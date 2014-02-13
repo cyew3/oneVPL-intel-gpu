@@ -68,12 +68,12 @@ namespace UMC
     }
 
     void VC1PackerDXVA::VC1PackOneSlice  (VC1Context* pContext,
-                                          SliceParams* slparams,
-                                          Ipp32u BufIndex, // only in future realisations
-                                          Ipp32u MBOffset,
-                                          Ipp32u SliceDataSize,
-                                          Ipp32u StartCodeOffset,
-                                          Ipp32u ChoppingType)
+        SliceParams* slparams,
+        Ipp32u BufIndex, // only in future realisations
+        Ipp32u MBOffset,
+        Ipp32u SliceDataSize,
+        Ipp32u StartCodeOffset,
+        Ipp32u ChoppingType)
     {
         // we should use next buffer for next slice in case of "Whole" mode
         Ipp32u mbShift = 0;
@@ -102,8 +102,8 @@ namespace UMC
 #endif
     }
     void VC1PackerDXVA::VC1PackWholeSliceSM (VC1Context* pContext,
-                                             Ipp32u MBOffset,
-                                             Ipp32u SliceDataSize)
+        Ipp32u MBOffset,
+        Ipp32u SliceDataSize)
     {
         m_pSliceInfo->wHorizontalPosition = 0;
         m_pSliceInfo->wVerticalPosition = 0;
@@ -122,8 +122,8 @@ namespace UMC
     }
 
     void VC1PackerDXVA::VC1PackPicParams (VC1Context* pContext,
-                                          DXVA_PictureParameters* ptr,
-                                          VideoAccelerator*              va)
+        DXVA_PictureParameters* ptr,
+        VideoAccelerator*              va)
     {
         //DXVA_PicParams_VC1* ptr = m_pPicPtr;
         //DXVA_PictureParameters* ptr = m_pPicPtr;
@@ -131,7 +131,7 @@ namespace UMC
 
         if (VC1_PROFILE_ADVANCED == pContext->m_seqLayerHeader.PROFILE)
         {
-// Menlow, LRB
+            // Menlow, LRB
 #if 1
             if (VC1_FieldInterlace == pContext->m_picLayerHeader->FCM)
             {
@@ -142,7 +142,7 @@ namespace UMC
                 ptr->wPicHeightInMBminus1 = (WORD)(2*(pContext->m_seqLayerHeader.CODED_HEIGHT + 1) -1);
             }
 #else
-// ATI
+            // ATI
             ptr->wPicHeightInMBminus1 = (WORD)(2*(pContext->m_seqLayerHeader.CODED_HEIGHT + 1) -1);
 #endif
 
@@ -242,7 +242,7 @@ namespace UMC
             (pContext->m_picLayerHeader->FCM != VC1_FrameInterlace))
         {
             if (VC1_MVMODE_HPELBI_1MV == pContext->m_picLayerHeader->MVMODE)
-               ptr->bMVprecisionAndChromaRelation |= 0x08;
+                ptr->bMVprecisionAndChromaRelation |= 0x08;
 
         }
 
@@ -335,7 +335,7 @@ namespace UMC
         }
         ptr->wDecodedPictureIndex = (WORD)(pContext->m_frmBuff.m_iCurrIndex);
 
-// Menlow/EagleLake 
+        // Menlow/EagleLake 
 #if 1
         if (pContext->m_seqLayerHeader.RANGE_MAPY_FLAG ||
             pContext->m_seqLayerHeader.RANGE_MAPUV_FLAG ||
@@ -452,7 +452,7 @@ namespace UMC
                 else if (2 == pContext->m_picLayerHeader->INTCOMFIELD)
                 {
                     //MAY_BE. NEED TO CORRECT !!!!!!!!!!!!!!!!!!
-                     // top field
+                    // top field
                     ptr->wBitstreamFcodes = bit_set(ptr->wBitstreamFcodes, 8, 8, pContext->m_picLayerHeader->LUMSCALE1 + 32);
                     ptr->wBitstreamPCEelements = bit_set(ptr->wBitstreamPCEelements, 8, 8, pContext->m_picLayerHeader->LUMSHIFT1);
                     // bottom field not compensated
@@ -517,10 +517,10 @@ namespace UMC
     }
 
     Ipp32u VC1PackerDXVA::VC1PackBitStreamSM (VC1Context* pContext,
-                                              Ipp32u Size,
-                                              Ipp8u* pOriginalData,
-                                              Ipp32u ByteOffset,
-                                              bool   isNeedToAddSC) // offset of the first byte of pbs in buffer
+        Ipp32u Size,
+        Ipp8u* pOriginalData,
+        Ipp32u ByteOffset,
+        bool   isNeedToAddSC) // offset of the first byte of pbs in buffer
     {
         UMCVACompBuffer* CompBuf;
         Ipp8u* pBitstream = (Ipp8u*)m_va->GetCompBuffer(DXVA_BITSTREAM_DATA_BUFFER, &CompBuf);
@@ -537,11 +537,11 @@ namespace UMC
 #endif
         CompBuf->SetDataSize(ByteOffset + Size - RemainBytes);
         return RemainBytes;
-     }
+    }
     Ipp32u VC1PackerDXVA::VC1PackBitStreamAdv (VC1Context* pContext,
-                                               Ipp32u Size,
-                                               Ipp8u* pOriginalData,
-                                               Ipp32u ByteOffset)
+        Ipp32u Size,
+        Ipp8u* pOriginalData,
+        Ipp32u ByteOffset)
     {
         UMCVACompBuffer* CompBuf;
 
@@ -580,51 +580,51 @@ namespace UMC
         CompBuf->SetDataSize(bitplane_size);
 
         if (pContext->m_picLayerHeader->FCM == VC1_FieldInterlace)
-            bitplane_size /= 2;
+        bitplane_size /= 2;
 
         switch (pContext->m_picLayerHeader->PTYPE)
         {
         case VC1_I_FRAME:
         case VC1_BI_FRAME:
-            lut_bitplane[0] = &pContext->m_picLayerHeader->FIELDTX;
-            lut_bitplane[1] = &pContext->m_picLayerHeader->ACPRED;
-            lut_bitplane[2] = &pContext->m_picLayerHeader->OVERFLAGS;
-            break;
+        lut_bitplane[0] = &pContext->m_picLayerHeader->FIELDTX;
+        lut_bitplane[1] = &pContext->m_picLayerHeader->ACPRED;
+        lut_bitplane[2] = &pContext->m_picLayerHeader->OVERFLAGS;
+        break;
         case VC1_P_FRAME:
-            lut_bitplane[0] = &pContext->m_picLayerHeader->m_DirectMB;
-            lut_bitplane[1] = &pContext->m_picLayerHeader->SKIPMB;
-            lut_bitplane[2] = &pContext->m_picLayerHeader->MVTYPEMB;
-            break;
+        lut_bitplane[0] = &pContext->m_picLayerHeader->m_DirectMB;
+        lut_bitplane[1] = &pContext->m_picLayerHeader->SKIPMB;
+        lut_bitplane[2] = &pContext->m_picLayerHeader->MVTYPEMB;
+        break;
         case VC1_B_FRAME:
-            lut_bitplane[0] = &pContext->m_picLayerHeader->m_DirectMB;
-            lut_bitplane[1] = &pContext->m_picLayerHeader->SKIPMB;
-            lut_bitplane[2] = &pContext->m_picLayerHeader->FORWARDMB;
-            break;
+        lut_bitplane[0] = &pContext->m_picLayerHeader->m_DirectMB;
+        lut_bitplane[1] = &pContext->m_picLayerHeader->SKIPMB;
+        lut_bitplane[2] = &pContext->m_picLayerHeader->FORWARDMB;
+        break;
         case VC1_SKIPPED_FRAME:
-            return;
+        return;
         }
         for (i=0;i<3;i++)
         {
-            if (lut_bitplane[i]->m_databits)
-                check_bitplane = lut_bitplane[i];
+        if (lut_bitplane[i]->m_databits)
+        check_bitplane = lut_bitplane[i];
 
         }
         if (check_bitplane)
         {
-            for (i=0;i<3;i++)
-            {
-                if (!lut_bitplane[i]->m_databits)
-                    lut_bitplane[i] = check_bitplane;
-            }
+        for (i=0;i<3;i++)
+        {
+        if (!lut_bitplane[i]->m_databits)
+        lut_bitplane[i] = check_bitplane;
+        }
 
-            for (i=0; i < bitplane_size;)
-            {
-                *ptr = lut_bitplane[0]->m_databits[i] + (lut_bitplane[1]->m_databits[i] << 1) +
-                    (lut_bitplane[2]->m_databits[i] << 2) + (lut_bitplane[0]->m_databits[i+1] << 4) +
-                    (lut_bitplane[1]->m_databits[i+1] << 5) + (lut_bitplane[2]->m_databits[i+1] << 6);
-                i += 2;
-                ++ptr;
-            }
+        for (i=0; i < bitplane_size;)
+        {
+        *ptr = lut_bitplane[0]->m_databits[i] + (lut_bitplane[1]->m_databits[i] << 1) +
+        (lut_bitplane[2]->m_databits[i] << 2) + (lut_bitplane[0]->m_databits[i+1] << 4) +
+        (lut_bitplane[1]->m_databits[i+1] << 5) + (lut_bitplane[2]->m_databits[i+1] << 6);
+        i += 2;
+        ++ptr;
+        }
         }
         */
     }
@@ -672,11 +672,11 @@ namespace UMC
     }
 
     void VC1PackerSA::VC1PackOneSlice    (VC1Context* pContext,
-                                          SliceParams* slparams,
-                                          Ipp32u BufIndex, // only in future realisations
-                                          Ipp32u MBOffset,
-                                          Ipp32u SliceDataSize,
-                                          Ipp32u StartCodeOffset)
+        SliceParams* slparams,
+        Ipp32u BufIndex, // only in future realisations
+        Ipp32u MBOffset,
+        Ipp32u SliceDataSize,
+        Ipp32u StartCodeOffset)
     {
         memset(m_pSliceInfo, 0, sizeof(DXVA_SliceInfoVC1));
         m_pSliceInfo->bStartCodeBitOffset = (WORD)((31-(BYTE)slparams->m_bitOffset) + MBOffset*8 + 32); //32 - Start Code
@@ -688,8 +688,8 @@ namespace UMC
         ++m_pSliceInfo;
     }
     void VC1PackerSA::VC1PackWholeSliceSM  (VC1Context* pContext,
-                                            Ipp32u MBOffset,
-                                            Ipp32u SliceDataSize)
+        Ipp32u MBOffset,
+        Ipp32u SliceDataSize)
     {
         memset(m_pSliceInfo, 0, sizeof(DXVA_SliceInfoVC1));
         m_pSliceInfo->bStartCodeBitOffset =(WORD)((31-(BYTE)pContext->m_bitstream.bitOffset) + MBOffset*8); //32 - Start Code
@@ -1349,18 +1349,18 @@ namespace UMC
             // last macroblock case
             if (bitplane_size&1)
                 *ptr = (lut_bitplane[0]->m_databits[i] << 4) + (lut_bitplane[1]->m_databits[i] << 5) +
-                       (lut_bitplane[2]->m_databits[i] << 6);
+                (lut_bitplane[2]->m_databits[i] << 6);
 
             CompBuf->SetDataSize(bitplane_size);
         }
     }
 
     Ipp32u VC1PackerLVA::VC1PackBitStreamAdv (VC1Context* pContext,
-                                                Ipp32u& Size,
-                                                Ipp8u* pOriginalData,
-                                                Ipp32u OriginalSize,
-                                                Ipp32u ByteOffset,
-                                                Ipp8u& Flag_03)
+        Ipp32u& Size,
+        Ipp8u* pOriginalData,
+        Ipp32u OriginalSize,
+        Ipp32u ByteOffset,
+        Ipp8u& Flag_03)
     {
         UMCVACompBuffer* CompBuf;
         Ipp8u* pBitstream = (Ipp8u*)m_va->GetCompBuffer(VASliceDataBufferType, &CompBuf, OriginalSize);
@@ -1384,7 +1384,9 @@ namespace UMC
         {
             if (pContext->m_bitstream.bitOffset < 24)
             {
-                ippsCopy_8u(pOriginalData + 1, pBitstream + ByteOffset, OriginalSize - RemainBytes + 1);
+                ippsCopy_8u(pOriginalData + 1, pBitstream + ByteOffset, OriginalSize + 1);
+                pEnd++;
+
                 *(pBitstream + ByteOffset + 1) = 0;
                 Size--;
             }
@@ -1409,21 +1411,21 @@ namespace UMC
             {
                 ippsCopy_8u(pOriginalData, pBitstream + ByteOffset, OriginalSize );
             }
-            
+
             Flag_03 = 0;
         }
         else if(Flag_03 == 4)
         {
-           // *(pBitstream + ByteOffset) = *pOriginalData;
-           // *(pBitstream + ByteOffset + 1) = *(pOriginalData + 1);
-           // *(pBitstream + ByteOffset + 2) = *(pOriginalData + 2);
-           // *(pBitstream + ByteOffset + 3) = *(pOriginalData + 3);
-           //ippsCopy_8u(pOriginalData + 5, pBitstream + ByteOffset + 4, OriginalSize - 5);
+            // *(pBitstream + ByteOffset) = *pOriginalData;
+            // *(pBitstream + ByteOffset + 1) = *(pOriginalData + 1);
+            // *(pBitstream + ByteOffset + 2) = *(pOriginalData + 2);
+            // *(pBitstream + ByteOffset + 3) = *(pOriginalData + 3);
+            //ippsCopy_8u(pOriginalData + 5, pBitstream + ByteOffset + 4, OriginalSize - 5);
 
-           // Size--;
-           // Flag_03 = 0;
+            // Size--;
+            // Flag_03 = 0;
             ippsCopy_8u(pOriginalData, pBitstream + ByteOffset, OriginalSize);
-            
+
             Flag_03 = 0;
 
         }
@@ -1432,8 +1434,8 @@ namespace UMC
             *(pBitstream + ByteOffset) = 0;
             *(pBitstream + ByteOffset + 1) = *(pOriginalData + 1);
             *(pBitstream + ByteOffset + 2) = *(pOriginalData + 2);
-           ippsCopy_8u(pOriginalData + 4, pBitstream + ByteOffset + 3, OriginalSize - 4);
-           pEnd--;
+            ippsCopy_8u(pOriginalData + 4, pBitstream + ByteOffset + 3, OriginalSize - 4);
+            pEnd--;
 
             Size--;
             Flag_03 = 0;
@@ -1449,7 +1451,7 @@ namespace UMC
         {
             *(pEnd-1) = 0;
         }
- 
+
         return 0;
     }
 
@@ -1465,7 +1467,7 @@ namespace UMC
         return 0;
     }
 
-     void VC1PackerLVA::VC1PackPicParams (VC1Context* pContext, VAPictureParameterBufferVC1* ptr, VideoAccelerator* va)
+    void VC1PackerLVA::VC1PackPicParams (VC1Context* pContext, VAPictureParameterBufferVC1* ptr, VideoAccelerator* va)
     {
         memset(ptr, 0, sizeof(VAPictureParameterBufferVC1));
 
@@ -1506,12 +1508,12 @@ namespace UMC
 
         switch(pContext->m_picLayerHeader->CONDOVER)
         {
-          case 0:
-          ptr->conditional_overlap_flag = 0; break;
-          case 2:
-          ptr->conditional_overlap_flag = 1; break;
-          default:
-          ptr->conditional_overlap_flag = 2; break;
+        case 0:
+            ptr->conditional_overlap_flag = 0; break;
+        case 2:
+            ptr->conditional_overlap_flag = 1; break;
+        default:
+            ptr->conditional_overlap_flag = 2; break;
         }
         ptr->fast_uvmc_flag = pContext->m_seqLayerHeader.FASTUVMC;
 
@@ -1550,7 +1552,7 @@ namespace UMC
                 }
                 else if (VC1_INTCOMP_BOTTOM_FIELD == pContext->m_picLayerHeader->INTCOMFIELD)
                 {
-                     // bottom field
+                    // bottom field
                     ptr->luma_scale2 = pContext->m_picLayerHeader->LUMSCALE1;
                     ptr->luma_shift2 = pContext->m_picLayerHeader->LUMSHIFT1;
                     // top field not compensated
@@ -1558,7 +1560,7 @@ namespace UMC
                 }
                 else if (VC1_INTCOMP_TOP_FIELD == pContext->m_picLayerHeader->INTCOMFIELD)
                 {
-                     // top field
+                    // top field
                     ptr->luma_scale = pContext->m_picLayerHeader->LUMSCALE;
                     ptr->luma_shift = pContext->m_picLayerHeader->LUMSHIFT;
                     // bottom field not compensated
@@ -1580,41 +1582,41 @@ namespace UMC
             //field picture
             switch(pContext->m_picLayerHeader->PTypeField1)
             {
-                case VC1_I_FRAME:
-                    if(pContext->m_picLayerHeader->PTypeField2 == VC1_I_FRAME)
-                        ptr->picture_fields.bits.picture_type = VC1_I_I_FRAME;
-                    else if(pContext->m_picLayerHeader->PTypeField2 == VC1_P_FRAME)
-                        ptr->picture_fields.bits.picture_type = VC1_I_P_FRAME;
-                    else
-                        VM_ASSERT(0);
-                    break;
-                case VC1_P_FRAME:
-                    if(pContext->m_picLayerHeader->PTypeField2 == VC1_P_FRAME)
-                        ptr->picture_fields.bits.picture_type = VC1_P_P_FRAME;
-                    else if(pContext->m_picLayerHeader->PTypeField2 == VC1_I_FRAME)
-                        ptr->picture_fields.bits.picture_type = VC1_P_I_FRAME;
-                    else
-                        VM_ASSERT(0);
-                    break;
-                case VC1_B_FRAME:
-                    if(pContext->m_picLayerHeader->PTypeField2 == VC1_B_FRAME)
-                        ptr->picture_fields.bits.picture_type = VC1_B_B_FRAME;
-                    else if(pContext->m_picLayerHeader->PTypeField2 == VC1_BI_FRAME)
-                        ptr->picture_fields.bits.picture_type = VC1_B_BI_FRAME;
-                    else
-                        VM_ASSERT(0);
-                    break;
-                case VC1_BI_FRAME:
-                    if(pContext->m_picLayerHeader->PTypeField2 == VC1_B_FRAME)
-                        ptr->picture_fields.bits.picture_type = VC1_BI_B_FRAME;
-                    else if(pContext->m_picLayerHeader->PTypeField2 == VC1_BI_FRAME)
-                        ptr->picture_fields.bits.picture_type = VC1_BI_BI_FRAME;
-                    else
-                        VM_ASSERT(0);
-                    break;
-                default:
+            case VC1_I_FRAME:
+                if(pContext->m_picLayerHeader->PTypeField2 == VC1_I_FRAME)
+                    ptr->picture_fields.bits.picture_type = VC1_I_I_FRAME;
+                else if(pContext->m_picLayerHeader->PTypeField2 == VC1_P_FRAME)
+                    ptr->picture_fields.bits.picture_type = VC1_I_P_FRAME;
+                else
                     VM_ASSERT(0);
-                    break;
+                break;
+            case VC1_P_FRAME:
+                if(pContext->m_picLayerHeader->PTypeField2 == VC1_P_FRAME)
+                    ptr->picture_fields.bits.picture_type = VC1_P_P_FRAME;
+                else if(pContext->m_picLayerHeader->PTypeField2 == VC1_I_FRAME)
+                    ptr->picture_fields.bits.picture_type = VC1_P_I_FRAME;
+                else
+                    VM_ASSERT(0);
+                break;
+            case VC1_B_FRAME:
+                if(pContext->m_picLayerHeader->PTypeField2 == VC1_B_FRAME)
+                    ptr->picture_fields.bits.picture_type = VC1_B_B_FRAME;
+                else if(pContext->m_picLayerHeader->PTypeField2 == VC1_BI_FRAME)
+                    ptr->picture_fields.bits.picture_type = VC1_B_BI_FRAME;
+                else
+                    VM_ASSERT(0);
+                break;
+            case VC1_BI_FRAME:
+                if(pContext->m_picLayerHeader->PTypeField2 == VC1_B_FRAME)
+                    ptr->picture_fields.bits.picture_type = VC1_BI_B_FRAME;
+                else if(pContext->m_picLayerHeader->PTypeField2 == VC1_BI_FRAME)
+                    ptr->picture_fields.bits.picture_type = VC1_BI_BI_FRAME;
+                else
+                    VM_ASSERT(0);
+                break;
+            default:
+                VM_ASSERT(0);
+                break;
             }
         }
         ptr->picture_fields.bits.frame_coding_mode =  pContext->m_picLayerHeader->FCM;
@@ -1727,12 +1729,12 @@ namespace UMC
         }
     }
     void  VC1PackerLVA::VC1PackOneSlice (VC1Context* pContext,
-                                         SliceParams* slparams,
-                                         Ipp32u SliceBufIndex,
-                                         Ipp32u MBOffset,
-                                         Ipp32u SliceDataSize,
-                                         Ipp32u StartCodeOffset,
-                                         Ipp32u ChoppingType) //compatibility with Windows code
+        SliceParams* slparams,
+        Ipp32u SliceBufIndex,
+        Ipp32u MBOffset,
+        Ipp32u SliceDataSize,
+        Ipp32u StartCodeOffset,
+        Ipp32u ChoppingType) //compatibility with Windows code
     {
         if (SliceBufIndex)
             ++m_pSliceInfo;
@@ -1752,8 +1754,8 @@ namespace UMC
 
     }
     void VC1PackerLVA::VC1PackWholeSliceSM (VC1Context* pContext,
-                                             Ipp32u MBOffset,
-                                             Ipp32u SliceDataSize)
+        Ipp32u MBOffset,
+        Ipp32u SliceDataSize)
     {
         m_pSliceInfo->slice_vertical_position = 0;
         m_pSliceInfo->slice_data_size = SliceDataSize;
@@ -1773,7 +1775,7 @@ namespace UMC
     }
 #endif
 
- #ifdef UMC_VA_DXVA
+#ifdef UMC_VA_DXVA
     void VC1PackerDXVA_EagleLake::VC1SetExtPictureBuffer()
     {
         UMCVACompBuffer* CompBuf;
@@ -1800,15 +1802,15 @@ namespace UMC
     }
 
     void VC1PackerDXVA_EagleLake::VC1PackExtPicParams (VC1Context* pContext,
-                                                      DXVA_ExtPicInfo* ptr,
-                                                      VideoAccelerator* va)
+        DXVA_ExtPicInfo* ptr,
+        VideoAccelerator* va)
     {
         memset(ptr, 0, sizeof(DXVA_ExtPicInfo));
         //VM_ASSERT(VC1_PROFILE_ADVANCED == pContext->m_seqLayerHeader.PROFILE);
 
         //BFraction // ADVANCE
         //if (VC1_PROFILE_ADVANCED == pContext->m_seqLayerHeader.PROFILE)
-            ptr->bBScaleFactor = (Ipp8u)pContext->m_picLayerHeader->ScaleFactor;
+        ptr->bBScaleFactor = (Ipp8u)pContext->m_picLayerHeader->ScaleFactor;
         //else
         //    ptr->bBScaleFactor = 128;//(Ipp8u)pContext->m_picLayerHeader->ScaleFactor;
 
@@ -1854,98 +1856,98 @@ namespace UMC
             //progressive or interlece frame
             switch(pContext->m_picLayerHeader->PTYPE)
             {
-                case VC1_I_FRAME:
-                    ptr->bPictureFlags = bit_set(ptr->bPictureFlags, 2, 3, 0);
-                    break;
-                case VC1_P_FRAME:
-                    ptr->bPictureFlags = bit_set(ptr->bPictureFlags, 2, 3, 1);
-                    break;
-                case VC1_B_FRAME:
-                    ptr->bPictureFlags = bit_set(ptr->bPictureFlags, 2, 3, 2);
-                    break;
-                case VC1_BI_FRAME:
-                    ptr->bPictureFlags = bit_set(ptr->bPictureFlags, 2, 3, 3);
-                    break;
-                 case VC1_SKIPPED_FRAME:
-                    ptr->bPictureFlags = bit_set(ptr->bPictureFlags, 2, 3, 4);
-                    break;
-                 default:
-                     VM_ASSERT(0);
-                     break;
-          }
+            case VC1_I_FRAME:
+                ptr->bPictureFlags = bit_set(ptr->bPictureFlags, 2, 3, 0);
+                break;
+            case VC1_P_FRAME:
+                ptr->bPictureFlags = bit_set(ptr->bPictureFlags, 2, 3, 1);
+                break;
+            case VC1_B_FRAME:
+                ptr->bPictureFlags = bit_set(ptr->bPictureFlags, 2, 3, 2);
+                break;
+            case VC1_BI_FRAME:
+                ptr->bPictureFlags = bit_set(ptr->bPictureFlags, 2, 3, 3);
+                break;
+            case VC1_SKIPPED_FRAME:
+                ptr->bPictureFlags = bit_set(ptr->bPictureFlags, 2, 3, 4);
+                break;
+            default:
+                VM_ASSERT(0);
+                break;
+            }
         }
         else
         {
             //field picture
             switch(pContext->m_picLayerHeader->PTypeField1)
             {
-                case VC1_I_FRAME:
-                    if(pContext->m_picLayerHeader->PTypeField2 == VC1_I_FRAME)
-                    {
-                        //I/I field
-                        ptr->bPictureFlags = bit_set(ptr->bPictureFlags, 2, 3, 0);
-                    }
-                    else if(pContext->m_picLayerHeader->PTypeField2 == VC1_P_FRAME)
-                    {
-                        //I/P field
-                        ptr->bPictureFlags = bit_set(ptr->bPictureFlags, 2, 3, 1);
-                    }
-                    else
-                    {
-                        VM_ASSERT(0);
-                    }
-                    break;
-                case VC1_P_FRAME:
-                    if(pContext->m_picLayerHeader->PTypeField2 == VC1_P_FRAME)
-                    {
-                        //P/P field
-                        ptr->bPictureFlags = bit_set(ptr->bPictureFlags, 2, 3, 3);
-                    }
-                    else if(pContext->m_picLayerHeader->PTypeField2 == VC1_I_FRAME)
-                    {
-                        //P/I field
-                        ptr->bPictureFlags = bit_set(ptr->bPictureFlags, 2, 3, 2);
-                    }
-                    else
-                    {
-                        VM_ASSERT(0);
-                    }
-                    break;
-                case VC1_B_FRAME:
-                    if(pContext->m_picLayerHeader->PTypeField2 == VC1_B_FRAME)
-                    {
-                        //B/B field
-                        ptr->bPictureFlags = bit_set(ptr->bPictureFlags, 2, 3, 4);
-                    }
-                    else if(pContext->m_picLayerHeader->PTypeField2 == VC1_BI_FRAME)
-                    {
-                        //B/BI field
-                        ptr->bPictureFlags = bit_set(ptr->bPictureFlags, 2, 3, 5);
-                    }
-                    else
-                    {
-                        VM_ASSERT(0);
-                    }
-                    break;
-                case VC1_BI_FRAME:
-                    if(pContext->m_picLayerHeader->PTypeField2 == VC1_B_FRAME)
-                    {
-                        //BI/B field
-                        ptr->bPictureFlags = bit_set(ptr->bPictureFlags, 2, 3, 6);
-                    }
-                    else if(pContext->m_picLayerHeader->PTypeField2 == VC1_BI_FRAME)
-                    {
-                        //BI/BI field
-                        ptr->bPictureFlags = bit_set(ptr->bPictureFlags, 2, 3, 7);
-                    }
-                    else
-                    {
-                        VM_ASSERT(0);
-                    }
-                    break;
-                default:
+            case VC1_I_FRAME:
+                if(pContext->m_picLayerHeader->PTypeField2 == VC1_I_FRAME)
+                {
+                    //I/I field
+                    ptr->bPictureFlags = bit_set(ptr->bPictureFlags, 2, 3, 0);
+                }
+                else if(pContext->m_picLayerHeader->PTypeField2 == VC1_P_FRAME)
+                {
+                    //I/P field
+                    ptr->bPictureFlags = bit_set(ptr->bPictureFlags, 2, 3, 1);
+                }
+                else
+                {
                     VM_ASSERT(0);
-                    break;
+                }
+                break;
+            case VC1_P_FRAME:
+                if(pContext->m_picLayerHeader->PTypeField2 == VC1_P_FRAME)
+                {
+                    //P/P field
+                    ptr->bPictureFlags = bit_set(ptr->bPictureFlags, 2, 3, 3);
+                }
+                else if(pContext->m_picLayerHeader->PTypeField2 == VC1_I_FRAME)
+                {
+                    //P/I field
+                    ptr->bPictureFlags = bit_set(ptr->bPictureFlags, 2, 3, 2);
+                }
+                else
+                {
+                    VM_ASSERT(0);
+                }
+                break;
+            case VC1_B_FRAME:
+                if(pContext->m_picLayerHeader->PTypeField2 == VC1_B_FRAME)
+                {
+                    //B/B field
+                    ptr->bPictureFlags = bit_set(ptr->bPictureFlags, 2, 3, 4);
+                }
+                else if(pContext->m_picLayerHeader->PTypeField2 == VC1_BI_FRAME)
+                {
+                    //B/BI field
+                    ptr->bPictureFlags = bit_set(ptr->bPictureFlags, 2, 3, 5);
+                }
+                else
+                {
+                    VM_ASSERT(0);
+                }
+                break;
+            case VC1_BI_FRAME:
+                if(pContext->m_picLayerHeader->PTypeField2 == VC1_B_FRAME)
+                {
+                    //BI/B field
+                    ptr->bPictureFlags = bit_set(ptr->bPictureFlags, 2, 3, 6);
+                }
+                else if(pContext->m_picLayerHeader->PTypeField2 == VC1_BI_FRAME)
+                {
+                    //BI/BI field
+                    ptr->bPictureFlags = bit_set(ptr->bPictureFlags, 2, 3, 7);
+                }
+                else
+                {
+                    VM_ASSERT(0);
+                }
+                break;
+            default:
+                VM_ASSERT(0);
+                break;
             }
         }
 
@@ -1960,211 +1962,211 @@ namespace UMC
         {
             ptr->bPQuantFlags = bit_set(ptr->bPQuantFlags, 0, 1, 0);
         }
-            
+
         ptr->bPQuantFlags = bit_set(ptr->bPQuantFlags, 1, 1, pContext->m_picLayerHeader->HALFQP);
 
         switch(pContext->m_picLayerHeader->m_PQuant_mode)
         {
-            case VC1_ALTPQUANT_NO:
-                ptr->bPQuantFlags = bit_set(ptr->bPQuantFlags, 2, 2, 0);
-                ptr->bPQuantFlags = bit_set(ptr->bPQuantFlags, 4, 4, 0);
-                break;
-            case VC1_ALTPQUANT_MB_LEVEL:
-                ptr->bPQuantFlags = bit_set(ptr->bPQuantFlags, 2, 2, 3);
-                ptr->bPQuantFlags = bit_set(ptr->bPQuantFlags, 4, 4, 0);
-                break;
-            case VC1_ALTPQUANT_ANY_VALUE:
-                ptr->bPQuantFlags = bit_set(ptr->bPQuantFlags, 2, 2, 2);
-                ptr->bPQuantFlags = bit_set(ptr->bPQuantFlags, 4, 4, 0);
-                break;
-            case VC1_ALTPQUANT_LEFT:
-                ptr->bPQuantFlags = bit_set(ptr->bPQuantFlags, 2, 2, 1);
-                ptr->bPQuantFlags = bit_set(ptr->bPQuantFlags, 4, 4, 1);
-                break;
-            case VC1_ALTPQUANT_TOP:
-                ptr->bPQuantFlags = bit_set(ptr->bPQuantFlags, 2, 2, 1);
-                ptr->bPQuantFlags = bit_set(ptr->bPQuantFlags, 4, 4, 2);
-                break;
-            case VC1_ALTPQUANT_RIGTHT:
-                ptr->bPQuantFlags = bit_set(ptr->bPQuantFlags, 2, 2, 1);
-                ptr->bPQuantFlags = bit_set(ptr->bPQuantFlags, 4, 4, 4);
-                break;
-            case VC1_ALTPQUANT_BOTTOM:
-                ptr->bPQuantFlags = bit_set(ptr->bPQuantFlags, 2, 2, 1);
-                ptr->bPQuantFlags = bit_set(ptr->bPQuantFlags, 4, 4, 8);
-                break;
-            case VC1_ALTPQUANT_LEFT_TOP:
-                ptr->bPQuantFlags = bit_set(ptr->bPQuantFlags, 2, 2, 1);
-                ptr->bPQuantFlags = bit_set(ptr->bPQuantFlags, 4, 4, 3);
-                break;
-            case VC1_ALTPQUANT_TOP_RIGTHT:
-                ptr->bPQuantFlags = bit_set(ptr->bPQuantFlags, 2, 2, 1);
-                ptr->bPQuantFlags = bit_set(ptr->bPQuantFlags, 4, 4, 6);
-                break;
-            case VC1_ALTPQUANT_RIGTHT_BOTTOM:
-                ptr->bPQuantFlags = bit_set(ptr->bPQuantFlags, 2, 2, 1);
-                ptr->bPQuantFlags = bit_set(ptr->bPQuantFlags, 4, 4, 12);
-                break;
-            case VC1_ALTPQUANT_BOTTOM_LEFT:
-                ptr->bPQuantFlags = bit_set(ptr->bPQuantFlags, 2, 2, 1);
-                ptr->bPQuantFlags = bit_set(ptr->bPQuantFlags, 4, 4, 9);
-                break;
-            case VC1_ALTPQUANT_EDGES:
-            case VC1_ALTPQUANT_ALL:
-                ptr->bPQuantFlags = bit_set(ptr->bPQuantFlags, 2, 2, 1);
-                ptr->bPQuantFlags = bit_set(ptr->bPQuantFlags, 4, 4, 15);
-                break;
-            default:
-                VM_ASSERT(0);
-                break;
-       }
+        case VC1_ALTPQUANT_NO:
+            ptr->bPQuantFlags = bit_set(ptr->bPQuantFlags, 2, 2, 0);
+            ptr->bPQuantFlags = bit_set(ptr->bPQuantFlags, 4, 4, 0);
+            break;
+        case VC1_ALTPQUANT_MB_LEVEL:
+            ptr->bPQuantFlags = bit_set(ptr->bPQuantFlags, 2, 2, 3);
+            ptr->bPQuantFlags = bit_set(ptr->bPQuantFlags, 4, 4, 0);
+            break;
+        case VC1_ALTPQUANT_ANY_VALUE:
+            ptr->bPQuantFlags = bit_set(ptr->bPQuantFlags, 2, 2, 2);
+            ptr->bPQuantFlags = bit_set(ptr->bPQuantFlags, 4, 4, 0);
+            break;
+        case VC1_ALTPQUANT_LEFT:
+            ptr->bPQuantFlags = bit_set(ptr->bPQuantFlags, 2, 2, 1);
+            ptr->bPQuantFlags = bit_set(ptr->bPQuantFlags, 4, 4, 1);
+            break;
+        case VC1_ALTPQUANT_TOP:
+            ptr->bPQuantFlags = bit_set(ptr->bPQuantFlags, 2, 2, 1);
+            ptr->bPQuantFlags = bit_set(ptr->bPQuantFlags, 4, 4, 2);
+            break;
+        case VC1_ALTPQUANT_RIGTHT:
+            ptr->bPQuantFlags = bit_set(ptr->bPQuantFlags, 2, 2, 1);
+            ptr->bPQuantFlags = bit_set(ptr->bPQuantFlags, 4, 4, 4);
+            break;
+        case VC1_ALTPQUANT_BOTTOM:
+            ptr->bPQuantFlags = bit_set(ptr->bPQuantFlags, 2, 2, 1);
+            ptr->bPQuantFlags = bit_set(ptr->bPQuantFlags, 4, 4, 8);
+            break;
+        case VC1_ALTPQUANT_LEFT_TOP:
+            ptr->bPQuantFlags = bit_set(ptr->bPQuantFlags, 2, 2, 1);
+            ptr->bPQuantFlags = bit_set(ptr->bPQuantFlags, 4, 4, 3);
+            break;
+        case VC1_ALTPQUANT_TOP_RIGTHT:
+            ptr->bPQuantFlags = bit_set(ptr->bPQuantFlags, 2, 2, 1);
+            ptr->bPQuantFlags = bit_set(ptr->bPQuantFlags, 4, 4, 6);
+            break;
+        case VC1_ALTPQUANT_RIGTHT_BOTTOM:
+            ptr->bPQuantFlags = bit_set(ptr->bPQuantFlags, 2, 2, 1);
+            ptr->bPQuantFlags = bit_set(ptr->bPQuantFlags, 4, 4, 12);
+            break;
+        case VC1_ALTPQUANT_BOTTOM_LEFT:
+            ptr->bPQuantFlags = bit_set(ptr->bPQuantFlags, 2, 2, 1);
+            ptr->bPQuantFlags = bit_set(ptr->bPQuantFlags, 4, 4, 9);
+            break;
+        case VC1_ALTPQUANT_EDGES:
+        case VC1_ALTPQUANT_ALL:
+            ptr->bPQuantFlags = bit_set(ptr->bPQuantFlags, 2, 2, 1);
+            ptr->bPQuantFlags = bit_set(ptr->bPQuantFlags, 4, 4, 15);
+            break;
+        default:
+            VM_ASSERT(0);
+            break;
+        }
 
-       //MvRange
+        //MvRange
 
-       if(pContext->m_picLayerHeader->MVRANGE == VC1_DMVRANGE_NONE)
-       {
-           ptr->bMvRange = bit_set(ptr->bMvRange, 0, 2, 0);
-       }
-       else if(pContext->m_picLayerHeader->MVRANGE == VC1_DMVRANGE_HORIZONTAL_RANGE)
-       {
-           ptr->bMvRange = bit_set(ptr->bMvRange, 0, 2, 1);
-       }
-       else if(pContext->m_picLayerHeader->MVRANGE == VC1_DMVRANGE_VERTICAL_RANGE)
-       {
-           ptr->bMvRange = bit_set(ptr->bMvRange, 0, 2, 2);
-       }
-       else if(pContext->m_picLayerHeader->MVRANGE == VC1_DMVRANGE_HORIZONTAL_VERTICAL_RANGE)
-       {
-           ptr->bMvRange = bit_set(ptr->bMvRange, 0, 2, 3);
-       }
-       else
-       {
-           VM_ASSERT(0);
-       }
+        if(pContext->m_picLayerHeader->MVRANGE == VC1_DMVRANGE_NONE)
+        {
+            ptr->bMvRange = bit_set(ptr->bMvRange, 0, 2, 0);
+        }
+        else if(pContext->m_picLayerHeader->MVRANGE == VC1_DMVRANGE_HORIZONTAL_RANGE)
+        {
+            ptr->bMvRange = bit_set(ptr->bMvRange, 0, 2, 1);
+        }
+        else if(pContext->m_picLayerHeader->MVRANGE == VC1_DMVRANGE_VERTICAL_RANGE)
+        {
+            ptr->bMvRange = bit_set(ptr->bMvRange, 0, 2, 2);
+        }
+        else if(pContext->m_picLayerHeader->MVRANGE == VC1_DMVRANGE_HORIZONTAL_VERTICAL_RANGE)
+        {
+            ptr->bMvRange = bit_set(ptr->bMvRange, 0, 2, 3);
+        }
+        else
+        {
+            VM_ASSERT(0);
+        }
 
-       if(pContext->m_picLayerHeader->DMVRANGE == VC1_DMVRANGE_NONE)
-       {
-           ptr->bMvRange = bit_set(ptr->bMvRange, 2, 2, 0);
-       }
-       else if(pContext->m_picLayerHeader->DMVRANGE == VC1_DMVRANGE_HORIZONTAL_RANGE)
-       {
-           ptr->bMvRange = bit_set(ptr->bMvRange, 2, 2, 1);
-       }
-       else if(pContext->m_picLayerHeader->DMVRANGE == VC1_DMVRANGE_VERTICAL_RANGE)
-       {
-           ptr->bMvRange = bit_set(ptr->bMvRange, 2, 2, 2);
-       }
-       else if(pContext->m_picLayerHeader->DMVRANGE == VC1_DMVRANGE_HORIZONTAL_VERTICAL_RANGE)
-       {
-           ptr->bMvRange = bit_set(ptr->bMvRange, 2, 2, 3);
-       }
-       else
-       {
-           VM_ASSERT(0);
-       }
+        if(pContext->m_picLayerHeader->DMVRANGE == VC1_DMVRANGE_NONE)
+        {
+            ptr->bMvRange = bit_set(ptr->bMvRange, 2, 2, 0);
+        }
+        else if(pContext->m_picLayerHeader->DMVRANGE == VC1_DMVRANGE_HORIZONTAL_RANGE)
+        {
+            ptr->bMvRange = bit_set(ptr->bMvRange, 2, 2, 1);
+        }
+        else if(pContext->m_picLayerHeader->DMVRANGE == VC1_DMVRANGE_VERTICAL_RANGE)
+        {
+            ptr->bMvRange = bit_set(ptr->bMvRange, 2, 2, 2);
+        }
+        else if(pContext->m_picLayerHeader->DMVRANGE == VC1_DMVRANGE_HORIZONTAL_VERTICAL_RANGE)
+        {
+            ptr->bMvRange = bit_set(ptr->bMvRange, 2, 2, 3);
+        }
+        else
+        {
+            VM_ASSERT(0);
+        }
 
-       //wMvReference
+        //wMvReference
 
-       Ipp32u FREFDIST = ((pContext->m_picLayerHeader->ScaleFactor * pContext->m_picLayerHeader->REFDIST) >> 8);
-       Ipp32s BREFDIST = pContext->m_picLayerHeader->REFDIST - FREFDIST - 1;
+        Ipp32u FREFDIST = ((pContext->m_picLayerHeader->ScaleFactor * pContext->m_picLayerHeader->REFDIST) >> 8);
+        Ipp32s BREFDIST = pContext->m_picLayerHeader->REFDIST - FREFDIST - 1;
 
-       if (BREFDIST < 0)
-           BREFDIST = 0;
+        if (BREFDIST < 0)
+            BREFDIST = 0;
 
-       if(pContext->m_picLayerHeader->FCM == VC1_FieldInterlace && VC1_B_FRAME == pContext->m_picLayerHeader->PTYPE)
+        if(pContext->m_picLayerHeader->FCM == VC1_FieldInterlace && VC1_B_FRAME == pContext->m_picLayerHeader->PTYPE)
             ptr->wMvReference = bit_set(ptr->wMvReference, 0, 4, FREFDIST);
-       else
+        else
             ptr->wMvReference = bit_set(ptr->wMvReference, 0, 4, pContext->m_picLayerHeader->REFDIST);
 
-       ptr->wMvReference = bit_set(ptr->wMvReference, 4, 4, BREFDIST);
+        ptr->wMvReference = bit_set(ptr->wMvReference, 4, 4, BREFDIST);
 
-       ptr->wMvReference = bit_set(ptr->wMvReference, 8, 1, pContext->m_picLayerHeader->NUMREF);
-       ptr->wMvReference = bit_set(ptr->wMvReference, 9, 1, pContext->m_picLayerHeader->REFFIELD);
-       ptr->wMvReference = bit_set(ptr->wMvReference, 10, 1, pContext->m_seqLayerHeader.FASTUVMC);
-       ptr->wMvReference = bit_set(ptr->wMvReference, 11, 1, pContext->m_picLayerHeader->MV4SWITCH);
+        ptr->wMvReference = bit_set(ptr->wMvReference, 8, 1, pContext->m_picLayerHeader->NUMREF);
+        ptr->wMvReference = bit_set(ptr->wMvReference, 9, 1, pContext->m_picLayerHeader->REFFIELD);
+        ptr->wMvReference = bit_set(ptr->wMvReference, 10, 1, pContext->m_seqLayerHeader.FASTUVMC);
+        ptr->wMvReference = bit_set(ptr->wMvReference, 11, 1, pContext->m_picLayerHeader->MV4SWITCH);
 
-       switch(pContext->m_picLayerHeader->MVMODE)
-       {
-           case VC1_MVMODE_HPELBI_1MV:
-               ptr->wMvReference = bit_set(ptr->wMvReference, 12, 2, 3);
-               ptr->wMvReference = bit_set(ptr->wMvReference, 14, 2, 0);
-               break;
-           case VC1_MVMODE_1MV:
-               ptr->wMvReference = bit_set(ptr->wMvReference, 12, 2, 1);
-               ptr->wMvReference = bit_set(ptr->wMvReference, 14, 2, 0);
-               break;
-           case VC1_MVMODE_MIXED_MV:
-               ptr->wMvReference = bit_set(ptr->wMvReference, 12, 2, 0);
-               ptr->wMvReference = bit_set(ptr->wMvReference, 14, 2, 0);
-               break;
-           case VC1_MVMODE_HPEL_1MV:
-               ptr->wMvReference = bit_set(ptr->wMvReference, 12, 2, 2);
-               ptr->wMvReference = bit_set(ptr->wMvReference, 14, 2, 0);
-               break;
-           //case VC1_MVMODE_INTENSCOMP:
-           //        //switch(pContext->m_picLayerHeader->MVMODE2)
-           //        //{
-           //        //    case VC1_MVMODE_HPELBI_1MV:
-           //        //        ptr->wMvReference = bit_set(ptr->wMvReference, 12, 2, 3);
-           //        //        break;
-           //        //    case VC1_MVMODE_1MV:
-           //        //        ptr->wMvReference = bit_set(ptr->wMvReference, 12, 2, 1);
-           //        //        break;
-           //        //    case VC1_MVMODE_MIXED_MV:
-           //        //        ptr->wMvReference = bit_set(ptr->wMvReference, 12, 2, 0);
-           //        //        break;
-           //        //    case VC1_MVMODE_HPEL_1MV:
-           //        //        ptr->wMvReference = bit_set(ptr->wMvReference, 12, 2, 2);
-           //        //        break;
-           //        //    default:
-           //        //        VM_ASSERT(0);
-           //        //        break;
-           //        //}
-           //    break;
-           default:
-               VM_ASSERT(0);
-               break;
-       }
+        switch(pContext->m_picLayerHeader->MVMODE)
+        {
+        case VC1_MVMODE_HPELBI_1MV:
+            ptr->wMvReference = bit_set(ptr->wMvReference, 12, 2, 3);
+            ptr->wMvReference = bit_set(ptr->wMvReference, 14, 2, 0);
+            break;
+        case VC1_MVMODE_1MV:
+            ptr->wMvReference = bit_set(ptr->wMvReference, 12, 2, 1);
+            ptr->wMvReference = bit_set(ptr->wMvReference, 14, 2, 0);
+            break;
+        case VC1_MVMODE_MIXED_MV:
+            ptr->wMvReference = bit_set(ptr->wMvReference, 12, 2, 0);
+            ptr->wMvReference = bit_set(ptr->wMvReference, 14, 2, 0);
+            break;
+        case VC1_MVMODE_HPEL_1MV:
+            ptr->wMvReference = bit_set(ptr->wMvReference, 12, 2, 2);
+            ptr->wMvReference = bit_set(ptr->wMvReference, 14, 2, 0);
+            break;
+            //case VC1_MVMODE_INTENSCOMP:
+            //        //switch(pContext->m_picLayerHeader->MVMODE2)
+            //        //{
+            //        //    case VC1_MVMODE_HPELBI_1MV:
+            //        //        ptr->wMvReference = bit_set(ptr->wMvReference, 12, 2, 3);
+            //        //        break;
+            //        //    case VC1_MVMODE_1MV:
+            //        //        ptr->wMvReference = bit_set(ptr->wMvReference, 12, 2, 1);
+            //        //        break;
+            //        //    case VC1_MVMODE_MIXED_MV:
+            //        //        ptr->wMvReference = bit_set(ptr->wMvReference, 12, 2, 0);
+            //        //        break;
+            //        //    case VC1_MVMODE_HPEL_1MV:
+            //        //        ptr->wMvReference = bit_set(ptr->wMvReference, 12, 2, 2);
+            //        //        break;
+            //        //    default:
+            //        //        VM_ASSERT(0);
+            //        //        break;
+            //        //}
+            //    break;
+        default:
+            VM_ASSERT(0);
+            break;
+        }
 
-       if(pContext->m_bIntensityCompensation)
-       {    
-           switch(pContext->m_picLayerHeader->INTCOMFIELD)
-           {
-               case VC1_INTCOMP_TOP_FIELD:
-                   ptr->wMvReference = bit_set(ptr->wMvReference, 14, 2, 1);
-                   break;
-               case VC1_INTCOMP_BOTTOM_FIELD:
-                   ptr->wMvReference = bit_set(ptr->wMvReference, 14, 2, 2);
-                   break;
-               case VC1_INTCOMP_BOTH_FIELD:
-                   ptr->wMvReference = bit_set(ptr->wMvReference, 14, 2, 3);
-                   break;
-               default:
-                   ptr->wMvReference = bit_set(ptr->wMvReference, 14, 2, 0);
-                   break;
-           }
-       }
+        if(pContext->m_bIntensityCompensation)
+        {    
+            switch(pContext->m_picLayerHeader->INTCOMFIELD)
+            {
+            case VC1_INTCOMP_TOP_FIELD:
+                ptr->wMvReference = bit_set(ptr->wMvReference, 14, 2, 1);
+                break;
+            case VC1_INTCOMP_BOTTOM_FIELD:
+                ptr->wMvReference = bit_set(ptr->wMvReference, 14, 2, 2);
+                break;
+            case VC1_INTCOMP_BOTH_FIELD:
+                ptr->wMvReference = bit_set(ptr->wMvReference, 14, 2, 3);
+                break;
+            default:
+                ptr->wMvReference = bit_set(ptr->wMvReference, 14, 2, 0);
+                break;
+            }
+        }
 
         //wTransformFlags
-       ptr->wTransformFlags = bit_set(ptr->wTransformFlags, 0, 3, pContext->m_picLayerHeader->CBPTAB);
-       ptr->wTransformFlags = bit_set(ptr->wTransformFlags, 3, 1, pContext->m_picLayerHeader->TRANSDCTAB);
-       ptr->wTransformFlags = bit_set(ptr->wTransformFlags, 4, 2, pContext->m_picLayerHeader->TRANSACFRM);
-       ptr->wTransformFlags = bit_set(ptr->wTransformFlags, 6, 2, pContext->m_picLayerHeader->TRANSACFRM2);
+        ptr->wTransformFlags = bit_set(ptr->wTransformFlags, 0, 3, pContext->m_picLayerHeader->CBPTAB);
+        ptr->wTransformFlags = bit_set(ptr->wTransformFlags, 3, 1, pContext->m_picLayerHeader->TRANSDCTAB);
+        ptr->wTransformFlags = bit_set(ptr->wTransformFlags, 4, 2, pContext->m_picLayerHeader->TRANSACFRM);
+        ptr->wTransformFlags = bit_set(ptr->wTransformFlags, 6, 2, pContext->m_picLayerHeader->TRANSACFRM2);
 
 
-       ptr->wTransformFlags = bit_set(ptr->wTransformFlags, 8, 3, pContext->m_picLayerHeader->MBMODETAB);
-       ptr->wTransformFlags = bit_set(ptr->wTransformFlags, 11, 1, pContext->m_picLayerHeader->TTMBF);
-       ptr->wTransformFlags = bit_set(ptr->wTransformFlags, 12, 2, pContext->m_picLayerHeader->TTFRM_ORIG);
+        ptr->wTransformFlags = bit_set(ptr->wTransformFlags, 8, 3, pContext->m_picLayerHeader->MBMODETAB);
+        ptr->wTransformFlags = bit_set(ptr->wTransformFlags, 11, 1, pContext->m_picLayerHeader->TTMBF);
+        ptr->wTransformFlags = bit_set(ptr->wTransformFlags, 12, 2, pContext->m_picLayerHeader->TTFRM_ORIG);
 
-       //MvTableFlags
-       ptr->bMvTableFlags = bit_set(ptr->bMvTableFlags, 0, 2, pContext->m_picLayerHeader->MV2BPTAB);
-       ptr->bMvTableFlags = bit_set(ptr->bMvTableFlags, 2, 2, pContext->m_picLayerHeader->MV4BPTAB);
-       ptr->bMvTableFlags = bit_set(ptr->bMvTableFlags, 4, 3, pContext->m_picLayerHeader->MVTAB);
+        //MvTableFlags
+        ptr->bMvTableFlags = bit_set(ptr->bMvTableFlags, 0, 2, pContext->m_picLayerHeader->MV2BPTAB);
+        ptr->bMvTableFlags = bit_set(ptr->bMvTableFlags, 2, 2, pContext->m_picLayerHeader->MV4BPTAB);
+        ptr->bMvTableFlags = bit_set(ptr->bMvTableFlags, 4, 3, pContext->m_picLayerHeader->MVTAB);
 
-       //RawCodingFlag
-       ptr->bRawCodingFlag = 0;
-       VC1Bitplane* check_bitplane = 0;
-       VC1Bitplane* lut_bitplane[3];
+        //RawCodingFlag
+        ptr->bRawCodingFlag = 0;
+        VC1Bitplane* check_bitplane = 0;
+        VC1Bitplane* lut_bitplane[3];
 
 
         switch (pContext->m_picLayerHeader->PTYPE)
@@ -2199,22 +2201,22 @@ namespace UMC
         }
         if (!check_bitplane) // no bitplanes can return
         {
-            #ifdef VC1_DEBUG_ON_LOG
-                    for (int i=0; i < sizeof(DXVA_ExtPicInfo); i++ )
+#ifdef VC1_DEBUG_ON_LOG
+            for (int i=0; i < sizeof(DXVA_ExtPicInfo); i++ )
 
-                        printf("The byte %d\t equal %x\n",i,*((Ipp8u*)ptr+i));
+                printf("The byte %d\t equal %x\n",i,*((Ipp8u*)ptr+i));
 
-                    printf("ptr->bBScaleFactor =%d\n", ptr->bBScaleFactor);
-                    printf("ptr->bPQuant =%d\n", ptr->bPQuant);
-                    printf("ptr->bAltPQuant =%d\n", ptr->bAltPQuant);
-                    printf("ptr->bPictureFlags =%d\n", ptr->bPictureFlags);
-                    printf("ptr->bPQuantFlags =%d\n", ptr->bPQuantFlags);
-                    printf("ptr->bMvRange =%d\n", ptr->bMvRange);
-                    printf("ptr->wMvReference =%d\n", ptr->wMvReference);
-                    printf("ptr->wTransformFlags =%d\n", ptr->wTransformFlags);
-                    printf("ptr->bMvTableFlags =%d\n", ptr->bMvTableFlags);
-                    printf("ptr->bRawCodingFlag =%d\n", ptr->bRawCodingFlag);
-            #endif
+            printf("ptr->bBScaleFactor =%d\n", ptr->bBScaleFactor);
+            printf("ptr->bPQuant =%d\n", ptr->bPQuant);
+            printf("ptr->bAltPQuant =%d\n", ptr->bAltPQuant);
+            printf("ptr->bPictureFlags =%d\n", ptr->bPictureFlags);
+            printf("ptr->bPQuantFlags =%d\n", ptr->bPQuantFlags);
+            printf("ptr->bMvRange =%d\n", ptr->bMvRange);
+            printf("ptr->wMvReference =%d\n", ptr->wMvReference);
+            printf("ptr->wTransformFlags =%d\n", ptr->wTransformFlags);
+            printf("ptr->bMvTableFlags =%d\n", ptr->bMvTableFlags);
+            printf("ptr->bRawCodingFlag =%d\n", ptr->bRawCodingFlag);
+#endif
             return;
         }
         else
@@ -2294,20 +2296,20 @@ namespace UMC
     }
 
     void VC1PackerDXVA_EagleLake::VC1PackPicParams (VC1Context* pContext,
-                                          DXVA_PictureParameters* ptr,
-                                          VideoAccelerator*              va)
+        DXVA_PictureParameters* ptr,
+        VideoAccelerator*              va)
     {
         memset(ptr, 0, sizeof(DXVA_PictureParameters));
-       if (VC1_PROFILE_ADVANCED == pContext->m_seqLayerHeader.PROFILE)
-       {
-           ptr->wPicHeightInMBminus1 = (WORD)(2*(pContext->m_seqLayerHeader.CODED_HEIGHT + 1) - 1);
-           ptr->wPicWidthInMBminus1 = (WORD)(2*(pContext->m_seqLayerHeader.CODED_WIDTH + 1) - 1);
-       }
-       else
-       {
-           ptr->wPicHeightInMBminus1 = (WORD)(2*(pContext->m_seqLayerHeader.CODED_HEIGHT + 1) - 1)/16;
-           ptr->wPicWidthInMBminus1 = (WORD)(2*(pContext->m_seqLayerHeader.CODED_WIDTH + 1) - 1)/16;
-       }
+        if (VC1_PROFILE_ADVANCED == pContext->m_seqLayerHeader.PROFILE)
+        {
+            ptr->wPicHeightInMBminus1 = (WORD)(2*(pContext->m_seqLayerHeader.CODED_HEIGHT + 1) - 1);
+            ptr->wPicWidthInMBminus1 = (WORD)(2*(pContext->m_seqLayerHeader.CODED_WIDTH + 1) - 1);
+        }
+        else
+        {
+            ptr->wPicHeightInMBminus1 = (WORD)(2*(pContext->m_seqLayerHeader.CODED_HEIGHT + 1) - 1)/16;
+            ptr->wPicWidthInMBminus1 = (WORD)(2*(pContext->m_seqLayerHeader.CODED_WIDTH + 1) - 1)/16;
+        }
 
         ptr->bMacroblockWidthMinus1  = 15;
         ptr->bMacroblockHeightMinus1 = 15;
@@ -2388,7 +2390,7 @@ namespace UMC
             (pContext->m_picLayerHeader->FCM != VC1_FrameInterlace))
         {
             if (VC1_MVMODE_HPELBI_1MV == pContext->m_picLayerHeader->MVMODE)
-               ptr->bMVprecisionAndChromaRelation |= 0x08;
+                ptr->bMVprecisionAndChromaRelation |= 0x08;
 
         }
 
@@ -2413,11 +2415,11 @@ namespace UMC
         if (pContext->m_seqLayerHeader.LOOPFILTER &&
             pContext->DeblockInfo.isNeedDbl)
         {
-          ptr->bPicDeblocked = bit_set(ptr->bPicDeblocked, 1, 1, 1);
+            ptr->bPicDeblocked = bit_set(ptr->bPicDeblocked, 1, 1, 1);
         }
 
-       //ptr->bPicDeblocked = bit_set(ptr->bPicDeblocked, 2, 1, pContext->m_picLayerHeader->POSTPROC);
-       //ptr->bPicDeblocked = bit_set(ptr->bPicDeblocked, 3, 1, pContext->m_picLayerHeader->POSTPROC);
+        //ptr->bPicDeblocked = bit_set(ptr->bPicDeblocked, 2, 1, pContext->m_picLayerHeader->POSTPROC);
+        //ptr->bPicDeblocked = bit_set(ptr->bPicDeblocked, 3, 1, pContext->m_picLayerHeader->POSTPROC);
         if (VC1_PROFILE_ADVANCED == pContext->m_seqLayerHeader.PROFILE)
         {
 
@@ -2429,8 +2431,8 @@ namespace UMC
         else
         {
             if(pContext->DeblockInfo.isNeedDbl)
-            ptr->bPicDeblocked = 2;
- 
+                ptr->bPicDeblocked = 2;
+
             if ((pContext->m_picLayerHeader->PQUANT >= 9) && (VC1_B_FRAME != pContext->m_picLayerHeader->PTYPE))
                 ptr->bPicDeblocked = bit_set(ptr->bPicDeblocked, 6, 1, pContext->m_seqLayerHeader.OVERLAP); // overlap
         }
@@ -2468,7 +2470,7 @@ namespace UMC
         ptr->bPicSpatialResid8 = bit_set(ptr->bPicSpatialResid8, 0, 1, pContext->m_seqLayerHeader.VSTRANSFORM);
 
         ptr->bPicOverflowBlocks = bit_set(ptr->bPicOverflowBlocks, 6, 2, pContext->m_seqLayerHeader.QUANTIZER);
- 
+
         ptr->bPic4MVallowed = 0;
         if (VC1_FrameInterlace == pContext->m_picLayerHeader->FCM &&
             1 == pContext->m_picLayerHeader->MV4SWITCH &&
@@ -2481,7 +2483,7 @@ namespace UMC
             if (VC1_MVMODE_MIXED_MV == pContext->m_picLayerHeader->MVMODE)
                 ptr->bPic4MVallowed = 1;
         }
-        
+
         ptr->wDecodedPictureIndex = (WORD)(pContext->m_frmBuff.m_iCurrIndex);
         ptr->wDeblockedPictureIndex  = ptr->wDecodedPictureIndex;
 
@@ -2585,7 +2587,7 @@ namespace UMC
                 }
                 else if (2 == pContext->m_picLayerHeader->INTCOMFIELD)
                 {
-                     // bottom field
+                    // bottom field
                     ptr->wBitstreamFcodes = bit_set(ptr->wBitstreamFcodes, 0, 8, pContext->m_picLayerHeader->LUMSCALE1);
                     ptr->wBitstreamPCEelements = bit_set(ptr->wBitstreamPCEelements, 0, 8, pContext->m_picLayerHeader->LUMSHIFT1);
                     //top from prev field
@@ -2595,12 +2597,12 @@ namespace UMC
                     //    ptr->wBitstreamPCEelements = bit_set(ptr->wBitstreamPCEelements, 8, 8, pContext->LUMSHIFT);
                     //}
                     //else
-                        // top field not compensated
-                        ptr->wBitstreamFcodes |= (32<<8);
+                    // top field not compensated
+                    ptr->wBitstreamFcodes |= (32<<8);
                 }
                 else if (1 == pContext->m_picLayerHeader->INTCOMFIELD)
                 {
-                     // top field
+                    // top field
                     ptr->wBitstreamFcodes = bit_set(ptr->wBitstreamFcodes, 8, 8, pContext->m_picLayerHeader->LUMSCALE);
                     ptr->wBitstreamPCEelements = bit_set(ptr->wBitstreamPCEelements, 8, 8, pContext->m_picLayerHeader->LUMSHIFT);
                     //bottom from prev field
@@ -2610,8 +2612,8 @@ namespace UMC
                     //    ptr->wBitstreamPCEelements = bit_set(ptr->wBitstreamPCEelements, 0, 8, pContext->LUMSHIFT1);     
                     //}
                     //else
-                        // bottom field not compensated
-                        ptr->wBitstreamFcodes |= 32;
+                    // bottom field not compensated
+                    ptr->wBitstreamFcodes |= 32;
                 }
             }
         }
@@ -2672,14 +2674,14 @@ namespace UMC
     }
 
     Ipp32u VC1PackerDXVA_EagleLake::VC1PackBitStreamAdv (VC1Context* pContext,
-                                                       Ipp32u& Size,
-                                                       Ipp8u* pOriginalData,
-                                                       Ipp32u OriginalSize,
-                                                       Ipp32u ByteOffset,
-                                                       Ipp8u& Flag_03)
+        Ipp32u& Size,
+        Ipp8u* pOriginalData,
+        Ipp32u OriginalSize,
+        Ipp32u ByteOffset,
+        Ipp8u& Flag_03)
     {
         UMCVACompBuffer* CompBuf;
-        
+
 #ifdef VC1_DEBUG_ON_LOG
         static FILE* f = 0;
         static int num = 0;
@@ -2705,12 +2707,12 @@ namespace UMC
             RemainBytes = OriginalSize + ByteOffset - DrvBufferSize;
             Size = DrvBufferSize;
         }
-        
+
         if(Flag_03 == 1)
         {
             *(pBitstream + ByteOffset) = 0;
             ippsCopy_8u(pOriginalData + 1, pBitstream + ByteOffset + 1, OriginalSize - 1 - RemainBytes);
-             Flag_03 = 0;
+            Flag_03 = 0;
         }
         else if(Flag_03 == 2)
         {
@@ -2741,21 +2743,21 @@ namespace UMC
             {
                 ippsCopy_8u(pOriginalData, pBitstream + ByteOffset, OriginalSize - RemainBytes);
             }
-            
+
             Flag_03 = 0;
         }
         else if(Flag_03 == 4)
         {
-           // *(pBitstream + ByteOffset) = *pOriginalData;
-           // *(pBitstream + ByteOffset + 1) = *(pOriginalData + 1);
-           // *(pBitstream + ByteOffset + 2) = *(pOriginalData + 2);
-           // *(pBitstream + ByteOffset + 3) = *(pOriginalData + 3);
-           //ippsCopy_8u(pOriginalData + 5, pBitstream + ByteOffset + 4, OriginalSize - 5 - RemainBytes);
+            // *(pBitstream + ByteOffset) = *pOriginalData;
+            // *(pBitstream + ByteOffset + 1) = *(pOriginalData + 1);
+            // *(pBitstream + ByteOffset + 2) = *(pOriginalData + 2);
+            // *(pBitstream + ByteOffset + 3) = *(pOriginalData + 3);
+            //ippsCopy_8u(pOriginalData + 5, pBitstream + ByteOffset + 4, OriginalSize - 5 - RemainBytes);
 
-           // Size--;
-           // Flag_03 = 0;
+            // Size--;
+            // Flag_03 = 0;
             ippsCopy_8u(pOriginalData, pBitstream + ByteOffset, OriginalSize - RemainBytes);
-            
+
             Flag_03 = 0;
 
         }
@@ -2764,7 +2766,7 @@ namespace UMC
             *(pBitstream + ByteOffset) = 0;
             *(pBitstream + ByteOffset + 1) = *(pOriginalData + 1);
             *(pBitstream + ByteOffset + 2) = *(pOriginalData + 2);
-           ippsCopy_8u(pOriginalData + 4, pBitstream + ByteOffset + 3, OriginalSize - 4 - RemainBytes);
+            ippsCopy_8u(pOriginalData + 4, pBitstream + ByteOffset + 3, OriginalSize - 4 - RemainBytes);
 
             Size--;
             Flag_03 = 0;
@@ -2780,8 +2782,8 @@ namespace UMC
         {
             fprintf(f, "%x ", *(pBitstream + ByteOffset + i));
 
-           if(i%10 == 0)
-               fprintf(f, "\n");
+            if(i%10 == 0)
+                fprintf(f, "\n");
         }
 
         fprintf(f, "\n\n\n");
@@ -2795,7 +2797,7 @@ namespace UMC
         return RemainBytes;
     }
 
-   void VC1PackerDXVA_EagleLake::VC1PackBitplaneBuffers(VC1Context* pContext)
+    void VC1PackerDXVA_EagleLake::VC1PackBitplaneBuffers(VC1Context* pContext)
     {
         UMCVACompBuffer* CompBuf;
 
@@ -2845,10 +2847,10 @@ namespace UMC
         {
             ptr = (Ipp8u*)m_va->GetCompBuffer(DXVA2_VC1BITPLANE_EXT_BUFFER, &CompBuf);
 #ifdef VC1_DEBUG_ON_LOG
-        static FILE* f = 0;
+            static FILE* f = 0;
 
-        if(!f)
-            f = fopen("Bitplane.txt", "wb");
+            if(!f)
+                f = fopen("Bitplane.txt", "wb");
 #endif
 
             bitplane_size = ((pContext->m_seqLayerHeader.heightMB +1)/2)*(pContext->m_seqLayerHeader.MaxWidthMB); //need to update for fields
@@ -2892,11 +2894,11 @@ namespace UMC
 
                 }
 #ifdef VC1_DEBUG_ON_LOG
-                    fprintf(f, "\n");
+                fprintf(f, "\n");
 #endif 
             }
 #ifdef VC1_DEBUG_ON_LOG
-                    fprintf(f, "\n");
+            fprintf(f, "\n");
 #endif
             CompBuf->SetDataSize(bitplane_size);
         }
@@ -2904,13 +2906,13 @@ namespace UMC
 
     }
 
-   void VC1PackerDXVA_EagleLake::VC1PackOneSlice  (VC1Context* pContext,
-                                          SliceParams* slparams,
-                                          Ipp32u BufIndex, // only in future realisations
-                                          Ipp32u MBOffset,
-                                          Ipp32u SliceDataSize,
-                                          Ipp32u StartCodeOffset,
-                                          Ipp32u ChoppingType)
+    void VC1PackerDXVA_EagleLake::VC1PackOneSlice  (VC1Context* pContext,
+        SliceParams* slparams,
+        Ipp32u BufIndex, // only in future realisations
+        Ipp32u MBOffset,
+        Ipp32u SliceDataSize,
+        Ipp32u StartCodeOffset,
+        Ipp32u ChoppingType)
     {
         if (BufIndex)
             ++m_pSliceInfo;
@@ -2970,15 +2972,15 @@ namespace UMC
     }
 
     void VC1PackerDXVA_Protected::VC1PackExtPicParams (VC1Context* pContext,
-                                                      DXVA_ExtPicInfo* ptr,
-                                                      VideoAccelerator* va)
+        DXVA_ExtPicInfo* ptr,
+        VideoAccelerator* va)
     {
         memset(ptr, 0, sizeof(DXVA_ExtPicInfo));
         //VM_ASSERT(VC1_PROFILE_ADVANCED == pContext->m_seqLayerHeader.PROFILE);
 
         //BFraction // ADVANCE
         //if (VC1_PROFILE_ADVANCED == pContext->m_seqLayerHeader.PROFILE)
-            ptr->bBScaleFactor = (Ipp8u)pContext->m_picLayerHeader->ScaleFactor;
+        ptr->bBScaleFactor = (Ipp8u)pContext->m_picLayerHeader->ScaleFactor;
         //else
         //    ptr->bBScaleFactor = 128;//(Ipp8u)pContext->m_picLayerHeader->ScaleFactor;
 
@@ -3024,98 +3026,98 @@ namespace UMC
             //progressive or interlece frame
             switch(pContext->m_picLayerHeader->PTYPE)
             {
-                case VC1_I_FRAME:
-                    ptr->bPictureFlags = bit_set(ptr->bPictureFlags, 2, 3, 0);
-                    break;
-                case VC1_P_FRAME:
-                    ptr->bPictureFlags = bit_set(ptr->bPictureFlags, 2, 3, 1);
-                    break;
-                case VC1_B_FRAME:
-                    ptr->bPictureFlags = bit_set(ptr->bPictureFlags, 2, 3, 2);
-                    break;
-                case VC1_BI_FRAME:
-                    ptr->bPictureFlags = bit_set(ptr->bPictureFlags, 2, 3, 3);
-                    break;
-                 case VC1_SKIPPED_FRAME:
-                    ptr->bPictureFlags = bit_set(ptr->bPictureFlags, 2, 3, 4);
-                    break;
-                 default:
-                     VM_ASSERT(0);
-                     break;
-          }
+            case VC1_I_FRAME:
+                ptr->bPictureFlags = bit_set(ptr->bPictureFlags, 2, 3, 0);
+                break;
+            case VC1_P_FRAME:
+                ptr->bPictureFlags = bit_set(ptr->bPictureFlags, 2, 3, 1);
+                break;
+            case VC1_B_FRAME:
+                ptr->bPictureFlags = bit_set(ptr->bPictureFlags, 2, 3, 2);
+                break;
+            case VC1_BI_FRAME:
+                ptr->bPictureFlags = bit_set(ptr->bPictureFlags, 2, 3, 3);
+                break;
+            case VC1_SKIPPED_FRAME:
+                ptr->bPictureFlags = bit_set(ptr->bPictureFlags, 2, 3, 4);
+                break;
+            default:
+                VM_ASSERT(0);
+                break;
+            }
         }
         else
         {
             //field picture
             switch(pContext->m_picLayerHeader->PTypeField1)
             {
-                case VC1_I_FRAME:
-                    if(pContext->m_picLayerHeader->PTypeField2 == VC1_I_FRAME)
-                    {
-                        //I/I field
-                        ptr->bPictureFlags = bit_set(ptr->bPictureFlags, 2, 3, 0);
-                    }
-                    else if(pContext->m_picLayerHeader->PTypeField2 == VC1_P_FRAME)
-                    {
-                        //I/P field
-                        ptr->bPictureFlags = bit_set(ptr->bPictureFlags, 2, 3, 1);
-                    }
-                    else
-                    {
-                        VM_ASSERT(0);
-                    }
-                    break;
-                case VC1_P_FRAME:
-                    if(pContext->m_picLayerHeader->PTypeField2 == VC1_P_FRAME)
-                    {
-                        //P/P field
-                        ptr->bPictureFlags = bit_set(ptr->bPictureFlags, 2, 3, 3);
-                    }
-                    else if(pContext->m_picLayerHeader->PTypeField2 == VC1_I_FRAME)
-                    {
-                        //P/I field
-                        ptr->bPictureFlags = bit_set(ptr->bPictureFlags, 2, 3, 2);
-                    }
-                    else
-                    {
-                        VM_ASSERT(0);
-                    }
-                    break;
-                case VC1_B_FRAME:
-                    if(pContext->m_picLayerHeader->PTypeField2 == VC1_B_FRAME)
-                    {
-                        //B/B field
-                        ptr->bPictureFlags = bit_set(ptr->bPictureFlags, 2, 3, 4);
-                    }
-                    else if(pContext->m_picLayerHeader->PTypeField2 == VC1_BI_FRAME)
-                    {
-                        //B/BI field
-                        ptr->bPictureFlags = bit_set(ptr->bPictureFlags, 2, 3, 5);
-                    }
-                    else
-                    {
-                        VM_ASSERT(0);
-                    }
-                    break;
-                case VC1_BI_FRAME:
-                    if(pContext->m_picLayerHeader->PTypeField2 == VC1_B_FRAME)
-                    {
-                        //BI/B field
-                        ptr->bPictureFlags = bit_set(ptr->bPictureFlags, 2, 3, 6);
-                    }
-                    else if(pContext->m_picLayerHeader->PTypeField2 == VC1_BI_FRAME)
-                    {
-                        //BI/BI field
-                        ptr->bPictureFlags = bit_set(ptr->bPictureFlags, 2, 3, 7);
-                    }
-                    else
-                    {
-                        VM_ASSERT(0);
-                    }
-                    break;
-                default:
+            case VC1_I_FRAME:
+                if(pContext->m_picLayerHeader->PTypeField2 == VC1_I_FRAME)
+                {
+                    //I/I field
+                    ptr->bPictureFlags = bit_set(ptr->bPictureFlags, 2, 3, 0);
+                }
+                else if(pContext->m_picLayerHeader->PTypeField2 == VC1_P_FRAME)
+                {
+                    //I/P field
+                    ptr->bPictureFlags = bit_set(ptr->bPictureFlags, 2, 3, 1);
+                }
+                else
+                {
                     VM_ASSERT(0);
-                    break;
+                }
+                break;
+            case VC1_P_FRAME:
+                if(pContext->m_picLayerHeader->PTypeField2 == VC1_P_FRAME)
+                {
+                    //P/P field
+                    ptr->bPictureFlags = bit_set(ptr->bPictureFlags, 2, 3, 3);
+                }
+                else if(pContext->m_picLayerHeader->PTypeField2 == VC1_I_FRAME)
+                {
+                    //P/I field
+                    ptr->bPictureFlags = bit_set(ptr->bPictureFlags, 2, 3, 2);
+                }
+                else
+                {
+                    VM_ASSERT(0);
+                }
+                break;
+            case VC1_B_FRAME:
+                if(pContext->m_picLayerHeader->PTypeField2 == VC1_B_FRAME)
+                {
+                    //B/B field
+                    ptr->bPictureFlags = bit_set(ptr->bPictureFlags, 2, 3, 4);
+                }
+                else if(pContext->m_picLayerHeader->PTypeField2 == VC1_BI_FRAME)
+                {
+                    //B/BI field
+                    ptr->bPictureFlags = bit_set(ptr->bPictureFlags, 2, 3, 5);
+                }
+                else
+                {
+                    VM_ASSERT(0);
+                }
+                break;
+            case VC1_BI_FRAME:
+                if(pContext->m_picLayerHeader->PTypeField2 == VC1_B_FRAME)
+                {
+                    //BI/B field
+                    ptr->bPictureFlags = bit_set(ptr->bPictureFlags, 2, 3, 6);
+                }
+                else if(pContext->m_picLayerHeader->PTypeField2 == VC1_BI_FRAME)
+                {
+                    //BI/BI field
+                    ptr->bPictureFlags = bit_set(ptr->bPictureFlags, 2, 3, 7);
+                }
+                else
+                {
+                    VM_ASSERT(0);
+                }
+                break;
+            default:
+                VM_ASSERT(0);
+                break;
             }
         }
 
@@ -3130,211 +3132,211 @@ namespace UMC
         {
             ptr->bPQuantFlags = bit_set(ptr->bPQuantFlags, 0, 1, 0);
         }
-            
+
         ptr->bPQuantFlags = bit_set(ptr->bPQuantFlags, 1, 1, pContext->m_picLayerHeader->HALFQP);
 
         switch(pContext->m_picLayerHeader->m_PQuant_mode)
         {
-            case VC1_ALTPQUANT_NO:
-                ptr->bPQuantFlags = bit_set(ptr->bPQuantFlags, 2, 2, 0);
-                ptr->bPQuantFlags = bit_set(ptr->bPQuantFlags, 4, 4, 0);
-                break;
-            case VC1_ALTPQUANT_MB_LEVEL:
-                ptr->bPQuantFlags = bit_set(ptr->bPQuantFlags, 2, 2, 3);
-                ptr->bPQuantFlags = bit_set(ptr->bPQuantFlags, 4, 4, 0);
-                break;
-            case VC1_ALTPQUANT_ANY_VALUE:
-                ptr->bPQuantFlags = bit_set(ptr->bPQuantFlags, 2, 2, 2);
-                ptr->bPQuantFlags = bit_set(ptr->bPQuantFlags, 4, 4, 0);
-                break;
-            case VC1_ALTPQUANT_LEFT:
-                ptr->bPQuantFlags = bit_set(ptr->bPQuantFlags, 2, 2, 1);
-                ptr->bPQuantFlags = bit_set(ptr->bPQuantFlags, 4, 4, 1);
-                break;
-            case VC1_ALTPQUANT_TOP:
-                ptr->bPQuantFlags = bit_set(ptr->bPQuantFlags, 2, 2, 1);
-                ptr->bPQuantFlags = bit_set(ptr->bPQuantFlags, 4, 4, 2);
-                break;
-            case VC1_ALTPQUANT_RIGTHT:
-                ptr->bPQuantFlags = bit_set(ptr->bPQuantFlags, 2, 2, 1);
-                ptr->bPQuantFlags = bit_set(ptr->bPQuantFlags, 4, 4, 4);
-                break;
-            case VC1_ALTPQUANT_BOTTOM:
-                ptr->bPQuantFlags = bit_set(ptr->bPQuantFlags, 2, 2, 1);
-                ptr->bPQuantFlags = bit_set(ptr->bPQuantFlags, 4, 4, 8);
-                break;
-            case VC1_ALTPQUANT_LEFT_TOP:
-                ptr->bPQuantFlags = bit_set(ptr->bPQuantFlags, 2, 2, 1);
-                ptr->bPQuantFlags = bit_set(ptr->bPQuantFlags, 4, 4, 3);
-                break;
-            case VC1_ALTPQUANT_TOP_RIGTHT:
-                ptr->bPQuantFlags = bit_set(ptr->bPQuantFlags, 2, 2, 1);
-                ptr->bPQuantFlags = bit_set(ptr->bPQuantFlags, 4, 4, 6);
-                break;
-            case VC1_ALTPQUANT_RIGTHT_BOTTOM:
-                ptr->bPQuantFlags = bit_set(ptr->bPQuantFlags, 2, 2, 1);
-                ptr->bPQuantFlags = bit_set(ptr->bPQuantFlags, 4, 4, 12);
-                break;
-            case VC1_ALTPQUANT_BOTTOM_LEFT:
-                ptr->bPQuantFlags = bit_set(ptr->bPQuantFlags, 2, 2, 1);
-                ptr->bPQuantFlags = bit_set(ptr->bPQuantFlags, 4, 4, 9);
-                break;
-            case VC1_ALTPQUANT_EDGES:
-            case VC1_ALTPQUANT_ALL:
-                ptr->bPQuantFlags = bit_set(ptr->bPQuantFlags, 2, 2, 1);
-                ptr->bPQuantFlags = bit_set(ptr->bPQuantFlags, 4, 4, 15);
-                break;
-            default:
-                VM_ASSERT(0);
-                break;
-       }
+        case VC1_ALTPQUANT_NO:
+            ptr->bPQuantFlags = bit_set(ptr->bPQuantFlags, 2, 2, 0);
+            ptr->bPQuantFlags = bit_set(ptr->bPQuantFlags, 4, 4, 0);
+            break;
+        case VC1_ALTPQUANT_MB_LEVEL:
+            ptr->bPQuantFlags = bit_set(ptr->bPQuantFlags, 2, 2, 3);
+            ptr->bPQuantFlags = bit_set(ptr->bPQuantFlags, 4, 4, 0);
+            break;
+        case VC1_ALTPQUANT_ANY_VALUE:
+            ptr->bPQuantFlags = bit_set(ptr->bPQuantFlags, 2, 2, 2);
+            ptr->bPQuantFlags = bit_set(ptr->bPQuantFlags, 4, 4, 0);
+            break;
+        case VC1_ALTPQUANT_LEFT:
+            ptr->bPQuantFlags = bit_set(ptr->bPQuantFlags, 2, 2, 1);
+            ptr->bPQuantFlags = bit_set(ptr->bPQuantFlags, 4, 4, 1);
+            break;
+        case VC1_ALTPQUANT_TOP:
+            ptr->bPQuantFlags = bit_set(ptr->bPQuantFlags, 2, 2, 1);
+            ptr->bPQuantFlags = bit_set(ptr->bPQuantFlags, 4, 4, 2);
+            break;
+        case VC1_ALTPQUANT_RIGTHT:
+            ptr->bPQuantFlags = bit_set(ptr->bPQuantFlags, 2, 2, 1);
+            ptr->bPQuantFlags = bit_set(ptr->bPQuantFlags, 4, 4, 4);
+            break;
+        case VC1_ALTPQUANT_BOTTOM:
+            ptr->bPQuantFlags = bit_set(ptr->bPQuantFlags, 2, 2, 1);
+            ptr->bPQuantFlags = bit_set(ptr->bPQuantFlags, 4, 4, 8);
+            break;
+        case VC1_ALTPQUANT_LEFT_TOP:
+            ptr->bPQuantFlags = bit_set(ptr->bPQuantFlags, 2, 2, 1);
+            ptr->bPQuantFlags = bit_set(ptr->bPQuantFlags, 4, 4, 3);
+            break;
+        case VC1_ALTPQUANT_TOP_RIGTHT:
+            ptr->bPQuantFlags = bit_set(ptr->bPQuantFlags, 2, 2, 1);
+            ptr->bPQuantFlags = bit_set(ptr->bPQuantFlags, 4, 4, 6);
+            break;
+        case VC1_ALTPQUANT_RIGTHT_BOTTOM:
+            ptr->bPQuantFlags = bit_set(ptr->bPQuantFlags, 2, 2, 1);
+            ptr->bPQuantFlags = bit_set(ptr->bPQuantFlags, 4, 4, 12);
+            break;
+        case VC1_ALTPQUANT_BOTTOM_LEFT:
+            ptr->bPQuantFlags = bit_set(ptr->bPQuantFlags, 2, 2, 1);
+            ptr->bPQuantFlags = bit_set(ptr->bPQuantFlags, 4, 4, 9);
+            break;
+        case VC1_ALTPQUANT_EDGES:
+        case VC1_ALTPQUANT_ALL:
+            ptr->bPQuantFlags = bit_set(ptr->bPQuantFlags, 2, 2, 1);
+            ptr->bPQuantFlags = bit_set(ptr->bPQuantFlags, 4, 4, 15);
+            break;
+        default:
+            VM_ASSERT(0);
+            break;
+        }
 
-       //MvRange
+        //MvRange
 
-       if(pContext->m_picLayerHeader->MVRANGE == VC1_DMVRANGE_NONE)
-       {
-           ptr->bMvRange = bit_set(ptr->bMvRange, 0, 2, 0);
-       }
-       else if(pContext->m_picLayerHeader->MVRANGE == VC1_DMVRANGE_HORIZONTAL_RANGE)
-       {
-           ptr->bMvRange = bit_set(ptr->bMvRange, 0, 2, 1);
-       }
-       else if(pContext->m_picLayerHeader->MVRANGE == VC1_DMVRANGE_VERTICAL_RANGE)
-       {
-           ptr->bMvRange = bit_set(ptr->bMvRange, 0, 2, 2);
-       }
-       else if(pContext->m_picLayerHeader->MVRANGE == VC1_DMVRANGE_HORIZONTAL_VERTICAL_RANGE)
-       {
-           ptr->bMvRange = bit_set(ptr->bMvRange, 0, 2, 3);
-       }
-       else
-       {
-           VM_ASSERT(0);
-       }
+        if(pContext->m_picLayerHeader->MVRANGE == VC1_DMVRANGE_NONE)
+        {
+            ptr->bMvRange = bit_set(ptr->bMvRange, 0, 2, 0);
+        }
+        else if(pContext->m_picLayerHeader->MVRANGE == VC1_DMVRANGE_HORIZONTAL_RANGE)
+        {
+            ptr->bMvRange = bit_set(ptr->bMvRange, 0, 2, 1);
+        }
+        else if(pContext->m_picLayerHeader->MVRANGE == VC1_DMVRANGE_VERTICAL_RANGE)
+        {
+            ptr->bMvRange = bit_set(ptr->bMvRange, 0, 2, 2);
+        }
+        else if(pContext->m_picLayerHeader->MVRANGE == VC1_DMVRANGE_HORIZONTAL_VERTICAL_RANGE)
+        {
+            ptr->bMvRange = bit_set(ptr->bMvRange, 0, 2, 3);
+        }
+        else
+        {
+            VM_ASSERT(0);
+        }
 
-       if(pContext->m_picLayerHeader->DMVRANGE == VC1_DMVRANGE_NONE)
-       {
-           ptr->bMvRange = bit_set(ptr->bMvRange, 2, 2, 0);
-       }
-       else if(pContext->m_picLayerHeader->DMVRANGE == VC1_DMVRANGE_HORIZONTAL_RANGE)
-       {
-           ptr->bMvRange = bit_set(ptr->bMvRange, 2, 2, 1);
-       }
-       else if(pContext->m_picLayerHeader->DMVRANGE == VC1_DMVRANGE_VERTICAL_RANGE)
-       {
-           ptr->bMvRange = bit_set(ptr->bMvRange, 2, 2, 2);
-       }
-       else if(pContext->m_picLayerHeader->DMVRANGE == VC1_DMVRANGE_HORIZONTAL_VERTICAL_RANGE)
-       {
-           ptr->bMvRange = bit_set(ptr->bMvRange, 2, 2, 3);
-       }
-       else
-       {
-           VM_ASSERT(0);
-       }
+        if(pContext->m_picLayerHeader->DMVRANGE == VC1_DMVRANGE_NONE)
+        {
+            ptr->bMvRange = bit_set(ptr->bMvRange, 2, 2, 0);
+        }
+        else if(pContext->m_picLayerHeader->DMVRANGE == VC1_DMVRANGE_HORIZONTAL_RANGE)
+        {
+            ptr->bMvRange = bit_set(ptr->bMvRange, 2, 2, 1);
+        }
+        else if(pContext->m_picLayerHeader->DMVRANGE == VC1_DMVRANGE_VERTICAL_RANGE)
+        {
+            ptr->bMvRange = bit_set(ptr->bMvRange, 2, 2, 2);
+        }
+        else if(pContext->m_picLayerHeader->DMVRANGE == VC1_DMVRANGE_HORIZONTAL_VERTICAL_RANGE)
+        {
+            ptr->bMvRange = bit_set(ptr->bMvRange, 2, 2, 3);
+        }
+        else
+        {
+            VM_ASSERT(0);
+        }
 
-       //wMvReference
+        //wMvReference
 
-       Ipp32u FREFDIST = ((pContext->m_picLayerHeader->ScaleFactor * pContext->m_picLayerHeader->REFDIST) >> 8);
-       Ipp32s BREFDIST = pContext->m_picLayerHeader->REFDIST - FREFDIST - 1;
+        Ipp32u FREFDIST = ((pContext->m_picLayerHeader->ScaleFactor * pContext->m_picLayerHeader->REFDIST) >> 8);
+        Ipp32s BREFDIST = pContext->m_picLayerHeader->REFDIST - FREFDIST - 1;
 
-       if (BREFDIST < 0)
-           BREFDIST = 0;
+        if (BREFDIST < 0)
+            BREFDIST = 0;
 
-       if(pContext->m_picLayerHeader->FCM == VC1_FieldInterlace && VC1_B_FRAME == pContext->m_picLayerHeader->PTYPE)
+        if(pContext->m_picLayerHeader->FCM == VC1_FieldInterlace && VC1_B_FRAME == pContext->m_picLayerHeader->PTYPE)
             ptr->wMvReference = bit_set(ptr->wMvReference, 0, 4, FREFDIST);
-       else
+        else
             ptr->wMvReference = bit_set(ptr->wMvReference, 0, 4, pContext->m_picLayerHeader->REFDIST);
 
-       ptr->wMvReference = bit_set(ptr->wMvReference, 4, 4, BREFDIST);
+        ptr->wMvReference = bit_set(ptr->wMvReference, 4, 4, BREFDIST);
 
-       ptr->wMvReference = bit_set(ptr->wMvReference, 8, 1, pContext->m_picLayerHeader->NUMREF);
-       ptr->wMvReference = bit_set(ptr->wMvReference, 9, 1, pContext->m_picLayerHeader->REFFIELD);
-       ptr->wMvReference = bit_set(ptr->wMvReference, 10, 1, pContext->m_seqLayerHeader.FASTUVMC);
-       ptr->wMvReference = bit_set(ptr->wMvReference, 11, 1, pContext->m_picLayerHeader->MV4SWITCH);
+        ptr->wMvReference = bit_set(ptr->wMvReference, 8, 1, pContext->m_picLayerHeader->NUMREF);
+        ptr->wMvReference = bit_set(ptr->wMvReference, 9, 1, pContext->m_picLayerHeader->REFFIELD);
+        ptr->wMvReference = bit_set(ptr->wMvReference, 10, 1, pContext->m_seqLayerHeader.FASTUVMC);
+        ptr->wMvReference = bit_set(ptr->wMvReference, 11, 1, pContext->m_picLayerHeader->MV4SWITCH);
 
-       switch(pContext->m_picLayerHeader->MVMODE)
-       {
-           case VC1_MVMODE_HPELBI_1MV:
-               ptr->wMvReference = bit_set(ptr->wMvReference, 12, 2, 3);
-               ptr->wMvReference = bit_set(ptr->wMvReference, 14, 2, 0);
-               break;
-           case VC1_MVMODE_1MV:
-               ptr->wMvReference = bit_set(ptr->wMvReference, 12, 2, 1);
-               ptr->wMvReference = bit_set(ptr->wMvReference, 14, 2, 0);
-               break;
-           case VC1_MVMODE_MIXED_MV:
-               ptr->wMvReference = bit_set(ptr->wMvReference, 12, 2, 0);
-               ptr->wMvReference = bit_set(ptr->wMvReference, 14, 2, 0);
-               break;
-           case VC1_MVMODE_HPEL_1MV:
-               ptr->wMvReference = bit_set(ptr->wMvReference, 12, 2, 2);
-               ptr->wMvReference = bit_set(ptr->wMvReference, 14, 2, 0);
-               break;
-           //case VC1_MVMODE_INTENSCOMP:
-           //        //switch(pContext->m_picLayerHeader->MVMODE2)
-           //        //{
-           //        //    case VC1_MVMODE_HPELBI_1MV:
-           //        //        ptr->wMvReference = bit_set(ptr->wMvReference, 12, 2, 3);
-           //        //        break;
-           //        //    case VC1_MVMODE_1MV:
-           //        //        ptr->wMvReference = bit_set(ptr->wMvReference, 12, 2, 1);
-           //        //        break;
-           //        //    case VC1_MVMODE_MIXED_MV:
-           //        //        ptr->wMvReference = bit_set(ptr->wMvReference, 12, 2, 0);
-           //        //        break;
-           //        //    case VC1_MVMODE_HPEL_1MV:
-           //        //        ptr->wMvReference = bit_set(ptr->wMvReference, 12, 2, 2);
-           //        //        break;
-           //        //    default:
-           //        //        VM_ASSERT(0);
-           //        //        break;
-           //        //}
-           //    break;
-           default:
-               VM_ASSERT(0);
-               break;
-       }
+        switch(pContext->m_picLayerHeader->MVMODE)
+        {
+        case VC1_MVMODE_HPELBI_1MV:
+            ptr->wMvReference = bit_set(ptr->wMvReference, 12, 2, 3);
+            ptr->wMvReference = bit_set(ptr->wMvReference, 14, 2, 0);
+            break;
+        case VC1_MVMODE_1MV:
+            ptr->wMvReference = bit_set(ptr->wMvReference, 12, 2, 1);
+            ptr->wMvReference = bit_set(ptr->wMvReference, 14, 2, 0);
+            break;
+        case VC1_MVMODE_MIXED_MV:
+            ptr->wMvReference = bit_set(ptr->wMvReference, 12, 2, 0);
+            ptr->wMvReference = bit_set(ptr->wMvReference, 14, 2, 0);
+            break;
+        case VC1_MVMODE_HPEL_1MV:
+            ptr->wMvReference = bit_set(ptr->wMvReference, 12, 2, 2);
+            ptr->wMvReference = bit_set(ptr->wMvReference, 14, 2, 0);
+            break;
+            //case VC1_MVMODE_INTENSCOMP:
+            //        //switch(pContext->m_picLayerHeader->MVMODE2)
+            //        //{
+            //        //    case VC1_MVMODE_HPELBI_1MV:
+            //        //        ptr->wMvReference = bit_set(ptr->wMvReference, 12, 2, 3);
+            //        //        break;
+            //        //    case VC1_MVMODE_1MV:
+            //        //        ptr->wMvReference = bit_set(ptr->wMvReference, 12, 2, 1);
+            //        //        break;
+            //        //    case VC1_MVMODE_MIXED_MV:
+            //        //        ptr->wMvReference = bit_set(ptr->wMvReference, 12, 2, 0);
+            //        //        break;
+            //        //    case VC1_MVMODE_HPEL_1MV:
+            //        //        ptr->wMvReference = bit_set(ptr->wMvReference, 12, 2, 2);
+            //        //        break;
+            //        //    default:
+            //        //        VM_ASSERT(0);
+            //        //        break;
+            //        //}
+            //    break;
+        default:
+            VM_ASSERT(0);
+            break;
+        }
 
-       if(pContext->m_bIntensityCompensation)
-       {    
-           switch(pContext->m_picLayerHeader->INTCOMFIELD)
-           {
-               case VC1_INTCOMP_TOP_FIELD:
-                   ptr->wMvReference = bit_set(ptr->wMvReference, 14, 2, 1);
-                   break;
-               case VC1_INTCOMP_BOTTOM_FIELD:
-                   ptr->wMvReference = bit_set(ptr->wMvReference, 14, 2, 2);
-                   break;
-               case VC1_INTCOMP_BOTH_FIELD:
-                   ptr->wMvReference = bit_set(ptr->wMvReference, 14, 2, 3);
-                   break;
-               default:
-                   ptr->wMvReference = bit_set(ptr->wMvReference, 14, 2, 0);
-                   break;
-           }
-       }
+        if(pContext->m_bIntensityCompensation)
+        {    
+            switch(pContext->m_picLayerHeader->INTCOMFIELD)
+            {
+            case VC1_INTCOMP_TOP_FIELD:
+                ptr->wMvReference = bit_set(ptr->wMvReference, 14, 2, 1);
+                break;
+            case VC1_INTCOMP_BOTTOM_FIELD:
+                ptr->wMvReference = bit_set(ptr->wMvReference, 14, 2, 2);
+                break;
+            case VC1_INTCOMP_BOTH_FIELD:
+                ptr->wMvReference = bit_set(ptr->wMvReference, 14, 2, 3);
+                break;
+            default:
+                ptr->wMvReference = bit_set(ptr->wMvReference, 14, 2, 0);
+                break;
+            }
+        }
 
         //wTransformFlags
-       ptr->wTransformFlags = bit_set(ptr->wTransformFlags, 0, 3, pContext->m_picLayerHeader->CBPTAB);
-       ptr->wTransformFlags = bit_set(ptr->wTransformFlags, 3, 1, pContext->m_picLayerHeader->TRANSDCTAB);
-       ptr->wTransformFlags = bit_set(ptr->wTransformFlags, 4, 2, pContext->m_picLayerHeader->TRANSACFRM);
-       ptr->wTransformFlags = bit_set(ptr->wTransformFlags, 6, 2, pContext->m_picLayerHeader->TRANSACFRM2);
+        ptr->wTransformFlags = bit_set(ptr->wTransformFlags, 0, 3, pContext->m_picLayerHeader->CBPTAB);
+        ptr->wTransformFlags = bit_set(ptr->wTransformFlags, 3, 1, pContext->m_picLayerHeader->TRANSDCTAB);
+        ptr->wTransformFlags = bit_set(ptr->wTransformFlags, 4, 2, pContext->m_picLayerHeader->TRANSACFRM);
+        ptr->wTransformFlags = bit_set(ptr->wTransformFlags, 6, 2, pContext->m_picLayerHeader->TRANSACFRM2);
 
 
-       ptr->wTransformFlags = bit_set(ptr->wTransformFlags, 8, 3, pContext->m_picLayerHeader->MBMODETAB);
-       ptr->wTransformFlags = bit_set(ptr->wTransformFlags, 11, 1, pContext->m_picLayerHeader->TTMBF);
-       ptr->wTransformFlags = bit_set(ptr->wTransformFlags, 12, 2, pContext->m_picLayerHeader->TTFRM_ORIG);
+        ptr->wTransformFlags = bit_set(ptr->wTransformFlags, 8, 3, pContext->m_picLayerHeader->MBMODETAB);
+        ptr->wTransformFlags = bit_set(ptr->wTransformFlags, 11, 1, pContext->m_picLayerHeader->TTMBF);
+        ptr->wTransformFlags = bit_set(ptr->wTransformFlags, 12, 2, pContext->m_picLayerHeader->TTFRM_ORIG);
 
-       //MvTableFlags
-       ptr->bMvTableFlags = bit_set(ptr->bMvTableFlags, 0, 2, pContext->m_picLayerHeader->MV2BPTAB);
-       ptr->bMvTableFlags = bit_set(ptr->bMvTableFlags, 2, 2, pContext->m_picLayerHeader->MV4BPTAB);
-       ptr->bMvTableFlags = bit_set(ptr->bMvTableFlags, 4, 3, pContext->m_picLayerHeader->MVTAB);
+        //MvTableFlags
+        ptr->bMvTableFlags = bit_set(ptr->bMvTableFlags, 0, 2, pContext->m_picLayerHeader->MV2BPTAB);
+        ptr->bMvTableFlags = bit_set(ptr->bMvTableFlags, 2, 2, pContext->m_picLayerHeader->MV4BPTAB);
+        ptr->bMvTableFlags = bit_set(ptr->bMvTableFlags, 4, 3, pContext->m_picLayerHeader->MVTAB);
 
-       //RawCodingFlag
-       ptr->bRawCodingFlag = 0;
-       VC1Bitplane* check_bitplane = 0;
-       VC1Bitplane* lut_bitplane[3];
+        //RawCodingFlag
+        ptr->bRawCodingFlag = 0;
+        VC1Bitplane* check_bitplane = 0;
+        VC1Bitplane* lut_bitplane[3];
 
 
         switch (pContext->m_picLayerHeader->PTYPE)
@@ -3369,22 +3371,22 @@ namespace UMC
         }
         if (!check_bitplane) // no bitplanes can return
         {
-            #ifdef VC1_DEBUG_ON_LOG
-                    for (int i=0; i < sizeof(DXVA_ExtPicInfo); i++ )
+#ifdef VC1_DEBUG_ON_LOG
+            for (int i=0; i < sizeof(DXVA_ExtPicInfo); i++ )
 
-                        printf("The byte %d\t equal %x\n",i,*((Ipp8u*)ptr+i));
+                printf("The byte %d\t equal %x\n",i,*((Ipp8u*)ptr+i));
 
-                    printf("ptr->bBScaleFactor =%d\n", ptr->bBScaleFactor);
-                    printf("ptr->bPQuant =%d\n", ptr->bPQuant);
-                    printf("ptr->bAltPQuant =%d\n", ptr->bAltPQuant);
-                    printf("ptr->bPictureFlags =%d\n", ptr->bPictureFlags);
-                    printf("ptr->bPQuantFlags =%d\n", ptr->bPQuantFlags);
-                    printf("ptr->bMvRange =%d\n", ptr->bMvRange);
-                    printf("ptr->wMvReference =%d\n", ptr->wMvReference);
-                    printf("ptr->wTransformFlags =%d\n", ptr->wTransformFlags);
-                    printf("ptr->bMvTableFlags =%d\n", ptr->bMvTableFlags);
-                    printf("ptr->bRawCodingFlag =%d\n", ptr->bRawCodingFlag);
-            #endif
+            printf("ptr->bBScaleFactor =%d\n", ptr->bBScaleFactor);
+            printf("ptr->bPQuant =%d\n", ptr->bPQuant);
+            printf("ptr->bAltPQuant =%d\n", ptr->bAltPQuant);
+            printf("ptr->bPictureFlags =%d\n", ptr->bPictureFlags);
+            printf("ptr->bPQuantFlags =%d\n", ptr->bPQuantFlags);
+            printf("ptr->bMvRange =%d\n", ptr->bMvRange);
+            printf("ptr->wMvReference =%d\n", ptr->wMvReference);
+            printf("ptr->wTransformFlags =%d\n", ptr->wTransformFlags);
+            printf("ptr->bMvTableFlags =%d\n", ptr->bMvTableFlags);
+            printf("ptr->bRawCodingFlag =%d\n", ptr->bRawCodingFlag);
+#endif
             return;
         }
         else
@@ -3464,20 +3466,20 @@ namespace UMC
     }
 
     void VC1PackerDXVA_Protected::VC1PackPicParams (VC1Context* pContext,
-                                          DXVA_PictureParameters* ptr,
-                                          VideoAccelerator*              va)
+        DXVA_PictureParameters* ptr,
+        VideoAccelerator*              va)
     {
         memset(ptr, 0, sizeof(DXVA_PictureParameters));
-       if (VC1_PROFILE_ADVANCED == pContext->m_seqLayerHeader.PROFILE)
-       {
-           ptr->wPicHeightInMBminus1 = (WORD)(2*(pContext->m_seqLayerHeader.CODED_HEIGHT + 1) - 1);
-           ptr->wPicWidthInMBminus1 = (WORD)(2*(pContext->m_seqLayerHeader.CODED_WIDTH + 1) - 1);
-       }
-       else
-       {
-           ptr->wPicHeightInMBminus1 = (WORD)(2*(pContext->m_seqLayerHeader.CODED_HEIGHT + 1) - 1)/16;
-           ptr->wPicWidthInMBminus1 = (WORD)(2*(pContext->m_seqLayerHeader.CODED_WIDTH + 1) - 1)/16;
-       }
+        if (VC1_PROFILE_ADVANCED == pContext->m_seqLayerHeader.PROFILE)
+        {
+            ptr->wPicHeightInMBminus1 = (WORD)(2*(pContext->m_seqLayerHeader.CODED_HEIGHT + 1) - 1);
+            ptr->wPicWidthInMBminus1 = (WORD)(2*(pContext->m_seqLayerHeader.CODED_WIDTH + 1) - 1);
+        }
+        else
+        {
+            ptr->wPicHeightInMBminus1 = (WORD)(2*(pContext->m_seqLayerHeader.CODED_HEIGHT + 1) - 1)/16;
+            ptr->wPicWidthInMBminus1 = (WORD)(2*(pContext->m_seqLayerHeader.CODED_WIDTH + 1) - 1)/16;
+        }
 
         ptr->bMacroblockWidthMinus1  = 15;
         ptr->bMacroblockHeightMinus1 = 15;
@@ -3558,7 +3560,7 @@ namespace UMC
             (pContext->m_picLayerHeader->FCM != VC1_FrameInterlace))
         {
             if (VC1_MVMODE_HPELBI_1MV == pContext->m_picLayerHeader->MVMODE)
-               ptr->bMVprecisionAndChromaRelation |= 0x08;
+                ptr->bMVprecisionAndChromaRelation |= 0x08;
 
         }
 
@@ -3583,11 +3585,11 @@ namespace UMC
         if (pContext->m_seqLayerHeader.LOOPFILTER &&
             pContext->DeblockInfo.isNeedDbl)
         {
-          ptr->bPicDeblocked = bit_set(ptr->bPicDeblocked, 1, 1, 1);
+            ptr->bPicDeblocked = bit_set(ptr->bPicDeblocked, 1, 1, 1);
         }
 
-       //ptr->bPicDeblocked = bit_set(ptr->bPicDeblocked, 2, 1, pContext->m_picLayerHeader->POSTPROC);
-       //ptr->bPicDeblocked = bit_set(ptr->bPicDeblocked, 3, 1, pContext->m_picLayerHeader->POSTPROC);
+        //ptr->bPicDeblocked = bit_set(ptr->bPicDeblocked, 2, 1, pContext->m_picLayerHeader->POSTPROC);
+        //ptr->bPicDeblocked = bit_set(ptr->bPicDeblocked, 3, 1, pContext->m_picLayerHeader->POSTPROC);
         if (VC1_PROFILE_ADVANCED == pContext->m_seqLayerHeader.PROFILE)
         {
 
@@ -3599,8 +3601,8 @@ namespace UMC
         else
         {
             if(pContext->DeblockInfo.isNeedDbl)
-            ptr->bPicDeblocked = 2;
- 
+                ptr->bPicDeblocked = 2;
+
             if ((pContext->m_picLayerHeader->PQUANT >= 9) && (VC1_B_FRAME != pContext->m_picLayerHeader->PTYPE))
                 ptr->bPicDeblocked = bit_set(ptr->bPicDeblocked, 6, 1, pContext->m_seqLayerHeader.OVERLAP); // overlap
         }
@@ -3638,7 +3640,7 @@ namespace UMC
         ptr->bPicSpatialResid8 = bit_set(ptr->bPicSpatialResid8, 0, 1, pContext->m_seqLayerHeader.VSTRANSFORM);
 
         ptr->bPicOverflowBlocks = bit_set(ptr->bPicOverflowBlocks, 6, 2, pContext->m_seqLayerHeader.QUANTIZER);
- 
+
         ptr->bPic4MVallowed = 0;
         if (VC1_FrameInterlace == pContext->m_picLayerHeader->FCM &&
             1 == pContext->m_picLayerHeader->MV4SWITCH &&
@@ -3651,7 +3653,7 @@ namespace UMC
             if (VC1_MVMODE_MIXED_MV == pContext->m_picLayerHeader->MVMODE)
                 ptr->bPic4MVallowed = 1;
         }
-        
+
         ptr->wDecodedPictureIndex = (WORD)(pContext->m_frmBuff.m_iCurrIndex);
         ptr->wDeblockedPictureIndex  = ptr->wDecodedPictureIndex;
 
@@ -3754,7 +3756,7 @@ namespace UMC
                 }
                 else if (2 == pContext->m_picLayerHeader->INTCOMFIELD)
                 {
-                     // bottom field
+                    // bottom field
                     ptr->wBitstreamFcodes = bit_set(ptr->wBitstreamFcodes, 0, 8, pContext->m_picLayerHeader->LUMSCALE1);
                     ptr->wBitstreamPCEelements = bit_set(ptr->wBitstreamPCEelements, 0, 8, pContext->m_picLayerHeader->LUMSHIFT1);
                     //top from prev field
@@ -3764,12 +3766,12 @@ namespace UMC
                     //    ptr->wBitstreamPCEelements = bit_set(ptr->wBitstreamPCEelements, 8, 8, pContext->LUMSHIFT);
                     //}
                     //else
-                        // top field not compensated
-                        ptr->wBitstreamFcodes |= (32<<8);
+                    // top field not compensated
+                    ptr->wBitstreamFcodes |= (32<<8);
                 }
                 else if (1 == pContext->m_picLayerHeader->INTCOMFIELD)
                 {
-                     // top field
+                    // top field
                     ptr->wBitstreamFcodes = bit_set(ptr->wBitstreamFcodes, 8, 8, pContext->m_picLayerHeader->LUMSCALE);
                     ptr->wBitstreamPCEelements = bit_set(ptr->wBitstreamPCEelements, 8, 8, pContext->m_picLayerHeader->LUMSHIFT);
                     //bottom from prev field
@@ -3779,8 +3781,8 @@ namespace UMC
                     //    ptr->wBitstreamPCEelements = bit_set(ptr->wBitstreamPCEelements, 0, 8, pContext->LUMSHIFT1);     
                     //}
                     //else
-                        // bottom field not compensated
-                        ptr->wBitstreamFcodes |= 32;
+                    // bottom field not compensated
+                    ptr->wBitstreamFcodes |= 32;
                 }
             }
         }
@@ -3840,7 +3842,7 @@ namespace UMC
 #endif
     }
 
-   void VC1PackerDXVA_Protected::VC1PackBitplaneBuffers(VC1Context* pContext)
+    void VC1PackerDXVA_Protected::VC1PackBitplaneBuffers(VC1Context* pContext)
     {
         UMCVACompBuffer* CompBuf;
 
@@ -3890,10 +3892,10 @@ namespace UMC
         {
             ptr = (Ipp8u*)m_va->GetCompBuffer(DXVA2_VC1BITPLANE_EXT_BUFFER, &CompBuf);
 #ifdef VC1_DEBUG_ON_LOG
-        static FILE* f = 0;
+            static FILE* f = 0;
 
-        if(!f)
-            f = fopen("Bitplane.txt", "wb");
+            if(!f)
+                f = fopen("Bitplane.txt", "wb");
 #endif
 
             bitplane_size = (pContext->m_seqLayerHeader.heightMB+1)*(pContext->m_seqLayerHeader.widthMB)/2; //need to update for fields
@@ -3937,11 +3939,11 @@ namespace UMC
 
                 }
 #ifdef VC1_DEBUG_ON_LOG
-                    fprintf(f, "\n");
+                fprintf(f, "\n");
 #endif 
             }
 #ifdef VC1_DEBUG_ON_LOG
-                    fprintf(f, "\n");
+            fprintf(f, "\n");
 #endif
             CompBuf->SetDataSize(bitplane_size);
         }
@@ -3949,13 +3951,13 @@ namespace UMC
 
     }
 
-   void VC1PackerDXVA_Protected::VC1PackOneSlice  (VC1Context* pContext,
-                                          SliceParams* slparams,
-                                          Ipp32u BufIndex, // only in future realisations
-                                          Ipp32u MBOffset,
-                                          Ipp32u SliceDataSize,
-                                          Ipp32u StartCodeOffset,
-                                          Ipp32u ChoppingType)
+    void VC1PackerDXVA_Protected::VC1PackOneSlice  (VC1Context* pContext,
+        SliceParams* slparams,
+        Ipp32u BufIndex, // only in future realisations
+        Ipp32u MBOffset,
+        Ipp32u SliceDataSize,
+        Ipp32u StartCodeOffset,
+        Ipp32u ChoppingType)
     {
         if (BufIndex)
             ++m_pSliceInfo;
@@ -3988,14 +3990,14 @@ namespace UMC
 
 
     Ipp32u VC1PackerDXVA_Protected::VC1PackBitStreamAdv (VC1Context* pContext,
-                                                       Ipp32u& Size,
-                                                       Ipp8u* pOriginalData,
-                                                       Ipp32u OriginalSize,
-                                                       Ipp32u ByteOffset,
-                                                       Ipp8u& Flag_03)
+        Ipp32u& Size,
+        Ipp8u* pOriginalData,
+        Ipp32u OriginalSize,
+        Ipp32u ByteOffset,
+        Ipp8u& Flag_03)
     {
         UMCVACompBuffer* CompBuf;
-        
+
 #ifdef VC1_DEBUG_ON_LOG
         static FILE* f = 0;
         static int num = 0;
@@ -4012,7 +4014,7 @@ namespace UMC
         Ipp8u* pBitstream = (Ipp8u*)m_va->GetCompBuffer(DXVA_BITSTREAM_DATA_BUFFER, &CompBuf);
 
         if(NULL != m_va->GetProtectedVA() && IS_PROTECTION_GPUCP_ANY(m_va->GetProtectedVA()->GetProtected()))
-                CompBuf->SetPVPState(NULL, 0);
+            CompBuf->SetPVPState(NULL, 0);
 
         Ipp32u DrvBufferSize = CompBuf->GetBufferSize();
         Ipp32u RemainBytes = 0;
@@ -4024,12 +4026,12 @@ namespace UMC
             RemainBytes = OriginalSize + ByteOffset - DrvBufferSize;
             Size = DrvBufferSize;
         }
-        
+
         if(Flag_03 == 1)
         {
             *(pBitstream + ByteOffset) = 0;
             ippsCopy_8u(pOriginalData + 1, pBitstream + ByteOffset + 1, OriginalSize - 1 - RemainBytes);
-             Flag_03 = 0;
+            Flag_03 = 0;
         }
         else if(Flag_03 == 2)
         {
@@ -4060,21 +4062,21 @@ namespace UMC
             {
                 ippsCopy_8u(pOriginalData, pBitstream + ByteOffset, OriginalSize - RemainBytes);
             }
-            
+
             Flag_03 = 0;
         }
         else if(Flag_03 == 4)
         {
-           // *(pBitstream + ByteOffset) = *pOriginalData;
-           // *(pBitstream + ByteOffset + 1) = *(pOriginalData + 1);
-           // *(pBitstream + ByteOffset + 2) = *(pOriginalData + 2);
-           // *(pBitstream + ByteOffset + 3) = *(pOriginalData + 3);
-           //ippsCopy_8u(pOriginalData + 5, pBitstream + ByteOffset + 4, OriginalSize - 5 - RemainBytes);
+            // *(pBitstream + ByteOffset) = *pOriginalData;
+            // *(pBitstream + ByteOffset + 1) = *(pOriginalData + 1);
+            // *(pBitstream + ByteOffset + 2) = *(pOriginalData + 2);
+            // *(pBitstream + ByteOffset + 3) = *(pOriginalData + 3);
+            //ippsCopy_8u(pOriginalData + 5, pBitstream + ByteOffset + 4, OriginalSize - 5 - RemainBytes);
 
-           // Size--;
-           // Flag_03 = 0;
+            // Size--;
+            // Flag_03 = 0;
             ippsCopy_8u(pOriginalData, pBitstream + ByteOffset, OriginalSize - RemainBytes);
-            
+
             Flag_03 = 0;
         }
         else if(Flag_03 == 5)
@@ -4082,7 +4084,7 @@ namespace UMC
             *(pBitstream + ByteOffset) = 0;
             *(pBitstream + ByteOffset + 1) = *(pOriginalData + 1);
             *(pBitstream + ByteOffset + 2) = *(pOriginalData + 2);
-           ippsCopy_8u(pOriginalData + 4, pBitstream + ByteOffset + 3, OriginalSize - 4 - RemainBytes);
+            ippsCopy_8u(pOriginalData + 4, pBitstream + ByteOffset + 3, OriginalSize - 4 - RemainBytes);
 
             Size--;
             Flag_03 = 0;
@@ -4098,8 +4100,8 @@ namespace UMC
         {
             fprintf(f, "%x ", *(pBitstream + ByteOffset + i));
 
-           if(i%10 == 0)
-               fprintf(f, "\n");
+            if(i%10 == 0)
+                fprintf(f, "\n");
         }
 
         fprintf(f, "\n\n\n");
