@@ -346,7 +346,7 @@ mfxStatus MFXLibraryIterator::SelectDLLVersion(wchar_t *pPath
                         (libMerit < merit))
                     {
                         wchar_t tmpPath[MFX_MAX_DLL_PATH];
-                        DWORD tmpPathSize = sizeof(tmpPath) / sizeof(tmpPath[0]);
+                        DWORD tmpPathSize = sizeof(tmpPath);
 
                         bRes = subKey.Query(pathKeyName, REG_SZ, (LPBYTE) tmpPath, &tmpPathSize);
                         if (!bRes)

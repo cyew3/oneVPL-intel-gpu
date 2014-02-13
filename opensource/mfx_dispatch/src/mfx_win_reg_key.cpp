@@ -1,6 +1,6 @@
 /* ****************************************************************************** *\
 
-Copyright (C) 2012-2013 Intel Corporation.  All rights reserved.
+Copyright (C) 2012-2014 Intel Corporation.  All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
@@ -142,7 +142,10 @@ bool WinRegKey::Query(const wchar_t *pValueName, DWORD type, LPBYTE pData, LPDWO
     if (REG_SZ == type && NULL != pData && NULL != pcbData)
     {
         wchar_t *pString = (wchar_t *) pData;
-        size_t lastIndex = (dstSize <= *pcbData) ? (dstSize - 1) : (*pcbData);
+        size_t maxStringLengthBytes = dstSize - sizeof(wchar_t);
+        size_t maxStringIndex = dstSize / sizeof(wchar_t) - 1;
+
+        size_t lastIndex = (maxStringLengthBytes < *pcbData) ? (maxStringIndex) : (*pcbData) / sizeof(wchar_t);
 
         pString[lastIndex] = (wchar_t) 0;
     }
