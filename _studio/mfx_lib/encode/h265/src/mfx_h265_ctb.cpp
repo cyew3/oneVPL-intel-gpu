@@ -537,6 +537,10 @@ void H265CU::InitCu(H265VideoParam *_par, H265CUData *_data, H265CUData *_dataTe
     if (initializeDataFlag) {
         m_rdOptFlag = m_cslice->rd_opt_flag;
         m_rdLambda = m_cslice->rd_lambda;
+
+        //kolya
+        m_rdLambdaSqrt = m_cslice->rd_lambda_sqrt;
+
         m_rdLambdaInter = m_cslice->rd_lambda_inter;
         m_rdLambdaInterMv = m_cslice->rd_lambda_inter_mv;
 

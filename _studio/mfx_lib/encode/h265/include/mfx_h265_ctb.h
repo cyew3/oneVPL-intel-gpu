@@ -189,10 +189,15 @@ public:
     Ipp8u m_interpIdxFirst, m_interpIdxLast;
 
     H265BsFake *m_bsf;
+
     Ipp8u m_rdOptFlag;
     Ipp64f m_rdLambda;
     Ipp64f m_rdLambdaInter;
     Ipp64f m_rdLambdaInterMv;
+    //kolya
+    //to match HM's HAD search for Intra modes
+    Ipp64f m_rdLambdaSqrt;
+
     H265Slice *m_cslice;
     Ipp8u m_depthMin;          // for Cu-tree branch to know if there is not SPLIT_MUST cu at lower depth
     Ipp32s HorMax;             // MV common limits in CU

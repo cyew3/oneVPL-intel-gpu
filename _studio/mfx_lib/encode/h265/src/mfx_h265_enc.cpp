@@ -572,6 +572,9 @@ mfxStatus H265Encoder::SetSlice(H265Slice *slice, Ipp32u curr_slice)
     slice->rd_lambda_inter = slice->rd_lambda;
     slice->rd_lambda_inter_mv = slice->rd_lambda_inter;
 
+    //kolya
+    slice->rd_lambda_sqrt = sqrt(slice->rd_lambda*256);
+
     return MFX_ERR_NONE;
 }
 

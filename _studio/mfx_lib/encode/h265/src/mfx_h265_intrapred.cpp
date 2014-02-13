@@ -746,7 +746,13 @@ CostType GetIntraLumaBitCost(H265CU * cu, Ipp32u abs_part_idx)
     cu->m_bsf->m_base.context_array[tab_ctxIdxOffset[INTRA_LUMA_PRED_MODE_HEVC]] = intra_luma_pred_mode_ctx;
     cu->m_data = old_data;
 
+    //kolya
+#define SQRT_LAMBDA 0 //<- on if HM like, gave loss ~6% in short all-intra 9-frame test by unknown reason
+#if SQRT_LAMBDA
+    return (cu->m_bsf->GetNumBits()/256) * cu->m_rdLambdaSqrt;
+#else
     return cu->m_bsf->GetNumBits() * cu->m_rdLambda;
+#endif
 }
 
 Ipp32s StoreFewBestModes(CostType cost, Ipp8u mode, CostType * costs, Ipp8u * modes, Ipp32s num_costs)

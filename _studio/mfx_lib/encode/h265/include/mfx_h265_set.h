@@ -247,6 +247,10 @@ public:
     Ipp64f rd_lambda_inter;
     Ipp64f rd_lambda_inter_mv;
 
+    // kolya
+    // to match HM's lambda in HAD search
+    Ipp64f rd_lambda_sqrt;
+
     EncoderRefPicList *m_pRefPicList;
 
     H265Frame *GetRefFrame(EnumRefPicList ref_list, T_RefIdx ref_idx) {
