@@ -1392,7 +1392,7 @@ namespace UMC
             }
             else
             {
-                ippsCopy_8u(pOriginalData, pBitstream + ByteOffset, OriginalSize - RemainBytes);
+                ippsCopy_8u(pOriginalData, pBitstream + ByteOffset, OriginalSize );
             }
             Flag_03 = 0;
         }
