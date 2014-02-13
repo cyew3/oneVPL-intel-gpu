@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2004-2013 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2004-2014 Intel Corporation. All Rights Reserved.
 //
 //
 //          VC-1 (VC1) decoder, Frame description VA support for multi-frame parallelization
@@ -1382,11 +1382,16 @@ namespace UMC
         }
         else if(Flag_03 == 2)
         {
-            ippsCopy_8u(pOriginalData + 1, pBitstream + ByteOffset, OriginalSize + 1);
-            pEnd++;
-
-            *(pBitstream + ByteOffset + 1) = 0;
-             Size--;
+            if (pContext->m_bitstream.bitOffset < 24)
+            {
+                ippsCopy_8u(pOriginalData + 1, pBitstream + ByteOffset, OriginalSize - RemainBytes + 1);
+                *(pBitstream + ByteOffset + 1) = 0;
+                Size--;
+            }
+            else
+            {
+                ippsCopy_8u(pOriginalData, pBitstream + ByteOffset, OriginalSize - RemainBytes);
+            }
             Flag_03 = 0;
         }
         else if(Flag_03 == 3)
@@ -2709,9 +2714,16 @@ namespace UMC
         }
         else if(Flag_03 == 2)
         {
-            ippsCopy_8u(pOriginalData + 1, pBitstream + ByteOffset, OriginalSize - RemainBytes + 1);
-            *(pBitstream + ByteOffset + 1) = 0;
-             Size--;
+            if (pContext->m_bitstream.bitOffset < 24)
+            {
+                ippsCopy_8u(pOriginalData + 1, pBitstream + ByteOffset, OriginalSize - RemainBytes + 1);
+                *(pBitstream + ByteOffset + 1) = 0;
+                Size--;
+            }
+            else
+            {
+                ippsCopy_8u(pOriginalData, pBitstream + ByteOffset, OriginalSize - RemainBytes);
+            }
             Flag_03 = 0;
         }
         else if(Flag_03 == 3)
@@ -4021,9 +4033,16 @@ namespace UMC
         }
         else if(Flag_03 == 2)
         {
-            ippsCopy_8u(pOriginalData + 1, pBitstream + ByteOffset, OriginalSize - RemainBytes + 1);
-            *(pBitstream + ByteOffset + 1) = 0;
-             Size--;
+            if (pContext->m_bitstream.bitOffset < 24)
+            {
+                ippsCopy_8u(pOriginalData + 1, pBitstream + ByteOffset, OriginalSize - RemainBytes + 1);
+                *(pBitstream + ByteOffset + 1) = 0;
+                Size--;
+            }
+            else
+            {
+                ippsCopy_8u(pOriginalData, pBitstream + ByteOffset, OriginalSize - RemainBytes);
+            }
             Flag_03 = 0;
         }
         else if(Flag_03 == 3)
