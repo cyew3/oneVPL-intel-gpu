@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2011-2013 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2011-2014 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -38,7 +38,7 @@ typedef mfxI32 cmStatus;
 
 
 #define CM_SUPPORTED_COPY_SIZE(ROI) (ROI.width <= 65408 && ROI.height <= 4088 )
-#define CM_ALIGNED(PTR) (!((Ipp64u(PTR))&0xf))
+#define CM_ALIGNED(PTR) (!((Ipp64u(PTR))&0x3f))
 
 #ifndef max
 #define max(a,b)            (((a) > (b)) ? (a) : (b))
@@ -92,6 +92,26 @@ public:
         }
         return m_pCmDevice;
     };
+
+    CmDevice* GetCmDevice(VADisplay dpy)
+    {
+        cmStatus cmSts = CM_SUCCESS;
+        mfxU32 version;
+
+        if (m_pCmDevice)
+            return m_pCmDevice;
+
+        cmSts = ::CreateCmDevice(m_pCmDevice, version, dpy);
+        if (cmSts != CM_SUCCESS)
+            return NULL;
+
+        if (CM_1_0 > version)
+        {
+            return NULL;
+        }
+        return m_pCmDevice;
+    };
+
 
     // initialize available functionality
     mfxStatus Initialize();

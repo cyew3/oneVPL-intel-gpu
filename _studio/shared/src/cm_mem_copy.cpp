@@ -4,18 +4,15 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2011-2013 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2011-2014 Intel Corporation. All Rights Reserved.
 //
 */
 
 #include "cm_mem_copy.h"
 #include "cm_gpu_copy_code.h"
-#include <fstream>
-
-
-
 
 typedef const mfxU8 mfxUC8;
+
 #define ALIGN128(X) (((mfxU32)((X)+127)) & (~ (mfxU32)127))
 
 #define CHECK_CM_STATUS(_sts, _ret)              \
@@ -262,6 +259,7 @@ CmSurface2D * CmCopyWrapper::CreateCmSurface2D(void *pSrc, mfxU32 width, mfxU32 
     {
         if (true == isSecondMode)
         {
+#ifdef MFX_VA_WIN
             HRESULT hRes = S_OK; 
             D3DLOCKED_RECT sLockRect;
 
@@ -271,6 +269,11 @@ CmSurface2D * CmCopyWrapper::CreateCmSurface2D(void *pSrc, mfxU32 width, mfxU32 
             pCmSurface2D->WriteSurface((mfxU8 *) sLockRect.pBits, NULL);
 
             ((IDirect3DSurface9 *)pSrc)->UnlockRect();
+#endif // MFX_VA_WIN
+
+#if defined(MFX_VA_LINUX) || defined(MFX_VA_ANDROID)
+            m_pCmDevice->CreateSurface2D(width, height, (CM_SURFACE_FORMAT)(MFX_MAKEFOURCC('N', 'V', '1', '2')), pCmSurface2D);
+#endif
         }
         else
         {

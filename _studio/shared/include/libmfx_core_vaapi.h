@@ -28,6 +28,8 @@ File Name: libmfx_core_vaapi.h
 #include "va/va.h"
 #include "vaapi_ext_interface.h"
 
+class CmCopyWrapper;
+
 // disable the "conditional expression is constant" warning
 #pragma warning(disable: 4127)
 
@@ -64,7 +66,7 @@ public:
 
     virtual mfxStatus     SetHandle(mfxHandleType type, mfxHDL handle);
 
-    virtual mfxStatus     AllocFrames(mfxFrameAllocRequest *request, mfxFrameAllocResponse *response);
+    virtual mfxStatus     AllocFrames(mfxFrameAllocRequest *request, mfxFrameAllocResponse *response, bool isNeedCopy = true);
     virtual void          GetVA(mfxHDL* phdl, mfxU16 type) 
     {
         (type & MFX_MEMTYPE_FROM_DECODE)?(*phdl = m_pVA.get()):(*phdl = 0);
@@ -113,6 +115,10 @@ protected:
     bool                                 m_bUseExtAllocForHWFrames;
     s_ptr<mfxDefaultAllocatorVAAPI::mfxWideHWFrameAllocator, true> m_pcHWAlloc;
     eMFXHWType                           m_HWType;
+
+    bool                                 m_bCmCopy;
+    bool                                 m_bCmCopyAllowed;
+    s_ptr<CmCopyWrapper, true>           m_pCmCopy;
 
 public: // aya: FIXME: private???   
 

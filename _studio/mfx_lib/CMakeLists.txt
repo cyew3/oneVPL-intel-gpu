@@ -344,6 +344,7 @@ foreach( prefix ${CMAKE_HOME_DIRECTORY}/_studio/shared/src )
 
   list( APPEND sources
     ${prefix}/auxiliary_device.cpp
+    ${prefix}/cm_mem_copy.cpp
     ${prefix}/fast_copy.cpp
     ${prefix}/fast_compositing_ddi.cpp
     ${prefix}/mfx_vpp_vaapi.cpp
@@ -357,6 +358,13 @@ foreach( prefix ${CMAKE_HOME_DIRECTORY}/_studio/shared/src )
     ${prefix}/mfx_dxva2_device.cpp
   )
 endforeach()
+list( APPEND sources
+  ${CMAKE_HOME_DIRECTORY}/_studio/mfx_lib/cmrt_cross_platform/src/cmrt_cross_platform.cpp
+)
+
+list( APPEND sources
+  ${CMAKE_HOME_DIRECTORY}/_studio/mfx_lib/cmrt_cross_platform/src/cmrt_cross_platform.cpp
+)
 
 set( USE_STRICT_NAME TRUE )
 set(MFX_LDFLAGS "${MFX_ORIG_LDFLAGS} -Wl,--version-script=${CMAKE_HOME_DIRECTORY}/_studio/mfx_lib/libmfx.map" )
@@ -427,6 +435,7 @@ endforeach()
 foreach( prefix ${CMAKE_HOME_DIRECTORY}/_studio/shared/src )
   list( APPEND sources
     ${prefix}/auxiliary_device.cpp
+    ${prefix}/cm_mem_copy.cpp    
     ${prefix}/fast_compositing_ddi.cpp
     ${prefix}/fast_copy.cpp
     ${prefix}/libmfx_allocator.cpp
@@ -443,6 +452,10 @@ foreach( prefix ${CMAKE_HOME_DIRECTORY}/_studio/shared/src )
     ${prefix}/mfx_vpp_vaapi.cpp    
   )
 endforeach()
+list( APPEND sources
+  ${CMAKE_HOME_DIRECTORY}/_studio/mfx_lib/cmrt_cross_platform/src/cmrt_cross_platform.cpp
+)
+
 foreach( prefix ${CMAKE_HOME_DIRECTORY}/_studio/mfx_lib )
   list( APPEND sources
     ${prefix}/shared/src/libmfxsw.cpp
@@ -599,6 +612,7 @@ endforeach()
 
 foreach( prefix ${CMAKE_HOME_DIRECTORY}/_studio/shared/src )
   list( APPEND plugin_common_sources
+    ${prefix}/cm_mem_copy.cpp
     ${prefix}/fast_copy.cpp
     ${prefix}/libmfx_allocator.cpp
     ${prefix}/libmfx_allocator_vaapi.cpp
@@ -608,6 +622,9 @@ foreach( prefix ${CMAKE_HOME_DIRECTORY}/_studio/shared/src )
     ${prefix}/mfx_umc_alloc_wrapper.cpp
   )
 endforeach()
+list( APPEND plugin_common_sources
+  ${CMAKE_HOME_DIRECTORY}/_studio/mfx_lib/cmrt_cross_platform/src/cmrt_cross_platform.cpp
+)
 
 foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/scheduler/src )
   list( APPEND plugin_common_sources
