@@ -10,7 +10,7 @@
 
 #include "mfx_common.h"
 
-#if defined(MFX_ENABLE_VP8_VIDEO_DECODE_HW) && (defined(MFX_VA_WIN) || defined(MFX_VA))            
+#if defined(MFX_ENABLE_VP8_VIDEO_DECODE_HW) && (defined(MFX_VA_WIN) || defined(MFX_VA))
 
 #include "mfx_session.h"
 #include "mfx_common_decode_int.h"
@@ -982,6 +982,8 @@ void VideoDECODEVP8_HW::DecodeInitDequantization(MFX_VP8_BoolDecoder &dec)
     else
       qp = m_quantInfo.yacQP;
 
+    #ifndef MFX_VA_WIN
+
     m_quantInfo.yacQ[segment_id]  = qp;
     m_quantInfo.ydcQ[segment_id]  = qp + m_quantInfo.ydcDeltaQP;
 
@@ -990,6 +992,19 @@ void VideoDECODEVP8_HW::DecodeInitDequantization(MFX_VP8_BoolDecoder &dec)
 
     m_quantInfo.uvacQ[segment_id] = qp + m_quantInfo.uvacDeltaQP;
     m_quantInfo.uvdcQ[segment_id] = qp + m_quantInfo.uvdcDeltaQP;
+
+    #else
+
+    m_quantInfo.yacQ[segment_id]  = ::vp8_quant_ac[qp  + 16];
+    m_quantInfo.ydcQ[segment_id]  = ::vp8_quant_dc[qp  + 16 + m_quantInfo.ydcDeltaQP];
+
+    m_quantInfo.y2acQ[segment_id] = ::vp8_quant_ac2[qp + 16 + m_quantInfo.y2acDeltaQP];
+    m_quantInfo.y2dcQ[segment_id] = ::vp8_quant_dc2[qp + 16 + m_quantInfo.y2dcDeltaQP];
+
+    m_quantInfo.uvacQ[segment_id] = ::vp8_quant_ac[qp    + 16 + m_quantInfo.uvacDeltaQP];
+    m_quantInfo.uvdcQ[segment_id] = ::vp8_quant_dc_uv[qp + 16 + m_quantInfo.uvdcDeltaQP];
+
+    #endif
 
   }
 } // VP8VideoDecoderSoftware::DecodeInitDequantization()
@@ -1365,7 +1380,8 @@ mfxStatus VideoDECODEVP8_HW::DecodeFrameHeader(mfxBitstream *in)
         m_frame_info.firstPartitionSize = m_frame_info.firstPartitionSize - (m_boolDecoder[VP8_FIRST_PARTITION].input() - ((Ipp8u*)in->Data) - 3) + 2;
         m_frame_info.entropyDecSize = m_frame_info.entropyDecSize / 8 - 3;
     }
-    #endif
+
+    #endif // MFX_VA_WIN
 
     return MFX_ERR_NONE;
 }
@@ -1556,7 +1572,7 @@ mfxStatus VideoDECODEVP8_HW::PackHeaders(mfxBitstream *p_bistream)
     picParams->CodedCoeffTokenPartition = m_frame_info.numPartitions - 1; // or m_frame_info.numTokenPartitions
 
     // TO DO
-    if (0 == m_frame_info.segmentationEnabled)
+    if (false/*0 == m_frame_info.segmentationEnabled*/)
     {
         picParams->loop_filter_level[0] = m_frame_info.loopFilterLevel;
     }
@@ -1641,7 +1657,7 @@ mfxStatus VideoDECODEVP8_HW::PackHeaders(mfxBitstream *p_bistream)
         std::ofstream ofs(ss.str(), std::ofstream::binary);
         i++;
         ofs.write((char*)picParams, sizeof(VP8_DECODE_PICTURE_PARAMETERS));
-    }*/
+    } */
 
     compBufPic->SetDataSize(sizeof(VP8_DECODE_PICTURE_PARAMETERS));
 
@@ -1675,6 +1691,15 @@ mfxStatus VideoDECODEVP8_HW::PackHeaders(mfxBitstream *p_bistream)
 
     compBufQm->SetDataSize(sizeof(VP8_DECODE_QM_TABLE));
 
+   /*{
+        static int i = 0;
+        std::stringstream ss;
+        ss << "c:/temp/mfxqm" << i;
+        std::ofstream ofs(ss.str(), std::ofstream::binary);
+        i++;
+        ofs.write((char*)qmTable, sizeof(VP8_DECODE_QM_TABLE));
+    }*/
+
     UMCVACompBuffer* compBufBs;
     Ipp8u *bistreamData = (Ipp8u *)m_p_video_accelerator->GetCompBuffer(D3D9_VIDEO_DECODER_BUFFER_BITSTREAM_DATA, &compBufBs);
     Ipp8u *pBuffer = (Ipp8u*)p_bistream->Data;
@@ -1698,6 +1723,16 @@ mfxStatus VideoDECODEVP8_HW::PackHeaders(mfxBitstream *p_bistream)
 
     // [4][8][3][11]
     memcpy(coeffProbs, m_frameProbs.coeff_probs, sizeof(Ipp8u)* 4 * 8 * 3 * 11);
+
+
+/*    {
+         static int i = 0;
+         std::stringstream ss;
+         ss << "c:/temp/mfxcp" << i;
+         std::ofstream ofs(ss.str(), std::ofstream::binary);
+         i++;
+         ofs.write((char*)coeffProbs, sizeof(Ipp8u)* 4 * 8 * 3 * 11);
+     } */
 
     compBufCp->SetDataSize(sizeof(Ipp8u)* 4 * 8 * 3 * 11);
 
