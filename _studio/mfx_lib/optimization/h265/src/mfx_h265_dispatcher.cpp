@@ -29,7 +29,7 @@ using namespace MFX_HEVC_PP;
     void SetTargetSSE4_ATOM(void);
     void SetTargetPX(void);
 
-    MFX_HEVC_PP::Dispatcher MFX_HEVC_PP::g_dispatcher = {NULL, false};
+    MFX_HEVC_PP::Dispatcher MFX_HEVC_PP::g_dispatcher = { }; //{NULL, false};
 
     IppStatus MFX_HEVC_PP::InitDispatcher( void )
     {

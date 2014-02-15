@@ -4,13 +4,16 @@
  This software is supplied under the terms of a license agreement or nondisclosure
  agreement with Intel Corporation and may not be copied or disclosed except in
  accordance with the terms of that agreement
- Copyright(c) 2012-2013 Intel Corporation. All Rights Reserved.
+ Copyright(c) 2012-2014 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
 #if !defined(_WIN32) && !defined(_WIN64)
 
-#define _GNU_SOURCE /* may need on some OS to support PTHREAD_MUTEX_RECURSIVE */
+#if !defined _GNU_SOURCE
+#  define _GNU_SOURCE /* may need on some OS to support PTHREAD_MUTEX_RECURSIVE */
+#endif
+
 #include "mfx_vm++_pthread.h"
 
 struct _MfxMutexHandle
