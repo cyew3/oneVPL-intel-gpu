@@ -583,13 +583,13 @@ namespace
 
     mfxU16 GetDefaultAsyncDepth(MfxVideoParam const & par)
     {
-        mfxExtCodingOption2 const * extOpt2 = GetExtBuffer(par);
+//        mfxExtCodingOption2 const * extOpt2 = GetExtBuffer(par);
 
         if (par.mfx.EncodedOrder)
             return 1;
 
-        if (IsOn(extOpt2->ExtBRC))
-            return 1;
+        //if (IsOn(extOpt2->ExtBRC))
+        //    return 1;
 
         mfxU32 picSize = par.mfx.FrameInfo.Width * par.mfx.FrameInfo.Height;
         if (picSize < 200000)
@@ -1639,19 +1639,19 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
         changed = true;
         par.AsyncDepth = 6;
     }
-
-    if (IsOn(extOpt2->ExtBRC) && par.mfx.RateControlMethod == MFX_RATECONTROL_LA && IsLookAheadSupported(par, platform))
+    //disable SW brc
+    /*if (IsOn(extOpt2->ExtBRC) && par.mfx.RateControlMethod == MFX_RATECONTROL_LA && IsLookAheadSupported(par, platform))
     {
         // turn on ExtBRC if LA will be used
         changed = true;
         extOpt2->ExtBRC = MFX_CODINGOPTION_OFF;
-    }
+    }*/
 
-    if (par.AsyncDepth > 1 && IsOn(extOpt2->ExtBRC))
+    /*if (par.AsyncDepth > 1 && IsOn(extOpt2->ExtBRC))
     {
         changed = true;
         par.AsyncDepth = 1;
-    }
+    }*/
 
     if (par.mfx.TargetUsage > 7)
     {
@@ -2026,7 +2026,7 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
     if (!CheckTriStateOption(extDdi->Hme))                      changed = true;
     if (!CheckTriStateOption(extOpt2->BitrateLimit))            changed = true;
     if (!CheckTriStateOption(extOpt2->MBBRC))                   changed = true;
-    if (!CheckTriStateOption(extOpt2->ExtBRC))                  changed = true;
+    //if (!CheckTriStateOption(extOpt2->ExtBRC))                  changed = true;
     if (!CheckTriStateOption(extOpt2->RepeatPPS))               changed = true;
 
     if (IsMvcProfile(par.mfx.CodecProfile) && IsOn(extOpt->FieldOutput))
@@ -3652,8 +3652,8 @@ void MfxHwH264Encode::SetDefaults(
     if (extDdi->Hme == MFX_CODINGOPTION_UNKNOWN)
         extDdi->Hme = MFX_CODINGOPTION_ON;
 
-    if (extOpt2->ExtBRC == MFX_CODINGOPTION_UNKNOWN)
-        extOpt2->ExtBRC = MFX_CODINGOPTION_OFF;
+    //if (extOpt2->ExtBRC == MFX_CODINGOPTION_UNKNOWN)
+    //    extOpt2->ExtBRC = MFX_CODINGOPTION_OFF;
 
     if (extOpt2->LookAheadDepth == 0)
     {

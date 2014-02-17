@@ -687,7 +687,7 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
 
     // CQP enabled
     mfxExtCodingOption2 const * extOpt2 = GetExtBuffer(m_video);
-    m_enabledSwBrc = IsOn(extOpt2->ExtBRC) ||
+    m_enabledSwBrc = 
         m_video.mfx.RateControlMethod == MFX_RATECONTROL_LA ||
         m_video.mfx.RateControlMethod == MFX_RATECONTROL_LA_ICQ;
 
