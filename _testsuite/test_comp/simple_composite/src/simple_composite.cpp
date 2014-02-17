@@ -222,7 +222,7 @@ map<string, string> ParsePar(ifstream &stream, string stream_name) {
     map<string, string> params;
 
     string line;
-    int counter = 13;
+    int counter = 18;
 
     params["stream"] = stream_name;
     while (counter--) {
@@ -485,8 +485,8 @@ int main(int argc, char *argv[])
     mfxExtVPPComposite comp;
     comp.Header.BufferId = MFX_EXTBUFF_VPP_COMPOSITE;
     comp.Header.BufferSz = sizeof(mfxExtVPPComposite);
-    comp.NumInputStream = (mfxU16) StreamCount;
-    comp.InputStream = (mfxVPPCompInputStream *)malloc( sizeof(mfxVPPCompInputStream)* comp.NumInputStream);
+    comp.NumInputStream  = (mfxU16) StreamCount;
+    comp.InputStream     = (mfxVPPCompInputStream *)malloc( sizeof(mfxVPPCompInputStream)* comp.NumInputStream);
 
     // stream params
     for (i = 0; i < StreamCount; ++i)
@@ -495,9 +495,18 @@ int main(int argc, char *argv[])
         comp.InputStream[i].DstY = atoi(streamParams[i]["dsty"].c_str());
         comp.InputStream[i].DstW = atoi(streamParams[i]["dstw"].c_str());
         comp.InputStream[i].DstH = atoi(streamParams[i]["dsth"].c_str());
-        comp.InputStream[i].AlphaEnable = 0;
-        comp.InputStream[i].LumaKeyEnable = 0;
+        comp.InputStream[i].Alpha         = atoi(streamParams[i]["Alpha"].c_str()) ;
+        comp.InputStream[i].AlphaEnable   = atoi(streamParams[i]["AlphaEnable"].c_str());
+        comp.InputStream[i].LumaKeyEnable = atoi(streamParams[i]["LumaKeyEnable"].c_str()) ;
+        comp.InputStream[i].LumaKeyMin    = atoi(streamParams[i]["LumaKeyMin"].c_str()) ;
+        comp.InputStream[i].LumaKeyMax    = atoi(streamParams[i]["LumaKeyMax"].c_str()) ;
         cout << "Set " << i << "->" << comp.InputStream[i].DstX << ":" << comp.InputStream[i].DstY << ":" << comp.InputStream[i].DstW  << ":" << comp.InputStream[i].DstH << ":" << endl;
+        cout << " Alpha Blending Params:" << endl;
+        cout << "  AlphaEnable=" << comp.InputStream[i].AlphaEnable << endl;
+        cout << "  Alpha=" << comp.InputStream[i].Alpha << endl;
+        cout << "  LumaKeyEnable=" << comp.InputStream[i].LumaKeyEnable << endl;
+        cout << "  LumaKeyMin=" << comp.InputStream[i].LumaKeyMin << endl;
+        cout << "  LumaKeyMax=" << comp.InputStream[i].LumaKeyMax << endl;
     }
 
 #ifdef TEST_VPP_COMP_RESET
@@ -506,9 +515,9 @@ int main(int argc, char *argv[])
 #endif
 
     mfxExtBuffer* ExtBuffer[1];
-    ExtBuffer[0] = (mfxExtBuffer*)&comp;
+    ExtBuffer[0]          = (mfxExtBuffer*)&comp;
     VPPParams.NumExtParam = 1;
-    VPPParams.ExtParam = (mfxExtBuffer**)&ExtBuffer[0];
+    VPPParams.ExtParam    = (mfxExtBuffer**)&ExtBuffer[0];
 
     // Initialize Media SDK VPP
     sts = mfxVPP.Init(&VPPParams);
@@ -521,7 +530,7 @@ int main(int argc, char *argv[])
     sts = mfxVPP.QueryIOSurf(&VPPParams, VPPRequest);
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
-    mfxU16 nVPPSurfNumIn = VPPRequest[0].NumFrameSuggested;
+    mfxU16 nVPPSurfNumIn  = VPPRequest[0].NumFrameSuggested;
     mfxU16 nVPPSurfNumOut = VPPRequest[1].NumFrameSuggested;
 
     // Allocate surfaces for VPP: In
@@ -547,7 +556,7 @@ int main(int argc, char *argv[])
         mfxU16 width; //= (mfxU16)MSDK_ALIGN32(atoi(subparams[i]["w"].c_str()));
         mfxU16 height;// = (mfxU16)MSDK_ALIGN32(atoi(subparams[i]["h"].c_str()));
 
-        width = (mfxU16)MSDK_ALIGN32(atoi(streamParams[i]["width"].c_str()));
+        width  = (mfxU16)MSDK_ALIGN32(atoi(streamParams[i]["width"].c_str()));
         height = (mfxU16)MSDK_ALIGN32(atoi(streamParams[i]["height"].c_str()));
         mfxU32 surfaceSize = width * height * bitsPerPixel / 8;
 
