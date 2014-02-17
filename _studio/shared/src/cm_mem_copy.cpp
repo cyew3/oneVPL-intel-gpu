@@ -654,8 +654,12 @@ mfxStatus CmCopyWrapper::CopySystemToVideoMemoryAPI(void *pDst, mfxU32 dstPitch,
     m_pCmDevice->CreateSurface2D((AbstractSurfaceHandle*)pDst,pCmSurface2D);
     //pCmSurface2D = CreateCmSurface2D(pDst, width, height, false, m_tableCmRelations2, m_tableCmIndex2);
     CHECK_CM_NULL_PTR(pCmSurface2D, MFX_ERR_DEVICE_FAILED);
-
-    cmSts = m_pCmQueue->EnqueueCopyCPUToGPUFullStride(pCmSurface2D, pSrc, srcPitch, srcUVOffset, 0, e);
+    if(srcUVOffset != 0){
+        cmSts = m_pCmQueue->EnqueueCopyCPUToGPUFullStride(pCmSurface2D, pSrc, srcPitch, srcUVOffset, 0, e);
+    }
+    else{
+        cmSts = m_pCmQueue->EnqueueCopyCPUToGPUStride(pCmSurface2D, pSrc, srcPitch, e);
+    }
 
     if (CM_SUCCESS == cmSts && e)
     {
@@ -670,6 +674,7 @@ mfxStatus CmCopyWrapper::CopySystemToVideoMemoryAPI(void *pDst, mfxU32 dstPitch,
     
     return MFX_ERR_NONE;
 }
+
 mfxStatus CmCopyWrapper::CopyVideoToSystemMemoryAPI(mfxU8 *pDst, mfxU32 dstPitch, mfxU32 dstUVOffset, void *pSrc, mfxU32 srcPitch, IppiSize roi)
 {
     cmStatus cmSts = 0;
@@ -683,12 +688,19 @@ mfxStatus CmCopyWrapper::CopyVideoToSystemMemoryAPI(mfxU8 *pDst, mfxU32 dstPitch
 
      // create or find already associated cm surface 2d
     CmSurface2D *pCmSurface2D;
+
     m_pCmDevice->CreateSurface2D((AbstractSurfaceHandle*)pSrc,pCmSurface2D);
+
+
     //pCmSurface2D = CreateCmSurface2D(pSrc, width, height, false, m_tableCmRelations2, m_tableCmIndex2);
     CHECK_CM_NULL_PTR(pCmSurface2D, MFX_ERR_DEVICE_FAILED);
 
-    cmSts = m_pCmQueue->EnqueueCopyGPUToCPUFullStride(pCmSurface2D, pDst, dstPitch, dstUVOffset, 0, e);
-
+    if(dstUVOffset != 0){
+        cmSts = m_pCmQueue->EnqueueCopyGPUToCPUFullStride(pCmSurface2D, pDst, dstPitch, dstUVOffset, 0, e);
+    }
+    else{
+        cmSts = m_pCmQueue->EnqueueCopyGPUToCPUStride(pCmSurface2D, pDst, dstPitch, e);
+    }
     if (CM_SUCCESS == cmSts && e)
     {
         e->GetStatus(sts);
@@ -700,6 +712,7 @@ mfxStatus CmCopyWrapper::CopyVideoToSystemMemoryAPI(mfxU8 *pDst, mfxU32 dstPitch
     }
     
     m_pCmDevice->DestroySurface(pCmSurface2D);
+
     return MFX_ERR_NONE;
 }
 mfxStatus CmCopyWrapper::CopyVideoToVideoMemoryAPI(void *pDst, void *pSrc, IppiSize roi)
