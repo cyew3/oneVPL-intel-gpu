@@ -632,7 +632,7 @@ public:
     // Initialize the user's plugin
     virtual
     mfxStatus PluginInit(const mfxPlugin *pParam,
-                   mfxCoreInterface *pCore,
+                   mfxSession session,
                    mfxU32 type = MFX_PLUGINTYPE_VIDEO_GENERAL) = 0;
     // Release the user's plugin
     virtual

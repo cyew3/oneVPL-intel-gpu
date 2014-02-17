@@ -4,13 +4,14 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2010-2013 Intel Corporation. All Rights Reserved.
+Copyright(c) 2010-2014 Intel Corporation. All Rights Reserved.
 
 File Name: mfx_user_plugin.cpp
 
 \* ****************************************************************************** */
 
 #include <mfx_user_plugin.h>
+#include <mfx_session.h>
 
 #include <memory.h> // declaration of memset on Windows
 #include <string.h> // declaration of memset on Android (and maybe on Linux)
@@ -48,7 +49,7 @@ void VideoUSERPlugin::Release(void)
 } // void VideoUSERPlugin::Release(void)
 
 mfxStatus VideoUSERPlugin::PluginInit(const mfxPlugin *pParam,
-                                mfxCoreInterface *pCore, mfxU32 type)
+                                mfxSession session, mfxU32 type)
 {
     mfxStatus mfxRes;
 
@@ -136,8 +137,7 @@ mfxStatus VideoUSERPlugin::PluginInit(const mfxPlugin *pParam,
     m_plugin = *pParam;
 
     // initialize the plugin
-    mfxRes = m_plugin.PluginInit(m_plugin.pthis,
-                                 pCore);
+    mfxRes = m_plugin.PluginInit(m_plugin.pthis, &(session->m_coreInt));
     if (MFX_ERR_NONE != mfxRes)
     {
         return mfxRes;
@@ -148,6 +148,12 @@ mfxStatus VideoUSERPlugin::PluginInit(const mfxPlugin *pParam,
     if (MFX_ERR_NONE != mfxRes)
     {
         return mfxRes;
+    }
+
+    if (m_param.APIVersion.Major != session->m_version.Major ||
+        m_param.APIVersion.Minor >  session->m_version.Minor)
+    {
+        return MFX_ERR_UNSUPPORTED;
     }
 
     // initialize the default 'entry point' structure

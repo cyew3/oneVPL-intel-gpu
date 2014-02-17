@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2010-2013 Intel Corporation. All Rights Reserved.
+Copyright(c) 2010-2014 Intel Corporation. All Rights Reserved.
 
 File Name: mfx_user_plugin.h
 
@@ -28,7 +28,7 @@ public:
 
     // Initialize the user's plugin
     mfxStatus PluginInit(const mfxPlugin *pParam,
-                   mfxCoreInterface *pCore,
+                   mfxSession session,
                    mfxU32 type = MFX_PLUGINTYPE_VIDEO_GENERAL);
     // Release the user's plugin
     mfxStatus PluginClose(void);
