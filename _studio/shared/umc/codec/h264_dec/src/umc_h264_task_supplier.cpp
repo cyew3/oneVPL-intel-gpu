@@ -2660,6 +2660,25 @@ void TaskSupplier::Reset()
     DecReferencePictureMarking::Reset();
     m_accessUnit.Release();
 
+    switch (m_initializationParams.info.profile) // after MVC_Extension::Init()
+    {
+    case 0:
+        m_decodingMode = UNKNOWN_DECODING_MODE;
+        break;
+    case H264VideoDecoderParams::H264_PROFILE_MULTIVIEW_HIGH:
+    case H264VideoDecoderParams::H264_PROFILE_STEREO_HIGH:
+        m_decodingMode = MVC_DECODING_MODE;
+        break;
+    case H264VideoDecoderParams::H264_PROFILE_SCALABLE_BASELINE:
+    case H264VideoDecoderParams::H264_PROFILE_SCALABLE_HIGH:
+        m_decodingMode = SVC_DECODING_MODE;
+        AllocateView(0);
+        break;
+    default:
+        m_decodingMode = AVC_DECODING_MODE;
+        break;
+    }
+
     if (m_pLastSlice)
     {
         m_pLastSlice->Release();
