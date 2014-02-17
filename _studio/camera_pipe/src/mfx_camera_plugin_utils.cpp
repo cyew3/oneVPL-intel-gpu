@@ -381,7 +381,7 @@ mfxStatus MFXCamera_Plugin::SetTasks() //mfxFrameSurface1 *surfIn, mfxFrameSurfa
 {
     m_cmCtx->CreateThreadSpace(m_PaddedFrameWidth, m_PaddedFrameHeight); // move to SetUp??? surfIn/Out as args???
 
-    CmSurface2D *pOutSurf, *pInSurf;
+    CmSurface2D *pOutSurf;//, *pInSurf;
     //mfxU32 taskBufId = 0; // ???
 
 //    if (m_Caps.InputMemoryOperationMode == MEM_FASTGPUCPY) {

@@ -23,11 +23,8 @@
 #include "cmrt_cross_platform.h"
 #include "cm_def.h"
 #include "cm_vm.h"
-//#include "mfx_h264_encode_cm_defs.h"
 #include "mfx_camera_plugin_cm.h"
 #include "mfx_camera_plugin_utils.h"
-//#include "genx_hsw_simple_me_isa.h"
-
 
 const unsigned char isaCode_CameraPipeGenx[] = {
                                                 #include "CameraPipe_genx.txt"

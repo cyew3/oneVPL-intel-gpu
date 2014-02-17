@@ -24,7 +24,7 @@
     <Keyword>Win32Proj</Keyword>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
-  <Import Project="Intel.Mfx.Common.props" />
+  <Import Project="..\mfx_lib\Intel.Mfx.Common.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <CharacterSet>Unicode</CharacterSet>
@@ -52,7 +52,6 @@
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    <Import Project="..\mfx_lib\Intel.Mfx.Common.props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
@@ -88,23 +87,23 @@
     <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ProjectName)64_d</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <OutDir>$(MfxBuildDir)win_$(Platform)\bin\abcdef01abcdef01abcdef01abcdef01\</OutDir>
+    <OutDir>$(MfxBuildDir)win_$(Platform)\bin\54542616243341e693ae899942ce7355\</OutDir>
     <IntDir>$(OutDir)..\..\objs\$(Configuration)\$(ProjectName)\</IntDir>
-    <TargetName>mfxplugin64_vpp_sw</TargetName>
+    <TargetName>$(ProjectName)64</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <OutDir>$(MfxBuildDir)win_$(Platform)\bin\abcdef01abcdef01abcdef01abcdef01\</OutDir>
+    <OutDir>$(MfxBuildDir)win_$(Platform)\bin\54542616243341e693ae899942ce7355\</OutDir>
     <IntDir>$(OutDir)..\..\objs\$(Configuration)\$(ProjectName)\</IntDir>
-    <TargetName>mfxplugin32_vpp_sw</TargetName>
+    <TargetName>$(ProjectName)32</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <OutDir>$(MfxBuildDir)win_$(Platform)\bin\abcdef01abcdef01abcdef01abcdef01\</OutDir>
+    <OutDir>$(MfxBuildDir)win_$(Platform)\bin\54542616243341e693ae899942ce7355\</OutDir>
     <IntDir>$(OutDir)..\..\objs\$(Configuration)\$(ProjectName)\</IntDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>.\;include;..\mfx_lib\cmrt_cross_platform\include;$(MEDIASDK_ROOT)\CMRT\compiler\include\cm;$(MEDIASDK_ROOT)\CMRT\runtime\include;$(INTELMEDIASDKROOT)\include;$(INTELMEDIASDKROOT)\_studio\shared\include;$(INTELMEDIASDKROOT)\_studio\mfx_lib\shared\include;$(INTELMEDIASDKROOT)\_studio\mfx_lib\plugin\include;$(MfxIppIncludeDir);$(INTELMEDIASDKROOT)\_studio\shared\umc\core\umc\include;$(INTELMEDIASDKROOT)\_studio\shared\umc\core\vm\include;$(INTELMEDIASDKROOT)\_studio\shared\umc\core\vm_plus\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\;include;..\mfx_lib\cmrt_cross_platform\include;$(MEDIASDK_ROOT)\CMRT\compiler\include\cm;$(MEDIASDK_ROOT)\CMRT\runtime\include;..\..\include;..\shared\include;..\mfx_lib\shared\include;..\mfx_lib\plugin\include;$(MfxIppIncludeDir);..\shared\umc\core\umc\include;..\shared\umc\core\vm\include;..\shared\umc\core\vm_plus\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>MFX_D3D11_ENABLED;WIN32;_DEBUG;_WINDOWS;_USRDLL;LIBMFXSW_EXPORTS;AS_VPP_PLUGIN;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <ExceptionHandling>Async</ExceptionHandling>
@@ -120,14 +119,15 @@
       <ImportLibrary>$(OutDir)\..\lib\$(TargetName).lib</ImportLibrary>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalDependencies>ippcoremt.lib;ippsmt.lib;ippvcmt.lib;ippimt.lib;ippccmt.lib;ippcvmt.lib;ippjmt.lib;ippmsdkmt.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(MfxBuildDir)win_$(Platform)\lib;$(MfxIppLibraryDir);D:\takulako\CM\compiler\lib\x86;D:\takulako\CM\runtime\lib\x86;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(MfxBuildDir)win_$(Platform)\lib;$(MfxIppLibraryDir);$(MEDIASDK_ROOT)\cmrt\compiler\lib\x86;$(MEDIASDK_ROOT)\cmrt\runtime\lib\x86;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <IgnoreSpecificDefaultLibraries>svml_disp.lib;libirc.lib;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy "$(OutDir)$(TargetName)*" "$(OutDir)..\" /y /i &amp; copy "$(SolutionDir)54542616243341e693ae899942ce7355\plugin_for_debug.cfg" "$(OutDir)plugin.cfg" /y &amp; xcopy "$(OutDir)$(TargetName)*" "$(ProjectDir)..\..\samples\_build\Win32\Debug\54542616243341e693ae899942ce7355" /y /i &amp; copy "$(SolutionDir)54542616243341e693ae899942ce7355\plugin_for_debug.cfg" "$(ProjectDir)..\..\samples\_build\Win32\Debug\54542616243341e693ae899942ce7355\plugin.cfg" /y</Command>
+      <Command>copy "$(SolutionDir)54542616243341e693ae899942ce7355\plugin_for_debug.cfg" "$(OutDir)plugin.cfg" /y &amp; xcopy "$(OutDir)$(TargetName)*" "$(ProjectDir)..\..\samples\_build\Win32\Debug\54542616243341e693ae899942ce7355" /y /i &amp; copy "$(SolutionDir)54542616243341e693ae899942ce7355\plugin_for_debug.cfg" "$(ProjectDir)..\..\samples\_build\Win32\Debug\54542616243341e693ae899942ce7355\plugin.cfg" /y</Command>
     </PostBuildEvent>
     <PreBuildEvent>
-      <Command>SET INSTALLDIR=D:\takulako\Cm
+      <Command>SET INSTALLDIR=$(MEDIASDK_ROOT)\cmrt
+
 SET ICLDIR=%INSTALLDIR%\compiler
 SET PATH=%ICLDIR%\bin;%ICLDIR%\lib;%PATH%
 SET INCLUDE=%ICLDIR%\include;%INCLUDE%
@@ -144,7 +144,7 @@ copy %INSTALLDIR%\compiler\lib\x86\libcm.dll $(OutDir)</Command>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>.\include;$(MfxIppIncludeDir);..\..\..\include;..\..\..\_studio\shared\include;..\..\..\_studio\shared\umc\core\vm\include;..\..\..\_studio\shared\umc\core\vm_plus\include;..\..\..\samples\sample_user_modules\plugin_api;..\..\..\opensource\mfx_dispatch\include;..\..\..\_studio\mfx_lib\shared\include;..\..\..\_studio\shared\umc\core\umc\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\;include;..\mfx_lib\cmrt_cross_platform\include;$(MEDIASDK_ROOT)\CMRT\compiler\include\cm;$(MEDIASDK_ROOT)\CMRT\runtime\include;..\..\include;..\shared\include;..\mfx_lib\shared\include;..\mfx_lib\plugin\include;$(MfxIppIncludeDir);..\shared\umc\core\umc\include;..\shared\umc\core\vm\include;..\shared\umc\core\vm_plus\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;AS_VPP_PLUGIN;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>Async</ExceptionHandling>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -158,14 +158,30 @@ copy %INSTALLDIR%\compiler\lib\x86\libcm.dll $(OutDir)</Command>
       <ImportLibrary>$(OutDir)\..\lib\$(TargetName).lib</ImportLibrary>
       <AdditionalDependencies>ippcoremt.lib;ippsmt.lib;ippvcmt.lib;ippimt.lib;ippccmt.lib;ippcvmt.lib;ippjmt.lib;ippmsdkmt.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
+      <AdditionalLibraryDirectories>$(MfxBuildDir)win_$(Platform)\lib;$(MfxIppLibraryDir);$(MEDIASDK_ROOT)\cmrt\compiler\lib\x64;$(MEDIASDK_ROOT)\cmrt\runtime\lib\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy "$(OutDir)$(TargetName)*" "$(OutDir)..\" /y /i &amp; copy "$(SolutionDir)abcdef01abcdef01abcdef01abcdef01\plugin_for_debug.cfg" "$(OutDir)plugin.cfg" /y</Command>
+      <Command>copy "$(SolutionDir)54542616243341e693ae899942ce7355\plugin_for_debug.cfg" "$(OutDir)plugin.cfg" /y &amp; xcopy "$(OutDir)$(TargetName)*" "$(ProjectDir)..\..\samples\_build\x64\Debug\54542616243341e693ae899942ce7355" /y /i &amp; copy "$(SolutionDir)54542616243341e693ae899942ce7355\plugin_for_debug.cfg" "$(ProjectDir)..\..\samples\_build\x64\Debug\54542616243341e693ae899942ce7355\plugin.cfg" /y</Command>
     </PostBuildEvent>
+    <PreBuildEvent>
+      <Command>SET INSTALLDIR=$(MEDIASDK_ROOT)\cmrt
+
+SET ICLDIR=%INSTALLDIR%\compiler
+SET PATH=%ICLDIR%\bin;%ICLDIR%\lib;%PATH%
+SET INCLUDE=%ICLDIR%\include;%INCLUDE%
+echo ============================
+echo Compiling CameraPipe GPU lib
+echo ============================
+icl /c /Qxcm /Qxcm_jit_target=gen7_5 $(ProjectDir)camerapipe_genx_skl.cpp /mCM_emit_common_isa /mCM_print_asm_count /Qxcm_S
+$(SolutionDir)tool\xxd.exe -i &lt; $(ProjectDir)camerapipe_genx_skl.isa &gt; $(ProjectDir)CameraPipe_genx.txt
+copy %INSTALLDIR%\runtime\lib\x64\igfx11cmrt64.dll  $(OutDir).
+copy %INSTALLDIR%\runtime\lib\x64\igfxcmjit64.dll $(OutDir).
+copy %INSTALLDIR%\compiler\lib\x64\libcm.dll $(OutDir)</Command>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>.\include;$(MfxIppIncludeDir);..\..\..\include;..\..\..\_studio\shared\include;..\..\..\_studio\shared\umc\core\vm\include;..\..\..\_studio\shared\umc\core\vm_plus\include;..\..\..\samples\sample_user_modules\plugin_api;..\..\..\opensource\mfx_dispatch\include;..\..\..\_studio\mfx_lib\shared\include;..\..\..\_studio\shared\umc\core\umc\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\;include;..\mfx_lib\cmrt_cross_platform\include;$(MEDIASDK_ROOT)\CMRT\compiler\include\cm;$(MEDIASDK_ROOT)\CMRT\runtime\include;..\..\include;..\shared\include;..\mfx_lib\shared\include;..\mfx_lib\plugin\include;$(MfxIppIncludeDir);..\shared\umc\core\umc\include;..\shared\umc\core\vm\include;..\shared\umc\core\vm_plus\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;AS_VPP_PLUGIN;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <PrecompiledHeader>
@@ -182,15 +198,30 @@ copy %INSTALLDIR%\compiler\lib\x86\libcm.dll $(OutDir)</Command>
       <TargetMachine>MachineX86</TargetMachine>
       <AdditionalDependencies>ippcoremt.lib;ippsmt.lib;ippvcmt.lib;ippimt.lib;ippccmt.lib;ippcvmt.lib;ippjmt.lib;ippmsdkmt.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
-      <AdditionalLibraryDirectories>$(MfxIppLibraryDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(MfxBuildDir)win_$(Platform)\lib;$(MfxIppLibraryDir);$(MEDIASDK_ROOT)\cmrt\compiler\lib\x86;$(MEDIASDK_ROOT)\cmrt\runtime\lib\x86;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy "$(OutDir)$(TargetName)*" "$(OutDir)..\" /y /i &amp; copy "$(SolutionDir)abcdef01abcdef01abcdef01abcdef01\plugin.cfg" "$(OutDir)plugin.cfg" /y</Command>
+      <Command>copy "$(SolutionDir)54542616243341e693ae899942ce7355\plugin.cfg" "$(OutDir)plugin.cfg" /y &amp; xcopy "$(OutDir)$(TargetName)*" "$(ProjectDir)..\..\samples\_build\Win32\Release\54542616243341e693ae899942ce7355" /y /i &amp; copy "$(SolutionDir)54542616243341e693ae899942ce7355\plugin.cfg" "$(ProjectDir)..\..\samples\_build\Win32\Release\54542616243341e693ae899942ce7355\plugin.cfg" /y</Command>
     </PostBuildEvent>
+    <PreBuildEvent>
+      <Command>SET INSTALLDIR=$(MEDIASDK_ROOT)\cmrt
+
+SET ICLDIR=%INSTALLDIR%\compiler
+SET PATH=%ICLDIR%\bin;%ICLDIR%\lib;%PATH%
+SET INCLUDE=%ICLDIR%\include;%INCLUDE%
+echo ============================
+echo Compiling CameraPipe GPU lib
+echo ============================
+icl /c /Qxcm /Qxcm_jit_target=gen7_5 $(ProjectDir)camerapipe_genx_skl.cpp /mCM_emit_common_isa /mCM_print_asm_count /Qxcm_S
+$(SolutionDir)tool\xxd.exe -i &lt; $(ProjectDir)camerapipe_genx_skl.isa &gt; $(ProjectDir)CameraPipe_genx.txt
+copy %INSTALLDIR%\runtime\lib\x86\igfx11cmrt32.dll  $(OutDir).
+copy %INSTALLDIR%\runtime\lib\x86\igfxcmjit32.dll $(OutDir).
+copy %INSTALLDIR%\compiler\lib\x86\libcm.dll $(OutDir)</Command>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>.\include;$(MfxIppIncludeDir);..\..\..\include;..\..\..\_studio\shared\include;..\..\..\_studio\shared\umc\core\vm\include;..\..\..\_studio\shared\umc\core\vm_plus\include;..\..\..\samples\sample_user_modules\plugin_api;..\..\..\opensource\mfx_dispatch\include;..\..\..\_studio\mfx_lib\shared\include;..\..\..\_studio\shared\umc\core\umc\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\;include;..\mfx_lib\cmrt_cross_platform\include;$(MEDIASDK_ROOT)\CMRT\compiler\include\cm;$(MEDIASDK_ROOT)\CMRT\runtime\include;..\..\include;..\shared\include;..\mfx_lib\shared\include;..\mfx_lib\plugin\include;$(MfxIppIncludeDir);..\shared\umc\core\umc\include;..\shared\umc\core\vm\include;..\shared\umc\core\vm_plus\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;AS_VPP_PLUGIN;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <PrecompiledHeader>
@@ -204,13 +235,28 @@ copy %INSTALLDIR%\compiler\lib\x86\libcm.dll $(OutDir)</Command>
       <SubSystem>Windows</SubSystem>
       <OptimizeReferences>true</OptimizeReferences>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
-      <AdditionalLibraryDirectories>$(MfxIppLibraryDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(MfxBuildDir)win_$(Platform)\lib;$(MfxIppLibraryDir);$(MEDIASDK_ROOT)\cmrt\compiler\lib\x64;$(MEDIASDK_ROOT)\cmrt\runtime\lib\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>ippcoremt.lib;ippsmt.lib;ippvcmt.lib;ippimt.lib;ippccmt.lib;ippcvmt.lib;ippjmt.lib;ippmsdkmt.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy "$(OutDir)$(TargetName)*" "$(OutDir)..\" /y /i &amp; copy "$(SolutionDir)abcdef01abcdef01abcdef01abcdef01\plugin.cfg" "$(OutDir)plugin.cfg" /y</Command>
+      <Command>copy "$(SolutionDir)54542616243341e693ae899942ce7355\plugin.cfg" "$(OutDir)plugin.cfg" /y &amp; xcopy "$(OutDir)$(TargetName)*" "$(ProjectDir)..\..\samples\_build\x64\Release\54542616243341e693ae899942ce7355" /y /i &amp; copy "$(SolutionDir)54542616243341e693ae899942ce7355\plugin.cfg" "$(ProjectDir)..\..\samples\_build\x64\Release\54542616243341e693ae899942ce7355\plugin.cfg" /y</Command>
     </PostBuildEvent>
+    <PreBuildEvent>
+      <Command>SET INSTALLDIR=$(MEDIASDK_ROOT)\cmrt
+
+SET ICLDIR=%INSTALLDIR%\compiler
+SET PATH=%ICLDIR%\bin;%ICLDIR%\lib;%PATH%
+SET INCLUDE=%ICLDIR%\include;%INCLUDE%
+echo ============================
+echo Compiling CameraPipe GPU lib
+echo ============================
+icl /c /Qxcm /Qxcm_jit_target=gen7_5 $(ProjectDir)camerapipe_genx_skl.cpp /mCM_emit_common_isa /mCM_print_asm_count /Qxcm_S
+$(SolutionDir)tool\xxd.exe -i &lt; $(ProjectDir)camerapipe_genx_skl.isa &gt; $(ProjectDir)CameraPipe_genx.txt
+copy %INSTALLDIR%\runtime\lib\x64\igfx11cmrt64.dll  $(OutDir).
+copy %INSTALLDIR%\runtime\lib\x64\igfxcmjit64.dll $(OutDir).
+copy %INSTALLDIR%\compiler\lib\x64\libcm.dll $(OutDir)</Command>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="include\mfx_camera_plugin.h" />
