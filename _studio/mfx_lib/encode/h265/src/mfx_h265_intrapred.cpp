@@ -747,8 +747,8 @@ CostType GetIntraLumaBitCost(H265CU * cu, Ipp32u abs_part_idx)
     cu->m_data = old_data;
 
     //kolya
-#define SQRT_LAMBDA 0 //<- on if HM like, gave loss ~6% in short all-intra 9-frame test by unknown reason
-#if SQRT_LAMBDA
+#define SQRT_LAMBDA_4_FUTURE 0 //<- fixed and reserved for next usage
+#if SQRT_LAMBDA_4_FUTURE
     return (cu->m_bsf->GetNumBits()/256) * cu->m_rdLambdaSqrt;
 #else
     return cu->m_bsf->GetNumBits() * cu->m_rdLambda;
@@ -835,14 +835,29 @@ void H265CU::IntraLumaModeDecision(Ipp32s abs_part_idx, Ipp32u offset, Ipp8u dep
         m_data = m_dataSave;
         FillSubPart(abs_part_idx, depth, tr_depth, part_size, INTRA_PLANAR, m_par->QP);
         m_intraModeBitcost[INTRA_PLANAR] = GetIntraLumaBitCost(this, abs_part_idx);
+
+//kolya
+//HM-lambda for HAD comparison moved here
+//correct fix gives only 0.17% loss in short test
+#define SQRT_LAMBDA 0
+
+#if SQRT_LAMBDA
+        StoreFewBestModes(cost + (int(m_intraModeBitcost[INTRA_PLANAR]/this->m_rdLambda)/256)*this->m_rdLambdaSqrt, INTRA_PLANAR, m_intraBestCosts, m_intraBestModes, num_cand);
+#else
         StoreFewBestModes(cost + m_intraModeBitcost[INTRA_PLANAR], INTRA_PLANAR, m_intraBestCosts, m_intraBestModes, num_cand);
+#endif
 
         MFX_HEVC_PP::h265_PredictIntra_DC_8u(predPel, pred_ptr, width, width, 1);
         cost = tuHad(pSrc, m_pitchSrc, pred_ptr, width, width, width);
         pred_ptr += width * width;
         FillSubPartIntraLumaDir(abs_part_idx, depth, tr_depth, INTRA_DC);
         m_intraModeBitcost[INTRA_DC] = GetIntraLumaBitCost(this, abs_part_idx);
+
+#if SQRT_LAMBDA
+        StoreFewBestModes(cost + (int(m_intraModeBitcost[INTRA_DC]/this->m_rdLambda)/256)*this->m_rdLambdaSqrt, INTRA_DC, m_intraBestCosts, m_intraBestModes, num_cand);
+#else
         StoreFewBestModes(cost + m_intraModeBitcost[INTRA_DC], INTRA_DC, m_intraBestCosts, m_intraBestModes, num_cand);
+#endif
 
         (m_par->intraAngModes == 2)
             ? MFX_HEVC_PP::NAME(h265_PredictIntra_Ang_All_Even_8u)(predPel, predPelFilt, pred_ptr, width)
@@ -855,7 +870,12 @@ void H265CU::IntraLumaModeDecision(Ipp32s abs_part_idx, Ipp32u offset, Ipp8u dep
                 : tuHad(pSrc, m_pitchSrc, pred_ptr, width, width, width);
             FillSubPartIntraLumaDir(abs_part_idx, depth, tr_depth, luma_dir);
             m_intraModeBitcost[luma_dir] = GetIntraLumaBitCost(this, abs_part_idx);
+
+#if SQRT_LAMBDA
+            StoreFewBestModes(cost + (int(m_intraModeBitcost[luma_dir]/this->m_rdLambda)/256)*this->m_rdLambdaSqrt, luma_dir, m_intraBestCosts, m_intraBestModes, num_cand);
+#else
             StoreFewBestModes(cost + m_intraModeBitcost[luma_dir], luma_dir, m_intraBestCosts, m_intraBestModes, num_cand);
+#endif
             pred_ptr += width * width * step;
         }
     }
@@ -866,17 +886,31 @@ void H265CU::IntraLumaModeDecision(Ipp32s abs_part_idx, Ipp32u offset, Ipp8u dep
 
         CalcCostLuma(abs_part_idx, offset, depth, tr_depth, COST_PRED_TR_0, part_size, INTRA_PLANAR, &cost);
         m_intraModeBitcost[INTRA_PLANAR] = GetIntraLumaBitCost(this, abs_part_idx);
+
+#if SQRT_LAMBDA
+        StoreFewBestModes(cost + (int(m_intraModeBitcost[INTRA_PLANAR]/this->m_rdLambda)/256)*this->m_rdLambdaSqrt, INTRA_PLANAR, m_intraBestCosts, m_intraBestModes, num_cand);
+#else
         StoreFewBestModes(cost + m_intraModeBitcost[INTRA_PLANAR], INTRA_PLANAR, m_intraBestCosts, m_intraBestModes, num_cand);
+#endif
 
         CalcCostLuma(abs_part_idx, offset, depth, tr_depth, COST_PRED_TR_0, part_size, INTRA_DC, &cost);
         m_intraModeBitcost[INTRA_DC] = GetIntraLumaBitCost(this, abs_part_idx);
+
+#if SQRT_LAMBDA
+        StoreFewBestModes(cost + (int(m_intraModeBitcost[INTRA_DC]/this->m_rdLambda)/256)*this->m_rdLambdaSqrt, INTRA_DC, m_intraBestCosts, m_intraBestModes, num_cand);
+#else
         StoreFewBestModes(cost + m_intraModeBitcost[INTRA_DC], INTRA_DC, m_intraBestCosts, m_intraBestModes, num_cand);
+#endif
 
         Ipp8u step = (Ipp8u)m_par->intraAngModes;
         for (Ipp8u luma_dir = 2; luma_dir <= 34; luma_dir += step) {
             CalcCostLuma(abs_part_idx, offset, depth, tr_depth, COST_PRED_TR_0, part_size, luma_dir, &cost);
             m_intraModeBitcost[luma_dir] = GetIntraLumaBitCost(this, abs_part_idx);
-            StoreFewBestModes(cost + m_intraModeBitcost[luma_dir], luma_dir, m_intraBestCosts, m_intraBestModes, num_cand);
+#if SQRT_LAMBDA
+                StoreFewBestModes(cost + (int(m_intraModeBitcost[luma_dir]/this->m_rdLambda)/256)*this->m_rdLambdaSqrt, luma_dir, m_intraBestCosts, m_intraBestModes, num_cand);
+#else
+                StoreFewBestModes(cost + m_intraModeBitcost[luma_dir], luma_dir, m_intraBestCosts, m_intraBestModes, num_cand);
+#endif
         }
     }
 
@@ -908,7 +942,11 @@ void H265CU::IntraLumaModeDecision(Ipp32s abs_part_idx, Ipp32u offset, Ipp8u dep
 
                 FillSubPartIntraLumaDir(abs_part_idx, depth, tr_depth, luma_dir);
                 m_intraModeBitcost[luma_dir] = GetIntraLumaBitCost(this, abs_part_idx);
+#if SQRT_LAMBDA
+                StoreFewBestModes(cost + (int(m_intraModeBitcost[luma_dir]/this->m_rdLambda)/256)*this->m_rdLambdaSqrt, luma_dir, m_intraBestCosts, m_intraBestModes, num_cand);
+#else
                 StoreFewBestModes(cost + m_intraModeBitcost[luma_dir], luma_dir, m_intraBestCosts, m_intraBestModes, num_cand);
+#endif
             }
         }
         else
@@ -917,7 +955,12 @@ void H265CU::IntraLumaModeDecision(Ipp32s abs_part_idx, Ipp32u offset, Ipp8u dep
                 Ipp8u luma_dir = odd_modes[i];
                 CalcCostLuma(abs_part_idx, offset, depth, tr_depth, COST_PRED_TR_0, part_size, luma_dir, &cost);
                 m_intraModeBitcost[luma_dir] = GetIntraLumaBitCost(this, abs_part_idx);
+#if SQRT_LAMBDA
+                StoreFewBestModes(cost + (int(m_intraModeBitcost[luma_dir]/this->m_rdLambda)/256)*this->m_rdLambdaSqrt, luma_dir, m_intraBestCosts, m_intraBestModes, num_cand);
+#else
                 StoreFewBestModes(cost + m_intraModeBitcost[luma_dir], luma_dir, m_intraBestCosts, m_intraBestModes, num_cand);
+#endif
+
             }
         }
     }
