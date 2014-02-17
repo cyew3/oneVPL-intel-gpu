@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2008-2013 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2008-2014 Intel Corporation. All Rights Reserved.
 //
 //
 //          UMC wrapper for MFX Memory Allocator
@@ -34,24 +34,10 @@
 
 mfx_UMC_MemAllocator::mfx_UMC_MemAllocator():m_pCore(NULL)
 {
-    for(Ipp32u i=0; i < MFX_UMC_MAX_ALLOC_SIZE; i++)
-    {
-        m_AddrStore[i] = 0;
-        m_PTRStore[i]  = 0;
-    }
-
 }
+
 mfx_UMC_MemAllocator::~mfx_UMC_MemAllocator()
 {
-    for(Ipp32u i = 1; i < MFX_UMC_MAX_ALLOC_SIZE; i++)
-    {
-        if (m_AddrStore[i])
-        {
-            m_pCore->FreeBuffer((mfxHDL)(m_AddrStore[i]));
-            m_AddrStore[i] = 0;
-            m_PTRStore[i]  = 0;
-        }
-    }
 }
 
 UMC::Status mfx_UMC_MemAllocator::InitMem(UMC::MemoryAllocatorParams *, VideoCORE* mfxCore)
@@ -78,22 +64,11 @@ UMC::Status mfx_UMC_MemAllocator::Alloc(UMC::MemID *pNewMemID, size_t Size, Ipp3
 {
     UMC::AutomaticUMCMutex guard(m_guard);
 
-    mfxStatus Sts = MFX_ERR_NONE;
-    for(Ipp32u i = 1; i < MFX_UMC_MAX_ALLOC_SIZE; i++)
-    {
-        if (m_AddrStore[i] == 0)
-        {
-            Sts = m_pCore->AllocBuffer((mfxU32)Size, /*MFX_MEMTYPE_PERSISTENT_MEMORY*/ MFX_MEMTYPE_SYSTEM_MEMORY, &m_AddrStore[i]);
-            MFX_CHECK_UMC_STS(Sts);
-            if (m_AddrStore[i])
-            {
-                *pNewMemID = (UMC::MemID)i;
-                return UMC::UMC_OK;
-            }
-            return UMC::UMC_ERR_ALLOC;
-        }
-    }
-    return UMC::UMC_ERR_ALLOC;
+    mfxMemId memId;
+    mfxStatus Sts = m_pCore->AllocBuffer((mfxU32)Size, /*MFX_MEMTYPE_PERSISTENT_MEMORY*/ MFX_MEMTYPE_SYSTEM_MEMORY, &memId);
+    MFX_CHECK_UMC_STS(Sts);
+    *pNewMemID = ((UMC::MemID)memId + 1);
+    return UMC::UMC_OK;
 }
 
 void* mfx_UMC_MemAllocator::Lock(UMC::MemID MID)
@@ -102,44 +77,29 @@ void* mfx_UMC_MemAllocator::Lock(UMC::MemID MID)
 
     mfxStatus Sts = MFX_ERR_NONE;
 
-    if (CheckArrayConditions(MID))
-    {
-          Sts = m_pCore->LockBuffer((mfxHDL)(m_AddrStore[MID]), &m_PTRStore[MID]);
-          if (Sts < MFX_ERR_NONE)
-              return 0;
+    mfxU8 *ptr;
+    Sts = m_pCore->LockBuffer((mfxHDL)(MID - 1), &ptr);
+    if (Sts < MFX_ERR_NONE)
+        return 0;
 
-          return m_PTRStore[MID];
-    }
-    else return 0;
+    return ptr;
 }
 
 UMC::Status mfx_UMC_MemAllocator::Unlock(UMC::MemID MID)
 {
     UMC::AutomaticUMCMutex guard(m_guard);
 
-    if (CheckArrayConditions(MID))
-    {
-        UMC::Status sts = UMC::UMC_OK;
-        m_pCore->UnlockBuffer((mfxHDL)(m_AddrStore[MID]));
-        return sts;
-    }
-    else
-        return UMC::UMC_ERR_INVALID_PARAMS;
+    UMC::Status sts = UMC::UMC_OK;
+    m_pCore->UnlockBuffer((mfxHDL)(MID - 1));
+    return sts;
 }
 
 UMC::Status mfx_UMC_MemAllocator::Free(UMC::MemID MID)
 {
     UMC::AutomaticUMCMutex guard(m_guard);
 
-    if (CheckArrayConditions(MID))
-    {
-        m_pCore->FreeBuffer((mfxHDL)(m_AddrStore[MID]));
-        m_AddrStore[MID] = 0;
-        m_PTRStore[MID]  = 0;
-        return UMC::UMC_OK;
-    }
-    else
-        return UMC::UMC_ERR_INVALID_PARAMS;
+    m_pCore->FreeBuffer((mfxHDL)(MID - 1));
+    return UMC::UMC_OK;
 }
 
 UMC::Status mfx_UMC_MemAllocator::DeallocateMem(UMC::MemID )

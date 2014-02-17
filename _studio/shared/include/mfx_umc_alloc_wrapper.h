@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2009-2013 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2009-2014 Intel Corporation. All Rights Reserved.
 //
 //
 //          UMC Wrapper for MXF memory allocator
@@ -59,18 +59,7 @@ public:
     virtual UMC::Status DeallocateMem(UMC::MemID MID);
 
 protected:
-    inline bool CheckArrayConditions(UMC::MemID mid)
-    {
-        if (mid > 0 && mid < MFX_UMC_MAX_ALLOC_SIZE)
-            return true;
-        else
-            return false;
-    }
-
     VideoCORE* m_pCore;
-    // Need for correspondance between UMC::MemID and real memory addrs
-    void*      m_AddrStore[MFX_UMC_MAX_ALLOC_SIZE];
-    mfxU8*     m_PTRStore[MFX_UMC_MAX_ALLOC_SIZE];
 };
 
 

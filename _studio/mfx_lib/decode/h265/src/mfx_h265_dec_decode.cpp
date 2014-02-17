@@ -23,6 +23,14 @@
 #include "umc_va_dxva2_protected.h"
 #endif
 
+static inline mfxU32 CalculateAsyncDepth(VideoCORE *core, mfxVideoParam *par)
+{
+    mfxU32 asyncDepth = par->AsyncDepth;
+    if (core && !asyncDepth)
+        asyncDepth = core->GetAutoAsyncDepth();
+    asyncDepth = IPP_MIN(16, asyncDepth);
+    return asyncDepth;
+}
 
 static inline void mfx_memcpy(void * dst, size_t dstLen, void * src, size_t len)
 {
@@ -114,7 +122,7 @@ mfxStatus VideoDECODEH265::Init(mfxVideoParam *par)
     m_vPar.CreateExtendedBuffer(MFX_EXTBUFF_VIDEO_SIGNAL_INFO);
     m_vPar.CreateExtendedBuffer(MFX_EXTBUFF_CODING_OPTION_SPSPPS);
 
-    mfxU32 asyncDepth = par->AsyncDepth ? par->AsyncDepth : m_core->GetAutoAsyncDepth();
+    mfxU32 asyncDepth = CalculateAsyncDepth(m_core, par);
     m_vPar.mfx.NumThread = (mfxU16)asyncDepth;
 
     if (MFX_PLATFORM_SOFTWARE != m_platform)
@@ -344,7 +352,7 @@ mfxStatus VideoDECODEH265::Reset(mfxVideoParam *par)
     m_vPar.CreateExtendedBuffer(MFX_EXTBUFF_VIDEO_SIGNAL_INFO);
     m_vPar.CreateExtendedBuffer(MFX_EXTBUFF_CODING_OPTION_SPSPPS);
 
-    m_vPar.mfx.NumThread = (mfxU16)(m_vPar.AsyncDepth ? m_vPar.AsyncDepth : m_core->GetAutoAsyncDepth());
+    m_vPar.mfx.NumThread = (mfxU16)CalculateAsyncDepth(m_core, &m_vPar);
 
     if (MFX_PLATFORM_SOFTWARE != m_platform)
         m_vPar.mfx.NumThread = 1;
@@ -642,7 +650,7 @@ mfxStatus VideoDECODEH265::QueryIOSurf(VideoCORE *core, mfxVideoParam *par, mfxF
 
     if (isInternalManaging)
     {
-        request->NumFrameSuggested = request->NumFrameMin = par->AsyncDepth ? par->AsyncDepth : core->GetAutoAsyncDepth();
+        request->NumFrameSuggested = request->NumFrameMin = (mfxU16)CalculateAsyncDepth(core, par);
 
         if (MFX_PLATFORM_SOFTWARE == platform)
             request->Type = MFX_MEMTYPE_DXVA2_DECODER_TARGET | MFX_MEMTYPE_FROM_DECODE;
@@ -681,7 +689,7 @@ mfxStatus VideoDECODEH265::QueryIOSurfInternal(eMFXPlatform platform, eMFXHWType
 {
     request->Info = par->mfx.FrameInfo;
 
-    mfxU32 asyncDepth = (par->AsyncDepth ? par->AsyncDepth : core->GetAutoAsyncDepth());
+    mfxU32 asyncDepth = CalculateAsyncDepth(core, par);
     bool useDelayedDisplay = (ENABLE_DELAYED_DISPLAY_MODE != 0) && IsNeedToUseHWBuffering(type) && (asyncDepth != 1);
 
     mfxI32 dpbSize = CalculateDPBSize(par->mfx.CodecLevel, par->mfx.FrameInfo.Width, par->mfx.FrameInfo.Height);
@@ -1360,7 +1368,7 @@ bool VideoDECODEH265::IsSameVideoParam(mfxVideoParam * newPar, mfxVideoParam * o
         return false;
     }
 
-    if (newPar->AsyncDepth != oldPar->AsyncDepth)
+    if (CalculateAsyncDepth(0, newPar) != CalculateAsyncDepth(0, oldPar))
     {
         return false;
     }

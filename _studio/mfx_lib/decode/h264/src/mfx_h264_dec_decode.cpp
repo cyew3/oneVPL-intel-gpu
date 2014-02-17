@@ -33,6 +33,15 @@
 #include "umc_h264_vda_supplier.h"
 #endif
 
+static inline mfxU32 CalculateAsyncDepth(VideoCORE *core, mfxVideoParam *par)
+{
+    mfxU32 asyncDepth = par->AsyncDepth;
+    if (core && !asyncDepth)
+        asyncDepth = core->GetAutoAsyncDepth();
+    asyncDepth = IPP_MIN(16, asyncDepth);
+    return asyncDepth;
+}
+
 static inline void mfx_memcpy(void * dst, size_t dstLen, void * src, size_t len)
 {
     memcpy_s(dst, dstLen, src, len);
@@ -239,7 +248,7 @@ mfxStatus VideoDECODEH264::Init(mfxVideoParam *par)
     m_vPar.CreateExtendedBuffer(MFX_EXTBUFF_VIDEO_SIGNAL_INFO);
     m_vPar.CreateExtendedBuffer(MFX_EXTBUFF_CODING_OPTION_SPSPPS);
 
-    mfxU32 asyncDepth = par->AsyncDepth ? par->AsyncDepth : m_core->GetAutoAsyncDepth();
+    mfxU32 asyncDepth = CalculateAsyncDepth(m_core, par);
     m_vPar.mfx.NumThread = (mfxU16)asyncDepth;
     if (MFX_PLATFORM_SOFTWARE != m_platform || IsSVCProfile(par->mfx.CodecProfile))
         m_vPar.mfx.NumThread = 1;
@@ -561,7 +570,7 @@ mfxStatus VideoDECODEH264::Reset(mfxVideoParam *par)
     m_vPar.CreateExtendedBuffer(MFX_EXTBUFF_VIDEO_SIGNAL_INFO);
     m_vPar.CreateExtendedBuffer(MFX_EXTBUFF_CODING_OPTION_SPSPPS);
 
-    m_vPar.mfx.NumThread = (mfxU16)(m_vPar.AsyncDepth ? m_vPar.AsyncDepth : m_core->GetAutoAsyncDepth());
+    m_vPar.mfx.NumThread = (mfxU16)CalculateAsyncDepth(m_core, par);
     if (MFX_PLATFORM_SOFTWARE != m_platform)
         m_vPar.mfx.NumThread = 1;
 
@@ -904,7 +913,7 @@ mfxStatus VideoDECODEH264::QueryIOSurf(VideoCORE *core, mfxVideoParam *par, mfxF
 
     if (isInternalManaging)
     {
-        request->NumFrameSuggested = request->NumFrameMin = par->AsyncDepth ? par->AsyncDepth : core->GetAutoAsyncDepth();
+        request->NumFrameSuggested = request->NumFrameMin = (mfxU16)CalculateAsyncDepth(core, par);
 
         if (MFX_PLATFORM_SOFTWARE == platform)
             request->Type = MFX_MEMTYPE_DXVA2_DECODER_TARGET | MFX_MEMTYPE_FROM_DECODE;
@@ -947,7 +956,7 @@ mfxStatus VideoDECODEH264::QueryIOSurfInternal(eMFXPlatform platform, eMFXHWType
         level_idc = mfxU8 (IPP_MAX(level_idc, points->OP->LevelIdc));
     }
 
-    mfxU32 asyncDepth = (par->AsyncDepth ? par->AsyncDepth : core->GetAutoAsyncDepth());
+    mfxU32 asyncDepth = CalculateAsyncDepth(core, par);
     bool useDelayedDisplay = (ENABLE_DELAYED_DISPLAY_MODE != 0) && IsNeedToUseHWBuffering(type) && (asyncDepth != 1);
 
     mfxI32 dpbSize = UMC::CalculateDPBSize(level_idc, par->mfx.FrameInfo.Width, par->mfx.FrameInfo.Height, 0);
@@ -1718,7 +1727,7 @@ bool VideoDECODEH264::IsSameVideoParam(mfxVideoParam * newPar, mfxVideoParam * o
         return false;
     }
 
-    if (newPar->AsyncDepth != oldPar->AsyncDepth)
+    if (CalculateAsyncDepth(0, newPar) != CalculateAsyncDepth(0, oldPar))
     {
         return false;
     }
