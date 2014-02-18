@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2012-2013 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2012-2014 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -74,6 +74,7 @@ void H265CodingUnit::create (H265FrameCodingData * frameCD, Ipp32s cuAddr)
     m_rasterToPelY = frameCD->m_partitionInfo.m_rasterToPelY;
 
     m_zscanToRaster = frameCD->m_partitionInfo.m_zscanToRaster;
+    m_rasterToZscan = frameCD->m_partitionInfo.m_rasterToZscan;
 }
 
 void H265CodingUnit::destroy()
@@ -277,9 +278,47 @@ void H265CodingUnit::setChromIntraDirSubParts(Ipp32u uDir, Ipp32u AbsPartIdx, Ip
     memset(m_chromaIntraDir + AbsPartIdx, uDir, sizeof(Ipp8u) * uCurrPartNumb);
 }
 
-void H265CodingUnit::setTrIdx(Ipp32u uTrIdx, Ipp32u AbsPartIdx)
+void H265CodingUnit::setTrIdx(Ipp32u uTrIdx, Ipp32u AbsPartIdx, Ipp32s Depth)
 {
+    Ipp32u uCurrPartNumb = m_NumPartition >> (Depth << 1);
     m_cuData[AbsPartIdx].trIndex = (Ipp8u)uTrIdx;
+
+    for (Ipp32u i = 1; i < uCurrPartNumb; i++)
+    {
+        m_cuData[AbsPartIdx + i].trIndex = (Ipp8u)uTrIdx;
+    }
+}
+
+void H265CodingUnit::SetTrStart (Ipp32u AbsPartIdx, Ipp32s Depth)
+{
+    Ipp32u uCurrPartNumb = m_NumPartition >> (Depth << 1);
+
+    m_cuData[AbsPartIdx].trStart = (Ipp8u)AbsPartIdx;
+    for (Ipp32u i = 1; i < uCurrPartNumb; i++)
+    {
+        m_cuData[AbsPartIdx + i].trStart = (Ipp8u)AbsPartIdx;
+    }
+}
+
+void H265CodingUnit::UpdateTUInfo (Ipp32u AbsPartIdx, Ipp32u uTrIdx, Ipp32s Depth)
+{
+    Ipp32u uCurrPartNumb = m_NumPartition >> (Depth << 1);
+
+    for (Ipp32u i = 0; i < uCurrPartNumb; i++)
+    {
+        m_cuData[AbsPartIdx + i].trStart = (Ipp8u)AbsPartIdx;
+        m_cuData[AbsPartIdx + i].trIndex = (Ipp8u)uTrIdx;
+    }
+}
+
+void H265CodingUnit::UpdateTUQpInfo (Ipp32u AbsPartIdx, Ipp32s qp, Ipp32s Depth)
+{
+    Ipp32u uCurrPartNumb = m_NumPartition >> (Depth << 1);
+
+    for (Ipp32u i = 0; i < uCurrPartNumb; i++)
+    {
+        m_cuData[AbsPartIdx + i].qp = (Ipp8s)qp;
+    }
 }
 
 void H265CodingUnit::setSize(Ipp32u Width, Ipp32u AbsPartIdx)

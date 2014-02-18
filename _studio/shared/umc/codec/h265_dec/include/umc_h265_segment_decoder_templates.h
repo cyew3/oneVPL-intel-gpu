@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2012-2013 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2012-2014 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -110,9 +110,9 @@ public:
 
             if (newCUAddr >= nBorder)
             {
-                    if (sd->m_pCurrentFrame->m_CodingData->getTileIdxMap(rsCUAddr) ==
-                        sd->m_pCurrentFrame->m_CodingData->getTileIdxMap(newRSCUAddr))
-                    {
+                if (sd->m_pCurrentFrame->m_CodingData->getTileIdxMap(rsCUAddr) ==
+                    sd->m_pCurrentFrame->m_CodingData->getTileIdxMap(newRSCUAddr))
+                {
                     if (sd->m_pPicParamSet->entropy_coding_sync_enabled_flag)
                     {
                         Ipp32u CUX = rsCUAddr % sd->m_pSeqParamSet->WidthInCU;

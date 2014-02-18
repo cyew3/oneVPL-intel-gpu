@@ -266,6 +266,13 @@ public:
     template<Ipp32s tusize> inline void GetCTBEdgeStrengths(void);
     template<Ipp32s tusize, Ipp32s dir> inline void GetEdgeStrength(Ipp32s tuQ, Ipp32s tuP, H265EdgeData *edge, Ipp32s xQ, Ipp32s yQ);
     template<Ipp32s dir> inline void GetEdgeStrengthDelayed(Ipp32s tusize, Ipp32s x, Ipp32s y, H265EdgeData *edge);
+    void DeblockOneCross(H265CodingUnit* curLCU, Ipp32s curPixelColumn, Ipp32s curPixelRow, bool isNeddAddHorDeblock);
+
+    template <Ipp32s direction>
+    void CalculateEdge(H265CodingUnit* cu, H265EdgeData * edge, Ipp32s x, Ipp32s y);
+
+    void DeblockOneLCU(H265CodingUnit* cu, Ipp32u absPartIdx, Ipp32u depth, Ipp32s edgeType);
+
     inline void GetEdgeStrengthInter(H265MVInfo *mvinfoQ, H265MVInfo *mvinfoP, H265EdgeData *edge);
     template<Ipp32s tusize> void GetCTBEdgeStrengthsSimple(void);
     template<Ipp32s tusize> void GetEdgeStrengthSimple(Ipp32s tuQ, Ipp32s tuP, H265EdgeData *edge, bool anotherCU);

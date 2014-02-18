@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2012-2013 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2012-2014 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -48,8 +48,8 @@ struct H265CodingUnitData
     Ipp8u predMode;
 
     Ipp8u trIndex;
-
-    Ipp8u reserved[2];
+    Ipp8u trStart;
+    Ipp8s qp;
 };
 #pragma pack()
 
@@ -65,6 +65,7 @@ public:
     Ipp32u *m_rasterToPelY;
 
     Ipp32u *m_zscanToRaster;
+    Ipp32u *m_rasterToZscan;
 
     Ipp32s                   m_SliceIdx;
     MFX_HEVC_PP::CTBBorders  m_AvailBorder;
@@ -88,6 +89,11 @@ protected:
     Ipp8u*                    m_lumaIntraDir;    // array of intra directions (luma)
     Ipp8u*                    m_chromaIntraDir;  // array of intra directions (chroma)
 public:
+
+    inline H265CodingUnitData * GetCUData(Ipp32s addr) const
+    {
+        return &m_cuData[addr];
+    }
 
     inline Ipp8u GetTrIndex(Ipp32s partAddr) const
     {
@@ -178,7 +184,10 @@ public:
     void setCUTransquantBypass(bool flag, Ipp32u AbsPartIdx);
     void setPredMode (EnumPredMode Mode, Ipp32u AbsPartIdx);
     void setSize (Ipp32u Width, Ipp32u AbsPartIdx);
-    void setTrIdx (Ipp32u TrIdx, Ipp32u AbsPartIdx);
+    void setTrIdx (Ipp32u TrIdx, Ipp32u AbsPartIdx, Ipp32s Depth);
+    void SetTrStart (Ipp32u AbsPartIdx, Ipp32s Depth);
+    void UpdateTUInfo (Ipp32u AbsPartIdx, Ipp32u uTrIdx, Ipp32s Depth);
+    void UpdateTUQpInfo (Ipp32u AbsPartIdx, Ipp32s qp, Ipp32s Depth);
 
     Ipp32u getQuadtreeTULog2MinSizeInCU (Ipp32u Idx);
 
