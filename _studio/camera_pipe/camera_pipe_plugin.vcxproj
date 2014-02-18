@@ -159,6 +159,7 @@ copy %INSTALLDIR%\compiler\lib\x86\libcm.dll $(OutDir)</Command>
       <AdditionalDependencies>ippcoremt.lib;ippsmt.lib;ippvcmt.lib;ippimt.lib;ippccmt.lib;ippcvmt.lib;ippjmt.lib;ippmsdkmt.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <AdditionalLibraryDirectories>$(MfxBuildDir)win_$(Platform)\lib;$(MfxIppLibraryDir);$(MEDIASDK_ROOT)\cmrt\compiler\lib\x64;$(MEDIASDK_ROOT)\cmrt\runtime\lib\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
     <PostBuildEvent>
       <Command>copy "$(SolutionDir)54542616243341e693ae899942ce7355\plugin_for_debug.cfg" "$(OutDir)plugin.cfg" /y &amp; xcopy "$(OutDir)$(TargetName)*" "$(ProjectDir)..\..\samples\_build\x64\Debug\54542616243341e693ae899942ce7355" /y /i &amp; copy "$(SolutionDir)54542616243341e693ae899942ce7355\plugin_for_debug.cfg" "$(ProjectDir)..\..\samples\_build\x64\Debug\54542616243341e693ae899942ce7355\plugin.cfg" /y</Command>
@@ -191,7 +192,7 @@ copy %INSTALLDIR%\compiler\lib\x64\libcm.dll $(OutDir)</Command>
     </ClCompile>
     <Link>
       <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
-      <GenerateDebugInformation>false</GenerateDebugInformation>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Windows</SubSystem>
       <OptimizeReferences>true</OptimizeReferences>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
@@ -231,7 +232,7 @@ copy %INSTALLDIR%\compiler\lib\x86\libcm.dll $(OutDir)</Command>
     </ClCompile>
     <Link>
       <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
-      <GenerateDebugInformation>false</GenerateDebugInformation>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Windows</SubSystem>
       <OptimizeReferences>true</OptimizeReferences>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
