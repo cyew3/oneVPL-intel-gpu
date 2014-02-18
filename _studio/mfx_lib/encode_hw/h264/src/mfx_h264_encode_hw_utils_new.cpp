@@ -808,11 +808,11 @@ namespace
         initList0.Resize(list0.Size());
         initList1.Resize(list1.Size());
 
-        bool noLongTermInList0 = !RefListHasLongTerm(dpb, initList0);
-        bool noLongTermInList1 = !RefListHasLongTerm(dpb, initList1);
+        bool bNoRefListModOpt0 = (video.calcParam.lyncMode == 0) && video.calcParam.numTemporalLayer && RefListHasLongTerm(dpb, initList0); // ref list mod syntax optimization is prohibited for SVC + LTR
+        bool bNoRefListModOpt1 = (video.calcParam.lyncMode == 0) && video.calcParam.numTemporalLayer && RefListHasLongTerm(dpb, initList1); // ref list mod syntax optimization is prohibited for SVC + LTR
 
-        mod0 = CreateRefListMod(dpb, initList0, list0, task.m_viewIdx, curPicNum, noLongTermInList0);
-        mod1 = CreateRefListMod(dpb, initList1, list1, task.m_viewIdx, curPicNum, noLongTermInList1);
+        mod0 = CreateRefListMod(dpb, initList0, list0, task.m_viewIdx, curPicNum, !bNoRefListModOpt0);
+        mod1 = CreateRefListMod(dpb, initList1, list1, task.m_viewIdx, curPicNum, !bNoRefListModOpt1);
     }
 
 
