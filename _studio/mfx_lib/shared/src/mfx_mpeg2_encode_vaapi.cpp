@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2013 Intel Corporation. All Rights Reserved.
+//        Copyright(c) 2013-2014 Intel Corporation. All Rights Reserved.
 //
 //
 //          MPEG2 encoder VAAPI
@@ -1024,8 +1024,9 @@ mfxStatus VAAPIEncoder::FillSlices(ExecuteBuffers* pExecuteBuffers)
         sliceParam->is_intra_slice       = ddiSlice.IntraSlice;
         sliceParam->quantiser_scale_code = ddiSlice.quantiser_scale_code; 
         //sliceParam->quantiser_scale_code = 4; /*ctx->qp*/ // TODO: where find QP value ?
+        MFX_DESTROY_VABUFFER(m_sliceParamBufferId[i], m_vaDisplay);
     }
-
+    
     vaSts = vaCreateBuffer(m_vaDisplay,
         m_vaContextEncode,
         VAEncSliceParameterBufferType,
@@ -1042,7 +1043,7 @@ mfxStatus VAAPIEncoder::FillSlices(ExecuteBuffers* pExecuteBuffers)
     sliceParam->is_intra_slice = (m_vaPpsBuf.picture_type == VAEncPictureTypeIntra);
     sliceParam->quantiser_scale_code = /*ctx->qp*/ 8 / 2; // TODO: where find QP value ?
 
-
+    MFX_DESTROY_VABUFFER(m_sliceParamBufferId, m_vaDisplay);
     vaSts = vaCreateBuffer(m_vaDisplay,
         m_vaContextEncode,
         VAEncSliceParameterBufferType,
@@ -1065,6 +1066,7 @@ mfxStatus VAAPIEncoder::FillMiscParameterBuffer(ExecuteBuffers* pExecuteBuffers)
     miscFps.framerate            = m_vaSpsBuf.frame_rate * 100; // TODO: fixme
     miscPrivate.target_usage     = pExecuteBuffers->m_sps.TargetUsage;
     
+    MFX_DESTROY_VABUFFER(m_miscParamFpsId, m_vaDisplay);
     vaSts = vaCreateBuffer(m_vaDisplay,
         m_vaContextEncode,
         VAEncMiscParameterBufferType,
@@ -1074,6 +1076,7 @@ mfxStatus VAAPIEncoder::FillMiscParameterBuffer(ExecuteBuffers* pExecuteBuffers)
         &m_miscParamFpsId);
     MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
 
+    MFX_DESTROY_VABUFFER(m_miscParamPrivateId, m_vaDisplay);
     vaSts = vaCreateBuffer(m_vaDisplay,
         m_vaContextEncode,
         VAEncMiscParameterBufferType,
