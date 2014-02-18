@@ -21,7 +21,7 @@ namespace H265Enc {
 bool H265CU::CheckIdenticalMotion(Ipp32u abs_part_idx)
 {
     EncoderRefPicListStruct *pList[2];
-    T_RefIdx ref_idx[2];
+    Ipp8s ref_idx[2];
     pList[0] = &(m_cslice->m_pRefPicList[0].m_RefPicListL0);
     pList[1] = &(m_cslice->m_pRefPicList[0].m_RefPicListL1);
     ref_idx[0] = m_data[abs_part_idx].refIdx[0];

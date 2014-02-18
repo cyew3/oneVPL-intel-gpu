@@ -30,10 +30,12 @@ typedef struct
 
 typedef struct
 {
-    H265MV   mvCand[10];
-    T_RefIdx refIdx[10];
-    Ipp32s      numCand;
+    H265MV mvCand[10];
+    Ipp8s  refIdx[10];
+    Ipp32s numCand;
 } MVPInfo;
+
+const H265MV MV_ZERO = {};
 
 Ipp32s operator == (const H265MV &mv1, const H265MV &mv2);
 Ipp32s operator != (const H265MV &mv1, const H265MV &mv2);
@@ -59,7 +61,7 @@ public:
     Ipp8s mvpNum[2];
     H265MV mv[2];
     H265MV mvd[2];
-    T_RefIdx refIdx[2];
+    Ipp8s refIdx[2];
 
     Ipp8u transformSkipFlag[3];
     union {
@@ -85,20 +87,19 @@ struct H265MEInfo
     Ipp8u posx, posy; // in pix inside LCU
     Ipp8u width, height;
     H265MV MV[2]; // [fwd/bwd]
-    T_RefIdx refIdx[2];
-    Ipp32s costOneDir[2];
-    Ipp32s costBiDir;
-    CostType costIntra;
-    Ipp32s costInter;
-    Ipp32s meParts[4]; // used if split
-    Ipp32s details[2]; // [vert/horz]
+    Ipp8s refIdx[2];
+    //Ipp32s costOneDir[2];
+    //Ipp32s costBiDir;
+    //CostType costIntra;
+    //Ipp32s costInter;
+    //Ipp32s details[2]; // [vert/horz]
 
     Ipp32u absPartIdx;
     Ipp8u interDir;   // INTER_DIR_PRED_LX
     Ipp8u splitMode;
     Ipp8u depth;
-    Ipp8u mustSplit; // part of CU is out of the frame
-    Ipp8u excluded;   // completely out of the frame
+    //Ipp8u mustSplit; // part of CU is out of the frame
+    //Ipp8u excluded;   // completely out of the frame
 };
 
 #define IS_INTRA(data, partIdx) ((data)[partIdx].predMode == MODE_INTRA)
@@ -114,7 +115,7 @@ class H265CU
 {
 public:
     H265VideoParam *m_par;
-    H265CUData *m_data;
+    H265CUData     *m_data;
     Ipp32u          m_ctbAddr;           ///< CU address in a slice
     Ipp32u          m_absIdxInLcu;      ///< absolute address in a CU. It's Z scan order
     Ipp32u          m_ctbPelX;           ///< CU position in a pixel (X)
@@ -130,20 +131,20 @@ public:
     __ALIGN32 PixType       m_tuSrcTransposed[32*32];
     __ALIGN32 PixType       m_interPred[4][MAX_CU_SIZE * MAX_CU_SIZE];
     __ALIGN32 PixType       m_interPredBest[4][MAX_CU_SIZE * MAX_CU_SIZE];
-    PixType                 (*m_interPredPtr)[MAX_CU_SIZE * MAX_CU_SIZE];
-    __ALIGN32 CoeffsType       m_interResidualsY[4][MAX_CU_SIZE * MAX_CU_SIZE];
-    __ALIGN32 CoeffsType       m_interResidualsYBest[4][MAX_CU_SIZE * MAX_CU_SIZE];
-    CoeffsType                 (*m_interResidualsYPtr)[MAX_CU_SIZE * MAX_CU_SIZE];
+    PixType               (*m_interPredPtr)[MAX_CU_SIZE * MAX_CU_SIZE];
+    __ALIGN32 CoeffsType    m_interResidualsY[4][MAX_CU_SIZE * MAX_CU_SIZE];
+    __ALIGN32 CoeffsType    m_interResidualsYBest[4][MAX_CU_SIZE * MAX_CU_SIZE];
+    CoeffsType            (*m_interResidualsYPtr)[MAX_CU_SIZE * MAX_CU_SIZE];
     __ALIGN32 PixType       m_interRecBest[5][MAX_CU_SIZE*MAX_CU_SIZE];
     Ipp32s                  m_interPredReady;
 
     CostType m_intraBestCosts[35];
     Ipp8u    m_intraBestModes[35];
     Ipp64f   m_intraModeBitcost[35];
+    Ipp32s   m_predIntraAllWidth;
 
-    Ipp32s m_predIntraAllWidth;
-    Ipp8u           m_inNeighborFlags[4*MAX_CU_SIZE+1];
-    Ipp8u           m_outNeighborFlags[4*MAX_CU_SIZE+1];
+    Ipp8u         m_inNeighborFlags[4*MAX_CU_SIZE+1];
+    Ipp8u         m_outNeighborFlags[4*MAX_CU_SIZE+1];
     H265CUData*   m_above;          ///< pointer of above CU
     H265CUData*   m_left;           ///< pointer of left CU
     H265CUData*   m_aboveLeft;      ///< pointer of above-left CU
@@ -204,6 +205,7 @@ public:
     Ipp32s HorMin;
     Ipp32s VerMax;
     Ipp32s VerMin;
+    const Ipp8u *m_logMvCostTable;
 
     SaoEncodeFilter m_saoEncodeFilter;
 
@@ -225,19 +227,14 @@ public:
     inline Ipp8u GetQtRootCbf(Ipp32u idx)
     { return GetCbf( idx, TEXT_LUMA, 0 ) || GetCbf( idx, TEXT_CHROMA_U, 0 ) || GetCbf( idx, TEXT_CHROMA_V, 0 ); }
 
-    void GetPuLeft(H265CUPtr *cu,
-                   Ipp32u currPartUnitIdx,
-                   Ipp32s enforceSliceRestriction=true,
-                   Ipp32s enforceDependentSliceRestriction=true,
-                   Ipp32s enforceTileRestriction=true );
+    void GetPuLeft(H265CUPtr *cu, Ipp32u currPartUnitIdx, Ipp32s enforceSliceRestriction = true,
+                   Ipp32s enforceDependentSliceRestriction = true,
+                   Ipp32s enforceTileRestriction = true);
 
-    void GetPuAbove(H265CUPtr *cu,
-                    Ipp32u currPartUnitIdx,
-                    Ipp32s enforceSliceRestriction=true,
-                    Ipp32s enforceDependentSliceRestriction=true,
-                    Ipp32s motionDataCompresssion = false,
-                    Ipp32s planarAtLcuBoundary = false,
-                    Ipp32s enforceTileRestriction=true );
+    void GetPuAbove(H265CUPtr *cu, Ipp32u currPartUnitIdx, Ipp32s enforceSliceRestriction = true,
+                    Ipp32s enforceDependentSliceRestriction = true,
+                    Ipp32s motionDataCompresssion = false, Ipp32s planarAtLcuBoundary = false,
+                    Ipp32s enforceTileRestriction = true);
 
     bool GetColMvp(H265CUData *colLCU, Ipp32s blockZScanIdx, Ipp32s refPicListIdx, Ipp32s refIdx,
                    H265MV &rcMv);
@@ -410,13 +407,14 @@ public:
 
     void MePu(H265MEInfo *meInfo);
 
+    void MePuExperimental(H265MEInfo *meInfo, Ipp32s lastPredIdx);
+
     Ipp32s GetMvPredictors(H265MV *mvPred, const H265MEInfo* meInfo, const MVPInfo *predInfo,
                            const MVPInfo *mergeInfo, H265MV mvLast, Ipp32s meDir,
                            Ipp32s refIdx) const;
 
-    void MeSubpel(H265MV mvIntpel, Ipp32s costIntpel, const H265MEInfo *meInfo,
-                  const MVPInfo *predInfo, const MVPInfo *mergeInfo, Ipp32s meDir,
-                  Ipp32s refIdx, H265MV *mvSubpel, Ipp32s *costSubpel) const;
+    void MeSubpel(const H265MEInfo *meInfo, const MVPInfo *predInfo, Ipp32s meDir, Ipp32s refIdx,
+                  H265MV *mv, Ipp32s *cost, Ipp32s *mvCost) const;
 
     CostType CuCost(Ipp32u absPartIdx, Ipp8u depth, const H265MEInfo* bestInfo, Ipp32s offset,
                     Ipp32s fastPuDecision);
@@ -439,14 +437,16 @@ public:
                                   PixType *bwd, Ipp32u pitchBwd, H265MV fullMV[2],
                                   Ipp32s useHadamard);
 
-    Ipp32s MvCost(H265MV MV[2], T_RefIdx ref_idx[2], MVPInfo pInfo[2], MVPInfo *mergeInfo) const;
+    Ipp32s MvCost(H265MV MV[2], Ipp8s ref_idx[2], MVPInfo pInfo[2], MVPInfo *mergeInfo) const;
 
-    Ipp32s MvCost1Ref(H265MV *mv, Ipp8s refIdx, const MVPInfo *predInfo, const MVPInfo *mergeInfo,
-                      Ipp32s rlist) const;
+    Ipp32s MvCost1Ref(H265MV mv, Ipp8s refIdx, const MVPInfo *predInfo, Ipp32s rlist) const;
+
+    Ipp32s MvCost1RefLog(H265MV mv, Ipp8s refIdx, const MVPInfo *predInfo, Ipp32s rlist) const;
 
     void InitCu(H265VideoParam *_par, H265CUData *_data, H265CUData *_dataTemp, Ipp32s cuAddr,
                 PixType *_y, PixType *_uv, Ipp32s _pitch, PixType *_ySrc, PixType *uvSrc,
-                Ipp32s _pitchSrc, H265BsFake *_bsf, H265Slice *cslice, Ipp32s initializeDataFlag);
+                Ipp32s _pitchSrc, H265BsFake *_bsf, H265Slice *cslice, Ipp32s initializeDataFlag,
+                const Ipp8u *logMvCostTable);
 
     void ModeDecision(Ipp32u absPartIdx, Ipp32u offset, Ipp8u depth, CostType *cost);
 

@@ -98,7 +98,7 @@ static
 void h265_code_mvp_idx (H265Bs *bs, H265CU* pCU, Ipp32u abs_part_idx, EnumRefPicList ref_list )
 {
     Ipp32s symbol = pCU->m_data[abs_part_idx].mvpIdx[ref_list];
-    Ipp32s num = AMVP_MAX_NUM_CANDS;
+    Ipp32s num = MAX_NUM_AMVP_CANDS;
 
     h265_write_unary_max_symbol(bs, symbol, CTX(bs,MVP_IDX_HEVC), 1, num-1);
 }
@@ -216,9 +216,9 @@ template <class H265Bs>
 static
 void h265_code_merge_index(H265Bs *bs, H265CU* pCU, Ipp32u abs_part_idx)
 {
-    Ipp32u num_cand = MRG_MAX_NUM_CANDS;
+    Ipp32u num_cand = MAX_NUM_MERGE_CANDS;
     Ipp32u unary_idx = pCU->m_data[abs_part_idx].mergeIdx;
-    num_cand = MRG_MAX_NUM_CANDS;
+    num_cand = MAX_NUM_MERGE_CANDS;
     if (num_cand > 1)
     {
         for (Ipp32u i = 0; i < num_cand - 1; ++i)
@@ -391,7 +391,7 @@ void h265_code_reffrm_idx(H265Bs *bs, H265CU* pCU, Ipp32u abs_part_idx, EnumRefP
     Ipp32s j;
     H265ENC_UNREFERENCED_PARAMETER(abs_part_idx);
 
-    T_RefIdx ref_idx = pCU->m_data[abs_part_idx].refIdx[ref_list];
+    Ipp8s ref_idx = pCU->m_data[abs_part_idx].refIdx[ref_list];
     bs->EncodeSingleBin_CABAC(CTX(bs,REF_FRAME_IDX_HEVC),( ref_idx == 0 ? 0 : 1 ));
 
     j = 0;

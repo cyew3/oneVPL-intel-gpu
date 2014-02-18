@@ -96,13 +96,9 @@ extern int DEBUG_CABAC_PRINT;
 #define     MAX_CU_SIZE             (1<<(MAX_CU_DEPTH))         // maximum allowable size of CU
 #define     MAX_NUM_PARTITIONS 256
 
-#define AMVP_MAX_NUM_CANDS          2           ///< max number of final candidates
-#define MRG_MAX_NUM_CANDS           5           // from 2 to 5
-//#define AMVP_MAX_NUM_CANDS_MEM      3           ///< max number of candidates
-//#define MRG_MAX_NUM_CANDS_SIGNALED         5   //<G091: value of maxNumMergeCand signaled in slice header
 
-#define MLS_GRP_NUM                         64     ///< G644 : Max number of coefficient groups, max(16, 64)
-#define MLS_CG_SIZE                         4      ///< G644 : Coefficient group size of 4x4
+#define MLS_GRP_NUM                 64     ///< G644 : Max number of coefficient groups, max(16, 64)
+#define MLS_CG_SIZE                 4      ///< G644 : Coefficient group size of 4x4
 
 #define C1FLAG_NUMBER               8 // maximum number of largerThan1 flag coded in one chunk :  16 in HM5
 #define C2FLAG_NUMBER               1 // maximum number of largerThan2 flag coded in one chunk:  16 in HM5
@@ -151,15 +147,16 @@ extern int DEBUG_CABAC_PRINT;
 
 typedef Ipp16s CoeffsType;
 typedef Ipp8u PixType;
-typedef Ipp8s T_RefIdx;
 typedef Ipp64f CostType;
 #define COST_MAX DBL_MAX
 
 
-#define H265_MAXNUMREF  4
 #define PGOP_PIC_SIZE 4
 
-const Ipp8u OPT_LAMBDA_PYRAMID = 1;
+const Ipp32s MAX_NUM_AMVP_CANDS  = 2;
+const Ipp32s MAX_NUM_MERGE_CANDS = 5;
+const Ipp32s MAX_NUM_REF_IDX     = 4;
+const Ipp32s OPT_LAMBDA_PYRAMID  = 1;
 
 enum EnumSliceType {
     B_SLICE     = 0,
@@ -269,6 +266,8 @@ enum MVPDir
 #define SCAN_SET_SIZE                     16
 #define LOG2_SCAN_SET_SIZE                4
 
+static const Ipp32s MVP_LX_FLAG_BITS = 1;
+
 enum InterDir {
     INTER_DIR_PRED_L0 = 1,
     INTER_DIR_PRED_L1 = 2,
@@ -334,8 +333,8 @@ class H265Frame;
 struct EncoderRefPicListStruct
 {
     H265Frame *m_RefPicList[MAX_NUM_REF_FRAMES + 1];
-    Ipp8s m_Tb[MAX_NUM_REF_FRAMES+1];
-    Ipp8u m_IsLongTermRef[MAX_NUM_REF_FRAMES+1];
+    Ipp8s m_Tb[MAX_NUM_REF_FRAMES + 1];
+    Ipp8u m_IsLongTermRef[MAX_NUM_REF_FRAMES + 1];
 };
 
 struct EncoderRefPicList

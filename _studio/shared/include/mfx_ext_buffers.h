@@ -194,7 +194,8 @@ typedef struct {
     mfxU16      BPyramid;           // tri-state
     mfxU16      FastPUDecision;     // tri-state
     mfxU16      HadamardMe;         // 0-default 0-never; 1-subpel; 2-always
-    mfxU16      reserved[25];
+    mfxU16      TMVP;               // tri-state
+    mfxU16      reserved[24];
 } mfxExtCodingOptionHEVC;
 
 #define MFX_EXTBUFF_VP8_PARAM MFX_MAKEFOURCC('B','V','P','8')

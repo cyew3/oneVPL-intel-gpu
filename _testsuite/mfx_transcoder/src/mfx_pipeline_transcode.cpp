@@ -234,6 +234,7 @@ MFXTranscodingPipeline::MFXTranscodingPipeline(IMFXPipelineFactory *pFactory)
         HANDLE_HEVC_OPTION(BPyramid,                 OPT_TRI_STATE,  "B-Pyramid"),
         HANDLE_HEVC_OPTION(FastPUDecision,           OPT_TRI_STATE,  "on/off fast PU decision (fast means no TU split)"),
         HANDLE_HEVC_OPTION(HadamardMe,               OPT_UINT_16,    "0-default 1-never; 2-subpel; 3-always"),
+        HANDLE_HEVC_OPTION(TMVP,                     OPT_TRI_STATE,  "on/off temporal MV predictor"),
 
         HANDLE_VP8PARAM_OPTION(VP8Version,            OPT_UINT_8,    "0-maxU8"),
         HANDLE_VP8PARAM_OPTION(LoopFilterType,        OPT_UINT_8,    "0-maxU8"),

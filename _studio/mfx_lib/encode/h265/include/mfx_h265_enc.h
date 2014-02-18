@@ -184,6 +184,7 @@ public:
     H265Frame *m_pCurrentFrame;
     H265Frame *m_pLastFrame;     // ptr to last frame
     H265Frame *m_pReconstructFrame;
+    Ipp8u *m_logMvCostTable;
 
     Ipp32s profile_frequency;
     Ipp32s m_iProfileIndex;

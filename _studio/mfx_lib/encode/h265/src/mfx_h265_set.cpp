@@ -297,7 +297,7 @@ mfxStatus H265Encoder::PutSPS(H265BsReal *_bs)
     if (sps->long_term_ref_pics_present_flag) {
         VM_ASSERT(0);
     }
-    H265Bs_PutBit(bs, sps->sps_temporal_mvp_enable_flag);
+    H265Bs_PutBit(bs, sps->sps_temporal_mvp_enabled_flag);
     H265Bs_PutBit(bs, sps->strong_intra_smoothing_enabled_flag);
 
     H265Bs_PutBit(bs, sps->vui_parameters_present_flag);
@@ -512,7 +512,7 @@ mfxStatus H265Encoder::PutSliceHeader(H265BsReal *_bs, H265Slice *slice)
                     H265Bs_PutBit(bs, sh->used_by_curr_pic_lt_flag[i]);
                 }*/
             }
-            if( sps->sps_temporal_mvp_enable_flag )
+            if (sps->sps_temporal_mvp_enabled_flag)
                 H265Bs_PutBit(bs, sh->slice_temporal_mvp_enabled_flag);
         }
         if (sps->sample_adaptive_offset_enabled_flag) {
@@ -534,7 +534,7 @@ mfxStatus H265Encoder::PutSliceHeader(H265BsReal *_bs, H265Slice *slice)
                 H265Bs_PutBit(bs, sh->mvd_l1_zero_flag);
             if (pps->cabac_init_present_flag)
                 H265Bs_PutBit(bs, sh->cabac_init_flag);
-            if (sps->sps_temporal_mvp_enable_flag) {
+            if (sps->sps_temporal_mvp_enabled_flag) {
                 if (sh->slice_type == B_SLICE)
                     H265Bs_PutBit(bs, sh->collocated_from_l0_flag);
                 if (sh->slice_type != I_SLICE &&
