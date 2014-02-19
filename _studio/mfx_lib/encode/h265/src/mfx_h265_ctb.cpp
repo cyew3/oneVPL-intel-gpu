@@ -2357,7 +2357,7 @@ void H265CU::MePuExperimental(H265MEInfo *meInfo, Ipp32s lastPredIdx)
                 if (idx0 >= 0) {
                     // don't do ME just re-calc costs
                     mvRefBest[1][refIdx] = mvRefBest[0][idx0];
-                    mvCostRefBest[1][refIdx] = MvCost1RefLog(mvRefBest[0][idx0], refIdx, predInfo, list);
+                    mvCostRefBest[1][refIdx] = MvCost1RefLog(mvRefBest[0][idx0], (Ipp8s)refIdx, predInfo, list);
                     bitsRefBest[1][refIdx] = MVP_LX_FLAG_BITS;
                     bitsRefBest[1][refIdx] += GetFlBits(refIdx, numRefIdx);
                     bitsRefBest[1][refIdx] += predIdxBits[list];
@@ -2396,7 +2396,7 @@ void H265CU::MePuExperimental(H265MEInfo *meInfo, Ipp32s lastPredIdx)
                 mvBest.mvx = (mvBest.mvx + 1) & ~3;
                 mvBest.mvy = (mvBest.mvy + 1) & ~3;
                 costBest = MatchingMetricPu(src, meInfo, &mvBest, ref, useHadamard);
-                mvCostBest = MvCost1RefLog(mvBest, refIdx, predInfo, list);
+                mvCostBest = MvCost1RefLog(mvBest, (Ipp8s)refIdx, predInfo, list);
                 costBest += mvCostBest;
             }
             else {
@@ -2418,7 +2418,7 @@ void H265CU::MePuExperimental(H265MEInfo *meInfo, Ipp32s lastPredIdx)
                     };
                     if (ClipMV(mv))
                         continue;
-                    Ipp32s mvCost = MvCost1RefLog(mv, refIdx, predInfo, list);
+                    Ipp32s mvCost = MvCost1RefLog(mv, (Ipp8s)refIdx, predInfo, list);
                     Ipp32s cost = MatchingMetricPu(src, meInfo, &mv, ref, useHadamard) + mvCost;
                     if (costBest > cost) {
                         costBest = cost;
@@ -2444,7 +2444,7 @@ void H265CU::MePuExperimental(H265MEInfo *meInfo, Ipp32s lastPredIdx)
                     };
                     if (ClipMV(mv))
                         continue;
-                    Ipp32s mvCost = MvCost1RefLog(mv, refIdx, predInfo, list);
+                    Ipp32s mvCost = MvCost1RefLog(mv, (Ipp8s)refIdx, predInfo, list);
                     Ipp32s cost = MatchingMetricPu(src, meInfo, &mv, ref, useHadamard) + mvCost;
                     if (costBest > cost) {
                         costBest = cost;
@@ -2511,8 +2511,8 @@ void H265CU::MePuExperimental(H265MEInfo *meInfo, Ipp32s lastPredIdx)
                     else
                         mv[i >> 2].mvy += (i & 1) ? 1 : -1;
 
-                    Ipp32s mvCost = MvCost1RefLog(mv[0], idxL0, predInfo, 0) +
-                                    MvCost1RefLog(mv[1], idxL1, predInfo, 1);
+                    Ipp32s mvCost = MvCost1RefLog(mv[0], (Ipp8s)idxL0, predInfo, 0) +
+                                    MvCost1RefLog(mv[1], (Ipp8s)idxL1, predInfo, 1);
                     Ipp32s cost = MatchingMetricBipredPu(src, meInfo, refF->y, refF->pitch_luma,
                                                          refB->y, refB->pitch_luma, mv, useHadamard);
                     cost += mvCost;
@@ -2583,7 +2583,7 @@ void H265CU::MePuExperimental(H265MEInfo *meInfo, Ipp32s lastPredIdx)
     }
     else if (costList[0] <= costList[1] && costList[0] <= costBiBest) {
         meInfo->interDir = INTER_DIR_PRED_L0;
-        meInfo->refIdx[0] = refIdxBest[0];
+        meInfo->refIdx[0] = (Ipp8s)refIdxBest[0];
         meInfo->refIdx[1] = -1;
         meInfo->MV[0] = mvRefBest[0][idxL0];
         meInfo->MV[1] = MV_ZERO;
@@ -2591,14 +2591,14 @@ void H265CU::MePuExperimental(H265MEInfo *meInfo, Ipp32s lastPredIdx)
     else if (costList[1] <= costBiBest) {
         meInfo->interDir = INTER_DIR_PRED_L1;
         meInfo->refIdx[0] = -1;
-        meInfo->refIdx[1] = refIdxBest[1];
+        meInfo->refIdx[1] = (Ipp8s)refIdxBest[1];
         meInfo->MV[0] = MV_ZERO;
         meInfo->MV[1] = mvRefBest[1][idxL1];
     }
     else {
         meInfo->interDir = INTER_DIR_PRED_L0 + INTER_DIR_PRED_L1;
-        meInfo->refIdx[0] = refIdxBest[0];
-        meInfo->refIdx[1] = refIdxBest[1];
+        meInfo->refIdx[0] = (Ipp8s)refIdxBest[0];
+        meInfo->refIdx[1] = (Ipp8s)refIdxBest[1];
         meInfo->MV[0] = mvBiBest[0];
         meInfo->MV[1] = mvBiBest[1];
     }

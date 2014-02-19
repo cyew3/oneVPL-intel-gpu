@@ -692,7 +692,6 @@ eMFXPlatform MFX_Utility::GetPlatform(VideoCORE * core, mfxVideoParam * par)
     case MFX_HW_HSW_ULT:
     case MFX_HW_HSW:
     case MFX_HW_BDW:
-    case MFX_HW_CHV:
     case MFX_HW_SCL:
         if (isMVCProfile(par->mfx.CodecProfile))
         {

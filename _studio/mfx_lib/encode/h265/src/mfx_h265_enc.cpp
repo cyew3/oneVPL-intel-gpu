@@ -799,7 +799,7 @@ mfxStatus H265Encoder::Init(const mfxVideoParam *param, const mfxExtCodingOption
     m_logMvCostTable[(1 << 15)] = 1;
     Ipp32f log2reciproc = 2 / log(2.0f);
     for (Ipp32s i = 1; i < (1 << 15); i++)
-        m_logMvCostTable[(1 << 15) + i] = m_logMvCostTable[(1 << 15) - i] = log(i + 1.0f) * log2reciproc + 2;
+        m_logMvCostTable[(1 << 15) + i] = m_logMvCostTable[(1 << 15) - i] = (Ipp8u)(log(i + 1.0f) * log2reciproc + 2);
 
     m_iProfileIndex = 0;
     //m_bMakeNextFrameKey = true; // Ensure that we always start with a key frame.
