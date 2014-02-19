@@ -290,6 +290,7 @@ foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/shared/src )
     ${prefix}/mfx_common_int.cpp
     ${prefix}/mfx_enc_common.cpp
     ${prefix}/mfx_h264_enc_common.cpp
+    ${prefix}/mfx_vp8_enc_common.cpp
     ${prefix}/mfx_mpeg2_dec_common.cpp
     ${prefix}/mfx_vc1_dec_common.cpp
     ${prefix}/mfx_vc1_enc_common.cpp
@@ -386,7 +387,8 @@ foreach( variant sw hw )
     umc_codecs_merged_${variant}
     umc_codecs_merged
     umc_io_merged_${variant}
-    umc_core_merged 
+    umc_core_merged
+    vpx
     ${ITT_LIBS}
     ippmsdk_l ippj_l ippvc_l ippcc_l ippcv_l ippi_l ipps_l ippcore_l
     pthread

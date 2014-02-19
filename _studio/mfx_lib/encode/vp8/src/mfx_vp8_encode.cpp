@@ -12,6 +12,7 @@
 
 #include "mfxdefs.h"
 #include "mfx_vp8_encode.h"
+#include "mfx_platform_headers.h"
 #include "mfx_task.h"
 #include "mfx_session.h"
 #include "vm_interlocked.h"
