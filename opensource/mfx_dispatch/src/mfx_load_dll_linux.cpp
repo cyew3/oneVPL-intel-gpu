@@ -1,6 +1,6 @@
 /* ****************************************************************************** *\
 
-Copyright (C) 2012-2013 Intel Corporation.  All rights reserved.
+Copyright (C) 2012-2014 Intel Corporation.  All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
@@ -61,6 +61,7 @@ const msdk_disp_char * defaultDLLName[2] = {"libmfxhw32.so",
                                             "libmfxsw32.so"};
 const msdk_disp_char * defaultAudioDLLName[2] = {"libmfxaudiosw32.so",
                                             "libmfxaudiosw32.so"};
+const msdk_disp_char * defaultRTName =  {"libmfxrt32.so"};
 #endif // (defined(WIN64))
 
 #else // defined(_DEBUG)
@@ -90,6 +91,7 @@ const msdk_disp_char * defaultDLLName[2] = {"libmfxhw32_d.so",
                                             "libmfxsw32_d.so"};
 const msdk_disp_char * defaultAudioDLLName[2] = {"libmfxaudiosw32_d.so",
                                             "libmfxaudiosw32_d.so"};
+const msdk_disp_char * defaultRTName =  {"libmfxrt32_d.so"};
 
 #endif // (defined(WIN64))
 

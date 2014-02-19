@@ -18,7 +18,10 @@ LOCAL_SRC_FILES := $(addprefix src/, \
     mfx_load_dll.cpp \
     mfx_load_dll_linux.cpp \
     mfx_win_reg_key.cpp \
-    mfx_dxva2_device.cpp)
+    mfx_dxva2_device.cpp \
+    mfx_plugin_hive_linux.cpp \
+    mfx_plugin_cfg_parser.cpp \
+    mfx_load_plugin.cpp)
 
 LOCAL_C_INCLUDES += \
     $(MFX_C_INCLUDES) \
@@ -49,7 +52,10 @@ LOCAL_SRC_FILES := $(addprefix src/, \
     mfx_load_dll.cpp \
     mfx_load_dll_linux.cpp \
     mfx_win_reg_key.cpp \
-    mfx_dxva2_device.cpp)
+    mfx_dxva2_device.cpp \
+    mfx_plugin_hive_linux.cpp \
+    mfx_plugin_cfg_parser.cpp \
+    mfx_load_plugin.cpp)
 
 LOCAL_C_INCLUDES += \
     $(MFX_C_INCLUDES) \
