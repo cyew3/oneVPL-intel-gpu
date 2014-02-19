@@ -25,12 +25,8 @@
 #include "cm_vm.h"
 #include "mfx_camera_plugin_cm.h"
 #include "mfx_camera_plugin_utils.h"
+#include "genx_hsw_camerapipe_isa.h"
 
-const unsigned char isaCode_CameraPipeGenx[] = {
-                                                #include "CameraPipe_genx.txt"
-                                               };
-const unsigned char *isaCode_CameraPipe[1] =  {isaCode_CameraPipeGenx};
-const unsigned int isaCodeSize_CameraPipe[1] = {sizeof(isaCode_CameraPipeGenx)};
 
 namespace
 {
@@ -950,7 +946,7 @@ void CmContext::Setup(
     if (m_device->CreateQueue(m_queue) != CM_SUCCESS)
         throw CmRuntimeError();
 
-    m_program = ReadProgram(m_device, isaCode_CameraPipe[0], SizeOf(isaCode_CameraPipeGenx));
+    m_program = ReadProgram(m_device, genx_hsw_camerapipe, SizeOf(genx_hsw_camerapipe));
 
     CreateCameraKernels();
     CreateCameraTasks();
