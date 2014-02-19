@@ -44,7 +44,7 @@ mfxStatus MFXHWVideoENCODEVP8::Init(mfxVideoParam * par)
 #else
     ENCODE_CAPS_VP8             caps = {0};
     sts = MFX_VP8ENC::QueryHwCaps(m_core, caps);
-    MFX_CHECK_STS(sts);
+    MFX_CHECK(sts == MFX_ERR_NONE, MFX_WRN_PARTIAL_ACCELERATION);
 #ifdef DDI_ENCODE_IMPL
     if (impl.get() == 0 && caps.EncodeFunc)
     {
@@ -77,6 +77,9 @@ mfxStatus MFXHWVideoENCODEVP8::Query(
     mfxVideoParam * out)
 { 
     MFX_CHECK_NULL_PTR2(core, out);
+
+    ENCODE_CAPS_VP8             caps = {0};
+    MFX_CHECK(MFX_ERR_NONE == MFX_VP8ENC::QueryHwCaps(core, caps), MFX_WRN_PARTIAL_ACCELERATION);
     
     return   (in == 0) ? MFX_VP8ENC::SetSupportedParameters(out):
         MFX_VP8ENC::CheckParameters(in,out);

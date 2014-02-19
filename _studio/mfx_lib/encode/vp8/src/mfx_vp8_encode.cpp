@@ -3,7 +3,7 @@
 //  This software is supplied under the terms of a license agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in accordance with the terms of that agreement.
-//        Copyright (c) 2008-2013 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2008-2014 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -18,6 +18,8 @@
 #include "mfx_enc_common.h"
 #include "mfx_vp8_enc_common.h"
 #include "mfx_tools.h"
+#include "ipps.h"
+#include "umc_defs.h"
 
 #pragma warning(disable:4505)
 namespace WEBM_VP8
@@ -850,8 +852,8 @@ mfxStatus MFXVideoENCODEVP8::EncodeFrame(mfxEncodeCtrl *, mfxEncodeInternalParam
     }
 
     WEBM_VP8::vpx_codec_enc_cfg_t *cfg = (WEBM_VP8::vpx_codec_enc_cfg_t *)vpx_cfg;
-    WEBM_VP8::int64_t frame_start = (cfg->g_timebase.den * (WEBM_VP8::int64_t)(m_frameCount)*cfg->g_timebase.num*m_mfxVideoParam.mfx.FrameInfo.FrameRateExtD) / cfg->g_timebase.num/m_mfxVideoParam.mfx.FrameInfo.FrameRateExtN;
-    WEBM_VP8::int64_t next_frame_start = (cfg->g_timebase.den * (WEBM_VP8::int64_t)(m_frameCount + 1)*cfg->g_timebase.num*m_mfxVideoParam.mfx.FrameInfo.FrameRateExtD) / cfg->g_timebase.num/m_mfxVideoParam.mfx.FrameInfo.FrameRateExtN;
+    /*WEBM_VP8::*/int64_t frame_start = (cfg->g_timebase.den * (/*WEBM_VP8::*/int64_t)(m_frameCount)*cfg->g_timebase.num*m_mfxVideoParam.mfx.FrameInfo.FrameRateExtD) / cfg->g_timebase.num/m_mfxVideoParam.mfx.FrameInfo.FrameRateExtN;
+    /*WEBM_VP8::*/int64_t next_frame_start = (cfg->g_timebase.den * (/*WEBM_VP8::*/int64_t)(m_frameCount + 1)*cfg->g_timebase.num*m_mfxVideoParam.mfx.FrameInfo.FrameRateExtD) / cfg->g_timebase.num/m_mfxVideoParam.mfx.FrameInfo.FrameRateExtN;
 
     if (surface) 
     {
