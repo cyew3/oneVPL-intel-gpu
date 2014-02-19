@@ -48,8 +48,7 @@ namespace MFX_HEVC_PP
     #define MAKE_NAME( func ) func ## _px
 #endif
 
-    void MAKE_NAME(h265_ProcessSaoCuOrg_Luma_16u)(PixType* pRec, Ipp32s stride, Ipp32s saoType, PixType* tmpL, PixType* tmpU, Ipp32u maxCUWidth, Ipp32u maxCUHeight, \
-            Ipp32s picWidth, Ipp32s picHeight, Ipp32s* pOffsetEo, Ipp16u* pOffsetBo, Ipp16u* pClipTable, Ipp32u CUPelX, Ipp32u CUPelY)
+    void MAKE_NAME(h265_ProcessSaoCuOrg_Luma_16u)(SAOCU_ORG_PARAMETERS_LIST_U16)
     {
         Ipp32s tmpUpBuff1[65];
         Ipp32s tmpUpBuff2[65];
@@ -238,8 +237,7 @@ namespace MFX_HEVC_PP
     }
 
 
-    void MAKE_NAME(h265_ProcessSaoCu_Luma_16u) (PixType* pRec, Ipp32s stride, Ipp32s saoType, PixType* tmpL, PixType* tmpU, Ipp32u maxCUWidth, Ipp32u maxCUHeight,
-    Ipp32s picWidth, Ipp32s picHeight, Ipp32s* pOffsetEo, Ipp16u* pOffsetBo, Ipp16u* pClipTable, Ipp32u CUPelX, Ipp32u CUPelY, CTBBorders pbBorderAvail)
+    void MAKE_NAME(h265_ProcessSaoCu_Luma_16u)(SAOCU_PARAMETERS_LIST_U16)
     {
         Ipp32s tmpUpBuff1[65];
         Ipp32s tmpUpBuff2[65];

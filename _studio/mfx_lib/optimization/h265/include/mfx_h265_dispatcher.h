@@ -391,6 +391,14 @@ namespace MFX_HEVC_PP
     void h265_ProcessSaoCu_Luma_8u_sse(SAOCU_PARAMETERS_LIST);
     void h265_ProcessSaoCu_Luma_8u_ssse3(SAOCU_PARAMETERS_LIST);
 
+    void h265_ProcessSaoCuOrg_Luma_16u_px( SAOCU_ORG_PARAMETERS_LIST_U16 );
+    void h265_ProcessSaoCuOrg_Luma_16u_sse( SAOCU_ORG_PARAMETERS_LIST_U16 );
+    void h265_ProcessSaoCuOrg_Luma_16u_ssse3( SAOCU_ORG_PARAMETERS_LIST_U16 );
+
+    void h265_ProcessSaoCu_Luma_16u_px(SAOCU_PARAMETERS_LIST_U16);
+    void h265_ProcessSaoCu_Luma_16u_sse(SAOCU_PARAMETERS_LIST_U16);
+    void h265_ProcessSaoCu_Luma_16u_ssse3(SAOCU_PARAMETERS_LIST_U16);
+
     void h265_GetCtuStatistics_8u_px( SAOCU_ENCODE_PARAMETERS_LIST );
     void h265_GetCtuStatistics_8u_sse( SAOCU_ENCODE_PARAMETERS_LIST );
     // [INTRA predict]
@@ -470,6 +478,27 @@ namespace MFX_HEVC_PP
         Ipp8u* PredPel,
         Ipp8u* FiltPel,
         Ipp8u* pels,
+        Ipp32s width);
+
+    void h265_PredictIntra_Ang_16u_px(
+        Ipp32s mode,
+        Ipp16u* PredPel,
+        Ipp16u* pels,
+        Ipp32s pitch,
+        Ipp32s width);
+
+    void h265_PredictIntra_Ang_16u_sse(
+        Ipp32s mode,
+        Ipp16u* PredPel,
+        Ipp16u* pels,
+        Ipp32s pitch,
+        Ipp32s width);
+
+    void h265_PredictIntra_Ang_16u_ssse3(
+        Ipp32s mode,
+        Ipp16u* PredPel,
+        Ipp16u* pels,
+        Ipp32s pitch,
         Ipp32s width);
 
     // Interpolation

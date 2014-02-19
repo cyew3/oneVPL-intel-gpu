@@ -527,7 +527,7 @@ void ReconstructorT<bitDepth, H265PlaneType>::PredictIntra(Ipp32s predMode, H265
             MFX_HEVC_PP::h265_PredictIntra_Hor_16u(pels, rec, pitch, width, bit_depth, 1);
             break;
         default:
-            MFX_HEVC_PP::h265_PredictIntra_Ang_16u_px(predMode, pels, rec, pitch, width);
+            MFX_HEVC_PP::NAME(h265_PredictIntra_Ang_16u)(predMode, pels, rec, pitch, width);
         }
     }
     else

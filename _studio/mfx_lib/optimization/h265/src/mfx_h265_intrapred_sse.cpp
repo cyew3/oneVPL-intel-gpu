@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2013 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2013-2014 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -276,15 +276,15 @@ namespace MFX_HEVC_PP
 
     void MAKE_NAME(h265_PredictIntra_Ang_8u) (
         Ipp32s mode,
-        PixType* PredPel,
-        PixType* pels,
+        Ipp8u* PredPel,
+        Ipp8u* pels,
         Ipp32s pitch,
         Ipp32s width)
     {
         Ipp32s intraPredAngle = intraPredAngleTable[mode];
-        PixType refMainBuf[4*64+1];
-        PixType *refMain = refMainBuf + 128;
-        PixType *PredPel1, *PredPel2;
+        Ipp8u refMainBuf[4*64+1];
+        Ipp8u *refMain = refMainBuf + 128;
+        Ipp8u *PredPel1, *PredPel2;
         Ipp32s invAngle = invAngleTable[mode];
         Ipp32s invAngleSum;
         Ipp32s i;
@@ -370,6 +370,317 @@ namespace MFX_HEVC_PP
 
     } // void h265_PredictIntra_Ang_8u(...)
 
+    static inline void PredAngle_4x4_16u_SSE4(Ipp16u *pSrc, Ipp16u *pDst, Ipp32s dstPitch, Ipp32s angle)
+    {
+        Ipp32s iIdx;
+        Ipp16s iFact;
+        Ipp32s pos = 0;
+        __m128i r0, r1;
+
+        for (int j = 0; j < 4; j++)
+        {
+            pos += angle;
+            iIdx = pos >> 5;
+            iFact = pos & 31;
+
+            // process i = 0..3
+
+            r0 = _mm_loadl_epi64((__m128i *)&pSrc[iIdx+1]);
+            r1 = _mm_loadl_epi64((__m128i *)&pSrc[iIdx+2]);
+
+            r1 = _mm_sub_epi16(r1, r0);
+            r1 = _mm_mullo_epi16(r1, _mm_set1_epi16(iFact));
+            r1 = _mm_add_epi16(r1, _mm_set1_epi16(16));
+            r1 = _mm_srai_epi16(r1, 5);
+            r0 = _mm_add_epi16(r0, r1);
+            
+            _mm_storel_epi64((__m128i *)&pDst[j*dstPitch], r0);
+        }
+    }
+
+    static inline void PredAngle_8x8_16u_SSE4(Ipp16u *pSrc, Ipp16u *pDst, Ipp32s dstPitch, Ipp32s angle)
+    {
+        Ipp32s iIdx;
+        Ipp16s iFact;
+        Ipp32s pos = 0;
+        __m128i r0, r1;
+
+        for (int j = 0; j < 8; j++)
+        {
+            pos += angle;
+            iIdx = pos >> 5;
+            iFact = pos & 31;
+
+            // process i = 0..7
+
+            r0 = _mm_loadu_si128((__m128i *)&pSrc[iIdx+1]);
+            r1 = _mm_loadu_si128((__m128i *)&pSrc[iIdx+2]);
+
+            r1 = _mm_sub_epi16(r1, r0);
+            r1 = _mm_mullo_epi16(r1, _mm_set1_epi16(iFact));
+            r1 = _mm_add_epi16(r1, _mm_set1_epi16(16));
+            r1 = _mm_srai_epi16(r1, 5);
+            r0 = _mm_add_epi16(r0, r1);
+            
+            _mm_storeu_si128((__m128i *)&pDst[j*dstPitch], r0);
+        }
+    }
+
+    static inline void PredAngle_16x16_16u_SSE4(Ipp16u *pSrc, Ipp16u *pDst, Ipp32s dstPitch, Ipp32s angle)
+    {
+        Ipp32s iIdx;
+        Ipp16s iFact;
+        Ipp32s pos = 0;
+        __m128i r0, r1, r2, r3;
+
+        for (int j = 0; j < 16; j++)
+        {
+            pos += angle;
+            iIdx = pos >> 5;
+            iFact = pos & 31;
+
+            // process i = 0..15
+
+            r0 = _mm_loadu_si128((__m128i *)&pSrc[iIdx+1]);
+            r1 = _mm_loadu_si128((__m128i *)&pSrc[iIdx+2]);
+            r2 = _mm_loadu_si128((__m128i *)&pSrc[iIdx+9]);
+            r3 = _mm_loadu_si128((__m128i *)&pSrc[iIdx+10]);
+            
+            r1 = _mm_sub_epi16(r1, r0);
+            r3 = _mm_sub_epi16(r3, r2);
+            r1 = _mm_mullo_epi16(r1, _mm_set1_epi16(iFact));
+            r3 = _mm_mullo_epi16(r3, _mm_set1_epi16(iFact));
+            r1 = _mm_add_epi16(r1, _mm_set1_epi16(16));
+            r3 = _mm_add_epi16(r3, _mm_set1_epi16(16));
+            r1 = _mm_srai_epi16(r1, 5);
+            r3 = _mm_srai_epi16(r3, 5);
+            r0 = _mm_add_epi16(r0, r1);
+            r2 = _mm_add_epi16(r2, r3);
+
+            _mm_storeu_si128((__m128i *)&pDst[j*dstPitch+0], r0);
+            _mm_storeu_si128((__m128i *)&pDst[j*dstPitch+8], r2);
+        }
+    }
+
+    static inline void PredAngle_32x32_16u_SSE4(Ipp16u *pSrc, Ipp16u *pDst, Ipp32s dstPitch, Ipp32s angle)
+    {
+        Ipp32s iIdx;
+        Ipp16s iFact;
+        Ipp32s pos = 0;
+        __m128i r0, r1, r2, r3;
+
+        for (int j = 0; j < 32; j++)
+        {
+            pos += angle;
+            iIdx = pos >> 5;
+            iFact = pos & 31;
+
+            for (int i = 0; i < 32; i += 16)
+            {
+                r0 = _mm_loadu_si128((__m128i *)&pSrc[iIdx+1+i]);
+                r1 = _mm_loadu_si128((__m128i *)&pSrc[iIdx+2+i]);
+                r2 = _mm_loadu_si128((__m128i *)&pSrc[iIdx+9+i]);
+                r3 = _mm_loadu_si128((__m128i *)&pSrc[iIdx+10+i]);
+
+                r1 = _mm_sub_epi16(r1, r0);
+                r3 = _mm_sub_epi16(r3, r2);
+                r1 = _mm_mullo_epi16(r1, _mm_set1_epi16(iFact));
+                r3 = _mm_mullo_epi16(r3, _mm_set1_epi16(iFact));
+                r1 = _mm_add_epi16(r1, _mm_set1_epi16(16));
+                r3 = _mm_add_epi16(r3, _mm_set1_epi16(16));
+                r1 = _mm_srai_epi16(r1, 5);
+                r3 = _mm_srai_epi16(r3, 5);
+                r0 = _mm_add_epi16(r0, r1);
+                r2 = _mm_add_epi16(r2, r3);
+
+                _mm_storeu_si128((__m128i *)&pDst[j*dstPitch+0+i], r0);
+                _mm_storeu_si128((__m128i *)&pDst[j*dstPitch+8+i], r2);
+            }
+        }
+    }
+
+    static inline void Transpose_4x4_16u_SSE4(Ipp16u *pSrc, Ipp32s srcPitch, Ipp16u *pDst, Ipp32s dstPitch)
+    {
+        __m128i r0, r1, r2, r3;
+
+        r0 = _mm_loadl_epi64((__m128i*)&pSrc[0*srcPitch]);  // 03,02,01,00
+        r1 = _mm_loadl_epi64((__m128i*)&pSrc[1*srcPitch]);  // 13,12,11,10
+        r2 = _mm_loadl_epi64((__m128i*)&pSrc[2*srcPitch]);  // 23,22,21,20
+        r3 = _mm_loadl_epi64((__m128i*)&pSrc[3*srcPitch]);  // 33,32,31,30
+
+        r0 = _mm_unpacklo_epi16(r0, r1);
+        r2 = _mm_unpacklo_epi16(r2, r3);
+        r1 = r0;
+        r0 = _mm_unpacklo_epi32(r0, r2);
+        r1 = _mm_unpackhi_epi32(r1, r2);
+
+        _mm_storel_pi((__m64 *)&pDst[0*dstPitch], _mm_castsi128_ps(r0));    // MOVLPS
+        _mm_storeh_pi((__m64 *)&pDst[1*dstPitch], _mm_castsi128_ps(r0));    // MOVHPS
+        _mm_storel_pi((__m64 *)&pDst[2*dstPitch], _mm_castsi128_ps(r1));
+        _mm_storeh_pi((__m64 *)&pDst[3*dstPitch], _mm_castsi128_ps(r1));
+    }
+
+    static inline void Transpose_4x8_16u_SSE4(Ipp16u *pSrc, Ipp32s srcPitch, Ipp16u *pDst, Ipp32s dstPitch)
+    {
+        __m128i r0, r1, r2, r3, r4, r5, r6, r7;
+        r0 = _mm_loadl_epi64((__m128i*)&pSrc[0*srcPitch]);  // 03,02,01,00
+        r1 = _mm_loadl_epi64((__m128i*)&pSrc[1*srcPitch]);  // 13,12,11,10
+        r2 = _mm_loadl_epi64((__m128i*)&pSrc[2*srcPitch]);  // 23,22,21,20
+        r3 = _mm_loadl_epi64((__m128i*)&pSrc[3*srcPitch]);  // 33,32,31,30
+        r4 = _mm_loadl_epi64((__m128i*)&pSrc[4*srcPitch]);  // 43,42,41,40
+        r5 = _mm_loadl_epi64((__m128i*)&pSrc[5*srcPitch]);  // 53,52,51,50
+        r6 = _mm_loadl_epi64((__m128i*)&pSrc[6*srcPitch]);  // 63,62,61,60
+        r7 = _mm_loadl_epi64((__m128i*)&pSrc[7*srcPitch]);  // 73,72,71,70
+
+        r0 = _mm_unpacklo_epi16(r0, r1);
+        r2 = _mm_unpacklo_epi16(r2, r3);
+        r4 = _mm_unpacklo_epi16(r4, r5);
+        r6 = _mm_unpacklo_epi16(r6, r7);
+
+        r1 = r0;
+        r0 = _mm_unpacklo_epi32(r0, r2);
+        r1 = _mm_unpackhi_epi32(r1, r2);
+        r5 = r4;
+        r4 = _mm_unpacklo_epi32(r4, r6);
+        r5 = _mm_unpackhi_epi32(r5, r6);
+        r2 = r0;
+        r0 = _mm_unpacklo_epi64(r0, r4);
+        r2 = _mm_unpackhi_epi64(r2, r4);
+        r3 = r1;
+        r1 = _mm_unpacklo_epi64(r1, r5);
+        r3 = _mm_unpackhi_epi64(r3, r5);
+
+        _mm_storeu_si128((__m128i *)&pDst[0*dstPitch], r0);
+        _mm_storeu_si128((__m128i *)&pDst[1*dstPitch], r2);
+        _mm_storeu_si128((__m128i *)&pDst[2*dstPitch], r1);
+        _mm_storeu_si128((__m128i *)&pDst[3*dstPitch], r3);
+    }
+
+    static inline void Transpose_8x8_16u_SSE4(Ipp16u *pSrc, Ipp32s srcPitch, Ipp16u *pDst, Ipp32s dstPitch)
+    {
+        for (int j = 0; j < 8; j += 4)
+        {
+            Transpose_4x8_16u_SSE4(&pSrc[j], srcPitch, &pDst[j*dstPitch], dstPitch);
+        }
+    }
+
+    static inline void Transpose_16x16_16u_SSE4(Ipp16u *pSrc, Ipp32s srcPitch, Ipp16u *pDst, Ipp32s dstPitch)
+    {
+        for (int j = 0; j < 16; j += 4)
+        {
+            for (int i = 0; i < 16; i += 8)
+            {
+                Transpose_4x8_16u_SSE4(&pSrc[i*srcPitch+j], srcPitch, &pDst[j*dstPitch+i], dstPitch);
+            }
+        }
+    }
+
+    static inline void Transpose_32x32_16u_SSE4(Ipp16u *pSrc, Ipp32s srcPitch, Ipp16u *pDst, Ipp32s dstPitch)
+    {
+        for (int j = 0; j < 32; j += 4)
+        {
+            for (int i = 0; i < 32; i += 8)
+            {
+                Transpose_4x8_16u_SSE4(&pSrc[i*srcPitch+j], srcPitch, &pDst[j*dstPitch+i], dstPitch);
+            }
+        }
+    }
+
+    void MAKE_NAME(h265_PredictIntra_Ang_16u) (
+        Ipp32s mode,
+        Ipp16u* PredPel,
+        Ipp16u* pels,
+        Ipp32s pitch,
+        Ipp32s width)
+    {
+        Ipp32s intraPredAngle = intraPredAngleTable[mode];
+        Ipp16u refMainBuf[4*64+1];
+        Ipp16u *refMain = refMainBuf + 128;
+        Ipp16u *PredPel1, *PredPel2;
+        Ipp32s invAngle = invAngleTable[mode];
+        Ipp32s invAngleSum;
+        Ipp32s i;
+
+        if (mode >= 18)
+        {
+            PredPel1 = PredPel;
+            PredPel2 = PredPel + 2 * width + 1;
+        }
+        else
+        {
+            PredPel1 = PredPel + 2 * width;
+            PredPel2 = PredPel + 1;
+        }
+
+        refMain[0] = PredPel[0];
+
+        if (intraPredAngle < 0)
+        {
+            for (i = 1; i <= width; i++)
+            {
+                refMain[i] = PredPel1[i];
+            }
+
+            invAngleSum = 128;
+            for (i = -1; i > ((width * intraPredAngle) >> 5); i--)
+            {
+                invAngleSum += invAngle;
+                refMain[i] = PredPel2[(invAngleSum >> 8) - 1];
+            }
+        }
+        else
+        {
+            for (i = 1; i <= 2*width; i++)
+            {
+                refMain[i] = PredPel1[i];
+            }
+        }
+
+        switch (width)
+        {
+        case 4:
+            if (mode >= 18)
+                PredAngle_4x4_16u_SSE4(refMain, pels, pitch, intraPredAngle);
+            else
+            {
+                Ipp16u buf[4*4];
+                PredAngle_4x4_16u_SSE4(refMain, buf, 4, intraPredAngle);
+                Transpose_4x4_16u_SSE4(buf, 4, pels, pitch);
+            }
+            break;
+        case 8:
+            if (mode >= 18)
+                PredAngle_8x8_16u_SSE4(refMain, pels, pitch, intraPredAngle);
+            else
+            {
+                Ipp16u buf[8*8];
+                PredAngle_8x8_16u_SSE4(refMain, buf, 8, intraPredAngle);
+                Transpose_8x8_16u_SSE4(buf, 8, pels, pitch);
+            }
+            break;
+        case 16:
+            if (mode >= 18)
+                PredAngle_16x16_16u_SSE4(refMain, pels, pitch, intraPredAngle);
+            else
+            {
+                Ipp16u buf[16*16];
+                PredAngle_16x16_16u_SSE4(refMain, buf, 16, intraPredAngle);
+                Transpose_16x16_16u_SSE4(buf, 16, pels, pitch);
+            }
+            break;
+        case 32:
+            if (mode >= 18)
+                PredAngle_32x32_16u_SSE4(refMain, pels, pitch, intraPredAngle);
+            else
+            {
+                Ipp16u buf[32*32];
+                PredAngle_32x32_16u_SSE4(refMain, buf, 32, intraPredAngle);
+                Transpose_32x32_16u_SSE4(buf, 32, pels, pitch);
+            }
+            break;
+        }
+    }
+    
     void MAKE_NAME(h265_PredictIntra_Ang_NoTranspose_8u) (
         Ipp32s mode,
         PixType* PredPel,

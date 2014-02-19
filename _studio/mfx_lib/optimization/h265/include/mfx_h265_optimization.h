@@ -227,9 +227,19 @@ namespace MFX_HEVC_PP
     #define SAOCU_PARAMETERS_LIST Ipp8u* pRec, Ipp32s stride, Ipp32s saoType, Ipp8u* tmpL, Ipp8u* tmpU, Ipp32u maxCUWidth, Ipp32u maxCUHeight, \
     Ipp32s picWidth, Ipp32s picHeight, Ipp32s* pOffsetEo, Ipp8u* pOffsetBo, Ipp8u* pClipTable, Ipp32u CUPelX, Ipp32u CUPelY, CTBBorders pbBorderAvail
 
+    #define SAOCU_ORG_PARAMETERS_LIST_U16 Ipp16u* pRec, Ipp32s stride, Ipp32s saoType, Ipp16u* tmpL, Ipp16u* tmpU, Ipp32u maxCUWidth, Ipp32u maxCUHeight, \
+            Ipp32s picWidth, Ipp32s picHeight, Ipp32s* pOffsetEo, Ipp16u* pOffsetBo, Ipp16u* pClipTable, Ipp32u CUPelX, Ipp32u CUPelY
+
+    #define SAOCU_PARAMETERS_LIST_U16 Ipp16u* pRec, Ipp32s stride, Ipp32s saoType, Ipp16u* tmpL, Ipp16u* tmpU, Ipp32u maxCUWidth, Ipp32u maxCUHeight, \
+    Ipp32s picWidth, Ipp32s picHeight, Ipp32s* pOffsetEo, Ipp16u* pOffsetBo, Ipp16u* pClipTable, Ipp32u CUPelX, Ipp32u CUPelY, CTBBorders pbBorderAvail
+
     typedef void (* PTR_ProcessSaoCuOrg_Luma_8u)( SAOCU_ORG_PARAMETERS_LIST );
 
     typedef void (* PTR_ProcessSaoCu_Luma_8u)( SAOCU_PARAMETERS_LIST );
+
+    typedef void (* PTR_ProcessSaoCuOrg_Luma_16u)( SAOCU_ORG_PARAMETERS_LIST_U16 );
+
+    typedef void (* PTR_ProcessSaoCu_Luma_16u)( SAOCU_PARAMETERS_LIST_U16 );
 
     // [PTR.SAO :: Encode primitivies]
     #define SAOCU_ENCODE_PARAMETERS_LIST int compIdx, const Ipp8u* recBlk, int recStride, const Ipp8u* orgBlk, int orgStride, int width, \
@@ -249,6 +259,13 @@ namespace MFX_HEVC_PP
         Ipp8u* PredPel,
         Ipp8u* FiltPel,
         Ipp8u* pels,
+        Ipp32s width);
+
+    typedef void (* PTR_PredictIntra_Ang_16u)(
+        Ipp32s mode,
+        Ipp16u* PredPel,
+        Ipp16u* pels,
+        Ipp32s pitch,
         Ipp32s width);
 
     //-----------------------------------------------------
@@ -424,6 +441,10 @@ namespace MFX_HEVC_PP
         HEVCPP_API( PTR_ProcessSaoCu_Luma_8u, void, h265_ProcessSaoCu_Luma_8u, (SAOCU_PARAMETERS_LIST));
 
         HEVCPP_API( PTR_GetCtuStatistics_8u, void, h265_GetCtuStatistics_8u, (SAOCU_ENCODE_PARAMETERS_LIST));
+
+        HEVCPP_API( PTR_ProcessSaoCuOrg_Luma_16u, void, h265_ProcessSaoCuOrg_Luma_16u, (SAOCU_ORG_PARAMETERS_LIST_U16));
+        HEVCPP_API( PTR_ProcessSaoCu_Luma_16u, void, h265_ProcessSaoCu_Luma_16u, (SAOCU_PARAMETERS_LIST_U16));
+
         // [INTRA Predict]
         HEVCPP_API( PTR_PredictIntra_Ang_8u, void, h265_PredictIntra_Ang_8u,
             (Ipp32s mode,
@@ -446,6 +467,13 @@ namespace MFX_HEVC_PP
             (Ipp8u* PredPel,
             Ipp8u* FiltPel,
             Ipp8u* pels,
+            Ipp32s width));
+
+        HEVCPP_API( PTR_PredictIntra_Ang_16u, void, h265_PredictIntra_Ang_16u,
+            (Ipp32s mode,
+            Ipp16u* PredPel,
+            Ipp16u* pels,
+            Ipp32s pitch,
             Ipp32s width));
 
         // [Interpolation]
@@ -823,12 +851,6 @@ namespace MFX_HEVC_PP
         h265_GetPredPelsChromaNV12_8u(pSrc, PredPel, blkSize, srcPitch, tpIf, lfIf, tlIf);
     }
 
-    void h265_PredictIntra_Ang_16u_px(Ipp32s mode,
-        Ipp16u* PredPel,
-        Ipp16u* pels,
-        Ipp32s pitch,
-        Ipp32s width);
-
     /* interpolation, version from Jon/Ken */
     void Interp_NoAvg(
         const Ipp16u* pSrc, unsigned int srcPitch, 
@@ -903,13 +925,6 @@ namespace MFX_HEVC_PP
 
     void h265_AverageModeB_px(short *pSrc, unsigned int srcPitch, short *pAvg, unsigned int avgPitch, Ipp16u *pDst, unsigned int dstPitch, int width, int height, unsigned bit_depth);
 
-    void h265_ProcessSaoCuOrg_Luma_16u_px (Ipp16u* pRec, Ipp32s stride, Ipp32s saoType, Ipp16u* tmpL, Ipp16u* tmpU, Ipp32u maxCUWidth, Ipp32u maxCUHeight,
-            Ipp32s picWidth, Ipp32s picHeight, Ipp32s* pOffsetEo, Ipp16u* pOffsetBo, Ipp16u* pClipTable, Ipp32u CUPelX, Ipp32u CUPelY);
-
-    void h265_ProcessSaoCu_Luma_16u_px (Ipp16u* pRec, Ipp32s stride, Ipp32s saoType, Ipp16u* tmpL, Ipp16u* tmpU, Ipp32u maxCUWidth, Ipp32u maxCUHeight,
-        Ipp32s picWidth, Ipp32s picHeight, Ipp32s* pOffsetEo, Ipp16u* pOffsetBo, Ipp16u* pClipTable, Ipp32u CUPelX, Ipp32u CUPelY, CTBBorders pbBorderAvail);
-
-
     inline void h265_ProcessSaoCuOrg_Luma(Ipp8u* pRec, Ipp32s stride, Ipp32s saoType, Ipp8u* tmpL, Ipp8u* tmpU, Ipp32u maxCUWidth, Ipp32u maxCUHeight,
             Ipp32s picWidth, Ipp32s picHeight, Ipp32s* pOffsetEo, Ipp8u* pOffsetBo, Ipp8u* pClipTable, Ipp32u CUPelX, Ipp32u CUPelY)
     {
@@ -920,7 +935,7 @@ namespace MFX_HEVC_PP
     inline void h265_ProcessSaoCuOrg_Luma(Ipp16u* pRec, Ipp32s stride, Ipp32s saoType, Ipp16u* tmpL, Ipp16u* tmpU, Ipp32u maxCUWidth, Ipp32u maxCUHeight,
             Ipp32s picWidth, Ipp32s picHeight, Ipp32s* pOffsetEo, Ipp16u* pOffsetBo, Ipp16u* pClipTable, Ipp32u CUPelX, Ipp32u CUPelY)
     {
-        h265_ProcessSaoCuOrg_Luma_16u_px(pRec, stride, saoType, tmpL, tmpU, maxCUWidth, maxCUHeight,
+        MFX_HEVC_PP::NAME(h265_ProcessSaoCuOrg_Luma_16u)(pRec, stride, saoType, tmpL, tmpU, maxCUWidth, maxCUHeight,
             picWidth, picHeight, pOffsetEo, pOffsetBo, pClipTable, CUPelX, CUPelY);
     }
 
@@ -934,7 +949,7 @@ namespace MFX_HEVC_PP
     inline void h265_ProcessSaoCu_Luma(Ipp16u* pRec, Ipp32s stride, Ipp32s saoType, Ipp16u* tmpL, Ipp16u* tmpU, Ipp32u maxCUWidth, Ipp32u maxCUHeight,
         Ipp32s picWidth, Ipp32s picHeight, Ipp32s* pOffsetEo, Ipp16u* pOffsetBo, Ipp16u* pClipTable, Ipp32u CUPelX, Ipp32u CUPelY, CTBBorders pbBorderAvail)
     {
-        h265_ProcessSaoCu_Luma_16u_px(pRec, stride, saoType, tmpL, tmpU, maxCUWidth, maxCUHeight,
+        MFX_HEVC_PP::NAME(h265_ProcessSaoCu_Luma_16u)(pRec, stride, saoType, tmpL, tmpU, maxCUWidth, maxCUHeight,
             picWidth, picHeight, pOffsetEo, pOffsetBo, pClipTable, CUPelX, CUPelY, pbBorderAvail);
     }
 } // namespace MFX_HEVC_PP

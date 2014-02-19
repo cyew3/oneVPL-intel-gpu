@@ -309,6 +309,9 @@ using namespace MFX_HEVC_PP;
         g_dispatcher. h265_ProcessSaoCu_Luma_8u = &MFX_HEVC_PP::h265_ProcessSaoCu_Luma_8u_sse;
         g_dispatcher. h265_GetCtuStatistics_8u = &MFX_HEVC_PP::h265_GetCtuStatistics_8u_sse;
 
+        g_dispatcher. h265_ProcessSaoCuOrg_Luma_16u = &MFX_HEVC_PP::h265_ProcessSaoCuOrg_Luma_16u_sse;
+        g_dispatcher. h265_ProcessSaoCu_Luma_16u = &MFX_HEVC_PP::h265_ProcessSaoCu_Luma_16u_px;
+
         //[Interpoaltion]==================================
         // average
         g_dispatcher.h265_AverageModeB = &MFX_HEVC_PP::h265_AverageModeB_sse;
@@ -334,6 +337,8 @@ using namespace MFX_HEVC_PP;
         g_dispatcher.h265_PredictIntra_Ang_All_8u = &MFX_HEVC_PP::h265_PredictIntra_Ang_All_8u_sse;
         g_dispatcher.h265_PredictIntra_Ang_NoTranspose_8u = &MFX_HEVC_PP::h265_PredictIntra_Ang_NoTranspose_8u_sse;
         g_dispatcher.h265_PredictIntra_Ang_All_Even_8u = &MFX_HEVC_PP::h265_PredictIntra_Ang_All_Even_8u_sse;
+
+        g_dispatcher.h265_PredictIntra_Ang_16u = &MFX_HEVC_PP::h265_PredictIntra_Ang_16u_sse;
 
         // [WeightedPred]
         g_dispatcher.h265_CopyWeighted_S16U8 = &MFX_HEVC_PP::h265_CopyWeighted_S16U8_sse;
@@ -447,6 +452,9 @@ using namespace MFX_HEVC_PP;
         g_dispatcher. h265_ProcessSaoCu_Luma_8u = &MFX_HEVC_PP::h265_ProcessSaoCu_Luma_8u_ssse3;
         g_dispatcher. h265_GetCtuStatistics_8u = &MFX_HEVC_PP::h265_GetCtuStatistics_8u_px;// aya!!!
 
+        g_dispatcher. h265_ProcessSaoCuOrg_Luma_16u = &MFX_HEVC_PP::h265_ProcessSaoCuOrg_Luma_16u_ssse3;
+        g_dispatcher. h265_ProcessSaoCu_Luma_16u = &MFX_HEVC_PP::h265_ProcessSaoCu_Luma_16u_px;
+
         //[Interpoaltion]==================================
         // average
         g_dispatcher.h265_AverageModeB = &MFX_HEVC_PP::h265_AverageModeB_ssse3;
@@ -472,6 +480,8 @@ using namespace MFX_HEVC_PP;
         g_dispatcher.h265_PredictIntra_Ang_All_8u = &MFX_HEVC_PP::h265_PredictIntra_Ang_All_8u_ssse3;
         g_dispatcher.h265_PredictIntra_Ang_NoTranspose_8u = &MFX_HEVC_PP::h265_PredictIntra_Ang_NoTranspose_8u_ssse3;
         g_dispatcher.h265_PredictIntra_Ang_All_Even_8u = &MFX_HEVC_PP::h265_PredictIntra_Ang_All_Even_8u_ssse3;
+
+        g_dispatcher.h265_PredictIntra_Ang_16u = &MFX_HEVC_PP::h265_PredictIntra_Ang_16u_ssse3;
 
         // [WeightedPred]
         g_dispatcher.h265_CopyWeighted_S16U8 = &MFX_HEVC_PP::h265_CopyWeighted_S16U8_ssse3;
@@ -585,6 +595,9 @@ using namespace MFX_HEVC_PP;
         g_dispatcher. h265_ProcessSaoCu_Luma_8u = &MFX_HEVC_PP::h265_ProcessSaoCu_Luma_8u_sse;
         g_dispatcher. h265_GetCtuStatistics_8u = &MFX_HEVC_PP::h265_GetCtuStatistics_8u_sse;
 
+        g_dispatcher. h265_ProcessSaoCuOrg_Luma_16u = &MFX_HEVC_PP::h265_ProcessSaoCuOrg_Luma_16u_sse;
+        g_dispatcher. h265_ProcessSaoCu_Luma_16u = &MFX_HEVC_PP::h265_ProcessSaoCu_Luma_16u_px;
+
         //[Interpoaltion]==================================
         // average
         g_dispatcher.h265_AverageModeB = &MFX_HEVC_PP::h265_AverageModeB_avx2;
@@ -610,6 +623,8 @@ using namespace MFX_HEVC_PP;
         g_dispatcher.h265_PredictIntra_Ang_All_8u = &MFX_HEVC_PP::h265_PredictIntra_Ang_All_8u_sse;
         g_dispatcher.h265_PredictIntra_Ang_NoTranspose_8u = &MFX_HEVC_PP::h265_PredictIntra_Ang_NoTranspose_8u_sse;
         g_dispatcher.h265_PredictIntra_Ang_All_Even_8u = &MFX_HEVC_PP::h265_PredictIntra_Ang_All_Even_8u_sse;
+
+        g_dispatcher.h265_PredictIntra_Ang_16u = &MFX_HEVC_PP::h265_PredictIntra_Ang_16u_sse;
 
         // [WeightedPred]
         g_dispatcher.h265_CopyWeighted_S16U8 = &MFX_HEVC_PP::h265_CopyWeighted_S16U8_avx2;
@@ -723,6 +738,9 @@ using namespace MFX_HEVC_PP;
         g_dispatcher. h265_ProcessSaoCu_Luma_8u = &MFX_HEVC_PP::h265_ProcessSaoCu_Luma_8u_px;
         g_dispatcher. h265_GetCtuStatistics_8u = &MFX_HEVC_PP::h265_GetCtuStatistics_8u_px;
 
+        g_dispatcher. h265_ProcessSaoCuOrg_Luma_16u = &MFX_HEVC_PP::h265_ProcessSaoCuOrg_Luma_16u_px;
+        g_dispatcher. h265_ProcessSaoCu_Luma_16u = &MFX_HEVC_PP::h265_ProcessSaoCu_Luma_16u_px;
+
         //[Interpoaltion]==================================
         // average
         g_dispatcher.h265_AverageModeB = &MFX_HEVC_PP::h265_AverageModeB_px;
@@ -748,6 +766,8 @@ using namespace MFX_HEVC_PP;
         g_dispatcher.h265_PredictIntra_Ang_All_8u = &MFX_HEVC_PP::h265_PredictIntra_Ang_All_8u_px;
         g_dispatcher.h265_PredictIntra_Ang_NoTranspose_8u = &MFX_HEVC_PP::h265_PredictIntra_Ang_NoTranspose_8u_px;
         g_dispatcher.h265_PredictIntra_Ang_All_Even_8u = &MFX_HEVC_PP::h265_PredictIntra_Ang_All_Even_8u_px;
+
+        g_dispatcher.h265_PredictIntra_Ang_16u = &MFX_HEVC_PP::h265_PredictIntra_Ang_16u_px;
 
         // [WeightedPred]
         g_dispatcher.h265_CopyWeighted_S16U8 = &MFX_HEVC_PP::h265_CopyWeighted_S16U8_px;
