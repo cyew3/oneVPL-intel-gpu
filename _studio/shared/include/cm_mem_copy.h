@@ -38,7 +38,7 @@ typedef mfxI32 cmStatus;
 
 
 #define CM_SUPPORTED_COPY_SIZE(ROI) (ROI.width <= 65408 && ROI.height <= 4088 )
-#define CM_ALIGNED(PTR) (!((Ipp64u(PTR))&0x3f))
+#define CM_ALIGNED(PTR) (!((Ipp64u(PTR))&0xf))
 
 #ifndef max
 #define max(a,b)            (((a) > (b)) ? (a) : (b))
