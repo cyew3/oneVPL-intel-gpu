@@ -9,7 +9,7 @@ endif
 
 # Build SW Media SDK library
 ifeq ($(MFX_IMPL_SW),)
-  MFX_IMPL_SW:=false
+  MFX_IMPL_SW:=true
 endif
 
 # Build HW OMX plugins
@@ -19,5 +19,5 @@ endif
 
 # Build SW OMX plugins
 ifeq ($(MFX_OMX_IMPL_SW),)
-  MFX_OMX_IMPL_SW:=false
+  MFX_OMX_IMPL_SW:=true
 endif

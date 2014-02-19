@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2013 Intel Corporation. All Rights Reserved.
+Copyright(c) 2013-2014 Intel Corporation. All Rights Reserved.
 
 *********************************************************************************/
 
@@ -19,20 +19,12 @@ Copyright(c) 2013 Intel Corporation. All Rights Reserved.
 
   #define MFX_ENABLE_H265_VIDEO_DECODE
 
+  // H.265 optimization
+  #define MFX_MAKENAME_ATOM
+
+  #define MFX_OMX_PVR_RENDER
+
 #elif MFX_ANDROID_PLATFORM == baytrail
-
-  #define MFX_ENABLE_H264_VIDEO_DECODE
-
-  #define MFX_ENABLE_H264_VIDEO_ENCODE
-  #define MFX_ENABLE_H264_VIDEO_BRC
-  #define MFX_ENABLE_H264_VIDEO_ENCODE_HW
-  #define MFX_ENABLE_MVC_VIDEO_ENCODE_HW
-
-  #define MFX_ENABLE_VC1_VIDEO_DECODE
-
-  #define MFX_ENABLE_VPP
-
-#elif MFX_ANDROID_PLATFORM == mfx_generic
 
   #define MFX_ENABLE_H264_VIDEO_DECODE
   #define MFX_ENABLE_H265_VIDEO_DECODE
@@ -45,6 +37,9 @@ Copyright(c) 2013 Intel Corporation. All Rights Reserved.
   #define MFX_ENABLE_VC1_VIDEO_DECODE
 
   #define MFX_ENABLE_VPP
+
+  // H.265 optimization
+  #define MFX_MAKENAME_ATOM
 
 #else
 

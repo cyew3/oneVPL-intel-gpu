@@ -250,9 +250,9 @@ public:
         // load U
         for (i = 0; i < h; i++) 
         {
-            MFX_CHECK_WITH_ERR(w == BSUtil::MoveNBytes(m_chroma_line.data(), bs, w), MFX_ERR_MORE_DATA);
+            MFX_CHECK_WITH_ERR(w == BSUtil::MoveNBytes(&m_chroma_line.front(), bs, w), MFX_ERR_MORE_DATA);
 
-            const mfxU8* p_chroma = m_chroma_line.data(); // MSVC generates additional load for vector<>'s operator [] in the loop 
+            const mfxU8* p_chroma = &m_chroma_line.front(); // MSVC generates additional load for vector<>'s operator [] in the loop
             mfxU8* p_dest = ptr + i*pitch;
 
             // skipping to have p_dest aligned
@@ -274,9 +274,9 @@ public:
         // load V
         for (i = 0; i < h; i++) 
         {
-            MFX_CHECK_WITH_ERR(w == BSUtil::MoveNBytes(m_chroma_line.data(), bs, w), MFX_ERR_MORE_DATA);
+            MFX_CHECK_WITH_ERR(w == BSUtil::MoveNBytes(&m_chroma_line.front(), bs, w), MFX_ERR_MORE_DATA);
 
-            const mfxU8* p_chroma = m_chroma_line.data();
+            const mfxU8* p_chroma = &m_chroma_line.front();
             mfxU8* p_dest = ptr + i*pitch;
             j = 0;
 #if 0 // ML: OPT: TODO: The below code results in a unexplained slowdown on HSW 

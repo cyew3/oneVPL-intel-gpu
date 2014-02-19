@@ -4,6 +4,7 @@ include $(MFX_HOME)/android/mfx_env.mk
 
 # Setting subdirectories to march thru
 MFX_LOCAL_DIRS = \
+    aac_common \
     asf_spl \
     avi_spl \
     brc \

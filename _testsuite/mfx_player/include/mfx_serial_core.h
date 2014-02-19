@@ -17,6 +17,7 @@ File Name: .h
 #include "mfx_serial_formater.h"
 #include "mfx_serial_collection.h"
 #include <set>
+#include <algorithm>
 
 // internal, mostly necessary to avoid code duplication for templated definition and base ctor call
 template <class T>
@@ -389,8 +390,8 @@ private:
         tstring s = prefix + m_name;
         tstring nckey = key;
 
-        transform(s.begin(), s.end(), s.begin(), ::_totlower);
-        transform(key.begin(), key.end(), nckey.begin(), ::_totlower);
+        std::transform(s.begin(), s.end(), s.begin(), ::_totlower);
+        std::transform(key.begin(), key.end(), nckey.begin(), ::_totlower);
 
         size_t pos = nckey.find(s);
         if (tstring::npos == pos || 0 != pos)

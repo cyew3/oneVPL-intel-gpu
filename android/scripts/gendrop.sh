@@ -6,7 +6,6 @@ mkdir $2
 
 DIRS_TO_COPY=" \
   include \
-  cxx \
   opensource \
   android \
   _studio/mfx_lib \
@@ -45,9 +44,9 @@ PATHS_TO_REMOVE=" \
   android/droid_tree \
   _studio/mfx_lib/audio_decode \
   _studio/mfx_lib/audio_encode \
+  _studio/mfx_lib/plugin \
   _studio/mfx_lib/genx/h264_encode/src/embed_isa.c \
   _studio/mfx_lib/genx/h264_encode/src/genx_hsw_simple_me.cpp \
-  _studio/mfx_lib/genx/h264_encode/src/genx_hsw_simple_me_proto.cpp \
   _studio/mfx_lib/vpp/include/videovme*.h \
   _studio/mfx_lib/vpp/include/meforgen7_5.h \
   _studio/mfx_lib/vpp/src/vme \

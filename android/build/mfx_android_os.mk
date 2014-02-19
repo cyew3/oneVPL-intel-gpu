@@ -21,3 +21,8 @@ ifeq ($(MFX_ANDROID_VERSION), MFX_MCG_JB)
   MFX_C_INCLUDES_OMX += \
     $(TARGET_OUT_HEADERS)/libmix_videoencoder
 endif
+
+ifeq ($(MFX_ANDROID_VERSION), MFX_MCG_KK)
+  MFX_C_INCLUDES_OMX += \
+    $(TARGET_OUT_HEADERS)/libmix_videoencoder
+endif

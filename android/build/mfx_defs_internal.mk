@@ -17,6 +17,7 @@ MFX_CFLAGS_INTERNAL := \
     -msse4.2 -DLINUX32
 
 IPP_ROOT := $(MEDIASDK_ROOT)/ipp/linux/ia32
+MDF_ROOT := $(MEDIASDK_ROOT)/mdf
 
 # See http://software.intel.com/en-us/articles/intel-integrated-performance-primitives-intel-ipp-understanding-cpu-optimized-code-used-in-intel-ipp
 ifneq ($(filter $(MFX_IPP), px),) # C optimized for all IA-32 processors; i386+
@@ -63,7 +64,10 @@ MFX_C_INCLUDES_INTERNAL :=  \
     $(MFX_HOME)/_studio/shared/umc/io/umc_va/include \
     $(MFX_HOME)/_studio/mfx_lib/shared/include \
     $(MFX_HOME)/_studio/mfx_lib/optimization/h265/include \
-    $(IPP_ROOT)/include
+    $(IPP_ROOT)/include \
+    $(MDF_ROOT)/runtime/include \
+    $(MDF_ROOT)/compiler/include \
+    $(MDF_ROOT)/compiler/include/cm
 
 MFX_C_INCLUDES_INTERNAL_HW := \
     $(MFX_C_INCLUDES_INTERNAL) \

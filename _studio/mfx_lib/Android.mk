@@ -26,7 +26,9 @@ MFX_LOCAL_DIRS_IMPL = \
 
 MFX_LOCAL_DIRS_HW = \
     $(addprefix enc_hw/, $(MFX_LOCAL_ENCODERS)) \
-    $(addprefix encode_hw/, $(MFX_LOCAL_ENCODERS))
+    $(addprefix encode_hw/, $(MFX_LOCAL_ENCODERS)) \
+    genx/h264_encode \
+    cmrt_cross_platform
 
 MFX_OPTIMIZATION_FILES = \
     $(patsubst $(LOCAL_PATH)/%, %, $(foreach dir, $(MFX_OPTIMIZATION_DIRS), $(wildcard $(LOCAL_PATH)/mfx_lib/$(dir)/src/*.cpp)))
@@ -114,6 +116,7 @@ MFX_LIB_SHARED_FILES_2 = $(addprefix shared/src/, \
     auxiliary_device.cpp \
     fast_copy.cpp \
     fast_compositing_ddi.cpp \
+    cm_mem_copy.cpp \
     mfx_vpp_vaapi.cpp \
     libmfx_allocator.cpp \
     libmfx_allocator_vaapi.cpp \
