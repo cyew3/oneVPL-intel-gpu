@@ -109,15 +109,58 @@ namespace MFX_VP8ENC
 
         return MFX_ERR_NONE;
 
-    } 
+    }
+
+    mfxU32 ModifyLoopFilterLevelQPBased(mfxU32 QP, mfxU32 loopFilterLevel, mfxU32 frameType)
+    {
+#if 0
+        mfxU16 QPThr[7] = {15, 30, 45, 60, 75, 90, 105};
+        mfxI16 DeltaLoopFilterLevelIntra[8] = {30, 31, 31, 32, 32, 33, 33, 34};
+        mfxI16 DeltaLoopFilterLevelInter[8] = {26, 28, 30, 31, 32, 32, 32, 33}; 
+
+        mfxU8 idx = 0;
+        for (idx = 0; idx < 7; idx++)
+        {
+            if (QP <= QPThr[idx])
+                break;
+        } 
+        mfxI32 loopFilterValue;
+        loopFilterValue = loopFilterLevel + ((QP * (frameType ? DeltaLoopFilterLevelInter[idx] : DeltaLoopFilterLevelIntra[idx]))>>6);
+        return loopFilterValue < 0 ? 0 : loopFilterValue > 63 ? 63 : loopFilterValue;
+#else
+        QP; frameType;
+        return loopFilterLevel;
+#endif
+    }
+
     mfxStatus SetFramesParams(mfxVideoParam * par, mfxU32 frameOrder, sFrameParams *pFrameParams)
     {
+#if defined (MFX_VA_WIN)
+        memset(pFrameParams, 0, sizeof(sFrameParams));
+        pFrameParams->bIntra  = (frameOrder % par->mfx.GopPicSize) == 0 ? true: false; 
+        if (pFrameParams->bIntra)
+        {
+            pFrameParams->bAltRef = 1; // refresh gold_ref with current frame only for key-frames
+            pFrameParams->bGold   = 1; // refresh alt_ref with current frame only for key-frames
+        }
+        pFrameParams->copyToGoldRef = 0; // update gold_ref only with key-frames
+        if (!pFrameParams->bIntra)
+            pFrameParams->copyToAltRef = 1; // copy every last_ref frame to alt_ref
+#else
         pFrameParams->bAltRef = 1;
         pFrameParams->bGold   = 1;
         pFrameParams->bIntra  = (frameOrder % par->mfx.GopPicSize) == 0 ? true: false; 
-        pFrameParams->LFType  = 0;
-        pFrameParams->LFLevel = 16;
-        pFrameParams->Sharpness = 5;
+#endif
+        mfxExtCodingOptionVP8Param *VP8Par = GetExtBuffer(*par);
+        pFrameParams->LFType  = VP8Par->LoopFilterType;
+        for (mfxU8 i = 0; i < 4; i ++)
+        {
+            pFrameParams->LFLevel[i] = (mfxU8)ModifyLoopFilterLevelQPBased(
+                pFrameParams->bIntra ? par->mfx.QPI : par->mfx.QPP,
+                VP8Par->LoopFilterLevel[i],
+                !pFrameParams->bIntra);
+        }
+        pFrameParams->Sharpness = VP8Par->SharpnessLevel;
 
         return MFX_ERR_NONE;  
     }
@@ -282,6 +325,8 @@ namespace MFX_VP8ENC
         if (mfxExtEncoderROI * opts = GetExtBuffer(par))
             m_extROI = *opts;
 
+        if (m_extOpt.EnableMultipleSegments == MFX_CODINGOPTION_UNKNOWN && m_extROI.NumROI)
+            m_extOpt.EnableMultipleSegments = MFX_CODINGOPTION_ON;
 
         m_extParam[0]  = &m_extOpt.Header;    
         m_extParam[1]  = &m_extOpaque.Header;
@@ -482,7 +527,7 @@ namespace MFX_VP8ENC
         return MFX_ERR_NONE;       
     }
 
-    mfxStatus Task::SubmitTask (sFrameEx*  pRecFrame, sFrameEx ** dpb, sFrameParams* pParams, sFrameEx* pRawLocalFrame)
+    mfxStatus Task::SubmitTask (sFrameEx*  pRecFrame, sDpbVP8 &dpb, sFrameParams* pParams, sFrameEx* pRawLocalFrame)
     {
         MFX_CHECK(m_status == TASK_INITIALIZED, MFX_ERR_UNDEFINED_BEHAVIOR);
         MFX_CHECK_NULL_PTR2(pRecFrame, pParams);
@@ -500,9 +545,9 @@ namespace MFX_VP8ENC
 
         if (!m_sFrameParams.bIntra)
         {
-            m_pRecRefFrames[REF_BASE] = dpb[REF_BASE];
-            m_pRecRefFrames[REF_GOLD] = dpb[REF_GOLD];
-            m_pRecRefFrames[REF_ALT]  = dpb[REF_ALT];
+            m_pRecRefFrames[REF_BASE] = dpb.m_refFrames[REF_BASE];
+            m_pRecRefFrames[REF_GOLD] = dpb.m_refFrames[REF_GOLD];
+            m_pRecRefFrames[REF_ALT]  = dpb.m_refFrames[REF_ALT];
         }
 
         MFX_CHECK_STS(LockSurface(m_pRecFrame,m_pCore));

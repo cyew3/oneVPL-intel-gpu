@@ -201,13 +201,14 @@ namespace MFX_VP8ENC
 #endif
 
         m_video = *par;
+        mfxExtCodingOptionVP8* pExtOpt    = GetExtBuffer(m_video);
         {
-            mfxExtCodingOptionVP8*       pExtOpt    = GetExtBuffer(m_video);        
-            mfxExtOpaqueSurfaceAlloc*    pExtOpaque = GetExtBuffer(m_video);
+            mfxExtOpaqueSurfaceAlloc   * pExtOpaque = GetExtBuffer(m_video);
+            mfxExtCodingOptionVP8Param * pVP8Par    = GetExtBuffer(m_video);
 
             MFX_CHECK(CheckFrameSize(par->mfx.FrameInfo.Width, par->mfx.FrameInfo.Height),MFX_ERR_INVALID_VIDEO_PARAM);
 
-            sts1 = MFX_VP8ENC::CheckParametersAndSetDefault(par,&m_video, pExtOpt, pExtOpaque, m_core->IsExternalFrameAllocator(),false);
+            sts1 = MFX_VP8ENC::CheckParametersAndSetDefault(par,&m_video, pExtOpt, pVP8Par, pExtOpaque, m_core->IsExternalFrameAllocator(),false);
             MFX_CHECK(sts1 >=0, sts1);
         }
         m_ddi.reset(CreatePlatformVp8Encoder( m_core));
@@ -239,6 +240,7 @@ namespace MFX_VP8ENC
         sts = m_taskManager.Init(m_core,&m_video,m_ddi->GetReconSurfFourCC());
         MFX_CHECK_STS(sts);
 
+#if !defined (VP8_HYBRID_DUMP_READ)
         // encoding device/context is created inside this Register() call
         sts = m_ddi->Register(m_taskManager.GetRecFramesForReg(), D3DDDIFMT_NV12);
         MFX_CHECK_STS(sts);
@@ -249,8 +251,9 @@ namespace MFX_VP8ENC
         if (sts == MFX_ERR_NONE)
             reqDist.NumFrameMin = reqDist.NumFrameSuggested = (mfxU16)CalcNumSurfRecon(m_video);
         sts = m_ddi->QueryCompBufferInfo(D3DDDIFMT_INTELENCODE_SEGMENTMAP, reqSegMap, m_video.mfx.FrameInfo.Width, m_video.mfx.FrameInfo.Height);
-        if (sts == MFX_ERR_NONE)
+        if (sts == MFX_ERR_NONE && pExtOpt->EnableMultipleSegments == MFX_CODINGOPTION_ON)
             reqSegMap.NumFrameMin = reqSegMap.NumFrameSuggested = (mfxU16)CalcNumSurfRecon(m_video);
+#endif // !VP8_HYBRID_DUMP_READ
 
 #if defined (VP8_HYBRID_DUMP_WRITE_STRUCTS) // dump of MB data to file
         fwrite(&(reqMB.Info), 1, sizeof(mfxFrameInfo), m_bse_dump);
@@ -266,6 +269,7 @@ namespace MFX_VP8ENC
         memcpy(&(m_ddi->hackResponse), &(m_taskManager.m_MBDataDDI_hw.m_response), sizeof(mfxFrameAllocRequest));
 #endif
 
+#if !defined (VP8_HYBRID_DUMP_READ)
         sts = m_ddi->Register(m_taskManager.GetMBFramesForReg(), D3DDDIFMT_INTELENCODE_MBDATA);
         MFX_CHECK_STS(sts);
         if (reqDist.NumFrameMin)
@@ -278,6 +282,7 @@ namespace MFX_VP8ENC
             sts = m_ddi->Register(m_taskManager.GetSegMapFramesForReg(), D3DDDIFMT_INTELENCODE_SEGMENTMAP);
             MFX_CHECK_STS(sts);
         }
+#endif // !VP8_HYBRID_DUMP_READ
 
         sts = m_BSE.Init(m_video);
         MFX_CHECK_STS(sts);
@@ -308,10 +313,11 @@ namespace MFX_VP8ENC
         m_video     = *par;
 
         {
-            mfxExtCodingOptionVP8*       pExtOpt = GetExtBuffer(m_video);        
+            mfxExtCodingOptionVP8*       pExtOpt = GetExtBuffer(m_video);
+            mfxExtCodingOptionVP8Param*  pVP8Par = GetExtBuffer(m_video);
             mfxExtOpaqueSurfaceAlloc*    pExtOpaque = GetExtBuffer(m_video);
 
-            sts1 = MFX_VP8ENC::CheckParametersAndSetDefault(par,&m_video, pExtOpt, pExtOpaque,m_core->IsExternalFrameAllocator(),true);
+            sts1 = MFX_VP8ENC::CheckParametersAndSetDefault(par,&m_video, pExtOpt, pVP8Par,pExtOpaque,m_core->IsExternalFrameAllocator(),true);
             MFX_CHECK(sts1>=0, sts1);
         }
         sts = m_taskManager.Reset(&m_video);
@@ -429,11 +435,10 @@ namespace MFX_VP8ENC
         if (MFX_HW_D3D11 == m_core->GetVAType())
             pSurfaceHdl = (mfxHDL *)&surfacePair;
 
-        sts = SetFramesParams(&m_video,pTask->m_frameOrder, &frameParams);
-        MFX_CHECK_STS(sts);
-
         {
             UMC::AutomaticUMCMutex guard(m_taskMutex);
+            sts = SetFramesParams(&m_video,pTask->m_frameOrder, &frameParams);
+            MFX_CHECK_STS(sts);
             sts = m_taskManager.SubmitTask(pTask,&frameParams);
             MFX_CHECK_STS(sts);
         }
@@ -509,8 +514,11 @@ namespace MFX_VP8ENC
         MFX_CHECK_STS(sts);
 
         //m_BSE.GetModeProbs(pTask->modeCosts);
+        mfxExtCodingOptionVP8Param * extOptVP8 = GetExtBuffer(m_video);
+        bool bInsertIVF = (extOptVP8->WriteIVFHeaders != MFX_CODINGOPTION_OFF);
+        bool bInsertSH  = bInsertIVF && pTask->m_frameOrder==0;
 
-        m_BSE.RunBSP(pTask->m_frameOrder==0, pTask->m_pBitsteam, (TaskHybridDDI *)pTask, layout, m_core
+        m_BSE.RunBSP(bInsertIVF, bInsertSH, pTask->m_pBitsteam, (TaskHybridDDI *)pTask, layout, m_core
 #if defined (VP8_HYBRID_DUMP_READ) || defined (VP8_HYBRID_DUMP_WRITE)
             , m_bse_dump
             , m_bse_dump_size

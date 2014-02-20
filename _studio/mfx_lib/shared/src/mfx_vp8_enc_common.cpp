@@ -106,9 +106,10 @@ static mfxU16 GetDefaultBufferSize(double frame_rate, mfxU16 bitrate, mfxU16& mu
 }
 /*function for const quantization*/
 static mfxU16 GetDefaultBufferSize(mfxU16 w, mfxU16 h, mfxU16& multiplier)
-{    
-    mfxU32 bufSize = ((mfxU32)w*(mfxU32)h*50 + 1000 - 1)/1000;
-    
+{
+    // size of uncompressed frame (YUV 4:2:0) in KB
+    mfxU32 bufSize = (((w*h*3) >> 1) + 1000 - 1)/1000;
+
     multiplier = (mfxU16)((bufSize + RANGE_FOR_MULTIPLIER)/RANGE_FOR_MULTIPLIER);
 
     return (mfxU16)(bufSize/multiplier);
@@ -315,7 +316,7 @@ static mfxStatus CheckMFXParameters(mfxInfoMFX*  par)
     if (bUnsupported)
         return MFX_ERR_UNSUPPORTED;
 
-    return (bChanged)? MFX_WRN_VIDEO_PARAM_CHANGED: MFX_ERR_NONE;
+    return (bChanged)? MFX_WRN_INCOMPATIBLE_VIDEO_PARAM: MFX_ERR_NONE;
 }
 static void SetSupportedExCodingParameters(mfxExtCodingOptionVP8*  par)
 {
@@ -351,7 +352,7 @@ static mfxStatus CheckExCodingParameters(mfxExtCodingOptionVP8*  par)
         par->EnableMultipleSegments = MFX_CODINGOPTION_ADAPTIVE;
         bChanged = true;     
     }
-    return (bChanged)? MFX_WRN_VIDEO_PARAM_CHANGED: sts; 
+    return (bChanged)? MFX_WRN_INCOMPATIBLE_VIDEO_PARAM: sts; 
 }
 
 static void SetDefaultMFXParameters(mfxInfoMFX*  par)

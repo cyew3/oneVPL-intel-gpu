@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2010 - 2013 Intel Corporation. All Rights Reserved.
+Copyright(c) 2010 - 2014 Intel Corporation. All Rights Reserved.
 
 File Name: mfx_serializer.cpp
 
@@ -258,6 +258,8 @@ void MFXStructureRef <mfxExtCodingOptionVP8Param>::ConstructValues() const
     SERIALIZE_POD_ARRAY(MBTypeLFDelta, 4);
     SERIALIZE_POD_ARRAY(SegmentQPDelta, 4);
     SERIALIZE_POD_ARRAY(CTQPDelta, 5);
+
+    SERIALIZE_INT(WriteIVFHeaders);
 }
 
 void MFXStructureRef <mfxFrameInfo>::ConstructValues () const

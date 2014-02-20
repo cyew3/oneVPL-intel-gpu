@@ -269,8 +269,8 @@ namespace MFX_VP8ENC
             vp8EncodeInit(&(m_BoolEncStates[i]), m_pPartitions[i]);
         }
 
-        DetermineFrameType(frameParams.bIntra==1);
-        PrepareFrameControls();
+        DetermineFrameType(frameParams);
+        PrepareFrameControls(frameParams);
 
         // [SE] Use LoopFilterLevel provided by application
         /*I16 dc_idx = m_ctrl.qIndex + m_ctrl.qDelta[VP8_Y_DC-1];
@@ -279,14 +279,14 @@ namespace MFX_VP8ENC
 
         return sts;
     }
-    void Vp8CoreBSE::DetermineFrameType(bool bIntra)
+    void Vp8CoreBSE::DetermineFrameType(const sFrameParams &frameParams)
     {
-        m_ctrl.FrameType = (bIntra) ? 0 : 1;
+        m_ctrl.FrameType = (frameParams.bIntra) ? 0 : 1;
 
         if(m_ctrl.FrameType) 
         {
-            m_ctrl.GoldenCopyFlag  = 1;
-            m_ctrl.AltRefCopyFlag  = 2;
+            m_ctrl.GoldenCopyFlag  = frameParams.bGold ? 3 : frameParams.copyToGoldRef;
+            m_ctrl.AltRefCopyFlag  = frameParams.bAltRef ? 3 : frameParams.copyToAltRef;
             m_ctrl.LastFrameUpdate = 1;
             m_ctrl.SignBiasGolden  = 0;
             m_ctrl.SignBiasAltRef  = 0;
@@ -298,7 +298,7 @@ namespace MFX_VP8ENC
         }    
     }
 
-    void Vp8CoreBSE::PrepareFrameControls(void)
+    void Vp8CoreBSE::PrepareFrameControls(const sFrameParams &frameParams)
     {
         I32 i, j;
 
@@ -333,7 +333,7 @@ namespace MFX_VP8ENC
             U32 *QP = m_ctrl.FrameType ? m_Params.PFrameQP : m_Params.KeyFrameQP;
             m_ctrl.SegFeatUpdate = 0;
             for(i=1;i<VP8_MAX_NUM_OF_SEGMENTS;i++)
-                if((QP[i]!=QP[0]) || (m_Params.LoopFilterLevel[i]!=m_Params.LoopFilterLevel[0])) {
+                if((QP[i]!=QP[0]) || (frameParams.LFLevel[i]!=frameParams.LFLevel[0])) {
                     m_ctrl.SegFeatUpdate = 1; break;
                 }
                 if(m_ctrl.SegFeatUpdate) {
@@ -341,14 +341,14 @@ namespace MFX_VP8ENC
                     for(i=0;i<VP8_MAX_NUM_OF_SEGMENTS;i++)
                         m_ctrl.segFeatureData[0][i] = (I8)(QP[i] - QP[0]);
                     for(i=0;i<VP8_MAX_NUM_OF_SEGMENTS;i++)
-                        m_ctrl.segFeatureData[1][i] = (I8)(m_Params.LoopFilterLevel[i] - m_Params.LoopFilterLevel[0]);
+                        m_ctrl.segFeatureData[1][i] = (I8)(frameParams.LFLevel[i] - frameParams.LFLevel[0]);
                 }
                 m_ctrl.MBSegUpdate  = 1;
         }
 
-        m_ctrl.LoopFilterType   = m_Params.LoopFilterType;
-        m_ctrl.LoopFilterLevel  = m_Params.LoopFilterLevel[0];
-        m_ctrl.SharpnessLevel   = m_Params.SharpnessLevel;
+        m_ctrl.LoopFilterType   = frameParams.LFType;
+        m_ctrl.LoopFilterLevel  = frameParams.LFLevel[0];
+        m_ctrl.SharpnessLevel   = frameParams.Sharpness;
 
         m_ctrl.LoopFilterAdjOn = ((m_Params.RefTypeLFDelta[0]|m_Params.RefTypeLFDelta[1]|m_Params.RefTypeLFDelta[2]|m_Params.RefTypeLFDelta[3]|
             m_Params.MBTypeLFDelta[0]|m_Params.MBTypeLFDelta[1]|m_Params.MBTypeLFDelta[2]|m_Params.MBTypeLFDelta[3]) != 0);
@@ -399,7 +399,7 @@ namespace MFX_VP8ENC
         memcpy(pPictureHeader, ivf_frame_header, sizeof (ivf_frame_header));
     }
 
-    mfxStatus Vp8CoreBSE::RunBSP(bool bSeqHeader ,mfxBitstream * pBitstream, TaskHybridDDI *pTask, MBDATA_LAYOUT const & layout,VideoCORE * pCore
+    mfxStatus Vp8CoreBSE::RunBSP(bool bIVFHeaders, bool bSeqHeader, mfxBitstream * pBitstream, TaskHybridDDI *pTask, MBDATA_LAYOUT const & layout,VideoCORE * pCore
 #if defined (VP8_HYBRID_DUMP_READ) || defined (VP8_HYBRID_DUMP_WRITE)
         , FILE* m_bse_dump, mfxU32 m_bse_dump_size
 #endif
@@ -407,19 +407,24 @@ namespace MFX_VP8ENC
     {
         mfxStatus   sts = MFX_ERR_NONE;
         mfxU8      *pPictureHeader = 0;
-        mfxU32      hOffset = 12;
+        mfxU32      IVFHeaderSize = 0;
+        if (bIVFHeaders)
+            IVFHeaderSize = bSeqHeader ? 32 + 12 : 12;
 
-        CHECK(pBitstream->DataLength + pBitstream->DataOffset + 3 + 8  < pBitstream->MaxLength);
+        CHECK(pBitstream->DataLength + pBitstream->DataOffset + IVFHeaderSize  < pBitstream->MaxLength);
 
         m_pBitstream = pBitstream;
-        pPictureHeader = pBitstream->Data + pBitstream->DataLength + pBitstream->DataOffset;
-        if (bSeqHeader) {
-            AddSeqHeader(m_Params.SrcWidth , m_Params.SrcHeight, m_Params.FrameRateNom, m_Params.FrameRateDeNom, pPictureHeader);
-            pBitstream->DataLength += 32; hOffset += 32;
+        if (bIVFHeaders)
+        {
+            pPictureHeader = pBitstream->Data + pBitstream->DataLength + pBitstream->DataOffset;
+            if (bSeqHeader) {
+                AddSeqHeader(m_Params.SrcWidth , m_Params.SrcHeight, m_Params.FrameRateNom, m_Params.FrameRateDeNom, pPictureHeader);
+                pBitstream->DataLength += 32;
+            }
+            pPictureHeader = pBitstream->Data + pBitstream->DataLength + pBitstream->DataOffset;
+            AddPictureHeader(pPictureHeader);
+            pBitstream->DataLength += 12;
         }
-        pPictureHeader = pBitstream->Data + pBitstream->DataLength + pBitstream->DataOffset;
-        AddPictureHeader(pPictureHeader);
-        pBitstream->DataLength += 12;
 
         memset(&m_cnt1, 0, sizeof(m_cnt1));
 
@@ -433,8 +438,8 @@ namespace MFX_VP8ENC
         EncodeFirstPartition();
         sts = OutputBitstream();
 
-        if(sts == MFX_ERR_NONE)
-            UpdatePictureHeader(pBitstream->DataLength-hOffset, m_encoded_frame_num, pPictureHeader);
+        if(sts == MFX_ERR_NONE && bIVFHeaders)
+            UpdatePictureHeader(pBitstream->DataLength-IVFHeaderSize, m_encoded_frame_num, pPictureHeader);
 
         return sts;   
     }

@@ -26,12 +26,13 @@ namespace MFX_VP8ENC
     mfxU16 GetDefaultAsyncDepth();
 
     /*function for init/reset*/
-    mfxStatus CheckParametersAndSetDefault( mfxVideoParam*           pParamSrc,
-                                            mfxVideoParam*           pParamDst,
-                                            mfxExtCodingOptionVP8*   pExCodingVP8Dst,
-                                            mfxExtOpaqueSurfaceAlloc*pOpaqAllocDst,
-                                            bool                     bExternalFrameAllocator,
-                                            bool                     bReset = false);
+    mfxStatus CheckParametersAndSetDefault( mfxVideoParam*              pParamSrc,
+                                            mfxVideoParam*              pParamDst,
+                                            mfxExtCodingOptionVP8*      pExCodingVP8Dst,
+                                            mfxExtCodingOptionVP8Param* pExCodingVP8ParamDst,
+                                            mfxExtOpaqueSurfaceAlloc*   pOpaqAllocDst,
+                                            bool                        bExternalFrameAllocator,
+                                            bool                        bReset = false);
 
     /*functios for Query*/
 

@@ -1280,8 +1280,8 @@ namespace MFX_VP8ENC
         U16              *m_TokensB[VP8_MAX_NUM_OF_PARTITIONS];
 
         mfxStatus InitVp8VideoParam(const mfxVideoParam &video);
-        void DetermineFrameType(bool bIntra);
-        void PrepareFrameControls(void);
+        void DetermineFrameType(const sFrameParams &frameParams);
+        void PrepareFrameControls(const sFrameParams &frameParams);
         void PrepareFrameControlsHW(void *conf);
         void EncodeFirstPartition(void);
         void Tokenization(void);
@@ -1302,7 +1302,7 @@ namespace MFX_VP8ENC
         ~Vp8CoreBSE();
         mfxStatus Init(const mfxVideoParam &video);
         mfxStatus SetNextFrame(mfxFrameSurface1 * pSurface, bool bExternal, const sFrameParams &frameParams, mfxU32 frameNum);
-        mfxStatus RunBSP(bool bAddSH, mfxBitstream *bs, TaskHybridDDI *pTask, MBDATA_LAYOUT const & layout,VideoCORE * pCore
+        mfxStatus RunBSP(bool bIVFHeaders, bool bAddSH, mfxBitstream *bs, TaskHybridDDI *pTask, MBDATA_LAYOUT const & layout,VideoCORE * pCore
 #if defined (VP8_HYBRID_DUMP_READ)  || defined (VP8_HYBRID_DUMP_WRITE)
             , FILE* m_bse_dump, mfxU32 m_bse_dump_size
 #endif

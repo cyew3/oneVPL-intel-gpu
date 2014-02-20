@@ -92,8 +92,10 @@ namespace MFX_VP8ENC
         mfxU8    bGold;
         mfxU8    bAltRef;
         mfxU8    LFType;    //Loop filter type [0, 1]
-        mfxU8    LFLevel;   //Loop filter level [0,63]
+        mfxU8    LFLevel[4];   //Loop filter level [0,63], all segments
         mfxU8    Sharpness; //[0,7]
+        mfxU8    copyToGoldRef;
+        mfxU8    copyToAltRef;
     } sFrameParams;
 
     enum eTaskStatus
@@ -105,9 +107,10 @@ namespace MFX_VP8ENC
     };
     enum eRefFrames
     {
-        REF_BASE = 0,
-        REF_GOLD = 1,
-        REF_ALT  = 2,   
+        REF_BASE  = 0,
+        REF_GOLD  = 1,
+        REF_ALT   = 2,
+        REF_TOTAL = 3
     };
     enum
     {
@@ -475,6 +478,14 @@ namespace MFX_VP8ENC
         inline MfxFrameAllocResponse& GetFrameAllocReponse()  {return m_response;}
     };
 
+
+    typedef struct _sDpbVP8
+    {
+        sFrameEx* m_refFrames[REF_TOTAL];
+        mfxU8     m_refMap[REF_TOTAL];
+    } sDpbVP8;
+
+
     class Task
     {
     public:
@@ -528,7 +539,7 @@ namespace MFX_VP8ENC
                               mfxBitstream *pBitsteam,
                               mfxU32        frameOrder);
           virtual
-          mfxStatus SubmitTask (sFrameEx*  pRecFrame, sFrameEx ** dpb, sFrameParams* pParams, sFrameEx* pRawLocalFrame);
+          mfxStatus SubmitTask (sFrameEx*  pRecFrame, sDpbVP8 &dpb, sFrameParams* pParams, sFrameEx* pRawLocalFrame);
  
           inline mfxStatus CompleteTask ()
           {
@@ -598,7 +609,7 @@ namespace MFX_VP8ENC
         InternalFrames  m_ReconFrames;
 
         std::vector<TTask>  m_Tasks;
-        sFrameEx*           m_dpb[3];
+        sDpbVP8             m_dpb;
 
         mfxU32              m_frameNum;
 
@@ -610,7 +621,7 @@ namespace MFX_VP8ENC
           m_pCore(0),
           m_frameNum(0)
         {
-            memset(m_dpb, 0, sizeof(m_dpb));
+            memset(&m_dpb, 0, sizeof(m_dpb));
         }
 
           ~TaskManager()
@@ -629,7 +640,7 @@ namespace MFX_VP8ENC
               m_bHWFrames = bHWImpl;
               m_bHWInput = isVideoSurfInput(m_video);
 
-              memset(m_dpb, 0, sizeof(m_dpb));
+              memset(&m_dpb, 0, sizeof(m_dpb));
 
               m_frameNum = 0;
 
@@ -676,7 +687,7 @@ namespace MFX_VP8ENC
               MFX_CHECK(mfxU16(CalcNumSurfRawLocal(m_video,m_bHWFrames,isVideoSurfInput(m_video))) <= m_LocalRawFrames.Num(),MFX_ERR_INCOMPATIBLE_VIDEO_PARAM); 
               MFX_CHECK(mfxU16(CalcNumSurfRecon(m_video)) <= m_ReconFrames.Num(),MFX_ERR_INCOMPATIBLE_VIDEO_PARAM); 
 
-              memset(m_dpb, 0, sizeof(m_dpb));
+              memset(&m_dpb, 0, sizeof(m_dpb));
 
               sts = FreeTasks(m_Tasks);
 
@@ -713,7 +724,7 @@ namespace MFX_VP8ENC
           }
           mfxStatus SubmitTask(Task*  pTask, sFrameParams *pParams)
           {
-#if 0 // this implementation isn't used for hybrid - disable it's code (start)
+#if 0 // this implementation isn't used for hybrid - disable it's code (start)              
               sFrameEx* pRecFrame = 0;
               sFrameEx* pRawLocalFrame = 0;
               mfxStatus sts = MFX_ERR_NONE;
@@ -729,8 +740,16 @@ namespace MFX_VP8ENC
                   MFX_CHECK(pRawLocalFrame!= 0,MFX_WRN_DEVICE_BUSY);
               }            
 
-              sts = pTask->SubmitTask(pRecFrame,m_dpb,pParams, pRawLocalFrame);
+              sts = pTask->SubmitTask(pRecFrame,m_pPrevSubmittedTask,pParams, pRawLocalFrame);
               MFX_CHECK_STS(sts);
+
+              if (m_pPrevSubmittedTask)
+              {
+                sts = m_pPrevSubmittedTask->FreeTask();
+                MFX_CHECK_STS(sts);
+              }
+
+              m_pPrevSubmittedTask = pTask;
 
               return sts;
 #endif // this implementation isn't used for hybrid - disable it's code (end)

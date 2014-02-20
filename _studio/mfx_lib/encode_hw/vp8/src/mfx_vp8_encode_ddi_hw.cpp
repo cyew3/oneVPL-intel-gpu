@@ -47,7 +47,7 @@ namespace MFX_VP8ENC
         if (opts->EnableMultipleSegments && !caps.SegmentationAllowed)
         {
             opts->EnableMultipleSegments = 0;
-            sts =  MFX_WRN_VIDEO_PARAM_CHANGED;       
+            sts =  MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;       
         }
         return sts;    
     }
@@ -191,6 +191,7 @@ mfxStatus CachedFeedback::Remove(mfxU32 feedbackNumber)
         {
             pps.LastRefPic.Index7Bits      = mfxU8(task.m_pRecRefFrames[REF_BASE]->idInPool);
             pps.LastRefPic.AssociatedFlag  = 0;
+            pps.ref_frame_ctrl =  pps.ref_frame_ctrl | 0x01;
         }
 
         pps.GoldenRefPic.bPicEntry                    = 0xff;
@@ -198,6 +199,8 @@ mfxStatus CachedFeedback::Remove(mfxU32 feedbackNumber)
         {
             pps.GoldenRefPic.Index7Bits      = mfxU8(task.m_pRecRefFrames[REF_GOLD]->idInPool);
             pps.GoldenRefPic.AssociatedFlag  = 0;
+            if (task.m_pRecRefFrames[REF_GOLD] != task.m_pRecRefFrames[REF_BASE])
+                pps.ref_frame_ctrl =  pps.ref_frame_ctrl | 0x02;
         }
 
         pps.AltRefPic.bPicEntry                    = 0xff;
@@ -205,6 +208,9 @@ mfxStatus CachedFeedback::Remove(mfxU32 feedbackNumber)
         {
             pps.AltRefPic.Index7Bits      = mfxU8(task.m_pRecRefFrames[REF_ALT]->idInPool);
             pps.AltRefPic.AssociatedFlag  = 0;
+            if (task.m_pRecRefFrames[REF_ALT] != task.m_pRecRefFrames[REF_GOLD] &&
+                task.m_pRecRefFrames[REF_ALT] != task.m_pRecRefFrames[REF_BASE])
+                pps.ref_frame_ctrl =  pps.ref_frame_ctrl | 0x04;
         }
 
         pps.frame_type = (task.m_sFrameParams.bIntra) ? 0 : 1;
@@ -213,38 +219,36 @@ mfxStatus CachedFeedback::Remove(mfxU32 feedbackNumber)
 
         pps.segmentation_enabled     = opts->EnableMultipleSegments;
 
-        pps.filter_type              = VP8Par->LoopFilterType;
+        pps.filter_type              = task.m_sFrameParams.LFType;
         pps.loop_filter_adj_enable   = VP8Par->RefTypeLFDelta[0] || VP8Par->RefTypeLFDelta[1] || VP8Par->RefTypeLFDelta[2] || VP8Par->RefTypeLFDelta[3] ||
             VP8Par->MBTypeLFDelta[0] || VP8Par->MBTypeLFDelta[1] || VP8Par->MBTypeLFDelta[2] || VP8Par->MBTypeLFDelta[3];
 
         pps.CodedCoeffTokenPartition = VP8Par->NumPartitions;
 
+        /* this code is for full HW encode only
         if (pps.frame_type)
         {
             pps.refresh_golden_frame = 0; 
             pps.refresh_alternate_frame = 0; 
-            pps.copy_buffer_to_golden = 1;            
-            pps.copy_buffer_to_alternate = 2; 
-            pps.refresh_last = 1;                             
-        
-        }
+            pps.copy_buffer_to_golden = 0;
+            pps.copy_buffer_to_alternate = 1; 
+            pps.refresh_last = 1;
+        }*/
 
         pps.sign_bias_golden         = 0;
         pps.sign_bias_alternate      = 0;
         pps.mb_no_coeff_skip         = 1;
-        pps.sharpness_level          = VP8Par->SharpnessLevel;
+        pps.sharpness_level          = task.m_sFrameParams.Sharpness;
 
         for (int i = 0; i < 4; i ++)
         {
-            pps.loop_filter_level[i] = VP8Par->LoopFilterLevel[i];
+            pps.loop_filter_level[i] = task.m_sFrameParams.LFLevel[i];
             if (pps.loop_filter_adj_enable)
             {
                 pps.ref_lf_delta[i]      = VP8Par->RefTypeLFDelta[i];
                 pps.mode_lf_delta[i]     = VP8Par->MBTypeLFDelta[i];
             }
         }
-
-        pps.ref_frame_ctrl =  1;
 
         return MFX_ERR_NONE;
       
@@ -1245,7 +1249,7 @@ mfxStatus D3D11Encoder::Destroy()
         pps.pic_flags.bits.frame_type                      = (task.m_sFrameParams.bIntra) ? 0 : 1;
         pps.pic_flags.bits.segmentation_enabled           = opts->EnableMultipleSegments;
         
-        pps.pic_flags.bits.loop_filter_type               = VP8Par->LoopFilterType;
+        pps.pic_flags.bits.loop_filter_type               = task.m_sFrameParams.LFType;
         pps.pic_flags.bits.loop_filter_adj_enable         = VP8Par->RefTypeLFDelta[0] || VP8Par->RefTypeLFDelta[1] || VP8Par->RefTypeLFDelta[2] || VP8Par->RefTypeLFDelta[3] ||
             VP8Par->MBTypeLFDelta[0] || VP8Par->MBTypeLFDelta[1] || VP8Par->MBTypeLFDelta[2] || VP8Par->MBTypeLFDelta[3];
         pps.pic_flags.bits.num_token_partitions           = VP8Par->NumPartitions;
@@ -1263,12 +1267,12 @@ mfxStatus D3D11Encoder::Destroy()
         pps.pic_flags.bits.sign_bias_alternate      = 0;
         pps.pic_flags.bits.mb_no_coeff_skip         = 1;
   
-        pps.sharpness_level          = VP8Par->SharpnessLevel;
+        pps.sharpness_level          = task.m_sFrameParams.Sharpness;;
 
 
         for (int i = 0; i < 4; i ++)
         {
-            pps.loop_filter_level[i] = VP8Par->LoopFilterLevel[i];
+            pps.loop_filter_level[i] = task.m_sFrameParams.LFLevel[i];
             if (pps.pic_flags.bits.loop_filter_adj_enable)
             {
                 pps.ref_lf_delta[i]      = VP8Par->RefTypeLFDelta[i];
@@ -1863,6 +1867,7 @@ mfxStatus VAAPIEncoder::Execute(
         }
 
         // 4. Segmentation map
+        if (task.ddi_frames.m_pSegMap_hw != 0)
         {
             // segmentation map buffer is already allocated and filled. Need just to attach it
             configBuffers[buffersCount++] = m_segMapQueue[idxInPool].surface;
