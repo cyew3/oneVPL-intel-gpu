@@ -22,6 +22,7 @@
 //#define VP8_HYBRID_DUMP_WRITE_STRUCTS
 #endif
 //#define VP8_HYBRID_TIMING
+//#define VP8_HYBRID_FALL_TO_SW
 
 #include "umc_mutex.h"
 

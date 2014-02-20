@@ -34,7 +34,11 @@ namespace MFX_VP8ENC
         sts = ddi.get()->QueryEncodeCaps(caps);
         MFX_CHECK_STS(sts);
 
+#if defined (VP8_HYBRID_FALL_TO_SW)
+        return MFX_ERR_UNSUPPORTED;
+#else // VP8_HYBRID_FALL_TO_SW
         return MFX_ERR_NONE;
+#endif // VP8_HYBRID_FALL_TO_SW
     }
     mfxStatus CheckVideoParam(mfxVideoParam const & par, ENCODE_CAPS_VP8 const &caps)
     {

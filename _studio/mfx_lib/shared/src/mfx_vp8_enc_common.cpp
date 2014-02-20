@@ -20,6 +20,7 @@
 #include <math.h>
 #include <memory.h>
 #include "mfx_common_int.h"
+#include "mfx_ext_buffers.h"
 
 //#define NO_THREADING
 
@@ -27,11 +28,12 @@ namespace VP8_encoder
 {
 mfxStatus CheckExtendedBuffers (mfxVideoParam* par)
 {
-#define NUM_SUPPORTED_BUFFERS 2
+#define NUM_SUPPORTED_BUFFERS 3
     mfxU32 supported_buffers[NUM_SUPPORTED_BUFFERS] = {
             //MFX_EXTBUFF_CODING_OPTION_SPSPPS,
             MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION,
-            MFX_EXTBUFF_VP8_EX_CODING_OPT
+            MFX_EXTBUFF_VP8_EX_CODING_OPT,
+            MFX_EXTBUFF_VP8_PARAM
     };
     mfxU32 num_supported = 0;
     if (par->NumExtParam == 0 || par->ExtParam == 0)

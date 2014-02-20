@@ -80,7 +80,7 @@ mfxStatus MFXHWVideoENCODEVP8::Query(
 
     ENCODE_CAPS_VP8             caps = {0};
     MFX_CHECK(MFX_ERR_NONE == MFX_VP8ENC::QueryHwCaps(core, caps), MFX_WRN_PARTIAL_ACCELERATION);
-    
+
     return   (in == 0) ? MFX_VP8ENC::SetSupportedParameters(out):
         MFX_VP8ENC::CheckParameters(in,out);
 }

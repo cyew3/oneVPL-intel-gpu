@@ -546,7 +546,11 @@ mfxStatus MFXVideoENCODEVP8::Init(mfxVideoParam* par_in)
     memset(&m_mfxVideoParam,0,sizeof(mfxVideoParam));
     memset(&m_extOption,    0,sizeof(mfxExtCodingOptionVP8));
     memset(&m_extOpaqAlloc, 0,sizeof(mfxExtOpaqueSurfaceAlloc));
-    
+    memset(&m_extVP8Par,    0,sizeof(mfxExtCodingOptionVP8Param));
+
+    mfxExtCodingOptionVP8Param * extVP8ParIn = (mfxExtCodingOptionVP8Param*)GetExtBuffer(par_in->ExtParam, par_in->NumExtParam, MFX_EXTBUFF_VP8_PARAM);
+    if (extVP8ParIn)
+        m_extVP8Par = *extVP8ParIn;
     memset(&m_auxInput, 0, sizeof(m_auxInput));
     memset(&m_response_alien, 0, sizeof(m_response_alien));
     memset(&m_response, 0, sizeof(m_response));
@@ -584,7 +588,7 @@ mfxStatus MFXVideoENCODEVP8::Init(mfxVideoParam* par_in)
         request.Type = MFX_MEMTYPE_FROM_ENCODE|MFX_MEMTYPE_INTERNAL_FRAME|MFX_MEMTYPE_SYSTEM_MEMORY;
         request.NumFrameMin = 1;
         request.NumFrameSuggested = 1;
-        temp_sts  = m_core->AllocFrames(&request, &m_response);
+        temp_sts  = m_core->AllocFrames(&request, &m_response, false);
         MFX_CHECK_STS(temp_sts);
 
         m_useAuxInput = true;
@@ -892,16 +896,19 @@ mfxStatus MFXVideoENCODEVP8::EncodeFrame(mfxEncodeCtrl *, mfxEncodeInternalParam
     if (pkt->kind == WEBM_VP8::VPX_CODEC_CX_FRAME_PKT) 
     {
 #ifdef VP8_ENC_WRITE_IVF_HEADERS
-        if (m_frameCount == 0)
+        if (m_extVP8Par.WriteIVFHeaders != MFX_CODINGOPTION_OFF)
         {
-            write_ivf_file_header(dataPtr, (WEBM_VP8::vpx_codec_enc_cfg_t *)vpx_cfg, 10000); 
-            bs->DataLength += 32;
-            dataPtr += 32;
-        }
+            if (m_frameCount == 0)
+            {
+                write_ivf_file_header(dataPtr, (WEBM_VP8::vpx_codec_enc_cfg_t *)vpx_cfg, 10000); 
+                bs->DataLength += 32;
+                dataPtr += 32;
+            }
 
-        write_ivf_frame_header(dataPtr, pkt);
-        bs->DataLength += 12;
-        dataPtr += 12;
+            write_ivf_frame_header(dataPtr, pkt);
+            bs->DataLength += 12;
+            dataPtr += 12;
+        }
 #endif
 
         MFX_INTERNAL_CPY(dataPtr, pkt->data.frame.buf,pkt->data.frame.sz);

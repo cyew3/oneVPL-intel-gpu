@@ -3,7 +3,7 @@
 //  This software is supplied under the terms of a license agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in accordance with the terms of that agreement.
-//        Copyright (c) 2012 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2012-2014 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -20,6 +20,7 @@
 #include "mfxdefs.h"
 #include "mfxvideo.h"
 #include "mfxvideo++int.h"
+#include "mfx_ext_buffers.h"
 
 class MFXVideoENCODEVP8;
 
@@ -106,9 +107,10 @@ private:
 
     VideoCORE *m_core;
 
-    mfxVideoParam            m_mfxVideoParam;
-    mfxExtCodingOptionVP8    m_extOption;
-    mfxExtOpaqueSurfaceAlloc m_extOpaqAlloc;
+    mfxVideoParam              m_mfxVideoParam;
+    mfxExtCodingOptionVP8      m_extOption;
+    mfxExtCodingOptionVP8Param m_extVP8Par;
+    mfxExtOpaqueSurfaceAlloc   m_extOpaqAlloc;
 
     mfxU32  m_frameCountSync;         // counter for sync. part
     mfxU32  m_frameCount;             // counter for Async. part
