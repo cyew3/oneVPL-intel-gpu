@@ -2536,10 +2536,10 @@ mfxStatus ConfigureExecuteParams(
                             rec.DstY = extComp->InputStream[cnt].DstY;
                             rec.DstW = extComp->InputStream[cnt].DstW;
                             rec.DstH = extComp->InputStream[cnt].DstH;
-                            if (extComp->InputStream[cnt].AlphaEnable != 0)
+                            if (extComp->InputStream[cnt].GlobalAlphaEnable != 0)
                             {
-                                rec.AlphaEnable = extComp->InputStream[cnt].AlphaEnable;
-                                rec.Alpha = extComp->InputStream[cnt].Alpha;
+                                rec.GlobalAlphaEnable = extComp->InputStream[cnt].GlobalAlphaEnable;
+                                rec.GlobalAlpha = extComp->InputStream[cnt].GlobalAlpha;
                             }
                             if (extComp->InputStream[cnt].LumaKeyEnable !=0)
                             {
@@ -2547,6 +2547,8 @@ mfxStatus ConfigureExecuteParams(
                                 rec.LumaKeyMin = extComp->InputStream[cnt].LumaKeyMin;
                                 rec.LumaKeyMax = extComp->InputStream[cnt].LumaKeyMax;
                             }
+                            if (extComp->InputStream[cnt].PixelAlphaEnable != 0)
+                                rec.PixelAlphaEnable = 1;
                             executeParams.dstRects[cnt]= rec ;
                         }
                         /* And now lets calculate background color

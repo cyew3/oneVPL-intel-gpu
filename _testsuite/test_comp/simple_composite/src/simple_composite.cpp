@@ -222,14 +222,22 @@ map<string, string> ParsePar(ifstream &stream, string stream_name) {
     map<string, string> params;
 
     string line;
-    int counter = 18;
-
+    int counter = 128; /*This is maximal number of all params per one stream */
     params["stream"] = stream_name;
+
     while (counter--) {
         getline(stream, line);
         istringstream iss(line);
+        if (line.compare("") == 0) /* We have reach EOF...*/
+        {
+            break;
+        }
         string key, value;
         getline(iss, key,   '=');
+        if (key.compare("\r") == 0)
+        {
+            break;
+        }
         getline(iss, value, '=');
         params[key] = value;
     }
@@ -246,8 +254,6 @@ int main(int argc, char *argv[])
      * This is means 1 primary and 63 sub-streams */
 
     mfxFrameInfo streams[MAX_INPUT_STREAMS] = {};
-
-    mfxFrameInfo pr_stream;
 
     auto args = ConvertInputString(argc, argv);
     ProgramArguments pa;
@@ -489,29 +495,41 @@ int main(int argc, char *argv[])
     comp.InputStream     = (mfxVPPCompInputStream *)malloc( sizeof(mfxVPPCompInputStream)* comp.NumInputStream);
 
     // stream params
+    /* if input streams in NV12 format background color should be in YUV format too
+     * The same for RGB4 input, background color should be in ARGB format
+     * */
+    /* back color in YUV */
+    comp.Y = 0x10;
+    comp.U = 0x80;
+    comp.V = 0x80;
     for (i = 0; i < StreamCount; ++i)
     {
         comp.InputStream[i].DstX = atoi(streamParams[i]["dstx"].c_str());
         comp.InputStream[i].DstY = atoi(streamParams[i]["dsty"].c_str());
         comp.InputStream[i].DstW = atoi(streamParams[i]["dstw"].c_str());
         comp.InputStream[i].DstH = atoi(streamParams[i]["dsth"].c_str());
-        comp.InputStream[i].Alpha         = atoi(streamParams[i]["Alpha"].c_str()) ;
-        comp.InputStream[i].AlphaEnable   = atoi(streamParams[i]["AlphaEnable"].c_str());
+        comp.InputStream[i].GlobalAlpha         = atoi(streamParams[i]["GlobalAlpha"].c_str()) ;
+        comp.InputStream[i].GlobalAlphaEnable   = atoi(streamParams[i]["GlobalAlphaEnable"].c_str());
+
         comp.InputStream[i].LumaKeyEnable = atoi(streamParams[i]["LumaKeyEnable"].c_str()) ;
         comp.InputStream[i].LumaKeyMin    = atoi(streamParams[i]["LumaKeyMin"].c_str()) ;
         comp.InputStream[i].LumaKeyMax    = atoi(streamParams[i]["LumaKeyMax"].c_str()) ;
         cout << "Set " << i << "->" << comp.InputStream[i].DstX << ":" << comp.InputStream[i].DstY << ":" << comp.InputStream[i].DstW  << ":" << comp.InputStream[i].DstH << ":" << endl;
         cout << " Alpha Blending Params:" << endl;
-        cout << "  AlphaEnable=" << comp.InputStream[i].AlphaEnable << endl;
-        cout << "  Alpha=" << comp.InputStream[i].Alpha << endl;
+        cout << "  GlobalAlphaEnable=" << comp.InputStream[i].GlobalAlphaEnable << endl;
+        cout << "  GlobalAlpha=" << comp.InputStream[i].GlobalAlpha << endl;
+        cout << "  PixelAlphaEnable=" << comp.InputStream[i].PixelAlphaEnable << endl;
         cout << "  LumaKeyEnable=" << comp.InputStream[i].LumaKeyEnable << endl;
         cout << "  LumaKeyMin=" << comp.InputStream[i].LumaKeyMin << endl;
         cout << "  LumaKeyMax=" << comp.InputStream[i].LumaKeyMax << endl;
     }
 
 #ifdef TEST_VPP_COMP_RESET
-    comp.InputStream[1].AlphaEnable = 1;
-    comp.InputStream[1].Alpha = 128;
+    comp.InputStream[1].GlobalAlphaEnable = 0;
+    comp.InputStream[1].GlobalAlpha = 128;
+    comp.InputStream[StreamCount - 1].GlobalAlphaEnable = 1;
+    comp.InputStream[StreamCount - 1].GlobalAlpha = 128;
+
 #endif
 
     mfxExtBuffer* ExtBuffer[1];
@@ -883,7 +901,7 @@ int main(int argc, char *argv[])
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
     /*---------------------------------------------------------------------------------------------*/
-#endif TEST_VPP_COMP_RESET
+#endif // for TEST_VPP_COMP_RESET
     // ===================================================================
     // Clean up resources
     //  - It is recommended to close Media SDK components first, before releasing allocated surfaces, since

@@ -87,8 +87,13 @@ namespace MfxHwVideoProcessing
         mfxU16 LumaKeyEnable;
         mfxU16 LumaKeyMin;
         mfxU16 LumaKeyMax;
-        mfxU16 AlphaEnable;
-        mfxU16 Alpha;
+        mfxU16 GlobalAlphaEnable;
+        mfxU16 GlobalAlpha;
+        mfxU16 PixelAlphaEnable;
+        /* NB! Experimental part*/
+        mfxU16 IOPattern; //sys/video/opaque memory
+        mfxU16 ChromaFormat;
+        mfxU32 FourCC;
     };
 
 
