@@ -219,7 +219,7 @@ ifeq ($(MFX_IMPL_HW), true)
     -Wl,--version-script=$(LOCAL_PATH)/mfx_lib/libmfx.map \
     -lippj_l -lippvc_l -lippcc_l -lippcv_l -lippi_l -lipps_l -lippcore_l -lippmsdk_l
 
-  LOCAL_SHARED_LIBRARIES := libstlport-mfx libgabi++-mfx libva libdl
+  LOCAL_SHARED_LIBRARIES := libstlport-mfx libgabi++-mfx libva libva-tpi libdl
 
   LOCAL_MODULE_TAGS := optional
   LOCAL_MODULE := libmfxhw32

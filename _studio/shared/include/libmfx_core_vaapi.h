@@ -101,6 +101,14 @@ protected:
     virtual void           Close();
     virtual mfxStatus      DefaultAllocFrames(mfxFrameAllocRequest *request, mfxFrameAllocResponse *response);
 
+#if defined (ANDROID)
+    mfxStatus CM_FastCopy(VADisplay va_display, VAContextID va_context, VASurfaceID dstSurf, VASurfaceID srcSurf, int width, int height);
+    VASurfaceID CM_FindInPool(mfxHDL key);
+    mfxStatus CM_AddToPool(VASurfaceID srf, mfxHDL key);
+    mfxStatus InitCM(int width, int height);
+    mfxStatus CloseCM();
+#endif
+
     mfxStatus              CreateVideoAccelerator(mfxVideoParam * param, int profile, int NumOfRenderTarget, _mfxPlatformVideoSurface *RenderTargets);
     mfxStatus              ProcessRenderTargets(mfxFrameAllocRequest *request, mfxFrameAllocResponse *response, mfxBaseWideFrameAllocator* pAlloc);
     mfxStatus              TraceFrames(mfxFrameAllocRequest *request, mfxFrameAllocResponse *response, mfxStatus sts);
@@ -120,6 +128,19 @@ protected:
     bool                                 m_bCmCopyAllowed;
     s_ptr<CmCopyWrapper, true>           m_pCmCopy;
 
+#if defined (ANDROID)
+    VAConfigID m_va_config;
+    VAContextID m_va_CM_context;
+    bool m_bCM_Initialized;
+
+#define CM_SRF_POOL_SIZE 20
+    mfxU32 m_CM_CurIndex;
+    struct
+    {
+        VASurfaceID srf;
+        mfxHDL      key;
+    } m_CM_SrfPool[CM_SRF_POOL_SIZE];
+#endif
 public: // aya: FIXME: private???   
 
     std::auto_ptr<VAAPIAdapter>            m_pAdapter;

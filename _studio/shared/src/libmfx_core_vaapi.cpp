@@ -29,7 +29,10 @@ File Name: libmf_core_vaapi.cpp
 #include "va/va.h"
 #include <va/va_backend.h>
 
-//#include "mfx_session.h"
+#if defined(ANDROID)
+#include <va/va_tpi.h>
+#include <va/va_backend_vpp.h>
+#endif
 
 #define MFX_CHECK_HDL(hdl) {if (!hdl) MFX_RETURN(MFX_ERR_INVALID_HANDLE);}
 //#define MFX_GUID_CHECKING
@@ -263,8 +266,17 @@ VAAPIVideoCORE::VAAPIVideoCORE(
           , m_adapterNum(adapterNum)
           , m_bUseExtAllocForHWFrames(false)
           , m_HWType(MFX_HW_IVB) //MFX_HW_UNKNOWN
+#if !defined(ANDROID)
           , m_bCmCopy(false)
           , m_bCmCopyAllowed(false)
+#else
+          , m_bCmCopy(false)
+          , m_bCmCopyAllowed(false)
+          , m_va_config(VA_INVALID_ID)
+          , m_va_CM_context(VA_INVALID_ID)
+          , m_bCM_Initialized(false)
+          , m_CM_CurIndex(0)
+#endif
 {
 } // VAAPIVideoCORE::VAAPIVideoCORE(...)
 
@@ -285,6 +297,9 @@ VAAPIVideoCORE::~VAAPIVideoCORE()
 void VAAPIVideoCORE::Close()
 {
     m_pVA.reset();
+#if defined(ANDROID)
+    CloseCM();
+#endif
 } // void VAAPIVideoCORE::Close()
 
 
@@ -937,7 +952,55 @@ VAAPIVideoCORE::DoFastCopyExtended(
         void *pBits = NULL;
 
         MFX_CHECK(m_Display,MFX_ERR_NOT_INITIALIZED);
-        
+
+#if defined(ANDROID)
+        if((((unsigned long)pDst->Data.Y & (64 - 1)) == 0)
+            && (pDst->Info.FourCC == MFX_FOURCC_NV12))
+        // make CM fast copy only in case of output memory aligment equal to 64
+        // and MFX_FOURCC_NV12 color format
+        {
+            if (!m_bCM_Initialized)
+            {
+                va_sts = InitCM(pDst->Info.Width, pDst->Info.Height);
+                MFX_CHECK(VA_STATUS_SUCCESS == va_sts, MFX_ERR_DEVICE_FAILED);
+            }
+
+            VASurfaceID va_dstSurface = CM_FindInPool(pDst->Data.Y);
+            if (VA_INVALID_SURFACE == va_dstSurface)
+            {
+                VASurfaceAttributeTPI attribute_tpi;
+
+                attribute_tpi.size = pDst->Info.Width * pDst->Info.Height * 3 / 2;
+                attribute_tpi.luma_stride = pDst->Info.Width;
+                attribute_tpi.buffers = (unsigned int*) pDst->Data.Y;
+                attribute_tpi.tiling = 0;
+                attribute_tpi.pixel_format = VA_FOURCC_NV12;
+                attribute_tpi.type = VAExternalMemoryUserPointer;
+
+                // Create surface
+                va_sts = vaCreateSurfacesWithAttribute(
+                           m_Display,
+                           pDst->Info.Width,
+                           pDst->Info.Height,
+                           VA_RT_FORMAT_YUV420,
+                           1,
+                           &va_dstSurface,
+                           &attribute_tpi
+                          );
+                MFX_CHECK(VA_STATUS_SUCCESS == va_sts, MFX_ERR_DEVICE_FAILED);
+
+                mfxStatus mfx_sts = CM_AddToPool(va_dstSurface, pDst->Data.Y);
+                MFX_CHECK_STS(mfx_sts);
+            }
+
+            //CM fast copy call
+            va_sts = CM_FastCopy(m_Display, m_va_CM_context, va_dstSurface, *va_surface, pDst->Info.Width, pDst->Info.Height);
+            MFX_CHECK(VA_STATUS_SUCCESS == va_sts, MFX_ERR_DEVICE_FAILED);
+
+            return MFX_ERR_NONE;
+        }
+#endif
+
         va_sts = vaDeriveImage(m_Display, *va_surface, &va_image);
         MFX_CHECK(VA_STATUS_SUCCESS == va_sts, MFX_ERR_DEVICE_FAILED);
 
@@ -1284,6 +1347,147 @@ VAAPIVideoCORE::DoFastCopyExtended(
 
 } // mfxStatus VAAPIVideoCORE::DoFastCopyExtended(mfxFrameSurface1 *pDst, mfxFrameSurface1 *pSrc)
 
+#if defined(ANDROID)
+mfxStatus VAAPIVideoCORE::CM_FastCopy(
+    VADisplay va_display,
+    VAContextID va_context,
+    VASurfaceID dstSurf,
+    VASurfaceID srcSurf,
+    int width,
+    int height)
+{
+    VAStatus va_sts = VA_STATUS_SUCCESS;
+
+    VARectangle va_dstRect;
+    VARectangle va_srcRect;
+
+    va_srcRect.x = va_srcRect.y = 0;
+    va_srcRect.width = width;
+    va_srcRect.height = height;
+
+    va_dstRect = va_srcRect;
+
+    VAProcPipelineParameterBuffer va_vpp_param;
+
+    memset(&va_vpp_param, 0, sizeof(va_vpp_param));
+    va_vpp_param.surface = srcSurf;
+    va_vpp_param.output_region = &va_dstRect;
+    va_vpp_param.surface_region = &va_srcRect;
+
+    VABufferID va_vpp_pipeline_buf;
+
+    va_sts = vaCreateBuffer(va_display, va_context,
+                               VAProcPipelineParameterBufferType,
+                               sizeof(VAProcPipelineParameterBuffer),
+                               1, &va_vpp_param, &va_vpp_pipeline_buf);
+    MFX_CHECK(VA_STATUS_SUCCESS == va_sts, MFX_ERR_DEVICE_FAILED);
+
+    va_sts = vaBeginPicture(va_display, va_context, dstSurf);
+    MFX_CHECK(VA_STATUS_SUCCESS == va_sts, MFX_ERR_DEVICE_FAILED);
+
+    va_sts = vaRenderPicture(va_display, va_context, &va_vpp_pipeline_buf, 1);
+
+    MFX_CHECK(VA_STATUS_SUCCESS == va_sts, MFX_ERR_DEVICE_FAILED);
+
+    va_sts = vaEndPicture(va_display, va_context);
+    MFX_CHECK(VA_STATUS_SUCCESS == va_sts, MFX_ERR_DEVICE_FAILED);
+
+    va_sts = vaDestroyBuffer(va_display, va_vpp_pipeline_buf);
+    MFX_CHECK(VA_STATUS_SUCCESS == va_sts, MFX_ERR_DEVICE_FAILED);
+
+    return MFX_ERR_NONE;
+} //mfxStatus VAAPIVideoCORE::CM_FastCopy(..)
+
+VASurfaceID VAAPIVideoCORE::CM_FindInPool(
+    mfxHDL key)
+{
+    VASurfaceID srf = VA_INVALID_SURFACE;
+
+    for (mfxU32 indx = 0; indx < CM_SRF_POOL_SIZE; indx++)
+    {
+        if (key == m_CM_SrfPool[indx].key) srf = m_CM_SrfPool[indx].srf;
+    }
+
+    return srf;
+} //VASurfaceID VAAPIVideoCORE::CM_FindInPool(..)
+
+mfxStatus VAAPIVideoCORE::CM_AddToPool(
+    VASurfaceID srf,
+    mfxHDL key)
+{
+    mfxU32 indx = m_CM_CurIndex;
+
+    for (mfxU32 i = 0; i < CM_SRF_POOL_SIZE; i++)
+    {
+        if (!m_CM_SrfPool[indx].key)
+        {
+            m_CM_SrfPool[indx].key = key;
+            m_CM_SrfPool[indx].srf = srf;
+            return MFX_ERR_NONE;
+        }
+        indx = (indx + 1)%CM_SRF_POOL_SIZE;
+    }
+
+    VAStatus va_sts = vaDestroySurfaces(m_Display, &m_CM_SrfPool[indx].srf, 1);
+    MFX_CHECK(VA_STATUS_SUCCESS == va_sts, MFX_ERR_DEVICE_FAILED);
+
+    m_CM_SrfPool[indx].srf = srf;
+    m_CM_SrfPool[indx].key = key;
+    m_CM_CurIndex = (m_CM_CurIndex + 1)%CM_SRF_POOL_SIZE;
+
+    return MFX_ERR_NONE;
+} //mfxStatus VAAPIVideoCORE::CM_AddToPool(..)
+
+mfxStatus VAAPIVideoCORE::InitCM(int width, int height)
+{
+    if (!m_bCM_Initialized)
+    {
+        VAStatus va_sts = VA_STATUS_SUCCESS;
+        VAConfigAttrib va_Attrib;
+
+        va_Attrib.type = VAConfigAttribRTFormat;
+        va_Attrib.value = VA_RT_FORMAT_YUV420;
+
+        va_sts = vaCreateConfig(m_Display, VAProfileNone,
+                              VAEntrypointVideoProc, &va_Attrib, 1, &m_va_config);
+        MFX_CHECK(VA_STATUS_SUCCESS == va_sts, MFX_ERR_DEVICE_FAILED);
+
+        va_sts = vaCreateContext(m_Display, m_va_config, width,
+                               height, 0, NULL, 0, &m_va_CM_context);
+        MFX_CHECK(VA_STATUS_SUCCESS == va_sts, MFX_ERR_DEVICE_FAILED);
+
+        for (mfxU32 indx = 0; indx < CM_SRF_POOL_SIZE; indx++)
+        {
+            m_CM_SrfPool[indx].srf = VA_INVALID_SURFACE;
+            m_CM_SrfPool[indx].key = 0;
+        }
+        m_bCM_Initialized = true;
+    }
+
+    return MFX_ERR_NONE;
+} //mfxStatus VAAPIVideoCORE::InitCM(..)
+
+mfxStatus VAAPIVideoCORE::CloseCM()
+{
+    if (m_bCM_Initialized)
+    {
+        for (mfxU32 indx = 0; indx < CM_SRF_POOL_SIZE; indx++)
+        {
+            if (VA_INVALID_SURFACE != m_CM_SrfPool[indx].srf)
+            {
+                VAStatus va_sts = vaDestroySurfaces(m_Display, &m_CM_SrfPool[indx].srf, 1);
+                MFX_CHECK(VA_STATUS_SUCCESS == va_sts, MFX_ERR_DEVICE_FAILED);
+                m_CM_SrfPool[indx].srf = VA_INVALID_SURFACE;
+                m_CM_SrfPool[indx].key = 0;
+            }
+        }
+
+        m_bCM_Initialized = false;
+    }
+
+    return MFX_ERR_NONE;
+} //mfxStatus VAAPIVideoCORE::CloseCM()
+#endif
 
 mfxStatus
 VAAPIVideoCORE::DoFastCopy(
