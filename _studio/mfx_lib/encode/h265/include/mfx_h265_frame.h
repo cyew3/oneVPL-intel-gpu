@@ -48,6 +48,10 @@ public:
     Ipp8u    m_isBRef;
     Ipp8u    m_isMarked;
 
+    RefPicList m_refPicList[2];
+    Ipp32s m_mapRefIdxL1ToL0[MAX_NUM_REF_IDX];
+    Ipp32s m_allRefFramesAreFromThePast;
+
     H265Frame() {
         m_pPreviousFrame = m_pFutureFrame = NULL;
         mem = NULL;

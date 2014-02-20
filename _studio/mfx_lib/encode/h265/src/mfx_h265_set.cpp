@@ -534,12 +534,14 @@ mfxStatus H265Encoder::PutSliceHeader(H265BsReal *_bs, H265Slice *slice)
                 H265Bs_PutBit(bs, sh->mvd_l1_zero_flag);
             if (pps->cabac_init_present_flag)
                 H265Bs_PutBit(bs, sh->cabac_init_flag);
-            if (sps->sps_temporal_mvp_enabled_flag) {
+            if (sh->slice_temporal_mvp_enabled_flag) {
                 if (sh->slice_type == B_SLICE)
                     H265Bs_PutBit(bs, sh->collocated_from_l0_flag);
-                if (sh->slice_type != I_SLICE &&
-                    ((sh->collocated_from_l0_flag && sh->num_ref_idx_l0_active > 1)  ||
-                    (!sh->collocated_from_l0_flag && sh->num_ref_idx_l1_active > 1)))
+                Ipp32s collocated_from_l0_flag = sh->collocated_from_l0_flag;
+                if (sh->slice_type != B_SLICE)
+                    collocated_from_l0_flag = 1; // inferred
+                if (((collocated_from_l0_flag && sh->num_ref_idx_l0_active > 1)  ||
+                    (!collocated_from_l0_flag && sh->num_ref_idx_l1_active > 1)))
                     H265Bs_PutVLCCode(bs, sh->collocated_ref_idx);
             }
             if ((pps->weighted_pred_flag && sh->slice_type == P_SLICE)  ||

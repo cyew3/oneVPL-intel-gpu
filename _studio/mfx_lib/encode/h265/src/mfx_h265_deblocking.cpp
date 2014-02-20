@@ -335,18 +335,14 @@ void H265CU::GetEdgeStrength(H265CUPtr *pcCUQptr,
 
         if (numRefsQ == 2)
         {
-            RefPOCQ0 = m_par->m_pRefPicList[m_par->m_slice_ids[m_ctbAddr]].
-                m_RefPicListL0.m_RefPicList[pcCUQ[uiPartQ].refIdx[REF_PIC_LIST_0]]->m_PicOrderCnt;
-            RefPOCQ1 = m_par->m_pRefPicList[m_par->m_slice_ids[m_ctbAddr]].
-                m_RefPicListL1.m_RefPicList[pcCUQ[uiPartQ].refIdx[REF_PIC_LIST_1]]->m_PicOrderCnt;
-            MVQ0 = pcCUQ[uiPartQ].mv[REF_PIC_LIST_0];
-            MVQ1 = pcCUQ[uiPartQ].mv[REF_PIC_LIST_1];
-            RefPOCP0 = m_par->m_pRefPicList[m_par->m_slice_ids[CUPPtr.ctbAddr]].
-                m_RefPicListL0.m_RefPicList[pcCUP[uiPartP].refIdx[REF_PIC_LIST_0]]->m_PicOrderCnt;
-            RefPOCP1 = m_par->m_pRefPicList[m_par->m_slice_ids[CUPPtr.ctbAddr]].
-                m_RefPicListL1.m_RefPicList[pcCUP[uiPartP].refIdx[REF_PIC_LIST_1]]->m_PicOrderCnt;
-            MVP0 = pcCUP[uiPartP].mv[REF_PIC_LIST_0];
-            MVP1 = pcCUP[uiPartP].mv[REF_PIC_LIST_1];
+            RefPOCQ0 = m_currFrame->m_refPicList[0].m_refFrames[pcCUQ[uiPartQ].refIdx[0]]->m_PicOrderCnt;
+            RefPOCQ1 = m_currFrame->m_refPicList[1].m_refFrames[pcCUQ[uiPartQ].refIdx[1]]->m_PicOrderCnt;
+            MVQ0 = pcCUQ[uiPartQ].mv[0];
+            MVQ1 = pcCUQ[uiPartQ].mv[1];
+            RefPOCP0 = m_currFrame->m_refPicList[0].m_refFrames[pcCUP[uiPartP].refIdx[0]]->m_PicOrderCnt;
+            RefPOCP1 = m_currFrame->m_refPicList[1].m_refFrames[pcCUP[uiPartP].refIdx[1]]->m_PicOrderCnt;
+            MVP0 = pcCUP[uiPartP].mv[0];
+            MVP1 = pcCUP[uiPartP].mv[1];
 
             if (((RefPOCQ0 == RefPOCP0) && (RefPOCQ1 == RefPOCP1)) ||
                 ((RefPOCQ0 == RefPOCP1) && (RefPOCQ1 == RefPOCP0)))
@@ -382,27 +378,24 @@ void H265CU::GetEdgeStrength(H265CUPtr *pcCUQptr,
         else
         {
             if (pcCUQ[uiPartQ].refIdx[REF_PIC_LIST_0] >= 0) {
-                RefPOCQ0 = m_par->m_pRefPicList[m_par->m_slice_ids[m_ctbAddr]].
-                    m_RefPicListL0.m_RefPicList[pcCUQ[uiPartQ].refIdx[REF_PIC_LIST_0]]->m_PicOrderCnt;
-                MVQ0 = pcCUQ[uiPartQ].mv[REF_PIC_LIST_0];
-            } else {
-                RefPOCQ0 = m_par->m_pRefPicList[m_par->m_slice_ids[m_ctbAddr]].
-                    m_RefPicListL1.m_RefPicList[pcCUQ[uiPartQ].refIdx[REF_PIC_LIST_1]]->m_PicOrderCnt;
-                MVQ0 = pcCUQ[uiPartQ].mv[REF_PIC_LIST_1];
+                RefPOCQ0 = m_currFrame->m_refPicList[0].m_refFrames[pcCUQ[uiPartQ].refIdx[0]]->m_PicOrderCnt;
+                MVQ0 = pcCUQ[uiPartQ].mv[0];
+            }
+            else {
+                RefPOCQ0 = m_currFrame->m_refPicList[1].m_refFrames[pcCUQ[uiPartQ].refIdx[1]]->m_PicOrderCnt;
+                MVQ0 = pcCUQ[uiPartQ].mv[1];
             }
 
-            if (pcCUP[uiPartP].refIdx[REF_PIC_LIST_0] >= 0) {
-                RefPOCP0 = m_par->m_pRefPicList[m_par->m_slice_ids[CUPPtr.ctbAddr]].
-                    m_RefPicListL0.m_RefPicList[pcCUP[uiPartP].refIdx[REF_PIC_LIST_0]]->m_PicOrderCnt;
-                MVP0 = pcCUP[uiPartP].mv[REF_PIC_LIST_0];
-            } else {
-                RefPOCP0 = m_par->m_pRefPicList[m_par->m_slice_ids[CUPPtr.ctbAddr]].
-                    m_RefPicListL1.m_RefPicList[pcCUP[uiPartP].refIdx[REF_PIC_LIST_1]]->m_PicOrderCnt;
-                MVP0 = pcCUP[uiPartP].mv[REF_PIC_LIST_1];
+            if (pcCUP[uiPartP].refIdx[0] >= 0) {
+                RefPOCP0 = m_currFrame->m_refPicList[0].m_refFrames[pcCUP[uiPartP].refIdx[0]]->m_PicOrderCnt;
+                MVP0 = pcCUP[uiPartP].mv[0];
+            }
+            else {
+                RefPOCP0 = m_currFrame->m_refPicList[1].m_refFrames[pcCUP[uiPartP].refIdx[1]]->m_PicOrderCnt;
+                MVP0 = pcCUP[uiPartP].mv[1];
             }
 
-            if (RefPOCQ0 == RefPOCP0)
-            {
+            if (RefPOCQ0 == RefPOCP0) {
                 Ipp32s bs = (MVIsnotEq(MVP0, MVQ0) ? 1 : 0);
                 edge->strength = (Ipp8u)bs;
                 return;

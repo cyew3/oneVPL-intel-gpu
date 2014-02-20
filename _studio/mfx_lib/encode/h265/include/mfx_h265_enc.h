@@ -129,7 +129,6 @@ struct H265VideoParam {
 
     H265SeqParameterSet *csps;
     H265PicParameterSet *cpps;
-    EncoderRefPicList *m_pRefPicList;
     Ipp8u *m_slice_ids;
 };
 
@@ -173,7 +172,6 @@ public:
     Ipp8u *m_slice_ids;
     H265EncoderRowInfo *m_row_info;
 
-    EncoderRefPicList *m_pRefPicList;
     Ipp32u m_numShortTermRefPicSets;
     Ipp32s m_PicOrderCnt_Accu; // Accumulator to compensate POC resets on IDR frames.
     Ipp32u m_PicOrderCnt;
@@ -219,7 +217,6 @@ public:
         m_slice_ids = NULL;
         m_row_info = NULL;
         m_pCurrentFrame = m_pLastFrame = m_pReconstructFrame = NULL;
-        m_pRefPicList = NULL;
         m_brc = NULL;
         m_context_array_wpp = NULL;
         m_recon_dump_file_name = NULL;
@@ -265,13 +262,6 @@ public:
     void CreateRefPicSet(H265Slice *curr_slice);
     mfxStatus CheckCurRefPicSet(H265Slice *curr_slice);
     mfxStatus UpdateRefPicList(H265Slice *curr_slice);
-
-    inline EncoderRefPicList* GetRefPicLists(Ipp32s SliceNum)
-    {
-        return &m_pRefPicList[SliceNum];
-    }    // RefPicLists
-
-    //////////////////
 
     mfxStatus InitH265VideoParam(const mfxVideoParam *param, const mfxExtCodingOptionHEVC *opts_hevc);
 private:

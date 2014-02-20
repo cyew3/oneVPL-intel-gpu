@@ -492,9 +492,8 @@ Ipp8s H265CU::GetLastCodedQP( Ipp32u absPartIdx )
 }
 
 void H265CU::InitCu(H265VideoParam *_par, H265CUData *_data, H265CUData *_dataTemp, Ipp32s cuAddr,
-                    PixType *_y, PixType *_uv, Ipp32s _pitch, PixType *_ySrc, PixType *_uvSrc,
-                    Ipp32s _pitchSrc, H265BsFake *_bsf, H265Slice *_cslice,
-                    Ipp32s initializeDataFlag, const Ipp8u *logMvCostTable) 
+                    PixType *_y, PixType *_uv, Ipp32s _pitch, H265Frame *currFrame, H265BsFake *_bsf,
+                    H265Slice *_cslice, Ipp32s initializeDataFlag, const Ipp8u *logMvCostTable) 
 {
     m_par = _par;
 
@@ -511,11 +510,12 @@ void H265CU::InitCu(H265VideoParam *_par, H265CUData *_data, H265CUData *_dataTe
     m_absIdxInLcu      = 0;
     m_numPartition     = m_par->NumPartInCU;
     m_pitchRec = _pitch;
-    m_pitchSrc = _pitchSrc;
+    m_currFrame = currFrame;
+    m_pitchSrc = currFrame->pitch_luma;
     m_yRec = _y + m_ctbPelX + m_ctbPelY * m_pitchRec;
     m_uvRec = _uv + m_ctbPelX + (m_ctbPelY * m_pitchRec >> 1);
 
-    m_ySrc = _ySrc + m_ctbPelX + m_ctbPelY * m_pitchSrc;
+    m_ySrc = currFrame->y + m_ctbPelX + m_ctbPelY * m_pitchSrc;
 
     // limits to clip MV allover the CU
     const Ipp32s MvShift = 2;
@@ -532,7 +532,7 @@ void H265CU::InitCu(H265VideoParam *_par, H265CUData *_data, H265CUData *_dataTe
     ippiCopy_8u_C1R(_m_ySrc + m_ctbPelX + m_ctbPelY * m_pitchSrc, m_pitchSrc, m_src_aligned_block, MAX_CU_SIZE, blkSize);
     }*/
 
-    m_uvSrc = _uvSrc + m_ctbPelX + (m_ctbPelY * m_pitchSrc >> 1);
+    m_uvSrc = currFrame->uv + m_ctbPelX + (m_ctbPelY * m_pitchSrc >> 1);
     m_depthMin = MAX_TOTAL_DEPTH;
 
     if (initializeDataFlag) {
@@ -2135,15 +2135,13 @@ Ipp32s H265CU::GetMvPredictors(H265MV * mvPred, const H265MEInfo* meInfo, const 
                                const MVPInfo *mergeInfo, H265MV mvLast, Ipp32s meDir, Ipp32s refIdx) const
 {
     Ipp32s numMvPred = 0;
-    EncoderRefPicListStruct *refList = (meDir == 0)
-        ? &m_cslice->m_pRefPicList[0].m_RefPicListL0
-        : &m_cslice->m_pRefPicList[0].m_RefPicListL1;
+    RefPicList *refList = m_currFrame->m_refPicList + meDir;
 
     if (refIdx > 0) {
         mvPred[numMvPred++] = mvLast; // add best mv from previous reference
 
         Ipp32s scale =
-            GetDistScaleFactor(refList->m_Tb[refIdx], refList->m_Tb[refIdx - 1]);
+            GetDistScaleFactor(refList->m_deltaPoc[refIdx], refList->m_deltaPoc[refIdx - 1]);
         if (scale < 4096) {
             // add scaled best mv from previous reference
             mvPred[numMvPred].mvx = (Ipp16s)Saturate(-32768, 32767, (scale * mvLast.mvx + 127 + (scale * mvLast.mvx < 0)) >> 8);
@@ -2207,10 +2205,7 @@ void H265CU::MeSubpel(const H265MEInfo *meInfo, const MVPInfo *predInfo, Ipp32s 
     Ipp32s costBest = *cost;
     Ipp32s mvCostBest = *mvCost;
 
-    EncoderRefPicListStruct *refList = (meDir == 0)
-        ? &m_cslice->m_pRefPicList[0].m_RefPicListL0
-        : &m_cslice->m_pRefPicList[0].m_RefPicListL1;
-    H265Frame *ref = refList->m_RefPicList[refIdx];
+    H265Frame *ref = m_currFrame->m_refPicList[meDir].m_refFrames[refIdx];
     PixType *src = m_ySrc + meInfo->posx + meInfo->posy * m_pitchSrc;
 
     Ipp32s useHadamard = (m_par->hadamardMe >= 2);
@@ -2302,7 +2297,7 @@ void GetPredIdxBits(Ipp32s partMode, Ipp32s isP, int partIdx, Ipp32s lastPredIdx
     }
 }
 
-static bool IsCandFound(const Ipp8s *curRefIdx, const H265MV* curMV, const MVPInfo* pInfo,
+static bool IsCandFound(const Ipp8s *curRefIdx, const H265MV *curMV, const MVPInfo *mergeInfo,
                         Ipp32s candIdx, Ipp32s numRefLists);
 
 Ipp32s IsDuplicatedMergeCand(const MVPInfo * mergeInfo, Ipp32s mergeIdxCur) // FIXME: try using IsCandFound()
@@ -2320,11 +2315,7 @@ Ipp32s IsDuplicatedMergeCand(const MVPInfo * mergeInfo, Ipp32s mergeIdxCur) // F
 
 void H265CU::MePuExperimental(H265MEInfo *meInfo, Ipp32s lastPredIdx)
 {
-    EncoderRefPicListStruct *refList[2] = {
-        &m_cslice->m_pRefPicList[0].m_RefPicListL0,
-        &m_cslice->m_pRefPicList[0].m_RefPicListL1
-    };
-
+    RefPicList *refPicList = m_currFrame->m_refPicList;
     Ipp32u numParts = (m_par->NumPartInCU >> (meInfo->depth << 1));
     Ipp32s blockIdx = meInfo->absPartIdx &~ (numParts - 1);
     Ipp32s partAddr = meInfo->absPartIdx &  (numParts - 1);
@@ -2353,7 +2344,7 @@ void H265CU::MePuExperimental(H265MEInfo *meInfo, Ipp32s lastPredIdx)
             costRefBest[list][refIdx] = INT_MAX;
 
             if (list == 1) { // TODO: use pre-build table of duplicates instead of std::find
-                Ipp32s idx0 = m_cslice->m_mapRefIdxL1ToL0[refIdx];
+                Ipp32s idx0 = m_currFrame->m_mapRefIdxL1ToL0[refIdx];
                 if (idx0 >= 0) {
                     // don't do ME just re-calc costs
                     mvRefBest[1][refIdx] = mvRefBest[0][idx0];
@@ -2377,7 +2368,7 @@ void H265CU::MePuExperimental(H265MEInfo *meInfo, Ipp32s lastPredIdx)
             Ipp32s costBest = INT_MAX;
             H265MV mvBest = { 0, 0 };
             MVPInfo *mvp = predInfo + refIdx * 2 + list;
-            H265Frame *ref = refList[list]->m_RefPicList[refIdx];
+            H265Frame *ref = refPicList[list].m_refFrames[refIdx];
             for (Ipp32s i = 0; i < predInfo[refIdx * 2 + list].numCand; i++) {
                 H265MV mv = mvp->mvCand[i];
                 if (std::find(mvp->mvCand, mvp->mvCand + i, mvp->mvCand[i]) != mvp->mvCand + i)
@@ -2484,8 +2475,8 @@ void H265CU::MePuExperimental(H265MEInfo *meInfo, Ipp32s lastPredIdx)
     Ipp32s costBiBest = INT_MAX;
     H265MV mvBiBest[2] = { mvRefBest[0][idxL0], mvRefBest[1][idxL1] };
 
-    H265Frame *refF = refList[0]->m_RefPicList[idxL0];
-    H265Frame *refB = refList[1]->m_RefPicList[idxL1];
+    H265Frame *refF = refPicList[0].m_refFrames[idxL0];
+    H265Frame *refB = refPicList[1].m_refFrames[idxL1];
     if (m_cslice->slice_type == B_SLICE && meInfo->width + meInfo->height != 12 && refF && refB) {
         // use satd for bidir refine because it is always sub-pel
         Ipp32s useHadamard = (m_par->hadamardMe >= 2);
@@ -2552,14 +2543,14 @@ void H265CU::MePuExperimental(H265MEInfo *meInfo, Ipp32s lastPredIdx)
         interDir += (refIdx[0] >= 0) ? INTER_DIR_PRED_L0 : 0;
         interDir += (refIdx[1] >= 0) ? INTER_DIR_PRED_L1 : 0;
         if (refIdx[0] >= 0 && refIdx[1] >= 0) {
-            H265Frame *refF = refList[0]->m_RefPicList[refIdx[0]];
-            H265Frame *refB = refList[1]->m_RefPicList[refIdx[1]];
+            H265Frame *refF = refPicList[0].m_refFrames[refIdx[0]];
+            H265Frame *refB = refPicList[1].m_refFrames[refIdx[1]];
             cost = MatchingMetricBipredPu(src, meInfo, refF->y, refF->pitch_luma, refB->y,
                                           refB->pitch_luma, mv, useHadamard);
         }
         else {
             Ipp32s list = (refIdx[1] >= 0);
-            H265Frame *ref = refList[list]->m_RefPicList[refIdx[list]];
+            H265Frame *ref = refPicList[list].m_refFrames[refIdx[list]];
             cost = MatchingMetricPu(src, meInfo, mv + list, ref, useHadamard);
         }
 
@@ -3340,13 +3331,10 @@ bool H265CU::AddMvpCand(MVPInfo* pInfo,
                         Ipp32s refIdx,
                         bool order)
 {
-    EncoderRefPicListStruct* refPicList[2];
+    RefPicList *refPicList = m_currFrame->m_refPicList;
     Ipp8u isCurrRefLongTerm;
     Ipp32s  currRefTb;
     Ipp32s  i;
-
-    refPicList[0] = &m_cslice->m_pRefPicList->m_RefPicListL0;
-    refPicList[1] = &m_cslice->m_pRefPicList->m_RefPicListL1;
 
     if (!p_data || (p_data[blockZScanIdx].predMode == MODE_INTRA))
     {
@@ -3363,12 +3351,12 @@ bool H265CU::AddMvpCand(MVPInfo* pInfo,
             return true;
         }
 
-        currRefTb = refPicList[refPicListIdx]->m_Tb[refIdx];
+        currRefTb = refPicList[refPicListIdx].m_deltaPoc[refIdx];
         refPicListIdx = 1 - refPicListIdx;
 
         if (p_data[blockZScanIdx].refIdx[refPicListIdx] >= 0)
         {
-            Ipp32s neibRefTb = refPicList[refPicListIdx]->m_Tb[p_data[blockZScanIdx].refIdx[refPicListIdx]];
+            Ipp32s neibRefTb = refPicList[refPicListIdx].m_deltaPoc[p_data[blockZScanIdx].refIdx[refPicListIdx]];
 
             if (currRefTb == neibRefTb)
             {
@@ -3381,15 +3369,15 @@ bool H265CU::AddMvpCand(MVPInfo* pInfo,
     }
     else
     {
-        currRefTb = refPicList[refPicListIdx]->m_Tb[refIdx];
-        isCurrRefLongTerm = refPicList[refPicListIdx]->m_IsLongTermRef[refIdx];
+        currRefTb = refPicList[refPicListIdx].m_deltaPoc[refIdx];
+        isCurrRefLongTerm = refPicList[refPicListIdx].m_isLongTermRef[refIdx];
 
         for (i = 0; i < 2; i++)
         {
             if (p_data[blockZScanIdx].refIdx[refPicListIdx] >= 0)
             {
-                Ipp32s neibRefTb = refPicList[refPicListIdx]->m_Tb[p_data[blockZScanIdx].refIdx[refPicListIdx]];
-                Ipp8u isNeibRefLongTerm = refPicList[refPicListIdx]->m_IsLongTermRef[p_data[blockZScanIdx].refIdx[refPicListIdx]];
+                Ipp32s neibRefTb = refPicList[refPicListIdx].m_deltaPoc[p_data[blockZScanIdx].refIdx[refPicListIdx]];
+                Ipp8u isNeibRefLongTerm = refPicList[refPicListIdx].m_isLongTermRef[p_data[blockZScanIdx].refIdx[refPicListIdx]];
 
                 H265MV cMvPred, rcMv;
 
@@ -3433,28 +3421,16 @@ FUNCTION: HasEqualMotion
 DESCRIPTION:
 \* ****************************************************************************** */
 
-static bool HasEqualMotion(Ipp32s blockZScanIdx,
-                           H265CUData* blockLCU,
-                           Ipp32s candZScanIdx,
-                           H265CUData* candLCU)
+static bool HasEqualMotion(Ipp32s blockZScanIdx, H265CUData *blockLCU, Ipp32s candZScanIdx,
+                           H265CUData *candLCU)
 {
-    Ipp32s i;
-
-    for (i = 0; i < 2; i++)
-    {
+    for (Ipp32s i = 0; i < 2; i++) {
         if (blockLCU[blockZScanIdx].refIdx[i] != candLCU[candZScanIdx].refIdx[i])
-        {
             return false;
-        }
 
-        if (blockLCU[blockZScanIdx].refIdx[i] >= 0)
-        {
-            if ((blockLCU[blockZScanIdx].mv[i].mvx != candLCU[candZScanIdx].mv[i].mvx) ||
-                (blockLCU[blockZScanIdx].mv[i].mvy != candLCU[candZScanIdx].mv[i].mvy))
-            {
-                return false;
-            }
-        }
+        if (blockLCU[blockZScanIdx].refIdx[i] >= 0 &&
+            blockLCU[blockZScanIdx].mv[i] != candLCU[candZScanIdx].mv[i])
+            return false;
     }
 
     return true;
@@ -3465,28 +3441,25 @@ FUNCTION: GetMergeCandInfo
 DESCRIPTION:
 \* ****************************************************************************** */
 
-static void GetMergeCandInfo(MVPInfo* pInfo,
-                             bool *abCandIsInter,
-                             Ipp32s *puhInterDirNeighbours,
-                             Ipp32s blockZScanIdx,
-                             H265CUData* blockLCU)
+static void GetMergeCandInfo(MVPInfo * pInfo, bool *abCandIsInter, Ipp32s *puhInterDirNeighbours,
+                             Ipp32s blockZScanIdx, H265CUData* blockLCU)
 {
     Ipp32s iCount = pInfo->numCand;
 
     abCandIsInter[iCount] = true;
 
-    pInfo->mvCand[2*iCount] = blockLCU[blockZScanIdx].mv[0];
-    pInfo->mvCand[2*iCount+1] = blockLCU[blockZScanIdx].mv[1];
+    pInfo->mvCand[2 * iCount] = blockLCU[blockZScanIdx].mv[0];
+    pInfo->mvCand[2 * iCount + 1] = blockLCU[blockZScanIdx].mv[1];
 
-    pInfo->refIdx[2*iCount] = blockLCU[blockZScanIdx].refIdx[0];
-    pInfo->refIdx[2*iCount+1] = blockLCU[blockZScanIdx].refIdx[1];
+    pInfo->refIdx[2 * iCount] = blockLCU[blockZScanIdx].refIdx[0];
+    pInfo->refIdx[2 * iCount + 1] = blockLCU[blockZScanIdx].refIdx[1];
 
     puhInterDirNeighbours[iCount] = 0;
 
-    if (pInfo->refIdx[2*iCount] >= 0)
+    if (pInfo->refIdx[2 * iCount] >= 0)
         puhInterDirNeighbours[iCount] += 1;
 
-    if (pInfo->refIdx[2*iCount+1] >= 0)
+    if (pInfo->refIdx[2 * iCount + 1] >= 0)
         puhInterDirNeighbours[iCount] += 2;
 
     pInfo->numCand++;
@@ -3657,60 +3630,27 @@ void H265CU::GetInterMergeCandidates(Ipp32s topLeftCUBlockZScanIdx,
     if (pInfo->numCand > MAX_NUM_MERGE_CANDS - 1)
         pInfo->numCand = MAX_NUM_MERGE_CANDS - 1;
 
-    /* temporal candidate */
     if (m_par->TMVPFlag) {
-        Ipp32s frameWidthInSamples = m_par->Width;
-        Ipp32s frameHeightInSamples = m_par->Height;
-        Ipp32s bottomRightCandRow = topLeftRow + partHeight;
-        Ipp32s bottomRightCandColumn = topLeftColumn + partWidth;
-        Ipp32s centerCandRow = topLeftRow + (partHeight >> 1);
-        Ipp32s centerCandColumn = topLeftColumn + (partWidth >> 1);
-        Ipp8s refIdx = 0;
-        H265MV colCandMv;
+        H265CUData *currPb = m_data + topLeftBlockZScanIdx;
+        H265MV mvCol;
 
-        if ((((Ipp32s)m_ctbPelX + bottomRightCandColumn * minTUSize) >= frameWidthInSamples) ||
-            (((Ipp32s)m_ctbPelY + bottomRightCandRow * minTUSize) >= frameHeightInSamples) ||
-             (bottomRightCandRow >= numMinTUInLCU))
-        {
-            candLCU[0] = NULL;
-        }
-        else if (bottomRightCandColumn < numMinTUInLCU) {
-            candLCU[0] = m_colocatedLcu[0];
-            candZScanIdx[0] = h265_scan_r2z[maxDepth][(bottomRightCandRow << maxDepth) + bottomRightCandColumn];
-        }
-        else {
-            candLCU[0] = m_colocatedLcu[1];
-            candZScanIdx[0] = h265_scan_r2z[maxDepth][(bottomRightCandRow << maxDepth) + bottomRightCandColumn - numMinTUInLCU];
-        }
-
-        candLCU[1] = m_colocatedLcu[0];
-        candZScanIdx[1] = h265_scan_r2z[maxDepth][(centerCandRow << maxDepth) + centerCandColumn];
-
-        if ((candLCU[0] != NULL) && GetColMvp(candLCU[0], candZScanIdx[0], 0, refIdx, colCandMv) ||
-            GetColMvp(candLCU[1], candZScanIdx[1], 0, refIdx, colCandMv))
-        {
+        puhInterDirNeighbours[pInfo->numCand] = 0;
+        if (GetTempMvPred(currPb, topLeftColumn, topLeftRow, partWidth, partHeight, 0, 0, &mvCol)) {
             abCandIsInter[pInfo->numCand] = true;
-
-            pInfo->mvCand[2*pInfo->numCand].mvx = colCandMv.mvx;
-            pInfo->mvCand[2*pInfo->numCand].mvy = colCandMv.mvy;
-
-            pInfo->refIdx[2*pInfo->numCand] = refIdx;
-            puhInterDirNeighbours[pInfo->numCand] = 1;
-
-            if (m_cslice->slice_type == B_SLICE) {
-                if (candLCU[0] != NULL && GetColMvp(candLCU[0], candZScanIdx[0], 1, refIdx, colCandMv) ||
-                     GetColMvp(candLCU[1], candZScanIdx[1], 1, refIdx, colCandMv) )
-                {
-                    pInfo->mvCand[2*pInfo->numCand+1].mvx = colCandMv.mvx;
-                    pInfo->mvCand[2*pInfo->numCand+1].mvy = colCandMv.mvy;
-
-                    pInfo->refIdx[2*pInfo->numCand+1] = refIdx;
-                    puhInterDirNeighbours[pInfo->numCand] += 2;
-                }
-            }
-
-            pInfo->numCand++;
+            puhInterDirNeighbours[pInfo->numCand] |= 1;
+            pInfo->mvCand[2 * pInfo->numCand + 0] = mvCol;
+            pInfo->refIdx[2 * pInfo->numCand + 0] = 0;
         }
+        if (m_cslice->slice_type == B_SLICE) {
+            if (GetTempMvPred(currPb, topLeftColumn, topLeftRow, partWidth, partHeight, 1, 0, &mvCol)) {
+                abCandIsInter[pInfo->numCand] = true;
+                puhInterDirNeighbours[pInfo->numCand] |= 2;
+                pInfo->mvCand[2 * pInfo->numCand + 1] = mvCol;
+                pInfo->refIdx[2 * pInfo->numCand + 1] = 0;
+            }
+        }
+        if (abCandIsInter[pInfo->numCand])
+            pInfo->numCand++;
     }
 
     /* combined bi-predictive merging candidates */
@@ -3735,10 +3675,10 @@ void H265CU::GetInterMergeCandidates(Ipp32s topLeftCUBlockZScanIdx,
                 pInfo->mvCand[2*pInfo->numCand+1] = pInfo->mvCand[2*l1idx+1];
                 pInfo->refIdx[2*pInfo->numCand+1] = pInfo->refIdx[2*l1idx+1];
 
-                if ((m_cslice->m_pRefPicList->m_RefPicListL0.m_Tb[pInfo->refIdx[2*pInfo->numCand]] ==
-                     m_cslice->m_pRefPicList->m_RefPicListL1.m_Tb[pInfo->refIdx[2*pInfo->numCand+1]]) &&
-                    (pInfo->mvCand[2*pInfo->numCand].mvx == pInfo->mvCand[2*pInfo->numCand+1].mvx) &&
-                    (pInfo->mvCand[2*pInfo->numCand].mvy == pInfo->mvCand[2*pInfo->numCand+1].mvy))
+                if ((m_currFrame->m_refPicList[0].m_deltaPoc[pInfo->refIdx[2 * pInfo->numCand + 0]] ==
+                     m_currFrame->m_refPicList[1].m_deltaPoc[pInfo->refIdx[2 * pInfo->numCand + 1]]) &&
+                    (pInfo->mvCand[2 * pInfo->numCand].mvx == pInfo->mvCand[2 * pInfo->numCand + 1].mvx) &&
+                    (pInfo->mvCand[2 * pInfo->numCand].mvy == pInfo->mvCand[2 * pInfo->numCand + 1].mvy))
                 {
                     abCandIsInter[pInfo->numCand] = false;
                 }
@@ -3779,26 +3719,19 @@ FUNCTION: IsCandFound
 DESCRIPTION:
 \* ****************************************************************************** */
 
-static bool IsCandFound(const Ipp8s *curRefIdx, const H265MV* curMV, const MVPInfo* pInfo,
+static bool IsCandFound(const Ipp8s *curRefIdx, const H265MV *curMV, const MVPInfo *mergeInfo,
                         Ipp32s candIdx, Ipp32s numRefLists)
 {
-    Ipp32s i;
-
-    for (i = 0; i < numRefLists; i++)
-    {
-        if (curRefIdx[i] != pInfo->refIdx[2*candIdx+i])
-        {
+    for (Ipp32s i = 0; i < numRefLists; i++) {
+        if (curRefIdx[i] != mergeInfo->refIdx[2 * candIdx + i])
             return false;
-        }
 
         if (curRefIdx[i] >= 0)
-        {
-            if ((curMV[i].mvx != pInfo->mvCand[2*candIdx+i].mvx) ||
-                (curMV[i].mvy != pInfo->mvCand[2*candIdx+i].mvy))
+            if ((curMV[i].mvx != mergeInfo->mvCand[2 * candIdx + i].mvx) ||
+                (curMV[i].mvy != mergeInfo->mvCand[2 * candIdx + i].mvy))
             {
                 return false;
             }
-        }
     }
 
     return true;
@@ -3928,20 +3861,18 @@ FUNCTION: GetNeighbour
 DESCRIPTION:
 \* ****************************************************************************** */
 
-H265CUData* H265CU::GetNeighbour(Ipp32s& neighbourBlockZScanIdx,
-                                 Ipp32s  neighbourBlockColumn,
-                                 Ipp32s  neighbourBlockRow,
-                                 Ipp32s  curBlockZScanIdx,
+H265CUData *H265CU::GetNeighbour(Ipp32s &neighbourBlockZScanIdx, Ipp32s neighbourBlockColumn,
+                                 Ipp32s neighbourBlockRow, Ipp32s  curBlockZScanIdx,
                                  bool isNeedTocheckCurLCU)
 {
     Ipp32s maxDepth = m_par->MaxCUDepth;
     Ipp32s numMinTUInLCU = 1 << maxDepth;
-//    Ipp32s maxCUSize = m_par->MaxCUSize;
+    //Ipp32s maxCUSize = m_par->MaxCUSize;
     Ipp32s minCUSize = m_par->MinCUSize;
     Ipp32s minTUSize = m_par->MinTUSize;
     Ipp32s frameWidthInSamples = m_par->Width;
     Ipp32s frameHeightInSamples = m_par->Height;
-//    Ipp32s frameWidthInLCUs = m_par->PicWidthInCtbs;
+    //Ipp32s frameWidthInLCUs = m_par->PicWidthInCtbs;
     Ipp32s sliceStartAddr = m_cslice->slice_segment_address;
     Ipp32s tmpNeighbourBlockRow = neighbourBlockRow;
     Ipp32s tmpNeighbourBlockColumn = neighbourBlockColumn;
@@ -3975,7 +3906,7 @@ H265CUData* H265CU::GetNeighbour(Ipp32s& neighbourBlockZScanIdx,
     if (neighbourBlockRow < 0)
     {
         /* Constrained motion data compression */
-if(0)        if ((minCUSize == 8) && (minTUSize == 4))
+        if(0) if ((minCUSize == 8) && (minTUSize == 4))
         {
             tmpNeighbourBlockColumn = ((tmpNeighbourBlockColumn >> 1) << 1) + ((tmpNeighbourBlockColumn >> 1) & 1);
         }
@@ -4050,95 +3981,98 @@ FUNCTION: GetColMvp
 DESCRIPTION:
 \* ****************************************************************************** */
 
-bool H265CU::GetColMvp(H265CUData* colLCU,
-                       Ipp32s blockZScanIdx,
-                       Ipp32s refPicListIdx,
-                       Ipp32s refIdx,
-                       H265MV& rcMv)
+bool H265CU::GetTempMvPred(const H265CUData *currPb, Ipp32s xPb, Ipp32s yPb, Ipp32s nPbW,
+                           Ipp32s nPbH, Ipp32s listIdx, Ipp32s refIdx, H265MV *mvLxCol)
 {
-    EncoderRefPicListStruct* refPicList[2];
-    Ipp32s colPicListIdx, colRefIdx;
+    H265Frame *colPic = (m_cslice->slice_type == P_SLICE || m_cslice->collocated_from_l0_flag)
+        ? m_currFrame->m_refPicList[0].m_refFrames[m_cslice->collocated_ref_idx]
+        : m_currFrame->m_refPicList[1].m_refFrames[m_cslice->collocated_ref_idx];
+
+    H265CUData *colBr = NULL;
+    Ipp32s xColBr = xPb + nPbW;
+    Ipp32s yColBr = yPb + nPbH;
+    Ipp32s maxDepth = m_par->MaxCUDepth;
+    Ipp32s numMinTUInLCU = 1 << m_par->MaxCUDepth;
+    Ipp32s compressionShift = (m_par->Log2MinTUSize < 4) ? 4 - m_par->Log2MinTUSize : 0;
+
+    if ((Ipp32s)m_ctbPelX + xColBr * m_par->MinTUSize < m_par->Width &&
+        (Ipp32s)m_ctbPelY + yColBr * m_par->MinTUSize < m_par->Height &&
+        yColBr < numMinTUInLCU) {
+
+        xColBr = (xColBr >> compressionShift) << compressionShift;
+        yColBr = (yColBr >> compressionShift) << compressionShift;
+
+        if (xColBr < numMinTUInLCU) {
+            colBr = colPic->cu_data + (m_ctbAddr << m_par->Log2NumPartInCU);
+            colBr += h265_scan_r2z[maxDepth][(yColBr << maxDepth) + xColBr];
+        }
+        else {
+            colBr = colPic->cu_data + ((m_ctbAddr + 1) << m_par->Log2NumPartInCU);
+            colBr += h265_scan_r2z[maxDepth][(yColBr << maxDepth) + xColBr - numMinTUInLCU];
+        }
+
+        if (!GetColMv(currPb, listIdx, refIdx, colPic, colBr, mvLxCol))
+            colBr = NULL;
+    }
+
+    if (colBr)
+        return true;
+
+    Ipp32s xColCtr = xPb + (nPbW >> 1);
+    Ipp32s yColCtr = yPb + (nPbH >> 1);
+    xColCtr = (xColCtr >> compressionShift) << compressionShift;
+    yColCtr = (yColCtr >> compressionShift) << compressionShift;
+
+    H265CUData *colCtr = colPic->cu_data + (m_ctbAddr << m_par->Log2NumPartInCU);
+    colCtr += h265_scan_r2z[maxDepth][(yColCtr << maxDepth) + xColCtr];
+
+    return GetColMv(currPb, listIdx, refIdx, colPic, colCtr, mvLxCol);
+}
+
+
+bool H265CU::GetColMv(const H265CUData *currPb, Ipp32s listIdxCurr, Ipp32s refIdxCurr,
+                      const H265Frame *colPic, const H265CUData *colPb, H265MV *mvLxCol)
+{
     Ipp8u isCurrRefLongTerm, isColRefLongTerm;
-    Ipp32s  currRefTb, colRefTb;
+    Ipp32s currRefTb, colRefTb;
     H265MV cMvPred;
     Ipp32s minTUSize = m_par->MinTUSize;
 
-    /* MV compression */
-    if (m_par->MinTUSize < 2)
-    {
-        Ipp32s shift = 2 * (2 - minTUSize);
-        blockZScanIdx = (blockZScanIdx >> shift) << shift;
-    }
+    if (colPb->predMode == MODE_INTRA)
+        return false; // availableFlagLXCol=0
 
-    refPicList[0] = &m_cslice->m_pRefPicList->m_RefPicListL0;
-    refPicList[1] = &m_cslice->m_pRefPicList->m_RefPicListL1;
-
-    if ((colLCU == NULL) || (colLCU[blockZScanIdx].predMode == MODE_INTRA))
-    {
-        return false;
-    }
-
-    if (m_cslice->slice_type != B_SLICE)
-    {
-        colPicListIdx = 1;
-    }
+    Ipp32s listCol;
+    if (colPb->refIdx[0] < 0)
+        listCol = 1;
+    else if (colPb->refIdx[1] < 0)
+        listCol = 0;
+    else if (m_currFrame->m_allRefFramesAreFromThePast)
+        listCol = listIdxCurr;
     else
-    {
-        /*if (m_SliceInf.IsLowDelay)
-        {
-            colPicListIdx = refPicListIdx;
-        }
-        else */if (m_cslice->collocated_from_l0_flag)
-        {
-            colPicListIdx = 1;
-        }
-        else
-        {
-            colPicListIdx = 0;
-        }
+        listCol = m_cslice->collocated_from_l0_flag;
+
+    H265MV mvCol = colPb->mv[listCol];
+    Ipp8s refIdxCol = colPb->refIdx[listCol];
+
+    Ipp32s isLongTermCurr = m_currFrame->m_refPicList[listIdxCurr].m_isLongTermRef[refIdxCurr];
+    Ipp32s isLongTermCol  = colPic->m_refPicList[listCol].m_isLongTermRef[refIdxCol];
+
+    if (isLongTermCurr != isLongTermCol)
+        return false; // availableFlagLXCol=0
+
+    Ipp32s colPocDiff  = colPic->m_refPicList[listCol].m_deltaPoc[refIdxCol];
+    Ipp32s currPocDiff = m_currFrame->m_refPicList[listIdxCurr].m_deltaPoc[refIdxCurr];
+
+    if (isLongTermCurr || currPocDiff == colPocDiff) {
+        *mvLxCol = mvCol;
+    }
+    else {
+        Ipp32s scale = GetDistScaleFactor(currPocDiff, colPocDiff);
+        mvLxCol->mvx = Saturate(-32768, 32767, (scale * mvCol.mvx + 127 + (scale * mvCol.mvx < 0)) >> 8);
+        mvLxCol->mvy = Saturate(-32768, 32767, (scale * mvCol.mvy + 127 + (scale * mvCol.mvy < 0)) >> 8);
     }
 
-    colRefIdx = colLCU[blockZScanIdx].refIdx[colPicListIdx];
-
-    if (colRefIdx < 0 )
-    {
-        colPicListIdx = 1 - colPicListIdx;
-        colRefIdx = colLCU[blockZScanIdx].refIdx[colPicListIdx];
-
-        if (colRefIdx < 0 )
-        {
-            return false;
-        }
-    }
-
-    // Scale the vector.
-    currRefTb = refPicList[refPicListIdx]->m_Tb[refIdx];
-    isCurrRefLongTerm = refPicList[refPicListIdx]->m_IsLongTermRef[refIdx];
-    colRefTb = m_colFrmRefFramesTbList[colPicListIdx][colRefIdx];
-    isColRefLongTerm = m_colFrmRefIsLongTerm[colPicListIdx][colRefIdx];
-
-    cMvPred = colLCU[blockZScanIdx].mv[colPicListIdx];
-
-    if (isCurrRefLongTerm || isColRefLongTerm)
-    {
-        rcMv = cMvPred;
-    }
-    else
-    {
-        Ipp32s scale = GetDistScaleFactor(currRefTb, colRefTb);
-
-        if (scale == 4096)
-        {
-            rcMv = cMvPred;
-        }
-        else
-        {
-            rcMv.mvx = (Ipp16s)Saturate(-32768, 32767, (scale * cMvPred.mvx + 127 + (scale * cMvPred.mvx < 0)) >> 8);
-            rcMv.mvy = (Ipp16s)Saturate(-32768, 32767, (scale * cMvPred.mvy + 127 + (scale * cMvPred.mvy < 0)) >> 8);
-        }
-    }
-
-    return true;
+    return true; // availableFlagLXCol=1
 }
 
 void H265CU::GetMvpCand(Ipp32s topLeftCUBlockZScanIdx,
@@ -4257,74 +4191,21 @@ void H265CU::GetMvpCand(Ipp32s topLeftCUBlockZScanIdx,
         }
     }
 
-    if (pInfo->numCand == 2)
-    {
-        if ((pInfo->mvCand[0].mvx == pInfo->mvCand[1].mvx) &&
-            (pInfo->mvCand[0].mvy == pInfo->mvCand[1].mvy))
-        {
-            pInfo->numCand = 1;
+    if (pInfo->numCand == 2 && pInfo->mvCand[0] == pInfo->mvCand[1])
+        pInfo->numCand = 1;
+
+    if (pInfo->numCand < 2) {
+        if (m_par->TMVPFlag) {
+            H265CUData *currPb = m_data + topLeftBlockZScanIdx;
+            H265MV mvCol;
+            bool availFlagCol = GetTempMvPred(currPb, topLeftColumn, topLeftRow, partWidth,
+                                              partHeight, refPicListIdx, refIdx, &mvCol);
+            if (availFlagCol)
+                pInfo->mvCand[pInfo->numCand++] = mvCol;
         }
     }
 
-    if (m_par->TMVPFlag)
-    {
-        Ipp32s frameWidthInSamples = m_par->Width;
-        Ipp32s frameHeightInSamples = m_par->Height;
-        Ipp32s topLeftRow = topLeftRasterIdx >> maxDepth;
-        Ipp32s topLeftColumn = topLeftRasterIdx & (numMinTUInLCU - 1);
-        Ipp32s bottomRightCandRow = topLeftRow + partHeight;
-        Ipp32s bottomRightCandColumn = topLeftColumn + partWidth;
-        Ipp32s minTUSize = m_par->MinTUSize;
-        Ipp32s colCandBlockZScanIdx = 0;
-        H265CUData* colCandLCU;
-        H265MV colCandMv;
-
-        if ((((Ipp32s)m_ctbPelX + bottomRightCandColumn * minTUSize) >= frameWidthInSamples) ||
-            (((Ipp32s)m_ctbPelY + bottomRightCandRow * minTUSize) >= frameHeightInSamples) ||
-            (bottomRightCandRow >= numMinTUInLCU))
-        {
-            colCandLCU = NULL;
-        }
-        else if (bottomRightCandColumn < numMinTUInLCU)
-        {
-            colCandLCU = m_colocatedLcu[0];
-            colCandBlockZScanIdx = h265_scan_r2z[maxDepth][(bottomRightCandRow << maxDepth) + bottomRightCandColumn];
-        }
-        else
-        {
-            colCandLCU = m_colocatedLcu[1];
-            colCandBlockZScanIdx = h265_scan_r2z[maxDepth][(bottomRightCandRow << maxDepth) + bottomRightCandColumn - numMinTUInLCU];
-        }
-
-        if ((colCandLCU != NULL) &&
-            GetColMvp(colCandLCU, colCandBlockZScanIdx, refPicListIdx, refIdx, colCandMv))
-        {
-            pInfo->mvCand[pInfo->numCand] = colCandMv;
-            pInfo->numCand++;
-        }
-        else
-        {
-            Ipp32s centerCandRow = topLeftRow + (partHeight >> 1);
-            Ipp32s centerCandColumn = topLeftColumn + (partWidth >> 1);
-
-            colCandLCU = m_colocatedLcu[0];
-            colCandBlockZScanIdx = h265_scan_r2z[maxDepth][(centerCandRow << maxDepth) + centerCandColumn];
-
-            if (GetColMvp(colCandLCU, colCandBlockZScanIdx, refPicListIdx, refIdx, colCandMv))
-            {
-                pInfo->mvCand[pInfo->numCand] = colCandMv;
-                pInfo->numCand++;
-            }
-        }
-    }
-
-    if (pInfo->numCand > 2)
-    {
-        pInfo->numCand = 2;
-    }
-
-    while (pInfo->numCand < 2)
-    {
+    while (pInfo->numCand < 2) {
         pInfo->mvCand[pInfo->numCand].mvx = 0;
         pInfo->mvCand[pInfo->numCand].mvy = 0;
         pInfo->numCand++;
@@ -4333,10 +4214,10 @@ void H265CU::GetMvpCand(Ipp32s topLeftCUBlockZScanIdx,
     return;
 }
 
-static inline Ipp8u isEqualRef(EncoderRefPicListStruct *ref_list, Ipp8s idx1, Ipp8s idx2)
+static Ipp8u isEqualRef(RefPicList *ref_list, Ipp8s idx1, Ipp8s idx2)
 {
     if (idx1 < 0 || idx2 < 0) return 0;
-    return ref_list->m_RefPicList[idx1] == ref_list->m_RefPicList[idx2];
+    return ref_list->m_refFrames[idx1] == ref_list->m_refFrames[idx2];
 }
 
 Ipp8u H265CU::GetNumPartInter(Ipp32s absPartIdx)
@@ -4520,15 +4401,15 @@ CostType H265CU::CalcCostSkip(Ipp32u absPartIdx, Ipp8u depth)
 
             H265MV *mv = &(mergeInfo.mvCand[2*i]);
             if (inter_dir == (INTER_DIR_PRED_L0 | INTER_DIR_PRED_L1)) {
-                H265Frame *PicYUVRefF = m_cslice->GetRefFrame(REF_PIC_LIST_0, ref_idx[0]);
-                H265Frame *PicYUVRefB = m_cslice->GetRefFrame(REF_PIC_LIST_1, ref_idx[1]);
+                H265Frame *PicYUVRefF = m_currFrame->m_refPicList[0].m_refFrames[ref_idx[0]];
+                H265Frame *PicYUVRefB = m_currFrame->m_refPicList[1].m_refFrames[ref_idx[1]];
                 if (PicYUVRefF && PicYUVRefB)
                     cost_temp = MatchingMetricBipredPu(pSrc, &me_info, PicYUVRefF->y, PicYUVRefF->pitch_luma, PicYUVRefB->y, PicYUVRefB->pitch_luma, mv, 0);
                 else
                     cost_temp = COST_MAX;
             } else {
                 EnumRefPicList dir = inter_dir == INTER_DIR_PRED_L0 ? REF_PIC_LIST_0 : REF_PIC_LIST_1;
-                H265Frame *PicYUVRef = m_cslice->GetRefFrame(dir, ref_idx[dir]);
+                H265Frame *PicYUVRef = m_currFrame->m_refPicList[dir].m_refFrames[ref_idx[dir]];
                 cost_temp = MatchingMetricPu(pSrc, &me_info, mv+dir, PicYUVRef, 0); // approx MvCost
             }
 

@@ -330,18 +330,12 @@ struct H265VideoParam;
 class H265Encoder;
 class H265Frame;
 
-struct EncoderRefPicListStruct
+struct RefPicList
 {
-    H265Frame *m_RefPicList[MAX_NUM_REF_FRAMES + 1];
-    Ipp8s m_Tb[MAX_NUM_REF_FRAMES + 1];
-    Ipp8u m_IsLongTermRef[MAX_NUM_REF_FRAMES + 1];
+    H265Frame *m_refFrames[MAX_NUM_REF_FRAMES + 1];
+    Ipp8s m_deltaPoc[MAX_NUM_REF_FRAMES + 1];
+    Ipp8u m_isLongTermRef[MAX_NUM_REF_FRAMES + 1];
 };
-
-struct EncoderRefPicList
-{
-    EncoderRefPicListStruct m_RefPicListL0;
-    EncoderRefPicListStruct m_RefPicListL1;
-};    // EncoderRefPicList
 
 inline Ipp32s H265_CeilLog2(Ipp32s a) {
     Ipp32s r = 0;

@@ -115,6 +115,7 @@ class H265CU
 {
 public:
     H265VideoParam *m_par;
+    H265Frame      *m_currFrame;
     H265CUData     *m_data;
     Ipp32u          m_ctbAddr;           ///< CU address in a slice
     Ipp32u          m_absIdxInLcu;      ///< absolute address in a CU. It's Z scan order
@@ -236,8 +237,11 @@ public:
                     Ipp32s motionDataCompresssion = false, Ipp32s planarAtLcuBoundary = false,
                     Ipp32s enforceTileRestriction = true);
 
-    bool GetColMvp(H265CUData *colLCU, Ipp32s blockZScanIdx, Ipp32s refPicListIdx, Ipp32s refIdx,
-                   H265MV &rcMv);
+    bool GetTempMvPred(const H265CUData *currPb, Ipp32s xPb, Ipp32s yPb, Ipp32s nPbW, Ipp32s nPbH,
+                       Ipp32s listIdx, Ipp32s refIdx, H265MV *mvLxCol);
+
+    bool GetColMv(const H265CUData *currPb, Ipp32s listIdxCurr, Ipp32s refIdxCurr,
+                  const H265Frame *colPic, const H265CUData *colPb, H265MV *mvLxCol);
 
     H265CUData *GetNeighbour(Ipp32s &neighbourBlockZScanIdx, Ipp32s neighbourBlockColumn,
                              Ipp32s neighbourBlockRow, Ipp32s curBlockZScanIdx,
@@ -250,7 +254,7 @@ public:
                     Ipp32s partMode, Ipp32s partIdx, Ipp32s cuSize, MVPInfo *pInfo);
 
     void GetInterMergeCandidates(Ipp32s topLeftCUBlockZScanIdx, Ipp32s partMode, Ipp32s partIdx,
-                                 Ipp32s cuSize, MVPInfo *pInfo);
+                                 Ipp32s cuSize, MVPInfo *mergeInfo);
 
     void GetPuMvInfo(Ipp32s blockZScanIdx, Ipp32s partAddr, Ipp32s partMode, Ipp32s curPUidx);
 
@@ -444,9 +448,8 @@ public:
     Ipp32s MvCost1RefLog(H265MV mv, Ipp8s refIdx, const MVPInfo *predInfo, Ipp32s rlist) const;
 
     void InitCu(H265VideoParam *_par, H265CUData *_data, H265CUData *_dataTemp, Ipp32s cuAddr,
-                PixType *_y, PixType *_uv, Ipp32s _pitch, PixType *_ySrc, PixType *uvSrc,
-                Ipp32s _pitchSrc, H265BsFake *_bsf, H265Slice *cslice, Ipp32s initializeDataFlag,
-                const Ipp8u *logMvCostTable);
+                PixType *_y, PixType *_uv, Ipp32s _pitch, H265Frame *currFrame, H265BsFake *_bsf,
+                H265Slice *cslice, Ipp32s initializeDataFlag, const Ipp8u *logMvCostTable);
 
     void ModeDecision(Ipp32u absPartIdx, Ipp32u offset, Ipp8u depth, CostType *cost);
 

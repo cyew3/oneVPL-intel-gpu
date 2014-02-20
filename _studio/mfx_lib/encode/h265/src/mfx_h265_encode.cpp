@@ -644,7 +644,7 @@ mfxStatus MFXVideoENCODEH265::Init(mfxVideoParam* par_in)
 //    m_mfxVideoParam.mfx.NumThread = (mfxU16)asyncDepth;
 //    if (MFX_PLATFORM_SOFTWARE != MFX_Utility::GetPlatform(m_core, par_in))
 //        m_mfxVideoParam.mfx.NumThread = 1;
-    m_mfxVideoParam.mfx.NumThread = (mfxU16)vm_sys_info_get_cpu_num();
+    m_mfxVideoParam.mfx.NumThread = (mfxU16)vm_sys_info_get_cpu_num(); // force 1 thread here
 
 /*#if defined (AS_HEVCE_PLUGIN)
     m_mfxVideoParam.mfx.NumThread += 1;

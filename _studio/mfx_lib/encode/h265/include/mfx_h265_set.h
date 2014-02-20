@@ -250,15 +250,6 @@ public:
     // kolya
     // to match HM's lambda in HAD search
     Ipp64f rd_lambda_sqrt;
-
-    EncoderRefPicList *m_pRefPicList;
-    Ipp32s m_mapRefIdxL1ToL0[MAX_NUM_REF_IDX];
-
-    H265Frame *GetRefFrame(EnumRefPicList ref_list, Ipp8s ref_idx) {
-        if (!m_pRefPicList || ref_idx < 0) return NULL;
-        if (ref_list == REF_PIC_LIST_0) return m_pRefPicList->m_RefPicListL0.m_RefPicList[ref_idx];
-        else return m_pRefPicList->m_RefPicListL1.m_RefPicList[ref_idx];
-    }
 };
 
 } // namespace

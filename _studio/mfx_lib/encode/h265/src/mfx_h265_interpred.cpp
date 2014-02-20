@@ -20,24 +20,15 @@ namespace H265Enc {
 
 bool H265CU::CheckIdenticalMotion(Ipp32u abs_part_idx)
 {
-    EncoderRefPicListStruct *pList[2];
-    Ipp8s ref_idx[2];
-    pList[0] = &(m_cslice->m_pRefPicList[0].m_RefPicListL0);
-    pList[1] = &(m_cslice->m_pRefPicList[0].m_RefPicListL1);
-    ref_idx[0] = m_data[abs_part_idx].refIdx[0];
-    ref_idx[1] = m_data[abs_part_idx].refIdx[1];
-// TODO optimize: check B_SLISE && !weighted on entrance, POC after mv matched
-    if(m_cslice->slice_type == B_SLICE && !m_par->cpps->weighted_bipred_flag)
-    {
-        if(ref_idx[0] >= 0 && ref_idx[1] >= 0)
-        {
-            Ipp32s RefPOCL0 = pList[0]->m_RefPicList[ref_idx[0]]->PicOrderCnt();
-            Ipp32s RefPOCL1 = pList[1]->m_RefPicList[ref_idx[1]]->PicOrderCnt();
-            if(RefPOCL0 == RefPOCL1 &&
-                m_data[abs_part_idx].mv[0] == m_data[abs_part_idx].mv[1])
-            {
+    RefPicList *refPicList = m_currFrame->m_refPicList;
+    Ipp8s ref_idx[2] = { m_data[abs_part_idx].refIdx[0], m_data[abs_part_idx].refIdx[1] };
+    // TODO optimize: check B_SLISE && !weighted on entrance, POC after mv matched
+    if(m_cslice->slice_type == B_SLICE && !m_par->cpps->weighted_bipred_flag) {
+        if(ref_idx[0] >= 0 && ref_idx[1] >= 0) {
+            Ipp32s RefPOCL0 = refPicList[0].m_refFrames[ref_idx[0]]->PicOrderCnt();
+            Ipp32s RefPOCL1 = refPicList[1].m_refFrames[ref_idx[1]]->PicOrderCnt();
+            if (RefPOCL0 == RefPOCL1 && m_data[abs_part_idx].mv[0] == m_data[abs_part_idx].mv[1])
                 return true;
-            }
         }
     }
     return false;
@@ -138,26 +129,24 @@ void WriteAverageToPic(
 }
 
 
-void H265CU::PredInterUni(Ipp32u PartAddr, Ipp32s Width, Ipp32s Height, EnumRefPicList RefPicList,
+void H265CU::PredInterUni(Ipp32u PartAddr, Ipp32s Width, Ipp32s Height, EnumRefPicList listIdx,
                           Ipp32s PartIdx, PixType *dst, Ipp32s dst_pitch, bool bi, Ipp8u is_luma,
                           MFX_HEVC_PP::EnumAddAverageType eAddAverage)
 {
-    EncoderRefPicListStruct *pList[2];
+    RefPicList *refPicList = m_currFrame->m_refPicList;
     Ipp32s maxDepth = m_par->Log2MaxCUSize - m_par->Log2MinTUSize;
     Ipp32s numMinTUInLCU = 1 << maxDepth;
     Ipp32s PURasterIdx = h265_scan_z2r[maxDepth][PartAddr];
     Ipp32s PUStartRow = PURasterIdx >> maxDepth;
     Ipp32s PUStartColumn = PURasterIdx & (numMinTUInLCU - 1);
 
-    pList[0] = &(m_cslice->m_pRefPicList[0].m_RefPicListL0);
-    pList[1] = &(m_cslice->m_pRefPicList[0].m_RefPicListL1);
-    Ipp32s RefIdx = m_data[PartAddr].refIdx[RefPicList];
+    Ipp32s RefIdx = m_data[PartAddr].refIdx[listIdx];
     VM_ASSERT(RefIdx >= 0);
 
-    H265MV MV = m_data[PartAddr].mv[RefPicList];
+    H265MV MV = m_data[PartAddr].mv[listIdx];
     ClipMV(MV);
 
-    H265Frame *PicYUVRef = pList[RefPicList]->m_RefPicList[RefIdx];
+    H265Frame *PicYUVRef = refPicList[listIdx].m_refFrames[RefIdx];
 
     Ipp32s in_SrcPitch, in_dstPicPitch, in_dstBufPitch, refOffset;
     PixType *in_pSrc;
@@ -174,9 +163,9 @@ void H265CU::PredInterUni(Ipp32u PartAddr, Ipp32s Width, Ipp32s Height, EnumRefP
         Ipp32s in_SrcPitch2 = 0;
         PixType *in_pSrc2 = 0;
         if ( eAddAverage == AVERAGE_FROM_PIC ) {
-            EnumRefPicList RefPicList2 = (EnumRefPicList)!RefPicList;
+            EnumRefPicList RefPicList2 = (EnumRefPicList)!listIdx;
             Ipp32s RefIdx2 = m_data[PartAddr].refIdx[RefPicList2];
-            H265Frame *PicYUVRef2 = pList[RefPicList2]->m_RefPicList[RefIdx2];
+            H265Frame *PicYUVRef2 = refPicList[RefPicList2].m_refFrames[RefIdx2];
             in_SrcPitch2 = PicYUVRef2->pitch_luma;
             H265MV MV2 = m_data[PartAddr].mv[RefPicList2];
             ClipMV(MV2);
@@ -190,7 +179,7 @@ void H265CU::PredInterUni(Ipp32u PartAddr, Ipp32s Width, Ipp32s Height, EnumRefP
             ((PUStartRow * m_pitchRec + PUStartColumn) << m_par->Log2MinTUSize) + refOffset;
 
         in_dstBufPitch = m_par->MaxCUSize;
-        in_dstBuf = m_predBufY[ (eAddAverage == AVERAGE_FROM_BUF ? !RefPicList : RefPicList) ];
+        in_dstBuf = m_predBufY[ (eAddAverage == AVERAGE_FROM_BUF ? !listIdx : listIdx) ];
         in_dstBuf += ((PUStartRow * m_par->MaxCUSize + PUStartColumn) << m_par->Log2MinTUSize);
 
         in_dstPicPitch = dst_pitch;
@@ -293,9 +282,9 @@ void H265CU::PredInterUni(Ipp32u PartAddr, Ipp32s Width, Ipp32s Height, EnumRefP
         Ipp32s in_SrcPitch2 = 0;
         PixType *in_pSrc2 = 0;
         if ( eAddAverage == AVERAGE_FROM_PIC ) {
-            EnumRefPicList RefPicList2 = (EnumRefPicList)!RefPicList;
+            EnumRefPicList RefPicList2 = (EnumRefPicList)!listIdx;
             Ipp32s RefIdx2 = m_data[PartAddr].refIdx[RefPicList2];
-            H265Frame *PicYUVRef2 = pList[RefPicList2]->m_RefPicList[RefIdx2];
+            H265Frame *PicYUVRef2 = refPicList[RefPicList2].m_refFrames[RefIdx2];
             in_SrcPitch2 = PicYUVRef2->pitch_luma;
             H265MV MV2 = m_data[PartAddr].mv[RefPicList2];
             ClipMV(MV2);
@@ -307,7 +296,7 @@ void H265CU::PredInterUni(Ipp32u PartAddr, Ipp32s Width, Ipp32s Height, EnumRefP
         in_pSrc = PicYUVRef->uv + ((PUStartRow * in_SrcPitch / 2 + PUStartColumn) << m_par->Log2MinTUSize) + refOffset;
 
         in_dstBufPitch = m_par->MaxCUSize;
-        in_dstBuf = m_predBufUv[ (eAddAverage == AVERAGE_FROM_BUF ? !RefPicList : RefPicList) ];
+        in_dstBuf = m_predBufUv[ (eAddAverage == AVERAGE_FROM_BUF ? !listIdx : listIdx) ];
         in_dstBuf += ((PUStartRow * m_par->MaxCUSize + PUStartColumn * 2) << m_par->Log2MinTUSize);
 
         in_dstPicPitch = dst_pitch;
