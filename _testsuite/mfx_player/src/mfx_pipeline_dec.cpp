@@ -419,6 +419,26 @@ mfxStatus MFXDecPipeline::BuildPipeline()
     PrintInfo(VM_STRING("Memory AvailPhys"), VM_STRING("%.2f M"),
         (Ipp64f)(memEx.ullAvailPhys)/ (1024 * 1024));
 #endif // #if defined(_WIN32) || defined(_WIN64)
+#if defined(LINUX32) || defined(LINUX64)
+    int mem_used = -1;
+    char mem_buffer[128];
+    FILE* file = fopen("/proc/self/status", "r");
+    if ( file ) {
+        while (fgets(mem_buffer, 128, file) != NULL){
+            if (strncmp(mem_buffer, "VmRSS:", 6) == 0){
+                int len = strlen(mem_buffer);
+                int i = 0;
+                while(i<128 && (mem_buffer[i] < '0' || mem_buffer[i] > '9')) i++;
+                mem_buffer[len-2] = '\0';
+                mem_used = atoi(&mem_buffer[i]);
+                break;
+           }
+       }
+       fclose (file);
+   }
+   PrintInfo(VM_STRING("Memory Private"), VM_STRING("%.2f M"),
+        (Ipp64f)(mem_used) / (1024));
+#endif
 
 #if MFX_D3D11_SUPPORT
     PrintInfo(VM_STRING("D3D11 Support"), VM_STRING("ON"));
