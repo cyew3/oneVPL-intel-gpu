@@ -6,7 +6,7 @@
 #include "d3d_device.h"
 #include "d3d11_device.h"
 #include <algorithm>
-#include "test_common.h"
+//#include "test_common.h"
 
 #define PREPARE_ALLOCATOR( t_allocator, t_device, t_par, e_hdl, c_copy_hdl)\
 {                                              \
@@ -37,6 +37,13 @@ frame_allocator::frame_allocator(AllocatorType _allocator_type, AllocMode _alloc
     , surf_cnt       (0)
     , is_valid       (false)
 {
+    mfxFrameAllocator::pthis  = this;
+    mfxFrameAllocator::Alloc  = &AllocFrame;
+    mfxFrameAllocator::Lock   = &LockFrame;
+    mfxFrameAllocator::Unlock = &UnLockFrame;
+    mfxFrameAllocator::GetHDL = &GetHDL;
+    mfxFrameAllocator::Free   = &Free;
+
     switch (allocator_type)
     {
     case SOFTWARE:
@@ -353,7 +360,7 @@ mfxStatus buffer_allocator::_Alloc  (mfxHDL pthis, mfxU32 nbytes, mfxU16 type, m
 
     if (!sts)
     {
-        instance->buf.push_back(buffer(type, nbytes, mid));
+        instance->buf.push_back(buffer(type, nbytes, *mid));
         std::cout << nbytes << " bytes allocated" << std::endl;
     }
 

@@ -19,6 +19,7 @@ list(APPEND sources
   ${CMAKE_HOME_DIRECTORY}/_testsuite/msdk_ts/src/test_verif.cpp
   ${CMAKE_HOME_DIRECTORY}/_testsuite/msdk_ts/src/test_libva_utils.cpp
   ${CMAKE_HOME_DIRECTORY}/_testsuite/msdk_ts/src/test_sample_allocator.cpp
+  ${CMAKE_HOME_DIRECTORY}/_testsuite/msdk_ts/src/debug_output.cpp
 )
 
 add_definitions( -DUSE_SAMPLE_ALLOCATOR=1 )
@@ -101,6 +102,7 @@ list(APPEND sources
   ${CMAKE_HOME_DIRECTORY}/_testsuite/msdk_ts/src/test_libva_utils.cpp
   ${CMAKE_HOME_DIRECTORY}/_testsuite/msdk_ts/src/msdk_ts_wrap.cxx
   ${CMAKE_HOME_DIRECTORY}/_testsuite/msdk_ts/src/test_sample_allocator.cpp
+  ${CMAKE_HOME_DIRECTORY}/_testsuite/msdk_ts/src/debug_output.cpp
 )
 
 foreach( variant sw x11 drm)

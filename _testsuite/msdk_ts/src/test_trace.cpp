@@ -1,9 +1,6 @@
 //test_trace.cpp - trace functions only
 //no blocks
-#include "stdafx.h"
 #include "test_trace.h"
-#include <ostream>
-#include <sstream>
 #include <iomanip>
 
 _print_param print_param;
@@ -299,8 +296,10 @@ std::ostream &operator << (std::ostream &os, mfxFrameData &p){
 #define PRINT_BUF(id, type) case id: if(p.BufferSz < sizeof(type)) break; os << *((type*)&p); return os;
 DEF_STRUCT_TRACE(mfxExtBuffer){
     switch(p.BufferId){
+#ifdef __MFXSVC_H__
         PRINT_BUF(MFX_EXTBUFF_SVC_SEQ_DESC              , mfxExtSVCSeqDesc              );
         PRINT_BUF(MFX_EXTBUFF_SVC_RATE_CONTROL          , mfxExtSVCRateControl          );
+#endif //__MFXSVC_H__
         PRINT_BUF(MFX_EXTBUFF_CODING_OPTION2            , mfxExtCodingOption2           );
         PRINT_BUF(MFX_EXTBUFF_VPP_DONOTUSE              , mfxExtVPPDoNotUse             );
         PRINT_BUF(MFX_EXTBUFF_VPP_DENOISE               , mfxExtVPPDenoise              );
@@ -337,6 +336,7 @@ DEF_STRUCT_TRACE(mfxExtBuffer){
                 << print_param.padding << '}';
 };
 
+#ifdef __MFXSVC_H__
 DEF_STRUCT_TRACE(mfxExtSVCSeqDesc){
     mfxExtSVCSeqDesc zero = {0};
     os  << "{\n"
@@ -452,6 +452,8 @@ DEF_STRUCT_TRACE(mfxExtSVCRateControl){
     os  << print_param.padding << '}';
     return os;
 };
+
+#endif //__MFXSVC_H__
 
 DEF_STRUCT_TRACE(mfxExtCodingOption2){
     os  << "{\n"
@@ -1085,119 +1087,4 @@ DEF_STRUCT_TRACE(mfxExtEncoderROI){
 }
 #endif
 
-#if (defined(_WIN32) || defined(_WIN64))
-
-/// \brief This class is a derivate of basic_stringbuf which will output all the written data using the OutputDebugString function
-template<typename TChar, typename TTraits = std::char_traits<TChar>, int BUF_SIZE = 512>
-class OutputDebugStringBuf : public std::basic_stringbuf<TChar,TTraits> {
-public:
-    OutputDebugStringBuf() {
-
-        psz = new char_type[ BUF_SIZE ];
-        setbuf(psz, BUF_SIZE);
-        // leave place for single char + 0 terminator
-        setp(psz, psz + BUF_SIZE - 2);
-        ::InitializeCriticalSection(&_csLock);
-    }
-
-    ~OutputDebugStringBuf() {
-        ::DeleteCriticalSection(&_csLock);
-        delete[] psz;
-    }
-
-protected:
-    virtual int sync() {
-        overflow();
-        return 0;
-    }
-
-    virtual int_type overflow(int_type c = TTraits::eof()) {
-
-        ::EnterCriticalSection(&_csLock);
-        char_type* plast = pptr();
-        if (c != TTraits::eof())
-            // add c to buffer
-            *plast++ = c;
-        *plast = char_type();
-
-        // Pass test to debug output
-        MessageOutputer<TChar, TTraits>  out;
-        out(pbase());
-
-        setp(pbase(), epptr());
-
-        ::LeaveCriticalSection(&_csLock);
-        return c != TTraits::eof() ? TTraits::not_eof( c ) : TTraits::eof();
-    }
-
-    virtual std::streamsize xsputn(const char_type* pch, std::streamsize n)
-    {
-        std::streamsize nMax, nPut;
-        ::EnterCriticalSection(&_csLock);
-        for (nPut = 0; 0 < n; ) {
-            if (pptr() != 0 && 0 < (nMax = epptr() - pptr())) {
-                if (n < nMax)
-                    nMax = n;
-                traits_type::copy(pptr(), pch, (size_t)nMax);
-
-                // Sync if string contains LF
-                bool bSync = traits_type::find( pch, (size_t)nMax, traits_type::to_char_type( '\n' ) ) != NULL;
-                pch += nMax, nPut += nMax, n -= nMax, pbump((int)nMax);
-                if( bSync )
-                    sync();
-            }
-            else if (traits_type::eq_int_type(traits_type::eof(),
-                overflow(traits_type::to_int_type(*pch))))
-                break;
-            else
-                ++pch, ++nPut, --n;
-        }
-        ::LeaveCriticalSection(&_csLock);
-        return (nPut);
-    }
-
-private:
-    char_type*        psz;
-    CRITICAL_SECTION  _csLock;
-
-    template<typename TChar, typename TTraits>
-    struct MessageOutputer;
-
-    template<>
-    struct MessageOutputer<char, std::char_traits<char>> {
-        void operator()(const char * msg) const {
-            OutputDebugStringA(msg);
-        }
-    };
-
-    template<>
-    struct MessageOutputer<wchar_t, std::char_traits<wchar_t>> {
-        void operator()(const wchar_t * msg) const {
-            OutputDebugStringW(msg);
-        }
-    };
-}; //OutputDebugStringBuf
-#endif //#if (defined(_WIN32) || defined(_WIN64))
-
-void allow_debug_output()
-{
-#ifndef NDEBUG
-#ifdef _WIN32
-
-    if (!IsDebuggerPresent())
-        return;
-
-    static OutputDebugStringBuf<wchar_t> wcharDebugOutput;
-    std::wcerr.rdbuf(&wcharDebugOutput);
-    std::wclog.rdbuf(&wcharDebugOutput);
-    std::wcout.rdbuf(&wcharDebugOutput);
-
-    static OutputDebugStringBuf<char> charDebugOutput;
-    std::cerr.rdbuf(&charDebugOutput);
-    std::clog.rdbuf(&charDebugOutput);
-    std::cout.rdbuf(&charDebugOutput);
-
-#endif
-#endif
-}
 

@@ -16,7 +16,7 @@
 #endif
 
 
-class frame_allocator{
+class frame_allocator : public mfxFrameAllocator{
 public:
     enum AllocatorType
     {

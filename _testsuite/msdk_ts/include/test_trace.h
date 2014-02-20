@@ -2,7 +2,7 @@
 #include <iostream>
 #include "mfxvideo.h"
 #include "mfxvp8.h"
-#include "mfxsvc.h"
+//#include "mfxsvc.h"
 #include "mfxmvc.h"
 #include "mfxjpeg.h"
 #include "mfxpcp.h"
@@ -58,8 +58,12 @@ DECL_STRUCT_TRACE(mfxFrameAllocRequest);
 DECL_STRUCT_TRACE(mfxBitstream);
 DECL_STRUCT_TRACE(mfxFrameSurface1);
 DECL_STRUCT_TRACE(mfxExtBuffer);
+
+#ifdef __MFXSVC_H__
 DECL_STRUCT_TRACE(mfxExtSVCSeqDesc);
 DECL_STRUCT_TRACE(mfxExtSVCRateControl);
+#endif __MFXSVC_H__
+
 DECL_STRUCT_TRACE(mfxExtVPPDoNotUse);
 DECL_STRUCT_TRACE(mfxExtVPPDenoise);
 DECL_STRUCT_TRACE(mfxExtVPPDetail);
