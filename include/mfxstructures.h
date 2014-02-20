@@ -905,10 +905,12 @@ typedef struct mfxVPPCompInputStream {
         mfxU16  LumaKeyMin;
         mfxU16  LumaKeyMax;
 
-        mfxU16  AlphaEnable;
-        mfxU16  Alpha;
-        
-        mfxU16  reserved2[19];
+        mfxU16  GlobalAlphaEnable;
+        mfxU16  GlobalAlpha;
+
+        mfxU16 PixelAlphaEnable;
+
+        mfxU16  reserved2[18];
 } mfxVPPCompInputStream;     
 
 typedef struct {
