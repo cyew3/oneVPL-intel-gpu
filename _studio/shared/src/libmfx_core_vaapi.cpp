@@ -263,13 +263,20 @@ VAAPIVideoCORE::VAAPIVideoCORE(
           , m_adapterNum(adapterNum)
           , m_bUseExtAllocForHWFrames(false)
           , m_HWType(MFX_HW_IVB) //MFX_HW_UNKNOWN
-          , m_bCmCopyAllowed(true)
+          , m_bCmCopy(false)
+          , m_bCmCopyAllowed(false)
 {
 } // VAAPIVideoCORE::VAAPIVideoCORE(...)
 
 
 VAAPIVideoCORE::~VAAPIVideoCORE()
 {
+    if (m_bCmCopy)
+    {
+        m_pCmCopy.get()->Release();
+        m_bCmCopy = false;
+    }
+
     Close();
     
 } // VAAPIVideoCORE::~VAAPIVideoCORE()
@@ -930,18 +937,16 @@ VAAPIVideoCORE::DoFastCopyExtended(
         void *pBits = NULL;
 
         MFX_CHECK(m_Display,MFX_ERR_NOT_INITIALIZED);
-
+        
         va_sts = vaDeriveImage(m_Display, *va_surface, &va_image);
         MFX_CHECK(VA_STATUS_SUCCESS == va_sts, MFX_ERR_DEVICE_FAILED);
 
         // vaMapBuffer
         va_sts = vaMapBuffer(m_Display, va_image.buf, (void **) &pBits);
         MFX_CHECK(VA_STATUS_SUCCESS == va_sts, MFX_ERR_DEVICE_FAILED);
-
+        
         // copy data
         {
-            Ipp32u srcPitch = va_image.pitches[0];
-            Ipp32u Height =  va_image.height;
             mfxI64 verticalPitch = (mfxI64)(pDst->Data.UV - pDst->Data.Y);
             verticalPitch = (verticalPitch % pDst->Data.Pitch)? 0 : verticalPitch / pDst->Data.Pitch;
 
@@ -952,6 +957,10 @@ VAAPIVideoCORE::DoFastCopyExtended(
             }
             else
             {
+
+                Ipp32u srcPitch = va_image.pitches[0];
+                Ipp32u Height =  va_image.height;
+
                 mfxStatus sts;
                 mfxU8* ptrY  = (mfxU8 *)pBits + va_image.offsets[0];
                 mfxU8* ptrUV = (mfxU8 *)pBits + va_image.offsets[1];
@@ -1043,6 +1052,7 @@ VAAPIVideoCORE::DoFastCopyExtended(
 
                         return MFX_ERR_UNSUPPORTED;
                 }
+
             }
         }
 
@@ -1053,6 +1063,7 @@ VAAPIVideoCORE::DoFastCopyExtended(
         // vaDestroyImage
         va_sts = vaDestroyImage(m_Display, va_image.image_id);
         MFX_CHECK(VA_STATUS_SUCCESS == va_sts, MFX_ERR_DEVICE_FAILED);
+    
     }
     else if (NULL != pSrc->Data.Y && NULL != pDst->Data.Y)
     {
