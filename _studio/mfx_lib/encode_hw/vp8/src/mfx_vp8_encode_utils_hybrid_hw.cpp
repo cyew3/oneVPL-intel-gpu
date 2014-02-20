@@ -113,7 +113,8 @@ namespace MFX_VP8ENC
 
     mfxU32 ModifyLoopFilterLevelQPBased(mfxU32 QP, mfxU32 loopFilterLevel, mfxU32 frameType)
     {
-#if 0
+        if (loopFilterLevel)
+            return loopFilterLevel;
         mfxU16 QPThr[7] = {15, 30, 45, 60, 75, 90, 105};
         mfxI16 DeltaLoopFilterLevelIntra[8] = {30, 31, 31, 32, 32, 33, 33, 34};
         mfxI16 DeltaLoopFilterLevelInter[8] = {26, 28, 30, 31, 32, 32, 32, 33}; 
@@ -124,13 +125,8 @@ namespace MFX_VP8ENC
             if (QP <= QPThr[idx])
                 break;
         } 
-        mfxI32 loopFilterValue;
-        loopFilterValue = loopFilterLevel + ((QP * (frameType ? DeltaLoopFilterLevelInter[idx] : DeltaLoopFilterLevelIntra[idx]))>>6);
-        return loopFilterValue < 0 ? 0 : loopFilterValue > 63 ? 63 : loopFilterValue;
-#else
-        QP; frameType;
-        return loopFilterLevel;
-#endif
+        mfxI32 loopFilterValue = ((QP * (frameType ? DeltaLoopFilterLevelInter[idx] : DeltaLoopFilterLevelIntra[idx]))>>6);
+        return loopFilterValue > 63 ? 63 : loopFilterValue;
     }
 
     mfxStatus SetFramesParams(mfxVideoParam * par, mfxU32 frameOrder, sFrameParams *pFrameParams)

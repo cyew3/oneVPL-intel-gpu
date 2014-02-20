@@ -546,14 +546,6 @@ static void SetDefaultExCodingParameters(mfxExtCodingOptionVP8*  par, mfxExtCodi
     {
         if (parPlus->NumPartitions == 0)
             parPlus->NumPartitions = 1;
-        if (parPlus->LoopFilterLevel[0] == 0)
-            parPlus->LoopFilterLevel[0] = 10;
-        if (par->EnableMultipleSegments == MFX_CODINGOPTION_ON && roi && roi->NumROI)
-        {
-            for (mfxU8 i = 1; i < roi->NumROI; i ++)
-                if (parPlus->LoopFilterLevel[i] == 0)
-                    parPlus->LoopFilterLevel[i] = 10;
-        }
     }
 }
 

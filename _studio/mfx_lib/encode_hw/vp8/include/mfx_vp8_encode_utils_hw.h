@@ -259,8 +259,6 @@ namespace MFX_VP8ENC
 
         // align with hardcoded parameters that were used before
         extBuf.NumPartitions = 1;
-        for (mfxU8 i = 0; i < 4; i ++)
-            extBuf.LoopFilterLevel[i] = 10;
     }
 
     // temporal application of nonzero defaults to test ROI for VP8
