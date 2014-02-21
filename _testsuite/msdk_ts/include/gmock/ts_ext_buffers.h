@@ -126,6 +126,11 @@ public:
             p = GetExtBuffer(id);
         }
 
-        return *(reinterpret_cast<T*>(p));
+        return *(T*)p;
+    }
+
+    template <typename T> operator T*()
+    {
+        return (T*)GetExtBuffer(tsExtBufTypeToId<T>::id);
     }
 };

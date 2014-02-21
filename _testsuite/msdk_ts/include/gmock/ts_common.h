@@ -39,10 +39,9 @@ extern mfxU32       g_tsTrace;
 extern std::ostream g_tsLog;
 
 #define TS_REG_TEST_SUITE(name, routine, n_cases) \
-  TEST_P(MFXVideoTest, name) {\
-      EXPECT_EQ(0, (routine)(GetParam()));\
-  }\
-  INSTANTIATE_TEST_CASE_P(ts, MFXVideoTest, ::testing::Range<unsigned int>(0, (n_cases)));
+    class name : public MFXVideoTest{};\
+    TEST_P(name,) { if((routine)(GetParam())) {ADD_FAILURE();} }\
+    INSTANTIATE_TEST_CASE_P(, name, ::testing::Range<unsigned int>(0, (n_cases)));
 
 #define TRACE_FUNCN(n, name, p1, p2, p3, p4, p5, p6, p7)\
     g_tsLog << "-------------------------------------------------------------------------------\n";\
