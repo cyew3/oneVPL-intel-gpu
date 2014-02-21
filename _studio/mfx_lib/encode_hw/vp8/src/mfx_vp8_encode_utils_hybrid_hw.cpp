@@ -131,7 +131,6 @@ namespace MFX_VP8ENC
 
     mfxStatus SetFramesParams(mfxVideoParam * par, mfxU32 frameOrder, sFrameParams *pFrameParams)
     {
-#if defined (MFX_VA_WIN)
         memset(pFrameParams, 0, sizeof(sFrameParams));
         pFrameParams->bIntra  = (frameOrder % par->mfx.GopPicSize) == 0 ? true: false; 
         if (pFrameParams->bIntra)
@@ -144,11 +143,6 @@ namespace MFX_VP8ENC
             pFrameParams->copyToGoldRef = 1; // copy every last_ref frame to gold_ref
             pFrameParams->copyToAltRef = 2; // copy every gold_ref frame to alt_ref
         }
-#else
-        pFrameParams->bAltRef = 1;
-        pFrameParams->bGold   = 1;
-        pFrameParams->bIntra  = (frameOrder % par->mfx.GopPicSize) == 0 ? true: false; 
-#endif
         mfxExtCodingOptionVP8Param *VP8Par = GetExtBuffer(*par);
         pFrameParams->LFType  = VP8Par->LoopFilterType;
         for (mfxU8 i = 0; i < 4; i ++)
