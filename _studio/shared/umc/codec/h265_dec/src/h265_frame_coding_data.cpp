@@ -121,8 +121,8 @@ void H265FrameCodingData::create(Ipp32s iPicWidth, Ipp32s iPicHeight, Ipp32u uiM
     m_CU[m_NumCUsInFrame] = 0;
 
     Ipp32s m_edgesInCTBSize = m_MaxCUWidth >> 3;
-    m_edgesInFrameWidth = (m_edgesInCTBSize * m_WidthInCU + 2) * 4;
-    Ipp32s edgesInFrameHeight = m_edgesInCTBSize * m_HeightInCU + 1;
+    m_edgesInFrameWidth = (m_edgesInCTBSize * m_WidthInCU) * 2;
+    Ipp32s edgesInFrameHeight = m_edgesInCTBSize * m_HeightInCU;
     m_edge = new MFX_HEVC_PP::H265EdgeData[m_edgesInFrameWidth * edgesInFrameHeight];
 }
 
