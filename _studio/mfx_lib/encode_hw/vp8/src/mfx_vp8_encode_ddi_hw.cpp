@@ -229,15 +229,14 @@ mfxStatus CachedFeedback::Remove(mfxU32 feedbackNumber)
 
         pps.CodedCoeffTokenPartition = VP8Par->NumPartitions;
 
-        /* this code is for full HW encode only
         if (pps.frame_type)
         {
             pps.refresh_golden_frame = 0; 
             pps.refresh_alternate_frame = 0; 
-            pps.copy_buffer_to_golden = 0;
-            pps.copy_buffer_to_alternate = 1; 
+            pps.copy_buffer_to_golden = 1;
+            pps.copy_buffer_to_alternate = 2; 
             pps.refresh_last = 1;
-        }*/
+        }
 
         pps.sign_bias_golden         = 0;
         pps.sign_bias_alternate      = 0;

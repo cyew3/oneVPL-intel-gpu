@@ -139,9 +139,11 @@ namespace MFX_VP8ENC
             pFrameParams->bAltRef = 1; // refresh gold_ref with current frame only for key-frames
             pFrameParams->bGold   = 1; // refresh alt_ref with current frame only for key-frames
         }
-        pFrameParams->copyToGoldRef = 0; // update gold_ref only with key-frames
-        if (!pFrameParams->bIntra)
-            pFrameParams->copyToAltRef = 1; // copy every last_ref frame to alt_ref
+        else
+        {
+            pFrameParams->copyToGoldRef = 1; // copy every last_ref frame to gold_ref
+            pFrameParams->copyToAltRef = 2; // copy every gold_ref frame to alt_ref
+        }
 #else
         pFrameParams->bAltRef = 1;
         pFrameParams->bGold   = 1;
