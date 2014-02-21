@@ -162,6 +162,7 @@
     <ClInclude Include="include\gmock\ts_common.h" />
     <ClInclude Include="include\gmock\ts_alloc.h" />
     <ClInclude Include="include\gmock\ts_encoder.h" />
+    <ClInclude Include="include\gmock\ts_ext_buffers.h" />
     <ClInclude Include="include\gmock\ts_session.h" />
     <ClInclude Include="include\test_sample_allocator.h" />
     <ClInclude Include="include\test_trace.h" />

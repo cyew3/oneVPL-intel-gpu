@@ -12,6 +12,7 @@ tsVideoEncoder::tsVideoEncoder(mfxU32 CodecId, bool useDefaults)
     , m_pRequest(&m_request)
     , m_pSyncPoint(&m_syncpoint)
     , m_pSurf(0)
+    , m_pCtrl(&m_ctrl)
 {
     m_par.mfx.CodecId = CodecId;
     if(m_default)
@@ -176,7 +177,7 @@ mfxStatus tsVideoEncoder::EncodeFrameAsync()
         }
         m_pSurf = GetSurface();TS_CHECK_MFX;
     }
-    mfxStatus mfxRes = EncodeFrameAsync(m_session, 0, m_pSurf, m_pBitstream, m_pSyncPoint);
+    mfxStatus mfxRes = EncodeFrameAsync(m_session, m_pCtrl, m_pSurf, m_pBitstream, m_pSyncPoint);
 
     return mfxRes;
 }

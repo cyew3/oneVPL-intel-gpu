@@ -1,21 +1,24 @@
 #pragma once
 
 #include "ts_session.h"
+#include "ts_ext_buffers.h"
 
 class tsVideoEncoder : public tsSession, public tsSurfacePool
 {
 public:
-    bool                    m_default;
-    bool                    m_initialized;
-    mfxVideoParam           m_par;
-    mfxBitstream            m_bitstream;
-    mfxFrameAllocRequest    m_request;
-    mfxVideoParam*          m_pPar;
-    mfxVideoParam*          m_pParOut;
-    mfxBitstream*           m_pBitstream;
-    mfxFrameAllocRequest*   m_pRequest;
-    mfxSyncPoint*           m_pSyncPoint;
-    mfxFrameSurface1*       m_pSurf;
+    bool                        m_default;
+    bool                        m_initialized;
+    tsExtBufType<mfxVideoParam> m_par;
+    tsExtBufType<mfxBitstream>  m_bitstream;
+    tsExtBufType<mfxEncodeCtrl> m_ctrl;
+    mfxFrameAllocRequest        m_request;
+    mfxVideoParam*              m_pPar;
+    mfxVideoParam*              m_pParOut;
+    mfxBitstream*               m_pBitstream;
+    mfxFrameAllocRequest*       m_pRequest;
+    mfxSyncPoint*               m_pSyncPoint;
+    mfxFrameSurface1*           m_pSurf;
+    mfxEncodeCtrl*              m_pCtrl;
 
     tsVideoEncoder(mfxU32 CodecId = 0, bool useDefaults = true);
     ~tsVideoEncoder();
