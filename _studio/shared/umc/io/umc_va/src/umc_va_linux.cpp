@@ -804,25 +804,8 @@ Status LinuxVideoAccelerator::QueryTaskStatus(Ipp32s FrameBufIndex, void * statu
     VASurfaceStatus surface_status;
     VAStatus va_status = vaQuerySurfaceStatus(m_dpy, m_surfaces[FrameBufIndex], &surface_status);
 
-#if defined(MFX_HANDLE_VA_DECODING_ERRORS)
     if ((VA_STATUS_SUCCESS == va_status) && (VASurfaceReady == surface_status))
     {
-        /*
-         TODO: Remove this comment after fix in driver
-         The code below works only if RC6 is disabled on HSW.
-         The only known way to disable RC6 is to change boot time parameters for i915 module.
-
-         To disable "RC6" on Linux, please follow these steps:
-         Modify:
-
-            sudo gedit /etc/default/grub
-                GRUB_CMDLINE_LINUX_DEFAULT="quiet splash" => GRUB_CMDLINE_LINUX_DEFAULT="quiet splash i915.i915_enable_rc6=0"
-            sudo update-grub
-            sudo reboot
-
-        Check:
-            sudo cat /sys/module/i915/parameters/i915_enable_rc6*
-        */
         // handle decoding errors
         VAStatus va_sts = vaSyncSurface(m_dpy, m_surfaces[FrameBufIndex]);
         if (VA_STATUS_ERROR_DECODING_ERROR == va_sts)
@@ -834,23 +817,26 @@ Status LinuxVideoAccelerator::QueryTaskStatus(Ipp32s FrameBufIndex, void * statu
                 VASurfaceDecodeMBErrors* pVaDecErr = NULL;
                 va_sts = vaQuerySurfaceError(m_dpy, m_surfaces[cnt], VA_STATUS_ERROR_DECODING_ERROR, (void**)&pVaDecErr);
 
-                if ((VA_STATUS_SUCCESS == va_sts) && (NULL != pVaDecErr))
+                if ((VA_STATUS_SUCCESS == va_sts) && (NULL != error))
                 {
-                    for (int i = 0; pVaDecErr[i].status != -1; ++i)
+                    if (NULL != pVaDecErr)
                     {
-                        if (VADecodeMBError == pVaDecErr[i].decode_error_type)
+                        for (int i = 0; pVaDecErr[i].status != -1; ++i)
                         {
-                            if (NULL != error)
+                            if (VADecodeMBError == pVaDecErr[i].decode_error_type)
                             {
                                 *(VAStatus*)error = VA_STATUS_ERROR_DECODING_ERROR;
                             }
                         }
                     }
+                    else
+                    {
+                        *(VAStatus*)error = VA_STATUS_ERROR_DECODING_ERROR;
+                    }
                 }
             }
         }
     }
-#endif
 
     if (NULL != status)
     {
