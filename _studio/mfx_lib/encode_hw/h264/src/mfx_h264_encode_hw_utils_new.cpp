@@ -348,7 +348,7 @@ namespace
             {
                 if (!dpb[i].m_longterm && (useRefBasePicFlag == dpb[i].m_refBase))
                 {
-                    if (dpb[i].m_poc[0] < task.GetPoc(0))
+                    if (dpb[i].m_poc[0] <= task.GetPoc(0))
                         list0Frm.PushBack(mfxU8(i));
                     else
                         list1Frm.PushBack(mfxU8(i));
