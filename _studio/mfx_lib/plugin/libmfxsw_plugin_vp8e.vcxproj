@@ -1,0 +1,777 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug_Intel|Win32">
+      <Configuration>Debug_Intel</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug_Intel|x64">
+      <Configuration>Debug_Intel</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug_Intel_Evaluation|Win32">
+      <Configuration>Debug_Intel_Evaluation</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug_Intel_Evaluation|x64">
+      <Configuration>Debug_Intel_Evaluation</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release_Intel_Evaluation|Win32">
+      <Configuration>Release_Intel_Evaluation</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release_Intel_Evaluation|x64">
+      <Configuration>Release_Intel_Evaluation</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release_Intel|Win32">
+      <Configuration>Release_Intel</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release_Intel|x64">
+      <Configuration>Release_Intel</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{5D8E1BF2-A605-46EC-902B-ABC8ACC6840C}</ProjectGuid>
+    <RootNamespace>libmfxsw</RootNamespace>
+    <Keyword>Win32Proj</Keyword>
+    <ProjectName>libmfxsw_plugin_vp8e</ProjectName>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <Import Project="..\Intel.Mfx.Common.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_Intel|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_Intel_Evaluation|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug_Intel|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug_Intel_Evaluation|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_Intel|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_Intel_Evaluation|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug_Intel|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug_Intel_Evaluation|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug_Intel|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug_Intel_Evaluation|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release_Intel|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release_Intel_Evaluation|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug_Intel|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug_Intel_Evaluation|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release_Intel|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release_Intel_Evaluation|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <_ProjectFileVersion>10.0.40117.1</_ProjectFileVersion>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(MfxBuildDir)win_$(Platform)\bin\bffc518cde134df98a96f4cf816c0fac\</OutDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug_Intel|Win32'">$(MfxBuildDir)win_$(Platform)\bin\bffc518cde134df98a96f4cf816c0fac\</OutDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug_Intel_Evaluation|Win32'">$(MfxBuildDir)win_$(Platform)\bin\evaluation\bffc518cde134df98a96f4cf816c0fac\</OutDir>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</LinkIncremental>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug_Intel|Win32'">true</LinkIncremental>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug_Intel_Evaluation|Win32'">true</LinkIncremental>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(MfxBuildDir)win_$(Platform)\bin\bffc518cde134df98a96f4cf816c0fac\</OutDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug_Intel|x64'">$(MfxBuildDir)win_$(Platform)\bin\bffc518cde134df98a96f4cf816c0fac\</OutDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug_Intel_Evaluation|x64'">$(MfxBuildDir)win_$(Platform)\bin\evaluation\bffc518cde134df98a96f4cf816c0fac\</OutDir>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</LinkIncremental>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug_Intel|x64'">true</LinkIncremental>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug_Intel_Evaluation|x64'">true</LinkIncremental>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(MfxBuildDir)win_$(Platform)\bin\bffc518cde134df98a96f4cf816c0fac\</OutDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release_Intel|Win32'">$(MfxBuildDir)win_$(Platform)\bin\bffc518cde134df98a96f4cf816c0fac\</OutDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release_Intel_Evaluation|Win32'">$(MfxBuildDir)win_$(Platform)\bin\evaluation\bffc518cde134df98a96f4cf816c0fac\</OutDir>
+    <IgnoreImportLibrary Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</IgnoreImportLibrary>
+    <IgnoreImportLibrary Condition="'$(Configuration)|$(Platform)'=='Release_Intel|Win32'">false</IgnoreImportLibrary>
+    <IgnoreImportLibrary Condition="'$(Configuration)|$(Platform)'=='Release_Intel_Evaluation|Win32'">false</IgnoreImportLibrary>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</LinkIncremental>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release_Intel|Win32'">false</LinkIncremental>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release_Intel_Evaluation|Win32'">false</LinkIncremental>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(MfxBuildDir)win_$(Platform)\bin\bffc518cde134df98a96f4cf816c0fac\</OutDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release_Intel|x64'">$(MfxBuildDir)win_$(Platform)\bin\bffc518cde134df98a96f4cf816c0fac\</OutDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release_Intel_Evaluation|x64'">$(MfxBuildDir)win_$(Platform)\bin\evaluation\bffc518cde134df98a96f4cf816c0fac\</OutDir>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkIncremental>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release_Intel|x64'">false</LinkIncremental>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release_Intel_Evaluation|x64'">false</LinkIncremental>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">mfxplugin32_vp8e_sw_d</TargetName>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug_Intel|Win32'">$(ProjectName)32_d</TargetName>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug_Intel_Evaluation|Win32'">mfxplugin32_vp8e_sw_d</TargetName>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">mfxplugin32_vp8e_sw</TargetName>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Release_Intel|Win32'">$(ProjectName)32</TargetName>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Release_Intel_Evaluation|Win32'">mfxplugin32_vp8e_sw</TargetName>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">mfxplugin64_vp8e_sw_d</TargetName>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug_Intel|x64'">$(ProjectName)64_d</TargetName>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug_Intel_Evaluation|x64'">mfxplugin64_vp8e_sw_d</TargetName>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">mfxplugin64_vp8e_sw</TargetName>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Release_Intel|x64'">$(ProjectName)64</TargetName>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Release_Intel_Evaluation|x64'">mfxplugin64_vp8e_sw</TargetName>
+    <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">AllRules.ruleset</CodeAnalysisRuleSet>
+    <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Debug_Intel|Win32'">AllRules.ruleset</CodeAnalysisRuleSet>
+    <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Debug_Intel_Evaluation|Win32'">AllRules.ruleset</CodeAnalysisRuleSet>
+    <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" />
+    <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Debug_Intel|Win32'" />
+    <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Debug_Intel_Evaluation|Win32'" />
+    <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" />
+    <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Debug_Intel|Win32'" />
+    <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Debug_Intel_Evaluation|Win32'" />
+    <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">AllRules.ruleset</CodeAnalysisRuleSet>
+    <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Debug_Intel|x64'">AllRules.ruleset</CodeAnalysisRuleSet>
+    <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Debug_Intel_Evaluation|x64'">AllRules.ruleset</CodeAnalysisRuleSet>
+    <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" />
+    <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Debug_Intel|x64'" />
+    <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Debug_Intel_Evaluation|x64'" />
+    <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" />
+    <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Debug_Intel|x64'" />
+    <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Debug_Intel_Evaluation|x64'" />
+    <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">AllRules.ruleset</CodeAnalysisRuleSet>
+    <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Release_Intel|Win32'">AllRules.ruleset</CodeAnalysisRuleSet>
+    <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Release_Intel_Evaluation|Win32'">AllRules.ruleset</CodeAnalysisRuleSet>
+    <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" />
+    <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Release_Intel|Win32'" />
+    <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Release_Intel_Evaluation|Win32'" />
+    <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" />
+    <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Release_Intel|Win32'" />
+    <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Release_Intel_Evaluation|Win32'" />
+    <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Release|x64'">AllRules.ruleset</CodeAnalysisRuleSet>
+    <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Release_Intel|x64'">AllRules.ruleset</CodeAnalysisRuleSet>
+    <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Release_Intel_Evaluation|x64'">AllRules.ruleset</CodeAnalysisRuleSet>
+    <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Release|x64'" />
+    <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Release_Intel|x64'" />
+    <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Release_Intel_Evaluation|x64'" />
+    <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Release|x64'" />
+    <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Release_Intel|x64'" />
+    <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Release_Intel_Evaluation|x64'" />
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">.dll</TargetExt>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='Debug_Intel|x64'">.dll</TargetExt>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='Debug_Intel_Evaluation|x64'">.dll</TargetExt>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">.dll</TargetExt>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='Debug_Intel|Win32'">.dll</TargetExt>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='Debug_Intel_Evaluation|Win32'">.dll</TargetExt>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">.dll</TargetExt>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='Release_Intel|Win32'">.dll</TargetExt>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='Release_Intel_Evaluation|Win32'">.dll</TargetExt>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='Release|x64'">.dll</TargetExt>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='Release_Intel|x64'">.dll</TargetExt>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='Release_Intel_Evaluation|x64'">.dll</TargetExt>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(OutDir)..\..\objs\$(Configuration)\$(ProjectName)\</IntDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release_Intel|Win32'">$(OutDir)..\..\objs\$(Configuration)\$(ProjectName)\</IntDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release_Intel_Evaluation|Win32'">$(OutDir)..\..\..\objs\$(Configuration)\$(ProjectName)\</IntDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(OutDir)..\..\objs\$(Configuration)\$(ProjectName)\</IntDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug_Intel|Win32'">$(OutDir)..\..\objs\$(Configuration)\$(ProjectName)\</IntDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug_Intel_Evaluation|Win32'">$(OutDir)..\..\..\objs\$(Configuration)\$(ProjectName)\</IntDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(OutDir)..\..\objs\$(Configuration)\$(ProjectName)\</IntDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug_Intel|x64'">$(OutDir)..\..\objs\$(Configuration)\$(ProjectName)\</IntDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug_Intel_Evaluation|x64'">$(OutDir)..\..\..\objs\$(Configuration)\$(ProjectName)\</IntDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(OutDir)..\..\objs\$(Configuration)\$(ProjectName)\</IntDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release_Intel|x64'">$(OutDir)..\..\objs\$(Configuration)\$(ProjectName)\</IntDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release_Intel_Evaluation|x64'">$(OutDir)..\..\..\objs\$(Configuration)\$(ProjectName)\</IntDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_Intel|Win32'">
+    <GenerateManifest>false</GenerateManifest>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_Intel_Evaluation|Win32'">
+    <GenerateManifest>false</GenerateManifest>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_Intel|x64'">
+    <GenerateManifest>false</GenerateManifest>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_Intel_Evaluation|x64'">
+    <GenerateManifest>false</GenerateManifest>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <Optimization>Disabled</Optimization>
+      <AdditionalIncludeDirectories>.\include;..\shared\include;..\scheduler\include;..\..\..\include;..\..\shared\include;..\brc\vc1\include;..\brc\h264\include;..\brc\mpeg2\include;..\decode\vc1\include;..\dec\mpeg2\include;..\dec\vc1\include;..\dec\h264\include;..\bsd\mpeg2\include;..\bsd\vc1\include;..\bsd\h264\include;..\decode\mpeg2\include;..\decode\vp8\include;..\decode\mjpeg\include;..\decode\h264\include;..\enc\mpeg2\include;..\enc\h264\include;..\enc\vc1\include;..\encode\mpeg2\include;..\encode\vc1\include;..\encode\h264\include;..\encode\vp8\include;..\pak\vc1\include;..\pak\mpeg2\include;..\pak\h264\include;$(MfxIppIncludeDir);..\..\shared\umc\core\umc\include;..\..\shared\umc\core\vm\include;..\..\shared\umc\codec\me\include;..\..\shared\umc\codec\vc1_common\include;..\..\shared\umc\codec\vc1_enc\include;..\..\shared\umc\codec\color_space_converter\include;..\..\shared\umc\codec\mpeg2_enc\include;..\..\shared\umc\codec\vp8_dec\include;..\..\shared\umc\codec\vc1_dec\include;..\..\shared\umc\codec\mpeg2_dec\include;..\..\shared\umc\io\media_buffers\include;..\..\shared\umc\codec\h264_enc\include;..\..\shared\umc\codec\scene_analyzer\include;..\..\shared\umc\core\vm_plus\include;..\..\shared\umc\codec\vc1_spl\include;..\vpp\include;..\..\shared\umc\codec\brc\include;..\encode\mjpeg\include;..\..\shared\umc\codec\jpeg_enc\include;..\..\..\thirdparty\vp8_libvpx</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>MFX_D3D11_ENABLED;WIN32;_DEBUG;_WINDOWS;_USRDLL;LIBMFXSW_EXPORTS;AS_VP8E_PLUGIN;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <MinimalRebuild>true</MinimalRebuild>
+      <ExceptionHandling>Async</ExceptionHandling>
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <WarningLevel>Level4</WarningLevel>
+      <TreatWarningAsError>false</TreatWarningAsError>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+    </ClCompile>
+    <Link>
+      <AdditionalDependencies>ippcoremt.lib;ippsmt.lib;ippvcmt.lib;ippimt.lib;ippccmt.lib;ippcvmt.lib;ippjmt.lib;ippmsdkmt.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(MfxIppLibraryDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
+      <ModuleDefinitionFile>
+      </ModuleDefinitionFile>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <ProgramDatabaseFile>$(TargetDir)$(TargetName).pdb</ProgramDatabaseFile>
+      <SubSystem>Console</SubSystem>
+      <ImportLibrary>$(OutDir)..\lib\$(TargetName).lib</ImportLibrary>
+      <TargetMachine>MachineX86</TargetMachine>
+    </Link>
+    <PostBuildEvent>
+      <Command>copy "$(SolutionDir)bffc518cde134df98a96f4cf816c0fac\plugin_for_debug.cfg" "$(OutDir)plugin.cfg" /y</Command>
+      <Message>copy built plugin into its own folder</Message>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug_Intel|Win32'">
+    <ClCompile>
+      <Optimization>Disabled</Optimization>
+      <AdditionalIncludeDirectories>.\include;..\shared\include;..\scheduler\include;..\..\..\include;..\..\shared\include;..\brc\vc1\include;..\brc\h264\include;..\brc\mpeg2\include;..\decode\vc1\include;..\dec\mpeg2\include;..\dec\vc1\include;..\dec\h264\include;..\bsd\mpeg2\include;..\bsd\vc1\include;..\bsd\h264\include;..\decode\mpeg2\include;..\decode\vp8\include;..\decode\mjpeg\include;..\decode\h264\include;..\enc\mpeg2\include;..\enc\h264\include;..\enc\vc1\include;..\encode\mpeg2\include;..\encode\vc1\include;..\encode\h264\include;..\encode\vp8\include;..\pak\vc1\include;..\pak\mpeg2\include;..\pak\h264\include;$(MfxIppIncludeDir);..\..\shared\umc\core\umc\include;..\..\shared\umc\core\vm\include;..\..\shared\umc\codec\me\include;..\..\shared\umc\codec\vc1_common\include;..\..\shared\umc\codec\vc1_enc\include;..\..\shared\umc\codec\color_space_converter\include;..\..\shared\umc\codec\mpeg2_enc\include;..\..\shared\umc\codec\vp8_dec\include;..\..\shared\umc\codec\vc1_dec\include;..\..\shared\umc\codec\mpeg2_dec\include;..\..\shared\umc\io\media_buffers\include;..\..\shared\umc\codec\h264_enc\include;..\..\shared\umc\codec\scene_analyzer\include;..\..\shared\umc\core\vm_plus\include;..\..\shared\umc\codec\vc1_spl\include;..\vpp\include;..\..\shared\umc\codec\brc\include;..\encode\mjpeg\include;..\..\shared\umc\codec\jpeg_enc\include;..\..\..\thirdparty\vp8_libvpx</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>MFX_D3D11_ENABLED;WIN32;_DEBUG;_WINDOWS;_USRDLL;LIBMFXSW_EXPORTS;AS_VP8E_PLUGIN;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <MinimalRebuild>true</MinimalRebuild>
+      <ExceptionHandling>Async</ExceptionHandling>
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <WarningLevel>Level4</WarningLevel>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+    </ClCompile>
+    <Link>
+      <AdditionalDependencies>ippcoremt.lib;ippsmt.lib;ippvcmt.lib;ippimt.lib;ippccmt.lib;ippcvmt.lib;ippjmt.lib;ippmsdkmt.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(MfxIppLibraryDir);$(ICPP_COMPILER13)compiler\lib\ia32;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
+      <ModuleDefinitionFile>
+      </ModuleDefinitionFile>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <ProgramDatabaseFile>$(TargetDir)$(TargetName).pdb</ProgramDatabaseFile>
+      <SubSystem>Console</SubSystem>
+      <ImportLibrary>$(OutDir)..\lib\$(TargetName).lib</ImportLibrary>
+      <TargetMachine>MachineX86</TargetMachine>
+    </Link>
+    <PostBuildEvent>
+      <Command>copy "$(SolutionDir)bffc518cde134df98a96f4cf816c0fac\plugin_for_debug.cfg" "$(OutDir)plugin.cfg" /y</Command>
+      <Message>copy built plugin into its own folder</Message>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug_Intel_Evaluation|Win32'">
+    <ClCompile>
+      <Optimization>Disabled</Optimization>
+      <AdditionalIncludeDirectories>.\include;..\shared\include;..\scheduler\include;..\..\..\include;..\..\shared\include;..\brc\vc1\include;..\brc\h264\include;..\brc\mpeg2\include;..\decode\vc1\include;..\dec\mpeg2\include;..\dec\vc1\include;..\dec\h264\include;..\bsd\mpeg2\include;..\bsd\vc1\include;..\bsd\h264\include;..\decode\mpeg2\include;..\decode\vp8\include;..\decode\mjpeg\include;..\decode\h264\include;..\enc\mpeg2\include;..\enc\h264\include;..\enc\vc1\include;..\encode\mpeg2\include;..\encode\vc1\include;..\encode\h264\include;..\encode\vp8\include;..\pak\vc1\include;..\pak\mpeg2\include;..\pak\h264\include;$(MfxIppIncludeDir);..\..\shared\umc\core\umc\include;..\..\shared\umc\core\vm\include;..\..\shared\umc\codec\me\include;..\..\shared\umc\codec\vc1_common\include;..\..\shared\umc\codec\vc1_enc\include;..\..\shared\umc\codec\color_space_converter\include;..\..\shared\umc\codec\mpeg2_enc\include;..\..\shared\umc\codec\vp8_dec\include;..\..\shared\umc\codec\vc1_dec\include;..\..\shared\umc\codec\mpeg2_dec\include;..\..\shared\umc\io\media_buffers\include;..\..\shared\umc\codec\h264_enc\include;..\..\shared\umc\codec\scene_analyzer\include;..\..\shared\umc\core\vm_plus\include;..\..\shared\umc\codec\vc1_spl\include;..\vpp\include;..\..\shared\umc\codec\brc\include;..\encode\mjpeg\include;..\..\shared\umc\codec\jpeg_enc\include;..\..\..\thirdparty\vp8_libvpx</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>MFX_D3D11_ENABLED;WIN32;_DEBUG;_WINDOWS;_USRDLL;LIBMFXSW_EXPORTS;AS_VP8E_PLUGIN;VP8E_EVALUATION;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <MinimalRebuild>true</MinimalRebuild>
+      <ExceptionHandling>Async</ExceptionHandling>
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <WarningLevel>Level4</WarningLevel>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+    </ClCompile>
+    <Link>
+      <AdditionalDependencies>ippcoremt.lib;ippsmt.lib;ippvcmt.lib;ippimt.lib;ippccmt.lib;ippcvmt.lib;ippjmt.lib;ippmsdkmt.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(MfxIppLibraryDir);$(ICPP_COMPILER13)compiler\lib\ia32;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
+      <ModuleDefinitionFile>
+      </ModuleDefinitionFile>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <ProgramDatabaseFile>$(TargetDir)$(TargetName).pdb</ProgramDatabaseFile>
+      <SubSystem>Console</SubSystem>
+      <ImportLibrary>$(OutDir)..\lib\$(TargetName).lib</ImportLibrary>
+      <TargetMachine>MachineX86</TargetMachine>
+    </Link>
+    <PostBuildEvent>
+      <Command>copy "$(SolutionDir)bffc518cde134df98a96f4cf816c0fac\plugin_for_debug.cfg" "$(OutDir)plugin.cfg" /y</Command>
+      <Message>copy built plugin into its own folder</Message>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Midl>
+      <TargetEnvironment>X64</TargetEnvironment>
+    </Midl>
+    <ClCompile>
+      <Optimization>Disabled</Optimization>
+      <AdditionalIncludeDirectories>.\include;..\shared\include;..\scheduler\include;..\..\..\include;..\..\shared\include;..\brc\vc1\include;..\brc\h264\include;..\brc\mpeg2\include;..\decode\vc1\include;..\dec\mpeg2\include;..\dec\vc1\include;..\dec\h264\include;..\bsd\mpeg2\include;..\bsd\vc1\include;..\bsd\h264\include;..\decode\mpeg2\include;..\decode\vp8\include;..\decode\mjpeg\include;..\decode\h264\include;..\enc\mpeg2\include;..\enc\h264\include;..\enc\vc1\include;..\encode\mpeg2\include;..\encode\vc1\include;..\encode\h264\include;..\encode\vp8\include;..\pak\vc1\include;..\pak\mpeg2\include;..\pak\h264\include;$(MfxIppIncludeDir);..\..\shared\umc\core\umc\include;..\..\shared\umc\core\vm\include;..\..\shared\umc\codec\me\include;..\..\shared\umc\codec\vc1_common\include;..\..\shared\umc\codec\vc1_enc\include;..\..\shared\umc\codec\color_space_converter\include;..\..\shared\umc\codec\mpeg2_enc\include;..\..\shared\umc\codec\vp8_dec\include;..\..\shared\umc\codec\vc1_dec\include;..\..\shared\umc\codec\mpeg2_dec\include;..\..\shared\umc\io\media_buffers\include;..\..\shared\umc\codec\h264_enc\include;..\..\shared\umc\codec\scene_analyzer\include;..\..\shared\umc\core\vm_plus\include;..\..\shared\umc\codec\vc1_spl\include;..\vpp\include;..\..\shared\umc\codec\brc\include;..\encode\mjpeg\include;..\..\shared\umc\codec\jpeg_enc\include;..\..\..\thirdparty\vp8_libvpx</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>MFX_D3D11_ENABLED;WIN64;_DEBUG;_WINDOWS;_USRDLL;LIBMFXSW_EXPORTS;AS_VP8E_PLUGIN;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <MinimalRebuild>true</MinimalRebuild>
+      <ExceptionHandling>Async</ExceptionHandling>
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <WarningLevel>Level4</WarningLevel>
+      <TreatWarningAsError>true</TreatWarningAsError>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+    </ClCompile>
+    <Link>
+      <AdditionalDependencies>ippcoremt.lib;ippsmt.lib;ippvcmt.lib;ippimt.lib;ippccmt.lib;ippcvmt.lib;ippjmt.lib;ippmsdkmt.lib;%(AdditionalDependencies);</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(MfxIppLibraryDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
+      <ModuleDefinitionFile>
+      </ModuleDefinitionFile>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <ProgramDatabaseFile>$(TargetDir)$(TargetName).pdb</ProgramDatabaseFile>
+      <SubSystem>Windows</SubSystem>
+      <ImportLibrary>$(OutDir)..\lib\$(TargetName).lib</ImportLibrary>
+      <TargetMachine>MachineX64</TargetMachine>
+    </Link>
+    <PostBuildEvent>
+      <Command>copy "$(SolutionDir)bffc518cde134df98a96f4cf816c0fac\plugin_for_debug.cfg" "$(OutDir)plugin.cfg" /y</Command>
+      <Message>copy built plugin into its own folder</Message>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug_Intel|x64'">
+    <Midl>
+      <TargetEnvironment>X64</TargetEnvironment>
+    </Midl>
+    <ClCompile>
+      <Optimization>Disabled</Optimization>
+      <AdditionalIncludeDirectories>.\include;..\shared\include;..\scheduler\include;..\..\..\include;..\..\shared\include;..\brc\vc1\include;..\brc\h264\include;..\brc\mpeg2\include;..\decode\vc1\include;..\dec\mpeg2\include;..\dec\vc1\include;..\dec\h264\include;..\bsd\mpeg2\include;..\bsd\vc1\include;..\bsd\h264\include;..\decode\mpeg2\include;..\decode\vp8\include;..\decode\mjpeg\include;..\decode\h264\include;..\enc\mpeg2\include;..\enc\h264\include;..\enc\vc1\include;..\encode\mpeg2\include;..\encode\vc1\include;..\encode\h264\include;..\encode\vp8\include;..\pak\vc1\include;..\pak\mpeg2\include;..\pak\h264\include;$(MfxIppIncludeDir);..\..\shared\umc\core\umc\include;..\..\shared\umc\core\vm\include;..\..\shared\umc\codec\me\include;..\..\shared\umc\codec\vc1_common\include;..\..\shared\umc\codec\vc1_enc\include;..\..\shared\umc\codec\color_space_converter\include;..\..\shared\umc\codec\mpeg2_enc\include;..\..\shared\umc\codec\vp8_dec\include;..\..\shared\umc\codec\vc1_dec\include;..\..\shared\umc\codec\mpeg2_dec\include;..\..\shared\umc\io\media_buffers\include;..\..\shared\umc\codec\h264_enc\include;..\..\shared\umc\codec\scene_analyzer\include;..\..\shared\umc\core\vm_plus\include;..\..\shared\umc\codec\vc1_spl\include;..\vpp\include;..\..\shared\umc\codec\brc\include;..\encode\mjpeg\include;..\..\shared\umc\codec\jpeg_enc\include;..\..\..\thirdparty\vp8_libvpx</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>MFX_D3D11_ENABLED;WIN64;_DEBUG;_WINDOWS;_USRDLL;LIBMFXSW_EXPORTS;AS_VP8E_PLUGIN;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <MinimalRebuild>true</MinimalRebuild>
+      <ExceptionHandling>Async</ExceptionHandling>
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <WarningLevel>Level4</WarningLevel>
+      <TreatWarningAsError>false</TreatWarningAsError>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+    </ClCompile>
+    <Link>
+      <AdditionalDependencies>ippcoremt.lib;ippsmt.lib;ippvcmt.lib;ippimt.lib;ippccmt.lib;ippcvmt.lib;ippjmt.lib;ippmsdkmt.lib;%(AdditionalDependencies);</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(MfxIppLibraryDir);$(ICPP_COMPILER13)compiler\lib\intel64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
+      <ModuleDefinitionFile>
+      </ModuleDefinitionFile>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <ProgramDatabaseFile>$(TargetDir)$(TargetName).pdb</ProgramDatabaseFile>
+      <SubSystem>Windows</SubSystem>
+      <ImportLibrary>$(OutDir)..\lib\$(TargetName).lib</ImportLibrary>
+      <TargetMachine>MachineX64</TargetMachine>
+    </Link>
+    <PostBuildEvent>
+      <Command>copy "$(SolutionDir)bffc518cde134df98a96f4cf816c0fac\plugin_for_debug.cfg" "$(OutDir)plugin.cfg" /y</Command>
+      <Message>copy built plugin into its own folder</Message>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug_Intel_Evaluation|x64'">
+    <Midl>
+      <TargetEnvironment>X64</TargetEnvironment>
+    </Midl>
+    <ClCompile>
+      <Optimization>Disabled</Optimization>
+      <AdditionalIncludeDirectories>.\include;..\shared\include;..\scheduler\include;..\..\..\include;..\..\shared\include;..\brc\vc1\include;..\brc\h264\include;..\brc\mpeg2\include;..\decode\vc1\include;..\dec\mpeg2\include;..\dec\vc1\include;..\dec\h264\include;..\bsd\mpeg2\include;..\bsd\vc1\include;..\bsd\h264\include;..\decode\mpeg2\include;..\decode\vp8\include;..\decode\mjpeg\include;..\decode\h264\include;..\enc\mpeg2\include;..\enc\h264\include;..\enc\vc1\include;..\encode\mpeg2\include;..\encode\vc1\include;..\encode\h264\include;..\encode\vp8\include;..\pak\vc1\include;..\pak\mpeg2\include;..\pak\h264\include;$(MfxIppIncludeDir);..\..\shared\umc\core\umc\include;..\..\shared\umc\core\vm\include;..\..\shared\umc\codec\me\include;..\..\shared\umc\codec\vc1_common\include;..\..\shared\umc\codec\vc1_enc\include;..\..\shared\umc\codec\color_space_converter\include;..\..\shared\umc\codec\mpeg2_enc\include;..\..\shared\umc\codec\vp8_dec\include;..\..\shared\umc\codec\vc1_dec\include;..\..\shared\umc\codec\mpeg2_dec\include;..\..\shared\umc\io\media_buffers\include;..\..\shared\umc\codec\h264_enc\include;..\..\shared\umc\codec\scene_analyzer\include;..\..\shared\umc\core\vm_plus\include;..\..\shared\umc\codec\vc1_spl\include;..\vpp\include;..\..\shared\umc\codec\brc\include;..\encode\mjpeg\include;..\..\shared\umc\codec\jpeg_enc\include;..\..\..\thirdparty\vp8_libvpx</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>MFX_D3D11_ENABLED;WIN64;_DEBUG;_WINDOWS;_USRDLL;LIBMFXSW_EXPORTS;AS_VP8E_PLUGIN;VP8E_EVALUATION;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <MinimalRebuild>true</MinimalRebuild>
+      <ExceptionHandling>Async</ExceptionHandling>
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <WarningLevel>Level4</WarningLevel>
+      <TreatWarningAsError>false</TreatWarningAsError>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+    </ClCompile>
+    <Link>
+      <AdditionalDependencies>ippcoremt.lib;ippsmt.lib;ippvcmt.lib;ippimt.lib;ippccmt.lib;ippcvmt.lib;ippjmt.lib;ippmsdkmt.lib;%(AdditionalDependencies);</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(MfxIppLibraryDir);$(ICPP_COMPILER13)compiler\lib\intel64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
+      <ModuleDefinitionFile>
+      </ModuleDefinitionFile>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <ProgramDatabaseFile>$(TargetDir)$(TargetName).pdb</ProgramDatabaseFile>
+      <SubSystem>Windows</SubSystem>
+      <ImportLibrary>$(OutDir)..\lib\$(TargetName).lib</ImportLibrary>
+      <TargetMachine>MachineX64</TargetMachine>
+    </Link>
+    <PostBuildEvent>
+      <Command>copy "$(SolutionDir)bffc518cde134df98a96f4cf816c0fac\plugin_for_debug.cfg" "$(OutDir)plugin.cfg" /y</Command>
+      <Message>copy built plugin into its own folder</Message>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <AdditionalOptions>$(CPPFLAGS) %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalIncludeDirectories>.\include;..\shared\include;..\scheduler\include;..\..\..\include;..\..\shared\include;..\brc\vc1\include;..\brc\h264\include;..\brc\mpeg2\include;..\decode\vc1\include;..\dec\mpeg2\include;..\dec\vc1\include;..\dec\h264\include;..\bsd\mpeg2\include;..\bsd\vc1\include;..\bsd\h264\include;..\decode\mpeg2\include;..\decode\vp8\include;..\decode\mjpeg\include;..\decode\h264\include;..\enc\mpeg2\include;..\enc\h264\include;..\enc\vc1\include;..\encode\mpeg2\include;..\encode\vc1\include;..\encode\h264\include;..\encode\vp8\include;..\pak\vc1\include;..\pak\mpeg2\include;..\pak\h264\include;$(MfxIppIncludeDir);..\..\shared\umc\core\umc\include;..\..\shared\umc\core\vm\include;..\..\shared\umc\codec\me\include;..\..\shared\umc\codec\vc1_common\include;..\..\shared\umc\codec\vc1_enc\include;..\..\shared\umc\codec\color_space_converter\include;..\..\shared\umc\codec\mpeg2_enc\include;..\..\shared\umc\codec\vp8_dec\include;..\..\shared\umc\codec\vc1_dec\include;..\..\shared\umc\codec\mpeg2_dec\include;..\..\shared\umc\io\media_buffers\include;..\..\shared\umc\codec\h264_enc\include;..\..\shared\umc\codec\scene_analyzer\include;..\..\shared\umc\core\vm_plus\include;..\..\shared\umc\codec\vc1_spl\include;..\vpp\include;..\..\shared\umc\codec\brc\include;..\encode\mjpeg\include;..\..\shared\umc\codec\jpeg_enc\include;..\..\..\thirdparty\vp8_libvpx</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>MFX_D3D11_ENABLED;WIN32;NDEBUG;_WINDOWS;_USRDLL;LIBMFXSW_EXPORTS;AS_VP8E_PLUGIN;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ExceptionHandling>Async</ExceptionHandling>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <WarningLevel>Level4</WarningLevel>
+      <TreatWarningAsError>false</TreatWarningAsError>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+    </ClCompile>
+    <Link>
+      <AdditionalDependencies>ippcoremt.lib;ippsmt.lib;ippvcmt.lib;ippimt.lib;ippccmt.lib;ippcvmt.lib;ippjmt.lib;ippmsdkmt.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(MfxIppLibraryDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <IgnoreSpecificDefaultLibraries>svml_disp.lib;libirc.lib;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
+      <ModuleDefinitionFile>
+      </ModuleDefinitionFile>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <ProgramDatabaseFile>$(TargetDir)$(TargetName).pdb</ProgramDatabaseFile>
+      <SubSystem>Console</SubSystem>
+      <OptimizeReferences>true</OptimizeReferences>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <ImportLibrary>$(OutDir)..\lib\$(TargetName).lib</ImportLibrary>
+      <TargetMachine>MachineX86</TargetMachine>
+      <Profile>false</Profile>
+    </Link>
+    <PostBuildEvent>
+      <Command>copy "$(SolutionDir)bffc518cde134df98a96f4cf816c0fac\plugin.cfg" "$(OutDir)plugin.cfg" /y</Command>
+      <Message>copy built plugin into its own folder</Message>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release_Intel|Win32'">
+    <ClCompile>
+      <AdditionalOptions>$(CPPFLAGS) %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalIncludeDirectories>.\include;..\shared\include;..\scheduler\include;..\..\..\include;..\..\shared\include;..\brc\vc1\include;..\brc\h264\include;..\brc\mpeg2\include;..\decode\vc1\include;..\dec\mpeg2\include;..\dec\vc1\include;..\dec\h264\include;..\bsd\mpeg2\include;..\bsd\vc1\include;..\bsd\h264\include;..\decode\mpeg2\include;..\decode\vp8\include;..\decode\mjpeg\include;..\decode\h264\include;..\enc\mpeg2\include;..\enc\h264\include;..\enc\vc1\include;..\encode\mpeg2\include;..\encode\vc1\include;..\encode\h264\include;..\encode\vp8\include;..\pak\vc1\include;..\pak\mpeg2\include;..\pak\h264\include;$(MfxIppIncludeDir);..\..\shared\umc\core\umc\include;..\..\shared\umc\core\vm\include;..\..\shared\umc\codec\me\include;..\..\shared\umc\codec\vc1_common\include;..\..\shared\umc\codec\vc1_enc\include;..\..\shared\umc\codec\color_space_converter\include;..\..\shared\umc\codec\mpeg2_enc\include;..\..\shared\umc\codec\vp8_dec\include;..\..\shared\umc\codec\vc1_dec\include;..\..\shared\umc\codec\mpeg2_dec\include;..\..\shared\umc\io\media_buffers\include;..\..\shared\umc\codec\h264_enc\include;..\..\shared\umc\codec\scene_analyzer\include;..\..\shared\umc\core\vm_plus\include;..\..\shared\umc\codec\vc1_spl\include;..\vpp\include;..\..\shared\umc\codec\brc\include;..\encode\mjpeg\include;..\..\shared\umc\codec\jpeg_enc\include;..\..\..\thirdparty\vp8_libvpx</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>MFX_D3D11_ENABLED;WIN32;NDEBUG;_WINDOWS;_USRDLL;LIBMFXSW_EXPORTS;AS_VP8E_PLUGIN;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ExceptionHandling>Async</ExceptionHandling>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <WarningLevel>Level4</WarningLevel>
+      <TreatWarningAsError>false</TreatWarningAsError>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
+      <BufferSecurityCheck>false</BufferSecurityCheck>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+    </ClCompile>
+    <Link>
+      <AdditionalDependencies>ippcoremt.lib;ippsmt.lib;ippvcmt.lib;ippimt.lib;ippccmt.lib;ippcvmt.lib;ippjmt.lib;ippmsdkmt.lib;libircmt.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(MfxIppLibraryDir);$(ICPP_COMPILER13)compiler\lib\ia32;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
+      <ModuleDefinitionFile>
+      </ModuleDefinitionFile>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <ProgramDatabaseFile>$(TargetDir)$(TargetName).pdb</ProgramDatabaseFile>
+      <SubSystem>Windows</SubSystem>
+      <OptimizeReferences>true</OptimizeReferences>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <ImportLibrary>$(OutDir)..\lib\$(TargetName).lib</ImportLibrary>
+      <TargetMachine>MachineX86</TargetMachine>
+      <Profile>false</Profile>
+    </Link>
+    <PostBuildEvent>
+      <Command>copy "$(SolutionDir)bffc518cde134df98a96f4cf816c0fac\plugin.cfg" "$(OutDir)plugin.cfg" /y</Command>
+      <Message>copy built plugin into its own folder</Message>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release_Intel_Evaluation|Win32'">
+    <ClCompile>
+      <AdditionalOptions>$(CPPFLAGS) %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalIncludeDirectories>.\include;..\shared\include;..\scheduler\include;..\..\..\include;..\..\shared\include;..\brc\vc1\include;..\brc\h264\include;..\brc\mpeg2\include;..\decode\vc1\include;..\dec\mpeg2\include;..\dec\vc1\include;..\dec\h264\include;..\bsd\mpeg2\include;..\bsd\vc1\include;..\bsd\h264\include;..\decode\mpeg2\include;..\decode\vp8\include;..\decode\mjpeg\include;..\decode\h264\include;..\enc\mpeg2\include;..\enc\h264\include;..\enc\vc1\include;..\encode\mpeg2\include;..\encode\vc1\include;..\encode\h264\include;..\encode\vp8\include;..\pak\vc1\include;..\pak\mpeg2\include;..\pak\h264\include;$(MfxIppIncludeDir);..\..\shared\umc\core\umc\include;..\..\shared\umc\core\vm\include;..\..\shared\umc\codec\me\include;..\..\shared\umc\codec\vc1_common\include;..\..\shared\umc\codec\vc1_enc\include;..\..\shared\umc\codec\color_space_converter\include;..\..\shared\umc\codec\mpeg2_enc\include;..\..\shared\umc\codec\vp8_dec\include;..\..\shared\umc\codec\vc1_dec\include;..\..\shared\umc\codec\mpeg2_dec\include;..\..\shared\umc\io\media_buffers\include;..\..\shared\umc\codec\h264_enc\include;..\..\shared\umc\codec\scene_analyzer\include;..\..\shared\umc\core\vm_plus\include;..\..\shared\umc\codec\vc1_spl\include;..\vpp\include;..\..\shared\umc\codec\brc\include;..\encode\mjpeg\include;..\..\shared\umc\codec\jpeg_enc\include;..\..\..\thirdparty\vp8_libvpx</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>MFX_D3D11_ENABLED;WIN32;NDEBUG;_WINDOWS;_USRDLL;LIBMFXSW_EXPORTS;AS_VP8E_PLUGIN;VP8E_EVALUATION;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ExceptionHandling>Async</ExceptionHandling>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <WarningLevel>Level4</WarningLevel>
+      <TreatWarningAsError>false</TreatWarningAsError>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
+      <BufferSecurityCheck>false</BufferSecurityCheck>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+    </ClCompile>
+    <Link>
+      <AdditionalDependencies>ippcoremt.lib;ippsmt.lib;ippvcmt.lib;ippimt.lib;ippccmt.lib;ippcvmt.lib;ippjmt.lib;ippmsdkmt.lib;libircmt.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(MfxIppLibraryDir);$(ICPP_COMPILER13)compiler\lib\ia32;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
+      <ModuleDefinitionFile>
+      </ModuleDefinitionFile>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <ProgramDatabaseFile>$(TargetDir)$(TargetName).pdb</ProgramDatabaseFile>
+      <SubSystem>Windows</SubSystem>
+      <OptimizeReferences>true</OptimizeReferences>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <ImportLibrary>$(OutDir)..\lib\$(TargetName).lib</ImportLibrary>
+      <TargetMachine>MachineX86</TargetMachine>
+      <Profile>false</Profile>
+    </Link>
+    <PostBuildEvent>
+      <Command>copy "$(SolutionDir)bffc518cde134df98a96f4cf816c0fac\plugin.cfg" "$(OutDir)plugin.cfg" /y</Command>
+      <Message>copy built plugin into its own folder</Message>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Midl>
+      <TargetEnvironment>X64</TargetEnvironment>
+    </Midl>
+    <ClCompile>
+      <AdditionalIncludeDirectories>.\include;..\shared\include;..\scheduler\include;..\..\..\include;..\..\shared\include;..\brc\vc1\include;..\brc\h264\include;..\brc\mpeg2\include;..\decode\vc1\include;..\dec\mpeg2\include;..\dec\vc1\include;..\dec\h264\include;..\bsd\mpeg2\include;..\bsd\vc1\include;..\bsd\h264\include;..\decode\mpeg2\include;..\decode\vp8\include;..\decode\mjpeg\include;..\decode\h264\include;..\enc\mpeg2\include;..\enc\h264\include;..\enc\vc1\include;..\encode\mpeg2\include;..\encode\vc1\include;..\encode\h264\include;..\encode\vp8\include;..\pak\vc1\include;..\pak\mpeg2\include;..\pak\h264\include;$(MfxIppIncludeDir);..\..\shared\umc\core\umc\include;..\..\shared\umc\core\vm\include;..\..\shared\umc\codec\me\include;..\..\shared\umc\codec\vc1_common\include;..\..\shared\umc\codec\vc1_enc\include;..\..\shared\umc\codec\color_space_converter\include;..\..\shared\umc\codec\mpeg2_enc\include;..\..\shared\umc\codec\vp8_dec\include;..\..\shared\umc\codec\vc1_dec\include;..\..\shared\umc\codec\mpeg2_dec\include;..\..\shared\umc\io\media_buffers\include;..\..\shared\umc\codec\h264_enc\include;..\..\shared\umc\codec\scene_analyzer\include;..\..\shared\umc\core\vm_plus\include;..\..\shared\umc\codec\vc1_spl\include;..\vpp\include;..\..\shared\umc\codec\brc\include;..\encode\mjpeg\include;..\..\shared\umc\codec\jpeg_enc\include;..\..\..\thirdparty\vp8_libvpx</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>MFX_D3D11_ENABLED;WIN64;NDEBUG;_WINDOWS;_USRDLL;LIBMFXSW_EXPORTS;AS_VP8E_PLUGIN;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ExceptionHandling>Async</ExceptionHandling>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <WarningLevel>Level4</WarningLevel>
+      <TreatWarningAsError>true</TreatWarningAsError>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+    </ClCompile>
+    <Link>
+      <AdditionalDependencies>ippcoremt.lib;ippsmt.lib;ippvcmt.lib;ippimt.lib;ippccmt.lib;ippcvmt.lib;ippjmt.lib;ippmsdkmt.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(MfxIppLibraryDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
+      <ModuleDefinitionFile>
+      </ModuleDefinitionFile>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <ProgramDatabaseFile>$(TargetDir)$(TargetName).pdb</ProgramDatabaseFile>
+      <SubSystem>Windows</SubSystem>
+      <OptimizeReferences>true</OptimizeReferences>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <ImportLibrary>$(OutDir)..\lib\$(TargetName).lib</ImportLibrary>
+      <TargetMachine>MachineX64</TargetMachine>
+      <Profile>false</Profile>
+    </Link>
+    <PostBuildEvent>
+      <Command>copy "$(SolutionDir)bffc518cde134df98a96f4cf816c0fac\plugin.cfg" "$(OutDir)plugin.cfg" /y</Command>
+      <Message>copy built plugin into its own folder</Message>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release_Intel|x64'">
+    <Midl>
+      <TargetEnvironment>X64</TargetEnvironment>
+    </Midl>
+    <ClCompile>
+      <AdditionalIncludeDirectories>.\include;..\shared\include;..\scheduler\include;..\..\..\include;..\..\shared\include;..\brc\vc1\include;..\brc\h264\include;..\brc\mpeg2\include;..\decode\vc1\include;..\dec\mpeg2\include;..\dec\vc1\include;..\dec\h264\include;..\bsd\mpeg2\include;..\bsd\vc1\include;..\bsd\h264\include;..\decode\mpeg2\include;..\decode\vp8\include;..\decode\mjpeg\include;..\decode\h264\include;..\enc\mpeg2\include;..\enc\h264\include;..\enc\vc1\include;..\encode\mpeg2\include;..\encode\vc1\include;..\encode\h264\include;..\encode\vp8\include;..\pak\vc1\include;..\pak\mpeg2\include;..\pak\h264\include;$(MfxIppIncludeDir);..\..\shared\umc\core\umc\include;..\..\shared\umc\core\vm\include;..\..\shared\umc\codec\me\include;..\..\shared\umc\codec\vc1_common\include;..\..\shared\umc\codec\vc1_enc\include;..\..\shared\umc\codec\color_space_converter\include;..\..\shared\umc\codec\mpeg2_enc\include;..\..\shared\umc\codec\vp8_dec\include;..\..\shared\umc\codec\vc1_dec\include;..\..\shared\umc\codec\mpeg2_dec\include;..\..\shared\umc\io\media_buffers\include;..\..\shared\umc\codec\h264_enc\include;..\..\shared\umc\codec\scene_analyzer\include;..\..\shared\umc\core\vm_plus\include;..\..\shared\umc\codec\vc1_spl\include;..\vpp\include;..\..\shared\umc\codec\brc\include;..\encode\mjpeg\include;..\..\shared\umc\codec\jpeg_enc\include;..\..\..\thirdparty\vp8_libvpx</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>MFX_D3D11_ENABLED;WIN64;NDEBUG;_WINDOWS;_USRDLL;LIBMFXSW_EXPORTS;AS_VP8E_PLUGIN;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ExceptionHandling>Async</ExceptionHandling>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <WarningLevel>Level4</WarningLevel>
+      <TreatWarningAsError>true</TreatWarningAsError>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
+      <BufferSecurityCheck>false</BufferSecurityCheck>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+    </ClCompile>
+    <Link>
+      <AdditionalDependencies>ippcoremt.lib;ippsmt.lib;ippvcmt.lib;ippimt.lib;ippccmt.lib;ippcvmt.lib;ippjmt.lib;ippmsdkmt.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(MfxIppLibraryDir);$(ICPP_COMPILER13)compiler\lib\intel64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
+      <ModuleDefinitionFile>
+      </ModuleDefinitionFile>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <ProgramDatabaseFile>$(TargetDir)$(TargetName).pdb</ProgramDatabaseFile>
+      <SubSystem>Windows</SubSystem>
+      <OptimizeReferences>true</OptimizeReferences>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <ImportLibrary>$(OutDir)..\lib\$(TargetName).lib</ImportLibrary>
+      <TargetMachine>MachineX64</TargetMachine>
+      <Profile>false</Profile>
+      <RandomizedBaseAddress>false</RandomizedBaseAddress>
+    </Link>
+    <PostBuildEvent>
+      <Command>copy "$(SolutionDir)bffc518cde134df98a96f4cf816c0fac\plugin.cfg" "$(OutDir)plugin.cfg" /y</Command>
+      <Message>copy built plugin into its own folder</Message>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release_Intel_Evaluation|x64'">
+    <Midl>
+      <TargetEnvironment>X64</TargetEnvironment>
+    </Midl>
+    <ClCompile>
+      <AdditionalIncludeDirectories>.\include;..\shared\include;..\scheduler\include;..\..\..\include;..\..\shared\include;..\brc\vc1\include;..\brc\h264\include;..\brc\mpeg2\include;..\decode\vc1\include;..\dec\mpeg2\include;..\dec\vc1\include;..\dec\h264\include;..\bsd\mpeg2\include;..\bsd\vc1\include;..\bsd\h264\include;..\decode\mpeg2\include;..\decode\vp8\include;..\decode\mjpeg\include;..\decode\h264\include;..\enc\mpeg2\include;..\enc\h264\include;..\enc\vc1\include;..\encode\mpeg2\include;..\encode\vc1\include;..\encode\h264\include;..\encode\vp8\include;..\pak\vc1\include;..\pak\mpeg2\include;..\pak\h264\include;$(MfxIppIncludeDir);..\..\shared\umc\core\umc\include;..\..\shared\umc\core\vm\include;..\..\shared\umc\codec\me\include;..\..\shared\umc\codec\vc1_common\include;..\..\shared\umc\codec\vc1_enc\include;..\..\shared\umc\codec\color_space_converter\include;..\..\shared\umc\codec\mpeg2_enc\include;..\..\shared\umc\codec\vp8_dec\include;..\..\shared\umc\codec\vc1_dec\include;..\..\shared\umc\codec\mpeg2_dec\include;..\..\shared\umc\io\media_buffers\include;..\..\shared\umc\codec\h264_enc\include;..\..\shared\umc\codec\scene_analyzer\include;..\..\shared\umc\core\vm_plus\include;..\..\shared\umc\codec\vc1_spl\include;..\vpp\include;..\..\shared\umc\codec\brc\include;..\encode\mjpeg\include;..\..\shared\umc\codec\jpeg_enc\include;..\..\..\thirdparty\vp8_libvpx</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>MFX_D3D11_ENABLED;WIN64;NDEBUG;_WINDOWS;_USRDLL;LIBMFXSW_EXPORTS;AS_VP8E_PLUGIN;VP8E_EVALUATION;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ExceptionHandling>Async</ExceptionHandling>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <WarningLevel>Level4</WarningLevel>
+      <TreatWarningAsError>true</TreatWarningAsError>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
+      <BufferSecurityCheck>false</BufferSecurityCheck>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+    </ClCompile>
+    <Link>
+      <AdditionalDependencies>ippcoremt.lib;ippsmt.lib;ippvcmt.lib;ippimt.lib;ippccmt.lib;ippcvmt.lib;ippjmt.lib;ippmsdkmt.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(MfxIppLibraryDir);$(ICPP_COMPILER13)compiler\lib\intel64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
+      <ModuleDefinitionFile>
+      </ModuleDefinitionFile>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <ProgramDatabaseFile>$(TargetDir)$(TargetName).pdb</ProgramDatabaseFile>
+      <SubSystem>Windows</SubSystem>
+      <OptimizeReferences>true</OptimizeReferences>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <ImportLibrary>$(OutDir)..\lib\$(TargetName).lib</ImportLibrary>
+      <TargetMachine>MachineX64</TargetMachine>
+      <Profile>false</Profile>
+      <RandomizedBaseAddress>false</RandomizedBaseAddress>
+    </Link>
+    <PostBuildEvent>
+      <Command>copy "$(SolutionDir)bffc518cde134df98a96f4cf816c0fac\plugin.cfg" "$(OutDir)plugin.cfg" /y</Command>
+      <Message>copy built plugin into its own folder</Message>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\shared\src\fast_copy.cpp" />
+    <ClCompile Include="..\..\shared\src\libmfx_allocator.cpp" />
+    <ClCompile Include="..\..\shared\src\libmfx_core.cpp" />
+    <ClCompile Include="..\..\shared\src\libmfx_core_factory.cpp" />
+    <ClCompile Include="..\encode\vp8\src\mfx_vp8_encode.cpp" />
+    <ClCompile Include="..\shared\src\libmfxsw.cpp" />
+    <ClCompile Include="..\shared\src\libmfxsw_async.cpp" />
+    <ClCompile Include="..\shared\src\libmfxsw_encode.cpp" />
+    <ClCompile Include="..\shared\src\libmfxsw_query.cpp" />
+    <ClCompile Include="..\shared\src\libmfxsw_session.cpp" />
+    <ClCompile Include="..\shared\src\mfx_brc_common.cpp" />
+    <ClCompile Include="..\shared\src\mfx_common_int.cpp" />
+    <ClCompile Include="..\shared\src\mfx_enc_common.cpp" />
+    <ClCompile Include="..\shared\src\mfx_log.cpp" />
+    <ClCompile Include="..\shared\src\mfx_session.cpp" />
+    <ClCompile Include="..\..\shared\src\mfx_timing.cpp" />
+    <ClCompile Include="..\..\shared\src\mfx_umc_alloc_wrapper.cpp" />
+    <ClCompile Include="..\shared\src\mfx_user_plugin.cpp" />
+    <ClCompile Include="..\scheduler\src\mfx_scheduler_core.cpp" />
+    <ClCompile Include="..\scheduler\src\mfx_scheduler_core_ischeduler.cpp" />
+    <ClCompile Include="..\scheduler\src\mfx_scheduler_core_iunknown.cpp" />
+    <ClCompile Include="..\scheduler\src\mfx_scheduler_core_task.cpp" />
+    <ClCompile Include="..\scheduler\src\mfx_scheduler_core_task_management.cpp" />
+    <ClCompile Include="..\scheduler\src\mfx_scheduler_core_thread.cpp" />
+    <ClCompile Include="..\shared\src\mfx_vp8_enc_common.cpp" />
+    <ClCompile Include="src\mfx_vp8_enc_plugin.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\shared\include\fast_copy.h" />
+    <ClInclude Include="..\..\shared\include\libmfx_allocator.h" />
+    <ClInclude Include="..\..\shared\include\libmfx_core.h" />
+    <ClInclude Include="..\..\shared\include\libmfx_core_factory.h" />
+    <ClInclude Include="..\..\shared\include\libmfx_core_operation.h" />
+    <ClInclude Include="..\..\shared\include\mfx_common.h" />
+    <ClInclude Include="..\encode\vp8\include\mfx_vp8_encode.h" />
+    <ClInclude Include="..\scheduler\include\mfx_dependency_item.h" />
+    <ClInclude Include="..\shared\include\mfx_brc_common.h" />
+    <ClInclude Include="..\shared\include\mfx_common_int.h" />
+    <ClInclude Include="..\shared\include\mfx_enc_common.h" />
+    <ClInclude Include="..\shared\include\mfx_interface.h" />
+    <ClInclude Include="..\shared\include\mfx_interface_scheduler.h" />
+    <ClInclude Include="..\shared\include\mfx_log.h" />
+    <ClInclude Include="..\shared\include\mfx_session.h" />
+    <ClInclude Include="..\shared\include\mfx_task.h" />
+    <ClInclude Include="..\shared\include\mfx_task_threading_policy.h" />
+    <ClInclude Include="..\shared\include\mfx_thread_task.h" />
+    <ClInclude Include="..\..\shared\include\mfx_timing.h" />
+    <ClInclude Include="..\shared\include\mfx_tools.h" />
+    <ClInclude Include="..\..\shared\include\mfx_umc_alloc_wrapper.h" />
+    <ClInclude Include="..\shared\include\mfx_user_plugin.h" />
+    <ClInclude Include="..\..\shared\include\mfx_utils.h" />
+    <ClInclude Include="..\..\shared\include\mfxstructurespro.h" />
+    <ClInclude Include="..\..\shared\include\mfxvideo++int.h" />
+    <ClInclude Include="..\..\shared\include\mfxvideopro++.h" />
+    <ClInclude Include="..\..\shared\include\mfxvideopro.h" />
+    <ClInclude Include="..\..\..\include\mfxdefs.h" />
+    <ClInclude Include="..\..\..\include\mfxplugin.h" />
+    <ClInclude Include="..\..\..\include\mfxstructures.h" />
+    <ClInclude Include="..\..\..\include\mfxvideo++.h" />
+    <ClInclude Include="..\..\..\include\mfxvideo.h" />
+    <ClInclude Include="..\scheduler\include\mfx_scheduler_core.h" />
+    <ClInclude Include="..\scheduler\include\mfx_scheduler_core_handle.h" />
+    <ClInclude Include="..\scheduler\include\mfx_scheduler_core_task.h" />
+    <ClInclude Include="..\scheduler\include\mfx_scheduler_core_thread.h" />
+    <ClInclude Include="include\mfx_plugin_module.h" />
+    <ClInclude Include="include\mfx_vp8_enc_plugin.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="libmfxsw_plugin_vp8e.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\thirdparty\vp8_libvpx.vcxproj">
+      <Project>{18a3f3bc-74d2-4155-9be1-9b29bb7db2db}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\..\shared\mfx_trace\mfx_trace.vcxproj">
+      <Project>{ff93e15e-6a4a-4cc5-8d13-892fbba5cc5f}</Project>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
+    <ProjectReference Include="..\..\shared\umc\codec\color_space_converter\color_space_converter.vcxproj">
+      <Project>{57fe8dac-c7c4-4df4-9a36-2fee040dff38}</Project>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
+    <ProjectReference Include="..\..\shared\umc\core\umc\base_classes.vcxproj">
+      <Project>{31991d83-f6a2-49d9-bdc5-64e85d055a1c}</Project>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
+    <ProjectReference Include="..\..\shared\umc\core\vm\vm.vcxproj">
+      <Project>{d41d3178-5c65-4868-bdb1-42c44643274e}</Project>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
+    <ProjectReference Include="..\..\shared\umc\core\vm_plus\vm_plus.vcxproj">
+      <Project>{04854e7f-2a17-4b40-a14f-4e1d9b1d4785}</Project>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
+    <ProjectReference Include="..\..\shared\umc\io\media_buffers\media_buffers.vcxproj">
+      <Project>{9befd888-5d4d-49fb-bda0-e5987f4f6fc7}</Project>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
+    <ProjectReference Include="..\..\shared\umc\io\umc_io\umc_io.vcxproj">
+      <Project>{8ba23c0c-d2d7-4a5a-b8f9-ba5ca19cbab7}</Project>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>
