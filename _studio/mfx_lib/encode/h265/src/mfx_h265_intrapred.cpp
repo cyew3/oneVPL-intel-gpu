@@ -755,6 +755,33 @@ CostType GetIntraLumaBitCost(H265CU * cu, Ipp32u abs_part_idx)
 #endif
 }
 
+
+#define HM_MATCH_1 0
+//kolya
+//just copied from HM's code to check compression gain
+//todo: optimize
+#if HM_MATCH_1 1
+Ipp32s StoreFewBestModes(CostType cost, Ipp8u mode, CostType * costs, Ipp8u * modes, Ipp32s num_costs)
+{
+    Ipp32s idx = 0;
+
+    while (idx < num_costs && cost < costs[num_costs - 1 - idx]) idx++;
+
+    if (idx > 0)
+    {
+        for(Ipp32s i=1; i < idx; i++)
+        {
+            costs[num_costs - idx] = costs[num_costs - idx - 1];
+            modes[num_costs - idx] = modes[num_costs - idx - 1];
+        }
+        costs[num_costs - idx] = cost;
+        modes[num_costs - idx] = mode;
+        return 1;
+    }
+
+    return 0; // nothing inserted
+}
+#else
 Ipp32s StoreFewBestModes(CostType cost, Ipp8u mode, CostType * costs, Ipp8u * modes, Ipp32s num_costs)
 {
     CostType max_cost = -1;
@@ -773,6 +800,7 @@ Ipp32s StoreFewBestModes(CostType cost, Ipp8u mode, CostType * costs, Ipp8u * mo
     }
     return num_costs; // nothing inserted
 }
+#endif
 
 #define NO_TRANSFORM_SPLIT_INTRAPRED_STAGE1 0
 void H265CU::IntraLumaModeDecision(Ipp32s abs_part_idx, Ipp32u offset, Ipp8u depth, Ipp8u tr_depth)
