@@ -760,7 +760,7 @@ CostType GetIntraLumaBitCost(H265CU * cu, Ipp32u abs_part_idx)
 //kolya
 //just copied from HM's code to check compression gain
 //todo: optimize
-#if HM_MATCH_1 1
+#if HM_MATCH_1
 Ipp32s StoreFewBestModes(CostType cost, Ipp8u mode, CostType * costs, Ipp8u * modes, Ipp32s num_costs)
 {
     Ipp32s idx = 0;
