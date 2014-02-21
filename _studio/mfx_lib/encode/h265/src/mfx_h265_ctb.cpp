@@ -4033,10 +4033,10 @@ bool H265CU::GetTempMvPred(const H265CUData *currPb, Ipp32s xPb, Ipp32s yPb, Ipp
 bool H265CU::GetColMv(const H265CUData *currPb, Ipp32s listIdxCurr, Ipp32s refIdxCurr,
                       const H265Frame *colPic, const H265CUData *colPb, H265MV *mvLxCol)
 {
-    Ipp8u isCurrRefLongTerm, isColRefLongTerm;
-    Ipp32s currRefTb, colRefTb;
-    H265MV cMvPred;
-    Ipp32s minTUSize = m_par->MinTUSize;
+    //Ipp8u isCurrRefLongTerm, isColRefLongTerm;
+    //Ipp32s currRefTb, colRefTb;
+    //H265MV cMvPred;
+    //Ipp32s minTUSize = m_par->MinTUSize;
 
     if (colPb->predMode == MODE_INTRA)
         return false; // availableFlagLXCol=0
@@ -4068,8 +4068,8 @@ bool H265CU::GetColMv(const H265CUData *currPb, Ipp32s listIdxCurr, Ipp32s refId
     }
     else {
         Ipp32s scale = GetDistScaleFactor(currPocDiff, colPocDiff);
-        mvLxCol->mvx = Saturate(-32768, 32767, (scale * mvCol.mvx + 127 + (scale * mvCol.mvx < 0)) >> 8);
-        mvLxCol->mvy = Saturate(-32768, 32767, (scale * mvCol.mvy + 127 + (scale * mvCol.mvy < 0)) >> 8);
+        mvLxCol->mvx = (Ipp16s)Saturate(-32768, 32767, (scale * mvCol.mvx + 127 + (scale * mvCol.mvx < 0)) >> 8);
+        mvLxCol->mvy = (Ipp16s)Saturate(-32768, 32767, (scale * mvCol.mvy + 127 + (scale * mvCol.mvy < 0)) >> 8);
     }
 
     return true; // availableFlagLXCol=1

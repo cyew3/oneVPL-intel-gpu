@@ -750,9 +750,6 @@ mfxStatus MFXVideoENCODEH265::Init(mfxVideoParam* par_in)
 
     m_isInitialized = true;
 
-    if (MFX_ERR_NONE == stsQuery)
-        return (m_core->GetPlatformType() == MFX_PLATFORM_SOFTWARE)?MFX_ERR_NONE:MFX_WRN_PARTIAL_ACCELERATION;
-
     return stsQuery;
 }
 
