@@ -43,9 +43,7 @@ void PartitionInfo::InitZscanToRaster(Ipp32s MaxDepth, Ipp32s Depth, Ipp32u Star
 
 void PartitionInfo::InitRasterToZscan(const H265SeqParamSet* sps)
 {
-    Ipp32u  MinCUSize  = sps->MaxCUSize  >> sps->MaxCUDepth;
-
-    Ipp32u  NumPartInSize  = sps->MaxCUSize  / MinCUSize;
+    Ipp32u  NumPartInSize  = sps->MaxCUSize  / sps->MinCUSize;
 
     for (Ipp32u i = 0; i < NumPartInSize * NumPartInSize; i++)
     {
@@ -58,17 +56,16 @@ void PartitionInfo::InitRasterToPelXY(const H265SeqParamSet* sps)
     Ipp32u* TempX = &m_rasterToPelX[0];
     Ipp32u* TempY = &m_rasterToPelY[0];
 
-    Ipp32u MinCUSize = sps->MaxCUSize >> sps->MaxCUDepth;
-    Ipp32u NumPartInSize = sps->MaxCUSize / MinCUSize;
+    Ipp32u NumPartInSize = sps->MaxCUSize / sps->MinCUSize;
     
     for (Ipp32u i = 0; i < NumPartInSize*NumPartInSize; i++)
     {
-        TempX[i] = (m_zscanToRaster[i] % NumPartInSize) * MinCUSize;
+        TempX[i] = (m_zscanToRaster[i] % NumPartInSize) * sps->MinCUSize;
     }
 
     for (Ipp32u i = 1; i < NumPartInSize * NumPartInSize; i++)
     {
-        TempY[i] = (m_zscanToRaster[i] / NumPartInSize) * MinCUSize;
+        TempY[i] = (m_zscanToRaster[i] / NumPartInSize) * sps->MinCUSize;
     }
 };
 
@@ -135,17 +132,17 @@ void H265FrameCodingData::destroy()
     {
         m_CU[i]->destroy();
         delete m_CU[i];
-        m_CU[i] = NULL;
+        m_CU[i] = 0;
     }
 
     delete [] m_CU;
-    m_CU = NULL;
+    m_CU = 0;
 
     delete[] m_colocatedInfo;
-    m_colocatedInfo = NULL;
+    m_colocatedInfo = 0;
 
     delete[] m_edge;
-    m_edge = NULL;
+    m_edge = 0;
 
     m_SAO.destroy();
 }

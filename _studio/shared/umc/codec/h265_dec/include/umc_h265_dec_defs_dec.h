@@ -222,8 +222,6 @@ enum EnumPartSize   // supported partition shape
     PART_SIZE_2NxnD,           ///< asymmetric motion partition, 2Nx(3N/2) + 2Nx( N/2)
     PART_SIZE_nLx2N,           ///< asymmetric motion partition, ( N/2)x2N + (3N/2)x2N
     PART_SIZE_nRx2N,           ///< asymmetric motion partition, (3N/2)x2N + ( N/2)x2N
-
-    PART_SIZE_NONE = 15
 };
 
 // supported prediction type
@@ -231,7 +229,7 @@ enum EnumPredMode
 {
     MODE_INTER,           ///< inter-prediction mode
     MODE_INTRA,           ///< intra-prediction mode
-    MODE_NONE = 15
+    MODE_NONE
 };
 
 #define SCALING_LIST_NUM 6         ///< list number for quantization matrix
@@ -933,6 +931,7 @@ struct H265SeqParamSetBase
 
     Ipp32u MaxCUSize;
     Ipp32u MaxCUDepth;
+    Ipp32u MinCUSize;
     Ipp32s AddCUDepth;
     Ipp32u WidthInCU;
     Ipp32u HeightInCU;

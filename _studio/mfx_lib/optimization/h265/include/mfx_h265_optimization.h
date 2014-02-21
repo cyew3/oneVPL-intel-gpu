@@ -104,26 +104,14 @@ namespace MFX_HEVC_PP
 
     struct H265EdgeData
     {
-        // Reserved are 5 bits in each flag byte are making sure that no writes are
-        // made between sides. P side may be written from one thread and Q side from
-        // another, they have to be in different bytes or race conditions happen on
-        // slice or tile boundaries!!!
         Ipp8u deblockP  : 1;
-        Ipp8u isIntraP  : 1;
-        Ipp8u isTrCbfYP : 1;
-        Ipp8u reservedP : 5;
-        Ipp8s qpP;
-
         Ipp8u deblockQ  : 1;
-        Ipp8u isIntraQ  : 1;
-        Ipp8u isTrCbfYQ : 1;
-        Ipp8u reservedQ : 5;
-        Ipp8s qp;
+        Ipp8s strength  : 3;
 
-        Ipp8u strength;
+        Ipp8s qp;
         Ipp8s tcOffset;
         Ipp8s betaOffset;
-    };
+    }; // sizeof - 4 bytes
 
     enum SGUBorderID
     {

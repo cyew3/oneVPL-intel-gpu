@@ -102,7 +102,6 @@ public:
 
     // Updated after whole CTB is done for initializing external neighbour data in m_CurCTB
     H265FrameHLDNeighborsInfo *m_TopNgbrs;
-    H265MVInfo *m_TopMVInfo;
     // Updated after every PU is processed and MV info is available
     H265FrameHLDNeighborsInfo *m_CurrCTBFlags;
     H265MVInfo *m_CurrCTB;
@@ -255,27 +254,16 @@ public:
         Ipp32u Size,
         Ipp32s PicStride);
 
-    void CleanLeftEdges(bool leftAvailable, H265EdgeData *ctb_start_edge, Ipp32s height);
-    void CleanTopEdges(bool leftAvailable, H265EdgeData *ctb_start_edge, Ipp32s width);
-    void CleanRightHorEdges(void);
     void DeblockOneLCU(Ipp32s curLCUAddr);
-    void DeblockOneCrossLuma(H265CodingUnit* curLCU, Ipp32s curPixelColumn, Ipp32s curPixelRow);
-    void DeblockOneCrossChroma(H265CodingUnit* curLCU, Ipp32s curPixelColumn, Ipp32s curPixelRow);
-
-    void GetCTBEdgeStrengths(void);
-    template<Ipp32s tusize> inline void GetCTBEdgeStrengths(void);
-    template<Ipp32s tusize, Ipp32s dir> inline void GetEdgeStrength(Ipp32s tuQ, Ipp32s tuP, H265EdgeData *edge, Ipp32s xQ, Ipp32s yQ);
-    template<Ipp32s dir> inline void GetEdgeStrengthDelayed(Ipp32s tusize, Ipp32s x, Ipp32s y, H265EdgeData *edge);
     void DeblockOneCross(H265CodingUnit* curLCU, Ipp32s curPixelColumn, Ipp32s curPixelRow, bool isNeddAddHorDeblock);
 
     template <Ipp32s direction>
     void CalculateEdge(H265CodingUnit* cu, H265EdgeData * edge, Ipp32s x, Ipp32s y);
 
     void DeblockOneLCU(H265CodingUnit* cu, Ipp32u absPartIdx, Ipp32u depth, Ipp32s edgeType);
+    void DeblockTU(H265CodingUnit* cu, Ipp32u absPartIdx, Ipp32u depth, Ipp32s edgeType);
 
     inline void GetEdgeStrengthInter(H265MVInfo *mvinfoQ, H265MVInfo *mvinfoP, H265EdgeData *edge);
-    template<Ipp32s tusize> void GetCTBEdgeStrengthsSimple(void);
-    template<Ipp32s tusize> void GetEdgeStrengthSimple(Ipp32s tuQ, Ipp32s tuP, H265EdgeData *edge, bool anotherCU);
 
     H265CodingUnit* m_curCU;
     bool m_DecodeDQPFlag;
@@ -289,6 +277,12 @@ public:
     Ipp32u m_BakAbsPartIdx;
     Ipp32u m_BakChromaOffset;
     Ipp32u m_bakAbsPartIdxCU;
+
+    bool predictionExist;
+    Ipp32u saveColumn;
+    Ipp32u saveRow;
+    Ipp32u saveHeight;
+    Ipp32s isMin4x4Block;
 
     DecodingContext * m_context;
     std::auto_ptr<DecodingContext> m_context_single_thread;

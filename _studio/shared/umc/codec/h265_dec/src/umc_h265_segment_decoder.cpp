@@ -29,7 +29,6 @@ DecodingContext::DecodingContext()
     m_pps = 0;
     m_frame = 0;
     m_TopNgbrs = 0;
-    m_TopMVInfo = 0;
     m_CurrCTBFlags = 0;
     m_CurrCTB = 0;
     m_CurrCTBStride = 0;
@@ -59,7 +58,6 @@ void DecodingContext::Init(H265Slice *slice)
     }
 
     m_TopNgbrs = &m_TopNgbrsHolder[1];
-    m_TopMVInfo = &m_TopMVInfoHolder[1];
 
     VM_ASSERT(m_sps->pic_width_in_luma_samples <= 11776); // Top Intra flags placeholder can store up to (11776 / 4 / 32) + 1 flags
     m_RecTpIntraFlags    = m_RecIntraFlagsHolder;

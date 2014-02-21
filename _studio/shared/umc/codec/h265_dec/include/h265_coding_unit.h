@@ -39,15 +39,13 @@ struct H265CodingUnitData
         Ipp8u cu_transform_bypass : 1;
         Ipp8u pcm_flag : 1;
         Ipp8u transform_skip : 3;
+        Ipp8u depth : 3;
+        Ipp8u predMode : 2;
+        Ipp8u partSize : 3;
+        Ipp8u trIndex : 3;
     };
 
     Ipp8u width;
-    Ipp8u depth;
-
-    Ipp8u partSize;
-    Ipp8u predMode;
-
-    Ipp8u trIndex;
     Ipp8u trStart;
     Ipp8s qp;
 };

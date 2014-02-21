@@ -200,7 +200,7 @@ void H265TrQuant::InvRecurTransformNxN(H265CodingUnit* pCU, Ipp32u AbsPartIdx, I
     {
         H265CoeffsPtrCommon pCoeff;
 
-        Ipp32u NumCoeffInc = (pCU->m_SliceHeader->m_SeqParamSet->MaxCUSize * pCU->m_SliceHeader->m_SeqParamSet->MaxCUSize) >> (pCU->m_SliceHeader->m_SeqParamSet->MaxCUDepth << 1);
+        Ipp32u NumCoeffInc = pCU->m_SliceHeader->m_SeqParamSet->MinCUSize * pCU->m_SliceHeader->m_SeqParamSet->MinCUSize;
         size_t coeffsOffset = NumCoeffInc * AbsPartIdx;
 
         if (lumaPresent)

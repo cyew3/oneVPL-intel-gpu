@@ -563,6 +563,7 @@ UMC::Status H265HeadersBitstream::GetSequenceParamSet(H265SeqParamSet *pcSPS)
     }
     pcSPS->AddCUDepth = addCUDepth;
     pcSPS->MaxCUDepth = log2_diff_max_min_coding_block_size + addCUDepth;
+    pcSPS->MinCUSize = pcSPS->MaxCUSize >> pcSPS->MaxCUDepth;
     // BB: these parameters may be removed completly and replaced by the fixed values
     pcSPS->scaling_list_enabled_flag = Get1Bit();
     if(pcSPS->scaling_list_enabled_flag)

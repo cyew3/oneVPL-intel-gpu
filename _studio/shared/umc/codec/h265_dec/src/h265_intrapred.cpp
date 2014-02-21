@@ -136,7 +136,7 @@ namespace UMC_HEVC_DECODER
         if (!pCU->GetCbf(COMPONENT_LUMA, AbsPartIdx, TrDepth))
             return;
 
-        Ipp32u NumCoeffInc = (m_pSeqParamSet->MaxCUSize * m_pSeqParamSet->MaxCUSize) >> (m_pSeqParamSet->MaxCUDepth << 1);
+        Ipp32u NumCoeffInc = m_pSeqParamSet->MinCUSize * m_pSeqParamSet->MinCUSize;
         H265CoeffsPtrCommon pCoeff = pCU->m_TrCoeffY + (NumCoeffInc * AbsPartIdx);
         bool useTransformSkip = pCU->GetTransformSkip(COMPONENT_LUMA, AbsPartIdx) != 0;
 
@@ -193,7 +193,7 @@ namespace UMC_HEVC_DECODER
             return;
 
         //===== inverse transform =====
-        Ipp32u NumCoeffInc = ((pCU->m_SliceHeader->m_SeqParamSet->MaxCUSize * pCU->m_SliceHeader->m_SeqParamSet->MaxCUSize) >> (pCU->m_SliceHeader->m_SeqParamSet->MaxCUDepth << 1)) >> 2;
+        Ipp32u NumCoeffInc = (pCU->m_SliceHeader->m_SeqParamSet->MinCUSize * pCU->m_SliceHeader->m_SeqParamSet->MinCUSize) >> 2;
         Ipp32u residualPitch = m_ppcYUVResi->pitch_chroma() >> 1;
 
         // Cb
