@@ -1235,6 +1235,8 @@ mfxStatus D3D11Encoder::Destroy()
         pps.reconstructed_frame = reconQueue[task.m_pRecFrame->idInPool].surface;
 
         pps.ref_flags.value = 0; // use all references
+        pps.ref_flags.bits.no_ref_gf = 1;
+        pps.ref_flags.bits.no_ref_arf = 1;
         if ( task.m_pRecRefFrames[REF_BASE])
         {
             MFX_CHECK(task.m_pRecRefFrames[REF_BASE]->idInPool < reconQueue.size(), MFX_ERR_UNDEFINED_BEHAVIOR);
