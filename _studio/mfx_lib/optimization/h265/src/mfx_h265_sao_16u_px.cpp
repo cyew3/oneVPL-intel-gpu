@@ -42,6 +42,8 @@ namespace MFX_HEVC_PP
 
     typedef Ipp16u PixType;
 
+#undef MAKE_NAME
+
 #if defined(MFX_TARGET_OPTIMIZATION_AUTO)
     #define MAKE_NAME( func ) func ## _px
 #else
@@ -236,8 +238,11 @@ namespace MFX_HEVC_PP
 
     }
 
-
+#if defined MFX_TARGET_OPTIMIZATION_ATOM
+    void h265_ProcessSaoCu_Luma_16u(SAOCU_PARAMETERS_LIST_U16)
+#else
     void MAKE_NAME(h265_ProcessSaoCu_Luma_16u)(SAOCU_PARAMETERS_LIST_U16)
+#endif
     {
         Ipp32s tmpUpBuff1[65];
         Ipp32s tmpUpBuff2[65];

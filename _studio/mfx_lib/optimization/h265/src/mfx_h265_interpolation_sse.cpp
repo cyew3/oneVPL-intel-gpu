@@ -30,10 +30,15 @@
 
 #include "mfx_h265_optimization.h"
 
+#if defined(MFX_MAKENAME_ATOM)
+    #define MFX_SSE_OPTIMIZATION_FOR_ATOM
+#endif
+
 #if defined(MFX_TARGET_OPTIMIZATION_AUTO) || \
     defined(MFX_MAKENAME_SSE4) && defined(MFX_TARGET_OPTIMIZATION_SSE4) || \
     defined(MFX_MAKENAME_SSSE3) && defined(MFX_TARGET_OPTIMIZATION_SSSE3) || \
-    defined(MFX_MAKENAME_SSSE3) && defined(MFX_TARGET_OPTIMIZATION_AVX2)
+    defined(MFX_MAKENAME_SSSE3) && defined(MFX_TARGET_OPTIMIZATION_AVX2) || \
+    defined(MFX_MAKENAME_ATOM) && defined(MFX_TARGET_OPTIMIZATION_ATOM)
 
 #include <immintrin.h>
 
@@ -221,6 +226,7 @@ static void t_InterpLuma_s8_d16_H(const unsigned char* pSrc, unsigned int srcPit
     } while (--height);
 }
 
+#if !defined MFX_SSE_OPTIMIZATION_FOR_ATOM
 /* luma, horizontal, 8-bit input, 16-bit output */
 void MAKE_NAME(h265_InterpLuma_s8_d16_H)(INTERP_S8_D16_PARAMETERS_LIST)
 {
@@ -517,6 +523,7 @@ void MAKE_NAME(h265_InterpChroma_s16_d16_H)(INTERP_S16_D16_PARAMETERS_LIST, int 
         }
     }
 }
+#endif //!defined MFX_SSE_OPTIMIZATION_FOR_ATOM
 
 template<int widthMul, int shift>
 static void t_InterpLuma_s8_d16_V(const unsigned char* pSrc, unsigned int srcPitch, short *pDst, unsigned int dstPitch, int tab_index, int width, int height)

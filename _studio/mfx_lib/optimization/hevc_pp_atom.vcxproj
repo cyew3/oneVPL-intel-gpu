@@ -45,6 +45,7 @@
       <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug_Intel|x64'">/Qsfalign %(AdditionalOptions)</AdditionalOptions>
       <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug_Intel|Win32'">/Qsfalign %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
+    <ClCompile Include="h265\src\mfx_h265_interpolation_sse.cpp" />
     <ClCompile Include="h265\src\mfx_h265_interp_tmpl_sse.cpp">
       <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release_Intel|x64'">/Qopt-ra-region-strategy:routine /QxSSSE3_ATOM %(AdditionalOptions)</AdditionalOptions>
       <UseProcessorExtensions Condition="'$(Configuration)|$(Platform)'=='Release_Intel|x64'">None</UseProcessorExtensions>
