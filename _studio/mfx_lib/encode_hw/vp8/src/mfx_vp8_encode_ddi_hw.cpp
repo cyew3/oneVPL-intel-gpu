@@ -1233,6 +1233,8 @@ mfxStatus D3D11Encoder::Destroy()
 
         MFX_CHECK(task.m_pRecFrame->idInPool < reconQueue.size(), MFX_ERR_UNDEFINED_BEHAVIOR);
         pps.reconstructed_frame = reconQueue[task.m_pRecFrame->idInPool].surface;
+
+        pps.ref_flags.value = 0; // use all references
         if ( task.m_pRecRefFrames[REF_BASE])
         {
             MFX_CHECK(task.m_pRecRefFrames[REF_BASE]->idInPool < reconQueue.size(), MFX_ERR_UNDEFINED_BEHAVIOR);
@@ -1281,14 +1283,7 @@ mfxStatus D3D11Encoder::Destroy()
                 pps.ref_lf_delta[i]      = VP8Par->RefTypeLFDelta[i];
                 pps.mode_lf_delta[i]     = VP8Par->MBTypeLFDelta[i];
             }
-        }    
-
-        //OG: TO DO - those DDI parameters aren't used now
-        /*pps.all_DC_bias              = 1500;
-        pps.ref_frame_ctrl =  1;*/
-
-        pps.ref_flags.value = 0; /*OG: is this parameters used for full ENCODE Mode only ??? */
-        /*OG: is this parameters used for full ENCODE Mode only ??? */
+        }
 
         pps.pic_flags.bits.refresh_entropy_probs          = 0;
         pps.pic_flags.bits.forced_lf_adjustment           = 0;
