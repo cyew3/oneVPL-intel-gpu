@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//       Copyright(c) 2003-2013 Intel Corporation. All Rights Reserved.
+//       Copyright(c) 2003-2014 Intel Corporation. All Rights Reserved.
 //
 */
 /*
@@ -13,7 +13,18 @@
  */
 #ifndef VM_FILE_H
 #  define VM_FILE_H
+
+#if defined(__GNUC__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#endif
 #  include "ippdefs.h"
+#if defined(__GNUC__)
+#pragma GCC diagnostic pop
+#endif
+
+
+
 #  include "vm_types.h"
 #  include "vm_strings.h"
 #  if defined(LINUX32) || defined(__APPLE__)
