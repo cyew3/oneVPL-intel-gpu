@@ -88,18 +88,10 @@ struct H265MEInfo
     Ipp8u width, height;
     H265MV MV[2]; // [fwd/bwd]
     Ipp8s refIdx[2];
-    //Ipp32s costOneDir[2];
-    //Ipp32s costBiDir;
-    //CostType costIntra;
-    //Ipp32s costInter;
-    //Ipp32s details[2]; // [vert/horz]
-
     Ipp32u absPartIdx;
     Ipp8u interDir;   // INTER_DIR_PRED_LX
     Ipp8u splitMode;
     Ipp8u depth;
-    //Ipp8u mustSplit; // part of CU is out of the frame
-    //Ipp8u excluded;   // completely out of the frame
 };
 
 #define IS_INTRA(data, partIdx) ((data)[partIdx].predMode == MODE_INTRA)
@@ -137,6 +129,12 @@ public:
     __ALIGN32 CoeffsType    m_interResidualsYBest[4][MAX_CU_SIZE * MAX_CU_SIZE];
     CoeffsType            (*m_interResidualsYPtr)[MAX_CU_SIZE * MAX_CU_SIZE];
     __ALIGN32 PixType       m_interRecBest[5][MAX_CU_SIZE*MAX_CU_SIZE];
+
+    __ALIGN32 PixType       m_interPredMerge[4][MAX_CU_SIZE * MAX_CU_SIZE];
+    __ALIGN32 PixType       m_interPredMergeBest[4][MAX_CU_SIZE * MAX_CU_SIZE];
+    __ALIGN32 CoeffsType    m_interResidualsYMerge[4][MAX_CU_SIZE * MAX_CU_SIZE];
+    __ALIGN32 CoeffsType    m_interResidualsYMergeBest[4][MAX_CU_SIZE * MAX_CU_SIZE];
+
     Ipp32s                  m_interPredReady;
 
     CostType m_intraBestCosts[35];
@@ -280,9 +278,6 @@ public:
 
     Ipp32u GetQuadtreeTuLog2MinSizeInCu(Ipp32u absPartIdx);
 
-    Ipp32u GetQuadtreeTuLog2MinSizeInCu(Ipp32u absPartIdx, Ipp32s size, Ipp8u partSize,
-                                        Ipp8u predMode);
-
     H265CUData *GetQpMinCuLeft(Ipp32u &uiLPartUnitIdx, Ipp32u uiCurrAbsIdxInLCU,
                                bool bEnforceSliceRestriction = true,
                                bool bEnforceDependentSliceRestriction = true);
@@ -406,6 +401,7 @@ public:
                       Ipp8u partSize, Ipp8u lumaDir, CostType *cost);
 
     CostType CalcCostSkip(Ipp32u absPartIdx, Ipp8u depth);
+    CostType CalcCostSkipExperimental(Ipp32u absPartIdx, Ipp8u depth);
 
     CostType MeCu(Ipp32u absPartIdx, Ipp8u depth, Ipp32s offset);
 
@@ -420,7 +416,7 @@ public:
     void MeSubpel(const H265MEInfo *meInfo, const MVPInfo *predInfo, Ipp32s meDir, Ipp32s refIdx,
                   H265MV *mv, Ipp32s *cost, Ipp32s *mvCost) const;
 
-    CostType CuCost(Ipp32u absPartIdx, Ipp8u depth, const H265MEInfo* bestInfo, Ipp32s offset,
+    CostType CuCost(Ipp32u absPartIdx, Ipp8u depth, const H265MEInfo* bestInfo,
                     Ipp32s fastPuDecision);
 
     void TuGetSplitInter(Ipp32u absPartIdx, Ipp32s offset, Ipp8u trIdx, Ipp8u trIdxMax, Ipp8u *nz,
@@ -471,6 +467,9 @@ Ipp32s GetLumaOffset(H265VideoParam *par, Ipp32s absPartIdx, Ipp32s pitch);
 
 Ipp32s tuHad(const PixType *src, Ipp32s pitch_src, const PixType *rec, Ipp32s pitch_rec,
              Ipp32s width, Ipp32s height);
+
+Ipp32u GetQuadtreeTuLog2MinSizeInCu(const H265VideoParam *par, Ipp32u absPartIdx, Ipp32s size,
+                                    Ipp8u partSize, Ipp8u predMode);
 
 } // namespace
 

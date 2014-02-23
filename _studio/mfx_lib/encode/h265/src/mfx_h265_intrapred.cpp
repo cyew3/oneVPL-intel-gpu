@@ -1010,10 +1010,10 @@ void H265CU::IntraLumaModeDecisionRDO(Ipp32s abs_part_idx, Ipp32u offset, Ipp8u 
     bool restoreContextAndRec = false;
 
     CABAC_CONTEXT_H265 bestCtx[NUM_CABAC_CONTEXT];
-    CostType m_intraBestCosts_tmp[35];
-    Ipp8u m_intraBestModes_tmp[35];
+    CostType intraBestCosts_tmp[35];
+    Ipp8u intraBestModes_tmp[35];
     CostOpt finalRdoCostOpt = COST_REC_TR_ALL;
-    for (Ipp32s i = 0; i < num_cand2; i++) m_intraBestCosts_tmp[i] = COST_MAX;
+    for (Ipp32s i = 0; i < num_cand2; i++) intraBestCosts_tmp[i] = COST_MAX;
 
     if (tuSplitIntra)
     {
@@ -1025,21 +1025,21 @@ void H265CU::IntraLumaModeDecisionRDO(Ipp32s abs_part_idx, Ipp32u offset, Ipp8u 
             CalcCostLuma(abs_part_idx, offset, depth, tr_depth, COST_REC_TR_0, part_size, luma_dir, &cost);
             cost += m_intraModeBitcost[luma_dir];
 
-            StoreFewBestModes(cost, luma_dir, m_intraBestCosts_tmp, m_intraBestModes_tmp, num_cand2);
+            StoreFewBestModes(cost, luma_dir, intraBestCosts_tmp, intraBestModes_tmp, num_cand2);
         }
     }
     else
     {
         finalRdoCostOpt = COST_REC_TR_0;
         num_cand2 = num_cand1;
-        small_memcpy(m_intraBestCosts_tmp, m_intraBestCosts, num_cand1 * sizeof(m_intraBestCosts_tmp[0]));
-        small_memcpy(m_intraBestModes_tmp, m_intraBestModes, num_cand1 * sizeof(m_intraBestModes_tmp[0]));
+        small_memcpy(intraBestCosts_tmp, m_intraBestCosts, num_cand1 * sizeof(intraBestCosts_tmp[0]));
+        small_memcpy(intraBestModes_tmp, m_intraBestModes, num_cand1 * sizeof(intraBestModes_tmp[0]));
     }
 
     m_intraBestCosts[0] = COST_MAX;
 
     for (Ipp8u i = 0; i < num_cand2; i++) {
-        Ipp8u luma_dir = m_intraBestModes_tmp[i];
+        Ipp8u luma_dir = intraBestModes_tmp[i];
         if (m_rdOptFlag)
             m_bsf->CtxRestore(initCtx, 0, NUM_CABAC_CONTEXT);
         CalcCostLuma(abs_part_idx, offset, depth, tr_depth, finalRdoCostOpt, part_size, luma_dir, &cost);
@@ -1073,24 +1073,24 @@ Ipp8u H265CU::GetTrSplitMode(Ipp32s abs_part_idx, Ipp8u depth, Ipp8u tr_depth, I
 {
     Ipp32s width = m_par->MaxCUSize >> (depth + tr_depth);
     Ipp8u split_mode = SPLIT_NONE;
+    Ipp32u tuLog2MinSizeInCu = H265Enc::GetQuadtreeTuLog2MinSizeInCu(m_par, abs_part_idx, m_par->MaxCUSize >> depth, part_size, MODE_INTRA);
 
     if (width > 32) {
         split_mode = SPLIT_MUST;
-    } else if ((m_par->MaxCUSize >> (depth + tr_depth)) > 4 &&
-            (m_par->Log2MaxCUSize - depth - tr_depth >
-                GetQuadtreeTuLog2MinSizeInCu(abs_part_idx, m_par->MaxCUSize >> depth, part_size, MODE_INTRA)))
-    {
-                Ipp32u lpel_x   = m_ctbPelX +
-                    ((h265_scan_z2r[m_par->MaxCUDepth][abs_part_idx] & (m_par->NumMinTUInMaxCU - 1)) << m_par->QuadtreeTULog2MinSize);
-                Ipp32u tpel_y   = m_ctbPelY +
-                    ((h265_scan_z2r[m_par->MaxCUDepth][abs_part_idx] >> m_par->MaxCUDepth) << m_par->QuadtreeTULog2MinSize);
+    }
+    else if ((m_par->MaxCUSize >> (depth + tr_depth)) > 4 &&
+        (m_par->Log2MaxCUSize - depth - tr_depth > tuLog2MinSizeInCu)) {
 
-                if ((strict && m_par->Log2MaxCUSize - depth - tr_depth > m_par->QuadtreeTULog2MaxSize) ||
-                    lpel_x + width > m_par->Width || tpel_y + width > m_par->Height) {
-                    split_mode = SPLIT_MUST;
-                } else {
-                    split_mode = SPLIT_TRY;
-                }
+        Ipp32u lpel_x = m_ctbPelX +
+            ((h265_scan_z2r[m_par->MaxCUDepth][abs_part_idx] & (m_par->NumMinTUInMaxCU - 1)) << m_par->QuadtreeTULog2MinSize);
+        Ipp32u tpel_y = m_ctbPelY +
+            ((h265_scan_z2r[m_par->MaxCUDepth][abs_part_idx] >> m_par->MaxCUDepth) << m_par->QuadtreeTULog2MinSize);
+
+        if ((strict && m_par->Log2MaxCUSize - depth - tr_depth > m_par->QuadtreeTULog2MaxSize) ||
+            lpel_x + width > m_par->Width || tpel_y + width > m_par->Height)
+            split_mode = SPLIT_MUST;
+        else
+            split_mode = SPLIT_TRY;
     }
     return split_mode;
 }
