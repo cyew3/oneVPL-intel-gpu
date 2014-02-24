@@ -1,0 +1,8 @@
+*~
+# VS intermediate files
+*.sdf
+*.suo
+*.ncb
+_build
+# CMake intermidiate files
+__cmake
