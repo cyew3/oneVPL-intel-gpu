@@ -1,9 +1,7 @@
 #include "ts_encoder.h"
 
-bool operator == (const mfxFrameInfo& v1, const mfxFrameInfo& v2)
+namespace
 {
-    return !memcmp(&v1, &v2, sizeof(mfxFrameInfo));
-}
 
 typedef struct 
 {
@@ -147,3 +145,5 @@ int test(unsigned int id)
 }
 
 TS_REG_TEST_SUITE(vp8e_query_io_surf, test, sizeof(test_case)/sizeof(tc_struct) + IOP_NUM);
+
+};

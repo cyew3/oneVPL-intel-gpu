@@ -62,7 +62,11 @@ DECL_STRUCT_TRACE(mfxExtBuffer);
 #ifdef __MFXSVC_H__
 DECL_STRUCT_TRACE(mfxExtSVCSeqDesc);
 DECL_STRUCT_TRACE(mfxExtSVCRateControl);
-#endif __MFXSVC_H__
+#endif //__MFXSVC_H__
+
+#ifdef __MFXVP8_H__
+DECL_STRUCT_TRACE(mfxExtCodingOptionVP8);
+#endif //__MFXVP8_H__
 
 DECL_STRUCT_TRACE(mfxExtVPPDoNotUse);
 DECL_STRUCT_TRACE(mfxExtVPPDenoise);

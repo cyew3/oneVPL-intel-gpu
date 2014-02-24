@@ -6,6 +6,11 @@ mfxIMPL      g_tsImpl    = MFX_IMPL_AUTO;
 mfxVersion   g_tsVersion = {MFX_VERSION_MINOR, MFX_VERSION_MAJOR};
 mfxU32       g_tsTrace   = 1;
 
+bool operator == (const mfxFrameInfo& v1, const mfxFrameInfo& v2)
+{
+    return !memcmp(&v1, &v2, sizeof(mfxFrameInfo));
+}
+
 #pragma warning(disable:4996)
 std::string ENV(const char* name, const char* def)
 {

@@ -4,7 +4,7 @@
 #include <vector>
 #include <algorithm>
 
-template<class T> struct tsExtBufTypeToId {};
+template<class T> struct tsExtBufTypeToId { enum { id = 0 }; };
 
 #define BIND_EXTBUF_TYPE_TO_ID(TYPE, ID) template<> struct tsExtBufTypeToId<TYPE> { enum { id = ID }; }
     BIND_EXTBUF_TYPE_TO_ID(mfxExtCodingOption           , MFX_EXTBUFF_CODING_OPTION             );
@@ -94,12 +94,18 @@ public:
 
     void AddExtBuffer(mfxU32 id, mfxU32 size)
     {
-        m_buf.push_back( (mfxExtBuffer*)new mfxU8[size] );
-        mfxExtBuffer& eb = *m_buf.back();
+        if(!size)
+        {
+             m_buf.push_back(0);
+        } else
+        {
+            m_buf.push_back( (mfxExtBuffer*)new mfxU8[size] );
+            mfxExtBuffer& eb = *m_buf.back();
 
-        memset(&eb, 0, size);
-        eb.BufferId = id;
-        eb.BufferSz = size;
+            memset(&eb, 0, size);
+            eb.BufferId = id;
+            eb.BufferSz = size;
+        }
 
         RefreshBuffers();
     }

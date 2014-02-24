@@ -328,6 +328,10 @@ DEF_STRUCT_TRACE(mfxExtBuffer){
         PRINT_BUF(MFX_EXTBUFF_ENCODER_ROI               , mfxExtEncoderROI              );
 #endif
         PRINT_BUF(MFX_EXTBUFF_AVC_REFLIST_CTRL          , mfxExtAVCRefListCtrl          );
+        
+#ifdef __MFXVP8_H__
+        PRINT_BUF(MFX_EXTBUFF_VP8_EX_CODING_OPT         , mfxExtCodingOptionVP8         );
+#endif //__MFXVP8_H__
         default: break;
     }
     return os  << "{\n"
@@ -1088,3 +1092,15 @@ DEF_STRUCT_TRACE(mfxExtEncoderROI){
 #endif
 
 
+#ifdef __MFXVP8_H__
+DEF_STRUCT_TRACE(mfxExtCodingOptionVP8){
+    os  << "{\n"
+        << PUT_4CC(Header.BufferId)
+        << PUT_PAR(Header.BufferSz)
+        << PUT_PAR(EnableAutoAltRef)
+        << PUT_PAR(TokenPartitions)
+        << PUT_PAR(EnableMultipleSegments)
+        << print_param.padding << '}';
+    return os;
+}
+#endif //__MFXVP8_H__

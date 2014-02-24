@@ -79,3 +79,5 @@ extern std::ostream g_tsLog;
 #define TS_MIN(x,y) ((x)<(y) ? (x) : (y))
 #define TS_START try {
 #define TS_END   } catch(tsRes r) { return r; }
+
+bool operator == (const mfxFrameInfo&, const mfxFrameInfo&);
