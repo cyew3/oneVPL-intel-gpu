@@ -817,7 +817,7 @@ mfxStatus VAAPIVideoProcessing::Execute_Composition(mfxExecuteParams *pParams)
         if (pParams->dstRects[refIdx].GlobalAlphaEnable !=0)
         {
             blend_state[refIdx].flags = VA_BLEND_GLOBAL_ALPHA;
-            blend_state[refIdx].global_alpha = ((float)pParams->dstRects[refIdx].GlobalAlpha) /256;
+            blend_state[refIdx].global_alpha = ((float)pParams->dstRects[refIdx].GlobalAlpha) /255;
         }
         /* Luma color key  for YUV surfaces only.
          * And Premultiplied alpha blending for RGBA surfaces only.
@@ -956,7 +956,7 @@ mfxStatus VAAPIVideoProcessing::Execute_Composition(mfxExecuteParams *pParams)
             if (pParams->dstRects[refIdx-1].GlobalAlphaEnable !=0)
             {
                 blend_state[refIdx].flags = VA_BLEND_GLOBAL_ALPHA;
-                blend_state[refIdx].global_alpha = ((float)pParams->dstRects[refIdx-1].GlobalAlpha) /256;
+                blend_state[refIdx].global_alpha = ((float)pParams->dstRects[refIdx-1].GlobalAlpha) /255;
             }
             /* Luma color key  for YUV surfaces only.
              * And Premultiplied alpha blending for RGBA surfaces only.
