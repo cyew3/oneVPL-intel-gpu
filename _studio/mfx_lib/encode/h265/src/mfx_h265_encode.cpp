@@ -66,15 +66,89 @@ typedef struct
 
 mfxExtBuffer HEVC_HEADER = { MFX_EXTBUFF_HEVCENC, sizeof(mfxExtCodingOptionHEVC) };
 
-mfxExtCodingOptionHEVC tab_tu[8] = {                    // CUS CUD 2TUS 2TUD  AnalyzeChroma         SignBitHiding          RDOQuant               SAO                   thrCU,TU,CUInter    5numCand1  5numCand2 WPP                       GPB                   AMP                   CmIntraThreshold TUSplitIntra CUSplit IntraAngModes EnableCm              BPyramid              FastPUDecision        HadamardMe TMVP
-    {{MFX_EXTBUFF_HEVCENC, sizeof(mfxExtCodingOptionHEVC)}, 5,  3, 5,2, 3,3,  MFX_CODINGOPTION_ON,  MFX_CODINGOPTION_ON,   MFX_CODINGOPTION_OFF,  MFX_CODINGOPTION_ON,    2, 2, 2,         6,6,3,3,3, 3,3,2,2,2, MFX_CODINGOPTION_UNKNOWN, MFX_CODINGOPTION_OFF, MFX_CODINGOPTION_OFF, 0,               1,           2,      1,            MFX_CODINGOPTION_OFF, MFX_CODINGOPTION_ON,  MFX_CODINGOPTION_OFF, 1,         MFX_CODINGOPTION_OFF }, // tu default (==4)
-    {{MFX_EXTBUFF_HEVCENC, sizeof(mfxExtCodingOptionHEVC)}, 6,  4, 5,2, 5,5,  MFX_CODINGOPTION_ON,  MFX_CODINGOPTION_OFF,  MFX_CODINGOPTION_ON,   MFX_CODINGOPTION_ON,    1, 1, 1,         8,8,4,4,4, 4,4,2,2,2, MFX_CODINGOPTION_UNKNOWN, MFX_CODINGOPTION_ON,  MFX_CODINGOPTION_ON , 0,               1,           1,      1,            MFX_CODINGOPTION_OFF, MFX_CODINGOPTION_ON,  MFX_CODINGOPTION_OFF, 2,         MFX_CODINGOPTION_ON  }, // tu 1
-    {{MFX_EXTBUFF_HEVCENC, sizeof(mfxExtCodingOptionHEVC)}, 6,  3, 5,2, 5,5,  MFX_CODINGOPTION_ON,  MFX_CODINGOPTION_OFF,  MFX_CODINGOPTION_ON,   MFX_CODINGOPTION_ON,    2, 2, 2,         6,6,3,3,3, 3,3,2,2,2, MFX_CODINGOPTION_UNKNOWN, MFX_CODINGOPTION_ON,  MFX_CODINGOPTION_ON , 0,               1,           2,      1,            MFX_CODINGOPTION_OFF, MFX_CODINGOPTION_ON,  MFX_CODINGOPTION_OFF, 1,         MFX_CODINGOPTION_ON  }, // tu 2  (==4)
-    {{MFX_EXTBUFF_HEVCENC, sizeof(mfxExtCodingOptionHEVC)}, 6,  4, 5,2, 4,4,  MFX_CODINGOPTION_ON,  MFX_CODINGOPTION_OFF,  MFX_CODINGOPTION_ON,   MFX_CODINGOPTION_ON,    2, 2, 2,         6,6,3,3,3, 3,3,2,2,2, MFX_CODINGOPTION_UNKNOWN, MFX_CODINGOPTION_ON,  MFX_CODINGOPTION_ON , 0,               1,           2,      1,            MFX_CODINGOPTION_OFF, MFX_CODINGOPTION_ON,  MFX_CODINGOPTION_OFF, 1,         MFX_CODINGOPTION_ON  }, // tu 3  (==4)
-    {{MFX_EXTBUFF_HEVCENC, sizeof(mfxExtCodingOptionHEVC)}, 5,  3, 5,2, 3,3,  MFX_CODINGOPTION_ON,  MFX_CODINGOPTION_ON,   MFX_CODINGOPTION_OFF,  MFX_CODINGOPTION_ON,    2, 2, 2,         6,6,3,3,3, 3,3,2,2,2, MFX_CODINGOPTION_UNKNOWN, MFX_CODINGOPTION_OFF, MFX_CODINGOPTION_OFF, 0,               1,           2,      1,            MFX_CODINGOPTION_OFF, MFX_CODINGOPTION_ON,  MFX_CODINGOPTION_OFF, 1,         MFX_CODINGOPTION_OFF }, // tu 4
-    {{MFX_EXTBUFF_HEVCENC, sizeof(mfxExtCodingOptionHEVC)}, 5,  3, 5,2, 3,3,  MFX_CODINGOPTION_ON,  MFX_CODINGOPTION_ON,   MFX_CODINGOPTION_OFF,  MFX_CODINGOPTION_ON,    2, 2, 2,         6,6,3,3,3, 3,3,2,2,2, MFX_CODINGOPTION_UNKNOWN, MFX_CODINGOPTION_OFF, MFX_CODINGOPTION_OFF, 0,               3,           2,      2,            MFX_CODINGOPTION_OFF, MFX_CODINGOPTION_OFF, MFX_CODINGOPTION_OFF, 1,         MFX_CODINGOPTION_OFF }, // tu 5  (==4)
-    {{MFX_EXTBUFF_HEVCENC, sizeof(mfxExtCodingOptionHEVC)}, 5,  2, 5,2, 3,3,  MFX_CODINGOPTION_ON,  MFX_CODINGOPTION_ON,   MFX_CODINGOPTION_OFF,  MFX_CODINGOPTION_ON,    2, 2, 2,         6,6,3,3,3, 3,3,2,2,2, MFX_CODINGOPTION_UNKNOWN, MFX_CODINGOPTION_OFF, MFX_CODINGOPTION_OFF, 0,               3,           2,      2,            MFX_CODINGOPTION_OFF, MFX_CODINGOPTION_OFF, MFX_CODINGOPTION_OFF, 1,         MFX_CODINGOPTION_OFF }, // tu 6  (==4)
-    {{MFX_EXTBUFF_HEVCENC, sizeof(mfxExtCodingOptionHEVC)}, 5,  2, 5,2, 2,2,  MFX_CODINGOPTION_ON,  MFX_CODINGOPTION_ON,   MFX_CODINGOPTION_OFF,  MFX_CODINGOPTION_ON,    3, 3, 3,         4,4,2,2,2, 2,2,1,1,1, MFX_CODINGOPTION_UNKNOWN, MFX_CODINGOPTION_OFF, MFX_CODINGOPTION_OFF, 0,               3,           2,      2,            MFX_CODINGOPTION_OFF, MFX_CODINGOPTION_OFF, MFX_CODINGOPTION_OFF, 1,         MFX_CODINGOPTION_OFF }  // tu 7
+#define ON  MFX_CODINGOPTION_ON
+#define OFF MFX_CODINGOPTION_OFF
+#define UNK MFX_CODINGOPTION_UNKNOWN
+
+#define TU_OPT(opt, t1, t2, t3, t4, t5, t6, t7) static const mfxU16 tab_##opt[] = {t1, t2, t3, t4, t5, t6, t7};
+#define TAB_TU(x) {{MFX_EXTBUFF_HEVCENC, sizeof(mfxExtCodingOptionHEVC)}, \
+    tab_Log2MaxCUSize[x],\
+    tab_MaxCUDepth[x],\
+    tab_QuadtreeTULog2MaxSize[x],\
+    tab_QuadtreeTULog2MinSize[x],\
+    tab_QuadtreeTUMaxDepthIntra[x],\
+    tab_QuadtreeTUMaxDepthInter[x],\
+    tab_AnalyzeChroma[x],\
+    tab_SignBitHiding[x],\
+    tab_RDOQuant[x],\
+    tab_SAO[x],\
+    tab_SplitThresholdStrengthCUIntra[x],\
+    tab_SplitThresholdStrengthTUIntra[x],\
+    tab_SplitThresholdStrengthCUInter[x],\
+    tab_IntraNumCand1_2[x],\
+    tab_IntraNumCand1_3[x],\
+    tab_IntraNumCand1_4[x],\
+    tab_IntraNumCand1_5[x],\
+    tab_IntraNumCand1_6[x],\
+    tab_IntraNumCand2_2[x],\
+    tab_IntraNumCand2_3[x],\
+    tab_IntraNumCand2_4[x],\
+    tab_IntraNumCand2_5[x],\
+    tab_IntraNumCand2_6[x],\
+    tab_WPP[x],\
+    tab_GPB[x],\
+    tab_AMP[x],\
+    tab_CmIntraThreshold[x],\
+    tab_TUSplitIntra[x],\
+    tab_CUSplit[x],\
+    tab_IntraAngModes[x],\
+    tab_EnableCm[x],\
+    tab_BPyramid[x],\
+    tab_FastPUDecision[x],\
+    tab_HadamardMe[x],\
+    tab_TMVP[x],\
+}
+
+//                                    TU1  TU2  TU3  TU4  TU4  TU6  TU7
+
+TU_OPT(Log2MaxCUSize,                  6,   6,   6,   5,   5,   5,   5)
+TU_OPT(MaxCUDepth,                     4,   3,   4,   3,   3,   2,   2)
+TU_OPT(QuadtreeTULog2MaxSize,          5,   5,   5,   5,   5,   5,   5)
+TU_OPT(QuadtreeTULog2MinSize,          2,   2,   2,   2,   2,   2,   2)
+TU_OPT(QuadtreeTUMaxDepthIntra,        5,   5,   4,   3,   3,   3,   2)
+TU_OPT(QuadtreeTUMaxDepthInter,        5,   5,   4,   3,   3,   3,   2)
+TU_OPT(AnalyzeChroma,                 ON,  ON,  ON,  ON,  ON,  ON,  ON)
+TU_OPT(SignBitHiding,                OFF, OFF, OFF,  ON,  ON,  ON,  ON)
+TU_OPT(RDOQuant,                      ON,  ON,  ON, OFF, OFF, OFF, OFF)
+TU_OPT(SAO,                           ON,  ON,  ON,  ON,  ON,  ON,  ON)
+TU_OPT(SplitThresholdStrengthCUIntra,  1,   2,   2,   2,   2,   2,   3)
+TU_OPT(SplitThresholdStrengthTUIntra,  1,   2,   2,   2,   2,   2,   3)
+TU_OPT(SplitThresholdStrengthCUInter,  1,   2,   2,   2,   2,   2,   3)
+TU_OPT(IntraNumCand1_2,                8,   6,   6,   6,   6,   6,   4)
+TU_OPT(IntraNumCand1_3,                8,   6,   6,   6,   6,   6,   4)
+TU_OPT(IntraNumCand1_4,                4,   3,   3,   3,   3,   3,   2)
+TU_OPT(IntraNumCand1_5,                4,   3,   3,   3,   3,   3,   2)
+TU_OPT(IntraNumCand1_6,                4,   3,   3,   3,   3,   3,   2)
+TU_OPT(IntraNumCand2_2,                4,   3,   3,   3,   3,   3,   2)
+TU_OPT(IntraNumCand2_3,                4,   3,   3,   3,   3,   3,   2)
+TU_OPT(IntraNumCand2_4,                2,   2,   2,   2,   2,   2,   1)
+TU_OPT(IntraNumCand2_5,                2,   2,   2,   2,   2,   2,   1)
+TU_OPT(IntraNumCand2_6,                2,   2,   2,   2,   2,   2,   1)
+TU_OPT(WPP,                          UNK, UNK, UNK, UNK, UNK, UNK, UNK)
+TU_OPT(GPB,                           ON,  ON,  ON, OFF, OFF, OFF, OFF)
+TU_OPT(AMP,                           ON,  ON,  ON, OFF, OFF, OFF, OFF)
+TU_OPT(CmIntraThreshold,               0,   0,   0,   0,   0,   0,   0)
+TU_OPT(TUSplitIntra,                   1,   1,   1,   1,   3,   3,   3)
+TU_OPT(CUSplit,                        1,   2,   2,   2,   2,   2,   2)
+TU_OPT(IntraAngModes,                  1,   1,   1,   1,   2,   2,   2)
+TU_OPT(EnableCm,                     OFF, OFF, OFF, OFF, OFF, OFF, OFF)
+TU_OPT(BPyramid,                      ON,  ON,  ON,  ON, OFF, OFF, OFF)
+TU_OPT(FastPUDecision,               OFF, OFF, OFF, OFF, OFF, OFF, OFF)
+TU_OPT(HadamardMe,                     2,   1,   1,   1,   1,   1,   1)
+TU_OPT(TMVP,                          ON,  ON,  ON, OFF, OFF, OFF, OFF)
+
+mfxExtCodingOptionHEVC tab_tu[8] = {
+    TAB_TU(3), TAB_TU(0), TAB_TU(1), TAB_TU(2), TAB_TU(3), TAB_TU(4), TAB_TU(5), TAB_TU(6)
 };
 
 Ipp8u tab_tuGopRefDist [8] = {4, 8, 8, 4, 4, 3, 2, 1};
