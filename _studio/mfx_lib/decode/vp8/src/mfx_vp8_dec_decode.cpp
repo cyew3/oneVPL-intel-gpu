@@ -87,7 +87,7 @@ VideoDECODEVP8::VideoDECODEVP8(VideoCORE *p_core, mfxStatus *p_sts)
     // allocate vpx decoder
     m_vpx_codec = ippMalloc(sizeof(vpx_codec_ctx_t));
 
-    if (!m_vpx_codec) 
+    if (!m_vpx_codec)
     {
         *p_sts = MFX_ERR_NOT_INITIALIZED;
     }
@@ -206,7 +206,7 @@ mfxStatus VideoDECODEVP8::Init(mfxVideoParam *p_params)
     if (useInternal)
     {
         m_request.Type = MFX_MEMTYPE_INTERNAL_FRAME | MFX_MEMTYPE_FROM_DECODE | MFX_MEMTYPE_SYSTEM_MEMORY;
-        
+
         mfxExtOpaqueSurfaceAlloc *p_opq_ext = NULL;
         if (MFX_IOPATTERN_OUT_OPAQUE_MEMORY & p_params->IOPattern) // opaque memory case
         {
@@ -244,9 +244,9 @@ mfxStatus VideoDECODEVP8::Init(mfxVideoParam *p_params)
                     trequest.Type =  (mfxU16)p_opq_ext->Out.Type;
                     trequest.NumFrameMin = trequest.NumFrameSuggested = (mfxU16)p_opq_ext->Out.NumSurface;
 
-                    sts = m_p_core->AllocFrames(&trequest, 
+                    sts = m_p_core->AllocFrames(&trequest,
                                                 &m_opaque_response,
-                                                p_opq_ext->In.Surfaces, 
+                                                p_opq_ext->In.Surfaces,
                                                 p_opq_ext->In.NumSurface);
 
                     if (MFX_ERR_NONE != sts && MFX_ERR_UNSUPPORTED != sts)
@@ -255,7 +255,7 @@ mfxStatus VideoDECODEVP8::Init(mfxVideoParam *p_params)
                         return sts;
                     }
                 }
-            }   
+            }
         }
 
         if (true == m_is_opaque_memory)
@@ -311,8 +311,8 @@ mfxStatus VideoDECODEVP8::Init(mfxVideoParam *p_params)
     mfxI32 vpx_sts = 0;
     vpx_codec_dec_cfg_t cfg;
     cfg.threads = 8;
-    
-    vpx_sts = vpx_codec_dec_init((vpx_codec_ctx_t *)m_vpx_codec, vpx_codec_vp8_dx(), &cfg, 0); 
+
+    vpx_sts = vpx_codec_dec_init((vpx_codec_ctx_t *)m_vpx_codec, vpx_codec_vp8_dx(), &cfg, 0);
     CHECK_VPX_STATUS(vpx_sts);
 
     m_is_initialized = true;
@@ -422,7 +422,7 @@ mfxStatus VideoDECODEVP8::Close(void)
     memset(&m_decode_stat, 0, sizeof(m_decode_stat));
 
     vpx_codec_destroy((vpx_codec_ctx_t *)m_vpx_codec);
-    
+
     return MFX_ERR_NONE;
 
 } // mfxStatus VideoDECODEVP8::Close(void)
@@ -524,7 +524,7 @@ mfxStatus VideoDECODEVP8::DecodeHeader(VideoCORE *p_core, mfxBitstream *p_bs, mf
 
     if (false == start_code_found)
     {
-        // set offset, but leave last six bytes 
+        // set offset, but leave last six bytes
         // since they can be start bytes of start code and frame tag
 
         MoveBitstreamData2(*p_bs, n_bytes_offset - 6);
@@ -548,10 +548,10 @@ mfxStatus VideoDECODEVP8::DecodeHeader(VideoCORE *p_core, mfxBitstream *p_bs, mf
                                 (p_bitstream[1] << 3) |
                                 (p_bitstream[2] << 11);
 
-    
+
     if (p_bitstream + first_partion_size > p_bitstream_end)
     {
-        return MFX_ERR_MORE_DATA; 
+        return MFX_ERR_MORE_DATA;
     }
 
     // move to start code
@@ -619,12 +619,12 @@ mfxStatus VideoDECODEVP8::PreDecodeFrame(mfxBitstream *p_bs, mfxFrameSurface1 *p
 
     if (0 == p_surface->Info.CropW)
     {
-        p_surface->Info.CropW = m_on_init_video_params.mfx.FrameInfo.Width;
+        p_surface->Info.CropW = m_on_init_video_params.mfx.FrameInfo.CropW;
     }
 
     if (0 == p_surface->Info.CropH)
     {
-        p_surface->Info.CropH = m_on_init_video_params.mfx.FrameInfo.Height;
+        p_surface->Info.CropH = m_on_init_video_params.mfx.FrameInfo.CropH;
     }
 
     if (m_init_w != width && m_init_h != height)
@@ -652,19 +652,19 @@ mfxStatus VideoDECODEVP8::QueryIOSurf(VideoCORE *p_core, mfxVideoParam *p_params
         return MFX_ERR_INVALID_VIDEO_PARAM;
     }
 
-    if ((p_params->IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY) && 
+    if ((p_params->IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY) &&
         (p_params->IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY))
     {
         return MFX_ERR_INVALID_VIDEO_PARAM;
     }
 
-    if ((p_params->IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY) && 
+    if ((p_params->IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY) &&
         (p_params->IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY))
     {
         return MFX_ERR_INVALID_VIDEO_PARAM;
     }
 
-    if ((p_params->IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY) && 
+    if ((p_params->IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY) &&
         (p_params->IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY))
     {
         return MFX_ERR_INVALID_VIDEO_PARAM;
@@ -849,7 +849,7 @@ static mfxStatus __CDECL VP8DECODERoutine(void *p_state, void *p_param, mfxU32 /
         pitch = (Ipp32u) p_thread_info->m_p_video_data->GetPlanePitch(2);
 
         buf = img->planes[2];
-        
+
         for (unsigned int j = 0; j < (img->d_h + 1) >> 1; j += 1)
         {
             MFX_INTERNAL_CPY(p_data, buf, (img->d_w + 1) >> 1);
@@ -884,7 +884,7 @@ mfxStatus VideoDECODEVP8::DecodeFrameCheck(mfxBitstream *p_bs, mfxFrameSurface1 
     {
         return MFX_ERR_MORE_SURFACE;
     }
-   
+
     if (true == m_is_opaque_memory)
     {
         if (p_surface_work->Data.MemId || p_surface_work->Data.Y || p_surface_work->Data.R || p_surface_work->Data.A || p_surface_work->Data.UV) // opaq surface
@@ -940,7 +940,8 @@ mfxStatus VideoDECODEVP8::DecodeFrameCheck(mfxBitstream *p_bs, mfxFrameSurface1 
 
     UMC::VideoDataInfo info;
     info.Init(p_surface_work->Info.Width, (p_surface_work->Info.CropH + 15) & ~0x0f, YUV420);
-    
+//    info.Init(p_surface_work->Info.Width, p_surface_work->Info.CropH, YUV420);
+
     UMC::FrameMemID memId = 0;
 
     UMC::FrameData *p_frame_data = NULL;
@@ -960,7 +961,7 @@ mfxStatus VideoDECODEVP8::DecodeFrameCheck(mfxBitstream *p_bs, mfxFrameSurface1 
         }
 
         m_p_frame_allocator->IncreaseReference(memId);
-        
+
         UMC::Status umcSts = video_data->Init(p_surface_work->Info.Width, p_surface_work->Info.Height, UMC::YUV420);
         umcSts;
 
@@ -970,12 +971,12 @@ mfxStatus VideoDECODEVP8::DecodeFrameCheck(mfxBitstream *p_bs, mfxFrameSurface1 
 
         video_data->SetPlanePointer(p_info->m_planePtr, 0);
         Ipp32u pitch = (Ipp32u) p_info->m_pitch;
-        
+
         p_info = p_frame_data->GetPlaneMemoryInfo(1);
         video_data->SetPlanePointer(p_info->m_planePtr, 1);
-        
+
         p_info = p_frame_data->GetPlaneMemoryInfo(2);
-        
+
         video_data->SetPlanePointer(p_info->m_planePtr, 2);
 
         video_data->SetPlanePitch(pitch, 0);
@@ -1043,7 +1044,7 @@ mfxFrameSurface1 * VideoDECODEVP8::GetOriginalSurface(mfxFrameSurface1 *p_surfac
 mfxStatus VideoDECODEVP8::GetOutputSurface(mfxFrameSurface1 **pp_surface_out, mfxFrameSurface1 *p_surface_work, UMC::FrameMemID index)
 {
     mfxFrameSurface1 *p_native_surface =  m_p_frame_allocator->GetSurface(index, p_surface_work, &m_on_init_video_params);
-    
+
     if (p_native_surface)
     {
         *pp_surface_out = m_p_core->GetOpaqSurface(p_native_surface->Data.MemId) ? m_p_core->GetOpaqSurface(p_native_surface->Data.MemId) : p_native_surface;
@@ -1237,17 +1238,17 @@ mfxStatus MFX_VP8_Utility::Query(VideoCORE *p_core, mfxVideoParam *p_in, mfxVide
         else
             sts = MFX_ERR_UNSUPPORTED;
 
-        /*if (in->mfx.FrameInfo.CropX <= out->mfx.FrameInfo.Width)
-            out->mfx.FrameInfo.CropX = in->mfx.FrameInfo.CropX;
+        if (p_in->mfx.FrameInfo.CropX <= p_out->mfx.FrameInfo.Width)
+            p_out->mfx.FrameInfo.CropX = p_in->mfx.FrameInfo.CropX;
 
-        if (in->mfx.FrameInfo.CropY <= out->mfx.FrameInfo.Height)
-            out->mfx.FrameInfo.CropY = in->mfx.FrameInfo.CropY;
+        if (p_in->mfx.FrameInfo.CropY <= p_out->mfx.FrameInfo.Height)
+            p_out->mfx.FrameInfo.CropY = p_in->mfx.FrameInfo.CropY;
 
-        if (out->mfx.FrameInfo.CropX + in->mfx.FrameInfo.CropW <= out->mfx.FrameInfo.Width)
-            out->mfx.FrameInfo.CropW = in->mfx.FrameInfo.CropW;
+        if (p_out->mfx.FrameInfo.CropX + p_in->mfx.FrameInfo.CropW <= p_out->mfx.FrameInfo.Width)
+            p_out->mfx.FrameInfo.CropW = p_in->mfx.FrameInfo.CropW;
 
-        if (out->mfx.FrameInfo.CropY + in->mfx.FrameInfo.CropH <= out->mfx.FrameInfo.Height)
-            out->mfx.FrameInfo.CropH = in->mfx.FrameInfo.CropH;*/
+        if (p_out->mfx.FrameInfo.CropY + p_in->mfx.FrameInfo.CropH <= p_out->mfx.FrameInfo.Height)
+            p_out->mfx.FrameInfo.CropH = p_in->mfx.FrameInfo.CropH;
 
         p_out->mfx.FrameInfo.FrameRateExtN = p_in->mfx.FrameInfo.FrameRateExtN;
         p_out->mfx.FrameInfo.FrameRateExtD = p_in->mfx.FrameInfo.FrameRateExtD;

@@ -88,10 +88,13 @@ mfxStatus VideoDECODEVP8_HW::Init(mfxVideoParam *p_video_param)
     mfxStatus sts = MFX_ERR_NONE;
     eMFXHWType type = m_p_core->GetHWType();
 
+    std::cout << "opanki -1" << std::endl;
+
     m_platform = MFX_VP8_Utility::GetPlatform(m_p_core, p_video_param);
 
     if (MFX_ERR_NONE > CheckVideoParamDecoders(p_video_param, m_p_core->IsExternalFrameAllocator(), type))
     {
+        std::cout << "opanki 0" << std::endl;
         return MFX_ERR_INVALID_VIDEO_PARAM;
     }
 
@@ -110,6 +113,7 @@ mfxStatus VideoDECODEVP8_HW::Init(mfxVideoParam *p_video_param)
 
     if (MFX_VP8_Utility::CheckVideoParam(p_video_param, type) == false)
     {
+        std::cout << "opanki 1" << std::endl;
         return MFX_ERR_INVALID_VIDEO_PARAM;
     }
 
@@ -424,12 +428,12 @@ mfxStatus VideoDECODEVP8_HW::PreDecodeFrame(mfxBitstream *p_bs, mfxFrameSurface1
 
     if (0 == p_surface->Info.CropW)
     {
-        p_surface->Info.CropW = m_on_init_video_params.mfx.FrameInfo.Width;
+        p_surface->Info.CropW = m_on_init_video_params.mfx.FrameInfo.CropW;
     }
 
     if (0 == p_surface->Info.CropH)
     {
-        p_surface->Info.CropH = m_on_init_video_params.mfx.FrameInfo.Height;
+        p_surface->Info.CropH = m_on_init_video_params.mfx.FrameInfo.CropH;
     }
 
     if (m_init_w != width && m_init_h != height)
@@ -602,12 +606,12 @@ mfxStatus VideoDECODEVP8_HW::DecodeFrameCheck(mfxBitstream *p_bs, mfxFrameSurfac
 
     if (0 == p_surface_work->Info.CropW)
     {
-        p_surface_work->Info.CropW = m_on_init_video_params.mfx.FrameInfo.Width;
+//        p_surface_work->Info.CropW = m_on_init_video_params.mfx.FrameInfo.Width;
     }
 
     if (0 == p_surface_work->Info.CropH)
     {
-        p_surface_work->Info.CropH = m_on_init_video_params.mfx.FrameInfo.Height;
+        p_surface_work->Info.CropH = m_on_init_video_params.mfx.FrameInfo.CropH;
     }
 
     if (I_PICTURE == frame_type)
@@ -652,21 +656,22 @@ mfxStatus VideoDECODEVP8_HW::DecodeFrameCheck(mfxBitstream *p_bs, mfxFrameSurfac
     info.currIndex = curr_indx;
     info.goldIndex = gold_indx;
     info.altrefIndex = altref_indx;
+    info.lastrefIndex = lastrefIndex;
 
     if (I_PICTURE == m_frame_info.frameType)
     {
-        gold_indx = altref_indx = curr_indx;
+        gold_indx = altref_indx = lastrefIndex = curr_indx;
     }
     else
     {
         switch (m_refresh_info.copy2Golden)
         {
             case 1:
-                info.goldIndex = info.currIndex - 1;
+                gold_indx = lastrefIndex;
                 break;
 
             case 2:
-                info.goldIndex = altref_indx;
+                gold_indx = altref_indx;
 
             case 0:
             default:
@@ -676,11 +681,11 @@ mfxStatus VideoDECODEVP8_HW::DecodeFrameCheck(mfxBitstream *p_bs, mfxFrameSurfac
         switch (m_refresh_info.copy2Altref)
         {
             case 1:
-                info.altrefIndex = info.currIndex - 1;
+                altref_indx = lastrefIndex;
                 break;
 
             case 2:
-                info.altrefIndex = gold_indx;
+                altref_indx = gold_indx;
 
             case 0:
             default:
@@ -692,6 +697,10 @@ mfxStatus VideoDECODEVP8_HW::DecodeFrameCheck(mfxBitstream *p_bs, mfxFrameSurfac
 
         if (0 != (m_refresh_info.refreshRefFrame & 1))
             altref_indx = curr_indx;
+
+        if (m_refresh_info.refreshLastFrame)
+           lastrefIndex = curr_indx;
+
     }
 
     m_frames.push_back(info);
@@ -1084,6 +1093,12 @@ mfxStatus VideoDECODEVP8_HW::DecodeFrameHeader(mfxBitstream *in)
 
     data_in   += 3;
 
+    if (!m_refresh_info.refreshProbabilities)
+    {
+        memcpy(&m_frameProbs, &m_frameProbs_saved, sizeof(m_frameProbs));
+        memcpy(m_frameProbs.mvContexts, vp8_default_mv_contexts, sizeof(vp8_default_mv_contexts));
+    }
+
     if (m_frame_info.frameType == I_PICTURE)  // if VP8_KEY_FRAME
     {
         if (first_partition_size > in->DataLength - 10)
@@ -1185,8 +1200,12 @@ mfxStatus VideoDECODEVP8_HW::DecodeFrameHeader(mfxBitstream *in)
     m_frame_info.sharpnessLevel     = bits >> 1;
     m_frame_info.mbLoopFilterAdjust = bits  & 1;
 
+    m_frame_info.modeRefLoopFilterDeltaUpdate = 0;
+
     if (m_frame_info.mbLoopFilterAdjust)
     {
+
+
         m_frame_info.modeRefLoopFilterDeltaUpdate = (Ipp8u)m_boolDecoder[VP8_FIRST_PARTITION].decode();
         if (m_frame_info.modeRefLoopFilterDeltaUpdate)
         {
@@ -1197,6 +1216,8 @@ mfxStatus VideoDECODEVP8_HW::DecodeFrameHeader(mfxBitstream *in)
     mfxU32 partitions;
 
     bits = (Ipp8u)m_boolDecoder[VP8_FIRST_PARTITION].decode(2);
+
+    m_CodedCoeffTokenPartition = bits;
 
     partitions                     = 1 << bits;
     m_frame_info.numTokenPartitions = 1 << bits;
@@ -1302,8 +1323,7 @@ mfxStatus VideoDECODEVP8_HW::DecodeFrameHeader(mfxBitstream *in)
 
             do
             {
-                //pbi->common.fc.ymode_prob[i] = (vp8_prob) vp8_read_literal(bc, 8);
-                m_boolDecoder[VP8_FIRST_PARTITION].decode(8);
+                m_frameProbs.mbModeProbY[i] = m_boolDecoder[VP8_FIRST_PARTITION].decode(8);
             }
             while (++i < 4);
         }
@@ -1314,8 +1334,7 @@ mfxStatus VideoDECODEVP8_HW::DecodeFrameHeader(mfxBitstream *in)
 
             do
             {
-                //pbi->common.fc.uv_mode_prob[i] = (vp8_prob) vp8_read_literal(bc, 8);
-                m_boolDecoder[VP8_FIRST_PARTITION].decode(8);
+                m_frameProbs.mbModeProbUV[i] = m_boolDecoder[VP8_FIRST_PARTITION].decode(8);
             }
             while (++i < 3);
         }
@@ -1495,8 +1514,8 @@ mfxStatus VideoDECODEVP8_HW::PackHeaders(mfxBitstream *p_bistream)
     VP8_DECODE_PICTURE_PARAMETERS *picParams = (VP8_DECODE_PICTURE_PARAMETERS*)m_p_video_accelerator->GetCompBuffer(D3D9_VIDEO_DECODER_BUFFER_PICTURE_PARAMETERS, &compBufPic);
     memset(picParams, 0, sizeof(VP8_DECODE_PICTURE_PARAMETERS));
 
-    picParams->wFrameWidthInMbsMinus1 = (USHORT)((m_frame_info.frameSize.width / 16) - 1);
-    picParams->wFrameHeightInMbsMinus1 = (USHORT)((m_frame_info.frameSize.height / 16) - 1);
+    picParams->wFrameWidthInMbsMinus1 = (USHORT)(((m_frame_info.frameSize.width + 15) / 16) - 1);
+    picParams->wFrameHeightInMbsMinus1 = (USHORT)(((m_frame_info.frameSize.height + 15) / 16) - 1);
 
     sFrameInfo info = m_frames.back();
 
@@ -1508,10 +1527,10 @@ mfxStatus VideoDECODEVP8_HW::PackHeaders(mfxBitstream *p_bistream)
     {
         picParams->key_frame = 1;
 
-        picParams->LastRefPicIndex = (UCHAR)0xff;
-        picParams->GoldenRefPicIndex = (UCHAR)0xff;
-        picParams->AltRefPicIndex = (UCHAR)0xff;
-        picParams->DeblockedPicIndex = (UCHAR)0xff;
+        picParams->LastRefPicIndex = (UCHAR)info.currIndex;
+        picParams->GoldenRefPicIndex = (UCHAR)info.currIndex;
+        picParams->AltRefPicIndex = (UCHAR)info.currIndex;
+        picParams->DeblockedPicIndex = (UCHAR)info.currIndex;
 
         sprintf(cStr, "key: cpi %d\n", picParams->CurrPicIndex);
     }
@@ -1519,18 +1538,16 @@ mfxStatus VideoDECODEVP8_HW::PackHeaders(mfxBitstream *p_bistream)
     {
         picParams->key_frame = 0;
 
-        picParams->LastRefPicIndex = lastrefIndex;//(UCHAR)info.currIndex - 1;
+        picParams->LastRefPicIndex = (UCHAR)info.lastrefIndex;
         picParams->GoldenRefPicIndex = (UCHAR)info.goldIndex;
         picParams->AltRefPicIndex = (UCHAR)info.altrefIndex;
-        picParams->DeblockedPicIndex = (UCHAR)0xff;
+        picParams->DeblockedPicIndex = (UCHAR)info.currIndex;
 
         sprintf(cStr, "inter: cpi %d | lf %d | gf %d | altf %d\n", picParams->CurrPicIndex,
             picParams->LastRefPicIndex,
             picParams->GoldenRefPicIndex,
             picParams->AltRefPicIndex);
     }
-
-    lastrefIndex = info.currIndex;
 
     curr_indx += 1;
 
@@ -1543,11 +1560,11 @@ mfxStatus VideoDECODEVP8_HW::PackHeaders(mfxBitstream *p_bistream)
 
     picParams->filter_type = m_frame_info.loopFilterType;
 
-    if (I_PICTURE != m_frame_info.frameType)
+/*  if (I_PICTURE != m_frame_info.frameType)
     {
         picParams->sign_bias_golden = m_refresh_info.refFrameBiasTable[2];
         picParams->sign_bias_alternate = m_refresh_info.refFrameBiasTable[3];
-    }
+    }*/
 
     picParams->mb_no_coeff_skip = m_frame_info.mbSkipEnabled;
     picParams->loop_filter_adj_enable = m_frame_info.mbLoopFilterAdjust;
@@ -1563,18 +1580,35 @@ mfxStatus VideoDECODEVP8_HW::PackHeaders(mfxBitstream *p_bistream)
         picParams->mode_lf_delta[i] = m_frame_info.modeLoopFilterDeltas[i];
     }
 
+    /*
+
     // partition 0 is always MB header this partition always exists. there is no need for a flag to indicate this.
     // if CodedCoeffTokenPartition == 0, it means Partition #1 also exists. That is, there is a total of 2 partitions.
     // if CodedCoeffTokenPartition == 1, it means Partition #1-2 also exists. That is, there is a total of 3 partitions.
     // if CodedCoeffTokenPartition == 2, it means Partition #1-4 also exists. That is, there is a total of 5 partitions.
     // if CodedCoeffTokenPartition == 3, it means Partition #1-8 also exists. That is, there is a total of 9 partitions.
 
-    picParams->CodedCoeffTokenPartition = m_frame_info.numPartitions - 1; // or m_frame_info.numTokenPartitions
+    //picParams->CodedCoeffTokenPartition = m_frame_info.numPartitions - 1; // or m_frame_info.numTokenPartitions
 
-    // TO DO
-    if (false/*0 == m_frame_info.segmentationEnabled*/)
+    */
+
+    picParams->CodedCoeffTokenPartition = m_CodedCoeffTokenPartition;
+
+    if (m_frame_info.segmentationEnabled)
     {
-        picParams->loop_filter_level[0] = m_frame_info.loopFilterLevel;
+
+        for (int i = 0; i < 4; i++)
+        {
+            if (m_frame_info.segmentAbsMode)
+                picParams->loop_filter_level[i] = m_frame_info.segmentFeatureData[VP8_ALT_LOOP_FILTER][i];
+            else
+            {
+                picParams->loop_filter_level[i] = m_frame_info.loopFilterLevel + m_frame_info.segmentFeatureData[VP8_ALT_LOOP_FILTER][i];
+                picParams->loop_filter_level[i] = (picParams->loop_filter_level[i] >= 0) ?
+                    ((picParams->loop_filter_level[i] <= 63) ? picParams->loop_filter_level[i] : 63) : 0;
+            }
+        }
+
     }
     else
     {
@@ -1634,7 +1668,6 @@ mfxStatus VideoDECODEVP8_HW::PackHeaders(mfxBitstream *p_bistream)
     memset(picParams->PartitionSize, 0, sizeof(Ipp32u)* 9);
 
     picParams->PartitionSize[0] = m_frame_info.firstPartitionSize;
-//  picParams->PartitionSize[0] = m_frame_info.partitionSize[0];
 
     for (Ipp32s i = 1; i < m_frame_info.numPartitions + 1; i += 1)
     {
@@ -1650,14 +1683,14 @@ mfxStatus VideoDECODEVP8_HW::PackHeaders(mfxBitstream *p_bistream)
 
     picParams->P0EntropyCount = 8 - (picParams->P0EntropyCount & 0x07);
 
-/*  {
+/*    {
         static int i = 0;
         std::stringstream ss;
         ss << "c:/temp/mfx" << i;
         std::ofstream ofs(ss.str(), std::ofstream::binary);
         i++;
         ofs.write((char*)picParams, sizeof(VP8_DECODE_PICTURE_PARAMETERS));
-    } */
+    }  */
 
     compBufPic->SetDataSize(sizeof(VP8_DECODE_PICTURE_PARAMETERS));
 
@@ -1691,14 +1724,14 @@ mfxStatus VideoDECODEVP8_HW::PackHeaders(mfxBitstream *p_bistream)
 
     compBufQm->SetDataSize(sizeof(VP8_DECODE_QM_TABLE));
 
-   /*{
+/*    {
         static int i = 0;
         std::stringstream ss;
         ss << "c:/temp/mfxqm" << i;
         std::ofstream ofs(ss.str(), std::ofstream::binary);
         i++;
         ofs.write((char*)qmTable, sizeof(VP8_DECODE_QM_TABLE));
-    }*/
+    } */
 
     UMCVACompBuffer* compBufBs;
     Ipp8u *bistreamData = (Ipp8u *)m_p_video_accelerator->GetCompBuffer(D3D9_VIDEO_DECODER_BUFFER_BITSTREAM_DATA, &compBufBs);
@@ -1732,7 +1765,7 @@ mfxStatus VideoDECODEVP8_HW::PackHeaders(mfxBitstream *p_bistream)
          std::ofstream ofs(ss.str(), std::ofstream::binary);
          i++;
          ofs.write((char*)coeffProbs, sizeof(Ipp8u)* 4 * 8 * 3 * 11);
-     } */
+     }*/
 
     compBufCp->SetDataSize(sizeof(Ipp8u)* 4 * 8 * 3 * 11);
 
@@ -1794,8 +1827,6 @@ mfxStatus VideoDECODEVP8_HW::PackHeaders(mfxBitstream *p_bistream)
 
          picParams->out_of_loop_frame =  0xffffffff;
      }
-
-     lastrefIndex = info.currIndex;
 
      //same as version in bitstream syntax
      picParams->pic_fields.bits.version = m_frame_info.version;

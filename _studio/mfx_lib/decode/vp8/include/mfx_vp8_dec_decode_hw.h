@@ -164,6 +164,7 @@ struct sFrameInfo
     mfxU16 currIndex;
     mfxU16 goldIndex;
     mfxU16 altrefIndex;
+    mfxU16 lastrefIndex;
     FrameData *frmData;
 };
 
@@ -228,6 +229,8 @@ private:
 
     mfxBitstream            m_bs;
     vp8_FrameInfo           m_frame_info;
+    unsigned                m_CodedCoeffTokenPartition;
+
     vp8_RefreshInfo         m_refresh_info;
     vp8_FrameProbabilities  m_frameProbs;
     vp8_FrameProbabilities  m_frameProbs_saved;
