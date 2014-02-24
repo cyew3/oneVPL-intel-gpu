@@ -229,7 +229,7 @@ mfxStatus CachedFeedback::Remove(mfxU32 feedbackNumber)
 
         // hardcode loop_filter_adj_enable value for key-frames to align with C-model
         if (pps.frame_type == 0)
-            loop_filter_adj_enable = 1;
+            pps.loop_filter_adj_enable = 1;
 
         pps.CodedCoeffTokenPartition = VP8Par->NumPartitions;
 
