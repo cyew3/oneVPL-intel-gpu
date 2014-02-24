@@ -44,14 +44,14 @@ public:
 
     bool DecodeCodingUnit_CABAC(H265SegmentDecoderMultiThreaded *sd)
     {
-        if (sd->m_curCU->m_SliceHeader->m_PicParamSet->cu_qp_delta_enabled_flag)
+        if (sd->m_cu->m_SliceHeader->m_PicParamSet->cu_qp_delta_enabled_flag)
         {
             sd->m_DecodeDQPFlag = true;
         }
 
         Ipp32u IsLast = 0;
-        sd->DecodeCUCABAC(sd->m_curCU, 0, 0, IsLast);
-        sd->SaveCTBContext(sd->m_curCU);
+        sd->DecodeCUCABAC(0, 0, IsLast);
+        sd->SaveCTBContext();
         return IsLast > 0;
     } // void DecodeCodingUnit_CABAC(H265SegmentDecoderMultiThreaded *sd)
 };
@@ -74,11 +74,11 @@ public:
 
         for (;;)
         {
-            sd->m_curCU = sd->m_pCurrentFrame->getCU(rsCUAddr);
-            sd->m_curCU->initCU(sd, rsCUAddr);
+            sd->m_cu = sd->m_pCurrentFrame->getCU(rsCUAddr);
+            sd->m_cu->initCU(sd, rsCUAddr);
 
             START_TICK;
-            sd->DecodeSAOOneLCU(sd->m_curCU);
+            sd->DecodeSAOOneLCU();
             bool is_last = Decoder::DecodeCodingUnit_CABAC(sd); //decode CU
             END_TICK(decode_time);
 
@@ -219,15 +219,15 @@ public:
         UMC::Status umcRes = UMC::UMC_OK;
         Ipp32s rsCUAddr = sd->m_pCurrentFrame->m_CodingData->getCUOrderMap(curCUAddr);
 
-        sd->m_curCU = sd->m_pCurrentFrame->getCU(rsCUAddr);
+        sd->m_cu = sd->m_pCurrentFrame->getCU(rsCUAddr);
 
-        if (curCUAddr == sd->m_curCU->m_SliceHeader->SliceCurStartCUAddr / sd->m_pCurrentFrame->m_CodingData->m_NumPartitions)
+        if (curCUAddr == sd->m_cu->m_SliceHeader->SliceCurStartCUAddr / sd->m_pCurrentFrame->m_CodingData->m_NumPartitions)
             sd->m_context->ResetRecRowBuffer();
 
         for (;;)
         {
             START_TICK1;
-            sd->ReconstructCU(sd->m_curCU, 0, 0);
+            sd->ReconstructCU(0, 0);
             END_TICK1(reconstruction_time);
 
             Ipp32s newCUAddr = curCUAddr + 1;
@@ -262,7 +262,7 @@ public:
 
             curCUAddr = newCUAddr;
             rsCUAddr = newRSCUAddr;
-            sd->m_curCU = sd->m_pCurrentFrame->getCU(rsCUAddr);
+            sd->m_cu = sd->m_pCurrentFrame->getCU(rsCUAddr);
         }
 
         return umcRes;
@@ -283,16 +283,16 @@ public:
 
         for (;;)
         {
-            sd->m_curCU = sd->m_pCurrentFrame->getCU(rsCUAddr);
-            sd->m_curCU->initCU(sd, rsCUAddr);
+            sd->m_cu = sd->m_pCurrentFrame->getCU(rsCUAddr);
+            sd->m_cu->initCU(sd, rsCUAddr);
 
             START_TICK;
-            sd->DecodeSAOOneLCU(sd->m_curCU);
+            sd->DecodeSAOOneLCU();
             bool is_last = Decoder::DecodeCodingUnit_CABAC(sd); //decode CU
             END_TICK(decode_time);
 
             START_TICK1;
-            sd->ReconstructCU(sd->m_curCU, 0, 0);
+            sd->ReconstructCU(0, 0);
             END_TICK1(reconstruction_time);
 
             if (is_last)

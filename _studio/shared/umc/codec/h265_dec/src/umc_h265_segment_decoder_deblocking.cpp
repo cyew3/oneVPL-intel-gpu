@@ -176,49 +176,49 @@ Ipp32s GetNumPartForVertFilt(H265CodingUnit* cu, Ipp32u absPartIdx)
     return numParts;
 }
 
-void H265SegmentDecoder::DeblockTU(H265CodingUnit* cu, Ipp32u absPartIdx, Ipp32u trDepth, Ipp32s edgeType)
+void H265SegmentDecoder::DeblockTU(Ipp32u absPartIdx, Ipp32u trDepth, Ipp32s edgeType)
 {
-    Ipp32u stopDepth = cu->GetDepth(absPartIdx) + cu->GetTrIndex(absPartIdx);
+    Ipp32u stopDepth = m_cu->GetDepth(absPartIdx) + m_cu->GetTrIndex(absPartIdx);
     if (trDepth < stopDepth)
     {
         trDepth++;
         Ipp32u depth = trDepth;
-        Ipp32u partOffset = cu->m_NumPartition >> (depth << 1);
+        Ipp32u partOffset = m_cu->m_NumPartition >> (depth << 1);
         
         for (Ipp32s i = 0; i < 4; i++, absPartIdx += partOffset)
         {
-            DeblockTU(cu, absPartIdx, trDepth, edgeType);
+            DeblockTU(absPartIdx, trDepth, edgeType);
         }
 
         return;
     }
 
-    Ipp32s size = cu->GetWidth(absPartIdx) >> cu->GetTrIndex(absPartIdx);
+    Ipp32s size = m_cu->GetWidth(absPartIdx) >> m_cu->GetTrIndex(absPartIdx);
 
     if (m_context->m_sps->MinCUSize == 4 && ((edgeType == VERT_FILT) ? ((absPartIdx % 2) != 0) : ((absPartIdx-((absPartIdx>>2)<<2))/2 != 0)))
     {
         return;
     }
 
-    Ipp32u curPixelColumn = cu->m_rasterToPelX[absPartIdx];
-    Ipp32u curPixelRow = cu->m_rasterToPelY[absPartIdx];
+    Ipp32u curPixelColumn = m_cu->m_rasterToPelX[absPartIdx];
+    Ipp32u curPixelRow = m_cu->m_rasterToPelY[absPartIdx];
 
     H265EdgeData edge1;
     H265EdgeData *edge = &edge1;
-    edge->tcOffset = (Ipp8s)cu->m_SliceHeader->slice_tc_offset;
-    edge->betaOffset = (Ipp8s)cu->m_SliceHeader->slice_beta_offset;
+    edge->tcOffset = (Ipp8s)m_cu->m_SliceHeader->slice_tc_offset;
+    edge->betaOffset = (Ipp8s)m_cu->m_SliceHeader->slice_beta_offset;
 
     if (edgeType == VERT_FILT)
     {
         Ipp32s srcDstStride = m_pCurrentFrame->pitch_luma();
-        H265PlaneYCommon* baseSrcDst = m_pCurrentFrame->GetLumaAddr(cu->CUAddr);
+        H265PlaneYCommon* baseSrcDst = m_pCurrentFrame->GetLumaAddr(m_cu->CUAddr);
 
         Ipp32s srcDstStrideChroma = m_pCurrentFrame->pitch_chroma();
-        H265PlaneYCommon* baseSrcDstChroma = m_pCurrentFrame->GetCbCrAddr(cu->CUAddr);
+        H265PlaneYCommon* baseSrcDstChroma = m_pCurrentFrame->GetCbCrAddr(m_cu->CUAddr);
 
         for (Ipp32s i = 0; i < size / 4; i++)
         {
-            CalculateEdge<VERT_FILT>(cu, edge, curPixelColumn, curPixelRow + 4 * i);
+            CalculateEdge<VERT_FILT>(edge, curPixelColumn, curPixelRow + 4 * i);
 
             if (edge->strength > 0)
             {
@@ -237,7 +237,7 @@ void H265SegmentDecoder::DeblockTU(H265CodingUnit* cu, Ipp32u absPartIdx, Ipp32u
 
             for (Ipp32s i = 0; i < size / 4; i++)
             {
-                CalculateEdge<VERT_FILT>(cu, edge, curPixelColumn, curPixelRow + 4 * i);
+                CalculateEdge<VERT_FILT>(edge, curPixelColumn, curPixelRow + 4 * i);
 
                 if (edge->strength > 0)
                 {
@@ -258,15 +258,15 @@ void H265SegmentDecoder::DeblockTU(H265CodingUnit* cu, Ipp32u absPartIdx, Ipp32u
         Ipp32s x = curPixelColumn >> (2 + !isMin4x4Block);
         Ipp32s y = curPixelRow >> 3;
 
-        H265EdgeData *ctb_start_edge = m_pCurrentFrame->m_CodingData->m_edge + m_pCurrentFrame->m_CodingData->m_edgesInFrameWidth * (cu->m_CUPelY >> 3) + (cu->m_CUPelX >> (2 + !isMin4x4Block));
+        H265EdgeData *ctb_start_edge = m_pCurrentFrame->m_CodingData->m_edge + m_pCurrentFrame->m_CodingData->m_edgesInFrameWidth * (m_cu->m_CUPelY >> 3) + (m_cu->m_CUPelX >> (2 + !isMin4x4Block));
         H265EdgeData *edge = ctb_start_edge + m_pCurrentFrame->m_CodingData->m_edgesInFrameWidth * y + x;
 
         for (Ipp32s i = 0; i < size / minSize; i++)
         {
-            edge->tcOffset = (Ipp8s)cu->m_SliceHeader->slice_tc_offset;
-            edge->betaOffset = (Ipp8s)cu->m_SliceHeader->slice_beta_offset;
+            edge->tcOffset = (Ipp8s)m_cu->m_SliceHeader->slice_tc_offset;
+            edge->betaOffset = (Ipp8s)m_cu->m_SliceHeader->slice_beta_offset;
             
-            CalculateEdge<HOR_FILT>(cu, edge, curPixelColumn + minSize * i, curPixelRow);
+            CalculateEdge<HOR_FILT>(edge, curPixelColumn + minSize * i, curPixelRow);
 
             edge++;
         }
@@ -280,10 +280,10 @@ void H265SegmentDecoder::DeblockTU(H265CodingUnit* cu, Ipp32u absPartIdx, Ipp32u
 
             for (Ipp32s i = 0; i < size / minSize; i++)
             {
-                edge->tcOffset = (Ipp8s)cu->m_SliceHeader->slice_tc_offset;
-                edge->betaOffset = (Ipp8s)cu->m_SliceHeader->slice_beta_offset;
+                edge->tcOffset = (Ipp8s)m_cu->m_SliceHeader->slice_tc_offset;
+                edge->betaOffset = (Ipp8s)m_cu->m_SliceHeader->slice_beta_offset;
 
-                CalculateEdge<HOR_FILT>(cu, edge, curPixelColumn + minSize * i, curPixelRow);
+                CalculateEdge<HOR_FILT>(edge, curPixelColumn + minSize * i, curPixelRow);
 
                 edge++;
             }
@@ -291,20 +291,20 @@ void H265SegmentDecoder::DeblockTU(H265CodingUnit* cu, Ipp32u absPartIdx, Ipp32u
     }
 }
 
-void H265SegmentDecoder::DeblockOneLCU(H265CodingUnit* cu, Ipp32u absPartIdx, Ipp32u depth, Ipp32s edgeType)
+void H265SegmentDecoder::DeblockOneLCU(Ipp32u absPartIdx, Ipp32u depth, Ipp32s edgeType)
 {
-    if (cu->GetDepth(absPartIdx) > depth)
+    if (m_cu->GetDepth(absPartIdx) > depth)
     {
         depth++;
-        Ipp32u partOffset = cu->m_NumPartition >> (depth << 1);
+        Ipp32u partOffset = m_cu->m_NumPartition >> (depth << 1);
         for (Ipp32s i = 0; i < 4; i++, absPartIdx += partOffset)
         {
-            DeblockOneLCU(cu, absPartIdx, depth, edgeType);
+            DeblockOneLCU(absPartIdx, depth, edgeType);
         }
         return;
     }
 
-    Ipp32s countPart = (edgeType == VERT_FILT) ? GetNumPartForVertFilt(cu, absPartIdx) : GetNumPartForHorFilt(cu, absPartIdx);
+    Ipp32s countPart = (edgeType == VERT_FILT) ? GetNumPartForVertFilt(m_cu, absPartIdx) : GetNumPartForHorFilt(m_cu, absPartIdx);
     predictionExist = false;
 
     if (countPart == 2)
@@ -313,17 +313,17 @@ void H265SegmentDecoder::DeblockOneLCU(H265CodingUnit* cu, Ipp32u absPartIdx, Ip
         Ipp32u width;
         Ipp32u height;
 
-        Ipp32s isFourParts = cu->getNumPartInter(absPartIdx) == 4;
+        Ipp32s isFourParts = m_cu->getNumPartInter(absPartIdx) == 4;
 
-        Ipp32u PUOffset = (g_PUOffset[cu->GetPartitionSize(absPartIdx)] << ((m_context->m_sps->MaxCUDepth - depth) << 1)) >> 4;
+        Ipp32u PUOffset = (g_PUOffset[m_cu->GetPartitionSize(absPartIdx)] << ((m_context->m_sps->MaxCUDepth - depth) << 1)) >> 4;
         Ipp32s subPartIdx = absPartIdx + PUOffset;
         if (isFourParts && edgeType == HOR_FILT)
             subPartIdx += PUOffset;
 
-        cu->getPartIndexAndSize(absPartIdx, depth, 1, partAddr, width, height);
+        m_cu->getPartIndexAndSize(absPartIdx, depth, 1, partAddr, width, height);
 
-        Ipp32u curPixelColumn = cu->m_rasterToPelX[subPartIdx];
-        Ipp32u curPixelRow = cu->m_rasterToPelY[subPartIdx];
+        Ipp32u curPixelColumn = m_cu->m_rasterToPelX[subPartIdx];
+        Ipp32u curPixelRow = m_cu->m_rasterToPelY[subPartIdx];
 
         if (m_context->m_sps->MinCUSize != 4 || (edgeType == VERT_FILT ? ((subPartIdx % 2) == 0) : ((subPartIdx-((subPartIdx>>2)<<2))/2 == 0)))
         {
@@ -335,24 +335,24 @@ void H265SegmentDecoder::DeblockOneLCU(H265CodingUnit* cu, Ipp32u absPartIdx, Ip
         }
     }
 
-    DeblockTU(cu, absPartIdx, depth, edgeType);
+    DeblockTU(absPartIdx, depth, edgeType);
 }
 
-void H265SegmentDecoder::DeblockOneCross(H265CodingUnit* curLCU, Ipp32s curPixelColumn, Ipp32s curPixelRow, bool isNeedAddHorDeblock)
+void H265SegmentDecoder::DeblockOneCross(Ipp32s curPixelColumn, Ipp32s curPixelRow, bool isNeedAddHorDeblock)
 {
     Ipp32s srcDstStride = m_pCurrentFrame->pitch_luma();
-    H265PlaneYCommon* baseSrcDst = m_pCurrentFrame->GetLumaAddr(curLCU->CUAddr);
+    H265PlaneYCommon* baseSrcDst = m_pCurrentFrame->GetLumaAddr(m_cu->CUAddr);
 
     Ipp32s srcDstStrideChroma = m_pCurrentFrame->pitch_chroma();
-    H265PlaneUVCommon*baseSrcDstChroma = m_pCurrentFrame->GetCbCrAddr(curLCU->CUAddr);
+    H265PlaneUVCommon*baseSrcDstChroma = m_pCurrentFrame->GetCbCrAddr(m_cu->CUAddr);
 
     Ipp32s chromaCbQpOffset = m_pPicParamSet->pps_cb_qp_offset;
     Ipp32s chromaCrQpOffset = m_pPicParamSet->pps_cr_qp_offset;
 
     H265EdgeData edgeForCheck;
     H265EdgeData *edge = &edgeForCheck;
-    edge->tcOffset = (Ipp8s)curLCU->m_SliceHeader->slice_tc_offset;
-    edge->betaOffset = (Ipp8s)curLCU->m_SliceHeader->slice_beta_offset;
+    edge->tcOffset = (Ipp8s)m_cu->m_SliceHeader->slice_tc_offset;
+    edge->betaOffset = (Ipp8s)m_cu->m_SliceHeader->slice_beta_offset;
 
     /*for (Ipp32s i = 0; i < 2; i++)
     {
@@ -372,22 +372,22 @@ void H265SegmentDecoder::DeblockOneCross(H265CodingUnit* curLCU, Ipp32s curPixel
     Ipp32s x = curPixelColumn >> (2 + !isMin4x4Block);
     Ipp32s y = curPixelRow >> 3;
 
-    H265EdgeData *ctb_start_edge = m_pCurrentFrame->m_CodingData->m_edge + m_pCurrentFrame->m_CodingData->m_edgesInFrameWidth * (curLCU->m_CUPelY >> 3) + (curLCU->m_CUPelX >> (2 + !isMin4x4Block));
+    H265EdgeData *ctb_start_edge = m_pCurrentFrame->m_CodingData->m_edge + m_pCurrentFrame->m_CodingData->m_edgesInFrameWidth * (m_cu->m_CUPelY >> 3) + (m_cu->m_CUPelX >> (2 + !isMin4x4Block));
     H265EdgeData *hor_edge = ctb_start_edge + m_pCurrentFrame->m_CodingData->m_edgesInFrameWidth * y + x - 1;
 
     Ipp32s end = isNeedAddHorDeblock ? 3 : 2;
     for (Ipp32s i = 0; i < end; i++)
     {
         Ipp32s currPixelColumnTemp = curPixelColumn + 4 * (i - 1);
-        H265CodingUnit* curLCUTemp = curLCU;
+        H265CodingUnit* curLCUTemp = m_cu;
 
         if (currPixelColumnTemp < 0)
         {
             currPixelColumnTemp += m_pSeqParamSet->MaxCUSize;
 
-            if (curLCU->m_CUPelX)
+            if (m_cu->m_CUPelX)
             {
-                curLCUTemp = m_pCurrentFrame->getCU(curLCU->CUAddr - 1);
+                curLCUTemp = m_pCurrentFrame->getCU(m_cu->CUAddr - 1);
                 if (curLCUTemp->m_SliceHeader->slice_deblocking_filter_disabled_flag)
                 {
                     hor_edge++;
@@ -441,26 +441,26 @@ void H265SegmentDecoder::DeblockOneCross(H265CodingUnit* curLCU, Ipp32s curPixel
 
 void H265SegmentDecoder::DeblockOneLCU(Ipp32s curLCUAddr)
 {
-    H265CodingUnit* curLCU = m_pCurrentFrame->getCU(curLCUAddr);
-    m_pSliceHeader = curLCU->m_SliceHeader;
+    m_cu = m_pCurrentFrame->getCU(curLCUAddr);
+    m_pSliceHeader = m_cu->m_SliceHeader;
 
-    if (curLCU->m_SliceHeader->slice_deblocking_filter_disabled_flag)
+    if (m_cu->m_SliceHeader->slice_deblocking_filter_disabled_flag)
         return;
 
     Ipp32s maxCUSize = m_pSeqParamSet->MaxCUSize;
     Ipp32s frameHeightInSamples = m_pSeqParamSet->pic_height_in_luma_samples;
     Ipp32s frameWidthInSamples = m_pSeqParamSet->pic_width_in_luma_samples;
 
-    VM_ASSERT (!curLCU->m_SliceHeader->slice_deblocking_filter_disabled_flag || m_bIsNeedWADeblocking);
+    VM_ASSERT (!m_cu->m_SliceHeader->slice_deblocking_filter_disabled_flag || m_bIsNeedWADeblocking);
 
-    Ipp32s width = frameWidthInSamples - curLCU->m_CUPelX;
+    Ipp32s width = frameWidthInSamples - m_cu->m_CUPelX;
 
     if (width > maxCUSize)
     {
         width = maxCUSize;
     }
 
-    Ipp32s height = frameHeightInSamples - curLCU->m_CUPelY;
+    Ipp32s height = frameHeightInSamples - m_cu->m_CUPelY;
 
     if (height > maxCUSize)
     {
@@ -469,67 +469,67 @@ void H265SegmentDecoder::DeblockOneLCU(Ipp32s curLCUAddr)
 
     isMin4x4Block = m_pSeqParamSet->MinCUSize == 4 ? 1 : 0;
 
-    bool picLBoundary = ((curLCU->m_CUPelX == 0) ? true : false);
-    bool picTBoundary = ((curLCU->m_CUPelY == 0) ? true : false);
+    bool picLBoundary = ((m_cu->m_CUPelX == 0) ? true : false);
+    bool picTBoundary = ((m_cu->m_CUPelY == 0) ? true : false);
     Ipp32s numLCUInPicWidth = m_pCurrentFrame->m_CodingData->m_WidthInCU;
 
-    curLCU->m_AvailBorder.m_left = !picLBoundary;
-    curLCU->m_AvailBorder.m_top = !picTBoundary;
+    m_cu->m_AvailBorder.m_left = !picLBoundary;
+    m_cu->m_AvailBorder.m_top = !picTBoundary;
 
-    if (!curLCU->m_SliceHeader->m_PicParamSet->loop_filter_across_tiles_enabled_flag)
+    if (!m_cu->m_SliceHeader->m_PicParamSet->loop_filter_across_tiles_enabled_flag)
     {
         Ipp32u tileID = m_pCurrentFrame->m_CodingData->getTileIdxMap(curLCUAddr);
 
         if (picLBoundary)
-            curLCU->m_AvailBorder.m_left = false;
+            m_cu->m_AvailBorder.m_left = false;
         else
         {
-            curLCU->m_AvailBorder.m_left = m_pCurrentFrame->m_CodingData->getTileIdxMap(curLCUAddr - 1) == tileID ? true : false;
+            m_cu->m_AvailBorder.m_left = m_pCurrentFrame->m_CodingData->getTileIdxMap(curLCUAddr - 1) == tileID ? true : false;
         }
 
         if (picTBoundary)
-            curLCU->m_AvailBorder.m_top = false;
+            m_cu->m_AvailBorder.m_top = false;
         else
         {
-            curLCU->m_AvailBorder.m_top = m_pCurrentFrame->m_CodingData->getTileIdxMap(curLCUAddr - numLCUInPicWidth) == tileID ? true : false;
+            m_cu->m_AvailBorder.m_top = m_pCurrentFrame->m_CodingData->getTileIdxMap(curLCUAddr - numLCUInPicWidth) == tileID ? true : false;
         }
     }
 
-    if (!curLCU->m_SliceHeader->slice_loop_filter_across_slices_enabled_flag)
+    if (!m_cu->m_SliceHeader->slice_loop_filter_across_slices_enabled_flag)
     {
         if (picLBoundary)
-            curLCU->m_AvailBorder.m_left = false;
+            m_cu->m_AvailBorder.m_left = false;
         else
         {
-            if (curLCU->m_AvailBorder.m_left)
+            if (m_cu->m_AvailBorder.m_left)
             {
                 H265CodingUnit* refCU = m_pCurrentFrame->getCU(curLCUAddr - 1);
                 Ipp32u          refSA = refCU->m_SliceHeader->SliceCurStartCUAddr;
-                Ipp32u          SA = curLCU->m_SliceHeader->SliceCurStartCUAddr;
+                Ipp32u          SA = m_cu->m_SliceHeader->SliceCurStartCUAddr;
 
-                curLCU->m_AvailBorder.m_left = refSA == SA ? true : false;
+                m_cu->m_AvailBorder.m_left = refSA == SA ? true : false;
             }
         }
 
         if (picTBoundary)
-            curLCU->m_AvailBorder.m_top = false;
+            m_cu->m_AvailBorder.m_top = false;
         else
         {
-            if (curLCU->m_AvailBorder.m_top)
+            if (m_cu->m_AvailBorder.m_top)
             {
                 H265CodingUnit* refCU = m_pCurrentFrame->getCU(curLCUAddr - numLCUInPicWidth);
                 Ipp32u          refSA = refCU->m_SliceHeader->SliceCurStartCUAddr;
-                Ipp32u          SA = curLCU->m_SliceHeader->SliceCurStartCUAddr;
+                Ipp32u          SA = m_cu->m_SliceHeader->SliceCurStartCUAddr;
 
-                curLCU->m_AvailBorder.m_top = refSA == SA ? true : false;
+                m_cu->m_AvailBorder.m_top = refSA == SA ? true : false;
             }
         }
     }
 
 #if 1
-    DeblockOneLCU(curLCU, 0, 0, VERT_FILT);
+    DeblockOneLCU(0, 0, VERT_FILT);
 
-    H265EdgeData *ctb_start_edge = m_pCurrentFrame->m_CodingData->m_edge + m_pCurrentFrame->m_CodingData->m_edgesInFrameWidth * (curLCU->m_CUPelY >> 3) + (curLCU->m_CUPelX >> (2 + !isMin4x4Block));
+    H265EdgeData *ctb_start_edge = m_pCurrentFrame->m_CodingData->m_edge + m_pCurrentFrame->m_CodingData->m_edgesInFrameWidth * (m_cu->m_CUPelY >> 3) + (m_cu->m_CUPelX >> (2 + !isMin4x4Block));
     Ipp32s minSize = isMin4x4Block ? 4 : 8;
     
     for (int i = 0; i < (height >> 3); i++)
@@ -538,19 +538,19 @@ void H265SegmentDecoder::DeblockOneLCU(Ipp32s curLCUAddr)
         ctb_start_edge += m_pCurrentFrame->m_CodingData->m_edgesInFrameWidth;
     }
 
-    DeblockOneLCU(curLCU, 0, 0, HOR_FILT);
+    DeblockOneLCU(0, 0, HOR_FILT);
 #endif
 
     bool isNeddAddHorDeblock = false;
 
-    if ((Ipp32s)curLCU->m_CUPelX + width >= frameWidthInSamples - 8)
+    if ((Ipp32s)m_cu->m_CUPelX + width > frameWidthInSamples - 8)
     {
         isNeddAddHorDeblock = true;
     }
 
     if (m_bIsNeedWADeblocking && !isNeddAddHorDeblock)
     {
-        Ipp32u width = frameWidthInSamples - curLCU->m_CUPelX;
+        Ipp32u width = frameWidthInSamples - m_cu->m_CUPelX;
 
         if (width > m_pSeqParamSet->MaxCUSize)
         {
@@ -559,7 +559,7 @@ void H265SegmentDecoder::DeblockOneLCU(Ipp32s curLCUAddr)
 
         if (m_hasTiles)
         {
-            H265CodingUnit* nextAddr = m_pCurrentFrame->m_CodingData->getCU(curLCU->CUAddr + 1);
+            H265CodingUnit* nextAddr = m_pCurrentFrame->m_CodingData->getCU(m_cu->CUAddr + 1);
             if (nextAddr && nextAddr->m_SliceHeader->slice_deblocking_filter_disabled_flag)
             {
                 isNeddAddHorDeblock = true;
@@ -567,9 +567,9 @@ void H265SegmentDecoder::DeblockOneLCU(Ipp32s curLCUAddr)
         }
         else
         {
-            if (m_pCurrentFrame->m_CodingData->GetInverseCUOrderMap(curLCU->CUAddr) == (Ipp32s)curLCU->m_SliceHeader->m_sliceSegmentCurEndCUAddr / m_pCurrentFrame->m_CodingData->m_NumPartitions)
+            if (m_pCurrentFrame->m_CodingData->GetInverseCUOrderMap(m_cu->CUAddr) == (Ipp32s)m_cu->m_SliceHeader->m_sliceSegmentCurEndCUAddr / m_pCurrentFrame->m_CodingData->m_NumPartitions)
             {
-                H265Slice * nextSlice = m_pCurrentFrame->GetAU()->GetSliceByNumber(curLCU->m_SliceIdx + 1);
+                H265Slice * nextSlice = m_pCurrentFrame->GetAU()->GetSliceByNumber(m_cu->m_SliceIdx + 1);
                 if (!nextSlice || nextSlice->GetSliceHeader()->slice_deblocking_filter_disabled_flag)
                 {
                     isNeddAddHorDeblock = true;
@@ -582,23 +582,23 @@ void H265SegmentDecoder::DeblockOneLCU(Ipp32s curLCUAddr)
     {
         for (Ipp32s i = 0; i < width; i += 8)
         {
-            DeblockOneCross(curLCU, i, j, i == width - 8 ? isNeddAddHorDeblock : false);
+            DeblockOneCross(i, j, i == width - 8 ? isNeddAddHorDeblock : false);
         }
     }
 }
 
 template <Ipp32s direction>
-void H265SegmentDecoder::CalculateEdge(H265CodingUnit* cu, H265EdgeData * edge, Ipp32s xPel, Ipp32s yPel)
+void H265SegmentDecoder::CalculateEdge(H265EdgeData * edge, Ipp32s xPel, Ipp32s yPel)
 {
     Ipp32s tusize = m_pSeqParamSet->log2_min_transform_block_size;
-    Ipp32s y = yPel >> m_pSeqParamSet->log2_min_transform_block_size;
-    Ipp32s x = xPel >> m_pSeqParamSet->log2_min_transform_block_size;
+    Ipp32s y = yPel >> tusize;
+    Ipp32s x = xPel >> tusize;
 
     Ipp32s tuPAddr = y*m_pCurrentFrame->m_CodingData->m_NumPartInWidth + x;
     Ipp32s tuQAddr = y*m_pCurrentFrame->m_CodingData->m_NumPartInWidth + x;
 
     bool anotherCU;
-    H265CodingUnit* cuP = cu;
+    H265CodingUnit* cuP = m_cu;
 
     if (direction == VERT_FILT)
     {
@@ -618,13 +618,13 @@ void H265SegmentDecoder::CalculateEdge(H265CodingUnit* cu, H265EdgeData * edge, 
         anotherCU = xPel == 0;
         if (anotherCU)
         {
-            if (!cu->m_AvailBorder.m_left)
+            if (!m_cu->m_AvailBorder.m_left)
             {
                 edge->strength = 0;
                 return;
             }
 
-            cuP = m_pCurrentFrame->getCU(cu->CUAddr - 1);
+            cuP = m_pCurrentFrame->getCU(m_cu->CUAddr - 1);
             tuPAddr += m_pCurrentFrame->m_CodingData->m_NumPartInWidth;
         }
     }
@@ -646,13 +646,13 @@ void H265SegmentDecoder::CalculateEdge(H265CodingUnit* cu, H265EdgeData * edge, 
         anotherCU = yPel == 0;
         if (anotherCU)
         {
-            if (!cu->m_AvailBorder.m_top)
+            if (!m_cu->m_AvailBorder.m_top)
             {
                 edge->strength = 0;
                 return;
             }
 
-            cuP = m_pCurrentFrame->getCU(cu->CUAddr - m_pCurrentFrame->getFrameWidthInCU());
+            cuP = m_pCurrentFrame->getCU(m_cu->CUAddr - m_pCurrentFrame->getFrameWidthInCU());
             tuPAddr += m_pCurrentFrame->m_CodingData->m_NumPartitions;
         }
     }
@@ -663,11 +663,11 @@ void H265SegmentDecoder::CalculateEdge(H265CodingUnit* cu, H265EdgeData * edge, 
         return;
     }
 
-    tuPAddr = cu->m_rasterToZscan[tuPAddr];
-    tuQAddr = cu->m_rasterToZscan[tuQAddr];
+    tuPAddr = m_cu->m_rasterToZscan[tuPAddr];
+    tuQAddr = m_cu->m_rasterToZscan[tuQAddr];
 
     H265CodingUnitData * tuP = cuP->GetCUData(tuPAddr);
-    H265CodingUnitData * tuQ = cu->GetCUData(tuQAddr);
+    H265CodingUnitData * tuQ = m_cu->GetCUData(tuQAddr);
 
     edge->deblockQ = tuQ->cu_transform_bypass ? 0 : 1;
     edge->deblockP = tuP->cu_transform_bypass ? 0 : 1;
@@ -692,15 +692,15 @@ void H265SegmentDecoder::CalculateEdge(H265CodingUnit* cu, H265EdgeData * edge, 
     // Intra
     if (anotherCU || tuQ->trStart != tuP->trStart || tuQ->trIndex != tuP->trIndex)
     {
-        if (cu->GetCbf(COMPONENT_LUMA, tuQ->trStart, tuQ->trIndex) != 0 || cuP->GetCbf(COMPONENT_LUMA, tuP->trStart, tuP->trIndex) != 0)
+        if (m_cu->GetCbf(COMPONENT_LUMA, tuQ->trStart, tuQ->trIndex) != 0 || cuP->GetCbf(COMPONENT_LUMA, tuP->trStart, tuP->trIndex) != 0)
         {
             edge->strength = 1;
             return;
         }
     }
 
-    Ipp32s PartX = (cu->m_CUPelX >> m_pSeqParamSet->log2_min_transform_block_size) + x;
-    Ipp32s PartY = (cu->m_CUPelY >> m_pSeqParamSet->log2_min_transform_block_size) + y;
+    Ipp32s PartX = (m_cu->m_CUPelX >> m_pSeqParamSet->log2_min_transform_block_size) + x;
+    Ipp32s PartY = (m_cu->m_CUPelY >> m_pSeqParamSet->log2_min_transform_block_size) + y;
 
     H265MVInfo *mvinfoQ = &m_context->m_frame->getCD()->GetTUInfo(m_context->m_frame->getNumPartInCUSize() * m_context->m_frame->getFrameWidthInCU() * PartY + PartX);
     H265MVInfo *mvinfoP;

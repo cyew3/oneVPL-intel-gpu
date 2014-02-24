@@ -243,11 +243,7 @@ struct H265FrameHLDNeighborsInfo
             Ipp16u SkipFlag           : 1;  //  3
             Ipp16u Depth              : 3;  //  6
             Ipp16u IntraDir           : 6;  // 12
-            Ipp16u IsIPCM             : 1;  // 13
-            Ipp16u IsTransquantBypass : 1;  // 14
-            Ipp16u IsTrCbfY           : 1;  // 15
             Ipp8s qp;
-            Ipp8u TrStart;
         } members;
         Ipp32u data;
     };
