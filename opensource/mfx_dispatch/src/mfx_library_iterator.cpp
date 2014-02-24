@@ -224,7 +224,7 @@ mfxStatus MFXLibraryIterator::SelectDLLVersion(wchar_t *pPath
     do
     {
         WinRegKey subKey;
-        wchar_t subKeyName[MFX_MAX_VALUE_NAME];
+        wchar_t subKeyName[MFX_MAX_REGISTRY_KEY_NAME];
         DWORD subKeyNameSize = sizeof(subKeyName) / sizeof(subKeyName[0]);
 
         // query next value name

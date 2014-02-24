@@ -142,7 +142,7 @@ MFX::MFXPluginsInHive::MFXPluginsInHive(int mfxStorageID, const msdk_disp_char *
 
     for(index = 0; ; index++) 
     {
-        wchar_t   subKeyName[MFX_MAX_VALUE_NAME];
+        wchar_t   subKeyName[MFX_MAX_REGISTRY_KEY_NAME];
         DWORD     subKeyNameSize = sizeof(subKeyName) / sizeof(subKeyName[0]);
         WinRegKey subKey;
 

@@ -1,6 +1,6 @@
 /* ****************************************************************************** *\
 
-Copyright (C) 2012-2013 Intel Corporation.  All rights reserved.
+Copyright (C) 2012-2014 Intel Corporation.  All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
@@ -113,7 +113,7 @@ protected:
     mfxU32 m_vendorID;                                          // (mfxU32) property of used graphic card
     mfxU32 m_deviceID;                                          // (mfxU32) property of used graphic card
     bool   m_bIsSubKeyValid;
-    wchar_t m_SubKeyName[MFX_MAX_VALUE_NAME];                   // registry subkey for selected module loaded 
+    wchar_t m_SubKeyName[MFX_MAX_REGISTRY_KEY_NAME];            // registry subkey for selected module loaded 
     int    m_StorageID;
     
 #if defined(_WIN32) || defined(_WIN64)

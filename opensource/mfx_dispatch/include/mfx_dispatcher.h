@@ -1,6 +1,6 @@
 /* ****************************************************************************** *\
 
-Copyright (C) 2012-2013 Intel Corporation.  All rights reserved.
+Copyright (C) 2012-2014 Intel Corporation.  All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
@@ -76,10 +76,10 @@ enum eAudioFunc
     eAudioFuncTotal
 };
 
-// declare max buffer length for DLL path
+// declare max buffer length for regsitry key name
 enum
 {
-    MFX_MAX_VALUE_NAME          = 128
+    MFX_MAX_REGISTRY_KEY_NAME = 256
 };
 
 // declare the maximum DLL path
@@ -150,7 +150,7 @@ struct MFX_DISP_HANDLE
     mfxFunctionPointer callTable[eVideoFuncTotal];
     mfxFunctionPointer callAudioTable[eAudioFuncTotal];
 
-    wchar_t subKeyName[MFX_MAX_VALUE_NAME];
+    wchar_t subKeyName[MFX_MAX_REGISTRY_KEY_NAME];
 
 private:
     // Declare assignment operator and copy constructor to prevent occasional assignment
