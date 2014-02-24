@@ -849,7 +849,7 @@ mfxStatus D3D9Encoder::CreateAuxilliaryDevice(
     // but after it driver fails to create AVC encoding acceleration service.
     // To check AVC-E support in Query MSDK should try to create AVC acceleration service here
     // WA start
-    if (isTemporal)
+    if (isTemporal && (m_width<=caps.MaxPicWidth && m_height<=caps.MaxPicHeight))
     {
         DXVADDI_VIDEODESC desc;
         Zero(desc);
