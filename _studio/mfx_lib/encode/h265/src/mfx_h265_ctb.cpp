@@ -3595,7 +3595,7 @@ void H265CU::GetInterMergeCandidates(Ipp32s topLeftCUBlockZScanIdx,
     pInfo->numCand = 0;
 
     for (i = 0; i < 5; i++) {
-        if (pInfo->numCand < 4)  {
+        if (pInfo->numCand < MAX_NUM_MERGE_CANDS-1)  {
             candLCU[i] = GetNeighbour(candZScanIdx[i], candColumn[i], candRow[i], topLeftBlockZScanIdx, checkCurLCU[i]);
 
             if (candLCU[i] && !IsDiffMER(canXP[i], canYP[i], xP, yP, m_par->cpps->log2_parallel_merge_level))
@@ -3656,9 +3656,6 @@ void H265CU::GetInterMergeCandidates(Ipp32s topLeftCUBlockZScanIdx,
         }
     }
 
-    if (pInfo->numCand > MAX_NUM_MERGE_CANDS - 1)
-        pInfo->numCand = MAX_NUM_MERGE_CANDS - 1;
-
     if (m_par->TMVPFlag) {
         H265CUData *currPb = m_data + topLeftBlockZScanIdx;
         H265MV mvCol;
@@ -3688,7 +3685,7 @@ void H265CU::GetInterMergeCandidates(Ipp32s topLeftCUBlockZScanIdx,
         Ipp32s uiPriorityList1[12] = {1 , 0, 2, 0, 2, 1, 3, 0, 3, 1, 3, 2};
         Ipp32s limit = pInfo->numCand * (pInfo->numCand - 1);
 
-        for (i = 0; i < limit && pInfo->numCand != MAX_NUM_MERGE_CANDS; i++) {
+        for (i = 0; i < limit && pInfo->numCand < MAX_NUM_MERGE_CANDS; i++) {
             Ipp32s l0idx = uiPriorityList0[i];
             Ipp32s l1idx = uiPriorityList1[i];
 
