@@ -285,7 +285,7 @@ void GetTrDepthMinMax(const H265VideoParam *par, Ipp32s absPartIdx, Ipp32s depth
                       Ipp8u *trDepthMin, Ipp8u *trDepthMax)
 {
     Ipp8u trDepth = (par->QuadtreeTUMaxDepthInter == 1) && (partMode != PART_SIZE_2Nx2N);
-    Ipp32u tuLog2MinSize = GetQuadtreeTuLog2MinSizeInCu(par, absPartIdx, par->MaxCUSize >> depth, partMode, MODE_INTER);
+    Ipp32u tuLog2MinSize = GetQuadtreeTuLog2MinSizeInCu(par, absPartIdx, par->MaxCUSize >> depth, (Ipp8u)partMode, MODE_INTER);
     while ((par->MaxCUSize >> (depth + trDepth)) > 32) trDepth++;
     while (trDepth < (par->QuadtreeTUMaxDepthInter - 1 + (par->QuadtreeTUMaxDepthInter == 1)) &&
         (par->MaxCUSize >> (depth + trDepth)) > 4 &&
@@ -4361,13 +4361,13 @@ void H265CU::GetPuMvPredictorInfo(Ipp32s blockZScanIdx,
 CostType H265CU::CalcCostSkipExperimental(Ipp32u absPartIdx, Ipp8u depth)
 {
     Ipp8u size = (Ipp8u)(m_par->MaxCUSize>>depth);
-    Ipp32u num_parts = ( m_par->NumPartInCU >> (depth<<1) );
+//    Ipp32u num_parts = ( m_par->NumPartInCU >> (depth<<1) );
 
-    Ipp32s maxDepth = m_par->Log2MaxCUSize - m_par->Log2MinTUSize;
-    Ipp32s numMinTUInLCU = 1 << maxDepth;
-    Ipp32s PURasterIdx = h265_scan_z2r[maxDepth][absPartIdx];
-    Ipp32s PUStartRow = PURasterIdx >> maxDepth;
-    Ipp32s PUStartColumn = PURasterIdx & (numMinTUInLCU - 1);
+//    Ipp32s maxDepth = m_par->Log2MaxCUSize - m_par->Log2MinTUSize;
+//    Ipp32s numMinTUInLCU = 1 << maxDepth;
+//    Ipp32s PURasterIdx = h265_scan_z2r[maxDepth][absPartIdx];
+//    Ipp32s PUStartRow = PURasterIdx >> maxDepth;
+//    Ipp32s PUStartColumn = PURasterIdx & (numMinTUInLCU - 1);
     Ipp32u numParts = ( m_par->NumPartInCU >> (depth<<1) );
     Ipp32s offsetRec  = GetLumaOffset(m_par, absPartIdx, m_pitchRec);
     Ipp32s offsetSrc  = GetLumaOffset(m_par, absPartIdx, m_pitchSrc);

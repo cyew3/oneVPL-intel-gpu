@@ -645,6 +645,7 @@ mfxStatus CmCopyWrapper::CopySystemToVideoMemoryAPI(void *pDst, mfxU32 dstPitch,
     
     CmEvent* e = NULL;
     CM_STATUS sts;
+    mfxStatus status = MFX_ERR_NONE;
 
     //mfxU32 width  = roi.width;
     //mfxU32 height = roi.height;
@@ -665,14 +666,16 @@ mfxStatus CmCopyWrapper::CopySystemToVideoMemoryAPI(void *pDst, mfxU32 dstPitch,
     {
         e->GetStatus(sts);
         
-        while (sts != CM_STATUS_FINISHED)
+        while (sts != CM_STATUS_FINISHED) 
         {
             e->GetStatus(sts);
         }
+    }else{
+        status = MFX_ERR_DEVICE_FAILED;
     }
+    if(e) m_pCmQueue->DestroyEvent(e);
     m_pCmDevice->DestroySurface(pCmSurface2D);
-    
-    return MFX_ERR_NONE;
+    return status;
 }
 
 mfxStatus CmCopyWrapper::CopyVideoToSystemMemoryAPI(mfxU8 *pDst, mfxU32 dstPitch, mfxU32 dstUVOffset, void *pSrc, mfxU32 srcPitch, IppiSize roi)
@@ -681,7 +684,7 @@ mfxStatus CmCopyWrapper::CopyVideoToSystemMemoryAPI(mfxU8 *pDst, mfxU32 dstPitch
     
     CmEvent* e = NULL;
     CM_STATUS sts;
-
+    mfxStatus status = MFX_ERR_NONE;
     //mfxU32 width  = roi.width;
     //mfxU32 height = roi.height;
     //mfxU32 memSize = srcPitch * height * 3/2;
@@ -709,11 +712,13 @@ mfxStatus CmCopyWrapper::CopyVideoToSystemMemoryAPI(mfxU8 *pDst, mfxU32 dstPitch
         {
             e->GetStatus(sts);
         }
+    }else{
+        status = MFX_ERR_DEVICE_FAILED;
     }
-    
+    if(e) m_pCmQueue->DestroyEvent(e);
     m_pCmDevice->DestroySurface(pCmSurface2D);
 
-    return MFX_ERR_NONE;
+    return status;
 }
 mfxStatus CmCopyWrapper::CopyVideoToVideoMemoryAPI(void *pDst, void *pSrc, IppiSize roi)
 {
@@ -721,6 +726,7 @@ mfxStatus CmCopyWrapper::CopyVideoToVideoMemoryAPI(void *pDst, void *pSrc, IppiS
     
     CmEvent* e = NULL;
     CM_STATUS sts;
+    mfxStatus status = MFX_ERR_NONE;
 
     mfxU32 width  = roi.width;
     mfxU32 height = roi.height;
@@ -744,7 +750,10 @@ mfxStatus CmCopyWrapper::CopyVideoToVideoMemoryAPI(void *pDst, void *pSrc, IppiS
         {
             e->GetStatus(sts);
         }
+    }else{
+        status = MFX_ERR_DEVICE_FAILED;
     }
+    if(e) m_pCmQueue->DestroyEvent(e);
 
-    return MFX_ERR_NONE;
+    return status;
 }
