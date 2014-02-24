@@ -127,18 +127,6 @@ mfxStatus CDecodingPipeline::Init(sInputParams *pParams)
     sts = m_FileReader->Init(pParams->strSrcFile);
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
-    m_eWorkMode = pParams->mode;
-    if (m_eWorkMode == MODE_FILE_DUMP) {
-        // prepare YUV file writer
-        sts = m_FileWriter.Init(pParams->strDstFile, pParams->numViews);
-    } else if (m_eWorkMode == MODE_RENDERING) {
-        sts = CreateRenderingWindow(pParams, m_bIsMVC && (m_memType == D3D9_MEMORY));
-    } else if (m_eWorkMode != MODE_PERFORMANCE) {
-        msdk_printf(MSDK_STRING("error: unsupported work mode\n"));
-        sts = MFX_ERR_UNSUPPORTED;
-    }
-    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
-
     // Init session
     if (pParams->bUseHWLib)
     {
@@ -170,11 +158,6 @@ mfxStatus CDecodingPipeline::Init(sInputParams *pParams)
 
     // prepare bit stream
     sts = InitMfxBitstream(&m_mfxBS, 1024 * 1024);
-    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
-
-    // create device and allocator. SetHandle must be called after session Init and before any other MSDK calls,
-    // otherwise an own device will be created by MSDK
-    sts = CreateAllocator();
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
     /* Here we actually define the following codec initialization scheme:
@@ -235,6 +218,22 @@ mfxStatus CDecodingPipeline::Init(sInputParams *pParams)
 
     // Populate parameters. Involves DecodeHeader call
     sts = InitMfxParams(pParams);
+    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+
+    m_eWorkMode = pParams->mode;
+    if (m_eWorkMode == MODE_FILE_DUMP) {
+        // prepare YUV file writer
+        sts = m_FileWriter.Init(pParams->strDstFile, pParams->numViews);
+    } else if (m_eWorkMode == MODE_RENDERING) {
+        sts = CreateRenderingWindow(pParams, m_bIsMVC && (m_memType == D3D9_MEMORY));
+    } else if (m_eWorkMode != MODE_PERFORMANCE) {
+        msdk_printf(MSDK_STRING("error: unsupported work mode\n"));
+        sts = MFX_ERR_UNSUPPORTED;
+    }
+    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+
+    // create device and allocator
+    sts = CreateAllocator();
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
     // in case of HW accelerated decode frames must be allocated prior to decoder initialization

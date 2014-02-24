@@ -756,6 +756,9 @@ mfxStatus CSmplYUVWriter::Init(const msdk_char *strFileName, const mfxU32 numVie
     else if (m_bIsMultiView)
     {
         mfxU32 i;
+
+        MSDK_CHECK_ERROR(numViews, 0, MFX_ERR_NOT_INITIALIZED);
+
         m_fDestMVC = new FILE*[numViews];
         for (i = 0; i < numViews; ++i)
         {
