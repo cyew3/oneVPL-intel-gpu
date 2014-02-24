@@ -173,10 +173,9 @@ mfxStatus CUserPipeline::Init(sInputParams *pParams)
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
     mfxIMPL impl = pParams->bUseHWLib ? MFX_IMPL_HARDWARE : MFX_IMPL_SOFTWARE;
-    mfxVersion version = {1, 1}; // pipeline with plugin requires media sdk API 1.1
-
+    
     // create a session for the second vpp and encode
-    sts = m_mfxSession.Init(impl, &version);
+    sts = m_mfxSession.Init(impl, NULL);
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
     // we check if codec is distributed as a mediasdk plugin and load it if yes

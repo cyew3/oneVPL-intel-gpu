@@ -914,13 +914,6 @@ mfxStatus CEncodingPipeline::Init(sInputParams *pParams)
     sts = InitFileWriters(pParams);
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
-    APIChangeFeatures features = {};
-    features.MVCEncode = (pParams->MVC_flags & MVC_ENABLED) != 0;
-    features.ViewOutput = (pParams->MVC_flags & MVC_VIEWOUTPUT) != 0;
-    features.JpegEncode = (pParams->CodecId == MFX_CODEC_JPEG);
-    features.LookAheadBRC = (pParams->bLABRC || pParams->nLADepth);
-    mfxVersion version = getMinimalRequiredVersion(features);
-
     // Init session
     if (pParams->bUseHWLib)
     {
@@ -932,14 +925,14 @@ mfxStatus CEncodingPipeline::Init(sInputParams *pParams)
         if (D3D11_MEMORY == pParams->memType)
             impl |= MFX_IMPL_VIA_D3D11;
 
-        sts = m_mfxSession.Init(impl, &version);
+        sts = m_mfxSession.Init(impl, NULL);
 
         // MSDK API version may not support multiple adapters - then try initialize on the default
         if (MFX_ERR_NONE != sts)
-           sts = m_mfxSession.Init(impl & !MFX_IMPL_HARDWARE_ANY | MFX_IMPL_HARDWARE, &version);
+           sts = m_mfxSession.Init(impl & !MFX_IMPL_HARDWARE_ANY | MFX_IMPL_HARDWARE, NULL);
     }
     else
-        sts = m_mfxSession.Init(MFX_IMPL_SOFTWARE, &version);
+        sts = m_mfxSession.Init(MFX_IMPL_SOFTWARE, NULL);
 
     
     // we check if codec is distributed as a mediasdk plugin and load it if yes

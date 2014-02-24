@@ -23,8 +23,6 @@ Launcher::Launcher():
     m_StartTime(0),
     m_eDevType(static_cast<mfxHandleType>(0))
 {
-    m_MinRequiredAPIVersion.Major = 1;
-    m_MinRequiredAPIVersion.Minor = 0;
 } // Launcher::Launcher()
 
 Launcher::~Launcher()
@@ -159,8 +157,7 @@ mfxStatus Launcher::Init(int argc, msdk_char *argv[])
                                                    hdl,
                                                    pSinkPipeline,
                                                    pBuffer,
-                                                   m_pExtBSProcArray.back(),
-                                                   m_MinRequiredAPIVersion);
+                                                   m_pExtBSProcArray.back());
         }
         else
         {
@@ -169,8 +166,7 @@ mfxStatus Launcher::Init(int argc, msdk_char *argv[])
                                                     hdl,
                                                     pParentPipeline,
                                                     pBuffer,
-                                                    m_pExtBSProcArray.back(),
-                                                    m_MinRequiredAPIVersion);
+                                                    m_pExtBSProcArray.back());
         }
 
         MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);         
@@ -334,24 +330,6 @@ bool operator <(const mfxVersion &left, const mfxVersion &right)
     return false;
 }
 
-mfxStatus Launcher::DetermineMinRequiredAPIVersion(sInputParams *pParams)
-{
-    MSDK_CHECK_POINTER(pParams, MFX_ERR_NULL_PTR);    
-    
-    APIChangeFeatures features = {};
-    features.MVCDecode = features.MVCEncode = pParams->bIsMVC;
-    features.JpegDecode = (MFX_CODEC_JPEG == pParams->DecodeId);
-    features.JpegEncode = (MFX_CODEC_JPEG == pParams->EncodeId);
-    features.LookAheadBRC = (pParams->bLABRC || pParams->nLADepth);
-    mfxVersion version = getMinimalRequiredVersion(features);
-
-    // min required version is max version of all transcoding sessions
-    if (m_MinRequiredAPIVersion < version)
-        m_MinRequiredAPIVersion = version;
-
-    return MFX_ERR_NONE;
-}
-
 mfxStatus Launcher::VerifyCrossSessionsOptions()
 {
     bool IsSinkPresence = false;
@@ -441,8 +419,6 @@ mfxStatus Launcher::VerifyCrossSessionsOptions()
 #endif
         }
 
-        mfxStatus sts = DetermineMinRequiredAPIVersion(&m_InputParamsArray[i]);
-        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);        
     }
 
     if (IsSinkPresence && !IsSourcePresence)

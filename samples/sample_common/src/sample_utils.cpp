@@ -1468,6 +1468,10 @@ mfxVersion getMinimalRequiredVersion(const APIChangeFeatures &features)
         version.Minor = 8;
     }
 
+    if (features.SupportCodecPluginAPI) {
+        version.Minor = 8;
+    }
+
     return version;
 }
 

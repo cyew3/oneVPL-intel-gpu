@@ -251,8 +251,7 @@ namespace TranscodingSample
                                void* hdl,
                                CTranscodingPipeline *pParentPipeline,
                                SafetySurfaceBuffer  *pBuffer,
-                               BitstreamProcessor   *pBSProc,
-                               mfxVersion version);
+                               BitstreamProcessor   *pBSProc);
 
         // frames allocation is suspended for heterogeneous pipeline
         virtual mfxStatus CompleteInit();

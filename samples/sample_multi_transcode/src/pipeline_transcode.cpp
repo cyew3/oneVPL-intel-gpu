@@ -1443,8 +1443,7 @@ mfxStatus CTranscodingPipeline::Init(sInputParams *pParams,
                                      void* hdl,                            
                                      CTranscodingPipeline *pParentPipeline, 
                                      SafetySurfaceBuffer  *pBuffer,
-                                     BitstreamProcessor   *pBSProc,
-                                     mfxVersion version)       
+                                     BitstreamProcessor   *pBSProc)       
 {
     MSDK_CHECK_POINTER(pParams, MFX_ERR_NULL_PTR);
     MSDK_CHECK_POINTER(pMFXAllocator, MFX_ERR_NULL_PTR);
@@ -1499,18 +1498,19 @@ mfxStatus CTranscodingPipeline::Init(sInputParams *pParams,
     if (pParams->libType & MFX_IMPL_HARDWARE_ANY)
     {
         // try search for MSDK on all display adapters
-        sts = m_pmfxSession->Init(pParams->libType, &version);
+        sts = m_pmfxSession->Init(pParams->libType, NULL);
 
         // MSDK API version may have no support for multiple adapters - then try initialize on the default
         if (MFX_ERR_NONE != sts)
-            sts = m_pmfxSession->Init(pParams->libType & !MFX_IMPL_HARDWARE_ANY | MFX_IMPL_HARDWARE, &version);                     
+            sts = m_pmfxSession->Init(pParams->libType & !MFX_IMPL_HARDWARE_ANY | MFX_IMPL_HARDWARE, NULL);                     
     }
     else
-        sts = m_pmfxSession->Init(pParams->libType, &version);    
+        sts = m_pmfxSession->Init(pParams->libType, NULL);    
 
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
     // check the API version of actually loaded library
+    mfxVersion version;
     sts = m_pmfxSession->QueryVersion(&version);
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 

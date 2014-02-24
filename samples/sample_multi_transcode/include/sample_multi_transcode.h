@@ -44,7 +44,6 @@ namespace TranscodingSample
     protected:
         virtual mfxStatus VerifyCrossSessionsOptions();
         virtual mfxStatus CreateSafetyBuffers();
-        mfxStatus DetermineMinRequiredAPIVersion(sInputParams *pParams);        
 
         virtual void Close();
 
@@ -69,7 +68,6 @@ namespace TranscodingSample
         // need to work with HW pipeline
         mfxHandleType                        m_eDevType;
 
-        mfxVersion                           m_MinRequiredAPIVersion;
     private:
         DISALLOW_COPY_AND_ASSIGN(Launcher);
 

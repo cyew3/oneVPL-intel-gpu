@@ -139,13 +139,6 @@ mfxStatus CDecodingPipeline::Init(sInputParams *pParams)
     }
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
-    // API version
-    APIChangeFeatures features = {};
-    features.MVCDecode = pParams->bIsMVC;
-    features.LowLatency = pParams->bLowLat;
-    features.JpegDecode = (pParams->videoType == MFX_CODEC_JPEG);
-    mfxVersion version = getMinimalRequiredVersion(features);
-
     // Init session
     if (pParams->bUseHWLib)
     {
@@ -157,14 +150,14 @@ mfxStatus CDecodingPipeline::Init(sInputParams *pParams)
         if (D3D11_MEMORY == pParams->memType)
             impl |= MFX_IMPL_VIA_D3D11;
 
-        sts = m_mfxSession.Init(impl, &version);
+        sts = m_mfxSession.Init(impl, NULL);
 
         // MSDK API version may not support multiple adapters - then try initialize on the default
         if (MFX_ERR_NONE != sts)
-            sts = m_mfxSession.Init((impl & !MFX_IMPL_HARDWARE_ANY) | MFX_IMPL_HARDWARE, &version);
+            sts = m_mfxSession.Init((impl & !MFX_IMPL_HARDWARE_ANY) | MFX_IMPL_HARDWARE, NULL);
     }
     else
-        sts = m_mfxSession.Init(MFX_IMPL_SOFTWARE, &version);
+        sts = m_mfxSession.Init(MFX_IMPL_SOFTWARE, NULL);
 
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 

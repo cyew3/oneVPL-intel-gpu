@@ -38,7 +38,9 @@ const msdkPluginUID* msdkGetPluginUID(mfxU32 type, mfxU32 codecid)
 
     for (i = 0; i < sizeof(g_msdk_supported_plugins)/sizeof(g_msdk_supported_plugins[0]); ++i) {
         if ((type == g_msdk_supported_plugins[i].type) && (codecid == g_msdk_supported_plugins[i].codecid)) {
-            return &(g_msdk_supported_plugins[i].uid);
+            return (memcmp(&g_msdk_supported_plugins[i].uid, &MSDK_NULL_GUID, sizeof(msdkPluginDesc)))?
+                &(g_msdk_supported_plugins[i].uid):
+                NULL;
         }
     }
     return NULL;
@@ -75,7 +77,7 @@ const msdk_char* msdkGetPluginPath(mfxU32 type, mfxU32 codecid)
 
     for (i = 0; i < sizeof(g_msdk_supported_plugins)/sizeof(g_msdk_supported_plugins[0]); ++i) {
         if (g_msdk_supported_plugins[i].type == type && g_msdk_supported_plugins[i].codecid == codecid) {
-            return g_msdk_supported_plugins[i].path;
+            return (g_msdk_supported_plugins[i].path[0])? g_msdk_supported_plugins[i].path: NULL;
         }
     }                 
     return NULL;

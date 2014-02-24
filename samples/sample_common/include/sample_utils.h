@@ -585,6 +585,7 @@ struct APIChangeFeatures {
     bool ViewOutput;
     bool LookAheadBRC;
     bool AudioDecode;
+    bool SupportCodecPluginAPI;
 };
 
 mfxVersion getMinimalRequiredVersion(const APIChangeFeatures &features);
