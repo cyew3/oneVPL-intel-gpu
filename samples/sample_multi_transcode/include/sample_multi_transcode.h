@@ -1,0 +1,80 @@
+//* ////////////////////////////////////////////////////////////////////////////// */
+//*
+//
+//              INTEL CORPORATION PROPRIETARY INFORMATION
+//  This software is supplied under the terms of a license  agreement or
+//  nondisclosure agreement with Intel Corporation and may not be copied
+//  or disclosed except in  accordance  with the terms of that agreement.
+//        Copyright (c) 2011 - 2014 Intel Corporation. All Rights Reserved.
+//
+//
+//*/
+
+#ifndef __SAMPLE_MULTI_TRANSCODE_H__
+#define __SAMPLE_MULTI_TRANSCODE_H__
+
+#include "transcode_utils.h"
+#include "pipeline_transcode.h"
+#include "sample_utils.h"
+
+#include "d3d_allocator.h"
+#include "d3d11_allocator.h"
+#include "hw_device.h"
+#include "d3d_device.h"
+#include "d3d11_device.h"
+
+#ifdef LIBVA_SUPPORT
+#include "vaapi_device.h"
+#include "vaapi_utils.h"
+#include "vaapi_allocator.h"
+#endif
+
+namespace TranscodingSample
+{
+    class Launcher
+    {
+    public:
+        Launcher();
+        virtual ~Launcher();
+
+        virtual mfxStatus Init(int argc, msdk_char *argv[]);
+        virtual void      Run();
+        virtual mfxStatus ProcessResult();
+
+    protected:
+        virtual mfxStatus VerifyCrossSessionsOptions();
+        virtual mfxStatus CreateSafetyBuffers();
+        mfxStatus DetermineMinRequiredAPIVersion(sInputParams *pParams);        
+
+        virtual void Close();
+
+        // command line parser
+        CmdProcessor m_parser;
+        // sessions to process playlist
+        std::vector<ThreadTranscodeContext*> m_pSessionArray;
+        // handles 
+        std::vector<MSDKThread*>             m_HDLArray;
+        // allocator for each session
+        std::vector<GeneralAllocator*>       m_pAllocArray;
+        // input parameters for each session
+        std::vector<sInputParams>            m_InputParamsArray;
+        // safety buffers
+        // needed for heterogeneous pipeline
+        std::vector<SafetySurfaceBuffer*>    m_pBufferArray;
+
+        std::vector<FileBitstreamProcessor*> m_pExtBSProcArray;
+        std::auto_ptr<mfxAllocatorParams>    m_pAllocParam;
+        std::auto_ptr<CHWDevice>             m_hwdev;
+        msdk_tick                            m_StartTime;
+        // need to work with HW pipeline
+        mfxHandleType                        m_eDevType;
+
+        mfxVersion                           m_MinRequiredAPIVersion;
+    private:
+        DISALLOW_COPY_AND_ASSIGN(Launcher);
+
+    };
+}
+
+#endif
+
