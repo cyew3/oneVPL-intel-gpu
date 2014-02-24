@@ -14,6 +14,7 @@
 #include <string>
 #include <iostream>
 #include <vector>
+#include <list>
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -29,7 +30,6 @@
 #include <CL/cl.h>
 #include <CL/opencl.h>
 #include <CL/va_ext.h>
-
 
 typedef struct {
     std::string       program_source;
@@ -56,18 +56,17 @@ public:
     //void DumpToFile(VASurfaceID *pSrc);
     static std::string readFile(const char *filename);
 private:
+   
     cl_int InitPlatform();
     cl_int InitD3D9SurfaceSharingExtension();
     cl_int InitDevice();
     cl_int BuildKernels();
     cl_int SetKernelArgs();
 
-    cl_int PrepareSharedSurfaces(int width, int height, VASurfaceID* pD3DSurf);
+    cl_int PrepareSharedSurfaces(int width, int height, VASurfaceID* inputD3DSurf, VASurfaceID* outputD3DSurf);
     cl_int ProcessSurface();
-    cl_int CopySurface(VASurfaceID* , VASurfaceID* );
-    cl_int CopySurfacePlane(VASurfaceID *pSrc, VASurfaceID *pDst, bool isLuma);
 
-    void   ReleaseResources();    
+    cl_int ReleaseResources();
 
     static size_t chooseLocalSize(size_t globalSize, size_t preferred);
 
