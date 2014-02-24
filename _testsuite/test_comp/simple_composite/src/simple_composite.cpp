@@ -285,7 +285,7 @@ int main(int argc, char *argv[])
             getline(iss, value, '=');
             trim(key);
             trim(value);
-            if ( key.compare("stream") == 0 ){
+            if ( key.compare("stream") == 0 || key.compare("primarystream") == 0){
                 map<string, string> params = ParsePar(par, value);
                 streamParams[StreamCount] = params;
                 if (pa.scc == kNV12)
