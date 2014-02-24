@@ -95,7 +95,7 @@ BOOL VideoWindow::Initialize(const InitParams &refInit)
         y = m_RectWindow.top;
     }
 
-    PrintInfo(VM_STRING("Rendering Window"), VM_STRING("%d,%d,%d,%d\n"), x, y, x+w, y+w);
+    PrintInfo(VM_STRING("Rendering Window"), VM_STRING("%d,%d,%d,%d\n"), x, y, x+w, y+h);
     
     //
     // Start in Window mode regardless of the initial mode.
