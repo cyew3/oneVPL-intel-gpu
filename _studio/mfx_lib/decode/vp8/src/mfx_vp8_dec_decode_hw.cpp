@@ -1560,11 +1560,11 @@ mfxStatus VideoDECODEVP8_HW::PackHeaders(mfxBitstream *p_bistream)
 
     picParams->filter_type = m_frame_info.loopFilterType;
 
-/*  if (I_PICTURE != m_frame_info.frameType)
+    if (I_PICTURE != m_frame_info.frameType)
     {
-        picParams->sign_bias_golden = m_refresh_info.refFrameBiasTable[2];
-        picParams->sign_bias_alternate = m_refresh_info.refFrameBiasTable[3];
-    }*/
+        picParams->sign_bias_golden = m_refresh_info.refFrameBiasTable[3];
+        picParams->sign_bias_alternate = m_refresh_info.refFrameBiasTable[2];
+    }
 
     picParams->mb_no_coeff_skip = m_frame_info.mbSkipEnabled;
     picParams->loop_filter_adj_enable = m_frame_info.mbLoopFilterAdjust;
@@ -1683,14 +1683,14 @@ mfxStatus VideoDECODEVP8_HW::PackHeaders(mfxBitstream *p_bistream)
 
     picParams->P0EntropyCount = 8 - (picParams->P0EntropyCount & 0x07);
 
-/*    {
+    /*{
         static int i = 0;
         std::stringstream ss;
         ss << "c:/temp/mfx" << i;
         std::ofstream ofs(ss.str(), std::ofstream::binary);
         i++;
         ofs.write((char*)picParams, sizeof(VP8_DECODE_PICTURE_PARAMETERS));
-    }  */
+    }*/
 
     compBufPic->SetDataSize(sizeof(VP8_DECODE_PICTURE_PARAMETERS));
 
@@ -1724,14 +1724,14 @@ mfxStatus VideoDECODEVP8_HW::PackHeaders(mfxBitstream *p_bistream)
 
     compBufQm->SetDataSize(sizeof(VP8_DECODE_QM_TABLE));
 
-/*    {
+    /*{
         static int i = 0;
         std::stringstream ss;
         ss << "c:/temp/mfxqm" << i;
         std::ofstream ofs(ss.str(), std::ofstream::binary);
         i++;
         ofs.write((char*)qmTable, sizeof(VP8_DECODE_QM_TABLE));
-    } */
+    }*/
 
     UMCVACompBuffer* compBufBs;
     Ipp8u *bistreamData = (Ipp8u *)m_p_video_accelerator->GetCompBuffer(D3D9_VIDEO_DECODER_BUFFER_BITSTREAM_DATA, &compBufBs);
@@ -1758,14 +1758,14 @@ mfxStatus VideoDECODEVP8_HW::PackHeaders(mfxBitstream *p_bistream)
     memcpy(coeffProbs, m_frameProbs.coeff_probs, sizeof(Ipp8u)* 4 * 8 * 3 * 11);
 
 
-/*    {
+    /*{
          static int i = 0;
          std::stringstream ss;
          ss << "c:/temp/mfxcp" << i;
          std::ofstream ofs(ss.str(), std::ofstream::binary);
          i++;
          ofs.write((char*)coeffProbs, sizeof(Ipp8u)* 4 * 8 * 3 * 11);
-     }*/
+    }*/
 
     compBufCp->SetDataSize(sizeof(Ipp8u)* 4 * 8 * 3 * 11);
 
@@ -1860,8 +1860,8 @@ mfxStatus VideoDECODEVP8_HW::PackHeaders(mfxBitstream *p_bistream)
 
      if (I_PICTURE != m_frame_info.frameType)
      {
-         picParams->pic_fields.bits.sign_bias_golden = m_refresh_info.refFrameBiasTable[2];
-         picParams->pic_fields.bits.sign_bias_alternate = m_refresh_info.refFrameBiasTable[3];
+         picParams->pic_fields.bits.sign_bias_golden = m_refresh_info.refFrameBiasTable[3];
+         picParams->pic_fields.bits.sign_bias_alternate = m_refresh_info.refFrameBiasTable[2];
      }
 
      //same as mb_no_coeff_skip in bitstream syntax
