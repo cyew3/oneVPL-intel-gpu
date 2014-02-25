@@ -46,7 +46,7 @@ void tsSurfacePool::UseDefaultAllocator(bool isSW)
     Close();
     m_allocator = new frame_allocator(
         isSW ? frame_allocator::SOFTWARE : frame_allocator::HARDWARE, 
-        frame_allocator::ALLOC_MIN, 
+        frame_allocator::ALLOC_MAX, 
         frame_allocator::ENABLE_ALL,
         frame_allocator::ALLOC_EMPTY);
     m_external = false;

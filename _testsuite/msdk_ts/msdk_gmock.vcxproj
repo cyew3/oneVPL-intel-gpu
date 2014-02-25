@@ -163,11 +163,13 @@
     <ClInclude Include="include\gmock\ts_alloc.h" />
     <ClInclude Include="include\gmock\ts_encoder.h" />
     <ClInclude Include="include\gmock\ts_ext_buffers.h" />
+    <ClInclude Include="include\gmock\ts_parser.h" />
     <ClInclude Include="include\gmock\ts_session.h" />
     <ClInclude Include="include\test_sample_allocator.h" />
     <ClInclude Include="include\test_trace.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="src\gmock\test_suites\vp8e_encode_frame_async.cpp" />
     <ClCompile Include="src\gmock\test_suites\vp8e_init.cpp" />
     <ClCompile Include="src\gmock\test_suites\vp8e_query_io_surf.cpp" />
     <ClCompile Include="src\gmock\ts_alloc.cpp" />
