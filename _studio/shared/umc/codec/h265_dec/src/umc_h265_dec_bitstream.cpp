@@ -553,8 +553,8 @@ UMC::Status H265HeadersBitstream::GetSequenceParamSet(H265SeqParamSet *pcSPS)
     pcSPS->log2_max_transform_block_size = log2_diff_max_min_transform_block_size + pcSPS->log2_min_transform_block_size;
     pcSPS->m_maxTrSize = 1 << pcSPS->log2_max_transform_block_size;
 
-    pcSPS->max_transform_hierarchy_depth_inter = GetVLCElementU() + 1;
-    pcSPS->max_transform_hierarchy_depth_intra = GetVLCElementU() + 1;
+    pcSPS->max_transform_hierarchy_depth_inter = GetVLCElementU();
+    pcSPS->max_transform_hierarchy_depth_intra = GetVLCElementU();
     
     Ipp32u addCUDepth = 0;
     while((pcSPS->MaxCUSize >> log2_diff_max_min_coding_block_size) > (Ipp32u)( 1 << ( pcSPS->log2_min_transform_block_size + addCUDepth)))

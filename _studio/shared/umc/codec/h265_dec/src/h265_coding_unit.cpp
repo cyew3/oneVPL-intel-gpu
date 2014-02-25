@@ -173,43 +173,30 @@ void H265CodingUnit::getAllowedChromaDir(Ipp32u AbsPartIdx, Ipp32u* ModeList)
     }
 }
 
-Ipp32u H265CodingUnit::getCtxQtCbf(ComponentPlane plane, Ipp32u TrDepth)
-{
-    if (plane)
-    {
-        return TrDepth;
-    }
-    else
-    {
-        const Ipp32u Ctx = (TrDepth == 0) ? 1 : 0;
-        return Ctx;
-    }
-}
-
 Ipp32u H265CodingUnit::getQuadtreeTULog2MinSizeInCU(Ipp32u Idx)
 {
     Ipp32u Log2CbSize = g_ConvertToBit[GetWidth(Idx)] + 2;
     EnumPartSize partSize = GetPartitionSize(Idx);
-    const H265SeqParamSet *SPS = m_SliceHeader->m_SeqParamSet;
-    Ipp32u QuadtreeTUMaxDepth = GetPredictionMode(Idx) == MODE_INTRA ? SPS->max_transform_hierarchy_depth_intra : SPS->max_transform_hierarchy_depth_inter;
+    const H265SeqParamSet *sps = m_SliceHeader->m_SeqParamSet;
+    Ipp32u QuadtreeTUMaxDepth = GetPredictionMode(Idx) == MODE_INTRA ? sps->max_transform_hierarchy_depth_intra : sps->max_transform_hierarchy_depth_inter;
     Ipp32s IntraSplitFlag = GetPredictionMode(Idx) == MODE_INTRA && partSize == PART_SIZE_NxN;
-    Ipp32s InterSplitFlag = ((QuadtreeTUMaxDepth == 1) && (GetPredictionMode(Idx) == MODE_INTER) && (partSize != PART_SIZE_2Nx2N));
+    Ipp32s InterSplitFlag = GetPredictionMode(Idx) == MODE_INTER && sps->max_transform_hierarchy_depth_inter == 0 && partSize != PART_SIZE_2Nx2N;
 
     Ipp32u Log2MinTUSizeInCU = 0;
 
-    if (Log2CbSize < SPS->log2_min_transform_block_size + QuadtreeTUMaxDepth - 1 + InterSplitFlag + IntraSplitFlag)
+    if (Log2CbSize < sps->log2_min_transform_block_size + QuadtreeTUMaxDepth + InterSplitFlag + IntraSplitFlag)
     {
         // when fully making use of signaled TUMaxDepth + inter/intraSplitFlag, resulting luma TB size is < log2_min_transform_block_size
-        Log2MinTUSizeInCU = SPS->log2_min_transform_block_size;
+        Log2MinTUSizeInCU = sps->log2_min_transform_block_size;
     }
     else
     {
         // when fully making use of signaled TUMaxDepth + inter/intraSplitFlag, resulting luma TB size is still >= log2_min_transform_block_size
-        Log2MinTUSizeInCU = Log2CbSize - (QuadtreeTUMaxDepth - 1 + InterSplitFlag + IntraSplitFlag);
+        Log2MinTUSizeInCU = Log2CbSize - (QuadtreeTUMaxDepth + InterSplitFlag + IntraSplitFlag);
 
-        if (Log2MinTUSizeInCU > SPS->log2_max_transform_block_size)
+        if (Log2MinTUSizeInCU > sps->log2_max_transform_block_size)
             // when fully making use of signaled TUMaxDepth + inter/intraSplitFlag, resulting luma TB size is still > log2_max_transform_block_size
-            Log2MinTUSizeInCU = SPS->log2_max_transform_block_size;
+            Log2MinTUSizeInCU = sps->log2_max_transform_block_size;
     }
 
     return Log2MinTUSizeInCU;
@@ -289,24 +276,12 @@ void H265CodingUnit::setTrIdx(Ipp32u uTrIdx, Ipp32u AbsPartIdx, Ipp32s Depth)
     }
 }
 
-void H265CodingUnit::SetTrStart (Ipp32u AbsPartIdx, Ipp32s Depth)
-{
-    Ipp32u uCurrPartNumb = m_NumPartition >> (Depth << 1);
-
-    m_cuData[AbsPartIdx].trStart = (Ipp8u)AbsPartIdx;
-    for (Ipp32u i = 1; i < uCurrPartNumb; i++)
-    {
-        m_cuData[AbsPartIdx + i].trStart = (Ipp8u)AbsPartIdx;
-    }
-}
-
 void H265CodingUnit::UpdateTUInfo (Ipp32u AbsPartIdx, Ipp32u uTrIdx, Ipp32s Depth)
 {
     Ipp32u uCurrPartNumb = m_NumPartition >> (Depth << 1);
 
     for (Ipp32u i = 0; i < uCurrPartNumb; i++)
     {
-        m_cuData[AbsPartIdx + i].trStart = (Ipp8u)AbsPartIdx;
         m_cuData[AbsPartIdx + i].trIndex = (Ipp8u)uTrIdx;
     }
 }

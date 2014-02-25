@@ -246,7 +246,7 @@ public:
     void DeblockOneCross(Ipp32s curPixelColumn, Ipp32s curPixelRow, bool isNeddAddHorDeblock);
 
     template <Ipp32s direction>
-    void CalculateEdge(H265EdgeData * edge, Ipp32s x, Ipp32s y);
+    void CalculateEdge(H265EdgeData * edge, Ipp32s x, Ipp32s y, bool diffTr);
 
     void DeblockOneLCU(Ipp32u absPartIdx, Ipp32u depth, Ipp32s edgeType);
     void DeblockTU(Ipp32u absPartIdx, Ipp32u depth, Ipp32s edgeType);

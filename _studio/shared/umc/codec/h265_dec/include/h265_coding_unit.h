@@ -46,7 +46,6 @@ struct H265CodingUnitData
     };
 
     Ipp8u width;
-    Ipp8u trStart;
     Ipp8s qp;
 };
 #pragma pack()
@@ -183,7 +182,6 @@ public:
     void setPredMode (EnumPredMode Mode, Ipp32u AbsPartIdx);
     void setSize (Ipp32u Width, Ipp32u AbsPartIdx);
     void setTrIdx (Ipp32u TrIdx, Ipp32u AbsPartIdx, Ipp32s Depth);
-    void SetTrStart (Ipp32u AbsPartIdx, Ipp32s Depth);
     void UpdateTUInfo (Ipp32u AbsPartIdx, Ipp32u uTrIdx, Ipp32s Depth);
     void UpdateTUQpInfo (Ipp32u AbsPartIdx, Ipp32s qp, Ipp32s Depth);
 
@@ -223,9 +221,6 @@ public:
     bool isBipredRestriction(Ipp32u AbsPartIdx, Ipp32u PartIdx);
 
     void getAllowedChromaDir (Ipp32u AbsPartIdx, Ipp32u* ModeList);
-
-    // member functions for SBAC context ----------------------------------------------------------------------------------
-    Ipp32u getCtxQtCbf (ComponentPlane plane, Ipp32u TrDepth);
 
     // member functions for RD cost storage  ------------(only functions with declaration here. simple get/set are removed)
     Ipp32u getCoefScanIdx(Ipp32u AbsPartIdx, Ipp32u L2Width, bool IsLuma, bool IsIntra);

@@ -797,9 +797,7 @@ void H265SegmentDecoder::DecodeCUCABAC(Ipp32u AbsPartIdx, Ipp32u Depth, Ipp32u& 
             }
 
             if (IsLast)
-            {
                 break;
-            }
 
             Idx += QNumParts;
         }
@@ -902,7 +900,7 @@ void H265SegmentDecoder::DecodeCUCABAC(Ipp32u AbsPartIdx, Ipp32u Depth, Ipp32u& 
         isFirstPartMerge = DecodePUWiseCABAC(AbsPartIdx, Depth);
     }
 
-    if (m_cu->m_SliceHeader->m_PicParamSet->cu_qp_delta_enabled_flag)
+    if (m_pPicParamSet->cu_qp_delta_enabled_flag)
         m_context->SetNewQP(m_DecodeDQPFlag ? getRefQP(AbsPartIdx) : m_cu->m_CodedQP);
 
     // Coefficient decoding
@@ -1544,12 +1542,12 @@ void H265SegmentDecoder::DecodeCoeff(Ipp32u AbsPartIdx, Ipp32u Depth, bool& Code
     DecodeTransform(lumaOffset, AbsPartIdx, Depth, Log2TrafoSize, 0, CodeDQP);
 }
 
-void H265SegmentDecoder::DecodeTransform(Ipp32u offsetLuma, Ipp32u AbsPartIdx, Ipp32u Depth, Ipp32u  l2width, Ipp32u TrIdx, bool& CodeDQP)
+void H265SegmentDecoder::DecodeTransform(Ipp32u offsetLuma, Ipp32u AbsPartIdx, Ipp32u Depth, Ipp32u  log2TrafoSize, Ipp32u trafoDepth, bool& CodeDQP)
 {
     Ipp32u offsetChroma = offsetLuma >> 2;
     Ipp32u Subdiv;
 
-    if (l2width == 2)
+    if (log2TrafoSize == 2)
     {
         if ((AbsPartIdx & 0x03) == 0)
         {
@@ -1558,61 +1556,51 @@ void H265SegmentDecoder::DecodeTransform(Ipp32u offsetLuma, Ipp32u AbsPartIdx, I
         }
     }
 
-    if (m_cu->GetPredictionMode(AbsPartIdx) == MODE_INTRA && m_cu->GetPartitionSize(AbsPartIdx) == PART_SIZE_NxN && Depth == m_cu->GetDepth(AbsPartIdx))
+    Ipp32s IntraSplitFlag = m_cu->GetPredictionMode(AbsPartIdx) == MODE_INTRA && m_cu->GetPartitionSize(AbsPartIdx) == PART_SIZE_NxN;
+
+    Ipp32u Log2MaxTrafoSize = m_pSeqParamSet->log2_max_transform_block_size; 
+    Ipp32u Log2MinTrafoSize = m_pSeqParamSet->log2_min_transform_block_size;
+
+    Ipp32u MaxTrafoDepth = m_cu->GetPredictionMode(AbsPartIdx) == MODE_INTRA ? (m_pSeqParamSet->max_transform_hierarchy_depth_intra + IntraSplitFlag ) : m_pSeqParamSet->max_transform_hierarchy_depth_inter;
+
+    if (log2TrafoSize <= Log2MaxTrafoSize && log2TrafoSize > Log2MinTrafoSize && trafoDepth < MaxTrafoDepth && !(IntraSplitFlag && (trafoDepth == 0)) )
     {
-        Subdiv = 1;
-    }
-    else if ((m_pSeqParamSet->max_transform_hierarchy_depth_inter == 1) && (m_cu->GetPredictionMode(AbsPartIdx) == MODE_INTER) && (m_cu->GetPartitionSize(AbsPartIdx) != PART_SIZE_2Nx2N) && (Depth == m_cu->GetDepth(AbsPartIdx)))
-    {
-        Subdiv = (l2width > m_cu->getQuadtreeTULog2MinSizeInCU(AbsPartIdx));
-    }
-    else if (l2width > m_pSeqParamSet->log2_max_transform_block_size)
-    {
-        Subdiv = 1;
-    }
-    else if (l2width == m_pSeqParamSet->log2_min_transform_block_size)
-    {
-        Subdiv = 0;
-    }
-    else if (l2width == m_cu->getQuadtreeTULog2MinSizeInCU(AbsPartIdx))
-    {
-        Subdiv = 0;
+        VM_ASSERT(log2TrafoSize > m_cu->getQuadtreeTULog2MinSizeInCU(AbsPartIdx));
+        ParseTransformSubdivFlagCABAC(Subdiv, 5 - log2TrafoSize);
     }
     else
     {
-        VM_ASSERT(l2width > m_cu->getQuadtreeTULog2MinSizeInCU(AbsPartIdx));
-        ParseTransformSubdivFlagCABAC(Subdiv, 5 - l2width);
+        Ipp32s interSplitFlag = m_pSeqParamSet->max_transform_hierarchy_depth_inter == 0 && m_cu->GetPredictionMode(AbsPartIdx) == MODE_INTER &&
+            m_cu->GetPartitionSize(AbsPartIdx) != PART_SIZE_2Nx2N && trafoDepth == 0;
+
+        Subdiv = ((IntraSplitFlag && trafoDepth == 0) || interSplitFlag || log2TrafoSize > Log2MaxTrafoSize) ? 1 : 0;
     }
 
-    const Ipp32u TrDepth = Depth - m_cu->GetDepth(AbsPartIdx);
-
+    const bool FirstCbfOfCUFlag = trafoDepth == 0;
+    if (FirstCbfOfCUFlag)
     {
-        const bool FirstCbfOfCUFlag = TrDepth == 0;
-        if (FirstCbfOfCUFlag)
-        {
-            m_cu->setCbfSubParts( 0, COMPONENT_CHROMA_U, AbsPartIdx, Depth);
-            m_cu->setCbfSubParts( 0, COMPONENT_CHROMA_V, AbsPartIdx, Depth);
-        }
+        m_cu->setCbfSubParts( 0, COMPONENT_CHROMA_U, AbsPartIdx, Depth);
+        m_cu->setCbfSubParts( 0, COMPONENT_CHROMA_V, AbsPartIdx, Depth);
+    }
 
-        if (FirstCbfOfCUFlag || l2width > 2)
-        {
-            if (FirstCbfOfCUFlag || m_cu->GetCbf(COMPONENT_CHROMA_U, AbsPartIdx, TrDepth - 1))
-                ParseQtCbfCABAC(AbsPartIdx, COMPONENT_CHROMA_U, TrDepth, Depth);
-            if (FirstCbfOfCUFlag || m_cu->GetCbf(COMPONENT_CHROMA_V, AbsPartIdx, TrDepth - 1))
-                ParseQtCbfCABAC(AbsPartIdx, COMPONENT_CHROMA_V, TrDepth, Depth);
-        }
-        else
-        {
-            m_cu->setCbfSubParts(m_cu->GetCbf(COMPONENT_CHROMA_U, AbsPartIdx, TrDepth - 1) << TrDepth, COMPONENT_CHROMA_U, AbsPartIdx, Depth);
-            m_cu->setCbfSubParts(m_cu->GetCbf(COMPONENT_CHROMA_V, AbsPartIdx, TrDepth - 1) << TrDepth, COMPONENT_CHROMA_V, AbsPartIdx, Depth);
-        }
+    if (FirstCbfOfCUFlag || log2TrafoSize > 2)
+    {
+        if (FirstCbfOfCUFlag || m_cu->GetCbf(COMPONENT_CHROMA_U, AbsPartIdx, trafoDepth - 1))
+            ParseQtCbfCABAC(AbsPartIdx, COMPONENT_CHROMA_U, trafoDepth, Depth);
+        if (FirstCbfOfCUFlag || m_cu->GetCbf(COMPONENT_CHROMA_V, AbsPartIdx, trafoDepth - 1))
+            ParseQtCbfCABAC(AbsPartIdx, COMPONENT_CHROMA_V, trafoDepth, Depth);
+    }
+    else
+    {
+        m_cu->setCbfSubParts(m_cu->GetCbf(COMPONENT_CHROMA_U, AbsPartIdx, trafoDepth - 1) << trafoDepth, COMPONENT_CHROMA_U, AbsPartIdx, Depth);
+        m_cu->setCbfSubParts(m_cu->GetCbf(COMPONENT_CHROMA_V, AbsPartIdx, trafoDepth - 1) << trafoDepth, COMPONENT_CHROMA_V, AbsPartIdx, Depth);
     }
 
     if (Subdiv)
     {
-        l2width--; Depth++;
+        log2TrafoSize--; Depth++;
 
-        Ipp32u size = 1 << (l2width << 1);
+        Ipp32u size = 1 << (log2TrafoSize << 1);
         const Ipp32u QPartNum = m_pCurrentFrame->getCD()->getNumPartInCU() >> (Depth << 1);
         const Ipp32u StartAbsPartIdx = AbsPartIdx;
         Ipp32u YCbf = 0;
@@ -1621,80 +1609,81 @@ void H265SegmentDecoder::DecodeTransform(Ipp32u offsetLuma, Ipp32u AbsPartIdx, I
 
         for (Ipp32s i = 0; i < 4; i++)
         {
-            DecodeTransform(offsetLuma, AbsPartIdx, Depth, l2width, TrIdx+1, CodeDQP);
+            DecodeTransform(offsetLuma, AbsPartIdx, Depth, log2TrafoSize, trafoDepth+1, CodeDQP);
 
-            YCbf |= m_cu->GetCbf(COMPONENT_LUMA, AbsPartIdx, TrDepth + 1);
-            UCbf |= m_cu->GetCbf(COMPONENT_CHROMA_U, AbsPartIdx, TrDepth + 1);
-            VCbf |= m_cu->GetCbf(COMPONENT_CHROMA_V, AbsPartIdx, TrDepth + 1);
+            YCbf |= m_cu->GetCbf(COMPONENT_LUMA, AbsPartIdx, trafoDepth + 1);
+            UCbf |= m_cu->GetCbf(COMPONENT_CHROMA_U, AbsPartIdx, trafoDepth + 1);
+            VCbf |= m_cu->GetCbf(COMPONENT_CHROMA_V, AbsPartIdx, trafoDepth + 1);
             AbsPartIdx += QPartNum;
             offsetLuma += size;
         }
 
         for (Ipp32u ui = 0; ui < 4 * QPartNum; ++ui)
         {
-            m_cu->GetCbf(COMPONENT_LUMA)[StartAbsPartIdx + ui] |= YCbf << TrDepth;
-            m_cu->GetCbf(COMPONENT_CHROMA_U)[StartAbsPartIdx + ui] |= UCbf << TrDepth;
-            m_cu->GetCbf(COMPONENT_CHROMA_V)[StartAbsPartIdx + ui] |= VCbf << TrDepth;
+            m_cu->GetCbf(COMPONENT_LUMA)[StartAbsPartIdx + ui] |= YCbf << trafoDepth;
+            m_cu->GetCbf(COMPONENT_CHROMA_U)[StartAbsPartIdx + ui] |= UCbf << trafoDepth;
+            m_cu->GetCbf(COMPONENT_CHROMA_V)[StartAbsPartIdx + ui] |= VCbf << trafoDepth;
         }
     }
     else
     {
         VM_ASSERT(Depth >= m_cu->GetDepth(AbsPartIdx));
 
-        m_cu->setCbfSubParts(0, COMPONENT_LUMA, AbsPartIdx, Depth);
-        if (m_cu->GetPredictionMode(AbsPartIdx) != MODE_INTRA && Depth == m_cu->GetDepth(AbsPartIdx) && !m_cu->GetCbf(COMPONENT_CHROMA_U, AbsPartIdx) && !m_cu->GetCbf(COMPONENT_CHROMA_V, AbsPartIdx))
+        if (m_cu->GetPredictionMode(AbsPartIdx) != MODE_INTRA && trafoDepth == 0 && !m_cu->GetCbf(COMPONENT_CHROMA_U, AbsPartIdx) && !m_cu->GetCbf(COMPONENT_CHROMA_V, AbsPartIdx))
         {
-            m_cu->setCbfSubParts( 1 << TrDepth, COMPONENT_LUMA, AbsPartIdx, Depth);
+            m_cu->setCbfSubParts( 1 << trafoDepth, COMPONENT_LUMA, AbsPartIdx, Depth);
         }
         else
         {
-            ParseQtCbfCABAC(AbsPartIdx, COMPONENT_LUMA, TrDepth, Depth);
+            ParseQtCbfCABAC(AbsPartIdx, COMPONENT_LUMA, trafoDepth, Depth);
         }
-            // transform_unit begin
-        Ipp32u cbfY = m_cu->GetCbf(COMPONENT_LUMA    , AbsPartIdx, TrIdx);
-        Ipp32u cbfU = m_cu->GetCbf(COMPONENT_CHROMA_U, AbsPartIdx, TrIdx);
-        Ipp32u cbfV = m_cu->GetCbf(COMPONENT_CHROMA_V, AbsPartIdx, TrIdx);
 
-        if (l2width == 2 && (AbsPartIdx & 0x3) == 0x3 )
+        // transform_unit begin
+        Ipp32u cbfY = m_cu->GetCbf(COMPONENT_LUMA, AbsPartIdx, trafoDepth);
+        Ipp32u cbfU;
+        Ipp32u cbfV;
+
+        if (log2TrafoSize == 2 && (AbsPartIdx & 0x3) == 0x3 )
         {
-            cbfU = m_cu->GetCbf(COMPONENT_CHROMA_U, m_BakAbsPartIdx, TrIdx);
-            cbfV = m_cu->GetCbf(COMPONENT_CHROMA_V, m_BakAbsPartIdx, TrIdx);
+            cbfU = m_cu->GetCbf(COMPONENT_CHROMA_U, m_BakAbsPartIdx, trafoDepth);
+            cbfV = m_cu->GetCbf(COMPONENT_CHROMA_V, m_BakAbsPartIdx, trafoDepth);
+        }
+        else
+        {
+            cbfU = m_cu->GetCbf(COMPONENT_CHROMA_U, AbsPartIdx, trafoDepth);
+            cbfV = m_cu->GetCbf(COMPONENT_CHROMA_V, AbsPartIdx, trafoDepth);
         }
 
         if (cbfY || cbfU || cbfV)
         {
             // dQP: only for LCU
-            if (m_pPicParamSet->cu_qp_delta_enabled_flag)
+            if (m_pPicParamSet->cu_qp_delta_enabled_flag && CodeDQP)
             {
-                if (CodeDQP)
-                {
-                    DecodeQP(m_bakAbsPartIdxCU);
-                    UpdateNeighborDecodedQP(m_bakAbsPartIdxCU, m_cu->GetDepth(AbsPartIdx));
-                    //if (m_bakAbsPartIdxCU != AbsPartIdx)
-                        m_cu->UpdateTUQpInfo(m_bakAbsPartIdxCU, m_context->GetQP(), m_cu->GetDepth(AbsPartIdx));
-                    CodeDQP = false;
-                }
+                DecodeQP(m_bakAbsPartIdxCU);
+                UpdateNeighborDecodedQP(m_bakAbsPartIdxCU, m_cu->GetDepth(AbsPartIdx));
+                m_cu->UpdateTUQpInfo(m_bakAbsPartIdxCU, m_context->GetQP(), m_cu->GetDepth(AbsPartIdx));
+                CodeDQP = false;
             }
         }
 
-        m_cu->UpdateTUInfo(AbsPartIdx, TrDepth, Depth);
+        m_cu->UpdateTUInfo(AbsPartIdx, trafoDepth, Depth);
 
         UpdateNeighborBuffers(AbsPartIdx, Depth, false);
 
         if (cbfY)
         {
-            ParseCoeffNxNCABAC(m_cu->m_TrCoeffY + offsetLuma, AbsPartIdx, l2width, Depth, COMPONENT_LUMA);
+            ParseCoeffNxNCABAC(m_cu->m_TrCoeffY + offsetLuma, AbsPartIdx, log2TrafoSize, Depth, COMPONENT_LUMA);
         }
 
-        if (l2width > 2)
+        if (log2TrafoSize > 2)
         {
             if (cbfU)
             {
-                ParseCoeffNxNCABAC(m_cu->m_TrCoeffCb + offsetChroma, AbsPartIdx, l2width-1, Depth, COMPONENT_CHROMA_U);
+                ParseCoeffNxNCABAC(m_cu->m_TrCoeffCb + offsetChroma, AbsPartIdx, log2TrafoSize-1, Depth, COMPONENT_CHROMA_U);
             }
             if (cbfV)
             {
-                ParseCoeffNxNCABAC(m_cu->m_TrCoeffCr + offsetChroma, AbsPartIdx, l2width-1, Depth, COMPONENT_CHROMA_V);
+                ParseCoeffNxNCABAC(m_cu->m_TrCoeffCr + offsetChroma, AbsPartIdx, log2TrafoSize-1, Depth, COMPONENT_CHROMA_V);
             }
         }
         else
@@ -1703,11 +1692,11 @@ void H265SegmentDecoder::DecodeTransform(Ipp32u offsetLuma, Ipp32u AbsPartIdx, I
             {
                 if (cbfU)
                 {
-                    ParseCoeffNxNCABAC(m_cu->m_TrCoeffCb + m_BakChromaOffset, m_BakAbsPartIdx, l2width, Depth, COMPONENT_CHROMA_U);
+                    ParseCoeffNxNCABAC(m_cu->m_TrCoeffCb + m_BakChromaOffset, m_BakAbsPartIdx, log2TrafoSize, Depth, COMPONENT_CHROMA_U);
                 }
                 if (cbfV)
                 {
-                    ParseCoeffNxNCABAC(m_cu->m_TrCoeffCr + m_BakChromaOffset, m_BakAbsPartIdx, l2width, Depth, COMPONENT_CHROMA_V);
+                    ParseCoeffNxNCABAC(m_cu->m_TrCoeffCr + m_BakChromaOffset, m_BakAbsPartIdx, log2TrafoSize, Depth, COMPONENT_CHROMA_V);
                 }
             }
         }
@@ -1720,12 +1709,23 @@ void H265SegmentDecoder::ParseTransformSubdivFlagCABAC(Ipp32u& SubdivFlag, Ipp32
     SubdivFlag = m_pBitStream->DecodeSingleBin_CABAC(ctxIdxOffsetHEVC[TRANS_SUBDIV_FLAG_HEVC] + Log2TransformBlockSize);
 }
 
+Ipp32u getCtxQtCbf(ComponentPlane plane, Ipp32u TrDepth)
+{
+    if (plane)
+    {
+        return TrDepth;
+    }
+    else
+    {
+        return TrDepth == 0 ? 1 : 0;
+    }
+}
+
 void H265SegmentDecoder::ParseQtCbfCABAC(Ipp32u AbsPartIdx, ComponentPlane plane, Ipp32u TrDepth, Ipp32u Depth)
 {
-    Ipp32u uVal;
-    const Ipp32u Ctx = m_cu->getCtxQtCbf(plane, TrDepth);
+    const Ipp32u Ctx = getCtxQtCbf(plane, TrDepth);
 
-    uVal = m_pBitStream->DecodeSingleBin_CABAC(ctxIdxOffsetHEVC[QT_CBF_HEVC] + Ctx + NUM_CONTEXT_QT_CBF * (plane ? COMPONENT_CHROMA : plane));
+    Ipp32u uVal = m_pBitStream->DecodeSingleBin_CABAC(ctxIdxOffsetHEVC[QT_CBF_HEVC] + Ctx + NUM_CONTEXT_QT_CBF * (plane ? COMPONENT_CHROMA : plane));
 
     m_cu->setCbfSubParts(uVal << TrDepth, plane, AbsPartIdx, Depth);
 }
@@ -1817,7 +1817,6 @@ void H265SegmentDecoder::BeforeCoeffs(Ipp32u AbsPartIdx, Ipp32u Depth)
 {
     H265CodingUnitData * data = m_cu->GetCUData(AbsPartIdx);
     data->qp = (Ipp8s)m_context->GetQP();
-    data->trStart = Ipp8u(AbsPartIdx);
     m_cu->SetCUDataSubParts(AbsPartIdx, Depth);
 }
 
