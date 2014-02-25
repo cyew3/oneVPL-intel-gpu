@@ -39,5 +39,8 @@
     <ClCompile Include="h265\src\mfx_h265_sao_16u_px.cpp">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="h265\src\mfx_h265_satd_px.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

@@ -287,6 +287,13 @@ using namespace MFX_HEVC_PP;
         // forward quantization
         g_dispatcher. h265_QuantFwd_16s = &MFX_HEVC_PP::h265_QuantFwd_16s_sse;
         g_dispatcher. h265_QuantFwd_SBH_16s = &MFX_HEVC_PP::h265_QuantFwd_SBH_16s_sse;
+
+        // SATD
+        g_dispatcher. h265_SATD_4x4_8u = &MFX_HEVC_PP::h265_SATD_4x4_8u_sse;
+        g_dispatcher. h265_SATD_8x8_8u = &MFX_HEVC_PP::h265_SATD_8x8_8u_sse;
+
+        g_dispatcher. h265_SATD_4x4_Pair_8u = &MFX_HEVC_PP::h265_SATD_4x4_Pair_8u_sse;
+        g_dispatcher. h265_SATD_8x8_Pair_8u = &MFX_HEVC_PP::h265_SATD_8x8_Pair_8u_sse;
 #endif
         //[transform.inv]==================================
         g_dispatcher. h265_DST4x4Inv_16sT = &MFX_HEVC_PP::h265_DST4x4Inv_16sT_sse;
@@ -430,6 +437,13 @@ using namespace MFX_HEVC_PP;
         // forward quantization
         g_dispatcher. h265_QuantFwd_16s = &MFX_HEVC_PP::h265_QuantFwd_16s_px;
         g_dispatcher. h265_QuantFwd_SBH_16s = &MFX_HEVC_PP::h265_QuantFwd_SBH_16s_px;
+
+        // SATD
+        g_dispatcher. h265_SATD_4x4_8u = &MFX_HEVC_PP::h265_SATD_4x4_8u_px;
+        g_dispatcher. h265_SATD_8x8_8u = &MFX_HEVC_PP::h265_SATD_8x8_8u_px;
+
+        g_dispatcher. h265_SATD_4x4_Pair_8u = &MFX_HEVC_PP::h265_SATD_4x4_Pair_8u_px;
+        g_dispatcher. h265_SATD_8x8_Pair_8u = &MFX_HEVC_PP::h265_SATD_8x8_Pair_8u_px;
 #endif
         //[transform.inv]==================================
         g_dispatcher. h265_DST4x4Inv_16sT = &MFX_HEVC_PP::h265_DST4x4Inv_16sT_ssse3;
@@ -573,6 +587,13 @@ using namespace MFX_HEVC_PP;
         // forward quantization
         g_dispatcher. h265_QuantFwd_16s = &MFX_HEVC_PP::h265_QuantFwd_16s_avx2;
         g_dispatcher. h265_QuantFwd_SBH_16s = &MFX_HEVC_PP::h265_QuantFwd_SBH_16s_avx2;
+
+        // SATD
+        g_dispatcher. h265_SATD_4x4_8u = &MFX_HEVC_PP::h265_SATD_4x4_8u_avx2;
+        g_dispatcher. h265_SATD_8x8_8u = &MFX_HEVC_PP::h265_SATD_8x8_8u_avx2;
+
+        g_dispatcher. h265_SATD_4x4_Pair_8u = &MFX_HEVC_PP::h265_SATD_4x4_Pair_8u_avx2;
+        g_dispatcher. h265_SATD_8x8_Pair_8u = &MFX_HEVC_PP::h265_SATD_8x8_Pair_8u_avx2;
 #endif
         //[transform.inv]==================================
         g_dispatcher. h265_DST4x4Inv_16sT = &MFX_HEVC_PP::h265_DST4x4Inv_16sT_avx2;
@@ -716,6 +737,13 @@ using namespace MFX_HEVC_PP;
         // forward quantization
         g_dispatcher. h265_QuantFwd_16s = &MFX_HEVC_PP::h265_QuantFwd_16s_px;
         g_dispatcher. h265_QuantFwd_SBH_16s = &MFX_HEVC_PP::h265_QuantFwd_SBH_16s_px;
+
+        // SATD
+        g_dispatcher. h265_SATD_4x4_8u = &MFX_HEVC_PP::h265_SATD_4x4_8u_px;
+        g_dispatcher. h265_SATD_8x8_8u = &MFX_HEVC_PP::h265_SATD_8x8_8u_px;
+
+        g_dispatcher. h265_SATD_4x4_Pair_8u = &MFX_HEVC_PP::h265_SATD_4x4_Pair_8u_px;
+        g_dispatcher. h265_SATD_8x8_Pair_8u = &MFX_HEVC_PP::h265_SATD_8x8_Pair_8u_px;
 #endif
         //[transform.inv]==================================
         g_dispatcher. h265_DST4x4Inv_16sT = &MFX_HEVC_PP::h265_DST4x4Inv_16sT_px;

@@ -34,6 +34,9 @@
     <ClCompile Include="h265\src\mfx_h265_quantization_avx2.cpp">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="h265\src\mfx_h265_satd_avx2.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="include">

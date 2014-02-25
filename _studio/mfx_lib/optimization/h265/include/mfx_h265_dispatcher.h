@@ -298,6 +298,23 @@ namespace MFX_HEVC_PP
     int H265_FASTCALL SAD_64x48_general_avx2(SAD_PARAMETERS_LIST_GENERAL);
     int H265_FASTCALL SAD_64x64_general_avx2(SAD_PARAMETERS_LIST_GENERAL);
 
+    // SATD
+    Ipp32s H265_FASTCALL h265_SATD_4x4_8u_px  (const Ipp8u* pSrcCur, int srcCurStep, const Ipp8u* pSrcRef, int srcRefStep);
+    Ipp32s H265_FASTCALL h265_SATD_4x4_8u_sse (const Ipp8u* pSrcCur, int srcCurStep, const Ipp8u* pSrcRef, int srcRefStep);
+    Ipp32s H265_FASTCALL h265_SATD_4x4_8u_avx2(const Ipp8u* pSrcCur, int srcCurStep, const Ipp8u* pSrcRef, int srcRefStep);
+
+    Ipp32s H265_FASTCALL h265_SATD_8x8_8u_px  (const Ipp8u* pSrcCur, int srcCurStep, const Ipp8u* pSrcRef, int srcRefStep);
+    Ipp32s H265_FASTCALL h265_SATD_8x8_8u_sse (const Ipp8u* pSrcCur, int srcCurStep, const Ipp8u* pSrcRef, int srcRefStep);
+    Ipp32s H265_FASTCALL h265_SATD_8x8_8u_avx2(const Ipp8u* pSrcCur, int srcCurStep, const Ipp8u* pSrcRef, int srcRefStep);
+
+    void H265_FASTCALL h265_SATD_4x4_Pair_8u_px  (const Ipp8u* pSrcCur, int srcCurStep, const Ipp8u* pSrcRef, int srcRefStep, Ipp32s* satdPair);
+    void H265_FASTCALL h265_SATD_4x4_Pair_8u_sse (const Ipp8u* pSrcCur, int srcCurStep, const Ipp8u* pSrcRef, int srcRefStep, Ipp32s* satdPair);
+    void H265_FASTCALL h265_SATD_4x4_Pair_8u_avx2(const Ipp8u* pSrcCur, int srcCurStep, const Ipp8u* pSrcRef, int srcRefStep, Ipp32s* satdPair);
+
+    void H265_FASTCALL h265_SATD_8x8_Pair_8u_px  (const Ipp8u* pSrcCur, int srcCurStep, const Ipp8u* pSrcRef, int srcRefStep, Ipp32s* satdPair);
+    void H265_FASTCALL h265_SATD_8x8_Pair_8u_sse (const Ipp8u* pSrcCur, int srcCurStep, const Ipp8u* pSrcRef, int srcRefStep, Ipp32s* satdPair);
+    void H265_FASTCALL h265_SATD_8x8_Pair_8u_avx2(const Ipp8u* pSrcCur, int srcCurStep, const Ipp8u* pSrcRef, int srcRefStep, Ipp32s* satdPair);
+
     // [transform.forward]
     void H265_FASTCALL h265_DST4x4Fwd_16s_px(const short *H265_RESTRICT src, short *H265_RESTRICT dst);
     void H265_FASTCALL h265_DCT4x4Fwd_16s_px(const short *H265_RESTRICT src, short *H265_RESTRICT dst);

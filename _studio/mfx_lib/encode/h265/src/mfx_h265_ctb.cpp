@@ -13,10 +13,10 @@
 #include <limits.h> /* for INT_MAX on Linux/Android */
 #include <algorithm>
 
-#include "mfx_h265_ctb.h"
-#include "mfx_h265_enc.h"
 #include "ippi.h"
 #include "ippvc.h"
+#include "mfx_h265_ctb.h"
+#include "mfx_h265_enc.h"
 
 namespace H265Enc {
 
@@ -3058,26 +3058,52 @@ Ipp32s tuHad(const PixType *src, Ipp32s pitchSrc, const PixType *rec, Ipp32s pit
              Ipp32s width, Ipp32s height)
 {
     Ipp32u satdTotal = 0;
-    Ipp32s satd = 0;
+    Ipp32s satd[2] = {0, 0};
 
-    if (!((width | height) & 7)) {
-        for (Ipp32s j = 0; j < height; j += 8, src += pitchSrc * 8, rec += pitchRec * 8) {
-            for (Ipp32s i = 0; i < width; i += 8) {
-                ippiSAT8x8D_8u32s_C1R(src + i, pitchSrc, rec + i, pitchRec, &satd);
-                satdTotal += (satd + 2) >> 2;
-            }
-        }
-    }
-    else if (!((width | height) & 3)) {
+    /* assume height and width are multiple of 4 */
+    VM_ASSERT(!(width & 0x03) && !(height & 0x03));
+
+    /* test with optimized SATD source code */
+    if (width == 4 && height == 4) {
+        /* single 4x4 block */
+        satd[0] = MFX_HEVC_PP::NAME(h265_SATD_4x4_8u)(src, pitchSrc, rec, pitchRec);
+        satdTotal += (satd[0] + 1) >> 1;
+    } else if ( (height | width) & 0x07 ) {
+        /* multiple 4x4 blocks - do as many pairs as possible */
+        Ipp32s widthPair = width & ~0x07;
+        Ipp32s widthRem = width - widthPair;
         for (Ipp32s j = 0; j < height; j += 4, src += pitchSrc * 4, rec += pitchRec * 4) {
-            for (Ipp32s i = 0; i < width; i += 4) {
-                ippiSATD4x4_8u32s_C1R(src + i, pitchSrc, rec + i, pitchRec, &satd);
-                satdTotal += (satd + 1) >> 1;
+            Ipp32s i = 0;
+            for (; i < widthPair; i += 4*2) {
+                MFX_HEVC_PP::NAME(h265_SATD_4x4_Pair_8u)(src + i, pitchSrc, rec + i, pitchRec, satd);
+                satdTotal += ( (satd[0] + 1) >> 1) + ( (satd[1] + 1) >> 1 );
+            }
+
+            if (widthRem) {
+                satd[0] = MFX_HEVC_PP::NAME(h265_SATD_4x4_8u)(src + i, pitchSrc, rec + i, pitchRec);
+                satdTotal += (satd[0] + 1) >> 1;
             }
         }
-    }
-    else {
-        VM_ASSERT(0);
+    } else if (width == 8 && height == 8) {
+        /* single 8x8 block */
+        satd[0] = MFX_HEVC_PP::NAME(h265_SATD_8x8_8u)(src, pitchSrc, rec, pitchRec);
+        satdTotal += (satd[0] + 2) >> 2;
+    } else {
+        /* multiple 8x8 blocks - do as many pairs as possible */
+        Ipp32s widthPair = width & ~0x0f;
+        Ipp32s widthRem = width - widthPair;
+        for (Ipp32s j = 0; j < height; j += 8, src += pitchSrc * 8, rec += pitchRec * 8) {
+            Ipp32s i = 0;
+            for (; i < widthPair; i += 8*2) {
+                MFX_HEVC_PP::NAME(h265_SATD_8x8_Pair_8u)(src + i, pitchSrc, rec + i, pitchRec, satd);
+                satdTotal += ( (satd[0] + 2) >> 2) + ( (satd[1] + 2) >> 2 );
+            }
+
+            if (widthRem) {
+                satd[0] = MFX_HEVC_PP::NAME(h265_SATD_8x8_8u)(src + i, pitchSrc, rec + i, pitchRec);
+                satdTotal += (satd[0] + 2) >> 2;
+            }
+        }
     }
 
     return satdTotal;

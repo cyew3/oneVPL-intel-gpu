@@ -189,6 +189,10 @@ namespace MFX_HEVC_PP
     typedef  int (H265_FASTCALL *PTR_SAD_MxN_8u)(SAD_PARAMETERS_LIST_SPECIAL);
     typedef  int (H265_FASTCALL *PTR_SAD_MxN_General_8u)(SAD_PARAMETERS_LIST_GENERAL);
 
+    // [PTR.SATD]
+    typedef  Ipp32s (H265_FASTCALL *PTR_SATD_8u)     (const Ipp8u* pSrcCur, int srcCurStep, const Ipp8u* pSrcRef, int srcRefStep);
+    typedef  void   (H265_FASTCALL *PTR_SATD_Pair_8u)(const Ipp8u* pSrcCur, int srcCurStep, const Ipp8u* pSrcRef, int srcRefStep, Ipp32s* satdPair);
+
     // [PTR.TransformInv]
     typedef void (* PTR_TransformInv_16sT) (void *destPtr, const short *H265_RESTRICT coeff, int destStride, bool inplace, Ipp32u bitDepth);
 
@@ -487,6 +491,13 @@ namespace MFX_HEVC_PP
         HEVCPP_API( PTR_CopyWeightedBidi_S16U8, void, h265_CopyWeightedBidi_S16U8, (Ipp16s* pSrc0, Ipp16s* pSrcUV0, Ipp16s* pSrc1, Ipp16s* pSrcUV1, Ipp8u* pDst, Ipp8u* pDstUV, Ipp32u SrcStride0Y, Ipp32u SrcStride1Y, Ipp32u DstStrideY, Ipp32u SrcStride0C, Ipp32u SrcStride1C, Ipp32u DstStrideC, Ipp32u Width, Ipp32u Height, Ipp32s *w0, Ipp32s *w1, Ipp32s *logWD, Ipp32s *round) );
         HEVCPP_API( PTR_CopyWeighted_S16U16, void, h265_CopyWeighted_S16U16, (Ipp16s* pSrc, Ipp16s* pSrcUV, Ipp16u* pDst, Ipp16u* pDstUV, Ipp32u SrcStrideY, Ipp32u DstStrideY, Ipp32u SrcStrideC, Ipp32u DstStrideC, Ipp32u Width, Ipp32u Height, Ipp32s *w, Ipp32s *o, Ipp32s *logWD, Ipp32s *round, Ipp32u bit_depth) );
         HEVCPP_API( PTR_CopyWeightedBidi_S16U16, void, h265_CopyWeightedBidi_S16U16, (Ipp16s* pSrc0, Ipp16s* pSrcUV0, Ipp16s* pSrc1, Ipp16s* pSrcUV1, Ipp16u* pDst, Ipp16u* pDstUV, Ipp32u SrcStride0Y, Ipp32u SrcStride1Y, Ipp32u DstStrideY, Ipp32u SrcStride0C, Ipp32u SrcStride1C, Ipp32u DstStrideC, Ipp32u Width, Ipp32u Height, Ipp32s *w0, Ipp32s *w1, Ipp32s *logWD, Ipp32s *round, Ipp32u bit_depth) );
+
+        // [SATD]
+        HEVCPP_API( PTR_SATD_8u, Ipp32s, h265_SATD_4x4_8u, (const Ipp8u* pSrcCur, int srcCurStep, const Ipp8u* pSrcRef, int srcRefStep));
+        HEVCPP_API( PTR_SATD_8u, Ipp32s, h265_SATD_8x8_8u, (const Ipp8u* pSrcCur, int srcCurStep, const Ipp8u* pSrcRef, int srcRefStep));
+
+        HEVCPP_API( PTR_SATD_Pair_8u, void, h265_SATD_4x4_Pair_8u, (const Ipp8u* pSrcCur, int srcCurStep, const Ipp8u* pSrcRef, int srcRefStep, Ipp32s* satdPair));
+        HEVCPP_API( PTR_SATD_Pair_8u, void, h265_SATD_8x8_Pair_8u, (const Ipp8u* pSrcCur, int srcCurStep, const Ipp8u* pSrcRef, int srcRefStep, Ipp32s* satdPair));
 
 #if defined(MFX_TARGET_OPTIMIZATION_AUTO)
         bool           isInited;
