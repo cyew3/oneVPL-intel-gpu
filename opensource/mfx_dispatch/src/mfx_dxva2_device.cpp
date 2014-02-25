@@ -230,41 +230,36 @@ bool D3D9Device::Init(const mfxU32 adapterNum)
             m_driverVersion = (mfxU64)adapterIdent.DriverVersion.QuadPart;
 
             // load LUID
-            do
-            {    
-                IDirect3D9Ex *pD3D9Ex;
-                D3DExCreateFunctionPtr_t pFuncEx;
-                LUID d3d9LUID;
+            IDirect3D9Ex *pD3D9Ex;
+            D3DExCreateFunctionPtr_t pFuncEx;
+            LUID d3d9LUID;
 
-                // find the appropriate function
-                pFuncEx = (D3DExCreateFunctionPtr_t) GetProcAddress(m_hModule, "Direct3DCreate9Ex");
-                if (NULL == pFuncEx)
-                {
-                    // the extended interface is not supported
-                    break;
-                }
+            // find the appropriate function
+            pFuncEx = (D3DExCreateFunctionPtr_t) GetProcAddress(m_hModule, "Direct3DCreate9Ex");
+            if (NULL == pFuncEx)
+            {
+                // the extended interface is not supported
+                return true;
+            }
 
-                // create extended interface
-                hRes = pFuncEx(D3D_SDK_VERSION, &pD3D9Ex);
-                if (FAILED(hRes))
-                {
-                    // can't create extended interface
-                    break;
-                }
-                m_pD3D9Ex = pD3D9Ex;
+            // create extended interface
+            hRes = pFuncEx(D3D_SDK_VERSION, &pD3D9Ex);
+            if (FAILED(hRes))
+            {
+                // can't create extended interface
+                return true;
+            }
+            m_pD3D9Ex = pD3D9Ex;
 
-                // obtain D3D9 device LUID
-                hRes = pD3D9Ex->GetAdapterLUID(adapterNum, &d3d9LUID);
-                if (FAILED(hRes))
-                {
-                    // can't get extended interface
-                    break;
-                }
-
-                // copy the LUID
-                *((LUID *) &m_luid) = d3d9LUID;
-
-            } while (FAILED(hRes));
+            // obtain D3D9 device LUID
+            hRes = pD3D9Ex->GetAdapterLUID(adapterNum, &d3d9LUID);
+            if (FAILED(hRes))
+            {
+                // can't get LUID
+                return true;
+            }
+            // copy the LUID
+            *((LUID *) &m_luid) = d3d9LUID;
         }
         else
         {
