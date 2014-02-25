@@ -13,6 +13,7 @@
 #include "mfx_h265_defs.h"
 #include "mfx_h265_quant.h"
 #include "mfx_h265_quant_rdo.h"
+#include "mfx_h265_enc.h"
 
 namespace H265Enc {
 
@@ -79,17 +80,29 @@ void h265_quant_fwd_rdo(
 
     RDOQuant quant(pCU, bs);
 
-    quant.DoAlgorithm(
-        pSrc,
-        pDst,
-        log2_tr_size,
-        bit_depth,
-        is_slice_i,
-        abs_sum,
-        type,
-        abs_part_idx,
-        QP);
-
+    if (pCU->m_par->rdoqCGZFlag) {
+        quant.DoAlgorithm<1>(
+            pSrc,
+            pDst,
+            log2_tr_size,
+            bit_depth,
+            is_slice_i,
+            abs_sum,
+            type,
+            abs_part_idx,
+            QP);
+    } else {
+        quant.DoAlgorithm<0>(
+            pSrc,
+            pDst,
+            log2_tr_size,
+            bit_depth,
+            is_slice_i,
+            abs_sum,
+            type,
+            abs_part_idx,
+            QP);
+    }
 } // void h265_quant_fwd_rdo(...)
 
 //---------------------------------------------------------
@@ -302,14 +315,14 @@ typedef int Int;
 //}
 
 
-//struct RDOQ_CoeffGroup_Report
-//{
-//    Ipp32s num_nz_before_pos0;
-//    Ipp64f cost_nz_levels;
-//    Ipp64f cost_zero_levels;
-//    Ipp64f cost_sig;
-//    Ipp64f cost_sig_pos0;
-//};
+struct RDOQ_CoeffGroup_Report
+{
+    Ipp32s num_nz_before_pos0;
+    Ipp64f cost_nz_levels;
+    Ipp64f cost_zero_levels;
+    Ipp64f cost_sig;
+    Ipp64f cost_sig_pos0;
+};
 
 
 //only state update
@@ -363,6 +376,7 @@ void EncodeOneCoeff(
 } // void EncodeOneCoeff(...)
 
 
+template <Ipp8u rdoqCGZ>
 void RDOQuant::DoAlgorithm(
     Ipp16s*  pSrc,
     Ipp16s*  pDst,
@@ -453,9 +467,10 @@ void RDOQuant::DoAlgorithm(
         Ipp32u CG_blk_pos = scanCG[ subset ];
         Ipp32u CG_pos_y   = CG_blk_pos / num_blk_side;
         Ipp32u CG_pos_x   = CG_blk_pos - (CG_pos_y * num_blk_side);
-
-        //RDOQ_CoeffGroup_Report CG_report;
-        //memset( &CG_report, 0, sizeof (RDOQ_CoeffGroup_Report));
+        RDOQ_CoeffGroup_Report CG_report;
+        
+        if (rdoqCGZ)
+            memset( &CG_report, 0, sizeof (RDOQ_CoeffGroup_Report));
 
         const Ipp32s pattern_sig_ctx = (Ipp32s)h265_quant_calcpattern_sig_ctx(
             sig_coeff_group_flag,
@@ -482,7 +497,7 @@ void RDOQuant::DoAlgorithm(
             if ( max_abs_level > 0 && last_nz_pos < 0 )
             {
                 last_nz_pos         = scan_pos;
-                local_cabac.ctx_set = (scan_pos < SCAN_SET_SIZE) ? 0 : 2;
+                local_cabac.ctx_set = (scan_pos < SCAN_SET_SIZE || type != TEXT_LUMA) ? 0 : 2;
                 last_nz_subset      = subset;
             }
 
@@ -530,99 +545,103 @@ void RDOQuant::DoAlgorithm(
                 cost_base += cost_zero_level[ scan_pos ];
             }
 
-            /*CG_report.cost_sig += cost_sig[ scan_pos ];
+            if (rdoqCGZ) {
+                CG_report.cost_sig += cost_sig[ scan_pos ];
 
-            if (pos_in_CG == 0 )
-            {
-                CG_report.cost_sig_pos0 = cost_sig[ scan_pos ];
-            }*/
+                if (pos_in_CG == 0 )
+                {
+                    CG_report.cost_sig_pos0 = cost_sig[ scan_pos ];
+                }
+            }
 
             if (qlevels[ blk_pos ] )
             {
                 sig_coeff_group_flag[ CG_blk_pos ] = 1;
-                /*CG_report.cost_nz_levels   += cost_nz_level[ scan_pos ] - cost_sig[ scan_pos ];
-                CG_report.cost_zero_levels += cost_zero_level[ scan_pos ];
-                if ( pos_in_CG != 0 )
-                {
-                    CG_report.num_nz_before_pos0++;
-                }*/
+                if (rdoqCGZ) {
+                    CG_report.cost_nz_levels   += cost_nz_level[ scan_pos ] - cost_sig[ scan_pos ];
+                    CG_report.cost_zero_levels += cost_zero_level[ scan_pos ];
+                    if ( pos_in_CG != 0 )
+                    {
+                        CG_report.num_nz_before_pos0++;
+                    }
+                }
             }
         } //end for (Ipp32s pos_in_CG = sizeCG-1; pos_in_CG >= 0; pos_in_CG--)
 
+        if (!rdoqCGZ) {
+            if(last_nz_subset >= 0 && 0 == subset)
+            {
+                sig_coeff_group_flag[ CG_blk_pos ] = 1;
+                continue;
+            }
+        } else {
+            //-----------------------------------------------------
+            //  try to zero current CG
+            //-----------------------------------------------------
+            if (last_nz_subset >= 0)
+            {
+                Ipp32u  ctx_sig_inc = h265_quant_getSigCoeffGroupCtxInc  (
+                    sig_coeff_group_flag,
+                    CG_pos_x,
+                    CG_pos_y,
+                    0,
+                    width,
+                    height);
 
-        if(last_nz_subset >= 0 && 0 == subset)
-        {
-            sig_coeff_group_flag[ CG_blk_pos ] = 1;
-            continue;
+                if (sig_coeff_group_flag[ CG_blk_pos ] == 0)
+                {
+                    cost_base += GetCost_SigCoeffGroup(0, ctx_sig_inc) - CG_report.cost_sig;
+                    cost_coeff_group_sig[ subset ] = GetCost_SigCoeffGroup(0, ctx_sig_inc);
+                }
+                else
+                {
+                    if (subset < last_nz_subset) //skip the last coefficient group
+                    {
+                        if ( CG_report.num_nz_before_pos0 == 0 )
+                        {
+                            cost_base -= CG_report.cost_sig_pos0;
+                            CG_report.cost_sig -= CG_report.cost_sig_pos0;
+                        }
+
+                        // try to zero current CG
+                        Ipp64f cost_zero_CG = cost_base;
+
+                        cost_coeff_group_sig[ subset ] = GetCost_SigCoeffGroup(1, ctx_sig_inc);
+                        cost_base    += cost_coeff_group_sig[ subset ];
+
+                        cost_zero_CG += GetCost_SigCoeffGroup(0, ctx_sig_inc);
+                        cost_zero_CG += CG_report.cost_zero_levels;
+                        cost_zero_CG -= CG_report.cost_nz_levels;
+                        cost_zero_CG -= CG_report.cost_sig;// sig cost for all coeffs
+
+                        // zerroed this block in case of better _zero_cost
+                        if ( cost_zero_CG < cost_base )
+                        {
+
+            //                printf("\n zerroed!!! \n");fflush(stderr);
+
+                            sig_coeff_group_flag[ CG_blk_pos ] = 0;
+                            cost_base = cost_zero_CG;
+
+                            cost_coeff_group_sig[ subset ] = GetCost_SigCoeffGroup(0, ctx_sig_inc);
+
+                            for (Ipp32s pos_in_CG = sizeCG-1; pos_in_CG >= 0; pos_in_CG--)
+                            {
+                                Ipp32s scan_pos = sub_pos + pos_in_CG;
+                                Ipp16u blk_pos  = scan[ scan_pos ];
+
+                                if (qlevels[ blk_pos ])
+                                {
+                                    qlevels [ blk_pos ] = 0;
+                                    cost_nz_level[ scan_pos ] = cost_zero_level[ scan_pos ];
+                                    cost_sig  [ scan_pos ] = 0;
+                                }
+                            }
+                        } // end if ( cost_zero_CG < cost_base )
+                    }
+                }
+            } // try to zero current CG
         }
-
-        //-----------------------------------------------------
-        //  try to zero current CG
-        //-----------------------------------------------------
-        //if (last_nz_subset >= 0)
-        //{
-        //    Ipp32u  ctx_sig_inc = h265_quant_getSigCoeffGroupCtxInc  (
-        //        sig_coeff_group_flag,
-        //        CG_pos_x,
-        //        CG_pos_y,
-        //        0,
-        //        width,
-        //        height);
-
-        //    if (sig_coeff_group_flag[ CG_blk_pos ] == 0)
-        //    {
-        //        cost_base += GetCost_SigCoeffGroup(0, ctx_sig_inc) - CG_report.cost_sig;
-        //        cost_coeff_group_sig[ subset ] = GetCost_SigCoeffGroup(0, ctx_sig_inc);
-        //    }
-        //    else
-        //    {
-        //        if (subset < last_nz_subset) //skip the last coefficient group
-        //        {
-        //            if ( CG_report.num_nz_before_pos0 == 0 )
-        //            {
-        //                cost_base -= CG_report.cost_sig_pos0;
-        //                CG_report.cost_sig -= CG_report.cost_sig_pos0;
-        //            }
-
-        //            // try to zero current CG
-        //            Ipp64f cost_zero_CG = cost_base;
-
-        //            cost_coeff_group_sig[ subset ] = GetCost_SigCoeffGroup(1, ctx_sig_inc);
-        //            cost_base    += cost_coeff_group_sig[ subset ];
-
-        //            cost_zero_CG += GetCost_SigCoeffGroup(0, ctx_sig_inc);
-        //            cost_zero_CG += CG_report.cost_zero_levels;
-        //            cost_zero_CG -= CG_report.cost_nz_levels;
-        //            cost_zero_CG -= CG_report.cost_sig;// sig cost for all coeffs
-
-        //            // zerroed this block in case of better _zero_cost
-        //            if ( cost_zero_CG < cost_base )
-        //            {
-
-        //                printf("\n zerroed!!! \n");fflush(stderr);
-
-        //                sig_coeff_group_flag[ CG_blk_pos ] = 0;
-        //                cost_base = cost_zero_CG;
-
-        //                cost_coeff_group_sig[ subset ] = GetCost_SigCoeffGroup(0, ctx_sig_inc);
-
-        //                for (Ipp32s pos_in_CG = sizeCG-1; pos_in_CG >= 0; pos_in_CG--)
-        //                {
-        //                    Ipp32s scan_pos = sub_pos + pos_in_CG;
-        //                    Ipp16u blk_pos  = scan[ scan_pos ];
-
-        //                    if (qlevels[ blk_pos ])
-        //                    {
-        //                        qlevels [ blk_pos ] = 0;
-        //                        cost_nz_level[ scan_pos ] = cost_zero_level[ scan_pos ];
-        //                        cost_sig  [ scan_pos ] = 0;
-        //                    }
-        //                }
-        //            } // end if ( cost_zero_CG < cost_base )
-        //        }
-        //    }
-        //} // try to zero current CG
-
     } //end for (Ipp32s subset = last_scan_set; subset >= 0; subset--)//subset means CG
 
 

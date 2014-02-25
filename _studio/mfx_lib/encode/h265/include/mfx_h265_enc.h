@@ -66,9 +66,12 @@ struct H265VideoParam {
     Ipp8u SplitThresholdStrengthCUInter;
     Ipp8u num_cand_1[8];
     Ipp8u num_cand_2[8];
-
+    
+    Ipp8u  deblockingFlag; // Deblocking
     Ipp8u  SBHFlag;  // Sign Bit Hiding
     Ipp8u  RDOQFlag; // RDO Quantization
+    Ipp8u  rdoqChromaFlag; // RDOQ Chroma
+    Ipp8u  rdoqCGZFlag; // RDOQ Coeff Group Zero
     Ipp8u  SAOFlag;  // Sample Adaptive Offset
     Ipp8u  WPPFlag; // Wavefront
     Ipp8u  fastPUDecision;

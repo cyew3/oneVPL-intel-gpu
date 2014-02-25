@@ -107,6 +107,9 @@ mfxExtBuffer HEVC_HEADER = { MFX_EXTBUFF_HEVCENC, sizeof(mfxExtCodingOptionHEVC)
     tab_FastPUDecision[x],\
     tab_HadamardMe[x],\
     tab_TMVP[x],\
+    tab_Deblocking[x],\
+    tab_RDOQuantChroma[x],\
+    tab_RDOQuantCGZ[x],\
 }
 
 //                                    TU1  TU2  TU3  TU4  TU4  TU6  TU7
@@ -146,6 +149,9 @@ TU_OPT(BPyramid,                      ON,  ON,  ON,  ON, OFF, OFF, OFF)
 TU_OPT(FastPUDecision,               OFF, OFF, OFF, OFF, OFF, OFF, OFF)
 TU_OPT(HadamardMe,                     2,   1,   1,   1,   1,   1,   1)
 TU_OPT(TMVP,                          ON,  ON,  ON, OFF, OFF, OFF, OFF)
+TU_OPT(Deblocking,                    ON,  ON,  ON,  ON,  ON,  ON,  ON)
+TU_OPT(RDOQuantChroma,               OFF, OFF, OFF, OFF, OFF, OFF, OFF)
+TU_OPT(RDOQuantCGZ,                  OFF, OFF, OFF, OFF, OFF, OFF, OFF)
 
 mfxExtCodingOptionHEVC tab_tu[8] = {
     TAB_TU(3), TAB_TU(0), TAB_TU(1), TAB_TU(2), TAB_TU(3), TAB_TU(4), TAB_TU(5), TAB_TU(6)
@@ -692,6 +698,12 @@ mfxStatus MFXVideoENCODEH265::Init(mfxVideoParam* par_in)
             m_mfxHEVCOpts.EnableCm = opts_tu->EnableCm;
         if (m_mfxHEVCOpts.FastPUDecision == 0)
             m_mfxHEVCOpts.FastPUDecision = opts_tu->FastPUDecision;
+        if (m_mfxHEVCOpts.Deblocking == 0)
+            m_mfxHEVCOpts.Deblocking = opts_tu->Deblocking;
+        if (m_mfxHEVCOpts.RDOQuantChroma == 0)
+            m_mfxHEVCOpts.RDOQuantChroma = opts_tu->RDOQuantChroma;
+        if (m_mfxHEVCOpts.RDOQuantCGZ == 0)
+            m_mfxHEVCOpts.RDOQuantCGZ = opts_tu->RDOQuantCGZ;
     }
 
     // uncomment here if sign bit hiding doesn't work properly
@@ -1466,6 +1478,9 @@ mfxStatus MFXVideoENCODEH265::Query(VideoCORE *core, mfxVideoParam *par_in, mfxV
             opts_out->TMVP = opts_in->TMVP;
             opts_out->EnableCm = opts_in->EnableCm;
             opts_out->FastPUDecision = opts_in->FastPUDecision;
+            opts_out->Deblocking = opts_in->Deblocking;
+            opts_out->RDOQuantChroma = opts_in->RDOQuantChroma;
+            opts_out->RDOQuantCGZ = opts_in->RDOQuantCGZ;
 
             CHECK_OPTION(opts_in->AnalyzeChroma, opts_out->AnalyzeChroma, isInvalid);  /* tri-state option */
             CHECK_OPTION(opts_in->SignBitHiding, opts_out->SignBitHiding, isInvalid);  /* tri-state option */
@@ -1475,6 +1490,9 @@ mfxStatus MFXVideoENCODEH265::Query(VideoCORE *core, mfxVideoParam *par_in, mfxV
             CHECK_OPTION(opts_in->SAO, opts_out->SAO, isInvalid);            /* tri-state option */
             CHECK_OPTION(opts_in->WPP, opts_out->WPP, isInvalid);       /* tri-state option */
             CHECK_OPTION(opts_in->BPyramid, opts_out->BPyramid, isInvalid);  /* tri-state option */
+            CHECK_OPTION(opts_in->Deblocking, opts_out->Deblocking, isInvalid);  /* tri-state option */
+            CHECK_OPTION(opts_in->RDOQuantChroma, opts_out->RDOQuantChroma, isInvalid);  /* tri-state option */
+            CHECK_OPTION(opts_in->RDOQuantCGZ, opts_out->RDOQuantCGZ, isInvalid);  /* tri-state option */
 
             if (opts_out->BPyramid == MFX_CODINGOPTION_ON) {
                 Ipp32s GopRefDist = out->mfx.GopRefDist;

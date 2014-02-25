@@ -52,6 +52,7 @@ public:
      RDOQuant(H265CU* pCU, H265BsFake* bs);
      ~RDOQuant();
 
+     template <Ipp8u rdoqCGZ>
      void DoAlgorithm(
          Ipp16s* pSrc,
          Ipp16s* pDst,

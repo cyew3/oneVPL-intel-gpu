@@ -159,7 +159,9 @@ mfxStatus H265Encoder::InitH265VideoParam(const mfxVideoParam *param, const mfxE
 
     pars->SBHFlag  = (opts_hevc->SignBitHiding == MFX_CODINGOPTION_ON);
     pars->RDOQFlag = (opts_hevc->RDOQuant == MFX_CODINGOPTION_ON);
-    // aya ================================================
+    pars->rdoqChromaFlag = (opts_hevc->RDOQuantChroma == MFX_CODINGOPTION_ON);
+    pars->rdoqCGZFlag = (opts_hevc->RDOQuantCGZ == MFX_CODINGOPTION_ON);
+   // aya ================================================
     pars->SAOFlag  = (opts_hevc->SAO == MFX_CODINGOPTION_ON);
     // ====================================================
     pars->WPPFlag  = (opts_hevc->WPP == MFX_CODINGOPTION_ON) || (opts_hevc->WPP == MFX_CODINGOPTION_UNKNOWN && param->mfx.NumThread > 1);
@@ -198,6 +200,7 @@ mfxStatus H265Encoder::InitH265VideoParam(const mfxVideoParam *param, const mfxE
     pars->fastPUDecision = (opts_hevc->FastPUDecision == MFX_CODINGOPTION_ON);
     pars->hadamardMe = opts_hevc->HadamardMe;
     pars->TMVPFlag = (opts_hevc->TMVP == MFX_CODINGOPTION_ON);
+    pars->deblockingFlag = (opts_hevc->Deblocking == MFX_CODINGOPTION_ON);
 
     for (Ipp32s i = 0; i <= 6; i++) {
         if (pars->num_cand_1[i] < 1)
@@ -420,9 +423,9 @@ mfxStatus H265Encoder::SetPPS()
     memset(pps, 0, sizeof(H265PicParameterSet));
 
     pps->pps_seq_parameter_set_id = sps->sps_seq_parameter_set_id;
-    pps->deblocking_filter_control_present_flag = 0;
+    pps->deblocking_filter_control_present_flag = !m_videoParam.deblockingFlag;
     pps->deblocking_filter_override_enabled_flag = 0;
-    pps->pps_deblocking_filter_disabled_flag = 0;
+    pps->pps_deblocking_filter_disabled_flag = !m_videoParam.deblockingFlag;
     pps->pps_tc_offset_div2 = 0;
     pps->pps_beta_offset_div2 = 0;
     pps->pps_loop_filter_across_slices_enabled_flag = 1;

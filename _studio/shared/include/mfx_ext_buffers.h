@@ -195,7 +195,10 @@ typedef struct {
     mfxU16      FastPUDecision;     // tri-state
     mfxU16      HadamardMe;         // 0-default 0-never; 1-subpel; 2-always
     mfxU16      TMVP;               // tri-state
-    mfxU16      reserved[24];
+    mfxU16      Deblocking;         // tri-state
+    mfxU16      RDOQuantChroma;     // tri-state
+    mfxU16      RDOQuantCGZ;        // tri-state
+    mfxU16      reserved[21];
 } mfxExtCodingOptionHEVC;
 
 #define MFX_EXTBUFF_VP8_PARAM MFX_MAKEFOURCC('B','V','P','8')
