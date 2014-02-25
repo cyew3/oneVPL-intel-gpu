@@ -38,7 +38,7 @@ const msdkPluginUID* msdkGetPluginUID(mfxU32 type, mfxU32 codecid)
 
     for (i = 0; i < sizeof(g_msdk_supported_plugins)/sizeof(g_msdk_supported_plugins[0]); ++i) {
         if ((type == g_msdk_supported_plugins[i].type) && (codecid == g_msdk_supported_plugins[i].codecid)) {
-            return (memcmp(&g_msdk_supported_plugins[i].uid, &MSDK_NULL_GUID, sizeof(msdkPluginDesc)))?
+            return (memcmp(&g_msdk_supported_plugins[i].uid, &MSDK_NULL_GUID, sizeof(MSDK_NULL_GUID)))?
                 &(g_msdk_supported_plugins[i].uid):
                 NULL;
         }
