@@ -17,6 +17,7 @@ File Name: mfx_camera_plugin_utils.h
 #include <iostream>
 #include <vector>
 #include "libmfx_core_interface.h"
+#include "mfx_session.h"
 //#include "mfxvideo++.h"
 #include "mfxplugin++.h"
 //#include "cmrt_cross_platform.h"

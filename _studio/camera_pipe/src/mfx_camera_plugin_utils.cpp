@@ -18,6 +18,18 @@ File Name: mfx_camera_plugin_utils.cpp
 #include "mfx_camera_plugin_utils.h"
 #include "mfx_camera_plugin.h"
 
+#ifdef CAMP_PIPE_ITT
+#include "ittnotify.h"
+
+
+__itt_domain* CamPipeAccel = __itt_domain_create(L"CamPipeAccel");
+
+//__itt_string_handle* CPU_file_fread;
+//__itt_string_handle* CPU_raw_unpack_;
+__itt_string_handle* task2 = __itt_string_handle_create(L"GPU_DM_Gamma");;
+__itt_string_handle* task3 = __itt_string_handle_create(L"ColorConv");;
+#endif
+
 
 namespace MfxCameraPlugin
 {
@@ -127,6 +139,39 @@ mfxStatus MfxFrameAllocResponse::AllocCmBuffers(
     m_cmDestroy = &DestroyBuffer;
     return MFX_ERR_NONE;
 }
+
+
+
+mfxStatus MfxFrameAllocResponse::AllocCmBuffersUp(
+    CmDevice *             device,
+    mfxFrameAllocRequest & req)
+{
+    if (m_core || m_cmDevice)
+        return MFX_ERR_MEMORY_ALLOC;
+
+    req.NumFrameSuggested = req.NumFrameMin;
+    mfxU32 size = req.Info.Width * req.Info.Height;
+
+    m_mids.resize(req.NumFrameMin, 0);
+    m_locked.resize(req.NumFrameMin, 0);
+    m_sysmems.resize(req.NumFrameMin, 0);   
+
+    for (int i = 0; i < req.NumFrameMin; i++)
+    {
+        m_sysmems[i] = CM_ALIGNED_MALLOC(size, 0x1000);
+        m_mids[i] = CreateBuffer(device, size, m_sysmems[i]);
+    }
+
+    NumFrameActual = req.NumFrameMin;
+    mids = &m_mids[0];
+
+    m_core     = 0;
+    m_cmDevice = device;
+    m_cmDestroy = &DestroyBufferUp;
+    return MFX_ERR_NONE;
+}
+
+
 
 mfxStatus MfxFrameAllocResponse::AllocCmSurfaces(
     CmDevice *             device,
@@ -296,17 +341,31 @@ mfxStatus MFXCamera_Plugin::AllocateInternalSurfaces()
     m_gammaCorrectSurf->WriteSurface((unsigned char *)m_GammaParams.gamma_hw_params.Correct, NULL);
     m_gammaPointSurf->WriteSurface((unsigned char *)m_GammaParams.gamma_hw_params.Points, NULL);
 
-
     if (m_Caps.InputMemoryOperationMode == MEM_FASTGPUCPY) {
-        m_cmSurfIn = CreateSurface(m_cmDevice, m_mfxVideoParam.vpp.In.Width*sizeof(mfxU16),  m_mfxVideoParam.vpp.In.Height, CM_SURFACE_FORMAT_A8);
-    }
+        request.Info = m_mfxVideoParam.vpp.In;
+        request.Info.Width = m_mfxVideoParam.vpp.In.Width*sizeof(mfxU16);
+        request.Info.Height = m_mfxVideoParam.vpp.In.Height;
+        //request.Type = MFX_MEMTYPE_D3D_INT; comment out Type above as well ???
+        request.Info.FourCC = CM_SURFACE_FORMAT_A8;
+        request.NumFrameMin = request.NumFrameSuggested = 1 + m_mfxVideoParam.AsyncDepth;
+        sts = m_rawIn.AllocCmSurfaces(m_cmDevice, request);
+        MFX_CHECK_STS(sts);
+//        m_cmSurfIn = CreateSurface(m_cmDevice, m_mfxVideoParam.vpp.In.Width*sizeof(mfxU16),  m_mfxVideoParam.vpp.In.Height, CM_SURFACE_FORMAT_A8);
+    } // add MEM_GPUSHARED support !!!
 
 
+    // create buffer pool for (m_Caps.OutputMemoryOperationMode == MEM_FASTGPUCPY) !!!
+    
     return sts;
 }
 
-mfxStatus MFXCamera_Plugin::SetExternalSurfaces(mfxFrameSurface1 *surfIn, mfxFrameSurface1 *surfOut)
+//mfxStatus MFXCamera_Plugin::SetExternalSurfaces(mfxFrameSurface1 *surfIn, mfxFrameSurface1 *surfOut)
+mfxStatus MFXCamera_Plugin::SetExternalSurfaces(AsyncParams *pParam)
 {
+
+    mfxFrameSurface1 *surfIn = pParam->surf_in;
+    mfxFrameSurface1 *surfOut = pParam->surf_out;
+
     if (surfIn->Data.MemId)
     {
         m_core->LockExternalFrame(surfIn->Data.MemId,  &surfIn->Data);
@@ -321,26 +380,26 @@ mfxStatus MFXCamera_Plugin::SetExternalSurfaces(mfxFrameSurface1 *surfIn, mfxFra
     mfxU32 inWidth = (mfxU32)surfIn->Info.Width;
     mfxU32 inHeight = (mfxU32)surfIn->Info.Height;
 
-    // add external allocation support !!! ???
-
-    // m_cmSurf[NUM_BUFFERS] ???
-
     if (m_Caps.InputMemoryOperationMode == MEM_GPUSHARED) {
         if (inPitch == sizeof(mfxU16)*inWidth && !((mfxU64)surfIn->Data.Y16 & 0xFFF)) {
-            //m_cmSurfIn = (void *)CreateSurface(m_cmDevice, inWidth*sizeof(mfxU16),  inHeight, CM_SURFACE_FORMAT_A8, (void *)surfIn->Data.Y16); // 16bit fromats not supported; make this more flexible ???
-            m_cmSurfUPIn = CreateSurface(m_cmDevice, inWidth*sizeof(mfxU16),  inHeight, CM_SURFACE_FORMAT_A8, (void *)surfIn->Data.Y16); // 16bit fromats not supported; make this more flexible ???
+            pParam->inSurf2DUP = (mfxMemId)CreateSurface(m_cmDevice, inWidth*sizeof(mfxU16),  inHeight, CM_SURFACE_FORMAT_A8, (void *)surfIn->Data.Y16);
+            pParam->pMemIn = 0;
         } else {
-            if (!m_memIn)
-                m_memIn = CM_ALIGNED_MALLOC(inWidth*inHeight*sizeof(mfxU16), 0x1000);
-            // to add !!! ???
-            // Copy from surf to m_memIn
-            // m_cmSurfIn = (void *)CreateSurfaceUP(m_cmDevice, inWidth,  inHeight, surfIn->Info.FourCC, (void *)surfIn->Data.Y16);
+            pParam->pMemIn = CM_ALIGNED_MALLOC(inWidth*inHeight*sizeof(mfxU16), 0x1000); // todo : implement a pool !!! ???
+            // todo: Copy from surfIn->Data.Y16 to pMemIn !!!
+            pParam->inSurf2DUP = (mfxMemId)CreateSurface(m_cmDevice, inWidth*sizeof(mfxU16),  inHeight, CM_SURFACE_FORMAT_A8, (void *)pParam->pMemIn);
         }
+        pParam->inSurf2D = 0;
     }
     else if (m_Caps.InputMemoryOperationMode == MEM_FASTGPUCPY) {
         //m_cmSurfIn = CreateSurface(m_cmDevice, inWidth*sizeof(mfxU16),  inHeight, CM_SURFACE_FORMAT_A8);
+
+        CmSurface2D *in2DSurf = (CmSurface2D *)AcquireResource(m_rawIn);
+        pParam->inSurf2D = (mfxMemId)in2DSurf;
+        pParam->inSurf2DUP = 0;
+
         if (inPitch == sizeof(mfxU16)*inWidth && !(inWidth*sizeof(mfxU16) & 0xF) && !((mfxU64)surfIn->Data.Y16 & 0xF)) {
-            m_cmCtx->CopyMemToCmSurf(m_cmSurfIn, surfIn->Data.Y16);
+            m_cmCtx->CopyMemToCmSurf(in2DSurf, surfIn->Data.Y16);
         }
         // else  to implement!!!
     }
@@ -352,15 +411,16 @@ mfxStatus MFXCamera_Plugin::SetExternalSurfaces(mfxFrameSurface1 *surfIn, mfxFra
     mfxU32 outHeight = (mfxU32)surfOut->Info.Height;
     if (m_Caps.OutputMemoryOperationMode == MEM_GPUSHARED) {
         if (outPitch == 4*outWidth && !((mfxU64)surfOut->Data.B /* ??? */ & 0xFFF)) {
-            m_memOut = (void *)surfOut->Data.B;
+            pParam->pMemOut = 0;
+            pParam->outBufUP = CreateBuffer(m_cmDevice, outWidth*outHeight*4, (void *)surfOut->Data.B);
         } else {
-            if (!m_memOutAllocPtr)
-                m_memOutAllocPtr = CM_ALIGNED_MALLOC(outWidth*outHeight*4, 0x1000);
-            m_memOut = m_memOutAllocPtr;
+            pParam->pMemOut = CM_ALIGNED_MALLOC(outWidth*outHeight*4, 0x1000); // todo : implement a pool !!! ???
+            pParam->outBufUP = CreateBuffer(m_cmDevice, outWidth*outHeight*4, pParam->pMemOut);
         }
-        m_cmBufferUPOut = CreateBuffer(m_cmDevice, outWidth*outHeight*4, m_memOut);
-    }
-    // else if (m_Caps.InputMemoryOperationMode == MEM_FASTGPUCPY) {} // implement !!!
+        pParam->outBuf = 0;
+    } else if (m_Caps.InputMemoryOperationMode == MEM_FASTGPUCPY) {
+        //pParam->outBuf = AquireResource - add when pool implemented !!!
+    } 
     // else {}
 
     if (surfIn->Data.MemId)
@@ -377,37 +437,41 @@ mfxStatus MFXCamera_Plugin::SetExternalSurfaces(mfxFrameSurface1 *surfIn, mfxFra
     return MFX_ERR_NONE;
 }
 
-mfxStatus MFXCamera_Plugin::SetTasks() //mfxFrameSurface1 *surfIn, mfxFrameSurface1 *surfOut)
+mfxStatus MFXCamera_Plugin::CreateEnqueueTasks(AsyncParams *pParam) //mfxFrameSurface1 *surfIn, mfxFrameSurface1 *surfOut)
 {
-    m_cmCtx->CreateThreadSpace(m_PaddedFrameWidth, m_PaddedFrameHeight); // move to SetUp??? surfIn/Out as args???
+#ifdef CAMP_PIPE_ITT
+    __itt_task_begin(CamPipeAccel, __itt_null, __itt_null, task2);
+#endif    
+    int result;
+    CmEvent *e;
 
-    CmSurface2D *pOutSurf;//, *pInSurf;
-    //mfxU32 taskBufId = 0; // ???
+    UMC::AutomaticUMCMutex guard(m_guard);
 
-//    if (m_Caps.InputMemoryOperationMode == MEM_FASTGPUCPY) {
-//        m_cmCtx->CopyMfxSurfToCmSurf(m_cmSurfIn, surfIn);
-//    }
+    //m_core->
 
+//    CmSurface2D *pOutSurf;
 
     SurfaceIndex *pInputSurfaceIndex;
-    if (m_cmSurfUPIn)
-        m_cmSurfUPIn->GetIndex(pInputSurfaceIndex);
-    else if (m_cmSurfIn)
-        m_cmSurfIn->GetIndex(pInputSurfaceIndex);
-    else
+
+    if (pParam->inSurf2D) {
+        CmSurface2D *inSurf = (CmSurface2D *)pParam->inSurf2D;
+        inSurf->GetIndex(pInputSurfaceIndex);
+    } else if (pParam->inSurf2DUP) {
+        CmSurface2DUP *inSurf = (CmSurface2DUP *)pParam->inSurf2DUP;
+        inSurf->GetIndex(pInputSurfaceIndex);
+    } else
         return MFX_ERR_NULL_PTR;
 
-    if (m_Caps.bWhiteBalance && m_WBparams.bActive) {
-        pOutSurf = (CmSurface2D *)AcquireResource(m_raw16padded);
-        m_cmCtx->CreateTask_ManualWhiteBalance(*pInputSurfaceIndex, pOutSurf, m_WBparams.RedCorrection, m_WBparams.GreenTopCorrection, m_WBparams.BlueCorrection, m_WBparams.GreenBottomCorrection, m_InputBitDepth);
-        pOutSurf->GetIndex(pInputSurfaceIndex);
-    }
+    //if (m_Caps.bWhiteBalance && m_WBparams.bActive) {
+    //    pOutSurf = (CmSurface2D *)AcquireResource(m_raw16padded);
+    //    m_cmCtx->CreateTask_ManualWhiteBalance(*pInputSurfaceIndex, pOutSurf, m_WBparams.RedCorrection, m_WBparams.GreenTopCorrection, m_WBparams.BlueCorrection, m_WBparams.GreenBottomCorrection, m_InputBitDepth);
+    //    pOutSurf->GetIndex(pInputSurfaceIndex);
+    //}
 
     CmSurface2D *goodPixCntSurf = (CmSurface2D *)AcquireResource(m_aux8);
     CmSurface2D *bigPixCntSurf = (CmSurface2D *)AcquireResource(m_aux8);
 
-    m_cmCtx->CreateTask_GoodPixelCheck(*pInputSurfaceIndex, goodPixCntSurf, bigPixCntSurf, m_InputBitDepth);
-
+    e = m_cmCtx->CreateEnqueueTask_GoodPixelCheck(*pInputSurfaceIndex, goodPixCntSurf, bigPixCntSurf, m_InputBitDepth);
 
     CmSurface2D *greenHorSurf = (CmSurface2D *)AcquireResource(m_raw16padded);
     CmSurface2D *greenVerSurf = (CmSurface2D *)AcquireResource(m_raw16padded);
@@ -415,8 +479,7 @@ mfxStatus MFXCamera_Plugin::SetTasks() //mfxFrameSurface1 *surfIn, mfxFrameSurfa
     CmSurface2D *avgFlagSurf = (CmSurface2D *)AcquireResource(m_aux8);
 
 
-    m_cmCtx->CreateTask_RestoreGreen(*pInputSurfaceIndex, goodPixCntSurf, bigPixCntSurf, greenHorSurf, greenVerSurf, greenAvgSurf, avgFlagSurf, m_InputBitDepth);
-
+    e = m_cmCtx->CreateEnqueueTask_RestoreGreen(*pInputSurfaceIndex, goodPixCntSurf, bigPixCntSurf, greenHorSurf, greenVerSurf, greenAvgSurf, avgFlagSurf, m_InputBitDepth);
 
     CmSurface2D *blueHorSurf = (CmSurface2D *)AcquireResource(m_raw16padded);
     CmSurface2D *blueVerSurf = (CmSurface2D *)AcquireResource(m_raw16padded);
@@ -425,7 +488,7 @@ mfxStatus MFXCamera_Plugin::SetTasks() //mfxFrameSurface1 *surfIn, mfxFrameSurfa
     CmSurface2D *redVerSurf = (CmSurface2D *)AcquireResource(m_raw16padded);
     CmSurface2D *redAvgSurf = (CmSurface2D *)AcquireResource(m_raw16padded);
 
-    m_cmCtx->CreateTask_RestoreBlueRed(*pInputSurfaceIndex,
+    e = m_cmCtx->CreateEnqueueTask_RestoreBlueRed(*pInputSurfaceIndex,
                                        greenHorSurf, greenVerSurf, greenAvgSurf,
                                        blueHorSurf, blueVerSurf, blueAvgSurf,
                                        redHorSurf, redVerSurf, redAvgSurf,
@@ -436,16 +499,19 @@ mfxStatus MFXCamera_Plugin::SetTasks() //mfxFrameSurface1 *surfIn, mfxFrameSurfa
     CmSurface2D *greenOutSurf = (CmSurface2D *)AcquireResource(m_raw16aligned);
     CmSurface2D *blueOutSurf  = (CmSurface2D *)AcquireResource(m_raw16aligned);
 
-    m_cmCtx->CreateTask_SAD(redHorSurf, greenHorSurf, blueHorSurf, redVerSurf, greenVerSurf, blueVerSurf, redOutSurf, greenOutSurf, blueOutSurf);
+    e = m_cmCtx->CreateEnqueueTask_SAD(redHorSurf, greenHorSurf, blueHorSurf, redVerSurf, greenVerSurf, blueVerSurf, redOutSurf, greenOutSurf, blueOutSurf);
 
-    m_cmCtx->CreateTask_DecideAverage(redAvgSurf, greenAvgSurf, blueAvgSurf, avgFlagSurf, redOutSurf, greenOutSurf, blueOutSurf);
+    e = m_cmCtx->CreateEnqueueTask_DecideAverage(redAvgSurf, greenAvgSurf, blueAvgSurf, avgFlagSurf, redOutSurf, greenOutSurf, blueOutSurf);
 
     SurfaceIndex *pOutputSurfaceIndex;
-    if (m_cmBufferUPOut)
-        m_cmBufferUPOut->GetIndex(pOutputSurfaceIndex);
-    else if (m_cmBufferOut)
-        m_cmBufferOut->GetIndex(pOutputSurfaceIndex);
-    else
+
+    if (pParam->outBufUP) {
+        CmBufferUP *outBuffer = (CmBufferUP *)pParam->outBufUP;
+        outBuffer->GetIndex(pOutputSurfaceIndex);
+    } else if (pParam->outBuf) {
+        CmBuffer *outBuffer = (CmBuffer *)pParam->outBuf;
+        outBuffer->GetIndex(pOutputSurfaceIndex);
+    } else
         return MFX_ERR_NULL_PTR;
 
     // if (m_Caps.bForwardGammaCorrection && m_GammaParams.bActive)   currently won't work otherwise ???
@@ -453,26 +519,62 @@ mfxStatus MFXCamera_Plugin::SetTasks() //mfxFrameSurface1 *surfIn, mfxFrameSurfa
 
         if (m_Caps.OutputMemoryOperationMode == MEM_GPUSHARED) // add other mem types support !!! ???
         {
-            m_cmCtx->CreateTask_ForwardGamma(m_gammaCorrectSurf, m_gammaPointSurf, redOutSurf, greenOutSurf, blueOutSurf, *pOutputSurfaceIndex, m_InputBitDepth);
+            e = m_cmCtx->CreateEnqueueTask_ForwardGamma(m_gammaCorrectSurf, m_gammaPointSurf, redOutSurf, greenOutSurf, blueOutSurf, *pOutputSurfaceIndex, m_InputBitDepth);
         }
+    }
+
+  
+    pParam->pEvent = e;
+    //e->WaitForTaskFinished(-1);
+
+#ifdef CAMP_PIPE_ITT
+    __itt_task_end(CamPipeAccel);
+#endif
+
+    //m_raw16aligned.Unlock();
+    //m_raw16padded.Unlock();
+    //m_aux8.Unlock();
+
+    //if (pParam->inSurf2D) {
+    //    ReleaseResource(m_rawIn, pParam->inSurf2D);
+    //} else if (pParam->inSurf2DUP) {
+    //    if (pParam->pMemIn)
+    //        CM_ALIGNED_FREE(pParam->pMemIn); // remove/change when pool implemented !!!
+    //    pParam->pMemIn = 0;
+    //    CmSurface2DUP *surf = (CmSurface2DUP *)pParam->inSurf2DUP;
+    //    m_cmDevice->DestroySurface2DUP(surf);
+    //    pParam->inSurf2DUP = 0;
+    //}
+
+    if (pParam->outBufUP) {
+        CmBufferUP *buf = (CmBufferUP *)pParam->outBufUP;
+        if (pParam->pMemOut) {
+            // copy mem to out mfx surface - to implement !!!
+            CM_ALIGNED_FREE(pParam->pMemOut);  // remove/change when pool implemented !!! ???
+            pParam->pMemOut = 0;
+        }
+        m_cmDevice->DestroyBufferUP(buf);
+        pParam->outBufUP = 0;
+    } else if (pParam->outBuf) {
+        // copy from CmBuffer to out mfx surface - to implement !!! 
     }
 
     return MFX_ERR_NONE;
 }
 
 
-mfxStatus MFXCamera_Plugin::EnqueueTasks()
-{
-    int result;
-    CmEvent *e;
-
-    e = m_cmCtx->EnqueueTasks();
-    e->WaitForTaskFinished();
-
-    m_raw16aligned.Unlock();
-    m_raw16padded.Unlock();
-    m_aux8.Unlock();
-
-    return MFX_ERR_NONE;
-
-}
+//mfxStatus MFXCamera_Plugin::EnqueueTasks()
+//{
+//    int result;
+//    CmEvent *e;
+//
+//    e = m_cmCtx->EnqueueTasks();
+//    e->WaitForTaskFinished();
+//
+//    m_raw16aligned.Unlock();
+//    m_raw16padded.Unlock();
+//    m_aux8.Unlock();
+//
+//    return MFX_ERR_NONE;
+//
+//}

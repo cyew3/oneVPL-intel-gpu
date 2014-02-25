@@ -69,10 +69,10 @@ public:
     {
         return MFXVideoVPP_Close(m_session);
     }
-    virtual mfxStatus GetVideoParam(mfxVideoParam *par)
-    {
-        return MFXVideoVPP_GetVideoParam(m_session, par);
-    }
+    virtual mfxStatus GetVideoParam(mfxVideoParam *par);
+    //{
+    //    return MFXVideoVPP_GetVideoParam(m_session, par);
+    //}
     virtual void Release()
     {
         delete this;
@@ -112,10 +112,23 @@ protected:
     {
         mfxFrameSurface1 *surf_in;
         mfxFrameSurface1 *surf_out;
+
+        mfxMemId inSurf2D;
+        mfxMemId inSurf2DUP;
+
+        mfxMemId outBufUP;
+        mfxMemId outBuf;
+
+        void     *pMemIn;
+        void     *pMemOut;
+
+        void      *pEvent;
+
         //mfxExtVppAuxData *aux;
         //mfxU64  inputTimeStamp;
     };
 
+    UMC::Mutex m_guard;
     mfxCoreInterface*   m_pmfxCore;
 
     mfxSession          m_session;
@@ -123,14 +136,21 @@ protected:
     bool                m_createdByDispatcher;
 
     mfxStatus           AllocateInternalSurfaces();
-    mfxStatus           SetExternalSurfaces(mfxFrameSurface1 *surfIn, mfxFrameSurface1 *surfOut);
+    //mfxStatus           SetExternalSurfaces(mfxFrameSurface1 *surfIn, mfxFrameSurface1 *surfOut);
+    mfxStatus           SetExternalSurfaces(AsyncParams *pParam);
 
     mfxStatus           CameraAsyncRoutine(AsyncParams *pParam);
+    mfxStatus           CompleteCameraAsyncRoutine(AsyncParams *pParam);
 
     static mfxStatus    CameraRoutine(void *pState, void *pParam, mfxU32 threadNumber, mfxU32 callNumber);
+    static mfxStatus    CompleteCameraRoutine(void *pState, void *pParam, mfxStatus taskRes);
+
+
 
     mfxStatus           SetTasks(); //mfxFrameSurface1 *surfIn, mfxFrameSurface1 *surfOut);
-    mfxStatus           EnqueueTasks();
+    //mfxStatus           EnqueueTasks();
+
+    mfxStatus           CreateEnqueueTasks(AsyncParams *pParam);
 
     mfxVideoParam       m_mfxVideoParam;
     CmDevicePtr         m_cmDevice;
@@ -171,6 +191,9 @@ private:
     MfxFrameAllocResponse   m_raw16padded;
     MfxFrameAllocResponse   m_raw16aligned;
     MfxFrameAllocResponse   m_aux8;
+
+    MfxFrameAllocResponse   m_rawIn;
+    
 
 
 };

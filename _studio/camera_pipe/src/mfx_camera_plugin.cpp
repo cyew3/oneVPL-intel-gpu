@@ -14,8 +14,18 @@ File Name: mfx_camera_plugin.cpp
 #define VPP_OUT      (1)
 
 #include "mfx_camera_plugin.h"
-#include "mfx_session.h"
+//#include "mfx_session.h"
 #include "mfx_task.h"
+
+#ifdef CAMP_PIPE_ITT
+#include "ittnotify.h"
+
+__itt_domain* CamPipe = __itt_domain_create(L"CamPipe");
+
+//__itt_string_handle* CPU_file_fread;
+//__itt_string_handle* CPU_raw_unpack_;
+__itt_string_handle* task1 = __itt_string_handle_create(L"CreateEnqueueTasks");;
+#endif
 
 #include "mfx_plugin_module.h"
 PluginModuleTemplate g_PluginModule = {
@@ -155,16 +165,28 @@ mfxStatus MFXCamera_Plugin::QueryIOSurf(mfxVideoParam *par, mfxFrameAllocRequest
     if (!out)
         return MFX_ERR_NULL_PTR;
 
+    mfxU16 asyncDepth = par->AsyncDepth;
+    if (asyncDepth == 0)
+        asyncDepth = m_core->GetAutoAsyncDepth();
+
     in->Info = par->vpp.In;
     in->NumFrameMin = 1;
-    in->NumFrameSuggested = in->NumFrameMin + par->AsyncDepth; // ???
+    in->NumFrameSuggested = in->NumFrameMin + asyncDepth - 1;
     in->Type = MFX_MEMTYPE_FROM_VPPIN;
 
     out->Info = par->vpp.Out;
     out->NumFrameMin = 1;
-    out->NumFrameSuggested = out->NumFrameMin + par->AsyncDepth; // ???
+    out->NumFrameSuggested = out->NumFrameMin + asyncDepth - 1;
     out->Type = MFX_MEMTYPE_FROM_VPPOUT;
 
+    return MFX_ERR_NONE;
+}
+
+mfxStatus  MFXCamera_Plugin::GetVideoParam(mfxVideoParam *par)
+{
+    if (!par)
+        return MFX_ERR_NULL_PTR;
+    *par = m_mfxVideoParam;
     return MFX_ERR_NONE;
 }
 
@@ -174,6 +196,9 @@ mfxStatus MFXCamera_Plugin::Init(mfxVideoParam *par)
 
     m_mfxVideoParam = *par;
     m_core = m_session->m_pCORE.get();
+
+    if (m_mfxVideoParam.AsyncDepth == 0)
+        m_mfxVideoParam.AsyncDepth = m_core->GetAutoAsyncDepth();
 
     m_FrameWidth64   = ((m_mfxVideoParam.vpp.In.CropW + 31) & 0xFFFFFFE0); // 2 bytes each for In, 4 bytes for Out, so 32 is good enough for 64 ???
     m_PaddedFrameWidth  = m_mfxVideoParam.vpp.In.CropW + 16;
@@ -189,16 +214,16 @@ mfxStatus MFXCamera_Plugin::Init(mfxVideoParam *par)
     m_Caps.OutputMemoryOperationMode = MEM_GPUSHARED; //MEM_FASTGPUCPY;
 
     m_WBparams.bActive = false; // no WB
-    m_WBparams.RedCorrection         = 2.156250;
-    m_WBparams.GreenTopCorrection    = 1.000000;
-    m_WBparams.GreenBottomCorrection = 1.000000;
-    m_WBparams.BlueCorrection        = 1.417969;
+    m_WBparams.RedCorrection         = 2.156250f;
+    m_WBparams.GreenTopCorrection    = 1.000000f;
+    m_WBparams.GreenBottomCorrection = 1.000000f;
+    m_WBparams.BlueCorrection        = 1.417969f;
 
     m_GammaParams.bActive = true;
     for (int i = 0 ; i < 64; i++)
     {
-        m_GammaParams.gamma_hw_params.Points[i]  = gamma_point[i];
-        m_GammaParams.gamma_hw_params.Correct[i] = gamma_correct[i];
+        m_GammaParams.gamma_hw_params.Points[i]  = (mfxU16)gamma_point[i];
+        m_GammaParams.gamma_hw_params.Correct[i] = (mfxU16)gamma_correct[i];
     }
 
     pipeline_config cam_pipeline;
@@ -208,12 +233,14 @@ mfxStatus MFXCamera_Plugin::Init(mfxVideoParam *par)
     m_cmDevice.Reset(CreateCmDevicePtr(m_core));
     m_cmCtx.reset(new CmContext(m_mfxVideoParam, m_cmDevice, &cam_pipeline));
 
+    m_cmCtx->CreateThreadSpace(m_PaddedFrameWidth, m_PaddedFrameHeight);
+
     mfxRes = AllocateInternalSurfaces();
 
     return mfxRes;
 }
 
- mfxStatus MFXCamera_Plugin::CameraRoutine(void *pState, void *pParam, mfxU32 threadNumber, mfxU32 callNumber)
+mfxStatus MFXCamera_Plugin::CameraRoutine(void *pState, void *pParam, mfxU32 threadNumber, mfxU32 callNumber)
 {
     mfxStatus sts;
 
@@ -228,24 +255,88 @@ mfxStatus MFXCamera_Plugin::Init(mfxVideoParam *par)
     return sts;
 }
 
- mfxStatus MFXCamera_Plugin::CameraAsyncRoutine(AsyncParams *pParam)
- {
+mfxStatus MFXCamera_Plugin::CameraAsyncRoutine(AsyncParams *pParam)
+{
     pParam;
     mfxStatus sts;
     mfxFrameSurface1 *surfIn = pParam->surf_in;
     mfxFrameSurface1 *surfOut = pParam->surf_out;
 
-    sts = SetExternalSurfaces(surfIn, surfOut);
+    m_core->IncreaseReference(&surfIn->Data);
+    m_core->IncreaseReference(&surfOut->Data);
 
-    sts = SetTasks(); //(surfIn, surfOut);
+    //sts = SetExternalSurfaces(surfIn, surfOut);
+    sts = SetExternalSurfaces(pParam);
 
-    sts = EnqueueTasks();
+//    sts = SetTasks(); //(surfIn, surfOut);
+//    sts = EnqueueTasks();
+
+#ifdef CAMP_PIPE_ITT
+    __itt_task_begin(CamPipe, __itt_null, __itt_null, task1);
+#endif
+
+    sts  = CreateEnqueueTasks(pParam);
+
+#ifdef CAMP_PIPE_ITT
+    __itt_task_end(CamPipe);
+#endif
+
+    m_core->DecreaseReference(&surfIn->Data);
+    m_core->DecreaseReference(&surfOut->Data);
 
     return sts;
- }
+}
 
 
-mfxStatus MFXCamera_Plugin::VPPFrameSubmit(mfxFrameSurface1 *surface_in, mfxFrameSurface1 *surface_out, mfxExtVppAuxData *aux, mfxThreadTask *mfxthreadtask)
+mfxStatus MFXCamera_Plugin::CompleteCameraRoutine(void *pState, void *pParam, mfxStatus taskRes)
+{
+    mfxStatus sts;
+    taskRes;
+    pState;
+    MFXCamera_Plugin & impl = *(MFXCamera_Plugin *)pState;
+    AsyncParams *asyncParams = (AsyncParams *)pParam;
+
+    sts = impl.CompleteCameraAsyncRoutine(asyncParams);
+
+    if (pParam)
+        delete (AsyncParams *)pParam; // not safe !!! ???
+
+    return sts;
+}
+
+
+mfxStatus MFXCamera_Plugin::CompleteCameraAsyncRoutine(AsyncParams *pParam)
+{
+    
+    mfxStatus sts = MFX_ERR_NONE;
+    if (pParam) {
+
+        ((CmEvent *)pParam->pEvent)->WaitForTaskFinished((DWORD)-1);  //???
+
+        if (pParam->inSurf2D) {
+            ReleaseResource(m_rawIn, pParam->inSurf2D);
+        } else if (pParam->inSurf2DUP) {
+            if (pParam->pMemIn)
+                CM_ALIGNED_FREE(pParam->pMemIn); // remove/change when pool implemented !!!
+            pParam->pMemIn = 0;
+            CmSurface2DUP *surf = (CmSurface2DUP *)pParam->inSurf2DUP;
+            m_cmDevice->DestroySurface2DUP(surf);
+            pParam->inSurf2DUP = 0;
+        }
+    }
+
+    m_raw16aligned.Unlock();
+    m_raw16padded.Unlock();
+    m_aux8.Unlock();
+
+    return sts;
+}
+
+//mfxStatus MFXCamera_Plugin::Execute(mfxThreadTask task, mfxU32 , mfxU32 )
+//{
+//}
+
+mfxStatus MFXCamera_Plugin::VPPFrameSubmit(mfxFrameSurface1 *surface_in, mfxFrameSurface1 *surface_out, mfxExtVppAuxData* /*aux*/, mfxThreadTask *mfxthreadtask)
 {
     mfxStatus mfxRes;
 
@@ -266,7 +357,7 @@ mfxStatus MFXCamera_Plugin::VPPFrameSubmit(mfxFrameSurface1 *surface_in, mfxFram
 
     entryPoint.pRoutine = CameraRoutine;
     entryPoint.pRoutineName = "CameraPipeline";
-    //entryPoint.pCompleteProc = &CompleteFrameVPPRoutine;
+    entryPoint.pCompleteProc = &CompleteCameraRoutine;
     entryPoint.pState = this; //???
     entryPoint.requiredNumThreads = 1;
     entryPoint.pParam = pParams;

@@ -227,11 +227,11 @@ typedef struct {
 #define CAM_PIPE_KERNEL_ARRAY(name, i) name
 #endif
 
-#define CAM_PIPE_NUM_TASK_BUFFERS 2
+#define CAM_PIPE_NUM_TASK_BUFFERS 1
 #if (CAM_PIPE_NUM_TASK_BUFFERS-1)
 #define CAM_PIPE_TASK_ARRAY(name, i) name[i]
 #else
-#define CAM_PIPE_NUM_TASK_BUFFERS(name, i) name
+#define CAM_PIPE_TASK_ARRAY(name, i) name
 #endif
 
 class CmContext
@@ -288,7 +288,22 @@ public:
     void CreateTask_DecideAverage(CmSurface2D *redAvgSurf, CmSurface2D *greenAvgSurf, CmSurface2D *blueAvgSurf, CmSurface2D *avgFlagSurf, CmSurface2D *redOutSurf, CmSurface2D *greenOutSurf, CmSurface2D *blueOutSurf, mfxU32 task_bufId = 0);
     void CreateTask_ForwardGamma(CmSurface2D *correcSurf, CmSurface2D *pointSurf,  CmSurface2D *redSurf, CmSurface2D *greenSurf, CmSurface2D *blueSurf, SurfaceIndex outSurfIndex, mfxU32 bitDepth, mfxU32 task_bufId = 0);
 
-    CmEvent *EnqueueTasks(mfxU32 task_bufId = 0);
+    //CmEvent *EnqueueTasks(mfxU32 task_bufId = 0);
+
+
+    CmEvent *CreateEnqueueTask_GoodPixelCheck(SurfaceIndex inSurfIndex, CmSurface2D *goodPixCntSurf, CmSurface2D *bigPixCntSurf, mfxU32 bitDepth);
+    CmEvent *CreateEnqueueTask_RestoreGreen(SurfaceIndex inSurfIndex, CmSurface2D *goodPixCntSurf, CmSurface2D *bigPixCntSurf, CmSurface2D *greenHorSurf, CmSurface2D *greenVerSurf, CmSurface2D *greenAvgSurf, CmSurface2D *avgFlagSurf, mfxU32 bitDepth);
+
+    CmEvent *CreateEnqueueTask_RestoreBlueRed(SurfaceIndex inSurfIndex,
+                                                CmSurface2D *greenHorSurf, CmSurface2D *greenVerSurf, CmSurface2D *greenAvgSurf,
+                                                CmSurface2D *blueHorSurf, CmSurface2D *blueVerSurf, CmSurface2D *blueAvgSurf,
+                                                CmSurface2D *redHorSurf, CmSurface2D *redVerSurf, CmSurface2D *redAvgSurf,
+                                                CmSurface2D *avgFlagSurf, mfxU32 bitDepth);
+
+    CmEvent *CreateEnqueueTask_SAD(CmSurface2D *redHorSurf, CmSurface2D *greenHorSurf, CmSurface2D *blueHorSurf, CmSurface2D *redVerSurf, CmSurface2D *greenVerSurf, CmSurface2D *blueVerSurf, CmSurface2D *redOutSurf, CmSurface2D *greenOutSurf, CmSurface2D *blueOutSurf);
+    CmEvent *CreateEnqueueTask_DecideAverage(CmSurface2D *redAvgSurf, CmSurface2D *greenAvgSurf, CmSurface2D *blueAvgSurf, CmSurface2D *avgFlagSurf, CmSurface2D *redOutSurf, CmSurface2D *greenOutSurf, CmSurface2D *blueOutSurf);
+    CmEvent *CreateEnqueueTask_ForwardGamma(CmSurface2D *correcSurf, CmSurface2D *pointSurf,  CmSurface2D *redSurf, CmSurface2D *greenSurf, CmSurface2D *blueSurf, SurfaceIndex outSurfIndex, mfxU32 bitDepth);
+
 
 protected:
 
@@ -310,9 +325,6 @@ private:
 
     mfxU32 m_widthInMb;
     mfxU32 m_heightInMb;
-
-    mfxU32 m_gamma_threads_per_group;
-    mfxU32 m_gamma_groups_vert;
 
     //mfxU32 m_SrcFrameWidth;
     //mfxU32 m_SrcFrameHeight;

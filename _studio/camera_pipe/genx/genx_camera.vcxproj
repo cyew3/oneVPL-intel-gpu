@@ -90,7 +90,7 @@
     <_ProjectFileVersion>11.0.61030.0</_ProjectFileVersion>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <OutDir>..\..\..\..\build\win_$(Platform)\</OutDir>
+    <OutDir>..\..\..\build\win_$(Platform)\</OutDir>
     <IntDir>$(OutDir)objs\$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -150,15 +150,17 @@ SET ICLDIR=%25INSTALLDIR%25\compiler
 SET PATH=%25ICLDIR%25\bin%3b%25ICLDIR%25\lib%3b%25PATH%25
 SET INCLUDE=%25ICLDIR%25\include%3b%25ICLDIR%25\include\cm%3b%25INCLUDE%25
 SET CM_RT_PLATFORM=hsw
-icl /c /Qxcm /Qxcm_jit_target=gen7_5 .\src\genx_hsw_simple_me.cpp /mCM_print_asm_count
+copy  .\src\camerapipe_genx_skl.cpp .\src\genx_hsw_camerapipe.cpp /Y
+icl /c /Qxcm /Qxcm_jit_target=gen7_5 .\src\genx_hsw_camerapipe.cpp /mCM_print_asm_count
 cl .\src\embed_isa.c
-embed_isa genx_hsw_simple_me.isa
-move genx_hsw_simple_me.cpp .\src\genx_hsw_simple_me_isa.cpp
-move genx_hsw_simple_me.h .\include\genx_hsw_simple_me_isa.h
+embed_isa genx_hsw_camerapipe.isa
+move genx_hsw_camerapipe.cpp .\src\genx_hsw_camerapipe_isa.cpp
+move  genx_hsw_camerapipe.h .\include\genx_hsw_camerapipe_isa.h
+del .\src\genx_hsw_camerapipe.cpp
 
-rem copy genx_hsw_simple_me.isa ..\..\..\..\build\win_$(Platform)\bin
-rem copy %25INSTALLDIR%25\runtime\lib\x86\igfxcmrt32.dll ..\..\..\..\build\win_$(Platform)\bin
-rem copy %25INSTALLDIR%25\runtime\lib\x86\igfxcmjit32.dll ..\..\..\..\build\win_$(Platform)\bin
+rem copy genx_hsw_camerapipe.isa ..\..\..\..\build\win_$(Platform)\bin
+copy %25INSTALLDIR%25\runtime\lib\x86\igfxcmrt32.dll ..\..\..\build\win_$(Platform)\bin
+copy %25INSTALLDIR%25\runtime\lib\x86\igfxcmjit32.dll ..\..\..\build\win_$(Platform)\bin
 </Command>
     </PreBuildEvent>
     <CustomBuildStep>
@@ -278,6 +280,7 @@ copy $(MEDIASDK_ROOT)\CMRT\compiler\lib\x86\libcm.dll ..\..\..\..\build\win_$(Pl
   <ItemGroup>
     <ClCompile Include="src\camerapipe_genx_skl.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="src\embed_isa.c">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug_HSW_Emu|Win32'">true</ExcludedFromBuild>
