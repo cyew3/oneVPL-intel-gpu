@@ -240,15 +240,6 @@ mfxStatus CDecodingPipeline::Init(sInputParams *pParams)
     sts = AllocFrames();
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
-    // init decoder
-    if(MFX_ROTATION_90 == m_mfxVideoParams.mfx.Rotation || MFX_ROTATION_270 == m_mfxVideoParams.mfx.Rotation)
-    {
-        std::swap(m_mfxVideoParams.mfx.FrameInfo.Height, m_mfxVideoParams.mfx.FrameInfo.Width);
-        std::swap(m_mfxVideoParams.mfx.FrameInfo.CropW, m_mfxVideoParams.mfx.FrameInfo.CropH);
-        std::swap(m_mfxVideoParams.mfx.FrameInfo.AspectRatioW, m_mfxVideoParams.mfx.FrameInfo.AspectRatioH);
-        std::swap(m_mfxVideoParams.mfx.FrameInfo.CropX, m_mfxVideoParams.mfx.FrameInfo.CropY);
-    }
-
     sts = m_pmfxDEC->Init(&m_mfxVideoParams);
     if (MFX_WRN_PARTIAL_ACCELERATION == sts)
     {
