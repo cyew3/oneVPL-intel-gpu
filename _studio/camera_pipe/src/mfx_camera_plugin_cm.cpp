@@ -19,14 +19,10 @@
 #include <stdexcept> /* for std exceptions on Linux/Android */
 
 #include "libmfx_core_interface.h"
-
-#include "cmrt_cross_platform.h"
 #include "cm_def.h"
 #include "cm_vm.h"
-#include "mfx_camera_plugin_cm.h"
 #include "mfx_camera_plugin_utils.h"
 #include "genx_hsw_camerapipe_isa.h"
-
 
 namespace
 {

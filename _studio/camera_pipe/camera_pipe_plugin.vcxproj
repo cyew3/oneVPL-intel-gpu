@@ -110,7 +110,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>.\genx\include;include;..\mfx_lib\cmrt_cross_platform\include;$(MEDIASDK_ROOT)\CMRT\compiler\include\cm;$(MEDIASDK_ROOT)\CMRT\runtime\include;..\..\include;..\shared\include;..\mfx_lib\shared\include;..\mfx_lib\plugin\include;$(MfxIppIncludeDir);..\shared\umc\core\umc\include;..\shared\umc\core\vm\include;..\shared\umc\core\vm_plus\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\genx\include;include;..\mfx_lib\cmrt_cross_platform\include;$(MEDIASDK_ROOT)\CMRT\compiler\include\cm;$(MEDIASDK_ROOT)\CMRT\runtime\include;..\..\include;..\shared\include;..\mfx_lib\shared\include;..\mfx_lib\plugin\include;$(MfxIppIncludeDir);..\shared\umc\core\umc\include;..\shared\umc\core\vm\include;..\shared\umc\core\vm_plus\include;..\mfx_lib\scheduler\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>MFX_D3D11_ENABLED;WIN32;_DEBUG;_WINDOWS;_USRDLL;LIBMFXSW_EXPORTS;AS_VPP_PLUGIN;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <ExceptionHandling>Async</ExceptionHandling>
@@ -167,7 +167,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>.\genx\include;include;..\mfx_lib\cmrt_cross_platform\include;$(MEDIASDK_ROOT)\CMRT\compiler\include\cm;$(MEDIASDK_ROOT)\CMRT\runtime\include;..\..\include;..\shared\include;..\mfx_lib\shared\include;..\mfx_lib\plugin\include;$(MfxIppIncludeDir);..\shared\umc\core\umc\include;..\shared\umc\core\vm\include;..\shared\umc\core\vm_plus\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\genx\include;include;..\mfx_lib\cmrt_cross_platform\include;$(MEDIASDK_ROOT)\CMRT\compiler\include\cm;$(MEDIASDK_ROOT)\CMRT\runtime\include;..\..\include;..\shared\include;..\mfx_lib\shared\include;..\mfx_lib\plugin\include;$(MfxIppIncludeDir);..\shared\umc\core\umc\include;..\shared\umc\core\vm\include;..\shared\umc\core\vm_plus\include;..\mfx_lib\scheduler\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;AS_VPP_PLUGIN;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <PrecompiledHeader>
@@ -223,6 +223,12 @@
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="..\mfx_lib\scheduler\include\mfx_dependency_item.h" />
+    <ClInclude Include="..\mfx_lib\scheduler\include\mfx_scheduler_core.h" />
+    <ClInclude Include="..\mfx_lib\scheduler\include\mfx_scheduler_core_handle.h" />
+    <ClInclude Include="..\mfx_lib\scheduler\include\mfx_scheduler_core_task.h" />
+    <ClInclude Include="..\mfx_lib\scheduler\include\mfx_scheduler_core_thread.h" />
+    <ClInclude Include="..\mfx_lib\scheduler\include\mfx_scheduler_dx11_event.h" />
     <ClInclude Include="genx\include\genx_hsw_camerapipe_isa.h" />
     <ClInclude Include="include\mfx_camera_plugin.h" />
     <ClInclude Include="include\mfx_camera_plugin_cm.h" />
@@ -255,9 +261,16 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\mfx_lib\scheduler\src\mfx_scheduler_core.cpp" />
+    <ClCompile Include="..\mfx_lib\scheduler\src\mfx_scheduler_core_ischeduler.cpp" />
+    <ClCompile Include="..\mfx_lib\scheduler\src\mfx_scheduler_core_iunknown.cpp" />
+    <ClCompile Include="..\mfx_lib\scheduler\src\mfx_scheduler_core_task.cpp" />
+    <ClCompile Include="..\mfx_lib\scheduler\src\mfx_scheduler_core_task_management.cpp" />
+    <ClCompile Include="..\mfx_lib\scheduler\src\mfx_scheduler_core_thread.cpp" />
     <ClCompile Include="genx\src\genx_hsw_camerapipe_isa.cpp" />
     <ClCompile Include="src\mfx_camera_plugin.cpp" />
     <ClCompile Include="src\mfx_camera_plugin_cm.cpp" />
+    <ClCompile Include="src\mfx_camera_plugin_session.cpp" />
     <ClCompile Include="src\mfx_camera_plugin_utils.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

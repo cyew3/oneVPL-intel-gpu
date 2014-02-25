@@ -14,7 +14,7 @@ File Name: mfx_camera_plugin.cpp
 #define VPP_OUT      (1)
 
 #include "mfx_camera_plugin.h"
-//#include "mfx_session.h"
+#include "mfx_session.h"
 #include "mfx_task.h"
 
 #ifdef CAMP_PIPE_ITT
