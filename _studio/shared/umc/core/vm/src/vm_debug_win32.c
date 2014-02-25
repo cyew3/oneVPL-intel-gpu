@@ -466,7 +466,7 @@ void vm_trace_GUID_func(const UMC_GUID *pGUID, vm_char *descr)
         }
     }
 
-    vm_string_sprintf(guid,
+    vm_string_snprintf(guid, sizeof(guid)-1
         VM_STRING("%s = %08lx-%04x-%04x-%02x%02x-%02x%02x%02x%02x%02x%02x"),
         descr,
         pGUID->Data1, pGUID->Data2, pGUID->Data3,
