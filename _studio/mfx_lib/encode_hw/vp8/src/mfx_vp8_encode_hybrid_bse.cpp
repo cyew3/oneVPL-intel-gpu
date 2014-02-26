@@ -355,7 +355,7 @@ namespace MFX_VP8ENC
 
         // hardcode loop_filter_adj_enable value for key-frames to align with C-model
         if (m_ctrl.FrameType == 0)
-            m_ctrl.LoopFilterAdjOn = 0;
+            m_ctrl.LoopFilterAdjOn = 1;
 
         if(m_ctrl.LoopFilterAdjOn)
         {
