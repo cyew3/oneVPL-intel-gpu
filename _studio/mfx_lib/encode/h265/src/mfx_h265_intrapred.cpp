@@ -771,8 +771,8 @@ Ipp32s StoreFewBestModes(CostType cost, Ipp8u mode, CostType * costs, Ipp8u * mo
     {
         for(Ipp32s i=1; i < idx; i++)
         {
-            costs[num_costs - idx] = costs[num_costs - idx - 1];
-            modes[num_costs - idx] = modes[num_costs - idx - 1];
+            costs[num_costs - i] = costs[num_costs - i - 1];
+            modes[num_costs - i] = modes[num_costs - i - 1];
         }
         costs[num_costs - idx] = cost;
         modes[num_costs - idx] = mode;
