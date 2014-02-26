@@ -551,7 +551,7 @@ mfxStatus VideoDECODEH265::DecodeHeader(VideoCORE *core, mfxBitstream *bs, mfxVi
     MFX_AVC_Decoder_H265 decoder;
 
     decoder.SetMemoryAllocator(&tempAllocator);
-    UMC::Status umcRes = MFX_Utility::DecodeHeader(&decoder, &avcInfo, bs, par);
+    UMC::Status umcRes = MFX_Utility::DecodeHeader(&decoder, &avcInfo, bs, par, core->GetPlatformType() != MFX_PLATFORM_SOFTWARE);
 
     if (umcRes == UMC::UMC_ERR_NOT_ENOUGH_DATA)
         return MFX_ERR_MORE_DATA;
@@ -1044,7 +1044,7 @@ void VideoDECODEH265::FillVideoParam(mfxVideoParamWrapper *par, bool full)
     if (!m_pH265VideoDecoder.get())
         return;
 
-    MFX_Utility::FillVideoParam(m_pH265VideoDecoder.get(), par, full);
+    MFX_Utility::FillVideoParam(m_pH265VideoDecoder.get(), par, full, m_core->GetPlatformType() != MFX_PLATFORM_SOFTWARE);
 
     RawHeader_H265 *sps = m_pH265VideoDecoder->GetSPS();
     RawHeader_H265 *pps = m_pH265VideoDecoder->GetPPS();

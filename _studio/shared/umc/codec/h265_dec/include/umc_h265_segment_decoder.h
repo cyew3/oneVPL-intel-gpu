@@ -248,13 +248,13 @@ public:
     template <Ipp32s direction>
     void CalculateEdge(H265EdgeData * edge, Ipp32s x, Ipp32s y, bool diffTr);
 
-    void DeblockOneLCU(Ipp32u absPartIdx, Ipp32u depth, Ipp32s edgeType);
-    void DeblockTU(Ipp32u absPartIdx, Ipp32u depth, Ipp32s edgeType);
+    void DeblockCURecur(Ipp32u absPartIdx, Ipp32u depth);
+    void DeblockTU(Ipp32u absPartIdx, Ipp32u depth);
 
     inline void GetEdgeStrengthInter(H265MVInfo *mvinfoQ, H265MVInfo *mvinfoP, H265EdgeData *edge);
 
     bool m_DecodeDQPFlag;
-    Ipp32s m_minCUDQPSize;
+    Ipp32u m_minCUDQPSize;
     Ipp32u m_MaxDepth; //max number of depth
     H265DecYUVBufferPadded* m_ppcYUVResi; //array of residual buffer
 
@@ -265,10 +265,15 @@ public:
     Ipp32u m_BakChromaOffset;
     Ipp32u m_bakAbsPartIdxCU;
 
-    bool predictionExist;
-    Ipp32u saveColumn;
-    Ipp32u saveRow;
-    Ipp32u saveHeight;
+
+    struct
+    {
+        bool predictionExist;
+        Ipp32u saveColumn;
+        Ipp32u saveRow;
+        Ipp32u saveHeight;
+    } m_deblockPredData[2];
+
     Ipp32s isMin4x4Block;
 
     DecodingContext * m_context;

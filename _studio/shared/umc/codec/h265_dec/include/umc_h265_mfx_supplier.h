@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2012-2013 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2012-2014 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -116,9 +116,8 @@ class MFX_Utility
 public:
 
     static eMFXPlatform MFX_CDECL GetPlatform_H265(VideoCORE * core, mfxVideoParam * par);
-    static UMC::Status MFX_CDECL FillVideoParam(TaskSupplier_H265 * supplier, ::mfxVideoParam *par, bool full);
-    static UMC::Status MFX_CDECL FillVideoParamMVCEx(TaskSupplier_H265 * supplier, ::mfxVideoParam *par, eMFXHWType type);
-    static UMC::Status MFX_CDECL DecodeHeader(TaskSupplier_H265 * supplier, UMC::BaseCodecParams* params, mfxBitstream *bs, mfxVideoParam *out);
+    static UMC::Status MFX_CDECL FillVideoParam(TaskSupplier_H265 * supplier, ::mfxVideoParam *par, bool full, bool isHW);
+    static UMC::Status MFX_CDECL DecodeHeader(TaskSupplier_H265 * supplier, UMC::BaseCodecParams* params, mfxBitstream *bs, mfxVideoParam *out, bool isHW);
 
     static mfxStatus MFX_CDECL Query_H265(VideoCORE *core, mfxVideoParam *in, mfxVideoParam *out, eMFXHWType type);
     static bool MFX_CDECL CheckVideoParam_H265(mfxVideoParam *in, eMFXHWType type);

@@ -1928,7 +1928,7 @@ void H265SegmentDecoder::ParseCoeffNxNCABACOptimized(H265CoeffsPtrCommon pCoef, 
     const Ipp32u L2Width = Log2BlockSize-2;
 
     const bool   IsLuma  = (plane == COMPONENT_LUMA);
-    const bool   beValid = m_cu->GetCUTransquantBypass(AbsPartIdx) ? false : m_pPicParamSet->sign_data_hiding_enabled_flag;
+    const bool   beValid = m_cu->GetCUTransquantBypass(AbsPartIdx) ? false : m_pPicParamSet->sign_data_hiding_enabled_flag != 0;
 
     const Ipp32u baseCoeffGroupCtxIdx = ctxIdxOffsetHEVC[SIG_COEFF_GROUP_FLAG_HEVC] + (IsLuma ? 0 : NUM_CONTEXT_SIG_COEFF_GROUP_FLAG);
     const Ipp32u baseCtxIdx = ctxIdxOffsetHEVC[SIG_FLAG_HEVC] + ( IsLuma ? 0 : NUM_CONTEXT_SIG_FLAG_LUMA);
