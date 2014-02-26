@@ -567,7 +567,8 @@ mfxStatus VAAPIEncoder::Init(ENCODE_FUNC func, ExecuteBuffers* pExecuteBuffers)
     mfxStatus   sts    = MFX_ERR_NONE;    
 
     m_initFrameWidth   = 16 * ((pExecuteBuffers->m_sps.FrameWidth + 15) >> 4);
-    if (m_vaSpsBuf.sequence_extension.bits.progressive_sequence)
+    
+    if (pExecuteBuffers->m_sps.progressive_sequence)
     {
         m_initFrameHeight  = 16 * ((pExecuteBuffers->m_sps.FrameHeight + 15) >> 4);        
     }
