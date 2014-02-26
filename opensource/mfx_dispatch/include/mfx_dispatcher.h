@@ -150,8 +150,6 @@ struct MFX_DISP_HANDLE
     mfxFunctionPointer callTable[eVideoFuncTotal];
     mfxFunctionPointer callAudioTable[eAudioFuncTotal];
 
-    wchar_t subKeyName[MFX_MAX_REGISTRY_KEY_NAME];
-
 private:
     // Declare assignment operator and copy constructor to prevent occasional assignment
     MFX_DISP_HANDLE(const MFX_DISP_HANDLE &);
