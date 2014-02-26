@@ -464,7 +464,7 @@ mfxStatus D3D9VideoCORE::AllocFrames(mfxFrameAllocRequest *request,
                 sts = (*m_FrameAllocator.frameAllocator.Alloc)(m_FrameAllocator.frameAllocator.pthis, &temp_request, response);
 
                 // if external allocator cannot allocate d3d frames - use default memory allocator
-                if (MFX_ERR_UNSUPPORTED == sts)
+                if (MFX_ERR_UNSUPPORTED == sts || MFX_ERR_MEMORY_ALLOC == sts)
                 {
                     // Default Allocator is used for internal memory allocation only
                     if (request->Type & MFX_MEMTYPE_EXTERNAL_FRAME)
