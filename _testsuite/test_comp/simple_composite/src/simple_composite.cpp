@@ -510,6 +510,7 @@ int main(int argc, char *argv[])
         comp.InputStream[i].DstH = atoi(streamParams[i]["dsth"].c_str());
         comp.InputStream[i].GlobalAlpha         = atoi(streamParams[i]["GlobalAlpha"].c_str()) ;
         comp.InputStream[i].GlobalAlphaEnable   = atoi(streamParams[i]["GlobalAlphaEnable"].c_str());
+        comp.InputStream[i].PixelAlphaEnable    = atoi(streamParams[i]["PixelAlphaEnable"].c_str()) ;
 
         comp.InputStream[i].LumaKeyEnable = atoi(streamParams[i]["LumaKeyEnable"].c_str()) ;
         comp.InputStream[i].LumaKeyMin    = atoi(streamParams[i]["LumaKeyMin"].c_str()) ;
