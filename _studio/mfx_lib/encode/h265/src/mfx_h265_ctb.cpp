@@ -1127,7 +1127,27 @@ void H265CU::ModeDecision(Ipp32u absPartIdx, Ipp32u offset, Ipp8u depth, CostTyp
                         m_bsf->CtxSave(ctxSave[1], 0, NUM_CABAC_CONTEXT);
 
                     IntraLumaModeDecision(absPartIdxTu, offset + subsize * i, depth, trDepth);
-                    IntraLumaModeDecisionRDO(absPartIdxTu, offset + subsize * i, depth, trDepth, ctxSave[1]);
+
+                   //FAST_UDI_USE_MPM //<--kolya
+                    const Ipp32s num_cand1 = m_par->num_cand_1[m_par->Log2MaxCUSize - (depth + trDepth)];
+                    Ipp32s iNumCand1Updated = num_cand1;
+#if 0
+                    Ipp32s  uiPreds[3] = {0xFF, 0xFF, 0xFF}; //all 3 values will be changed to different 
+                    Ipp32s iMode = GetIntradirLumaPred(absPartIdxTu, uiPreds);
+                    for(Ipp32s j = 0; j < iMode; j++) {
+                        Ipp32s isInList = 0;
+                        for(Ipp32s i = 0; i < num_cand1; i++) 
+                            if (uiPreds[j] == this->m_intraBestModes[i] ) {
+                                isInList = 1;
+                                break;
+                            }
+                        if (isInList == 0) {
+                            this->m_intraBestModes[num_cand1 + j] = uiPreds[j];
+                            iNumCand1Updated++;
+                        }
+                    } // <-- end of FAST_UDI_USE_MPM
+#endif
+                    IntraLumaModeDecisionRDO(absPartIdxTu, offset + subsize * i, depth, trDepth, ctxSave[1], iNumCand1Updated);
                     costBestPu[i] = m_intraBestCosts[0];
 
                     m_data = m_dataBest + ((depth + trDepth) << m_par->Log2NumPartInCU);

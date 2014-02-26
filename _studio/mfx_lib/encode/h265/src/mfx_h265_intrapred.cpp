@@ -995,14 +995,13 @@ void H265CU::IntraLumaModeDecision(Ipp32s abs_part_idx, Ipp32u offset, Ipp8u dep
 }
 
 
-void H265CU::IntraLumaModeDecisionRDO(Ipp32s abs_part_idx, Ipp32u offset, Ipp8u depth, Ipp8u tr_depth, CABAC_CONTEXT_H265 * initCtx)
+void H265CU::IntraLumaModeDecisionRDO(Ipp32s abs_part_idx, Ipp32u offset, Ipp8u depth, Ipp8u tr_depth, CABAC_CONTEXT_H265 * initCtx, Ipp32s num_cand1)
 {
     Ipp32s width = m_par->MaxCUSize >> (depth + tr_depth);
     Ipp32u num_parts = (m_par->NumPartInCU >> ((depth + tr_depth) << 1));
     Ipp32s offset_luma_tu = GetLumaOffset(m_par, abs_part_idx, m_pitchRec);
     Ipp32s tuSplitIntra = (m_par->tuSplitIntra == 1 || m_par->tuSplitIntra == 3 && m_cslice->slice_type == I_SLICE);
     Ipp8u  part_size = (Ipp8u)(tr_depth == 1 ? PART_SIZE_NxN : PART_SIZE_2Nx2N);
-    Ipp32s num_cand1 = m_par->num_cand_1[m_par->Log2MaxCUSize - (depth + tr_depth)];
     Ipp32s num_cand2 = m_par->num_cand_2[m_par->Log2MaxCUSize - (depth + tr_depth)];
     IppiSize roi = { width, width };
     CostType cost;

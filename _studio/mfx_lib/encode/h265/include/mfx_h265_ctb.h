@@ -344,7 +344,7 @@ public:
     void IntraLumaModeDecision(Ipp32s absPartIdx, Ipp32u offset, Ipp8u depth, Ipp8u trDepth);
 
     void IntraLumaModeDecisionRDO(Ipp32s absPartIdx, Ipp32u offset, Ipp8u depth, Ipp8u trDepth,
-                                  CABAC_CONTEXT_H265 * initCtx);
+                                  CABAC_CONTEXT_H265 * initCtx, Ipp32s num_cand1);
 
     Ipp8u GetTrSplitMode(Ipp32s absPartIdx, Ipp8u depth, Ipp8u trDepth, Ipp8u partSize,
                          Ipp8u isLuma, Ipp8u strict = 1);
