@@ -1385,6 +1385,9 @@ PairU8 MfxHwH264Encode::GetFrameType(
     mfxU32 gopRefDist = video.mfx.GopRefDist;
     mfxU32 idrPicDist = gopPicSize * (video.mfx.IdrInterval + 1);
 
+    if (gopPicSize == 0xffff) //infinite GOP
+        idrPicDist = gopPicSize = 0xffffffff;
+
     if (frameOrder % idrPicDist == 0)
         return ExtendFrameType(MFX_FRAMETYPE_I | MFX_FRAMETYPE_REF | MFX_FRAMETYPE_IDR);
 
@@ -1503,6 +1506,9 @@ BiFrameLocation MfxHwH264Encode::GetBiFrameLocation(
     mfxU32 biPyramid  = extOpt2->BRefType;
 
     BiFrameLocation loc;
+
+    if (gopPicSize == 0xffff) //infinite GOP
+        gopPicSize = 0xffffffff;
 
     if (biPyramid != MFX_B_REF_OFF)
     {
