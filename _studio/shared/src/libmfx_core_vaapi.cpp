@@ -353,7 +353,16 @@ VAAPIVideoCORE::AllocFrames(
     {
         MFX_CHECK_NULL_PTR2(request, response);
         mfxStatus sts = MFX_ERR_NONE;
+        mfxFrameAllocRequest temp_request = *request;
 
+        // external allocator doesn't know how to allocate opaque surfaces
+        // we can treat opaque as internal
+        if (temp_request.Type & MFX_MEMTYPE_OPAQUE_FRAME)
+        {
+            temp_request.Type -= MFX_MEMTYPE_OPAQUE_FRAME;
+            temp_request.Type |= MFX_MEMTYPE_INTERNAL_FRAME;
+        }
+        
         if (!m_bFastCopy)
         {
             // initialize fast copy
@@ -402,7 +411,7 @@ VAAPIVideoCORE::AllocFrames(
                     return TraceFrames(request, response, sts);
                 }
 
-                sts = (*m_FrameAllocator.frameAllocator.Alloc)(m_FrameAllocator.frameAllocator.pthis,request, response);
+                sts = (*m_FrameAllocator.frameAllocator.Alloc)(m_FrameAllocator.frameAllocator.pthis, &temp_request, response);
 
                 // if external allocator cannot allocate d3d frames - use default memory allocator
                 if (MFX_ERR_UNSUPPORTED == sts || MFX_ERR_MEMORY_ALLOC == sts)
