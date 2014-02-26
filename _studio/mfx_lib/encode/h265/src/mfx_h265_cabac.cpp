@@ -275,7 +275,7 @@ void H265CU::CodeIntradirLumaAng(H265Bs *bs, Ipp32u abs_part_idx, Ipp8u multiple
         {-1, -1, -1},
         {-1, -1, -1}
     };
-    Ipp32s pred_num[4], pred_idx[4] = { -1,-1,-1,-1};
+    Ipp32s pred_idx[4] = { -1,-1,-1,-1};
     Ipp8u mode = pCU->m_data[abs_part_idx].partSize;
     Ipp32u part_num = multiple ? (mode==PART_SIZE_NxN ? 4 : 1) : 1;
     Ipp32u part_offset = (par->NumPartInCU >> (pCU->m_data[abs_part_idx].depth << 1)) >> 2;
@@ -283,8 +283,8 @@ void H265CU::CodeIntradirLumaAng(H265Bs *bs, Ipp32u abs_part_idx, Ipp8u multiple
     for (j=0; j<part_num; j++)
     {
         dir[j] = pCU->m_data[abs_part_idx+part_offset*j].intraLumaDir;
-        pred_num[j] = pCU->GetIntradirLumaPred(abs_part_idx+part_offset*j, predictors[j]);
-        for(Ipp32s i = 0; i < pred_num[j]; i++)
+        pCU->GetIntradirLumaPred(abs_part_idx+part_offset*j, predictors[j]);
+        for(Ipp32s i = 0; i < 3; i++)
         {
             if(dir[j] == predictors[j][i])
             {
@@ -317,7 +317,7 @@ void H265CU::CodeIntradirLumaAng(H265Bs *bs, Ipp32u abs_part_idx, Ipp8u multiple
             {
                 std::swap(predictors[j][1], predictors[j][2]);
             }
-            for(Ipp32s i = (pred_num[j] - 1); i >= 0; i--)
+            for(Ipp32s i = 2; i >= 0; i--)
             {
                 dir[j] = dir[j] > predictors[j][i] ? dir[j] - 1 : dir[j];
             }

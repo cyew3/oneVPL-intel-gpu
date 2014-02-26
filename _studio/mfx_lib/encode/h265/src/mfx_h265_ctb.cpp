@@ -316,11 +316,11 @@ Ipp32u H265CU::GetSCuAddr()
     return m_ctbAddr*(1<<(m_par->MaxCUDepth<<1))+m_absIdxInLcu;
 }
 
-Ipp32s H265CU::GetIntradirLumaPred(Ipp32u absPartIdx, Ipp32s* intraDirPred, Ipp32s* mode)
+Ipp32s H265CU::GetIntradirLumaPred(Ipp32u absPartIdx, Ipp32s* intraDirPred)
 {
     H265CUPtr tempCU;
     Ipp32s leftIntraDir, aboveIntraDir;
-    Ipp32s predNum = 0;
+    Ipp32s iModes = 3; //for encoder side only //kolya
 
     // Get intra direction of left PU
     GetPuLeft(&tempCU, m_absIdxInLcu + absPartIdx );
@@ -332,13 +332,9 @@ Ipp32s H265CU::GetIntradirLumaPred(Ipp32u absPartIdx, Ipp32s* intraDirPred, Ipp3
 
     aboveIntraDir = tempCU.ctbData ? ( IS_INTRA(tempCU.ctbData, tempCU.absPartIdx ) ? tempCU.ctbData[tempCU.absPartIdx].intraLumaDir : INTRA_DC ) : INTRA_DC;
 
-    predNum = 3;
     if (leftIntraDir == aboveIntraDir)
     {
-        if (mode)
-        {
-            *mode = 1;
-        }
+        iModes = 1;
 
         if (leftIntraDir > 1) // angular modes
         {
@@ -355,10 +351,8 @@ Ipp32s H265CU::GetIntradirLumaPred(Ipp32u absPartIdx, Ipp32s* intraDirPred, Ipp3
     }
     else
     {
-        if (mode)
-        {
-            *mode = 2;
-        }
+        iModes = 2;
+
         intraDirPred[0] = leftIntraDir;
         intraDirPred[1] = aboveIntraDir;
 
@@ -372,7 +366,7 @@ Ipp32s H265CU::GetIntradirLumaPred(Ipp32u absPartIdx, Ipp32s* intraDirPred, Ipp3
         }
     }
 
-    return predNum;
+    return iModes;
 }
 
 
