@@ -106,18 +106,13 @@ set( defs "-DMFX_MAKENAME_ATOM -DAS_HEVCD_PLUGIN -DAS_HEVCE_PLUGIN" )
 set( sources "" )
 set( sources.plus "" )
 
+foreach( dir ${CMAKE_HOME_DIRECTORY}/_studio/mfx_lib/optimization/h265/src )
+  file( GLOB_RECURSE srcs "${dir}/*sse.c" "${dir}/*sse.cpp" )
+  list( APPEND sources ${srcs})
+endforeach()
+
 list( APPEND sources 
-  ${vdir_optimization}/src/mfx_h265_deblocking_sse.cpp
   ${vdir_optimization}/src/mfx_h265_interpolation_atom.cpp
-  ${vdir_optimization}/src/mfx_h265_interp_tmpl_sse.cpp
-  ${vdir_optimization}/src/mfx_h265_intrapred_sse.cpp
-  ${vdir_optimization}/src/mfx_h265_quantization_sse.cpp
-  ${vdir_optimization}/src/mfx_h265_sad_general_sse.cpp
-  ${vdir_optimization}/src/mfx_h265_sad_sse.cpp
-  ${vdir_optimization}/src/mfx_h265_sao_sse.cpp
-  ${vdir_optimization}/src/mfx_h265_transform_fwd_sse.cpp
-  ${vdir_optimization}/src/mfx_h265_transform_inv_sse.cpp
-  ${vdir_optimization}/src/mfx_h265_weighted_pred_sse.cpp
 )
 
 make_library( hevc_pp_atom none static )
@@ -130,18 +125,13 @@ set( defs "-DMFX_MAKENAME_AVX2 -DAS_HEVCD_PLUGIN -DAS_HEVCE_PLUGIN" )
 set( sources "" )
 set( sources.plus "" )
 
+foreach( dir ${CMAKE_HOME_DIRECTORY}/_studio/mfx_lib/optimization/h265/src )
+  file( GLOB_RECURSE srcs "${dir}/*avx2.c" "${dir}/*avx2.cpp" )
+  list( APPEND sources ${srcs})
+endforeach()
+
 list( APPEND sources 
-  ${vdir_optimization}/src/mfx_h265_interpolation_avx2.cpp
-  ${vdir_optimization}/src/mfx_h265_interp_tmpl_avx2.cpp
-  ${vdir_optimization}/src/mfx_h265_quantization_avx2.cpp
-  ${vdir_optimization}/src/mfx_h265_reordering_avx2.cpp
-  ${vdir_optimization}/src/mfx_h265_sad_avx2.cpp
-  ${vdir_optimization}/src/mfx_h265_sad_general_avx2.cpp
   ${vdir_optimization}/src/mfx_h265_transform_fwd_32x32_avx2_nablet.cpp
-  ${vdir_optimization}/src/mfx_h265_transform_fwd_avx2.cpp
-  ${vdir_optimization}/src/mfx_h265_transform_inv_32x32_avx2.cpp
-  ${vdir_optimization}/src/mfx_h265_transform_inv_avx2.cpp
-  ${vdir_optimization}/src/mfx_h265_weighted_pred_avx2.cpp
 )
 
 make_library( hevc_pp_avx2 none static )
@@ -156,20 +146,13 @@ set( defs "-DMFX_MAKENAME_PX -DAS_HEVCD_PLUGIN -DAS_HEVCE_PLUGIN" )
 set( sources "" )
 set( sources.plus "" )
 
+foreach( dir ${CMAKE_HOME_DIRECTORY}/_studio/mfx_lib/optimization/h265/src )
+  file( GLOB_RECURSE srcs "${dir}/*px.c" "${dir}/*px.cpp" )
+  list( APPEND sources ${srcs})
+endforeach()
+
 list( APPEND sources 
-    ${vdir_optimization}/src/mfx_h265_deblocking_px.cpp
-    ${vdir_optimization}/src/mfx_h265_interpolation_16u_px.cpp
-    ${vdir_optimization}/src/mfx_h265_interpolation_px.cpp
-    ${vdir_optimization}/src/mfx_h265_intrapred_16u_px.cpp
-    ${vdir_optimization}/src/mfx_h265_intrapred_px.cpp
-    ${vdir_optimization}/src/mfx_h265_quantization_px.cpp
     ${vdir_optimization}/src/mfx_h265_sad_ipp.cpp
-    ${vdir_optimization}/src/mfx_h265_sao_16u_px.cpp
-    ${vdir_optimization}/src/mfx_h265_sao_px.cpp
-    ${vdir_optimization}/src/mfx_h265_transform_16u_px.cpp
-    ${vdir_optimization}/src/mfx_h265_transform_px.cpp
-    ${vdir_optimization}/src/mfx_h265_weighted_pred_16u_px.cpp
-    ${vdir_optimization}/src/mfx_h265_weighted_pred_px.cpp
 )
 
 make_library( hevc_pp_px none static )
@@ -182,19 +165,13 @@ set( defs "-DMFX_MAKENAME_SSE4 -DAS_HEVCD_PLUGIN -DAS_HEVCE_PLUGIN" )
 set( sources "" )
 set( sources.plus "" )
 
+foreach( dir ${CMAKE_HOME_DIRECTORY}/_studio/mfx_lib/optimization/h265/src )
+  file( GLOB_RECURSE srcs "${dir}/*sse.c" "${dir}/*sse.cpp" )
+  list( APPEND sources ${srcs})
+endforeach()
+
 list( APPEND sources 
-  ${vdir_optimization}/src/mfx_h265_deblocking_sse.cpp
-  ${vdir_optimization}/src/mfx_h265_interpolation_sse.cpp
-  ${vdir_optimization}/src/mfx_h265_interp_tmpl_sse.cpp
-  ${vdir_optimization}/src/mfx_h265_intrapred_sse.cpp
-  ${vdir_optimization}/src/mfx_h265_quantization_sse.cpp
-  ${vdir_optimization}/src/mfx_h265_sad_general_sse.cpp
-  ${vdir_optimization}/src/mfx_h265_sad_sse.cpp
-  ${vdir_optimization}/src/mfx_h265_sao_sse.cpp
   ${vdir_optimization}/src/mfx_h265_transform_consts.cpp
-  ${vdir_optimization}/src/mfx_h265_transform_fwd_sse.cpp
-  ${vdir_optimization}/src/mfx_h265_transform_inv_sse.cpp
-  ${vdir_optimization}/src/mfx_h265_weighted_pred_sse.cpp
 )
 
 make_library( hevc_pp_sse4 none static )
@@ -207,18 +184,10 @@ set( defs "-DMFX_MAKENAME_SSSE3 -DAS_HEVCD_PLUGIN -DAS_HEVCE_PLUGIN" )
 set( sources "" )
 set( sources.plus "" )
 
-list( APPEND sources 
-  ${vdir_optimization}/src/mfx_h265_deblocking_sse.cpp
-  ${vdir_optimization}/src/mfx_h265_interpolation_sse.cpp
-  ${vdir_optimization}/src/mfx_h265_interp_tmpl_sse.cpp
-  ${vdir_optimization}/src/mfx_h265_intrapred_sse.cpp
-  ${vdir_optimization}/src/mfx_h265_sad_general_sse.cpp
-  ${vdir_optimization}/src/mfx_h265_sad_sse.cpp
-  ${vdir_optimization}/src/mfx_h265_sao_sse.cpp
-  ${vdir_optimization}/src/mfx_h265_transform_fwd_sse.cpp
-  ${vdir_optimization}/src/mfx_h265_transform_inv_sse.cpp
-  ${vdir_optimization}/src/mfx_h265_weighted_pred_sse.cpp
-)
+foreach( dir ${CMAKE_HOME_DIRECTORY}/_studio/mfx_lib/optimization/h265/src )
+  file( GLOB_RECURSE srcs "${dir}/*sse.c" "${dir}/*sse.cpp" )
+  list( APPEND sources ${srcs})
+endforeach()
 
 make_library( hevc_pp_ssse3 none static )
 append_property( hevc_pp_ssse3 COMPILE_FLAGS "-mssse3")
