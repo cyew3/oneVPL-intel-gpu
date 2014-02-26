@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2013 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2013-2014 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -35,7 +35,7 @@ namespace MFX_HEVC_PP
     void H265_FASTCALL MAKE_NAME(h265_QuantFwd_16s)(const Ipp16s* pSrc, Ipp16s* pDst, int len, int scale, int offset, int shift)
     {
         __m128i xmm_shift, xmm_src;
-        __m256i ymm0, ymm1, ymm3, ymm4, ymm5;
+        __m256i ymm0, ymm1, ymm3, ymm4;
 
         VM_ASSERT((len & 0x07) == 0);
         VM_ASSERT((offset >> shift) == 0);
