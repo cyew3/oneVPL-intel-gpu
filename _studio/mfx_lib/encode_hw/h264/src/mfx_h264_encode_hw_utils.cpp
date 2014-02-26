@@ -1701,6 +1701,18 @@ mfxStatus TaskManager::AssignTask(
     DecideOnRefPicFlag(m_video, *toEncode); // check for temporal layers
     CreateAdditionalDpbCommands(m_video, m_recons, *toEncode); // for svc temporal layers
 
+    if (toEncode->m_ctrl.SkipFrame != 0)
+    {
+        mfxExtCodingOption2 const * extOpt2 = GetExtBuffer(m_video);
+        toEncode->m_ctrl.SkipFrame = (extOpt2->SkipFrame) ? (1 + (IsProtectionPavp(m_video.Protected) || IsProtectionHdcp(m_video.Protected)) ) : 0;
+
+        if (toEncode->SkipFlag() != 0)
+        {
+            toEncode->m_type.top &= ~MFX_FRAMETYPE_REF;
+            toEncode->m_type.bot &= ~MFX_FRAMETYPE_REF;
+        }
+    }
+
     mfxExtCodingOptionDDI const * extDdi = GetExtBuffer(m_video);
     toEncode->m_subMbPartitionAllowed[0] = CheckSubMbPartition(extDdi, toEncode->m_type[0]);
     toEncode->m_subMbPartitionAllowed[1] = CheckSubMbPartition(extDdi, toEncode->m_type[1]);

@@ -21,7 +21,13 @@
 #include "mfx_h264_encode_vaapi.h"
 #include "mfx_h264_encode_hw_utils.h"
 
-//#define SKIP_FRAME_SUPPORT
+#ifdef MFX_VA_ANDROID
+    #define SKIP_FRAME_SUPPORT
+#else
+    #define MAX_FRAME_SIZE_SUPPORT
+    #define TRELLIS_QUANTIZATION_SUPPORT
+    #define ROLLING_INTRA_REFRESH_SUPPORT
+#endif
 
 using namespace MfxHwH264Encode;
 
@@ -1412,12 +1418,12 @@ mfxStatus VAAPIEncoder::Execute(
     configBuffers[buffersCount++] = m_rateParamBufferId;
     configBuffers[buffersCount++] = m_frameRateId;
 
+#ifdef MAX_FRAME_SIZE_SUPPORT
 /*
  * Limit frame size by application/user level
  */
     if (m_userMaxFrameSize != task.m_maxFrameSize)
     {
-//printf( "+++ own MFS: %d task MFS: %d\n", m_userMaxFrameSize, task.m_maxFrameSize );
         m_userMaxFrameSize = (UINT)task.m_maxFrameSize;
 //        if (task.m_frameOrder)
 //            m_sps.bResetBRC = true;
@@ -1425,6 +1431,9 @@ mfxStatus VAAPIEncoder::Execute(
                                                               m_vaContextEncode, m_maxFrameSizeId), MFX_ERR_DEVICE_FAILED);
         configBuffers[buffersCount++] = m_maxFrameSizeId;
     }
+#endif
+
+#ifdef TRELLIS_QUANTIZATION_SUPPORT
 /*
  *  By default (0) - driver will decide.
  *  1 - disable trellis quantization
@@ -1437,6 +1446,9 @@ mfxStatus VAAPIEncoder::Execute(
                                                                      m_vaContextEncode, m_quantizationId), MFX_ERR_DEVICE_FAILED);
         configBuffers[buffersCount++] = m_quantizationId;
     }
+#endif
+
+#ifdef ROLLING_INTRA_REFRESH_SUPPORT
  /*
  *   RollingIntraRefresh
  */
@@ -1447,6 +1459,7 @@ mfxStatus VAAPIEncoder::Execute(
                                                                      m_vaContextEncode, m_rirId), MFX_ERR_DEVICE_FAILED);
         configBuffers[buffersCount++] = m_rirId;
     }
+#endif
 
     if (VA_INVALID_ID != m_privateParamsId) configBuffers[buffersCount++] = m_privateParamsId;
 

@@ -1581,7 +1581,7 @@ void MfxHwH264Encode::ConfigureTask(
     
     if (task.m_ctrl.SkipFrame != 0)
     {
-        task.m_ctrl.SkipFrame = (extOpt2.SkipFrame) ? (1 + IsProtectionPavp(video.Protected)) : 0;
+        task.m_ctrl.SkipFrame = (extOpt2.SkipFrame) ? (1 + (IsProtectionPavp(video.Protected) || IsProtectionHdcp(video.Protected)) ) : 0;
 
         if (task.SkipFlag() != 0)
         {
