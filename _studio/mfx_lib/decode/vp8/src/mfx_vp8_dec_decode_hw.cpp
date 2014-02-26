@@ -88,13 +88,10 @@ mfxStatus VideoDECODEVP8_HW::Init(mfxVideoParam *p_video_param)
     mfxStatus sts = MFX_ERR_NONE;
     eMFXHWType type = m_p_core->GetHWType();
 
-    std::cout << "opanki -1" << std::endl;
-
     m_platform = MFX_VP8_Utility::GetPlatform(m_p_core, p_video_param);
 
     if (MFX_ERR_NONE > CheckVideoParamDecoders(p_video_param, m_p_core->IsExternalFrameAllocator(), type))
     {
-        std::cout << "opanki 0" << std::endl;
         return MFX_ERR_INVALID_VIDEO_PARAM;
     }
 
@@ -113,7 +110,6 @@ mfxStatus VideoDECODEVP8_HW::Init(mfxVideoParam *p_video_param)
 
     if (MFX_VP8_Utility::CheckVideoParam(p_video_param, type) == false)
     {
-        std::cout << "opanki 1" << std::endl;
         return MFX_ERR_INVALID_VIDEO_PARAM;
     }
 
@@ -606,7 +602,7 @@ mfxStatus VideoDECODEVP8_HW::DecodeFrameCheck(mfxBitstream *p_bs, mfxFrameSurfac
 
     if (0 == p_surface_work->Info.CropW)
     {
-//        p_surface_work->Info.CropW = m_on_init_video_params.mfx.FrameInfo.Width;
+        p_surface_work->Info.CropW = m_on_init_video_params.mfx.FrameInfo.CropW;
     }
 
     if (0 == p_surface_work->Info.CropH)
@@ -737,7 +733,7 @@ mfxStatus VideoDECODEVP8_HW::DecodeFrameCheck(mfxBitstream *p_bs, mfxFrameSurfac
     p_entry_point->pState = this;
     p_entry_point->requiredNumThreads = 1;
 
-    return MFX_ERR_NONE;
+    return show_frame ? MFX_ERR_NONE : MFX_ERR_MORE_DATA;
 
 } // mfxStatus VideoDECODEVP8_HW::DecodeFrameCheck(mfxBitstream *p_bs, mfxFrameSurface1 *p_surface_work, mfxFrameSurface1 **pp_surface_out, MFX_ENTRY_POINT *p_entry_point)
 
