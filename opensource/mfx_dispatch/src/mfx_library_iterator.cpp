@@ -362,7 +362,7 @@ mfxStatus MFXLibraryIterator::SelectDLLVersion(wchar_t *pPath
                             wcscpy_s(m_SubKeyName, sizeof(m_SubKeyName) / sizeof(m_SubKeyName[0]), subKeyName);
 #else
                             wcscpy(libPath, tmpPath);
-                            wcscpy_s(m_SubKeyName, subKeyName);
+                            wcscpy(m_SubKeyName, subKeyName);
 #endif
 
                             libMerit = merit;
