@@ -1255,7 +1255,7 @@ mfxStatus D3D11Encoder::Destroy()
         {
             MFX_CHECK(task.m_pRecRefFrames[REF_ALT]->idInPool < reconQueue.size(), MFX_ERR_UNDEFINED_BEHAVIOR);
             pps.ref_arf_frame = reconQueue[task.m_pRecRefFrames[REF_ALT]->idInPool].surface;
-        }       
+        }
 
         pps.pic_flags.bits.frame_type                      = (task.m_sFrameParams.bIntra) ? 0 : 1;
         pps.pic_flags.bits.segmentation_enabled           = opts->EnableMultipleSegments;
@@ -1956,6 +1956,7 @@ mfxStatus VAAPIEncoder::Execute(
     //------------------------------------------------------------------
     // put to cache
     {
+        UMC::AutomaticUMCMutex guard(m_guard);
         ExtVASurface currentFeedback;
         currentFeedback.surface = *inputSurface;
         currentFeedback.number = task.m_frameOrder;
@@ -1981,18 +1982,21 @@ mfxStatus VAAPIEncoder::QueryStatus(
     mfxU32 waitIdxBs;
     mfxU32 indxSurf;
 
-    for( indxSurf = 0; indxSurf < m_feedbackCache.size(); indxSurf++ )
     {
-        ExtVASurface currentFeedback = m_feedbackCache[ indxSurf ];
-
-        if( currentFeedback.number == task.m_frameOrder)
+        UMC::AutomaticUMCMutex guard(m_guard);
+        for( indxSurf = 0; indxSurf < m_feedbackCache.size(); indxSurf++ )
         {
-            waitSurface = currentFeedback.surface;
-            waitIdxBs   = currentFeedback.idxBs;
+            ExtVASurface currentFeedback = m_feedbackCache[ indxSurf ];
 
-            isFound  = true;
+            if( currentFeedback.number == task.m_frameOrder)
+            {
+                waitSurface = currentFeedback.surface;
+                waitIdxBs   = currentFeedback.idxBs;
 
-            break;
+                isFound  = true;
+
+                break;
+            }
         }
     }
 
@@ -2025,7 +2029,10 @@ mfxStatus VAAPIEncoder::QueryStatus(
     }
 #endif
 
-    m_feedbackCache.erase( m_feedbackCache.begin() + indxSurf );
+    {
+        UMC::AutomaticUMCMutex guard(m_guard);
+        m_feedbackCache.erase( m_feedbackCache.begin() + indxSurf );
+    }
 
     return MFX_ERR_NONE;
 #else
