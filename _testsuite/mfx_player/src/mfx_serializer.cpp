@@ -227,6 +227,7 @@ void MFXStructureRef <mfxExtCodingOptionHEVC>::ConstructValues() const
     SERIALIZE_INT(AnalyzeChroma);
     SERIALIZE_INT(SignBitHiding);
     SERIALIZE_INT(RDOQuant);
+    SERIALIZE_INT(SAO);
     SERIALIZE_INT(SplitThresholdStrengthCUIntra);
     SERIALIZE_INT(SplitThresholdStrengthTUIntra);
     SERIALIZE_INT(SplitThresholdStrengthCUInter);
@@ -241,9 +242,20 @@ void MFXStructureRef <mfxExtCodingOptionHEVC>::ConstructValues() const
     SERIALIZE_INT(IntraNumCand2_5);
     SERIALIZE_INT(IntraNumCand2_6);
     SERIALIZE_INT(WPP);
+    SERIALIZE_INT(GPB);
+    SERIALIZE_INT(AMP);
+    SERIALIZE_INT(CmIntraThreshold);
+    SERIALIZE_INT(TUSplitIntra);
+    SERIALIZE_INT(CUSplit);
+    SERIALIZE_INT(IntraAngModes);
+    SERIALIZE_INT(EnableCm);
+    SERIALIZE_INT(BPyramid);
     SERIALIZE_INT(FastPUDecision);
     SERIALIZE_INT(HadamardMe); 
     SERIALIZE_INT(TMVP); 
+    SERIALIZE_INT(Deblocking); 
+    SERIALIZE_INT(RDOQuantChroma); 
+    SERIALIZE_INT(RDOQuantCGZ); 
 }
 
 void MFXStructureRef <mfxExtCodingOptionVP8Param>::ConstructValues() const
