@@ -1002,7 +1002,14 @@ void H265CU::IntraLumaModeDecisionRDO(Ipp32s abs_part_idx, Ipp32u offset, Ipp8u 
     Ipp32s offset_luma_tu = GetLumaOffset(m_par, abs_part_idx, m_pitchRec);
     Ipp32s tuSplitIntra = (m_par->tuSplitIntra == 1 || m_par->tuSplitIntra == 3 && m_cslice->slice_type == I_SLICE);
     Ipp8u  part_size = (Ipp8u)(tr_depth == 1 ? PART_SIZE_NxN : PART_SIZE_2Nx2N);
+
+#define HM_MATCH_3 0
+#if HM_MATCH_3
+    Ipp32s num_cand2 = num_cand1;
+#else
     Ipp32s num_cand2 = m_par->num_cand_2[m_par->Log2MaxCUSize - (depth + tr_depth)];
+#endif
+
     IppiSize roi = { width, width };
     CostType cost;
 

@@ -192,6 +192,18 @@ mfxStatus H265Encoder::InitH265VideoParam(const mfxVideoParam *param, const mfxE
     if (opts_hevc->IntraNumCand2_5) pars->num_cand_2[5] = (Ipp8u)opts_hevc->IntraNumCand2_5;
     if (opts_hevc->IntraNumCand2_6) pars->num_cand_2[6] = (Ipp8u)opts_hevc->IntraNumCand2_6;
 
+//kolya HM's number of intra modes to search through
+#define HM_MATCH_2 0
+#if HM_MATCH_2
+    pars->num_cand_1[1] = 3; // 2x2
+    pars->num_cand_1[2] = 8; // 4x4
+    pars->num_cand_1[3] = 8; // 8x8
+    pars->num_cand_1[4] = 3; // 16x16
+    pars->num_cand_1[5] = 3; // 32x32
+    pars->num_cand_1[6] = 3; // 64x64
+    pars->num_cand_1[7] = 3; // 128x128
+#endif
+
     pars->enableCmFlag = (opts_hevc->EnableCm == MFX_CODINGOPTION_ON);
     pars->cmIntraThreshold = opts_hevc->CmIntraThreshold;
     pars->tuSplitIntra = opts_hevc->TUSplitIntra;
@@ -1847,6 +1859,9 @@ mfxStatus H265Encoder::EncodeThread(Ipp32s ithread) {
             cu[ithread].ModeDecision(0, 0, 0, NULL);
             //cu[ithread].FillRandom(0, 0);
             //cu[ithread].FillZero(0, 0);
+
+            //kolya
+            //exit(0);
 
             if( pars->RDOQFlag )
             {
