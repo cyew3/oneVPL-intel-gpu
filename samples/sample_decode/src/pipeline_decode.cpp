@@ -167,19 +167,15 @@ mfxStatus CDecodingPipeline::Init(sInputParams *pParams)
      *    2.b) if codec is not in the list of mediasdk plugins, we assume, that it is supported inside mediasdk library
      */
     // Load user plug-in, should go after CreateAllocator function (when all callbacks were initialized)
+    
     if (msdk_strlen(pParams->strPluginPath))
     {
         m_pUserModule.reset(new MFXVideoUSER(m_mfxSession));
-        if (pParams->videoType == CODEC_VP8)
+        if (pParams->videoType == CODEC_VP8 || pParams->videoType == MFX_CODEC_HEVC)
         {
-            m_pVP8_plugin.reset(LoadPlugin(MFX_PLUGINTYPE_VIDEO_DECODE, m_pUserModule.get(), pParams->strPluginPath));
-            if (m_pVP8_plugin.get() == NULL) sts = MFX_ERR_UNSUPPORTED;
+            m_pPlugin.reset(LoadPlugin(MFX_PLUGINTYPE_VIDEO_DECODE, m_pUserModule.get(), pParams->strPluginPath));
         }
-        else if (pParams->videoType == MFX_CODEC_HEVC)
-        {
-            m_pHEVC_plugin.reset(LoadPlugin(MFX_PLUGINTYPE_VIDEO_DECODE, m_pUserModule.get(), pParams->strPluginPath));
-            if (m_pHEVC_plugin.get() == NULL) sts = MFX_ERR_UNSUPPORTED;
-        }
+        if (m_pPlugin.get() == NULL) sts = MFX_ERR_UNSUPPORTED;
     }
     else
     {
@@ -274,8 +270,7 @@ void CDecodingPipeline::Close()
     if (m_pRenderSurface != NULL)
         m_pRenderSurface = NULL;
 #endif
-    m_pVP8_plugin.reset();
-    m_pHEVC_plugin.reset();
+    m_pPlugin.reset();
     if (m_pUID) MFXVideoUSER_UnLoad(m_mfxSession, &(m_pUID->mfx));
     m_mfxSession.Close();
     m_FileWriter.Close();
@@ -380,7 +375,7 @@ mfxStatus CDecodingPipeline::InitMfxParams(sInputParams *pParams)
 
         // parse bit stream and fill mfx params
         sts = m_pmfxDEC->DecodeHeader(&m_mfxBS, &m_mfxVideoParams);
-        if (m_pVP8_plugin.get() && !sts) {
+        if (m_pPlugin.get() && pParams->videoType == CODEC_VP8 && !sts) {
             // force set format to nv12 as the vp8 plugin uses yv12
             m_mfxVideoParams.mfx.FrameInfo.FourCC = MFX_FOURCC_NV12;
         }

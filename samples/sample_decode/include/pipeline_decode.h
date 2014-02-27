@@ -179,10 +179,8 @@ protected: // variables
     MFXVideoDECODE*         m_pmfxDEC;
     mfxVideoParam           m_mfxVideoParams; 
     std::auto_ptr<MFXVideoUSER>  m_pUserModule;
-    std::auto_ptr<MFXPlugin> m_pVP8_plugin;  
-    std::auto_ptr<MFXPlugin> m_pHEVC_plugin;
+    std::auto_ptr<MFXPlugin> m_pPlugin;
     const msdkPluginUID*     m_pUID;
-          
     std::vector<mfxExtBuffer *> m_ExtBuffers;
     
     MFXFrameAllocator*      m_pMFXAllocator; 
