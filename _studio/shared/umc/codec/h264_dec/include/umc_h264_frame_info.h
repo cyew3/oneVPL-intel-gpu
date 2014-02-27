@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2003-2013 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2003-2014 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -62,11 +62,10 @@ class H264DecoderFrameInfo : public H264DecoderLayer
 {
 public:
 
-    H264DecoderFrameInfo(H264DecoderFrame * pFrame, H264_Heap * heap, H264_Heap_Objects * pObjHeap)
+    H264DecoderFrameInfo(H264DecoderFrame * pFrame,  H264_Heap_Objects * pObjHeap)
         : m_pFrame(pFrame)
         , m_prepared(0)
         , m_SliceCount(0)
-        , m_pHeap(heap)
         , m_pObjHeap(pObjHeap)
     {
         Reset();
@@ -382,7 +381,6 @@ private:
 
     Ipp32s m_SliceCount;
 
-    H264_Heap *m_pHeap;
     H264_Heap_Objects * m_pObjHeap;
     bool m_IsNeedDeblocking;
 

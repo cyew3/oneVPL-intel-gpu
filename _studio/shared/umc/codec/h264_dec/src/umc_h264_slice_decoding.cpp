@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2003-2013 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2003-2014 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -283,7 +283,6 @@ H264Slice::H264Slice(MemoryAllocator *pMemoryAllocator)
     : m_pSeqParamSet(0)
     , m_coeffsBuffers(0)
     , m_pMemoryAllocator(pMemoryAllocator)
-    , m_pHeap(0)
 {   
     Reset();
 } // H264Slice::H264Slice()
@@ -296,12 +295,7 @@ H264Slice::~H264Slice()
 
 void H264Slice::Reset()
 {
-    if (m_pHeap)
-    {
-        m_pHeap->Free(m_pSource);
-    }
-
-    m_pSource = 0;
+    m_pSource.Release();
 
     if (m_pSeqParamSet)
     {
@@ -337,8 +331,6 @@ void H264Slice::Reset()
 
 void H264Slice::ZeroedMembers()
 {
-    m_pSource = 0;
-
     m_pPicParamSet = 0;
     m_pSeqParamSet = 0;
     m_pSeqParamSetEx = 0;
@@ -370,13 +362,13 @@ void H264Slice::Release()
 
 } // void H264Slice::Release(void)
 
-Ipp32s H264Slice::RetrievePicParamSetNumber(void *pSource, size_t nSourceSize)
+Ipp32s H264Slice::RetrievePicParamSetNumber()
 {
-    if (!nSourceSize)
+    if (!m_pSource.GetDataSize())
         return -1;
 
     memset(&m_SliceHeader, 0, sizeof(m_SliceHeader));
-    m_BitStream.Reset((Ipp8u *) pSource, (Ipp32u) nSourceSize);
+    m_BitStream.Reset((Ipp8u *) m_pSource.GetPointer(), (Ipp32u) m_pSource.GetDataSize());
 
     Status umcRes = UMC_OK;
 
@@ -413,16 +405,15 @@ void H264Slice::FreeResources()
     m_coeffsBuffers = 0;
 }
 
-bool H264Slice::Reset(void *pSource, size_t nSourceSize, Ipp32s ,
-                      H264NalExtension *pNalExt)
+bool H264Slice::Reset(H264NalExtension *pNalExt)
 {
     Ipp32s iMBInFrame;
     Ipp32s iFieldIndex;
 
-    m_BitStream.Reset((Ipp8u *) pSource, (Ipp32u) nSourceSize);
+    m_BitStream.Reset((Ipp8u *) m_pSource.GetPointer(), (Ipp32u) m_pSource.GetDataSize());
 
     // decode slice header
-    if (nSourceSize && false == DecodeSliceHeader(pNalExt))
+    if (m_pSource.GetDataSize() && false == DecodeSliceHeader(pNalExt))
     {
         ZeroedMembers();
         return false;

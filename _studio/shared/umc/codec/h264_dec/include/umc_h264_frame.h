@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2003-2013 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2003-2014 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -256,7 +256,7 @@ public:
     // m_paddedParsedFrameDataSize contains the image dimensions,
     // rounded up to a multiple of 16, that were used.
 
-    H264DecoderFrame(MemoryAllocator *pMemoryAllocator, H264_Heap * heap, H264_Heap_Objects * pObjHeap);
+    H264DecoderFrame(MemoryAllocator *pMemoryAllocator, H264_Heap_Objects * pObjHeap);
 
     virtual ~H264DecoderFrame();
 
@@ -537,7 +537,6 @@ protected:
     MemID m_midParsedFrameDataNew;
 
     H264_Heap_Objects * m_pObjHeap;
-    H264_Heap * m_pHeap;
 };
 
 class H264DecoderFrameExtension : public H264DecoderFrame
@@ -545,7 +544,7 @@ class H264DecoderFrameExtension : public H264DecoderFrame
     DYNAMIC_CAST_DECL(H264DecoderFrameExtension, H264DecoderFrame)
 
 public:
-    H264DecoderFrameExtension(MemoryAllocator *pMemoryAllocator, H264_Heap * heap, H264_Heap_Objects * pObjHeap);
+    H264DecoderFrameExtension(MemoryAllocator *pMemoryAllocator, H264_Heap_Objects * pObjHeap);
 
     virtual ~H264DecoderFrameExtension();
 

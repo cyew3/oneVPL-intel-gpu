@@ -100,6 +100,8 @@ eMFXHWType GetHardwareType(const mfxU32 adapterNum, mfxU32 platformFromDriver)
         return MFX_HW_BDW;
     case IGFX_CHERRYVIEW:
         return MFX_HW_CHV;
+    case IGFX_GT:
+        return MFX_HW_IVB; // sandybridge
     }
 
     // if we were not able to find right device via PrivateGUID let base on defines and check HW capabilities

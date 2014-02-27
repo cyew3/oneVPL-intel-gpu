@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2003-2013 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2003-2014 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -23,7 +23,7 @@
 namespace UMC
 {
 
-H264DecoderFrame g_GlobalFakeFrame(0, 0, 0);
+H264DecoderFrame g_GlobalFakeFrame(0, 0);
 
 H264DecoderFrameInfo::FakeFrameInitializer H264DecoderFrameInfo::g_FakeFrameInitializer;
 
@@ -33,7 +33,7 @@ H264DecoderFrameInfo::FakeFrameInitializer::FakeFrameInitializer()
     g_GlobalFakeFrame.m_ID[1] = (size_t)-1;
 };
 
-H264DecoderFrame::H264DecoderFrame(MemoryAllocator *pMemoryAllocator, H264_Heap * heap, H264_Heap_Objects * pObjHeap)
+H264DecoderFrame::H264DecoderFrame(MemoryAllocator *pMemoryAllocator, H264_Heap_Objects * pObjHeap)
     : H264DecYUVBufferPadded()
     , m_TopSliceCount(0)
     , m_ErrorType(0)
@@ -53,7 +53,6 @@ H264DecoderFrame::H264DecoderFrame(MemoryAllocator *pMemoryAllocator, H264_Heap 
     , m_maxDId(0)
     , m_maxQId(0)
     , m_pObjHeap(pObjHeap)
-    , m_pHeap(heap)
 {
 
     for (Ipp32u i = 0; i < MAX_NUM_LAYERS; i++)
@@ -85,8 +84,8 @@ H264DecoderFrame::H264DecoderFrame(MemoryAllocator *pMemoryAllocator, H264_Heap 
 
     ResetRefCounter();
 
-    m_pSlicesInfo = new H264DecoderFrameInfo(this, m_pHeap, m_pObjHeap);
-    m_pSlicesInfoBottom = new H264DecoderFrameInfo(this, m_pHeap, m_pObjHeap);
+    m_pSlicesInfo = new H264DecoderFrameInfo(this, m_pObjHeap);
+    m_pSlicesInfoBottom = new H264DecoderFrameInfo(this, m_pObjHeap);
 
     m_ID[0] = (Ipp32s) ((Ipp8u *) this - (Ipp8u *) 0);
     m_ID[1] = m_ID[0] + 1;
@@ -621,8 +620,8 @@ void H264DecoderFrame::UpdateLongTermPicNum(Ipp32s CurrPicStruct)
 //////////////////////////////////////////////////////////////////////////////
 //  H264DecoderFrameExtension class implementation
 //////////////////////////////////////////////////////////////////////////////
-H264DecoderFrameExtension::H264DecoderFrameExtension(MemoryAllocator *pMemoryAllocator, H264_Heap * heap, H264_Heap_Objects * pObjHeap)
-    : H264DecoderFrame(pMemoryAllocator, heap, pObjHeap)
+H264DecoderFrameExtension::H264DecoderFrameExtension(MemoryAllocator *pMemoryAllocator, H264_Heap_Objects * pObjHeap)
+    : H264DecoderFrame(pMemoryAllocator, pObjHeap)
     , m_pAuxiliaryFrame(0)
 {
     is_auxiliary_frame = false;
@@ -644,7 +643,7 @@ void H264DecoderFrameExtension::AllocateAuxiliary()
     if (m_pAuxiliaryFrame)
         return;
 
-    m_pAuxiliaryFrame = new H264DecoderFrame(m_pMemoryAllocator, m_pHeap, m_pObjHeap);
+    m_pAuxiliaryFrame = new H264DecoderFrame(m_pMemoryAllocator, m_pObjHeap);
 
     if (!m_pAuxiliaryFrame)
     {

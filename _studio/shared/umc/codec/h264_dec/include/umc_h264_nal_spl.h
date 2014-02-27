@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2003-2013 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2003-2014 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -121,7 +121,7 @@ class NALUnitSplitter
 {
 public:
 
-    NALUnitSplitter(H264_Heap * heap);
+    NALUnitSplitter();
 
     virtual ~NALUnitSplitter();
 
@@ -151,7 +151,6 @@ protected:
 
     TaskSupplier *  m_pSupplier;
     bool m_bWaitForIDR;
-    H264_Heap   *   m_pHeap;
     SwapperBase *   m_pSwapper;
     StartCodeIteratorBase * m_pStartCodeIter;
 
@@ -164,7 +163,7 @@ size_t BuildNALUnit(MediaDataEx * , Ipp8u * , Ipp32s lengthSize);
 class NALUnitSplitterMP4 : public NALUnitSplitter
 {
 public:
-    NALUnitSplitterMP4(H264_Heap * heap);
+    NALUnitSplitterMP4();
 
     virtual void Init();
 

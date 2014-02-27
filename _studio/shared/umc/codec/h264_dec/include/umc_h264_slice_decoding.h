@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//    Copyright (c) 2003-2013 Intel Corporation. All Rights Reserved.
+//    Copyright (c) 2003-2014 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -176,7 +176,7 @@ public:
     H264Slice *m_firstILPredSliceInDepLayer;
 
     // Set slice source data
-    bool Reset(void *pSource, size_t nSourceSize, Ipp32s iConsumerNumber, H264NalExtension *pNalExt = NULL);
+    bool Reset(H264NalExtension *pNalExt);
     // Set current slice number
     void SetSliceNumber(Ipp32s iSliceNumber);
 
@@ -184,7 +184,7 @@ public:
 
     void InitializeContexts();
 
-    Ipp32s RetrievePicParamSetNumber(void *pSource, size_t nSourceSize);
+    Ipp32s RetrievePicParamSetNumber();
 
     //
     // method(s) to obtain slice specific information
@@ -294,10 +294,9 @@ public:
 
     bool IsReference() const {return m_SliceHeader.nal_ref_idc != 0;}
 
-    void SetHeap(H264_Heap_Objects  *pObjHeap, H264_Heap *pHeap)
+    void SetHeap(H264_Heap_Objects  *pObjHeap)
     {
         m_pObjHeap = pObjHeap;
-        m_pHeap = pHeap;
     }
 
     void CompleteDecoding();
@@ -308,7 +307,7 @@ public:
 
     Ipp32s GetDQid() {return (m_SliceHeader.nal_ext.svc.dependency_id << 4) | m_SliceHeader.nal_ext.svc.quality_id;}
 
-    H264MemoryPiece *m_pSource;                                 // (H264MemoryPiece *) pointer to owning memory piece
+    H264MemoryPiece m_pSource;                                 // (H264MemoryPiece *) pointer to owning memory piece
     Ipp64f m_dTime;                                             // (Ipp64f) slice's time stamp
 
 public:  // DEBUG !!!! should remove dependence
@@ -406,7 +405,6 @@ public:  // DEBUG !!!! should remove dependence
     MemoryAllocator *m_pMemoryAllocator;                        // (MemoryAllocator *) pointer to memory allocation tool
 
     H264_Heap_Objects           *m_pObjHeap;
-    H264_Heap                   *m_pHeap;
 
     static FactorArrayAFF m_StaticFactorArrayAFF;
 };

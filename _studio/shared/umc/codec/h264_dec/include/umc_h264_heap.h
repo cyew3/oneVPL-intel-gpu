@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2003-2013 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2003-2014 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -27,8 +27,6 @@ namespace UMC
 //*********************************************************************************************/
 class H264MemoryPiece
 {
-    friend class H264_Heap;
-
 public:
     // Default constructor
     H264MemoryPiece()
@@ -43,22 +41,10 @@ public:
         Release();
     }
 
-    static H264MemoryPiece * AllocateMemoryPiece(size_t nSize)
+    void Release()
     {
-        Ipp8u * ppp = new Ipp8u[sizeof(Ipp8u)*nSize + sizeof(H264MemoryPiece)];
-        if (!ppp)
-            throw h264_exception(UMC_ERR_ALLOC);
-        H264MemoryPiece * piece = new (ppp) H264MemoryPiece();
-
-        piece->m_pSourceBuffer = (Ipp8u*)ppp + sizeof(H264MemoryPiece);
-        piece->m_pDataPointer = piece->m_pSourceBuffer;
-        piece->m_nSourceSize = nSize;
-        return piece;
-    }
-
-    static void FreeMemoryPiece(H264MemoryPiece * piece)
-    {
-        delete[] (Ipp8u*)piece;
+        delete[] m_pSourceBuffer;
+        Reset();
     }
 
     void SetData(MediaData *out)
@@ -75,7 +61,6 @@ public:
     {
         Release();
 
-        // DEBUG : ADB : need to use ExternalMemoryAllocator
         // allocate little more
         m_pSourceBuffer = h264_new_array_throw<Ipp8u>((Ipp32s)nSize);
         m_pDataPointer = m_pSourceBuffer;
@@ -112,202 +97,11 @@ protected:
         m_nDataSize = 0;
     }
 
-    void Release()
-    {
-        if (m_pSourceBuffer)
-            delete[] m_pSourceBuffer;
-        Reset();
-    }
-
 private:
     H264MemoryPiece( const H264MemoryPiece &s );                // no copy CTR
     H264MemoryPiece & operator=(const H264MemoryPiece &s );
 };
 
-//*********************************************************************************************/
-//
-//*********************************************************************************************/
-//#define CONST_HEAP_DEFINE
-
-class H264_Heap
-{
-public:
-
-    H264_Heap()
-        : m_pFilledMemory(0)
-        , m_pFreeMemory(0)
-    {
-    }
-
-    virtual ~H264_Heap()
-    {
-        while (m_pFreeMemory)
-        {
-            H264MemoryPiece *pMem = m_pFreeMemory->m_pNext;
-            H264MemoryPiece::FreeMemoryPiece(m_pFreeMemory);
-            m_pFreeMemory = pMem;
-        }
-
-        while (m_pFilledMemory)
-        {
-            H264MemoryPiece *pMem = m_pFilledMemory->m_pNext;
-            H264MemoryPiece::FreeMemoryPiece(m_pFilledMemory);
-            m_pFilledMemory = pMem;
-        }
-    }
-
-    const H264MemoryPiece * GetLastAllocated() const
-    {
-        return m_pFilledMemory;
-    }
-
-    H264MemoryPiece * Allocate(size_t nSize)
-    {
-#ifndef CONST_HEAP_DEFINE
-        H264MemoryPiece *pMem = H264MemoryPiece::AllocateMemoryPiece(nSize);
-#else
-        H264MemoryPiece *pMem = GetFreeMemoryPiece(nSize);
-        AddFilledMemoryPiece(pMem);
-#endif
-        return pMem;
-    }
-
-    void Free(H264MemoryPiece *pMem)
-    {
-        if (!pMem)
-            return;
-
-#ifndef CONST_HEAP_DEFINE
-        H264MemoryPiece::FreeMemoryPiece(pMem);
-#else
-        //m_pFilledMemory = m_pFilledMemory->m_pNext;
-        H264MemoryPiece *pTemp = m_pFilledMemory;
-
-        if (pTemp == pMem)
-        {
-            m_pFilledMemory = m_pFilledMemory->m_pNext;
-        }
-        else
-        {
-#ifdef _DEBUG
-            bool is_found = false;
-#endif
-            // find pMem at list
-            while (pTemp->m_pNext)
-            {
-                 if (pTemp->m_pNext == pMem)
-                 {
-                     pTemp->m_pNext = pMem->m_pNext;
-#ifdef _DEBUG
-                    is_found = true;
-#endif
-                     break;
-                 }
-                 pTemp = pTemp->m_pNext;
-            }
-
-#ifdef _DEBUG
-            VM_ASSERT(is_found);
-#endif
-        }
-
-        pMem->m_pNext = m_pFreeMemory;
-        m_pFreeMemory = pMem;
-#endif
-    }
-
-    void Reset()
-    {
-        while (m_pFilledMemory)
-        {
-            H264MemoryPiece *pMem = m_pFilledMemory;
-            m_pFilledMemory = pMem->GetNext();
-            pMem->m_pNext = m_pFreeMemory;
-            m_pFreeMemory = pMem;
-        }
-    }
-
-protected:
-
-    // Get free piece of memory
-    H264MemoryPiece *GetFreeMemoryPiece(size_t nSize)
-    {
-#ifndef CONST_HEAP_DEFINE
-        H264MemoryPiece *pTemp = h264_new_throw<H264MemoryPiece>();
-        pTemp->m_pNext = 0;
-        pTemp->Allocate(nSize);
-        return pTemp;
-#else
-        // try to find suitable already allocated memory
-        H264MemoryPiece *pTemp = m_pFreeMemory;
-        H264MemoryPiece *pPrev = 0;
-
-        H264MemoryPiece *pGoodPiece = 0;
-        size_t currMin = (size_t)-1;
-        bool found = false;
-
-        while (pTemp)
-        {
-            if (pTemp->m_nSourceSize >= nSize && currMin > (pTemp->m_nSourceSize - nSize))
-            {
-                pGoodPiece = pPrev;
-                currMin = pTemp->m_nSourceSize;
-                found = true;
-            }
-
-            pPrev = pTemp;
-            pTemp = pTemp->m_pNext;
-        }
-
-        if (found)
-        {
-            pTemp = pGoodPiece ? pGoodPiece->m_pNext : m_pFreeMemory;
-
-            if (pGoodPiece)
-                pGoodPiece->m_pNext = pGoodPiece->m_pNext->m_pNext;
-            else
-                m_pFreeMemory = m_pFreeMemory->m_pNext;
-
-            return pTemp;
-        }
-
-        // we found nothing, try to allocate new
-        {
-            pTemp = H264MemoryPiece::AllocateMemoryPiece(nSize * 2);
-            // bind to list to avoid memory leak
-            pTemp->m_pNext = m_pFreeMemory;
-            m_pFreeMemory = pTemp;
-            // unbind from list
-            m_pFreeMemory = m_pFreeMemory->m_pNext;
-
-            return pTemp;
-        }
-#endif
-    }
-
-    // Add filled piece of memory
-    void AddFilledMemoryPiece(H264MemoryPiece *pMem)
-    {
-        if (m_pFilledMemory)
-        {
-            H264MemoryPiece *pTemp = m_pFilledMemory;
-
-            // find end of list
-            while (pTemp->m_pNext)
-                pTemp = pTemp->m_pNext;
-            pTemp->m_pNext = pMem;
-        }
-        else
-            m_pFilledMemory = pMem;
-
-        pMem->m_pNext = 0;
-
-    }
-
-protected:
-    H264MemoryPiece * m_pFilledMemory;
-    H264MemoryPiece * m_pFreeMemory;
-};
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Item class

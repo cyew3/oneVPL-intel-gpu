@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2003-2013 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2003-2014 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -163,6 +163,7 @@ public:
             m_prev.insert(m_prev.end(), (Ipp8u *)pSource->GetDataPointer(), source);
             pSource->MoveDataPointer((Ipp32s)(source - (Ipp8u *)pSource->GetDataPointer()));
 
+            pDst->SetFlags(MediaData::FLAG_VIDEO_DATA_NOT_FULL_FRAME);
             pDst->SetBufferPointer(&(m_prev[0]), m_prev.size());
             pDst->SetDataSize(m_prev.size());
             pDst->SetTime(m_pts);
@@ -224,6 +225,7 @@ public:
         pDst->SetBufferPointer((Ipp8u*)pSource->GetDataPointer(), nal_size);
         pDst->SetDataSize(nal_size);
         pSource->MoveDataPointer((Ipp32s)nal_size);
+        pDst->SetFlags(pSource->GetFlags());
 
         Ipp32s code = m_code;
         m_code = -1;
@@ -426,10 +428,9 @@ static inline Ipp32s GetLenght(Ipp32s len_bytes_count, Ipp8u * buf)
 } // Ipp32s GetLenght(Ipp32s len_bytes_count, Ipp8u * buf)
 
 
-NALUnitSplitter::NALUnitSplitter(H264_Heap * heap)
+NALUnitSplitter::NALUnitSplitter()
     : m_pSupplier(0)
     , m_bWaitForIDR(true)
-    , m_pHeap(heap)
     , m_pSwapper(0)
     , m_pStartCodeIter(0)
 {
@@ -529,8 +530,8 @@ size_t BuildNALUnit(MediaDataEx * mediaData, Ipp8u * buf, Ipp32s lengthSize)
     return (len + lengthSize);
 }
 
-NALUnitSplitterMP4::NALUnitSplitterMP4(H264_Heap * heap)
-    : NALUnitSplitter(heap)
+NALUnitSplitterMP4::NALUnitSplitterMP4()
+    : NALUnitSplitter()
     , m_isHeaderReaded(false)
 {
 }

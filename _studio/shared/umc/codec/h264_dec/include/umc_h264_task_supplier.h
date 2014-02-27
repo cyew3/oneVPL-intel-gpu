@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2003-2013 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2003-2014 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -587,8 +587,6 @@ protected:
     Ipp32u m_iThreadNum;
 
     H264ThreadGroup  m_threadGroup;
-
-    H264_Heap      m_Heap;
 
     Ipp64f      m_local_delta_frame_time;
     bool        m_use_external_framerate;

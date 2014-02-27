@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2003-2013 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2003-2014 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -507,10 +507,9 @@ static bool IsNeedSPSInvalidate(const H264SeqParamSet *old_sps, const H264SeqPar
 }
 #endif
 
-AU_Splitter::AU_Splitter(H264_Heap *heap, H264_Heap_Objects *objectHeap)
+AU_Splitter::AU_Splitter(H264_Heap_Objects *objectHeap)
     : m_Headers(objectHeap)
     , m_objHeap(objectHeap)
-    , m_heap(heap)
 {
 }
 
@@ -525,11 +524,11 @@ void AU_Splitter::Init(VideoDecoderParams *init)
 
     if (init->info.stream_subtype == AVC1_VIDEO)
     {
-        m_pNALSplitter.reset(new NALUnitSplitterMP4(m_heap));
+        m_pNALSplitter.reset(new NALUnitSplitterMP4());
     }
     else
     {
-        m_pNALSplitter.reset(new NALUnitSplitter(m_heap));
+        m_pNALSplitter.reset(new NALUnitSplitter());
     }
 
     m_pNALSplitter->Init();

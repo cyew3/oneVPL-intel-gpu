@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2003-2013 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2003-2014 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -146,7 +146,7 @@ protected:
 class AU_Splitter
 {
 public:
-    AU_Splitter(H264_Heap *heap, H264_Heap_Objects *objectHeap);
+    AU_Splitter(H264_Heap_Objects *objectHeap);
     virtual ~AU_Splitter();
 
     void Init(VideoDecoderParams *init);
@@ -162,7 +162,6 @@ protected:
 
     Headers     m_Headers;
     H264_Heap_Objects   *m_objHeap;
-    H264_Heap      *m_heap;
 
 protected:
 
