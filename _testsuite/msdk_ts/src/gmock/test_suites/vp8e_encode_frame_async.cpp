@@ -1,18 +1,15 @@
 #include "ts_encoder.h"
 #include "ts_parser.h"
 
-namespace{
+namespace
+{
 
 class TestSuite : tsVideoEncoder
 {
 public:
-    TestSuite()
-        : tsVideoEncoder(MFX_CODEC_VP8)
-    {};
-    ~TestSuite() {};
-
+    TestSuite() : tsVideoEncoder(MFX_CODEC_VP8) {}
+    ~TestSuite() {}
     int RunTest(unsigned int id);
-
     static const unsigned int n_cases;
 
 private:
@@ -27,7 +24,6 @@ private:
 
     struct tc_par;
     typedef void (TestSuite::*callback)(tc_par&, EFApar*);
-
 
     struct tc_par
     {
@@ -207,8 +203,5 @@ int TestSuite::RunTest(unsigned int id)
     return 0;
 }
 
-class vp8e_encode_frame_async : public MFXVideoTest{};
-TEST_P(vp8e_encode_frame_async,) { TestSuite ts; if(ts.RunTest(GetParam())) {ADD_FAILURE();} }
-INSTANTIATE_TEST_CASE_P(, vp8e_encode_frame_async, ::testing::Range<unsigned int>(0, TestSuite::n_cases));
-
+TS_REG_TEST_SUITE_CLASS(vp8e_encode_frame_async);
 };

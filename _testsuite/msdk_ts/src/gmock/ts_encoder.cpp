@@ -36,6 +36,10 @@ tsVideoEncoder::tsVideoEncoder(mfxU32 CodecId, bool useDefaults)
 
 tsVideoEncoder::~tsVideoEncoder() 
 {
+    if(m_initialized)
+    {
+        Close();
+    }
 }
     
 mfxStatus tsVideoEncoder::Init() 
@@ -46,7 +50,9 @@ mfxStatus tsVideoEncoder::Init()
         {
             MFXInit();TS_CHECK_MFX;
         }
-        if(!m_pFrameAllocator && (m_request.Type & (MFX_MEMTYPE_VIDEO_MEMORY_DECODER_TARGET|MFX_MEMTYPE_VIDEO_MEMORY_PROCESSOR_TARGET)))
+        if(     !m_pFrameAllocator 
+            && (   (m_request.Type & (MFX_MEMTYPE_VIDEO_MEMORY_DECODER_TARGET|MFX_MEMTYPE_VIDEO_MEMORY_PROCESSOR_TARGET))
+                || (m_par.IOPattern & MFX_IOPATTERN_IN_VIDEO_MEMORY)))
         {
             if(!GetAllocator())
             {

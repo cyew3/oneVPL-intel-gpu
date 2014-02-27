@@ -67,5 +67,8 @@
     <ClCompile Include="src\gmock\test_suites\vp8e_encode_frame_async.cpp">
       <Filter>Source Files\test_suites</Filter>
     </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\vp8e_get_video_param.cpp">
+      <Filter>Source Files\test_suites</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

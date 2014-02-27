@@ -43,6 +43,11 @@ extern std::ostream g_tsLog;
     TEST_P(name,) { if((routine)(GetParam())) {ADD_FAILURE();} }\
     INSTANTIATE_TEST_CASE_P(, name, ::testing::Range<unsigned int>(0, (n_cases)));
 
+#define TS_REG_TEST_SUITE_CLASS(name)\
+    class name : public MFXVideoTest{};\
+    TEST_P(name,) { TestSuite ts; if(ts.RunTest(GetParam())) {ADD_FAILURE();} }\
+    INSTANTIATE_TEST_CASE_P(, name, ::testing::Range<unsigned int>(0, TestSuite::n_cases));
+
 #define TRACE_FUNCN(n, name, p1, p2, p3, p4, p5, p6, p7)\
     g_tsLog << "-------------------------------------------------------------------------------\n";\
     INC_PADDING();\
@@ -63,7 +68,7 @@ extern std::ostream g_tsLog;
     if((n) > 4) g_tsLog << ", " << #p5;\
     if((n) > 5) g_tsLog << ", " << #p6;\
     if((n) > 6) g_tsLog << ", " << #p7;\
-    g_tsLog << ");\n";\
+    g_tsLog << ");" << std::endl;\
     DEC_PADDING();
 #define TRACE_FUNC6(name, p1, p2, p3, p4, p5, p6) TRACE_FUNCN(6, name, p1, p2, p3, p4, p5, p6, 0)
 #define TRACE_FUNC5(name, p1, p2, p3, p4, p5) TRACE_FUNCN(5, name, p1, p2, p3, p4, p5, 0, 0)
