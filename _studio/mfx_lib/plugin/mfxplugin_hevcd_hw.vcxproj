@@ -226,17 +226,17 @@
     <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Release|x64'" />
     <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Release_Intel|x64'" />
     <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Release_Intel_Evaluation|x64'" />
-    <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">mfxplugin32_hevcd_hw_d</TargetName>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">mfxplugin32_hw_d</TargetName>
     <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug_Intel|Win32'">mfxplugin32_hevcd_sw_d</TargetName>
     <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug_Intel_Evaluation|Win32'">mfxplugin32_hevcd_sw_d</TargetName>
-    <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">mfxplugin64_hevcd_hw_d</TargetName>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">mfxplugin64_hw_d</TargetName>
     <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug_Intel|x64'">mfxplugin64_hevcd_sw_d</TargetName>
     <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug_Intel_Evaluation|x64'">mfxplugin64_hevcd_sw_d</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <OutDir>$(MfxBuildDir)win_$(Platform)\bin\33a61c0b4c27454ca8d85dde757c6f8e\</OutDir>
     <IntDir>$(OutDir)..\..\objs\$(Configuration)\$(ProjectName)\</IntDir>
-    <TargetName>mfxplugin64_hevcd_hw</TargetName>
+    <TargetName>mfxplugin64_hw</TargetName>
     <IncludePath>$(WindowsSdk8Path)\Include\um;$(WindowsSdk8Path)\Include\shared;$(IncludePath)</IncludePath>
     <LibraryPath>$(WindowsSdk8Path)\Lib\win8\um\x64;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
@@ -253,7 +253,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <OutDir>$(MfxBuildDir)win_$(Platform)\bin\33a61c0b4c27454ca8d85dde757c6f8e\</OutDir>
     <IntDir>$(OutDir)..\..\objs\$(Configuration)\$(ProjectName)\</IntDir>
-    <TargetName>mfxplugin32_hevcd_hw</TargetName>
+    <TargetName>mfxplugin32_hw</TargetName>
     <IncludePath>$(WindowsSdk8Path)\Include\um;$(WindowsSdk8Path)\Include\shared;$(IncludePath)</IncludePath>
     <LibraryPath>$(WindowsSdk8Path)\Lib\win8\um\x86;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
@@ -593,6 +593,7 @@
   <ItemGroup>
     <ClInclude Include="include\mfx_hevc_dec_plugin.h" />
     <ClInclude Include="include\mfx_plugin_module.h" />
+    <ClInclude Include="resource.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="ClassDiagram.cd" />

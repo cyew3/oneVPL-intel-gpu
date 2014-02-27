@@ -13,13 +13,11 @@
 #undef APSTUDIO_READONLY_SYMBOLS
 
 /////////////////////////////////////////////////////////////////////////////
-// English (U.S.) resources
+// English (United States) resources
 
 #if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)
-#ifdef _WIN32
 LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
 #pragma code_page(1252)
-#endif //_WIN32
 
 #ifdef APSTUDIO_INVOKED
 /////////////////////////////////////////////////////////////////////////////
@@ -70,10 +68,10 @@ BEGIN
         BLOCK "040904b0"
         BEGIN
             VALUE "CompanyName", "Intel Corporation"
-            VALUE "FileDescription", "Intel® Media SDK HEVC HW Decode Plug-in"
+            VALUE "FileDescription", "Intel® Media SDK HW Default Plug-in"
             VALUE "FileVersion", "3.11.5.20"
-            VALUE "InternalName", "mfxplugin_hevcd_hw"
-            VALUE "LegalCopyright", "Copyright© 2013 Intel Corporation"
+            VALUE "InternalName", "mfxplugin_hw"
+            VALUE "LegalCopyright", "Copyright© 2014 Intel Corporation"
             VALUE "LegalTrademarks", "Intel Corporation"
             VALUE "ProductName", "Intel® Media SDK Plugin"
             VALUE "ProductVersion", "1.8.1"
@@ -85,7 +83,7 @@ BEGIN
     END
 END
 
-#endif    // English (U.S.) resources
+#endif    // English (United States) resources
 /////////////////////////////////////////////////////////////////////////////
 
 
