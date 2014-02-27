@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2011 - 2013 Intel Corporation. All Rights Reserved.
+Copyright(c) 2011 - 2014 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 #if (defined(_WIN32) || defined(_WIN64))
@@ -127,7 +127,9 @@ mfxStatus D3D11FrameAllocator::LockFrame(mfxMemId mid, mfxFrameData *ptr)
                 DXGI_FORMAT_420_OPAQUE != desc.Format &&
                 DXGI_FORMAT_YUY2 != desc.Format &&
                 DXGI_FORMAT_P8 != desc.Format &&
-                DXGI_FORMAT_B8G8R8A8_UNORM != desc.Format)
+                DXGI_FORMAT_B8G8R8A8_UNORM != desc.Format &&
+                DXGI_FORMAT_R16_UINT != desc.Format &&
+                DXGI_FORMAT_R16_UNORM != desc.Format)
             {
                 return MFX_ERR_LOCK_MEMORY;
             }
@@ -197,6 +199,15 @@ mfxStatus D3D11FrameAllocator::LockFrame(mfxMemId mid, mfxFrameData *ptr)
             ptr->G = ptr->B + 1;
             ptr->R = ptr->B + 2;
             ptr->A = ptr->B + 3;
+
+            break;
+
+        case DXGI_FORMAT_R16_UNORM :
+        case DXGI_FORMAT_R16_UINT :
+            ptr->Pitch = (mfxU16)lockedRect.RowPitch;
+            ptr->Y16 = (mfxU16 *)lockedRect.pData;
+            ptr->U16 = 0;
+            ptr->V16 = 0;
 
             break;
 
@@ -439,6 +450,10 @@ DXGI_FORMAT D3D11FrameAllocator::ConverColortFormat(mfxU32 fourcc)
         case MFX_FOURCC_P8:
         case MFX_FOURCC_P8_TEXTURE:
             return DXGI_FORMAT_P8;
+
+        case MFX_FOURCC_P010: // tmp !!! kta
+        //case MFX_FOURCC_R16:
+            return DXGI_FORMAT_R16_UINT; // UNORM ??? kta
 
         default:
             return DXGI_FORMAT_UNKNOWN;

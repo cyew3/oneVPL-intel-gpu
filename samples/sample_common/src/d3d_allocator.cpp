@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2008-2013 Intel Corporation. All Rights Reserved.
+Copyright(c) 2008-2014 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -36,6 +36,9 @@ D3DFORMAT ConvertMfxFourccToD3dFormat(mfxU32 fourcc)
         return D3DFMT_A8R8G8B8;
     case MFX_FOURCC_P8:
         return D3DFMT_P8;
+    case MFX_FOURCC_P010: // tmp !!! kta
+    //case MFX_FOURCC_R16:
+        return D3DFMT_L16; //???
     default:
         return D3DFMT_UNKNOWN;
     }
@@ -53,7 +56,7 @@ public:
             HRESULT hr = manager->OpenDeviceHandle(&m_handle);
             if (FAILED(hr))
                 m_manager = 0;
-        }        
+        }
     }
 
     ~DeviceHandle()
@@ -87,7 +90,7 @@ protected:
 
 D3DFrameAllocator::D3DFrameAllocator()
 : m_decoderService(0), m_processorService(0), m_hDecoder(0), m_hProcessor(0), m_manager(0), m_surfaceUsage(0)
-{    
+{
 }
 
 D3DFrameAllocator::~D3DFrameAllocator()
@@ -96,20 +99,20 @@ D3DFrameAllocator::~D3DFrameAllocator()
 }
 
 mfxStatus D3DFrameAllocator::Init(mfxAllocatorParams *pParams)
-{   
+{
     D3DAllocatorParams *pd3dParams = 0;
     pd3dParams = dynamic_cast<D3DAllocatorParams *>(pParams);
     if (!pd3dParams)
         return MFX_ERR_NOT_INITIALIZED;
-   
+
     m_manager = pd3dParams->pManager;
     m_surfaceUsage = pd3dParams->surfaceUsage;
 
-    return MFX_ERR_NONE;    
+    return MFX_ERR_NONE;
 }
 
 mfxStatus D3DFrameAllocator::Close()
-{   
+{
     if (m_manager && m_hDecoder)
     {
         m_manager->CloseDeviceHandle(m_hDecoder);
@@ -206,7 +209,7 @@ mfxStatus D3DFrameAllocator::UnlockFrame(mfxMemId mid, mfxFrameData *ptr)
         return MFX_ERR_INVALID_HANDLE;
 
     pSurface->UnlockRect();
-    
+
     if (NULL != ptr)
     {
         ptr->Pitch = 0;
@@ -228,7 +231,7 @@ mfxStatus D3DFrameAllocator::GetFrameHDL(mfxMemId mid, mfxHDL *handle)
 }
 
 mfxStatus D3DFrameAllocator::CheckRequestType(mfxFrameAllocRequest *request)
-{    
+{
     mfxStatus sts = BaseFrameAllocator::CheckRequestType(request);
     if (MFX_ERR_NONE != sts)
         return sts;
@@ -258,12 +261,12 @@ mfxStatus D3DFrameAllocator::ReleaseResponse(mfxFrameAllocResponse *response)
                     return sts;
                 handle->Release();
             }
-        }        
+        }
     }
 
     delete [] response->mids;
     response->mids = 0;
-    
+
     return sts;
 }
 
@@ -275,7 +278,7 @@ mfxStatus D3DFrameAllocator::AllocImpl(mfxFrameAllocRequest *request, mfxFrameAl
 
     if (format == D3DFMT_UNKNOWN)
         return MFX_ERR_UNSUPPORTED;
-    
+
     safe_array<mfxMemId> mids(new mfxMemId[request->NumFrameSuggested]);
     if (!mids.get())
         return MFX_ERR_MEMORY_ALLOC;
@@ -357,7 +360,7 @@ mfxStatus D3DFrameAllocator::AllocImpl(mfxFrameAllocRequest *request, mfxFrameAl
     }
 
     if (FAILED(hr))
-    {        
+    {
         return MFX_ERR_MEMORY_ALLOC;
     }
 
