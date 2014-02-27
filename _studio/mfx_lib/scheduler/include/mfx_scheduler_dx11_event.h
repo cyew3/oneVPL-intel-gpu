@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2013 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2013-2014 Intel Corporation. All Rights Reserved.
 //
 //
 //
@@ -71,7 +71,7 @@ public:
 
             memset(&dec_ext, 0, sizeof(D3D11_VIDEO_DECODER_EXTENSION));
 
-            dec_ext.Function = 5;
+            dec_ext.Function = 1;
             dec_ext.ppResourceList = 0;
             dec_ext.PrivateInputDataSize = 0;
             dec_ext.pPrivateOutputData =  &m_event_handle;
