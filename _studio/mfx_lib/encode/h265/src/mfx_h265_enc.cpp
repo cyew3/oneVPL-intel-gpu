@@ -1860,9 +1860,6 @@ mfxStatus H265Encoder::EncodeThread(Ipp32s ithread) {
             //cu[ithread].FillRandom(0, 0);
             //cu[ithread].FillZero(0, 0);
 
-            //kolya
-            //exit(0);
-
             if( pars->RDOQFlag )
             {
                 small_memcpy(bsf[ctb_row].m_base.context_array, bs[ctb_row].m_base.context_array, sizeof(CABAC_CONTEXT_H265) * NUM_CABAC_CONTEXT);

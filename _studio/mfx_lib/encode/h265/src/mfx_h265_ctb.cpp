@@ -1143,9 +1143,6 @@ void H265CU::ModeDecision(Ipp32u absPartIdx, Ipp32u offset, Ipp8u depth, CostTyp
                         }
                     } // <-- end of FAST_UDI_USE_MPM
 #endif
- //                   for(int ii = 0; ii < num_cand1; ii++)
-//                        printf("%f\n", this->m_intraBestCosts[ii]);
-//                    printf("\n");
 
                     IntraLumaModeDecisionRDO(absPartIdxTu, offset + subsize * i, depth, trDepth, ctxSave[1], num_cand1);
                     costBestPu[i] = m_intraBestCosts[0];
