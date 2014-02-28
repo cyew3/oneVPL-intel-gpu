@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2012-2013 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2012-2014 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -216,7 +216,7 @@ public:
         m_IsFrameExist = isFrameExist;
     }
 
-    H265DecoderFrame(UMC::MemoryAllocator *pMemoryAllocator, Heap * heap, Heap_Objects * pObjHeap);
+    H265DecoderFrame(UMC::MemoryAllocator *pMemoryAllocator, Heap_Objects * pObjHeap);
 
     virtual ~H265DecoderFrame();
 
@@ -346,7 +346,6 @@ protected:
     UMC::MemoryAllocator *m_pMemoryAllocator;   // FIXME: should be removed because it duplicated in base class
 
     Heap_Objects * m_pObjHeap;
-    Heap * m_pHeap;
 };
 
 inline bool isAlmostDisposable(H265DecoderFrame * pTmp)

@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2012-2013 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2012-2014 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -33,7 +33,7 @@ class NALUnitSplitter_H265;
 class AU_Splitter_H265
 {
 public:
-    AU_Splitter_H265(Heap *heap, Heap_Objects *objectHeap);
+    AU_Splitter_H265(Heap_Objects *objectHeap);
     virtual ~AU_Splitter_H265();
 
     void Init(UMC::VideoDecoderParams *init);
@@ -50,7 +50,6 @@ protected:
 
     Headers         m_Headers;
     Heap_Objects   *m_objHeap;
-    Heap           *m_heap;
 
 protected:
 

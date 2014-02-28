@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2012-2013 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2012-2014 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -71,6 +71,9 @@ public:
 
     void printResults()
     {
+        if (!number_of_calls)
+            return;
+
         if (description)
         {
             printf("\nnumber of ticks %s : %I64u\n", description, m_ticks);

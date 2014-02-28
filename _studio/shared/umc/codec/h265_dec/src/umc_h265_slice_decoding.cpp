@@ -22,7 +22,6 @@ namespace UMC_HEVC_DECODER
 H265Slice::H265Slice(UMC::MemoryAllocator *pMemoryAllocator)
     : m_pSeqParamSet(0)
     , m_pMemoryAllocator(pMemoryAllocator)
-    , m_pHeap(0)
     , m_context(0)
 {
     m_SliceHeader.m_SubstreamSizes = NULL;
@@ -38,12 +37,7 @@ H265Slice::~H265Slice()
 
 void H265Slice::Reset()
 {
-    if (m_pHeap)
-    {
-        m_pHeap->Free(m_pSource);
-    }
-
-    m_pSource = 0;
+    m_source.Release();
 
     if (m_pSeqParamSet)
     {
@@ -81,13 +75,13 @@ bool H265Slice::Init(Ipp32s )
     return true;
 } // bool H265Slice::Init(Ipp32s iConsumerNumber)
 
-Ipp32s H265Slice::RetrievePicParamSetNumber(void *pSource, size_t nSourceSize)
+Ipp32s H265Slice::RetrievePicParamSetNumber()
 {
-    if (!nSourceSize)
+    if (!m_source.GetSize())
         return -1;
 
     memset(&m_SliceHeader, 0, sizeof(m_SliceHeader));
-    m_BitStream.Reset((Ipp8u *) pSource, (Ipp32u) nSourceSize);
+    m_BitStream.Reset((Ipp8u *) m_source.GetPointer(), (Ipp32u) m_source.GetSize());
 
     UMC::Status umcRes = UMC::UMC_OK;
 
@@ -110,12 +104,12 @@ Ipp32s H265Slice::RetrievePicParamSetNumber(void *pSource, size_t nSourceSize)
     return m_SliceHeader.slice_pic_parameter_set_id;
 }
 
-bool H265Slice::Reset(void *pSource, size_t nSourceSize, PocDecoding * pocDecoding)
+bool H265Slice::Reset(PocDecoding * pocDecoding)
 {
-    m_BitStream.Reset((Ipp8u *) pSource, (Ipp32u) nSourceSize);
+    m_BitStream.Reset((Ipp8u *) m_source.GetPointer(), (Ipp32u) m_source.GetSize());
 
     // decode slice header
-    if (nSourceSize && false == DecodeSliceHeader(pocDecoding))
+    if (m_source.GetSize() && false == DecodeSliceHeader(pocDecoding))
         return false;
 
     m_SliceHeader.m_HeaderBitstreamOffset = m_BitStream.BytesDecoded();

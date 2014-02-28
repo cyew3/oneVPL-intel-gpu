@@ -374,8 +374,6 @@ protected:
 
     H265ThreadGroup  m_threadGroup;
 
-    Heap      m_Heap;
-
     Ipp64f      m_local_delta_frame_time;
     bool        m_use_external_framerate;
 

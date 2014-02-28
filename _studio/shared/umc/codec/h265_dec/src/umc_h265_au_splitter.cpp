@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2012-2013 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2012-2014 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -55,10 +55,9 @@ static bool IsNeedSPSInvalidate(const H265SeqParamSet *old_sps, const H265SeqPar
 }
 #endif
 
-AU_Splitter_H265::AU_Splitter_H265(Heap *heap, Heap_Objects *objectHeap)
+AU_Splitter_H265::AU_Splitter_H265(Heap_Objects *objectHeap)
     : m_Headers(objectHeap)
     , m_objHeap(objectHeap)
-    , m_heap(heap)
 {
 }
 
@@ -71,7 +70,7 @@ void AU_Splitter_H265::Init(UMC::VideoDecoderParams *)
 {
     Close();
 
-    m_pNALSplitter.reset(new NALUnitSplitter_H265(m_heap));
+    m_pNALSplitter.reset(new NALUnitSplitter_H265());
     m_pNALSplitter->Init();
 }
 

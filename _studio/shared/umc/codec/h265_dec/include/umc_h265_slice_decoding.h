@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//    Copyright (c) 2012-2013 Intel Corporation. All Rights Reserved.
+//    Copyright (c) 2012-2014 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -102,13 +102,13 @@ public:
     // Initialize slice
     bool Init(Ipp32s iConsumerNumber);
     // Set slice source data
-    bool Reset(void *pSource, size_t nSourceSize, PocDecoding * pocDecoding);
+    bool Reset(PocDecoding * pocDecoding);
     // Set current slice number
     void SetSliceNumber(Ipp32s iSliceNumber);
 
     void InitializeContexts();
 
-    Ipp32s RetrievePicParamSetNumber(void *pSource, size_t nSourceSize);
+    Ipp32s RetrievePicParamSetNumber();
 
     //
     // method(s) to obtain slice specific information
@@ -155,16 +155,15 @@ public:
 
     bool IsError() const {return m_bError;}
 
-    void SetHeap(Heap_Objects  *pObjHeap, Heap *pHeap)
+    void SetHeap(Heap_Objects  *pObjHeap)
     {
         m_pObjHeap = pObjHeap;
-        m_pHeap = pHeap;
     }
 
 public:
 
-    MemoryPiece *m_pSource;                                 // (MemoryPiece *) pointer to owning memory piece
-    Ipp64f m_dTime;                                             // (Ipp64f) slice's time stamp
+    MemoryPiece m_source;                                 // (MemoryPiece *) pointer to owning memory piece
+    Ipp64f m_dTime;                                        // (Ipp64f) slice's time stamp
 
 public:  // DEBUG !!!! should remove dependence
 
@@ -210,7 +209,6 @@ public:
     UMC::MemoryAllocator *m_pMemoryAllocator;                        // (MemoryAllocator *) pointer to memory allocation tool
 
     Heap_Objects           *m_pObjHeap;
-    Heap                   *m_pHeap;
 
     DecodingContext        *m_context;
 

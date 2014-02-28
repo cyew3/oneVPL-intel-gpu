@@ -239,13 +239,18 @@ H265Slice * VATaskSupplier::DecodeSliceHeader(UMC::MediaDataEx *nalUnit)
     if (!slice)
         return 0;
 
-    MemoryPiece * pMemCopy = m_Heap.Allocate(nalUnit->GetDataSize() + DEFAULT_NU_TAIL_SIZE);
-    notifier1<Heap, MemoryPiece*> memory_leak_preventing1(&m_Heap, &Heap::Free, pMemCopy);
-
-    MFX_INTERNAL_CPY(pMemCopy->GetPointer(), nalUnit->GetDataPointer(), nalUnit->GetDataSize());
-    memset(pMemCopy->GetPointer() + nalUnit->GetDataSize(), DEFAULT_NU_TAIL_VALUE, DEFAULT_NU_TAIL_SIZE);
-    pMemCopy->SetDataSize(nalUnit->GetDataSize());
-    pMemCopy->SetTime(nalUnit->GetTime());
+    if (nalUnit->GetFlags() & UMC::MediaData::FLAG_VIDEO_DATA_NOT_FULL_FRAME)
+    {
+        slice->m_source.Allocate(nalUnit->GetDataSize() + DEFAULT_NU_TAIL_SIZE);
+        MFX_INTERNAL_CPY(slice->m_source.GetPointer(), nalUnit->GetDataPointer(), (Ipp32u)nalUnit->GetDataSize());
+        memset(slice->m_source.GetPointer() + nalUnit->GetDataSize(), DEFAULT_NU_TAIL_VALUE, DEFAULT_NU_TAIL_SIZE);
+        slice->m_source.SetDataSize(nalUnit->GetDataSize());
+        slice->m_source.SetTime(nalUnit->GetTime());
+    }
+    else
+    {
+        slice->m_source.SetData(nalUnit);
+    }
 
     Ipp32u* pbs;
     Ipp32u bitOffset;
@@ -254,14 +259,10 @@ H265Slice * VATaskSupplier::DecodeSliceHeader(UMC::MediaDataEx *nalUnit)
 
     size_t bytes = slice->GetBitStream()->BytesDecodedRoundOff();
 
-    m_Heap.Free(slice->m_pSource);
+    slice->GetBitStream()->Reset(slice->m_source.GetPointer(), bitOffset,
+        (Ipp32u)slice->m_source.GetDataSize());
+    slice->GetBitStream()->SetState((Ipp32u*)(slice->m_source.GetPointer() + bytes), bitOffset);
 
-    slice->m_pSource = pMemCopy;
-    slice->GetBitStream()->Reset(slice->m_pSource->GetPointer(), bitOffset,
-        (Ipp32u)slice->m_pSource->GetDataSize());
-    slice->GetBitStream()->SetState((Ipp32u*)(slice->m_pSource->GetPointer() + bytes), bitOffset);
-
-    memory_leak_preventing1.ClearNotification();
 
     return slice;
 }

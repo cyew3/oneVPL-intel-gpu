@@ -557,7 +557,7 @@ void ViewItem_H265::SetDPBSize(H265SeqParamSet *pSps, Ipp32u & level_idc)
 // TaskSupplier_H265
 /****************************************************************************************************/
 TaskSupplier_H265::TaskSupplier_H265()
-    : AU_Splitter_H265(&m_Heap, &m_ObjHeap)
+    : AU_Splitter_H265(&m_ObjHeap)
     , m_SliceIdxInTaskSupplier(0)
     , m_pSegmentDecoder(0)
     , m_iThreadNum(0)
@@ -752,7 +752,6 @@ void TaskSupplier_H265::Close()
     m_Headers.Reset(false);
     Skipping_H265::Reset();
     m_ObjHeap.Release();
-    m_Heap.Reset();
     m_pocDecoding.Reset();
 
     m_frameOrder               = 0;
@@ -816,7 +815,6 @@ void TaskSupplier_H265::Reset()
     m_Headers.Reset(true);
     Skipping_H265::Reset();
     m_ObjHeap.Release();
-    m_Heap.Reset();
     m_pocDecoding.Reset();
 
     m_frameOrder               = 0;
@@ -855,7 +853,6 @@ void TaskSupplier_H265::AfterErrorRestore()
 
     Skipping_H265::Reset();
     m_ObjHeap.Release();
-    m_Heap.Reset();
     m_Headers.Reset(true);
 
     m_WaitForIDR        = true;
@@ -936,7 +933,7 @@ H265DecoderFrame *TaskSupplier_H265::GetFreeFrame()
         }
 
         // Didn't find one. Let's try to insert a new one
-        pFrame = new H265DecoderFrame(m_pMemoryAllocator, &m_Heap, &m_ObjHeap);
+        pFrame = new H265DecoderFrame(m_pMemoryAllocator, &m_ObjHeap);
         if (NULL == pFrame)
             return 0;
 
@@ -973,20 +970,15 @@ UMC::Status TaskSupplier_H265::DecodeSEI(UMC::MediaDataEx *nalUnit)
         MemoryPiece mem;
         mem.SetData(nalUnit);
 
-        MemoryPiece * pMem = m_Heap.Allocate(nalUnit->GetDataSize() + DEFAULT_NU_TAIL_SIZE);
-        notifier1<Heap, MemoryPiece*> memory_leak_preventing(&m_Heap, &Heap::Free, pMem);
+        MemoryPiece swappedMem;
+        swappedMem.Allocate(nalUnit->GetDataSize() + DEFAULT_NU_TAIL_SIZE);
 
-        memset(pMem->GetPointer() + nalUnit->GetDataSize(), DEFAULT_NU_TAIL_VALUE, DEFAULT_NU_TAIL_SIZE);
+        memset(swappedMem.GetPointer() + nalUnit->GetDataSize(), DEFAULT_NU_TAIL_VALUE, DEFAULT_NU_TAIL_SIZE);
 
         SwapperBase * swapper = m_pNALSplitter->GetSwapper();
-        swapper->SwapMemory(pMem, &mem, NULL);
+        swapper->SwapMemory(&swappedMem, &mem, 0);
 
-        // Ipp32s nalIndex = nalUnit->GetExData()->index;
-
-        bitStream.Reset((Ipp8u*)pMem->GetPointer(), (Ipp32u)pMem->GetDataSize());
-
-        //bitStream.Reset((Ipp8u*)nalUnit->GetDataPointer() + nalUnit->GetExData()->offsets[nalIndex],
-          //  nalUnit->GetExData()->offsets[nalIndex + 1] - nalUnit->GetExData()->offsets[nalIndex]);
+        bitStream.Reset((Ipp8u*)swappedMem.GetPointer(), (Ipp32u)swappedMem.GetDataSize());
 
         NalUnitType nal_unit_type;
         Ipp32u temporal_id;
@@ -1332,15 +1324,16 @@ UMC::Status TaskSupplier_H265::DecodeHeaders(UMC::MediaDataEx *nalUnit)
         MemoryPiece mem;
         mem.SetData(nalUnit);
 
-        MemoryPiece * pMem = m_Heap.Allocate(nalUnit->GetDataSize() + DEFAULT_NU_TAIL_SIZE);
-        notifier1<Heap, MemoryPiece*> memory_leak_preventing(&m_Heap, &Heap::Free, pMem);
+        MemoryPiece swappedMem;
 
-        memset(pMem->GetPointer() + nalUnit->GetDataSize(), DEFAULT_NU_TAIL_VALUE, DEFAULT_NU_TAIL_SIZE);
+        swappedMem.Allocate(nalUnit->GetDataSize() + DEFAULT_NU_TAIL_SIZE);
+
+        memset(swappedMem.GetPointer() + nalUnit->GetDataSize(), DEFAULT_NU_TAIL_VALUE, DEFAULT_NU_TAIL_SIZE);
 
         SwapperBase * swapper = m_pNALSplitter->GetSwapper();
-        swapper->SwapMemory(pMem, &mem, NULL);
+        swapper->SwapMemory(&swappedMem, &mem, 0);
 
-        bitStream.Reset((Ipp8u*)pMem->GetPointer(), (Ipp32u)pMem->GetDataSize());
+        bitStream.Reset((Ipp8u*)swappedMem.GetPointer(), (Ipp32u)swappedMem.GetDataSize());
 
         NalUnitType nal_unit_type;
         Ipp32u temporal_id;
@@ -1833,7 +1826,7 @@ H265Slice *TaskSupplier_H265::DecodeSliceHeader(UMC::MediaDataEx *nalUnit)
     }
 
     H265Slice * pSlice = m_ObjHeap.AllocateObject<H265Slice>();
-    pSlice->SetHeap(&m_ObjHeap, &m_Heap);
+    pSlice->SetHeap(&m_ObjHeap);
     pSlice->IncrementReference();
 
     notifier0<H265Slice> memory_leak_preventing_slice(pSlice, &H265Slice::DecrementReference);
@@ -1841,20 +1834,16 @@ H265Slice *TaskSupplier_H265::DecodeSliceHeader(UMC::MediaDataEx *nalUnit)
     MemoryPiece memCopy;
     memCopy.SetData(nalUnit);
 
-    MemoryPiece * pMemCopy = &memCopy;
+    pSlice->m_source.Allocate(nalUnit->GetDataSize() + DEFAULT_NU_TAIL_SIZE);
 
-    pMemCopy->SetDataSize(nalUnit->GetDataSize());
-    pMemCopy->SetTime(nalUnit->GetTime());
-
-    MemoryPiece * pMem = m_Heap.Allocate(nalUnit->GetDataSize() + DEFAULT_NU_TAIL_SIZE);
-    notifier1<Heap, MemoryPiece*> memory_leak_preventing(&m_Heap, &Heap::Free, pMem);
-    memset(pMem->GetPointer() + nalUnit->GetDataSize(), DEFAULT_NU_TAIL_VALUE, DEFAULT_NU_TAIL_SIZE);
+    notifier0<MemoryPiece> memory_leak_preventing(&pSlice->m_source, &MemoryPiece::Release);
+    memset(pSlice->m_source.GetPointer() + nalUnit->GetDataSize(), DEFAULT_NU_TAIL_VALUE, DEFAULT_NU_TAIL_SIZE);
 
     std::vector<Ipp32u> removed_offsets(0);
     SwapperBase * swapper = m_pNALSplitter->GetSwapper();
-    swapper->SwapMemory(pMem, pMemCopy, &removed_offsets);
+    swapper->SwapMemory(&pSlice->m_source, &memCopy, &removed_offsets);
 
-    Ipp32s pps_pid = pSlice->RetrievePicParamSetNumber(pMem->GetPointer(), pMem->GetSize());
+    Ipp32s pps_pid = pSlice->RetrievePicParamSetNumber();
     if (pps_pid == -1)
     {
         return 0;
@@ -1883,10 +1872,9 @@ H265Slice *TaskSupplier_H265::DecodeSliceHeader(UMC::MediaDataEx *nalUnit)
     pSlice->m_pCurrentFrame = NULL;
 
     memory_leak_preventing.ClearNotification();
-    pSlice->m_pSource = pMem;
-    pSlice->m_dTime = pMem->GetTime();
+    pSlice->m_dTime = pSlice->m_source.GetTime();
 
-    if (!pSlice->Reset(pMem->GetPointer(), pMem->GetDataSize(), &m_pocDecoding))
+    if (!pSlice->Reset(&m_pocDecoding))
     {
         return 0;
     }

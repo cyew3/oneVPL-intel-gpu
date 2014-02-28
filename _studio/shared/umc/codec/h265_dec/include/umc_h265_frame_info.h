@@ -34,11 +34,10 @@ public:
         STATUS_STARTED
     };
 
-    H265DecoderFrameInfo(H265DecoderFrame * pFrame, Heap * heap, Heap_Objects * pObjHeap)
+    H265DecoderFrameInfo(H265DecoderFrame * pFrame, Heap_Objects * pObjHeap)
         : m_pFrame(pFrame)
         , m_prepared(0)
         , m_SliceCount(0)
-        , m_pHeap(heap)
         , m_pObjHeap(pObjHeap)
         , m_sps(0)
     {
@@ -322,7 +321,6 @@ private:
 
     Ipp32s m_SliceCount;
 
-    Heap *m_pHeap;
     Heap_Objects * m_pObjHeap;
     bool m_isNeedDeblocking;
     bool m_isNeedSAO;

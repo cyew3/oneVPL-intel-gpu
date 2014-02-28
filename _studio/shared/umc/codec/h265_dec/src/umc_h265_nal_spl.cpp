@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2012-2013 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2012-2014 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -171,6 +171,7 @@ public:
             m_prev.insert(m_prev.end(), (Ipp8u *)pSource->GetDataPointer(), source);
             pSource->MoveDataPointer((Ipp32s)(source - (Ipp8u *)pSource->GetDataPointer()));
 
+            pDst->SetFlags(UMC::MediaData::FLAG_VIDEO_DATA_NOT_FULL_FRAME);
             pDst->SetBufferPointer(&(m_prev[3]), m_prev.size());
             pDst->SetDataSize(m_prev.size());
             pDst->SetTime(m_pts);
@@ -234,6 +235,7 @@ public:
         size_t nal_size = source - (Ipp8u *)pSource->GetDataPointer() - startCodeSize1;
         pDst->SetBufferPointer((Ipp8u*)pSource->GetDataPointer(), nal_size);
         pDst->SetDataSize(nal_size);
+        pDst->SetFlags(pSource->GetFlags());
         pSource->MoveDataPointer((Ipp32s)nal_size);
 
         Ipp32s code = m_code;
@@ -394,10 +396,8 @@ public:
     }
 };
 
-NALUnitSplitter_H265::NALUnitSplitter_H265(Heap * heap)
-    : m_bWaitForIDR(true)
-    , m_pHeap(heap)
-    , m_pSwapper(0)
+NALUnitSplitter_H265::NALUnitSplitter_H265()
+    : m_pSwapper(0)
     , m_pStartCodeIter(0)
 {
     m_MediaData.SetExData(&m_MediaDataEx);
@@ -412,15 +412,12 @@ void NALUnitSplitter_H265::Init()
 {
     Release();
 
-    m_bWaitForIDR = true;
-
     m_pSwapper = new Swapper();
     m_pStartCodeIter = new StartCodeIterator();
 }
 
 void NALUnitSplitter_H265::Reset()
 {
-    m_bWaitForIDR = true;
     if (m_pStartCodeIter)
     {
         m_pStartCodeIter->Reset();

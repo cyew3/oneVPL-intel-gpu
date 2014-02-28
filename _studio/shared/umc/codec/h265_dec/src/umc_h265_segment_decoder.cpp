@@ -787,7 +787,7 @@ void H265SegmentDecoder::DecodeCUCABAC(Ipp32u AbsPartIdx, Ipp32u Depth, Ipp32u& 
             LPelX = m_cu->m_CUPelX + m_cu->m_rasterToPelX[Idx];
             TPelY = m_cu->m_CUPelY + m_cu->m_rasterToPelY[Idx];
 
-            if ((LPelX < m_pSeqParamSet->pic_width_in_luma_samples) && (TPelY < m_pSeqParamSet->pic_height_in_luma_samples))
+            if (!IsLast && (LPelX < m_pSeqParamSet->pic_width_in_luma_samples) && (TPelY < m_pSeqParamSet->pic_height_in_luma_samples))
             {
                 DecodeCUCABAC(Idx, Depth + 1, IsLast);
             }
@@ -796,8 +796,8 @@ void H265SegmentDecoder::DecodeCUCABAC(Ipp32u AbsPartIdx, Ipp32u Depth, Ipp32u& 
                 m_cu->setOutsideCUPart(Idx, Depth + 1);
             }
 
-            if (IsLast)
-                break;
+            //if (IsLast) // comment it for calling setOutsideCUPart for all CU parts
+             //   break;
 
             Idx += QNumParts;
         }

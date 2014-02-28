@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2012-2013 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2012-2014 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -20,7 +20,7 @@
 namespace UMC_HEVC_DECODER
 {
 
-H265DecoderFrame::H265DecoderFrame(UMC::MemoryAllocator *pMemoryAllocator, Heap * heap, Heap_Objects * pObjHeap)
+H265DecoderFrame::H265DecoderFrame(UMC::MemoryAllocator *pMemoryAllocator, Heap_Objects * pObjHeap)
     : H265DecYUVBufferPadded(pMemoryAllocator)
     , m_ErrorType(0)
     , m_pSlicesInfo(0)
@@ -37,7 +37,6 @@ H265DecoderFrame::H265DecoderFrame(UMC::MemoryAllocator *pMemoryAllocator, Heap 
     , m_buOffsetY(0)
     , m_buOffsetC(0)
     , m_pObjHeap(pObjHeap)
-    , m_pHeap(heap)
 {
     m_isShortTermRef = false;
     m_isLongTermRef = false;
@@ -53,7 +52,7 @@ H265DecoderFrame::H265DecoderFrame(UMC::MemoryAllocator *pMemoryAllocator, Heap 
 
     ResetRefCounter();
 
-    m_pSlicesInfo = new H265DecoderFrameInfo(this, m_pHeap, m_pObjHeap);
+    m_pSlicesInfo = new H265DecoderFrameInfo(this, m_pObjHeap);
 
     m_Flags.isFull = 0;
     m_Flags.isDecoded = 0;

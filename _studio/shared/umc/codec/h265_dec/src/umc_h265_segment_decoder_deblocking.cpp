@@ -193,7 +193,7 @@ void H265SegmentDecoder::DeblockTU(Ipp32u absPartIdx, Ipp32u trDepth)
         return;
     }
 
-    Ipp32s size = m_cu->GetWidth(absPartIdx) >> m_cu->GetTrIndex(absPartIdx);
+    Ipp32s size = m_cu->GetWidth(absPartIdx) >> m_cu->GetTrIndex(absPartIdx); // m_pSeqParamSet->MaxCUSize >> trDepth;
 
     for (Ipp32s edgeType = VERT_FILT; edgeType <= HOR_FILT; edgeType++)
     {
@@ -332,7 +332,7 @@ void H265SegmentDecoder::DeblockCURecur(Ipp32u absPartIdx, Ipp32u depth)
             Ipp32u curPixelColumn = m_cu->m_rasterToPelX[subPartIdx];
             Ipp32u curPixelRow = m_cu->m_rasterToPelY[subPartIdx];
 
-            if (m_context->m_sps->MinCUSize != 4 || (edgeType == VERT_FILT ? ((subPartIdx % 2) == 0) : ((subPartIdx-((subPartIdx>>2)<<2))/2 == 0)))
+            if (m_context->m_sps->MinCUSize != 4 || (edgeType == VERT_FILT ? ((curPixelColumn % 8) == 0) : ((curPixelRow % 8) == 0)))
             {
                 m_deblockPredData[edgeType].predictionExist = true;
                 m_deblockPredData[edgeType].saveColumn = curPixelColumn;
@@ -600,26 +600,15 @@ void H265SegmentDecoder::CalculateEdge(H265EdgeData * edge, Ipp32s xPel, Ipp32s 
     Ipp32s y = yPel >> tusize;
     Ipp32s x = xPel >> tusize;
 
-    Ipp32s tuPAddr = y*m_pCurrentFrame->m_CodingData->m_NumPartInWidth + x;
     Ipp32s tuQAddr = y*m_pCurrentFrame->m_CodingData->m_NumPartInWidth + x;
+    Ipp32s tuPAddr;
 
     bool anotherCU;
     H265CodingUnit* cuP = m_cu;
 
     if (direction == VERT_FILT)
     {
-        if (tusize <= 3)
-        {
-            tuPAddr -= 1;
-        }
-        else if (tusize == 4)
-        {
-            tuPAddr -= (xPel & 8) ? 0 : 1;
-        }
-        else
-        {
-            tuPAddr -= (xPel & 24) ? 0 : 1;
-        }
+        tuPAddr = tuQAddr - 1;
         
         anotherCU = xPel == 0;
         if (anotherCU)
@@ -636,18 +625,7 @@ void H265SegmentDecoder::CalculateEdge(H265EdgeData * edge, Ipp32s xPel, Ipp32s 
     }
     else
     {
-        if (tusize <= 3)
-        {
-            tuPAddr -= m_pCurrentFrame->m_CodingData->m_NumPartInWidth;
-        }
-        else if (tusize == 4)
-        {
-            tuPAddr -= (yPel & 8) ? 0 : m_pCurrentFrame->m_CodingData->m_NumPartInWidth;
-        }
-        else
-        {
-            tuPAddr -= (yPel & 24) ? 0 : m_pCurrentFrame->m_CodingData->m_NumPartInWidth;
-        }
+        tuPAddr = tuQAddr - m_pCurrentFrame->m_CodingData->m_NumPartInWidth;
 
         anotherCU = yPel == 0;
         if (anotherCU)
@@ -661,12 +639,6 @@ void H265SegmentDecoder::CalculateEdge(H265EdgeData * edge, Ipp32s xPel, Ipp32s 
             cuP = m_pCurrentFrame->getCU(m_cu->CUAddr - m_pCurrentFrame->getFrameWidthInCU());
             tuPAddr += m_pCurrentFrame->m_CodingData->m_NumPartitions;
         }
-    }
-
-    if (tuPAddr == tuQAddr)
-    {
-        edge->strength = 0;
-        return;
     }
 
     tuPAddr = m_cu->m_rasterToZscan[tuPAddr];
@@ -705,8 +677,8 @@ void H265SegmentDecoder::CalculateEdge(H265EdgeData * edge, Ipp32s xPel, Ipp32s 
         }
     }
 
-    Ipp32s PartX = (m_cu->m_CUPelX >> m_pSeqParamSet->log2_min_transform_block_size) + x;
-    Ipp32s PartY = (m_cu->m_CUPelY >> m_pSeqParamSet->log2_min_transform_block_size) + y;
+    Ipp32s PartX = (m_cu->m_CUPelX >> tusize) + x;
+    Ipp32s PartY = (m_cu->m_CUPelY >> tusize) + y;
 
     H265MVInfo *mvinfoQ = &m_context->m_frame->getCD()->GetTUInfo(m_pSeqParamSet->NumPartitionsInFrameWidth * PartY + PartX);
     H265MVInfo *mvinfoP;

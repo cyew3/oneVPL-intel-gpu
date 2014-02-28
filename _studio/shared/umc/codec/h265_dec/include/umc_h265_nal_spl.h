@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2012-2013 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2012-2014 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -90,7 +90,7 @@ class NALUnitSplitter_H265
 {
 public:
 
-    NALUnitSplitter_H265(Heap * heap);
+    NALUnitSplitter_H265();
 
     virtual ~NALUnitSplitter_H265();
 
@@ -118,8 +118,6 @@ public:
 
 protected:
 
-    bool m_bWaitForIDR;
-    Heap   *   m_pHeap;
     SwapperBase *   m_pSwapper;
     StartCodeIteratorBase * m_pStartCodeIter;
 

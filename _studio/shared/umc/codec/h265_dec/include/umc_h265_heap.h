@@ -30,13 +30,10 @@ void CumulativeFree(Ipp8u * ptr);
 //*********************************************************************************************/
 class MemoryPiece
 {
-    friend class Heap;
-
 public:
     // Default constructor
     MemoryPiece()
     {
-        m_pNext = 0;
         Reset();
     }
 
@@ -46,22 +43,11 @@ public:
         Release();
     }
 
-    static MemoryPiece * AllocateMemoryPiece(size_t nSize)
+    void Release()
     {
-        Ipp8u * ppp = new Ipp8u[sizeof(Ipp8u)*nSize + sizeof(MemoryPiece)];
-        if (!ppp)
-            throw h265_exception(UMC::UMC_ERR_ALLOC);
-        MemoryPiece * piece = new (ppp) MemoryPiece();
-
-        piece->m_pSourceBuffer = (Ipp8u*)ppp + sizeof(MemoryPiece);
-        piece->m_pDataPointer = piece->m_pSourceBuffer;
-        piece->m_nSourceSize = nSize;
-        return piece;
-    }
-
-    static void FreeMemoryPiece(MemoryPiece * piece)
-    {
-        delete[] (Ipp8u*)piece;
+        if (m_pSourceBuffer)
+            delete[] m_pSourceBuffer;
+        Reset();
     }
 
     void SetData(UMC::MediaData *out)
@@ -86,8 +72,6 @@ public:
         return true;
     }
 
-    // Get next element
-    MemoryPiece *GetNext(){return m_pNext;}
     // Obtain data pointer
     Ipp8u *GetPointer(){return m_pDataPointer;}
 
@@ -104,7 +88,6 @@ protected:
     Ipp8u *m_pDataPointer;                                      // (Ipp8u *) pointer to source memory
     size_t m_nSourceSize;                                       // (size_t) allocated memory size
     size_t m_nDataSize;                                         // (size_t) data memory size
-    MemoryPiece *m_pNext;                                   // (MemoryPiece *) pointer to next memory piece
     Ipp64f   m_pts;
 
     void Reset()
@@ -114,198 +97,6 @@ protected:
         m_nSourceSize = 0;
         m_nDataSize = 0;
     }
-
-    void Release()
-    {
-        if (m_pSourceBuffer)
-            delete[] m_pSourceBuffer;
-        Reset();
-    }
-};
-
-//*********************************************************************************************/
-//
-//*********************************************************************************************/
-//#define CONST_HEAP_DEFINE
-
-class Heap
-{
-public:
-
-    Heap()
-        : m_pFilledMemory(0)
-        , m_pFreeMemory(0)
-    {
-    }
-
-    virtual ~Heap()
-    {
-        while (m_pFreeMemory)
-        {
-            MemoryPiece *pMem = m_pFreeMemory->m_pNext;
-            MemoryPiece::FreeMemoryPiece(m_pFreeMemory);
-            m_pFreeMemory = pMem;
-        }
-
-        while (m_pFilledMemory)
-        {
-            MemoryPiece *pMem = m_pFilledMemory->m_pNext;
-            MemoryPiece::FreeMemoryPiece(m_pFilledMemory);
-            m_pFilledMemory = pMem;
-        }
-    }
-
-    const MemoryPiece * GetLastAllocated() const
-    {
-        return m_pFilledMemory;
-    }
-
-    MemoryPiece * Allocate(size_t nSize)
-    {
-#ifndef CONST_HEAP_DEFINE
-        MemoryPiece *pMem = MemoryPiece::AllocateMemoryPiece(nSize);
-#else
-        MemoryPiece *pMem = GetFreeMemoryPiece(nSize);
-        AddFilledMemoryPiece(pMem);
-#endif
-        return pMem;
-    }
-
-    void Free(MemoryPiece *pMem)
-    {
-        if (!pMem)
-            return;
-
-#ifndef CONST_HEAP_DEFINE
-        MemoryPiece::FreeMemoryPiece(pMem);
-#else
-        //m_pFilledMemory = m_pFilledMemory->m_pNext;
-        MemoryPiece *pTemp = m_pFilledMemory;
-
-        if (pTemp == pMem)
-        {
-            m_pFilledMemory = m_pFilledMemory->m_pNext;
-        }
-        else
-        {
-#ifdef _DEBUG
-            bool is_found = false;
-#endif
-            // find pMem at list
-            while (pTemp->m_pNext)
-            {
-                 if (pTemp->m_pNext == pMem)
-                 {
-                     pTemp->m_pNext = pMem->m_pNext;
-#ifdef _DEBUG
-                    is_found = true;
-#endif
-                     break;
-                 }
-                 pTemp = pTemp->m_pNext;
-            }
-
-#ifdef _DEBUG
-            VM_ASSERT(is_found);
-#endif
-        }
-
-        pMem->m_pNext = m_pFreeMemory;
-        m_pFreeMemory = pMem;
-#endif
-    }
-
-    void Reset()
-    {
-        while (m_pFilledMemory)
-        {
-            MemoryPiece *pMem = m_pFilledMemory;
-            m_pFilledMemory = pMem->GetNext();
-            pMem->m_pNext = m_pFreeMemory;
-            m_pFreeMemory = pMem;
-        }
-    }
-
-protected:
-
-    // Get free piece of memory
-    MemoryPiece *GetFreeMemoryPiece(size_t nSize)
-    {
-#ifndef CONST_HEAP_DEFINE
-        MemoryPiece *pTemp = h265_new_throw<MemoryPiece>();
-        pTemp->m_pNext = 0;
-        pTemp->Allocate(nSize);
-        return pTemp;
-#else
-        // try to find suitable already allocated memory
-        MemoryPiece *pTemp = m_pFreeMemory;
-        MemoryPiece *pPrev = 0;
-
-        MemoryPiece *pGoodPiece = 0;
-        size_t currMin = (size_t)-1;
-        bool found = false;
-
-        while (pTemp)
-        {
-            if (pTemp->m_nSourceSize >= nSize && currMin > (pTemp->m_nSourceSize - nSize))
-            {
-                pGoodPiece = pPrev;
-                currMin = pTemp->m_nSourceSize;
-                found = true;
-            }
-
-            pPrev = pTemp;
-            pTemp = pTemp->m_pNext;
-        }
-
-        if (found)
-        {
-            pTemp = pGoodPiece ? pGoodPiece->m_pNext : m_pFreeMemory;
-
-            if (pGoodPiece)
-                pGoodPiece->m_pNext = pGoodPiece->m_pNext->m_pNext;
-            else
-                m_pFreeMemory = m_pFreeMemory->m_pNext;
-
-            return pTemp;
-        }
-
-        // we found nothing, try to allocate new
-        {
-            pTemp = MemoryPiece::AllocateMemoryPiece(nSize * 2);
-            // bind to list to avoid memory leak
-            pTemp->m_pNext = m_pFreeMemory;
-            m_pFreeMemory = pTemp;
-            // unbind from list
-            m_pFreeMemory = m_pFreeMemory->m_pNext;
-
-            return pTemp;
-        }
-#endif
-    }
-
-    // Add filled piece of memory
-    void AddFilledMemoryPiece(MemoryPiece *pMem)
-    {
-        if (m_pFilledMemory)
-        {
-            MemoryPiece *pTemp = m_pFilledMemory;
-
-            // find end of list
-            while (pTemp->m_pNext)
-                pTemp = pTemp->m_pNext;
-            pTemp->m_pNext = pMem;
-        }
-        else
-            m_pFilledMemory = pMem;
-
-        pMem->m_pNext = 0;
-
-    }
-
-protected:
-    MemoryPiece * m_pFilledMemory;
-    MemoryPiece * m_pFreeMemory;
 };
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

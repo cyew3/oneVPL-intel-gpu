@@ -348,20 +348,15 @@ UMC::Status MFXTaskSupplier_H265::DecodeSEI(UMC::MediaDataEx *nalUnit)
         MemoryPiece mem;
         mem.SetData(nalUnit);
 
-        MemoryPiece * pMem = m_Heap.Allocate(nalUnit->GetDataSize() + DEFAULT_NU_TAIL_SIZE);
-        notifier1<Heap, MemoryPiece*> memory_leak_preventing(&m_Heap, &Heap::Free, pMem);
+        MemoryPiece swappedMem;
+        swappedMem.Allocate(nalUnit->GetDataSize() + DEFAULT_NU_TAIL_SIZE);
 
-        memset(pMem->GetPointer() + nalUnit->GetDataSize(), DEFAULT_NU_TAIL_VALUE, DEFAULT_NU_TAIL_SIZE);
+        memset(swappedMem.GetPointer() + nalUnit->GetDataSize(), DEFAULT_NU_TAIL_VALUE, DEFAULT_NU_TAIL_SIZE);
 
         SwapperBase * swapper = m_pNALSplitter->GetSwapper();
-        swapper->SwapMemory(pMem, &mem, NULL);
+        swapper->SwapMemory(&swappedMem, &mem, 0);
 
-        // Ipp32s nalIndex = nalUnit->GetExData()->index;
-
-        bitStream.Reset((Ipp8u*)pMem->GetPointer(), (Ipp32u)pMem->GetDataSize());
-
-        //bitStream.Reset((Ipp8u*)nalUnit->GetDataPointer() + nalUnit->GetExData()->offsets[nalIndex],
-          //  nalUnit->GetExData()->offsets[nalIndex + 1] - nalUnit->GetExData()->offsets[nalIndex]);
+        bitStream.Reset((Ipp8u*)swappedMem.GetPointer(), (Ipp32u)swappedMem.GetDataSize());
 
         NalUnitType nal_unit_type;
         Ipp32u temporal_id;
