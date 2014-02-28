@@ -170,6 +170,7 @@ public:
     H265PicParameterSet m_pps;
     H265VideoParam m_videoParam;
     H265Slice *m_slices;
+    H265Slice *m_slicesNext;
     H265CUData *data_temp;
     Ipp32u data_temp_size;
     Ipp8u *m_slice_ids;
@@ -183,6 +184,7 @@ public:
     H265FrameList m_cpb;
     H265FrameList m_dpb;
     H265Frame *m_pCurrentFrame;
+    H265Frame *m_pNextFrame;
     H265Frame *m_pLastFrame;     // ptr to last frame
     H265Frame *m_pReconstructFrame;
     Ipp8u *m_logMvCostTable;
@@ -204,6 +206,7 @@ public:
     Ipp8u m_BpyramidTabRight[129];
     Ipp8u m_BpyramidRefLayers[129];
     H265ShortTermRefPicSet m_ShortRefPicSet[66];
+    H265ShortTermRefPicSet m_ShortRefPicSetDump[66];
 
     volatile Ipp32u m_incRow;
     CABAC_CONTEXT_H265 *m_context_array_wpp;
@@ -217,9 +220,10 @@ public:
         data_temp = NULL;
         //eFrameType = NULL;
         m_slices = NULL;
+        m_slicesNext = NULL;
         m_slice_ids = NULL;
         m_row_info = NULL;
-        m_pCurrentFrame = m_pLastFrame = m_pReconstructFrame = NULL;
+        m_pCurrentFrame = m_pNextFrame = m_pLastFrame = m_pReconstructFrame = NULL;
         m_brc = NULL;
         m_context_array_wpp = NULL;
         m_recon_dump_file_name = NULL;
@@ -246,6 +250,7 @@ public:
     mfxStatus SetSPS();
     mfxStatus SetPPS();
     mfxStatus SetSlice(H265Slice *slice, Ipp32u curr_slice);
+    mfxStatus SetSlice(H265Slice *slice, Ipp32u curr_slice, H265Frame *frame);
 
     void InitShortTermRefPicSet();
     mfxStatus Init(const mfxVideoParam *param, const mfxExtCodingOptionHEVC *opts_hevc);
@@ -265,6 +270,9 @@ public:
     void CreateRefPicSet(H265Slice *curr_slice);
     mfxStatus CheckCurRefPicSet(H265Slice *curr_slice);
     mfxStatus UpdateRefPicList(H265Slice *curr_slice);
+    void CreateRefPicSet(H265Slice *slice, H265Frame *frame);
+    mfxStatus CheckRefPicSet(H265Slice *slice, H265Frame *frame);
+    mfxStatus UpdateRefPicList(H265Slice *slice, H265Frame *frame);
 
     mfxStatus InitH265VideoParam(const mfxVideoParam *param, const mfxExtCodingOptionHEVC *opts_hevc);
 private:

@@ -26,7 +26,12 @@
 #include "watermark.h"
 #endif
 
+#include "mfx_h265_enc_cm_defs.h"
+
 namespace H265Enc {
+
+extern Ipp32s cmCurIdx;
+extern Ipp32s cmNextIdx;
 
 #if defined( _WIN32) || defined(_WIN64)
 #define thread_sleep(nms) Sleep(nms)
@@ -598,6 +603,143 @@ mfxStatus H265Encoder::SetSlice(H265Slice *slice, Ipp32u curr_slice)
     return MFX_ERR_NONE;
 }
 
+mfxStatus H265Encoder::SetSlice(H265Slice *slice, Ipp32u curr_slice, H265Frame *frame)
+{
+    memset(slice, 0, sizeof(H265Slice));
+
+    Ipp32u numCtbs = m_videoParam.PicWidthInCtbs*m_videoParam.PicHeightInCtbs;
+    Ipp32u numSlices = m_videoParam.NumSlices;
+    Ipp32u slice_len = numCtbs / numSlices;
+    //    if (!m_videoParam.threading_by_rows)
+    //        slice_len = slice_len / m_videoParam.PicWidthInCtbs * m_videoParam.PicWidthInCtbs;
+
+    slice->slice_segment_address = slice_len * curr_slice;
+    slice->slice_address_last_ctb = slice_len * (curr_slice + 1) - 1;
+    if (slice->slice_address_last_ctb > numCtbs - 1 || curr_slice == numSlices - 1)
+        slice->slice_address_last_ctb = numCtbs - 1;
+
+    if (curr_slice) slice->first_slice_segment_in_pic_flag = 0;
+    else slice->first_slice_segment_in_pic_flag = 1;
+
+    slice->slice_pic_parameter_set_id = m_pps.pps_pic_parameter_set_id;
+
+    switch (frame->m_PicCodType) {
+    case MFX_FRAMETYPE_P:
+        slice->slice_type = P_SLICE; break;
+    case MFX_FRAMETYPE_B:
+        slice->slice_type = B_SLICE; break;
+    case MFX_FRAMETYPE_I:
+    default:
+        slice->slice_type = I_SLICE; break;
+    }
+
+    if (frame->m_bIsIDRPic)
+    {
+        slice->IdrPicFlag = 1;
+        slice->RapPicFlag = 1;
+    }
+
+    //    slice->rap_pic_id = m_frameCount & 0xffff;
+    slice->slice_pic_order_cnt_lsb =  frame->PicOrderCnt() & ~(0xffffffff << m_sps.log2_max_pic_order_cnt_lsb);
+    slice->deblocking_filter_override_flag = 0;
+    slice->slice_deblocking_filter_disabled_flag = m_pps.pps_deblocking_filter_disabled_flag;
+    slice->slice_tc_offset_div2 = m_pps.pps_tc_offset_div2;
+    slice->slice_beta_offset_div2 = m_pps.pps_beta_offset_div2;
+    slice->slice_loop_filter_across_slices_enabled_flag = m_pps.pps_loop_filter_across_slices_enabled_flag;
+    //    slice->deblocking_filter_override_flag = 0;
+    slice->slice_cb_qp_offset = m_pps.pps_cb_qp_offset;
+    slice->slice_cr_qp_offset = m_pps.pps_cb_qp_offset;
+    slice->slice_temporal_mvp_enabled_flag = m_sps.sps_temporal_mvp_enabled_flag;
+
+    if (m_videoParam.BPyramid) {
+        Ipp8u num_ref0 = m_videoParam.MaxRefIdxL0;
+        Ipp8u num_ref1 = m_videoParam.MaxRefIdxL1;
+        if (slice->slice_type == B_SLICE) {
+            if (num_ref0 > 1) num_ref0 >>= 1;
+            if (num_ref1 > 1) num_ref1 >>= 1;
+        }
+        slice->num_ref_idx_l0_active = num_ref0;
+        slice->num_ref_idx_l1_active = num_ref1;
+    } else {
+        slice->num_ref_idx_l0_active = m_pps.num_ref_idx_l0_default_active;
+        slice->num_ref_idx_l1_active = m_pps.num_ref_idx_l1_default_active;
+    }
+
+    slice->pgop_idx = slice->slice_type == P_SLICE ? (Ipp8u)frame->m_PGOPIndex : 0;
+    if (m_videoParam.GeneralizedPB && slice->slice_type == P_SLICE) {
+        slice->slice_type = B_SLICE;
+        slice->num_ref_idx_l1_active = slice->num_ref_idx_l0_active;
+    }
+
+
+    slice->short_term_ref_pic_set_sps_flag = 1;
+    if (frame->m_RPSIndex > 0) {
+        slice->short_term_ref_pic_set_idx = frame->m_RPSIndex;
+        if (!m_videoParam.BPyramid)
+            slice->num_ref_idx_l0_active = m_videoParam.MaxBRefIdxL0;
+    } else if (frame->m_PGOPIndex == 0)
+        slice->short_term_ref_pic_set_idx = 0;
+    else
+        slice->short_term_ref_pic_set_idx = m_videoParam.GopRefDist - 1 + frame->m_PGOPIndex;
+
+    slice->slice_num = curr_slice;
+
+    slice->five_minus_max_num_merge_cand = 5 - MAX_NUM_MERGE_CANDS;
+    slice->slice_qp_delta = m_videoParam.QP - m_pps.init_qp;
+
+    if (m_pps.entropy_coding_sync_enabled_flag) {
+        slice->row_first = slice->slice_segment_address / m_videoParam.PicWidthInCtbs;
+        slice->row_last = slice->slice_address_last_ctb / m_videoParam.PicWidthInCtbs;
+        slice->num_entry_point_offsets = slice->row_last - slice->row_first;
+    }
+
+    slice->rd_opt_flag = 1;
+    slice->rd_lambda = 1;
+    if (slice->rd_opt_flag) {
+        slice->rd_lambda = pow(2.0, (m_videoParam.QP - 12) * (1.0/3.0)) * (1.0 / 256.0);
+        switch (slice->slice_type) {
+        case P_SLICE:
+            if (m_videoParam.BPyramid && OPT_LAMBDA_PYRAMID) {
+                Ipp8u layer = m_BpyramidRefLayers[frame->m_PicOrderCnt % m_videoParam.GopRefDist];
+                slice->rd_lambda *= tab_rdLambdaBPyramid[layer];
+                if (layer > 0)
+                    slice->rd_lambda *= MAX(2,MIN(4,(m_videoParam.QP - 12)/6.0));
+            } else {
+                if (m_videoParam.PGopPicSize == 1 || slice->pgop_idx)
+                    slice->rd_lambda *= 0.4624;
+                else
+                    slice->rd_lambda *= 0.578;
+                if (slice->pgop_idx)
+                    slice->rd_lambda *= MAX(2,MIN(4,(m_videoParam.QP - 12)/6));
+            }
+            break;
+        case B_SLICE:
+            if (m_videoParam.BPyramid && OPT_LAMBDA_PYRAMID) {
+                Ipp8u layer = m_BpyramidRefLayers[frame->m_PicOrderCnt % m_videoParam.GopRefDist];
+                slice->rd_lambda *= tab_rdLambdaBPyramid[layer];
+                if (layer > 0)
+                    slice->rd_lambda *= MAX(2,MIN(4,(m_videoParam.QP - 12)/6.0));
+            } else {
+                slice->rd_lambda *= 0.4624;
+                slice->rd_lambda *= MAX(2,MIN(4,(m_videoParam.QP - 12)/6));
+            }
+            break;
+        case I_SLICE:
+        default:
+            slice->rd_lambda *= 0.57;
+            if (m_videoParam.GopRefDist > 1)
+                slice->rd_lambda *= (1 - MIN(0.5,0.05*(m_videoParam.GopRefDist - 1)));
+        }
+    }
+    slice->rd_lambda_inter = slice->rd_lambda;
+    slice->rd_lambda_inter_mv = slice->rd_lambda_inter;
+
+    //kolya
+    slice->rd_lambda_sqrt = sqrt(slice->rd_lambda*256);
+
+    return MFX_ERR_NONE;
+}
+
 static Ipp8u dpoc_neg[][8][5] = {
     //GopRefDist 4
     {{2, 4, 2},
@@ -741,6 +883,9 @@ mfxStatus H265Encoder::Init(const mfxVideoParam *param, const mfxExtCodingOption
     mfxStatus sts = InitH265VideoParam(param, opts_hevc);
     MFX_CHECK_STS(sts);
 
+    if (m_videoParam.enableCmFlag)
+        AllocateCmResources(param->mfx.FrameInfo.Width, param->mfx.FrameInfo.Height, param->mfx.NumRefFrame);
+
     Ipp32u numCtbs = m_videoParam.PicWidthInCtbs*m_videoParam.PicHeightInCtbs;
     profile_frequency = m_videoParam.GopRefDist;
     data_temp_size = ((MAX_TOTAL_DEPTH * 2 + 1) << m_videoParam.Log2NumPartInCU);
@@ -754,6 +899,7 @@ mfxStatus H265Encoder::Init(const mfxVideoParam *param, const mfxExtCodingOption
     memSize += streamBufSize*(m_videoParam.num_thread_structs+1);
     memSize += sizeof(CABAC_CONTEXT_H265) * NUM_CABAC_CONTEXT * m_videoParam.PicHeightInCtbs;
     memSize += sizeof(H265Slice) * m_videoParam.NumSlices + DATA_ALIGN;
+    memSize += sizeof(H265Slice) * m_videoParam.NumSlices + DATA_ALIGN; // for future slice
     memSize += sizeof(H265CUData) * data_temp_size * m_videoParam.num_threads + DATA_ALIGN;
     memSize += numCtbs;
     memSize += sizeof(H265EncoderRowInfo) * m_videoParam.PicHeightInCtbs + DATA_ALIGN;
@@ -785,6 +931,9 @@ mfxStatus H265Encoder::Init(const mfxVideoParam *param, const mfxExtCodingOption
     ptr += sizeof(CABAC_CONTEXT_H265) * NUM_CABAC_CONTEXT * m_videoParam.PicHeightInCtbs;
 
     m_slices = UMC::align_pointer<H265Slice*>(ptr, DATA_ALIGN);
+    ptr += sizeof(H265Slice) * m_videoParam.NumSlices + DATA_ALIGN;
+
+    m_slicesNext = UMC::align_pointer<H265Slice*>(ptr, DATA_ALIGN);
     ptr += sizeof(H265Slice) * m_videoParam.NumSlices + DATA_ALIGN;
 
     data_temp = UMC::align_pointer<H265CUData*>(ptr, DATA_ALIGN);
@@ -935,6 +1084,10 @@ mfxStatus H265Encoder::Init(const mfxVideoParam *param, const mfxExtCodingOption
 }
 
 void H265Encoder::Close() {
+    if (m_videoParam.enableCmFlag) {
+        PrintTimes();
+        FreeCmResources();
+    }
     if (m_pReconstructFrame) {
         m_pReconstructFrame->Destroy();
         delete m_pReconstructFrame;
@@ -963,7 +1116,11 @@ Ipp32u H265Encoder::DetermineFrameType()
 
     m_bMakeNextFrameIDR = false;
 
-    if (m_frameCountEncoded == 0) {
+    mfxEncodeStat eStat;
+    mfx_video_encode_h265_ptr->GetEncodeStat(&eStat);
+///    if (m_frameCountEncoded == 0) {  !!!sergo
+
+    if (eStat.NumFrameCountAsync == 0) {
         m_iProfileIndex = 0;
         m_uIntraFrameInterval = 0;
         m_uIDRFrameInterval = 0;
@@ -1181,6 +1338,162 @@ void H265Encoder::CreateRefPicSet(H265Slice *curr_slice)
     }
 }
 
+void H265Encoder::CreateRefPicSet(H265Slice *slice, H265Frame *frame)
+{
+    Ipp32s CurrPicOrderCnt = frame->PicOrderCnt();
+    H265Frame **refFrames = frame->m_refPicList[0].m_refFrames;
+    H265ShortTermRefPicSet* RefPicSet;
+    Ipp32s ExcludedPOC = -1;
+    Ipp32u NumShortTermL0, NumShortTermL1, NumLongTermL0, NumLongTermL1;
+
+    m_dpb.countActiveRefs(NumShortTermL0, NumLongTermL0, NumShortTermL1, NumLongTermL1, CurrPicOrderCnt);
+
+    if ((NumShortTermL0 + NumShortTermL1 + NumLongTermL0 + NumLongTermL1) >= (Ipp32u)m_sps.num_ref_frames) {
+        if ((NumShortTermL0 + NumShortTermL1) > 0) {
+            H265Frame *Frm = m_dpb.findMostDistantShortTermRefs(CurrPicOrderCnt);
+            ExcludedPOC = Frm->PicOrderCnt();
+
+            if (ExcludedPOC < CurrPicOrderCnt)
+                NumShortTermL0--;
+            else
+                NumShortTermL1--;
+        }
+        else {
+            H265Frame *Frm = m_dpb.findMostDistantLongTermRefs(CurrPicOrderCnt);
+            ExcludedPOC = Frm->PicOrderCnt();
+
+            if (ExcludedPOC < CurrPicOrderCnt)
+                NumLongTermL0--;
+            else
+                NumLongTermL1--;
+        }
+    }
+
+    slice->short_term_ref_pic_set_sps_flag = 0;
+    RefPicSet = m_ShortRefPicSet + m_sps.num_short_term_ref_pic_sets;
+    RefPicSet->inter_ref_pic_set_prediction_flag = 0;
+
+    /* Long term TODO */
+
+    /* Short Term L0 */
+    if (NumShortTermL0 > 0) {
+        H265Frame *pHead = m_dpb.head();
+        H265Frame *pFrm;
+        Ipp32s NumFramesInList = 0;
+        Ipp32s i, prev, numRefs;
+
+        for (pFrm = pHead; pFrm; pFrm = pFrm->future()) {
+            Ipp32s poc = pFrm->PicOrderCnt();
+            Ipp32s j, k;
+
+            if (pFrm->isShortTermRef() && (poc < CurrPicOrderCnt) && (poc != ExcludedPOC)) {
+                // find insertion point
+                j = 0;
+                while ((j < NumFramesInList) && (refFrames[j]->PicOrderCnt() > poc))
+                    j++;
+
+                // make room if needed
+                if (j < NumFramesInList && refFrames[j])
+                    for (k = NumFramesInList; k > j; k--)
+                        refFrames[k] = refFrames[k-1];
+
+                // add the short-term reference
+                refFrames[j] = pFrm;
+                NumFramesInList++;
+            }
+        }
+
+        RefPicSet->num_negative_pics = (Ipp8u)NumFramesInList;
+
+        prev = 0;
+        for (i = 0; i < RefPicSet->num_negative_pics; i++) {
+            Ipp32s DeltaPoc = refFrames[i]->PicOrderCnt() - CurrPicOrderCnt;
+            RefPicSet->delta_poc[i] = prev - DeltaPoc;
+            prev = DeltaPoc;
+        }
+
+        if (slice->slice_type == I_SLICE)
+            numRefs = 0;
+        else
+            numRefs = (Ipp32s)slice->num_ref_idx_l0_active;
+
+        Ipp32s used_count = 0;
+        for (i = 0; i < RefPicSet->num_negative_pics; i++) {
+            if (used_count < numRefs && refFrames[i]->m_PGOPIndex == 0) {
+                RefPicSet->used_by_curr_pic_flag[i] = 1;
+                used_count++;
+            }
+            else {
+                RefPicSet->used_by_curr_pic_flag[i] = 0;
+            }
+        }
+        for (i = 0; i < RefPicSet->num_negative_pics; i++) {
+            if (used_count < numRefs && RefPicSet->used_by_curr_pic_flag[i] == 0) {
+                RefPicSet->used_by_curr_pic_flag[i] = 1;
+                used_count++;
+            }
+        }
+    }
+    else {
+        RefPicSet->num_negative_pics = 0;
+    }
+
+    /* Short Term L1 */
+    if (NumShortTermL1 > 0) {
+        H265Frame *pHead = m_dpb.head();
+        H265Frame *pFrm;
+        Ipp32s NumFramesInList = 0;
+        Ipp32s i, prev, numRefs;
+
+        for (pFrm = pHead; pFrm; pFrm = pFrm->future()) {
+            Ipp32s poc = pFrm->PicOrderCnt();
+            Ipp32s j, k;
+
+            if (pFrm->isShortTermRef()&& (poc > CurrPicOrderCnt) && (poc != ExcludedPOC)) {
+                // find insertion point
+                j = 0;
+                while ((j < NumFramesInList) && (refFrames[j]->PicOrderCnt() < poc))
+                    j++;
+
+                // make room if needed
+                if (j < NumFramesInList && refFrames[j])
+                    for (k = NumFramesInList; k > j; k--)
+                        refFrames[k] = refFrames[k-1];
+
+                // add the short-term reference
+                refFrames[j] = pFrm;
+                NumFramesInList++;
+            }
+        }
+
+        RefPicSet->num_positive_pics = (Ipp8u)NumFramesInList;
+
+        prev = 0;
+        for (i = 0; i < RefPicSet->num_positive_pics; i++) {
+            Ipp32s DeltaPoc = refFrames[i]->PicOrderCnt() - CurrPicOrderCnt;
+            RefPicSet->delta_poc[RefPicSet->num_negative_pics + i] = DeltaPoc - prev;
+            prev = DeltaPoc;
+        }
+
+        if (slice->slice_type == B_SLICE)
+            numRefs = m_videoParam.MaxRefIdxL1 + 1;
+        else
+            numRefs = 0;
+
+        if (numRefs > RefPicSet->num_positive_pics)
+            numRefs = RefPicSet->num_positive_pics;
+
+        for (i = 0; i < numRefs; i++)
+            RefPicSet->used_by_curr_pic_flag[RefPicSet->num_negative_pics + i] = 1;
+
+        for (i = numRefs; i < RefPicSet->num_positive_pics; i++)
+            RefPicSet->used_by_curr_pic_flag[RefPicSet->num_negative_pics + i] = 0;
+    }
+    else {
+        RefPicSet->num_positive_pics = 0;
+    }
+}
+
 mfxStatus H265Encoder::CheckCurRefPicSet(H265Slice *curr_slice)
 {
     H265ShortTermRefPicSet* RefPicSet;
@@ -1208,6 +1521,76 @@ mfxStatus H265Encoder::CheckCurRefPicSet(H265Slice *curr_slice)
         if (curr_slice->delta_poc_msb_present_flag[i])
         {
             Poc -= curr_slice->delta_poc_msb_cycle_lt[i] * MaxPicOrderCntLsb;
+        }
+
+        Frm = m_dpb.findFrameByPOC(Poc);
+
+        if (Frm == NULL)
+        {
+            return MFX_ERR_UNKNOWN;
+        }
+    }
+
+    prev = 0;
+    for (i = 0; i < RefPicSet->num_negative_pics; i++)
+    {
+        Ipp32s DeltaPoc = prev - RefPicSet->delta_poc[i];
+
+        prev = DeltaPoc;
+
+        Frm = m_dpb.findFrameByPOC(CurrPicOrderCnt + DeltaPoc);
+
+        if ((Frm == NULL) || (!(Frm->isShortTermRef())))
+        {
+            return MFX_ERR_UNKNOWN;
+        }
+    }
+
+    prev = 0;
+    for (i = RefPicSet->num_negative_pics; i < RefPicSet->num_positive_pics + RefPicSet->num_negative_pics; i++)
+    {
+        Ipp32s DeltaPoc = prev + RefPicSet->delta_poc[i];
+
+        prev = DeltaPoc;
+
+        Frm = m_dpb.findFrameByPOC(CurrPicOrderCnt + DeltaPoc);
+
+        if ((Frm == NULL) || (!(Frm->isShortTermRef())))
+        {
+            return MFX_ERR_UNKNOWN;
+        }
+    }
+
+    return MFX_ERR_NONE;
+}
+
+mfxStatus H265Encoder::CheckRefPicSet(H265Slice *slice, H265Frame *frame)
+{
+    H265ShortTermRefPicSet* RefPicSet;
+    H265Frame *Frm;
+    Ipp32s CurrPicOrderCnt = frame->PicOrderCnt();
+    Ipp32s MaxPicOrderCntLsb = (1 << m_sps.log2_max_pic_order_cnt_lsb);
+    Ipp32s i, prev;
+
+    if (frame->m_bIsIDRPic)
+    {
+        return MFX_ERR_NONE;
+    }
+
+    if (!slice->short_term_ref_pic_set_sps_flag)
+    {
+        return MFX_ERR_UNKNOWN;
+    }
+
+    RefPicSet = m_ShortRefPicSet + slice->short_term_ref_pic_set_idx;
+
+    for (i = 0; i < (Ipp32s)slice->num_long_term_pics; i++)
+    {
+        Ipp32s Poc = (CurrPicOrderCnt - slice->poc_lsb_lt[i] + MaxPicOrderCntLsb) & (MaxPicOrderCntLsb - 1);
+
+        if (slice->delta_poc_msb_present_flag[i])
+        {
+            Poc -= slice->delta_poc_msb_cycle_lt[i] * MaxPicOrderCntLsb;
         }
 
         Frm = m_dpb.findFrameByPOC(Poc);
@@ -1576,6 +1959,336 @@ mfxStatus H265Encoder::UpdateRefPicList(H265Slice *curr_slice)
 
         //SetPakRefPicList(curr_slice, ref_pic_list);
         //SetEncRefPicList(curr_slice, ref_pic_list);
+    }
+
+    return MFX_ERR_NONE;
+}    // UpdateRefPicList
+
+mfxStatus H265Encoder::UpdateRefPicList(H265Slice *slice, H265Frame *frame)
+{
+    RefPicList *refPicList = frame->m_refPicList;
+    H265ShortTermRefPicSet* RefPicSet;
+    H265Frame *RefPicSetStCurrBefore[MAX_NUM_REF_FRAMES];
+    H265Frame *RefPicSetStCurrAfter[MAX_NUM_REF_FRAMES];
+    H265Frame *RefPicSetLtCurr[MAX_NUM_REF_FRAMES];
+    H265Frame *RefPicListTemp[MAX_NUM_REF_FRAMES];
+    H265Frame *Frm;
+    H265Frame **pRefPicList0 = refPicList[0].m_refFrames;
+    H265Frame **pRefPicList1 = refPicList[1].m_refFrames;
+    Ipp8s  *pTb0 = refPicList[0].m_deltaPoc;
+    Ipp8s  *pTb1 = refPicList[1].m_deltaPoc;
+    Ipp32s NumPocStCurrBefore, NumPocStCurrAfter, NumPocLtCurr;
+    Ipp32s CurrPicOrderCnt = frame->PicOrderCnt();
+    Ipp32s MaxPicOrderCntLsb = (1 << m_sps.log2_max_pic_order_cnt_lsb);
+    EnumSliceType slice_type = slice->slice_type;
+    Ipp32s prev;
+    Ipp32s i, j;
+
+    VM_ASSERT(frame);
+
+    if (!slice->short_term_ref_pic_set_sps_flag)
+    {
+        RefPicSet = m_ShortRefPicSet + m_sps.num_short_term_ref_pic_sets;
+    }
+    else
+    {
+        RefPicSet = m_ShortRefPicSet + slice->short_term_ref_pic_set_idx;
+    }
+
+    m_dpb.unMarkAll();
+
+    NumPocLtCurr = 0;
+
+    for (i = 0; i < (Ipp32s)slice->num_long_term_pics; i++)
+    {
+        Ipp32s Poc = (CurrPicOrderCnt - slice->poc_lsb_lt[i] + MaxPicOrderCntLsb) & (MaxPicOrderCntLsb - 1);
+
+        if (slice->delta_poc_msb_present_flag[i])
+        {
+            Poc -= slice->delta_poc_msb_cycle_lt[i] * MaxPicOrderCntLsb;
+        }
+
+        Frm = m_dpb.findFrameByPOC(Poc);
+
+        if (Frm == NULL)
+        {
+            if (!frame->m_bIsIDRPic)
+            {
+                VM_ASSERT(0);
+            }
+        }
+        else
+        {
+            Frm->m_isMarked = true;
+            Frm->unSetisShortTermRef();
+            Frm->SetisLongTermRef();
+        }
+
+        if (slice->used_by_curr_pic_lt_flag[i])
+        {
+            RefPicSetLtCurr[NumPocLtCurr] = Frm;
+            NumPocLtCurr++;
+        }
+    }
+
+    NumPocStCurrBefore = 0;
+    NumPocStCurrAfter = 0;
+
+    prev = 0;
+    for (i = 0; i < RefPicSet->num_negative_pics; i++)
+    {
+        Ipp32s DeltaPoc = prev - RefPicSet->delta_poc[i];
+
+        prev = DeltaPoc;
+
+        Frm = m_dpb.findFrameByPOC(CurrPicOrderCnt + DeltaPoc);
+
+        if ((Frm == NULL) || (!(Frm->isShortTermRef())))
+        {
+            if (!frame->m_bIsIDRPic)
+            {
+                VM_ASSERT(0);
+            }
+        }
+        else
+        {
+            Frm->m_isMarked = true;
+            Frm->unSetisLongTermRef();
+            Frm->SetisShortTermRef();
+        }
+
+        if (RefPicSet->used_by_curr_pic_flag[i])
+        {
+            RefPicSetStCurrBefore[NumPocStCurrBefore] = Frm;
+            NumPocStCurrBefore++;
+        }
+    }
+
+    prev = 0;
+    for (i = RefPicSet->num_negative_pics; i < RefPicSet->num_positive_pics + RefPicSet->num_negative_pics; i++)
+    {
+        Ipp32s DeltaPoc = prev + RefPicSet->delta_poc[i];
+
+        prev = DeltaPoc;
+
+        Frm = m_dpb.findFrameByPOC(CurrPicOrderCnt + DeltaPoc);
+
+        if ((Frm == NULL) || (!(Frm->isShortTermRef())))
+        {
+            if (!frame->m_bIsIDRPic)
+            {
+                VM_ASSERT(0);
+            }
+        }
+        else
+        {
+            Frm->m_isMarked = true;
+            Frm->unSetisLongTermRef();
+            Frm->SetisShortTermRef();
+        }
+
+        if (RefPicSet->used_by_curr_pic_flag[i])
+        {
+            RefPicSetStCurrAfter[NumPocStCurrAfter] = Frm;
+            NumPocStCurrAfter++;
+        }
+    }
+
+    m_dpb.removeAllUnmarkedRef();
+
+    slice->m_NumRefsInL0List = 0;
+    slice->m_NumRefsInL1List = 0;
+
+    if (slice->slice_type == I_SLICE)
+    {
+        slice->num_ref_idx_l0_active = 0;
+        slice->num_ref_idx_l1_active = 0;
+    }
+    else
+    {
+        /* create a LIST0 */
+        slice->m_NumRefsInL0List = NumPocStCurrBefore + NumPocStCurrAfter + NumPocLtCurr;
+
+        j = 0;
+
+        for (i = 0; i < NumPocStCurrBefore; i++, j++)
+        {
+            RefPicListTemp[j] = RefPicSetStCurrBefore[i];
+        }
+
+        for (i = 0; i < NumPocStCurrAfter; i++, j++)
+        {
+            RefPicListTemp[j] = RefPicSetStCurrAfter[i];
+        }
+
+        for (i = 0; i < NumPocLtCurr; i++, j++)
+        {
+            RefPicListTemp[j] = RefPicSetLtCurr[i];
+        }
+
+        if (slice->m_NumRefsInL0List > (Ipp32s)slice->num_ref_idx_l0_active)
+        {
+            slice->m_NumRefsInL0List = (Ipp32s)slice->num_ref_idx_l0_active;
+        }
+
+        if (slice->m_ref_pic_list_modification_flag_l0)
+        {
+            for (i = 0; i < slice->m_NumRefsInL0List; i++)
+            {
+                pRefPicList0[i] = RefPicListTemp[slice->list_entry_l0[i]];
+            }
+        }
+        else
+        {
+            for (i = 0; i < slice->m_NumRefsInL0List; i++)
+            {
+                pRefPicList0[i] = RefPicListTemp[i];
+            }
+        }
+
+        if (slice->slice_type == B_SLICE)
+        {
+            /* create a LIST1 */
+            slice->m_NumRefsInL1List = NumPocStCurrBefore + NumPocStCurrAfter + NumPocLtCurr;
+
+            j = 0;
+
+            for (i = 0; i < NumPocStCurrAfter; i++, j++)
+            {
+                RefPicListTemp[j] = RefPicSetStCurrAfter[i];
+            }
+
+            for (i = 0; i < NumPocStCurrBefore; i++, j++)
+            {
+                RefPicListTemp[j] = RefPicSetStCurrBefore[i];
+            }
+
+            for (i = 0; i < NumPocLtCurr; i++, j++)
+            {
+                RefPicListTemp[j] = RefPicSetLtCurr[i];
+            }
+
+            if (slice->m_NumRefsInL1List > (Ipp32s)slice->num_ref_idx_l1_active)
+            {
+                slice->m_NumRefsInL1List = (Ipp32s)slice->num_ref_idx_l1_active;
+            }
+
+            if (slice->m_ref_pic_list_modification_flag_l1)
+            {
+                for (i = 0; i < slice->m_NumRefsInL1List; i++)
+                {
+                    pRefPicList1[i] = RefPicListTemp[slice->list_entry_l1[i]];
+                }
+            }
+            else
+            {
+                for (i = 0; i < slice->m_NumRefsInL1List; i++)
+                {
+                    pRefPicList1[i] = RefPicListTemp[i];
+                }
+            }
+
+            /* create a LIST_C */
+            /* TO DO */
+        }
+
+        for (i = 0; i < slice->m_NumRefsInL0List; i++)
+        {
+            Ipp32s dPOC = CurrPicOrderCnt - pRefPicList0[i]->PicOrderCnt();
+
+            if (dPOC < -128)     dPOC = -128;
+            else if (dPOC > 127) dPOC =  127;
+
+            pTb0[i] = (Ipp8s)dPOC;
+        }
+
+        for (i = 0; i < slice->m_NumRefsInL1List; i++)
+        {
+            Ipp32s dPOC = CurrPicOrderCnt - pRefPicList1[i]->PicOrderCnt();
+
+            if (dPOC < -128)     dPOC = -128;
+            else if (dPOC > 127) dPOC =  127;
+
+            pTb1[i] = (Ipp8s)dPOC;
+        }
+
+        slice->num_ref_idx_l0_active = MAX(slice->m_NumRefsInL0List, 1);
+        slice->num_ref_idx_l1_active = MAX(slice->m_NumRefsInL1List, 1);
+
+        if (slice->slice_type == P_SLICE)
+        {
+            slice->num_ref_idx_l1_active = 0;
+            slice->num_ref_idx_active_override_flag =
+                (slice->num_ref_idx_l0_active != m_pps.num_ref_idx_l0_default_active);
+        }
+        else
+        {
+            slice->num_ref_idx_active_override_flag = (
+                (slice->num_ref_idx_l0_active != m_pps.num_ref_idx_l0_default_active) ||
+                (slice->num_ref_idx_l1_active != m_pps.num_ref_idx_l1_default_active));
+        }
+
+        /* RD tmp current version of HM decoder doesn't support m_num_ref_idx_active_override_flag == 0 yet*/
+        slice->num_ref_idx_active_override_flag = 1;
+
+        // If default
+        if ((P_SLICE == slice_type && m_pps.weighted_pred_flag == 0) ||
+            (B_SLICE == slice_type && m_pps.weighted_bipred_flag == 0))
+        {
+            slice->luma_log2_weight_denom = 0;
+            slice->chroma_log2_weight_denom = 0;
+            for (Ipp8u i = 0; i < slice->num_ref_idx_l0_active; i++) // refIdxL0
+                for (Ipp8u j = 0; j < slice->num_ref_idx_l1_active; j++) // refIdxL1
+                    for (Ipp8u k = 0; k < 6; k++) // L0/L1 and planes
+                    {
+                        slice->weights[k][i][j] = 1;
+                        slice->offsets[k][i][j] = 0;
+                    }
+        }
+#if 0
+        // If P/B slice and explicit
+        if ((PREDSLICE == slice_type && m_PicParamSet.weighted_pred_flag) ||
+            (BPREDSLICE == slice_type && m_PicParamSet.weighted_bipred_flag))
+        {
+            // load from explicit weight file
+            m_SliceHeader.luma_log2_weight_denom = m_info.LumaLog2WeightDenom;
+            m_SliceHeader.chroma_log2_weight_denom = m_info.ChromaLog2WeightDenom;
+            for (Ipp8u i = 0; i < slice->num_ref_idx_l0_active; i++) // refIdxL0
+                for (Ipp8u j = 0; j < slice->num_ref_idx_l1_active; j++) // refIdxL1
+                {
+                    slice->Weights[0][i][j] = m_info.Weights[0][i];//1 << m_SliceHeader.luma_log2_weight_denom; // luma_weight_l0[i]
+                    slice->Offsets[0][i][j] = m_info.Offsets[0][i]*(1<<(m_info.BitDepthLuma-8)); // luma_offset_l0[i]*(1<<(BitDepthY-8))
+                    slice->Weights[1][i][j] = m_info.Weights[1][j];//1 << m_SliceHeader.luma_log2_weight_denom; // luma_weight_l1[j]
+                    slice->Offsets[1][i][j] = m_info.Offsets[1][j]*(1<<(m_info.BitDepthLuma-8)); // luma_offset_l1[j]*(1<<(BitDepthY-8))
+                    slice->Weights[2][i][j] = m_info.Weights[2][i];//1 << m_SliceHeader.chroma_log2_weight_denom; // chroma_weight_l0[i][Cb]
+                    slice->Offsets[2][i][j] = m_info.Offsets[2][i]*(1<<(m_info.BitDepthChroma-8));//0; // chroma_offset_l0[i][Cb]*(1<<(BitDepthC-8))
+                    slice->Weights[3][i][j] = m_info.Weights[3][j];//1 << m_SliceHeader.chroma_log2_weight_denom; // chroma_weight_l1[j][Cb]
+                    slice->Offsets[3][i][j] = m_info.Offsets[3][j]*(1<<(m_info.BitDepthChroma-8));//0; // chroma_offset_l1[j][Cb]*(1<<(BitDepthC-8))
+                    slice->Weights[4][i][j] = m_info.Weights[4][i];//1 << m_SliceHeader.chroma_log2_weight_denom; // chroma_weight_l0[i][Cr]
+                    slice->Offsets[4][i][j] = m_info.Offsets[4][i]*(1<<(m_info.BitDepthChroma-8));//0; // chroma_offset_l0[i][Cr]*(1<<(BitDepthC-8))
+                    slice->Weights[5][i][j] = m_info.Weights[5][j];//1 << m_SliceHeader.chroma_log2_weight_denom; // chroma_weight_l1[j][Cr]
+                    slice->Offsets[5][i][j] = m_info.Offsets[5][j]*(1<<(m_info.BitDepthChroma-8));//0; // chroma_offset_l1[j][Cr]*(1<<(BitDepthC-8))
+                }
+        }
+#endif
+        //update temporal refpiclists
+
+        for (i = 0; i < (Ipp32s)slice->num_ref_idx_l0_active; i++)
+        {
+            frame->m_refPicList[0].m_refFrames[i] = pRefPicList0[i];
+            frame->m_refPicList[0].m_deltaPoc[i] = pTb0[i];
+            frame->m_refPicList[0].m_isLongTermRef[i] = pRefPicList0[i]->isLongTermRef();
+        }
+
+        for (i = 0; i < (Ipp32s)slice->num_ref_idx_l1_active; i++)
+        {
+            frame->m_refPicList[1].m_refFrames[i] = pRefPicList1[i];
+            frame->m_refPicList[1].m_deltaPoc[i] = pTb1[i];
+            frame->m_refPicList[1].m_isLongTermRef[i] = pRefPicList1[i]->isLongTermRef();
+        }
+
+        //SetPakRefPicList(slice, ref_pic_list);
+        //SetEncRefPicList(slice, ref_pic_list);
     }
 
     return MFX_ERR_NONE;
@@ -2170,6 +2883,7 @@ void H265Encoder::PrepareToEndSequence()
 }
 
 mfxStatus H265Encoder::EncodeFrame(mfxFrameSurface1 *surface, mfxBitstream *mfxBS) {
+
     EnumPicClass    ePic_Class;
 
     if (surface) {
@@ -2289,6 +3003,9 @@ mfxStatus H265Encoder::EncodeFrame(mfxFrameSurface1 *surface, mfxBitstream *mfxB
                 m_pCurrentFrame->m_PicCodType = MFX_FRAMETYPE_P;
         }
     }
+
+    if (m_videoParam.enableCmFlag)
+        m_pCurrentFrame->SetisShortTermRef();   // is needed for RefList of m_pNextFrame
 
     if (!mfxBS)
         return m_pCurrentFrame ? MFX_ERR_NONE : MFX_ERR_MORE_DATA;
@@ -2451,6 +3168,48 @@ recode:
                 m_pCurrentFrame->m_allRefFramesAreFromThePast = false;
     }
 
+
+    if (m_videoParam.enableCmFlag) {
+        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "CmPart");
+        if (m_slices->num_ref_idx[0] > 0) {
+
+            m_pNextFrame = m_cpb.findOldestToEncode(&m_dpb, m_l1_cnt_to_start_B,
+                0, 0 /*m_isBpyramid, m_Bpyramid_nextNumFrame*/);
+
+            if (m_pNextFrame)
+            {
+                memcpy(&m_ShortRefPicSetDump, &m_ShortRefPicSet, sizeof(m_ShortRefPicSet)); // !!!TODO: not all should be saved sergo!!!
+                for (Ipp8u curr_slice = 0; curr_slice < m_videoParam.NumSlices; curr_slice++) {
+                    H265Slice *pSlice = m_slicesNext + curr_slice;
+                    SetSlice(pSlice, curr_slice, m_pNextFrame);
+                    if (CheckRefPicSet(pSlice, m_pNextFrame) != MFX_ERR_NONE)
+                    {
+                        CreateRefPicSet(pSlice, m_pNextFrame);
+                    }
+                    UpdateRefPicList(pSlice, m_pNextFrame);
+                    if (pSlice->slice_type != I_SLICE) {
+                        pSlice->num_ref_idx[0] = pSlice->num_ref_idx_l0_active;
+                        pSlice->num_ref_idx[1] = pSlice->num_ref_idx_l1_active;
+                    } else {
+                        pSlice->num_ref_idx[0] = 0;
+                        pSlice->num_ref_idx[1] = 0;
+                    }
+                    for(Ipp32u i = m_slicesNext[curr_slice].slice_segment_address; i <= m_slicesNext[curr_slice].slice_address_last_ctb; i++) {
+                        m_slice_ids[i] = curr_slice;
+                    }
+                }
+                memcpy(&m_ShortRefPicSet, &m_ShortRefPicSetDump, sizeof(m_ShortRefPicSet));
+            }
+
+            cmCurIdx ^= 1;
+            cmNextIdx ^= 1;
+            H265Frame **refsCur = m_pCurrentFrame->m_refPicList[0].m_refFrames;
+            H265Frame **refsNext = m_pNextFrame->m_refPicList[0].m_refFrames;
+            RunVme(m_videoParam, m_pCurrentFrame, m_pNextFrame, m_slices, m_slicesNext, refsCur, refsNext);
+        }
+
+    }
+
     m_incRow = 0;
     for (Ipp32u i = 0; i < m_videoParam.num_thread_structs; i++)
         bs[i].Reset();
@@ -2608,7 +3367,8 @@ recode:
     {
     case IDR_PIC:
     case REFERENCE_PIC:
-        m_pCurrentFrame->SetisShortTermRef();
+        if (m_videoParam.enableCmFlag == 0)
+            m_pCurrentFrame->SetisShortTermRef();
         m_pReconstructFrame->doPadding();
         break;
 

@@ -140,7 +140,7 @@ TU_OPT(IntraNumCand2_6,                2,   2,   2,   2,   2,   2,   1)
 TU_OPT(WPP,                          UNK, UNK, UNK, UNK, UNK, UNK, UNK)
 TU_OPT(GPB,                           ON,  ON,  ON, OFF, OFF, OFF, OFF)
 TU_OPT(AMP,                           ON,  ON,  ON, OFF, OFF, OFF, OFF)
-TU_OPT(CmIntraThreshold,               0,   0,   0,   0,   0,   0,   0)
+TU_OPT(CmIntraThreshold,               0,   0,   0,   0,   0,   0, 576)
 TU_OPT(TUSplitIntra,                   1,   1,   1,   1,   3,   3,   3)
 TU_OPT(CUSplit,                        1,   2,   2,   2,   2,   2,   2)
 TU_OPT(IntraAngModes,                  1,   1,   1,   1,   2,   2,   2)
@@ -381,6 +381,8 @@ mfxStatus MFXVideoENCODEH265::EncodeFrameCheck(mfxEncodeCtrl *ctrl, mfxFrameSurf
         //    m_core->IncreaseReference(&(surface->Data));
 
         mfxU32 noahead = 1;
+        if (m_mfxVideoParam.mfx.NumRefFrame > 1)
+            noahead = 0;
 
         if (!surface) {
             if (m_frameCountBufferedSync == 0) { // buffered frames to be encoded
@@ -1648,6 +1650,7 @@ mfxStatus MFXVideoENCODEH265::GetEncodeStat(mfxEncodeStat *stat)
     stat->NumCachedFrame = m_frameCountBufferedSync; //(mfxU32)m_inFrames.size();
     stat->NumBit = m_totalBits;
     stat->NumFrame = m_encodedFrames;
+    stat->NumFrameCountAsync = m_frameCount;
     return MFX_ERR_NONE;
 }
 
