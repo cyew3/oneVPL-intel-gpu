@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2010-2013 Intel Corporation. All Rights Reserved.
+Copyright(c) 2010-2014 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -98,11 +98,16 @@ mfxStatus MFXVideoVPPPlugin::AllocateFrames(mfxVideoParam *par, mfxVideoParam *p
 {   
     mfxStatus sts = MFX_ERR_NONE;
 
-    mfxFrameAllocResponse allocResponse = {0};
-    mfxFrameAllocRequest plgAllocRequest0 = {0};
-    mfxFrameAllocRequest plgAllocRequest1 = {0};
-    mfxFrameAllocRequest vpp1Request[2] = {0};
-    mfxFrameAllocRequest vpp2Request[2] = {0};
+    mfxFrameAllocResponse allocResponse;
+    memset((void*)&allocResponse, 0, sizeof(mfxFrameAllocResponse));
+    mfxFrameAllocRequest plgAllocRequest0;
+    memset((void*)&plgAllocRequest0, 0, sizeof(mfxFrameAllocResponse));
+    mfxFrameAllocRequest plgAllocRequest1;
+    memset((void*)&plgAllocRequest1, 0, sizeof(mfxFrameAllocResponse));
+    mfxFrameAllocRequest vpp1Request[2];
+    memset((void*)&vpp1Request, 0, 2*sizeof(mfxFrameAllocResponse));
+    mfxFrameAllocRequest vpp2Request[2];
+    memset((void*)&vpp2Request, 0, 2*sizeof(mfxFrameAllocResponse));
 
     if (m_pPlugin)
     {
@@ -255,10 +260,14 @@ mfxStatus MFXVideoVPPPlugin::QueryIOSurf(mfxVideoParam *par, mfxFrameAllocReques
     MSDK_CHECK_POINTER(par, MFX_ERR_NULL_PTR);
     
     mfxStatus sts = MFX_ERR_NONE;
-    mfxFrameAllocRequest plgAllocRequest0 = {0};
-    mfxFrameAllocRequest plgAllocRequest1 = {0};
-    mfxFrameAllocRequest vpp1Request[2] = {0};
-    mfxFrameAllocRequest vpp2Request[2] = {0};
+    mfxFrameAllocRequest plgAllocRequest0;
+    memset((void*)&plgAllocRequest0, 0, sizeof(mfxFrameAllocRequest));
+    mfxFrameAllocRequest plgAllocRequest1;
+    memset((void*)&plgAllocRequest1, 0, sizeof(mfxFrameAllocRequest));
+    mfxFrameAllocRequest vpp1Request[2];
+    memset((void*)&vpp1Request, 0, 2*sizeof(mfxFrameAllocRequest));
+    mfxFrameAllocRequest vpp2Request[2];
+    memset((void*)&vpp2Request, 0, 2*sizeof(mfxFrameAllocRequest));
 
     MSDK_CHECK_POINTER(par, MFX_ERR_NULL_PTR);
 

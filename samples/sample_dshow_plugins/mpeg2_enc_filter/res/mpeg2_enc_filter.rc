@@ -1,0 +1,153 @@
+// Microsoft Visual C++ generated resource script.
+//
+#include "resource_enc.h"
+
+#define APSTUDIO_READONLY_SYMBOLS
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 2 resource.
+//
+#include "afxres.h"
+
+/////////////////////////////////////////////////////////////////////////////
+#undef APSTUDIO_READONLY_SYMBOLS
+
+/////////////////////////////////////////////////////////////////////////////
+// Russian resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_RUS)
+#ifdef _WIN32
+LANGUAGE LANG_RUSSIAN, SUBLANG_DEFAULT
+#pragma code_page(1251)
+#endif //_WIN32
+
+#ifdef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// TEXTINCLUDE
+//
+
+1 TEXTINCLUDE 
+BEGIN
+    "resource_enc.h\0"
+END
+
+2 TEXTINCLUDE 
+BEGIN
+    "#include ""afxres.h""\r\n"
+    "\0"
+END
+
+3 TEXTINCLUDE 
+BEGIN
+    "\r\n"
+    "\0"
+END
+
+#endif    // APSTUDIO_INVOKED
+
+#endif    // Russian resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+/////////////////////////////////////////////////////////////////////////////
+// English (U.S.) resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)
+#ifdef _WIN32
+LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
+#pragma code_page(1252)
+#endif //_WIN32
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog
+//
+
+IDD_PROPPAGE_CONFIGURE DIALOGEX 0, 0, 270, 150
+STYLE DS_SETFONT | DS_FIXEDSYS | WS_CHILD
+FONT 8, "MS Shell Dlg", 0, 0, 0x0
+BEGIN
+    LTEXT           "Preset",IDC_STATIC,32,18,25,8,0,WS_EX_RIGHT
+    COMBOBOX        IDC_COMBO_PRESET,62,16,65,80,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "Throttle policy",IDC_STATIC,150,18,48,8,0,WS_EX_RIGHT
+    COMBOBOX        IDC_COMBO_THROTTLE_POLICY,203,16,52,80,CBS_DROPDOWNLIST | WS_DISABLED | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "Bitrate",IDC_STATIC,176,32,22,8,0,WS_EX_RIGHT
+    COMBOBOX        IDC_COMBO_BITRATE,203,30,52,80,CBS_DROPDOWNLIST | WS_DISABLED | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "QP",IDC_STATIC,188,46,10,8,0,WS_EX_RIGHT
+    COMBOBOX        IDC_COMBO_QP,203,44,52,80,CBS_DROPDOWNLIST | WS_DISABLED | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "Profile",IDC_STATIC,7,73,50,8,0,WS_EX_RIGHT
+    COMBOBOX        IDC_COMBO_PROFILE2,62,71,65,80,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "Level",IDC_STATIC,7,88,50,8,0,WS_EX_RIGHT
+    COMBOBOX        IDC_COMBO_LEVEl,62,85,65,80,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "RC Method",IDC_STATIC,21,101,36,8,0,WS_EX_RIGHT
+    COMBOBOX        IDC_COMBO_RCCONTROL,62,99,65,80,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    EDITTEXT        IDC_EDIT_BFRAME,203,99,41,12,ES_AUTOHSCROLL
+    CONTROL         "",IDC_SPIN_BFRAME,"msctls_updown32",UDS_SETBUDDYINT | UDS_AUTOBUDDY | UDS_ARROWKEYS,244,99,12,12
+    EDITTEXT        IDC_EDIT_IDR,203,69,41,12,ES_AUTOHSCROLL
+    CONTROL         "",IDC_SPIN_IDR,"msctls_updown32",UDS_SETBUDDYINT | UDS_AUTOBUDDY | UDS_ARROWKEYS,244,69,12,12
+    EDITTEXT        IDC_EDIT_IFRAME,203,84,41,12,ES_AUTOHSCROLL
+    CONTROL         "",IDC_SPIN_IFRAME,"msctls_updown32",UDS_SETBUDDYINT | UDS_AUTOBUDDY | UDS_ARROWKEYS,244,84,12,12
+    EDITTEXT        IDC_EDIT_BITRATE,62,44,55,12,ES_AUTOHSCROLL
+    CONTROL         "",IDC_SPIN_BITRATE,"msctls_updown32",UDS_SETBUDDYINT | UDS_AUTOBUDDY | UDS_ARROWKEYS,116,44,11,12
+    GROUPBOX        "Throttle Control",IDC_STATIC,136,7,127,55
+    LTEXT           "Bitrate (kbps)",IDC_STATIC,0,46,57,8,0,WS_EX_RIGHT
+    LTEXT           "GopPicSize",IDC_STATIC,156,71,42,8,0,WS_EX_RIGHT
+    LTEXT           "GopRefDist",IDC_STATIC,140,86,58,8,0,WS_EX_RIGHT
+    LTEXT           "BufferSizeInKB",IDC_STATIC,139,101,59,8,0,WS_EX_RIGHT
+    LTEXT           "Target Usage",IDC_STATIC,7,32,50,8,0,WS_EX_RIGHT
+    COMBOBOX        IDC_COMBO_TRGTUSE,62,30,65,80,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    GROUPBOX        "",IDC_STATIC,7,61,257,61
+    GROUPBOX        "",IDC_STATIC,6,7,127,55
+    GROUPBOX        "",IDC_STATIC,6,121,127,29
+    EDITTEXT        IDC_EDIT_WIDTH,64,131,25,12,ES_AUTOHSCROLL
+    LTEXT           "Frame Size\r\n (width x height)",IDC_STATIC,7,129,53,18,0,WS_EX_RIGHT
+    LTEXT           "X",IDC_STATIC,89,133,8,8,0,WS_EX_RIGHT
+    EDITTEXT        IDC_EDIT_HEIGHT,102,131,25,12,ES_AUTOHSCROLL
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// DESIGNINFO
+//
+
+#ifdef APSTUDIO_INVOKED
+GUIDELINES DESIGNINFO 
+BEGIN
+    IDD_PROPPAGE_CONFIGURE, DIALOG
+    BEGIN
+        LEFTMARGIN, 6
+        RIGHTMARGIN, 263
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 148
+    END
+END
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// String Table
+//
+
+STRINGTABLE 
+BEGIN
+    IDS_PROPPAGE_CONFIGURE  "Configure"
+END
+
+#endif    // English (U.S.) resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+
+#ifndef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 3 resource.
+//
+
+
+/////////////////////////////////////////////////////////////////////////////
+#endif    // not APSTUDIO_INVOKED
+

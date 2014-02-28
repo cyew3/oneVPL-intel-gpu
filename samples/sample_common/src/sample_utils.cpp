@@ -1445,7 +1445,7 @@ mfxStatus MJPEG_AVI_ParsePicStruct(mfxBitstream *bitstream)
 
 mfxVersion getMinimalRequiredVersion(const APIChangeFeatures &features)
 {
-    mfxVersion version = {1, 1};
+    mfxVersion version = {{1, 1}};
 
     if (features.MVCDecode || features.MVCEncode || features.LowLatency || features.JpegDecode)
     {
@@ -1547,6 +1547,8 @@ msdk_ostream & operator <<(msdk_ostream & os, MsdkTraceLevel tl) {
             break;
         case MSDK_TRACE_LEVEL_DEBUG :
             os<<MSDK_STRING("DEBUG");
+            break;
+        default:
             break;
     }
     return os;

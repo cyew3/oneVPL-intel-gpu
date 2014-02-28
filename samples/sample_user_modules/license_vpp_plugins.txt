@@ -1,0 +1,37 @@
+The following materials are defined as "Developer Tools" and are subject
+to the terms and conditions of the End User License Agreement
+
+<InstallationFolder>\_bin\win32\ocl_rotate.cl
+<InstallationFolder>\_bin\win32\sample_encode.exe
+<InstallationFolder>\_bin\win32\sample_multi_transcode.exe
+<InstallationFolder>\_bin\win32\sample_plugin_opencl.dll
+<InstallationFolder>\_bin\win32\sample_rotate_plugin.dll
+
+<InstallationFolder>\_bin\x64\ocl_rotate.cl
+<InstallationFolder>\_bin\x64\sample_encode.exe
+<InstallationFolder>\_bin\x64\sample_multi_transcode.exe
+<InstallationFolder>\_bin\x64\sample_plugin_opencl.dll
+<InstallationFolder>\_bin\x64\sample_rotate_plugin.dll
+
+<InstallationFolder>\sample_encode\readme-encode.rtf
+<InstallationFolder>\sample_multi_transcode\readme-multi-transcode.rtf
+<InstallationFolder>\sample_user_modules\rotate_cpu\readme-opencl-rotate-plugin.rtf
+<InstallationFolder>\sample_utilities\vpp_plugin\readme-vppplugin.rtf
+
+The following materials are defined as "Sample Source" and are subject
+to the terms and conditions of the End User License Agreement
+
+<InstallationFolder>\sample_common\* (excluding readme files [*.rtf, *.doc, *.pdf] and binary files [*.dll, *.exe])
+This excludes any documentation files named *.rtf, *.doc or *.pdf and any binary files named *.dll or *.exe under the "<InstallationFolder>\sample_common" folder
+
+<InstallationFolder>\sample_encode\* (excluding readme files [*.rtf, *.doc, *.pdf] and binary files [*.dll, *.exe])
+This excludes any documentation files named *.rtf, *.doc or *.pdf and any binary files named *.dll or *.exe under the "<InstallationFolder>\sample_encode" folder
+
+<InstallationFolder>\sample_multi_transcode\* (excluding readme files [*.rtf, *.doc, *.pdf] and binary files [*.dll, *.exe])
+This excludes any documentation files named *.rtf, *.doc or *.pdf and any binary files named *.dll or *.exe under the "<InstallationFolder>\sample_multi_transcode" folder
+
+<InstallationFolder>\sample_user_modules\* (excluding readme files [*.rtf, *.doc, *.pdf] and binary files [*.dll, *.exe])
+This excludes any documentation files named *.rtf, *.doc or *.pdf and any binary files named *.dll or *.exe under the "<InstallationFolder>\sample_user_modules" folder
+
+<InstallationFolder>\sample_utilities\* (excluding readme files [*.rtf, *.doc, *.pdf] and binary files [*.dll, *.exe])
+This excludes any documentation files named *.rtf, *.doc or *.pdf and any binary files named *.dll or *.exe under the "<InstallationFolder>\sample_utilities" folder

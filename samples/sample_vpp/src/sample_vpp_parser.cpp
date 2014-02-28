@@ -412,7 +412,7 @@ mfxStatus vppParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams
             else if(0 == msdk_strcmp(strInput[i], MSDK_STRING("-spic")))
             {
                 i++;
-                msdk_sscanf(strInput[i], MSDK_STRING("%cu"), &pParams->inFrameInfo[VPP_IN].PicStruct);
+                msdk_sscanf(strInput[i], MSDK_STRING("%hhu"), &pParams->inFrameInfo[VPP_IN].PicStruct);
                 pParams->inFrameInfo[VPP_IN].PicStruct = GetPicStruct(pParams->inFrameInfo[VPP_IN].PicStruct);
             }
             else if(0 == msdk_strcmp(strInput[i], MSDK_STRING("-sf")))
@@ -453,7 +453,7 @@ mfxStatus vppParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams
             else if(0 == msdk_strcmp(strInput[i], MSDK_STRING("-dpic")))
             {
                 i++;
-                msdk_sscanf(strInput[i], MSDK_STRING("%cu"), &pParams->outFrameInfo.PicStruct);
+                msdk_sscanf(strInput[i], MSDK_STRING("%hhu"), &pParams->outFrameInfo.PicStruct);
                 pParams->outFrameInfo.PicStruct = GetPicStruct(pParams->outFrameInfo.PicStruct);
             }
             else if(0 == msdk_strcmp(strInput[i], MSDK_STRING("-df")))

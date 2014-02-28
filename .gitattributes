@@ -8,6 +8,7 @@
 *.cc text eol=lf
 *.cpp text eol=lf
 *.cl text eol=lf
+*.cs text eol=lf
 *.sh text eol=lf
 *.texi text eol=lf
 *.map text eol=lf
@@ -17,6 +18,7 @@ Makefile text eol=lf
 # files to be stored and checked out with CRLF endings
 *.vcxproj text eol=crlf
 *.vcproj text eol=crlf
+*.csproj text eol=crlf
 *.vsprops text eol=crlf
 *.props text eol=crlf
 *.sln text eol=crlf
@@ -28,6 +30,10 @@ Makefile text eol=lf
 # binary files which should not be modified
 *.docx binary
 *.pdf binary
+*.jpg binary
+*.jpeg binary
+*.png binary
+*.bmp binary
 
 # paths which should be ignored by git-archive
 .gitattributes export-ignore

@@ -1,0 +1,11 @@
+EXPORTS
+    MFXSplitter_Init
+	MFXSplitter_Close
+	MFXSplitter_ReleaseBitstream
+	MFXSplitter_GetInfo
+	MFXSplitter_GetBitstream
+	MFXSplitter_Seek
+
+	MFXMuxer_Init
+	MFXMuxer_Close
+	MFXMuxer_PutBitstream

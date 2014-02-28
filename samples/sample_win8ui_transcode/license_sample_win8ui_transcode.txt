@@ -1,0 +1,11 @@
+The following materials are defined as "Developer Tools" and are subject
+to the terms and conditions of the End User License Agreement
+
+<InstallationFolder>\sample_win8ui_transcode\readme-win8ui-transcode-app.rtf
+<InstallationFolder>\MediaSDK Sample Guide.pdf
+
+The following materials are defined as "Sample Source" and are subject
+to the terms and conditions of the End User License Agreement
+
+<InstallationFolder>\sample_win8ui_transcode\* (excluding readme files [*.rtf, *.doc, *.pdf] and binary files [*.dll, *.exe])
+This excludes any documentation files named *.rtf, *.doc or *.pdf and any binary files named *.dll or *.exe under the "<InstallationFolder>\sample_win8ui_transcode" folder

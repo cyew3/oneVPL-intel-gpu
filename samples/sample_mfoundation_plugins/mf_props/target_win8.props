@@ -1,0 +1,23 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ImportGroup Label="PropertySheets" />
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <_PropertySheetDisplayName>target_win8</_PropertySheetDisplayName>
+    <ExecutablePath>$(MINIDDK_ROOT)\bin\x86;$(MINIDDK_ROOT)\x86\x86;$(ExecutablePath)</ExecutablePath>
+    <IncludePath>$(MINIDDK_ROOT)\Include\um;$(MINIDDK_ROOT)\Include\shared;$(MEDIASDK_ROOT)\cmrt\runtime\include;$(MEDIASDK_ROOT)\cmrt\compiler\include\cm;$(IncludePath)</IncludePath>
+  </PropertyGroup>
+  <PropertyGroup Label="UserMacros" Condition="'$(Platform)'=='Win32'">
+    <LibraryPath>$(MEDIASDK_ROOT)\cmrt\runtime\lib\x86;$(MINIDDK_ROOT)\Lib;$(LibraryPath)</LibraryPath>
+  </PropertyGroup>
+  <PropertyGroup Label="UserMacros" Condition="'$(Platform)'=='x64'">
+    <LibraryPath>$(MEDIASDK_ROOT)\cmrt\runtime\lib\x64;$(MINIDDK_ROOT)\Lib;$(LibraryPath)</LibraryPath>
+  </PropertyGroup>
+  
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <PreprocessorDefinitions>MFX_D3D11_SUPPORT=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemGroup />
+</Project>

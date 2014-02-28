@@ -929,7 +929,7 @@ mfxStatus CEncodingPipeline::Init(sInputParams *pParams)
 
         // MSDK API version may not support multiple adapters - then try initialize on the default
         if (MFX_ERR_NONE != sts)
-           sts = m_mfxSession.Init(impl & !MFX_IMPL_HARDWARE_ANY | MFX_IMPL_HARDWARE, NULL);
+           sts = m_mfxSession.Init((impl & (!MFX_IMPL_HARDWARE_ANY)) | MFX_IMPL_HARDWARE, NULL);
     }
     else
         sts = m_mfxSession.Init(MFX_IMPL_SOFTWARE, NULL);

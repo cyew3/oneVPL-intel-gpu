@@ -1,0 +1,26 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 9.00
+# Visual Studio 2005
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "sample_spl_mux_dispatcher", "sample_spl_mux_dispatcher.vcproj", "{919D48BC-615B-4C72-B5A9-EDB34F1AEF7D}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Win32 = Debug|Win32
+		Debug|x64 = Debug|x64
+		Release|Win32 = Release|Win32
+		Release|x64 = Release|x64
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{919D48BC-615B-4C72-B5A9-EDB34F1AEF7D}.Debug|Win32.ActiveCfg = Debug|Win32
+		{919D48BC-615B-4C72-B5A9-EDB34F1AEF7D}.Debug|Win32.Build.0 = Debug|Win32
+		{919D48BC-615B-4C72-B5A9-EDB34F1AEF7D}.Debug|x64.ActiveCfg = Debug|x64
+		{919D48BC-615B-4C72-B5A9-EDB34F1AEF7D}.Debug|x64.Build.0 = Debug|x64
+		{919D48BC-615B-4C72-B5A9-EDB34F1AEF7D}.Release|Win32.ActiveCfg = Release|Win32
+		{919D48BC-615B-4C72-B5A9-EDB34F1AEF7D}.Release|Win32.Build.0 = Release|Win32
+		{919D48BC-615B-4C72-B5A9-EDB34F1AEF7D}.Release|x64.ActiveCfg = Release|x64
+		{919D48BC-615B-4C72-B5A9-EDB34F1AEF7D}.Release|x64.Build.0 = Release|x64
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

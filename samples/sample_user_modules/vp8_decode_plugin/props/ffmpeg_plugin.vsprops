@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="windows-1251"?>
+<VisualStudioPropertySheet
+	ProjectType="Visual C++"
+	Version="8.00"
+	Name="ffmpeg_plugin"
+	OutputDirectory="..\..\_build\$(PlatformName)\$(ConfigurationName)"
+	IntermediateDirectory="$(OutDir)\obj\$(ProjectName)"
+	>
+	<Tool
+		Name="VCCLCompilerTool"
+		AdditionalIncludeDirectories="..\..\sample_common\include;include;..\plugin_api;..\..\..\include;&quot;$(INTELMEDIASDK_FFMPEG_ROOT)\include&quot;;.\thirdparty\ffmpeg\include"
+	/>
+	<Tool
+		Name="VCLibrarianTool"
+		AdditionalLibraryDirectories=""
+	/>
+	<Tool
+		Name="VCLinkerTool"
+		AdditionalDependencies="avcodec.lib avutil.lib avformat.lib swscale.lib"
+		AdditionalLibraryDirectories="&quot;..\..\..\lib\$(PlatformName)&quot;;&quot;$(INTELMEDIASDK_FFMPEG_ROOT)\lib\$(PlatformName)&quot;;.\thirdparty\ffmpeg\lib\$(PlatformName)"
+	/>
+	<UserMacro
+		Name="SamplesDirforProject"
+		Value="$(ProjectDir)../../../"
+	/>
+</VisualStudioPropertySheet>

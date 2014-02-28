@@ -1,0 +1,10 @@
+include_directories (
+  ${CMAKE_SOURCE_DIR}/sample_spl_mux/dispatcher/include
+  ${CMAKE_SOURCE_DIR}/sample_spl_mux/api
+)
+
+list(APPEND sources
+  ${CMAKE_SOURCE_DIR}/sample_spl_mux/dispatcher/src/spl_mux_dispatcher.c
+)
+
+make_library( sample_spl_mux_dispatcher none static )
