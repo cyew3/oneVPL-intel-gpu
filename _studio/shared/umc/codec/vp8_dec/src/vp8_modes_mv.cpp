@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2011 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2014 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -321,14 +321,14 @@ Status VP8VideoDecoder::DecodeMbModesMVs_Inter(vp8BooleanDecoder *pBoolDec)
     }
   }
 
-  for (mb_row = 0; mb_row < m_FrameInfo.mbPerCol; mb_row++)
+  for (mb_row = 0; mb_row < static_cast<signed>(m_FrameInfo.mbPerCol); mb_row++)
   {
     pMbUpLeft = &m_MbExternal;
     pMbLeft   = &m_MbExternal;
     limitT    = -((mb_row + 1) << 7); // 16 pixels, 1/8th-pel MV, 16-pel padding
     limitB    = (m_FrameInfo.mbPerCol - mb_row) << 7;
 
-    for (mb_col = 0; mb_col < m_FrameInfo.mbPerRow; mb_col++)
+    for (mb_col = 0; mb_col < static_cast<signed>(m_FrameInfo.mbPerRow); mb_col++)
     {
       limitL = -((mb_col + 1) << 7); // 16 pixels, 1/8th-pel MV
       limitR = (m_FrameInfo.mbPerRow - mb_col) << 7;

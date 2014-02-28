@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2003-2013 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2003-2014 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -56,7 +56,7 @@
     #define UMC_ENABLE_MPEG2_VIDEO_DECODER
     //#define UMC_ENABLE_MPEG4_VIDEO_DECODER
     #define UMC_ENABLE_MJPEG_VIDEO_DECODER
-    //#define UMC_ENABLE_VP8_VIDEO_DECODER
+    #define UMC_ENABLE_VP8_VIDEO_DECODER
     #define UMC_ENABLE_VC1_VIDEO_DECODER
     //#define UMC_ENABLE_AVS_VIDEO_DECODER
 
@@ -212,6 +212,7 @@
     #define UMC_ENABLE_H261_VIDEO_DECODER
     #define UMC_ENABLE_VC1_VIDEO_DECODER
     #define UMC_ENABLE_AVS_VIDEO_DECODER
+    #define UMC_ENABLE_VP8_VIDEO_DECODER
 
     // video encoders
     #define UMC_ENABLE_DV_VIDEO_ENCODER
@@ -287,6 +288,7 @@
     #define UMC_ENABLE_MJPEG_VIDEO_DECODER
     #define UMC_ENABLE_VC1_VIDEO_DECODER
     //#define UMC_ENABLE_AVS_VIDEO_DECODER
+    #define UMC_ENABLE_VP8_VIDEO_DECODER
 
     // video encoders
     #define UMC_ENABLE_DV_VIDEO_ENCODER
@@ -438,7 +440,7 @@
 
     //#define UMC_ENABLE_MPEG4_VIDEO_DECODER
     #define UMC_ENABLE_MJPEG_VIDEO_DECODER
-    //#define UMC_ENABLE_VP8_VIDEO_DECODER
+    #define UMC_ENABLE_VP8_VIDEO_DECODER
     #define UMC_ENABLE_VC1_VIDEO_DECODER
     #define UMC_ENABLE_H264_VIDEO_DECODER
     #define UMC_ENABLE_H265_VIDEO_DECODER

@@ -136,9 +136,11 @@
 //#define MFX_ENABLE_VP8_VIDEO_ENCODE_HW
 #define MFX_ENABLE_VP8_VIDEO_PAK
 //#endif
-//#define MFX_ENABLE_VP8_VIDEO_DECODE
-//#define MFX_ENABLE_VP8_VIDEO_DECODE_HW
 
+#define MFX_ENABLE_VP8_VIDEO_DECODE
+#ifdef MFX_VA
+#define MFX_ENABLE_VP8_VIDEO_DECODE_HW
+#endif
 
 // vpp
 #define MFX_ENABLE_DENOISE_VIDEO_VPP
@@ -209,7 +211,7 @@
         //#undef MFX_ENABLE_H265_VIDEO_ENCODE
     // SW limitation
     #else // #if defined (MFX_VA)
-        #undef MFX_ENABLE_VP8_VIDEO_DECODE
+        #undef MFX_ENABLE_VP8_VIDEO_DECODE_HW
 
         //#undef MFX_ENABLE_H265_VIDEO_ENCODE
     #endif // #if defined (MFX_VA)

@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2011 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2014 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -623,6 +623,8 @@ static void vp8_inter_predict_6tap_h(Ipp16s* data,    Ipp32u dataStep,
   Ipp32u j;
   Ipp16s val;
 
+  vf_indx;hf_indx;
+
   const Ipp16s* filter = vp8_6tap_filters[hf_indx];
 
   for(i = 0; i < size_v; i++)
@@ -654,6 +656,9 @@ static void vp8_inter_predict_6tap_v(Ipp16s* data,    Ipp32u dataStep,
                                      Ipp8u   size_h,  Ipp8u  size_v,
                                      Ipp8u   hf_indx, Ipp8u  vf_indx)
 {
+  
+  hf_indx; vf_indx;
+
   Ipp32u i;
   Ipp32u j;
   Ipp16s val;
@@ -702,7 +707,7 @@ static void vp8_inter_predict_6tap_hv(Ipp16s* data,    Ipp32u dataStep,
   const Ipp16s* filter_h = vp8_6tap_filters[hf_indx];
   const Ipp16s* filter_v = vp8_6tap_filters[vf_indx];
 
-  for(i = 0; i < size_v+5; i++)
+  for(i = 0; i < size_v+5u; i++)
   {
     for(j = 0; j < size_h; j++)
     {
@@ -754,6 +759,9 @@ static void vp8_inter_predict_bilinear_h(Ipp16s* data,    Ipp32u dataStep,
                                          Ipp8u   size_h,  Ipp8u  size_v,
                                          Ipp8u   hf_indx, Ipp8u  vf_indx)
 {
+  
+  vf_indx; hf_indx;
+
   Ipp32u i;
   Ipp32u j;
   Ipp16s val;
@@ -785,6 +793,9 @@ static void vp8_inter_predict_bilinear_v(Ipp16s* data,    Ipp32u dataStep,
                                          Ipp8u   size_h,  Ipp8u  size_v,
                                          Ipp8u   hf_indx, Ipp8u  vf_indx)
 {
+
+  hf_indx; vf_indx;
+
   Ipp32u i;
   Ipp32u j;
   Ipp16s val;
@@ -827,7 +838,7 @@ static void vp8_inter_predict_bilinear_hv(Ipp16s* data,    Ipp32u dataStep,
   const Ipp8u* filter_h = vp8_bilinear_filters[hf_indx];
   const Ipp8u* filter_v = vp8_bilinear_filters[vf_indx];
 
-  for(i = 0; i < size_v+1; i++)
+  for(i = 0; i < size_v+1u; i++)
   {
     for(j = 0; j < size_h; j++)
     {
@@ -869,6 +880,9 @@ static void vp8_inter_copy_add(Ipp16s* data,    Ipp32u dataStep,
                                Ipp8u   size_h,  Ipp8u  size_v,
                                Ipp8u   hf_indx, Ipp8u  vf_indx)
 {
+
+  hf_indx; vf_indx;
+
   Ipp32u i;
   Ipp32u j;
 
@@ -1066,10 +1080,13 @@ void vp8_intra_predict16x16_add(Ipp16s* src, Ipp32u srcStep, Ipp8u bMode,
 
 void VP8VideoDecoder::ReconstructMbRow(vp8BooleanDecoder *pBoolDec, Ipp32s mb_row)
 {
+
+  pBoolDec;
+    
   Ipp16s      idctMb[24*4*4];
   Ipp32u      idctMbStep = /*24*4*/ 16 + 2*4;
 
-  Ipp32s      mb_col   = 0;
+  Ipp32u      mb_col   = 0;
   vp8_MbInfo* currMb   = 0;
 
   for(mb_col = 0; mb_col < m_FrameInfo.mbPerRow; mb_col++)
@@ -1224,7 +1241,7 @@ void VP8VideoDecoder::PredictMbIntra4x4(Ipp16s* pMbData, Ipp32u dataStep, Ipp32s
       }
       else
       {
-        if(mb_col != m_FrameInfo.mbPerRow - 1 && mb_row)
+        if(mb_col != static_cast<signed>(m_FrameInfo.mbPerRow) - 1 && mb_row)
         {
           if(j != 3 || !i)
             above_ptr = dst_y - step_y;

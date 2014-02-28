@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2011 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2014 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -54,7 +54,7 @@ void VP8VideoDecoder::UpdateCoeffProbabilitites(void)
 
 void VP8VideoDecoder::DecodeMbRow(vp8BooleanDecoder *pBoolDec, Ipp32s mb_row)
 {
-  Ipp32s mb_col        = 0;
+  Ipp32u mb_col        = 0;
   Ipp32u nonzeroMb;
   vp8_MbInfo* currMb   = 0;
 
@@ -408,7 +408,7 @@ Ipp32s VP8VideoDecoder::DecodeMbCoeffs(vp8BooleanDecoder *pBoolDec, Ipp32s mb_ro
     *pcUp      = *pcLeft = bit;
     nonzeroMb |= bit;
 
-    pMb->numNNZ[bl] = (Ipp8u)(bit != 0) ? i : 0;
+    pMb->numNNZ[bl] = Ipp8u((bit != 0) ? i : 0);
 
     if (bl == 0)
     {

@@ -513,7 +513,7 @@ UMC::FrameMemID VideoDECODEVP8_HW::GetMemIdToUnlock()
     }
 
     UMC::FrameMemID memId = -1;
-    sFrameInfo info;
+    sFrameInfo info = {};
 
     std::vector<sFrameInfo>::iterator i;
 
@@ -644,7 +644,7 @@ mfxStatus VideoDECODEVP8_HW::DecodeFrameCheck(mfxBitstream *p_bs, mfxFrameSurfac
 
     UMC::FrameMemID mem_id = m_p_curr_frame->GetFrameMID();
 
-    curr_indx = mem_id;
+    curr_indx = static_cast<mfxU16>(mem_id);
 
     sFrameInfo info;
     info.frameType = m_frame_info.frameType;
@@ -1319,7 +1319,7 @@ mfxStatus VideoDECODEVP8_HW::DecodeFrameHeader(mfxBitstream *in)
 
             do
             {
-                m_frameProbs.mbModeProbY[i] = m_boolDecoder[VP8_FIRST_PARTITION].decode(8);
+                m_frameProbs.mbModeProbY[i] = Ipp8u(m_boolDecoder[VP8_FIRST_PARTITION].decode(8));
             }
             while (++i < 4);
         }
@@ -1330,7 +1330,7 @@ mfxStatus VideoDECODEVP8_HW::DecodeFrameHeader(mfxBitstream *in)
 
             do
             {
-                m_frameProbs.mbModeProbUV[i] = m_boolDecoder[VP8_FIRST_PARTITION].decode(8);
+                m_frameProbs.mbModeProbUV[i] = Ipp8u(m_boolDecoder[VP8_FIRST_PARTITION].decode(8));
             }
             while (++i < 3);
         }
@@ -1378,7 +1378,7 @@ mfxStatus VideoDECODEVP8_HW::DecodeFrameHeader(mfxBitstream *in)
 
     #ifdef MFX_VA_WIN
 
-    unsigned char P0EntropyCount = m_boolDecoder[VP8_FIRST_PARTITION].bitcount();
+    unsigned char P0EntropyCount = unsigned char(m_boolDecoder[VP8_FIRST_PARTITION].bitcount());
     UINT offset_counter = ((P0EntropyCount & 0x18) >> 3) + (((P0EntropyCount & 0x07) != 0) ? 1 : 0);
 
     // + Working DDI .40

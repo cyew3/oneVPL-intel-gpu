@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2011-2013 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2011-2014 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -127,6 +127,9 @@ Status VP8VideoDecoder::Init(BaseCodecParams* init)
 
 Status VP8VideoDecoder::GetFrame(MediaData* in, MediaData* out)
 {
+
+  out;
+    
   Status status         = UMC_OK;
   Ipp32s part_number = 0;
 
@@ -339,9 +342,6 @@ Status VP8VideoDecoder::GetFrame(MediaData* in, FrameData **out)
 // temp frame saving
   if(m_FrameInfo.showFrame)
   {
-    Ipp32u y_size;
-    Ipp32u uv_size;
-    Ipp32u yuv_size;
     Ipp32s i;
 
     FILE *pFile = fopen("c:\\_mediasdk\\dump.yuv", "ab+");
@@ -372,6 +372,7 @@ Status VP8VideoDecoder::GetFrame(MediaData* in, FrameData **out)
 
 Status VP8VideoDecoder::GetInfo(BaseCodecParams* info)
 {
+  info;
   return UMC_OK;
 } // VP8VideoDecoder::GetInfo()
 
@@ -402,12 +403,14 @@ Status VP8VideoDecoder::Reset(void)
 
 Status VP8VideoDecoder::SetParams(BaseCodecParams* params)
 {
+  params;
   return UMC_OK;
 } // VP8VideoDecoder::SetParams()
 
 
 Status VP8VideoDecoder::GetPerformance(Ipp64f *perf)
 {
+  perf;
   return UMC_OK;
 } // VP8VideoDecoder::GetPerformance()
 
@@ -426,7 +429,7 @@ Ipp32u VP8VideoDecoder::GetNumOfSkippedFrames(void)
 
 Status VP8VideoDecoder::SkipVideoFrame(Ipp32s count)
 {
-
+  count;
   return UMC_OK;
 } // P8VideoDecoder::SkipVideoFrame()
 
