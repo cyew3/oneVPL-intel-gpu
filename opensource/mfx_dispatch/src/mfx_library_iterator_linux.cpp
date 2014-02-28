@@ -1,6 +1,6 @@
 /* ****************************************************************************** *\
 
-Copyright (C) 2012-2013 Intel Corporation.  All rights reserved.
+Copyright (C) 2012-2014 Intel Corporation.  All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
@@ -177,7 +177,7 @@ static mfxU32 mfx_list_libraries(const char* path, bool search_hw, struct mfx_li
         }
         else
         {
-            if (strncmp(dir_entries[i]->d_name, mfx_so_hw_base_name, MFX_SO_BASE_NAME_LEN)) goto skip;
+            if (strncmp(dir_entries[i]->d_name, mfx_so_sw_base_name, MFX_SO_BASE_NAME_LEN)) goto skip;
         }
 
         for (p = &(dir_entries[i]->d_name[MFX_SO_BASE_NAME_LEN]); !b_skip && *p; ++p)
