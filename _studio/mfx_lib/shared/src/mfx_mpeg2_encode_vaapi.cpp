@@ -471,6 +471,9 @@ VAAPIEncoder::VAAPIEncoder(VideoCORE* core)
     , m_initFrameHeight(0)
 {
     std::fill_n(m_sliceParamBufferId, sizeof(m_sliceParamBufferId)/sizeof(m_sliceParamBufferId[0]), VA_INVALID_ID);
+
+    Zero(m_allocResponseMB);
+    Zero(m_allocResponseBS);
 }
 
 VAAPIEncoder::~VAAPIEncoder()
@@ -510,6 +513,8 @@ mfxStatus VAAPIEncoder::QueryEncodeCaps(ENCODE_CAPS & caps)
         memset(&VaEncCaps, 0, sizeof(VaEncCaps));
         VaEncCaps.size = sizeof(VAEncQueryCapabilities);
         vaSts = pfnVaExtQueryCaps(m_vaDisplay, VAProfileMPEG2Main, &VaEncCaps);
+        if (vaSts == VA_STATUS_ERROR_UNSUPPORTED_PROFILE)
+            return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
         MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
 
         caps.MaxPicWidth  = VaEncCaps.MaxPicWidth;
