@@ -613,6 +613,7 @@ typedef struct {
     mfxU32  NumFrame;
     mfxU64  NumBit;
     mfxU32  NumCachedFrame;
+    mfxU32  NumFrameCountAsync;     // counter for Async. part
 } mfxEncodeStat;
 
 typedef struct {
