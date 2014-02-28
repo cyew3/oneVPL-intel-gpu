@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2006 - 2013 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2006 - 2014 Intel Corporation. All Rights Reserved.
 */
 
 #ifndef __UMC_VA_BASE_H__
@@ -294,6 +294,7 @@ public:
     virtual Status Execute      (void) = 0;          // execute decoding
     virtual Status ExecuteExtensionBuffer(void * buffer) = 0;
     virtual Status ExecuteStatusReportBuffer(void * buffer, Ipp32s size) = 0;
+    virtual Status SyncTask(Ipp32s index) = 0;
     virtual Status QueryTaskStatus(Ipp32s index, void * status, void * error) = 0;
     virtual Status ReleaseBuffer(Ipp32s type) = 0;   // release buffer
     virtual Status EndFrame     (void * handle = 0) = 0;          // end frame

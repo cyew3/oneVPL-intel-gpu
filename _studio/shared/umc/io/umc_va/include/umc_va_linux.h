@@ -3,7 +3,7 @@
  *     This software is supplied under the terms of a license agreement or
  *     nondisclosure agreement with Intel Corporation and may not be copied
  *     or disclosed except in accordance with the terms of that agreement.
- *          Copyright(c) 2006-2013 Intel Corporation. All Rights Reserved.
+ *          Copyright(c) 2006-2014 Intel Corporation. All Rights Reserved.
  *
  */
 
@@ -108,6 +108,7 @@ public:
     virtual Status FindConfiguration(UMC::VideoStreamInfo* /*x*/) { return UMC_ERR_UNSUPPORTED;}
     virtual Status ExecuteExtensionBuffer(void* /*x*/) { return UMC_ERR_UNSUPPORTED;}
     virtual Status ExecuteStatusReportBuffer(void* /*x*/, Ipp32s /*y*/)  { return UMC_ERR_UNSUPPORTED;}
+    virtual Status SyncTask(Ipp32s index);
     virtual Status QueryTaskStatus(Ipp32s index, void * status, void * error);
     virtual bool IsIntelCustomGUID() const { return false;}
     virtual GUID GetDecoderGuid(){return m_guidDecoder;};

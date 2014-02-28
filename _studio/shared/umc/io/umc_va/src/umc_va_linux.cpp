@@ -223,7 +223,6 @@ LinuxVideoAccelerator::LinuxVideoAccelerator(void)
     m_bLongSliceControl = true;
 
     vm_mutex_set_invalid(&m_SyncMutex);
-    //vm_mutex_init(&m_SyncMutex);
 
     m_bIsExtSurfaces    = false;
     m_isUseStatuReport  = true;
@@ -844,6 +843,26 @@ Status LinuxVideoAccelerator::QueryTaskStatus(Ipp32s FrameBufIndex, void * statu
     }
 
     Status umcRes = va_to_umc_res(va_status); // OK or not
+    return umcRes;
+}
+
+Status LinuxVideoAccelerator::SyncTask(Ipp32s FrameBufIndex)
+{
+    Status umcRes = UMC_OK;
+    VAStatus va_res = VA_STATUS_SUCCESS;
+
+    if ((UMC_OK == umcRes) && ((FrameBufIndex < 0) || (FrameBufIndex >= m_NumOfFrameBuffers)))
+        umcRes = UMC_ERR_INVALID_PARAMS;
+
+    if (UMC_OK == umcRes)
+    {
+        va_res = vaSyncSurface(m_dpy, m_surfaces[FrameBufIndex]);
+        if (VA_STATUS_ERROR_DECODING_ERROR == va_res)
+            va_res = VA_STATUS_SUCCESS;
+
+        umcRes = va_to_umc_res(va_res);
+    }
+
     return umcRes;
 }
 

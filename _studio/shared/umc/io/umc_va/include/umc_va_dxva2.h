@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2006-2013 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2006-2014 Intel Corporation. All Rights Reserved.
 */
 
 #pragma once
@@ -84,6 +84,7 @@ public:
     virtual Status Execute();
     virtual Status ExecuteExtensionBuffer(void * buffer);
     virtual Status ExecuteStatusReportBuffer(void * buffer, Ipp32s size);
+    virtual Status SyncTask(Ipp32s index) { return UMC_ERR_UNSUPPORTED;}
     virtual Status QueryTaskStatus(Ipp32s , void *, void * ) { return UMC_ERR_UNSUPPORTED;}
     virtual Status ReleaseBuffer(Ipp32s type);
     virtual Status EndFrame(void * handle = 0);

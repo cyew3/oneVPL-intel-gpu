@@ -16,7 +16,6 @@
 #if defined(MFX_ENABLE_H264_VIDEO_ENCODE_HW) && defined(MFX_VA_LINUX)
 
 #include <va/va.h>
-//#include <cstdio>
 #include "libmfx_core_vaapi.h"
 #include "mfx_h264_encode_vaapi.h"
 #include "mfx_h264_encode_hw_utils.h"
@@ -599,8 +598,8 @@ using namespace MfxHwH264Encode;
 VAAPIEncoder::VAAPIEncoder()
 : m_core(NULL)
 , m_vaDisplay(0)
-, m_vaContextEncode(0)
-, m_vaConfig(0)
+, m_vaContextEncode(VA_INVALID_ID)
+, m_vaConfig(VA_INVALID_ID)
 , m_spsBufferId(VA_INVALID_ID)
 , m_hrdBufferId(VA_INVALID_ID)
 , m_rateParamBufferId(VA_INVALID_ID)
@@ -1014,6 +1013,7 @@ mfxStatus VAAPIEncoder::Register(mfxFrameAllocResponse& response, D3DDDIFORMAT t
     if( D3DDDIFMT_INTELENCODE_BITSTREAMDATA == type )
     {
         pQueue = &m_bsQueue;
+        m_feedbackCache.resize(response.NumFrameActual);
     }
     else
     {
@@ -1605,16 +1605,13 @@ mfxStatus VAAPIEncoder::QueryStatus(
 {
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_SCHED, "Enc QueryStatus");
     VAStatus vaSts;
-
-    //------------------------------------------
-    // (1) mapping feedbackNumber -> surface & bs
     bool isFound = false;
     VASurfaceID waitSurface;
     mfxU32 waitIdxBs;
     mfxU32 waitSize;
     mfxU32 indxSurf;
 
-    UMC::AutomaticUMCMutex guard(m_guard);
+    std::auto_ptr<UMC::AutomaticUMCMutex> guard( new UMC::AutomaticUMCMutex(m_guard) );
 
     for( indxSurf = 0; indxSurf < m_feedbackCache.size(); indxSurf++ )
     {
@@ -1651,9 +1648,30 @@ mfxStatus VAAPIEncoder::QueryStatus(
     {
         VASurfaceStatus surfSts = VASurfaceSkipped;
 
+#if defined(SYNCHRONIZATION_BY_VA_SYNC_SURFACE)
+
+        m_feedbackCache.erase(m_feedbackCache.begin() + indxSurf);
+        guard.reset();
+
+        {
+            MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_SCHED, "Enc vaSyncSurface");
+            vaSts = vaSyncSurface(m_vaDisplay, waitSurface);
+            MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+        }
+        surfSts = VASurfaceReady;
+
+#else
+
         vaSts = vaQuerySurfaceStatus(m_vaDisplay, waitSurface, &surfSts);
         MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
 
+        if (VASurfaceReady == surfSts)
+        {
+            m_feedbackCache.erase(m_feedbackCache.begin() + indxSurf);
+            guard.reset();
+        }
+
+#endif
         switch (surfSts)
         {
             case VASurfaceReady:
@@ -1698,8 +1716,6 @@ mfxStatus VAAPIEncoder::QueryStatus(
                     vaUnmapBuffer( m_vaDisplay, codedBuffer );
                 }
 
-                // remove task
-                m_feedbackCache.erase( m_feedbackCache.begin() + indxSurf );
                 return MFX_ERR_NONE;
 
             case VASurfaceRendering:
@@ -1715,10 +1731,10 @@ mfxStatus VAAPIEncoder::QueryStatus(
     else
     {
         task.m_bsDataLength[fieldId] = waitSize;
-
         m_feedbackCache.erase(m_feedbackCache.begin() + indxSurf);
-        return MFX_ERR_NONE;
     }
+
+    return MFX_ERR_NONE;
 }
 
 mfxStatus VAAPIEncoder::Destroy()

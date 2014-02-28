@@ -50,8 +50,6 @@ namespace MfxHwVideoProcessing
 
         virtual mfxStatus QueryTaskStatus(mfxU32 taskIndex);
 
-        virtual mfxStatus QueryTaskStatus(FASTCOMP_QUERY_STATUS *pQueryStatus, mfxU32 numStructures);
-
         virtual mfxStatus QueryCapabilities( mfxVppCaps& caps );
 
         virtual mfxStatus QueryVariance(

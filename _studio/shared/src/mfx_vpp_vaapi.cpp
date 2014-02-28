@@ -1054,6 +1054,41 @@ mfxStatus VAAPIVideoProcessing::Execute_Composition(mfxExecuteParams *pParams)
 mfxStatus VAAPIVideoProcessing::QueryTaskStatus(mfxU32 taskIndex)
 {
     VAStatus vaSts;
+
+#if defined(SYNCHRONIZATION_BY_VA_SYNC_SURFACE)
+    VASurfaceID waitSurface = VA_INVALID_SURFACE;
+    mfxU32 indxSurf = 0;
+
+    // (1) find params (sutface & number) are required by feedbackNumber
+    //-----------------------------------------------
+    {
+        UMC::AutomaticUMCMutex guard(m_guard);
+
+        for (indxSurf = 0; indxSurf < m_feedbackCache.size(); indxSurf++)
+        {
+            if (m_feedbackCache[indxSurf].number == taskIndex)
+            {
+                waitSurface = m_feedbackCache[indxSurf].surface;
+                break;
+            }
+        }
+        if (VA_INVALID_SURFACE == waitSurface)
+        {
+            return MFX_ERR_UNKNOWN;
+        }
+
+        m_feedbackCache.erase(m_feedbackCache.begin() + indxSurf);
+    }
+
+    {
+        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_SCHED, "VPP vaSyncSurface");
+        vaSts = vaSyncSurface(m_vaDisplay, waitSurface);
+        MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+    }
+
+    return MFX_TASK_DONE;
+#else
+
     FASTCOMP_QUERY_STATUS queryStatus;
 
     // (1) find params (sutface & number) are required by feedbackNumber
@@ -1101,47 +1136,8 @@ mfxStatus VAAPIVideoProcessing::QueryTaskStatus(mfxU32 taskIndex)
     }
 
     return MFX_TASK_DONE;
-
+#endif
 } // mfxStatus VAAPIVideoProcessing::QueryTaskStatus(mfxU32 taskIndex)
-
-mfxStatus VAAPIVideoProcessing::QueryTaskStatus(FASTCOMP_QUERY_STATUS *pQueryStatus, mfxU32 numStructures)
-{
-//     VASurfaceID waitSurface;
-//
-//     // (1) find params (sutface & number) are required by feedbackNumber
-//     //-----------------------------------------------
-//     {
-//         UMC::AutomaticUMCMutex guard(m_guard);
-//
-//         bool isFound  = false;
-//         int num_element = m_feedbackCache.size();
-//         for( mfxU32 indxSurf = 0; indxSurf < num_element; indxSurf++ )
-//         {
-//             //ExtVASurface currentFeedback = m_feedbackCache.pop();
-//             ExtVASurface currentFeedback = m_feedbackCache[indxSurf];
-//
-//             // (2) Syncronization by output (target surface)
-//             //-----------------------------------------------
-//             VAStatus vaSts = vaSyncSurface(m_vaDisplay, currentFeedback.surface);
-//             MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
-//
-//             VASurfaceStatus surfSts = VASurfaceReady;
-//
-//             vaSts = vaQuerySurfaceStatus(m_vaDisplay,  currentFeedback.surface, &surfSts);
-//             MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
-//
-//             // update for comp vpp_hw
-//
-//             pQueryStatus[indxSurf].StatusReportID = currentFeedback.number;
-//             pQueryStatus[indxSurf].Status = VPREP_GPU_READY;
-//
-//             m_feedbackCache.erase( m_feedbackCache.begin() );
-//         }
-//
-//     }
-    return MFX_ERR_NONE;
-
-} // mfxStatus VAAPIVideoProcessing::QueryTaskStatus(PREPROC_QUERY_STATUS *pQueryStatus, mfxU32 numStructures)
 
 #endif // #if defined (MFX_VA_LINUX)
 #endif // #if defined (MFX_VPP_ENABLE)

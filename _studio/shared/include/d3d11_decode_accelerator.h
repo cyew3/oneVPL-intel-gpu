@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2011-2013 Intel Corporation. All Rights Reserved.
+Copyright(c) 2011-2014 Intel Corporation. All Rights Reserved.
 
 File Name: d3d11_decode_accelerator.h
 
@@ -61,6 +61,7 @@ public:
     virtual UMC::Status ExecuteExtensionBuffer(void * buffer){buffer;return UMC::UMC_ERR_UNSUPPORTED;};
     virtual HRESULT GetVideoDecoderDriverHandle(HANDLE *pDriverHandle) {return m_pDecoder->GetDriverHandle(pDriverHandle);};
     virtual UMC::Status ExecuteStatusReportBuffer(void * buffer, Ipp32s size);
+    virtual UMC::Status SyncTask(Ipp32s index) { return UMC::UMC_ERR_UNSUPPORTED;}
     virtual UMC::Status QueryTaskStatus(Ipp32s , void *, void *) { return UMC::UMC_ERR_UNSUPPORTED;}
     
     virtual UMC::Status ReleaseBuffer(Ipp32s type);

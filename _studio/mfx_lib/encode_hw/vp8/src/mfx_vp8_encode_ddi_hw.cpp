@@ -2013,7 +2013,7 @@ mfxStatus VAAPIEncoder::QueryStatus(
     {
         return MFX_ERR_UNKNOWN;
     }
-#if defined(SYHCHRONIZATION_BY_VA_SYNC_SURFACE)
+#if defined(SYNCHRONIZATION_BY_VA_SYNC_SURFACE)
 
 #if 1
     vaSts = vaSyncSurface(m_vaDisplay, waitSurface);

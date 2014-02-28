@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//    Copyright (c) 2003-2013 Intel Corporation. All Rights Reserved.
+//    Copyright (c) 2003-2014 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -17,6 +17,7 @@
 
 #include "umc_h264_segment_decoder_dxva.h"
 #include "umc_h264_task_supplier.h"
+#include "mfx_trace.h"
 
 #ifdef UMC_VA_DXVA
 #include "umc_va_dxva2_protected.h"
@@ -332,6 +333,27 @@ bool TaskBrokerSingleThreadDXVA::GetNextTaskInternal(H264Task *)
 
 #endif
 #ifdef UMC_VA_LINUX
+#ifdef ANDROID
+    Status sts = UMC_OK;
+    Ipp32s index;
+
+    for (H264DecoderFrameInfo * au = m_FirstAU; au; au = au->GetNextAU())
+    {
+        index = au->m_pFrame->m_index;
+        au->SetStatus(H264DecoderFrameInfo::STATUS_COMPLETED);
+        CompleteFrame(au->m_pFrame);
+
+        m_mGuard.Unlock();
+        {
+            MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_SCHED, "Dec vaSyncSurface");
+            sts = dxva_sd->GetPacker()->SyncTask(index);
+        }
+        m_mGuard.Lock();
+        if (sts != UMC_OK)
+            throw h264_exception(sts);
+    }
+    SwitchCurrentAU();
+#else
 
     Status sts = UMC_OK;
     VASurfaceStatus surfSts = VASurfaceSkipped;
@@ -358,6 +380,7 @@ bool TaskBrokerSingleThreadDXVA::GetNextTaskInternal(H264Task *)
     }
 
     SwitchCurrentAU();
+#endif
 #endif
 
     return false;

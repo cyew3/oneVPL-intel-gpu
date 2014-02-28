@@ -23,7 +23,7 @@
 #include <string>
 #include <stdexcept> /* for std exceptions on Linux/Android */
 
-//#define SYHCHRONIZATION_BY_VA_SYNC_SURFACE
+//#define SYNCHRONIZATION_BY_VA_SYNC_SURFACE
 
 #if defined(_WIN32) || defined(_WIN64)
     #include <windows.h>
@@ -38,7 +38,6 @@
 
 #ifdef MFX_VA
     #if defined(LINUX32) || defined(LINUX64)
-
         #undef  MFX_VA_LINUX
         #define MFX_VA_LINUX
 
@@ -221,6 +220,9 @@
 
 #else // #if !defined(ANDROID)
     #include "mfx_android_defs.h"
+
+    #define SYNCHRONIZATION_BY_VA_SYNC_SURFACE
+
 #endif // #if !defined(ANDROID)
 
 #define MFX_BIT_IN_KB 8*1000

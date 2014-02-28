@@ -29,7 +29,7 @@
 mfxSchedulerCore::mfxSchedulerCore(void) :
 #if defined(_MSC_VER)
     m_timeWaitPeriod(1000000)
-#elif defined(LINUX32) && defined(SYHCHRONIZATION_BY_VA_SYNC_SURFACE)
+#elif defined(LINUX32) && defined(SYNCHRONIZATION_BY_VA_SYNC_SURFACE)
     m_timeWaitPeriod(0)
 #else // !defined(_MSC_VER)
     m_timeWaitPeriod(vm_time_get_frequency() / 1000)
@@ -70,7 +70,7 @@ mfxSchedulerCore::mfxSchedulerCore(void) :
 
     m_timer_hw_event = MFX_THREAD_TIME_TO_WAIT;
 
-#if defined(LINUX32) && defined(SYHCHRONIZATION_BY_VA_SYNC_SURFACE)
+#if defined(LINUX32) && defined(SYNCHRONIZATION_BY_VA_SYNC_SURFACE)
     m_zero_thread_wait = MFX_THREAD_TIME_TO_WAIT;
 #else
     m_zero_thread_wait = 1;
@@ -285,7 +285,7 @@ void mfxSchedulerCore::WakeUpThreads(const mfxU32 curThreadNum,
 void mfxSchedulerCore::WakeUpNumThreads(mfxU32 numThreadsToWakeUp,
                                         const mfxU32 curThreadNum)
 {
-#if defined(SYHCHRONIZATION_BY_VA_SYNC_SURFACE)
+#if defined(SYNCHRONIZATION_BY_VA_SYNC_SURFACE)
     if (false == m_bQuit)
     {
         mfxU32 i;

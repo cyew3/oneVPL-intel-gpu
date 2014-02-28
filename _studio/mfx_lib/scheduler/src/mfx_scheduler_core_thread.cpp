@@ -55,7 +55,7 @@ mfxStatus mfxSchedulerCore::StartWakeUpThread(void)
     else
         m_zero_thread_wait = 1; // w/o events main thread should poll driver to get status 
 #else
-#if !defined(SYHCHRONIZATION_BY_VA_SYNC_SURFACE)
+#if !defined(SYNCHRONIZATION_BY_VA_SYNC_SURFACE)
     m_zero_thread_wait = 1;
 #endif
 #endif // defined(_WIN32) || defined(_WIN64)

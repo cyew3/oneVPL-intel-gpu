@@ -168,7 +168,7 @@ namespace MfxHwH264Encode
         {
         }
 
-        template<typename U> 
+        template<typename U>
         Pair<T> & operator =(Pair<U> const & pair)
         {
             Pair<T> tmp(pair);
@@ -888,9 +888,9 @@ namespace MfxHwH264Encode
         }
 
         // 0 - no skip, 1 - normal, 2 - pavp
-        mfxU8 SkipFlag() const 
+        mfxU8 SkipFlag() const
         {
-            if (    m_ctrl.SkipFrame == 0 
+            if (    m_ctrl.SkipFrame == 0
                 || (m_type.top & MFX_FRAMETYPE_I)
                 || (m_type.bot & MFX_FRAMETYPE_I))
                 return 0;
@@ -972,7 +972,7 @@ namespace MfxHwH264Encode
         char   m_FrameName[32];
 
         Pair<mfxAES128CipherCounter> m_aesCounter;
-        bool m_notProtected;             // Driver returns not protected data 
+        bool m_notProtected;             // Driver returns not protected data
         DdiTask const * m_nextLayerTask; // set to 0 if no nextLayerResolutionChange
         mfxU32  m_repack;
         mfxI32  m_fractionalQP; //if m_fractionalQP > 0 set it value in QM matrices
@@ -1184,7 +1184,7 @@ namespace MfxHwH264Encode
     };
 
     BrcIface * CreateBrc(MfxVideoParam const & video);
-    
+
     class Brc : public BrcIface
     {
     public:
@@ -1517,8 +1517,8 @@ namespace MfxHwH264Encode
                 , intraDist(0)
                 , interDist(0)
                 , totalDist(0)
-                , numIntraMb(0) 
-            { 
+                , numIntraMb(0)
+            {
                 int numMB = width*height/256;
                 mb.resize(numMB);
 
@@ -1778,6 +1778,178 @@ namespace MfxHwH264Encode
         mfxU32 m_bestGOPCost[MAX_B_FRAMES];
 #endif
         std::vector<SVCPAKObject>       m_mbData;
+    };
+
+    class ImplementationAvcAsync : public VideoENCODE
+    {
+    public:
+        static mfxStatus Query(
+            VideoCORE *     core,
+            mfxVideoParam * in,
+            mfxVideoParam * out);
+
+        static mfxStatus QueryIOSurf(
+            VideoCORE *            core,
+            mfxVideoParam *        par,
+            mfxFrameAllocRequest * request);
+
+        ImplementationAvcAsync(VideoCORE * core);
+
+        virtual ~ImplementationAvcAsync();
+
+        virtual mfxStatus Init(mfxVideoParam * par);
+
+        virtual mfxStatus Close() { return MFX_ERR_NONE; }
+
+        virtual mfxStatus Reset(mfxVideoParam * par);
+
+        virtual mfxStatus GetVideoParam(mfxVideoParam * par);
+
+        virtual mfxStatus GetFrameParam(mfxFrameParam * par);
+
+        virtual mfxStatus GetEncodeStat(mfxEncodeStat * stat);
+
+        virtual mfxStatus EncodeFrameCheck(
+            mfxEncodeCtrl *,
+            mfxFrameSurface1 *,
+            mfxBitstream *,
+            mfxFrameSurface1 **,
+            mfxEncodeInternalParams *)
+        {
+            return MFX_ERR_UNSUPPORTED;
+        }
+
+        virtual mfxStatus EncodeFrameCheck(
+            mfxEncodeCtrl *           ctrl,
+            mfxFrameSurface1 *        surface,
+            mfxBitstream *            bs,
+            mfxFrameSurface1 **       reordered_surface,
+            mfxEncodeInternalParams * internalParams,
+            MFX_ENTRY_POINT *         entryPoints,
+            mfxU32 &                  numEntryPoints);
+
+        virtual mfxStatus EncodeFrame(
+            mfxEncodeCtrl *,
+            mfxEncodeInternalParams *,
+            mfxFrameSurface1 *,
+            mfxBitstream *)
+        {
+            return MFX_ERR_UNSUPPORTED;
+        }
+
+        virtual mfxStatus CancelFrame(
+            mfxEncodeCtrl *,
+            mfxEncodeInternalParams *,
+            mfxFrameSurface1 *,
+            mfxBitstream *)
+        {
+            return MFX_ERR_UNSUPPORTED;
+        }
+
+    protected:
+
+        mfxStatus AssignTask(
+            mfxEncodeCtrl *    ctrl,
+            mfxFrameSurface1 * surface,
+            mfxBitstream *     bs,
+            DdiTask **         newTask);
+
+        mfxStatus SubmitEncodeTask(
+            DdiTask const &            task,
+            mfxU32                     fieldId, // 0 - top/progressive, 1 - bottom
+            PreAllocatedVector const & sei);
+
+        mfxStatus UpdateBitstream(
+            DdiTask & task,
+            mfxU32    fieldId); // 0 - top/progressive, 1 - bottom
+
+        mfxStatus SetRawSurface(
+            DdiTask const & task);
+
+        static mfxStatus TaskRoutineSubmitFrame(
+            void * state,
+            void * param,
+            mfxU32 threadNumber,
+            mfxU32 callNumber);
+
+        static mfxStatus TaskRoutineSubmit1stField(
+            void * state,
+            void * param,
+            mfxU32 threadNumber,
+            mfxU32 callNumber);
+
+        static mfxStatus TaskRoutineSubmit2ndField(
+            void * state,
+            void * param,
+            mfxU32 threadNumber,
+            mfxU32 callNumber);
+
+        static mfxStatus TaskRoutineQueryFrame(
+            void * state,
+            void * param,
+            mfxU32 threadNumber,
+            mfxU32 callNumber);
+
+        static mfxStatus TaskRoutineQuery1stField(
+            void * state,
+            void * param,
+            mfxU32 threadNumber,
+            mfxU32 callNumber);
+
+        static mfxStatus TaskRoutineQuery2ndField(
+            void * state,
+            void * param,
+            mfxU32 threadNumber,
+            mfxU32 callNumber);
+
+        mfxStatus UpdateDeviceStatus(mfxStatus sts);
+
+        mfxStatus CheckDevice();
+
+        VideoCORE *   m_core;
+        MfxVideoParam m_video;
+        MfxVideoParam m_videoInit;  // m_video may change by Reset, m_videoInit doesn't change
+
+        Hrd                          m_hrd;
+        std::auto_ptr<DriverEncoder> m_ddi;
+        TaskManager                  m_tasks;
+        AesCounter                   m_aesCounter;
+        mfxU32                       m_maxBsSize;
+        //SlidingWindowBudgetControl   m_SliWindController;
+
+        MfxFrameAllocResponse   m_raw;
+        MfxFrameAllocResponse   m_rawSys;
+        MfxFrameAllocResponse   m_recon;
+        MfxFrameAllocResponse   m_reconSys;
+        MfxFrameAllocResponse   m_mb;
+        MfxFrameAllocResponse   m_bitstream;
+        MfxFrameAllocResponse   m_opaqHren;     // hren' for opaq
+        ENCODE_MBDATA_LAYOUT    m_layout;
+        ENCODE_CAPS             m_caps;
+        bool                    m_deviceFailed;
+        mfxU32                  m_inputFrameType;
+
+        std::vector<mfxU8>  m_tmpBsBuf;
+        PreAllocatedVector  m_sei;
+
+        bool                m_frameDropRequired; // indicate if some frames could be dropped from output bitstream
+        std::vector<mfxU8>  m_dummyPicBuffer; // place for formation of dummy picture for frame skipping
+
+        eMFXHWType m_currentPlatform;
+        bool m_useWAForHighBitrates;  // FIXME: w/a for SNB issue with HRD at high bitrates
+        std::vector<mfxU16> m_submittedPicStructs;
+
+        // used in FieldOutput mode only
+        // m_1stFieldTask is not null when first field task is assigned
+        // m_1stFieldTask is null when FieldOutput = OFF or when second field task is assigned
+        // note: second field doesn't actually generate a task instead it re-uses m_1stFieldTask and nullifies it.
+        // note2: should be used only within sync-part
+        DdiTask *      m_1stFieldTask;
+        CyclicTaskPool m_2ndFieldTasks;
+
+        // bitrate reset work-around for SNB
+        mfxU32          m_enabledSwBrc;
+        Brc             m_brc;
     };
 
     class MvcTask : public Surface
@@ -2215,7 +2387,7 @@ namespace MfxHwH264Encode
         void PutBitC(mfxU32 B);
         void RenormE();
 
-        mfxU32 m_codILow; 
+        mfxU32 m_codILow;
         mfxU32 m_codIRange;
         mfxU32 m_bitsOutstanding;
         mfxU32 m_BinCountsInNALunits;

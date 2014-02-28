@@ -400,7 +400,13 @@ mfxStatus MFXVideoVPP_RunFrameVPPAsync(mfxSession session, mfxFrameSurface1 *in,
                 task.pOwner = session->m_pVPP.get();
                 task.entryPoint = entryPoints[1];
                 task.priority = session->m_priority;
-                task.threadingPolicy = MFX_TASK_THREADING_DEDICATED_WAIT;
+#if defined(SYNCHRONIZATION_BY_VA_SYNC_SURFACE)
+                if (MFX_HW_VAAPI == session->m_pCORE->GetVAType())
+                    task.threadingPolicy = MFX_TASK_THREADING_WAIT;
+                else
+#endif
+                    task.threadingPolicy = MFX_TASK_THREADING_DEDICATED_WAIT;
+                
                 // fill dependencies
                 task.pSrc[0] = entryPoints[0].pParam;
                 task.pDst[0] = out;

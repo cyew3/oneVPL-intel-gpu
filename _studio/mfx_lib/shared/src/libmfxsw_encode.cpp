@@ -782,7 +782,7 @@ mfxStatus MFXVideoENCODE_EncodeFrameAsync(mfxSession session, mfxEncodeCtrl *ctr
                 task.pOwner = session->m_pENCODE.get();
                 task.entryPoint = entryPoints[1];
                 task.priority = session->m_priority;
-#if defined(SYHCHRONIZATION_BY_VA_SYNC_SURFACE)
+#if defined(SYNCHRONIZATION_BY_VA_SYNC_SURFACE)
                 if (MFX_HW_VAAPI == session->m_pCORE->GetVAType())
                     task.threadingPolicy = MFX_TASK_THREADING_WAIT;
                 else

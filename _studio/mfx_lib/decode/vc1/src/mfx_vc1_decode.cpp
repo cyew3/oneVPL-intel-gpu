@@ -1052,6 +1052,12 @@ mfxTaskThreadingPolicy MFXVideoDECODEVC1::GetThreadingPolicy(void)
     {
         return MFX_TASK_THREADING_SHARED;
     }
+#if defined(SYNCHRONIZATION_BY_VA_SYNC_SURFACE)
+    else if (MFX_HW_VAAPI == m_pCore->GetVAType())
+    {
+        return MFX_TASK_THREADING_WAIT;
+    }
+#endif
     else
     {
         return MFX_TASK_THREADING_DEFAULT;
@@ -2887,7 +2893,12 @@ mfxStatus MFXVideoDECODEVC1::DecodeFrameCheck(mfxBitstream *bs,
         pEntryPoint->pRoutine = &VC1DECODERoutine;
         pEntryPoint->pCompleteProc = &VC1CompleteProc;
         pEntryPoint->pState = this;
-        pEntryPoint->requiredNumThreads = m_par.mfx.NumThread;
+#if defined(SYNCHRONIZATION_BY_VA_SYNC_SURFACE)
+        if (MFX_HW_VAAPI == m_pCore->GetVAType() && !m_isSWPlatform)
+            pEntryPoint->requiredNumThreads = 1;
+        else
+#endif
+            pEntryPoint->requiredNumThreads = m_par.mfx.NumThread;
         pEntryPoint->pParam = pAsyncSurface;
         pEntryPoint->pRoutineName = (char *)"DecodeVC1";
 
@@ -3063,8 +3074,20 @@ mfxStatus MFXVideoDECODEVC1::GetStatusReport(mfxFrameSurface1 *surface_disp)
         }
     }
 
-#endif
-#ifdef UMC_VA_LINUX
+#elif defined(MFX_VA_ANDROID)
+    VideoAccelerator *va;
+    m_pCore->GetVA((mfxHDL*)&va, MFX_MEMTYPE_FROM_DECODE);
+
+    UMC::VC1FrameDescriptor *pCurrDescriptor = m_pVC1VideoDecoder->m_pStore->GetFirstDS();
+
+    if (pCurrDescriptor)
+    {
+        Status sts = va->SyncTask(pCurrDescriptor->m_pContext->m_frmBuff.m_iCurrIndex);
+        if (sts != UMC_OK)
+             MFX_ERR_DEVICE_FAILED;
+    }
+
+#elif defined(MFX_VA_LINUX)
     VideoAccelerator *va;
     m_pCore->GetVA((mfxHDL*)&va, MFX_MEMTYPE_FROM_DECODE);
 
@@ -3119,8 +3142,6 @@ bool MFXVideoDECODEVC1::FrameStartCodePresence()
     }
 
     return false;
-
-
 }
 
 mfxStatus __CDECL VC1DECODERoutine(void *pState, void *pParam, mfxU32 threadNumber, mfxU32 callNumber)
@@ -3141,7 +3162,5 @@ mfxStatus __CDECL VC1DECODERoutine(void *pState, void *pParam, mfxU32 threadNumb
 
     return TaskSts;
 }
-
-
 
 #endif
