@@ -294,7 +294,7 @@ public:
 
     void GetAllowedChromaDir(Ipp32u absPartIdx, Ipp8u *modeList);
 
-    Ipp32s GetIntradirLumaPred(Ipp32u absPartIdx, Ipp32s *intraDirPred);
+    Ipp32s GetIntradirLumaPred(Ipp32u absPartIdx, Ipp8u *intraDirPred);
 
     Ipp32u GetCtxSplitFlag(Ipp32u absPartIdx, Ipp32u depth);
 

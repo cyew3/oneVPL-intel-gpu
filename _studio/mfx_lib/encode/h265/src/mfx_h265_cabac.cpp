@@ -267,60 +267,54 @@ void H265CU::CodeIntradirLumaAng(H265Bs *bs, Ipp32u abs_part_idx, Ipp8u multiple
 {
     H265CU* pCU = this;
     H265VideoParam *par = pCU->m_par;
-    Ipp32s dir[4];
-    Ipp32u j;
-    Ipp32s predictors[4][3] = {
-        {-1, -1, -1},
-        {-1, -1, -1},
-        {-1, -1, -1},
-        {-1, -1, -1}
-    };
-    Ipp32s pred_idx[4] = { -1,-1,-1,-1};
-    Ipp8u mode = pCU->m_data[abs_part_idx].partSize;
-    Ipp32u part_num = multiple ? (mode==PART_SIZE_NxN ? 4 : 1) : 1;
-    Ipp32u part_offset = (par->NumPartInCU >> (pCU->m_data[abs_part_idx].depth << 1)) >> 2;
+    Ipp8u dir[4];
 
-    for (j=0; j<part_num; j++)
+    Ipp8u predictors[4][3] = {
+        {0xFF, 0xFF, 0xFF},
+        {0xFF, 0xFF, 0xFF},
+        {0xFF, 0xFF, 0xFF},
+        {0xFF, 0xFF, 0xFF}
+    };
+
+    Ipp32s pred_idx[4] = { -1,-1,-1,-1};
+    const Ipp8u mode = pCU->m_data[abs_part_idx].partSize;
+    const Ipp32s part_num = multiple ? (mode==PART_SIZE_NxN ? 4 : 1) : 1;
+    const Ipp32u part_offset = ( par->NumPartInCU >> ( pCU->m_data[abs_part_idx].depth << 1) ) >> 2;
+
+    for (Ipp32s j=0; j<part_num; j++)
     {
-        dir[j] = pCU->m_data[abs_part_idx+part_offset*j].intraLumaDir;
-        pCU->GetIntradirLumaPred(abs_part_idx+part_offset*j, predictors[j]);
-        for(Ipp32s i = 0; i < 3; i++)
-        {
+        dir[j] = pCU->m_data[ abs_part_idx + part_offset*j ].intraLumaDir;
+        pCU->GetIntradirLumaPred( abs_part_idx + part_offset*j, predictors[j] );
+
+        for(Ipp32s i = 0; i < 3; i++) 
             if(dir[j] == predictors[j][i])
-            {
                 pred_idx[j] = i;
-            }
-        }
-        bs->EncodeSingleBin_CABAC(CTX(bs,INTRA_LUMA_PRED_MODE_HEVC),(pred_idx[j] != -1? 1 : 0));
+
+        bs->EncodeSingleBin_CABAC(CTX(bs,INTRA_LUMA_PRED_MODE_HEVC), (pred_idx[j] != -1? 1 : 0) );
     }
-    for (j=0; j<part_num; j++)
+
+    for (Ipp32s j=0; j<part_num; j++)
     {
         if(pred_idx[j] != -1)
         {
             bs->EncodeBinEP_CABAC(pred_idx[j] ? 1 : 0);
             if (pred_idx[j])
-            {
-                bs->EncodeBinEP_CABAC(pred_idx[j]-1);
-            }
+                bs->EncodeBinEP_CABAC( pred_idx[j]-1 );
         }
-        else
+        else // 8.4.2.4
         {
             if (predictors[j][0] > predictors[j][1])
-            {
                 std::swap(predictors[j][0], predictors[j][1]);
-            }
+
             if (predictors[j][0] > predictors[j][2])
-            {
                 std::swap(predictors[j][0], predictors[j][2]);
-            }
+
             if (predictors[j][1] > predictors[j][2])
-            {
                 std::swap(predictors[j][1], predictors[j][2]);
-            }
+
             for(Ipp32s i = 2; i >= 0; i--)
-            {
                 dir[j] = dir[j] > predictors[j][i] ? dir[j] - 1 : dir[j];
-            }
+
             bs->EncodeBinsEP_CABAC(dir[j],5);
         }
     }

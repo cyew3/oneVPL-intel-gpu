@@ -316,10 +316,10 @@ Ipp32u H265CU::GetSCuAddr()
     return m_ctbAddr*(1<<(m_par->MaxCUDepth<<1))+m_absIdxInLcu;
 }
 
-Ipp32s H265CU::GetIntradirLumaPred(Ipp32u absPartIdx, Ipp32s* intraDirPred)
+Ipp32s H265CU::GetIntradirLumaPred(Ipp32u absPartIdx, Ipp8u* intraDirPred)
 {
     H265CUPtr tempCU;
-    Ipp32s leftIntraDir, aboveIntraDir;
+    Ipp8u leftIntraDir, aboveIntraDir;
     Ipp32s iModes = 3; //for encoder side only //kolya
 
     // Get intra direction of left PU
