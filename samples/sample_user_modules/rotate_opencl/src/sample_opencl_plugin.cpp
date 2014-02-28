@@ -52,9 +52,8 @@ m_bOpenCLSurfaceSharing(false)
 }
 
 Rotate::~Rotate()
-{    
-    PluginClose();   
-    Close();    
+{  
+    Close();
 }
 
 /* Methods required for integration with Media SDK */
@@ -101,7 +100,45 @@ mfxStatus Rotate::PluginInit(mfxCoreInterface *core)
 
 mfxStatus Rotate::PluginClose()
 {
-    MSDK_SAFE_DELETE(m_pmfxCore); 
+    if (!m_bInited)
+        return MFX_ERR_NONE;
+
+    memset(&m_Param, 0, sizeof(RotateParam));
+
+    MSDK_SAFE_DELETE_ARRAY(m_pChunks);
+    MSDK_SAFE_DELETE_ARRAY(m_pTasks);
+
+    mfxStatus sts = MFX_ERR_NONE;
+
+    mfxExtOpaqueSurfaceAlloc* pluginOpaqueAlloc = NULL;
+
+    if (m_bIsInOpaque || m_bIsOutOpaque)
+    {
+        pluginOpaqueAlloc = (mfxExtOpaqueSurfaceAlloc*)
+            GetExtBuffer(m_VideoParam.ExtParam, m_VideoParam.NumExtParam, MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION);
+        MSDK_CHECK_POINTER(pluginOpaqueAlloc, MFX_ERR_INVALID_VIDEO_PARAM);
+    }
+    // check existence of corresponding allocs
+    if ((m_bIsInOpaque && ! pluginOpaqueAlloc->In.Surfaces) || (m_bIsOutOpaque && !pluginOpaqueAlloc->Out.Surfaces))
+        return MFX_ERR_INVALID_VIDEO_PARAM;
+
+    MSDK_CHECK_POINTER(m_pmfxCore, MFX_ERR_NULL_PTR);
+    if (m_bIsInOpaque)
+    {
+        sts = m_pmfxCore->UnmapOpaqueSurface(m_pmfxCore->pthis, pluginOpaqueAlloc->In.NumSurface,
+            pluginOpaqueAlloc->In.Type, pluginOpaqueAlloc->In.Surfaces);
+        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, MFX_ERR_MEMORY_ALLOC);
+    }
+
+    if (m_bIsOutOpaque)
+    {
+        sts = m_pmfxCore->UnmapOpaqueSurface(m_pmfxCore->pthis, pluginOpaqueAlloc->Out.NumSurface,
+            pluginOpaqueAlloc->Out.Type, pluginOpaqueAlloc->Out.Surfaces);
+        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, MFX_ERR_MEMORY_ALLOC);
+    }
+    MSDK_SAFE_DELETE(m_pmfxCore);
+
+    m_bInited = false;
     return MFX_ERR_NONE;
 }
 
@@ -264,7 +301,7 @@ mfxStatus Rotate::Init(mfxVideoParam *mfxParam)
 
     if (m_bIsOutOpaque)
     {
-        sts = m_pmfxCore->MapOpaqueSurface(m_pmfxCore->pthis, pluginOpaqueAlloc->Out.NumSurface, 
+        sts = m_pmfxCore->MapOpaqueSurface(m_pmfxCore->pthis, pluginOpaqueAlloc->Out.NumSurface,
             pluginOpaqueAlloc->Out.Type, pluginOpaqueAlloc->Out.Surfaces);
         MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, MFX_ERR_MEMORY_ALLOC);
 
@@ -365,45 +402,6 @@ mfxStatus Rotate::SetAuxParams(void* auxParam, int auxParamSize)
 
 mfxStatus Rotate::Close()
 {
-    if (!m_bInited)
-        return MFX_ERR_NONE;
-    
-    memset(&m_Param, 0, sizeof(RotateParam));
-
-    MSDK_SAFE_DELETE_ARRAY(m_pTasks); 
-
-    mfxStatus sts = MFX_ERR_NONE;
-
-    mfxExtOpaqueSurfaceAlloc* pluginOpaqueAlloc = NULL;
-    
-    if (m_bIsInOpaque || m_bIsOutOpaque)
-    {
-        pluginOpaqueAlloc = (mfxExtOpaqueSurfaceAlloc*)
-            GetExtBuffer(m_VideoParam.ExtParam, m_VideoParam.NumExtParam, MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION);
-        MSDK_CHECK_POINTER(pluginOpaqueAlloc, MFX_ERR_INVALID_VIDEO_PARAM);
-    }
-
-    // check existence of corresponding allocs
-    if ((m_bIsInOpaque && ! pluginOpaqueAlloc->In.Surfaces) || (m_bIsOutOpaque && !pluginOpaqueAlloc->Out.Surfaces))
-        return MFX_ERR_INVALID_VIDEO_PARAM;        
-
-    MSDK_CHECK_POINTER(m_pmfxCore, MFX_ERR_NULL_PTR);
-    if (m_bIsInOpaque)
-    {
-        sts = m_pmfxCore->UnmapOpaqueSurface(m_pmfxCore->pthis, pluginOpaqueAlloc->In.NumSurface, 
-            pluginOpaqueAlloc->In.Type, pluginOpaqueAlloc->In.Surfaces);
-        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, MFX_ERR_MEMORY_ALLOC);
-    }
-
-    if (m_bIsOutOpaque)
-    {
-        sts = m_pmfxCore->UnmapOpaqueSurface(m_pmfxCore->pthis, pluginOpaqueAlloc->Out.NumSurface, 
-            pluginOpaqueAlloc->Out.Type, pluginOpaqueAlloc->Out.Surfaces);
-        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, MFX_ERR_MEMORY_ALLOC);
-    }
-
-    m_bInited = false;
-
     return MFX_ERR_NONE;
 }
 

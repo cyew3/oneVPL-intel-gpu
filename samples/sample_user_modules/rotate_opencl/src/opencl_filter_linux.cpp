@@ -15,9 +15,6 @@
 #include "opencl_filter_linux.h"
 #include "sample_defs.h"
 #include <stdexcept>
-#include <utility>
-#include <functional>
-#include <iostream>
 
 using std::endl;
 
@@ -53,7 +50,15 @@ OpenCLFilter::OpenCLFilter() : log(std::clog)
 }
 
 OpenCLFilter::~OpenCLFilter() {
-//     fclose(m_pFile);
+    for(unsigned i=0;i<m_kernels.size();i++)
+    {
+        SAFE_OCL_FREE(m_kernels[i].clprogram, clReleaseProgram);
+        SAFE_OCL_FREE(m_kernels[i].clkernelY, clReleaseKernel);
+        SAFE_OCL_FREE(m_kernels[i].clkernelUV, clReleaseKernel);
+    }
+
+    SAFE_OCL_FREE(m_clqueue,clReleaseCommandQueue);
+    SAFE_OCL_FREE(m_clcontext,clReleaseContext);
 }
 #if 0
 bool isInit = false;
@@ -122,7 +127,8 @@ cl_int OpenCLFilter::ReleaseResources() {
 
     for(int i=0;i<c_ocl_surface_buffers_num;i++)
     {
-        error = clReleaseMemObject( m_clbuffer[i] );
+        if (m_clbuffer[i])
+          error = clReleaseMemObject( m_clbuffer[i] );
         if(error) {
             log.error() << "clReleaseMemObject failed. Error code: " << error << endl;
             return error;
@@ -430,7 +436,7 @@ cl_int OpenCLFilter::PrepareSharedSurfaces(int width, int height, VASurfaceID* i
                     log.error() << "clCreateFromVA_APIMediaSurfaceINTEL failed. Error code: " << error << endl;
                     return error;
                 }
-                m_clbuffer[2] = clCreateFromVA_APIMediaSurfaceINTEL(m_clcontext, CL_MEM_READ_ONLY, outputD3DSurf, 0, &error);
+                m_clbuffer[2] = clCreateFromVA_APIMediaSurfaceINTEL(m_clcontext, CL_MEM_WRITE_ONLY, outputD3DSurf, 0, &error);
                 if(error) {
                     log.error() << "clCreateFromVA_APIMediaSurfaceINTEL failed. Error code: " << error << endl;
                     return error;
@@ -516,6 +522,7 @@ cl_int OpenCLFilter::ProcessSurface()
                 log.error() << "clFlush failed. Error code: " << error << endl;
                 return error;
             }
+
             error = clFinish(m_clqueue);
             if(error) {
                 log.error() << "clFinish failed. Error code: " << error << endl;
