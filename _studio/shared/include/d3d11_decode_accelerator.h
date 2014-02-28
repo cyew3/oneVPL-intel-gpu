@@ -61,7 +61,7 @@ public:
     virtual UMC::Status ExecuteExtensionBuffer(void * buffer){buffer;return UMC::UMC_ERR_UNSUPPORTED;};
     virtual HRESULT GetVideoDecoderDriverHandle(HANDLE *pDriverHandle) {return m_pDecoder->GetDriverHandle(pDriverHandle);};
     virtual UMC::Status ExecuteStatusReportBuffer(void * buffer, Ipp32s size);
-    virtual UMC::Status SyncTask(Ipp32s index) { return UMC::UMC_ERR_UNSUPPORTED;}
+    virtual UMC::Status SyncTask(Ipp32s index) { index; return UMC::UMC_ERR_UNSUPPORTED;}
     virtual UMC::Status QueryTaskStatus(Ipp32s , void *, void *) { return UMC::UMC_ERR_UNSUPPORTED;}
     
     virtual UMC::Status ReleaseBuffer(Ipp32s type);
