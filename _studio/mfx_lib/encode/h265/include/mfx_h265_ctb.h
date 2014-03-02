@@ -139,7 +139,7 @@ public:
 
     CostType m_intraBestCosts[35];
     Ipp8u    m_intraBestModes[35];
-    Ipp64f   m_intraModeBitcost[35];
+    Ipp32s   m_intraModeBitcost[35];
     Ipp32s   m_predIntraAllWidth;
 
     Ipp8u         m_inNeighborFlags[4*MAX_CU_SIZE+1];

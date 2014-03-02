@@ -1547,15 +1547,20 @@ mfxStatus MFXVideoENCODEH265::Query(VideoCORE *core, mfxVideoParam *par_in, mfxV
                 isInvalid ++;
             } else opts_out->SplitThresholdStrengthCUInter = opts_in->SplitThresholdStrengthCUInter;
 
-#define CHECK_NUMCAND(field)                 \
-    if (opts_in->field > maxnum) {           \
-        opts_out->field = 0;                 \
-        isInvalid ++;                        \
-    } else opts_out->field = opts_in->field; \
-    if (opts_out->field > 0) maxnum = opts_out->field;
+#define CHECK_NUMCAND(field)                            \
+            if (opts_in->field > maxnum) {              \
+                opts_out->field = 0;                    \
+                isInvalid ++;                           \
+            } else opts_out->field = opts_in->field;    \
+            if (opts_out->field > 0) maxnum = opts_out->field;
 
             mfxU16 maxnum = 35;
 
+            CHECK_NUMCAND(IntraNumCand0_2)
+            CHECK_NUMCAND(IntraNumCand0_3)
+            CHECK_NUMCAND(IntraNumCand0_4)
+            CHECK_NUMCAND(IntraNumCand0_5)
+            CHECK_NUMCAND(IntraNumCand0_6)
             CHECK_NUMCAND(IntraNumCand1_2)
             CHECK_NUMCAND(IntraNumCand1_3)
             CHECK_NUMCAND(IntraNumCand1_4)

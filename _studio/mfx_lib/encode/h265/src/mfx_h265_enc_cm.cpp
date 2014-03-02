@@ -1715,6 +1715,36 @@ void SetCurbeData(
     curbeData.ScaledRefLayerBottomOffset      = 0;
 }
 
+void GetAngModesFromHistogram(Ipp32s xPu, Ipp32s yPu, Ipp32s puSize, Ipp8s *modes, Ipp32s numModes)
+{
+    VM_ASSERT(numModes <= 33);
+    VM_ASSERT(puSize >= 4);
+    VM_ASSERT(puSize <= 64);
+    VM_ASSERT(xPu + puSize <= (Ipp32s)width);
+    VM_ASSERT(yPu + puSize <= (Ipp32s)height);
+
+    // all in units of 4x4 blocks
+    Ipp32s pitch = width >> 2;
+    puSize >>= 2;
+    xPu >>= 2;
+    yPu >>= 2;
+
+    const CmMbIntraGrad *histBlock = cmMbIntraGrad[cmCurIdx] + xPu + yPu * pitch;
+
+    Ipp32s histogram[35] = {};
+    for (Ipp32s y = 0; y < puSize; y++, histBlock += pitch)
+        for (Ipp32s x = 0; x < puSize; x++)
+            for (Ipp32s i = 0; i < 35; i++)
+                histogram[i] += histBlock[x].histogram[i];
+
+    for (Ipp32s i = 0; i < numModes; i++) {
+        Ipp32s mode = std::max_element(histogram + 2, histogram + 35) - histogram;
+        modes[i] = mode;
+        histogram[mode] = -1;
+    }
+}
+
+
 //explicit instantiations
 //template void H265Prediction::Interpolate<TEXT_LUMA, Ipp8u, Ipp16s>(EnumInterpType interp_type,
 //    const Ipp8u* in_pSrc, Ipp32u in_SrcPitch, Ipp16s* H265_RESTRICT in_pDst, Ipp32u in_DstPitch,
@@ -1852,6 +1882,7 @@ enum {
 //            tmpHor + 3 * tmpHorPitch, tmpHorPitch, dst, dstPitch, (dmvy & 3), w, h, 12, 1 << 11);
 //    }
 //}
+
 
 
 } // namespace

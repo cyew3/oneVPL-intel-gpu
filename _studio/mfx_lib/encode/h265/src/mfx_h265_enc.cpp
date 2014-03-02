@@ -183,7 +183,7 @@ mfxStatus H265Encoder::InitH265VideoParam(const mfxVideoParam *param, const mfxE
 
     for (Ipp32s i = 0; i <= 6; i++) {
         Ipp32s w = (1 << i);
-        pars->num_cand_0[i] = 35;
+        pars->num_cand_0[i] = 33;
         pars->num_cand_1[i] = w > 8 ? 4 : 8;
         pars->num_cand_2[i] = pars->num_cand_1[i] >> 1;
     }
@@ -227,8 +227,8 @@ mfxStatus H265Encoder::InitH265VideoParam(const mfxVideoParam *param, const mfxE
     pars->saoOpt = opts_hevc->SaoOpt;
 
     for (Ipp32s i = 0; i <= 6; i++) {
-        pars->num_cand_0[i] = Saturate(1, 35, pars->num_cand_0[i]);
-        pars->num_cand_1[i] = Saturate(1, pars->num_cand_0[i], pars->num_cand_1[i]);
+        pars->num_cand_0[i] = Saturate(1, 33, pars->num_cand_0[i]);
+        pars->num_cand_1[i] = Saturate(1, pars->num_cand_0[i] + 2, pars->num_cand_1[i]);
         pars->num_cand_2[i] = Saturate(1, pars->num_cand_1[i], pars->num_cand_2[i]);
     }
 
