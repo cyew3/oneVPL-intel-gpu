@@ -189,7 +189,7 @@ typedef struct {
     mfxU16      CmIntraThreshold;   // threshold = CmIntraThreshold / 256.0
     mfxU16      TUSplitIntra;       // 0-default 1-always 2-never 3-for Intra frames only
     mfxU16      CUSplit;            // 0-default 1-always 2-check Skip cost first
-    mfxU16      IntraAngModes;      // 0-default 1-all; 2-all even + few odd
+    mfxU16      IntraAngModes;      // 0-default 1-all; 2-all even + few odd; 3-gradient analysis + few modes
     mfxU16      EnableCm;           // tri-state
     mfxU16      BPyramid;           // tri-state
     mfxU16      FastPUDecision;     // tri-state
@@ -198,7 +198,13 @@ typedef struct {
     mfxU16      Deblocking;         // tri-state
     mfxU16      RDOQuantChroma;     // tri-state
     mfxU16      RDOQuantCGZ;        // tri-state
-    mfxU16      reserved[21];
+    mfxU16      SaoOpt;             // 0-default; 1-all modes; 2-fast four modes only
+    mfxU16      IntraNumCand0_2;    // number of candidates for SATD stage after gradient analysis for TU4x4
+    mfxU16      IntraNumCand0_3;    // number of candidates for SATD stage after gradient analysis for TU8x8
+    mfxU16      IntraNumCand0_4;    // number of candidates for SATD stage after gradient analysis for TU16x16
+    mfxU16      IntraNumCand0_5;    // number of candidates for SATD stage after gradient analysis for TU32x32
+    mfxU16      IntraNumCand0_6;    // number of candidates for SATD stage after gradient analysis for TU64x64
+    mfxU16      reserved[15];
 } mfxExtCodingOptionHEVC;
 
 #define MFX_EXTBUFF_VP8_PARAM MFX_MAKEFOURCC('B','V','P','8')

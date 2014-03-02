@@ -44,8 +44,8 @@ extern CmMbDist16 ** cmDist8x8[2];
 extern CmMbDist16 ** cmDist8x4[2];
 extern CmMbDist16 ** cmDist4x8[2];
 
-extern Ipp32u intraPitch;
-extern CmMbIntraDist * cmMbIntraDist;
+extern Ipp32u intraPitch[2];
+extern CmMbIntraDist * cmMbIntraDist[2];
 extern Ipp32u mv32x32Pitch;
 extern mfxI16Pair ** cmMv32x32[2];
 extern Ipp32u mv32x16Pitch;
@@ -1158,18 +1158,10 @@ void H265CU::ModeDecision(Ipp32u absPartIdx, Ipp32u offset, Ipp8u depth, CostTyp
             int y = tPelY / 16;
             int x_num = (cuSize == 32) ? 2 : 1;
             int y_num = (cuSize == 32) ? 2 : 1;
-
-/*
-            if (ready16x16Event) {
-                MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "WaitFor16x16LastForIntra");
-                ready16x16Event->WaitForTaskFinished();
-                ready16x16Event = 0;
-            }
-*/
             
             for (int j = y; j < y + y_num; j++) {
                 for (int i = x; i < x + x_num; i++) {
-                    CmMbIntraDist *intraDistLine = (CmMbIntraDist *)((Ipp8u *)cmMbIntraDist + j * intraPitch);
+                    CmMbIntraDist *intraDistLine = (CmMbIntraDist *)((Ipp8u *)cmMbIntraDist[cmCurIdx] + j * intraPitch[cmCurIdx]);
                     cmIntraCost += intraDistLine[i].intraDist;
                     {
                         MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "CalcInterCost16x16");
@@ -1196,8 +1188,10 @@ void H265CU::ModeDecision(Ipp32u absPartIdx, Ipp32u offset, Ipp8u depth, CostTyp
                                              dist8x4line1[i * 2].dist + dist8x4line1[i * 2 + 1].dist +
                                              dist8x4line2[i * 2].dist + dist8x4line2[i * 2 + 1].dist +
                                              dist8x4line3[i * 2].dist + dist8x4line3[i * 2 + 1].dist;
-                            Ipp32u dist4x8 = dist4x8line0[i * 4].dist + dist4x8line0[i * 4 + 1].dist + dist4x8line0[i * 4 + 2].dist + dist4x8line0[i * 4 + 3].dist +
-                                             dist4x8line1[i * 4].dist + dist4x8line1[i * 4 + 1].dist + dist4x8line1[i * 4 + 2].dist + dist4x8line1[i * 4 + 3].dist;
+                            Ipp32u dist4x8 = dist4x8line0[i * 4 + 0].dist + dist4x8line0[i * 4 + 1].dist +
+                                             dist4x8line0[i * 4 + 2].dist + dist4x8line0[i * 4 + 3].dist +
+                                             dist4x8line1[i * 4 + 0].dist + dist4x8line1[i * 4 + 1].dist +
+                                             dist4x8line1[i * 4 + 2].dist + dist4x8line1[i * 4 + 3].dist;
                             if (dist16x16 < cmInterCost16x16)
                                 cmInterCost16x16 = dist16x16; 
                             if (dist16x8 < cmInterCost16x16)
@@ -1253,6 +1247,7 @@ void H265CU::ModeDecision(Ipp32u absPartIdx, Ipp32u offset, Ipp8u depth, CostTyp
 
                    //FAST_UDI_USE_MPM //<--kolya
                     Ipp32s num_cand1 = m_par->num_cand_1[m_par->Log2MaxCUSize - (depth + trDepth)];
+
 #if 0
                     Ipp32s  uiPreds[3] = {-1, -1, -1}; //all 3 values will be changed to different 
                     Ipp32s iMode = GetIntradirLumaPred(absPartIdxTu, uiPreds);

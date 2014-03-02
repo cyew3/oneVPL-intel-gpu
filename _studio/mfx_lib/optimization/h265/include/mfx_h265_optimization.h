@@ -235,7 +235,7 @@ namespace MFX_HEVC_PP
 
     // [PTR.SAO :: Encode primitivies]
     #define SAOCU_ENCODE_PARAMETERS_LIST int compIdx, const Ipp8u* recBlk, int recStride, const Ipp8u* orgBlk, int orgStride, int width, \
-        int height, int shift,  const MFX_HEVC_PP::CTBBorders& borders, MFX_HEVC_PP::SaoCtuStatistics* statsDataTypes
+        int height, int shift,  const MFX_HEVC_PP::CTBBorders& borders, int numSaoModes, MFX_HEVC_PP::SaoCtuStatistics* statsDataTypes
 
     typedef void(* PTR_GetCtuStatistics_8u)( SAOCU_ENCODE_PARAMETERS_LIST );
 

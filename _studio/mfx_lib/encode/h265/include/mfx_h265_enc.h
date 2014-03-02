@@ -64,6 +64,7 @@ struct H265VideoParam {
     Ipp8u SplitThresholdStrengthCUIntra;
     Ipp8u SplitThresholdStrengthTUIntra;
     Ipp8u SplitThresholdStrengthCUInter;
+    Ipp8u num_cand_0[8];
     Ipp8u num_cand_1[8];
     Ipp8u num_cand_2[8];
     
@@ -79,7 +80,8 @@ struct H265VideoParam {
     Ipp16u cmIntraThreshold;// 0-no theshold
     Ipp16u tuSplitIntra;    // 0-default; 1-always; 2-never; 3-for Intra frames only
     Ipp16u cuSplit;         // 0-default; 1-always; 2-check Skip cost first
-    Ipp16u intraAngModes;   // 0-default; 1-all; 2-all even + few odd
+    Ipp16u intraAngModes;   // 0-default; 1-all; 2-all even + few odd; 3-gradient analysis + few modes
+    Ipp32s saoOpt;          // 0-all modes; 1-only fast 4 modes
     Ipp16u hadamardMe;      // 0-default 1-never; 2-subpel; 3-always
     Ipp32u num_threads;
     Ipp32u num_thread_structs;

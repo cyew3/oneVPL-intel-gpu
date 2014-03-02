@@ -1865,6 +1865,105 @@ RawMeMB_P(SurfaceIndex SURF_CURBE_DATA,
     write(SURF_MV4x8, mbX * MVDATA_SIZE * 4, mbY * 2, mv4x8);
 }
 
+static const uint1 MODE_INIT_TABLE[257] = {
+     2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,
+     3,  3,  3,  3,  3,  3,  3,  3,  3,  3,  3,  3,  3,  3,  3,  3,  3,  3,  3,  3,  3,
+     4,  4,  4,  4,  4,  4,  4,  4,  4,  4,  4,  4,  4,  4,  4,  4,  4,  4,
+     5,  5,  5,  5,  5,  5,  5,  5,  5,  5,  5,  5,  5,  5,  5,  5,
+     6,  6,  6,  6,  6,  6,  6,  6,  6,  6,  6,  6,  6,  6,  6,  6,
+     7,  7,  7,  7,  7,  7,  7,  7,  7,  7,  7,  7,  7,  7,  7,  7,
+     8,  8,  8,  8,  8,  8,  8,  8,  8,  8,  8,  8,  8,  8,
+     9,  9,  9,  9,  9,  9,  9,  9,  9,  9,
+    10, 10, 10, 10, 10, 10, 10, 10, 10,
+    11, 11, 11, 11, 11, 11, 11, 11, 11, 11,
+    12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12,
+    13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13,
+    14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14,
+    15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15,
+    16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16,
+    17, 17, 17, 17, 17, 17, 17, 17, 17, 17, 17, 17, 17, 17, 17, 17, 17, 17, 17, 17, 17,
+    18, 18, 18, 18, 18, 18, 18, 18, 18, 18, 18, 18, 18,
+};
+
+extern "C" _GENX_MAIN_  void
+AnalyzeGradient(SurfaceIndex SURF_SRC,
+                SurfaceIndex SURF_GRADIENT,
+                uint4        width)
+{
+    uint x = get_thread_origin_x();
+    uint y = get_thread_origin_y();
+
+    matrix< uint1, 6, 8 > data;
+    read( SURF_SRC, x * 4 - 1, y * 4 - 1, data );
+
+    matrix< int2, 4, 4 > dx, dy;
+    
+    dx  = data.select<4,1,4,1>(2, 0);     // x-1, y+1
+    dx += data.select<4,1,4,1>(2, 1) * 2; // x+0, y+1
+    dx += data.select<4,1,4,1>(2, 2);     // x+1, y+1
+    dx -= data.select<4,1,4,1>(0, 0);     // x-1, y-1
+    dx -= data.select<4,1,4,1>(0, 1) * 2; // x+0, y-1
+    dx -= data.select<4,1,4,1>(0, 2);     // x+1, y-1
+
+    dy  = data.select<4,1,4,1>(0, 0);
+    dy += data.select<4,1,4,1>(1, 0) * 2;
+    dy += data.select<4,1,4,1>(2, 0);
+    dy -= data.select<4,1,4,1>(0, 2);
+    dy -= data.select<4,1,4,1>(1, 2) * 2;
+    dy -= data.select<4,1,4,1>(2, 2);
+
+    matrix< uint2, 4, 4 > absDx = cm_abs<uint2>(dx);
+    matrix< uint2, 4, 4 > absDy = cm_abs<uint2>(dy);
+
+    matrix< uint1, 4, 4 > ang;
+
+    vector< uint1, 257 > mode(MODE_INIT_TABLE);
+
+    SIMD_IF_BEGIN(absDx >= absDy) {
+        SIMD_IF_BEGIN(dx == 0) {
+            ang = 0;
+        }
+        SIMD_ELSE {
+            matrix< int4, 4, 4 > tabIndex = dy * 128;
+            tabIndex += dx / 2;
+            tabIndex /= dx;
+            tabIndex += 128;
+            ang = mode.iselect< uint4, 16 >(tabIndex);
+        }
+        SIMD_IF_END;
+    }
+    SIMD_ELSE {
+        SIMD_IF_BEGIN(dy == 0) {
+            ang = 0;
+        }
+        SIMD_ELSE {
+            matrix< int4, 4, 4 > tabIndex = dx * 128;
+            tabIndex += dy / 2;
+            tabIndex /= dy;
+            tabIndex += 128;
+            ang = 36 - mode.iselect< uint4, 16 >(tabIndex);
+        }
+        SIMD_IF_END;
+    }
+    SIMD_IF_END;
+
+    matrix< ushort, 4, 4 > amp = absDx + absDy;
+
+    vector< ushort, 40 > histogram = 0;
+
+#pragma unroll
+    for (int i = 0; i < 4; i++) {
+#pragma unroll
+        for (int j = 0; j < 4; j++) {
+            histogram( ang(i, j) ) += amp(i, j);
+        }
+    }
+
+    uint offset = ((width >> 2) * y + x) * sizeof(uint2) * 40;
+    write( SURF_GRADIENT, offset +  0, SLICE1(histogram,  0, 32) );
+    write( SURF_GRADIENT, offset + 64, SLICE1(histogram, 32,  8) );
+}
+
 //extern "C" _GENX_MAIN_  void
 //RawMeMB_B(SurfaceIndex CurbeDataSurfIndex,
 //        SurfaceIndex RawMeSurfIndex,

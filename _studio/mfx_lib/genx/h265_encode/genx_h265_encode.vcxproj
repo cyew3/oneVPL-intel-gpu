@@ -33,18 +33,18 @@
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug_HSW_Emu|Win32'" Label="Configuration">
-    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <ConfigurationType>Application</ConfigurationType>
     <PlatformToolset>v110</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
-    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <ConfigurationType>Application</ConfigurationType>
     <PlatformToolset>v110</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
     <WholeProgramOptimization>true</WholeProgramOptimization>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
-    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <ConfigurationType>Application</ConfigurationType>
     <PlatformToolset>v110</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
@@ -90,15 +90,16 @@
     <_ProjectFileVersion>11.0.51106.1</_ProjectFileVersion>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <OutDir>..\..\..\..\build\win_$(Platform)\</OutDir>
+    <OutDir>.\</OutDir>
     <IntDir>$(OutDir)objs\$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
+    <TargetName>$(ProjectName)_d</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <OutDir>..\..\..\build\win_$(Platform)\</OutDir>
     <IntDir>$(OutDir)objs\$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <OutDir>..\..\..\build\win_$(Platform)\</OutDir>
+    <OutDir>.\</OutDir>
     <IntDir>$(OutDir)objs\$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -106,8 +107,9 @@
     <IntDir>$(OutDir)objs\$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug_HSW_Emu|Win32'">
-    <OutDir>..\..\..\..\build\win_$(Platform)\</OutDir>
+    <OutDir>.\</OutDir>
     <IntDir>$(OutDir)objs\$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
+    <TargetName>$(ProjectName)_emu</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug_HSW_Emu|x64'">
     <OutDir>$(Platform)\$(Configuration)\</OutDir>
@@ -138,8 +140,19 @@ copy %25INSTALLDIR%25\runtime\lib\x86\igfxcmjit32.dll ..\..\..\..\build\win_$(Pl
       <OutputFile>$(OutDir)lib\$(ProjectName)_d.lib</OutputFile>
     </Lib>
     <PostBuildEvent>
-      <Command />
+      <Command>$(TargetPath)</Command>
     </PostBuildEvent>
+    <ClCompile>
+      <AdditionalIncludeDirectories>..\..\..\..\include;$(MEDIASDK_ROOT)/CMRT/compiler/include/cm;$(MEDIASDK_ROOT)/CMRT/runtime/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <Optimization>Disabled</Optimization>
+    </ClCompile>
+    <Link>
+      <AdditionalLibraryDirectories>$(MEDIASDK_ROOT)\CMRT\compiler\lib\x86;$(MEDIASDK_ROOT)\CMRT\runtime\lib\x86;$(ICPP_COMPILER13)compiler\lib\ia32</AdditionalLibraryDirectories>
+      <OutputFile>.\$(TargetName)$(TargetExt)</OutputFile>
+      <AdditionalDependencies>;igfxcmrt32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <ProgramDatabaseFile>$(TargetDir)$(TargetName).pdb</ProgramDatabaseFile>
+    </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <Midl>
@@ -186,7 +199,7 @@ rem copy %25INSTALLDIR%25\runtime\lib\x86\igfxcmjit32.dll ..\..\..\..\build\win_
       <Outputs>genx_h265_cmcode.cpp;%(Outputs)</Outputs>
     </CustomBuildStep>
     <ClCompile>
-      <AdditionalIncludeDirectories>..\..\..\include;..\..\mfx_hw\shared\include\;..\shared\include;..\..\shared\include;vc1\include;mjpeg\include;h264\include;..\..\shared\umc\codec\vc1_enc\include;..\..\shared\umc\codec\vc1_common\include;..\..\shared\umc\core\umc\include;..\..\shared\umc\core\vm\include;..\brc\vc1\include;..\..\shared\umc\codec\mpeg2_enc\include;..\..\shared\umc\codec\color_space_converter\include;..\..\shared\umc\codec\h264_enc\include;..\..\shared\umc\codec\me\include;$(MEDIASDK_ROOT)\ipp\ipp71gold\windows\ia32\include;..\..\shared\umc\core\vm_plus\include;..\enc_hw\mpeg2\include;..\pak\mpeg2\include;..\pak\h264\include;..\pak\vp8\include;..\..\shared\umc\io\umc_va\include;..\..\shared\umc\codec\brc\include;..\encode\h264\include;..\..\shared\umc\codec\jpeg_common\include;..\..\shared\umc\codec\jpeg_enc\include;mpeg2\include;vp8\include;svc\include;..\..\..\thirdparty\vp8_cmodel;$(MEDIASDK_ROOT)/CMRT/compiler/include/cm;$(MEDIASDK_ROOT)/CMRT/runtime/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\..\..\include;$(MEDIASDK_ROOT)/CMRT/compiler/include/cm;$(MEDIASDK_ROOT)/CMRT/runtime/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;MFX_VA;ENABLE_CM;CM_GEN7_5;USE_HSW_VME;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>Async</ExceptionHandling>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
@@ -201,8 +214,15 @@ rem copy %25INSTALLDIR%25\runtime\lib\x86\igfxcmjit32.dll ..\..\..\..\build\win_
       <OutputFile>$(TargetDir)/$(ProjectName).bsc</OutputFile>
     </Bscmake>
     <PostBuildEvent>
-      <Command />
+      <Command>$(TargetPath)</Command>
     </PostBuildEvent>
+    <Link>
+      <AdditionalLibraryDirectories>$(MEDIASDK_ROOT)\CMRT\compiler\lib\x86;$(MEDIASDK_ROOT)\CMRT\runtime\lib\x86;$(ICPP_COMPILER13)compiler\lib\ia32</AdditionalLibraryDirectories>
+      <AdditionalDependencies>libircmt.lib;igfxcmrt32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <OutputFile>.\$(TargetName)$(TargetExt)</OutputFile>
+      <GenerateDebugInformation>false</GenerateDebugInformation>
+      <ProgramDatabaseFile>$(TargetDir)$(TargetName).pdb</ProgramDatabaseFile>
+    </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <Midl>
@@ -231,8 +251,8 @@ rem copy %25INSTALLDIR%25\runtime\lib\x86\igfxcmjit32.dll ..\..\..\..\build\win_
     <ClCompile>
       <AdditionalOptions>$(CPPFLAGS) %(AdditionalOptions)</AdditionalOptions>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>$(MEDIASDK_ROOT)/CMRT/compiler/include/cm;$(MEDIASDK_ROOT)/CMRT/runtime/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;MFX_VA;CMRT_EMU;ENABLE_CM;CM_GEN7_5;USE_HSW_VME;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>..\..\..\..\include;$(MEDIASDK_ROOT)/CMRT/compiler/include/cm;$(MEDIASDK_ROOT)/CMRT/runtime/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;MFX_VA;CMRT_EMU;ENABLE_CM;CM_GEN7_5;USE_HSW_VME;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>Async</ExceptionHandling>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
@@ -246,10 +266,17 @@ rem copy %25INSTALLDIR%25\runtime\lib\x86\igfxcmjit32.dll ..\..\..\..\build\win_
       <OutputFile>$(TargetDir)/$(ProjectName).bsc</OutputFile>
     </Bscmake>
     <PostBuildEvent>
-      <Command>copy $(MEDIASDK_ROOT)\CMRT\runtime\lib\x86\igfxcmrt32_emu.dll ..\..\..\..\build\win_$(Platform)\Bin
-copy $(MEDIASDK_ROOT)\CMRT\compiler\lib\x86\libcm.dll ..\..\..\..\build\win_$(Platform)\Bin
-</Command>
+      <Command>copy $(MEDIASDK_ROOT)\CMRT\runtime\lib\x86\igfxcmrt32_emu.dll .
+copy $(MEDIASDK_ROOT)\CMRT\compiler\lib\x86\libcm.dll .
+$(TargetPath)</Command>
     </PostBuildEvent>
+    <Link>
+      <AdditionalLibraryDirectories>$(MEDIASDK_ROOT)\CMRT\compiler\lib\x86;$(MEDIASDK_ROOT)\CMRT\runtime\lib\x86;$(ICPP_COMPILER13)compiler\lib\ia32</AdditionalLibraryDirectories>
+      <OutputFile>.\$(TargetName)$(TargetExt)</OutputFile>
+      <AdditionalDependencies>libcm.lib;igfxcmrt32_emu.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <ProgramDatabaseFile>$(TargetDir)$(TargetName).pdb</ProgramDatabaseFile>
+    </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug_HSW_Emu|x64'">
     <Midl>
@@ -284,9 +311,15 @@ copy $(MEDIASDK_ROOT)\CMRT\compiler\lib\x86\libcm.dll ..\..\..\..\build\win_$(Pl
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="src\genx_h265_cmcode_isa.cpp" />
+    <ClCompile Include="src\test_main.cpp" />
+    <ClCompile Include="src\test_analyze_gradient.cpp" />
+    <ClCompile Include="src\test_refine_me_p_16x32.cpp" />
+    <ClCompile Include="src\test_refine_me_p_32x16.cpp" />
+    <ClCompile Include="src\test_refine_me_p_32x32.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\genx_h265_cmcode_isa.h" />
+    <ClInclude Include="include\test_common.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -36,6 +36,12 @@ namespace H265Enc {
 
 #define SAO_MAX_OFFSET_QVAL (7)
 
+enum
+{
+    SAO_OPT_ALL_MODES       = 1,
+    SAO_OPT_FAST_MODES_ONLY = 2
+};
+
 enum SaoCabacStateMarkers
 {
   SAO_CABACSTATE_BLK_CUR = 0,
@@ -177,7 +183,8 @@ public:
          int width,
          int height,
          int maxCUWidth,
-         int maxDepth);
+         int maxDepth,
+         int saoOpt);
 
      void Close(void);
 
@@ -237,6 +244,7 @@ public:
 
     Ipp32s   m_numCTU_inWidth;
     Ipp32s   m_numCTU_inHeight;
+    Ipp32s   m_numSaoModes;
 
     // work state
     MFX_HEVC_PP::SaoCtuStatistics    m_statData[NUM_SAO_COMPONENTS][NUM_SAO_BASE_TYPES];

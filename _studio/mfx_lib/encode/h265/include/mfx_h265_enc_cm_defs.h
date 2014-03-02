@@ -46,8 +46,14 @@ void PrintTimes();
 
 struct CmMbIntraDist // sizeof=4
 {
-    mfxU16      intraDist;
-    mfxU16      reserved;
+    mfxU16 intraDist;
+    mfxU16 reserved;
+};
+
+struct CmMbIntraGrad // sizeof=80
+{
+    mfxU16 histogram[35];
+    mfxU16 reserved[5];
 };
 
 struct CmMbDist32 // sizeof=64

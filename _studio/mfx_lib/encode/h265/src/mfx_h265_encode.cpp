@@ -110,6 +110,12 @@ mfxExtBuffer HEVC_HEADER = { MFX_EXTBUFF_HEVCENC, sizeof(mfxExtCodingOptionHEVC)
     tab_Deblocking[x],\
     tab_RDOQuantChroma[x],\
     tab_RDOQuantCGZ[x],\
+    tab_SaoOpt[x],\
+    tab_IntraNumCand0_2[x],\
+    tab_IntraNumCand0_3[x],\
+    tab_IntraNumCand0_4[x],\
+    tab_IntraNumCand0_5[x],\
+    tab_IntraNumCand0_6[x],\
 }
 
 //                                    TU1  TU2  TU3  TU4  TU4  TU6  TU7
@@ -152,6 +158,12 @@ TU_OPT(TMVP,                          ON,  ON,  ON, OFF, OFF, OFF, OFF)
 TU_OPT(Deblocking,                    ON,  ON,  ON,  ON,  ON,  ON,  ON)
 TU_OPT(RDOQuantChroma,                ON,  ON,  ON, OFF, OFF, OFF, OFF)
 TU_OPT(RDOQuantCGZ,                   ON,  ON,  ON, OFF, OFF, OFF, OFF)
+TU_OPT(SaoOpt,                         1,   1,   1,   1,   1,   1,   1)
+TU_OPT(IntraNumCand0_2,               35,  35,  35,  35,  35,  35,  35)
+TU_OPT(IntraNumCand0_3,               35,  35,  35,  35,  35,  35,  35)
+TU_OPT(IntraNumCand0_4,               35,  35,  35,  35,  35,  35,  35)
+TU_OPT(IntraNumCand0_5,               35,  35,  35,  35,  35,  35,  35)
+TU_OPT(IntraNumCand0_6,               35,  35,  35,  35,  35,  35,  35)
 
 mfxExtCodingOptionHEVC tab_tu[8] = {
     TAB_TU(3), TAB_TU(0), TAB_TU(1), TAB_TU(2), TAB_TU(3), TAB_TU(4), TAB_TU(5), TAB_TU(6)
@@ -381,7 +393,7 @@ mfxStatus MFXVideoENCODEH265::EncodeFrameCheck(mfxEncodeCtrl *ctrl, mfxFrameSurf
         //    m_core->IncreaseReference(&(surface->Data));
 
         mfxU32 noahead = 1;
-        if (m_mfxVideoParam.mfx.NumRefFrame > 1)
+        if (m_mfxHEVCOpts.EnableCm == MFX_CODINGOPTION_ON)
             noahead = 0;
 
         if (!surface) {
@@ -706,6 +718,8 @@ mfxStatus MFXVideoENCODEH265::Init(mfxVideoParam* par_in)
             m_mfxHEVCOpts.RDOQuantChroma = opts_tu->RDOQuantChroma;
         if (m_mfxHEVCOpts.RDOQuantCGZ == 0)
             m_mfxHEVCOpts.RDOQuantCGZ = opts_tu->RDOQuantCGZ;
+        if (m_mfxHEVCOpts.SaoOpt == 0)
+            m_mfxHEVCOpts.SaoOpt = opts_tu->SaoOpt;
     }
 
     // uncomment here if sign bit hiding doesn't work properly
@@ -1483,6 +1497,7 @@ mfxStatus MFXVideoENCODEH265::Query(VideoCORE *core, mfxVideoParam *par_in, mfxV
             opts_out->Deblocking = opts_in->Deblocking;
             opts_out->RDOQuantChroma = opts_in->RDOQuantChroma;
             opts_out->RDOQuantCGZ = opts_in->RDOQuantCGZ;
+            opts_out->SaoOpt = opts_in->SaoOpt;
 
             CHECK_OPTION(opts_in->AnalyzeChroma, opts_out->AnalyzeChroma, isInvalid);  /* tri-state option */
             CHECK_OPTION(opts_in->SignBitHiding, opts_out->SignBitHiding, isInvalid);  /* tri-state option */
