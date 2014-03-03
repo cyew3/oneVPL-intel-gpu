@@ -198,6 +198,19 @@ namespace msdk_analyzer
             this.Cursor = Cursors.Default;
         }
 
+        private void btnDeleteLog_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                File.Delete(tbxLogOutput.Text);
+            }
+            catch (System.Exception ex)
+            {
+                MessageBox.Show(ex.ToString());
+            }
+            
+        }
+
         private void tbxLogOutput_Leave(object sender, EventArgs e)
         {
             Registry.SetValue(Properties.Resources.target_folder_key
