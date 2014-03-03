@@ -1299,10 +1299,11 @@ void RunVme(
         { MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "CopyToGpuRawCur");
             queue->EnqueueCopyCPUToGPUStride(raw[cmCurIdx], pFrameCur->y, pFrameCur->pitch_luma,
                                              writeSrcEvent);
+            lastEvent[cmCurIdx] = writeSrcEvent;
         }
 
-        { MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "RefLast_kernelGradient");
-            lastEvent[cmCurIdx] = writeSrcEvent;
+        if (param.intraAngModes == 3) {
+            MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "RefLast_kernelGradient");
             SetKernelArg(kernelGradient, GetIndex(raw[cmCurIdx]), GetIndex(mbIntraGrad[cmCurIdx]), width);
             gradientEvent = EnqueueKernel(device, queue, kernelGradient, width / 4, height / 4);
             lastEvent[cmCurIdx] = gradientEvent;
@@ -1367,9 +1368,10 @@ void RunVme(
         { MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "CopyToGpuRawNext");
             queue->EnqueueCopyCPUToGPUStride(raw[cmNextIdx], pFrameNext->y, pFrameNext->pitch_luma,
                                              writeSrcEvent);
-        }
-        { MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "RefLast_kernelGradient");
             lastEvent[cmNextIdx] = writeSrcEvent;
+        }
+        if (param.intraAngModes == 3) {
+            MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "RefLast_kernelGradient");
             SetKernelArg(kernelGradient, GetIndex(raw[cmNextIdx]), GetIndex(mbIntraGrad[cmNextIdx]), width);
             gradientEvent = EnqueueKernel(device, queue, kernelGradient, width / 4, height / 4);
             lastEvent[cmNextIdx] = gradientEvent;
@@ -1738,7 +1740,7 @@ void GetAngModesFromHistogram(Ipp32s xPu, Ipp32s yPu, Ipp32s puSize, Ipp8s *mode
                 histogram[i] += histBlock[x].histogram[i];
 
     for (Ipp32s i = 0; i < numModes; i++) {
-        Ipp32s mode = std::max_element(histogram + 2, histogram + 35) - histogram;
+        Ipp32s mode = (Ipp32s)(std::max_element(histogram + 2, histogram + 35) - histogram);
         modes[i] = mode;
         histogram[mode] = -1;
     }

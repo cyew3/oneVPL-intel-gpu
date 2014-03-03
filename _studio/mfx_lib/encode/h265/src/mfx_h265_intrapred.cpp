@@ -10,6 +10,7 @@
 
 #if defined (MFX_ENABLE_H265_VIDEO_ENCODE)
 
+#include "algorithm"
 #include "mfx_h265_defs.h"
 #include "mfx_h265_enc.h"
 #include "mfx_h265_optimization.h"
@@ -798,27 +799,36 @@ Ipp32s StoreFewBestModes(CostType cost, Ipp8u mode, CostType * costs, Ipp8u * mo
 }
 #endif
 
+void SortLumaModesByCost(CostType *costs, Ipp8u *modes, Ipp32s *bits, Ipp32s numCandInput, Ipp32s numCandSorted)
+{
+    VM_ASSERT(numCandInput >= numCandSorted);
+    for (Ipp32s i = 0; i < numCandSorted; i++) {
+        Ipp32s idx = (Ipp32s)(std::min_element(costs + i, costs + numCandInput) - costs);
+        std::swap(costs[i], costs[idx]);
+        std::swap(modes[i], modes[idx]);
+        std::swap(bits[i], bits[idx]);
+    }
+}
+
 #define NO_TRANSFORM_SPLIT_INTRAPRED_STAGE1 0
-void H265CU::IntraLumaModeDecision(Ipp32s abs_part_idx, Ipp32u offset, Ipp8u depth, Ipp8u tr_depth)
+void H265CU::IntraLumaModeDecision(Ipp32s absPartIdx, Ipp32u offset, Ipp8u depth, Ipp8u trDepth)
 {
     __ALIGN32 PixType predPel[4*64+1];
     __ALIGN32 PixType predPelFilt[4*64+1];
-    Ipp32s width = m_par->MaxCUSize >> (depth + tr_depth);
-    Ipp8u  part_size = (Ipp8u)(tr_depth == 1 ? PART_SIZE_NxN : PART_SIZE_2Nx2N);
+    Ipp32s width = m_par->MaxCUSize >> (depth + trDepth);
+    Ipp8u  partSize = (Ipp8u)(trDepth == 1 ? PART_SIZE_NxN : PART_SIZE_2Nx2N);
     Ipp32s maxDepth = m_par->Log2MaxCUSize - m_par->Log2MinTUSize;
     Ipp32s numMinTUInLCU = 1 << maxDepth;
-    Ipp32s PURasterIdx = h265_scan_z2r[maxDepth][abs_part_idx];
-    Ipp32s PUStartRow = PURasterIdx >> maxDepth;
-    Ipp32s PUStartCol = PURasterIdx & (numMinTUInLCU - 1);
-    Ipp32s num_cand = m_par->num_cand_1[m_par->Log2MaxCUSize - (depth + tr_depth)];
-    CostType cost = 0;
+    Ipp32s puRasterIdx = h265_scan_z2r[maxDepth][absPartIdx];
+    Ipp32s puStartRow = puRasterIdx >> maxDepth;
+    Ipp32s puStartCol = puRasterIdx & (numMinTUInLCU - 1);
 
-    PixType *pSrc = m_ySrc + ((PUStartRow * m_pitchSrc + PUStartCol) << m_par->Log2MinTUSize);
-    PixType *pRec = m_yRec + ((PUStartRow * m_pitchRec + PUStartCol) << m_par->Log2MinTUSize);
+    PixType *src = m_ySrc + ((puStartRow * m_pitchSrc + puStartCol) << m_par->Log2MinTUSize);
+    PixType *rec = m_yRec + ((puStartRow * m_pitchRec + puStartCol) << m_par->Log2MinTUSize);
 
-    for (Ipp32s i = 0; i < num_cand; i++) m_intraBestCosts[i] = COST_MAX;
+    std::fill_n(m_intraCosts, 35, COST_MAX);
 
-    Ipp8u tr_split_mode = GetTrSplitMode(abs_part_idx, depth, tr_depth, part_size, 1, !NO_TRANSFORM_SPLIT_INTRAPRED_STAGE1);
+    Ipp8u trSplitMode = GetTrSplitMode(absPartIdx, depth, trDepth, partSize, 1, !NO_TRANSFORM_SPLIT_INTRAPRED_STAGE1);
     m_predIntraAllWidth = 0;
 
 #define SQRT_LAMBDA 0
@@ -832,19 +842,19 @@ void H265CU::IntraLumaModeDecision(Ipp32s abs_part_idx, Ipp32u offset, Ipp8u dep
     Ipp32s numAngModeCand = 33;
 
     if (m_par->intraAngModes == 3) {
-        Ipp32s xPu = m_ctbPelX + (PUStartCol << m_par->Log2MinTUSize);
-        Ipp32s yPu = m_ctbPelY + (PUStartRow << m_par->Log2MinTUSize);
-        Ipp32s log2BlockSize = m_par->Log2MaxCUSize - depth - tr_depth;
+        Ipp32s xPu = m_ctbPelX + (puStartCol << m_par->Log2MinTUSize);
+        Ipp32s yPu = m_ctbPelY + (puStartRow << m_par->Log2MinTUSize);
+        Ipp32s log2BlockSize = m_par->Log2MaxCUSize - depth - trDepth;
         numAngModeCand = m_par->num_cand_0[log2BlockSize];
         GetAngModesFromHistogram(xPu, yPu, 1 << log2BlockSize, angModeCand, numAngModeCand);
     }
 
-    if (tr_split_mode != SPLIT_MUST) {
+    if (trSplitMode != SPLIT_MUST) {
         m_predIntraAllWidth = width;
-        GetAvailablity(this, abs_part_idx, width, m_par->cpps->constrained_intra_pred_flag, m_inNeighborFlags, m_outNeighborFlags);
-        GetPredPelsLuma(m_par, pRec, predPel, m_outNeighborFlags, width, m_pitchRec);
+        GetAvailablity(this, absPartIdx, width, m_par->cpps->constrained_intra_pred_flag, m_inNeighborFlags, m_outNeighborFlags);
+        GetPredPelsLuma(m_par, rec, predPel, m_outNeighborFlags, width, m_pitchRec);
 
-        small_memcpy(predPelFilt, predPel, 4*width+1);
+        small_memcpy(predPelFilt, predPel, 4 * width + 1);
 
         if (m_par->csps->strong_intra_smoothing_enabled_flag && width == 32)
         {
@@ -854,8 +864,8 @@ void H265CU::IntraLumaModeDecision(Ipp32s abs_part_idx, Ipp32u offset, Ipp8u dep
             Ipp32s midHor = predPel[width];
             Ipp32s bottomLeft = predPel[4*width];
             Ipp32s midVer = predPel[3*width];
-            bool bilinearLeft = abs(topLeft + topRight - 2*midHor) < threshold;
-            bool bilinearAbove = abs(topLeft + bottomLeft - 2*midVer) < threshold;
+            bool bilinearLeft = abs(topLeft + topRight - 2 * midHor) < threshold;
+            bool bilinearAbove = abs(topLeft + bottomLeft - 2 * midVer) < threshold;
 
             if (bilinearLeft && bilinearAbove)
                 h265_FilterPredictPels_Bilinear_8u(predPelFilt, width, topLeft, bottomLeft, topRight);
@@ -866,26 +876,28 @@ void H265CU::IntraLumaModeDecision(Ipp32s abs_part_idx, Ipp32u offset, Ipp8u dep
         }
 
         IppiSize roi = {width, width};
-        ippiTranspose_8u_C1R(pSrc, m_pitchSrc, m_tuSrcTransposed, width, roi);
+        ippiTranspose_8u_C1R(src, m_pitchSrc, m_tuSrcTransposed, width, roi);
 
-        PixType *pred_ptr = m_predIntraAll;
+        PixType *predPtr = m_predIntraAll;
 
-        MFX_HEVC_PP::h265_PredictIntra_Planar_8u(INTRA_HOR <= h265_filteredModes[h265_log2table[width - 4] - 2] ? predPel : predPelFilt, pred_ptr, width, width);
-        cost = tuHad(pSrc, m_pitchSrc, pred_ptr, width, width, width);
-        pred_ptr += width * width;
+        bool needFilter = (INTRA_HOR > h265_filteredModes[h265_log2table[width - 4] - 2]);
+        Ipp8u *predPels = needFilter ? predPelFilt : predPel;
+        MFX_HEVC_PP::h265_PredictIntra_Planar_8u(predPels, predPtr, width, width);
+        m_intraCosts[INTRA_PLANAR] = tuHad(src, m_pitchSrc, predPtr, width, width, width);
+        predPtr += width * width;
         m_data = m_dataSave;
-        FillSubPart(abs_part_idx, depth, tr_depth, part_size, INTRA_PLANAR, m_par->QP);
-        m_intraModeBitcost[INTRA_PLANAR] = GetIntraLumaBitCost(this, abs_part_idx);
+        FillSubPart(absPartIdx, depth, trDepth, partSize, INTRA_PLANAR, m_par->QP);
+        m_intraBits[INTRA_PLANAR] = GetIntraLumaBitCost(this, absPartIdx);
+        m_intraCosts[INTRA_PLANAR] += m_intraBits[INTRA_PLANAR] * lambdaSatd;
+        m_intraModes[INTRA_PLANAR] = INTRA_PLANAR;
 
-        StoreFewBestModes(cost + m_intraModeBitcost[INTRA_PLANAR] * lambdaSatd, INTRA_PLANAR, m_intraBestCosts, m_intraBestModes, num_cand);
-
-        MFX_HEVC_PP::h265_PredictIntra_DC_8u(predPel, pred_ptr, width, width, 1);
-        cost = tuHad(pSrc, m_pitchSrc, pred_ptr, width, width, width);
-        pred_ptr += width * width;
-        FillSubPartIntraLumaDir(abs_part_idx, depth, tr_depth, INTRA_DC);
-        m_intraModeBitcost[INTRA_DC] = GetIntraLumaBitCost(this, abs_part_idx);
-
-        StoreFewBestModes(cost + m_intraModeBitcost[INTRA_DC] * lambdaSatd, INTRA_DC, m_intraBestCosts, m_intraBestModes, num_cand);
+        MFX_HEVC_PP::h265_PredictIntra_DC_8u(predPel, predPtr, width, width, 1);
+        m_intraCosts[INTRA_DC] = tuHad(src, m_pitchSrc, predPtr, width, width, width);
+        predPtr += width * width;
+        FillSubPartIntraLumaDir(absPartIdx, depth, trDepth, INTRA_DC);
+        m_intraBits[INTRA_DC] = GetIntraLumaBitCost(this, absPartIdx);
+        m_intraCosts[INTRA_DC] += m_intraBits[INTRA_DC] * lambdaSatd;
+        m_intraModes[INTRA_DC] = INTRA_DC;
 
         if (m_par->intraAngModes == 3) {
             for (Ipp32s i = 0; i < numAngModeCand; i++) {
@@ -893,188 +905,198 @@ void H265CU::IntraLumaModeDecision(Ipp32s abs_part_idx, Ipp32u offset, Ipp8u dep
 
                 Ipp32s diff = MIN(abs(lumaDir - 10), abs(lumaDir - 26));
                 bool needFilter = (diff > h265_filteredModes[h265_log2table[width - 4] - 2]);
-                Ipp8u * pred_pels = needFilter ? predPelFilt : predPel;
-                PixType *pred_ptr = m_predIntraAll + lumaDir * width * width;
+                Ipp8u *predPels = needFilter ? predPelFilt : predPel;
+                PixType *predPtr = m_predIntraAll + lumaDir * width * width;
 
-                MFX_HEVC_PP::NAME(h265_PredictIntra_Ang_NoTranspose_8u)(lumaDir, pred_pels, pred_ptr, width, width);
-                cost = (lumaDir < 18)
-                    ? tuHad(m_tuSrcTransposed, width, pred_ptr, width, width, width)
-                    : tuHad(pSrc, m_pitchSrc, pred_ptr, width, width, width);
+                MFX_HEVC_PP::NAME(h265_PredictIntra_Ang_NoTranspose_8u)(lumaDir, predPels, predPtr,
+                                                                        width, width);
+                m_intraCosts[lumaDir] = (lumaDir < 18)
+                    ? tuHad(m_tuSrcTransposed, width, predPtr, width, width, width)
+                    : tuHad(src, m_pitchSrc, predPtr, width, width, width);
 
-                FillSubPartIntraLumaDir(abs_part_idx, depth, tr_depth, lumaDir);
-                m_intraModeBitcost[lumaDir] = GetIntraLumaBitCost(this, abs_part_idx);
-                StoreFewBestModes(cost + m_intraModeBitcost[lumaDir] * lambdaSatd, lumaDir, m_intraBestCosts, m_intraBestModes, num_cand);
+                FillSubPartIntraLumaDir(absPartIdx, depth, trDepth, lumaDir);
+                m_intraBits[lumaDir] = GetIntraLumaBitCost(this, absPartIdx);
+                m_intraCosts[lumaDir] += m_intraBits[lumaDir] * lambdaSatd;
+                m_intraModes[lumaDir] = lumaDir;
             }
         }
         else {
             (m_par->intraAngModes == 2)
-                ? MFX_HEVC_PP::NAME(h265_PredictIntra_Ang_All_Even_8u)(predPel, predPelFilt, pred_ptr, width)
-                : MFX_HEVC_PP::NAME(h265_PredictIntra_Ang_All_8u)(predPel, predPelFilt, pred_ptr, width);
+                ? MFX_HEVC_PP::NAME(h265_PredictIntra_Ang_All_Even_8u)(predPel, predPelFilt, predPtr, width)
+                : MFX_HEVC_PP::NAME(h265_PredictIntra_Ang_All_8u)(predPel, predPelFilt, predPtr, width);
 
             Ipp8u step = (Ipp8u)m_par->intraAngModes;
-            for (Ipp8u luma_dir = 2; luma_dir < 35; luma_dir += step) {
-                cost = (luma_dir < 18)
-                    ? tuHad(m_tuSrcTransposed, width, pred_ptr, width, width, width)
-                    : tuHad(pSrc, m_pitchSrc, pred_ptr, width, width, width);
-                FillSubPartIntraLumaDir(abs_part_idx, depth, tr_depth, luma_dir);
-                m_intraModeBitcost[luma_dir] = GetIntraLumaBitCost(this, abs_part_idx);
-
-                StoreFewBestModes(cost + m_intraModeBitcost[luma_dir] * lambdaSatd, luma_dir, m_intraBestCosts, m_intraBestModes, num_cand);
-                pred_ptr += width * width * step;
+            for (Ipp8u lumaDir = 2; lumaDir < 35; lumaDir += step, predPtr += width * width * step) {
+                m_intraCosts[lumaDir] = (lumaDir < 18)
+                    ? tuHad(m_tuSrcTransposed, width, predPtr, width, width, width)
+                    : tuHad(src, m_pitchSrc, predPtr, width, width, width);
+                FillSubPartIntraLumaDir(absPartIdx, depth, trDepth, lumaDir);
+                m_intraBits[lumaDir] = GetIntraLumaBitCost(this, absPartIdx);
+                m_intraCosts[lumaDir] += m_intraBits[lumaDir] * lambdaSatd;
+                m_intraModes[lumaDir] = lumaDir;
             }
         }
     }
     else
     {
         m_data = m_dataSave;
-        FillSubPart(abs_part_idx, depth, tr_depth, part_size, INTRA_PLANAR, m_par->QP);
+        FillSubPart(absPartIdx, depth, trDepth, partSize, INTRA_PLANAR, m_par->QP);
+        CalcCostLuma(absPartIdx, offset, depth, trDepth, COST_PRED_TR_0, partSize, INTRA_PLANAR,
+                     m_intraCosts + INTRA_PLANAR);
+        m_intraBits[INTRA_PLANAR] = GetIntraLumaBitCost(this, absPartIdx);
+        m_intraCosts[INTRA_PLANAR] += m_intraBits[INTRA_PLANAR] * lambdaSatd;
+        m_intraModes[INTRA_PLANAR] = INTRA_PLANAR;
 
-        CalcCostLuma(abs_part_idx, offset, depth, tr_depth, COST_PRED_TR_0, part_size, INTRA_PLANAR, &cost);
-        m_intraModeBitcost[INTRA_PLANAR] = GetIntraLumaBitCost(this, abs_part_idx);
-
-        StoreFewBestModes(cost + m_intraModeBitcost[INTRA_PLANAR] * lambdaSatd, INTRA_PLANAR, m_intraBestCosts, m_intraBestModes, num_cand);
-
-        CalcCostLuma(abs_part_idx, offset, depth, tr_depth, COST_PRED_TR_0, part_size, INTRA_DC, &cost);
-        m_intraModeBitcost[INTRA_DC] = GetIntraLumaBitCost(this, abs_part_idx);
-
-        StoreFewBestModes(cost + m_intraModeBitcost[INTRA_DC] * lambdaSatd, INTRA_DC, m_intraBestCosts, m_intraBestModes, num_cand);
+        CalcCostLuma(absPartIdx, offset, depth, trDepth, COST_PRED_TR_0, partSize, INTRA_DC,
+                     m_intraCosts + INTRA_DC);
+        m_intraBits[INTRA_DC] = GetIntraLumaBitCost(this, absPartIdx);
+        m_intraCosts[INTRA_DC] += m_intraBits[INTRA_DC] * lambdaSatd;
+        m_intraModes[INTRA_DC] = INTRA_DC;
 
         if (m_par->intraAngModes == 3) {
             for (Ipp32s i = 0; i < numAngModeCand; i++) {
                 Ipp8s lumaDir = angModeCand[i];
-                CalcCostLuma(abs_part_idx, offset, depth, tr_depth, COST_PRED_TR_0, part_size, lumaDir, &cost);
-                m_intraModeBitcost[lumaDir] = GetIntraLumaBitCost(this, abs_part_idx);
-                StoreFewBestModes(cost + m_intraModeBitcost[lumaDir] * lambdaSatd, lumaDir, m_intraBestCosts, m_intraBestModes, num_cand);
+                CalcCostLuma(absPartIdx, offset, depth, trDepth, COST_PRED_TR_0, partSize, lumaDir,
+                             m_intraCosts + lumaDir);
+                m_intraBits[lumaDir] = GetIntraLumaBitCost(this, absPartIdx);
+                m_intraCosts[lumaDir] += m_intraBits[lumaDir] * lambdaSatd;
+                m_intraModes[lumaDir] = lumaDir;
             }
         }
         else {
             Ipp8u step = (Ipp8u)m_par->intraAngModes;
-            for (Ipp8u luma_dir = 2; luma_dir <= 34; luma_dir += step) {
-                CalcCostLuma(abs_part_idx, offset, depth, tr_depth, COST_PRED_TR_0, part_size, luma_dir, &cost);
-                m_intraModeBitcost[luma_dir] = GetIntraLumaBitCost(this, abs_part_idx);
-                StoreFewBestModes(cost + m_intraModeBitcost[luma_dir] * lambdaSatd, luma_dir, m_intraBestCosts, m_intraBestModes, num_cand);
+            for (Ipp8u lumaDir = 2; lumaDir <= 34; lumaDir += step) {
+                CalcCostLuma(absPartIdx, offset, depth, trDepth, COST_PRED_TR_0, partSize, lumaDir,
+                             m_intraCosts + lumaDir);
+                m_intraBits[lumaDir] = GetIntraLumaBitCost(this, absPartIdx);
+                m_intraCosts[lumaDir] += m_intraBits[lumaDir] * lambdaSatd;
+                m_intraModes[lumaDir] = lumaDir;
             }
         }
     }
+
+    Ipp32s numCand1 = m_par->num_cand_1[m_par->Log2MaxCUSize - depth - trDepth];
+    SortLumaModesByCost(m_intraCosts, m_intraModes, m_intraBits, 35, numCand1);
 
     if (m_par->intraAngModes == 2)
     {
         // select odd angular modes for refinement stage
-        Ipp8u  odd_modes[16];
-        Ipp32s num_odd_modes = 0;
-        for (Ipp8u odd_mode = 3; odd_mode < 35; odd_mode += 2)
-            for (Ipp32s i = 0; i < num_cand; i++)
-                if (m_intraBestModes[i] == odd_mode - 1 || m_intraBestModes[i] == odd_mode + 1) {
-                    odd_modes[num_odd_modes++] = odd_mode;
+        Ipp32s numOddModes = 0;
+        for (Ipp8u oddMode = 3; oddMode < 35; oddMode += 2) {
+            for (Ipp32s i = 0; i < numCand1; i++) {
+                if (oddMode + 1 == m_intraModes[i] || oddMode == m_intraModes[i] + 1) {
+                    m_intraModes[numCand1 + numOddModes++] = oddMode;
                     break;
                 }
+            }
+        }
 
-        if (tr_split_mode != SPLIT_MUST) {
-            for (Ipp32s i = 0; i < num_odd_modes; i++) {
-                Ipp8u luma_dir = odd_modes[i];
-                Ipp32s diff = MIN(abs(luma_dir - 10), abs(luma_dir - 26));
-                bool need_filter = (diff > h265_filteredModes[h265_log2table[width - 4] - 2]);
-                Ipp8u * pred_pels = need_filter ? predPelFilt : predPel;
-                PixType *pred_ptr = m_predIntraAll + luma_dir * width * width;
+        if (trSplitMode != SPLIT_MUST) {
+            for (Ipp32s i = numCand1; i < numCand1 + numOddModes; i++) {
+                Ipp8u lumaDir = m_intraModes[i];
+                Ipp32s diff = MIN(abs(lumaDir - 10), abs(lumaDir - 26));
+                bool needFilter = (diff > h265_filteredModes[h265_log2table[width - 4] - 2]);
+                Ipp8u * predPels = needFilter ? predPelFilt : predPel;
+                PixType *predPtr = m_predIntraAll + lumaDir * width * width;
 
-                MFX_HEVC_PP::NAME(h265_PredictIntra_Ang_NoTranspose_8u)(luma_dir, pred_pels, pred_ptr, width, width);
-                cost = (luma_dir < 18)
-                    ? tuHad(m_tuSrcTransposed, width, pred_ptr, width, width, width)
-                    : tuHad(pSrc, m_pitchSrc, pred_ptr, width, width, width);
+                MFX_HEVC_PP::NAME(h265_PredictIntra_Ang_NoTranspose_8u)(lumaDir, predPels, predPtr,
+                                                                        width, width);
+                m_intraCosts[i] = (lumaDir < 18)
+                    ? tuHad(m_tuSrcTransposed, width, predPtr, width, width, width)
+                    : tuHad(src, m_pitchSrc, predPtr, width, width, width);
 
-                FillSubPartIntraLumaDir(abs_part_idx, depth, tr_depth, luma_dir);
-                m_intraModeBitcost[luma_dir] = GetIntraLumaBitCost(this, abs_part_idx);
-                StoreFewBestModes(cost + m_intraModeBitcost[luma_dir] * lambdaSatd, luma_dir, m_intraBestCosts, m_intraBestModes, num_cand);
+                FillSubPartIntraLumaDir(absPartIdx, depth, trDepth, lumaDir);
+                m_intraBits[i] = GetIntraLumaBitCost(this, absPartIdx);
+                m_intraCosts[i] += m_intraBits[i] * lambdaSatd;
             }
         }
         else {
-            for (Ipp32s i = 0; i < num_odd_modes; i++) {
-                Ipp8u luma_dir = odd_modes[i];
-                CalcCostLuma(abs_part_idx, offset, depth, tr_depth, COST_PRED_TR_0, part_size, luma_dir, &cost);
-                m_intraModeBitcost[luma_dir] = GetIntraLumaBitCost(this, abs_part_idx);
-                StoreFewBestModes(cost + m_intraModeBitcost[luma_dir] * lambdaSatd, luma_dir, m_intraBestCosts, m_intraBestModes, num_cand);
+            for (Ipp32s i = numCand1; i < numCand1 + numOddModes; i++) {
+                Ipp8u lumaDir = m_intraModes[i];
+                CalcCostLuma(absPartIdx, offset, depth, trDepth, COST_PRED_TR_0, partSize, lumaDir,
+                             m_intraCosts + i);
+                m_intraBits[i] = GetIntraLumaBitCost(this, absPartIdx);
+                m_intraCosts[i] += m_intraBits[i] * lambdaSatd;
             }
         }
+
+        SortLumaModesByCost(m_intraCosts, m_intraModes, m_intraBits, numCand1 + numOddModes, numCand1);
     }
 }
 
 
-void H265CU::IntraLumaModeDecisionRDO(Ipp32s abs_part_idx, Ipp32u offset, Ipp8u depth, Ipp8u tr_depth, CABAC_CONTEXT_H265 * initCtx, Ipp32s num_cand1)
+void H265CU::IntraLumaModeDecisionRDO(Ipp32s absPartIdx, Ipp32u offset, Ipp8u depth, Ipp8u trDepth)
 {
-    Ipp32s width = m_par->MaxCUSize >> (depth + tr_depth);
-    Ipp32u num_parts = (m_par->NumPartInCU >> ((depth + tr_depth) << 1));
-    Ipp32s offset_luma_tu = GetLumaOffset(m_par, abs_part_idx, m_pitchRec);
-    Ipp32s tuSplitIntra = (m_par->tuSplitIntra == 1 || m_par->tuSplitIntra == 3 && m_cslice->slice_type == I_SLICE);
-    Ipp8u  part_size = (Ipp8u)(tr_depth == 1 ? PART_SIZE_NxN : PART_SIZE_2Nx2N);
-
+    Ipp32u numParts = (m_par->NumPartInCU >> ((depth + trDepth) << 1));
+    Ipp8u  partSize = (Ipp8u)(trDepth == 1 ? PART_SIZE_NxN : PART_SIZE_2Nx2N);
+    Ipp32s numCand1 = m_par->num_cand_1[m_par->Log2MaxCUSize - (depth + trDepth)];
+    Ipp32s numCand2 = m_par->num_cand_2[m_par->Log2MaxCUSize - (depth + trDepth)];
 #define HM_MATCH_3 0
 #if HM_MATCH_3
-    Ipp32s num_cand2 = num_cand1;
-#else
-    Ipp32s num_cand2 = m_par->num_cand_2[m_par->Log2MaxCUSize - (depth + tr_depth)];
+    Ipp32s numCand2 = numCand1;
 #endif
 
-    IppiSize roi = { width, width };
-    CostType cost;
-
-    bool restoreContextAndRec = false;
-
+    CABAC_CONTEXT_H265 initCtx[NUM_CABAC_CONTEXT];
     CABAC_CONTEXT_H265 bestCtx[NUM_CABAC_CONTEXT];
-    CostType intraBestCosts_tmp[35];
-    Ipp8u intraBestModes_tmp[35];
     CostOpt finalRdoCostOpt = COST_REC_TR_ALL;
-    for (Ipp32s i = 0; i < num_cand2; i++) intraBestCosts_tmp[i] = COST_MAX;
 
-    if (tuSplitIntra)
-    {
-        for (Ipp8u i = 0; i < num_cand1; i++) {
-            Ipp8u luma_dir = m_intraBestModes[i];
+    Ipp32s tuSplitIntra = (m_par->tuSplitIntra == 1 ||
+                           m_par->tuSplitIntra == 3 && m_cslice->slice_type == I_SLICE);
+    if (!tuSplitIntra) {
+        finalRdoCostOpt = COST_REC_TR_0;
+        numCand2 = numCand1;
+    }
 
+    if (m_rdOptFlag)
+        m_bsf->CtxSave(initCtx, 0, NUM_CABAC_CONTEXT);
+
+    if (numCand1 > numCand2) { // REC_TR_0 stage makes sense only of it reduce number of candidates
+        for (Ipp8u i = 0; i < numCand1; i++) {
+            Ipp8u lumaDir = m_intraModes[i];
             if (m_rdOptFlag)
                 m_bsf->CtxRestore(initCtx, 0, NUM_CABAC_CONTEXT);
-            CalcCostLuma(abs_part_idx, offset, depth, tr_depth, COST_REC_TR_0, part_size, luma_dir, &cost);
-            cost += m_intraModeBitcost[luma_dir] * m_rdLambda;
-
-            StoreFewBestModes(cost, luma_dir, intraBestCosts_tmp, intraBestModes_tmp, num_cand2);
+            CalcCostLuma(absPartIdx, offset, depth, trDepth, COST_REC_TR_0, partSize, lumaDir,
+                         m_intraCosts + i);
+            m_intraCosts[i] += m_intraBits[i] * m_rdLambda;
         }
-    }
-    else
-    {
-        finalRdoCostOpt = COST_REC_TR_0;
-        num_cand2 = num_cand1;
-        small_memcpy(intraBestCosts_tmp, m_intraBestCosts, num_cand1 * sizeof(intraBestCosts_tmp[0]));
-        small_memcpy(intraBestModes_tmp, m_intraBestModes, num_cand1 * sizeof(intraBestModes_tmp[0]));
+
+        SortLumaModesByCost(m_intraCosts, m_intraModes, m_intraBits, numCand1, numCand2);
     }
 
-    m_intraBestCosts[0] = COST_MAX;
+    Ipp32s width = m_par->MaxCUSize >> (depth + trDepth);
+    IppiSize roi = { width, width };
+    H265CUData *dataTemp = m_dataTemp + ((depth + trDepth) << m_par->Log2NumPartInCU) + absPartIdx;
+    H265CUData *dataBest = m_dataBest + ((depth + trDepth) << m_par->Log2NumPartInCU) + absPartIdx;
+    Ipp8u *rec = m_yRec + GetLumaOffset(m_par, absPartIdx, m_pitchRec);
 
-    for (Ipp8u i = 0; i < num_cand2; i++) {
-        Ipp8u luma_dir = intraBestModes_tmp[i];
+    m_intraCosts[0] = COST_MAX;
+    bool lastCandIsBest = 0;
+    for (Ipp32s i = 0; i < numCand2; i++) {
+        Ipp8u lumaDir = m_intraModes[i];
         if (m_rdOptFlag)
             m_bsf->CtxRestore(initCtx, 0, NUM_CABAC_CONTEXT);
-        CalcCostLuma(abs_part_idx, offset, depth, tr_depth, finalRdoCostOpt, part_size, luma_dir, &cost);
-        cost += m_intraModeBitcost[luma_dir] * m_rdLambda;
+        CostType cost;
+        CalcCostLuma(absPartIdx, offset, depth, trDepth, finalRdoCostOpt, partSize, lumaDir, &cost);
+        cost += m_intraBits[i] * m_rdLambda;
 
-        if (m_intraBestCosts[0] > cost) {
-            m_intraBestCosts[0] = cost;
-            m_intraBestModes[0] = luma_dir;
-            restoreContextAndRec = (i + 1 != num_cand2);
-            if (restoreContextAndRec) {
+        if (m_intraCosts[0] > cost) {
+            m_intraCosts[0] = cost;
+            m_intraModes[0] = lumaDir;
+            m_intraBits[0] = m_intraBits[i];
+            small_memcpy(dataBest, dataTemp, numParts * sizeof(H265CUData));
+            lastCandIsBest = (i == numCand2 - 1);
+            if (!lastCandIsBest) { // save current best
                 if (m_rdOptFlag)
                     m_bsf->CtxSave(bestCtx, 0, NUM_CABAC_CONTEXT);
-                ippiCopy_8u_C1R(m_yRec + offset_luma_tu, m_pitchRec, m_recLumaSaveCu[depth+tr_depth], width, roi);
+                ippiCopy_8u_C1R(rec, m_pitchRec, m_recLumaSaveCu[depth + trDepth], width, roi);
             }
-            small_memcpy(m_dataBest + ((depth + tr_depth) << m_par->Log2NumPartInCU) + abs_part_idx,
-                m_dataTemp + ((depth + tr_depth) << m_par->Log2NumPartInCU) + abs_part_idx,
-                sizeof(H265CUData) * num_parts);
         }
     }
 
-    if (restoreContextAndRec)
-    {
+    if (!lastCandIsBest) {
         if (m_rdOptFlag)
             m_bsf->CtxRestore(bestCtx, 0, NUM_CABAC_CONTEXT);
-        ippiCopy_8u_C1R(m_recLumaSaveCu[depth+tr_depth], width, m_yRec + offset_luma_tu, m_pitchRec, roi);
+        ippiCopy_8u_C1R(m_recLumaSaveCu[depth + trDepth], width, rec, m_pitchRec, roi);
     }
 }
 

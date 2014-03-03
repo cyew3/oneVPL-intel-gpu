@@ -137,9 +137,9 @@ public:
 
     Ipp32s                  m_interPredReady;
 
-    CostType m_intraBestCosts[35];
-    Ipp8u    m_intraBestModes[35];
-    Ipp32s   m_intraModeBitcost[35];
+    CostType m_intraCosts[35];
+    Ipp8u    m_intraModes[35];
+    Ipp32s   m_intraBits[35];
     Ipp32s   m_predIntraAllWidth;
 
     Ipp8u         m_inNeighborFlags[4*MAX_CU_SIZE+1];
@@ -343,8 +343,7 @@ public:
 
     void IntraLumaModeDecision(Ipp32s absPartIdx, Ipp32u offset, Ipp8u depth, Ipp8u trDepth);
 
-    void IntraLumaModeDecisionRDO(Ipp32s absPartIdx, Ipp32u offset, Ipp8u depth, Ipp8u trDepth,
-                                  CABAC_CONTEXT_H265 * initCtx, Ipp32s num_cand1);
+    void IntraLumaModeDecisionRDO(Ipp32s absPartIdx, Ipp32u offset, Ipp8u depth, Ipp8u trDepth);
 
     Ipp8u GetTrSplitMode(Ipp32s absPartIdx, Ipp8u depth, Ipp8u trDepth, Ipp8u partSize,
                          Ipp8u isLuma, Ipp8u strict = 1);

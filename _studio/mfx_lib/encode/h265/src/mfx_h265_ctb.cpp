@@ -1245,7 +1245,7 @@ void H265CU::ModeDecision(Ipp32u absPartIdx, Ipp32u offset, Ipp8u depth, CostTyp
 
                     IntraLumaModeDecision(absPartIdxTu, offset + subsize * i, depth, trDepth);
 
-                   //FAST_UDI_USE_MPM //<--kolya
+                    //FAST_UDI_USE_MPM //<--kolya
                     Ipp32s num_cand1 = m_par->num_cand_1[m_par->Log2MaxCUSize - (depth + trDepth)];
 
 #if 0
@@ -1262,8 +1262,8 @@ void H265CU::ModeDecision(Ipp32u absPartIdx, Ipp32u offset, Ipp8u depth, CostTyp
                     } // <-- end of FAST_UDI_USE_MPM
 #endif
 
-                    IntraLumaModeDecisionRDO(absPartIdxTu, offset + subsize * i, depth, trDepth, ctxSave[1], num_cand1);
-                    costBestPu[i] = m_intraBestCosts[0];
+                    IntraLumaModeDecisionRDO(absPartIdxTu, offset + subsize * i, depth, trDepth);
+                    costBestPu[i] = m_intraCosts[0];
 
                     m_data = m_dataBest + ((depth + trDepth) << m_par->Log2NumPartInCU);
                     CopySubPartTo(m_dataSave, absPartIdxTu, depth, trDepth);
