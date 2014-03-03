@@ -237,7 +237,7 @@ Status VP8VideoDecoderHardware::PackHeaders(MediaData* src)
     UMCVACompBuffer* compBufBs;
     Ipp8u *bistreamData = (Ipp8u *)m_pVideoAccelerator->GetCompBuffer(D3D9_VIDEO_DECODER_BUFFER_BITSTREAM_DATA, &compBufBs);
 
-    MFX_INTERNAL_CPY(bistreamData, src->GetDataPointer(), src->GetDataSize());
+    MFX_INTERNAL_CPY(bistreamData, src->GetDataPointer(), int(src->GetDataSize()));
     compBufBs->SetDataSize((Ipp32s)src->GetDataSize());
 
     UMCVACompBuffer* compBufCp;

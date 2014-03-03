@@ -554,7 +554,7 @@ Status VP8VideoDecoder::DecodeFrameHeader(MediaData *in)
   else if (first_partition_size > in->GetDataSize() - 3)
     return UMC_ERR_NOT_ENOUGH_DATA; //???
 
-  status = InitBooleanDecoder(data_in, data_in_end - data_in, 0); //???
+  status = InitBooleanDecoder(data_in, Ipp32s(data_in_end - data_in), 0); //???
   if(UMC_OK != status)
     return UMC_ERR_INIT;
 
@@ -642,7 +642,7 @@ Status VP8VideoDecoder::DecodeFrameHeader(MediaData *in)
     m_FrameInfo.partitionStart[0] = pTokenPartition;
   }
 
-  m_FrameInfo.partitionSize[partitions - 1] = data_in_end - m_FrameInfo.partitionStart[partitions - 1];
+  m_FrameInfo.partitionSize[partitions - 1] = Ipp32s(data_in_end - m_FrameInfo.partitionStart[partitions - 1]);
 
   status = InitBooleanDecoder(m_FrameInfo.partitionStart[partitions - 1], m_FrameInfo.partitionSize[partitions - 1], partitions);
   if(UMC_OK != status)
