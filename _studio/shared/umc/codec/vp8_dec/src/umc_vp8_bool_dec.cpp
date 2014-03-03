@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2011 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2014 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -20,7 +20,7 @@ using namespace UMC;
 namespace UMC
 {
 
-static const Ipp8u vp8_range_normalization_shift[64] = 
+const Ipp8u vp8_range_normalization_shift[64] = 
 {
   7, 6, 5, 5, 4, 4, 4, 4, 3, 3, 3, 3, 3, 3, 3, 3,
   2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 
@@ -184,7 +184,7 @@ Status VP8VideoDecoderSoftware::UpdateLoopFilterDeltas(vp8BooleanDecoder *pBoold
   return UMC_OK;
 } // VP8VideoDecoderSoftware::UpdateLoopFilterDeltas()
 
-Ipp32s vp8_ReadTree(vp8BooleanDecoder *pBooldec, const Ipp8s *pTree, const Ipp8u *pProb)
+/*Ipp32s vp8_ReadTree(vp8BooleanDecoder *pBooldec, const Ipp8s *pTree, const Ipp8u *pProb)
 {
   Ipp32s i;
   Ipp8u bit;
@@ -199,7 +199,7 @@ Ipp32s vp8_ReadTree(vp8BooleanDecoder *pBooldec, const Ipp8s *pTree, const Ipp8u
 
   return -i;
 } // vp8_ReadTree
-
+*/
 
 
 Ipp8u VP8VideoDecoderSoftware::DecodeValue_Prob128(vp8BooleanDecoder *pBooldec, Ipp32u numbits)

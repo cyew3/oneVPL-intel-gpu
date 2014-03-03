@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2011-2013 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2011-2014 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -103,32 +103,30 @@ void VP8VideoDecoderHardware::SetFrameAllocator(FrameAllocator * frameAllocator)
 
 Status VP8VideoDecoderHardware::PackHeaders(MediaData* src)
 {
-    Status sts = UMC_OK;
-
     /////////////////////////////////////////////////////////////////////////////////////////
     
     UMCVACompBuffer* compBufPic;
     VP8_DECODE_PICTURE_PARAMETERS *picParams = (VP8_DECODE_PICTURE_PARAMETERS*)m_pVideoAccelerator->GetCompBuffer(D3D9_VIDEO_DECODER_BUFFER_PICTURE_PARAMETERS, &compBufPic);
     //VP8_DECODE_PICTURE_PARAMETERS *picParams = (VP8_DECODE_PICTURE_PARAMETERS*)m_pVideoAccelerator->GetCompBuffer(DXVA_PICTURE_DECODE_BUFFER, &compBufPic);
 
-    picParams->wFrameWidthInMbsMinus1 = (m_frameInfo.frameSize.width / 16) - 1;
-    picParams->wFrameHeightInMbsMinus1 = (m_frameInfo.frameSize.height / 16) - 1;
+    picParams->wFrameWidthInMbsMinus1 = USHORT((m_frameInfo.frameSize.width / 16) - 1);
+    picParams->wFrameHeightInMbsMinus1 = USHORT((m_frameInfo.frameSize.height / 16) - 1);
 
     picParams->CurrPicIndex = 0;
 
-    picParams->LastRefPicIndex = 0xffff;
-    picParams->GoldenRefPicIndex = 0xffff;
-    picParams->AltRefPicIndex = 0xffff;
-    picParams->DeblockedPicIndex = 0xffff;
+    picParams->LastRefPicIndex = 0xff;
+    picParams->GoldenRefPicIndex = 0xff;
+    picParams->AltRefPicIndex = 0xff;
+    picParams->DeblockedPicIndex = 0xff;
 
     if (I_PICTURE == m_frameInfo.frameType)
     {
         picParams->key_frame = 1;
 
-        picParams->LastRefPicIndex = 0xffff;
-        picParams->GoldenRefPicIndex = 0xffff;
-        picParams->AltRefPicIndex = 0xffff;
-        picParams->DeblockedPicIndex = 0xffff;
+        picParams->LastRefPicIndex = 0xff;
+        picParams->GoldenRefPicIndex = 0xff;
+        picParams->AltRefPicIndex = 0xff;
+        picParams->DeblockedPicIndex = 0xff;
     }
 
     picParams->version = 0;
@@ -191,9 +189,7 @@ Status VP8VideoDecoderHardware::PackHeaders(MediaData* src)
 
     picParams->PartitionSize[0] = m_frameInfo.partitionSize[0];
 
-    Ipp8u *pData = (Ipp8u *)src->GetDataPointer();
-
-    for (Ipp32u i = 1; i < m_frameInfo.numPartitions; i += 1)
+    for (Ipp32s i = 1; i < m_frameInfo.numPartitions; i += 1)
     {
         picParams->PartitionSize[i] = m_frameInfo.partitionSize[i];
     }
@@ -214,23 +210,23 @@ Status VP8VideoDecoderHardware::PackHeaders(MediaData* src)
     {
         // when segmentation is disabled, use the first entry 0 for the quantization values
         // ippsCopy_8u
-        qmTable->Qvalue[0][0] = m_quantInfo.ydcQ[0];
-        qmTable->Qvalue[0][1] = m_quantInfo.yacQ[0];
-        qmTable->Qvalue[0][2] = m_quantInfo.uvdcQ[0];
-        qmTable->Qvalue[0][3] = m_quantInfo.uvacQ[0];
-        qmTable->Qvalue[0][4] = m_quantInfo.y2dcQ[0];
-        qmTable->Qvalue[0][5] = m_quantInfo.y2acQ[0];
+        qmTable->Qvalue[0][0] = USHORT(m_quantInfo.ydcQ[0]);
+        qmTable->Qvalue[0][1] = USHORT(m_quantInfo.yacQ[0]);
+        qmTable->Qvalue[0][2] = USHORT(m_quantInfo.uvdcQ[0]);
+        qmTable->Qvalue[0][3] = USHORT(m_quantInfo.uvacQ[0]);
+        qmTable->Qvalue[0][4] = USHORT(m_quantInfo.y2dcQ[0]);
+        qmTable->Qvalue[0][5] = USHORT(m_quantInfo.y2acQ[0]);
     }
     else
     {
         for (Ipp32u i = 0; i < 4; i += 1)
         {
-            qmTable->Qvalue[i][0] = m_quantInfo.ydcQ[i];
-            qmTable->Qvalue[i][1] = m_quantInfo.yacQ[i];
-            qmTable->Qvalue[i][2] = m_quantInfo.uvdcQ[i];
-            qmTable->Qvalue[i][3] = m_quantInfo.uvacQ[i];
-            qmTable->Qvalue[i][4] = m_quantInfo.y2dcQ[i];
-            qmTable->Qvalue[i][5] = m_quantInfo.y2acQ[i];
+            qmTable->Qvalue[i][0] = USHORT(m_quantInfo.ydcQ[i]);
+            qmTable->Qvalue[i][1] = USHORT(m_quantInfo.yacQ[i]);
+            qmTable->Qvalue[i][2] = USHORT(m_quantInfo.uvdcQ[i]);
+            qmTable->Qvalue[i][3] = USHORT(m_quantInfo.uvacQ[i]);
+            qmTable->Qvalue[i][4] = USHORT(m_quantInfo.y2dcQ[i]);
+            qmTable->Qvalue[i][5] = USHORT(m_quantInfo.y2acQ[i]);
         }
     }
 

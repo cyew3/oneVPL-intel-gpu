@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2011 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2014 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -19,7 +19,7 @@ using namespace UMC;
 
 namespace UMC
 {
-
+/*
 const Ipp32s vp8_quant_dc[VP8_MAX_QP + 1 + 32] =
 {
   4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4,
@@ -68,7 +68,7 @@ const Ipp32s vp8_quant_dc2[VP8_MAX_QP + 1 + 32] =
   122*2, 124*2, 126*2, 128*2, 130*2, 132*2, 134*2, 136*2, 138*2, 140*2, 143*2, 145*2, 148*2, 151*2, 154*2, 157*2,
 
   157*2, 157*2, 157*2, 157*2, 157*2, 157*2, 157*2, 157*2, 157*2, 157*2, 157*2, 157*2, 157*2, 157*2, 157*2, 157*2
-};
+};*/
 
 const Ipp32s vp8_quant_ac2[VP8_MAX_QP + 1 + 32] =
 {
