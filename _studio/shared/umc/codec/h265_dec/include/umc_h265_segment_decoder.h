@@ -78,6 +78,20 @@ struct Context
 
     H265CodingUnit*     m_cu;
 
+    struct
+    {
+        bool predictionExist;
+        Ipp32u saveColumn;
+        Ipp32u saveRow;
+        Ipp32u saveHeight;
+    } m_deblockPredData[2];
+
+    Ipp32s isMin4x4Block;
+
+    Ipp8u * m_pY_CU_Plane;
+    Ipp8u * m_pUV_CU_Plane;
+    size_t  m_pitch;
+
     std::auto_ptr<ReconstructorBase>  m_reconstructor;
 };
 
@@ -97,15 +111,12 @@ public:
     H265DecoderRefPicList::ReferenceInformation *m_refPicList[2];
 
     std::vector<H265FrameHLDNeighborsInfo> m_TopNgbrsHolder;
-    std::vector<H265MVInfo> m_TopMVInfoHolder;
-    std::vector<H265MVInfo> m_CurrCTBHolder;
     std::vector<H265FrameHLDNeighborsInfo> m_CurrCTBFlagsHolder;
 
     // Updated after whole CTB is done for initializing external neighbour data in m_CurCTB
     H265FrameHLDNeighborsInfo *m_TopNgbrs;
     // Updated after every PU is processed and MV info is available
     H265FrameHLDNeighborsInfo *m_CurrCTBFlags;
-    H265MVInfo *m_CurrCTB;
     Ipp32s m_CurrCTBStride;
 
     struct
@@ -198,7 +209,6 @@ public:
     void FinishDecodeCU(Ipp32u AbsPartIdx, Ipp32u Depth, Ipp32u& IsLast);
     void BeforeCoeffs(Ipp32u AbsPartIdx, Ipp32u Depth);
     void DecodeCUCABAC(Ipp32u AbsPartIdx, Ipp32u Depth, Ipp32u& IsLast);
-    void SaveCTBContext();
     bool DecodeSliceEnd(Ipp32u AbsPartIdx, Ipp32u Depth);
 
     Ipp32u ParseLastSignificantXYCABAC(Ipp32u &PosLastX, Ipp32u &PosLastY, Ipp32u L2Width, bool IsLuma, Ipp32u ScanIdx);
@@ -265,17 +275,6 @@ public:
     Ipp32u m_BakChromaOffset;
     Ipp32u m_bakAbsPartIdxCU;
 
-
-    struct
-    {
-        bool predictionExist;
-        Ipp32u saveColumn;
-        Ipp32u saveRow;
-        Ipp32u saveHeight;
-    } m_deblockPredData[2];
-
-    Ipp32s isMin4x4Block;
-
     DecodingContext * m_context;
     std::auto_ptr<DecodingContext> m_context_single_thread;
 
@@ -317,8 +316,8 @@ private:
         Ipp8u* InterDirNeighbours, Ipp32s &numValidMergeCand, Ipp32s mrgCandIdx);
     void fillMVPCand(Ipp32u AbsPartIdx, Ipp32u PartIdx, EnumRefPicList RefPicList, Ipp32s RefIdx, AMVPInfo* pInfo);
     // add possible motion vector predictor candidates
-    bool AddMVPCand(AMVPInfo* pInfo, EnumRefPicList RefPicList, Ipp32s RefIdx, Ipp32s NeibAddr);
-    bool AddMVPCandOrder(AMVPInfo* pInfo, EnumRefPicList RefPicList, Ipp32s RefIdx, Ipp32s NeibAddr);
+    bool AddMVPCand(AMVPInfo* pInfo, EnumRefPicList RefPicList, Ipp32s RefIdx, Ipp32s NeibAddr, const H265MVInfo &motionInfo);
+    bool AddMVPCandOrder(AMVPInfo* pInfo, EnumRefPicList RefPicList, Ipp32s RefIdx, Ipp32s NeibAddr, const H265MVInfo &motionInfo);
     bool GetColMVP(EnumRefPicList refPicListIdx, Ipp32u PartX, Ipp32u PartY, H265MotionVector& rcMV, Ipp32s RefIdx);
     bool hasEqualMotion(Ipp32s dir1, Ipp32s dir2);
 

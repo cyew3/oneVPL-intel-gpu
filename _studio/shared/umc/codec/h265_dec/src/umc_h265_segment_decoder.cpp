@@ -30,7 +30,6 @@ DecodingContext::DecodingContext()
     m_frame = 0;
     m_TopNgbrs = 0;
     m_CurrCTBFlags = 0;
-    m_CurrCTB = 0;
     m_CurrCTBStride = 0;
     m_LastValidQP = 0;
 
@@ -50,11 +49,10 @@ void DecodingContext::Init(H265Slice *slice)
     m_sh = &slice->m_SliceHeader;
     m_frame = slice->GetCurrentFrame();
 
-    if (m_TopNgbrsHolder.size() < m_sps->NumPartitionsInFrameWidth + 2 || m_TopMVInfoHolder.size() < m_sps->NumPartitionsInFrameWidth + 2)
+    if (m_TopNgbrsHolder.size() < m_sps->NumPartitionsInFrameWidth + 2)
     {
         // Zero element is left-top diagonal from zero CTB
         m_TopNgbrsHolder.resize(m_sps->NumPartitionsInFrameWidth + 2);
-        m_TopMVInfoHolder.resize(m_sps->NumPartitionsInFrameWidth + 2);
     }
 
     m_TopNgbrs = &m_TopNgbrsHolder[1];
@@ -66,13 +64,11 @@ void DecodingContext::Init(H265Slice *slice)
     m_RecTpIntraRowFlags = (Ipp16u*)(m_RecIntraFlagsHolder + 35) + 1;
 
     m_CurrCTBStride = (m_sps->NumPartitionsInCUSize + 2);
-    if (m_CurrCTBHolder.size() < (Ipp32u)(m_CurrCTBStride * m_CurrCTBStride))
+    if (m_CurrCTBFlagsHolder.size() < (Ipp32u)(m_CurrCTBStride * m_CurrCTBStride))
     {
-        m_CurrCTBHolder.resize(m_CurrCTBStride * m_CurrCTBStride);
         m_CurrCTBFlagsHolder.resize(m_CurrCTBStride * m_CurrCTBStride);
     }
 
-    m_CurrCTB = &m_CurrCTBHolder[m_CurrCTBStride + 1];
     m_CurrCTBFlags = &m_CurrCTBFlagsHolder[m_CurrCTBStride + 1];
 
     Ipp32s sliceNum = slice->GetSliceNum();
@@ -94,8 +90,8 @@ void DecodingContext::UpdateCurrCUContext(Ipp32u lastCUAddr, Ipp32u newCUAddr)
     // Set local pointers to real array start positions
     H265FrameHLDNeighborsInfo *CurrCTBFlags = &m_CurrCTBFlagsHolder[0];
     H265FrameHLDNeighborsInfo *TopNgbrs = &m_TopNgbrsHolder[0];
-    H265MVInfo *CurrCTB = &m_CurrCTBHolder[0];
-    H265MVInfo *TopMVInfo = &m_TopMVInfoHolder[0];
+    //H265MVInfo *CurrCTB = &m_CurrCTBHolder[0];
+    //H265MVInfo *TopMVInfo = &m_TopMVInfoHolder[0];
 
     VM_ASSERT(CurrCTBFlags[m_CurrCTBStride * (m_CurrCTBStride - 1)].data == 0);
 
@@ -113,13 +109,13 @@ void DecodingContext::UpdateCurrCUContext(Ipp32u lastCUAddr, Ipp32u newCUAddr)
             for (Ipp32s i = 0; i < m_CurrCTBStride; i++)
             {
                 CurrCTBFlags[i] = TopNgbrs[newCUX + i];
-                CurrCTB[i] = TopMVInfo[newCUX + i];
+                //CurrCTB[i] = TopMVInfo[newCUX + i];
             }
             // Store bottom margin for next row if next CTB is to the right. This is necessary for left-top diagonal
             for (Ipp32s i = 1; i < m_CurrCTBStride - 1; i++)
             {
                 TopNgbrs[lastCUX + i] = CurrCTBFlags[bottom_row_offset + i];
-                TopMVInfo[lastCUX + i] = CurrCTB[bottom_row_offset + i];
+                //TopMVInfo[lastCUX + i] = CurrCTB[bottom_row_offset + i];
             }
         }
         else if (newCUX < lastCUX)
@@ -128,13 +124,13 @@ void DecodingContext::UpdateCurrCUContext(Ipp32u lastCUAddr, Ipp32u newCUAddr)
             for (Ipp32s i = 1; i < m_CurrCTBStride - 1; i++)
             {
                 TopNgbrs[lastCUX + i] = CurrCTBFlags[bottom_row_offset + i];
-                TopMVInfo[lastCUX + i] = CurrCTB[bottom_row_offset + i];
+                //TopMVInfo[lastCUX + i] = CurrCTB[bottom_row_offset + i];
             }
             // Init top margin from previous row
             for (Ipp32s i = 0; i < m_CurrCTBStride; i++)
             {
                 CurrCTBFlags[i] = TopNgbrs[newCUX + i];
-                CurrCTB[i] = TopMVInfo[newCUX + i];
+                //CurrCTB[i] = TopMVInfo[newCUX + i];
             }
         }
         else // New CTB right under previous CTB
@@ -143,7 +139,7 @@ void DecodingContext::UpdateCurrCUContext(Ipp32u lastCUAddr, Ipp32u newCUAddr)
             for (Ipp32s i = 0; i < m_CurrCTBStride; i++)
             {
                 TopNgbrs[lastCUX + i] = CurrCTBFlags[i] = CurrCTBFlags[bottom_row_offset + i];
-                CurrCTB[i] = CurrCTB[bottom_row_offset + i];
+                //CurrCTB[i] = CurrCTB[bottom_row_offset + i];
             }
         }
     }
@@ -160,7 +156,7 @@ void DecodingContext::UpdateCurrCUContext(Ipp32u lastCUAddr, Ipp32u newCUAddr)
         for (Ipp32s i = 1; i < m_CurrCTBStride - 1; i++)
         {
             TopNgbrs[lastCUX + i].data = CurrCTBFlags[bottom_row_offset + i].data;
-            TopMVInfo[lastCUX + i] = CurrCTB[bottom_row_offset + i];
+            //TopMVInfo[lastCUX + i] = CurrCTB[bottom_row_offset + i];
         }
     }
 
@@ -170,7 +166,7 @@ void DecodingContext::UpdateCurrCUContext(Ipp32u lastCUAddr, Ipp32u newCUAddr)
         for (Ipp32s i = 1; i < m_CurrCTBStride - 1; i++)
         {
             CurrCTBFlags[i * m_CurrCTBStride] = CurrCTBFlags[i * m_CurrCTBStride + m_CurrCTBStride - 2];
-            CurrCTB[i * m_CurrCTBStride] = CurrCTB[i * m_CurrCTBStride + m_CurrCTBStride - 2];
+            //CurrCTB[i * m_CurrCTBStride] = CurrCTB[i * m_CurrCTBStride + m_CurrCTBStride - 2];
         }
     }
     else
@@ -282,17 +278,6 @@ void DecodingContext::SetNewQP(Ipp32s newQP)
     m_ScaledQP[COMPONENT_CHROMA_V].m_QPPer = qpScaledCr / 6;
     m_ScaledQP[COMPONENT_CHROMA_V].m_QPScale =
         g_invQuantScales[m_ScaledQP[COMPONENT_CHROMA_V].m_QPRem] << m_ScaledQP[COMPONENT_CHROMA_V].m_QPPer;
-}
-
-void H265SegmentDecoder::SaveCTBContext()
-{
-    Ipp32s CUX = m_cu->m_CUPelX >> m_pSeqParamSet->log2_min_transform_block_size;
-    Ipp32s CUY = m_cu->m_CUPelY >> m_pSeqParamSet->log2_min_transform_block_size;
-    H265MVInfo *colInfo = m_pCurrentFrame->m_CodingData->m_colocatedInfo + CUY * m_pSeqParamSet->NumPartitionsInFrameWidth + CUX;
-
-    for (Ipp32u y = 0; y < m_pSeqParamSet->NumPartitionsInCUSize; y++)
-        MFX_INTERNAL_CPY(colInfo + y * m_pSeqParamSet->NumPartitionsInFrameWidth,
-        m_context->m_CurrCTB + y * m_context->m_CurrCTBStride, sizeof(H265MVInfo) * m_pSeqParamSet->NumPartitionsInCUSize);
 }
 
 H265SegmentDecoder::H265SegmentDecoder(TaskBroker_H265 * pTaskBroker)
@@ -2522,17 +2507,19 @@ void H265SegmentDecoder::UpdatePUInfo(Ipp32u PartX, Ipp32u PartY, Ipp32u PartWid
     PartX &= mask;
     PartY &= mask;
 
-    H265MVInfo *pMVInfo;
     Ipp32s stride = m_context->m_CurrCTBStride;
-    
-    pMVInfo = &m_context->m_CurrCTB[PartY * stride + PartX];
+
+    Ipp32s CUX = (m_cu->m_CUPelX >> m_pSeqParamSet->log2_min_transform_block_size) + PartX;
+    Ipp32s CUY = (m_cu->m_CUPelY >> m_pSeqParamSet->log2_min_transform_block_size) + PartY;
+    H265MVInfo *colInfo = m_pCurrentFrame->m_CodingData->m_colocatedInfo + CUY * m_pSeqParamSet->NumPartitionsInFrameWidth + CUX;
+
     for (Ipp32u y = 0; y < PartHeight; y++)
     {
         for (Ipp32u x = 0; x < PartWidth; x++)
         {
-            pMVInfo[x] = MVi;
+            colInfo[x] = MVi;
         }
-        pMVInfo += stride;
+        colInfo += m_pSeqParamSet->NumPartitionsInFrameWidth;
     }
 
     H265FrameHLDNeighborsInfo *pInfo;
@@ -2589,14 +2576,17 @@ void H265SegmentDecoder::UpdateNeighborBuffers(Ipp32u AbsPartIdx, Ipp32u Depth, 
 
     if (info.members.IsIntra)
     {
-        H265MVInfo *pMVInfo = &m_context->m_CurrCTB[YInc * stride + XInc];
+        Ipp32s CUX = (m_cu->m_CUPelX >> m_pSeqParamSet->log2_min_transform_block_size) + XInc;
+        Ipp32s CUY = (m_cu->m_CUPelY >> m_pSeqParamSet->log2_min_transform_block_size) + YInc;
+        H265MVInfo *colInfo = m_pCurrentFrame->m_CodingData->m_colocatedInfo + CUY * m_pSeqParamSet->NumPartitionsInFrameWidth + CUX;
+
         for (Ipp32s i = 0; i < PartSize; i++)
         {
             for (Ipp32s j = 0; j < PartSize; j++)
             {
-                pMVInfo[j].m_flags[REF_PIC_LIST_0] = COL_TU_INTRA;
+                colInfo[j].m_flags[REF_PIC_LIST_0] = COL_TU_INTRA;
             }
-            pMVInfo += stride;
+            colInfo += m_pSeqParamSet->NumPartitionsInFrameWidth;
         }
     }
 }
@@ -2836,14 +2826,17 @@ static bool inline isDiffMER(Ipp32u plevel, Ipp32s xN, Ipp32s yN, Ipp32s xP, Ipp
 
 bool H265SegmentDecoder::hasEqualMotion(Ipp32s dir1, Ipp32s dir2)
 {
-    if (m_context->m_CurrCTB[dir1].m_refIdx[REF_PIC_LIST_0] != m_context->m_CurrCTB[dir2].m_refIdx[REF_PIC_LIST_0] ||
-        m_context->m_CurrCTB[dir1].m_refIdx[REF_PIC_LIST_1] != m_context->m_CurrCTB[dir2].m_refIdx[REF_PIC_LIST_1])
+    H265MVInfo &motionInfo1 = m_pCurrentFrame->m_CodingData->m_colocatedInfo[dir1];
+    H265MVInfo &motionInfo2 = m_pCurrentFrame->m_CodingData->m_colocatedInfo[dir2];
+
+    if (motionInfo1.m_refIdx[REF_PIC_LIST_0] != motionInfo2.m_refIdx[REF_PIC_LIST_0] ||
+        motionInfo1.m_refIdx[REF_PIC_LIST_1] != motionInfo2.m_refIdx[REF_PIC_LIST_1])
         return false;
 
-    if (m_context->m_CurrCTB[dir1].m_refIdx[REF_PIC_LIST_0] >= 0 && m_context->m_CurrCTB[dir1].m_mv[REF_PIC_LIST_0] != m_context->m_CurrCTB[dir2].m_mv[REF_PIC_LIST_0])
+    if (motionInfo1.m_refIdx[REF_PIC_LIST_0] >= 0 && motionInfo1.m_mv[REF_PIC_LIST_0] != motionInfo2.m_mv[REF_PIC_LIST_0])
         return false;
 
-    if (m_context->m_CurrCTB[dir1].m_refIdx[REF_PIC_LIST_1] >= 0 && m_context->m_CurrCTB[dir1].m_mv[REF_PIC_LIST_1] != m_context->m_CurrCTB[dir2].m_mv[REF_PIC_LIST_1])
+    if (motionInfo1.m_refIdx[REF_PIC_LIST_1] >= 0 && motionInfo1.m_mv[REF_PIC_LIST_1] != motionInfo2.m_mv[REF_PIC_LIST_1])
         return false;
 
     return true;
@@ -2851,18 +2844,19 @@ bool H265SegmentDecoder::hasEqualMotion(Ipp32s dir1, Ipp32s dir2)
 
 #define UPDATE_MV_INFO(dir)                                                                         \
     CandIsInter[Count] = true;                                                                      \
-    if (m_context->m_CurrCTB[dir].m_refIdx[REF_PIC_LIST_0] >= 0)                                      \
+    H265MVInfo &motionInfo = m_pCurrentFrame->m_CodingData->m_colocatedInfo[dir];                   \
+    if (motionInfo.m_refIdx[REF_PIC_LIST_0] >= 0)                                                   \
     {                                                                                               \
         InterDirNeighbours[Count] = 1;                                                              \
-        MVBufferNeighbours[Count].setMVInfo(REF_PIC_LIST_0, m_context->m_CurrCTB[dir].m_refIdx[REF_PIC_LIST_0], m_context->m_CurrCTB[dir].m_mv[REF_PIC_LIST_0]); \
+        MVBufferNeighbours[Count].setMVInfo(REF_PIC_LIST_0, motionInfo.m_refIdx[REF_PIC_LIST_0], motionInfo.m_mv[REF_PIC_LIST_0]); \
     }                                                                                               \
     else                                                                                            \
         InterDirNeighbours[Count] = 0;                                                              \
                                                                                                     \
-    if (B_SLICE == m_pSliceHeader->slice_type && m_context->m_CurrCTB[dir].m_refIdx[REF_PIC_LIST_1] >= 0) \
+    if (B_SLICE == m_pSliceHeader->slice_type && motionInfo.m_refIdx[REF_PIC_LIST_1] >= 0)          \
     {                                                                                               \
         InterDirNeighbours[Count] += 2;                                                             \
-        MVBufferNeighbours[Count].setMVInfo(REF_PIC_LIST_1, m_context->m_CurrCTB[dir].m_refIdx[REF_PIC_LIST_1], m_context->m_CurrCTB[dir].m_mv[REF_PIC_LIST_1]); \
+        MVBufferNeighbours[Count].setMVInfo(REF_PIC_LIST_1, motionInfo.m_refIdx[REF_PIC_LIST_1], motionInfo.m_mv[REF_PIC_LIST_1]); \
     }                                                                                               \
                                                                                                     \
     if (mrgCandIdx == Count)                                                                        \
@@ -2898,6 +2892,8 @@ void H265SegmentDecoder::getInterMergeCandidates(Ipp32u AbsPartIdx, Ipp32u PartI
     Ipp32s PartY = TPelY >> m_pSeqParamSet->log2_min_transform_block_size;
     Ipp32s TUPartNumberInCTB = m_context->m_CurrCTBStride * YInc + XInc;
 
+    Ipp32s TUPartNumberInGMV = m_pSeqParamSet->NumPartitionsInFrameWidth * PartY + PartX;
+
     Ipp32s nPSW, nPSH;
     m_cu->getPartSize(AbsPartIdx, PartIdx, nPSW, nPSH);
     Ipp32s PartWidth = nPSW >> m_pSeqParamSet->log2_min_transform_block_size;
@@ -2908,13 +2904,15 @@ void H265SegmentDecoder::getInterMergeCandidates(Ipp32u AbsPartIdx, Ipp32u PartI
 
     // left
     Ipp32s leftAddr = TUPartNumberInCTB + m_context->m_CurrCTBStride * (PartHeight - 1) - 1;
+    Ipp32s leftAddrGMV = TUPartNumberInGMV + m_pSeqParamSet->NumPartitionsInFrameWidth * (PartHeight - 1) - 1;
+
     bool isAvailableA1 = m_context->m_CurrCTBFlags[leftAddr].members.IsAvailable && !m_context->m_CurrCTBFlags[leftAddr].members.IsIntra &&
         isDiffMER(m_pPicParamSet->log2_parallel_merge_level, LPelX - 1, TPelY + nPSH - 1, LPelX, TPelY) &&
         !(PartIdx == 1 && (CurPS == PART_SIZE_Nx2N || CurPS == PART_SIZE_nLx2N || CurPS == PART_SIZE_nRx2N));
 
     if (isAvailableA1)
     {
-        UPDATE_MV_INFO(leftAddr);
+        UPDATE_MV_INFO(leftAddrGMV);
     }
 
     if (Count == m_pSliceHeader->max_num_merge_cand)
@@ -2922,13 +2920,14 @@ void H265SegmentDecoder::getInterMergeCandidates(Ipp32u AbsPartIdx, Ipp32u PartI
 
     // above
     Ipp32s aboveAddr = TUPartNumberInCTB - m_context->m_CurrCTBStride + (PartWidth - 1);
+    Ipp32s aboveAddrGMV = TUPartNumberInGMV - m_pSeqParamSet->NumPartitionsInFrameWidth + (PartWidth - 1);
     bool isAvailableB1 = m_context->m_CurrCTBFlags[aboveAddr].members.IsAvailable && !m_context->m_CurrCTBFlags[aboveAddr].members.IsIntra &&
         isDiffMER(m_pPicParamSet->log2_parallel_merge_level, LPelX + nPSW - 1, TPelY - 1, LPelX, TPelY) &&
         !(PartIdx == 1 && (CurPS == PART_SIZE_2NxN || CurPS == PART_SIZE_2NxnU || CurPS == PART_SIZE_2NxnD));
 
-    if (isAvailableB1 && (!isAvailableA1 || !hasEqualMotion(leftAddr, aboveAddr)))
+    if (isAvailableB1 && (!isAvailableA1 || !hasEqualMotion(leftAddrGMV, aboveAddrGMV)))
     {
-        UPDATE_MV_INFO(aboveAddr);
+        UPDATE_MV_INFO(aboveAddrGMV);
     }
 
     if (Count == m_pSliceHeader->max_num_merge_cand)
@@ -2936,12 +2935,13 @@ void H265SegmentDecoder::getInterMergeCandidates(Ipp32u AbsPartIdx, Ipp32u PartI
 
     // above right
     Ipp32s aboveRightAddr = TUPartNumberInCTB - m_context->m_CurrCTBStride + PartWidth;
+    Ipp32s aboveRightAddrGMV = TUPartNumberInGMV - m_pSeqParamSet->NumPartitionsInFrameWidth + PartWidth;
     bool isAvailableB0 = m_context->m_CurrCTBFlags[aboveRightAddr].members.IsAvailable && !m_context->m_CurrCTBFlags[aboveRightAddr].members.IsIntra &&
         isDiffMER(m_pPicParamSet->log2_parallel_merge_level, LPelX + nPSW, TPelY - 1, LPelX, TPelY);
 
-    if (isAvailableB0 && (!isAvailableB1 || !hasEqualMotion(aboveAddr, aboveRightAddr)))
+    if (isAvailableB0 && (!isAvailableB1 || !hasEqualMotion(aboveAddrGMV, aboveRightAddrGMV)))
     {
-        UPDATE_MV_INFO(aboveRightAddr);
+        UPDATE_MV_INFO(aboveRightAddrGMV);
     }
 
     if (Count == m_pSliceHeader->max_num_merge_cand)
@@ -2949,12 +2949,13 @@ void H265SegmentDecoder::getInterMergeCandidates(Ipp32u AbsPartIdx, Ipp32u PartI
 
     // left bottom
     Ipp32s leftBottomAddr = TUPartNumberInCTB - 1 + m_context->m_CurrCTBStride * PartHeight;
+    Ipp32s leftBottomAddrGMV = TUPartNumberInGMV - 1 + m_pSeqParamSet->NumPartitionsInFrameWidth * PartHeight;
     bool isAvailableA0 = m_context->m_CurrCTBFlags[leftBottomAddr].members.IsAvailable && !m_context->m_CurrCTBFlags[leftBottomAddr].members.IsIntra &&
         isDiffMER(m_pPicParamSet->log2_parallel_merge_level, LPelX - 1, TPelY + nPSH, LPelX, TPelY);
 
-    if (isAvailableA0 && (!isAvailableA1 || !hasEqualMotion(leftAddr, leftBottomAddr)))
+    if (isAvailableA0 && (!isAvailableA1 || !hasEqualMotion(leftAddrGMV, leftBottomAddrGMV)))
     {
-        UPDATE_MV_INFO(leftBottomAddr);
+        UPDATE_MV_INFO(leftBottomAddrGMV);
     }
 
     // early termination
@@ -2965,14 +2966,15 @@ void H265SegmentDecoder::getInterMergeCandidates(Ipp32u AbsPartIdx, Ipp32u PartI
     if (Count < 4 && PartX > 0)
     {
         Ipp32s aboveLeftAddr = TUPartNumberInCTB - m_context->m_CurrCTBStride - 1;
+        Ipp32s aboveLeftAddrGMV = TUPartNumberInGMV - m_pSeqParamSet->NumPartitionsInFrameWidth - 1;
         bool isAvailableB2 = m_context->m_CurrCTBFlags[aboveLeftAddr].members.IsAvailable && !m_context->m_CurrCTBFlags[aboveLeftAddr].members.IsIntra &&
             isDiffMER(m_pPicParamSet->log2_parallel_merge_level, LPelX - 1, TPelY - 1, LPelX, TPelY);
 
          if (isAvailableB2 &&
-            (!isAvailableA1 || !hasEqualMotion(leftAddr, aboveLeftAddr)) &&
-            (!isAvailableB1 || !hasEqualMotion(aboveAddr, aboveLeftAddr)))
+            (!isAvailableA1 || !hasEqualMotion(leftAddrGMV, aboveLeftAddrGMV)) &&
+            (!isAvailableB1 || !hasEqualMotion(aboveAddrGMV, aboveLeftAddrGMV)))
         {
-            UPDATE_MV_INFO(aboveLeftAddr);
+            UPDATE_MV_INFO(aboveLeftAddrGMV);
         }
     }
 
@@ -3132,6 +3134,7 @@ void H265SegmentDecoder::fillMVPCand(Ipp32u AbsPartIdx, Ipp32u PartIdx, EnumRefP
     Ipp32s PartX = LPelX >> m_pSeqParamSet->log2_min_transform_block_size;
     Ipp32s PartY = TPelY >> m_pSeqParamSet->log2_min_transform_block_size;
     Ipp32s TUPartNumberInCTB = m_context->m_CurrCTBStride * YInc + XInc;
+    Ipp32s TUPartNumberInGMV = m_pSeqParamSet->NumPartitionsInFrameWidth * PartY + PartX;
 
     Ipp32s nPSW, nPSH;
     m_cu->getPartSize(AbsPartIdx, PartIdx, nPSW, nPSH);
@@ -3142,19 +3145,26 @@ void H265SegmentDecoder::fillMVPCand(Ipp32u AbsPartIdx, Ipp32u PartIdx, EnumRefP
     Ipp32s leftAddr = TUPartNumberInCTB + m_context->m_CurrCTBStride * (PartHeight - 1) - 1;
     Ipp32s leftBottomAddr = TUPartNumberInCTB - 1 + m_context->m_CurrCTBStride * PartHeight;
 
-    Added = AddMVPCand(pInfo, RefPicList, RefIdx, leftBottomAddr);
-    if (!Added)
-    {
-        Added = AddMVPCand(pInfo, RefPicList, RefIdx, leftAddr);
-    }
-    if (!Added)
-    {
-        Added = AddMVPCandOrder(pInfo, RefPicList, RefIdx, leftBottomAddr);
+    Ipp32u leftAddrMV = TUPartNumberInGMV + m_pSeqParamSet->NumPartitionsInFrameWidth * (PartHeight - 1) - 1;
+    Ipp32s leftBottomAddrMV = TUPartNumberInGMV - 1 + m_pSeqParamSet->NumPartitionsInFrameWidth * PartHeight;
 
-        if (!Added)
-        {
-            Added = AddMVPCandOrder(pInfo, RefPicList, RefIdx, leftAddr);
-        }
+    for (;;)
+    {
+        Added = true;
+        if (AddMVPCand(pInfo, RefPicList, RefIdx, leftBottomAddr, m_pCurrentFrame->m_CodingData->m_colocatedInfo[leftBottomAddrMV]))
+            break;
+
+        if (AddMVPCand(pInfo, RefPicList, RefIdx, leftAddr, m_pCurrentFrame->m_CodingData->m_colocatedInfo[leftAddrMV]))
+            break;
+
+        if (AddMVPCandOrder(pInfo, RefPicList, RefIdx, leftBottomAddr, m_pCurrentFrame->m_CodingData->m_colocatedInfo[leftBottomAddrMV]))
+            break;
+
+        if (AddMVPCandOrder(pInfo, RefPicList, RefIdx, leftAddr, m_pCurrentFrame->m_CodingData->m_colocatedInfo[leftAddrMV]))
+            break;
+
+        Added = false;
+        break;
     }
 
     // Above predictor search
@@ -3162,14 +3172,25 @@ void H265SegmentDecoder::fillMVPCand(Ipp32u AbsPartIdx, Ipp32u PartIdx, EnumRefP
     Ipp32s aboveRightAddr = TUPartNumberInCTB - m_context->m_CurrCTBStride + PartWidth;
     Ipp32s aboveLeftAddr = TUPartNumberInCTB - m_context->m_CurrCTBStride - 1;
 
-    Added = AddMVPCand(pInfo, RefPicList, RefIdx, aboveRightAddr);
-    if (!Added)
+    Ipp32s aboveAddrGMV = TUPartNumberInGMV - m_pSeqParamSet->NumPartitionsInFrameWidth + (PartWidth - 1);
+    Ipp32s aboveRightAddrGMV = TUPartNumberInGMV - m_pSeqParamSet->NumPartitionsInFrameWidth + PartWidth;
+    Ipp32s aboveLeftAddrGMV = TUPartNumberInGMV - m_pSeqParamSet->NumPartitionsInFrameWidth - 1;
+
+    for (;;)
     {
-        Added = AddMVPCand(pInfo, RefPicList, RefIdx, aboveAddr);
-    }
-    if (!Added)
-    {
-        Added = AddMVPCand(pInfo, RefPicList, RefIdx, aboveLeftAddr);
+        Added = true;
+
+        if (AddMVPCand(pInfo, RefPicList, RefIdx, aboveRightAddr, m_pCurrentFrame->m_CodingData->m_colocatedInfo[aboveRightAddrGMV]))
+            break;
+
+        if (AddMVPCand(pInfo, RefPicList, RefIdx, aboveAddr, m_pCurrentFrame->m_CodingData->m_colocatedInfo[aboveAddrGMV]))
+            break;
+
+        if (AddMVPCand(pInfo, RefPicList, RefIdx, aboveLeftAddr, m_pCurrentFrame->m_CodingData->m_colocatedInfo[aboveLeftAddrGMV]))
+            break;
+
+        Added = false;
+        break;
     }
 
     if (pInfo->NumbOfCands == 2)
@@ -3184,15 +3205,21 @@ void H265SegmentDecoder::fillMVPCand(Ipp32u AbsPartIdx, Ipp32u PartIdx, EnumRefP
 
     if (!Added)
     {
-        Added = AddMVPCandOrder(pInfo, RefPicList, RefIdx, aboveRightAddr);
+        for (;;)
+        {
+            Added = true;
 
-        if (!Added)
-        {
-            Added = AddMVPCandOrder(pInfo, RefPicList, RefIdx, aboveAddr);
-        }
-        if (!Added)
-        {
-            Added = AddMVPCandOrder(pInfo, RefPicList, RefIdx, aboveLeftAddr);
+            if (AddMVPCandOrder(pInfo, RefPicList, RefIdx, aboveRightAddr, m_pCurrentFrame->m_CodingData->m_colocatedInfo[aboveRightAddrGMV]))
+                break;
+
+            if (AddMVPCandOrder(pInfo, RefPicList, RefIdx, aboveAddr, m_pCurrentFrame->m_CodingData->m_colocatedInfo[aboveAddrGMV]))
+                break;
+
+            if (AddMVPCandOrder(pInfo, RefPicList, RefIdx, aboveLeftAddr, m_pCurrentFrame->m_CodingData->m_colocatedInfo[aboveLeftAddrGMV]))
+                break;
+
+            Added = false;
+            break;
         }
     }
 
@@ -3247,26 +3274,26 @@ void H265SegmentDecoder::fillMVPCand(Ipp32u AbsPartIdx, Ipp32u PartIdx, EnumRefP
     return;
 }
 
-bool H265SegmentDecoder::AddMVPCand(AMVPInfo* pInfo, EnumRefPicList RefPicList, Ipp32s RefIdx, Ipp32s NeibAddr)
+bool H265SegmentDecoder::AddMVPCand(AMVPInfo* pInfo, EnumRefPicList RefPicList, Ipp32s RefIdx, Ipp32s NeibAddr, const H265MVInfo &motionInfo)
 {
     if (!m_context->m_CurrCTBFlags[NeibAddr].members.IsAvailable || m_context->m_CurrCTBFlags[NeibAddr].members.IsIntra)
         return false;
 
-    Ipp32s candRefIdx = m_context->m_CurrCTB[NeibAddr].m_refIdx[RefPicList];
+    Ipp32s candRefIdx = motionInfo.m_refIdx[RefPicList];
     if (candRefIdx >= 0 && m_pRefPicList[RefPicList][RefIdx].refFrame->m_PicOrderCnt == m_pRefPicList[RefPicList][candRefIdx].refFrame->m_PicOrderCnt)
     {
-        pInfo->MVCandidate[pInfo->NumbOfCands++] = m_context->m_CurrCTB[NeibAddr].m_mv[RefPicList];
+        pInfo->MVCandidate[pInfo->NumbOfCands++] = motionInfo.m_mv[RefPicList];
         return true;
     }
 
     EnumRefPicList RefPicList2nd = EnumRefPicList(1 - RefPicList);
-    RefIndexType NeibRefIdx = m_context->m_CurrCTB[NeibAddr].m_refIdx[RefPicList2nd];
+    RefIndexType NeibRefIdx = motionInfo.m_refIdx[RefPicList2nd];
 
     if (NeibRefIdx >= 0)
     {
         if(m_pRefPicList[RefPicList][RefIdx].refFrame->m_PicOrderCnt == m_pRefPicList[RefPicList2nd][NeibRefIdx].refFrame->m_PicOrderCnt)
         {
-            pInfo->MVCandidate[pInfo->NumbOfCands++] = m_context->m_CurrCTB[NeibAddr].m_mv[RefPicList2nd];
+            pInfo->MVCandidate[pInfo->NumbOfCands++] = motionInfo.m_mv[RefPicList2nd];
             return true;
         }
     }
@@ -3289,7 +3316,7 @@ static Ipp32s GetDistScaleFactor(Ipp32s DiffPocB, Ipp32s DiffPocD)
     }
 }
 
-bool H265SegmentDecoder::AddMVPCandOrder(AMVPInfo* pInfo, EnumRefPicList RefPicList, Ipp32s RefIdx, Ipp32s NeibAddr)
+bool H265SegmentDecoder::AddMVPCandOrder(AMVPInfo* pInfo, EnumRefPicList RefPicList, Ipp32s RefIdx, Ipp32s NeibAddr, const H265MVInfo &motionInfo)
 {
     if (!m_context->m_CurrCTBFlags[NeibAddr].members.IsAvailable || m_context->m_CurrCTBFlags[NeibAddr].members.IsIntra)
         return false;
@@ -3299,7 +3326,7 @@ bool H265SegmentDecoder::AddMVPCandOrder(AMVPInfo* pInfo, EnumRefPicList RefPicL
 
     for (Ipp32s i = 0; i < 2; i++)
     {
-        RefIndexType NeibRefIdx = m_context->m_CurrCTB[NeibAddr].m_refIdx[RefPicList];
+        const RefIndexType &NeibRefIdx = motionInfo.m_refIdx[RefPicList];
 
         if (NeibRefIdx >= 0)
         {
@@ -3307,7 +3334,7 @@ bool H265SegmentDecoder::AddMVPCandOrder(AMVPInfo* pInfo, EnumRefPicList RefPicL
 
             if (IsNeibRefLongTerm == IsCurrRefLongTerm)
             {
-                H265MotionVector MvPred = m_context->m_CurrCTB[NeibAddr].m_mv[RefPicList];
+                const H265MotionVector &MvPred = motionInfo.m_mv[RefPicList];
 
                 if (IsCurrRefLongTerm)
                 {
@@ -3350,7 +3377,7 @@ bool H265SegmentDecoder::GetColMVP(EnumRefPicList refPicListIdx, Ipp32u PartX, I
 
     EnumRefPicList colPicListIdx = EnumRefPicList((B_SLICE == m_pSliceHeader->slice_type) ? 1 - m_pSliceHeader->collocated_from_l0_flag : 0);
     H265DecoderFrame *colPic = m_pRefPicList[colPicListIdx][m_pSliceHeader->collocated_ref_idx].refFrame;
-    Ipp32u colocatedPartNumber = PartY * m_pCurrentFrame->getNumPartInCUSize() * m_pCurrentFrame->getFrameWidthInCU() + PartX;
+    Ipp32u colocatedPartNumber = PartY * m_pSeqParamSet->NumPartitionsInFrameWidth + PartX;
 
     // Intra mode is marked in ref list 0 only
     if (COL_TU_INTRA == colPic->m_CodingData->GetTUFlags(REF_PIC_LIST_0, colocatedPartNumber))
