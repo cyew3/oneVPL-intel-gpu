@@ -206,7 +206,7 @@ MFXTranscodingPipeline::MFXTranscodingPipeline(IMFXPipelineFactory *pFactory)
         HANDLE_HEVC_OPTION(QuadtreeTULog2MinSize,    OPT_UINT_16,    "2-QuadtreeTULog2MaxSize"),
         HANDLE_HEVC_OPTION(QuadtreeTUMaxDepthIntra,  OPT_UINT_16,    "1-(Log2MaxCUSize-1)"),
         HANDLE_HEVC_OPTION(QuadtreeTUMaxDepthInter,  OPT_UINT_16,    "1-(Log2MaxCUSize-1)"),
-        HANDLE_HEVC_OPTION(AnalyzeChroma,            OPT_TRI_STATE,  ""),
+        HANDLE_HEVC_OPTION(AnalyzeChroma,            OPT_TRI_STATE,  "on/off chroma intra mode"),
         HANDLE_HEVC_OPTION(SignBitHiding,            OPT_TRI_STATE,  ""),
         HANDLE_HEVC_OPTION(RDOQuant,                 OPT_TRI_STATE,  ""),
         HANDLE_HEVC_OPTION(SAO,                      OPT_TRI_STATE,  ""),
@@ -244,6 +244,7 @@ MFXTranscodingPipeline::MFXTranscodingPipeline(IMFXPipelineFactory *pFactory)
         HANDLE_HEVC_OPTION(IntraNumCand0_4,          OPT_UINT_16,    "number of candidates for SATD stage after gradient analysis for TU16x16"),
         HANDLE_HEVC_OPTION(IntraNumCand0_5,          OPT_UINT_16,    "number of candidates for SATD stage after gradient analysis for TU32x32"),
         HANDLE_HEVC_OPTION(IntraNumCand0_6,          OPT_UINT_16,    "number of candidates for SATD stage after gradient analysis for TU64x64"),
+        HANDLE_HEVC_OPTION(CostChroma,               OPT_TRI_STATE,  "on/off include chroma in cost"),
 
         HANDLE_VP8PARAM_OPTION(VP8Version,            OPT_UINT_8,    "0-maxU8"),
         HANDLE_VP8PARAM_OPTION(LoopFilterType,        OPT_UINT_8,    "0-maxU8"),
@@ -801,7 +802,7 @@ mfxStatus MFXTranscodingPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI3
             if (!m_ExtBuffers.get()->empty())
             {
                 m_EncParams.ExtParam = &(m_ExtBuffers.get()->operator [](0));
-                m_EncParams.NumExtParam = m_ExtBuffers.get()->size();
+                m_EncParams.NumExtParam = (mfxU16)m_ExtBuffers.get()->size();
                 // move ext buffers to the container
                 m_ExtBufferVectorsContainer.push_back(m_ExtBuffers.release());
                 m_ExtBuffers = m_ExtBuffersOld;
@@ -1513,13 +1514,13 @@ mfxStatus    MFXTranscodingPipeline::CreateAllocator()
         mfxVideoParam vParamOriginalEnc = m_components[eREN].m_params;
         mfxVideoParam vParamOriginalDec = m_components[eDEC].m_params;
 
-        m_components[eREN].m_params.mfx.FrameInfo.Width  = Width;
-        m_components[eREN].m_params.mfx.FrameInfo.Height = Height;
+        m_components[eREN].m_params.mfx.FrameInfo.Width  = (mfxU16)Width;
+        m_components[eREN].m_params.mfx.FrameInfo.Height = (mfxU16)Height;
 
         if (IsMultiReaderEnabled()) {
             //TODO: resolution for queryiosurface still taken from each components parameters, is it OK?
-            m_components[eDEC].m_params.mfx.FrameInfo.Width  = Width;
-            m_components[eDEC].m_params.mfx.FrameInfo.Height = Height;
+            m_components[eDEC].m_params.mfx.FrameInfo.Width  = (mfxU16)Width;
+            m_components[eDEC].m_params.mfx.FrameInfo.Height = (mfxU16)Height;
             m_components[eDEC].m_params.mfx.FrameInfo.FrameId.DependencyId = (mfxU16)i - 1;
         }
 

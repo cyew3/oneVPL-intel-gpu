@@ -10,6 +10,7 @@
 
 #if defined (MFX_ENABLE_H265_VIDEO_ENCODE)
 
+#include "ippi.h"
 #include "mfx_h265_defs.h"
 #include "mfx_h265_enc.h"
 #include "mfx_h265_optimization.h"
@@ -208,11 +209,13 @@ void H265CU::PredInterUni(Ipp32u PartAddr, Ipp32s Width, Ipp32s Height, EnumRefP
                 shift = 14 - bitDepth;
 
             if (!bi) {
-                for (Ipp32s j = 0; j < Height; j++) {
-                    small_memcpy( in_dstPic, in_pSrc, Width );
-                    in_pSrc += in_SrcPitch;
-                    in_dstPic += in_dstPicPitch;
-                }
+                IppiSize roi = {Width, Height};
+                ippiCopy_8u_C1R(in_pSrc, in_SrcPitch, in_dstPic, in_dstPicPitch, roi);
+                //for (Ipp32s j = 0; j < Height; j++) {
+                //    small_memcpy( in_dstPic, in_pSrc, Width );
+                //    in_pSrc += in_SrcPitch;
+                //    in_dstPic += in_dstPicPitch;
+                //}
             }
             else {
                 if ( eAddAverage == MFX_HEVC_PP::AVERAGE_FROM_PIC ) {
@@ -319,11 +322,13 @@ void H265CU::PredInterUni(Ipp32u PartAddr, Ipp32s Width, Ipp32s Height, EnumRefP
                 shift = 14 - bitDepth;
 
             if (!bi) {
-                for (Ipp32s j = 0; j < Height; j++) {
-                    small_memcpy( in_dstPic, in_pSrc, Width * 2 );
-                    in_pSrc += in_SrcPitch;
-                    in_dstPic += in_dstPicPitch;
-                }
+                IppiSize roi = {Width*2, Height};
+                ippiCopy_8u_C1R(in_pSrc, in_SrcPitch, in_dstPic, in_dstPicPitch, roi);
+                //for (Ipp32s j = 0; j < Height; j++) {
+                //    small_memcpy( in_dstPic, in_pSrc, Width * 2 );
+                //    in_pSrc += in_SrcPitch;
+                //    in_dstPic += in_dstPicPitch;
+                //}
             }
             else {
                 if ( eAddAverage == MFX_HEVC_PP::AVERAGE_FROM_PIC ) {

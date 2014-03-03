@@ -157,6 +157,8 @@ mfxStatus H265Encoder::InitH265VideoParam(const mfxVideoParam *param, const mfxE
     pars->AnalyseFlags = 0;
     if (opts_hevc->AnalyzeChroma == MFX_CODINGOPTION_ON)
         pars->AnalyseFlags |= HEVC_ANALYSE_CHROMA;
+    if (opts_hevc->CostChroma == MFX_CODINGOPTION_ON)
+        pars->AnalyseFlags |= HEVC_COST_CHROMA;
 
     pars->SplitThresholdStrengthCUIntra = (Ipp8u)opts_hevc->SplitThresholdStrengthCUIntra - 1;
     pars->SplitThresholdStrengthTUIntra = (Ipp8u)opts_hevc->SplitThresholdStrengthTUIntra - 1;

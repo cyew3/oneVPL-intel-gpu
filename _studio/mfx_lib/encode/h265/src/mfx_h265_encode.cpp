@@ -116,6 +116,7 @@ mfxExtBuffer HEVC_HEADER = { MFX_EXTBUFF_HEVCENC, sizeof(mfxExtCodingOptionHEVC)
     tab_IntraNumCand0_4[x],\
     tab_IntraNumCand0_5[x],\
     tab_IntraNumCand0_6[x],\
+    tab_CostChroma[x],\
 }
 
 //                                    TU1  TU2  TU3  TU4  TU4  TU6  TU7
@@ -164,6 +165,7 @@ TU_OPT(IntraNumCand0_3,               35,  35,  35,  35,  35,  35,  35)
 TU_OPT(IntraNumCand0_4,               35,  35,  35,  35,  35,  35,  35)
 TU_OPT(IntraNumCand0_5,               35,  35,  35,  35,  35,  35,  35)
 TU_OPT(IntraNumCand0_6,               35,  35,  35,  35,  35,  35,  35)
+TU_OPT(CostChroma,                   OFF, OFF, OFF, OFF, OFF, OFF, OFF)
 
 mfxExtCodingOptionHEVC tab_tu[8] = {
     TAB_TU(3), TAB_TU(0), TAB_TU(1), TAB_TU(2), TAB_TU(3), TAB_TU(4), TAB_TU(5), TAB_TU(6)
@@ -635,6 +637,8 @@ mfxStatus MFXVideoENCODEH265::Init(mfxVideoParam* par_in)
 
         if (m_mfxHEVCOpts.AnalyzeChroma == MFX_CODINGOPTION_UNKNOWN)
             m_mfxHEVCOpts.AnalyzeChroma = opts_tu->AnalyzeChroma;
+        if (m_mfxHEVCOpts.CostChroma == MFX_CODINGOPTION_UNKNOWN)
+            m_mfxHEVCOpts.CostChroma = opts_tu->CostChroma;
 
         // doesn't work together now, no sense
         if (m_mfxHEVCOpts.RDOQuant == MFX_CODINGOPTION_ON)
@@ -986,7 +990,8 @@ mfxStatus MFXVideoENCODEH265::Reset(mfxVideoParam *par_in)
         if (!optsNew.WPP                          ) optsNew.WPP                           = optsOld.WPP                          ;
         if (!optsNew.GPB                          ) optsNew.GPB                           = optsOld.GPB                          ;
         if (!optsNew.AMP                          ) optsNew.AMP                           = optsOld.AMP                          ;
-        if (!optsNew.BPyramid                     ) optsNew.BPyramid                      = optsOld.BPyramid                          ;
+        if (!optsNew.BPyramid                     ) optsNew.BPyramid                      = optsOld.BPyramid                     ;
+        if (!optsNew.CostChroma                   ) optsNew.CostChroma                    = optsOld.CostChroma                   ;
     }
 
     if ((parNew.IOPattern & 0xffc8) || (parNew.IOPattern == 0)) // 0 is possible after Query
@@ -1124,7 +1129,7 @@ mfxStatus MFXVideoENCODEH265::Query(VideoCORE *core, mfxVideoParam *par_in, mfxV
             optsHEVC->QuadtreeTULog2MinSize = 1;
             optsHEVC->QuadtreeTUMaxDepthIntra = 1;
             optsHEVC->QuadtreeTUMaxDepthInter = 1;
-            optsHEVC->AnalyzeChroma = 1;              /* tri-state option */
+            optsHEVC->AnalyzeChroma = 1;
             optsHEVC->SignBitHiding = 1;
             optsHEVC->RDOQuant = 1;
             optsHEVC->SAO      = 1;
@@ -1145,6 +1150,7 @@ mfxStatus MFXVideoENCODEH265::Query(VideoCORE *core, mfxVideoParam *par_in, mfxV
             optsHEVC->GPB = 1;
             optsHEVC->AMP = 1;
             optsHEVC->BPyramid = 1;
+            optsHEVC->CostChroma = 1;
         }
 
         mfxExtDumpFiles* optsDump = (mfxExtDumpFiles*)GetExtBuffer( out->ExtParam, out->NumExtParam, MFX_EXTBUFF_DUMP );
@@ -1494,9 +1500,9 @@ mfxStatus MFXVideoENCODEH265::Query(VideoCORE *core, mfxVideoParam *par_in, mfxV
             opts_out->TMVP = opts_in->TMVP;
             opts_out->EnableCm = opts_in->EnableCm;
             opts_out->FastPUDecision = opts_in->FastPUDecision;
-            opts_out->Deblocking = opts_in->Deblocking;
-            opts_out->RDOQuantChroma = opts_in->RDOQuantChroma;
-            opts_out->RDOQuantCGZ = opts_in->RDOQuantCGZ;
+            //opts_out->Deblocking = opts_in->Deblocking;
+            //opts_out->RDOQuantChroma = opts_in->RDOQuantChroma;
+            //opts_out->RDOQuantCGZ = opts_in->RDOQuantCGZ;
             opts_out->SaoOpt = opts_in->SaoOpt;
 
             CHECK_OPTION(opts_in->AnalyzeChroma, opts_out->AnalyzeChroma, isInvalid);  /* tri-state option */
@@ -1510,6 +1516,7 @@ mfxStatus MFXVideoENCODEH265::Query(VideoCORE *core, mfxVideoParam *par_in, mfxV
             CHECK_OPTION(opts_in->Deblocking, opts_out->Deblocking, isInvalid);  /* tri-state option */
             CHECK_OPTION(opts_in->RDOQuantChroma, opts_out->RDOQuantChroma, isInvalid);  /* tri-state option */
             CHECK_OPTION(opts_in->RDOQuantCGZ, opts_out->RDOQuantCGZ, isInvalid);  /* tri-state option */
+            CHECK_OPTION(opts_in->CostChroma, opts_out->CostChroma, isInvalid);  /* tri-state option */
 
             if (opts_out->BPyramid == MFX_CODINGOPTION_ON) {
                 Ipp32s GopRefDist = out->mfx.GopRefDist;

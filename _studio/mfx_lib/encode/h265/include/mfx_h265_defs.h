@@ -85,6 +85,7 @@ extern int DEBUG_CABAC_PRINT;
 #define MAX_NUM_REF_FRAMES  32
 
 #define HEVC_ANALYSE_CHROMA                    (1 << 0)
+#define HEVC_COST_CHROMA                       (1 << 1)
 
 #define DATA_ALIGN 64
 #define H265ENC_UNREFERENCED_PARAMETER(X) X=X

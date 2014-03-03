@@ -129,6 +129,7 @@ public:
     __ALIGN32 CoeffsType    m_interResidualsYBest[4][MAX_CU_SIZE * MAX_CU_SIZE];
     CoeffsType            (*m_interResidualsYPtr)[MAX_CU_SIZE * MAX_CU_SIZE];
     __ALIGN32 PixType       m_interRecBest[5][MAX_CU_SIZE*MAX_CU_SIZE];
+    __ALIGN32 PixType       m_interRecBestChroma[5][MAX_CU_SIZE*MAX_CU_SIZE / 2];
 
     __ALIGN32 PixType       m_interPredMerge[4][MAX_CU_SIZE * MAX_CU_SIZE];
     __ALIGN32 PixType       m_interPredMergeBest[4][MAX_CU_SIZE * MAX_CU_SIZE];
@@ -418,8 +419,8 @@ public:
     CostType CuCost(Ipp32u absPartIdx, Ipp8u depth, const H265MEInfo* bestInfo,
                     Ipp32s fastPuDecision);
 
-    void TuGetSplitInter(Ipp32u absPartIdx, Ipp32s offset, Ipp8u trIdx, Ipp8u trIdxMax, Ipp8u *nz,
-                         CostType *cost, Ipp8u *cbf);
+    void TuGetSplitInter(Ipp32u absPartIdx, Ipp32s offset, Ipp8u trIdx, Ipp8u trIdxMax, Ipp8u nz[3],
+                         CostType *cost, Ipp8u cbf[256][3]);
 
     void DetailsXY(H265MEInfo *meInfo) const;
 

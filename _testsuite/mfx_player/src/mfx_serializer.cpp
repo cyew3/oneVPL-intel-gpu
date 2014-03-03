@@ -251,11 +251,12 @@ void MFXStructureRef <mfxExtCodingOptionHEVC>::ConstructValues() const
     SERIALIZE_INT(EnableCm);
     SERIALIZE_INT(BPyramid);
     SERIALIZE_INT(FastPUDecision);
-    SERIALIZE_INT(HadamardMe); 
-    SERIALIZE_INT(TMVP); 
-    SERIALIZE_INT(Deblocking); 
-    SERIALIZE_INT(RDOQuantChroma); 
-    SERIALIZE_INT(RDOQuantCGZ); 
+    SERIALIZE_INT(HadamardMe);
+    SERIALIZE_INT(TMVP);
+    SERIALIZE_INT(Deblocking);
+    SERIALIZE_INT(RDOQuantChroma);
+    SERIALIZE_INT(RDOQuantCGZ);
+    SERIALIZE_INT(CostChroma);
     SERIALIZE_INT(SaoOpt);
     SERIALIZE_INT(IntraNumCand0_2);
     SERIALIZE_INT(IntraNumCand0_3);

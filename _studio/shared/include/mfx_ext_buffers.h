@@ -166,7 +166,7 @@ typedef struct {
     mfxU16      QuadtreeTULog2MinSize;
     mfxU16      QuadtreeTUMaxDepthIntra;
     mfxU16      QuadtreeTUMaxDepthInter;
-    mfxU16      AnalyzeChroma;              /* tri-state option */
+    mfxU16      AnalyzeChroma;      // tri-state, look for chroma intra mode
     mfxU16      SignBitHiding;
     mfxU16      RDOQuant;
     mfxU16      SAO;
@@ -204,7 +204,8 @@ typedef struct {
     mfxU16      IntraNumCand0_4;    // number of candidates for SATD stage after gradient analysis for TU16x16
     mfxU16      IntraNumCand0_5;    // number of candidates for SATD stage after gradient analysis for TU32x32
     mfxU16      IntraNumCand0_6;    // number of candidates for SATD stage after gradient analysis for TU64x64
-    mfxU16      reserved[15];
+    mfxU16      CostChroma;         // tri-state, include chroma in cost
+    mfxU16      reserved[14];
 } mfxExtCodingOptionHEVC;
 
 #define MFX_EXTBUFF_VP8_PARAM MFX_MAKEFOURCC('B','V','P','8')
