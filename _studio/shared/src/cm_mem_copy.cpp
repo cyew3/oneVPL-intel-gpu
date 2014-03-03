@@ -647,13 +647,13 @@ mfxStatus CmCopyWrapper::CopySystemToVideoMemoryAPI(void *pDst, mfxU32 dstPitch,
     CM_STATUS sts;
     mfxStatus status = MFX_ERR_NONE;
 
-    //mfxU32 width  = roi.width;
-    //mfxU32 height = roi.height;
+    mfxU32 width  = roi.width;
+    mfxU32 height = roi.height;
 
      // create or find already associated cm surface 2d
     CmSurface2D *pCmSurface2D;
-    m_pCmDevice->CreateSurface2D((AbstractSurfaceHandle*)pDst,pCmSurface2D);
-    //pCmSurface2D = CreateCmSurface2D(pDst, width, height, false, m_tableCmRelations2, m_tableCmIndex2);
+    //m_pCmDevice->CreateSurface2D((AbstractSurfaceHandle*)pDst,pCmSurface2D);
+    pCmSurface2D = CreateCmSurface2D(pDst, width, height, false, m_tableCmRelations2, m_tableCmIndex2);
     CHECK_CM_NULL_PTR(pCmSurface2D, MFX_ERR_DEVICE_FAILED);
     if(srcUVOffset != 0){
         cmSts = m_pCmQueue->EnqueueCopyCPUToGPUFullStride(pCmSurface2D, pSrc, srcPitch, srcUVOffset, 0, e);
@@ -674,7 +674,7 @@ mfxStatus CmCopyWrapper::CopySystemToVideoMemoryAPI(void *pDst, mfxU32 dstPitch,
         status = MFX_ERR_DEVICE_FAILED;
     }
     if(e) m_pCmQueue->DestroyEvent(e);
-    m_pCmDevice->DestroySurface(pCmSurface2D);
+    //m_pCmDevice->DestroySurface(pCmSurface2D);
     return status;
 }
 
@@ -685,17 +685,17 @@ mfxStatus CmCopyWrapper::CopyVideoToSystemMemoryAPI(mfxU8 *pDst, mfxU32 dstPitch
     CmEvent* e = NULL;
     CM_STATUS sts;
     mfxStatus status = MFX_ERR_NONE;
-    //mfxU32 width  = roi.width;
-    //mfxU32 height = roi.height;
+    mfxU32 width  = roi.width;
+    mfxU32 height = roi.height;
     //mfxU32 memSize = srcPitch * height * 3/2;
 
      // create or find already associated cm surface 2d
     CmSurface2D *pCmSurface2D;
 
-    m_pCmDevice->CreateSurface2D((AbstractSurfaceHandle*)pSrc,pCmSurface2D);
+    //m_pCmDevice->CreateSurface2D((AbstractSurfaceHandle*)pSrc,pCmSurface2D);
 
 
-    //pCmSurface2D = CreateCmSurface2D(pSrc, width, height, false, m_tableCmRelations2, m_tableCmIndex2);
+    pCmSurface2D = CreateCmSurface2D(pSrc, width, height, false, m_tableCmRelations2, m_tableCmIndex2);
     CHECK_CM_NULL_PTR(pCmSurface2D, MFX_ERR_DEVICE_FAILED);
 
     if(dstUVOffset != 0){
@@ -716,7 +716,7 @@ mfxStatus CmCopyWrapper::CopyVideoToSystemMemoryAPI(mfxU8 *pDst, mfxU32 dstPitch
         status = MFX_ERR_DEVICE_FAILED;
     }
     if(e) m_pCmQueue->DestroyEvent(e);
-    m_pCmDevice->DestroySurface(pCmSurface2D);
+    //m_pCmDevice->DestroySurface(pCmSurface2D);
 
     return status;
 }
