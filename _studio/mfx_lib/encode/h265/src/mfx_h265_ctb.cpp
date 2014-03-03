@@ -2523,200 +2523,96 @@ void H265CU::MePuExperimental(H265MEInfo *meInfo, Ipp32s lastPredIdx)
         int x = (m_ctbPelX + meInfo->posx) / meInfo->width;
         int y = (m_ctbPelY + meInfo->posy) / meInfo->height;
         PuSize puSize = PU_MAX;
+        mfxI16Pair **cmMv = NULL;
+        CmMbDist32 **cmDist32 = NULL;
+        CmMbDist16 **cmDist16 = NULL;
+        Ipp32s pitchDist = 0;
+        Ipp32s pitchMv = 0;
 
-        if      (meInfo->width == 32 && meInfo->height == 32) puSize = PU32x32;
-        else if (meInfo->width == 32 && meInfo->height == 24) puSize = PU32x24, y = (m_ctbPelY + meInfo->posy + 8) / 16;
-        else if (meInfo->width == 32 && meInfo->height == 16) puSize = PU32x16;
-        else if (meInfo->width == 32 && meInfo->height ==  8) puSize = PU32x8,  y = (m_ctbPelY + meInfo->posy) / 16;
-        else if (meInfo->width == 24 && meInfo->height == 32) puSize = PU24x32, x = (m_ctbPelX + meInfo->posx + 8) / 16;
-        else if (meInfo->width == 16 && meInfo->height == 32) puSize = PU16x32;
-        else if (meInfo->width == 16 && meInfo->height == 16) puSize = PU16x16;
-        else if (meInfo->width == 16 && meInfo->height == 12) puSize = PU16x12, y = (m_ctbPelY + meInfo->posy + 4) /  8;
-        else if (meInfo->width == 16 && meInfo->height ==  8) puSize = PU16x8;
-        else if (meInfo->width == 16 && meInfo->height ==  4) puSize = PU16x4,  y = (m_ctbPelY + meInfo->posy) /  8;
-        else if (meInfo->width == 12 && meInfo->height == 16) puSize = PU12x16, x = (m_ctbPelX + meInfo->posx + 4) /  8;
-        else if (meInfo->width ==  8 && meInfo->height == 32) puSize = PU8x32,  x = (m_ctbPelX + meInfo->posx) / 16;
-        else if (meInfo->width ==  8 && meInfo->height == 16) puSize = PU8x16;
-        else if (meInfo->width ==  8 && meInfo->height ==  8) puSize = PU8x8;
-        else if (meInfo->width ==  8 && meInfo->height ==  4) puSize = PU8x4;
-        else if (meInfo->width ==  4 && meInfo->height == 16) puSize = PU4x16,  x = (m_ctbPelX + meInfo->posx) /  8;
-        else if (meInfo->width ==  4 && meInfo->height ==  8) puSize = PU4x8;
+        if (meInfo->width == 32 && meInfo->height == 32)
+            cmMv = cmMv32x32[cmCurIdx], cmDist32 = cmDist32x32[cmCurIdx], pitchDist = (Ipp32s)dist32x32Pitch / sizeof(CmMbDist32), pitchMv = (Ipp32s)mv32x32Pitch / sizeof(mfxI16Pair);
+        else if (meInfo->width == 32 && meInfo->height == 16)
+            cmMv = cmMv32x16[cmCurIdx], cmDist32 = cmDist32x16[cmCurIdx], pitchDist = (Ipp32s)dist32x16Pitch / sizeof(CmMbDist32), pitchMv = (Ipp32s)mv32x16Pitch / sizeof(mfxI16Pair);
+        else if (meInfo->width == 16 && meInfo->height == 32)
+            cmMv = cmMv16x32[cmCurIdx], cmDist32 = cmDist16x32[cmCurIdx], pitchDist = (Ipp32s)dist16x32Pitch / sizeof(CmMbDist32), pitchMv = (Ipp32s)mv16x32Pitch / sizeof(mfxI16Pair);
+        else if (meInfo->width == 16 && meInfo->height == 16)
+            cmMv = cmMv16x16[cmCurIdx], cmDist16 = cmDist16x16[cmCurIdx], pitchDist = (Ipp32s)dist16x16Pitch / sizeof(CmMbDist16), pitchMv = (Ipp32s)mv16x16Pitch / sizeof(mfxI16Pair);
+        else if (meInfo->width == 16 && meInfo->height ==  8)
+            cmMv = cmMv16x8[cmCurIdx], cmDist16 = cmDist16x8[cmCurIdx], pitchDist = (Ipp32s)dist16x8Pitch / sizeof(CmMbDist16), pitchMv = (Ipp32s)mv16x8Pitch / sizeof(mfxI16Pair);
+        else if (meInfo->width ==  8 && meInfo->height == 16)
+            cmMv = cmMv8x16[cmCurIdx], cmDist16 = cmDist8x16[cmCurIdx], pitchDist = (Ipp32s)dist8x16Pitch / sizeof(CmMbDist16), pitchMv = (Ipp32s)mv8x16Pitch / sizeof(mfxI16Pair);
+        else if (meInfo->width ==  8 && meInfo->height ==  8)
+            cmMv = cmMv8x8[cmCurIdx], cmDist16 = cmDist8x8[cmCurIdx], pitchDist = (Ipp32s)dist8x8Pitch / sizeof(CmMbDist16), pitchMv = (Ipp32s)mv8x8Pitch / sizeof(mfxI16Pair);
+        else if (meInfo->width ==  8 && meInfo->height ==  4)
+            cmMv = cmMv8x4[cmCurIdx], cmDist16 = cmDist8x4[cmCurIdx], pitchDist = (Ipp32s)dist8x4Pitch / sizeof(CmMbDist16), pitchMv = (Ipp32s)mv8x4Pitch / sizeof(mfxI16Pair);
+        else if (meInfo->width ==  4 && meInfo->height ==  8)
+            cmMv = cmMv4x8[cmCurIdx], cmDist16 = cmDist4x8[cmCurIdx], pitchDist = (Ipp32s)dist4x8Pitch / sizeof(CmMbDist16), pitchMv = (Ipp32s)mv4x8Pitch / sizeof(mfxI16Pair);
 
-        m_data[meInfo->absPartIdx].refIdx[0] = -1;
-        m_data[meInfo->absPartIdx].refIdx[1] = -1;
-        m_data[meInfo->absPartIdx].size = (Ipp8u)(m_par->MaxCUSize>>meInfo->depth);
-        m_data[meInfo->absPartIdx].flags.skippedFlag = 0;
-        m_data[meInfo->absPartIdx].interDir = INTER_DIR_PRED_L0; // TODO fix with B
+        Ipp32u numParts = (m_par->NumPartInCU >> (meInfo->depth << 1));
+        Ipp32s blockIdx = meInfo->absPartIdx &~ (numParts - 1);
+        Ipp32s partAddr = meInfo->absPartIdx &  (numParts - 1);
+        Ipp32s curPUidx = (meInfo->splitMode == PART_SIZE_NxN) ? (partAddr / (numParts >> 2)) : !!partAddr;
 
-/*
-        if (readyMV32x32Event) {
-            MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "WaitForMVLast");
-            readyMV32x32Event->WaitForTaskFinished();
-            readyMV32x32Event = 0;
-        }
-*/
-        mfxI16Pair *mvData = 0;
-        if (puSize == PU32x32)
-        {
-            mvData = (mfxI16Pair *)((Ipp8u *)(cmMv32x32[cmCurIdx][0]) + y * mv32x32Pitch);
-        } else if (puSize == PU32x16)
-        {
-            mvData = (mfxI16Pair *)((Ipp8u *)(cmMv32x16[cmCurIdx][0]) + y * mv32x16Pitch);
-        } else if (puSize == PU16x32)
-        {
-            mvData = (mfxI16Pair *)((Ipp8u *)(cmMv16x32[cmCurIdx][0]) + y * mv16x32Pitch);
-        } else if (puSize == PU16x16)
-        {
-            mvData = (mfxI16Pair *)((Ipp8u *)(cmMv16x16[cmCurIdx][0]) + y * mv16x16Pitch);
-        } else if (puSize == PU16x8)
-        {
-            mvData = (mfxI16Pair *)((Ipp8u *)(cmMv16x8[cmCurIdx][0]) + y * mv16x8Pitch);
-        } else if (puSize == PU8x16)
-        {
-            mvData = (mfxI16Pair *)((Ipp8u *)(cmMv8x16[cmCurIdx][0]) + y * mv8x16Pitch);
-        } else if (puSize == PU8x8)
-        {
-            mvData = (mfxI16Pair *)((Ipp8u *)(cmMv8x8[cmCurIdx][0]) + y * mv8x8Pitch);
-        } else if (puSize == PU8x4)
-        {
-            mvData = (mfxI16Pair *)((Ipp8u *)(cmMv8x4[cmCurIdx][0]) + y * mv8x4Pitch);
-        } else if (puSize == PU4x8)
-        {
-            mvData = (mfxI16Pair *)((Ipp8u *)(cmMv4x8[cmCurIdx][0]) + y * mv4x8Pitch);
-        }
+        MVPInfo predInfo[2 * MAX_NUM_REF_IDX];
+        MVPInfo mergeInfo;
+        GetPuMvPredictorInfo(blockIdx, partAddr, meInfo->splitMode, curPUidx, predInfo, mergeInfo);
 
-        meInfo->MV[0].mvx = mvData[x].x;
-        meInfo->MV[0].mvy = mvData[x].y;
+        H265MV mvRefBest[2][MAX_NUM_REF_IDX] = {};
+        Ipp32s costRefBest[2][MAX_NUM_REF_IDX] = { { INT_MAX }, { INT_MAX } };
+        Ipp32s mvCostRefBest[2][MAX_NUM_REF_IDX] = {};
+        Ipp32s bitsRefBest[2][MAX_NUM_REF_IDX] = {};
+        Ipp32s refIdxBest[2] = {};
 
-        meInfo->refIdx[0] = 0;
-        meInfo->refIdx[1] = -1;
-        int bestCostInter = INT_MAX;
-        meInfo->interDir = INTER_DIR_PRED_L0;
+        Ipp32s predIdxBits[3];
+        GetPredIdxBits(meInfo->splitMode, (m_cslice->slice_type == P_SLICE), curPUidx, lastPredIdx, predIdxBits);
 
-        for (Ipp8s refIdx = 0; refIdx < m_cslice->num_ref_idx[0]; refIdx++)
-        {
-            H265MV mv[2];
-            if (puSize == PU32x32)
-            {
-                mvData = (mfxI16Pair *)((Ipp8u *)(cmMv32x32[cmCurIdx][refIdx]) + y * mv32x32Pitch);
-            } else if (puSize == PU32x16)
-            {
-                mvData = (mfxI16Pair *)((Ipp8u *)(cmMv32x16[cmCurIdx][refIdx]) + y * mv32x16Pitch);
-            } else if (puSize == PU16x32)
-            {
-                mvData = (mfxI16Pair *)((Ipp8u *)(cmMv16x32[cmCurIdx][refIdx]) + y * mv16x32Pitch);
-            } else if (puSize == PU16x16)
-            {
-                mvData = (mfxI16Pair *)((Ipp8u *)(cmMv16x16[cmCurIdx][refIdx]) + y * mv16x16Pitch);
-            } else if (puSize == PU16x8)
-            {
-                mvData = (mfxI16Pair *)((Ipp8u *)(cmMv16x8[cmCurIdx][refIdx]) + y * mv16x8Pitch);
-            } else if (puSize == PU8x16)
-            {
-                mvData = (mfxI16Pair *)((Ipp8u *)(cmMv8x16[cmCurIdx][refIdx]) + y * mv8x16Pitch);
-            } else if (puSize == PU8x8)
-            {
-                mvData = (mfxI16Pair *)((Ipp8u *)(cmMv8x8[cmCurIdx][refIdx]) + y * mv8x8Pitch);
-            } else if (puSize == PU8x4)
-            {
-                mvData = (mfxI16Pair *)((Ipp8u *)(cmMv8x4[cmCurIdx][refIdx]) + y * mv8x4Pitch);
-            } else if (puSize == PU4x8)
-            {
-                mvData = (mfxI16Pair *)((Ipp8u *)(cmMv4x8[cmCurIdx][refIdx]) + y * mv4x8Pitch);
-            }
-           
-            mv[0].mvx = mvData[x].x;
-            mv[0].mvy = mvData[x].y;
+        Ipp32s numRefIdx = m_cslice->num_ref_idx[0];
+        for (Ipp32s refIdx = 0; refIdx < numRefIdx; refIdx++) {
 
-            {
-                H265MV MV;
-                MVPInfo pInfo[2*MAX_NUM_REF_IDX];
-                MVPInfo mergeInfo;
-                Ipp32u num_parts = ( m_par->NumPartInCU >> (meInfo->depth<<1) );
-                Ipp32s blockIdx = meInfo->absPartIdx &~ (num_parts-1);
-                Ipp32s partAddr = meInfo->absPartIdx &  (num_parts-1);
-                Ipp32s curPUidx = (partAddr==0) ? 0 : ((meInfo->splitMode!=PART_SIZE_NxN) ? 1 : (partAddr / (num_parts>>2)) ); // TODO remove division
-                GetPuMvPredictorInfo(blockIdx, partAddr, meInfo->splitMode, curPUidx, pInfo, mergeInfo);
+            H265MV mvBest;
+            Ipp32s costBest = INT_MAX;
+            Ipp32s mvCostBest = 0;
 
-                if (meInfo->width > 16 || meInfo->height > 16)
-                {
-/*
-                    if (readyRefine16x32Event) {
-                        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "WaitForRefineLast");
-                        readyRefine16x32Event->WaitForTaskFinished();
-                        readyRefine16x32Event = 0;
-                    }
-*/
-                    for (short dy = -1, sadIdx = 0; dy <= 1; dy++) {
-                        for (short dx = -1; dx <= 1; dx++, sadIdx++) {
-                            MV.mvx = mv[0].mvx + dx;
-                            MV.mvy = mv[0].mvy + dy;
-                            int dist;
-                            if (puSize == PU32x32) {
-                                CmMbDist32 *dist32x32line = (CmMbDist32 *)((Ipp8u *)(cmDist32x32[cmCurIdx][refIdx]) + y * dist32x32Pitch);
-                                dist = dist32x32line[x].dist[sadIdx];
-                            } else if (puSize == PU32x16)
-                            {
-                                CmMbDist32 *dist32x16line = (CmMbDist32 *)((Ipp8u *)(cmDist32x16[cmCurIdx][refIdx]) + y * dist32x16Pitch);
-                                dist = dist32x16line[x].dist[sadIdx];
-                            } else if (puSize == PU16x32)
-                            {
-                                CmMbDist32 *dist16x32line = (CmMbDist32 *)((Ipp8u *)(cmDist16x32[cmCurIdx][refIdx]) + y * dist16x32Pitch);
-                                dist = dist16x32line[x].dist[sadIdx];
-                            }
-
-                            dist += MvCost1RefLog(MV, refIdx, pInfo, 0);
-                            if (bestCostInter > dist)
-                            {
-                                bestCostInter = dist;
-                                meInfo->MV[0] = MV;
-                                meInfo->refIdx[0] = refIdx;
-                            }
+            if (meInfo->width > 16 || meInfo->height > 16) {
+                H265MV mvCenter = { cmMv[refIdx][y * pitchMv + x].x, cmMv[refIdx][y * pitchMv + x].y };
+                for (Ipp16s sadIdx = 0, dy = -1; dy <= 1; dy++) {
+                    for (Ipp16s dx = -1; dx <= 1; dx++, sadIdx++) {
+                        H265MV mv = { mvCenter.mvx + dx, mvCenter.mvy + dy };
+                        Ipp32s mvCost = MvCost1RefLog(mv, refIdx, predInfo, 0);
+                        Ipp32s cost = cmDist32[refIdx][y * pitchDist + x].dist[sadIdx] + mvCost;
+                        if (costBest > cost) {
+                            costBest = cost;
+                            mvBest = mv;
+                            mvCostBest = mvCost;
                         }
-                    }
-                } else if (m_cslice->num_ref_idx[0] > 1) { // for mref only. otherwise they are already set
-                    // 16x16 and less
-                    MV.mvx = mv[0].mvx;
-                    MV.mvy = mv[0].mvy;
-                    int dist;
-                    if (puSize == PU16x16)
-                    {
-                        CmMbDist16 *dist16x16line = (CmMbDist16 *)((Ipp8u *)(cmDist16x16[cmCurIdx][refIdx]) + y * dist16x16Pitch);
-                        dist = dist16x16line[x].dist;
-                    } else if (puSize == PU16x8)
-                    {
-                        CmMbDist16 *dist16x8line = (CmMbDist16 *)((Ipp8u *)(cmDist16x8[cmCurIdx][refIdx]) + y * dist16x8Pitch);
-                        dist = dist16x8line[x].dist;
-                    } else if (puSize == PU8x16)
-                    {
-                        CmMbDist16 *dist8x16line = (CmMbDist16 *)((Ipp8u *)(cmDist8x16[cmCurIdx][refIdx]) + y * dist8x16Pitch);
-                        dist = dist8x16line[x].dist;
-                    } else if (puSize == PU8x8)
-                    {
-                        CmMbDist16 *dist8x8line = (CmMbDist16 *)((Ipp8u *)(cmDist8x8[cmCurIdx][refIdx]) + y * dist8x8Pitch);
-                        dist = dist8x8line[x].dist;
-                    } else if (puSize == PU8x4)
-                    {
-                        CmMbDist16 *dist8x4line = (CmMbDist16 *)((Ipp8u *)(cmDist8x4[cmCurIdx][refIdx]) + y * dist8x4Pitch);
-                        dist = dist8x4line[x].dist;
-                    } else if (puSize == PU4x8)
-                    {
-                        CmMbDist16 *dist4x8line = (CmMbDist16 *)((Ipp8u *)(cmDist4x8[cmCurIdx][refIdx]) + y * dist4x8Pitch);
-                        dist = dist4x8line[x].dist;
-                    }
-
-                    dist += MvCost1RefLog( MV, refIdx, pInfo, 0);
-                    if (bestCostInter > dist)
-                    {
-                        bestCostInter = dist;
-                        meInfo->MV[0] = MV;
-                        meInfo->refIdx[0] = refIdx;
                     }
                 }
             }
+            else {
+                mvBest.mvx = cmMv[refIdx][y * pitchMv + x].x;
+                mvBest.mvy = cmMv[refIdx][y * pitchMv + x].y;
+                mvCostBest = MvCost1RefLog(mvBest, refIdx, predInfo, 0);
+                costBest = cmDist16[refIdx][y * pitchDist + x].dist + mvCostBest;
+            }
+
+            mvRefBest[0][refIdx] = mvBest;
+            mvCostRefBest[0][refIdx] = 0;
+            costRefBest[0][refIdx] = costBest;
+            bitsRefBest[0][refIdx] = MVP_LX_FLAG_BITS + predIdxBits[0];
+            bitsRefBest[0][refIdx] += GetFlBits(refIdx, numRefIdx);
+            costRefBest[0][refIdx] += (Ipp32s)(bitsRefBest[0][refIdx] * m_cslice->rd_lambda_sqrt + 0.5);
+
+            if (costRefBest[0][refIdxBest[0]] > costRefBest[0][refIdx])
+                refIdxBest[0] = refIdx;
         }
-    } else
-    {
+
+        meInfo->interDir = INTER_DIR_PRED_L0;
+        meInfo->refIdx[0] = (Ipp8s)refIdxBest[0];
+        meInfo->refIdx[1] = -1;
+        meInfo->MV[0] = mvRefBest[0][refIdxBest[0]];
+        meInfo->MV[1] = MV_ZERO;
+    }
+    else {
         RefPicList *refPicList = m_currFrame->m_refPicList;
         Ipp32u numParts = (m_par->NumPartInCU >> (meInfo->depth << 1));
         Ipp32s blockIdx = meInfo->absPartIdx &~ (numParts - 1);
