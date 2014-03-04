@@ -13,13 +13,11 @@
 #undef APSTUDIO_READONLY_SYMBOLS
 
 /////////////////////////////////////////////////////////////////////////////
-// English (U.S.) resources
+// English (United States) resources
 
 #if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)
-#ifdef _WIN32
 LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
 #pragma code_page(1252)
-#endif //_WIN32
 
 #ifdef APSTUDIO_INVOKED
 /////////////////////////////////////////////////////////////////////////////
@@ -73,7 +71,7 @@ BEGIN
             VALUE "FileDescription", "Intel® Media SDK library"
             VALUE "FileVersion", "3.11.5.20"
             VALUE "InternalName", "libmfxhw"
-            VALUE "LegalCopyright", "Copyright© 2003-2011 Intel Corporation"
+            VALUE "LegalCopyright", "Copyright© 2003-2014 Intel Corporation"
             VALUE "LegalTrademarks", "Intel Corporation"
             VALUE "ProductName", "Intel® Media SDK"
             VALUE "ProductVersion", "0.0.0.32987"
@@ -85,7 +83,7 @@ BEGIN
     END
 END
 
-#endif    // English (U.S.) resources
+#endif    // English (United States) resources
 /////////////////////////////////////////////////////////////////////////////
 
 

@@ -1,6 +1,6 @@
 //{{NO_DEPENDENCIES}}
 // Microsoft Visual C++ generated include file.
-// Used by libmfxhw_plugin_hevcd.rc
+// Used by libmfxsw_plugin_hevce.rc
 //
 
 // Next default values for new objects
