@@ -296,8 +296,39 @@ mfxStatus MFXVideoVPP_RunFrameVPPAsync(mfxSession session, mfxFrameSurface1 *in,
 #ifdef MFX_ENABLE_USER_VPP
       if (session->m_plgVPP.get())
       {
-          mfxRes = session->m_plgVPP->VPPFrameCheck(in, out, aux, syncp);
-          //mfxRes = static_cast<VideoUSERPlugin*>(session->m_plgVPP.get())->VPPFrameCheck(in, out, aux, (MFX_ENTRY_POINT*) syncp);
+          MFX_TASK task;
+          mfxSyncPoint syncPoint = NULL;
+          *syncp = NULL;
+          memset(&task, 0, sizeof(MFX_TASK));
+
+          mfxRes = session->m_plgVPP->VPPFrameCheck(in, out, aux, &task.entryPoint);
+
+          if (task.entryPoint.pRoutine)
+          {
+              mfxStatus mfxAddRes;
+  
+              task.pOwner = session->m_plgVPP.get();
+              task.priority = session->m_priority;
+              task.threadingPolicy = session->m_plgVPP->GetThreadingPolicy();
+              // fill dependencies
+              task.pSrc[0] = in;
+              task.pDst[0] = out;
+              if (MFX_ERR_MORE_DATA_RUN_TASK == mfxRes)
+                task.pDst[0] = NULL;
+  
+              #ifdef MFX_TRACE_ENABLE
+              task.nParentId = MFX_AUTO_TRACE_GETID();
+              task.nTaskId = MFX::CreateUniqId() + MFX_TRACE_ID_VPP;
+              #endif
+  
+              // register input and call the task
+              mfxAddRes = session->m_pScheduler->AddTask(task, &syncPoint);
+              if (MFX_ERR_NONE != mfxAddRes)
+              {
+                  return mfxAddRes;
+              }
+              *syncp = syncPoint;
+          }
       }
       else
       {

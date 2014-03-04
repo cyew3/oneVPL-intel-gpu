@@ -307,8 +307,21 @@ mfxStatus VideoUSERPlugin::EncodeFrameCheck(mfxEncodeCtrl *ctrl, mfxFrameSurface
     return MFX_ERR_NONE;
 }
 
-mfxStatus VideoUSERPlugin::VPPFrameCheck(mfxFrameSurface1 *in, mfxFrameSurface1 *out, mfxExtVppAuxData *aux, mfxSyncPoint *syncp){
-    return m_plugin.Video->VPPFrameSubmit(m_plugin.pthis, in, out, aux, (mfxThreadTask*) syncp);
+mfxStatus VideoUSERPlugin::VPPFrameCheck(mfxFrameSurface1 *in, mfxFrameSurface1 *out, mfxExtVppAuxData *aux, MFX_ENTRY_POINT *ep){
+    mfxStatus mfxRes;
+    mfxThreadTask userParam;
+
+    // check the parameters with user object
+    mfxRes =  m_plugin.Video->VPPFrameSubmit(m_plugin.pthis, in, out, aux, &userParam);
+    if (!(MFX_ERR_NONE == mfxRes || MFX_ERR_MORE_SURFACE == mfxRes))
+    {
+        return mfxRes;
+    }
+    // fill the 'entry point' structure
+    *ep = m_entryPoint;
+    ep->pParam = userParam;
+
+    return MFX_ERR_NONE;
 }
 
 mfxStatus VideoUSERPlugin::GetVideoParam(mfxVideoParam *par) {

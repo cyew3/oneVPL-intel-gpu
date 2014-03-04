@@ -64,7 +64,7 @@ public:
         mfxEncodeInternalParams *pInternalParams,*/
         MFX_ENTRY_POINT *pEntryPoint) ;
 
-    mfxStatus VPPFrameCheck(mfxFrameSurface1 *in, mfxFrameSurface1 *out, mfxExtVppAuxData *aux, mfxSyncPoint *syncp) ;
+    mfxStatus VPPFrameCheck(mfxFrameSurface1 *in, mfxFrameSurface1 *out, mfxExtVppAuxData *aux, MFX_ENTRY_POINT *ep) ;
 
     mfxStatus EncodeFrame(mfxEncodeCtrl *ctrl, mfxEncodeInternalParams *pInternalParams, mfxFrameSurface1 *surface, mfxBitstream *bs) ;
     mfxStatus CancelFrame(mfxEncodeCtrl *ctrl, mfxEncodeInternalParams *pInternalParams, mfxFrameSurface1 *surface, mfxBitstream *bs) ;
@@ -151,9 +151,9 @@ protected:
             mfxStatus VPPFrameCheck(mfxFrameSurface1 *in,
             mfxFrameSurface1 *out,
             mfxExtVppAuxData *aux,
-            mfxSyncPoint *syncp)
+            MFX_ENTRY_POINT *ep)
         {
-            return m_plg->VPPFrameCheck(in, out, aux, syncp);
+            return m_plg->VPPFrameCheck(in, out, aux, ep);
         }
         virtual 
             mfxStatus VppFrameCheck(
