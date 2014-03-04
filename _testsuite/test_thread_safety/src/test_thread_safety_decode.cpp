@@ -108,8 +108,8 @@ mfxStatus OutputYuvTester::RenderFrame(mfxFrameSurface1 *surface, mfxEncodeCtrl 
     }
     else if (m_video.mfx.FrameInfo.FourCC == MFX_FOURCC_NV12)
     {
-        mfxU8 buf[4096];
-        if (surface->Info.CropW > 4096)
+        mfxU8 buf[8192];
+        if (surface->Info.CropW > 8192)
         {
             return MFX_ERR_UNSUPPORTED;
         }
