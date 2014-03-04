@@ -16,6 +16,7 @@
 
 #include "mfx_vp8_encode_utils_hw.h"
 #include "mfx_vp8_encode_ddi_hw.h"
+#include <queue>
 
 #define MFX_CHECK_WITH_ASSERT(EXPR, ERR) { assert(EXPR); MFX_CHECK(EXPR, ERR); }
 
@@ -59,6 +60,8 @@ namespace MFX_VP8ENC
     public:
         sDDIFrames ddi_frames;
         mfxU8         modeCosts[4];
+        mfxU64        prevFrameSize;
+        mfxU8         brcUpdateDelay;
 
     public:
         TaskHybridDDI(): 
@@ -101,6 +104,13 @@ namespace MFX_VP8ENC
             return TaskHybrid::FreeTask();
         }
     };
+
+    struct EncodedFrameInfo
+    {
+        mfxU64 m_frameOrder;
+        mfxU64 m_encodedFrameSize;
+    };
+
     class TaskManagerHybridPakDDI : public TaskManager<TaskHybridDDI>
     {
     public:
@@ -123,12 +133,17 @@ namespace MFX_VP8ENC
         bool            m_bUseSegMap;
         InternalFrames  m_SegMapDDI_hw;
 
+        mfxU16           m_maxBrcUpdateDelay;
+
+        std::queue<EncodedFrameInfo> m_cachedFrameInfo;
+
     public:
 
         inline
         mfxStatus Init( VideoCORE* pCore, mfxVideoParam *par, mfxU32 reconFourCC)
         {
             MFX_CHECK_STS(BaseClass::Init(pCore,par,true,reconFourCC));
+            m_maxBrcUpdateDelay = par->AsyncDepth;
             return MFX_ERR_NONE;
         }
 
@@ -276,13 +291,63 @@ namespace MFX_VP8ENC
         inline 
         mfxStatus Reset(mfxVideoParam *par)
         {
+            m_maxBrcUpdateDelay = par->AsyncDepth;
             return BaseClass::Reset(par);
         }
         inline
         mfxStatus InitTask(mfxFrameSurface1* pSurface, mfxBitstream* pBitstream, Task* & pOutTask)
         {
             /*printf("TaskManagerHybridPakDDI InitTask: core %p\n", this->m_pCore);*/
-            return BaseClass::InitTask(pSurface,pBitstream,pOutTask);
+            if (m_frameNum && m_cachedFrameInfo.size() == 0)
+            {
+                return MFX_WRN_DEVICE_BUSY;
+            }
+
+            mfxStatus sts = BaseClass::InitTask(pSurface,pBitstream,pOutTask);
+            if (pOutTask->m_frameOrder == 0)
+            {
+                return MFX_ERR_NONE;
+            }
+
+            mfxU64 minFrameOrderToUpdateBrc = 0;
+            if (pOutTask->m_frameOrder > m_maxBrcUpdateDelay)
+            {
+                minFrameOrderToUpdateBrc = pOutTask->m_frameOrder - m_maxBrcUpdateDelay;
+            }
+            EncodedFrameInfo newestFrame = m_cachedFrameInfo.back();
+            if (newestFrame.m_frameOrder < minFrameOrderToUpdateBrc)
+            {
+                return MFX_ERR_UNDEFINED_BEHAVIOR;
+            }
+            TaskHybridDDI *pHybridTask = (TaskHybridDDI*)pOutTask;
+            pHybridTask->prevFrameSize = newestFrame.m_encodedFrameSize;
+            pHybridTask->brcUpdateDelay = mfxU8(pOutTask->m_frameOrder - newestFrame.m_frameOrder);
+
+            while (m_cachedFrameInfo.size() > 1)
+            {
+                // remove cached information about all frames older than latest
+                m_cachedFrameInfo.pop();
+            }
+            if (pHybridTask->brcUpdateDelay == m_maxBrcUpdateDelay)
+            {
+                // remove latest frame too
+                m_cachedFrameInfo.pop();
+            }
+
+            return sts;
+        }
+        inline
+        mfxStatus RegisterTaskOutput(Task &task)
+        {
+            if (task.m_status != READY)
+                return MFX_ERR_UNDEFINED_BEHAVIOR;
+
+            EncodedFrameInfo justEncodedFrame;
+            justEncodedFrame.m_frameOrder = task.m_frameOrder;
+            justEncodedFrame.m_encodedFrameSize = task.m_pBitsteam->DataLength;
+            m_cachedFrameInfo.push(justEncodedFrame);
+
+            return MFX_ERR_NONE;
         }
         inline 
         mfxStatus SubmitTask(Task*  pTask, sFrameParams *pParams)

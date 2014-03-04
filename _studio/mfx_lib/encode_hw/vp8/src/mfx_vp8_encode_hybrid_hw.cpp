@@ -592,6 +592,7 @@ namespace MFX_VP8ENC
 
         {
             UMC::AutomaticUMCMutex guard(m_taskMutex);
+            m_taskManager.RegisterTaskOutput(*pTask);
             pTask->FreeTask();
         }
 
