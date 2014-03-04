@@ -59,6 +59,16 @@ enum
     COL_TU_LT_INTER      = 3
 };
 
+struct H265PartialEdgeData
+{
+    Ipp8u deblockP  : 1;
+    Ipp8u deblockQ  : 1;
+    Ipp8s strength  : 3;
+
+    Ipp8s qp;
+}; // sizeof - 4 bytes
+
+
 // picture coding data class
 class H265FrameCodingData
 {
@@ -76,6 +86,7 @@ public:
 
     H265CodingUnit **m_CU;
     std::vector<H265CodingUnitData> m_cuData;
+    Ipp8u * m_cumulativeMemoryPtr;
 
     Ipp32u* m_CUOrderMap;                   //the map of LCU raster scan address relative to LCU encoding order
     Ipp32u* m_TileIdxMap;                   //the map of the tile index relative to LCU raster scan address
@@ -85,7 +96,7 @@ public:
     H265SampleAdaptiveOffset m_SAO;
 
     // Deblocking data
-    MFX_HEVC_PP::H265EdgeData *m_edge;
+    H265PartialEdgeData *m_edge;
     Ipp32s m_edgesInCTBSize, m_edgesInFrameWidth;
 
 public:
@@ -120,24 +131,8 @@ public:
     void create (Ipp32s iPicWidth, Ipp32s iPicHeight, Ipp32u uiMaxWidth, Ipp32u uiMaxHeight, Ipp32u uiMaxDepth);
     void destroy();
 
-    H265FrameCodingData()
-        : m_WidthInCU(0)
-        , m_HeightInCU(0)
-        , m_MaxCUWidth(0)
-        , m_NumCUsInFrame(0)
-        , m_CU(0)
-        , m_CUOrderMap(0)
-        , m_TileIdxMap(0)
-        , m_InverseCUOrderMap(0)
-        , m_edge(0)
-        , m_colocatedInfo(0)
-    {
-    }
-
-    ~H265FrameCodingData()
-    {
-        this->destroy();
-    }
+    H265FrameCodingData();
+    ~H265FrameCodingData();
 
     H265CodingUnit*  getCU(Ipp32u CUAddr)
     {

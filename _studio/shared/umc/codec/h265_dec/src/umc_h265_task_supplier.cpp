@@ -1108,21 +1108,21 @@ UMC::Status TaskSupplier_H265::xDecodePPS(H265Bitstream &bs)
     Ipp32u WidthInLCU = sps->WidthInCU;
     Ipp32u HeightInLCU = sps->HeightInCU;
 
-    pps.m_CtbAddrRStoTS = new Ipp32u[WidthInLCU * HeightInLCU + 1];
+    pps.m_CtbAddrRStoTS = h265_new_array_throw<Ipp32u>(WidthInLCU * HeightInLCU + 1);
     if (NULL == pps.m_CtbAddrRStoTS)
     {
         pps.Reset();
         return UMC::UMC_ERR_ALLOC;
     }
 
-    pps.m_CtbAddrTStoRS = new Ipp32u[WidthInLCU * HeightInLCU + 1];
+    pps.m_CtbAddrTStoRS = h265_new_array_throw<Ipp32u>(WidthInLCU * HeightInLCU + 1);
     if (NULL == pps.m_CtbAddrTStoRS)
     {
         pps.Reset();
         return UMC::UMC_ERR_ALLOC;
     }
 
-    pps.m_TileIdx = new Ipp32u[WidthInLCU * HeightInLCU + 1];
+    pps.m_TileIdx = h265_new_array_throw<Ipp32u>(WidthInLCU * HeightInLCU + 1);
     if (NULL == pps.m_TileIdx)
     {
         pps.Reset();
@@ -1134,14 +1134,14 @@ UMC::Status TaskSupplier_H265::xDecodePPS(H265Bitstream &bs)
         Ipp32u colums = pps.num_tile_columns;
         Ipp32u rows = pps.num_tile_rows;
 
-        Ipp32u *colBd = new Ipp32u[colums];
+        Ipp32u *colBd = h265_new_array_throw<Ipp32u>(colums);
         if (NULL == colBd)
         {
             pps.Reset();
             return UMC::UMC_ERR_ALLOC;
         }
 
-        Ipp32u *rowBd = new Ipp32u[rows];
+        Ipp32u *rowBd = h265_new_array_throw<Ipp32u>(rows);
         if (NULL == rowBd)
         {
             pps.Reset();
@@ -1152,13 +1152,13 @@ UMC::Status TaskSupplier_H265::xDecodePPS(H265Bitstream &bs)
         {
             Ipp32u lastDiv, i;
 
-            pps.column_width = new Ipp32u[colums];
+            pps.column_width = h265_new_array_throw<Ipp32u>(colums);
             if (NULL == pps.column_width)
             {
                 pps.Reset();
                 return UMC::UMC_ERR_ALLOC;
             }
-            pps.row_height = new Ipp32u[rows];
+            pps.row_height = h265_new_array_throw<Ipp32u>(rows);
             if (NULL == pps.row_height)
             {
                 pps.Reset();

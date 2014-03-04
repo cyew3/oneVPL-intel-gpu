@@ -27,14 +27,14 @@ namespace UMC_HEVC_DECODER
 
 H265TrQuant::H265TrQuant()
 {
-    m_residualsBuffer = (H265CoeffsCommon*)ippMalloc(sizeof(H265CoeffsCommon) * MAX_CU_SIZE * MAX_CU_SIZE * 2);//aligned 64 bytes
+    m_residualsBuffer = h265_new_array_throw<H265CoeffsCommon>(MAX_CU_SIZE * MAX_CU_SIZE * 2);//aligned 64 bytes
     m_residualsBuffer1 = m_residualsBuffer + MAX_CU_SIZE * MAX_CU_SIZE;
     m_context = 0;
 }
 
 H265TrQuant::~H265TrQuant()
 {
-    ippFree(m_residualsBuffer);
+    delete[] m_residualsBuffer;
 }
 
 

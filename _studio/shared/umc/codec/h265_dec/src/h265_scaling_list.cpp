@@ -28,7 +28,7 @@ void H265ScalingList::init()
         size_t scalingListNum = g_scalingListNum[sizeId];
         size_t scalingListSize = g_scalingListSize[sizeId];
 
-        Ipp16s* pScalingList = new Ipp16s[scalingListNum * scalingListSize * SCALING_LIST_REM_NUM];
+        Ipp16s* pScalingList = h265_new_array_throw<Ipp16s>(scalingListNum * scalingListSize * SCALING_LIST_REM_NUM);
 
         for (Ipp32u listId = 0; listId < scalingListNum; listId++)
         {

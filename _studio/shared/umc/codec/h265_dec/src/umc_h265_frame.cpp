@@ -44,9 +44,7 @@ H265DecoderFrame::H265DecoderFrame(UMC::MemoryAllocator *pMemoryAllocator, Heap_
     m_PicOrderCnt = 0;
     m_CodingData = NULL; //CODINGDATA2
     m_sizeOfSAOData = 0;
-    m_saoLcuParam[0] = NULL;
-    m_saoLcuParam[1] = NULL;
-    m_saoLcuParam[2] = NULL;
+    m_saoLcuParam = 0;
     // set memory managment tools
     m_pMemoryAllocator = pMemoryAllocator;
 
@@ -81,17 +79,8 @@ H265DecoderFrame::~H265DecoderFrame()
     deallocate();
     deallocateCodingData();
 
-    if (m_sizeOfSAOData != 0)
-    {
-        delete[] m_saoLcuParam[0];
-        m_saoLcuParam[0] = NULL;
-
-        delete[] m_saoLcuParam[1];
-        m_saoLcuParam[1] = NULL;
-
-        delete[] m_saoLcuParam[2];
-        m_saoLcuParam[2] = NULL;
-    }
+    delete[] m_saoLcuParam;
+    m_saoLcuParam = 0;
 }
 
 void H265DecoderFrame::AddReference(RefCounter * reference)
@@ -368,8 +357,8 @@ void H265DecoderFrame::allocateCodingData(const H265SeqParamSet* sps, const H265
 
         Ipp32s NumCUInWidth = m_CodingData->m_WidthInCU;
         Ipp32s NumCUInHeight = m_CodingData->m_HeightInCU;
-        m_cuOffsetY = new Ipp32s[NumCUInWidth * NumCUInHeight];
-        m_cuOffsetC = new Ipp32s[NumCUInWidth * NumCUInHeight];
+        m_cuOffsetY = h265_new_array_throw<Ipp32s>(NumCUInWidth * NumCUInHeight);
+        m_cuOffsetC = h265_new_array_throw<Ipp32s>(NumCUInWidth * NumCUInHeight);
         for (Ipp32s cuRow = 0; cuRow < NumCUInHeight; cuRow++)
         {
             for (Ipp32s cuCol = 0; cuCol < NumCUInWidth; cuCol++)
@@ -382,8 +371,8 @@ void H265DecoderFrame::allocateCodingData(const H265SeqParamSet* sps, const H265
             }
         }
 
-        m_buOffsetY = new Ipp32s[(Ipp32s)(1 << (2 * MaxCUDepth))];
-        m_buOffsetC = new Ipp32s[(Ipp32s)(1 << (2 * MaxCUDepth))];
+        m_buOffsetY = h265_new_array_throw<Ipp32s>(1 << (2 * MaxCUDepth));
+        m_buOffsetC = h265_new_array_throw<Ipp32s>(1 << (2 * MaxCUDepth));
         for (Ipp32s buRow = 0; buRow < (1 << MaxCUDepth); buRow++)
         {
             for (Ipp32s buCol = 0; buCol < (1 << MaxCUDepth); buCol++)
@@ -408,22 +397,10 @@ void H265DecoderFrame::allocateCodingData(const H265SeqParamSet* sps, const H265
         Ipp32s size = m_CodingData->m_WidthInCU * m_CodingData->m_HeightInCU;
         if (m_sizeOfSAOData < size)
         {
-            if (m_sizeOfSAOData != 0)
-            {
-                delete[] m_saoLcuParam[0];
-                m_saoLcuParam[0] = NULL;
+            delete[] m_saoLcuParam;
+            m_saoLcuParam = 0;
 
-                delete[] m_saoLcuParam[1];
-                m_saoLcuParam[1] = NULL;
-
-                delete[] m_saoLcuParam[2];
-                m_saoLcuParam[2] = NULL;
-            }
-
-            m_saoLcuParam[0] = new SAOLCUParam[size];
-            m_saoLcuParam[1] = new SAOLCUParam[size];
-            m_saoLcuParam[2] = new SAOLCUParam[size];
-
+            m_saoLcuParam = h265_new_array_throw<SAOLCUParam>(size);
             m_sizeOfSAOData = size;
         }
     }

@@ -80,7 +80,7 @@ public:
 
     H265CodingUnitData         *m_cuData;
 
-protected:
+public:
     Ipp8u*                    m_cbf[3];         // array of coded block flags (CBF)
 
     Ipp8u*                    m_lumaIntraDir;    // array of intra directions (luma)
@@ -143,8 +143,6 @@ public:
     bool isLosslessCoded(Ipp32u absPartIdx);
 
 protected:
-
-    Ipp8u* m_cumulativeMemoryPtr;
 
     // compute scaling factor from POC difference
     Ipp32s GetDistScaleFactor(Ipp32s DiffPocB, Ipp32s DiffPocD);

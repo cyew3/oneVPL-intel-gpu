@@ -251,8 +251,7 @@ enum ScalingListSize
 
 enum SAOTypeLen
 {
-    SAO_EO_LEN    = 4,
-    SAO_BO_LEN    = 4,
+    SAO_OFFSETS_LEN = 4,
     SAO_MAX_BO_CLASSES = 32
 };
 
@@ -266,15 +265,22 @@ enum SAOType
     MAX_NUM_SAO_TYPE
 };
 
+#pragma pack(1)
+
 struct SAOLCUParam
 {
-    bool   m_mergeUpFlag;
-    bool   m_mergeLeftFlag;
-    Ipp32s m_typeIdx;
-    Ipp32s m_subTypeIdx;
-    Ipp32s m_offset[4];
-    Ipp32s m_length;
+    struct
+    {
+        Ipp8u m_mergeUpFlag : 1;
+        Ipp8u m_mergeLeftFlag : 1;
+    };
+
+    Ipp8s m_typeIdx[2];
+    Ipp8s m_subTypeIdx[3];
+    Ipp32s m_offset[3][4];
 };
+
+#pragma pack()
 
 class H265SampleAdaptiveOffsetBase
 {
@@ -340,7 +346,7 @@ protected:
     bool                m_isInitialized;
 
     void SetOffsetsLuma(SAOLCUParam &saoLCUParam, Ipp32s typeIdx);
-    void SetOffsetsChroma(SAOLCUParam &saoLCUParamCb, SAOLCUParam &saoLCUParamCr, Ipp32s typeIdx);
+    void SetOffsetsChroma(SAOLCUParam &saoLCUParamCb, Ipp32s typeIdx);
 
     void createNonDBFilterInfo();
     void PCMCURestoration(H265CodingUnit* pcCU, Ipp32u AbsZorderIdx, Ipp32u Depth);
@@ -349,7 +355,7 @@ protected:
     void processSaoCuOrgChroma(Ipp32s Addr, Ipp32s PartIdx, PlaneType *tmpL);
     void processSaoCuChroma(Ipp32s addr, Ipp32s saoType, PlaneType *tmpL);
     void processSaoUnits(Ipp32s first, Ipp32s toProcess);
-    void processSaoLine(SAOLCUParam* saoLCUParam, SAOLCUParam* saoLCUParamCb, SAOLCUParam* saoLCUParamCr, Ipp32s firstCU, Ipp32s lastCU);
+    void processSaoLine(SAOLCUParam* saoLCUParam, Ipp32s firstCU, Ipp32s lastCU);
 };
 
 class H265SampleAdaptiveOffset
@@ -504,8 +510,6 @@ public:
 
     virtual void Free();
 };
-
-#pragma pack(16)
 
 class H265ScalingList
 {
@@ -1366,13 +1370,6 @@ public:
 private:
     Ipp32s m_Status;
 };
-
-
-#pragma pack(1)
-
-extern Ipp32s lock_failed_H265;
-
-#pragma pack()
 
 template <typename T>
 inline T * h265_new_array_throw(Ipp32s size)

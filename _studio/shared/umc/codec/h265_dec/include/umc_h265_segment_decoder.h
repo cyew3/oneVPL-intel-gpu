@@ -172,10 +172,8 @@ public:
                                     Ipp32s allowMergeLeft,
                                     Ipp32s allowMergeUp);
 
-    void parseSaoMaxUvlc(Ipp32u& val, Ipp32u maxSymbol);
-    void parseSaoUflc(Ipp32s length, Ipp32u&  riVal);
-    void parseSaoMerge(Ipp32u&  ruiVal);
-    void parseSaoTypeIdx(Ipp32u&  ruiVal);
+    Ipp32s parseSaoMaxUvlc(Ipp32s maxSymbol);
+    Ipp32s parseSaoTypeIdx();
     void parseSaoOffset(SAOLCUParam* psSaoLcuParam, Ipp32u compIdx);
 
     void ReadUnaryMaxSymbolCABAC(Ipp32u& uVal, Ipp32u CtxIdx, Ipp32s Offset, Ipp32u MaxSymbol);
@@ -255,13 +253,13 @@ public:
     void DeblockOneLCU(Ipp32s curLCUAddr);
     void DeblockOneCross(Ipp32s curPixelColumn, Ipp32s curPixelRow, bool isNeddAddHorDeblock);
 
-    template <Ipp32s direction>
-    void CalculateEdge(H265EdgeData * edge, Ipp32s x, Ipp32s y, bool diffTr);
+    template <Ipp32s direction, typename EdgeType>
+    void CalculateEdge(EdgeType * edge, Ipp32s x, Ipp32s y, bool diffTr);
 
     void DeblockCURecur(Ipp32u absPartIdx, Ipp32u depth);
     void DeblockTU(Ipp32u absPartIdx, Ipp32u depth);
 
-    inline void GetEdgeStrengthInter(H265MVInfo *mvinfoQ, H265MVInfo *mvinfoP, H265EdgeData *edge);
+    inline void GetEdgeStrengthInter(H265MVInfo *mvinfoQ, H265MVInfo *mvinfoP, H265PartialEdgeData *edge);
 
     bool m_DecodeDQPFlag;
     Ipp32u m_minCUDQPSize;

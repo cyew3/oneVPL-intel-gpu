@@ -25,8 +25,6 @@ namespace UMC_HEVC_DECODER
 // Constructor, destructor, create, destroy -------------------------------------------------------------
 H265CodingUnit::H265CodingUnit()
 {
-    m_cumulativeMemoryPtr = 0;
-
     m_Frame = 0;
     m_SliceHeader = 0;
     m_SliceIdx = -1;
@@ -53,21 +51,6 @@ void H265CodingUnit::create (H265FrameCodingData * frameCD, Ipp32s cuAddr)
     m_SliceHeader = NULL;
     m_NumPartition = frameCD->m_NumPartitions;
 
-    Ipp32s widthOnHeight = frameCD->m_MaxCUWidth * frameCD->m_MaxCUWidth;
-
-    m_cumulativeMemoryPtr = CumulativeArraysAllocation(8, // number of parameters
-                                32, // align
-                                &m_lumaIntraDir, sizeof(Ipp8u) * m_NumPartition,
-                                &m_chromaIntraDir, sizeof(Ipp8u) * m_NumPartition,
-
-                                &m_TrCoeffY, sizeof(H265CoeffsCommon) * widthOnHeight,
-                                &m_TrCoeffCb, sizeof(H265CoeffsCommon) * widthOnHeight / 4,
-                                &m_TrCoeffCr, sizeof(H265CoeffsCommon) * widthOnHeight / 4,
-
-                                &m_cbf[0], sizeof(Ipp8u) * m_NumPartition,
-                                &m_cbf[1], sizeof(Ipp8u) * m_NumPartition,
-                                &m_cbf[2], sizeof(Ipp8u) * m_NumPartition);
-
     m_cuData = &frameCD->m_cuData[m_NumPartition*cuAddr];
 
     m_rasterToPelX = frameCD->m_partitionInfo.m_rasterToPelX;
@@ -81,12 +64,6 @@ void H265CodingUnit::destroy()
 {
     m_Frame = NULL;
     m_SliceHeader = NULL;
-
-    if (m_cumulativeMemoryPtr)
-    {
-        CumulativeFree(m_cumulativeMemoryPtr);
-        m_cumulativeMemoryPtr = 0;
-    }
 }
 
 

@@ -91,6 +91,26 @@ void PartitionInfo::Init(const H265SeqParamSet* sps)
     InitRasterToPelXY(sps);
 }
 
+H265FrameCodingData::H265FrameCodingData()
+    : m_WidthInCU(0)
+    , m_HeightInCU(0)
+    , m_MaxCUWidth(0)
+    , m_NumCUsInFrame(0)
+    , m_CU(0)
+    , m_CUOrderMap(0)
+    , m_TileIdxMap(0)
+    , m_InverseCUOrderMap(0)
+    , m_edge(0)
+    , m_colocatedInfo(0)
+    , m_cumulativeMemoryPtr(0)
+{
+}
+
+H265FrameCodingData::~H265FrameCodingData()
+{
+    destroy();
+}
+
 void H265FrameCodingData::create(Ipp32s iPicWidth, Ipp32s iPicHeight, Ipp32u uiMaxWidth, Ipp32u uiMaxHeight, Ipp32u uiMaxDepth)
 {
     m_MaxCUDepth = (Ipp8u) uiMaxDepth;
@@ -106,16 +126,62 @@ void H265FrameCodingData::create(Ipp32s iPicWidth, Ipp32s iPicHeight, Ipp32u uiM
     m_HeightInCU = (iPicHeight % uiMaxHeight) ? iPicHeight / uiMaxHeight + 1 : iPicHeight / uiMaxHeight;
 
     m_NumCUsInFrame = m_WidthInCU * m_HeightInCU;
-    m_CU = new H265CodingUnit*[m_NumCUsInFrame + 1];
+    m_CU = h265_new_array_throw<H265CodingUnit*>(m_NumCUsInFrame + 1);
 
-    m_colocatedInfo = new H265MVInfo[m_NumCUsInFrame * m_NumPartitions];
+    m_colocatedInfo = h265_new_array_throw<H265MVInfo>(m_NumCUsInFrame * m_NumPartitions);
 
     m_cuData.resize(m_NumCUsInFrame*m_NumPartitions);
+
+    Ipp8u*                    cbf[3];         // array of coded block flags (CBF)
+
+    Ipp8u*                    lumaIntraDir;    // array of intra directions (luma)
+    Ipp8u*                    chromaIntraDir;  // array of intra directions (chroma)
+
+    H265CoeffsPtrCommon        trCoeffY;
+    H265CoeffsPtrCommon        trCoeffCb;
+    H265CoeffsPtrCommon        trCoeffCr;
+
+    Ipp32s widthOnHeight = m_MaxCUWidth * m_MaxCUWidth;
+
+    m_cumulativeMemoryPtr = CumulativeArraysAllocation(8, // number of parameters
+                                32, // align
+                                &lumaIntraDir, sizeof(Ipp8u) * m_NumPartitions * m_NumCUsInFrame,
+                                &chromaIntraDir, sizeof(Ipp8u) * m_NumPartitions * m_NumCUsInFrame,
+
+                                &trCoeffY, sizeof(H265CoeffsCommon) * widthOnHeight * m_NumCUsInFrame,
+                                &trCoeffCb, sizeof(H265CoeffsCommon) * widthOnHeight * m_NumCUsInFrame / 4,
+                                &trCoeffCr, sizeof(H265CoeffsCommon) * widthOnHeight * m_NumCUsInFrame / 4,
+
+                                &cbf[0], sizeof(Ipp8u) * m_NumPartitions * m_NumCUsInFrame,
+                                &cbf[1], sizeof(Ipp8u) * m_NumPartitions * m_NumCUsInFrame,
+                                &cbf[2], sizeof(Ipp8u) * m_NumPartitions * m_NumCUsInFrame);
 
     for (Ipp32s i = 0; i < m_NumCUsInFrame; i++)
     {
         m_CU[i] = new H265CodingUnit;
         m_CU[i]->create (this, i);
+
+        m_CU[i]->m_lumaIntraDir = lumaIntraDir;
+        m_CU[i]->m_chromaIntraDir = chromaIntraDir;
+
+        lumaIntraDir += m_NumPartitions;
+        chromaIntraDir += m_NumPartitions;
+
+        m_CU[i]->m_TrCoeffY = trCoeffY;
+        m_CU[i]->m_TrCoeffCb = trCoeffCb;
+        m_CU[i]->m_TrCoeffCr = trCoeffCr;
+
+        trCoeffY += widthOnHeight;
+        trCoeffCb += widthOnHeight / 4;
+        trCoeffCr += widthOnHeight / 4;
+
+        m_CU[i]->m_cbf[0] = cbf[0];
+        m_CU[i]->m_cbf[1] = cbf[1];
+        m_CU[i]->m_cbf[2] = cbf[2];
+
+        cbf[0] += m_NumPartitions;
+        cbf[1] += m_NumPartitions;
+        cbf[2] += m_NumPartitions;
     }
 
     m_CU[m_NumCUsInFrame] = 0;
@@ -123,11 +189,17 @@ void H265FrameCodingData::create(Ipp32s iPicWidth, Ipp32s iPicHeight, Ipp32u uiM
     Ipp32s m_edgesInCTBSize = m_MaxCUWidth >> 3;
     m_edgesInFrameWidth = (m_edgesInCTBSize * m_WidthInCU) * 2;
     Ipp32s edgesInFrameHeight = m_edgesInCTBSize * m_HeightInCU;
-    m_edge = new MFX_HEVC_PP::H265EdgeData[m_edgesInFrameWidth * edgesInFrameHeight];
+    m_edge = h265_new_array_throw<H265PartialEdgeData>(m_edgesInFrameWidth * edgesInFrameHeight);
 }
 
 void H265FrameCodingData::destroy()
 {
+    if (m_cumulativeMemoryPtr)
+    {
+        CumulativeFree(m_cumulativeMemoryPtr);
+        m_cumulativeMemoryPtr = 0;
+    }
+
     for (Ipp32s i = 0; i < m_NumCUsInFrame; i++)
     {
         m_CU[i]->destroy();

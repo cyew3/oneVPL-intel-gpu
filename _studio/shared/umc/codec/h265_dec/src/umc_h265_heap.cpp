@@ -450,7 +450,7 @@ Ipp8u * CumulativeArraysAllocation(int n, int align, ...)
 
     va_end(args);
 
-    Ipp8u *cumulativePtr = new Ipp8u[cumulativeSize + align*n];
+    Ipp8u *cumulativePtr = h265_new_array_throw<Ipp8u>(cumulativeSize + align*n);
     Ipp8u *cumulativePtrSaved = cumulativePtr;
 
     va_start(args, align);

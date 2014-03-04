@@ -90,8 +90,6 @@ void DecodingContext::UpdateCurrCUContext(Ipp32u lastCUAddr, Ipp32u newCUAddr)
     // Set local pointers to real array start positions
     H265FrameHLDNeighborsInfo *CurrCTBFlags = &m_CurrCTBFlagsHolder[0];
     H265FrameHLDNeighborsInfo *TopNgbrs = &m_TopNgbrsHolder[0];
-    //H265MVInfo *CurrCTB = &m_CurrCTBHolder[0];
-    //H265MVInfo *TopMVInfo = &m_TopMVInfoHolder[0];
 
     VM_ASSERT(CurrCTBFlags[m_CurrCTBStride * (m_CurrCTBStride - 1)].data == 0);
 
@@ -109,13 +107,11 @@ void DecodingContext::UpdateCurrCUContext(Ipp32u lastCUAddr, Ipp32u newCUAddr)
             for (Ipp32s i = 0; i < m_CurrCTBStride; i++)
             {
                 CurrCTBFlags[i] = TopNgbrs[newCUX + i];
-                //CurrCTB[i] = TopMVInfo[newCUX + i];
             }
             // Store bottom margin for next row if next CTB is to the right. This is necessary for left-top diagonal
             for (Ipp32s i = 1; i < m_CurrCTBStride - 1; i++)
             {
                 TopNgbrs[lastCUX + i] = CurrCTBFlags[bottom_row_offset + i];
-                //TopMVInfo[lastCUX + i] = CurrCTB[bottom_row_offset + i];
             }
         }
         else if (newCUX < lastCUX)
@@ -124,13 +120,11 @@ void DecodingContext::UpdateCurrCUContext(Ipp32u lastCUAddr, Ipp32u newCUAddr)
             for (Ipp32s i = 1; i < m_CurrCTBStride - 1; i++)
             {
                 TopNgbrs[lastCUX + i] = CurrCTBFlags[bottom_row_offset + i];
-                //TopMVInfo[lastCUX + i] = CurrCTB[bottom_row_offset + i];
             }
             // Init top margin from previous row
             for (Ipp32s i = 0; i < m_CurrCTBStride; i++)
             {
                 CurrCTBFlags[i] = TopNgbrs[newCUX + i];
-                //CurrCTB[i] = TopMVInfo[newCUX + i];
             }
         }
         else // New CTB right under previous CTB
@@ -139,7 +133,6 @@ void DecodingContext::UpdateCurrCUContext(Ipp32u lastCUAddr, Ipp32u newCUAddr)
             for (Ipp32s i = 0; i < m_CurrCTBStride; i++)
             {
                 TopNgbrs[lastCUX + i] = CurrCTBFlags[i] = CurrCTBFlags[bottom_row_offset + i];
-                //CurrCTB[i] = CurrCTB[bottom_row_offset + i];
             }
         }
     }
@@ -156,7 +149,6 @@ void DecodingContext::UpdateCurrCUContext(Ipp32u lastCUAddr, Ipp32u newCUAddr)
         for (Ipp32s i = 1; i < m_CurrCTBStride - 1; i++)
         {
             TopNgbrs[lastCUX + i].data = CurrCTBFlags[bottom_row_offset + i].data;
-            //TopMVInfo[lastCUX + i] = CurrCTB[bottom_row_offset + i];
         }
     }
 
@@ -166,7 +158,6 @@ void DecodingContext::UpdateCurrCUContext(Ipp32u lastCUAddr, Ipp32u newCUAddr)
         for (Ipp32s i = 1; i < m_CurrCTBStride - 1; i++)
         {
             CurrCTBFlags[i * m_CurrCTBStride] = CurrCTBFlags[i * m_CurrCTBStride + m_CurrCTBStride - 2];
-            //CurrCTB[i * m_CurrCTBStride] = CurrCTB[i * m_CurrCTBStride + m_CurrCTBStride - 2];
         }
     }
     else
@@ -396,26 +387,18 @@ public:
 
 static SDInitializer tableInitializer;
 
-void H265SegmentDecoder::parseSaoMaxUvlc(Ipp32u& val, Ipp32u maxSymbol)
+Ipp32s H265SegmentDecoder::parseSaoMaxUvlc(Ipp32s maxSymbol)
 {
-    if (maxSymbol == 0)
-    {
-        val = 0;
-        return;
-    }
+    VM_ASSERT(maxSymbol != 0);
 
-    Ipp32u code;
-    Ipp32u  i;
-
-    code = m_pBitStream->DecodeSingleBinEP_CABAC();
+    Ipp32u code = m_pBitStream->DecodeSingleBinEP_CABAC();
 
     if (code == 0)
     {
-        val = 0;
-        return;
+        return 0;
     }
 
-    i = 1;
+    Ipp32s i = 1;
     for (;;)
     {
         code = m_pBitStream->DecodeSingleBinEP_CABAC();
@@ -433,140 +416,74 @@ void H265SegmentDecoder::parseSaoMaxUvlc(Ipp32u& val, Ipp32u maxSymbol)
         }
     }
 
-    val = i;
+    return i;
 }
 
-void H265SegmentDecoder::parseSaoUflc(Ipp32s length, Ipp32u&  riVal)
+Ipp32s H265SegmentDecoder::parseSaoTypeIdx()
 {
-    riVal = m_pBitStream->DecodeBypassBins_CABAC(length);
-}
-
-void H265SegmentDecoder::parseSaoMerge(Ipp32u&  ruiVal)
-{
-    ruiVal = m_pBitStream->DecodeSingleBin_CABAC(ctxIdxOffsetHEVC[SAO_MERGE_FLAG_HEVC]);
-}
-
-void H265SegmentDecoder::parseSaoTypeIdx(Ipp32u&  ruiVal)
-{
-    Ipp32u uiCode;
-    uiCode = m_pBitStream->DecodeSingleBin_CABAC(ctxIdxOffsetHEVC[SAO_TYPE_IDX_HEVC]);
-
-    if (uiCode == 0)
+    if (m_pBitStream->DecodeSingleBin_CABAC(ctxIdxOffsetHEVC[SAO_TYPE_IDX_HEVC]) == 0)
     {
-        ruiVal = 0;
+        return 0;
     }
     else
     {
-        uiCode = m_pBitStream->DecodeSingleBinEP_CABAC();
-
-        if (uiCode == 0)
-        {
-            ruiVal = 5;
-        }
-        else
-        {
-            ruiVal = 1;
-        }
+        return (!m_pBitStream->DecodeSingleBinEP_CABAC()) ? 5 : 1;
     }
 }
 
 void H265SegmentDecoder::parseSaoOffset(SAOLCUParam* psSaoLcuParam, Ipp32u compIdx)
 {
-    Ipp32u uiSymbol;
-    static Ipp32s iTypeLength[MAX_NUM_SAO_TYPE] =
-    {
-        SAO_EO_LEN,
-        SAO_EO_LEN,
-        SAO_EO_LEN,
-        SAO_EO_LEN,
-        SAO_BO_LEN
-    };
+    Ipp32s typeIdx;
 
     if (compIdx == 2)
     {
-        uiSymbol = (Ipp32u)(psSaoLcuParam->m_typeIdx + 1);
+        typeIdx = psSaoLcuParam->m_typeIdx[1];
     }
     else
     {
-        parseSaoTypeIdx(uiSymbol);
+        typeIdx = parseSaoTypeIdx() - 1;
+        psSaoLcuParam->m_typeIdx[compIdx] = (Ipp8s)typeIdx;
     }
 
-    psSaoLcuParam->m_typeIdx = (Ipp32s)uiSymbol - 1;
+    if (typeIdx < 0)
+        return;
 
-    if (uiSymbol)
+    Ipp32s bitDepth = compIdx ? m_pSeqParamSet->bit_depth_chroma : m_pSeqParamSet->bit_depth_luma;
+    Ipp32s offsetTh = (1 << IPP_MIN(bitDepth - 5, 5)) - 1;
+
+    if (typeIdx == SAO_BO)
     {
-        psSaoLcuParam->m_length = iTypeLength[psSaoLcuParam->m_typeIdx];
-
-        Ipp32s bitDepth = compIdx ? m_pSeqParamSet->bit_depth_chroma : m_pSeqParamSet->bit_depth_luma;
-        Ipp32s offsetTh = 1 << IPP_MIN(bitDepth - 5, 5);
-
-        if (psSaoLcuParam->m_typeIdx == SAO_BO)
+        for (Ipp32s i = 0; i < SAO_OFFSETS_LEN; i++)
         {
-            for (Ipp32s i = 0; i < psSaoLcuParam->m_length; i++)
-            {
-                parseSaoMaxUvlc(uiSymbol, offsetTh - 1);
-                psSaoLcuParam->m_offset[i] = uiSymbol;
-            }
+            psSaoLcuParam->m_offset[compIdx][i] = parseSaoMaxUvlc(offsetTh);
+        }
 
-            for (Ipp32s i = 0; i < psSaoLcuParam->m_length; i++)
+        for (Ipp32s i = 0; i < SAO_OFFSETS_LEN; i++)
+        {
+            if (psSaoLcuParam->m_offset[compIdx][i] != 0)
             {
-                if (psSaoLcuParam->m_offset[i] != 0)
+                Ipp32s sign = m_pBitStream->DecodeSingleBinEP_CABAC();
+
+                if (sign)
                 {
-                    uiSymbol = m_pBitStream->DecodeSingleBinEP_CABAC();
-
-                    if (uiSymbol)
-                    {
-                        psSaoLcuParam->m_offset[i] = -psSaoLcuParam->m_offset[i];
-                    }
+                    psSaoLcuParam->m_offset[compIdx][i] = -psSaoLcuParam->m_offset[compIdx][i];
                 }
             }
-            parseSaoUflc(5, uiSymbol);
-            psSaoLcuParam->m_subTypeIdx = uiSymbol;
         }
-        else if (psSaoLcuParam->m_typeIdx < 4)
-        {
-            parseSaoMaxUvlc(uiSymbol, offsetTh - 1);
-            psSaoLcuParam->m_offset[0] = (Ipp32s)uiSymbol;
-            parseSaoMaxUvlc(uiSymbol, offsetTh - 1);
-            psSaoLcuParam->m_offset[1] = (Ipp32s)uiSymbol;
-            parseSaoMaxUvlc(uiSymbol, offsetTh - 1);
-            psSaoLcuParam->m_offset[2] = -(Ipp32s)uiSymbol;
-            parseSaoMaxUvlc(uiSymbol, offsetTh - 1);
-            psSaoLcuParam->m_offset[3] = -(Ipp32s)uiSymbol;
-            if (compIdx != 2)
-            {
-                parseSaoUflc(2, uiSymbol);
-                psSaoLcuParam->m_subTypeIdx = (Ipp32s)uiSymbol;
-                psSaoLcuParam->m_typeIdx += psSaoLcuParam->m_subTypeIdx;
-            }
-        }
-    }
-    else
-    {
-        psSaoLcuParam->m_length = 0;
-    }
-}
 
-inline void copySaoOneLcuParam(SAOLCUParam* dst,  SAOLCUParam* src)
-{
-    Ipp32s i;
-    dst->m_typeIdx = src->m_typeIdx;
-
-    if (dst->m_typeIdx != -1)
-    {
-        dst->m_subTypeIdx = src->m_subTypeIdx;
-        dst->m_length = src->m_length;
-        for (i = 0; i < dst->m_length; i++)
-        {
-            dst->m_offset[i] = src->m_offset[i];
-        }
+        psSaoLcuParam->m_subTypeIdx[compIdx] = (Ipp8s)m_pBitStream->DecodeBypassBins_CABAC(5);
     }
-    else
+    else if (typeIdx < 4)
     {
-        dst->m_length = 0;
-        for (i = 0; i < SAO_BO_LEN; i++)
+        psSaoLcuParam->m_offset[compIdx][0] = parseSaoMaxUvlc(offsetTh);
+        psSaoLcuParam->m_offset[compIdx][1] = parseSaoMaxUvlc(offsetTh);
+        psSaoLcuParam->m_offset[compIdx][2] = - parseSaoMaxUvlc(offsetTh);
+        psSaoLcuParam->m_offset[compIdx][3] = - parseSaoMaxUvlc(offsetTh);
+
+        if (compIdx < 2)
         {
-            dst->m_offset[i] = 0;
+            psSaoLcuParam->m_subTypeIdx[compIdx] = (Ipp8s)m_pBitStream->DecodeBypassBins_CABAC(2);
+            psSaoLcuParam->m_typeIdx[compIdx] += psSaoLcuParam->m_subTypeIdx[compIdx];
         }
     }
 }
@@ -613,80 +530,38 @@ void H265SegmentDecoder::parseSaoOneLcuInterleaving(bool saoLuma,
                                                     Ipp32s allowMergeUp)
 {
     Ipp32s iAddr = m_cu->CUAddr;
-    Ipp32u uiSymbol;
-    SAOLCUParam* saoLcuParam[3];
 
-    saoLcuParam[0] = m_pCurrentFrame->m_saoLcuParam[0];
-    saoLcuParam[1] = m_pCurrentFrame->m_saoLcuParam[1];
-    saoLcuParam[2] = m_pCurrentFrame->m_saoLcuParam[2];
+    SAOLCUParam* saoLcuParam = m_pCurrentFrame->m_saoLcuParam;
 
-    for (Ipp32s iCompIdx = 0; iCompIdx < 3; iCompIdx++)
-    {
-        saoLcuParam[iCompIdx][iAddr].m_mergeUpFlag    = 0;
-        saoLcuParam[iCompIdx][iAddr].m_mergeLeftFlag  = 0;
-        saoLcuParam[iCompIdx][iAddr].m_subTypeIdx     = 0;
-        saoLcuParam[iCompIdx][iAddr].m_typeIdx        = -1;
-        saoLcuParam[iCompIdx][iAddr].m_offset[0]     = 0;
-        saoLcuParam[iCompIdx][iAddr].m_offset[1]     = 0;
-        saoLcuParam[iCompIdx][iAddr].m_offset[2]     = 0;
-        saoLcuParam[iCompIdx][iAddr].m_offset[3]     = 0;
-
-    }
-
-    if (allowMergeLeft)
-    {
-        parseSaoMerge(uiSymbol);
-        saoLcuParam[0][iAddr].m_mergeLeftFlag = uiSymbol != 0;
-    }
-    if (allowMergeUp && saoLcuParam[0][iAddr].m_mergeLeftFlag == 0)
-    {
-        parseSaoMerge(uiSymbol);
-        saoLcuParam[0][iAddr].m_mergeUpFlag = uiSymbol != 0;
-    }
+    allowMergeLeft = allowMergeLeft ? m_pBitStream->DecodeSingleBin_CABAC(ctxIdxOffsetHEVC[SAO_MERGE_FLAG_HEVC]) : 0;
+    allowMergeUp = (allowMergeUp && !allowMergeLeft) ? m_pBitStream->DecodeSingleBin_CABAC(ctxIdxOffsetHEVC[SAO_MERGE_FLAG_HEVC]) : 0;
 
     for (Ipp32s iCompIdx = 0; iCompIdx < 3; iCompIdx++)
     {
         if ((iCompIdx == 0 && saoLuma) || (iCompIdx > 0 && saoChroma))
         {
-            if (allowMergeLeft)
+            if (!allowMergeLeft && !allowMergeUp)
             {
-                saoLcuParam[iCompIdx][iAddr].m_mergeLeftFlag = saoLcuParam[0][iAddr].m_mergeLeftFlag;
+                parseSaoOffset(&saoLcuParam[iAddr], iCompIdx);
             }
             else
             {
-                saoLcuParam[iCompIdx][iAddr].m_mergeLeftFlag = 0;
+                if (allowMergeLeft)
+                    saoLcuParam[iAddr] = saoLcuParam[iAddr - 1];
+                else
+                    saoLcuParam[iAddr] = saoLcuParam[iAddr - m_pCurrentFrame->m_CodingData->m_WidthInCU];
             }
 
-            if (saoLcuParam[iCompIdx][iAddr].m_mergeLeftFlag == 0)
-            {
-                if (allowMergeUp)
-                {
-                    saoLcuParam[iCompIdx][iAddr].m_mergeUpFlag = saoLcuParam[0][iAddr].m_mergeUpFlag;
-                }
-                else
-                {
-                    saoLcuParam[iCompIdx][iAddr].m_mergeUpFlag = 0;
-                }
-
-                if (saoLcuParam[iCompIdx][iAddr].m_mergeUpFlag == 0)
-                {
-                    saoLcuParam[2][iAddr].m_typeIdx = saoLcuParam[1][iAddr].m_typeIdx;
-                    parseSaoOffset(&(saoLcuParam[iCompIdx][iAddr]), iCompIdx);
-                }
-                else
-                {
-                    copySaoOneLcuParam(&saoLcuParam[iCompIdx][iAddr], &saoLcuParam[iCompIdx][iAddr - m_pCurrentFrame->m_CodingData->m_WidthInCU]);
-                }
-            }
-            else
-            {
-                copySaoOneLcuParam(&saoLcuParam[iCompIdx][iAddr], &saoLcuParam[iCompIdx][iAddr - 1]);
-            }
+            saoLcuParam[iAddr].m_mergeLeftFlag = allowMergeLeft;
+            saoLcuParam[iAddr].m_mergeUpFlag = allowMergeUp;
         }
         else
         {
-            saoLcuParam[iCompIdx][iAddr].m_typeIdx = -1;
-            saoLcuParam[iCompIdx][iAddr].m_subTypeIdx = 0;
+            if (iCompIdx < 2)
+            {
+                saoLcuParam[iAddr].m_typeIdx[iCompIdx] = -1;
+                saoLcuParam[iAddr].m_subTypeIdx[iCompIdx] = 0;
+            }
         }
     }
 }

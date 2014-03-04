@@ -40,7 +40,7 @@ H265Prediction::~H265Prediction()
     m_YUVPred[0].destroy();
     m_YUVPred[1].destroy();
 
-    ippsFree(m_temp_interpolarion_buffer);
+    delete[] m_temp_interpolarion_buffer;
     m_temp_interpolarion_buffer = 0;
 }
 
@@ -64,14 +64,14 @@ void H265Prediction::InitTempBuff(DecodingContext* context)
     // ML: OPT: TODO: Allocate only when we need it
     m_YUVExtHeight = ((sps->MaxCUSize + 2) << 4);
     m_YUVExtStride = ((sps->MaxCUSize  + 8) << 4);
-    m_YUVExt = new H265PlaneYCommon[m_YUVExtStride * m_YUVExtHeight];
+    m_YUVExt = h265_new_array_throw<H265PlaneYCommon>(m_YUVExtStride * m_YUVExtHeight);
 
     // new structure
     m_YUVPred[0].create(sps->MaxCUSize, sps->MaxCUSize, sizeof(Ipp16s), sizeof(Ipp16s));
     m_YUVPred[1].create(sps->MaxCUSize, sps->MaxCUSize, sizeof(Ipp16s), sizeof(Ipp16s));
 
     if (!m_temp_interpolarion_buffer)
-        m_temp_interpolarion_buffer = ippsMalloc_8u(2*128*128*2);
+        m_temp_interpolarion_buffer = h265_new_array_throw<Ipp8u>(2*128*128*2);
 }
 
 //---------------------------------------------------------

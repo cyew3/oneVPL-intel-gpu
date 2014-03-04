@@ -788,7 +788,7 @@ UMC::Status H265HeadersBitstream::GetPictureParamSetFull(H265PicParamSet  *pcPPS
         if( !pcPPS->uniform_spacing_flag)
         {
             // THIS IS DIFFERENT FROM REFERENCE !!!
-            unsigned* columnWidth = (unsigned*)malloc((pcPPS->num_tile_columns - 1)*sizeof(unsigned));
+            unsigned* columnWidth = h265_new_array_throw<Ipp32u>(pcPPS->num_tile_columns - 1);
             if (NULL == columnWidth)
             {
                 pcPPS->Reset();
@@ -800,14 +800,14 @@ UMC::Status H265HeadersBitstream::GetPictureParamSetFull(H265PicParamSet  *pcPPS
                 columnWidth[i] = GetVLCElementU() + 1;
             }
             pcPPS->setColumnWidth(columnWidth);
-            free(columnWidth);
+            delete[] columnWidth;
             if (NULL == pcPPS->column_width && pcPPS->num_tile_columns - 1 > 0)
             {
                 pcPPS->Reset();
                 return UMC::UMC_ERR_ALLOC;
             }
 
-            unsigned* rowHeight = (unsigned*)malloc((pcPPS->num_tile_rows - 1)*sizeof(unsigned));
+            unsigned* rowHeight = h265_new_array_throw<Ipp32u>(pcPPS->num_tile_rows - 1);
             if (NULL == rowHeight)
             {
                 pcPPS->Reset();
@@ -819,7 +819,7 @@ UMC::Status H265HeadersBitstream::GetPictureParamSetFull(H265PicParamSet  *pcPPS
                 rowHeight[i] = GetVLCElementU() + 1;
             }
             pcPPS->setRowHeight(rowHeight);
-            free(rowHeight);
+            delete[] rowHeight;
             if (NULL == pcPPS->row_height && pcPPS->num_tile_rows - 1 > 0)
             {
                 pcPPS->Reset();
