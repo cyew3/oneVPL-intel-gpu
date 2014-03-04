@@ -395,9 +395,6 @@ mfxStatus CreateFrameProcessor(sFrameProcessor* pProcessor, mfxVideoParam* pPara
     sts = pProcessor->mfxSession.Init(impl, &version);
     CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, sts, WipeFrameProcessor(pProcessor));
     
-    // VPP
-    pProcessor->pmfxVPP = new MFXVideoVPP(pProcessor->mfxSession);
-
     // Plug-in
     if ( pInParams->need_plugin ) 
     {
@@ -423,6 +420,19 @@ mfxStatus CreateFrameProcessor(sFrameProcessor* pProcessor, mfxVideoParam* pPara
         }
 #endif
     }
+
+    if ( pProcessor->plugin )
+    {
+        sts = MFXVideoUSER_Load(pProcessor->mfxSession, &(pProcessor->mfxGuid), 1);
+        if (MFX_ERR_NONE != sts)
+        {
+            vm_string_printf(VM_STRING("Failed to load plugin\n"));
+            return sts;
+        }
+    }
+
+    // VPP
+    pProcessor->pmfxVPP = new MFXVideoVPP(pProcessor->mfxSession);
 
     return MFX_ERR_NONE;
 }
@@ -546,15 +556,6 @@ mfxStatus InitFrameProcessor(sFrameProcessor* pProcessor, mfxVideoParam* pParams
     IGNORE_MFX_STS(sts, MFX_ERR_NOT_INITIALIZED);
     CHECK_RESULT(sts,   MFX_ERR_NONE, sts);
 
-    if ( pProcessor->plugin )
-    {
-        sts = MFXVideoUSER_Load(pProcessor->mfxSession, &(pProcessor->mfxGuid), 1);
-        if (MFX_ERR_NONE != sts)
-        {
-            vm_string_printf(VM_STRING("Failed to load plugin\n"));
-            return sts;
-        }
-    }
 
     // init VPP
     sts = pProcessor->pmfxVPP->Init(pParams);
