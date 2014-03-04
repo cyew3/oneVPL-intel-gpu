@@ -19,12 +19,10 @@ File Name: mfx_camera_plugin.cpp
 
 #ifdef CAMP_PIPE_ITT
 #include "ittnotify.h"
-
 __itt_domain* CamPipe = __itt_domain_create(L"CamPipe");
-
-//__itt_string_handle* CPU_file_fread;
-//__itt_string_handle* CPU_raw_unpack_;
-__itt_string_handle* task1 = __itt_string_handle_create(L"CreateEnqueueTasks");;
+__itt_string_handle* task1 = __itt_string_handle_create(L"CreateEnqueueTasks");
+__itt_string_handle* taske = __itt_string_handle_create(L"WaitEvent");
+__itt_string_handle* tasks = __itt_string_handle_create(L"SetExtSurf");
 #endif
 
 #include "mfx_plugin_module.h"
@@ -210,7 +208,7 @@ mfxStatus MFXCamera_Plugin::Init(mfxVideoParam *par)
     m_Caps.bForwardGammaCorrection = 1;
     m_Caps.bColorConversionMaxtrix = 1;
     m_Caps.bWhiteBalance = 1;
-    m_Caps.InputMemoryOperationMode = MEM_FASTGPUCPY; //MEM_GPUSHARED; //
+    m_Caps.InputMemoryOperationMode = MEM_GPUSHARED; //MEM_FASTGPUCPY; 
     m_Caps.OutputMemoryOperationMode = MEM_GPUSHARED; //MEM_FASTGPUCPY;
 
     m_WBparams.bActive = false; // no WB
@@ -251,7 +249,6 @@ mfxStatus MFXCamera_Plugin::CameraRoutine(void *pState, void *pParam, mfxU32 thr
 
     sts = impl.CameraAsyncRoutine(asyncParams);
 
-
     return sts;
 }
 
@@ -265,11 +262,17 @@ mfxStatus MFXCamera_Plugin::CameraAsyncRoutine(AsyncParams *pParam)
     m_core->IncreaseReference(&surfIn->Data);
     m_core->IncreaseReference(&surfOut->Data);
 
+#ifdef CAMP_PIPE_ITT
+    __itt_task_begin(CamPipe, __itt_null, __itt_null, tasks);
+#endif
+
     //sts = SetExternalSurfaces(surfIn, surfOut);
     sts = SetExternalSurfaces(pParam);
 
-//    sts = SetTasks(); //(surfIn, surfOut);
-//    sts = EnqueueTasks();
+#ifdef CAMP_PIPE_ITT
+    __itt_task_end(CamPipe);
+#endif
+
 
 #ifdef CAMP_PIPE_ITT
     __itt_task_begin(CamPipe, __itt_null, __itt_null, task1);
@@ -281,8 +284,8 @@ mfxStatus MFXCamera_Plugin::CameraAsyncRoutine(AsyncParams *pParam)
     __itt_task_end(CamPipe);
 #endif
 
-    m_core->DecreaseReference(&surfIn->Data);
-    m_core->DecreaseReference(&surfOut->Data);
+//    m_core->DecreaseReference(&surfIn->Data);
+//    m_core->DecreaseReference(&surfOut->Data);
 
     return sts;
 }
@@ -307,12 +310,18 @@ mfxStatus MFXCamera_Plugin::CompleteCameraRoutine(void *pState, void *pParam, mf
 
 mfxStatus MFXCamera_Plugin::CompleteCameraAsyncRoutine(AsyncParams *pParam)
 {
-    
     mfxStatus sts = MFX_ERR_NONE;
+
+    m_raw16aligned.Unlock();
+    m_raw16padded.Unlock();
+    m_aux8.Unlock();
+
     if (pParam) {
 
-        ((CmEvent *)pParam->pEvent)->WaitForTaskFinished((DWORD)-1);  //???
-
+#ifdef CAMP_PIPE_ITT
+    __itt_task_begin(CamPipe, __itt_null, __itt_null, taske);
+#endif
+        
         if (pParam->inSurf2D) {
             ReleaseResource(m_rawIn, pParam->inSurf2D);
         } else if (pParam->inSurf2DUP) {
@@ -323,11 +332,19 @@ mfxStatus MFXCamera_Plugin::CompleteCameraAsyncRoutine(AsyncParams *pParam)
             m_cmDevice->DestroySurface2DUP(surf);
             pParam->inSurf2DUP = 0;
         }
-    }
 
-    m_raw16aligned.Unlock();
-    m_raw16padded.Unlock();
-    m_aux8.Unlock();
+        m_core->DecreaseReference(&pParam->surf_in->Data);
+
+        CmEvent *e = (CmEvent *)pParam->pEvent;
+        m_cmCtx->DestroyEvent(e);
+
+#ifdef CAMP_PIPE_ITT
+    __itt_task_end(CamPipe);
+#endif
+        
+        m_core->DecreaseReference(&pParam->surf_out->Data);
+
+    }
 
     return sts;
 }

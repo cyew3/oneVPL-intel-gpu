@@ -617,7 +617,7 @@ CmEvent *CmContext::CreateEnqueueTask_GoodPixelCheck(SurfaceIndex inSurfIndex, C
     if ((result = cmTask->AddKernel(kernel_good_pixel_check)) != CM_SUCCESS)
         throw CmRuntimeError();
 
-    CmEvent *e = 0;
+    CmEvent *e = CM_NO_EVENT;
     if ((result = m_queue->Enqueue(cmTask, e, m_thread_space)) != CM_SUCCESS)
         throw CmRuntimeError();
 
@@ -632,7 +632,7 @@ CmEvent *CmContext::CreateEnqueueTask_RestoreGreen(SurfaceIndex inSurfIndex, CmS
     int result;
     mfxU16  MaxIntensity = (1 << bitDepth) - 1;
     CmTask *cmTask;
-    CmEvent *e;
+    CmEvent *e = CM_NO_EVENT;
 
     for (int i = 0; i < CAM_PIPE_KERNEL_SPLIT; i++)
     {
@@ -652,7 +652,6 @@ CmEvent *CmContext::CreateEnqueueTask_RestoreGreen(SurfaceIndex inSurfIndex, CmS
         if ((result = cmTask->AddKernel(CAM_PIPE_KERNEL_ARRAY(kernel_restore_green, i))) != CM_SUCCESS)
             throw CmRuntimeError();
         
-        e = 0;
         if ((result = m_queue->Enqueue(cmTask, e, m_thread_space)) != CM_SUCCESS)
             throw CmRuntimeError();
 
@@ -672,7 +671,7 @@ CmEvent *CmContext::CreateEnqueueTask_RestoreBlueRed(SurfaceIndex inSurfIndex,
     int result;
     mfxU16  MaxIntensity = (1 << bitDepth) - 1;
     CmTask *cmTask;
-    CmEvent *e;
+    CmEvent *e = CM_NO_EVENT;
 
     for (int i = 0; i < CAM_PIPE_KERNEL_SPLIT; i++)
     {
@@ -699,7 +698,6 @@ CmEvent *CmContext::CreateEnqueueTask_RestoreBlueRed(SurfaceIndex inSurfIndex,
         if ((result = cmTask->AddKernel(CAM_PIPE_KERNEL_ARRAY(kernel_restore_blue_red, i))) != CM_SUCCESS)
             throw CmRuntimeError();
         
-        e = 0;
         if ((result = m_queue->Enqueue(cmTask, e, m_thread_space)) != CM_SUCCESS)
             throw CmRuntimeError();
 
@@ -714,7 +712,7 @@ CmEvent *CmContext::CreateEnqueueTask_SAD(CmSurface2D *redHorSurf, CmSurface2D *
 {
     int result;
     CmTask *cmTask;
-    CmEvent *e;
+    CmEvent *e = CM_NO_EVENT;
 
     for (int i = 0; i < CAM_PIPE_KERNEL_SPLIT; i++)
     {
@@ -737,7 +735,6 @@ CmEvent *CmContext::CreateEnqueueTask_SAD(CmSurface2D *redHorSurf, CmSurface2D *
         if ((result = cmTask->AddKernel(CAM_PIPE_KERNEL_ARRAY(kernel_sad, i))) != CM_SUCCESS)
             throw CmRuntimeError();
         
-        e = 0;
         if ((result = m_queue->Enqueue(cmTask, e, m_thread_space)) != CM_SUCCESS)
             throw CmRuntimeError();
 
@@ -759,11 +756,13 @@ CmEvent *CmContext::CreateEnqueueTask_DecideAverage(CmSurface2D *redAvgSurf, CmS
     if ((result = cmTask->AddKernel(kernel_decide_average)) != CM_SUCCESS)
         throw CmRuntimeError();
 
-    CmEvent *e = 0;
+    CmEvent *e = CM_NO_EVENT;
     if ((result = m_queue->Enqueue(cmTask, e, m_thread_space)) != CM_SUCCESS)
         throw CmRuntimeError();
 
+    m_queue->DestroyEvent(e);
     m_device->DestroyTask(cmTask);
+
     return e;
 }
 
@@ -791,7 +790,7 @@ CmEvent *CmContext::CreateEnqueueTask_ForwardGamma(CmSurface2D *correctSurf, CmS
     if ((result = cmTask->AddKernel(kernel_FwGamma)) != CM_SUCCESS)
         throw CmRuntimeError();
 
-    CmEvent *e = 0;
+    CmEvent *e = NULL;
     CmThreadGroupSpace* pTGS = NULL;
     if ((result = m_device->CreateThreadGroupSpace(1, gamma_threads_per_group, 1, gamma_groups_vert, pTGS)) != CM_SUCCESS)
         throw CmRuntimeError();
@@ -821,11 +820,6 @@ void CmContext::Setup(
     m_program = ReadProgram(m_device, genx_hsw_camerapipe, SizeOf(genx_hsw_camerapipe));
 
     CreateCameraKernels();
-
-//    CreateCameraTasks();
-
-    //m_nullBuf.Reset(m_device, 4);
-
 }
 
 CmEvent * CmContext::EnqueueTask(
