@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2008-2013 Intel Corporation. All Rights Reserved.
+Copyright(c) 2008-2014 Intel Corporation. All Rights Reserved.
 
 File Name: libmfxsw_decode.cpp
 
@@ -553,7 +553,7 @@ mfxStatus MFXVideoDECODE_DecodeFrameAsync(mfxSession session, mfxBitstream *bs, 
             task.threadingPolicy = session->m_pDECODE->GetThreadingPolicy();
             // fill dependencies
 // specific plug-in case to run additional task after main task 
-#if !defined(AS_HEVCD_PLUGIN) 
+#if !defined(AS_HEVCD_PLUGIN) && !defined(AS_VP8D_PLUGIN) 
             task.pSrc[0] = *surface_out;
 #endif
             task.pDst[0] = *surface_out;
