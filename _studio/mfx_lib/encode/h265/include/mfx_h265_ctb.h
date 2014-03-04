@@ -405,15 +405,26 @@ public:
 
     CostType MeCu(Ipp32u absPartIdx, Ipp8u depth, Ipp32s offset);
 
-    void MePu(H265MEInfo *meInfo);
+    void MePu(H265MEInfo *meInfo, Ipp32s lastPredIdx);
 
-    void MePuExperimental(H265MEInfo *meInfo, Ipp32s lastPredIdx);
+    void MePuGacc(H265MEInfo *meInfo, Ipp32s lastPredIdx);
+
+    bool CheckGpuIntraCost(Ipp32s leftPelX, Ipp32s topPelY, Ipp32s depth) const;
 
     Ipp32s GetMvPredictors(H265MV *mvPred, const H265MEInfo* meInfo, const MVPInfo *predInfo,
                            const MVPInfo *mergeInfo, H265MV mvLast, Ipp32s meDir,
                            Ipp32s refIdx) const;
 
-    void MeSubpel(const H265MEInfo *meInfo, const MVPInfo *predInfo, Ipp32s meDir, Ipp32s refIdx,
+    void MeIntPel(const H265MEInfo *meInfo, const MVPInfo *predInfo, Ipp32s list, Ipp32s refIdx,
+                  H265MV *mv, Ipp32s *cost, Ipp32s *mvCost) const;
+
+    void MeIntPelFullSearch(const H265MEInfo *meInfo, const MVPInfo *predInfo, Ipp32s list,
+                            Ipp32s refIdx, H265MV *mv, Ipp32s *cost, Ipp32s *mvCost) const;
+
+    void MeIntPelLog(const H265MEInfo *meInfo, const MVPInfo *predInfo, Ipp32s list, Ipp32s refIdx,
+                     H265MV *mv, Ipp32s *cost, Ipp32s *mvCost) const;
+
+    void MeSubPel(const H265MEInfo *meInfo, const MVPInfo *predInfo, Ipp32s meDir, Ipp32s refIdx,
                   H265MV *mv, Ipp32s *cost, Ipp32s *mvCost) const;
 
     CostType CuCost(Ipp32u absPartIdx, Ipp8u depth, const H265MEInfo* bestInfo,
@@ -436,10 +447,6 @@ public:
     Ipp32s MatchingMetricBipredPu(PixType *src, H265MEInfo* meInfo, PixType *fwd, Ipp32u pitchFwd,
                                   PixType *bwd, Ipp32u pitchBwd, H265MV fullMV[2],
                                   Ipp32s useHadamard);
-
-    Ipp32s MvCost(H265MV MV[2], Ipp8s ref_idx[2], MVPInfo pInfo[2], MVPInfo *mergeInfo) const;
-
-    Ipp32s MvCost1Ref(H265MV mv, Ipp8s refIdx, const MVPInfo *predInfo, Ipp32s rlist) const;
 
     Ipp32s MvCost1RefLog(H265MV mv, Ipp8s refIdx, const MVPInfo *predInfo, Ipp32s rlist) const;
 

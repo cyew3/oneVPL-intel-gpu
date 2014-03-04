@@ -227,11 +227,31 @@ mfxStatus H265Encoder::InitH265VideoParam(const mfxVideoParam *param, const mfxE
     pars->TMVPFlag = (opts_hevc->TMVP == MFX_CODINGOPTION_ON);
     pars->deblockingFlag = (opts_hevc->Deblocking == MFX_CODINGOPTION_ON);
     pars->saoOpt = opts_hevc->SaoOpt;
+    pars->patternIntPel = opts_hevc->PatternIntPel;
 
     for (Ipp32s i = 0; i <= 6; i++) {
         pars->num_cand_0[i] = Saturate(1, 33, pars->num_cand_0[i]);
         pars->num_cand_1[i] = Saturate(1, pars->num_cand_0[i] + 2, pars->num_cand_1[i]);
         pars->num_cand_2[i] = Saturate(1, pars->num_cand_1[i], pars->num_cand_2[i]);
+    }
+
+    if (pars->enableCmFlag) {
+        pars->intraAngModes = 3;
+        pars->num_cand_0[2] = 1;
+        pars->num_cand_0[3] = 1;
+        pars->num_cand_0[4] = 1;
+        pars->num_cand_0[5] = 1;
+        pars->num_cand_0[6] = 1;
+        pars->num_cand_1[2] = 1;
+        pars->num_cand_1[3] = 1;
+        pars->num_cand_1[4] = 1;
+        pars->num_cand_1[5] = 1;
+        pars->num_cand_1[6] = 1;
+        pars->num_cand_2[2] = 1;
+        pars->num_cand_2[3] = 1;
+        pars->num_cand_2[4] = 1;
+        pars->num_cand_2[5] = 1;
+        pars->num_cand_2[6] = 1;
     }
 
     /* derived */

@@ -297,55 +297,6 @@ namespace
         40,45,51,57,64,72,81,91
     };
 
-    void SetLutMv(mfxVMEUNIIn const & costs, mfxU32 lutMv[65])
-    {
-        lutMv[0]  = Map44LutValueBack(costs.MvCost[0]);
-        lutMv[1]  = Map44LutValueBack(costs.MvCost[1]);
-        lutMv[2]  = Map44LutValueBack(costs.MvCost[2]);
-        lutMv[4]  = Map44LutValueBack(costs.MvCost[3]);
-        lutMv[8]  = Map44LutValueBack(costs.MvCost[4]);
-        lutMv[16] = Map44LutValueBack(costs.MvCost[5]);
-        lutMv[32] = Map44LutValueBack(costs.MvCost[6]);
-        lutMv[64] = Map44LutValueBack(costs.MvCost[7]);
-        lutMv[3]  = (lutMv[4] + lutMv[2]) >> 1;
-        for (mfxU32 i = 5; i < 8; i++)
-            lutMv[i] = lutMv[ 4] + ((lutMv[ 8] - lutMv[ 4]) * (i -  4) >> 2);
-        for (mfxU32 i = 9; i < 16; i++)
-            lutMv[i] = lutMv[ 8] + ((lutMv[16] - lutMv[ 8]) * (i -  8) >> 3);
-        for (mfxU32 i = 17; i < 32; i++)
-            lutMv[i] = lutMv[16] + ((lutMv[32] - lutMv[16]) * (i - 16) >> 4);
-        for (mfxU32 i = 33; i < 64; i++)
-            lutMv[i] = lutMv[32] + ((lutMv[64] - lutMv[32]) * (i - 32) >> 5);
-    }
-
-    mfxU16 GetVmeMvCostP(
-        mfxU32 const         lutMv[65],
-        H265PAKObject const & mb)
-    {
-        mfxU32 diffx = abs(mb.costCenter0X - mb.mv[0].x) >> 2;
-        mfxU32 diffy = abs(mb.costCenter0Y - mb.mv[0].y) >> 2;
-        mfxU32 costx = diffx > 64 ? lutMv[64] + ((diffx - 64) >> 2) : lutMv[diffx];
-        mfxU32 costy = diffy > 64 ? lutMv[64] + ((diffy - 64) >> 2) : lutMv[diffy];
-        return mfxU16(IPP_MIN(0x3ff, costx + costy));
-    }
-
-    mfxU16 GetVmeMvCostB(
-        mfxU32 const         lutMv[65],
-        H265PAKObject const & mb)
-    {
-        mfxU32 diffx0 = abs(mb.costCenter0X - mb.mv[0].x) >> 2;
-        mfxU32 diffy0 = abs(mb.costCenter0Y - mb.mv[0].y) >> 2;
-        mfxU32 diffx1 = abs(mb.costCenter1X - mb.mv[1].x) >> 2;
-        mfxU32 diffy1 = abs(mb.costCenter1Y - mb.mv[1].y) >> 2;
-        mfxU32 costx0 = diffx0 > 64 ? lutMv[64] + ((diffx0 - 64) >> 2) : lutMv[diffx0];
-        mfxU32 costy0 = diffy0 > 64 ? lutMv[64] + ((diffy0 - 64) >> 2) : lutMv[diffy0];
-        mfxU32 costx1 = diffx1 > 64 ? lutMv[64] + ((diffx1 - 64) >> 2) : lutMv[diffx1];
-        mfxU32 costy1 = diffy1 > 64 ? lutMv[64] + ((diffy1 - 64) >> 2) : lutMv[diffy1];
-        mfxU32 mvCost0 = (IPP_MIN(0x3ff, costx0 + costy0));
-        mfxU32 mvCost1 = (IPP_MIN(0x3ff, costx1 + costy1));
-        return mfxU16(mvCost0 + mvCost1);
-    }
-
     mfxU8 GetMaxMvsPer2Mb(mfxU32 level)
     {
         return level < 30 ? 126 : (level == 30 ? 32 : 16);
@@ -377,100 +328,6 @@ namespace
 
         if(((ret&15)<<(ret>>4)) > ((max&15)<<(max>>4)))        ret = max;
         return ret;
-    }
-
-    void SetCosts(
-        mfxVMEUNIIn & costs,
-        mfxU32        frameType,
-        mfxU32        qp,
-        mfxU32        intraSad,
-        mfxU32        ftqBasedSkip)
-    {
-        mfxU16 lambda = QP_LAMBDA[max(0, mfxI32(qp - 12))];
-
-        float had_bias = (intraSad == 3) ? 1.67f : 2.0f;
-
-        memset(&costs, 0, sizeof(costs));    // Zero(costs);
-
-        //costs.ModeCost[LUTMODE_INTRA_NONPRED] = Map44LutValue((mfxU16)(lambda * 5 * had_bias), 0x6f);
-        //costs.ModeCost[LUTMODE_INTRA_16x16]   = 0;
-        //costs.ModeCost[LUTMODE_INTRA_8x8]     = Map44LutValue((mfxU16)(lambda * 1.5 * had_bias), 0x8f);
-        //costs.ModeCost[LUTMODE_INTRA_4x4]     = Map44LutValue((mfxU16)(lambda * 14 * had_bias), 0x8f);
-        costs.ModeCost[LUTMODE_INTRA_NONPRED] = 0;//Map44LutValue((mfxU16)(lambda * 3.5 * had_bias), 0x6f);
-        costs.ModeCost[LUTMODE_INTRA_16x16]   = Map44LutValue((mfxU16)(lambda * 10  * had_bias), 0x8f);
-        costs.ModeCost[LUTMODE_INTRA_8x8]     = Map44LutValue((mfxU16)(lambda * 14  * had_bias), 0x8f);
-        costs.ModeCost[LUTMODE_INTRA_4x4]     = Map44LutValue((mfxU16)(lambda * 35  * had_bias), 0x8f);
-
-        if (frameType & MFX_FRAMETYPE_P)
-        {
-            costs.ModeCost[LUTMODE_INTRA_NONPRED] = 0;//Map44LutValue((mfxU16)(lambda * 3.5 * had_bias), 0x6f);
-            costs.ModeCost[LUTMODE_INTRA_16x16]   = Map44LutValue((mfxU16)(lambda * 10  * had_bias), 0x8f);
-            costs.ModeCost[LUTMODE_INTRA_8x8]     = Map44LutValue((mfxU16)(lambda * 14  * had_bias), 0x8f);
-            costs.ModeCost[LUTMODE_INTRA_4x4]     = Map44LutValue((mfxU16)(lambda * 35  * had_bias), 0x8f);
-            
-            costs.ModeCost[LUTMODE_INTER_16x16] = Map44LutValue((mfxU16)(lambda * 2.75 * had_bias), 0x8f);
-            costs.ModeCost[LUTMODE_INTER_16x8]  = Map44LutValue((mfxU16)(lambda * 4.25 * had_bias), 0x8f);
-            costs.ModeCost[LUTMODE_INTER_8x8q]  = Map44LutValue((mfxU16)(lambda * 1.32 * had_bias), 0x6f);
-            costs.ModeCost[LUTMODE_INTER_8x4q]  = Map44LutValue((mfxU16)(lambda * 2.32 * had_bias), 0x6f);
-            costs.ModeCost[LUTMODE_INTER_4x4q]  = Map44LutValue((mfxU16)(lambda * 3.32 * had_bias), 0x6f);
-            costs.ModeCost[LUTMODE_REF_ID]      = Map44LutValue((mfxU16)(lambda * 2    * had_bias), 0x6f);
-
-            costs.MvCost[0] = Map44LutValue((mfxU16)(lambda * 0.5 * had_bias), 0x6f);
-            costs.MvCost[1] = Map44LutValue((mfxU16)(lambda * 2 * had_bias), 0x6f);
-            costs.MvCost[2] = Map44LutValue((mfxU16)(lambda * 2.5 * had_bias), 0x6f);
-            costs.MvCost[3] = Map44LutValue((mfxU16)(lambda * 4.5 * had_bias), 0x6f);
-            costs.MvCost[4] = Map44LutValue((mfxU16)(lambda * 5 * had_bias), 0x6f);
-            costs.MvCost[5] = Map44LutValue((mfxU16)(lambda * 6 * had_bias), 0x6f);
-            costs.MvCost[6] = Map44LutValue((mfxU16)(lambda * 7 * had_bias), 0x6f);
-            costs.MvCost[7] = Map44LutValue((mfxU16)(lambda * 7.5 * had_bias), 0x6f);
-        }
-        else if (frameType & MFX_FRAMETYPE_B)
-        {
-            costs.ModeCost[LUTMODE_INTRA_NONPRED] = 0;//Map44LutValue((mfxU16)(lambda * 3.5 * had_bias), 0x6f);
-            costs.ModeCost[LUTMODE_INTRA_16x16]   = Map44LutValue((mfxU16)(lambda * 17  * had_bias), 0x8f);
-            costs.ModeCost[LUTMODE_INTRA_8x8]     = Map44LutValue((mfxU16)(lambda * 20  * had_bias), 0x8f);
-            costs.ModeCost[LUTMODE_INTRA_4x4]     = Map44LutValue((mfxU16)(lambda * 40  * had_bias), 0x8f);
-
-            costs.ModeCost[LUTMODE_INTER_16x16] = Map44LutValue((mfxU16)(lambda * 3    * had_bias), 0x8f);
-            costs.ModeCost[LUTMODE_INTER_16x8]  = Map44LutValue((mfxU16)(lambda * 6    * had_bias), 0x8f);
-            costs.ModeCost[LUTMODE_INTER_8x8q]  = Map44LutValue((mfxU16)(lambda * 3.25 * had_bias), 0x6f);
-            costs.ModeCost[LUTMODE_INTER_8x4q]  = Map44LutValue((mfxU16)(lambda * 4.25 * had_bias), 0x6f);
-            costs.ModeCost[LUTMODE_INTER_4x4q]  = Map44LutValue((mfxU16)(lambda * 5.25 * had_bias), 0x6f);
-            costs.ModeCost[LUTMODE_INTER_BWD]   = Map44LutValue((mfxU16)(lambda * 1    * had_bias), 0x6f);
-            costs.ModeCost[LUTMODE_REF_ID]      = Map44LutValue((mfxU16)(lambda * 2    * had_bias), 0x6f);
-
-            costs.MvCost[0] = Map44LutValue((mfxU16)(lambda * 0 * had_bias), 0x6f);
-            costs.MvCost[1] = Map44LutValue((mfxU16)(lambda * 1 * had_bias), 0x6f);
-            costs.MvCost[2] = Map44LutValue((mfxU16)(lambda * 1 * had_bias), 0x6f);
-            costs.MvCost[3] = Map44LutValue((mfxU16)(lambda * 3 * had_bias), 0x6f);
-            costs.MvCost[4] = Map44LutValue((mfxU16)(lambda * 5 * had_bias), 0x6f);
-            costs.MvCost[5] = Map44LutValue((mfxU16)(lambda * 6 * had_bias), 0x6f);
-            costs.MvCost[6] = Map44LutValue((mfxU16)(lambda * 7 * had_bias), 0x6f);
-            costs.MvCost[7] = Map44LutValue((mfxU16)(lambda * 8 * had_bias), 0x6f);
-        }
-
-        if (ftqBasedSkip & 1)
-        {
-            //mfxU32 idx = (qp + 1) >> 1;
-
-            //const mfxU8 FTQ25[26] =
-            //{
-            //    0,0,0,0,
-            //    1,3,6,8,11,
-            //    13,16,19,22,26,
-            //    30,34,39,44,50,
-            //    56,62,69,77,85,
-            //    94,104
-            //};
-
-            costs.FTXCoeffThresh[0] =
-            costs.FTXCoeffThresh[1] =
-            costs.FTXCoeffThresh[2] =
-            costs.FTXCoeffThresh[3] =
-            costs.FTXCoeffThresh[4] =
-            costs.FTXCoeffThresh[5] = 0;//FTQ25[idx];
-            costs.FTXCoeffThresh_DC = 0;//FTQ25[idx];
-        }
     }
 
     const mfxU16 Dist10[26] =
@@ -1496,9 +1353,6 @@ void SetCurbeData(
     else if (!transformFlag)
         skipVal /= 2;
 
-    mfxVMEUNIIn costs = {0};
-    //SetCosts(costs, picType, qp, intraSad, ftqBasedSkip);
-
     mfxVMEIMEIn spath;
     SetSearchPath(spath, picType, meMethod);
 
@@ -1561,44 +1415,44 @@ void SetCurbeData(
     curbeData.RefIDCostMode         = 0;//!(picType & MFX_FRAMETYPE_I);
     curbeData.SkipCenterMask        = !!(picType & MFX_FRAMETYPE_P);
     //DW8
-    curbeData.ModeCost_0            = costs.ModeCost[LUTMODE_INTRA_NONPRED];
-    curbeData.ModeCost_1            = costs.ModeCost[LUTMODE_INTRA_16x16];
-    curbeData.ModeCost_2            = costs.ModeCost[LUTMODE_INTRA_8x8];
-    curbeData.ModeCost_3            = costs.ModeCost[LUTMODE_INTRA_4x4];
+    curbeData.ModeCost_0            = 0;
+    curbeData.ModeCost_1            = 0;
+    curbeData.ModeCost_2            = 0;
+    curbeData.ModeCost_3            = 0;
     //DW9
-    curbeData.ModeCost_4            = costs.ModeCost[LUTMODE_INTER_16x8];
-    curbeData.ModeCost_5            = costs.ModeCost[LUTMODE_INTER_8x8q];
-    curbeData.ModeCost_6            = costs.ModeCost[LUTMODE_INTER_8x4q];
-    curbeData.ModeCost_7            = costs.ModeCost[LUTMODE_INTER_4x4q];
+    curbeData.ModeCost_4            = 0;
+    curbeData.ModeCost_5            = 0;
+    curbeData.ModeCost_6            = 0;
+    curbeData.ModeCost_7            = 0;
     //DW10
-    curbeData.ModeCost_8            = costs.ModeCost[LUTMODE_INTER_16x16];
-    curbeData.ModeCost_9            = costs.ModeCost[LUTMODE_INTER_BWD];
-    curbeData.RefIDCost             = costs.ModeCost[LUTMODE_REF_ID];
-    curbeData.ChromaIntraModeCost   = costs.ModeCost[LUTMODE_INTRA_CHROMA];
+    curbeData.ModeCost_8            = 0;
+    curbeData.ModeCost_9            = 0;
+    curbeData.RefIDCost             = 0;
+    curbeData.ChromaIntraModeCost   = 0;
     //DW11
-    curbeData.MvCost_0              = costs.MvCost[0];
-    curbeData.MvCost_1              = costs.MvCost[1];
-    curbeData.MvCost_2              = costs.MvCost[2];
-    curbeData.MvCost_3              = costs.MvCost[3];
+    curbeData.MvCost_0              = 0;
+    curbeData.MvCost_1              = 0;
+    curbeData.MvCost_2              = 0;
+    curbeData.MvCost_3              = 0;
     //DW12
-    curbeData.MvCost_4              = costs.MvCost[4];
-    curbeData.MvCost_5              = costs.MvCost[5];
-    curbeData.MvCost_6              = costs.MvCost[6];
-    curbeData.MvCost_7              = costs.MvCost[7];
+    curbeData.MvCost_4              = 0;
+    curbeData.MvCost_5              = 0;
+    curbeData.MvCost_6              = 0;
+    curbeData.MvCost_7              = 0;
     //DW13
     curbeData.QpPrimeY              = qp;
     curbeData.QpPrimeCb             = qp;
     curbeData.QpPrimeCr             = qp;
     curbeData.TargetSizeInWord      = 0xff;
     //DW14
-    curbeData.FTXCoeffThresh_DC               = costs.FTXCoeffThresh_DC;
-    curbeData.FTXCoeffThresh_1                = costs.FTXCoeffThresh[0];
-    curbeData.FTXCoeffThresh_2                = costs.FTXCoeffThresh[1];
+    curbeData.FTXCoeffThresh_DC               = 0;
+    curbeData.FTXCoeffThresh_1                = 0;
+    curbeData.FTXCoeffThresh_2                = 0;
     //DW15
-    curbeData.FTXCoeffThresh_3                = costs.FTXCoeffThresh[2];
-    curbeData.FTXCoeffThresh_4                = costs.FTXCoeffThresh[3];
-    curbeData.FTXCoeffThresh_5                = costs.FTXCoeffThresh[4];
-    curbeData.FTXCoeffThresh_6                = costs.FTXCoeffThresh[5];
+    curbeData.FTXCoeffThresh_3                = 0;
+    curbeData.FTXCoeffThresh_4                = 0;
+    curbeData.FTXCoeffThresh_5                = 0;
+    curbeData.FTXCoeffThresh_6                = 0;
     //DW16
     curbeData.IMESearchPath0                  = spath.IMESearchPath0to31[0];
     curbeData.IMESearchPath1                  = spath.IMESearchPath0to31[1];
@@ -1745,146 +1599,5 @@ void GetAngModesFromHistogram(Ipp32s xPu, Ipp32s yPu, Ipp32s puSize, Ipp8s *mode
         histogram[mode] = -1;
     }
 }
-
-
-//explicit instantiations
-//template void H265Prediction::Interpolate<TEXT_LUMA, Ipp8u, Ipp16s>(EnumInterpType interp_type,
-//    const Ipp8u* in_pSrc, Ipp32u in_SrcPitch, Ipp16s* H265_RESTRICT in_pDst, Ipp32u in_DstPitch,
-//    Ipp32s tab_index, Ipp32s width, Ipp32s height, Ipp32s shift, Ipp16s offset,
-//    H265Prediction::EnumAddAverageType eAddAverage, const void* in_pSrc2, int in_Src2Pitch);
-//template void H265Prediction::Interpolate<TEXT_LUMA, Ipp8u, Ipp8u>(EnumInterpType interp_type,
-//    const Ipp8u* in_pSrc, Ipp32u in_SrcPitch, Ipp8u* H265_RESTRICT in_pDst, Ipp32u in_DstPitch,
-//    Ipp32s tab_index, Ipp32s width, Ipp32s height, Ipp32s shift, Ipp16s offset,
-//    H265Prediction::EnumAddAverageType eAddAverage, const void* in_pSrc2, int in_Src2Pitch);
-//template void H265Prediction::Interpolate<TEXT_LUMA, Ipp16s, Ipp8u>(EnumInterpType interp_type,
-//    const Ipp16s* in_pSrc, Ipp32u in_SrcPitch, Ipp8u* H265_RESTRICT in_pDst, Ipp32u in_DstPitch,
-//    Ipp32s tab_index, Ipp32s width, Ipp32s height, Ipp32s shift, Ipp16s offset,
-//    H265Prediction::EnumAddAverageType eAddAverage, const void* in_pSrc2, int in_Src2Pitch);
-
-enum {
-          SP01, SP02, SP03, 
-    SP10, SP11, SP12, SP13,
-    SP20, SP21, SP22, SP23,
-    SP30, SP31, SP32, SP33
-};
-
-enum {
-    HP_20, HP_02, HP_22
-};
-
-#define C  { 0, 0}
-#define U  { 0,-1}
-#define UR { 1,-1}
-#define R  { 1, 0}
-#define DR { 1, 1}
-#define D  { 0, 1}
-#define DL {-1, 1}
-#define L  {-1, 0}
-#define UL {-1,-1}
-    struct Cp_tab { Ipp8u start, len; };
-    const Ipp16s ME_Cpattern_square[1+8+3][2] = { C, UL, U, UR, R, DR, D, DL, L, UL, U, UR };
-    const Cp_tab Cpattern_tab_square[1+8+3] = { {1,8}, {7,5}, {1,3}, {1,5}, {3,3}, {3,5}, {5,3}, {5,5}, {7,3}, {7,5}, {1,3}, {1,5} };
-
-    const Ipp16s ME_Cpattern_diamond[1+4+2][2] = { C, U, R, D, L, U, R };
-    const Cp_tab Cpattern_tab_diamond[1+4+2] = { {1,4}, {4,3}, {1,3}, {2,3}, {3,3}, {4,3}, {1,3} };
-
-    const Ipp16s ME_Cpattern_diamond_finish[15][2] = { UL, UR, DR, DL, L, UL, U, UR, R, DR, D, DL, L, UL, U };
-    const Cp_tab Cpattern_tab_diamond_finish[1+4+2] = { {0,4}, {4,5}, {6,5}, {8,5}, {10,5}, {8,5}, {10,5} };
-#undef C
-#undef U
-#undef R
-#undef D
-#undef L
-
-//void H265CU_ME_Interpolate_TmpHor(H265CU * cu, H265MEInfo* me_info, H265MV* MV, PixType *src, Ipp32s srcPitch, Ipp16s *tmpHor[3], Ipp32s tmpHorPitch)
-//{
-//    assert((MV->mvx & 3) == 0);
-//    assert((MV->mvy & 3) == 0);
-//
-//    Ipp32s w = me_info->width;
-//    Ipp32s h = me_info->height;
-//
-//    src += cu->ctb_pelx + me_info->posx + (MV->mvx >> 2) + (cu->ctb_pely + me_info->posy + (MV->mvy >> 2)) * srcPitch;
-//
-//    H265Prediction::Interpolate<TEXT_LUMA>(H265Prediction::INTERP_HOR,
-//        src - 4 * srcPitch - 1, srcPitch, tmpHor[0], tmpHorPitch, 1, w + 2, h + 8, 0, 0);
-//    H265Prediction::Interpolate<TEXT_LUMA>(H265Prediction::INTERP_HOR,
-//        src - 4 * srcPitch - 1, srcPitch, tmpHor[1], tmpHorPitch, 2, w + 2, h + 8, 0, 0);
-//    H265Prediction::Interpolate<TEXT_LUMA>(H265Prediction::INTERP_HOR,
-//        src - 4 * srcPitch - 1, srcPitch, tmpHor[2], tmpHorPitch, 3, w + 2, h + 8, 0, 0);
-//}
-//
-//void Add32AndShift6(const Ipp16s * src, Ipp32s srcPitch, Ipp8u * dst, Ipp32s dstPitch, Ipp32s width, Ipp32s height)
-//{
-//    __m128i v_offset = _mm_cvtsi32_si128((32 << 16) | 32);
-//    v_offset = _mm_shuffle_epi32(v_offset, 0);
-//    for (int i, j = 0; j < height; ++j)
-//    {
-//         Ipp8u * dst_ = dst;
-//         const Ipp16s * src_ = src;
-//         for (i = 0; i < width; i += 8)
-//         {
-//             __m128i v_chunk = _mm_loadu_si128((const __m128i*)src_);
-//             v_chunk = _mm_add_epi16(v_chunk, v_offset); 
-//             v_chunk = _mm_srai_epi16(v_chunk, 6);
-//             v_chunk = _mm_packus_epi16(v_chunk, v_chunk);
-//             _mm_storel_epi64( (__m128i*)dst_, v_chunk);
-//             src_ += 8;
-//             dst_ += 8;
-//         }
-//         src += srcPitch;
-//         dst += dstPitch;
-//    }
-//}
-//
-//
-//void H265CU_ME_Interpolate_HalfPel(H265CU * cu, H265MEInfo* me_info, H265MV* MV, PixType *src, Ipp32s srcPitch, Ipp16s *tmpHp, Ipp32s tmpHpPitch, Ipp8u *dst[3], Ipp32s dstPitch)
-//{
-//    assert((MV->mvx & 3) == 0);
-//    assert((MV->mvy & 3) == 0);
-//
-//    Ipp32s w = me_info->width;
-//    Ipp32s h = me_info->height;
-//
-//    src += cu->ctb_pelx + me_info->posx + (MV->mvx >> 2) + (cu->ctb_pely + me_info->posy + (MV->mvy >> 2)) * srcPitch;
-//
-//    H265Prediction::Interpolate<TEXT_LUMA>(H265Prediction::INTERP_VER,
-//        src - 1 * srcPitch, srcPitch, dst[HP_02], dstPitch, 2, w, h + 1, 6, 1 << 5);
-//
-//    H265Prediction::Interpolate<TEXT_LUMA>(H265Prediction::INTERP_VER,
-//        tmpHp + 3 * tmpHpPitch, tmpHpPitch, dst[HP_22], dstPitch, 2, w + 2, h + 1, 12, 1 << 11);
-//
-//    Add32AndShift6(tmpHp + 4 * tmpHpPitch, tmpHpPitch, dst[HP_20], dstPitch, w + 1, h);
-//}
-//
-//void H265CU_ME_Interpolate_QuaterPel(H265CU * cu, H265MEInfo* me_info, H265MV* intMv, H265MV* subMv, PixType *src, Ipp32s srcPitch, Ipp16s *tmpHor, Ipp32s tmpHorPitch, Ipp8u *dst, Ipp32s dstPitch)
-//{
-//    Ipp32s w = me_info->width;
-//    Ipp32s h = me_info->height;
-//
-//    src += cu->ctb_pelx + me_info->posx + (intMv->mvx >> 2) + (cu->ctb_pely + me_info->posy + (intMv->mvy >> 2)) * srcPitch;
-//
-//    Ipp32s dmvx = subMv->mvx;
-//    Ipp32s dmvy = subMv->mvy;
-//
-//    assert(dmvx || dmvy);
-//
-//    if (dmvx == 0)
-//    {
-//        H265Prediction::Interpolate<TEXT_LUMA>(H265Prediction::INTERP_VER,
-//            src + (dmvy >> 31) * srcPitch, srcPitch, dst, dstPitch, (dmvy & 3), w, h, 6, 1 << 5);
-//    }
-//    else if (dmvy == 0)
-//    {
-//        Add32AndShift6(tmpHor + 3 * tmpHorPitch, tmpHorPitch, dst, dstPitch, w, h);
-//    }
-//    else
-//    {
-//        H265Prediction::Interpolate<TEXT_LUMA>(H265Prediction::INTERP_VER,
-//            tmpHor + 3 * tmpHorPitch, tmpHorPitch, dst, dstPitch, (dmvy & 3), w, h, 12, 1 << 11);
-//    }
-//}
-
-
 
 } // namespace

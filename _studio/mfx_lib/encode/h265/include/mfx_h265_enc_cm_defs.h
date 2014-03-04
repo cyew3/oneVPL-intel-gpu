@@ -540,109 +540,6 @@ struct H265EncCURBEData {
 };
 
 
-struct H265PAKObject
-{ /* PAK Object Macroblock Codes for AVC */
-
-    //DW0
-    union {
-        mfxU8   MbMode;
-        struct {
-            mfxU8   InterMbMode        :2;
-            mfxU8   SkipMbFlag         :1;
-            mfxU8   MBZ1               :1;
-            mfxU8   IntraMbMode        :2;
-            mfxU8   MBZ2               :1;
-            mfxU8   FieldPolarity      :1;
-        };
-    };
-
-    union {
-        mfxU8   MbType;
-        struct {
-            mfxU8   MbType5Bits     :5;
-            mfxU8   IntraMbFlag     :1;
-            mfxU8   FieldMbFlag     :1;
-            mfxU8   TransformFlag   :1;
-        };
-    };
-
-    union {
-        mfxU8 MbFlag;
-        struct {
-            mfxU8   ResidDiffFlag   :1;
-            mfxU8   DcBlockCodedVFlag   :1;
-            mfxU8   DcBlockCodedUFlag   :1;
-            mfxU8   DcBlockCodedYFlag   :1;
-            mfxU8   MvFormat      :3;
-            mfxU8   MBZ3          :1;
-        };
-    };
-
-    union {
-        mfxU8 MvNum;
-        struct {
-            mfxU8 NumPackedMv:6;
-            mfxU8 MBZ4:1;
-            mfxU8 ExtendedForm:1;
-        };
-    };
-
-    //DW1 - DW3
-    union {
-        struct {    /* Intra */
-            mfxU16  LumaIntraModes[4];;
-            union {
-                mfxU8   IntraStruct;
-                struct {
-                    mfxU8   ChromaIntraPredMode :2;
-                    mfxU8   IntraPredAvailFlags :6;
-                };
-            };
-            mfxU8   MBZ6;
-            mfxU16  MBZ7;
-        };
-
-        struct {    /* Inter */
-            mfxU8   SubMbShape;
-            mfxU8   SubMbPredMode;
-            mfxU16  MBZ8;
-            mfxU8   RefPicSelect[2][4];
-        };
-    };
-
-    //DW4. used for padding
-    mfxU16 intraCost;
-    mfxU16 interCost;
-    //DW5
-    mfxU16 dist;
-    mfxU16 rate;
-    //DW6-7
-    mfxU16 lumaCoeffSum[4];
-    //DW8
-    mfxU8  lumaCoeffCnt[4];
-    //DW9
-    mfxI16 costCenter0X;
-    mfxI16 costCenter0Y;
-    //DW10
-    mfxI16 costCenter1X;
-    mfxI16 costCenter1Y;
-    //DW11-12
-    mfxI16Pair mv[2];
-    //13
-    mfxU32 MBZ13;
-    //14
-    mfxU32 MBZ14;
-    //15
-    mfxU32 MBZ15;
-};
-
-
-struct mfxAvcMbMVs
-{
-    mfxI16Pair MotionVectors[2][16];
-};
-
-
 struct mfxVMEIMEIn
 {
     union{
@@ -806,21 +703,6 @@ extern "C" void RawMeMB_B(
     SurfaceIndex RawMeSurfIndex,
     SurfaceIndex RawMeMVPredSurfIndex,
     SurfaceIndex MvPredSurfIndex);
-
-#define DECLARE_INTERPOLATE_TEST_KERNEL(BLK_W, BLK_H, TYPE) \
-    extern "C" void InterpolateTest_##BLK_W##x##BLK_H##_##TYPE(SurfaceIndex SURF_SRC, SurfaceIndex SURF_REF, SurfaceIndex SURF_SAD, uint sadPitch)
-DECLARE_INTERPOLATE_TEST_KERNEL(16, 32, IntPel);
-DECLARE_INTERPOLATE_TEST_KERNEL(32, 16, IntPel);
-DECLARE_INTERPOLATE_TEST_KERNEL(32, 32, IntPel);
-DECLARE_INTERPOLATE_TEST_KERNEL(16, 32, HalfPelVert);
-DECLARE_INTERPOLATE_TEST_KERNEL(32, 16, HalfPelVert);
-DECLARE_INTERPOLATE_TEST_KERNEL(32, 32, HalfPelVert);
-DECLARE_INTERPOLATE_TEST_KERNEL(16, 32, HalfPelHorz);
-DECLARE_INTERPOLATE_TEST_KERNEL(32, 16, HalfPelHorz);
-DECLARE_INTERPOLATE_TEST_KERNEL(32, 32, HalfPelHorz);
-DECLARE_INTERPOLATE_TEST_KERNEL(16, 32, HalfPelDiag);
-DECLARE_INTERPOLATE_TEST_KERNEL(32, 16, HalfPelDiag);
-DECLARE_INTERPOLATE_TEST_KERNEL(32, 32, HalfPelDiag);
 
 #pragma warning(pop)
 

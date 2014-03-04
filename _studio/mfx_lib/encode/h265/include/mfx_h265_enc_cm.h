@@ -42,15 +42,6 @@ class DdiTask;
 */
 //class H265VideoParam;
 struct H265EncCURBEData;
-struct H265PAKObject;
-
-struct mfxVMEUNIIn
-{
-    mfxU16  FTXCoeffThresh_DC;
-    mfxU8   FTXCoeffThresh[6];
-    mfxU8   MvCost[8];
-    mfxU8   ModeCost[12];
-};
 
 class CmRuntimeError : public std::exception
 {
