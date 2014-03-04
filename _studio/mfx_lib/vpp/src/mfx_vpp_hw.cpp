@@ -1363,6 +1363,12 @@ mfxStatus  VideoVPPHW::Init(
     sts = CheckIOMode(par, m_ioMode);
     MFX_CHECK_STS(sts);
 
+    /* Any operations with P010 are SW-only so far */
+    if (MFX_FOURCC_P010 == par->vpp.In.FourCC || MFX_FOURCC_P010 == par->vpp.Out.FourCC)
+    {
+        return MFX_WRN_PARTIAL_ACCELERATION;
+    }
+
     if (MFX_FOURCC_NV12 != par->vpp.Out.FourCC && MFX_FOURCC_RGB4 != par->vpp.Out.FourCC)
     {
         return MFX_ERR_UNSUPPORTED;
@@ -1533,6 +1539,12 @@ mfxStatus VideoVPPHW::QueryIOSurf(
 
     sts = CheckIOMode(par, ioMode);
     MFX_CHECK_STS(sts);
+
+    /* Any operations with P010 are SW-only so far */
+    if (MFX_FOURCC_P010 == par->vpp.In.FourCC || MFX_FOURCC_P010 == par->vpp.Out.FourCC)
+    {
+        return MFX_WRN_PARTIAL_ACCELERATION;
+    }
 
     if (MFX_FOURCC_NV12 != par->vpp.Out.FourCC && MFX_FOURCC_RGB4 != par->vpp.Out.FourCC)
     {
