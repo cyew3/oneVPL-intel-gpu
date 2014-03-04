@@ -72,7 +72,6 @@ void h265_quant_fwd_rdo(
     Ipp32s  bit_depth,
     Ipp32s  is_slice_i,
 
-    Ipp32u& abs_sum,
     EnumTextType   type,
     Ipp32u  abs_part_idx,
 

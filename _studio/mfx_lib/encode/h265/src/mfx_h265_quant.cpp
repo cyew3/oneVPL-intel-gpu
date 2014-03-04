@@ -180,7 +180,7 @@ void H265CU::QuantFwdTu(
 
         if ((is_luma || m_par->rdoqChromaFlag) && m_isRdoq) {
             h265_quant_fwd_rdo( this, residuals + offset, coeff + offset, log2TrSize,
-                                BIT_DEPTH_LUMA, m_cslice->slice_type == I_SLICE, abs_sum, is_luma ? TEXT_LUMA : TEXT_CHROMA,
+                                BIT_DEPTH_LUMA, m_cslice->slice_type == I_SLICE, is_luma ? TEXT_LUMA : TEXT_CHROMA,
                                 abs_part_idx, QP, m_bsf );
         }
         else {

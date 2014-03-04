@@ -64,6 +64,9 @@ static const Ipp16u h265_quant_table_fwd[] =
 static const Ipp32s  g_eTTable[4] = {0,3,1,2};
 
 
+#define RDOQ_DoAlgorithm(CGZ,SBH) \
+    quant.DoAlgorithm<CGZ,SBH>(pSrc, pDst, log2_tr_size, bit_depth, is_slice_i, type, abs_part_idx, QP)
+
 void h265_quant_fwd_rdo(
     H265CU*  pCU,
     Ipp16s*  pSrc,
@@ -71,7 +74,6 @@ void h265_quant_fwd_rdo(
     Ipp32s   log2_tr_size,
     Ipp32s   bit_depth,
     Ipp32s   is_slice_i,
-    Ipp32u&  abs_sum,
     EnumTextType  type,
     Ipp32u   abs_part_idx,
     Ipp32s   QP,
@@ -80,28 +82,12 @@ void h265_quant_fwd_rdo(
 
     RDOQuant quant(pCU, bs);
 
-    if (pCU->m_par->rdoqCGZFlag) {
-        quant.DoAlgorithm<1>(
-            pSrc,
-            pDst,
-            log2_tr_size,
-            bit_depth,
-            is_slice_i,
-            abs_sum,
-            type,
-            abs_part_idx,
-            QP);
-    } else {
-        quant.DoAlgorithm<0>(
-            pSrc,
-            pDst,
-            log2_tr_size,
-            bit_depth,
-            is_slice_i,
-            abs_sum,
-            type,
-            abs_part_idx,
-            QP);
+    switch((pCU->m_par->rdoqCGZFlag << 1) | pCU->m_par->SBHFlag) {
+    case 0: RDOQ_DoAlgorithm(0, 0); break;
+    case 1: RDOQ_DoAlgorithm(0, 1); break;
+    case 2: RDOQ_DoAlgorithm(1, 0); break;
+    default:
+    case 3: RDOQ_DoAlgorithm(1, 1); break;
     }
 } // void h265_quant_fwd_rdo(...)
 
@@ -376,18 +362,18 @@ void EncodeOneCoeff(
 } // void EncodeOneCoeff(...)
 
 
-template <Ipp8u rdoqCGZ>
+template <Ipp8u rdoqCGZ, Ipp8u SBH>
 void RDOQuant::DoAlgorithm(
     Ipp16s*  pSrc,
     Ipp16s*  pDst,
     Ipp32s   log2_tr_size,
     Ipp32s   bit_depth,
     Ipp32s   is_slice_i,
-    Ipp32u&  abs_sum,
     EnumTextType  type,
     Ipp32u   abs_part_idx,
     Ipp32s   QP)
 {
+    Ipp32u  abs_sum = 0;
     //static int numCall = 0;
 
     //if(m_pCU->m_isPrint)
@@ -420,6 +406,18 @@ void RDOQuant::DoAlgorithm(
     Ipp32u qlevels[MAX_TU_SIZE];//abs levels
     memset(qlevels, 0, sizeof(Ipp32u)*coeffCount);
     memset(pDst, 0, sizeof(Ipp16s)*coeffCount);
+
+    Ipp32s rate_inc_up   [MAX_TU_SIZE];
+    Ipp32s rate_inc_down [MAX_TU_SIZE];
+    Ipp32s sig_rate_delta[MAX_TU_SIZE];
+    Ipp32s delta_u       [MAX_TU_SIZE];
+
+    if (SBH) {
+        memset( rate_inc_up,    0, sizeof(Ipp32s) * coeffCount );
+        memset( rate_inc_down,  0, sizeof(Ipp32s) * coeffCount );
+        memset( sig_rate_delta, 0, sizeof(Ipp32s) * coeffCount );
+        memset( delta_u,        0, sizeof(Ipp32s) * coeffCount );
+    }
 
     const Ipp16u * scanCG = h265_sig_last_scan[ scan_idx - 1 ][ log2_tr_size > 3 ? log2_tr_size-2-1 : 0  ];
     if( log2_tr_size == 3 )
@@ -521,6 +519,10 @@ void RDOQuant::DoAlgorithm(
                         width,
                         height,
                         type);
+                    if (SBH)  {
+                        sig_rate_delta[blk_pos] = m_cabacBits.significantBits[ctx_sig_inc][1] -
+                            m_cabacBits.significantBits[ctx_sig_inc][0];
+                    }
                 }
 
                 Ipp32u qval = GetBestQuantLevel(
@@ -534,6 +536,20 @@ void RDOQuant::DoAlgorithm(
                     qbits,
                     errScale,
                     isLast);
+
+                if (SBH) {
+                    delta_u[blk_pos] = (level_float - ((Ipp32s)qval << qbits)) >> (qbits-8);
+                    if( qval > 0 )
+                    {
+                        Ipp32s rate_cur = GetCost_EncodeOneCoeff(qval, local_cabac);
+                        rate_inc_up   [blk_pos] = GetCost_EncodeOneCoeff(qval+1, local_cabac) - rate_cur;
+                        rate_inc_down [blk_pos] = GetCost_EncodeOneCoeff(qval-1, local_cabac) - rate_cur;
+                    }
+                    else
+                    {
+                        rate_inc_up   [blk_pos] = m_cabacBits.greaterOneBits[4 * local_cabac.ctx_set + local_cabac.c1][0];
+                    }
+                }
 
                 qlevels[ blk_pos ] = qval;
                 cost_base += cost_nz_level [ scan_pos ];
@@ -727,7 +743,137 @@ void RDOQuant::DoAlgorithm(
         Ipp32s qval    = qlevels[ blk_pos ];
         pDst[blk_pos]  = (CoeffsType)Saturate(-32768, 32767, pSrc[ blk_pos ] < 0 ? -qval : qval);
 
-        abs_sum += qval;
+        if (SBH)
+            abs_sum += qval;
+    }
+
+    if(SBH)
+    {
+        if (abs_sum < 2) return;
+
+        Ipp32s qp_rem = h265_qp_rem[QP];
+        Ipp32s qp6 = h265_qp6[QP];
+        Ipp32s scale = h265_quant_table_inv[qp_rem] * h265_quant_table_inv[qp_rem] * (1<<(qp6<<1));
+        Ipp64s rd_factor = (Ipp64s) (scale / m_lambda / 16 / (1<<DISTORTION_PRECISION_ADJUSTMENT(2*(BIT_DEPTH_LUMA-8))) + 0.5);
+        Ipp32s lastCG = -1;
+
+        const Ipp32s last_scan_set = (width * height - 1) >> LOG2_SCAN_SET_SIZE;
+
+        for(Ipp32s subset = last_scan_set; subset >= 0; subset--)
+        {
+            Ipp32s sub_pos     = subset << LOG2_SCAN_SET_SIZE;
+            Ipp32s last_nz_pos_in_CG = -1, first_nz_pos_in_CG = SCAN_SET_SIZE;
+            Ipp32s pos_in_CG;
+            abs_sum = 0;
+
+            for(pos_in_CG = SCAN_SET_SIZE-1; pos_in_CG >= 0; pos_in_CG--)
+            {
+                if(pDst[scan[sub_pos + pos_in_CG]])
+                {
+                    last_nz_pos_in_CG = pos_in_CG;
+                    break;
+                }
+            }
+
+            for(pos_in_CG = 0; pos_in_CG < SCAN_SET_SIZE; pos_in_CG++)
+            {
+                if(pDst[scan[sub_pos + pos_in_CG]])
+                {
+                    first_nz_pos_in_CG = pos_in_CG;
+                    break;
+                }
+            }
+
+            for(pos_in_CG = first_nz_pos_in_CG; pos_in_CG <=last_nz_pos_in_CG; pos_in_CG++)
+            {
+                abs_sum += pDst[scan[sub_pos + pos_in_CG]];
+            }
+
+            if(last_nz_pos_in_CG >= 0 && lastCG==-1)
+            {
+                lastCG = 1; 
+            } 
+
+            if(last_nz_pos_in_CG - first_nz_pos_in_CG >= SBH_THRESHOLD)
+            {
+                Ipp8u sign_bit  = (pDst[scan[sub_pos + first_nz_pos_in_CG]] > 0 ? 0 : 1);
+                Ipp8u sum_parity= (Ipp8u)(abs_sum & 0x1);
+                if(sign_bit != sum_parity)
+                {
+                    Ipp64s min_cost_inc = IPP_MAX_64S, cur_cost = IPP_MAX_64S;
+                    Ipp16s min_pos = -1, final_adjust = 0, cur_adjust = 0;
+
+                    Ipp32s last_pos_in_CG = (lastCG == 1 ? last_nz_pos_in_CG : SCAN_SET_SIZE - 1);
+
+                    for(pos_in_CG = last_pos_in_CG; pos_in_CG >= 0; pos_in_CG--)
+                    {
+                        Ipp32u blk_pos   = scan[ sub_pos + pos_in_CG ];
+                        if(pDst[blk_pos] != 0)
+                        {
+                            Ipp64s cost_up   = rd_factor * ( - delta_u[blk_pos] ) + rate_inc_up  [blk_pos];
+                            Ipp64s cost_down = rd_factor * (   delta_u[blk_pos] ) + rate_inc_down[blk_pos] 
+                            -   ((abs(pDst[blk_pos]) == 1) ? sig_rate_delta[blk_pos] : 0);
+
+                            if(lastCG == 1 && last_nz_pos_in_CG == pos_in_CG && abs(pDst[blk_pos]) == 1)
+                            {
+                                cost_down -= (4<<15) ;
+                            }
+
+                            if(cost_up < cost_down)
+                            {  
+                                cur_cost = cost_up;
+                                cur_adjust = 1;
+                            }
+                            else               
+                            {
+                                cur_adjust = -1;
+                                if(pos_in_CG == first_nz_pos_in_CG && abs(pDst[blk_pos]) == 1)
+                                {
+                                    cur_cost = IPP_MAX_64S;
+                                }
+                                else
+                                {
+                                    cur_cost = cost_down ; 
+                                }
+                            }
+                        }
+                        else
+                        {
+                            cur_cost = rd_factor * ( - (abs(delta_u[blk_pos])) ) + (1<<15) + rate_inc_up[blk_pos] + sig_rate_delta[blk_pos]; 
+                            cur_adjust = 1 ;
+
+                            if(pos_in_CG < first_nz_pos_in_CG)
+                            {
+                                Ipp32u sign_bit_cur = (pSrc[blk_pos] >=0 ? 0 : 1);
+                                if(sign_bit_cur != sign_bit)
+                                {
+                                    cur_cost = IPP_MAX_64S;
+                                }
+                            }
+                        }
+
+                        if(cur_cost < min_cost_inc)
+                        {
+                            min_cost_inc = cur_cost;
+                            final_adjust = cur_adjust;
+                            min_pos = blk_pos;
+                        }
+                    }
+
+                    if(pDst[min_pos] == 32767 || pDst[min_pos] == -32768)
+                    {
+                        final_adjust = -1;
+                    }
+
+                    pDst[min_pos] += pSrc[min_pos] >= 0 ? final_adjust : -final_adjust;
+                }
+            }
+
+            if(lastCG == 1)
+            {
+                lastCG = 0;
+            }
+        }
     }
 
     return;
@@ -800,8 +946,7 @@ Ipp64f RDOQuant::GetCost_EncodeOneCoeff(
         VM_ASSERT (0);
     }
 
-    return GetCost( bit_cost );
-
+    return bit_cost;
 } // Ipp64f RDOQuant::GetCost_EncodeOneCoeff(
 
 
@@ -837,7 +982,7 @@ Ipp32u RDOQuant::GetBestQuantLevel (
     {
         Ipp64f quant_err = (Ipp64f)(level_float  - (qlevel << qbits ));
 
-        Ipp64f bit_cost = GetCost_EncodeOneCoeff( qlevel, local_cabac);
+        Ipp64f bit_cost = GetCost(GetCost_EncodeOneCoeff( qlevel, local_cabac));
 
         Ipp64f curr_cost = (quant_err *quant_err)*errScale + bit_cost;
         curr_cost       += curr_cost_sig;

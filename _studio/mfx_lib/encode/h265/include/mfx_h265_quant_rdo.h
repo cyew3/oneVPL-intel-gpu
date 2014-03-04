@@ -52,7 +52,7 @@ public:
      RDOQuant(H265CU* pCU, H265BsFake* bs);
      ~RDOQuant();
 
-     template <Ipp8u rdoqCGZ>
+     template <Ipp8u rdoqCGZ, Ipp8u SBH>
      void DoAlgorithm(
          Ipp16s* pSrc,
          Ipp16s* pDst,
@@ -62,7 +62,6 @@ public:
          Ipp32s  bit_depth,
          Ipp32s  is_slice_i,
 
-         Ipp32u& abs_sum,
          EnumTextType type,
          Ipp32u  abs_part_idx,
          Ipp32s  QP);

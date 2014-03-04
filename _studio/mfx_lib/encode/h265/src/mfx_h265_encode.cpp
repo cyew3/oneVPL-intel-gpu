@@ -642,11 +642,6 @@ mfxStatus MFXVideoENCODEH265::Init(mfxVideoParam* par_in)
         if (m_mfxHEVCOpts.CostChroma == MFX_CODINGOPTION_UNKNOWN)
             m_mfxHEVCOpts.CostChroma = opts_tu->CostChroma;
 
-        // doesn't work together now, no sense
-        if (m_mfxHEVCOpts.RDOQuant == MFX_CODINGOPTION_ON)
-           m_mfxHEVCOpts.SignBitHiding = MFX_CODINGOPTION_OFF;
-        if (m_mfxHEVCOpts.SignBitHiding == MFX_CODINGOPTION_ON)
-           m_mfxHEVCOpts.RDOQuant = MFX_CODINGOPTION_OFF;
         if (m_mfxHEVCOpts.RDOQuant == MFX_CODINGOPTION_UNKNOWN)
             m_mfxHEVCOpts.RDOQuant = opts_tu->RDOQuant;
         if (m_mfxHEVCOpts.SignBitHiding == MFX_CODINGOPTION_UNKNOWN)
@@ -1532,10 +1527,6 @@ mfxStatus MFXVideoENCODEH265::Query(VideoCORE *core, mfxVideoParam *par_in, mfxV
                 }
             }
 
-            if (opts_out->SignBitHiding == MFX_CODINGOPTION_ON && opts_out->RDOQuant == MFX_CODINGOPTION_ON) { // doesn't work together
-                opts_out->SignBitHiding = MFX_CODINGOPTION_OFF;
-                isCorrected++;
-            }
             if (opts_out->SAO == MFX_CODINGOPTION_ON && in->mfx.NumSlice > 1) { // switch off SAO for now, because of inter-slice deblocking
                 opts_out->SAO = MFX_CODINGOPTION_OFF;
                 isCorrected++;
