@@ -2,6 +2,7 @@
 
 #include "ts_session.h"
 #include "ts_ext_buffers.h"
+#include "ts_surface.h"
 
 class tsVideoEncoder : public tsSession, public tsSurfacePool
 {
@@ -19,6 +20,8 @@ public:
     mfxSyncPoint*               m_pSyncPoint;
     mfxFrameSurface1*           m_pSurf;
     mfxEncodeCtrl*              m_pCtrl;
+    tsSurfaceFiller*            m_filler;
+    tsBitstreamProcessor*       m_bs_processor;
 
     tsVideoEncoder(mfxU32 CodecId = 0, bool useDefaults = true);
     ~tsVideoEncoder();
@@ -46,4 +49,6 @@ public:
 
     mfxStatus AllocBitstream(mfxU32 size = 0);
     mfxStatus AllocSurfaces();
+
+    mfxStatus EncodeFrames(mfxU32 n);
 };

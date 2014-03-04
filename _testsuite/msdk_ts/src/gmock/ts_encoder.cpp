@@ -13,6 +13,8 @@ tsVideoEncoder::tsVideoEncoder(mfxU32 CodecId, bool useDefaults)
     , m_pSyncPoint(&m_syncpoint)
     , m_pSurf(0)
     , m_pCtrl(&m_ctrl)
+    , m_filler(0)
+    , m_bs_processor(0)
 {
     m_par.mfx.CodecId = CodecId;
     if(m_default)
@@ -185,6 +187,10 @@ mfxStatus tsVideoEncoder::EncodeFrameAsync()
             AllocBitstream();TS_CHECK_MFX;
         }
         m_pSurf = GetSurface();TS_CHECK_MFX;
+        if(m_filler)
+        {
+            m_pSurf = m_filler->FillSurface(m_pSurf, m_pFrameAllocator);
+        }
     }
     mfxStatus mfxRes = EncodeFrameAsync(m_session, m_pCtrl, m_pSurf, m_pBitstream, m_pSyncPoint);
 
@@ -241,4 +247,52 @@ mfxStatus tsVideoEncoder::AllocSurfaces()
         QueryIOSurf();TS_CHECK_MFX;
     }
     return tsSurfacePool::AllocSurfaces(m_request);
+}
+
+mfxStatus tsVideoEncoder::EncodeFrames(mfxU32 n)
+{
+    mfxU32 encoded = 0;
+    mfxU32 submitted = 0;
+    mfxU32 async = TS_MAX(1, m_par.AsyncDepth);
+    mfxSyncPoint sp;
+
+    async = TS_MIN(n, async - 1);
+
+    while(encoded < n)
+    {
+        if(MFX_ERR_MORE_DATA == EncodeFrameAsync())
+        {
+            if(!m_pSurf)
+            {
+                if(submitted)
+                {
+                    encoded += submitted;
+                    SyncOperation(m_session, sp, MFX_INFINITE);
+                }
+                break;
+            } 
+            continue;
+        }
+
+        g_tsStatus.check();TS_CHECK_MFX;
+        sp = m_syncpoint;
+
+        if(++submitted >= async)
+        {
+            SyncOperation();TS_CHECK_MFX;
+            encoded += submitted;
+            submitted = 0;
+            async = TS_MIN(async, (n - encoded));
+
+            if (m_bs_processor)
+            {
+                g_tsStatus.check(m_bs_processor->ProcessBitstream(m_bitstream));
+                TS_CHECK_MFX;
+            }
+        }
+    }
+
+    g_tsLog << encoded << " FRAMES ENCODED" << std::endl;
+    
+    return g_tsStatus.get();
 }

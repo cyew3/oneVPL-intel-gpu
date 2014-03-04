@@ -159,12 +159,14 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="include\gmock\ts_bitstream.h" />
     <ClInclude Include="include\gmock\ts_common.h" />
     <ClInclude Include="include\gmock\ts_alloc.h" />
     <ClInclude Include="include\gmock\ts_encoder.h" />
     <ClInclude Include="include\gmock\ts_ext_buffers.h" />
     <ClInclude Include="include\gmock\ts_parser.h" />
     <ClInclude Include="include\gmock\ts_session.h" />
+    <ClInclude Include="include\gmock\ts_surface.h" />
     <ClInclude Include="include\test_sample_allocator.h" />
     <ClInclude Include="include\test_trace.h" />
   </ItemGroup>
@@ -174,9 +176,11 @@
     <ClCompile Include="src\gmock\test_suites\vp8e_init.cpp" />
     <ClCompile Include="src\gmock\test_suites\vp8e_query_io_surf.cpp" />
     <ClCompile Include="src\gmock\ts_alloc.cpp" />
+    <ClCompile Include="src\gmock\ts_bitstream.cpp" />
     <ClCompile Include="src\gmock\ts_common.cpp" />
     <ClCompile Include="src\gmock\ts_encoder.cpp" />
     <ClCompile Include="src\gmock\ts_session.cpp" />
+    <ClCompile Include="src\gmock\ts_surface.cpp" />
     <ClCompile Include="src\test_sample_allocator.cpp" />
     <ClCompile Include="src\test_trace.cpp" />
   </ItemGroup>
