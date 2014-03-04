@@ -162,7 +162,7 @@ class H265DecoderFrame : public H265DecYUVBufferPadded, public RefCounter
 
 public:
     //h265
-    SAOLCUParam* m_saoLcuParam[3];
+    SAOLCUParam* m_saoLcuParam;
     Ipp32s m_sizeOfSAOData;
 
     // FIXME: make coding data a member, not pointer
