@@ -1036,6 +1036,22 @@ void H265CU::IntraLumaModeDecisionRDO(Ipp32s absPartIdx, Ipp32u offset, Ipp8u de
     Ipp32s numCand2 = numCand1;
 #endif
 
+    // FAST_UDI_USE_MPM //kolya
+    if(0) {
+        Ipp8u  uiPreds[3] = {0xFF, 0xFF, 0xFF}; //all 3 values will be changed to different 
+        Ipp32s iMode = GetIntradirLumaPred(absPartIdx, uiPreds);
+        for(Ipp32s j = 0; j < iMode; j++) {
+            Ipp32s isInList = 0;
+            for(Ipp32s i = 0; i < numCand1; i++) 
+                isInList |= (uiPreds[j] == this->m_intraModes[i]); 
+                if (!isInList) {
+                    this->m_intraModes[numCand1++] = uiPreds[j];
+                    this->m_intraCosts[numCand1] = this->m_intraCosts[uiPreds[j]];
+                    this->m_intraBits[numCand1] = this->m_intraBits[uiPreds[j]];
+                }
+            } 
+    } // <-- end of FAST_UDI_USE_MPM
+
     CABAC_CONTEXT_H265 initCtx[NUM_CABAC_CONTEXT];
     CABAC_CONTEXT_H265 bestCtx[NUM_CABAC_CONTEXT];
     CostOpt finalRdoCostOpt = COST_REC_TR_ALL;
