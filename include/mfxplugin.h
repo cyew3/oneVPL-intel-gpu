@@ -1,6 +1,6 @@
 /******************************************************************************* *\
 
-Copyright (C) 2007-2013 Intel Corporation.  All rights reserved.
+Copyright (C) 2007-2014 Intel Corporation.  All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
@@ -42,7 +42,8 @@ typedef enum {
     MFX_PLUGINTYPE_VIDEO_GENERAL   = 0,
     MFX_PLUGINTYPE_VIDEO_DECODE    = 1,
     MFX_PLUGINTYPE_VIDEO_ENCODE    = 2,
-    MFX_PLUGINTYPE_VIDEO_VPP       = 3
+    MFX_PLUGINTYPE_VIDEO_VPP       = 3,
+    MFX_PLUGINTYPE_VIDEO_ENC       = 4
 } mfxPluginType;
 
 typedef enum {
@@ -97,6 +98,8 @@ typedef struct mfxCoreInterface {
 } mfxCoreInterface;
 
 /* video codec plugin extension*/
+typedef struct _mfxENCInput *mfxENCInput;
+typedef struct _mfxENCOutput *mfxENCOutput;
 typedef struct mfxVideoCodecPlugin{
     mfxStatus (MFX_CDECL *Query)(mfxHDL pthis, mfxVideoParam *in, mfxVideoParam *out);
     mfxStatus (MFX_CDECL *QueryIOSurf)(mfxHDL pthis, mfxVideoParam *par, mfxFrameAllocRequest *in, mfxFrameAllocRequest *out); 
@@ -113,7 +116,9 @@ typedef struct mfxVideoCodecPlugin{
 
     mfxStatus (MFX_CDECL *VPPFrameSubmit)(mfxHDL pthis,  mfxFrameSurface1 *in, mfxFrameSurface1 *out, mfxExtVppAuxData *aux, mfxThreadTask *task);
 
-    mfxHDL reserved1[5];
+    mfxStatus (MFX_CDECL *ENCFrameSubmit)(mfxHDL pthis,  mfxENCInput *in, mfxENCOutput *out, mfxThreadTask *task);
+
+    mfxHDL reserved1[4];
     mfxU32 reserved2[8];
 } mfxVideoCodecPlugin;
 
