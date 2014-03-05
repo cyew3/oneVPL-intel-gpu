@@ -17,7 +17,7 @@ public:
 class tsBitstreamProcessor
 {
 public:
-    virtual mfxStatus ProcessBitstream(mfxBitstream& bs){ return MFX_ERR_NONE; };
+    virtual mfxStatus ProcessBitstream(mfxBitstream& bs, mfxU32 nFrames){ return MFX_ERR_NONE; };
 };
 
 class tsBitstreamErazer : public tsBitstreamProcessor
@@ -25,7 +25,7 @@ class tsBitstreamErazer : public tsBitstreamProcessor
 public:
     tsBitstreamErazer() {};
     ~tsBitstreamErazer() {};
-    mfxStatus ProcessBitstream(mfxBitstream& bs){ bs.DataLength = 0; return MFX_ERR_NONE; }
+    mfxStatus ProcessBitstream(mfxBitstream& bs, mfxU32 nFrames){ bs.DataLength = 0; return MFX_ERR_NONE; }
 };
 
 class tsBitstreamWriter : public tsBitstreamProcessor
@@ -35,5 +35,5 @@ private:
 public:
     tsBitstreamWriter(const char* fname);
     ~tsBitstreamWriter();
-    mfxStatus ProcessBitstream(mfxBitstream& bs);
+    mfxStatus ProcessBitstream(mfxBitstream& bs, mfxU32 nFrames);
 };

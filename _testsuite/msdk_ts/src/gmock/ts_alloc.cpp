@@ -1,4 +1,5 @@
 #include "ts_alloc.h"
+#include <algorithm>
 
 tsBufferAllocator::tsBufferAllocator()
 {
@@ -52,13 +53,47 @@ void tsSurfacePool::UseDefaultAllocator(bool isSW)
     m_external = false;
 }
 
+
+struct SurfPtr
+{
+    mfxFrameSurface1* m_surf;
+    SurfPtr(mfxFrameSurface1* s) : m_surf(s) {}
+    mfxFrameSurface1* operator() () { return m_surf++; }
+};
+
+void tsSurfacePool::AllocOpaque(mfxFrameAllocRequest request, mfxExtOpaqueSurfaceAlloc& osa)
+{
+    mfxFrameSurface1 s = {};
+
+    s.Info = request.Info;
+    s.Data.TimeStamp = MFX_TIMESTAMP_UNKNOWN;
+
+    if(!s.Info.PicStruct)
+    {
+        s.Info.PicStruct = MFX_PICSTRUCT_PROGRESSIVE;
+    }
+
+    m_pool.resize(request.NumFrameSuggested, s);
+    m_opaque_pool.resize(request.NumFrameSuggested);
+    std::generate(m_opaque_pool.begin(), m_opaque_pool.end(), SurfPtr(m_pool.data()));
+
+    if(request.Type & (MFX_MEMTYPE_FROM_ENCODE | MFX_MEMTYPE_FROM_VPPIN))
+    {
+        osa.In.Type       = request.Type;
+        osa.In.NumSurface = request.NumFrameSuggested;
+        osa.In.Surfaces   = m_opaque_pool.data();
+    }
+    else 
+    {
+        osa.Out.Type       = request.Type;
+        osa.Out.NumSurface = request.NumFrameSuggested;
+        osa.Out.Surfaces   = m_opaque_pool.data();
+    }
+}
+
 mfxStatus tsSurfacePool::AllocSurfaces(mfxFrameAllocRequest request, bool direct_pointers)
 {
     bool isSW = !(request.Type & (MFX_MEMTYPE_VIDEO_MEMORY_DECODER_TARGET|MFX_MEMTYPE_VIDEO_MEMORY_PROCESSOR_TARGET));
-    if(!m_allocator)
-    {
-        UseDefaultAllocator(isSW);
-    }
     mfxFrameAllocResponse response = {};
     mfxFrameSurface1 s = {};
     mfxFrameAllocRequest* pRequest = &request;
@@ -69,6 +104,11 @@ mfxStatus tsSurfacePool::AllocSurfaces(mfxFrameAllocRequest request, bool direct
     if(!s.Info.PicStruct)
     {
         s.Info.PicStruct = MFX_PICSTRUCT_PROGRESSIVE;
+    }
+
+    if(!m_allocator)
+    {
+        UseDefaultAllocator(isSW);
     }
 
     TRACE_FUNC3(m_allocator->AllocFrame, m_allocator, pRequest, &response);
@@ -83,8 +123,8 @@ mfxStatus tsSurfacePool::AllocSurfaces(mfxFrameAllocRequest request, bool direct
             s.Data.MemId = response.mids[i];
             if(direct_pointers && isSW)
             {
-                    LockSurface(s);
-                    TS_CHECK_MFX;
+                LockSurface(s);
+                TS_CHECK_MFX;
             }
         }
         m_pool.push_back(s);

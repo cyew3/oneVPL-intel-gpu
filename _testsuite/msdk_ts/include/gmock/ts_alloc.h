@@ -15,6 +15,7 @@ private:
     frame_allocator* m_allocator;
     bool             m_external;
     std::vector<mfxFrameSurface1> m_pool;
+    std::vector<mfxFrameSurface1*> m_opaque_pool;
 
     void Close();
 
@@ -27,6 +28,7 @@ public:
 
     void SetAllocator       (frame_allocator* allocator, bool external);
     void UseDefaultAllocator(bool isSW = false);
+    void AllocOpaque        (mfxFrameAllocRequest request, mfxExtOpaqueSurfaceAlloc& osa);
 
     mfxStatus AllocSurfaces (mfxFrameAllocRequest request, bool direct_pointers = true);
     mfxStatus LockSurface   (mfxFrameSurface1& s);

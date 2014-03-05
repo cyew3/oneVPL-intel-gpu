@@ -82,5 +82,8 @@
     <ClCompile Include="src\gmock\ts_bitstream.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\vp8e_reset.cpp">
+      <Filter>Source Files\test_suites</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

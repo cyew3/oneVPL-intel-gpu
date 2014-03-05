@@ -15,6 +15,7 @@ tsVideoEncoder::tsVideoEncoder(mfxU32 CodecId, bool useDefaults)
     , m_pCtrl(&m_ctrl)
     , m_filler(0)
     , m_bs_processor(0)
+    , m_frames_buffered(0)
 {
     m_par.mfx.CodecId = CodecId;
     if(m_default)
@@ -63,6 +64,11 @@ mfxStatus tsVideoEncoder::Init()
             m_pFrameAllocator = GetAllocator();
             SetFrameAllocator();TS_CHECK_MFX;
         }
+        if(m_par.IOPattern & MFX_IOPATTERN_IN_OPAQUE_MEMORY)
+        {
+            QueryIOSurf();
+            AllocOpaque(m_request, m_par);
+        }
     }
     return Init(m_session, m_pPar);
 }
@@ -88,6 +94,7 @@ mfxStatus tsVideoEncoder::Close(mfxSession session)
     g_tsStatus.check( MFXVideoENCODE_Close(session) );
 
     m_initialized = false;
+    m_frames_buffered = 0;
 
     return g_tsStatus.get();
 }
@@ -139,6 +146,8 @@ mfxStatus tsVideoEncoder::Reset(mfxSession session, mfxVideoParam *par)
 {
     TRACE_FUNC2(MFXVideoENCODE_Reset, session, par);
     g_tsStatus.check( MFXVideoENCODE_Reset(session, par) );
+
+    //m_frames_buffered = 0;
 
     return g_tsStatus.get();
 }
@@ -206,6 +215,8 @@ mfxStatus tsVideoEncoder::EncodeFrameAsync(mfxSession session, mfxEncodeCtrl *ct
     TS_TRACE(surface);
     TS_TRACE(bs);
     TS_TRACE(syncp);
+
+    m_frames_buffered += (mfxRes >= 0);
         
     return g_tsStatus.m_status = mfxRes;
 }
@@ -249,6 +260,31 @@ mfxStatus tsVideoEncoder::AllocSurfaces()
     return tsSurfacePool::AllocSurfaces(m_request);
 }
 
+mfxStatus tsVideoEncoder::SyncOperation()
+{
+    return SyncOperation(m_syncpoint);
+}
+
+mfxStatus tsVideoEncoder::SyncOperation(mfxSyncPoint syncp)
+{
+    mfxU32 nFrames = m_frames_buffered;
+    mfxStatus res = SyncOperation(m_session, syncp, MFX_INFINITE);
+    
+    if (m_default && m_bs_processor && g_tsStatus.get() == MFX_ERR_NONE)
+    {
+        g_tsStatus.check(m_bs_processor->ProcessBitstream(m_bitstream, nFrames));
+        TS_CHECK_MFX;
+    }
+
+    return g_tsStatus.m_status = res;
+}
+
+mfxStatus tsVideoEncoder::SyncOperation(mfxSession session,  mfxSyncPoint syncp, mfxU32 wait)
+{
+    m_frames_buffered = 0;
+    return tsSession::SyncOperation(session, syncp, wait);
+}
+
 mfxStatus tsVideoEncoder::EncodeFrames(mfxU32 n)
 {
     mfxU32 encoded = 0;
@@ -267,7 +303,7 @@ mfxStatus tsVideoEncoder::EncodeFrames(mfxU32 n)
                 if(submitted)
                 {
                     encoded += submitted;
-                    SyncOperation(m_session, sp, MFX_INFINITE);
+                    SyncOperation(sp);
                 }
                 break;
             } 
@@ -283,12 +319,6 @@ mfxStatus tsVideoEncoder::EncodeFrames(mfxU32 n)
             encoded += submitted;
             submitted = 0;
             async = TS_MIN(async, (n - encoded));
-
-            if (m_bs_processor)
-            {
-                g_tsStatus.check(m_bs_processor->ProcessBitstream(m_bitstream));
-                TS_CHECK_MFX;
-            }
         }
     }
 

@@ -175,6 +175,7 @@
     <ClCompile Include="src\gmock\test_suites\vp8e_get_video_param.cpp" />
     <ClCompile Include="src\gmock\test_suites\vp8e_init.cpp" />
     <ClCompile Include="src\gmock\test_suites\vp8e_query_io_surf.cpp" />
+    <ClCompile Include="src\gmock\test_suites\vp8e_reset.cpp" />
     <ClCompile Include="src\gmock\ts_alloc.cpp" />
     <ClCompile Include="src\gmock\ts_bitstream.cpp" />
     <ClCompile Include="src\gmock\ts_common.cpp" />

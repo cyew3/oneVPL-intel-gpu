@@ -32,6 +32,7 @@ bool tsReader::Read(mfxU8* dst, mfxU32 size)
         memcpy(dst, Data + DataOffset, size);
         DataOffset += size;
         DataLength -= size;
+        return true;
     }
 
     return false;
@@ -51,7 +52,7 @@ tsBitstreamWriter::~tsBitstreamWriter()
     }
 }
     
-mfxStatus tsBitstreamWriter::ProcessBitstream(mfxBitstream& bs)
+mfxStatus tsBitstreamWriter::ProcessBitstream(mfxBitstream& bs, mfxU32 nFrames)
 {
     if(bs.DataLength != fwrite(bs.Data + bs.DataOffset, 1, bs.DataLength, m_file))
     {

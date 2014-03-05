@@ -22,6 +22,7 @@ public:
     mfxEncodeCtrl*              m_pCtrl;
     tsSurfaceFiller*            m_filler;
     tsBitstreamProcessor*       m_bs_processor;
+    mfxU32                      m_frames_buffered;
 
     tsVideoEncoder(mfxU32 CodecId = 0, bool useDefaults = true);
     ~tsVideoEncoder();
@@ -49,6 +50,11 @@ public:
 
     mfxStatus AllocBitstream(mfxU32 size = 0);
     mfxStatus AllocSurfaces();
+
+    
+    mfxStatus SyncOperation();
+    mfxStatus SyncOperation(mfxSyncPoint syncp);
+    mfxStatus SyncOperation(mfxSession session, mfxSyncPoint syncp, mfxU32 wait);
 
     mfxStatus EncodeFrames(mfxU32 n);
 };
