@@ -321,9 +321,9 @@ mfxStatus MFX_PTIR_Plugin::PTIR_ProcessFrame(mfxFrameSurface1 *surf_in, mfxFrame
         //for (i = 0; i < uiTimer - 1; ++i)
         //    dTime[i] += (double)(liTime[i+1].QuadPart - liTime[i].QuadPart) / liFreq.QuadPart;
     //}
-        return MFX_ERR_MORE_DATA;
+        //return MFX_ERR_MORE_DATA;
 
-    if(uiCur)
+    if(uiCur && !surf_in)
     {
         for(i = 0; i < uiCur - 1; i++)
         {
@@ -340,6 +340,8 @@ mfxStatus MFX_PTIR_Plugin::PTIR_ProcessFrame(mfxFrameSurface1 *surf_in, mfxFrame
                 FrameQueue_Add(&fqIn, frmIn);
             }
         }
+
+        uiCur = 0;
 
         uiFrameCount = fqIn.iCount;
         for(i = 0; i < uiFrameCount; i++)
@@ -370,6 +372,7 @@ mfxStatus MFX_PTIR_Plugin::PTIR_ProcessFrame(mfxFrameSurface1 *surf_in, mfxFrame
             }
         }
     }
+    return MFX_ERR_MORE_DATA;
 
 
     return MFX_ERR_NONE;

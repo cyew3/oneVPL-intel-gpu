@@ -189,7 +189,7 @@ mfxStatus MFX_PTIR_Plugin::VPPFrameSubmit(mfxFrameSurface1 *surface_in, mfxFrame
         }
         return mfxSts;
     }
-    else if(0 == fqIn.iCount)
+    else if(0 == fqIn.iCount && 0 == uiCur)
     {
         return MFX_ERR_MORE_DATA;
     }
@@ -257,15 +257,33 @@ mfxStatus MFX_PTIR_Plugin::Query(mfxVideoParam *in, mfxVideoParam *out)
     if(!in)
         return MFX_ERR_NULL_PTR;
 
-    if(in->vpp.Out.PicStruct  == in->vpp.In.PicStruct ||
-        in->vpp.Out.PicStruct == MFX_PICSTRUCT_UNKNOWN ||
-        in->vpp.In.PicStruct  == MFX_PICSTRUCT_UNKNOWN)
+    mfxVideoParam tmp_param;
+    if(!out)
+        out = &tmp_param;
+
+    memcpy(&out->vpp, &in->vpp, sizeof(mfxInfoVPP));
+    in->AsyncDepth = out->AsyncDepth;
+    in->IOPattern  = out->IOPattern;
+
+    if(in->vpp.Out.PicStruct == in->vpp.In.PicStruct)
     {
+        out->vpp.Out.PicStruct = 0;
+        out->vpp.In.PicStruct = 0;
         return MFX_ERR_UNSUPPORTED;
     }
-    if(in->vpp.Out.PicStruct  != MFX_PICSTRUCT_PROGRESSIVE ||
-       in->vpp.In.PicStruct  == MFX_PICSTRUCT_UNKNOWN)
+    if(in->vpp.In.PicStruct == MFX_PICSTRUCT_UNKNOWN)
     {
+        out->vpp.In.PicStruct = 65535; // MFX_PICSTRUCT_UNKNOWN == 0, so that 0 is meaningless here
+        return MFX_ERR_UNSUPPORTED;
+    }
+    if(in->vpp.Out.PicStruct == MFX_PICSTRUCT_UNKNOWN)
+    {
+        out->vpp.Out.PicStruct = 65535; // MFX_PICSTRUCT_UNKNOWN == 0, so that 0 is meaningless here
+        return MFX_ERR_UNSUPPORTED;
+    }
+    if(in->vpp.Out.PicStruct != MFX_PICSTRUCT_PROGRESSIVE)
+    {
+        out->vpp.Out.PicStruct = 0;
         return MFX_ERR_UNSUPPORTED;
     }
 
@@ -278,7 +296,8 @@ mfxStatus MFX_PTIR_Plugin::Query(mfxVideoParam *in, mfxVideoParam *out)
     {
         return MFX_ERR_UNSUPPORTED;
     }
-    if(in->vpp.In.FourCC != in->vpp.Out.FourCC)
+    if(in->vpp.In.FourCC != in->vpp.Out.FourCC &&
+       in->vpp.In.FourCC != MFX_FOURCC_NV12)
     {
         return MFX_ERR_UNSUPPORTED;
     }
@@ -372,26 +391,64 @@ mfxStatus MFX_PTIR_Plugin::Init(mfxVideoParam *par)
     dFrameRate = par->vpp.In.FrameRateExtN / par->vpp.In.FrameRateExtD;
 
     bisInterlaced = false;
-
-    if(MFX_PICSTRUCT_FIELD_TFF == par->vpp.In.PicStruct ||
-       MFX_PICSTRUCT_FIELD_BFF == par->vpp.In.PicStruct)
+    bFullFrameRate = false;
+    if((MFX_PICSTRUCT_FIELD_TFF == par->vpp.In.PicStruct ||
+         MFX_PICSTRUCT_FIELD_BFF == par->vpp.In.PicStruct) &&
+       (par->vpp.In.FrameRateExtN  == 30 && par->vpp.In.FrameRateExtD == 1 &&
+        par->vpp.Out.FrameRateExtN == 24 && par->vpp.Out.FrameRateExtD == 1))
     {
+        //reverse telecine mode
+        bisInterlaced = false;
+        bFullFrameRate = false;
+    }
+    else if(MFX_PICSTRUCT_FIELD_TFF == par->vpp.In.PicStruct ||
+           MFX_PICSTRUCT_FIELD_BFF == par->vpp.In.PicStruct)
+    {
+        //Deinterlace only mode
         bisInterlaced = true;
+
+        if(2 * par->vpp.In.FrameRateExtN * par->vpp.Out.FrameRateExtD ==
+            par->vpp.In.FrameRateExtD * par->vpp.Out.FrameRateExtN)
+        {
+            //30i -> 60p mode
+            bFullFrameRate = true;
+        }
+        else if(par->vpp.In.FrameRateExtN * par->vpp.Out.FrameRateExtD ==
+            par->vpp.In.FrameRateExtD * par->vpp.Out.FrameRateExtN)
+        {
+            //30i -> 30p mode
+            bFullFrameRate = false;
+        }
+        else
+        {
+            //any additional frame rate conversions are unsupported
+            return MFX_ERR_INVALID_VIDEO_PARAM;
+        }
+    }
+    else
+    {
+        //reverse telecine + additional frame rate conversion are unsupported
+        return MFX_ERR_INVALID_VIDEO_PARAM;
     }
 
-    //TODO: change this
-    if((par->vpp.In.FrameRateExtN / par->vpp.In.FrameRateExtD) <
-       (par->vpp.In.FrameRateExtN / par->vpp.In.FrameRateExtD) )
+    //PTIR's frames init
+    try //try is useless here since frames allocated by malloc, but probably in future it could be changed to new
     {
-        bFullFrameRate = true;  //it determines if number of frames to output will be the same or double.
+        for(i = 0; i < LASTFRAME; i++)
+        {
+            Frame_Create(&frmIO[i], uiInWidth, uiInHeight, uiInWidth / 2, uiInHeight / 2, 0);
+            frmBuffer[i] = frmIO + i;
+        }
+        Frame_Create(&frmIO[LASTFRAME], uiWidth, uiHeight, uiWidth / 2, uiHeight / 2, 0);
     }
-
-    for(i = 0; i < LASTFRAME; i++)
+    catch(std::bad_alloc&)
     {
-        Frame_Create(&frmIO[i], uiInWidth, uiInHeight, uiInWidth / 2, uiInHeight / 2, 0);
-        frmBuffer[i] = frmIO + i;
+        return MFX_ERR_MEMORY_ALLOC;;
     }
-    Frame_Create(&frmIO[LASTFRAME], uiWidth, uiHeight, uiWidth / 2, uiHeight / 2, 0);
+    catch(...) 
+    { 
+        return MFX_ERR_UNKNOWN;; 
+    }
 
     bInited = true;
 
@@ -405,11 +462,27 @@ mfxStatus MFX_PTIR_Plugin::Close()
 {
     if(bInited)
     {
-        for (i = 0; i <= LASTFRAME; ++i)
-            Frame_Release(&frmIO[i]);
-        bInited = false;
+        try
+        {
+            for (mfxU32 i = 0; i <= LASTFRAME; ++i)
+                Frame_Release(&frmIO[i]);
+            bInited = false;
+
+            return MFX_ERR_NONE;
+        }
+        catch(std::bad_alloc&)
+        {
+            return MFX_ERR_UNDEFINED_BEHAVIOR;;
+        }
+        catch(...) 
+        { 
+            return MFX_ERR_UNKNOWN;; 
+        }
     }
-    return MFX_ERR_NONE;
+    else
+    {
+        return MFX_ERR_NOT_INITIALIZED;
+    }
 }
 mfxStatus MFX_PTIR_Plugin::GetVideoParam(mfxVideoParam *par)
 {
