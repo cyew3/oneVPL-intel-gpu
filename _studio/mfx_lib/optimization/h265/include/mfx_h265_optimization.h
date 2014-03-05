@@ -260,6 +260,9 @@ namespace MFX_HEVC_PP
         Ipp32s pitch,
         Ipp32s width);
 
+    typedef void (* PTR_FilterPredictPels_8u)(Ipp8u* PredPel, Ipp32s width);
+    typedef void (* PTR_FilterPredictPels_Bilinear_8u)(Ipp8u* pSrcDst, int width, int topLeft, int bottomLeft, int topRight);
+
     //-----------------------------------------------------
     // aya: approach from Ken/Jon
     // [PTR.Interpolation]
@@ -468,6 +471,9 @@ namespace MFX_HEVC_PP
             Ipp32s pitch,
             Ipp32s width));
 
+        HEVCPP_API( PTR_FilterPredictPels_8u,          void, h265_FilterPredictPels_8u,          (Ipp8u* PredPel, Ipp32s width) );
+        HEVCPP_API( PTR_FilterPredictPels_Bilinear_8u, void, h265_FilterPredictPels_Bilinear_8u, (Ipp8u* pSrcDst, int width, int topLeft, int bottomLeft, int topRight) );
+
         // [Interpolation]
         HEVCPP_API( PTR_Interp_s8_d16, void, h265_InterpLuma_s8_d16_H,   ( INTERP_S8_D16_PARAMETERS_LIST));
         HEVCPP_API( PTR_Interp_s8_d16_Ext, void, h265_InterpChroma_s8_d16_H, ( INTERP_S8_D16_PARAMETERS_LIST, int plane));
@@ -551,10 +557,6 @@ namespace MFX_HEVC_PP
     void h265_PredictIntra_Ang_ChromaNV12_8u(Ipp8u* PredPel, Ipp8u* pDst, Ipp32s dstStride, Ipp32s blkSize, Ipp32u dirMode);
     void h265_PredictIntra_Hor_ChromaNV12_8u(Ipp8u* PredPel, Ipp8u* pDst, Ipp32s dstStride, Ipp32s blkSize);
     void h265_PredictIntra_Ver_ChromaNV12_8u(Ipp8u* PredPel, Ipp8u* pDst, Ipp32s dstStride, Ipp32s blkSize);
-
-    /* Pre-Filtering for INTRA prediction */
-    void h265_FilterPredictPels_8u(Ipp8u* PredPel, Ipp32s width);
-    void h265_FilterPredictPels_Bilinear_8u(Ipp8u* pSrcDst, int width, int topLeft, int bottomLeft, int topRight);
 
     /* Predict Pels */
     void h265_GetPredPelsLuma_8u(Ipp8u* pSrc, Ipp8u* PredPel, Ipp32s blkSize, Ipp32s srcPitch, Ipp32u tpIf, Ipp32u lfIf, Ipp32u tlIf);
@@ -809,7 +811,7 @@ namespace MFX_HEVC_PP
 
     inline void h265_FilterPredictPels(Ipp8u* PredPel, Ipp32s width)
     {
-        h265_FilterPredictPels_8u(PredPel, width);
+        MFX_HEVC_PP::NAME(h265_FilterPredictPels_8u)(PredPel, width);
     }
 
     inline void h265_FilterPredictPels(Ipp16u* PredPel, Ipp32s width)
@@ -819,7 +821,7 @@ namespace MFX_HEVC_PP
 
     inline void h265_FilterPredictPels_Bilinear(Ipp8u* pSrcDst, int width, int topLeft, int bottomLeft, int topRight)
     {
-        h265_FilterPredictPels_Bilinear_8u(pSrcDst, width, topLeft, bottomLeft, topRight);
+        MFX_HEVC_PP::NAME(h265_FilterPredictPels_Bilinear_8u)(pSrcDst, width, topLeft, bottomLeft, topRight);
     }
 
     inline void h265_FilterPredictPels_Bilinear(Ipp16u* pSrcDst, int width, int topLeft, int bottomLeft, int topRight)

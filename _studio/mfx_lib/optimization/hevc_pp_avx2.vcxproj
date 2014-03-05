@@ -43,6 +43,7 @@
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Release_Intel|Win32'">MaxSpeedHighLevel</Optimization>
       <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release_Intel|x64'">/Qopt-ra-region-strategy:routine %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
+    <ClCompile Include="h265\src\mfx_h265_intrapred_avx2.cpp" />
     <ClCompile Include="h265\src\mfx_h265_quantization_avx2.cpp" />
     <ClCompile Include="h265\src\mfx_h265_reordering_avx2.cpp" />
     <ClCompile Include="h265\src\mfx_h265_sad_avx2.cpp" />

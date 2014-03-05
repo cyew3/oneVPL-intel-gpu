@@ -2254,6 +2254,135 @@ namespace MFX_HEVC_PP
         }
     }
 
+    ALIGN_DECL(16) static const char fppShufTab[3][16] = {
+        { 0, -1, 1, -1, 2, -1, 3, -1, 4, -1, 5, -1, 6, -1, 7, -1 },
+        { 1, -1, 2, -1, 3, -1, 4, -1, 5, -1, 6, -1, 7, -1, 8, -1 },
+        { 2, -1, 3, -1, 4, -1, 5, -1, 6, -1, 7, -1, 8, -1, 9, -1 },
+    };
+
+    /* assume PredPel buffer size is at least (4*width + 16) bytes to allow 16-byte loads (see calling code)
+     * only the data in range [0, 4*width] is actually used
+     * supported widths = 4, 8, 16, 32 (but should not require 4 - see spec)
+     */
+    void MAKE_NAME(h265_FilterPredictPels_8u)(Ipp8u* PredPel, Ipp32s width)
+    {
+        Ipp8u t0, t1, t2, t3;
+        Ipp8u *p0;
+        Ipp32s i;
+        __m128i xmm0, xmm1, xmm2, xmm3, xmm4, xmm5, xmm6, xmm7;
+
+        VM_ASSERT(width == 4 || width == 8 || width == 16 || width == 32);
+
+        /* precalcuate boundary cases (0, 2*w, 2*w+1, 4*w) to allow compact kernel, write back when finished */
+        t0 = (PredPel[1] + 2 * PredPel[0] + PredPel[2*width+1] + 2) >> 2;
+        t1 = PredPel[2*width];
+        t2 = (PredPel[0] + 2 * PredPel[2*width+1] + PredPel[2*width+2] + 2) >> 2;
+        t3 = PredPel[4*width];
+
+        i = 4*width;
+        p0 = PredPel;
+        xmm2 = _mm_loadu_si128((__m128i *)p0);
+        xmm7 = _mm_set1_epi16(2);
+        do {
+            /* shuffle and zero-extend to 16 bits */
+            xmm0 = _mm_shuffle_epi8(xmm2, *(__m128i *)fppShufTab[0]);
+            xmm1 = _mm_shuffle_epi8(xmm2, *(__m128i *)fppShufTab[1]);
+            xmm2 = _mm_shuffle_epi8(xmm2, *(__m128i *)fppShufTab[2]);
+
+            /* y[i] = (x[i-1] + 2*x[i] + x[i+1] + 2) >> 2 */
+            xmm0 = _mm_add_epi16(xmm0, xmm1);
+            xmm0 = _mm_add_epi16(xmm0, xmm1);
+            xmm0 = _mm_add_epi16(xmm0, xmm2);
+            xmm0 = _mm_add_epi16(xmm0, xmm7);
+            xmm0 = _mm_srli_epi16(xmm0, 2);
+            xmm0 = _mm_packus_epi16(xmm0, xmm0);
+
+            /* read 16 bytes (8 new) before writing */
+            xmm2 = _mm_loadu_si128((__m128i *)(p0 + 8));
+            _mm_storel_epi64((__m128i *)(p0 + 1), xmm0);
+
+            p0 += 8;
+            i -= 8;
+        } while (i > 0);
+
+        PredPel[0*width+0] = t0;
+        PredPel[2*width+0] = t1;
+        PredPel[2*width+1] = t2;
+        PredPel[4*width+0] = t3;
+    }
+    
+    /* width always = 32 (see spec) */
+    void MAKE_NAME(h265_FilterPredictPels_Bilinear_8u) (
+        Ipp8u* pSrcDst,
+        int width,
+        int topLeft,
+        int bottomLeft,
+        int topRight)
+    {
+        int x;
+        Ipp8u *p0, *p1;
+        __m128i xmm0, xmm1, xmm2, xmm3, xmm4, xmm5, xmm6, xmm7;
+
+        /* see calling code - if any of this changes, code would need to be rewritten */
+        VM_ASSERT(width == 32 && pSrcDst[0] == topLeft && pSrcDst[2*width] == topRight && pSrcDst[4*width] == bottomLeft);
+
+        p0 = pSrcDst;
+        if (topLeft == 128 && topRight == 128 && bottomLeft == 128) {
+            /* fast path: set 128 consecutive pixels to 128 */
+            xmm0 = _mm_set1_epi8(128);
+            _mm_storeu_si128((__m128i *)(p0 +   0), xmm0);
+            _mm_storeu_si128((__m128i *)(p0 +  16), xmm0);
+            _mm_storeu_si128((__m128i *)(p0 +  32), xmm0);
+            _mm_storeu_si128((__m128i *)(p0 +  48), xmm0);
+            _mm_storeu_si128((__m128i *)(p0 +  64), xmm0);
+            _mm_storeu_si128((__m128i *)(p0 +  80), xmm0);
+            _mm_storeu_si128((__m128i *)(p0 +  96), xmm0);
+            _mm_storeu_si128((__m128i *)(p0 + 112), xmm0);
+        } else {
+            /* calculate 8 at a time with successive addition 
+             * p[x] = ( ((64-x)*TL + x*TR + 32) >> 6 ) = ( ((64*TL + 32) + x*(TR - TL)) >> 6 )
+             * similar for p[x+64]
+             */
+            xmm0 = _mm_set1_epi16(64*topLeft + 32);
+            xmm1 = xmm0;
+
+            xmm2 = _mm_set1_epi16(topRight - topLeft);
+            xmm3 = _mm_set1_epi16(bottomLeft - topLeft);
+            xmm4 = _mm_setr_epi16(0, 1, 2, 3, 4, 5, 6, 7);
+            
+            xmm6 = _mm_slli_epi16(xmm2, 3);         /* 8*(TR-TL) */
+            xmm7 = _mm_slli_epi16(xmm3, 3);         /* 8*(BL-TL) */
+
+            xmm2 = _mm_mullo_epi16(xmm2, xmm4);     /* [0*(TR-TL) 1*(TR-TL) ... ] */
+            xmm3 = _mm_mullo_epi16(xmm3, xmm4);     /* [0*(BL-TL) 1*(BL-TL) ... ] */
+
+            xmm0 = _mm_add_epi16(xmm0, xmm2);
+            xmm1 = _mm_add_epi16(xmm1, xmm3);
+
+            for(x = 0; x < 64; x += 16) {
+                /* calculate 2 sets of 8 pixels for each direction */
+                xmm2 = _mm_srli_epi16(xmm0, 6);
+                xmm3 = _mm_srli_epi16(xmm1, 6);
+                xmm0 = _mm_add_epi16(xmm0, xmm6);
+                xmm1 = _mm_add_epi16(xmm1, xmm7);
+
+                xmm4 = _mm_srli_epi16(xmm0, 6);
+                xmm5 = _mm_srli_epi16(xmm1, 6);
+                xmm0 = _mm_add_epi16(xmm0, xmm6);
+                xmm1 = _mm_add_epi16(xmm1, xmm7);
+
+                /* clip to 8 bits, write 16 pixels for each direction */
+                xmm2 = _mm_packus_epi16(xmm2, xmm4);
+                xmm3 = _mm_packus_epi16(xmm3, xmm5);
+                _mm_storeu_si128((__m128i *)(p0 +  0), xmm2);
+                _mm_storeu_si128((__m128i *)(p0 + 64), xmm3);
+
+                p0 += 16;
+            }
+            pSrcDst[64] = topRight;
+        }
+    }
+
 }; // namespace MFX_HEVC_PP
 
 #endif // #if defined(MFX_TARGET_OPTIMIZATION_AUTO) ...

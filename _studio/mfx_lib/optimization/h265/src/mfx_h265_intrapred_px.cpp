@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2013 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2013-2014 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -61,7 +61,7 @@ namespace MFX_HEVC_PP
         575,   565,   555,   546,   537,   529,   520,   512
     };
 
-    void h265_FilterPredictPels_8u(
+    void MAKE_NAME(h265_FilterPredictPels_8u)(
         Ipp8u* PredPel,
         Ipp32s width)
     {
@@ -94,7 +94,7 @@ namespace MFX_HEVC_PP
     } // void h265_FilterPredictPels_8u(...)
 
 
-    void h265_FilterPredictPels_Bilinear_8u(
+    void MAKE_NAME(h265_FilterPredictPels_Bilinear_8u)(
         Ipp8u* pSrcDst,
         int width,
         int topLeft,

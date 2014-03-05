@@ -678,14 +678,14 @@ void H265CU::IntraPredTu(Ipp32s blockZScanIdx, Ipp32s width, Ipp32s pred_mode, I
 
             if (width == 32 && (bilinearLeft && bilinearAbove))
             {
-                h265_FilterPredictPels_Bilinear_8u(PredPel, width, topLeft, bottomLeft, topRight);
+                MFX_HEVC_PP::NAME(h265_FilterPredictPels_Bilinear_8u)(PredPel, width, topLeft, bottomLeft, topRight);
             }
             else
             {
-                h265_FilterPredictPels_8u(PredPel, width);
+                MFX_HEVC_PP::NAME(h265_FilterPredictPels_8u)(PredPel, width);
             }
         } else if (isFilterNeeded) {
-            h265_FilterPredictPels_8u(PredPel, width);
+            MFX_HEVC_PP::NAME(h265_FilterPredictPels_8u)(PredPel, width);
         }
 
         switch(pred_mode)
@@ -868,11 +868,11 @@ void H265CU::IntraLumaModeDecision(Ipp32s absPartIdx, Ipp32u offset, Ipp8u depth
             bool bilinearAbove = abs(topLeft + bottomLeft - 2 * midVer) < threshold;
 
             if (bilinearLeft && bilinearAbove)
-                h265_FilterPredictPels_Bilinear_8u(predPelFilt, width, topLeft, bottomLeft, topRight);
+                MFX_HEVC_PP::NAME(h265_FilterPredictPels_Bilinear_8u)(predPelFilt, width, topLeft, bottomLeft, topRight);
             else
-                h265_FilterPredictPels_8u(predPelFilt, width);
+                MFX_HEVC_PP::NAME(h265_FilterPredictPels_8u)(predPelFilt, width);
         } else {
-            h265_FilterPredictPels_8u(predPelFilt, width);
+            MFX_HEVC_PP::NAME(h265_FilterPredictPels_8u)(predPelFilt, width);
         }
 
         IppiSize roi = {width, width};
