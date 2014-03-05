@@ -22,7 +22,7 @@
 //#include "mfx_h265_prediction.h"
 #include "mfx_h265_enc_cm.h"
 #include "mfx_h265_enc_cm_defs.h"
-#include "..\..\..\genx\h265_encode\include\genx_h265_cmcode_isa.h"
+#include "genx_h265_cmcode_isa.h"
 
 namespace H265Enc {
 
