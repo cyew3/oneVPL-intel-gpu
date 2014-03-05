@@ -847,7 +847,7 @@ namespace MfxHwH264Encode
             , m_bsDataLength(0, 0)
             , m_numLeadingFF(0, 0)
             , m_qpY(0, 0)
-            , m_notProtected(true)
+            , m_notProtected(false)
             , m_nextLayerTask(0)
             , m_repack(0)
             , m_fractionalQP(0)

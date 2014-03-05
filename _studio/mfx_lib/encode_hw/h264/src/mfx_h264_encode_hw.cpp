@@ -2461,7 +2461,7 @@ mfxStatus ImplementationAvc::UpdateBitstream(
     mfxU8 *  bsData        = task.m_bs->Data + task.m_bs->DataOffset + task.m_bs->DataLength;
     mfxU32 * dataLength    = &task.m_bs->DataLength;
 
-    if (m_video.Protected == 0 || (task.m_notProtected && m_core->GetVAType()==MFX_HW_VAAPI))
+    if (m_video.Protected == 0 || task.m_notProtected)
     {
         if (needIntermediateBitstreamBuffer)
         {
@@ -2598,7 +2598,7 @@ mfxStatus ImplementationAvc::UpdateBitstream(
         }
     }
 
-    if (m_video.Protected != 0 && (m_core->GetVAType()==MFX_HW_VAAPI && !task.m_notProtected))
+    if (m_video.Protected != 0 && !task.m_notProtected)
     {
         // Return aes counter compressed picture encrypted with
         mfxEncryptedData * edata = GetEncryptedData(*task.m_bs, fieldNumInStreamOrder);
@@ -4449,7 +4449,7 @@ mfxStatus ImplementationAvcAsync::UpdateBitstream(
     mfxU8 *  bsData        = task.m_bs->Data + task.m_bs->DataOffset + task.m_bs->DataLength;
     mfxU32 * dataLength    = &task.m_bs->DataLength;
 
-    if (m_video.Protected == 0 || (task.m_notProtected && m_core->GetVAType()==MFX_HW_VAAPI))
+    if (m_video.Protected == 0 || task.m_notProtected)
     {
         if (needIntermediateBitstreamBuffer)
         {
@@ -4585,7 +4585,7 @@ mfxStatus ImplementationAvcAsync::UpdateBitstream(
     if (interlace)
         task.m_bs->FrameType = mfxU16(task.m_bs->FrameType | ((task.m_type[!task.GetFirstField()]& ~MFX_FRAMETYPE_KEYPIC) << 8));
 
-    if (m_video.Protected != 0 && (m_core->GetVAType()==MFX_HW_VAAPI && !task.m_notProtected))
+    if (m_video.Protected != 0 && !task.m_notProtected)
     {
         // Return aes counter compressed picture encrypted with
         mfxEncryptedData * edata = GetEncryptedData(*task.m_bs, fieldNumInStreamOrder);
