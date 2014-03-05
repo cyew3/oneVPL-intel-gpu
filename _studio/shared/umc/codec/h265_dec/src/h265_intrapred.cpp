@@ -146,7 +146,7 @@ namespace UMC_HEVC_DECODER
     } // void H265SegmentDecoder::IntraRecLumaBlk(...)
 
     template <typename PixType>
-    void SumOfResidAndPred(H265CoeffsPtrCommon p_ResiU, H265CoeffsPtrCommon p_ResiV, Ipp32u residualPitch, PixType *pRecIPred, Ipp32u RecIPredStride, Ipp32u Size,
+    void SumOfResidAndPred(H265CoeffsPtrCommon p_ResiU, H265CoeffsPtrCommon p_ResiV, size_t residualPitch, PixType *pRecIPred, size_t RecIPredStride, Ipp32u Size,
         bool chromaUPresent, bool chromaVPresent, Ipp32u bit_depth)
     {
         if (sizeof(PixType) == 1)

@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2013 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2013-2014 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -241,7 +241,7 @@ IppStatus ippiInterpolateLumaBlock_H265Internal(InterpolationStruct *interpolate
 
 
             interpolateInfo->pSrc[0] = params.pSrc;
-            interpolateInfo->srcStep = params.srcStep;
+            interpolateInfo->srcStep = (Ipp32s)params.srcStep;
             return sts;
         }
     }
@@ -387,7 +387,7 @@ IppStatus ippiInterpolateChromaBlock_H264Internal(InterpolationStruct *interpola
             /* there is something wrong, try to work through a temporal buffer */
             IppStatus sts =  ippiInterpolateBoundaryChromaBlock_NV12_H264<PixType, InterpolationStructInternal>(iOverlappingType, &params, temporary_buffer);
             interpolateInfo->pSrc[0] = params.pSrc;
-            interpolateInfo->srcStep = params.srcStep;
+            interpolateInfo->srcStep = (Ipp32s)params.srcStep;
             return sts;
         }
     }

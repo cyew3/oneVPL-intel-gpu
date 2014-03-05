@@ -112,7 +112,7 @@ bool H265Slice::Reset(PocDecoding * pocDecoding)
     if (m_source.GetSize() && false == DecodeSliceHeader(pocDecoding))
         return false;
 
-    m_SliceHeader.m_HeaderBitstreamOffset = m_BitStream.BytesDecoded();
+    m_SliceHeader.m_HeaderBitstreamOffset = (Ipp32u)m_BitStream.BytesDecoded();
 
     m_SliceHeader.m_SeqParamSet = m_pSeqParamSet;
     m_SliceHeader.m_PicParamSet = m_pPicParamSet;

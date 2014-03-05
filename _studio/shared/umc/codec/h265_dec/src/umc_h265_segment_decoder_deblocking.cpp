@@ -197,7 +197,7 @@ void H265SegmentDecoder::DeblockTU(Ipp32u absPartIdx, Ipp32u trDepth)
 
     for (Ipp32s edgeType = VERT_FILT; edgeType <= HOR_FILT; edgeType++)
     {
-        if (m_context->m_sps->MinCUSize == 4 && ((edgeType == VERT_FILT) ? ((absPartIdx % 2) != 0) : ((absPartIdx-((absPartIdx>>2)<<2))/2 != 0)))
+        if (isMin4x4Block && ((edgeType == VERT_FILT) ? ((absPartIdx % 2) != 0) : ((absPartIdx-((absPartIdx>>2)<<2))/2 != 0)))
         {
             continue;
         }

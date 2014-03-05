@@ -46,36 +46,36 @@ H265TrQuant::~H265TrQuant()
 */
 // ML: OPT: Parameterized to allow const 'shift' propogation
 template <Ipp32s bitDepth, typename DstCoeffsType>
-void InverseTransform(H265CoeffsPtrCommon coeff, DstCoeffsType* dst, Ipp32s dstPitch, Ipp32s Size, Ipp32u Mode, Ipp32u bit_depth)
+void InverseTransform(H265CoeffsPtrCommon coeff, DstCoeffsType* dst, size_t dstPitch, Ipp32s Size, Ipp32u Mode, Ipp32u bit_depth)
 {
     bool inplace = sizeof(DstCoeffsType) == 1;
     if (Size == 4)
     {
         if (Mode != REG_DCT)
         {
-            MFX_HEVC_PP::NAME(h265_DST4x4Inv_16sT)(dst, coeff, dstPitch, inplace, bit_depth);
+            MFX_HEVC_PP::NAME(h265_DST4x4Inv_16sT)(dst, coeff, (Ipp32s)dstPitch, inplace, bit_depth);
         }
         else
         {
-            MFX_HEVC_PP::NAME(h265_DCT4x4Inv_16sT)(dst, coeff, dstPitch, inplace, bit_depth);
+            MFX_HEVC_PP::NAME(h265_DCT4x4Inv_16sT)(dst, coeff, (Ipp32s)dstPitch, inplace, bit_depth);
         }
     }
     else if (Size == 8)
     {
-        MFX_HEVC_PP::NAME(h265_DCT8x8Inv_16sT)(dst, coeff, dstPitch, inplace, bit_depth);
+        MFX_HEVC_PP::NAME(h265_DCT8x8Inv_16sT)(dst, coeff, (Ipp32s)dstPitch, inplace, bit_depth);
     }
     else if (Size == 16)
     {
-        MFX_HEVC_PP::NAME(h265_DCT16x16Inv_16sT)(dst, coeff, dstPitch, inplace, bit_depth);
+        MFX_HEVC_PP::NAME(h265_DCT16x16Inv_16sT)(dst, coeff, (Ipp32s)dstPitch, inplace, bit_depth);
     }
     else if (Size == 32)
     {
-        MFX_HEVC_PP::NAME(h265_DCT32x32Inv_16sT)(dst, coeff, dstPitch, inplace, bit_depth);
+        MFX_HEVC_PP::NAME(h265_DCT32x32Inv_16sT)(dst, coeff, (Ipp32s)dstPitch, inplace, bit_depth);
     }
 }
 
 template <typename DstCoeffsType>
-void H265TrQuant::InvTransformByPass(H265CoeffsPtrCommon pCoeff, DstCoeffsType* pResidual, Ipp32u Stride, Ipp32u Size, Ipp32u bitDepth, bool inplace)
+void H265TrQuant::InvTransformByPass(H265CoeffsPtrCommon pCoeff, DstCoeffsType* pResidual, size_t Stride, Ipp32u Size, Ipp32u bitDepth, bool inplace)
 {
     Ipp32s max_value = (1 << bitDepth) - 1;
 
@@ -98,7 +98,7 @@ void H265TrQuant::InvTransformByPass(H265CoeffsPtrCommon pCoeff, DstCoeffsType* 
 
 template <typename DstCoeffsType>
 void H265TrQuant::InvTransformNxN(bool transQuantBypass, EnumTextType TxtType, Ipp32u Mode, DstCoeffsType* pResidual,
-                                  Ipp32u Stride, H265CoeffsPtrCommon pCoeff, Ipp32u Size,
+                                  size_t Stride, H265CoeffsPtrCommon pCoeff, Ipp32u Size,
                                   bool transformSkip)
 {
     Ipp32s bitDepth = TxtType == TEXT_LUMA ? m_context->m_sps->bit_depth_luma : m_context->m_sps->bit_depth_chroma;
@@ -150,18 +150,18 @@ void H265TrQuant::InvTransformNxN(bool transQuantBypass, EnumTextType TxtType, I
  */
 #if BITS_PER_PLANE == 8
 template void H265TrQuant::InvTransformNxN<Ipp8u>(
-    bool transQuantBypass, EnumTextType TxtType, Ipp32u Mode, Ipp8u* pResidual, Ipp32u Stride,
+    bool transQuantBypass, EnumTextType TxtType, Ipp32u Mode, Ipp8u* pResidual, size_t Stride,
     H265CoeffsPtrCommon pCoeff,Ipp32u Size, bool transformSkip);
 #endif
 
 template void H265TrQuant::InvTransformNxN<Ipp16s>(
-    bool transQuantBypass, EnumTextType TxtType, Ipp32u Mode, Ipp16s* pResidual, Ipp32u Stride,
+    bool transQuantBypass, EnumTextType TxtType, Ipp32u Mode, Ipp16s* pResidual, size_t Stride,
     H265CoeffsPtrCommon pCoeff,Ipp32u Size, bool transformSkip);
 
 /* ----------------------------------------------------------------------------*/
 
 template <typename PixType>
-void SumOfResidAndPred(H265CoeffsPtrCommon p_ResiU, H265CoeffsPtrCommon p_ResiV, Ipp32u residualPitch, PixType *pRecIPred, Ipp32u RecIPredStride, Ipp32u Size,
+void SumOfResidAndPred(H265CoeffsPtrCommon p_ResiU, H265CoeffsPtrCommon p_ResiV, size_t residualPitch, PixType *pRecIPred, size_t RecIPredStride, Ipp32u Size,
     bool chromaUPresent, bool chromaVPresent, Ipp32u bit_depth)
 {
     if (sizeof(PixType) == 1)
@@ -224,7 +224,7 @@ void H265TrQuant::InvRecurTransformNxN(H265CodingUnit* pCU, Ipp32u AbsPartIdx, I
                 Size >>= 1;
             }
 
-            Ipp32u DstStride = pCU->m_Frame->pitch_chroma();
+            size_t DstStride = pCU->m_Frame->pitch_chroma();
             H265PlanePtrUVCommon ptrChroma = pCU->m_Frame->GetCbCrAddr(pCU->CUAddr, AbsPartIdx);
             H265CoeffsPtrCommon residualsTempBuffer = m_residualsBuffer;
             H265CoeffsPtrCommon residualsTempBuffer1 = m_residualsBuffer1;
@@ -288,7 +288,7 @@ void H265TrQuant::InvRecurTransformNxN(H265CodingUnit* pCU, Ipp32u AbsPartIdx, I
 
 // ML: OPT: Parameterized to allow const 'bitDepth' propogation
 template <int bitDepth, typename DstCoeffsType>
-void H265TrQuant::InvTransformSkip(H265CoeffsPtrCommon pCoeff, DstCoeffsType* pResidual, Ipp32u Stride, Ipp32u Size, bool inplace, Ipp32u bit_depth)
+void H265TrQuant::InvTransformSkip(H265CoeffsPtrCommon pCoeff, DstCoeffsType* pResidual, size_t Stride, Ipp32u Size, bool inplace, Ipp32u bit_depth)
 {
     if (bitDepth == 8)
         bit_depth = 8;

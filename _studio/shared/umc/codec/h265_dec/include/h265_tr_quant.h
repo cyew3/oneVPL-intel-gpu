@@ -37,17 +37,17 @@ public:
 
     // transform & inverse transform functions
     template <typename DstCoeffsType>
-    void InvTransformNxN(bool transQuantBypass, EnumTextType TxtType, Ipp32u Mode, DstCoeffsType* pResidual, Ipp32u Stride,
+    void InvTransformNxN(bool transQuantBypass, EnumTextType TxtType, Ipp32u Mode, DstCoeffsType* pResidual, size_t Stride,
         H265CoeffsPtrCommon pCoeff, Ipp32u Size, bool transformSkip);
 
     void InvRecurTransformNxN(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u Size, Ipp32u TrMode);
 
     // ML: OPT: allows to propogate convert const shift
     template <int bitDepth, typename DstCoeffsType>
-    void InvTransformSkip(H265CoeffsPtrCommon pCoeff, DstCoeffsType* pResidual, Ipp32u Stride, Ipp32u Size, bool inplace, Ipp32u bit_depth);
+    void InvTransformSkip(H265CoeffsPtrCommon pCoeff, DstCoeffsType* pResidual, size_t Stride, Ipp32u Size, bool inplace, Ipp32u bit_depth);
 
     template <typename DstCoeffsType>
-    void InvTransformByPass(H265CoeffsPtrCommon pCoeff, DstCoeffsType* pResidual, Ipp32u Stride, Ipp32u Size, Ipp32u bitDepth, bool inplace);
+    void InvTransformByPass(H265CoeffsPtrCommon pCoeff, DstCoeffsType* pResidual, size_t Stride, Ipp32u Size, Ipp32u bitDepth, bool inplace);
 
 private:
     H265CoeffsPtrCommon m_residualsBuffer;

@@ -167,7 +167,7 @@ void H265DecYUVBufferPadded::create(Ipp32u PicWidth, Ipp32u PicHeight, Ipp32u El
     size_t allocationSize = (m_lumaSize.height) * m_pitch_luma * ElementSizeY + 
         (m_chromaSize.height) * m_pitch_chroma * ElementSizeUV*2 + 512;
 
-    m_pAllocatedBuffer = h265_new_array_throw<Ipp8u>(allocationSize);
+    m_pAllocatedBuffer = h265_new_array_throw<Ipp8u>((Ipp32s)allocationSize);
     m_pYPlane = UMC::align_pointer<H265PlanePtrYCommon>(m_pAllocatedBuffer, 64);
 
     m_pUVPlane = m_pUPlane = UMC::align_pointer<H265PlanePtrYCommon>(m_pYPlane + (m_lumaSize.height) * m_pitch_luma * ElementSizeY + 128, 64);
