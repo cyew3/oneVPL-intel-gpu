@@ -8,6 +8,8 @@
 //
 */
 
+#if defined (MFX_ENABLE_H265_VIDEO_ENCODE)
+
 #pragma once
 
 #ifndef __MFX_H265_ENC_CM_DEFS_H__
@@ -709,3 +711,5 @@ extern "C" void RawMeMB_B(
 } // namespace
 
 #endif // __MFX_H265_ENC_CM_DEFS_H__
+
+#endif // MFX_ENABLE_H265_VIDEO_ENCODE

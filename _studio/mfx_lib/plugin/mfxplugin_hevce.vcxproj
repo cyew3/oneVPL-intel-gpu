@@ -602,6 +602,9 @@
     <ProjectReference Include="..\..\shared\umc\io\umc_io\umc_io.vcxproj">
       <Project>{8ba23c0c-d2d7-4a5a-b8f9-ba5ca19cbab7}</Project>
     </ProjectReference>
+    <ProjectReference Include="..\cmrt_cross_platform\cmrt_cross_platform.vcxproj">
+      <Project>{811626eb-8608-4cac-abee-cd99daec38c4}</Project>
+    </ProjectReference>
     <ProjectReference Include="..\encode\h265_enc.vcxproj">
       <Project>{83f019ae-af39-49c6-b17c-5c4c3fca2055}</Project>
     </ProjectReference>

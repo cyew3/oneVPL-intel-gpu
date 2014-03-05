@@ -10,6 +10,8 @@
 
 #include "mfx_common.h"
 
+#if defined (MFX_ENABLE_H265_VIDEO_ENCODE)
+
 #include <fstream>
 #include <algorithm>
 #include <numeric>
@@ -197,15 +199,32 @@ void Write(CmBuffer * buffer, void * buf, CmEvent * e = 0)
         throw CmRuntimeError();
 }
 
-CmDevice * CreateCmDevicePtr(IDirect3DDeviceManager9 * manager, mfxU32 * version)
+CmDevice * TryCreateCmDevicePtr(VideoCORE * core, mfxU32 * version)
 {
     mfxU32 versionPlaceholder = 0;
     if (version == 0)
         version = &versionPlaceholder;
 
     CmDevice * device = 0;
-    int result = ::CreateCmDevice(device, *version, manager);
-    if (result != CM_SUCCESS )
+
+    int result = CM_SUCCESS;
+#if defined(_WIN32) || defined(_WIN64)
+        if ((result = ::CreateCmDevice(device, *version, (IDirect3DDeviceManager9 *)0)) != CM_SUCCESS)
+            return 0;
+#endif  // #if defined(_WIN32) || defined(_WIN64)
+#if defined(LINUX32) || defined(LINUX64)
+        VADisplay display = 0;
+        if ((result = ::CreateCmDevice(device, *version, display)) != CM_SUCCESS)
+            return 0;
+#endif // #if defined(LINUX32) || defined(LINUX64)
+
+    return device;
+}
+
+CmDevice * CreateCmDevicePtr(VideoCORE * core, mfxU32 * version)
+{
+    CmDevice * device = TryCreateCmDevicePtr(core, version);
+    if (device == 0)
         throw CmRuntimeError();
     return device;
 }
@@ -227,15 +246,6 @@ CmBufferUP * CreateBuffer(CmDevice * device, mfxU32 size, void * mem)
     if (result != CM_SUCCESS)
         throw std::exception("CreateBufferUP failed");
     return buffer;
-}
-
-CmSurface2D * CreateSurface(CmDevice * device, IDirect3DSurface9 * d3dSurface)
-{
-    int result = CM_SUCCESS;
-    CmSurface2D * cmSurface = 0;
-    if (device && d3dSurface && (result = device->CreateSurface2D(d3dSurface, cmSurface)) != CM_SUCCESS)
-        throw CmRuntimeError();
-    return cmSurface;
 }
 
 CmSurface2D * CreateSurface(CmDevice * device, mfxU32 width, mfxU32 height, mfxU32 fourcc)
@@ -1601,3 +1611,5 @@ void GetAngModesFromHistogram(Ipp32s xPu, Ipp32s yPu, Ipp32s puSize, Ipp8s *mode
 }
 
 } // namespace
+
+#endif // MFX_ENABLE_H265_VIDEO_ENCODE

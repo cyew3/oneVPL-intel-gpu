@@ -8,13 +8,17 @@
 //
 */
 
+#if defined (MFX_ENABLE_H265_VIDEO_ENCODE)
+
 #pragma once
 
 #ifndef __MFX_H265_ENC_CM_H__
 #define __MFX_H265_ENC_CM_H__
 
 #include "mfx_h265_enc.h"
-#include "cm_rt.h"
+
+#include "libmfx_core_interface.h"
+#include "cmrt_cross_platform.h"
 #include "libmfx_core_interface.h"
 
 #include <vector>
@@ -32,15 +36,9 @@ class SurfaceIndex;
 class CmThreadSpace;
 //class CmTask;
 class H265CmTask;
-interface IDirect3DSurface9;
-interface IDirect3DDeviceManager9;
 
 namespace H265Enc {
 
-    /*
-class DdiTask;
-*/
-//class H265VideoParam;
 struct H265EncCURBEData;
 
 class CmRuntimeError : public std::exception
@@ -49,14 +47,13 @@ public:
     CmRuntimeError() : std::exception() { assert(!"CmRuntimeError"); }
 };
 
+CmDevice * TryCreateCmDevicePtr(VideoCORE * core, mfxU32 * version = 0);
 
-CmDevice * CreateCmDevicePtr(IDirect3DDeviceManager9 * manager, mfxU32 * version = 0);
+CmDevice * CreateCmDevicePtr(VideoCORE * core, mfxU32 * version = 0);
 
 CmBuffer * CreateBuffer(CmDevice * device, mfxU32 size);
 
 CmBufferUP * CreateBuffer(CmDevice * device, mfxU32 size, void * mem);
-
-CmSurface2D * CreateSurface(CmDevice * device, IDirect3DSurface9 * d3dSurface);
 
 CmSurface2D * CreateSurface(CmDevice * device, mfxU32 width, mfxU32 height, mfxU32 fourcc);
 
@@ -192,3 +189,5 @@ void SetCurbeData(
 } // namespace
 
 #endif // __MFX_H265_ENC_CM_H__
+
+#endif // MFX_ENABLE_H265_VIDEO_ENCODE
