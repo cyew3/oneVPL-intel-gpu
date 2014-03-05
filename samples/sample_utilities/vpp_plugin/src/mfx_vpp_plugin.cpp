@@ -7,7 +7,6 @@ accordance with the terms of that agreement
 Copyright(c) 2010-2014 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
-
 #include <stdio.h>
 #include <memory>
 #include "mfx_vpp_plugin.h"
@@ -15,9 +14,9 @@ Copyright(c) 2010-2014 Intel Corporation. All Rights Reserved.
 
 #define MY_WAIT(__Milliseconds)  MSDK_SLEEP(__Milliseconds)
 
-MFXVideoVPPPlugin::MFXVideoVPPPlugin(mfxSession session) 
-    : MFXVideoMultiVPP(session)    
-{    
+MFXVideoVPPPlugin::MFXVideoVPPPlugin(mfxSession session)
+    : MFXVideoMultiVPP(session)
+{
     m_PluginModule = NULL;
     m_pPlugin = NULL;
 
@@ -54,7 +53,7 @@ mfxStatus MFXVideoVPPPlugin::LoadDLL(msdk_char *dll_path)
     // Create plugin object
     m_pPlugin = (*pCreateFunc)();
     MSDK_CHECK_POINTER(m_pPlugin, MFX_ERR_NOT_FOUND);
-    
+
     return MFX_ERR_NONE;
 }
 
@@ -83,7 +82,7 @@ mfxStatus MFXVideoVPPPlugin::Query(mfxVideoParam *in, mfxVideoParam *out, mfxU8 
 }
 
 mfxStatus MFXVideoVPPPlugin::GetVideoParam(mfxVideoParam *par, mfxU8 component_idx)
-{    
+{
     par;component_idx;
     return MFX_ERR_UNSUPPORTED;
 }
@@ -95,39 +94,39 @@ mfxStatus MFXVideoVPPPlugin::GetVPPStat(mfxVPPStat *stat, mfxU8 component_idx)
 }
 
 mfxStatus MFXVideoVPPPlugin::AllocateFrames(mfxVideoParam *par, mfxVideoParam *par1, mfxVideoParam *par2)
-{   
+{
     mfxStatus sts = MFX_ERR_NONE;
 
     mfxFrameAllocResponse allocResponse;
     memset((void*)&allocResponse, 0, sizeof(mfxFrameAllocResponse));
     mfxFrameAllocRequest plgAllocRequest0;
-    memset((void*)&plgAllocRequest0, 0, sizeof(mfxFrameAllocResponse));
+    memset((void*)&plgAllocRequest0, 0, sizeof(mfxFrameAllocRequest));
     mfxFrameAllocRequest plgAllocRequest1;
-    memset((void*)&plgAllocRequest1, 0, sizeof(mfxFrameAllocResponse));
+    memset((void*)&plgAllocRequest1, 0, sizeof(mfxFrameAllocRequest));
     mfxFrameAllocRequest vpp1Request[2];
-    memset((void*)&vpp1Request, 0, 2*sizeof(mfxFrameAllocResponse));
+    memset((void*)&vpp1Request, 0, 2*sizeof(mfxFrameAllocRequest));
     mfxFrameAllocRequest vpp2Request[2];
-    memset((void*)&vpp2Request, 0, 2*sizeof(mfxFrameAllocResponse));
+    memset((void*)&vpp2Request, 0, 2*sizeof(mfxFrameAllocRequest));
 
     if (m_pPlugin)
     {
         m_pmfxPluginParam = par;
-        
+
         sts = m_pPlugin->QueryIOSurf(m_pmfxPluginParam, &plgAllocRequest0, &plgAllocRequest1);
-        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);        
-    } 
+        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+    }
     else
     {
         return MFX_ERR_NOT_INITIALIZED;
-    } 
-    
+    }
+
     if (par1 && m_pVPP1)
     {
         m_pmfxVPP1Param = par1;
 
         sts = m_pVPP1->QueryIOSurf(m_pmfxVPP1Param, vpp1Request);
-        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);        
-        
+        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+
         plgAllocRequest0.Type = (mfxU16) ((vpp1Request[1].Type & ~MFX_MEMTYPE_EXTERNAL_FRAME) | MFX_MEMTYPE_INTERNAL_FRAME);
         plgAllocRequest0.NumFrameMin = plgAllocRequest0.NumFrameMin + vpp1Request[1].NumFrameMin;
         plgAllocRequest0.NumFrameSuggested = plgAllocRequest0.NumFrameSuggested + vpp1Request[1].NumFrameSuggested;
@@ -144,11 +143,11 @@ mfxStatus MFXVideoVPPPlugin::AllocateFrames(mfxVideoParam *par, mfxVideoParam *p
         else
         {
             allocResponse.NumFrameActual = plgAllocRequest0.NumFrameSuggested;
-        }        
+        }
 
         if (m_allocResponses[0].get())
         {
-            m_FrameAllocator.Free(m_FrameAllocator.pthis, m_allocResponses[0].get());            
+            m_FrameAllocator.Free(m_FrameAllocator.pthis, m_allocResponses[0].get());
         }
         m_allocResponses[0].reset(new mfxFrameAllocResponse(allocResponse));
         //create pool of mfxFrameSurface1 structures
@@ -162,7 +161,7 @@ mfxStatus MFXVideoVPPPlugin::AllocateFrames(mfxVideoParam *par, mfxVideoParam *p
                 (par1->ExtParam, par1->NumExtParam, MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION);
 
             MSDK_CHECK_POINTER(vpp1OpaqueAlloc, MFX_ERR_INVALID_VIDEO_PARAM);
-            
+
             vpp1OpaqueAlloc->Out.Surfaces = m_SurfacePool1.m_ppSurfacesPool;
             vpp1OpaqueAlloc->Out.NumSurface = (mfxU16)m_SurfacePool1.m_nPoolSize;
 
@@ -188,7 +187,7 @@ mfxStatus MFXVideoVPPPlugin::AllocateFrames(mfxVideoParam *par, mfxVideoParam *p
         {
             MSDK_CHECK_RESULT(sts = MFXVideoCORE_SetHandle(m_session2,
                 MFX_HANDLE_D3D9_DEVICE_MANAGER, m_mfxHDL), MFX_ERR_NONE, sts);
-        }       
+        }
     }
 
     if (par2 && m_pVPP2)
@@ -218,11 +217,11 @@ mfxStatus MFXVideoVPPPlugin::AllocateFrames(mfxVideoParam *par, mfxVideoParam *p
         else
         {
             allocResponse.NumFrameActual = plgAllocRequest1.NumFrameSuggested;
-        }        
+        }
 
         if (m_allocResponses[1].get())
         {
-            m_FrameAllocator.Free(m_FrameAllocator.pthis, m_allocResponses[1].get());            
+            m_FrameAllocator.Free(m_FrameAllocator.pthis, m_allocResponses[1].get());
         }
         m_allocResponses[1].reset(new mfxFrameAllocResponse(allocResponse));
         //create pool of mfxFrameSurface1 structures
@@ -245,7 +244,7 @@ mfxStatus MFXVideoVPPPlugin::AllocateFrames(mfxVideoParam *par, mfxVideoParam *p
             MSDK_CHECK_POINTER(pluginOpaqueAlloc, MFX_ERR_INVALID_VIDEO_PARAM);
 
             pluginOpaqueAlloc->Out = vpp2OpaqueAlloc->In;
-        }        
+        }
     }
     else if (par2 || m_pVPP2)// configuration differs from the one provided in QueryIOSurf
     {
@@ -258,7 +257,7 @@ mfxStatus MFXVideoVPPPlugin::AllocateFrames(mfxVideoParam *par, mfxVideoParam *p
 mfxStatus MFXVideoVPPPlugin::QueryIOSurf(mfxVideoParam *par, mfxFrameAllocRequest request[2], mfxVideoParam *par1, mfxVideoParam *par2)
 {
     MSDK_CHECK_POINTER(par, MFX_ERR_NULL_PTR);
-    
+
     mfxStatus sts = MFX_ERR_NONE;
     mfxFrameAllocRequest plgAllocRequest0;
     memset((void*)&plgAllocRequest0, 0, sizeof(mfxFrameAllocRequest));
@@ -275,17 +274,17 @@ mfxStatus MFXVideoVPPPlugin::QueryIOSurf(mfxVideoParam *par, mfxFrameAllocReques
     if (m_pPlugin)
     {
         m_pmfxPluginParam = par;
-        
+
         sts = m_pPlugin->QueryIOSurf(m_pmfxPluginParam, &plgAllocRequest0, &plgAllocRequest1);
         MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
         request[0] = plgAllocRequest0;
         request[1] = plgAllocRequest1;
-    } 
+    }
     else
     {
         return MFX_ERR_NOT_INITIALIZED;
-    }    
+    }
 
     // create VPP and allocate surfaces to build VPP->Plugin pipeline
     if (par1)
@@ -293,10 +292,10 @@ mfxStatus MFXVideoVPPPlugin::QueryIOSurf(mfxVideoParam *par, mfxFrameAllocReques
         m_pmfxVPP1Param = par1;
         m_pVPP1 = new MFXVideoVPP(m_session);
         MSDK_CHECK_POINTER(m_pVPP1, MFX_ERR_MEMORY_ALLOC);
-                
+
         sts = m_pVPP1->QueryIOSurf(m_pmfxVPP1Param, vpp1Request);
-        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);        
-        
+        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+
         plgAllocRequest0.Type = (mfxU16) ((vpp1Request[1].Type & ~MFX_MEMTYPE_EXTERNAL_FRAME) | MFX_MEMTYPE_INTERNAL_FRAME);
         plgAllocRequest0.NumFrameMin = plgAllocRequest0.NumFrameMin + vpp1Request[1].NumFrameMin;
         plgAllocRequest0.NumFrameSuggested = plgAllocRequest0.NumFrameSuggested + vpp1Request[1].NumFrameSuggested;
@@ -322,14 +321,14 @@ mfxStatus MFXVideoVPPPlugin::QueryIOSurf(mfxVideoParam *par, mfxFrameAllocReques
 
         session2 = m_session2;
     }
-    
+
     // create VPP and allocate surfaces to build Plugin->VPP pipeline
     if (par2)
     {
         m_pmfxVPP2Param = par2;
         m_pVPP2 = new MFXVideoVPP(session2);
         MSDK_CHECK_POINTER(m_pVPP2, MFX_ERR_MEMORY_ALLOC);
-        
+
         sts = m_pVPP2->QueryIOSurf(m_pmfxVPP2Param, vpp2Request);
         MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
@@ -348,13 +347,13 @@ mfxStatus MFXVideoVPPPlugin::QueryIOSurf(mfxVideoParam *par, mfxFrameAllocReques
         request[1] = vpp2Request[1];
     }
 
-    return MFX_ERR_NONE;    
+    return MFX_ERR_NONE;
 }
 
 mfxStatus MFXVideoVPPPlugin::Init(mfxVideoParam *par, mfxVideoParam *par1, mfxVideoParam *par2)
 {
-    mfxStatus sts = MFX_ERR_NONE;    
-    
+    mfxStatus sts = MFX_ERR_NONE;
+
     sts = AllocateFrames(par, par1, par2);
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
@@ -362,7 +361,7 @@ mfxStatus MFXVideoVPPPlugin::Init(mfxVideoParam *par, mfxVideoParam *par1, mfxVi
     if (m_pPlugin)
     {
         m_pmfxPluginParam = par;
-        
+
         // Register plugin, acquire mfxCore interface which will be needed in Init
         mfxPlugin plg = make_mfx_plugin_adapter(m_pPlugin);
         sts = MFXVideoUSER_Register(m_session, 0, &plg);
@@ -411,10 +410,10 @@ mfxStatus MFXVideoVPPPlugin::Reset(mfxVideoParam *par, mfxVideoParam *par1, mfxV
 }
 
 mfxStatus MFXVideoVPPPlugin::Close(void)
-{     
+{
     if (m_pPlugin)
-        MFXVideoUSER_Unregister(m_session, 0);         
-    
+        MFXVideoUSER_Unregister(m_session, 0);
+
     MSDK_SAFE_DELETE(m_pPlugin);
 
     if (m_PluginModule)
@@ -430,9 +429,9 @@ mfxStatus MFXVideoVPPPlugin::Close(void)
     if (m_session2)
     {
         //TODO: ensure no active tasks
-        MFXDisjoinSession(m_session2);      
+        MFXDisjoinSession(m_session2);
 
-        MFXClose(m_session2);        
+        MFXClose(m_session2);
 
         m_session2 = NULL;
     }
@@ -453,15 +452,15 @@ mfxStatus MFXVideoVPPPlugin::RunVPP1(mfxFrameSurface1 *in, mfxFrameSurface1 *out
     }
 
     mfxStatus sts;
-    mfxFrameSurface1 *pOutSurface = out;    
+    mfxFrameSurface1 *pOutSurface = out;
     mfxSyncPoint local_syncp = NULL;
-    
+
     pOutSurface = m_SurfacePool1.GetFreeSurface();
-    MSDK_CHECK_POINTER(pOutSurface, MFX_ERR_MEMORY_ALLOC);            
+    MSDK_CHECK_POINTER(pOutSurface, MFX_ERR_MEMORY_ALLOC);
 
     for(;;)
     {
-        sts = m_pVPP1->RunFrameVPPAsync(in, pOutSurface, NULL, &local_syncp); 
+        sts = m_pVPP1->RunFrameVPPAsync(in, pOutSurface, NULL, &local_syncp);
 
         if (MFX_WRN_DEVICE_BUSY == sts)
         {
@@ -486,15 +485,15 @@ mfxStatus MFXVideoVPPPlugin::RunPlugin(mfxFrameSurface1 *in, mfxFrameSurface1 *o
         return RunVPP2(in, out, syncp);
     }
 
-    mfxStatus sts;        
+    mfxStatus sts;
     mfxFrameSurface1 *pOutSurface = out;
     mfxSyncPoint local_syncp = NULL;
 
     if (m_pVPP2)
     {
         pOutSurface = m_SurfacePool2.GetFreeSurface();
-        MSDK_CHECK_POINTER(pOutSurface, MFX_ERR_MEMORY_ALLOC);        
-    }   
+        MSDK_CHECK_POINTER(pOutSurface, MFX_ERR_MEMORY_ALLOC);
+    }
 
     for(;;)
     {
@@ -503,7 +502,7 @@ mfxStatus MFXVideoVPPPlugin::RunPlugin(mfxFrameSurface1 *in, mfxFrameSurface1 *o
         // BE CAREFUL! mfxHDL in this instance represents pointer to mfxFrameSurface1.
         // And ProcessFrameAsync get pointers to mfxHDL objects. It is required for MSDK internal task dependency tracking.
         // So array of mfxFrameSurface1 pointers can be transferred into user plugin.
-        sts = MFXVideoUSER_ProcessFrameAsync(m_session, &h1, 1, &h2, 1, &local_syncp); 
+        sts = MFXVideoUSER_ProcessFrameAsync(m_session, &h1, 1, &h2, 1, &local_syncp);
         pOutSurface->Info.PicStruct = in->Info.PicStruct; // plugin has to passthrough the picstruct parameter if it is in the transcoding pipeline
 
         if (MFX_WRN_DEVICE_BUSY == sts)
@@ -522,8 +521,8 @@ mfxStatus MFXVideoVPPPlugin::RunPlugin(mfxFrameSurface1 *in, mfxFrameSurface1 *o
     }
     else
     {
-        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);        
-        
+        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+
         return RunVPP2(pOutSurface, out, syncp);
     }
 }
@@ -555,7 +554,7 @@ mfxStatus MFXVideoVPPPlugin::RunVPP2(mfxFrameSurface1 *in, mfxFrameSurface1 *out
 }
 
 mfxStatus MFXVideoVPPPlugin::SurfacePool::Alloc(mfxFrameAllocResponse &response, mfxFrameInfo &info, bool opaque)
-{    
+{
     Free();
 
     m_ppSurfacesPool = new mfxFrameSurface1* [response.NumFrameActual];
@@ -571,7 +570,7 @@ mfxStatus MFXVideoVPPPlugin::SurfacePool::Alloc(mfxFrameAllocResponse &response,
         if (!opaque)
         {
             m_ppSurfacesPool[i]->Data.MemId = response.mids[i];
-        }        
+        }
     }
     m_nPoolSize = response.NumFrameActual;
     return MFX_ERR_NONE;
@@ -579,21 +578,21 @@ mfxStatus MFXVideoVPPPlugin::SurfacePool::Alloc(mfxFrameAllocResponse &response,
 
 mfxFrameSurface1 *MFXVideoVPPPlugin::SurfacePool::GetFreeSurface()
 {
-    mfxU32 SleepInterval = 10; // milliseconds    
+    mfxU32 SleepInterval = 10; // milliseconds
 
     for (mfxU32 j = 0; j < MSDK_WAIT_INTERVAL; j += SleepInterval)
     {
         for (mfxU16 i = 0; i < m_nPoolSize; i++)
         {
             if (0 == m_ppSurfacesPool[i]->Data.Locked)
-            {       
+            {
                 return m_ppSurfacesPool[i];
             }
         }
 
         //wait if there's no free surface
         MY_WAIT(SleepInterval);
-    }          
+    }
 
     return NULL;
 }

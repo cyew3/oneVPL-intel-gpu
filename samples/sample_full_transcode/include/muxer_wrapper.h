@@ -20,6 +20,7 @@
 #include <list>
 
 namespace detail {
+
     //accumulate input samples just before muxing them, in order to receive sps pps before initialize muxer
     class SamplePoolForMuxer {
         std::list<ISample*> m_samples;
@@ -39,19 +40,19 @@ namespace detail {
 class MuxerWrapper : public ISink, private no_copy
 {
 protected:
-    std::auto_ptr<MFXMuxer>  m_muxer;
-    std::auto_ptr<MFXDataIO> m_io;
     MFXStreamParamsExt m_sParamsExt;
     MFXStreamParams m_sParams;
+    std::auto_ptr<MFXDataIO> m_io;
+    std::auto_ptr<MFXMuxer>  m_muxer;
     bool               m_bInited;
     detail::SamplePoolForMuxer m_SamplePool;
 
 public:
-    MuxerWrapper(std::auto_ptr<MFXMuxer>& muxer, const MFXStreamParamsExt & sParams, std::auto_ptr<MFXDataIO>& io) 
-        : m_muxer(muxer)
-        , m_io(io)
-        , m_sParamsExt(sParams)
+    MuxerWrapper(std::auto_ptr<MFXMuxer>& muxer, const MFXStreamParamsExt & sParams, std::auto_ptr<MFXDataIO>& io)
+        : m_sParamsExt(sParams)
         , m_sParams(m_sParamsExt.GetMFXStreamParams())
+        , m_io(io)
+        , m_muxer(muxer)
         , m_bInited(false)
         , m_SamplePool(m_sParamsExt.Tracks().size()) {
     }
