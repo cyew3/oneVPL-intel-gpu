@@ -127,8 +127,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "UnitTests", "UnitTests", "{
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "sample_spl_mux", "..\..\samples\sample_spl_mux\sample_spl_mux.vcxproj", "{44D60213-8682-48F3-ADD2-4885479FD9DB}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "h265_enc", "encode\h265_enc.vcxproj", "{83F019AE-AF39-49C6-B17C-5C4C3FCA2055}"
-EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "demuxer", "..\shared\umc\codec\demuxer\demuxer.vcxproj", "{792D7964-DE0E-421B-99EB-F98FAF53D235}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mpeg4_spl", "..\shared\umc\codec\mpeg4_spl\mpeg4_spl.vcxproj", "{568E3C4E-29BF-4637-8E64-0ACE1BCD529F}"
@@ -1084,26 +1082,6 @@ Global
 		{44D60213-8682-48F3-ADD2-4885479FD9DB}.Release|Win32.Build.0 = Release|Win32
 		{44D60213-8682-48F3-ADD2-4885479FD9DB}.Release|x64.ActiveCfg = Release|x64
 		{44D60213-8682-48F3-ADD2-4885479FD9DB}.Release|x64.Build.0 = Release|x64
-		{83F019AE-AF39-49C6-B17C-5C4C3FCA2055}.Debug_Intel|Win32.ActiveCfg = Debug_Intel|Win32
-		{83F019AE-AF39-49C6-B17C-5C4C3FCA2055}.Debug_Intel|Win32.Build.0 = Debug_Intel|Win32
-		{83F019AE-AF39-49C6-B17C-5C4C3FCA2055}.Debug_Intel|x64.ActiveCfg = Debug_Intel|x64
-		{83F019AE-AF39-49C6-B17C-5C4C3FCA2055}.Debug_Intel|x64.Build.0 = Debug_Intel|x64
-		{83F019AE-AF39-49C6-B17C-5C4C3FCA2055}.Debug|Win32.ActiveCfg = Debug|Win32
-		{83F019AE-AF39-49C6-B17C-5C4C3FCA2055}.Debug|Win32.Build.0 = Debug|Win32
-		{83F019AE-AF39-49C6-B17C-5C4C3FCA2055}.Debug|x64.ActiveCfg = Debug|x64
-		{83F019AE-AF39-49C6-B17C-5C4C3FCA2055}.Debug|x64.Build.0 = Debug|x64
-		{83F019AE-AF39-49C6-B17C-5C4C3FCA2055}.Release_Intel|Win32.ActiveCfg = Release_Intel|Win32
-		{83F019AE-AF39-49C6-B17C-5C4C3FCA2055}.Release_Intel|Win32.Build.0 = Release_Intel|Win32
-		{83F019AE-AF39-49C6-B17C-5C4C3FCA2055}.Release_Intel|x64.ActiveCfg = Release_Intel|x64
-		{83F019AE-AF39-49C6-B17C-5C4C3FCA2055}.Release_Intel|x64.Build.0 = Release_Intel|x64
-		{83F019AE-AF39-49C6-B17C-5C4C3FCA2055}.Release_MD|Win32.ActiveCfg = Release_Intel|Win32
-		{83F019AE-AF39-49C6-B17C-5C4C3FCA2055}.Release_MD|Win32.Build.0 = Release_Intel|Win32
-		{83F019AE-AF39-49C6-B17C-5C4C3FCA2055}.Release_MD|x64.ActiveCfg = Release_Intel|x64
-		{83F019AE-AF39-49C6-B17C-5C4C3FCA2055}.Release_MD|x64.Build.0 = Release_Intel|x64
-		{83F019AE-AF39-49C6-B17C-5C4C3FCA2055}.Release|Win32.ActiveCfg = Release|Win32
-		{83F019AE-AF39-49C6-B17C-5C4C3FCA2055}.Release|Win32.Build.0 = Release|Win32
-		{83F019AE-AF39-49C6-B17C-5C4C3FCA2055}.Release|x64.ActiveCfg = Release|x64
-		{83F019AE-AF39-49C6-B17C-5C4C3FCA2055}.Release|x64.Build.0 = Release|x64
 		{792D7964-DE0E-421B-99EB-F98FAF53D235}.Debug_Intel|Win32.ActiveCfg = Debug|Win32
 		{792D7964-DE0E-421B-99EB-F98FAF53D235}.Debug_Intel|Win32.Build.0 = Debug|Win32
 		{792D7964-DE0E-421B-99EB-F98FAF53D235}.Debug_Intel|x64.ActiveCfg = Debug|x64
