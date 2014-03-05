@@ -181,7 +181,7 @@ SurfaceIndex const & GetIndex(CmBufferUP * buffer)
     SurfaceIndex * index = 0;
     int result = buffer->GetIndex(index);
     if (result != CM_SUCCESS)
-        throw std::exception("GetIndex failed");
+        throw CmRuntimeError();
     return *index;
 }
 
@@ -244,7 +244,7 @@ CmBufferUP * CreateBuffer(CmDevice * device, mfxU32 size, void * mem)
     CmBufferUP * buffer;
     int result = device->CreateBufferUP(size, mem, buffer);
     if (result != CM_SUCCESS)
-        throw std::exception("CreateBufferUP failed");
+        throw CmRuntimeError();
     return buffer;
 }
 
@@ -252,7 +252,7 @@ CmSurface2D * CreateSurface(CmDevice * device, mfxU32 width, mfxU32 height, mfxU
 {
     int result = CM_SUCCESS;
     CmSurface2D * cmSurface = 0;
-    if (device && (result = device->CreateSurface2D(width, height, D3DFORMAT(fourcc), cmSurface)) != CM_SUCCESS)
+    if (device && (result = device->CreateSurface2D(width, height, CM_SURFACE_FORMAT(fourcc), cmSurface)) != CM_SUCCESS)
         throw CmRuntimeError();
     return cmSurface;
 }
@@ -261,7 +261,7 @@ CmSurface2DUP * CreateSurface(CmDevice * device, mfxU32 width, mfxU32 height, mf
 {
     int result = CM_SUCCESS;
     CmSurface2DUP * cmSurface = 0;
-    if (device && (result = device->CreateSurface2DUP(width, height, D3DFORMAT(fourcc), mem, cmSurface)) != CM_SUCCESS)
+    if (device && (result = device->CreateSurface2DUP(width, height, CM_SURFACE_FORMAT(fourcc), mem, cmSurface)) != CM_SUCCESS)
         throw CmRuntimeError();
     return cmSurface;
 }
@@ -528,6 +528,14 @@ Ipp32s cmNextIdx = 0;
 int cmMvW[PU_MAX] = {};
 int cmMvH[PU_MAX] = {};
 
+bool operator==(mfxI16Pair const & l, mfxI16Pair const & r) { return l.x == r.x && l.y == r.y; }
+template <class T>
+mfxI16Pair operator*(mfxI16Pair const & p, T scalar) { mfxI16Pair r = { mfxI16(p.x * scalar), mfxI16(p.y * scalar) }; return r; }
+template <class T>
+mfxI16Pair & operator*=(mfxI16Pair & p, T scalar) { p.x *= scalar; p.y *= scalar; return p; }
+
+#if defined(_WIN32) || defined(_WIN64)
+
 struct Timers
 {
     struct Timer {
@@ -539,12 +547,6 @@ struct Timers
     } me1x, me2x, refine32x32, refine32x16, refine16x32, refine, dsSrc, dsFwd,
         writeSrc, writeFwd, readDist32x32, readDist32x16, readDist16x32, readMb1x, readMb2x, runVme, processMv;
 } TIMERS = {};
-
-bool operator==(mfxI16Pair const & l, mfxI16Pair const & r) { return l.x == r.x && l.y == r.y; }
-template <class T>
-mfxI16Pair operator*(mfxI16Pair const & p, T scalar) { mfxI16Pair r = { mfxI16(p.x * scalar), mfxI16(p.y * scalar) }; return r; }
-template <class T>
-mfxI16Pair & operator*=(mfxI16Pair & p, T scalar) { p.x *= scalar; p.y *= scalar; return p; }
 
 mfxU64 gettick() {
     LARGE_INTEGER t;
@@ -604,6 +606,8 @@ void PrintTimes()
     printf("Interpolate_AVERAGE time %.3f\n", sum/interpolationTime.size());
 }
 //}} g_postMortemPrinter;
+
+#endif // #if defined(_WIN32) || defined(_WIN64)
 
 void FreeCmResources()
 {
@@ -1153,7 +1157,9 @@ void RunVme(
 {
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "RunVme");
 
+#if defined(_WIN32) || defined(_WIN64)
     mfxU64 runVmeStart = gettick();
+#endif // #if defined(_WIN32) || defined(_WIN64)
 
     CmEvent * writeSrcEvent = 0;
     CmEvent * writeFwdEvent = 0;

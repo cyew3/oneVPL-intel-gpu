@@ -616,6 +616,7 @@ set( sources.plus "" )
 list( APPEND sources ${plugin_common_sources} )
 
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/scheduler/include )
+include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/genx/h265_encode/include )
 
 foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/decode/h265/src )
   list( APPEND sources
@@ -693,6 +694,11 @@ foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/plugin/src )
   list( APPEND sources.plus
     ${prefix}/mfx_hevc_enc_plugin.cpp
     ${prefix}/watermark.cpp
+  )
+endforeach()
+foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/genx/h265_encode/src )
+  list( APPEND sources.plus
+    ${prefix}/genx_h265_cmcode_isa.cpp
   )
 endforeach()
 

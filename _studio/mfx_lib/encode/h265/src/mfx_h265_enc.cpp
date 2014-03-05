@@ -1112,7 +1112,9 @@ mfxStatus H265Encoder::Init(const mfxVideoParam *param, const mfxExtCodingOption
 
 void H265Encoder::Close() {
     if (m_videoParam.enableCmFlag) {
+#if defined(_WIN32) || defined(_WIN64)
         PrintTimes();
+#endif // #if defined(_WIN32) || defined(_WIN64)
         FreeCmResources();
     }
     if (m_pReconstructFrame) {
