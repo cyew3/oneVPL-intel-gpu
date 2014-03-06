@@ -3199,6 +3199,17 @@ recode:
                 m_pCurrentFrame->m_allRefFramesAreFromThePast = false;
     }
 
+    m_incRow = 0;
+    for (Ipp32u i = 0; i < m_videoParam.num_thread_structs; i++)
+        bs[i].Reset();
+    for (Ipp32u i = 0; i < m_videoParam.PicHeightInCtbs; i++) {
+        m_row_info[i].mt_current_ctb_col = -1;
+        m_row_info[i].mt_busy = 1;
+    }
+
+    if (m_videoParam.num_threads > 1)
+        mfx_video_encode_h265_ptr->ParallelRegionStart(m_videoParam.num_threads - 1, PARALLEL_REGION_MAIN);
+
 
     if (m_videoParam.enableCmFlag) {
         MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "CmPart");
@@ -3237,16 +3248,8 @@ recode:
         RunVme(m_videoParam, m_pCurrentFrame, m_pNextFrame, m_slices, m_slicesNext, refsCur, refsNext);
     }
 
-    m_incRow = 0;
-    for (Ipp32u i = 0; i < m_videoParam.num_thread_structs; i++)
-        bs[i].Reset();
-    for (Ipp32u i = 0; i < m_videoParam.PicHeightInCtbs; i++) {
-        m_row_info[i].mt_current_ctb_col = -1;
+    for (Ipp32u i = 0; i < m_videoParam.PicHeightInCtbs; i++)
         m_row_info[i].mt_busy = 0;
-    }
-
-    if (m_videoParam.num_threads > 1)
-        mfx_video_encode_h265_ptr->ParallelRegionStart(m_videoParam.num_threads - 1, PARALLEL_REGION_MAIN);
 
     if (m_videoParam.threading_by_rows)
         EncodeThreadByRow(0);
