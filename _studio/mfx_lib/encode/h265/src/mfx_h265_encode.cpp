@@ -118,6 +118,7 @@ mfxExtBuffer HEVC_HEADER = { MFX_EXTBUFF_HEVCENC, sizeof(mfxExtCodingOptionHEVC)
     tab_IntraNumCand0_6[x],\
     tab_CostChroma[x],\
     tab_PatternIntPel[x],\
+    tab_FastSkip[x],\
 }
 
 //                                    TU1  TU2  TU3  TU4  TU4  TU6  TU7
@@ -168,6 +169,7 @@ TU_OPT(IntraNumCand0_5,               35,  35,  35,  35,  35,  35,  35)
 TU_OPT(IntraNumCand0_6,               35,  35,  35,  35,  35,  35,  35)
 TU_OPT(CostChroma,                   OFF, OFF, OFF, OFF, OFF, OFF, OFF)
 TU_OPT(PatternIntPel,                  1,   1,   1,   1,   1,   1,   1)
+TU_OPT(FastSkip,                     OFF, OFF, OFF, OFF, OFF, OFF, OFF)
 
 mfxExtCodingOptionHEVC tab_tu[8] = {
     TAB_TU(3), TAB_TU(0), TAB_TU(1), TAB_TU(2), TAB_TU(3), TAB_TU(4), TAB_TU(5), TAB_TU(6)
@@ -723,6 +725,8 @@ mfxStatus MFXVideoENCODEH265::Init(mfxVideoParam* par_in)
             m_mfxHEVCOpts.SaoOpt = opts_tu->SaoOpt;
         if (m_mfxHEVCOpts.PatternIntPel == 0)
             m_mfxHEVCOpts.PatternIntPel = opts_tu->PatternIntPel;
+        if (m_mfxHEVCOpts.FastSkip == 0)
+            m_mfxHEVCOpts.FastSkip = opts_tu->FastSkip;
     }
 
     // uncomment here if sign bit hiding doesn't work properly
@@ -991,6 +995,7 @@ mfxStatus MFXVideoENCODEH265::Reset(mfxVideoParam *par_in)
         if (!optsNew.AMP                          ) optsNew.AMP                           = optsOld.AMP                          ;
         if (!optsNew.BPyramid                     ) optsNew.BPyramid                      = optsOld.BPyramid                     ;
         if (!optsNew.CostChroma                   ) optsNew.CostChroma                    = optsOld.CostChroma                   ;
+        if (!optsNew.FastSkip                     ) optsNew.FastSkip                      = optsOld.FastSkip                     ;
     }
 
     if ((parNew.IOPattern & 0xffc8) || (parNew.IOPattern == 0)) // 0 is possible after Query
@@ -1150,6 +1155,7 @@ mfxStatus MFXVideoENCODEH265::Query(VideoCORE *core, mfxVideoParam *par_in, mfxV
             optsHEVC->AMP = 1;
             optsHEVC->BPyramid = 1;
             optsHEVC->CostChroma = 1;
+            optsHEVC->FastSkip = 1;
         }
 
         mfxExtDumpFiles* optsDump = (mfxExtDumpFiles*)GetExtBuffer( out->ExtParam, out->NumExtParam, MFX_EXTBUFF_DUMP );
@@ -1514,6 +1520,7 @@ mfxStatus MFXVideoENCODEH265::Query(VideoCORE *core, mfxVideoParam *par_in, mfxV
             CHECK_OPTION(opts_in->RDOQuantChroma, opts_out->RDOQuantChroma, isInvalid);  /* tri-state option */
             CHECK_OPTION(opts_in->RDOQuantCGZ, opts_out->RDOQuantCGZ, isInvalid);  /* tri-state option */
             CHECK_OPTION(opts_in->CostChroma, opts_out->CostChroma, isInvalid);  /* tri-state option */
+            CHECK_OPTION(opts_in->FastSkip, opts_out->FastSkip, isInvalid);  /* tri-state option */
 
             if (opts_out->BPyramid == MFX_CODINGOPTION_ON) {
                 Ipp32s GopRefDist = out->mfx.GopRefDist;

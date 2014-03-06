@@ -402,6 +402,7 @@ public:
 
     CostType CalcCostSkip(Ipp32u absPartIdx, Ipp8u depth);
     CostType CalcCostSkipExperimental(Ipp32u absPartIdx, Ipp8u depth);
+    CostType CalcCostSkipFast(Ipp32u absPartIdx, Ipp8u depth);
 
     CostType MeCu(Ipp32u absPartIdx, Ipp8u depth, Ipp32s offset);
 

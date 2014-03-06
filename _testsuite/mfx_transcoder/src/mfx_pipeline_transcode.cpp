@@ -246,6 +246,7 @@ MFXTranscodingPipeline::MFXTranscodingPipeline(IMFXPipelineFactory *pFactory)
         HANDLE_HEVC_OPTION(IntraNumCand0_6,          OPT_UINT_16,    "number of candidates for SATD stage after gradient analysis for TU64x64"),
         HANDLE_HEVC_OPTION(CostChroma,               OPT_TRI_STATE,  "on/off include chroma in cost"),
         HANDLE_HEVC_OPTION(PatternIntPel,            OPT_UINT_16,    "0-default; 1-log; 2-fullsearch"),
+        HANDLE_HEVC_OPTION(FastSkip,                 OPT_TRI_STATE,  "on/off stop decision if cbf for best merge is 0"),
 
         HANDLE_VP8PARAM_OPTION(VP8Version,            OPT_UINT_8,    "0-maxU8"),
         HANDLE_VP8PARAM_OPTION(LoopFilterType,        OPT_UINT_8,    "0-maxU8"),
