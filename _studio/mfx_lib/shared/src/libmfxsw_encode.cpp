@@ -750,6 +750,11 @@ mfxStatus MFXVideoENCODE_EncodeFrameAsync(mfxSession session, mfxEncodeCtrl *ctr
                 task.pSrc[1] = aux;
                 task.pDst[0] = bs;
 
+                // specific plug-in case to run additional task after main task 
+#if !defined(AS_HEVCE_PLUGIN) 
+                task.pSrc[1] =  bs;
+#endif
+
 #ifdef MFX_TRACE_ENABLE
                 task.nParentId = MFX_AUTO_TRACE_GETID();
                 task.nTaskId = MFX::CreateUniqId() + MFX_TRACE_ID_ENCODE;
