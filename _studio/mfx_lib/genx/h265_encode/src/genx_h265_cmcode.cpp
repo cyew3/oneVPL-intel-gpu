@@ -1887,81 +1887,97 @@ static const uint1 MODE_INIT_TABLE[257] = {
 
 extern "C" _GENX_MAIN_  void
 AnalyzeGradient(SurfaceIndex SURF_SRC,
-                SurfaceIndex SURF_GRADIENT,
+                SurfaceIndex SURF_GRADIENT_4x4,
+                SurfaceIndex SURF_GRADIENT_8x8,
                 uint4        width)
 {
+    const uint W = 8;
+    const uint H = 8;
+    assert(W % 4 == 0 && H % 4 == 0);
+
     uint x = get_thread_origin_x();
     uint y = get_thread_origin_y();
 
-    matrix< uint1, 6, 8 > data;
-    read( SURF_SRC, x * 4 - 1, y * 4 - 1, data );
+    matrix<uint1, 6, 8> data;
+    matrix<int2, 4, 4> dx, dy;
+    matrix<uint2, 4, 4> absDx, absDy, amp;
+    matrix<uint1, 4, 4> ang;
+    matrix<int4, 4, 4> tabIndex;
+    vector<uint1, 257> mode(MODE_INIT_TABLE);
+    vector<uint2, 40> histogram4x4;
+    vector<uint2, 40> histogram8x8 = 0;
 
-    matrix< int2, 4, 4 > dx, dy;
+#pragma unroll
+    for (int yBlk = y * (H / 4); yBlk < y * (H / 4) + H / 4; yBlk++) {
+#pragma unroll
+        for (int xBlk = x * (W / 4); xBlk < x * (W / 4) + W / 4; xBlk++) {
+            read(SURF_SRC, xBlk * 4 - 1, yBlk * 4 - 1, data);
     
-    dx  = data.select<4,1,4,1>(2, 0);     // x-1, y+1
-    dx += data.select<4,1,4,1>(2, 1) * 2; // x+0, y+1
-    dx += data.select<4,1,4,1>(2, 2);     // x+1, y+1
-    dx -= data.select<4,1,4,1>(0, 0);     // x-1, y-1
-    dx -= data.select<4,1,4,1>(0, 1) * 2; // x+0, y-1
-    dx -= data.select<4,1,4,1>(0, 2);     // x+1, y-1
+            dx  = data.select<4, 1, 4, 1>(2, 0);     // x-1, y+1
+            dx += data.select<4, 1, 4, 1>(2, 1) * 2; // x+0, y+1
+            dx += data.select<4, 1, 4, 1>(2, 2);     // x+1, y+1
+            dx -= data.select<4, 1, 4, 1>(0, 0);     // x-1, y-1
+            dx -= data.select<4, 1, 4, 1>(0, 1) * 2; // x+0, y-1
+            dx -= data.select<4, 1, 4, 1>(0, 2);     // x+1, y-1
 
-    dy  = data.select<4,1,4,1>(0, 0);
-    dy += data.select<4,1,4,1>(1, 0) * 2;
-    dy += data.select<4,1,4,1>(2, 0);
-    dy -= data.select<4,1,4,1>(0, 2);
-    dy -= data.select<4,1,4,1>(1, 2) * 2;
-    dy -= data.select<4,1,4,1>(2, 2);
+            dy  = data.select<4, 1, 4, 1>(0, 0);
+            dy += data.select<4, 1, 4, 1>(1, 0) * 2;
+            dy += data.select<4, 1, 4, 1>(2, 0);
+            dy -= data.select<4, 1, 4, 1>(0, 2);
+            dy -= data.select<4, 1, 4, 1>(1, 2) * 2;
+            dy -= data.select<4, 1, 4, 1>(2, 2);
 
-    matrix< uint2, 4, 4 > absDx = cm_abs<uint2>(dx);
-    matrix< uint2, 4, 4 > absDy = cm_abs<uint2>(dy);
+            absDx = cm_abs<uint2>(dx);
+            absDy = cm_abs<uint2>(dy);
 
-    matrix< uint1, 4, 4 > ang;
+            SIMD_IF_BEGIN(absDx >= absDy) {
+                SIMD_IF_BEGIN(dx == 0) {
+                    ang = 0;
+                }
+                SIMD_ELSE {
+                    tabIndex = dy * 128;
+                    tabIndex += dx / 2;
+                    tabIndex /= dx;
+                    tabIndex += 128;
+                    ang = mode.iselect<uint4, 4 * 4>(tabIndex);
+                }
+                SIMD_IF_END;
+            }
+            SIMD_ELSE {
+                SIMD_IF_BEGIN(dy == 0) {
+                    ang = 0;
+                }
+                SIMD_ELSE {
+                    tabIndex = dx * 128;
+                    tabIndex += dy / 2;
+                    tabIndex /= dy;
+                    tabIndex += 128;
+                    ang = 36 - mode.iselect<uint4, 4 * 4>(tabIndex);
+                }
+                SIMD_IF_END;
+            }
+            SIMD_IF_END;
 
-    vector< uint1, 257 > mode(MODE_INIT_TABLE);
+            amp = absDx + absDy;
 
-    SIMD_IF_BEGIN(absDx >= absDy) {
-        SIMD_IF_BEGIN(dx == 0) {
-            ang = 0;
-        }
-        SIMD_ELSE {
-            matrix< int4, 4, 4 > tabIndex = dy * 128;
-            tabIndex += dx / 2;
-            tabIndex /= dx;
-            tabIndex += 128;
-            ang = mode.iselect< uint4, 16 >(tabIndex);
-        }
-        SIMD_IF_END;
-    }
-    SIMD_ELSE {
-        SIMD_IF_BEGIN(dy == 0) {
-            ang = 0;
-        }
-        SIMD_ELSE {
-            matrix< int4, 4, 4 > tabIndex = dx * 128;
-            tabIndex += dy / 2;
-            tabIndex /= dy;
-            tabIndex += 128;
-            ang = 36 - mode.iselect< uint4, 16 >(tabIndex);
-        }
-        SIMD_IF_END;
-    }
-    SIMD_IF_END;
-
-    matrix< ushort, 4, 4 > amp = absDx + absDy;
-
-    vector< ushort, 40 > histogram = 0;
-
+            histogram4x4 = 0;
 #pragma unroll
-    for (int i = 0; i < 4; i++) {
+            for (int i = 0; i < 4; i++)
 #pragma unroll
-        for (int j = 0; j < 4; j++) {
-            histogram( ang(i, j) ) += amp(i, j);
+                for (int j = 0; j < 4; j++)
+                    histogram4x4( ang(i, j) ) += amp(i, j);
+
+            histogram8x8 += histogram4x4;
+
+            uint offset = ((width / 4) * yBlk + xBlk) * sizeof(uint2) * 40;
+            write(SURF_GRADIENT_4x4, offset +  0, SLICE1(histogram4x4,  0, 32));
+            write(SURF_GRADIENT_4x4, offset + 64, SLICE1(histogram4x4, 32,  8));
         }
     }
 
-    uint offset = ((width >> 2) * y + x) * sizeof(uint2) * 40;
-    write( SURF_GRADIENT, offset +  0, SLICE1(histogram,  0, 32) );
-    write( SURF_GRADIENT, offset + 64, SLICE1(histogram, 32,  8) );
+    uint offset = ((width / 8) * y + x) * sizeof(uint2) * 40;
+    write(SURF_GRADIENT_8x8, offset +  0, SLICE1(histogram8x8,  0, 32));
+    write(SURF_GRADIENT_8x8, offset + 64, SLICE1(histogram8x8, 32,  8));
 }
 
 //extern "C" _GENX_MAIN_  void

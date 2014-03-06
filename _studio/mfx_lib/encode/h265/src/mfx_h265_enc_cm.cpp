@@ -419,10 +419,12 @@ bool cmResurcesAllocated = false;
 CmDevice * device = 0;
 CmQueue * queue = 0;
 CmSurface2DUP * mbIntraDist[2] = {};
-CmBufferUP * mbIntraGrad[2] = {};
+CmBufferUP * mbIntraGrad4x4[2] = {};
+CmBufferUP * mbIntraGrad8x8[2] = {};
 Ipp32u intraPitch[2] = {};
 CmMbIntraDist * cmMbIntraDist[2] = {};
-CmMbIntraGrad * cmMbIntraGrad[2] = {};
+CmMbIntraGrad * cmMbIntraGrad4x4[2] = {};
+CmMbIntraGrad * cmMbIntraGrad8x8[2] = {};
 
 CmSurface2DUP ** dist32x32[2] = {0};
 CmSurface2DUP ** dist32x16[2] = {0};
@@ -633,10 +635,15 @@ void FreeCmResources()
             mbIntraDist[i] = 0;
             cmMbIntraDist[i] = 0;
 
-            device->DestroyBufferUP(mbIntraGrad[i]);
-            CM_ALIGNED_FREE(cmMbIntraGrad[i]);
-            mbIntraGrad[i] = 0;
-            cmMbIntraGrad[i] = 0;
+            device->DestroyBufferUP(mbIntraGrad4x4[i]);
+            CM_ALIGNED_FREE(cmMbIntraGrad4x4[i]);
+            mbIntraGrad4x4[i] = 0;
+            cmMbIntraGrad4x4[i] = 0;
+
+            device->DestroyBufferUP(mbIntraGrad8x8[i]);
+            CM_ALIGNED_FREE(cmMbIntraGrad8x8[i]);
+            mbIntraGrad8x8[i] = 0;
+            cmMbIntraGrad8x8[i] = 0;
 
             for (uint j = 0; j < maxNumRefs; j++)
             {
@@ -827,8 +834,11 @@ void AllocateCmResources(mfxU32 w, mfxU32 h, mfxU16 nRefs)
         mbIntraDist[i] = CreateSurface(device, w * sizeof(CmMbIntraDist) / 16, h / 16, CM_SURFACE_FORMAT_P8, cmMbIntraDist[i]);
 
         /* surface for intra gradient histogram */
-        cmMbIntraGrad[i] = (CmMbIntraGrad *)CM_ALIGNED_MALLOC(w * h / 16 * sizeof(CmMbIntraGrad), 0x1000);
-        mbIntraGrad[i] = CreateBuffer(device, w * h / 16 * sizeof(CmMbIntraGrad), cmMbIntraGrad[i]);
+        cmMbIntraGrad4x4[i] = (CmMbIntraGrad *)CM_ALIGNED_MALLOC(w * h / 16 * sizeof(CmMbIntraGrad), 0x1000);
+        mbIntraGrad4x4[i] = CreateBuffer(device, w * h / 16 * sizeof(CmMbIntraGrad), cmMbIntraGrad4x4[i]);
+
+        cmMbIntraGrad8x8[i] = (CmMbIntraGrad *)CM_ALIGNED_MALLOC(w * h / 64 * sizeof(CmMbIntraGrad), 0x1000);
+        mbIntraGrad8x8[i] = CreateBuffer(device, w * h / 64 * sizeof(CmMbIntraGrad), cmMbIntraGrad8x8[i]);
 
         cmMv32x32[i] = new mfxI16Pair* [maxNumRefs];
         mv32x32[i] = new CmSurface2DUP* [maxNumRefs];
@@ -1177,8 +1187,9 @@ void RunVme(
 
         if (param.intraAngModes == 3) {
             MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "RefLast_kernelGradient");
-            SetKernelArg(kernelGradient, GetIndex(raw[cmCurIdx]), GetIndex(mbIntraGrad[cmCurIdx]), width);
-            gradientEvent = EnqueueKernel(device, queue, kernelGradient, width / 4, height / 4);
+            SetKernelArg(kernelGradient, GetIndex(raw[cmCurIdx]), GetIndex(mbIntraGrad4x4[cmCurIdx]),
+                         GetIndex(mbIntraGrad8x8[cmCurIdx]), width);
+            gradientEvent = EnqueueKernel(device, queue, kernelGradient, width / 8, height / 8);
             lastEvent[cmCurIdx] = gradientEvent;
         }
     }
@@ -1248,8 +1259,9 @@ void RunVme(
         }
         if (param.intraAngModes == 3) {
             MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "RefLast_kernelGradient");
-            SetKernelArg(kernelGradient, GetIndex(raw[cmNextIdx]), GetIndex(mbIntraGrad[cmNextIdx]), width);
-            gradientEvent = EnqueueKernel(device, queue, kernelGradient, width / 4, height / 4);
+            SetKernelArg(kernelGradient, GetIndex(raw[cmNextIdx]), GetIndex(mbIntraGrad4x4[cmNextIdx]),
+                         GetIndex(mbIntraGrad8x8[cmNextIdx]), width);
+            gradientEvent = EnqueueKernel(device, queue, kernelGradient, width / 8, height / 8);
             lastEvent[cmNextIdx] = gradientEvent;
         }
 
@@ -1603,19 +1615,28 @@ void GetAngModesFromHistogram(Ipp32s xPu, Ipp32s yPu, Ipp32s puSize, Ipp8s *mode
     VM_ASSERT(xPu + puSize <= (Ipp32s)width);
     VM_ASSERT(yPu + puSize <= (Ipp32s)height);
 
-    // all in units of 4x4 blocks
-    Ipp32s pitch = width >> 2;
-    puSize >>= 2;
-    xPu >>= 2;
-    yPu >>= 2;
-
-    const CmMbIntraGrad *histBlock = cmMbIntraGrad[cmCurIdx] + xPu + yPu * pitch;
+    Ipp32s pitch = width;
 
     Ipp32s histogram[35] = {};
-    for (Ipp32s y = 0; y < puSize; y++, histBlock += pitch)
-        for (Ipp32s x = 0; x < puSize; x++)
-            for (Ipp32s i = 0; i < 35; i++)
-                histogram[i] += histBlock[x].histogram[i];
+
+    // all in units of 4x4 blocks
+    if (puSize == 4) {
+        pitch >>= 2;
+        puSize >>= 2;
+        const CmMbIntraGrad *histBlock = cmMbIntraGrad4x4[cmCurIdx] + (xPu >> 2) + (yPu >> 2) * pitch;
+        for (Ipp32s i = 0; i < 35; i++)
+            histogram[i] = histBlock->histogram[i];
+    }
+    else {
+        pitch >>= 3;
+        puSize >>= 3;
+        const CmMbIntraGrad *histBlock = cmMbIntraGrad8x8[cmCurIdx] + (xPu >> 3) + (yPu >> 3) * pitch;
+
+        for (Ipp32s y = 0; y < puSize; y++, histBlock += pitch)
+            for (Ipp32s x = 0; x < puSize; x++)
+                for (Ipp32s i = 0; i < 35; i++)
+                    histogram[i] += histBlock[x].histogram[i];
+    }
 
     for (Ipp32s i = 0; i < numModes; i++) {
         Ipp32s mode = (Ipp32s)(std::max_element(histogram + 2, histogram + 35) - histogram);

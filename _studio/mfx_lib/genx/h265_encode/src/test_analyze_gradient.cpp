@@ -27,15 +27,19 @@ const mfxI32 HEIGHT = 240;
 const mfxI8 YUV_NAME[] = "./test_data/basketball_pass_416x240p_2.yuv";
 
 namespace {
-int RunGpu(const mfxU8 *inData, mfxU16 *outData);
-int RunCpu(const mfxU8 *inData, mfxU16 *outData);
+int RunGpu(const mfxU8 *inData, mfxU16 *outData4x4, mfxU16 *outData8x8);
+int RunCpu(const mfxU8 *inData, mfxU32 *outData, mfxU32 blockSize); // mfxU32 for CPU to test mfxU16 overflow on GPU
+int Compare(mfxU16 *outDataGpu, mfxU32 *outDataCpu, mfxU32 blockSize);
 };
 
 int TestAnalyzeGradient()
 {
-    mfxI32 outDataSize = WIDTH * HEIGHT * 40 / 16;
-    mfxU16 *outputGpu = new mfxU16[outDataSize];
-    mfxU16 *outputCpu = new mfxU16[outDataSize];
+    mfxI32 outData4x4Size = WIDTH * HEIGHT * 40 / 16;
+    mfxI32 outData8x8Size = WIDTH * HEIGHT * 40 / 64;
+    mfxU16 *output4x4Gpu = new mfxU16[outData4x4Size];
+    mfxU16 *output8x8Gpu = new mfxU16[outData8x8Size];
+    mfxU32 *output4x4Cpu = new mfxU32[outData4x4Size];
+    mfxU32 *output8x8Cpu = new mfxU32[outData8x8Size];
     mfxI32 res = PASSED;
 
     FILE *f = fopen(YUV_NAME, "rb");
@@ -47,36 +51,30 @@ int TestAnalyzeGradient()
         return FAILED;
     fclose(f);
 
-    res = RunGpu(input, outputGpu);
+    res = RunGpu(input, output4x4Gpu, output8x8Gpu);
     CHECK_ERR(res);
 
-    res = RunCpu(input, outputCpu);
+    res = RunCpu(input, output4x4Cpu, 4);
     CHECK_ERR(res);
-
-    for (mfxI32 y = 0; y < HEIGHT / 4; y++) {
-        for (mfxI32 x = 0; x < WIDTH / 4; x++) {
-            mfxU16 *histogramGpu = outputGpu + (y * (WIDTH / 4) + x) * 40;
-            mfxU16 *histogramCpu = outputCpu + (y * (WIDTH / 4) + x) * 40;
-            for (mfxI32 mode = 0; mode < 35; mode++) {
-                if (histogramGpu[mode] != histogramCpu[mode]) {
-                    printf("bad histogram value (%d != %d) for mode %d for block (x,y)=(%d,%d)\n",
-                           histogramGpu[mode], histogramCpu[mode], mode, x, y);
-                    return FAILED;
-                }
-            }
-        }
-    }
+    res = RunCpu(input, output8x8Cpu, 8);
+    CHECK_ERR(res);
+    res = Compare(output4x4Gpu, output4x4Cpu, 4);
+    CHECK_ERR(res);
+    res = Compare(output8x8Gpu, output8x8Cpu, 8);
+    CHECK_ERR(res);
 
     delete [] input;
-    delete [] outputGpu;
-    delete [] outputCpu;
+    delete [] output4x4Gpu;
+    delete [] output8x8Gpu;
+    delete [] output4x4Cpu;
+    delete [] output8x8Cpu;
 
     return PASSED;
 }
 
 namespace {
 
-int RunGpu(const mfxU8 *inData, mfxU16 *outData)
+int RunGpu(const mfxU8 *inData, mfxU16 *outData4x4, mfxU16 *outData8x8)
 {
     mfxU32 version = 0;
     CmDevice *device = 0;
@@ -98,31 +96,44 @@ int RunGpu(const mfxU8 *inData, mfxU16 *outData)
     res = input->WriteSurface(inData, NULL);
     CHECK_CM_ERR(res);
 
-    size_t outputSize = WIDTH * HEIGHT * 40 / 16 * sizeof(mfxU16);
-    mfxU16 *outputSys = (mfxU16 *)CM_ALIGNED_MALLOC(outputSize, 0x1000);
-    CmBufferUP *outputCm = 0;
-    res = device->CreateBufferUP(outputSize, outputSys, outputCm);
+    size_t output4x4Size = WIDTH * HEIGHT * 40 / 16 * sizeof(mfxU16);
+    mfxU16 *output4x4Sys = (mfxU16 *)CM_ALIGNED_MALLOC(output4x4Size, 0x1000);
+    CmBufferUP *output4x4Cm = 0;
+    res = device->CreateBufferUP(output4x4Size, output4x4Sys, output4x4Cm);
+    CHECK_CM_ERR(res);
+
+    size_t output8x8Size = WIDTH * HEIGHT * 40 / 64 * sizeof(mfxU16);
+    mfxU16 *output8x8Sys = (mfxU16 *)CM_ALIGNED_MALLOC(output4x4Size, 0x1000);
+    CmBufferUP *output8x8Cm = 0;
+    res = device->CreateBufferUP(output8x8Size, output8x8Sys, output8x8Cm);
     CHECK_CM_ERR(res);
 
     SurfaceIndex *idxInput = 0;
-    SurfaceIndex *idxOutputCm = 0;
+    SurfaceIndex *idxOutput4x4Cm = 0;
+    SurfaceIndex *idxOutput8x8Cm = 0;
     res = input->GetIndex(idxInput);
     CHECK_CM_ERR(res);
-    res = outputCm->GetIndex(idxOutputCm);
+    res = output4x4Cm->GetIndex(idxOutput4x4Cm);
+    CHECK_CM_ERR(res);
+    res = output8x8Cm->GetIndex(idxOutput8x8Cm);
     CHECK_CM_ERR(res);
 
     res = kernel->SetKernelArg(0, sizeof(*idxInput), idxInput);
     CHECK_CM_ERR(res);
-    res = kernel->SetKernelArg(1, sizeof(*idxOutputCm), idxOutputCm);
+    res = kernel->SetKernelArg(1, sizeof(*idxOutput4x4Cm), idxOutput4x4Cm);
     CHECK_CM_ERR(res);
-    res = kernel->SetKernelArg(2, sizeof(WIDTH), &WIDTH);
+    res = kernel->SetKernelArg(2, sizeof(*idxOutput8x8Cm), idxOutput8x8Cm);
+    CHECK_CM_ERR(res);
+    res = kernel->SetKernelArg(3, sizeof(WIDTH), &WIDTH);
     CHECK_CM_ERR(res);
 
-    res = kernel->SetThreadCount(WIDTH * HEIGHT / 16);
+    mfxU32 tsWidth = WIDTH / 8;
+    mfxU32 tsHeight = HEIGHT / 8;
+    res = kernel->SetThreadCount(tsWidth * tsHeight);
     CHECK_CM_ERR(res);
 
     CmThreadSpace * threadSpace = 0;
-    res = device->CreateThreadSpace(WIDTH / 4, HEIGHT / 4, threadSpace);
+    res = device->CreateThreadSpace(tsWidth, tsHeight, threadSpace);
     CHECK_CM_ERR(res);
 
     res = threadSpace->SelectThreadDependencyPattern(CM_NONE_DEPENDENCY);
@@ -153,11 +164,14 @@ int RunGpu(const mfxU8 *inData, mfxU16 *outData)
     //e->GetExecutionTime(time);
     //printf("TIME=%.3f ms\n", time / 1000000.0);
 
-    memcpy(outData, outputSys, outputSize);
+    memcpy(outData4x4, output4x4Sys, output4x4Size);
+    memcpy(outData8x8, output8x8Sys, output8x8Size);
 
     queue->DestroyEvent(e);
-    device->DestroyBufferUP(outputCm);
-    CM_ALIGNED_FREE(outputSys);
+    device->DestroyBufferUP(output4x4Cm);
+    CM_ALIGNED_FREE(output4x4Sys);
+    device->DestroyBufferUP(output8x8Cm);
+    CM_ALIGNED_FREE(output8x8Sys);
     device->DestroySurface(input);
     device->DestroyKernel(kernel);
     device->DestroyProgram(program);
@@ -209,7 +223,7 @@ mfxU8 GetPel(const mfxU8 *frame, mfxI32 x, mfxI32 y)
 }
 
 void BuildHistogram(const mfxU8 *frame, mfxI32 blockX, mfxI32 blockY, mfxI32 blockSize,
-                    mfxU16 *histogram)
+                    mfxU32 *histogram)
 {
     for (mfxI32 y = blockY; y < blockY + blockSize; y++) {
         for (mfxI32 x = blockX; x < blockX + blockSize; x++) {
@@ -224,16 +238,34 @@ void BuildHistogram(const mfxU8 *frame, mfxI32 blockX, mfxI32 blockY, mfxI32 blo
     }
 }
 
-int RunCpu(const mfxU8 *inData, mfxU16 *outData)
+int RunCpu(const mfxU8 *inData, mfxU32 *outData, mfxU32 blockSize)
 {
-    for (mfxI32 y = 0; y < HEIGHT / 4; y++, outData += (WIDTH / 4) * 40) {
-        for (mfxI32 x = 0; x < WIDTH / 4; x++) {
-            memset(outData + x * 40, 0, sizeof(mfxU16) * 40);
-            BuildHistogram(inData, x * 4, y * 4, 4, outData + x * 40);
+    for (mfxI32 y = 0; y < HEIGHT / blockSize; y++, outData += (WIDTH / blockSize) * 40) {
+        for (mfxI32 x = 0; x < WIDTH / blockSize; x++) {
+            memset(outData + x * 40, 0, sizeof(*outData) * 40);
+            BuildHistogram(inData, x * blockSize, y * blockSize, blockSize, outData + x * 40);
         }
     }
 
     return PASSED;
 }
 
+
+int Compare(mfxU16 *outDataGpu, mfxU32 *outDataCpu, mfxU32 blockSize)
+{
+    for (mfxI32 y = 0; y < HEIGHT / blockSize; y++) {
+        for (mfxI32 x = 0; x < WIDTH / blockSize; x++) {
+            mfxU16 *histogramGpu = outDataGpu + (y * (WIDTH / blockSize) + x) * 40;
+            mfxU32 *histogramCpu = outDataCpu + (y * (WIDTH / blockSize) + x) * 40;
+            for (mfxI32 mode = 0; mode < 35; mode++) {
+                if (histogramGpu[mode] != histogramCpu[mode]) {
+                    printf("bad histogram value (%d != %d) for mode %d for block%dx%d (x,y)=(%d,%d)\n",
+                           histogramGpu[mode], histogramCpu[mode], mode, blockSize, blockSize, x, y);
+                    return FAILED;
+                }
+            }
+        }
+    }
+    return PASSED;
+}
 };
