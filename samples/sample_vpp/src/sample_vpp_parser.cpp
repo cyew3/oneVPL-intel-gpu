@@ -265,15 +265,6 @@ mfxStatus ParseCompositionParfile(const msdk_char* parFileName, sInputParams* pP
         {
             pParams->inFrameInfo[nStreamInd].dFrameRate = (mfxF64) atof(value.c_str());
         }
-        else if (key.compare("fourcc") == 0)
-        {
-            const mfxU16 len_size = 5;
-            msdk_char fourcc[len_size];
-            for (mfxU16 i = 0; i < (value.size() > len_size ? len_size : value.size()); i++)
-                fourcc[i] = value.at(i);
-            fourcc[len_size-1]=0;
-            pParams->inFrameInfo[nStreamInd].FourCC = Str2FourCC(fourcc);
-        }
         else if (key.compare("picstruct") == 0)
         {
             pParams->inFrameInfo[nStreamInd].PicStruct = (mfxU8) atoi(value.c_str());
@@ -359,6 +350,8 @@ mfxStatus vppParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams
     mfxU32 readData;
     mfxU32 ioStatus;
 
+    mfxU8 i;
+
     if (nArgNum < 4)
     {
         vppPrintHelp(strInput[0], MSDK_STRING("Please, specify all necessary parameters"));
@@ -375,7 +368,7 @@ mfxStatus vppParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams
     pParams->outFrameInfo.CropY = 0;
     pParams->outFrameInfo.CropW = NOT_INIT_VALUE;
     pParams->outFrameInfo.CropH = NOT_INIT_VALUE;
-    for (mfxU8 i = 1; i < nArgNum; i++ )
+    for (i = 1; i < nArgNum; i++ )
     {
         MSDK_CHECK_POINTER(strInput[i], MFX_ERR_NULL_PTR);
         {
@@ -635,6 +628,14 @@ mfxStatus vppParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams
     {
         vppPrintHelp(strInput[0], MSDK_STRING("Source file name not found"));
         return MFX_ERR_UNSUPPORTED;
+    };
+
+    if (pParams->compositionParam.mode == VPP_FILTER_ENABLED_CONFIGURED)
+    {
+        for (i = 1; i < pParams->numStreams; i++)
+        {
+            pParams->inFrameInfo[i].FourCC = pParams->inFrameInfo[VPP_IN].FourCC;
+        }
     };
 
     if (0 == msdk_strlen(pParams->strDstFile))
