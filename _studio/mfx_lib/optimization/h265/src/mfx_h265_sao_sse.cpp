@@ -1277,21 +1277,865 @@ namespace MFX_HEVC_PP
 #define PixType Ipp8u
 #endif
 
+    // Encoder part of SAO
+    __declspec(align(16)) static const Ipp16s tab_killmask[8][8] = {
+    { 0xdead, 0xdead, 0xdead, 0xdead, 0xdead, 0xdead, 0xdead, 0xdead },
+    { 0xffff, 0xdead, 0xdead, 0xdead, 0xdead, 0xdead, 0xdead, 0xdead },
+    { 0xffff, 0xffff, 0xdead, 0xdead, 0xdead, 0xdead, 0xdead, 0xdead },
+    { 0xffff, 0xffff, 0xffff, 0xdead, 0xdead, 0xdead, 0xdead, 0xdead },
+    { 0xffff, 0xffff, 0xffff, 0xffff, 0xdead, 0xdead, 0xdead, 0xdead },
+    { 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xdead, 0xdead, 0xdead },
+    { 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xdead, 0xdead },
+    { 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xdead },
+};
+
+static
+void h265_sao_EO_0_sse4(
+        const PixType* recBlk,
+        int recStride,
+        const PixType* orgBlk,
+        int orgStride,
+        IppiRect roi,
+        Ipp32s* sse4_diff,
+        Ipp16s* sse4_count)
+{
+    int x, y, startX, startY, endX, endY;
+
+    const PixType *recLine = recBlk;
+    const PixType *orgLine = orgBlk;
+
+    __m128i diff0 = _mm_setzero_si128();
+    __m128i diff1 = _mm_setzero_si128();
+    __m128i diff2 = _mm_setzero_si128();
+    __m128i diff3 = _mm_setzero_si128();
+    __m128i diff4 = _mm_setzero_si128();
+    __m128i count0 = _mm_setzero_si128();
+    __m128i count1 = _mm_setzero_si128();
+    __m128i count2 = _mm_setzero_si128();
+    __m128i count3 = _mm_setzero_si128();
+    __m128i count4 = _mm_setzero_si128();
+    __m128i negOne = _mm_cmpeq_epi8(_mm_setzero_si128(), _mm_setzero_si128());
+    __m128i recn, rec0, rec1, org0;
+    __m128i sign0, sign1, type;
+    __m128i mask, diff;
+
+    // for testing, stay entirely inside block
+    startY = roi.y;
+    endY = startY + roi.height;
+    startX = roi.x;
+    endX = startX + roi.width;
+
+    for (y = startY; y < endY; y++)
+    {
+        // process 8 pixels per iteration
+        for (x = startX; x < endX - startX - 7; x += 8)
+        {
+            // promote to 16-bit
+            recn = _mm_cvtepu8_epi16(_mm_loadl_epi64((__m128i *)(&recLine[x-1])));
+            rec0 = _mm_cvtepu8_epi16(_mm_loadl_epi64((__m128i *)(&recLine[x])));
+            rec1 = _mm_cvtepu8_epi16(_mm_loadl_epi64((__m128i *)(&recLine[x+1])));
+            org0 = _mm_cvtepu8_epi16(_mm_loadl_epi64((__m128i *)(&orgLine[x])));
+
+            // compute signLeft, signRight
+            sign0 = _mm_sign_epi16(negOne, _mm_sub_epi16(recn, rec0));
+            sign1 = _mm_sign_epi16(negOne, _mm_sub_epi16(rec1, rec0));
+            sign0 = _mm_sub_epi16(sign0, negOne);
+
+            // compute diff
+            diff = _mm_sub_epi16(org0, rec0);
+
+            // accumulate for each type
+            // promote masked diff to 32-bit, using diff -= madd(diff, -1)
+            type = _mm_add_epi16(sign0, sign1);  // type = [-1,+3]
+            mask = _mm_cmpeq_epi16(type, negOne);
+            count0 = _mm_sub_epi16(count0, mask);
+            diff0 = _mm_sub_epi32(diff0, _mm_madd_epi16(_mm_and_si128(mask, diff), negOne));
+
+            type = _mm_add_epi16(type, negOne);  // type = [-2,+2]
+            mask = _mm_cmpeq_epi16(type, negOne);
+            count1 = _mm_sub_epi16(count1, mask);
+            diff1 = _mm_sub_epi32(diff1, _mm_madd_epi16(_mm_and_si128(mask, diff), negOne));
+
+            type = _mm_add_epi16(type, negOne);  // type = [-3,+1]
+            mask = _mm_cmpeq_epi16(type, negOne);
+            count2 = _mm_sub_epi16(count2, mask);
+            diff2 = _mm_sub_epi32(diff2, _mm_madd_epi16(_mm_and_si128(mask, diff), negOne));
+
+            type = _mm_add_epi16(type, negOne);  // type = [-4, 0]
+            mask = _mm_cmpeq_epi16(type, negOne);
+            count3 = _mm_sub_epi16(count3, mask);
+            diff3 = _mm_sub_epi32(diff3, _mm_madd_epi16(_mm_and_si128(mask, diff), negOne));
+
+            type = _mm_add_epi16(type, negOne);  // type = [-5,-1]
+            mask = _mm_cmpeq_epi16(type, negOne);
+            count4 = _mm_sub_epi16(count4, mask);
+            diff4 = _mm_sub_epi32(diff4, _mm_madd_epi16(_mm_and_si128(mask, diff), negOne));
+        }
+
+        // process remaining 1..7 pixels
+        if (x < endX)
+        {
+            // kill out-of-bound values
+            mask = _mm_load_si128((__m128i *)tab_killmask[endX - x]);
+
+            // promote to 16-bit
+            recn = _mm_cvtepu8_epi16(_mm_loadl_epi64((__m128i *)(&recLine[x-1])));
+            rec0 = _mm_cvtepu8_epi16(_mm_loadl_epi64((__m128i *)(&recLine[x])));
+            rec1 = _mm_cvtepu8_epi16(_mm_loadl_epi64((__m128i *)(&recLine[x+1])));
+            org0 = _mm_cvtepu8_epi16(_mm_loadl_epi64((__m128i *)(&orgLine[x])));
+
+            // compute signLeft, signRight
+            sign0 = _mm_sign_epi16(negOne, _mm_sub_epi16(recn, rec0));
+            sign1 = _mm_sign_epi16(negOne, _mm_sub_epi16(rec1, rec0));
+            sign0 = _mm_sub_epi16(sign0, mask);
+
+            // compute diff
+            diff = _mm_sub_epi16(org0, rec0);
+
+            // accumulate for each type
+            // promote masked diff to 32-bit, using diff -= madd(diff, -1)
+            type = _mm_add_epi16(sign0, sign1);  // type = [-1,+3]
+            mask = _mm_cmpeq_epi16(type, negOne);
+            count0 = _mm_sub_epi16(count0, mask);
+            diff0 = _mm_sub_epi32(diff0, _mm_madd_epi16(_mm_and_si128(mask, diff), negOne));
+
+            type = _mm_add_epi16(type, negOne);  // type = [-2,+2]
+            mask = _mm_cmpeq_epi16(type, negOne);
+            count1 = _mm_sub_epi16(count1, mask);
+            diff1 = _mm_sub_epi32(diff1, _mm_madd_epi16(_mm_and_si128(mask, diff), negOne));
+
+            type = _mm_add_epi16(type, negOne);  // type = [-3,+1]
+            mask = _mm_cmpeq_epi16(type, negOne);
+            count2 = _mm_sub_epi16(count2, mask);
+            diff2 = _mm_sub_epi32(diff2, _mm_madd_epi16(_mm_and_si128(mask, diff), negOne));
+
+            type = _mm_add_epi16(type, negOne);  // type = [-4, 0]
+            mask = _mm_cmpeq_epi16(type, negOne);
+            count3 = _mm_sub_epi16(count3, mask);
+            diff3 = _mm_sub_epi32(diff3, _mm_madd_epi16(_mm_and_si128(mask, diff), negOne));
+
+            type = _mm_add_epi16(type, negOne);  // type = [-5,-1]
+            mask = _mm_cmpeq_epi16(type, negOne);
+            count4 = _mm_sub_epi16(count4, mask);
+            diff4 = _mm_sub_epi32(diff4, _mm_madd_epi16(_mm_and_si128(mask, diff), negOne));
+        }
+
+        recLine  += recStride;
+        orgLine  += orgStride;
+    }
+
+    // horizontal sum of diffs, using adder tree
+    diff0 = _mm_hadd_epi32(diff0, diff1);
+    diff2 = _mm_hadd_epi32(diff2, diff3);
+    diff4 = _mm_hadd_epi32(diff4, diff4);
+
+    diff0 = _mm_hadd_epi32(diff0, diff2);
+    diff4 = _mm_hadd_epi32(diff4, diff4);
+
+    _mm_storeu_si128((__m128i *)&sse4_diff[0], diff0);
+    sse4_diff[4] = _mm_cvtsi128_si32(diff4);
+
+    // horizontal sum of diffs, using adder tree
+    count0 = _mm_hadd_epi16(count0, count1);
+    count2 = _mm_hadd_epi16(count2, count3);
+    count4 = _mm_hadd_epi16(count4, count4);
+
+    count0 = _mm_hadd_epi16(count0, count2);
+    count4 = _mm_hadd_epi16(count4, count4);
+
+    count0 = _mm_hadd_epi16(count0, count4); 
+
+    _mm_storel_epi64((__m128i *)&sse4_count[0], count0);
+    sse4_count[4] = _mm_extract_epi16(count0, 4);
+
+} // void h265_sao_EO_0_sse4(...)
+
+
+static
+void h265_sao_EO_90_sse4(
+        const PixType* recBlk,
+        int recStride,
+        const PixType* orgBlk,
+        int orgStride,
+        IppiRect roi,
+        Ipp32s* sse4_diff,
+        Ipp16s* sse4_count)
+{
+    int x, y, startX, startY, endX, endY;
+
+    const PixType *recLine = recBlk;
+    const PixType *orgLine = orgBlk;
+
+    __m128i diff0 = _mm_setzero_si128();
+    __m128i diff1 = _mm_setzero_si128();
+    __m128i diff2 = _mm_setzero_si128();
+    __m128i diff3 = _mm_setzero_si128();
+    __m128i diff4 = _mm_setzero_si128();
+    __m128i count0 = _mm_setzero_si128();
+    __m128i count1 = _mm_setzero_si128();
+    __m128i count2 = _mm_setzero_si128();
+    __m128i count3 = _mm_setzero_si128();
+    __m128i count4 = _mm_setzero_si128();
+    __m128i negOne = _mm_cmpeq_epi8(_mm_setzero_si128(), _mm_setzero_si128());
+    __m128i recn, rec0, rec1, org0;
+    __m128i sign0, sign1, type;
+    __m128i mask, diff;
+
+    // for testing, stay entirely inside block
+    startY = roi.y;
+    endY = startY + roi.height;
+    startX = roi.x;
+    endX = startX + roi.width;
+
+    for (y = startY; y < endY; y++)
+    {
+        // process 8 pixels per iteration
+        for (x = startX; x < endX - startX - 7; x += 8)
+        {
+            // promote to 16-bit
+            recn = _mm_cvtepu8_epi16(_mm_loadl_epi64((__m128i *)(&recLine[x-recStride])));
+            rec0 = _mm_cvtepu8_epi16(_mm_loadl_epi64((__m128i *)(&recLine[x])));
+            rec1 = _mm_cvtepu8_epi16(_mm_loadl_epi64((__m128i *)(&recLine[x+recStride])));
+            org0 = _mm_cvtepu8_epi16(_mm_loadl_epi64((__m128i *)(&orgLine[x])));
+
+            // compute signUp(Left), signDown(Right)
+            sign0 = _mm_sign_epi16(negOne, _mm_sub_epi16(recn, rec0));
+            sign1 = _mm_sign_epi16(negOne, _mm_sub_epi16(rec1, rec0));
+            sign0 = _mm_sub_epi16(sign0, negOne);
+
+            // compute diff
+            diff = _mm_sub_epi16(org0, rec0);
+
+            // accumulate for each type
+            // promote masked diff to 32-bit, using diff -= madd(diff, -1)
+            type = _mm_add_epi16(sign0, sign1);  // type = [-1,+3]
+            mask = _mm_cmpeq_epi16(type, negOne);
+            count0 = _mm_sub_epi16(count0, mask);
+            diff0 = _mm_sub_epi32(diff0, _mm_madd_epi16(_mm_and_si128(mask, diff), negOne));
+
+            type = _mm_add_epi16(type, negOne);  // type = [-2,+2]
+            mask = _mm_cmpeq_epi16(type, negOne);
+            count1 = _mm_sub_epi16(count1, mask);
+            diff1 = _mm_sub_epi32(diff1, _mm_madd_epi16(_mm_and_si128(mask, diff), negOne));
+
+            type = _mm_add_epi16(type, negOne);  // type = [-3,+1]
+            mask = _mm_cmpeq_epi16(type, negOne);
+            count2 = _mm_sub_epi16(count2, mask);
+            diff2 = _mm_sub_epi32(diff2, _mm_madd_epi16(_mm_and_si128(mask, diff), negOne));
+
+            type = _mm_add_epi16(type, negOne);  // type = [-4, 0]
+            mask = _mm_cmpeq_epi16(type, negOne);
+            count3 = _mm_sub_epi16(count3, mask);
+            diff3 = _mm_sub_epi32(diff3, _mm_madd_epi16(_mm_and_si128(mask, diff), negOne));
+
+            type = _mm_add_epi16(type, negOne);  // type = [-5,-1]
+            mask = _mm_cmpeq_epi16(type, negOne);
+            count4 = _mm_sub_epi16(count4, mask);
+            diff4 = _mm_sub_epi32(diff4, _mm_madd_epi16(_mm_and_si128(mask, diff), negOne));
+        }
+
+        // process remaining 1..7 pixels
+        if (x < endX)
+        {
+            // kill out-of-bound values
+            mask = _mm_load_si128((__m128i *)tab_killmask[endX - x]);
+
+            // promote to 16-bit
+            recn = _mm_cvtepu8_epi16(_mm_loadl_epi64((__m128i *)(&recLine[x-recStride])));
+            rec0 = _mm_cvtepu8_epi16(_mm_loadl_epi64((__m128i *)(&recLine[x])));
+            rec1 = _mm_cvtepu8_epi16(_mm_loadl_epi64((__m128i *)(&recLine[x+recStride])));
+            org0 = _mm_cvtepu8_epi16(_mm_loadl_epi64((__m128i *)(&orgLine[x])));
+
+            // compute signLeft, signRight
+            sign0 = _mm_sign_epi16(negOne, _mm_sub_epi16(recn, rec0));
+            sign1 = _mm_sign_epi16(negOne, _mm_sub_epi16(rec1, rec0));
+            sign0 = _mm_sub_epi16(sign0, mask);
+
+            // compute diff
+            diff = _mm_sub_epi16(org0, rec0);
+
+            // accumulate for each type
+            // promote masked diff to 32-bit, using diff -= madd(diff, -1)
+            type = _mm_add_epi16(sign0, sign1);  // type = [-1,+3]
+            mask = _mm_cmpeq_epi16(type, negOne);
+            count0 = _mm_sub_epi16(count0, mask);
+            diff0 = _mm_sub_epi32(diff0, _mm_madd_epi16(_mm_and_si128(mask, diff), negOne));
+
+            type = _mm_add_epi16(type, negOne);  // type = [-2,+2]
+            mask = _mm_cmpeq_epi16(type, negOne);
+            count1 = _mm_sub_epi16(count1, mask);
+            diff1 = _mm_sub_epi32(diff1, _mm_madd_epi16(_mm_and_si128(mask, diff), negOne));
+
+            type = _mm_add_epi16(type, negOne);  // type = [-3,+1]
+            mask = _mm_cmpeq_epi16(type, negOne);
+            count2 = _mm_sub_epi16(count2, mask);
+            diff2 = _mm_sub_epi32(diff2, _mm_madd_epi16(_mm_and_si128(mask, diff), negOne));
+
+            type = _mm_add_epi16(type, negOne);  // type = [-4, 0]
+            mask = _mm_cmpeq_epi16(type, negOne);
+            count3 = _mm_sub_epi16(count3, mask);
+            diff3 = _mm_sub_epi32(diff3, _mm_madd_epi16(_mm_and_si128(mask, diff), negOne));
+
+            type = _mm_add_epi16(type, negOne);  // type = [-5,-1]
+            mask = _mm_cmpeq_epi16(type, negOne);
+            count4 = _mm_sub_epi16(count4, mask);
+            diff4 = _mm_sub_epi32(diff4, _mm_madd_epi16(_mm_and_si128(mask, diff), negOne));
+        }
+
+        recLine  += recStride;
+        orgLine  += orgStride;
+    }
+
+    // horizontal sum of diffs, using adder tree
+    diff0 = _mm_hadd_epi32(diff0, diff1);
+    diff2 = _mm_hadd_epi32(diff2, diff3);
+    diff4 = _mm_hadd_epi32(diff4, diff4);
+
+    diff0 = _mm_hadd_epi32(diff0, diff2);
+    diff4 = _mm_hadd_epi32(diff4, diff4);
+
+    _mm_storeu_si128((__m128i *)&sse4_diff[0], diff0);
+    sse4_diff[4] = _mm_cvtsi128_si32(diff4);
+
+    // horizontal sum of diffs, using adder tree
+    count0 = _mm_hadd_epi16(count0, count1);
+    count2 = _mm_hadd_epi16(count2, count3);
+    count4 = _mm_hadd_epi16(count4, count4);
+
+    count0 = _mm_hadd_epi16(count0, count2);
+    count4 = _mm_hadd_epi16(count4, count4);
+
+    count0 = _mm_hadd_epi16(count0, count4); 
+
+    _mm_storel_epi64((__m128i *)&sse4_count[0], count0);
+    sse4_count[4] = _mm_extract_epi16(count0, 4);
+
+}
+// void h265_sao_EO_90_sse4(...)
+
+
+static
+void h265_sao_EO_135_sse4(
+        const PixType* recBlk,
+        int recStride,
+        const PixType* orgBlk,
+        int orgStride,
+        IppiRect roi,
+        Ipp32s* sse4_diff,
+        Ipp16s* sse4_count)
+{
+    int x, y, startX, startY, endX, endY;
+
+    const PixType *recLine = recBlk;
+    const PixType *orgLine = orgBlk;
+
+    __m128i diff0 = _mm_setzero_si128();
+    __m128i diff1 = _mm_setzero_si128();
+    __m128i diff2 = _mm_setzero_si128();
+    __m128i diff3 = _mm_setzero_si128();
+    __m128i diff4 = _mm_setzero_si128();
+    __m128i count0 = _mm_setzero_si128();
+    __m128i count1 = _mm_setzero_si128();
+    __m128i count2 = _mm_setzero_si128();
+    __m128i count3 = _mm_setzero_si128();
+    __m128i count4 = _mm_setzero_si128();
+    __m128i negOne = _mm_cmpeq_epi8(_mm_setzero_si128(), _mm_setzero_si128());
+    __m128i recn, rec0, rec1, org0;
+    __m128i sign0, sign1, type;
+    __m128i mask, diff;
+
+    // for testing, stay entirely inside block
+    startY = roi.y;
+    endY = startY + roi.height;
+    startX = roi.x;
+    endX = startX + roi.width;
+
+    for (y = startY; y < endY; y++)
+    {
+        // process 8 pixels per iteration
+        for (x = startX; x < endX - startX - 7; x += 8)
+        {
+            // promote to 16-bit
+            recn = _mm_cvtepu8_epi16(_mm_loadl_epi64((__m128i *)(&recLine[x-1 -recStride])));
+            rec0 = _mm_cvtepu8_epi16(_mm_loadl_epi64((__m128i *)(&recLine[x])));
+            rec1 = _mm_cvtepu8_epi16(_mm_loadl_epi64((__m128i *)(&recLine[x+1+recStride])));
+            org0 = _mm_cvtepu8_epi16(_mm_loadl_epi64((__m128i *)(&orgLine[x])));
+
+            // compute signUp(Left), signDown(Right)
+            sign0 = _mm_sign_epi16(negOne, _mm_sub_epi16(recn, rec0));
+            sign1 = _mm_sign_epi16(negOne, _mm_sub_epi16(rec1, rec0));
+            sign0 = _mm_sub_epi16(sign0, negOne);
+
+            // compute diff
+            diff = _mm_sub_epi16(org0, rec0);
+
+            // accumulate for each type
+            // promote masked diff to 32-bit, using diff -= madd(diff, -1)
+            type = _mm_add_epi16(sign0, sign1);  // type = [-1,+3]
+            mask = _mm_cmpeq_epi16(type, negOne);
+            count0 = _mm_sub_epi16(count0, mask);
+            diff0 = _mm_sub_epi32(diff0, _mm_madd_epi16(_mm_and_si128(mask, diff), negOne));
+
+            type = _mm_add_epi16(type, negOne);  // type = [-2,+2]
+            mask = _mm_cmpeq_epi16(type, negOne);
+            count1 = _mm_sub_epi16(count1, mask);
+            diff1 = _mm_sub_epi32(diff1, _mm_madd_epi16(_mm_and_si128(mask, diff), negOne));
+
+            type = _mm_add_epi16(type, negOne);  // type = [-3,+1]
+            mask = _mm_cmpeq_epi16(type, negOne);
+            count2 = _mm_sub_epi16(count2, mask);
+            diff2 = _mm_sub_epi32(diff2, _mm_madd_epi16(_mm_and_si128(mask, diff), negOne));
+
+            type = _mm_add_epi16(type, negOne);  // type = [-4, 0]
+            mask = _mm_cmpeq_epi16(type, negOne);
+            count3 = _mm_sub_epi16(count3, mask);
+            diff3 = _mm_sub_epi32(diff3, _mm_madd_epi16(_mm_and_si128(mask, diff), negOne));
+
+            type = _mm_add_epi16(type, negOne);  // type = [-5,-1]
+            mask = _mm_cmpeq_epi16(type, negOne);
+            count4 = _mm_sub_epi16(count4, mask);
+            diff4 = _mm_sub_epi32(diff4, _mm_madd_epi16(_mm_and_si128(mask, diff), negOne));
+        }
+
+        // process remaining 1..7 pixels
+        if (x < endX)
+        {
+            // kill out-of-bound values
+            mask = _mm_load_si128((__m128i *)tab_killmask[endX - x]);
+
+            // promote to 16-bit
+            recn = _mm_cvtepu8_epi16(_mm_loadl_epi64((__m128i *)(&recLine[x-1-recStride])));
+            rec0 = _mm_cvtepu8_epi16(_mm_loadl_epi64((__m128i *)(&recLine[x])));
+            rec1 = _mm_cvtepu8_epi16(_mm_loadl_epi64((__m128i *)(&recLine[x+1+recStride])));
+            org0 = _mm_cvtepu8_epi16(_mm_loadl_epi64((__m128i *)(&orgLine[x])));
+
+            // compute signLeft, signRight
+            sign0 = _mm_sign_epi16(negOne, _mm_sub_epi16(recn, rec0));
+            sign1 = _mm_sign_epi16(negOne, _mm_sub_epi16(rec1, rec0));
+            sign0 = _mm_sub_epi16(sign0, mask);
+
+            // compute diff
+            diff = _mm_sub_epi16(org0, rec0);
+
+            // accumulate for each type
+            // promote masked diff to 32-bit, using diff -= madd(diff, -1)
+            type = _mm_add_epi16(sign0, sign1);  // type = [-1,+3]
+            mask = _mm_cmpeq_epi16(type, negOne);
+            count0 = _mm_sub_epi16(count0, mask);
+            diff0 = _mm_sub_epi32(diff0, _mm_madd_epi16(_mm_and_si128(mask, diff), negOne));
+
+            type = _mm_add_epi16(type, negOne);  // type = [-2,+2]
+            mask = _mm_cmpeq_epi16(type, negOne);
+            count1 = _mm_sub_epi16(count1, mask);
+            diff1 = _mm_sub_epi32(diff1, _mm_madd_epi16(_mm_and_si128(mask, diff), negOne));
+
+            type = _mm_add_epi16(type, negOne);  // type = [-3,+1]
+            mask = _mm_cmpeq_epi16(type, negOne);
+            count2 = _mm_sub_epi16(count2, mask);
+            diff2 = _mm_sub_epi32(diff2, _mm_madd_epi16(_mm_and_si128(mask, diff), negOne));
+
+            type = _mm_add_epi16(type, negOne);  // type = [-4, 0]
+            mask = _mm_cmpeq_epi16(type, negOne);
+            count3 = _mm_sub_epi16(count3, mask);
+            diff3 = _mm_sub_epi32(diff3, _mm_madd_epi16(_mm_and_si128(mask, diff), negOne));
+
+            type = _mm_add_epi16(type, negOne);  // type = [-5,-1]
+            mask = _mm_cmpeq_epi16(type, negOne);
+            count4 = _mm_sub_epi16(count4, mask);
+            diff4 = _mm_sub_epi32(diff4, _mm_madd_epi16(_mm_and_si128(mask, diff), negOne));
+        }
+
+        recLine  += recStride;
+        orgLine  += orgStride;
+    }
+
+    // horizontal sum of diffs, using adder tree
+    diff0 = _mm_hadd_epi32(diff0, diff1);
+    diff2 = _mm_hadd_epi32(diff2, diff3);
+    diff4 = _mm_hadd_epi32(diff4, diff4);
+
+    diff0 = _mm_hadd_epi32(diff0, diff2);
+    diff4 = _mm_hadd_epi32(diff4, diff4);
+
+    _mm_storeu_si128((__m128i *)&sse4_diff[0], diff0);
+    sse4_diff[4] = _mm_cvtsi128_si32(diff4);
+
+    // horizontal sum of diffs, using adder tree
+    count0 = _mm_hadd_epi16(count0, count1);
+    count2 = _mm_hadd_epi16(count2, count3);
+    count4 = _mm_hadd_epi16(count4, count4);
+
+    count0 = _mm_hadd_epi16(count0, count2);
+    count4 = _mm_hadd_epi16(count4, count4);
+
+    count0 = _mm_hadd_epi16(count0, count4); 
+
+    _mm_storel_epi64((__m128i *)&sse4_count[0], count0);
+    sse4_count[4] = _mm_extract_epi16(count0, 4);
+
+} // h265_sao_EO_135_sse4(...)
+
+
+static
+void h265_sao_EO_45_sse4(
+        const PixType* recBlk,
+        int recStride,
+        const PixType* orgBlk,
+        int orgStride,
+        IppiRect roi,
+        Ipp32s* sse4_diff,
+        Ipp16s* sse4_count)
+{
+    int x, y, startX, startY, endX, endY;
+
+    const PixType *recLine = recBlk;
+    const PixType *orgLine = orgBlk;
+
+    __m128i diff0 = _mm_setzero_si128();
+    __m128i diff1 = _mm_setzero_si128();
+    __m128i diff2 = _mm_setzero_si128();
+    __m128i diff3 = _mm_setzero_si128();
+    __m128i diff4 = _mm_setzero_si128();
+    __m128i count0 = _mm_setzero_si128();
+    __m128i count1 = _mm_setzero_si128();
+    __m128i count2 = _mm_setzero_si128();
+    __m128i count3 = _mm_setzero_si128();
+    __m128i count4 = _mm_setzero_si128();
+    __m128i negOne = _mm_cmpeq_epi8(_mm_setzero_si128(), _mm_setzero_si128());
+    __m128i recn, rec0, rec1, org0;
+    __m128i sign0, sign1, type;
+    __m128i mask, diff;
+
+    // for testing, stay entirely inside block
+    startY = roi.y;
+    endY = startY + roi.height;
+    startX = roi.x;
+    endX = startX + roi.width;
+
+    for (y = startY; y < endY; y++)
+    {
+        // process 8 pixels per iteration
+        for (x = startX; x < endX - startX - 7; x += 8)
+        {
+            // promote to 16-bit
+            recn = _mm_cvtepu8_epi16(_mm_loadl_epi64((__m128i *)(&recLine[x+1 -recStride])));
+            rec0 = _mm_cvtepu8_epi16(_mm_loadl_epi64((__m128i *)(&recLine[x])));
+            rec1 = _mm_cvtepu8_epi16(_mm_loadl_epi64((__m128i *)(&recLine[x-1+recStride])));
+            org0 = _mm_cvtepu8_epi16(_mm_loadl_epi64((__m128i *)(&orgLine[x])));
+
+            // compute signUp(Left), signDown(Right)
+            sign0 = _mm_sign_epi16(negOne, _mm_sub_epi16(recn, rec0));
+            sign1 = _mm_sign_epi16(negOne, _mm_sub_epi16(rec1, rec0));
+            sign0 = _mm_sub_epi16(sign0, negOne);
+
+            // compute diff
+            diff = _mm_sub_epi16(org0, rec0);
+
+            // accumulate for each type
+            // promote masked diff to 32-bit, using diff -= madd(diff, -1)
+            type = _mm_add_epi16(sign0, sign1);  // type = [-1,+3]
+            mask = _mm_cmpeq_epi16(type, negOne);
+            count0 = _mm_sub_epi16(count0, mask);
+            diff0 = _mm_sub_epi32(diff0, _mm_madd_epi16(_mm_and_si128(mask, diff), negOne));
+
+            type = _mm_add_epi16(type, negOne);  // type = [-2,+2]
+            mask = _mm_cmpeq_epi16(type, negOne);
+            count1 = _mm_sub_epi16(count1, mask);
+            diff1 = _mm_sub_epi32(diff1, _mm_madd_epi16(_mm_and_si128(mask, diff), negOne));
+
+            type = _mm_add_epi16(type, negOne);  // type = [-3,+1]
+            mask = _mm_cmpeq_epi16(type, negOne);
+            count2 = _mm_sub_epi16(count2, mask);
+            diff2 = _mm_sub_epi32(diff2, _mm_madd_epi16(_mm_and_si128(mask, diff), negOne));
+
+            type = _mm_add_epi16(type, negOne);  // type = [-4, 0]
+            mask = _mm_cmpeq_epi16(type, negOne);
+            count3 = _mm_sub_epi16(count3, mask);
+            diff3 = _mm_sub_epi32(diff3, _mm_madd_epi16(_mm_and_si128(mask, diff), negOne));
+
+            type = _mm_add_epi16(type, negOne);  // type = [-5,-1]
+            mask = _mm_cmpeq_epi16(type, negOne);
+            count4 = _mm_sub_epi16(count4, mask);
+            diff4 = _mm_sub_epi32(diff4, _mm_madd_epi16(_mm_and_si128(mask, diff), negOne));
+        }
+
+        // process remaining 1..7 pixels
+        if (x < endX)
+        {
+            // kill out-of-bound values
+            mask = _mm_load_si128((__m128i *)tab_killmask[endX - x]);
+
+            // promote to 16-bit
+            recn = _mm_cvtepu8_epi16(_mm_loadl_epi64((__m128i *)(&recLine[x+1-recStride])));
+            rec0 = _mm_cvtepu8_epi16(_mm_loadl_epi64((__m128i *)(&recLine[x])));
+            rec1 = _mm_cvtepu8_epi16(_mm_loadl_epi64((__m128i *)(&recLine[x-1+recStride])));
+            org0 = _mm_cvtepu8_epi16(_mm_loadl_epi64((__m128i *)(&orgLine[x])));
+
+            // compute signLeft, signRight
+            sign0 = _mm_sign_epi16(negOne, _mm_sub_epi16(recn, rec0));
+            sign1 = _mm_sign_epi16(negOne, _mm_sub_epi16(rec1, rec0));
+            sign0 = _mm_sub_epi16(sign0, mask);
+
+            // compute diff
+            diff = _mm_sub_epi16(org0, rec0);
+
+            // accumulate for each type
+            // promote masked diff to 32-bit, using diff -= madd(diff, -1)
+            type = _mm_add_epi16(sign0, sign1);  // type = [-1,+3]
+            mask = _mm_cmpeq_epi16(type, negOne);
+            count0 = _mm_sub_epi16(count0, mask);
+            diff0 = _mm_sub_epi32(diff0, _mm_madd_epi16(_mm_and_si128(mask, diff), negOne));
+
+            type = _mm_add_epi16(type, negOne);  // type = [-2,+2]
+            mask = _mm_cmpeq_epi16(type, negOne);
+            count1 = _mm_sub_epi16(count1, mask);
+            diff1 = _mm_sub_epi32(diff1, _mm_madd_epi16(_mm_and_si128(mask, diff), negOne));
+
+            type = _mm_add_epi16(type, negOne);  // type = [-3,+1]
+            mask = _mm_cmpeq_epi16(type, negOne);
+            count2 = _mm_sub_epi16(count2, mask);
+            diff2 = _mm_sub_epi32(diff2, _mm_madd_epi16(_mm_and_si128(mask, diff), negOne));
+
+            type = _mm_add_epi16(type, negOne);  // type = [-4, 0]
+            mask = _mm_cmpeq_epi16(type, negOne);
+            count3 = _mm_sub_epi16(count3, mask);
+            diff3 = _mm_sub_epi32(diff3, _mm_madd_epi16(_mm_and_si128(mask, diff), negOne));
+
+            type = _mm_add_epi16(type, negOne);  // type = [-5,-1]
+            mask = _mm_cmpeq_epi16(type, negOne);
+            count4 = _mm_sub_epi16(count4, mask);
+            diff4 = _mm_sub_epi32(diff4, _mm_madd_epi16(_mm_and_si128(mask, diff), negOne));
+        }
+
+        recLine  += recStride;
+        orgLine  += orgStride;
+    }
+
+    // horizontal sum of diffs, using adder tree
+    diff0 = _mm_hadd_epi32(diff0, diff1);
+    diff2 = _mm_hadd_epi32(diff2, diff3);
+    diff4 = _mm_hadd_epi32(diff4, diff4);
+
+    diff0 = _mm_hadd_epi32(diff0, diff2);
+    diff4 = _mm_hadd_epi32(diff4, diff4);
+
+    _mm_storeu_si128((__m128i *)&sse4_diff[0], diff0);
+    sse4_diff[4] = _mm_cvtsi128_si32(diff4);
+
+    // horizontal sum of diffs, using adder tree
+    count0 = _mm_hadd_epi16(count0, count1);
+    count2 = _mm_hadd_epi16(count2, count3);
+    count4 = _mm_hadd_epi16(count4, count4);
+
+    count0 = _mm_hadd_epi16(count0, count2);
+    count4 = _mm_hadd_epi16(count4, count4);
+
+    count0 = _mm_hadd_epi16(count0, count4); 
+
+    _mm_storel_epi64((__m128i *)&sse4_count[0], count0);
+    sse4_count[4] = _mm_extract_epi16(count0, 4);
+
+} // h265_sao_EO_45_sse4(...)
+
+
+static
+void h265_sao_EO_general_sse4(
+        const PixType* recBlk,
+        int recStride,
+        const PixType* orgBlk,
+        int orgStride,
+        IppiRect roi,
+        Ipp32s* sse4_diff,
+        Ipp16s* sse4_count,
+        int typeId)
+{
+    int x, y, startX, startY, endX, endY;
+
+    const PixType *recLine = recBlk;
+    const PixType *orgLine = orgBlk;
+
+    __m128i diff0 = _mm_setzero_si128();
+    __m128i diff1 = _mm_setzero_si128();
+    __m128i diff2 = _mm_setzero_si128();
+    __m128i diff3 = _mm_setzero_si128();
+    __m128i diff4 = _mm_setzero_si128();
+    __m128i count0 = _mm_setzero_si128();
+    __m128i count1 = _mm_setzero_si128();
+    __m128i count2 = _mm_setzero_si128();
+    __m128i count3 = _mm_setzero_si128();
+    __m128i count4 = _mm_setzero_si128();
+    __m128i negOne = _mm_cmpeq_epi8(_mm_setzero_si128(), _mm_setzero_si128());
+    __m128i recn, rec0, rec1, org0;
+    __m128i sign0, sign1, type;
+    __m128i mask, diff;
+
+    // for testing, stay entirely inside block
+    startY = roi.y;
+    endY = startY + roi.height;
+    startX = roi.x;
+    endX = startX + roi.width;
+
+    // offset
+    const int tab_offsetX[] = {-1, 0, -1, 1};
+    const int offsetX = tab_offsetX[typeId];
+    const int offsetStride = (SAO_EO_0 == typeId) ? 0 : -recStride;
+    const int offset = offsetX + offsetStride;
+
+    for (y = startY; y < endY; y++)
+    {
+        // process 8 pixels per iteration
+        for (x = startX; x < endX - startX - 7; x += 8)
+        {
+            // promote to 16-bit
+            recn = _mm_cvtepu8_epi16(_mm_loadl_epi64((__m128i *)(&recLine[x + offset])));
+            rec0 = _mm_cvtepu8_epi16(_mm_loadl_epi64((__m128i *)(&recLine[x])));
+            rec1 = _mm_cvtepu8_epi16(_mm_loadl_epi64((__m128i *)(&recLine[x - offset])));
+            org0 = _mm_cvtepu8_epi16(_mm_loadl_epi64((__m128i *)(&orgLine[x])));
+
+            // compute signUp(Left), signDown(Right)
+            sign0 = _mm_sign_epi16(negOne, _mm_sub_epi16(recn, rec0));
+            sign1 = _mm_sign_epi16(negOne, _mm_sub_epi16(rec1, rec0));
+            sign0 = _mm_sub_epi16(sign0, negOne);
+
+            // compute diff
+            diff = _mm_sub_epi16(org0, rec0);
+
+            // accumulate for each type
+            // promote masked diff to 32-bit, using diff -= madd(diff, -1)
+            type = _mm_add_epi16(sign0, sign1);  // type = [-1,+3]
+            mask = _mm_cmpeq_epi16(type, negOne);
+            count0 = _mm_sub_epi16(count0, mask);
+            diff0 = _mm_sub_epi32(diff0, _mm_madd_epi16(_mm_and_si128(mask, diff), negOne));
+
+            type = _mm_add_epi16(type, negOne);  // type = [-2,+2]
+            mask = _mm_cmpeq_epi16(type, negOne);
+            count1 = _mm_sub_epi16(count1, mask);
+            diff1 = _mm_sub_epi32(diff1, _mm_madd_epi16(_mm_and_si128(mask, diff), negOne));
+
+            type = _mm_add_epi16(type, negOne);  // type = [-3,+1]
+            mask = _mm_cmpeq_epi16(type, negOne);
+            count2 = _mm_sub_epi16(count2, mask);
+            diff2 = _mm_sub_epi32(diff2, _mm_madd_epi16(_mm_and_si128(mask, diff), negOne));
+
+            type = _mm_add_epi16(type, negOne);  // type = [-4, 0]
+            mask = _mm_cmpeq_epi16(type, negOne);
+            count3 = _mm_sub_epi16(count3, mask);
+            diff3 = _mm_sub_epi32(diff3, _mm_madd_epi16(_mm_and_si128(mask, diff), negOne));
+
+            type = _mm_add_epi16(type, negOne);  // type = [-5,-1]
+            mask = _mm_cmpeq_epi16(type, negOne);
+            count4 = _mm_sub_epi16(count4, mask);
+            diff4 = _mm_sub_epi32(diff4, _mm_madd_epi16(_mm_and_si128(mask, diff), negOne));
+        }
+
+        // process remaining 1..7 pixels
+        if (x < endX)
+        {
+            // kill out-of-bound values
+            mask = _mm_load_si128((__m128i *)tab_killmask[endX - x]);
+
+            // promote to 16-bit
+            recn = _mm_cvtepu8_epi16(_mm_loadl_epi64((__m128i *)(&recLine[x + offset])));
+            rec0 = _mm_cvtepu8_epi16(_mm_loadl_epi64((__m128i *)(&recLine[x])));
+            rec1 = _mm_cvtepu8_epi16(_mm_loadl_epi64((__m128i *)(&recLine[x - offset])));
+            org0 = _mm_cvtepu8_epi16(_mm_loadl_epi64((__m128i *)(&orgLine[x])));
+
+            // compute signLeft, signRight
+            sign0 = _mm_sign_epi16(negOne, _mm_sub_epi16(recn, rec0));
+            sign1 = _mm_sign_epi16(negOne, _mm_sub_epi16(rec1, rec0));
+            sign0 = _mm_sub_epi16(sign0, mask);
+
+            // compute diff
+            diff = _mm_sub_epi16(org0, rec0);
+
+            // accumulate for each type
+            // promote masked diff to 32-bit, using diff -= madd(diff, -1)
+            type = _mm_add_epi16(sign0, sign1);  // type = [-1,+3]
+            mask = _mm_cmpeq_epi16(type, negOne);
+            count0 = _mm_sub_epi16(count0, mask);
+            diff0 = _mm_sub_epi32(diff0, _mm_madd_epi16(_mm_and_si128(mask, diff), negOne));
+
+            type = _mm_add_epi16(type, negOne);  // type = [-2,+2]
+            mask = _mm_cmpeq_epi16(type, negOne);
+            count1 = _mm_sub_epi16(count1, mask);
+            diff1 = _mm_sub_epi32(diff1, _mm_madd_epi16(_mm_and_si128(mask, diff), negOne));
+
+            type = _mm_add_epi16(type, negOne);  // type = [-3,+1]
+            mask = _mm_cmpeq_epi16(type, negOne);
+            count2 = _mm_sub_epi16(count2, mask);
+            diff2 = _mm_sub_epi32(diff2, _mm_madd_epi16(_mm_and_si128(mask, diff), negOne));
+
+            type = _mm_add_epi16(type, negOne);  // type = [-4, 0]
+            mask = _mm_cmpeq_epi16(type, negOne);
+            count3 = _mm_sub_epi16(count3, mask);
+            diff3 = _mm_sub_epi32(diff3, _mm_madd_epi16(_mm_and_si128(mask, diff), negOne));
+
+            type = _mm_add_epi16(type, negOne);  // type = [-5,-1]
+            mask = _mm_cmpeq_epi16(type, negOne);
+            count4 = _mm_sub_epi16(count4, mask);
+            diff4 = _mm_sub_epi32(diff4, _mm_madd_epi16(_mm_and_si128(mask, diff), negOne));
+        }
+
+        recLine  += recStride;
+        orgLine  += orgStride;
+    }
+
+    // horizontal sum of diffs, using adder tree
+    diff0 = _mm_hadd_epi32(diff0, diff1);
+    diff2 = _mm_hadd_epi32(diff2, diff3);
+    diff4 = _mm_hadd_epi32(diff4, diff4);
+
+    diff0 = _mm_hadd_epi32(diff0, diff2);
+    diff4 = _mm_hadd_epi32(diff4, diff4);
+
+    _mm_storeu_si128((__m128i *)&sse4_diff[0], diff0);
+    sse4_diff[4] = _mm_cvtsi128_si32(diff4);
+
+    // horizontal sum of diffs, using adder tree
+    count0 = _mm_hadd_epi16(count0, count1);
+    count2 = _mm_hadd_epi16(count2, count3);
+    count4 = _mm_hadd_epi16(count4, count4);
+
+    count0 = _mm_hadd_epi16(count0, count2);
+    count4 = _mm_hadd_epi16(count4, count4);
+
+    count0 = _mm_hadd_epi16(count0, count4); 
+
+    _mm_storel_epi64((__m128i *)&sse4_count[0], count0);
+    sse4_count[4] = _mm_extract_epi16(count0, 4);
+
+} // h265_sao_EO_general_sse4(...)
+
+
+static void h265_sao_BO_sse(
+    const PixType* recLine,
+    int recStride,
+    const PixType* orgLine,
+    int orgStride,
+    Ipp64s *diff,
+    Ipp64s* count,
+    int endX,
+    int endY)
+{
+    const int shiftBits = 3;
+    for (int y=0; y<endY; y++)
+    {
+        for (int x=0; x<endX; x++)
+        {
+            int bandIdx= recLine[x] >> shiftBits;
+            diff [bandIdx] += (orgLine[x] - recLine[x]);
+            count[bandIdx]++;
+        }
+        recLine += recStride;
+        orgLine += orgStride;
+    }
+
+    return;
+
+}
+
+
     void MAKE_NAME(h265_GetCtuStatistics_8u)(SAOCU_ENCODE_PARAMETERS_LIST)
-        //(
-        //int compIdx,
-        //const PixType* recBlk,
-        //int recStride,
-        //const PixType* orgBlk,
-        //int orgStride,
-
-        //int width, // correct LCU size
-        //int height,
-
-        //int shift,// to switch btw NV12/YV12 Chroma
-
-        //const MFX_HEVC_PP::CTBBorders& borders,
-        //MFX_HEVC_PP::SaoCtuStatistics* statsDataTypes)
     {
         Ipp16s signLineBuf1[64+1];
         Ipp16s signLineBuf2[64+1];
@@ -1311,88 +2155,111 @@ namespace MFX_HEVC_PP
         const PixType* recLineBelow;
 
 
-        for(int typeIdx=0; typeIdx< MAX_NUM_SAO_TYPE; typeIdx++)
-        {
-            SaoCtuStatistics& statsData= statsDataTypes[typeIdx];
+        for (int typeIdx = 0; typeIdx < numSaoModes; typeIdx++)  { // numSaoModes!!!
+            SaoCtuStatistics &statsData = statsDataTypes[typeIdx];
             statsData.Reset();
 
             recLine = recBlk;
             orgLine = orgBlk;
             diff    = statsData.diff;
             count   = statsData.count;
-            switch(typeIdx)
-            {
-            case SAO_EO_0://SAO_TYPE_EO_0:
-                {
-                    diff +=2;
-                    count+=2;
-                    endY   = height - skipLinesB;
+            switch(typeIdx) {
+            case SAO_EO_0: {
+                startY = 0;
+                endY   = height - skipLinesB;
 
-                    startX = borders.m_left ? 0 : 1;
-                    endX   = width - skipLinesR;
+                startX = borders.m_left ? 0 : 1;
+                endX   = width - skipLinesR;
 
-                    for (y=0; y<endY; y++)
-                    {
-                        signLeft = getSign(recLine[startX] - recLine[startX-1]);
-                        for (x=startX; x<endX; x++)
-                        {
-                            signRight =  getSign(recLine[x] - recLine[x+1]);
-                            edgeType  =  signRight + signLeft;
-                            signLeft  = -signRight;
+                IppiRect roi = {startX, startY, endX-startX, endY-startY};
+                Ipp32s sse4_diff[5];
+                Ipp16s sse4_count[5];
 
-                            diff [edgeType] += (orgLine[x << shift] - recLine[x]);
-                            count[edgeType] ++;
-                        }
+                h265_sao_EO_general_sse4(recLine, recStride, orgLine, orgStride, roi, sse4_diff,
+                                         sse4_count, typeIdx);
+
+                for(int idxType = 0; idxType < 5; idxType++) {
+                    diff[idxType]  = sse4_diff[idxType];
+                    count[idxType]  = sse4_count[idxType];
+                }
+            }
+            break;
+
+            case SAO_EO_1: {
+                if (0 == borders.m_top) {
+                    recLine += recStride;
+                    orgLine += orgStride;
+                }
+
+                startX = 0;
+                endX = width - skipLinesR;
+
+                startY = borders.m_top ? 0 : 1;
+                endY = height - skipLinesB;
+
+                IppiRect roi = {startX, startY, endX-startX, endY-startY};
+                Ipp32s sse4_diff[5];
+                Ipp16s sse4_count[5];
+
+                h265_sao_EO_general_sse4(recLine, recStride, orgLine, orgStride, roi,
+                                            sse4_diff, sse4_count, typeIdx);
+
+                for(int idxType = 0; idxType < 5; idxType++) {
+                    diff[idxType]  = sse4_diff[idxType];
+                    count[idxType]  = sse4_count[idxType];
+                }
+            }
+            break;
+
+            case SAO_EO_2: {
+                bool isGeneralCase = (borders.m_top_left) || (!borders.m_top && borders.m_left) ||
+                       (borders.m_top && !borders.m_left) || (!borders.m_top && !borders.m_left);
+
+                if(isGeneralCase) {
+                    if(borders.m_top_left) {
+                        startX = 0;
+                        endX   = width - skipLinesR;
+                        startY = 0;
+                        endY = height - skipLinesB;
+                    }
+                    else if(!borders.m_top && borders.m_left) {
+                        startX = 0;
+                        endX   = width - skipLinesR;
+                        startY = 1;
+                        endY = height - skipLinesB;
                         recLine  += recStride;
                         orgLine  += orgStride;
                     }
-                }
-                break;
-
-            case SAO_EO_1: //SAO_TYPE_EO_90:
-                {
-                    diff +=2;
-                    count+=2;
-                    endX   = width - skipLinesR;
-
-                    startY = borders.m_top ? 0 : 1;
-                    endY   = height - skipLinesB;
-                    if ( 0 == borders.m_top )
-                    {
-                        recLine += recStride;
-                        orgLine += orgStride;
+                    else if( borders.m_top && !borders.m_left) {
+                        startX = 1;
+                        endX   = width - skipLinesR;
+                        startY = 0;
+                        endY = height - skipLinesB;
+                    }
+                    else if(!borders.m_top && !borders.m_left) {
+                        startX = 1;
+                        endX   = width - skipLinesR;
+                        startY = 1;
+                        endY = height - skipLinesB;
+                        recLine  += recStride;
+                        orgLine  += orgStride;
                     }
 
-                    recLineAbove = recLine - recStride;
-                    Ipp16s *signUpLine = signLineBuf1;
-                    for (x=0; x< endX; x++) 
-                    {
-                        signUpLine[x] = getSign(recLine[x] - recLineAbove[x]);
-                    }
+                    IppiRect roi = {startX, startY, endX-startX, endY-startY};
+                    Ipp32s sse4_diff[5] = {0};
+                    Ipp16s sse4_count[5]= {0};
 
-                    for (y=startY; y<endY; y++)
-                    {
-                        recLineBelow = recLine + recStride;
+                    h265_sao_EO_general_sse4(recLine, recStride, orgLine, orgStride, roi,
+                                             sse4_diff, sse4_count, typeIdx);
 
-                        for (x=0; x<endX; x++)
-                        {
-                            signDown  = getSign(recLine[x] - recLineBelow[x]); 
-                            edgeType  = signDown + signUpLine[x];
-                            signUpLine[x]= -signDown;
-
-                            diff [edgeType] += (orgLine[x<<shift] - recLine[x]);
-                            count[edgeType] ++;
-                        }
-                        recLine += recStride;
-                        orgLine += orgStride;
+                    for(int idxType = 0; idxType < 5; idxType++) {
+                        diff[idxType]  = sse4_diff[idxType];
+                        count[idxType] = sse4_count[idxType];
                     }
                 }
-                break;
-
-            case SAO_EO_2: //SAO_TYPE_EO_135:
-                {
-                    diff +=2;
-                    count+=2;
+                else {
+                    diff  +=2;
+                    count +=2;
                     startX = borders.m_left ? 0 : 1 ;
                     endX   = width - skipLinesR;
                     endY   = height - skipLinesB;
@@ -1402,18 +2269,15 @@ namespace MFX_HEVC_PP
                     signUpLine  = signLineBuf1;
                     signDownLine= signLineBuf2;
                     recLineBelow = recLine + recStride;
-                    for (x=startX; x<endX+1; x++)
-                    {
+                    for (x = startX; x < endX + 1; x++)
                         signUpLine[x] = getSign(recLineBelow[x] - recLine[x-1]);
-                    }
 
                     //1st line
                     recLineAbove = recLine - recStride;
                     firstLineStartX = borders.m_top_left ? 0 : 1;
                     firstLineEndX   = borders.m_top      ? endX : 1;
 
-                    for(x=firstLineStartX; x<firstLineEndX; x++)
-                    {
+                    for (x = firstLineStartX; x < firstLineEndX; x++) {
                         edgeType = getSign(recLine[x] - recLineAbove[x-1]) - signUpLine[x+1];
                         diff [edgeType] += (orgLine[x<<shift] - recLine[x]);
                         count[edgeType] ++;
@@ -1421,116 +2285,61 @@ namespace MFX_HEVC_PP
                     recLine  += recStride;
                     orgLine  += orgStride;
 
+                    startY = 1;
+                    IppiRect roi = {startX, startY, endX-startX, endY-startY};
+                    Ipp32s sse4_diff[5] = {0};
+                    Ipp16s sse4_count[5]= {0};
 
-                    //middle lines
-                    for (y=1; y<endY; y++)
-                    {
-                        recLineBelow = recLine + recStride;
+                    h265_sao_EO_general_sse4(recLine, recStride, orgLine, orgStride, roi,
+                                             sse4_diff, sse4_count, typeIdx);
 
-                        for (x=startX; x<endX; x++)
-                        {
-                            signDown = getSign(recLine[x] - recLineBelow[x+1]);
-                            edgeType = signDown + signUpLine[x];
-                            diff [edgeType] += (orgLine[x<<shift] - recLine[x]);
-                            count[edgeType] ++;
-
-                            signDownLine[x+1] = -signDown; 
-                        }
-                        signDownLine[startX] = getSign(recLineBelow[startX] - recLine[startX-1]);
-
-                        signTmpLine  = signUpLine;
-                        signUpLine   = signDownLine;
-                        signDownLine = signTmpLine;
-
-                        recLine += recStride;
-                        orgLine += orgStride;
+                    for(int idxType = 0; idxType < 5; idxType++) {
+                        diff[idxType - 2]  += sse4_diff[idxType];
+                        count[idxType - 2] += sse4_count[idxType];
                     }
-                }
-                break;
-
-            case SAO_EO_3: //SAO_TYPE_EO_45:
-                {
-                    diff +=2;
-                    count+=2;
-                    endY   = height - skipLinesB;
-
-                    startX = borders.m_left ? 0 : 1;
-                    endX   = width - skipLinesR;
-
-                    //prepare 2nd line upper sign
-                    recLineBelow = recLine + recStride;
-                    Ipp16s *signUpLine = signLineBuf1+1;
-                    for (x=startX-1; x<endX; x++)
-                    {
-                        signUpLine[x] = getSign(recLineBelow[x] - recLine[x+1]);
-                    }
-
-                    //first line
-                    recLineAbove = recLine - recStride;
-
-                    firstLineStartX = borders.m_top ? startX : endX;
-                    firstLineEndX   = endX;
-
-                    for(x=firstLineStartX; x<firstLineEndX; x++)
-                    {
-                        edgeType = getSign(recLine[x] - recLineAbove[x+1]) - signUpLine[x-1];
-                        diff [edgeType] += (orgLine[x<<shift] - recLine[x]);
-                        count[edgeType] ++;
-                    }
-
-                    recLine += recStride;
-                    orgLine += orgStride;
-
-                    //middle lines
-                    for (y=1; y<endY; y++)
-                    {
-                        recLineBelow = recLine + recStride;
-
-                        for(x=startX; x<endX; x++)
-                        {
-                            signDown = getSign(recLine[x] - recLineBelow[x-1]) ;
-                            edgeType = signDown + signUpLine[x];
-
-                            diff [edgeType] += (orgLine[x<<shift] - recLine[x]);
-                            count[edgeType] ++;
-
-                            signUpLine[x-1] = -signDown; 
-                        }
-                        signUpLine[endX-1] = getSign(recLineBelow[endX-1] - recLine[endX]);
-                        recLine  += recStride;
-                        orgLine  += orgStride;
-                    }
-                }
-                break;
-
-            case SAO_BO: //SAO_TYPE_BO:
-                {
-                    endX = width- skipLinesR;
-                    endY = height- skipLinesB;
-                    const int shiftBits = 3;
-                    for (y=0; y<endY; y++)
-                    {
-                        for (x=0; x<endX; x++)
-                        {
-                            int bandIdx= recLine[x] >> shiftBits; 
-                            diff [bandIdx] += (orgLine[x<<shift] - recLine[x]);
-                            count[bandIdx]++;
-                        }
-                        recLine += recStride;
-                        orgLine += orgStride;
-                    }
-                }
-                break;
-
-            default:
-                {
-                    VM_ASSERT(!"Not a supported SAO types\n");
                 }
             }
-        }
+            break;
 
-    } // void MAKE_NAME(GetCtuStatistics_Internal)(SAOCU_ENCODE_PARAMETERS_LIST)
-}; // namespace MFX_HEVC_PP
+            case SAO_EO_3: {
+                startY = borders.m_top ? 0 : 1;
+                endY   = height - skipLinesB;
+                startX = borders.m_left ? 0 : 1;
+                endX   = width - skipLinesR;
+
+                if (!borders.m_top) {
+                    recLine += recStride;
+                    orgLine += orgStride;
+                }
+                        
+                IppiRect roi = {startX, startY, endX-startX, endY-startY};
+                Ipp32s sse4_diff[5] = {0};
+                Ipp16s sse4_count[5]= {0};
+
+                h265_sao_EO_general_sse4(recLine, recStride, orgLine, orgStride, roi,
+                                            sse4_diff, sse4_count, typeIdx);
+
+                for(int idxType = 0; idxType < 5; idxType++) {
+                    diff[idxType]  = sse4_diff[idxType];
+                    count[idxType] = sse4_count[idxType];
+                }
+            }
+            break;
+
+            case SAO_BO: {
+                endX = width- skipLinesR;
+                endY = height- skipLinesB;
+                h265_sao_BO_sse(recLine, recStride, orgLine, orgStride, diff, count, endX, endY);
+            }
+            break;
+
+            default: {
+                VM_ASSERT(!"Not a supported SAO types\n");
+            }
+            }
+        }
+    }
+};
 
 #endif // #if defined(MFX_TARGET_OPTIMIZATION_AUTO) ...
 #endif // #if defined (MFX_ENABLE_H265_VIDEO_ENCODE) || defined(MFX_ENABLE_H265_VIDEO_DECODE)

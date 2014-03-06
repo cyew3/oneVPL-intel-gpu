@@ -236,6 +236,8 @@ mfxStatus H265Encoder::InitH265VideoParam(const mfxVideoParam *param, const mfxE
 
     if (pars->enableCmFlag) {
         pars->intraAngModes = 3;
+        pars->SBHFlag = 0;
+        pars->saoOpt = 2;
         pars->num_cand_0[2] = 1;
         pars->num_cand_0[3] = 1;
         pars->num_cand_0[4] = 1;
