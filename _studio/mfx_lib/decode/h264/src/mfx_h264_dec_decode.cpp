@@ -27,6 +27,7 @@
 #if defined(MFX_VA)
 #include "umc_h264_va_supplier.h"
 #include "umc_va_dxva2_protected.h"
+#include "umc_va_linux_protected.h"
 #endif
 
 #if defined (MFX_VA_OSX)
@@ -385,14 +386,13 @@ mfxStatus VideoDECODEH264::Init(mfxVideoParam *par)
     umcVideoParams.numThreads = m_vPar.mfx.NumThread;
     umcVideoParams.m_bufferedFrames = asyncDepth - umcVideoParams.numThreads;
 
-#if defined (MFX_VA_WIN) || defined (MFX_VA_LINUX)
+#if defined(MFX_VA)
     if (MFX_PLATFORM_SOFTWARE != m_platform)
     {
         m_core->GetVA((mfxHDL*)&m_va, MFX_MEMTYPE_FROM_DECODE);
         umcVideoParams.pVideoAccelerator = m_va;
         ((UMC::VATaskSupplier*)m_pH264VideoDecoder.get())->SetVideoHardwareAccelerator(m_va);
-
-#if defined MFX_VA_WIN
+#if defined(MFX_VA_WIN) || defined (MFX_VA_LINUX)
         if (m_va->GetProtectedVA())
         {
             if (m_va->GetProtectedVA()->SetModes(par) != UMC::UMC_OK)
@@ -579,10 +579,8 @@ mfxStatus VideoDECODEH264::Reset(mfxVideoParam *par)
 #if defined (MFX_VA_WIN) || defined (MFX_VA_LINUX)
         if (m_va->GetProtectedVA())
         {
-#if defined MFX_VA_WIN
             if (m_va->GetProtectedVA()->SetModes(par) != UMC::UMC_OK)
                 return MFX_ERR_INVALID_VIDEO_PARAM;
-#endif
         }
         else
         {
@@ -1184,7 +1182,7 @@ mfxStatus VideoDECODEH264::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1 *
 
     sts = MFX_ERR_UNDEFINED_BEHAVIOR;
 
-#ifdef MFX_VA_WIN
+#if defined(MFX_VA_WIN) || defined (MFX_VA_LINUX)
     if (m_vPar.Protected && bs)
     {
         if (!m_va->GetProtectedVA() || !(bs->DataFlag & MFX_BITSTREAM_COMPLETE_FRAME))

@@ -21,3 +21,8 @@ endif
 ifeq ($(MFX_OMX_IMPL_SW),)
   MFX_OMX_IMPL_SW:=true
 endif
+
+# Build OMX plugins with PAVP support
+ifeq ($(MFX_OMX_PAVP),)
+    MFX_OMX_PAVP:=false
+endif

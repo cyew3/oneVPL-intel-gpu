@@ -24,6 +24,11 @@ MFX_CFLAGS += \
   -DMFX_ANDROID_PLATFORM=$(MFX_ANDROID_PLATFORM) \
   -include $(MFX_HOME)/android/include/mfx_config.h
 
+ifeq ($(MFX_OMX_PAVP),true)
+  MFX_CFLAGS += \
+    -DMFX_OMX_PAVP
+endif
+
 # Setting version information for the binaries
 ifeq ($(MFX_VERSION),)
   MFX_VERSION = "0.0.000.0000"

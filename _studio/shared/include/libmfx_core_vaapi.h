@@ -117,6 +117,7 @@ protected:
     void                   ReleaseHandle();
     //std::auto_ptr<UMC::LinuxVideoAccelerator>       m_pVA;
     s_ptr<UMC::LinuxVideoAccelerator, true> m_pVA;
+    std::auto_ptr<UMC::ProtectedVA>            m_protectedVA;
     VADisplay                           m_Display;
 
     const mfxU32                         m_adapterNum; // Ordinal number of adapter to work

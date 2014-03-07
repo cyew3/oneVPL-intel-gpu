@@ -12,6 +12,7 @@
 #ifdef UMC_VA_LINUX
 
 #include "umc_va_linux.h"
+#include "umc_va_linux_protected.h"
 #include "vm_file.h"
 #include "mfx_trace.h"
 
@@ -89,7 +90,7 @@ VAEntrypoint umc_to_va_entrypoint(Ipp32u umc_entrypoint)
 Ipp32u g_Profiles[] =
 {
     UMC::MPEG2_VLD, UMC::MPEG2_IT,
-    UMC::H264_VLD, 
+    UMC::H264_VLD,
     UMC::VC1_VLD, UMC::VC1_MC
 };
 
@@ -220,7 +221,6 @@ LinuxVideoAccelerator::LinuxVideoAccelerator(void)
     m_NumOfFrameBuffers = 0;
     m_uiCompBuffersNum  = 0;
     m_uiCompBuffersUsed = 0;
-    m_bLongSliceControl = true;
 
     vm_mutex_set_invalid(&m_SyncMutex);
 
@@ -239,7 +239,7 @@ Status LinuxVideoAccelerator::Init(VideoAcceleratorParams* pInfo)
 {
     Status         umcRes = UMC_OK;
     VAStatus       va_res = VA_STATUS_SUCCESS;
-    VAConfigAttrib va_attributes;
+    VAConfigAttrib va_attributes[2];
 
     LinuxVideoAcceleratorParams* pParams = DynamicCast<LinuxVideoAcceleratorParams>(pInfo);
     Ipp32s width = 0, height = 0;
@@ -266,6 +266,7 @@ Status LinuxVideoAccelerator::Init(VideoAcceleratorParams* pInfo)
         width               = pParams->m_pVideoStreamInfo->clip_info.width;
         height              = pParams->m_pVideoStreamInfo->clip_info.height;
         m_NumOfFrameBuffers = pParams->m_iNumberSurfaces;
+        m_protectedVA       = pParams->m_protectedVA;
         m_FrameState        = lvaBeforeBegin;
 
         // profile or stream type should be set
@@ -376,15 +377,36 @@ Status LinuxVideoAccelerator::Init(VideoAcceleratorParams* pInfo)
         if (UMC_OK == umcRes)
         {
             // Assuming finding VLD, find out the format for the render target
-            va_attributes.type = VAConfigAttribRTFormat;
-            va_res = vaGetConfigAttributes(m_dpy, va_profile, va_entrypoint, &va_attributes, 1);
+            va_attributes[0].type = VAConfigAttribRTFormat;
+
+            va_attributes[1].type = VAConfigAttribDecSliceMode;
+            va_attributes[1].value = VA_DEC_SLICE_MODE_NORMAL;
+
+            va_res = vaGetConfigAttributes(m_dpy, va_profile, va_entrypoint, va_attributes, 2);
             umcRes = va_to_umc_res(va_res);
         }
-        if ((UMC_OK == umcRes) && (!(va_attributes.value & VA_RT_FORMAT_YUV420)))
+        if ((UMC_OK == umcRes) && (!(va_attributes[0].value & VA_RT_FORMAT_YUV420)))
             umcRes = UMC_ERR_FAILED;
+
         if (UMC_OK == umcRes)
         {
-            va_res = vaCreateConfig(m_dpy, va_profile, va_entrypoint, &va_attributes, 1, &m_config_id);
+            if (m_protectedVA && MFX_PROTECTION_PAVP == m_protectedVA->GetProtected())
+            {
+                if (va_attributes[1].value & VA_DEC_SLICE_MODE_BASE)
+                {
+                    m_bH264ShortSlice = true;
+                    va_attributes[1].value = VA_DEC_SLICE_MODE_BASE;
+                }
+                else
+                    umcRes = UMC_ERR_FAILED;
+            }
+            else
+                va_attributes[1].value = VA_DEC_SLICE_MODE_NORMAL;
+        }
+
+        if (UMC_OK == umcRes)
+        {
+            va_res = vaCreateConfig(m_dpy, va_profile, va_entrypoint, va_attributes, 2, &m_config_id);
             umcRes = va_to_umc_res(va_res);
         }
         UMC_FREE(va_profiles);
@@ -403,7 +425,7 @@ Status LinuxVideoAccelerator::Init(VideoAcceleratorParams* pInfo)
         {
             m_bIsExtSurfaces = false;
 
-            va_res = vaCreateSurfaces(m_dpy, va_attributes.value, width, height, m_surfaces, m_NumOfFrameBuffers, NULL, 0);
+            va_res = vaCreateSurfaces(m_dpy, va_attributes[0].value, width, height, m_surfaces, m_NumOfFrameBuffers, NULL, 0);
             umcRes = va_to_umc_res(va_res);
         }
         else
@@ -415,7 +437,7 @@ Status LinuxVideoAccelerator::Init(VideoAcceleratorParams* pInfo)
             for(Ipp32s i = 0; i < pParams->m_iNumberSurfaces; i++)
                 m_surfaces[i] = pSurfaces[i];
 #else
-            va_res = vaCreateSurfaces(m_dpy, width, height, va_attributes.value, m_NumOfFrameBuffers, m_surfaces);
+            va_res = vaCreateSurfaces(m_dpy, width, height, va_attributes[0].value, m_NumOfFrameBuffers, m_surfaces);
             umcRes = va_to_umc_res(va_res);
             for(Ipp32s i = 0; i < pParams->m_iNumberSurfaces; i++)
                 pParams->m_surf[i] = (void*)m_surfaces[i];
@@ -478,7 +500,6 @@ Status LinuxVideoAccelerator::Close(void)
     m_FrameState = lvaBeforeBegin;
     m_uiCompBuffersNum  = 0;
     m_uiCompBuffersUsed = 0;
-    m_bLongSliceControl = true;
     vm_mutex_unlock (&m_SyncMutex);
     vm_mutex_destroy(&m_SyncMutex);
     return UMC_OK;
@@ -607,8 +628,16 @@ VACompBuffer* LinuxVideoAccelerator::GetCompBufferHW(Ipp32s type, Ipp32s size, I
                 va_num_elements = size/sizeof(VASliceParameterBufferMPEG4);
                 break;
             case UMC::VA_H264:
-                va_size         = sizeof(VASliceParameterBufferH264);
-                va_num_elements = size/sizeof(VASliceParameterBufferH264);
+                if (m_bH264ShortSlice)
+                {
+                    va_size         = sizeof(VASliceParameterBufferH264Base);
+                    va_num_elements = size/sizeof(VASliceParameterBufferH264Base);
+                }
+                else
+                {
+                    va_size         = sizeof(VASliceParameterBufferH264);
+                    va_num_elements = size/sizeof(VASliceParameterBufferH264);
+                }
                 break;
             case UMC::VA_VC1:
                 va_size         = sizeof(VASliceParameterBufferVC1);
@@ -626,7 +655,7 @@ VACompBuffer* LinuxVideoAccelerator::GetCompBufferHW(Ipp32s type, Ipp32s size, I
             va_num_elements = 1;
         }
         buffer_size = va_size * va_num_elements;
-        
+
         va_res = vaCreateBuffer(m_dpy, m_context, va_type, va_size, va_num_elements, NULL, &id);
     }
     if (VA_STATUS_SUCCESS == va_res)
@@ -667,15 +696,13 @@ LinuxVideoAccelerator::Execute()
             pCompBuf = m_pCompBuffers[i];
             id = pCompBuf->GetID();
 
-            // TODO: rewrite this
-            if (pCompBuf->GetType() == VASliceParameterBufferType)
+            if (!m_bH264ShortSlice)
             {
-//printf("m_uiCompBuffersUsed = %d, pCompBuf->GetType() = %d, id = %d, pCompBuf->GetNumOfItem() = %d\n", m_uiCompBuffersUsed, pCompBuf->GetType(), id, pCompBuf->GetNumOfItem());
-                va_sts = vaBufferSetNumElements(
-                    m_dpy,
-                    id,
-                    pCompBuf->GetNumOfItem());
-                if (VA_STATUS_SUCCESS == va_res) va_res = va_sts;
+                if (pCompBuf->GetType() == VASliceParameterBufferType)
+                {
+                    va_sts = vaBufferSetNumElements(m_dpy, id, pCompBuf->GetNumOfItem());
+                    if (VA_STATUS_SUCCESS == va_res) va_res = va_sts;
+                }
             }
 
             va_sts = vaUnmapBuffer(m_dpy, id);

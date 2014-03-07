@@ -22,6 +22,8 @@ File Name: libmf_core_vaapi.cpp
 #include "ippi.h"
 #include "mfx_common_decode_int.h"
 
+#include "umc_va_linux_protected.h"
+
 #include "cm_mem_copy.h"
 
 #include <sys/ioctl.h>
@@ -649,14 +651,12 @@ VAAPIVideoCORE::CreateVideoAccelerator(
     if (!m_Display)
         return MFX_ERR_NOT_INITIALIZED;
 
-#if 0
     if (IS_PROTECTION_ANY(param->Protected))
     {
         m_protectedVA.reset(new ProtectedVA(param->Protected));
         params.m_protectedVA = m_protectedVA.get();
-        m_pVA->SetProtectedVA(params.m_protectedVA);
+        m_pVA.get()->SetProtectedVA(params.m_protectedVA);
     }
-#endif
 
     UMC::VideoStreamInfo VideoInfo;
     VideoInfo.clip_info.width = pInfo->Width;

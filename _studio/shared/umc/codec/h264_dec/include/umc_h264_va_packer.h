@@ -167,6 +167,9 @@ public:
 
     virtual void PackPicParams(H264DecoderFrameInfo * pSliceInfo, H264Slice * pSlice);
 
+    virtual void CreateSliceParamBuffer(H264DecoderFrameInfo * pSliceInfo);
+    virtual void CreateSliceDataBuffer(H264DecoderFrameInfo * pSliceInfo);
+
     virtual Ipp32s PackSliceParams(H264Slice *pSlice, Ipp32s sliceNum, Ipp32s chopping, Ipp32s numSlicesOfPrevField);
 
     virtual void PackQmatrix(const UMC_H264_DECODER::H264ScalingPicParams * scaling);
@@ -189,6 +192,21 @@ private:
     {
         VA_FRAME_INDEX_INVALID = 0x7f
     };
+};
+
+class PackerVA_PAVP : public PackerVA
+{
+public:
+    PackerVA_PAVP(VideoAccelerator * va, TaskSupplier * supplier);
+
+    virtual void PackPicParams(H264DecoderFrameInfo * pSliceInfo, H264Slice * pSlice);
+
+    virtual void CreateSliceDataBuffer(H264DecoderFrameInfo * pSliceInfo);
+
+    virtual Ipp32s PackSliceParams(H264Slice *pSlice, Ipp32s sliceNum, Ipp32s chopping, Ipp32s numSlicesOfPrevField);
+
+protected:
+    void PackPavpParams(void);
 };
 
 #endif // UMC_VA_LINUX

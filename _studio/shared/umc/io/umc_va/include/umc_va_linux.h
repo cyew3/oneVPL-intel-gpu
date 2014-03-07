@@ -133,9 +133,6 @@ protected:
     vm_mutex m_SyncMutex;
     VACompBuffer** m_pCompBuffers;
 
-    // NOT used variables:
-    bool m_bLongSliceControl;
-
     // introduced for MediaSDK
     bool    m_bIsExtSurfaces;
 

@@ -26,3 +26,16 @@ ifeq ($(MFX_ANDROID_VERSION), MFX_MCG_KK)
   MFX_C_INCLUDES_OMX += \
     $(TARGET_OUT_HEADERS)/libmix_videoencoder
 endif
+
+ifeq ($(MFX_OMX_PAVP),true)
+  ifeq ($(MFX_ANDROID_VERSION), MFX_MCG_JB)
+    # libpavp.h
+    MFX_C_INCLUDES_OMX += \
+      $(TOP)/vendor/intel/hardware/PRIVATE/ufo/inc/libpavp
+  endif
+  ifeq ($(MFX_ANDROID_VERSION), MFX_MCG_KK)
+    # libpavp.h
+    MFX_C_INCLUDES_OMX += \
+      $(TOP)/vendor/intel/hardware/PRIVATE/ufo/inc/libpavp
+  endif
+endif
