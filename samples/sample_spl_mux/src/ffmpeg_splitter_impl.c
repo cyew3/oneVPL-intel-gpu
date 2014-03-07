@@ -530,6 +530,8 @@ mfxU16 GetMFXCodecProfileFromAVCodecProfile(enum AVCodecID codecID, int codecPro
             return MFX_PROFILE_AVC_HIGH;
         case FF_PROFILE_H264_CONSTRAINED_BASELINE:
             return MFX_PROFILE_AVC_CONSTRAINED_BASELINE;
+        default:
+            break;
         }
         break;
     case AV_CODEC_ID_MPEG2VIDEO:
@@ -541,6 +543,8 @@ mfxU16 GetMFXCodecProfileFromAVCodecProfile(enum AVCodecID codecID, int codecPro
             return MFX_PROFILE_MPEG2_MAIN;
         case FF_PROFILE_MPEG2_HIGH:
             return MFX_PROFILE_MPEG2_HIGH;
+        default:
+            break;
         }
         break;
     case AV_CODEC_ID_AAC:
@@ -558,7 +562,11 @@ mfxU16 GetMFXCodecProfileFromAVCodecProfile(enum AVCodecID codecID, int codecPro
             return MFX_PROFILE_AAC_HE;
         case FF_PROFILE_AAC_HE_V2:
             return MFX_PROFILE_AAC_PS;
+        default:
+            break;
         }
+        break;
+    default:
         break;
     }
 

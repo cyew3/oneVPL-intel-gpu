@@ -59,7 +59,7 @@ mfxF64 TranscodingSample::GetTime(msdk_tick start)
     return MSDK_GET_TIME(msdk_time_get_tick(), start, frequency);
 }
 
-void TranscodingSample::PrintHelp(msdk_char *strAppName, msdk_char *strErrorMessage, ...)
+void TranscodingSample::PrintHelp(const msdk_char *strAppName, const msdk_char *strErrorMessage, ...)
 {
     msdk_printf(MSDK_STRING("Intel(R) Media SDK Multi Transcoding Sample Version %s\n\n"), MSDK_SAMPLE_VERSION);
 

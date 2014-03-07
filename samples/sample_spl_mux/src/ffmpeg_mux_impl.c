@@ -50,6 +50,8 @@ int GetAVCodecProfileFromMFXCodecProfile(mfxTrackType trackType, mfxU16 codecPro
             return FF_PROFILE_H264_HIGH;
         case MFX_PROFILE_AVC_CONSTRAINED_BASELINE:
             return FF_PROFILE_H264_CONSTRAINED_BASELINE;
+        default:
+            break;
         }
         break;
     case MFX_TRACK_MPEG2V:
@@ -61,6 +63,8 @@ int GetAVCodecProfileFromMFXCodecProfile(mfxTrackType trackType, mfxU16 codecPro
             return FF_PROFILE_MPEG2_MAIN;
         case MFX_PROFILE_MPEG2_HIGH:
             return FF_PROFILE_MPEG2_HIGH;
+        default:
+            break;
         }
         break;
     case MFX_TRACK_AAC:
@@ -78,7 +82,11 @@ int GetAVCodecProfileFromMFXCodecProfile(mfxTrackType trackType, mfxU16 codecPro
             return FF_PROFILE_AAC_HE;
         case MFX_PROFILE_AAC_PS:
             return FF_PROFILE_AAC_HE_V2;
+        default:
+            break;
         }
+        break;
+    default:
         break;
     }
 

@@ -62,29 +62,30 @@ mfxU32 MSDK_THREAD_CALLCONVENTION TranscodingSample::ThranscodeRoutine(void   *p
 } // mfxU32 __stdcall ThranscodeRoutine(void   *pObj)
 
 // set structure to define values
-sInputParams::sInputParams():bIsJoin(false),
-                             priority(MFX_PRIORITY_NORMAL),
-                             libType(MFX_IMPL_SOFTWARE),
-                             bIsPerf(false),
-                             EncodeId(0),
-                             DecodeId(0),
-                             nTargetUsage(),
-                             dFrameRate(0),
-                             nBitRate(0),
-                             nQuality(0),
-                             nDstWidth(0),
-                             nDstHeight(0),
-                             nAsyncDepth(0),
-                             nTimeout(0),
-                             eMode(Native),
-                             FrameNumberPreference(0),
-                             MaxFrameNumber(0xFFFFFFFF),
-                             nSlices(0),
-                             bIsMVC(false),
-                             nRotationAngle(0),
-                             bEnableDeinterlacing(false),
-                             bLABRC(false),
-                             nLADepth(0)
+sInputParams::sInputParams():
+    bIsJoin(false),
+    priority(MFX_PRIORITY_NORMAL),
+    libType(MFX_IMPL_SOFTWARE),
+    bIsPerf(false),
+    EncodeId(0),
+    DecodeId(0),
+    nTargetUsage(),
+    dFrameRate(0),
+    nBitRate(0),
+    nQuality(0),
+    nDstWidth(0),
+    nDstHeight(0),
+    bEnableDeinterlacing(false),
+    nAsyncDepth(0),
+    eMode(Native),
+    FrameNumberPreference(0),
+    MaxFrameNumber(0xFFFFFFFF),
+    nSlices(0),
+    bIsMVC(false),
+    nRotationAngle(0),
+    nTimeout(0),
+    bLABRC(false),
+    nLADepth(0)
 {
 
 } // sInputParams::sInputParams()
@@ -96,27 +97,28 @@ void sInputParams::Reset()
     MaxFrameNumber = 0xFFFFFFFF;
 }
 
-CTranscodingPipeline::CTranscodingPipeline():m_pmfxBS(NULL),
-                                             m_pMFXAllocator(NULL),
-                                             m_AsyncDepth(0),
-                                             m_nTimeout(0),
-                                             m_nProcessedFramesNum(0),
-                                             m_bIsJoinSession(false),
-                                             m_bDecodeEnable(true),
-                                             m_bEncodeEnable(true),
-                                             m_pBuffer(NULL),
-                                             m_pParentPipeline(NULL),
-                                             m_bIsInit(false),
-                                             m_FrameNumberPreference(0xFFFFFFFF),
-                                             m_MaxFramesForTranscode(0xFFFFFFFF),
-                                             m_pBSProcessor(NULL),
-                                             m_bIsVpp(false),
-                                             m_bIsPlugin(false),
-                                             m_bUseOpaqueMemory(false),
-                                             m_DecSurfaceType(0),
-                                             m_EncSurfaceType(0),
-                                             m_bOwnMVCSeqDescMemory(true),
-                                             m_hdl(NULL)
+CTranscodingPipeline::CTranscodingPipeline():
+    m_pmfxBS(NULL),
+    m_pMFXAllocator(NULL),
+    m_hdl(NULL),
+    m_EncSurfaceType(0),
+    m_DecSurfaceType(0),
+    m_bIsVpp(false),
+    m_bIsPlugin(false),
+    m_nTimeout(0),
+    m_bOwnMVCSeqDescMemory(true),
+    m_AsyncDepth(0),
+    m_nProcessedFramesNum(0),
+    m_bIsJoinSession(false),
+    m_bDecodeEnable(true),
+    m_bEncodeEnable(true),
+    m_bUseOpaqueMemory(false),
+    m_pBuffer(NULL),
+    m_pParentPipeline(NULL),
+    m_bIsInit(false),
+    m_FrameNumberPreference(0xFFFFFFFF),
+    m_MaxFramesForTranscode(0xFFFFFFFF),
+    m_pBSProcessor(NULL)
 {
     MSDK_ZERO_MEMORY(m_mfxDecParams);
     MSDK_ZERO_MEMORY(m_mfxVppParams);
@@ -1255,7 +1257,11 @@ mfxStatus CTranscodingPipeline::AllocFrames(mfxFrameAllocRequest *pRequest, bool
 mfxStatus CTranscodingPipeline::AllocFrames()
 {
     mfxStatus sts;
-    mfxFrameAllocRequest DecRequest = {0};
+    mfxFrameAllocRequest DecRequest;
+    mfxFrameAllocRequest EncRequest;
+
+    MSDK_ZERO_MEMORY(DecRequest);
+    MSDK_ZERO_MEMORY(EncRequest);
 
     if (m_pmfxDEC.get())
     {
@@ -1269,7 +1275,9 @@ mfxStatus CTranscodingPipeline::AllocFrames()
 
     if (m_pmfxVPP.get())
     {
-        mfxFrameAllocRequest VppRequest[2] = {0};
+        mfxFrameAllocRequest VppRequest[2];
+
+        MSDK_ZERO_MEMORY(VppRequest);
 
         if (m_bIsPlugin && m_bIsVpp)
             sts = m_pmfxVPP.get()->QueryIOSurf(&m_mfxPluginParams, &(VppRequest[0]), &m_mfxVppParams);
@@ -1280,7 +1288,6 @@ mfxStatus CTranscodingPipeline::AllocFrames()
 
         MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
-        mfxFrameAllocRequest EncRequest = {0};
         sts = m_pmfxENC.get()->QueryIOSurf(&m_mfxEncParams, &EncRequest);
         MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
@@ -1297,8 +1304,6 @@ mfxStatus CTranscodingPipeline::AllocFrames()
     }
     else if (m_pmfxENC.get())
     {
-        mfxFrameAllocRequest EncRequest = {0};
-
         sts = m_pmfxENC.get()->QueryIOSurf(&m_mfxEncParams, &EncRequest);
         MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
@@ -1318,10 +1323,14 @@ mfxStatus CTranscodingPipeline::AllocFrames()
 mfxStatus CTranscodingPipeline::CalculateNumberOfReqFrames(mfxFrameAllocRequest  *pRequest)
 {
     mfxStatus sts;
+    mfxFrameAllocRequest EncRequest;
 
+    MSDK_ZERO_MEMORY(EncRequest);
     if (m_pmfxVPP.get())
     {
-        mfxFrameAllocRequest VppRequest[2] = {0};
+        mfxFrameAllocRequest VppRequest[2];
+
+        MSDK_ZERO_MEMORY(VppRequest);
         if (m_bIsPlugin && m_bIsVpp)
             sts = m_pmfxVPP.get()->QueryIOSurf(&m_mfxPluginParams, &(VppRequest[0]), &m_mfxVppParams);
         else if (m_bIsPlugin)
@@ -1330,7 +1339,6 @@ mfxStatus CTranscodingPipeline::CalculateNumberOfReqFrames(mfxFrameAllocRequest 
             sts = m_pmfxVPP.get()->QueryIOSurf(&m_mfxVppParams, &(VppRequest[0]));
         MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
-        mfxFrameAllocRequest EncRequest = {0};
         sts = m_pmfxENC.get()->QueryIOSurf(&m_mfxEncParams, &EncRequest);
         MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
@@ -1349,8 +1357,6 @@ mfxStatus CTranscodingPipeline::CalculateNumberOfReqFrames(mfxFrameAllocRequest 
     }
     else if (m_pmfxENC.get())
     {
-        mfxFrameAllocRequest EncRequest = {0};
-
         sts = m_pmfxENC.get()->QueryIOSurf(&m_mfxEncParams, &EncRequest);
         MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
@@ -1502,7 +1508,7 @@ mfxStatus CTranscodingPipeline::Init(sInputParams *pParams,
 
         // MSDK API version may have no support for multiple adapters - then try initialize on the default
         if (MFX_ERR_NONE != sts)
-            sts = m_pmfxSession->Init(pParams->libType & !MFX_IMPL_HARDWARE_ANY | MFX_IMPL_HARDWARE, NULL);
+            sts = m_pmfxSession->Init((pParams->libType & !MFX_IMPL_HARDWARE_ANY) | MFX_IMPL_HARDWARE, NULL);
     }
     else
         sts = m_pmfxSession->Init(pParams->libType, NULL);
@@ -1586,7 +1592,9 @@ mfxStatus CTranscodingPipeline::Init(sInputParams *pParams,
     }
     else if (Source == pParams->eMode)// need allocate frames only for VPP and Encode if VPP exist
     {
-        mfxFrameAllocRequest  Request = {0};
+        mfxFrameAllocRequest  Request;
+
+        MSDK_ZERO_MEMORY(Request);
         sts = CalculateNumberOfReqFrames(&Request);
         MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
         m_pParentPipeline->CorrectNumberOfAllocatedFrames(&Request);

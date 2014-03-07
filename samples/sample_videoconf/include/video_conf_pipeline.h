@@ -29,16 +29,16 @@ class VideoConfParams
     : public IInitParams
 {
 public:
-    VideoConfParams ()
-        : bRPMRS()
-        , bUseHWLib()
-        , nTemporalScalabilityBase()
-        , nTemporalScalabilityLayers()
-        , nTargetKbps()
-        , bCalcLAtency()
-        , nRefrType(0)
-        , nCycleSize(0)
-        , nQPDelta(0)
+    VideoConfParams():
+        nTargetKbps(0),
+        bRPMRS(false),
+        bUseHWLib(false),
+        bCalcLAtency(false),
+        nTemporalScalabilityBase(0),
+        nTemporalScalabilityLayers(0),
+        nRefrType(0),
+        nCycleSize(0),
+        nQPDelta(0)
     {
     }
 public:
@@ -48,10 +48,10 @@ public:
         mfxU16 nWidth;      // picture width
         mfxU16 nHeight;     // picture height
         mfxF64 dFrameRate;  // framerate
-        SourceInfo()
-            : nWidth()
-            , nHeight()
-            , dFrameRate()
+        SourceInfo():
+            nWidth(0),
+            nHeight(0),
+            dFrameRate(0)
         {
         }
     };

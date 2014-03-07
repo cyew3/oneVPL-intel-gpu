@@ -10,7 +10,7 @@
 #include "pipeline_encode.h"
 #include "pipeline_user.h"
 
-void PrintHelp(msdk_char *strAppName, msdk_char *strErrorMessage)
+void PrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage)
 {
     msdk_printf(MSDK_STRING("Intel(R) Media SDK Decoding Sample Version %s\n\n"), MSDK_SAMPLE_VERSION);
 

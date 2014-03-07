@@ -29,55 +29,55 @@ void WipeMemoryAllocator(sMemoryAllocator* pAllocator);
 
 /* ******************************************************************* */
 
-static
-msdk_char* FourCC2Str( mfxU32 FourCC )
+static const msdk_char*
+FourCC2Str( mfxU32 FourCC )
 {
-  msdk_char* strFourCC = MSDK_STRING("YV12");//default
-
   switch ( FourCC )
   {
   case MFX_FOURCC_NV12:
-    strFourCC = MSDK_STRING("NV12");
+    return MSDK_STRING("NV12");
     break;
 
   case MFX_FOURCC_YV12:
-    strFourCC = MSDK_STRING("YV12");
+    return MSDK_STRING("YV12");
     break;
 
   case MFX_FOURCC_YUY2:
-    strFourCC = MSDK_STRING("YUY2");
+    return MSDK_STRING("YUY2");
     break;
 
   case MFX_FOURCC_RGB3:
-    strFourCC = MSDK_STRING("RGB3");
+    return MSDK_STRING("RGB3");
     break;
 
   case MFX_FOURCC_RGB4:
-    strFourCC = MSDK_STRING("RGB4");
+    return MSDK_STRING("RGB4");
+    break;
+
+  default:
+    return MSDK_STRING("UNKN");
     break;
   }
 
-  return strFourCC;
+  return MSDK_STRING("UNKN");
 
 } // msdk_char* FourCC2Str( mfxU32 FourCC )
 
 /* ******************************************************************* */
 
-static
-msdk_char* PicStruct2Str( mfxU16  PicStruct )
+static const msdk_char*
+PicStruct2Str( mfxU16  PicStruct )
 {
-  msdk_char* strPicStruct = NULL;
-
-  if(PicStruct == MFX_PICSTRUCT_PROGRESSIVE)
+  if (PicStruct == MFX_PICSTRUCT_PROGRESSIVE)
   {
-    strPicStruct = MSDK_STRING("progressive");
+    return MSDK_STRING("progressive");
   }
   else
   {
-    strPicStruct = MSDK_STRING("interleave");
+    return MSDK_STRING("interleave");
   }
 
-  return strPicStruct;
+  return MSDK_STRING("unknown");
 
 } // msdk_char* PicStruct2Str( mfxU16  PicStruct )
 
@@ -225,7 +225,7 @@ mfxStatus InitParamsVPP(mfxVideoParam* pParams, sInputParams* pInParams)
 mfxStatus CreateFrameProcessor(sFrameProcessor* pProcessor, mfxVideoParam* pParams, mfxIMPL impl)
 {
   mfxStatus  sts = MFX_ERR_NONE;
-  mfxVersion version = {3, 1}; // as this version of sample demonstrates the new DOUSE structure used to turn on VPP filters
+  mfxVersion version = {{3, 1}}; // as this version of sample demonstrates the new DOUSE structure used to turn on VPP filters
 
   MSDK_CHECK_POINTER(pProcessor, MFX_ERR_NULL_PTR);
   MSDK_CHECK_POINTER(pParams,    MFX_ERR_NULL_PTR);

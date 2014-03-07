@@ -15,7 +15,7 @@
         return MFX_ERR_UNSUPPORTED; \
     }
 
-void vppPrintHelp(msdk_char *strAppName, msdk_char *strErrorMessage)
+void vppPrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage)
 {
 
     msdk_printf(MSDK_STRING("Intel(R) Media SDK VPP Sample Version %s\n\n"), MSDK_SAMPLE_VERSION);

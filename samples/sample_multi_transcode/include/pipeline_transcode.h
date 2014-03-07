@@ -114,7 +114,7 @@ namespace TranscodingSample
 
     struct ExtendedBS
     {
-        ExtendedBS():IsFree(true), Syncp(NULL)
+        ExtendedBS(): Syncp(NULL), IsFree(true)
         {
             MSDK_ZERO_MEMORY(Bitstream);
         };
@@ -374,6 +374,8 @@ namespace TranscodingSample
         bool           m_bDecodeEnable;
         bool           m_bEncodeEnable;
 
+        bool           m_bUseOpaqueMemory; // indicates if opaque memory is used in the pipeline
+
         SafetySurfaceBuffer   *m_pBuffer;
         CTranscodingPipeline  *m_pParentPipeline;
 
@@ -388,7 +390,6 @@ namespace TranscodingSample
         // pointer to already extended bs processor
         BitstreamProcessor                   *m_pBSProcessor;
 
-        bool m_bUseOpaqueMemory; // indicates if opaque memory is used in the pipeline
 
     private:
         DISALLOW_COPY_AND_ASSIGN(CTranscodingPipeline);

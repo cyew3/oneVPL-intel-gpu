@@ -88,7 +88,7 @@ mfxStatus Launcher::Init(int argc, msdk_char *argv[])
 
     }
 #endif
-#else defined(LIBVA_X11_SUPPORT) || defined(LIBVA_DRM_SUPPORT)
+#elif defined(LIBVA_X11_SUPPORT) || defined(LIBVA_DRM_SUPPORT)
     if (m_eDevType == MFX_HANDLE_VA_DISPLAY)
     {
         m_pAllocParam.reset(new vaapiAllocatorParams);
@@ -180,7 +180,7 @@ mfxStatus Launcher::Init(int argc, msdk_char *argv[])
         pThreadPipeline->implType = m_InputParamsArray[i].libType;
         m_pSessionArray.push_back(pThreadPipeline.release());
 
-        mfxVersion ver = {0};
+        mfxVersion ver = {{0, 0}};
         sts = m_pSessionArray[i]->pPipeline->QueryMFXVersion(&ver);
         MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 

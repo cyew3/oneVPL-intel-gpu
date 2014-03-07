@@ -111,4 +111,4 @@ protected:
     bool m_bIsOutOpaque;
 };
 
-#endif __SAMPLE_PLUGIN_H__
+#endif // __SAMPLE_PLUGIN_H__
