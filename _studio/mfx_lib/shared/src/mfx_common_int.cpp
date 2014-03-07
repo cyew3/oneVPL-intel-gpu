@@ -686,6 +686,11 @@ void mfxVideoParamWrapper::CopyVideoParam(const mfxVideoParam & par)
                 void * in = GetExtendedBufferInternal(par.ExtParam, par.NumExtParam, par.ExtParam[i]->BufferId);
                 m_buffers.AddBuffer(par.ExtParam[i]);
                 mfxExtBuffer * out = m_buffers.GetBufferById<mfxExtBuffer >(par.ExtParam[i]->BufferId);
+                if (NULL == out)
+                {
+                    VM_ASSERT(false);
+                    throw UMC::UMC_ERR_FAILED;
+                }
                 memcpy_s((void*)out, out->BufferSz, in, par.ExtParam[i]->BufferSz);
             }
             break;
