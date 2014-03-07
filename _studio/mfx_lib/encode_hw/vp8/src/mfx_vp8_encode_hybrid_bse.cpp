@@ -148,7 +148,7 @@ namespace MFX_VP8ENC
         m_Params.SrcWidth  = video.mfx.FrameInfo.CropW!=0 ? video.mfx.FrameInfo.CropW: video.mfx.FrameInfo.Width;
         m_Params.SrcHeight = video.mfx.FrameInfo.CropH!=0 ? video.mfx.FrameInfo.CropH: video.mfx.FrameInfo.Height;
         m_Params.fSizeInMBs = ((m_Params.SrcWidth+15)>>4) * ((m_Params.SrcHeight+15)>>4);
-        m_Params.NumFramesToEncode = 0;
+        m_Params.NumFramesToEncode = pVP8Par->NumFramesForIVF;
         m_Params.FrameRateNom = video.mfx.FrameInfo.FrameRateExtN;
         m_Params.FrameRateDeNom = video.mfx.FrameInfo.FrameRateExtD;
         m_Params.EnableSeg = (pOpt->EnableMultipleSegments==MFX_CODINGOPTION_ON)?1:0;
@@ -380,9 +380,10 @@ namespace MFX_VP8ENC
         unsigned int   height,
         unsigned int   FrameRateN,
         unsigned int   FrameRateD,
+        unsigned int   numFramesInFile,
         unsigned char *pBitstream)
     {
-        U32   ivf_file_header[8]  = {0x46494B44, 0x00200000, 0x30385056, width + (height << 16), FrameRateN, FrameRateD, 0x00000000, 0x00000000};
+        U32   ivf_file_header[8]  = {0x46494B44, 0x00200000, 0x30385056, width + (height << 16), FrameRateN, FrameRateD, numFramesInFile, 0x00000000};
 
         memcpy(pBitstream, ivf_file_header, sizeof (ivf_file_header));
     }
@@ -398,7 +399,7 @@ namespace MFX_VP8ENC
         unsigned int frameNum,
         unsigned char *pPictureHeader)
     {
-        U32 ivf_frame_header[3] = {frameLen, frameNum, 0x00000000};
+        U32 ivf_frame_header[3] = {frameLen, frameNum << 1, 0x00000000};
 
         memcpy(pPictureHeader, ivf_frame_header, sizeof (ivf_frame_header));
     }
@@ -422,7 +423,7 @@ namespace MFX_VP8ENC
         {
             pPictureHeader = pBitstream->Data + pBitstream->DataLength + pBitstream->DataOffset;
             if (bSeqHeader) {
-                AddSeqHeader(m_Params.SrcWidth , m_Params.SrcHeight, m_Params.FrameRateNom, m_Params.FrameRateDeNom, pPictureHeader);
+                AddSeqHeader(m_Params.SrcWidth , m_Params.SrcHeight, m_Params.FrameRateNom, m_Params.FrameRateDeNom, m_Params.NumFramesToEncode, pPictureHeader);
                 pBitstream->DataLength += 32;
             }
             pPictureHeader = pBitstream->Data + pBitstream->DataLength + pBitstream->DataOffset;

@@ -281,6 +281,7 @@ void MFXStructureRef <mfxExtCodingOptionVP8Param>::ConstructValues() const
     SERIALIZE_POD_ARRAY(CTQPDelta, 5);
 
     SERIALIZE_INT(WriteIVFHeaders);
+    SERIALIZE_INT(NumFramesForIVF);
 }
 
 void MFXStructureRef <mfxFrameInfo>::ConstructValues () const

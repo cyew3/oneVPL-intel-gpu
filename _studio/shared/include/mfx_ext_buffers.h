@@ -224,6 +224,7 @@ typedef struct {
     mfxI8       SegmentQPDelta[4];
     mfxI8       CTQPDelta[5];
     mfxU16      WriteIVFHeaders; /* tri-state option */
+    mfxU32      NumFramesForIVF;
 
     mfxU8       reserved[1];
 

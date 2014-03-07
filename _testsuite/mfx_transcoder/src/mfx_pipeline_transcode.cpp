@@ -253,6 +253,7 @@ MFXTranscodingPipeline::MFXTranscodingPipeline(IMFXPipelineFactory *pFactory)
         HANDLE_VP8PARAM_OPTION(SharpnessLevel,        OPT_UINT_8,    "0-maxU8"),
         HANDLE_VP8PARAM_OPTION(NumPartitions,         OPT_UINT_8,    "0-maxU8"),
         HANDLE_VP8PARAM_OPTION(WriteIVFHeaders,       OPT_UINT_16,   "0-maxU16"),
+        HANDLE_VP8PARAM_OPTION(NumFramesForIVF,       OPT_UINT_32,   "0-maxU32"),
 
         // mfxExtCodingOption2
         HANDLE_EXT_OPTION2(IntRefType,             OPT_UINT_16,   ""),
