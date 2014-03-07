@@ -78,6 +78,9 @@ mfxStatus AuxiliaryDevice::Initialize(IDirect3DDeviceManager9       *pD3DDeviceM
         hr = D3DAuxObjects.pD3DDeviceManager->GetVideoService(D3DAuxObjects.m_hDXVideoDecoderService, 
                                                               IID_IDirectXVideoDecoderService, 
                                                               (void**)&D3DAuxObjects.m_pDXVideoDecoderService);
+
+        D3DAuxObjects.pD3DDeviceManager->CloseDeviceHandle(D3DAuxObjects.m_hDXVideoDecoderService);
+        D3DAuxObjects.m_hDXVideoDecoderService = INVALID_HANDLE_VALUE;
         MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
     }
 
@@ -216,11 +219,6 @@ mfxStatus AuxiliaryDevice::Release(void)
     SAFE_RELEASE(D3DAuxObjects.m_pDXVideoProcessorService);
     SAFE_RELEASE(D3DAuxObjects.m_pDXRegistrationDevice);
 
-    // close device processor handle
-    if (D3DAuxObjects.m_hRegistrationDevice && INVALID_HANDLE_VALUE != D3DAuxObjects.m_hRegistrationDevice)
-    {
-//        D3DAuxObjects.pD3DDeviceManager->CloseDeviceHandle(D3DAuxObjects.m_hRegistrationDevice);
-    }
 
     return MFX_ERR_NONE;
 
@@ -314,26 +312,17 @@ mfxStatus AuxiliaryDevice::CreateSurfaceRegistrationDevice(void)
     // gets a handle to the Direct3D device
     hr = D3DAuxObjects.pD3DDeviceManager->OpenDeviceHandle(&D3DAuxObjects.m_hRegistrationDevice);
     
-    // check errors
-    if (FAILED(hr))
-    {
-        return MFX_ERR_NOT_INITIALIZED;
-    }
+    MFX_CHECK(SUCCEEDED(hr), MFX_ERR_NOT_INITIALIZED);
     
     // create DXVA services object
     hr = D3DAuxObjects.pD3DDeviceManager->GetVideoService(D3DAuxObjects.m_hRegistrationDevice, 
                                             IID_IDirectXVideoProcessorService,
                                             (void**)&D3DAuxObjects.m_pDXVideoProcessorService);
     
-    // check errors
-    if (FAILED(hr))
-    {
-        // close device handle
-        D3DAuxObjects.pD3DDeviceManager->CloseDeviceHandle(D3DAuxObjects.m_hRegistrationDevice);
-        D3DAuxObjects.m_hRegistrationDevice = INVALID_HANDLE_VALUE;
-
-        return MFX_ERR_NOT_INITIALIZED;
-    }
+    D3DAuxObjects.pD3DDeviceManager->CloseDeviceHandle(D3DAuxObjects.m_hRegistrationDevice);
+    D3DAuxObjects.m_hRegistrationDevice = INVALID_HANDLE_VALUE;
+    
+    MFX_CHECK(SUCCEEDED(hr), MFX_ERR_NOT_INITIALIZED);
 
     // -----------------------------------------------------------------
     // skip checking of GUID by GetVideoProccesorDeviceGuids, because of
@@ -369,14 +358,7 @@ mfxStatus AuxiliaryDevice::CreateSurfaceRegistrationDevice(void)
                                                                         1,
                                                                         &D3DAuxObjects.m_pDXRegistrationDevice);
 
-    if (FAILED(hr))
-    {
-        // close device handle
-        D3DAuxObjects.pD3DDeviceManager->CloseDeviceHandle(D3DAuxObjects.m_hRegistrationDevice);
-        D3DAuxObjects.m_hRegistrationDevice = INVALID_HANDLE_VALUE;
-
-        return MFX_ERR_NOT_INITIALIZED;
-    }
+    MFX_CHECK(SUCCEEDED(hr), MFX_ERR_NOT_INITIALIZED);
     
     // create surface
     if (D3DAuxObjects.m_pDummySurface)
@@ -395,15 +377,7 @@ mfxStatus AuxiliaryDevice::CreateSurfaceRegistrationDevice(void)
                                                                  &D3DAuxObjects.m_pDummySurface, 
                                                                  0);
 
-    // check errors
-    if (FAILED(hr))
-    {
-        // close device handle
-        D3DAuxObjects.pD3DDeviceManager->CloseDeviceHandle(D3DAuxObjects.m_hRegistrationDevice);
-        D3DAuxObjects.m_hRegistrationDevice = INVALID_HANDLE_VALUE;
-
-        return MFX_ERR_NOT_INITIALIZED;
-    }
+    MFX_CHECK(SUCCEEDED(hr), MFX_ERR_NOT_INITIALIZED);
 
     return MFX_ERR_NONE;
 

@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2009-2013 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2009-2014 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -225,17 +225,18 @@ mfxStatus FastCompositingDDI::Initialize(
     {
         MFX_CHECK(pD3DDeviceManager, MFX_ERR_NOT_INITIALIZED);
         
-        HANDLE hDXVideoDecoderService;
+        HANDLE hDXVideoDeviceHandle;
 
-        hRes = pD3DDeviceManager->OpenDeviceHandle(&hDXVideoDecoderService);
+        hRes = pD3DDeviceManager->OpenDeviceHandle(&hDXVideoDeviceHandle);
 
         MFX_CHECK(SUCCEEDED(hRes), MFX_ERR_DEVICE_FAILED);
 
-        hRes = pD3DDeviceManager->GetVideoService(hDXVideoDecoderService, 
+        hRes = pD3DDeviceManager->GetVideoService(hDXVideoDeviceHandle, 
                                                 IID_IDirectXVideoDecoderService, 
                                                 (void**)&pVideoDecoderService);
-
         MFX_CHECK(SUCCEEDED(hRes), MFX_ERR_DEVICE_FAILED);
+
+        pD3DDeviceManager->CloseDeviceHandle(hDXVideoDeviceHandle);
     }
 
     MFX_CHECK(pVideoDecoderService, MFX_ERR_NOT_INITIALIZED);
