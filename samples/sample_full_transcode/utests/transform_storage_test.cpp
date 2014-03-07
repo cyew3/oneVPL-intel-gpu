@@ -15,7 +15,7 @@ public:
     mk_trans1(*new MockTransform()),
     mk_trans2(*new MockTransform()),
     mk_trans3(*new MockTransform()){}
- 
+
 protected:
     class ConfigureHolder {
     public:
@@ -47,7 +47,7 @@ protected:
 
 
 TEST_F(TransformStorageTest, empty_if_not_added) {
-    
+
     EXPECT_EQ(true, storage.empty(0));
 }
 
@@ -94,7 +94,7 @@ TEST_F(TransformStorageTest, 2_tracks_1_transform_expect_register_with_NULL_neig
     mfxVideoParam vp = {};
     vp.mfx.CodecId = MFX_CODEC_AVC;
     storage.RegisterTransform(TransformConfigDesc(0, vp),instant_auto_ptr<ITransform>(&mk_trans1));
-    
+
     vp.mfx.CodecId = MFX_CODEC_HEVC;
     storage.RegisterTransform(TransformConfigDesc(1, vp),instant_auto_ptr<ITransform>(&mk_trans2));
 
@@ -104,7 +104,7 @@ TEST_F(TransformStorageTest, 2_tracks_1_transform_expect_register_with_NULL_neig
 }
 
 TEST_F(TransformStorageTest, 1_track_2_transforms_expect_register_with_pointer_to_neighbor_on_resolve) {
-    
+
     EXPECT_CALL(mk_trans1, Configure(_, &mk_trans2)).WillOnce(Invoke(&c1, &ConfigureHolder::OnConfigure));
     EXPECT_CALL(mk_trans2, Configure(_, NULL)).WillOnce(Invoke(&c2, &ConfigureHolder::OnConfigure));
 

@@ -23,7 +23,7 @@
 class FFDecWorkload
 {
 public:
-    FFDecWorkload() 
+    FFDecWorkload()
         : m_ffCodec(NULL)
         , m_bsIn()
         , m_pOut(NULL)
@@ -54,7 +54,7 @@ public:
             m_bsData.insert(m_bsData.end(), bs_in->Data + bs_in->DataOffset, bs_in->Data + bs_in->DataOffset + bs_in->DataLength);
             m_bsData.resize(bs_in->DataLength + FF_INPUT_BUFFER_PADDING_SIZE);
 
-            
+
             m_bsIn.MaxLength  = (mfxU32)m_bsData.size();
             m_bsIn.DataOffset = 0;
 
@@ -65,10 +65,10 @@ public:
     }
 
     mfxStatus operator () () {
-        // Task is run once and saved status 
+        // Task is run once and saved status
         if (m_executeSts)
             return m_executeSts;
-        
+
         //copy ctor implementation is absent, and this buffer will point to wrong location, if initialized in curent ctor
         if (!m_bsData.empty()) {
             m_bsIn.Data       = &m_bsData.front();

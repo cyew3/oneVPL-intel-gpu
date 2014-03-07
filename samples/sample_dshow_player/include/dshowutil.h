@@ -10,7 +10,7 @@
 */
 //////////////////////////////////////////////////////////////////////////
 // DSUtil.h: DirectShow helper functions.
-// 
+//
 // THIS CODE AND INFORMATION IS PROVIDED "AS IS" WITHOUT WARRANTY OF
 // ANY KIND, EITHER EXPRESSED OR IMPLIED, INCLUDING BUT NOT LIMITED TO
 // THE IMPLIED WARRANTIES OF MERCHANTABILITY AND/OR FITNESS FOR A
@@ -25,7 +25,7 @@
 // Functions named "IsX" return true or false.
 //
 // Functions named "FindX" enumerate over a collection and return the first
-// matching instance. 
+// matching instance.
 
 #pragma once
 
@@ -56,7 +56,7 @@
     IsRenderer
     SupportsPropertyPage
 
-    Graph Building Functions 
+    Graph Building Functions
     -----------------------
     AddFilterByCLSID
     AddFilterFromMoniker
@@ -107,7 +107,7 @@ const LONGLONG ONE_MSEC = ONE_SECOND / 10000;  // One millisecond, in 100-nanose
 
 // Directions for filter graph data flow.
 enum GraphDirection
-{ 
+{
     UPSTREAM, DOWNSTREAM
 };
 
@@ -135,7 +135,7 @@ HRESULT GetPinCategory(
 
 ///////////////////////////////////////////////////////////////////////
 // Name: GetPinMediaType
-// Desc: Given a pin, find a preferred media type 
+// Desc: Given a pin, find a preferred media type
 //
 // pPin         Pointer to the pin
 // majorType    Preferred major type (GUID_NULL = don't care)
@@ -152,8 +152,8 @@ HRESULT GetPinCategory(
 ///////////////////////////////////////////////////////////////////////
 
 HRESULT GetPinMediaType(
-    IPin *pPin, 
-    REFGUID majorType, 
+    IPin *pPin,
+    REFGUID majorType,
     REFGUID subType,
     REFGUID formatType,
     AM_MEDIA_TYPE **ppmt
@@ -256,7 +256,7 @@ HRESULT FindConnectedPin(
 ///////////////////////////////////////////////////////////////////////
 
 HRESULT FindPinByCategory(
-    IBaseFilter *pFilter, 
+    IBaseFilter *pFilter,
     REFGUID guidCategory,
     PIN_DIRECTION PinDir,
     IPin **ppPin
@@ -280,13 +280,13 @@ HRESULT FindPinByName(IBaseFilter *pFilter, const WCHAR *wszName, IPin **ppPin);
 // Name: FindPinInterface
 // Desc: Search a filter for a pin that exposes a specified interface.
 //       (Returns the first instance found.)
-// 
+//
 // pFilter  Pointer to the filter to search.
 // iid      IID of the interface.
 // ppUnk    Receives the interface pointer.
 // Q        Address of an ATL smart pointer.
 //
-// Note:    This function returns the first instance that it finds. 
+// Note:    This function returns the first instance that it finds.
 //          If no pin is found, the function returns VFW_E_NOT_FOUND.
 //          The templated version deduces the IID.
 ///////////////////////////////////////////////////////////////////////
@@ -303,7 +303,7 @@ HRESULT FindPinInterface(IGraphBuilder *pGraph, Q** pp)
 
 ///////////////////////////////////////////////////////////////////////
 // Name: FindMatchingPin (template)
-// Desc: Return the first pin on a filter that matches a caller-supplied 
+// Desc: Return the first pin on a filter that matches a caller-supplied
 //       function or function object
 //
 // FN must be either
@@ -443,21 +443,21 @@ HRESULT AddFilterFromMoniker(
 // pGraph: Pointer to the filter graph manager.
 // szFile: File name.
 // clsid:  CLSID of the source filter to use.
-// ppSourceFilter: Receives a pointer to the source filter's IBaseFilter 
+// ppSourceFilter: Receives a pointer to the source filter's IBaseFilter
 //                 interface.
 //
 // This function creates the filter, adds it to the graph, queries for
-// IFileSourceFilter, and calls IFileSourceFilter::Load. 
+// IFileSourceFilter, and calls IFileSourceFilter::Load.
 //
 // You can use this function if you want to specify the source filter by
 // CLSID. Otherwise, just use IGraphBuilder::AddSourceFilter.
 ///////////////////////////////////////////////////////////////////////
 
 HRESULT AddSourceFilter(
-    IGraphBuilder *pGraph,          
-    const WCHAR *szFile,            
-    const GUID& clsid,              
-    IBaseFilter **ppSourceFilter    
+    IGraphBuilder *pGraph,
+    const WCHAR *szFile,
+    const GUID& clsid,
+    IBaseFilter **ppSourceFilter
     );
 
 
@@ -472,8 +472,8 @@ HRESULT AddSourceFilter(
 // bOverwrite: If TRUE, overwrite the file.
 // ppSourceFilter: Receives the filter's IBaseFilter interface.
 //
-// This function creates the filter, adds it to the graph, sets the 
-// file name, and set the overwrite mode. 
+// This function creates the filter, adds it to the graph, sets the
+// file name, and set the overwrite mode.
 ///////////////////////////////////////////////////////////////////////
 HRESULT AddWriterFilter(
     IGraphBuilder *pGraph,
@@ -492,20 +492,20 @@ HRESULT AddWriterFilter(
 // (1) From output pin to filter
 // (2) From filter to filter
 // (3) From filter to input pin
-// 
+//
 // Note: The 4th combination (output pin to input pin) is already
-// provided by the IGraphBuilder::Connect method. 
+// provided by the IGraphBuilder::Connect method.
 //
 // All of these methods search the filter(s) for the first unconnected
-// pin. If that pin fails, the method fails. In some cases, it may be 
-// better to try every pin until one succeeds, or loop through the pins 
-// and examine the preferred media types. 
-// 
+// pin. If that pin fails, the method fails. In some cases, it may be
+// better to try every pin until one succeeds, or loop through the pins
+// and examine the preferred media types.
+//
 ///////////////////////////////////////////////////////////////////////
 
-HRESULT ConnectFilters(IGraphBuilder *pGraph, IPin *pOut, IBaseFilter *pDest);  
+HRESULT ConnectFilters(IGraphBuilder *pGraph, IPin *pOut, IBaseFilter *pDest);
 HRESULT ConnectFilters(IGraphBuilder *pGraph, IBaseFilter *pSrc, IBaseFilter *pDest);
-HRESULT ConnectFilters(IGraphBuilder *pGraph, IBaseFilter *pSrc, IPin *pIn);  
+HRESULT ConnectFilters(IGraphBuilder *pGraph, IBaseFilter *pSrc, IPin *pIn);
 
 
 ///////////////////////////////////////////////////////////////////////
@@ -536,18 +536,18 @@ HRESULT DisconnectPin(
 ///////////////////////////////////////////////////////////////////////
 // Name: FindFilterInterface
 // Desc: Search the graph for a filter that exposes a specified interface.
-// 
+//
 // pGraph   Pointer to the Filter Graph Manager.
 // iid      IID of the interface to retrieve.
 // ppUnk    Receives the interface pointer.
 // Q        Address of an ATL smart pointer.
 //
-// Note:    This function returns the first instance that it finds. 
+// Note:    This function returns the first instance that it finds.
 //          If no filter is found, the function returns VFW_E_NOT_FOUND.
 //          The templated version takes an ATL smart pointer and deduces the IID.
 ///////////////////////////////////////////////////////////////////////
 
-HRESULT FindFilterInterface(IGraphBuilder *pGraph, REFGUID iid, void **ppUnk);  
+HRESULT FindFilterInterface(IGraphBuilder *pGraph, REFGUID iid, void **ppUnk);
 
 template <class Q>
 HRESULT FindFilterInterface(IGraphBuilder *pGraph, Q** pp)
@@ -560,15 +560,15 @@ HRESULT FindFilterInterface(IGraphBuilder *pGraph, Q** pp)
 
 ///////////////////////////////////////////////////////////////////////
 // Name: FindGraphInterface
-// Desc: Search the graph for a filter OR pin that exposes a specified 
-//       interface. 
-// 
+// Desc: Search the graph for a filter OR pin that exposes a specified
+//       interface.
+//
 // pGraph   Pointer to the Filter Graph Manager.
 // iid      IID of the interface.
 // ppUnk    Receives the interface pointer.
 // Q        Address of an ATL smart pointer.
 //
-// Note:    This function returns the first instance that it finds. 
+// Note:    This function returns the first instance that it finds.
 //          If no match is found, the function returns VFW_E_NOT_FOUND.
 //          The templated version takes an ATL smart pointer and deduces the IID.
 ///////////////////////////////////////////////////////////////////////
@@ -585,9 +585,9 @@ HRESULT FindGraphInterface(IGraphBuilder *pGraph, Q** pp)
 
 ///////////////////////////////////////////////////////////////////////
 // Name: GetNextFilter
-// Desc: Find a filter's upstream or downstream neighbor. 
+// Desc: Find a filter's upstream or downstream neighbor.
 //       (Returns the first instance found.)
-// 
+//
 // If there is no matching filter, the function returns VFW_E_NOT_CONNECTED.
 ///////////////////////////////////////////////////////////////////////
 
@@ -600,10 +600,10 @@ HRESULT GetNextFilter(
 
 ///////////////////////////////////////////////////////////////////////
 // Name: GetConnectedFilter
-// Desc: Returns the filter on the other side of a pin. 
+// Desc: Returns the filter on the other side of a pin.
 //
 // ie, Given a pin, get the pin connected to it, and return that pin's filter.
-// 
+//
 // pPin     Pointer to the pin.
 // ppFilter Receives a pointer to the filter.
 //
@@ -630,10 +630,10 @@ HRESULT RemoveFilter(
 
 ///////////////////////////////////////////////////////////////////////
 // Name: RemoveFiltersDownstream
-// Desc: Remove a filter from the graph, including all filters 
+// Desc: Remove a filter from the graph, including all filters
 //       downstream from that filter.
 //
-// Note: This function removes pFilter from the graph and 
+// Note: This function removes pFilter from the graph and
 //       removes every filter that is downstream from pFilter.
 ///////////////////////////////////////////////////////////////////////
 
@@ -650,8 +650,8 @@ HRESULT RemoveFiltersDownstream(
 
 **************************************************************************/
 
-// CopyFormatBlock: 
-// Allocates memory for the format block in the media type and copies the 
+// CopyFormatBlock:
+// Allocates memory for the format block in the media type and copies the
 // buffer into the format block. Also releases the previous format block.
 HRESULT CopyFormatBlock(AM_MEDIA_TYPE *pmt, const BYTE *pFormat, DWORD cbSize);
 
@@ -671,8 +671,8 @@ inline LONG RectHeight(const RECT& rc) { return rc.bottom - rc.top; }
 // Converts from frames-to-second to frame duration.
 ///////////////////////////////////////////////////////////////////////
 
-inline REFERENCE_TIME FramesPerSecToFrameLength(double fps) 
-{ 
+inline REFERENCE_TIME FramesPerSecToFrameLength(double fps)
+{
     return (REFERENCE_TIME)((double)ONE_SECOND / fps);
 }
 
@@ -799,7 +799,7 @@ HRESULT CreateRGBVideoType(
 // Name: LetterBoxRect
 // Desc: Find the largest rectangle that fits inside rcDest and has
 //       the specified aspect ratio.
-// 
+//
 // aspectRatio: Desired aspect ratio
 // rcDest:      Destination rectangle (defines the bounds)
 // prcResult:   Pointer to a RECT struct. The method fills in the
@@ -807,7 +807,7 @@ HRESULT CreateRGBVideoType(
 //
 ///////////////////////////////////////////////////////////////////////
 
-HRESULT LetterBoxRect(const SIZE &aspectRatio, const RECT &rcDest, 
+HRESULT LetterBoxRect(const SIZE &aspectRatio, const RECT &rcDest,
                       RECT *prcResult);
 
 
@@ -816,7 +816,7 @@ HRESULT LetterBoxRect(const SIZE &aspectRatio, const RECT &rcDest,
 
 //----------------------------------------------------------------------------
 // SetMediaTypeFormat: Sets the format block of a media type
-// 
+//
 // pmt: Pointer to the AM_MEDIA_TYPE structure. Cannot be NULL
 // pBuffer: Pointer to the format block. (Can be NULL)
 // cbBuffer: Size of pBuffer in bytes
@@ -860,7 +860,7 @@ inline void DeleteMediaType(AM_MEDIA_TYPE *pmt)
 {
     if (pmt != NULL)
     {
-        FreeMediaType(*pmt); 
+        FreeMediaType(*pmt);
         CoTaskMemFree(pmt);
     }
 }

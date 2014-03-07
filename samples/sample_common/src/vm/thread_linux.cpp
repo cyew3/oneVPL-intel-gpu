@@ -287,7 +287,7 @@ mfxStatus MSDKThread::GetExitCode()
 mfxStatus msdk_setrlimit_vmem(mfxU64 size)
 {
     struct rlimit limit;
-    
+
     limit.rlim_cur = size;
     limit.rlim_max = size;
     if (setrlimit(RLIMIT_AS, &limit)) return MFX_ERR_UNKNOWN;

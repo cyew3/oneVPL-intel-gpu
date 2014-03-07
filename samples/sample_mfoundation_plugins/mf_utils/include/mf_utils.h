@@ -99,7 +99,7 @@ Defined Global Functions:
 #if MFX_D3D11_SUPPORT
     //since ms decoder create surfaces with inappropriate bins flags we cannot pas this surface directly to decoder, we will use owr own surface and copysubresource
     #define MF_D3D11_COPYSURFACES
-#endif    
+#endif
 #define MF_MFX_IMPL MFX_IMPL_HARDWARE
 
 //#define MF_ENABLE_PICTURE_COMPLEXITY_LIMITS

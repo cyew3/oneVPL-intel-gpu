@@ -8,7 +8,7 @@
 //
 */
 
-#pragma once    
+#pragma once
 
 #include "atlbase.h"
 
@@ -31,14 +31,14 @@
 
 class CDecoderOutputPin;
 
-class CDecVideoFilter : public CTransformFilter, public ISpecifyPropertyPages, public IAboutProperty, public IConfigureVideoDecoder, 
+class CDecVideoFilter : public CTransformFilter, public ISpecifyPropertyPages, public IAboutProperty, public IConfigureVideoDecoder,
                         public IVideoDecoderProperty
 {
 public:
 
     DECLARE_IUNKNOWN;
     // Default constructor
-    CDecVideoFilter(TCHAR *tszName,LPUNKNOWN punk, const GUID VIDEOCodecGUID, HRESULT *phr, 
+    CDecVideoFilter(TCHAR *tszName,LPUNKNOWN punk, const GUID VIDEOCodecGUID, HRESULT *phr,
         mfxU16 APIVerMinor = 1, mfxU16 APIVerMajor = 1);
     // Destructor
     ~CDecVideoFilter(void);
@@ -95,10 +95,10 @@ protected:
     virtual void        WriteMfxImplToRegistry();
 
 protected:
-    
+
     CCritSec            m_csLock;
 
-    CComBSTR            m_bstrFilterName;      //filter name   
+    CComBSTR            m_bstrFilterName;      //filter name
 
     CBaseDecoder*       m_pDecoder;
 
@@ -106,14 +106,14 @@ protected:
     BOOL                m_bFlushing;
 
     // minimum required API version
-    mfxU16                        m_nAPIVerMinor; 
+    mfxU16                        m_nAPIVerMinor;
     mfxU16                        m_nAPIVerMajor;
 
     mfxVideoParam       m_mfxParamsVideo;      // video params
     mfxU32              m_nPitch;
 
     BYTE                m_pTempBuffer[5];
-    mfxU32              m_nTempBufferLen;   
+    mfxU32              m_nTempBufferLen;
 
     CTimeManager*       m_pTimeManager;
 
@@ -126,7 +126,7 @@ protected:
 
     IDirect3DDeviceManager9* m_pManager;
 
-    CDecoderOutputPin  *m_pDecoderOutput; // custom interface    
+    CDecoderOutputPin  *m_pDecoderOutput; // custom interface
 
     // pixel aspect ratio
     mfxU16              m_nPARW;
@@ -148,8 +148,8 @@ public:
 
     CDecoderOutputPin(CTransformFilter* pTransformFilter, HRESULT* phr);
     virtual ~CDecoderOutputPin();
-  
-    STDMETHODIMP QueryAccept(const AM_MEDIA_TYPE* pmt);    
+
+    STDMETHODIMP QueryAccept(const AM_MEDIA_TYPE* pmt);
 
     HRESULT InitAllocator(IMemAllocator **ppAlloc);
 

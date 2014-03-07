@@ -40,18 +40,18 @@ public:
 
     //Temporal Layers Count
     bool        IsTemporalLayersCountValid(ULONG nTemporalLayersCount) const;
-    
+
     //doesn't change current TLC immediately, just remebers new value and generates new ext buffer for it
     HRESULT     SetNewTemporalLayersCount(ULONG nTemporalLayersCount);
     void        TemporalLayersCountChanged();
-    
+
     //TODO: check if it is possible to hide ULONG GetTemporalLayersCount()
     inline ULONG       GetTemporalLayersCount() const { return m_nTemporalLayersCount; }
 
     HRESULT     GetTemporalLayersCount(ULONG &nTemporalLayersCount) const;
 
     //Mfx structures generators
-    
+
     // allocates mfxEncodeCtrl, making the caller responsible for freeing
     // Increments frame number (m_nFrameNum)
     mfxEncodeCtrl*              GenerateFrameEncodeCtrl();

@@ -11,7 +11,7 @@
 #include "cmdline_options.h"
 #include "exceptions.h"
 
-#include "itransform.h" 
+#include "itransform.h"
 #include "fileio_wrapper.h"
 #include "output_format.h"
 #include "trace_levels.h"
@@ -153,8 +153,8 @@ CmdLineParser* PipelineFactory::CreateCmdLineParser()
                MSDK_STRING("Where [options] can be:\n");
 
     msdk_stringstream UsageExamples;
-    UsageExamples << MSDK_STRING("\nExample:\n") << OPTION_I << MSDK_STRING(" in.m2ts ") << OPTION_O << MSDK_STRING(" out.mp4 ")<< OPTION_VB << MSDK_STRING(" 1000 ") << 
-        OPTION_AB << MSDK_STRING(" 16") << std::endl 
+    UsageExamples << MSDK_STRING("\nExample:\n") << OPTION_I << MSDK_STRING(" in.m2ts ") << OPTION_O << MSDK_STRING(" out.mp4 ")<< OPTION_VB << MSDK_STRING(" 1000 ") <<
+        OPTION_AB << MSDK_STRING(" 16") << std::endl
         << OPTION_I << MSDK_STRING(" in.mp4 ") << OPTION_O << MSDK_STRING(" out.m2ts ") << OPTION_VB << MSDK_STRING(" 2000 ") << OPTION_AB << MSDK_STRING(" 52 ") <<
         OPTION_D3D11 << MSDK_STRING(" ") << OPTION_HW << std::endl
         << OPTION_I << MSDK_STRING(" in.mp4 ")<< OPTION_O << MSDK_STRING(" out.abc ") << OPTION_VB << MSDK_STRING(" 2000 ") << OPTION_AB << MSDK_STRING(" 52 ") <<
@@ -181,7 +181,7 @@ CmdLineParser* PipelineFactory::CreateCmdLineParser()
 #endif
         (ArgHandler<bool>(OPTION_HW, MSDK_CHAR("Use hardware video library, otherwise software library selected")))
         //(ArgHandler<bool>(OPTION_ASW, MSDK_CHAR("Use software audio library, by default it is same as video")))
-        //(ArgHandler<msdk_string>(OPTION_ACODEC, supported_acodec.str())) 
+        //(ArgHandler<msdk_string>(OPTION_ACODEC, supported_acodec.str()))
         (ArgHandler<msdk_string>(OPTION_VCODEC, supported_vcodec.str()))
         //(ArgHandler<msdk_string>(OPTION_PLG, MSDK_CHAR("Generic MediaSDK plugin")))
         //(ArgHandler<msdk_string>(OPTION_VDECPLG, MSDK_CHAR("MediaSDK decoder plugin")))
@@ -234,7 +234,7 @@ MFXPlugin* PipelineFactory::CreatePlugin(mfxPluginType type, MFXVideoUSER *usrMo
 }*/
 
 ITransform* PipelineFactory::CreatePluginTransform(MFXVideoSessionExt &session, mfxPluginType type, const msdk_string & pluginFullPath, int timeout) {
-    
+
     return new Transform<MFXVideoUSER>(*this, session, type, pluginFullPath, timeout);
 }
 

@@ -223,7 +223,7 @@ struct AVCSeqParamSet
         bit_depth_luma = paramset.bit_depth_luma;
         bit_depth_chroma = paramset.bit_depth_chroma;
         qpprime_y_zero_transform_bypass_flag = paramset.qpprime_y_zero_transform_bypass_flag;
-        MSDK_MEMCPY_VAR(type_of_scaling_list_used, 
+        MSDK_MEMCPY_VAR(type_of_scaling_list_used,
             paramset.type_of_scaling_list_used, sizeof(type_of_scaling_list_used));
         seq_scaling_matrix_present_flag = paramset.seq_scaling_matrix_present_flag;
         MSDK_MEMCPY_VAR(ScalingLists4x4, paramset.ScalingLists4x4, sizeof(ScalingLists4x4));
@@ -633,7 +633,7 @@ struct AVCPicParamSet
             SliceGroupInfo.t3.pSliceGroupIDMap)
         {
             SliceGroupInfo.t3.pSliceGroupIDMap = new mfxU8[SliceGroupInfo.t3.pic_size_in_map_units];
-            MSDK_MEMCPY(SliceGroupInfo.t3.pSliceGroupIDMap, pps.SliceGroupInfo.t3.pSliceGroupIDMap, 
+            MSDK_MEMCPY(SliceGroupInfo.t3.pSliceGroupIDMap, pps.SliceGroupInfo.t3.pSliceGroupIDMap,
                 SliceGroupInfo.t3.pic_size_in_map_units * sizeof(mfxU8));
         }
     }

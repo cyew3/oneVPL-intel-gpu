@@ -28,7 +28,7 @@ class ITransform {
 public:
     virtual ~ITransform() {};
     virtual void Configure(MFXAVParams& , ITransform *pNext) = 0;
-    
+
     virtual void PutSample(SamplePtr&) = 0;
     virtual bool GetSample(SamplePtr&) = 0;
     //rationale need an interface to negotiate number and type of shared surfaces

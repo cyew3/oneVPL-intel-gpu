@@ -76,7 +76,7 @@ HRESULT CMPEG2EncPropPage::FillCombos(void)
             strItems[j]   = CodecPreset::Preset2Str(i);
             nItemsData[j] = i;
             j++;
-        }        
+        }
     }
 
     hr = FillCombo(IDC_COMBO_PROFILE, strItems, nItemsData, 4, 0);
@@ -117,11 +117,11 @@ HRESULT CMPEG2EncPropPage::FillCombos(void)
     CHECK_HRESULT(hr);
 
     //fill level combo
-    strItems[0]  = _T("Autoselect");    nItemsData[0]  = IConfigureVideoEncoder::Params::LL_AUTOSELECT; 
-    strItems[1]  = _T("Low");           nItemsData[1]  = IConfigureVideoEncoder::Params::LL_LOW;        
-    strItems[2]  = _T("Main");          nItemsData[2]  = IConfigureVideoEncoder::Params::LL_MAIN;       
-    strItems[3]  = _T("High1440");      nItemsData[3]  = IConfigureVideoEncoder::Params::LL_HIGH1440;   
-    strItems[4]  = _T("High");          nItemsData[4]  = IConfigureVideoEncoder::Params::LL_HIGH;       
+    strItems[0]  = _T("Autoselect");    nItemsData[0]  = IConfigureVideoEncoder::Params::LL_AUTOSELECT;
+    strItems[1]  = _T("Low");           nItemsData[1]  = IConfigureVideoEncoder::Params::LL_LOW;
+    strItems[2]  = _T("Main");          nItemsData[2]  = IConfigureVideoEncoder::Params::LL_MAIN;
+    strItems[3]  = _T("High1440");      nItemsData[3]  = IConfigureVideoEncoder::Params::LL_HIGH1440;
+    strItems[4]  = _T("High");          nItemsData[4]  = IConfigureVideoEncoder::Params::LL_HIGH;
 
     hr = FillCombo(IDC_COMBO_LEVEl, strItems, nItemsData, 5, m_EncoderParams.level_idc);
     CHECK_HRESULT(hr);
@@ -181,8 +181,8 @@ HRESULT CMPEG2EncPropPage::ConfigureEditsSpins(void)
         nRecommended =  m_EncoderParams.rc_control.bitrate;
     }
 
-    if (m_EncoderParams.rc_control.bitrate && 
-        m_EncoderParams.rc_control.bitrate >= nMin && 
+    if (m_EncoderParams.rc_control.bitrate &&
+        m_EncoderParams.rc_control.bitrate >= nMin &&
         m_EncoderParams.rc_control.bitrate <= nMax)
     {
         nRecommended = m_EncoderParams.rc_control.bitrate;
@@ -229,7 +229,7 @@ HRESULT CMPEG2EncPropPage::OnActivate(void)
 
 void CMPEG2EncPropPage::InitDlgItemsArray()
 {
-    CConfigPropPage::ItemVal items[] = 
+    CConfigPropPage::ItemVal items[] =
     {
         {IDC_SPIN_BITRATE,    (DWORD*)0,                                            true},
         {IDC_SPIN_IFRAME,     (DWORD*)0,                                            true},
@@ -262,7 +262,7 @@ void CMPEG2EncPropPage::InitDlgItemsArray()
     {
         return;
     }
-    
+
     MSDK_MEMCPY_BUF(m_pItems, 0, ARRAY_SIZE(items) * sizeof (CConfigPropPage::ItemVal), items, sizeof (items));
     m_nItems = ARRAY_SIZE(items);
 }
@@ -285,7 +285,7 @@ INT_PTR CMPEG2EncPropPage::OnReceiveMessage(HWND hwnd, UINT uMsg, WPARAM wParam,
     switch (uMsg)
     {
     case WM_COMMAND:
-        
+
         if (LOWORD(wParam) == IDC_COMBO_PRESET)
         {
             GetDlgItemData(IDC_COMBO_PRESET, &m_EncoderParams.preset);
@@ -294,7 +294,7 @@ INT_PTR CMPEG2EncPropPage::OnReceiveMessage(HWND hwnd, UINT uMsg, WPARAM wParam,
                                 , IDC_COMBO_PROFILE
                                 , IDC_COMBO_TRGTUSE
                                 , IDC_EDIT_BITRATE
-                                , IDC_SPIN_BITRATE);        
+                                , IDC_SPIN_BITRATE);
         }
         else
         if (LOWORD(wParam) == IDC_COMBO_RCCONTROL)
@@ -317,14 +317,14 @@ INT_PTR CMPEG2EncPropPage::OnReceiveMessage(HWND hwnd, UINT uMsg, WPARAM wParam,
             hWnd = GetDlgItem(m_Dlg, IDC_SPIN_BITRATE);
             MSDK_CHECK_POINTER(hWnd, E_POINTER);
 
-            pcwndSpin = (CSpinButtonCtrl*)CWnd::FromHandle(hWnd);  
+            pcwndSpin = (CSpinButtonCtrl*)CWnd::FromHandle(hWnd);
             MSDK_CHECK_POINTER(pcwndSpin, E_POINTER);
 
             //get requested control
             hWnd = GetDlgItem(m_Dlg, IDC_EDIT_BITRATE);
             MSDK_CHECK_POINTER(hWnd, E_POINTER);
 
-            pEdt = (CEdit*)CWnd::FromHandle(hWnd); 
+            pEdt = (CEdit*)CWnd::FromHandle(hWnd);
             MSDK_CHECK_POINTER(pEdt, E_POINTER);
 
             int nLower(0), nUpper(0);
@@ -351,7 +351,7 @@ INT_PTR CMPEG2EncPropPage::OnReceiveMessage(HWND hwnd, UINT uMsg, WPARAM wParam,
                                  , IDC_SPIN_BITRATE);
             //EnableDialogControls();
         }
-        
+
         SetDirty();
         break;
     } // switch

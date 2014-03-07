@@ -82,7 +82,7 @@ public:
         io = MFXDataIOAdapter(data_io) ;
         return MFXSplitter_Init(&io, &m_spl);
     }
-    virtual mfxStatus Close() { 
+    virtual mfxStatus Close() {
         mfxStatus sts = MFXSplitter_Close(m_spl);
         m_spl = (mfxSplitter)0;
         return sts;
@@ -159,7 +159,7 @@ public:
         io = MFXDataIOAdapter(data_io) ;
         return MFXMuxer_Init(&par, &io, &m_mux);
     }
-    virtual mfxStatus Close() { 
+    virtual mfxStatus Close() {
         mfxStatus sts = MFXMuxer_Close(m_mux);
         m_mux = (mfxMuxer)0;
         return sts;

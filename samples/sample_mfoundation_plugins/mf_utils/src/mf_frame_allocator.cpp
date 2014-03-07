@@ -62,7 +62,7 @@ HRESULT MFFrameAllocator::QueryInterface(REFIID iid, void** ppv)
     {
         MFX_LTRACE_S(MF_TL_GENERAL, "IUnknown");
         *ppv = this;
-        
+
         AddRef();
     }
     else if (iid == IID_IDirect3DDeviceManager9)
@@ -70,7 +70,7 @@ HRESULT MFFrameAllocator::QueryInterface(REFIID iid, void** ppv)
         MFX_LTRACE_S(MF_TL_GENERAL, "IDirect3DDeviceManager9");
         CComQIPtr<IDirect3DDeviceManager9> iDeviceManager (GetDeviceManager());
         CHECK_POINTER(iDeviceManager.p, E_POINTER);
-     
+
         *ppv = iDeviceManager.Detach();
     }
     else if (iid == IID_IDirectXVideoDecoderService)
@@ -98,7 +98,7 @@ HRESULT MFFrameAllocator::QueryInterface(REFIID iid, void** ppv)
         MFX_LTRACE_GUID(MF_TL_GENERAL, iid);
         return E_NOINTERFACE;
     }
-    
+
     MFX_LTRACE_S(MF_TL_GENERAL, "S_OK");
     return S_OK;
 }

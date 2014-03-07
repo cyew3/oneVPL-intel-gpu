@@ -15,11 +15,11 @@
 #include <functional>
 #include <iostream>
 
-bool CmdLineParser::Parse(const msdk_string & params) { 
+bool CmdLineParser::Parse(const msdk_string & params) {
     msdk_string str_remained(params);
     msdk_string str_head;
     bool bHandlerFound = true;
-    
+
     for (; bHandlerFound && !str_remained.empty(); )
     {
         size_t delimiter_pos = str_remained.find_first_of(MSDK_CHAR(' '));
@@ -31,7 +31,7 @@ bool CmdLineParser::Parse(const msdk_string & params) {
                 m_handled[str_head] = *i;
 
                 size_t nAccepted = (*i)->Handle(str_remained);
-            
+
                 if (!nAccepted) {
                     return false;
                 }
@@ -46,7 +46,7 @@ bool CmdLineParser::Parse(const msdk_string & params) {
     }
 
     return bHandlerFound;
-} 
+}
 
 //returns handler for particular option
 const OptionHandler & CmdLineParser::at(const msdk_string & option_name) const {

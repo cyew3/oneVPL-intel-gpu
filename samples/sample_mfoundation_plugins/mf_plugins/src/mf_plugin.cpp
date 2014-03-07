@@ -113,7 +113,7 @@ MFPlugin::MFPlugin(HRESULT &hr, ClassRegData *pRegData):
     SAFE_NEW(m_pErrorFoundEvent, MyEvent(hr));
     if (!m_pErrorFoundEvent) hr = E_OUTOFMEMORY;
     if (FAILED(hr)) return;
-    
+
     SAFE_NEW(m_pErrorHandledEvent, MyEvent(hr));
     if (!m_pErrorHandledEvent) hr = E_OUTOFMEMORY;
     if (FAILED(hr)) return;
@@ -308,12 +308,12 @@ bool MFPlugin::IsVppNeeded(IMFMediaType* pType1, IMFMediaType* pType2)
     hr2 = pType2->GetBlob(MF_MT_MINIMUM_DISPLAY_APERTURE, (UINT8*)&area2, sizeof(area2), NULL);
     if (FAILED(hr1))
     {
-        area1.OffsetX.value = 0; area1.OffsetY.value = 0; 
+        area1.OffsetX.value = 0; area1.OffsetY.value = 0;
         area1.Area.cx = parA1; area1.Area.cy = parB1;
     }
     if (FAILED(hr2))
     {
-        area2.OffsetX.value = 0; area2.OffsetY.value = 0; 
+        area2.OffsetX.value = 0; area2.OffsetY.value = 0;
         area2.Area.cx = parA2; area2.Area.cy = parB2;
     }
     if (SUCCEEDED(hr1) || SUCCEEDED(hr2))

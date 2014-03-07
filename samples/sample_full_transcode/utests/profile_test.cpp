@@ -27,8 +27,8 @@ struct PipelineProfileTest : public ::testing::Test {
     mfxTrackInfo  *tracks[10];
     MockHandler   hdl;
     MockHandler   hdlo;
-    
-    PipelineProfileTest() 
+
+    PipelineProfileTest()
          : sp(splParams)
          , track_video()
          , track_audio()
@@ -46,7 +46,7 @@ struct PipelineProfileTest : public ::testing::Test {
             EXPECT_CALL(mock_parser, IsPresent(msdk_string(OPTION_SW))).WillOnce(Return(1==bSw));
         if (bAudioSW >=0 ) {
             EXPECT_CALL(mock_parser, IsPresent(msdk_string(OPTION_ASW))).WillOnce(Return(1==bAudioSW));
-        } 
+        }
         if (bD3d11 >= 0)
             EXPECT_CALL(mock_parser, IsPresent(msdk_string(OPTION_D3D11))).WillRepeatedly(Return(1==bD3d11));
     }
@@ -89,7 +89,7 @@ struct PipelineProfileTest : public ::testing::Test {
                 EXPECT_CALL(hdlo, GetValue(0)).WillRepeatedly(Return(filename.c_str()));
             }
         }
-       
+
         OutputFormat f;
         OutputCodec c;
         profile.reset( new PipelineProfile(splParams, mock_parser, f, c));
@@ -104,7 +104,7 @@ TEST_F(PipelineProfileTest, transcode_only_video_if_no_videos_in_input) {
 
     DECL_OPTION_IN_PARSER(OPTION_ACODEC, "copy", hdl);
     DECL_NO_OPTION_IN_PARSER(OPTION_AB);
-    
+
     tracks[0] = &track_audio;
     sp.NumTracks = 1;
 
@@ -126,12 +126,12 @@ TEST_F(PipelineProfileTest, vcodec_copy_no_encoder) {
 
     DECL_OPTION_IN_PARSER(OPTION_VCODEC, "copy", hdl);
     DECL_NO_OPTION_IN_PARSER(OPTION_VB);
-    
+
     tracks[0] = &track_video;
     sp.NumTracks = 1;
     track_video.VideoParam.CodecId = MFX_CODEC_AVC;
 
-   
+
     InitProfile();
 
     EXPECT_EQ(false, profile->isEncoderExist());
@@ -622,7 +622,7 @@ TEST_F (PipelineProfileTest, tracks_mapping_only_video_output_format_not_defined
 
     sp.NumTracks = 4;
     InitMFXImpl(0,0,0);
-    
+
     DECL_OPTION_IN_PARSER(OPTION_VCODEC, "copy", hdl);
     DECL_NO_OPTION_IN_PARSER(OPTION_VB);
 

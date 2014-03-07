@@ -12,9 +12,9 @@
 #include "exceptions.h"
 #include "trace_levels.h"
 
-PipelineProfile::PipelineProfile(const MFXStreamParams &splInfo, CmdLineParser & parser, OutputFormat & extensions, OutputCodec & codecs) 
+PipelineProfile::PipelineProfile(const MFXStreamParams &splInfo, CmdLineParser & parser, OutputFormat & extensions, OutputCodec & codecs)
     : m_splInfo(splInfo)
-    , m_parser(parser) 
+    , m_parser(parser)
     , m_bIsMuxer()
     , m_nAudioTracks()
     , m_nVideoTracks()
@@ -25,7 +25,7 @@ PipelineProfile::PipelineProfile(const MFXStreamParams &splInfo, CmdLineParser &
 {
     ParseLogLevel();
     ParsePlugins();
-    
+
     if (!m_parser.IsPresent(OPTION_O)) {
         MSDK_TRACE_ERROR(MSDK_STRING("Output file not specified"));
         throw PipelineProfileNoOuputError();
@@ -63,7 +63,7 @@ void PipelineProfile::ParseSessionInfo() {
 
     if (m_parser.IsPresent(OPTION_HW)) {
         m_vSesInfo.IMPL() = MFX_IMPL_HARDWARE;
-    } 
+    }
     if (m_parser.IsPresent(OPTION_D3D11)) {
         if (m_vSesInfo.IMPL() == MFX_IMPL_SOFTWARE) {
             MSDK_TRACE_ERROR(MSDK_STRING("Option -d3d11 can be used only with -hw option"));
@@ -88,9 +88,9 @@ void PipelineProfile::BuildAudioVideoInfo() {
 
     mfxStreamParams& sp = (mfxStreamParams&)m_splInfo;
 
-      //if format not defined try first audio and video tracks but not both 
+      //if format not defined try first audio and video tracks but not both
     bool bFormatDefined =  m_bAudioTracksEnabled || m_bVideoTracksEnabled;
-    
+
     if (!bFormatDefined) {
         for (size_t i = 0; i < sp.NumTracks; i++) {
             if (MFX_TRACK_ANY_AUDIO & sp.TrackInfo[i]->Type ) {
@@ -107,7 +107,7 @@ void PipelineProfile::BuildAudioVideoInfo() {
                     }
                     m_bAudioTracksEnabled = true;
                     MSDK_TRACE_INFO(MSDK_STRING("Track ")<<i<<("   : Audio  enabled"));
-                    
+
                     m_muxerInfo.TrackMapping()[(int)i] = 0;
                     m_audios.push_back(ap);
                 }
@@ -269,7 +269,7 @@ void PipelineProfile::ParseTrackSummary() {
 
 mfxTrackType PipelineProfile::ConvertCodecIdToTrackType(mfxU32 CodecId) {
     switch (CodecId) {
-        case MFX_CODEC_AAC : 
+        case MFX_CODEC_AAC :
             return MFX_TRACK_AAC;
         case MFX_CODEC_MP3:
             return MFX_TRACK_MPEGA;

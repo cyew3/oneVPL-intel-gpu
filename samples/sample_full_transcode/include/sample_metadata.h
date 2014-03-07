@@ -15,12 +15,12 @@ class AddMetadata : public ISample {
     MetaData m_metadata;
     int m_nMetadataType;
 public:
-    AddMetadata(SamplePtr& sample, int type, const MetaData &mdata) 
+    AddMetadata(SamplePtr& sample, int type, const MetaData &mdata)
         : m_sample(sample)
-        , m_metadata(mdata) 
+        , m_metadata(mdata)
         , m_nMetadataType (type) {
     }
-    AddMetadata(SamplePtr& sample, int type, const char* pData, int nData) 
+    AddMetadata(SamplePtr& sample, int type, const char* pData, int nData)
         : m_sample(sample)
         , m_metadata(pData, pData + nData)
         , m_nMetadataType (type) {
@@ -45,24 +45,24 @@ public:
         if (HasMetaData(type)) {
             data = m_metadata;
             return true;
-        } 
+        }
         return m_sample->GetMetaData(type, data);
     }
     virtual bool HasMetaData( int type ) const{
         if (type == m_nMetadataType) {
             return true;
-        } 
+        }
         return false;
     }
-protected: 
+protected:
     AddMetadata(int type, const MetaData &mdata)
         : m_sample(0)
-        , m_metadata(mdata) 
+        , m_metadata(mdata)
         , m_nMetadataType (type) {
     }
     AddMetadata(int type, const char* pData, int nData)
         : m_sample(0)
-        , m_metadata(pData, pData + nData) 
+        , m_metadata(pData, pData + nData)
         , m_nMetadataType (type) {
     }
 };

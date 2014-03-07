@@ -12,7 +12,7 @@
 #include "mfxstructures.h"
 #include "mfxsplmux++.h"
 
-class FileIO : public MFXDataIO 
+class FileIO : public MFXDataIO
 {
     FILE* f;
 public:

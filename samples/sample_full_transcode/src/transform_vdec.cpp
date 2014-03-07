@@ -12,7 +12,7 @@
 #include "sample_defs.h"
 #include <iostream>
 
-Transform <MFXVideoDECODE>::Transform(PipelineFactory& factory, MFXVideoSessionExt & session, int TimeToWait) 
+Transform <MFXVideoDECODE>::Transform(PipelineFactory& factory, MFXVideoSessionExt & session, int TimeToWait)
         : m_factory(factory)
         , m_session(session)
         , m_pNextTransform(0)
@@ -20,7 +20,7 @@ Transform <MFXVideoDECODE>::Transform(PipelineFactory& factory, MFXVideoSessionE
         , m_bDrainSamplefSent(false)
         , m_bEOS(false)
         , mBshouldLoad(true){
-    m_pDEC.reset(m_factory.CreateVideoDecoder(session));    
+    m_pDEC.reset(m_factory.CreateVideoDecoder(session));
     m_pSamplesSurfPool.reset(m_factory.CreateSamplePool(TimeToWait));
     m_bInited = false;
     m_nFramesForNextTransform = 0;
@@ -76,7 +76,7 @@ bool Transform <MFXVideoDECODE>::GetSample( SamplePtr& sample) {
         case MFX_ERR_NONE:
             sample.reset(m_pSamplesSurfPool->LockSample(SampleSurface1(*outSurf, m_pInput->GetTrackID())));
             return true;
-        case MFX_ERR_MORE_SURFACE: 
+        case MFX_ERR_MORE_SURFACE:
             workSurf = &m_pSamplesSurfPool->FindFreeSample().GetSurface();
             break;
         case MFX_ERR_MORE_DATA:
@@ -95,11 +95,11 @@ bool Transform <MFXVideoDECODE>::GetSample( SamplePtr& sample) {
             continue;
         default:
             MSDK_TRACE_ERROR(MSDK_STRING("MFXVideoDECODE::DecodeFrameAsync sts=") << sts);
-            throw DecodeFrameAsyncError();    
+            throw DecodeFrameAsyncError();
         }
     }
     MSDK_TRACE_ERROR(MSDK_STRING("MFXVideoDECODE::DecodeFrameAsync device busy"));
-    throw DecodeTimeoutError();    
+    throw DecodeTimeoutError();
 }
 
 void Transform <MFXVideoDECODE>::InitDecode(SamplePtr& sample) {
@@ -139,14 +139,14 @@ void Transform <MFXVideoDECODE>::CreateAllocatorAndDevice(AllocatorImpl impl)
         m_pDevice.reset(m_factory.CreateHardwareDevice(impl));
         sts = m_pDevice->Init(0, 1, 0);
         if (sts < 0) {
-            MSDK_TRACE_ERROR(MSDK_STRING("CreateHardwareDevice failed, sts=") << sts); 
+            MSDK_TRACE_ERROR(MSDK_STRING("CreateHardwareDevice failed, sts=") << sts);
             throw DecodeHWDeviceInitError();
         }
     }
     std::auto_ptr<mfxAllocatorParams> alloc_params(m_factory.CreateAllocatorParam(m_pDevice.get(), impl));
     sts = m_pAllocator->Init(alloc_params.release());
     if (sts < 0) {
-        MSDK_TRACE_ERROR(MSDK_STRING("MFXFrameAllocator::Init failed, sts=") << sts); 
+        MSDK_TRACE_ERROR(MSDK_STRING("MFXFrameAllocator::Init failed, sts=") << sts);
         throw DecodeAllocatorInitError();
     }
 }
@@ -212,7 +212,7 @@ void Transform <MFXVideoDECODE>::AllocFrames(SamplePtr& sample) {
     allocReq.NumFrameMin = allocReq.NumFrameMin + nextTransformRequest.Video().NumFrameMin;
     allocReq.NumFrameSuggested = allocReq.NumFrameSuggested + nextTransformRequest.Video().NumFrameSuggested;
     allocReq.Type |= MFX_MEMTYPE_VIDEO_MEMORY_DECODER_TARGET;
-    sts = m_pAllocator->AllocFrames(&allocReq, &allocResp);    
+    sts = m_pAllocator->AllocFrames(&allocReq, &allocResp);
     if (sts < 0) {
         MSDK_TRACE_ERROR(MSDK_STRING("MFXFrameAllocator::AllocFrames, sts=") << sts);
         throw DecodeAllocError();
@@ -228,5 +228,5 @@ void Transform <MFXVideoDECODE>::AllocFrames(SamplePtr& sample) {
         surf.Data.MemId = allocResp.mids[i];
         SamplePtr sampleToBuf(new SampleSurfaceWithData(surf, sample->GetTrackID()));
         m_pSamplesSurfPool->RegisterSample(sampleToBuf);
-    }    
+    }
 }

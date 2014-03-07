@@ -74,7 +74,7 @@ HRESULT CH264EncPropPage::FillCombos(void)
 
     hr = FillCombo(IDC_COMBO_PROFILE, strItems, nItemsData, 5, 0);
     CHECK_HRESULT(hr);
-    
+
     //fill throttle policy combo
     strItems[0] = _T("Auto Throttling");     nItemsData[0]  = 0;
     strItems[1] = _T("No Throttling");       nItemsData[1]  = 1;
@@ -110,23 +110,23 @@ HRESULT CH264EncPropPage::FillCombos(void)
     CHECK_HRESULT(hr);
 
     //fill level combo
-    strItems[0]  = _T("Autoselect");    nItemsData[0]  = IConfigureVideoEncoder::Params::LL_AUTOSELECT;  
-    strItems[1]  = _T("10");            nItemsData[1]  = IConfigureVideoEncoder::Params::LL_1;           
-    strItems[2]  = _T("1b");            nItemsData[2]  = IConfigureVideoEncoder::Params::LL_1b;          
-    strItems[3]  = _T("11");            nItemsData[3]  = IConfigureVideoEncoder::Params::LL_11;          
-    strItems[4]  = _T("12");            nItemsData[4]  = IConfigureVideoEncoder::Params::LL_12;          
-    strItems[5]  = _T("13");            nItemsData[5]  = IConfigureVideoEncoder::Params::LL_13;          
-    strItems[6]  = _T("20");            nItemsData[6]  = IConfigureVideoEncoder::Params::LL_2;           
-    strItems[7]  = _T("21");            nItemsData[7]  = IConfigureVideoEncoder::Params::LL_21;          
-    strItems[8]  = _T("22");            nItemsData[8]  = IConfigureVideoEncoder::Params::LL_22;          
-    strItems[9]  = _T("30");            nItemsData[9]  = IConfigureVideoEncoder::Params::LL_3;           
-    strItems[10] = _T("31");            nItemsData[10] = IConfigureVideoEncoder::Params::LL_31;          
-    strItems[11] = _T("32");            nItemsData[11] = IConfigureVideoEncoder::Params::LL_32;          
-    strItems[12] = _T("40");            nItemsData[12] = IConfigureVideoEncoder::Params::LL_4;           
-    strItems[13] = _T("41");            nItemsData[13] = IConfigureVideoEncoder::Params::LL_41;          
-    strItems[14] = _T("42");            nItemsData[14] = IConfigureVideoEncoder::Params::LL_42;          
-    strItems[15] = _T("50");            nItemsData[15] = IConfigureVideoEncoder::Params::LL_5;           
-    strItems[16] = _T("51");            nItemsData[16] = IConfigureVideoEncoder::Params::LL_51;          
+    strItems[0]  = _T("Autoselect");    nItemsData[0]  = IConfigureVideoEncoder::Params::LL_AUTOSELECT;
+    strItems[1]  = _T("10");            nItemsData[1]  = IConfigureVideoEncoder::Params::LL_1;
+    strItems[2]  = _T("1b");            nItemsData[2]  = IConfigureVideoEncoder::Params::LL_1b;
+    strItems[3]  = _T("11");            nItemsData[3]  = IConfigureVideoEncoder::Params::LL_11;
+    strItems[4]  = _T("12");            nItemsData[4]  = IConfigureVideoEncoder::Params::LL_12;
+    strItems[5]  = _T("13");            nItemsData[5]  = IConfigureVideoEncoder::Params::LL_13;
+    strItems[6]  = _T("20");            nItemsData[6]  = IConfigureVideoEncoder::Params::LL_2;
+    strItems[7]  = _T("21");            nItemsData[7]  = IConfigureVideoEncoder::Params::LL_21;
+    strItems[8]  = _T("22");            nItemsData[8]  = IConfigureVideoEncoder::Params::LL_22;
+    strItems[9]  = _T("30");            nItemsData[9]  = IConfigureVideoEncoder::Params::LL_3;
+    strItems[10] = _T("31");            nItemsData[10] = IConfigureVideoEncoder::Params::LL_31;
+    strItems[11] = _T("32");            nItemsData[11] = IConfigureVideoEncoder::Params::LL_32;
+    strItems[12] = _T("40");            nItemsData[12] = IConfigureVideoEncoder::Params::LL_4;
+    strItems[13] = _T("41");            nItemsData[13] = IConfigureVideoEncoder::Params::LL_41;
+    strItems[14] = _T("42");            nItemsData[14] = IConfigureVideoEncoder::Params::LL_42;
+    strItems[15] = _T("50");            nItemsData[15] = IConfigureVideoEncoder::Params::LL_5;
+    strItems[16] = _T("51");            nItemsData[16] = IConfigureVideoEncoder::Params::LL_51;
 
     hr = FillCombo(IDC_COMBO_LEVEl, strItems, nItemsData, 17, m_EncoderParams.level_idc);
     CHECK_HRESULT(hr);
@@ -197,7 +197,7 @@ HRESULT CH264EncPropPage::ConfigureEditsSpins(void)
     CHECK_HRESULT(hr);
 
     mfxU32 nMin(0), nMax(0), nRecommended(0);
-    
+
     if (nWidth > 0)
     {
         nRecommended = CalculateDefaultBitrate(MFX_CODEC_AVC, m_EncoderParams.target_usage,
@@ -211,14 +211,14 @@ HRESULT CH264EncPropPage::ConfigureEditsSpins(void)
         nMin         = 50;
         nMax         = 50 * 1000;
         nRecommended =  m_EncoderParams.rc_control.bitrate;
-    }    
+    }
 
-    if (m_EncoderParams.rc_control.bitrate && 
-        m_EncoderParams.rc_control.bitrate >= nMin && 
+    if (m_EncoderParams.rc_control.bitrate &&
+        m_EncoderParams.rc_control.bitrate >= nMin &&
         m_EncoderParams.rc_control.bitrate <= nMax)
     {
         nRecommended = m_EncoderParams.rc_control.bitrate;
-    }   
+    }
 
     //edit and spin for RC Bitrate
     ConfigureEditSpin(IDC_SPIN_BITRATE, nMin, nMax, nRecommended, true);
@@ -245,9 +245,9 @@ HRESULT CH264EncPropPage::OnActivate(void)
     //fill all edits and spins
     hr = ConfigureEditsSpins();
     CHECK_HRESULT(hr);
-    
+
     SetDlgItemData(IDC_COMBO_PRESET, m_EncoderParams.preset);
-    
+
     UpdateDialogControls( MFX_CODEC_AVC
                         , IDC_COMBO_PROFILE
                         , IDC_COMBO_TRGTUSE
@@ -262,7 +262,7 @@ HRESULT CH264EncPropPage::OnActivate(void)
 
 void CH264EncPropPage::InitDlgItemsArray()
 {
-    CConfigPropPage::ItemVal items[] = 
+    CConfigPropPage::ItemVal items[] =
     {
         {IDC_SPIN_BITRATE,    (DWORD*)0,                                             true},
         {IDC_SPIN_IFRAME,     (DWORD*)0,                                             true},
@@ -409,14 +409,14 @@ INT_PTR CH264EncPropPage::OnReceiveMessage(HWND hwnd, UINT uMsg, WPARAM wParam, 
             hWnd = GetDlgItem(m_Dlg, IDC_SPIN_BITRATE);
             MSDK_CHECK_POINTER(hWnd, E_POINTER);
 
-            pcwndSpin = (CSpinButtonCtrl*)CWnd::FromHandle(hWnd);  
+            pcwndSpin = (CSpinButtonCtrl*)CWnd::FromHandle(hWnd);
             MSDK_CHECK_POINTER(pcwndSpin, E_POINTER);
 
             //get requested control
             hWnd = GetDlgItem(m_Dlg, IDC_EDIT_BITRATE);
             MSDK_CHECK_POINTER(hWnd, E_POINTER);
 
-            pEdt = (CEdit*)CWnd::FromHandle(hWnd); 
+            pEdt = (CEdit*)CWnd::FromHandle(hWnd);
             MSDK_CHECK_POINTER(pEdt, E_POINTER);
 
             int nLower(0), nUpper(0);
@@ -441,7 +441,7 @@ INT_PTR CH264EncPropPage::OnReceiveMessage(HWND hwnd, UINT uMsg, WPARAM wParam, 
                                  , IDC_SPIN_BITRATE);
             //EnableDialogControls();
         }
-        
+
         SetDirty();
         break;
     } // switch

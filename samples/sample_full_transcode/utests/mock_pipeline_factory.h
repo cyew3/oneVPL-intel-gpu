@@ -13,17 +13,17 @@
 
 class MockPipelineFactory : public PipelineFactory {
 public:
-    
+
     MOCK_METHOD0(CreateSplitter, MFXSplitter *());
     MOCK_METHOD1(CreateSplitterWrapper, ISplitterWrapper *(std::auto_ptr<MFXDataIO>&io));
-    
+
     MOCK_METHOD2(CreateSessionStorage, SessionStorage * ( const MFXSessionInfo &, const MFXSessionInfo &));
     MOCK_METHOD2(CreateFileIO, MFXDataIO * (const msdk_string&, const msdk_string&));
 
     MOCK_METHOD0(CreateVideoSession, MFXVideoSessionExt* ());
     MOCK_METHOD1(CreateVideoDecoder, MFXVideoDECODE* (MFXVideoSessionExt&));
     MOCK_METHOD2(CreateVideoDecoderTransform, ITransform* (MFXVideoSessionExt&, int));
-    
+
 
     MOCK_METHOD1(CreateVideoEncoder, MFXVideoENCODE* (MFXVideoSessionExt&));
     MOCK_METHOD2(CreateVideoEncoderTransform, ITransform* (MFXVideoSessionExt&, int));

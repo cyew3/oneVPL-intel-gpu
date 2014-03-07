@@ -18,12 +18,12 @@ class IUnknownAdapter
     T* m_obj;
     int m_c;
 public:
-    IUnknownAdapter(T * obj) 
+    IUnknownAdapter(T * obj)
       : m_obj(  obj)
       , m_c()
       {}
 
-    virtual HRESULT STDMETHODCALLTYPE QueryInterface( 
+    virtual HRESULT STDMETHODCALLTYPE QueryInterface(
     /* [in] */ REFIID riid,
     /* [iid_is][out] */ _COM_Outptr_ void __RPC_FAR *__RPC_FAR *ppvObject) {
         *ppvObject = this;
@@ -33,7 +33,7 @@ public:
     virtual ULONG STDMETHODCALLTYPE AddRef( void){
         return m_c++;
     }
-    
+
     virtual ULONG STDMETHODCALLTYPE Release( void){
         return m_c--;
     }

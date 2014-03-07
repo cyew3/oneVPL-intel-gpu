@@ -37,7 +37,7 @@ namespace {
 }
 
 TraceLevel & TraceLevel :: FromString(const msdk_string & str) {
-    std::vector<msdk_string>::iterator i = 
+    std::vector<msdk_string>::iterator i =
         std::find(TraceLevels::g_strLevels.begin(), TraceLevels::g_strLevels.end(), str);
     if (TraceLevels::g_strLevels.end() == i) {
         MSDK_TRACE_ERROR(MSDK_STRING("Unknown logger level: ") << str);
@@ -45,19 +45,19 @@ TraceLevel & TraceLevel :: FromString(const msdk_string & str) {
     }
     MsdkTraceLevel idx = (MsdkTraceLevel)(i - TraceLevels::g_strLevels.begin() - 1);
     switch (idx) {
-        case MSDK_TRACE_LEVEL_SILENT : 
+        case MSDK_TRACE_LEVEL_SILENT :
             return log_level_silent;
-        case MSDK_TRACE_LEVEL_CRITICAL : 
+        case MSDK_TRACE_LEVEL_CRITICAL :
             return log_level_critical;
-        case MSDK_TRACE_LEVEL_ERROR : 
+        case MSDK_TRACE_LEVEL_ERROR :
             return log_level_error;
-        case MSDK_TRACE_LEVEL_WARNING : 
+        case MSDK_TRACE_LEVEL_WARNING :
             return log_level_warning;
-        case MSDK_TRACE_LEVEL_INFO : 
+        case MSDK_TRACE_LEVEL_INFO :
             return log_level_info;
-        case MSDK_TRACE_LEVEL_DEBUG : 
+        case MSDK_TRACE_LEVEL_DEBUG :
             return log_level_debug;
-        
+
         default:
             return log_level_info;
     }

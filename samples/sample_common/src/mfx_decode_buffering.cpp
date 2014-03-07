@@ -7,7 +7,7 @@ or disclosed except in accordance with the terms of that agreement.
 Copyright(c) 2014 Intel Corporation. All Rights Reserved.
 
 *****************************************************************************/
-   
+
 #include <stdlib.h>
 
 #include <mfx_decode_buffering.h>
@@ -64,7 +64,7 @@ void
 CDecodingBuffering::AllocOutputBuffer()
 {
     AutomaticMutex lock(m_Mutex);
-    
+
     m_pFreeOutputSurfaces = (msdkOutputSurface*)calloc(1, sizeof(msdkOutputSurface));
 }
 
@@ -90,7 +90,7 @@ CDecodingBuffering::FreeBuffers()
         free(m_pSurfaces);
         m_pSurfaces = NULL;
     }
-    
+
     FreeList(m_pFreeOutputSurfaces);
     FreeList(m_pOutputSurfacesHead);
     FreeList(m_pDeliveredSurfacesHead);
@@ -101,7 +101,7 @@ CDecodingBuffering::ResetBuffers()
 {
     mfxU32 i;
     m_pFreeSurfaces = m_pSurfaces;
-    
+
     for (i = 0; i < m_SurfacesNumber; ++i) {
         if (i < (m_SurfacesNumber-1)) {
             m_pFreeSurfaces[i].next = &(m_pFreeSurfaces[i+1]);
@@ -122,7 +122,7 @@ CDecodingBuffering::SyncFrameSurfaces()
     msdkFrameSurface *prev = NULL;
     msdkFrameSurface *next = NULL;
     msdkFrameSurface *cur = m_pUsedSurfacesHead;
-    
+
     while (cur) {
         if (cur->frame.Data.Locked || cur->render_lock) {
             // frame is still locked: just moving to the next one

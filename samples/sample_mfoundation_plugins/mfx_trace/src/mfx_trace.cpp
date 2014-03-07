@@ -381,7 +381,7 @@ UINT32 MFXTrace_Close(void)
 {
     UINT32 sts = 0, res = 0;
     UINT32 i = 0;
- 
+
     for (i = 0; i < sizeof(g_TraceAlgorithms)/sizeof(mfxTraceAlgorithm); ++i)
     {
         if (g_OutputMode & g_TraceAlgorithms[i].m_OutputMode)
@@ -433,7 +433,7 @@ UINT32 MFXTrace_DebugMessage(mfxTraceStaticHandle *static_handle,
     UINT32 sts = 0, res = 0;
     UINT32 i = 0;
     va_list args;
- 
+
     va_start(args, format);
     for (i = 0; i < sizeof(g_TraceAlgorithms)/sizeof(mfxTraceAlgorithm); ++i)
     {
@@ -464,7 +464,7 @@ UINT32 MFXTrace_vDebugMessage(mfxTraceStaticHandle *static_handle,
 
     UINT32 sts = 0, res = 0;
     UINT32 i = 0;
- 
+
     for (i = 0; i < sizeof(g_TraceAlgorithms)/sizeof(mfxTraceAlgorithm); ++i)
     {
         if (g_OutputMode & g_TraceAlgorithms[i].m_OutputMode)
@@ -497,7 +497,7 @@ UINT32 MFXTrace_BeginTask(mfxTraceStaticHandle *static_handle,
 
     UINT32 sts = 0, res = 0;
     UINT32 i = 0;
- 
+
     for (i = 0; i < sizeof(g_TraceAlgorithms)/sizeof(mfxTraceAlgorithm); ++i)
     {
         if (g_OutputMode & g_TraceAlgorithms[i].m_OutputMode)
@@ -530,7 +530,7 @@ UINT32 MFXTrace_EndTask(mfxTraceStaticHandle *static_handle,
 
     UINT32 sts = 0, res = 0;
     UINT32 i = 0;
- 
+
     for (i = 0; i < sizeof(g_TraceAlgorithms)/sizeof(mfxTraceAlgorithm); ++i)
     {
         if (g_OutputMode & g_TraceAlgorithms[i].m_OutputMode)

@@ -45,7 +45,7 @@ private:
     bool m_bEOS;
     bool mBshouldLoad;
 
-    SamplePtr m_pInput;  
+    SamplePtr m_pInput;
     std::auto_ptr<CHWDevice> m_pDevice;
     std::auto_ptr<SamplePool> m_pSamplesSurfPool;
     std::auto_ptr<BaseFrameAllocator> m_pAllocator;

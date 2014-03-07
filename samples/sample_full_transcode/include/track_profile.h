@@ -27,8 +27,8 @@ struct TrackInfoExt {
     TrackInfoExt(mfxU32 sid = 0,
         T decodeParams = T(),
         T encodeParams = T(),
-        MFXSessionInfo sessionInfo = MFXSessionInfo()) 
-        : SID(sid) 
+        MFXSessionInfo sessionInfo = MFXSessionInfo())
+        : SID(sid)
         , Decode(decodeParams)
         , Encode(encodeParams)
         , Session(sessionInfo) {
@@ -42,10 +42,10 @@ inline TrackInfoExt<T> CreateTrackInfo(mfxU32 sid, T decodeParams, T encodeParam
 }
 
 typedef TrackInfoExt<mfxAudioParam> AudioTrackInfoExt;
-typedef TrackInfoExt<mfxVideoParam> VideoTrackInfoExt; 
+typedef TrackInfoExt<mfxVideoParam> VideoTrackInfoExt;
 
 namespace detail {
-    //rationale - pipeline profile decomposition into separate tracks profiles 
+    //rationale - pipeline profile decomposition into separate tracks profiles
     class TrackProfileBase {
     protected:
         MFXStreamParams m_splInfo;
@@ -56,7 +56,7 @@ namespace detail {
         OutputCodec::StringToCodecMap m_codecs;
 
         std::map<msdk_string, mfxU32> m_extensions;
-        
+
         TrackProfileBase (const MFXStreamParams &splInfo, CmdLineParser & parser, MFXSessionInfo sesInfo, size_t nTrack);
         virtual ~TrackProfileBase (){}
 
@@ -68,7 +68,7 @@ namespace detail {
         virtual void OnNoExtension()  = 0;
 
         virtual msdk_string GetOutputExtension();
-    
+
         //dedicated handler for -o option
         template <class T, class T2>
         void parse_codec_option(T & param, T2 & srcParam, const msdk_string & option) {

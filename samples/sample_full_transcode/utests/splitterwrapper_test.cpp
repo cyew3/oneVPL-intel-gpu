@@ -32,7 +32,7 @@ struct SplitterWrapperTest  : public ::testing::Test, private no_copy {
 
     void CreateSplitter() {
 
-        splitter.reset(new SplitterWrapper(instant_auto_ptr2<MFXSplitter>(&mocksplitter), 
+        splitter.reset(new SplitterWrapper(instant_auto_ptr2<MFXSplitter>(&mocksplitter),
                                            instant_auto_ptr2<MFXDataIO>(new MockDataIO())));
     }
     void getInfo() {
@@ -48,7 +48,7 @@ TEST_F(SplitterWrapperTest, getSample_success) {
     EXPECT_CALL(mocksplitter, GetBitstream(_, _)).WillOnce(Return(MFX_ERR_NONE));
     EXPECT_CALL(mocksplitter, ReleaseBitstream(_)).WillOnce(Return(MFX_ERR_NONE));
     EXPECT_CALL(*((MockSample*)sample.get()), GetBitstream()).WillRepeatedly(ReturnRef(bitstream));
-    
+
     CreateSplitter();
 
     EXPECT_EQ(true, splitter->GetSample(sample));
@@ -84,7 +84,7 @@ TEST_F(SplitterWrapperTest, getInfo_StreamParams) {
 TEST_F(SplitterWrapperTest, splitterInitFailed) {
     params.NumTracks = 5;
     EXPECT_CALL(mocksplitter, Init(_)).WillOnce(Return(MFX_ERR_UNKNOWN));
-    
+
     EXPECT_THROW(CreateSplitter(), SplitterInitError);
 }
 
@@ -108,7 +108,7 @@ TEST_F(SplitterWrapperTest, getSample_EOF) {
     EXPECT_CALL(*((MockSample*)sample.get()), GetBitstream()).WillRepeatedly(ReturnRef(bitstream));
 
     CreateSplitter();
-    EXPECT_CALL(mocksplitter, ReleaseBitstream(_)).WillRepeatedly(Return(MFX_ERR_NONE)); 
+    EXPECT_CALL(mocksplitter, ReleaseBitstream(_)).WillRepeatedly(Return(MFX_ERR_NONE));
     EXPECT_EQ(true, splitter->GetSample(sample));
     EXPECT_EQ(0, sample->GetTrackID());
     EXPECT_EQ(true, splitter->GetSample(sample));

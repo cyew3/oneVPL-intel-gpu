@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////
 // Control.cpp: Base control class.
-// 
+//
 // THIS CODE AND INFORMATION IS PROVIDED "AS IS" WITHOUT WARRANTY OF
 // ANY KIND, EITHER EXPRESSED OR IMPLIED, INCLUDING BUT NOT LIMITED TO
 // THE IMPLIED WARRANTIES OF MERCHANTABILITY AND/OR FITNESS FOR A
@@ -47,7 +47,7 @@ HRESULT Control::Create(const CREATESTRUCT& create)
 
 
     HWND hwnd = CreateWindowEx(
-        create.dwExStyle, create.lpszClass, create.lpszName, 
+        create.dwExStyle, create.lpszClass, create.lpszName,
         create.style | WS_CHILD | WS_VISIBLE,
         create.x, create.y, create.cx, create.cy, create.hwndParent, create.hMenu,
         hinst, create.lpCreateParams);
@@ -80,7 +80,7 @@ void CreateStruct::SetBoundingRect(const Rect& rc)
 
 HINSTANCE GetInstance()
 {
-	return (HINSTANCE)GetModuleHandle(NULL); 
+	return (HINSTANCE)GetModuleHandle(NULL);
 }
 
 

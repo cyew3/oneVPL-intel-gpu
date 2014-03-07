@@ -544,7 +544,7 @@ mfxStatus AVCFrameSplitter::AddSliceNalUnit(mfxBitstream * nalUnit, AVCSlice * s
     SliceSplitterInfo & newSlice = m_slices[m_frame.SliceNum - 1];
 
     AVCHeadersBitstream * bs = slice->GetBitStream();
-    
+
     newSlice.HeaderLength = (mfxU32)bs->BytesDecoded();
     newSlice.HeaderLength += sizeof(start_code_prefix) + 1; // with start code and nal unit type; DEBUG to eliminate it ?
     newSlice.DataLength = sliceLength;
@@ -653,7 +653,7 @@ mfxStatus AVCFrameSplitter::GetFrame(mfxBitstream * bs_in, AVCFrameSplitterInfo 
 
         if (sts == MFX_ERR_NONE || (!bs_in && m_frame.SliceNum))
         {
-            m_currentInfo = 0;            
+            m_currentInfo = 0;
             *frame = &m_frame;
             return MFX_ERR_NONE;
         }

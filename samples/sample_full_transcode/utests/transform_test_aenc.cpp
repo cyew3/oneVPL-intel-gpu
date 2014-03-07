@@ -31,21 +31,21 @@ public:
 
     TransformTestAENC()
         : allocRequest()
-        , mockSample (*new MockSample) 
-        , mockSample2 (*new MockSample) 
-        , mockOutSample (*new MockSample) 
-        , mockSampleEOS (*new MockSample) 
+        , mockSample (*new MockSample)
+        , mockSample2 (*new MockSample)
+        , mockOutSample (*new MockSample)
+        , mockSampleEOS (*new MockSample)
         , mockEncoder(*new MockMFXAudioENCODE)
         , mockPool(*new MockSamplePool)
     {
-        
+
         EXPECT_CALL(mockFactory, CreateAudioEncoder(_)).WillOnce(Return(&mockEncoder));
         EXPECT_CALL(mockFactory, CreateSamplePool(_)).WillOnce(Return(&mockPool));
         pTransform.reset(new Transform<MFXAudioENCODE>(mockFactory, mockSession, 10000));
     }
 
     void LetEncoderInitReturn(mfxStatus e){
-        EXPECT_CALL(mockEncoder, Init(_)).WillOnce(Return(e));      
+        EXPECT_CALL(mockEncoder, Init(_)).WillOnce(Return(e));
     }
     void LetQueryIOsizeReturn(mfxStatus e, int size){
         allocRequest.SuggestedOutputSize = size;
@@ -116,7 +116,7 @@ TEST_F(TransformTestAENC, normal_operation_and_bitstream_alloc_check){
     EXPECT_CALL(mockSample, GetTrackID()).WillOnce(Return(1));
     EXPECT_NO_THROW(pTransform->PutSample(instant_auto_ptr2<ISample>(&mockSample)));
     LetEncodeFrameAsyncReturn(MFX_ERR_NONE);
-    
+
     EXPECT_CALL(mockOutSample, GetBitstream()).WillRepeatedly(ReturnRef(bitstream));
     EXPECT_CALL(mockPool, FindFreeSample()).WillOnce(ReturnRef(mockOutSample));
     EXPECT_CALL(mockPool, LockSample(_)).WillOnce(Return(&mockOutSample));
@@ -140,7 +140,7 @@ TEST_F(TransformTestAENC, encodeFrameAsyncReturnedError_resultInException){
     EXPECT_CALL(mockSample, GetTrackID()).WillOnce(Return(1));
 
     EXPECT_NO_THROW(pTransform->PutSample(instant_auto_ptr2<ISample>(&mockSample)));
-    
+
     EXPECT_CALL(mockPool, FindFreeSample()).WillOnce(ReturnRef(mockOutSample));
     EXPECT_THROW(pTransform->GetSample(outSample), EncodeFrameAsyncError);
     delete &mockOutSample;
@@ -183,7 +183,7 @@ TEST_F(TransformTestAENC, EOS_RECEIVED){
     SetupMetaData(mockSample, false);
     EXPECT_CALL(mockSample, GetTrackID()).WillOnce(Return(1));
     EXPECT_NO_THROW(pTransform->PutSample(instant_auto_ptr2<ISample>(&mockSample)));
-    
+
     LetEncodeFrameAsyncReturn(MFX_ERR_NONE);
     EXPECT_CALL(mockOutSample, GetBitstream()).WillRepeatedly(ReturnRef(bitstream));
     EXPECT_CALL(mockPool, FindFreeSample()).InSequence(s1).WillOnce(ReturnRef(mockOutSample));
@@ -199,9 +199,9 @@ TEST_F(TransformTestAENC, EOS_RECEIVED){
     EXPECT_NO_THROW(pTransform->PutSample(instant_auto_ptr2<ISample>(&mockSampleEOS)));
 
     EXPECT_CALL(mockSample2, GetBitstream()).WillRepeatedly(ReturnRef(bitstream));
-    EXPECT_CALL(mockPool, FindFreeSample()).InSequence(s1).WillOnce(ReturnRef(mockSample2)); 
+    EXPECT_CALL(mockPool, FindFreeSample()).InSequence(s1).WillOnce(ReturnRef(mockSample2));
     EXPECT_CALL(mockEncoder, EncodeFrameAsync(0,_,_)).InSequence(sEFA).WillOnce(Return(MFX_ERR_MORE_DATA));
-    
+
 
     ASSERT_FALSE(pTransform->GetSample(outSample));
     delete &mockSample2;

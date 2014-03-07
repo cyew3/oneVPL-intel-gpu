@@ -45,7 +45,7 @@ public:
         }
         return hr;
     }
-    
+
     HRESULT SetMode(ULONG nMode)
     {
         HRESULT hr = S_OK;
@@ -67,7 +67,7 @@ public:
     {
         return m_nQualityPercent;
     }
-    
+
     HRESULT GetQualityPercent(ULONG &nQualityPercent) const
     {
         HRESULT hr = VFW_E_CODECAPI_NO_CURRENT_VALUE;
@@ -108,7 +108,7 @@ public:
     {
         return m_nMeanBitRate;
     }
-    
+
     void SetMeanBitRate(ULONG nMeanBitRate)
     {
         m_nMeanBitRate = nMeanBitRate;
@@ -122,7 +122,7 @@ public:
     {
         return m_nMaxBitRate;
     }
-    
+
     void SetMaxBitRate(ULONG nMaxBitRate)
     {
         m_nMaxBitRate = nMaxBitRate;
@@ -131,12 +131,12 @@ public:
             MfxSetMaxKbps(m_pMfxVideoParam->mfx, m_nMaxBitRate/1000); //bps = 1/1000 Kbps
         }
     }
-    
+
     ULONG GetBufferSize() const
     {
         return m_nBufferSize;
     }
-    
+
     void SetBufferSize(ULONG nBufferSize)
     {
         m_nBufferSize = nBufferSize;
@@ -145,12 +145,12 @@ public:
             MfxSetBufferSizeInKB(m_pMfxVideoParam->mfx, m_nBufferSize/8000); //bit = 1/8000 KB
         }
     }
-    
+
     ULONG GetQualityVsSpeed() const
     {
         return m_nQualityVsSpeed;
     }
-    
+
     HRESULT GetQualityVsSpeed(ULONG &nQualityVsSpeed) const
     {
         HRESULT hr = VFW_E_CODECAPI_NO_CURRENT_VALUE;

@@ -142,14 +142,14 @@ public:
     PluginLoader(MFXVideoUSER *userModule, const msdk_string & pluginName)
         : m_PluginModule(pluginName)
         , m_userModule()
-    {        
+    {
         TCreator pCreateFunc = m_PluginModule.GetAddr<TCreator>(PluginCreateTrait<T>::Name());
         if(NULL == pCreateFunc)
         {
             return;
         }
         m_plugin.reset((*pCreateFunc)());
-        
+
         if (NULL == m_plugin.get())
         {
             MSDK_TRACE_ERROR(MSDK_STRING("Failed to Create plugin: ")<< pluginName);
@@ -159,7 +159,7 @@ public:
         mfxPlugin plg = m_adapter;
         mfxStatus sts = userModule->Register(ePluginType, &plg);
         if (MFX_ERR_NONE != sts) {
-            MSDK_TRACE_ERROR(MSDK_STRING("Failed to register plugin: ") << pluginName 
+            MSDK_TRACE_ERROR(MSDK_STRING("Failed to register plugin: ") << pluginName
                 << MSDK_STRING(", MFXVideoUSER::Register(type=") << ePluginType << MSDK_STRING("), mfxsts=") << sts);
             return;
         }
@@ -201,7 +201,7 @@ public:
         return m_plugin->QueryIOSurf(par, in, out);
     }
     virtual void Release() {
-        return m_plugin->Release(); 
+        return m_plugin->Release();
     }
     virtual mfxStatus Close() {
         return m_plugin->Close();
@@ -211,7 +211,7 @@ public:
     }
 };
 
-template <class T> 
+template <class T>
 MFXPlugin * LoadPluginByType(MFXVideoUSER *userModule, const msdk_string & pluginFullPath) {
     std::auto_ptr<PluginLoader<T> > plg(new PluginLoader<T> (userModule, pluginFullPath));
     return plg->IsOk() ? plg.release() : NULL;

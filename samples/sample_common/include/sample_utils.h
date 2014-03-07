@@ -58,7 +58,7 @@ typedef std::basic_stringstream<msdk_char> msdk_stringstream;
 typedef std::basic_ostream<msdk_char, std::char_traits<msdk_char> > msdk_ostream;
 typedef std::basic_istream<msdk_char, std::char_traits<msdk_char> > msdk_istream;
 
-#ifdef UNICODE 
+#ifdef UNICODE
     #define msdk_cout std::wcout
     #define msdk_err std::wcerr
 #else
@@ -182,8 +182,8 @@ public:
     virtual mfxStatus Init(const msdk_char *strFileName);
     virtual mfxStatus ReadNextFrame(mfxBitstream *pBS);
 
-protected: 
-    
+protected:
+
       /*bytes 0-3    signature: 'DKIF'
     bytes 4-5    version (should be 0)
     bytes 6-7    length of header in bytes

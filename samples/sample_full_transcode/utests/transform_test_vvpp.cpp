@@ -41,7 +41,7 @@ public:
     TransformTestVVPP() :
         impl(MFX_IMPL_HARDWARE_ANY) {
         vpp.reset(new MockMFXVideoVPP());
-        
+
         allocator.reset(new MockMFXFrameAllocator());
         EXPECT_CALL(factory, CreateVideoVPP(_)).WillOnce(Return(vpp.get()));
         transform_vv.reset(new Transform<MFXVideoVPP>(factory, vSession, 10));
@@ -56,14 +56,14 @@ public:
 
         EXPECT_CALL(nextTransform, GetNumSurfaces(_, _)).WillOnce(DoAll(SetArgReferee<1>(allocRequest), Return()));
         transform_vv->Configure(vParam, &nextTransform);
-        
+
         allocRequest.NumFrameMin = 2;
         allocRequest.NumFrameSuggested = 2;
 
         response.NumFrameActual = 2;
         response.mids = new mfxMemId[response.NumFrameActual];
         EXPECT_CALL(*(MockSample*)sample1.get(), GetSurface()).WillRepeatedly(ReturnRef(surf1));
-    }  
+    }
     ~TransformTestVVPP() {
         delete[] response.mids;
     }

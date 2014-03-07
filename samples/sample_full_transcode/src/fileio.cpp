@@ -80,7 +80,7 @@ mfxI64 FileIO::Seek(mfxI64 offset, mfxSeekOrigin origin)
             break;
         case MFX_SEEK_ORIGIN_END: {
             mfxI64 filePos = 0;
-            if (!offset) { 
+            if (!offset) {
                 filePos = ftell(f);
             }
             res = fseek(f, offset, SEEK_END);

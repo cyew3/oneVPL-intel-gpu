@@ -16,7 +16,7 @@
 #include "sample_utils.h"
 
 ///////////////////////////////////////////////////////////////////////////////
-//! delegates operator << calls to underlying ostream with 
+//! delegates operator << calls to underlying ostream with
 //! on == true, and swallows the input with on == false
 template <bool on = true>
 class OnOffFilter
@@ -37,8 +37,8 @@ public:
     }
 
     //! handles manipulators like endl, etc.
-    typedef std::ostream& (*OstreamManipulator)(std::ostream&);    
-    OnOffFilter& operator<<(OstreamManipulator manip) 
+    typedef std::ostream& (*OstreamManipulator)(std::ostream&);
+    OnOffFilter& operator<<(OstreamManipulator manip)
     {
         manip(*m_os);
         return *this;

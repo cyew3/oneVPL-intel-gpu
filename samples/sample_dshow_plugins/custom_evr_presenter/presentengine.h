@@ -11,7 +11,7 @@
 //////////////////////////////////////////////////////////////////////////
 //
 // PresentEngine.h: Defines the D3DPresentEngine object.
-// 
+//
 // THIS CODE AND INFORMATION IS PROVIDED "AS IS" WITHOUT WARRANTY OF
 // ANY KIND, EITHER EXPRESSED OR IMPLIED, INCLUDING BUT NOT LIMITED TO
 // THE IMPLIED WARRANTIES OF MERCHANTABILITY AND/OR FITNESS FOR A
@@ -56,15 +56,15 @@ public:
     virtual ~D3DPresentEngine();
 
     // GetService: Returns the IDirect3DDeviceManager9 interface.
-    // (The signature is identical to IMFGetService::GetService but 
+    // (The signature is identical to IMFGetService::GetService but
     // this object does not derive from IUnknown.)
     virtual HRESULT GetService(REFGUID guidService, REFIID riid, void** ppv);
     virtual HRESULT CheckFormat(D3DFORMAT format);
 
     // Video window / destination rectangle:
-    // This object implements a sub-set of the functions defined by the 
-    // IMFVideoDisplayControl interface. However, some of the method signatures 
-    // are different. The presenter's implementation of IMFVideoDisplayControl 
+    // This object implements a sub-set of the functions defined by the
+    // IMFVideoDisplayControl interface. However, some of the method signatures
+    // are different. The presenter's implementation of IMFVideoDisplayControl
     // calls these methods.
     HRESULT SetVideoWindow(HWND hwnd);
     HWND    GetVideoWindow() const { return m_hwnd; }
@@ -75,7 +75,7 @@ public:
     void    ReleaseResources();
 
     HRESULT CheckDeviceState(DeviceState *pState);
-    HRESULT PresentSample(IMFSample* pSample, LONGLONG llTarget); 
+    HRESULT PresentSample(IMFSample* pSample, LONGLONG llTarget);
 
     UINT    RefreshRate() const { return m_DisplayMode.RefreshRate; }
 
@@ -114,9 +114,9 @@ protected:
 
     // various structures for DXVA2 calls
     DXVA2_VideoDesc                 m_VideoDesc;
-    DXVA2_VideoProcessBltParams     m_BltParams; 
+    DXVA2_VideoProcessBltParams     m_BltParams;
     DXVA2_VideoSample               m_Sample;
-    
+
     IDirectXVideoProcessorService   *m_pDXVAVPS;            // Service required to create video processors
     IDirectXVideoProcessor          *m_pDXVAVP_Left;        // Left channel processor
     IDirectXVideoProcessor          *m_pDXVAVP_Right;       // Right channel processor
@@ -124,6 +124,6 @@ protected:
     IDirect3DSurface9               *m_pMixerSurfaces[PRESENTER_BUFFER_COUNT]; // The surfaces, which are used by mixer
 
 private: // disallow copy and assign
-    D3DPresentEngine(const D3DPresentEngine&);              
-    void operator=(const D3DPresentEngine&);   
+    D3DPresentEngine(const D3DPresentEngine&);
+    void operator=(const D3DPresentEngine&);
 };

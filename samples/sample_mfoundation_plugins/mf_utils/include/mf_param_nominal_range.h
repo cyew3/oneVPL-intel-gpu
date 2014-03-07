@@ -40,7 +40,7 @@ public:
         {
             ATLASSERT(NULL != pSignalInfo); // is guaranteed by return value
             if (MFNominalRange_0_255 == m_NominalRange)
-                pSignalInfo->VideoFullRange = 1; 
+                pSignalInfo->VideoFullRange = 1;
         }
         return hr;
     }
@@ -65,7 +65,7 @@ public:
         };
         return hr;
     }
-    
+
 protected:
     MFNominalRange          m_NominalRange;
 };

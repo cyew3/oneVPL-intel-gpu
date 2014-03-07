@@ -213,7 +213,7 @@ mfxStatus MFXSplitter_GetBitstream(mfxSplitter spl, mfxU32 *track_num, mfxBitstr
     if (track_num == NULL)
         return MFX_ERR_NULL_PTR;
 
-    if(bs == NULL) 
+    if(bs == NULL)
         return MFX_ERR_NULL_PTR;
 
     outBuffer = NULL;
@@ -248,7 +248,7 @@ mfxStatus MFXSplitter_GetBitstream(mfxSplitter spl, mfxU32 *track_num, mfxBitstr
     while (isNoPkt)
     {
         ret = av_read_frame(inSpl->formatContext, pkt);
-        if (ret < 0) 
+        if (ret < 0)
         {
             if(ret == -AVERROR(AVERROR_EOF))
             {
@@ -279,10 +279,10 @@ mfxStatus MFXSplitter_GetBitstream(mfxSplitter spl, mfxU32 *track_num, mfxBitstr
 
     inSpl->formatContext->streams[pkt->stream_index]->nb_frames++;
 
-    if(inSpl->formatContext->streams[pkt->stream_index]->codec->codec_id == AV_CODEC_ID_H264 
+    if(inSpl->formatContext->streams[pkt->stream_index]->codec->codec_id == AV_CODEC_ID_H264
         && strncmp(inSpl->formatContext->iformat->name,"mov,mp4",7) == 0)
     {
-        av_bitstream_filter_filter(inSpl->bsfContext, inSpl->formatContext->streams[pkt->stream_index]->codec, 
+        av_bitstream_filter_filter(inSpl->bsfContext, inSpl->formatContext->streams[pkt->stream_index]->codec,
             NULL, outBuffer, &outBufferSize, pkt->data, pkt->size, pkt->flags & AV_PKT_FLAG_KEY);
 
         bs->Data = *outBuffer;
@@ -326,7 +326,7 @@ mfxStatus MFXSplitter_GetBitstream(mfxSplitter spl, mfxU32 *track_num, mfxBitstr
     }
     else
     {
-        bs->Data = (mfxU8*)pkt->data; 
+        bs->Data = (mfxU8*)pkt->data;
         bs->MaxLength = pkt->size;
         bs->DataLength = pkt->size;
         bs->DataOffset = 0;
@@ -395,7 +395,7 @@ mfxStatus MFXSplitter_GetInfo(mfxSplitter spl, mfxStreamParams *par)
     if (inSpl->isStreamInfoFound == 0)
     {
         ret = avformat_find_stream_info(inSpl->formatContext, NULL);
-        if(ret < 0) 
+        if(ret < 0)
         {
             return MFX_ERR_UNKNOWN;
         }
@@ -415,7 +415,7 @@ mfxStatus MFXSplitter_GetInfo(mfxSplitter spl, mfxStreamParams *par)
         for (numTrack = 0; numTrack < inSpl->formatContext->nb_streams; numTrack++ )
         {
             par->TrackInfo[numTrack]->Type = GetTrackTypeByCodecID(inSpl->formatContext->streams[numTrack]->codec->codec_id);
-            par->TrackInfo[numTrack]->SID = inSpl->formatContext->streams[numTrack]->id; 
+            par->TrackInfo[numTrack]->SID = inSpl->formatContext->streams[numTrack]->id;
             par->TrackInfo[numTrack]->Enable = 1;
             inSpl->formatContext->streams[numTrack]->nb_frames = 0;
             if (par->TrackInfo[numTrack]->Type & MFX_TRACK_ANY_AUDIO)
@@ -459,7 +459,7 @@ mfxStatus MFXSplitter_GetInfo(mfxSplitter spl, mfxStreamParams *par)
             if(inSpl->formatContext->streams[numTrack]->codec->extradata_size > 0)
             {
                 par->TrackInfo[numTrack]->HeaderLength = (mfxU16) inSpl->formatContext->streams[numTrack]->codec->extradata_size;
-                MSDK_MEMCPY(par->TrackInfo[numTrack]->Header, inSpl->formatContext->streams[numTrack]->codec->extradata, 
+                MSDK_MEMCPY(par->TrackInfo[numTrack]->Header, inSpl->formatContext->streams[numTrack]->codec->extradata,
                            (inSpl->formatContext->streams[numTrack]->codec->extradata_size < MFX_TRACK_HEADER_MAX_SIZE ? inSpl->formatContext->streams[numTrack]->codec->extradata_size : MFX_TRACK_HEADER_MAX_SIZE) );
             }
         }
@@ -489,7 +489,7 @@ mfxStatus MFXSplitter_Seek(mfxSplitter spl, mfxU64 timestamp)
             return MFX_ERR_UNKNOWN;
         if (rescaledTimestamp > (mfxU64) inSpl->formatContext->streams[numTrack]->duration)
             return MFX_ERR_UNKNOWN;
-        if (av_seek_frame(inSpl->formatContext, numTrack, rescaledTimestamp, 0) < 0) 
+        if (av_seek_frame(inSpl->formatContext, numTrack, rescaledTimestamp, 0) < 0)
         {
             return MFX_ERR_UNKNOWN;
         }

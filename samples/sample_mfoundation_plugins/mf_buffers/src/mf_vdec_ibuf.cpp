@@ -91,7 +91,7 @@ HRESULT MFDecBitstream::Reset(void)
 
     m_bFirstFrame   = true;
     m_nFirstFrameTimeMinus1Sec = 0;
-    
+
     SAFE_RELEASE(m_pSample);
 
     MFX_LTRACE_D(MF_TL_GENERAL, hr);
@@ -215,7 +215,7 @@ mfxU32 MFDecBitstream::BstBufNeedHdr(mfxU8* data, mfxU32 size)
             }
             else // buffer is less than 4 bytes, it can't contain header
             {    // we need to append 0x0D010000
-                size = 4; 
+                size = 4;
             }
         }
     }
@@ -249,7 +249,7 @@ HRESULT MFDecBitstream::BstBufAppendHdr(mfxU8* /*data*/, mfxU32 /*size*/)
                 BstSetValue32(0x00000000, buf + 4);
                 m_pBstBuf->DataLength += 8;
                 m_nBstBufCopyBytes += 8;
-                
+
                 m_DbgFileFc.WriteSample(buf, 8);
             }
         }
@@ -263,7 +263,7 @@ HRESULT MFDecBitstream::BstBufAppendHdr(mfxU8* /*data*/, mfxU32 /*size*/)
                 BstSetValue32(0x0D010000, buf);
                 m_pBstBuf->DataLength += 4;
                 m_nBstBufCopyBytes += 4;
-                
+
                 m_DbgFileFc.WriteSample(buf, 4);
             }
         }
@@ -329,7 +329,7 @@ HRESULT MFDecBitstream::InitFC(mfxVideoParam* pVideoParams,
                         data, size);
                 m_pBstBuf->DataLength += size;
                 m_nBstBufCopyBytes += size;
-                
+
                 m_DbgFileFc.WriteSample(buf, size);
             }
         }
@@ -447,7 +447,7 @@ HRESULT MFDecBitstream::Load(IMFSample* pSample)
                 m_nFirstFrameTimeMinus1Sec = time - 1e7;
             m_bFirstFrame = false;
         }
-        //correct timestamps, in case of start from very big value (>10secs). 
+        //correct timestamps, in case of start from very big value (>10secs).
         //generally m_nFirstFrameTimeMinus1Sec == 0
         time -= m_nFirstFrameTimeMinus1Sec;
 #endif //!MFX_D3D11_SUPPORT

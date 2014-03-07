@@ -33,10 +33,10 @@ bool detail::SamplePoolForMuxer::GetVideoInfo( mfxTrackInfo & track_info)
     if (m_muxVideoParam.empty() || !m_SpsPps.size())
         return false;
     mfxVideoParam *vParam = reinterpret_cast<mfxVideoParam*>(&m_muxVideoParam.front());
-    
+
     //need to get actual frame resolution from encoder
     track_info.VideoParam.FrameInfo = vParam->mfx.FrameInfo;
-    
+
     //need to get actual seq headers
     if (m_SpsPps.size() > MFX_TRACK_HEADER_MAX_SIZE) {
         MSDK_TRACE_ERROR(MSDK_STRING("Muxer header buffer overflow "));

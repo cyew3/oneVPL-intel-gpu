@@ -21,15 +21,15 @@ static const GUID IID_IConfigureVideoEncoder =
 { 0x6babaf70, 0x864b, 0x486b, { 0xb4, 0x71, 0xcc, 0x4e, 0x9a, 0xff, 0x93, 0x1b } };
 
 // {8C787D42-E7C5-47e0-BFAC-7305EB54EBBA}
-static const GUID IID_IConfigureVideoDecoder = 
+static const GUID IID_IConfigureVideoDecoder =
 { 0x8c787d42, 0xe7c5, 0x47e0, { 0xbf, 0xac, 0x73, 0x5, 0xeb, 0x54, 0xeb, 0xba } };
 
 // {F1DB8643-AB53-494a-B8D1-7D8DA5A32C2A}
-static const GUID IID_IExposeMfxMemTypeFlags = 
+static const GUID IID_IExposeMfxMemTypeFlags =
 { 0xf1db8643, 0xab53, 0x494a, { 0xb8, 0xd1, 0x7d, 0x8d, 0xa5, 0xa3, 0x2c, 0x2a } };
 
 // {66F887BE-2764-4825-8EA9-E9DF3497B019}
-static const GUID IID_IShareMfxSession = 
+static const GUID IID_IShareMfxSession =
 { 0x66f887be, 0x2764, 0x4825, { 0x8e, 0xa9, 0xe9, 0xdf, 0x34, 0x97, 0xb0, 0x19 } };
 
 interface IConfigureVideoDecoder : public IUnknown
@@ -61,18 +61,18 @@ interface IConfigureVideoEncoder : public IUnknown
         {
             PF_AUTOSELECT           = 0,
 
-            // H.264 values            
+            // H.264 values
             PF_H264_BASELINE             = 66,
             PF_H264_MAIN                 = 77,
             PF_H264_HIGH                 = 100,
             PF_H264_HIGH10               = 110,
             PF_H264_HIGH422              = 122,
 
-            // MPEG2 values            
-            PF_MPEG2_SIMPLE              = 80, 
-            PF_MPEG2_MAIN                = 64, 
-            PF_MPEG2_SNR                 = 3, 
-            PF_MPEG2_SPATIAL             = 2, 
+            // MPEG2 values
+            PF_MPEG2_SIMPLE              = 80,
+            PF_MPEG2_MAIN                = 64,
+            PF_MPEG2_SNR                 = 3,
+            PF_MPEG2_SPATIAL             = 2,
             PF_MPEG2_HIGH                = 16
         } profile_idc;
 
@@ -110,7 +110,7 @@ interface IConfigureVideoEncoder : public IUnknown
             DWORD        GopPicSize;           // I-frame interval in frames
             DWORD        GopRefDist;           // Distance between I- or P- key frames;If GopRefDist = 1, there are no B-frames used
             DWORD        NumSlice;             // Number of slices
-            DWORD        BufferSizeInKB;       // vbv buffer size 
+            DWORD        BufferSizeInKB;       // vbv buffer size
         } ps_control;
 
         enum PCControl // picture coding control
@@ -139,7 +139,7 @@ interface IConfigureVideoEncoder : public IUnknown
             DWORD qp_up;            // range of qp increase adjustment
             DWORD qp_down;          // range of qp decrease adjustment
         } throttle_control;
-        
+
         struct RCControl // rate control
         {
             enum RCMethod
@@ -151,7 +151,7 @@ interface IConfigureVideoEncoder : public IUnknown
             DWORD       bitrate;               // specify bit rate in bps
         } rc_control;
 
-        DWORD  preset;   
+        DWORD  preset;
         DWORD  target_usage;
 
         Params() { memset(this, 0, sizeof(*this)); }
@@ -193,7 +193,7 @@ interface IExposeMfxMemTypeFlags : public IUnknown
 
 interface IShareMfxSession : public IUnknown
 {
-    STDMETHOD(GetMfxSession) (void **ppSession) PURE; 
+    STDMETHOD(GetMfxSession) (void **ppSession) PURE;
     STDMETHOD(SygnalSessionHasChild) () PURE;
 };
 

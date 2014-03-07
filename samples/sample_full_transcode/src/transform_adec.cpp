@@ -11,14 +11,14 @@
 #include <algorithm>
 
 
-Transform <MFXAudioDECODE>::Transform(PipelineFactory& factory, MFXAudioSession & session, int TimeToWait) 
+Transform <MFXAudioDECODE>::Transform(PipelineFactory& factory, MFXAudioSession & session, int TimeToWait)
     : m_factory(factory)
     , m_session(session)
     , m_dTimeToWait(TimeToWait)
     , m_outSamples(factory.CreateSamplePool(TimeToWait))
     , m_pDEC(factory.CreateAudioDecoder(session))
     , m_bEOS(false)
-    , m_bDrainSamplefSent(false) {    
+    , m_bDrainSamplefSent(false) {
         m_bInited = false;
 }
 
@@ -40,13 +40,13 @@ bool Transform <MFXAudioDECODE>::GetSample( SamplePtr& sample) {
     if (!m_pInput.get()) {
         return false;
     }
-    
+
     mfxBitstream * pIn = m_bEOS ? NULL : &m_pInput->GetBitstream();
 
     for (int i = 0, WaitPortion = 10 ; i <= m_dTimeToWait; ) {
         mfxSyncPoint syncp;
         ISample &pOut = m_outSamples->FindFreeSample();
-        
+
         pOut.GetAudioFrame().DataLength = 0;
 
         mfxStatus sts = m_pDEC->DecodeFrameAsync(pIn, &pOut.GetAudioFrame() , &syncp);
@@ -77,7 +77,7 @@ bool Transform <MFXAudioDECODE>::GetSample( SamplePtr& sample) {
         }
     }
     MSDK_TRACE_ERROR(MSDK_STRING("DecodeFrameAsync Timeout Error"));
-    throw DecodeTimeoutError();    
+    throw DecodeTimeoutError();
 }
 
 void Transform <MFXAudioDECODE>::InitDecode() {
@@ -91,13 +91,13 @@ void Transform <MFXAudioDECODE>::InitDecode() {
         MSDK_TRACE_ERROR(MSDK_STRING("MFXAudioDECODE::DecodeHeader, sts=") << sts);
         throw DecodeHeaderError();
     }
-    
+
     sts = m_pDEC->Query(&m_decParam, &m_decParam);
     if (sts < 0){
         MSDK_TRACE_ERROR(MSDK_STRING("MFXAudioDECODE::Query, sts=") << sts);
         throw DecodeQueryError();
     }
-    
+
     mfxAudioAllocRequest allocRequest = {};
     sts = m_pDEC->QueryIOSize(&m_decParam, &allocRequest);
     if (sts < 0){
@@ -108,7 +108,7 @@ void Transform <MFXAudioDECODE>::InitDecode() {
     MFXAVAllocRequest<mfxAudioAllocRequest> aRequest;
     MFXAVParams decParam(m_decParam);
     m_pNextTransform->GetNumSurfaces(decParam, aRequest);
-    int nFramesToAlloc = std::max(aRequest.Audio().SuggestedInputSize, m_pInput->GetBitstream().DataLength) / 
+    int nFramesToAlloc = std::max(aRequest.Audio().SuggestedInputSize, m_pInput->GetBitstream().DataLength) /
         std::min(aRequest.Audio().SuggestedInputSize, m_pInput->GetBitstream().DataLength);
     for (int i = 0; i < nFramesToAlloc; i++) {
         std::auto_ptr<ISample> outSample(new SampleAudioFrameWithData(allocRequest.SuggestedOutputSize, m_pInput->GetTrackID()));

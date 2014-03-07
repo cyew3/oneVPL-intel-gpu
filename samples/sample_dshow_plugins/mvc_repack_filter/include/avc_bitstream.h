@@ -8,7 +8,7 @@
 //
 //
 */
-#pragma once 
+#pragma once
 
 #include "mfxstructures.h"
 #include "avc_structures.h"

@@ -10,7 +10,7 @@
 */
 //////////////////////////////////////////////////////////////////////////
 // DSUtil.cpp: DirectShow helper functions.
-// 
+//
 // THIS CODE AND INFORMATION IS PROVIDED "AS IS" WITHOUT WARRANTY OF
 // ANY KIND, EITHER EXPRESSED OR IMPLIED, INCLUDING BUT NOT LIMITED TO
 // THE IMPLIED WARRANTIES OF MERCHANTABILITY AND/OR FITNESS FOR A
@@ -22,7 +22,7 @@
 
 /*********************************************************************************
 /
-/  DSUtil.cpp 
+/  DSUtil.cpp
 /  DirectShow helper functions.
 /
 /  Copyright (C) Microsoft Corporation. All rights reserved.
@@ -40,7 +40,7 @@
 
 /******* Helper functions not declared in DShowUtil.h *******/
 
-// MatchPinName: 
+// MatchPinName:
 // Function object to match a pin by name.
 struct MatchPinName
 {
@@ -84,7 +84,7 @@ struct MatchPinDirectionAndConnection
     PIN_DIRECTION   m_direction;
 
 
-    MatchPinDirectionAndConnection(PIN_DIRECTION direction, BOOL bShouldBeConnected) 
+    MatchPinDirectionAndConnection(PIN_DIRECTION direction, BOOL bShouldBeConnected)
         : m_bShouldBeConnected(bShouldBeConnected), m_direction(direction)
     {
     }
@@ -132,7 +132,7 @@ struct MatchPinDirectionAndCategory
         GUID category;
 
         HRESULT hr = IsPinDirection(pPin, m_direction, &bMatch);
-            
+
         if (SUCCEEDED(hr) && bMatch)
         {
             hr = GetPinCategory(pPin, &category);
@@ -162,7 +162,7 @@ HRESULT AddFilterByCLSID(
     IBaseFilter **ppF,      // Receives a pointer to the filter.
     LPCWSTR wszName)        // A name for the filter.
 {
-    if (!pGraph || ! ppF) 
+    if (!pGraph || ! ppF)
     {
         return E_POINTER;
     }
@@ -171,17 +171,17 @@ HRESULT AddFilterByCLSID(
 
     IBaseFilter *pFilter = NULL;
     HRESULT hr = CoCreateInstance(
-        clsid, 
-        NULL, 
-        CLSCTX_INPROC_SERVER, 
-        IID_IBaseFilter, 
+        clsid,
+        NULL,
+        CLSCTX_INPROC_SERVER,
+        IID_IBaseFilter,
         (void**)&pFilter);
 
     if (SUCCEEDED(hr))
     {
         hr = pGraph->AddFilter(pFilter, wszName);
     }
-    
+
 
     if (SUCCEEDED(hr))
     {
@@ -210,8 +210,8 @@ HRESULT AddFilterFromMoniker(
     IBaseFilter *pFilter = NULL;
 
     // Use the moniker to create the filter
-    HRESULT hr = pFilterMoniker->BindToObject(0, 0, IID_IBaseFilter, (void**)&pFilter);   
-    
+    HRESULT hr = pFilterMoniker->BindToObject(0, 0, IID_IBaseFilter, (void**)&pFilter);
+
     // Add the capture filter to the filter graph
     if (SUCCEEDED(hr))
     {
@@ -263,8 +263,8 @@ HRESULT ConnectFilters(
 // ConnectFilters: Filter to filter
 
 HRESULT ConnectFilters(
-    IGraphBuilder *pGraph, 
-    IBaseFilter *pSrc, 
+    IGraphBuilder *pGraph,
+    IBaseFilter *pSrc,
     IBaseFilter *pDest)
 {
     if ((pGraph == NULL) || (pSrc == NULL) || (pDest == NULL))
@@ -353,7 +353,7 @@ HRESULT CreateKernelFilter(
 {
     HRESULT hr;
 
-    if (!szName || !ppFilter) 
+    if (!szName || !ppFilter)
     {
         return E_POINTER;
     }
@@ -362,8 +362,8 @@ HRESULT CreateKernelFilter(
     IEnumMoniker *pEnum = NULL;
 
     // Create the system device enumerator.
-    hr = CoCreateInstance(CLSID_SystemDeviceEnum, 
-        NULL, 
+    hr = CoCreateInstance(CLSID_SystemDeviceEnum,
+        NULL,
         CLSCTX_INPROC_SERVER,
         IID_ICreateDevEnum,
         (void**)&pDevEnum);
@@ -409,7 +409,7 @@ HRESULT CreateKernelFilter(
             pBag->Release();
             pMoniker->Release();
         } // while
-        if (!bFound) 
+        if (!bFound)
         {
             hr = E_FAIL;
         }
@@ -422,7 +422,7 @@ HRESULT CreateKernelFilter(
 }
 
 
-HRESULT CreatePCMAudioType(AM_MEDIA_TYPE& mt, WORD nChannels, 
+HRESULT CreatePCMAudioType(AM_MEDIA_TYPE& mt, WORD nChannels,
     DWORD nSamplesPerSec, WORD wBitsPerSample)
 {
     FreeMediaType(mt);
@@ -466,10 +466,10 @@ HRESULT CreatePCMAudioType(AM_MEDIA_TYPE& mt, WORD nChannels,
 // Width:      Width in pixels
 // Height:     Height in pixels. Use > 0 for bottom-up DIBs, < 0 for top-down DIB
 // fps:        Frame rate, in frames per second
-// 
+//
 //-----------------------------------------------------------------------------
 
-HRESULT CreateRGBVideoType(AM_MEDIA_TYPE &mt, WORD iBitDepth, long Width, long Height, 
+HRESULT CreateRGBVideoType(AM_MEDIA_TYPE &mt, WORD iBitDepth, long Width, long Height,
                            double fps)
 {
     DWORD color_mask_565[] = { 0x00F800, 0x0007E0, 0x00001F };
@@ -614,7 +614,7 @@ HRESULT FindConnectedPin(
 }
 
 HRESULT FindPinByCategory(
-    IBaseFilter *pFilter, 
+    IBaseFilter *pFilter,
     REFGUID guidCategory,
     PIN_DIRECTION PinDir,
     IPin **ppPin
@@ -631,7 +631,7 @@ HRESULT FindFilterInterface(
     REFGUID iid,           // IID of the interface to retrieve.
     void **ppUnk)          // Receives the interface pointer.
 {
-    if (!pGraph || !ppUnk) 
+    if (!pGraph || !ppUnk)
     {
         return E_POINTER;
     }
@@ -669,11 +669,11 @@ HRESULT FindFilterInterface(
 
 
 HRESULT FindGraphInterface(
-    IGraphBuilder *pGraph, 
-    REFGUID iid, 
+    IGraphBuilder *pGraph,
+    REFGUID iid,
     void **ppUnk)
 {
-    if (!pGraph || !ppUnk) 
+    if (!pGraph || !ppUnk)
     {
         return E_POINTER;
     }
@@ -790,7 +790,7 @@ HRESULT FindPinInterface(
     REFGUID iid,           // IID of the interface.
     void **ppUnk)          // Receives the interface pointer.
 {
-    if (!pFilter || !ppUnk) 
+    if (!pFilter || !ppUnk)
     {
         return E_POINTER;
     }
@@ -806,7 +806,7 @@ HRESULT FindPinInterface(
     {
         return hr;
     }
-    
+
     // Query every pin for the interface.
     while (S_OK == pEnum->Next(1, &pPin, 0))
     {
@@ -867,7 +867,7 @@ HRESULT GetConnectedFilter(IPin *pPin, IBaseFilter **ppFilter)
         }
         else
         {
-            hr = E_UNEXPECTED;  // Pin does not have an owning filter! That's weird! 
+            hr = E_UNEXPECTED;  // Pin does not have an owning filter! That's weird!
         }
     }
 
@@ -887,9 +887,9 @@ HRESULT GetNextFilter(
     IBaseFilter **ppNext) // Receives a pointer to the next filter.
 {
 
-    PIN_DIRECTION PinDirection = (Dir == UPSTREAM ? PINDIR_INPUT : PINDIR_OUTPUT); 
+    PIN_DIRECTION PinDirection = (Dir == UPSTREAM ? PINDIR_INPUT : PINDIR_OUTPUT);
 
-    if (!pFilter || !ppNext) 
+    if (!pFilter || !ppNext)
     {
         return E_POINTER;
     }
@@ -927,9 +927,9 @@ HRESULT GetPinCategory(IPin *pPin, GUID *pPinCategory)
     {
         // Try to retrieve the pin category.
         DWORD cbReturned;
-        hr = pKs->Get(AMPROPSETID_Pin, AMPROPERTY_PIN_CATEGORY, NULL, 0, 
+        hr = pKs->Get(AMPROPSETID_Pin, AMPROPERTY_PIN_CATEGORY, NULL, 0,
             pPinCategory, sizeof(GUID), &cbReturned);
-    
+
         // If this succeeded, pPinCategory now contains the category GUID.
 
     }
@@ -975,7 +975,7 @@ HRESULT GetPinMediaType(
             {
                 if ((formatType == GUID_NULL) || (formatType == pmt->formattype))
                 {
-                    // Found a match. 
+                    // Found a match.
                     if (ppmt)
                     {
                         *ppmt = pmt;  // Return it to the caller
@@ -1075,7 +1075,7 @@ HRESULT IsRenderer(IBaseFilter *pFilter, BOOL *pResult)
     IPin *pPin = NULL;
 
 
-    // First try IAMFilterMiscFlags. 
+    // First try IAMFilterMiscFlags.
     hr = pFilter->QueryInterface(IID_IAMFilterMiscFlags, (void**)&pFlags);
     if (SUCCEEDED(hr))
     {
@@ -1129,8 +1129,8 @@ HRESULT IsRenderer(IBaseFilter *pFilter, BOOL *pResult)
                     if (hr == S_OK)
                     {
                         // The count (nPin) was zero, and the method returned S_OK, so
-                        // this input pin is mapped to exactly zero ouput pins. 
-                        // Therefore, it is a rendered input pin. 
+                        // this input pin is mapped to exactly zero ouput pins.
+                        // Therefore, it is a rendered input pin.
                         bFoundRenderedInputPin = true;
 
                         // We have met condition (2) above, so we can stop looking.
@@ -1142,7 +1142,7 @@ HRESULT IsRenderer(IBaseFilter *pFilter, BOOL *pResult)
                     }
                     else if (hr == E_NOTIMPL)
                     {
-                        // This pin is not mapped to any particular output pin. 
+                        // This pin is not mapped to any particular output pin.
                         bFoundUnmappedInputPin = true;
                         hr = S_OK;
                     }
@@ -1156,7 +1156,7 @@ HRESULT IsRenderer(IBaseFilter *pFilter, BOOL *pResult)
                 pPin->Release();  // Release for the next loop.
             }  // while
 
-           
+
             if (bFoundRenderedInputPin)
             {
                 bIsRenderer = TRUE; // condition (1) above
@@ -1216,7 +1216,7 @@ HRESULT IsSourceFilter(IBaseFilter *pFilter, BOOL *pResult)
     }
     else
     {
-        // Next, look for IFileSourceFilter. 
+        // Next, look for IFileSourceFilter.
         hr = pFilter->QueryInterface(IID_IFileSourceFilter, (void**)&pFileSrc);
         if (SUCCEEDED(hr))
         {
@@ -1319,8 +1319,8 @@ HRESULT AddSourceFilter(
 
     // Create the source filter and add it to the graph.
     HRESULT hr = CoCreateInstance(
-        clsidSourceFilter, 
-        NULL, 
+        clsidSourceFilter,
+        NULL,
         CLSCTX_INPROC_SERVER,
         IID_IBaseFilter,
         (void**)&pSource);
@@ -1334,7 +1334,7 @@ HRESULT AddSourceFilter(
     {
         hr = pSource->QueryInterface(IID_IFileSourceFilter, (void**)&pFileSource);
     }
-    
+
     if (SUCCEEDED(hr))
     {
         hr = pFileSource->Load(szFile, NULL);
@@ -1345,7 +1345,7 @@ HRESULT AddSourceFilter(
         *ppSourceFilter = pSource;
         (*ppSourceFilter)->AddRef();
     }
-    else 
+    else
     {
         // FAILED, remove the filter
         if (pSource != NULL)
@@ -1466,7 +1466,7 @@ HRESULT RemoveFilter(IGraphBuilder *pGraph, IBaseFilter *pFilter)
 }
 
 
-// RemoveFiltersDownstreamOfPin: 
+// RemoveFiltersDownstreamOfPin:
 // Removes any filters downstream from pPin, AND removes the filter that owns pPin.
 // (This is a recursive function used by RemoveFiltersDownstream, see below.)
 
@@ -1570,7 +1570,7 @@ HRESULT ShowFilterPropertyPage(IBaseFilter *pFilter, HWND hwndParent)
 
     // Discover if this filter contains a property page
     hr = pFilter->QueryInterface(IID_ISpecifyPropertyPages, (void **)&pSpecify);
-    if (SUCCEEDED(hr)) 
+    if (SUCCEEDED(hr))
     {
         hr = pFilter->QueryFilterInfo(&FilterInfo);
     }
@@ -1589,7 +1589,7 @@ HRESULT ShowFilterPropertyPage(IBaseFilter *pFilter, HWND hwndParent)
             0,                      // y (Reserved)
             FilterInfo.achName,     // Caption for the dialog box
             1,                      // Number of filters
-            (IUnknown **)&pFilter,  // Pointer to the filter 
+            (IUnknown **)&pFilter,  // Pointer to the filter
             caGUID.cElems,          // Number of property pages
             caGUID.pElems,          // Pointer to property page CLSIDs
             0,                      // Locale identifier
@@ -1600,8 +1600,8 @@ HRESULT ShowFilterPropertyPage(IBaseFilter *pFilter, HWND hwndParent)
     }
 
     CoTaskMemFree(caGUID.pElems);
-    
-    MSDK_SAFE_RELEASE(FilterInfo.pGraph); 
+
+    MSDK_SAFE_RELEASE(FilterInfo.pGraph);
     MSDK_SAFE_RELEASE(pSpecify);
     return hr;
 }
@@ -1640,7 +1640,7 @@ HRESULT SetMediaTypeFormatBlock(AM_MEDIA_TYPE *pmt, BYTE *pBuffer, DWORD cbBuffe
             pmt->cbFormat = 0;
             hr = E_OUTOFMEMORY;  // CoTaskMemRealloc failed
         }
-    }        
+    }
 
     return hr;
 }
@@ -1650,12 +1650,12 @@ BOOL SupportsPropertyPage(IBaseFilter *pFilter)
 {
     if (pFilter == NULL)
     {
-        return FALSE; 
+        return FALSE;
     }
 
     ISpecifyPropertyPages *pProp = NULL;
 
-    HRESULT hr = pFilter->QueryInterface(IID_ISpecifyPropertyPages, 
+    HRESULT hr = pFilter->QueryInterface(IID_ISpecifyPropertyPages,
         (void**)&pProp);
 
     if (SUCCEEDED(hr))
@@ -1671,15 +1671,15 @@ BOOL SupportsPropertyPage(IBaseFilter *pFilter)
 
 
 
-HRESULT SaveGraphFile(IGraphBuilder *pGraph, WCHAR *wszPath) 
+HRESULT SaveGraphFile(IGraphBuilder *pGraph, WCHAR *wszPath)
 {
     if (pGraph == NULL)
     {
         return E_POINTER;
     }
 
-    const WCHAR wszStreamName[] = L"ActiveMovieGraph"; 
-    
+    const WCHAR wszStreamName[] = L"ActiveMovieGraph";
+
     IStorage *pStorage = NULL;
     IStream *pStream = NULL;
     IPersistStream *pPersist = NULL;
@@ -1689,13 +1689,13 @@ HRESULT SaveGraphFile(IGraphBuilder *pGraph, WCHAR *wszPath)
         STGM_CREATE | STGM_TRANSACTED | STGM_READWRITE | STGM_SHARE_EXCLUSIVE,
         0, &pStorage);
 
-    if(SUCCEEDED(hr)) 
+    if(SUCCEEDED(hr))
     {
         hr = pStorage->CreateStream(
             wszStreamName,
             STGM_WRITE | STGM_CREATE | STGM_SHARE_EXCLUSIVE,
-            0, 
-            0, 
+            0,
+            0,
             &pStream);
     }
 
@@ -1709,7 +1709,7 @@ HRESULT SaveGraphFile(IGraphBuilder *pGraph, WCHAR *wszPath)
         hr = pPersist->Save(pStream, TRUE);
     }
 
-    if (SUCCEEDED(hr)) 
+    if (SUCCEEDED(hr))
     {
         hr = pStorage->Commit(STGC_DEFAULT);
     }
@@ -1747,11 +1747,11 @@ HRESULT LoadGraphFile(IGraphBuilder *pGraph, const WCHAR* wszName)
     IStream *pStream = NULL;
 
     HRESULT hr = StgOpenStorage(
-        wszName, 
-        0, 
-        STGM_TRANSACTED | STGM_READ | STGM_SHARE_DENY_WRITE, 
-        0, 
-        0, 
+        wszName,
+        0,
+        STGM_TRANSACTED | STGM_READ | STGM_SHARE_DENY_WRITE,
+        0,
+        0,
         &pStorage);
 
     if (SUCCEEDED(hr))
@@ -1761,7 +1761,7 @@ HRESULT LoadGraphFile(IGraphBuilder *pGraph, const WCHAR* wszName)
 
     if (SUCCEEDED(hr))
     {
-        hr = pStorage->OpenStream(L"ActiveMovieGraph", 0, 
+        hr = pStorage->OpenStream(L"ActiveMovieGraph", 0,
             STGM_READ | STGM_SHARE_EXCLUSIVE, 0, &pStream);
     }
 
@@ -1780,7 +1780,7 @@ HRESULT LoadGraphFile(IGraphBuilder *pGraph, const WCHAR* wszName)
 
 // Adds a DirectShow filter graph to the Running Object Table,
 // allowing GraphEdit to load a remote filter graph.
-HRESULT AddGraphToRot(IUnknown *pUnkGraph, DWORD *pdwRegister) 
+HRESULT AddGraphToRot(IUnknown *pUnkGraph, DWORD *pdwRegister)
 {
     IMoniker * pMoniker = NULL;
     IRunningObjectTable *pROT = NULL;
@@ -1803,7 +1803,7 @@ HRESULT AddGraphToRot(IUnknown *pUnkGraph, DWORD *pdwRegister)
 
         // Format the string for the registration
         hr = StringCchPrintfW(
-                wsz, NUMELMS(wsz), L"FilterGraph %08x pid %08x\0", 
+                wsz, NUMELMS(wsz), L"FilterGraph %08x pid %08x\0",
                 (DWORD_PTR)pUnkGraph, GetCurrentProcessId());
         if (FAILED(hr))
         {
@@ -1822,10 +1822,10 @@ HRESULT AddGraphToRot(IUnknown *pUnkGraph, DWORD *pdwRegister)
         // registered until it is explicitly revoked with the Revoke() method.
         //
         // Not using this flag means that if GraphEdit remotely connects
-        // to this graph and then GraphEdit exits, this object registration 
+        // to this graph and then GraphEdit exits, this object registration
         // will be deleted, causing future attempts by GraphEdit to fail until
         // this application is restarted or until the graph is registered again.
-        hr = pROT->Register(ROTFLAGS_REGISTRATIONKEEPSALIVE, pUnkGraph, 
+        hr = pROT->Register(ROTFLAGS_REGISTRATIONKEEPSALIVE, pUnkGraph,
                             pMoniker, pdwRegister);
         if (FAILED(hr))
         {
@@ -1844,7 +1844,7 @@ void RemoveGraphFromRot(DWORD dwRegister)
 {
     IRunningObjectTable *pROT = NULL;
 
-    if (SUCCEEDED(GetRunningObjectTable(0, &pROT))) 
+    if (SUCCEEDED(GetRunningObjectTable(0, &pROT)))
     {
         pROT->Revoke(dwRegister);
     }

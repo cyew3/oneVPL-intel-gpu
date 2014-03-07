@@ -11,7 +11,7 @@
 //////////////////////////////////////////////////////////////////////////
 //
 // Presenter.h : Defines the presenter object.
-// 
+//
 // THIS CODE AND INFORMATION IS PROVIDED "AS IS" WITHOUT WARRANTY OF
 // ANY KIND, EITHER EXPRESSED OR IMPLIED, INCLUDING BUT NOT LIMITED TO
 // THE IMPLIED WARRANTIES OF MERCHANTABILITY AND/OR FITNESS FOR A
@@ -25,13 +25,13 @@
 
 #pragma once
 
-// RENDER_STATE: Defines the state of the presenter. 
+// RENDER_STATE: Defines the state of the presenter.
 enum RENDER_STATE
 {
     RENDER_STATE_STARTED = 1,
     RENDER_STATE_STOPPED,
     RENDER_STATE_PAUSED,
-    RENDER_STATE_SHUTDOWN,  // Initial state. 
+    RENDER_STATE_SHUTDOWN,  // Initial state.
 
     // State transitions:
 
@@ -50,7 +50,7 @@ enum FRAMESTEP_STATE
     FRAMESTEP_WAITING_START,    // Frame stepping, but the clock is not started.
     FRAMESTEP_PENDING,          // Clock is started. Waiting for samples.
     FRAMESTEP_SCHEDULED,        // Submitted a sample for rendering.
-    FRAMESTEP_COMPLETE          // Sample was rendered. 
+    FRAMESTEP_COMPLETE          // Sample was rendered.
 
     // State transitions:
 
@@ -69,9 +69,9 @@ enum FRAMESTEP_STATE
 //  Description: Implements the custom presenter.
 //-----------------------------------------------------------------------------
 
-class EVRCustomPresenter : 
-    BaseObject,  
-    RefCountedObject, 
+class EVRCustomPresenter :
+    BaseObject,
+    RefCountedObject,
     // COM interfaces:
     public IMFVideoDeviceID,
     public IMFVideoPresenter, // Inherits IMFClockStateSink
@@ -137,10 +137,10 @@ protected:
     EVRCustomPresenter(HRESULT& hr);
     virtual ~EVRCustomPresenter();
 
-    // CheckShutdown: 
+    // CheckShutdown:
     //     Returns MF_E_SHUTDOWN if the presenter is shutdown.
     //     Call this at the start of any methods that should fail after shutdown.
-    inline HRESULT CheckShutdown() const 
+    inline HRESULT CheckShutdown() const
     {
         if (m_RenderState == RENDER_STATE_SHUTDOWN)
         {
@@ -190,7 +190,7 @@ protected:
     HRESULT CheckEndOfStream();
 
     // Managing samples
-    void    ProcessOutputLoop();   
+    void    ProcessOutputLoop();
     HRESULT ProcessOutput();
     HRESULT DeliverSample(IMFSample *pSample, BOOL bRepaint);
     HRESULT TrackSample(IMFSample *pSample);
@@ -211,7 +211,7 @@ protected:
 
 protected:
 
-    // FrameStep: Holds information related to frame-stepping. 
+    // FrameStep: Holds information related to frame-stepping.
     // Note: The purpose of this structure is simply to organize the data in one variable.
     struct FrameStep
     {
@@ -231,7 +231,7 @@ protected:
     RENDER_STATE                m_RenderState;          // Rendering state.
     FrameStep                   m_FrameStep;            // Frame-stepping information.
 
-    CritSec                     m_ObjectLock;           // Serializes our public methods.  
+    CritSec                     m_ObjectLock;           // Serializes our public methods.
 
     // Samples and scheduling
     Scheduler                   m_scheduler;            // Manages scheduling of samples.
@@ -257,7 +257,7 @@ protected:
     IMFMediaType                *m_pMediaType;           // Output media type
 
 private: // disallow copy and assign
-    EVRCustomPresenter(const EVRCustomPresenter&);              
-    void operator=(const EVRCustomPresenter&);   
+    EVRCustomPresenter(const EVRCustomPresenter&);
+    void operator=(const EVRCustomPresenter&);
 };
 

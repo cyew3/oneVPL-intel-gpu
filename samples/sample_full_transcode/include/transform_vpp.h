@@ -29,7 +29,7 @@ private:
     int  m_dTimeToWait;
     std::auto_ptr<MFXVideoVPP> m_pVPP;
     mfxFrameSurface1* m_pInputSurface;
-    std::auto_ptr<SamplePool>  m_pSamplesSurfPool; 
+    std::auto_ptr<SamplePool>  m_pSamplesSurfPool;
 
     std::queue<ISample*> m_ExtBitstreamQueue;
 

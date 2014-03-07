@@ -69,7 +69,7 @@ public:
         }
         return pResult;
     }
-    
+
     // checks whether mfxVideoParam points to same array of extParam
     inline bool IsExtParamUsed(const mfxVideoParam &videoParams) const
     {
@@ -210,12 +210,12 @@ public:
     // TryUpdate(save state) - checks params, notifies other workers
     // message Commit(forget saved state)
     // message Rollback(return to saved state) - notifies other workers
-    
+
     // problem: conflict in case of params collision
     // worker1->TryUpdate, worker2->TryUpdate, worker1->Rollback, worker2->Commit
 
 
-    
+
     // caller is reponsible for releasing all collected mfxExtBuffers
     // MFParamsWorker is allowed to modify any mfxExtBuffer only during this call but not after
     STDMETHOD(UpdateVideoParam)(mfxVideoParam &videoParams, MFExtBufCollection &arrExtBuf) const
@@ -276,7 +276,7 @@ protected:
                 pResult = pExtBuf;
             }
         }
-        
+
         //debug paranoid checks, can be removed:
         if (SUCCEEDED(hr))
         {

@@ -5,7 +5,7 @@
 // Class Factory implementation
 
 
-/* 
+/*
 
 // Example of usage:
 
@@ -20,7 +20,7 @@ ClassFactoryData g_ClassFactories[] =
 
 DWORD g_numClassFactories = ARRAY_SIZE(g_ClassFactories);
 
-// Defines the static ClassFactory::m_serverLocks member. 
+// Defines the static ClassFactory::m_serverLocks member.
 DEFINE_CLASSFACTORY_SERVER_LOCK;
 
 STDAPI DllGetClassObject(REFCLSID clsid, REFIID riid, void** ppv)
@@ -137,7 +137,7 @@ namespace MediaFoundationSamples
             {
                 *ppv = static_cast<IClassFactory*>(this);
             }
-            else 
+            else
             {
                 *ppv = NULL;
                 return E_NOINTERFACE;
@@ -162,7 +162,7 @@ namespace MediaFoundationSamples
         }
 
         STDMETHODIMP LockServer(BOOL lock)
-        {   
+        {
             if (lock)
             {
                 LockServer();
@@ -194,7 +194,7 @@ namespace MediaFoundationSamples
     class BaseObject
     {
     public:
-        BaseObject() 
+        BaseObject()
         {
             ClassFactory::LockServer();
         }

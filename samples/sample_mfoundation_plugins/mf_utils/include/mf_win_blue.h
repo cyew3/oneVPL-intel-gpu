@@ -15,7 +15,7 @@ Copyright(c) 2013 Intel Corporation. All Rights Reserved.
     #define STATIC_CODECAPI_AVEncSliceControlMode       0xe9e782ef, 0x5f18, 0x44c9, 0xa9, 0x0b, 0xe9, 0xc3, 0xc2, 0xc1, 0x7b, 0x0b
     #define STATIC_CODECAPI_AVEncSliceControlSize       0x92f51df3, 0x07a5, 0x4172, 0xae, 0xfe, 0xc6, 0x9c, 0xa3, 0xb6, 0x0e, 0x35
     #define STATIC_CODECAPI_AVEncVideoMaxNumRefFrame    0x964829ed, 0x94f9, 0x43b4, 0xb7, 0x4d, 0xef, 0x40, 0x94, 0x4b, 0x69, 0xa0
-    #define STATIC_CODECAPI_AVEncVideoMeanAbsoluteDifference    0xe5c0c10f, 0x81a4, 0x422d, 0x8c, 0x3f, 0xb4, 0x74, 0xa4, 0x58, 0x13, 0x36      
+    #define STATIC_CODECAPI_AVEncVideoMeanAbsoluteDifference    0xe5c0c10f, 0x81a4, 0x422d, 0x8c, 0x3f, 0xb4, 0x74, 0xa4, 0x58, 0x13, 0x36
     #define STATIC_CODECAPI_AVEncVideoMaxQP             0x3daf6f66, 0xa6a7, 0x45e0, 0xa8, 0xe5, 0xf2, 0x74, 0x3f, 0x46, 0xa3, 0xa2
     #define STATIC_CODECAPI_AVEncVideoLTRBufferControl  0xa4a0e93d, 0x4cbc, 0x444c, 0x89, 0xf4, 0x82, 0x6d, 0x31, 0x0e, 0x92, 0xa7
     #define STATIC_CODECAPI_AVEncVideoMarkLTRFrame      0xe42f4748, 0xa06d, 0x4ef9, 0x8c, 0xea, 0x3d, 0x05, 0xfd, 0xe3, 0xbd, 0x3b
@@ -89,11 +89,11 @@ DEFINE_MEDIATYPE_GUID( MFVideoFormat_HEVC_ES,   FCC('HEVS') );
 // VIDEO - Generic compressed video extra data
 //
 
-// {ad76a80b-2d5c-4e0b-b375-64e520137036}   MF_MT_VIDEO_PROFILE             {UINT32}    This is an alias of  MF_MT_MPEG2_PROFILE       
+// {ad76a80b-2d5c-4e0b-b375-64e520137036}   MF_MT_VIDEO_PROFILE             {UINT32}    This is an alias of  MF_MT_MPEG2_PROFILE
 DEFINE_GUID(MF_MT_VIDEO_PROFILE,
 0xad76a80b, 0x2d5c, 0x4e0b, 0xb3, 0x75, 0x64, 0xe5, 0x20, 0x13, 0x70, 0x36);
 
-// {96f66574-11c5-4015-8666-bff516436da7}   MF_MT_VIDEO_LEVEL               {UINT32}    This is an alias of  MF_MT_MPEG2_LEVEL        
+// {96f66574-11c5-4015-8666-bff516436da7}   MF_MT_VIDEO_LEVEL               {UINT32}    This is an alias of  MF_MT_MPEG2_LEVEL
 DEFINE_GUID(MF_MT_VIDEO_LEVEL,
 0x96f66574, 0x11c5, 0x4015, 0x86, 0x66, 0xbf, 0xf5, 0x16, 0x43, 0x6d, 0xa7);
 
@@ -106,14 +106,14 @@ DEFINE_GUID(MF_MT_VIDEO_LEVEL,
 DEFINE_GUID(MF_VIDEO_MAX_MB_PER_SEC,
 0xe3f2e203, 0xd445, 0x4b8c, 0x92, 0x11, 0xae, 0x39, 0xd, 0x3b, 0xa0, 0x17);
 
-//    MF_VIDEO_MAX_MB_PER_SEC  
+//    MF_VIDEO_MAX_MB_PER_SEC
 //
 //    Data type : UINT32
 //
 //    MF_VIDEO_MAX_MB_PER_SEC on IMFTransform specifies the maximum macroblock processing rate (in unit of macroblocks per second) supported by the hardware encoder. The value shall be independent of how the pipeline is constructed. This is read only attribute, and we expect encoder to return static value based on the hardware capability. Hardware shall return the lower bound on this value. For example if hardware has lower processing power when operating in low latency mode, it should return the lower value.
 //    Only lower 28 bits should be used by app. Upper 4bits are reserved for future use. Applications should ignore the upper 4 bits and MFT should set the upper 4 bits to 0.
 //
-//    Applicable to H.264/AVC encoders. 
+//    Applicable to H.264/AVC encoders.
 //    Sample code
 //    CHECKHR_GOTO_DONE (pMFT->GetAttributes(&pAttributes));
 //    hr = pAttributes->GetUINT32(MF_VIDEO_MAX_MB_PER_SEC, &uiMaxMBPerSec);

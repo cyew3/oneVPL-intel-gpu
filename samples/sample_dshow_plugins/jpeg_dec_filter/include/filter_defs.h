@@ -15,7 +15,7 @@
 #define FILTER_NAME        _T(FILTER_NAME_STRING)
 #define FILTER_GUID        CLSID_JPEGDecFilter
 #define FILTER_CREATE      CJPEGDecVideoFilter::CreateInstance
-#define FILTER_INPUT       { &MEDIATYPE_Video, &MEDIASUBTYPE_MJPG } 
+#define FILTER_INPUT       { &MEDIATYPE_Video, &MEDIASUBTYPE_MJPG }
 #define FILTER_OUTPUT      { &MEDIATYPE_Video, &MEDIASUBTYPE_NV12 }
 
 #define FILTER_PROPERTIES2 { L"Video Decoder Properties", &CLSID_VideoPropertyPage, CVideoDecPropPage::CreateInstance, NULL, NULL }

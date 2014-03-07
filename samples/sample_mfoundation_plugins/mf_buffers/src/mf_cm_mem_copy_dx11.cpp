@@ -66,7 +66,7 @@ mfxStatus CmDeviceHelper<ID3D11Device> :: CreateCmSurface(CmSurfaces_t & cmSurfa
 
     UINT nSurfaces = 0;
     INT cm_sts = m_pCmDevice->CreateSurface2DSubresource(dxSurface, dsc.ArraySize, &cmSurfaces.front(), nSurfaces);
-    
+
     //todo: handle cm ret_code
     if (CM_SUCCESS != cm_sts) {
         return MFX_ERR_UNKNOWN;
@@ -79,7 +79,7 @@ mfxStatus CmDeviceHelper<ID3D11Device> :: CreateCmSurface(CmSurfaces_t & cmSurfa
         cmSurfaces.resize(0);
         return MFX_ERR_UNKNOWN;
     }
-    
+
     return MFX_ERR_NONE;
 }
 

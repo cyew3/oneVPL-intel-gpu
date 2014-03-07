@@ -42,7 +42,7 @@ class FastCopy
         // event handles
         MyEvent EventStart;
         MyEvent EventEnd;
-        
+
         IppBool *pbCopyQuit;
     };
 public:

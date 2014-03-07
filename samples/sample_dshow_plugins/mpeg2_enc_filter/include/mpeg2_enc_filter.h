@@ -31,18 +31,18 @@ public:
     STDMETHODIMP        GetPages(CAUUID *pPages);
 
     HRESULT             CheckInputType(const CMediaType* mtIn);
-    
+
 protected:
 
     // Fill m_EncoderParams with default values
     void                SetDefaultParams(void);
-    // Fill m_EncoderParams with values from registry if available, 
+    // Fill m_EncoderParams with values from registry if available,
     // otherwise write current m_EncoderParams values to registry
     void                ReadParamsFromRegistry(void);
     // Write current m_EncoderParams values to registry
     void                WriteParamsToRegistry(void);
     void                ReadFrameRateFromRegistry(mfxU32 &iFrameRate);
-    void                UpdateRegistry(void) 
+    void                UpdateRegistry(void)
     {CopyMFXToEncoderParams(&m_EncoderParams,&m_mfxParamsVideo); WriteParamsToRegistry(); CEncVideoFilter::UpdateRegistry();};
 
     // Crops are not supported by MPEG2 standard, so we need to use VPP

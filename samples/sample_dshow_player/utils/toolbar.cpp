@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////
 // Toolbar.cpp: Toolbar and rebar control classes.
-// 
+//
 // THIS CODE AND INFORMATION IS PROVIDED "AS IS" WITHOUT WARRANTY OF
 // ANY KIND, EITHER EXPRESSED OR IMPLIED, INCLUDING BUT NOT LIMITED TO
 // THE IMPLIED WARRANTIES OF MERCHANTABILITY AND/OR FITNESS FOR A
@@ -66,8 +66,8 @@ HRESULT Toolbar::Create(HINSTANCE hInstance, HWND hParent, DWORD_PTR id, DWORD d
 
     dwStyle |= WS_CHILD | WS_VISIBLE | WS_CLIPCHILDREN | WS_CLIPSIBLINGS | CCS_NODIVIDER;
 
-    m_hwnd = CreateWindowEx(0, TOOLBARCLASSNAME, (LPTSTR) NULL, 
-        dwStyle, 0, 0, 0, 0, hParent, (HMENU)id, hInstance, NULL); 
+    m_hwnd = CreateWindowEx(0, TOOLBARCLASSNAME, (LPTSTR) NULL,
+        dwStyle, 0, 0, 0, 0, hParent, (HMENU)id, hInstance, NULL);
 
     if (m_hwnd == 0)
     {
@@ -75,7 +75,7 @@ HRESULT Toolbar::Create(HINSTANCE hInstance, HWND hParent, DWORD_PTR id, DWORD d
     }
 
 
-    SendMessage(TB_BUTTONSTRUCTSIZE, (WPARAM) sizeof(TBBUTTON), 0); 
+    SendMessage(TB_BUTTONSTRUCTSIZE, (WPARAM) sizeof(TBBUTTON), 0);
     return S_OK;
 }
 
@@ -170,12 +170,12 @@ HRESULT Toolbar::SetButtonImage(int id, int bitmap)
 //
 // Call this method when the app receives a TTN_GETDISPINFO notification.
 // The method loads a string resource with the same resource ID as the
-// button ID. 
+// button ID.
 //
 // hInstance: Handle to the application instance
 // pDispInfo: Pointer to the NMTTDISPINFO struct from the WM_NOTFIY
 //            message.
-// 
+//
 ///////////////////////////////////////////////////////////////////////
 
 HRESULT Toolbar::ShowToolTip(NMTTDISPINFO *pDispInfo)
@@ -210,10 +210,10 @@ HRESULT Toolbar::ShowToolTip(NMTTDISPINFO *pDispInfo)
 //--------------------------------------------------------------------------------------
 
 HRESULT Toolbar::SetImageList(
-	ButtonState state, 
-	UINT nBitmapID, 
-	const Size& buttonSize, 
-	DWORD numButtons, 
+	ButtonState state,
+	UINT nBitmapID,
+	const Size& buttonSize,
+	DWORD numButtons,
 	COLORREF mask
 	)
 {
@@ -305,11 +305,11 @@ Rebar::Rebar()
 
 HRESULT Rebar::Create(HINSTANCE hInstance, HWND hParent, DWORD_PTR id, DWORD dwStyle)
 {
-    dwStyle |= WS_CHILD | WS_VISIBLE | WS_CLIPCHILDREN | WS_CLIPSIBLINGS | 
-        RBS_VARHEIGHT | RBS_AUTOSIZE | RBS_BANDBORDERS | CCS_NODIVIDER; 
+    dwStyle |= WS_CHILD | WS_VISIBLE | WS_CLIPCHILDREN | WS_CLIPSIBLINGS |
+        RBS_VARHEIGHT | RBS_AUTOSIZE | RBS_BANDBORDERS | CCS_NODIVIDER;
 
-    m_hwnd = CreateWindowEx(0, REBARCLASSNAME, (LPTSTR) NULL, 
-        dwStyle, 0, 0, 0, 0, hParent, (HMENU)id, hInstance, NULL); 
+    m_hwnd = CreateWindowEx(0, REBARCLASSNAME, (LPTSTR) NULL,
+        dwStyle, 0, 0, 0, 0, hParent, (HMENU)id, hInstance, NULL);
 
     if (m_hwnd == 0)
     {
@@ -383,7 +383,7 @@ HRESULT Rebar::AddBand(HWND hBand, UINT id)
 		bRet = (BOOL)::SendMessage(hBand, TB_GETITEMRECT, nBtnCount - 1, (LPARAM)&rcTmp);
 
         rbBand.cx = nBtnCount * (rcTmp.right - rcTmp.left); // length of band
-		rbBand.cyMinChild = rcTmp.bottom - rcTmp.top;  // minimum height 
+		rbBand.cyMinChild = rcTmp.bottom - rcTmp.top;  // minimum height
 		rbBand.cxMinChild = rbBand.cx;  // minimum width
 	}
 	else	// no buttons, either not a toolbar or really has no buttons

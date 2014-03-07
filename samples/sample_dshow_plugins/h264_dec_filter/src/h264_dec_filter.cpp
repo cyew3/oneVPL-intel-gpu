@@ -60,11 +60,11 @@ HRESULT CH264DecVideoFilter::CheckInputType(const CMediaType *mtIn)
     if (FAILED(hr))
         return hr;
 
-    if (m_mfxParamsVideo.mfx.CodecProfile == MFX_PROFILE_AVC_MULTIVIEW_HIGH || 
+    if (m_mfxParamsVideo.mfx.CodecProfile == MFX_PROFILE_AVC_MULTIVIEW_HIGH ||
         m_mfxParamsVideo.mfx.CodecProfile == MFX_PROFILE_AVC_STEREO_HIGH)
     {
         // CH264DecVideoFilter is not suited for MVC decoding,
-        // you should use CMVCDecVideoFilter for this task    
+        // you should use CMVCDecVideoFilter for this task
         return VFW_E_INVALIDMEDIATYPE;
     }
 

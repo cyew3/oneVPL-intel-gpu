@@ -24,7 +24,7 @@ namespace {
 
 
 TEST(GenericTTX, __int64) {
-    
+
     VerifyConvert<__int64>("int64");
 }
 TEST(GenericTTX, int) {

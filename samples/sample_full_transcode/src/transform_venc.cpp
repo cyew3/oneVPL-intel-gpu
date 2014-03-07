@@ -14,7 +14,7 @@
 
 #include <iostream>
 
-Transform <MFXVideoENCODE>::Transform( PipelineFactory& factory, MFXVideoSessionExt & session, int TimeToWait ) : 
+Transform <MFXVideoENCODE>::Transform( PipelineFactory& factory, MFXVideoSessionExt & session, int TimeToWait ) :
       m_session(session)
     , m_factory(factory)
     , m_dTimeToWait(TimeToWait)
@@ -84,9 +84,9 @@ bool Transform <MFXVideoENCODE>::GetSample( SamplePtr& sample) {
     }
 
     if (m_ExtBitstreamQueue.empty()) {
-        if (m_bDrainSampleSent) 
+        if (m_bDrainSampleSent)
             return false;
-    
+
         m_bDrainSampleSent = true;
         //TODO: remove call to findfree surface
         sample.reset(new MetaSample(META_EOS, 0, 0, m_nTrackId));
@@ -99,7 +99,7 @@ bool Transform <MFXVideoENCODE>::GetSample( SamplePtr& sample) {
     }
 
     mfxStatus sts = MFX_ERR_NONE;
-    
+
     //wait for timeout in case of eos or not enough bitstreams
     int nWait = m_bEOS || (m_ExtBitstreamQueue.size() == m_initVideoParam.AsyncDepth) ? m_dTimeToWait : 0;
 
@@ -121,11 +121,11 @@ bool Transform <MFXVideoENCODE>::GetSample( SamplePtr& sample) {
         MSDK_TRACE_DEBUG(MSDK_STRING("MFXVideoENCODE::SyncOperation(), sts=")<<sts);
     }
 
-    MSDK_TRACE_DEBUG(MSDK_STRING("MFXVideoENCODE::SyncOperation(), pts=") 
-        << m_ExtBitstreamQueue.front().first->GetBitstream().TimeStamp << MSDK_STRING(", dts=") 
+    MSDK_TRACE_DEBUG(MSDK_STRING("MFXVideoENCODE::SyncOperation(), pts=")
+        << m_ExtBitstreamQueue.front().first->GetBitstream().TimeStamp << MSDK_STRING(", dts=")
         << m_ExtBitstreamQueue.front().first->GetBitstream().DecodeTimeStamp );
 
-    
+
     sample.reset(m_ExtBitstreamQueue.front().first);
 
     if (m_bCreateSPS) {
@@ -142,7 +142,7 @@ void Transform <MFXVideoENCODE>::PutSample(SamplePtr& sample) {
     m_bEOS |= sample->HasMetaData(META_EOS);
 
     InitEncode(sample);
-    
+
     return SubmitEncodingWorkload(m_bEOS? 0: &sample->GetSurface());
 }
 
@@ -189,9 +189,9 @@ void Transform <MFXVideoENCODE>::InitEncode(SamplePtr& sample) {
         throw NullPointerError();
     }
     //TODO: [business critical] add overflow u16 test
-    mfxU32 bits_MaxLength = vparam.mfx.BufferSizeInKB * 1000 * 
+    mfxU32 bits_MaxLength = vparam.mfx.BufferSizeInKB * 1000 *
         (0 == vparam.mfx.BRCParamMultiplier ? 1 : vparam.mfx.BRCParamMultiplier);
-    
+
     // add one bitstream to process buffered frames correctly within existing architecture
     for (int i = 0; i < m_initVideoParam.AsyncDepth + 1; i++) {
         SamplePtr sampleOut(new SampleBitstream(bits_MaxLength, sample->GetTrackID()));
@@ -204,13 +204,13 @@ void Transform <MFXVideoENCODE>::SubmitEncodingWorkload(mfxFrameSurface1 * surfa
 {
     SamplePtr sampleBitstream;
     mfxSyncPoint syncp = 0;
-    for (int i = 0, waitPortion = 10 ; i <= m_dTimeToWait; ) { 
+    for (int i = 0, waitPortion = 10 ; i <= m_dTimeToWait; ) {
         if (!sampleBitstream.get()) {
             sampleBitstream.reset(m_BitstreamPool->LockSample(m_BitstreamPool->FindFreeSample()));
         }
         sampleBitstream->GetBitstream().DataLength = 0;
         sampleBitstream->GetBitstream().DataOffset = 0;
-        
+
         if (surface) {
             MSDK_TRACE_DEBUG(MSDK_STRING("MFXVideoENCODE::EncodeFrameAsync(), pts=") << surface->Data.TimeStamp);
         }
@@ -232,14 +232,14 @@ void Transform <MFXVideoENCODE>::SubmitEncodingWorkload(mfxFrameSurface1 * surfa
         case MFX_ERR_MORE_DATA:
             m_bDrainComplete |= 0 == surface ;
             return;
-        case MFX_WRN_DEVICE_BUSY:        
+        case MFX_WRN_DEVICE_BUSY:
             MSDK_SLEEP(waitPortion);
             i += waitPortion;
             continue;
         default:
             MSDK_TRACE_ERROR(MSDK_STRING("MFXVideoENCODE::EncodeFrameAsync(), sts=") << sts);
             throw EncodeFrameAsyncError();
-        }        
+        }
         if(MFX_ERR_NONE == sts) {
             return;
         }
@@ -253,8 +253,8 @@ void Transform <MFXVideoENCODE>::GetNumSurfaces(MFXAVParams& param, IAllocReques
     Param.mfx.CodecId = m_initVideoParam.mfx.CodecId;
     Param.mfx.CodecProfile = m_initVideoParam.mfx.CodecProfile;
     Param.mfx.CodecLevel = m_initVideoParam.mfx.CodecLevel;
-    Param.IOPattern = Param.IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY  
-        ? (mfxU16)MFX_IOPATTERN_IN_SYSTEM_MEMORY 
+    Param.IOPattern = Param.IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY
+        ? (mfxU16)MFX_IOPATTERN_IN_SYSTEM_MEMORY
         : (mfxU16)MFX_IOPATTERN_IN_VIDEO_MEMORY;
     mfxStatus sts = m_pENC->QueryIOSurf(&Param, &request.Video());
     if (sts < 0) {

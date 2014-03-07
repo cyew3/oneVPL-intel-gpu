@@ -38,7 +38,7 @@ mfxStatus Launcher::Init(int argc, msdk_char *argv[])
     mfxU32 BufCounter = 0;
     mfxHDL hdl = NULL;
     sInputParams    InputParams;
-    
+
     //parent transcode pipeline
     CTranscodingPipeline *pParentPipeline = NULL;
     // source transcode pipeline use instead parent in heterogeneous pipeline
@@ -46,7 +46,7 @@ mfxStatus Launcher::Init(int argc, msdk_char *argv[])
 
     // parse input par file
     sts = m_parser.ParseCmdLine(argc, argv);
-    MSDK_CHECK_PARSE_RESULT(sts, MFX_ERR_NONE, sts); 
+    MSDK_CHECK_PARSE_RESULT(sts, MFX_ERR_NONE, sts);
 
     // get parameters for each session from parser
     while(m_parser.GetNextSessionParams(InputParams))
@@ -54,10 +54,10 @@ mfxStatus Launcher::Init(int argc, msdk_char *argv[])
         m_InputParamsArray.push_back(InputParams);
         InputParams.Reset();
     }
-   
+
     // check correctness of input parameters
     sts = VerifyCrossSessionsOptions();
-    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts); 
+    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
 #if defined(_WIN32) || defined(_WIN64)
     if (m_eDevType == MFX_HANDLE_D3D9_DEVICE_MANAGER)
@@ -111,27 +111,27 @@ mfxStatus Launcher::Init(int argc, msdk_char *argv[])
     sts = CreateSafetyBuffers();
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
-    // create sessions, allocators 
+    // create sessions, allocators
     for (i = 0; i < m_InputParamsArray.size(); i++)
     {
         GeneralAllocator* pAllocator = new GeneralAllocator;
         sts = pAllocator->Init(m_pAllocParam.get());
-        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts); 
+        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
         m_pAllocArray.push_back(pAllocator);
 
         std::auto_ptr<ThreadTranscodeContext> pThreadPipeline(new ThreadTranscodeContext);
         // extend BS processing init
         m_InputParamsArray[i].nTimeout == 0 ? m_pExtBSProcArray.push_back(new FileBitstreamProcessor) :
                                         m_pExtBSProcArray.push_back(new FileBitstreamProcessor_WithReset);
-        pThreadPipeline->pPipeline.reset(new CTranscodingPipeline);        
-     
+        pThreadPipeline->pPipeline.reset(new CTranscodingPipeline);
+
         pThreadPipeline->pBSProcessor = m_pExtBSProcArray.back();
         if (Sink == m_InputParamsArray[i].eMode)
         {
             pBuffer = m_pBufferArray[m_pBufferArray.size()-1];
             pSinkPipeline = pThreadPipeline->pPipeline.get();
             sts = m_pExtBSProcArray.back()->Init(m_InputParamsArray[i].strSrcFile, NULL);
-            MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts); 
+            MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
         }
         else if (Source == m_InputParamsArray[i].eMode)
         {
@@ -140,7 +140,7 @@ mfxStatus Launcher::Init(int argc, msdk_char *argv[])
             sts = m_pExtBSProcArray.back()->Init(NULL, m_InputParamsArray[i].strDstFile);
             MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
         }
-        else 
+        else
         {
             sts = m_pExtBSProcArray.back()->Init(m_InputParamsArray[i].strSrcFile, m_InputParamsArray[i].strDstFile);
             MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
@@ -149,7 +149,7 @@ mfxStatus Launcher::Init(int argc, msdk_char *argv[])
 
         // if session has VPP plus ENCODE only (-i::source option)
         // use decode source session as input
-        sts = MFX_ERR_MORE_DATA; 
+        sts = MFX_ERR_MORE_DATA;
         if (Source == m_InputParamsArray[i].eMode)
         {
             sts = pThreadPipeline->pPipeline->Init(&m_InputParamsArray[i],
@@ -169,7 +169,7 @@ mfxStatus Launcher::Init(int argc, msdk_char *argv[])
                                                     m_pExtBSProcArray.back());
         }
 
-        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);         
+        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
         if (!pParentPipeline && m_InputParamsArray[i].bIsJoin)
             pParentPipeline = pThreadPipeline->pPipeline.get();
@@ -184,7 +184,7 @@ mfxStatus Launcher::Init(int argc, msdk_char *argv[])
         sts = m_pSessionArray[i]->pPipeline->QueryMFXVersion(&ver);
         MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
-        PrintInfo(i, &m_InputParamsArray[i], &ver);            
+        PrintInfo(i, &m_InputParamsArray[i], &ver);
     }
 
     for (i = 0; i < m_InputParamsArray.size(); i++)
@@ -218,7 +218,7 @@ void Launcher::Run()
 
     mfxU32 i;
     mfxStatus sts;
-    
+
     MSDKThread * pthread = NULL;
 
     for (i = 0; i < totalSessions; i++)
@@ -226,11 +226,11 @@ void Launcher::Run()
         pthread = new MSDKThread(sts, ThranscodeRoutine, (void *)m_pSessionArray[i]);
 
         m_HDLArray.push_back(pthread);
-    }   
-    
+    }
+
     for (i = 0; i < m_pSessionArray.size(); i++)
     {
-        m_HDLArray[i]->Wait();        
+        m_HDLArray[i]->Wait();
     }
 
     msdk_printf(MSDK_STRING("\nTranscoding finished\n"));
@@ -240,7 +240,7 @@ void Launcher::Run()
 mfxStatus Launcher::ProcessResult()
 {
     FILE* pPerfFile = m_parser.GetPerformanceFile();
-    msdk_printf(MSDK_STRING("\nCommon transcoding time is  %.2f sec \n"), GetTime(m_StartTime));    
+    msdk_printf(MSDK_STRING("\nCommon transcoding time is  %.2f sec \n"), GetTime(m_StartTime));
 
     m_parser.PrintParFileName();
 
@@ -258,30 +258,30 @@ mfxStatus Launcher::ProcessResult()
         if (MFX_ERR_NONE != sts)
         {
             SuccessTranscode = false;
-            msdk_printf(MSDK_STRING("MFX session %d transcoding FAILED:\nProcessing time: %.2f sec \nNumber of processed frames: %d\n"), 
-                i, 
-                m_pSessionArray[i]->working_time, 
+            msdk_printf(MSDK_STRING("MFX session %d transcoding FAILED:\nProcessing time: %.2f sec \nNumber of processed frames: %d\n"),
+                i,
+                m_pSessionArray[i]->working_time,
                 m_pSessionArray[i]->numTransFrames);
             if (pPerfFile)
             {
-                msdk_fprintf(pPerfFile, MSDK_STRING("MFX session %d transcoding FAILED:\nProcessing time: %.2f sec \nNumber of processed frames: %d\n"), 
-                    i, 
-                    m_pSessionArray[i]->working_time, 
+                msdk_fprintf(pPerfFile, MSDK_STRING("MFX session %d transcoding FAILED:\nProcessing time: %.2f sec \nNumber of processed frames: %d\n"),
+                    i,
+                    m_pSessionArray[i]->working_time,
                     m_pSessionArray[i]->numTransFrames);
             }
-            
+
         }
         else
         {
-            msdk_printf(MSDK_STRING("MFX session %d transcoding PASSED:\nProcessing time: %.2f sec \nNumber of processed frames: %d\n"), 
-                i, 
-                m_pSessionArray[i]->working_time, 
+            msdk_printf(MSDK_STRING("MFX session %d transcoding PASSED:\nProcessing time: %.2f sec \nNumber of processed frames: %d\n"),
+                i,
+                m_pSessionArray[i]->working_time,
                 m_pSessionArray[i]->numTransFrames);
             if (pPerfFile)
             {
-                msdk_fprintf(pPerfFile, MSDK_STRING("MFX session %d transcoding PASSED:\nProcessing time: %.2f sec \nNumber of processed frames: %d\n"), 
-                    i, 
-                    m_pSessionArray[i]->working_time, 
+                msdk_fprintf(pPerfFile, MSDK_STRING("MFX session %d transcoding PASSED:\nProcessing time: %.2f sec \nNumber of processed frames: %d\n"),
+                    i,
+                    m_pSessionArray[i]->working_time,
                     m_pSessionArray[i]->numTransFrames);
             }
         }
@@ -369,7 +369,7 @@ mfxStatus Launcher::VerifyCrossSessionsOptions()
                     return MFX_ERR_UNSUPPORTED;
                 }
             }
-            
+
             if (IsFirstInTopology)
                 IsFirstInTopology = false;
 
@@ -382,7 +382,7 @@ mfxStatus Launcher::VerifyCrossSessionsOptions()
                 return MFX_ERR_UNSUPPORTED;
             }
             IsSinkPresence = true;
-            
+
             if (IsFirstInTopology)
             {
                 if (m_InputParamsArray[i].bIsJoin)
@@ -434,7 +434,7 @@ mfxStatus Launcher::CreateSafetyBuffers()
 {
     SafetySurfaceBuffer* pBuffer     = NULL;
     SafetySurfaceBuffer* pPrevBuffer = NULL;
-    
+
     for (mfxU32 i = 0; i < m_InputParamsArray.size(); i++)
     {
         if (Source == m_InputParamsArray[i].eMode)
@@ -485,12 +485,12 @@ int _tmain(int argc, TCHAR *argv[])
 #else
 int main(int argc, char *argv[])
 #endif
-{  
+{
     mfxStatus sts;
     Launcher transcode;
     sts = transcode.Init(argc, argv);
     MSDK_CHECK_PARSE_RESULT(sts, MFX_ERR_NONE, 1);
-    
+
     transcode.Run();
 
     sts = transcode.ProcessResult();

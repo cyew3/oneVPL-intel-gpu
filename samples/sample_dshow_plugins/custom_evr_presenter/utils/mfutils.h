@@ -1,7 +1,7 @@
 //////////////////////////////////////////////////////////////////////////
 //
 // mfutils.h : Miscellaneous helper functions for Media Foundation.
-// 
+//
 // THIS CODE AND INFORMATION IS PROVIDED "AS IS" WITHOUT WARRANTY OF
 // ANY KIND, EITHER EXPRESSED OR IMPLIED, INCLUDING BUT NOT LIMITED TO
 // THE IMPLIED WARRANTIES OF MERCHANTABILITY AND/OR FITNESS FOR A
@@ -18,7 +18,7 @@
 namespace MediaFoundationSamples
 {
     const MFTIME ONE_SECOND = 10000000; // One second in hns
-    const LONG   ONE_MSEC = 1000;       // One msec in hns 
+    const LONG   ONE_MSEC = 1000;       // One msec in hns
 
 
     /*
@@ -45,10 +45,10 @@ namespace MediaFoundationSamples
     //
     //  sURL: The URL to open.
     //
-    //  Note: This function uses the synchronous method on IMFSourceResolver 
-    //  to create the media source. However, creating a media source can take 
-    //  a noticeable amount of time, especially for a network source. For a 
-    //  more responsive UI, use the asynchronous BeginCreateObjectFromURL 
+    //  Note: This function uses the synchronous method on IMFSourceResolver
+    //  to create the media source. However, creating a media source can take
+    //  a noticeable amount of time, especially for a network source. For a
+    //  more responsive UI, use the asynchronous BeginCreateObjectFromURL
     //  method.
     //
     /////////////////////////////////////////////////////////////////////////
@@ -78,7 +78,7 @@ namespace MediaFoundationSamples
                 sURL,                       // URL of the source.
                 MF_RESOLUTION_MEDIASOURCE,  // Create a source object.
                 NULL,                       // Optional property store.
-                &ObjectType,                // Receives the created object type. 
+                &ObjectType,                // Receives the created object type.
                 &pSourceUnk                 // Receives a pointer to the media source.
                 );
         }
@@ -100,11 +100,11 @@ namespace MediaFoundationSamples
     //  Name: GetStreamMajorType
     //  Description:  Get the major media type from a stream descriptor.
     //
-    //  Note: 
+    //  Note:
     //  To get the major media type from a stream descriptor, you need to go
     //  through the stream descriptor's media type handler. Use this helper
     //  function if you don't need the type handler for anything else.
-    // 
+    //
     /////////////////////////////////////////////////////////////////////////
 
     inline HRESULT GetStreamMajorType(IMFStreamDescriptor *pSD, GUID *pguidMajorType)
@@ -145,10 +145,10 @@ namespace MediaFoundationSamples
             return E_POINTER;
         }
 
-        *pszText = NULL;  
+        *pszText = NULL;
 
-        int cch = GetWindowTextLength(hwnd);  
-        if (cch < 0) 
+        int cch = GetWindowTextLength(hwnd);
+        if (cch < 0)
         {
             return E_UNEXPECTED; // This function should not return a negative value.
         }
@@ -181,7 +181,7 @@ namespace MediaFoundationSamples
         *pszText = szTmp;
         if (pcchLen)
         {
-            *pcchLen = static_cast<DWORD>(cch);  // Return the length NOT including the '\0' 
+            *pcchLen = static_cast<DWORD>(cch);  // Return the length NOT including the '\0'
         }
         return S_OK;
     }

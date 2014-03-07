@@ -139,7 +139,7 @@ Defined Global Functions:
 
 //TODO: assuming it is true, and you'll be able to call destructor via delet ptr; but c standard prohibits deletion of partially constructed object
 //that is why your pointer (p) - will be zero since = operator should be called after constructor that thrown an exception, and following delete 0 means nothing
-// propose to remove SAVE_DELETE section 
+// propose to remove SAVE_DELETE section
 #ifndef SAFE_NEW
 #define SAFE_NEW(P, C){ (P) = NULL; try { (P) = new C; } catch(...) { SAFE_DELETE(P); ATLASSERT(NULL != (P)); } }
 #endif
@@ -249,19 +249,19 @@ DEFINE_GUID(CLSID_MF_MPEG2EncFilter,
 0x07f19984, 0x4fc7, 0x45ba, 0x9a, 0xd0, 0x41, 0x84, 0x49, 0xe8, 0x12, 0x83);
 
 // {4BE8D3C0-0515-4a37-AD55-E4BAE19AF471}
-DEFINE_GUID(CLSID_MF_H264EncFilter, 
+DEFINE_GUID(CLSID_MF_H264EncFilter,
 0x4be8d3c0, 0x515, 0x4a37, 0xad, 0x55, 0xe4, 0xba, 0xe1, 0x9a, 0xf4, 0x71);
 
 // {CD5BA7FF-9071-40e9-A462-8DC5152B1776}
-DEFINE_GUID(CLSID_MF_MPEG2DecFilter, 
+DEFINE_GUID(CLSID_MF_MPEG2DecFilter,
 0xcd5ba7ff, 0x9071, 0x40e9, 0xa4, 0x62, 0x8d, 0xc5, 0x15, 0x2b, 0x17, 0x76);
 
 // {45E5CE07-5AC7-4509-94E9-62DB27CF8F96}
-DEFINE_GUID(CLSID_MF_H264DecFilter, 
+DEFINE_GUID(CLSID_MF_H264DecFilter,
 0x45e5ce07, 0x5ac7, 0x4509, 0x94, 0xe9, 0x62, 0xdb, 0x27, 0xcf, 0x8f, 0x96);
 
 // {059A5BAE-5D7A-4c5e-8F7A-BFD57D1D6AAA}
-DEFINE_GUID(CLSID_MF_VC1DecFilter, 
+DEFINE_GUID(CLSID_MF_VC1DecFilter,
 0x59a5bae, 0x5d7a, 0x4c5e, 0x8f, 0x7a, 0xbf, 0xd5, 0x7d, 0x1d, 0x6a, 0xaa);
 
 // {00C69F81-0524-48C0-A353-4DD9D54F9A6E}
@@ -269,11 +269,11 @@ DEFINE_GUID(CLSID_MF_MJPEGDecFilter,
 0xc69f81, 0x524, 0x48c0, 0xa3, 0x53, 0x4d, 0xd9, 0xd5, 0x4f, 0x9a, 0x6e);
 
 // {EE69B504-1CBF-4ea6-8137-BB10F806B014}
-DEFINE_GUID(CLSID_MF_VppFilter, 
+DEFINE_GUID(CLSID_MF_VppFilter,
 0xee69b504, 0x1cbf, 0x4ea6, 0x81, 0x37, 0xbb, 0x10, 0xf8, 0x6, 0xb0, 0x14);
 
 // {763AA0AC-05EC-43ac-968C-73D949CDE876}
-DEFINE_GUID(CLSID_MF_HEVCDecFilter, 
+DEFINE_GUID(CLSID_MF_HEVCDecFilter,
 0x763aa0ac, 0x5ec, 0x43ac, 0x96, 0x8c, 0x73, 0xd9, 0x49, 0xcd, 0xe8, 0x76);
 
 
@@ -306,7 +306,7 @@ DEFINE_GUID(MEDIASUBTYPE_VC1P_MFX,
 // HW support GUIDs
 
 // {26F6BB9A-EAA2-45f8-86D2-69DCD984B9B1}
-DEFINE_GUID(IID_IMFDeviceDXVA, 
+DEFINE_GUID(IID_IMFDeviceDXVA,
 0x26f6bb9a, 0xeaa2, 0x45f8, 0x86, 0xd2, 0x69, 0xdc, 0xd9, 0x84, 0xb9, 0xb1);
 
 // {85E4DCCF-F1FE-4117-854D-7CDA2ACC2C77}
@@ -321,26 +321,26 @@ DEFINE_GUID(MF_MT_DEC_SUBTYPE,
 
 // {4ACC65CB-BE19-4cd6-80BD-B28F8E112054}
 // Media type attribute containing error occurred in dowsntream plug-in
-DEFINE_GUID(MF_MT_DOWNSTREAM_ERROR, 
+DEFINE_GUID(MF_MT_DOWNSTREAM_ERROR,
 0x4acc65cb, 0xbe19, 0x4cd6, 0x80, 0xbd, 0xb2, 0x8f, 0x8e, 0x11, 0x20, 0x54);
 
 // {7E151065-C321-4e28-A6A5-BA4C84DAA7B9}
-DEFINE_GUID(MF_MT_MFX_FRAME_SRF, 
+DEFINE_GUID(MF_MT_MFX_FRAME_SRF,
 0x7e151065, 0xc321, 0x4e28, 0xa6, 0xa5, 0xba, 0x4c, 0x84, 0xda, 0xa7, 0xb9);
 
 // {FC8875C8-8B57-479e-B89E-D4D10E174645}
-DEFINE_GUID(MF_MT_FAKE_SRF, 
+DEFINE_GUID(MF_MT_FAKE_SRF,
 0xfc8875c8, 0x8b57, 0x479e, 0xb8, 0x9e, 0xd4, 0xd1, 0xe, 0x17, 0x46, 0x45);
 
 /*--------------------------------------------------------------------*/
 // Other GUIDs
 
 // {31670B7E-6A65-4a0f-BC78-62B0AE86DDC3}
-DEFINE_GUID(IID_IMfxFrameSurface, 
+DEFINE_GUID(IID_IMfxFrameSurface,
 0x31670b7e, 0x6a65, 0x4a0f, 0xbc, 0x78, 0x62, 0xb0, 0xae, 0x86, 0xdd, 0xc3);
 
 // {7F48BBA1-8680-4af9-83BD-DE8FBBD3B32D}
-DEFINE_GUID(IID_MFVideoBuffer, 
+DEFINE_GUID(IID_MFVideoBuffer,
 0x7f48bba1, 0x8680, 0x4af9, 0x83, 0xbd, 0xde, 0x8f, 0xbb, 0xd3, 0xb3, 0x2d);
 
 /*--------------------------------------------------------------------*/

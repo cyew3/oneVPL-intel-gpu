@@ -16,10 +16,10 @@
 
 struct PipelineFactoryTest  : public ::testing::Test {
     PipelineFactory factory;
-    
+
     template <class T> void VerifyCreation(T * obj) {
-        EXPECT_NE((T*)0, obj); 
-        delete obj; 
+        EXPECT_NE((T*)0, obj);
+        delete obj;
     }
 };
 

@@ -45,7 +45,7 @@ CD3D9Device::CD3D9Device()
 
     // Initialize DXVA structures
 
-    DXVA2_AYUVSample16 color = {         
+    DXVA2_AYUVSample16 color = {
         0x8000,          // Cr
         0x8000,          // Cb
         0x1000,          // Y
@@ -59,28 +59,28 @@ CD3D9Device::CD3D9Device()
         DXVA2_VideoTransferMatrix_BT709,        // VideoTransferMatrix
         DXVA2_VideoLighting_bright,             // VideoLighting
         DXVA2_VideoPrimaries_BT709,             // VideoPrimaries
-        DXVA2_VideoTransFunc_709                // VideoTransferFunction            
+        DXVA2_VideoTransFunc_709                // VideoTransferFunction
     };
 
     // init m_VideoDesc structure
     MSDK_MEMCPY_VAR(m_VideoDesc.SampleFormat, &format, sizeof(DXVA2_ExtendedFormat));
     m_VideoDesc.SampleWidth                         = 0;
-    m_VideoDesc.SampleHeight                        = 0;    
+    m_VideoDesc.SampleHeight                        = 0;
     m_VideoDesc.InputSampleFreq.Numerator           = 60;
     m_VideoDesc.InputSampleFreq.Denominator         = 1;
     m_VideoDesc.OutputFrameFreq.Numerator           = 60;
     m_VideoDesc.OutputFrameFreq.Denominator         = 1;
-    
+
     // init m_BltParams structure
     MSDK_MEMCPY_VAR(m_BltParams.DestFormat, &format, sizeof(DXVA2_ExtendedFormat));
-    MSDK_MEMCPY_VAR(m_BltParams.BackgroundColor, &color, sizeof(DXVA2_AYUVSample16));  
-      
+    MSDK_MEMCPY_VAR(m_BltParams.BackgroundColor, &color, sizeof(DXVA2_AYUVSample16));
+
     // init m_Sample structure
     m_Sample.Start = 0;
     m_Sample.End = 1;
     m_Sample.SampleFormat = format;
     m_Sample.PlanarAlpha.Fraction = 0;
-    m_Sample.PlanarAlpha.Value = 1;   
+    m_Sample.PlanarAlpha.Value = 1;
 }
 
 bool CD3D9Device::CheckOverlaySupport()
@@ -94,7 +94,7 @@ bool CD3D9Device::CheckOverlaySupport()
     HRESULT hr = m_pD3D9->GetDeviceCaps(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, &d3d9caps);
     if (FAILED(hr) || !(d3d9caps.Caps & D3DCAPS_OVERLAY))
     {
-        overlaySupported = false;            
+        overlaySupported = false;
     }
     else
     {
@@ -155,7 +155,7 @@ mfxStatus CD3D9Device::FillD3DPP(mfxHDL hWindow, mfxU16 nViews, D3DPRESENT_PARAM
     if (2 == nViews && !isOverlaySupported)
         return MFX_ERR_UNSUPPORTED;
 
-    bool needOverlay = (2 == nViews) ? true : false;        
+    bool needOverlay = (2 == nViews) ? true : false;
 
     D3DPP.SwapEffect = needOverlay ? D3DSWAPEFFECT_OVERLAY : D3DSWAPEFFECT_DISCARD;
 
@@ -198,16 +198,16 @@ mfxStatus CD3D9Device::Init(
     {
         hr = m_pD3DD9->ResetEx(&m_D3DPP, NULL);
         if (FAILED(hr))
-            return MFX_ERR_UNDEFINED_BEHAVIOR;    
-    
+            return MFX_ERR_UNDEFINED_BEHAVIOR;
+
         hr = m_pD3DD9->Clear(0, NULL, D3DCLEAR_TARGET, D3DCOLOR_XRGB(0, 0, 0), 1.0f, 0);
         if (FAILED(hr))
-            return MFX_ERR_UNDEFINED_BEHAVIOR;    
+            return MFX_ERR_UNDEFINED_BEHAVIOR;
     }
     UINT resetToken = 0;
 
     hr = DXVA2CreateDirect3DDeviceManager9(&resetToken, &m_pDeviceManager9);
-    if (FAILED(hr)) 
+    if (FAILED(hr))
         return MFX_ERR_NULL_PTR;
 
     hr = m_pDeviceManager9->ResetDevice(m_pD3DD9, resetToken);
@@ -215,7 +215,7 @@ mfxStatus CD3D9Device::Init(
         return MFX_ERR_UNDEFINED_BEHAVIOR;
 
     m_resetToken = resetToken;
-    
+
 
     return sts;
 }
@@ -298,14 +298,14 @@ mfxStatus CD3D9Device::RenderFrame(mfxFrameSurface1 * pSurface, mfxFrameAllocato
     HRESULT hr = S_OK;
     mfxStatus sts = MFX_ERR_NONE;
     IDirectXVideoProcessor* pVideoProcessor = NULL;
-    
+
     if (!(1 == m_nViews || (2 == m_nViews && NULL != m_pS3DControl)))
         return MFX_ERR_UNDEFINED_BEHAVIOR;
 
     MSDK_CHECK_POINTER(pSurface, MFX_ERR_NULL_PTR);
     MSDK_CHECK_POINTER(m_pDeviceManager9, MFX_ERR_NOT_INITIALIZED);
     MSDK_CHECK_POINTER(pmfxAlloc, MFX_ERR_NULL_PTR);
-    
+
     // don't try to render second view if output rect changed since first view
     if ((2 == m_nViews && (0 != pSurface->Info.FrameId.ViewId) && NULL == m_pRenderSurface))
         return MFX_ERR_NONE;
@@ -317,7 +317,7 @@ mfxStatus CD3D9Device::RenderFrame(mfxFrameSurface1 * pSurface, mfxFrameAllocato
         MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
     }
 
-    hr = m_pD3DD9->TestCooperativeLevel();    
+    hr = m_pD3DD9->TestCooperativeLevel();
 
     if (SUCCEEDED(hr))
     {
@@ -326,7 +326,7 @@ mfxStatus CD3D9Device::RenderFrame(mfxFrameSurface1 * pSurface, mfxFrameAllocato
             GetClientRect(m_D3DPP.hDeviceWindow, &m_targetRect);
             // Ensure target rect fits back buffer (when window bigger than monitor).
             if (NULL != m_pDeviceManager9 &&
-               (m_targetRect.right - m_targetRect.left > (LONG)m_backBufferDesc.Width || 
+               (m_targetRect.right - m_targetRect.left > (LONG)m_backBufferDesc.Width ||
                 m_targetRect.bottom - m_targetRect.top > (LONG)m_backBufferDesc.Height))
             {
                 m_targetRect.right = min(m_targetRect.right, m_targetRect.left + (LONG)m_backBufferDesc.Width);
@@ -335,7 +335,7 @@ mfxStatus CD3D9Device::RenderFrame(mfxFrameSurface1 * pSurface, mfxFrameAllocato
         }
 
         // source rectangle
-        RECT source = { pSurface->Info.CropX, pSurface->Info.CropY, 
+        RECT source = { pSurface->Info.CropX, pSurface->Info.CropY,
             pSurface->Info.CropX + pSurface->Info.CropW,
             pSurface->Info.CropY + pSurface->Info.CropH };
 
@@ -352,10 +352,10 @@ mfxStatus CD3D9Device::RenderFrame(mfxFrameSurface1 * pSurface, mfxFrameAllocato
         pVideoProcessor = m_pDXVAVP_Left;
         if (1 == m_nViews || 1 == pSurface->Info.FrameId.ViewId)
         {
-            pVideoProcessor = m_pDXVAVP_Right;            
+            pVideoProcessor = m_pDXVAVP_Right;
         }
 
-        // this is the key moment: 
+        // this is the key moment:
         // a new rendering surface must be retrieved for every s3d frame (L+R) and then released
         if (1 == m_nViews || 0 == pSurface->Info.FrameId.ViewId)
         {
@@ -366,11 +366,11 @@ mfxStatus CD3D9Device::RenderFrame(mfxFrameSurface1 * pSurface, mfxFrameAllocato
     if (SUCCEEDED(hr))
     {
         // process the surface
-        hr = pVideoProcessor->VideoProcessBlt(m_pRenderSurface, 
+        hr = pVideoProcessor->VideoProcessBlt(m_pRenderSurface,
             &m_BltParams,
             &m_Sample,
             1,
-            NULL); 
+            NULL);
         if (1 == m_nViews || 1 == pSurface->Info.FrameId.ViewId)
         {
             MSDK_SAFE_RELEASE(m_pRenderSurface);
@@ -379,7 +379,7 @@ mfxStatus CD3D9Device::RenderFrame(mfxFrameSurface1 * pSurface, mfxFrameAllocato
     if (SUCCEEDED(hr)&& (1 == m_nViews || pSurface->Info.FrameId.ViewId == 1))
     {
         hr = m_pD3DD9->Present(&m_targetRect, &m_targetRect, NULL, NULL);
-    }        
+    }
 
     return SUCCEEDED(hr) ? MFX_ERR_NONE : MFX_ERR_DEVICE_FAILED;
 }
@@ -399,7 +399,7 @@ mfxStatus CD3D9Device::CreateVideoProcessors()
    {
        hr = m_pS3DControl->SetDevice(m_pDeviceManager9);
        if (FAILED(hr))
-       {      
+       {
            return MFX_ERR_DEVICE_FAILED;
        }
    }
@@ -424,7 +424,7 @@ mfxStatus CD3D9Device::CreateVideoProcessors()
         // Activate L channel
         if (SUCCEEDED(hr))
         {
-           hr = m_pS3DControl->SelectLeftView();       
+           hr = m_pS3DControl->SelectLeftView();
         }
 
         if (SUCCEEDED(hr))
@@ -440,7 +440,7 @@ mfxStatus CD3D9Device::CreateVideoProcessors()
         // Activate R channel
         if (SUCCEEDED(hr))
         {
-           hr = m_pS3DControl->SelectRightView();       
+           hr = m_pS3DControl->SelectRightView();
         }
 
    }
@@ -450,10 +450,10 @@ mfxStatus CD3D9Device::CreateVideoProcessors()
            &m_VideoDesc,
            OVERLAY_BACKBUFFER_FORMAT,
            1,
-           &m_pDXVAVP_Right);        
-   } 
+           &m_pDXVAVP_Right);
+   }
 
-   return SUCCEEDED(hr) ? MFX_ERR_NONE : MFX_ERR_DEVICE_FAILED;   
+   return SUCCEEDED(hr) ? MFX_ERR_NONE : MFX_ERR_DEVICE_FAILED;
 }
 
 #endif // #if defined(WIN32) || defined(WIN64)

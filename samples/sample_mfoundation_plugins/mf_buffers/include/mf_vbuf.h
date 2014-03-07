@@ -83,29 +83,29 @@ public:
                               DWORD *pcbCurrentLength);
 
     virtual STDMETHODIMP Unlock(void);
-    
+
     virtual STDMETHODIMP GetCurrentLength(DWORD *pcbCurrentLength);
-    
+
     virtual STDMETHODIMP SetCurrentLength(DWORD cbCurrentLength);
-    
+
     virtual STDMETHODIMP GetMaxLength(DWORD *pcbMaxLength);
 
     // IMF2DBuffer methods
     virtual STDMETHODIMP Lock2D(BYTE **pbScanline0,
                                 LONG *plPitch);
-    
+
     virtual STDMETHODIMP Unlock2D(void);
-    
+
     virtual STDMETHODIMP GetScanline0AndPitch(BYTE **pbScanline0,
                                               LONG *plPitch);
-    
+
     virtual STDMETHODIMP IsContiguousFormat(BOOL *pfIsContiguous);
-    
+
     virtual STDMETHODIMP GetContiguousLength(DWORD *pcbLength);
-    
+
     virtual STDMETHODIMP ContiguousCopyTo(BYTE *pbDestBuffer,
                                           DWORD cbDestBuffer);
-    
+
     virtual STDMETHODIMP ContiguousCopyFrom(const BYTE *pbSrcBuffer,
                                             DWORD cbSrcBuffer);
 

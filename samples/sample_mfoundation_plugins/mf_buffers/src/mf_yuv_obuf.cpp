@@ -325,7 +325,7 @@ mfxStatus MFYuvOutSurface::Alloc(mfxMemId memid)
                 p2DTexture = reinterpret_cast<ID3D11Texture2D *>(handlePair.first);
             }
 
-            if (p2DTexture) 
+            if (p2DTexture)
             {
                     p2DTexture->AddRef();
                     sts = AllocD3D11(p2DTexture, memid);
@@ -394,7 +394,7 @@ HRESULT MFYuvOutSurface::Sync(void)
                 m_bLocked = false;
             }
         }
-        else if (IsFileSet() && (MFX_FOURCC_NV12 == srf->Info.FourCC || MFX_FOURCC_YUY2 == srf->Info.FourCC)) 
+        else if (IsFileSet() && (MFX_FOURCC_NV12 == srf->Info.FourCC || MFX_FOURCC_YUY2 == srf->Info.FourCC))
         {
             mfxFrameInfo * pInfo = &srf->Info;
             mfxFrameData * pData = &srf->Data;
@@ -481,7 +481,7 @@ HRESULT MFYuvOutSurface::Sync(void)
 
             IMFMediaBuffer* pMediaBuffer = NULL;
             hr_sts = m_pSample->GetBufferByIndex(0, &pMediaBuffer);
-            if (SUCCEEDED(hr_sts) && pMediaBuffer) 
+            if (SUCCEEDED(hr_sts) && pMediaBuffer)
             {
                 mfxU32 mediaBufferLength = srf->Info.Width * srf->Info.Height * bitsPerPixel / 8;
                 hr_sts = pMediaBuffer->SetCurrentLength(mediaBufferLength);
@@ -518,7 +518,7 @@ HRESULT MFYuvOutSurface::Release(void)
     case stSurfaceLocked:
         {
             mfxFrameSurface1* srf = m_pComMfxSurface->GetMfxFrameSurface();
-            if (srf->Data.Locked) 
+            if (srf->Data.Locked)
             {
                 hr = E_FAIL;
                 MFX_LTRACE_S(MF_TL_NOTES, "Surface is locked!");

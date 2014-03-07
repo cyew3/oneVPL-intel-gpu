@@ -18,7 +18,7 @@ namespace MediaFoundationSamples
     //
     // To enable logging in debug builds, #define USE_LOGGING.
     // The TRACE_INIT, TRACE, and TRACE_CLOSE macros are mapped to the logging functions.
-    // 
+    //
     // In retail builds, these macros are mapped to nothing.
     //--------------------------------------------------------------------------------------
 
@@ -73,7 +73,7 @@ namespace MediaFoundationSamples
     {
         if (FAILED(hr))
         {
-            TRACE((L"%S\n", sFileName)); 
+            TRACE((L"%S\n", sFileName));
             TRACE((L"Line: %d hr=0x%X\n", lLineNo, hr));
         }
         return hr;
@@ -83,8 +83,8 @@ namespace MediaFoundationSamples
     #define LOG_MSG_IF_FAILED(msg, hr) if (FAILED(hr)) { TRACE((msg)); }
 
 #else
-    #define TRACE_INIT() 
-    #define TRACE(x) 
+    #define TRACE_INIT()
+    #define TRACE(x)
     #define TRACE_CLOSE()
     #define LOG_MSG_IF_FAILED(x, hr)
     #define LOG_HRESULT(hr)

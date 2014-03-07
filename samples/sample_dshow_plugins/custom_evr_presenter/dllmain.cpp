@@ -11,7 +11,7 @@
 //////////////////////////////////////////////////////////////////////////
 //
 // dllmain.cpp : Implements DLL exports and COM class factory
-// 
+//
 // THIS CODE AND INFORMATION IS PROVIDED "AS IS" WITHOUT WARRANTY OF
 // ANY KIND, EITHER EXPRESSED OR IMPLIED, INCLUDING BUT NOT LIMITED TO
 // THE IMPLIED WARRANTIES OF MERCHANTABILITY AND/OR FITNESS FOR A
@@ -48,12 +48,12 @@ ClassFactoryData g_ClassFactories[] =
 {
     {   &CLSID_CustomEVRPresenter, EVRCustomPresenter::CreateInstance }
 };
-      
+
 const DWORD g_numClassFactories = ARRAY_SIZE(g_ClassFactories);
 
 // DllMain: Entry-point for the DLL.
-BOOL APIENTRY DllMain( HANDLE hModule, 
-                       DWORD  ul_reason_for_call, 
+BOOL APIENTRY DllMain( HANDLE hModule,
+                       DWORD  ul_reason_for_call,
                        LPVOID lpReserved
                      )
 {
@@ -91,7 +91,7 @@ STDAPI DllCanUnloadNow()
 STDAPI DllRegisterServer()
 {
     HRESULT hr;
-    
+
     // Register the MFT's CLSID as a COM object.
     hr = RegisterObject(g_hModule, CLSID_CustomEVRPresenter, g_sFriendlyName, TEXT("Both"));
 

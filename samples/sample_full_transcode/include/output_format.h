@@ -23,7 +23,7 @@ public:
         mfxSystemStreamType system;
         Extension (mfxU32 vcodec = 0,
                    mfxU32 acodec = 0,
-                   mfxSystemStreamType system = MFX_UNDEF_STREAM) 
+                   mfxSystemStreamType system = MFX_UNDEF_STREAM)
         : acodec(acodec)
         , vcodec(vcodec)
         , system(system) {
@@ -36,15 +36,15 @@ public:
         mux_extensions[MSDK_CHAR("mpg")] = Extension( MFX_CODEC_MPEG2, MFX_CODEC_MP3, MFX_MPEG2_TRANSPORT_STREAM);
         mux_extensions[MSDK_CHAR("mpeg")] = Extension( MFX_CODEC_MPEG2, MFX_CODEC_MP3, MFX_MPEG2_TRANSPORT_STREAM);
         mux_extensions[MSDK_CHAR("m2ts")] = Extension( MFX_CODEC_MPEG2, MFX_CODEC_MP3, MFX_MPEG2_TRANSPORT_STREAM);
-        
+
         //in case of undef streams we will use not a multiplexer but file writer, so it is OK
         raw_extensions_video[MSDK_CHAR("h264")] = Extension(MFX_CODEC_AVC, 0, MFX_UNDEF_STREAM);
         raw_extensions_video[MSDK_CHAR("m2v")] = Extension(MFX_CODEC_MPEG2, 0, MFX_UNDEF_STREAM);
-        
+
         raw_extensions_audio[MSDK_CHAR("mp3")] = Extension( 0, MFX_CODEC_MP3, MFX_UNDEF_STREAM);
         raw_extensions_audio[MSDK_CHAR("aac")] = Extension( 0, MFX_CODEC_AAC, MFX_UNDEF_STREAM);
     }
-    
+
     virtual const Extensions& MuxerExtensions() const {
         return mux_extensions;
     }
@@ -71,7 +71,7 @@ public:
             return m_map[id];
         }
         mfxU32 operator [] (const msdk_string &id) const {
-            return m_map.find(id)->second; 
+            return m_map.find(id)->second;
         }
         void ToStream(msdk_ostream & os) const {
             std::map<msdk_string, mfxU32> :: const_iterator i;

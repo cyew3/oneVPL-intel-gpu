@@ -32,7 +32,7 @@ public:
 class ChangeBitrateAction
     : public NonRepeatableAction
 {
-public:    
+public:
     ChangeBitrateAction (double dBitrateScale)
         : m_dBitrateScale(dBitrateScale)
     {
@@ -49,7 +49,7 @@ protected:
 class KeyFrameInsertAction
     : public NonRepeatableAction
 {
-public:    
+public:
     virtual mfxStatus ApplyFeedBack(IPipeline* pPipeline)
     {
         MSDK_CHECK_POINTER(pPipeline, MFX_ERR_NULL_PTR);
@@ -61,7 +61,7 @@ public:
 class PutFrameIntoRefListAction
     : public IAction
 {
-public:    
+public:
     PutFrameIntoRefListAction(RefListType nRefList
         , mfxU32 nFrameOrderToPut
         , bool bActiveUntillIDR)
@@ -111,7 +111,7 @@ protected:
 class SetSourceAction
     : public NonRepeatableAction
 {
-  
+
 public:
     SetSourceAction(int idx)
         : m_idx(idx)

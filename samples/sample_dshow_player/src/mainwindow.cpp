@@ -10,7 +10,7 @@
 */
 //////////////////////////////////////////////////////////////////////////
 // MainWindow.cpp: Main application window.
-// 
+//
 // THIS CODE AND INFORMATION IS PROVIDED "AS IS" WITHOUT WARRANTY OF
 // ANY KIND, EITHER EXPRESSED OR IMPLIED, INCLUDING BUT NOT LIMITED TO
 // THE IMPLIED WARRANTIES OF MERCHANTABILITY AND/OR FITNESS FOR A
@@ -27,7 +27,7 @@
 const LONG        ONE_MSEC = 10000;   // The number of 100-ns in 1 msec
 
 const UINT_PTR    IDT_TIMER1 = 1;        // Timer ID
-const UINT        TICK_FREQ = 200;    // Timer frequency in msec        
+const UINT        TICK_FREQ = 200;    // Timer frequency in msec
 
 // Forward declarations of functions included in this code module:
 void NotifyError(HWND hwnd, TCHAR* sMessage, HRESULT hrStatus);
@@ -93,7 +93,7 @@ LRESULT MainWindow::OnReceiveMessage(UINT message, WPARAM wParam, LPARAM lParam)
             return -1;
         }
         break;
-        
+
     case WM_SIZE:
         OnSize();
         break;
@@ -149,7 +149,7 @@ LRESULT MainWindow::OnReceiveMessage(UINT message, WPARAM wParam, LPARAM lParam)
         case IDC_BUTTON_PAUSE:
             OnPause();
             break;
-    
+
         case IDC_BUTTON_MUTE:
             OnMute();
             break;
@@ -179,7 +179,7 @@ LRESULT MainWindow::OnReceiveMessage(UINT message, WPARAM wParam, LPARAM lParam)
             break;
 
         case ID_HELP_ABOUT:
-            DialogBox(m_hInstance, MAKEINTRESOURCE(IDD_ABOUTBOX), m_hwnd, DialogProc);            
+            DialogBox(m_hInstance, MAKEINTRESOURCE(IDD_ABOUTBOX), m_hwnd, DialogProc);
             break;
         }
         break;
@@ -255,7 +255,7 @@ HRESULT MainWindow::OnCreate()
         // Play
         hr = toolbar.AddButton(Toolbar::Button(ID_IMAGE_PLAY, IDC_BUTTON_PLAY));
     }
-    
+
     if (SUCCEEDED(hr))
     {
         // Stop
@@ -344,7 +344,7 @@ HRESULT MainWindow::OnCreate()
         toolTip.AddTool(seekbar.Window(), L"Seek");
         rebar.SendMessage(RB_SETTOOLTIPS, (WPARAM)toolTip.Window(), 0);
     }
-    
+
     // Create the DirectShow player object.
     if (SUCCEEDED(hr))
     {
@@ -366,7 +366,7 @@ HRESULT MainWindow::OnCreate()
         {
             m_pPlayer = new DShowPlayer(video);
         }
-        
+
         if (m_pPlayer == NULL)
         {
             hr = E_OUTOFMEMORY;
@@ -404,12 +404,12 @@ void MainWindow::OnPaint()
 
     if (m_pPlayer->State() != STATE_CLOSED && m_pPlayer->HasVideo())
     {
-        // The player has video, so ask the player to repaint. 
+        // The player has video, so ask the player to repaint.
         m_pPlayer->Repaint(hdc);
     }
     else
     {
-        // The player does not have video. Fill in our client region, not 
+        // The player does not have video. Fill in our client region, not
         // including the area for the toolbar.
 
         RECT rcClient;
@@ -443,7 +443,7 @@ void MainWindow::OnSize()
     // resize the toolbar
     SendMessage(toolbar.Window(), WM_SIZE, 0, 0);
 
-    // resize the rebar 
+    // resize the rebar
     SendMessage(rebar.Window(), WM_SIZE, 0, 0);
 
     RECT rcWindow;
@@ -495,7 +495,7 @@ void MainWindow::OnWmNotify(const NMHDR *pHdr)
     {
     case TTN_GETDISPINFO:
         // Display tool tips
-        toolbar.ShowToolTip((NMTTDISPINFO*)pHdr);           
+        toolbar.ShowToolTip((NMTTDISPINFO*)pHdr);
         break;
 
     default:
@@ -524,7 +524,7 @@ void MainWindow::OnSeekbarNotify(const NMSLIDER_INFO *pInfo)
     static PlaybackState state = STATE_CLOSED;
 
     // Pause when the scroll action begins.
-    if (pInfo->hdr.code == SLIDER_NOTIFY_SELECT) 
+    if (pInfo->hdr.code == SLIDER_NOTIFY_SELECT)
     {
         state = m_pPlayer->State();
         m_pPlayer->Pause();
@@ -562,19 +562,19 @@ void MainWindow::ShowFilterProperties(IBaseFilter * pFilter)
 {
     CComQIPtr<ISpecifyPropertyPages> pProp(pFilter);
 
-    if (NULL == pProp.p) 
+    if (NULL == pProp.p)
         return;
     // Get the filter's name and IUnknown pointer.
     FILTER_INFO FilterInfo;
 
-    if (SUCCEEDED(pFilter->QueryFilterInfo(&FilterInfo))) 
+    if (SUCCEEDED(pFilter->QueryFilterInfo(&FilterInfo)))
     {
         CComPtr<IUnknown> pFilterUnk;
         pFilter->QueryInterface(IID_IUnknown, (void**)&pFilterUnk);
 
         if (NULL != pFilterUnk.p)
         {
-            // Show the page. 
+            // Show the page.
             CAUUID caGUID;
             if (SUCCEEDED(pProp->GetPages(&caGUID)))
             {
@@ -583,7 +583,7 @@ void MainWindow::ShowFilterProperties(IBaseFilter * pFilter)
                     0, 0,                   // Reserved
                     FilterInfo.achName,     // Caption for the dialog box
                     1,                      // Number of objects (just the filter)
-                    &pFilterUnk.p,            // Array of object pointers. 
+                    &pFilterUnk.p,            // Array of object pointers.
                     caGUID.cElems,          // Number of property pages
                     caGUID.pElems,          // Array of property page CLSIDs
                     0,                      // Locale identifier
@@ -594,7 +594,7 @@ void MainWindow::ShowFilterProperties(IBaseFilter * pFilter)
             }
         }
 
-        FilterInfo.pGraph->Release(); 
+        FilterInfo.pGraph->Release();
     }
 }
 
@@ -623,10 +623,10 @@ void MainWindow::OnFileTranscode(INT nType)
     BOOL bOpen = FALSE;
 
     bOpen = GetOpenFileName(&ofn);
-    
+
     if (FALSE == bOpen)
     {
-        return;           
+        return;
     }
 
     ofn.lpstrFile = szOutputFileName;
@@ -637,13 +637,13 @@ void MainWindow::OnFileTranscode(INT nType)
     {
         return;
     }
-            
+
     hr = m_pPlayer->TranscodeFile(szInputFileName, szOutputFileName, nType);
 
-    // Update the state of the UI. 
+    // Update the state of the UI.
     UpdateUI();
 
-    // Invalidate the application window, in case there is an old video 
+    // Invalidate the application window, in case there is an old video
     // frame from the previous file and there is no video now. (eg, the
     // new file is audio only, or we failed to open this file.)
     InvalidateRect(m_hwnd, NULL, FALSE);
@@ -683,11 +683,11 @@ void MainWindow::OnFileOpen(INT nType)
     if (GetOpenFileName(&ofn))
     {
         hr = m_pPlayer->OpenFile(szFileName, nType);
-        
-        // Update the state of the UI. 
+
+        // Update the state of the UI.
         UpdateUI();
 
-        // Invalidate the application window, in case there is an old video 
+        // Invalidate the application window, in case there is an old video
         // frame from the previous file and there is no video now. (eg, the
         // new file is audio only, or we failed to open this file.)
         InvalidateRect(m_hwnd, NULL, FALSE);
@@ -697,7 +697,7 @@ void MainWindow::OnFileOpen(INT nType)
 
         if (SUCCEEDED(hr))
         {
-            // If this file has a video stream, we need to notify 
+            // If this file has a video stream, we need to notify
             // the VMR about the size of the destination rectangle.
             // Invoking our OnSize() handler does this.
             OnSize();
@@ -731,7 +731,7 @@ void MainWindow::OnStop()
 {
     HRESULT hr = m_pPlayer->Stop();
 
-    // Seek back to the start. 
+    // Seek back to the start.
     if (SUCCEEDED(hr))
     {
         if (m_pPlayer->CanSeek() || m_pPlayer->GetEncoder())
@@ -829,7 +829,7 @@ void MainWindow::UpdateUI()
 
     HMENU hmenu    = GetMenu(m_hwnd);
     HMENU subhmenu = GetSubMenu(hmenu, 1);
-    
+
     if (m_pPlayer->GetEncoder())
     {
         EnableMenuItem(subhmenu, ID_CONFIGURE_ENCODER, MF_ENABLED);

@@ -708,7 +708,7 @@ HRESULT MFPluginVEnc::SetInputType(DWORD         dwInputStreamID,
     HRESULT hr  = S_OK;
 
     MFX_LTRACE_P(MF_TL_PERF, pType);
-    
+
     //checking for locked MFT firstly
     hr = MFPlugin::SetInputType(dwInputStreamID, pType, dwFlags);
     if (FAILED(hr))
@@ -735,11 +735,11 @@ HRESULT MFPluginVEnc::SetInputType(DWORD         dwInputStreamID,
 
 #if MFX_D3D11_SUPPORT
     // Accept input type only in case of output is set. MSFT vision:
-    // With encoders, the typical pipeline behavior is to negotiate the output type first (this is driven by the encoder returning MF_E_TRANSFORM_TYPE_NOT_SET from SetInputType as you noticed). 
+    // With encoders, the typical pipeline behavior is to negotiate the output type first (this is driven by the encoder returning MF_E_TRANSFORM_TYPE_NOT_SET from SetInputType as you noticed).
     // Once the output type is set the encoder, its expected to expose complete types from GetInputAvailableType() as that is what is used to configure the video processor upstream.
     // In other words, in capture scenario (actually in SinkWriter scenarios since that is where this logic lives), its not possible for encoder to expose partial types from GetInputAvailableType().
     // Moreover, this would likely be meaningless since negotiation would simply fail later on. Specifically, even if the encoder accepted an arbitrary input type from upstream
-    // (lets say the colorspace format matched something that encoder likes), it would then see a call to SetOutputType() where the resolution may not match whats set on input. 
+    // (lets say the colorspace format matched something that encoder likes), it would then see a call to SetOutputType() where the resolution may not match whats set on input.
     // Since the encoder is not supposed to do scaling, it would reject the output type and the negotiation would fail.
     if (!m_pOutputType)
     {
@@ -765,7 +765,7 @@ HRESULT MFPluginVEnc::SetInputType(DWORD         dwInputStreamID,
                 CHECK_EXPRESSION(!m_bInitialized, MF_E_TRANSFORM_CANNOT_CHANGE_MEDIATYPE_WHILE_PROCESSING);
             }
 
-            if (!m_bStreamingStarted) //  Need to reject it 
+            if (!m_bStreamingStarted) //  Need to reject it
             {
                 MFX_LTRACE_S(MF_TL_GENERAL, "Cannot change type during format negotiation stage");
                 hr = MF_E_INVALIDMEDIATYPE;
@@ -861,7 +861,7 @@ HRESULT MFPluginVEnc::SetInputType(DWORD         dwInputStreamID,
         }
         if (!bFormatChange && !(m_bInitialized && stHeaderNotSet == m_State) && !m_TypeDynamicallyChanged)
         {
-            if (SUCCEEDED(hr) && !CheckHwSupport()) 
+            if (SUCCEEDED(hr) && !CheckHwSupport())
             {
                 MFX_LTRACE_S(MF_TL_GENERAL, "CheckHwSupport() failed");
                 hr = MF_E_INVALIDMEDIATYPE;
@@ -889,7 +889,7 @@ HRESULT MFPluginVEnc::SetOutputType(DWORD         dwOutputStreamID,
 
     MFX_LTRACE_P(MF_TL_PERF, pType);
 
-    
+
     if (0 != (dwFlags & MFT_SET_TYPE_TEST_ONLY))
     {
         MFX_LTRACE_I(MF_TL_GENERAL, (dwFlags & MFT_SET_TYPE_TEST_ONLY));
@@ -920,7 +920,7 @@ HRESULT MFPluginVEnc::SetOutputType(DWORD         dwOutputStreamID,
     if (m_bTypeChangeAfterEndOfStream)
     {
         m_bRejectProcessInputWhileDCC = false;
-        
+
         // TODO: remove copy-paste (also in PerformDynamicConfigurationChange)
         // CloseCodec overwrites current encoder settings with m_ENCInitInfo_original
         // let's update them before CloseCodec call
@@ -974,7 +974,7 @@ HRESULT MFPluginVEnc::SetOutputType(DWORD         dwOutputStreamID,
                 }
                 if (SUCCEEDED(hr))
                 {
-                    hr = pType->SetBlob(MF_MT_MPEG_SEQUENCE_HEADER, 
+                    hr = pType->SetBlob(MF_MT_MPEG_SEQUENCE_HEADER,
                                         m_OutputBitstream.m_pHeader, m_OutputBitstream.m_uiHeaderSize);
                 }
                 if (SUCCEEDED(hr))
@@ -1163,7 +1163,7 @@ HRESULT MFPluginVEnc::ProcessMessage(MFT_MESSAGE_TYPE eMessage,
         //other DXVA interfaces, and revert to software processing. At this point, the MFT must not use DXVA processing."
             break;//not a d3d11
         }
-    
+
         HANDLE d3d11deviceHandle = 0;
         pDXGIDeviceManager->OpenDeviceHandle(&d3d11deviceHandle);
         MFX_LTRACE_D(MF_TL_GENERAL, d3d11deviceHandle);
@@ -1212,7 +1212,7 @@ HRESULT MFPluginVEnc::ProcessMessage(MFT_MESSAGE_TYPE eMessage,
                                 ATLASSERT(MFX_ERR_NONE == sts);
                             }
                         }
-                        if (MFX_ERR_NONE == sts && !CheckHwSupport()) 
+                        if (MFX_ERR_NONE == sts && !CheckHwSupport())
                         {
                             //Query fails after changing the device.
                             ATLASSERT(false);
@@ -1230,9 +1230,9 @@ HRESULT MFPluginVEnc::ProcessMessage(MFT_MESSAGE_TYPE eMessage,
 #else
         if (ulParam) hr = E_NOTIMPL; // this return status is an exception (see MS docs)
 #endif
-        
+
         if (SUCCEEDED(hr))
-        {   
+        {
             HandleNewMessage(mtRequireUpdateMaxMBperSec, this); // ignore return value
         }
 
@@ -1490,7 +1490,7 @@ HRESULT MFPluginVEnc::IsModifiable(const GUID* Api)
         }
         else if (CODECAPI_AVEncH264CABACEnable == *Api)
         {
-            m_pCabac->SetCodecProfile(m_MfxParamsVideo.mfx.CodecProfile); //TODO: remove this paranoid code 
+            m_pCabac->SetCodecProfile(m_MfxParamsVideo.mfx.CodecProfile); //TODO: remove this paranoid code
             hr = m_pCabac->IsModifiable();
         }
     }
@@ -1662,7 +1662,7 @@ HRESULT MFPluginVEnc::GetDefaultValue(const GUID* Api, VARIANT* Value)
         else if (CODECAPI_AVEncMPVGOPSize == *Api)
         {
             Value->vt   = VT_UI4;
-            Value->ulVal = 128; 
+            Value->ulVal = 128;
         }
         else if (CODECAPI_AVEncCommonQuality == *Api)
         {
@@ -1776,7 +1776,7 @@ HRESULT MFPluginVEnc::GetValue(const GUID* Api, VARIANT* Value)
                 if ( (!!nLowLatency) != (!!Value->boolVal) ) // "!!" is to cast VARIANT_BOOL and BOOL to bool
                 {
                     //it seems that LowLatency setting was updated through IMFAttributes
-                    
+
                     if (!nLowLatency && m_TemporalScalablity.IsEnabled())
                     {
                         //MSFT doesn't plan to use CODECAPI_AVEncCommonLowLatency VARIANT_FALSE for Lync
@@ -1793,7 +1793,7 @@ HRESULT MFPluginVEnc::GetValue(const GUID* Api, VARIANT* Value)
             Value->vt   = VT_BOOL;
             hr = S_OK;
             Value->boolVal = ( ( 1 == m_MfxParamsVideo.AsyncDepth ) ? VARIANT_TRUE : VARIANT_FALSE );
-            MFX_LTRACE_1(MF_TL_GENERAL, 
+            MFX_LTRACE_1(MF_TL_GENERAL,
                         (CODECAPI_AVLowLatencyMode == *Api ? "CODECAPI_AVLowLatencyMode: "
                                                         : "CODECAPI_AVEncCommonLowLatency: "),
                         "%lu",
@@ -1989,7 +1989,7 @@ HRESULT MFPluginVEnc::SetValue(const GUID *Api, VARIANT *Value)
             //}
             CHECK_POINTER(Api, E_POINTER);
             CHECK_POINTER(Value, E_POINTER);
-        
+
             hr = E_INVALIDARG;
 
             if (CODECAPI_AVEncMPVProfile == *Api)
@@ -2090,10 +2090,10 @@ HRESULT MFPluginVEnc::SetValue(const GUID *Api, VARIANT *Value)
                         const mfxU16 nOldGopOptFlag = m_MfxParamsVideo.mfx.GopOptFlag;
                         const mfxU16 nOldGopPicSize = m_MfxParamsVideo.mfx.GopPicSize;
                         const mfxU16 nOldAsyncDepth = m_MfxParamsVideo.AsyncDepth;
-                        
+
                         //TODO: consider moving into UpdateVideoParam (two calls: new settings + rollback)
                         // Update related properties to keep them consistent with new number of layers:
-                            
+
                         if (Value->ulVal > 0)
                         {
                             // B frames are unsupported for Lync mode
@@ -2732,26 +2732,26 @@ mfxStatus MFPluginVEnc::InitFRA(void)
                 sts = MFX_ERR_NULL_PTR;
                 break;
             }
-#ifndef MF_D3D11_COPYSURFACES                 
+#ifndef MF_D3D11_COPYSURFACES
             m_pFrameAllocator =  new MFFrameAllocator(new MFAllocatorHelper<MFD3D11FrameAllocator>);
-#else //#ifndef MF_D3D11_COPYSURFACES                 
+#else //#ifndef MF_D3D11_COPYSURFACES
             m_pFrameAllocator =  new MFFrameAllocator(new MFAllocatorHelper<D3D11FrameAllocator>);
-#endif //#ifndef MF_D3D11_COPYSURFACES                 
+#endif //#ifndef MF_D3D11_COPYSURFACES
             D3D11AllocatorParams *pD3D11AllocParams;
             std::auto_ptr<mfxAllocatorParams> allocParams;
             allocParams.reset(pD3D11AllocParams = new D3D11AllocatorParams);
-                
+
             if (NULL != pD3D11AllocParams)
             {
                 pD3D11AllocParams->pDevice = d3d11Device.p;
             }
-                            
-            if (!m_pFrameAllocator || !allocParams.get()) 
+
+            if (!m_pFrameAllocator || !allocParams.get())
             {
                 sts = MFX_ERR_MEMORY_ALLOC;
                 break;
             }
-            else 
+            else
             {
                 m_pFrameAllocator->AddRef();
             }
@@ -2861,7 +2861,7 @@ mfxStatus MFPluginVEnc::InitInSRF(mfxU32* pSurfacesNum)
                     m_pInSurfaces[i].SetFile(m_dbg_vppin);
                     sts = m_pInSurfaces[i].Init(&(m_VPPInitParams.vpp.In),
                                                 (m_bDirectConnectionMFX)? NULL: &(m_VPPInitParams_original.vpp.In),
-                                                NULL, 
+                                                NULL,
                                                 false,
 #if MFX_D3D11_SUPPORT
                                                 m_pD3D11Device,
@@ -3040,7 +3040,7 @@ HRESULT MFPluginVEnc::RequireDynamicConfigurationChange(MFEncDynamicConfiguratio
     MFX_LTRACE_I(MF_TL_PERF, newDccState);
     HRESULT hr = E_FAIL;
     //TODO: check whether any actions are required
-    if ((dccResetWoIdrRequired == newDccState || dccResetWithIdrRequired == newDccState) && 
+    if ((dccResetWoIdrRequired == newDccState || dccResetWithIdrRequired == newDccState) &&
         (dccResetWithIdrRequired == m_DccState || dccResetWoIdrRequired == m_DccState || dccNotRequired == m_DccState) )
     {
         if (!m_pmfxENC)
@@ -3126,7 +3126,7 @@ HRESULT MFPluginVEnc::RequireDynamicConfigurationChange(MFEncDynamicConfiguratio
             MFX_LTRACE_S(MF_TL_PERF, "unsupported state");
             ATLASSERT(false);
         }
-    } 
+    }
     else
     {
         MFX_LTRACE_S(MF_TL_PERF, "new state is not supported\n");
@@ -3144,11 +3144,11 @@ enum {
     MFX_DCC_CHANGED_TMP_LAYERS_CNT = 1 << 1, // ExtParam: MFX_EXTBUFF_AVC_TEMPORAL_LAYERS (mfxExtAvcTemporalLayers) Layer
     MFX_DCC_CHANGED_FRAMERATE      = 1 << 2, // FrameInfo: FrameRateExtN, FrameRateExtD
     MFX_DCC_CHANGED_BITRATE        = 1 << 3, // TargetKbps, MaxKbps
-    MFX_DCC_CHANGED_OTHER_SPS      = 1 << 4, // 
+    MFX_DCC_CHANGED_OTHER_SPS      = 1 << 4, //
     MFX_DCC_CHANGED_OTHER          = 1 << 5, // BufferSizeInKB
 
     MFX_DCC_IDR                    = 1 << 6,
-    
+
     MFX_DCC_METHOD_RESET           = 1 << 8,
     MFX_DCC_METHOD_CLOSEINIT       = 1 << 9
 };
@@ -3260,7 +3260,7 @@ mfxU32 MFPluginVEnc::CheckDccType(mfxVideoParam& oldParam, mfxVideoParam& newPar
         nResult |= MFX_DCC_CHANGED_OTHER;
         if (m_pSliceControl->IsIdrNeeded())
             nResult |= MFX_DCC_IDR | MFX_DCC_METHOD_RESET | MFX_DCC_METHOD_CLOSEINIT; //TODO: which one?
-        else 
+        else
             nResult |= MFX_DCC_METHOD_RESET;
     }
 
@@ -3349,7 +3349,7 @@ HRESULT MFPluginVEnc::PerformDynamicConfigurationChange()
             }
 
             mfxU32 dccType = 0;
-    
+
             ATLASSERT(NULL != m_pmfxENC);
             if (SUCCEEDED(hr) && NULL != m_pmfxENC)
             {
@@ -3358,7 +3358,7 @@ HRESULT MFPluginVEnc::PerformDynamicConfigurationChange()
                 //to understand how DCC would happen.
                 mfxVideoParam currentParam;
                 memset(&currentParam, 0, sizeof(mfxVideoParam));
-    
+
                 mfxStatus sts = MFX_ERR_NONE;
                 sts = mf_alloc_same_extparam(&m_MfxParamsVideo, &currentParam);
                 ATLASSERT(MFX_ERR_NONE == sts);
@@ -3374,7 +3374,7 @@ HRESULT MFPluginVEnc::PerformDynamicConfigurationChange()
                     }
                     ATLASSERT(MFX_ERR_NONE == sts || MFX_ERR_NOT_INITIALIZED == sts);
                 }
-        
+
                 if (MFX_ERR_NONE == sts)
                 {
                     dccType = CheckDccType(currentParam, m_MfxParamsVideo);
@@ -3392,7 +3392,7 @@ HRESULT MFPluginVEnc::PerformDynamicConfigurationChange()
                 {
                     hr = E_FAIL;
                 }
-        
+
                 if (MFX_ERR_NONE !=  mf_free_extparam(&currentParam))
                 {
                     hr = E_FAIL;
@@ -3469,7 +3469,7 @@ HRESULT MFPluginVEnc::PerformDynamicConfigurationChange()
                 MFX_LTRACE_I(MF_TL_PERF, m_bDoNotRequestInput);
                 MFX_LTRACE_I(MF_TL_PERF, m_bEndOfInput);
                 ATLASSERT(!m_bEndOfInput); //should be done in AsyncThreadFunc
-        
+
                 MFX_LTRACE_I(MF_TL_GENERAL, m_NeedInputEventInfo.m_requested);
                 MFX_LTRACE_I(MF_TL_GENERAL, m_NeedInputEventInfo.m_sent);
                 if (m_NeedInputEventInfo.m_requested)
@@ -3546,7 +3546,7 @@ HRESULT MFPluginVEnc::ResizeSurfaces()
     {
         MFX_LTRACE_P(MF_TL_GENERAL, m_pInSurfaces);
     }
-    
+
     if (m_pOutSurfaces)
     {
 #define ALWAYS_REALLOC_SURFACES
@@ -3639,7 +3639,7 @@ HRESULT MFPluginVEnc::ResizeBitstreamBuffer()
     //    hr = E_FAIL;
     //    ATLASSERT(SUCCEEDED(hr));
     //}
-    
+
     return hr; //TODO: implement
 }
 
@@ -3671,12 +3671,12 @@ bool MFPluginVEnc::IsInvalidResolutionChange(IMFMediaType* pType1, IMFMediaType*
     hr2 = pType2->GetBlob(MF_MT_MINIMUM_DISPLAY_APERTURE, (UINT8*)&area2, sizeof(area2), NULL);
     if (FAILED(hr1))
     {
-        area1.OffsetX.value = 0; area1.OffsetY.value = 0; 
+        area1.OffsetX.value = 0; area1.OffsetY.value = 0;
         area1.Area.cx = parA1; area1.Area.cy = parB1;
     }
     if (FAILED(hr2))
     {
-        area2.OffsetX.value = 0; area2.OffsetY.value = 0; 
+        area2.OffsetX.value = 0; area2.OffsetY.value = 0;
         area2.Area.cx = parA2; area2.Area.cy = parB2;
     }
     if (SUCCEEDED(hr1) || SUCCEEDED(hr2))
@@ -3938,7 +3938,7 @@ mfxStatus MFPluginVEnc::InitENC(mfxU32* pSurfacesNum)
         m_pCabac->SetCodecProfile(m_MfxParamsVideo.mfx.CodecProfile); //TODO: remove this paranoid code
 
         // apply m_TemporalScalablity, m_pNominalRange, etc
-        HRESULT hr = UpdateVideoParam(m_MfxParamsVideo, m_arrEncExtBuf); 
+        HRESULT hr = UpdateVideoParam(m_MfxParamsVideo, m_arrEncExtBuf);
         if (E_NOTIMPL == hr)
             hr = S_OK;
         if (FAILED(hr))
@@ -3974,7 +3974,7 @@ mfxStatus MFPluginVEnc::InitENC(mfxU32* pSurfacesNum)
                     pCodingOption->AUDelimiter = MFX_CODINGOPTION_ON;
 
                     // It is recommended to set mfxExtCodingOption::MaxDecFrameBuffering
-                    // equal to number of reference frames. 
+                    // equal to number of reference frames.
                     pCodingOption->VuiVclHrdParameters   = MFX_CODINGOPTION_OFF; //disabling SEI
                     pCodingOption->MaxDecFrameBuffering  = m_MfxParamsVideo.mfx.NumRefFrame;
                     pCodingOption->PicTimingSEI          = MFX_CODINGOPTION_OFF; //disabling SEI
@@ -4035,7 +4035,7 @@ mfxStatus MFPluginVEnc::InitENC(mfxU32* pSurfacesNum)
         MFX_LTRACE_2(MF_TL_PERF, "calling m_pmfxENC->Init with resolution: ", "%dx%d", m_MfxParamsVideo.mfx.FrameInfo.Width, m_MfxParamsVideo.mfx.FrameInfo.Height);
         sts = m_pmfxENC->Init(&m_MfxParamsVideo);
         MFX_LTRACE_I(MF_TL_PERF, sts);
-        
+
         if (!m_dbg_no_SW_fallback && (MFX_WRN_PARTIAL_ACCELERATION == sts) ||
             (MFX_WRN_INCOMPATIBLE_VIDEO_PARAM == sts)) sts = MFX_ERR_NONE;
         // currently, we need to send SPS/PPS data only for H.264 encoder
@@ -4090,7 +4090,7 @@ mfxStatus MFPluginVEnc::InitMfxVideoSession(mfxIMPL implD3D)
         sts = MFX_ERR_MEMORY_ALLOC;
     }
     else
-    { 
+    {
         // adjustment of MSDK implementation
         m_MSDK_impl =  MF_MFX_IMPL;
         if (dbgHwMsdk == m_dbg_MSDK)
@@ -4245,7 +4245,7 @@ void MFPluginVEnc::CloseCodec(void)
     if (m_pmfxENC) m_pmfxENC->Close();
     SAFE_DELETE_ARRAY(m_pInSurfaces);
     SAFE_DELETE_ARRAY(m_pOutSurfaces);
-    
+
     m_OutputBitstream.Free(); //free m_pFreeSamplesPool, OutBitstreams, Header
 
     if (m_pFrameAllocator)
@@ -4315,7 +4315,7 @@ mfxStatus MFPluginVEnc::ResetCodec(void)
 
     m_pAsyncThreadSemaphore->Reset();
     m_pAsyncThreadEvent->Reset();
-    
+
     m_OutputBitstream.DiscardCachedSamples(m_pMfxVideoSession);
 
     if (m_pmfxVPP)
@@ -4355,7 +4355,7 @@ mfxStatus MFPluginVEnc::ResetCodec(void)
         }
         m_pOutSurface = SetFreeSurface(m_pOutSurfaces, m_nOutSurfacesNum);
     }
-    
+
     m_State = stReady;
     MFX_LTRACE_I(MF_TL_NOTES, m_State);
 
@@ -4395,7 +4395,7 @@ mfxStatus MFPluginVEnc::ResetCodec(void)
     m_SyncOpSts = MFX_ERR_NONE;
 
 #if MFX_D3D11_SUPPORT
-    //to no run async thread twice in case of message command flush 
+    //to no run async thread twice in case of message command flush
     if (MFT_MESSAGE_COMMAND_FLUSH == m_eLastMessage)
     {
         m_pAsyncThreadEvent->Signal();
@@ -4471,7 +4471,7 @@ mfxStatus MFPluginVEnc::InitPlg(IMfxVideoSession* pSession,
         }
     }
     if ((MFX_ERR_NONE == sts) && pSession)
-    { 
+    {
         MFXVideoVPPEx*  vpp = NULL;
         MFXVideoENCODE* enc = NULL;
         MFXVideoSession* session = (MFXVideoSession*)pSession;
@@ -4802,7 +4802,7 @@ HRESULT MFPluginVEnc::AsyncThreadFunc(void)
                     MFX_LTRACE_S(MF_TL_NOTES, "WARNING: zero data length!");
                     ATLASSERT(!"WARNING: zero data length!");
                 }
-                if (MFX_ERR_NONE == sts) 
+                if (MFX_ERR_NONE == sts)
                 {
                     MFX_LTRACE_S(MF_TL_NOTES, "calling SendOutput");
                     hr = SendOutput();
@@ -5167,7 +5167,7 @@ HRESULT MFPluginVEnc::ProcessInput(DWORD      dwInputStreamID,
         ATLASSERT(NULL != m_pInSurface);
         hr = E_FAIL;
         MFX_LTRACE_D(MF_TL_PERF, hr);
-    }    
+    }
     if (SUCCEEDED(hr))
     {
         hr = m_pInSurface->Load(pSample, m_bDirectConnectionMFX);
@@ -5194,7 +5194,7 @@ HRESULT MFPluginVEnc::ProcessInput(DWORD      dwInputStreamID,
 #endif //WORKAROUND_FOR_INPUT_SAMPLE_0_BUFFERS
     }
     ATLASSERT(SUCCEEDED(hr));
-    
+
 #if MFX_D3D11_SUPPORT
     // In case of B-frames we set DTS for output
     if (m_OutputBitstream.m_bSetDTS)
@@ -5211,7 +5211,7 @@ HRESULT MFPluginVEnc::ProcessInput(DWORD      dwInputStreamID,
         }
     }
 #endif
-    
+
     if (SUCCEEDED(hr) && !m_pInSurface->IsFakeSrf()) ++(m_MfxCodecInfo.m_nInFrames);
     ATLASSERT(SUCCEEDED(hr));
     if (SUCCEEDED(hr))
@@ -5349,7 +5349,7 @@ HRESULT MFPluginVEnc::ProcessOutput(DWORD  dwFlags,
     else
     {
         MFX_LTRACE_S(MF_TL_PERF, "Normal encoding");
-        
+
 
         m_State = stReady;
         MFX_LTRACE_I(MF_TL_NOTES, m_State);

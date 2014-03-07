@@ -7,7 +7,7 @@ accordance with the terms of that agreement
 Copyright(c) 2013 Intel Corporation. All Rights Reserved.
 
 File Name: mf_hw_platform.cpp
- 
+
 \* ****************************************************************************** */
 
 #include "mf_guids.h"

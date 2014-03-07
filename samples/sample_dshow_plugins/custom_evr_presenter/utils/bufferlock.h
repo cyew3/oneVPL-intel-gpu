@@ -6,7 +6,7 @@ namespace MediaFoundationSamples
     //////////////////////////////////////////////////////////////////////////
     //  VideoBufferLock
     //
-    //  Description: 
+    //  Description:
     //  Locks a video buffer that might or might not support IMF2DBuffer.
     //
     //////////////////////////////////////////////////////////////////////////
@@ -32,7 +32,7 @@ namespace MediaFoundationSamples
 
         // LockBuffer:
         // Locks the buffer. Returns a pointer to scan line 0 and returns the stride.
-        
+
         // The caller must provide the default stride as an input parameter, in case
         // the buffer does not expose IMF2DBuffer. You can calculate the default stride
         // from the media type.
@@ -76,7 +76,7 @@ namespace MediaFoundationSamples
             }
             return hr;
         }
-        
+
         HRESULT UnlockBuffer()
         {
             if (m_p2DBuffer)

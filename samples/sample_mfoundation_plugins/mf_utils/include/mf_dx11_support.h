@@ -21,7 +21,7 @@ class MFDeviceD3D11 : public MFDeviceBase
 public:
     MFDeviceD3D11();
     virtual ~MFDeviceD3D11();
-    
+
     // IMFDeviceDXVA methods
     virtual IUnknown* GetDeviceManager (void);
     virtual HRESULT DXVASupportInit (void);

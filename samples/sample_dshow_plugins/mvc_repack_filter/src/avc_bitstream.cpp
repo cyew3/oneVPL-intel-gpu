@@ -13,7 +13,7 @@
 
 #define MAX(a,b) (((a) > (b)) ? (a) : (b))
 
-mfxStatus DecodeExpGolombOne(mfxU32 **ppBitStream, 
+mfxStatus DecodeExpGolombOne(mfxU32 **ppBitStream,
                              mfxI32 *pBitOffset,
                              mfxI32 *pDst,
                              mfxI32 isSigned);

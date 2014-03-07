@@ -33,7 +33,7 @@ static inline mfxU32 GetValue32(mfxU8* pBuf)
 };
 
 static inline mfxU32 GetLength(mfxU32 nBytesCount, mfxU8* pBuf)
-{    
+{
     mfxU32 nLenght = 0;
     MSDK_CHECK_POINTER(pBuf, 0);
 
@@ -61,8 +61,8 @@ static inline void SetValue(mfxU32 nValue, mfxU8* pBuf)
     return;
 }
 
-mfxU32 MFX_TIME_STAMP_FREQUENCY = 90000; 
-mfxU64 MFX_TIME_STAMP_INVALID = (mfxU64)-1; 
+mfxU32 MFX_TIME_STAMP_FREQUENCY = 90000;
+mfxU64 MFX_TIME_STAMP_INVALID = (mfxU64)-1;
 
 mfxU64 ConvertReferenceTime2MFXTime(REFERENCE_TIME rtTime)
 {
@@ -80,15 +80,15 @@ mfxU64 ConvertReferenceTime2MFXTime(REFERENCE_TIME rtTime)
     return nTime;
 };
 
-CFrameConstructor::CFrameConstructor() 
+CFrameConstructor::CFrameConstructor()
 {
-    memset(&m_mfxResidualBS, 0, sizeof(mfxBitstream)); 
+    memset(&m_mfxResidualBS, 0, sizeof(mfxBitstream));
 
     m_mfxResidualBS.Data        = new mfxU8[100];
-    m_mfxResidualBS.MaxLength   = 100;    
+    m_mfxResidualBS.MaxLength   = 100;
 };
 
-CFrameConstructor::~CFrameConstructor() 
+CFrameConstructor::~CFrameConstructor()
 {
     delete [] m_mfxResidualBS.Data;
 };
@@ -131,7 +131,7 @@ mfxStatus CFrameConstructor::ConstructFrame(IMediaSample* pSample, mfxBitstream 
     {
         MSDK_SAFE_DELETE_ARRAY(pBS->Data);
 
-        pBS->MaxLength = 
+        pBS->MaxLength =
             pBS->DataLength = nDataSize + m_mfxResidualBS.DataLength;
 
         pBS->Data = new mfxU8[pBS->DataLength];
@@ -148,7 +148,7 @@ mfxStatus CFrameConstructor::ConstructFrame(IMediaSample* pSample, mfxBitstream 
     }
 
     if (MFX_ERR_NONE == sts)
-    {            
+    {
         if (SUCCEEDED(pSample->GetTime(&rtStart, &rtEnd)))
         {
             if (-1e7 != rtStart || -1e7 != rtEnd)
@@ -161,8 +161,8 @@ mfxStatus CFrameConstructor::ConstructFrame(IMediaSample* pSample, mfxBitstream 
         }
         else
         {
-            pBS->TimeStamp = MFX_TIME_STAMP_INVALID;         
-        }        
+            pBS->TimeStamp = MFX_TIME_STAMP_INVALID;
+        }
     }
 
     return sts;
@@ -193,28 +193,28 @@ mfxStatus CVC1FrameConstructor::ConstructFrame(IMediaSample* pSample, mfxBitstre
     else
     {
         nDataSize = pSample->GetActualDataLength();
-        
+
         if (0 == nDataSize)
         {
             sts = MFX_ERR_MORE_DATA;
         }
-        
+
         if (MFX_ERR_NONE == sts)
         {
             pSample->GetPointer(&pDataBuffer);
             CHECK_POINTER_SET_STS(pDataBuffer, sts);
         }
-        
+
         if (MFX_ERR_NONE == sts)
         {
             MSDK_SAFE_DELETE_ARRAY(pBS->Data);
 
-            pBS->MaxLength = 
+            pBS->MaxLength =
                 pBS->DataLength = nDataSize + 4 + m_mfxResidualBS.DataLength;
 
             if (MFX_PROFILE_VC1_ADVANCED != m_pVideoParam->mfx.CodecProfile)
             {
-                pBS->MaxLength = 
+                pBS->MaxLength =
                     pBS->DataLength = pBS->DataLength + 4;
             }
 
@@ -223,9 +223,9 @@ mfxStatus CVC1FrameConstructor::ConstructFrame(IMediaSample* pSample, mfxBitstre
         }
 
         if (MFX_ERR_NONE == sts)
-        {            
-            pSample->GetTime(&rtStart, &rtEnd);    
-            
+        {
+            pSample->GetTime(&rtStart, &rtEnd);
+
             pBS->TimeStamp = ConvertReferenceTime2MFXTime(rtStart);
         }
 
@@ -238,11 +238,11 @@ mfxStatus CVC1FrameConstructor::ConstructFrame(IMediaSample* pSample, mfxBitstre
 
             if (MFX_PROFILE_VC1_ADVANCED != m_pVideoParam->mfx.CodecProfile)
             {
-                SetValue(nDataSize, pBS->Data + m_mfxResidualBS.DataLength);     
+                SetValue(nDataSize, pBS->Data + m_mfxResidualBS.DataLength);
                 SetValue(0, pBS->Data + 4 + m_mfxResidualBS.DataLength);
-                MSDK_MEMCPY_BITSTREAM(*pBS, 8 + m_mfxResidualBS.DataLength, pDataBuffer, nDataSize);                
+                MSDK_MEMCPY_BITSTREAM(*pBS, 8 + m_mfxResidualBS.DataLength, pDataBuffer, nDataSize);
             }
-            else 
+            else
             {
                 if (false == StartCodeExist(pDataBuffer))
                 {
@@ -259,7 +259,7 @@ mfxStatus CVC1FrameConstructor::ConstructFrame(IMediaSample* pSample, mfxBitstre
 
             m_mfxResidualBS.DataLength = 0;
         }
-    }    
+    }
 
     return sts;
 };
@@ -267,7 +267,7 @@ mfxStatus CVC1FrameConstructor::ConstructSequenceHeaderSM(IMediaSample *pSample)
 {
     mfxStatus   sts         = MFX_ERR_NONE;
     mfxU8*      pTempBuffer = NULL;
-    
+
     mfxU8*      pDataBuffer = NULL;
     mfxU32      nDataSize   = 0;
 
@@ -362,7 +362,7 @@ bool CVC1FrameConstructor::StartCodeExist(mfxU8* pStart)
             return true;
         default:
             // start code not found
-            return false; 
+            return false;
     }
 }
 
@@ -370,11 +370,11 @@ CAVCFrameConstructor::CAVCFrameConstructor() : CFrameConstructor(),
 m_bInsertHeaders(true)
 {
     m_HeaderNalSize  = 2;  //MSDN - MPEG2VideoInfo->dwSequenceHeader delimited by 2 byte length fields
-    
+
     memset(&m_StartCodeBS, 0, sizeof(mfxBitstream));
 
     m_StartCodeBS.Data = new mfxU8[4];
-    
+
     m_StartCodeBS.DataLength =
         m_StartCodeBS.MaxLength = 4;
 
@@ -390,22 +390,22 @@ CAVCFrameConstructor::~CAVCFrameConstructor()
 }
 
 mfxStatus CAVCFrameConstructor::ReadAVCHeader( MPEG2VIDEOINFO *pMPEG2VidInfo,   mfxBitstream  *pBS )
-{    
-    mfxStatus sts = MFX_ERR_NONE;    
+{
+    mfxStatus sts = MFX_ERR_NONE;
 
     std::vector<mfxU8>      tempBuffer;
-    mfxU32 nNalDataLen;          
-    mfxU8* pNalDataBuff; 
+    mfxU32 nNalDataLen;
+    mfxU8* pNalDataBuff;
     StartCodeIteratorMP4    m_pStartCodeIter;
 
-    ZeroMemory(&m_Headers, sizeof(mfxBitstream));                     
-            
-    m_NalSize = pMPEG2VidInfo->dwFlags;     
-        
-    m_pStartCodeIter.Init((BYTE *)pMPEG2VidInfo->dwSequenceHeader, pMPEG2VidInfo->cbSequenceHeader, m_HeaderNalSize ); //Nal size = 2 
+    ZeroMemory(&m_Headers, sizeof(mfxBitstream));
+
+    m_NalSize = pMPEG2VidInfo->dwFlags;
+
+    m_pStartCodeIter.Init((BYTE *)pMPEG2VidInfo->dwSequenceHeader, pMPEG2VidInfo->cbSequenceHeader, m_HeaderNalSize ); //Nal size = 2
     while (m_pStartCodeIter.ReadNext())
-    {    
-        nNalDataLen = m_pStartCodeIter.GetDataLength(); 
+    {
+        nNalDataLen = m_pStartCodeIter.GetDataLength();
         pNalDataBuff = m_pStartCodeIter.GetDataBuffer();
 
         switch(m_pStartCodeIter.GetType())
@@ -414,9 +414,9 @@ mfxStatus CAVCFrameConstructor::ReadAVCHeader( MPEG2VIDEOINFO *pMPEG2VidInfo,   
             case NALU_TYPE_PPS:
                 tempBuffer.insert(tempBuffer.end(), m_StartCodeBS.Data, m_StartCodeBS.Data + 4);
                 tempBuffer.insert(tempBuffer.end(), pNalDataBuff, pNalDataBuff+nNalDataLen);
-                break; 
-            default: 
-                sts = MFX_ERR_MORE_DATA; 
+                break;
+            default:
+                sts = MFX_ERR_MORE_DATA;
                 break;
         }
     }
@@ -427,38 +427,38 @@ mfxStatus CAVCFrameConstructor::ReadAVCHeader( MPEG2VIDEOINFO *pMPEG2VidInfo,   
         pBS->DataLength = pBS->MaxLength = (mfxU32)tempBuffer.size();
         MSDK_MEMCPY_BITSTREAM(*pBS, 0, &tempBuffer.front(), tempBuffer.size());
 
-        //Keep a copy of the SPS/PPS to place put into the  decode stream. 
+        //Keep a copy of the SPS/PPS to place put into the  decode stream.
         MSDK_SAFE_DELETE_ARRAY(m_Headers.Data);
         m_Headers.Data = new mfxU8[tempBuffer.size()];
-        m_Headers.DataLength = m_Headers.MaxLength = (mfxU32)tempBuffer.size(); 
-        MSDK_MEMCPY_BUF(m_Headers.Data, 0, m_Headers.MaxLength, &tempBuffer.front(), tempBuffer.size()); 
+        m_Headers.DataLength = m_Headers.MaxLength = (mfxU32)tempBuffer.size();
+        MSDK_MEMCPY_BUF(m_Headers.Data, 0, m_Headers.MaxLength, &tempBuffer.front(), tempBuffer.size());
 
         tempBuffer.clear();
     }
 
-    return sts; 
+    return sts;
 }
 
 mfxStatus CAVCFrameConstructor::ConstructFrame(IMediaSample *pSample, mfxBitstream *pBS)
 {
-    mfxStatus sts = MFX_ERR_NONE; 
-    mfxU32 nDataSize = 0; 
-    mfxU8*                  pDataBuffer = NULL;    
+    mfxStatus sts = MFX_ERR_NONE;
+    mfxU32 nDataSize = 0;
+    mfxU8*                  pDataBuffer = NULL;
     std::vector<mfxU8>      tempBuffer;
     REFERENCE_TIME          rtStart(0), rtEnd(0);
     StartCodeIteratorMP4    m_pStartCodeIter;
-    mfxU32 nNalDataLen; 
-    mfxU8* pNalDataBuff; 
-    
-    MSDK_CHECK_POINTER(pSample, MFX_ERR_NULL_PTR); 
-    MSDK_CHECK_POINTER(pBS, MFX_ERR_NULL_PTR); 
+    mfxU32 nNalDataLen;
+    mfxU8* pNalDataBuff;
 
-    nDataSize = pSample->GetActualDataLength(); 
+    MSDK_CHECK_POINTER(pSample, MFX_ERR_NULL_PTR);
+    MSDK_CHECK_POINTER(pBS, MFX_ERR_NULL_PTR);
+
+    nDataSize = pSample->GetActualDataLength();
     if( 0 == nDataSize)
     {
-        sts = MFX_ERR_MORE_DATA; 
+        sts = MFX_ERR_MORE_DATA;
     }
-    
+
     if (MFX_ERR_NONE == sts)
     {
         pSample->GetPointer(&pDataBuffer);
@@ -466,16 +466,16 @@ mfxStatus CAVCFrameConstructor::ConstructFrame(IMediaSample *pSample, mfxBitstre
     }
 
     if (MFX_ERR_NONE == sts)
-    {             
-        m_pStartCodeIter.Init(pDataBuffer, nDataSize, m_NalSize); //Nal size = 4 
+    {
+        m_pStartCodeIter.Init(pDataBuffer, nDataSize, m_NalSize); //Nal size = 4
         while (m_pStartCodeIter.ReadNext())
-        {    
+        {
             switch(m_pStartCodeIter.GetType())
             {
             case     NALU_TYPE_AUD:
                 break;
             default:
-                nNalDataLen =  m_pStartCodeIter.GetDataLength(); 
+                nNalDataLen =  m_pStartCodeIter.GetDataLength();
                 pNalDataBuff = m_pStartCodeIter.GetDataBuffer();
                 tempBuffer.insert(tempBuffer.end(), m_StartCodeBS.Data, m_StartCodeBS.Data + 4);
                 tempBuffer.insert(tempBuffer.end(), pNalDataBuff, pNalDataBuff + nNalDataLen);
@@ -485,50 +485,50 @@ mfxStatus CAVCFrameConstructor::ConstructFrame(IMediaSample *pSample, mfxBitstre
 
         if (tempBuffer.size())
         {
-            if(m_bInsertHeaders) 
+            if(m_bInsertHeaders)
             {
                 pBS->Data = new mfxU8[tempBuffer.size() + m_mfxResidualBS.DataLength + m_Headers.DataLength];
                 pBS->DataLength = pBS->MaxLength = (mfxU32)tempBuffer.size() + m_mfxResidualBS.DataLength + m_Headers.DataLength;
 
                 // copy saved headers
-                MSDK_MEMCPY_BITSTREAM(*pBS, 0, m_Headers.Data, m_Headers.DataLength); 
+                MSDK_MEMCPY_BITSTREAM(*pBS, 0, m_Headers.Data, m_Headers.DataLength);
                 // copy any residual data
                 if (m_mfxResidualBS.DataLength)
                 {
                     MSDK_MEMCPY_BITSTREAM(*pBS, m_Headers.DataLength, m_mfxResidualBS.Data, m_mfxResidualBS.DataLength);
-                }                
+                }
                 // copy current data portion
-                MSDK_MEMCPY_BITSTREAM(*pBS, m_Headers.DataLength + m_mfxResidualBS.DataLength, 
-                    &tempBuffer.front(), tempBuffer.size());                
+                MSDK_MEMCPY_BITSTREAM(*pBS, m_Headers.DataLength + m_mfxResidualBS.DataLength,
+                    &tempBuffer.front(), tempBuffer.size());
             }
-            else 
+            else
             {
                 pBS->Data = new mfxU8[tempBuffer.size() + m_mfxResidualBS.DataLength];
                 pBS->DataLength = pBS->MaxLength = (mfxU32)tempBuffer.size() + m_mfxResidualBS.DataLength;
-                
+
                 // copy any residual data
                 if (m_mfxResidualBS.DataLength)
                 {
                     MSDK_MEMCPY_BITSTREAM(*pBS, 0, m_mfxResidualBS.Data, m_mfxResidualBS.DataLength);
-                }     
+                }
                 // copy current data portion
                 MSDK_MEMCPY_BITSTREAM(*pBS, m_mfxResidualBS.DataLength, &tempBuffer.front(), tempBuffer.size());
-            }                  
-                        
-            tempBuffer.clear();            
+            }
+
+            tempBuffer.clear();
         }
 
         if (MFX_ERR_NONE == sts)
-        {            
-            pSample->GetTime(&rtStart, &rtEnd);      
+        {
+            pSample->GetTime(&rtStart, &rtEnd);
             if(rtStart < 0 )
             {
-                rtStart = 0; 
+                rtStart = 0;
 
             }
-            pBS->TimeStamp = ConvertReferenceTime2MFXTime(rtStart);        
+            pBS->TimeStamp = ConvertReferenceTime2MFXTime(rtStart);
         }
 
     }
-    return sts; 
+    return sts;
 }

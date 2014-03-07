@@ -7,7 +7,7 @@ accordance with the terms of that agreement
 Copyright(c) 2013 Intel Corporation. All Rights Reserved.
 
 File Name: mf_hw_platform.cpp
- 
+
 \* ****************************************************************************** */
 
 #include "mf_guids.h"
@@ -28,7 +28,7 @@ File Name: mf_hw_platform.cpp
 #pragma comment (lib, "d3d11.lib")
 #pragma comment (lib, "dxgi.lib")
 
-DEFINE_GUID(DXVADDI_Intel_Decode_PrivateData_Report, 
+DEFINE_GUID(DXVADDI_Intel_Decode_PrivateData_Report,
 0x49761bec, 0x4b63, 0x4349, 0xa5, 0xff, 0x87, 0xff, 0xdf, 0x8, 0x84, 0x66);
 
 
@@ -43,9 +43,9 @@ CComPtr<ID3D11Device> HWPlatform::CreateD3D11Device(IDXGIAdapter * pAdapter) {
     D3D_FEATURE_LEVEL               pFeatureLevelsOut;
 
     D3D_DRIVER_TYPE type = D3D_DRIVER_TYPE_HARDWARE;
-    
-    
-    if (pAdapter) // not default 
+
+
+    if (pAdapter) // not default
     {
         type = D3D_DRIVER_TYPE_UNKNOWN; // !!!!!! See MSDN, how to create device using not default device
     }
@@ -65,7 +65,7 @@ CComPtr<ID3D11Device> HWPlatform::CreateD3D11Device(IDXGIAdapter * pAdapter) {
     {
         MFX_LTRACE_1(MF_TL_GENERAL, "[HWPlatform] D3D11CreateDevice() failed, NO D3D11 features level hr=", "0x%x", hr);
         // lets try to create dx11 device with d9 feature level
-        static D3D_FEATURE_LEVEL FeatureLevels9[] = { 
+        static D3D_FEATURE_LEVEL FeatureLevels9[] = {
             D3D_FEATURE_LEVEL_9_1,
             D3D_FEATURE_LEVEL_9_2,
             D3D_FEATURE_LEVEL_9_3 };
@@ -152,7 +152,7 @@ mfxStatus HWPlatform::GetIntelDataPrivateReport(ID3D11VideoDevice * device, cons
             return MFX_ERR_NONE;
         }
     }
-    
+
     MFX_LTRACE_S(MF_TL_GENERAL, "[HWPlatform] [GetIntelDataPrivateReport] returns MFX_WRN_PARTIAL_ACCELERATION");
     return MFX_WRN_PARTIAL_ACCELERATION;
 }
@@ -224,7 +224,7 @@ HWPlatform::HWType HWPlatform::Type(const mfxU32 adapterNum)
 
     switch(m_platformForAdapter[adapterNum])
     {
-    case IGFX_HASWELL: 
+    case IGFX_HASWELL:
         MFX_LTRACE_S(MF_TL_GENERAL, "[HWPlatform] Type() = HASWELL");
         return HSW_ULT;
     case IGFX_IVYBRIDGE:
@@ -245,4 +245,4 @@ HWPlatform::HWType HWPlatform::Type(const mfxU32 adapterNum)
     }
     MFX_LTRACE_1(MF_TL_GENERAL, "[HWPlatform] unknown platformFromDriver: ", "%d", m_platformForAdapter[adapterNum]);
     return UNKNOWN;
-} 
+}

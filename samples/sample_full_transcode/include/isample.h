@@ -30,7 +30,7 @@ enum {
 
 typedef std::vector<char> MetaData;
 
-class ISample 
+class ISample
 {
 public:
     virtual ~ISample() {}
@@ -55,7 +55,7 @@ enum {
 inline int CompareSamples (const ISample &lhs, const ISample &rhs) {
     if (lhs.GetSampleType() != rhs.GetSampleType())
         return SAMPLES_HAVE_INCOPARABLE_TYPES;
-    
+
     ISample &nonc_lhs = const_cast<ISample&>(lhs);
     ISample &nonc_rhs = const_cast<ISample&>(rhs);
 
@@ -75,7 +75,7 @@ inline int CompareSamples (const ISample &lhs, const ISample &rhs) {
 }
 
 //lightweight wrapper for MediaSDK containers
-template <class T, int SampleType> 
+template <class T, int SampleType>
 class SampleImplTmpl : public ISample {
 protected:
     T  m_Data;
@@ -86,12 +86,12 @@ protected:
         m_nTrackId(TrackId) {
     }
 
-    SampleImplTmpl(T data, int TrackId) 
+    SampleImplTmpl(T data, int TrackId)
         : m_Data(data)
         , m_nTrackId(TrackId) {
     }
 
-public:    
+public:
     virtual mfxFrameSurface1 & GetSurface() {
         MSDK_TRACE_ERROR(MSDK_STRING("GetSurface(): Incompatible sample type error"));
         throw IncompatibleSampleTypeError();
@@ -123,7 +123,7 @@ class SampleSurface1 : public SampleImplTmpl<mfxFrameSurface1*, SAMPLE_SURFACE>
 {
     typedef SampleImplTmpl<mfxFrameSurface1*, SAMPLE_SURFACE> base;
 public:
-    SampleSurface1(mfxFrameSurface1& surf, int TrackId) : 
+    SampleSurface1(mfxFrameSurface1& surf, int TrackId) :
         base(&surf, TrackId) {
     }
     //SampleSurface(SampleSurface& sample) {
@@ -138,7 +138,7 @@ class SampleBitstream1 : public SampleImplTmpl<mfxBitstream*, SAMPLE_BITSTREAM>
 {
     typedef SampleImplTmpl<mfxBitstream*, SAMPLE_BITSTREAM> base;
 public:
-    SampleBitstream1(mfxBitstream& bs, int TrackId) : 
+    SampleBitstream1(mfxBitstream& bs, int TrackId) :
         base(&bs, TrackId) {
     }
     virtual mfxBitstream & GetBitstream() {
@@ -151,7 +151,7 @@ class SampleAudioFrame : public SampleImplTmpl<mfxAudioFrame*, SAMPLE_AUDIO_FRAM
     typedef SampleImplTmpl<mfxAudioFrame*, SAMPLE_AUDIO_FRAME> base;
 
 public:
-    SampleAudioFrame(mfxAudioFrame& frame, int TrackId) : 
+    SampleAudioFrame(mfxAudioFrame& frame, int TrackId) :
         base(&frame, TrackId) {
     }
     virtual mfxAudioFrame & GetAudioFrame() {
@@ -165,8 +165,8 @@ class SampleBitstream : public SampleImplTmpl<mfxBitstream, SAMPLE_BITSTREAM>
 {
     typedef SampleImplTmpl<mfxBitstream, SAMPLE_BITSTREAM> base;
     std::vector<mfxU8> m_bits;
-public:  
-    SampleBitstream(mfxU32 dataLen, int TrackId ) 
+public:
+    SampleBitstream(mfxU32 dataLen, int TrackId )
         : base(TrackId)
         , m_bits(dataLen) {
         if (!dataLen) {
@@ -198,7 +198,7 @@ class SampleAudioFrameWithData : public SampleImplTmpl<mfxAudioFrame, SAMPLE_AUD
     typedef SampleImplTmpl<mfxAudioFrame, SAMPLE_AUDIO_FRAME> base;
     std::vector<mfxU8> m_bits;
 public:
-    SampleAudioFrameWithData(mfxU32 dataLen, int TrackId ) 
+    SampleAudioFrameWithData(mfxU32 dataLen, int TrackId )
         : base(TrackId)
         , m_bits(dataLen) {
         if (!dataLen) {
@@ -230,7 +230,7 @@ class SampleSurfaceWithData : public SampleImplTmpl<mfxFrameSurface1, SAMPLE_SUR
 {
     typedef SampleImplTmpl<mfxFrameSurface1, SAMPLE_SURFACE> base;
 public:
-    SampleSurfaceWithData(const mfxFrameSurface1& surf, int TrackId) : 
+    SampleSurfaceWithData(const mfxFrameSurface1& surf, int TrackId) :
         base(surf, TrackId) {
     }
     //SampleSurface(SampleSurface& sample) {

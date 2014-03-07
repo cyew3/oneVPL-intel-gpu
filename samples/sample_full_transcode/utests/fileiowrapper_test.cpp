@@ -25,7 +25,7 @@ struct FileIOWrapperTest  : public ::testing::Test {
     ~FileIOWrapperTest(){
         _tremove(tmpFile.c_str());
         delete[] bitstream.Data;
-    }    
+    }
 };
 
 TEST_F(FileIOWrapperTest, putSample) {

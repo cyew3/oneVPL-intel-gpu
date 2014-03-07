@@ -153,7 +153,7 @@ mfxStatus InitParamsVPP(mfxVideoParam* pParams, sInputParams* pInParams)
   memset(pParams, 0, sizeof(mfxVideoParam));
 
   /* input data */
-  pParams->vpp.In.FourCC          = pInParams->inFrameInfo[VPP_IN].FourCC;  
+  pParams->vpp.In.FourCC          = pInParams->inFrameInfo[VPP_IN].FourCC;
 
   pParams->vpp.In.CropX = pInParams->inFrameInfo[VPP_IN].CropX;
   pParams->vpp.In.CropY = pInParams->inFrameInfo[VPP_IN].CropY;
@@ -184,7 +184,7 @@ mfxStatus InitParamsVPP(mfxVideoParam* pParams, sInputParams* pInParams)
                    &pParams->vpp.In.FrameRateExtD);
 
   /* output data */
-  pParams->vpp.Out.FourCC          = pInParams->outFrameInfo.FourCC;  
+  pParams->vpp.Out.FourCC          = pInParams->outFrameInfo.FourCC;
 
   pParams->vpp.Out.CropX = pInParams->outFrameInfo.CropX;
   pParams->vpp.Out.CropY = pInParams->outFrameInfo.CropY;
@@ -448,19 +448,19 @@ mfxStatus InitMemoryAllocator(sFrameProcessor* pProcessor, sMemoryAllocator* pAl
 
     // prepare allocator
     pAllocator->pMfxAllocator = new vaapiFrameAllocator;
-    
+
     vaapiAllocatorParams *p_vaapiAllocParams = new vaapiAllocatorParams;
 
     p_vaapiAllocParams->m_dpy = pAllocator->pVALibrary->GetVADisplay();
     pAllocator->pAllocatorParams = p_vaapiAllocParams;
 
-    /* In case of video memory we must provide mediasdk with external allocator 
+    /* In case of video memory we must provide mediasdk with external allocator
 
     thus we demonstrate "external allocator" usage model.
     Call SetAllocator to pass allocator to mediasdk */
     sts = pProcessor->mfxSession.SetFrameAllocator(pAllocator->pMfxAllocator);
     MSDK_CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, sts, WipeMemoryAllocator(pAllocator));
-    pAllocator->bUsedAsExternalAllocator = true; 
+    pAllocator->bUsedAsExternalAllocator = true;
 #endif
   }
   else
@@ -480,7 +480,7 @@ mfxStatus InitMemoryAllocator(sFrameProcessor* pProcessor, sMemoryAllocator* pAl
       MSDK_CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, sts, WipeMemoryAllocator(pAllocator));
     }
 #endif
-    
+
     // prepare allocator
     pAllocator->pMfxAllocator = new SysMemFrameAllocator;
 
@@ -538,7 +538,7 @@ void WipeFrameProcessor(sFrameProcessor* pProcessor)
 
   MSDK_SAFE_DELETE(pProcessor->pmfxVPP);
 
-  if (pProcessor->mfxSession.operator mfxSession()) 
+  if (pProcessor->mfxSession.operator mfxSession())
   {
       pProcessor->mfxSession.Close();
   }
@@ -902,7 +902,7 @@ mfxStatus CRawVideoWriter::WriteFrame(mfxFrameData* pData, mfxFrameInfo* pInfo)
       ptr = MSDK_MIN( MSDK_MIN(pData->R, pData->G), pData->B );
       ptr = ptr + pInfo->CropX + pInfo->CropY * pitch;
 
-      for(i = 0; i < h; i++) 
+      for(i = 0; i < h; i++)
       {
           MSDK_CHECK_NOT_EQUAL( fwrite(ptr + i * pitch, 1, 4*w, m_fDst), 4*w, MFX_ERR_UNDEFINED_BEHAVIOR);
       }

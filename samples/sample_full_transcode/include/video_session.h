@@ -14,21 +14,21 @@
 
 #include "mfxvideo++.h"
 
-//Rationale: 
+//Rationale:
 //mediaSDK c++ wrapper wraps only c library functionality
 //however OOP style code requires to have allocators connected to session as a property
 
 class MFXVideoSessionExt : public MFXVideoSession {
 public:
-    MFXVideoSessionExt() 
+    MFXVideoSessionExt()
         : m_FrameAllocator() {}
-    virtual mfxStatus SetFrameAllocator(mfxFrameAllocator *allocator) { 
+    virtual mfxStatus SetFrameAllocator(mfxFrameAllocator *allocator) {
         m_FrameAllocator = allocator;
-        return MFXVideoCORE_SetFrameAllocator(m_session, allocator); 
+        return MFXVideoCORE_SetFrameAllocator(m_session, allocator);
     }
-    virtual mfxStatus GetFrameAllocator(mfxFrameAllocator *&refAllocator) { 
+    virtual mfxStatus GetFrameAllocator(mfxFrameAllocator *&refAllocator) {
         refAllocator = m_FrameAllocator;
-        return MFX_ERR_NONE; 
+        return MFX_ERR_NONE;
     }
 protected:
     mfxFrameAllocator *m_FrameAllocator;

@@ -18,9 +18,9 @@
 #include <algorithm>
 
 
-// disable "unreferenced formal parameter" warning - 
+// disable "unreferenced formal parameter" warning -
 // not all formal parameters of interface functions will be used by sample plugin
-#pragma warning(disable : 4100) 
+#pragma warning(disable : 4100)
 
 namespace {
     const mfxU32 FF_CODEC_H263 = MFX_MAKEFOURCC('h','2','6','3');
@@ -49,15 +49,15 @@ FFDecPlugin::FFDecPlugin()
 }
 
 FFDecPlugin::~FFDecPlugin()
-{    
+{
     Close();
 }
 
 /* Methods required for integration with Media SDK */
 mfxStatus FFDecPlugin::PluginInit(mfxCoreInterface *core)
 {
-    MSDK_CHECK_POINTER(core, MFX_ERR_NULL_PTR);       
-        
+    MSDK_CHECK_POINTER(core, MFX_ERR_NULL_PTR);
+
     m_mfxCore = MFXCoreInterface(*core);
 
     return MFX_ERR_NONE;
@@ -71,7 +71,7 @@ mfxStatus FFDecPlugin::PluginClose()
 
 mfxStatus FFDecPlugin::GetPluginParam(mfxPluginParam *par)
 {
-    MSDK_CHECK_POINTER(par, MFX_ERR_NULL_PTR);    
+    MSDK_CHECK_POINTER(par, MFX_ERR_NULL_PTR);
 
     *par = *m_PluginParam;
 
@@ -100,9 +100,9 @@ mfxStatus FFDecPlugin::DecodeFrameSubmit(mfxBitstream *bs, mfxFrameSurface1 *sur
         sts = m_mfxCore.GetRealSurface(surface_work, &real_surface_work);
         MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
     }
-    
+
     m_Tasks.push_back(FFDecWorkload(g_ffPort, &m_ffDecoder, &m_ffParser, &m_scl, m_mfxCore, bs, real_surface_work));
-    
+
     *task = (mfxThreadTask)&m_Tasks.back();
 
 #if !IS_PLUGIN_ASYNC()
@@ -117,7 +117,7 @@ mfxStatus FFDecPlugin::DecodeFrameSubmit(mfxBitstream *bs, mfxFrameSurface1 *sur
 }
 
 mfxStatus FFDecPlugin::Execute(mfxThreadTask task, mfxU32 uid_p, mfxU32 uid_a)
-{    
+{
     MSDK_CHECK_ERROR(m_bInited, false, MFX_ERR_NOT_INITIALIZED);
 
     FFDecWorkload &current_task = *(FFDecWorkload *)task;
@@ -142,7 +142,7 @@ mfxStatus FFDecPlugin::FreeResources(mfxThreadTask task, mfxStatus sts)
             return MFX_ERR_NONE;
         }
     }
-    
+
     MSDK_TRACE_ERROR("[FFDecPlugin::FreeResources] Task ptr=0x"<<std::hex<<pDecTask<<", not found");
     return MFX_ERR_UNKNOWN;
 }
@@ -150,7 +150,7 @@ mfxStatus FFDecPlugin::FreeResources(mfxThreadTask task, mfxStatus sts)
 
 mfxStatus FFDecPlugin::CheckParam(mfxVideoParam *mfxParam)
 {
-    MSDK_CHECK_POINTER(mfxParam, MFX_ERR_NULL_PTR);      
+    MSDK_CHECK_POINTER(mfxParam, MFX_ERR_NULL_PTR);
 
     mfxFrameInfo &param = mfxParam->mfx.FrameInfo;
 
@@ -159,7 +159,7 @@ mfxStatus FFDecPlugin::CheckParam(mfxVideoParam *mfxParam)
         MFX_FOURCC_YV12 != param.FourCC )
     {
         return MFX_ERR_UNSUPPORTED;
-    }    
+    }
 
     return MFX_ERR_NONE;
 }
@@ -169,9 +169,9 @@ mfxStatus FFDecPlugin::CheckInOutFrameInfo(mfxFrameInfo *pIn, mfxFrameInfo *pOut
     MSDK_CHECK_POINTER(pIn, MFX_ERR_NULL_PTR);
     MSDK_CHECK_POINTER(pOut, MFX_ERR_NULL_PTR);
 
-    if (pIn->CropW != m_VideoParam.vpp.In.CropW || pIn->CropH != m_VideoParam.vpp.In.CropH || 
+    if (pIn->CropW != m_VideoParam.vpp.In.CropW || pIn->CropH != m_VideoParam.vpp.In.CropH ||
         pIn->FourCC != m_VideoParam.vpp.In.FourCC ||
-        pOut->CropW != m_VideoParam.vpp.Out.CropW || pOut->CropH != m_VideoParam.vpp.Out.CropH || 
+        pOut->CropW != m_VideoParam.vpp.Out.CropW || pOut->CropH != m_VideoParam.vpp.Out.CropH ||
         pOut->FourCC != m_VideoParam.vpp.Out.FourCC)
     {
         return MFX_ERR_INVALID_VIDEO_PARAM;
@@ -197,7 +197,7 @@ mfxStatus FFDecPlugin::QueryIOSurf(mfxVideoParam *par, mfxFrameAllocRequest *in,
     out->Info = par->mfx.FrameInfo;
 
 
-    //request->Type = 
+    //request->Type =
     mfxCoreParam core_par;
     mfxStatus sts = m_mfxCore.GetCoreParam(&core_par);
     if (MFX_ERR_NONE != sts)
@@ -205,7 +205,7 @@ mfxStatus FFDecPlugin::QueryIOSurf(mfxVideoParam *par, mfxFrameAllocRequest *in,
         MSDK_TRACE_ERROR(MSDK_STRING("FFDecPlugin::QueryIOSurf(), m_pmfxCore->GetCoreParam() returned sts=") << sts);
         return sts;
     }
-    
+
     mfxI32 isInternalManaging = (core_par.Impl & MFX_IMPL_SOFTWARE) ?
         (par->IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY) : (par->IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY);
 
@@ -238,7 +238,7 @@ mfxStatus FFDecPlugin::Init(mfxVideoParam *mfxParam)
 {
     MSDK_TRACE_INFO("FFDecPlugin::Init");
 
-    MSDK_CHECK_POINTER(mfxParam, MFX_ERR_NULL_PTR); 
+    MSDK_CHECK_POINTER(mfxParam, MFX_ERR_NULL_PTR);
     if (!m_mfxCore.IsCoreSet()) {
         MSDK_TRACE_ERROR("FFDecPlugin::Init - IsCoreSet() = false");
         return MFX_ERR_NULL_PTR;
@@ -256,18 +256,18 @@ mfxStatus FFDecPlugin::Init(mfxVideoParam *mfxParam)
 
     if (m_bIsOpaq)
     {
-        pluginOpaqueAlloc = (mfxExtOpaqueSurfaceAlloc*)GetExtBuffer(m_VideoParam.ExtParam, 
+        pluginOpaqueAlloc = (mfxExtOpaqueSurfaceAlloc*)GetExtBuffer(m_VideoParam.ExtParam,
             m_VideoParam.NumExtParam, MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION);
         MSDK_CHECK_POINTER(pluginOpaqueAlloc, MFX_ERR_INVALID_VIDEO_PARAM);
     }
 
     // check existence of corresponding allocs
     if (m_bIsOpaq && !pluginOpaqueAlloc->Out.Surfaces)
-        return MFX_ERR_INVALID_VIDEO_PARAM;        
+        return MFX_ERR_INVALID_VIDEO_PARAM;
 
     if (m_bIsOpaq)
     {
-        sts = m_mfxCore.MapOpaqueSurface(pluginOpaqueAlloc->Out.NumSurface, 
+        sts = m_mfxCore.MapOpaqueSurface(pluginOpaqueAlloc->Out.NumSurface,
             pluginOpaqueAlloc->Out.Type, pluginOpaqueAlloc->Out.Surfaces);
         MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, MFX_ERR_MEMORY_ALLOC);
     }
@@ -275,7 +275,7 @@ mfxStatus FFDecPlugin::Init(mfxVideoParam *mfxParam)
     m_MaxNumTasks = m_VideoParam.AsyncDepth;
     if (m_MaxNumTasks < 1) m_MaxNumTasks = 1;
 
-    
+
     sts = g_ffPort.InitCodec(m_ffDecoder, mfxParam->mfx.CodecId);
     if (MFX_ERR_NONE != sts) {
         MSDK_TRACE_ERROR("FFPortable::InitCodec failure = " << sts);
@@ -323,7 +323,7 @@ mfxStatus FFDecPlugin::Close()
 
     // check existence of corresponding allocs
     if ((m_bIsOpaq && !pluginOpaqueAlloc->Out.Surfaces))
-        return MFX_ERR_INVALID_VIDEO_PARAM;        
+        return MFX_ERR_INVALID_VIDEO_PARAM;
 
     if (!m_mfxCore.IsCoreSet()) {
         MSDK_TRACE_ERROR("FFDecPlugin::Close - IsCoreSet() = false");
@@ -332,7 +332,7 @@ mfxStatus FFDecPlugin::Close()
 
     if (m_bIsOpaq)
     {
-        sts = m_mfxCore.UnmapOpaqueSurface(pluginOpaqueAlloc->Out.NumSurface, 
+        sts = m_mfxCore.UnmapOpaqueSurface(pluginOpaqueAlloc->Out.NumSurface,
             pluginOpaqueAlloc->Out.Type, pluginOpaqueAlloc->Out.Surfaces);
         MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, MFX_ERR_MEMORY_ALLOC);
     }
@@ -355,7 +355,7 @@ mfxStatus FFDecPlugin::GetVideoParam(mfxVideoParam *par)
 mfxStatus FFDecPlugin::DecodeHeader(mfxBitstream *bs, mfxVideoParam *par)
 {
     MSDK_TRACE_INFO("FFDecPlugin::DecodeHeader");
-    
+
     FFCodec codec(false);
     mfxStatus sts = g_ffPort.InitCodec(codec, par->mfx.CodecId);
     if (MFX_ERR_NONE != sts) {

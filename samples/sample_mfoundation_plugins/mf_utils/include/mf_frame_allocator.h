@@ -41,7 +41,7 @@ template <class T>
 class MFFrameAllocatorRWDetach : public T
 {
 public:
-   
+
     virtual mfxStatus LockFrame(mfxMemId mid, mfxFrameData *ptr)
     {
         mfxMemId raw_mid = MFXReadWriteMid(mid).raw();
@@ -55,7 +55,7 @@ public:
 };
 /*------------------------------------------------------------------------------*/
 
-class MFFrameAllocator 
+class MFFrameAllocator
     : public IUnknown
 {
 public:
@@ -95,7 +95,7 @@ class MFAllocatorHelperBase
     : public T, public IMFAllocatorHelper
 {
 public:
-    virtual MFXFrameAllocator * GetAllocator() 
+    virtual MFXFrameAllocator * GetAllocator()
     {
         return (T*)this;
     }
@@ -119,7 +119,7 @@ public:
     {
         return m_decoderService.p;
     }
-    
+
 };
 
 #if MFX_D3D11_SUPPORT

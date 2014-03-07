@@ -60,12 +60,12 @@ mfxStatus CUserPipeline::AllocFrames()
     // prepare allocation requests
     EncRequest.NumFrameMin = EncRequest.NumFrameSuggested = nEncSurfNum;
     RotateRequest.NumFrameMin = RotateRequest.NumFrameSuggested = nRotateSurfNum;
-        
+
     mfxU16 mem_type = MFX_MEMTYPE_EXTERNAL_FRAME;
     mem_type |= (D3D9_MEMORY == m_memType) ? (mfxU16)MFX_MEMTYPE_VIDEO_MEMORY_DECODER_TARGET : (mfxU16)MFX_MEMTYPE_SYSTEM_MEMORY;
     EncRequest.Type = RotateRequest.Type = mem_type;
 
-    EncRequest.Type |= MFX_MEMTYPE_FROM_ENCODE;    
+    EncRequest.Type |= MFX_MEMTYPE_FROM_ENCODE;
     RotateRequest.Type |= MFX_MEMTYPE_FROM_VPPOUT; // THIS IS A WORKAROUND, NEED TO ADJUST ALLOCATOR
 
     MSDK_MEMCPY_VAR(EncRequest.Info, &(m_mfxEncParams.mfx.FrameInfo), sizeof(mfxFrameInfo));
@@ -173,7 +173,7 @@ mfxStatus CUserPipeline::Init(sInputParams *pParams)
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
     mfxIMPL impl = pParams->bUseHWLib ? MFX_IMPL_HARDWARE : MFX_IMPL_SOFTWARE;
-    
+
     // create a session for the second vpp and encode
     sts = m_mfxSession.Init(impl, NULL);
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
@@ -211,7 +211,7 @@ mfxStatus CUserPipeline::Init(sInputParams *pParams)
             }
     }
 
-    
+
     // create encoder
     m_pmfxENC = new MFXVideoENCODE(m_mfxSession);
     MSDK_CHECK_POINTER(m_pmfxENC, MFX_ERR_MEMORY_ALLOC);
@@ -299,7 +299,7 @@ mfxStatus CUserPipeline::Run()
     mfxU16 nRotateSurfIdx = 0; // ~ for rotation plugin input
 
     mfxSyncPoint RotateSyncPoint = NULL; // ~ with rotation plugin call
-  
+
     sts = MFX_ERR_NONE;
 
     // main loop, preprocessing and encoding
@@ -325,7 +325,7 @@ mfxStatus CUserPipeline::Run()
         if (D3D9_MEMORY == m_memType)
         {
             sts = m_pMFXAllocator->Unlock(m_pMFXAllocator->pthis, rot_surf->Data.MemId, &(rot_surf->Data));
-            MSDK_BREAK_ON_ERROR(sts);        
+            MSDK_BREAK_ON_ERROR(sts);
         }
 
         nEncSurfIdx = GetFreeSurface(m_pEncSurfaces, m_EncResponse.NumFrameActual);

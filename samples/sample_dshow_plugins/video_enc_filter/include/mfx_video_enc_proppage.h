@@ -29,7 +29,7 @@ static const GUID IID_IAboutPropertyPage =
 { 0xd826b2e2, 0x52b6, 0x4f51, { 0x8c, 0x6f, 0x8c, 0x29, 0xfb, 0x6f, 0x1f, 0x3d } };
 
 // {A7064786-4BF6-4a5a-B975-5D78303E7C56}
-static const GUID CLSID_AboutPropertyPage = 
+static const GUID CLSID_AboutPropertyPage =
 { 0xa7064786, 0x4bf6, 0x4a5a, { 0xb9, 0x75, 0x5d, 0x78, 0x30, 0x3e, 0x7c, 0x56 } };
 
 #include "resource.h"
@@ -62,12 +62,12 @@ public:
     HRESULT                     OnApplyChanges(void);
     HRESULT                     OnDisconnect(void);
 
-    static CUnknown* WINAPI     CreateInstance(LPUNKNOWN pUnk, HRESULT *pHr);    
+    static CUnknown* WINAPI     CreateInstance(LPUNKNOWN pUnk, HRESULT *pHr);
 private:
 
     IConfigureVideoEncoder*     m_pVideoEncProps;    // Pointer to the filter's custom interface.
-    
-    CCritSec                    m_critSec;           
+
+    CCritSec                    m_critSec;
  };
 
 class CAboutPropPage : public CBasePropertyPage
@@ -132,14 +132,14 @@ protected:
                                          , DWORD* nItemsData
                                          , size_t nSize
                                          , int nSelected);
-    
+
     HRESULT                     ConfigureEditSpin( int nCmd
                                                  , int nMin
                                                  , int nMax
                                                  , int nSelected
                                                  , bool bModifyStyle);
     HRESULT                     ConfigureEdit(int nCmd, int nValue);
-    
+
     HRESULT                     FillTGUsageCombo(int nTGUsageItem, DWORD nSelected);
 
 protected:
@@ -156,4 +156,3 @@ protected:
 private:
     DISALLOW_COPY_AND_ASSIGN(CConfigPropPage);
  };
- 

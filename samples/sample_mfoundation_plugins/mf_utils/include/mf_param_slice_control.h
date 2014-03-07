@@ -64,7 +64,7 @@ public:
             *pHR = S_OK;
         return m_nMode;
     }
-    
+
     virtual HRESULT GetModeParameterRange(VARIANT *ValueMin, VARIANT *ValueMax, VARIANT *SteppingDelta)
     {
         HRESULT hr = S_OK;
@@ -83,7 +83,7 @@ public:
         {
             hr = VariantClear(SteppingDelta);
         }
-        
+
         ValueMin->vt   = VT_UI4;
         ValueMax->vt   = VT_UI4;
         SteppingDelta->vt   = VT_UI4;
@@ -93,7 +93,7 @@ public:
 
     virtual HRESULT GetModeParameterRange(ULONG &ValueMin, ULONG &ValueMax, ULONG &SteppingDelta)
     {
-        ValueMin = 0; 
+        ValueMin = 0;
         ValueMax = 2;
         SteppingDelta = 2;
         return S_OK;
@@ -119,7 +119,7 @@ public:
             *pHR = S_OK;
         return m_nSize;
     }
-    
+
     virtual HRESULT SetFrameInfo(const mfxFrameInfo &frameInfo)
     {
         HRESULT hr = E_INVALIDARG;

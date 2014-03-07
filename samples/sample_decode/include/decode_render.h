@@ -66,8 +66,8 @@ public:
     VOID OnKey(HWND hwnd, UINT vk, BOOL fDown, int cRepeat, UINT flags);
     VOID ChangeWindowSize(bool bFullScreen);
 
-    void SetHWDevice(CHWDevice *dev) 
-    { 
+    void SetHWDevice(CHWDevice *dev)
+    {
         m_hwdev = dev;
     }
 protected:
@@ -78,7 +78,7 @@ protected:
     sWindowParams       m_sWindowParams;
     HWND                m_Hwnd;
     RECT                m_rect;
-    DWORD               m_style; 
+    DWORD               m_style;
 
     bool EnableDwmQueuing();
     static BOOL CALLBACK MonitorEnumProc(HMONITOR ,HDC ,LPRECT lprcMonitor,LPARAM dwData);

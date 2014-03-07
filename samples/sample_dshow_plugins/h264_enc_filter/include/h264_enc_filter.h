@@ -13,7 +13,7 @@
 #include "mfx_video_enc_filter.h"
 #include "h264_enc_proppage.h"
 
-class CH264EncVideoFilter 
+class CH264EncVideoFilter
     : public CEncVideoFilter
 {
 public:
@@ -22,7 +22,7 @@ public:
     static CUnknown * WINAPI CreateInstance(LPUNKNOWN punk, HRESULT *phr);
 
     CH264EncVideoFilter(TCHAR *tszName, LPUNKNOWN punk, HRESULT *phr);
-    
+
     // Fills a counted array of GUID values where each GUID specifies the CLSID of each property page that can be displayed
     STDMETHODIMP        GetPages(CAUUID *pPages);
 
@@ -35,15 +35,15 @@ protected:
 
     // Fill m_EncoderParams with default values
     void                SetDefaultParams(void);
-    // Fill m_EncoderParams with values from registry if available, 
+    // Fill m_EncoderParams with values from registry if available,
     // otherwise write current m_EncoderParams values to registry
     void                ReadParamsFromRegistry(void);
     // Write current m_EncoderParams values to registry
     void                WriteParamsToRegistry(void);
     void                ReadFrameRateFromRegistry(mfxU32 &iFrameRate);
-    void                UpdateRegistry(void) 
+    void                UpdateRegistry(void)
     {CopyMFXToEncoderParams(&m_EncoderParams, &m_mfxParamsVideo); WriteParamsToRegistry(); CEncVideoFilter::UpdateRegistry();};
 
-    BOOL                CheckOnlyBitrateChanged(mfxVideoParam* paramsVideo1, mfxVideoParam* paramsVideo2, DWORD preset);    
+    BOOL                CheckOnlyBitrateChanged(mfxVideoParam* paramsVideo1, mfxVideoParam* paramsVideo2, DWORD preset);
 };
 

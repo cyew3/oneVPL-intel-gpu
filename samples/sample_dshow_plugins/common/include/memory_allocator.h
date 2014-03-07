@@ -33,18 +33,18 @@ File Name: memory_allocator.h
 #include "combase.h"
 
 // {58A9922B-54B4-4386-A185-1FD38213B19F}
-static const GUID IID_IMFXSample = 
+static const GUID IID_IMFXSample =
 { 0x58a9922b, 0x54b4, 0x4386, { 0xa1, 0x85, 0x1f, 0xd3, 0x82, 0x13, 0xb1, 0x9f } };
 
 // {DA8A2F72-334A-4c22-B0C3-C3A18D45FECA}
-static const GUID IID_IMFXAllocator = 
+static const GUID IID_IMFXAllocator =
 { 0xda8a2f72, 0x334a, 0x4c22, { 0xb0, 0xc3, 0xc3, 0xa1, 0x8d, 0x45, 0xfe, 0xca } };
 
 // additional interface which allows to access mfxFrameSurface
 MIDL_INTERFACE("58A9922B-54B4-4386-A185-1FD38213B19F")
 IMFXSample : public IUnknown
 {
-    virtual STDMETHODIMP GetMfxSurfacePointer( 
+    virtual STDMETHODIMP GetMfxSurfacePointer(
         /* [out] */ mfxFrameSurface1 **ppSurf) = 0;
     virtual STDMETHODIMP SetMfxSurfacePointer(
         /* [in] */ mfxFrameSurface1 *pSurf) = 0;
@@ -54,7 +54,7 @@ IMFXSample : public IUnknown
 MIDL_INTERFACE("DA8A2F72-334A-4c22-B0C3-C3A18D45FECA")
 IMFXAllocator : public IUnknown
 {
-    virtual STDMETHODIMP GetMfxFrameAllocator( 
+    virtual STDMETHODIMP GetMfxFrameAllocator(
         /* [out] */ MFXFrameAllocator **ppAlloc) = 0;
 };
 
@@ -69,38 +69,38 @@ public:
     STDMETHODIMP_(ULONG) Release();
 
     // IMFXSample methods
-    STDMETHODIMP GetMfxSurfacePointer(mfxFrameSurface1 **ppSurf); 
+    STDMETHODIMP GetMfxSurfacePointer(mfxFrameSurface1 **ppSurf);
     STDMETHODIMP SetMfxSurfacePointer(mfxFrameSurface1 *pSurf);
 
 protected:
-    friend class MFXDSFrameAllocatorSys;    
+    friend class MFXDSFrameAllocatorSys;
     mfxFrameSurface1 *m_pmfxSurface;
 };
 
 class CDXVA2Sample : public CMFXSample, public IMFGetService
-{    
+{
 
 public:
     CDXVA2Sample(CBaseAllocator* pBase, HRESULT *phr);
 
     // IUnknown methods
-    STDMETHODIMP QueryInterface(REFIID riid, void **ppv);  
+    STDMETHODIMP QueryInterface(REFIID riid, void **ppv);
     STDMETHODIMP_(ULONG) AddRef();
     STDMETHODIMP_(ULONG) Release();
 
     // IMFGetService methods
-    STDMETHODIMP GetService(REFGUID guidService, REFIID riid, LPVOID *ppv);   
+    STDMETHODIMP GetService(REFGUID guidService, REFIID riid, LPVOID *ppv);
 
     // Override GetPointer because this class does not manage a system memory buffer.
     // The EVR uses the MR_BUFFER_SERVICE service to get the Direct3D surface.
     STDMETHODIMP GetPointer(BYTE ** ppBuffer);
 
     // IMFXSample methods
-    STDMETHODIMP GetMfxSurfacePointer(mfxFrameSurface1 **ppSurf); 
+    STDMETHODIMP GetMfxSurfacePointer(mfxFrameSurface1 **ppSurf);
     STDMETHODIMP SetMfxSurfacePointer(mfxFrameSurface1 *pSurf);
 
-protected:    
-    friend class MFXDSFrameAllocatorD3D;    
+protected:
+    friend class MFXDSFrameAllocatorD3D;
     IDirect3DSurface9 *m_pd3dSurface;
 };
 
@@ -125,15 +125,15 @@ public:
     STDMETHODIMP ReleaseBuffer(IMediaSample * pSample);
     STDMETHODIMP GetBuffer(__deref_out IMediaSample **ppBuffer, __in_opt REFERENCE_TIME *pStartTime
                                                              , __in_opt REFERENCE_TIME *pEndTime, DWORD dwFlags);
-  
+
 
     void SetDXVA2 (BOOL bDXVA2) {m_bDXVA2 = bDXVA2;};
 
-protected:        
+protected:
     BOOL m_bDXVA2;
 };
 
-class MFXDSFrameAllocatorD3D 
+class MFXDSFrameAllocatorD3D
     : public D3DFrameAllocator, public CDSMemAllocator, public IMFXAllocator
 {
 public:
@@ -145,8 +145,8 @@ public:
     STDMETHODIMP NonDelegatingQueryInterface(const IID & riid, void **ppv);
 
     // IMFXFrameAllocator
-    STDMETHODIMP GetMfxFrameAllocator(MFXFrameAllocator **ppAlloc);    
-    
+    STDMETHODIMP GetMfxFrameAllocator(MFXFrameAllocator **ppAlloc);
+
     mfxStatus Init(mfxAllocatorParams *pParams);
     mfxStatus Close();
 
@@ -155,23 +155,23 @@ protected:
     mfxStatus LockFrame (mfxMemId mid, mfxFrameData *ptr);
     mfxStatus UnlockFrame (mfxMemId mid, mfxFrameData *ptr);
     mfxStatus GetFrameHDL (mfxMemId mid, mfxHDL *handle);
-    mfxStatus ReleaseResponse (mfxFrameAllocResponse *response);   
+    mfxStatus ReleaseResponse (mfxFrameAllocResponse *response);
 };
 
 class MFXDSFrameAllocatorSys : public SysMemFrameAllocator, public CDSMemAllocator
 {
 public:
-    MFXDSFrameAllocatorSys(__in_opt LPCTSTR,  __inout_opt LPUNKNOWN, __inout HRESULT *);  
+    MFXDSFrameAllocatorSys(__in_opt LPCTSTR,  __inout_opt LPUNKNOWN, __inout HRESULT *);
 
 protected:
     mfxStatus AllocImpl (mfxFrameAllocRequest *request, mfxFrameAllocResponse *response);
     mfxStatus LockFrame (mfxMemId mid, mfxFrameData *ptr);
     mfxStatus UnlockFrame (mfxMemId mid, mfxFrameData *ptr);
-    mfxStatus ReleaseResponse (mfxFrameAllocResponse *response);    
+    mfxStatus ReleaseResponse (mfxFrameAllocResponse *response);
 
     // override to allocate the memory when Commit called
     // in CMemAllocator implementation only change CMediaSample to CMFXSample
-    virtual HRESULT Alloc(void); 
+    virtual HRESULT Alloc(void);
 
     mfxFrameInfo m_FrameInfo;
 };

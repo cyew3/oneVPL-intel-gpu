@@ -811,7 +811,7 @@ HRESULT mf_mftype2mfx_info(IMFMediaType* pType, mfxInfoMFX* pMfxInfo)
 #if MFX_D3D11_SUPPORT
 #ifdef BYT_WA
 
-            if (GetModuleHandle(L"MFCaptureEngine.dll") != NULL) 
+            if (GetModuleHandle(L"MFCaptureEngine.dll") != NULL)
             {
                 pMfxInfo->CodecProfile = MFX_PROFILE_AVC_BASELINE;
             }
@@ -898,7 +898,7 @@ void mf_set_cropping(mfxInfoVPP* pVppInfo)
         {
             pVppInfo->Out.CropY = (mfxU16)((pVppInfo->Out.CropH - dProportionalH) / 2. + 1) & -2;
             pVppInfo->Out.CropH = pVppInfo->Out.CropH - 2 * pVppInfo->Out.CropY;
-        } 
+        }
         else if (dProportionalH > pVppInfo->Out.CropH)
         {
             mfxU16 dProportionalW = (mfxU16)(pVppInfo->Out.CropH * dFrameAR / dPixelAR + 1) & -2;
@@ -1395,7 +1395,7 @@ HRESULT mf_get_reg_dword(const TCHAR *pPath, const TCHAR* pName, DWORD* pValue)
         RegCloseKey(key);
         if (ERROR_SUCCESS != res) {
             hr = E_FAIL;
-      
+
             TCHAR *buffer;
             FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER, 0, res, LANG_SYSTEM_DEFAULT, (LPTSTR)&buffer, 1, NULL);
 #ifdef UNICODE
@@ -1418,14 +1418,14 @@ HRESULT mf_test_createdevice(void)
     MFX_AUTO_LTRACE_FUNC(MF_TL_PERF);
     HRESULT hr = E_FAIL;
     IDirect3D9* pD3D = Direct3DCreate9(D3D_SDK_VERSION);
-    
+
     if (pD3D)
     {
         D3DPRESENT_PARAMETERS params;
         IDirect3DDevice9* pDevice = NULL;
         POINT point = {0, 0};
         HWND  hWindow = 0;
-        
+
         hWindow = WindowFromPoint(point);
 
         memset(&params, 0, sizeof(D3DPRESENT_PARAMETERS));

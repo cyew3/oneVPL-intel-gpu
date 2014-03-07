@@ -10,15 +10,15 @@
 #include"pipeline_factory.h"
 
 
-Transform <MFXAudioENCODE>::Transform(PipelineFactory& factory, MFXAudioSession & session, int TimeToWait) 
+Transform <MFXAudioENCODE>::Transform(PipelineFactory& factory, MFXAudioSession & session, int TimeToWait)
     : m_factory(factory)
     , m_session(session)
     , m_dTimeToWait(TimeToWait)
     , m_bEOS()
     , m_bNeedNewBitstream(true)
     , m_allocRequest(mfxAudioAllocRequest()) {
-    
-    m_pENC.reset(m_factory.CreateAudioEncoder(session));    
+
+    m_pENC.reset(m_factory.CreateAudioEncoder(session));
     m_outSamples.reset(m_factory.CreateSamplePool(TimeToWait));
     m_bInited = false;
 }
@@ -50,7 +50,7 @@ bool Transform <MFXAudioENCODE>::GetSample( SamplePtr& sample) {
                 SamplePtr sample_ptr(new SampleBitstream(m_allocRequest.SuggestedOutputSize+8, m_pInput->GetTrackID()));
                 m_outSamples->RegisterSample(sample_ptr);
             }
-           
+
             m_pCurrentBitstream.reset(m_outSamples->LockSample(m_outSamples->FindFreeSample()));
             m_pCurrentBitstream->GetBitstream().DataLength = 0;
             m_pCurrentBitstream->GetBitstream().DataOffset = 0;
@@ -91,7 +91,7 @@ bool Transform <MFXAudioENCODE>::GetSample( SamplePtr& sample) {
         }
     }
     MSDK_TRACE_ERROR(MSDK_STRING("MFXAudioENCODE::EncodeFrameAsync device busy"));
-    throw EncodeTimeoutError();    
+    throw EncodeTimeoutError();
 }
 
 void Transform <MFXAudioENCODE>::InitEncode() {
@@ -99,13 +99,13 @@ void Transform <MFXAudioENCODE>::InitEncode() {
         return;
 
     mfxStatus sts = MFX_ERR_NONE;
-    
+
     sts = m_pENC->Query(&m_encParam, &m_encParam);
     if (sts < 0) {
         MSDK_TRACE_ERROR(MSDK_STRING("MFXAudioENCODE::Query, sts=")<<sts);
         throw EncodeQueryError();
     }
-    
+
     sts = m_pENC->QueryIOSize(&m_encParam, &m_allocRequest);
     if (sts < 0) {
         MSDK_TRACE_ERROR(MSDK_STRING("MFXAudioENCODE::QueryIOSize, sts=")<<sts);

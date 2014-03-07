@@ -28,7 +28,7 @@ private:
     PipelineFactory& m_factory;
     MFXVideoSessionExt& m_session;
     std::auto_ptr<MFXVideoVPP> m_pVPP;
-    std::auto_ptr<SamplePool> m_pSamplesSurfPool; 
+    std::auto_ptr<SamplePool> m_pSamplesSurfPool;
 
     int  m_dTimeToWait;
 

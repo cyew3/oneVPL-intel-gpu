@@ -1,11 +1,11 @@
-/* ****************************************************************************** *\ 
- 
+/* ****************************************************************************** *\
+
  INTEL CORPORATION PROPRIETARY INFORMATION
  This software is supplied under the terms of a license agreement or nondisclosure
  agreement with Intel Corporation and may not be copied or disclosed except in
  accordance with the terms of that agreement
  Copyright(c) 2012-2014 Intel Corporation. All Rights Reserved.
-  
+
 \* ****************************************************************************** */
 
 #ifndef __THREAD_DEFS_H__
@@ -31,7 +31,7 @@ public:
     mfxStatus Lock(void);
     mfxStatus Unlock(void);
     int Try(void);
-    
+
 private:
     bool m_bInitialized;
 #if defined(_WIN32) || defined(_WIN64)
@@ -47,7 +47,7 @@ public:
     AutomaticMutex(MSDKMutex& mutex);
     ~AutomaticMutex(void);
 
-private: 
+private:
     void Lock(void);
     void Unlock(void);
 

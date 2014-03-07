@@ -19,7 +19,7 @@ File Name: memory_allocator.cpp
 
 #define ALLOCATOR_PROP_SIZE sizeof(ALLOCATOR_PROPERTIES)
 
-/* CMFXSample */ 
+/* CMFXSample */
 CMFXSample::CMFXSample(LPCTSTR pName, CBaseAllocator* pBase, HRESULT *phr, LPBYTE pBuffer, LONG length) :
 CMediaSample(pName, pBase, phr, pBuffer, length),
 m_pmfxSurface(NULL)
@@ -75,7 +75,7 @@ HRESULT CDXVA2Sample::QueryInterface(REFIID riid, void **ppv)
     {
         return GetInterface((IUnknown*)static_cast<IMFGetService*>(this), ppv);
     }
-    
+
     return CMFXSample::QueryInterface(riid, ppv);
 }
 
@@ -87,18 +87,18 @@ ULONG CDXVA2Sample::AddRef()
 ULONG CDXVA2Sample::Release()
 {
     /* Decrement our own private reference count */
-    LONG lRef;    
+    LONG lRef;
 
     if (m_cRef == 0)
     {
         return S_OK;
-    } 
-    else if (m_cRef == 1) 
+    }
+    else if (m_cRef == 1)
     {
         lRef = 0;
         m_cRef = 0;
-    } 
-    else 
+    }
+    else
     {
         lRef = InterlockedDecrement(&m_cRef);
     }
@@ -106,14 +106,14 @@ ULONG CDXVA2Sample::Release()
     ASSERT(lRef >= 0);
 
     /* Did we release our final reference count */
-    if (lRef == 0) 
+    if (lRef == 0)
     {
         /* Free all resources */
-        if (m_dwFlags & Sample_TypeChanged) 
+        if (m_dwFlags & Sample_TypeChanged)
         {
             SetMediaType(NULL);
         }
-        
+
         m_dwFlags = 0;
         m_dwTypeSpecificFlags = 0;
         m_dwStreamId = AM_STREAM_MEDIA;
@@ -160,9 +160,9 @@ HRESULT CDXVA2Sample::SetMfxSurfacePointer(mfxFrameSurface1 *pSurf)
 }
 
 /* CDSMemAllocator */
-CDSMemAllocator::CDSMemAllocator(__in_opt LPCTSTR str,  __inout_opt LPUNKNOWN pUnknown, __inout HRESULT * phr) : 
+CDSMemAllocator::CDSMemAllocator(__in_opt LPCTSTR str,  __inout_opt LPUNKNOWN pUnknown, __inout HRESULT * phr) :
 CMemAllocator(str, pUnknown, phr)
-{    
+{
     m_bDXVA2 = false;
 };
 
@@ -176,52 +176,52 @@ HRESULT CDSMemAllocator::GetProperties(ALLOCATOR_PROPERTIES *pActual)
     return CMemAllocator::GetProperties(pActual);
 }
 
-HRESULT CDSMemAllocator::Commit() 
-{ 
+HRESULT CDSMemAllocator::Commit()
+{
     if (m_bDXVA2)
     {
-        return S_OK; 
+        return S_OK;
     }
 
-    return CMemAllocator::Commit(); 
+    return CMemAllocator::Commit();
 };
 
 HRESULT CDSMemAllocator::Decommit()
-{ 
+{
     if (m_bDXVA2)
     {
-        return S_OK; 
+        return S_OK;
     }
 
-    return CMemAllocator::Decommit();  
+    return CMemAllocator::Decommit();
 };
 
 HRESULT CDSMemAllocator::GetBuffer(__deref_out IMediaSample **ppBuffer
                                            , __in_opt REFERENCE_TIME *pStartTime
                                            , __in_opt REFERENCE_TIME *pEndTime
-                                           , DWORD dwFlags) 
-{ 
+                                           , DWORD dwFlags)
+{
     if (m_bDXVA2)
     {
         return E_NOTIMPL; // we don't use GetBuffer() for DXVA2
-    }  
+    }
 
     return CMemAllocator::GetBuffer(ppBuffer, pStartTime, pEndTime, dwFlags);
-} 
+}
 
-HRESULT CDSMemAllocator::ReleaseBuffer(IMediaSample *pSample)  
-{ 
+HRESULT CDSMemAllocator::ReleaseBuffer(IMediaSample *pSample)
+{
     if (m_bDXVA2)
     {
         return E_NOTIMPL; // we don't use ReleaseBuffer() for DXVA2
     }
 
     return CMemAllocator::ReleaseBuffer(pSample);
-} 
+}
 
-MFXDSFrameAllocatorD3D::MFXDSFrameAllocatorD3D(__in_opt LPCTSTR str,  __inout_opt LPUNKNOWN pUnknown, __inout HRESULT * phr) : 
+MFXDSFrameAllocatorD3D::MFXDSFrameAllocatorD3D(__in_opt LPCTSTR str,  __inout_opt LPUNKNOWN pUnknown, __inout HRESULT * phr) :
 CDSMemAllocator(str, pUnknown, phr)
-{    
+{
     m_bDXVA2 = true;
 };
 
@@ -238,37 +238,37 @@ HRESULT MFXDSFrameAllocatorD3D::NonDelegatingQueryInterface(const IID & riid, vo
 mfxStatus MFXDSFrameAllocatorD3D::Init(mfxAllocatorParams *pParams)
 {
     mfxStatus                                   sts             = MFX_ERR_NONE;
-    HRESULT                                     hr              = S_OK;    
+    HRESULT                                     hr              = S_OK;
     CComPtr<IMFGetService>                      pGetService(NULL);
 
     CheckPointer(pParams, MFX_ERR_NULL_PTR);
 
     DSAllocatorParams *pDSParams = NULL;
     pDSParams = dynamic_cast<DSAllocatorParams*>(pParams);
-    MSDK_CHECK_POINTER(pDSParams, MFX_ERR_NULL_PTR);    
-   
-    hr = pDSParams->pPin->QueryInterface(__uuidof(IMFGetService), (void**)&pGetService);        
+    MSDK_CHECK_POINTER(pDSParams, MFX_ERR_NULL_PTR);
+
+    hr = pDSParams->pPin->QueryInterface(__uuidof(IMFGetService), (void**)&pGetService);
 
     if (SUCCEEDED(hr))
     {
         m_manager.Release();
-        hr = pGetService->GetService(MR_VIDEO_ACCELERATION_SERVICE, IID_IDirect3DDeviceManager9, (void**)&m_manager);        
+        hr = pGetService->GetService(MR_VIDEO_ACCELERATION_SERVICE, IID_IDirect3DDeviceManager9, (void**)&m_manager);
     }
 
     if (SUCCEEDED(hr))
     {
-        pDSParams->pManager = m_manager; 
+        pDSParams->pManager = m_manager;
     }
     else
     {
         sts = MFX_ERR_UNKNOWN;
-    }    
+    }
 
     return sts;
 };
 
 mfxStatus MFXDSFrameAllocatorD3D::Close()
-{  
+{
     return MFX_ERR_NONE;
 }
 
@@ -313,7 +313,7 @@ mfxStatus MFXDSFrameAllocatorD3D::LockFrame(mfxMemId mid, mfxFrameData *ptr)
     if (MFX_ERR_NONE == sts)
     {
         sts = D3DFrameAllocator::LockFrame(pD3D9Surface, ptr);
-    } 
+    }
 
     return sts;
 };
@@ -323,11 +323,11 @@ mfxStatus MFXDSFrameAllocatorD3D::UnlockFrame(mfxMemId mid, mfxFrameData *ptr)
     mfxStatus           sts          = MFX_ERR_NONE;
     IDirect3DSurface9*  pD3D9Surface = NULL;
 
-    sts = GetFrameHDL(mid, (mfxHDL*)&pD3D9Surface);    
+    sts = GetFrameHDL(mid, (mfxHDL*)&pD3D9Surface);
 
     if (MFX_ERR_NONE == sts)
     {
-        sts = D3DFrameAllocator::UnlockFrame(pD3D9Surface, ptr);        
+        sts = D3DFrameAllocator::UnlockFrame(pD3D9Surface, ptr);
     }
 
     return sts;
@@ -341,7 +341,7 @@ mfxStatus MFXDSFrameAllocatorD3D::GetFrameHDL(mfxMemId mid, mfxHDL *handle)
     IMFGetService*      pGetService = NULL;
     IDirect3DSurface9*  pD3DSurface = NULL;
 
-    if (!pSample || !handle) 
+    if (!pSample || !handle)
     {
         return MFX_ERR_NULL_PTR;
     }
@@ -351,19 +351,19 @@ mfxStatus MFXDSFrameAllocatorD3D::GetFrameHDL(mfxMemId mid, mfxHDL *handle)
 
     if (SUCCEEDED(hr))
     {
-        hr = pGetService->GetService(MR_BUFFER_SERVICE, __uuidof(IDirect3DSurface9), (void**)&pD3DSurface);        
+        hr = pGetService->GetService(MR_BUFFER_SERVICE, __uuidof(IDirect3DSurface9), (void**)&pD3DSurface);
         pGetService->Release();
     }
 
     if (SUCCEEDED(hr))
-    {       
+    {
         *handle = pD3DSurface;
         pD3DSurface->Release();
     }
     else
     {
         sts = MFX_ERR_UNKNOWN;
-    }    
+    }
 
     return sts;
 };
@@ -372,7 +372,7 @@ mfxStatus MFXDSFrameAllocatorD3D::ReleaseResponse(mfxFrameAllocResponse *respons
 {
     if (!response)
         return MFX_ERR_NULL_PTR;
-    
+
     if (response->mids)
     {
         for (mfxU32 i = 0; i < response->NumFrameActual; i++)
@@ -387,7 +387,7 @@ mfxStatus MFXDSFrameAllocatorD3D::ReleaseResponse(mfxFrameAllocResponse *respons
             CDXVA2Sample* pSample = (CDXVA2Sample*)response->mids[i];
             pSample->Release();
         }
-    }    
+    }
 
     delete [] response->mids;
     response->mids = NULL;
@@ -403,9 +403,9 @@ HRESULT MFXDSFrameAllocatorD3D::GetMfxFrameAllocator( MFXFrameAllocator **ppAllo
 }
 
 /* MFXDSFrameAllocatorSys */
-MFXDSFrameAllocatorSys::MFXDSFrameAllocatorSys(__in_opt LPCTSTR str,  __inout_opt LPUNKNOWN pUnknown, __inout HRESULT * phr) : 
+MFXDSFrameAllocatorSys::MFXDSFrameAllocatorSys(__in_opt LPCTSTR str,  __inout_opt LPUNKNOWN pUnknown, __inout HRESULT * phr) :
 CDSMemAllocator(str, pUnknown, phr)
-{    
+{
     m_bDXVA2 = false;
     MSDK_ZERO_MEMORY(m_FrameInfo);
 };
@@ -520,12 +520,12 @@ mfxStatus MFXDSFrameAllocatorSys::AllocImpl(mfxFrameAllocRequest *request, mfxFr
     if (!(request->Type & MFX_MEMTYPE_SYSTEM_MEMORY))
         return MFX_ERR_UNSUPPORTED;
 
-    mfxStatus sts = MFX_ERR_NONE;     
+    mfxStatus sts = MFX_ERR_NONE;
 
     safe_array<CMFXSample*> ppSamples = new CMFXSample *[request->NumFrameSuggested];
     MSDK_CHECK_POINTER(ppSamples.get(), MFX_ERR_MEMORY_ALLOC);
     for (mfxU16 i = 0; i < request->NumFrameSuggested; i++)
-    {      
+    {
         HRESULT hr = GetBuffer((IMediaSample**)&ppSamples.get()[i], NULL, NULL, 0);
         if (FAILED(hr))
             return MFX_ERR_MEMORY_ALLOC;
@@ -539,17 +539,17 @@ mfxStatus MFXDSFrameAllocatorSys::AllocImpl(mfxFrameAllocRequest *request, mfxFr
 }
 
 mfxStatus MFXDSFrameAllocatorSys::LockFrame(mfxMemId mid, mfxFrameData *ptr)
-{   
-    MSDK_CHECK_POINTER(ptr, MFX_ERR_NULL_PTR);        
+{
+    MSDK_CHECK_POINTER(ptr, MFX_ERR_NULL_PTR);
 
     CMFXSample *pSample = (CMFXSample *)mid;
-    MSDK_CHECK_POINTER(pSample, MFX_ERR_NULL_PTR);    
+    MSDK_CHECK_POINTER(pSample, MFX_ERR_NULL_PTR);
 
-    mfxU8 *pBuffer = 0;    
+    mfxU8 *pBuffer = 0;
     pSample->GetPointer(&pBuffer);
 
-    mfxU32 BufSize = pSample->GetSize();      
-    
+    mfxU32 BufSize = pSample->GetSize();
+
     mfxU16 Width = m_FrameInfo.Width;
     mfxU16 Height = m_FrameInfo.Height;
     mfxU16 Pitch = BufSize / Height * 2 / 3;
@@ -557,15 +557,15 @@ mfxStatus MFXDSFrameAllocatorSys::LockFrame(mfxMemId mid, mfxFrameData *ptr)
     // TODO: add size check
 
     ptr->Y = (mfxU8 *)pBuffer;
-    switch (m_FrameInfo.FourCC) 
+    switch (m_FrameInfo.FourCC)
     {
     case MFX_FOURCC_NV12:
         ptr->U = ptr->Y + Width * Height;
         ptr->V = ptr->U + 1;
         ptr->Pitch = Pitch;
-        break;    
+        break;
     default:
-        return MFX_ERR_UNSUPPORTED;    
+        return MFX_ERR_UNSUPPORTED;
     }
 
     return MFX_ERR_NONE;
@@ -579,7 +579,7 @@ mfxStatus MFXDSFrameAllocatorSys::UnlockFrame(mfxMemId mid, mfxFrameData *ptr)
         ptr->Y     = 0;
         ptr->U     = 0;
         ptr->V     = 0;
-    }        
+    }
 
     return MFX_ERR_NONE;
 };
@@ -596,10 +596,10 @@ mfxStatus MFXDSFrameAllocatorSys::ReleaseResponse(mfxFrameAllocResponse *respons
             {
                 CMFXSample* pSample = (CMFXSample *)response->mids[i];
                 if (pSample)
-                    pSample->Release();                
-            }                   
+                    pSample->Release();
+            }
         }
-    }    
+    }
 
     delete [] response->mids;
     response->mids = NULL;

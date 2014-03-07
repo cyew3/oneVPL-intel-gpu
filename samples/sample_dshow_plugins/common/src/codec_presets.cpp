@@ -12,7 +12,7 @@
 #include "memory.h"
 #include "sample_defs.h"
 
-struct 
+struct
 {
     mfxU32 preset;
     TCHAR  desc[32];
@@ -61,7 +61,7 @@ mfxStatus CodecPreset::VParamsFromPreset(mfxVideoParam & vParams , mfxU32 preset
     {
         return MFX_ERR_NONE;
     }
-    
+
     mfxFrameInfo tmpInfo;
     mfxU32       codecId;
     mfxU32       nBitrate;
@@ -69,13 +69,13 @@ mfxStatus CodecPreset::VParamsFromPreset(mfxVideoParam & vParams , mfxU32 preset
     MSDK_MEMCPY_VAR(tmpInfo, &vParams.mfx.FrameInfo, sizeof(mfxFrameInfo));
     codecId = vParams.mfx.CodecId;
     nBitrate = vParams.mfx.TargetKbps;
-    
-    memset(&vParams, 0, sizeof(vParams));  
+
+    memset(&vParams, 0, sizeof(vParams));
 
     MSDK_MEMCPY_VAR(vParams.mfx.FrameInfo, &tmpInfo, sizeof(mfxFrameInfo));
     vParams.mfx.CodecId = codecId;
     vParams.mfx.TargetKbps = vParams.mfx.MaxKbps = nBitrate;
-        
+
     switch (preset)
     {
         case PRESET_FAST :
@@ -111,13 +111,13 @@ mfxStatus CodecPreset::VParamsFromPreset(mfxVideoParam & vParams , mfxU32 preset
     {
         vParams.mfx.FrameInfo.CropW = 720;
         vParams.mfx.FrameInfo.CropH = 576;
-    }  
+    }
 
     PartiallyLinearFNC fnc;
 
     switch (vParams.mfx.CodecId)
     {
-        case MFX_CODEC_AVC : 
+        case MFX_CODEC_AVC :
         {
             fnc.AddPair(25344,  225);
             fnc.AddPair(101376, 1000);
@@ -128,25 +128,25 @@ mfxStatus CodecPreset::VParamsFromPreset(mfxVideoParam & vParams , mfxU32 preset
             vParams.mfx.FrameInfo.PicStruct = MFX_PICSTRUCT_PROGRESSIVE;
             break;
         }
-        case MFX_CODEC_MPEG2: 
+        case MFX_CODEC_MPEG2:
         {
             fnc.AddPair(0,0);
             fnc.AddPair(414720, 12000);
             vParams.mfx.FrameInfo.PicStruct = MFX_PICSTRUCT_PROGRESSIVE;
-            break;        
+            break;
         }
         default:
             return MFX_ERR_UNSUPPORTED;
     }
-    
+
     mfxF64 fSquare = vParams.mfx.FrameInfo.CropW * vParams.mfx.FrameInfo.CropH;
     mfxF64 ffps    = CalcFramerate(vParams.mfx.FrameInfo.FrameRateExtN, vParams.mfx.FrameInfo.FrameRateExtD);
-    
+
     if (!(vParams.mfx.TargetKbps && (PRESET_LOW_LATENCY == preset)))
     {
-        vParams.mfx.MaxKbps = 
+        vParams.mfx.MaxKbps =
             vParams.mfx.TargetKbps = (mfxU16)CalcBitrate(preset, fSquare * ffps / 30.0, &fnc);
-    }    
+    }
 
     return vParams.mfx.TargetKbps == 0 ? MFX_ERR_UNSUPPORTED : MFX_ERR_NONE;
 }

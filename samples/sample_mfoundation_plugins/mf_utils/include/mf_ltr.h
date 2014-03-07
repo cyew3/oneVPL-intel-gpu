@@ -47,11 +47,11 @@ public:
       }
     virtual ~FrameTypeGenerator(){}
 
-    virtual void Init(mfxU16 GopOptFlag, 
-                      mfxU16 GopPicSize, 
-                      mfxU16 GopRefDist, 
+    virtual void Init(mfxU16 GopOptFlag,
+                      mfxU16 GopPicSize,
+                      mfxU16 GopRefDist,
                       mfxU16 IdrInterval);
-    
+
     virtual void ResetFrameOrder() { m_frameOrder = 0; m_cachedFrameType = MFX_FRAMETYPE_UNKNOWN; }
 
     virtual mfxU16 CurrentFrameType() const;
@@ -138,10 +138,10 @@ public:
 
     //Mfx params
     void        SetNumRefFrame(mfxU16 nNumRefFrame) { m_nNumRefFrame = nNumRefFrame; }
-    void        SetGopParams(mfxU16 GopOptFlag, 
-                             mfxU16 GopPicSize, 
-                             mfxU16 GopRefDist, 
-                             mfxU16 IdrInterval) 
+    void        SetGopParams(mfxU16 GopOptFlag,
+                             mfxU16 GopPicSize,
+                             mfxU16 GopRefDist,
+                             mfxU16 IdrInterval)
                 { m_frameTypeGen->Init(GopOptFlag, GopPicSize, GopRefDist, IdrInterval); }
 
     void        IncrementFrameOrder();
@@ -163,7 +163,7 @@ protected: // functions
     void UpdateLTRList(mfxU32 frameType, std::vector<LongTermRefFrame> & addToDPB, mfxU16 & idx);
     void UpdateSTRList(mfxU32 frameType, bool isLTR);
 
-    mfxU16 FindMinFreeIdx(RefList const & refPicList) const; 
+    mfxU16 FindMinFreeIdx(RefList const & refPicList) const;
 
     void PrintInfo() const;
 
@@ -185,10 +185,10 @@ protected: // variables
     RefList                m_LTRFrames;
     std::set<mfxU32>       m_STRFrames;
     LongTermFrameIdx       m_MarkFrameIdx;     // CODECAPI_AVEncVideoMarkLTRFrame
-    std::set<mfxU16>       m_preferredIdxs; 
+    std::set<mfxU16>       m_preferredIdxs;
     bool                   m_bSaveConstraints;
     bool                   m_bToCleanSTRList;
-    
+
     MFParamsManagerMessageType              m_tempLayerType; //information about current temporal layer
 };
 

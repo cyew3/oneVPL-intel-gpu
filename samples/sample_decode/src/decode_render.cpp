@@ -154,10 +154,10 @@ mfxStatus CDecodeD3DRender::RenderFrame(mfxFrameSurface1 *pSurface, mfxFrameAllo
     MSG msg;
     MSDK_ZERO_MEMORY(msg);
     while (msg.message != WM_QUIT && PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
-    {        
+    {
         TranslateMessage(&msg);
-        DispatchMessage(&msg);        
-    }    
+        DispatchMessage(&msg);
+    }
 
     RECT rect;
     GetClientRect(m_Hwnd, &rect);
@@ -189,7 +189,7 @@ mfxStatus CDecodeD3DRender::RenderFrame(mfxFrameSurface1 *pSurface, mfxFrameAllo
             QueryPerformanceCounter(&timeEnd);
             dfps = ++m_nFrames * (double)m_Freq.QuadPart / ((double)timeEnd.QuadPart - (double)m_LastInputTime.QuadPart);
         }
-        
+
         TCHAR str[20];
         _stprintf_s(str, 20, _T("fps=%.2lf"), dfps );
         SetWindowText(m_Hwnd, str);
@@ -265,9 +265,9 @@ VOID CDecodeD3DRender::ChangeWindowSize(bool bFullScreen)
     {
         AdjustWindowRectEx(&m_rect,0,0,0);
         SetWindowLong(m_Hwnd, GWL_STYLE, m_style);
-        SetWindowPos(m_Hwnd, HWND_NOTOPMOST, 
-            m_rect.left , m_rect.top , 
-            abs(m_rect.right - m_rect.left), abs(m_rect.bottom - m_rect.top), 
+        SetWindowPos(m_Hwnd, HWND_NOTOPMOST,
+            m_rect.left , m_rect.top ,
+            abs(m_rect.right - m_rect.left), abs(m_rect.bottom - m_rect.top),
             SWP_SHOWWINDOW);
     }
     else
@@ -330,7 +330,7 @@ bool CDecodeD3DRender::EnableDwmQueuing()
     dwmpp.cRefreshesPerFrame        = 1;
     dwmpp.eSampling                 = DWM_SOURCE_FRAME_SAMPLING_POINT;
     dwmpp.rateSource.uiDenominator  = 1;
-    dwmpp.rateSource.uiNumerator    = m_sWindowParams.nMaxFPS; 
+    dwmpp.rateSource.uiNumerator    = m_sWindowParams.nMaxFPS;
 
 
     hr = DwmSetPresentParameters(m_Hwnd, &dwmpp);

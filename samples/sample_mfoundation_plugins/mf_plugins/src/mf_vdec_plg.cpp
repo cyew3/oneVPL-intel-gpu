@@ -179,7 +179,7 @@ MFPluginVDec::MFPluginVDec(HRESULT &hr,
 #endif
         switch (sts)
         {
-        case MFX_ERR_NONE:          
+        case MFX_ERR_NONE:
             m_State = stHeaderNotDecoded;
             hr = S_OK;
             break;
@@ -597,7 +597,7 @@ HRESULT MFPluginVDec::SetInputType(DWORD         dwInputStreamID,
         }
         if (SUCCEEDED(hr))
         {
-            if(m_pInputType) 
+            if(m_pInputType)
             {
                 MFX_LTRACE_S(MF_TL_GENERAL, "Input Type has been changed - Output Type is needed to be changed");
                 m_bChangeOutputType = true;
@@ -911,7 +911,7 @@ HRESULT MFPluginVDec::ProcessMessage(MFT_MESSAGE_TYPE eMessage,
                     MFX_LTRACE_D(MF_TL_GENERAL, m_deviceHandle);
                     m_pHWDevice.Release();
                     pDXGIDeviceManager->GetVideoService(m_deviceHandle,  IID_ID3D11Device,  (void**)&m_pHWDevice);
-                
+
                     if (m_pHWDevice)
                     {
                         MFX_LTRACE_S(MF_TL_PERF, "Obtained ID3D11Device");
@@ -1068,11 +1068,11 @@ mfxStatus MFPluginVDec::InitFRA(void)
             }
             if (MFX_ERR_NONE == sts)
             {
-                if (!m_pFrameAllocator || !allocParams.get()) 
+                if (!m_pFrameAllocator || !allocParams.get())
                 {
                     sts = MFX_ERR_MEMORY_ALLOC;
                 }
-                else 
+                else
                 {
                     m_pFrameAllocator->AddRef();
                 }
@@ -1090,7 +1090,7 @@ mfxStatus MFPluginVDec::InitFRA(void)
             memcpy_s(&(request.Info), sizeof(request.Info),
                      &(m_MfxParamsVideo.mfx.FrameInfo), sizeof(m_MfxParamsVideo.mfx.FrameInfo));
             request.Type = MFX_MEMTYPE_EXTERNAL_FRAME | MFX_MEMTYPE_DXVA2_DECODER_TARGET | MFX_MEMTYPE_FROM_DECODE;
-            if(m_VideoParams_input.mfx.CodecId == MFX_CODEC_JPEG) 
+            if(m_VideoParams_input.mfx.CodecId == MFX_CODEC_JPEG)
             {
                 request.Type = m_DecoderRequest.Type; //from QueryIOSurf
             }
@@ -1114,7 +1114,7 @@ mfxStatus MFPluginVDec::InitFRA(void)
             memcpy_s(&(request.Info), sizeof(request.Info),
                      &(m_MfxParamsVideo.mfx.FrameInfo), sizeof(m_MfxParamsVideo.mfx.FrameInfo));
             request.Type = MFX_MEMTYPE_EXTERNAL_FRAME | MFX_MEMTYPE_DXVA2_DECODER_TARGET | MFX_MEMTYPE_FROM_DECODE;
-            if(m_VideoParams_input.mfx.CodecId == MFX_CODEC_JPEG) 
+            if(m_VideoParams_input.mfx.CodecId == MFX_CODEC_JPEG)
             {
                 request.Type = m_DecoderRequest.Type; //from QueryIOSurf
             }
@@ -1277,7 +1277,7 @@ mfxStatus MFPluginVDec::InitMfxVideoSession(mfxIMPL implD3D)
         sts = MFX_ERR_MEMORY_ALLOC;
     }
     else
-    { 
+    {
         // adjustment of MSDK implementation
         m_MSDK_impl = MF_MFX_IMPL;
         if (dbgHwMsdk == m_dbg_MSDK)
@@ -1366,7 +1366,7 @@ mfxStatus MFPluginVDec::SetHandle(mfxHandleType handleType, bool bAllowCloseInit
         }
         if (MFX_ERR_NONE == sts)
         {
-            if (m_pInputType) 
+            if (m_pInputType)
             {
                 if (!CheckHwSupport())
                 {
@@ -1677,7 +1677,7 @@ mfxStatus MFPluginVDec::ResetCodec(MyAutoLock& lock)
     m_MfxCodecInfo.m_ErrorStatus = MFX_ERR_NONE;
 
     m_SyncOpSts = MFX_ERR_NONE;
-    //to no run async thread twice in case of message command flush 
+    //to no run async thread twice in case of message command flush
     if (MFT_MESSAGE_COMMAND_FLUSH == m_eLastMessage)
     {
         m_pAsyncThreadEvent->Signal();
@@ -1881,7 +1881,7 @@ HRESULT MFPluginVDec::CopyAllAttributes(CComPtr<IMFAttributes> pSrc, CComPtr<IMF
     UINT32 count = 0;
 
     if (NULL == pSrc || NULL == pOutSample)
-        hr = E_FAIL; 
+        hr = E_FAIL;
 
     CComPtr<IMFAttributes> pTmpAttr;
     if (SUCCEEDED(hr))
@@ -2011,7 +2011,7 @@ void MFPluginVDec::SetPlgError(HRESULT hr, mfxStatus sts)
         if (MFX_ERR_NONE == m_MfxCodecInfo.m_ErrorStatus)
         {
             m_MfxCodecInfo.m_ErrorStatus = sts;
-        }        
+        }
     }
     return;
 }
@@ -2210,7 +2210,7 @@ HRESULT MFPluginVDec::AsyncThreadFunc(void)
         {
             //this check is not thread-safe but covers particular paranoid
             //Klocwork issue with HandlePlgError && m_bReinit == true.
-            if (NULL == m_pDispSurface) 
+            if (NULL == m_pDispSurface)
             {
                 MFX_LTRACE_P(MF_TL_PERF, m_pDispSurface);
                 ATLASSERT(NULL != m_pDispSurface);

@@ -30,15 +30,15 @@ public:
     virtual mfxStatus Init(sInputParams *pParams);
     virtual mfxStatus Run();
     virtual void Close();
-    virtual mfxStatus ResetMFXComponents(sInputParams* pParams);    
+    virtual mfxStatus ResetMFXComponents(sInputParams* pParams);
     virtual void PrintInfo();
 
-protected:        
+protected:
     msdk_so_handle          m_PluginModule;
-    MFXGenericPlugin*       m_pusrPlugin;     
-    mfxFrameSurface1*       m_pPluginSurfaces; // frames array for rotate input 
-    mfxFrameAllocResponse   m_PluginResponse;  // memory allocation response for rotate plugin   
-            
+    MFXGenericPlugin*       m_pusrPlugin;
+    mfxFrameSurface1*       m_pPluginSurfaces; // frames array for rotate input
+    mfxFrameAllocResponse   m_PluginResponse;  // memory allocation response for rotate plugin
+
     mfxVideoParam           m_pluginVideoParams;
     RotateParam             m_RotateParams;
 

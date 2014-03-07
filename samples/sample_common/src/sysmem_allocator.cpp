@@ -197,7 +197,7 @@ mfxStatus SysMemFrameAllocator::AllocImpl(mfxFrameAllocRequest *request, mfxFram
 //    case MFX_FOURCC_R16:
         nbytes = 2*Width2*Height2;
         break;
-    
+
     default:
         return MFX_ERR_UNSUPPORTED;
     }

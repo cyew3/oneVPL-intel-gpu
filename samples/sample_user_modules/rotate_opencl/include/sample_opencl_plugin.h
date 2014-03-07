@@ -71,7 +71,7 @@ protected:
     //locks frame or report of an error
     mfxStatus LockFrame(mfxFrameSurface1 *frame);
     mfxStatus UnlockFrame(mfxFrameSurface1 *frame);
-    
+
 
     mfxFrameSurface1  *m_pIn;
     mfxFrameSurface1  *m_pOut;
@@ -83,7 +83,7 @@ class Rotator180 : public Processor
 public:
     Rotator180();
     virtual ~Rotator180();
-    
+
     virtual mfxStatus Process(DataChunk *chunk);
 };
 
@@ -112,7 +112,7 @@ class OpenCLFilterRotator180 : public Processor
 public:
     OpenCLFilterRotator180(OpenCLFilter *pOpenCLFilter);
     virtual ~OpenCLFilterRotator180();
-    
+
     virtual mfxStatus Process(DataChunk * /* chunk */); // operates on whole frame
 private:
     OpenCLFilter *m_pOpenCLFilter;
@@ -123,7 +123,7 @@ class OpenCLRotator180Context
 public:
     OpenCLRotator180Context(const std::string &filename);
 
-    void Rotate(size_t width, size_t height, 
+    void Rotate(size_t width, size_t height,
                 size_t pitchIn, size_t pitchOut,
                 void *pInY,  void *pInUV,
                 void *pOutY, void *pOutUV);
@@ -151,7 +151,7 @@ class OpenCLRotator180 : public Processor
 public:
     OpenCLRotator180(OpenCLRotator180Context *pOpenCLRotator180Context);
     virtual ~OpenCLRotator180();
-    
+
     virtual mfxStatus Process(DataChunk * /* chunk */); // operates on whole frame
 private:
     OpenCLRotator180Context *m_pOpenCLRotator180Context;
@@ -160,15 +160,15 @@ private:
 typedef struct {
     mfxFrameSurface1 *In;
     mfxFrameSurface1 *Out;
-    bool bBusy;    
-    Processor *pProcessor;    
+    bool bBusy;
+    Processor *pProcessor;
 } RotateTask;
 
 class Rotate : public MFXGenericPlugin
 {
 public:
     Rotate();
-    virtual ~Rotate();      
+    virtual ~Rotate();
 
     // methods to be called by Media SDK
     virtual mfxStatus PluginInit(mfxCoreInterface *core);
@@ -181,18 +181,18 @@ public:
     virtual mfxStatus SetAuxParams(void* auxParam, int auxParamSize);
     virtual void Release(void){};
 
-    // methods to be called by application    
+    // methods to be called by application
     virtual mfxStatus QueryIOSurf(mfxVideoParam *par, mfxFrameAllocRequest *in, mfxFrameAllocRequest *out);
     virtual mfxStatus SetAllocator(mfxFrameAllocator *pAlloc);
     virtual mfxStatus SetHandle(mfxHandleType type, mfxHDL handle);
-    virtual mfxStatus Close(); 
+    virtual mfxStatus Close();
 
     static MFXGenericPlugin* CreatePlugin() {
         return new Rotate();
     }
-  
+
 protected:
-    bool m_bInited;    
+    bool m_bInited;
 
     bool m_bOpenCLSurfaceSharing;
     OpenCLFilter m_OpenCLFilter;

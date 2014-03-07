@@ -7,7 +7,7 @@
 //          Copyright(c) 2005-2011 Intel Corporation. All Rights Reserved.
 //
 */
-   
+
 #include "mfx_video_dec_proppage.h"
 #include "current_date.h"
 #include "mfx_filter_defs.h"
@@ -21,7 +21,7 @@
 CVideoDecPropPage::CVideoDecPropPage(IUnknown *pUnk) :
 CBasePropertyPage(NAME("VideoProp"), pUnk, IDD_PROPPAGE_VIDEO, IDS_PROPPAGE_NAME)
 {
-    m_pVideoDecProps    = NULL;   
+    m_pVideoDecProps    = NULL;
 }
 
 CUnknown* WINAPI CVideoDecPropPage::CreateInstance(LPUNKNOWN pUnk, HRESULT *pHr)
@@ -47,7 +47,7 @@ HRESULT CVideoDecPropPage::OnActivate(void)
 {
     MSDK_CHECK_POINTER(m_pVideoDecProps, S_FALSE);
 
-    CAutoLock cObjectLock(&m_critSec);  
+    CAutoLock cObjectLock(&m_critSec);
 
     UINT_PTR uResult;
 
@@ -63,8 +63,8 @@ HRESULT CVideoDecPropPage::OnActivate(void)
 
 HRESULT CVideoDecPropPage::OnDeactivate(void)
 {
-    CAutoLock cObjectLock(&m_critSec);     
-    
+    CAutoLock cObjectLock(&m_critSec);
+
     KillTimer(m_hwnd, IDT_STATUPDATER);
 
     return S_OK;
@@ -102,7 +102,7 @@ INT_PTR CVideoDecPropPage::OnReceiveMessage(HWND hwnd, UINT uMsg, WPARAM wParam,
         _sntprintf(strNumber, 100, _T("%d"), stStats.height);
         SetDlgItemText(m_Dlg, IDC_Height, strNumber);
     }
-    
+
     return CBasePropertyPage::OnReceiveMessage(hwnd,uMsg,wParam,lParam);
 }
 

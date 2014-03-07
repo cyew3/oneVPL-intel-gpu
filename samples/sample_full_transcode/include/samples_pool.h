@@ -21,7 +21,7 @@ protected:
         unsigned int            m_lock;
         SamplePtr  m_psample;
     public:
-        DataSampleWithRef(SamplePtr& sample) : 
+        DataSampleWithRef(SamplePtr& sample) :
             m_lock(0),
             m_psample ( sample) {
         }
@@ -37,11 +37,11 @@ protected:
         }
         virtual bool isUnlocked() {
             switch(m_psample->GetSampleType()) {
-                case SAMPLE_BITSTREAM: 
+                case SAMPLE_BITSTREAM:
                     return !m_lock;
-                case SAMPLE_SURFACE: 
+                case SAMPLE_SURFACE:
                     return !m_lock && !m_psample->GetSurface().Data.Locked;
-                case SAMPLE_AUDIO_FRAME: 
+                case SAMPLE_AUDIO_FRAME:
                     return !m_lock && !m_psample->GetAudioFrame().Locked;
                 default:
                     return false;
@@ -53,7 +53,7 @@ protected:
     {
         DataSampleWithRef *  m_psample;
     public:
-        DataSampleToReturn(DataSampleWithRef *sample) : 
+        DataSampleToReturn(DataSampleWithRef *sample) :
             m_psample(sample) {
             m_psample->AddRef();
         }
@@ -67,8 +67,8 @@ protected:
             return m_psample->Get()->GetBitstream();
         }
         virtual mfxFrameSurface1& GetSurface(){
-            return m_psample->Get()->GetSurface(); 
-        }        
+            return m_psample->Get()->GetSurface();
+        }
         virtual int GetSampleType() const {
             return m_psample->Get()->GetSampleType();
         }
@@ -89,12 +89,12 @@ public:
     SamplePool(int FindFreeTimeout) : m_nTimeout(FindFreeTimeout){
     }
 
-    virtual ~SamplePool() {     
+    virtual ~SamplePool() {
         std::transform(m_pool.begin(), m_pool.end(), m_pool.begin(), DeletePtr());
     }
     //returns locked sample
     virtual ISample * LockSample(const ISample& sample) {
-        
+
         for (std::vector<DataSampleWithRef* > ::iterator i = m_pool.begin(); i != m_pool.end(); i++) {
             switch (CompareSamples(*(*i)->Get(), sample)) {
                 case SAMPLES_HAVE_INCOPARABLE_TYPES :
@@ -113,20 +113,20 @@ public:
 
     virtual ISample & FindFreeSample() {
         for (int overalTimeout = 0, WaitPortion = 10; m_nTimeout >= overalTimeout; overalTimeout += WaitPortion) {
-           std::vector<DataSampleWithRef* > ::iterator i = 
+           std::vector<DataSampleWithRef* > ::iterator i =
                std::find_if(m_pool.begin(), m_pool.end(), std::mem_fun(&DataSampleWithRef::isUnlocked));
-         
+
            if (i != m_pool.end()) {
                return *(*i)->Get();
            }
            MSDK_SLEEP(WaitPortion);
-       }       
+       }
        MSDK_TRACE_ERROR(MSDK_STRING("No free samples in SamplePool"));
-       throw NoFreeSampleError();      
+       throw NoFreeSampleError();
     };
 
     virtual bool HasFreeSample() {
-        std::vector<DataSampleWithRef* > ::iterator i = 
+        std::vector<DataSampleWithRef* > ::iterator i =
                std::find_if(m_pool.begin(), m_pool.end(), std::mem_fun(&DataSampleWithRef::isUnlocked));
         if (i != m_pool.end()) {
                return true;

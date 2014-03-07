@@ -44,7 +44,7 @@ public:
     virtual mfxStatus PluginClose();
     virtual mfxStatus GetPluginParam(mfxPluginParam *par);
     virtual mfxStatus Execute(mfxThreadTask task, mfxU32 uid_p, mfxU32 uid_a);
-    virtual mfxStatus FreeResources(mfxThreadTask task, mfxStatus sts); 
+    virtual mfxStatus FreeResources(mfxThreadTask task, mfxStatus sts);
     virtual mfxStatus Query(mfxVideoParam *in, mfxVideoParam *out);
     virtual mfxStatus QueryIOSurf(mfxVideoParam *par, mfxFrameAllocRequest *in, mfxFrameAllocRequest *out);
     virtual mfxStatus Init(mfxVideoParam *par);
@@ -55,7 +55,7 @@ public:
     virtual mfxStatus SetAuxParams(void* , int ) {
         return MFX_ERR_NONE;
     }
-    
+
     virtual void Release() {
         delete this;
     }
@@ -63,11 +63,11 @@ public:
         return new MockEncoderPlugin(false);
     }
     static mfxStatus CreateByDispatcher(mfxPluginUID guid, mfxPlugin* mfxPlg) {
-        
+
         if (g_singlePlg.get()) {
             return MFX_ERR_NOT_FOUND;
-        } 
-        //check that guid match 
+        }
+        //check that guid match
         g_singlePlg.reset(new MockEncoderPlugin(true));
 
         if (memcmp(& guid , &g_mockEncoderGuid, sizeof(mfxPluginUID))) {

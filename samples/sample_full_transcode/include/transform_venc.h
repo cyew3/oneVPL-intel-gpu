@@ -30,7 +30,7 @@ public:
     virtual void GetNumSurfaces(MFXAVParams& param, IAllocRequest& request);
 
 private:
-    
+
     MFXVideoSessionExt& m_session;
     PipelineFactory& m_factory;
     int  m_dTimeToWait;

@@ -719,14 +719,14 @@ mfxStatus VideoConfPipeline::CreateAllocator()
 
         sts = m_hwdev->GetHandle(hdl_t, &hdl);
         MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
-        
+
         // handle is needed for HW library only
         mfxIMPL impl = 0;
         m_mfxSession.QueryIMPL(&impl);
         if (impl != MFX_IMPL_SOFTWARE)
         {
             sts = m_mfxSession.SetHandle(hdl_t, hdl);
-            MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts); 
+            MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
         }
 
         // create D3D allocator
@@ -785,7 +785,7 @@ mfxStatus VideoConfPipeline::CreateHWDevice()
 #ifdef D3D_SURFACES_SUPPORT // TOFO: rewrite using m_hwdev
     POINT point = {0, 0};
     HWND window = WindowFromPoint(point);
-    
+
     m_hwdev = new CD3D9Device();
 
     if (NULL == m_hwdev)

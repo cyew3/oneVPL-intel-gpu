@@ -21,7 +21,7 @@ class SplitterSample : public SampleBitstream1, private no_copy {
     //TODO : splitter release bitstream WA
     mfxBitstream m_bsToRelease;
 public:
-    SplitterSample(MFXSplitter& splitter, int TrackId, const mfxBitstream& bits) : 
+    SplitterSample(MFXSplitter& splitter, int TrackId, const mfxBitstream& bits) :
         SampleBitstream1(m_bs, TrackId),
         m_spl(splitter),
         m_bs(bits) ,
@@ -49,12 +49,12 @@ class SplitterWrapper : public ISplitterWrapper, private no_copy
     int  n_TracksInFile;
 public:
     SplitterWrapper( std::auto_ptr<MFXSplitter>& splitter
-                    , std::auto_ptr<MFXDataIO>&io) 
+                    , std::auto_ptr<MFXDataIO>&io)
                    : m_splitter(splitter)
                    , m_io (io)
-                   , m_EOF(false) 
+                   , m_EOF(false)
                    , n_NullIds(0)
-                   , n_TracksInFile(0) { 
+                   , n_TracksInFile(0) {
         InitSplitter();
         MFXStreamParams info;
         GetInfo(info);

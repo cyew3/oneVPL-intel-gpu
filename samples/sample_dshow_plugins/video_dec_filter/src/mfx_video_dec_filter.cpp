@@ -13,7 +13,7 @@
 
 #pragma warning( disable : 4748 )
 
-CDecVideoFilter::CDecVideoFilter(TCHAR *tszName,LPUNKNOWN punk, const GUID VideoCodecGUID, HRESULT *phr, 
+CDecVideoFilter::CDecVideoFilter(TCHAR *tszName,LPUNKNOWN punk, const GUID VideoCodecGUID, HRESULT *phr,
                                  mfxU16 APIVerMinor, mfxU16 APIVerMajor) :
 CTransformFilter(tszName, punk, VideoCodecGUID),
 m_bstrFilterName(0),
@@ -70,32 +70,32 @@ HRESULT CDecVideoFilter::RenewSampleParams(mfxFrameSurface1* pSurface, IMediaSam
 {
     HRESULT                     hr = S_OK;
     CMediaType                  mt;
-    VIDEOINFOHEADER2*           pVIH2 = NULL;    
-    CComQIPtr<IMediaSample2>    pSample2 = pSample;   
+    VIDEOINFOHEADER2*           pVIH2 = NULL;
+    CComQIPtr<IMediaSample2>    pSample2 = pSample;
     AM_SAMPLE2_PROPERTIES       props;
 
     BOOL                        bMediaTypeChanged = FALSE;
     RECT                        rcCrop;
-    
+
     mfxIMPL                     impl;
-    
+
     MSDK_CHECK_POINTER(pSample, MFX_ERR_NULL_PTR);
-    MSDK_CHECK_POINTER(pSurface, MFX_ERR_NULL_PTR);      
-  
-    MSDK_CHECK_NOT_EQUAL(m_State, State_Running, S_OK);    
+    MSDK_CHECK_POINTER(pSurface, MFX_ERR_NULL_PTR);
+
+    MSDK_CHECK_NOT_EQUAL(m_State, State_Running, S_OK);
 
     ZeroMemory(&props, sizeof(AM_SAMPLE2_PROPERTIES));
 
-    if (m_pOutput->IsConnected()) 
+    if (m_pOutput->IsConnected())
     {
-        CopyMediaType(&mt, &(m_pOutput->CurrentMediaType()));            
-    } 
-    else 
-    {  
+        CopyMediaType(&mt, &(m_pOutput->CurrentMediaType()));
+    }
+    else
+    {
         return VFW_E_NOT_CONNECTED;
     }
-       
-    pVIH2 = reinterpret_cast<VIDEOINFOHEADER2*>(mt.pbFormat); 
+
+    pVIH2 = reinterpret_cast<VIDEOINFOHEADER2*>(mt.pbFormat);
     MSDK_CHECK_POINTER_SAFE(pVIH2, E_UNEXPECTED, FreeMediaType(mt));
 
     m_pDecoder->QueryIMPL(&impl);
@@ -105,7 +105,7 @@ HRESULT CDecVideoFilter::RenewSampleParams(mfxFrameSurface1* pSurface, IMediaSam
     rcCrop.right  = rcCrop.left + pSurface->Info.CropW;
     rcCrop.bottom = rcCrop.top + pSurface->Info.CropH;
 
-    // set media type if current rcSource differs from crop values    
+    // set media type if current rcSource differs from crop values
     if ((rcCrop.left != pVIH2->rcSource.left || rcCrop.right != pVIH2->rcSource.right ||
         rcCrop.top != pVIH2->rcSource.top || rcCrop.bottom != pVIH2->rcSource.bottom) &&
         rcCrop.right <= pVIH2->rcSource.right && rcCrop.bottom <= pVIH2->rcSource.bottom) // if this condition is not met reconnection is required (render has smaller buffer)
@@ -113,12 +113,12 @@ HRESULT CDecVideoFilter::RenewSampleParams(mfxFrameSurface1* pSurface, IMediaSam
         pVIH2->rcSource = rcCrop;
 
         bMediaTypeChanged = TRUE;
-    } 
+    }
 
     if (bMediaTypeChanged)
     {
         // update sample's media type
-        hr = pSample->SetMediaType(&mt); 
+        hr = pSample->SetMediaType(&mt);
         MSDK_CHECK_RESULT_SAFE(hr, S_OK, hr, FreeMediaType(mt));
 
         // update output pin's media type
@@ -126,7 +126,7 @@ HRESULT CDecVideoFilter::RenewSampleParams(mfxFrameSurface1* pSurface, IMediaSam
         MSDK_CHECK_RESULT_SAFE(hr, S_OK, hr, FreeMediaType(mt));
     }
 
-    FreeMediaType(mt); 
+    FreeMediaType(mt);
 
     //update interlace properties of sample according to surface PicStruct
     hr = pSample2->GetProperties(sizeof(AM_SAMPLE2_PROPERTIES), (BYTE*)&props);
@@ -135,14 +135,14 @@ HRESULT CDecVideoFilter::RenewSampleParams(mfxFrameSurface1* pSurface, IMediaSam
     if (MFX_PICSTRUCT_FIELD_TFF == pSurface->Info.PicStruct)
     {
         props.dwTypeSpecificFlags = AM_VIDEO_FLAG_FIELD1FIRST;
-    }    
+    }
     else if (MFX_PICSTRUCT_PROGRESSIVE == pSurface->Info.PicStruct)
     {
         props.dwTypeSpecificFlags = AM_VIDEO_FLAG_WEAVE;
     }
 
     hr = pSample2->SetProperties(sizeof(AM_SAMPLE2_PROPERTIES), (BYTE*)&props);
-    CHECK_RESULT_P_RET(hr, S_OK); 
+    CHECK_RESULT_P_RET(hr, S_OK);
 
     return hr;
 }
@@ -156,27 +156,27 @@ HRESULT CDecVideoFilter::DeliverSurface(mfxFrameSurface1* pSurface)
     MSDK_CHECK_POINTER(pSurface, E_POINTER);
 
     mfxIMPL impl;
-    m_pDecoder->QueryIMPL(&impl); 
+    m_pDecoder->QueryIMPL(&impl);
 
-    // In case of sysmem surfaces we provide plane pointers, not MemIds,    
+    // In case of sysmem surfaces we provide plane pointers, not MemIds,
     if (!m_pDecoder->m_bd3dAlloc)
     {
         mfxStatus sts = m_pFrameAllocator->Lock(m_pFrameAllocator->pthis, pSurface->Data.MemId, &pSurface->Data);
-        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, E_FAIL);            
-    }  
+        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, E_FAIL);
+    }
 
     if (m_pDecoderOutput->m_bOwnDSAllocatorAgreed)
     {
-        CMFXSample *pmfxSample = (CMFXSample*)pSurface->Data.MemId;       
+        CMFXSample *pmfxSample = (CMFXSample*)pSurface->Data.MemId;
 
         // To pass surface pointer downstream
         pmfxSample->SetMfxSurfacePointer(pSurface);
 
-        pOutSample = (IMediaSample*)pSurface->Data.MemId; // assignment to CComPtr does an AddRef                       
+        pOutSample = (IMediaSample*)pSurface->Data.MemId; // assignment to CComPtr does an AddRef
     }
-    else 
+    else
     {
-        // GetBuffer and copy surface data        
+        // GetBuffer and copy surface data
         mfxU32 nTry = 0;
         for (;;)
         {
@@ -200,16 +200,16 @@ HRESULT CDecVideoFilter::DeliverSurface(mfxFrameSurface1* pSurface)
 
         hr = pOutSample->GetPointer(&pBuffer);
         CHECK_RESULT_P_RET(hr, S_OK);
-        
+
         // copy the surface_out data to sample buffer
 
-        // find out the frame height at connection 
-        // to copy decoded data correctly in the case when we are connected with H and cropH != H     
+        // find out the frame height at connection
+        // to copy decoded data correctly in the case when we are connected with H and cropH != H
         VIDEOINFOHEADER2 *pVIH2(NULL);
         pVIH2 = reinterpret_cast<VIDEOINFOHEADER2* >(m_pOutput->CurrentMediaType().Format());
         MSDK_CHECK_POINTER(pVIH2, E_UNEXPECTED);
 
-        LONG lConnectionHeight = abs(pVIH2->bmiHeader.biHeight);     
+        LONG lConnectionHeight = abs(pVIH2->bmiHeader.biHeight);
 
         mfxFrameData *pData = &pSurface->Data;
 
@@ -225,19 +225,19 @@ HRESULT CDecVideoFilter::DeliverSurface(mfxFrameSurface1* pSurface)
             break;
 
         default:
-            return E_UNEXPECTED;        
+            return E_UNEXPECTED;
         }
 
         hr = pOutSample->SetActualDataLength(pData->Pitch * lConnectionHeight * 3 / 2);
         CHECK_RESULT_P_RET(hr, S_OK);
-    } 
-    
+    }
+
     MSDK_CHECK_POINTER(pOutSample, E_POINTER);
-    rtStart = ConvertMFXTime2ReferenceTime(pSurface->Data.TimeStamp);    
-    
+    rtStart = ConvertMFXTime2ReferenceTime(pSurface->Data.TimeStamp);
+
     if (1 == pSurface->Info.FrameId.ViewId)
     {
-        //in case of we have 2 views, only first sample comes with duration, 
+        //in case of we have 2 views, only first sample comes with duration,
         //for second duration is equal to 0
         REFERENCE_TIME rtEnd = rtStart;
         hr = pOutSample->SetTime(&rtStart, &rtEnd);
@@ -246,7 +246,7 @@ HRESULT CDecVideoFilter::DeliverSurface(mfxFrameSurface1* pSurface)
     {
         hr = pOutSample->SetTime(&rtStart, NULL);
     }
- 
+
     CHECK_RESULT_P_RET(hr, S_OK);
 
     // notify cropping and interlace flags to downstream filter via output sample's media type and sample properties
@@ -265,27 +265,27 @@ HRESULT CDecVideoFilter::ProcessNewResolution()
 {
     HRESULT                hr = S_OK;
     CMediaType            mt;
-    VIDEOINFOHEADER2*    pInfo;    
-    mfxStatus            sts = MFX_ERR_NONE;   
+    VIDEOINFOHEADER2*    pInfo;
+    mfxStatus            sts = MFX_ERR_NONE;
 
     // let downstream filter process all samples with old mediatype
-    BeginFlush();   
+    BeginFlush();
     EndFlush();
-    
-    if (m_pOutput->IsConnected()) 
+
+    if (m_pOutput->IsConnected())
     {
-        CopyMediaType(&mt, &(m_pOutput->CurrentMediaType()));            
-    } 
-    else 
-    {  
+        CopyMediaType(&mt, &(m_pOutput->CurrentMediaType()));
+    }
+    else
+    {
         return VFW_E_NOT_CONNECTED;
-    }                    
-      
+    }
+
     pInfo = reinterpret_cast<VIDEOINFOHEADER2*>(mt.pbFormat);
     if (!pInfo)
     {
         hr = E_UNEXPECTED;
-    }   
+    }
 
     // update mediatype according to new m_mfxParamsVideo
     if (SUCCEEDED(hr))
@@ -294,25 +294,25 @@ HRESULT CDecVideoFilter::ProcessNewResolution()
         m_nPitch = m_mfxParamsVideo.mfx.FrameInfo.Width;
 
         // update resolution
-        pInfo->rcSource.bottom = pInfo->rcTarget.bottom = pInfo->bmiHeader.biHeight 
+        pInfo->rcSource.bottom = pInfo->rcTarget.bottom = pInfo->bmiHeader.biHeight
             = m_mfxParamsVideo.mfx.FrameInfo.CropH;
 
-        pInfo->rcSource.right = pInfo->rcTarget.right = pInfo->bmiHeader.biWidth 
+        pInfo->rcSource.right = pInfo->rcTarget.right = pInfo->bmiHeader.biWidth
             = m_mfxParamsVideo.mfx.FrameInfo.CropW;
 
         // update aspect ratio
         mfxU16 arw = m_mfxParamsVideo.mfx.FrameInfo.AspectRatioW;
-        mfxU16 arh = m_mfxParamsVideo.mfx.FrameInfo.AspectRatioH;        
+        mfxU16 arh = m_mfxParamsVideo.mfx.FrameInfo.AspectRatioH;
 
-        // AR is not always contained in the header 
+        // AR is not always contained in the header
         if (arw * arh == 0)
         {
             arw = arh = 1;
         }
-        
+
         pInfo->dwPictAspectRatioX = arw * pInfo->bmiHeader.biWidth;
-        pInfo->dwPictAspectRatioY = arh * pInfo->bmiHeader.biHeight;        
-        
+        pInfo->dwPictAspectRatioY = arh * pInfo->bmiHeader.biHeight;
+
         if (m_mfxParamsVideo.mfx.FrameInfo.PicStruct == MFX_PICSTRUCT_FIELD_TFF)
         {
             pInfo->dwInterlaceFlags = AMINTERLACE_IsInterlaced | AMINTERLACE_Field1First | AMINTERLACE_DisplayModeBobOrWeave;
@@ -320,7 +320,7 @@ HRESULT CDecVideoFilter::ProcessNewResolution()
         else if (m_mfxParamsVideo.mfx.FrameInfo.PicStruct == MFX_PICSTRUCT_FIELD_BFF)
         {
             pInfo->dwInterlaceFlags = AMINTERLACE_IsInterlaced | AMINTERLACE_DisplayModeBobOrWeave;
-        }        
+        }
 
 
         CDecoderOutputPin *pDecPin;
@@ -328,18 +328,18 @@ HRESULT CDecVideoFilter::ProcessNewResolution()
         if (pDecPin)
         {
             hr = pDecPin->NotifyFormatChange(&mt);
-        }                                
-    }  
+        }
+    }
 
     if (SUCCEEDED(hr))
-    {          
+    {
         sts = m_pDecoder->InternalReset(&m_mfxParamsVideo, m_nPitch, true);
         if (MFX_ERR_NONE != sts)
         {
             hr = E_FAIL;
-        }                 
-    }         
-   
+        }
+    }
+
     FreeMediaType(mt);
 
     return hr;
@@ -349,7 +349,7 @@ HRESULT CDecVideoFilter::Receive(IMediaSample* pSample)
 {
     HRESULT         hr = S_OK;
     mfxStatus       sts = MFX_ERR_NONE;
-    mfxBitstream    mfxBS; 
+    mfxBitstream    mfxBS;
     mfxVideoParam VideoParams;
     mfxFrameSurface1 *pSurfaceOut = NULL;
 
@@ -364,7 +364,7 @@ HRESULT CDecVideoFilter::Receive(IMediaSample* pSample)
     if (0 == pSample->GetActualDataLength())
     {
         return S_FALSE;
-    }    
+    }
 
     memset(&mfxBS, 0, sizeof(mfxBitstream));
 
@@ -374,19 +374,19 @@ HRESULT CDecVideoFilter::Receive(IMediaSample* pSample)
     while (mfxBS.DataLength > 0 && !m_bStop)
     {
         if (!m_pDecoder->m_bHeaderDecoded)
-        {            
+        {
             memset(&VideoParams, 0, sizeof(mfxVideoParam));
             VideoParams.mfx.CodecId = m_mfxParamsVideo.mfx.CodecId;
             VideoParams.AsyncDepth = (mfxU16)m_bLowLatencyMode;
-            sts = m_pDecoder->DecodeHeader(&mfxBS, &VideoParams); 
+            sts = m_pDecoder->DecodeHeader(&mfxBS, &VideoParams);
             if (MFX_ERR_MORE_DATA == sts)
             {
                 break;
-            }            
-                   
+            }
+
             mfxIMPL impl;
             m_pDecoder->QueryIMPL(&impl);
-            VideoParams.IOPattern = (mfxU16)((m_pDecoder->m_bd3dAlloc) ? MFX_IOPATTERN_OUT_VIDEO_MEMORY : 
+            VideoParams.IOPattern = (mfxU16)((m_pDecoder->m_bd3dAlloc) ? MFX_IOPATTERN_OUT_VIDEO_MEMORY :
                 MFX_IOPATTERN_OUT_SYSTEM_MEMORY);
 
             mfxFrameInfo* pNew = &VideoParams.mfx.FrameInfo;
@@ -397,43 +397,43 @@ HRESULT CDecVideoFilter::Receive(IMediaSample* pSample)
                 pNew->Width != pOld->Width || pNew->Height != pOld->Height ||
                 pNew->PicStruct != pOld->PicStruct))
             {
-                if (VideoParams.mfx.FrameInfo.CropX && 
+                if (VideoParams.mfx.FrameInfo.CropX &&
                     ((mfxU32)(VideoParams.mfx.FrameInfo.Width - VideoParams.mfx.FrameInfo.CropX) > m_nPitch))
                 {
-                    m_nPitch = VideoParams.mfx.FrameInfo.Width;            
+                    m_nPitch = VideoParams.mfx.FrameInfo.Width;
                 }
 
                 m_pDecoder->Close();
 
-                MSDK_MEMCPY_VAR(m_mfxParamsVideo.mfx.FrameInfo, &VideoParams.mfx.FrameInfo, sizeof(mfxFrameInfo)); 
-                ProcessNewResolution();                       
-            }   
+                MSDK_MEMCPY_VAR(m_mfxParamsVideo.mfx.FrameInfo, &VideoParams.mfx.FrameInfo, sizeof(mfxFrameInfo));
+                ProcessNewResolution();
+            }
 
             if (MFX_ERR_NONE == sts)
             {
-                MSDK_MEMCPY_VAR(m_mfxParamsVideo, &VideoParams, sizeof(mfxVideoParam)); 
-            } 
-            else 
+                MSDK_MEMCPY_VAR(m_mfxParamsVideo, &VideoParams, sizeof(mfxVideoParam));
+            }
+            else
             {
                 hr = E_FAIL;
-                break;            
+                break;
             }
-        }      
+        }
 
-        mfxBS.DataFlag = (mfxU16)m_bLowLatencyMode;                        
-        sts = m_pDecoder->RunDecode(&mfxBS, pSurfaceOut);                
+        mfxBS.DataFlag = (mfxU16)m_bLowLatencyMode;
+        sts = m_pDecoder->RunDecode(&mfxBS, pSurfaceOut);
 
         if (MFX_ERR_NONE == sts)
         {
-            hr = DeliverSurface(pSurfaceOut);            
-            if (SUCCEEDED(hr)) 
+            hr = DeliverSurface(pSurfaceOut);
+            if (SUCCEEDED(hr))
             {
                 continue;
             }
-            else 
+            else
             {
                 break;
-            }                                               
+            }
         }
         else if (MFX_ERR_MORE_DATA == sts)
         {
@@ -448,25 +448,25 @@ HRESULT CDecVideoFilter::Receive(IMediaSample* pSample)
             continue; // just continue, new surface will be found in RunDecode
         }
         else if (MFX_ERR_INCOMPATIBLE_VIDEO_PARAM == sts)
-        {           
+        {
             // retrieve new parameters
-            ZeroMemory(&VideoParams, sizeof(mfxVideoParam)); 
+            ZeroMemory(&VideoParams, sizeof(mfxVideoParam));
             VideoParams.mfx.CodecId = m_pDecoder->m_nCodecId;
-            sts = m_pDecoder->DecodeHeader(&mfxBS, &VideoParams); 
+            sts = m_pDecoder->DecodeHeader(&mfxBS, &VideoParams);
             if (MFX_ERR_MORE_DATA == sts)
             {
                 break;
             }
             // save IOPattern and update parameters
-            VideoParams.IOPattern = m_mfxParamsVideo.IOPattern; 
+            VideoParams.IOPattern = m_mfxParamsVideo.IOPattern;
             MSDK_MEMCPY_VAR(m_mfxParamsVideo, &VideoParams, sizeof(mfxVideoParam));
 
             hr = ProcessNewResolution();
             if (SUCCEEDED(hr))
-            {                
+            {
                 continue;
             }
-        }        
+        }
 
         // notify about an error from either RunDecode or ProcessNewResolution
         if (MFX_ERR_NONE != sts || FAILED(hr))
@@ -503,7 +503,7 @@ void CDecVideoFilter::WriteMfxImplToRegistry()
 
 HRESULT CDecVideoFilter::StartStreaming(void)
 {
-    mfxStatus sts = MFX_ERR_NONE;    
+    mfxStatus sts = MFX_ERR_NONE;
 
     CAutoLock cObjectLock(&m_csLock);
 
@@ -511,15 +511,15 @@ HRESULT CDecVideoFilter::StartStreaming(void)
     Deinitialize();
 
     //let's start
-    m_bStop = FALSE;   
+    m_bStop = FALSE;
 
     // Commit the allocator to allow memory allocation in Init
     m_pDecoderOutput->Active();
 
     // if base decoder's frame allocator wasn't yet set
-    if (!m_pDecoder->m_pMfxFrameAllocator)        
+    if (!m_pDecoder->m_pMfxFrameAllocator)
     {
-        // Own DS allocator can act as frame allocator, 
+        // Own DS allocator can act as frame allocator,
         // alien DS allocator cannot so we create simple sys mem frame allocator in this case
         if (!m_pDecoderOutput->m_bOwnDSAllocatorAgreed)
         {
@@ -530,13 +530,13 @@ HRESULT CDecVideoFilter::StartStreaming(void)
 
             sts = m_pFrameAllocator->Init(NULL);
             MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, E_FAIL);
-        }      
-                
+        }
+
         // provide frame allocator to BaseDecoder,
         // BaseDecoder doesn't own the allocator
         sts = m_pDecoder->SetFrameAllocator(m_pFrameAllocator);
         MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, E_FAIL);
-    }    
+    }
 
     sts = m_pDecoder->Init(&m_mfxParamsVideo, m_nPitch);
     WriteMfxImplToRegistry();
@@ -547,12 +547,12 @@ HRESULT CDecVideoFilter::StartStreaming(void)
 }
 
 HRESULT CDecVideoFilter::StopStreaming(void)
-{  
+{
     CAutoLock cObjectLock(&m_csLock);
 
     m_bStop = TRUE;
 
-    mfxStatus sts = MFX_ERR_NONE;   
+    mfxStatus sts = MFX_ERR_NONE;
 
     sts = m_pDecoder->Close();
     WriteMfxImplToRegistry();
@@ -601,7 +601,7 @@ HRESULT CDecVideoFilter::NewSegment(REFERENCE_TIME tStart, REFERENCE_TIME tStop,
         WriteMfxImplToRegistry();
         MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, E_FAIL);
         m_pFrameConstructor->Reset();
-    }   
+    }
 
     m_nTempBufferLen = 0;
     return CTransformFilter::NewSegment(tStart,tStop,dRate);
@@ -638,22 +638,22 @@ HRESULT CDecVideoFilter::DecideBufferSize(IMemAllocator* pAlloc,ALLOCATOR_PROPER
 
     //check whether we should use our own allocator
     if (m_pDecoderOutput->m_bRequireOwnDSAllocator)
-    {        
+    {
         if (pAlloc != m_pDecoderOutput->m_pOwnAllocator)
         {
             return E_FAIL;
-        }        
+        }
     }
-    
+
     AM_MEDIA_TYPE mt;
-    if (m_pOutput->IsConnected()) 
+    if (m_pOutput->IsConnected())
     {
-        CopyMediaType(&mt, &(m_pOutput->CurrentMediaType()));            
-    } 
-    else 
-    {   
+        CopyMediaType(&mt, &(m_pOutput->CurrentMediaType()));
+    }
+    else
+    {
         return VFW_E_NOT_CONNECTED;
-    }    
+    }
 
     BITMAPINFOHEADER *pbmi = NULL;
 
@@ -689,9 +689,9 @@ HRESULT CDecVideoFilter::DecideBufferSize(IMemAllocator* pAlloc,ALLOCATOR_PROPER
     if (MFX_ERR_NONE == sts)
     {
         nBuffersNum = m_pDecoder->GetIOSurfNum(&m_mfxParamsVideo);
-    } 
+    }
 
-    m_pDecoder->SetAuxFramesNum((mfxU16)pProperties->cBuffers); 
+    m_pDecoder->SetAuxFramesNum((mfxU16)pProperties->cBuffers);
 
     pProperties->cBuffers += nBuffersNum;
 
@@ -714,7 +714,7 @@ HRESULT CDecVideoFilter::DecideBufferSize(IMemAllocator* pAlloc,ALLOCATOR_PROPER
             m_pDecoder->SetAdditionalMemTypeFlags((mfxU16)flags);
         }
     }
-    
+
 
     if (pProperties->cBuffers > Actual.cBuffers || pProperties->cbBuffer > Actual.cbBuffer)
     {
@@ -728,7 +728,7 @@ HRESULT CDecVideoFilter::DecideBufferSize(IMemAllocator* pAlloc,ALLOCATOR_PROPER
 }
 
 HRESULT CDecVideoFilter::BreakConnect(PIN_DIRECTION dir)
-{   
+{
     if (PINDIR_OUTPUT == dir)
     {
         if (m_pDecoder && m_pDecoder->m_bSessionHasParent)
@@ -742,26 +742,26 @@ HRESULT CDecVideoFilter::BreakConnect(PIN_DIRECTION dir)
             }
 
             MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, E_FAIL);
-            m_pDecoder->m_bSessionHasParent = false;            
-        }        
+            m_pDecoder->m_bSessionHasParent = false;
+        }
 
         m_nPitch = m_mfxParamsVideo.mfx.FrameInfo.Width;
-        
+
         // Frame allocator is defined at connection.
         // BaseDecoder must be re-created if another frame allocator is used.
-        // Therefore delete and free all these:        
-        MSDK_SAFE_DELETE(m_pDecoder); 
+        // Therefore delete and free all these:
+        MSDK_SAFE_DELETE(m_pDecoder);
         m_pDecoder = new CBaseDecoder(m_nAPIVerMinor, m_nAPIVerMajor);
         MSDK_CHECK_POINTER(m_pDecoder, E_FAIL);
 
-        m_pDecoderOutput->SetAllocator(NULL); 
+        m_pDecoderOutput->SetAllocator(NULL);
 
         if (m_bNeedToDeleteAllocator)
         {
             MSDK_SAFE_DELETE(m_pFrameAllocator); // normal object was created so need to delete
-        }        
-        
-        m_pFrameAllocator = NULL;        
+        }
+
+        m_pFrameAllocator = NULL;
     }
 
     return CTransformFilter::BreakConnect(dir);
@@ -795,7 +795,7 @@ HRESULT CDecVideoFilter::GetMediaType(int iPosition, CMediaType* pmt)
 {
     GUID               guidFormat;
     VIDEOINFOHEADER    *pSrcVIH = NULL;
-    VIDEOINFOHEADER2   *pSrcVIH2(NULL), *pDstVIH(NULL);    
+    VIDEOINFOHEADER2   *pSrcVIH2(NULL), *pDstVIH(NULL);
 
     MSDK_CHECK_POINTER(pmt, E_POINTER);
     MSDK_CHECK_POINTER(m_pInput,   E_POINTER);
@@ -809,7 +809,7 @@ HRESULT CDecVideoFilter::GetMediaType(int iPosition, CMediaType* pmt)
     if (iPosition > 1)
     {
         return VFW_S_NO_MORE_ITEMS;
-    }    
+    }
 
     pmt->cbFormat = sizeof(VIDEOINFOHEADER2);
     pmt->pbFormat = (unsigned char*)CoTaskMemAlloc(pmt->cbFormat);
@@ -826,7 +826,7 @@ HRESULT CDecVideoFilter::GetMediaType(int iPosition, CMediaType* pmt)
         pSrcVIH2 = reinterpret_cast<VIDEOINFOHEADER2*>(m_pInput->CurrentMediaType().Format());
         MSDK_CHECK_POINTER(pSrcVIH2, E_UNEXPECTED);
 
-        MSDK_MEMCPY_VAR(*pDstVIH, pSrcVIH2, sizeof(VIDEOINFOHEADER2));        
+        MSDK_MEMCPY_VAR(*pDstVIH, pSrcVIH2, sizeof(VIDEOINFOHEADER2));
     }
     else if (guidFormat == FORMAT_VideoInfo)
     {
@@ -841,13 +841,13 @@ HRESULT CDecVideoFilter::GetMediaType(int iPosition, CMediaType* pmt)
         pDstVIH->bmiHeader        = pSrcVIH->bmiHeader;
 
         pDstVIH->dwPictAspectRatioX = pDstVIH->bmiHeader.biWidth;
-        pDstVIH->dwPictAspectRatioY = pDstVIH->bmiHeader.biHeight;        
+        pDstVIH->dwPictAspectRatioY = pDstVIH->bmiHeader.biHeight;
     }
     else
-    {        
+    {
         return E_UNEXPECTED;
-    }  
-   
+    }
+
     pmt->SetType(&MEDIATYPE_Video);
     pmt->SetSampleSize(DIBSIZE(pDstVIH->bmiHeader));
     pmt->SetTemporalCompression(FALSE);
@@ -881,7 +881,7 @@ HRESULT CDecVideoFilter::GetMediaType(int iPosition, CMediaType* pmt)
     pDstVIH->bmiHeader.biCompression = ColorFormat2BiCompression(m_mfxParamsVideo.mfx.FrameInfo.FourCC);
     pDstVIH->bmiHeader.biBitCount    = ColorFormat2BiBitCount(m_mfxParamsVideo.mfx.FrameInfo.FourCC);
     pDstVIH->bmiHeader.biPlanes      = 1;
-    pDstVIH->bmiHeader.biSize        = sizeof(BITMAPINFOHEADER);    
+    pDstVIH->bmiHeader.biSize        = sizeof(BITMAPINFOHEADER);
 
     return S_OK;
 }
@@ -905,9 +905,9 @@ HRESULT CDecVideoFilter::CheckInputType(const CMediaType *mtIn)
         MSDK_CHECK_POINTER(pvi2, E_UNEXPECTED);
 
         MSDK_MEMCPY_VAR(vih2, pvi2, sizeof(VIDEOINFOHEADER2));
-        nVideoInfoSize = (FORMAT_VideoInfo2 == guidFormat) ? 
+        nVideoInfoSize = (FORMAT_VideoInfo2 == guidFormat) ?
             sizeof(VIDEOINFOHEADER2) : sizeof(MPEG2VIDEOINFO);
-    } 
+    }
     else if (FORMAT_VideoInfo == guidFormat)
     {
         VIDEOINFOHEADER* pvi = (VIDEOINFOHEADER*)(mtIn->pbFormat);
@@ -967,40 +967,40 @@ HRESULT CDecVideoFilter::CheckInputType(const CMediaType *mtIn)
         }
         //For AVC1 support
 
-        //AVC Format MAY send bitstream SPS/PPS to the decoder via MPEG2VIDEOINFO (out of band) 
-        //Use the FrameConstructor Class to parse the data, then use for MediaSDK's DecodeHeader() 
-        if((MAKEFOURCC('a','v','c','1') == vih2.bmiHeader.biCompression || MAKEFOURCC('A','V','C','1') == vih2.bmiHeader.biCompression) &&  (FORMAT_MPEG2_VIDEO == guidFormat))   
-        {        
-            MPEG2VIDEOINFO *mp2 = reinterpret_cast<MPEG2VIDEOINFO *> (mtIn->pbFormat); 
-            MSDK_CHECK_POINTER(mp2, E_UNEXPECTED); 
+        //AVC Format MAY send bitstream SPS/PPS to the decoder via MPEG2VIDEOINFO (out of band)
+        //Use the FrameConstructor Class to parse the data, then use for MediaSDK's DecodeHeader()
+        if((MAKEFOURCC('a','v','c','1') == vih2.bmiHeader.biCompression || MAKEFOURCC('A','V','C','1') == vih2.bmiHeader.biCompression) &&  (FORMAT_MPEG2_VIDEO == guidFormat))
+        {
+            MPEG2VIDEOINFO *mp2 = reinterpret_cast<MPEG2VIDEOINFO *> (mtIn->pbFormat);
+            MSDK_CHECK_POINTER(mp2, E_UNEXPECTED);
 
-            if (mp2->cbSequenceHeader > 0 ) //if > 0 then the SPS and/or PPS Data will be present 
+            if (mp2->cbSequenceHeader > 0 ) //if > 0 then the SPS and/or PPS Data will be present
             {
-                mfxBitstream avcSPS_PPS; 
-                ZeroMemory(&avcSPS_PPS, sizeof(mfxBitstream)); 
+                mfxBitstream avcSPS_PPS;
+                ZeroMemory(&avcSPS_PPS, sizeof(mfxBitstream));
 
                 CAVCFrameConstructor* pAVCConstructor = dynamic_cast<CAVCFrameConstructor*>(m_pFrameConstructor);
 
-                // AVCFrameConstructor will allocate and fill avcSPS_PPS.Data buffer 
+                // AVCFrameConstructor will allocate and fill avcSPS_PPS.Data buffer
                 // and also save headers internally for future use
-                sts = pAVCConstructor->ReadAVCHeader(mp2, &avcSPS_PPS);    
+                sts = pAVCConstructor->ReadAVCHeader(mp2, &avcSPS_PPS);
 
-                if(MFX_ERR_NONE == sts) 
+                if(MFX_ERR_NONE == sts)
                 {
-                    sts = m_pDecoder->DecodeHeader(&avcSPS_PPS, &params); 
-                } 
+                    sts = m_pDecoder->DecodeHeader(&avcSPS_PPS, &params);
+                }
 
                 // Free allocated buffer as it is no longer needed
                 MSDK_SAFE_DELETE_ARRAY(avcSPS_PPS.Data);
             }
         }
-        
+
         else if (MAKEFOURCC('W', 'M', 'V', '3') != vih2.bmiHeader.biCompression)
         {
-            bs.DataLength = bs.MaxLength 
+            bs.DataLength = bs.MaxLength
                 = mtIn->cbFormat - nVideoInfoSize;
             bs.Data = (mfxU8*)(mtIn->pbFormat + nVideoInfoSize);
-            
+
             AttachCustomCodecParams(&params);
 
             sts = m_pDecoder->DecodeHeader(&bs, &params);
@@ -1034,10 +1034,10 @@ HRESULT CDecVideoFilter::CheckInputType(const CMediaType *mtIn)
                 sts = MFX_ERR_NULL_PTR;
             }
         }
-        
+
         if (MFX_ERR_NONE == sts)
         {
-            MSDK_MEMCPY_VAR(m_mfxParamsVideo, &params, sizeof(mfxVideoParam));            
+            MSDK_MEMCPY_VAR(m_mfxParamsVideo, &params, sizeof(mfxVideoParam));
         }
     }
 
@@ -1050,12 +1050,12 @@ HRESULT CDecVideoFilter::CheckInputType(const CMediaType *mtIn)
         pmfx->FrameInfo.Height          = (pmfx->FrameInfo.CropH + 31) &~ 31;
 
         pmfx->FrameInfo.FourCC          = MFX_FOURCC_NV12;
-        pmfx->FrameInfo.ChromaFormat    = MFX_CHROMAFORMAT_YUV420;        
+        pmfx->FrameInfo.ChromaFormat    = MFX_CHROMAFORMAT_YUV420;
 
-        ConvertFrameRate(m_pTimeManager->GetFrameRate(), 
-                         &pmfx->FrameInfo.FrameRateExtN, 
+        ConvertFrameRate(m_pTimeManager->GetFrameRate(),
+                         &pmfx->FrameInfo.FrameRateExtN,
                          &pmfx->FrameInfo.FrameRateExtD);
-        
+
         // use progressive picstruct for jpeg codec by default
         if (pmfx->FrameInfo.PicStruct == MFX_PICSTRUCT_UNKNOWN && pmfx->CodecId == MFX_CODEC_JPEG )
             pmfx->FrameInfo.PicStruct = MFX_PICSTRUCT_PROGRESSIVE;
@@ -1065,24 +1065,24 @@ HRESULT CDecVideoFilter::CheckInputType(const CMediaType *mtIn)
     if (pmfx->FrameInfo.AspectRatioW * pmfx->FrameInfo.AspectRatioH == 0)
     {
         //convert display aspect ratio (is in VIDEOINFOHEADER2) to pixel aspect ratio (is accepted by MediaSDK components)
-        sts = DARtoPAR(vih2.dwPictAspectRatioX, vih2.dwPictAspectRatioY, 
+        sts = DARtoPAR(vih2.dwPictAspectRatioX, vih2.dwPictAspectRatioY,
             pmfx->FrameInfo.CropW, pmfx->FrameInfo.CropH,
             &pmfx->FrameInfo.AspectRatioW, &pmfx->FrameInfo.AspectRatioH);
         MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, E_FAIL);
 
         m_nPARW = pmfx->FrameInfo.AspectRatioW;
-        m_nPARH = pmfx->FrameInfo.AspectRatioH;        
-    }    
+        m_nPARH = pmfx->FrameInfo.AspectRatioH;
+    }
 
     // set IOPattern based on allocator type (actual or default)
-    m_mfxParamsVideo.IOPattern = (mfxU16)((m_pDecoder->m_bd3dAlloc) ? 
-        MFX_IOPATTERN_OUT_VIDEO_MEMORY : MFX_IOPATTERN_OUT_SYSTEM_MEMORY); 
-    
+    m_mfxParamsVideo.IOPattern = (mfxU16)((m_pDecoder->m_bd3dAlloc) ?
+        MFX_IOPATTERN_OUT_VIDEO_MEMORY : MFX_IOPATTERN_OUT_SYSTEM_MEMORY);
+
     //update pitch
     if (State_Stopped == m_State)
     {
         m_nPitch = pmfx->FrameInfo.Width;
-    }    
+    }
 
     return S_OK;
 };
@@ -1141,7 +1141,7 @@ HRESULT CDecVideoFilter::GetRunTimeStatistics(Statistics *statistics)
             // we take the values from VideoType saved at connection
             statistics->aspect_ratio.vertical = m_nPARH;
             statistics->aspect_ratio.horizontal = m_nPARW;
-        }        
+        }
 
         statistics->frame_rate = (DWORD)(m_pTimeManager->GetFrameRate() * 100);
     }
@@ -1166,7 +1166,7 @@ CBasePin* CDecVideoFilter::GetPin(int n)
     {
         if (NULL == m_pOutput)
         {
-            m_pOutput = m_pDecoderOutput = new CDecoderOutputPin(this, &hr); 
+            m_pOutput = m_pDecoderOutput = new CDecoderOutputPin(this, &hr);
         }
 
         return m_pOutput;
@@ -1179,7 +1179,7 @@ HRESULT QueryPinVideoMemSupport(IPin *pPin)
 {
     HRESULT hr = S_OK;
     CComPtr<IDirectXVideoMemoryConfiguration> pVideoMemConfig(NULL);
-    
+
     // Get the IDirectXVideoMemoryConfiguration interface.
     hr = pPin->QueryInterface(__uuidof(IDirectXVideoMemoryConfiguration), (void**)&pVideoMemConfig);
 
@@ -1212,11 +1212,11 @@ HRESULT QueryPinVideoMemSupport(IPin *pPin)
 HRESULT CDecVideoFilter::CompleteConnect(PIN_DIRECTION direction, IPin *pReceivePin)
 {
     HRESULT   hr  = S_OK;
-    mfxStatus sts = MFX_ERR_NONE;    
+    mfxStatus sts = MFX_ERR_NONE;
 
     // create and init frame/MediaSample allocator at output pin
     if (direction == PINDIR_OUTPUT && !m_pFrameAllocator)
-    {            
+    {
         hr = QueryPinVideoMemSupport(pReceivePin);
         if (SUCCEEDED(hr))
         {
@@ -1229,8 +1229,8 @@ HRESULT CDecVideoFilter::CompleteConnect(PIN_DIRECTION direction, IPin *pReceive
         }
 
         // now we know pattern (allocator type)
-        m_mfxParamsVideo.IOPattern = (mfxU16)((m_pDecoder->m_bd3dAlloc) ? 
-            MFX_IOPATTERN_OUT_VIDEO_MEMORY : MFX_IOPATTERN_OUT_SYSTEM_MEMORY);              
+        m_mfxParamsVideo.IOPattern = (mfxU16)((m_pDecoder->m_bd3dAlloc) ?
+            MFX_IOPATTERN_OUT_VIDEO_MEMORY : MFX_IOPATTERN_OUT_SYSTEM_MEMORY);
 
         if (m_pDecoder->m_bd3dAlloc)
         {
@@ -1238,27 +1238,27 @@ HRESULT CDecVideoFilter::CompleteConnect(PIN_DIRECTION direction, IPin *pReceive
 
             pParam.reset(new DSAllocatorParams);
             MSDK_CHECK_POINTER(pParam.get(), MFX_ERR_NULL_PTR);
-                                        
-            pParam->pPin = pReceivePin;            
-            
-            MFXDSFrameAllocatorD3D *pAlloc = new MFXDSFrameAllocatorD3D(_T("d3d allocator"), NULL, &hr);             
-           
-            m_pFrameAllocator = pAlloc; 
 
-            sts = m_pFrameAllocator->Init(pParam.get());     
+            pParam->pPin = pReceivePin;
+
+            MFXDSFrameAllocatorD3D *pAlloc = new MFXDSFrameAllocatorD3D(_T("d3d allocator"), NULL, &hr);
+
+            m_pFrameAllocator = pAlloc;
+
+            sts = m_pFrameAllocator->Init(pParam.get());
             MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, E_FAIL);
 
-            sts = m_pDecoder->SetHandle(pParam.get());            
+            sts = m_pDecoder->SetHandle(pParam.get());
             MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, E_FAIL);
 
-            sts = m_pDecoder->SetFrameAllocator(m_pFrameAllocator);  
+            sts = m_pDecoder->SetFrameAllocator(m_pFrameAllocator);
             MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, E_FAIL);
 
             m_pDecoderOutput->SetAllocator(pAlloc);
         }
         else
-        {                 
-            MFXDSFrameAllocatorSys *pAlloc = new MFXDSFrameAllocatorSys(_T("sys mem allocator"), NULL, &hr);              
+        {
+            MFXDSFrameAllocatorSys *pAlloc = new MFXDSFrameAllocatorSys(_T("sys mem allocator"), NULL, &hr);
 
             m_pDecoderOutput->SetAllocator(pAlloc);
 
@@ -1267,7 +1267,7 @@ HRESULT CDecVideoFilter::CompleteConnect(PIN_DIRECTION direction, IPin *pReceive
             m_pFrameAllocator = pAlloc;
 
             m_pFrameAllocator->Init(NULL);
-        }                                                    
+        }
     }
 
     if (direction == PINDIR_INPUT)
@@ -1282,7 +1282,7 @@ HRESULT CDecVideoFilter::CompleteConnect(PIN_DIRECTION direction, IPin *pReceive
         if (SUCCEEDED(hr))
         {
             CComPtr<IConfigureVideoEncoder> pInterface(NULL);
-            
+
             if (SUCCEEDED(infoPin.pFilter->QueryInterface(IID_IConfigureVideoEncoder, reinterpret_cast<void**>(&pInterface)))
                 && pInterface)
             {
@@ -1292,26 +1292,26 @@ HRESULT CDecVideoFilter::CompleteConnect(PIN_DIRECTION direction, IPin *pReceive
             }
 
             MSDK_SAFE_RELEASE(infoPin.pFilter);
-        }        
+        }
     }
 
     if (SUCCEEDED(hr))
     {
-        hr = CTransformFilter::CompleteConnect(direction, pReceivePin);        
+        hr = CTransformFilter::CompleteConnect(direction, pReceivePin);
     }
 
     // check if filter should try joining its session to a session from downstream filter
     if (SUCCEEDED(hr) && direction == PINDIR_OUTPUT && m_bJoinSession && m_pDecoder)
-    {  
+    {
         CComPtr<IShareMfxSession> pMFXPin(NULL);
-        MFXVideoSession *pSession = NULL;        
-        
+        MFXVideoSession *pSession = NULL;
+
         // check if downstream filter can share an mfx session
         hr = pReceivePin->QueryInterface(IID_IShareMfxSession, reinterpret_cast<void**>(&pMFXPin));
 
         if (SUCCEEDED(hr))
         {
-            // get session  
+            // get session
             pMFXPin->GetMfxSession(reinterpret_cast<void**>(&pSession));
 
             // try joining: downstream session - parent, decoder's session - child
@@ -1322,24 +1322,24 @@ HRESULT CDecVideoFilter::CompleteConnect(PIN_DIRECTION direction, IPin *pReceive
                 m_pDecoder->m_bSessionHasParent = true;
                 pMFXPin->SygnalSessionHasChild();
                 m_pDecoderOutput->m_bRequireOwnDSAllocator = TRUE;
-            }               
+            }
         }
         else
         {
-            hr = S_OK;        
+            hr = S_OK;
         }
     }
 
     // reconnect the output pin if it is connected during input pin connection final stage
     if (PINDIR_INPUT == direction && m_pOutput && m_pOutput->IsConnected() && SUCCEEDED(hr))
-    {        
+    {
         CComPtr<IFilterGraph>   pGraph;
 
-        hr = m_pGraph->QueryInterface(IID_IFilterGraph, (void**)&pGraph); 
+        hr = m_pGraph->QueryInterface(IID_IFilterGraph, (void**)&pGraph);
         MSDK_CHECK_RESULT(hr, S_OK, E_FAIL);
         MSDK_CHECK_POINTER(pGraph, E_FAIL);
 
-        hr = pGraph->Reconnect(m_pOutput);                 
+        hr = pGraph->Reconnect(m_pOutput);
     }
 
     return hr;
@@ -1355,25 +1355,25 @@ CTransformOutputPin(NAME("OutputPin"), pTransformFilter, phr, L"Out")
 
 HRESULT CDecoderOutputPin::QueryAccept( const AM_MEDIA_TYPE *pmt )
 {
-    /* TODO: need to set new allocator properties. 
+    /* TODO: need to set new allocator properties.
     Although we currently don't have scenarios where it might be needed */
 
     ((CDecVideoFilter*)m_pFilter)->SetNewStride(((VIDEOINFOHEADER2*)(pmt->pbFormat))->bmiHeader.biWidth);
-    
+
     return CTransformOutputPin::QueryAccept(pmt);
 
 };
 
 HRESULT CDecoderOutputPin::InitAllocator(IMemAllocator **ppAlloc)
 {
-    HRESULT hr = S_OK;  
+    HRESULT hr = S_OK;
 
     MSDK_CHECK_POINTER(ppAlloc, E_POINTER);
     MSDK_CHECK_POINTER(m_pOwnAllocator, E_POINTER);
 
     *ppAlloc = m_pOwnAllocator;
-    m_pOwnAllocator->AddRef();   
-    
+    m_pOwnAllocator->AddRef();
+
     return hr;
 }
 
@@ -1400,7 +1400,7 @@ HRESULT CDecoderOutputPin::SetAllocator(IMemAllocator *pAlloc)
 };
 
 HRESULT CDecoderOutputPin::NotifyFormatChange(const CMediaType* pmt)
-{    
+{
     CComPtr<IPin> pPin;
     HRESULT hr;
     ALLOCATOR_PROPERTIES prop;
@@ -1409,25 +1409,25 @@ HRESULT CDecoderOutputPin::NotifyFormatChange(const CMediaType* pmt)
     if (!pPin)
     {
         return E_POINTER;
-    } 
+    }
 
-    hr = pPin->ReceiveConnection(this, pmt);    
+    hr = pPin->ReceiveConnection(this, pmt);
 
     if (SUCCEEDED(hr) || hr == VFW_E_ALREADY_CONNECTED)
     {
         SetMediaType(pmt);
-        
-        m_pAllocator->Decommit();        
-        
+
+        m_pAllocator->Decommit();
+
         hr = m_pInputPin->GetAllocatorRequirements(&prop);
 
         if (FAILED(hr))
         {
             memset(&prop, 0, sizeof(ALLOCATOR_PROPERTIES));
         }
-        
-        hr = DecideBufferSize(m_pAllocator, &prop);            
-        
+
+        hr = DecideBufferSize(m_pAllocator, &prop);
+
         if (SUCCEEDED(hr))
         {
             m_pInputPin->NotifyAllocator(m_pAllocator, false);
@@ -1445,27 +1445,27 @@ HRESULT CDecoderOutputPin::CompleteConnect(IPin *pReceivePin)
     if (FAILED(hr)) {
         return hr;
     }
-    
+
     hr = CBaseOutputPin::CompleteConnect(pReceivePin);
     if (FAILED(hr)) {
         return hr;
     }
 
-    return hr;    
+    return hr;
 }
 
 
-/* Override DecideAllocator to try own allocator first. 
-If downstream pin refuses (it may require its own allocator - e.g. like VMR), 
-then agree to use their allocator for MediaSample buffers, but still use own memory for MFX frames. 
-A copy from mfxFrameSurface to IMediaSample will be done on Deliver. 
+/* Override DecideAllocator to try own allocator first.
+If downstream pin refuses (it may require its own allocator - e.g. like VMR),
+then agree to use their allocator for MediaSample buffers, but still use own memory for MFX frames.
+A copy from mfxFrameSurface to IMediaSample will be done on Deliver.
 This does not apply to D3D memory allocator, with D3D we require own allocator to be used. */
 HRESULT CDecoderOutputPin::DecideAllocator(IMemInputPin *pPin, __deref_out IMemAllocator **ppAlloc)
 {
     HRESULT hr = NOERROR;
     *ppAlloc = NULL;
 
-    // get downstream prop request    
+    // get downstream prop request
     ALLOCATOR_PROPERTIES prop;
     ZeroMemory(&prop, sizeof(prop));
 
@@ -1482,7 +1482,7 @@ HRESULT CDecoderOutputPin::DecideAllocator(IMemInputPin *pPin, __deref_out IMemA
 
     hr = InitAllocator(ppAlloc);
     if (SUCCEEDED(hr)) {
-        
+
         hr = DecideBufferSize(*ppAlloc, &prop);
         if (SUCCEEDED(hr)) {
             hr = pPin->NotifyAllocator(*ppAlloc, FALSE);
@@ -1513,7 +1513,7 @@ HRESULT CDecoderOutputPin::DecideAllocator(IMemInputPin *pPin, __deref_out IMemA
                 return NOERROR;
             }
         }
-    }  
+    }
 
     /* Likewise we may not have an interface to release */
 

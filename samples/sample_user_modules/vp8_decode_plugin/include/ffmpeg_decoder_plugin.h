@@ -37,7 +37,7 @@ public:
     virtual mfxStatus GetPluginParam(mfxPluginParam *par);
     virtual mfxStatus DecodeFrameSubmit(mfxBitstream *bs, mfxFrameSurface1 *surface_work, mfxFrameSurface1 **surface_out,  mfxThreadTask *task);
     virtual mfxStatus Execute(mfxThreadTask task, mfxU32 uid_p, mfxU32 uid_a);
-    virtual mfxStatus FreeResources(mfxThreadTask task, mfxStatus sts); 
+    virtual mfxStatus FreeResources(mfxThreadTask task, mfxStatus sts);
     virtual mfxStatus Query(mfxVideoParam *in, mfxVideoParam *out);
     virtual mfxStatus QueryIOSurf(mfxVideoParam *par, mfxFrameAllocRequest *in, mfxFrameAllocRequest *out);
     virtual mfxStatus Init(mfxVideoParam *par);

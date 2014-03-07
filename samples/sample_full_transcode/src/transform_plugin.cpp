@@ -10,19 +10,19 @@
 
 
 Transform <MFXVideoUSER>::Transform(PipelineFactory& factory, MFXVideoSessionExt& session,
-                                    mfxPluginType type, const msdk_string & pluginFullPath, int TimeToWait) : 
+                                    mfxPluginType type, const msdk_string & pluginFullPath, int TimeToWait) :
     m_factory(factory)
     ,m_session(session)
     ,m_PluginType(type)
     {
         pluginFullPath;
         TimeToWait;
-        
+
 }
 
 
 void Transform <MFXVideoUSER>::Configure(MFXAVParams& /*param*/, ITransform *) {
-   
+
 }
 
 bool Transform <MFXVideoUSER>::GetSample( SamplePtr& /*sample*/) {
@@ -31,5 +31,5 @@ bool Transform <MFXVideoUSER>::GetSample( SamplePtr& /*sample*/) {
 
 
 void Transform <MFXVideoUSER>::PutSample(SamplePtr& /*sample*/) {
-   
+
 }

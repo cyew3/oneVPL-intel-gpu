@@ -15,7 +15,7 @@
 #define FILTER_NAME        _T(FILTER_NAME_STRING)
 #define FILTER_GUID        CLSID_MVCDecFilter
 #define FILTER_CREATE      CMVCDecVideoFilter::CreateInstance
-#define FILTER_INPUT       { &MEDIATYPE_Video, &MEDIASUBTYPE_H264 } 
+#define FILTER_INPUT       { &MEDIATYPE_Video, &MEDIASUBTYPE_H264 }
 #define FILTER_OUTPUT      { &MEDIATYPE_Video, &MEDIASUBTYPE_NV12 }
 
 #define FILTER_PROPERTIES2 { L"Video Decoder Properties", &CLSID_VideoPropertyPage, CVideoDecPropPage::CreateInstance, NULL, NULL }

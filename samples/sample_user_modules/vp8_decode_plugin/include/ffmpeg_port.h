@@ -37,7 +37,7 @@ extern "C" {
 #pragma warning(pop)
 
 
-//decoder and encoder wrapper 
+//decoder and encoder wrapper
 struct FFCodec
 {
     bool            bEncoder; //release and create activities are different
@@ -120,13 +120,13 @@ public:
     mfxStatus OpenParser(FFParser  &, mfxU32 fourcc);
     //used to convert internal ffmpeg surface to external provided by allocator->Lock()
     mfxStatus ConvertSurface(FFScaler &scl, const mfxFrameSurface1& pSurfaceIn, mfxFrameSurface1 & pSurfaceOut);
-    
+
     void      ReleaseCodec(FFCodec &codec);
     void      ReleaseParser(FFParser &);
 
 
     mfxStatus ConstructFrame(FFParser  &, const mfxBitstream & inBs, mfxBitstream & outBs);
-    
+
     // contract:
     // bitstream offset pointer is moved
     // psurface pointers are set up

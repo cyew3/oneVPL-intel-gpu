@@ -42,7 +42,7 @@ public:
     virtual MFXVideoSessionExt*      CreateVideoSession();
     virtual MFXAudioSession*         CreateAudioSession();
 
-    //MFX native objects to be wrapped into transforms 
+    //MFX native objects to be wrapped into transforms
     //TODO: deprecate this
     virtual MFXVideoDECODE*          CreateVideoDecoder(MFXVideoSessionExt&);
     virtual ITransform*              CreateVideoDecoderTransform(MFXVideoSessionExt&, int timeout);
@@ -51,13 +51,13 @@ public:
     virtual MFXVideoENCODE*          CreateVideoEncoder(MFXVideoSessionExt&);
     virtual ITransform*              CreateVideoEncoderTransform(MFXVideoSessionExt&, int timeout);
 
-    virtual MFXVideoVPP*             CreateVideoVPP(MFXVideoSessionExt&);    
+    virtual MFXVideoVPP*             CreateVideoVPP(MFXVideoSessionExt&);
     virtual ITransform*              CreateVideoVPPTransform(MFXVideoSessionExt&, int timeout);
 
     //TODO: deprecate this
     virtual MFXAudioDECODE*          CreateAudioDecoder(MFXAudioSession&);
     virtual ITransform*              CreateAudioDecoderTransform(MFXAudioSession&, int timeout);
-    
+
     virtual MFXVideoUSER*            CreateVideoUserModule(MFXVideoSessionExt&);
     //virtual MFXPlugin*               CreatePlugin(mfxPluginType , MFXVideoUSER *, const msdk_string & pluginFullPath);
     virtual ITransform*              CreatePluginTransform(MFXVideoSessionExt&, mfxPluginType , const msdk_string & pluginFullPath, int);
@@ -71,7 +71,7 @@ public:
     //TODO: deprecate this
     virtual MFXSplitter*             CreateSplitter();
     virtual ISplitterWrapper*        CreateSplitterWrapper(std::auto_ptr<MFXDataIO>& );
-    
+
     virtual BaseFrameAllocator*      CreateFrameAllocator(AllocatorImpl );
 
     //TODO: deprecate this

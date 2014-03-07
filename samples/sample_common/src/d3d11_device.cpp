@@ -50,11 +50,11 @@ mfxStatus CD3D11Device::Init(
     m_bDefaultStereoEnabled = FALSE;
     m_nSyncInterval = 0;
 
-    static D3D_FEATURE_LEVEL FeatureLevels[] = { 
-        D3D_FEATURE_LEVEL_11_1, 
-        D3D_FEATURE_LEVEL_11_0, 
-        D3D_FEATURE_LEVEL_10_1, 
-        D3D_FEATURE_LEVEL_10_0 
+    static D3D_FEATURE_LEVEL FeatureLevels[] = {
+        D3D_FEATURE_LEVEL_11_1,
+        D3D_FEATURE_LEVEL_11_0,
+        D3D_FEATURE_LEVEL_10_1,
+        D3D_FEATURE_LEVEL_10_0
     };
     D3D_FEATURE_LEVEL pFeatureLevelsOut;
 
@@ -68,10 +68,10 @@ mfxStatus CD3D11Device::Init(
         if (FAILED(hres))
             return MFX_ERR_DEVICE_FAILED;
         m_bDefaultStereoEnabled = m_pDisplayControl->IsStereoEnabled();
-        if (!m_bDefaultStereoEnabled) 
+        if (!m_bDefaultStereoEnabled)
             m_pDisplayControl->SetStereoEnabled(TRUE);
     }
-    
+
     hres = m_pDXGIFactory->EnumAdapters(nAdapterNum,&m_pAdapter);
     if (FAILED(hres))
         return MFX_ERR_DEVICE_FAILED;
@@ -87,26 +87,26 @@ mfxStatus CD3D11Device::Init(
                             &pFeatureLevelsOut,
                             &m_pD3D11Ctx);
 
-    if (FAILED(hres))    
+    if (FAILED(hres))
         return MFX_ERR_DEVICE_FAILED;
 
     m_pDXGIDev = m_pD3D11Device;
     m_pDX11VideoDevice = m_pD3D11Device;
     m_pVideoContext = m_pD3D11Ctx;
-    
+
     MSDK_CHECK_POINTER(m_pDXGIDev.p, MFX_ERR_NULL_PTR);
     MSDK_CHECK_POINTER(m_pDX11VideoDevice.p, MFX_ERR_NULL_PTR);
     MSDK_CHECK_POINTER(m_pVideoContext.p, MFX_ERR_NULL_PTR);
 
-    // turn on multithreading for the Context 
+    // turn on multithreading for the Context
     CComQIPtr<ID3D10Multithread> p_mt(m_pVideoContext);
 
     if (p_mt)
         p_mt->SetMultithreadProtected(true);
     else
-        return MFX_ERR_DEVICE_FAILED; 
+        return MFX_ERR_DEVICE_FAILED;
 
-    // create swap chain only for rendering use case (hWindow != 0)    
+    // create swap chain only for rendering use case (hWindow != 0)
     DXGI_SWAP_CHAIN_DESC scd;
     if (hWindow)
     {
@@ -128,7 +128,7 @@ mfxStatus CD3D11Device::Init(
         swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL;
         swapChainDesc.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH;
         hres = m_pDXGIFactory->CreateSwapChainForHwnd(m_pD3D11Device,
-            (HWND)hWindow, 
+            (HWND)hWindow,
             &swapChainDesc,
             NULL,
             NULL,
@@ -189,7 +189,7 @@ mfxStatus CD3D11Device::CreateVideoProcessor(mfxFrameSurface1 * pSrf)
     hres = m_pDX11VideoDevice->CreateVideoProcessor( m_VideoProcessorEnum, 0, &m_pVideoProcessor );
     if (FAILED(hres))
         return MFX_ERR_DEVICE_FAILED;
-    
+
     return MFX_ERR_NONE;
 }
 
@@ -223,7 +223,7 @@ mfxStatus CD3D11Device::RenderFrame(mfxFrameSurface1 * pSrf, mfxFrameAllocator *
 
     sts = CreateVideoProcessor(pSrf);
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
-    
+
     hres = m_pSwapChain->GetBuffer(0, __uuidof( ID3D11Texture2D ), (void**)&m_pDXGIBackBuffer.p);
     if (FAILED(hres))
         return MFX_ERR_DEVICE_FAILED;
@@ -243,12 +243,12 @@ mfxStatus CD3D11Device::RenderFrame(mfxFrameSurface1 * pSrf, mfxFrameAllocator *
     else
     {
         OutputViewDesc.ViewDimension = D3D11_VPOV_DIMENSION_TEXTURE2D;
-        OutputViewDesc.Texture2D.MipSlice = 0;        
+        OutputViewDesc.Texture2D.MipSlice = 0;
     }
 
     if (1 == m_nViews || 0 == pSrf->Info.FrameId.ViewId)
     {
-        hres = m_pDX11VideoDevice->CreateVideoProcessorOutputView( 
+        hres = m_pDX11VideoDevice->CreateVideoProcessorOutputView(
             m_pDXGIBackBuffer,
             m_VideoProcessorEnum,
             &OutputViewDesc,
@@ -262,7 +262,7 @@ mfxStatus CD3D11Device::RenderFrame(mfxFrameSurface1 * pSrf, mfxFrameAllocator *
     InputViewDesc.ViewDimension = D3D11_VPIV_DIMENSION_TEXTURE2D;
     InputViewDesc.Texture2D.MipSlice = 0;
     InputViewDesc.Texture2D.ArraySlice = 0;
-    
+
     mfxHDLPair pair = {NULL};
     sts = pAlloc->GetHDL(pAlloc->pthis, pSrf->Data.MemId, (mfxHDL*)&pair);
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
@@ -274,24 +274,24 @@ mfxStatus CD3D11Device::RenderFrame(mfxFrameSurface1 * pSrf, mfxFrameAllocator *
     {
         pRTTexture2D->GetDesc(&RTTexture2DDesc);
         hres = m_pD3D11Device->CreateTexture2D(&RTTexture2DDesc,NULL,&m_pTempTexture.p);
-        if (FAILED(hres)) 
+        if (FAILED(hres))
             return MFX_ERR_DEVICE_FAILED;
     }
-    
+
     // Creating input views for left and righ eyes
     if (1 == m_nViews)
     {
-        hres = m_pDX11VideoDevice->CreateVideoProcessorInputView( 
+        hres = m_pDX11VideoDevice->CreateVideoProcessorInputView(
             pRTTexture2D,
             m_VideoProcessorEnum,
             &InputViewDesc,
             &m_pInputViewLeft.p );
-    
+
     }
     else if (2 == m_nViews && 0 == pSrf->Info.FrameId.ViewId)
     {
         m_pD3D11Ctx->CopyResource(m_pTempTexture,pRTTexture2D);
-        hres = m_pDX11VideoDevice->CreateVideoProcessorInputView( 
+        hres = m_pDX11VideoDevice->CreateVideoProcessorInputView(
             m_pTempTexture,
             m_VideoProcessorEnum,
             &InputViewDesc,
@@ -306,7 +306,7 @@ mfxStatus CD3D11Device::RenderFrame(mfxFrameSurface1 * pSrf, mfxFrameAllocator *
             &m_pInputViewRight.p );
     }
     if (FAILED(hres))
-        return MFX_ERR_DEVICE_FAILED;   
+        return MFX_ERR_DEVICE_FAILED;
 
     //  NV12 surface to RGB backbuffer
     RECT rect = {0};
@@ -316,7 +316,7 @@ mfxStatus CD3D11Device::RenderFrame(mfxFrameSurface1 * pSrf, mfxFrameAllocator *
     D3D11_VIDEO_PROCESSOR_STREAM StreamData;
 
     if (1 == m_nViews || pSrf->Info.FrameId.ViewId == 1)
-    {    
+    {
         StreamData.Enable = TRUE;
         StreamData.OutputIndex = 0;
         StreamData.InputFrameOrField = 0;
@@ -335,14 +335,14 @@ mfxStatus CD3D11Device::RenderFrame(mfxFrameSurface1 * pSrf, mfxFrameAllocator *
         if (FAILED(hres))
             return MFX_ERR_DEVICE_FAILED;
     }
-    
+
     if (1 == m_nViews || 1 == pSrf->Info.FrameId.ViewId)
-    {    
+    {
         DXGI_PRESENT_PARAMETERS parameters = {0};
         hres = m_pSwapChain->Present1(m_nSyncInterval, 0, &parameters);
         if (FAILED(hres))
             return MFX_ERR_DEVICE_FAILED;
-    }    
+    }
 
     return MFX_ERR_NONE;
 }

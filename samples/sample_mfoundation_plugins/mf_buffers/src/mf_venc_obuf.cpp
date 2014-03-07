@@ -406,7 +406,7 @@ bool MFOutputBitstream::GetSample(IMFSample** ppResult, HRESULT &hr)
     if (HaveBitstreamToDisplay())
     {
         bDisplayFrame = true;
-        
+
         //copy input sample attributes to output
         IMFSample *pSample = NULL;
         MFEncBitstream* pDispMFBitstream = NULL;
@@ -437,7 +437,7 @@ bool MFOutputBitstream::GetSample(IMFSample** ppResult, HRESULT &hr)
             ATLASSERT(NULL != pDispMFBitstream);
             hr = E_POINTER;
         }
-        
+
         ATLASSERT(SUCCEEDED(hr));
     }
     ATLASSERT(bDisplayFrame);
@@ -457,7 +457,7 @@ bool MFOutputBitstream::GetSample(IMFSample** ppResult, HRESULT &hr)
         {
             REFERENCE_TIME duration = SEC2REF_TIME((m_Framerate)? 1.0/m_Framerate: 0.04);
             (*ppResult)->SetSampleDuration(duration);
-                
+
 #if MFX_D3D11_SUPPORT
             // In case of B-frames we set DTS for output
             if (m_bSetDTS)

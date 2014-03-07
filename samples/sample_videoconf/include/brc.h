@@ -22,8 +22,8 @@ class SampleBRC
     mfxF64 m_fps;
     mfxU32 m_targetFrameSize;
     int    m_QP;
-    mfxU32 m_nFramesAfterReset; 
-    mfxU32 m_nFrames; 
+    mfxU32 m_nFramesAfterReset;
+    mfxU32 m_nFrames;
     mfxU64 m_BsSizeAfterReset;
     mfxU16 m_targetKbps;
     mfxU16 m_nGopSize;
@@ -31,7 +31,7 @@ class SampleBRC
 public:
     SampleBRC()
     {}
-    
+
     mfxStatus Init(mfxVideoParam *pvParams)
     {
         m_fps               = (mfxF64)pvParams->mfx.FrameInfo.FrameRateExtN / (mfxF64)pvParams->mfx.FrameInfo.FrameRateExtD;
@@ -42,7 +42,7 @@ public:
         m_BsSizeAfterReset  = 0;
         m_nFrames           = 0;
         m_nFramesAfterReset = 0;
-        
+
         return MFX_ERR_NONE;
     }
 
@@ -90,7 +90,7 @@ public:
         m_targetKbps      = pvParams->mfx.TargetKbps;
         m_targetFrameSize = (mfxU32)(m_targetKbps * 1024 / m_fps / 8);
         m_QP              = (mfxU16)(m_QP * pow(((mfxF64)m_BsSizeAfterReset / m_nFramesAfterReset / m_targetFrameSize), 0.3));
-        if (m_QP < 1) 
+        if (m_QP < 1)
             m_QP = 1;
 
         m_BsSizeAfterReset  = 0;

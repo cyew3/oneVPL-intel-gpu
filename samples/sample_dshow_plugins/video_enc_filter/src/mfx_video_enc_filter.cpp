@@ -14,7 +14,7 @@
 #include <list>
 #include <algorithm>
 
-CEncVideoFilter::CEncVideoFilter(TCHAR *tszName,LPUNKNOWN punk, const GUID VideoCodecGUID, HRESULT *phr, 
+CEncVideoFilter::CEncVideoFilter(TCHAR *tszName,LPUNKNOWN punk, const GUID VideoCodecGUID, HRESULT *phr,
                                  mfxU16 APIVerMinor, mfxU16 APIVerMajor) :
 CTransformFilter(tszName, punk, VideoCodecGUID),
 m_bStop(FALSE),
@@ -22,7 +22,7 @@ m_pAdapter(NULL),
 m_Thread(0),
 m_bUseVPP(FALSE),
 m_FramesReceived(0)
-{    
+{
     m_pTimeManager = new CTimeManager;
 
     mfxStatus sts = MFX_ERR_NONE;
@@ -34,7 +34,7 @@ m_FramesReceived(0)
     m_pEncoder = new CBaseEncoder(APIVerMinor, APIVerMajor, &sts);
     if (phr)
         *phr = (MFX_ERR_NONE == sts) ? S_OK : E_FAIL;
-    
+
 
     memset(&m_mfxParamsVideo, 0, sizeof(mfxVideoParam));
     memset(&m_mfxParamsVPP,   0, sizeof(mfxVideoParam));
@@ -45,7 +45,7 @@ m_FramesReceived(0)
 }
 
 CEncVideoFilter::~CEncVideoFilter(void)
-{            
+{
     MSDK_SAFE_DELETE(m_pTimeManager);
     MSDK_SAFE_DELETE(m_pEncoder);
 }
@@ -93,16 +93,16 @@ HRESULT CEncVideoFilter::DeliverBitstream(mfxBitstream* pBS)
     MSDK_MEMCPY_BUF(pBuffer,0,pOutSample->GetSize(),pBS->Data,pBS->DataLength);
 
     pOutSample->SetActualDataLength(pBS->DataLength);
-    CHECK_RESULT_P_RET(hr, S_OK);    
-     
-    rtStart = ConvertMFXTime2ReferenceTime(pBS->TimeStamp);     
-    
+    CHECK_RESULT_P_RET(hr, S_OK);
+
+    rtStart = ConvertMFXTime2ReferenceTime(pBS->TimeStamp);
+
     if (rtStart != -1e7)
     {
-        rtEnd = (REFERENCE_TIME)(rtStart + (1.0 / m_pTimeManager->GetFrameRate()) * 1e7);         
+        rtEnd = (REFERENCE_TIME)(rtStart + (1.0 / m_pTimeManager->GetFrameRate()) * 1e7);
     }
     else
-    {        
+    {
         // if time stamp is invalid we calculate it basing on frame rate
         hr = m_pTimeManager->GetTime(&rtStart, &rtEnd);
         CHECK_RESULT_P_RET(hr, S_OK);
@@ -121,14 +121,14 @@ HRESULT CEncVideoFilter::DeliverBitstream(mfxBitstream* pBS)
 
 HRESULT CEncVideoFilter::CompleteConnect(PIN_DIRECTION direction, IPin *pReceivePin)
 {
-    HRESULT   hr  = S_OK;         
-    
+    HRESULT   hr  = S_OK;
+
     if (PINDIR_OUTPUT == direction && m_pInput->IsConnected())
-    {           
+    {
         CComQIPtr<IMemAllocator> alloc;
         MFXFrameAllocator *pMfxAlloc = NULL;
 
-        hr = m_pInput->GetAllocator(&alloc.p);        
+        hr = m_pInput->GetAllocator(&alloc.p);
         MSDK_CHECK_RESULT(hr, S_OK, E_FAIL);
 
         CComQIPtr<IMFXAllocator> mfxalloc(alloc);
@@ -137,22 +137,22 @@ HRESULT CEncVideoFilter::CompleteConnect(PIN_DIRECTION direction, IPin *pReceive
             hr = mfxalloc->GetMfxFrameAllocator(&pMfxAlloc);
             MSDK_CHECK_RESULT(hr, S_OK, E_FAIL);
 
-            MSDK_CHECK_RESULT(m_pEncoder->SetExtFrameAllocator(pMfxAlloc), MFX_ERR_NONE, E_FAIL);           
+            MSDK_CHECK_RESULT(m_pEncoder->SetExtFrameAllocator(pMfxAlloc), MFX_ERR_NONE, E_FAIL);
         }
-    }       
-    
+    }
+
     hr = CTransformFilter::CompleteConnect(direction, pReceivePin);
-    MSDK_CHECK_RESULT(hr, S_OK, E_FAIL);    
+    MSDK_CHECK_RESULT(hr, S_OK, E_FAIL);
 
     // reconnect the output pin if it is connected during input pin connection final stage
     if (PINDIR_INPUT == direction && m_pOutput && m_pOutput->IsConnected())
-    {       
+    {
         CComPtr<IFilterGraph>   pGraph;
 
-        hr = m_pGraph->QueryInterface(IID_IFilterGraph, (void**)&pGraph); 
-        CHECK_RESULT_FAIL(hr);        
+        hr = m_pGraph->QueryInterface(IID_IFilterGraph, (void**)&pGraph);
+        CHECK_RESULT_FAIL(hr);
 
-        hr = pGraph->Reconnect(m_pOutput);                 
+        hr = pGraph->Reconnect(m_pOutput);
     }
 
     return hr;
@@ -170,23 +170,23 @@ HRESULT CEncVideoFilter::Receive(IMediaSample* pSample)
     if (FAILED(hr))
         pSink.p = 0;
 
-    CAutoLock cObjectLock(&m_csLock);         
-        
+    CAutoLock cObjectLock(&m_csLock);
+
     // check pointer
     MSDK_CHECK_POINTER(pSample, S_OK);
 
     // check if the process has stopped
-    MSDK_CHECK_ERROR(m_bStop, TRUE, E_FAIL);       
-     
+    MSDK_CHECK_ERROR(m_bStop, TRUE, E_FAIL);
+
     mfxIMPL impl;
     m_pEncoder->QueryIMPL(&impl);
 
     // prepare surface pointer to pass to RunEncode
     mfxFrameSurface1* pmfxSurface = NULL;
-    
+
     CComPtr<IMFXSample> pMFXSample(NULL);
     hr = pSample->QueryInterface(IID_IMFXSample, reinterpret_cast<void**>(&pMFXSample));
-    
+
     if (SUCCEEDED(hr))
     {
         hr = pMFXSample->GetMfxSurfacePointer(&pmfxSurface);
@@ -196,7 +196,7 @@ HRESULT CEncVideoFilter::Receive(IMediaSample* pSample)
 
     if (!m_pEncoder->m_bmfxSample)
     {
-        // MediaSample contains YUV data in system memory buffer, 
+        // MediaSample contains YUV data in system memory buffer,
         // so we need to allocate mfx surface structure, initialize fields and set plane pointers
         pmfxSurface = new mfxFrameSurface1;
         MSDK_CHECK_POINTER(pmfxSurface, E_OUTOFMEMORY);
@@ -209,7 +209,7 @@ HRESULT CEncVideoFilter::Receive(IMediaSample* pSample)
         {
             if (-1e7 != rtStart)
             {
-                rtStart = (rtStart < 0) ? 0 : rtStart;            
+                rtStart = (rtStart < 0) ? 0 : rtStart;
             }
         }
         else
@@ -217,7 +217,7 @@ HRESULT CEncVideoFilter::Receive(IMediaSample* pSample)
             rtStart = (REFERENCE_TIME) -1e7;
         }
 
-        pmfxSurface->Data.TimeStamp = ConvertReferenceTime2MFXTime(rtStart); 
+        pmfxSurface->Data.TimeStamp = ConvertReferenceTime2MFXTime(rtStart);
 
         m_bUseVPP = memcmp(&m_mfxParamsVPP.vpp.In, &m_mfxParamsVPP.vpp.Out, sizeof(mfxFrameInfo)) ? true : false;
 
@@ -231,21 +231,21 @@ HRESULT CEncVideoFilter::Receive(IMediaSample* pSample)
             sts = InitMfxFrameSurface(pmfxSurface, &m_mfxParamsVideo.mfx.FrameInfo, pSample);
         }
 
-        if (MFX_ERR_NONE != sts && pSink)    
+        if (MFX_ERR_NONE != sts && pSink)
             pSink->Notify(EC_ERRORABORT, 0, 0);
 
-        MSDK_CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, E_FAIL, MSDK_SAFE_DELETE(pmfxSurface));        
-        
+        MSDK_CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, E_FAIL, MSDK_SAFE_DELETE(pmfxSurface));
+
         hr = pSample->GetPointer(&pBuffer);
         MSDK_CHECK_RESULT_SAFE(hr, S_OK, E_FAIL, MSDK_SAFE_DELETE(pmfxSurface));
 
-        // find out the frame height at connection 
-        // to correctly handle the case when we are connected with H and cropH != H       
+        // find out the frame height at connection
+        // to correctly handle the case when we are connected with H and cropH != H
         GUID guidFormat = *m_pInput->CurrentMediaType().FormatType();
-        BITMAPINFOHEADER bmiHeader; 
+        BITMAPINFOHEADER bmiHeader;
         VIDEOINFOHEADER2 *pVIH2(NULL);
         VIDEOINFOHEADER *pVIH(NULL);
-  
+
         bmiHeader.biHeight = 0;
 
         if (FORMAT_VideoInfo2 == guidFormat)
@@ -259,9 +259,9 @@ HRESULT CEncVideoFilter::Receive(IMediaSample* pSample)
             pVIH = reinterpret_cast<VIDEOINFOHEADER* >(m_pInput->CurrentMediaType().Format());
             MSDK_CHECK_POINTER_SAFE(pVIH, E_UNEXPECTED, MSDK_SAFE_DELETE(pmfxSurface));
             bmiHeader = pVIH->bmiHeader;
-        }    
+        }
 
-        LONG lConnectionHeight = abs(bmiHeader.biHeight);       
+        LONG lConnectionHeight = abs(bmiHeader.biHeight);
 
         // set mfx surface plane pointers
         switch (pmfxSurface->Info.FourCC)
@@ -269,21 +269,21 @@ HRESULT CEncVideoFilter::Receive(IMediaSample* pSample)
         case MFX_FOURCC_NV12:
             pmfxSurface->Data.Y   = pBuffer;
             pmfxSurface->Data.UV  = pBuffer + pmfxSurface->Data.Pitch * lConnectionHeight;
-            break; 
+            break;
         case MFX_FOURCC_YUY2:
-            pmfxSurface->Data.Y = pBuffer; 
-            pmfxSurface->Data.U = pmfxSurface->Data.Y + 1; 
+            pmfxSurface->Data.Y = pBuffer;
+            pmfxSurface->Data.U = pmfxSurface->Data.Y + 1;
             pmfxSurface->Data.V = pmfxSurface->Data.Y + 3;
             break;
         case MFX_FOURCC_RGB4:
-            pmfxSurface->Data.R = pBuffer; 
+            pmfxSurface->Data.R = pBuffer;
             pmfxSurface->Data.G = pBuffer + 4;
-            pmfxSurface->Data.B = pBuffer + 8;             
+            pmfxSurface->Data.B = pBuffer + 8;
             break;
         default:
             MSDK_SAFE_DELETE(pmfxSurface);
-            return E_UNEXPECTED;            
-        }      
+            return E_UNEXPECTED;
+        }
     }
 
     // initialize mfx encoder
@@ -291,27 +291,27 @@ HRESULT CEncVideoFilter::Receive(IMediaSample* pSample)
     {
         sts = m_pEncoder->Init(&m_mfxParamsVideo, &m_mfxParamsVPP, this);
         WriteMfxImplToRegistry();
-    }    
+    }
 
     if (MFX_ERR_NONE == sts)
     {
         ++m_FramesReceived;
-        sts = m_pEncoder->RunEncode(pSample, pmfxSurface); 
+        sts = m_pEncoder->RunEncode(pSample, pmfxSurface);
     }
-    
+
     if (MFX_ERR_NONE != sts && MFX_ERR_MORE_DATA != sts)
-    {       
-        if (pSink)        
-            pSink->Notify(EC_ERRORABORT, 0, 0);       
+    {
+        if (pSink)
+            pSink->Notify(EC_ERRORABORT, 0, 0);
 
         hr = E_FAIL;
-    } 
+    }
 
     // check if need to free memory allocated for mfxSurface structure
-    if (!m_pEncoder->m_bmfxSample && !m_pEncoder->m_bSurfaceStored) 
+    if (!m_pEncoder->m_bmfxSample && !m_pEncoder->m_bSurfaceStored)
     {
-        MSDK_SAFE_DELETE(pmfxSurface);      
-    }        
+        MSDK_SAFE_DELETE(pmfxSurface);
+    }
 
     return hr;
 }
@@ -342,7 +342,7 @@ bool CEncVideoFilter::EncResetRequired(const mfxFrameInfo *pNewFrameInfo)
     {
         MSDK_MEMCPY_VAR(m_mfxParamsVideo.mfx.FrameInfo, pNewFrameInfo, sizeof(mfxFrameInfo));
         return true;
-    }    
+    }
 
     return false;
 }
@@ -371,7 +371,7 @@ HRESULT CEncVideoFilter::StartStreaming(void)
 
     m_FramesReceived = 0;
 
-    sts = m_pEncoder->Init(&m_mfxParamsVideo, &m_mfxParamsVPP, this); 
+    sts = m_pEncoder->Init(&m_mfxParamsVideo, &m_mfxParamsVPP, this);
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, E_FAIL);
 
     WriteMfxImplToRegistry();
@@ -383,14 +383,14 @@ HRESULT CEncVideoFilter::StartStreaming(void)
 HRESULT CEncVideoFilter::StopStreaming(void)
 {
     CAutoLock cObjectLock(&m_csLock);
-    
+
     //stop working
     m_bStop = TRUE;
 
     // update registry with encoding statistics before closing
     UpdateRegistry();
 
-    m_pEncoder->Close();    
+    m_pEncoder->Close();
 
     return CTransformFilter::StopStreaming();
 }
@@ -449,8 +449,8 @@ HRESULT CEncVideoFilter::DecideBufferSize(IMemAllocator* pAlloc,ALLOCATOR_PROPER
         pProperties->cBuffers = 1;
     }
 
-    // get suggested output size 
-    // will be a good approximation for HW impl case  
+    // get suggested output size
+    // will be a good approximation for HW impl case
     // actual Init with frames allocation is deferred
     if (m_pEncoder)
     {
@@ -467,10 +467,10 @@ HRESULT CEncVideoFilter::DecideBufferSize(IMemAllocator* pAlloc,ALLOCATOR_PROPER
         sts = pEnc->GetVideoParam(&par);
         pEnc->Close();
 
-        m_mfxParamsVideo.mfx.BufferSizeInKB = par.mfx.BufferSizeInKB; // will use this value for further encoder initialization      
-        
+        m_mfxParamsVideo.mfx.BufferSizeInKB = par.mfx.BufferSizeInKB; // will use this value for further encoder initialization
+
         //sts = m_pEncoder->InternalReset(&m_mfxParamsVideo, &m_mfxParamsVPP, false);
-       
+
         if (MFX_ERR_NONE == sts)
         {
             pProperties->cbBuffer = std::max(pProperties->cbBuffer, (long)par.mfx.BufferSizeInKB * 1000);
@@ -531,7 +531,7 @@ HRESULT CEncVideoFilter::CheckInputType(const CMediaType* mtIn)
     }
 
     // actual frame sizes, check if rcSource is specified
-    mfxU16 frameWidth = ((pvi.rcSource.right - pvi.rcSource.left) > 0 ) ? 
+    mfxU16 frameWidth = ((pvi.rcSource.right - pvi.rcSource.left) > 0 ) ?
         (mfxU16)(pvi.rcSource.right - pvi.rcSource.left) : (mfxU16)(pvi.bmiHeader.biWidth);
     mfxU16 frameHeight = ((pvi.rcSource.bottom - pvi.rcSource.top) > 0) ?
         (mfxU16)(pvi.rcSource.bottom - pvi.rcSource.top) : (mfxU16)(pvi.bmiHeader.biHeight);
@@ -542,32 +542,32 @@ HRESULT CEncVideoFilter::CheckInputType(const CMediaType* mtIn)
     m_mfxParamsVideo.mfx.FrameInfo.CropH = frameHeight;
 
     if (pvi.dwInterlaceFlags & AMINTERLACE_IsInterlaced)
-    {        
+    {
         if (pvi.dwInterlaceFlags & AMINTERLACE_DisplayModeBobOrWeave)
         {
             // if stream has mixed content or picture structure is unknown at connection, encode as progressive
-            m_mfxParamsVideo.mfx.FrameInfo.PicStruct = MFX_PICSTRUCT_PROGRESSIVE; 
+            m_mfxParamsVideo.mfx.FrameInfo.PicStruct = MFX_PICSTRUCT_PROGRESSIVE;
         }
         else if (pvi.dwInterlaceFlags & AMINTERLACE_Field1First)
         {
             m_mfxParamsVideo.mfx.FrameInfo.PicStruct = MFX_PICSTRUCT_FIELD_TFF;
         }
-        else 
+        else
         {
             m_mfxParamsVideo.mfx.FrameInfo.PicStruct = MFX_PICSTRUCT_FIELD_BFF;
         }
     }
-    else 
+    else
     {
         m_mfxParamsVideo.mfx.FrameInfo.PicStruct = MFX_PICSTRUCT_PROGRESSIVE;
-    }    
+    }
 
     //convert display aspect ratio (is in VIDEOINFOHEADER2) to pixel aspect ratio (is accepted by MediaSDK components)
-    sts = DARtoPAR(pvi.dwPictAspectRatioX, pvi.dwPictAspectRatioY, 
+    sts = DARtoPAR(pvi.dwPictAspectRatioX, pvi.dwPictAspectRatioY,
         m_mfxParamsVideo.mfx.FrameInfo.CropW, m_mfxParamsVideo.mfx.FrameInfo.CropH,
         &m_mfxParamsVideo.mfx.FrameInfo.AspectRatioW, &m_mfxParamsVideo.mfx.FrameInfo.AspectRatioH);
-    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, E_FAIL);    
-    
+    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, E_FAIL);
+
     MSDK_CHECK_POINTER(m_pTimeManager, E_OUTOFMEMORY);
 
     mfxU32  nTargetFrameRateX100 = 0;
@@ -577,7 +577,7 @@ HRESULT CEncVideoFilter::CheckInputType(const CMediaType* mtIn)
         m_pTimeManager->Init(nTargetFrameRateX100 / 1e2);
     }
     else
-    {        
+    {
         m_pTimeManager->Init(1e7 / pvi.AvgTimePerFrame);
     }
 
@@ -604,16 +604,16 @@ HRESULT CEncVideoFilter::CheckInputType(const CMediaType* mtIn)
     {
         m_mfxParamsVPP.vpp.In.FourCC = MFX_FOURCC_RGB4;
     }
-    
+
     // if vpp parameters were set via frame control update frame sizes and crops in m_mfxParamsVideo
-    AlignFrameSizes(&m_mfxParamsVideo.mfx.FrameInfo, 
-                    m_mfxParamsVPP.vpp.Out.CropW, 
+    AlignFrameSizes(&m_mfxParamsVideo.mfx.FrameInfo,
+                    m_mfxParamsVPP.vpp.Out.CropW,
                     m_mfxParamsVPP.vpp.Out.CropH);
 
     // specify parameters for aspect ratio conversion if needed along with resize
     m_mfxParamsVPP.vpp.In.AspectRatioH = m_mfxParamsVideo.mfx.FrameInfo.AspectRatioH;
     m_mfxParamsVPP.vpp.In.AspectRatioW = m_mfxParamsVideo.mfx.FrameInfo.AspectRatioW;
-    sts = DARtoPAR(pvi.dwPictAspectRatioX, pvi.dwPictAspectRatioY, 
+    sts = DARtoPAR(pvi.dwPictAspectRatioX, pvi.dwPictAspectRatioY,
         m_mfxParamsVideo.mfx.FrameInfo.CropW, m_mfxParamsVideo.mfx.FrameInfo.CropH,
         &m_mfxParamsVideo.mfx.FrameInfo.AspectRatioW, &m_mfxParamsVideo.mfx.FrameInfo.AspectRatioH);
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, E_FAIL);
@@ -637,7 +637,7 @@ HRESULT CEncVideoFilter::CheckInputType(const CMediaType* mtIn)
 HRESULT CEncVideoFilter::GetMediaType(int iPosition, CMediaType* pMediaType)
 {
     GUID               guidFormat;
-    VIDEOINFOHEADER2   SrcVIH, *pDstVIH(NULL);    
+    VIDEOINFOHEADER2   SrcVIH, *pDstVIH(NULL);
 
     MSDK_CHECK_POINTER(pMediaType, E_POINTER);
     MSDK_CHECK_POINTER(m_pInput,   E_POINTER);
@@ -734,16 +734,16 @@ HRESULT CEncVideoFilter::GetMediaType(int iPosition, CMediaType* pMediaType)
 HRESULT CEncVideoFilter::BreakConnect(PIN_DIRECTION dir)
 {
     if (PINDIR_INPUT == dir)
-    {        
+    {
         mfxIMPL impl = MFX_IMPL_UNSUPPORTED;
         m_pEncoder->QueryIMPL(&impl);
         if (MFX_IMPL_HARDWARE & impl)
-        {            
+        {
             // it is not possible to re-use allocator
             // re-create encoder, new allocator will be provided on connect
-            MSDK_SAFE_DELETE(m_pEncoder); 
+            MSDK_SAFE_DELETE(m_pEncoder);
             m_pEncoder = new CBaseEncoder(m_nAPIVerMinor, m_nAPIVerMajor);
-            MSDK_CHECK_POINTER(m_pEncoder, E_FAIL);           
+            MSDK_CHECK_POINTER(m_pEncoder, E_FAIL);
         }
     }
 
@@ -817,8 +817,8 @@ HRESULT CEncVideoFilter::GetRunTimeStatistics(Statistics *statistics)
     statistics->requested_bitrate           = m_mfxParamsVideo.mfx.TargetKbps * 1000;
     statistics->width                       = m_mfxParamsVideo.mfx.FrameInfo.CropW;
     statistics->height                      = m_mfxParamsVideo.mfx.FrameInfo.CropH;
-    statistics->aspect_ratio.vertical       = m_mfxParamsVideo.mfx.FrameInfo.AspectRatioH;    
-    statistics->aspect_ratio.horizontal     = m_mfxParamsVideo.mfx.FrameInfo.AspectRatioW;  
+    statistics->aspect_ratio.vertical       = m_mfxParamsVideo.mfx.FrameInfo.AspectRatioH;
+    statistics->aspect_ratio.horizontal     = m_mfxParamsVideo.mfx.FrameInfo.AspectRatioW;
 
     statistics->frame_rate                  = (DWORD)(m_pTimeManager->GetFrameRate() * 100);
     statistics->frames_encoded              = m_pTimeManager->GetEncodedFramesCount();
@@ -845,7 +845,7 @@ CBasePin* CEncVideoFilter::GetPin(int n)
         {
             mfxIMPL impl;
             m_pEncoder->QueryIMPL(&impl);
-            m_pInput = (impl & MFX_IMPL_HARDWARE) ? new CVideoMemEncoderInputPin(this, &hr) : 
+            m_pInput = (impl & MFX_IMPL_HARDWARE) ? new CVideoMemEncoderInputPin(this, &hr) :
                 new CEncoderInputPin(this, &hr);
         }
 
@@ -883,7 +883,7 @@ HRESULT CEncVideoFilter::AlignFrameSizes(mfxFrameInfo* pInfo, mfxU16 nWidth, mfx
     }
 
     pInfo->Width  = (pInfo->Width + 15) &~ 15;
-    pInfo->Height = (pInfo->Height + 31) &~ 31;    
+    pInfo->Height = (pInfo->Height + 31) &~ 31;
 
     return S_OK;
 };
@@ -954,7 +954,7 @@ HRESULT CEncVideoFilter::GetRequiredFramesNum( mfxU16* nMinFrames, mfxU16* nReco
 
     memset(&mfxEncRequest, 0, sizeof(mfxFrameAllocRequest));
     memset(mfxVppRequest, 0, 2 * sizeof(mfxFrameAllocRequest));
-    
+
     sts = m_pEncoder->QueryIMPL(&impl);
 
     // Issue: application may change m_mfxParamsVideo later!
@@ -978,7 +978,7 @@ HRESULT CEncVideoFilter::GetRequiredFramesNum( mfxU16* nMinFrames, mfxU16* nReco
         m_bUseVPP = memcmp(&m_mfxParamsVPP.vpp.In, &m_mfxParamsVPP.vpp.Out, sizeof(mfxFrameInfo)) ? true : false;
         if (m_bUseVPP)
         {
-            sts = m_pEncoder->m_pmfxVPP->QueryIOSurf(&m_mfxParamsVPP, mfxVppRequest);                
+            sts = m_pEncoder->m_pmfxVPP->QueryIOSurf(&m_mfxParamsVPP, mfxVppRequest);
             MSDK_IGNORE_MFX_STS(sts, MFX_WRN_PARTIAL_ACCELERATION);
             MSDK_IGNORE_MFX_STS(sts, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM);
         }
@@ -989,9 +989,9 @@ HRESULT CEncVideoFilter::GetRequiredFramesNum( mfxU16* nMinFrames, mfxU16* nReco
         }
         else
         {
-            *nMinFrames = std::max((mfxU16)(mfxEncRequest.NumFrameMin + mfxVppRequest[1].NumFrameMin), 
+            *nMinFrames = std::max((mfxU16)(mfxEncRequest.NumFrameMin + mfxVppRequest[1].NumFrameMin),
                 mfxVppRequest[0].NumFrameMin);
-            *nRecommendedFrames = std::max((mfxU16)(mfxEncRequest.NumFrameSuggested + mfxVppRequest[1].NumFrameSuggested), 
+            *nRecommendedFrames = std::max((mfxU16)(mfxEncRequest.NumFrameSuggested + mfxVppRequest[1].NumFrameSuggested),
                 mfxVppRequest[0].NumFrameSuggested);
 
             m_pEncoder->m_nEncoderFramesNum = *nRecommendedFrames;
@@ -1002,24 +1002,24 @@ HRESULT CEncVideoFilter::GetRequiredFramesNum( mfxU16* nMinFrames, mfxU16* nReco
 };
 
 STDMETHODIMP CEncVideoFilter::SetParams(Params* pParams)
-{    
-    HRESULT                 hr = S_OK;   
+{
+    HRESULT                 hr = S_OK;
     CComPtr<IFilterGraph>   pGraph;
 
     mfxStatus               sts = MFX_ERR_NONE;
-    mfxIMPL                 impl;    
+    mfxIMPL                 impl;
 
     MSDK_CHECK_POINTER(m_pEncoder, E_FAIL);
     MSDK_CHECK_POINTER(m_pEncoder->m_pmfxENC, E_FAIL);
 
     mfxVideoParam paramsVideo = m_mfxParamsVideo;
-    mfxVideoParam paramsVPP = m_mfxParamsVPP;    
+    mfxVideoParam paramsVPP = m_mfxParamsVPP;
 
     StoreEncoderParams(pParams);
-   
+
     m_pEncoder->QueryIMPL(&impl);
-    m_mfxParamsVideo.IOPattern = (mfxU16)((MFX_IMPL_HARDWARE & impl) ? MFX_IOPATTERN_IN_VIDEO_MEMORY : 
-        MFX_IOPATTERN_IN_SYSTEM_MEMORY);        
+    m_mfxParamsVideo.IOPattern = (mfxU16)((MFX_IMPL_HARDWARE & impl) ? MFX_IOPATTERN_IN_VIDEO_MEMORY :
+        MFX_IOPATTERN_IN_SYSTEM_MEMORY);
 
     // check if parameters are supported and let MFX encoder correct them if possible
     mfxVideoParam SupportedParams;
@@ -1028,7 +1028,7 @@ STDMETHODIMP CEncVideoFilter::SetParams(Params* pParams)
 
     sts = m_pEncoder->m_pmfxENC->Query(&m_mfxParamsVideo, &SupportedParams);
     MSDK_IGNORE_MFX_STS(sts, MFX_WRN_PARTIAL_ACCELERATION);
-    MSDK_IGNORE_MFX_STS(sts, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM);  
+    MSDK_IGNORE_MFX_STS(sts, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM);
     if (MFX_ERR_NONE != sts)
     {
         m_mfxParamsVideo = paramsVideo;
@@ -1037,7 +1037,7 @@ STDMETHODIMP CEncVideoFilter::SetParams(Params* pParams)
     }
 
     // update current parameters
-    m_mfxParamsVideo = SupportedParams;    
+    m_mfxParamsVideo = SupportedParams;
 
     hr = m_pGraph->QueryInterface(IID_IFilterGraph, (void**)&pGraph);
 
@@ -1049,18 +1049,18 @@ STDMETHODIMP CEncVideoFilter::SetParams(Params* pParams)
     if (FAILED(hr))
     {
         m_mfxParamsVideo = paramsVideo;
-        m_mfxParamsVPP = paramsVPP;        
+        m_mfxParamsVPP = paramsVPP;
     }
 
     return hr;
-}                         
+}
 
 HRESULT CEncVideoFilter::GetMfxMemTypeFlags(DWORD *pFlags)
 {
     MSDK_CHECK_POINTER(pFlags, E_POINTER);
 
     m_bUseVPP = memcmp(&m_mfxParamsVPP.vpp.In, &m_mfxParamsVPP.vpp.Out, sizeof(mfxFrameInfo)) ? true : false;
-    
+
     if (m_bUseVPP)
     {
         *pFlags = MFX_MEMTYPE_FROM_VPPIN;
@@ -1077,18 +1077,18 @@ HRESULT CEncVideoFilter::GetMfxSession(void **ppSession)
 {
     MSDK_CHECK_POINTER(ppSession, E_POINTER);
 
-    *ppSession = reinterpret_cast<void*>(&m_pEncoder->m_mfxVideoSession);     
+    *ppSession = reinterpret_cast<void*>(&m_pEncoder->m_mfxVideoSession);
 
     return S_OK;
 }
 
 STDMETHODIMP CEncVideoFilter::GetParams(Params *params)
-{    
-    CheckPointer(params, E_POINTER)   
+{
+    CheckPointer(params, E_POINTER)
 
     if (NULL != m_pEncoder)
     {
-        m_pEncoder->GetVideoParams(&m_mfxParamsVideo);                
+        m_pEncoder->GetVideoParams(&m_mfxParamsVideo);
         CopyMFXToEncoderParams(params,&m_mfxParamsVideo);
         params->preset = m_EncoderParams.preset;
 
@@ -1101,7 +1101,7 @@ STDMETHODIMP CEncVideoFilter::GetParams(Params *params)
 mfxStatus CEncVideoFilter::StoreEncoderParams(Params *params)
 {
     MSDK_CHECK_POINTER(params, MFX_ERR_NULL_PTR);
-        
+
     HRESULT hr = S_OK;
     mfxVideoParam paramsVideo;
     mfxVideoParam paramsVPP;
@@ -1115,7 +1115,7 @@ mfxStatus CEncVideoFilter::StoreEncoderParams(Params *params)
     }
 
     MSDK_MEMCPY_VAR(m_EncoderParams, params, sizeof(m_EncoderParams));
-    
+
     WriteParamsToRegistry();
 
     MSDK_MEMCPY_VAR(paramsVideo, &m_mfxParamsVideo, sizeof(paramsVideo));
@@ -1124,7 +1124,7 @@ mfxStatus CEncVideoFilter::StoreEncoderParams(Params *params)
     CopyEncoderToMFXParams(&m_EncoderParams, &m_mfxParamsVideo);
 
     if (State_Running != m_State)
-    {        
+    {
         MSDK_MEMCPY_VAR(m_mfxParamsVPP.vpp.Out, &m_mfxParamsVideo.mfx.FrameInfo, sizeof(mfxFrameInfo));
 
         AlignFrameSizes(&m_mfxParamsVPP.vpp.Out, (mfxU16)m_EncoderParams.frame_control.width, (mfxU16)m_EncoderParams.frame_control.height);
@@ -1143,19 +1143,19 @@ mfxStatus CEncVideoFilter::StoreEncoderParams(Params *params)
 /* CEncoderInputPin */
 CEncoderInputPin::CEncoderInputPin(CTransformFilter* pTransformFilter, HRESULT* phr) :
 CTransformInputPin(NAME("InputPin"), pTransformFilter, phr, L"In")
-{   
+{
 };
 
 CEncoderInputPin::~CEncoderInputPin()
-{   
+{
 }
 
 HRESULT CEncoderInputPin::GetAllocatorRequirements(ALLOCATOR_PROPERTIES *pProps)
 {
     HRESULT                 hr =S_OK;
-    AM_MEDIA_TYPE           mt;    
+    AM_MEDIA_TYPE           mt;
     BITMAPINFOHEADER*       pbmi = NULL;
-    long                    lPitch(0), lHeight(0);    
+    long                    lPitch(0), lHeight(0);
     mfxU16                  nMin(0), nRecommended(0);
 
     hr = ConnectionMediaType(&mt);
@@ -1173,7 +1173,7 @@ HRESULT CEncoderInputPin::GetAllocatorRequirements(ALLOCATOR_PROPERTIES *pProps)
     pProps->cbPrefix = 0;
 
     //update buffers count basing on request from encoder
-    hr = ((CEncVideoFilter*)m_pFilter)->GetRequiredFramesNum(&nMin, &nRecommended);    
+    hr = ((CEncVideoFilter*)m_pFilter)->GetRequiredFramesNum(&nMin, &nRecommended);
     if (SUCCEEDED(hr))
     {
         pProps->cBuffers = nRecommended;
@@ -1186,12 +1186,12 @@ HRESULT CEncoderInputPin::GetAllocatorRequirements(ALLOCATOR_PROPERTIES *pProps)
 }
 
 HRESULT CEncoderInputPin::NonDelegatingQueryInterface(REFIID riid, __deref_out void **ppv)
-{    
+{
     if (riid == IID_IExposeMfxMemTypeFlags || riid == IID_IShareMfxSession)
     {
         return m_pFilter->NonDelegatingQueryInterface(riid, ppv);
-    }    
-    else 
+    }
+    else
     {
         return CTransformInputPin::NonDelegatingQueryInterface(riid, ppv);
     }
@@ -1206,7 +1206,7 @@ HRESULT CEncoderInputPin::NotifyAllocator(IMemAllocator * pAllocator, BOOL bRead
     MSDK_CHECK_POINTER(pAllocator, E_POINTER);
     MSDK_CHECK_POINTER(m_pFilter, E_POINTER);
 
-    hr = pAllocator->GetProperties(&props);    
+    hr = pAllocator->GetProperties(&props);
     CHECK_RESULT_P_RET(hr, S_OK);
 
     hr = ((CEncVideoFilter*)m_pFilter)->GetRequiredFramesNum(&nMin, &nRecommended);
@@ -1228,7 +1228,7 @@ HRESULT CEncoderInputPin::NotifyAllocator(IMemAllocator * pAllocator, BOOL bRead
 /* CVideoMemEncoderInputPin */
 CVideoMemEncoderInputPin::CVideoMemEncoderInputPin(CTransformFilter* pTransformFilter, HRESULT* phr) :
 CEncoderInputPin(pTransformFilter, phr)
-{    
+{
     m_pd3d = NULL;
     m_pd3dDevice = NULL;
     m_pd3dDeviceManager = NULL;
@@ -1243,15 +1243,15 @@ CVideoMemEncoderInputPin::~CVideoMemEncoderInputPin()
 
 HRESULT CVideoMemEncoderInputPin::NonDelegatingQueryInterface(REFIID riid, __deref_out void **ppv)
 {
-    if (riid == __uuidof(IMFGetService)) 
+    if (riid == __uuidof(IMFGetService))
     {
         return GetInterface((IMFGetService *) this, ppv);
-    } 
-    else if (riid == __uuidof(IDirectXVideoMemoryConfiguration)) 
+    }
+    else if (riid == __uuidof(IDirectXVideoMemoryConfiguration))
     {
         return GetInterface((IDirectXVideoMemoryConfiguration *) this, ppv);
-    }    
-    else 
+    }
+    else
     {
         return CEncoderInputPin::NonDelegatingQueryInterface(riid, ppv);
     }
@@ -1272,7 +1272,7 @@ HRESULT CVideoMemEncoderInputPin::GetService(REFGUID guidService,
     if (!m_pd3dDeviceManager)
     {
         // Create IDirect3DDeviceManager9
-        UINT ResetToken = 0;        
+        UINT ResetToken = 0;
         int SourceWidth = 320;
         int SourceHeight = 240;
         D3DPRESENT_PARAMETERS d3dParams;
@@ -1294,10 +1294,10 @@ HRESULT CVideoMemEncoderInputPin::GetService(REFGUID guidService,
 
         // create D3D
         m_pd3d = Direct3DCreate9(D3D_SDK_VERSION);
-        if (!m_pd3d) 
+        if (!m_pd3d)
             return E_FAIL;
 
-        // create D3D device        
+        // create D3D device
         hr = m_pd3d->CreateDevice(
             MSDKAdapter::GetNumber(),
             D3DDEVTYPE_HAL,
@@ -1314,13 +1314,13 @@ HRESULT CVideoMemEncoderInputPin::GetService(REFGUID guidService,
         if (SUCCEEDED(hr))
         {
             hr = m_pd3dDeviceManager->ResetDevice(m_pd3dDevice, ResetToken);
-        }     
-    } 
+        }
+    }
 
     MSDK_CHECK_POINTER(m_pd3dDeviceManager, E_UNEXPECTED);
     MSDK_CHECK_POINTER(m_pd3dDevice, E_UNEXPECTED);
-    
-    *(IDirect3DDeviceManager9**)ppvObject = m_pd3dDeviceManager;   
+
+    *(IDirect3DDeviceManager9**)ppvObject = m_pd3dDeviceManager;
     (*(IDirect3DDeviceManager9**)ppvObject)->AddRef();
 
     return hr;
@@ -1340,7 +1340,7 @@ HRESULT CVideoMemEncoderInputPin::GetAvailableSurfaceTypeByIndex(
 HRESULT CVideoMemEncoderInputPin::SetSurfaceType(DXVA2_SurfaceType dwType)
 {
     // we can accept DecoderRenderTarget D3D9 surfaces only
-    if (dwType != DXVA2_SurfaceType_DecoderRenderTarget) return E_FAIL;   
+    if (dwType != DXVA2_SurfaceType_DecoderRenderTarget) return E_FAIL;
 
     return S_OK;
 }

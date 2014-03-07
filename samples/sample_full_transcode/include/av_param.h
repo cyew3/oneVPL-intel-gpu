@@ -21,12 +21,12 @@ public:
         PARAM_AUDIO,
         PARAM_VIDEO
     } m_type;
-    MFXAVParams(mfxAudioParam& aParam) 
-        : m_audioParam(aParam) 
+    MFXAVParams(mfxAudioParam& aParam)
+        : m_audioParam(aParam)
         , m_videoParam()
         , m_type(PARAM_AUDIO) {
     }
-    MFXAVParams(mfxVideoParam& vParam) 
+    MFXAVParams(mfxVideoParam& vParam)
         : m_audioParam()
         , m_videoParam (vParam)
         , m_type(PARAM_VIDEO){

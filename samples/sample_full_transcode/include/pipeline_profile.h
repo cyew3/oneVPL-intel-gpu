@@ -50,7 +50,7 @@ class PipelineProfile : public IPipelineProfile, private no_copy {
 public:
     PipelineProfile(const MFXStreamParams &splInfo, CmdLineParser & parser, OutputFormat &, OutputCodec & ) ;
     virtual bool isAudioDecoderExist (int nTrack) const {
-        return m_audios.size() > (size_t)nTrack;    
+        return m_audios.size() > (size_t)nTrack;
     }
     virtual bool isAudioEncoderExist (int nTrack) const {
         if (!isAudioDecoderExist(nTrack)) {
@@ -60,10 +60,10 @@ public:
         if (m_parser.IsPresent(OPTION_ACODEC) && m_parser[OPTION_ACODEC].as<msdk_string>() == ARG_COPY) {
             return false;
         }
-        return true;    
+        return true;
     }
     virtual bool isDecoderExist () const {
-        return !m_videos.empty() ;    
+        return !m_videos.empty() ;
     }
     virtual bool isDecoderPluginExist () const {
         return !m_dec_plugins.empty();
@@ -85,7 +85,7 @@ public:
         if (m_parser.IsPresent(OPTION_VCODEC) && m_parser[OPTION_VCODEC].as<msdk_string>() == ARG_COPY) {
             return false;
         }
-        return true;    
+        return true;
     }
     virtual bool isMultiplexerExist() const {
         return m_bIsMuxer;
@@ -117,7 +117,7 @@ protected:
 
     unsigned int m_nAudioTracks;
     unsigned int m_nVideoTracks;
-    
+
     bool m_bAudioTracksEnabled;
     bool m_bVideoTracksEnabled;
 

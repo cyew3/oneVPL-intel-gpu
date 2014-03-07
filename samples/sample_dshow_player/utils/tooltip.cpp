@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////
 // Tooltip.cpp: Tooltip control class.
-// 
+//
 // THIS CODE AND INFORMATION IS PROVIDED "AS IS" WITHOUT WARRANTY OF
 // ANY KIND, EITHER EXPRESSED OR IMPLIED, INCLUDING BUT NOT LIMITED TO
 // THE IMPLIED WARRANTIES OF MERCHANTABILITY AND/OR FITNESS FOR A
@@ -31,15 +31,15 @@ HRESULT ToolTip::Create(HWND hParent)
 
     m_hwnd = CreateWindowEx(
         NULL,
-        TOOLTIPS_CLASS, 
-        NULL, 
+        TOOLTIPS_CLASS,
+        NULL,
         WS_POPUP,
-        CW_USEDEFAULT, 
         CW_USEDEFAULT,
-        CW_USEDEFAULT, 
         CW_USEDEFAULT,
-        hParent, 
-        (HMENU)NULL, 
+        CW_USEDEFAULT,
+        CW_USEDEFAULT,
+        hParent,
+        (HMENU)NULL,
         hInstance,
         NULL
         );
@@ -49,7 +49,7 @@ HRESULT ToolTip::Create(HWND hParent)
 
         SetWindowPos(m_hwnd, HWND_TOPMOST,0, 0, 0, 0,
              SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
-        
+
         SendMessage(TTM_ACTIVATE, TRUE, 0);
     }
 
@@ -76,14 +76,14 @@ BOOL ToolTip::AddTool(HWND hControl, LPTSTR szText)
 
     tinfo.cbSize = sizeof(tinfo);
     tinfo.uFlags = TTF_IDISHWND | TTF_SUBCLASS;
-    tinfo.hwnd = hControl;  
+    tinfo.hwnd = hControl;
     tinfo.uId = (UINT_PTR)hControl;
     tinfo.lpszText = szText;
 
     BOOL bResult = (BOOL)SendMessage(TTM_ADDTOOL, 0, (LPARAM)&tinfo);
 
 
-    DWORD count = (DWORD)SendMessage(TTM_GETTOOLCOUNT, 0, 0); 
+    DWORD count = (DWORD)SendMessage(TTM_GETTOOLCOUNT, 0, 0);
 
     return bResult;
 }

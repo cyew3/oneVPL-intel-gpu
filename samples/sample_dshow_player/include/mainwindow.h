@@ -10,7 +10,7 @@
 */
 //////////////////////////////////////////////////////////////////////////
 // MainWindow.h: Main application window.
-// 
+//
 // THIS CODE AND INFORMATION IS PROVIDED "AS IS" WITHOUT WARRANTY OF
 // ANY KIND, EITHER EXPRESSED OR IMPLIED, INCLUDING BUT NOT LIMITED TO
 // THE IMPLIED WARRANTIES OF MERCHANTABILITY AND/OR FITNESS FOR A
@@ -37,9 +37,9 @@
 // This should be used in the private: declarations for a class
 #define DISALLOW_COPY_AND_ASSIGN(TypeName) \
     TypeName(const TypeName&);               \
-    void operator=(const TypeName&)   
+    void operator=(const TypeName&)
 
-// TODO: 
+// TODO:
 // Status bar - with size grip
 // Tool tips (get rid of WTL way)
 // Set minimum client area
@@ -112,7 +112,7 @@ private:
     ToolTip     toolTip;
 
     HBRUSH        brush;
-    UINT_PTR    m_timerID; 
+    UINT_PTR    m_timerID;
 
     DShowPlayer    *m_pPlayer;
 

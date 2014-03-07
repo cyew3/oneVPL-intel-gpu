@@ -11,7 +11,7 @@
 //////////////////////////////////////////////////////////////////////////
 //
 // PresentEngine.cpp: Defines the D3DPresentEngine object.
-// 
+//
 // THIS CODE AND INFORMATION IS PROVIDED "AS IS" WITHOUT WARRANTY OF
 // ANY KIND, EITHER EXPRESSED OR IMPLIED, INCLUDING BUT NOT LIMITED TO
 // THE IMPLIED WARRANTIES OF MERCHANTABILITY AND/OR FITNESS FOR A
@@ -31,7 +31,7 @@ HRESULT FindAdapter(IDirect3D9 *pD3D9, HMONITOR hMonitor, UINT *puAdapterID);
 // Constructor
 //-----------------------------------------------------------------------------
 
-D3DPresentEngine::D3DPresentEngine(HRESULT& hr) : 
+D3DPresentEngine::D3DPresentEngine(HRESULT& hr) :
     m_hwnd(NULL),
     m_DeviceResetToken(0),
     m_pD3D9(NULL),
@@ -65,13 +65,13 @@ D3DPresentEngine::D3DPresentEngine(HRESULT& hr) :
                                     DXVA2_VideoTransferMatrix_BT709,        // VideoTransferMatrix
                                     DXVA2_VideoLighting_dim,                // VideoLighting
                                     DXVA2_VideoPrimaries_BT709,             // VideoPrimaries
-                                    DXVA2_VideoTransFunc_709                // VideoTransferFunction            
+                                    DXVA2_VideoTransFunc_709                // VideoTransferFunction
                                     };
 
     // init m_VideoDesc structure
     MSDK_MEMCPY_VAR(m_VideoDesc.SampleFormat, &format, sizeof(DXVA2_ExtendedFormat));
     m_VideoDesc.SampleWidth                  = 256;
-    m_VideoDesc.SampleHeight                 = 256;    
+    m_VideoDesc.SampleHeight                 = 256;
     m_VideoDesc.InputSampleFreq.Numerator    = 60;
     m_VideoDesc.InputSampleFreq.Denominator  = 1;
     m_VideoDesc.OutputFrameFreq.Numerator    = 60;
@@ -89,7 +89,7 @@ D3DPresentEngine::D3DPresentEngine(HRESULT& hr) :
     m_Sample.End = 1;
     m_Sample.SampleFormat = format;
     m_Sample.PlanarAlpha.Fraction = 0;
-    m_Sample.PlanarAlpha.Value = 1;   
+    m_Sample.PlanarAlpha.Value = 1;
 
     ZeroMemory(&m_DisplayMode, sizeof(m_DisplayMode));
 
@@ -135,11 +135,11 @@ D3DPresentEngine::~D3DPresentEngine()
 // GetService
 //
 // Returns a service interface from the presenter engine.
-// The presenter calls this method from inside it's implementation of 
+// The presenter calls this method from inside it's implementation of
 // IMFGetService::GetService.
 //
-// Classes that derive from D3DPresentEngine can override this method to return 
-// other interfaces. If you override this method, call the base method from the 
+// Classes that derive from D3DPresentEngine can override this method to return
+// other interfaces. If you override this method, call the base method from the
 // derived class.
 //-----------------------------------------------------------------------------
 
@@ -197,7 +197,7 @@ HRESULT D3DPresentEngine::CheckFormat(D3DFORMAT format)
 
     CHECK_HR(hr = m_pD3D9->GetAdapterDisplayMode(uAdapter, &mode));
 
-    CHECK_HR(hr = m_pD3D9->CheckDeviceType(uAdapter, type, mode.Format, format, TRUE)); 
+    CHECK_HR(hr = m_pD3D9->CheckDeviceType(uAdapter, type, mode.Format, format, TRUE));
 
 done:
     return hr;
@@ -205,7 +205,7 @@ done:
 
 //-----------------------------------------------------------------------------
 // SetVideoWindow
-// 
+//
 // Sets the window where the video is drawn.
 //-----------------------------------------------------------------------------
 
@@ -213,7 +213,7 @@ HRESULT D3DPresentEngine::SetVideoWindow(HWND hwnd)
 {
     // Assertions: EVRCustomPresenter checks these cases.
     assert(IsWindow(hwnd));
-    assert(hwnd != m_hwnd);     
+    assert(hwnd != m_hwnd);
 
     HRESULT hr = S_OK;
 
@@ -231,7 +231,7 @@ HRESULT D3DPresentEngine::SetVideoWindow(HWND hwnd)
 
 //-----------------------------------------------------------------------------
 // SetDestinationRect
-// 
+//
 // Sets the region within the video window where the video is drawn.
 //-----------------------------------------------------------------------------
 
@@ -271,7 +271,7 @@ HRESULT D3DPresentEngine::CreateVideoSamples(IMFMediaType *pFormat, VideoSampleL
 
     HRESULT     hr = S_OK;
     D3DCOLOR    clrBlack = D3DCOLOR_ARGB(0xFF, 0x00, 0x00, 0x00);
-    IMFSample*  pVideoSample = NULL; 
+    IMFSample*  pVideoSample = NULL;
     HANDLE      hDevice = 0;
     UINT        nWidth(0), nHeight(0);
     IDirectXVideoProcessorService* pVideoProcessorService = NULL;
@@ -307,7 +307,7 @@ HRESULT D3DPresentEngine::CreateVideoSamples(IMFMediaType *pFormat, VideoSampleL
 
         // Add it to the list.
         hr = videoSampleQueue.InsertBack(pVideoSample);
-        SAFE_RELEASE(pVideoSample);        
+        SAFE_RELEASE(pVideoSample);
         CHECK_HR(hr);
     }
 
@@ -325,8 +325,8 @@ done:
 
 //-----------------------------------------------------------------------------
 // ReleaseResources
-// 
-// Released Direct3D resources used by this object. 
+//
+// Released Direct3D resources used by this object.
 //-----------------------------------------------------------------------------
 
 void D3DPresentEngine::ReleaseResources()
@@ -343,7 +343,7 @@ void D3DPresentEngine::ReleaseResources()
 
 //-----------------------------------------------------------------------------
 // CheckDeviceState
-// 
+//
 // Tests the Direct3D device state.
 //
 // pState: Receives the state of the device (OK, reset, removed)
@@ -384,7 +384,7 @@ HRESULT D3DPresentEngine::CheckDeviceState(DeviceState *pState)
 
     case E_INVALIDARG:
         // CheckDeviceState can return E_INVALIDARG if the window is not valid
-        // We'll assume that the window was destroyed; we'll recreate the device 
+        // We'll assume that the window was destroyed; we'll recreate the device
         // if the application sets a new window.
         hr = S_OK;
     }
@@ -398,7 +398,7 @@ done:
 //
 // Presents a video frame.
 //
-// pSample:  Pointer to the sample that contains the surface to present. If 
+// pSample:  Pointer to the sample that contains the surface to present. If
 //           this parameter is NULL, the method paints a black rectangle.
 // llTarget: Target presentation time.
 //
@@ -420,7 +420,7 @@ HRESULT D3DPresentEngine::PresentSample(IMFSample* pSample, LONGLONG llTarget)
 
         // Get the surface from the buffer.
         CHECK_HR(hr = MFGetService(pBuffer, MR_BUFFER_SERVICE, __uuidof(IDirect3DSurface9), (void**)&pSurface));
-        
+
         CHECK_HR(hr = pSample->GetSampleDuration(&sampleDuration));
     }
     else if (m_pSurfaceRepaint)
@@ -460,7 +460,7 @@ done:
             // same thread that created the device. The Reset(Ex) method must be
             // called from the thread that created the device.
 
-            // The presenter will detect the state when it calls CheckDeviceState() 
+            // The presenter will detect the state when it calls CheckDeviceState()
             // on the next sample.
             hr = S_OK;
         }
@@ -474,7 +474,7 @@ done:
 
 //-----------------------------------------------------------------------------
 // InitializeD3D
-// 
+//
 // Initializes Direct3D and the Direct3D device manager.
 //-----------------------------------------------------------------------------
 
@@ -482,12 +482,12 @@ HRESULT D3DPresentEngine::InitializeD3D()
 {
     HRESULT hr = S_OK;
     IGFX_DISPLAY_MODE mode = {0};
-    
+
     assert(m_pD3D9 == NULL);
     assert(m_pDeviceManager == NULL);
 
     //// S3D part
-    m_pS3DControl = CreateIGFXS3DControl();    
+    m_pS3DControl = CreateIGFXS3DControl();
     CHECK_HR(hr = (NULL != m_pS3DControl))
 
     // check if s3d supported and get a list of supported display modes
@@ -511,7 +511,7 @@ done:
 
 //-----------------------------------------------------------------------------
 // CreateD3DDevice
-// 
+//
 // Creates the Direct3D device.
 //-----------------------------------------------------------------------------
 
@@ -529,7 +529,7 @@ HRESULT D3DPresentEngine::CreateD3DDevice()
     IDirect3DDevice9Ex* pDevice = NULL;
 
     // Hold the lock because we might be discarding an existing device.
-    AutoLock lock(m_ObjectLock);    
+    AutoLock lock(m_ObjectLock);
 
     if (!m_pD3D9 || !m_pDeviceManager)
     {
@@ -537,12 +537,12 @@ HRESULT D3DPresentEngine::CreateD3DDevice()
     }
 
     if (m_hwnd)
-    {   
+    {
         hwnd = m_hwnd;
     }
     else
     {
-        hwnd = GetDesktopWindow();   
+        hwnd = GetDesktopWindow();
     }
 
     IGFX_DISPLAY_MODE mode = {0};
@@ -583,12 +583,12 @@ HRESULT D3DPresentEngine::CreateD3DDevice()
     }
 
     // Create the device.
-    CHECK_HR(hr = m_pD3D9->CreateDeviceEx(uAdapterID, 
-                                          D3DDEVTYPE_HAL, 
-                                          pp.hDeviceWindow, 
+    CHECK_HR(hr = m_pD3D9->CreateDeviceEx(uAdapterID,
+                                          D3DDEVTYPE_HAL,
+                                          pp.hDeviceWindow,
                                           vp | D3DCREATE_MULTITHREADED | D3DCREATE_FPU_PRESERVE,
-                                          &pp, 
-                                          NULL, 
+                                          &pp,
+                                          NULL,
                                           &pDevice));
 
     // Get the adapter display mode.
@@ -598,13 +598,13 @@ HRESULT D3DPresentEngine::CreateD3DDevice()
 
     CHECK_HR(hr = pDevice->Clear(0, NULL, D3DCLEAR_TARGET, D3DCOLOR_XRGB(0, 0, 0), 1.0f, 0));
 
-    // Reset the D3DDeviceManager with the new device 
+    // Reset the D3DDeviceManager with the new device
     CHECK_HR(hr = m_pDeviceManager->ResetDevice(pDevice, m_DeviceResetToken));
 
     CHECK_HR(hr = m_pS3DControl->SetDevice(m_pDeviceManager));
 
     // Create DXVA2 Video Processor Service.
-    CHECK_HR(hr = DXVA2CreateVideoService(pDevice, IID_IDirectXVideoProcessorService, (void**)&m_pDXVAVPS)); 
+    CHECK_HR(hr = DXVA2CreateVideoService(pDevice, IID_IDirectXVideoProcessorService, (void**)&m_pDXVAVPS));
 
     // Activate L channel
     CHECK_HR(hr = m_pS3DControl->SelectLeftView());
@@ -652,25 +652,25 @@ HRESULT D3DPresentEngine::PresentSurface( IDirect3DSurface9* pSurface, LONG nVie
 
     GetClientRect(m_hwnd, &target);
 
-    m_BltParams.TargetRect = 
+    m_BltParams.TargetRect =
         m_Sample.SrcRect =
             m_Sample.DstRect = target;
 
-    m_Sample.SrcSurface =  pSurface; 
+    m_Sample.SrcSurface =  pSurface;
 
     // select processor based on the view id
     IDirectXVideoProcessor* pVideoProcessor = m_pDXVAVP_Left;
     if (nView)
     {
-        pVideoProcessor = m_pDXVAVP_Right;            
+        pVideoProcessor = m_pDXVAVP_Right;
     }
 
-    // a new rendering surface must be retrieved not for every frame, 
+    // a new rendering surface must be retrieved not for every frame,
     // rendering frame is one for both views(L+R)
     if (0 == nView)
     {
           hr = m_pDevice->GetBackBuffer(0, 0, D3DBACKBUFFER_TYPE_MONO, &m_pRenderSurface);
-    }         
+    }
 
     // process the surface
     hr = pVideoProcessor->VideoProcessBlt(m_pRenderSurface, &m_BltParams, &m_Sample, 1, NULL);
@@ -693,7 +693,7 @@ HRESULT D3DPresentEngine::PresentSurface( IDirect3DSurface9* pSurface, LONG nVie
 
 //-----------------------------------------------------------------------------
 // PaintFrameWithGDI
-// 
+//
 // Fills the destination rectangle with black.
 //-----------------------------------------------------------------------------
 
@@ -762,7 +762,7 @@ HRESULT D3DPresentEngine::GetPreferableS3DMode(IGFX_DISPLAY_MODE *mode)
     CheckPointer(m_Caps.S3DSupportedModes, E_POINTER);
     for (ULONG i = 0; i<m_Caps.ulNumEntries; i++)
     {
-        if (Less(m_Caps.S3DSupportedModes[pref_idx], m_Caps.S3DSupportedModes[i])) pref_idx = i;            
+        if (Less(m_Caps.S3DSupportedModes[pref_idx], m_Caps.S3DSupportedModes[i])) pref_idx = i;
     }
 
     *mode = m_Caps.S3DSupportedModes[pref_idx];
@@ -777,7 +777,7 @@ HRESULT D3DPresentEngine::GetPreferableS3DMode(IGFX_DISPLAY_MODE *mode)
 //-----------------------------------------------------------------------------
 // FindAdapter
 //
-// Given a handle to a monitor, returns the ordinal number that D3D uses to 
+// Given a handle to a monitor, returns the ordinal number that D3D uses to
 // identify the adapter.
 //-----------------------------------------------------------------------------
 
@@ -824,7 +824,7 @@ bool D3DPresentEngine::Less(const IGFX_DISPLAY_MODE &l, const IGFX_DISPLAY_MODE&
 
          if (l.ulResWidth < r.ulResWidth) return true;
     else if (l.ulResHeight < r.ulResHeight) return true;
-    else if (l.ulRefreshRate < r.ulRefreshRate) return true;    
-        
+    else if (l.ulRefreshRate < r.ulRefreshRate) return true;
+
     return false;
 }

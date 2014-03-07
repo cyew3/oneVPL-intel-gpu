@@ -37,7 +37,7 @@ protected:
     // external buffers allocation
     mfxStatus   AllocateExtMVCBuffers(mfxVideoParam *par);
     void        DeallocateExtMVCBuffers();
-    // 
+    //
     void        AttachExtParam(mfxVideoParam *par);
     void        SetExtBuffersFlag()       { m_bIsExtBuffers = true; }
 

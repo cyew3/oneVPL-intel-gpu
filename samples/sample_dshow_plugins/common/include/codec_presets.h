@@ -17,7 +17,7 @@
 class CodecPreset
 {
 public:
-    enum 
+    enum
     {
           PRESET_UNKNOWN      =  -1  // undefined preset
         , PRESET_USER_DEFINED        // User Defined (by setting encoder parameters)

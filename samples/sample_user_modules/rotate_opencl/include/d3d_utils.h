@@ -33,8 +33,8 @@ public:
         , m_hDevice(hDevice)
         , m_pD3DDevice(NULL)
     {
-        if (FAILED(m_pD3DDeviceManager->LockDevice(m_hDevice, &m_pD3DDevice, true)))         
-            throw std::runtime_error("Couldn't lock device");               
+        if (FAILED(m_pD3DDeviceManager->LockDevice(m_hDevice, &m_pD3DDevice, true)))
+            throw std::runtime_error("Couldn't lock device");
     }
 
     // "move" constructor (transfering ownership)
@@ -42,20 +42,20 @@ public:
         : m_pD3DDeviceManager(other.m_pD3DDeviceManager)
         , m_hDevice(other.m_hDevice)
         , m_pD3DDevice(other.m_pD3DDevice)
-    {        
-        other.release();       
-    }        
+    {
+        other.release();
+    }
 
     ~LockedD3DDevice()
     {
         release();
     }
-    
+
     void release()
-    {        
+    {
         if (m_pD3DDevice)
         {
-            m_pD3DDevice->Release();            
+            m_pD3DDevice->Release();
             m_pD3DDeviceManager->UnlockDevice(m_hDevice, true);
 
             m_pD3DDevice = NULL;
@@ -79,7 +79,7 @@ protected:
 public:
     SafeD3DDeviceManager(IDirect3DDeviceManager9 *pD3DDeviceManager)
         : m_pD3DDeviceManager(pD3DDeviceManager)
-        , m_hDevice(0)        
+        , m_hDevice(0)
     {
         if (FAILED(m_pD3DDeviceManager->OpenDeviceHandle(&m_hDevice)))
             throw std::runtime_error("Couldn't open Direct3D device handle");

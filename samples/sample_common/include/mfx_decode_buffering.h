@@ -7,7 +7,7 @@ or disclosed except in accordance with the terms of that agreement.
 Copyright(c) 2014 Intel Corporation. All Rights Reserved.
 
 *****************************************************************************/
-   
+
 #ifndef __MFX_DECODE_BUFFERING_H__
 #define __MFX_DECODE_BUFFERING_H__
 
@@ -150,7 +150,7 @@ protected: // functions
         AutomaticMutex lock(m_Mutex);
 
         MSDK_SELF_CHECK(surface);
-        
+
         msdkFrameSurface *prev = surface->prev;
         msdkFrameSurface *next = surface->next;
 
@@ -247,7 +247,7 @@ protected: // functions
         }
         return surface;
     }
-    
+
     inline void AddDeliveredSurface(msdkOutputSurface* surface)
     {
         AutomaticMutex lock(m_Mutex);
@@ -296,7 +296,7 @@ protected: // functions
         output_surface->surface = NULL;
         output_surface->syncp = NULL;
 
-        AddFreeOutputSurface(output_surface); 
+        AddFreeOutputSurface(output_surface);
     }
 
 protected: // variables
@@ -319,7 +319,7 @@ protected: // variables
     msdkOutputSurface*      m_pOutputSurfacesHead; // oldest surface
     msdkOutputSurface*      m_pOutputSurfacesTail; // youngest surface
     mfxU32                  m_OutputSurfacesCount;
-    
+
     // FIFO list of surfaces
     msdkOutputSurface*      m_pDeliveredSurfacesHead; // oldest surface
     msdkOutputSurface*      m_pDeliveredSurfacesTail; // youngest surface

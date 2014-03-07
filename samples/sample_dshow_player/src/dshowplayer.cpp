@@ -10,7 +10,7 @@
 */
 //////////////////////////////////////////////////////////////////////////
 // DShowPlayer.cpp: Implements DirectShow playback functionality.
-// 
+//
 // THIS CODE AND INFORMATION IS PROVIDED "AS IS" WITHOUT WARRANTY OF
 // ANY KIND, EITHER EXPRESSED OR IMPLIED, INCLUDING BUT NOT LIMITED TO
 // THE IMPLIED WARRANTIES OF MERCHANTABILITY AND/OR FITNESS FOR A
@@ -31,7 +31,7 @@
 #include <qnetwork.h>
 
 HRESULT RemoveUnconnectedRenderer(IGraphBuilder *pGraph, IBaseFilter *pRenderer, BOOL *pbRemoved);
-HRESULT InitWindowlessVMR(IBaseFilter *pVMR, HWND hwnd, IMFVideoDisplayControl** ppWc); 
+HRESULT InitWindowlessVMR(IBaseFilter *pVMR, HWND hwnd, IMFVideoDisplayControl** ppWc);
 
 //-----------------------------------------------------------------------------
 // DShowPlayer constructor.
@@ -73,7 +73,7 @@ DShowPlayer::~DShowPlayer()
 // Description: Set the window to receive graph events.
 //
 // hwnd: Window to receive the events.
-// msg: Private window message that window will receive whenever a 
+// msg: Private window message that window will receive whenever a
 //      graph event occurs. (Must be in the range WM_APP through 0xBFFF.)
 //-----------------------------------------------------------------------------
 
@@ -105,7 +105,7 @@ HRESULT DShowPlayer::TranscodeFile(const WCHAR* sSrcFileName, const WCHAR* sDstF
 
     // Add the source filter to the graph.
   if (SUCCEEDED(hr))
-  {    
+  {
         hr = AddFilterByCLSID(m_pGraph, CLSID_AsyncReader, &pSource, L"File Source Async");
   }
 
@@ -125,11 +125,11 @@ HRESULT DShowPlayer::TranscodeFile(const WCHAR* sSrcFileName, const WCHAR* sDstF
 
     //if connect to splitter failed suppose that file is wmv
     if (FAILED(hr) && pSource)
-    {        
+    {
         LPOLESTR strFileName = NULL;
-        
-        hr = pSource->QueryInterface(IID_IFileSourceFilter, (void**)&pWNMASFReader);    
-        
+
+        hr = pSource->QueryInterface(IID_IFileSourceFilter, (void**)&pWNMASFReader);
+
         if (SUCCEEDED(hr))
         {
             hr = pWNMASFReader->GetCurFile(&strFileName, NULL);
@@ -165,7 +165,7 @@ HRESULT DShowPlayer::TranscodeFile(const WCHAR* sSrcFileName, const WCHAR* sDstF
         hr = E_FAIL;
 
         //video
-        hr2 = ConnectFilterToFilter(pSplitter, &pVideoDecoder, VIDEO_DECODER); 
+        hr2 = ConnectFilterToFilter(pSplitter, &pVideoDecoder, VIDEO_DECODER);
         if (SUCCEEDED(hr2))
         {
             hr = S_OK;
@@ -178,7 +178,7 @@ HRESULT DShowPlayer::TranscodeFile(const WCHAR* sSrcFileName, const WCHAR* sDstF
         hr2 = E_FAIL;
 
         //audio
-        hr2 = ConnectFilterToFilter(pSplitter, &pAudioDecoder, AUDIO_DECODER); 
+        hr2 = ConnectFilterToFilter(pSplitter, &pAudioDecoder, AUDIO_DECODER);
 
         //try to connect with WMAudio DMO
         if (FAILED(hr2))
@@ -206,8 +206,8 @@ HRESULT DShowPlayer::TranscodeFile(const WCHAR* sSrcFileName, const WCHAR* sDstF
         if (pVideoDecoder)
         {
       hr2 = AddFilterByCLSID(m_pGraph, guidVideoEncoders[nType-1], &pVideoEncoder, L"Video Encoder");
-            
-            if (SUCCEEDED(hr2))        
+
+            if (SUCCEEDED(hr2))
             {
                 hr2 = ConnectFilters(m_pGraph, pVideoDecoder, pVideoEncoder);
 
@@ -229,8 +229,8 @@ HRESULT DShowPlayer::TranscodeFile(const WCHAR* sSrcFileName, const WCHAR* sDstF
         if (pAudioDecoder)
         {
             hr2 = AddFilterByCLSID(m_pGraph, guidAudioEncoders[nType-1], &pAudioEncoder, L"Audio Encoder");
-            
-            if (SUCCEEDED(hr2))        
+
+            if (SUCCEEDED(hr2))
             {
                 hr2 = ConnectFilters(m_pGraph, pAudioDecoder, pAudioEncoder);
 
@@ -254,15 +254,15 @@ HRESULT DShowPlayer::TranscodeFile(const WCHAR* sSrcFileName, const WCHAR* sDstF
         HRESULT hr2 = E_FAIL;
 
         hr = AddFilterByCLSID(m_pGraph, guidMuxers[nType-1], &pMuxer, L"Muxer");
-        
+
         if (SUCCEEDED(hr))
-        {   
+        {
             hr2 = E_FAIL;
 
             if (SUCCEEDED(hr) && pAudioEncoder)
-            {                
+            {
         hr2 = ConnectFilters(m_pGraph, pAudioEncoder, pMuxer);
-      } 
+      }
 
             if (SUCCEEDED(hr2))
             {
@@ -283,7 +283,7 @@ HRESULT DShowPlayer::TranscodeFile(const WCHAR* sSrcFileName, const WCHAR* sDstF
             {
                 MessageBox(NULL,_T("Video decoder to encoder connection failed"), _T("Warning"), 0);
             }
-            
+
             DWORD pRegister;
             AddGraphToRot(m_pGraph, &pRegister);
 
@@ -303,7 +303,7 @@ HRESULT DShowPlayer::TranscodeFile(const WCHAR* sSrcFileName, const WCHAR* sDstF
 
         if (SUCCEEDED(hr))
         {
-            hr = pFileWriter->QueryInterface(IID_IFileSinkFilter, (void**)&pFileSinkFilter);            
+            hr = pFileWriter->QueryInterface(IID_IFileSinkFilter, (void**)&pFileSinkFilter);
         }
 
         if (SUCCEEDED(hr))
@@ -321,9 +321,9 @@ HRESULT DShowPlayer::TranscodeFile(const WCHAR* sSrcFileName, const WCHAR* sDstF
 
     m_pEncoder = pVideoEncoder;
 
-    MSDK_SAFE_RELEASE(pSource);    
+    MSDK_SAFE_RELEASE(pSource);
     MSDK_SAFE_RELEASE(pSplitter);
-    MSDK_SAFE_RELEASE(pVideoDecoder);    
+    MSDK_SAFE_RELEASE(pVideoDecoder);
     MSDK_SAFE_RELEASE(pAudioDecoder);
     MSDK_SAFE_RELEASE(pVideoEncoder);
     MSDK_SAFE_RELEASE(pAudioEncoder);
@@ -336,7 +336,7 @@ HRESULT DShowPlayer::TranscodeFile(const WCHAR* sSrcFileName, const WCHAR* sDstF
     {
         m_state = STATE_STOPPED;
     }
-    
+
     return hr;
 };
 
@@ -357,7 +357,7 @@ HRESULT DShowPlayer::OpenFile(const WCHAR* sFileName, INT nType)
 
     // Add the source filter to the graph.
     if (SUCCEEDED(hr))
-    {    
+    {
         hr = AddFilterByCLSID(m_pGraph, CLSID_AsyncReader, &pSource, L"File Source Async");
     }
 
@@ -380,7 +380,7 @@ HRESULT DShowPlayer::OpenFile(const WCHAR* sFileName, INT nType)
         {
             hr = RenderStreamsS3D(pSource);
         }
-        
+
     }
 
     // Get the seeking capabilities.
@@ -413,9 +413,9 @@ HRESULT DShowPlayer::OpenFile(const WCHAR* sFileName, INT nType)
 // The owning window should call this method when it receives the window
 // message that the application specified when it called SetEventWindow.
 //
-// pCB: Pointer to the GraphEventCallback callback, implemented by 
+// pCB: Pointer to the GraphEventCallback callback, implemented by
 //      the application. This callback is invoked once for each event
-//      in the queue. 
+//      in the queue.
 //
 // Caution: Do not tear down the graph from inside the callback.
 //-----------------------------------------------------------------------------
@@ -601,7 +601,7 @@ HRESULT DShowPlayer::SetPosition(REFERENCE_TIME pos)
   if (SUCCEEDED(hr))
   {
     // If playback is stopped, we need to put the graph into the paused
-    // state to update the video renderer with the new frame, and then stop 
+    // state to update the video renderer with the new frame, and then stop
     // the graph again. The IMediaControl::StopWhenReady does this.
     if (m_state == STATE_STOPPED)
     {
@@ -658,7 +658,7 @@ HRESULT  DShowPlayer::Mute(BOOL bMute)
 
 //-----------------------------------------------------------------------------
 // DShowPlayer::SetVolume
-// Description: Sets the volume. 
+// Description: Sets the volume.
 //-----------------------------------------------------------------------------
 
 HRESULT  DShowPlayer::SetVolume(long lVolume)
@@ -679,7 +679,7 @@ HRESULT DShowPlayer::UpdateVolume()
 
   if (m_bAudioStream && m_pAudio)
   {
-        // If the audio is muted, set the minimum volume. 
+        // If the audio is muted, set the minimum volume.
     if (m_bMute)
     {
       hr = m_pAudio->put_Volume(MIN_VOLUME);
@@ -699,7 +699,7 @@ HRESULT DShowPlayer::UpdateVolume()
 
 //-----------------------------------------------------------------------------
 // DShowPlayer::InitializeGraph
-// Description: Create a new filter graph. (Tears down the old graph.) 
+// Description: Create a new filter graph. (Tears down the old graph.)
 //-----------------------------------------------------------------------------
 
 HRESULT DShowPlayer::InitializeGraph()
@@ -710,8 +710,8 @@ HRESULT DShowPlayer::InitializeGraph()
 
   // Create the Filter Graph Manager.
   hr = CoCreateInstance(
-    CLSID_FilterGraph, 
-    NULL, 
+    CLSID_FilterGraph,
+    NULL,
     CLSCTX_INPROC_SERVER,
     IID_IGraphBuilder,
     (void**)&m_pGraph
@@ -749,7 +749,7 @@ HRESULT DShowPlayer::InitializeGraph()
 
 //-----------------------------------------------------------------------------
 // DShowPlayer::TearDownGraph
-// Description: Tear down the filter graph and release resources. 
+// Description: Tear down the filter graph and release resources.
 //-----------------------------------------------------------------------------
 
 void DShowPlayer::TearDownGraph()
@@ -804,23 +804,23 @@ HRESULT DShowPlayer::ConnectFilterToFilter(IBaseFilter *pSrc, IBaseFilter** pDst
 
     switch (nType)
     {
-    case SPLITTER: 
+    case SPLITTER:
         nArraySize = ARRAYSIZE(guidSplitters);
         _tcscpy_s(strFilterName, L"Splitter");
         memcpy_s(guidFilters, sizeof(GUID) * 10, guidSplitters, sizeof(GUID) * nArraySize);
         break;
-    case VIDEO_DECODER: 
+    case VIDEO_DECODER:
         nArraySize = ARRAYSIZE(guidVideoDecoders);
         _tcscpy_s(strFilterName, L"Video Decoder");
         memcpy_s(guidFilters, sizeof(GUID) * 10, guidVideoDecoders, sizeof(GUID) * nArraySize);
         break;
-    case VIDEO_DECODER3D: 
+    case VIDEO_DECODER3D:
         nArraySize = ARRAYSIZE(guidVideoDecodersS3D);
         _tcscpy_s(strFilterName, L"Video Decoder");
         memcpy_s(guidFilters, sizeof(GUID) * 10, guidVideoDecodersS3D, sizeof(GUID) * nArraySize);
-        break;        
-    case AUDIO_DECODER: 
-        nArraySize = ARRAYSIZE(guidAudioDecoders);        
+        break;
+    case AUDIO_DECODER:
+        nArraySize = ARRAYSIZE(guidAudioDecoders);
         _tcscpy_s(strFilterName, L"Audio Decoder");
         memcpy_s(guidFilters, sizeof(GUID) * 10, guidAudioDecoders, sizeof(GUID) * nArraySize);
         break;
@@ -841,8 +841,8 @@ HRESULT DShowPlayer::ConnectFilterToFilter(IBaseFilter *pSrc, IBaseFilter** pDst
                 {
                     hr = pPin->QueryDirection(&dir);
 
-                    if (FAILED(hr) || dir == PINDIR_INPUT) 
-                    {    
+                    if (FAILED(hr) || dir == PINDIR_INPUT)
+                    {
                         MSDK_SAFE_RELEASE(pPin);
                         continue;
                     }
@@ -859,7 +859,7 @@ HRESULT DShowPlayer::ConnectFilterToFilter(IBaseFilter *pSrc, IBaseFilter** pDst
 
                 MSDK_SAFE_RELEASE(pEnum);
             }
-        }  
+        }
 
         if (SUCCEEDED(hr))
         {
@@ -870,7 +870,7 @@ HRESULT DShowPlayer::ConnectFilterToFilter(IBaseFilter *pSrc, IBaseFilter** pDst
         {
             m_pGraph->RemoveFilter(*pDst);
             MSDK_SAFE_RELEASE((*pDst));
-        } 
+        }
     }
 
     return hr;
@@ -884,15 +884,15 @@ HRESULT DShowPlayer::ConnectToDMOAudio(IBaseFilter *pSrc, IBaseFilter** pDst)
     // Create the DMO Wrapper filter.
     hr = CoCreateInstance(CLSID_DMOWrapperFilter, NULL, CLSCTX_INPROC, IID_IBaseFilter, (void **)pDst);
 
-    if (SUCCEEDED(hr)) 
-    {        
+    if (SUCCEEDED(hr))
+    {
         hr = (*pDst)->QueryInterface(IID_IDMOWrapperFilter, (void **)&pWraperFilter);
     }
 
-    if(SUCCEEDED(hr)) 
-    {     
+    if(SUCCEEDED(hr))
+    {
         // Initialize the filter.
-        hr = pWraperFilter->Init(CLSID_CWMADecMediaObject, DMOCATEGORY_AUDIO_DECODER); 
+        hr = pWraperFilter->Init(CLSID_CWMADecMediaObject, DMOCATEGORY_AUDIO_DECODER);
     }
 
     if(SUCCEEDED(hr))
@@ -918,7 +918,7 @@ HRESULT DShowPlayer::ConnectToDMOAudio(IBaseFilter *pSrc, IBaseFilter** pDst)
 
 //-----------------------------------------------------------------------------
 // DShowPlayer::RenderStreams
-// Description: Render the streams from a source filter. 
+// Description: Render the streams from a source filter.
 //-----------------------------------------------------------------------------
 
 HRESULT  DShowPlayer::RenderStreams(IBaseFilter *pSource)
@@ -963,8 +963,8 @@ HRESULT  DShowPlayer::RenderStreams(IBaseFilter *pSource)
     {
         LPOLESTR strFileName = NULL;
 
-        hr = pSource->QueryInterface(IID_IFileSourceFilter, (void**)&pWNMASFReader);        
-        
+        hr = pSource->QueryInterface(IID_IFileSourceFilter, (void**)&pWNMASFReader);
+
         if (SUCCEEDED(hr))
         {
             hr = pWNMASFReader->GetCurFile(&strFileName, NULL);
@@ -996,7 +996,7 @@ HRESULT  DShowPlayer::RenderStreams(IBaseFilter *pSource)
     if (SUCCEEDED(hr))
     {
         //video
-        hr = ConnectFilterToFilter(pSplitter, &pVideoDecoder, VIDEO_DECODER); 
+        hr = ConnectFilterToFilter(pSplitter, &pVideoDecoder, VIDEO_DECODER);
 
         if (SUCCEEDED(hr))
         {
@@ -1014,7 +1014,7 @@ HRESULT  DShowPlayer::RenderStreams(IBaseFilter *pSource)
         }
 
         //audio
-        hr = ConnectFilterToFilter(pSplitter, &pAudioDecoder, AUDIO_DECODER); 
+        hr = ConnectFilterToFilter(pSplitter, &pAudioDecoder, AUDIO_DECODER);
 
         //try to connect with WMAudio DMO
         if (FAILED(hr))
@@ -1049,7 +1049,7 @@ HRESULT  DShowPlayer::RenderStreams(IBaseFilter *pSource)
       BOOL bRemoved = FALSE;
     hr = RemoveUnconnectedRenderer(m_pGraph, m_pVMR, &bRemoved);
 
-    // If we removed the VMR, then we also need to release our 
+    // If we removed the VMR, then we also need to release our
     // pointer to the VMR's windowless control interface.
     if (bRemoved)
     {
@@ -1078,7 +1078,7 @@ HRESULT  DShowPlayer::RenderStreams(IBaseFilter *pSource)
     MSDK_SAFE_RELEASE(pAudioDecoder);
   MSDK_SAFE_RELEASE(pAudioRenderer);
 
-  // If we succeeded to this point, make sure we rendered at least one 
+  // If we succeeded to this point, make sure we rendered at least one
   // stream.
   if (SUCCEEDED(hr))
   {
@@ -1119,7 +1119,7 @@ HRESULT  DShowPlayer::RenderStreamsS3D(IBaseFilter *pSource)
     }
 
     if (SUCCEEDED(hr))
-    {    
+    {
         hr = m_pVMR->QueryInterface(__uuidof(IMFGetService), (void**)&pGetService);
     }
 
@@ -1150,13 +1150,13 @@ HRESULT  DShowPlayer::RenderStreamsS3D(IBaseFilter *pSource)
     if (SUCCEEDED(hr))
     {
         hr = ConnectFilterToFilter(pSource, &pSplitter, SPLITTER);
-    }    
+    }
 
     //connect splitter to video and to render
     if (SUCCEEDED(hr))
     {
         //video
-        hr = ConnectFilterToFilter(pSplitter, &pVideoDecoder, VIDEO_DECODER3D); 
+        hr = ConnectFilterToFilter(pSplitter, &pVideoDecoder, VIDEO_DECODER3D);
         if (FAILED(hr))
         {
             return hr;
@@ -1177,7 +1177,7 @@ HRESULT  DShowPlayer::RenderStreamsS3D(IBaseFilter *pSource)
         }
 
         //audio
-        hr = ConnectFilterToFilter(pSplitter, &pAudioDecoder, AUDIO_DECODER); 
+        hr = ConnectFilterToFilter(pSplitter, &pAudioDecoder, AUDIO_DECODER);
 
         //try to connect with WMAudio DMO
         if (FAILED(hr))
@@ -1212,7 +1212,7 @@ HRESULT  DShowPlayer::RenderStreamsS3D(IBaseFilter *pSource)
         BOOL bRemoved = FALSE;
         hr = RemoveUnconnectedRenderer(m_pGraph, m_pVMR, &bRemoved);
 
-        // If we removed the VMR, then we also need to release our 
+        // If we removed the VMR, then we also need to release our
         // pointer to the VMR's windowless control interface.
         if (bRemoved)
         {
@@ -1241,7 +1241,7 @@ HRESULT  DShowPlayer::RenderStreamsS3D(IBaseFilter *pSource)
     MSDK_SAFE_RELEASE(pAudioDecoder);
     MSDK_SAFE_RELEASE(pAudioRenderer);
 
-    // If we succeeded to this point, make sure we rendered at least one 
+    // If we succeeded to this point, make sure we rendered at least one
     // stream.
     if (SUCCEEDED(hr))
     {
@@ -1257,7 +1257,7 @@ HRESULT  DShowPlayer::RenderStreamsS3D(IBaseFilter *pSource)
 //-----------------------------------------------------------------------------
 // DShowPlayer::RemoveUnconnectedRenderer
 // Description: Remove a renderer filter from the graph if the filter is
-//              not connected. 
+//              not connected.
 //-----------------------------------------------------------------------------
 
 HRESULT RemoveUnconnectedRenderer(IGraphBuilder *pGraph, IBaseFilter *pRenderer, BOOL *pbRemoved)
@@ -1291,20 +1291,20 @@ HRESULT RemoveUnconnectedRenderer(IGraphBuilder *pGraph, IBaseFilter *pRenderer,
 
 //-----------------------------------------------------------------------------
 // DShowPlayer::InitWindowlessVMR
-// Description: Initialize the VMR-9 for windowless mode. 
+// Description: Initialize the VMR-9 for windowless mode.
 //-----------------------------------------------------------------------------
 
-HRESULT InitWindowlessVMR( 
+HRESULT InitWindowlessVMR(
     IBaseFilter *pVMR,        // Pointer to the render
   HWND hwnd,            // Clipping window
   IMFVideoDisplayControl** ppWC  // Receives a pointer to the render config.
-    ) 
-{ 
+    )
+{
     HRESULT                         hr = S_OK;
     CComPtr<IMFGetService>          pGetService = NULL;
-    CComPtr<IMFVideoDisplayControl> pConfig = NULL; 
-    
-    hr = pVMR->QueryInterface(__uuidof(IMFGetService), (void**)&pGetService);        
+    CComPtr<IMFVideoDisplayControl> pConfig = NULL;
+
+    hr = pVMR->QueryInterface(__uuidof(IMFGetService), (void**)&pGetService);
 
     if (SUCCEEDED(hr))
     {
@@ -1328,5 +1328,5 @@ HRESULT InitWindowlessVMR(
     (*ppWC)->AddRef();
   }
 
-  return hr; 
-} 
+  return hr;
+}

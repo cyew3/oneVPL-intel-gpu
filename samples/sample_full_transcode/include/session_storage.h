@@ -31,7 +31,7 @@ class SessionStorage :private no_copy{
     PipelineFactory&          m_factory;
     MFXSessionInfo            m_vInfo;
     MFXSessionInfo            m_aInfo;
-public:    
+public:
     SessionStorage (PipelineFactory& factory , const MFXSessionInfo &vSession, const MFXSessionInfo &aSession );
     virtual ~SessionStorage();
     virtual  MFXAudioSession * GetAudioSessionForID(int id);

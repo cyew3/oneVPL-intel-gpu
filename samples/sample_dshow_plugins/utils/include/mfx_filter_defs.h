@@ -15,4 +15,4 @@
 
 // disable printf calls
 #undef MSDK_PRINT_RET_MSG
-#define MSDK_PRINT_RET_MSG  
+#define MSDK_PRINT_RET_MSG

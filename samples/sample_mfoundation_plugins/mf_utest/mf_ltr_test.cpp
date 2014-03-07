@@ -19,9 +19,9 @@ class MockPatternGenerator : public FrameTypeGenerator
 public:
     MOCK_CONST_METHOD0( CurrentFrameType, mfxU16 ());
     MOCK_METHOD0( Next, void ());
-    MOCK_METHOD4( Init, void (mfxU16 GopOptFlag, 
-                              mfxU16 GopPicSize, 
-                              mfxU16 GopRefDist, 
+    MOCK_METHOD4( Init, void (mfxU16 GopOptFlag,
+                              mfxU16 GopPicSize,
+                              mfxU16 GopRefDist,
                               mfxU16 IdrInterval));
 };
 
@@ -30,11 +30,11 @@ TEST(LTR, GOP_PATTERN_GENERATOR_ONLY_IDR_FRAMES)
     FrameTypeGenerator gen;
     gen.Init(MFX_GOP_CLOSED, 1, 0, 0);
 
-    EXPECT_EQ(MFX_FRAMETYPE_I | MFX_FRAMETYPE_xP | MFX_FRAMETYPE_IDR | MFX_FRAMETYPE_REF | MFX_FRAMETYPE_xREF , gen.CurrentFrameType()); 
+    EXPECT_EQ(MFX_FRAMETYPE_I | MFX_FRAMETYPE_xP | MFX_FRAMETYPE_IDR | MFX_FRAMETYPE_REF | MFX_FRAMETYPE_xREF , gen.CurrentFrameType());
     gen.Next();
-    EXPECT_EQ(MFX_FRAMETYPE_I | MFX_FRAMETYPE_xP | MFX_FRAMETYPE_IDR | MFX_FRAMETYPE_REF | MFX_FRAMETYPE_xREF , gen.CurrentFrameType()); 
+    EXPECT_EQ(MFX_FRAMETYPE_I | MFX_FRAMETYPE_xP | MFX_FRAMETYPE_IDR | MFX_FRAMETYPE_REF | MFX_FRAMETYPE_xREF , gen.CurrentFrameType());
     gen.Next();
-    EXPECT_EQ(MFX_FRAMETYPE_I | MFX_FRAMETYPE_xP | MFX_FRAMETYPE_IDR | MFX_FRAMETYPE_REF | MFX_FRAMETYPE_xREF , gen.CurrentFrameType()); 
+    EXPECT_EQ(MFX_FRAMETYPE_I | MFX_FRAMETYPE_xP | MFX_FRAMETYPE_IDR | MFX_FRAMETYPE_REF | MFX_FRAMETYPE_xREF , gen.CurrentFrameType());
 }
 
 TEST(LTR, GOP_PATTERN_GENERATOR_I_FRAMES_PLUS_IDR)
@@ -42,15 +42,15 @@ TEST(LTR, GOP_PATTERN_GENERATOR_I_FRAMES_PLUS_IDR)
     FrameTypeGenerator gen;
     gen.Init(MFX_GOP_CLOSED, 0, 0, 3);
 
-    EXPECT_EQ(MFX_FRAMETYPE_I | MFX_FRAMETYPE_xP | MFX_FRAMETYPE_IDR | MFX_FRAMETYPE_REF | MFX_FRAMETYPE_xREF , gen.CurrentFrameType()); 
+    EXPECT_EQ(MFX_FRAMETYPE_I | MFX_FRAMETYPE_xP | MFX_FRAMETYPE_IDR | MFX_FRAMETYPE_REF | MFX_FRAMETYPE_xREF , gen.CurrentFrameType());
     gen.Next();
-    EXPECT_EQ(MFX_FRAMETYPE_I | MFX_FRAMETYPE_xP | MFX_FRAMETYPE_REF | MFX_FRAMETYPE_xREF , gen.CurrentFrameType()); 
+    EXPECT_EQ(MFX_FRAMETYPE_I | MFX_FRAMETYPE_xP | MFX_FRAMETYPE_REF | MFX_FRAMETYPE_xREF , gen.CurrentFrameType());
     gen.Next();
-    EXPECT_EQ(MFX_FRAMETYPE_I | MFX_FRAMETYPE_xP | MFX_FRAMETYPE_REF | MFX_FRAMETYPE_xREF , gen.CurrentFrameType()); 
+    EXPECT_EQ(MFX_FRAMETYPE_I | MFX_FRAMETYPE_xP | MFX_FRAMETYPE_REF | MFX_FRAMETYPE_xREF , gen.CurrentFrameType());
     gen.Next();
-    EXPECT_EQ(MFX_FRAMETYPE_I | MFX_FRAMETYPE_xP | MFX_FRAMETYPE_REF | MFX_FRAMETYPE_xREF , gen.CurrentFrameType()); 
+    EXPECT_EQ(MFX_FRAMETYPE_I | MFX_FRAMETYPE_xP | MFX_FRAMETYPE_REF | MFX_FRAMETYPE_xREF , gen.CurrentFrameType());
     gen.Next();
-    EXPECT_EQ(MFX_FRAMETYPE_I | MFX_FRAMETYPE_xP | MFX_FRAMETYPE_IDR | MFX_FRAMETYPE_REF | MFX_FRAMETYPE_xREF , gen.CurrentFrameType()); 
+    EXPECT_EQ(MFX_FRAMETYPE_I | MFX_FRAMETYPE_xP | MFX_FRAMETYPE_IDR | MFX_FRAMETYPE_REF | MFX_FRAMETYPE_xREF , gen.CurrentFrameType());
 }
 
 TEST(LTR, GOP_PATTERN_GENERATOR_I_AND_P_Frames)
@@ -58,13 +58,13 @@ TEST(LTR, GOP_PATTERN_GENERATOR_I_AND_P_Frames)
     FrameTypeGenerator gen;
     gen.Init(MFX_GOP_CLOSED, 3, 0, 0);
 
-    EXPECT_EQ(MFX_FRAMETYPE_I | MFX_FRAMETYPE_xP | MFX_FRAMETYPE_IDR | MFX_FRAMETYPE_REF | MFX_FRAMETYPE_xREF , gen.CurrentFrameType()); 
+    EXPECT_EQ(MFX_FRAMETYPE_I | MFX_FRAMETYPE_xP | MFX_FRAMETYPE_IDR | MFX_FRAMETYPE_REF | MFX_FRAMETYPE_xREF , gen.CurrentFrameType());
     gen.Next();
-    EXPECT_EQ(MFX_FRAMETYPE_P | MFX_FRAMETYPE_xP | MFX_FRAMETYPE_REF | MFX_FRAMETYPE_xREF , gen.CurrentFrameType()); 
+    EXPECT_EQ(MFX_FRAMETYPE_P | MFX_FRAMETYPE_xP | MFX_FRAMETYPE_REF | MFX_FRAMETYPE_xREF , gen.CurrentFrameType());
     gen.Next();
-    EXPECT_EQ(MFX_FRAMETYPE_P | MFX_FRAMETYPE_xP | MFX_FRAMETYPE_REF | MFX_FRAMETYPE_xREF , gen.CurrentFrameType()); 
+    EXPECT_EQ(MFX_FRAMETYPE_P | MFX_FRAMETYPE_xP | MFX_FRAMETYPE_REF | MFX_FRAMETYPE_xREF , gen.CurrentFrameType());
     gen.Next();
-    EXPECT_EQ(MFX_FRAMETYPE_I | MFX_FRAMETYPE_xP | MFX_FRAMETYPE_IDR | MFX_FRAMETYPE_REF | MFX_FRAMETYPE_xREF , gen.CurrentFrameType()); 
+    EXPECT_EQ(MFX_FRAMETYPE_I | MFX_FRAMETYPE_xP | MFX_FRAMETYPE_IDR | MFX_FRAMETYPE_REF | MFX_FRAMETYPE_xREF , gen.CurrentFrameType());
 }
 
 TEST(LTR, GOP_PATTERN_GENERATOR_IBP)
@@ -72,15 +72,15 @@ TEST(LTR, GOP_PATTERN_GENERATOR_IBP)
     FrameTypeGenerator gen;
     gen.Init(MFX_GOP_STRICT, 4, 2, 0);
 
-    EXPECT_EQ(MFX_FRAMETYPE_I | MFX_FRAMETYPE_xP | MFX_FRAMETYPE_IDR | MFX_FRAMETYPE_REF | MFX_FRAMETYPE_xREF , gen.CurrentFrameType()); 
+    EXPECT_EQ(MFX_FRAMETYPE_I | MFX_FRAMETYPE_xP | MFX_FRAMETYPE_IDR | MFX_FRAMETYPE_REF | MFX_FRAMETYPE_xREF , gen.CurrentFrameType());
     gen.Next();
-    EXPECT_EQ(MFX_FRAMETYPE_B | MFX_FRAMETYPE_xB , gen.CurrentFrameType()); 
+    EXPECT_EQ(MFX_FRAMETYPE_B | MFX_FRAMETYPE_xB , gen.CurrentFrameType());
     gen.Next();
-    EXPECT_EQ(MFX_FRAMETYPE_P | MFX_FRAMETYPE_xP | MFX_FRAMETYPE_REF | MFX_FRAMETYPE_xREF , gen.CurrentFrameType()); 
+    EXPECT_EQ(MFX_FRAMETYPE_P | MFX_FRAMETYPE_xP | MFX_FRAMETYPE_REF | MFX_FRAMETYPE_xREF , gen.CurrentFrameType());
     gen.Next();
-    EXPECT_EQ(MFX_FRAMETYPE_B | MFX_FRAMETYPE_xB , gen.CurrentFrameType()); 
+    EXPECT_EQ(MFX_FRAMETYPE_B | MFX_FRAMETYPE_xB , gen.CurrentFrameType());
     gen.Next();
-    EXPECT_EQ(MFX_FRAMETYPE_I | MFX_FRAMETYPE_xP | MFX_FRAMETYPE_IDR | MFX_FRAMETYPE_REF | MFX_FRAMETYPE_xREF , gen.CurrentFrameType()); 
+    EXPECT_EQ(MFX_FRAMETYPE_I | MFX_FRAMETYPE_xP | MFX_FRAMETYPE_IDR | MFX_FRAMETYPE_REF | MFX_FRAMETYPE_xREF , gen.CurrentFrameType());
 }
 
 TEST(LTR, GOP_PATTERN_GENERATOR_NO_INIT)
@@ -95,7 +95,7 @@ using testing::Return;
 TEST(LTR, BufferControl_SpecValid )
 {
     MockPatternGenerator *my_pattern = new MockPatternGenerator;
-    
+
     MFLongTermReference ltr(NULL, my_pattern);
 
     EXPECT_EQ(S_OK, ltr.SetBufferControl(MAKE_ULONG(1, 16)));
@@ -123,9 +123,9 @@ TEST(LTR, UseFrame_SpecValid )
 
     EXPECT_EQ(S_OK, ltr.SetBufferControl(MAKE_ULONG(1, 10)));
     ltr.SetNumRefFrame(12);
-    
+
     mfxEncodeCtrl encodeCtrl = {0};
-    
+
     //need to populate ltrs prior calling to use certain pattern
     EXPECT_EQ(S_OK, ltr.GenerateFrameEncodeCtrlExtParam(encodeCtrl));
     ltr.IncrementFrameOrder();
@@ -153,7 +153,7 @@ TEST(LTR, UseFrame_SpecValid )
 
     EXPECT_EQ(E_INVALIDARG, ltr.UseFrame(MAKE_ULONG(2, 5)));
     EXPECT_EQ(E_INVALIDARG, ltr.UseFrame(MAKE_ULONG(0, 0)));
-    
+
     EXPECT_EQ(S_OK, ltr.UseFrame(MAKE_ULONG(1, 5)));
     EXPECT_EQ(S_OK, ltr.UseFrame(MAKE_ULONG(0, NBITS1(1))));
     EXPECT_EQ(S_OK, ltr.UseFrame(MAKE_ULONG(0, NBITS1(2))));
@@ -163,7 +163,7 @@ TEST(LTR, UseFrame_SpecValid )
     EXPECT_EQ(S_OK, ltr.UseFrame(MAKE_ULONG(0, NBITS1(6))));
     EXPECT_EQ(S_OK, ltr.UseFrame(MAKE_ULONG(0, NBITS1(7))));
     EXPECT_EQ(S_OK, ltr.UseFrame(MAKE_ULONG(0, NBITS1(8))));
-    
+
     //frame not yet used as ltr, call should report an error
     EXPECT_EQ(E_INVALIDARG, ltr.UseFrame(MAKE_ULONG(0, ((ULONG)1) << 9)));
 }
@@ -182,9 +182,9 @@ TEST(LTR, MArkFrame_SpecValid )
 
     EXPECT_EQ(S_OK, ltr.SetBufferControl(MAKE_ULONG(1, 10)));
     ltr.SetNumRefFrame(12);
-    
+
     mfxEncodeCtrl encodeCtrl = {0};
-    
+
     EXPECT_EQ(E_INVALIDARG, ltr.MarkFrame(16));
 
     //need to populate ltrs prior calling to use certain pattern
@@ -199,7 +199,7 @@ TEST(LTR, MArkFrame_SpecValid )
     Zero(encodeCtrl);
     EXPECT_EQ(S_OK, ltr.GenerateFrameEncodeCtrlExtParam(encodeCtrl));
     ltr.IncrementFrameOrder();
-   
+
 
     EXPECT_EQ(S_OK, ltr.MarkFrame(0));
     EXPECT_EQ(S_OK, ltr.MarkFrame(1));
@@ -235,13 +235,13 @@ TEST(LTR, BufferControl_BehaviorValid )
     mfxEncodeCtrl encodeCtrl = {0};
 
     EXPECT_EQ(S_OK, ltr.GenerateFrameEncodeCtrlExtParam(encodeCtrl));
-    
+
     EXPECT_EQ(1, encodeCtrl.NumExtParam);
     EXPECT_NE((mfxExtBuffer**)NULL, encodeCtrl.ExtParam);
     EXPECT_EQ((mfxU32)MFX_EXTBUFF_AVC_REFLIST_CTRL, encodeCtrl.ExtParam[0]->BufferId);
-    
+
     ref_list = reinterpret_cast<mfxExtAVCRefListCtrl*>(encodeCtrl.ExtParam[0]);
-    
+
     //first frame 1ltr
     EXPECT_FRAME(LongTermRefList, 0, 0);
     UNEXPECT_FRAME(LongTermRefList, 1);
@@ -250,11 +250,11 @@ TEST(LTR, BufferControl_BehaviorValid )
     ltr.IncrementFrameOrder();
     Zero(encodeCtrl);
     EXPECT_EQ(S_OK, ltr.GenerateFrameEncodeCtrlExtParam(encodeCtrl));
-    
+
     EXPECT_EQ(1, encodeCtrl.NumExtParam);
     EXPECT_NE((mfxExtBuffer**)NULL, encodeCtrl.ExtParam);
     EXPECT_EQ((mfxU32)MFX_EXTBUFF_AVC_REFLIST_CTRL, encodeCtrl.ExtParam[0]->BufferId);
-    
+
     ref_list = reinterpret_cast<mfxExtAVCRefListCtrl*>(encodeCtrl.ExtParam[0]);
 
     EXPECT_FRAME(LongTermRefList, 0, 1);
@@ -264,11 +264,11 @@ TEST(LTR, BufferControl_BehaviorValid )
     ltr.IncrementFrameOrder();
     Zero(encodeCtrl);
     EXPECT_EQ(S_OK, ltr.GenerateFrameEncodeCtrlExtParam(encodeCtrl));
-    
+
     EXPECT_EQ(1, encodeCtrl.NumExtParam);
     EXPECT_NE((mfxExtBuffer**)NULL, encodeCtrl.ExtParam);
     EXPECT_EQ((mfxU32)MFX_EXTBUFF_AVC_REFLIST_CTRL, encodeCtrl.ExtParam[0]->BufferId);
-    
+
     ref_list = reinterpret_cast<mfxExtAVCRefListCtrl*>(encodeCtrl.ExtParam[0]);
     EXPECT_FRAME(LongTermRefList, 0, 2);
     UNEXPECT_FRAME(LongTermRefList, 1);
@@ -277,11 +277,11 @@ TEST(LTR, BufferControl_BehaviorValid )
     ltr.IncrementFrameOrder();
     Zero(encodeCtrl);
     EXPECT_EQ(S_OK, ltr.GenerateFrameEncodeCtrlExtParam(encodeCtrl));
-    
+
     EXPECT_EQ(1, encodeCtrl.NumExtParam);
     EXPECT_NE((mfxExtBuffer**)NULL, encodeCtrl.ExtParam);
     EXPECT_EQ((mfxU32)MFX_EXTBUFF_AVC_REFLIST_CTRL, encodeCtrl.ExtParam[0]->BufferId);
-    
+
     ref_list = reinterpret_cast<mfxExtAVCRefListCtrl*>(encodeCtrl.ExtParam[0]);
 
     UNEXPECT_FRAME(LongTermRefList, 0);
@@ -290,11 +290,11 @@ TEST(LTR, BufferControl_BehaviorValid )
     ltr.IncrementFrameOrder();
     Zero(encodeCtrl);
     EXPECT_EQ(S_OK, ltr.GenerateFrameEncodeCtrlExtParam(encodeCtrl));
-    
+
     EXPECT_EQ(1, encodeCtrl.NumExtParam);
     EXPECT_NE((mfxExtBuffer**)NULL, encodeCtrl.ExtParam);
     EXPECT_EQ((mfxU32)MFX_EXTBUFF_AVC_REFLIST_CTRL, encodeCtrl.ExtParam[0]->BufferId);
-    
+
     ref_list = reinterpret_cast<mfxExtAVCRefListCtrl*>(encodeCtrl.ExtParam[0]);
 
     UNEXPECT_FRAME(LongTermRefList, 0);
@@ -324,7 +324,7 @@ TEST(LTR, BufferControl_BehaviorValid_RepopulateLTRs_after_secondIDR )
 
     EXPECT_EQ(S_OK, ltr.GenerateFrameEncodeCtrlExtParam(encodeCtrl));
     ref_list = reinterpret_cast<mfxExtAVCRefListCtrl*>(encodeCtrl.ExtParam[0]);
-    
+
     //first frame 1ltr
     EXPECT_FRAME(LongTermRefList, 0, 0);
     UNEXPECT_FRAME(LongTermRefList, 1);
@@ -342,11 +342,11 @@ TEST(LTR, BufferControl_BehaviorValid_RepopulateLTRs_after_secondIDR )
     ltr.IncrementFrameOrder();
     Zero(encodeCtrl);
     EXPECT_EQ(S_OK, ltr.GenerateFrameEncodeCtrlExtParam(encodeCtrl));
-    
+
     ref_list = reinterpret_cast<mfxExtAVCRefListCtrl*>(encodeCtrl.ExtParam[0]);
     UNEXPECT_FRAME(LongTermRefList, 0);
 
-    //4rd frame - IDR - 3 frame order is LTR 
+    //4rd frame - IDR - 3 frame order is LTR
     ltr.IncrementFrameOrder();
     Zero(encodeCtrl);
     EXPECT_EQ(S_OK, ltr.GenerateFrameEncodeCtrlExtParam(encodeCtrl));
@@ -382,7 +382,7 @@ TEST(LTR, BufferControl_TrusUntiltWithoutUse_SpecValid)
     EXPECT_CALL(*my_pattern, CurrentFrameType())
         .WillOnce(Return(idr_return_type))
         .WillRepeatedly(Return(p_return_type));
-  
+
     MFLongTermReference ltr(NULL, my_pattern);
     EXPECT_EQ(S_OK, ltr.SetBufferControl(MAKE_ULONG(MF_LTR_BC_MODE_TRUST_UNTIL, 3)));
     ltr.SetNumRefFrame(5);
@@ -410,7 +410,7 @@ TEST(LTR, BufferControl_TrusUntiltWithoutUse_SpecValid)
 
     EXPECT_EQ(S_OK, ltr.GenerateFrameEncodeCtrlExtParam(encodeCtrl));
     ref_list = reinterpret_cast<mfxExtAVCRefListCtrl*>(encodeCtrl.ExtParam[0]);
-    EXPECT_EQ(0, ref_list->NumRefIdxL0Active); // why EXPECT_EQ(not EXPECT_NE): we don't have any short-term's yet  
+    EXPECT_EQ(0, ref_list->NumRefIdxL0Active); // why EXPECT_EQ(not EXPECT_NE): we don't have any short-term's yet
     ltr.IncrementFrameOrder();
     Zero(encodeCtrl);
 
@@ -429,7 +429,7 @@ TEST(LTR, BufferControl_TrustUntilWithUse_SpecValid)
     EXPECT_CALL(*my_pattern, CurrentFrameType())
         .WillOnce(Return(idr_return_type))
         .WillRepeatedly(Return(p_return_type));
-  
+
     MFLongTermReference ltr(NULL, my_pattern);
     EXPECT_EQ(S_OK, ltr.SetBufferControl(MAKE_ULONG(MF_LTR_BC_MODE_TRUST_UNTIL, 3)));
     ltr.SetNumRefFrame(5);
@@ -515,10 +515,6 @@ TEST(LTR, ForceFrameType)
 
     mfxEncodeCtrl encodeCtrl = {0};
     mfxExtAVCRefListCtrl *ref_list;
-    
-    EXPECT_EQ(S_OK, ltr.GenerateFrameEncodeCtrlExtParam(encodeCtrl));
-    ltr.IncrementFrameOrder();
-    Zero(encodeCtrl);
 
     EXPECT_EQ(S_OK, ltr.GenerateFrameEncodeCtrlExtParam(encodeCtrl));
     ltr.IncrementFrameOrder();
@@ -528,7 +524,11 @@ TEST(LTR, ForceFrameType)
     ltr.IncrementFrameOrder();
     Zero(encodeCtrl);
 
-    ltr.ForceFrameType(MFX_FRAMETYPE_I | MFX_FRAMETYPE_IDR | MFX_FRAMETYPE_REF); 
+    EXPECT_EQ(S_OK, ltr.GenerateFrameEncodeCtrlExtParam(encodeCtrl));
+    ltr.IncrementFrameOrder();
+    Zero(encodeCtrl);
+
+    ltr.ForceFrameType(MFX_FRAMETYPE_I | MFX_FRAMETYPE_IDR | MFX_FRAMETYPE_REF);
 
     EXPECT_EQ(S_OK, ltr.GenerateFrameEncodeCtrlExtParam(encodeCtrl));
     ref_list = reinterpret_cast<mfxExtAVCRefListCtrl*>(encodeCtrl.ExtParam[0]);
@@ -550,10 +550,10 @@ TEST(LTR, UseFrameWithConstrationsInTrustMode)
 
     EXPECT_EQ(S_OK, ltr.SetBufferControl(MAKE_ULONG(1, 3)));
     ltr.SetNumRefFrame(5);
-    
+
     mfxEncodeCtrl encodeCtrl = {0};
     mfxExtAVCRefListCtrl *ref_list;
-    
+
     EXPECT_EQ(S_OK, ltr.GenerateFrameEncodeCtrlExtParam(encodeCtrl));
     ltr.IncrementFrameOrder();
     Zero(encodeCtrl);
@@ -628,10 +628,10 @@ TEST(LTR, UseFrameWithConstrationsInDontTrustMode)
 
     EXPECT_EQ(S_OK, ltr.SetBufferControl(MAKE_ULONG(1, 4)));
     ltr.SetNumRefFrame(6);
-    
+
     mfxEncodeCtrl encodeCtrl = {0};
     mfxExtAVCRefListCtrl *ref_list;
-    
+
     EXPECT_EQ(S_OK, ltr.GenerateFrameEncodeCtrlExtParam(encodeCtrl));
     ltr.IncrementFrameOrder();
     Zero(encodeCtrl);
@@ -708,10 +708,10 @@ TEST(LTR, MarkFrame_BehaviorValid)
 
     EXPECT_EQ(S_OK, ltr.SetBufferControl(MAKE_ULONG(1, 2)));
     ltr.SetNumRefFrame(3);
-    
+
     mfxEncodeCtrl encodeCtrl = {0};
     mfxExtAVCRefListCtrl *ref_list;
-    
+
     EXPECT_EQ(E_INVALIDARG, ltr.MarkFrame(2));
 
     //need to populate ltrs prior calling to use certain pattern

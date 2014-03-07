@@ -28,12 +28,12 @@ struct TransformTestVEnc  : public ::testing::Test {
     std::vector<mfxU8> pps;
 public:
 
-    TransformTestVEnc() 
+    TransformTestVEnc()
         : impl(MFX_IMPL_HARDWARE_ANY), bWasSPSBuffer()
-        , sample(*new MockSample()) 
+        , sample(*new MockSample())
         , pool(*new MockSamplePool())
         , encode(*new MockMFXVideoENCODE())
-        , sampleToReturn(*new MockSample()) 
+        , sampleToReturn(*new MockSample())
         , sampleToLock(*new MockSample())
     {
         EXPECT_CALL(factory, CreateVideoEncoder(_)).WillRepeatedly(Return(&encode));
@@ -45,9 +45,9 @@ public:
         vParam.AsyncDepth = 2;
         vParam.mfx.BufferSizeInKB = 1000;
         transform_ve->Configure(vParam, NULL);
-        
+
         EXPECT_CALL(sample, GetSurface()).WillRepeatedly(ReturnRef(surface));
-    }  
+    }
 
     ~TransformTestVEnc() {
 
@@ -264,7 +264,7 @@ TEST_F(TransformTestVEnc, MakeSPSPPS_GetVideoParamReturns_More_Buffer) {
     EXPECT_CALL(encode, GetVideoParam(_)).InSequence(ss1).WillOnce(DoAll(SetArgumentPointee<0>(vParam), Return(MFX_ERR_NONE)));
     EXPECT_CALL(encode, GetVideoParam(_)).InSequence(ss1).WillOnce(Invoke(this, &TransformTestVEnc::SaveWetherSPSPPSBuffer));
     EXPECT_CALL(encode, GetVideoParam(_)).InSequence(ss1).WillOnce(Invoke(this, &TransformTestVEnc::SaveWetherSPSPPSBuffer));
-    
+
     EXPECT_CALL(*this, WhatGetParamShouldReturn()).InSequence(ss2).WillOnce(Return(MFX_ERR_NOT_ENOUGH_BUFFER));
     EXPECT_CALL(*this, WhatGetParamShouldReturn()).InSequence(ss2).WillOnce(Return(MFX_ERR_NONE));
     mfxU16 sps1,pps1;
@@ -274,7 +274,7 @@ TEST_F(TransformTestVEnc, MakeSPSPPS_GetVideoParamReturns_More_Buffer) {
 
     LetQueryReturns(MFX_ERR_NONE, 1);
     LetQueryIOSurfReturns(MFX_ERR_NONE, 1);
-    
+
     EXPECT_CALL(pool, RegisterSample(_)).WillRepeatedly(Return());
     EXPECT_CALL(pool, FindFreeSample()).WillRepeatedly(ReturnRef(sample));
     EXPECT_CALL(pool, LockSample(_)).WillRepeatedly(Return((&sampleToReturn)));
@@ -285,7 +285,7 @@ TEST_F(TransformTestVEnc, MakeSPSPPS_GetVideoParamReturns_More_Buffer) {
 
     EXPECT_CALL(sample, HasMetaData(META_EOS)).WillRepeatedly(Return(false));
     EXPECT_CALL(sample, GetTrackID()).WillRepeatedly(Return(0));
-    
+
 
     transform_ve->PutSample(instant_auto_ptr2<ISample>(&sample));
     SamplePtr sample_out;
@@ -321,7 +321,7 @@ TEST_F(TransformTestVEnc, GetSample_SyncOperationSuccess) {
 
 
 TEST_F(TransformTestVEnc, GetSample_SyncOperationError) {
-    
+
     PutSampleNoThrow(1);
 
     EXPECT_CALL(vSession, SyncOperation(_, _)).WillOnce(Return(MFX_ERR_UNDEFINED_BEHAVIOR));

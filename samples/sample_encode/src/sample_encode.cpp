@@ -17,7 +17,7 @@ void PrintHelp(msdk_char *strAppName, msdk_char *strErrorMessage)
     if (strErrorMessage)
     {
         msdk_printf(MSDK_STRING("Error: %s\n"), strErrorMessage);
-    } 
+    }
 
     msdk_printf(MSDK_STRING("Usage: %s <msdk-codecid> [<options>] -i InputYUVFile -o OutputEncodedFile -w width -h height\n"), strAppName);
     msdk_printf(MSDK_STRING("\n"));
@@ -25,16 +25,16 @@ void PrintHelp(msdk_char *strAppName, msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("   <codecid>=h264|mpeg2|vc1|mvc|jpeg - built-in Media SDK codecs\n"));
     msdk_printf(MSDK_STRING("   <codecid>=h265                    - in-box Media SDK plugins (may require separate downloading and installation)\n"));
     msdk_printf(MSDK_STRING("Options: \n"));
-    msdk_printf(MSDK_STRING("   [-nv12] - input is in NV12 color format, if not specified YUV420 is expected\n"));  
-    msdk_printf(MSDK_STRING("   [-tff|bff] - input stream is interlaced, top|bottom fielf first, if not specified progressive is expected\n"));      
+    msdk_printf(MSDK_STRING("   [-nv12] - input is in NV12 color format, if not specified YUV420 is expected\n"));
+    msdk_printf(MSDK_STRING("   [-tff|bff] - input stream is interlaced, top|bottom fielf first, if not specified progressive is expected\n"));
     msdk_printf(MSDK_STRING("   [-f frameRate] - video frame rate (frames per second)\n"));
     msdk_printf(MSDK_STRING("   [-b bitRate] - encoded bit rate (Kbits per second), valid for H.264, H.265, MPEG2 and MVC encoders \n"));
-    msdk_printf(MSDK_STRING("   [-u speed|quality|balanced] - target usage, valid for H.264, H.265, MPEG2 and MVC encoders\n")); 
+    msdk_printf(MSDK_STRING("   [-u speed|quality|balanced] - target usage, valid for H.264, H.265, MPEG2 and MVC encoders\n"));
     msdk_printf(MSDK_STRING("   [-q quality] - quality parameter for JPEG encoder. In range [1,100]. 100 is the best quality. \n"));
     msdk_printf(MSDK_STRING("   [-la] - use the look ahead bitrate control algorithm (LA BRC) for H.264, H.265 encoder. Supported only with -hw option on 4th Generation Intel Core processors. \n"));
     msdk_printf(MSDK_STRING("   [-lad depth] - depth parameter for the LA BRC, the number of frames to be analyzed before encoding. In range [10,100].\n"));
-    msdk_printf(MSDK_STRING("   [-dstw width] - destination picture width, invokes VPP resizing\n")); 
-    msdk_printf(MSDK_STRING("   [-dsth height] - destination picture height, invokes VPP resizing\n")); 
+    msdk_printf(MSDK_STRING("   [-dstw width] - destination picture width, invokes VPP resizing\n"));
+    msdk_printf(MSDK_STRING("   [-dsth height] - destination picture height, invokes VPP resizing\n"));
     msdk_printf(MSDK_STRING("   [-hw] - use platform specific SDK implementation, if not specified software implementation is used\n"));
 #if D3D_SURFACES_SUPPORT
     msdk_printf(MSDK_STRING("   [-d3d] - work with d3d surfaces\n"));
@@ -55,7 +55,7 @@ void PrintHelp(msdk_char *strAppName, msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("User module options: \n"));
     msdk_printf(MSDK_STRING("   [-angle 180] - enables 180 degrees picture rotation before encoding, CPU implementation by default. Rotation requires NV12 input. Options -tff|bff, -dstw, -dsth, -d3d are not effective together with this one, -nv12 is required.\n"));
     msdk_printf(MSDK_STRING("   [-opencl] - rotation implementation through OPENCL\n"));
-    msdk_printf(MSDK_STRING("Example: %s h264|h265|mpeg2|mvc|jpeg -i InputYUVFile -o OutputEncodedFile -w width -h height -angle 180 -opencl \n"), strAppName);    
+    msdk_printf(MSDK_STRING("Example: %s h264|h265|mpeg2|mvc|jpeg -i InputYUVFile -o OutputEncodedFile -w width -h height -angle 180 -opencl \n"), strAppName);
 
     msdk_printf(MSDK_STRING("\n"));
 }
@@ -91,10 +91,10 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         return MFX_ERR_UNSUPPORTED;
     }
 
-    MSDK_CHECK_POINTER(pParams, MFX_ERR_NULL_PTR);  
+    MSDK_CHECK_POINTER(pParams, MFX_ERR_NULL_PTR);
 
     msdk_strcopy(pParams->strPluginDLLPath, MSDK_STRING(PLUGIN_NAME));
-    
+
     // parse command line parameters
     for (mfxU8 i = 1; i < nArgNum; i++)
     {
@@ -182,13 +182,13 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
             pParams->MVC_flags |= MVC_VIEWOUTPUT;
         }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-la")))
-        {            
-            pParams->bLABRC = true;                        
+        {
+            pParams->bLABRC = true;
         }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-lad")))
         {
             i++;
-            pParams->nLADepth = (mfxU8)msdk_strtol(strInput[i], &stopCharacter, 10);            
+            pParams->nLADepth = (mfxU8)msdk_strtol(strInput[i], &stopCharacter, 10);
         }
 #if D3D_SURFACES_SUPPORT
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-d3d")))
@@ -227,7 +227,7 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
                 pParams->dFrameRate = (mfxF64)msdk_strtod(strArgument, &stopCharacter);
                 break;
             case MSDK_CHAR('b'):
-                GET_OPTION_POINTER(strArgument);                
+                GET_OPTION_POINTER(strArgument);
                 pParams->nBitRate = (mfxU16)msdk_strtol(strArgument, &stopCharacter, 10);
                 break;
             case MSDK_CHAR('i'):
@@ -243,7 +243,7 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
                 pParams->dstFileBuff.push_back(strArgument);
                 break;
             case MSDK_CHAR('q'):
-                GET_OPTION_POINTER(strArgument);                
+                GET_OPTION_POINTER(strArgument);
                 pParams->nQuality = (mfxU16)msdk_strtol(strArgument, &stopCharacter, 10);
                 break;
             case MSDK_CHAR('?'):
@@ -284,8 +284,8 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
     if (pParams->nRotationAngle != 0 && pParams->nRotationAngle != 180)
     {
         PrintHelp(strInput[0], MSDK_STRING("Angles other than 180 degrees are not supported."));
-        return MFX_ERR_UNSUPPORTED; // other than 180 are not supported 
-    }  
+        return MFX_ERR_UNSUPPORTED; // other than 180 are not supported
+    }
 
     if (pParams->nQuality && (MFX_CODEC_JPEG != pParams->CodecId))
     {
@@ -317,16 +317,16 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
     {
         pParams->numViews = nviews;
     }
-    
+
     if (MFX_TARGETUSAGE_BEST_QUALITY != pParams->nTargetUsage && MFX_TARGETUSAGE_BEST_SPEED != pParams->nTargetUsage)
     {
         pParams->nTargetUsage = MFX_TARGETUSAGE_BALANCED;
     }
-    
+
     if (pParams->dFrameRate <= 0)
     {
         pParams->dFrameRate = 30;
-    }    
+    }
 
     // if no destination picture width or height wasn't specified set it to the source picture size
     if (pParams->nDstWidth == 0)
@@ -341,10 +341,10 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
 
     // calculate default bitrate based on the resolution (a parameter for encoder, so Dst resolution is used)
     if (pParams->nBitRate == 0)
-    {        
+    {
         pParams->nBitRate = CalculateDefaultBitrate(pParams->CodecId, pParams->nTargetUsage, pParams->nDstWidth,
-            pParams->nDstHeight, pParams->dFrameRate);         
-    }    
+            pParams->nDstHeight, pParams->dFrameRate);
+    }
 
     // if nv12 option wasn't specified we expect input YUV file in YUV420 color format
     if (!pParams->ColorFormat)
@@ -355,7 +355,7 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
     if (!pParams->nPicStruct)
     {
         pParams->nPicStruct = MFX_PICSTRUCT_PROGRESSIVE;
-    }  
+    }
 
     if ((pParams->bLABRC || pParams->nLADepth) && (!pParams->bUseHWLib))
     {
@@ -367,7 +367,7 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
     {
         PrintHelp(strInput[0], MSDK_STRING("Look ahead BRC is supported only with H.264 encoder!"));
         return MFX_ERR_UNSUPPORTED;
-    }        
+    }
 
     if (pParams->nLADepth && (pParams->nLADepth < 10 || pParams->nLADepth > 100))
     {
@@ -381,13 +381,13 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         pParams->nDstWidth != pParams->nWidth ||
         pParams->nDstHeight != pParams->nHeight ||
         MVC_ENABLED & pParams->MVC_flags ||
-        pParams->memType & D3D11_MEMORY || 
+        pParams->memType & D3D11_MEMORY ||
         pParams->bLABRC ||
-        pParams->nLADepth)) 
-    {        
+        pParams->nLADepth))
+    {
         PrintHelp(strInput[0], MSDK_STRING("Some of the command line options are not supported with rotation plugin!"));
         return MFX_ERR_UNSUPPORTED;
-    }    
+    }
 
     return MFX_ERR_NONE;
 }
@@ -397,7 +397,7 @@ int _tmain(int argc, msdk_char *argv[])
 #else
 int main(int argc, char *argv[])
 #endif
-{  
+{
     sInputParams Params = {};   // input parameters from command line
     std::auto_ptr<CEncodingPipeline>  pPipeline;
 
@@ -406,7 +406,7 @@ int main(int argc, char *argv[])
     sts = ParseInputString(argv, (mfxU8)argc, &Params);
     MSDK_CHECK_PARSE_RESULT(sts, MFX_ERR_NONE, 1);
 
-    pPipeline.reset((Params.nRotationAngle) ? new CUserPipeline : new CEncodingPipeline); 
+    pPipeline.reset((Params.nRotationAngle) ? new CUserPipeline : new CEncodingPipeline);
 
     MSDK_CHECK_POINTER(pPipeline.get(), MFX_ERR_MEMORY_ALLOC);
 
@@ -417,7 +417,7 @@ int main(int argc, char *argv[])
     }
 
     sts = pPipeline->Init(&Params);
-    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, 1);   
+    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, 1);
 
     pPipeline->PrintInfo();
 
@@ -428,24 +428,24 @@ int main(int argc, char *argv[])
         sts = pPipeline->Run();
 
         if (MFX_ERR_DEVICE_LOST == sts || MFX_ERR_DEVICE_FAILED == sts)
-        {            
+        {
             msdk_printf(MSDK_STRING("\nERROR: Hardware device was lost or returned an unexpected error. Recovering...\n"));
             sts = pPipeline->ResetDevice();
-            MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, 1);         
+            MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, 1);
 
             sts = pPipeline->ResetMFXComponents(&Params);
             MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, 1);
             continue;
-        }        
+        }
         else
-        {            
+        {
             MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, 1);
             break;
         }
-    }    
+    }
 
-    pPipeline->Close();  
-    msdk_printf(MSDK_STRING("\nProcessing finished\n"));    
-    
+    pPipeline->Close();
+    msdk_printf(MSDK_STRING("\nProcessing finished\n"));
+
     return 0;
 }

@@ -9,7 +9,7 @@
 //
 */
 
-#pragma once 
+#pragma once
 
 #include <vector>
 #include <list>
@@ -38,7 +38,7 @@ struct AVCFrameSplitterInfo
     mfxU32     SliceNum;
     mfxU32     FirstFieldSliceNum;
 
-    mfxU8  *   Data;    // including data of slices 
+    mfxU8  *   Data;    // including data of slices
     mfxU32     DataLength;
     mfxU64     TimeStamp;
 };

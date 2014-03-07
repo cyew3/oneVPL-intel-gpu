@@ -142,7 +142,7 @@ mfxEncodeCtrl* TemporalScalablity::GenerateFrameEncodeCtrl()
         m_nFrameNum++;
         hr = TryRequireDCC();
         ATLASSERT(SUCCEEDED(hr));
-        
+
         //Check if next frame is base layer
         LONG nNextFrameLayerNum = GetTemporalLayerNumber();
         if (0 == nNextFrameLayerNum)
@@ -157,7 +157,7 @@ mfxEncodeCtrl* TemporalScalablity::GenerateFrameEncodeCtrl()
             }
         }
     }
-        
+
     TraceEncodeCtrlStatic(pResult);
     return pResult;
 }
@@ -203,7 +203,7 @@ HRESULT TemporalScalablity::GetSelectedLayerNumber(ULONG &nLayerNumber) const
 
 /*------------------------------------------------------------------------------*/
 
-HRESULT TemporalScalablity::SetLayerEncodeQP(ULONGLONG nQP) 
+HRESULT TemporalScalablity::SetLayerEncodeQP(ULONGLONG nQP)
 {
     return SetEncodeQP( m_nSelectedLayer, (mfxU16)nQP );
 }

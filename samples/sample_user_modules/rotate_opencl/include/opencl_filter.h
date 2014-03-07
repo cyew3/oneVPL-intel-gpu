@@ -46,7 +46,7 @@ private:
     cl_int PrepareSharedSurfaces(int width, int height, IDirect3DSurface9* pD3DSurf);
     cl_int ProcessSurface();
     cl_int CopySurface(IDirect3DSurface9* pSrc, IDirect3DSurface9* pDst);
-    void   ReleaseResources();    
+    void   ReleaseResources();
 
     static size_t chooseLocalSize(size_t globalSize, size_t preferred);
 

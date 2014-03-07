@@ -11,7 +11,7 @@
 //////////////////////////////////////////////////////////////////////////
 //
 // EVRPresenter.h : Internal header for building the DLL.
-// 
+//
 // THIS CODE AND INFORMATION IS PROVIDED "AS IS" WITHOUT WARRANTY OF
 // ANY KIND, EITHER EXPRESSED OR IMPLIED, INCLUDING BUT NOT LIMITED TO
 // THE IMPLIED WARRANTIES OF MERCHANTABILITY AND/OR FITNESS FOR A
@@ -54,7 +54,7 @@ typedef ComPtrList<IMFSample> VideoSampleList;
 // Version number for the video samples. When the presenter increments the version
 // number, all samples with the previous version number are stale and should be
 // discarded.
-static const GUID MFSamplePresenter_SampleCounter = 
+static const GUID MFSamplePresenter_SampleCounter =
 { 0xb0bb83cc, 0xf10f, 0x4e2e, { 0xaa, 0x2b, 0x29, 0xea, 0x5e, 0x92, 0xef, 0x85 } };
 
 // Project headers.

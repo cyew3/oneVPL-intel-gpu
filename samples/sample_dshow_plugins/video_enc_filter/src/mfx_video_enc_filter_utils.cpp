@@ -26,8 +26,8 @@ mfxStatus InitMfxFrameSurface( mfxFrameSurface1* pSurface, mfxFrameInfo* pInfo, 
     pSurface->Info.PicStruct        = pInfo->PicStruct;                             // picture structure
     pSurface->Info.ChromaFormat     = MFX_CHROMAFORMAT_YUV420;                      // picture chroma format
     pSurface->Info.CropH            = pInfo->CropH;                                 // height crop
-    pSurface->Info.CropW            = pInfo->CropW;                                 // width crop    
-      
+    pSurface->Info.CropW            = pInfo->CropW;                                 // width crop
+
     mfxU32 nSurfaceSize = pSample->GetActualDataLength();
     mfxU8 bitsPerSample = 0;
 
@@ -51,42 +51,42 @@ mfxStatus InitMfxFrameSurface( mfxFrameSurface1* pSurface, mfxFrameInfo* pInfo, 
     // check that upstream filter has allocated the buffer of requested on connection size ()
     if (pSample->GetSize() < pInfo->Width * pInfo->Height * bitsPerSample / 8)
         return MFX_ERR_NOT_ENOUGH_BUFFER;
-    
+
     return MFX_ERR_NONE;
 }
 
 mfxStatus CopyMFXToEncoderParams(IConfigureVideoEncoder::Params* pParams, mfxVideoParam* pmfxParams)
-{     
+{
     //check input params
     MSDK_CHECK_POINTER(pParams, MFX_ERR_NULL_PTR);
     MSDK_CHECK_POINTER(pmfxParams, MFX_ERR_NULL_PTR);
-    
+
     mfxInfoMFX* pMFXInfo  = &pmfxParams->mfx;
 
     pParams->level_idc                      = (IConfigureVideoEncoder::Params::Level)
                                               pMFXInfo->CodecLevel;
     pParams->profile_idc                    = (IConfigureVideoEncoder::Params::Profile)
-                                              pMFXInfo->CodecProfile;    
+                                              pMFXInfo->CodecProfile;
     pParams->pc_control                     = (IConfigureVideoEncoder::Params::PCControl)
-                                              pMFXInfo->FrameInfo.PicStruct;   
+                                              pMFXInfo->FrameInfo.PicStruct;
     pParams->rc_control.bitrate             = pMFXInfo->TargetKbps;
-    
+
     pParams->rc_control.rc_method           = (IConfigureVideoEncoder::Params::RCControl::RCMethod)
-                                              pMFXInfo->RateControlMethod;    
-    pParams->ps_control.NumSlice            = pMFXInfo->NumSlice;    
+                                              pMFXInfo->RateControlMethod;
+    pParams->ps_control.NumSlice            = pMFXInfo->NumSlice;
     pParams->ps_control.GopRefDist          = pMFXInfo->GopRefDist;
     pParams->ps_control.GopPicSize          = pMFXInfo->GopPicSize;
-    pParams->ps_control.BufferSizeInKB      = pMFXInfo->BufferSizeInKB;    
-    pParams->target_usage                   = pMFXInfo->TargetUsage;   
+    pParams->ps_control.BufferSizeInKB      = pMFXInfo->BufferSizeInKB;
+    pParams->target_usage                   = pMFXInfo->TargetUsage;
 
     pParams->frame_control.width            = pMFXInfo->FrameInfo.CropW;
-    pParams->frame_control.height           = pMFXInfo->FrameInfo.CropH;        
+    pParams->frame_control.height           = pMFXInfo->FrameInfo.CropH;
 
     return MFX_ERR_NONE;
 }
 
 mfxStatus CopyEncoderToMFXParams(IConfigureVideoEncoder::Params* pParams, mfxVideoParam* pmfxParams)
-{   
+{
     //check input params
     MSDK_CHECK_POINTER(pParams, MFX_ERR_NULL_PTR);
     MSDK_CHECK_POINTER(pmfxParams, MFX_ERR_NULL_PTR);
@@ -101,7 +101,7 @@ mfxStatus CopyEncoderToMFXParams(IConfigureVideoEncoder::Params* pParams, mfxVid
     pMFXInfo->CodecProfile              = (mfxU16)pParams->profile_idc;
 
     pMFXInfo->FrameInfo.PicStruct       = MFX_PICSTRUCT_PROGRESSIVE;
-    pMFXInfo->RateControlMethod         = (mfxU16)pParams->rc_control.rc_method;        
+    pMFXInfo->RateControlMethod         = (mfxU16)pParams->rc_control.rc_method;
 
     pMFXInfo->GopRefDist                = (mfxU8)pParams->ps_control.GopRefDist;
     pMFXInfo->GopPicSize                = (mfxU16)pParams->ps_control.GopPicSize;
@@ -114,7 +114,7 @@ mfxStatus CopyEncoderToMFXParams(IConfigureVideoEncoder::Params* pParams, mfxVid
 
     pMFXInfo->FrameInfo.CropW           = (mfxU16)(0 == pParams->frame_control.width ? pMFXInfo->FrameInfo.CropW : pParams->frame_control.width);
     pMFXInfo->FrameInfo.CropH           = (mfxU16)(0 == pParams->frame_control.height ? pMFXInfo->FrameInfo.CropH : pParams->frame_control.height);
-    
+
     CodecPreset::VParamsFromPreset(*pmfxParams, pParams->preset);
 
     return MFX_ERR_NONE;

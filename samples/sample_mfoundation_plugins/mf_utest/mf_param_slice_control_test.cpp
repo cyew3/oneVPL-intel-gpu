@@ -81,7 +81,7 @@ TEST(Param_SliceControl, GetNumSlice_720p_5kMBsPerSlice)
     EXPECT_EQ(S_OK, sc.SetMode(MF_PARAM_SLICECONTROL_MODE_MBS_PER_SLICE));
     EXPECT_EQ(S_OK, sc.SetSize(5000));
     EXPECT_EQ(S_OK, sc.SetFrameInfo(mfxFrameInfoHelper(1280,720)));
-    EXPECT_EQ(1, sc.GetNumSlice()); 
+    EXPECT_EQ(1, sc.GetNumSlice());
 }
 
 TEST(Param_SliceControl, GetNumSlice_720p_3600MBsPerSlice)
@@ -90,7 +90,7 @@ TEST(Param_SliceControl, GetNumSlice_720p_3600MBsPerSlice)
     EXPECT_EQ(S_OK, sc.SetMode(MF_PARAM_SLICECONTROL_MODE_MBS_PER_SLICE));
     EXPECT_EQ(S_OK, sc.SetSize(1280*720/16/16));
     EXPECT_EQ(S_OK, sc.SetFrameInfo(mfxFrameInfoHelper(1280,720)));
-    EXPECT_EQ(1, sc.GetNumSlice()); 
+    EXPECT_EQ(1, sc.GetNumSlice());
 }
 
 TEST(Param_SliceControl, GetNumSlice_720p_1800MBsPerSlice)
@@ -99,7 +99,7 @@ TEST(Param_SliceControl, GetNumSlice_720p_1800MBsPerSlice)
     EXPECT_EQ(S_OK, sc.SetMode(MF_PARAM_SLICECONTROL_MODE_MBS_PER_SLICE));
     EXPECT_EQ(S_OK, sc.SetSize(1280*720/16/16/2));
     EXPECT_EQ(S_OK, sc.SetFrameInfo(mfxFrameInfoHelper(1280,720)));
-    EXPECT_EQ(2, sc.GetNumSlice()); 
+    EXPECT_EQ(2, sc.GetNumSlice());
 }
 
 TEST(Param_SliceControl, GetNumSlice_720p_1kMBsPerSlice)
@@ -108,7 +108,7 @@ TEST(Param_SliceControl, GetNumSlice_720p_1kMBsPerSlice)
     EXPECT_EQ(S_OK, sc.SetMode(MF_PARAM_SLICECONTROL_MODE_MBS_PER_SLICE));
     EXPECT_EQ(S_OK, sc.SetSize(1000));
     EXPECT_EQ(S_OK, sc.SetFrameInfo(mfxFrameInfoHelper(1280,720)));
-    EXPECT_EQ(4, sc.GetNumSlice()); 
+    EXPECT_EQ(4, sc.GetNumSlice());
 }
 
 TEST(Param_SliceControl, GetNumSlice_720p_50MBrowsPerSlice)
@@ -117,7 +117,7 @@ TEST(Param_SliceControl, GetNumSlice_720p_50MBrowsPerSlice)
     EXPECT_EQ(S_OK, sc.SetMode(MF_PARAM_SLICECONTROL_MODE_MBROW_PER_SLICE));
     EXPECT_EQ(S_OK, sc.SetSize(50));
     EXPECT_EQ(S_OK, sc.SetFrameInfo(mfxFrameInfoHelper(1280,720)));
-    EXPECT_EQ(1, sc.GetNumSlice()); 
+    EXPECT_EQ(1, sc.GetNumSlice());
 }
 
 TEST(Param_SliceControl, GetNumSlice_720p_45MBrowsPerSlice)
@@ -126,7 +126,7 @@ TEST(Param_SliceControl, GetNumSlice_720p_45MBrowsPerSlice)
     EXPECT_EQ(S_OK, sc.SetMode(MF_PARAM_SLICECONTROL_MODE_MBROW_PER_SLICE));
     EXPECT_EQ(S_OK, sc.SetSize(45));
     EXPECT_EQ(S_OK, sc.SetFrameInfo(mfxFrameInfoHelper(1280,720)));
-    EXPECT_EQ(1, sc.GetNumSlice()); 
+    EXPECT_EQ(1, sc.GetNumSlice());
 }
 
 TEST(Param_SliceControl, GetNumSlice_720p_15MBrowsPerSlice)
@@ -135,7 +135,7 @@ TEST(Param_SliceControl, GetNumSlice_720p_15MBrowsPerSlice)
     EXPECT_EQ(S_OK, sc.SetMode(MF_PARAM_SLICECONTROL_MODE_MBROW_PER_SLICE));
     EXPECT_EQ(S_OK, sc.SetSize(15));
     EXPECT_EQ(S_OK, sc.SetFrameInfo(mfxFrameInfoHelper(1280,720)));
-    EXPECT_EQ(3, sc.GetNumSlice()); 
+    EXPECT_EQ(3, sc.GetNumSlice());
 }
 
 TEST(Param_SliceControl, GetNumSlice_720p_10MBrowsPerSlice)
@@ -144,7 +144,7 @@ TEST(Param_SliceControl, GetNumSlice_720p_10MBrowsPerSlice)
     EXPECT_EQ(S_OK, sc.SetMode(MF_PARAM_SLICECONTROL_MODE_MBROW_PER_SLICE));
     EXPECT_EQ(S_OK, sc.SetSize(10));
     EXPECT_EQ(S_OK, sc.SetFrameInfo(mfxFrameInfoHelper(1280,720)));
-    EXPECT_EQ(5, sc.GetNumSlice()); 
+    EXPECT_EQ(5, sc.GetNumSlice());
 }
 
 TEST(Param_SliceControl, GetModeParameterRange_ULONG)

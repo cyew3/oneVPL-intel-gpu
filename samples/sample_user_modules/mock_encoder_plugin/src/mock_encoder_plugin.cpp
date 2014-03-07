@@ -15,9 +15,9 @@
 #include <iostream>
 
 
-// disable "unreferenced formal parameter" warning - 
+// disable "unreferenced formal parameter" warning -
 // not all formal parameters of interface functions will be used by sample plugin
-#pragma warning(disable : 4100) 
+#pragma warning(disable : 4100)
 
 namespace {
     const mfxU32 CODEC_H265 = MFX_MAKEFOURCC('H','E','V','C');
@@ -46,7 +46,7 @@ MockEncoderPlugin::MockEncoderPlugin(bool createdByDispatcher)
 }
 
 MockEncoderPlugin::~MockEncoderPlugin()
-{    
+{
     Close();
 }
 
@@ -54,7 +54,7 @@ MockEncoderPlugin::~MockEncoderPlugin()
 mfxStatus MockEncoderPlugin::PluginInit(mfxCoreInterface *core)
 {
     MSDK_TRACE_INFO("MockEncoderPlugin::PluginInit");
-    MSDK_CHECK_POINTER(core, MFX_ERR_NULL_PTR);       
+    MSDK_CHECK_POINTER(core, MFX_ERR_NULL_PTR);
     m_mfxCore = MFXCoreInterface(*core);
     return MFX_ERR_NONE;
 }
@@ -75,7 +75,7 @@ mfxStatus MockEncoderPlugin::PluginClose()
 mfxStatus MockEncoderPlugin::GetPluginParam(mfxPluginParam *par)
 {
     MSDK_TRACE_INFO("MockEncoderPlugin::GetPluginParam");
-    MSDK_CHECK_POINTER(par, MFX_ERR_NULL_PTR);    
+    MSDK_CHECK_POINTER(par, MFX_ERR_NULL_PTR);
 
     *par = m_PluginParam;
 
@@ -96,7 +96,7 @@ mfxStatus MockEncoderPlugin::EncodeFrameSubmit(mfxEncodeCtrl *ctrl, mfxFrameSurf
     }
 
     m_Tasks.push_back(MockEncoderPluginTask());
-    
+
     *task = (mfxThreadTask)&m_Tasks.back();
     MSDK_TRACE_INFO("MockEncoderPlugin::EncodeFrameSubmit task=" << *task);
 
@@ -104,7 +104,7 @@ mfxStatus MockEncoderPlugin::EncodeFrameSubmit(mfxEncodeCtrl *ctrl, mfxFrameSurf
 }
 
 mfxStatus MockEncoderPlugin::Execute(mfxThreadTask task, mfxU32 uid_p, mfxU32 uid_a)
-{    
+{
     MockEncoderPluginTask &current_task = *(MockEncoderPluginTask *)task;
 
     return current_task();
@@ -128,7 +128,7 @@ mfxStatus MockEncoderPlugin::FreeResources(mfxThreadTask task, mfxStatus sts)
             return MFX_ERR_NONE;
         }
     }
-    
+
     MSDK_TRACE_ERROR("[MockEncoderPlugin::FreeResources] Task ptr=0x"<<std::hex<<pEncTask<<", not found");
     return MFX_ERR_UNKNOWN;
 }
@@ -150,7 +150,7 @@ mfxStatus MockEncoderPlugin::QueryIOSurf(mfxVideoParam *par, mfxFrameAllocReques
     request->Info = par->mfx.FrameInfo;
 
 
-    //request->Type = 
+    //request->Type =
     mfxCoreParam core_par;
     mfxStatus sts = m_mfxCore.GetCoreParam(&core_par);
     if (MFX_ERR_NONE != sts)
@@ -158,7 +158,7 @@ mfxStatus MockEncoderPlugin::QueryIOSurf(mfxVideoParam *par, mfxFrameAllocReques
         MSDK_TRACE_ERROR(MSDK_STRING("MockEncoderPlugin::QueryIOSurf(), m_pmfxCore->GetCoreParam() returned sts=") << sts);
         return sts;
     }
-    
+
     mfxI32 isInternalManaging = (core_par.Impl & MFX_IMPL_SOFTWARE) ?
         (par->IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY) : (par->IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY);
 
@@ -191,7 +191,7 @@ mfxStatus MockEncoderPlugin::Init(mfxVideoParam *mfxParam)
 {
     MSDK_TRACE_INFO("MockEncoderPlugin::Init");
 
-    MSDK_CHECK_POINTER(mfxParam, MFX_ERR_NULL_PTR); 
+    MSDK_CHECK_POINTER(mfxParam, MFX_ERR_NULL_PTR);
     if (!m_mfxCore.IsCoreSet()) {
         MSDK_TRACE_ERROR("MockEncoderPlugin::Init - IsCoreSet() = false");
         return MFX_ERR_NULL_PTR;
@@ -207,18 +207,18 @@ mfxStatus MockEncoderPlugin::Init(mfxVideoParam *mfxParam)
 
     if (m_bIsOpaq)
     {
-        pluginOpaqueAlloc = (mfxExtOpaqueSurfaceAlloc*)GetExtBuffer(m_VideoParam.ExtParam, 
+        pluginOpaqueAlloc = (mfxExtOpaqueSurfaceAlloc*)GetExtBuffer(m_VideoParam.ExtParam,
             m_VideoParam.NumExtParam, MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION);
         MSDK_CHECK_POINTER(pluginOpaqueAlloc, MFX_ERR_INVALID_VIDEO_PARAM);
     }
 
     // check existence of corresponding allocs
     if (m_bIsOpaq && !pluginOpaqueAlloc->Out.Surfaces)
-        return MFX_ERR_INVALID_VIDEO_PARAM;        
+        return MFX_ERR_INVALID_VIDEO_PARAM;
 
     if (m_bIsOpaq)
     {
-        sts = m_mfxCore.MapOpaqueSurface(pluginOpaqueAlloc->Out.NumSurface, 
+        sts = m_mfxCore.MapOpaqueSurface(pluginOpaqueAlloc->Out.NumSurface,
             pluginOpaqueAlloc->Out.Type, pluginOpaqueAlloc->Out.Surfaces);
         MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, MFX_ERR_MEMORY_ALLOC);
     }
@@ -226,7 +226,7 @@ mfxStatus MockEncoderPlugin::Init(mfxVideoParam *mfxParam)
     m_MaxNumTasks = m_VideoParam.AsyncDepth;
     if (m_MaxNumTasks < 1) m_MaxNumTasks = 1;
 
-    
+
     m_bInited = true;
 
     return MFX_ERR_NONE;
@@ -257,7 +257,7 @@ mfxStatus MockEncoderPlugin::Close()
 
     // check existence of corresponding allocs
     if ((m_bIsOpaq && !pluginOpaqueAlloc->Out.Surfaces))
-        return MFX_ERR_INVALID_VIDEO_PARAM;        
+        return MFX_ERR_INVALID_VIDEO_PARAM;
 
     if (!m_mfxCore.IsCoreSet()) {
         MSDK_TRACE_ERROR("MockEncoderPlugin::Close - IsCoreSet() = false");
@@ -266,7 +266,7 @@ mfxStatus MockEncoderPlugin::Close()
 
     if (m_bIsOpaq)
     {
-        sts = m_mfxCore.UnmapOpaqueSurface(pluginOpaqueAlloc->Out.NumSurface, 
+        sts = m_mfxCore.UnmapOpaqueSurface(pluginOpaqueAlloc->Out.NumSurface,
             pluginOpaqueAlloc->Out.Type, pluginOpaqueAlloc->Out.Surfaces);
         MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, MFX_ERR_MEMORY_ALLOC);
     }

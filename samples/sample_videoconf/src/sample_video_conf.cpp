@@ -26,7 +26,7 @@ void PrintHelp( const std::basic_string<msdk_char> & strAppName
     if (!strErrorMessage.empty())
     {
         msdk_printf(MSDK_STRING("Error: %s\n\n"), strErrorMessage.c_str());
-    }    
+    }
 
     msdk_printf(MSDK_STRING("Usage: %s [Options] -i InputYUVFile -o OutputEncodedFile -w width -h height\n"), strAppName.c_str());
     msdk_printf(MSDK_STRING("Options: \n"));
@@ -53,12 +53,12 @@ void PrintHelp( const std::basic_string<msdk_char> & strAppName
 }
 
 //convert from string to specific type, like double, int, etc
-template <class T> 
+template <class T>
 void lexical_cast(const std::basic_string<msdk_char>& from, T &value)
 {
     std::basic_stringstream<msdk_char> sstream;
 
-    sstream.str(from); 
+    sstream.str(from);
     if ((sstream >> value).fail() || !sstream.eof())
     {
         msdk_char msg[1024];
@@ -132,7 +132,7 @@ void ParseInputString(msdk_char** strInput, int nArgNum, VideoConfParams& params
             lexical_cast(strInput[++i], params.nTargetKbps);
         }
         else if (0 == msdk_strncmp(strInput[i], MSDK_STRING("-i"), 2) && -1 != idx)
-        {        
+        {
             CHECK_OPTION_ARGS(1);
             //we expect frame number attached with -i1, -i2
             if (idx != 0)
@@ -201,7 +201,7 @@ void ParseInputString(msdk_char** strInput, int nArgNum, VideoConfParams& params
                 throw stream.str();
             }
 
-            //to instruct encoder to DONOT predict from specific frame it is necessary to add this frame to rejected ref list            
+            //to instruct encoder to DONOT predict from specific frame it is necessary to add this frame to rejected ref list
             //putting frame into rejected list does make this frame permanently rejected
 
             //if feedback is delayed frames predicted from broken can be already encoded, need to also remove all of them from references
@@ -225,7 +225,7 @@ void ParseInputString(msdk_char** strInput, int nArgNum, VideoConfParams& params
 
             mfxU32 nLTFrameOrder = 0;
             lexical_cast(strInput[++i], nLTFrameOrder);
-            
+
             //firstly frame should be added to long term list once
             //NOTE: to remove this longterm, you need to put it once into rejected reflist
             params.pActionProc->RegisterAction(nLTFrameOrder, new PutFrameIntoRefListAction(REFLIST_LONGTERM, nLTFrameOrder, false));
@@ -290,7 +290,7 @@ void CheckInitParams(VideoConfParams& params)
                 error<< i->first << MSDK_STRING(" ");
             }
             error<< MSDK_STRING("source file name not set");
-            
+
             throw error.str();
         }
 
@@ -306,7 +306,7 @@ void CheckInitParams(VideoConfParams& params)
                 error<< i->first << MSDK_STRING(" ");
             }
             error<< MSDK_STRING("width must be specidied");
-            
+
             if (i->first != 0)
             {
                 error<< MSDK_STRING("(-w") << i->first << MSDK_STRING(")");
@@ -318,7 +318,7 @@ void CheckInitParams(VideoConfParams& params)
 
             throw error.str();
         }
-        
+
         if (0 == info.nHeight)
         {
             if (i->first!= 0)
@@ -342,13 +342,13 @@ void CheckInitParams(VideoConfParams& params)
         if (info.dFrameRate <= 0)
         {
             info.dFrameRate = 30;
-        }    
+        }
     }
     // calculate default bitrate based on the resolution (a parameter for encoder, so Dst resolution is used)
     if (params.nTargetKbps == 0)
-    {        
-        params.nTargetKbps = CalculateDefaultBitrate(MFX_CODEC_AVC, 0, params.sources[0].nWidth, params.sources[0].nHeight, params.sources[0].dFrameRate);         
-    }    
+    {
+        params.nTargetKbps = CalculateDefaultBitrate(MFX_CODEC_AVC, 0, params.sources[0].nWidth, params.sources[0].nHeight, params.sources[0].dFrameRate);
+    }
 }
 
 void ParseParFile(const msdk_char* file_path, VideoConfParams& pParams)
@@ -378,7 +378,7 @@ void ParseParFile(const msdk_char* file_path, VideoConfParams& pParams)
     }
     //removing line endings
     std::replace(str.begin(), str.end(), MSDK_CHAR('\n'), MSDK_CHAR(' '));
-    
+
     //put this 1 line file into stream;
     str_stream.str(str);
 
@@ -394,7 +394,7 @@ void ParseParFile(const msdk_char* file_path, VideoConfParams& pParams)
         command_line_strings.push_back(current_arg);
         command_line_args.push_back(&command_line_strings.back().at(0));
     }
-    
+
     if (!command_line_args.empty())
     {
         ParseInputString((msdk_char**)&command_line_args.front(), (int)command_line_args.size(), pParams);
@@ -406,7 +406,7 @@ int _tmain(int argc, TCHAR *argv[])
 #else
 int main(int argc, char *argv[])
 #endif
-{  
+{
     VideoConfParams init_params;   // input parameters from command line
     std::auto_ptr<IPipeline>  pPipeline;
     mfxStatus sts = MFX_ERR_NONE; // return value check
@@ -421,10 +421,10 @@ int main(int argc, char *argv[])
         ParseInputString(++argv, --argc, init_params);
         CheckInitParams(init_params);
 
-        pPipeline.reset(new VideoConfPipeline()); 
+        pPipeline.reset(new VideoConfPipeline());
 
         sts = pPipeline->Init(&init_params);
-        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, 1);   
+        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, 1);
 
         pPipeline->PrintInfo();
 
@@ -433,7 +433,7 @@ int main(int argc, char *argv[])
         sts = pPipeline->Run();
 
         if (MFX_ERR_DEVICE_LOST == sts || MFX_ERR_DEVICE_FAILED == sts)
-        {            
+        {
             msdk_printf(MSDK_STRING("\nERROR: Hardware device was lost or returned an unexpected error\n"));
         }
 
@@ -453,9 +453,9 @@ int main(int argc, char *argv[])
     catch (std::exception &ex)
     {
 #ifdef UNICODE
-        wprintf(L"\nstd::exception caught: %S\n", ex.what());    
+        wprintf(L"\nstd::exception caught: %S\n", ex.what());
 #else
-        printf("\nstd::exception caught: %s\n", ex.what());    
+        printf("\nstd::exception caught: %s\n", ex.what());
 #endif
     }
     catch (...)

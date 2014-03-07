@@ -1,7 +1,7 @@
 //////////////////////////////////////////////////////////////////////////
 //
 // trace.h : Functions to return the names of constants.
-// 
+//
 // THIS CODE AND INFORMATION IS PROVIDED "AS IS" WITHOUT WARRANTY OF
 // ANY KIND, EITHER EXPRESSED OR IMPLIED, INCLUDING BUT NOT LIMITED TO
 // THE IMPLIED WARRANTIES OF MERCHANTABILITY AND/OR FITNESS FOR A
@@ -113,7 +113,7 @@ namespace MediaFoundationSamples
         }
     }
 
-    // Names of VARIANT data types. 
+    // Names of VARIANT data types.
     inline const WCHAR* VariantTypeName(const PROPVARIANT& prop)
     {
         switch (prop.vt & VT_TYPEMASK)

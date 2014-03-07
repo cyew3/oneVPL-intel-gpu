@@ -47,7 +47,7 @@ HRESULT MFDeviceD3D11::DXVASupportInitWrapper (IMFDeviceDXVA* pDeviceDXVA)
     MFX_LTRACE_S(MF_TL_GENERAL, "Unsupported");
 
     pDeviceDXVA;
-    
+
     return E_FAIL;
 }
 
@@ -143,7 +143,7 @@ HRESULT MFDeviceD3D11::CreateDXGIManagerAndDevice()
         }
 
         pMultiThread->SetMultithreadProtected(TRUE);
-    
+
     }while(false);
 
     return hr;

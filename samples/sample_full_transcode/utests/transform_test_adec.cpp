@@ -54,7 +54,7 @@ public:
         EXPECT_CALL(mockSample, GetBitstream()).WillRepeatedly(ReturnRef(bitstream));
     }
     void LetDecoderInitReturn(mfxStatus e){
-        EXPECT_CALL(mockDecoder, Init(_)).WillOnce(Return(e));      
+        EXPECT_CALL(mockDecoder, Init(_)).WillOnce(Return(e));
     }
     void LetQueryIOsizeReturn(mfxStatus e){
         EXPECT_CALL(mockDecoder, QueryIOSize(_,_)).WillOnce(DoAll(SetArgPointee<1>(allocRequest), Return(e)));
@@ -69,7 +69,7 @@ public:
     void SetupMetaData(MockSample & smpl, bool sts) {
         EXPECT_CALL(smpl, HasMetaData(META_EOS)).WillOnce(Return(sts));
     }
-    void DecodeHeaderSaveParams(mfxBitstream *bs, mfxAudioParam *par) { 
+    void DecodeHeaderSaveParams(mfxBitstream *bs, mfxAudioParam *par) {
         if (bs) decHeaderBs = *bs;
         if (par) decHeaderParam = *par;
     }
@@ -96,7 +96,7 @@ TEST_F(TransformTestADEC, DecodeHeader_fail_throw_exception){
 TEST_F(TransformTestADEC, DecodeHeader_set_valid_codecid){
     mfxAudioParam aParam = {0};
     aParam.mfx.CodecId = MFX_CODEC_AAC;
-    
+
     LetDecodeHeaderReturn(MFX_ERR_NOT_INITIALIZED);
 
     pTransform->Configure(aParam, NULL);
@@ -160,7 +160,7 @@ TEST_F(TransformTestADEC, DecodeFrameAsyncError_result_in_excetion) {
     LetQueryReturn(MFX_ERR_NONE);
     LetInitReturn(MFX_ERR_NONE);
     EXPECT_CALL(mockPool, RegisterSample(_)).Times(1);
-    
+
     EXPECT_CALL(mockSample, GetTrackID()).WillOnce(Return(22));
     EXPECT_CALL(mockPool, FindFreeSample()).WillOnce(ReturnRef(mockSample));
     SetupMetaData(mockSample, false);
@@ -206,7 +206,7 @@ TEST_F(TransformTestADEC, EOS_CASE) {
     EXPECT_CALL(mockPool, RegisterSample(_)).Times(1);
     EXPECT_CALL(mockPool, FindFreeSample()).InSequence(s1).WillOnce(ReturnRef(mockSample));
     EXPECT_CALL(mockPool, LockSample(_)).WillOnce(Return(&mockSampleToReturn));
-    
+
     EXPECT_CALL(mockSample, GetTrackID()).WillOnce(Return(22));
     SetupMetaData(mockSample, false);
 
@@ -214,7 +214,7 @@ TEST_F(TransformTestADEC, EOS_CASE) {
     LetDecodeFrameAsyncReturn(MFX_ERR_NONE);
     ASSERT_TRUE(pTransform->GetSample(outSample));
     ASSERT_FALSE(pTransform->GetSample(outSample));
-    
+
     //setupEOS
     SetupMetaData(mockSampleEOS, true);
     EXPECT_NO_THROW(pTransform->PutSample(instant_auto_ptr((ISample*)&mockSampleEOS)));

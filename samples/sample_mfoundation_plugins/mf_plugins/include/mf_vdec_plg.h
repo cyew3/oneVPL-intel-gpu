@@ -144,7 +144,7 @@ protected: // functions
     bool ReturnPlgError(void);
 
     //Mfx Video session. implD3D is checked against flag MFX_IMPL_VIA_D3D11
-    mfxStatus  InitMfxVideoSession(mfxIMPL implD3D); 
+    mfxStatus  InitMfxVideoSession(mfxIMPL implD3D);
     mfxStatus  CloseInitMfxVideoSession(mfxIMPL implD3D);
     mfxStatus  SetHandle(mfxHandleType handleType, bool bAllowCloseInit);
 

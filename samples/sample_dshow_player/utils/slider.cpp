@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////
 // Slider.cpp: Custom slider control.
-// 
+//
 // THIS CODE AND INFORMATION IS PROVIDED "AS IS" WITHOUT WARRANTY OF
 // ANY KIND, EITHER EXPRESSED OR IMPLIED, INCLUDING BUT NOT LIMITED TO
 // THE IMPLIED WARRANTIES OF MERCHANTABILITY AND/OR FITNESS FOR A
@@ -29,7 +29,7 @@ namespace SliderControl
 
 
 	// GOALS of the slider class:
-    // 
+    //
     // - Application can get/set logical position.
 	// - When the usser clicks on the client area, the slider jumps to the clicked position.
     //   (This behavior is different from the slider control in the Windows common controls,
@@ -62,7 +62,7 @@ namespace SliderControl
 		SIZE    pxThumbSize;	// real size of thumb bitmap (constant until bitmap changes
 		Rect	rcThumb;		// client area of the thumb (changes with position)
 
-		// state	
+		// state
 		BOOL	bThumbDown;		// User is dragging the thumb?
 
 		// GDI objects
@@ -74,9 +74,9 @@ namespace SliderControl
 	LRESULT CALLBACK Slider_WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
 	// Message handlers
-	LRESULT OnCreate(HWND hwnd); 
-	LRESULT OnNcDestroy(HWND hwnd, Slider_Info *pInfo); 
-	LRESULT OnPaint(HWND hwnd, Slider_Info *pInfo); 
+	LRESULT OnCreate(HWND hwnd);
+	LRESULT OnNcDestroy(HWND hwnd, Slider_Info *pInfo);
+	LRESULT OnPaint(HWND hwnd, Slider_Info *pInfo);
 	LRESULT OnLButtonDown(HWND hwnd, LONG x, LONG y, Slider_Info *pInfo);
 	LRESULT OnLButtonUp(HWND hwnd, LONG x, LONG y, Slider_Info *pInfo);
 	LRESULT OnMouseMove(HWND hwnd, LONG x, LONG y, Slider_Info *pInfo);
@@ -84,7 +84,7 @@ namespace SliderControl
 	// Private message handlers
 	LRESULT OnSetThumbBitmap(HWND hwnd, WORD nID, Slider_Info *pInfo);
 	LRESULT OnSetBackground(HWND hwnd, HBRUSH hBrush, Slider_Info *pInfo);
-	LRESULT OnSetMinMax(HWND hwnd, LONG posMin, LONG posMax, Slider_Info *pInfo);	
+	LRESULT OnSetMinMax(HWND hwnd, LONG posMin, LONG posMax, Slider_Info *pInfo);
 	LRESULT OnSetPosition(HWND hwnd, LONG pos, Slider_Info *pInfo);
 	LRESULT OnGetPosition(HWND hwnd, Slider_Info *pInfo);
 
@@ -112,7 +112,7 @@ namespace SliderControl
     //--------------------------------------------------------------------------------------
     // GetThumbRect
     // Description: Get the current position of the thumb rectangle.
-    // 
+    //
     // The position is updated in the rcThumb member of pInfo.
     //--------------------------------------------------------------------------------------
 
@@ -130,11 +130,11 @@ namespace SliderControl
 		LONG logWidth = pInfo->posMax - pInfo->posMin;
 		LONG pixWidth = rc.Width() - pInfo->pxThumbSize.cx;
 		LONG logPosition = pInfo->posThumb - pInfo->posMin;
-		LONG left = MulDiv(logPosition, pixWidth, logWidth);	
+		LONG left = MulDiv(logPosition, pixWidth, logWidth);
 
 		// 2. Center vertically
 		LONG top = (rc.Height() - pInfo->pxThumbSize.cy) / 2;
-	
+
 		pInfo->rcThumb.Set(
 			left,
 			top,
@@ -146,7 +146,7 @@ namespace SliderControl
     //--------------------------------------------------------------------------------------
     // PixelToLogical
     // Description: Convert a pixel position to a logical position.
-    // 
+    //
     // Returns the logical position.
     //--------------------------------------------------------------------------------------
 
@@ -170,7 +170,7 @@ namespace SliderControl
     //--------------------------------------------------------------------------------------
     // NotifyParent
     // Description: Send the parent window a WM_NOTIFY message with our current status.
-    // 
+    //
     // hwnd: Control window.
     // code: WM_NOTIFY code. (One of the SLIDER_NOTIFY_xxx constants.)
     // pInfo: Instance data.
@@ -180,11 +180,11 @@ namespace SliderControl
 		HWND hParent = GetParent(hwnd);
 
 		if (hParent)
-		{	
+		{
 			NMSLIDER_INFO nminfo;
 
 			nminfo.hdr.hwndFrom = hwnd;
-			nminfo.hdr.idFrom = (UINT)GetMenu(hwnd);  
+			nminfo.hdr.idFrom = (UINT)GetMenu(hwnd);
 			nminfo.hdr.code = code;
 			nminfo.bSelected = pInfo->bThumbDown;
 			nminfo.position = pInfo->posThumb;
@@ -245,7 +245,7 @@ namespace SliderControl
 		return 0;
 	};
 
-    
+
 	LRESULT OnCreate(HWND hwnd)
 	{
 		Slider_Info *pInfo = new Slider_Info();
@@ -304,18 +304,18 @@ namespace SliderControl
 
 		if (pInfo->hbmThumb)
 		{
-			HDC hdcCompat = CreateCompatibleDC(hdc); 
+			HDC hdcCompat = CreateCompatibleDC(hdc);
             if (!hdcCompat)
             {
                 return (LRESULT)-1;
             }
 
-			SelectObject(hdcCompat, pInfo->hbmThumb); 
+			SelectObject(hdcCompat, pInfo->hbmThumb);
 
 			BOOL bResult = BitBlt(
-				hdc, 
-				pInfo->rcThumb.left, 
-				pInfo->rcThumb.top, 
+				hdc,
+				pInfo->rcThumb.left,
+				pInfo->rcThumb.top,
 				pInfo->pxThumbSize.cx,
 				pInfo->pxThumbSize.cy,
 				hdcCompat,
@@ -398,7 +398,7 @@ namespace SliderControl
     //--------------------------------------------------------------------------------------
     // OnSetThumbBitmap
     // Description: Sets the bitmap image for the slider thumb.
-    // 
+    //
     // Handler for WM_SLIDER_SET_THUMB_BITMAP message.
     //--------------------------------------------------------------------------------------
 
@@ -432,7 +432,7 @@ namespace SliderControl
     //--------------------------------------------------------------------------------------
     // OnSetBackground
     // Description: Sets the background brush.
-    // 
+    //
     // Handler for WM_SLIDER_SET_BACKGROUND message.
     //--------------------------------------------------------------------------------------
 
@@ -444,7 +444,7 @@ namespace SliderControl
 		}
 
 		pInfo->hBackground = hBrush;
-	
+
 		return TRUE;
 	}
 
@@ -452,7 +452,7 @@ namespace SliderControl
     //--------------------------------------------------------------------------------------
     // OnSetMinMax
     // Description: Sets the slider range.
-    // 
+    //
     // Handler for WM_SLIDER_SET_MIN_MAX message.
     //--------------------------------------------------------------------------------------
 	LRESULT OnSetMinMax(HWND hwnd, LONG posMin, LONG posMax, Slider_Info *pInfo)
@@ -474,7 +474,7 @@ namespace SliderControl
     //--------------------------------------------------------------------------------------
     // OnSetPosition
     // Description: Sets the slider range.
-    // 
+    //
     // Handler for WM_SLIDER_SET_POSITION message.
     //--------------------------------------------------------------------------------------
 
@@ -494,7 +494,7 @@ namespace SliderControl
     //--------------------------------------------------------------------------------------
     // OnSetPosition
     // Description: Sets the slider range.
-    // 
+    //
     // Handler for WM_SLIDER_GET_POSITION message.
     //--------------------------------------------------------------------------------------
 
@@ -511,7 +511,7 @@ namespace SliderControl
 //--------------------------------------------------------------------------------------
 // Slider_Init
 // Description: Initializes the slider window class.
-// 
+//
 // Call this function before using the slider control.
 //--------------------------------------------------------------------------------------
 
@@ -547,7 +547,7 @@ HRESULT Slider_Init()
 HRESULT Slider_Create(HWND hParent, const Rect rc, DWORD_PTR id, HWND *pHwnd)
 {
 	HINSTANCE hInstance = GetInstance();
-    
+
     if (!hInstance)
     {
         return E_FAIL;
@@ -594,7 +594,7 @@ HRESULT Slider::SetThumbBitmap(UINT nId)
 {
 	if (SendMessage(WM_SLIDER_SET_THUMB_BITMAP, nId, 0))
     {
-    	return S_OK; 
+    	return S_OK;
     }
     else
     {
@@ -606,7 +606,7 @@ HRESULT Slider::SetBackground(HBRUSH hBackground)
 {
 	if (SendMessage(WM_SLIDER_SET_BACKGROUND, (WPARAM)hBackground, 0))
     {
-    	return S_OK; 
+    	return S_OK;
     }
     else
     {
@@ -623,7 +623,7 @@ HRESULT Slider::SetPosition(LONG pos)
 {
 	if (SendMessage(WM_SLIDER_SET_POSITION, pos, 0))
     {
-    	return S_OK; 
+    	return S_OK;
     }
     else
     {
@@ -635,7 +635,7 @@ HRESULT Slider::SetRange(LONG min, LONG max)
 {
 	if (SendMessage(WM_SLIDER_SET_MIN_MAX, min, max))
     {
-    	return S_OK; 
+    	return S_OK;
     }
     else
     {

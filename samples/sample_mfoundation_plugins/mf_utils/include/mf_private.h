@@ -69,7 +69,7 @@ typedef struct {
     mfxU16 BiPyramid;               // 0 - no ref b, 1 - one ref b, 2 - pyramid
     mfxU16 CabacInitIdcPlus1;       // 0 - use default value, 1 - cabac_init_idc = 0 and so on
     mfxU16 NumActiveRefBL1;         //
-    mfxU16 QpUpdateRange;           // 
+    mfxU16 QpUpdateRange;           //
     mfxU16 RegressionWindow;        //
     mfxU16 LookAheadDep;            // LookAheadDep < LookAhead
     mfxU16 Hme;                     // tri-state

@@ -15,7 +15,7 @@ class MockSessionStorage : public SessionStorage {
 public:
     MockSessionStorage ():
         SessionStorage(*(PipelineFactory*)0, MFXSessionInfo(), MFXSessionInfo()) {}
-    
+
     MOCK_METHOD1(GetAudioSessionForID, MFXAudioSession * (int id));
     MOCK_METHOD1(GetVideoSessionForID, MFXVideoSessionExt * (int id));
 };

@@ -9,16 +9,16 @@
 #include "pipeline_factory.h"
 #include "mfxstructures.h"
 
-Transform <MFXVideoVPP>::Transform( PipelineFactory& factory, MFXVideoSessionExt & session, int TimeToWait ) : 
+Transform <MFXVideoVPP>::Transform( PipelineFactory& factory, MFXVideoSessionExt & session, int TimeToWait ) :
     m_session(session)
     ,m_factory(factory)
     ,m_dTimeToWait(TimeToWait)
-    ,m_pVPP(m_factory.CreateVideoVPP(m_session)) 
+    ,m_pVPP(m_factory.CreateVideoVPP(m_session))
     ,m_pInputSurface(0)
     ,m_pSamplesSurfPool(factory.CreateSamplePool(TimeToWait)) {
         m_bInited = false;
         m_nFramesForNextTransform = 0;
-        
+
 }
 
 void Transform <MFXVideoVPP>::Configure(MFXAVParams& param, ITransform * nextTransform) {
@@ -49,14 +49,14 @@ bool Transform <MFXVideoVPP>::GetSample( SamplePtr& sample) {
         case MFX_ERR_MORE_SURFACE:
             sample.reset(m_pSamplesSurfPool->LockSample(SampleSurface1(*outSurf, 0)));
             return true;
-        case MFX_WRN_DEVICE_BUSY:        
+        case MFX_WRN_DEVICE_BUSY:
             MSDK_SLEEP(WaitPortion);
             i += WaitPortion;
             continue;
         default:
             MSDK_TRACE_ERROR(MSDK_STRING("MFXVideoVPP::RunFrameVPPAsync, sts=") << sts);
             throw VPPRunFrameVPPAsyncError();
-        }        
+        }
     }
     MSDK_TRACE_ERROR(MSDK_STRING("MFXVideoVPP::RunFrameVPPAsync device busy") << sts);
     throw VPPTimeoutError();
@@ -112,7 +112,7 @@ void Transform <MFXVideoVPP>::AllocFrames() {
         m_SurfArray[i].Data.MemId = allocResp.mids[i];
     /*    SamplePtr sample(new DataSample(m_SurfArray[i]));
         m_pSamplesSurfPool->RegisterSample(sample);*/
-    }    
+    }
 }
 
 void Transform <MFXVideoVPP>::GetNumSurfaces(MFXAVParams& param, IAllocRequest& request)

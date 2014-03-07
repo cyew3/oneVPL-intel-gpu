@@ -40,7 +40,7 @@ interface INotifier
 };
 
 
-class CBaseEncoder 
+class CBaseEncoder
 {
     friend class CEncVideoFilter;
     friend class CEncoderInputPin;
@@ -79,7 +79,7 @@ protected:
             m_pExternalFrameAllocator = pAllocator;
             mfxStatus sts = m_mfxVideoSession.SetFrameAllocator(m_pExternalFrameAllocator);
             MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
-            
+
             D3DFrameAllocator* pAlloc = dynamic_cast<D3DFrameAllocator*> (m_pExternalFrameAllocator);
             if (pAlloc)
             {
@@ -87,20 +87,20 @@ protected:
                 MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
             }
         }
-        
+
         return MFX_ERR_NONE;
     }
 
-    mfxStatus QueryIMPL(mfxIMPL *impl) 
+    mfxStatus QueryIMPL(mfxIMPL *impl)
     {
-        mfxStatus sts = m_mfxVideoSession.QueryIMPL(impl); 
+        mfxStatus sts = m_mfxVideoSession.QueryIMPL(impl);
 
 #ifdef MFX_EMULATE_HW
         *impl = MFX_IMPL_HARDWARE;
 #endif
         return sts;
     };
-    
+
 protected:
 
     mfxVideoParam                   m_VideoParam;
@@ -118,7 +118,7 @@ protected:
     MFXVideoSession                 m_mfxVideoSession;
 
     MFXVideoENCODE*                 m_pmfxENC;
-    MFXVideoVPP*                    m_pmfxVPP;          
+    MFXVideoVPP*                    m_pmfxVPP;
 
     BitstreamPool                   m_BitstreamPool;
 
@@ -126,9 +126,9 @@ protected:
     std::list<sOutputBitstream *>   m_ResList; // output list
     mfxFrameSurface1**              m_ppFrameSurfaces; // frames shared by VPP output and ENC input
     mfxU16                          m_nRequiredFramesNum; // required number of frames
-    
-    MFXFrameAllocator*              m_pExternalFrameAllocator; 
-    MFXFrameAllocator*              m_pInternalFrameAllocator;    
+
+    MFXFrameAllocator*              m_pExternalFrameAllocator;
+    MFXFrameAllocator*              m_pInternalFrameAllocator;
     mfxFrameAllocResponse           m_InternalAllocResponse; // allocation response for frames shared by VPP output and ENC input
 
     INotifier*                      m_pNotifier;
@@ -139,10 +139,10 @@ protected:
 
     CRITICAL_SECTION                m_CriticalSection;
 
-    bool                            m_bUseVPP;                  
+    bool                            m_bUseVPP;
 
     mfxU16                          m_nEncoderFramesNum;       // required number of frames for encoding
-    bool                            m_bEncPartialAcceleration; 
+    bool                            m_bEncPartialAcceleration;
     bool                            m_bInitialized;
     bool                            m_bSessionHasChild;
     bool                            m_bSurfaceStored; // flag shows that mfxSurface was added to input list

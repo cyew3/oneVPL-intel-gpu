@@ -15,11 +15,11 @@
 #include "mfx_video_enc_filter_utils.h"
 
 // {4BA8E452-C7E5-48e9-965B-D150AA722D71}
-static const GUID IID_IMPEG2EncPropertyPage = 
+static const GUID IID_IMPEG2EncPropertyPage =
 { 0x4ba8e452, 0xc7e5, 0x48e9, { 0x96, 0x5b, 0xd1, 0x50, 0xaa, 0x72, 0x2d, 0x71 } };
 
 // {2D3AA453-0814-4ca3-8E5A-7728D4800746}
-static const GUID CLSID_MPEG2EncPropertyPage = 
+static const GUID CLSID_MPEG2EncPropertyPage =
 { 0x2d3aa453, 0x814, 0x4ca3, { 0x8e, 0x5a, 0x77, 0x28, 0xd4, 0x80, 0x7, 0x46 } };
 
 #include "resource_enc.h"

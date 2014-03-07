@@ -18,7 +18,7 @@ Copyright(c) 2013 Intel Corporation. All Rights Reserved.
 #include "gtest/gtest.h"
 
 struct D3D11DeviceCreator : public ::testing::Test {
-    
+
     D3D11DeviceCreator () {
     }
     CComPtr<ID3D11Device> CreateDevice(){
@@ -62,7 +62,7 @@ TEST_F(D3D11DeviceCreator, CM_COPY_verify_block_5x5) {
     params.pDevice = device;
     D3D11FrameAllocator alloc;
     EXPECT_EQ(0, alloc.Init(&params));
-    
+
     mfxFrameAllocRequest request;
     mfxFrameAllocResponse response;
 
@@ -79,10 +79,10 @@ TEST_F(D3D11DeviceCreator, CM_COPY_verify_block_5x5) {
     EXPECT_EQ(0, alloc.AllocFrames(&request, &response));
 
     char data[6][4] = {{1,2,3,4}, {5,6,7,8},{9,10,11,12},{13,14,15,16}, {17,18,19,20}, {21,22,23,24}};
-    
+
     mfxFrameSurface1 input_surface = {};
     mfxFrameSurface1 output_surface = {};
-    
+
     input_surface.Data.MemId = response.mids[0];
     output_surface.Data.MemId = response.mids[1];
 

@@ -10,7 +10,7 @@ Copyright(c) 2013 Intel Corporation. All Rights Reserved.
 
 #pragma once
 
-//intrusive ptr concept 
+//intrusive ptr concept
 //usage examples same as smart pointers except user has to define addref and release routine for that class
 
 //inline void intrusive_ptr_addref(UserClassA * pResource);
@@ -25,7 +25,7 @@ public:
         : m_pResource(pResource) {
         intrusive_ptr_addref(m_pResource);
     }
-    intrusive_ptr(const intrusive_ptr<T> & rhs) 
+    intrusive_ptr(const intrusive_ptr<T> & rhs)
         : m_pResource(rhs.m_pResource) {
         intrusive_ptr_addref(m_pResource);
     }

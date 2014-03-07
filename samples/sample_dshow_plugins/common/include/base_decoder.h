@@ -26,9 +26,9 @@
 
 //#define MFX_EMULATE_HW
 
-class DXVA2Sample; 
+class DXVA2Sample;
 
-class CBaseDecoder 
+class CBaseDecoder
 {
     friend class CDecVideoFilter;
 
@@ -45,7 +45,7 @@ public:
     mfxStatus   GetDecodeStat(mfxDecodeStat* pVideoStat);
 
     mfxU32      GetIOSurfNum(mfxVideoParam* pVideoParams);
-    
+
     mfxStatus   SetFrameAllocator(MFXFrameAllocator* pAllocator)
     {
         m_pMfxFrameAllocator = pAllocator;
@@ -82,18 +82,18 @@ public:
         return MFX_ERR_NONE;
     }
 
-    mfxStatus   QueryIMPL(mfxIMPL *impl) 
+    mfxStatus   QueryIMPL(mfxIMPL *impl)
     {
-        m_mfxVideoSession.QueryIMPL(impl); 
+        m_mfxVideoSession.QueryIMPL(impl);
 
 #ifdef MFX_EMULATE_HW
         *impl = MFX_IMPL_HARDWARE;
 #endif
 
-        return MFX_ERR_NONE; 
+        return MFX_ERR_NONE;
     };
 
-    mfxStatus DecodeHeader(mfxBitstream *bs, mfxVideoParam *par) 
+    mfxStatus DecodeHeader(mfxBitstream *bs, mfxVideoParam *par)
     {
         mfxStatus sts = MFX_ERR_NONE;
         MSDK_CHECK_POINTER(m_pmfxDEC, MFX_ERR_NULL_PTR);
@@ -119,18 +119,18 @@ public:
             if (bs->PicStruct == MFX_PICSTRUCT_FIELD_TFF || bs->PicStruct == MFX_PICSTRUCT_FIELD_BFF)
             {
                 par->mfx.FrameInfo.CropH *= 2;
-                par->mfx.FrameInfo.Height = MSDK_ALIGN16(par->mfx.FrameInfo.CropH);                
+                par->mfx.FrameInfo.Height = MSDK_ALIGN16(par->mfx.FrameInfo.CropH);
             }
         }
         else
         {
-            sts = m_pmfxDEC->DecodeHeader(bs, par); 
+            sts = m_pmfxDEC->DecodeHeader(bs, par);
         }
         MSDK_IGNORE_MFX_STS(sts, MFX_WRN_PARTIAL_ACCELERATION);
 
         m_bHeaderDecoded = (MFX_ERR_NONE == sts) ? true : false;
 
-        return sts; 
+        return sts;
     };
 
     void HeaderDecoded(bool bParse)
@@ -152,11 +152,11 @@ public:
 
     void SetAdditionalMemTypeFlags(mfxU16 flags)
     {
-        m_nAdditionalMemTypeFlags = flags;        
+        m_nAdditionalMemTypeFlags = flags;
     }
 
-    bool GetHeaderDecoded() 
-    { 
+    bool GetHeaderDecoded()
+    {
         return m_bHeaderDecoded;
     }
 
@@ -164,16 +164,16 @@ public:
     {
         return m_bd3dAlloc;
     };
-        
+
 protected:
 
-    mfxStatus   InternalReset(mfxVideoParam* pVideoParams, mfxU32 nPitch, bool bInited);   
+    mfxStatus   InternalReset(mfxVideoParam* pVideoParams, mfxU32 nPitch, bool bInited);
     mfxU8       FindFreeSurface();
 
 protected:
 
     MFXVideoSession         m_mfxVideoSession;
-    
+
     MFXVideoDECODE*         m_pmfxDEC;
 
     mfxFrameSurface1**      m_ppFrameSurfaces;
@@ -181,22 +181,22 @@ protected:
     mfxFrameAllocator*      m_pAllocExt;
     bool                    m_bd3dAlloc;
     mfxFrameAllocResponse   m_AllocResponse;
-    
+
     mfxU16                  m_nRequiredFramesNum;
 
     bool                    m_bHeaderDecoded;
-    mfxU32                  m_nCodecId; 
+    mfxU32                  m_nCodecId;
 
     mfxVideoParam*          m_pVideoParams;
-    
+
     MFXFrameAllocator*      m_pMfxFrameAllocator;
 
-    mfxU16                  m_nAuxFramesNum;   
+    mfxU16                  m_nAuxFramesNum;
 
-    bool                    m_bDecPartialAcceleration; 
+    bool                    m_bDecPartialAcceleration;
 
     mfxU16                  m_nAdditionalMemTypeFlags;
-    bool                    m_bSessionHasParent;    
+    bool                    m_bSessionHasParent;
 
     // Media SDK API version the object requires
     mfxU16                  m_nAPIVerMinor;

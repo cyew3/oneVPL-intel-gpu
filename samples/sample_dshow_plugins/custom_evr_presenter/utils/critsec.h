@@ -38,7 +38,7 @@ namespace MediaFoundationSamples
 
     //////////////////////////////////////////////////////////////////////////
     //  AutoLock
-    //  Description: Provides automatic locking and unlocking of a 
+    //  Description: Provides automatic locking and unlocking of a
     //               of a critical section.
     //
     //  Note: The AutoLock object must go out of scope before the CritSec.

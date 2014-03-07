@@ -21,14 +21,14 @@ public:
     {
         memset(&m_TempVideoParamIn, 0, sizeof(m_TempVideoParamIn));
         m_TempVideoParamIn.mfx.CodecId = MFX_CODEC_AVC;
-        
+
         //dafault values:
         m_TempVideoParamIn.mfx.CodecLevel = MFX_LEVEL_AVC_4;
         m_TempVideoParamIn.mfx.TargetUsage = MFX_TARGETUSAGE_BEST_SPEED;
         m_TempVideoParamIn.mfx.GopRefDist = 1; //no B frames
 
         m_TempVideoParamIn.NumExtParam = 0;
-        m_TempVideoParamIn.ExtParam = NULL; 
+        m_TempVideoParamIn.ExtParam = NULL;
         m_arrTempEncExtBufIn.UpdateExtParam(m_TempVideoParamIn);
 
         mfxExtEncoderCapability *pExtEncoderCapability = m_arrTempEncExtBufIn.Find<mfxExtEncoderCapability>();
@@ -127,7 +127,7 @@ public:
 
         if (SUCCEEDED(hr))
         {
-            
+
             mfxStatus sts = pmfxENC->Query(&m_TempVideoParamIn, &tempVideoParamOut);
             if (MFX_ERR_NONE != sts)
             {

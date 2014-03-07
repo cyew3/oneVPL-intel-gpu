@@ -19,6 +19,6 @@ public:
     MOCK_METHOD2(SetHandle, mfxStatus (mfxHandleType type, mfxHDL pHdl));
     MOCK_METHOD0(Reset, mfxStatus ());
     MOCK_METHOD2(RenderFrame, mfxStatus (mfxFrameSurface1 * pSurface, mfxFrameAllocator * pmfxAlloc));
-    MOCK_METHOD0(Close, void ());    
+    MOCK_METHOD0(Close, void ());
 };
 

@@ -14,9 +14,9 @@
 #include <stdexcept> // for std::exception on Linux
 #include "sample_opencl_plugin.h"
 
-// disable "unreferenced formal parameter" warning - 
+// disable "unreferenced formal parameter" warning -
 // not all formal parameters of interface functions will be used by sample plugin
-#pragma warning(disable : 4100) 
+#pragma warning(disable : 4100)
 
 //defining module template for generic plugin
 #include "mfx_plugin_module.h"
@@ -27,7 +27,7 @@ PluginModuleTemplate g_PluginModule = {
 };
 
 /* Rotate class implementation */
-Rotate::Rotate() : 
+Rotate::Rotate() :
 m_pTasks(NULL),
 m_bInited(false),
 m_pAlloc(NULL),
@@ -41,7 +41,7 @@ m_pD3D9Manager(NULL),
 m_bOpenCLSurfaceSharing(false)
 {
     m_MaxNumTasks = 0;
-    
+
     memset(&m_VideoParam, 0, sizeof(m_VideoParam));
     memset(&m_Param, 0, sizeof(m_Param));
 
@@ -52,14 +52,14 @@ m_bOpenCLSurfaceSharing(false)
 }
 
 Rotate::~Rotate()
-{  
+{
     Close();
 }
 
 /* Methods required for integration with Media SDK */
 mfxStatus Rotate::PluginInit(mfxCoreInterface *core)
 {
-    MSDK_CHECK_POINTER(core, MFX_ERR_NULL_PTR);  
+    MSDK_CHECK_POINTER(core, MFX_ERR_NULL_PTR);
     mfxCoreParam core_param;
     mfxStatus sts = core->GetCoreParam(core->pthis, &core_param);
     MSDK_CHECK_RESULT(MFX_ERR_NONE, sts, MFX_ERR_NONE);
@@ -71,9 +71,9 @@ mfxStatus Rotate::PluginInit(mfxCoreInterface *core)
 
     MSDK_SAFE_DELETE(m_pmfxCore);
 
-    m_pmfxCore = new mfxCoreInterface; 
+    m_pmfxCore = new mfxCoreInterface;
     MSDK_CHECK_POINTER(m_pmfxCore, MFX_ERR_MEMORY_ALLOC);
-    *m_pmfxCore = *core;  
+    *m_pmfxCore = *core;
 
     mfxHDL hdl = 0;
 #if defined(_WIN32) || defined(_WIN64)
@@ -144,7 +144,7 @@ mfxStatus Rotate::PluginClose()
 
 mfxStatus Rotate::GetPluginParam(mfxPluginParam *par)
 {
-    MSDK_CHECK_POINTER(par, MFX_ERR_NULL_PTR);    
+    MSDK_CHECK_POINTER(par, MFX_ERR_NULL_PTR);
 
     *par = m_PluginParam;
 
@@ -157,14 +157,14 @@ mfxStatus Rotate::Submit(const mfxHDL *in, mfxU32 in_num, const mfxHDL *out, mfx
     MSDK_CHECK_POINTER(out, MFX_ERR_NULL_PTR);
     MSDK_CHECK_POINTER(*in, MFX_ERR_NULL_PTR);
     MSDK_CHECK_POINTER(*out, MFX_ERR_NULL_PTR);
-    MSDK_CHECK_POINTER(task, MFX_ERR_NULL_PTR);    
+    MSDK_CHECK_POINTER(task, MFX_ERR_NULL_PTR);
     MSDK_CHECK_NOT_EQUAL(in_num, 1, MFX_ERR_UNSUPPORTED);
     MSDK_CHECK_NOT_EQUAL(out_num, 1, MFX_ERR_UNSUPPORTED);
-    MSDK_CHECK_POINTER(m_pmfxCore, MFX_ERR_NOT_INITIALIZED);  
-    MSDK_CHECK_ERROR(m_bInited, false, MFX_ERR_NOT_INITIALIZED);  
+    MSDK_CHECK_POINTER(m_pmfxCore, MFX_ERR_NOT_INITIALIZED);
+    MSDK_CHECK_ERROR(m_bInited, false, MFX_ERR_NOT_INITIALIZED);
 
     mfxFrameSurface1 *surface_in = (mfxFrameSurface1 *)in[0];
-    mfxFrameSurface1 *surface_out = (mfxFrameSurface1 *)out[0]; 
+    mfxFrameSurface1 *surface_out = (mfxFrameSurface1 *)out[0];
     mfxFrameSurface1 *real_surface_in = surface_in;
     mfxFrameSurface1 *real_surface_out = surface_out;
 
@@ -178,21 +178,21 @@ mfxStatus Rotate::Submit(const mfxHDL *in, mfxU32 in_num, const mfxHDL *out, mfx
 
     if (m_bIsOutOpaque)
     {
-        sts = m_pmfxCore->GetRealSurface(m_pmfxCore->pthis, surface_out, &real_surface_out);            
+        sts = m_pmfxCore->GetRealSurface(m_pmfxCore->pthis, surface_out, &real_surface_out);
         MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, MFX_ERR_MEMORY_ALLOC);
     }
-    
+
     // check validity of parameters
     sts = CheckInOutFrameInfo(&real_surface_in->Info, &real_surface_out->Info);
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
-           
+
     mfxU32 ind = FindFreeTaskIdx();
 
     if (ind >= m_MaxNumTasks)
     {
         return MFX_WRN_DEVICE_BUSY; // currently there are no free tasks available
     }
-    
+
     m_pmfxCore->IncreaseReference(m_pmfxCore->pthis, &(real_surface_in->Data));
     m_pmfxCore->IncreaseReference(m_pmfxCore->pthis, &(real_surface_out->Data));
 
@@ -214,22 +214,22 @@ mfxStatus Rotate::Submit(const mfxHDL *in, mfxU32 in_num, const mfxHDL *out, mfx
     default:
         return MFX_ERR_UNSUPPORTED;
     }
-    
+
     m_pTasks[ind].pProcessor->SetAllocator(m_pAlloc);
     m_pTasks[ind].pProcessor->Init(real_surface_in, real_surface_out);
-    
-    *task = (mfxThreadTask)&m_pTasks[ind];    
+
+    *task = (mfxThreadTask)&m_pTasks[ind];
 
     return MFX_ERR_NONE;
 }
 
 mfxStatus Rotate::Execute(mfxThreadTask task, mfxU32 uid_p, mfxU32 uid_a)
-{    
+{
     MSDK_CHECK_ERROR(m_bInited, false, MFX_ERR_NOT_INITIALIZED);
-    MSDK_CHECK_POINTER(m_pmfxCore, MFX_ERR_NOT_INITIALIZED);  
+    MSDK_CHECK_POINTER(m_pmfxCore, MFX_ERR_NOT_INITIALIZED);
 
     mfxStatus sts = MFX_ERR_NONE;
-    RotateTask *current_task = (RotateTask *)task;    
+    RotateTask *current_task = (RotateTask *)task;
 
     if (uid_a < 1)
     {
@@ -243,11 +243,11 @@ mfxStatus Rotate::Execute(mfxThreadTask task, mfxU32 uid_p, mfxU32 uid_a)
 
 mfxStatus Rotate::FreeResources(mfxThreadTask task, mfxStatus sts)
 {
-    MSDK_CHECK_ERROR(m_bInited, false, MFX_ERR_NOT_INITIALIZED); 
-    MSDK_CHECK_POINTER(m_pmfxCore, MFX_ERR_NOT_INITIALIZED);  
+    MSDK_CHECK_ERROR(m_bInited, false, MFX_ERR_NOT_INITIALIZED);
+    MSDK_CHECK_POINTER(m_pmfxCore, MFX_ERR_NOT_INITIALIZED);
 
     RotateTask *current_task = (RotateTask *)task;
-    
+
     m_pmfxCore->DecreaseReference(m_pmfxCore->pthis, &(current_task->In->Data));
     m_pmfxCore->DecreaseReference(m_pmfxCore->pthis, &(current_task->Out->Data));
     MSDK_SAFE_DELETE(current_task->pProcessor);
@@ -258,8 +258,8 @@ mfxStatus Rotate::FreeResources(mfxThreadTask task, mfxStatus sts)
 
 /* Custom methods */
 mfxStatus Rotate::Init(mfxVideoParam *mfxParam)
-{ 
-    MSDK_CHECK_POINTER(mfxParam, MFX_ERR_NULL_PTR); 
+{
+    MSDK_CHECK_POINTER(mfxParam, MFX_ERR_NULL_PTR);
     MSDK_CHECK_POINTER(m_pmfxCore, MFX_ERR_NULL_PTR);
 
     mfxStatus sts = MFX_ERR_NONE;
@@ -276,22 +276,22 @@ mfxStatus Rotate::Init(mfxVideoParam *mfxParam)
 
     if (m_bIsInOpaque || m_bIsOutOpaque)
     {
-        pluginOpaqueAlloc = (mfxExtOpaqueSurfaceAlloc*)GetExtBuffer(m_VideoParam.ExtParam, 
+        pluginOpaqueAlloc = (mfxExtOpaqueSurfaceAlloc*)GetExtBuffer(m_VideoParam.ExtParam,
             m_VideoParam.NumExtParam, MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION);
         MSDK_CHECK_POINTER(pluginOpaqueAlloc, MFX_ERR_INVALID_VIDEO_PARAM);
     }
 
     // check existence of corresponding allocs
     if ((m_bIsInOpaque && ! pluginOpaqueAlloc->In.Surfaces) || (m_bIsOutOpaque && !pluginOpaqueAlloc->Out.Surfaces))
-       return MFX_ERR_INVALID_VIDEO_PARAM;        
-   
+       return MFX_ERR_INVALID_VIDEO_PARAM;
+
     if (m_bIsInOpaque)
     {
-        sts = m_pmfxCore->MapOpaqueSurface(m_pmfxCore->pthis, pluginOpaqueAlloc->In.NumSurface, 
+        sts = m_pmfxCore->MapOpaqueSurface(m_pmfxCore->pthis, pluginOpaqueAlloc->In.NumSurface,
             pluginOpaqueAlloc->In.Type, pluginOpaqueAlloc->In.Surfaces);
         MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, MFX_ERR_MEMORY_ALLOC);
 
-        bd3d[0] = pluginOpaqueAlloc->In.Type & 
+        bd3d[0] = pluginOpaqueAlloc->In.Type &
             (MFX_MEMTYPE_VIDEO_MEMORY_DECODER_TARGET | MFX_MEMTYPE_VIDEO_MEMORY_PROCESSOR_TARGET);
     }
     else
@@ -305,7 +305,7 @@ mfxStatus Rotate::Init(mfxVideoParam *mfxParam)
             pluginOpaqueAlloc->Out.Type, pluginOpaqueAlloc->Out.Surfaces);
         MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, MFX_ERR_MEMORY_ALLOC);
 
-        bd3d[1] = pluginOpaqueAlloc->Out.Type & 
+        bd3d[1] = pluginOpaqueAlloc->Out.Type &
             (MFX_MEMTYPE_VIDEO_MEMORY_DECODER_TARGET | MFX_MEMTYPE_VIDEO_MEMORY_PROCESSOR_TARGET);
     }
     else
@@ -330,7 +330,7 @@ mfxStatus Rotate::Init(mfxVideoParam *mfxParam)
     // remaining lines are distributed among first chunks (+ extra 1 line each)
     for (mfxU32 i = 0; i < m_NumChunks; i++)
     {
-        m_pChunks[i].StartLine = (i == 0) ? 0 : m_pChunks[i-1].EndLine + 1; 
+        m_pChunks[i].StartLine = (i == 0) ? 0 : m_pChunks[i-1].EndLine + 1;
         m_pChunks[i].EndLine = (i < remainder_lines) ? (i + 1) * num_lines_in_chunk : (i + 1) * num_lines_in_chunk - 1;
     }
 
@@ -340,7 +340,7 @@ mfxStatus Rotate::Init(mfxVideoParam *mfxParam)
 
     if (m_bOpenCLSurfaceSharing)
     {
-        // init OpenCLFilter    
+        // init OpenCLFilter
         cl_int error = CL_SUCCESS;
 #if defined(_WIN32) || defined(_WIN64)
         error = m_OpenCLFilter.AddKernel(OpenCLFilter::readFile("ocl_rotate.cl").c_str(), "rotate_Y", "rotate_UV", D3DFMT_NV12);
@@ -352,7 +352,7 @@ mfxStatus Rotate::Init(mfxVideoParam *mfxParam)
         error = m_OpenCLFilter.OCLInit(&m_pD3D9Manager);
 #endif
 
-        if (error) 
+        if (error)
         {
             error = CL_SUCCESS;
             std::cout << "\nWARNING: Initializing plugin with dx9 sharing failed" << std::endl;
@@ -391,7 +391,7 @@ mfxStatus Rotate::Init(mfxVideoParam *mfxParam)
 mfxStatus Rotate::SetAuxParams(void* auxParam, int auxParamSize)
 {
     RotateParam *pRotatePar = (RotateParam *)auxParam;
-    MSDK_CHECK_POINTER(pRotatePar, MFX_ERR_NULL_PTR); 
+    MSDK_CHECK_POINTER(pRotatePar, MFX_ERR_NULL_PTR);
     // check validity of parameters
     mfxStatus sts = CheckParam(&m_VideoParam, pRotatePar);
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
@@ -432,12 +432,12 @@ mfxStatus Rotate::SetHandle(mfxHandleType type, mfxHDL hdl)
 {
 #if defined(_WIN32) || defined(_WIN64)
     if (MFX_HANDLE_D3D9_DEVICE_MANAGER == type)
-    {        
+    {
         m_pD3D9Manager = reinterpret_cast<IDirect3DDeviceManager9 *>(hdl);
     }
 #else
     if (MFX_HANDLE_VA_DISPLAY == type)
-    {        
+    {
         m_pD3D9Manager = reinterpret_cast<VADisplay>(hdl);
     }
 #endif
@@ -446,7 +446,7 @@ mfxStatus Rotate::SetHandle(mfxHandleType type, mfxHDL hdl)
 
 /* Internal methods */
 mfxU32 Rotate::FindFreeTaskIdx()
-{   
+{
     mfxU32 i;
     for (i = 0; i < m_MaxNumTasks; i++)
     {
@@ -461,15 +461,15 @@ mfxU32 Rotate::FindFreeTaskIdx()
 
 mfxStatus Rotate::CheckParam(mfxVideoParam *mfxParam, RotateParam *pRotatePar)
 {
-    MSDK_CHECK_POINTER(mfxParam, MFX_ERR_NULL_PTR);      
+    MSDK_CHECK_POINTER(mfxParam, MFX_ERR_NULL_PTR);
 
-    mfxInfoVPP *pParam = &mfxParam->vpp;    
+    mfxInfoVPP *pParam = &mfxParam->vpp;
 
     // only NV12 color format is supported
     if (MFX_FOURCC_NV12 != pParam->In.FourCC || MFX_FOURCC_NV12 != pParam->Out.FourCC)
     {
         return MFX_ERR_UNSUPPORTED;
-    }    
+    }
 
     return MFX_ERR_NONE;
 }
@@ -479,9 +479,9 @@ mfxStatus Rotate::CheckInOutFrameInfo(mfxFrameInfo *pIn, mfxFrameInfo *pOut)
     MSDK_CHECK_POINTER(pIn, MFX_ERR_NULL_PTR);
     MSDK_CHECK_POINTER(pOut, MFX_ERR_NULL_PTR);
 
-    if (pIn->CropW != m_VideoParam.vpp.In.CropW || pIn->CropH != m_VideoParam.vpp.In.CropH || 
+    if (pIn->CropW != m_VideoParam.vpp.In.CropW || pIn->CropH != m_VideoParam.vpp.In.CropH ||
         pIn->FourCC != m_VideoParam.vpp.In.FourCC ||
-        pOut->CropW != m_VideoParam.vpp.Out.CropW || pOut->CropH != m_VideoParam.vpp.Out.CropH || 
+        pOut->CropW != m_VideoParam.vpp.Out.CropW || pOut->CropH != m_VideoParam.vpp.Out.CropH ||
         pOut->FourCC != m_VideoParam.vpp.Out.FourCC)
     {
         return MFX_ERR_INVALID_VIDEO_PARAM;
@@ -491,7 +491,7 @@ mfxStatus Rotate::CheckInOutFrameInfo(mfxFrameInfo *pIn, mfxFrameInfo *pOut)
 }
 
 /* Processor class implementation */
-Processor::Processor() 
+Processor::Processor()
     : m_pIn(NULL)
     , m_pOut(NULL)
     , m_pAlloc(NULL)
@@ -514,9 +514,9 @@ mfxStatus Processor::Init(mfxFrameSurface1 *frame_in, mfxFrameSurface1 *frame_ou
     MSDK_CHECK_POINTER(frame_out, MFX_ERR_NULL_PTR);
 
     m_pIn = frame_in;
-    m_pOut = frame_out;    
+    m_pOut = frame_out;
 
-    return MFX_ERR_NONE;        
+    return MFX_ERR_NONE;
 }
 
 mfxStatus Processor::LockFrame(mfxFrameSurface1 *frame)
@@ -548,7 +548,7 @@ mfxStatus Processor::UnlockFrame(mfxFrameSurface1 *frame)
 }
 
 /* 180 degrees rotator class implementation */
-OpenCLFilterRotator180::OpenCLFilterRotator180(OpenCLFilter *pOpenCLFilter) 
+OpenCLFilterRotator180::OpenCLFilterRotator180(OpenCLFilter *pOpenCLFilter)
     : Processor()
     , m_pOpenCLFilter(pOpenCLFilter)
 {
@@ -601,13 +601,13 @@ OpenCLRotator180Context::OpenCLRotator180Context(const std::string &program_src)
         }
 
         // create context and device
-        cl_context_properties properties[] = 
+        cl_context_properties properties[] =
            { CL_CONTEXT_PLATFORM, (cl_context_properties)m_platform(), 0};
-        m_context = cl::Context(CL_DEVICE_TYPE_DEFAULT, properties); 
-     
+        m_context = cl::Context(CL_DEVICE_TYPE_DEFAULT, properties);
+
         std::vector<cl::Device> devices = m_context.getInfo<CL_CONTEXT_DEVICES>();
         m_device = devices[0];
-     
+
         // load and build kernels
         cl::Program::Sources source(1,
             std::make_pair(program_src.c_str(),program_src.size()));
@@ -616,30 +616,30 @@ OpenCLRotator180Context::OpenCLRotator180Context(const std::string &program_src)
 
         m_kernelY = cl::Kernel(m_program, "rotate_Y_packed", &err);
         m_kernelUV = cl::Kernel(m_program, "rotate_UV_packed", &err);
-     
+
         // create command queue
         m_queue = cl::CommandQueue(m_context, m_device, 0, &err);
     }
     catch (const cl::Error &err) {
         throw std::runtime_error(
-            "OpenCL error: " 
+            "OpenCL error: "
             + std::string(err.what())
             + "(" + toString(err.err()) + ")");
     }
 }
 
-void OpenCLRotator180Context::CreateBuffers(const cl::size_t<3> &Y_size, 
+void OpenCLRotator180Context::CreateBuffers(const cl::size_t<3> &Y_size,
                                             const cl::size_t<3> &UV_size)
 {
     const cl::ImageFormat imf(CL_RGBA, CL_UNSIGNED_INT8);
     if (!m_InY())
-        m_InY   = cl::Image2D(m_context, CL_MEM_READ_ONLY, imf,  Y_size[0],  Y_size[1]); 
+        m_InY   = cl::Image2D(m_context, CL_MEM_READ_ONLY, imf,  Y_size[0],  Y_size[1]);
     if (!m_InUV())
-        m_InUV  = cl::Image2D(m_context, CL_MEM_READ_ONLY, imf, UV_size[0], UV_size[1]); 
+        m_InUV  = cl::Image2D(m_context, CL_MEM_READ_ONLY, imf, UV_size[0], UV_size[1]);
     if (!m_OutY())
-        m_OutY  = cl::Image2D(m_context, CL_MEM_WRITE_ONLY, imf,  Y_size[0],  Y_size[1]); 
+        m_OutY  = cl::Image2D(m_context, CL_MEM_WRITE_ONLY, imf,  Y_size[0],  Y_size[1]);
     if (!m_OutUV())
-        m_OutUV = cl::Image2D(m_context, CL_MEM_WRITE_ONLY, imf, UV_size[0], UV_size[1]); 
+        m_OutUV = cl::Image2D(m_context, CL_MEM_WRITE_ONLY, imf, UV_size[0], UV_size[1]);
 }
 
 void OpenCLRotator180Context::SetKernelArgs()
@@ -669,10 +669,10 @@ void OpenCLRotator180Context::Rotate(size_t width, size_t height,
     m_queue.enqueueWriteImage(m_InY, 0, origin, Y_size, pitchIn, 0, pInY);
     m_queue.enqueueWriteImage(m_InUV, 0, origin, UV_size, pitchIn, 0, pInUV);
 
-    m_queue.enqueueNDRangeKernel(m_kernelY, cl::NullRange, 
+    m_queue.enqueueNDRangeKernel(m_kernelY, cl::NullRange,
             cl::NDRange(Y_size[0],Y_size[1]),
             cl::NDRange(1,1));
-    m_queue.enqueueNDRangeKernel(m_kernelUV, cl::NullRange, 
+    m_queue.enqueueNDRangeKernel(m_kernelUV, cl::NullRange,
             cl::NDRange(UV_size[0],UV_size[1]),
             cl::NDRange(1,1));
 
@@ -704,7 +704,7 @@ mfxStatus OpenCLRotator180::Process(DataChunk * /*chunk*/)
     }
 
     try {
-        m_pOpenCLRotator180Context->Rotate(m_pIn->Info.Width, m_pIn->Info.Height, 
+        m_pOpenCLRotator180Context->Rotate(m_pIn->Info.Width, m_pIn->Info.Height,
                                            m_pIn->Data.Pitch, m_pOut->Data.Pitch,
                                            m_pIn->Data.Y, m_pIn->Data.UV,
                                            m_pOut->Data.Y, m_pOut->Data.UV);

@@ -81,8 +81,8 @@ public:
     HRESULT GetTime(REFERENCE_TIME* dStart, REFERENCE_TIME* dStop)
     {
         if (!dStart || !dStop)
-            return E_POINTER;        
-        if (!m_dFrameRate) 
+            return E_POINTER;
+        if (!m_dFrameRate)
             return E_FAIL;
 
         m_nFrameNumber++;

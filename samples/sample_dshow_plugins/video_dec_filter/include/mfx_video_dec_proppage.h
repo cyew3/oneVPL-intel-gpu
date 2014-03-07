@@ -74,8 +74,8 @@ private:
     IConfigureVideoDecoder*     m_pVideoDecProps;    // Pointer to the filter's custom interface.
     LONG                        m_lVal;
     LONG                        m_lNewVal;
-    
-    CCritSec                    m_critSec;       
+
+    CCritSec                    m_critSec;
 };
 
 class CAboutPropPage : public CBasePropertyPage

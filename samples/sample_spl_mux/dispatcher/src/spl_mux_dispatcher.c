@@ -38,7 +38,7 @@ static const char *MuxAPIFunc[] =
 
 #undef FUNCTION
 #define FUNCTION(spl_or_mux, return_value, func_name, formal_param_list, actual_param_list)\
-    typedef mfxStatus (MFX_CDECL  * func_name##_ptr) formal_param_list ; 
+    typedef mfxStatus (MFX_CDECL  * func_name##_ptr) formal_param_list ;
 
 #include "spl_exposed_functions_has_impl.h"
 #include "mux_exposed_functions_has_impl.h"
@@ -217,7 +217,7 @@ mfxStatus MFXSplitter_Init(mfxDataIO *data_io, mfxSplitter *spl)
 
     if (spl == 0)
         return MFX_ERR_NULL_PTR;
-    
+
     *spl = 0;
 
     r = (retMfxSpl*) malloc(sizeof(retMfxSpl));
@@ -275,7 +275,7 @@ mfxStatus MFXMuxer_Init(mfxStreamParams* par, mfxDataIO *data_io, mfxMuxer *mux)
 
     if (mux == 0)
         return MFX_ERR_NULL_PTR;
-    
+
     *mux = 0;
 
     r = (retMfxMux*) malloc(sizeof(retMfxMux));
@@ -295,7 +295,7 @@ mfxStatus MFXMuxer_Init(mfxStreamParams* par, mfxDataIO *data_io, mfxMuxer *mux)
             }
         }
     }
-    
+
     if (mfxRes != MFX_ERR_NONE)
     {
         free(r);

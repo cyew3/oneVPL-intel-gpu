@@ -11,7 +11,7 @@
 #include "isample.h"
 #include "gmock\gmock.h"
 
-class MockSample : public ISample 
+class MockSample : public ISample
 {
 public:
     MOCK_METHOD0(GetSurface, mfxFrameSurface1 & ());

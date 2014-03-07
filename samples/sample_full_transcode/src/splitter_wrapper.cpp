@@ -39,7 +39,7 @@ bool SplitterWrapper::GetSample( SamplePtr & sample ) {
 
     // get current sample
     mfxStatus sts = m_splitter->GetBitstream(&OutputTrack, &bs);
-   
+
     if (sts == MFX_ERR_MORE_DATA) {
         m_EOF = true;
         sample.reset(new MetaSample(META_EOS, 0, 0, 0));
@@ -57,7 +57,7 @@ bool SplitterWrapper::GetSample( SamplePtr & sample ) {
 void SplitterWrapper::GetInfo( MFXStreamParams & info) {
     mfxStatus sts = MFX_ERR_NONE;
     sts = m_splitter->GetInfo(info);
-   
+
     if (sts < MFX_ERR_NONE) {
         MSDK_TRACE_ERROR(MSDK_STRING("MFXSplitter::GetInfo, sts=")<<sts);
         throw SplitterGetInfoError();

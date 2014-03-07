@@ -36,7 +36,7 @@ namespace TranscodingSample
 {
 
     struct sInputParams;
-    
+
     msdk_tick GetTick();
     mfxF64 GetTime(msdk_tick start);
 
@@ -67,7 +67,7 @@ namespace TranscodingSample
             m_ptr = 0;
             return ptr;
         }
-        void reset(T* ptr) 
+        void reset(T* ptr)
         {
             if (m_ptr)
             {
@@ -81,7 +81,7 @@ namespace TranscodingSample
     protected:
         T* m_ptr;
     };
-  
+
     class CmdProcessor
     {
     public:
@@ -108,13 +108,13 @@ namespace TranscodingSample
     };
 
 
-    // Wrapper on standard allocator for concurrent allocation of 
+    // Wrapper on standard allocator for concurrent allocation of
     // D3D and system surfaces
     class GeneralAllocator : public BaseFrameAllocator
     {
     public:
         GeneralAllocator();
-        virtual ~GeneralAllocator();    
+        virtual ~GeneralAllocator();
 
         virtual mfxStatus Init(mfxAllocatorParams *pParams);
         virtual mfxStatus Close();
@@ -122,7 +122,7 @@ namespace TranscodingSample
     protected:
         virtual mfxStatus LockFrame(mfxMemId mid, mfxFrameData *ptr);
         virtual mfxStatus UnlockFrame(mfxMemId mid, mfxFrameData *ptr);
-        virtual mfxStatus GetFrameHDL(mfxMemId mid, mfxHDL *handle);       
+        virtual mfxStatus GetFrameHDL(mfxMemId mid, mfxHDL *handle);
 
         virtual mfxStatus ReleaseResponse(mfxFrameAllocResponse *response);
         virtual mfxStatus AllocImpl(mfxFrameAllocRequest *request, mfxFrameAllocResponse *response);

@@ -13,7 +13,7 @@ Copyright(c) 2008-2012 Intel Corporation. All Rights Reserved.
 #include "base_allocator.h"
 
 MFXFrameAllocator::MFXFrameAllocator()
-{    
+{
     pthis = this;
     Alloc = Alloc_;
     Lock  = Lock_;
@@ -89,7 +89,7 @@ mfxStatus BaseFrameAllocator::CheckRequestType(mfxFrameAllocRequest *request)
     if (0 == request)
         return MFX_ERR_NULL_PTR;
 
-    // check that Media SDK component is specified in request 
+    // check that Media SDK component is specified in request
     if ((request->Type & MEMTYPE_FROM_MASK) != 0)
         return MFX_ERR_NONE;
     else
@@ -99,7 +99,7 @@ mfxStatus BaseFrameAllocator::CheckRequestType(mfxFrameAllocRequest *request)
 mfxStatus BaseFrameAllocator::AllocFrames(mfxFrameAllocRequest *request, mfxFrameAllocResponse *response)
 {
     if (0 == request || 0 == response || 0 == request->NumFrameSuggested)
-        return MFX_ERR_MEMORY_ALLOC; 
+        return MFX_ERR_MEMORY_ALLOC;
 
     if (MFX_ERR_NONE != CheckRequestType(request))
         return MFX_ERR_UNSUPPORTED;
@@ -109,7 +109,7 @@ mfxStatus BaseFrameAllocator::AllocFrames(mfxFrameAllocRequest *request, mfxFram
     if ( (request->Type & MFX_MEMTYPE_EXTERNAL_FRAME) && (request->Type & MFX_MEMTYPE_FROM_DECODE) )
     {
         // external decoder allocations
-        std::list<UniqueResponse>::iterator it = 
+        std::list<UniqueResponse>::iterator it =
             std::find_if( m_ExtResponses.begin()
                         , m_ExtResponses.end()
                         , UniqueResponse (*response, request->Info.CropW, request->Info.CropH, 0));
@@ -160,9 +160,9 @@ mfxStatus BaseFrameAllocator::FreeFrames(mfxFrameAllocResponse *response)
         return MFX_ERR_INVALID_HANDLE;
 
     mfxStatus sts = MFX_ERR_NONE;
-    
+
     // check whether response is an external decoder response
-    std::list<UniqueResponse>::iterator i = 
+    std::list<UniqueResponse>::iterator i =
         std::find_if( m_ExtResponses.begin(), m_ExtResponses.end(), std::bind1st(IsSame(), *response));
 
     if (i != m_ExtResponses.end())
@@ -176,7 +176,7 @@ mfxStatus BaseFrameAllocator::FreeFrames(mfxFrameAllocResponse *response)
     }
 
     // if not found so far, then search in internal responses
-    std::list<mfxFrameAllocResponse>::iterator i2 = 
+    std::list<mfxFrameAllocResponse>::iterator i2 =
         std::find_if(m_responses.begin(), m_responses.end(), std::bind1st(IsSame(), *response));
 
     if (i2 != m_responses.end())
@@ -209,7 +209,7 @@ mfxStatus BaseFrameAllocator::Close()
 }
 
 MFXBufferAllocator::MFXBufferAllocator()
-{    
+{
     pthis = this;
     Alloc = Alloc_;
     Lock  = Lock_;

@@ -67,7 +67,7 @@ mfxStatus msdkSetPluginPath(mfxU32 type, mfxU32 codecid, msdk_char path[MSDK_MAX
             msdk_strcopy(g_msdk_supported_plugins[i].path, path);
             return MFX_ERR_NONE;
         }
-    }                 
+    }
     return MFX_ERR_NOT_FOUND;
 }
 
@@ -79,6 +79,6 @@ const msdk_char* msdkGetPluginPath(mfxU32 type, mfxU32 codecid)
         if (g_msdk_supported_plugins[i].type == type && g_msdk_supported_plugins[i].codecid == codecid) {
             return (g_msdk_supported_plugins[i].path[0])? g_msdk_supported_plugins[i].path: NULL;
         }
-    }                 
+    }
     return NULL;
 }

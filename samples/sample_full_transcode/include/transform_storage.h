@@ -67,7 +67,7 @@ public:
         }
     }
     //creates iterator for transform components that particular sample has to pass through
-    virtual iterator begin(int id) {        
+    virtual iterator begin(int id) {
         return m_transforms[id].begin();
     }
     virtual iterator end(int id) {

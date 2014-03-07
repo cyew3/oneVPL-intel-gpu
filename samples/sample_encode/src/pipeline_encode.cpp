@@ -337,7 +337,7 @@ mfxStatus CEncodingPipeline::InitMfxEncParams(sInputParams *pInParams)
         (mfxU16)MFX_RATECONTROL_LA : (mfxU16)MFX_RATECONTROL_CBR;
     ConvertFrameRate(pInParams->dFrameRate, &m_mfxEncParams.mfx.FrameInfo.FrameRateExtN, &m_mfxEncParams.mfx.FrameInfo.FrameRateExtD);
     m_mfxEncParams.mfx.EncodedOrder            = 0; // binary flag, 0 signals encoder to take frames in display order
-    
+
 
     // specify memory type
     if (D3D9_MEMORY == pInParams->memType || D3D11_MEMORY == pInParams->memType)
@@ -544,12 +544,12 @@ mfxStatus CEncodingPipeline::AllocFrames()
     // prepare allocation requests
     EncRequest.NumFrameMin = nEncSurfNum;
     EncRequest.NumFrameSuggested = nEncSurfNum;
-    MSDK_MEMCPY_VAR(EncRequest.Info, &(m_mfxEncParams.mfx.FrameInfo), sizeof(mfxFrameInfo));    
+    MSDK_MEMCPY_VAR(EncRequest.Info, &(m_mfxEncParams.mfx.FrameInfo), sizeof(mfxFrameInfo));
     if (m_pmfxVPP)
     {
-        EncRequest.Type |= MFX_MEMTYPE_FROM_VPPOUT; // surfaces are shared between vpp output and encode input 
+        EncRequest.Type |= MFX_MEMTYPE_FROM_VPPOUT; // surfaces are shared between vpp output and encode input
     }
-    
+
     // alloc frames for encoder
     sts = m_pMFXAllocator->Alloc(m_pMFXAllocator->pthis, &EncRequest, &m_EncResponse);
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
@@ -560,7 +560,7 @@ mfxStatus CEncodingPipeline::AllocFrames()
         VppRequest[0].NumFrameMin = nVppSurfNum;
         VppRequest[0].NumFrameSuggested = nVppSurfNum;
         MSDK_MEMCPY_VAR(VppRequest[0].Info, &(m_mfxVppParams.mfx.FrameInfo), sizeof(mfxFrameInfo));
-        
+
         sts = m_pMFXAllocator->Alloc(m_pMFXAllocator->pthis, &(VppRequest[0]), &m_VppResponse);
         MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
     }
@@ -631,14 +631,14 @@ mfxStatus CEncodingPipeline::CreateAllocator()
 
         sts = m_hwdev->GetHandle(hdl_t, &hdl);
         MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
-        
+
         // handle is needed for HW library only
         mfxIMPL impl = 0;
         m_mfxSession.QueryIMPL(&impl);
         if (impl != MFX_IMPL_SOFTWARE)
         {
             sts = m_mfxSession.SetHandle(hdl_t, hdl);
-            MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts); 
+            MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
         }
 
         // create D3D allocator
@@ -697,7 +697,7 @@ mfxStatus CEncodingPipeline::CreateAllocator()
         p_vaapiAllocParams->m_dpy = (VADisplay)hdl;
         m_pmfxAllocatorParams = p_vaapiAllocParams;
 
-        /* In case of video memory we must provide MediaSDK with external allocator 
+        /* In case of video memory we must provide MediaSDK with external allocator
         thus we demonstrate "external allocator" usage model.
         Call SetAllocator to pass allocator to mediasdk */
         sts = m_mfxSession.SetFrameAllocator(m_pMFXAllocator);
@@ -705,7 +705,7 @@ mfxStatus CEncodingPipeline::CreateAllocator()
 
         m_bExternalAlloc = true;
 #endif
-    } 
+    }
     else
     {
 #ifdef LIBVA_SUPPORT
@@ -934,9 +934,9 @@ mfxStatus CEncodingPipeline::Init(sInputParams *pParams)
     else
         sts = m_mfxSession.Init(MFX_IMPL_SOFTWARE, NULL);
 
-    
+
     // we check if codec is distributed as a mediasdk plugin and load it if yes
-    // else if codec is not in the list of mediasdk plugins, we assume, that it is supported inside mediasdk library    
+    // else if codec is not in the list of mediasdk plugins, we assume, that it is supported inside mediasdk library
     if (pParams->bUseHWLib){
              m_pUID = msdkGetPluginUID(MSDK_VENC | MSDK_IMPL_HW, pParams->CodecId);
           } else {
@@ -1021,7 +1021,7 @@ void CEncodingPipeline::Close()
     MSDK_SAFE_DELETE(m_pmfxVPP);
 
     if (m_pUID) MFXVideoUSER_UnLoad(m_mfxSession, &(m_pUID->mfx));
-    
+
     m_pHEVC_plugin.reset();
 
     FreeMVCSeqDesc();
@@ -1225,7 +1225,7 @@ mfxStatus CEncodingPipeline::Run()
             bVppMultipleOutput = false; // reset the flag before a call to VPP
             for (;;)
             {
-                sts = m_pmfxVPP->RunFrameVPPAsync(&m_pVppSurfaces[nVppSurfIdx], &m_pEncSurfaces[nEncSurfIdx], 
+                sts = m_pmfxVPP->RunFrameVPPAsync(&m_pVppSurfaces[nVppSurfIdx], &m_pEncSurfaces[nEncSurfIdx],
                     NULL, &VppSyncPoint);
 
                 if (MFX_ERR_NONE < sts && !VppSyncPoint) // repeat the call if warning and no output

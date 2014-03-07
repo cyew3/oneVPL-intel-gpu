@@ -14,7 +14,7 @@
 //public:
 //    MOCK_METHOD2(Init,
 //        mfxStatus(mfxIMPL impl, mfxVersion *ver));
-//    MOCK_METHOD0(Close, 
+//    MOCK_METHOD0(Close,
 //        mfxStatus(void));
 //    MOCK_METHOD1(QueryIMPL,
 //        mfxStatus(mfxIMPL *impl));

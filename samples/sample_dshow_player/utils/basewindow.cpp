@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////
 // BaseWindow.cpp: Abstract window class.
-// 
+//
 // THIS CODE AND INFORMATION IS PROVIDED "AS IS" WITHOUT WARRANTY OF
 // ANY KIND, EITHER EXPRESSED OR IMPLIED, INCLUDING BUT NOT LIMITED TO
 // THE IMPLIED WARRANTIES OF MERCHANTABILITY AND/OR FITNESS FOR A
@@ -39,7 +39,7 @@ HRESULT BaseWindow::Register()
 	wcex.cbClsExtra		= 0;
 	wcex.cbWndExtra		= 0;
 	wcex.hInstance		= m_hInstance;
-	wcex.hIcon			= NULL; 
+	wcex.hIcon			= NULL;
 	wcex.hCursor		= LoadCursor(NULL, IDC_ARROW);
 	wcex.hbrBackground	= (HBRUSH)(COLOR_WINDOW+1);
 	wcex.lpszMenuName	= MenuName();
@@ -72,12 +72,12 @@ HRESULT BaseWindow::Create(HINSTANCE hInstance)
 	{
 		HWND hwnd = CreateWindow(
 			ClassName(),
-			WindowName(), 
+			WindowName(),
 			WS_OVERLAPPEDWINDOW,
-			CW_USEDEFAULT, 0, CW_USEDEFAULT, 0, 
-			NULL, 
-			NULL, 
-			m_hInstance, 
+			CW_USEDEFAULT, 0, CW_USEDEFAULT, 0,
+			NULL,
+			NULL,
+			m_hInstance,
 			this);
 
 		if (hwnd == 0)
@@ -111,30 +111,30 @@ LRESULT CALLBACK BaseWindow::WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPA
 {
 	BaseWindow *pWin = NULL;
 
-	if (uMsg == WM_NCCREATE) 
+	if (uMsg == WM_NCCREATE)
 	{
-        // When we create the window, we pass in a pointer to this class 
+        // When we create the window, we pass in a pointer to this class
         // as part of the CREATESTRUCT structure.
 		LPCREATESTRUCT lpcs = (LPCREATESTRUCT)lParam;
 		pWin = (BaseWindow*)lpcs->lpCreateParams;
-		
+
         // Set the window handle.
         pWin->m_hwnd = hwnd;
 
         // Set the pointer to the class as user data.
 		SetWindowLongPtr(hwnd, GWLP_USERDATA, (LONG_PTR)pWin);
-	} 
-	else 
+	}
+	else
 	{
         // Get the pointer to the class.
 		pWin = (BaseWindow*)GetWindowLongPtr(hwnd, GWLP_USERDATA);
 	}
 
-	if (pWin) 
+	if (pWin)
 	{
 		return pWin->OnReceiveMessage(uMsg, wParam, lParam);
-	} 
-	else 
+	}
+	else
 	{
 		return DefWindowProc(hwnd, uMsg, wParam, lParam);
 	}
@@ -147,7 +147,7 @@ LRESULT CALLBACK BaseWindow::WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPA
 
 LRESULT BaseWindow::OnReceiveMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
-	switch (uMsg) 
+	switch (uMsg)
 	{
 	case WM_NCDESTROY:
 		SetWindowLongPtr(m_hwnd, GWLP_USERDATA, 0);

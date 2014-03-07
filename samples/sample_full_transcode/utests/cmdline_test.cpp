@@ -19,8 +19,8 @@ namespace {
         std::auto_ptr<MockHandler> hdl2;
         std::auto_ptr<MockHandler> hdl3;
         std::auto_ptr<MockHandler> hdl4;
-        
-        CmdLineParserTest() 
+
+        CmdLineParserTest()
             : hdl(new MockHandler)
             , hdl1(new MockHandler)
             , hdl2(new MockHandler)
@@ -32,17 +32,17 @@ namespace {
 }
 
 TEST_F(CmdLineParserTest, register_option_print_help) {
-    
+
     EXPECT_CALL(*hdl, GetName()).WillRepeatedly(Return(MSDK_STRING("-mock")));
     EXPECT_CALL(*hdl, PrintHelp(_, _)).WillOnce(Invoke(PrintMockHelp));
     msdk_stringstream os;
-    
+
     parser.RegisterOption(hdl);
 
     hdl.reset(new MockHandler);
     EXPECT_CALL(*hdl, GetName()).WillRepeatedly(Return(MSDK_STRING("-mock")));
     EXPECT_CALL(*hdl.get(), PrintHelp(_, _)).WillOnce(Invoke(PrintMockHelp));
-    
+
     parser.RegisterOption(hdl);
 
     parser.PrintHelp(os);
@@ -95,7 +95,7 @@ TEST_F(CmdLineParserTest, integration_test_parse3_options) {
         (ArgHandler<msdk_string>(MSDK_CHAR("-opt1"), MSDK_CHAR("description")))
         (ArgHandler<int>(MSDK_CHAR("-opt2"), MSDK_CHAR("description")))
         (ArgHandler<double>(MSDK_CHAR("-opt45"), MSDK_CHAR("description"))),
-        MSDK_STRING(""), 
+        MSDK_STRING(""),
         MSDK_STRING("")));
 
     CmdLineParser &parser = *parser2.get();
@@ -108,8 +108,8 @@ TEST_F(CmdLineParserTest, integration_test_parse3_options) {
 
 TEST_F (CmdLineParserTest, not_registered_option_requested) {
 
-    std::auto_ptr<CmdLineParser> parser2(CreateCmdLineParser (Options(), 
-        MSDK_STRING(""), 
+    std::auto_ptr<CmdLineParser> parser2(CreateCmdLineParser (Options(),
+        MSDK_STRING(""),
         MSDK_STRING("")));
     CmdLineParser &parser3 = *parser2.get();
 
@@ -120,8 +120,8 @@ TEST_F (CmdLineParserTest, not_parsed_option_requested) {
 
     std::auto_ptr<CmdLineParser> parser2(CreateCmdLineParser (Options()
         (ArgHandler<msdk_string>(MSDK_CHAR("-opt1"),  MSDK_CHAR("description")))
-        (ArgHandler<msdk_string>(MSDK_CHAR("-opt2"),  MSDK_CHAR("description"))), 
-        MSDK_STRING(""), 
+        (ArgHandler<msdk_string>(MSDK_CHAR("-opt2"),  MSDK_CHAR("description"))),
+        MSDK_STRING(""),
         MSDK_STRING("")));
     CmdLineParser &parser3 = *parser2.get();
     parser3.Parse(MSDK_CHAR("-opt2 32"));
@@ -134,16 +134,16 @@ TEST_F (CmdLineParserTest, option_is_present) {
     std::auto_ptr<CmdLineParser> parser2(CreateCmdLineParser (Options()
         (ArgHandler<msdk_string>(MSDK_CHAR("-opt1"),  MSDK_CHAR("description")))
         (ArgHandler<msdk_string>(MSDK_CHAR("-opt2"),  MSDK_CHAR("description"))),
-        MSDK_STRING(""), 
+        MSDK_STRING(""),
         MSDK_STRING("")));
 
     CmdLineParser &parser3 = *parser2.get();
     parser3.Parse(MSDK_CHAR("-opt2 32"));
 
-    //registered option parsed 
+    //registered option parsed
     EXPECT_EQ(true, parser3.IsPresent(MSDK_CHAR("-opt2")));
 
-    //registered option not parsed 
+    //registered option not parsed
     EXPECT_EQ(false, parser3.IsPresent(MSDK_CHAR("-opt1")));
 
     //lets not registered option result to false as well
@@ -156,7 +156,7 @@ TEST_F (CmdLineParserTest, integration_test_parse3_options_new_API) {
         (ArgHandler<msdk_string>(MSDK_CHAR("-opt1"),  MSDK_CHAR("description")))
         (ArgHandler<int>        (MSDK_CHAR("-opt2"),  MSDK_CHAR("description")))
         (ArgHandler<double>     (MSDK_CHAR("-opt45"), MSDK_CHAR("description"))),
-        MSDK_STRING(""), 
+        MSDK_STRING(""),
         MSDK_STRING("")));
 
     CmdLineParser &parser3 = *parser2.get();
@@ -171,7 +171,7 @@ TEST_F(CmdLineParserTest, cast_to_vector_of_int) {
     std::auto_ptr<CmdLineParser> parser2(CreateCmdLineParser( Options()
         (ArgHandler<std::vector<msdk_string> >(MSDK_CHAR("-opt1"),  MSDK_CHAR("description")))
         (ArgHandler<std::vector<int> > (MSDK_CHAR("-opt2"),  MSDK_CHAR("description"))),
-        MSDK_STRING(""), 
+        MSDK_STRING(""),
         MSDK_STRING("")));
 
     CmdLineParser &parser3 = *parser2.get();
@@ -187,7 +187,7 @@ TEST_F(CmdLineParserTest, cast_to_vector_of_str) {
     std::auto_ptr<CmdLineParser> parser2(CreateCmdLineParser ( Options()
         (ArgHandler<std::vector<msdk_string> >(MSDK_CHAR("-opt1"),  MSDK_CHAR("description")))
         (ArgHandler<std::vector<int> > (MSDK_CHAR("-opt2"),  MSDK_CHAR("description"))),
-        MSDK_STRING(""), 
+        MSDK_STRING(""),
         MSDK_STRING("")));
 
     CmdLineParser &parser3 = *parser2.get();

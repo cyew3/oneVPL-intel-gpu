@@ -51,7 +51,7 @@ CUnknown * WINAPI CVC1DecVideoFilter::CreateInstance(LPUNKNOWN punk, HRESULT *ph
 }
 
 HRESULT CVC1DecVideoFilter::CheckInputType(const CMediaType *mtIn)
-{    
+{
     BITMAPINFOHEADER* pBmpHdr        = NULL;
     INT               nSeqHeaderSize = 0;
     INT               nVideoInfoSize = 0;
@@ -60,8 +60,8 @@ HRESULT CVC1DecVideoFilter::CheckInputType(const CMediaType *mtIn)
 
     if (WMMEDIASUBTYPE_WMV3 == *mtIn->Subtype())
     {
-        m_mfxParamsVideo.mfx.CodecProfile = MFX_PROFILE_VC1_SIMPLE;        
-    }   
+        m_mfxParamsVideo.mfx.CodecProfile = MFX_PROFILE_VC1_SIMPLE;
+    }
     else if (WMMEDIASUBTYPE_WVC1 == *mtIn->Subtype())
     {
         m_mfxParamsVideo.mfx.CodecProfile = MFX_PROFILE_VC1_ADVANCED;
@@ -71,7 +71,7 @@ HRESULT CVC1DecVideoFilter::CheckInputType(const CMediaType *mtIn)
         return VFW_E_INVALIDMEDIATYPE;
     }
 
-    if (FORMAT_VideoInfo2 == *mtIn->FormatType()) 
+    if (FORMAT_VideoInfo2 == *mtIn->FormatType())
     {
         VIDEOINFOHEADER2* pvi2 = (VIDEOINFOHEADER2*)mtIn->pbFormat;
         MSDK_CHECK_POINTER(pvi2, E_POINTER);
@@ -81,7 +81,7 @@ HRESULT CVC1DecVideoFilter::CheckInputType(const CMediaType *mtIn)
         pBmpHdr = &(pvi2->bmiHeader);
     }
 
-    if (FORMAT_VideoInfo == *mtIn->FormatType()) 
+    if (FORMAT_VideoInfo == *mtIn->FormatType())
     {
         VIDEOINFOHEADER* pvi = (VIDEOINFOHEADER*)mtIn->pbFormat;
         MSDK_CHECK_POINTER(pvi, E_POINTER);
@@ -108,14 +108,14 @@ HRESULT CVC1DecVideoFilter::CheckInputType(const CMediaType *mtIn)
         MSDK_SAFE_DELETE_ARRAY(m_pVC1SeqHeader);
         m_pVC1SeqHeader = new BYTE [nSeqHeaderSize];
         MSDK_CHECK_POINTER(m_pVC1SeqHeader, MFX_ERR_MEMORY_ALLOC);
-        
+
         MSDK_MEMCPY_BUF(m_pVC1SeqHeader, 0, nSeqHeaderSize, mtIn->pbFormat + nVideoInfoSize, nSeqHeaderSize);
 
         m_nVC1SeqHeaderSize = nSeqHeaderSize;
         m_bVC1SeqHeaderDeliver = TRUE;
 
         MSDK_SAFE_DELETE(m_pFrameConstructor);
-        m_pFrameConstructor = new CVC1FrameConstructor(&m_mfxParamsVideo);        
+        m_pFrameConstructor = new CVC1FrameConstructor(&m_mfxParamsVideo);
     }
 
     return CDecVideoFilter::CheckInputType(mtIn);
@@ -123,7 +123,7 @@ HRESULT CVC1DecVideoFilter::CheckInputType(const CMediaType *mtIn)
 
 HRESULT CVC1DecVideoFilter::Receive(IMediaSample *pSample)
 {
-    mfxStatus sts = MFX_ERR_NONE;    
+    mfxStatus sts = MFX_ERR_NONE;
 
     if (m_bVC1SeqHeaderDeliver && m_nVC1SeqHeaderSize && !m_bStop)
     {
@@ -144,10 +144,10 @@ HRESULT CVC1DecVideoFilter::Receive(IMediaSample *pSample)
         if (0 == pSample->GetActualDataLength())
         {
             return S_FALSE;
-        }    
-        
+        }
+
         memset(&mfxBS, 0, sizeof(mfxBitstream));
-       
+
         pSample->GetPointer(&pDataBuffer);
         MSDK_CHECK_POINTER(pDataBuffer, E_POINTER);
 
@@ -159,9 +159,9 @@ HRESULT CVC1DecVideoFilter::Receive(IMediaSample *pSample)
         MSDK_MEMCPY_BUF(pSaveDataBuffer, 0, nSaveBufferSize, pDataBuffer, nSaveBufferSize);
 
         MSDK_MEMCPY_BUF(pDataBuffer, 0, m_nVC1SeqHeaderSize, m_pVC1SeqHeader, m_nVC1SeqHeaderSize);
-        
+
         pSample->SetActualDataLength(m_nVC1SeqHeaderSize);
-        
+
         //input sample is updated if required
         sts = m_pFrameConstructor->ConstructFrame(pSample, 0);
 
@@ -188,7 +188,7 @@ HRESULT CVC1DecVideoFilter::Receive(IMediaSample *pSample)
 
                 MSDK_SAFE_DELETE_ARRAY(pSaveDataBuffer);
 
-                return E_FAIL;                                         
+                return E_FAIL;
             }
         }
 
@@ -198,9 +198,9 @@ HRESULT CVC1DecVideoFilter::Receive(IMediaSample *pSample)
         MSDK_SAFE_DELETE_ARRAY(pSaveDataBuffer);
 
         m_bVC1SeqHeaderDeliver = FALSE;
-    }    
-    
-    return CDecVideoFilter::Receive(pSample);        
+    }
+
+    return CDecVideoFilter::Receive(pSample);
 };
 
 HRESULT CVC1DecVideoFilter::NewSegment(REFERENCE_TIME tStart, REFERENCE_TIME tStop, double dRate)

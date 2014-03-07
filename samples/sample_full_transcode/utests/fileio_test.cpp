@@ -33,7 +33,7 @@ struct FileIOTest  : public ::testing::Test {
         fclose(f);
         _tremove(tmpFile.c_str());
         delete[] bitstream.Data;
-    }        
+    }
 };
 
 TEST_F(FileIOTest, test_file_read) {
@@ -95,7 +95,7 @@ TEST_F(FileIOTest, test_file_write) {
     bitstream.DataOffset = 0;
     fio->Write(&bitstream);
     fio.reset();
-    
+
     f = _tfopen(tmpFile.c_str(), MSDK_STRING("rb"));
     EXPECT_EQ(100, fread(bitstream.Data, sizeof(mfxU8), 100, f));
     fclose(f);

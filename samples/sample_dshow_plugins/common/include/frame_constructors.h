@@ -36,20 +36,20 @@ protected:
 
 class CVC1FrameConstructor : public CFrameConstructor
 {
-public:    
+public:
     CVC1FrameConstructor(mfxVideoParam* pVideoParam);
-    
+
     mfxStatus       ConstructFrame              (IMediaSample* pSample, mfxBitstream* pBS);
 
     mfxStatus       ConstructHeaderSM           (mfxU8* pHeaderSM, mfxU32 nHeaderSize, mfxU8* pDataBuffer, mfxU32 nDataSize);
 
 protected:
-    
+
     mfxStatus       ConstructSequenceHeaderSM   (IMediaSample* pSample);
     bool            StartCodeExist              (mfxU8* pStart);
-    
+
 protected:
-    
+
     mfxVideoParam*  m_pVideoParam;
 };
 
@@ -79,17 +79,17 @@ public:
     ~CAVCFrameConstructor();
 
     virtual mfxStatus ConstructFrame(IMediaSample* pSample, mfxBitstream *pBS);
-    
-    mfxStatus ReadAVCHeader( MPEG2VIDEOINFO *pMPEG2VidInfo,  mfxBitstream  *pBS ); 
+
+    mfxStatus ReadAVCHeader( MPEG2VIDEOINFO *pMPEG2VidInfo,  mfxBitstream  *pBS );
 
     virtual void Reset() { m_bInsertHeaders = true; };
 
 private:
     bool         m_bInsertHeaders;
-    mfxU32       m_NalSize; 
-    mfxU32       m_HeaderNalSize; 
+    mfxU32       m_NalSize;
+    mfxU32       m_HeaderNalSize;
 
-    mfxBitstream m_Headers; 
+    mfxBitstream m_Headers;
     mfxBitstream m_StartCodeBS;
 };
 
@@ -98,14 +98,14 @@ class StartCodeIteratorMP4
 public:
 
     StartCodeIteratorMP4() :m_nCurPos(0), m_nNALStartPos(0), m_nNALDataPos(0), m_nNextRTP(0){};
-    
+
 
     void Init(BYTE * pBuffer, int nSize, int nNALSize)
-    {    
-         m_pBuffer = pBuffer; 
-         m_nSize = nSize; 
-         m_nNALSize = nNALSize; 
-        
+    {
+         m_pBuffer = pBuffer;
+         m_nSize = nSize;
+         m_nNALSize = nNALSize;
+
     }
 
     NALU_TYPE    GetType()        const { return m_nal_type; };
@@ -118,7 +118,7 @@ public:
         if (m_nCurPos >= m_nSize) return false;
         if ((m_nNALSize != 0) && (m_nCurPos == m_nNextRTP))
         {
-            
+
             m_nNALStartPos   = m_nCurPos;
             m_nNALDataPos    = m_nCurPos + m_nNALSize;
             nTemp            = 0;
@@ -142,22 +142,22 @@ public:
             m_nCurPos       += 3;
             m_nNALDataPos    = m_nCurPos;
             MoveToNextStartcode();
-        }        
+        }
         m_nal_type    = (NALU_TYPE) (m_pBuffer[m_nNALDataPos] & 0x1f);
 
         return true;
     }
 
 private:
-    mfxU32        m_nNALStartPos; 
-    mfxU32        m_nNALDataPos; 
-    mfxU32        m_nDatalen; 
+    mfxU32        m_nNALStartPos;
+    mfxU32        m_nNALDataPos;
+    mfxU32        m_nDatalen;
     mfxU32        m_nCurPos;
-    mfxU32        m_nNextRTP; 
-    mfxU32        m_nSize; 
-    mfxU32        m_nNALSize; 
-    NALU_TYPE    m_nal_type; 
-    BYTE *        m_pBuffer; 
+    mfxU32        m_nNextRTP;
+    mfxU32        m_nSize;
+    mfxU32        m_nNALSize;
+    NALU_TYPE    m_nal_type;
+    BYTE *        m_pBuffer;
 
     bool MoveToNextStartcode()
     {

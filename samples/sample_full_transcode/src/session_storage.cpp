@@ -14,7 +14,7 @@
 #include "pipeline_factory.h"
 #include <iostream>
 
-SessionStorage::SessionStorage( PipelineFactory& factory , const MFXSessionInfo &vSession, const MFXSessionInfo &aSession ) : 
+SessionStorage::SessionStorage( PipelineFactory& factory , const MFXSessionInfo &vSession, const MFXSessionInfo &aSession ) :
     m_factory(factory),
     m_vInfo(vSession),
     m_aInfo(aSession)
@@ -45,8 +45,8 @@ MFXAudioSession * SessionStorage::GetAudioSessionForID(int id){
             MSDK_TRACE_ERROR(MSDK_STRING("pAudioSession->Init(m_impl, &m_ver), sts=") << sts);
             throw MFXAudioSessionInitError();
         }
-            
-        m_audstorage[id] = pAudioSession.get();      
+
+        m_audstorage[id] = pAudioSession.get();
         return pAudioSession.release();
     }
     return (*session).second;
@@ -57,7 +57,7 @@ MFXVideoSessionExt * SessionStorage::GetVideoSessionForID(int id){
     if(session == m_vidstorage.end())
     {
         std::auto_ptr<MFXVideoSessionExt> pVideoSession (m_factory.CreateVideoSession());
-        
+
         mfxStatus sts = pVideoSession->Init(m_vInfo.IMPL(), &m_vInfo.Version());
         if( MFX_ERR_NONE > sts) {
             MSDK_TRACE_ERROR(MSDK_STRING("pVideoSession->Init(m_impl, &m_ver), sts=") << sts);
@@ -69,7 +69,7 @@ MFXVideoSessionExt * SessionStorage::GetVideoSessionForID(int id){
             MSDK_TRACE_ERROR(MSDK_STRING("pVideoSession->QueryVersion(&ver), sts=") << sts);
         }
         MSDK_TRACE_INFO(MSDK_STRING("Video library version: ") << ver.Major << MSDK_STRING(".") << ver.Minor);
-        m_vidstorage[id] = pVideoSession.get();      
+        m_vidstorage[id] = pVideoSession.get();
         return pVideoSession.release();
     }
     return (*session).second;

@@ -48,7 +48,7 @@ mfxStatus CBaseDecoder::SetAcceleration(mfxIMPL impl)
 
     m_mfxVideoSession.Close();
 
-    mfxVersion version = {m_nAPIVerMinor, m_nAPIVerMajor};     
+    mfxVersion version = {m_nAPIVerMinor, m_nAPIVerMajor};
     sts = m_mfxVideoSession.Init(impl, &version);
 
     if (MFX_ERR_NONE == sts)
@@ -76,7 +76,7 @@ mfxU8 CBaseDecoder::FindFreeSurface()
         for (mfxU8 i = 0; i < m_nRequiredFramesNum; i++)
         {
             if (!m_ppFrameSurfaces[i]->Data.Locked)
-            {               
+            {
                 // if a MediaSample is bound with mfxFrameSurface
                 if (dynamic_cast<IMemAllocator*>(m_pMfxFrameAllocator))
                 {
@@ -109,14 +109,14 @@ CBaseDecoder::~CBaseDecoder()
 
 mfxStatus CBaseDecoder::Close()
 {
-    mfxStatus sts = MFX_ERR_NONE;    
+    mfxStatus sts = MFX_ERR_NONE;
 
     if (m_pmfxDEC)
     {
         m_pmfxDEC->Close();
-    }    
+    }
 
-    FreeFrames();    
+    FreeFrames();
 
     return sts;
 };
@@ -135,15 +135,15 @@ mfxStatus CBaseDecoder::AllocFrames(mfxVideoParam* pVideoParams, mfxU32 nPitch)
     FreeFrames();
 
     //prepare and create allocator
-    memset(&allocRequest, 0, sizeof(allocRequest)); 
+    memset(&allocRequest, 0, sizeof(allocRequest));
 
     sts =  m_pmfxDEC->QueryIOSurf(pVideoParams, &allocRequest);
     MSDK_IGNORE_MFX_STS(sts, MFX_WRN_PARTIAL_ACCELERATION);
-    MSDK_IGNORE_MFX_STS(sts, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM);   
+    MSDK_IGNORE_MFX_STS(sts, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM);
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
     allocRequest.NumFrameSuggested += m_nAuxFramesNum;
-    m_nRequiredFramesNum = allocRequest.NumFrameSuggested; 
+    m_nRequiredFramesNum = allocRequest.NumFrameSuggested;
 
     MSDK_MEMCPY_VAR(allocRequest.Info, &pVideoParams->mfx.FrameInfo, sizeof(mfxFrameInfo));
 
@@ -151,7 +151,7 @@ mfxStatus CBaseDecoder::AllocFrames(mfxVideoParam* pVideoParams, mfxU32 nPitch)
     allocRequest.Info.Height = (allocRequest.Info.Height + 31) &~ 31; // allocate frames with H aligned at 32 for both progressive and interlaced content
 
     sts = m_pMfxFrameAllocator->Alloc(m_pMfxFrameAllocator->pthis, &allocRequest, &m_AllocResponse);
-   
+
     if (MFX_ERR_NONE == sts)
     {
         m_ppFrameSurfaces = new mfxFrameSurface1 * [m_AllocResponse.NumFrameActual];
@@ -167,10 +167,10 @@ mfxStatus CBaseDecoder::AllocFrames(mfxVideoParam* pVideoParams, mfxU32 nPitch)
                 BREAK_ON_EPOINTER(m_ppFrameSurfaces[i], sts);
 
                 memset(m_ppFrameSurfaces[i], 0, sizeof(mfxFrameSurface1));
-                MSDK_MEMCPY_VAR(m_ppFrameSurfaces[i]->Info, &pVideoParams->mfx.FrameInfo, sizeof(mfxFrameInfo));   
+                MSDK_MEMCPY_VAR(m_ppFrameSurfaces[i]->Info, &pVideoParams->mfx.FrameInfo, sizeof(mfxFrameInfo));
                 m_ppFrameSurfaces[i]->Info.Height = (m_ppFrameSurfaces[i]->Info.Height + 31) &~ 31;
 
-                m_ppFrameSurfaces[i]->Data.MemId = m_AllocResponse.mids[i];                 
+                m_ppFrameSurfaces[i]->Data.MemId = m_AllocResponse.mids[i];
             }
         }
         else
@@ -187,7 +187,7 @@ mfxStatus CBaseDecoder::FreeFrames()
     if (m_pMfxFrameAllocator)
     {
         m_pMfxFrameAllocator->Free(m_pMfxFrameAllocator->pthis, &m_AllocResponse);
-        memset(&m_AllocResponse, 0, sizeof(mfxFrameAllocResponse));        
+        memset(&m_AllocResponse, 0, sizeof(mfxFrameAllocResponse));
     }
 
     if (m_ppFrameSurfaces)
@@ -208,33 +208,33 @@ mfxStatus CBaseDecoder::FreeFrames()
 mfxStatus CBaseDecoder::InternalReset(mfxVideoParam* pVideoParams, mfxU32 nPitch, bool bInited)
 {
     mfxStatus sts = MFX_ERR_NONE;
-   
+
     MSDK_CHECK_POINTER(pVideoParams, MFX_ERR_NULL_PTR);
     MSDK_CHECK_POINTER(m_pmfxDEC, MFX_ERR_NOT_INITIALIZED);
-    
+
     m_nCodecId = pVideoParams->mfx.CodecId;
     m_pVideoParams = pVideoParams;
 
     if (bInited)
     {
-        sts = m_pmfxDEC->Reset(pVideoParams);       
+        sts = m_pmfxDEC->Reset(pVideoParams);
 
         // Reset could be not enough, then Close->Init should be called
         if (MFX_ERR_NONE != sts)
         {
-            bInited = false;           
+            bInited = false;
         }
     }
 
     if (!bInited)
     {
         m_pmfxDEC->Close();
-        
+
         sts = AllocFrames(pVideoParams, nPitch);
 
         if (MFX_ERR_NONE == sts)
         {
-            sts = m_pmfxDEC->Init(pVideoParams);            
+            sts = m_pmfxDEC->Init(pVideoParams);
         }
     }
 
@@ -246,13 +246,13 @@ mfxStatus CBaseDecoder::InternalReset(mfxVideoParam* pVideoParams, mfxU32 nPitch
 };
 
 mfxStatus CBaseDecoder::Init(mfxVideoParam* pVideoParams, mfxU32 nPitch)
-{  
-    return InternalReset(pVideoParams, nPitch, false);     
+{
+    return InternalReset(pVideoParams, nPitch, false);
 };
 
 mfxStatus CBaseDecoder::Reset(mfxVideoParam* pVideoParams, mfxU32 nPitch)
 {
-    return InternalReset(pVideoParams, nPitch, true);     
+    return InternalReset(pVideoParams, nPitch, true);
 };
 
 mfxStatus CBaseDecoder::GetVideoParams(mfxVideoParam* pVideoParams)
@@ -291,7 +291,7 @@ mfxStatus CBaseDecoder::RunDecode(mfxBitstream* pBS, mfxFrameSurface1* &pFrameSu
     mfxStatus sts = MFX_ERR_NONE;
     mfxSyncPoint syncp;
 
-    MSDK_CHECK_POINTER(m_pmfxDEC, MFX_ERR_NOT_INITIALIZED);    
+    MSDK_CHECK_POINTER(m_pmfxDEC, MFX_ERR_NOT_INITIALIZED);
 
     mfxU8 nIndex = FindFreeSurface();
 
@@ -304,7 +304,7 @@ mfxStatus CBaseDecoder::RunDecode(mfxBitstream* pBS, mfxFrameSurface1* &pFrameSu
     do
     {
         sts = m_pmfxDEC->DecodeFrameAsync(pBS, m_ppFrameSurfaces[nIndex], &pFrameSurface, &syncp);
-        
+
         if (MFX_WRN_DEVICE_BUSY == sts)
         {
             Sleep(1);
@@ -312,13 +312,13 @@ mfxStatus CBaseDecoder::RunDecode(mfxBitstream* pBS, mfxFrameSurface1* &pFrameSu
     } while (MFX_WRN_DEVICE_BUSY == sts);
 
     // if decoder's session was joined to a downstream session synchronization is not needed
-    if (MFX_ERR_NONE == sts && !m_bSessionHasParent) 
+    if (MFX_ERR_NONE == sts && !m_bSessionHasParent)
     {
         sts = m_mfxVideoSession.SyncOperation(syncp, 0xFFFF);
-        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);            
+        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
     }
     else if (MFX_ERR_INCOMPATIBLE_VIDEO_PARAM == sts)
-    {        
+    {
         m_bHeaderDecoded = false;
     }
 

@@ -17,12 +17,12 @@ CH264EncVideoFilter::CH264EncVideoFilter(TCHAR* tszName, LPUNKNOWN punk, HRESULT
     CEncVideoFilter(tszName, punk, FILTER_GUID, phr)
 {
     m_bstrFilterName                  = FILTER_NAME;
-    m_mfxParamsVideo.mfx.CodecId      = MFX_CODEC_AVC;   
+    m_mfxParamsVideo.mfx.CodecId      = MFX_CODEC_AVC;
 
     //fill m_EncoderParams with default values
-    SetDefaultParams();   
+    SetDefaultParams();
 
-    // Fill m_EncoderParams with values from registry if available, 
+    // Fill m_EncoderParams with values from registry if available,
     // otherwise write current m_EncoderParams values to registry
     ReadParamsFromRegistry();
 
@@ -47,7 +47,7 @@ void CH264EncVideoFilter::SetDefaultParams(void)
 
     m_EncoderParams.target_usage                   = MFX_TARGETUSAGE_BALANCED;
     m_EncoderParams.preset                         = CodecPreset::PRESET_USER_DEFINED;
-    m_EncoderParams.frame_control.width            = 0; 
+    m_EncoderParams.frame_control.width            = 0;
     m_EncoderParams.frame_control.height           = 0;
 }
 
@@ -152,7 +152,7 @@ BOOL CH264EncVideoFilter::CheckOnlyBitrateChanged(mfxVideoParam* paramsVideo1, m
         memset(&H264Params1, 0, sizeof(H264Params1));
         memset(&H264Params2, 0, sizeof(H264Params2));
 
-        H264Params1.preset = 
+        H264Params1.preset =
             H264Params2.preset = preset;
 
         CopyMFXToEncoderParams(&H264Params1, paramsVideo1);
@@ -166,7 +166,7 @@ BOOL CH264EncVideoFilter::CheckOnlyBitrateChanged(mfxVideoParam* paramsVideo1, m
             bOnlyBitrateChanged = TRUE;
         }
     }
-    
+
     return bOnlyBitrateChanged;
 }
 
@@ -176,9 +176,9 @@ STDMETHODIMP CH264EncVideoFilter::SetParams(Params* params)
 
     HRESULT       hr = S_OK;
     mfxVideoParam old_mfxparams = m_mfxParamsVideo;
-        
+
     BOOL          bOnlyBitrateChanged = FALSE; //only bitrate changed
- 
+
     if (m_EncoderParams.preset == params->preset)
     {
         CopyEncoderToMFXParams(params, &m_mfxParamsVideo);
@@ -187,7 +187,7 @@ STDMETHODIMP CH264EncVideoFilter::SetParams(Params* params)
 
     if (bOnlyBitrateChanged && State_Running != m_State)
     {
-        mfxFrameInfo info = m_mfxParamsVideo.mfx.FrameInfo;        
+        mfxFrameInfo info = m_mfxParamsVideo.mfx.FrameInfo;
 
         AlignFrameSizes(&info, (mfxU16)m_EncoderParams.frame_control.width, (mfxU16)m_EncoderParams.frame_control.height);
 
@@ -207,7 +207,7 @@ STDMETHODIMP CH264EncVideoFilter::SetParams(Params* params)
     else
     {
         m_mfxParamsVideo = old_mfxparams;
-        hr = CEncVideoFilter::SetParams(params);        
+        hr = CEncVideoFilter::SetParams(params);
     }
 
     return hr;

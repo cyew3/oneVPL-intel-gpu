@@ -19,9 +19,9 @@ CMPEG2EncVideoFilter::CMPEG2EncVideoFilter(TCHAR *tszName,LPUNKNOWN punk,HRESULT
     m_mfxParamsVideo.mfx.CodecId = MFX_CODEC_MPEG2;
 
     //fill m_EncoderParams with default values
-    SetDefaultParams();   
+    SetDefaultParams();
 
-    // Fill m_EncoderParams with values from registry if available, 
+    // Fill m_EncoderParams with values from registry if available,
     // otherwise write current m_EncoderParams values to registry
     ReadParamsFromRegistry();
 
@@ -62,7 +62,7 @@ HRESULT CMPEG2EncVideoFilter::GetPages(CAUUID* pPages)
 
 void CMPEG2EncVideoFilter::SetDefaultParams(void)
 {
-    m_EncoderParams.level_idc                      = Params::LL_AUTOSELECT; 
+    m_EncoderParams.level_idc                      = Params::LL_AUTOSELECT;
     m_EncoderParams.profile_idc                    = Params::PF_AUTOSELECT;
 
     m_EncoderParams.ps_control.BufferSizeInKB      = 768;
@@ -113,7 +113,7 @@ void CMPEG2EncVideoFilter::ReadFrameRateFromRegistry(mfxU32 &iFrameRate)
 }
 
 bool CMPEG2EncVideoFilter::EncResetRequired(const mfxFrameInfo *pNewFrameInfo)
-{      
+{
     bool ret = (m_mfxParamsVPP.vpp.In.CropX != pNewFrameInfo->CropX) ||
                (m_mfxParamsVPP.vpp.In.CropY != pNewFrameInfo->CropY) ||
                (m_mfxParamsVPP.vpp.In.CropW != pNewFrameInfo->CropW) ||
@@ -136,7 +136,7 @@ bool CMPEG2EncVideoFilter::EncResetRequired(const mfxFrameInfo *pNewFrameInfo)
     m_mfxParamsVPP.vpp.Out.Width = MSDK_ALIGN16(pNewFrameInfo->Width);
     m_mfxParamsVPP.vpp.Out.Height = MSDK_ALIGN32(pNewFrameInfo->Height);
 
-    //return CEncVideoFilter::EncResetRequired(pNewFrameInfo);        
+    //return CEncVideoFilter::EncResetRequired(pNewFrameInfo);
     return ret;
 }
 
@@ -147,7 +147,7 @@ HRESULT CMPEG2EncVideoFilter::CheckInputType(const CMediaType* mtIn)
 
     // update registry params according to internal computations
     CopyMFXToEncoderParams(&m_EncoderParams,&m_mfxParamsVideo);
-    
+
     WriteParamsToRegistry();
     return S_OK;
 };

@@ -21,11 +21,11 @@ namespace {
         std::auto_ptr<MockHandler> hdl2;
         std::auto_ptr<MockHandler> hdl3;
         std::auto_ptr<MockHandler> hdl4;
-        
+
         std::auto_ptr<OptionHandler> chdl;
         std::auto_ptr<OptionHandler> chdl1;
 
-        OptionsTest() 
+        OptionsTest()
             : hdl(new MockHandler)
             , hdl1(new MockHandler)
             , hdl2(new MockHandler)

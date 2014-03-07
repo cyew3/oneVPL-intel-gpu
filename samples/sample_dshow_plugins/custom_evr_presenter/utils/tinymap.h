@@ -13,7 +13,7 @@
 // NOTES:
 // The TinyMap class is designed to hold a small-ish number of elements where
 // look-up performance is not important. (It uses a sorted linked list.)
-// 
+//
 // TinyMap uses "copy semantics" (keys and values are copied into the map).
 // Keys must support the comparison operators.
 
@@ -70,7 +70,7 @@ namespace MediaFoundationSamples
                 else if (pNode->item.key == k)
                 {
                     // Found a duplicate item. Fail.
-                    hr = MF_E_INVALID_KEY; 
+                    hr = MF_E_INVALID_KEY;
                     break;
                 }
                 else if (pNode->item.key > k)
@@ -97,13 +97,13 @@ namespace MediaFoundationSamples
             {
                 if (pNode == &m_anchor)
                 {
-                    // Reached the end of the list. 
+                    // Reached the end of the list.
                     break;
                 }
                 else if (pNode->item.key == k)
                 {
                     // Found the node to remove.
-                    pToRemove = pNode; 
+                    pToRemove = pNode;
                     break;
                 }
                 else if (pNode->item.key > k)
@@ -148,7 +148,7 @@ namespace MediaFoundationSamples
                     // Found a match
                     if (pv)
                     {
-                        *pv = pair.value; 
+                        *pv = pair.value;
                     }
                     bFound = TRUE;
                     break;
@@ -199,12 +199,12 @@ namespace MediaFoundationSamples
             m_count = 0;
         }
 
-        DWORD GetCount() const 
+        DWORD GetCount() const
         {
             return List<pair_type>::GetCount();
         }
 
-    
+
         ////////// Enumeration methods //////////
 
         // Object for enumerating the list.
@@ -215,7 +215,7 @@ namespace MediaFoundationSamples
             typedef List<pair_type>::POSITION LISTPOS;
 
         public:
-            MAPPOS() 
+            MAPPOS()
             {
             }
 
@@ -232,7 +232,7 @@ namespace MediaFoundationSamples
         private:
             LISTPOS pos;
 
-            MAPPOS(LISTPOS p) : pos(p) 
+            MAPPOS(LISTPOS p) : pos(p)
             {
             }
         };
@@ -249,7 +249,7 @@ namespace MediaFoundationSamples
         }
 
         HRESULT GetValue(MAPPOS vals, Value *ppItem)
-        {  
+        {
             HRESULT hr = S_OK;
 
             pair_type pair;
@@ -266,7 +266,7 @@ namespace MediaFoundationSamples
 
 
         HRESULT GetKey(MAPPOS vals, Key *ppItem)
-        {  
+        {
             HRESULT hr = S_OK;
 
             pair_type pair;

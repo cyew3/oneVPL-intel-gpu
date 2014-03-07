@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////
 // WinControl.h: Base control class
-// 
+//
 // THIS CODE AND INFORMATION IS PROVIDED "AS IS" WITHOUT WARRANTY OF
 // ANY KIND, EITHER EXPRESSED OR IMPLIED, INCLUDING BUT NOT LIMITED TO
 // THE IMPLIED WARRANTIES OF MERCHANTABILITY AND/OR FITNESS FOR A
@@ -42,7 +42,7 @@ struct Rect : RECT
 		POINT pt = { x, y };
 		return PtInRect(this, pt);
 	}
-	
+
 
 	LONG Width() const { return right - left; }
 	LONG Height() const { return bottom - top; }
@@ -58,7 +58,7 @@ struct Size :  SIZE
 	Size(LONG x, LONG y)
 	{
 		this->cx = x;
-		this->cy = y; 
+		this->cy = y;
 	}
 };
 
@@ -66,12 +66,12 @@ class Control
 {
 public:
 	Control() : m_hwnd(0) {}
-    
+
 	void SetWindow(HWND hwnd) { m_hwnd = hwnd; }
     HWND Window() const { return m_hwnd; }
 
-	void Enable(BOOL bEnable) 
-    { 
+	void Enable(BOOL bEnable)
+    {
         if (!bEnable &&  m_hwnd == GetFocus())
         {
             // If we're being disabled and this control has focus,
@@ -80,7 +80,7 @@ public:
             ::SendMessage(GetParent(m_hwnd), WM_NEXTDLGCTL, 0, FALSE);
         }
 
-        EnableWindow(m_hwnd, bEnable); 
+        EnableWindow(m_hwnd, bEnable);
     }
 
     // SendMessage: Send a message to the control.

@@ -164,7 +164,7 @@ static HRESULT RegisterAsMFT(ClassRegData *pRegData,
                              GUID guidCategory)
 {
     HRESULT hr = S_OK;
-    
+
     if (!pRegData) return E_POINTER;
 
     DWORD i = 0;

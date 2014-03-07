@@ -46,7 +46,7 @@ CBaseFilter(tszName, punk, &m_csShared, FILTER_GUID)
         bs.DataLength = MAX_FRAME_SIZE;
         bs.Data = new mfxU8[bs.DataLength];
 
-        memset(bs.Data, 0, bs.DataLength);        
+        memset(bs.Data, 0, bs.DataLength);
 
         setTotal.push_back(bs);
     }
@@ -87,7 +87,7 @@ STDMETHODIMP CMVCRepackFilter::Pause()
 
     if (!m_pOutputPin->IsConnected())
     {
-        return E_FAIL;   
+        return E_FAIL;
     };
 
     return CBaseFilter::Pause();
@@ -135,7 +135,7 @@ void CMVCRepackFilter::CreatePins(void)
     }
 
     m_pOutputPin = NULL;
-    
+
     //base view pin
     CreateInputPin();
     //second view pin
@@ -161,7 +161,7 @@ bool CMVCRepackFilter::CreateInputPin()
     else
     {
         _stprintf_s(strPinName, 15, _T("Second view %d"), m_nInputPinsCount);
-    }    
+    }
 
     m_pInput[m_nInputPinsCount] = new CRepackInputPin(strPinName, this, &hr, &m_csShared, strPinName, m_nInputPinsCount);
 
@@ -204,12 +204,12 @@ HRESULT CMVCRepackFilter::DeliverEndOfStream()
 {
     HRESULT hr = S_OK;
     CAutoLock cObjectLock(m_pLock);
-    
+
     m_nPinsActive--;
 
     if (0 == m_nPinsActive)
     {
-        do 
+        do
         {
             hr = PutDataToWriter(NULL, 0);
         } while (S_OK == hr);
@@ -227,7 +227,7 @@ HRESULT CMVCRepackFilter::DeliverBitstream(mfxBitstream* bs)
     mfxU8* pBuffer = NULL;
     mfxU32 nLength = bs->DataLength;
     CComPtr<IMediaSample> pOutSample;
-    
+
     HRESULT hr = m_pOutputPin->GetDeliveryBuffer(&pOutSample, NULL, NULL, 0);
 
     if (S_OK == hr)
@@ -273,7 +273,7 @@ HRESULT CMVCRepackFilter::PutDataToWriter(AVCFrameSplitterInfo* frame, mfxU8 vie
     CAutoLock cObjectLock(m_pLock);
 
     if (frame && setTotal.size())
-    {        
+    {
         mfxBitstream bitstream = setTotal.front();
         setTotal.pop_front();
 
@@ -291,7 +291,7 @@ HRESULT CMVCRepackFilter::PutDataToWriter(AVCFrameSplitterInfo* frame, mfxU8 vie
     }
 
     if (0 == m_nViewToWrite && set1.size())
-    {        
+    {
         hr = DeliverBitstream(&set1.front());
 
         set1.front().DataLength = 0;
@@ -305,7 +305,7 @@ HRESULT CMVCRepackFilter::PutDataToWriter(AVCFrameSplitterInfo* frame, mfxU8 vie
     if (1 == m_nViewToWrite && set2.size())
     {
         hr = DeliverBitstream(&set2.front());
-        
+
         set2.front().DataLength = 0;
         setTotal.push_back(set2.front());
 
@@ -320,7 +320,7 @@ HRESULT CMVCRepackFilter::PutDataToWriter(AVCFrameSplitterInfo* frame, mfxU8 vie
 //CRepackInputPin
 CRepackInputPin::CRepackInputPin( TCHAR *pName, CBaseFilter *pFilter, HRESULT *phr, CCritSec *cs, LPCWSTR pPinName, INT PinNumber) :
 CBaseInputPin(pName, pFilter, cs, phr, pPinName)
-{    
+{
     m_pFilter = pFilter;
     m_nPinNumber = (mfxU8)PinNumber;
 
@@ -343,11 +343,11 @@ CRepackInputPin::~CRepackInputPin()
 STDMETHODIMP CRepackInputPin::Receive(IMediaSample *pSample)
 {
     HRESULT         hr = S_OK;
-    
+
     mfxStatus       sts = MFX_ERR_NONE;
     mfxBitstream    inBs;
     BYTE*           pBuffer = NULL;
-    
+
     memset(&inBs, 0, sizeof(inBs));
 
     hr = pSample->GetPointer(&pBuffer);
@@ -382,8 +382,8 @@ STDMETHODIMP CRepackInputPin::Receive(IMediaSample *pSample)
             ((CMVCRepackFilter*)m_pFilter)->PutDataToWriter(m_pFrame, m_nPinNumber);
             m_pNALSplitter->ResetCurrentState();
         }
-    }    
-        
+    }
+
     return CBaseInputPin::Receive(pSample);
 }
 
@@ -403,7 +403,7 @@ HRESULT CRepackInputPin::CheckMediaType(const CMediaType *pmt)
 {
     if (MEDIATYPE_Video == pmt->majortype && FORMAT_MPEG2_VIDEO == pmt->formattype)
     {
-        if (MEDIASUBTYPE_H264 == *pmt->Subtype() || MEDIASUBTYPE_H264_CUST == *pmt->Subtype())        
+        if (MEDIASUBTYPE_H264 == *pmt->Subtype() || MEDIASUBTYPE_H264_CUST == *pmt->Subtype())
         {
             if (pmt->cbFormat > sizeof(VIDEOINFOHEADER2))
             {
@@ -413,7 +413,7 @@ HRESULT CRepackInputPin::CheckMediaType(const CMediaType *pmt)
 
             return S_OK;
         }
-    }   
+    }
 
     return VFW_E_TYPE_NOT_ACCEPTED;
 };
@@ -422,7 +422,7 @@ HRESULT CRepackInputPin::EndOfStream(void)
 {
     ((CMVCRepackFilter*)m_pFilter)->DeliverEndOfStream();
     return S_OK;
-}; 
+};
 
 CRepackOutputPin::CRepackOutputPin(TCHAR *pName, CBaseFilter  *pFilter, HRESULT *phr, CCritSec *cs, LPCWSTR pPinName) :
 CBaseOutputPin(pName, pFilter, cs, phr, pPinName)

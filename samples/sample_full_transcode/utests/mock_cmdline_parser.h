@@ -28,7 +28,7 @@ public:
 
     }
     MOCK_METHOD1(RegisterOption, void (const OptionHandler &));
-    MOCK_METHOD1(Parse, bool (const msdk_string & params)); 
+    MOCK_METHOD1(Parse, bool (const msdk_string & params));
     MOCK_CONST_METHOD1(at, const OptionHandler & (const msdk_string & option));
     MOCK_CONST_METHOD2(PrintHelp, void (std::ostream &, size_t ));
     MOCK_CONST_METHOD1(IsPresent, bool (const msdk_string & option));

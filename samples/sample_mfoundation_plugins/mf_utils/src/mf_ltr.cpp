@@ -101,7 +101,7 @@ void FrameTypeGenerator::Next()
 /*------------------------------------------------------------------------------*/
 
 
-auto_ptr<MFLongTermReference> MFLongTermReferenceFactory::CreateLongTermReference(MFParamsManager *pManager) 
+auto_ptr<MFLongTermReference> MFLongTermReferenceFactory::CreateLongTermReference(MFParamsManager *pManager)
 {
     try
     {
@@ -227,9 +227,9 @@ HRESULT MFLongTermReference::UseFrame(ULONG nUseLTRFrames)
         for (mfxU8 i = 0; i < 16; i++)
         {
             if (!bitMap[i]) continue;
-            
+
             RefList::iterator it = m_LTRFrames.find(i);
-            if (it == m_LTRFrames.end()) 
+            if (it == m_LTRFrames.end())
             {
                 hr = E_INVALIDARG;
                 break;
@@ -246,9 +246,9 @@ HRESULT MFLongTermReference::UseFrame(ULONG nUseLTRFrames)
         for (mfxU8 i = 0; i < 16; i++)
         {
             if (!bitMap[i]) continue;
-            
+
             RefList::iterator it = m_LTRFrames.find(i);
-            if (it != m_LTRFrames.end()) 
+            if (it != m_LTRFrames.end())
             {
                 try
                 {
@@ -304,8 +304,8 @@ void MFLongTermReference::IncrementFrameOrder()
 
 /*------------------------------------------------------------------------------*/
 
-void MFLongTermReference::ResetFrameOrder(void) 
-{ 
+void MFLongTermReference::ResetFrameOrder(void)
+{
     m_LTRFrames.clear();
     m_MarkFrameIdx = MF_INVALID_IDX;
     m_preferredIdxs.clear();
@@ -380,7 +380,7 @@ HRESULT MFLongTermReference::GenerateFrameEncodeCtrlExtParam(mfxEncodeCtrl &enco
 }
 
 /*------------------------------------------------------------------------------*/
- 
+
 HRESULT MFLongTermReference::GenerateExtAVCRefList(mfxExtAVCRefListCtrl& extAvcRefListCtrl)
 {
     mfxU16 longTermIdx = MF_INVALID_IDX; //0xffff means output frame is a short term reference frame or a non-reference frame.
@@ -514,7 +514,7 @@ void MFLongTermReference::UpdateLTRList(mfxU32 frameType, vector<LongTermRefFram
     {
         if (m_LTRFrames.size() < m_nBufferControlSize) //auto mode: we mark n-frames from the base layer after each IDR as LTR , where n = m_nBufferControlSize
         {
-            // The Mark command is optional here. If it's passed we can consider that it wants to set specific idx for the current frame, even the frame is going to be marked without the command 
+            // The Mark command is optional here. If it's passed we can consider that it wants to set specific idx for the current frame, even the frame is going to be marked without the command
             if (m_MarkFrameIdx != MF_INVALID_IDX)
             {
                 idx = m_MarkFrameIdx;
@@ -533,7 +533,7 @@ void MFLongTermReference::UpdateLTRList(mfxU32 frameType, vector<LongTermRefFram
             frame.LongTermIdx = idx;
             addToDPB.push_back(frame);
         }
-        else 
+        else
         {
             if (m_MarkFrameIdx != MF_INVALID_IDX)
             {
@@ -559,7 +559,7 @@ void MFLongTermReference::UpdateSTRList(mfxU32 frameType, bool isLTR)
     if ((frameType & MFX_FRAMETYPE_REF) && !isLTR)
     {
         mfxU16 maxNumShortTerm = m_nNumRefFrame - m_nBufferControlSize;
-            
+
         if (m_STRFrames.size() == maxNumShortTerm)
         {
             m_STRFrames.erase(min_element(m_STRFrames.begin(), m_STRFrames.end()));

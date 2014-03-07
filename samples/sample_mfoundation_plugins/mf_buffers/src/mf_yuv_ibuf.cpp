@@ -370,7 +370,7 @@ HRESULT MFYuvInSurface::LoadD3D11()
     {
         mfxHDLPair pair;
         m_pAlloc->GetHDL(m_pAlloc->pthis, srf->Data.MemId, (mfxHDL*)&pair);
-        
+
 
         UINT srcSubresourceIdx = 0u;
         hr = dxgiBuffer->GetResource(IID_ID3D11Texture2D, (LPVOID*)&p2DTexture);
@@ -385,7 +385,7 @@ HRESULT MFYuvInSurface::LoadD3D11()
             MFX_LTRACE_1(MF_TL_GENERAL, "dxgiBuffer->GetSubresourceIndex()=", "%d", hr);
             return hr;
         }
-        
+
 #ifdef CM_COPY_RESOURCE
        if (!m_bFallBackToNonCMCopy && m_pMFAllocator)
        {

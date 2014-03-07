@@ -22,7 +22,7 @@ Copyright(c) 2012-2013 Intel Corporation. All Rights Reserved.
 // This should be used in the private: declarations for a class
 #define DISALLOW_COPY_AND_ASSIGN(TypeName) \
     TypeName(const TypeName&);               \
-    void operator=(const TypeName&) 
+    void operator=(const TypeName&)
 
 class MFXPluginBase;
 
@@ -39,7 +39,7 @@ public:
 
     virtual mfxStatus LoadDLL(msdk_char *dll_path);
     virtual mfxStatus SetAuxParam(void* auxParam, int auxParamSize);
-    
+
     // par1 != null enables first VPP (before Plugin), par2 != null enables second VPP (after Plugin); pipeline Plugin-VPP is not unsupported
     // QueryIOSurf must be called prior to Init to create topology
     mfxStatus QueryIOSurf(mfxVideoParam *par, mfxFrameAllocRequest request[2], mfxVideoParam *par1 = NULL, mfxVideoParam *par2 = NULL);
@@ -53,7 +53,7 @@ public:
     mfxStatus Query(mfxVideoParam *in, mfxVideoParam *out, mfxU8 component_idx = 0);
     mfxStatus GetVideoParam(mfxVideoParam *par, mfxU8 component_idx = 0);
     mfxStatus GetVPPStat(mfxVPPStat *stat, mfxU8 component_idx = 0);
-    
+
 protected:
     mfxFrameAllocator   m_FrameAllocator;
     mfxHDL              m_mfxHDL;
@@ -79,18 +79,18 @@ protected:
             Free();
         }
         mfxStatus Alloc(mfxFrameAllocResponse &response, mfxFrameInfo &info, bool opaque);
-        mfxFrameSurface1* GetFreeSurface();        
+        mfxFrameSurface1* GetFreeSurface();
     private:
         void Free()
         {
             for (mfxU32 i = 0; m_ppSurfacesPool && (i < m_nPoolSize) ; i++)
             {
                 MSDK_SAFE_DELETE(m_ppSurfacesPool[i]);
-            }                       
+            }
             MSDK_SAFE_DELETE_ARRAY(m_ppSurfacesPool);
         }
         DISALLOW_COPY_AND_ASSIGN(SurfacePool);
-    };    
+    };
 
     // VPP1
     mfxVideoParam          *m_pmfxVPP1Param;
@@ -105,7 +105,7 @@ protected:
 
     std::auto_ptr<mfxFrameAllocResponse>  m_allocResponses[2];
     mfxStatus               AllocateFrames(mfxVideoParam *par, mfxVideoParam *par1, mfxVideoParam *par2);
-    
+
     // pipeline implementation
     mfxStatus RunVPP1(mfxFrameSurface1 *in, mfxFrameSurface1 *out, mfxSyncPoint *syncp);
     mfxStatus RunPlugin(mfxFrameSurface1 *in, mfxFrameSurface1 *out, mfxSyncPoint *syncp);

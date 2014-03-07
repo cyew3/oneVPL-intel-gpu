@@ -7,7 +7,7 @@ or disclosed except in accordance with the terms of that agreement.
 Copyright(c) 2005-2014 Intel Corporation. All Rights Reserved.
 
 *****************************************************************************/
-   
+
 #ifndef __PIPELINE_DECODE_H__
 #define __PIPELINE_DECODE_H__
 
@@ -74,7 +74,7 @@ struct sInputParams
 
     msdk_char  strSrcFile[MSDK_MAX_FILENAME_LEN];
     msdk_char  strDstFile[MSDK_MAX_FILENAME_LEN];
-    msdk_char  strPluginPath[MSDK_MAX_FILENAME_LEN]; 
+    msdk_char  strPluginPath[MSDK_MAX_FILENAME_LEN];
 
     sInputParams()
     {
@@ -164,8 +164,8 @@ protected: // functions
     virtual mfxStatus DeliverOutput(mfxFrameSurface1* frame);
     mfxStatus DeliverLoop(void);
 
-    static unsigned int MSDK_THREAD_CALLCONVENTION DeliverThreadFunc(void* ctx); 
-    
+    static unsigned int MSDK_THREAD_CALLCONVENTION DeliverThreadFunc(void* ctx);
+
     virtual void PrintPerFrameStat();
 
 
@@ -177,13 +177,13 @@ protected: // variables
 
     MFXVideoSession         m_mfxSession;
     MFXVideoDECODE*         m_pmfxDEC;
-    mfxVideoParam           m_mfxVideoParams; 
+    mfxVideoParam           m_mfxVideoParams;
     std::auto_ptr<MFXVideoUSER>  m_pUserModule;
     std::auto_ptr<MFXPlugin> m_pPlugin;
     const msdkPluginUID*     m_pUID;
     std::vector<mfxExtBuffer *> m_ExtBuffers;
-    
-    MFXFrameAllocator*      m_pMFXAllocator; 
+
+    MFXFrameAllocator*      m_pMFXAllocator;
     mfxAllocatorParams*     m_pmfxAllocatorParams;
     MemType                 m_memType;      // memory type of surfaces to use
     bool                    m_bExternalAlloc; // use memory allocator as external for Media SDK
@@ -195,8 +195,8 @@ protected: // variables
 
     MSDKSemaphore*          m_pDeliverOutputSemaphore; // to access to DeliverOutput method
     MSDKEvent*              m_pDeliveredEvent; // to signal when output surfaces will be processed
-    mfxStatus               m_error; // error returned by DeliverOutput method 
-                            
+    mfxStatus               m_error; // error returned by DeliverOutput method
+
     bool                    m_bIsMVC; // enables MVC mode (need to support several files as an output)
     bool                    m_bIsExtBuffers; // indicates if external buffers were allocated
     eWorkMode               m_eWorkMode; // work mode for the pipeline
@@ -212,7 +212,7 @@ protected: // variables
     CHWDevice               *m_hwdev;
 #if D3D_SURFACES_SUPPORT
     IGFXS3DControl          *m_pS3DControl;
-    
+
     IDirect3DSurface9*       m_pRenderSurface;
     CDecodeD3DRender         m_d3dRender;
 #endif

@@ -17,15 +17,15 @@ Copyright(c) 2008-2013 Intel Corporation. All Rights Reserved.
 #include "mfxstructures.h"
 
 // {4084132D-CF06-4331-B899-F2FD9A6B5D03}
-static const GUID IID_IConfigureMfxEncoder = 
+static const GUID IID_IConfigureMfxEncoder =
 { 0x4084132d, 0xcf06, 0x4331, { 0xb8, 0x99, 0xf2, 0xfd, 0x9a, 0x6b, 0x5d, 0x3 } };
 
 // {FF987C70-BE2C-42e1-BA63-0CE3169C3811}
-static const GUID IID_IConfigureMfxDecoder = 
+static const GUID IID_IConfigureMfxDecoder =
 { 0xff987c70, 0xbe2c, 0x42e1, { 0xba, 0x63, 0xc, 0xe3, 0x16, 0x9c, 0x38, 0x11 } };
 
 // {5B4A85CA-453C-422e-B8DB-4D9A7C86ADC2}
-static const GUID IID_IConfigureMfxVpp = 
+static const GUID IID_IConfigureMfxVpp =
 { 0x5b4a85ca, 0x453c, 0x422e, { 0xb8, 0xdb, 0x4d, 0x9a, 0x7c, 0x86, 0xad, 0xc2 } };
 
 struct mfxCodecInfo

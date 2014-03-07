@@ -50,11 +50,11 @@ HRESULT MainPage::CreateD3D11DeviceManager()
     ComPtr<ID3D11DeviceContext> m_pDeviceContext;
     UINT32 resetToken;
     ComPtr<ID3D10Multithread> pProtected = nullptr;
-    D3D_FEATURE_LEVEL levelsWanted[] = 
-    { 
+    D3D_FEATURE_LEVEL levelsWanted[] =
+    {
         D3D_FEATURE_LEVEL_11_1,
-        D3D_FEATURE_LEVEL_11_0, 
-        D3D_FEATURE_LEVEL_10_1, 
+        D3D_FEATURE_LEVEL_11_0,
+        D3D_FEATURE_LEVEL_10_1,
         D3D_FEATURE_LEVEL_10_0,
     };
     DWORD numLevelsWanted = sizeof( levelsWanted ) / sizeof( levelsWanted[0] );
@@ -326,7 +326,7 @@ void MainPage::TranscodeButtonClick(Platform::Object^ pSender, Windows::UI::Xaml
                 cancelButton->IsEnabled = false;
                 cancel_current_task();
             }
-            
+
         }).then(
             [this](task<void> transcodeTask)
         {
@@ -378,7 +378,7 @@ HRESULT MainPage::SetTypes()
     while(SUCCEEDED(hr))
     {
         hr = m_pSourceReader->GetNativeMediaType(dwSourceStreamIndex, 0, &pStreamMediaType);
-//MF_E_INVALIDSTREAMNUMBER means that Source Reader has no more streams, and we should exit from "while" loop without error 
+//MF_E_INVALIDSTREAMNUMBER means that Source Reader has no more streams, and we should exit from "while" loop without error
         if (hr == MF_E_INVALIDSTREAMNUMBER)
         {
             return S_OK;
@@ -844,7 +844,7 @@ void MainPage::EnablePlayButtons()
 
 void MainPage::PlayInputButtonClick(Object^ pSender, Windows::UI::Xaml::RoutedEventArgs^ pE)
 {
-    inputVideoMediaElement->Play(); 
+    inputVideoMediaElement->Play();
 }
 
 void MainPage::PauseInputButtonClick(Object^ pSender, Windows::UI::Xaml::RoutedEventArgs^ pE)
@@ -859,7 +859,7 @@ void MainPage::StopInputButtonClick(Object^ pSender, Windows::UI::Xaml::RoutedEv
 
 void MainPage::PlayOutputButtonClick(Object^ pSender, Windows::UI::Xaml::RoutedEventArgs^ pE)
 {
-    outputVideoMediaElement->Play(); 
+    outputVideoMediaElement->Play();
 }
 
 void MainPage::PauseOutputButtonClick(Object^ pSender, Windows::UI::Xaml::RoutedEventArgs^ pE)

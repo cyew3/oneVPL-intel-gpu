@@ -21,7 +21,7 @@ public:
     virtual void        Init(mfxU32 nVideoType)                         { nVideoType; };
     virtual void        Reset()                                         { };
 
-    virtual mfxStatus   Adapt(mfxBitstream mfxBS)                       { mfxBS;   return MFX_ERR_NONE; };    
+    virtual mfxStatus   Adapt(mfxBitstream mfxBS)                       { mfxBS;   return MFX_ERR_NONE; };
     virtual mfxU8*      ExtractHeader(mfxU8* pBuffer, mfxU32* pSize)    { pBuffer; *pSize = 0; return NULL; };
     virtual bool        IsKeyFrame(mfxBitstream mfxBS)                  { mfxBS;   return false; };
 

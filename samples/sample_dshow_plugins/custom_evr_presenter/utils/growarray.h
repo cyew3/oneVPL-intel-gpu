@@ -17,10 +17,10 @@
 namespace MediaFoundationSamples
 {
 
-    // Class template: Re-sizable array. 
+    // Class template: Re-sizable array.
 
-    // To grow or shrink the array, call SetSize(). 
-    // To pre-allocate the array, call Allocate(). 
+    // To grow or shrink the array, call SetSize().
+    // To pre-allocate the array, call Allocate().
 
     // Notes:
     // Copy constructor and assignment operator are private, to avoid throwing exceptions. (One could easily modify this.)
@@ -33,7 +33,7 @@ namespace MediaFoundationSamples
     public:
         GrowableArray() : m_count(0), m_allocated(0), m_pArray(NULL)
         {
-            
+
         }
         virtual ~GrowableArray()
         {
@@ -88,7 +88,7 @@ namespace MediaFoundationSamples
             }
             return hr;
         }
-        
+
         DWORD GetCount() const { return m_count; }
 
         // Accessor.

@@ -28,14 +28,14 @@ struct OptionsContainer {
     T first;
     TNext second;
     OptionsContainer() {}
-    OptionsContainer (const T& element) 
+    OptionsContainer (const T& element)
         : first(element) {
     }
-    OptionsContainer (const T& element, const TNext &next) 
+    OptionsContainer (const T& element, const TNext &next)
         : first(element)
         , second(next) {
     }
-    OptionsContainer(const OptionsContainer &that) 
+    OptionsContainer(const OptionsContainer &that)
         : first(that.first)
         , second(that.second) {
 
@@ -45,7 +45,7 @@ struct OptionsContainer {
         OptionsContainer<TOption, OptionsContainer<T, TNext> > container(hdl, *this);
         return container;
     }
-    
+
     template <class TOption>
     OptionsContainer<TOption> AddOption (const TOption& opt) const {
         OptionsContainer<TOption> cnt(opt);
@@ -69,7 +69,7 @@ protected:
     msdk_string m_sHelpHead;
     msdk_string m_sUsageExamples;
 public:
-    CmdLineParser(msdk_string HelpHead, msdk_string UsageExamples) : 
+    CmdLineParser(msdk_string HelpHead, msdk_string UsageExamples) :
         m_sHelpHead(HelpHead)
         ,m_sUsageExamples(UsageExamples) {
 
@@ -90,7 +90,7 @@ public:
 
     virtual void PrintHelp(msdk_ostream & os) const {
         size_t maxSize = 0;
-        
+
         for (size_t j = 0; j < m_options.size(); j++) {
             maxSize = (std::max)(m_options[j]->GetName().size(), maxSize);
         }
@@ -101,7 +101,7 @@ public:
         }
         os<<m_sUsageExamples<<std::endl;
     }
-    //option was parsed 
+    //option was parsed
     virtual bool IsPresent(const msdk_string & option) const {
         return m_handled.find(option) != m_handled.end();
     }
@@ -143,7 +143,7 @@ public:
         m_options.push_back(&cnt.first);
         RegisterAll(cnt.second);
     }
-    
+
     template <class T> void RegisterAll(OptionsContainer<T, LastType>& cnt) {
         m_options.push_back(&cnt.first);
     }
@@ -152,7 +152,7 @@ public:
     }
 };
 
-template <class T> 
+template <class T>
 CmdLineParserTmpl<T>* CreateCmdLineParser(const T&options_description, msdk_string HelpHead,  msdk_string UsageExamples) {
     CmdLineParserTmpl<T> *parser = new CmdLineParserTmpl<T>(options_description, HelpHead, UsageExamples);
     return parser;

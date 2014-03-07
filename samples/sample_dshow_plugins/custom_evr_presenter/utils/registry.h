@@ -1,7 +1,7 @@
 //////////////////////////////////////////////////////////////////////////
 //
 // Registry.h: Registry helpers.
-// 
+//
 // THIS CODE AND INFORMATION IS PROVIDED "AS IS" WITHOUT WARRANTY OF
 // ANY KIND, EITHER EXPRESSED OR IMPLIED, INCLUDING BUT NOT LIMITED TO
 // THE IMPLIED WARRANTIES OF MERCHANTABILITY AND/OR FITNESS FOR A
@@ -166,7 +166,7 @@ namespace MediaFoundationSamples
 
     inline HRESULT CreateObjectKeyName(const GUID& guid, TCHAR *sName, DWORD cchMax)
     {
-      // convert CLSID uuid to string 
+      // convert CLSID uuid to string
       OLECHAR szCLSID[CHARS_IN_GUID];
       HRESULT hr = StringFromGUID2(guid, szCLSID, CHARS_IN_GUID);
       if (FAILED(hr))

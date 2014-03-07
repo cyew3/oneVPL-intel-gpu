@@ -85,7 +85,7 @@ enum MFEncDynamicConfigurationChange
     dccTypeChangeRequired,      // InputType != OutputType. Need to request new SetOutputType by returning
                                 // MFT_OUTPUT_DATA_BUFFER_FORMAT_CHANGE / MF_E_TRANSFORM_STREAM_CHANGE
                                 // from ProcessOutput, after returning cached frames.
-    
+
     dccResetWithIdrRequired     // Both Input/Output types equally changed to new resolution.
 };
 
@@ -179,7 +179,7 @@ protected: // functions
     bool ReturnPlgError(void);
 
     //Mfx Video session. implD3D is checked against flag MFX_IMPL_VIA_D3D11
-    mfxStatus  InitMfxVideoSession(mfxIMPL implD3D); 
+    mfxStatus  InitMfxVideoSession(mfxIMPL implD3D);
     mfxStatus  CloseInitMfxVideoSession(mfxIMPL implD3D);
     //mfxStatus  SetHandle(mfxHandleType handleType, bool bAllowCloseInit);
 
@@ -209,7 +209,7 @@ protected: // functions
     HRESULT    GetHeader(mfxBitstream* pBst);
     MFYuvInSurface* SetFreeSurface(MFYuvInSurface* pSurfaces,
                                    mfxU32 nSurfacesNum);
-    
+
     bool SendDrainCompleteIfNeeded();
 
     //Stops processing of input, start returning cached frames
@@ -217,13 +217,13 @@ protected: // functions
 
     //MFParamsMessagePeer::
     virtual HRESULT HandleMessage(MFParamsManagerMessage *pMessage, MFParamsMessagePeer *pSender);
-    
+
     //Makes MediaSDK to prepare for future configuration change:
     //this may include obtaining buffered frames
     HRESULT RequireDynamicConfigurationChange(MFEncDynamicConfigurationChange newDccState);
-    
+
     mfxU32 CheckDccType(mfxVideoParam& oldParam, mfxVideoParam& newParam);
-    
+
     //Should be called when there is no buffered frames inside MediaSDK
     //and it is ready to be restarted or closed/inited;
     HRESULT PerformDynamicConfigurationChange(void);
@@ -237,7 +237,7 @@ protected: // functions
     bool IsInvalidResolutionChange(IMFMediaType* pType1, IMFMediaType* pType2);
 
     HRESULT UpdateAVCRefListCtrl(mfxEncodeCtrl* &pEncodeCtrl);
-    
+
     void TraceMediaType(mfxTraceLevel level, IMFMediaType* pType1) const;
 
     bool       CheckHwSupport(void);
@@ -267,7 +267,7 @@ protected: // variables
 
     mfxVideoParam          m_VPPInitParams;
     mfxVideoParam          m_VPPInitParams_original;
-    
+
     //saved version of m_MfxParamsVideo stored after SetInputType / SetOutputType and restored at CloseCodec
     //also copy is saved on PerformDynamicConfigurationChange before CloseCodec
     //to keep all changes introduced through ICodecAPI (and as a result adjusted on InitENC).
@@ -294,7 +294,7 @@ protected: // variables
     MFYuvInSurface*        m_pOutSurfaces;
     MFYuvInSurface*        m_pOutSurface;            // pointer to current surface
     // encoded bitstreams
-    // Stored in "circular buffer" with "one slot always open". 
+    // Stored in "circular buffer" with "one slot always open".
     // m_nOutBitstreamsNum - number of allocated elements. m_pOutBitstreams - allocated buffer.
     // m_pDispBitstream - "start"
     // m_pOutBitstream - next element after the "end", This is "open slot"
@@ -313,12 +313,12 @@ protected: // variables
     bool                   m_bEndOfInput;
     bool                   m_bNeedInSurface;
     bool                   m_bNeedOutSurface;
-    
+
     bool                   m_bStartDrain;
     bool                   m_bStartDrainEnc;
     bool                   m_bSendDrainComplete;
     bool                   m_bReinit;
-    
+
     IMFSample*             m_pFakeSample;
 
     MFOutputBitstream      m_OutputBitstream;

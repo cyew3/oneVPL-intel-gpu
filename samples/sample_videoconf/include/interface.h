@@ -36,18 +36,18 @@ public:
     virtual ~IPipeline(){}
     virtual mfxStatus Run() = 0;
     virtual mfxStatus Init(IInitParams *) = 0;
-    virtual mfxStatus Close() = 0;  
+    virtual mfxStatus Close() = 0;
     virtual void      PrintInfo() = 0;
     //inserts 1 frameorder to specific framelist for current frame only
     virtual mfxStatus AddFrameToRefList(RefListType refList, mfxU32 nFrameOrder) = 0;
     //instructs pipeline to inser Key Frame at currently encoding frame
     virtual mfxStatus InsertKeyFrame() = 0;
     //encoder should change current bitrate
-    virtual mfxStatus ScaleBitrate(double dScaleBy) = 0; 
+    virtual mfxStatus ScaleBitrate(double dScaleBy) = 0;
     //specify l0 size for current frame
-    virtual mfxStatus SetNumL0Active(mfxU16 nActive) = 0; 
+    virtual mfxStatus SetNumL0Active(mfxU16 nActive) = 0;
     //setet pipeline using source information stored at index in initialisation parameters
-    virtual mfxStatus ResetPipeline(int nSourceIdx) = 0; 
+    virtual mfxStatus ResetPipeline(int nSourceIdx) = 0;
 };
 
 //video conference actions for bitrate change, decoding error reporting interface, etc

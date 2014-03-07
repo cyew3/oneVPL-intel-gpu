@@ -95,7 +95,7 @@ bool AreComObjectsEqual(T1 *p1, T2 *p2)
         // One is NULL and one is not
         bResult = false;
     }
-    else 
+    else
     {
         // Both are not NULL. Compare IUnknowns.
         IUnknown *pUnk1 = NULL;

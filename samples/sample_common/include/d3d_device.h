@@ -30,7 +30,7 @@ enum {
 class IGFXS3DControl;
 
 /** Direct3D 9 device implementation.
-@note Can be initilized for only 1 or two 2 views. Handle to 
+@note Can be initilized for only 1 or two 2 views. Handle to
 MFX_HANDLE_GFXS3DCONTROL must be set prior if initializing for 2 views.
 
 @note Device always set D3DPRESENT_PARAMETERS::Windowed to TRUE.
@@ -50,7 +50,7 @@ public:
     virtual mfxStatus SetHandle(mfxHandleType type, mfxHDL hdl);
     virtual mfxStatus RenderFrame(mfxFrameSurface1 * pSurface, mfxFrameAllocator * pmfxAlloc);
     virtual void Close() ;
-    
+
 protected:
     mfxStatus CreateVideoProcessors();
     bool CheckOverlaySupport();
@@ -71,18 +71,18 @@ private:
     // service required to create video processors
     IDirectXVideoProcessorService*  m_pDXVAVPS;
     //left channel processor
-    IDirectXVideoProcessor*         m_pDXVAVP_Left; 
+    IDirectXVideoProcessor*         m_pDXVAVP_Left;
     // right channel processor
     IDirectXVideoProcessor*         m_pDXVAVP_Right;
     // the surface which is passed to render
-    IDirect3DSurface9*              m_pRenderSurface; 
-    
+    IDirect3DSurface9*              m_pRenderSurface;
+
     // target rectangle
     RECT                            m_targetRect;
 
     // various structures for DXVA2 calls
     DXVA2_VideoDesc                 m_VideoDesc;
-    DXVA2_VideoProcessBltParams     m_BltParams; 
+    DXVA2_VideoProcessBltParams     m_BltParams;
     DXVA2_VideoSample               m_Sample;
 };
 

@@ -69,7 +69,7 @@ HRESULT MFParamsManager::UpdateVideoParam(mfxVideoParam &videoParams, MFExtBufCo
     for (std::list<MFParamsWorker*>::const_iterator i = m_arrWorkers.begin(); i != m_arrWorkers.end(); i++)
     {
         ATLASSERT(NULL != *i);
-        if (NULL != *i) 
+        if (NULL != *i)
         {
             hr = (*i)->UpdateVideoParam(videoParams, arrExtBuf);
             if (FAILED(hr) && E_NOTIMPL != hr)

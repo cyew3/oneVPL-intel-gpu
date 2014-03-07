@@ -53,22 +53,22 @@ class Rotator180 : public Processor
 public:
     Rotator180();
     virtual ~Rotator180();
-    
+
     virtual mfxStatus Process(DataChunk *chunk);
 };
 
 typedef struct {
     mfxFrameSurface1 *In;
     mfxFrameSurface1 *Out;
-    bool bBusy;    
-    Processor *pProcessor;    
+    bool bBusy;
+    Processor *pProcessor;
 } RotateTask;
 
 class Rotate : public MFXGenericPlugin
 {
 public:
     Rotate();
-    virtual ~Rotate();      
+    virtual ~Rotate();
 
     // methods to be called by Media SDK
     virtual mfxStatus PluginInit(mfxCoreInterface *core);
@@ -78,17 +78,17 @@ public:
     virtual mfxStatus GetPluginParam(mfxPluginParam *par);
     virtual mfxStatus Submit(const mfxHDL *in, mfxU32 in_num, const mfxHDL *out, mfxU32 out_num, mfxThreadTask *task);
     virtual mfxStatus Execute(mfxThreadTask task, mfxU32 uid_p, mfxU32 uid_a);
-    virtual mfxStatus FreeResources(mfxThreadTask task, mfxStatus sts); 
+    virtual mfxStatus FreeResources(mfxThreadTask task, mfxStatus sts);
     virtual void Release(){}
-    // methods to be called by application    
+    // methods to be called by application
     virtual mfxStatus QueryIOSurf(mfxVideoParam *par, mfxFrameAllocRequest *in, mfxFrameAllocRequest *out);
     static MFXGenericPlugin* CreatePlugin() {
         return new Rotate();
     }
-    virtual mfxStatus Close(); 
-  
+    virtual mfxStatus Close();
+
 protected:
-    bool m_bInited;    
+    bool m_bInited;
 
     MFXCoreInterface m_mfxCore;
 

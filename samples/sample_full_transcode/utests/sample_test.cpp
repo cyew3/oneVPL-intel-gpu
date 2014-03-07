@@ -18,11 +18,11 @@ public:
     mfxFrameSurface1 surface;
 };
 
-TEST_F(SampleTest, SampleBitstream_NullDatalen_Error) {    
+TEST_F(SampleTest, SampleBitstream_NullDatalen_Error) {
     EXPECT_THROW(SampleBitstream((mfxU32)0, 0), SampleBitstreamNullDatalenError);
 }
 
-TEST_F(SampleTest, SampleBitstream_NullDatalen_Error2) {    
+TEST_F(SampleTest, SampleBitstream_NullDatalen_Error2) {
     bitstream.DataLength = 0;
     EXPECT_THROW(SampleBitstream(&bitstream, 0), SampleBitstreamNullDatalenError);
 }

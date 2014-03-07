@@ -25,7 +25,7 @@ Defined Classes, Structures & Enumerations:
 #include "mf_samples_extradata.h"
 #include <limits>
 
-#define LTR_DEFAULT_FRAMEINFO 0xFFFF // [31..16] = 0, [15..0] = 0xFFFF 
+#define LTR_DEFAULT_FRAMEINFO 0xFFFF // [31..16] = 0, [15..0] = 0xFFFF
 /*------------------------------------------------------------------------------*/
 
 class MFEncBitstream : public MFDebugDump
@@ -148,7 +148,7 @@ public:
     mfxU32                  m_uiHeaderSize;
     mfxU8*                  m_pHeader;
     mfxU32                  m_uiHasOutputEventExists; //TODO: try to hide
-    
+
     //used widely (4 places)
     bool                    m_bBitstreamsLimit;
     //fields below are used about 1-2 times
@@ -174,11 +174,11 @@ protected:
     MFSamplesPool*          m_pFreeSamplesPool;
 
     // pointers to encoded bitstreams
-    // Stored in "circular buffer" with "one slot always open". 
+    // Stored in "circular buffer" with "one slot always open".
     // m_nOutBitstreamsNum      - number of allocated elements. m_pOutBitstreams - allocated buffer.
     // m_nDispBitstreamIndex    - index of "start"
     // m_nOutBitstreamIndex     - index of next element after the "end", This is "open slot"
-    mfxU32                  m_nOutBitstreamsNum; 
+    mfxU32                  m_nOutBitstreamsNum;
     MFEncOutData**          m_pOutBitstreams;
     size_t                  m_nOutBitstreamIndex;
     size_t                  m_nDispBitstreamIndex;

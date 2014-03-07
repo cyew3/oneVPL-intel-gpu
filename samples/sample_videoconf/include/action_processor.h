@@ -23,29 +23,29 @@ public:
     {
         std::for_each(m_actions.begin(), m_actions.end(), actionsArrayDeleter);
     }
-    
+
     virtual void RegisterAction(mfxU32 nFrame, IAction *pAction)
     {
         if (NULL == pAction)
             return;
         m_actions[nFrame].push_back(pAction);
     }
-    
+
     virtual void GetActionsForFrame(mfxU32 nFrameOrder, std::vector<IAction*> & vec)
     {
         vec.clear();
-        
+
         std::map<int, std::vector<IAction*> >::iterator  it = m_actions.find(nFrameOrder);
         if (it != m_actions.end())
         {
             m_comitted.insert(m_comitted.end(), it->second.begin(), it->second.end());
         }
-        
+
         //returning already comitted actions + for curent frame
         vec.insert(vec.end(), m_comitted.begin(), m_comitted.end());
     }
 
-    virtual void OnFrameEncoded(mfxBitstream * pBs) 
+    virtual void OnFrameEncoded(mfxBitstream * pBs)
     {
         //need to remove already comitted actions by specific condition
         m_pLastBs = pBs;
@@ -56,7 +56,7 @@ protected:
     friend class clean_commited;
     class clean_commited
     {
-    
+
         ActionProcessor * m_pProc;
     public:
         clean_commited(ActionProcessor *pProc)

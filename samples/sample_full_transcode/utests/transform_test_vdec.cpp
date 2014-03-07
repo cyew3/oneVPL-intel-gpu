@@ -48,7 +48,7 @@ public:
             allocator.reset(new MockD3D11FrameAllocator());
             response.NumFrameActual = 5;
             response.mids = new mfxMemId[5];
-    }  
+    }
     ~TransformTest() {
         MSDK_SAFE_DELETE(response.mids);
     }
@@ -175,7 +175,7 @@ public:
     }
     void DecodeFrameAsync(mfxStatus sts, mfxSyncPoint sp, int nTimes) {
         EXPECT_CALL(*decode.get(), DecodeFrameAsync(_, _, _, _)).Times(nTimes).WillRepeatedly(DoAll(SetArgPointee<3>(sp),Return(sts)));
-    } 
+    }
     void CompleteSuccessInit() {
         CreateHardwareDevice(0);
         AllocatorInit(0);
@@ -256,7 +256,7 @@ TEST_F(TransformTest, VDec_putSample_Init_Success) {
     SetFrameAllocator(0);
     CreateAllocatorParam(0);
     SetHandle(0);
-    
+
     DeviceInit(0);
     NextTransformGetNumSurfaces();
     mfxFrameAllocRequest frameAllocRequestFinal  = {};

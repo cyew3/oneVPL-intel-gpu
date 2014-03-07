@@ -26,9 +26,9 @@ void PipelineManager::PushTroughTransform(TransformStorage::iterator current, Tr
         m_pSink->PutSample(m_WorkerSample);
         return;
     }
-    
+
     (*current)->PutSample(m_WorkerSample);
-    
+
     //pull cycle
     for (;;) {
         if (!(*current)->GetSample(m_WorkerSample)) {
@@ -92,7 +92,7 @@ void PipelineManager::Build(CmdLineParser &parser) {
     m_transforms->Resolve();
     if (m_profile->isMultiplexerExist()) {
         m_StreamParams = m_profile->GetMuxerInfo();
-        
+
 
         std::auto_ptr<MFXDataIO> dataio(m_factory.CreateFileIO(parser[OPTION_O].as<msdk_string>(),  MSDK_STRING("wb")));
         m_pSink.reset(m_factory.CreateMuxerWrapper(m_StreamParams, dataio));
@@ -113,7 +113,7 @@ void PipelineManager::BuildAudioChain(size_t nTrack) {
     if (!session)
         return;
     std::auto_ptr<ITransform> dec(m_factory.CreateAudioDecoderTransform(*session, 60000));
-    
+
     m_transforms->RegisterTransform(TransformConfigDesc(info.SID, aParam), dec);
 
     if (m_profile->isAudioEncoderExist((int)nTrack)) {
@@ -141,13 +141,13 @@ void PipelineManager::BuildVideoChain()
 
     if (m_profile->isGenericPluginExist()) {
         //std::auto_ptr<ITransform> plg(m_factory.CreatePluginTransform(m_profile->(session, 60000));
-    } 
-    
+    }
+
     if (m_profile->isVppExist()) {
         std::auto_ptr<ITransform> vpp(m_factory.CreateVideoVPPTransform(session, 60000));
         m_transforms->RegisterTransform(TransformConfigDesc(info.SID, vParam), vpp);
-    } 
-    
+    }
+
     if (m_profile->isEncoderExist()) {
         std::auto_ptr<ITransform> enc(m_factory.CreateVideoEncoderTransform(session, 60000));
         vParam = info.Encode;

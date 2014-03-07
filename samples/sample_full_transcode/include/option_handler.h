@@ -34,7 +34,7 @@ public:
     virtual size_t  Handle(const msdk_string & )  = 0;
     virtual void PrintHelp(msdk_ostream & , size_t optAlign) const = 0;
     virtual bool Exist() const = 0;
-    
+
     template <class T>
     T as () const;
 protected:
@@ -52,12 +52,12 @@ namespace detail {
         bool m_bHandled;
         msdk_string m_value;
     public:
-        OptionHandlerBase (const msdk_string & name, const msdk_string &description) 
+        OptionHandlerBase (const msdk_string & name, const msdk_string &description)
             : m_desc(description)
             , m_name(name)
             , m_bHandled(false) {
         }
-        OptionHandlerBase (const OptionHandlerBase & that) 
+        OptionHandlerBase (const OptionHandlerBase & that)
             : m_desc(that.m_desc)
             , m_name(that.m_name)
             , m_bHandled(that.m_bHandled)
@@ -85,7 +85,7 @@ namespace detail {
     template <class T>
     class OptionHandlerBaseTmpl : public OptionHandlerBase {
     public:
-        OptionHandlerBaseTmpl(const msdk_string & name, const msdk_string &description) 
+        OptionHandlerBaseTmpl(const msdk_string & name, const msdk_string &description)
             : detail::OptionHandlerBase(name, description) {
         }
         virtual void PrintHelp(msdk_ostream & os, size_t alignLen) const  {
@@ -155,7 +155,7 @@ namespace detail {
     struct CanHaveDelimiters {
         enum {value = 0};
     };
-    
+
     template<>
     struct CanHaveDelimiters<msdk_string> {
         enum {value = 1};
@@ -169,13 +169,13 @@ T OptionHandler::as () const {
     }
     detail::InternalParser<T> obj(*this);
     return  obj;
-} 
+}
 
 
 template <class T>
 class ArgHandler : public detail::OptionHandlerBaseTmpl<T> {
 public:
-    ArgHandler(const msdk_string & name, const msdk_string &description) 
+    ArgHandler(const msdk_string & name, const msdk_string &description)
         : detail::OptionHandlerBaseTmpl<T>(name, description) {
     }
 };
@@ -183,7 +183,7 @@ public:
 template <>
 class ArgHandler<msdk_string> : public detail::OptionHandlerBaseTmpl<msdk_string> {
 public:
-    ArgHandler(const msdk_string & name, const msdk_string &description) 
+    ArgHandler(const msdk_string & name, const msdk_string &description)
         : detail::OptionHandlerBaseTmpl<msdk_string>(name, description) {
     }
 
@@ -196,7 +196,7 @@ protected:
 template<>
 class ArgHandler<bool> : public detail::OptionHandlerBase {
 public:
-    ArgHandler(const msdk_string & name, const msdk_string &description) 
+    ArgHandler(const msdk_string & name, const msdk_string &description)
         : detail::OptionHandlerBase(name, description) {
     }
     virtual size_t Handle(const msdk_string & str);
@@ -209,7 +209,7 @@ template<class T>
 class ArgHandler<std::vector<T> > : public detail::OptionHandlerBaseTmpl<T> {
     std::vector<msdk_string> m_vec_values;
 public:
-    ArgHandler(const msdk_string & name, const msdk_string &description) 
+    ArgHandler(const msdk_string & name, const msdk_string &description)
         : detail::OptionHandlerBaseTmpl<T>(name, description) {
     }
     virtual size_t Handle(const msdk_string & str) {

@@ -34,13 +34,13 @@ public:
     CEncoderOutputPin(CTransformFilter* pTransformFilter, HRESULT* phr):
     CTransformOutputPin(NAME("OutputPin"), pTransformFilter, phr, L"Out"){};
 
-    DECLARE_IUNKNOWN;    
+    DECLARE_IUNKNOWN;
 };
 
 class CEncVideoFilter : public CTransformFilter, public ISpecifyPropertyPages, public IAboutProperty,
                         public IConfigureVideoEncoder, public IVideoEncoderProperty, INotifier,
                         public IExposeMfxMemTypeFlags, public IShareMfxSession
-{  
+{
 public:
     DECLARE_IUNKNOWN;
 
@@ -82,7 +82,7 @@ public:
     //IAboutProperty
     STDMETHODIMP        GetFilterName(BSTR* pName) { *pName = m_bstrFilterName; return S_OK; };
 
-    HRESULT             CompleteConnect(PIN_DIRECTION direction, IPin *pReceivePin);   
+    HRESULT             CompleteConnect(PIN_DIRECTION direction, IPin *pReceivePin);
 
     HRESULT             GetRequiredFramesNum(mfxU16* nMinFrames, mfxU16* nRecommendedFrames);
 
@@ -102,11 +102,11 @@ protected:
     virtual void            ReadFrameRateFromRegistry(mfxU32 &iFrameRate) = 0;
     virtual void            WriteParamsToRegistry() = 0;
     virtual void            WriteMfxImplToRegistry();
-    virtual void            UpdateRegistry() 
+    virtual void            UpdateRegistry()
     {
         mfxStatus sts;
 
-        mfxVideoParam mfxParam;  
+        mfxVideoParam mfxParam;
         mfxEncodeStat mfxStat;
         mfxU32        nBitrate;
 
@@ -119,10 +119,10 @@ protected:
         {
             SetParamToReg(_T("Profile"), mfxParam.mfx.CodecProfile);
             SetParamToReg(_T("Level"),   mfxParam.mfx.CodecLevel);
-        }       
+        }
 
-        sts = m_pEncoder->GetEncodeStat(&mfxStat);        
-                
+        sts = m_pEncoder->GetEncodeStat(&mfxStat);
+
         if (MFX_ERR_NONE == sts && mfxStat.NumFrame)
         {
             nBitrate = (mfxU32)(mfxStat.NumBit / mfxStat.NumFrame * m_pTimeManager->GetFrameRate());
@@ -135,14 +135,14 @@ protected:
     HRESULT                 AlignFrameSizes(mfxFrameInfo* pInfo, mfxU16 nWidth, mfxU16 nHeight);
     HRESULT                 DynamicFrameSizeChange(mfxFrameInfo* pInfo);
     HRESULT                 DeliverBitstream(mfxBitstream* pBS);
-    
+
     mfxStatus               OnFrameReady(mfxBitstream* pBS);
     mfxStatus               StoreEncoderParams(Params *params);
     virtual bool            EncResetRequired(const mfxFrameInfo *pNewFrameInfo);
 
 protected:
 
-    CComBSTR                      m_bstrFilterName;      //filter name   
+    CComBSTR                      m_bstrFilterName;      //filter name
 
     BOOL                          m_bStop;               // (BOOL) graph is stopped
     CCritSec                      m_csLock;
@@ -150,7 +150,7 @@ protected:
     HANDLE                        m_Thread;
 
     // minimum required API version
-    mfxU16                        m_nAPIVerMinor; 
+    mfxU16                        m_nAPIVerMinor;
     mfxU16                        m_nAPIVerMajor;
 
     mfxVideoParam                 m_mfxParamsVideo;      // video params for ENC
@@ -161,7 +161,7 @@ protected:
 
     CBaseEncoder*                 m_pEncoder;
 
-    BOOL                          m_bUseVPP;    
+    BOOL                          m_bUseVPP;
 
     Params                        m_EncoderParams;
 
@@ -184,8 +184,8 @@ public:
 
     // IUnknown
     DECLARE_IUNKNOWN;
-    virtual STDMETHODIMP NonDelegatingQueryInterface(REFIID riid, __deref_out void **ppv);   
-    
+    virtual STDMETHODIMP NonDelegatingQueryInterface(REFIID riid, __deref_out void **ppv);
+
     virtual STDMETHODIMP NotifyAllocator(IMemAllocator * pAllocator, BOOL bReadOnly);
 
 private:
@@ -209,14 +209,14 @@ public:
     virtual STDMETHODIMP GetService(REFGUID guidService,
         REFIID riid,
         LPVOID *ppvObject);
-    virtual STDMETHODIMP GetAvailableSurfaceTypeByIndex( 
+    virtual STDMETHODIMP GetAvailableSurfaceTypeByIndex(
         DWORD dwTypeIndex,
         DXVA2_SurfaceType *pdwType);
     virtual STDMETHODIMP SetSurfaceType(DXVA2_SurfaceType dwType);
 
-protected:    
+protected:
     IDirect3D9*              m_pd3d;
-    IDirect3DDeviceManager9* m_pd3dDeviceManager; 
+    IDirect3DDeviceManager9* m_pd3dDeviceManager;
     IDirect3DDevice9*        m_pd3dDevice;
 
 private:

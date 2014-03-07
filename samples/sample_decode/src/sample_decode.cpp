@@ -15,7 +15,7 @@ void PrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage)
     if (strErrorMessage)
     {
         msdk_printf(MSDK_STRING("Error: %s\n"), strErrorMessage);
-    } 
+    }
 
     msdk_printf(MSDK_STRING("Usage: %s <codecid> [<options>] -i InputBitstream\n"), strAppName);
     msdk_printf(MSDK_STRING("   or: %s <codecid> [<options>] -i InputBitstream -r\n"), strAppName);
@@ -86,7 +86,7 @@ void PrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage)
 }
 
 mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* pParams)
-{   
+{
     msdk_char* strArgument = MSDK_STRING("");
 
     if (1 == nArgNum)
@@ -96,7 +96,7 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
     }
 
     MSDK_CHECK_POINTER(pParams, MFX_ERR_NULL_PTR);
-    
+
 
     for (mfxU8 i = 1; i < nArgNum; i++)
     {
@@ -177,12 +177,12 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
             msdk_sscanf(strInput[++i], MSDK_STRING("%d"), &pParams->nWallCell);
             msdk_sscanf(strInput[++i], MSDK_STRING("%d"), &pParams->nWallMonitor);
             msdk_sscanf(strInput[++i], MSDK_STRING("%d"), &pParams->nWallFPS);
-            
+
             int nTitle;
             msdk_sscanf(strInput[++i], MSDK_STRING("%d"), &nTitle);
 
             pParams->bWallNoTitle = 0 == nTitle;
-            
+
             msdk_sscanf(strInput[++i], MSDK_STRING("%d"), &pParams->nWallTimeout);
         }
 #endif
@@ -198,7 +198,7 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         }
 #endif
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-low_latency")))
-        {            
+        {
             switch (pParams->videoType)
             {
                 case MFX_CODEC_HEVC:
@@ -235,7 +235,7 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
             }
         }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-calc_latency")))
-        {            
+        {
             switch (pParams->videoType)
             {
                 case MFX_CODEC_HEVC:
@@ -243,7 +243,7 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
                 case MFX_CODEC_JPEG:
                 {
                     pParams->bCalLat = true;
-                    if (!pParams->bIsMVC)               
+                    if (!pParams->bIsMVC)
                         break;
                 }
                 default:
@@ -296,8 +296,8 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         return MFX_ERR_UNSUPPORTED;
     }
 
-    if (MFX_CODEC_MPEG2 != pParams->videoType && 
-        MFX_CODEC_AVC   != pParams->videoType && 
+    if (MFX_CODEC_MPEG2 != pParams->videoType &&
+        MFX_CODEC_AVC   != pParams->videoType &&
         MFX_CODEC_HEVC  != pParams->videoType &&
         MFX_CODEC_VC1   != pParams->videoType &&
         MFX_CODEC_JPEG  != pParams->videoType &&
@@ -328,10 +328,10 @@ int main(int argc, char *argv[])
         Pipeline.SetMultiView();
 
     sts = Pipeline.Init(&Params);
-    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, 1);   
+    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, 1);
 
-    // print stream info 
-    Pipeline.PrintInfo(); 
+    // print stream info
+    Pipeline.PrintInfo();
 
     msdk_printf(MSDK_STRING("Decoding started\n"));
 
@@ -350,19 +350,19 @@ int main(int argc, char *argv[])
                 msdk_printf(MSDK_STRING("\nERROR: Hardware device was lost or returned unexpected error. Recovering...\n"));
                 sts = Pipeline.ResetDevice();
                 MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, 1);
-            }           
+            }
 
             sts = Pipeline.ResetDecoder(&Params);
-            MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, 1);            
+            MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, 1);
             continue;
-        }        
+        }
         else
         {
             MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, 1);
             break;
         }
     }
-    
+
     msdk_printf(MSDK_STRING("\nDecoding finished\n"));
 
     return 0;

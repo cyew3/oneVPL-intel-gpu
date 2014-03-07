@@ -56,13 +56,13 @@ public:
        try
        {
            IMFDXGIBuffer* dxgiBuffer = (IMFDXGIBuffer*)mid;
-           //hope dueto ms implementation this interface isn't created dynamically, 
+           //hope dueto ms implementation this interface isn't created dynamically,
            //otherwise we have to create our own interface for holding 2 items: resouce and subresource, instead of using dxgi
            CComPtr<ID3D11Texture2D> p2DTexture;
            HRESULT hr = dxgiBuffer->GetResource(IID_ID3D11Texture2D, (LPVOID*)&p2DTexture);
            if (FAILED(hr) || NULL == p2DTexture)
                return MFX_ERR_UNKNOWN;
-           
+
            UINT subResIdx = 0;
            hr = dxgiBuffer->GetSubresourceIndex(&subResIdx);
            if (FAILED(hr))
@@ -76,7 +76,7 @@ public:
        {
 
        }
-       
+
        return MFX_ERR_NONE;
     }
     std::vector<mfxMemId> m_mids;

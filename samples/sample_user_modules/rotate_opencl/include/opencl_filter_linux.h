@@ -56,7 +56,7 @@ public:
     //void DumpToFile(VASurfaceID *pSrc);
     static std::string readFile(const char *filename);
 private:
-   
+
     cl_int InitPlatform();
     cl_int InitD3D9SurfaceSharingExtension();
     cl_int InitDevice();

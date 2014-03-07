@@ -16,7 +16,7 @@
 #include "sample_defs.h"
 
 namespace {
-    enum { 
+    enum {
         FF_CODEC_H263 = MFX_MAKEFOURCC('h','2','6','3'),
         FF_CODEC_VP8 = MFX_MAKEFOURCC('V','P','8',' ')
     };
@@ -94,7 +94,7 @@ mfxStatus FFPortable::MFXCodecIDToAVCodecID(mfxU32 mfxCodecId, AVCodecID & av_co
     case FF_CODEC_VP8 :
         av_codec_id = CODEC_ID_VP8;
         break;
-   
+
     default:
         MSDK_TRACE_ERROR("Unknown MediaSDK codecID provided" << mfxCodecId);
         return MFX_ERR_UNKNOWN;
@@ -203,7 +203,7 @@ mfxStatus FFPortable::FourccToPixelFormat(mfxU32 mfxFourcc, AVPixelFormat & fmt)
 }
 
 namespace {
-    
+
     template <class TFrom, class TTo>
     bool static_cast_range_check(TTo & lhs, TFrom &rhs) {
         if (rhs > (std::numeric_limits<TTo>::max)() || rhs < (std::numeric_limits<TTo>::min)()) {
@@ -212,7 +212,7 @@ namespace {
         lhs = static_cast<TTo>(rhs);
         return true;
     }
-    
+
     #define MSDK_SET_VALUE(msdk_variable, ffvariable)\
     if (!static_cast_range_check(msdk_variable, ffvariable)) {\
         MSDK_TRACE_ERROR(#ffvariable << "("<< ffvariable <<") not in range limit for MediaSDK variable "\
@@ -283,7 +283,7 @@ mfxStatus FFPortable::InitCodec(FFCodec &codec, mfxU32 mfxCodecId)
 
     switch (sts)
     {
-    case MFX_ERR_NONE : 
+    case MFX_ERR_NONE :
         break;
 
     default:
@@ -339,12 +339,12 @@ mfxStatus FFPortable::DecodeFrame(FFCodec  &codec, mfxBitstream &bs, mfxFrameSur
         pkt.size = bs.DataLength;
 
         memset(pkt.data + pkt.size, 0, FF_INPUT_BUFFER_PADDING_SIZE);
-        
-        pkt.pts = (MFX_TIME_STAMP_INVALID == bs.TimeStamp) ? AV_NOPTS_VALUE : 
+
+        pkt.pts = (MFX_TIME_STAMP_INVALID == bs.TimeStamp) ? AV_NOPTS_VALUE :
             (int64_t)((double)bs.TimeStamp / MFX_TIME_STAMP_FREQUENCY / av_q2d(codec.pCtx->time_base));
         pkt.dts = AV_NOPTS_VALUE;
     }
-    
+
     int got_picture = 0;
     int result = avcodec_decode_video2(codec.pCtx, codec.pFrame, &got_picture, &pkt);
 
@@ -398,7 +398,7 @@ mfxStatus FFPortable::OpenParser(FFParser  & parser, mfxU32 mfxCodecId)
 
     switch (sts)
     {
-    case MFX_ERR_NONE : 
+    case MFX_ERR_NONE :
         break;
     default:
         return sts;
@@ -449,7 +449,7 @@ mfxStatus FFPortable::ConstructFrame(FFParser  & parser, const mfxBitstream & in
            , 0
            , 0
            , 0);
-       
+
        input.DataOffset += len;
        input.DataLength -= len;
 
@@ -458,7 +458,7 @@ mfxStatus FFPortable::ConstructFrame(FFParser  & parser, const mfxBitstream & in
            return MFX_ERR_NONE;
        }
     }
-    
+
     return MFX_ERR_MORE_DATA;
 }
 
@@ -503,7 +503,7 @@ mfxStatus FFPortable::ConvertSurface(FFScaler &scl, const mfxFrameSurface1& surf
         MSDK_TRACE_ERROR( "sws_getCachedContext() returned NULL");
         return MFX_ERR_UNSUPPORTED;
     }
-    
+
     //setting up chroma shifts
     uint32_t chroma_subsampling_in[AV_NUM_DATA_POINTERS]  = {0};
     uint32_t chroma_subsampling_out[AV_NUM_DATA_POINTERS]  = {0};
@@ -541,6 +541,6 @@ mfxStatus FFPortable::ConvertSurface(FFScaler &scl, const mfxFrameSurface1& surf
         MSDK_TRACE_ERROR( "sws_scale() returned " << h<<", while output slice height=" << surfaceOut.Info.CropH);
         return MFX_ERR_UNSUPPORTED;
     }
-    
+
     return MFX_ERR_NONE;
 }

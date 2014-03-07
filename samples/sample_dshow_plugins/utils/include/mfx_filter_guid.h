@@ -30,15 +30,15 @@
 
 #define CHECK_RESULT_P_RET(P, X) {if ((X) != (P)) {return P;}}
 
-const GUID* CodecId2GUID(const mfxU32 fmt, mfxU16 nCodecProfile, int iPosition);    
+const GUID* CodecId2GUID(const mfxU32 fmt, mfxU16 nCodecProfile, int iPosition);
 
 const GUID* ColorFormat2GUID(const mfxU32 fmt);
 
 WORD ColorFormat2BiBitCount(const mfxU32 fmt);
 DWORD ColorFormat2BiCompression(const mfxU32 fmt);
 
-static const mfxU32 MFX_TIME_STAMP_FREQUENCY = 90000; 
-static const mfxU64 MFX_TIME_STAMP_INVALID = (mfxU64)-1; 
+static const mfxU32 MFX_TIME_STAMP_FREQUENCY = 90000;
+static const mfxU64 MFX_TIME_STAMP_INVALID = (mfxU64)-1;
 
 //mfxU64                  ConvertReferenceTime2MFXTime(REFERENCE_TIME rtTime);
 REFERENCE_TIME          ConvertMFXTime2ReferenceTime(mfxU64 nTime);
@@ -55,32 +55,32 @@ __inline void SetParamToReg( const TCHAR * pParamName
     SetRegistryValue(pParamName, (DWORD)refParam, GetCodecRegistryPath());
 }
 
-// get interface parameter from registry: 
+// get interface parameter from registry:
 //if the registry key doesn't exist create such with current value
 template<class T>
 __inline void GetParamFromReg( const TCHAR * pParamName
-                             , T           & refParam) 
-{ 
-    DWORD tmp_value; 
-    if (MFX_ERR_NONE == GetRegistryValue(pParamName, &tmp_value, GetCodecRegistryPath())) 
-        refParam = (T)tmp_value; 
-    else 
-        SetParamToReg(pParamName, refParam); 
+                             , T           & refParam)
+{
+    DWORD tmp_value;
+    if (MFX_ERR_NONE == GetRegistryValue(pParamName, &tmp_value, GetCodecRegistryPath()))
+        refParam = (T)tmp_value;
+    else
+        SetParamToReg(pParamName, refParam);
 }
 
 // get auxiliary parameter from registry: if the registry key doesn't exist do nothing
 template<class T>
 __inline void GetAuxParamFromReg( const TCHAR * pParamName
-                                , T           & refParam) 
-{ 
-    DWORD tmp_value; 
-    if (MFX_ERR_NONE == GetRegistryValue(pParamName, &tmp_value, GetCodecRegistryPath())) 
-        refParam = (T)tmp_value; 
+                                , T           & refParam)
+{
+    DWORD tmp_value;
+    if (MFX_ERR_NONE == GetRegistryValue(pParamName, &tmp_value, GetCodecRegistryPath()))
+        refParam = (T)tmp_value;
 }
 
-mfxStatus  SetRegistryValue(const TCHAR *pName, DWORD value, TCHAR *pPath); 
+mfxStatus  SetRegistryValue(const TCHAR *pName, DWORD value, TCHAR *pPath);
 mfxStatus  GetRegistryValue(const TCHAR *pName, DWORD *pValue, TCHAR *pPath);
-     
+
 #define WSTR(x) L##x
 
 #define FULL_FILTER_NAME_A(PREFIX, NAME, SUFFIX) \

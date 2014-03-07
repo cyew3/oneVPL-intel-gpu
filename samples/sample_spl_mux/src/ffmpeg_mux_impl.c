@@ -104,7 +104,7 @@ mfxStatus SetStreamInfo(mfxHDL mux, mfxU16 trackNum)
     {
         codecContext->codec_type     = AVMEDIA_TYPE_VIDEO;
         codecContext->codec_id       = GetAVCodecIDFromMFXTrackType(inMux->streamParams.TrackInfo[trackNum]->Type);
-        codecContext->width          = inMux->streamParams.TrackInfo[trackNum]->VideoParam.FrameInfo.Width; 
+        codecContext->width          = inMux->streamParams.TrackInfo[trackNum]->VideoParam.FrameInfo.Width;
         codecContext->height         = inMux->streamParams.TrackInfo[trackNum]->VideoParam.FrameInfo.Height;
         codecContext->time_base.num  = inMux->streamParams.TrackInfo[trackNum]->VideoParam.FrameInfo.FrameRateExtD;
         codecContext->time_base.den  = inMux->streamParams.TrackInfo[trackNum]->VideoParam.FrameInfo.FrameRateExtN;

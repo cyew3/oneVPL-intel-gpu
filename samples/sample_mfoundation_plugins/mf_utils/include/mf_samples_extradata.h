@@ -193,7 +193,7 @@ public:
         }
         return hr;
     }
-    
+
     CComPtr<IMFSampleExtradata> Receive(mfxU32 nFrameOrder)
     {
         MFX_AUTO_LTRACE_FUNC(MF_TL_NOTES);
@@ -203,7 +203,7 @@ public:
         if (m_arrData.end() == it)
         {
             //workaround for case when MSDK doesn't provide FrameOrder with output bitstream
-            //if (_UI32_MAX == nFrameOrder) 
+            //if (_UI32_MAX == nFrameOrder)
             //    it = m_arrData.begin();
             //else
                 ATLASSERT(m_arrData.end() != it);

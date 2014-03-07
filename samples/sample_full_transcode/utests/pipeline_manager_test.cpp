@@ -25,7 +25,7 @@ public:
         , mockSink(*new MockSink())
         , mockStorage (*new MockTransformStorage())
         , mockSource(*new MockSource())
-    
+
     {
             //v1.push_back(new MockTransform());
 
@@ -64,7 +64,7 @@ public:
 
 TEST_F (PipelineManagerRunTest, no_samples_in_source) {
     EXPECT_CALL(mockSource, GetSample(_)).WillOnce(Return(false));
-    
+
     //check that mock sink and mock source components are used according to expect_calls
     PipelineManager::Run();
 }
@@ -110,7 +110,7 @@ TEST_F (PipelineManagerRunTest, transform_plus_1_sample) {
 
     //transform
     EXPECT_CALL(*mockTrans, PutSample(_)).WillOnce(Invoke(this, &PipelineManagerRunTest::FPutSample));
-    
+
     Sequence s2;
     EXPECT_CALL(*mockTrans, GetSample(_)).InSequence(s2).WillOnce(Invoke(&mock_get_trans, &MockGetSample::GetSample));
     EXPECT_CALL(*mockTrans, GetSample(_)).InSequence(s2).WillOnce(Return(false));
@@ -136,7 +136,7 @@ public:
         std::auto_ptr<ITransform > next;
         TransformConfigDesc desc;
     public:
-        RegisterTransformCallback () 
+        RegisterTransformCallback ()
             : desc(0, MFXAVParams(mfxAudioParam()) ) {
         }
         ITransform * GetTransform() {
@@ -173,7 +173,7 @@ public:
     Sequence svideo;
     Sequence saudio;
     Sequence scommon;
-    
+
     mfxTrackInfo trackInfo0;
     mfxTrackInfo trackInfo1;
 
@@ -183,9 +183,9 @@ public:
     MFXSessionInfo vSession;
     MFXSessionInfo aSession;
 
-    PipelineManager_BuildTest () 
+    PipelineManager_BuildTest ()
         : mgr(fac)
-        , mock_storage(*new MockSessionStorage()) 
+        , mock_storage(*new MockSessionStorage())
         , mock_file_io(*new MockDataIO())
         , mock_file_io_output(*new MockDataIO())
         , mock_decode(*new MockMFXVideoDECODE())
@@ -197,7 +197,7 @@ public:
         , mock_venctransform(*new MockTransform())
         , mock_aenctransform(*new MockTransform())
         , mock_vpptransform(*new MockTransform())
-        , trackInfo0() 
+        , trackInfo0()
         , trackInfo1() {
         trackInfos[0] = &trackInfo0;
         trackInfos[1] = &trackInfo1;
@@ -253,7 +253,7 @@ public:
             EXPECT_CALL(mock_profile, isAudioEncoderExist(atrack)).WillRepeatedly(Return(true));
             EXPECT_CALL(fac, CreateAudioEncoderTransform(_,_)).WillOnce(Return(&mock_aenctransform));
             EXPECT_CALL(mock_transform_storage, RegisterTransform(_,_)).InSequence(saudio).WillOnce(Invoke(&aenc, &RegisterTransformCallback::RegisterTransform));;
-      
+
         } else {
             EXPECT_CALL(mock_profile, isEncoderExist()).WillRepeatedly(Return(true));
             EXPECT_CALL(fac, CreateVideoEncoderTransform(_,_)).WillOnce(Return(&mock_venctransform));
@@ -304,7 +304,7 @@ TEST_F (PipelineManager_BuildTest, decode_only_profile_reports_1_video_no_audio)
     EXPECT_CALL(mock_profile, isMultiplexerExist()).WillRepeatedly(Return(false));
 
     InitOutput();
-    
+
     VideoTrackInfoExt vTrackInfo;
     EXPECT_CALL(mock_profile, GetVideoTrackInfo()).WillRepeatedly(Return(vTrackInfo));
 

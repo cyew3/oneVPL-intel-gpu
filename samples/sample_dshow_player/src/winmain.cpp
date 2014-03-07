@@ -10,7 +10,7 @@
 */
 //////////////////////////////////////////////////////////////////////////
 // winmain.cpp : Defines the entry point for the application.
-// 
+//
 // THIS CODE AND INFORMATION IS PROVIDED "AS IS" WITHOUT WARRANTY OF
 // ANY KIND, EITHER EXPRESSED OR IMPLIED, INCLUDING BUT NOT LIMITED TO
 // THE IMPLIED WARRANTIES OF MERCHANTABILITY AND/OR FITNESS FOR A
@@ -33,7 +33,7 @@
 int APIENTRY _tWinMain(HINSTANCE hInstance,
                      HINSTANCE hPrevInstance,
                      LPTSTR    lpCmdLine,
-                     int       nCmdShow)    
+                     int       nCmdShow)
 {
     UNREFERENCED_PARAMETER(hPrevInstance);
     UNREFERENCED_PARAMETER(lpCmdLine);
@@ -54,7 +54,7 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
     MainWindow *pWin = new MainWindow();
 
     HRESULT hr;
-    
+
     hr = CoInitialize(NULL);
 
     hr = pWin->Create(hInstance);

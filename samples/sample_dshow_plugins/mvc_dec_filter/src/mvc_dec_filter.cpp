@@ -69,7 +69,7 @@ HRESULT CMVCDecVideoFilter::GetMediaType(int iPosition, CMediaType* pmt)
 
     if (SUCCEEDED(hr))
     {
-        VIDEOINFOHEADER2 *pDstVIH = NULL; 
+        VIDEOINFOHEADER2 *pDstVIH = NULL;
         pDstVIH = reinterpret_cast<VIDEOINFOHEADER2*> (pmt->pbFormat);
         MSDK_CHECK_POINTER(pDstVIH, E_UNEXPECTED);
 
@@ -81,18 +81,18 @@ HRESULT CMVCDecVideoFilter::GetMediaType(int iPosition, CMediaType* pmt)
 
 void CMVCDecVideoFilter::AttachExtParam(mfxVideoParam *par)
 {
-    par->ExtParam = m_ppExtBuffers;     
-    par->NumExtParam = m_nNumExtBuffers; 
+    par->ExtParam = m_ppExtBuffers;
+    par->NumExtParam = m_nNumExtBuffers;
 }
 
 mfxStatus CMVCDecVideoFilter::CreateExtMVCBuffers()
 {
-    std::auto_ptr<mfxExtMVCSeqDesc> pExtMVCSeqDesc (new mfxExtMVCSeqDesc()); 
+    std::auto_ptr<mfxExtMVCSeqDesc> pExtMVCSeqDesc (new mfxExtMVCSeqDesc());
     MSDK_CHECK_POINTER(pExtMVCSeqDesc.get(), MFX_ERR_MEMORY_ALLOC);
     pExtMVCSeqDesc->Header.BufferId = MFX_EXTBUFF_MVC_SEQ_DESC;
     pExtMVCSeqDesc->Header.BufferSz = sizeof(mfxExtMVCSeqDesc);
 
-    m_ppExtBuffers = new mfxExtBuffer* [1]; 
+    m_ppExtBuffers = new mfxExtBuffer* [1];
     MSDK_CHECK_POINTER(m_ppExtBuffers, MFX_ERR_MEMORY_ALLOC);
 
     m_ppExtBuffers[0] = (mfxExtBuffer*) pExtMVCSeqDesc.release();
@@ -156,8 +156,8 @@ mfxStatus CMVCDecVideoFilter::AllocateExtMVCBuffers(mfxVideoParam *par)
 void CMVCDecVideoFilter::DeallocateExtMVCBuffers()
 {
     mfxExtMVCSeqDesc* pExtMVCBuffer = NULL;
-        
-    if (m_mfxParamsVideo.NumExtParam > 0 && 
+
+    if (m_mfxParamsVideo.NumExtParam > 0 &&
         m_mfxParamsVideo.ExtParam &&
         m_mfxParamsVideo.ExtParam[0])
     {
@@ -184,7 +184,7 @@ HRESULT CMVCDecVideoFilter::Receive(IMediaSample* pSample)
     HRESULT         hr = S_OK;
     mfxVideoParam   VideoParams;
     mfxStatus       sts = MFX_ERR_NONE;
-    mfxBitstream    mfxBS; 
+    mfxBitstream    mfxBS;
 
     CAutoLock cObjectLock(&m_csLock);
 
@@ -197,7 +197,7 @@ HRESULT CMVCDecVideoFilter::Receive(IMediaSample* pSample)
     if (0 == pSample->GetActualDataLength())
     {
         return S_FALSE;
-    }    
+    }
 
     if (m_pDecoder && !m_pDecoder->GetHeaderDecoded() && !m_bStop)
     {
@@ -210,7 +210,7 @@ HRESULT CMVCDecVideoFilter::Receive(IMediaSample* pSample)
 
         AttachExtParam(&VideoParams);
 
-        sts = m_pDecoder->DecodeHeader(&mfxBS, &VideoParams); 
+        sts = m_pDecoder->DecodeHeader(&mfxBS, &VideoParams);
 
         if (MFX_ERR_NONE == sts)
         {
@@ -224,9 +224,9 @@ HRESULT CMVCDecVideoFilter::Receive(IMediaSample* pSample)
 
         if (MFX_ERR_NONE == sts)
         {
-            MSDK_MEMCPY_VAR(m_mfxParamsVideo, &VideoParams, sizeof(mfxVideoParam)); 
-        } 
-        else 
+            MSDK_MEMCPY_VAR(m_mfxParamsVideo, &VideoParams, sizeof(mfxVideoParam));
+        }
+        else
         {
             hr = E_FAIL;
         }

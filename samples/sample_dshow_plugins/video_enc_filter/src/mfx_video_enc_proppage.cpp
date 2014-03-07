@@ -48,7 +48,7 @@ HRESULT CVideoEncPropPage::OnActivate(void)
 {
     MSDK_CHECK_POINTER(m_pVideoEncProps, S_FALSE);
 
-    CAutoLock cObjectLock(&m_critSec);      
+    CAutoLock cObjectLock(&m_critSec);
 
     UINT_PTR uResult;
 
@@ -64,10 +64,10 @@ HRESULT CVideoEncPropPage::OnActivate(void)
 
 HRESULT CVideoEncPropPage::OnDeactivate(void)
 {
-    CAutoLock cObjectLock(&m_critSec);      
+    CAutoLock cObjectLock(&m_critSec);
 
     KillTimer(m_hwnd, IDT_STATUPDATER);
-    
+
     return S_OK;
 }
 
@@ -79,7 +79,7 @@ INT_PTR CVideoEncPropPage::OnReceiveMessage(HWND hwnd, UINT uMsg, WPARAM wParam,
 
         HRESULT hr = S_OK;
         TCHAR strNumber[100];
-        
+
         if (NULL == m_pVideoEncProps || NULL == m_Dlg)
         {
             return 1;
@@ -103,9 +103,9 @@ INT_PTR CVideoEncPropPage::OnReceiveMessage(HWND hwnd, UINT uMsg, WPARAM wParam,
         _sntprintf(strNumber, 100, _T("%d"), stStats.width);
         SetDlgItemText(m_Dlg, IDC_Width, strNumber);
         _sntprintf(strNumber, 100, _T("%d"), stStats.height);
-        SetDlgItemText(m_Dlg, IDC_Height, strNumber);    
+        SetDlgItemText(m_Dlg, IDC_Height, strNumber);
     }
-    
+
     return CBasePropertyPage::OnReceiveMessage(hwnd, uMsg, wParam, lParam);
 }
 
@@ -115,7 +115,7 @@ HRESULT CVideoEncPropPage::OnApplyChanges(void)
 }
 
 HRESULT CVideoEncPropPage::OnDisconnect(void)
-{    
+{
     if (m_pVideoEncProps)
     {
         m_pVideoEncProps->Release();
@@ -165,7 +165,7 @@ void CConfigPropPage::UpdateTGUsageControls( int nTGUsageDlgCombobox
     {
         return ;
     }
-    
+
     if (0 != tgUsage)
     {
         //not user defined
@@ -239,12 +239,12 @@ void CConfigPropPage::UpdateDialogControls( mfxU32 codecID
     vParam.mfx.FrameInfo.CropY         = 0;
     vParam.mfx.FrameInfo.CropW         = (mfxU16)statistics.width;
     vParam.mfx.FrameInfo.CropH         = (mfxU16)statistics.height;
-    
+
     mfxU32 fcExtN(0), fcExtD(0);
     ConvertFrameRate( (mfxF64)statistics.frame_rate / 100.0
                     , &fcExtN
                     , &fcExtD);
-    
+
     vParam.mfx.FrameInfo.FrameRateExtN = fcExtN;
     vParam.mfx.FrameInfo.FrameRateExtD = fcExtD;
 
@@ -347,9 +347,9 @@ HRESULT CConfigPropPage::FillTGUsageCombo(int nTGUsageItem, DWORD nSelected)
     TCHAR*  strItems[26];
     DWORD   nItemsData[26];
 
-    //fill Target Usage combo    
-    strItems[0] = _T("Best Quality");    nItemsData[0]  = 1;    
-    strItems[1] = _T("Balanced");        nItemsData[1]  = 4;    
+    //fill Target Usage combo
+    strItems[0] = _T("Best Quality");    nItemsData[0]  = 1;
+    strItems[1] = _T("Balanced");        nItemsData[1]  = 4;
     strItems[2] = _T("Best Speed");      nItemsData[2]  = 7;
 
     return FillCombo(nTGUsageItem, strItems, nItemsData, 3, nSelected);
@@ -430,7 +430,7 @@ HRESULT CConfigPropPage::GetDlgItemData(int nDlgItem, DWORD* nParam)
 {
     HWND             hWnd;
     TCHAR            classname[32];
-    
+
     CheckPointer(nParam, E_POINTER);
 
     //get requested control
@@ -497,7 +497,7 @@ HRESULT CConfigPropPage::SetDlgItemData(int nDlgItem, DWORD nParam)
                 SendMessage(hWnd, (UINT) CB_SETCURSEL  , (WPARAM)i, 0);
                 return S_OK;
             }
-        }    
+        }
     }else
     {
         TCHAR value[32];
@@ -570,8 +570,8 @@ HRESULT CAboutPropPage::OnActivate(void)
     MSDK_MEMCPY_VAR(strMFXVersion, _T(PRODUCT_VERSION_STRING), nMFXVersionLen * sizeof(TCHAR));
     strMFXVersion[nMFXVersionLen] = 0;
 
-    SetDlgItemText(m_Dlg, IDC_VERSION_MFX, strMFXVersion);   
-   
+    SetDlgItemText(m_Dlg, IDC_VERSION_MFX, strMFXVersion);
+
     TCHAR strCopyright[100] = _T("");
     MSDK_MEMCPY_VAR(strCopyright, _T(PRODUCT_COPYRIGHT), _tcslen(_T(PRODUCT_COPYRIGHT)) * sizeof(TCHAR));
 

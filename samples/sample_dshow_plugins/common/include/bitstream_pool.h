@@ -25,7 +25,7 @@ struct sBitstreamPoolEntry
     sOutputBitstream *pBitstream;
     int Locked;
 
-    sBitstreamPoolEntry(sOutputBitstream *bitstream = NULL, int locked = 0) 
+    sBitstreamPoolEntry(sOutputBitstream *bitstream = NULL, int locked = 0)
         : pBitstream(bitstream)
         , Locked(locked)
     {

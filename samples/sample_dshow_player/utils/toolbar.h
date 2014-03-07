@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////
 // Toolbar.h: Toolbar and rebar control classes.
-// 
+//
 // THIS CODE AND INFORMATION IS PROVIDED "AS IS" WITHOUT WARRANTY OF
 // ANY KIND, EITHER EXPRESSED OR IMPLIED, INCLUDING BUT NOT LIMITED TO
 // THE IMPLIED WARRANTIES OF MERCHANTABILITY AND/OR FITNESS FOR A
@@ -32,7 +32,7 @@ public:
     Toolbar();
 	~Toolbar();
     HRESULT Create(HINSTANCE hInstance, HWND hParent, DWORD_PTR id, DWORD dwStyle = 0);
-    HRESULT AddButton(const Button& button);  
+    HRESULT AddButton(const Button& button);
     HRESULT Check(int id, BOOL fCheck);
     HRESULT Enable(int id, BOOL fCheck);
 

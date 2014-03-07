@@ -25,7 +25,7 @@ Copyright(c) 2011-2013 Intel Corporation. All Rights Reserved.
 #include "base_allocator.h"
 #include "interface.h"
 
-class VideoConfParams 
+class VideoConfParams
     : public IInitParams
 {
 public:
@@ -47,7 +47,7 @@ public:
         std::basic_string<msdk_char> srcFile;
         mfxU16 nWidth;      // picture width
         mfxU16 nHeight;     // picture height
-        mfxF64 dFrameRate;  // framerate 
+        mfxF64 dFrameRate;  // framerate
         SourceInfo()
             : nWidth()
             , nHeight()
@@ -67,7 +67,7 @@ public:
 
     mfxU16 nTemporalScalabilityBase;
     mfxU16 nTemporalScalabilityLayers;
-    
+
     //dynamic encoder control actions processor
     //prior encoding of particular frame several actions could be applied as a simulation of generic video conferencing infrastructure events
     std::auto_ptr <IActionProcessor> pActionProc;
@@ -87,17 +87,17 @@ class VideoConfPipeline
 public:
     VideoConfPipeline();
     virtual ~VideoConfPipeline();
-    
+
     //////////////////////////////////////////////////////////////////////////
     //IPipeline
     virtual mfxStatus   Run();
     virtual mfxStatus   Init(IInitParams *);
-    virtual mfxStatus   Close();  
+    virtual mfxStatus   Close();
     virtual mfxStatus   InsertKeyFrame();
-    virtual mfxStatus   ScaleBitrate(double dScaleBy); 
+    virtual mfxStatus   ScaleBitrate(double dScaleBy);
     virtual mfxStatus   AddFrameToRefList(RefListType refList, mfxU32 nFrameOrder);
-    virtual mfxStatus   SetNumL0Active(mfxU16 nActive); 
-    virtual mfxStatus   ResetPipeline(int nSourceIdx); 
+    virtual mfxStatus   SetNumL0Active(mfxU16 nActive);
+    virtual mfxStatus   ResetPipeline(int nSourceIdx);
     virtual void        PrintInfo();
     static const mfxU16 gopLength = 30;
 
@@ -128,17 +128,17 @@ protected:
     VideoConfParams m_initParams;
     CSmplBitstreamWriter m_FileWriter;
     CSmplYUVReader m_FileReader;
-    
+
     //encode query and initialization params
     std::auto_ptr<MFXVideoENCODE> m_encoder;
     MFXVideoSession m_mfxSession;
-    mfxVideoParam m_mfxEncParams; 
-    MFXFrameAllocator* m_pMFXAllocator; 
+    mfxVideoParam m_mfxEncParams;
+    MFXFrameAllocator* m_pMFXAllocator;
     mfxAllocatorParams* m_pmfxAllocatorParams;
 
     CHWDevice *m_hwdev;
 
-    mfxFrameAllocResponse m_EncResponse;  // memory allocation response for encoder  
+    mfxFrameAllocResponse m_EncResponse;  // memory allocation response for encoder
     std::vector <mfxFrameSurface1> m_EncSurfaces;
 
     mfxBitstream m_encodedBs;
@@ -172,8 +172,8 @@ protected:
 
     std::vector<RefListExt> m_ReferenceLists; // number of frames currently in specific reference list
     bool m_bAvcRefListAttached ;
-    
-    //extcoding options for instructing encoder to specify maxdecodebuffering=1 
+
+    //extcoding options for instructing encoder to specify maxdecodebuffering=1
     mfxExtCodingOption m_extCO;
 
     //extcoding options for intra refresh

@@ -44,13 +44,13 @@ TEST(Param_Cabac, DefaultSettings)
 {
     MFParamCabac cabac(NULL);
     EXPECT_EQ(true, cabac.IsEnabled());
-    
+
     EXPECT_EQ(S_OK, cabac.IsSupported());
     EXPECT_EQ(S_OK, cabac.IsModifiable());
     HRESULT hr = E_FAIL;
     cabac.Get(&hr);
     EXPECT_EQ(VFW_E_CODECAPI_NO_CURRENT_VALUE, hr);
-    
+
     mfxU16 cavlc = MFX_CODINGOPTION_UNKNOWN;
     EXPECT_EQ(S_OK, Get_CAVLC_CodingOption(cabac, cavlc));
     EXPECT_EQ(MFX_CODINGOPTION_UNKNOWN, cavlc);
@@ -65,7 +65,7 @@ TEST(Param_Cabac, DefaultProfileSetCABAC)
     HRESULT hr = E_FAIL;
     EXPECT_EQ(VARIANT_TRUE, cabac.Get(&hr));
     EXPECT_EQ(S_OK, hr);
-    
+
     mfxU16 cavlc = MFX_CODINGOPTION_UNKNOWN;
     EXPECT_EQ(S_OK, Get_CAVLC_CodingOption(cabac, cavlc));
     EXPECT_EQ(MFX_CODINGOPTION_OFF, cavlc);
@@ -81,7 +81,7 @@ TEST(Param_Cabac, BaseProfileSetCABAC)
     //HRESULT hr = E_FAIL;
     //cabac.Get(&hr);
     //EXPECT_EQ(VFW_E_CODECAPI_NO_CURRENT_VALUE, hr);
-    
+
     mfxU16 cavlc = MFX_CODINGOPTION_UNKNOWN;
     EXPECT_EQ(S_OK, Get_CAVLC_CodingOption(cabac, cavlc));
     EXPECT_EQ(MFX_CODINGOPTION_UNKNOWN, cavlc);
@@ -109,7 +109,7 @@ TEST(Param_Cabac, MainProfileSetCABAC)
     HRESULT hr = E_FAIL;
     EXPECT_EQ(VARIANT_TRUE, cabac.Get(&hr));
     EXPECT_EQ(S_OK, hr);
-    
+
     mfxU16 cavlc = MFX_CODINGOPTION_UNKNOWN;
     EXPECT_EQ(S_OK, Get_CAVLC_CodingOption(cabac, cavlc));
     EXPECT_EQ(MFX_CODINGOPTION_OFF, cavlc);
@@ -125,7 +125,7 @@ TEST(Param_Cabac, MainProfileSetCAVLC)
     HRESULT hr = E_FAIL;
     EXPECT_EQ(VARIANT_FALSE, cabac.Get(&hr));
     EXPECT_EQ(S_OK, hr);
-    
+
     mfxU16 cavlc = MFX_CODINGOPTION_UNKNOWN;
     EXPECT_EQ(S_OK, Get_CAVLC_CodingOption(cabac, cavlc));
     EXPECT_EQ(MFX_CODINGOPTION_ON, cavlc);

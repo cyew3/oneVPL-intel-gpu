@@ -59,7 +59,7 @@ int main(int nParams, char ** sparams)
         PipelineManager mgr(factory);
         mgr.Build(*parser);
         mgr.Run();
-        
+
         return 0;
     }
     catch (KnownException & /*e*/) {

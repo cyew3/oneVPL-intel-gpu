@@ -45,7 +45,7 @@ HRESULT CMPEG2DecVideoFilter::CheckInputType(const CMediaType *mtIn)
     if ((MEDIASUBTYPE_MPEG2_VIDEO != *mtIn->Subtype()))
     {
         return VFW_E_INVALIDMEDIATYPE;
-    }   
+    }
 
     return CDecVideoFilter::CheckInputType(mtIn);
 };

@@ -16,7 +16,7 @@
 
 using namespace detail;
 
-TrackProfileBase::TrackProfileBase( const MFXStreamParams &splInfo, CmdLineParser & parser, MFXSessionInfo sesInfo, size_t nTrack ) : 
+TrackProfileBase::TrackProfileBase( const MFXStreamParams &splInfo, CmdLineParser & parser, MFXSessionInfo sesInfo, size_t nTrack ) :
     m_splInfo(splInfo),
     m_track(nTrack),
     m_sessionInfo(sesInfo),
@@ -46,20 +46,20 @@ msdk_string TrackProfileBase::GetOutputExtension() {
     return filename.substr(pointPos + 1);
 }
 
-TrackProfile<mfxVideoParam>::TrackProfile (const MFXStreamParams &splInfo, CmdLineParser & parser, OutputFormat & extensions, OutputCodec &codecs, MFXSessionInfo sesInfo, size_t nTrack ) 
+TrackProfile<mfxVideoParam>::TrackProfile (const MFXStreamParams &splInfo, CmdLineParser & parser, OutputFormat & extensions, OutputCodec &codecs, MFXSessionInfo sesInfo, size_t nTrack )
     : TrackProfileBaseTmpl<mfxVideoParam>(splInfo, parser, sesInfo, nTrack)
 {
     OutputFormat::Extensions mext ( extensions.MuxerExtensions());
     OutputFormat::Extensions vext ( extensions.RawVideoExtensions());
 
-    
+
     for (OutputFormat::Extensions::iterator i = mext.begin(); i != mext.end(); i++) {
         m_extensions[i->first] = i->second.vcodec;
     }
     for (OutputFormat::Extensions::iterator i = vext.begin(); i != vext.end(); i++) {
         m_extensions[i->first] = i->second.vcodec;
     }
-    
+
     m_codecs = codecs.VCodec();
 
     ParseEncodeParams();
@@ -88,7 +88,7 @@ void TrackProfile<mfxVideoParam>::ParseEncodeParams()
 {
     mfxTrackInfo & vInfo = *((mfxStreamParams&)m_splInfo).TrackInfo[m_track];
     mfxInfoMFX &vInfoMFX = m_trackInfo.Encode.mfx;
-    
+
     if (m_parser->IsPresent(OPTION_VB)) {
         mfxU32 bitrate = (*m_parser)[OPTION_VB].as<mfxU32>();
         if (bitrate > (std::numeric_limits<mfxU16>::max)()) {
@@ -109,7 +109,7 @@ void TrackProfile<mfxVideoParam>::ParseEncodeParams()
 void TrackProfile<mfxVideoParam>::ParseDecodeParams()
 {
     mfxTrackInfo & vInfo = *((mfxStreamParams&)m_splInfo).TrackInfo[m_track];
-    
+
     m_trackInfo.Decode.IOPattern = MFX_IOPATTERN_OUT_SYSTEM_MEMORY;
     if (m_parser->IsPresent(OPTION_HW)) {
         m_trackInfo.Decode.IOPattern = MFX_IOPATTERN_OUT_VIDEO_MEMORY;
@@ -121,7 +121,7 @@ TrackProfile <mfxAudioParam>::TrackProfile( const MFXStreamParams &splInfo
                                            , CmdLineParser & parser
                                            , OutputFormat & extensions
                                            , OutputCodec & codecs
-                                           , MFXSessionInfo sesInfo, size_t nTrack) 
+                                           , MFXSessionInfo sesInfo, size_t nTrack)
     : TrackProfileBaseTmpl<mfxAudioParam>(splInfo, parser, sesInfo,  nTrack)
 {
     OutputFormat::Extensions mext ( extensions.MuxerExtensions());

@@ -7,7 +7,7 @@
 //          Copyright(c) 2003-2011 Intel Corporation. All Rights Reserved.
 //
 */
-  
+
 #include <atlbase.h>
 #include <Windows.h>
 #include "guiddef.h"
@@ -37,7 +37,7 @@ static const struct
 {
     mfxU32          codec_type;
     mfxI8           profile;
-    GUID            guid; 
+    GUID            guid;
     int             iPosition;
 }
 codec_types[] =
@@ -57,7 +57,7 @@ const GUID* CodecId2GUID(const mfxU32 fmt, mfxU16 nCodecProfile, int iPosition)
                 continue;
             }
             return &codec_types[i].guid;
-        }               
+        }
     }
     return NULL;
 }
@@ -102,7 +102,7 @@ mfxStatus SetRegistryValue(const TCHAR *pName, DWORD value, TCHAR *pPath)
     if (!pPath || !pName)
     {
         return MFX_ERR_NULL_PTR;
-    }    
+    }
 
     res = RegCreateKeyEx(REGISTRY_ROOT, pPath, 0, 0, 0, KEY_SET_VALUE, NULL, &key, NULL);
     if (res == ERROR_SUCCESS)
@@ -111,7 +111,7 @@ mfxStatus SetRegistryValue(const TCHAR *pName, DWORD value, TCHAR *pPath)
         RegCloseKey(key);
     }
 
-    return (res == ERROR_SUCCESS) ? MFX_ERR_NONE : MFX_ERR_UNKNOWN;    
+    return (res == ERROR_SUCCESS) ? MFX_ERR_NONE : MFX_ERR_UNKNOWN;
 }
 
 mfxStatus  GetRegistryValue(const TCHAR *pName, DWORD *pValue, TCHAR *pPath)
@@ -125,16 +125,16 @@ mfxStatus  GetRegistryValue(const TCHAR *pName, DWORD *pValue, TCHAR *pPath)
         return MFX_ERR_NULL_PTR;
     }
 
-    DWORD cbData = sizeof(*pValue);             
-        
+    DWORD cbData = sizeof(*pValue);
+
     res = RegOpenKeyEx(REGISTRY_ROOT, pPath, 0, KEY_QUERY_VALUE, &key);
     if (res == ERROR_SUCCESS)
     {
         res = RegQueryValueEx(key, pName, NULL, &type, (LPBYTE)pValue, &cbData);
         RegCloseKey(key);
-    }   
-    
-    return (res == ERROR_SUCCESS) ? MFX_ERR_NONE : MFX_ERR_UNKNOWN;    
+    }
+
+    return (res == ERROR_SUCCESS) ? MFX_ERR_NONE : MFX_ERR_UNKNOWN;
 }
 
 REFERENCE_TIME ConvertMFXTime2ReferenceTime(mfxU64 nTime)
@@ -146,5 +146,5 @@ REFERENCE_TIME ConvertMFXTime2ReferenceTime(mfxU64 nTime)
     else
     {
         return (REFERENCE_TIME)-1e7;
-    }    
+    }
 };

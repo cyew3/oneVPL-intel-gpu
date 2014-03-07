@@ -7,7 +7,7 @@ accordance with the terms of that agreement
 Copyright(c) 2013 Intel Corporation. All Rights Reserved.
 
 File Name: mf_hw_platform.h
- 
+
 \* ****************************************************************************** */
 
 #pragma once
@@ -42,7 +42,7 @@ struct  HWPlatform  {
     enum {
         //default system adapter
         ADAPTER_DEFAULT = 0,
-        //enumerator used to find-out suitable intel adapter 
+        //enumerator used to find-out suitable intel adapter
         ADAPTER_ANY = 0xFFFFFFFF,
     };
 
@@ -54,7 +54,7 @@ private:
     static CComPtr<ID3D11Device> CreateD3D11Device(IDXGIAdapter * pAdapter);
     static mfxStatus GetIntelDataPrivateReport(ID3D11VideoDevice * device, const GUID guid, D3D11_VIDEO_DECODER_CONFIG & config);
 #endif
-    enum 
+    enum
     {
         EAGLELAKE_G45_ID0  = 0x02e20,
         EAGLELAKE_G45_ID1  = 0x02e21,
@@ -85,7 +85,7 @@ private:
         IGFX_EAGLELAKE_G,
         IGFX_IRONLAKE_G,
         IGFX_GT,
-        IGFX_IVYBRIDGE,    
+        IGFX_IVYBRIDGE,
         IGFX_HASWELL,
         IGFX_VALLEYVIEW,
         IGFX_BROADWELL,

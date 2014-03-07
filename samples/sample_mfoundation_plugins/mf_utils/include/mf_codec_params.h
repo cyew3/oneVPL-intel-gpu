@@ -151,7 +151,7 @@ protected:
 
 /*--------------------------------------------------------------------*/
 
-class MFDecoderParams : 
+class MFDecoderParams :
 #if MFX_D3D11_SUPPORT
                         public IMFQualityAdvise,
                         public IMFRealTimeClientEx,

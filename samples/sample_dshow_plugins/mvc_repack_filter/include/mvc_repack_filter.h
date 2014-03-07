@@ -30,7 +30,7 @@ public:
 
     CMVCRepackFilter(TCHAR *tszName, LPUNKNOWN punk, HRESULT *phr);
     ~CMVCRepackFilter();
-    
+
     STDMETHODIMP            Pause();
 
     // these methods should be overridden
@@ -50,10 +50,10 @@ public:
     HRESULT                 DeliverBitstream(mfxBitstream* bs);
 
 protected:
-    
+
     bool                    CreateInputPin(void);
     bool                    CreateOutputPin(void);
-    
+
     void                    CreatePins(void);
     void                    RemovePins(void);
 

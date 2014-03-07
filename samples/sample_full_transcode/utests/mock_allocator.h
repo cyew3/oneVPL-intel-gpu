@@ -14,8 +14,8 @@
 #include "sysmem_allocator.h"
 
 class MockD3DFrameAllocator: public D3DFrameAllocator
-{    
-public: 
+{
+public:
     MOCK_METHOD1(Init, mfxStatus(mfxAllocatorParams *pParams));
     MOCK_METHOD0(Close, mfxStatus());
     MOCK_METHOD2(LockFrame, mfxStatus(mfxMemId mid, mfxFrameData *ptr));
@@ -26,8 +26,8 @@ public:
 };
 
 class MockD3D11FrameAllocator: public D3D11FrameAllocator
-{    
-public: 
+{
+public:
     MOCK_METHOD1(Init, mfxStatus(mfxAllocatorParams *pParams));
     MOCK_METHOD0(Close, mfxStatus());
     MOCK_METHOD2(LockFrame, mfxStatus(mfxMemId mid, mfxFrameData *ptr));
@@ -39,8 +39,8 @@ public:
 };
 
 class MockSysMemFrameAllocator: public SysMemFrameAllocator
-{    
-public: 
+{
+public:
     MOCK_METHOD1(Init, mfxStatus(mfxAllocatorParams *pParams));
     MOCK_METHOD0(Close, mfxStatus());
     MOCK_METHOD2(LockFrame, mfxStatus(mfxMemId mid, mfxFrameData *ptr));
@@ -49,8 +49,8 @@ public:
 };
 
 class MockMFXFrameAllocator: public MFXFrameAllocator
-{    
-public: 
+{
+public:
     MOCK_METHOD1(Init, mfxStatus(mfxAllocatorParams *pParams));
     MOCK_METHOD0(Close, mfxStatus());
     MOCK_METHOD2(LockFrame, mfxStatus(mfxMemId mid, mfxFrameData *ptr));

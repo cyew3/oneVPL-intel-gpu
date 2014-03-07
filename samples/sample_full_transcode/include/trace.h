@@ -11,7 +11,7 @@
 class TraceStreamName {
     const msdk_string m_name;
 public:
-    TraceStreamName(const msdk_string & name) 
+    TraceStreamName(const msdk_string & name)
         : m_name(name) {
     }
     const msdk_string & Name() const {

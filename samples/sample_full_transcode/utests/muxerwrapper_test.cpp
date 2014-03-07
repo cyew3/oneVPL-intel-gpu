@@ -21,7 +21,7 @@ struct MuxerWrapperTest  : public ::testing::Test {
     mfxTrackInfo  videoTrack;
     mfxTrackInfo  audioTrack;
     mfxU8 data[100];
-    MuxerWrapperTest() 
+    MuxerWrapperTest()
         : mockmuxer(*new MockMFXMuxer())
         , mockio(*new MockDataIO())
         , mockSample(*new MockSample())
@@ -31,7 +31,7 @@ struct MuxerWrapperTest  : public ::testing::Test {
             videoTrack.Type = MFX_TRACK_H264;
             audioTrack.Type = MFX_TRACK_AAC;
             //sParams.TrackInfo = info;
-    }      
+    }
     void CreateMuxer() {
         EXPECT_CALL(mockmuxer, Init(_, _)).WillOnce(Return(MFX_ERR_NONE));
         muxer.reset(new MuxerWrapper(instant_auto_ptr2<MFXMuxer>(&mockmuxer), sParams, instant_auto_ptr2<MFXDataIO>(&mockio)));
@@ -47,7 +47,7 @@ struct MuxerWrapperTest  : public ::testing::Test {
 };
 
 
-TEST_F(MuxerWrapperTest, initFailureResultinException) {    
+TEST_F(MuxerWrapperTest, initFailureResultinException) {
     EXPECT_CALL(mockmuxer, Init(_, _)).WillOnce(Return(MFX_ERR_UNKNOWN));
     EXPECT_CALL(mockSample, HasMetaData(META_EOS)).WillOnce(Return(false));
     std::auto_ptr<MuxerWrapper> wrp (new MuxerWrapper(instant_auto_ptr2<MFXMuxer>(&mockmuxer), sParams, instant_auto_ptr2<MFXDataIO>(&mockio)));
@@ -55,29 +55,29 @@ TEST_F(MuxerWrapperTest, initFailureResultinException) {
 }
 
 
-TEST_F(MuxerWrapperTest, putSample_fail) {    
+TEST_F(MuxerWrapperTest, putSample_fail) {
     EXPECT_CALL(mockmuxer, PutBitstream(_, _, _)).WillOnce(Return(MFX_ERR_UNDEFINED_BEHAVIOR));
     EXPECT_CALL(mockSample, GetBitstream()).WillOnce(ReturnRef(bitsteam));
     EXPECT_CALL(mockSample, GetTrackID()).WillOnce(Return(2277));
     EXPECT_CALL(mockSample, HasMetaData(META_EOS)).WillOnce(Return(false));
-    
+
     CreateMuxer();
     EXPECT_THROW(muxer->PutSample(instant_auto_ptr2<ISample>(&mockSample)), MuxerPutSampleError);
 }
 
-TEST_F(MuxerWrapperTest, putSample_mock_sample) {    
+TEST_F(MuxerWrapperTest, putSample_mock_sample) {
     EXPECT_CALL(mockSample, GetTrackID()).WillOnce(Return(2277));
     EXPECT_CALL(mockSample, GetBitstream()).WillOnce(ReturnRef(bitsteam));
     EXPECT_CALL(mockSample, HasMetaData(META_EOS)).WillOnce(Return(false));
     //due to trackmapping id not saved
     EXPECT_CALL(mockmuxer, PutBitstream(0, _, _)).WillOnce(Return(MFX_ERR_NONE));
-    
-    
+
+
     CreateMuxer();
     EXPECT_NO_THROW(muxer->PutSample(instant_auto_ptr2<ISample>(&mockSample)));
 }
 
-TEST_F(MuxerWrapperTest, NoInitIfNotEnoughVideoData) {    
+TEST_F(MuxerWrapperTest, NoInitIfNotEnoughVideoData) {
     EXPECT_CALL(mockSample, HasMetaData(META_EOS)).WillOnce(Return(false));
     EXPECT_CALL(mockSample, GetMetaData(META_VIDEOPARAM, _)).Times(1);
     EXPECT_CALL(mockSample, GetMetaData(META_SPSPPS, _)).Times(1);
@@ -91,7 +91,7 @@ TEST_F(MuxerWrapperTest, NoInitIfNotEnoughVideoData) {
     EXPECT_NO_THROW(wrp->PutSample(instant_auto_ptr2<ISample>(&mockSample)));
 }
 
-TEST_F(MuxerWrapperTest, DefferedAudioSampleOrder) {    
+TEST_F(MuxerWrapperTest, DefferedAudioSampleOrder) {
     mfxBitstream abs1 = {};
     mfxBitstream abs2 = {};
     mfxBitstream abs3 = {};
@@ -146,7 +146,7 @@ TEST_F(MuxerWrapperTest, DefferedAudioSampleOrder) {
     detail::SamplePoolForMuxer sp(2);
     mfxTrackInfo tInfo;
     SamplePtr mock_sample_ptr(&mockSample);
-    
+
     //1st audio
     EXPECT_FALSE(sp.GetVideoInfo(tInfo));
     sp.PutSample(mock_sample_ptr);

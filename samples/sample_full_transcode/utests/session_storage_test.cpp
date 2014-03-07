@@ -22,7 +22,7 @@ struct SessionStorageTest  : public ::testing::Test {
     std::auto_ptr<MockMFXAudioSession> aSession;
     mfxVersion verv;
     mfxVersion vera;
-    SessionStorageTest() 
+    SessionStorageTest()
         : vSession ( new MockMFXVideoSession())
         , vSession2 ( new MockMFXVideoSession())
         , aSession ( new MockMFXAudioSession()) {
@@ -54,7 +54,7 @@ TEST_F(SessionStorageTest, add_2video_sessions_same_pid) {
     EXPECT_CALL(*vSession, QueryVersion(_)).WillRepeatedly(Return(MFX_ERR_NONE));
     EXPECT_EQ(vSession.get(), storage->GetVideoSessionForID(5));
     EXPECT_EQ(vSession.get(), storage->GetVideoSessionForID(5));
-    
+
     vSession.release();
 };
 
@@ -79,7 +79,7 @@ TEST_F(SessionStorageTest, add_2video_sessions_diff_pid) {
 TEST_F(SessionStorageTest, add_audio_session) {
     EXPECT_CALL(factory, CreateAudioSession()).WillOnce(Return(aSession.get()));
     EXPECT_CALL(*aSession, Init(MFX_IMPL_SOFTWARE | MFX_IMPL_AUDIO, _)).WillOnce(Return(MFX_ERR_NONE));
-    
+
     EXPECT_EQ(aSession.get(), storage->GetAudioSessionForID(5));
     aSession.release();
 };

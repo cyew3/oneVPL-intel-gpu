@@ -128,7 +128,7 @@ STDAPI AMovieSetupUnregisterServer(CLSID clsServer)
     // out subkey CLSID\{}
     OLECHAR szCLSID[CHARS_IN_GUID];
     TCHAR achBuffer[MAX_KEY_LEN];
-    
+
     hr = StringFromGUID2(clsServer, szCLSID, CHARS_IN_GUID);
     assert(SUCCEEDED(hr));
 

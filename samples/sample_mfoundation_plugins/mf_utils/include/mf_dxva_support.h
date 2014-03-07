@@ -98,7 +98,7 @@ protected:
     // System-wide mutex
     MyNamedMutex            m_Mutex;
     HRESULT                 m_mutCreateRes;
-    
+
     IDirect3D9*              m_pD3D;
     IDirect3DDevice9*        m_pDevice;
     IDirect3DDeviceManager9* m_pDeviceManager;
