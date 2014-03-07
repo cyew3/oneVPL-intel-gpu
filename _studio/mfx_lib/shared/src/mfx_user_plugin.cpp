@@ -240,7 +240,7 @@ mfxStatus VideoUSERPlugin::QueryIOSurf(VideoCORE *core, mfxVideoParam *par, mfxF
     core;
     if (m_param.CodecId != par->mfx.CodecId)
     {
-        printf("ERROR: VideoUSERPlugin::QueryIOSurf, plugin_codec_id=%c%c%c%c, query_codec_id=%c%c%c%c\n", U32TOFOURCC(m_param.CodecId), U32TOFOURCC(par->mfx.CodecId));
+        //printf("ERROR: VideoUSERPlugin::QueryIOSurf, plugin_codec_id=%c%c%c%c, query_codec_id=%c%c%c%c\n", U32TOFOURCC(m_param.CodecId), U32TOFOURCC(par->mfx.CodecId));
         return MFX_ERR_UNSUPPORTED;
     }
 
@@ -252,7 +252,7 @@ mfxStatus VideoUSERPlugin::Query(VideoCORE *core, mfxVideoParam *in, mfxVideoPar
     core;
     if (m_param.CodecId != out->mfx.CodecId)
     {
-        printf("ERROR: VideoUSERPlugin::Query, plugin_codec_id=%c%c%c%c, query_codec_id=%c%c%c%c\n", U32TOFOURCC(m_param.CodecId), U32TOFOURCC(out->mfx.CodecId));
+        //printf("ERROR: VideoUSERPlugin::Query, plugin_codec_id=%c%c%c%c, query_codec_id=%c%c%c%c\n", U32TOFOURCC(m_param.CodecId), U32TOFOURCC(out->mfx.CodecId));
         return MFX_ERR_UNSUPPORTED;
     }
     
