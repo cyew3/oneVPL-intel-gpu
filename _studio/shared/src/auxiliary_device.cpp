@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2009-2012 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2009-2014 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -640,6 +640,10 @@ HRESULT AuxiliaryDevice::Execute(mfxU32 func,
 
     if (AUXDEV_CREATE_ACCEL_SERVICE == func && SUCCEEDED(hr))
     {
+        if (NULL == input)
+        {
+            return MFX_ERR_NULL_PTR;
+        }
         m_Guid = *(GUID*)input; // to call AUXDEV_DESTROY_ACCEL_SERVICE in destructor
     }
 
