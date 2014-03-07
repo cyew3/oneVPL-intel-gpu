@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2009-2013 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2009-2014 Intel Corporation. All Rights Reserved.
 //
 //
 //          H264 encoder common
@@ -1104,7 +1104,7 @@ mfxU32 CopyWOStartCodeAndPrevention(mfxU8* dst, const mfxU8* src, mfxU32 len)
 }
 
 #define BS_DECLARE mfxU8* bptr = 0; mfxU32 bsize; mfxU32 bpos;
-#define BS_ALLOC(size) bptr = (mfxU8*)H264_Malloc(size);
+#define BS_ALLOC(size) {bptr = (mfxU8*)H264_Malloc(size); if (NULL == bptr) { return MFX_ERR_MEMORY_ALLOC;} }
 #define BS_FREE_RETURN(sts) { if (bptr) H264_Free(bptr); return sts; }
 #define BS_INIT(ptr,size) bptr=ptr; bsize=size; bpos=0;
 #define BS_LOAD(src, size) bsize = CopyWOStartCodeAndPrevention(bptr, src, size); bpos = 0
