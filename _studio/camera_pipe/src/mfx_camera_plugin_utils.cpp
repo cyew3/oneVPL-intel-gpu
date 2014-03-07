@@ -296,7 +296,7 @@ mfxStatus MFXCamera_Plugin::AllocateInternalSurfaces()
     mfxStatus sts;
 
     request.Info = m_mfxVideoParam.vpp.In;
-    request.Info.Width = m_PaddedFrameWidth;
+    request.Info.Width = m_VSliceWidth;
     request.Info.Height = m_PaddedFrameHeight;
     request.Type = MFX_MEMTYPE_D3D_INT;
 
@@ -306,8 +306,7 @@ mfxStatus MFXCamera_Plugin::AllocateInternalSurfaces()
     if (m_Caps.bDemosaic)
         frNum += 9;
 
-    request.NumFrameMin = request.NumFrameSuggested = (mfxU16)(frNum); // + m_mfxVideoParam.AsyncDepth); // AsyncDepth ???
-    //request.Info.FourCC = MFX_FOURCC_P010; // ??? doublecheck fourCC !!!
+    request.NumFrameMin = request.NumFrameSuggested = (mfxU16)(frNum);
     request.Info.FourCC = CM_SURFACE_FORMAT_A8;
     request.Info.Width *= sizeof(mfxU16);
 
@@ -317,11 +316,10 @@ mfxStatus MFXCamera_Plugin::AllocateInternalSurfaces()
     request.Info.Width = m_FrameWidth64;
     request.Info.Height = m_mfxVideoParam.vpp.In.CropH;
     request.Type = MFX_MEMTYPE_D3D_INT;
-    // fourCC ??? !!!
     request.Info.FourCC = CM_SURFACE_FORMAT_A8;
     request.Info.Width *= sizeof(mfxU16);
     frNum = 3;
-    request.NumFrameMin = request.NumFrameSuggested = (mfxU16)(frNum); // + m_mfxVideoParam.AsyncDepth);
+    request.NumFrameMin = request.NumFrameSuggested = (mfxU16)(frNum);
 
     sts = m_raw16aligned.AllocCmSurfaces(m_cmDevice, request);
     MFX_CHECK_STS(sts);
@@ -330,11 +328,19 @@ mfxStatus MFXCamera_Plugin::AllocateInternalSurfaces()
     request.Info.Height = m_PaddedFrameHeight;
     request.Type = MFX_MEMTYPE_D3D_INT;
     request.Info.FourCC = CM_SURFACE_FORMAT_A8;
-    frNum = 3; // ???
-    request.NumFrameMin = request.NumFrameSuggested = (mfxU16)(frNum); // + m_mfxVideoParam.AsyncDepth);
+#ifdef CAM_PIPE_VERTICAL_SLICE_ENABLE
+    frNum = 2;
+#else
+    frNum = 3;
+#endif
+    request.NumFrameMin = request.NumFrameSuggested = (mfxU16)(frNum);
 
     sts = m_aux8.AllocCmSurfaces(m_cmDevice, request);
     MFX_CHECK_STS(sts);
+
+#ifdef CAM_PIPE_VERTICAL_SLICE_ENABLE
+    m_avgFlagSurf = CreateSurface(m_cmDevice, m_VSliceWidth, m_PaddedFrameHeight, CM_SURFACE_FORMAT_A8);
+#endif
 
     m_gammaCorrectSurf = CreateSurface(m_cmDevice, 32, 4, CM_SURFACE_FORMAT_A8);
     m_gammaPointSurf = CreateSurface(m_cmDevice, 32, 4, CM_SURFACE_FORMAT_A8);
@@ -448,6 +454,113 @@ mfxStatus MFXCamera_Plugin::SetExternalSurfaces(AsyncParams *pParam)
     return MFX_ERR_NONE;
 }
 
+
+#ifdef CAM_PIPE_VERTICAL_SLICE_ENABLE
+
+mfxStatus MFXCamera_Plugin::CreateEnqueueTasks(AsyncParams *pParam)
+{
+#ifdef CAMP_PIPE_ITT
+    __itt_task_begin(CamPipeAccel, __itt_null, __itt_null, task2);
+#endif    
+    int result;
+    CmEvent *e = NULL;
+
+    UMC::AutomaticUMCMutex guard(m_guard);
+
+    SurfaceIndex *pInputSurfaceIndex;
+
+    if (pParam->inSurf2D) {
+        CmSurface2D *inSurf = (CmSurface2D *)pParam->inSurf2D;
+        inSurf->GetIndex(pInputSurfaceIndex);
+    } else if (pParam->inSurf2DUP) {
+        CmSurface2DUP *inSurf = (CmSurface2DUP *)pParam->inSurf2DUP;
+        inSurf->GetIndex(pInputSurfaceIndex);
+    } else
+        return MFX_ERR_NULL_PTR;
+
+    CmSurface2D *goodPixCntSurf = (CmSurface2D *)AcquireResource(m_aux8);
+    CmSurface2D *bigPixCntSurf = (CmSurface2D *)AcquireResource(m_aux8);
+
+    m_cmCtx->CreateEnqueueTask_GoodPixelCheck(*pInputSurfaceIndex, goodPixCntSurf, bigPixCntSurf, m_InputBitDepth);
+
+    CmSurface2D *greenHorSurf = (CmSurface2D *)AcquireResource(m_raw16padded);
+    CmSurface2D *greenVerSurf = (CmSurface2D *)AcquireResource(m_raw16padded);
+    CmSurface2D *greenAvgSurf = (CmSurface2D *)AcquireResource(m_raw16padded);
+    CmSurface2D *avgFlagSurf = m_avgFlagSurf;
+
+    m_cmCtx->CreateTask_RestoreGreen(*pInputSurfaceIndex, goodPixCntSurf, bigPixCntSurf, greenHorSurf, greenVerSurf, greenAvgSurf, avgFlagSurf, m_InputBitDepth);
+
+
+    CmSurface2D *blueHorSurf = (CmSurface2D *)AcquireResource(m_raw16padded);
+    CmSurface2D *blueVerSurf = (CmSurface2D *)AcquireResource(m_raw16padded);
+    CmSurface2D *blueAvgSurf = (CmSurface2D *)AcquireResource(m_raw16padded);
+    CmSurface2D *redHorSurf = (CmSurface2D *)AcquireResource(m_raw16padded);
+    CmSurface2D *redVerSurf = (CmSurface2D *)AcquireResource(m_raw16padded);
+    CmSurface2D *redAvgSurf = (CmSurface2D *)AcquireResource(m_raw16padded);
+
+    m_cmCtx->CreateTask_RestoreBlueRed(*pInputSurfaceIndex,
+                                        greenHorSurf, greenVerSurf, greenAvgSurf,
+                                        blueHorSurf, blueVerSurf, blueAvgSurf,
+                                        redHorSurf, redVerSurf, redAvgSurf,
+                                        avgFlagSurf, m_InputBitDepth);
+
+
+    CmSurface2D *redOutSurf   = (CmSurface2D *)AcquireResource(m_raw16aligned);
+    CmSurface2D *greenOutSurf = (CmSurface2D *)AcquireResource(m_raw16aligned);
+    CmSurface2D *blueOutSurf  = (CmSurface2D *)AcquireResource(m_raw16aligned);
+
+    m_cmCtx->CreateTask_SAD(redHorSurf, greenHorSurf, blueHorSurf, redVerSurf, greenVerSurf, blueVerSurf, redOutSurf, greenOutSurf, blueOutSurf);
+
+    m_cmCtx->CreateTask_DecideAverage(redAvgSurf, greenAvgSurf, blueAvgSurf, avgFlagSurf, redOutSurf, greenOutSurf, blueOutSurf);
+
+    for (int i = 0; i < CAM_PIPE_KERNEL_SPLIT; i++) {
+        m_cmCtx->EnqueueSliceTasks(i);
+    }
+
+    SurfaceIndex *pOutputSurfaceIndex;
+
+    if (pParam->outBufUP) {
+        CmBufferUP *outBuffer = (CmBufferUP *)pParam->outBufUP;
+        outBuffer->GetIndex(pOutputSurfaceIndex);
+    } else if (pParam->outBuf) {
+        CmBuffer *outBuffer = (CmBuffer *)pParam->outBuf;
+        outBuffer->GetIndex(pOutputSurfaceIndex);
+    } else
+        return MFX_ERR_NULL_PTR;
+
+    // if (m_Caps.bForwardGammaCorrection && m_GammaParams.bActive)   currently won't work otherwise ???
+    {
+
+        if (m_Caps.OutputMemoryOperationMode == MEM_GPUSHARED) // add other mem types support !!! ???
+        {
+            e = m_cmCtx->CreateEnqueueTask_ForwardGamma(m_gammaCorrectSurf, m_gammaPointSurf, redOutSurf, greenOutSurf, blueOutSurf, *pOutputSurfaceIndex, m_InputBitDepth);
+        }
+    }
+
+    pParam->pEvent = e;
+
+#ifdef CAMP_PIPE_ITT
+    __itt_task_end(CamPipeAccel);
+#endif
+
+    if (pParam->outBufUP) {
+        CmBufferUP *buf = (CmBufferUP *)pParam->outBufUP;
+        if (pParam->pMemOut) {
+            // copy mem to out mfx surface - to implement !!!
+            CM_ALIGNED_FREE(pParam->pMemOut);  // remove/change when pool implemented !!! ???
+            pParam->pMemOut = 0;
+        }
+        m_cmDevice->DestroyBufferUP(buf);
+        pParam->outBufUP = 0;
+    } else if (pParam->outBuf) {
+        // copy from CmBuffer to out mfx surface - to implement !!! 
+    }
+
+    return MFX_ERR_NONE;
+}
+
+#else
+
 mfxStatus MFXCamera_Plugin::CreateEnqueueTasks(AsyncParams *pParam) //mfxFrameSurface1 *surfIn, mfxFrameSurface1 *surfOut)
 {
 #ifdef CAMP_PIPE_ITT
@@ -483,8 +596,12 @@ mfxStatus MFXCamera_Plugin::CreateEnqueueTasks(AsyncParams *pParam) //mfxFrameSu
     CmSurface2D *greenHorSurf = (CmSurface2D *)AcquireResource(m_raw16padded);
     CmSurface2D *greenVerSurf = (CmSurface2D *)AcquireResource(m_raw16padded);
     CmSurface2D *greenAvgSurf = (CmSurface2D *)AcquireResource(m_raw16padded);
-    CmSurface2D *avgFlagSurf = (CmSurface2D *)AcquireResource(m_aux8);
 
+#ifdef CAM_PIPE_VERTICAL_SLICE_ENABLE
+    CmSurface2D *avgFlagSurf = m_avgFlagSurf;
+#else
+    CmSurface2D *avgFlagSurf = (CmSurface2D *)AcquireResource(m_aux8);
+#endif
 
     m_cmCtx->CreateEnqueueTask_RestoreGreen(*pInputSurfaceIndex, goodPixCntSurf, bigPixCntSurf, greenHorSurf, greenVerSurf, greenAvgSurf, avgFlagSurf, m_InputBitDepth);
 
@@ -552,3 +669,4 @@ mfxStatus MFXCamera_Plugin::CreateEnqueueTasks(AsyncParams *pParam) //mfxFrameSu
 
     return MFX_ERR_NONE;
 }
+#endif

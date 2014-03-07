@@ -198,9 +198,14 @@ mfxStatus MFXCamera_Plugin::Init(mfxVideoParam *par)
     if (m_mfxVideoParam.AsyncDepth == 0)
         m_mfxVideoParam.AsyncDepth = m_core->GetAutoAsyncDepth();
 
-    m_FrameWidth64   = ((m_mfxVideoParam.vpp.In.CropW + 31) & 0xFFFFFFE0); // 2 bytes each for In, 4 bytes for Out, so 32 is good enough for 64 ???
+    m_FrameWidth64   = ((m_mfxVideoParam.vpp.In.CropW + 31) &~ 0x1F); // 2 bytes each for In, 4 bytes for Out, so 32 is good enough for 64 ???
     m_PaddedFrameWidth  = m_mfxVideoParam.vpp.In.CropW + 16;
     m_PaddedFrameHeight = m_mfxVideoParam.vpp.In.CropH + 16;
+#ifdef CAM_PIPE_VERTICAL_SLICE_ENABLE
+    m_VSliceWidth       = ((( m_mfxVideoParam.vpp.In.CropW / CAM_PIPE_KERNEL_SPLIT)  + 15) &~ 0xF) + 16;
+#else
+    m_VSliceWidth       = m_PaddedFrameWidth;
+#endif
     m_InputBitDepth = m_mfxVideoParam.vpp.In.BitDepthLuma;
 
         // get Caps and algo params from the ExtBuffers (?) or QueryCaps???
@@ -231,8 +236,11 @@ mfxStatus MFXCamera_Plugin::Init(mfxVideoParam *par)
     m_cmDevice.Reset(CreateCmDevicePtr(m_core));
     m_cmCtx.reset(new CmContext(m_mfxVideoParam, m_cmDevice, &cam_pipeline));
 
+#ifdef CAM_PIPE_VERTICAL_SLICE_ENABLE
+    m_cmCtx->CreateThreadSpaces(m_VSliceWidth);
+#else
     m_cmCtx->CreateThreadSpace(m_PaddedFrameWidth, m_PaddedFrameHeight);
-
+#endif
     mfxRes = AllocateInternalSurfaces();
 
     return mfxRes;

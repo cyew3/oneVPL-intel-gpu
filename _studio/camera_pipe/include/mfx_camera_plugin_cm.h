@@ -220,6 +220,8 @@ typedef struct {
 } pipeline_config;
 
 
+#define CAM_PIPE_VERTICAL_SLICE_ENABLE
+
 #define CAM_PIPE_KERNEL_SPLIT 4
 #if (CAM_PIPE_KERNEL_SPLIT-1)
 #define CAM_PIPE_KERNEL_ARRAY(name, i) name[i]
@@ -270,8 +272,11 @@ public:
         }
         else return 0;
     }
-
+#ifdef CAM_PIPE_VERTICAL_SLICE_ENABLE
+    void CreateThreadSpaces(mfxU32 sliceWidth);
+#else
     void CreateThreadSpace(mfxU32 frameWidth, mfxU32 frameHeight);
+#endif
 
     void CopyMfxSurfToCmSurf(CmSurface2D *cmSurf, mfxFrameSurface1* mfxSurf);
     void CopyMemToCmSurf(CmSurface2D *cmSurf, void *mem);
@@ -288,8 +293,6 @@ public:
     void CreateTask_DecideAverage(CmSurface2D *redAvgSurf, CmSurface2D *greenAvgSurf, CmSurface2D *blueAvgSurf, CmSurface2D *avgFlagSurf, CmSurface2D *redOutSurf, CmSurface2D *greenOutSurf, CmSurface2D *blueOutSurf, mfxU32 task_bufId = 0);
     void CreateTask_ForwardGamma(CmSurface2D *correcSurf, CmSurface2D *pointSurf,  CmSurface2D *redSurf, CmSurface2D *greenSurf, CmSurface2D *blueSurf, SurfaceIndex outSurfIndex, mfxU32 bitDepth, mfxU32 task_bufId = 0);
 
-    //CmEvent *EnqueueTasks(mfxU32 task_bufId = 0);
-
 
     CmEvent *CreateEnqueueTask_GoodPixelCheck(SurfaceIndex inSurfIndex, CmSurface2D *goodPixCntSurf, CmSurface2D *bigPixCntSurf, mfxU32 bitDepth);
     CmEvent *CreateEnqueueTask_RestoreGreen(SurfaceIndex inSurfIndex, CmSurface2D *goodPixCntSurf, CmSurface2D *bigPixCntSurf, CmSurface2D *greenHorSurf, CmSurface2D *greenVerSurf, CmSurface2D *greenAvgSurf, CmSurface2D *avgFlagSurf, mfxU32 bitDepth);
@@ -305,26 +308,59 @@ public:
     CmEvent *CreateEnqueueTask_ForwardGamma(CmSurface2D *correcSurf, CmSurface2D *pointSurf,  CmSurface2D *redSurf, CmSurface2D *greenSurf, CmSurface2D *blueSurf, SurfaceIndex outSurfIndex, mfxU32 bitDepth);
 
 
+    CmEvent *EnqueueSliceTasks(mfxU32 sliceNum)
+    {
+        int result;
+        CmEvent *e = CM_NO_EVENT;
+        if ((result = m_queue->Enqueue(CAM_PIPE_KERNEL_ARRAY(task_RestoreGreen, sliceNum), e, m_TS_Slice_8x8)) != CM_SUCCESS)
+            throw CmRuntimeError();
+        if ((result = m_queue->Enqueue(CAM_PIPE_KERNEL_ARRAY(task_RestoreBlueRed, sliceNum), e, m_TS_Slice_8x8)) != CM_SUCCESS)
+            throw CmRuntimeError();
+        if ((result = m_queue->Enqueue(CAM_PIPE_KERNEL_ARRAY(task_SAD, sliceNum), e, m_TS_Slice_8x8_np)) != CM_SUCCESS)
+            throw CmRuntimeError();
+        if ((result = m_queue->Enqueue(CAM_PIPE_KERNEL_ARRAY(task_DecideAvg, sliceNum), e, m_TS_Slice_16x16_np)) != CM_SUCCESS)
+            throw CmRuntimeError();
+
+        return e;
+    };
+
 protected:
 
 private:
 
     void CreateCameraKernels();
-    void CreateCameraTasks();
+    void CreateCmTasks();
     void CreateTask(CmTask *&task);
-
-    CmEvent *EnqueueTask(CmTask *task);
 
     mfxVideoParam m_video;
 
     CmDevice *  m_device;
     CmQueue *   m_queue;
     CmProgram * m_program;
-    CmThreadSpace * m_thread_space;
+#ifdef CAM_PIPE_VERTICAL_SLICE_ENABLE
+    CmThreadSpace * m_TS_16x16;
+    CmThreadSpace * m_TS_Slice_8x8;
+    CmThreadSpace * m_TS_Slice_16x16_np;
+    CmThreadSpace * m_TS_Slice_8x8_np;
+
+    mfxU32 m_widthIn16;
+    mfxU32 m_heightIn16;
+    mfxU32 m_sliceWidthIn8;
+    mfxU32 m_sliceHeightIn8;
+    mfxU32 m_sliceWidthIn16_np;
+    mfxU32 m_sliceHeightIn16_np;
+    mfxU32 m_sliceWidthIn8_np;
+    mfxU32 m_sliceHeightIn8_np;
+
+#else
+    CmThreadSpace * m_TS_16x16;
+    mfxU32 m_widthIn16;
+    mfxU32 m_heightIn16;
+#endif
+
+
     pipeline_config m_pipeline_flags;
 
-    mfxU32 m_widthInMb;
-    mfxU32 m_heightInMb;
 
     //mfxU32 m_SrcFrameWidth;
     //mfxU32 m_SrcFrameHeight;
@@ -351,8 +387,12 @@ private:
     CmKernel*   CAM_PIPE_KERNEL_ARRAY(kernel_restore_green, CAM_PIPE_KERNEL_SPLIT);
     CmKernel*   CAM_PIPE_KERNEL_ARRAY(kernel_restore_blue_red, CAM_PIPE_KERNEL_SPLIT);
     CmKernel*   CAM_PIPE_KERNEL_ARRAY(kernel_sad, CAM_PIPE_KERNEL_SPLIT);
+#ifdef CAM_PIPE_VERTICAL_SLICE_ENABLE
+    CmKernel*   CAM_PIPE_KERNEL_ARRAY(kernel_decide_average, CAM_PIPE_KERNEL_SPLIT);
+#else
     CmKernel*   kernel_decide_average;
-    CmKernel*   kernel_check_confidence;
+#endif
+    //CmKernel*   kernel_check_confidence;
     //CmKernel*   CAM_PIPE_KERNEL_ARRAY(kernel_bad_pixel_check, CAM_PIPE_KERNEL_SPLIT); // removed for SKL-light arch
 
     // CCM kernels ---------------
@@ -366,16 +406,13 @@ private:
     CmKernel*   kernel_FwGamma;
 
 
-    CmKernel*   kernel_fecsc;
-
-    //CmBuf       m_nullBuf;
-
     //CmTask*         task_GenMask[CAM_PIPE_NUM_TASK_BUFFERS];
     //CmTask*         task_GenUpSampledMask[CAM_PIPE_NUM_TASK_BUFFERS];
     //CmTask*         task_Vignette[CAM_PIPE_NUM_TASK_BUFFERS];
+//    CmTask*         CAM_PIPE_TASK_ARRAY(task_WhiteBalanceManual, CAM_PIPE_NUM_TASK_BUFFERS);
 
-    CmTask*         CAM_PIPE_TASK_ARRAY(task_WhiteBalanceManual, CAM_PIPE_NUM_TASK_BUFFERS);
 
+#ifdef CAM_PIPE_VERTICAL_SLICE_ENABLE
     // Demosaic - good pix check
     CmTask*         CAM_PIPE_TASK_ARRAY(task_GoodPixelCheck, CAM_PIPE_NUM_TASK_BUFFERS);
 
@@ -390,20 +427,21 @@ private:
     CmTask*         CAM_PIPE_KERNEL_ARRAY(CAM_PIPE_TASK_ARRAY(task_SAD, CAM_PIPE_NUM_TASK_BUFFERS), CAM_PIPE_KERNEL_SPLIT);
 
     // Demosaic - decide average
-    CmTask*         CAM_PIPE_TASK_ARRAY(task_DecideAvg, CAM_PIPE_NUM_TASK_BUFFERS);
+    CmTask*         CAM_PIPE_KERNEL_ARRAY(CAM_PIPE_TASK_ARRAY(task_DecideAvg, CAM_PIPE_NUM_TASK_BUFFERS), CAM_PIPE_KERNEL_SPLIT);
 
     // Demoisaic - check confidence
-    CmTask*         CAM_PIPE_TASK_ARRAY(task_CheckConfidence, CAM_PIPE_NUM_TASK_BUFFERS);
+//    CmTask*         CAM_PIPE_TASK_ARRAY(task_CheckConfidence, CAM_PIPE_NUM_TASK_BUFFERS);
 
     // Demoisaic - bad pixel check
-    CmTask*         CAM_PIPE_KERNEL_ARRAY(CAM_PIPE_TASK_ARRAY(task_BadPixelCheck, CAM_PIPE_NUM_TASK_BUFFERS), CAM_PIPE_KERNEL_SPLIT);
+//    CmTask*         CAM_PIPE_KERNEL_ARRAY(CAM_PIPE_TASK_ARRAY(task_BadPixelCheck, CAM_PIPE_NUM_TASK_BUFFERS), CAM_PIPE_KERNEL_SPLIT);
 
     // CCM
-    CmTask*         CAM_PIPE_TASK_ARRAY(task_3x3CCM, CAM_PIPE_NUM_TASK_BUFFERS);
-    CmBuffer*       CCM_Matrix;
+//    CmTask*         CAM_PIPE_TASK_ARRAY(task_3x3CCM, CAM_PIPE_NUM_TASK_BUFFERS);
+//    CmBuffer*       CCM_Matrix;
 
     // Forward Gamma Correction
     CmTask*         CAM_PIPE_TASK_ARRAY(task_FwGamma, CAM_PIPE_NUM_TASK_BUFFERS);
+#endif
 };
 
 

@@ -171,6 +171,7 @@ protected:
     mfxU32              m_PaddedFrameWidth;
     mfxU32              m_PaddedFrameHeight;
     mfxU32              m_InputBitDepth;
+    mfxU32              m_VSliceWidth;
 
     CmSurface2D         *m_cmSurfIn; // CmSurface2DUP or CmSurface2D
     CmSurface2DUP       *m_cmSurfUPIn; // CmSurface2DUP or CmSurface2D
@@ -184,6 +185,11 @@ protected:
 
     CmSurface2D         *m_gammaCorrectSurf;
     CmSurface2D         *m_gammaPointSurf;
+
+#ifdef CAM_PIPE_VERTICAL_SLICE_ENABLE
+    CmSurface2D         *m_avgFlagSurf;
+#endif
+
 
 private:
 

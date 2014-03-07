@@ -454,7 +454,7 @@ CmContext::CmContext()
 : m_device(0)
 , m_program(0)
 , m_queue(0)
-, m_thread_space(0)
+, m_TS_16x16(0)
 {
 }
 
@@ -464,18 +464,48 @@ CmContext::CmContext(
     CmDevice *            cmDevice,
     pipeline_config *pPipeFlags)
 {
-    Zero(task_WhiteBalanceManual);
+#ifdef CAM_PIPE_VERTICAL_SLICE_ENABLE
+//    Zero(task_WhiteBalanceManual);
     Zero(task_GoodPixelCheck);
     Zero(task_RestoreGreen);
     Zero(task_RestoreBlueRed);
     Zero(task_SAD);
     Zero(task_DecideAvg);
-    Zero(task_CheckConfidence);
-    Zero(task_BadPixelCheck);
-    Zero(task_3x3CCM);
+//    Zero(task_CheckConfidence);
+//    Zero(task_BadPixelCheck);
+//    Zero(task_3x3CCM);
     Zero(task_FwGamma);
+#endif
     Setup(video, cmDevice, pPipeFlags);
 }
+
+#ifdef CAM_PIPE_VERTICAL_SLICE_ENABLE
+
+void CmContext::CreateCameraKernels()
+{
+    int i;
+    //if (m_pipeline_flags.wbFlag)
+    //    kernel_whitebalance_manual = CreateKernel(m_device, m_program, CM_KERNEL_FUNCTION(BAYER_GAIN), NULL);
+    //CreateKernel(m_device,m_program, CM_KERNEL_FUNCTION(Padding_16bpp) , (void*)kernel_padding16bpp); // no padding currently
+
+    kernel_good_pixel_check = CreateKernel(m_device, m_program, CM_KERNEL_FUNCTION(GPU_GOOD_PIXEL_CHECK_16x16_SKL), NULL);
+
+    for (i = 0; i < CAM_PIPE_KERNEL_SPLIT; i++) {
+        CAM_PIPE_KERNEL_ARRAY(kernel_restore_green, i) = CreateKernel(m_device, m_program, CM_KERNEL_FUNCTION(GPU_RESTORE_GREEN_SKL), NULL);
+    }
+    for (i = 0; i < CAM_PIPE_KERNEL_SPLIT; i++) {
+        CAM_PIPE_KERNEL_ARRAY(kernel_restore_blue_red, i) = CreateKernel(m_device, m_program, CM_KERNEL_FUNCTION(GPU_RESTORE_BR_SKL), NULL);
+    }
+    for (i = 0; i < CAM_PIPE_KERNEL_SPLIT; i++) {
+        CAM_PIPE_KERNEL_ARRAY(kernel_sad, i) = CreateKernel(m_device, m_program, CM_KERNEL_FUNCTION(GPU_SAD_CONFCHK_SKL), NULL);
+    }
+    for (i = 0; i < CAM_PIPE_KERNEL_SPLIT; i++) {
+        CAM_PIPE_KERNEL_ARRAY(kernel_decide_average, i) = CreateKernel(m_device, m_program, CM_KERNEL_FUNCTION(GPU_DECIDE_AVG16x16_SKL), NULL);
+    }
+
+    kernel_FwGamma = CreateKernel(m_device, m_program, CM_KERNEL_FUNCTION(GAMMA_GPUV5_ARGB8_LINEAR), NULL);
+}
+#else
 
 void CmContext::CreateCameraKernels()
 {
@@ -495,27 +525,51 @@ void CmContext::CreateCameraKernels()
     for (i = 0; i < CAM_PIPE_KERNEL_SPLIT; i++) {
         CAM_PIPE_KERNEL_ARRAY(kernel_sad, i) = CreateKernel(m_device, m_program, CM_KERNEL_FUNCTION(SAD), NULL);
     }
-
     kernel_decide_average = CreateKernel(m_device, m_program, CM_KERNEL_FUNCTION(DECIDE_AVG), NULL);
     //CreateKernel(m_device, m_program, CM_KERNEL_FUNCTION(CONFIDENCE_CHECK) , kernel_check_confidence);
-
     kernel_FwGamma = CreateKernel(m_device, m_program, CM_KERNEL_FUNCTION(GAMMA_GPUV4_ARGB8), NULL);
 }
 
+#endif
 
+#ifdef CAM_PIPE_VERTICAL_SLICE_ENABLE
+void CmContext::CreateThreadSpaces(mfxU32 sliceWidth)
+{
+    m_heightIn16 = (m_video.vpp.In.CropH + 16 + 15) >> 4;
+    m_widthIn16 = (m_video.vpp.In.CropW + 16 + 15) >> 4;
+
+    m_sliceHeightIn16_np = (m_video.vpp.In.CropH + 15) >> 4;
+    m_sliceWidthIn16_np = (sliceWidth - 16) >> 4;
+
+    m_sliceHeightIn8 = (m_video.vpp.In.CropH + 16 + 7) >> 3;
+    m_sliceWidthIn8 = sliceWidth >> 3;   // slicewidth is a multiple of 16
+
+    m_sliceHeightIn8_np = (m_video.vpp.In.CropH + 7) >> 3;
+    m_sliceWidthIn8_np = (sliceWidth - 16) >> 3;
+
+    int result = CM_SUCCESS;
+    if ((result = m_device->CreateThreadSpace(m_widthIn16, m_heightIn16, m_TS_16x16)) != CM_SUCCESS)
+        throw CmRuntimeError();
+    if ((result = m_device->CreateThreadSpace(m_sliceWidthIn16_np, m_sliceHeightIn16_np, m_TS_Slice_16x16_np)) != CM_SUCCESS)
+        throw CmRuntimeError();
+    if ((result = m_device->CreateThreadSpace(m_sliceWidthIn8, m_sliceHeightIn8, m_TS_Slice_8x8)) != CM_SUCCESS)
+        throw CmRuntimeError();
+    if ((result = m_device->CreateThreadSpace(m_sliceWidthIn8_np, m_sliceHeightIn8_np, m_TS_Slice_8x8_np)) != CM_SUCCESS)
+        throw CmRuntimeError();
+}
+#else
 void CmContext::CreateThreadSpace(mfxU32 frameWidth, mfxU32 frameHeight)
 {
 //    mfxU32 widthPadded = m_video.vpp.In.Width + 16; // EXEC width/height ???
 //    mfxU32 heightPadded = m_video.vpp.In.Height + 16;
-    m_widthInMb = (frameWidth + 15) >> 4;
-    m_heightInMb = (frameHeight + 15) >> 4;
+    m_widthIn16 = (frameWidth + 15) >> 4;
+    m_heightIn16 = (frameHeight + 15) >> 4;
 
     int result = CM_SUCCESS;
-    if ((result = m_device->CreateThreadSpace(m_widthInMb, m_heightInMb, m_thread_space)) != CM_SUCCESS)
+    if ((result = m_device->CreateThreadSpace(m_widthIn16, m_heightIn16, m_TS_16x16)) != CM_SUCCESS)
         throw CmRuntimeError();
 }
-
-
+#endif
 void CmContext::CopyMfxSurfToCmSurf(CmSurface2D *cmSurf, mfxFrameSurface1* mfxSurf) //, gpucopy/cpucopy ??? only for gpucopy so far)
 {
     int result = CM_SUCCESS;
@@ -542,41 +596,33 @@ void CmContext::CreateTask(CmTask *&task)
 }
 
 
-void CmContext::CreateCameraTasks()
+void CmContext::CreateCmTasks()
 {
 
-    // general CmTask
-    //CreateTask(m_pCmTask);
 
     for (int i = 0; i < CAM_PIPE_NUM_TASK_BUFFERS; i++) {
 
-        //CreateTask(task_Padding[i]);
-        //if (m_PipeCaps.bVignette){
-            //CreateTask(task_GenMask[i]);
-            //CreateTask(task_GenUpSampledMask[i]);
-            //CreateTask(task_Vignette[i]);
-        //}
 
-        if (m_pipeline_flags.wbFlag) {
-            CreateTask(CAM_PIPE_TASK_ARRAY(task_WhiteBalanceManual, i));
-        }
+        //if (m_pipeline_flags.wbFlag) {
+        //    CreateTask(CAM_PIPE_TASK_ARRAY(task_WhiteBalanceManual, i));
+        //}
         CreateTask(CAM_PIPE_TASK_ARRAY(task_GoodPixelCheck, i));
 
         for (int j = 0; j < CAM_PIPE_KERNEL_SPLIT; j++) {
             CreateTask(CAM_PIPE_KERNEL_ARRAY(CAM_PIPE_TASK_ARRAY(task_RestoreGreen, i), j));
             CreateTask(CAM_PIPE_KERNEL_ARRAY(CAM_PIPE_TASK_ARRAY(task_RestoreBlueRed, i), j));
             CreateTask(CAM_PIPE_KERNEL_ARRAY(CAM_PIPE_TASK_ARRAY(task_SAD, i), j));
-            CreateTask(CAM_PIPE_KERNEL_ARRAY(CAM_PIPE_TASK_ARRAY(task_BadPixelCheck, i), j));
+            CreateTask(CAM_PIPE_KERNEL_ARRAY(CAM_PIPE_TASK_ARRAY(task_DecideAvg, i), j));
+//            CreateTask(CAM_PIPE_KERNEL_ARRAY(CAM_PIPE_TASK_ARRAY(task_BadPixelCheck, i), j));
         }
 
-        CreateTask(CAM_PIPE_TASK_ARRAY(task_DecideAvg, i));
-        CreateTask(CAM_PIPE_TASK_ARRAY(task_CheckConfidence, i));
+//        CreateTask(CAM_PIPE_TASK_ARRAY(task_CheckConfidence, i));
 //#if !ENABLE_SLM_GAMMA
 //        CreateTask(task_PrepareLUT[i]);
 //#endif
 
         //if (m_PipeCaps.bColorConversionMaxtrix){
-        CreateTask(CAM_PIPE_TASK_ARRAY(task_3x3CCM, i));
+//        CreateTask(CAM_PIPE_TASK_ARRAY(task_3x3CCM, i));
         //}
 
         CreateTask(CAM_PIPE_TASK_ARRAY(task_FwGamma, i));
@@ -586,28 +632,28 @@ void CmContext::CreateCameraTasks()
 
 
 //void CmContext::CreateTask_ManualWhiteBalance(CmSurface2D *pInSurf, CmSurface2D *pOutSurf, mfxF32 R, mfxF32 G1, mfxF32 B, mfxF32 G2, mfxU32 bitDepth, mfxU32 task_bufId)
-void CmContext::CreateTask_ManualWhiteBalance(SurfaceIndex inSurfIndex, CmSurface2D *pOutSurf, mfxF32 R, mfxF32 G1, mfxF32 B, mfxF32 G2, mfxU32 bitDepth, mfxU32 task_bufId)
-{
-    int result;
-    mfxU16 MaxInputLevel = (1<<bitDepth)-1;
-    kernel_whitebalance_manual->SetThreadCount(m_widthInMb * m_heightInMb);
-    SetKernelArg(kernel_whitebalance_manual, inSurfIndex, GetIndex(pOutSurf), R, G1, B, G2, MaxInputLevel);
-
-    result = CAM_PIPE_TASK_ARRAY(task_WhiteBalanceManual, task_bufId)->Reset();
-    if (result != CM_SUCCESS)
-        throw CmRuntimeError();
-
-    result = CAM_PIPE_TASK_ARRAY(task_WhiteBalanceManual, task_bufId)->AddKernel(kernel_whitebalance_manual);
-    if (result != CM_SUCCESS )
-        throw CmRuntimeError();
-}
+//void CmContext::CreateTask_ManualWhiteBalance(SurfaceIndex inSurfIndex, CmSurface2D *pOutSurf, mfxF32 R, mfxF32 G1, mfxF32 B, mfxF32 G2, mfxU32 bitDepth, mfxU32 task_bufId)
+//{
+//    int result;
+//    mfxU16 MaxInputLevel = (1<<bitDepth)-1;
+//    kernel_whitebalance_manual->SetThreadCount(m_widthIn16 * m_heightIn16);
+//    SetKernelArg(kernel_whitebalance_manual, inSurfIndex, GetIndex(pOutSurf), R, G1, B, G2, MaxInputLevel);
+//
+//    result = CAM_PIPE_TASK_ARRAY(task_WhiteBalanceManual, task_bufId)->Reset();
+//    if (result != CM_SUCCESS)
+//        throw CmRuntimeError();
+//
+//    result = CAM_PIPE_TASK_ARRAY(task_WhiteBalanceManual, task_bufId)->AddKernel(kernel_whitebalance_manual);
+//    if (result != CM_SUCCESS )
+//        throw CmRuntimeError();
+//}
 
 
 CmEvent *CmContext::CreateEnqueueTask_GoodPixelCheck(SurfaceIndex inSurfIndex, CmSurface2D *goodPixCntSurf, CmSurface2D *bigPixCntSurf, mfxU32 bitDepth)
 {
     int result;
     mfxI32 shift_amount = (bitDepth - 8);
-    kernel_good_pixel_check->SetThreadCount(m_widthInMb * m_heightInMb);
+    kernel_good_pixel_check->SetThreadCount(m_widthIn16 * m_heightIn16);
     SetKernelArg(kernel_good_pixel_check, inSurfIndex, GetIndex(goodPixCntSurf), GetIndex(bigPixCntSurf), shift_amount);
 
     CmTask *cmTask = 0;
@@ -618,7 +664,7 @@ CmEvent *CmContext::CreateEnqueueTask_GoodPixelCheck(SurfaceIndex inSurfIndex, C
         throw CmRuntimeError();
 
     CmEvent *e = CM_NO_EVENT;
-    if ((result = m_queue->Enqueue(cmTask, e, m_thread_space)) != CM_SUCCESS)
+    if ((result = m_queue->Enqueue(cmTask, e, m_TS_16x16)) != CM_SUCCESS)
         throw CmRuntimeError();
 
     //m_device->DestroyThreadSpace(cmThreadSpace);
@@ -626,6 +672,45 @@ CmEvent *CmContext::CreateEnqueueTask_GoodPixelCheck(SurfaceIndex inSurfIndex, C
     
     return e;
 }
+
+#ifdef CAM_PIPE_VERTICAL_SLICE_ENABLE
+
+void CmContext::CreateTask_RestoreGreen(SurfaceIndex inSurfIndex, CmSurface2D *goodPixCntSurf, CmSurface2D *bigPixCntSurf, CmSurface2D *greenHorSurf, CmSurface2D *greenVerSurf, CmSurface2D *greenAvgSurf, CmSurface2D *avgFlagSurf, mfxU32 bitDepth, mfxU32)
+{
+    int result;
+    mfxU16  MaxIntensity = (1 << bitDepth) - 1;
+    //CmEvent *e = CM_NO_EVENT;
+
+    for (int i = 0; i < CAM_PIPE_KERNEL_SPLIT; i++)
+    {
+        int xbase = (i * m_sliceWidthIn8) - ((i == 0) ? 0 : i * 2);
+        int ybase = 0;
+
+        int wr_x_base = 0;
+        int wr_y_base = 0;
+
+        CAM_PIPE_KERNEL_ARRAY(kernel_restore_green, i)->SetThreadCount(m_sliceWidthIn8 * m_sliceHeightIn8);
+
+        SetKernelArg(CAM_PIPE_KERNEL_ARRAY(kernel_restore_green, i),
+                     inSurfIndex, GetIndex(goodPixCntSurf), GetIndex(bigPixCntSurf),
+                     GetIndex(greenHorSurf), GetIndex(greenVerSurf), GetIndex(greenAvgSurf), GetIndex(avgFlagSurf), xbase, ybase, wr_x_base);
+        SetKernelArgLast(CAM_PIPE_KERNEL_ARRAY(kernel_restore_green, i), wr_y_base, 10);
+        SetKernelArgLast(CAM_PIPE_KERNEL_ARRAY(kernel_restore_green, i), MaxIntensity, 11);
+
+        CAM_PIPE_KERNEL_ARRAY(task_RestoreGreen, i)->Reset();
+
+        if ((result = CAM_PIPE_KERNEL_ARRAY(task_RestoreGreen, i)->AddKernel(CAM_PIPE_KERNEL_ARRAY(kernel_restore_green, i))) != CM_SUCCESS)
+            throw CmRuntimeError();
+        
+        //if ((result = m_queue->Enqueue(cmTask, e, m_TS_Slice_8x8)) != CM_SUCCESS)
+        //    throw CmRuntimeError();
+
+        //m_device->DestroyTask(cmTask);
+    }
+}
+
+
+#else
 
 CmEvent *CmContext::CreateEnqueueTask_RestoreGreen(SurfaceIndex inSurfIndex, CmSurface2D *goodPixCntSurf, CmSurface2D *bigPixCntSurf, CmSurface2D *greenHorSurf, CmSurface2D *greenVerSurf, CmSurface2D *greenAvgSurf, CmSurface2D *avgFlagSurf, mfxU32 bitDepth)
 {
@@ -636,10 +721,10 @@ CmEvent *CmContext::CreateEnqueueTask_RestoreGreen(SurfaceIndex inSurfIndex, CmS
 
     for (int i = 0; i < CAM_PIPE_KERNEL_SPLIT; i++)
     {
-        int xbase = (i % 2 == 0)? 0 : (m_widthInMb);
-        int ybase = (i < 2 == 0)? 0 : (m_heightInMb);
+        int xbase = (i % 2 == 0)? 0 : (m_widthIn16);
+        int ybase = (i < 2 == 0)? 0 : (m_heightIn16);
 
-        CAM_PIPE_KERNEL_ARRAY(kernel_restore_green, i)->SetThreadCount(m_widthInMb * m_heightInMb);
+        CAM_PIPE_KERNEL_ARRAY(kernel_restore_green, i)->SetThreadCount(m_widthIn16 * m_heightIn16);
 
         SetKernelArg(CAM_PIPE_KERNEL_ARRAY(kernel_restore_green, i),
                      inSurfIndex, GetIndex(goodPixCntSurf), GetIndex(bigPixCntSurf),
@@ -652,7 +737,7 @@ CmEvent *CmContext::CreateEnqueueTask_RestoreGreen(SurfaceIndex inSurfIndex, CmS
         if ((result = cmTask->AddKernel(CAM_PIPE_KERNEL_ARRAY(kernel_restore_green, i))) != CM_SUCCESS)
             throw CmRuntimeError();
         
-        if ((result = m_queue->Enqueue(cmTask, e, m_thread_space)) != CM_SUCCESS)
+        if ((result = m_queue->Enqueue(cmTask, e, m_TS_16x16)) != CM_SUCCESS)
             throw CmRuntimeError();
 
         m_device->DestroyTask(cmTask);
@@ -661,6 +746,52 @@ CmEvent *CmContext::CreateEnqueueTask_RestoreGreen(SurfaceIndex inSurfIndex, CmS
     return e;
 }
 
+#endif
+
+
+#ifdef CAM_PIPE_VERTICAL_SLICE_ENABLE
+
+void CmContext::CreateTask_RestoreBlueRed(SurfaceIndex inSurfIndex,
+                                            CmSurface2D *greenHorSurf, CmSurface2D *greenVerSurf, CmSurface2D *greenAvgSurf,
+                                            CmSurface2D *blueHorSurf, CmSurface2D *blueVerSurf, CmSurface2D *blueAvgSurf,
+                                            CmSurface2D *redHorSurf, CmSurface2D *redVerSurf, CmSurface2D *redAvgSurf,
+                                            CmSurface2D *avgFlagSurf, mfxU32 bitDepth, mfxU32)
+{
+    int result;
+    mfxU16  MaxIntensity = (1 << bitDepth) - 1;
+
+    for (int i = 0; i < CAM_PIPE_KERNEL_SPLIT; i++)
+    {
+        int xbase = 0;
+        int ybase = 0;
+
+        int wr_x_base = (i * m_sliceWidthIn8) - ((i == 0) ? 0 : i * 2);
+        int wr_y_base = 0;
+
+        CAM_PIPE_KERNEL_ARRAY(kernel_restore_blue_red, i)->SetThreadCount(m_sliceWidthIn8 * m_sliceHeightIn8);
+
+        SetKernelArg(CAM_PIPE_KERNEL_ARRAY(kernel_restore_blue_red, i),
+                     inSurfIndex,
+                     GetIndex(greenHorSurf), GetIndex(greenVerSurf), GetIndex(greenAvgSurf),
+                     GetIndex(blueHorSurf), GetIndex(blueVerSurf), GetIndex(blueAvgSurf),
+                     GetIndex(redHorSurf),  GetIndex(redVerSurf), GetIndex(redAvgSurf));
+        SetKernelArgLast(CAM_PIPE_KERNEL_ARRAY(kernel_restore_blue_red, i), GetIndex(avgFlagSurf), 10);
+        SetKernelArgLast(CAM_PIPE_KERNEL_ARRAY(kernel_restore_blue_red, i), xbase, 11);
+        SetKernelArgLast(CAM_PIPE_KERNEL_ARRAY(kernel_restore_blue_red, i), ybase, 12);
+        SetKernelArgLast(CAM_PIPE_KERNEL_ARRAY(kernel_restore_blue_red, i), wr_x_base, 13);
+        SetKernelArgLast(CAM_PIPE_KERNEL_ARRAY(kernel_restore_blue_red, i), wr_y_base, 14);
+        SetKernelArgLast(CAM_PIPE_KERNEL_ARRAY(kernel_restore_blue_red, i), MaxIntensity, 15);
+
+        CAM_PIPE_KERNEL_ARRAY(task_RestoreBlueRed, i)->Reset();
+        
+        if ((result = CAM_PIPE_KERNEL_ARRAY(task_RestoreBlueRed, i)->AddKernel(CAM_PIPE_KERNEL_ARRAY(kernel_restore_blue_red, i))) != CM_SUCCESS)
+            throw CmRuntimeError();
+       
+    }
+}
+
+
+#else
 
 CmEvent *CmContext::CreateEnqueueTask_RestoreBlueRed(SurfaceIndex inSurfIndex,
                                                     CmSurface2D *greenHorSurf, CmSurface2D *greenVerSurf, CmSurface2D *greenAvgSurf,
@@ -675,10 +806,10 @@ CmEvent *CmContext::CreateEnqueueTask_RestoreBlueRed(SurfaceIndex inSurfIndex,
 
     for (int i = 0; i < CAM_PIPE_KERNEL_SPLIT; i++)
     {
-        int xbase = (i % 2 == 0)? 0 : (m_widthInMb);
-        int ybase = (i < 2 == 0)? 0 : (m_heightInMb);
+        int xbase = (i % 2 == 0)? 0 : (m_widthIn16);
+        int ybase = (i < 2 == 0)? 0 : (m_heightIn16);
 
-        CAM_PIPE_KERNEL_ARRAY(kernel_restore_blue_red, i)->SetThreadCount(m_widthInMb * m_heightInMb);
+        CAM_PIPE_KERNEL_ARRAY(kernel_restore_blue_red, i)->SetThreadCount(m_widthIn16 * m_heightIn16);
 
         SetKernelArg(CAM_PIPE_KERNEL_ARRAY(kernel_restore_blue_red, i),
                      inSurfIndex,
@@ -698,7 +829,7 @@ CmEvent *CmContext::CreateEnqueueTask_RestoreBlueRed(SurfaceIndex inSurfIndex,
         if ((result = cmTask->AddKernel(CAM_PIPE_KERNEL_ARRAY(kernel_restore_blue_red, i))) != CM_SUCCESS)
             throw CmRuntimeError();
         
-        if ((result = m_queue->Enqueue(cmTask, e, m_thread_space)) != CM_SUCCESS)
+        if ((result = m_queue->Enqueue(cmTask, e, m_TS_16x16)) != CM_SUCCESS)
             throw CmRuntimeError();
 
         m_device->DestroyTask(cmTask);
@@ -707,6 +838,42 @@ CmEvent *CmContext::CreateEnqueueTask_RestoreBlueRed(SurfaceIndex inSurfIndex,
     return e;
 }
 
+#endif
+
+
+#ifdef CAM_PIPE_VERTICAL_SLICE_ENABLE
+
+void CmContext::CreateTask_SAD(CmSurface2D *redHorSurf, CmSurface2D *greenHorSurf, CmSurface2D *blueHorSurf, CmSurface2D *redVerSurf, CmSurface2D *greenVerSurf, CmSurface2D *blueVerSurf, CmSurface2D *redOutSurf, CmSurface2D *greenOutSurf, CmSurface2D *blueOutSurf, mfxU32)
+{
+    int result;
+
+    for (int i = 0; i < CAM_PIPE_KERNEL_SPLIT; i++)
+    {
+        int xbase = 0;
+        int ybase = 0;
+
+        int wr_x_base = (i * m_sliceWidthIn8_np);// - ((i == 0)? 0 : i*2);
+        int wr_y_base = 0;
+
+        CAM_PIPE_KERNEL_ARRAY(kernel_sad, i)->SetThreadCount(m_sliceWidthIn8_np * m_sliceHeightIn8_np);
+
+        SetKernelArg(CAM_PIPE_KERNEL_ARRAY(kernel_sad, i),
+                     GetIndex(redHorSurf), GetIndex(greenHorSurf),  GetIndex(blueHorSurf),
+                     GetIndex(redVerSurf), GetIndex(greenVerSurf),  GetIndex(blueVerSurf),
+                     xbase, ybase, wr_x_base, wr_y_base);
+        SetKernelArgLast(CAM_PIPE_KERNEL_ARRAY(kernel_sad, i), GetIndex(redOutSurf), 10);
+        SetKernelArgLast(CAM_PIPE_KERNEL_ARRAY(kernel_sad, i), GetIndex(greenOutSurf), 11);
+        SetKernelArgLast(CAM_PIPE_KERNEL_ARRAY(kernel_sad, i), GetIndex(blueOutSurf), 12);
+
+        CAM_PIPE_KERNEL_ARRAY(task_SAD, i)->Reset();
+
+        if ((result = CAM_PIPE_KERNEL_ARRAY(task_SAD, i)->AddKernel(CAM_PIPE_KERNEL_ARRAY(kernel_sad, i))) != CM_SUCCESS)
+            throw CmRuntimeError();
+        
+    }
+}
+
+#else
 
 CmEvent *CmContext::CreateEnqueueTask_SAD(CmSurface2D *redHorSurf, CmSurface2D *greenHorSurf, CmSurface2D *blueHorSurf, CmSurface2D *redVerSurf, CmSurface2D *greenVerSurf, CmSurface2D *blueVerSurf, CmSurface2D *redOutSurf, CmSurface2D *greenOutSurf, CmSurface2D *blueOutSurf)
 {
@@ -716,10 +883,10 @@ CmEvent *CmContext::CreateEnqueueTask_SAD(CmSurface2D *redHorSurf, CmSurface2D *
 
     for (int i = 0; i < CAM_PIPE_KERNEL_SPLIT; i++)
     {
-        int xbase = (i % 2 == 0)? 0 : (m_widthInMb);
-        int ybase = (i < 2 == 0)? 0 : (m_heightInMb);
+        int xbase = (i % 2 == 0)? 0 : (m_widthIn16);
+        int ybase = (i < 2 == 0)? 0 : (m_heightIn16);
 
-        CAM_PIPE_KERNEL_ARRAY(kernel_sad, i)->SetThreadCount(m_widthInMb * m_heightInMb);
+        CAM_PIPE_KERNEL_ARRAY(kernel_sad, i)->SetThreadCount(m_widthIn16 * m_heightIn16);
 
         SetKernelArg(CAM_PIPE_KERNEL_ARRAY(kernel_sad, i),
                      GetIndex(redHorSurf), GetIndex(greenHorSurf),  GetIndex(blueHorSurf),
@@ -735,7 +902,7 @@ CmEvent *CmContext::CreateEnqueueTask_SAD(CmSurface2D *redHorSurf, CmSurface2D *
         if ((result = cmTask->AddKernel(CAM_PIPE_KERNEL_ARRAY(kernel_sad, i))) != CM_SUCCESS)
             throw CmRuntimeError();
         
-        if ((result = m_queue->Enqueue(cmTask, e, m_thread_space)) != CM_SUCCESS)
+        if ((result = m_queue->Enqueue(cmTask, e, m_TS_16x16)) != CM_SUCCESS)
             throw CmRuntimeError();
 
         m_device->DestroyTask(cmTask);
@@ -743,10 +910,43 @@ CmEvent *CmContext::CreateEnqueueTask_SAD(CmSurface2D *redHorSurf, CmSurface2D *
     return e;
 }
 
+
+#endif
+
+
+#ifdef CAM_PIPE_VERTICAL_SLICE_ENABLE
+
+void CmContext::CreateTask_DecideAverage(CmSurface2D *redAvgSurf, CmSurface2D *greenAvgSurf, CmSurface2D *blueAvgSurf, CmSurface2D *avgFlagSurf, CmSurface2D *redOutSurf, CmSurface2D *greenOutSurf, CmSurface2D *blueOutSurf, mfxU32)
+{
+    int result;
+
+    for (int i = 0; i < CAM_PIPE_KERNEL_SPLIT; i++)
+    {
+
+        int wr_x_base = (i * m_sliceWidthIn16_np);// - ((i == 0)? 0 : i*2);;
+        int wr_y_base = 0;
+
+
+        CAM_PIPE_KERNEL_ARRAY(kernel_decide_average, i)->SetThreadCount(m_sliceWidthIn16_np * m_sliceHeightIn16_np);
+
+        SetKernelArg(CAM_PIPE_KERNEL_ARRAY(kernel_decide_average, i), GetIndex(redAvgSurf), GetIndex(greenAvgSurf), GetIndex(blueAvgSurf), 
+                                                                      GetIndex(avgFlagSurf), GetIndex(redOutSurf), GetIndex(greenOutSurf), GetIndex(blueOutSurf),
+                                                                      wr_x_base, wr_y_base);
+
+        CAM_PIPE_KERNEL_ARRAY(task_DecideAvg, i)->Reset();
+
+        if ((result = CAM_PIPE_KERNEL_ARRAY(task_DecideAvg, i)->AddKernel(CAM_PIPE_KERNEL_ARRAY(kernel_decide_average, i))) != CM_SUCCESS)
+            throw CmRuntimeError();
+    }
+}
+
+
+#else
+
 CmEvent *CmContext::CreateEnqueueTask_DecideAverage(CmSurface2D *redAvgSurf, CmSurface2D *greenAvgSurf, CmSurface2D *blueAvgSurf, CmSurface2D *avgFlagSurf, CmSurface2D *redOutSurf, CmSurface2D *greenOutSurf, CmSurface2D *blueOutSurf)
 {
     int result;
-    kernel_decide_average->SetThreadCount(m_widthInMb * m_heightInMb);
+    kernel_decide_average->SetThreadCount(m_widthIn16 * m_heightIn16);
     SetKernelArg(kernel_decide_average, GetIndex(redAvgSurf), GetIndex(greenAvgSurf), GetIndex(blueAvgSurf), GetIndex(avgFlagSurf), GetIndex(redOutSurf), GetIndex(greenOutSurf), GetIndex(blueOutSurf));
 
     CmTask *cmTask = 0;
@@ -757,7 +957,7 @@ CmEvent *CmContext::CreateEnqueueTask_DecideAverage(CmSurface2D *redAvgSurf, CmS
         throw CmRuntimeError();
 
     CmEvent *e = CM_NO_EVENT;
-    if ((result = m_queue->Enqueue(cmTask, e, m_thread_space)) != CM_SUCCESS)
+    if ((result = m_queue->Enqueue(cmTask, e, m_TS_16x16)) != CM_SUCCESS)
         throw CmRuntimeError();
 
     m_queue->DestroyEvent(e);
@@ -766,6 +966,7 @@ CmEvent *CmContext::CreateEnqueueTask_DecideAverage(CmSurface2D *redAvgSurf, CmS
     return e;
 }
 
+#endif
 
 CmEvent *CmContext::CreateEnqueueTask_ForwardGamma(CmSurface2D *correctSurf, CmSurface2D *pointSurf,  CmSurface2D *redSurf, CmSurface2D *greenSurf, CmSurface2D *blueSurf, SurfaceIndex outSurfIndex, mfxU32 bitDepth)
 {
@@ -820,22 +1021,11 @@ void CmContext::Setup(
     m_program = ReadProgram(m_device, genx_hsw_camerapipe, SizeOf(genx_hsw_camerapipe));
 
     CreateCameraKernels();
+#ifdef CAM_PIPE_VERTICAL_SLICE_ENABLE
+    CreateCmTasks();
+#endif
+
 }
-
-CmEvent * CmContext::EnqueueTask(
-    CmTask *            task)
-{
-    int result = CM_SUCCESS;
-
-    CmEvent * e = 0;
-    if ((result = m_queue->Enqueue(task, e, m_thread_space)) != CM_SUCCESS)
-        throw CmRuntimeError();
-
-    return e;
-}
-
-
-
 
 }
 
