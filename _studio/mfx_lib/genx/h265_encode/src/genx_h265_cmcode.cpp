@@ -161,7 +161,7 @@ _GENX_ inline
 void SetRef(vector_ref<int2, 2> source,         // IN:  SourceX, SourceY
             vector<int2, 2>     predictor,      // IN:  mv predictor
             vector_ref<int1, 2> searchWindow,   // IN:  reference window w/h
-            vector_ref<int1, 2> picSize,        // IN:  pic size w/h
+            vector_ref<uint1, 2> picSize,       // IN:  pic size w/h
             int2                maxMvLenY,      // IN:  max MV.Y
             vector_ref<int2, 2> reference)      // OUT: Ref0X, Ref0Y
 {
@@ -1353,7 +1353,7 @@ MeP32(
     SetRef(uniIn.row(0).format<int2>().select<2,1>(4),  // IN:  SourceX, SourceY
            mvPred,                                      // IN:  mv predictor
            searchWindow,                                // IN:  search window w/h
-           curbeData.format<int1>().select<2,1>(17),    // IN:  pic size w/h
+           curbeData.format<uint1>().select<2,1>(17),    // IN:  pic size w/h
            curbeData.format<int2>()[68],                // IN:  max MV.Y
            uniIn.row(0).format<int2>().select<2,1>(0)); // OUT: Ref0X, Ref0Y
 
@@ -1726,7 +1726,7 @@ RawMeMB_P(SurfaceIndex SURF_CURBE_DATA,
     SetRef(uniIn.row(0).format<int2>().select<2,1>(4),  // IN:  SourceX, SourceY
            mvPred,                                      // IN:  mv predictor
            searchWindow,                                // IN:  search window w/h
-           curbeData.format<int1>().select<2,1>(17),    // IN:  pic size w/h
+           curbeData.format<uint1>().select<2,1>(17),    // IN:  pic size w/h
            curbeData.format<int2>()[68],                // IN:  max MV.Y
            uniIn.row(0).format<int2>().select<2,1>(0)); // OUT: Ref0X, Ref0Y
 
