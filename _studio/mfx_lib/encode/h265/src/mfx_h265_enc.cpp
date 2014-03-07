@@ -917,12 +917,13 @@ mfxStatus H265Encoder::Init(const mfxVideoParam *param, const mfxExtCodingOption
     data_temp_size = ((MAX_TOTAL_DEPTH * 2 + 1) << m_videoParam.Log2NumPartInCU);
 
     // temp buf size - todo reduce
-    Ipp32u streamBufSize = m_videoParam.SourceWidth * m_videoParam.SourceHeight * 3 / 2;
+    Ipp32u streamBufSizeMain = m_videoParam.SourceWidth * m_videoParam.SourceHeight * 3 / 2 + DATA_ALIGN;
+    Ipp32u streamBufSize = (m_videoParam.SourceWidth * (m_videoParam.threading_by_rows ? m_videoParam.SourceHeight : m_videoParam.MaxCUSize)) * 3 / 2 + DATA_ALIGN;
     Ipp32u memSize = 0;
 
     memSize += sizeof(H265BsReal)*(m_videoParam.num_thread_structs + 1) + DATA_ALIGN;
     memSize += sizeof(H265BsFake)*m_videoParam.num_thread_structs + DATA_ALIGN;
-    memSize += streamBufSize*(m_videoParam.num_thread_structs+1);
+    memSize += streamBufSize*m_videoParam.num_thread_structs + streamBufSizeMain;
     memSize += sizeof(CABAC_CONTEXT_H265) * NUM_CABAC_CONTEXT * m_videoParam.PicHeightInCtbs;
     memSize += sizeof(H265Slice) * m_videoParam.NumSlices + DATA_ALIGN;
     memSize += sizeof(H265Slice) * m_videoParam.NumSlices + DATA_ALIGN; // for future slice
@@ -949,6 +950,9 @@ mfxStatus H265Encoder::Init(const mfxVideoParam *param, const mfxExtCodingOption
         bs[i].Reset();
         ptr += streamBufSize;
     }
+    bs[m_videoParam.num_thread_structs].m_base.m_maxBsSize = streamBufSizeMain;
+    ptr += streamBufSizeMain - streamBufSize;
+
     for (Ipp32u i = 0; i < m_videoParam.num_thread_structs; i++) {
         bsf[i].Reset();
     }
