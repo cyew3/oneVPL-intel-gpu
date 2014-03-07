@@ -693,7 +693,8 @@ static void SetDefaultExCodingParameters(mfxExtCodingOptionVP8*  par, mfxExtCodi
             if (pExtRoiSrc->NumROI > 4)
             {
                 pExtRoiDst->NumROI = 4;
-                MFX_INTERNAL_CPY(pExtRoiDst->ROI, pExtRoiSrc->ROI, &(pExtRoiSrc->ROI[4]) - pExtRoiSrc->ROI);
+                for (mfxU8 i = 0; i < 4; i ++)
+                    pExtRoiDst->ROI[i] = pExtRoiSrc->ROI[i];
                 sts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
             }
             else
