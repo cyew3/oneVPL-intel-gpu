@@ -598,6 +598,9 @@ HRESULT AuxiliaryDevice::Execute(mfxU32 func,
 #endif
     MFX_CHECK(D3DAuxObjects.m_pDXVideoDecoder, E_FAIL);
 
+    if (AUXDEV_CREATE_ACCEL_SERVICE == func && NULL == input)
+        return E_POINTER;
+
     DXVA2_DecodeExtensionData extensionData;
     extensionData.Function = func;
     extensionData.pPrivateInputData = input;
@@ -613,13 +616,7 @@ HRESULT AuxiliaryDevice::Execute(mfxU32 func,
     HRESULT hr = D3DAuxObjects.m_pDXVideoDecoder->Execute(&executeParams);
 
     if (AUXDEV_CREATE_ACCEL_SERVICE == func && SUCCEEDED(hr))
-    {
-        if (NULL == input)
-        {
-            return MFX_ERR_NULL_PTR;
-        }
         m_Guid = *(GUID*)input; // to call AUXDEV_DESTROY_ACCEL_SERVICE in destructor
-    }
 
     return hr;
 
