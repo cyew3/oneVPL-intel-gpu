@@ -1,0 +1,235 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\shared\include\mfx_utils.h" />
+    <ClInclude Include="include\mfx_screen_capture_plugin.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="src\mfx_screen_capture_plugin.cpp" />
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{4041A665-2623-43CA-88D4-7D516875F864}</ProjectGuid>
+    <RootNamespace>camera_pipe_plugin</RootNamespace>
+    <Keyword>Win32Proj</Keyword>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <Import Project="..\mfx_lib\Intel.Mfx.Common.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <CharacterSet>Unicode</CharacterSet>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <PlatformToolset>v110</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <CharacterSet>Unicode</CharacterSet>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <PlatformToolset>v110</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <CharacterSet>Unicode</CharacterSet>
+    <PlatformToolset>v110</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <CharacterSet>Unicode</CharacterSet>
+    <PlatformToolset>v110</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <_ProjectFileVersion>10.0.40117.1</_ProjectFileVersion>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(MfxBuildDir)win_$(Platform)\bin\22d62c07e672408fbb4cc20ed7a053e4\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(OutDir)..\..\objs\$(Configuration)\$(ProjectName)\</IntDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\..\build\win_$(Platform)\bin</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(OutDir)objs\$(ProjectName)\</IntDir>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</LinkIncremental>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkIncremental>
+    <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">AllRules.ruleset</CodeAnalysisRuleSet>
+    <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">AllRules.ruleset</CodeAnalysisRuleSet>
+    <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" />
+    <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" />
+    <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" />
+    <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" />
+    <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">AllRules.ruleset</CodeAnalysisRuleSet>
+    <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Release|x64'">AllRules.ruleset</CodeAnalysisRuleSet>
+    <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" />
+    <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Release|x64'" />
+    <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" />
+    <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Release|x64'" />
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(ProjectName)32_d</TargetName>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ProjectName)64_d</TargetName>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <OutDir>$(MfxBuildDir)win_$(Platform)\bin\22d62c07e672408fbb4cc20ed7a053e4\</OutDir>
+    <IntDir>$(OutDir)..\..\objs\$(Configuration)\$(ProjectName)\</IntDir>
+    <TargetName>$(ProjectName)64</TargetName>
+    <PreBuildEventUseInBuild />
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <OutDir>$(MfxBuildDir)win_$(Platform)\bin\22d62c07e672408fbb4cc20ed7a053e4\</OutDir>
+    <IntDir>$(OutDir)..\..\objs\$(Configuration)\$(ProjectName)\</IntDir>
+    <TargetName>$(ProjectName)32</TargetName>
+    <PreBuildEventUseInBuild />
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <OutDir>$(MfxBuildDir)win_$(Platform)\bin\22d62c07e672408fbb4cc20ed7a053e4\</OutDir>
+    <IntDir>$(OutDir)..\..\objs\$(Configuration)\$(ProjectName)\</IntDir>
+    <PreBuildEventUseInBuild />
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <PreBuildEventUseInBuild>
+    </PreBuildEventUseInBuild>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <Optimization>Disabled</Optimization>
+      <AdditionalIncludeDirectories>.\genx\include;include;..\mfx_lib\cmrt_cross_platform\include;$(MEDIASDK_ROOT)\CMRT\compiler\include\cm;$(MEDIASDK_ROOT)\CMRT\runtime\include;..\..\include;..\shared\include;..\mfx_lib\shared\include;..\mfx_lib\plugin\include;$(MfxIppIncludeDir);..\shared\umc\core\umc\include;..\shared\umc\core\vm\include;..\shared\umc\core\vm_plus\include;..\mfx_lib\scheduler\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>MFX_D3D11_ENABLED;WIN32;_DEBUG;_WINDOWS;_USRDLL;LIBMFXSW_EXPORTS;AS_VPP_PLUGIN;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <MinimalRebuild>true</MinimalRebuild>
+      <ExceptionHandling>Async</ExceptionHandling>
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level4</WarningLevel>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <TreatWarningAsError>false</TreatWarningAsError>
+    </ClCompile>
+    <Link>
+      <ImportLibrary>$(OutDir)\..\lib\$(TargetName).lib</ImportLibrary>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>ippcoremt.lib;ippsmt.lib;ippvcmt.lib;ippimt.lib;ippccmt.lib;ippcvmt.lib;ippjmt.lib;ippmsdkmt.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(MfxBuildDir)win_$(Platform)\lib;$(MfxIppLibraryDir);$(MEDIASDK_ROOT)\cmrt\compiler\lib\x86;$(MEDIASDK_ROOT)\cmrt\runtime\lib\x86;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <IgnoreSpecificDefaultLibraries>svml_disp.lib;libirc.lib;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
+    </Link>
+    <PostBuildEvent>
+      <Command>copy "$(SolutionDir)22d62c07e672408fbb4cc20ed7a053e4\plugin_for_debug.cfg" "$(OutDir)plugin.cfg" /y &amp; xcopy "$(OutDir)$(TargetName)*" "$(ProjectDir)..\..\samples\_build\Win32\Debug\22d62c07e672408fbb4cc20ed7a053e4" /y /i &amp; copy "$(SolutionDir)22d62c07e672408fbb4cc20ed7a053e4\plugin_for_debug.cfg" "$(ProjectDir)..\..\samples\_build\Win32\Debug\22d62c07e672408fbb4cc20ed7a053e4\plugin.cfg" /y</Command>
+    </PostBuildEvent>
+    <PreBuildEvent>
+      <Command>
+      </Command>
+    </PreBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <Optimization>Disabled</Optimization>
+      <AdditionalIncludeDirectories>.\;include;..\mfx_lib\cmrt_cross_platform\include;$(MEDIASDK_ROOT)\CMRT\compiler\include\cm;$(MEDIASDK_ROOT)\CMRT\runtime\include;..\..\include;..\shared\include;..\mfx_lib\shared\include;..\mfx_lib\plugin\include;$(MfxIppIncludeDir);..\shared\umc\core\umc\include;..\shared\umc\core\vm\include;..\shared\umc\core\vm_plus\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;AS_VPP_PLUGIN;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ExceptionHandling>Async</ExceptionHandling>
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level4</WarningLevel>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+    </ClCompile>
+    <Link>
+      <ImportLibrary>$(OutDir)\..\lib\$(TargetName).lib</ImportLibrary>
+      <AdditionalDependencies>ippcoremt.lib;ippsmt.lib;ippvcmt.lib;ippimt.lib;ippccmt.lib;ippcvmt.lib;ippjmt.lib;ippmsdkmt.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
+      <AdditionalLibraryDirectories>$(MfxBuildDir)win_$(Platform)\lib;$(MfxIppLibraryDir);$(MEDIASDK_ROOT)\cmrt\compiler\lib\x64;$(MEDIASDK_ROOT)\cmrt\runtime\lib\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+    <PostBuildEvent>
+      <Command>copy "$(SolutionDir)22d62c07e672408fbb4cc20ed7a053e4\plugin_for_debug.cfg" "$(OutDir)plugin.cfg" /y &amp; xcopy "$(OutDir)$(TargetName)*" "$(ProjectDir)..\..\samples\_build\x64\Debug\22d62c07e672408fbb4cc20ed7a053e4" /y /i &amp; copy "$(SolutionDir)22d62c07e672408fbb4cc20ed7a053e4\plugin_for_debug.cfg" "$(ProjectDir)..\..\samples\_build\x64\Debug\22d62c07e672408fbb4cc20ed7a053e4\plugin.cfg" /y</Command>
+    </PostBuildEvent>
+    <PreBuildEvent>
+      <Command>
+      </Command>
+    </PreBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>.\genx\include;include;..\mfx_lib\cmrt_cross_platform\include;$(MEDIASDK_ROOT)\CMRT\compiler\include\cm;$(MEDIASDK_ROOT)\CMRT\runtime\include;..\..\include;..\shared\include;..\mfx_lib\shared\include;..\mfx_lib\plugin\include;$(MfxIppIncludeDir);..\shared\umc\core\umc\include;..\shared\umc\core\vm\include;..\shared\umc\core\vm_plus\include;..\mfx_lib\scheduler\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;AS_VPP_PLUGIN;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+    </ClCompile>
+    <Link>
+      <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <SubSystem>Windows</SubSystem>
+      <OptimizeReferences>true</OptimizeReferences>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <TargetMachine>MachineX86</TargetMachine>
+      <AdditionalDependencies>ippcoremt.lib;ippsmt.lib;ippvcmt.lib;ippimt.lib;ippccmt.lib;ippcvmt.lib;ippjmt.lib;ippmsdkmt.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
+      <AdditionalLibraryDirectories>$(MfxBuildDir)win_$(Platform)\lib;$(MfxIppLibraryDir);$(MEDIASDK_ROOT)\cmrt\compiler\lib\x86;$(MEDIASDK_ROOT)\cmrt\runtime\lib\x86;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    </Link>
+    <PostBuildEvent>
+      <Command>copy "$(SolutionDir)22d62c07e672408fbb4cc20ed7a053e4\plugin.cfg" "$(OutDir)plugin.cfg" /y &amp; xcopy "$(OutDir)$(TargetName)*" "$(ProjectDir)..\..\samples\_build\Win32\Release\22d62c07e672408fbb4cc20ed7a053e4" /y /i &amp; copy "$(SolutionDir)22d62c07e672408fbb4cc20ed7a053e4\plugin.cfg" "$(ProjectDir)..\..\samples\_build\Win32\Release\22d62c07e672408fbb4cc20ed7a053e4\plugin.cfg" /y</Command>
+    </PostBuildEvent>
+    <PreBuildEvent>
+      <Command>
+      </Command>
+    </PreBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>.\;include;..\mfx_lib\cmrt_cross_platform\include;$(MEDIASDK_ROOT)\CMRT\compiler\include\cm;$(MEDIASDK_ROOT)\CMRT\runtime\include;..\..\include;..\shared\include;..\mfx_lib\shared\include;..\mfx_lib\plugin\include;$(MfxIppIncludeDir);..\shared\umc\core\umc\include;..\shared\umc\core\vm\include;..\shared\umc\core\vm_plus\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;AS_VPP_PLUGIN;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+    </ClCompile>
+    <Link>
+      <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <SubSystem>Windows</SubSystem>
+      <OptimizeReferences>true</OptimizeReferences>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <AdditionalLibraryDirectories>$(MfxBuildDir)win_$(Platform)\lib;$(MfxIppLibraryDir);$(MEDIASDK_ROOT)\cmrt\compiler\lib\x64;$(MEDIASDK_ROOT)\cmrt\runtime\lib\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>ippcoremt.lib;ippsmt.lib;ippvcmt.lib;ippimt.lib;ippccmt.lib;ippcvmt.lib;ippjmt.lib;ippmsdkmt.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
+    </Link>
+    <PostBuildEvent>
+      <Command>copy "$(SolutionDir)22d62c07e672408fbb4cc20ed7a053e4\plugin.cfg" "$(OutDir)plugin.cfg" /y &amp; xcopy "$(OutDir)$(TargetName)*" "$(ProjectDir)..\..\samples\_build\x64\Release\22d62c07e672408fbb4cc20ed7a053e4" /y /i &amp; copy "$(SolutionDir)22d62c07e672408fbb4cc20ed7a053e4\plugin.cfg" "$(ProjectDir)..\..\samples\_build\x64\Release\22d62c07e672408fbb4cc20ed7a053e4\plugin.cfg" /y</Command>
+    </PostBuildEvent>
+    <PreBuildEvent>
+      <Command>
+      </Command>
+    </PreBuildEvent>
+  </ItemDefinitionGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>
