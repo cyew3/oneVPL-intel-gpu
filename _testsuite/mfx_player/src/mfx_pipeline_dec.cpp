@@ -33,7 +33,7 @@ File Name: .h
 #include "mfx_multi_render.h"
 
 #ifdef MFX_PIPELINE_SUPPORT_VP8
-    #include "mfxvp8.h"
+#include "mfxvp8.h"
 #endif
 
 #include "mfx_serializer.h"
@@ -318,7 +318,7 @@ mfxStatus MFXDecPipeline::BuildMFXPart()
     //cmd line params should be modified for par file
     mfxInfoVPP &rInfo = m_components[eVPP].m_params.vpp;
     m_inParams.nPicStruct = Convert_MFXPS_to_CmdPS( m_inParams.bUseVPP ? rInfo.Out.PicStruct:m_components[eDEC].m_params.mfx.FrameInfo.PicStruct
-                                                  , m_inParams.bUseVPP ? m_components[eVPP].m_extCO : m_components[eDEC].m_extCO );
+        , m_inParams.bUseVPP ? m_components[eVPP].m_extCO : m_components[eDEC].m_extCO );
 
 
     MFX_CHECK_STS(InitPluginParams());
@@ -432,11 +432,11 @@ mfxStatus MFXDecPipeline::BuildPipeline()
                 mem_buffer[len-2] = '\0';
                 mem_used = atoi(&mem_buffer[i]);
                 break;
-           }
-       }
-       fclose (file);
-   }
-   PrintInfo(VM_STRING("Memory Private"), VM_STRING("%.2f M"),
+            }
+        }
+        fclose (file);
+    }
+    PrintInfo(VM_STRING("Memory Private"), VM_STRING("%.2f M"),
         (Ipp64f)(mem_used) / (1024));
 #endif
 
@@ -455,15 +455,20 @@ mfxStatus MFXDecPipeline::BuildPipeline()
     TIME_PRINT(VM_STRING("CreateSpl"));
     bufferingNotifier.Complete();
 
-    // GetStreamInfo
     sStreamInfo streamInfo;
-    res = m_pSpl->GetStreamInfo(&streamInfo);
+    res = MFX_ERR_NONE;
+
+    // GetStreamInfo
+    if (m_inParams.InputCodecType != MFX_CODEC_CAPTURE)
+    {
+        res = m_pSpl->GetStreamInfo(&streamInfo);
+    }
 
     m_components[eDEC].m_params.mfx.CodecId = m_inParams.InputCodecType;
     if ( MFX_FOURCC_P010 == m_inParams.FrameInfo.FourCC) {
         m_components[eDEC].m_params.mfx.FrameInfo.FourCC = m_inParams.FrameInfo.FourCC;
     }
-    if (MFX_ERR_NONE == res)
+    if (MFX_ERR_NONE == res && m_inParams.InputCodecType != MFX_CODEC_CAPTURE)
     {
         m_inParams.FrameInfo.Width  = streamInfo.nWidth;
         m_inParams.FrameInfo.Height = streamInfo.nHeight;
@@ -513,10 +518,10 @@ mfxStatus MFXDecPipeline::ReleasePipeline()
 #if defined(_WIN32) || defined(_WIN64)
         FILETIME notUsedVar;
         GetProcessTimes( GetCurrentProcess()
-                       , &notUsedVar
-                       , &notUsedVar
-                       , (LPFILETIME)&KernelTime
-                       , (LPFILETIME)&UserTime );
+            , &notUsedVar
+            , &notUsedVar
+            , (LPFILETIME)&KernelTime
+            , (LPFILETIME)&UserTime );
 #else
         struct rusage usage;
         getrusage(RUSAGE_SELF,&usage);
@@ -709,7 +714,7 @@ mfxStatus MFXDecPipeline::LightReset()
 mfxStatus MFXDecPipeline::InitInputBs(bool &bExtended)
 {
     mfxU64 bs_size = m_components[eDEC].m_params.mfx.FrameInfo.Width  *
-                     m_components[eDEC].m_params.mfx.FrameInfo.Height * 4;
+        m_components[eDEC].m_params.mfx.FrameInfo.Height * 4;
     if (0 == bs_size)
     {
         //taking params from cmdline
@@ -737,10 +742,10 @@ mfxStatus MFXDecPipeline::InitInputBs(bool &bExtended)
     //extending bitstream if necessary
     MFX_CHECK_STS(MFXBistreamBuffer::ExtendBs((mfxU32)bs_size, &m_inBSFrame));
     MFX_CHECK_STS(m_bitstreamBuf.Init( m_inParams.nDecBufSize
-                                     , m_inBSFrame.MaxLength));
+        , m_inBSFrame.MaxLength));
 
     PrintInfo( VM_STRING("Input bitstream buffer"), VM_STRING("%d")
-             , 0 != m_inParams.nDecBufSize ? m_inParams.nDecBufSize : m_inBSFrame.MaxLength);
+        , 0 != m_inParams.nDecBufSize ? m_inParams.nDecBufSize : m_inBSFrame.MaxLength);
 
     //complete frame is failed if decbufsize used
     if (m_inParams.nDecBufSize !=0 )
@@ -886,7 +891,7 @@ mfxStatus MFXDecPipeline::CreateCore()
 
 //shortening macro
 #define ENABLE_VPP(reason)\
-if (reason)\
+    if (reason)\
 {\
     PrintInfo(VM_STRING("Vpp.ENABLED"), _TSTR(reason));\
     m_inParams.bUseVPP = true;\
@@ -954,7 +959,7 @@ mfxStatus MFXDecPipeline::CreateVPP()
         return MFX_ERR_UNSUPPORTED;
     } else if (  vm_string_strlen(m_inParams.strVPPPluginGuid)  )
     {
-         m_pVPP = m_pFactory->CreateVPP(
+        m_pVPP = m_pFactory->CreateVPP(
             PipelineObjectDesc<IMFXVideoVPP>(m_components[eVPP].m_pSession->GetMFXSession(), m_inParams.strVPPPluginGuid, 1, VPP_MFX_PLUGIN_GUID, NULL));
     } else
     {
@@ -1060,8 +1065,8 @@ mfxStatus MFXDecPipeline::CreateVPP()
     }
 
 
-//    m_components[eVPP].m_extParams.merge( m_components[eDEC].m_extParams.begin()
-//                                        , m_components[eDEC].m_extParams.end());
+    //    m_components[eVPP].m_extParams.merge( m_components[eDEC].m_extParams.begin()
+    //                                        , m_components[eDEC].m_extParams.end());
     // asomsiko: this is workaround for bug in HW library - it is not accepting other protected values.
     MFXExtBufferVector::iterator it = m_components[eDEC].m_extParams.begin();
     for(;it != m_components[eDEC].m_extParams.end(); it++ )
@@ -1077,7 +1082,7 @@ mfxStatus MFXDecPipeline::CreateVPP()
     //.m_params.NumExtParam = (mfxU16)m_components[eVPP].m_extParams.size();
     //m_components[eVPP].m_params.ExtParam    = &m_components[eVPP].m_extParams;//vector is stored linear in memory
 
- //   MFX_CHECK_STS(m_pVPP->Init(&m_components[eVPP].m_params));
+    //   MFX_CHECK_STS(m_pVPP->Init(&m_components[eVPP].m_params));
 
     //pAlgList.release();
     //pExtDoNotUse.release();
@@ -1175,9 +1180,17 @@ mfxStatus MFXDecPipeline::DecodeHeader()
     //decode header might overrite some values, fourcc for example
     mfxFrameInfo dec_info = m_components[eDEC].m_params.mfx.FrameInfo;
 
+    if (m_components[eDEC].m_params.mfx.CodecId == MFX_CODEC_CAPTURE)
+    {
+        m_components[eDEC].m_params.mfx.FrameInfo.Width = m_inParams.FrameInfo.Width;
+        m_components[eDEC].m_params.mfx.FrameInfo.Height = m_inParams.FrameInfo.Height;
+        return MFX_ERR_NONE;
+    }
+
     for (;;)
     {
         //buffer may contain data
+
         MFX_CHECK_STS_SKIP(sts = m_pYUVSource->DecodeHeader(&m_inBSFrame, &m_components[eDEC].m_params)
             , MFX_ERR_MORE_DATA);
 
@@ -1187,8 +1200,8 @@ mfxStatus MFXDecPipeline::DecodeHeader()
             //in case of SVC codec profile specified we will continue decode header to get info
             switch(m_components[eDEC].m_params.mfx.CodecProfile)
             {
-                case MFX_PROFILE_AVC_SCALABLE_BASELINE:
-                case MFX_PROFILE_AVC_SCALABLE_HIGH :
+            case MFX_PROFILE_AVC_SCALABLE_BASELINE:
+            case MFX_PROFILE_AVC_SCALABLE_HIGH :
                 {
                     MFXExtBufferPtr<mfxExtSVCSeqDesc> seqDescription(m_components[eDEC].m_extParams);
 
@@ -1311,6 +1324,10 @@ mfxStatus MFXDecPipeline::CreateSplitter()
 {
     std::auto_ptr<IBitstreamReader> pSpl;
 
+    // for capturing we dont need splitter...
+    if (m_inParams.InputCodecType == MFX_CODEC_CAPTURE)
+        return MFX_ERR_NONE;
+
     sStreamInfo sInfo;
 
     if (m_inParams.bMediaSDKSplitter)
@@ -1373,9 +1390,9 @@ mfxStatus MFXDecPipeline::CreateSplitter()
     {
         //TODO: vary chunk
         m_pSpl = new BitrateLimitedReader( m_inParams.nLimitFileReader
-                                         , &PerfCounterTime::Instance()
-                                         , m_inParams.nLimitChunkSize //0- //chunk is equal to splitted video frame
-                                         , m_pSpl);
+            , &PerfCounterTime::Instance()
+            , m_inParams.nLimitChunkSize //0- //chunk is equal to splitted video frame
+            , m_pSpl);
     }
 
     if (m_inParams.bVerbose)
@@ -1494,17 +1511,17 @@ mfxStatus MFXDecPipeline::CreateRender()
     if (   MFX_FOURCC_P010 == m_inParams.outFrameInfo.FourCC
         || MFX_FOURCC_NV12 == m_inParams.outFrameInfo.FourCC
         ) {
-        m_components[eREN].m_params.mfx.FrameInfo.FourCC = m_inParams.outFrameInfo.FourCC;
+            m_components[eREN].m_params.mfx.FrameInfo.FourCC = m_inParams.outFrameInfo.FourCC;
     }
 
     switch (m_RenderType)
     {
-        case MFX_FW_RENDER :
-            m_pRender = new MFXFileWriteRender(m_inParams.outFrameInfo, m_components[eREN].m_pSession, &sts);
-            break;
-        case MFX_BMP_RENDER: m_pRender = new MFXBMPRender(m_components[eREN].m_pSession, &sts); break;
+    case MFX_FW_RENDER :
+        m_pRender = new MFXFileWriteRender(m_inParams.outFrameInfo, m_components[eREN].m_pSession, &sts);
+        break;
+    case MFX_BMP_RENDER: m_pRender = new MFXBMPRender(m_components[eREN].m_pSession, &sts); break;
 #if defined(_WIN32) || defined(_WIN64)
-        case MFX_SCREEN_RENDER:
+    case MFX_SCREEN_RENDER:
         {
             ScreenRender::InitParams iParams(m_components[eREN].GetAdapter(), VideoWindow::InitParams(NULL, m_inParams.bFullscreen));
 
@@ -1587,7 +1604,7 @@ mfxStatus MFXDecPipeline::CreateRender()
         }
 #endif // #if defined(_WIN32) || defined(_WIN64)
 #if defined(LIBVA_X11_SUPPORT) && !defined(ANDROID)
-        case MFX_SCREEN_RENDER:
+    case MFX_SCREEN_RENDER:
         {
             ScreenVAAPIRender::InitParams iParams(m_components[eREN].GetAdapter(), XVideoWindow::InitParams(NULL, m_inParams.bFullscreen));
 
@@ -1623,7 +1640,7 @@ mfxStatus MFXDecPipeline::CreateRender()
             break;
         }
 #endif
-        case MFX_METRIC_CHECK_RENDER:
+    case MFX_METRIC_CHECK_RENDER:
         {
             MFXMetricComparatorRender *pRender;
             m_pRender = pRender = new MFXMetricComparatorRender(m_inParams.outFrameInfo, m_components[eREN].m_pSession, &sts);
@@ -1642,7 +1659,7 @@ mfxStatus MFXDecPipeline::CreateRender()
             MFX_CHECK_STS(pRender->SetOutputPerfFile(m_inParams.perfFile));
             break;
         }
-        case MFX_OUTLINE_RENDER:
+    case MFX_OUTLINE_RENDER:
         {
             MFXOutlineRender *pRender = new MFXOutlineRender(m_inParams.outFrameInfo, m_components[eREN].m_pSession, &sts);
             MFX_CHECK_WITH_ERR(pRender, MFX_ERR_MEMORY_ALLOC);
@@ -1659,26 +1676,26 @@ mfxStatus MFXDecPipeline::CreateRender()
             m_pRender = pRender;
             break;
         }
-        case MFX_NO_RENDER :
+    case MFX_NO_RENDER :
         {
             m_components[eREN].m_nMaxAsync = 1;
             MFX_CHECK_WITH_ERR(m_pRender = new MFXNullRender(m_components[eREN].m_pSession, &sts), MFX_ERR_MEMORY_ALLOC);
             break;
         }
-        case MFX_NULL_RENDER :
+    case MFX_NULL_RENDER :
         {
             m_components[eREN].m_nMaxAsync = 1;
             MFX_CHECK_WITH_ERR(m_pRender = new MFXLockUnlockRender(m_components[eREN].m_pSession, &sts), MFX_ERR_MEMORY_ALLOC);
         }
-        default:
-            break;
+    default:
+        break;
     }
 
     if (NULL != m_pRender)
     {
         MFX_CHECK_STS(DecorateRender());
         //TODO: it is always a part of render creation?
-//        MFX_CHECK_STS(m_pRender->SetOutputFourcc(m_components[eREN].m_params.mfx.FrameInfo.FourCC));
+        //        MFX_CHECK_STS(m_pRender->SetOutputFourcc(m_components[eREN].m_params.mfx.FrameInfo.FourCC));
         MFX_CHECK_STS(m_pRender->SetAutoView(m_inParams.bMultiFiles));
     }
 
@@ -1808,8 +1825,8 @@ mfxStatus MFXDecPipeline::InitRenderParams()
     {
         switch (m_components[eDEC].m_params.mfx.CodecProfile)
         {
-            case MFX_PROFILE_AVC_STEREO_HIGH :
-            case MFX_PROFILE_AVC_MULTIVIEW_HIGH :
+        case MFX_PROFILE_AVC_STEREO_HIGH :
+        case MFX_PROFILE_AVC_MULTIVIEW_HIGH :
             {
                 m_components[eREN].m_params.mfx.CodecProfile = m_components[eDEC].m_params.mfx.CodecProfile;
                 break;
@@ -1855,18 +1872,18 @@ mfxStatus MFXDecPipeline::CreateYUVSource()
     {
         m_pYUVSource.reset(m_pFactory->CreateDecode(
             PipelineObjectDesc<IYUVSource>(m_components[eDEC].m_pSession->GetMFXSession()
-                , m_inParams.strDecPluginGuid
-                , 1
-                , DECODER_MFX_PLUGIN_GUID
-                , NULL)));
+            , m_inParams.strDecPluginGuid
+            , 1
+            , DECODER_MFX_PLUGIN_GUID
+            , NULL)));
     }
     else if (vm_string_strlen(m_inParams.strDecPlugin))
     {
         m_pYUVSource.reset(m_pFactory->CreateDecode(
             PipelineObjectDesc<IYUVSource>(m_components[eDEC].m_pSession->GetMFXSession()
-                , m_inParams.strDecPlugin
-                , DECODER_MFX_PLUGIN_FILE
-                , NULL)));
+            , m_inParams.strDecPlugin
+            , DECODER_MFX_PLUGIN_FILE
+            , NULL)));
     }
     else if (m_inParams.bYuvReaderMode ||
         MFX_FOURCC_NV12 == m_inParams.InputCodecType ||
@@ -1880,11 +1897,11 @@ mfxStatus MFXDecPipeline::CreateYUVSource()
         yuvDecParam.mfx.FrameInfo.PicStruct = Convert_CmdPS_to_MFXPS(m_inParams.nPicStruct);
 
         m_pYUVSource.reset(new MFXYUVDecoder( m_components[eDEC].m_pSession
-                                        , yuvDecParam
-                                        , m_components[eDEC].m_fFrameRate
-                                        , m_inParams.FrameInfo.FourCC
-                                        , m_pFactory.get()
-                                        , m_inParams.strOutlineInputFile));
+            , yuvDecParam
+            , m_components[eDEC].m_fFrameRate
+            , m_inParams.FrameInfo.FourCC
+            , m_pFactory.get()
+            , m_inParams.strOutlineInputFile));
         bGenerateViewIds = true;
     }
     else
@@ -1976,9 +1993,9 @@ struct GetMonitorRect_data{
     RECT requiredRect;
 };
 BOOL CALLBACK GetMonitorRect_MonitorEnumProc(HMONITOR /*hMonitor*/,
-                                           HDC /*hdcMonitor*/,
-                                           LPRECT lprcMonitor,
-                                           LPARAM dwData)
+                                             HDC /*hdcMonitor*/,
+                                             LPRECT lprcMonitor,
+                                             LPARAM dwData)
 {
     GetMonitorRect_data *data = reinterpret_cast<GetMonitorRect_data *>(dwData);
     RECT r = {0};
@@ -1986,7 +2003,7 @@ BOOL CALLBACK GetMonitorRect_MonitorEnumProc(HMONITOR /*hMonitor*/,
         lprcMonitor = &r;
 
     if (data->current ==data->required)
-       data->requiredRect = *lprcMonitor;
+        data->requiredRect = *lprcMonitor;
     data->current++;
 
     return TRUE;
@@ -2101,7 +2118,7 @@ mfxStatus MFXDecPipeline::CreateDeviceManager()
             m_pHWDevice.reset(
                 m_inParams.bDxgiDebug ?
                 new MFXD3D11DxgiDebugDevice() :
-                new MFXD3D11Device());
+            new MFXD3D11Device());
 
             MFX_CHECK_STS(m_pHWDevice->Init(cparams.GetAdapter(), NULL, !m_inParams.bFullscreen, D3DFMT_X8R8G8B8, 1, m_inParams.dxva2DllName, cparams.m_bD39Feat));
         }
@@ -2179,8 +2196,8 @@ mfxStatus MFXDecPipeline::CreateAllocator()
     if (NULL == m_pVPP)
     {
         nSurfaces = (numDecSfr + numRenSfr - 1 )
-                  + (IPP_MAX(m_components[eDEC].m_nMaxAsync, 1) - 1)
-                  + (IPP_MAX(m_components[eREN].m_nMaxAsync, 1) - 1);
+            + (IPP_MAX(m_components[eDEC].m_nMaxAsync, 1) - 1)
+            + (IPP_MAX(m_components[eREN].m_nMaxAsync, 1) - 1);
 
         request->NumFrameMin       = nSurfaces;
         request->NumFrameSuggested = nSurfaces;
@@ -2228,8 +2245,8 @@ mfxStatus MFXDecPipeline::CreateAllocator()
     }else
     {
         nSurfaces = (numDecSfr + numVppSfrIn - 1 )
-                  + (IPP_MAX(m_components[eDEC].m_nMaxAsync, 1) - 1)
-                  + (IPP_MAX(m_components[eVPP].m_nMaxAsync, 1) - 1);
+            + (IPP_MAX(m_components[eDEC].m_nMaxAsync, 1) - 1)
+            + (IPP_MAX(m_components[eVPP].m_nMaxAsync, 1) - 1);
 
         request->NumFrameMin       = nSurfaces;
         request->NumFrameSuggested = nSurfaces;
@@ -2271,22 +2288,22 @@ mfxStatus MFXDecPipeline::CreateAllocator()
         }
 
         nSurfaces = (numRenSfr + numVppSfrOut - 1 )
-                  + (IPP_MAX(m_components[eREN].m_nMaxAsync, 1) - 1)
-                  + (IPP_MAX(m_components[eVPP].m_nMaxAsync, 1) - 1);
+            + (IPP_MAX(m_components[eREN].m_nMaxAsync, 1) - 1)
+            + (IPP_MAX(m_components[eVPP].m_nMaxAsync, 1) - 1);
         request->NumFrameMin       = nSurfaces;
         request->NumFrameSuggested = nSurfaces;
         memcpy(&request->Info, &m_components[eREN].m_params.mfx.FrameInfo, sizeof(mfxFrameInfo));
 
         PrintInfo( VM_STRING("Surfaces vpp+ren")
-                 , VM_STRING("%sx%dx%dx%d (vpp_out:%d + ren:%d - 1 + vpp_async:%d + ren_async:%d)")
-                 , GetMFXFourccString(request->Info.FourCC).c_str()
-                 , request->Info.Width
-                 , request->Info.Height
-                 , nSurfaces
-                 , numVppSfrOut
-                 , numRenSfr
-                 , IPP_MAX(m_components[eVPP].m_nMaxAsync, 1) - 1
-                 , IPP_MAX(m_components[eREN].m_nMaxAsync, 1) - 1);
+            , VM_STRING("%sx%dx%dx%d (vpp_out:%d + ren:%d - 1 + vpp_async:%d + ren_async:%d)")
+            , GetMFXFourccString(request->Info.FourCC).c_str()
+            , request->Info.Width
+            , request->Info.Height
+            , nSurfaces
+            , numVppSfrOut
+            , numRenSfr
+            , IPP_MAX(m_components[eVPP].m_nMaxAsync, 1) - 1
+            , IPP_MAX(m_components[eREN].m_nMaxAsync, 1) - 1);
 
         //in case of opaq memory we may selects vpp or renedr request type
         if (m_components[eREN].m_bufType != MFX_BUF_OPAQ)
@@ -2334,7 +2351,8 @@ mfxStatus MFXDecPipeline::Play()
     mfxStatus exit_sts = MFX_ERR_NONE;
     bool      bEOS     = false;
 
-    MFX_CHECK_SET_ERR(NULL != m_pSpl, PE_NO_ERROR, MFX_ERR_NULL_PTR);
+    if (m_components[eDEC].m_params.mfx.CodecId != MFX_CODEC_CAPTURE)
+        MFX_CHECK_SET_ERR(NULL != m_pSpl, PE_NO_ERROR, MFX_ERR_NULL_PTR);
 
     //m_bStat = true;
     m_statTimer.Start();
@@ -2344,10 +2362,10 @@ mfxStatus MFXDecPipeline::Play()
     FILETIME notUsedVar;
 
     GetProcessTimes( GetCurrentProcess()
-                    , &notUsedVar
-                    , &notUsedVar
-                    , (LPFILETIME)&m_KernelTime
-                    , (LPFILETIME)&m_UserTime );
+        , &notUsedVar
+        , &notUsedVar
+        , (LPFILETIME)&m_KernelTime
+        , (LPFILETIME)&m_UserTime );
 #else
     struct rusage usage;
     getrusage(RUSAGE_SELF,&usage);
@@ -2363,6 +2381,7 @@ mfxStatus MFXDecPipeline::Play()
     while (!bEOS && sts != PIPELINE_ERR_STOPPED)
     {
         // Read next frame
+        if (m_pSpl)
         {
             MPA_TRACE("ReadNextFrame");
             if ((bHasFirstFrame || MFX_ERR_NONE != (sts = m_pSpl->ReadNextFrame(m_inBSFrame))) && m_inBSFrame.DataLength <= 4)
@@ -2385,7 +2404,7 @@ mfxStatus MFXDecPipeline::Play()
             }else
             {
                 if (!m_inParams.bVerbose)
-                PipelineTraceSplFrame();
+                    PipelineTraceSplFrame();
             }
         }
 
@@ -2403,7 +2422,7 @@ mfxStatus MFXDecPipeline::Play()
 
             MFX_CHECK_STS_SKIP(sts = m_bitstreamBuf.LockOutput(&inputBs) , MFX_ERR_MORE_DATA);
 
-            if (MFX_ERR_MORE_DATA == sts)//still don't have enough data in buffer
+            if (MFX_ERR_MORE_DATA == sts && m_pSpl)//still don't have enough data in buffer
             {
                 break;
             }
@@ -2414,7 +2433,7 @@ mfxStatus MFXDecPipeline::Play()
 
             MFX_CHECK_STS(m_bitstreamBuf.UnLockOutput(&inputBs));
 
-           //extraordinary exit
+            //extraordinary exit
             if (sts == MFX_ERR_INCOMPATIBLE_VIDEO_PARAM)
             {
                 exit_sts = sts;
@@ -2483,8 +2502,8 @@ mfxStatus MFXDecPipeline::Play()
     //to get empty render's buffers
     //should skip files_sizes_mismatch status, if err incompatible params happened
     mfxStatus vppSkipSts = (MFX_ERR_INCOMPATIBLE_VIDEO_PARAM == exit_sts)
-                          ? PIPELINE_ERR_FILES_SIZES_MISMATCH
-                          : MFX_ERR_NONE;
+        ? PIPELINE_ERR_FILES_SIZES_MISMATCH
+        : MFX_ERR_NONE;
 
     MFX_CHECK_STS_SKIP(RunVPP(NULL), vppSkipSts);
 
@@ -2541,6 +2560,9 @@ mfxStatus MFXDecPipeline::RunDecode(mfxBitstream2 & bs)
         }
 
         bs.DataFlag = (mfxU16)(m_inParams.bCompleteFrame ? MFX_BITSTREAM_COMPLETE_FRAME : 0);
+        
+        if (m_pSpl == NULL)
+            bs.isNull = true;
 
         sts = m_pYUVSource->DecodeFrameAsync(bs, inSurface.pSurface, &pDecodedSurface, &syncp);
         HandleIncompatParamsCode(sts, IP_DECASYNC, bs.isNull);
@@ -2592,8 +2614,8 @@ mfxStatus MFXDecPipeline::RunDecode(mfxBitstream2 & bs)
 
             //only checking for completed task
             for ( ; !m_components[eDEC].m_SyncPoints.empty() &&
-                    MFX_ERR_NONE == m_pYUVSource->SyncOperation( m_components[eDEC].m_SyncPoints.begin()->first, 0)
-                  ; )
+                MFX_ERR_NONE == m_pYUVSource->SyncOperation( m_components[eDEC].m_SyncPoints.begin()->first, 0)
+                ; )
             {
                 pDecodedSurface = m_components[eDEC].m_SyncPoints.begin()->second.pSurface;
 
@@ -2754,8 +2776,8 @@ mfxStatus  MFXDecPipeline::RunVPP(mfxFrameSurface1 *pSurface)
 
                 //only checking for completed task
                 for ( ; !m_components[eVPP].m_SyncPoints.empty() &&
-                            MFX_ERR_NONE == m_pVPP->SyncOperation(m_components[eVPP].m_SyncPoints.begin()->first, 0)
-                      ; )
+                    MFX_ERR_NONE == m_pVPP->SyncOperation(m_components[eVPP].m_SyncPoints.begin()->first, 0)
+                    ; )
                 {
                     mfxFrameSurface1 *pVpp   = m_components[eVPP].m_SyncPoints.begin()->second.pSurface;
                     mfxEncodeCtrl * pControl = m_components[eVPP].m_SyncPoints.begin()->second.pCtrl;
@@ -2787,7 +2809,7 @@ mfxStatus  MFXDecPipeline::RunVPP(mfxFrameSurface1 *pSurface)
 
     if(NULL == m_pVPP || NULL == pSurface)
     {
-         MFX_CHECK_STS(RunRender(pSurface));
+        MFX_CHECK_STS(RunRender(pSurface));
     }
 
     return MFX_ERR_NONE;
@@ -2815,8 +2837,8 @@ mfxStatus MFXDecPipeline::RunRender(mfxFrameSurface1* pSurface, mfxEncodeCtrl *p
 
     if(NULL != m_pRender)
     {
-         if ( m_components[eREN].m_SkippedFrames.size() > 0 )
-         {
+        if ( m_components[eREN].m_SkippedFrames.size() > 0 )
+        {
             if ( NULL == pControl)
             {
                 pControl = new mfxEncodeCtrl;
@@ -2895,24 +2917,24 @@ ComponentParams* MFXDecPipeline::GetComponentParams(vm_char SYM)
 {
     switch (tolower(SYM))
     {
-        case 'd':
+    case 'd':
         {
             return &m_components[eDEC];
         }
-        case 'v':
+    case 'v':
         {
             m_inParams.bUseVPP = true;
             return &m_components[eVPP];
         }
 
-        case 'r':
-        case 'e':
+    case 'r':
+    case 'e':
         {
             return &m_components[eREN];
         }
-        case 's':
-        default :
-            return NULL;
+    case 's':
+    default :
+        return NULL;
     }
 }
 
@@ -2966,17 +2988,17 @@ mfxStatus MFXDecPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI32 argc, 
             std::for_each(m_components.begin(), m_components.end(), mem_var_set(&ComponentParams::m_libType, (int)MFX_IMPL_SOFTWARE));
         }
         else if (0 != (nPattern = m_OptProc.Check(argv[0], VM_STRING("-hw( |:1|:2|:3|:4|:default)")
-                 , VM_STRING("use hardware-accelerated MediaSDK library (libmfxhw*.dll), also particular device id might be specified"))))
+            , VM_STRING("use hardware-accelerated MediaSDK library (libmfxhw*.dll), also particular device id might be specified"))))
         {
             mfxIMPL impl = MFX_IMPL_UNSUPPORTED;
             switch(nPattern)
             {
-                case 1 : impl = MFX_IMPL_HARDWARE_ANY;  break;
-                case 2 : impl = MFX_IMPL_HARDWARE; break;
-                case 3 : impl = MFX_IMPL_HARDWARE2; break;
-                case 4 : impl = MFX_IMPL_HARDWARE3; break;
-                case 5 : impl = MFX_IMPL_HARDWARE4; break;
-                case 6 : impl = MFX_IMPL_HARDWARE; break;
+            case 1 : impl = MFX_IMPL_HARDWARE_ANY;  break;
+            case 2 : impl = MFX_IMPL_HARDWARE; break;
+            case 3 : impl = MFX_IMPL_HARDWARE2; break;
+            case 4 : impl = MFX_IMPL_HARDWARE3; break;
+            case 5 : impl = MFX_IMPL_HARDWARE4; break;
+            case 6 : impl = MFX_IMPL_HARDWARE; break;
             }
             std::for_each(m_components.begin(), m_components.end(), mem_var_set(&ComponentParams::m_libType, impl));
         }
@@ -3002,7 +3024,7 @@ mfxStatus MFXDecPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI32 argc, 
             argv++;
         }
         else if (m_OptProc.Check(argv[0], VM_STRING("-InputFile|-i"), VM_STRING("input file"), OPT_FILENAME)||
-                 0!=(nPattern = m_OptProc.Check(argv[0], VM_STRING("-i:(")VM_STRING(MFX_FOURCC_PATTERN())VM_STRING(")"), VM_STRING("input file is raw YUV, or RGB color format"), OPT_FILENAME)))
+            0!=(nPattern = m_OptProc.Check(argv[0], VM_STRING("-i:(")VM_STRING(MFX_FOURCC_PATTERN())VM_STRING(")"), VM_STRING("input file is raw YUV, or RGB color format"), OPT_FILENAME)))
         {
             MFX_CHECK(1 + argv != argvEnd);
             argv++;
@@ -3023,371 +3045,376 @@ mfxStatus MFXDecPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI32 argc, 
 
             vm_string_strcpy_s(m_inParams.strSrcFile, MFX_ARRAY_SIZE(m_inParams.strSrcFile), argv[0]);
         }
-        else if (0!=(nPattern = m_OptProc.Check(argv[0], VM_STRING("-i:(h264|mpeg2|vc1|mvc|jpeg|hevc|hevc10b|vp8)"), VM_STRING("input stream is raw(non container), pipeline works without demuxing"), OPT_UNDEFINED)))
+        else if (0!=(nPattern = m_OptProc.Check(argv[0], VM_STRING("-i:(h264|mpeg2|vc1|mvc|jpeg|hevc|hevc10b|vp8|null)"), VM_STRING("input stream is raw(non container), pipeline works without demuxing"), OPT_UNDEFINED)))
         {
             MFX_CHECK(1 + argv != argvEnd);
-            argv++;
-            vm_string_strcpy_s(m_inParams.strSrcFile, MFX_ARRAY_SIZE(m_inParams.strSrcFile), argv[0]);
+            if (nPattern != 9)
+            {
+                argv++;
+                vm_string_strcpy_s(m_inParams.strSrcFile, MFX_ARRAY_SIZE(m_inParams.strSrcFile), argv[0]);
+            }
 
             switch (nPattern)
             {
-                case 1 :
-                    m_inParams.InputCodecType = MFX_CODEC_AVC;
-                    break;
-                case 2 :
-                    m_inParams.InputCodecType = MFX_CODEC_MPEG2;
-                    break;
-                case 3 :
-                    m_inParams.InputCodecType = MFX_CODEC_VC1;
-                    break;
-                case 4:
-                    m_inParams.InputCodecType = MFX_CODEC_AVC;
-                    m_components[eDEC].m_bForceMVCDetection = true;
-                    break;
-                case 5 :
-                    m_inParams.InputCodecType = MFX_CODEC_JPEG;
-                    break;
-                case 6 :
-                    m_inParams.InputCodecType = MFX_CODEC_HEVC;
-                    break;
-                case 7 :
-                    m_inParams.InputCodecType = MFX_CODEC_HEVC;
-                    m_inParams.FrameInfo.FourCC = MFX_FOURCC_P010;
-                    break;
-                case 8 :
-                    m_inParams.InputCodecType = MFX_CODEC_VP8;
-                    break;
+            case 1 :
+                m_inParams.InputCodecType = MFX_CODEC_AVC;
+                break;
+            case 2 :
+                m_inParams.InputCodecType = MFX_CODEC_MPEG2;
+                break;
+            case 3 :
+                m_inParams.InputCodecType = MFX_CODEC_VC1;
+                break;
+            case 4:
+                m_inParams.InputCodecType = MFX_CODEC_AVC;
+                m_components[eDEC].m_bForceMVCDetection = true;
+                break;
+            case 5 :
+                m_inParams.InputCodecType = MFX_CODEC_JPEG;
+                break;
+            case 6 :
+                m_inParams.InputCodecType = MFX_CODEC_HEVC;
+                break;
+            case 7 :
+                m_inParams.InputCodecType = MFX_CODEC_HEVC;
+                m_inParams.FrameInfo.FourCC = MFX_FOURCC_P010;
+                break;
+            case 8 :
+                m_inParams.InputCodecType = MFX_CODEC_VP8;
+            case 9:
+                m_inParams.InputCodecType = MFX_CODEC_CAPTURE;
+                break;
             }
         }
         else HANDLE_INT_OPTION(m_inParams.nLimitChunkSize, VM_STRING("-i:maxdatachunk"), VM_STRING("restrict file reading by special size"))
-        else if (0!=(nPattern = m_OptProc.Check(argv[0], VM_STRING("-i:maxbitrate"), VM_STRING("limit input bitrate"), OPT_SPECIAL, VM_STRING("bits/sec"))))
+    else if (0!=(nPattern = m_OptProc.Check(argv[0], VM_STRING("-i:maxbitrate"), VM_STRING("limit input bitrate"), OPT_SPECIAL, VM_STRING("bits/sec"))))
         {
             MFX_CHECK(1 + argv != argvEnd);
             MFX_PARSE_INT(m_inParams.nLimitFileReader, argv[1]);
             //conversion to bytes/sec
             m_inParams.nLimitFileReader >>= 3;
             argv++;
-        }
-        else if (m_OptProc.Check(argv[0], VM_STRING("-o:split"), VM_STRING("split outputfile every n-frames"), OPT_INT_32))
-        {
-            MFX_CHECK(1 + argv != argvEnd);
-            mfxU32 nSplitFrames;
-            MFX_PARSE_INT(nSplitFrames, argv[1]);
-            argv++;
+    }
+    else if (m_OptProc.Check(argv[0], VM_STRING("-o:split"), VM_STRING("split outputfile every n-frames"), OPT_INT_32))
+    {
+        MFX_CHECK(1 + argv != argvEnd);
+        mfxU32 nSplitFrames;
+        MFX_PARSE_INT(nSplitFrames, argv[1]);
+        argv++;
 
-            reopenFileCommand *pCmd = new reopenFileCommand(this);
-            MFX_CHECK_WITH_ERR(NULL != pCmd, MFX_ERR_MEMORY_ALLOC);
+        reopenFileCommand *pCmd = new reopenFileCommand(this);
+        MFX_CHECK_WITH_ERR(NULL != pCmd, MFX_ERR_MEMORY_ALLOC);
 
-            FrameBasedCommandActivator *pActivator = new FrameBasedCommandActivator (pCmd, this, true);
-            MFX_CHECK_WITH_ERR(NULL != pActivator, MFX_ERR_MEMORY_ALLOC);
+        FrameBasedCommandActivator *pActivator = new FrameBasedCommandActivator (pCmd, this, true);
+        MFX_CHECK_WITH_ERR(NULL != pActivator, MFX_ERR_MEMORY_ALLOC);
 
-            pActivator->SetExecuteFrameNumber(nSplitFrames);
-            m_commands.push_back(pActivator);
-            m_inParams.bUseSeparateFileWriter = true;
+        pActivator->SetExecuteFrameNumber(nSplitFrames);
+        m_commands.push_back(pActivator);
+        m_inParams.bUseSeparateFileWriter = true;
         }
-        else if ( 0!= (nPattern1 = m_OptProc.Check(argv[0], VM_STRING("-OutputFile|-o( |:multi)"), VM_STRING("output file. If Multiple flag specified new file will be created for each view"), OPT_FILENAME)) ||
-                  0!= (nPattern = m_OptProc.Check(argv[0], VM_STRING("-o:(bmp|")VM_STRING(MFX_FOURCC_PATTERN())VM_STRING(")"), VM_STRING("output file in NV12 ,YV12, RGB32 color format. Default is YV12"), OPT_FILENAME)))
-        {
-            MFX_CHECK(1 + argv != argvEnd);
-            argv++;
+    else if ( 0!= (nPattern1 = m_OptProc.Check(argv[0], VM_STRING("-OutputFile|-o( |:multi)"), VM_STRING("output file. If Multiple flag specified new file will be created for each view"), OPT_FILENAME)) ||
+        0!= (nPattern = m_OptProc.Check(argv[0], VM_STRING("-o:(bmp|")VM_STRING(MFX_FOURCC_PATTERN())VM_STRING(")"), VM_STRING("output file in NV12 ,YV12, RGB32 color format. Default is YV12"), OPT_FILENAME)))
+    {
+        MFX_CHECK(1 + argv != argvEnd);
+        argv++;
 
-            m_inParams.bMultiFiles = nPattern1 == 3;///-o:multiple is 3rd case
+        m_inParams.bMultiFiles = nPattern1 == 3;///-o:multiple is 3rd case
 
-            if (MFX_ERR_NONE != GetMFXFrameInfoFromFOURCCPatternIdx(nPattern - 1, m_inParams.outFrameInfo))
-            {
-                switch (nPattern)
-                {
-                    case 1:
-                    {
-                        m_inParams.outFrameInfo.FourCC = MFX_FOURCC_RGB4;
-                        m_inParams.outFrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV444;
-                        m_RenderType = MFX_BMP_RENDER;
-                        break;
-                    }
-                }
-            }
-
-            MFX_CHECK(0 == vm_string_strcpy_s(m_inParams.strDstFile, MFX_ARRAY_SIZE(m_inParams.strDstFile), argv[0]));
-
-            if (m_RenderType != MFX_METRIC_CHECK_RENDER&&
-                m_RenderType != MFX_ENC_RENDER &&
-                m_RenderType != MFX_OUTLINE_RENDER&&
-                m_RenderType != MFX_BMP_RENDER)
-            {
-                m_RenderType = MFX_FW_RENDER;
-            }
-        }
-        else HANDLE_BOOL_OPTION(m_inParams.bFullscreen,  VM_STRING("-fullscreen"), VM_STRING("Render in fullscreen"));
-        else if (m_OptProc.Check(argv[0], VM_STRING("-sys|-swfrbuf"), VM_STRING("video frames in system memory")))
+        if (MFX_ERR_NONE != GetMFXFrameInfoFromFOURCCPatternIdx(nPattern - 1, m_inParams.outFrameInfo))
         {
-            std::for_each(m_components.begin(), m_components.end(), mem_var_set(&ComponentParams::m_bufType, (int)MFX_BUF_SW));
-        }
-#ifdef D3D_SURFACES_SUPPORT
-        else if (m_OptProc.Check(argv[0], VM_STRING("-d3d|-hwfrbuf"), VM_STRING("video frames in D3D surfaces")))
-        {
-            std::for_each(m_components.begin(), m_components.end(), mem_var_set(&ComponentParams::m_bufType, MFX_BUF_HW));
-        }
-#endif
-#ifdef LIBVA_SUPPORT
-        else if (m_OptProc.Check(argv[0], VM_STRING("-d3d|-hwfrbuf"), VM_STRING("video frames in D3D surfaces")))
-        {
-            std::for_each(m_components.begin(), m_components.end(), mem_var_set(&ComponentParams::m_bufType, MFX_BUF_HW));
-        }
-        else if (m_OptProc.Check(argv[0], VM_STRING("-lva|-hwfrbuf"), VM_STRING("video frames in LVA surfaces")))
-        {
-            std::for_each(m_components.begin(), m_components.end(), mem_var_set(&ComponentParams::m_bufType, MFX_BUF_HW));
-        }
-#endif
-        else if (m_OptProc.Check(argv[0], VM_STRING("-d3d11"), VM_STRING("SW Mediasdk library will use external memory as d3d11. HW library additionaly will uses d3d11 interfaces internally")))
-        {
-            std::for_each(m_components.begin(), m_components.end(), mem_var_set(&ComponentParams::m_libType, (int)MFX_IMPL_VIA_D3D11));
-        }
-        else if (0 != (nPattern = m_OptProc.Check(argv[0], VM_STRING("-(d|dec:d|enc:d)3d11:single_texture"), VM_STRING("d3d11 allocator will use single texture model, instead of single subresource model for particular memory pool"))))
-        {
-            std::for_each(m_components.begin(), m_components.end(), mem_var_set(&ComponentParams::m_libType, (int)MFX_IMPL_VIA_D3D11));
             switch (nPattern)
             {
             case 1:
-                m_components[eDEC].m_bD3D11SingeTexture = true;
-                break;
-            case 2:
-                m_components[eREN].m_bD3D11SingeTexture = true;
-                break;
-            default:
-                std::for_each(m_components.begin(), m_components.end(), mem_var_set(&ComponentParams::m_bD3D11SingeTexture, true));
-            }
-        }
-        else if (m_OptProc.Check(argv[0], VM_STRING("-d3d9_feat"), VM_STRING("SW Mediasdk library will use d3d11 device with DX9 feature levels")))
-        {
-            std::for_each(m_components.begin(), m_components.end(), mem_var_set(&ComponentParams::m_bD39Feat, true));
-        }
-        else if (m_OptProc.Check(argv[0], VM_STRING("-opaq"), VM_STRING("Mediasdk will decide target memory for video frames. It is D3D or system memory")))
-        {
-            std::for_each(m_components.begin(), m_components.end(), mem_var_set(&ComponentParams::m_bufType, MFX_BUF_OPAQ));
-        }
-        else if (m_OptProc.Check(argv[0], VM_STRING("-NumberFrames|-n"), VM_STRING("number frames to process"), OPT_UINT_32))
-        {
-            MFX_CHECK(1 + argv != argvEnd);
-            argv++;
-            MFX_PARSE_INT(m_inParams.nFrames,argv[0]);
-        }
-        else if (m_OptProc.Check(argv[0], VM_STRING("-width|-w"), VM_STRING("video width,  forces to treat InputFile as YUV, in specific color format specified by -i option, default is YUV420"), OPT_UINT_32))
-        {
-            MFX_CHECK(1 + argv != argvEnd);
-            MFX_PARSE_INT(m_inParams.FrameInfo.Width, argv[1]);
-            argv++;
-            m_inParams.bYuvReaderMode = true;
-        }
-        else if (m_OptProc.Check(argv[0], VM_STRING("-height|-h"), VM_STRING("video height, forces to treat InputFile as YUV, in specific color format specified by -i option, default is YUV420"), OPT_UINT_32))
-        {
-            MFX_CHECK(1 + argv != argvEnd);
-            MFX_PARSE_INT(m_inParams.FrameInfo.Height, argv[1]);
-            argv++;
-            m_inParams.bYuvReaderMode = true;
-        }
-        else if (m_OptProc.Check(argv[0], VM_STRING("-async"), VM_STRING("maximum number of asynchronious tasks"), OPT_INT_32))
-        {
-            MFX_CHECK(1 + argv != argvEnd);
-            mfxU16 asyncLevel = 0;
-            MFX_PARSE_INT(asyncLevel, argv[1]);
-            std::for_each(m_components.begin(), m_components.end(), mem_var_set(&ComponentParams::m_nMaxAsync, asyncLevel));
-            //SET_GLOBAL_PARAM(m_nMaxAsync, (mfxU16)vm_string_atoi(argv[1]));
-            argv++;
-        }
-        else if (m_OptProc.Check(argv[0], VM_STRING("-NumThread|-t"), VM_STRING("number of threads"), OPT_INT_32))
-        {
-            MFX_CHECK(1 + argv != argvEnd);
-
-            mfxU16 nThreads = 0;
-            MFX_PARSE_INT(nThreads, argv[1]);
-            std::for_each(m_components.begin(), m_components.end(), mem_var_set(&ComponentParams::m_NumThread, nThreads));
-
-            //SET_GLOBAL_PARAM(m_NumThread, (mfxU16)vm_string_atoi(argv[1]));
-            argv++;
-        }
-#ifdef D3D_SURFACES_SUPPORT
-        else if (m_OptProc.Check(argv[0], VM_STRING("-dump"), VM_STRING("dump DXVA2 VLD decode buffers into text file"), OPT_FILENAME))
-        {
-            MFX_CHECK(1 + argv != argvEnd);
-            m_inParams.bDXVA2Dump = true;
-            argv++;
-            { // convert vm_char to char
-                char dir[MAX_PATH];
-                char *pDir = dir;
-#ifdef UNICODE
-                wcstombs(dir, argv[0], 1 + vm_string_strlen(argv[0]));
-#else
-                pDir = argv[0];
-#endif
-                SetDumpingDirectory(pDir);
-            }
-        }
-#endif // #ifdef D3D_SURFACES_SUPPORT
-        else if (m_OptProc.Check(argv[0], VM_STRING("-dll"), VM_STRING("load specific library instead of dxva2.dll (for LRB Windows emulator)"), OPT_FILENAME))
-        {
-            MFX_CHECK(1 + argv != argvEnd);
-            argv++;
-            if (sizeof(void*) == 8) // this option is used for dxvaencode_emu.dll which available in 64-bit version only
-            {
-                MFX_CHECK(0 == vm_string_strcpy_s(m_inParams.dxva2DllName, MFX_ARRAY_SIZE(m_inParams.dxva2DllName), argv[0]));
-            }
-        }
-        else if (m_OptProc.Check(argv[0], VM_STRING("-created3d"), VM_STRING("force to create D3D device manager in application and pass to MediaSDK")))
-        {
-            m_inParams.bCreateD3D = true;
-        }
-        else if (m_OptProc.Check(argv[0], VM_STRING("-dec:custom"), VM_STRING("use Intel custom GUIDs for HW decoding")))
-        {
-            m_inParams.m_ExtOptions |= MFX_EXTOPTION_DEC_CUSTOM_GUID;
-        }
-        else if (m_OptProc.Check(argv[0], VM_STRING("-dec:standard"), VM_STRING("use standard GUIDs for HW decoding")))
-        {
-            m_inParams.m_ExtOptions |= MFX_EXTOPTION_DEC_STANDARD_GUID;
-        }
-        else if (m_OptProc.Check(argv[0], VM_STRING("-vpp:sw_strict"), VM_STRING("force VPP to SW version (even if libmfxhw library)")))
-        {
-            m_inParams.m_ExtOptions |= MFX_EXTOPTION_VPP_SW;
-        }
-        else if (m_OptProc.Check(argv[0], VM_STRING("-vpp:blt"), VM_STRING("force VPP to use BLT interface")))
-        {
-            m_inParams.m_ExtOptions |= MFX_EXTOPTION_VPP_BLT;
-        }
-        else if (m_OptProc.Check(argv[0], VM_STRING("-vpp:fastcomp"), VM_STRING("force VPP to use FastComposite interface")))
-        {
-            m_inParams.m_ExtOptions |= MFX_EXTOPTION_VPP_FASTCOMP;
-        }
-        else if (m_OptProc.Check(argv[0], VM_STRING("-dec:noExtPicstruct"), VM_STRING("prevents decoder from generating extended picstruct codes")))
-        {
-            m_inParams.bNoExtPicstruct = true;
-        }
-        else if (m_OptProc.Check(argv[0], VM_STRING("-vpp:enable"), VM_STRING("enable VPP")))
-        {
-            m_inParams.bUseVPP = true;
-        }
-        else if (m_OptProc.Check(argv[0], VM_STRING("-dec:sw"), VM_STRING("Use MediaSDK SW library for decode")) ||
-                 m_OptProc.Check(argv[0], VM_STRING("-vpp:sw"), VM_STRING("Use MediaSDK SW library for post/pre-processing")) ||
-                 m_OptProc.Check(argv[0], VM_STRING("-enc:sw"), VM_STRING("Use MediaSDK SW library for encode")) ||
-                 m_OptProc.Check(argv[0], VM_STRING("-dec:hw"), VM_STRING("Use MediaSDK HW library for decode")) ||
-                 m_OptProc.Check(argv[0], VM_STRING("-vpp:hw"), VM_STRING("Use MediaSDK HW library for post/pre-processing")) ||
-                 m_OptProc.Check(argv[0], VM_STRING("-enc:hw"), VM_STRING("Use MediaSDK HW library for encode")) ||
-                 m_OptProc.Check(argv[0], VM_STRING("-dec:hw_strict"), VM_STRING("Ensure HW-accelerated decode (fail otherwise)")) ||
-                 m_OptProc.Check(argv[0], VM_STRING("-vpp:hw_strict"), VM_STRING("Ensure HW-accelerated post/pre-processing (fail otherwise)")) ||
-                 m_OptProc.Check(argv[0], VM_STRING("-enc:hw_strict"), VM_STRING("Ensure HW-accelerated encode (fail otherwise)")) ||
-                 m_OptProc.Check(argv[0], VM_STRING("-dec:async"), VM_STRING("maximum number of Decode asynchronous tasks"), OPT_INT_32) ||
-                 m_OptProc.Check(argv[0], VM_STRING("-vpp:async"), VM_STRING("maximum number of VPP    asynchronous tasks"), OPT_INT_32) ||
-                 m_OptProc.Check(argv[0], VM_STRING("-enc:async"), VM_STRING("maximum number of Encode asynchronous tasks"), OPT_INT_32)||
-                 m_OptProc.Check(argv[0], VM_STRING("-(spl|dec|vpp|enc):pts"), VM_STRING("prints component timestamps"))||
-                 m_OptProc.Check(argv[0], VM_STRING("-dec:fr"), VM_STRING("specifies constant frame rate for the whole pipeline(equals to -f)"))||
-                 m_OptProc.Check(argv[0], VM_STRING("-vpp:fr"), VM_STRING("do FRC from framerate of input stream to specified value(equals to -frc)"))||
-                 m_OptProc.Check(argv[0], VM_STRING("-dec:picstruct"), VM_STRING("overrides picture structure for decoder output surface 0=progressive, 1=tff, 2=bff, 3=field tff, 4=field bff"))||
-                 m_OptProc.Check(argv[0], VM_STRING("-vpp:picstruct"), VM_STRING("overrides picture structure for VPP output surface 0=progressive, 1=tff, 2=bff, 3=field tff, 4=field bff"))||
-                 m_OptProc.Check(argv[0], VM_STRING("-dec:async_depth"), VM_STRING("fills mfxVideoParam.AsyncDepth to specified value in decoder.QueryIOSurface request"), OPT_INT_32)||
-                 m_OptProc.Check(argv[0], VM_STRING("-vpp:async_depth"), VM_STRING("fills mfxVideoParam.AsyncDepth to specified value in vpp.QueryIOSurface request"), OPT_INT_32)||
-                 m_OptProc.Check(argv[0], VM_STRING("-enc:async_depth"), VM_STRING("fills mfxVideoParam.AsyncDepth to specified value in encoder.QueryIOSurface request"), OPT_INT_32)||
-                 m_OptProc.Check(argv[0], VM_STRING("-spl:print_frame_type"), VM_STRING("traces frame types for splitted frames")) ||
-                 m_OptProc.Check(argv[0], VM_STRING("-(dec|vpp|enc):latency"), VM_STRING("prints latency for specific Mediasdk component"), OPT_BOOL)||
-                 m_OptProc.Check(argv[0], VM_STRING("-(dec|vpp|enc):drop_frames"), VM_STRING("drop n frames in end of interval before corresponding component"), OPT_SPECIAL, VM_STRING("DROP INTERVAL"))||
-                 (0 != (nPattern = m_OptProc.Check(argv[0],
-                    VM_STRING("-dec:(")VM_STRING(MFX_FOURCC_PATTERN()VM_STRING(")")),
-                    VM_STRING("output fourcc, valid only for YUV input"), OPT_INT_32)))||
-                 (0 != (nPattern = m_OptProc.Check(argv[0],
-                    VM_STRING("-enc:(")VM_STRING(MFX_FOURCC_PATTERN()VM_STRING(")")),
-                    VM_STRING("output fourcc, valid only for YUV input"), OPT_INT_32))))
-        {
-
-            //ComponentParams *pParam = NULL;
-            vm_char *sub_option = argv[0] + 5;
-            bool *pbPrintTimeStamp;
-
-            ComponentsContainer::iterator component;
-            component = std::find_if(m_components.begin(), m_components.end(),
-                std::bind2nd(mem_var_isequal<ComponentParams, tstring>(&ComponentParams::m_ShortName), tstring(argv[0]).substr(1, 3)));
-
-            //component = std::find_if(m_components.begin(), m_components.end(), std::bind2nd(NameEqual<ComponentParams>(), tstring(argv[0]+ 1).substr(0,3)));
-            //GetComponentParams(pParam, argv[0][1]);
-
-            if (component == m_components.end()  /*'s' == argv[0][1]*/)
-            {
-                pbPrintTimeStamp = &m_inParams.bPrintSplTimeStamps;
-            }else
-            {
-                pbPrintTimeStamp = &component->m_bPrintTimeStamps;
-            }
-
-            if (!vm_string_stricmp(sub_option, VM_STRING("picstruct")))
-            {
-                MFX_CHECK(1 + argv != argvEnd);
-                argv++;
-
-                component->m_bOverPS = true;
-                mfxI32 nCmdPS;
-                MFX_PARSE_INT(nCmdPS, argv[0]);
-                component->m_nOverPS = Convert_CmdPS_to_MFXPS(nCmdPS);
-                component->m_extCO   = Convert_CmdPS_to_ExtCO(nCmdPS);
-            }
-            else if (!vm_string_stricmp(sub_option, VM_STRING("sw")))
-            {
-                component->m_libType = MFX_IMPL_SOFTWARE;
-            }
-            else if (!vm_string_stricmp(sub_option, VM_STRING("hw")))
-            {
-                component->m_libType = MFX_IMPL_HARDWARE;
-            }
-            else if (!vm_string_stricmp(sub_option, VM_STRING("hw_strict")))
-            {
-                component->m_libType = MFX_IMPL_HARDWARE;
-                component->m_bHWStrict = true;
-            }
-            else if (!vm_string_stricmp(sub_option, VM_STRING("async")))
-            {
-                MFX_CHECK(1 + argv != argvEnd);
-                argv++;
-                component->m_nMaxAsync = (mfxU16)vm_string_atoi(argv[0]);
-            }
-            else if (!vm_string_stricmp(sub_option, VM_STRING("pts")))
-            {
-                *pbPrintTimeStamp = true;
-                PipelineSetFrameTrace(false);
-            }
-            else if (!vm_string_stricmp(sub_option, VM_STRING("fr")))
-            {
-                MFX_CHECK(1 + argv != argvEnd);
-                argv++;
-                MFX_PARSE_DOUBLE(component->m_fFrameRate, argv[0]);
-            }
-            else if (!vm_string_stricmp(sub_option, VM_STRING("async_depth")))
-            {
-                MFX_CHECK(1 + argv != argvEnd);
-                MFX_PARSE_INT(component->m_params.AsyncDepth, argv[1]);
-                argv++;
-            }else if (!vm_string_stricmp(sub_option, VM_STRING("latency")))
-            {
-                component->m_bCalcLatency = true;
-            }else if (!vm_string_stricmp(sub_option, VM_STRING("drop_frames")))
-            {
-                MFX_CHECK(2 + argv < argvEnd);
-                MFX_PARSE_INT(component->m_nDropCount, argv[1]);
-                MFX_PARSE_INT(component->m_nDropCyle, argv[2]);
-                argv += 2;
-            }
-            else if (nPattern)
-            {
-                mfxFrameInfo info;
-                if (MFX_ERR_NONE == GetMFXFrameInfoFromFOURCCPatternIdx(nPattern, info))
                 {
-                    component->m_params.mfx.FrameInfo.FourCC       = info.FourCC;
-                    component->m_params.mfx.FrameInfo.ChromaFormat = info.ChromaFormat;
+                    m_inParams.outFrameInfo.FourCC = MFX_FOURCC_RGB4;
+                    m_inParams.outFrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV444;
+                    m_RenderType = MFX_BMP_RENDER;
+                    break;
                 }
             }
         }
-        else HANDLE_64F_OPTION(m_components[eDEC].m_fFrameRate, VM_STRING("-FrameRate|-f"), VM_STRING("video framerate (frames per second), used for encoding from yuv files"))
+
+        MFX_CHECK(0 == vm_string_strcpy_s(m_inParams.strDstFile, MFX_ARRAY_SIZE(m_inParams.strDstFile), argv[0]));
+
+        if (m_RenderType != MFX_METRIC_CHECK_RENDER&&
+            m_RenderType != MFX_ENC_RENDER &&
+            m_RenderType != MFX_OUTLINE_RENDER&&
+            m_RenderType != MFX_BMP_RENDER)
+        {
+            m_RenderType = MFX_FW_RENDER;
+        }
+    }
+    else HANDLE_BOOL_OPTION(m_inParams.bFullscreen,  VM_STRING("-fullscreen"), VM_STRING("Render in fullscreen"));
+    else if (m_OptProc.Check(argv[0], VM_STRING("-sys|-swfrbuf"), VM_STRING("video frames in system memory")))
+    {
+        std::for_each(m_components.begin(), m_components.end(), mem_var_set(&ComponentParams::m_bufType, (int)MFX_BUF_SW));
+    }
+#ifdef D3D_SURFACES_SUPPORT
+    else if (m_OptProc.Check(argv[0], VM_STRING("-d3d|-hwfrbuf"), VM_STRING("video frames in D3D surfaces")))
+    {
+        std::for_each(m_components.begin(), m_components.end(), mem_var_set(&ComponentParams::m_bufType, MFX_BUF_HW));
+    }
+#endif
+#ifdef LIBVA_SUPPORT
+    else if (m_OptProc.Check(argv[0], VM_STRING("-d3d|-hwfrbuf"), VM_STRING("video frames in D3D surfaces")))
+    {
+        std::for_each(m_components.begin(), m_components.end(), mem_var_set(&ComponentParams::m_bufType, MFX_BUF_HW));
+    }
+    else if (m_OptProc.Check(argv[0], VM_STRING("-lva|-hwfrbuf"), VM_STRING("video frames in LVA surfaces")))
+    {
+        std::for_each(m_components.begin(), m_components.end(), mem_var_set(&ComponentParams::m_bufType, MFX_BUF_HW));
+    }
+#endif
+    else if (m_OptProc.Check(argv[0], VM_STRING("-d3d11"), VM_STRING("SW Mediasdk library will use external memory as d3d11. HW library additionaly will uses d3d11 interfaces internally")))
+    {
+        std::for_each(m_components.begin(), m_components.end(), mem_var_set(&ComponentParams::m_libType, (int)MFX_IMPL_VIA_D3D11));
+    }
+    else if (0 != (nPattern = m_OptProc.Check(argv[0], VM_STRING("-(d|dec:d|enc:d)3d11:single_texture"), VM_STRING("d3d11 allocator will use single texture model, instead of single subresource model for particular memory pool"))))
+    {
+        std::for_each(m_components.begin(), m_components.end(), mem_var_set(&ComponentParams::m_libType, (int)MFX_IMPL_VIA_D3D11));
+        switch (nPattern)
+        {
+        case 1:
+            m_components[eDEC].m_bD3D11SingeTexture = true;
+            break;
+        case 2:
+            m_components[eREN].m_bD3D11SingeTexture = true;
+            break;
+        default:
+            std::for_each(m_components.begin(), m_components.end(), mem_var_set(&ComponentParams::m_bD3D11SingeTexture, true));
+        }
+    }
+    else if (m_OptProc.Check(argv[0], VM_STRING("-d3d9_feat"), VM_STRING("SW Mediasdk library will use d3d11 device with DX9 feature levels")))
+    {
+        std::for_each(m_components.begin(), m_components.end(), mem_var_set(&ComponentParams::m_bD39Feat, true));
+    }
+    else if (m_OptProc.Check(argv[0], VM_STRING("-opaq"), VM_STRING("Mediasdk will decide target memory for video frames. It is D3D or system memory")))
+    {
+        std::for_each(m_components.begin(), m_components.end(), mem_var_set(&ComponentParams::m_bufType, MFX_BUF_OPAQ));
+    }
+    else if (m_OptProc.Check(argv[0], VM_STRING("-NumberFrames|-n"), VM_STRING("number frames to process"), OPT_UINT_32))
+    {
+        MFX_CHECK(1 + argv != argvEnd);
+        argv++;
+        MFX_PARSE_INT(m_inParams.nFrames,argv[0]);
+    }
+    else if (m_OptProc.Check(argv[0], VM_STRING("-width|-w"), VM_STRING("video width,  forces to treat InputFile as YUV, in specific color format specified by -i option, default is YUV420"), OPT_UINT_32))
+    {
+        MFX_CHECK(1 + argv != argvEnd);
+        MFX_PARSE_INT(m_inParams.FrameInfo.Width, argv[1]);
+        argv++;
+        m_inParams.bYuvReaderMode = true;
+    }
+    else if (m_OptProc.Check(argv[0], VM_STRING("-height|-h"), VM_STRING("video height, forces to treat InputFile as YUV, in specific color format specified by -i option, default is YUV420"), OPT_UINT_32))
+    {
+        MFX_CHECK(1 + argv != argvEnd);
+        MFX_PARSE_INT(m_inParams.FrameInfo.Height, argv[1]);
+        argv++;
+        m_inParams.bYuvReaderMode = true;
+    }
+    else if (m_OptProc.Check(argv[0], VM_STRING("-async"), VM_STRING("maximum number of asynchronious tasks"), OPT_INT_32))
+    {
+        MFX_CHECK(1 + argv != argvEnd);
+        mfxU16 asyncLevel = 0;
+        MFX_PARSE_INT(asyncLevel, argv[1]);
+        std::for_each(m_components.begin(), m_components.end(), mem_var_set(&ComponentParams::m_nMaxAsync, asyncLevel));
+        //SET_GLOBAL_PARAM(m_nMaxAsync, (mfxU16)vm_string_atoi(argv[1]));
+        argv++;
+    }
+    else if (m_OptProc.Check(argv[0], VM_STRING("-NumThread|-t"), VM_STRING("number of threads"), OPT_INT_32))
+    {
+        MFX_CHECK(1 + argv != argvEnd);
+
+        mfxU16 nThreads = 0;
+        MFX_PARSE_INT(nThreads, argv[1]);
+        std::for_each(m_components.begin(), m_components.end(), mem_var_set(&ComponentParams::m_NumThread, nThreads));
+
+        //SET_GLOBAL_PARAM(m_NumThread, (mfxU16)vm_string_atoi(argv[1]));
+        argv++;
+    }
+#ifdef D3D_SURFACES_SUPPORT
+    else if (m_OptProc.Check(argv[0], VM_STRING("-dump"), VM_STRING("dump DXVA2 VLD decode buffers into text file"), OPT_FILENAME))
+    {
+        MFX_CHECK(1 + argv != argvEnd);
+        m_inParams.bDXVA2Dump = true;
+        argv++;
+        { // convert vm_char to char
+            char dir[MAX_PATH];
+            char *pDir = dir;
+#ifdef UNICODE
+            wcstombs(dir, argv[0], 1 + vm_string_strlen(argv[0]));
+#else
+            pDir = argv[0];
+#endif
+            SetDumpingDirectory(pDir);
+        }
+    }
+#endif // #ifdef D3D_SURFACES_SUPPORT
+    else if (m_OptProc.Check(argv[0], VM_STRING("-dll"), VM_STRING("load specific library instead of dxva2.dll (for LRB Windows emulator)"), OPT_FILENAME))
+    {
+        MFX_CHECK(1 + argv != argvEnd);
+        argv++;
+        if (sizeof(void*) == 8) // this option is used for dxvaencode_emu.dll which available in 64-bit version only
+        {
+            MFX_CHECK(0 == vm_string_strcpy_s(m_inParams.dxva2DllName, MFX_ARRAY_SIZE(m_inParams.dxva2DllName), argv[0]));
+        }
+    }
+    else if (m_OptProc.Check(argv[0], VM_STRING("-created3d"), VM_STRING("force to create D3D device manager in application and pass to MediaSDK")))
+    {
+        m_inParams.bCreateD3D = true;
+    }
+    else if (m_OptProc.Check(argv[0], VM_STRING("-dec:custom"), VM_STRING("use Intel custom GUIDs for HW decoding")))
+    {
+        m_inParams.m_ExtOptions |= MFX_EXTOPTION_DEC_CUSTOM_GUID;
+    }
+    else if (m_OptProc.Check(argv[0], VM_STRING("-dec:standard"), VM_STRING("use standard GUIDs for HW decoding")))
+    {
+        m_inParams.m_ExtOptions |= MFX_EXTOPTION_DEC_STANDARD_GUID;
+    }
+    else if (m_OptProc.Check(argv[0], VM_STRING("-vpp:sw_strict"), VM_STRING("force VPP to SW version (even if libmfxhw library)")))
+    {
+        m_inParams.m_ExtOptions |= MFX_EXTOPTION_VPP_SW;
+    }
+    else if (m_OptProc.Check(argv[0], VM_STRING("-vpp:blt"), VM_STRING("force VPP to use BLT interface")))
+    {
+        m_inParams.m_ExtOptions |= MFX_EXTOPTION_VPP_BLT;
+    }
+    else if (m_OptProc.Check(argv[0], VM_STRING("-vpp:fastcomp"), VM_STRING("force VPP to use FastComposite interface")))
+    {
+        m_inParams.m_ExtOptions |= MFX_EXTOPTION_VPP_FASTCOMP;
+    }
+    else if (m_OptProc.Check(argv[0], VM_STRING("-dec:noExtPicstruct"), VM_STRING("prevents decoder from generating extended picstruct codes")))
+    {
+        m_inParams.bNoExtPicstruct = true;
+    }
+    else if (m_OptProc.Check(argv[0], VM_STRING("-vpp:enable"), VM_STRING("enable VPP")))
+    {
+        m_inParams.bUseVPP = true;
+    }
+    else if (m_OptProc.Check(argv[0], VM_STRING("-dec:sw"), VM_STRING("Use MediaSDK SW library for decode")) ||
+        m_OptProc.Check(argv[0], VM_STRING("-vpp:sw"), VM_STRING("Use MediaSDK SW library for post/pre-processing")) ||
+        m_OptProc.Check(argv[0], VM_STRING("-enc:sw"), VM_STRING("Use MediaSDK SW library for encode")) ||
+        m_OptProc.Check(argv[0], VM_STRING("-dec:hw"), VM_STRING("Use MediaSDK HW library for decode")) ||
+        m_OptProc.Check(argv[0], VM_STRING("-vpp:hw"), VM_STRING("Use MediaSDK HW library for post/pre-processing")) ||
+        m_OptProc.Check(argv[0], VM_STRING("-enc:hw"), VM_STRING("Use MediaSDK HW library for encode")) ||
+        m_OptProc.Check(argv[0], VM_STRING("-dec:hw_strict"), VM_STRING("Ensure HW-accelerated decode (fail otherwise)")) ||
+        m_OptProc.Check(argv[0], VM_STRING("-vpp:hw_strict"), VM_STRING("Ensure HW-accelerated post/pre-processing (fail otherwise)")) ||
+        m_OptProc.Check(argv[0], VM_STRING("-enc:hw_strict"), VM_STRING("Ensure HW-accelerated encode (fail otherwise)")) ||
+        m_OptProc.Check(argv[0], VM_STRING("-dec:async"), VM_STRING("maximum number of Decode asynchronous tasks"), OPT_INT_32) ||
+        m_OptProc.Check(argv[0], VM_STRING("-vpp:async"), VM_STRING("maximum number of VPP    asynchronous tasks"), OPT_INT_32) ||
+        m_OptProc.Check(argv[0], VM_STRING("-enc:async"), VM_STRING("maximum number of Encode asynchronous tasks"), OPT_INT_32)||
+        m_OptProc.Check(argv[0], VM_STRING("-(spl|dec|vpp|enc):pts"), VM_STRING("prints component timestamps"))||
+        m_OptProc.Check(argv[0], VM_STRING("-dec:fr"), VM_STRING("specifies constant frame rate for the whole pipeline(equals to -f)"))||
+        m_OptProc.Check(argv[0], VM_STRING("-vpp:fr"), VM_STRING("do FRC from framerate of input stream to specified value(equals to -frc)"))||
+        m_OptProc.Check(argv[0], VM_STRING("-dec:picstruct"), VM_STRING("overrides picture structure for decoder output surface 0=progressive, 1=tff, 2=bff, 3=field tff, 4=field bff"))||
+        m_OptProc.Check(argv[0], VM_STRING("-vpp:picstruct"), VM_STRING("overrides picture structure for VPP output surface 0=progressive, 1=tff, 2=bff, 3=field tff, 4=field bff"))||
+        m_OptProc.Check(argv[0], VM_STRING("-dec:async_depth"), VM_STRING("fills mfxVideoParam.AsyncDepth to specified value in decoder.QueryIOSurface request"), OPT_INT_32)||
+        m_OptProc.Check(argv[0], VM_STRING("-vpp:async_depth"), VM_STRING("fills mfxVideoParam.AsyncDepth to specified value in vpp.QueryIOSurface request"), OPT_INT_32)||
+        m_OptProc.Check(argv[0], VM_STRING("-enc:async_depth"), VM_STRING("fills mfxVideoParam.AsyncDepth to specified value in encoder.QueryIOSurface request"), OPT_INT_32)||
+        m_OptProc.Check(argv[0], VM_STRING("-spl:print_frame_type"), VM_STRING("traces frame types for splitted frames")) ||
+        m_OptProc.Check(argv[0], VM_STRING("-(dec|vpp|enc):latency"), VM_STRING("prints latency for specific Mediasdk component"), OPT_BOOL)||
+        m_OptProc.Check(argv[0], VM_STRING("-(dec|vpp|enc):drop_frames"), VM_STRING("drop n frames in end of interval before corresponding component"), OPT_SPECIAL, VM_STRING("DROP INTERVAL"))||
+        (0 != (nPattern = m_OptProc.Check(argv[0],
+        VM_STRING("-dec:(")VM_STRING(MFX_FOURCC_PATTERN()VM_STRING(")")),
+        VM_STRING("output fourcc, valid only for YUV input"), OPT_INT_32)))||
+        (0 != (nPattern = m_OptProc.Check(argv[0],
+        VM_STRING("-enc:(")VM_STRING(MFX_FOURCC_PATTERN()VM_STRING(")")),
+        VM_STRING("output fourcc, valid only for YUV input"), OPT_INT_32))))
+    {
+
+        //ComponentParams *pParam = NULL;
+        vm_char *sub_option = argv[0] + 5;
+        bool *pbPrintTimeStamp;
+
+        ComponentsContainer::iterator component;
+        component = std::find_if(m_components.begin(), m_components.end(),
+            std::bind2nd(mem_var_isequal<ComponentParams, tstring>(&ComponentParams::m_ShortName), tstring(argv[0]).substr(1, 3)));
+
+        //component = std::find_if(m_components.begin(), m_components.end(), std::bind2nd(NameEqual<ComponentParams>(), tstring(argv[0]+ 1).substr(0,3)));
+        //GetComponentParams(pParam, argv[0][1]);
+
+        if (component == m_components.end()  /*'s' == argv[0][1]*/)
+        {
+            pbPrintTimeStamp = &m_inParams.bPrintSplTimeStamps;
+        }else
+        {
+            pbPrintTimeStamp = &component->m_bPrintTimeStamps;
+        }
+
+        if (!vm_string_stricmp(sub_option, VM_STRING("picstruct")))
+        {
+            MFX_CHECK(1 + argv != argvEnd);
+            argv++;
+
+            component->m_bOverPS = true;
+            mfxI32 nCmdPS;
+            MFX_PARSE_INT(nCmdPS, argv[0]);
+            component->m_nOverPS = Convert_CmdPS_to_MFXPS(nCmdPS);
+            component->m_extCO   = Convert_CmdPS_to_ExtCO(nCmdPS);
+        }
+        else if (!vm_string_stricmp(sub_option, VM_STRING("sw")))
+        {
+            component->m_libType = MFX_IMPL_SOFTWARE;
+        }
+        else if (!vm_string_stricmp(sub_option, VM_STRING("hw")))
+        {
+            component->m_libType = MFX_IMPL_HARDWARE;
+        }
+        else if (!vm_string_stricmp(sub_option, VM_STRING("hw_strict")))
+        {
+            component->m_libType = MFX_IMPL_HARDWARE;
+            component->m_bHWStrict = true;
+        }
+        else if (!vm_string_stricmp(sub_option, VM_STRING("async")))
+        {
+            MFX_CHECK(1 + argv != argvEnd);
+            argv++;
+            component->m_nMaxAsync = (mfxU16)vm_string_atoi(argv[0]);
+        }
+        else if (!vm_string_stricmp(sub_option, VM_STRING("pts")))
+        {
+            *pbPrintTimeStamp = true;
+            PipelineSetFrameTrace(false);
+        }
+        else if (!vm_string_stricmp(sub_option, VM_STRING("fr")))
+        {
+            MFX_CHECK(1 + argv != argvEnd);
+            argv++;
+            MFX_PARSE_DOUBLE(component->m_fFrameRate, argv[0]);
+        }
+        else if (!vm_string_stricmp(sub_option, VM_STRING("async_depth")))
+        {
+            MFX_CHECK(1 + argv != argvEnd);
+            MFX_PARSE_INT(component->m_params.AsyncDepth, argv[1]);
+            argv++;
+        }else if (!vm_string_stricmp(sub_option, VM_STRING("latency")))
+        {
+            component->m_bCalcLatency = true;
+        }else if (!vm_string_stricmp(sub_option, VM_STRING("drop_frames")))
+        {
+            MFX_CHECK(2 + argv < argvEnd);
+            MFX_PARSE_INT(component->m_nDropCount, argv[1]);
+            MFX_PARSE_INT(component->m_nDropCyle, argv[2]);
+            argv += 2;
+        }
+        else if (nPattern)
+        {
+            mfxFrameInfo info;
+            if (MFX_ERR_NONE == GetMFXFrameInfoFromFOURCCPatternIdx(nPattern, info))
+            {
+                component->m_params.mfx.FrameInfo.FourCC       = info.FourCC;
+                component->m_params.mfx.FrameInfo.ChromaFormat = info.ChromaFormat;
+            }
+        }
+    }
+    else HANDLE_64F_OPTION(m_components[eDEC].m_fFrameRate, VM_STRING("-FrameRate|-f"), VM_STRING("video framerate (frames per second), used for encoding from yuv files"))
         else HANDLE_64F_OPTION(m_components[eVPP].m_fFrameRate, VM_STRING("-frc"), VM_STRING("do FRC from framerate of input stream to specified value"))
         else HANDLE_INT_OPTION(m_inParams.nAdvanceFRCAlgorithm, VM_STRING("-afrc"), VM_STRING("specifies algorithm for advanced frc(1=PRESERVE_TIMESTAMP, 2=DISTRIBUTED_TIMESTAMP"))
         else HANDLE_INT_OPTION(m_inParams.nDecodeInAdvance, VM_STRING("-dec:advance"), VM_STRING("decode specified number frames in advance before passing to VPP/Encode"))
         else if (0 != (nPattern  = m_OptProc.Check(argv[0], VM_STRING("-(dec|vpp|enc):sys"),  VM_STRING("Use system memory for decoder,or VPP output frames"))) ||
-                 0 != (nPattern1 = m_OptProc.Check(argv[0], VM_STRING("-(dec|vpp|enc):d3d"),  VM_STRING("Use D3D for decoder,or VPP output frames"))) ||
-                 0 != (nPattern2 = m_OptProc.Check(argv[0], VM_STRING("-(dec|vpp|enc):d3d11"),  VM_STRING("Use D3D11 for decoder,or VPP output frames"))) ||
-                 0 != (nPattern3 = m_OptProc.Check(argv[0], VM_STRING("-(dec|vpp|enc):opaq"), VM_STRING("Mediasdk selects prefered memory for decoder,or VPP output frames"))))
+        0 != (nPattern1 = m_OptProc.Check(argv[0], VM_STRING("-(dec|vpp|enc):d3d"),  VM_STRING("Use D3D for decoder,or VPP output frames"))) ||
+        0 != (nPattern2 = m_OptProc.Check(argv[0], VM_STRING("-(dec|vpp|enc):d3d11"),  VM_STRING("Use D3D11 for decoder,or VPP output frames"))) ||
+        0 != (nPattern3 = m_OptProc.Check(argv[0], VM_STRING("-(dec|vpp|enc):opaq"), VM_STRING("Mediasdk selects prefered memory for decoder,or VPP output frames"))))
         {
             // encoder output frames are always system memory
 
@@ -3407,7 +3434,7 @@ mfxStatus MFXDecPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI32 argc, 
             if (m_components.end() != component)
             {
                 component->m_bufType = bType;
-              //  pParam->m_bExternalAlloc = false;
+                //  pParam->m_bExternalAlloc = false;
             }
         }
         else if (m_OptProc.Check(argv[0], VM_STRING("-nv12"), VM_STRING("use surfaces with nv12 color format")))
@@ -3481,8 +3508,8 @@ mfxStatus MFXDecPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI32 argc, 
             m_RenderType = MFX_METRIC_CHECK_RENDER;
         }
         else if (m_OptProc.Check(argv[0], VM_STRING("-delta"), VM_STRING("specifies maximum delta, used in combination with -cmp only"), OPT_64F) ||
-                 m_OptProc.Check(argv[0], VM_STRING("-ssim"), VM_STRING("calculates every frame SSIM. If MIN exist compares with it, used in combination with -cmp only"), OPT_64F) ||
-                 m_OptProc.Check(argv[0], VM_STRING("-psnr"), VM_STRING("calculates every frame PSNR. If MIN exist compares with it, used in combination with -cmp only"), OPT_64F))
+            m_OptProc.Check(argv[0], VM_STRING("-ssim"), VM_STRING("calculates every frame SSIM. If MIN exist compares with it, used in combination with -cmp only"), OPT_64F) ||
+            m_OptProc.Check(argv[0], VM_STRING("-psnr"), VM_STRING("calculates every frame PSNR. If MIN exist compares with it, used in combination with -cmp only"), OPT_64F))
         {
             MetricType type = (argv[0][1] == 'd') ? METRIC_DELTA : ((argv[0][1] == 's') ? METRIC_SSIM : METRIC_PSNR);
             mfxF64 metricVal;
@@ -3664,9 +3691,9 @@ mfxStatus MFXDecPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI32 argc, 
                 , new randSeekCmdInitializer(fMaxWarminUp, 0, m_pRandom)));
 
             argv += 2;
-         }
+        }
         else if (m_OptProc.Check(argv[0], VM_STRING("-numseek"), VM_STRING("performs seeks to particular position (intended for pure streams) MAXFROM - maximum FROM, TO - seek position, NUM - number of iterations"), OPT_SPECIAL, VM_STRING("MAXFROM TO NUM")))
-         {
+        {
             MFX_CHECK(3 + argv < argvEnd);
 
             double  fMaxWarminUp;
@@ -3682,9 +3709,9 @@ mfxStatus MFXDecPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI32 argc, 
                 , new randActivationInitializer(fMaxWarminUp, fTimePos, 0, m_pRandom)));
 
             argv +=3;
-         }
+        }
         else if (m_OptProc.Check(argv[0], VM_STRING("-numsourceseek"), VM_STRING("performs seeking (similar to -numseek options) on splitter level only, downstream components : decoder, render, etc., continue to work in normal mode"), OPT_SPECIAL, VM_STRING("FROM TO NUM")))
-         {
+        {
             MFX_CHECK(3 + argv < argvEnd);
 
             double  fMaxWarminUp;
@@ -3789,22 +3816,22 @@ mfxStatus MFXDecPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI32 argc, 
             eSurfacesSearchAlgo nAlgo  = USE_FIRST;
             switch (nPattern)
             {
-                case 1:
+            case 1:
                 {
                     nAlgo = USE_FIRST;
                     break;
                 }
-                case 2:
+            case 2:
                 {
                     nAlgo = USE_OLDEST_DIRECT;
                     break;
                 }
-                case 3:
+            case 3:
                 {
                     nAlgo = USE_OLDEST_REVERSE;
                     break;
                 }
-                case 4:
+            case 4:
                 {
                     nAlgo = USE_RANDOM;
                     std::for_each(m_components.begin(), m_components.end(), mem_var_set(&ComponentParams::m_pRandom, m_pRandom));
@@ -3873,8 +3900,8 @@ mfxStatus MFXDecPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI32 argc, 
         //http://support.microsoft.com/kb/315481
         if (bUnhandled)
         {
-                 HANDLE_64F_OPTION_AND_FLAG(m_inParams.m_ProcAmp.Brightness, VM_STRING("-brightness"), VM_STRING("enable ProcAmp filter with specified brightness (from -100.0f to 100.0f by 0.01f, default = 0.0f)"),m_inParams.bUseProcAmp)
-            else HANDLE_64F_OPTION_AND_FLAG(m_inParams.m_ProcAmp.Contrast, VM_STRING("-contrast"), VM_STRING("enable ProcAmp filter with specified contrast (from 0.0f to 10.0f by 0.01f, default = 1.0f)"),m_inParams.bUseProcAmp)
+            HANDLE_64F_OPTION_AND_FLAG(m_inParams.m_ProcAmp.Brightness, VM_STRING("-brightness"), VM_STRING("enable ProcAmp filter with specified brightness (from -100.0f to 100.0f by 0.01f, default = 0.0f)"),m_inParams.bUseProcAmp)
+        else HANDLE_64F_OPTION_AND_FLAG(m_inParams.m_ProcAmp.Contrast, VM_STRING("-contrast"), VM_STRING("enable ProcAmp filter with specified contrast (from 0.0f to 10.0f by 0.01f, default = 1.0f)"),m_inParams.bUseProcAmp)
             else HANDLE_64F_OPTION_AND_FLAG(m_inParams.m_ProcAmp.Hue, VM_STRING("-hue"), VM_STRING("enable ProcAmp filter with specified hue (from -180.0f to 180.0f by 0.1f, default = 0.0f)"),m_inParams.bUseProcAmp)
             else HANDLE_64F_OPTION_AND_FLAG(m_inParams.m_ProcAmp.Saturation, VM_STRING("-saturation"), VM_STRING("enable ProcAmp filter with specified saturation (from 0.0f to 10.0f by 0.01f, default = 1.0f)"),m_inParams.bUseProcAmp)
             else HANDLE_INT_OPTION(m_inParams.m_WallW,VM_STRING("-wall_w"), VM_STRING("width of video wall (several windows without overlapping"))
@@ -3920,7 +3947,7 @@ mfxStatus MFXDecPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI32 argc, 
             {
                 MFX_CHECK(1 + argv != argvEnd);
                 MFX_PARSE_INT(m_inParams.nBurstDecodeFrames, argv[1])
-                argv++;
+                    argv++;
             }
             else HANDLE_INT_OPTION(m_inParams.targetViewsTemporalId, VM_STRING("-dec:temporalid"), VM_STRING("in case of MVC->AVC and MVC->MVC transcoding,  specifies coresponding field in mfxExtMVCTargetViews structure"))
             else HANDLE_INT_OPTION(m_inParams.nTestId, VM_STRING("-testid"), VM_STRING("testid value used in SendNotifyMessages(WNDBROADCAST,,testid)"))
@@ -3972,9 +3999,9 @@ mfxStatus MFXDecPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI32 argc, 
             else
             {
                 MFX_TRACE_AT_EXIT_IF( MFX_ERR_UNSUPPORTED
-                                    , !bReportError
-                                    , PE_OPTION
-                                    , (VM_STRING("ERROR: Unknown option: %s\n"), argv[0]));
+                    , !bReportError
+                    , PE_OPTION
+                    , (VM_STRING("ERROR: Unknown option: %s\n"), argv[0]));
             }
         }
     }
@@ -4166,7 +4193,7 @@ mfxStatus MFXDecPipeline::ReadParFile(const vm_char * pInFile, IProcessCommand *
 
         //vm_char *p = vm_file_fgets(fileLine + 1, MFX_ARRAY_SIZE(fileLine) - 2, fd);
         //if (NULL == p)
-          //  break;
+        //  break;
         vm_char *p = fileLine + 1;
 
         if (pHandler->IsPrintParFile())
