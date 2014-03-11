@@ -121,8 +121,8 @@ mfxExtBuffer HEVC_HEADER = { MFX_EXTBUFF_HEVCENC, sizeof(mfxExtCodingOptionHEVC)
     tab_FastSkip[x],\
 }
 
+#ifdef __old_tu_definition
 //                                    TU1  TU2  TU3  TU4  TU4  TU6  TU7
-
 TU_OPT(Log2MaxCUSize,                  6,   6,   6,   5,   5,   5,   5)
 TU_OPT(MaxCUDepth,                     4,   3,   4,   3,   3,   2,   2)
 TU_OPT(QuadtreeTULog2MaxSize,          5,   5,   5,   5,   5,   5,   5)
@@ -170,13 +170,68 @@ TU_OPT(IntraNumCand0_6,               35,  35,  35,  35,  35,  35,  35)
 TU_OPT(CostChroma,                   OFF, OFF, OFF, OFF, OFF, OFF, OFF)
 TU_OPT(PatternIntPel,                  1,   1,   1,   1,   1,   1,   1)
 TU_OPT(FastSkip,                     OFF, OFF, OFF, OFF, OFF, OFF, OFF)
+Ipp8u tab_tuGopRefDist [8] = {8, 8, 8, 8, 8, 3, 2, 1};
+Ipp8u tab_tuNumRefFrame[8] = {2, 4, 3, 3, 2, 2, 1, 1};
+
+#else
+//                                    TU1  TU2  TU3  TU4  TU5  TU6  TU7
+TU_OPT(Log2MaxCUSize,                  6,   6,   6,   5,   5,   5,   5)
+TU_OPT(MaxCUDepth,                     4,   4,   4,   3,   3,   3,   2)
+TU_OPT(QuadtreeTULog2MaxSize,          5,   5,   5,   5,   5,   5,   5)
+TU_OPT(QuadtreeTULog2MinSize,          2,   2,   2,   2,   2,   2,   2)
+TU_OPT(QuadtreeTUMaxDepthIntra,        3,   2,   2,   2,   1,   1,   1) //intra decrease has less effect than inter. need to measure more
+TU_OPT(QuadtreeTUMaxDepthInter,        3,   3,   2,   2,   2,   1,   1)
+TU_OPT(AnalyzeChroma,                 ON,  ON,  ON,  ON,  ON,  ON,  ON)
+TU_OPT(SignBitHiding,                 ON,  ON,  ON,  ON,  ON,  ON, OFF)
+TU_OPT(RDOQuant,                      ON,  ON,  ON, OFF, OFF, OFF, OFF)
+TU_OPT(SAO,                           ON,  ON,  ON,  ON,  ON,  ON, OFF)
+TU_OPT(SplitThresholdStrengthCUIntra,  1,   2,   2,   2,   2,   3,   3)
+TU_OPT(SplitThresholdStrengthTUIntra,  1,   2,   2,   2,   2,   3,   3)
+TU_OPT(SplitThresholdStrengthCUInter,  1,   2,   2,   2,   2,   3,   3)
+TU_OPT(IntraNumCand1_2,                8,   6,   6,   6,   5,   4,   4)
+TU_OPT(IntraNumCand1_3,                8,   6,   6,   6,   5,   4,   4)
+TU_OPT(IntraNumCand1_4,                4,   3,   3,   3,   3,   2,   2)
+TU_OPT(IntraNumCand1_5,                4,   3,   3,   3,   3,   2,   2)
+TU_OPT(IntraNumCand1_6,                4,   3,   3,   3,   3,   2,   2)
+TU_OPT(IntraNumCand2_2,                4,   3,   3,   3,   3,   2,   2)
+TU_OPT(IntraNumCand2_3,                4,   3,   3,   3,   3,   2,   2)
+TU_OPT(IntraNumCand2_4,                2,   2,   2,   2,   2,   1,   1)
+TU_OPT(IntraNumCand2_5,                2,   2,   2,   2,   2,   1,   1)
+TU_OPT(IntraNumCand2_6,                2,   2,   2,   2,   2,   1,   1)
+TU_OPT(WPP,                          UNK, UNK, UNK, UNK, UNK, UNK, UNK)
+TU_OPT(GPB,                           ON,  ON,  ON,  ON, OFF, OFF, OFF)
+TU_OPT(AMP,                           ON,  ON, OFF, OFF, OFF, OFF, OFF)
+TU_OPT(CmIntraThreshold,               0,   0,   0,   0,   0, 576, 576)
+TU_OPT(TUSplitIntra,                   1,   1,   1,   3,   3,   3,   3)
+TU_OPT(CUSplit,                        2,   2,   2,   2,   2,   2,   2) //CUSplit = 1 gives 2-4x slowdown in speed with less than 1% bdrate
+TU_OPT(IntraAngModes,                  1,   1,   1,   2,   2,   2,   2)
+TU_OPT(EnableCm,                     OFF, OFF, OFF, OFF, OFF, OFF, OFF)
+TU_OPT(BPyramid,                      ON,  ON,  ON,  ON,  ON, OFF, OFF)
+TU_OPT(FastPUDecision,               OFF, OFF, OFF, OFF, OFF, OFF, OFF)
+TU_OPT(HadamardMe,                     2,   2,   1,   1,   1,   1,   1)
+TU_OPT(TMVP,                          ON,  ON,  ON,  ON,  ON, OFF, OFF)
+TU_OPT(Deblocking,                    ON,  ON,  ON,  ON,  ON,  ON,  ON)
+TU_OPT(RDOQuantChroma,                ON,  ON,  ON, OFF, OFF, OFF, OFF)
+TU_OPT(RDOQuantCGZ,                   ON,  ON,  ON, OFF, OFF, OFF, OFF)
+TU_OPT(SaoOpt,                         1,   1,   1,   2,   2,   2,   2)
+TU_OPT(IntraNumCand0_2,               35,  35,  35,  35,  35,  35,  35)
+TU_OPT(IntraNumCand0_3,               35,  35,  35,  35,  35,  35,  35)
+TU_OPT(IntraNumCand0_4,               35,  35,  35,  35,  35,  35,  35)
+TU_OPT(IntraNumCand0_5,               35,  35,  35,  35,  35,  35,  35)
+TU_OPT(IntraNumCand0_6,               35,  35,  35,  35,  35,  35,  35)
+TU_OPT(CostChroma,                   OFF, OFF, OFF, OFF, OFF, OFF, OFF)
+TU_OPT(PatternIntPel,                  1,   1,   1,   1,   1,   1,   1)
+TU_OPT(FastSkip,                     OFF, OFF, OFF,  ON,  ON,  ON,  ON)
+
+Ipp8u tab_tuGopRefDist [8] = {8, 8, 8, 8, 8, 4, 1, 1};
+Ipp8u tab_tuNumRefFrame[8] = {2, 4, 3, 2, 2, 2, 2, 2};
+
+#endif
 
 mfxExtCodingOptionHEVC tab_tu[8] = {
     TAB_TU(3), TAB_TU(0), TAB_TU(1), TAB_TU(2), TAB_TU(3), TAB_TU(4), TAB_TU(5), TAB_TU(6)
 };
 
-Ipp8u tab_tuGopRefDist [8] = {4, 8, 8, 4, 4, 3, 2, 1};
-Ipp8u tab_tuNumRefFrame[8] = {3, 4, 4, 3, 3, 2, 1, 1};
 
 static const struct tab_hevcLevel {
     // General limits
