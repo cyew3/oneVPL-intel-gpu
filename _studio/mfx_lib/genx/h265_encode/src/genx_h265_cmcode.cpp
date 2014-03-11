@@ -16,9 +16,22 @@
 #include <cm.h>
 #include <genx_vme.h>
 
-#if defined(CMRT_EMU)
-//#include <cm_trace_log.h>
-#endif // defined(CMRT_EMU)
+#ifndef CMRT_EMU
+
+extern "C" {
+void DownSampleMB(SurfaceIndex, SurfaceIndex) {}
+void MeP32(SurfaceIndex, SurfaceIndex, SurfaceIndex, SurfaceIndex, SurfaceIndex) {}
+void RefineMeP32x32(SurfaceIndex, SurfaceIndex, SurfaceIndex, SurfaceIndex) {}
+void RefineMeP32x16(SurfaceIndex, SurfaceIndex, SurfaceIndex, SurfaceIndex) {}
+void RefineMeP16x32(SurfaceIndex, SurfaceIndex, SurfaceIndex, SurfaceIndex) {}
+void RawMeMB_P_Intra(SurfaceIndex, SurfaceIndex, SurfaceIndex , SurfaceIndex ) {}
+void RawMeMB_P(SurfaceIndex, SurfaceIndex, SurfaceIndex, SurfaceIndex, SurfaceIndex, SurfaceIndex,
+               SurfaceIndex, SurfaceIndex, SurfaceIndex, SurfaceIndex) {}
+void RawMeMB_B(SurfaceIndex, SurfaceIndex, SurfaceIndex, SurfaceIndex) {}
+void AnalyzeGradient(SurfaceIndex, SurfaceIndex, SurfaceIndex, unsigned int) {}
+};
+
+#else // !CMRT_EMU
 
 #define MBINTRADIST_SIZE    4 // mfxU16 intraDist;mfxU16 reserved;
 #define MBDIST_SIZE     64  // 16*mfxU32
@@ -1980,123 +1993,4 @@ AnalyzeGradient(SurfaceIndex SURF_SRC,
     write(SURF_GRADIENT_8x8, offset + 64, SLICE1(histogram8x8, 32,  8));
 }
 
-//extern "C" _GENX_MAIN_  void
-//RawMeMB_B(SurfaceIndex CurbeDataSurfIndex,
-//        SurfaceIndex RawMeSurfIndex,
-//        SurfaceIndex RawMeMVPredSurfIndex,
-//        SurfaceIndex /*MvPredSurfIndex*/) // input 2X down sized surface with initial MVs predicted on the prev stage
-//{
-//    ///    cm_wait();
-//
-//    uint mbX = get_thread_origin_x();
-//    uint mbY = get_thread_origin_y();
-//    uint x = mbX * 16;
-//    uint y = mbY * 16;
-//
-//    vector<uchar, CURBEDATA_SIZE> CURBEData;
-//    read(CurbeDataSurfIndex,0,CURBEData.select<128,1>());
-//    read(CurbeDataSurfIndex,128,CURBEData.select<32,1>(128));
-//
-//    // read MB record data
-//    vector<uchar, 1> direct8x8pattern = 0;
-//    matrix<uchar, 3, 32> uniIn = 0;
-//    matrix<uchar, 7, 32> best_uniOut = 0;
-//
-//    // declare parameters for VME
-//    matrix<uchar, 6, 32> imeIn = 0;
-//    matrix<uint4, 16, 2> Costs = 0;
-//    vector<int2, 2> mvPred = 0;
-//
-//    VME_SET_UNIOutput_BestIntraDistortion(best_uniOut, -1);
-//    VME_SET_UNIOutput_InterDistortion(best_uniOut, -1);
-//    VME_SET_UNIOutput_SkipRawDistortion(best_uniOut, -1);
-//
-//    LoadCostsRawMe(uniIn, CURBEData);
-//    LoadSearchPath(imeIn, CURBEData);
-//
-//    matrix<uchar, 11, 32> temp;
-//    vector<short, 2> ref0, ref1;
-//    vector<ushort, 4> costCenter;
-//
-//    VME_SET_UNIInput_SrcX(uniIn, x);
-//    VME_SET_UNIInput_SrcY(uniIn, y);
-//
-//    VME_COPY_DWORD(uniIn, 0, 3, CURBEData, 3);
-//    VME_SET_UNIInput_ShapeMask(uniIn, 0x3f);   // change SubMbPartMask to 4x4 instead of 16x16
-//    VME_SET_UNIInput_MaxNumMVs(uniIn, 32);
-//    VME_COPY_DWORD(uniIn, 0, 5, CURBEData, 5);  // RefWidth & RefHeight (32 & 32)
-//
-//    SetRef(uniIn,
-//        uniIn.row(0).format<int2>().select<2, 1> (0),
-//        mvPred,
-//        uniIn.row(0).format<int1>().select<2, 1> (22),
-//        CURBEData.format<int1>().select<2, 1> (17),
-//        CURBEData.format<int2>()[68]);
-//    SetRef(uniIn,
-//        uniIn.row(0).format<int2>().select<2, 1> (2),
-//        mvPred,
-//        uniIn.row(0).format<int1>().select<2, 1> (22),
-//        CURBEData.format<int1>().select<2, 1> (17),
-//        CURBEData.format<int2>()[68]);
-//    // M0.6 debug
-//    // M0.7 debug
-//
-//    // register M1
-//    // M1.0/1.1/1.2 Search path parameters & start centers
-//    uniIn.row(1).format<uint4> ().select<3, 1> (0) = CURBEData.format<uint4> ().select<3, 1> (0);
-//    {
-//        vector<uint1, 2> Start0;
-//        Start0 = uniIn.row(0).format<int1>().select<2, 1> (22);
-//        Start0 = ((Start0 - 16) >> 3) & 0x0f;
-//        uniIn.row(1)[10] = Start0[0] | (Start0[1] << 4);
-//    }
-//    // M1.3 Weighted SAD (not used for HSW)
-//    // M1.4 Cost center 0 FWD
-//    VME_COPY_DWORD(uniIn, 1, 4, mvPred, 0);
-//    // M1.5 Cost center 1 BWD
-//    VME_COPY_DWORD(uniIn, 1, 5, mvPred, 0);
-//    // M1.6 Fwd/Bwd Block RefID (used in B slices only)
-//    // M1.7 various prediction parameters
-//    VME_COPY_DWORD(uniIn, 1, 7, CURBEData, 7);
-//    VME_CLEAR_UNIInput_IntraCornerSwap(uniIn);
-//
-//    matrix<uchar, 3, 32> uniIn0 = uniIn;
-//    matrix<uchar, 2, 32> imeIn0 = imeIn.select<2, 1, 32, 1> (0, 0);
-//
-//    ref0 = uniIn.row(0).format<short> ().select<2, 1> (0);
-//    ref1 = uniIn.row(0).format<short> ().select<2, 1> (2);
-//    costCenter = uniIn.row(1).format<ushort> ().select<4, 1> (8);
-//    run_vme_ime(uniIn0, imeIn0,
-//        VME_STREAM_OUT, VME_SEARCH_DUAL_REF_DUAL_REC,
-//        RawMeSurfIndex, ref0, ref1, costCenter, temp);
-//    best_uniOut = temp.select<7, 1, 32, 1> (0, 0);
-/////    imeOut.select<2, 1, 32, 1> (0, 0) = temp.select<2, 1, 32, 1> (7, 0);
-//
-///*  fractional RawMe is not checked
-//    PrepareFractionalCall(uniIn, fbrIn, best_uniOut, 1);
-//
-//    uchar FBRMbMode, FBRSubMbShape, FBRSubPredMode;
-//    // copy mb mode
-//    FBRMbMode = VME_GET_UNIInput_FBRMbModeInput(uniIn);
-//    // copy sub mb shape
-//    FBRSubMbShape = VME_GET_UNIInput_FBRSubMBShapeInput(uniIn);
-//    // copy sub mb prediction modes
-//    FBRSubPredMode = VME_GET_UNIInput_FBRSubPredModeInput(uniIn);
-//
-//    if (GET_CURBE_SubPelMode(CURBEData))
-//    {
-//    matrix<uchar, 3, 32> uniIn0 = uniIn;
-//    matrix<uchar, 7, 32> temp;
-//    run_vme_fbr(uniIn0, fbrIn, RawMeSurfIndex, FBRMbMode, FBRSubMbShape, FBRSubPredMode, temp);
-//    best_uniOut = temp;
-//    }
-//*/
-//
-//    // write MVs (due to split 4x4) for 16 Mbs (4 rows x 32 bytes)
-//    matrix<uint2,4,16> bestMV = best_uniOut.format<uint2,7,16>().select<4,1,16,1>(1,0) << 2;
-//    write(RawMeMVPredSurfIndex, mbX * MVDATA_SIZE * 4, mbY * 4, bestMV);
-//
-//    ///    cm_fence();
-//}
-
-/****************************************************************************************/
+#endif // !CMRT_EMU

@@ -653,62 +653,32 @@ const mfxU8 Diamond[56] =
 #define LUTMODE_INTER_16x8_FIELD 0x06
 #define LUTMODE_INTER_8x8_FIELD  0x07
 
-extern "C" void DownSampleMB(
-    SurfaceIndex SrcSurfIndex,
-    SurfaceIndex SrcSurf2XIndex);
-
-extern "C" void MeP32(
-    SurfaceIndex SURF_CURBE_DATA,
-    SurfaceIndex SURF_SRC_AND_REF,
-    SurfaceIndex SURF_MV32x32,
-    SurfaceIndex SURF_MV32x16,
-    SurfaceIndex SURF_MV16x32);
-
-extern "C" void RefineMeP32x32(
-    SurfaceIndex SURF_MBDIST32x32,
-    SurfaceIndex SURF_MV32X32,
-    SurfaceIndex SURF_SRC_1X,
-    SurfaceIndex SURF_REF_1X);
-
-extern "C" void RefineMeP32x16(
-    SurfaceIndex SURF_MBDIST32x16,
-    SurfaceIndex SURF_MV32X16,
-    SurfaceIndex SURF_SRC_1X,
-    SurfaceIndex SURF_REF_1X);
-
-extern "C" void RefineMeP16x32(
-    SurfaceIndex SURF_MBDIST16x32,
-    SurfaceIndex SURF_MV16X32,
-    SurfaceIndex SURF_SRC_1X,
-    SurfaceIndex SURF_REF_1X);
-
-extern "C" void RawMeMB_P_Intra(
-    SurfaceIndex SURF_CURBE_DATA,
-    SurfaceIndex SURF_SRC_AND_REF,
-    SurfaceIndex SURF_SRC,
-    SurfaceIndex SURF_MBDISTINTRA);
-
-extern "C" void RawMeMB_P(
-    SurfaceIndex SURF_CURBE_DATA,
-    SurfaceIndex SURF_SRC_AND_REF,
-    SurfaceIndex SURF_DIST16x16,
-    SurfaceIndex SURF_DIST16x8,
-    SurfaceIndex SURF_DIST8x16,
-    SurfaceIndex SURF_DIST8x8,
-    SurfaceIndex SURF_MV16x16,
-    SurfaceIndex SURF_MV16x8,
-    SurfaceIndex SURF_MV8x16,
-    SurfaceIndex SURF_MV8x8);
-
-extern "C" void RawMeMB_B(
-    vector<mfxU8, sizeof(H265EncCURBEData)> CURBEData,
-    SurfaceIndex RawMeSurfIndex,
-    SurfaceIndex RawMeMVPredSurfIndex,
-    SurfaceIndex MvPredSurfIndex);
-
 #pragma warning(pop)
 
 } // namespace
+
+extern "C" {
+void DownSampleMB(SurfaceIndex SrcSurfIndex, SurfaceIndex SrcSurf2XIndex);
+void MeP32(SurfaceIndex SURF_CURBE_DATA, SurfaceIndex SURF_SRC_AND_REF, SurfaceIndex SURF_MV32x32,
+           SurfaceIndex SURF_MV32x16, SurfaceIndex SURF_MV16x32);
+void RefineMeP32x32(SurfaceIndex SURF_MBDIST32x32, SurfaceIndex SURF_MV32X32,
+                    SurfaceIndex SURF_SRC_1X, SurfaceIndex SURF_REF_1X);
+void RefineMeP32x16(SurfaceIndex SURF_MBDIST32x16, SurfaceIndex SURF_MV32X16,
+                    SurfaceIndex SURF_SRC_1X, SurfaceIndex SURF_REF_1X);
+void RefineMeP16x32(SurfaceIndex SURF_MBDIST16x32, SurfaceIndex SURF_MV16X32,
+                    SurfaceIndex SURF_SRC_1X, SurfaceIndex SURF_REF_1X);
+void RawMeMB_P_Intra(SurfaceIndex SURF_CURBE_DATA, SurfaceIndex SURF_SRC_AND_REF,
+                     SurfaceIndex SURF_SRC, SurfaceIndex SURF_MBDISTINTRA);
+void RawMeMB_P(SurfaceIndex SURF_CURBE_DATA, SurfaceIndex SURF_SRC_AND_REF,
+               SurfaceIndex SURF_DIST16x16, SurfaceIndex SURF_DIST16x8, SurfaceIndex SURF_DIST8x16,
+               SurfaceIndex SURF_DIST8x8, SurfaceIndex SURF_MV16x16, SurfaceIndex SURF_MV16x8,
+               SurfaceIndex SURF_MV8x16, SurfaceIndex SURF_MV8x8);
+void RawMeMB_B(SurfaceIndex CURBEData, SurfaceIndex RawMeSurfIndex,
+               SurfaceIndex RawMeMVPredSurfIndex, SurfaceIndex MvPredSurfIndex);
+void AnalyzeGradient(SurfaceIndex SURF_SRC, SurfaceIndex SURF_GRADIENT_4x4,
+                     SurfaceIndex SURF_GRADIENT_8x8, unsigned int width);
+};
+
 
 #endif // __MFX_H265_ENC_CM_DEFS_H__
 

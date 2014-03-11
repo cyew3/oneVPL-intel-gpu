@@ -93,28 +93,16 @@ CmProgram * ReadProgram(CmDevice * device, const unsigned char* buffer, int len)
     return program;
 }
 
-CmKernel * CreateKernel(CmDevice * device, CmProgram * program, char const * name)
-{
-    int result = CM_SUCCESS;
-    CmKernel * kernel = 0;
-
-    if ((result = device->CreateKernel(program, name, kernel)) != CM_SUCCESS)
-        throw CmRuntimeError();
-
-    return kernel;
-}
-
 CmKernel * CreateKernel(CmDevice * device, CmProgram * program, char const * name, void * funcptr)
 {
     int result = CM_SUCCESS;
     CmKernel * kernel = 0;
 
-    if ((result = device->CreateKernel(program, name, funcptr, kernel)) != CM_SUCCESS)
+    if ((result = ::CreateKernel(device, program, name, funcptr, kernel)) != CM_SUCCESS)
         throw CmRuntimeError();
 
     return kernel;
 }
-
 
 CmEvent * EnqueueKernel(CmDevice * device, CmQueue * queue, CmKernel * kernel, mfxU32 tsWidth,
                         mfxU32 tsHeight, CM_DEPENDENCY_PATTERN tsPattern = CM_NONE_DEPENDENCY)
@@ -1105,15 +1093,16 @@ void AllocateCmResources(mfxU32 w, mfxU32 h, mfxU16 nRefs)
         }
     }
 
-    kernelDownSampleSrc = CreateKernel(device, program, CM_KERNEL_FUNCTION(DownSampleMB));
-    kernelDownSampleFwd = CreateKernel(device, program, CM_KERNEL_FUNCTION(DownSampleMB));
-    kernelMeIntra = CreateKernel(device, program, CM_KERNEL_FUNCTION(RawMeMB_P_Intra));
-    kernelGradient = CreateKernel(device, program, CM_KERNEL_FUNCTION(AnalyzeGradient));
-    kernelMe      = CreateKernel(device, program, CM_KERNEL_FUNCTION(RawMeMB_P));
-    kernelMe2x    = CreateKernel(device, program, CM_KERNEL_FUNCTION(MeP32));
-    kernelRefine32x32 = CreateKernel(device, program, CM_KERNEL_FUNCTION(RefineMeP32x32));
-    kernelRefine32x16 = CreateKernel(device, program, CM_KERNEL_FUNCTION(RefineMeP32x16));
-    kernelRefine16x32 = CreateKernel(device, program, CM_KERNEL_FUNCTION(RefineMeP16x32));
+
+    kernelDownSampleSrc = CreateKernel(device, program, "DownSampleMB", DownSampleMB);
+    kernelDownSampleFwd = CreateKernel(device, program, "DownSampleMB", DownSampleMB);
+    kernelMeIntra = CreateKernel(device, program, "RawMeMB_P_Intra", RawMeMB_P_Intra);
+    kernelGradient = CreateKernel(device, program, "AnalyzeGradient", AnalyzeGradient);
+    kernelMe      = CreateKernel(device, program, "RawMeMB_P", RawMeMB_P);
+    kernelMe2x    = CreateKernel(device, program, "MeP32", MeP32);
+    kernelRefine32x32 = CreateKernel(device, program, "RefineMeP32x32", RefineMeP32x32);
+    kernelRefine32x16 = CreateKernel(device, program, "RefineMeP32x16", RefineMeP32x16);
+    kernelRefine16x32 = CreateKernel(device, program, "RefineMeP16x32", RefineMeP16x32);
     curbe   = CreateBuffer(device, sizeof(H265EncCURBEData));
     curbe2x = CreateBuffer(device, sizeof(H265EncCURBEData));
 
