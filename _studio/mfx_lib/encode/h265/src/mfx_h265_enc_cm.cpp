@@ -1094,15 +1094,15 @@ void AllocateCmResources(mfxU32 w, mfxU32 h, mfxU16 nRefs)
     }
 
 
-    kernelDownSampleSrc = CreateKernel(device, program, "DownSampleMB", DownSampleMB);
-    kernelDownSampleFwd = CreateKernel(device, program, "DownSampleMB", DownSampleMB);
-    kernelMeIntra = CreateKernel(device, program, "RawMeMB_P_Intra", RawMeMB_P_Intra);
-    kernelGradient = CreateKernel(device, program, "AnalyzeGradient", AnalyzeGradient);
-    kernelMe      = CreateKernel(device, program, "RawMeMB_P", RawMeMB_P);
-    kernelMe2x    = CreateKernel(device, program, "MeP32", MeP32);
-    kernelRefine32x32 = CreateKernel(device, program, "RefineMeP32x32", RefineMeP32x32);
-    kernelRefine32x16 = CreateKernel(device, program, "RefineMeP32x16", RefineMeP32x16);
-    kernelRefine16x32 = CreateKernel(device, program, "RefineMeP16x32", RefineMeP16x32);
+    kernelDownSampleSrc = CreateKernel(device, program, "DownSampleMB", (void *)DownSampleMB);
+    kernelDownSampleFwd = CreateKernel(device, program, "DownSampleMB", (void *)DownSampleMB);
+    kernelMeIntra = CreateKernel(device, program, "RawMeMB_P_Intra", (void *)RawMeMB_P_Intra);
+    kernelGradient = CreateKernel(device, program, "AnalyzeGradient", (void *)AnalyzeGradient);
+    kernelMe      = CreateKernel(device, program, "RawMeMB_P", (void *)RawMeMB_P);
+    kernelMe2x    = CreateKernel(device, program, "MeP32", (void *)MeP32);
+    kernelRefine32x32 = CreateKernel(device, program, "RefineMeP32x32", (void *)RefineMeP32x32);
+    kernelRefine32x16 = CreateKernel(device, program, "RefineMeP32x16", (void *)RefineMeP32x16);
+    kernelRefine16x32 = CreateKernel(device, program, "RefineMeP16x32", (void *)RefineMeP16x32);
     curbe   = CreateBuffer(device, sizeof(H265EncCURBEData));
     curbe2x = CreateBuffer(device, sizeof(H265EncCURBEData));
 
