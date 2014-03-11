@@ -612,6 +612,9 @@ void __stdcall Detect_Solve_32BlendedPatterns(Frame **pFrm, Pattern *ptrn, unsig
     previousPattern = ptrn->ucPatternType;
     ptrn->ucPatternType = 0;
 
+    for (i = 0; i < 10; i++)
+        condition[i] = 0;
+
     if(previousPattern != 5 && previousPattern != 7)
     {
         condition[0] = (pFrm[0]->plaY.ucStats.ucRs[4] + 2 < pFrm[1]->plaY.ucStats.ucRs[4]) &&
