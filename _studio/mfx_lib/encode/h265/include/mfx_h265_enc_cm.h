@@ -83,6 +83,27 @@ void SetKernelArgLast(CmKernel * kernel, T0 const & arg, unsigned int index)
 {
     kernel->SetKernelArg(index, sizeof(arg), &arg);
 }
+template <> inline
+void SetKernelArgLast<CmSurface2D *>(CmKernel * kernel, CmSurface2D * const & arg, unsigned int index)
+{
+    kernel->SetKernelArg(index, sizeof(SurfaceIndex), &GetIndex(arg));
+}
+template <> inline
+void SetKernelArgLast<CmSurface2DUP *>(CmKernel * kernel, CmSurface2DUP * const & arg, unsigned int index)
+{
+    kernel->SetKernelArg(index, sizeof(SurfaceIndex), &GetIndex(arg));
+}
+template <> inline
+void SetKernelArgLast<CmBuffer *>(CmKernel * kernel, CmBuffer * const & arg, unsigned int index)
+{
+    kernel->SetKernelArg(index, sizeof(SurfaceIndex), &GetIndex(arg));
+}
+template <> inline
+void SetKernelArgLast<CmBufferUP *>(CmKernel * kernel, CmBufferUP * const & arg, unsigned int index)
+{
+    kernel->SetKernelArg(index, sizeof(SurfaceIndex), &GetIndex(arg));
+}
+
 
 template <class T0>
 void SetKernelArg(CmKernel * kernel, T0 const & arg0)

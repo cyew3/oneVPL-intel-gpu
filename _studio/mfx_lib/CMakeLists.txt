@@ -698,6 +698,7 @@ foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/plugin/src )
 endforeach()
 foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/genx/h265_encode/src )
   list( APPEND sources.plus
+    ${prefix}/genx_h265_cmcode.cpp
     ${prefix}/genx_h265_cmcode_isa.cpp
   )
 endforeach()
