@@ -104,8 +104,8 @@ CmKernel * CreateKernel(CmDevice * device, CmProgram * program, char const * nam
     return kernel;
 }
 
-CmEvent * EnqueueKernel(CmDevice * device, CmQueue * queue, CmKernel * kernel, mfxU32 tsWidth,
-                        mfxU32 tsHeight, CM_DEPENDENCY_PATTERN tsPattern = CM_NONE_DEPENDENCY)
+void EnqueueKernel(CmDevice *device, CmQueue *queue, CmKernel *kernel, mfxU32 tsWidth,
+                   mfxU32 tsHeight, CmEvent *&event, CM_DEPENDENCY_PATTERN tsPattern = CM_NONE_DEPENDENCY)
 {
     int result = CM_SUCCESS;
 
@@ -125,52 +125,56 @@ CmEvent * EnqueueKernel(CmDevice * device, CmQueue * queue, CmKernel * kernel, m
     if ((result = cmTask->AddKernel(kernel)) != CM_SUCCESS)
         throw CmRuntimeError();
 
-    CmEvent * e = 0;
-    if ((result = queue->Enqueue(cmTask, e, cmThreadSpace)) != CM_SUCCESS)
+    if (event != NULL && event != CM_NO_EVENT)
+        queue->DestroyEvent(event);
+
+    if ((result = queue->Enqueue(cmTask, event, cmThreadSpace)) != CM_SUCCESS)
         throw CmRuntimeError();
 
     device->DestroyThreadSpace(cmThreadSpace);
     device->DestroyTask(cmTask);
-
-    return e;
 }
 
-
-SurfaceIndex & GetIndex(CmSurface2D * surface)
+void EnqueueCopyCPUToGPU(CmQueue *queue, CmSurface2D *surface, const void *sysMem, CmEvent *&event)
 {
-    SurfaceIndex * index = 0;
-    int result = surface->GetIndex(index);
-    if (result != CM_SUCCESS)
+    if (event != NULL && event != CM_NO_EVENT)
+        queue->DestroyEvent(event);
+
+    int result = CM_SUCCESS;
+    if ((result = queue->EnqueueCopyCPUToGPU(surface, (const mfxU8 *)sysMem, event)) != CM_SUCCESS)
         throw CmRuntimeError();
-    return *index;
 }
 
-SurfaceIndex & GetIndex(CmSurface2DUP * surface)
+void EnqueueCopyGPUToCPU(CmQueue *queue, CmSurface2D *surface, void *sysMem, CmEvent *&event)
 {
-    SurfaceIndex * index = 0;
-    int result = surface->GetIndex(index);
-    if (result != CM_SUCCESS)
+    if (event != NULL && event != CM_NO_EVENT)
+        queue->DestroyEvent(event);
+
+    int result = CM_SUCCESS;
+    if ((result = queue->EnqueueCopyGPUToCPU(surface, (mfxU8 *)sysMem, event)) != CM_SUCCESS)
         throw CmRuntimeError();
-    return *index;
 }
 
-
-SurfaceIndex & GetIndex(CmBuffer * buffer)
+void EnqueueCopyCPUToGPUStride(CmQueue *queue, CmSurface2D *surface, const void *sysMem,
+                               mfxU32 pitch, CmEvent *&event)
 {
-    SurfaceIndex * index = 0;
-    int result = buffer->GetIndex(index);
-    if (result != CM_SUCCESS)
+    if (event != NULL && event != CM_NO_EVENT)
+        queue->DestroyEvent(event);
+
+    int result = CM_SUCCESS;
+    if ((result = queue->EnqueueCopyCPUToGPUStride(surface, (const mfxU8 *)sysMem, pitch, event)) != CM_SUCCESS)
         throw CmRuntimeError();
-    return *index;
 }
 
-SurfaceIndex const & GetIndex(CmBufferUP * buffer)
+void EnqueueCopyGPUToCPUStride(CmQueue *queue, CmSurface2D *surface, void *sysMem,
+                               mfxU32 pitch, CmEvent *&event)
 {
-    SurfaceIndex * index = 0;
-    int result = buffer->GetIndex(index);
-    if (result != CM_SUCCESS)
+    if (event != NULL && event != CM_NO_EVENT)
+        queue->DestroyEvent(event);
+
+    int result = CM_SUCCESS;
+    if ((result = queue->EnqueueCopyGPUToCPUStride(surface, (mfxU8 *)sysMem, pitch, event)) != CM_SUCCESS)
         throw CmRuntimeError();
-    return *index;
 }
 
 void Read(CmBuffer * buffer, void * buf, CmEvent * e = 0)
@@ -1169,66 +1173,61 @@ void RunVme(
 
     if (frameOrder == 0) {
         {   MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "CopyToGpuRawCur");
-            queue->EnqueueCopyCPUToGPUStride(raw[cmCurIdx], pFrameCur->y, pFrameCur->pitch_luma,
-                                             writeSrcEvent);
-            lastEvent[cmCurIdx] = writeSrcEvent;
+            EnqueueCopyCPUToGPUStride(queue, raw[cmCurIdx], pFrameCur->y, pFrameCur->pitch_luma,
+                                      lastEvent[cmCurIdx]);
         }
 
         if (param.intraAngModes == 3) {
             MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "RefLast_kernelGradient");
-            SetKernelArg(kernelGradient, GetIndex(raw[cmCurIdx]), GetIndex(mbIntraGrad4x4[cmCurIdx]),
-                         GetIndex(mbIntraGrad8x8[cmCurIdx]), width);
-            gradientEvent = EnqueueKernel(device, queue, kernelGradient, width / 8, height / 8);
-            lastEvent[cmCurIdx] = gradientEvent;
+            SetKernelArg(kernelGradient, raw[cmCurIdx], mbIntraGrad4x4[cmCurIdx],
+                         mbIntraGrad8x8[cmCurIdx], width);
+            EnqueueKernel(device, queue, kernelGradient, width / 8, height / 8, lastEvent[cmCurIdx]);
         }
     }
     else if (pFrameCur->m_PicCodType & MFX_FRAMETYPE_P) {
         SurfaceIndex * refs2x = CreateVmeSurfaceG75(device, raw2x[cmCurIdx], &fwdRef2xCur, 0, 1, 0);
         SurfaceIndex * refs   = CreateVmeSurfaceG75(device, raw[cmCurIdx], &fwdRefCur, 0, 1, 0);
         {   MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "CopyToGpuCurFwdRef");
-            queue->EnqueueCopyCPUToGPUStride(fwdRefCur, refFrameCur->y, refFrameCur->pitch_luma,
-                                             writeFwdEvent);
+            EnqueueCopyCPUToGPUStride(queue, fwdRefCur, refFrameCur->y, refFrameCur->pitch_luma,
+                                      lastEvent[cmCurIdx]);
         }
         if (param.Log2MaxCUSize > 4) {
             MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "DSCurFwdRef");
-            SetKernelArg(kernelDownSampleFwd, GetIndex(fwdRefCur), GetIndex(fwdRef2xCur));
-            dsFwdEvent = EnqueueKernel(device, queue, kernelDownSampleFwd, width / 16, height / 16);
+            SetKernelArg(kernelDownSampleFwd, fwdRefCur, fwdRef2xCur);
+            EnqueueKernel(device, queue, kernelDownSampleFwd, width / 16, height / 16, lastEvent[cmCurIdx]);
         }
         {   MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "RefLast_kernelMe");
-            SetKernelArg(kernelMe, GetIndex(curbe), *refs, GetIndex(dist16x16[cmCurIdx][0]),
-                         GetIndex(dist16x8[cmCurIdx][0]), GetIndex(dist8x16[cmCurIdx][0]),
-                         GetIndex(dist8x8[cmCurIdx][0]), GetIndex(dist8x4[cmCurIdx][0]),
-                         GetIndex(dist4x8[cmCurIdx][0]), GetIndex(mv16x16[cmCurIdx][0]),
-                         GetIndex(mv16x8[cmCurIdx][0]), GetIndex(mv8x16[cmCurIdx][0]),
-                         GetIndex(mv8x8[cmCurIdx][0]), GetIndex(mv8x4[cmCurIdx][0]),
-                         GetIndex(mv4x8[cmCurIdx][0]));
-            ready16x16Event = EnqueueKernel(device, queue, kernelMe, width / 16, height / 16);
-            lastEvent[cmCurIdx] = ready16x16Event;
+            SetKernelArg(kernelMe, curbe, *refs, dist16x16[cmCurIdx][0], dist16x8[cmCurIdx][0],
+                         dist8x16[cmCurIdx][0], dist8x8[cmCurIdx][0], dist8x4[cmCurIdx][0],
+                         dist4x8[cmCurIdx][0], mv16x16[cmCurIdx][0], mv16x8[cmCurIdx][0],
+                         mv8x16[cmCurIdx][0], mv8x8[cmCurIdx][0], mv8x4[cmCurIdx][0],
+                         mv4x8[cmCurIdx][0]);
+            EnqueueKernel(device, queue, kernelMe, width / 16, height / 16, lastEvent[cmCurIdx]);
         }
         if (param.Log2MaxCUSize > 4) {
             {   MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "RefLast_kernelMe2x");
-                SetKernelArg(kernelMe2x, GetIndex(curbe2x), *refs2x, GetIndex(mv32x32[cmCurIdx][0]),
-                             GetIndex(mv32x16[cmCurIdx][0]), GetIndex(mv16x32[cmCurIdx][0]));
-                readyMV32x32Event = EnqueueKernel(device, queue, kernelMe2x, width2x / 16, height2x / 16);
+                SetKernelArg(kernelMe2x, curbe2x, *refs2x, mv32x32[cmCurIdx][0],
+                             mv32x16[cmCurIdx][0], mv16x32[cmCurIdx][0]);
+                EnqueueKernel(device, queue, kernelMe2x, width2x / 16, height2x / 16,
+                              lastEvent[cmCurIdx]);
             }
             {   MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "RefLast_kernelRefine32x32");
-                SetKernelArg(kernelRefine32x32, GetIndex(dist32x32[cmCurIdx][0]),
-                             GetIndex(mv32x32[cmCurIdx][0]), GetIndex(raw[cmCurIdx]), GetIndex(fwdRefCur));
-                readyRefine32x32Event = EnqueueKernel(device, queue, kernelRefine32x32, width2x / 16,
-                                                      height2x / 16);
+                SetKernelArg(kernelRefine32x32, dist32x32[cmCurIdx][0], mv32x32[cmCurIdx][0],
+                             raw[cmCurIdx], fwdRefCur);
+                EnqueueKernel(device, queue, kernelRefine32x32, width2x / 16, height2x / 16,
+                              lastEvent[cmCurIdx]);
             }
             {   MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "RefLast_kernelRefine32x16");
-                SetKernelArg(kernelRefine32x16, GetIndex(dist32x16[cmCurIdx][0]),
-                             GetIndex(mv32x16[cmCurIdx][0]), GetIndex(raw[cmCurIdx]), GetIndex(fwdRefCur));
-                readyRefine32x16Event = EnqueueKernel(device, queue, kernelRefine32x16, width2x / 16,
-                                                      height2x / 8);
+                SetKernelArg(kernelRefine32x16, dist32x16[cmCurIdx][0], mv32x16[cmCurIdx][0],
+                             raw[cmCurIdx], fwdRefCur);
+                EnqueueKernel(device, queue, kernelRefine32x16, width2x / 16, height2x / 8,
+                              lastEvent[cmCurIdx]);
             }
             {   MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "RefLast_kernelRefine16x32");
-                SetKernelArg(kernelRefine16x32, GetIndex(dist16x32[cmCurIdx][0]),
-                             GetIndex(mv16x32[cmCurIdx][0]), GetIndex(raw[cmCurIdx]), GetIndex(fwdRefCur));
-                readyRefine16x32Event = EnqueueKernel(device, queue, kernelRefine16x32, width2x / 8,
-                                                      height2x / 16);
-                lastEvent[cmCurIdx] = readyRefine16x32Event;
+                SetKernelArg(kernelRefine16x32, dist16x32[cmCurIdx][0], mv16x32[cmCurIdx][0],
+                             raw[cmCurIdx], fwdRefCur);
+                EnqueueKernel(device, queue, kernelRefine16x32, width2x / 8, height2x / 16,
+                              lastEvent[cmCurIdx]);
             }
         }
         device->DestroyVmeSurfaceG7_5(refs2x);
@@ -1238,113 +1237,90 @@ void RunVme(
 
     if (pFrameNext)
     { // common next raw
-        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "CommonNextRaw");
-
         { 
             MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "CopyToGpuRawNext");
-            queue->EnqueueCopyCPUToGPUStride(raw[cmNextIdx], pFrameNext->y, pFrameNext->pitch_luma,
-                                             writeSrcEvent);
-            lastEvent[cmNextIdx] = writeSrcEvent;
+            EnqueueCopyCPUToGPUStride(queue, raw[cmNextIdx], pFrameNext->y, pFrameNext->pitch_luma,
+                                      lastEvent[cmNextIdx]);
         }
         if (param.intraAngModes == 3) {
             MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "RefLast_kernelGradient");
-            SetKernelArg(kernelGradient, GetIndex(raw[cmNextIdx]), GetIndex(mbIntraGrad4x4[cmNextIdx]),
-                         GetIndex(mbIntraGrad8x8[cmNextIdx]), width);
-            gradientEvent = EnqueueKernel(device, queue, kernelGradient, width / 8, height / 8);
-            lastEvent[cmNextIdx] = gradientEvent;
+            SetKernelArg(kernelGradient, raw[cmNextIdx], mbIntraGrad4x4[cmNextIdx],
+                         mbIntraGrad8x8[cmNextIdx], width);
+            EnqueueKernel(device, queue, kernelGradient, width / 8, height / 8,
+                          lastEvent[cmNextIdx]);
         }
 
         if (pFrameNext->m_PicCodType & MFX_FRAMETYPE_P) {
             
             if (param.Log2MaxCUSize > 4) {
                 MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "DSRaw2xNext");
-                SetKernelArg(kernelDownSampleSrc, GetIndex(raw[cmNextIdx]), GetIndex(raw2x[cmNextIdx]));
-                dsSrcEvent = EnqueueKernel(device, queue, kernelDownSampleSrc, width / 16, height / 16);
+                SetKernelArg(kernelDownSampleSrc, raw[cmNextIdx], raw2x[cmNextIdx]);
+                EnqueueKernel(device, queue, kernelDownSampleSrc, width / 16, height / 16,
+                              lastEvent[cmNextIdx]);
             }
 
             MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "RefLast_kernelMeIntra");
             SurfaceIndex *refsIntra = CreateVmeSurfaceG75(device, raw[cmNextIdx], 0, 0, 0, 0);
-            SetKernelArg(kernelMeIntra, GetIndex(curbe), *refsIntra, GetIndex(raw[cmNextIdx]),
-                         GetIndex(mbIntraDist[cmNextIdx]));
-            me1xIntraEvent = EnqueueKernel(device, queue, kernelMeIntra, width / 16, height / 16);
+            SetKernelArg(kernelMeIntra, curbe, *refsIntra, raw[cmNextIdx], mbIntraDist[cmNextIdx]);
+            EnqueueKernel(device, queue, kernelMeIntra, width / 16, height / 16,
+                          lastEvent[cmNextIdx]);
             device->DestroyVmeSurfaceG7_5(refsIntra);
-            lastEvent[cmNextIdx] = me1xIntraEvent;
         }
 
-        { 
-            MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "Enqueue Next");
-            for (int refIdx = 1; pFrameNext && refIdx < pSliceNext->num_ref_idx[0]; refIdx++)
-            {
-                H265Frame const *refFrameNext = refsNext[refIdx];
-                SurfaceIndex * refs2x = CreateVmeSurfaceG75(device, raw2x[cmNextIdx], &fwdRef2xNext, 0, 1, 0);
-                SurfaceIndex * refs   = CreateVmeSurfaceG75(device, raw[cmNextIdx],   &fwdRefNext,   0, 1, 0);
-                {   MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "CopyToGpuRefNext");
-                    queue->EnqueueCopyCPUToGPUStride(fwdRefNext, refFrameNext->y,
-                                                     refFrameNext->pitch_luma, writeFwdEvent);
-                }
-                if (param.Log2MaxCUSize > 4) {
-                    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "DSNextFwdRef");
-                    SetKernelArg(kernelDownSampleFwd, GetIndex(fwdRefNext), GetIndex(fwdRef2xNext));
-                    dsFwdEvent = EnqueueKernel(device, queue, kernelDownSampleFwd, width / 16, height / 16);
-                }
-                {   MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "RefNext_kernelMe");
-                    SetKernelArg(kernelMe, GetIndex(curbe), *refs,
-                        GetIndex(dist16x16[cmNextIdx][refIdx]), GetIndex(dist16x8[cmNextIdx][refIdx]),
-                        GetIndex(dist8x16[cmNextIdx][refIdx]), GetIndex(dist8x8[cmNextIdx][refIdx]),
-                        GetIndex(dist8x4[cmNextIdx][refIdx]), GetIndex(dist4x8[cmNextIdx][refIdx]),
-                        GetIndex(mv16x16[cmNextIdx][refIdx]), GetIndex(mv16x8[cmNextIdx][refIdx]),
-                        GetIndex(mv8x16[cmNextIdx][refIdx]), GetIndex(mv8x8[cmNextIdx][refIdx]),
-                        GetIndex(mv8x4[cmNextIdx][refIdx]), GetIndex(mv4x8[cmNextIdx][refIdx]));
-                    CmEvent *e = EnqueueKernel(device, queue, kernelMe, width / 16, height / 16);
-                    if (refIdx + 1 == pSliceNext->num_ref_idx[0])
-                        lastEvent[cmNextIdx] = e;
-                }
-                if (param.Log2MaxCUSize > 4) {
-                    {   MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "RefNext_kernelMe2x");
-                    SetKernelArg(kernelMe2x, GetIndex(curbe2x), *refs2x,
-                        GetIndex(mv32x32[cmNextIdx][refIdx]),
-                        GetIndex(mv32x16[cmNextIdx][refIdx]),
-                        GetIndex(mv16x32[cmNextIdx][refIdx]));
-                    EnqueueKernel(device, queue, kernelMe2x, width2x / 16, height2x / 16);
-                    }
-                    {   MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "RefNext_kernelRefine32x32");
-                    SetKernelArg(kernelRefine32x32, GetIndex(dist32x32[cmNextIdx][refIdx]),
-                        GetIndex(mv32x32[cmNextIdx][refIdx]), GetIndex(raw[cmNextIdx]),
-                        GetIndex(fwdRefNext));
-                    EnqueueKernel(device, queue, kernelRefine32x32, width2x / 16, height2x / 16);
-                    }
-                    {   MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "RefNext_kernelRefine32x16");
-                    SetKernelArg(kernelRefine32x16, GetIndex(dist32x16[cmNextIdx][refIdx]),
-                        GetIndex(mv32x16[cmNextIdx][refIdx]), GetIndex(raw[cmNextIdx]),
-                        GetIndex(fwdRefNext));
-                    EnqueueKernel(device, queue, kernelRefine32x16, width2x / 16, height2x / 8);
-                    }
-                    {   MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "RefNext_kernelRefine16x32");
-                    SetKernelArg(kernelRefine16x32, GetIndex(dist16x32[cmNextIdx][refIdx]),
-                        GetIndex(mv16x32[cmNextIdx][refIdx]), GetIndex(raw[cmNextIdx]),
-                        GetIndex(fwdRefNext));
-                    CmEvent *e = EnqueueKernel(device, queue, kernelRefine16x32, width2x / 8, height2x / 16);
-                    if (refIdx + 1 == pSliceNext->num_ref_idx[0])
-                        lastEvent[cmNextIdx] = e;
-                    }
-                }
-
-                //TIMERS.me1x.Add(GetCmTime(me1xEvent));
-                //TIMERS.me2x.Add(GetCmTime(me2xEvent));
-                //TIMERS.refine32x32.Add(GetCmTime(refineEvent32x32));
-                //TIMERS.refine32x16.Add(GetCmTime(refineEvent32x16));
-                //TIMERS.refine16x32.Add(GetCmTime(refineEvent16x32));
-                //TIMERS.dsSrc.Add(GetCmTime(dsSrcEvent));
-                //TIMERS.dsFwd.Add(GetCmTime(dsFwdEvent));
-                //TIMERS.writeSrc.Add(GetCmTime(writeSrcEvent));
-                //TIMERS.writeFwd.Add(GetCmTime(writeFwdEvent));
-                //TIMERS.readDist32x32.Add(GetCmTime(readDist32x32Event));
-                //TIMERS.readDist32x16.Add(GetCmTime(readDist32x16Event));
-                //TIMERS.readDist16x32.Add(GetCmTime(readDist16x32Event));
-
-                device->DestroyVmeSurfaceG7_5(refs2x);
-                device->DestroyVmeSurfaceG7_5(refs);
+        for (int refIdx = 1; pFrameNext && refIdx < pSliceNext->num_ref_idx[0]; refIdx++)
+        {
+            H265Frame const *refFrameNext = refsNext[refIdx];
+            SurfaceIndex * refs2x = CreateVmeSurfaceG75(device, raw2x[cmNextIdx], &fwdRef2xNext, 0, 1, 0);
+            SurfaceIndex * refs   = CreateVmeSurfaceG75(device, raw[cmNextIdx],   &fwdRefNext,   0, 1, 0);
+            {   MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "CopyToGpuRefNext");
+                EnqueueCopyCPUToGPUStride(queue, fwdRefNext, refFrameNext->y,
+                                          refFrameNext->pitch_luma, lastEvent[cmNextIdx]);
             }
+            if (param.Log2MaxCUSize > 4) {
+                MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "DSNextFwdRef");
+                SetKernelArg(kernelDownSampleFwd, fwdRefNext, fwdRef2xNext);
+                EnqueueKernel(device, queue, kernelDownSampleFwd, width / 16, height / 16,
+                              lastEvent[cmNextIdx]);
+            }
+            {   MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "RefNext_kernelMe");
+                SetKernelArg(kernelMe, curbe, *refs, dist16x16[cmNextIdx][refIdx],
+                    dist16x8[cmNextIdx][refIdx], dist8x16[cmNextIdx][refIdx],
+                    dist8x8[cmNextIdx][refIdx], dist8x4[cmNextIdx][refIdx],
+                    dist4x8[cmNextIdx][refIdx], mv16x16[cmNextIdx][refIdx],
+                    mv16x8[cmNextIdx][refIdx], mv8x16[cmNextIdx][refIdx], mv8x8[cmNextIdx][refIdx],
+                    mv8x4[cmNextIdx][refIdx], mv4x8[cmNextIdx][refIdx]);
+                EnqueueKernel(device, queue, kernelMe, width / 16, height / 16,
+                              lastEvent[cmNextIdx]);
+            }
+            if (param.Log2MaxCUSize > 4) {
+                {   MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "RefNext_kernelMe2x");
+                SetKernelArg(kernelMe2x, curbe2x, *refs2x, mv32x32[cmNextIdx][refIdx],
+                    mv32x16[cmNextIdx][refIdx], mv16x32[cmNextIdx][refIdx]);
+                EnqueueKernel(device, queue, kernelMe2x, width2x / 16, height2x / 16,
+                              lastEvent[cmNextIdx]);
+                }
+                {   MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "RefNext_kernelRefine32x32");
+                SetKernelArg(kernelRefine32x32, dist32x32[cmNextIdx][refIdx],
+                    mv32x32[cmNextIdx][refIdx], raw[cmNextIdx], fwdRefNext);
+                EnqueueKernel(device, queue, kernelRefine32x32, width2x / 16, height2x / 16,
+                              lastEvent[cmNextIdx]);
+                }
+                {   MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "RefNext_kernelRefine32x16");
+                SetKernelArg(kernelRefine32x16, dist32x16[cmNextIdx][refIdx],
+                             mv32x16[cmNextIdx][refIdx], raw[cmNextIdx], fwdRefNext);
+                EnqueueKernel(device, queue, kernelRefine32x16, width2x / 16, height2x / 8,
+                              lastEvent[cmNextIdx]);
+                }
+                {   MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "RefNext_kernelRefine16x32");
+                SetKernelArg(kernelRefine16x32, dist16x32[cmNextIdx][refIdx],
+                             mv16x32[cmNextIdx][refIdx], raw[cmNextIdx], fwdRefNext);
+                EnqueueKernel(device, queue, kernelRefine16x32, width2x / 8, height2x / 16,
+                              lastEvent[cmNextIdx]);
+                }
+            }
+
+            device->DestroyVmeSurfaceG7_5(refs2x);
+            device->DestroyVmeSurfaceG7_5(refs);
         }
     }
 

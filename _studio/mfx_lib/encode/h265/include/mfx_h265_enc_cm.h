@@ -67,22 +67,53 @@ SurfaceIndex * CreateVmeSurfaceG75(
     mfxU32          numFwdRefs,
     mfxU32          numBwdRefs);
 
-template <class T0>
-void SetKernelArg(CmKernel * kernel, T0 const & arg)
+template <class T>
+SurfaceIndex & GetIndex(const T * cmResource)
 {
-    kernel->SetKernelArg(0, sizeof(T0), &arg);
+    SurfaceIndex * index = 0;
+    int result = const_cast<T *>(cmResource)->GetIndex(index);
+    if (result != CM_SUCCESS)
+        throw CmRuntimeError();
+    return *index;
 }
+
 
 template <class T0>
 void SetKernelArgLast(CmKernel * kernel, T0 const & arg, unsigned int index)
 {
-    kernel->SetKernelArg(index, sizeof(T0), &arg);
+    kernel->SetKernelArg(index, sizeof(arg), &arg);
+}
+template <>
+void SetKernelArgLast<CmSurface2D *>(CmKernel * kernel, CmSurface2D * const & arg, unsigned int index)
+{
+    kernel->SetKernelArg(index, sizeof(SurfaceIndex), &GetIndex(arg));
+}
+template <>
+void SetKernelArgLast<CmSurface2DUP *>(CmKernel * kernel, CmSurface2DUP * const & arg, unsigned int index)
+{
+    kernel->SetKernelArg(index, sizeof(SurfaceIndex), &GetIndex(arg));
+}
+template <>
+void SetKernelArgLast<CmBuffer *>(CmKernel * kernel, CmBuffer * const & arg, unsigned int index)
+{
+    kernel->SetKernelArg(index, sizeof(SurfaceIndex), &GetIndex(arg));
+}
+template <>
+void SetKernelArgLast<CmBufferUP *>(CmKernel * kernel, CmBufferUP * const & arg, unsigned int index)
+{
+    kernel->SetKernelArg(index, sizeof(SurfaceIndex), &GetIndex(arg));
+}
+
+template <class T0>
+void SetKernelArg(CmKernel * kernel, T0 const & arg0)
+{
+    SetKernelArgLast(kernel, arg0, 0);
 }
 
 template <class T0, class T1>
 void SetKernelArg(CmKernel * kernel, T0 const & arg0, T1 const & arg1)
 {
-    SetKernelArg(kernel, arg0);
+    SetKernelArgLast(kernel, arg0, 0);
     SetKernelArgLast(kernel, arg1, 1);
 }
 

@@ -1,6 +1,6 @@
 /**             
 ***
-*** Copyright  (C) 1985-2013 Intel Corporation. All rights reserved.
+*** Copyright  (C) 1985-2014 Intel Corporation. All rights reserved.
 ***
 *** The information and source code contained herein is the exclusive
 *** property of Intel Corporation. and may not be disclosed, examined
@@ -49,7 +49,6 @@ typedef unsigned int VADisplay;
 #else
 #include "cm_rt_win.h"  
 #endif
-
 
 #define CM_KERNEL_FUNCTION(...) CM_KERNEL_FUNCTION2(__VA_ARGS__)
 
@@ -164,7 +163,8 @@ typedef unsigned int VADisplay;
 #define CM_MAX_TIMEOUT 2
 //Time in milliseconds before kernel should timeout
 #define CM_MAX_TIMEOUT_MS CM_MAX_TIMEOUT*1000
-#define CM_NO_EVENT  ((CmEvent *)(-1))  //NO Event
+
+extern class CmEvent *CM_NO_EVENT;
 
 typedef enum _CM_STATUS
 {
