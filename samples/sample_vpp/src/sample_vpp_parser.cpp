@@ -309,22 +309,18 @@ mfxStatus ParseCompositionParfile(const msdk_char* parFileName, sInputParams* pP
         {
             pParams->compositionParam.streamInfo[nStreamInd].compStream.LumaKeyMax = (mfxU16) atoi(value.c_str());
         }
-        else if (key.compare("stream") == 0 )
+        else if ((key.compare("stream") == 0 || key.compare("primarystream") == 0) && nStreamInd < (MAX_INPUT_STREAMS - 1))
         {
             const mfxU16 len_size = MSDK_MAX_FILENAME_LEN;
-            /* Looks like first stream found*/
-            if (key.compare("stream") == 0 && nStreamInd < (MAX_INPUT_STREAMS - 1) )
+            /* KW fix actually... */
+            if (firstStreamFound == 1)
             {
-                /* KW fix actually... */
-                if (firstStreamFound == 1)
-                {
-                    nStreamInd ++;
-                }
-                else
-                {
-                    nStreamInd = 0;
-                    firstStreamFound = 1;
-                }
+                nStreamInd ++;
+            }
+            else
+            {
+                nStreamInd = 0;
+                firstStreamFound = 1;
             }
             pParams->inFrameInfo[nStreamInd].CropX = 0;
             pParams->inFrameInfo[nStreamInd].CropY = 0;
