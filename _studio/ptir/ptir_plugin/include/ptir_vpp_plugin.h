@@ -117,6 +117,7 @@ protected:
 
     bool b_firstFrameProceed;
     bool bInited;
+    bool bMoreOutFrames;
     //mfxFrameAllocRequest ReqOut;
     //std::vector<mfxFrameSurface1*> in_surfs;
     //std::vector<mfxFrameSurface1*> cache_surfs;

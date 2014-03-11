@@ -26,9 +26,9 @@ mfxStatus ColorSpaceConversionWCopy(mfxFrameSurface1* surface_in, mfxFrameSurfac
             {
                 const Ipp8u *pSrcY = (Ipp8u*)surface_in->Data.Y;
                 const Ipp8u *pSrcUV = (Ipp8u*)surface_in->Data.UV;
-                Ipp32u pSrcYStep = surface_in->Info.Width;
-                //Ipp32u pSrcUVStep = surface_in->Info.Width / 2;
-                Ipp32u pSrcUVStep = surface_in->Info.Width;
+                Ipp32u pSrcYStep = surface_in->Info.CropW;
+                //Ipp32u pSrcUVStep = surface_in->Info.CropW / 2;
+                Ipp32u pSrcUVStep = surface_in->Info.CropW;
 
                 Ipp8u *(pDst[3]) = {(Ipp8u*)surface_out->Data.Y,
                       (Ipp8u*)surface_out->Data.U,
@@ -38,7 +38,7 @@ mfxStatus ColorSpaceConversionWCopy(mfxFrameSurface1* surface_in, mfxFrameSurfac
                                     surface_out->Data.Pitch/2,
                                     surface_out->Data.Pitch/2};
 
-                IppiSize roiSize = {surface_in->Info.Width, surface_in->Info.Height};
+                IppiSize roiSize = {surface_in->Info.CropW, surface_in->Info.CropH};
 
                 if(surface_in->Info.Width != surface_out->Info.Width   ||
                    surface_in->Info.Height != surface_out->Info.Height)
@@ -59,16 +59,16 @@ mfxStatus ColorSpaceConversionWCopy(mfxFrameSurface1* surface_in, mfxFrameSurfac
                                           (Ipp8u*)surface_in->Data.U,
                                           (Ipp8u*)surface_in->Data.V};
 
-                int pSrcStep[3] = {surface_in->Info.Width,
-                                   surface_in->Info.Width / 2,
-                                   surface_in->Info.Width / 2};
+                int pSrcStep[3] = {surface_in->Info.CropW,
+                                   surface_in->Info.CropW / 2,
+                                   surface_in->Info.CropW / 2};
 
                 Ipp8u *pDstY = (Ipp8u*)surface_out->Data.Y;
                 Ipp8u *pDstUV = (Ipp8u*)surface_out->Data.UV;
-                Ipp32u pDstYStep = surface_out->Info.Width;
-                Ipp32u pDstUVStep = surface_out->Info.Width;
+                Ipp32u pDstYStep = surface_out->Info.CropW;
+                Ipp32u pDstUVStep = surface_out->Info.CropW;
 
-                IppiSize roiSize = {surface_in->Info.Width, surface_in->Info.Height};
+                IppiSize roiSize = {surface_in->Info.CropW, surface_in->Info.CropH};
 
                 if(surface_in->Info.Width > surface_out->Info.Width   ||
                    surface_in->Info.Height > surface_out->Info.Height)

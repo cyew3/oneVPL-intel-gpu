@@ -17,6 +17,7 @@ mfxStatus MFX_PTIR_Plugin::PTIR_ProcessFrame(mfxFrameSurface1 *surf_in, mfxFrame
 
     if(!b_firstFrameProceed)
     {
+        uiStart = 1;
         memcpy(frmBuffer[0]->ucMem, frmBuffer[uiSupBuf]->ucMem, frmBuffer[uiSupBuf]->uiSize);
         frmBuffer[0]->frmProperties.tindex = uiStart + 1;
         sadCalc_I420_frame(frmBuffer[0],frmBuffer[0]);
@@ -32,7 +33,6 @@ mfxStatus MFX_PTIR_Plugin::PTIR_ProcessFrame(mfxFrameSurface1 *surf_in, mfxFrame
         patternFound = FALSE;
         //bFullFrameRate = FALSE;
         uiDispatch = 0;
-        uiStart = 1;
         mainPattern.blendedCount = 0.0;
         mainPattern.uiIFlush = 0;
         mainPattern.uiPFlush = 0;
@@ -47,69 +47,6 @@ mfxStatus MFX_PTIR_Plugin::PTIR_ProcessFrame(mfxFrameSurface1 *surf_in, mfxFrame
 
         return MFX_ERR_MORE_DATA;
     }
-
-    //if(fqIn.iCount >= 1 && !mainPattern.ucPatternFound)
-    //{
-    //    uiFrameCount = fqIn.iCount;
-    //    for(i = 0; i < uiFrameCount; i++)
-    //    {
-    //        frmIn = FrameQueue_Get(&fqIn);
-    //        //----------------------------------------
-    //        // Saving Test Output
-    //        //----------------------------------------
-    //        if (frmIn)
-    //        {
-    //            ferror = FALSE;
-    //            TrimBorders(&frmIn->plaY, &frmIO[LASTFRAME].plaY);
-    //            TrimBorders(&frmIn->plaU, &frmIO[LASTFRAME].plaU);
-    //            TrimBorders(&frmIn->plaV, &frmIO[LASTFRAME].plaV);
-
-    //            //fprintf(fTCodeOut,"%4.3lf\n",frmIn->frmProperties.timestamp);
-    //            //ferror = WriteFile(hOut, frmIO[LASTFRAME].ucMem, frmIO[LASTFRAME].uiSize, &uiBytesRead, NULL);
-    //            memcpy(surf_out->Data.Y, frmIO[LASTFRAME].ucMem, frmIO[LASTFRAME].uiSize);
-    //            Frame_Release(frmIn);
-    //            free(frmIn);
-
-    //            if(0 != fqIn.iCount)
-    //                return MFX_ERR_MORE_SURFACE;
-    //            else
-    //                return MFX_ERR_NONE;
-
-    //            uiFrameOut++;
-    //        }
-    //    }
-    //}
-    //else if(mainPattern.ucPatternFound)
-    //{
-    //    mainPattern.ucPatternFound = FALSE;
-    //    uiFrameCount = fqIn.iCount;
-
-    //    for(i = 0; i < uiFrameCount; i++)
-    //    {
-    //        ferror = FALSE;
-    //        frmIn = FrameQueue_Get(&fqIn);
-    //        if (frmIn)
-    //        {
-    //            TrimBorders(&frmIn->plaY, &frmIO[LASTFRAME].plaY);
-    //            TrimBorders(&frmIn->plaU, &frmIO[LASTFRAME].plaU);
-    //            TrimBorders(&frmIn->plaV, &frmIO[LASTFRAME].plaV);
-    //
-    //            //fprintf(fTCodeOut,"%4.3lf\n",frmIn->frmProperties.timestamp);
-    //            //ferror = WriteFile(hOut, frmIO[LASTFRAME].ucMem, frmIO[LASTFRAME].uiSize, &uiBytesRead, NULL);
-    //            memcpy(surf_out->Data.Y, frmIO[LASTFRAME].ucMem, frmIO[LASTFRAME].uiSize);
-    //            Frame_Release(frmIn);
-    //            free(frmIn);
-
-    //            if(0 != fqIn.iCount)
-    //                return MFX_ERR_MORE_SURFACE;
-    //            else
-    //                return MFX_ERR_NONE;
-
-    //            uiFrameOut++;
-    //        }
-    //    }
-    //}
-
 
     //for (uiFrame = uiStart, uiFrameOut = 0, uiCur = 1; uiFrame < uiCount; ++uiFrame)
     //{
@@ -154,7 +91,7 @@ mfxStatus MFX_PTIR_Plugin::PTIR_ProcessFrame(mfxFrameSurface1 *surf_in, mfxFrame
                         else
                             dOutBaseTime = (dBaseTime * 5 / 4);
 
-                        for(i = 0; i < min(uiDispatch,uiCur + 1); i++)
+                        for(mfxU32 i = 0; i < min(uiDispatch,uiCur + 1); i++)
                         {
                             if(!frmBuffer[i]->frmProperties.drop)
                             {
@@ -177,7 +114,7 @@ mfxStatus MFX_PTIR_Plugin::PTIR_ProcessFrame(mfxFrameSurface1 *surf_in, mfxFrame
                     }
                     else
                     {
-                        for(i = 0; i < min(uiDispatch,uiCur + 1); i++)
+                        for(mfxU32 i = 0; i < min(uiDispatch,uiCur + 1); i++)
                         {
                             FillBaseLinesIYUV(frmBuffer[0], frmBuffer[BUFMINSIZE], FALSE, FALSE);
                             if(!frmBuffer[0]->frmProperties.drop)
@@ -251,13 +188,12 @@ mfxStatus MFX_PTIR_Plugin::PTIR_ProcessFrame(mfxFrameSurface1 *surf_in, mfxFrame
             }
         }
 
-        //return MFX_ERR_MORE_DATA;
         frmIn = NULL;
         //QueryPerformanceCounter(&liTime[uiTimer++]);
         if(fqIn.iCount >= 1 && !mainPattern.ucPatternFound)
         {
             uiFrameCount = fqIn.iCount;
-            for(i = 0; i < uiFrameCount; i++)
+            for(mfxU32 i = 0; i < uiFrameCount; i++)
             {
                 frmIn = FrameQueue_Get(&fqIn);
                 //----------------------------------------
@@ -290,7 +226,7 @@ mfxStatus MFX_PTIR_Plugin::PTIR_ProcessFrame(mfxFrameSurface1 *surf_in, mfxFrame
             mainPattern.ucPatternFound = FALSE;
             uiFrameCount = fqIn.iCount;
 
-            for(i = 0; i < uiFrameCount; i++)
+            for(mfxU32 i = 0; i < uiFrameCount; i++)
             {
                 ferror = FALSE;
                 frmIn = FrameQueue_Get(&fqIn);
@@ -321,11 +257,10 @@ mfxStatus MFX_PTIR_Plugin::PTIR_ProcessFrame(mfxFrameSurface1 *surf_in, mfxFrame
         //for (i = 0; i < uiTimer - 1; ++i)
         //    dTime[i] += (double)(liTime[i+1].QuadPart - liTime[i].QuadPart) / liFreq.QuadPart;
     //}
-        //return MFX_ERR_MORE_DATA;
 
     if(uiCur && !surf_in)
     {
-        for(i = 0; i < uiCur - 1; i++)
+        for(mfxU32 i = 0; i < uiCur; i++)
         {
             if(!frmBuffer[i]->frmProperties.drop)
             {
@@ -344,7 +279,7 @@ mfxStatus MFX_PTIR_Plugin::PTIR_ProcessFrame(mfxFrameSurface1 *surf_in, mfxFrame
         uiCur = 0;
 
         uiFrameCount = fqIn.iCount;
-        for(i = 0; i < uiFrameCount; i++)
+        for(mfxU32 i = 0; i < uiFrameCount; i++)
         {
             ferror = FALSE;
             frmIn = FrameQueue_Get(&fqIn);
@@ -373,7 +308,4 @@ mfxStatus MFX_PTIR_Plugin::PTIR_ProcessFrame(mfxFrameSurface1 *surf_in, mfxFrame
         }
     }
     return MFX_ERR_MORE_DATA;
-
-
-    return MFX_ERR_NONE;
 }

@@ -132,17 +132,15 @@ mfxStatus MFX_PTIR_Plugin::VPPFrameSubmit(mfxFrameSurface1 *surface_in, mfxFrame
     if(NULL == surface_out)
         return MFX_ERR_NULL_PTR;
 
-    if(NULL != surface_in)
+    if(NULL != surface_in && !bMoreOutFrames)
     {
         bool isUnlockReq = false;
         mfxFrameSurface1 work420_surface;
         memset(&work420_surface, 0, sizeof(mfxFrameSurface1));
         memcpy(&(work420_surface.Info), &(surface_in->Info), sizeof(mfxFrameInfo));
         work420_surface.Info.FourCC = MFX_FOURCC_I420;
-        mfxU16& w = work420_surface.Info.Width;
-        mfxU16& h = work420_surface.Info.Height;
-        //work420_surface.Data.Y = (mfxU8*) malloc (w*h*3/2);
-        //work420_surface.Data.Y = frmIO[i].plaY.ucData;
+        mfxU16& w = work420_surface.Info.CropW;
+        mfxU16& h = work420_surface.Info.CropH;
         work420_surface.Data.Y = frmBuffer[uiSupBuf]->ucMem;
         work420_surface.Data.U = work420_surface.Data.Y+w*h;
         work420_surface.Data.V = work420_surface.Data.U+w*h/4;
@@ -152,9 +150,7 @@ mfxStatus MFX_PTIR_Plugin::VPPFrameSubmit(mfxFrameSurface1 *surface_in, mfxFrame
         memset(&surf_out, 0, sizeof(mfxFrameSurface1));
         memcpy(&(surf_out.Info), &(surface_in->Info), sizeof(mfxFrameInfo));
         surf_out.Info.FourCC = MFX_FOURCC_I420;
-        //mfxU16& w = surf_out.Info.Width;
-        //mfxU16& h = surf_out.Info.Height;
-        //surf_out.Data.Y = (mfxU8*) malloc (w*h*3/2);
+
         surf_out.Data.Y = frmBuffer[uiSupBuf]->ucMem;
         surf_out.Data.U = surf_out.Data.Y+w*h;
         surf_out.Data.V = surf_out.Data.U+w*h/4;
@@ -187,6 +183,11 @@ mfxStatus MFX_PTIR_Plugin::VPPFrameSubmit(mfxFrameSurface1 *surface_in, mfxFrame
             m_pmfxCore->FrameAllocator.Unlock(m_pmfxCore->FrameAllocator.pthis, surface_in->Data.MemId, &(surface_in->Data));
             isUnlockReq = false;
         }
+        if(MFX_ERR_MORE_SURFACE == mfxSts)
+            bMoreOutFrames = true;
+        else
+            bMoreOutFrames = false;
+
         return mfxSts;
     }
     else if(0 == fqIn.iCount && 0 == uiCur)
@@ -199,12 +200,10 @@ mfxStatus MFX_PTIR_Plugin::VPPFrameSubmit(mfxFrameSurface1 *surface_in, mfxFrame
         mfxFrameSurface1 surf_out;
         memset(&surf_out, 0, sizeof(mfxFrameSurface1));
         memcpy(&(surf_out.Info), &(surface_out->Info), sizeof(mfxFrameInfo));
-        mfxU16& w = surf_out.Info.Width;
-        mfxU16& h = surf_out.Info.Height;
+        mfxU16& w = surf_out.Info.CropW;
+        mfxU16& h = surf_out.Info.CropH;
         surf_out.Info.FourCC = MFX_FOURCC_I420;
-        //mfxU16& w = surf_out.Info.Width;
-        //mfxU16& h = surf_out.Info.Height;
-        //surf_out.Data.Y = (mfxU8*) malloc (w*h*3/2);
+
         surf_out.Data.Y = frmBuffer[uiSupBuf]->ucMem;
         surf_out.Data.U = surf_out.Data.Y+w*h;
         surf_out.Data.V = surf_out.Data.U+w*h/4;
@@ -224,13 +223,16 @@ mfxStatus MFX_PTIR_Plugin::VPPFrameSubmit(mfxFrameSurface1 *surface_in, mfxFrame
             *task = ptir_task;
             mfxCCSts = ColorSpaceConversionWCopy(&surf_out, surface_out, surface_out->Info.FourCC);
             assert(!mfxCCSts);
-
         }
         if(isUnlockReq)
         {
             m_pmfxCore->FrameAllocator.Unlock(m_pmfxCore->FrameAllocator.pthis, surface_out->Data.MemId, &(surface_out->Data));
             isUnlockReq = false;
         }
+        if(MFX_ERR_MORE_SURFACE == mfxSts)
+            bMoreOutFrames = true;
+        else
+            bMoreOutFrames = false;
         return mfxSts;
     }
 
@@ -386,8 +388,10 @@ mfxStatus MFX_PTIR_Plugin::Init(mfxVideoParam *par)
     if(mfxSts)
         return MFX_ERR_INVALID_VIDEO_PARAM;
 
-    uiInWidth  = uiWidth  = par->vpp.In.Width;
-    uiInHeight = uiHeight = par->vpp.In.Height;
+    //uiInWidth  = uiWidth  = par->vpp.In.Width;
+    //uiInHeight = uiHeight = par->vpp.In.Height;
+    uiInWidth  = uiWidth  = par->vpp.In.CropW;
+    uiInHeight = uiHeight = par->vpp.In.CropH;
     dFrameRate = par->vpp.In.FrameRateExtN / par->vpp.In.FrameRateExtD;
 
     bisInterlaced = false;
@@ -450,6 +454,7 @@ mfxStatus MFX_PTIR_Plugin::Init(mfxVideoParam *par)
         return MFX_ERR_UNKNOWN;; 
     }
 
+    bMoreOutFrames = false;
     bInited = true;
 
     return MFX_ERR_NONE;
