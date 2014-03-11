@@ -20,8 +20,8 @@
 
 #include "mfx_h265_defs.h"
 //#include "mfx_h265_prediction.h"
-#include "mfx_h265_enc_cm.h"
 #include "mfx_h265_enc_cm_defs.h"
+#include "mfx_h265_enc_cm.h"
 #include "genx_h265_cmcode_isa.h"
 
 namespace H265Enc {
@@ -37,6 +37,26 @@ template<class T> inline void Zero(T & obj)
     memset(&obj, 0, sizeof(obj));
 }
 
+template <>
+void SetKernelArgLast<CmSurface2D *>(CmKernel * kernel, CmSurface2D * const & arg, unsigned int index)
+{
+    kernel->SetKernelArg(index, sizeof(SurfaceIndex), &GetIndex(arg));
+}
+template <>
+void SetKernelArgLast<CmSurface2DUP *>(CmKernel * kernel, CmSurface2DUP * const & arg, unsigned int index)
+{
+    kernel->SetKernelArg(index, sizeof(SurfaceIndex), &GetIndex(arg));
+}
+template <>
+void SetKernelArgLast<CmBuffer *>(CmKernel * kernel, CmBuffer * const & arg, unsigned int index)
+{
+    kernel->SetKernelArg(index, sizeof(SurfaceIndex), &GetIndex(arg));
+}
+template <>
+void SetKernelArgLast<CmBufferUP *>(CmKernel * kernel, CmBufferUP * const & arg, unsigned int index)
+{
+    kernel->SetKernelArg(index, sizeof(SurfaceIndex), &GetIndex(arg));
+}
 
 const char   ME_PROGRAM_NAME[] = "genx_h265_cmcode.isa";
 
