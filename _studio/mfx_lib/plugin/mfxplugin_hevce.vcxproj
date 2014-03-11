@@ -582,7 +582,7 @@
       <TargetMachine>MachineX86</TargetMachine>
       <AdditionalDependencies>ippcoremt.lib;ippsmt.lib;ippvcmt.lib;ippimt.lib;ippccmt.lib;ippcvmt.lib;ippjmt.lib;ippmsdkmt.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
-      <AdditionalLibraryDirectories>$(MfxIppLibraryDir);$(ICPP_COMPILER13)compiler\lib\ia32;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(MfxIppLibraryDir);$(ICPP_COMPILER13)compiler\lib\ia32;$(MEDIASDK_ROOT)\CMRT\runtime\lib\x86;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <ImportLibrary>$(OutDir)\..\..\..\lib\$(TargetName)_evaluation.lib</ImportLibrary>
     </Link>
     <PostBuildEvent>
@@ -655,7 +655,7 @@
       <SubSystem>Windows</SubSystem>
       <OptimizeReferences>true</OptimizeReferences>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
-      <AdditionalLibraryDirectories>$(MfxIppLibraryDir);$(ICPP_COMPILER13)compiler\lib\intel64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(MfxIppLibraryDir);$(ICPP_COMPILER13)compiler\lib\intel64;$(MEDIASDK_ROOT)\CMRT\runtime\lib\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>ippcoremt.lib;ippsmt.lib;ippvcmt.lib;ippimt.lib;ippccmt.lib;ippcvmt.lib;ippjmt.lib;ippmsdkmt.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <ImportLibrary>$(OutDir)\..\..\..\lib\$(TargetName)_evaluation.lib</ImportLibrary>
