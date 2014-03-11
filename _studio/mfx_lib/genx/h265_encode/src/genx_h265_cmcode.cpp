@@ -8,15 +8,9 @@
 //
 */
 
-#pragma warning(disable: 4127)
-#pragma warning(disable: 4244)
-#pragma warning(disable: 4018)
-#pragma warning(disable: 4189)
-#pragma warning(disable: 4505)
-#include <cm.h>
-#include <genx_vme.h>
-
 #ifndef CMRT_EMU
+
+#include <cm_common.h>
 
 extern "C" {
 void DownSampleMB(SurfaceIndex, SurfaceIndex) {}
@@ -32,6 +26,14 @@ void AnalyzeGradient(SurfaceIndex, SurfaceIndex, SurfaceIndex, unsigned int) {}
 };
 
 #else // !CMRT_EMU
+
+#pragma warning(disable: 4127)
+#pragma warning(disable: 4244)
+#pragma warning(disable: 4018)
+#pragma warning(disable: 4189)
+#pragma warning(disable: 4505)
+#include <cm.h>
+#include <genx_vme.h>
 
 #define MBINTRADIST_SIZE    4 // mfxU16 intraDist;mfxU16 reserved;
 #define MBDIST_SIZE     64  // 16*mfxU32
