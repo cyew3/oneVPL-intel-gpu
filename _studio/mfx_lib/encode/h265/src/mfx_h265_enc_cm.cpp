@@ -12,6 +12,8 @@
 
 #if defined (MFX_ENABLE_H265_VIDEO_ENCODE)
 
+#if defined (MFX_ENABLE_CM)
+
 #include <fstream>
 #include <algorithm>
 #include <numeric>
@@ -1571,44 +1573,8 @@ void SetCurbeData(
     curbeData.ScaledRefLayerBottomOffset      = 0;
 }
 
-void GetAngModesFromHistogram(Ipp32s xPu, Ipp32s yPu, Ipp32s puSize, Ipp8s *modes, Ipp32s numModes)
-{
-    VM_ASSERT(numModes <= 33);
-    VM_ASSERT(puSize >= 4);
-    VM_ASSERT(puSize <= 64);
-    VM_ASSERT(xPu + puSize <= (Ipp32s)width);
-    VM_ASSERT(yPu + puSize <= (Ipp32s)height);
-
-    Ipp32s pitch = width;
-
-    Ipp32s histogram[35] = {};
-
-    // all in units of 4x4 blocks
-    if (puSize == 4) {
-        pitch >>= 2;
-        puSize >>= 2;
-        const CmMbIntraGrad *histBlock = cmMbIntraGrad4x4[cmCurIdx] + (xPu >> 2) + (yPu >> 2) * pitch;
-        for (Ipp32s i = 0; i < 35; i++)
-            histogram[i] = histBlock->histogram[i];
-    }
-    else {
-        pitch >>= 3;
-        puSize >>= 3;
-        const CmMbIntraGrad *histBlock = cmMbIntraGrad8x8[cmCurIdx] + (xPu >> 3) + (yPu >> 3) * pitch;
-
-        for (Ipp32s y = 0; y < puSize; y++, histBlock += pitch)
-            for (Ipp32s x = 0; x < puSize; x++)
-                for (Ipp32s i = 0; i < 35; i++)
-                    histogram[i] += histBlock[x].histogram[i];
-    }
-
-    for (Ipp32s i = 0; i < numModes; i++) {
-        Ipp32s mode = (Ipp32s)(std::max_element(histogram + 2, histogram + 35) - histogram);
-        modes[i] = mode;
-        histogram[mode] = -1;
-    }
-}
-
 } // namespace
+
+#endif // MFX_ENABLE_CM
 
 #endif // MFX_ENABLE_H265_VIDEO_ENCODE

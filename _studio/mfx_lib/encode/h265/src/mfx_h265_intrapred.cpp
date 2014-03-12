@@ -16,9 +16,74 @@
 #include "mfx_h265_optimization.h"
 #include "ippi.h"
 
+#if defined (MFX_ENABLE_CM)
+#include "mfx_h265_enc_cm_defs.h"
+#endif // MFX_ENABLE_CM
+
 namespace H265Enc {
 
-void GetAngModesFromHistogram(Ipp32s xPu, Ipp32s yPu, Ipp32s puSize, Ipp8s *modes, Ipp32s numModes);
+#if defined (MFX_ENABLE_CM)
+    extern mfxU32 width;
+    extern mfxU32 height;
+    extern CmMbIntraGrad * cmMbIntraGrad4x4[2];
+    extern CmMbIntraGrad * cmMbIntraGrad8x8[2];
+    extern Ipp32s cmCurIdx;
+#endif // MFX_ENABLE_CM
+
+
+void GetAngModesFromHistogram(Ipp32s xPu, Ipp32s yPu, Ipp32s puSize, Ipp8s *modes, Ipp32s numModes)
+{
+#if !defined (MFX_ENABLE_CM)
+    mfxU32 width = 0;
+    mfxU32 height = 0;
+#endif // MFX_ENABLE_CM
+
+    VM_ASSERT(numModes <= 33);
+    VM_ASSERT(puSize >= 4);
+    VM_ASSERT(puSize <= 64);
+    VM_ASSERT(xPu + puSize <= (Ipp32s)width);
+    VM_ASSERT(yPu + puSize <= (Ipp32s)height);
+
+    Ipp32s pitch = width;
+
+    Ipp32s histogram[35] = {};
+
+    // all in units of 4x4 blocks
+    if (puSize == 4) {
+        pitch >>= 2;
+        puSize >>= 2;
+#if defined (MFX_ENABLE_CM)
+        const CmMbIntraGrad *histBlock = cmMbIntraGrad4x4[cmCurIdx] + (xPu >> 2) + (yPu >> 2) * pitch;
+        for (Ipp32s i = 0; i < 35; i++)
+            histogram[i] = histBlock->histogram[i];
+#else
+        for (Ipp32s i = 0; i < 35; i++)
+            histogram[i] = 0;
+#endif // MFX_ENABLE_CM
+    }
+    else {
+        pitch >>= 3;
+        puSize >>= 3;
+#if defined (MFX_ENABLE_CM)
+        const CmMbIntraGrad *histBlock = cmMbIntraGrad8x8[cmCurIdx] + (xPu >> 3) + (yPu >> 3) * pitch;
+
+        for (Ipp32s y = 0; y < puSize; y++, histBlock += pitch)
+            for (Ipp32s x = 0; x < puSize; x++)
+                for (Ipp32s i = 0; i < 35; i++)
+                    histogram[i] += histBlock[x].histogram[i];
+#else
+        for (Ipp32s x = 0; x < puSize; x++)
+            for (Ipp32s i = 0; i < 35; i++)
+                histogram[i] += 0;
+#endif // MFX_ENABLE_CM
+    }
+
+    for (Ipp32s i = 0; i < numModes; i++) {
+        Ipp32s mode = (Ipp32s)(std::max_element(histogram + 2, histogram + 35) - histogram);
+        modes[i] = mode;
+        histogram[mode] = -1;
+    }
+}
 
 static
 void IsAboveLeftAvailable(H265CU *pCU,

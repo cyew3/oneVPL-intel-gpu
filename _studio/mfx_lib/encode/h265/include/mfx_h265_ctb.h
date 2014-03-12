@@ -410,9 +410,11 @@ public:
 
     void MePu(H265MEInfo *meInfo, Ipp32s lastPredIdx);
 
+#if defined (MFX_ENABLE_CM)
     void MePuGacc(H265MEInfo *meInfo, Ipp32s lastPredIdx);
 
     bool CheckGpuIntraCost(Ipp32s leftPelX, Ipp32s topPelY, Ipp32s depth) const;
+#endif // MFX_ENABLE_CM
 
     Ipp32s GetMvPredictors(H265MV *mvPred, const H265MEInfo* meInfo, const MVPInfo *predInfo,
                            const MVPInfo *mergeInfo, H265MV mvLast, Ipp32s meDir,

@@ -10,6 +10,8 @@
 
 #if defined (MFX_ENABLE_H265_VIDEO_ENCODE)
 
+#if defined (MFX_ENABLE_CM)
+
 #pragma once
 
 #ifndef __MFX_H265_ENC_CM_H__
@@ -221,5 +223,7 @@ void SetCurbeData(
 } // namespace
 
 #endif // __MFX_H265_ENC_CM_H__
+
+#endif // MFX_ENABLE_CM
 
 #endif // MFX_ENABLE_H265_VIDEO_ENCODE

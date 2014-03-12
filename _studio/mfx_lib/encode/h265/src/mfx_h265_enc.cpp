@@ -215,7 +215,12 @@ mfxStatus H265Encoder::InitH265VideoParam(const mfxVideoParam *param, const mfxE
     pars->num_cand_1[7] = 3; // 128x128
 #endif
 
+#if defined (MFX_ENABLE_CM)
     pars->enableCmFlag = (opts_hevc->EnableCm == MFX_CODINGOPTION_ON);
+#else
+    pars->enableCmFlag = 0;
+#endif // MFX_ENABLE_CM
+
     pars->cmIntraThreshold = opts_hevc->CmIntraThreshold;
     pars->tuSplitIntra = opts_hevc->TUSplitIntra;
     pars->cuSplit = opts_hevc->CUSplit;
@@ -909,8 +914,10 @@ mfxStatus H265Encoder::Init(const mfxVideoParam *param, const mfxExtCodingOption
     mfxStatus sts = InitH265VideoParam(param, opts_hevc);
     MFX_CHECK_STS(sts);
 
+#if defined (MFX_ENABLE_CM)
     if (m_videoParam.enableCmFlag)
         AllocateCmResources(param->mfx.FrameInfo.Width, param->mfx.FrameInfo.Height, param->mfx.NumRefFrame);
+#endif // MFX_ENABLE_CM
 
     Ipp32u numCtbs = m_videoParam.PicWidthInCtbs*m_videoParam.PicHeightInCtbs;
     profile_frequency = m_videoParam.GopRefDist;
@@ -1116,12 +1123,16 @@ mfxStatus H265Encoder::Init(const mfxVideoParam *param, const mfxExtCodingOption
 }
 
 void H265Encoder::Close() {
+
+#if defined (MFX_ENABLE_CM)
     if (m_videoParam.enableCmFlag) {
 #if defined(_WIN32) || defined(_WIN64)
         PrintTimes();
 #endif // #if defined(_WIN32) || defined(_WIN64)
         FreeCmResources();
     }
+#endif // MFX_ENABLE_CM
+
     if (m_pReconstructFrame) {
         m_pReconstructFrame->Destroy();
         delete m_pReconstructFrame;
@@ -3214,7 +3225,7 @@ recode:
     if (m_videoParam.num_threads > 1)
         mfx_video_encode_h265_ptr->ParallelRegionStart(m_videoParam.num_threads - 1, PARALLEL_REGION_MAIN);
 
-
+#if defined (MFX_ENABLE_CM)
     if (m_videoParam.enableCmFlag) {
         MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "CmPart");
         m_pNextFrame = m_cpb.findOldestToEncode(&m_dpb, m_l1_cnt_to_start_B,
@@ -3251,6 +3262,7 @@ recode:
         H265Frame **refsNext = m_pNextFrame->m_refPicList[0].m_refFrames;
         RunVme(m_videoParam, m_pCurrentFrame, m_pNextFrame, m_slices, m_slicesNext, refsCur, refsNext);
     }
+#endif // MFX_ENABLE_CM
 
     for (Ipp32u i = 0; i < m_videoParam.PicHeightInCtbs; i++)
         m_row_info[i].mt_busy = 0;

@@ -23,6 +23,8 @@
 
 namespace H265Enc {
 
+#if defined (MFX_ENABLE_CM)
+
 extern int cmMvW[PU_MAX];
 extern int cmMvH[PU_MAX];
 extern Ipp32u dist32x32Pitch;
@@ -72,6 +74,8 @@ extern CmEvent * readyMV32x32Event;
 extern CmEvent * readyRefine32x32Event;
 extern CmEvent * readyRefine32x16Event;
 extern CmEvent * readyRefine16x32Event;
+
+#endif // MFX_ENABLE_CM
 
 #define NO_TRANSFORM_SPLIT_INTRAPRED_STAGE1 0
 
@@ -1159,7 +1163,11 @@ void H265CU::ModeDecision(Ipp32u absPartIdx, Ipp32u offset, Ipp8u depth, CostTyp
 
         m_data = m_dataTemp + (depth << m_par->Log2NumPartInCU);
 
-        bool tryIntra = CheckGpuIntraCost(lPelX, tPelY, depth);
+        bool tryIntra = true;
+
+#if defined (MFX_ENABLE_CM)
+        tryIntra = CheckGpuIntraCost(lPelX, tPelY, depth);
+#endif // MFX_ENABLE_CM
 
         // FAST SKIP CHECK:
         if (m_cslice->slice_type != I_SLICE && m_par->fastSkip) {
@@ -2566,8 +2574,10 @@ Ipp32s IsDuplicatedMergeCand(const MVPInfo * mergeInfo, Ipp32s mergeIdxCur) // F
 
 void H265CU::MePu(H265MEInfo *meInfo, Ipp32s lastPredIdx)
 {
+#if defined (MFX_ENABLE_CM)
     if (m_par->enableCmFlag)
         return MePuGacc(meInfo, lastPredIdx);
+#endif // MFX_ENABLE_CM
 
     RefPicList *refPicList = m_currFrame->m_refPicList;
     Ipp32u numParts = (m_par->NumPartInCU >> (meInfo->depth << 1));
@@ -2793,6 +2803,7 @@ void H265CU::MePu(H265MEInfo *meInfo, Ipp32s lastPredIdx)
     }
 }
 
+#if defined (MFX_ENABLE_CM)
 
 void H265CU::MePuGacc(H265MEInfo *meInfo, Ipp32s lastPredIdx)
 {
@@ -2891,6 +2902,75 @@ void H265CU::MePuGacc(H265MEInfo *meInfo, Ipp32s lastPredIdx)
     }
 }
 
+bool H265CU::CheckGpuIntraCost(Ipp32s leftPelX, Ipp32s topPelY, Ipp32s depth) const
+{
+    bool tryIntra = true;
+
+    if (m_par->enableCmFlag && m_par->cmIntraThreshold != 0 && m_cslice->slice_type != I_SLICE) {
+        mfxU32 cmIntraCost = 0;
+        mfxU32 cmInterCost = 0;
+        Ipp32s cuSize = m_par->MaxCUSize >> depth;
+        Ipp32s x = leftPelX / 16;
+        Ipp32s y = topPelY / 16;
+        Ipp32s x_num = (cuSize == 32) ? 2 : 1;
+        Ipp32s y_num = (cuSize == 32) ? 2 : 1;
+
+        for (Ipp32s j = y; j < y + y_num; j++) {
+            for (Ipp32s i = x; i < x + x_num; i++) {
+                CmMbIntraDist *intraDistLine = (CmMbIntraDist *)((Ipp8u *)cmMbIntraDist[cmCurIdx] + j * intraPitch[cmCurIdx]);
+                cmIntraCost += intraDistLine[i].intraDist;
+
+                mfxU32 cmInterCost16x16 = IPP_MAX_32U;
+                for (Ipp8s ref_idx = 0; ref_idx < m_cslice->num_ref_idx[0]; ref_idx++) {
+                    CmMbDist16 *dist16x16line = (CmMbDist16 *)((Ipp8u *)(cmDist16x16[cmCurIdx][ref_idx]) + j * dist16x16Pitch);
+                    CmMbDist16 *dist16x8line0 = (CmMbDist16 *)((Ipp8u *)(cmDist16x8[cmCurIdx][ref_idx]) + (j * 2) * dist16x8Pitch);
+                    CmMbDist16 *dist16x8line1 = (CmMbDist16 *)((Ipp8u *)(cmDist16x8[cmCurIdx][ref_idx]) + (j * 2 + 1) * dist16x8Pitch);
+                    CmMbDist16 *dist8x16line = (CmMbDist16 *)((Ipp8u *)(cmDist8x16[cmCurIdx][ref_idx]) + j * dist8x16Pitch);
+                    CmMbDist16 *dist8x8line0 = (CmMbDist16 *)((Ipp8u *)(cmDist8x8[cmCurIdx][ref_idx]) + (j * 2) * dist8x8Pitch);
+                    CmMbDist16 *dist8x8line1 = (CmMbDist16 *)((Ipp8u *)(cmDist8x8[cmCurIdx][ref_idx]) + (j * 2 + 1) * dist8x8Pitch);
+                    CmMbDist16 *dist8x4line0 = (CmMbDist16 *)((Ipp8u *)(cmDist8x4[cmCurIdx][ref_idx]) + (j * 4) * dist8x4Pitch);
+                    CmMbDist16 *dist8x4line1 = (CmMbDist16 *)((Ipp8u *)(cmDist8x4[cmCurIdx][ref_idx]) + (j * 4 + 1) * dist8x4Pitch);
+                    CmMbDist16 *dist8x4line2 = (CmMbDist16 *)((Ipp8u *)(cmDist8x4[cmCurIdx][ref_idx]) + (j * 4 + 2) * dist8x4Pitch);
+                    CmMbDist16 *dist8x4line3 = (CmMbDist16 *)((Ipp8u *)(cmDist8x4[cmCurIdx][ref_idx]) + (j * 4 + 3) * dist8x4Pitch);
+                    CmMbDist16 *dist4x8line0 = (CmMbDist16 *)((Ipp8u *)(cmDist4x8[cmCurIdx][ref_idx]) + (j * 2) * dist4x8Pitch);
+                    CmMbDist16 *dist4x8line1 = (CmMbDist16 *)((Ipp8u *)(cmDist4x8[cmCurIdx][ref_idx]) + (j * 2 + 1) * dist4x8Pitch);
+                    Ipp32u dist16x16 = dist16x16line[i].dist;
+                    Ipp32u dist16x8 = dist16x8line0[i].dist + dist16x8line1[i].dist;
+                    Ipp32u dist8x16 = dist8x16line[i * 2].dist + dist8x16line[i * 2 + 1].dist;
+                    Ipp32u dist8x8 = dist8x8line0[i * 2].dist + dist8x8line0[i * 2 + 1].dist +
+                        dist8x8line1[i * 2].dist + dist8x8line1[i * 2 + 1].dist;
+                    Ipp32u dist8x4 = dist8x4line0[i * 2].dist + dist8x4line0[i * 2 + 1].dist +
+                        dist8x4line1[i * 2].dist + dist8x4line1[i * 2 + 1].dist +
+                        dist8x4line2[i * 2].dist + dist8x4line2[i * 2 + 1].dist +
+                        dist8x4line3[i * 2].dist + dist8x4line3[i * 2 + 1].dist;
+                    Ipp32u dist4x8 = dist4x8line0[i * 4 + 0].dist + dist4x8line0[i * 4 + 1].dist +
+                        dist4x8line0[i * 4 + 2].dist + dist4x8line0[i * 4 + 3].dist +
+                        dist4x8line1[i * 4 + 0].dist + dist4x8line1[i * 4 + 1].dist +
+                        dist4x8line1[i * 4 + 2].dist + dist4x8line1[i * 4 + 3].dist;
+                    if (dist16x16 < cmInterCost16x16)
+                        cmInterCost16x16 = dist16x16; 
+                    if (dist16x8 < cmInterCost16x16)
+                        cmInterCost16x16 = dist16x8; 
+                    if (dist8x16 < cmInterCost16x16)
+                        cmInterCost16x16 = dist8x16; 
+                    if (dist8x8 < cmInterCost16x16)
+                        cmInterCost16x16 = dist8x8; 
+                    if (dist8x4 < cmInterCost16x16)
+                        cmInterCost16x16 = dist8x4; 
+                    if (dist4x8 < cmInterCost16x16)
+                        cmInterCost16x16 = dist4x8;
+                }
+                cmInterCost += cmInterCost16x16;
+            }
+        }
+
+        tryIntra = cmIntraCost < (m_par->cmIntraThreshold / 256.0) * cmInterCost;
+    }
+
+    return tryIntra;
+}
+
+#endif // MFX_ENABLE_CM
 
 void H265CU::EncAndRecLuma(Ipp32u absPartIdx, Ipp32s offset, Ipp8u depth, Ipp8u *nz, CostType *cost) {
     Ipp32s depthMax = m_data[absPartIdx].depth + m_data[absPartIdx].trIdx;
@@ -4819,75 +4899,6 @@ inline Ipp32s qdist(const H265MV *mv1, const H265MV *mv2)
     Ipp32s dx = ABS(mv1->mvx - mv2->mvx);
     Ipp32s dy = ABS(mv1->mvy - mv2->mvy);
     return (dx + dy);
-}
-
-
-bool H265CU::CheckGpuIntraCost(Ipp32s leftPelX, Ipp32s topPelY, Ipp32s depth) const
-{
-    bool tryIntra = true;
-
-    if (m_par->enableCmFlag && m_par->cmIntraThreshold != 0 && m_cslice->slice_type != I_SLICE) {
-        mfxU32 cmIntraCost = 0;
-        mfxU32 cmInterCost = 0;
-        Ipp32s cuSize = m_par->MaxCUSize >> depth;
-        Ipp32s x = leftPelX / 16;
-        Ipp32s y = topPelY / 16;
-        Ipp32s x_num = (cuSize == 32) ? 2 : 1;
-        Ipp32s y_num = (cuSize == 32) ? 2 : 1;
-            
-        for (Ipp32s j = y; j < y + y_num; j++) {
-            for (Ipp32s i = x; i < x + x_num; i++) {
-                CmMbIntraDist *intraDistLine = (CmMbIntraDist *)((Ipp8u *)cmMbIntraDist[cmCurIdx] + j * intraPitch[cmCurIdx]);
-                cmIntraCost += intraDistLine[i].intraDist;
-                
-                mfxU32 cmInterCost16x16 = IPP_MAX_32U;
-                for (Ipp8s ref_idx = 0; ref_idx < m_cslice->num_ref_idx[0]; ref_idx++) {
-                    CmMbDist16 *dist16x16line = (CmMbDist16 *)((Ipp8u *)(cmDist16x16[cmCurIdx][ref_idx]) + j * dist16x16Pitch);
-                    CmMbDist16 *dist16x8line0 = (CmMbDist16 *)((Ipp8u *)(cmDist16x8[cmCurIdx][ref_idx]) + (j * 2) * dist16x8Pitch);
-                    CmMbDist16 *dist16x8line1 = (CmMbDist16 *)((Ipp8u *)(cmDist16x8[cmCurIdx][ref_idx]) + (j * 2 + 1) * dist16x8Pitch);
-                    CmMbDist16 *dist8x16line = (CmMbDist16 *)((Ipp8u *)(cmDist8x16[cmCurIdx][ref_idx]) + j * dist8x16Pitch);
-                    CmMbDist16 *dist8x8line0 = (CmMbDist16 *)((Ipp8u *)(cmDist8x8[cmCurIdx][ref_idx]) + (j * 2) * dist8x8Pitch);
-                    CmMbDist16 *dist8x8line1 = (CmMbDist16 *)((Ipp8u *)(cmDist8x8[cmCurIdx][ref_idx]) + (j * 2 + 1) * dist8x8Pitch);
-                    CmMbDist16 *dist8x4line0 = (CmMbDist16 *)((Ipp8u *)(cmDist8x4[cmCurIdx][ref_idx]) + (j * 4) * dist8x4Pitch);
-                    CmMbDist16 *dist8x4line1 = (CmMbDist16 *)((Ipp8u *)(cmDist8x4[cmCurIdx][ref_idx]) + (j * 4 + 1) * dist8x4Pitch);
-                    CmMbDist16 *dist8x4line2 = (CmMbDist16 *)((Ipp8u *)(cmDist8x4[cmCurIdx][ref_idx]) + (j * 4 + 2) * dist8x4Pitch);
-                    CmMbDist16 *dist8x4line3 = (CmMbDist16 *)((Ipp8u *)(cmDist8x4[cmCurIdx][ref_idx]) + (j * 4 + 3) * dist8x4Pitch);
-                    CmMbDist16 *dist4x8line0 = (CmMbDist16 *)((Ipp8u *)(cmDist4x8[cmCurIdx][ref_idx]) + (j * 2) * dist4x8Pitch);
-                    CmMbDist16 *dist4x8line1 = (CmMbDist16 *)((Ipp8u *)(cmDist4x8[cmCurIdx][ref_idx]) + (j * 2 + 1) * dist4x8Pitch);
-                    Ipp32u dist16x16 = dist16x16line[i].dist;
-                    Ipp32u dist16x8 = dist16x8line0[i].dist + dist16x8line1[i].dist;
-                    Ipp32u dist8x16 = dist8x16line[i * 2].dist + dist8x16line[i * 2 + 1].dist;
-                    Ipp32u dist8x8 = dist8x8line0[i * 2].dist + dist8x8line0[i * 2 + 1].dist +
-                                        dist8x8line1[i * 2].dist + dist8x8line1[i * 2 + 1].dist;
-                    Ipp32u dist8x4 = dist8x4line0[i * 2].dist + dist8x4line0[i * 2 + 1].dist +
-                                        dist8x4line1[i * 2].dist + dist8x4line1[i * 2 + 1].dist +
-                                        dist8x4line2[i * 2].dist + dist8x4line2[i * 2 + 1].dist +
-                                        dist8x4line3[i * 2].dist + dist8x4line3[i * 2 + 1].dist;
-                    Ipp32u dist4x8 = dist4x8line0[i * 4 + 0].dist + dist4x8line0[i * 4 + 1].dist +
-                                        dist4x8line0[i * 4 + 2].dist + dist4x8line0[i * 4 + 3].dist +
-                                        dist4x8line1[i * 4 + 0].dist + dist4x8line1[i * 4 + 1].dist +
-                                        dist4x8line1[i * 4 + 2].dist + dist4x8line1[i * 4 + 3].dist;
-                    if (dist16x16 < cmInterCost16x16)
-                        cmInterCost16x16 = dist16x16; 
-                    if (dist16x8 < cmInterCost16x16)
-                        cmInterCost16x16 = dist16x8; 
-                    if (dist8x16 < cmInterCost16x16)
-                        cmInterCost16x16 = dist8x16; 
-                    if (dist8x8 < cmInterCost16x16)
-                        cmInterCost16x16 = dist8x8; 
-                    if (dist8x4 < cmInterCost16x16)
-                        cmInterCost16x16 = dist8x4; 
-                    if (dist4x8 < cmInterCost16x16)
-                        cmInterCost16x16 = dist4x8;
-                }
-                cmInterCost += cmInterCost16x16;
-            }
-        }
-
-        tryIntra = cmIntraCost < (m_par->cmIntraThreshold / 256.0) * cmInterCost;
-    }
-
-    return tryIntra;
 }
 
 } // namespace
