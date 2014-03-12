@@ -916,7 +916,7 @@ mfxStatus CDecodingPipeline::DeliverLoop(void)
         if (MFX_ERR_NONE != m_error) {
             continue;
         }
-        msdkOutputSurface* pCurrentDeliveredSurface = GetDeliveredSurface();
+        msdkOutputSurface* pCurrentDeliveredSurface = m_DeliveredSurfacesPool.GetSurface();
         mfxFrameSurface1* frame = &(pCurrentDeliveredSurface->surface->frame);
 
         m_error = DeliverOutput(frame);
@@ -957,7 +957,7 @@ void CDecodingPipeline::PrintPerFrameStat()
 mfxStatus CDecodingPipeline::SyncOutputSurface(mfxU32 wait)
 {
     if (!m_pCurrentOutputSurface) {
-        m_pCurrentOutputSurface = GetOutputSurface();
+        m_pCurrentOutputSurface = m_OutputSurfacesPool.GetSurface();
     }
     if (!m_pCurrentOutputSurface) {
         return MFX_ERR_MORE_DATA;
@@ -982,7 +982,7 @@ mfxStatus CDecodingPipeline::SyncOutputSurface(mfxU32 wait)
             m_output_count = m_synced_count;
             ReturnSurfaceToBuffers(m_pCurrentOutputSurface);
         } else if ((m_eWorkMode == MODE_FILE_DUMP) || (m_eWorkMode == MODE_RENDERING)) {
-            AddDeliveredSurface(m_pCurrentOutputSurface);
+            m_DeliveredSurfacesPool.AddSurface(m_pCurrentOutputSurface);
             m_pDeliveredEvent->Reset();
             m_pDeliverOutputSemaphore->Post();
         }
@@ -1056,12 +1056,12 @@ mfxStatus CDecodingPipeline::RunDecoding()
         if ((MFX_ERR_NONE == sts) || (MFX_ERR_MORE_DATA == sts) || (MFX_ERR_MORE_SURFACE == sts)) {
             SyncFrameSurfaces();
             if (!m_pCurrentFreeSurface) {
-              m_pCurrentFreeSurface = GetFreeSurface();
+                m_pCurrentFreeSurface = m_FreeSurfacesPool.GetSurface();
             }
 #ifndef __SYNC_WA
             if (!m_pCurrentFreeSurface) {
 #else
-            if (!m_pCurrentFreeSurface || (m_OutputSurfacesCount == 4)) {
+            if (!m_pCurrentFreeSurface || (m_OutputSurfacesPool.GetSurfaceCount() == 4)) {
 #endif
                 // we stuck with no free surface available, now we will sync...
                 sts = SyncOutputSurface(MSDK_DEC_WAIT_INTERVAL);
@@ -1162,7 +1162,7 @@ mfxStatus CDecodingPipeline::RunDecoding()
         if ((MFX_ERR_NONE == sts) || (MFX_ERR_MORE_DATA == sts) || (MFX_ERR_MORE_SURFACE == sts)) {
             // if current free surface is locked we are moving it to the used surfaces array
             /*if (m_pCurrentFreeSurface->frame.Data.Locked)*/ {
-                AddUsedSurface(m_pCurrentFreeSurface);
+                m_UsedSurfacesPool.AddSurface(m_pCurrentFreeSurface);
                 m_pCurrentFreeSurface = NULL;
             }
         }
@@ -1172,7 +1172,7 @@ mfxStatus CDecodingPipeline::RunDecoding()
             msdk_atomic_inc16(&(surface->render_lock));
 
             m_pCurrentFreeOutputSurface->surface = surface;
-            AddOutputSurface(m_pCurrentFreeOutputSurface);
+            m_OutputSurfacesPool.AddSurface(m_pCurrentFreeOutputSurface);
             m_pCurrentFreeOutputSurface = NULL;
         }
     } //while processing

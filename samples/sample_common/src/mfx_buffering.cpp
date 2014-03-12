@@ -10,22 +10,20 @@ Copyright(c) 2014 Intel Corporation. All Rights Reserved.
 
 #include <stdlib.h>
 
-#include <mfx_decode_buffering.h>
+#include <mfx_buffering.h>
 
 CDecodingBuffering::CDecodingBuffering():
     m_SurfacesNumber(0),
     m_OutputSurfacesNumber(0),
     m_pSurfaces(NULL),
-    m_pFreeSurfaces(NULL),
-    m_pUsedSurfacesHead(NULL),
-    m_pUsedSurfacesTail(NULL),
+    m_pVppSurfaces(NULL),
     m_pFreeOutputSurfaces(NULL),
-    m_pOutputSurfacesHead(NULL),
-    m_pOutputSurfacesTail(NULL),
-    m_OutputSurfacesCount(0),
-    m_pDeliveredSurfacesHead(NULL),
-    m_pDeliveredSurfacesTail(NULL),
-    m_DeliveredSurfacesCount(0)
+    m_FreeSurfacesPool(&m_Mutex),
+    m_FreeVppSurfacesPool(&m_Mutex),
+    m_UsedSurfacesPool(&m_Mutex),
+    m_UsedVppSurfacesPool(&m_Mutex),
+    m_OutputSurfacesPool(&m_Mutex),
+    m_DeliveredSurfacesPool(&m_Mutex)
 {
 }
 
@@ -38,13 +36,17 @@ CDecodingBuffering::AllocBuffers(mfxU32 SurfaceNumber)
 {
     if (!SurfaceNumber) return MFX_ERR_MEMORY_ALLOC;
 
-    m_OutputSurfacesNumber = m_SurfacesNumber = SurfaceNumber;
+    if (!m_OutputSurfacesNumber) { // true - if Vpp isn't enabled
+        m_OutputSurfacesNumber = SurfaceNumber;
+    }
+    m_SurfacesNumber = SurfaceNumber;
 
     m_pSurfaces = (msdkFrameSurface*)calloc(m_SurfacesNumber, sizeof(msdkFrameSurface));
     if (!m_pSurfaces) return MFX_ERR_MEMORY_ALLOC;
 
     msdkOutputSurface* p = NULL;
     msdkOutputSurface* tail = NULL;
+
     for (mfxU32 i = 0; i < m_OutputSurfacesNumber; ++i) {
         p = (msdkOutputSurface*)calloc(1, sizeof(msdkOutputSurface));
         if (!m_pFreeOutputSurfaces) {
@@ -57,6 +59,17 @@ CDecodingBuffering::AllocBuffers(mfxU32 SurfaceNumber)
     }
 
     ResetBuffers();
+    return MFX_ERR_NONE;
+}
+
+mfxStatus
+CDecodingBuffering::AllocVppBuffers(mfxU32 VppSurfaceNumber)
+{
+    m_OutputSurfacesNumber = VppSurfaceNumber;
+    m_pVppSurfaces = (msdkFrameSurface*)calloc(m_OutputSurfacesNumber, sizeof(msdkFrameSurface));
+    if (!m_pVppSurfaces) return MFX_ERR_MEMORY_ALLOC;
+
+    ResetVppBuffers();
     return MFX_ERR_NONE;
 }
 
@@ -83,45 +96,57 @@ FreeList(msdkOutputSurface* head) {
 void
 CDecodingBuffering::FreeBuffers()
 {
-    m_pUsedSurfacesHead = NULL;
-    m_pUsedSurfacesTail = NULL;
-
     if (m_pSurfaces) {
         free(m_pSurfaces);
         m_pSurfaces = NULL;
     }
 
+    if (m_pVppSurfaces) {
+        free(m_pVppSurfaces);
+        m_pVppSurfaces = NULL;
+    }
+
     FreeList(m_pFreeOutputSurfaces);
-    FreeList(m_pOutputSurfacesHead);
-    FreeList(m_pDeliveredSurfacesHead);
+    FreeList(m_OutputSurfacesPool.m_pSurfacesHead);
+    FreeList(m_DeliveredSurfacesPool.m_pSurfacesHead);
 }
 
 void
 CDecodingBuffering::ResetBuffers()
 {
     mfxU32 i;
-    m_pFreeSurfaces = m_pSurfaces;
+    msdkFrameSurface* pFreeSurf = m_FreeSurfacesPool.m_pSurfaces = m_pSurfaces;
 
     for (i = 0; i < m_SurfacesNumber; ++i) {
         if (i < (m_SurfacesNumber-1)) {
-            m_pFreeSurfaces[i].next = &(m_pFreeSurfaces[i+1]);
-            m_pFreeSurfaces[i+1].prev = &(m_pFreeSurfaces[i]);
+            pFreeSurf[i].next = &(pFreeSurf[i+1]);
+            pFreeSurf[i+1].prev = &(pFreeSurf[i]);
         }
     }
+}
 
-    m_pUsedSurfacesHead = NULL;
-    m_pUsedSurfacesTail = NULL;
-    m_pOutputSurfacesHead = NULL;
-    m_pOutputSurfacesTail = NULL;
+void
+CDecodingBuffering::ResetVppBuffers()
+{
+    mfxU32 i;
+    msdkFrameSurface* pFreeVppSurf = m_FreeVppSurfacesPool.m_pSurfaces = m_pVppSurfaces;
+
+    for (i = 0; i < m_OutputSurfacesNumber; ++i) {
+        if (i < (m_OutputSurfacesNumber-1)) {
+            pFreeVppSurf[i].next = &(pFreeVppSurf[i+1]);
+            pFreeVppSurf[i+1].prev = &(pFreeVppSurf[i]);
+        }
+    }
 }
 
 void
 CDecodingBuffering::SyncFrameSurfaces()
 {
     AutomaticMutex lock(m_Mutex);
-    msdkFrameSurface *prev = NULL;
-    msdkFrameSurface *next = NULL;
-    msdkFrameSurface *cur = m_pUsedSurfacesHead;
+    msdkFrameSurface *prev;
+    msdkFrameSurface *next;
+    prev = next = NULL;
+    msdkFrameSurface *cur = m_UsedSurfacesPool.m_pSurfacesHead;
 
     while (cur) {
         if (cur->frame.Data.Locked || cur->render_lock) {
@@ -129,30 +154,31 @@ CDecodingBuffering::SyncFrameSurfaces()
             cur = cur->next;
         } else {
             // frame was unlocked: moving it to the free surfaces array
-            prev = cur->prev;
-            next = cur->next;
+            m_UsedSurfacesPool.DetachSurfaceUnsafe(cur);
+            m_FreeSurfacesPool.AddSurfaceUnsafe(cur);
 
-            if (prev) {
-                prev->next = next;
-            }
-            else {
-                MSDK_SELF_CHECK(cur == m_pUsedSurfacesHead);
-                m_pUsedSurfacesHead = next;
-            }
-            if (next) {
-                next->prev = prev;
-            } else {
-                MSDK_SELF_CHECK(cur == m_pUsedSurfacesTail);
-                m_pUsedSurfacesTail = prev;
-            }
+            cur = next;
+        }
+    }
+}
 
-            cur->prev = cur->next = NULL;
-            MSDK_SELF_CHECK(!cur->prev);
-            MSDK_SELF_CHECK(!cur->next);
+void
+CDecodingBuffering::SyncVppFrameSurfaces()
+{
+    AutomaticMutex lock(m_Mutex);
+    msdkFrameSurface *prev;
+    msdkFrameSurface *next;
+    prev = next = NULL;
+    msdkFrameSurface *cur = m_UsedVppSurfacesPool.m_pSurfacesHead;
 
-            m_Mutex.Unlock();
-            AddFreeSurface(cur);
-            m_Mutex.Lock();
+    while (cur) {
+        if (cur->frame.Data.Locked || cur->render_lock) {
+            // frame is still locked: just moving to the next one
+            cur = cur->next;
+        } else {
+            // frame was unlocked: moving it to the free surfaces array
+            m_UsedVppSurfacesPool.DetachSurfaceUnsafe(cur);
+            m_FreeVppSurfacesPool.AddSurfaceUnsafe(cur);
 
             cur = next;
         }

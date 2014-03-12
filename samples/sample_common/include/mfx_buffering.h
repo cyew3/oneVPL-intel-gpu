@@ -55,64 +55,87 @@ struct msdkOutputSurface
     #define MSDK_SELF_CHECK(C)
 #endif
 
-/** \brief Helper class defining optimal buffering operations for the Media SDK decoder.
- */
-class CDecodingBuffering
+class CDecodingBuffering;
+
+// LIFO list of frame surfaces
+class msdkFreeSurfacesPool
 {
+    friend CDecodingBuffering;
 public:
-    CDecodingBuffering();
-    virtual ~CDecodingBuffering();
+    msdkFreeSurfacesPool(MSDKMutex* mutex):
+        m_pSurfaces(NULL),
+        m_pMutex(mutex) {}
 
-protected: // functions
-    mfxStatus AllocBuffers(mfxU32 SurfaceNumber);
-    void AllocOutputBuffer();
-    void FreeBuffers();
-    void ResetBuffers();
-
-    /** \brief The function syncs arrays of free and used surfaces.
-     *
-     * If Media SDK used surface for internal needs and unlocked it, the function moves such a surface
-     * back to the free surfaces array.
-     */
-    void SyncFrameSurfaces();
-
+    ~msdkFreeSurfacesPool() {
+        m_pSurfaces = NULL;
+    }
     /** \brief The function adds free surface to the free surfaces array.
      *
      * @note That's caller responsibility to pass valid surface.
      * @note We always add and get free surface from the array head. In case not all surfaces
      * will be actually used we have good chance to avoid actual allocation of the surface memory.
      */
-    inline void AddFreeSurface(msdkFrameSurface* surface)
-    {
-        AutomaticMutex lock(m_Mutex);
+    inline void AddSurface(msdkFrameSurface* surface) {
+        AutomaticMutex lock(*m_pMutex);
+        AddSurfaceUnsafe(surface);
+    }
+    /** \brief The function gets the next free surface from the free surfaces array.
+     *
+     * @note Surface is detached from the free surfaces array.
+     */
+    inline msdkFrameSurface* GetSurface() {
+        AutomaticMutex lock(*m_pMutex);
+        return GetSurfaceUnsafe();
+    }
+
+private:
+    inline void AddSurfaceUnsafe(msdkFrameSurface* surface) {
         msdkFrameSurface* head;
 
         MSDK_SELF_CHECK(surface);
         MSDK_SELF_CHECK(!surface->prev);
         MSDK_SELF_CHECK(!surface->next);
 
-        head = m_pFreeSurfaces;
-        m_pFreeSurfaces = surface;
-        m_pFreeSurfaces->next = head;
+        head = m_pSurfaces;
+        m_pSurfaces = surface;
+        m_pSurfaces->next = head;
     }
+    inline msdkFrameSurface* GetSurfaceUnsafe() {
 
-    /** \brief The function gets the next free surface from the free surfaces array.
-     *
-     * @note Surface is detached from the free surfaces array.
-     */
-    inline msdkFrameSurface* GetFreeSurface()
-    {
-        AutomaticMutex lock(m_Mutex);
         msdkFrameSurface* surface = NULL;
 
-        if (m_pFreeSurfaces) {
-            surface = m_pFreeSurfaces;
-            m_pFreeSurfaces = m_pFreeSurfaces->next;
+        if (m_pSurfaces) {
+            surface = m_pSurfaces;
+            m_pSurfaces = m_pSurfaces->next;
             surface->prev = surface->next = NULL;
             MSDK_SELF_CHECK(!surface->prev);
             MSDK_SELF_CHECK(!surface->next);
         }
         return surface;
+    }
+
+protected:
+    msdkFrameSurface* m_pSurfaces;
+    MSDKMutex* m_pMutex;
+
+private:
+    msdkFreeSurfacesPool(const msdkFreeSurfacesPool&);
+    void operator=(const msdkFreeSurfacesPool&);
+};
+
+// random access, predicted as FIFO
+class msdkUsedSurfacesPool
+{
+    friend CDecodingBuffering;
+public:
+    msdkUsedSurfacesPool(MSDKMutex* mutex):
+        m_pSurfacesHead(NULL),
+        m_pSurfacesTail(NULL),
+        m_pMutex(mutex) {}
+
+    ~msdkUsedSurfacesPool() {
+        m_pSurfacesHead = NULL;
+        m_pSurfacesTail = NULL;
     }
 
     /** \brief The function adds surface to the used surfaces array (m_pUsedSurfaces).
@@ -123,32 +146,24 @@ protected: // functions
      * surface (youngest) to the tail of the least. Check operations for the list will run starting from
      * head.
      */
-    inline void AddUsedSurface(msdkFrameSurface* surface)
-    {
-        AutomaticMutex lock(m_Mutex);
-
-        MSDK_SELF_CHECK(surface);
-        MSDK_SELF_CHECK(!surface->prev);
-        MSDK_SELF_CHECK(!surface->next);
-
-        surface->prev = m_pUsedSurfacesTail;
-        surface->next = NULL;
-        if (m_pUsedSurfacesTail) {
-            m_pUsedSurfacesTail->next = surface;
-            m_pUsedSurfacesTail = m_pUsedSurfacesTail->next;
-        } else {
-            m_pUsedSurfacesHead = m_pUsedSurfacesTail = surface;
-        }
+    inline void AddSurface(msdkFrameSurface* surface) {
+        AutomaticMutex lock(*m_pMutex);
+        AddSurfaceUnsafe(surface);
     }
 
     /** \brief The function detaches surface from the used surfaces array.
      *
      * @note That's caller responsibility to pass valid surface.
      */
-    inline void DetachUsedSurface(msdkFrameSurface* surface)
-    {
-        AutomaticMutex lock(m_Mutex);
 
+    inline void DetachSurface(msdkFrameSurface* surface) {
+        AutomaticMutex lock(*m_pMutex);
+        DetachSurfaceUnsafe(surface);
+    }
+
+private:
+    inline void DetachSurfaceUnsafe(msdkFrameSurface* surface)
+    {
         MSDK_SELF_CHECK(surface);
 
         msdkFrameSurface *prev = surface->prev;
@@ -158,20 +173,141 @@ protected: // functions
             prev->next = next;
         }
         else {
-            MSDK_SELF_CHECK(surface == m_pUsedSurfacesHead);
-            m_pUsedSurfacesHead = next;
+            MSDK_SELF_CHECK(surface == m_pSurfacesHead);
+            m_pSurfacesHead = next;
         }
         if (next) {
             next->prev = prev;
         } else {
-            MSDK_SELF_CHECK(surface == m_pUsedSurfacesTail);
-            m_pUsedSurfacesTail = prev;
+            MSDK_SELF_CHECK(surface == m_pSurfacesTail);
+            m_pSurfacesTail = prev;
         }
 
         surface->prev = surface->next = NULL;
         MSDK_SELF_CHECK(!surface->prev);
         MSDK_SELF_CHECK(!surface->next);
     }
+    inline void AddSurfaceUnsafe(msdkFrameSurface* surface)
+    {
+        MSDK_SELF_CHECK(surface);
+        MSDK_SELF_CHECK(!surface->prev);
+        MSDK_SELF_CHECK(!surface->next);
+
+        surface->prev = m_pSurfacesTail;
+        surface->next = NULL;
+        if (m_pSurfacesTail) {
+            m_pSurfacesTail->next = surface;
+            m_pSurfacesTail = m_pSurfacesTail->next;
+        } else {
+            m_pSurfacesHead = m_pSurfacesTail = surface;
+        }
+    }
+
+protected:
+    msdkFrameSurface* m_pSurfacesHead; // oldest surface
+    msdkFrameSurface* m_pSurfacesTail; // youngest surface
+    MSDKMutex* m_pMutex;
+
+private:
+    msdkUsedSurfacesPool(const msdkUsedSurfacesPool&);
+    void operator=(const msdkUsedSurfacesPool&);
+};
+
+// FIFO list of surfaces
+class msdkOutputSurfacesPool
+{
+    friend CDecodingBuffering;
+public:
+    msdkOutputSurfacesPool(MSDKMutex* mutex):
+        m_pSurfacesHead(NULL),
+        m_pSurfacesTail(NULL),
+        m_SurfacesCount(0),
+        m_pMutex(mutex) {}
+
+    ~msdkOutputSurfacesPool() {
+        m_pSurfacesHead = NULL;
+        m_pSurfacesTail = NULL;
+    }
+
+    inline void AddSurface(msdkOutputSurface* surface) {
+        AutomaticMutex lock(*m_pMutex);
+        AddSurfaceUnsafe(surface);
+    }
+    inline msdkOutputSurface* GetSurface() {
+        AutomaticMutex lock(*m_pMutex);
+        return GetSurfaceUnsafe();
+    }
+
+    inline mfxU32 GetSurfaceCount() {
+        return m_SurfacesCount;
+    }
+private:
+    inline void AddSurfaceUnsafe(msdkOutputSurface* surface)
+    {
+        MSDK_SELF_CHECK(surface);
+        MSDK_SELF_CHECK(!surface->next);
+        surface->next = NULL;
+
+        if (m_pSurfacesTail) {
+            m_pSurfacesTail->next = surface;
+            m_pSurfacesTail = m_pSurfacesTail->next;
+        } else {
+            m_pSurfacesHead = m_pSurfacesTail = surface;
+        }
+        ++m_SurfacesCount;
+    }
+    inline msdkOutputSurface* GetSurfaceUnsafe()
+    {
+        msdkOutputSurface* surface = NULL;
+
+        if (m_pSurfacesHead) {
+            surface = m_pSurfacesHead;
+            m_pSurfacesHead = m_pSurfacesHead->next;
+            if (!m_pSurfacesHead) {
+                // there was only one surface in the array...
+                m_pSurfacesTail = NULL;
+            }
+            --m_SurfacesCount;
+            surface->next = NULL;
+            MSDK_SELF_CHECK(!surface->next);
+        }
+        return surface;
+    }
+
+protected:
+    msdkOutputSurface*      m_pSurfacesHead; // oldest surface
+    msdkOutputSurface*      m_pSurfacesTail; // youngest surface
+    mfxU32                  m_SurfacesCount;
+    MSDKMutex*              m_pMutex;
+
+private:
+    msdkOutputSurfacesPool(const msdkOutputSurfacesPool&);
+    void operator=(const msdkOutputSurfacesPool&);
+};
+
+/** \brief Helper class defining optimal buffering operations for the Media SDK decoder.
+ */
+class CDecodingBuffering
+{
+public:
+    CDecodingBuffering();
+    virtual ~CDecodingBuffering();
+
+protected: // functions
+    mfxStatus AllocBuffers(mfxU32 SurfaceNumber);
+    mfxStatus AllocVppBuffers(mfxU32 VppSurfaceNumber);
+    void AllocOutputBuffer();
+    void FreeBuffers();
+    void ResetBuffers();
+    void ResetVppBuffers();
+
+    /** \brief The function syncs arrays of free and used surfaces.
+     *
+     * If Media SDK used surface for internal needs and unlocked it, the function moves such a surface
+     * back to the free surfaces array.
+     */
+    void SyncFrameSurfaces();
+    void SyncVppFrameSurfaces();
 
     /** \brief Returns surface which corresponds to the given one in Media SDK format (mfxFrameSurface1).
      *
@@ -182,9 +318,8 @@ protected: // functions
         return (msdkFrameSurface*)(frame);
     }
 
-    inline void AddFreeOutputSurface(msdkOutputSurface* surface)
+    inline void AddFreeOutputSurfaceUnsafe(msdkOutputSurface* surface)
     {
-        AutomaticMutex lock(m_Mutex);
         msdkOutputSurface* head = m_pFreeOutputSurfaces;
 
         MSDK_SELF_CHECK(surface);
@@ -192,10 +327,13 @@ protected: // functions
         m_pFreeOutputSurfaces = surface;
         m_pFreeOutputSurfaces->next = head;
     }
-
-    inline msdkOutputSurface* GetFreeOutputSurface()
-    {
+    inline void AddFreeOutputSurface(msdkOutputSurface* surface) {
         AutomaticMutex lock(m_Mutex);
+        AddFreeOutputSurfaceUnsafe(surface);
+    }
+
+    inline msdkOutputSurface* GetFreeOutputSurfaceUnsafe()
+    {
         msdkOutputSurface* surface = NULL;
 
         if (!m_pFreeOutputSurfaces) {
@@ -211,76 +349,9 @@ protected: // functions
         }
         return surface;
     }
-
-    inline void AddOutputSurface(msdkOutputSurface* surface)
-    {
+    inline msdkOutputSurface* GetFreeOutputSurface() {
         AutomaticMutex lock(m_Mutex);
-
-        MSDK_SELF_CHECK(surface);
-        MSDK_SELF_CHECK(!surface->next);
-        surface->next = NULL;
-
-        if (m_pOutputSurfacesTail) {
-            m_pOutputSurfacesTail->next = surface;
-            m_pOutputSurfacesTail = m_pOutputSurfacesTail->next;
-        } else {
-            m_pOutputSurfacesHead = m_pOutputSurfacesTail = surface;
-        }
-        ++m_OutputSurfacesCount;
-    }
-
-    inline msdkOutputSurface* GetOutputSurface()
-    {
-        AutomaticMutex lock(m_Mutex);
-        msdkOutputSurface* surface = NULL;
-
-        if (m_pOutputSurfacesHead) {
-            surface = m_pOutputSurfacesHead;
-            m_pOutputSurfacesHead = m_pOutputSurfacesHead->next;
-            if (!m_pOutputSurfacesHead) {
-                // there was only one surface in the array...
-                m_pOutputSurfacesTail = NULL;
-            }
-            --m_OutputSurfacesCount;
-            surface->next = NULL;
-            MSDK_SELF_CHECK(!surface->next);
-        }
-        return surface;
-    }
-
-    inline void AddDeliveredSurface(msdkOutputSurface* surface)
-    {
-        AutomaticMutex lock(m_Mutex);
-
-        MSDK_SELF_CHECK(surface);
-        MSDK_SELF_CHECK(!surface->next);
-        surface->next = NULL;
-        if (m_pDeliveredSurfacesTail) {
-            m_pDeliveredSurfacesTail->next = surface;
-            m_pDeliveredSurfacesTail = m_pDeliveredSurfacesTail->next;
-        } else {
-            m_pDeliveredSurfacesHead = m_pDeliveredSurfacesTail = surface;
-        }
-        ++m_DeliveredSurfacesCount;
-    }
-
-    inline msdkOutputSurface* GetDeliveredSurface()
-    {
-        AutomaticMutex lock(m_Mutex);
-        msdkOutputSurface* surface = NULL;
-
-        if (m_pDeliveredSurfacesHead) {
-            surface = m_pDeliveredSurfacesHead;
-            m_pDeliveredSurfacesHead = m_pDeliveredSurfacesHead->next;
-            if (!m_pDeliveredSurfacesHead) {
-                // there was only one surface in the array...
-                m_pDeliveredSurfacesTail= NULL;
-            }
-            --m_DeliveredSurfacesCount;
-            surface->next = NULL;
-            MSDK_SELF_CHECK(!surface->next);
-        }
-        return surface;
+        return GetFreeOutputSurfaceUnsafe();
     }
 
     /** \brief Function returns surface data to the corresponding buffers.
@@ -303,27 +374,23 @@ protected: // variables
     mfxU32                  m_SurfacesNumber;
     mfxU32                  m_OutputSurfacesNumber;
     msdkFrameSurface*       m_pSurfaces;
+    msdkFrameSurface*       m_pVppSurfaces;
     MSDKMutex               m_Mutex;
 
-    // LIFO list of surfaces
-    msdkFrameSurface*       m_pFreeSurfaces;
+    // LIFO list of frame surfaces
+    msdkFreeSurfacesPool    m_FreeSurfacesPool;
+    msdkFreeSurfacesPool    m_FreeVppSurfacesPool;
 
     // random access, predicted as FIFO
-    msdkFrameSurface*       m_pUsedSurfacesHead; // oldest surface
-    msdkFrameSurface*       m_pUsedSurfacesTail; // youngest surface
+    msdkUsedSurfacesPool    m_UsedSurfacesPool;
+    msdkUsedSurfacesPool    m_UsedVppSurfacesPool;
 
-    // LIFO list of surfaces
+    // LIFO list of output surfaces
     msdkOutputSurface*      m_pFreeOutputSurfaces;
 
     // FIFO list of surfaces
-    msdkOutputSurface*      m_pOutputSurfacesHead; // oldest surface
-    msdkOutputSurface*      m_pOutputSurfacesTail; // youngest surface
-    mfxU32                  m_OutputSurfacesCount;
-
-    // FIFO list of surfaces
-    msdkOutputSurface*      m_pDeliveredSurfacesHead; // oldest surface
-    msdkOutputSurface*      m_pDeliveredSurfacesTail; // youngest surface
-    mfxU32                  m_DeliveredSurfacesCount;
+    msdkOutputSurfacesPool  m_OutputSurfacesPool;
+    msdkOutputSurfacesPool  m_DeliveredSurfacesPool;
 
 private:
     CDecodingBuffering(const CDecodingBuffering&);
