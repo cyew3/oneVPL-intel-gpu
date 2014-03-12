@@ -813,6 +813,8 @@ mfxStatus CSmplYUVWriter::WriteNextFrame(mfxFrameSurface1 *pSurface)
     mfxFrameInfo *pInfo = &pSurface->Info;
     mfxFrameData *pData = &pSurface->Data;
     MSDK_CHECK_POINTER(pData, MFX_ERR_NULL_PTR);
+    MSDK_CHECK_POINTER(pInfo, MFX_ERR_NULL_PTR);
+    MSDK_CHECK_POINTER(m_fDest, MFX_ERR_NULL_PTR);
 
     mfxU32 i, j, h, w;
     mfxU32 vid = pSurface->Info.FrameId.ViewId;
@@ -837,6 +839,11 @@ mfxStatus CSmplYUVWriter::WriteNextFrame(mfxFrameSurface1 *pSurface)
             }
         }
         break;
+
+        case MFX_FOURCC_RGB4:
+            // Implementation for RGB4 in the next switch below
+        break;
+
         default:
             return MFX_ERR_UNSUPPORTED;
     }
@@ -896,7 +903,32 @@ mfxStatus CSmplYUVWriter::WriteNextFrame(mfxFrameSurface1 *pSurface)
                 }
             }
         }
+        break;
 
+        case MFX_FOURCC_RGB4:
+        mfxU8* ptr;
+
+        if (pInfo->CropH > 0 && pInfo->CropW > 0)
+        {
+            w = pInfo->CropW;
+            h = pInfo->CropH;
+        }
+        else
+        {
+            w = pInfo->Width;
+            h = pInfo->Height;
+        }
+
+        ptr = MSDK_MIN( MSDK_MIN(pData->R, pData->G), pData->B);
+        ptr = ptr + pInfo->CropX + pInfo->CropY * pData->Pitch;
+
+        for(i = 0; i < h; i++)
+        {
+            MSDK_CHECK_NOT_EQUAL(
+                fwrite(ptr + i * pData->Pitch, 1, 4*w, m_fDest),
+                4*w, MFX_ERR_UNDEFINED_BEHAVIOR);
+        }
+        fflush(m_fDest);
         break;
 
     default:
