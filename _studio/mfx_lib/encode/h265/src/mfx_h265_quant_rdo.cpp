@@ -943,7 +943,7 @@ Ipp64f RDOQuant::GetCost_EncodeOneCoeff(
     }
     else
     {
-        VM_ASSERT (0);
+        bit_cost = 0;
     }
 
     return bit_cost;
