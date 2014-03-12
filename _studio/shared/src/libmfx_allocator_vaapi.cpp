@@ -199,7 +199,7 @@ mfxDefaultAllocatorVAAPI::AllocFramesHW(
                 int width32 = 32 * ((request->Info.Width + 31) >> 5);
                 int height32 = 32 * ((request->Info.Height + 31) >> 5);
                 codedbuf_size = static_cast<int>((width32 * height32) * 400LL / (16 * 16)); //from libva spec
-                codedbuf_size = 0x1000 * ((codedbuf_size + 0xfff) >> 12); // align to page size
+                //codedbuf_size = 0x1000 * ((codedbuf_size + 0xfff) >> 12); // align to page size
 #endif
                 codedbuf_type = VAEncCodedBufferType;
             }
