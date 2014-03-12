@@ -176,7 +176,9 @@ public:
     H265CUData *m_dataTemp;
     H265CUData *m_dataTemp2;
     PixType     m_recLumaSaveCu[6][MAX_CU_SIZE*MAX_CU_SIZE];
+    PixType     m_recChromaSaveCu[6][MAX_CU_SIZE*MAX_CU_SIZE/2];
     PixType     m_recLumaSaveTu[6][MAX_CU_SIZE*MAX_CU_SIZE];
+    PixType     m_recChromaSaveTu[6][MAX_CU_SIZE*MAX_CU_SIZE/2];
     Ipp16s m_predBufY[2][MAX_CU_SIZE*MAX_CU_SIZE];
     Ipp16s m_predBufUv[2][MAX_CU_SIZE*MAX_CU_SIZE/2];
 
@@ -471,7 +473,8 @@ template <class H265Bs>
 void CodeSaoCtbParam(H265Bs *bs, SaoCtuParam &saoBlkParam, bool *sliceEnabled, bool leftMergeAvail,
                      bool aboveMergeAvail, bool onlyEstMergeInfo);
 
-Ipp32s GetLumaOffset(H265VideoParam *par, Ipp32s absPartIdx, Ipp32s pitch);
+Ipp32s GetLumaOffset(const H265VideoParam *par, Ipp32s absPartIdx, Ipp32s pitch);
+Ipp32s GetChromaOffset(const H265VideoParam *par, Ipp32s absPartIdx, Ipp32s pitch);
 
 Ipp32s tuHad(const PixType *src, Ipp32s pitch_src, const PixType *rec, Ipp32s pitch_rec,
              Ipp32s width, Ipp32s height);
