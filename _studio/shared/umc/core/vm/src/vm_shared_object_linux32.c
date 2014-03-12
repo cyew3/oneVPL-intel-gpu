@@ -4,11 +4,11 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//       Copyright(c) 2003-2013 Intel Corporation. All Rights Reserved.
+//       Copyright(c) 2003-2014 Intel Corporation. All Rights Reserved.
 //
 */
 
-#ifdef LINUX32
+#if defined(LINUX32) || defined (OSX32)
 
 #include <dlfcn.h>
 #include "vm_shared_object.h"
@@ -52,4 +52,4 @@ void vm_so_free(vm_so_handle so_handle)
 } /* void vm_so_free(vm_so_handle so_handle) */
 #else
 # pragma warning( disable: 4206 )
-#endif /* LINUX32 */
+#endif /* LINUX32 || OSX32 */

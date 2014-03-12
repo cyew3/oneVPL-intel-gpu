@@ -1,3 +1,16 @@
+list( APPEND dirs_splmux
+  asf_spl
+  avi_spl
+  common
+  demuxer
+  h264_spl
+  mpeg4_spl  
+  spl_common
+  vc1_common
+  vc1_spl
+  jpeg_common
+  )
+
 list( APPEND adirs
   aac_common
   aac_dec
@@ -109,4 +122,12 @@ set( sources "" )
 make_library( umc_h265 sw static )
 set( defs "" )
 
+# =============================================================================
 
+set( sources "" )
+foreach( dir ${dirs_splmux} )
+  file( GLOB_RECURSE srcs "${dir}/*.c" "${dir}/*.cpp" )
+  list( APPEND sources ${srcs})
+endforeach()
+
+make_library( umc_splmux_merged none static )

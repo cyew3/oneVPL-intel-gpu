@@ -25,6 +25,8 @@
 ##  Content: Intel(R) Media SDK Samples projects creation and build
 ##******************************************************************************
 
+if (Linux)
+
 if (__ARCH MATCHES ia32)
   set( mdf_arch x86)
   set( mdf_lib_suffix 86 )
@@ -50,5 +52,9 @@ if(NOT DEFINED MDF_FOUND)
   message( FATAL_ERROR "Intel(R) MDF was not found (required)! Set/check MFX_MDF_PATH environment variable!" )
 else ( )
   message( STATUS "Intel(R) MDF was found here $ENV{MFX_MDF_PATH}" )
+endif( )
+
+else( )
+  message( STATUS "Intel(R) MDF search skipped" )
 endif( )
 

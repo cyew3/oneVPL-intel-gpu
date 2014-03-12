@@ -320,6 +320,7 @@ foreach( prefix ${CMAKE_HOME_DIRECTORY}/_studio/shared/src )
     ${prefix}/mfx_vpp_vaapi.cpp
     ${prefix}/libmfx_allocator.cpp
     ${prefix}/libmfx_allocator_vaapi.cpp
+    ${prefix}/libmfx_allocator_vdaapi.cpp
     ${prefix}/libmfx_core.cpp
     ${prefix}/libmfx_core_factory.cpp
     ${prefix}/libmfx_core_vaapi.cpp
@@ -470,8 +471,8 @@ list( APPEND LIBS
   pthread
   dl )
 
-make_library( ${mfxrtlibname} none shared)
-append_property( ${mfxrtlibname} COMPILE_FLAGS "-DMFX_VA -DMFX_VA_LINUX -DMFX_RT" )  
+make_library( ${mfxrtlibname} hw shared)
+append_property( ${mfxrtlibname} COMPILE_FLAGS " -DMFX_RT" )  
 
 # =============================================================================
  

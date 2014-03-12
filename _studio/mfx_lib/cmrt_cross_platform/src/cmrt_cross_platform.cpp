@@ -8,6 +8,8 @@
 //
 */
 
+#if !defined(OSX)
+
 #include "assert.h"
 #include "vm_shared_object.h"
 #include "cmrt_cross_platform.h"
@@ -389,3 +391,6 @@ int CreateKernel(CmDevice * device, CmProgram * program, const char * kernelName
 }
 
 CmEvent *CM_NO_EVENT = ((CmEvent *)(-1));
+
+#endif // !defined(OSX)
+

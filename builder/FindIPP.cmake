@@ -37,7 +37,7 @@ if( Windows )
 elseif( Linux )
   set( ipp_root ${ipp_root}/linux/${ipp_arch} )
 elseif( Darwin )
-  set( ipp_root ${ipp_root}/darwin )
+  set( ipp_root ${ipp_root}/darwin/${ipp_arch} )
 endif( )
 
 find_path( IPP_INCLUDE ippcore.h PATHS ${ipp_root}/include )

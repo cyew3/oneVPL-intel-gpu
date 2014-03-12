@@ -271,7 +271,10 @@ static void h265_DCT32x32Inv_16sT_Kernel(DstCoeffsType *dst, const short *H265_R
 #endif
 
 // GCC 4.7 bug workaround
-#if ((__GNUC__== 4) && (__GNUC_MINOR__== 7))
+#if !defined(__INTEL_COMPILER) && ( __GNUC__ < 4 || (__GNUC__ == 4 && \
+    (__GNUC_MINOR__ < 6 || (__GNUC_MINOR__ == 6 && __GNUC_PATCHLEVEL__ > 0))))
+                ydata1 = _mm_broadcastsi128_si256((__m128i const *)&sdata);
+#elif(__GNUC__ == 4 && (__GNUC_MINOR__ == 7 && __GNUC_PATCHLEVEL__ > 0))
                 ydata1 = _mm_broadcastsi128_si256(sdata);
 #else
                 ydata1 = _mm256_broadcastsi128_si256(sdata);

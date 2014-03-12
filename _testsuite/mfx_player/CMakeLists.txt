@@ -52,7 +52,7 @@ foreach( variant sw drm x11 )
         mfx_pipeline_${variant}
 #        vpp_plugin
         shared_utils_lucas
-        umc_codecs_merged
+        umc_splmux_merged
         umc_io_merged_sw
         umc_core_merged
         ${ITT_LIBS}
@@ -74,7 +74,7 @@ foreach( variant sw drm x11 )
         mfx_pipeline_lucas_${variant}
 #        vpp_plugin
         shared_utils
-        umc_codecs_merged
+        umc_splmux_merged
         umc_io_merged_sw
         umc_core_merged
         ${ITT_LIBS}

@@ -2290,7 +2290,7 @@ UMC::Status TaskSupplier_H265::InitFreeFrame(H265DecoderFrame * pFrame, const H2
     //Ipp32s iCUHeight = pSeqParam->HeightInCU;
 //    IppiSize dimensions = {iMBWidth * 16, iMBHeight * 16};
     //IppiSize dimensions = {iCUWidth * pSeqParam->MaxCUWidth, iCUHeight * pSeqParam->MaxCUHeight};
-    IppiSize dimensions = {pSeqParam->pic_width_in_luma_samples, pSeqParam->pic_height_in_luma_samples};
+    IppiSize dimensions = {static_cast<int>(pSeqParam->pic_width_in_luma_samples), static_cast<int>(pSeqParam->pic_height_in_luma_samples)};
 
     UMC::ColorFormat cf = GetUMCColorFormat_H265(chroma_format_idc);
 

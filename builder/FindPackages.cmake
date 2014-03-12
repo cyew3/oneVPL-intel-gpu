@@ -137,8 +137,9 @@ function( configure_build_variant_darwin target variant )
       CoreMedia
       CoreVideo
       )
-    
+
     append_property( ${ARGV0} COMPILE_FLAGS "-DMFX_VA" )
+    
     foreach( item ${darwin_includes} )
       append_property( ${ARGV0} COMPILE_FLAGS "-I${item}" )
     endforeach()

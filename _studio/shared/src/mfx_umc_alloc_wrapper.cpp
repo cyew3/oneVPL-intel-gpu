@@ -324,8 +324,8 @@ UMC::Status mfx_UMC_FrameAllocator::Alloc(UMC::FrameMemID *pNewMemID, const UMC:
         *pNewMemID = (UMC::FrameMemID)index;
     }
 
-    IppiSize allocated = {m_info.GetWidth(), m_info.GetHeight()};
-    IppiSize passed = {info->GetWidth(), info->GetHeight()};
+    IppiSize allocated = {static_cast<int>(m_info.GetWidth()), static_cast<int>(m_info.GetHeight())};
+    IppiSize passed = {static_cast<int>(info->GetWidth()), static_cast<int>(info->GetHeight())};
     UMC::ColorFormat colorFormat = info->GetColorFormat();
 
     switch(colorFormat)
@@ -969,8 +969,8 @@ mfxStatus mfx_UMC_FrameAllocator_NV12::ConvertToNV12(const UMC::FrameData * fd, 
 
     Ipp8u *(pDst[2]) = {data->Y,
                         data->U};
-    Ipp32s pDstStep[2] = {data->PitchLow + ((mfxU32)data->PitchHigh << 16),
-                          data->PitchLow + ((mfxU32)data->PitchHigh << 16)};
+    Ipp32s pDstStep[2] = {static_cast<Ipp32s>(data->PitchLow + ((mfxU32)data->PitchHigh << 16)),
+                          static_cast<Ipp32s>(data->PitchLow + ((mfxU32)data->PitchHigh << 16))};
 
     IppiSize srcSize = {videoInfo.Width, videoInfo.Height};
     IppStatus sts = ippiYCbCr420_8u_P3P2R(pYVU, pYVUStep, pDst[0], pDstStep[0], pDst[1], pDstStep[1], srcSize);

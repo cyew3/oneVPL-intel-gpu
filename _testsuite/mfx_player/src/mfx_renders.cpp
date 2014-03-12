@@ -1218,9 +1218,9 @@ mfxStatus ConvertSurface(mfxFrameSurface1* pSurfaceIn, mfxFrameSurface1* pSurfac
 
     Ipp32s pDstStep[3] = 
     {
-        pitchOut,
-        pitchOut >> 1,
-        pitchOut >> 1
+        static_cast<Ipp32s>(pitchOut),
+        static_cast<Ipp32s>(pitchOut >> 1),
+        static_cast<Ipp32s>(pitchOut >> 1)
     };
 
     if (pSurfaceIn->Info.FourCC == MFX_FOURCC_NV12)
@@ -1233,8 +1233,8 @@ mfxStatus ConvertSurface(mfxFrameSurface1* pSurfaceIn, mfxFrameSurface1* pSurfac
 
         Ipp32s pSrcStep[2] = 
         {
-            pitchIn, 
-            pitchIn
+            static_cast<Ipp32s>(pitchIn), 
+            static_cast<Ipp32s>(pitchIn)
         };
 
         IppiSize srcSize = 
@@ -1261,9 +1261,9 @@ mfxStatus ConvertSurface(mfxFrameSurface1* pSurfaceIn, mfxFrameSurface1* pSurfac
 
         Ipp32s pSrcStep[3] = 
         {
-            pitchIn, 
-            pitchIn,
-            pitchIn
+            static_cast<Ipp32s>(pitchIn), 
+            static_cast<Ipp32s>(pitchIn),
+            static_cast<Ipp32s>(pitchIn)
         };
 
         IppiSize srcSize[3] = 

@@ -3,7 +3,7 @@
 //  This software is supplied under the terms of a license agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in accordance with the terms of that agreement.
-//        Copyright (c) 2004 - 2011 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2004 - 2014 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -152,7 +152,7 @@ const Ipp32s ctxIdxOffsetFieldCoded[SYNTAX_ELEMENT_NUMBER] =
 // See table 9-24 of H.264 standard
 const Ipp32s ctxIdxOffsetFrameCoded_BlockCat_5[SYNTAX_ELEMENT_NUMBER] =
 {
-    0xffffffff, // na
+    -1, // na
     402,
     417,
     426
@@ -161,7 +161,7 @@ const Ipp32s ctxIdxOffsetFrameCoded_BlockCat_5[SYNTAX_ELEMENT_NUMBER] =
 // See table 9-24 of H.264 standard
 const Ipp32s ctxIdxOffsetFieldCoded_BlockCat_5[SYNTAX_ELEMENT_NUMBER] =
 {
-    0xffffffff, // na
+    -1, // na
     436,
     451,
     426

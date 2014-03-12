@@ -25,17 +25,23 @@
 ##  Content: Intel(R) Media SDK Samples projects creation and build
 ##******************************************************************************
 
-pkg_check_modules(PKG_LIBVAUTIL libavutil>=52.38.100)
-pkg_check_modules(PKG_LIBAVCODEC libavcodec>=55.18.102)
-pkg_check_modules(PKG_LIBAVFORMAT libavformat>=55.12.100)
+if (Linux)
 
-if(PKG_LIBVAUTIL_FOUND AND
-   PKG_LIBAVCODEC_FOUND AND
-   PKG_LIBAVFORMAT_FOUND)
-    set( FFMPEG_FOUND TRUE )
-    message( STATUS "FFmpeg headers and libraries were found." )
-endif( )
+	pkg_check_modules(PKG_LIBVAUTIL libavutil>=52.38.100)
+	pkg_check_modules(PKG_LIBAVCODEC libavcodec>=55.18.102)
+	pkg_check_modules(PKG_LIBAVFORMAT libavformat>=55.12.100)
 
-if(NOT DEFINED FFMPEG_FOUND)
-  message( STATUS "FFmpeg headers and libraries were not found (optional). The following will not be built: sample_spl_mux." )
+	if(PKG_LIBVAUTIL_FOUND AND
+	   PKG_LIBAVCODEC_FOUND AND
+	   PKG_LIBAVFORMAT_FOUND)
+	    set( FFMPEG_FOUND TRUE )
+	    message( STATUS "FFmpeg headers and libraries were found." )
+	endif( )
+
+	if(NOT DEFINED FFMPEG_FOUND)
+	  message( STATUS "FFmpeg headers and libraries were not found (optional). The following will not be built: sample_spl_mux." )
+	endif( )
+
+else()
+   message( STATUS "FFmpeg headers and libraries were serached at all (optional). The following will not be built: sample_spl_mux." )
 endif( )

@@ -7,7 +7,11 @@ include_directories (
   ${CMAKE_HOME_DIRECTORY}/_studio/shared/umc/test_suite/spy_test_component/xerces/include
 )
 
-pkg_check_modules(PKG_XERCES xerces-c>=3.0)
+if( Linux )
+  pkg_check_modules(PKG_XERCES xerces-c>=3.0)
+elseif( Darwin )
+  set (PKG_XERCES_FOUND false)
+endif ()
 
 
 

@@ -8,6 +8,8 @@
 //
 */
 
+#if !defined(OSX)
+
 #include "cm_mem_copy.h"
 #include "cm_gpu_copy_code.h"
 
@@ -757,3 +759,5 @@ mfxStatus CmCopyWrapper::CopyVideoToVideoMemoryAPI(void *pDst, void *pSrc, IppiS
 
     return status;
 }
+
+#endif // !defined(OSX)

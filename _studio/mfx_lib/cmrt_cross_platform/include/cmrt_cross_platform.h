@@ -11,6 +11,8 @@
 **/ 
 #pragma once
 
+#if !defined(OSX)
+
 //Using CM_DX9 by default
 #if (!defined(__GNUC__)) && (!defined(CM_DX11))
 #ifndef CM_DX9
@@ -126,12 +128,21 @@ typedef unsigned int VADisplay;
 #define CM_FEATURE_NOT_SUPPORTED_BY_HARDWARE        -61
 #define CM_RESOURCE_USAGE_NOT_SUPPORT_READWRITE     -62
 #define CM_MULTIPLE_MIPLEVELS_NOT_SUPPORTED         -63
+#define CM_INVALID_UMD_CONTEXT                      -64
+#define CM_INVALID_LIBVA_SURFACE                    -65
+#define CM_INVALID_LIBVA_INITIALIZE                 -66
 
 #define CM_MIN_SURF_WIDTH   1
 #define CM_MIN_SURF_HEIGHT  1
 #define CM_MIN_SURF_DEPTH   2
 
 #define CM_MAX_1D_SURF_WIDTH 0X8000000 // 2^27
+
+#define CM_MAX_GPUCOPY_SURFACE_WIDTH_IN_BYTE        65408
+#define CM_MAX_GPUCOPY_SURFACE_HEIGHT               4088
+
+#define CM_DEVICE_CREATE_OPTION_DEFAULT                     0
+#define CM_DEVICE_CREATE_OPTION_SCRATCH_SPACE_DISABLE       1
 
 //SNB
 #define CM_MAX_2D_SURF_WIDTH    8192
@@ -151,9 +162,6 @@ typedef unsigned int VADisplay;
 
 #define CM_MAX_THREADSPACE_WIDTH        511
 #define CM_MAX_THREADSPACE_HEIGHT       511
-
-#define CM_DEVICE_CREATE_OPTION_DEFAULT                     0
-#define CM_DEVICE_CREATE_OPTION_SCRATCH_SPACE_DISABLE       1
 
 #define IVB_MAX_SLM_SIZE_PER_GROUP   16 // 64KB PER Group on Gen7
 
@@ -392,6 +400,13 @@ typedef struct _CM_DEPENDENCY
     INT     deltaY[CM_MAX_DEPENDENCY_COUNT];
 }CM_DEPENDENCY;
 
+typedef enum _CM_BOUNDARY_PIXEL_MODE
+{
+     CM_BOUNDARY_NORMAL  = 0x0,
+     CM_BOUNDARY_PROGRESSIVE_FRAME = 0x2,
+     CM_BOUNARY_INTERLACED_FRAME = 0x3
+}CM_BOUNDARY_PIXEL_MODE;
+
 /**************** L3/Cache ***************/
 typedef enum _MEMORY_OBJECT_CONTROL{
     // SNB
@@ -401,7 +416,7 @@ typedef enum _MEMORY_OBJECT_CONTROL{
     MEMORY_OBJECT_CONTROL_LLC_AND_MLC,
 
     // IVB
-    MEMORY_OBJECT_CONTROL_FROM_GTT_ENTRY,                                 // Caching dependent on pte
+    MEMORY_OBJECT_CONTROL_FROM_GTT_ENTRY = MEMORY_OBJECT_CONTROL_USE_GTT_ENTRY,                                 // Caching dependent on pte
     MEMORY_OBJECT_CONTROL_L3,                                             // Cached in L3$
     MEMORY_OBJECT_CONTROL_LLC,                                            // Cached in LLC 
     MEMORY_OBJECT_CONTROL_LLC_L3,                                         // Cached in LLC & L3$
@@ -420,7 +435,7 @@ typedef enum _MEMORY_OBJECT_CONTROL{
     MEMORY_OBJECT_CONTROL_L3_LLC_ELLC,
     MEMORY_OBJECT_CONTROL_L3_ELLC,
 
-    MEMORY_OBJECT_CONTROL_UNKNOW = 0xff
+    MEMORY_OBJECT_CONTROL_UNKNOWN = 0xff
 } MEMORY_OBJECT_CONTROL;
 
 typedef enum _MEMORY_TYPE {
@@ -961,7 +976,6 @@ public:
 
     CM_RT_API virtual INT SetThreadArg(UINT threadId, UINT index, size_t size, const void * pValue ) = 0;
     CM_RT_API virtual INT SetStaticBuffer(UINT index, const void * pValue ) = 0;
-    CM_RT_API virtual INT SetSurfaceMemoryObjectCtrl(SurfaceIndex * index, MEMORY_OBJECT_CONTROL mem_ctrl, MEMORY_TYPE mem_type, UINT  age) = 0;
 
     CM_RT_API virtual INT SetKernelPayloadData(size_t size, const void *pValue) = 0;
     CM_RT_API virtual INT SetKernelPayloadSurface(UINT surfaceCount, SurfaceIndex** pSurfaces) = 0;
@@ -986,12 +1000,14 @@ public:
     CM_RT_API virtual INT ReadSurface( unsigned char* pSysMem, CmEvent* pEvent, UINT64 sysMemSize = 0xFFFFFFFFFFFFFFFFULL ) = 0;
     CM_RT_API virtual INT WriteSurface( const unsigned char* pSysMem, CmEvent* pEvent, UINT64 sysMemSize = 0xFFFFFFFFFFFFFFFFULL ) = 0;
     CM_RT_API virtual INT InitSurface(const DWORD initValue, CmEvent* pEvent) = 0;
+    CM_RT_API virtual INT SetMemoryObjectControl(MEMORY_OBJECT_CONTROL mem_ctrl, MEMORY_TYPE mem_type, UINT  age) = 0;
 };
 
 class CmBufferUP
 {
 public:
     CM_RT_API virtual INT GetIndex( SurfaceIndex*& pIndex ) = 0; 
+    CM_RT_API virtual INT SetMemoryObjectControl(MEMORY_OBJECT_CONTROL mem_ctrl, MEMORY_TYPE mem_type, UINT  age) = 0;
 };
 
 class CmSurface2D
@@ -1009,12 +1025,18 @@ public:
 #ifndef __GNUC__
     CM_RT_API virtual INT QuerySubresourceIndex(UINT& FirstArraySlice, UINT& FirstMipSlice) = 0;
 #endif //__GNUC__
+    CM_RT_API virtual INT SetMemoryObjectControl(MEMORY_OBJECT_CONTROL mem_ctrl, MEMORY_TYPE mem_type, UINT  age) = 0;
+    CM_RT_API virtual INT SetSurfaceState(UINT iWidth, UINT iHeight, CM_SURFACE_FORMAT Format, CM_BOUNDARY_PIXEL_MODE boundaryMode) = 0;
+#ifdef __GNUC__
+    CM_RT_API virtual INT GetVaSurfaceID( VASurfaceID  &iVASurface) = 0;
+#endif
 };
 
 class CmSurface2DUP  
 {
 public:    
     CM_RT_API virtual INT GetIndex( SurfaceIndex*& pIndex ) = 0; 
+    CM_RT_API virtual INT SetMemoryObjectControl(MEMORY_OBJECT_CONTROL mem_ctrl, MEMORY_TYPE mem_type, UINT  age) = 0;
 };
 
 class CmSurface3D  
@@ -1024,6 +1046,7 @@ public:
     CM_RT_API virtual INT ReadSurface( unsigned char* pSysMem, CmEvent* pEvent, UINT64 sysMemSize = 0xFFFFFFFFFFFFFFFFULL ) = 0;
     CM_RT_API virtual INT WriteSurface( const unsigned char* pSysMem, CmEvent* pEvent, UINT64 sysMemSize = 0xFFFFFFFFFFFFFFFFULL ) = 0;
     CM_RT_API virtual INT InitSurface(const DWORD initValue, CmEvent* pEvent) = 0;
+    CM_RT_API virtual INT SetMemoryObjectControl(MEMORY_OBJECT_CONTROL mem_ctrl, MEMORY_TYPE mem_type, UINT  age) = 0;
 };
 
 class CmSampler
@@ -1040,6 +1063,7 @@ public:
 };
 
 class CmThreadGroupSpace;
+class CmVebox_G75;
 
 class CmQueue
 {
@@ -1054,8 +1078,9 @@ public:
     CM_RT_API virtual INT EnqueueInitSurface2D( CmSurface2D* pSurface, const DWORD initValue, CmEvent* &pEvent ) = 0;
     CM_RT_API virtual INT EnqueueCopyGPUToGPU( CmSurface2D* pOutputSurface, CmSurface2D* pInputSurface, CmEvent* & pEvent ) = 0;
     CM_RT_API virtual INT EnqueueCopyCPUToCPU( unsigned char* pDstSysMem, unsigned char* pSrcSysMem, UINT size, CmEvent* & pEvent ) = 0;
-    CM_RT_API virtual INT EnqueueCopyCPUToGPUFullStride( CmSurface2D* pSurface, const unsigned char* pSysMem, const UINT stride, const UINT vstride, const UINT option, CmEvent* & pEvent ) = 0; 
-    CM_RT_API virtual INT EnqueueCopyGPUToCPUFullStride( CmSurface2D* pSurface, unsigned char* pSysMem, const UINT stride, const UINT vstride, const UINT option, CmEvent* & pEvent ) = 0;
+
+    CM_RT_API virtual INT EnqueueCopyCPUToGPUFullStride( CmSurface2D* pSurface, const unsigned char* pSysMem, const UINT widthStride, const UINT heightStride, const UINT option, CmEvent* & pEvent ) = 0;
+    CM_RT_API virtual INT EnqueueCopyGPUToCPUFullStride( CmSurface2D* pSurface, unsigned char* pSysMem, const UINT widthStride, const UINT heightStride, const UINT option, CmEvent* & pEvent ) = 0;
 };
 
 class CmVmeState
@@ -1354,3 +1379,4 @@ int CreateKernel(CmDevice * device, CmProgram * program, const char * kernelName
 #undef ULONG
 #endif
 
+#endif // !defined(OSX)

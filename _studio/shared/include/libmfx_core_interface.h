@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2011-2013 Intel Corporation. All Rights Reserved.
+Copyright(c) 2011-2014 Intel Corporation. All Rights Reserved.
 
 File Name: libmfx_core_interface.h
 
@@ -34,6 +34,10 @@ static const MFX_GUID  MFXICORED3D11_GUID =
 // {B0FCB183-1A6D-4f00-8BAF-93F285ACEC93}
 static const MFX_GUID MFXICOREVAAPI_GUID = 
 { 0xb0fcb183, 0x1a6d, 0x4f00, { 0x8b, 0xaf, 0x93, 0xf2, 0x85, 0xac, 0xec, 0x93 } };
+
+// {86dc1aab-eb20-47a2-a461-428a7bd60183}
+static const MFX_GUID MFXICOREVDAAPI_GUID =
+{ 0x86dc1aab, 0xeb20, 0x47a2, {0xa4, 0x61, 0x42, 0x8a, 0x7b, 0xd6, 0x01, 0x83 } };
 
 // {6ED94B99-DB70-4EBB-BC5C-C7E348FC2396}
 static const 
@@ -226,6 +230,16 @@ struct D3D11Interface
     //                                                 mfxU16 height,
     //                                                 VADisplay** pDisplay = NULL) = 0;      
     };
+
+#elif defined (MFX_VA_OSX)
+struct VDAAPIInterface
+{
+    static const MFX_GUID & getGuid()
+    {
+        return MFXICOREVDAAPI_GUID;
+    }
+};
+
 #endif
 
 #endif // __LIBMFX_CORE_INTERFACE_H__

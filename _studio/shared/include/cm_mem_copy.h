@@ -15,6 +15,8 @@
 #include "mfxstructures.h"
 #include "ippi.h"
 
+#if !defined(OSX)
+
 #pragma warning(disable: 4505)
 #pragma warning(disable: 4100)
 #pragma warning(disable: 4201)
@@ -178,5 +180,6 @@ protected:
 
 };
 
+#endif // !defined(MFX_VA_OSX)
 
 #endif // __CM_MEM_COPY_H__
