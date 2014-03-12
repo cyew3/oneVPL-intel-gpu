@@ -49,11 +49,14 @@ const msdk_disp_char * defaultDLLName[2] = {"libmfxhw32.dylib",
                                             "libmfxsw32.dylib"};
 const msdk_disp_char * defaultAudioDLLName[2] = {"libmfxaudiosw32.dylib",
                                             "libmfxaudiosw32.dylib"};
+const msdk_disp_char * defaultRTName =  {"libmfxrt32.dylib"};
 #else
 const msdk_disp_char * defaultDLLName[2] = {"libmfxhw64.dylib",
                                             "libmfxsw64.dylib"};
 const msdk_disp_char * defaultAudioDLLName[2] = {"libmfxaudiosw64.dylib",
                                             "libmfxaudiosw64.dylib"};
+const msdk_disp_char * defaultRTName =  {"libmfxrt64.dylib"};
+
 #endif // #ifdef __i386__ for __APPLE__
 
 #else // for Linux32 and Android
@@ -79,11 +82,17 @@ const msdk_disp_char * defaultDLLName[2] = {"libmfxhw32_d.dylib",
                                             "libmfxsw32_d.dylib"};
 const msdk_disp_char * defaultAudioDLLName[2] = {"libmfxaudiosw32_d.dylib",
                                             "libmfxaudiosw32_d.dylib"};
+
+const msdk_disp_char * defaultRTName =  {"libmfxrt32_d.dylib"};
+
 #else
 const msdk_disp_char * defaultDLLName[2] = {"libmfxhw64_d.dylib",
                                             "libmfxsw64_d.dylib"};
 const msdk_disp_char * defaultAudioDLLName[2] = {"libmfxaudiosw64_d.dylib",
                                             "libmfxaudiosw64_d.dylib"};
+
+const msdk_disp_char * defaultRTName =  {"libmfxrt64_d.dylib"};
+
 #endif // #ifdef __i386__ for __APPLE__
 
 #else // for Linux32 and Android

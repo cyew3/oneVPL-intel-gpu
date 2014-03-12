@@ -49,6 +49,7 @@ File Name: mfx_library_iterator_linux.cpp
 
 static const char mfx_storage_opt[] = "/opt/intel";
 
+#ifndef __APPLE__
 #if defined(LINUX64)
     static const char mfx_folder[] = "mediasdk/lib64";
     static const char mfx_so_hw_base_name[] = "libmfxhw64-p.so";
@@ -58,6 +59,18 @@ static const char mfx_storage_opt[] = "/opt/intel";
     static const char mfx_so_hw_base_name[] = "libmfxhw32-p.so";
     static const char mfx_so_sw_base_name[] = "libmfxsw32-p.so";
 #endif
+
+#else
+#if defined(X86_64)
+static const char mfx_folder[] = "mediasdk/lib64";
+static const char mfx_so_hw_base_name[] = "libmfxhw64.dylib";
+static const char mfx_so_sw_base_name[] = "libmfxsw64.dylib";
+#else
+static const char mfx_folder[] = "mediasdk/lib32";
+static const char mfx_so_hw_base_name[] = "libmfxhw32.dylib";
+static const char mfx_so_sw_base_name[] = "libmfxsw32.dylib";
+#endif
+#endif  //ifndef __APPLE__
 
 static int mfx_dir_filter(const struct dirent* dir_ent)
 {

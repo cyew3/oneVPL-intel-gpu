@@ -43,7 +43,13 @@ struct mfx_disp_adapters
     mfxU32 device_id;
 };
 
+#ifndef __APPLE__
 #define MFX_SO_BASE_NAME_LEN 15 // sizeof("libmfxhw32-p.so") = 15
+#else
+
+#define MFX_SO_BASE_NAME_LEN 16 // sizeof("libmfxhw64.dylib") = 16
+#endif
+
 #define MFX_MIN_REAL_LIBNAME MFX_SO_BASE_NAME_LEN + 4 // sizeof("libmfxhw32-p.so.0.0") >= 19
 #define MFX_MAX_REAL_LIBNAME MFX_MIN_REAL_LIBNAME + 8 // sizeof("libmfxhw32-p.so.<mj>.<mn>") <= 27, max(sizeof(<mj>))=sizeof(0xFFFF) = sizeof(65535) = 5
 
