@@ -16,6 +16,7 @@ int TestAnalyzeGradient();
 int TestRefineMeP32x32();
 int TestRefineMeP32x16();
 int TestRefineMeP16x32();
+int TestInterpolateFrame();
 
 typedef int (*TestFuncPtr)();
 
@@ -43,4 +44,5 @@ int main()
     RunTest(TestRefineMeP32x16, "RefineMeP32x16");
     RunTest(TestRefineMeP16x32, "RefineMeP16x32");
     RunTest(TestAnalyzeGradient, "AnalyzeGradient");
+    RunTest(TestInterpolateFrame, "InterpolateFrame");
 }

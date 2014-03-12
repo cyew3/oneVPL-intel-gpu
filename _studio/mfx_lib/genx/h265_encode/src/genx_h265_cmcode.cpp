@@ -1977,3 +1977,8 @@ AnalyzeGradient(SurfaceIndex SURF_SRC,
     write(SURF_GRADIENT_8x8, offset + 64, SLICE1(histogram8x8, 32,  8));
 }
 
+extern "C" _GENX_MAIN_
+void InterpolateFrame(SurfaceIndex SURF_FPEL, SurfaceIndex SURF_HPEL_HORZ,
+                      SurfaceIndex SURF_HPEL_VERT, SurfaceIndex SURF_HPEL_DIAG)
+{
+}

@@ -313,6 +313,7 @@ $(TargetPath)</Command>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="src\genx_h265_cmcode_isa.cpp" />
+    <ClCompile Include="src\test_interpolate_frame.cpp" />
     <ClCompile Include="src\test_main.cpp" />
     <ClCompile Include="src\test_analyze_gradient.cpp" />
     <ClCompile Include="src\test_refine_me_p_16x32.cpp" />

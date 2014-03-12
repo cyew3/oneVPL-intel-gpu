@@ -19,4 +19,6 @@ void RawMeMB_P(SurfaceIndex, SurfaceIndex, SurfaceIndex, SurfaceIndex, SurfaceIn
                SurfaceIndex, SurfaceIndex, SurfaceIndex, SurfaceIndex);
 void RawMeMB_B(SurfaceIndex, SurfaceIndex, SurfaceIndex, SurfaceIndex);
 void AnalyzeGradient(SurfaceIndex, SurfaceIndex, SurfaceIndex, unsigned int);
+void InterpolateFrame(SurfaceIndex SURF_FPEL, SurfaceIndex SURF_HPEL_HORZ,
+                      SurfaceIndex SURF_HPEL_VERT, SurfaceIndex SURF_HPEL_DIAG);
 };
