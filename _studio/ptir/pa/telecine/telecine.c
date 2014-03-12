@@ -644,7 +644,7 @@ void __stdcall Detect_Solve_32BlendedPatterns(Frame **pFrm, Pattern *ptrn, unsig
             condition[i + start] = (pFrm[i + start]->plaY.ucStats.ucRs[6] > 100) && (pFrm[i + start]->plaY.ucStats.ucRs[7] > 0.1);
 
         count = 1;
-        for(i = 2; i < 5; i++)
+        for(i = 1; i < 4; i++)
             count += condition[i];
         if(count > 3)
         {
