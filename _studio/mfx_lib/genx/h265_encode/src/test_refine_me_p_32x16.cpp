@@ -18,7 +18,7 @@
 #include "../include/genx_h265_cmcode_isa.h"
 
 #ifdef CMRT_EMU
-extern "C" _GENX_MAIN_
+extern "C"
 void RefineMeP32x16(SurfaceIndex SURF_MBDIST_32x32, SurfaceIndex SURF_MBDATA_2X,
                     SurfaceIndex SURF_SRC_1X, SurfaceIndex SURF_REF_1X, mfxU32 picWidth);
 #endif //CMRT_EMU

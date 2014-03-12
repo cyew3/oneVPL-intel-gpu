@@ -19,9 +19,9 @@
 #include <utility>
 
 #include "mfx_h265_defs.h"
-//#include "mfx_h265_prediction.h"
 #include "mfx_h265_enc_cm_defs.h"
 #include "mfx_h265_enc_cm.h"
+#include "genx_h265_cmcode_proto.h"
 #include "genx_h265_cmcode_isa.h"
 
 namespace H265Enc {

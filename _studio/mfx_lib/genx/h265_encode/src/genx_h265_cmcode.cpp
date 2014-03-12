@@ -8,30 +8,12 @@
 //
 */
 
-#ifndef CMRT_EMU
-
-#include <cm_common.h>
-
-extern "C" {
-void DownSampleMB(SurfaceIndex, SurfaceIndex) {}
-void MeP32(SurfaceIndex, SurfaceIndex, SurfaceIndex, SurfaceIndex, SurfaceIndex) {}
-void RefineMeP32x32(SurfaceIndex, SurfaceIndex, SurfaceIndex, SurfaceIndex) {}
-void RefineMeP32x16(SurfaceIndex, SurfaceIndex, SurfaceIndex, SurfaceIndex) {}
-void RefineMeP16x32(SurfaceIndex, SurfaceIndex, SurfaceIndex, SurfaceIndex) {}
-void RawMeMB_P_Intra(SurfaceIndex, SurfaceIndex, SurfaceIndex , SurfaceIndex ) {}
-void RawMeMB_P(SurfaceIndex, SurfaceIndex, SurfaceIndex, SurfaceIndex, SurfaceIndex, SurfaceIndex,
-               SurfaceIndex, SurfaceIndex, SurfaceIndex, SurfaceIndex) {}
-void RawMeMB_B(SurfaceIndex, SurfaceIndex, SurfaceIndex, SurfaceIndex) {}
-void AnalyzeGradient(SurfaceIndex, SurfaceIndex, SurfaceIndex, unsigned int) {}
-};
-
-#else // !CMRT_EMU
 
 #pragma warning(disable: 4127)
 #pragma warning(disable: 4244)
 #pragma warning(disable: 4018)
 #pragma warning(disable: 4189)
-#pragma warning(disable: 4505)
+#pragma warning(disable: 4505) 
 #include <cm.h>
 #include <genx_vme.h>
 
@@ -1995,4 +1977,3 @@ AnalyzeGradient(SurfaceIndex SURF_SRC,
     write(SURF_GRADIENT_8x8, offset + 64, SLICE1(histogram8x8, 32,  8));
 }
 
-#endif // !CMRT_EMU

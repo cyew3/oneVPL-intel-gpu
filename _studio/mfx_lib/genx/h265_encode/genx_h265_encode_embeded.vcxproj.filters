@@ -17,9 +17,15 @@
     <ClCompile Include="src\genx_h265_cmcode_isa.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\genx_h265_cmcode_stub.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\genx_h265_cmcode_isa.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\genx_h265_cmcode_proto.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
