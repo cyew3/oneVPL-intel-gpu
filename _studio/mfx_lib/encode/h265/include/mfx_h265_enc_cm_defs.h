@@ -10,7 +10,7 @@
 
 #if defined (MFX_ENABLE_H265_VIDEO_ENCODE)
 
-#if defined (MFX_ENABLE_CM))
+#if defined (MFX_ENABLE_CM)
 
 #pragma once
 
