@@ -132,7 +132,7 @@ void vppPrintHelp(vm_char *strAppName, vm_char *strErrorMessage)
 } // void vppPrintHelp(vm_char *strAppName, vm_char *strErrorMessage)
 
 
-mfxU8 GetPicStruct( mfxU8 picStruct )
+mfxU8 GetPicStruct( mfxI8 picStruct )
 {  
     if ( 0 == picStruct ) 
     {
@@ -142,12 +142,16 @@ mfxU8 GetPicStruct( mfxU8 picStruct )
     {
         return MFX_PICSTRUCT_FIELD_BFF;
     } 
+    else if( -1 == picStruct )
+    {
+        return MFX_PICSTRUCT_UNKNOWN;
+    } 
     else 
     {
         return MFX_PICSTRUCT_PROGRESSIVE;
     }
 
-} // mfxU8 GetPicStruct( mfxU8 picStruct )
+} // mfxU8 GetPicStruct( mfxI8 picStruct )
 
 
 mfxU32 Str2FourCC( vm_char* strInput )
