@@ -67,6 +67,7 @@
 
 #ifdef UMC_VA_LINUX
 #include <va/va.h>//aya
+#include <va/va_dec_vp8.h>
 #ifndef UNREFERENCED_PARAMETER
 #define UNREFERENCED_PARAMETER(p) (p);
 #endif

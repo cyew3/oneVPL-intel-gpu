@@ -91,7 +91,8 @@ Ipp32u g_Profiles[] =
 {
     UMC::MPEG2_VLD, UMC::MPEG2_IT,
     UMC::H264_VLD,
-    UMC::VC1_VLD, UMC::VC1_MC
+    UMC::VC1_VLD, UMC::VC1_MC,
+    UMC::VP8_VLD
 };
 
 // va profile priorities for different codecs
@@ -115,6 +116,11 @@ VAProfile g_VC1Profiles[] =
     VAProfileVC1Advanced, VAProfileVC1Main, VAProfileVC1Simple
 };
 
+VAProfile g_VP8Profiles[] =
+{
+    VAProfileVP8Version0_3
+};
+
 VAProfile get_next_va_profile(Ipp32u umc_codec, Ipp32u profile)
 {
     VAProfile va_profile = (VAProfile)-1;
@@ -132,6 +138,9 @@ VAProfile get_next_va_profile(Ipp32u umc_codec, Ipp32u profile)
         break;
     case UMC::VA_VC1:
         if (profile < UMC_ARRAY_SIZE(g_VC1Profiles)) va_profile = g_VC1Profiles[profile];
+        break;
+    case UMC::VA_VP8:
+        if (profile < UMC_ARRAY_SIZE(g_VP8Profiles)) va_profile = g_VP8Profiles[profile];
         break;
     default:
         va_profile = (VAProfile)-1;
@@ -643,6 +652,10 @@ VACompBuffer* LinuxVideoAccelerator::GetCompBufferHW(Ipp32s type, Ipp32s size, I
                 va_size         = sizeof(VASliceParameterBufferVC1);
                 va_num_elements = size/sizeof(VASliceParameterBufferVC1);
                 break;
+            case UMC::VA_VP8:
+                va_size         = sizeof(VASliceParameterBufferVP8);
+                va_num_elements = size/sizeof(VASliceParameterBufferVP8);
+                break;
             default:
                 va_size         = 0;
                 va_num_elements = 0;
@@ -703,7 +716,7 @@ LinuxVideoAccelerator::Execute()
                     va_sts = vaBufferSetNumElements(m_dpy, id, pCompBuf->GetNumOfItem());
                     if (VA_STATUS_SUCCESS == va_res) va_res = va_sts;
                 }
-            }
+            }*/
 
             va_sts = vaUnmapBuffer(m_dpy, id);
             if (VA_STATUS_SUCCESS == va_res) va_res = va_sts;
