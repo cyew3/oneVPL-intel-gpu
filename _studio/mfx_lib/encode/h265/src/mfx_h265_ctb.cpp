@@ -2190,10 +2190,8 @@ CostType H265CU::CuCost(Ipp32u absPartIdx, Ipp8u depth, const H265MEInfo *bestIn
 
         TuDiff(m_interResidualsYPtr[depth] + offsetPred, MAX_CU_SIZE, src, m_pitchSrc, m_interPredPtr[depth] + offsetPred, MAX_CU_SIZE, m_data[absPartIdx].size);
 
-        if (m_par->AnalyseFlags & HEVC_COST_CHROMA) {
-            PixType *pRec = m_uvRec + GetChromaOffset(m_par, absPartIdx, m_pitchRec);
-            InterPredCu(absPartIdx, depth, pRec, m_pitchRec, 0);
-        }
+        if (m_par->AnalyseFlags & HEVC_COST_CHROMA)
+            InterPredCu(absPartIdx, depth, m_uvRec, m_pitchRec, 0);
 
         memset(&cbf[absPartIdx], 0, numParts*sizeof(cbf[0]));
         for (Ipp32u pos = 0; pos < numParts; ) {
@@ -2933,6 +2931,8 @@ void H265CU::EncAndRecLuma(Ipp32u absPartIdx, Ipp32s offset, Ipp8u depth, Ipp8u 
     //if (depth == data[absPartIdx].depth && data[absPartIdx].pred_mode == MODE_INTER) {
     //    InterPredCu(absPartIdx, depth, m_yRec, m_pitchRec, 1);
     //}
+
+    VM_ASSERT(depth <= depthMax);
 
     if (depth == depthMax) {
         EncAndRecLumaTu( absPartIdx, offset, width, nz, cost, 0, INTRA_PRED_CALC);
