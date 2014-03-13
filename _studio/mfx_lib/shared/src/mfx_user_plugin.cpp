@@ -321,7 +321,7 @@ mfxStatus VideoUSERPlugin::VPPFrameCheck(mfxFrameSurface1 *in, mfxFrameSurface1 
     *ep = m_entryPoint;
     ep->pParam = userParam;
 
-    return MFX_ERR_NONE;
+    return mfxRes;
 }
 
 mfxStatus VideoUSERPlugin::GetVideoParam(mfxVideoParam *par) {
