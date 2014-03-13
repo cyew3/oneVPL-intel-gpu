@@ -77,11 +77,11 @@ bool H265Slice::Init(Ipp32s )
 
 Ipp32s H265Slice::RetrievePicParamSetNumber()
 {
-    if (!m_source.GetSize())
+    if (!m_source.GetDataSize())
         return -1;
 
     memset(&m_SliceHeader, 0, sizeof(m_SliceHeader));
-    m_BitStream.Reset((Ipp8u *) m_source.GetPointer(), (Ipp32u) m_source.GetSize());
+    m_BitStream.Reset((Ipp8u *) m_source.GetPointer(), (Ipp32u) m_source.GetDataSize());
 
     UMC::Status umcRes = UMC::UMC_OK;
 
@@ -106,10 +106,10 @@ Ipp32s H265Slice::RetrievePicParamSetNumber()
 
 bool H265Slice::Reset(PocDecoding * pocDecoding)
 {
-    m_BitStream.Reset((Ipp8u *) m_source.GetPointer(), (Ipp32u) m_source.GetSize());
+    m_BitStream.Reset((Ipp8u *) m_source.GetPointer(), (Ipp32u) m_source.GetDataSize());
 
     // decode slice header
-    if (m_source.GetSize() && false == DecodeSliceHeader(pocDecoding))
+    if (m_source.GetDataSize() && false == DecodeSliceHeader(pocDecoding))
         return false;
 
     m_SliceHeader.m_HeaderBitstreamOffset = (Ipp32u)m_BitStream.BytesDecoded();

@@ -59,6 +59,13 @@ void H265BaseBitstream::Reset(Ipp8u * const pb, Ipp32s offset, const Ipp32u maxs
 
 } // void Reset(Ipp8u * const pb, Ipp32s offset, const Ipp32u maxsize)
 
+void H265BaseBitstream::CheckBSLeft()
+{
+    size_t bitsDecoded = BitsDecoded();
+    if (bitsDecoded > m_maxBsSize*8)
+        throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
+}
+
 void H265BaseBitstream::ReadToByteAlignment()
 {
     VM_ASSERT(m_bitOffset >= 0 && m_bitOffset <= 31);
@@ -1480,6 +1487,7 @@ UMC::Status H265HeadersBitstream::GetSliceHeaderFull(H265Slice *rpcSlice, const 
     if (UMC::UMC_OK != sts)
         return sts;
     decodeSlice(rpcSlice, sps, pps);
+    CheckBSLeft();
     return UMC::UMC_OK;
 }
 

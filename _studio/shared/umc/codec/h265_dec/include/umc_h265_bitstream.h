@@ -64,6 +64,8 @@ public:
     // Move pointer to nearest byte
     void ReadToByteAlignment();
 
+    void CheckBSLeft();
+
     // Check amount of data
     bool More_RBSP_Data();
 
