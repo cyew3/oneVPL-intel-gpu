@@ -716,7 +716,7 @@ LinuxVideoAccelerator::Execute()
                     va_sts = vaBufferSetNumElements(m_dpy, id, pCompBuf->GetNumOfItem());
                     if (VA_STATUS_SUCCESS == va_res) va_res = va_sts;
                 }
-            }*/
+            }
 
             va_sts = vaUnmapBuffer(m_dpy, id);
             if (VA_STATUS_SUCCESS == va_res) va_res = va_sts;
