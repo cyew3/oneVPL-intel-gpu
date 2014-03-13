@@ -791,7 +791,7 @@ mfxStatus VideoDECODEVP8::GetDecodeStat(mfxDecodeStat *p_stat)
 
 static mfxStatus VP8CompleteProc(void *, void *p_param, mfxStatus )
 {
-    delete p_param;
+    delete reinterpret_cast<THREAD_TASK_INFO*>(p_param);
     return MFX_ERR_NONE;
 
 } // static mfxStatus VP8CompleteProc(void *, void *p_param, mfxStatus )
