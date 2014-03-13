@@ -2360,7 +2360,7 @@ void H265CU::MeIntPelFullSearch(const H265MEInfo *meInfo, const MVPInfo *predInf
     H265MV mvCenter = mvBest;
     for (Ipp32s dy = -RANGE; dy <= RANGE; dy += 4) {
         for (Ipp32s dx = -RANGE; dx <= RANGE; dx += 4) {
-            H265MV mv = { mvCenter.mvx + dx, mvCenter.mvy + dy };
+            H265MV mv = { static_cast<Ipp16s>(mvCenter.mvx + dx), static_cast<Ipp16s>(mvCenter.mvy + dy) };
             if (ClipMV(mv))
                 continue;
             Ipp32s mvCost = MvCost1RefLog(mv, (Ipp8s)refIdx, predInfo, list);
@@ -2396,8 +2396,8 @@ void H265CU::MeIntPelLog(const H265MEInfo *meInfo, const MVPInfo *predInfo, Ipp3
     for (Ipp16s meStep = meStepBest; meStep <= meStepMax; meStep *= 2) {
         for (Ipp16s mePos = 1; mePos < 9; mePos++) {
             H265MV mv = {
-                mvCenter.mvx + tab_mePattern[mePos][0] * meStep,
-                mvCenter.mvy + tab_mePattern[mePos][1] * meStep
+                static_cast<Ipp16s>(mvCenter.mvx + tab_mePattern[mePos][0] * meStep),
+                static_cast<Ipp16s>(mvCenter.mvy + tab_mePattern[mePos][1] * meStep)
             };
             if (ClipMV(mv))
                 continue;
@@ -2422,8 +2422,8 @@ void H265CU::MeIntPelLog(const H265MEInfo *meInfo, const MVPInfo *predInfo, Ipp3
         Ipp32s bestPos = 0;
         for (Ipp16s mePos = start; mePos < start + len; mePos++) {
             H265MV mv = {
-                mvCenter.mvx + tab_mePattern[mePos][0] * meStep,
-                mvCenter.mvy + tab_mePattern[mePos][1] * meStep
+                static_cast<Ipp16s>(mvCenter.mvx + tab_mePattern[mePos][0] * meStep),
+                static_cast<Ipp16s>(mvCenter.mvy + tab_mePattern[mePos][1] * meStep)
             };
             if (ClipMV(mv))
                 continue;
@@ -2476,8 +2476,8 @@ void H265CU::MeSubPel(const H265MEInfo *meInfo, const MVPInfo *predInfo, Ipp32s 
         Ipp32s bestPos = 0;
         for (Ipp32s mePos = startPos; mePos < 9; mePos++) {
             H265MV mv = {
-                mvCenter.mvx + tab_mePattern[mePos][0] * (Ipp16s)meStep,
-                mvCenter.mvy + tab_mePattern[mePos][1] * (Ipp16s)meStep
+                static_cast<Ipp16s>(mvCenter.mvx + tab_mePattern[mePos][0] * (Ipp16s)meStep),
+                static_cast<Ipp16s>(mvCenter.mvy + tab_mePattern[mePos][1] * (Ipp16s)meStep)
             };
             if (ClipMV(mv))
                 continue;
@@ -4890,7 +4890,7 @@ inline Ipp32s qcost(const H265MV *mv)
 
 inline Ipp32s qdiff(const H265MV *mv1, const H265MV *mv2)
 {
-    H265MV mvdiff = {mv1->mvx - mv2->mvx, mv1->mvy - mv2->mvy};
+    H265MV mvdiff = {static_cast<Ipp16s>(mv1->mvx - mv2->mvx), static_cast<Ipp16s>(mv1->mvy - mv2->mvy)};
     return qcost(&mvdiff);
 }
 
