@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2011-2012 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2011-2014 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -29,12 +29,17 @@ namespace UMC
 #define __ALIGN16(type, name, size) \
   __declspec (align(16)) type name[size]
 #else
-#if defined(_WIN64) || defined(WIN64) || defined(LINUX64)
+#if defined(LINUX32) || defined(LINUX64)
+#define __ALIGN16(type, name, size) \
+  type __attribute__((aligned(0x10))) name[size]
+#else
+#if defined(_WIN64) || defined(WIN64)
 #define __ALIGN16(type, name, size) \
   Ipp8u _a16_##name[(size)*sizeof(type)+15]; type *name = (type*)(((Ipp64s)(_a16_##name) + 15) & ~15)
 #else
 #define __ALIGN16(type, name, size) \
   Ipp8u _a16_##name[(size)*sizeof(type)+15]; type *name = (type*)(((Ipp32s)(_a16_##name) + 15) & ~15)
+#endif
 #endif
 #endif
 

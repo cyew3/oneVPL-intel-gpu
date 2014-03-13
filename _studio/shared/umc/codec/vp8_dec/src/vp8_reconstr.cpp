@@ -920,18 +920,18 @@ vp8_inter_predict_fptr vp8_inter_predict_fun[2][2][2] =
 {
   {// 6TAP functions
     {
-      {vp8_inter_copy_add},       {vp8_inter_predict_6tap_v}
+      vp8_inter_copy_add,       vp8_inter_predict_6tap_v
     },
     {
-      {vp8_inter_predict_6tap_h}, {vp8_inter_predict_6tap_hv}
+      vp8_inter_predict_6tap_h, vp8_inter_predict_6tap_hv
     }
   },
   {// bilinear func`s
     {
-      {vp8_inter_copy_add},           {vp8_inter_predict_bilinear_v}
+      vp8_inter_copy_add,           vp8_inter_predict_bilinear_v
     },
     {
-      {vp8_inter_predict_bilinear_h}, {vp8_inter_predict_bilinear_hv}
+      vp8_inter_predict_bilinear_h, vp8_inter_predict_bilinear_hv
     }
   }
 };
