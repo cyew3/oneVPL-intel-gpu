@@ -276,5 +276,7 @@ void __stdcall Prepare_frame_for_queue(Frame **pfrmOut, Frame *pfrmIn, unsigned 
 {
     *pfrmOut = (Frame *)malloc(sizeof(Frame));
     Frame_Create(*pfrmOut, uiWidth, uiHeight, uiWidth / 2, uiHeight / 2, 64);
+    (*pfrmOut)->frmProperties.tindex = pfrmIn->frmProperties.tindex;
     ReSample(*pfrmOut, pfrmIn);
+    (*pfrmOut)->frmProperties.tindex = pfrmIn->frmProperties.tindex;
 }

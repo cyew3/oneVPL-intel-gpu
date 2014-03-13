@@ -123,9 +123,9 @@ mfxStatus MFX_PTIR_Plugin::PTIR_ProcessFrame(mfxFrameSurface1 *surf_in, mfxFrame
                                 {
                                     if(frmBuffer[0]->frmProperties.interlaced)
                                     {
-                                        if(!frmBuffer[0]->frmProperties.processed)
-                                            DeinterlaceBilinearFilter(frmBuffer, 0 , 0);
-                                        else
+                                        //if(!frmBuffer[0]->frmProperties.processed)
+                                        //    DeinterlaceBilinearFilter(frmBuffer, 0 , 0);
+                                        //else
                                             DeinterlaceMedianFilter(frmBuffer, 0, 0);
                                         //Second field
                                         DeinterlaceMedianFilter(frmBuffer, BUFMINSIZE, 1);
@@ -188,6 +188,8 @@ mfxStatus MFX_PTIR_Plugin::PTIR_ProcessFrame(mfxFrameSurface1 *surf_in, mfxFrame
             }
         }
 
+    if(surf_out)
+    {
         frmIn = NULL;
         //QueryPerformanceCounter(&liTime[uiTimer++]);
         if(fqIn.iCount >= 1 && !mainPattern.ucPatternFound)
@@ -195,6 +197,7 @@ mfxStatus MFX_PTIR_Plugin::PTIR_ProcessFrame(mfxFrameSurface1 *surf_in, mfxFrame
             uiFrameCount = fqIn.iCount;
             for(mfxU32 i = 0; i < uiFrameCount; i++)
             {
+                uiLastFrameNumber = fqIn.pfrmHead->pfrmItem->frmProperties.tindex;
                 frmIn = FrameQueue_Get(&fqIn);
                 //----------------------------------------
                 // Saving Test Output
@@ -229,6 +232,7 @@ mfxStatus MFX_PTIR_Plugin::PTIR_ProcessFrame(mfxFrameSurface1 *surf_in, mfxFrame
             for(mfxU32 i = 0; i < uiFrameCount; i++)
             {
                 ferror = FALSE;
+                uiLastFrameNumber = fqIn.pfrmHead->pfrmItem->frmProperties.tindex;
                 frmIn = FrameQueue_Get(&fqIn);
                 if (frmIn)
                 {
@@ -258,54 +262,227 @@ mfxStatus MFX_PTIR_Plugin::PTIR_ProcessFrame(mfxFrameSurface1 *surf_in, mfxFrame
         //    dTime[i] += (double)(liTime[i+1].QuadPart - liTime[i].QuadPart) / liFreq.QuadPart;
     //}
 
-    if(uiCur && !surf_in)
-    {
-        for(mfxU32 i = 0; i < uiCur; i++)
+        if(uiCur && !surf_in)
         {
-            if(!frmBuffer[i]->frmProperties.drop)
+            for(mfxU32 i = 0; i < uiCur; i++)
             {
-                CheckGenFrame(frmBuffer, i, mainPattern.ucPatternType);
-                Prepare_frame_for_queue(&frmIn,frmBuffer[i], uiWidth, uiHeight);
-                memcpy(frmIn->plaY.ucStats.ucRs,frmBuffer[i]->plaY.ucStats.ucRs,sizeof(double) * 10);
+                if (!frmBuffer[i]->frmProperties.drop /*&& (frmBuffer[i]->frmProperties.tindex > uiLastFrameNumber)*/)
+                {
+                    if (bisInterlaced)
+                    {
+                        FillBaseLinesIYUV(frmBuffer[i], frmBuffer[BUFMINSIZE], FALSE, FALSE);
+                        DeinterlaceMedianFilter(frmBuffer, i, 0);
+                        //Second field
+                        DeinterlaceMedianFilter(frmBuffer, BUFMINSIZE, 1);
 
-                //timestamp
-                frmBuffer[i + 1]->frmProperties.timestamp = frmBuffer[i]->frmProperties.timestamp + (dBaseTime * 5 / 4);
-                frmIn->frmProperties.timestamp = frmBuffer[i]->frmProperties.timestamp;
+                        Prepare_frame_for_queue(&frmIn, frmBuffer[i], uiWidth, uiHeight); // Go to input frame rate
+                        memcpy(frmIn->plaY.ucStats.ucRs, frmBuffer[i]->plaY.ucStats.ucRs, sizeof(double)* 10);
 
-                FrameQueue_Add(&fqIn, frmIn);
+                        //Timestamp
+                        frmBuffer[BUFMINSIZE]->frmProperties.tindex = frmBuffer[i]->frmProperties.tindex;
+                        frmBuffer[BUFMINSIZE]->frmProperties.timestamp = frmBuffer[i]->frmProperties.timestamp + dDeIntTime;
+                        frmBuffer[i + 1]->frmProperties.timestamp = frmBuffer[BUFMINSIZE]->frmProperties.timestamp + dDeIntTime;
+                        frmIn->frmProperties.timestamp = frmBuffer[i]->frmProperties.timestamp;
+
+                        FrameQueue_Add(&fqIn, frmIn);
+                        if (bFullFrameRate)
+                        {
+                            Prepare_frame_for_queue(&frmIn, frmBuffer[BUFMINSIZE], uiWidth, uiHeight); // Go to double frame rate
+                            memcpy(frmIn->plaY.ucStats.ucRs, frmBuffer[BUFMINSIZE]->plaY.ucStats.ucRs, sizeof(double)* 10);
+
+                            //Timestamp
+                            frmIn->frmProperties.timestamp = frmBuffer[BUFMINSIZE]->frmProperties.timestamp;
+
+                            FrameQueue_Add(&fqIn, frmIn);
+                        }
+                    }
+                    else
+                    {
+                        CheckGenFrame(frmBuffer, i, mainPattern.ucPatternType);
+                        Prepare_frame_for_queue(&frmIn, frmBuffer[i], uiWidth, uiHeight);
+                        memcpy(frmIn->plaY.ucStats.ucRs, frmBuffer[i]->plaY.ucStats.ucRs, sizeof(double)* 10);
+
+                        //timestamp
+                        frmBuffer[i + 1]->frmProperties.timestamp = frmBuffer[i]->frmProperties.timestamp + (dBaseTime * 5 / 4);
+                        frmIn->frmProperties.timestamp = frmBuffer[i]->frmProperties.timestamp;
+
+                        FrameQueue_Add(&fqIn, frmIn);
+                    }
+                }
             }
-        }
 
-        uiCur = 0;
+            uiCur = 0;
 
-        uiFrameCount = fqIn.iCount;
-        for(mfxU32 i = 0; i < uiFrameCount; i++)
-        {
-            ferror = FALSE;
-            frmIn = FrameQueue_Get(&fqIn);
-            if (frmIn)
+            uiFrameCount = fqIn.iCount;
+            for(mfxU32 i = 0; i < uiFrameCount; i++)
             {
-                TrimBorders(&frmIn->plaY, &frmIO[LASTFRAME].plaY);
-                TrimBorders(&frmIn->plaU, &frmIO[LASTFRAME].plaU);
-                TrimBorders(&frmIn->plaV, &frmIO[LASTFRAME].plaV);
+                ferror = FALSE;
+                frmIn = FrameQueue_Get(&fqIn);
+                if (frmIn)
+                {
+                    TrimBorders(&frmIn->plaY, &frmIO[LASTFRAME].plaY);
+                    TrimBorders(&frmIn->plaU, &frmIO[LASTFRAME].plaU);
+                    TrimBorders(&frmIn->plaV, &frmIO[LASTFRAME].plaV);
 
-                    //fprintf(fTCodeOut,"%4.3lf\n",frmIn->frmProperties.timestamp);
-                    //ferror = WriteFile(hOut, frmIO[LASTFRAME].ucMem, frmIO[LASTFRAME].uiSize, &uiBytesRead, NULL);
-                    memcpy(surf_out->Data.Y, frmIO[LASTFRAME].ucMem, frmIO[LASTFRAME].uiSize);
+                        //fprintf(fTCodeOut,"%4.3lf\n",frmIn->frmProperties.timestamp);
+                        //ferror = WriteFile(hOut, frmIO[LASTFRAME].ucMem, frmIO[LASTFRAME].uiSize, &uiBytesRead, NULL);
+                        memcpy(surf_out->Data.Y, frmIO[LASTFRAME].ucMem, frmIO[LASTFRAME].uiSize);
+                        Frame_Release(frmIn);
+                        free(frmIn);
+
+                        if(0 != fqIn.iCount)
+                            return MFX_ERR_MORE_SURFACE;
+                        else
+                            return MFX_ERR_NONE;
+
                     Frame_Release(frmIn);
                     free(frmIn);
 
-                    if(0 != fqIn.iCount)
-                        return MFX_ERR_MORE_SURFACE;
-                    else
-                        return MFX_ERR_NONE;
-
-                Frame_Release(frmIn);
-                free(frmIn);
-
-                uiFrameOut++;
+                    uiFrameOut++;
+                }
             }
         }
     }
     return MFX_ERR_MORE_DATA;
+}
+
+mfxStatus MFX_PTIR_Plugin::Process(mfxFrameSurface1 *surface_in, mfxFrameSurface1 *surface_out)
+{
+    mfxStatus mfxSts = MFX_ERR_NONE;
+    mfxStatus mfxCCSts = MFX_ERR_NONE;
+
+    if(NULL != surface_in && NULL != surface_out)
+    {
+        bool isUnlockReq = false;
+        mfxFrameSurface1 work420_surface;
+        memset(&work420_surface, 0, sizeof(mfxFrameSurface1));
+        memcpy(&(work420_surface.Info), &(surface_in->Info), sizeof(mfxFrameInfo));
+        work420_surface.Info.FourCC = MFX_FOURCC_I420;
+        mfxU16& w = work420_surface.Info.CropW;
+        mfxU16& h = work420_surface.Info.CropH;
+        work420_surface.Data.Y = frmBuffer[uiSupBuf]->ucMem;
+        work420_surface.Data.U = work420_surface.Data.Y+w*h;
+        work420_surface.Data.V = work420_surface.Data.U+w*h/4;
+        work420_surface.Data.Pitch = w;
+
+        mfxFrameSurface1 surf_out;
+        memset(&surf_out, 0, sizeof(mfxFrameSurface1));
+        memcpy(&(surf_out.Info), &(surface_in->Info), sizeof(mfxFrameInfo));
+        surf_out.Info.FourCC = MFX_FOURCC_I420;
+
+        surf_out.Data.Y = frmBuffer[uiSupBuf]->ucMem;
+        surf_out.Data.U = surf_out.Data.Y+w*h;
+        surf_out.Data.V = surf_out.Data.U+w*h/4;
+        surf_out.Data.Pitch = w;
+
+        if(surface_in->Data.MemId)
+        {
+            m_pmfxCore->FrameAllocator.Lock(m_pmfxCore->FrameAllocator.pthis, surface_out->Data.MemId, &(surface_out->Data));
+            m_pmfxCore->FrameAllocator.Lock(m_pmfxCore->FrameAllocator.pthis, surface_in->Data.MemId, &(surface_in->Data));
+            isUnlockReq = true;
+        }
+        mfxCCSts = ColorSpaceConversionWCopy(surface_in, &work420_surface, work420_surface.Info.FourCC);
+        assert(!mfxCCSts);
+        frmBuffer[uiSupBuf]->frmProperties.fr = dFrameRate;
+
+
+        mfxSts = PTIR_ProcessFrame( &work420_surface, &surf_out );
+
+        if(MFX_ERR_NONE == mfxSts || MFX_ERR_MORE_SURFACE == mfxSts)
+        {
+            mfxCCSts = ColorSpaceConversionWCopy(&surf_out, surface_out, surface_out->Info.FourCC);
+            assert(!mfxCCSts);
+
+        }
+        if(isUnlockReq)
+        {
+            m_pmfxCore->FrameAllocator.Unlock(m_pmfxCore->FrameAllocator.pthis, surface_out->Data.MemId, &(surface_out->Data));
+            m_pmfxCore->FrameAllocator.Unlock(m_pmfxCore->FrameAllocator.pthis, surface_in->Data.MemId, &(surface_in->Data));
+            isUnlockReq = false;
+        }
+        if(MFX_ERR_MORE_SURFACE == mfxSts)
+            bMoreOutFrames = true;
+        else
+            bMoreOutFrames = false;
+
+        return mfxSts;
+    }
+    else if(NULL != surface_in && NULL == surface_out)
+    {
+        bool isUnlockReq = false;
+        mfxFrameSurface1 work420_surface;
+        memset(&work420_surface, 0, sizeof(mfxFrameSurface1));
+        memcpy(&(work420_surface.Info), &(surface_in->Info), sizeof(mfxFrameInfo));
+        work420_surface.Info.FourCC = MFX_FOURCC_I420;
+        mfxU16& w = work420_surface.Info.CropW;
+        mfxU16& h = work420_surface.Info.CropH;
+        work420_surface.Data.Y = frmBuffer[uiSupBuf]->ucMem;
+        work420_surface.Data.U = work420_surface.Data.Y+w*h;
+        work420_surface.Data.V = work420_surface.Data.U+w*h/4;
+        work420_surface.Data.Pitch = w;
+
+        if(surface_in->Data.MemId)
+        {
+            m_pmfxCore->FrameAllocator.Lock(m_pmfxCore->FrameAllocator.pthis, surface_in->Data.MemId, &(surface_in->Data));
+            isUnlockReq = true;
+        }
+        mfxCCSts = ColorSpaceConversionWCopy(surface_in, &work420_surface, work420_surface.Info.FourCC);
+        assert(!mfxCCSts);
+        frmBuffer[uiSupBuf]->frmProperties.fr = dFrameRate;
+
+        mfxSts = PTIR_ProcessFrame( &work420_surface, 0 );
+
+        if(isUnlockReq)
+        {
+            m_pmfxCore->FrameAllocator.Unlock(m_pmfxCore->FrameAllocator.pthis, surface_in->Data.MemId, &(surface_in->Data));
+            isUnlockReq = false;
+        }
+
+        return mfxSts;
+    }
+    else if(0 == fqIn.iCount && 0 == uiCur)
+    {
+        return MFX_ERR_MORE_DATA;
+    }
+    else
+    {
+        bool isUnlockReq = false;
+        mfxFrameSurface1 surf_out;
+        memset(&surf_out, 0, sizeof(mfxFrameSurface1));
+        memcpy(&(surf_out.Info), &(surface_out->Info), sizeof(mfxFrameInfo));
+        mfxU16& w = surf_out.Info.CropW;
+        mfxU16& h = surf_out.Info.CropH;
+        surf_out.Info.FourCC = MFX_FOURCC_I420;
+
+        surf_out.Data.Y = frmBuffer[uiSupBuf]->ucMem;
+        surf_out.Data.U = surf_out.Data.Y+w*h;
+        surf_out.Data.V = surf_out.Data.U+w*h/4;
+        surf_out.Data.Pitch = w;
+
+        if(surface_out->Data.MemId)
+        {
+            m_pmfxCore->FrameAllocator.Lock(m_pmfxCore->FrameAllocator.pthis, surface_out->Data.MemId, &(surface_out->Data));
+            isUnlockReq = true;
+        }
+
+        mfxSts = PTIR_ProcessFrame( 0, &surf_out );
+
+        if(MFX_ERR_NONE == mfxSts || MFX_ERR_MORE_SURFACE == mfxSts)
+        {
+            mfxCCSts = ColorSpaceConversionWCopy(&surf_out, surface_out, surface_out->Info.FourCC);
+            assert(!mfxCCSts);
+        }
+        if(isUnlockReq)
+        {
+            m_pmfxCore->FrameAllocator.Unlock(m_pmfxCore->FrameAllocator.pthis, surface_out->Data.MemId, &(surface_out->Data));
+            isUnlockReq = false;
+        }
+        if(MFX_ERR_MORE_SURFACE == mfxSts)
+            bMoreOutFrames = true;
+        else
+            bMoreOutFrames = false;
+        return mfxSts;
+    }
+
+    return mfxSts;
 }

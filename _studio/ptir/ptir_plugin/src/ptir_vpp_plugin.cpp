@@ -97,8 +97,6 @@ mfxStatus MFX_PTIR_Plugin::PluginInit(mfxCoreInterface *core)
     uiCount = MFX_INFINITE / 2; // /2 to avoid overflow. TODO: fix
     uiSupBuf = BUFMINSIZE;
 
-    out_surf = 0;
-
     return mfxRes;
 }
 
@@ -127,119 +125,170 @@ mfxStatus MFX_PTIR_Plugin::GetPluginParam(mfxPluginParam *par)
 
 mfxStatus MFX_PTIR_Plugin::VPPFrameSubmit(mfxFrameSurface1 *surface_in, mfxFrameSurface1 *surface_out, mfxExtVppAuxData *aux, mfxThreadTask *task)
 {
+    if(bInExecution)
+        return MFX_WRN_DEVICE_BUSY;
     mfxStatus mfxSts = MFX_ERR_NONE;
-    mfxStatus mfxCCSts = MFX_ERR_NONE;
+    PTIR_Task *ptir_task = 0;
     if(NULL == surface_out)
         return MFX_ERR_NULL_PTR;
 
-    if(NULL != surface_in && !bMoreOutFrames)
+    if(0 != fqIn.iCount)
     {
-        bool isUnlockReq = false;
-        mfxFrameSurface1 work420_surface;
-        memset(&work420_surface, 0, sizeof(mfxFrameSurface1));
-        memcpy(&(work420_surface.Info), &(surface_in->Info), sizeof(mfxFrameInfo));
-        work420_surface.Info.FourCC = MFX_FOURCC_I420;
-        mfxU16& w = work420_surface.Info.CropW;
-        mfxU16& h = work420_surface.Info.CropH;
-        work420_surface.Data.Y = frmBuffer[uiSupBuf]->ucMem;
-        work420_surface.Data.U = work420_surface.Data.Y+w*h;
-        work420_surface.Data.V = work420_surface.Data.U+w*h/4;
-        work420_surface.Data.Pitch = w;
-
-        mfxFrameSurface1 surf_out;
-        memset(&surf_out, 0, sizeof(mfxFrameSurface1));
-        memcpy(&(surf_out.Info), &(surface_in->Info), sizeof(mfxFrameInfo));
-        surf_out.Info.FourCC = MFX_FOURCC_I420;
-
-        surf_out.Data.Y = frmBuffer[uiSupBuf]->ucMem;
-        surf_out.Data.U = surf_out.Data.Y+w*h;
-        surf_out.Data.V = surf_out.Data.U+w*h/4;
-        surf_out.Data.Pitch = w;
-
-        if(surface_in->Data.MemId)
+        /*if previous submit call returned ERR_MORE_SURFACE, application should not update input frame,
+        however, plugin can handle it */
+        if(surface_in && prevSurf != surface_in)
         {
-            m_pmfxCore->FrameAllocator.Lock(m_pmfxCore->FrameAllocator.pthis, surface_out->Data.MemId, &(surface_out->Data));
-            m_pmfxCore->FrameAllocator.Lock(m_pmfxCore->FrameAllocator.pthis, surface_in->Data.MemId, &(surface_in->Data));
-            isUnlockReq = true;
+            if(inSurfs.end() == std::find (inSurfs.begin(), inSurfs.end(), surface_in))
+            {
+                inSurfs.push_back(surface_in);
+                m_pmfxCore->IncreaseReference(m_pmfxCore->pthis, &surface_in->Data);
+            }
         }
-        mfxCCSts = ColorSpaceConversionWCopy(surface_in, &work420_surface, work420_surface.Info.FourCC);
-        assert(!mfxCCSts);
-        frmBuffer[uiSupBuf]->frmProperties.fr = dFrameRate;
-
-
-        mfxSts = PTIR_ProcessFrame( &work420_surface, &surf_out );
-
-        if(MFX_ERR_NONE == mfxSts || MFX_ERR_MORE_SURFACE == mfxSts)
+        if(vTasks.size() == 0)
         {
-            PTIR_Task *ptir_task = new PTIR_Task;
-            *task = ptir_task;
-            mfxCCSts = ColorSpaceConversionWCopy(&surf_out, surface_out, surface_out->Info.FourCC);
-            assert(!mfxCCSts);
-
+            ptir_task = new PTIR_Task;
+            memset(ptir_task, 0, sizeof(PTIR_Task));
+            vTasks.push_back(ptir_task);
         }
-        if(isUnlockReq)
-        {
-            m_pmfxCore->FrameAllocator.Unlock(m_pmfxCore->FrameAllocator.pthis, surface_out->Data.MemId, &(surface_out->Data));
-            m_pmfxCore->FrameAllocator.Unlock(m_pmfxCore->FrameAllocator.pthis, surface_in->Data.MemId, &(surface_in->Data));
-            isUnlockReq = false;
-        }
-        if(MFX_ERR_MORE_SURFACE == mfxSts)
-            bMoreOutFrames = true;
         else
-            bMoreOutFrames = false;
+            ptir_task = vTasks[0];
 
-        return mfxSts;
+        *task = ptir_task;
+        ptir_task->filled = true;
+        ptir_task->surface_out = surface_out;
+        m_pmfxCore->IncreaseReference(m_pmfxCore->pthis, &surface_out->Data);
+
+        if(1 == fqIn.iCount)
+            return MFX_ERR_NONE;
+        else
+            return MFX_ERR_MORE_SURFACE;
+    }
+    else if(surface_in && inSurfs.size() < 8)
+    {
+        //add in surface to the queue
+        inSurfs.push_back(surface_in);
+        m_pmfxCore->IncreaseReference(m_pmfxCore->pthis, &surface_in->Data);
+
+        return MFX_ERR_MORE_DATA;
+    }
+    else if(surface_in && inSurfs.size() > 7 )
+    {
+        //queue is full, ready to create task for execution
+        inSurfs.push_back(surface_in);
+        m_pmfxCore->IncreaseReference(m_pmfxCore->pthis, &surface_in->Data);
+
+        if(vTasks.size() == 0)
+        {
+            ptir_task = new PTIR_Task;
+            memset(ptir_task, 0, sizeof(PTIR_Task));
+            vTasks.push_back(ptir_task);
+        }
+        else
+            ptir_task = vTasks[0];
+
+        *task = ptir_task;
+        ptir_task->filled = true;
+        ptir_task->surface_out = surface_out;
+        m_pmfxCore->IncreaseReference(m_pmfxCore->pthis, &surface_out->Data);
+        return MFX_ERR_NONE;
+    }
+    else if(0 != uiCur)
+    {
+        if(vTasks.size() == 0)
+        {
+            ptir_task = new PTIR_Task;
+            memset(ptir_task, 0, sizeof(PTIR_Task));
+            vTasks.push_back(ptir_task);
+        }
+        else
+            ptir_task = vTasks[0];
+
+        *task = ptir_task;
+        ptir_task->filled = true;
+        ptir_task->surface_out = surface_out;
+        m_pmfxCore->IncreaseReference(m_pmfxCore->pthis, &surface_out->Data);
+        return MFX_ERR_NONE;
     }
     else if(0 == fqIn.iCount && 0 == uiCur)
     {
         return MFX_ERR_MORE_DATA;
     }
-    else
-    {
-        bool isUnlockReq = false;
-        mfxFrameSurface1 surf_out;
-        memset(&surf_out, 0, sizeof(mfxFrameSurface1));
-        memcpy(&(surf_out.Info), &(surface_out->Info), sizeof(mfxFrameInfo));
-        mfxU16& w = surf_out.Info.CropW;
-        mfxU16& h = surf_out.Info.CropH;
-        surf_out.Info.FourCC = MFX_FOURCC_I420;
 
-        surf_out.Data.Y = frmBuffer[uiSupBuf]->ucMem;
-        surf_out.Data.U = surf_out.Data.Y+w*h;
-        surf_out.Data.V = surf_out.Data.U+w*h/4;
-        surf_out.Data.Pitch = w;
-
-        if(surface_out->Data.MemId)
-        {
-            m_pmfxCore->FrameAllocator.Lock(m_pmfxCore->FrameAllocator.pthis, surface_out->Data.MemId, &(surface_out->Data));
-            isUnlockReq = true;
-        }
-
-        mfxSts = PTIR_ProcessFrame( 0, &surf_out );
-
-        if(MFX_ERR_NONE == mfxSts || MFX_ERR_MORE_SURFACE == mfxSts)
-        {
-            PTIR_Task *ptir_task = new PTIR_Task;
-            *task = ptir_task;
-            mfxCCSts = ColorSpaceConversionWCopy(&surf_out, surface_out, surface_out->Info.FourCC);
-            assert(!mfxCCSts);
-        }
-        if(isUnlockReq)
-        {
-            m_pmfxCore->FrameAllocator.Unlock(m_pmfxCore->FrameAllocator.pthis, surface_out->Data.MemId, &(surface_out->Data));
-            isUnlockReq = false;
-        }
-        if(MFX_ERR_MORE_SURFACE == mfxSts)
-            bMoreOutFrames = true;
-        else
-            bMoreOutFrames = false;
-        return mfxSts;
-    }
-
-    return mfxSts;
+    return MFX_ERR_MORE_DATA;
 }
 mfxStatus MFX_PTIR_Plugin::Execute(mfxThreadTask task, mfxU32 , mfxU32 )
 {
+    bInExecution = true;
+    PTIR_Task *ptir_task = (PTIR_Task*) task;
+    if(!ptir_task->filled)
+        return MFX_ERR_UNDEFINED_BEHAVIOR;
+    if(inSurfs.size() == 0 && 0 == fqIn.iCount && 0 == uiCur)
+        return MFX_ERR_UNDEFINED_BEHAVIOR;
+
+    mfxStatus mfxSts = MFX_ERR_NONE;
+    mfxFrameSurface1 *surface_out;
+    surface_out = ptir_task->surface_out;
+
+    if(inSurfs.size() != 0)
+    {
+        //process input frames until 1 output frame is generated
+        for(std::vector<mfxFrameSurface1*>::iterator it = inSurfs.begin(); it != inSurfs.end(); ++it) {
+            mfxSts = Process(*it, surface_out);
+            m_pmfxCore->DecreaseReference(m_pmfxCore->pthis, &(*it)->Data);
+            prevSurf = *it;
+            *it = 0;
+            if(MFX_ERR_NONE == mfxSts)
+            {
+                m_pmfxCore->DecreaseReference(m_pmfxCore->pthis, &surface_out->Data);
+                surface_out = 0;
+                break;
+            }
+            else if(MFX_ERR_MORE_SURFACE == mfxSts)
+            {
+                m_pmfxCore->DecreaseReference(m_pmfxCore->pthis, &surface_out->Data);
+                surface_out = 0;
+                mfxSts = MFX_ERR_NONE;
+                break;
+            }
+            else if(MFX_ERR_MORE_DATA != mfxSts)
+            {
+                assert(0);
+                return mfxSts;
+            }
+        }
+        while(0 == *inSurfs.begin())
+        {
+            //remove the processed head of the queue
+            inSurfs.erase(inSurfs.begin());
+            if(0 == inSurfs.size())
+                break;
+        }
+    }
+    else
+    {
+        //get cached frame
+        mfxSts = Process(0, surface_out);
+        if(MFX_ERR_NONE == mfxSts ||
+           MFX_ERR_MORE_SURFACE == mfxSts)
+        {
+            m_pmfxCore->DecreaseReference(m_pmfxCore->pthis, &surface_out->Data);
+            surface_out = 0;
+        }
+        else if(MFX_ERR_MORE_DATA != mfxSts)
+        {
+            assert(0);
+            return mfxSts;
+        }
+    }
+
+    if(surface_out)
+    {
+        //smth wrong, execute should always generate output!
+        assert(0);
+        return MFX_ERR_UNDEFINED_BEHAVIOR;
+    }
+
+    bInExecution = false;
     return MFX_ERR_NONE;
 }
 mfxStatus MFX_PTIR_Plugin::FreeResources(mfxThreadTask task, mfxStatus )
@@ -251,6 +300,7 @@ mfxStatus MFX_PTIR_Plugin::FreeResources(mfxThreadTask task, mfxStatus )
             vTasks.erase(vTasks.begin() + i);
         }
     }
+    bInExecution = false;
 
     return MFX_ERR_NONE;
 }
@@ -264,8 +314,8 @@ mfxStatus MFX_PTIR_Plugin::Query(mfxVideoParam *in, mfxVideoParam *out)
         out = &tmp_param;
 
     memcpy(&out->vpp, &in->vpp, sizeof(mfxInfoVPP));
-    in->AsyncDepth = out->AsyncDepth;
-    in->IOPattern  = out->IOPattern;
+    out->AsyncDepth = in->AsyncDepth;
+    out->IOPattern  = in->IOPattern;
 
     if(in->vpp.Out.PicStruct == in->vpp.In.PicStruct)
     {
@@ -273,11 +323,12 @@ mfxStatus MFX_PTIR_Plugin::Query(mfxVideoParam *in, mfxVideoParam *out)
         out->vpp.In.PicStruct = 0;
         return MFX_ERR_UNSUPPORTED;
     }
-    if(in->vpp.In.PicStruct == MFX_PICSTRUCT_UNKNOWN)
-    {
-        out->vpp.In.PicStruct = 65535; // MFX_PICSTRUCT_UNKNOWN == 0, so that 0 is meaningless here
-        return MFX_ERR_UNSUPPORTED;
-    }
+    // auto-detection mode
+    //if(in->vpp.In.PicStruct == MFX_PICSTRUCT_UNKNOWN)
+    //{
+    //    out->vpp.In.PicStruct = 65535; // MFX_PICSTRUCT_UNKNOWN == 0, so that 0 is meaningless here
+    //    return MFX_ERR_UNSUPPORTED;
+    //}
     if(in->vpp.Out.PicStruct == MFX_PICSTRUCT_UNKNOWN)
     {
         out->vpp.Out.PicStruct = 65535; // MFX_PICSTRUCT_UNKNOWN == 0, so that 0 is meaningless here
@@ -312,13 +363,16 @@ mfxStatus MFX_PTIR_Plugin::QueryIOSurf(mfxVideoParam *par, mfxFrameAllocRequest 
 
     in->Info = par->vpp.In;
     out->Info = par->vpp.Out;
+    mfxU16 AsyncDepth = 1;
+    if(par->AsyncDepth)
+        AsyncDepth = par->AsyncDepth;
 
-    in->NumFrameMin = 6;
-    in->NumFrameSuggested = 6;
+    in->NumFrameMin = 10 * AsyncDepth;
+    in->NumFrameSuggested = 12 * AsyncDepth;
     //in->Type = MFX_MEMTYPE_DXVA2_PROCESSOR_TARGET | MFX_MEMTYPE_FROM_DECODE | MFX_MEMTYPE_FROM_VPPIN;
 
-    out->NumFrameMin = 6;
-    out->NumFrameSuggested = 6;
+    out->NumFrameMin = 2 * AsyncDepth;
+    out->NumFrameSuggested = 4 * AsyncDepth;
     //out->Type = MFX_MEMTYPE_DXVA2_PROCESSOR_TARGET | MFX_MEMTYPE_FROM_DECODE | MFX_MEMTYPE_FROM_VPPIN;
 
 
@@ -392,12 +446,24 @@ mfxStatus MFX_PTIR_Plugin::Init(mfxVideoParam *par)
     //uiInHeight = uiHeight = par->vpp.In.Height;
     uiInWidth  = uiWidth  = par->vpp.In.CropW;
     uiInHeight = uiHeight = par->vpp.In.CropH;
-    dFrameRate = par->vpp.In.FrameRateExtN / par->vpp.In.FrameRateExtD;
+    if(par->vpp.In.FrameRateExtN && par->vpp.In.FrameRateExtD)
+        dFrameRate = par->vpp.In.FrameRateExtN / par->vpp.In.FrameRateExtD;
+    else
+        dFrameRate = 30.0;
 
     bisInterlaced = false;
     bFullFrameRate = false;
-    if((MFX_PICSTRUCT_FIELD_TFF == par->vpp.In.PicStruct ||
-         MFX_PICSTRUCT_FIELD_BFF == par->vpp.In.PicStruct) &&
+    bInExecution = false;
+    uiLastFrameNumber = 0;
+    if(MFX_PICSTRUCT_UNKNOWN == par->vpp.In.PicStruct &&
+       0 == par->vpp.In.FrameRateExtN && 0 == par->vpp.Out.FrameRateExtN)
+    {
+        //auto-detection mode, currently equal to reverse telecine mode
+        bisInterlaced = false;
+        bFullFrameRate = false;
+    }
+    else if((MFX_PICSTRUCT_FIELD_TFF == par->vpp.In.PicStruct ||
+             MFX_PICSTRUCT_FIELD_BFF == par->vpp.In.PicStruct) &&
        (par->vpp.In.FrameRateExtN  == 30 && par->vpp.In.FrameRateExtD == 1 &&
         par->vpp.Out.FrameRateExtN == 24 && par->vpp.Out.FrameRateExtD == 1))
     {
@@ -442,16 +508,26 @@ mfxStatus MFX_PTIR_Plugin::Init(mfxVideoParam *par)
         {
             Frame_Create(&frmIO[i], uiInWidth, uiInHeight, uiInWidth / 2, uiInHeight / 2, 0);
             frmBuffer[i] = frmIO + i;
+            if(!frmIO[i].ucMem)
+            {
+                Close();
+                return MFX_ERR_MEMORY_ALLOC;
+            }
         }
         Frame_Create(&frmIO[LASTFRAME], uiWidth, uiHeight, uiWidth / 2, uiHeight / 2, 0);
+        if(!frmIO[LASTFRAME].ucMem)
+        {
+            Close();
+            return MFX_ERR_MEMORY_ALLOC;
+        }
     }
     catch(std::bad_alloc&)
     {
-        return MFX_ERR_MEMORY_ALLOC;;
+        return MFX_ERR_MEMORY_ALLOC;
     }
     catch(...) 
     { 
-        return MFX_ERR_UNKNOWN;; 
+        return MFX_ERR_UNKNOWN;
     }
 
     bMoreOutFrames = false;

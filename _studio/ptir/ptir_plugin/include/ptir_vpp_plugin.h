@@ -32,13 +32,7 @@ struct PTIR_Task
 {
     mfxU32           id;
     bool             filled;
-    mfxFrameSurface1 *surface_in1;
-    mfxFrameSurface1 *surface_in2;
-    mfxFrameSurface1 *surface_in3;
-    mfxFrameSurface1 *surface_in4;
-    mfxFrameSurface1 *surface_in5;
     mfxFrameSurface1 *surface_out;
-    mfxFrameSurface1 *surface_out1;
 };
 
 enum {
@@ -114,16 +108,15 @@ protected:
     std::auto_ptr<MFXPluginAdapter<MFXVPPPlugin> > m_adapter;
 
     mfxStatus PTIR_ProcessFrame(mfxFrameSurface1 *surf_in, mfxFrameSurface1 *surf_out);
+    mfxStatus Process(mfxFrameSurface1 *surf_in, mfxFrameSurface1 *surf_out);
 
     bool b_firstFrameProceed;
     bool bInited;
+    bool bInExecution;
     bool bMoreOutFrames;
-    //mfxFrameAllocRequest ReqOut;
-    //std::vector<mfxFrameSurface1*> in_surfs;
-    //std::vector<mfxFrameSurface1*> cache_surfs;
-    //std::vector<mfxFrameSurface1*> out_cached_surfs;
-    mfxFrameSurface1* out_surf;
+    mfxFrameSurface1* prevSurf;
     std::vector<PTIR_Task*> vTasks;
+    std::vector<mfxFrameSurface1*> inSurfs;
 
     unsigned int
         i,
@@ -145,6 +138,7 @@ protected:
         uiFrameCount,
         uiBufferCount,
         uiSize,
+        uiLastFrameNumber,
         uiDispatch;
     unsigned char
         *pucIO;
