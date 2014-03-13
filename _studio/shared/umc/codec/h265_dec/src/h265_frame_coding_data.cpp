@@ -137,20 +137,10 @@ void H265FrameCodingData::create(Ipp32s iPicWidth, Ipp32s iPicHeight, Ipp32u uiM
     Ipp8u*                    lumaIntraDir;    // array of intra directions (luma)
     Ipp8u*                    chromaIntraDir;  // array of intra directions (chroma)
 
-    H265CoeffsPtrCommon        trCoeffY;
-    H265CoeffsPtrCommon        trCoeffCb;
-    H265CoeffsPtrCommon        trCoeffCr;
-
-    Ipp32s widthOnHeight = m_MaxCUWidth * m_MaxCUWidth;
-
-    m_cumulativeMemoryPtr = CumulativeArraysAllocation(8, // number of parameters
+    m_cumulativeMemoryPtr = CumulativeArraysAllocation(5, // number of parameters
                                 32, // align
                                 &lumaIntraDir, sizeof(Ipp8u) * m_NumPartitions * m_NumCUsInFrame,
                                 &chromaIntraDir, sizeof(Ipp8u) * m_NumPartitions * m_NumCUsInFrame,
-
-                                &trCoeffY, sizeof(H265CoeffsCommon) * widthOnHeight * m_NumCUsInFrame,
-                                &trCoeffCb, sizeof(H265CoeffsCommon) * widthOnHeight * m_NumCUsInFrame / 4,
-                                &trCoeffCr, sizeof(H265CoeffsCommon) * widthOnHeight * m_NumCUsInFrame / 4,
 
                                 &cbf[0], sizeof(Ipp8u) * m_NumPartitions * m_NumCUsInFrame,
                                 &cbf[1], sizeof(Ipp8u) * m_NumPartitions * m_NumCUsInFrame,
@@ -166,15 +156,7 @@ void H265FrameCodingData::create(Ipp32s iPicWidth, Ipp32s iPicHeight, Ipp32u uiM
 
         lumaIntraDir += m_NumPartitions;
         chromaIntraDir += m_NumPartitions;
-
-        m_CU[i]->m_TrCoeffY = trCoeffY;
-        m_CU[i]->m_TrCoeffCb = trCoeffCb;
-        m_CU[i]->m_TrCoeffCr = trCoeffCr;
-
-        trCoeffY += widthOnHeight;
-        trCoeffCb += widthOnHeight / 4;
-        trCoeffCr += widthOnHeight / 4;
-
+       
         m_CU[i]->m_cbf[0] = cbf[0];
         m_CU[i]->m_cbf[1] = cbf[1];
         m_CU[i]->m_cbf[2] = cbf[2];

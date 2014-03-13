@@ -431,7 +431,7 @@ H265DecoderRefPicList* H265DecoderFrame::GetRefPicList(Ipp32s sliceNumber, Ipp32
 }   // RefPicList. Returns pointer to start of specified ref pic list.
 #endif
 
-H265CodingUnit* H265DecoderFrame::getCU(Ipp32u CUaddr)
+H265CodingUnit* H265DecoderFrame::getCU(Ipp32u CUaddr) const 
 {
     return m_CodingData->getCU(CUaddr);
 }

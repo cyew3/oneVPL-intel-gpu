@@ -170,7 +170,7 @@ public:
 
     H265FrameCodingData* getCD() const {return m_CodingData;}
 
-    H265CodingUnit* getCU(Ipp32u CUaddr);
+    H265CodingUnit* getCU(Ipp32u CUaddr) const;
 
     Ipp32u getNumCUsInFrame() const;
     Ipp32u getNumPartInCUSize() const;

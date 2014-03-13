@@ -134,7 +134,7 @@ public:
     H265FrameCodingData();
     ~H265FrameCodingData();
 
-    H265CodingUnit*  getCU(Ipp32u CUAddr)
+    H265CodingUnit*  getCU(Ipp32u CUAddr) const
     {
         return m_CU[CUAddr];
     }

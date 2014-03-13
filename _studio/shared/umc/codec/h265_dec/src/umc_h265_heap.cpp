@@ -71,20 +71,23 @@ void CoeffsBuffer::Close(void)
 
 UMC::Status CoeffsBuffer::Init(Ipp32s numberOfItems, Ipp32s sizeOfItem)
 {
-    Ipp32s lAllocate, lMaxSampleSize;
+    Ipp32s lMaxSampleSize = sizeOfItem + COEFFS_BUFFER_ALIGN_VALUE_H265 + (Ipp32s)sizeof(BufferInfo);
+    Ipp32s lAllocate = lMaxSampleSize * numberOfItems;
 
-    Close();
+    if ((Ipp32s)m_lBufferSize < lAllocate)
+    {
+        Close();
 
-    // allocate buffer
-    lMaxSampleSize = sizeOfItem + COEFFS_BUFFER_ALIGN_VALUE_H265 + (Ipp32s)sizeof(BufferInfo);
-    lAllocate = lMaxSampleSize * numberOfItems;
-    m_pbAllocatedBuffer = h265_new_array_throw<Ipp8u>(lAllocate + COEFFS_BUFFER_ALIGN_VALUE_H265);
-    m_lAllocatedBufferSize = lAllocate + COEFFS_BUFFER_ALIGN_VALUE_H265;
+        // allocate buffer
+        m_pbAllocatedBuffer = h265_new_array_throw<Ipp8u>(lAllocate + COEFFS_BUFFER_ALIGN_VALUE_H265);
+        m_lBufferSize = lAllocate;
 
-    // align buffer
-    m_pbBuffer = UMC::align_pointer<Ipp8u *> (m_pbAllocatedBuffer, COEFFS_BUFFER_ALIGN_VALUE_H265);
-    m_lBufferSize = lAllocate;
+        m_lAllocatedBufferSize = lAllocate + COEFFS_BUFFER_ALIGN_VALUE_H265;
 
+        // align buffer
+        m_pbBuffer = UMC::align_pointer<Ipp8u *> (m_pbAllocatedBuffer, COEFFS_BUFFER_ALIGN_VALUE_H265);
+    }
+    
     m_pbFree = m_pbBuffer;
     m_lFreeSize = m_lBufferSize;
 
@@ -324,7 +327,6 @@ void CoeffsBuffer::Reset()
 
 void CoeffsBuffer::Free()
 {
-    Close();
     HeapObject::Free();
 }
 

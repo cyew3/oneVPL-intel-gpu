@@ -92,6 +92,11 @@ struct Context
     Ipp8u * m_pUV_CU_Plane;
     size_t  m_pitch;
 
+    // intra chroma prediction. For temporal save
+    Ipp32u save_lfIf;
+    Ipp32u save_tlIf;
+    Ipp32u save_tpIf;
+
     std::auto_ptr<ReconstructorBase>  m_reconstructor;
 };
 
@@ -112,6 +117,11 @@ public:
 
     std::vector<H265FrameHLDNeighborsInfo> m_TopNgbrsHolder;
     std::vector<H265FrameHLDNeighborsInfo> m_CurrCTBFlagsHolder;
+
+    CoeffsBuffer    m_coeffBuffer;
+
+    H265CoeffsPtrCommon        m_coeffsRead;
+    H265CoeffsPtrCommon        m_coeffsWrite;
 
     // Updated after whole CTB is done for initializing external neighbour data in m_CurCTB
     H265FrameHLDNeighborsInfo *m_TopNgbrs;
@@ -154,9 +164,11 @@ public:
         return (*m_dequantCoef)[size][list][qp];
     }
     Ipp16s *(*m_dequantCoef)[SCALING_LIST_SIZE_NUM][SCALING_LIST_NUM][SCALING_LIST_REM_NUM];
+
 protected:
 
-    Ipp32s m_LastValidQP;
+    
+    Ipp32s          m_LastValidQP;
 };
 
 class H265SegmentDecoder : public Context
@@ -197,7 +209,7 @@ public:
     void ParseTransformSubdivFlagCABAC(Ipp32u& SubdivFlag, Ipp32u Log2TransformBlockSize);
     void ReadEpExGolombCABAC(Ipp32u& Value, Ipp32u Count);
     void DecodeCoeff(Ipp32u AbsPartIdx, Ipp32u Depth, bool& CodeDQP, bool isFirstPartMerge);
-    void DecodeTransform(Ipp32u offsetLuma, Ipp32u AbsPartIdx, Ipp32u Depth, Ipp32u  l2width, Ipp32u TrIdx, bool& CodeDQP);
+    void DecodeTransform(Ipp32u AbsPartIdx, Ipp32u Depth, Ipp32u  l2width, Ipp32u TrIdx, bool& CodeDQP);
     void ParseQtCbfCABAC(Ipp32u AbsPartIdx, ComponentPlane plane, Ipp32u TrDepth, Ipp32u Depth);
     void ParseQtRootCbfCABAC(Ipp32u& QtRootCbf);
     void DecodeQP(Ipp32u AbsPartIdx);
@@ -224,8 +236,6 @@ public:
     void ReconIntraQT(Ipp32u AbsPartIdx, Ipp32u Depth);
     void ReconInter(Ipp32u AbsPartIdx, Ipp32u Depth);
     void ReconPCM(Ipp32u AbsPartIdx, Ipp32u Depth);
-    void FillPCMBuffer(Ipp32u AbsPartIdx, Ipp32u Depth);
-    void DecodeInterTexture(Ipp32u AbsPartIdx);
 
     void IntraRecQT(Ipp32u TrDepth, Ipp32u AbsPartIdx, Ipp32u ChromaPredMode);
 
@@ -269,9 +279,8 @@ public:
     std::auto_ptr<H265Prediction> m_Prediction;
 
     H265TrQuant* m_TrQuant;
-    Ipp32u m_BakAbsPartIdx;
-    Ipp32u m_BakChromaOffset;
-    Ipp32u m_bakAbsPartIdxCU;
+    Ipp32u m_BakAbsPartIdxChroma;
+    Ipp32u m_bakAbsPartIdxQp;
 
     DecodingContext * m_context;
     std::auto_ptr<DecodingContext> m_context_single_thread;

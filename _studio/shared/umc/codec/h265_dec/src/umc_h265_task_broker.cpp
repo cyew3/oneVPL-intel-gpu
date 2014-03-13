@@ -713,7 +713,7 @@ bool TaskBroker_H265::GetNextSliceToDecoding(H265DecoderFrameInfo * info, H265Ta
             pTask->m_iFirstMB = pSlice->m_iFirstMB;
             pTask->m_iMBToProcess = IPP_MIN(pSlice->m_iMaxMB - pSlice->m_iFirstMB, pSlice->m_iAvailableMB);
             pTask->m_iTaskID = TASK_PROCESS_H265;
-            pTask->m_pBuffer = NULL;
+            pTask->m_pBuffer = 0;
             pTask->pFunction = &H265SegmentDecoderMultiThreaded::ProcessSlice;
             pSlice->m_bInProcess = true;
             pSlice->m_processVacant[DEC_PROCESS_ID] = 0;
@@ -891,6 +891,8 @@ void TaskBroker_H265::AddPerformedTask(H265Task *pTask)
             pSlice->m_curMBToProcess[DEC_PROCESS_ID] += pTask->m_iMBToProcess;
             pSlice->m_mvsDistortion = pTask->m_mvsDistortion;
 
+            pTask->m_context->m_coeffBuffer.UnLockInputBuffer(pTask->m_WrittenSize);
+
             bool isReadyIncrease = (pTask->m_iFirstMB == info->m_decAddrReady);
             if (isReadyIncrease)
             {
@@ -950,6 +952,8 @@ void TaskBroker_H265::AddPerformedTask(H265Task *pTask)
             {
                 info->m_recAddrReady += pTask->m_iMBToProcess;
             }
+
+            pTask->m_context->m_coeffBuffer.UnLockOutputBuffer();
 
             // error handling
             if (pTask->m_bError || pSlice->m_bError)
@@ -1309,20 +1313,31 @@ bool TaskBrokerTwoThread_H265::WrapDecodingTask(H265DecoderFrameInfo * info, H26
     if (!pSlice->m_processVacant[DEC_PROCESS_ID])
         return false;
 
+    InitTask(info, pTask, pSlice);
+    pTask->m_iTaskID = TASK_DEC_H265;
+
+    GetResources(pTask);
+
+    CoeffsBuffer & coeffBuffer = pTask->m_context->m_coeffBuffer;
+
+    if (!coeffBuffer.IsInputAvailable())
+    {
+        FreeResources(pTask);
+        return false;
+    }
+
+    pTask->m_pBuffer = (H265CoeffsPtrCommon)coeffBuffer.LockInputBuffer();
     pSlice->m_bInProcess = true;
     pSlice->m_processVacant[DEC_PROCESS_ID] = 0;
 
     Ipp32s width = info->m_pFrame->getCD()->m_WidthInCU;
-    InitTask(info, pTask, pSlice);
     pTask->m_iFirstMB = pSlice->m_curMBToProcess[DEC_PROCESS_ID];
     pTask->m_iMBToProcess = IPP_MIN(pSlice->m_curMBToProcess[DEC_PROCESS_ID] -
                                     (pSlice->m_curMBToProcess[DEC_PROCESS_ID] % width) +
                                     width,
                                     pSlice->m_iMaxMB) - pSlice->m_curMBToProcess[DEC_PROCESS_ID];
-    pTask->m_iTaskID = TASK_DEC_H265;
-    pTask->pFunction = &H265SegmentDecoderMultiThreaded::DecodeSegment;
 
-    GetResources(pTask);
+    pTask->pFunction = &H265SegmentDecoderMultiThreaded::DecodeSegment;
 
     pTask->m_taskPreparingGuard->Unlock();
 
@@ -1341,15 +1356,29 @@ bool TaskBrokerTwoThread_H265::WrapReconstructTask(H265DecoderFrameInfo * info, 
     if (!pSlice->m_processVacant[REC_PROCESS_ID])
         return false;
 
+    pTask->m_iTaskID = TASK_REC_H265;
+    InitTask(info, pTask, pSlice);
+    GetResources(pTask);
+
+    CoeffsBuffer & coeffBuffer = pTask->m_context->m_coeffBuffer;
+
+    if (!coeffBuffer.IsOutputAvailable())
+    {
+        FreeResources(pTask);
+        return false;
+    }
+
+    Ipp8u* pointer;
+    size_t size;
+    coeffBuffer.LockOutputBuffer(pointer, size);
+    pTask->m_pBuffer = (H265CoeffsPtrCommon)pointer;
+
     pSlice->m_processVacant[REC_PROCESS_ID] = 0;
 
     Ipp32s width = info->m_pFrame->getCD()->m_WidthInCU;
-    InitTask(info, pTask, pSlice);
     pTask->m_iFirstMB = pSlice->m_curMBToProcess[REC_PROCESS_ID];
     pTask->m_iMBToProcess = IPP_MIN(pSlice->m_curMBToProcess[REC_PROCESS_ID] - (pSlice->m_curMBToProcess[REC_PROCESS_ID] % width) + width,
                                     pSlice->m_iMaxMB) - pSlice->m_curMBToProcess[REC_PROCESS_ID];
-    pTask->m_iTaskID = TASK_REC_H265;
-    GetResources(pTask);
 
     pTask->m_taskPreparingGuard->Unlock();
 
@@ -1367,12 +1396,24 @@ bool TaskBrokerTwoThread_H265::WrapDecRecTask(H265DecoderFrameInfo * info, H265T
 {
     VM_ASSERT(pSlice);
     // this is guarded function, safe to touch any variable
-    pSlice->m_curTileDec++;
-    pTask->m_iFirstMB = pSlice->m_curTileDec;
-    InitTask(info, pTask, pSlice);
     pTask->m_iTaskID = TASK_DEC_REC_H265;
-    pTask->pFunction = &H265SegmentDecoderMultiThreaded::DecRecSegment;
+    InitTask(info, pTask, pSlice);
     GetResources(pTask);
+
+    CoeffsBuffer & coeffBuffer = pTask->m_context->m_coeffBuffer;
+
+    if (!coeffBuffer.IsInputAvailable())
+    {
+        FreeResources(pTask);
+        return false;
+    }
+
+    pSlice->m_curTileDec++;
+    pTask->m_pBuffer = (H265CoeffsPtrCommon)coeffBuffer.LockInputBuffer();
+
+    pTask->m_iFirstMB = pSlice->m_curTileDec;
+
+    pTask->pFunction = &H265SegmentDecoderMultiThreaded::DecRecSegment;
 
     pTask->m_taskPreparingGuard->Unlock();
 

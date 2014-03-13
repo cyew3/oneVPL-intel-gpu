@@ -66,34 +66,51 @@ void H265SegmentDecoderMultiThreaded::StartProcessingSegment(H265Task &Task)
     m_minCUDQPSize = m_pSeqParamSet->MaxCUSize >> m_pPicParamSet->diff_cu_qp_delta_depth;
 
     m_context = Task.m_context;
-    if (!m_context)
+    if (!m_context && (Task.m_iTaskID == TASK_DEC_REC_H265 || Task.m_iTaskID == TASK_PROCESS_H265))
     {
         m_context = m_context_single_thread.get();
         m_context->Init(Task.m_pSlice);
+        Task.m_pBuffer = (H265CoeffsPtrCommon)m_context->m_coeffBuffer.LockInputBuffer();
     }
 
     this->create((H265SeqParamSet*)m_pSeqParamSet);
 
-    m_TrQuant->m_context = m_context;
+    switch (Task.m_iTaskID)
+    {
+    case TASK_DEC_H265:
+    case TASK_DEC_REC_H265:
+    case TASK_PROCESS_H265:
+        VM_ASSERT(m_context->m_coeffsWrite);
+        m_context->m_coeffsWrite = Task.m_pBuffer;
+        break;
+    case TASK_REC_H265:
+        VM_ASSERT(m_context->m_coeffsRead);
+        m_context->m_coeffsRead = Task.m_pBuffer;
+        break;
+    }
 
-    m_Prediction->InitTempBuff(m_context);
+    if (m_context)
+    {
+        m_TrQuant->m_context = m_context;
+        m_Prediction->InitTempBuff(m_context);
+
+        if (m_pSeqParamSet->scaling_list_enabled_flag)
+        {
+            if (m_pPicParamSet->pps_scaling_list_data_present_flag || !m_pSeqParamSet->sps_scaling_list_data_present_flag)
+            {
+                m_context->m_dequantCoef = &m_pPicParamSet->getScalingList()->m_dequantCoef;
+            }
+            else
+            {
+                m_context->m_dequantCoef = &m_pSeqParamSet->getScalingList()->m_dequantCoef;
+            }
+        }
+    }
 
     Ipp32s sliceNum = m_pSlice->GetSliceNum();
 
     m_pRefPicList[0] = m_pCurrentFrame->GetRefPicList(sliceNum, REF_PIC_LIST_0)->m_refPicList;
     m_pRefPicList[1] = m_pCurrentFrame->GetRefPicList(sliceNum, REF_PIC_LIST_1)->m_refPicList;
-
-    if (m_pSeqParamSet->scaling_list_enabled_flag)
-    {
-        if (m_pPicParamSet->pps_scaling_list_data_present_flag || !m_pSeqParamSet->sps_scaling_list_data_present_flag)
-        {
-            m_context->m_dequantCoef = &m_pPicParamSet->getScalingList()->m_dequantCoef;
-        }
-        else
-        {
-            m_context->m_dequantCoef = &m_pSeqParamSet->getScalingList()->m_dequantCoef;
-        }
-    }
 }
 
 void H265SegmentDecoderMultiThreaded::EndProcessingSegment(H265Task &Task)
@@ -105,6 +122,20 @@ void H265SegmentDecoderMultiThreaded::EndProcessingSegment(H265Task &Task)
         Ipp32s mvsDistortion = m_context->m_mvsDistortion;
         mvsDistortion = (mvsDistortion + 6) >> 2; // remove 1/2 pel
         Task.m_mvsDistortion = IPP_MAX(mvsDistortion, m_pSlice->m_mvsDistortion);
+
+        Task.m_WrittenSize = (Ipp8u*)m_context->m_coeffsWrite - (Ipp8u*)Task.m_pBuffer;
+    }
+
+    switch (Task.m_iTaskID)
+    {
+    case TASK_DEC_H265:
+    case TASK_DEC_REC_H265:
+    case TASK_PROCESS_H265:
+        m_context->m_coeffsWrite = 0;
+        break;
+    case TASK_REC_H265:
+        m_context->m_coeffsRead = 0;
+        break;
     }
 
     m_pTaskBroker->AddPerformedTask(&Task);

@@ -36,9 +36,6 @@ H265CodingUnit::H265CodingUnit()
     m_cbf[0] = 0;
     m_cbf[1] = 0;
     m_cbf[2] = 0;
-    m_TrCoeffY = 0;
-    m_TrCoeffCb = 0;
-    m_TrCoeffCr = 0;
 }
 
 H265CodingUnit::~H265CodingUnit()

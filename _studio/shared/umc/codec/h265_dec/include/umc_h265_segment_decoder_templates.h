@@ -280,10 +280,15 @@ public:
             sd->m_context->ResetRecRowBuffer();
         }
 
+        H265CoeffsPtrCommon saveBuffer = sd->m_context->m_coeffsWrite;
+
         for (;;)
         {
             sd->m_cu = sd->m_pCurrentFrame->getCU(rsCUAddr);
             sd->m_cu->initCU(sd, rsCUAddr);
+
+            sd->m_context->m_coeffsRead = saveBuffer;
+            sd->m_context->m_coeffsWrite = saveBuffer;
 
             START_TICK;
             sd->DecodeSAOOneLCU();

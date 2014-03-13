@@ -21,6 +21,7 @@
 #include "umc_structures.h"
 
 #include "mfx_h265_optimization.h"
+
 namespace UMC_HEVC_DECODER
 {
   
@@ -334,6 +335,8 @@ protected:
     PlaneType *m_TmpU[2];
     PlaneType *m_TmpL[2];
 
+    PlaneType *m_tempPCMBuffer;
+
     Ipp32u              m_PicWidth;
     Ipp32u              m_PicHeight;
     Ipp32u              m_MaxCUSize;
@@ -349,8 +352,8 @@ protected:
     void SetOffsetsChroma(SAOLCUParam &saoLCUParamCb, Ipp32s typeIdx);
 
     void createNonDBFilterInfo();
-    void PCMCURestoration(H265CodingUnit* pcCU, Ipp32u AbsZorderIdx, Ipp32u Depth);
-    void PCMSampleRestoration(H265CodingUnit* pcCU, Ipp32u AbsZorderIdx, Ipp32u Depth);
+    void PCMCURestoration(H265CodingUnit* pcCU, Ipp32u AbsZorderIdx, Ipp32u Depth, bool restore);
+    void PCMSampleRestoration(H265CodingUnit* pcCU, Ipp32u AbsZorderIdx, Ipp32u Depth, bool restore);
 
     void processSaoCuOrgChroma(Ipp32s Addr, Ipp32s PartIdx, PlaneType *tmpL);
     void processSaoCuChroma(Ipp32s addr, Ipp32s saoType, PlaneType *tmpL);

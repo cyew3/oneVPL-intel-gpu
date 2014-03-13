@@ -310,7 +310,7 @@ void H265SegmentDecoder::DeblockCURecur(Ipp32u absPartIdx, Ipp32u depth)
 
             Ipp32s isFourParts = m_cu->getNumPartInter(absPartIdx) == 4;
 
-            Ipp32u PUOffset = (g_PUOffset[m_cu->GetPartitionSize(absPartIdx)] << ((m_context->m_sps->MaxCUDepth - depth) << 1)) >> 4;
+            Ipp32u PUOffset = (g_PUOffset[m_cu->GetPartitionSize(absPartIdx)] << ((m_pSeqParamSet->MaxCUDepth - depth) << 1)) >> 4;
             Ipp32s subPartIdx = absPartIdx + PUOffset;
             if (isFourParts && edgeType == HOR_FILT)
                 subPartIdx += PUOffset;
@@ -320,7 +320,7 @@ void H265SegmentDecoder::DeblockCURecur(Ipp32u absPartIdx, Ipp32u depth)
             Ipp32u curPixelColumn = m_cu->m_rasterToPelX[subPartIdx];
             Ipp32u curPixelRow = m_cu->m_rasterToPelY[subPartIdx];
 
-            if (m_context->m_sps->MinCUSize != 4 || (edgeType == VERT_FILT ? ((curPixelColumn % 8) == 0) : ((curPixelRow % 8) == 0)))
+            if (m_pSeqParamSet->MinCUSize != 4 || (edgeType == VERT_FILT ? ((curPixelColumn % 8) == 0) : ((curPixelRow % 8) == 0)))
             {
                 m_deblockPredData[edgeType].predictionExist = true;
                 m_deblockPredData[edgeType].saveColumn = curPixelColumn;
@@ -674,7 +674,7 @@ void H265SegmentDecoder::CalculateEdge(EdgeType * edge, Ipp32s xPel, Ipp32s yPel
     Ipp32s PartX = (m_cu->m_CUPelX >> tusize) + x;
     Ipp32s PartY = (m_cu->m_CUPelY >> tusize) + y;
 
-    H265MVInfo *mvinfoQ = &m_context->m_frame->getCD()->GetTUInfo(m_pSeqParamSet->NumPartitionsInFrameWidth * PartY + PartX);
+    H265MVInfo *mvinfoQ = &m_pCurrentFrame->getCD()->GetTUInfo(m_pSeqParamSet->NumPartitionsInFrameWidth * PartY + PartX);
     H265MVInfo *mvinfoP;
 
     if (direction == VERT_FILT)

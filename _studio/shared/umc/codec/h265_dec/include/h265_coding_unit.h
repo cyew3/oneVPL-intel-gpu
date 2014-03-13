@@ -74,10 +74,6 @@ public:
     Ipp32u                    m_NumPartition;   // total number of minimum partitions in a CU
 
     //CU data ----------------------------------------------------------------------------------------
-    H265CoeffsPtrCommon        m_TrCoeffY;       // transformed coefficient buffer (Y)
-    H265CoeffsPtrCommon        m_TrCoeffCb;      // transformed coefficient buffer (Cb)
-    H265CoeffsPtrCommon        m_TrCoeffCr;      // transformed coefficient buffer (Cr)
-
     H265CodingUnitData         *m_cuData;
 
 public:

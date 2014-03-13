@@ -146,6 +146,8 @@ H265SampleAdaptiveOffsetTemplate<PlaneType>::H265SampleAdaptiveOffsetTemplate()
     m_TmpL[0] = 0;
     m_TmpL[1] = 0;
 
+    m_tempPCMBuffer = 0;
+
     m_isInitialized = false;
 }
 
@@ -163,6 +165,8 @@ void H265SampleAdaptiveOffsetTemplate<PlaneType>::destroy()
     delete [] m_TmpU[1]; m_TmpU[1] = 0;
     delete [] m_TmpL[0]; m_TmpL[0] = 0;
     delete [] m_TmpL[1]; m_TmpL[1] = 0;
+
+    delete [] m_tempPCMBuffer; m_tempPCMBuffer = 0;
 
     m_PicWidth  = 0;
     m_PicHeight = 0;
@@ -243,6 +247,8 @@ void H265SampleAdaptiveOffsetTemplate<PlaneType>::init(const H265SeqParamSet* sp
 
     m_TmpL[0] = h265_new_array_throw<PlaneType>(2*SAO_PRED_SIZE);
     m_TmpL[1] = h265_new_array_throw<PlaneType>(2*SAO_PRED_SIZE);
+
+    m_tempPCMBuffer = h265_new_array_throw<PlaneType>((64*64 *3) /2); // one CU data
 
     m_isInitialized = true;
 }
@@ -883,7 +889,13 @@ void H265SampleAdaptiveOffsetTemplate<PlaneType>::processSaoLine(SAOLCUParam* sa
         }
 
         H265CodingUnit *pTmpCu = m_Frame->getCU(addr);
-        if (pTmpCu->m_SliceHeader->slice_sao_luma_flag && saoLCUParam[addr].m_typeIdx >= 0)
+        bool isNeedSAOLuma = pTmpCu->m_SliceHeader->slice_sao_luma_flag && saoLCUParam[addr].m_typeIdx >= 0;
+        bool isNeedSAOChroma = pTmpCu->m_SliceHeader->slice_sao_chroma_flag && saoLCUParam[addr].m_typeIdx[1] >= 0;
+
+        if (m_needPCMRestoration && (isNeedSAOLuma || isNeedSAOChroma))
+            PCMCURestoration(pTmpCu, 0, 0, false);
+
+        if (isNeedSAOLuma)
         {
             Ipp32s typeIdx = saoLCUParam[addr].m_typeIdx[0];
             if (!saoLCUParam[addr].m_mergeLeftFlag)
@@ -930,7 +942,7 @@ void H265SampleAdaptiveOffsetTemplate<PlaneType>::processSaoLine(SAOLCUParam* sa
             }
         }
 
-        if (pTmpCu->m_SliceHeader->slice_sao_chroma_flag && saoLCUParam[addr].m_typeIdx[1] >= 0)
+        if (isNeedSAOChroma)
         {
             Ipp32s typeIdx = saoLCUParam[addr].m_typeIdx[1];
 
@@ -944,6 +956,9 @@ void H265SampleAdaptiveOffsetTemplate<PlaneType>::processSaoLine(SAOLCUParam* sa
             else
                 processSaoCuChroma(addr, typeIdx, m_TmpL[0] + SAO_PRED_SIZE);
         }
+
+        if (m_needPCMRestoration && (isNeedSAOLuma || isNeedSAOChroma))
+            PCMCURestoration(pTmpCu, 0, 0, true);
 
         std::swap(m_TmpL[0], m_TmpL[1]);
     }
@@ -1011,15 +1026,6 @@ void H265SampleAdaptiveOffsetTemplate<PlaneType>::processSaoUnits(Ipp32s firstCU
         }
 
         processSaoLine(saoLCUParam, firstCU, endAddr);
-
-        if (m_needPCMRestoration)
-        {
-            for(Ipp32s CUAddr = firstCU; CUAddr < endAddr; CUAddr++)
-            {
-                H265CodingUnit* pcCU = m_Frame->getCU(CUAddr);
-                PCMCURestoration(pcCU, 0, 0);
-            }
-        }
 
         firstCU = endAddr;
 
@@ -1157,7 +1163,7 @@ void H265SampleAdaptiveOffsetTemplate<PlaneType>::createNonDBFilterInfo()
  * \returns Void
  */
 template<typename PlaneType>
-void H265SampleAdaptiveOffsetTemplate<PlaneType>::PCMCURestoration(H265CodingUnit* pcCU, Ipp32u AbsZorderIdx, Ipp32u Depth)
+void H265SampleAdaptiveOffsetTemplate<PlaneType>::PCMCURestoration(H265CodingUnit* pcCU, Ipp32u AbsZorderIdx, Ipp32u Depth, bool restore)
 {
     Ipp32u CurNumParts = m_Frame->getCD()->getNumPartInCU() >> (Depth << 1);
     Ipp32u QNumParts   = CurNumParts >> 2;
@@ -1170,7 +1176,7 @@ void H265SampleAdaptiveOffsetTemplate<PlaneType>::PCMCURestoration(H265CodingUni
             Ipp32u LPelX = pcCU->m_CUPelX + pcCU->m_rasterToPelX[AbsZorderIdx];
             Ipp32u TPelY = pcCU->m_CUPelY + pcCU->m_rasterToPelY[AbsZorderIdx];
             if((LPelX < pcCU->m_SliceHeader->m_SeqParamSet->pic_width_in_luma_samples) && (TPelY < pcCU->m_SliceHeader->m_SeqParamSet->pic_height_in_luma_samples))
-                PCMCURestoration(pcCU, AbsZorderIdx, Depth + 1);
+                PCMCURestoration(pcCU, AbsZorderIdx, Depth + 1, restore);
         }
         return;
     }
@@ -1178,8 +1184,16 @@ void H265SampleAdaptiveOffsetTemplate<PlaneType>::PCMCURestoration(H265CodingUni
     // restore PCM samples
     if ((pcCU->GetIPCMFlag(AbsZorderIdx) && pcCU->m_SliceHeader->m_SeqParamSet->pcm_loop_filter_disabled_flag) || pcCU->isLosslessCoded(AbsZorderIdx))
     {
-        PCMSampleRestoration(pcCU, AbsZorderIdx, Depth);
+        PCMSampleRestoration(pcCU, AbsZorderIdx, Depth, restore);
     }
+}
+
+Ipp32s GetAddrOffset(H265FrameCodingData * cd, Ipp32u PartUnitIdx, Ipp32u width)
+{
+    Ipp32s blkX = cd->m_partitionInfo.m_rasterToPelX[PartUnitIdx];
+    Ipp32s blkY = cd->m_partitionInfo.m_rasterToPelY[PartUnitIdx];
+
+    return blkX + blkY * width;
 }
 
 /** PCM sample restoration.
@@ -1190,68 +1204,65 @@ void H265SampleAdaptiveOffsetTemplate<PlaneType>::PCMCURestoration(H265CodingUni
 * \returns Void
 */
 template<typename PlaneType>
-void H265SampleAdaptiveOffsetTemplate<PlaneType>::PCMSampleRestoration(H265CodingUnit* pcCU, Ipp32u AbsZorderIdx, Ipp32u Depth)
+void H265SampleAdaptiveOffsetTemplate<PlaneType>::PCMSampleRestoration(H265CodingUnit* pcCU, Ipp32u AbsZorderIdx, Ipp32u Depth, bool restore)
 {
-    Ipp32u PcmLeftShiftBit;
-    Ipp32u X, Y;
-    Ipp32u MinCoeffSize = m_Frame->getMinCUWidth() * m_Frame->getMinCUWidth();
-    Ipp32u LumaOffset   = MinCoeffSize * AbsZorderIdx;
-    Ipp32u ChromaOffset = LumaOffset >> 2;
+    H265FrameCodingData * cd = m_Frame->getCD();
 
-    H265FrameCodingData * cd = pcCU->m_Frame->getCD();
+    PlaneType *src = (PlaneType *)m_Frame->GetLumaAddr(pcCU->CUAddr, AbsZorderIdx);
 
-    H265PlanePtrYCommon Src = m_Frame->GetLumaAddr(pcCU->CUAddr, AbsZorderIdx);
-    H265PlanePtrYCommon Pcm = (H265PlanePtrYCommon)(pcCU->m_TrCoeffY + LumaOffset);
-    Ipp32u Stride  = m_Frame->pitch_luma();
-    Ipp32u Size = (cd->m_MaxCUWidth >> Depth);
+    Ipp32u pitch  = m_Frame->pitch_luma();
+    Ipp32u width = (cd->m_MaxCUWidth >> Depth);
 
-    if (pcCU->isLosslessCoded(AbsZorderIdx) && !pcCU->GetIPCMFlag(AbsZorderIdx))
+    PlaneType *pcm = m_tempPCMBuffer + GetAddrOffset(cd, AbsZorderIdx, 64);
+
+    if (restore)
     {
-        PcmLeftShiftBit = 0;
+        for (Ipp32u Y = 0; Y < width; Y++)
+        {
+            for (Ipp32u X = 0; X < width; X++)
+                src[X] = pcm[X];
+            pcm += 64;
+            src += pitch;
+        }
     }
     else
     {
-        PcmLeftShiftBit = m_sps->bit_depth_luma - pcCU->m_SliceHeader->m_SeqParamSet->pcm_sample_bit_depth_luma;
-    }
-
-    for(Y = 0; Y < Size; Y++)
-    {
-        for(X = 0; X < Size; X++)
+        for (Ipp32u Y = 0; Y < width; Y++)
         {
-            Src[X] = (Pcm[X] << PcmLeftShiftBit);
+            for (Ipp32u X = 0; X < width; X++)
+                pcm[X] = src[X];
+            pcm += 64;
+            src += pitch;
         }
-        Pcm += Size;
-        Src += Stride;
     }
 
-    H265PlanePtrUVCommon PcmCb, PcmCr;
+    src = (PlaneType *)m_Frame->GetCbCrAddr(pcCU->CUAddr, AbsZorderIdx);
+    PlaneType * pcmChroma = m_tempPCMBuffer + 64*64 + GetAddrOffset(cd, AbsZorderIdx, 32);
 
-    Src = m_Frame->GetCbCrAddr(pcCU->CUAddr, AbsZorderIdx);
-    PcmCb = (H265PlanePtrUVCommon)(pcCU->m_TrCoeffCb + ChromaOffset);
-    PcmCr = (H265PlanePtrUVCommon)(pcCU->m_TrCoeffCr + ChromaOffset);
+    pitch = m_Frame->pitch_chroma();
+    width >>= 1;
 
-    Stride = m_Frame->pitch_chroma();
-    Size = (cd->m_MaxCUWidth >> Depth) / 2;
-
-    if (pcCU->isLosslessCoded(AbsZorderIdx) && !pcCU->GetIPCMFlag(AbsZorderIdx))
+    if (restore)
     {
-        PcmLeftShiftBit = 0;
+        for(Ipp32u Y = 0; Y < width; Y++)
+        {
+            for(Ipp32u X = 0; X < 2*width; X++)
+                src[X] = pcmChroma[X];
+
+            pcmChroma += 64;
+            src += pitch;
+        }
     }
     else
     {
-        PcmLeftShiftBit = m_sps->bit_depth_chroma - pcCU->m_SliceHeader->m_SeqParamSet->pcm_sample_bit_depth_chroma;
-    }
-
-    for(Y = 0; Y < Size; Y++)
-    {
-        for(X = 0; X < Size; X++)
+        for(Ipp32u Y = 0; Y < width; Y++)
         {
-            Src[X * 2] = (PcmCb[X] << PcmLeftShiftBit);
-            Src[X * 2 + 1] = (PcmCr[X] << PcmLeftShiftBit);
+            for(Ipp32u X = 0; X < 2*width; X++)
+                pcmChroma[X] = src[X];
+
+            pcmChroma += 64;
+            src += pitch;
         }
-        PcmCb += Size;
-        PcmCr += Size;
-        Src += Stride;
     }
 }
 

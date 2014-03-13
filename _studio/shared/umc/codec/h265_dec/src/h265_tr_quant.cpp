@@ -208,7 +208,9 @@ void H265TrQuant::InvRecurTransformNxN(H265CodingUnit* pCU, Ipp32u AbsPartIdx, I
             Ipp32u DstStride = pCU->m_Frame->pitch_luma();
             H265PlanePtrYCommon ptrLuma = pCU->m_Frame->GetLumaAddr(pCU->CUAddr, AbsPartIdx);
 
-            pCoeff = pCU->m_TrCoeffY + coeffsOffset;
+            pCoeff = m_context->m_coeffsRead;
+            m_context->m_coeffsRead += Size*Size;
+
             InvTransformNxN(pCU->GetCUTransquantBypass(AbsPartIdx), TEXT_LUMA, REG_DCT, ptrLuma, DstStride, pCoeff, Size,
                 pCU->GetTransformSkip(COMPONENT_LUMA, AbsPartIdx) != 0);
         }
@@ -217,9 +219,11 @@ void H265TrQuant::InvRecurTransformNxN(H265CodingUnit* pCU, Ipp32u AbsPartIdx, I
         {
             // Chroma
             if (Size == 4) {
-                if((AbsPartIdx & 0x3) != 0) {
+                if((AbsPartIdx & 0x3) != 3) {
                     return;
                 }
+                AbsPartIdx -= 3;
+                coeffsOffset = NumCoeffInc * AbsPartIdx;
             } else {
                 Size >>= 1;
             }
@@ -232,14 +236,16 @@ void H265TrQuant::InvRecurTransformNxN(H265CodingUnit* pCU, Ipp32u AbsPartIdx, I
 
             if (chromaUPresent)
             {
-                pCoeff = pCU->m_TrCoeffCb + (coeffsOffset >> 2);
+                pCoeff = m_context->m_coeffsRead;
+                m_context->m_coeffsRead += Size*Size;
                 InvTransformNxN(pCU->GetCUTransquantBypass(AbsPartIdx), TEXT_CHROMA_U, REG_DCT, residualsTempBuffer, res_pitch, pCoeff, Size,
                     pCU->GetTransformSkip(COMPONENT_CHROMA_U, AbsPartIdx) != 0);
             }
 
             if (chromaVPresent)
             {
-                pCoeff = pCU->m_TrCoeffCr + (coeffsOffset >> 2);
+                pCoeff = m_context->m_coeffsRead;
+                m_context->m_coeffsRead += Size*Size;
                 InvTransformNxN(pCU->GetCUTransquantBypass(AbsPartIdx), TEXT_CHROMA_V, REG_DCT, residualsTempBuffer1, res_pitch, pCoeff, Size,
                     pCU->GetTransformSkip(COMPONENT_CHROMA_V, AbsPartIdx) != 0);
             }
