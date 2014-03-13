@@ -10,6 +10,8 @@ File Name: libmf_core_vaapi.cpp
 
 \* ****************************************************************************** */
 
+#include <iostream>
+
 #include "mfx_common.h"
 
 #if defined (MFX_VA_LINUX)
@@ -519,7 +521,7 @@ VAAPIVideoCORE::CreateVA(
     mfxFrameAllocResponse* response)
 {
     mfxStatus sts = MFX_ERR_NONE;
-    
+
     if (!(request->Type & MFX_MEMTYPE_FROM_DECODE) ||
         !(request->Type & MFX_MEMTYPE_DXVA2_DECODER_TARGET))
         return MFX_ERR_NONE;
@@ -537,6 +539,9 @@ VAAPIVideoCORE::CreateVA(
         break;
     case MFX_CODEC_AVC:
         profile |= VA_H264;
+        break;
+    case MFX_CODEC_VP8:
+        profile |= VA_VP8;
         break;
     default:
         return MFX_ERR_UNSUPPORTED;
@@ -642,6 +647,7 @@ VAAPIVideoCORE::CreateVideoAccelerator(
     VASurfaceID* RenderTargets)
 {
     mfxStatus sts = MFX_ERR_NONE;
+
     Status st;
     UMC::LinuxVideoAcceleratorParams params;
     mfxFrameInfo *pInfo = &(param->mfx.FrameInfo);
@@ -712,7 +718,7 @@ VAAPIVideoCORE::CreateVideoAccelerator(
 #endif
 
     m_pVA.get()->m_HWPlatform = ConvertMFXToUMCType(m_HWType);
-    
+
     return sts;
     
 } // mfxStatus VAAPIVideoCORE::CreateVideoAccelerator(...)
