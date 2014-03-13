@@ -267,7 +267,7 @@ bool D3D9Device::Init(const mfxU32 adapterNum)
                 wchar_t path[1024]; 
                 DWORD lastErr = GetLastError();
                 GetModuleFileNameW(m_hModule, path, sizeof(path)/sizeof(path[0]));
-                printf("FAIL: invoking GetProcAddress(Direct3DCreate9) in %S : GetLastError()==0x%x\n", path, lastErr); });
+                DXVA2DEVICE_TRACE(("FAIL: invoking GetProcAddress(Direct3DCreate9) in %S : GetLastError()==0x%x\n", path, lastErr)); });
                 return false;
         }
     }

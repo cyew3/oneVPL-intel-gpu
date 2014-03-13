@@ -116,10 +116,10 @@ static bool CheckPluginRecord(PluginDescriptionRecord & descriptionRecord, mfxU3
 
     if (isFieldMissed(foundFields, requiredFields, PluginConfigParser::PARSED_PATH)) 
     {
-        TRACE_HIVE_WRN("no value for : %S\n", PathKeyName);
+        TRACE_HIVE_WRN("no value for : %s\n", PathKeyName);
         return false;
     }
-    TRACE_HIVE_INFO(alignStr()" : %S\n", PathKeyName, descriptionRecord.sPath);
+    TRACE_HIVE_INFO(alignStr()" : %s\n", PathKeyName, descriptionRecord.sPath);
 
     if (isFieldMissed(foundFields, requiredFields, PluginConfigParser::PARSED_DEFAULT)) 
     {
@@ -197,7 +197,7 @@ MFXPluginsInHive::MFXPluginsInHive(int, const msdk_disp_char* msdkLibSubKey, mfx
                 TRACE_HIVE_WRN("unable to parse section # %d in %s\n", index, rootPluginPath);
                 continue;
             }
-            TRACE_HIVE_INFO("Found Plugin: %S\n", pluginName);
+            TRACE_HIVE_INFO("Found Plugin: %s\n", pluginName);
 
             mfxU32 reqs =  PluginConfigParser::PARSED_VERSION
                          | PluginConfigParser::PARSED_API_VERSION
@@ -332,7 +332,7 @@ MFXPluginsInFS::MFXPluginsInFS(mfxVersion currentAPIVersion)
                     TRACE_HIVE_WRN("unable to parse plugin information in %s\n", cfgName);
                     continue;
                 }
-                TRACE_HIVE_INFO("Found Plugin: %S\n", pluginName);
+                TRACE_HIVE_INFO("Found Plugin: %s\n", pluginName);
 
                 mfxU32 reqs =  PluginConfigParser::PARSED_VERSION
                              | PluginConfigParser::PARSED_API_VERSION

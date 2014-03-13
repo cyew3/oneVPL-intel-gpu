@@ -214,7 +214,7 @@ mfxStatus DISPATCHER_EXPOSED_PREFIX(MFXInit)(mfxIMPL impl, mfxVersion *pVer, mfx
                     {
                         break;
                     }
-                    DISPATCHER_LOG_INFO((("loading library %S\n"), dllName));
+                    DISPATCHER_LOG_INFO((("loading library %S\n"), MSDK2WIDE(dllName)));
 
                     // try to load the selected DLL
                     curImpl = implTypes[curImplIdx].impl;
@@ -264,7 +264,7 @@ mfxStatus DISPATCHER_EXPOSED_PREFIX(MFXInit)(mfxIMPL impl, mfxVersion *pVer, mfx
 
             if (MFX_ERR_NONE == mfxRes)
             {
-                DISPATCHER_LOG_INFO((("loading default library %S\n"), dllName))
+                DISPATCHER_LOG_INFO((("loading default library %S\n"), MSDK2WIDE(dllName)))
 
                     // try to load the selected DLL using default DLL search mechanism
                     if (MFX_LIB_HARDWARE == implTypes[curImplIdx].implType)

@@ -30,13 +30,24 @@ File Name: mfx_dispatcher_defs.h
 
 #pragma once
 #include "mfxdefs.h"
+#include <string>
+#include <string.h>
 
 #if defined(_WIN32) || defined(_WIN64)
 typedef wchar_t  msdk_disp_char;
+#define MSDK2WIDE(x) x
 #define msdk_disp_char_cpy_s(to, to_size, from) wcscpy_s(to,to_size, from)
 #else
-#define msdk_disp_char char
+typedef char msdk_disp_char;
 #define msdk_disp_char_cpy_s(to, to_size, from) strcpy(to, from)
+#define MSDK2WIDE(x) getWideString(x).c_str()
+
+inline std::wstring getWideString(const char * string)
+{
+    size_t len = strlen(string);
+    return std::wstring(string, string + len);
+}
+
 #endif
 
 #ifdef __GNUC__

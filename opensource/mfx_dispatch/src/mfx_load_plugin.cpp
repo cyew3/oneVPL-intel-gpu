@@ -1,6 +1,6 @@
 /* ****************************************************************************** *\
 
-Copyright (C) 2013 Intel Corporation.  All rights reserved.
+Copyright (C) 2013-2014 Intel Corporation.  All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
@@ -68,10 +68,10 @@ MFX::PluginModule::PluginModule(const msdk_disp_char * path)
 {
     mHmodule = mfx_dll_load(path);
     if (NULL == mHmodule) {
-        TRACE_PLUGIN_ERROR("Cannot load module: %S\n", path);
+        TRACE_PLUGIN_ERROR("Cannot load module: %S\n", MSDK2WIDE(path));
         return ;
     }
-    TRACE_PLUGIN_INFO("Plugin loaded at: %S\n", path);
+    TRACE_PLUGIN_INFO("Plugin loaded at: %S\n", MSDK2WIDE(path));
     
     mCreatePluginPtr = (CreatePluginPtr_t)mfx_dll_get_addr(mHmodule, CREATE_PLUGIN_FNC);
     if (NULL == mCreatePluginPtr) {
@@ -90,9 +90,9 @@ bool MFX::PluginModule::Create( mfxPluginUID uid, mfxPlugin& plg)
         mfxStatus mfxResult = mCreatePluginPtr(uid, &plg);
         result = (MFX_ERR_NONE == mfxResult);
         if (!result) {
-            TRACE_PLUGIN_ERROR("\"%S::%s\" returned %d\n", mPath, CREATE_PLUGIN_FNC, mfxResult);
+            TRACE_PLUGIN_ERROR("\"%S::%s\" returned %d\n", MSDK2WIDE(mPath), CREATE_PLUGIN_FNC, mfxResult);
         } else {
-            TRACE_PLUGIN_INFO("\"%S::%s\" SUCCEED\n", mPath, CREATE_PLUGIN_FNC);
+            TRACE_PLUGIN_INFO("\"%S::%s\" SUCCEED\n", MSDK2WIDE(mPath), CREATE_PLUGIN_FNC);
         }
     }
     return result;
