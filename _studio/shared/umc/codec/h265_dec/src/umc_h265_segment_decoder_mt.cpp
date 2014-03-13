@@ -80,11 +80,11 @@ void H265SegmentDecoderMultiThreaded::StartProcessingSegment(H265Task &Task)
     case TASK_DEC_H265:
     case TASK_DEC_REC_H265:
     case TASK_PROCESS_H265:
-        VM_ASSERT(m_context->m_coeffsWrite);
+        VM_ASSERT(!m_context->m_coeffsWrite);
         m_context->m_coeffsWrite = Task.m_pBuffer;
         break;
     case TASK_REC_H265:
-        VM_ASSERT(m_context->m_coeffsRead);
+        VM_ASSERT(!m_context->m_coeffsRead);
         m_context->m_coeffsRead = Task.m_pBuffer;
         break;
     }
