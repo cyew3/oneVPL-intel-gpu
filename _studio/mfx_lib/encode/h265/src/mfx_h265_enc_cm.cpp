@@ -136,6 +136,41 @@ void EnqueueKernel(CmDevice *device, CmQueue *queue, CmKernel *kernel, mfxU32 ts
     device->DestroyTask(cmTask);
 }
 
+void EnqueueKernel(CmDevice *device, CmQueue *queue, CmKernel *kernel0, CmKernel *kernel1, mfxU32 tsWidth,
+                   mfxU32 tsHeight, CmEvent *&event, CM_DEPENDENCY_PATTERN tsPattern = CM_NONE_DEPENDENCY)
+{
+    int result = CM_SUCCESS;
+
+    if ((result = kernel0->SetThreadCount(tsWidth * tsHeight)) != CM_SUCCESS)
+        throw CmRuntimeError();
+    if ((result = kernel1->SetThreadCount(tsWidth * tsHeight)) != CM_SUCCESS)
+        throw CmRuntimeError();
+
+    CmThreadSpace * cmThreadSpace = 0;
+    if ((result = device->CreateThreadSpace(tsWidth, tsHeight, cmThreadSpace)) != CM_SUCCESS)
+        throw CmRuntimeError();
+
+    cmThreadSpace->SelectThreadDependencyPattern(tsPattern);
+
+    CmTask * cmTask = 0;
+    if ((result = device->CreateTask(cmTask)) != CM_SUCCESS)
+        throw CmRuntimeError();
+
+    if ((result = cmTask->AddKernel(kernel0)) != CM_SUCCESS)
+        throw CmRuntimeError();
+    if ((result = cmTask->AddKernel(kernel1)) != CM_SUCCESS)
+        throw CmRuntimeError();
+
+    if (event != NULL && event != CM_NO_EVENT)
+        queue->DestroyEvent(event);
+
+    if ((result = queue->Enqueue(cmTask, event, cmThreadSpace)) != CM_SUCCESS)
+        throw CmRuntimeError();
+
+    device->DestroyThreadSpace(cmThreadSpace);
+    device->DestroyTask(cmTask);
+}
+
 void EnqueueCopyCPUToGPU(CmQueue *queue, CmSurface2D *surface, const void *sysMem, CmEvent *&event)
 {
     if (event != NULL && event != CM_NO_EVENT)
@@ -280,79 +315,42 @@ SurfaceIndex * CreateVmeSurfaceG75(
     return index;
 }
 
+template <class T>
+void CreateCmSurface2DUp(CmDevice *device, Ipp32u numElemInRow, Ipp32u numRows, CM_SURFACE_FORMAT format,
+                         T *&surfaceCpu, CmSurface2DUP *& surfaceGpu, Ipp32u &pitch)
+{
+    Ipp32u size = 0;
+    Ipp32u numBytesInRow = numElemInRow * sizeof(T);
+    int res = CM_SUCCESS;
+    if ((res = device->GetSurface2DInfo(numBytesInRow, numRows, format, pitch, size)) != CM_SUCCESS)
+        throw CmRuntimeError();
+    surfaceCpu = static_cast<T *>(CM_ALIGNED_MALLOC(size, 0x1000)); // 4K aligned
+    surfaceGpu = CreateSurface(device, numBytesInRow, numRows, format, surfaceCpu);
+}
+
+template <class T>
+void CreateCmBufferUp(CmDevice *device, Ipp32u numElems, T *&surfaceCpu, CmBufferUP *& surfaceGpu)
+{
+    Ipp32u numBytes = numElems * sizeof(T);
+    surfaceCpu = static_cast<T *>(CM_ALIGNED_MALLOC(numBytes, 0x1000)); // 4K aligned
+    surfaceGpu = CreateBuffer(device, numBytes, surfaceCpu);
+}
+
+void DestroyCmSurface2DUp(CmDevice *device, void *surfaceCpu, CmSurface2DUP *surfaceGpu)
+{
+    device->DestroySurface2DUP(surfaceGpu);
+    CM_ALIGNED_FREE(surfaceCpu);
+}
+
+void DestroyCmBufferUp(CmDevice *device, void *bufferCpu, CmBufferUP *bufferGpu)
+{
+    device->DestroyBufferUP(bufferGpu);
+    CM_ALIGNED_FREE(bufferCpu);
+}
+
 
 namespace
 {
-    mfxU32 Map44LutValueBack(mfxU32 val)
-    {
-        mfxU32 base  = val & 0xf;
-        mfxU32 shift = (val >> 4) & 0xf;
-        assert((base << shift) < (1 << 12)); // encoded value must fit in 12-bits (Bspec)
-        return base << shift;
-    }
-
-    const mfxU8 QP_LAMBDA[40] = // pow(2, qp/6)
-    {
-        1, 1, 1, 1, 2, 2, 2, 2,
-        3, 3, 3, 4, 4, 4, 5, 6,
-        6, 7, 8, 9,10,11,13,14,
-        16,18,20,23,25,29,32,36,
-        40,45,51,57,64,72,81,91
-    };
-
-    mfxU8 GetMaxMvsPer2Mb(mfxU32 level)
-    {
-        return level < 30 ? 126 : (level == 30 ? 32 : 16);
-    }
-
-    mfxU32 GetMaxMvLenY(mfxU32 level)
-    {
-        return level < 11
-            ? 63
-            : level < 21
-                ? 127
-                : level < 31
-                    ? 255
-                    : 511;
-    }
-
-    using std::min;
-    using std::max;
-
-    mfxU8 Map44LutValue(mfxU32 v, mfxU8 max)
-    {
-        if(v == 0)        return 0;
-
-        mfxI16 D = (mfxI16)(log((double)v)/log(2.)) - 3;
-        if(D < 0)    D = 0;
-        mfxI8 ret = (mfxU8)((D << 4) + (int)((v + (D == 0 ? 0 : (1<<(D-1)))) >> D));
-
-        ret =  (ret & 0xf) == 0 ? (ret | 8) : ret;
-
-        if(((ret&15)<<(ret>>4)) > ((max&15)<<(max>>4)))        ret = max;
-        return ret;
-    }
-
-    const mfxU16 Dist10[26] =
-    {
-        0,0,0,0,2,
-        4,7,11,17,25,
-        35,50,68,91,119,
-        153,194,241,296,360,
-        432,513,604,706,819,
-        944
-    };
-
-    const mfxU16 Dist25[26] =
-    {
-        0,0,0,0,
-        12,32,51,69,87,
-        107,129,154,184,219,
-        260,309,365,431,507,
-        594,694,806,933,1074,
-        1232,1406
-    };
-
     mfxU32 SetSearchPath(
         mfxVMEIMEIn & spath,
         mfxU32        frameType,
@@ -419,25 +417,12 @@ CmMbIntraDist * cmMbIntraDist[2] = {};
 CmMbIntraGrad * cmMbIntraGrad4x4[2] = {};
 CmMbIntraGrad * cmMbIntraGrad8x8[2] = {};
 
-CmSurface2DUP ** dist32x32[2] = {0};
-CmSurface2DUP ** dist32x16[2] = {0};
-CmSurface2DUP ** dist16x32[2] = {0};
-CmSurface2DUP ** dist16x16[2] = {0};
-CmSurface2DUP ** dist16x8[2] = {0};
-CmSurface2DUP ** dist8x16[2] = {0};
-CmSurface2DUP ** dist8x8[2] = {0};
-CmSurface2DUP ** dist8x4[2] = {0};
-CmSurface2DUP ** dist4x8[2] = {0};
-
-CmSurface2DUP ** mv32x32[2] = {0};
-CmSurface2DUP ** mv32x16[2] = {0};
-CmSurface2DUP ** mv16x32[2] = {0};
-CmSurface2DUP ** mv16x16[2] = {0};
-CmSurface2DUP ** mv16x8[2] = {0};
-CmSurface2DUP ** mv8x16[2] = {0};
-CmSurface2DUP ** mv8x8[2] = {0};
-CmSurface2DUP ** mv8x4[2] = {0};
-CmSurface2DUP ** mv4x8[2] = {0};
+CmSurface2DUP * distGpu[2][MAX_NUM_REF_IDX][PU_MAX] = {};
+CmSurface2DUP * mvGpu[2][MAX_NUM_REF_IDX][PU_MAX] = {};
+mfxU32 * distCpu[2][MAX_NUM_REF_IDX][PU_MAX] = {0};
+mfxI16Pair * mvCpu[2][MAX_NUM_REF_IDX][PU_MAX] = {0};
+Ipp32u pitchDist[PU_MAX] = {};
+Ipp32u pitchMv[PU_MAX] = {};
 
 CmSurface2D * raw2x[2] = {};
 CmSurface2D * raw[2] = {};
@@ -446,6 +431,7 @@ CmSurface2D * fwdRefCur = 0;
 CmSurface2D * fwdRef2xNext = 0;
 CmSurface2D * fwdRefNext = 0;
 CmSurface2D * IntraDist = 0;
+
 CmProgram * program = 0;
 CmKernel * kernelMeIntra = 0;
 CmKernel * kernelGradient = 0;
@@ -464,70 +450,14 @@ mfxU32 height = 0;
 mfxU32 width2x = 0;
 mfxU32 height2x = 0;
 mfxU32 frameOrder = 0;
-mfxU32 maxNumRefs = 0;
+Ipp32s maxNumRefs = 0;
 
-Ipp32u dist32x32Pitch = 0;
-Ipp32u dist32x16Pitch = 0;
-Ipp32u dist16x32Pitch = 0;
-Ipp32u dist16x16Pitch = 0;
-Ipp32u dist16x8Pitch = 0;
-Ipp32u dist8x16Pitch = 0;
-Ipp32u dist8x8Pitch = 0;
-Ipp32u dist8x4Pitch = 0;
-Ipp32u dist4x8Pitch = 0;
-CmMbDist32 ** cmDist32x32[2] = {0};
-CmMbDist32 ** cmDist32x16[2] = {0};
-CmMbDist32 ** cmDist16x32[2] = {0};
-CmMbDist16 ** cmDist16x16[2] = {0};
-CmMbDist16 ** cmDist16x8[2] = {0};
-CmMbDist16 ** cmDist8x16[2] = {0};
-CmMbDist16 ** cmDist8x8[2] = {0};
-CmMbDist16 ** cmDist8x4[2] = {0};
-CmMbDist16 ** cmDist4x8[2] = {0};
-
-Ipp32u mv32x32Pitch = 0;
-Ipp32u mv32x16Pitch = 0;
-Ipp32u mv16x32Pitch = 0;
-Ipp32u mv16x16Pitch = 0;
-Ipp32u mv16x8Pitch = 0;
-Ipp32u mv8x16Pitch = 0;
-Ipp32u mv8x8Pitch = 0;
-Ipp32u mv8x4Pitch = 0;
-Ipp32u mv4x8Pitch = 0;
-mfxI16Pair ** cmMv32x32[2] = {0};
-mfxI16Pair ** cmMv32x16[2] = {0};
-mfxI16Pair ** cmMv16x32[2] = {0};
-mfxI16Pair ** cmMv16x16[2] = {0};
-mfxI16Pair ** cmMv16x8[2] = {0};
-mfxI16Pair ** cmMv8x16[2] = {0};
-mfxI16Pair ** cmMv8x8[2] = {0};
-mfxI16Pair ** cmMv8x4[2] = {0};
-mfxI16Pair ** cmMv4x8[2] = {0};
-
-CmEvent * me1xIntraEvent = 0;
-CmEvent * gradientEvent = 0;
-CmEvent * ready16x16Event = 0;
-CmEvent * readyMV32x32Event = 0;
-CmEvent * readyRefine32x32Event = 0;
-CmEvent * readyRefine32x16Event = 0;
-CmEvent * readyRefine16x32Event = 0;
-CmEvent * me1xEvent[16] = {0};   // max num refs
-CmEvent * me2xEvent[16] = {0};
-CmEvent * readDist32x32Event[16] = {0};
-CmEvent * readDist32x16Event[16] = {0};
-CmEvent * readDist16x32Event[16] = {0};
 CmEvent * lastEvent[2] = {};
 Ipp32s cmCurIdx = 0;
 Ipp32s cmNextIdx = 0;
 
-int cmMvW[PU_MAX] = {};
-int cmMvH[PU_MAX] = {};
-
-bool operator==(mfxI16Pair const & l, mfxI16Pair const & r) { return l.x == r.x && l.y == r.y; }
-template <class T>
-mfxI16Pair operator*(mfxI16Pair const & p, T scalar) { mfxI16Pair r = { mfxI16(p.x * scalar), mfxI16(p.y * scalar) }; return r; }
-template <class T>
-mfxI16Pair & operator*=(mfxI16Pair & p, T scalar) { p.x *= scalar; p.y *= scalar; return p; }
+Ipp32s cmMvW[PU_MAX] = {};
+Ipp32s cmMvH[PU_MAX] = {};
 
 #if defined(_WIN32) || defined(_WIN64)
 
@@ -606,8 +536,7 @@ void PrintTimes()
 
 void FreeCmResources()
 {
-    if (cmResurcesAllocated)
-    {
+    if (cmResurcesAllocated) {
         device->DestroySurface(curbe);
         device->DestroySurface(curbe2x);
         device->DestroyKernel(kernelMeIntra);
@@ -621,136 +550,17 @@ void FreeCmResources()
         device->DestroyKernel(kernelDownSampleSrc);
         device->DestroyKernel(kernelDownSampleFwd);
 
-        for (uint i = 0; i < 2; i++)
-        {
-            device->DestroySurface2DUP(mbIntraDist[i]);
-            CM_ALIGNED_FREE(cmMbIntraDist[i]);
-            mbIntraDist[i] = 0;
-            cmMbIntraDist[i] = 0;
+        for (Ipp32s i = 0; i < 2; i++) {
+            DestroyCmSurface2DUp(device, cmMbIntraDist[i], mbIntraDist[i]);
+            DestroyCmBufferUp(device, cmMbIntraGrad4x4[i], mbIntraGrad4x4[i]);
+            DestroyCmBufferUp(device, cmMbIntraGrad8x8[i], mbIntraGrad8x8[i]);
 
-            device->DestroyBufferUP(mbIntraGrad4x4[i]);
-            CM_ALIGNED_FREE(cmMbIntraGrad4x4[i]);
-            mbIntraGrad4x4[i] = 0;
-            cmMbIntraGrad4x4[i] = 0;
-
-            device->DestroyBufferUP(mbIntraGrad8x8[i]);
-            CM_ALIGNED_FREE(cmMbIntraGrad8x8[i]);
-            mbIntraGrad8x8[i] = 0;
-            cmMbIntraGrad8x8[i] = 0;
-
-            for (uint j = 0; j < maxNumRefs; j++)
-            {
-                device->DestroySurface2DUP(dist32x32[i][j]);
-                device->DestroySurface2DUP(dist32x16[i][j]);
-                device->DestroySurface2DUP(dist16x32[i][j]);
-                device->DestroySurface2DUP(dist16x16[i][j]);
-                device->DestroySurface2DUP(dist16x8[i][j]);
-                device->DestroySurface2DUP(dist8x16[i][j]);
-                device->DestroySurface2DUP(dist8x8[i][j]);
-                device->DestroySurface2DUP(dist8x4[i][j]);
-                device->DestroySurface2DUP(dist4x8[i][j]);
-                CM_ALIGNED_FREE(cmDist32x32[i][j]);
-                CM_ALIGNED_FREE(cmDist32x16[i][j]);
-                CM_ALIGNED_FREE(cmDist16x32[i][j]);
-                CM_ALIGNED_FREE(cmDist16x16[i][j]);
-                CM_ALIGNED_FREE(cmDist16x8[i][j]);
-                CM_ALIGNED_FREE(cmDist8x16[i][j]);
-                CM_ALIGNED_FREE(cmDist8x8[i][j]);
-                CM_ALIGNED_FREE(cmDist8x4[i][j]);
-                CM_ALIGNED_FREE(cmDist4x8[i][j]);
-
-                device->DestroySurface2DUP(mv32x32[i][j]);
-                CM_ALIGNED_FREE(cmMv32x32[i][j]);
-                device->DestroySurface2DUP(mv32x16[i][j]);
-                CM_ALIGNED_FREE(cmMv32x16[i][j]);
-                device->DestroySurface2DUP(mv16x32[i][j]);
-                CM_ALIGNED_FREE(cmMv16x32[i][j]);
-                device->DestroySurface2DUP(mv16x16[i][j]);
-                CM_ALIGNED_FREE(cmMv16x16[i][j]);
-                device->DestroySurface2DUP(mv16x8[i][j]);
-                CM_ALIGNED_FREE(cmMv16x8[i][j]);
-                device->DestroySurface2DUP(mv8x16[i][j]);
-                CM_ALIGNED_FREE(cmMv8x16[i][j]);
-                device->DestroySurface2DUP(mv8x8[i][j]);
-                CM_ALIGNED_FREE(cmMv8x8[i][j]);
-                device->DestroySurface2DUP(mv8x4[i][j]);
-                CM_ALIGNED_FREE(cmMv8x4[i][j]);
-                device->DestroySurface2DUP(mv4x8[i][j]);
-                CM_ALIGNED_FREE(cmMv4x8[i][j]);
+            for (Ipp32s j = 0; j < maxNumRefs; j++) {
+                for (Ipp32s k = PU32x32; k < PU_MAX; k++) {
+                    DestroyCmSurface2DUp(device, distCpu[i][j][k], distGpu[i][j][k]);
+                    DestroyCmSurface2DUp(device, mvCpu[i][j][k], mvGpu[i][j][k]);
+                }
             }
-            delete [] dist32x32[i];
-            delete [] dist32x16[i];
-            delete [] dist16x32[i];
-            delete [] dist16x16[i];
-            delete [] dist16x8[i];
-            delete [] dist8x16[i];
-            delete [] dist8x8[i];
-            delete [] dist8x4[i];
-            delete [] dist4x8[i];
-            delete [] cmDist32x32[i];
-            delete [] cmDist32x16[i];
-            delete [] cmDist16x32[i];
-            delete [] cmDist16x16[i];
-            delete [] cmDist16x8[i];
-            delete [] cmDist8x16[i];
-            delete [] cmDist8x8[i];
-            delete [] cmDist8x4[i];
-            delete [] cmDist4x8[i];
-            dist32x32[i] = 0;
-            dist32x16[i] = 0;
-            dist16x32[i] = 0;
-            dist16x16[i] = 0;
-            dist16x8[i] = 0;
-            dist8x16[i] = 0;
-            dist8x8[i] = 0;
-            dist8x4[i] = 0;
-            dist4x8[i] = 0;
-            cmDist32x32[i] = 0;
-            cmDist32x16[i] = 0;
-            cmDist16x32[i] = 0;
-            cmDist16x16[i] = 0;
-            cmDist16x8[i] = 0;
-            cmDist8x16[i] = 0;
-            cmDist8x8[i] = 0;
-            cmDist8x4[i] = 0;
-            cmDist4x8[i] = 0;
-
-            delete [] mv32x32[i];
-            delete [] cmMv32x32[i];
-            mv32x32[i] = 0;
-            cmMv32x32[i] = 0;
-            delete [] mv32x16[i];
-            delete [] cmMv32x16[i];
-            mv32x16[i] = 0;
-            cmMv32x16[i] = 0;
-            delete [] mv16x32[i];
-            delete [] cmMv16x32[i];
-            mv16x32[i] = 0;
-            cmMv16x32[i] = 0;
-            delete [] mv16x16[i];
-            delete [] cmMv16x16[i];
-            mv16x16[i] = 0;
-            cmMv16x16[i] = 0;
-            delete [] mv16x8[i];
-            delete [] cmMv16x8[i];
-            mv16x8[i] = 0;
-            cmMv16x8[i] = 0;
-            delete [] mv8x16[i];
-            delete [] cmMv8x16[i];
-            mv8x16[i] = 0;
-            cmMv8x16[i] = 0;
-            delete [] mv8x8[i];
-            delete [] cmMv8x8[i];
-            mv8x8[i] = 0;
-            cmMv8x8[i] = 0;
-            delete [] mv8x4[i];
-            delete [] cmMv8x4[i];
-            mv8x4[i] = 0;
-            cmMv8x4[i] = 0;
-            delete [] mv4x8[i];
-            delete [] cmMv4x8[i];
-            mv4x8[i] = 0;
-            cmMv4x8[i] = 0;
 
             device->DestroySurface(raw[i]);
             device->DestroySurface(raw2x[i]);
@@ -799,350 +609,66 @@ void AllocateCmResources(mfxU32 w, mfxU32 h, mfxU16 nRefs)
     cmMvW[PU16x16] = w / 16; cmMvH[PU16x16] = h / 16;
     cmMvW[PU16x8 ] = w / 16; cmMvH[PU16x8 ] = h /  8;
     cmMvW[PU8x16 ] = w /  8; cmMvH[PU8x16 ] = h / 16;
-    cmMvW[PU16x4 ] = w / 16; cmMvH[PU16x4 ] = h /  8;
-    cmMvW[PU16x12] = w / 16; cmMvH[PU16x12] = h /  8;
-    cmMvW[PU4x16 ] = w /  8; cmMvH[PU4x16 ] = h / 16;
-    cmMvW[PU12x16] = w /  8; cmMvH[PU12x16] = h / 16;
     cmMvW[PU8x8  ] = w /  8; cmMvH[PU8x8  ] = h /  8;
     cmMvW[PU8x4  ] = w /  8; cmMvH[PU8x4  ] = h /  4;
     cmMvW[PU4x8  ] = w /  4; cmMvH[PU4x8  ] = h /  8;
     cmMvW[PU32x32] = width2x / 16; cmMvH[PU32x32] = height2x / 16;
     cmMvW[PU32x16] = width2x / 16; cmMvH[PU32x16] = height2x /  8;
     cmMvW[PU16x32] = width2x /  8; cmMvH[PU16x32] = height2x / 16;
-    cmMvW[PU32x8 ] = width2x / 16; cmMvH[PU32x8 ] = height2x /  8;
-    cmMvW[PU32x24] = width2x / 16; cmMvH[PU32x24] = height2x /  8;
-    cmMvW[PU8x32 ] = width2x /  8; cmMvH[PU8x32 ] = height2x / 16;
-    cmMvW[PU24x32] = width2x /  8; cmMvH[PU24x32] = height2x / 16;
 
-    /* surfaces for mv32x32 */
-    Ipp32u mv32x32Size = 0;
-    device->GetSurface2DInfo(cmMvW[PU32x32] * sizeof(mfxI16Pair), cmMvH[PU32x32], CM_SURFACE_FORMAT_P8, mv32x32Pitch, mv32x32Size);
+    for (Ipp32u i = 0; i < 2; i++) {
+        CreateCmSurface2DUp(device, w / 16, h / 16, CM_SURFACE_FORMAT_P8, cmMbIntraDist[i],
+                            mbIntraDist[i], intraPitch[i]);
+        CreateCmBufferUp(device, w * h / 16, cmMbIntraGrad4x4[i], mbIntraGrad4x4[i]);
+        CreateCmBufferUp(device, w * h / 64, cmMbIntraGrad8x8[i], mbIntraGrad8x8[i]);
 
-    for (Ipp32u i = 0; i < 2; i++)
-    {
-        /* surface for intra costs */
-        Ipp32u intraSize = 0;
-        device->GetSurface2DInfo(w / 16 * sizeof(CmMbIntraDist), h / 16, CM_SURFACE_FORMAT_P8, intraPitch[i], intraSize);
-        cmMbIntraDist[i] = (CmMbIntraDist *)CM_ALIGNED_MALLOC(intraSize, 0x1000);    // 4K aligned 
-        mbIntraDist[i] = CreateSurface(device, w * sizeof(CmMbIntraDist) / 16, h / 16, CM_SURFACE_FORMAT_P8, cmMbIntraDist[i]);
-
-        /* surface for intra gradient histogram */
-        cmMbIntraGrad4x4[i] = (CmMbIntraGrad *)CM_ALIGNED_MALLOC(w * h / 16 * sizeof(CmMbIntraGrad), 0x1000);
-        mbIntraGrad4x4[i] = CreateBuffer(device, w * h / 16 * sizeof(CmMbIntraGrad), cmMbIntraGrad4x4[i]);
-
-        cmMbIntraGrad8x8[i] = (CmMbIntraGrad *)CM_ALIGNED_MALLOC(w * h / 64 * sizeof(CmMbIntraGrad), 0x1000);
-        mbIntraGrad8x8[i] = CreateBuffer(device, w * h / 64 * sizeof(CmMbIntraGrad), cmMbIntraGrad8x8[i]);
-
-        cmMv32x32[i] = new mfxI16Pair* [maxNumRefs];
-        mv32x32[i] = new CmSurface2DUP* [maxNumRefs];
-        for (Ipp32u j = 0; j < maxNumRefs; j++)
-        {
-            cmMv32x32[i][j] = (mfxI16Pair *)CM_ALIGNED_MALLOC(mv32x32Size, 0x1000);    // 4K aligned 
-            mv32x32[i][j] = CreateSurface(device, cmMvW[PU32x32] * sizeof(mfxI16Pair), cmMvH[PU32x32], CM_SURFACE_FORMAT_P8, cmMv32x32[i][j]);
+        for (Ipp32s j = 0; j < maxNumRefs; j++) {
+            for (Ipp32u k = PU32x32; k <= PU16x32; k++)
+                CreateCmSurface2DUp(device, cmMvW[k] * 16, cmMvH[k], CM_SURFACE_FORMAT_P8,
+                                    distCpu[i][j][k], distGpu[i][j][k], pitchDist[k]);
+            for (Ipp32u k = PU16x16; k < PU_MAX; k++)
+                CreateCmSurface2DUp(device, cmMvW[k] * 1, cmMvH[k], CM_SURFACE_FORMAT_P8,
+                                    distCpu[i][j][k], distGpu[i][j][k], pitchDist[k]);
+            for (Ipp32u k = 0; k < PU_MAX; k++)
+                CreateCmSurface2DUp(device, cmMvW[k], cmMvH[k], CM_SURFACE_FORMAT_P8,
+                                    mvCpu[i][j][k], mvGpu[i][j][k], pitchMv[k]);
         }
     }
-
-    /* surfaces for mv32x16 */
-    Ipp32u mv32x16Size = 0;
-    device->GetSurface2DInfo(cmMvW[PU32x16] * sizeof(mfxI16Pair), cmMvH[PU32x16], CM_SURFACE_FORMAT_P8, mv32x16Pitch, mv32x16Size);
-
-    for (Ipp32u i = 0; i < 2; i++)
-    {
-        cmMv32x16[i] = new mfxI16Pair* [maxNumRefs];
-        mv32x16[i] = new CmSurface2DUP* [maxNumRefs];
-        for (Ipp32u j = 0; j < maxNumRefs; j++)
-        {
-            cmMv32x16[i][j] = (mfxI16Pair *)CM_ALIGNED_MALLOC(mv32x16Size, 0x1000);    // 4K aligned 
-            mv32x16[i][j] = CreateSurface(device, cmMvW[PU32x16] * sizeof(mfxI16Pair), cmMvH[PU32x16], CM_SURFACE_FORMAT_P8, cmMv32x16[i][j]);
-        }
-    }
-
-    /* surfaces for mv16x32 */
-    Ipp32u mv16x32Size = 0;
-    device->GetSurface2DInfo(cmMvW[PU16x32] * sizeof(mfxI16Pair), cmMvH[PU16x32], CM_SURFACE_FORMAT_P8, mv16x32Pitch, mv16x32Size);
-
-    for (Ipp32u i = 0; i < 2; i++)
-    {
-        cmMv16x32[i] = new mfxI16Pair* [maxNumRefs];
-        mv16x32[i] = new CmSurface2DUP* [maxNumRefs];
-        for (Ipp32u j = 0; j < maxNumRefs; j++)
-        {
-            cmMv16x32[i][j] = (mfxI16Pair *)CM_ALIGNED_MALLOC(mv16x32Size, 0x1000);    // 4K aligned 
-            mv16x32[i][j] = CreateSurface(device, cmMvW[PU16x32] * sizeof(mfxI16Pair), cmMvH[PU16x32], CM_SURFACE_FORMAT_P8, cmMv16x32[i][j]);
-        }
-    }
-
-    /* surfaces for mv16x16 */
-    Ipp32u mv16x16Size = 0;
-    device->GetSurface2DInfo(cmMvW[PU16x16] * sizeof(mfxI16Pair), cmMvH[PU16x16], CM_SURFACE_FORMAT_P8, mv16x16Pitch, mv16x16Size);
-
-    for (Ipp32u i = 0; i < 2; i++)
-    {
-        cmMv16x16[i] = new mfxI16Pair* [maxNumRefs];
-        mv16x16[i] = new CmSurface2DUP* [maxNumRefs];
-        for (Ipp32u j = 0; j < maxNumRefs; j++)
-        {
-            cmMv16x16[i][j] = (mfxI16Pair *)CM_ALIGNED_MALLOC(mv16x16Size, 0x1000);    // 4K aligned 
-            mv16x16[i][j] = CreateSurface(device, cmMvW[PU16x16] * sizeof(mfxI16Pair), cmMvH[PU16x16], CM_SURFACE_FORMAT_P8, cmMv16x16[i][j]);
-        }
-    }
-
-    /* surfaces for mv16x8 */
-    Ipp32u mv16x8Size = 0;
-    device->GetSurface2DInfo(cmMvW[PU16x8] * sizeof(mfxI16Pair), cmMvH[PU16x8], CM_SURFACE_FORMAT_P8, mv16x8Pitch, mv16x8Size);
-
-    for (Ipp32u i = 0; i < 2; i++)
-    {
-        cmMv16x8[i] = new mfxI16Pair* [maxNumRefs];
-        mv16x8[i] = new CmSurface2DUP* [maxNumRefs];
-        for (Ipp32u j = 0; j < maxNumRefs; j++)
-        {
-            cmMv16x8[i][j] = (mfxI16Pair *)CM_ALIGNED_MALLOC(mv16x8Size, 0x1000);    // 4K aligned 
-            mv16x8[i][j] = CreateSurface(device, cmMvW[PU16x8] * sizeof(mfxI16Pair), cmMvH[PU16x8], CM_SURFACE_FORMAT_P8, cmMv16x8[i][j]);
-        }
-    }
-
-    /* surfaces for mv8x16 */
-    Ipp32u mv8x16Size = 0;
-    device->GetSurface2DInfo(cmMvW[PU8x16] * sizeof(mfxI16Pair), cmMvH[PU8x16], CM_SURFACE_FORMAT_P8, mv8x16Pitch, mv8x16Size);
-
-    for (Ipp32u i = 0; i < 2; i++)
-    {
-        cmMv8x16[i] = new mfxI16Pair* [maxNumRefs];
-        mv8x16[i] = new CmSurface2DUP* [maxNumRefs];
-        for (Ipp32u j = 0; j < maxNumRefs; j++)
-        {
-            cmMv8x16[i][j] = (mfxI16Pair *)CM_ALIGNED_MALLOC(mv8x16Size, 0x1000);    // 4K aligned 
-            mv8x16[i][j] = CreateSurface(device, cmMvW[PU8x16] * sizeof(mfxI16Pair), cmMvH[PU8x16], CM_SURFACE_FORMAT_P8, cmMv8x16[i][j]);
-        }
-    }
-
-    /* surfaces for mv8x8 */
-    Ipp32u mv8x8Size = 0;
-    device->GetSurface2DInfo(cmMvW[PU8x8] * sizeof(mfxI16Pair), cmMvH[PU8x8], CM_SURFACE_FORMAT_P8, mv8x8Pitch, mv8x8Size);
-
-    for (Ipp32u i = 0; i < 2; i++)
-    {
-        cmMv8x8[i] = new mfxI16Pair* [maxNumRefs];
-        mv8x8[i] = new CmSurface2DUP* [maxNumRefs];
-        for (Ipp32u j = 0; j < maxNumRefs; j++)
-        {
-            cmMv8x8[i][j] = (mfxI16Pair *)CM_ALIGNED_MALLOC(mv8x8Size, 0x1000);    // 4K aligned 
-            mv8x8[i][j] = CreateSurface(device, cmMvW[PU8x8] * sizeof(mfxI16Pair), cmMvH[PU8x8], CM_SURFACE_FORMAT_P8, cmMv8x8[i][j]);
-        }
-    }
-
-    /* surfaces for mv8x4 */
-    Ipp32u mv8x4Size = 0;
-    device->GetSurface2DInfo(cmMvW[PU8x4] * sizeof(mfxI16Pair), cmMvH[PU8x4], CM_SURFACE_FORMAT_P8, mv8x4Pitch, mv8x4Size);
-
-    for (Ipp32u i = 0; i < 2; i++)
-    {
-        cmMv8x4[i] = new mfxI16Pair* [maxNumRefs];
-        mv8x4[i] = new CmSurface2DUP* [maxNumRefs];
-        for (Ipp32u j = 0; j < maxNumRefs; j++)
-        {
-            cmMv8x4[i][j] = (mfxI16Pair *)CM_ALIGNED_MALLOC(mv8x4Size, 0x1000);    // 4K aligned 
-            mv8x4[i][j] = CreateSurface(device, cmMvW[PU8x4] * sizeof(mfxI16Pair), cmMvH[PU8x4], CM_SURFACE_FORMAT_P8, cmMv8x4[i][j]);
-        }
-    }
-
-    /* surfaces for mv4x8 */
-    Ipp32u mv4x8Size = 0;
-    device->GetSurface2DInfo(cmMvW[PU4x8] * sizeof(mfxI16Pair), cmMvH[PU4x8], CM_SURFACE_FORMAT_P8, mv4x8Pitch, mv4x8Size);
-
-    for (Ipp32u i = 0; i < 2; i++)
-    {
-        cmMv4x8[i] = new mfxI16Pair* [maxNumRefs];
-        mv4x8[i] = new CmSurface2DUP* [maxNumRefs];
-        for (Ipp32u j = 0; j < maxNumRefs; j++)
-        {
-            cmMv4x8[i][j] = (mfxI16Pair *)CM_ALIGNED_MALLOC(mv4x8Size, 0x1000);    // 4K aligned 
-            mv4x8[i][j] = CreateSurface(device, cmMvW[PU4x8] * sizeof(mfxI16Pair), cmMvH[PU4x8], CM_SURFACE_FORMAT_P8, cmMv4x8[i][j]);
-        }
-    }
-
-
-    /* surfaces for dist32x32 */
-    Ipp32u dist32x32Size = 0;
-    device->GetSurface2DInfo(cmMvW[PU32x32] * sizeof(CmMbDist32), cmMvH[PU32x32], CM_SURFACE_FORMAT_P8, dist32x32Pitch, dist32x32Size);
-
-    for (Ipp32u i = 0; i < 2; i++)
-    {
-        cmDist32x32[i] = new CmMbDist32* [maxNumRefs];
-        dist32x32[i] = new CmSurface2DUP* [maxNumRefs];
-        for (Ipp32u j = 0; j < maxNumRefs; j++)
-        {
-            cmDist32x32[i][j] = (CmMbDist32 *)CM_ALIGNED_MALLOC(dist32x32Size, 0x1000);    // 4K aligned 
-            dist32x32[i][j] = CreateSurface(device, cmMvW[PU32x32] * sizeof(CmMbDist32), cmMvH[PU32x32], CM_SURFACE_FORMAT_P8, cmDist32x32[i][j]);
-        }
-    }
-
-    /* surfaces for dist32x16 */
-    Ipp32u dist32x16Size = 0;
-    device->GetSurface2DInfo(cmMvW[PU32x16] * sizeof(CmMbDist32), cmMvH[PU32x16], CM_SURFACE_FORMAT_P8, dist32x16Pitch, dist32x16Size);
-
-    for (Ipp32u i = 0; i < 2; i++)
-    {
-        cmDist32x16[i] = new CmMbDist32* [maxNumRefs];
-        dist32x16[i] = new CmSurface2DUP* [maxNumRefs];
-        for (Ipp32u j = 0; j < maxNumRefs; j++)
-        {
-            cmDist32x16[i][j] = (CmMbDist32 *)CM_ALIGNED_MALLOC(dist32x16Size, 0x1000);    // 4K aligned 
-            dist32x16[i][j] = CreateSurface(device, cmMvW[PU32x16] * sizeof(CmMbDist32), cmMvH[PU32x16], CM_SURFACE_FORMAT_P8, cmDist32x16[i][j]);
-        }
-    }
-
-    /* surfaces for dist16x32 */
-    Ipp32u dist16x32Size = 0;
-    device->GetSurface2DInfo(cmMvW[PU16x32] * sizeof(CmMbDist32), cmMvH[PU16x32], CM_SURFACE_FORMAT_P8, dist16x32Pitch, dist16x32Size);
-
-    for (Ipp32u i = 0; i < 2; i++)
-    {
-        cmDist16x32[i] = new CmMbDist32* [maxNumRefs];
-        dist16x32[i] = new CmSurface2DUP* [maxNumRefs];
-        for (Ipp32u j = 0; j < maxNumRefs; j++)
-        {
-            cmDist16x32[i][j] = (CmMbDist32 *)CM_ALIGNED_MALLOC(dist16x32Size, 0x1000);    // 4K aligned 
-            dist16x32[i][j] = CreateSurface(device, cmMvW[PU16x32] * sizeof(CmMbDist32), cmMvH[PU16x32], CM_SURFACE_FORMAT_P8, cmDist16x32[i][j]);
-        }
-    }
-
-    /* surfaces for dist16x16 */
-    Ipp32u dist16x16Size = 0;
-    device->GetSurface2DInfo(cmMvW[PU16x16] * sizeof(CmMbDist16), cmMvH[PU16x16], CM_SURFACE_FORMAT_P8, dist16x16Pitch, dist16x16Size);
-
-    for (Ipp32u i = 0; i < 2; i++)
-    {
-        cmDist16x16[i] = new CmMbDist16* [maxNumRefs];
-        dist16x16[i] = new CmSurface2DUP* [maxNumRefs];
-        for (Ipp32u j = 0; j < maxNumRefs; j++)
-        {
-            cmDist16x16[i][j] = (CmMbDist16 *)CM_ALIGNED_MALLOC(dist16x16Size, 0x1000);    // 4K aligned 
-            dist16x16[i][j] = CreateSurface(device, cmMvW[PU16x16] * sizeof(CmMbDist16), cmMvH[PU16x16], CM_SURFACE_FORMAT_P8, cmDist16x16[i][j]);
-        }
-    }
-
-    /* surfaces for dist16x8 */
-    Ipp32u dist16x8Size = 0;
-    device->GetSurface2DInfo(cmMvW[PU16x8] * sizeof(CmMbDist16), cmMvH[PU16x8], CM_SURFACE_FORMAT_P8, dist16x8Pitch, dist16x8Size);
-
-    for (Ipp32u i = 0; i < 2; i++)
-    {
-        cmDist16x8[i] = new CmMbDist16* [maxNumRefs];
-        dist16x8[i] = new CmSurface2DUP* [maxNumRefs];
-        for (Ipp32u j = 0; j < maxNumRefs; j++)
-        {
-            cmDist16x8[i][j] = (CmMbDist16 *)CM_ALIGNED_MALLOC(dist16x8Size, 0x1000);    // 4K aligned 
-            dist16x8[i][j] = CreateSurface(device, cmMvW[PU16x8] * sizeof(CmMbDist16), cmMvH[PU16x8], CM_SURFACE_FORMAT_P8, cmDist16x8[i][j]);
-        }
-    }
-
-    /* surfaces for dist8x16 */
-    Ipp32u dist8x16Size = 0;
-    device->GetSurface2DInfo(cmMvW[PU8x16] * sizeof(CmMbDist16), cmMvH[PU8x16], CM_SURFACE_FORMAT_P8, dist8x16Pitch, dist8x16Size);
-
-    for (Ipp32u i = 0; i < 2; i++)
-    {
-        cmDist8x16[i] = new CmMbDist16* [maxNumRefs];
-        dist8x16[i] = new CmSurface2DUP* [maxNumRefs];
-        for (Ipp32u j = 0; j < maxNumRefs; j++)
-        {
-            cmDist8x16[i][j] = (CmMbDist16 *)CM_ALIGNED_MALLOC(dist8x16Size, 0x1000);    // 4K aligned 
-            dist8x16[i][j] = CreateSurface(device, cmMvW[PU8x16] * sizeof(CmMbDist16), cmMvH[PU8x16], CM_SURFACE_FORMAT_P8, cmDist8x16[i][j]);
-        }
-    }
-
-    /* surfaces for dist8x8 */
-    Ipp32u dist8x8Size = 0;
-    device->GetSurface2DInfo(cmMvW[PU8x8] * sizeof(CmMbDist16), cmMvH[PU8x8], CM_SURFACE_FORMAT_P8, dist8x8Pitch, dist8x8Size);
-
-    for (Ipp32u i = 0; i < 2; i++)
-    {
-        cmDist8x8[i] = new CmMbDist16* [maxNumRefs];
-        dist8x8[i] = new CmSurface2DUP* [maxNumRefs];
-        for (Ipp32u j = 0; j < maxNumRefs; j++)
-        {
-            cmDist8x8[i][j] = (CmMbDist16 *)CM_ALIGNED_MALLOC(dist8x8Size, 0x1000);    // 4K aligned 
-            dist8x8[i][j] = CreateSurface(device, cmMvW[PU8x8] * sizeof(CmMbDist16), cmMvH[PU8x8], CM_SURFACE_FORMAT_P8, cmDist8x8[i][j]);
-        }
-    }
-
-    /* surfaces for dist8x4 */
-    Ipp32u dist8x4Size = 0;
-    device->GetSurface2DInfo(cmMvW[PU8x4] * sizeof(CmMbDist16), cmMvH[PU8x4], CM_SURFACE_FORMAT_P8, dist8x4Pitch, dist8x4Size);
-
-    for (Ipp32u i = 0; i < 2; i++)
-    {
-        cmDist8x4[i] = new CmMbDist16* [maxNumRefs];
-        dist8x4[i] = new CmSurface2DUP* [maxNumRefs];
-        for (Ipp32u j = 0; j < maxNumRefs; j++)
-        {
-            cmDist8x4[i][j] = (CmMbDist16 *)CM_ALIGNED_MALLOC(dist8x4Size, 0x1000);    // 4K aligned 
-            dist8x4[i][j] = CreateSurface(device, cmMvW[PU8x4] * sizeof(CmMbDist16), cmMvH[PU8x4], CM_SURFACE_FORMAT_P8, cmDist8x4[i][j]);
-        }
-    }
-
-    /* surfaces for dist4x8 */
-    Ipp32u dist4x8Size = 0;
-    device->GetSurface2DInfo(cmMvW[PU4x8] * sizeof(CmMbDist16), cmMvH[PU4x8], CM_SURFACE_FORMAT_P8, dist4x8Pitch, dist4x8Size);
-
-    for (Ipp32u i = 0; i < 2; i++)
-    {
-        cmDist4x8[i] = new CmMbDist16* [maxNumRefs];
-        dist4x8[i] = new CmSurface2DUP* [maxNumRefs];
-        for (Ipp32u j = 0; j < maxNumRefs; j++)
-        {
-            cmDist4x8[i][j] = (CmMbDist16 *)CM_ALIGNED_MALLOC(dist4x8Size, 0x1000);    // 4K aligned 
-            dist4x8[i][j] = CreateSurface(device, cmMvW[PU4x8] * sizeof(CmMbDist16), cmMvH[PU4x8], CM_SURFACE_FORMAT_P8, cmDist4x8[i][j]);
-        }
-    }
-
 
     kernelDownSampleSrc = CreateKernel(device, program, "DownSampleMB", (void *)DownSampleMB);
     kernelDownSampleFwd = CreateKernel(device, program, "DownSampleMB", (void *)DownSampleMB);
     kernelMeIntra = CreateKernel(device, program, "RawMeMB_P_Intra", (void *)RawMeMB_P_Intra);
     kernelGradient = CreateKernel(device, program, "AnalyzeGradient", (void *)AnalyzeGradient);
-    kernelMe      = CreateKernel(device, program, "RawMeMB_P", (void *)RawMeMB_P);
-    kernelMe2x    = CreateKernel(device, program, "MeP32", (void *)MeP32);
+    kernelMe = CreateKernel(device, program, "RawMeMB_P", (void *)RawMeMB_P);
+    kernelMe2x = CreateKernel(device, program, "MeP32", (void *)MeP32);
     kernelRefine32x32 = CreateKernel(device, program, "RefineMeP32x32", (void *)RefineMeP32x32);
     kernelRefine32x16 = CreateKernel(device, program, "RefineMeP32x16", (void *)RefineMeP32x16);
     kernelRefine16x32 = CreateKernel(device, program, "RefineMeP16x32", (void *)RefineMeP16x32);
     curbe   = CreateBuffer(device, sizeof(H265EncCURBEData));
     curbe2x = CreateBuffer(device, sizeof(H265EncCURBEData));
 
-    {
-        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "SetCurbeDataAllCur");
-        // common curbe data
-        H265EncCURBEData curbeData = {};
-        {
-            MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "SetCurbeDataCur");
-            SetCurbeData(curbeData, MFX_FRAMETYPE_P, 26);
-        }
+    H265EncCURBEData curbeData = {};
+    SetCurbeData(curbeData, MFX_FRAMETYPE_P, 26);
 
-        // original sized
-        {
-            MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "curbe->WriteSurface0");
-            curbeData.PictureHeightMinusOne = height / 16 - 1;
-            curbeData.SliceHeightMinusOne   = height / 16 - 1;
-            curbeData.PictureWidth          = width  / 16;
-            curbeData.Log2MvScaleFactor     = 0;
-            curbeData.Log2MbScaleFactor     = 1;
-            curbeData.SubMbPartMask         = 0x7e;
-            curbeData.InterSAD              = 2;
-            curbeData.IntraSAD              = 2;
-            curbe->WriteSurface((mfxU8 *)&curbeData, NULL);
-        }
+    { MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "curbe->WriteSurface0");
+        curbeData.PictureHeightMinusOne = height / 16 - 1;
+        curbeData.SliceHeightMinusOne   = height / 16 - 1;
+        curbeData.PictureWidth          = width  / 16;
+        curbeData.Log2MvScaleFactor     = 0;
+        curbeData.Log2MbScaleFactor     = 1;
+        curbeData.SubMbPartMask         = 0x7e;
+        curbeData.InterSAD              = 2;
+        curbeData.IntraSAD              = 2;
+        curbe->WriteSurface((mfxU8 *)&curbeData, NULL);
+    }
 
-        {
-            MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "curbe->WriteSurface1");
-            curbeData.PictureHeightMinusOne = height2x / 16 - 1;
-            curbeData.SliceHeightMinusOne   = height2x / 16 - 1;
-            curbeData.PictureWidth          = width2x  / 16;
-            curbeData.InterSAD              = 0;
-            curbeData.IntraSAD              = 0;
-            curbe2x->WriteSurface((mfxU8 *)&curbeData, NULL);
-        }
+    { MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "curbe->WriteSurface1");
+        curbeData.PictureHeightMinusOne = height2x / 16 - 1;
+        curbeData.SliceHeightMinusOne   = height2x / 16 - 1;
+        curbeData.PictureWidth          = width2x  / 16;
+        curbeData.InterSAD              = 0;
+        curbeData.IntraSAD              = 0;
+        curbe2x->WriteSurface((mfxU8 *)&curbeData, NULL);
     }
 
     cmResurcesAllocated = true;
@@ -1161,17 +687,6 @@ void RunVme(
 {
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "RunVme");
 
-#if defined(_WIN32) || defined(_WIN64)
-    mfxU64 runVmeStart = gettick();
-#endif // #if defined(_WIN32) || defined(_WIN64)
-
-    CmEvent * writeSrcEvent = 0;
-    CmEvent * writeFwdEvent = 0;
-    CmEvent * dsSrcEvent = 0;
-    CmEvent * dsFwdEvent = 0;
-        
-    const H265Frame *refFrameCur = refsCur[0];
-
     if (frameOrder == 0) {
         {   MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "CopyToGpuRawCur");
             EnqueueCopyCPUToGPUStride(queue, raw[cmCurIdx], pFrameCur->y, pFrameCur->pitch_luma,
@@ -1186,10 +701,12 @@ void RunVme(
         }
     }
     else if (pFrameCur->m_PicCodType & MFX_FRAMETYPE_P) {
+        CmSurface2DUP ** dist = distGpu[cmCurIdx][0];
+        CmSurface2DUP ** mv = mvGpu[cmCurIdx][0];
         SurfaceIndex * refs2x = CreateVmeSurfaceG75(device, raw2x[cmCurIdx], &fwdRef2xCur, 0, 1, 0);
         SurfaceIndex * refs   = CreateVmeSurfaceG75(device, raw[cmCurIdx], &fwdRefCur, 0, 1, 0);
         {   MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "CopyToGpuCurFwdRef");
-            EnqueueCopyCPUToGPUStride(queue, fwdRefCur, refFrameCur->y, refFrameCur->pitch_luma,
+            EnqueueCopyCPUToGPUStride(queue, fwdRefCur, refsCur[0]->y, refsCur[0]->pitch_luma,
                                       lastEvent[cmCurIdx]);
         }
         if (param.Log2MaxCUSize > 4) {
@@ -1197,36 +714,33 @@ void RunVme(
             SetKernelArg(kernelDownSampleFwd, fwdRefCur, fwdRef2xCur);
             EnqueueKernel(device, queue, kernelDownSampleFwd, width / 16, height / 16, lastEvent[cmCurIdx]);
         }
-        {   MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "RefLast_kernelMe");
-            SetKernelArg(kernelMe, curbe, *refs, dist16x16[cmCurIdx][0], dist16x8[cmCurIdx][0],
-                         dist8x16[cmCurIdx][0], dist8x8[cmCurIdx][0], dist8x4[cmCurIdx][0],
-                         dist4x8[cmCurIdx][0], mv16x16[cmCurIdx][0], mv16x8[cmCurIdx][0],
-                         mv8x16[cmCurIdx][0], mv8x8[cmCurIdx][0], mv8x4[cmCurIdx][0],
-                         mv4x8[cmCurIdx][0]);
+        { MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "RefLast_kernelMe");
+            SetKernelArg(kernelMe, curbe, *refs, dist[PU16x16], dist[PU16x8], dist[PU8x16],
+                         dist[PU8x8], dist[PU8x4], dist[PU4x8], mv[PU16x16], mv[PU16x8],
+                         mv[PU8x16], mv[PU8x8], mv[PU8x4], mv[PU4x8]);
             EnqueueKernel(device, queue, kernelMe, width / 16, height / 16, lastEvent[cmCurIdx]);
         }
         if (param.Log2MaxCUSize > 4) {
-            {   MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "RefLast_kernelMe2x");
-                SetKernelArg(kernelMe2x, curbe2x, *refs2x, mv32x32[cmCurIdx][0],
-                             mv32x16[cmCurIdx][0], mv16x32[cmCurIdx][0]);
+            { MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "RefLast_kernelMe2x");
+                SetKernelArg(kernelMe2x, curbe2x, *refs2x, mv[PU32x32], mv[PU32x16], mv[PU16x32]);
                 EnqueueKernel(device, queue, kernelMe2x, width2x / 16, height2x / 16,
                               lastEvent[cmCurIdx]);
             }
-            {   MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "RefLast_kernelRefine32x32");
-                SetKernelArg(kernelRefine32x32, dist32x32[cmCurIdx][0], mv32x32[cmCurIdx][0],
-                             raw[cmCurIdx], fwdRefCur);
+            { MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "RefLast_kernelRefine32x32");
+                SetKernelArg(kernelRefine32x32, dist[PU32x32], mv[PU32x32], raw[cmCurIdx],
+                             fwdRefCur);
                 EnqueueKernel(device, queue, kernelRefine32x32, width2x / 16, height2x / 16,
                               lastEvent[cmCurIdx]);
             }
-            {   MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "RefLast_kernelRefine32x16");
-                SetKernelArg(kernelRefine32x16, dist32x16[cmCurIdx][0], mv32x16[cmCurIdx][0],
-                             raw[cmCurIdx], fwdRefCur);
+            { MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "RefLast_kernelRefine32x16");
+                SetKernelArg(kernelRefine32x16, dist[PU32x16], mv[PU32x16], raw[cmCurIdx],
+                             fwdRefCur);
                 EnqueueKernel(device, queue, kernelRefine32x16, width2x / 16, height2x / 8,
                               lastEvent[cmCurIdx]);
             }
             {   MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "RefLast_kernelRefine16x32");
-                SetKernelArg(kernelRefine16x32, dist16x32[cmCurIdx][0], mv16x32[cmCurIdx][0],
-                             raw[cmCurIdx], fwdRefCur);
+                SetKernelArg(kernelRefine16x32, dist[PU16x32], mv[PU16x32], raw[cmCurIdx],
+                             fwdRefCur);
                 EnqueueKernel(device, queue, kernelRefine16x32, width2x / 8, height2x / 16,
                               lastEvent[cmCurIdx]);
             }
@@ -1237,9 +751,8 @@ void RunVme(
 
 
     if (pFrameNext)
-    { // common next raw
-        { 
-            MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "CopyToGpuRawNext");
+    {
+        { MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "CopyToGpuRawNext");
             EnqueueCopyCPUToGPUStride(queue, raw[cmNextIdx], pFrameNext->y, pFrameNext->pitch_luma,
                                       lastEvent[cmNextIdx]);
         }
@@ -1252,7 +765,6 @@ void RunVme(
         }
 
         if (pFrameNext->m_PicCodType & MFX_FRAMETYPE_P) {
-            
             if (param.Log2MaxCUSize > 4) {
                 MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "DSRaw2xNext");
                 SetKernelArg(kernelDownSampleSrc, raw[cmNextIdx], raw2x[cmNextIdx]);
@@ -1268,14 +780,15 @@ void RunVme(
             device->DestroyVmeSurfaceG7_5(refsIntra);
         }
 
-        for (int refIdx = 1; pFrameNext && refIdx < pSliceNext->num_ref_idx[0]; refIdx++)
+        for (Ipp32s refIdx = 1; pFrameNext && refIdx < pSliceNext->num_ref_idx[0]; refIdx++)
         {
-            H265Frame const *refFrameNext = refsNext[refIdx];
-            SurfaceIndex * refs2x = CreateVmeSurfaceG75(device, raw2x[cmNextIdx], &fwdRef2xNext, 0, 1, 0);
-            SurfaceIndex * refs   = CreateVmeSurfaceG75(device, raw[cmNextIdx],   &fwdRefNext,   0, 1, 0);
-            {   MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "CopyToGpuRefNext");
-                EnqueueCopyCPUToGPUStride(queue, fwdRefNext, refFrameNext->y,
-                                          refFrameNext->pitch_luma, lastEvent[cmNextIdx]);
+            CmSurface2DUP ** dist = distGpu[cmNextIdx][refIdx];
+            CmSurface2DUP ** mv = mvGpu[cmNextIdx][refIdx];
+            SurfaceIndex *refs2x = CreateVmeSurfaceG75(device, raw2x[cmNextIdx], &fwdRef2xNext, 0, 1, 0);
+            SurfaceIndex *refs   = CreateVmeSurfaceG75(device, raw[cmNextIdx],   &fwdRefNext,   0, 1, 0);
+            { MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "CopyToGpuRefNext");
+                EnqueueCopyCPUToGPUStride(queue, fwdRefNext, refsNext[refIdx]->y,
+                                          refsNext[refIdx]->pitch_luma, lastEvent[cmNextIdx]);
             }
             if (param.Log2MaxCUSize > 4) {
                 MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "DSNextFwdRef");
@@ -1283,40 +796,36 @@ void RunVme(
                 EnqueueKernel(device, queue, kernelDownSampleFwd, width / 16, height / 16,
                               lastEvent[cmNextIdx]);
             }
-            {   MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "RefNext_kernelMe");
-                SetKernelArg(kernelMe, curbe, *refs, dist16x16[cmNextIdx][refIdx],
-                    dist16x8[cmNextIdx][refIdx], dist8x16[cmNextIdx][refIdx],
-                    dist8x8[cmNextIdx][refIdx], dist8x4[cmNextIdx][refIdx],
-                    dist4x8[cmNextIdx][refIdx], mv16x16[cmNextIdx][refIdx],
-                    mv16x8[cmNextIdx][refIdx], mv8x16[cmNextIdx][refIdx], mv8x8[cmNextIdx][refIdx],
-                    mv8x4[cmNextIdx][refIdx], mv4x8[cmNextIdx][refIdx]);
+            { MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "RefNext_kernelMe");
+                SetKernelArg(kernelMe, curbe, *refs, dist[PU16x16], dist[PU16x8], dist[PU8x16],
+                             dist[PU8x8], dist[PU8x4], dist[PU4x8], mv[PU16x16], mv[PU16x8],
+                             mv[PU8x16], mv[PU8x8], mv[PU8x4], mv[PU4x8]);
                 EnqueueKernel(device, queue, kernelMe, width / 16, height / 16,
                               lastEvent[cmNextIdx]);
             }
             if (param.Log2MaxCUSize > 4) {
-                {   MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "RefNext_kernelMe2x");
-                SetKernelArg(kernelMe2x, curbe2x, *refs2x, mv32x32[cmNextIdx][refIdx],
-                    mv32x16[cmNextIdx][refIdx], mv16x32[cmNextIdx][refIdx]);
-                EnqueueKernel(device, queue, kernelMe2x, width2x / 16, height2x / 16,
-                              lastEvent[cmNextIdx]);
+                { MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "RefNext_kernelMe2x");
+                    SetKernelArg(kernelMe2x, curbe2x, *refs2x, mv[PU32x32], mv[PU32x16], mv[PU16x32]);
+                    EnqueueKernel(device, queue, kernelMe2x, width2x / 16, height2x / 16,
+                                  lastEvent[cmNextIdx]);
                 }
-                {   MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "RefNext_kernelRefine32x32");
-                SetKernelArg(kernelRefine32x32, dist32x32[cmNextIdx][refIdx],
-                    mv32x32[cmNextIdx][refIdx], raw[cmNextIdx], fwdRefNext);
-                EnqueueKernel(device, queue, kernelRefine32x32, width2x / 16, height2x / 16,
-                              lastEvent[cmNextIdx]);
+                { MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "RefNext_kernelRefine32x32");
+                    SetKernelArg(kernelRefine32x32, dist[PU32x32], mv[PU32x32], raw[cmNextIdx],
+                                 fwdRefNext);
+                    EnqueueKernel(device, queue, kernelRefine32x32, width2x / 16, height2x / 16,
+                                  lastEvent[cmNextIdx]);
                 }
-                {   MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "RefNext_kernelRefine32x16");
-                SetKernelArg(kernelRefine32x16, dist32x16[cmNextIdx][refIdx],
-                             mv32x16[cmNextIdx][refIdx], raw[cmNextIdx], fwdRefNext);
-                EnqueueKernel(device, queue, kernelRefine32x16, width2x / 16, height2x / 8,
-                              lastEvent[cmNextIdx]);
+                { MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "RefNext_kernelRefine32x16");
+                    SetKernelArg(kernelRefine32x16, dist[PU32x16], mv[PU32x16], raw[cmNextIdx],
+                                 fwdRefNext);
+                    EnqueueKernel(device, queue, kernelRefine32x16, width2x / 16, height2x / 8,
+                                  lastEvent[cmNextIdx]);
                 }
-                {   MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "RefNext_kernelRefine16x32");
-                SetKernelArg(kernelRefine16x32, dist16x32[cmNextIdx][refIdx],
-                             mv16x32[cmNextIdx][refIdx], raw[cmNextIdx], fwdRefNext);
-                EnqueueKernel(device, queue, kernelRefine16x32, width2x / 8, height2x / 16,
-                              lastEvent[cmNextIdx]);
+                { MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "RefNext_kernelRefine16x32");
+                    SetKernelArg(kernelRefine16x32, dist[PU16x32], mv[PU16x32], raw[cmNextIdx],
+                                 fwdRefNext);
+                    EnqueueKernel(device, queue, kernelRefine16x32, width2x / 8, height2x / 16,
+                                  lastEvent[cmNextIdx]);
                 }
             }
 
@@ -1348,12 +857,6 @@ void SetCurbeData(
     mfxU32 qpIdx          = (qp + 1) >> 1;
     mfxU32 transformFlag  = 0;//(extOpt->IntraPredBlockSize > 1);
     mfxU32 meMethod       = 6;
-
-    mfxU32 skipVal = (picType & MFX_FRAMETYPE_P) ? (Dist10[qpIdx]) : (Dist25[qpIdx]);
-    if (!blockBasedSkip)
-        skipVal *= 3;
-    else if (!transformFlag)
-        skipVal /= 2;
 
     mfxVMEIMEIn spath;
     SetSearchPath(spath, picType, meMethod);
@@ -1571,6 +1074,23 @@ void SetCurbeData(
     //DW39
     curbeData.ScaledRefLayerTopOffset         = 0;
     curbeData.ScaledRefLayerBottomOffset      = 0;
+}
+
+Ipp32s GetPuSize(Ipp32s puw, Ipp32s puh)
+{
+    const Ipp32s MAX_PU_WIDTH = 64;
+    const Ipp32s MAX_PU_HEIGHT = 64;
+    enum { IDX4, IDX8, IDX16, IDX32, IDX_MAX };
+    static const Ipp8s tab_wh2Idx[MAX_PU_WIDTH >> 2] = { IDX4, IDX8, -1, IDX16, -1, -1, -1, IDX32, -1, -1, -1, -1, -1, -1, -1, -1 };
+    static const Ipp8s tab_lookUpPuSize[IDX_MAX][IDX_MAX] = {
+        //H=  4       8       16       32
+        {    -1,  PU4x8,      -1,      -1 }, //W=4
+        { PU8x4,  PU8x8,  PU8x16,      -1 }, //W=8
+        {    -1, PU16x8, PU16x16, PU16x32 }, //W=16
+        {    -1,     -1, PU32x16, PU32x32 }, //W=32
+    };
+
+    return tab_lookUpPuSize[tab_wh2Idx[puw / 4 - 1]][tab_wh2Idx[puh / 4 - 1]];
 }
 
 } // namespace

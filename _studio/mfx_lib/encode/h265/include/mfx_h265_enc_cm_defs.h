@@ -27,12 +27,11 @@
 
 namespace H265Enc {
 
-enum PuSize {
-    PU32x32, PU32x16, PU16x32, PU32x8, PU32x24, PU8x32, PU24x32,
-    PU16x16, PU16x8,  PU8x16,  PU16x4, PU16x12, PU4x16, PU12x16,
-    PU8x8,   PU8x4,   PU4x8,
-    PU_MAX
+enum {
+    PU32x32, PU32x16, PU16x32, PU16x16, PU16x8, PU8x16, PU8x8, PU8x4, PU4x8, PU_MAX
 };
+
+Ipp32s GetPuSize(Ipp32s puw, Ipp32s puh);
 
 void AllocateCmResources(mfxU32 w, mfxU32 h, mfxU16 nRefs);
 
@@ -58,16 +57,6 @@ struct CmMbIntraGrad // sizeof=80
 {
     mfxU16 histogram[35];
     mfxU16 reserved[5];
-};
-
-struct CmMbDist32 // sizeof=64
-{
-    mfxU32      dist[16];  // only 9 are used
-};
-
-struct CmMbDist16 // sizeof=4
-{
-    mfxU32      dist;
 };
 
 struct H265EncCURBEData {
