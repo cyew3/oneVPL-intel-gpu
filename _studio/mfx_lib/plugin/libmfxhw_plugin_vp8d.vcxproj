@@ -294,11 +294,14 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug_Intel|Win32'">
     <IncludePath>$(ProjectDir)\..\..\..\thirdparty\vp8_libvpx;$(IncludePath)</IncludePath>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <IncludePath>$(ProjectDir)\..\..\..\thirdparty\vp8_libvpx;$(IncludePath)</IncludePath>
+  </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
       <AdditionalIncludeDirectories>$(MEDIASDK_ROOT)/CMRT/compiler/include/cm;..\cmrt_cross_platform\include;..\..\shared\umc\io\umc_va\include;$(MfxIppIncludeDir);$(MEDIASDK_ROOT)/CMRT/runtime/include;..\optimization\h265\include;..\..\shared\umc\codec\h265_dec\include;..\shared\include;..\scheduler\include;..\..\..\include;..\..\shared\include;..\brc\vc1\include;..\brc\h264\include;..\brc\mpeg2\include;..\decode\vc1\include;..\dec\mpeg2\include;..\dec\vc1\include;..\dec\h264\include;..\bsd\mpeg2\include;..\bsd\vc1\include;..\bsd\h264\include;..\decode\mpeg2\include;..\decode\vp8\include;..\decode\mjpeg\include;..\decode\h265\include;..\decode\h264\include;..\enc\mpeg2\include;..\enc\h264\include;..\enc\vc1\include;..\encode\mpeg2\include;..\encode\vc1\include;..\encode\h264\include;..\encode\vp8\include;..\pak\vc1\include;..\pak\mpeg2\include;..\pak\h264\include;..\..\shared\umc\core\umc\include;..\..\shared\umc\core\vm\include;..\..\shared\umc\codec\me\include;..\..\shared\umc\codec\vc1_common\include;..\..\shared\umc\codec\vc1_enc\include;..\..\shared\umc\codec\color_space_converter\include;..\..\shared\umc\codec\mpeg2_enc\include;..\..\shared\umc\codec\vp8_dec\include;..\..\shared\umc\codec\vc1_dec\include;..\..\shared\umc\codec\mpeg2_dec\include;..\..\shared\umc\io\media_buffers\include;..\..\shared\umc\codec\h264_enc\include;..\..\shared\umc\codec\scene_analyzer\include;..\..\shared\umc\core\vm_plus\include;..\..\shared\umc\codec\vc1_spl\include;..\vpp\include;..\..\shared\umc\codec\brc\include;..\encode\mjpeg\include;..\..\shared\umc\codec\jpeg_enc\include;..\encode\h265\include;..\..\..\_studio\mfx_lib\plugin\include</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>MFX_D3D11_ENABLED;WIN32;MFX_VA;MFX_VA_WIN;_DEBUG;_WINDOWS;_USRDLL;LIBMFXSW_EXPORTS;AS_HEVCD_PLUGIN;AS_VP8DHW_PLUGIN;UMC_ENABLE_VP8_VIDEO_DECODER;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>MFX_D3D11_ENABLED;WIN32;MFX_VA;MFX_VA_WIN;_DEBUG;_WINDOWS;_USRDLL;LIBMFXSW_EXPORTS;AS_VP8DHW_PLUGIN;UMC_ENABLE_VP8_VIDEO_DECODER;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <ExceptionHandling>Async</ExceptionHandling>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -374,7 +377,7 @@
     <ClCompile>
       <Optimization>Disabled</Optimization>
       <AdditionalIncludeDirectories>$(MEDIASDK_ROOT)/CMRT/compiler/include/cm;..\cmrt_cross_platform\include;..\..\shared\umc\io\umc_va\include;$(MfxIppIncludeDir);$(MEDIASDK_ROOT)/CMRT/runtime/include;..\optimization\h265\include;..\..\shared\umc\codec\h265_dec\include;..\shared\include;..\scheduler\include;..\..\..\include;..\..\shared\include;..\brc\vc1\include;..\brc\h264\include;..\brc\mpeg2\include;..\decode\vc1\include;..\dec\mpeg2\include;..\dec\vc1\include;..\dec\h264\include;..\bsd\mpeg2\include;..\bsd\vc1\include;..\bsd\h264\include;..\decode\mpeg2\include;..\decode\vp8\include;..\decode\mjpeg\include;..\decode\h265\include;..\decode\h264\include;..\enc\mpeg2\include;..\enc\h264\include;..\enc\vc1\include;..\encode\mpeg2\include;..\encode\vc1\include;..\encode\h264\include;..\encode\vp8\include;..\pak\vc1\include;..\pak\mpeg2\include;..\pak\h264\include;..\..\shared\umc\core\umc\include;..\..\shared\umc\core\vm\include;..\..\shared\umc\codec\me\include;..\..\shared\umc\codec\vc1_common\include;..\..\shared\umc\codec\vc1_enc\include;..\..\shared\umc\codec\color_space_converter\include;..\..\shared\umc\codec\mpeg2_enc\include;..\..\shared\umc\codec\vp8_dec\include;..\..\shared\umc\codec\vc1_dec\include;..\..\shared\umc\codec\mpeg2_dec\include;..\..\shared\umc\io\media_buffers\include;..\..\shared\umc\codec\h264_enc\include;..\..\shared\umc\codec\scene_analyzer\include;..\..\shared\umc\core\vm_plus\include;..\..\shared\umc\codec\vc1_spl\include;..\vpp\include;..\..\shared\umc\codec\brc\include;..\encode\mjpeg\include;..\..\shared\umc\codec\jpeg_enc\include;..\encode\h265\include;..\..\..\_studio\mfx_lib\plugin\include</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>MFX_VA;MFX_VA_WIN;MFX_D3D11_ENABLED;_WIN64;_DEBUG;_WINDOWS;_USRDLL;LIBMFXSW_EXPORTS;AS_VP8DHW_PLUGIN;AS_HEVCD_PLUGIN;UMC_ENABLE_VP8_VIDEO_DECODER;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>MFX_VA;MFX_VA_WIN;MFX_D3D11_ENABLED;_WIN64;_DEBUG;_WINDOWS;_USRDLL;LIBMFXSW_EXPORTS;AS_VP8DHW_PLUGIN;UMC_ENABLE_VP8_VIDEO_DECODER;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <ExceptionHandling>Async</ExceptionHandling>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -455,7 +458,7 @@
     <ClCompile>
       <AdditionalOptions>$(CPPFLAGS) %(AdditionalOptions)</AdditionalOptions>
       <AdditionalIncludeDirectories>$(MEDIASDK_ROOT)/CMRT/compiler/include/cm;..\cmrt_cross_platform\include;..\..\shared\umc\io\umc_va\include;$(MfxIppIncludeDir);$(MEDIASDK_ROOT)/CMRT/runtime/include;..\optimization\h265\include;..\..\shared\umc\codec\h265_dec\include;..\shared\include;..\scheduler\include;..\..\..\include;..\..\shared\include;..\brc\vc1\include;..\brc\h264\include;..\brc\mpeg2\include;..\decode\vc1\include;..\dec\mpeg2\include;..\dec\vc1\include;..\dec\h264\include;..\bsd\mpeg2\include;..\bsd\vc1\include;..\bsd\h264\include;..\decode\mpeg2\include;..\decode\vp8\include;..\decode\mjpeg\include;..\decode\h265\include;..\decode\h264\include;..\enc\mpeg2\include;..\enc\h264\include;..\enc\vc1\include;..\encode\mpeg2\include;..\encode\vc1\include;..\encode\h264\include;..\encode\vp8\include;..\pak\vc1\include;..\pak\mpeg2\include;..\pak\h264\include;..\..\shared\umc\core\umc\include;..\..\shared\umc\core\vm\include;..\..\shared\umc\codec\me\include;..\..\shared\umc\codec\vc1_common\include;..\..\shared\umc\codec\vc1_enc\include;..\..\shared\umc\codec\color_space_converter\include;..\..\shared\umc\codec\mpeg2_enc\include;..\..\shared\umc\codec\vp8_dec\include;..\..\shared\umc\codec\vc1_dec\include;..\..\shared\umc\codec\mpeg2_dec\include;..\..\shared\umc\io\media_buffers\include;..\..\shared\umc\codec\h264_enc\include;..\..\shared\umc\codec\scene_analyzer\include;..\..\shared\umc\core\vm_plus\include;..\..\shared\umc\codec\vc1_spl\include;..\vpp\include;..\..\shared\umc\codec\brc\include;..\encode\mjpeg\include;..\..\shared\umc\codec\jpeg_enc\include;..\encode\h265\include;..\..\..\_studio\mfx_lib\plugin\include</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>MFX_D3D11_ENABLED;MFX_VA;MFX_VA_WIN;WIN32;NDEBUG;_WINDOWS;_USRDLL;LIBMFXSW_EXPORTS;AS_VP8DHW_PLUGIN;AS_HEVCD_PLUGIN;UMC_ENABLE_VP8_VIDEO_DECODER;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>MFX_D3D11_ENABLED;MFX_VA;MFX_VA_WIN;WIN32;NDEBUG;_WINDOWS;_USRDLL;LIBMFXSW_EXPORTS;AS_VP8DHW_PLUGIN;UMC_ENABLE_VP8_VIDEO_DECODER;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>Async</ExceptionHandling>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <WarningLevel>Level4</WarningLevel>
@@ -545,7 +548,7 @@
     </Midl>
     <ClCompile>
       <AdditionalIncludeDirectories>..\cmrt_cross_platform\include;$(MEDIASDK_ROOT)/CMRT/compiler/include/cm;..\..\shared\umc\io\umc_va\include;$(MfxIppIncludeDir);$(MEDIASDK_ROOT)/CMRT/runtime/include;..\optimization\h265\include;..\..\shared\umc\codec\h265_dec\include;..\shared\include;..\scheduler\include;..\..\..\include;..\..\shared\include;..\brc\vc1\include;..\brc\h264\include;..\brc\mpeg2\include;..\decode\vc1\include;..\dec\mpeg2\include;..\dec\vc1\include;..\dec\h264\include;..\bsd\mpeg2\include;..\bsd\vc1\include;..\bsd\h264\include;..\decode\mpeg2\include;..\decode\vp8\include;..\decode\mjpeg\include;..\decode\h265\include;..\decode\h264\include;..\enc\mpeg2\include;..\enc\h264\include;..\enc\vc1\include;..\encode\mpeg2\include;..\encode\vc1\include;..\encode\h264\include;..\encode\vp8\include;..\pak\vc1\include;..\pak\mpeg2\include;..\pak\h264\include;..\..\shared\umc\core\umc\include;..\..\shared\umc\core\vm\include;..\..\shared\umc\codec\me\include;..\..\shared\umc\codec\vc1_common\include;..\..\shared\umc\codec\vc1_enc\include;..\..\shared\umc\codec\color_space_converter\include;..\..\shared\umc\codec\mpeg2_enc\include;..\..\shared\umc\codec\vp8_dec\include;..\..\shared\umc\codec\vc1_dec\include;..\..\shared\umc\codec\mpeg2_dec\include;..\..\shared\umc\io\media_buffers\include;..\..\shared\umc\codec\h264_enc\include;..\..\shared\umc\codec\scene_analyzer\include;..\..\shared\umc\core\vm_plus\include;..\..\shared\umc\codec\vc1_spl\include;..\vpp\include;..\..\shared\umc\codec\brc\include;..\encode\mjpeg\include;..\..\shared\umc\codec\jpeg_enc\include;..\encode\h265\include;..\..\..\_studio\mfx_lib\plugin\include</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>MFX_VA;MFX_VA_WIN;MFX_D3D11_ENABLED;_WIN64;NDEBUG;_WINDOWS;_USRDLL;LIBMFXSW_EXPORTS;AS_VP8DHW_PLUGIN;AS_HEVCD_PLUGIN;UMC_ENABLE_VP8_VIDEO_DECODER;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>MFX_VA;MFX_VA_WIN;MFX_D3D11_ENABLED;_WIN64;NDEBUG;_WINDOWS;_USRDLL;LIBMFXSW_EXPORTS;AS_VP8DHW_PLUGIN;AS_VP8D_PLUGIN;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>Async</ExceptionHandling>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <WarningLevel>Level4</WarningLevel>
@@ -649,7 +652,6 @@
     <ClCompile Include="..\..\shared\src\libmfx_core_factory.cpp" />
     <ClCompile Include="..\..\shared\src\libmfx_core_hw.cpp" />
     <ClCompile Include="..\..\shared\src\mfx_dxva2_device.cpp" />
-    <ClCompile Include="..\..\shared\umc\codec\vp8_dec\src\vp8_tables.cpp" />
     <ClCompile Include="..\decode\vp8\src\mfx_vp8_dec_decode.cpp" />
     <ClCompile Include="..\decode\vp8\src\mfx_vp8_dec_decode_hw.cpp" />
     <ClCompile Include="..\shared\src\libmfxsw.cpp" />
@@ -732,11 +734,17 @@
     <None Include="libmfx.def" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\..\thirdparty\vp8_libvpx.vcxproj">
+      <Project>{18a3f3bc-74d2-4155-9be1-9b29bb7db2db}</Project>
+    </ProjectReference>
     <ProjectReference Include="..\..\shared\mfx_trace\mfx_trace.vcxproj">
       <Project>{ff93e15e-6a4a-4cc5-8d13-892fbba5cc5f}</Project>
     </ProjectReference>
     <ProjectReference Include="..\..\shared\umc\codec\color_space_converter\color_space_converter_hw.vcxproj">
       <Project>{57fe8dac-c7c4-4df4-9a36-2fee040dff38}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\..\shared\umc\codec\vp8_dec\vp8_dec.vcxproj">
+      <Project>{27c98bcb-bcb6-4d57-9a47-d154bce0d8c9}</Project>
     </ProjectReference>
     <ProjectReference Include="..\..\shared\umc\core\umc\base_classes.vcxproj">
       <Project>{31991d83-f6a2-49d9-bdc5-64e85d055a1c}</Project>
@@ -755,6 +763,9 @@
     </ProjectReference>
     <ProjectReference Include="..\..\shared\umc\io\umc_va\umc_va_elk.vcxproj">
       <Project>{0e971ee7-4430-47d9-92cd-9822bc664642}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\cmrt_cross_platform\cmrt_cross_platform.vcxproj">
+      <Project>{811626eb-8608-4cac-abee-cd99daec38c4}</Project>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
