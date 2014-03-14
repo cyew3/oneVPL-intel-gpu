@@ -756,7 +756,7 @@ void H265CU::IntraPredTu(Ipp32s blockZScanIdx, Ipp32s width, Ipp32s pred_mode, I
         switch(pred_mode)
         {
         case INTRA_PLANAR:
-            MFX_HEVC_PP::h265_PredictIntra_Planar_8u(PredPel, pRec, pitch, width);
+            MFX_HEVC_PP::NAME(h265_PredictIntra_Planar_8u)(PredPel, pRec, pitch, width);
             break;
         case INTRA_DC:
             MFX_HEVC_PP::h265_PredictIntra_DC_8u(PredPel, pRec, pitch, width, is_luma);
@@ -947,7 +947,7 @@ void H265CU::IntraLumaModeDecision(Ipp32s absPartIdx, Ipp32u offset, Ipp8u depth
 
         bool needFilter = (INTRA_HOR > h265_filteredModes[h265_log2table[width - 4] - 2]);
         Ipp8u *predPels = needFilter ? predPelFilt : predPel;
-        MFX_HEVC_PP::h265_PredictIntra_Planar_8u(predPels, predPtr, width, width);
+        MFX_HEVC_PP::NAME(h265_PredictIntra_Planar_8u)(predPels, predPtr, width, width);
         m_intraCosts[INTRA_PLANAR] = tuHad(src, m_pitchSrc, predPtr, width, width, width);
         predPtr += width * width;
         m_data = m_dataSave;

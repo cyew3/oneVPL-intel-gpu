@@ -619,9 +619,9 @@ namespace MFX_HEVC_PP
 #endif // #if defined(MFX_TARGET_OPTIMIZATION_PX)  || defined(MFX_TARGET_OPTIMIZATION_AUTO)
 
 
-    void h265_PredictIntra_Planar_8u(
-        PixType* PredPel,
-        PixType* pels,
+    void MAKE_NAME(h265_PredictIntra_Planar_8u)(
+        Ipp8u* PredPel,
+        Ipp8u* pels,
         Ipp32s pitch,
         Ipp32s width)
     {

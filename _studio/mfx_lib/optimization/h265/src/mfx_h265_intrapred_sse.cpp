@@ -2382,6 +2382,147 @@ namespace MFX_HEVC_PP
             pSrcDst[64] = topRight;
         }
     }
+    
+    /* optimized kernel with const width and shift */
+    template <Ipp32s width, Ipp32s shift>
+    static void h265_PredictIntra_Planar_8u_Kernel(Ipp8u* PredPel, Ipp8u* pels, Ipp32s pitch)
+    {
+        ALIGN_DECL(16) Ipp16s leftColumn[32], horInc[32];
+        Ipp32s row, col;
+        __m128i xmm0, xmm1, xmm2, xmm3, xmm4, xmm5, xmm6, xmm7;
+
+        /* broadcast scalar values*/
+        xmm7 = _mm_set1_epi16(width);
+        xmm6 = _mm_set1_epi16(PredPel[1+width]);
+        xmm1 = _mm_set1_epi16(PredPel[3*width+1]);
+
+        if (width == 4) {
+            /* xmm6 = horInc = topRight - leftColumn, xmm5 = leftColumn = (PredPel[2*width+1+i] << shift) + width */
+            xmm5 = _mm_cvtepu8_epi16(_mm_cvtsi32_si128(*(int *)(&PredPel[2*width+1])));
+            xmm6 = _mm_sub_epi16(xmm6, xmm5);
+            xmm5 = _mm_slli_epi16(xmm5, shift);
+            xmm5 = _mm_add_epi16(xmm5, xmm7);
+
+            /* xmm2 = verInc = bottomLeft - topRow, xmm0 = topRow = (PredPel[1+i] << shift) */
+            xmm0 = _mm_cvtepu8_epi16(_mm_cvtsi32_si128(*(int *)(&PredPel[1])));
+            xmm2 = _mm_sub_epi16(xmm1, xmm0);
+            xmm0 = _mm_slli_epi16(xmm0, shift);
+            xmm7 = _mm_setr_epi16(1, 2, 3, 4, 5, 6, 7, 8);
+
+            /* generate prediction signal one row at a time */
+            for (row = 0; row < width; row++) {
+                /* calculate horizontal component */
+                xmm3 = _mm_shufflelo_epi16(xmm5, 0);
+                xmm4 = _mm_shufflelo_epi16(xmm6, 0);
+                xmm4 = _mm_mullo_epi16(xmm4, xmm7);
+                xmm3 = _mm_add_epi16(xmm3, xmm4);
+
+                /* add vertical component, scale and pack to 8 bits */
+                xmm0 = _mm_add_epi16(xmm0, xmm2);
+                xmm3 = _mm_add_epi16(xmm3, xmm0);
+                xmm3 = _mm_srli_epi16(xmm3, shift+1);
+                xmm3 = _mm_packus_epi16(xmm3, xmm3);
+
+                /* shift in (leftColumn[j] + width) for next row */
+                xmm5 = _mm_srli_si128(xmm5, 2);
+                xmm6 = _mm_srli_si128(xmm6, 2);
+
+                /* store 4 8-bit pixels */
+                *(int *)(&pels[row*pitch]) = _mm_cvtsi128_si32(xmm3);
+            }
+        } else if (width == 8) {
+            /* 8x8 block (see comments for 4x4 case) */
+            xmm5 = _mm_cvtepu8_epi16(MM_LOAD_EPI64(&PredPel[2*width+1]));
+            xmm6 = _mm_sub_epi16(xmm6, xmm5);
+            xmm5 = _mm_slli_epi16(xmm5, shift);
+            xmm5 = _mm_add_epi16(xmm5, xmm7);
+
+            xmm0 = _mm_cvtepu8_epi16(MM_LOAD_EPI64(&PredPel[1]));
+            xmm2 = _mm_sub_epi16(xmm1, xmm0);
+            xmm0 = _mm_slli_epi16(xmm0, shift);
+            xmm7 = _mm_setr_epi16(1, 2, 3, 4, 5, 6, 7, 8);
+
+            for (row = 0; row < width; row++) {
+                /* generate 8 pixels per row */
+                xmm3 = _mm_shufflelo_epi16(xmm5, 0);
+                xmm4 = _mm_shufflelo_epi16(xmm6, 0);
+                xmm3 = _mm_unpacklo_epi64(xmm3, xmm3);
+                xmm4 = _mm_unpacklo_epi64(xmm4, xmm4);
+                xmm4 = _mm_mullo_epi16(xmm4, xmm7);
+                xmm3 = _mm_add_epi16(xmm3, xmm4);
+
+                xmm0 = _mm_add_epi16(xmm0, xmm2);
+                xmm3 = _mm_add_epi16(xmm3, xmm0);
+                xmm3 = _mm_srli_epi16(xmm3, shift+1);
+                xmm3 = _mm_packus_epi16(xmm3, xmm3);
+
+                xmm5 = _mm_srli_si128(xmm5, 2);
+                xmm6 = _mm_srli_si128(xmm6, 2);
+
+                /* store 8 8-bit pixels */
+                _mm_storel_epi64((__m128i *)(&pels[row*pitch]), xmm3);
+            }
+        } else if (width == 16 || width == 32) {
+            /* 16x16 or 32x32 block (see comments for 4x4 case) */
+            for (col = 0; col < width; col += 8) {
+                xmm5 = _mm_cvtepu8_epi16(MM_LOAD_EPI64(&PredPel[2*width+1+col]));
+                xmm2 = _mm_sub_epi16(xmm6, xmm5);
+                xmm5 = _mm_slli_epi16(xmm5, shift);
+                xmm5 = _mm_add_epi16(xmm5, xmm7);
+
+                /* store in aligned temp buffer since we don't have enough registers */
+                _mm_store_si128((__m128i*)(horInc + col), xmm2);
+                _mm_store_si128((__m128i*)(leftColumn + col), xmm5);
+            }
+            xmm7 = _mm_setr_epi16(1, 2, 3, 4, 5, 6, 7, 8);
+
+            /* generate 8 pixels per row, repeat 2 or 4 times (width = 16 or 32) */
+            for (col = 0; col < width; col += 8) {
+                xmm0 = _mm_cvtepu8_epi16(MM_LOAD_EPI64(&PredPel[1+col]));
+                xmm2 = _mm_sub_epi16(xmm1, xmm0);
+                xmm0 = _mm_slli_epi16(xmm0, shift);
+
+                for (row = 0; row < width; row++) {
+                    /* load leftColumn and horInc from aligned buffers, broadcast to whole register */
+                    xmm3 = _mm_set1_epi16(leftColumn[row]);
+                    xmm4 = _mm_set1_epi16(horInc[row]);
+                    xmm4 = _mm_mullo_epi16(xmm4, xmm7);
+                    xmm3 = _mm_add_epi16(xmm3, xmm4);
+
+                    xmm0 = _mm_add_epi16(xmm0, xmm2);
+                    xmm3 = _mm_add_epi16(xmm3, xmm0);
+                    xmm3 = _mm_srli_epi16(xmm3, shift+1);
+                    xmm3 = _mm_packus_epi16(xmm3, xmm3);
+
+                    /* store 8 8-bit pixels */
+                    _mm_storel_epi64((__m128i *)(&pels[row*pitch+col]), xmm3);
+                }
+                /* add 8 to each offset for next 8 columns */
+                xmm7 = _mm_add_epi16(xmm7, _mm_set1_epi16(8));
+            }
+        }
+    }
+
+    /* planar intra prediction for 4x4, 8x8, 16x16, and 32x32 blocks (with arbitrary pitch) */
+    void MAKE_NAME(h265_PredictIntra_Planar_8u)(Ipp8u* PredPel, Ipp8u* pels, Ipp32s pitch, Ipp32s width)
+    {
+        VM_ASSERT(width == 4 || width == 8 || width == 16 || width == 32);
+
+        switch (width) {
+        case 4:
+            h265_PredictIntra_Planar_8u_Kernel< 4, 2>(PredPel, pels, pitch);
+            break;
+        case 8:
+            h265_PredictIntra_Planar_8u_Kernel< 8, 3>(PredPel, pels, pitch);
+            break;
+        case 16:
+            h265_PredictIntra_Planar_8u_Kernel<16, 4>(PredPel, pels, pitch);
+            break;
+        case 32:
+            h265_PredictIntra_Planar_8u_Kernel<32, 5>(PredPel, pels, pitch);
+            break;
+        }
+    }
 
 }; // namespace MFX_HEVC_PP
 

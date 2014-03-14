@@ -155,6 +155,198 @@ void MAKE_NAME(h265_FilterPredictPels_Bilinear_8u) (
     }
 }
 
+/* optimized kernel with const width and shift */
+template <Ipp32s width, Ipp32s shift>
+static void h265_PredictIntra_Planar_8u_Kernel(Ipp8u* PredPel, Ipp8u* pels, Ipp32s pitch)
+{
+    ALIGN_DECL(32) Ipp16s leftColumn[32], horInc[32];
+    Ipp32s row, col;
+    __m128i xmm0, xmm1, xmm2, xmm3, xmm4, xmm5, xmm6, xmm7;
+    __m256i ymm0, ymm1, ymm2, ymm3, ymm4, ymm5, ymm6, ymm7;
+
+    _mm256_zeroupper();
+
+    if (width == 4) {
+        /* broadcast scalar values */
+        xmm7 = _mm_set1_epi16(width);
+        xmm6 = _mm_set1_epi16(PredPel[1+width]);
+        xmm1 = _mm_set1_epi16(PredPel[3*width+1]);
+
+        /* xmm6 = horInc = topRight - leftColumn, xmm5 = leftColumn = (PredPel[2*width+1+i] << shift) + width */
+        xmm5 = _mm_cvtepu8_epi16(_mm_cvtsi32_si128(*(int *)(&PredPel[2*width+1])));
+        xmm6 = _mm_sub_epi16(xmm6, xmm5);
+        xmm5 = _mm_slli_epi16(xmm5, shift);
+        xmm5 = _mm_add_epi16(xmm5, xmm7);
+
+        /* xmm2 = verInc = bottomLeft - topRow, xmm0 = topRow = (PredPel[1+i] << shift) */
+        xmm0 = _mm_cvtepu8_epi16(_mm_cvtsi32_si128(*(int *)(&PredPel[1])));
+        xmm2 = _mm_sub_epi16(xmm1, xmm0);
+        xmm0 = _mm_slli_epi16(xmm0, shift);
+        xmm7 = _mm_setr_epi16(1, 2, 3, 4, 5, 6, 7, 8);
+
+        /* generate prediction signal one row at a time */
+        for (row = 0; row < width; row++) {
+            /* calculate horizontal component */
+            xmm3 = _mm_shufflelo_epi16(xmm5, 0);
+            xmm4 = _mm_shufflelo_epi16(xmm6, 0);
+            xmm4 = _mm_mullo_epi16(xmm4, xmm7);
+            xmm3 = _mm_add_epi16(xmm3, xmm4);
+
+            /* add vertical component, scale and pack to 8 bits */
+            xmm0 = _mm_add_epi16(xmm0, xmm2);
+            xmm3 = _mm_add_epi16(xmm3, xmm0);
+            xmm3 = _mm_srli_epi16(xmm3, shift+1);
+            xmm3 = _mm_packus_epi16(xmm3, xmm3);
+
+            /* shift in (leftColumn[j] + width) for next row */
+            xmm5 = _mm_srli_si128(xmm5, 2);
+            xmm6 = _mm_srli_si128(xmm6, 2);
+
+            /* store 4 8-bit pixels */
+            *(int *)(&pels[row*pitch]) = _mm_cvtsi128_si32(xmm3);
+        }
+    } else if (width == 8) {
+        /* broadcast scalar values */
+        xmm7 = _mm_set1_epi16(width);
+        xmm6 = _mm_set1_epi16(PredPel[1+width]);
+        xmm1 = _mm_set1_epi16(PredPel[3*width+1]);
+
+        /* 8x8 block (see comments for 4x4 case) */
+        xmm5 = _mm_cvtepu8_epi16(MM_LOAD_EPI64(&PredPel[2*width+1]));
+        xmm6 = _mm_sub_epi16(xmm6, xmm5);
+        xmm5 = _mm_slli_epi16(xmm5, shift);
+        xmm5 = _mm_add_epi16(xmm5, xmm7);
+
+        xmm0 = _mm_cvtepu8_epi16(MM_LOAD_EPI64(&PredPel[1]));
+        xmm2 = _mm_sub_epi16(xmm1, xmm0);
+        xmm0 = _mm_slli_epi16(xmm0, shift);
+        xmm7 = _mm_setr_epi16(1, 2, 3, 4, 5, 6, 7, 8);
+
+        for (row = 0; row < width; row++) {
+            /* generate 8 pixels per row */
+            xmm3 = _mm_shufflelo_epi16(xmm5, 0);
+            xmm4 = _mm_shufflelo_epi16(xmm6, 0);
+            xmm3 = _mm_unpacklo_epi64(xmm3, xmm3);
+            xmm4 = _mm_unpacklo_epi64(xmm4, xmm4);
+            xmm4 = _mm_mullo_epi16(xmm4, xmm7);
+            xmm3 = _mm_add_epi16(xmm3, xmm4);
+
+            xmm0 = _mm_add_epi16(xmm0, xmm2);
+            xmm3 = _mm_add_epi16(xmm3, xmm0);
+            xmm3 = _mm_srli_epi16(xmm3, shift+1);
+            xmm3 = _mm_packus_epi16(xmm3, xmm3);
+
+            xmm5 = _mm_srli_si128(xmm5, 2);
+            xmm6 = _mm_srli_si128(xmm6, 2);
+
+            /* store 8 8-bit pixels */
+            _mm_storel_epi64((__m128i *)(&pels[row*pitch]), xmm3);
+        }
+    } else if (width == 16) {
+        /* broadcast scalar values */
+        ymm7 = _mm256_set1_epi16(width);
+        ymm6 = _mm256_set1_epi16(PredPel[1+width]);
+        ymm1 = _mm256_set1_epi16(PredPel[3*width+1]);
+
+        /* load 16 8-bit pixels, zero extend to 16 bits */
+        ymm5 = _mm256_cvtepu8_epi16(_mm_loadu_si128((__m128i *)(&PredPel[2*width+1])));
+        ymm6 = _mm256_sub_epi16(ymm6, ymm5);
+        ymm5 = _mm256_slli_epi16(ymm5, shift);
+        ymm5 = _mm256_add_epi16(ymm5, ymm7);
+
+        /* store in aligned temp buffer */
+        _mm256_store_si256((__m256i*)(leftColumn), ymm5);
+        _mm256_store_si256((__m256i*)(horInc), ymm6);
+
+        ymm0 = _mm256_cvtepu8_epi16(_mm_loadu_si128((__m128i *)(&PredPel[1])));
+        ymm2 = _mm256_sub_epi16(ymm1, ymm0);
+        ymm0 = _mm256_slli_epi16(ymm0, shift);
+        ymm7 = _mm256_setr_epi16(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16);
+
+        for (row = 0; row < width; row++) {
+            /* generate 16 pixels per row */
+            ymm3 = _mm256_set1_epi16(leftColumn[row]);
+            ymm4 = _mm256_set1_epi16(horInc[row]);
+            ymm4 = _mm256_mullo_epi16(ymm4, ymm7);
+            ymm3 = _mm256_add_epi16(ymm3, ymm4);
+
+            ymm0 = _mm256_add_epi16(ymm0, ymm2);
+            ymm3 = _mm256_add_epi16(ymm3, ymm0);
+            ymm3 = _mm256_srli_epi16(ymm3, shift+1);
+            ymm3 = _mm256_packus_epi16(ymm3, ymm3);
+
+            /* store 16 8-bit pixels */
+            ymm3 = _mm256_permute4x64_epi64(ymm3, 0xd8);
+            _mm_storeu_si128((__m128i *)(&pels[row*pitch]), mm128(ymm3));
+        }
+    } else if (width == 32) {
+        /* broadcast scalar values */
+        ymm7 = _mm256_set1_epi16(width);
+        ymm6 = _mm256_set1_epi16(PredPel[1+width]);
+        ymm1 = _mm256_set1_epi16(PredPel[3*width+1]);
+
+        for (col = 0; col < width; col += 16) {
+            /* load 16 8-bit pixels, zero extend to 16 bits */
+            ymm0 = _mm256_cvtepu8_epi16(_mm_loadu_si128((__m128i *)(&PredPel[2*width+1+col])));
+            ymm2 = _mm256_sub_epi16(ymm6, ymm0);
+            ymm0 = _mm256_slli_epi16(ymm0, shift);
+            ymm0 = _mm256_add_epi16(ymm0, ymm7);
+
+            /* store in aligned temp buffer */
+            _mm256_store_si256((__m256i*)(horInc + col), ymm2);
+            _mm256_store_si256((__m256i*)(leftColumn + col), ymm0);
+        }
+        ymm7 = _mm256_setr_epi16(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16);
+
+        /* generate 8 pixels per row, repeat 2 times (width = 32) */
+        for (col = 0; col < width; col += 16) {
+            ymm0 = _mm256_cvtepu8_epi16(_mm_loadu_si128((__m128i *)(&PredPel[1+col])));
+            ymm2 = _mm256_sub_epi16(ymm1, ymm0);
+            ymm0 = _mm256_slli_epi16(ymm0, shift);
+
+            for (row = 0; row < width; row++) {
+                /* generate 16 pixels per row */
+                ymm3 = _mm256_set1_epi16(leftColumn[row]);
+                ymm4 = _mm256_set1_epi16(horInc[row]);
+                ymm4 = _mm256_mullo_epi16(ymm4, ymm7);
+                ymm3 = _mm256_add_epi16(ymm3, ymm4);
+
+                ymm0 = _mm256_add_epi16(ymm0, ymm2);
+                ymm3 = _mm256_add_epi16(ymm3, ymm0);
+                ymm3 = _mm256_srli_epi16(ymm3, shift+1);
+                ymm3 = _mm256_packus_epi16(ymm3, ymm3);
+
+                /* store 16 8-bit pixels */
+                ymm3 = _mm256_permute4x64_epi64(ymm3, 0xd8);
+                _mm_storeu_si128((__m128i *)(&pels[row*pitch+col]), mm128(ymm3));
+            }
+            /* add 16 to each offset for next 16 columns */
+            ymm7 = _mm256_add_epi16(ymm7, _mm256_set1_epi16(16));
+        }
+    }
+}
+
+/* planar intra prediction for 4x4, 8x8, 16x16, and 32x32 blocks (with arbitrary pitch) */
+void MAKE_NAME(h265_PredictIntra_Planar_8u)(Ipp8u* PredPel, Ipp8u* pels, Ipp32s pitch, Ipp32s width)
+{
+    VM_ASSERT(width == 4 || width == 8 || width == 16 || width == 32);
+
+    switch (width) {
+    case 4:
+        h265_PredictIntra_Planar_8u_Kernel< 4, 2>(PredPel, pels, pitch);
+        break;
+    case 8:
+        h265_PredictIntra_Planar_8u_Kernel< 8, 3>(PredPel, pels, pitch);
+        break;
+    case 16:
+        h265_PredictIntra_Planar_8u_Kernel<16, 4>(PredPel, pels, pitch);
+        break;
+    case 32:
+        h265_PredictIntra_Planar_8u_Kernel<32, 5>(PredPel, pels, pitch);
+        break;
+    }
+}
+
 } // end namespace MFX_HEVC_PP
 
 #endif  // #if defined(MFX_TARGET_OPTIMIZATION_AUTO) ...

@@ -262,6 +262,7 @@ namespace MFX_HEVC_PP
 
     typedef void (* PTR_FilterPredictPels_8u)(Ipp8u* PredPel, Ipp32s width);
     typedef void (* PTR_FilterPredictPels_Bilinear_8u)(Ipp8u* pSrcDst, int width, int topLeft, int bottomLeft, int topRight);
+    typedef void (* PTR_PredictIntra_Planar_8u)(Ipp8u* PredPel, Ipp8u* pels, Ipp32s pitch, Ipp32s width);
 
     //-----------------------------------------------------
     // aya: approach from Ken/Jon
@@ -473,6 +474,7 @@ namespace MFX_HEVC_PP
 
         HEVCPP_API( PTR_FilterPredictPels_8u,          void, h265_FilterPredictPels_8u,          (Ipp8u* PredPel, Ipp32s width) );
         HEVCPP_API( PTR_FilterPredictPels_Bilinear_8u, void, h265_FilterPredictPels_Bilinear_8u, (Ipp8u* pSrcDst, int width, int topLeft, int bottomLeft, int topRight) );
+        HEVCPP_API( PTR_PredictIntra_Planar_8u,        void, h265_PredictIntra_Planar_8u,        (Ipp8u* PredPel, Ipp8u* pels, Ipp32s pitch, Ipp32s width) );
 
         // [Interpolation]
         HEVCPP_API( PTR_Interp_s8_d16, void, h265_InterpLuma_s8_d16_H,   ( INTERP_S8_D16_PARAMETERS_LIST));
@@ -545,12 +547,6 @@ namespace MFX_HEVC_PP
         Ipp32s pitch,
         Ipp32s width,
         Ipp32s isLuma);
-
-    void h265_PredictIntra_Planar_8u(
-        Ipp8u* PredPel,
-        Ipp8u* pels,
-        Ipp32s pitch,
-        Ipp32s width);
 
     void h265_PredictIntra_Planar_ChromaNV12_8u(Ipp8u* PredPel, Ipp8u* pDst, Ipp32s dstStride, Ipp32s blkSize);
     void h265_PredictIntra_DC_ChromaNV12_8u(Ipp8u* PredPel, Ipp8u* pDst, Ipp32s dstStride, Ipp32s blkSize);

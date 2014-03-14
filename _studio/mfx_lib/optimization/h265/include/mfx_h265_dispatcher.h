@@ -526,6 +526,10 @@ namespace MFX_HEVC_PP
     void h265_FilterPredictPels_Bilinear_8u_sse(Ipp8u* pSrcDst, int width, int topLeft, int bottomLeft, int topRight);
     void h265_FilterPredictPels_Bilinear_8u_avx2(Ipp8u* pSrcDst, int width, int topLeft, int bottomLeft, int topRight);
 
+    void h265_PredictIntra_Planar_8u_px(Ipp8u* PredPel, Ipp8u* pels, Ipp32s pitch, Ipp32s width);
+    void h265_PredictIntra_Planar_8u_sse(Ipp8u* PredPel, Ipp8u* pels, Ipp32s pitch, Ipp32s width);
+    void h265_PredictIntra_Planar_8u_avx2(Ipp8u* PredPel, Ipp8u* pels, Ipp32s pitch, Ipp32s width);
+
     // Interpolation
     void h265_InterpLuma_s8_d16_H_px(INTERP_S8_D16_PARAMETERS_LIST);
     void h265_InterpLuma_s8_d16_H_sse(INTERP_S8_D16_PARAMETERS_LIST);
