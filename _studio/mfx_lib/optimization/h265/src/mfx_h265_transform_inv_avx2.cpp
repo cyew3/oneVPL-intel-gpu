@@ -925,12 +925,13 @@ static H265_FORCEINLINE void DCTInverse16x16_h_2nd_avx2(DstCoeffsType *dst, cons
          xmm0 = _mm256_max_epi16(xmm0, xmm4); xmm0 = _mm256_min_epi16(xmm0, xmm5);
          xmm1 = _mm256_max_epi16(xmm1, xmm4); xmm1 = _mm256_min_epi16(xmm1, xmm5);
 
-         _mm256_store_si256((__m256i *)&dst[0], xmm0);
-         _mm256_store_si256((__m256i *)&dst[destStride], xmm1);
+         _mm256_storeu_si256((__m256i *)&dst[0], xmm0);
+         _mm256_storeu_si256((__m256i *)&dst[destStride], xmm1);
          dst += 2 * destStride;
       } else {
-         _mm256_store_si256((__m256i *)&dst[0], xmm2);
-         _mm256_store_si256((__m256i *)&dst[destStride], xmm5);
+         _mm256_storeu_si256((__m256i *)&dst[0], xmm2);
+         _mm256_storeu_si256((__m256i *)&dst[destStride], xmm5);
+
          dst += 2 * destStride;
       }
       coeff += 32;
