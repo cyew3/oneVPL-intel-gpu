@@ -25,11 +25,11 @@
 ##  Content: Intel(R) Media SDK Samples projects creation and build
 ##******************************************************************************
 
-pkg_check_modules(PKG_LIBVAUTIL libavutil>=52.38.100)
+pkg_check_modules(PKG_LIBAVUTIL libavutil>=52.38.100)
 pkg_check_modules(PKG_LIBAVCODEC libavcodec>=55.18.102)
 pkg_check_modules(PKG_LIBAVFORMAT libavformat>=55.12.100)
 
-if(PKG_LIBVAUTIL_FOUND AND
+if(PKG_LIBAVUTIL_FOUND AND
    PKG_LIBAVCODEC_FOUND AND
    PKG_LIBAVFORMAT_FOUND)
     set( FFMPEG_FOUND TRUE )
