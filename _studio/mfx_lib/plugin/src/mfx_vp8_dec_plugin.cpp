@@ -19,27 +19,18 @@ File Name: mfx_VP8_dec_plugin.cpp
 
 #include "plugin_version_linux.h"
 
-PluginModuleTemplate g_PluginModule = {
-    &MFXVP8DecoderPlugin::Create,
-    NULL,
-    NULL,
-    NULL,
-    &MFXVP8DecoderPlugin::CreateByDispatcher
-};
+#ifndef UNIFIED_PLUGIN 
 
 MSDK_PLUGIN_API(MFXDecoderPlugin*) mfxCreateDecoderPlugin() {
-    if (!g_PluginModule.CreateDecoderPlugin) {
-        return 0;
-    }
-    return g_PluginModule.CreateDecoderPlugin();
+    return MFXVP8DecoderPlugin::Create();
 }
 
-MSDK_PLUGIN_API(MFXPlugin*) CreatePlugin(mfxPluginUID uid, mfxPlugin* plugin) {
-    if (!g_PluginModule.CreatePlugin) {
-        return 0;
-    }
-    return (MFXPlugin*) g_PluginModule.CreatePlugin(uid, plugin);
+MSDK_PLUGIN_API(mfxStatus) CreatePlugin(mfxPluginUID uid, mfxPlugin* plugin) {
+    return MFXVP8DecoderPlugin::CreateByDispatcher(uid, plugin);
 }
+
+#endif
+
 #ifndef MFX_VA
 const mfxPluginUID MFXVP8DecoderPlugin::g_VP8DecoderGuid = { 0xbc, 0xa2, 0x76, 0xec, 0x7a, 0x85, 0x4a, 0x59, 0x8c, 0x30, 0xe0, 0xdc, 0x57, 0x48, 0xf1, 0xf6 };
 #else

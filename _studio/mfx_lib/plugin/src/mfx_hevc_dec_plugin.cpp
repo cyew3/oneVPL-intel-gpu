@@ -19,32 +19,24 @@ File Name: mfx_hevc_dec_plugin.cpp
 
 #include "plugin_version_linux.h"
 
-PluginModuleTemplate g_PluginModule = {
-    &MFXHEVCDecoderPlugin::Create,
-    NULL,
-    NULL,
-    NULL,
-    &MFXHEVCDecoderPlugin::CreateByDispatcher
-};
+#ifndef UNIFIED_PLUGIN 
 
 MSDK_PLUGIN_API(MFXDecoderPlugin*) mfxCreateDecoderPlugin() {
-    if (!g_PluginModule.CreateDecoderPlugin) {
-        return 0;
-    }
-    return g_PluginModule.CreateDecoderPlugin();
+    return MFXHEVCDecoderPlugin::Create();
 }
 
-MSDK_PLUGIN_API(MFXPlugin*) CreatePlugin(mfxPluginUID uid, mfxPlugin* plugin) {
-    if (!g_PluginModule.CreatePlugin) {
-        return 0;
-    }
-    return (MFXPlugin*) g_PluginModule.CreatePlugin(uid, plugin);
+MSDK_PLUGIN_API(mfxStatus) CreatePlugin(mfxPluginUID uid, mfxPlugin* plugin) {
+    return MFXHEVCDecoderPlugin::CreateByDispatcher(uid, plugin);
 }
+
+#endif
+
 #ifndef MFX_VA
 const mfxPluginUID MFXHEVCDecoderPlugin::g_HEVCDecoderGuid = {0x15,0xdd,0x93,0x68,0x25,0xad,0x47,0x5e,0xa3,0x4e,0x35,0xf3,0xf5,0x42,0x17,0xa6};
 #else
 const mfxPluginUID MFXHEVCDecoderPlugin::g_HEVCDecoderGuid = {0x33, 0xa6, 0x1c, 0x0b, 0x4c, 0x27, 0x45, 0x4c, 0xa8, 0xd8, 0x5d, 0xde, 0x75, 0x7c, 0x6f, 0x8e};
 #endif
+
 MFXHEVCDecoderPlugin::MFXHEVCDecoderPlugin(bool CreateByDispatcher)
 {
     m_session = 0;
