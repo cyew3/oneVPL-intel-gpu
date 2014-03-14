@@ -54,6 +54,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "cmrt_cross_platform", "..\c
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libmfxhw_plugin_vp8d", "libmfxhw_plugin_vp8d.vcxproj", "{88E11BE7-A3D1-4EDF-AF98-537852F7DCDC}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "vp8_libvpx", "..\..\..\thirdparty\vp8_libvpx.vcxproj", "{18A3F3BC-74D2-4155-9BE1-9B29BB7DB2DB}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug_HSW_Emu|Win32 = Debug_HSW_Emu|Win32
@@ -604,6 +606,34 @@ Global
 		{88E11BE7-A3D1-4EDF-AF98-537852F7DCDC}.Release|Win32.Build.0 = Release|Win32
 		{88E11BE7-A3D1-4EDF-AF98-537852F7DCDC}.Release|x64.ActiveCfg = Release|x64
 		{88E11BE7-A3D1-4EDF-AF98-537852F7DCDC}.Release|x64.Build.0 = Release|x64
+		{18A3F3BC-74D2-4155-9BE1-9B29BB7DB2DB}.Debug_HSW_Emu|Win32.ActiveCfg = Debug|Win32
+		{18A3F3BC-74D2-4155-9BE1-9B29BB7DB2DB}.Debug_HSW_Emu|Win32.Build.0 = Debug|Win32
+		{18A3F3BC-74D2-4155-9BE1-9B29BB7DB2DB}.Debug_HSW_Emu|x64.ActiveCfg = Debug|x64
+		{18A3F3BC-74D2-4155-9BE1-9B29BB7DB2DB}.Debug_HSW_Emu|x64.Build.0 = Debug|x64
+		{18A3F3BC-74D2-4155-9BE1-9B29BB7DB2DB}.Debug_Intel_Evaluation|Win32.ActiveCfg = Debug|Win32
+		{18A3F3BC-74D2-4155-9BE1-9B29BB7DB2DB}.Debug_Intel_Evaluation|Win32.Build.0 = Debug|Win32
+		{18A3F3BC-74D2-4155-9BE1-9B29BB7DB2DB}.Debug_Intel_Evaluation|x64.ActiveCfg = Debug|x64
+		{18A3F3BC-74D2-4155-9BE1-9B29BB7DB2DB}.Debug_Intel_Evaluation|x64.Build.0 = Debug|x64
+		{18A3F3BC-74D2-4155-9BE1-9B29BB7DB2DB}.Debug_Intel|Win32.ActiveCfg = Debug|Win32
+		{18A3F3BC-74D2-4155-9BE1-9B29BB7DB2DB}.Debug_Intel|Win32.Build.0 = Debug|Win32
+		{18A3F3BC-74D2-4155-9BE1-9B29BB7DB2DB}.Debug_Intel|x64.ActiveCfg = Debug|x64
+		{18A3F3BC-74D2-4155-9BE1-9B29BB7DB2DB}.Debug_Intel|x64.Build.0 = Debug|x64
+		{18A3F3BC-74D2-4155-9BE1-9B29BB7DB2DB}.Debug|Win32.ActiveCfg = Debug|Win32
+		{18A3F3BC-74D2-4155-9BE1-9B29BB7DB2DB}.Debug|Win32.Build.0 = Debug|Win32
+		{18A3F3BC-74D2-4155-9BE1-9B29BB7DB2DB}.Debug|x64.ActiveCfg = Debug|x64
+		{18A3F3BC-74D2-4155-9BE1-9B29BB7DB2DB}.Debug|x64.Build.0 = Debug|x64
+		{18A3F3BC-74D2-4155-9BE1-9B29BB7DB2DB}.Release_Intel_Evaluation|Win32.ActiveCfg = Release|Win32
+		{18A3F3BC-74D2-4155-9BE1-9B29BB7DB2DB}.Release_Intel_Evaluation|Win32.Build.0 = Release|Win32
+		{18A3F3BC-74D2-4155-9BE1-9B29BB7DB2DB}.Release_Intel_Evaluation|x64.ActiveCfg = Release|x64
+		{18A3F3BC-74D2-4155-9BE1-9B29BB7DB2DB}.Release_Intel_Evaluation|x64.Build.0 = Release|x64
+		{18A3F3BC-74D2-4155-9BE1-9B29BB7DB2DB}.Release_Intel|Win32.ActiveCfg = Release|Win32
+		{18A3F3BC-74D2-4155-9BE1-9B29BB7DB2DB}.Release_Intel|Win32.Build.0 = Release|Win32
+		{18A3F3BC-74D2-4155-9BE1-9B29BB7DB2DB}.Release_Intel|x64.ActiveCfg = Release|x64
+		{18A3F3BC-74D2-4155-9BE1-9B29BB7DB2DB}.Release_Intel|x64.Build.0 = Release|x64
+		{18A3F3BC-74D2-4155-9BE1-9B29BB7DB2DB}.Release|Win32.ActiveCfg = Release|Win32
+		{18A3F3BC-74D2-4155-9BE1-9B29BB7DB2DB}.Release|Win32.Build.0 = Release|Win32
+		{18A3F3BC-74D2-4155-9BE1-9B29BB7DB2DB}.Release|x64.ActiveCfg = Release|x64
+		{18A3F3BC-74D2-4155-9BE1-9B29BB7DB2DB}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

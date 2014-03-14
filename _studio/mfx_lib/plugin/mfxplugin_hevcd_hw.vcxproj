@@ -600,6 +600,9 @@
     <None Include="ClassDiagram.cd" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\..\thirdparty\vp8_libvpx.vcxproj">
+      <Project>{18a3f3bc-74d2-4155-9be1-9b29bb7db2db}</Project>
+    </ProjectReference>
     <ProjectReference Include="..\..\shared\mfx_trace\mfx_trace.vcxproj">
       <Project>{ff93e15e-6a4a-4cc5-8d13-892fbba5cc5f}</Project>
     </ProjectReference>
@@ -650,6 +653,9 @@
     </ProjectReference>
     <ProjectReference Include="libmfxhw_plugin_hevcd.vcxproj">
       <Project>{d719372d-ba13-4730-aff6-1994b26eff6c}</Project>
+    </ProjectReference>
+    <ProjectReference Include="libmfxhw_plugin_vp8d.vcxproj">
+      <Project>{88e11be7-a3d1-4edf-af98-537852f7dcdc}</Project>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
