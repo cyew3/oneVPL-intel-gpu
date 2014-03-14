@@ -163,7 +163,7 @@
     <ClInclude Include="include\shared_ptr.h" />
     <ClInclude Include="include\sysmem_allocator.h" />
     <ClInclude Include="include\mfx_plugin_uids.h" />
-    <ClInclude Include="include\mfx_decode_buffering.h" />
+    <ClInclude Include="include\mfx_buffering.h" />
     <ClInclude Include="include\vpp_ex.h" />
     <ClInclude Include="include\vm\atomic_defs.h" />
     <ClInclude Include="include\vm\file_defs.h" />
@@ -181,7 +181,7 @@
     <ClCompile Include="src\sample_utils.cpp" />
     <ClCompile Include="src\sysmem_allocator.cpp" />
     <ClCompile Include="src\mfx_plugin_uids.cpp" />
-    <ClCompile Include="src\mfx_decode_buffering.cpp" />
+    <ClCompile Include="src\mfx_buffering.cpp" />
     <ClCompile Include="src\vm\time.cpp" />
     <ClCompile Include="src\vpp_ex.cpp" />
     <ClCompile Include="src\vm\atomic.cpp" />

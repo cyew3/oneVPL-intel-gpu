@@ -335,7 +335,7 @@
 				>
 			</File>
 			<File
-				RelativePath=".\src\mfx_decode_buffering.h"
+				RelativePath=".\src\mfx_buffering.h"
 				>
 			</File>
 			<File
@@ -417,7 +417,7 @@
 				>
 			</File>
 			<File
-				RelativePath=".\src\mfx_decode_buffering.cpp"
+				RelativePath=".\src\mfx_buffering.cpp"
 				>
 			</File>
 			<File

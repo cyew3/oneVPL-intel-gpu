@@ -23,7 +23,7 @@ Copyright(c) 2005-2014 Intel Corporation. All Rights Reserved.
 #include <vector>
 #include "hw_device.h"
 #include "decode_render.h"
-#include "mfx_decode_buffering.h"
+#include "mfx_buffering.h"
 #include <memory>
 
 #include "sample_defs.h"
