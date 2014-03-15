@@ -119,8 +119,10 @@ mfxExtBuffer HEVC_HEADER = { MFX_EXTBUFF_HEVCENC, sizeof(mfxExtCodingOptionHEVC)
     tab_CostChroma[x],\
     tab_PatternIntPel[x],\
     tab_FastSkip[x],\
+    tab_ForceNumThread[x],\
 }
 
+#define __old_tu_definition
 #ifdef __old_tu_definition
 //                                    TU1  TU2  TU3  TU4  TU4  TU6  TU7
 TU_OPT(Log2MaxCUSize,                  6,   6,   6,   5,   5,   5,   5)
@@ -170,6 +172,7 @@ TU_OPT(IntraNumCand0_6,               35,  35,  35,  35,  35,  35,  35)
 TU_OPT(CostChroma,                   OFF, OFF, OFF, OFF, OFF, OFF, OFF)
 TU_OPT(PatternIntPel,                  1,   1,   1,   1,   1,   1,   1)
 TU_OPT(FastSkip,                     OFF, OFF, OFF, OFF, OFF, OFF, OFF)
+TU_OPT(ForceNumThread,                 0,   0,   0,   0,   0,   0,   0)
 Ipp8u tab_tuGopRefDist [8] = {8, 8, 8, 8, 8, 3, 2, 1};
 Ipp8u tab_tuNumRefFrame[8] = {2, 4, 3, 3, 2, 2, 1, 1};
 
@@ -222,6 +225,7 @@ TU_OPT(IntraNumCand0_6,               35,  35,  35,  35,  35,  35,  35)
 TU_OPT(CostChroma,                   OFF, OFF, OFF, OFF, OFF, OFF, OFF)
 TU_OPT(PatternIntPel,                  1,   1,   1,   1,   1,   1,   1)
 TU_OPT(FastSkip,                     OFF, OFF, OFF,  ON,  ON,  ON,  ON)
+TU_OPT(ForceNumThread,                 0,   0,   0,   0,   0,   0,   0)
 
 Ipp8u tab_tuGopRefDist [8] = {8, 8, 8, 8, 8, 4, 1, 1};
 Ipp8u tab_tuNumRefFrame[8] = {2, 4, 3, 2, 2, 2, 2, 2};
@@ -809,7 +813,8 @@ mfxStatus MFXVideoENCODEH265::Init(mfxVideoParam* par_in)
 //    if (MFX_PLATFORM_SOFTWARE != MFX_Utility::GetPlatform(m_core, par_in))
 //        m_mfxVideoParam.mfx.NumThread = 1;
     m_mfxVideoParam.mfx.NumThread = (mfxU16)vm_sys_info_get_cpu_num();
-    //m_mfxVideoParam.mfx.NumThread = 1; // uncomment to force 1 thread
+    if (m_mfxHEVCOpts.ForceNumThread > 0)
+        m_mfxVideoParam.mfx.NumThread = m_mfxHEVCOpts.ForceNumThread;
 
 /*#if defined (AS_HEVCE_PLUGIN)
     m_mfxVideoParam.mfx.NumThread += 1;
@@ -1562,6 +1567,7 @@ mfxStatus MFXVideoENCODEH265::Query(VideoCORE *core, mfxVideoParam *par_in, mfxV
             opts_out->FastPUDecision = opts_in->FastPUDecision;
             opts_out->SaoOpt = opts_in->SaoOpt;
             opts_out->PatternIntPel = opts_in->PatternIntPel;
+            opts_out->ForceNumThread = opts_in->ForceNumThread;
 
             CHECK_OPTION(opts_in->AnalyzeChroma, opts_out->AnalyzeChroma, isInvalid);  /* tri-state option */
             CHECK_OPTION(opts_in->SignBitHiding, opts_out->SignBitHiding, isInvalid);  /* tri-state option */

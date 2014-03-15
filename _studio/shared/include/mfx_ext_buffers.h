@@ -207,7 +207,8 @@ typedef struct {
     mfxU16      CostChroma;         // tri-state, include chroma in cost
     mfxU16      PatternIntPel;      // 0-default; 1-log; 2-fullsearch
     mfxU16      FastSkip;           // tri-state
-    mfxU16      reserved[12];
+    mfxU16      ForceNumThread;     // 0-default
+    mfxU16      reserved[11];
 } mfxExtCodingOptionHEVC;
 
 #define MFX_EXTBUFF_VP8_PARAM MFX_MAKEFOURCC('B','V','P','8')
