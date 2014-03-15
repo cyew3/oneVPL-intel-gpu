@@ -2084,7 +2084,7 @@ mfxStatus MFXDecPipeline::CreateDeviceManager()
                 m_pHWDevice.reset(new MFXHWDeviceInThread(*m_threadPool.get(), m_pHWDevice.release()));
             }
 
-            MFX_CHECK_STS(m_pHWDevice->Init(cparams.GetAdapter(), hWindow, !m_inParams.bFullscreen, D3DFMT_X8R8G8B8, 1, m_inParams.dxva2DllName));
+            MFX_CHECK_STS(m_pHWDevice->Init(cparams.GetAdapter(), hWindow, !m_inParams.bFullscreen, D3DFMT_A2R10G10B10/*D3DFMT_X8R8G8B8*/, 1, m_inParams.dxva2DllName));
         }
         MFX_CHECK_STS(m_pHWDevice->GetHandle(MFX_HANDLE_DIRECT3D_DEVICE_MANAGER9, (mfxHDL *)&pMgr));
 

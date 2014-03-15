@@ -162,6 +162,71 @@ protected:
     
 };
 
+#define CLIP(x) ((x < 0) ? 0 : ((x > 1023) ? 1023 : x))
+template <>
+class BSConvert<MFX_FOURCC_P010, MFX_FOURCC_P010>
+    : public BSConvertBase<MFX_FOURCC_P010, MFX_FOURCC_P010>
+{
+    IMPLEMENT_CLONE(BSConvert<MFX_FOURCC_P010 MFX_PP_COMMA() MFX_FOURCC_P010>);
+    
+public:
+    virtual mfxStatus Transform(mfxBitstream * bs, mfxFrameSurface1 *surface)
+    {
+        mfxFrameData &data = surface->Data;
+        mfxFrameInfo &info = surface->Info;
+
+#if defined(LINUX32) || defined (LINUX64)  
+        // on Windows surfaces comes zero-initialized, on Linux have to clear non-aligned stream boundaries
+        memset(data.Y, 0, info.Width * info.Height * 2);
+        memset(data.UV, 0, info.Width * info.Height );
+#endif
+        // It actually does a convertions from P010 bitstream to RGB surface, so surface should be created accordingly
+        mfxU32 w, h, pitch;
+        mfxU8  *ptr;
+        mfxU32 uv_offset, y_offset, pixel_offset;
+        mfxU16 y, v,u;
+        mfxU16 r, g, b;
+        
+        int Y,Cb,Cr;
+        
+        pitch = data.PitchLow + ((mfxU32)data.PitchHigh << 16);
+        ptr = data.Y + info.CropX + (info.CropY >> 1) * pitch;
+        w = info.CropW;
+        h = info.CropH;
+        uv_offset = w * h;
+        pixel_offset = y_offset = 0;
+        
+        for(mfxU32 j = 0; j < h; j++) {
+            for (mfxU32 i = 0; i < w; i++) {
+                y = ((mfxU16 *)bs->Data)[y_offset++];
+                pixel_offset = (i/2)*2;
+                u = ((mfxU16 *)bs->Data)[uv_offset + pixel_offset];
+                v = ((mfxU16 *)bs->Data)[uv_offset + pixel_offset + 1];
+                Y = (int)y * 0x000129fa;
+                Cb = u - 512;
+                Cr = v - 512;
+                r = CLIP((((Y + 0x00019891 * Cr + 0x00008000 )>>16)));
+                g = CLIP((((Y - 0x00006459 * Cb - 0x0000d01f * Cr + 0x00008000  ) >> 16 )));
+                b = CLIP((((Y + 0x00020458 * Cb + 0x00008000  )>>16)));
+                ((mfxU32*)ptr)[0] = (r <<20 | g << 10 | b << 0 );
+                ptr += 4;
+            }
+
+            if ( j != 0 && (j%2) == 0 ){
+                uv_offset += pixel_offset + 2;
+            }
+        }
+
+        bs->DataLength -= w*h*3;
+        bs->DataOffset += w*h*3;
+      
+        return MFX_ERR_NONE;
+    }
+
+protected:
+    
+};
+
 template <>
 class BSConvert<MFX_FOURCC_YV12, MFX_FOURCC_YV12>
     : public BSConvertBase<MFX_FOURCC_YV12, MFX_FOURCC_YV12>

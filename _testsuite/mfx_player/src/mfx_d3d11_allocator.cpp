@@ -132,6 +132,7 @@ mfxStatus D3D11FrameAllocator::LockFrame(mfxMemId mid, mfxFrameData *ptr)
                 DXGI_FORMAT_YUY2 != desc.Format &&
                 DXGI_FORMAT_P8 != desc.Format &&
                 DXGI_FORMAT_B8G8R8A8_UNORM != desc.Format &&
+                DXGI_FORMAT_R10G10B10A2_UNORM != desc.Format &&
                 DXGI_FORMAT_AYUV != desc.Format)
             {
                 return MFX_ERR_LOCK_MEMORY;
@@ -207,6 +208,16 @@ mfxStatus D3D11FrameAllocator::LockFrame(mfxMemId mid, mfxFrameData *ptr)
             ptr->G = ptr->B + 1;
             ptr->R = ptr->B + 2;
             ptr->A = ptr->B + 3;
+
+            break;
+
+        case DXGI_FORMAT_R10G10B10A2_UNORM :
+            ptr->PitchHigh = (mfxU16)(lockedRect.RowPitch / (1 << 16));
+            ptr->PitchLow  = (mfxU16)(lockedRect.RowPitch % (1 << 16));
+            ptr->R = (mfxU8 *)lockedRect.pData;
+            ptr->G = ptr->R + 1;
+            ptr->B = ptr->R + 2;
+            ptr->A = ptr->R + 3;
 
             break;
 
@@ -366,7 +377,8 @@ mfxStatus D3D11FrameAllocator::AllocImpl(mfxFrameAllocRequest *request, mfxFrame
         desc.BindFlags = D3D11_BIND_DECODER;
 
         if ( (MFX_MEMTYPE_FROM_VPPIN & request->Type) && (DXGI_FORMAT_YUY2 == desc.Format) ||
-             (DXGI_FORMAT_B8G8R8A8_UNORM == desc.Format) )
+             (DXGI_FORMAT_B8G8R8A8_UNORM == desc.Format) || 
+             (DXGI_FORMAT_R10G10B10A2_UNORM == desc.Format) )
         {
             desc.BindFlags = D3D11_BIND_RENDER_TARGET;
             if (desc.ArraySize > 2)
@@ -451,6 +463,9 @@ DXGI_FORMAT D3D11FrameAllocator::ConverColortFormat(mfxU32 fourcc)
         case MFX_FOURCC_NV12:
             return DXGI_FORMAT_NV12;
 
+        case MFX_FOURCC_P010:
+            return DXGI_FORMAT_P010;
+            
         case MFX_FOURCC_YUY2:
             return DXGI_FORMAT_YUY2;
 
