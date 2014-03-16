@@ -40,7 +40,7 @@
     (dst.row(r).format<uint4>().select<dwordCount, 1>(c) = src.format<uint4>().select<dwordCount, 1>(srcIdx))
 
 #define VME_SET_DWORD(dst, r, c, src)           \
-    (dst.row(r).format<uint4>().select<1, 1>(c) = src.format<uint4>().select<1, 1>(0))
+    dst.row(r).format<uint4>().select<1, 1>(c) = src
 
 #define VME_INIT_H265_PACK(mbData) \
     {mbData = 0;}
@@ -158,7 +158,7 @@ _GENX_ inline
 void SetRef(vector_ref<int2, 2> source,         // IN:  SourceX, SourceY
             vector<int2, 2>     predictor,      // IN:  mv predictor
             vector_ref<int1, 2> searchWindow,   // IN:  reference window w/h
-            vector_ref<uint1, 2> picSize,       // IN:  pic size w/h
+            vector<uint1, 2>    picSize,        // IN:  pic size w/h
             int2                maxMvLenY,      // IN:  max MV.Y
             vector_ref<int2, 2> reference)      // OUT: Ref0X, Ref0Y
 {
@@ -1300,22 +1300,22 @@ void InterpolateQpelFromHalfPelDiag(SurfaceIndex SURF_SRC, SurfaceIndex SURF_REF
         InterpolateQpelFromHalfPelDiag< W, H >( SURF_SRC, SURF_REF, x, y, xref, yref, sad ); \
 }
 
-extern "C" _GENX_MAIN_  void
-MeP32(
-    SurfaceIndex SURF_CURBE_DATA,
-    SurfaceIndex SURF_SRC_AND_REF,
-    SurfaceIndex SURF_MV32x32,
-    SurfaceIndex SURF_MV32x16,
-    SurfaceIndex SURF_MV16x32)
+extern "C" _GENX_MAIN_ 
+void MeP32(SurfaceIndex SURF_CONTROL, SurfaceIndex SURF_SRC_AND_REF, SurfaceIndex SURF_MV32x32,
+           SurfaceIndex SURF_MV32x16, SurfaceIndex SURF_MV16x32)
 {
     uint mbX = get_thread_origin_x();
     uint mbY = get_thread_origin_y();
     uint x = mbX * 16;
     uint y = mbY * 16;
 
-    vector<uchar, CURBEDATA_SIZE> curbeData;
-    read(SURF_CURBE_DATA, 0,   curbeData.select<128,1>(0));
-    read(SURF_CURBE_DATA, 128, curbeData.select<32, 1>(128));
+    vector<uchar, 64> control;
+    read(SURF_CONTROL, 0, control);
+
+    uint1 maxNumSu = control.format<uint1>()[56];
+    uint1 lenSp = control.format<uint1>()[57];
+    uint2 width = control.format<uint2>()[30];
+    uint2 height = control.format<uint2>()[31];
 
     // read MB record data
     matrix<uchar, 3, 32> uniIn = 0;
@@ -1327,59 +1327,46 @@ MeP32(
     matrix<uint4, 16, 2> costs = 0;
     vector<int2, 2> mvPred = 0;
 
-    // M2.0-4
-    LoadCostsRawMe(uniIn, curbeData);
-
-    LoadSearchPath(imeIn, curbeData);
+    // load search path
+    SELECT_N_ROWS(imeIn, 0, 2) = SLICE1(control, 0, 64);
 
     // M0.2
     VME_SET_UNIInput_SrcX(uniIn, x);
     VME_SET_UNIInput_SrcY(uniIn, y);
 
     // M0.3 various prediction parameters
-    VME_COPY_DWORD(uniIn, 0, 3, curbeData, 3);
-    VME_SET_UNIInput_SubMbPartMask(uniIn, 0x78); // disable 4x4/4x8/8x4/8x8
+    VME_SET_DWORD(uniIn, 0, 3, 0x78040000); // BMEDisableFBR=1 InterSAD=0 SubMbPartMask=0x78
     // M1.1 MaxNumMVs
     VME_SET_UNIInput_MaxNumMVs(uniIn, 32);
     // M0.5 Reference Window Width & Height
-    VME_COPY_DWORD(uniIn, 0, 5, curbeData, 5);
-
-    vector_ref<int1, 2> searchWindow = uniIn.row(0).format<int1>().select<2,1>(22);
+    VME_SET_UNIInput_RefW(uniIn, 48);
+    VME_SET_UNIInput_RefH(uniIn, 40);
 
     // M0.0 Ref0X, Ref0Y
-    SetRef(uniIn.row(0).format<int2>().select<2,1>(4),  // IN:  SourceX, SourceY
-           mvPred,                                      // IN:  mv predictor
-           searchWindow,                                // IN:  search window w/h
-           curbeData.format<uint1>().select<2,1>(17),    // IN:  pic size w/h
-           curbeData.format<int2>()[68],                // IN:  max MV.Y
-           uniIn.row(0).format<int2>().select<2,1>(0)); // OUT: Ref0X, Ref0Y
-
-    // M0.1 Ref1X, Ref1Y
-    // not used
+    vector_ref<int2, 2> sourceXY = uniIn.row(0).format<int2>().select<2,1>(4);
+    vector<uint1, 2> widthHeight;
+    widthHeight[0] = (height >> 4) - 1;
+    widthHeight[1] = (width >> 4);
+    vector_ref<int1, 2> searchWindow = uniIn.row(0).format<int1>().select<2,1>(22);
+    vector_ref<int2, 2> ref0XY = uniIn.row(0).format<int2>().select<2,1>(0);
+    int2 maxMvY = 0x7fff;
+    SetRef(sourceXY, mvPred, searchWindow, widthHeight, maxMvY, /*out*/ref0XY);
 
     // M1.0-3 Search path parameters & start centers & MaxNumMVs again!!!
-    VME_COPY_N_DWORD(uniIn, 1, 0, curbeData, 0, 3); //uniIn.row(1).format<uint4> ().select<3, 1> (0) = CURBEData.format<uint4> ().select<3, 1> (0);
+    VME_SET_UNIInput_AdaptiveEn(uniIn);
+    VME_SET_UNIInput_T8x8FlagForInterEn(uniIn);
+    VME_SET_UNIInput_MaxNumMVs(uniIn, 0x3f);
+    VME_SET_UNIInput_MaxNumSU(uniIn, maxNumSu);
+    VME_SET_UNIInput_LenSP(uniIn, lenSp);
     
     // M1.2 Start0X, Start0Y
     vector<int1, 2> start0 = searchWindow;
     start0 = ((start0 - 16) >> 3) & 0x0f;
     uniIn.row(1)[10] = start0[0] | (start0[1] << 4);
 
-    // M1.3 Weighted SAD
-    // not used for HSW
+    
 
-    // M1.4 Cost center 0 FWD
-    VME_COPY_DWORD(uniIn, 1, 4, mvPred, 0);
-
-    // M1.5 Cost center 1 BWD
-    // not used
-
-    // M1.6 Fwd/Bwd Block RefID
-    // not used
-
-    // M1.7 various prediction parameters
-    VME_COPY_DWORD(uniIn, 1, 7, curbeData, 7);
-    VME_CLEAR_UNIInput_IntraCornerSwap(uniIn);
+    uniIn.row(1)[31] = 0x1;
 
     vector<int2,2>  ref0       = uniIn.row(0).format<int2>().select<2, 1> (0);
     vector<uint2,4> costCenter = uniIn.row(1).format<uint2>().select<4, 1> (8);
@@ -1425,24 +1412,19 @@ MeP32(
     write(SURF_MV32x32, mbX * MVDATA_SIZE, mbY, SLICE(fbrOut16x16.format<uint>(), 8, 1, 1));
     // 32x16
     fbrOut16x8.format<short, 7, 16>().select<2, 2, 2, 1>(1, 0) = fbrOut16x8.format<short, 7, 16>().select<2, 2, 2, 1>(1, 0) << 1;
-    SLICE(fbrOut16x8.format<short>(), 32, 2, 1); 
     matrix<uint, 2, 1> mv32x16 = SLICE(fbrOut16x8.format<uint>(), 8, 2, 16); 
     write(SURF_MV32x16,  mbX * MVDATA_SIZE, mbY * 2, mv32x16);
     // 16x32
     fbrOut8x16.format<short, 7, 16>().select<2, 1, 2, 1>(1, 0) = fbrOut8x16.format<short, 7, 16>().select<2, 1, 2, 1>(1, 0) << 1;
-    matrix<uint, 1, 2> mv16x32 = SLICE(fbrOut8x16.format<uint>(), 8, 2, 8); 
+    matrix<uint, 1, 2> mv16x32 = SLICE(fbrOut8x16.format<uint>(), 8, 2, 8);
     write(SURF_MV16x32,  mbX * MVDATA_SIZE * 2, mbY, mv16x32);
 }
 
 
 _GENX_ inline
-void SetUpVmeIntra(
-    matrix_ref<uchar, 3, 32>          uniIn,
-    matrix_ref<uchar, 4, 32>          sicIn,
-    vector_ref<uchar, CURBEDATA_SIZE> curbeData,
-    SurfaceIndex                      SURF_SRC,
-    uint                              mbX,
-    uint                               mbY)
+void SetUpVmeIntra(matrix_ref<uchar, 3, 32> uniIn, matrix_ref<uchar, 4, 32> sicIn,
+                   vector_ref<uchar, CURBEDATA_SIZE> curbeData, SurfaceIndex SURF_SRC,
+                   uint mbX, uint mbY)
 {
     vector<uchar, 8>     leftMbIntraModes = 0x22;
     vector<uchar, 8>     upperMbIntraModes = 0x22;
@@ -1566,11 +1548,8 @@ void SetUpVmeIntra(
 }
 
 extern "C" _GENX_MAIN_
-void RefineMeP32x32(
-    SurfaceIndex SURF_MBDIST_32x32,
-    SurfaceIndex SURF_MV32X32,
-    SurfaceIndex SURF_SRC_1X,
-    SurfaceIndex SURF_REF_1X)
+void RefineMeP32x32(SurfaceIndex SURF_MBDIST_32x32, SurfaceIndex SURF_MV32X32,
+                    SurfaceIndex SURF_SRC_1X, SurfaceIndex SURF_REF_1X)
 {
     uint mbX = get_thread_origin_x();
     uint mbY = get_thread_origin_y();
@@ -1589,11 +1568,8 @@ void RefineMeP32x32(
 }
 
 extern "C" _GENX_MAIN_
-    void RefineMeP32x16(
-    SurfaceIndex SURF_MBDIST_32x16,
-    SurfaceIndex SURF_MV32X16,
-    SurfaceIndex SURF_SRC_1X,
-    SurfaceIndex SURF_REF_1X)
+void RefineMeP32x16(SurfaceIndex SURF_MBDIST_32x16, SurfaceIndex SURF_MV32X16,
+                    SurfaceIndex SURF_SRC_1X, SurfaceIndex SURF_REF_1X)
 {
     uint mbX = get_thread_origin_x();
     uint mbY = get_thread_origin_y();
@@ -1612,11 +1588,8 @@ extern "C" _GENX_MAIN_
 }
 
 extern "C" _GENX_MAIN_
-    void RefineMeP16x32(
-    SurfaceIndex SURF_MBDIST_16x32,
-    SurfaceIndex SURF_MV16X32,
-    SurfaceIndex SURF_SRC_1X,
-    SurfaceIndex SURF_REF_1X)
+void RefineMeP16x32(SurfaceIndex SURF_MBDIST_16x32, SurfaceIndex SURF_MV16X32,
+                    SurfaceIndex SURF_SRC_1X, SurfaceIndex SURF_REF_1X)
 {
     uint mbX = get_thread_origin_x();
     uint mbY = get_thread_origin_y();
@@ -1634,11 +1607,9 @@ extern "C" _GENX_MAIN_
     write(SURF_MBDIST_16x32, mbX * MBDIST_SIZE + 32, mbY, SLICE1(sad16x32, 8, 1));
 }
 
-extern "C" _GENX_MAIN_  void
-    RawMeMB_P_Intra(SurfaceIndex SURF_CURBE_DATA,
-    SurfaceIndex SURF_SRC_AND_REF,
-    SurfaceIndex SURF_SRC,
-    SurfaceIndex SURF_MBDISTINTRA)
+extern "C" _GENX_MAIN_
+void RawMeMB_P_Intra(SurfaceIndex SURF_CURBE_DATA, SurfaceIndex SURF_SRC_AND_REF,
+                     SurfaceIndex SURF_SRC, SurfaceIndex SURF_MBDISTINTRA)
 {
     uint mbX = get_thread_origin_x();
     uint mbY = get_thread_origin_y();
@@ -1662,32 +1633,27 @@ extern "C" _GENX_MAIN_  void
     write(SURF_MBDISTINTRA, mbX * MBINTRADIST_SIZE, mbY, SLICE1(sicOut.row(0), 12, 4));  // !!!sergo: use sicOut
 }
 
-extern "C" _GENX_MAIN_  void
-RawMeMB_P(SurfaceIndex SURF_CURBE_DATA,
-          SurfaceIndex SURF_SRC_AND_REF,
-          SurfaceIndex SURF_DIST16x16,
-          SurfaceIndex SURF_DIST16x8,
-          SurfaceIndex SURF_DIST8x16,
-          SurfaceIndex SURF_DIST8x8,
-          SurfaceIndex SURF_DIST8x4,
-          SurfaceIndex SURF_DIST4x8,
-          SurfaceIndex SURF_MV16x16,
-          SurfaceIndex SURF_MV16x8,
-          SurfaceIndex SURF_MV8x16,
-          SurfaceIndex SURF_MV8x8,
-          SurfaceIndex SURF_MV8x4,
-          SurfaceIndex SURF_MV4x8)
+extern "C" _GENX_MAIN_ 
+void RawMeMB_P(SurfaceIndex SURF_CONTROL, SurfaceIndex SURF_SRC_AND_REF, SurfaceIndex SURF_DIST16x16,
+               SurfaceIndex SURF_DIST16x8, SurfaceIndex SURF_DIST8x16, SurfaceIndex SURF_DIST8x8,
+               SurfaceIndex SURF_DIST8x4, SurfaceIndex SURF_DIST4x8, SurfaceIndex SURF_MV16x16,
+               SurfaceIndex SURF_MV16x8, SurfaceIndex SURF_MV8x16, SurfaceIndex SURF_MV8x8,
+               SurfaceIndex SURF_MV8x4, SurfaceIndex SURF_MV4x8)
 {
     uint mbX = get_thread_origin_x();
     uint mbY = get_thread_origin_y();
     uint x = mbX * 16;
     uint y = mbY * 16;
 
-    vector<uchar, CURBEDATA_SIZE> curbeData;
-    read(SURF_CURBE_DATA, 0,   curbeData.select<128,1>(0));
-    read(SURF_CURBE_DATA, 128, curbeData.select<32, 1>(128));
+    vector<uchar, 64> control;
+    read(SURF_CONTROL, 0, control);
 
-    uint picWidthInMB = GET_CURBE_PictureWidth(curbeData);
+    uint1 maxNumSu = control.format<uint1>()[56];
+    uint1 lenSp = control.format<uint1>()[57];
+    uint2 width = control.format<uint2>()[30];
+    uint2 height = control.format<uint2>()[31];
+
+    uint2 picWidthInMB = width >> 4;
     uint mbIndex = picWidthInMB * mbY + mbX;
 
     // read MB record data
@@ -1700,59 +1666,45 @@ RawMeMB_P(SurfaceIndex SURF_CURBE_DATA,
     matrix<uint4, 16, 2> costs = 0;
     vector<int2, 2> mvPred = 0;
 
-    // M2.0-4
-    LoadCostsRawMe(uniIn, curbeData);
-
-    LoadSearchPath(imeIn, curbeData);
+    // load search path
+    SELECT_N_ROWS(imeIn, 0, 2) = SLICE1(control, 0, 64);
 
     // M0.2
     VME_SET_UNIInput_SrcX(uniIn, x);
     VME_SET_UNIInput_SrcY(uniIn, y);
 
     // M0.3 various prediction parameters
-    VME_COPY_DWORD(uniIn, 0, 3, curbeData, 3);
-    VME_SET_UNIInput_SubMbPartMask(uniIn, 0x40); // disable 4x4
+    VME_SET_DWORD(uniIn, 0, 3, 0x40a40000); // BMEDisableFBR=1 InterSAD=2 SubMbPartMask=0x40
     // M1.1 MaxNumMVs
     VME_SET_UNIInput_MaxNumMVs(uniIn, 32);
     // M0.5 Reference Window Width & Height
-    VME_COPY_DWORD(uniIn, 0, 5, curbeData, 5);
-
-    vector_ref<int1, 2> searchWindow = uniIn.row(0).format<int1>().select<2,1>(22);
+    VME_SET_UNIInput_RefW(uniIn, 48);
+    VME_SET_UNIInput_RefH(uniIn, 40);
 
     // M0.0 Ref0X, Ref0Y
-    SetRef(uniIn.row(0).format<int2>().select<2,1>(4),  // IN:  SourceX, SourceY
-           mvPred,                                      // IN:  mv predictor
-           searchWindow,                                // IN:  search window w/h
-           curbeData.format<uint1>().select<2,1>(17),    // IN:  pic size w/h
-           curbeData.format<int2>()[68],                // IN:  max MV.Y
-           uniIn.row(0).format<int2>().select<2,1>(0)); // OUT: Ref0X, Ref0Y
-
-    // M0.1 Ref1X, Ref1Y
-    // not used
+    vector_ref<int2, 2> sourceXY = uniIn.row(0).format<int2>().select<2,1>(4);
+    vector<uint1, 2> widthHeight;
+    widthHeight[0] = (height >> 4) - 1;
+    widthHeight[1] = (width >> 4);
+    vector_ref<int1, 2> searchWindow = uniIn.row(0).format<int1>().select<2,1>(22);
+    vector_ref<int2, 2> ref0XY = uniIn.row(0).format<int2>().select<2,1>(0);
+    int2 maxMvY = 0x7fff;
+    SetRef(sourceXY, mvPred, searchWindow, widthHeight, maxMvY, /*out*/ref0XY);
 
     // M1.0-3 Search path parameters & start centers & MaxNumMVs again!!!
-    VME_COPY_N_DWORD(uniIn, 1, 0, curbeData, 0, 3); //uniIn.row(1).format<uint4> ().select<3, 1> (0) = CURBEData.format<uint4> ().select<3, 1> (0);
+    VME_SET_UNIInput_AdaptiveEn(uniIn);
+    VME_SET_UNIInput_T8x8FlagForInterEn(uniIn);
+    VME_SET_UNIInput_MaxNumMVs(uniIn, 0x3f);
+    VME_SET_UNIInput_MaxNumSU(uniIn, maxNumSu);
+    VME_SET_UNIInput_LenSP(uniIn, lenSp);
     
     // M1.2 Start0X, Start0Y
     vector<int1, 2> start0 = searchWindow;
     start0 = ((start0 - 16) >> 3) & 0x0f;
     uniIn.row(1)[10] = start0[0] | (start0[1] << 4);
 
-    // M1.3 Weighted SAD
-    // not used for HSW
-
-    // M1.4 Cost center 0 FWD
-    VME_COPY_DWORD(uniIn, 1, 4, mvPred, 0);
-
-    // M1.5 Cost center 1 BWD
-    // not used
-
-    // M1.6 Fwd/Bwd Block RefID
-    // not used
-
-    // M1.7 various prediction parameters
-    VME_COPY_DWORD(uniIn, 1, 7, curbeData, 7);
-    VME_CLEAR_UNIInput_IntraCornerSwap(uniIn);
+    uniIn.row(1)[6] = 0x20;
+    uniIn.row(1)[31] = 0x1;
 
     vector<int2,2>  ref0       = uniIn.row(0).format<int2>().select<2, 1> (0);
     vector<uint2,4> costCenter = uniIn.row(1).format<uint2>().select<4, 1> (8);

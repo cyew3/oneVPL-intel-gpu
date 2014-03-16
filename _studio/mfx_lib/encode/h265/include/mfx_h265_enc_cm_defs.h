@@ -35,14 +35,11 @@ Ipp32s GetPuSize(Ipp32s puw, Ipp32s puh);
 
 void AllocateCmResources(mfxU32 w, mfxU32 h, mfxU16 nRefs);
 
-void RunVme(
-    H265VideoParam const & param,
-    H265Frame *            pFrameCur,
-    H265Frame *            pFrameNext,
-    H265Slice *            pSliceCur,
-    H265Slice *            pSliceNext,
-    H265Frame **           refsCur,
-    H265Frame **           refsNext);
+void RunVmeCurr(H265VideoParam const &param, H265Frame *pFrameCur, H265Slice *pSliceCur,
+                H265Frame **refsCur);
+
+void RunVmeNext(H265VideoParam const &param, H265Frame *pFrameNext, H265Slice *pSliceNext,
+                H265Frame **refsNext);
 
 void FreeCmResources();
 void PrintTimes();
@@ -57,6 +54,26 @@ struct CmMbIntraGrad // sizeof=80
 {
     mfxU16 histogram[35];
     mfxU16 reserved[5];
+};
+
+struct IntraControl
+{
+    mfxU16 width;
+};
+
+struct VmeSearchPath // sizeof=58
+{
+    mfxU8 sp[56];
+    mfxU8 maxNumSu;
+    mfxU8 lenSp;
+};
+
+struct Me2xControl // sizeof=64
+{
+    VmeSearchPath searchPath;
+    mfxU8  reserved[2];
+    mfxU16 width;
+    mfxU16 height;
 };
 
 struct H265EncCURBEData {

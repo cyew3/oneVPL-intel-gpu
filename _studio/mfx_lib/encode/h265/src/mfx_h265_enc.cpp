@@ -3227,10 +3227,19 @@ recode:
 
 #if defined (MFX_ENABLE_CM)
     if (m_videoParam.enableCmFlag) {
-        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "CmPart");
-        m_pNextFrame = m_cpb.findOldestToEncode(&m_dpb, m_l1_cnt_to_start_B,
-            0, 0 /*m_isBpyramid, m_Bpyramid_nextNumFrame*/);
+        cmCurIdx ^= 1;
+        cmNextIdx ^= 1;
+        H265Frame **refsCur = m_pCurrentFrame->m_refPicList[0].m_refFrames;
+        RunVmeCurr(m_videoParam, m_pCurrentFrame, m_slices, refsCur);
+    }
+#endif // MFX_ENABLE_CM
 
+    for (Ipp32u i = 0; i < m_videoParam.PicHeightInCtbs; i++)
+        m_row_info[i].mt_busy = 0;
+
+#if defined (MFX_ENABLE_CM)
+    if (m_videoParam.enableCmFlag) {
+        m_pNextFrame = m_cpb.findOldestToEncode(&m_dpb, m_l1_cnt_to_start_B, 0, 0);
         if (m_pNextFrame)
         {
             memcpy(&m_ShortRefPicSetDump, &m_ShortRefPicSet, sizeof(m_ShortRefPicSet)); // !!!TODO: not all should be saved sergo!!!
@@ -3256,16 +3265,10 @@ recode:
             memcpy(&m_ShortRefPicSet, &m_ShortRefPicSetDump, sizeof(m_ShortRefPicSet));
         }
 
-        cmCurIdx ^= 1;
-        cmNextIdx ^= 1;
-        H265Frame **refsCur = m_pCurrentFrame->m_refPicList[0].m_refFrames;
         H265Frame **refsNext = m_pNextFrame->m_refPicList[0].m_refFrames;
-        RunVme(m_videoParam, m_pCurrentFrame, m_pNextFrame, m_slices, m_slicesNext, refsCur, refsNext);
+        RunVmeNext(m_videoParam, m_pNextFrame, m_slicesNext, refsNext);
     }
 #endif // MFX_ENABLE_CM
-
-    for (Ipp32u i = 0; i < m_videoParam.PicHeightInCtbs; i++)
-        m_row_info[i].mt_busy = 0;
 
     if (m_videoParam.threading_by_rows)
         EncodeThreadByRow(0);
