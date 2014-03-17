@@ -2321,8 +2321,7 @@ void H265SegmentDecoder::UpdatePUInfo(Ipp32u PartX, Ipp32u PartY, Ipp32u PartWid
         if (m_pSliceHeader->m_numRefIdx[RefListIdx] > 0 && MVi.m_refIdx[RefListIdx] >= 0)
         {
             H265DecoderRefPicList::ReferenceInformation &refInfo = m_pRefPicList[RefListIdx][MVi.m_refIdx[RefListIdx]];
-            Ipp32s POCDelta = m_pCurrentFrame->m_PicOrderCnt - refInfo.refFrame->m_PicOrderCnt;
-            MVi.m_pocDelta[RefListIdx] = POCDelta;
+            MVi.m_index[RefListIdx] = (Ipp8s)refInfo.refFrame->m_index;
             MVi.m_flags[RefListIdx] = Ipp8u(refInfo.isLongReference ? COL_TU_LT_INTER : COL_TU_ST_INTER);
 
             if (MVi.m_mv[RefListIdx].Vertical > m_context->m_mvsDistortion)
@@ -2331,6 +2330,7 @@ void H265SegmentDecoder::UpdatePUInfo(Ipp32u PartX, Ipp32u PartY, Ipp32u PartWid
         else
         {
             MVi.m_flags[RefListIdx] = COL_TU_INVALID_INTER;
+            MVi.m_index[RefListIdx] = -1;
         }
     }
 

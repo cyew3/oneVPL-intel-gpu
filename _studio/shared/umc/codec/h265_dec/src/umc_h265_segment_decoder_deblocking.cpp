@@ -71,14 +71,14 @@ void H265SegmentDecoder::GetEdgeStrengthInter(H265MVInfo *mvinfoQ, H265MVInfo *m
 
     if (numRefsQ == 2)
     {
-        if (((mvinfoQ->m_pocDelta[REF_PIC_LIST_0] == mvinfoP->m_pocDelta[REF_PIC_LIST_0]) &&
-            (mvinfoQ->m_pocDelta[REF_PIC_LIST_1] == mvinfoP->m_pocDelta[REF_PIC_LIST_1])) ||
-            ((mvinfoQ->m_pocDelta[REF_PIC_LIST_0] == mvinfoP->m_pocDelta[REF_PIC_LIST_1]) &&
-            (mvinfoQ->m_pocDelta[REF_PIC_LIST_1] == mvinfoP->m_pocDelta[REF_PIC_LIST_0])))
+        if (((mvinfoQ->m_index[REF_PIC_LIST_0] == mvinfoP->m_index[REF_PIC_LIST_0]) &&
+            (mvinfoQ->m_index[REF_PIC_LIST_1] == mvinfoP->m_index[REF_PIC_LIST_1])) ||
+            ((mvinfoQ->m_index[REF_PIC_LIST_0] == mvinfoP->m_index[REF_PIC_LIST_1]) &&
+            (mvinfoQ->m_index[REF_PIC_LIST_1] == mvinfoP->m_index[REF_PIC_LIST_0])))
         {
-            if (mvinfoP->m_pocDelta[REF_PIC_LIST_0] != mvinfoP->m_pocDelta[REF_PIC_LIST_1])
+            if (mvinfoP->m_index[REF_PIC_LIST_0] != mvinfoP->m_index[REF_PIC_LIST_1])
             {
-                if (mvinfoQ->m_pocDelta[REF_PIC_LIST_0] == mvinfoP->m_pocDelta[REF_PIC_LIST_0])
+                if (mvinfoQ->m_index[REF_PIC_LIST_0] == mvinfoP->m_index[REF_PIC_LIST_0])
                 {
                     edge->strength = MVIsnotEq(mvinfoQ->m_mv[REF_PIC_LIST_0], mvinfoP->m_mv[REF_PIC_LIST_0]) | MVIsnotEq(mvinfoQ->m_mv[REF_PIC_LIST_1], mvinfoP->m_mv[REF_PIC_LIST_1]);
                     return;
@@ -102,32 +102,32 @@ void H265SegmentDecoder::GetEdgeStrengthInter(H265MVInfo *mvinfoQ, H265MVInfo *m
     }
     else
     {
-        Ipp32s POCDeltaQ, POCDeltaP;
+        Ipp32s indexQ, indexP;
         H265MotionVector *MVQ, *MVP;
         
         if (mvinfoQ->m_refIdx[REF_PIC_LIST_0] >= 0)
         {
-            POCDeltaQ = mvinfoQ->m_pocDelta[REF_PIC_LIST_0];
+            indexQ = mvinfoQ->m_index[REF_PIC_LIST_0];
             MVQ = &mvinfoQ->m_mv[REF_PIC_LIST_0];
         }
         else
         {
-            POCDeltaQ = mvinfoQ->m_pocDelta[REF_PIC_LIST_1];
+            indexQ = mvinfoQ->m_index[REF_PIC_LIST_1];
             MVQ = &mvinfoQ->m_mv[REF_PIC_LIST_1];
         }
 
         if (mvinfoP->m_refIdx[REF_PIC_LIST_0] >= 0)
         {
-            POCDeltaP = mvinfoP->m_pocDelta[REF_PIC_LIST_0];
+            indexP = mvinfoP->m_index[REF_PIC_LIST_0];
             MVP = &mvinfoP->m_mv[REF_PIC_LIST_0];
         }
         else
         {
-            POCDeltaP = mvinfoP->m_pocDelta[REF_PIC_LIST_1];
+            indexP = mvinfoP->m_index[REF_PIC_LIST_1];
             MVP = &mvinfoP->m_mv[REF_PIC_LIST_1];
         }
 
-        if (POCDeltaQ == POCDeltaP)
+        if (indexQ == indexP)
         {
             edge->strength = MVIsnotEq(*MVQ, *MVP);
             return;

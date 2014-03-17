@@ -2162,8 +2162,32 @@ void TaskSupplier_H265::AddFakeReferenceFrame(H265Slice *)
 #endif
 }
 
+void SetDeltaPocs(const H265DecoderFrameList * dpb, const H265DecoderFrame * frame)
+{
+    Ipp32s max_index = 0;
+    for (const H265DecoderFrame *curr = dpb->head(); curr; curr = curr->future())
+    {
+        if (curr->m_index > max_index)
+            max_index = curr->m_index;
+    }
+
+    frame->getCD()->m_pocDelta.resize(max_index + 1);
+
+    for (const H265DecoderFrame *curr = dpb->head(); curr; curr = curr->future())
+    {
+        if (curr->m_index < 0)
+            continue;
+
+        Ipp32s POCDelta = frame->m_PicOrderCnt - curr->m_PicOrderCnt;
+        frame->getCD()->m_pocDelta[curr->m_index] = POCDelta;
+    }
+}
+
 void TaskSupplier_H265::OnFullFrame(H265DecoderFrame * pFrame)
 {
+    ViewItem_H265 *pView = GetView();
+    SetDeltaPocs(pView->pDPB.get(), pFrame);
+
     pFrame->SetFullFrame(true);
 
     if (pFrame->IsSkipped())

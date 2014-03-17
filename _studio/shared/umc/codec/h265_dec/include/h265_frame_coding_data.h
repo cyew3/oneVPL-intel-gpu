@@ -66,7 +66,7 @@ struct H265PartialEdgeData
     Ipp8s strength  : 3;
 
     Ipp8s qp;
-}; // sizeof - 4 bytes
+}; // sizeof - 2 bytes
 
 
 // picture coding data class
@@ -99,6 +99,8 @@ public:
     H265PartialEdgeData *m_edge;
     Ipp32s m_edgesInCTBSize, m_edgesInFrameWidth;
 
+    std::vector<Ipp32s> m_pocDelta;
+
 public:
 
     H265MVInfo *m_colocatedInfo;
@@ -113,9 +115,9 @@ public:
         return m_colocatedInfo[partNumber].m_flags[direction];
     }
 
-    Ipp32s & GetTUPOCDelta(EnumRefPicList direction, Ipp32u partNumber)
+    Ipp32s GetTUPOCDelta(EnumRefPicList direction, Ipp32u partNumber)
     {
-        return m_colocatedInfo[partNumber].m_pocDelta[direction];
+        return m_pocDelta[m_colocatedInfo[partNumber].m_index[direction]];
     }
 
     RefIndexType & GetRefIdx(EnumRefPicList direction, Ipp32u partNumber)

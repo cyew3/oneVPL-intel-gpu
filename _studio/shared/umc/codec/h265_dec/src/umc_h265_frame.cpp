@@ -143,6 +143,7 @@ void H265DecoderFrame::Reset()
 
     m_ErrorType = 0;
     m_UID = -1;
+    m_index = -1;
 
     m_MemID = MID_INVALID;
 

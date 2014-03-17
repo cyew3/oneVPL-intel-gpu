@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2013 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2013-2014 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -113,8 +113,10 @@ struct H265MVInfo
 public:
     H265MotionVector    m_mv[2];
     RefIndexType        m_refIdx[2];
-    Ipp32s              m_pocDelta[2];
+    Ipp8s               m_index[2];
     Ipp8u               m_flags[2];
+
+    Ipp8u               reserved[2];
 
     void setMVInfo(Ipp32s refList, RefIndexType iRefIdx, H265MotionVector const &cMV)
     {
