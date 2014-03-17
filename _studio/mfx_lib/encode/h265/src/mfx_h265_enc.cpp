@@ -358,7 +358,13 @@ mfxStatus H265Encoder::SetVPS()
         vps->vps_max_dec_pic_buffering[0] = (Ipp8u)(MAX(m_videoParam.MaxRefIdxL0,m_videoParam.MaxBRefIdxL0) +
             m_videoParam.MaxRefIdxL1);
 
-    vps->vps_max_num_reorder_pics[0] = (Ipp8u)(m_videoParam.GopRefDist - 1);
+    vps->vps_max_num_reorder_pics[0] = 0;
+    if (m_videoParam.GopRefDist > 1) {
+        vps->vps_max_num_reorder_pics[0] = (m_videoParam.BPyramid)
+            ? H265_CeilLog2(m_videoParam.GopRefDist)
+            : 1;
+    }
+
     vps->vps_max_latency_increase[0] = 0;
     vps->vps_num_layer_sets = 1;
 
