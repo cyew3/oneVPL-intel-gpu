@@ -59,18 +59,6 @@ mfxStatus MFX_PTIR_Plugin::PTIR_ProcessFrame(mfxFrameSurface1 *surf_in, mfxFrame
 
             if (uiFrame < uiStart + uiCount)
             {
-                ////QueryPerformanceCounter(&liTime[uiTimer++]);
-                //----------------------------------------
-                // Loading
-                //----------------------------------------
-                //ferror = ReadFile(hIn, pucIO, uiSize, &uiBytesRead, NULL);
-
-                ////QueryPerformanceCounter(&liTime[uiTimer++]);
-                //----------------------------------------
-                // Picture Format Conversion
-                //----------------------------------------
-                //Convert_to_I420(pucIO, frmBuffer[uiSupBuf], pcFormat, dFrameRate);
-
                 memcpy(frmBuffer[uiCur]->ucMem, frmBuffer[uiSupBuf]->ucMem, frmBuffer[uiSupBuf]->uiSize);
                 frmBuffer[uiCur]->frmProperties.tindex = uiFrame + 1;
                 sadCalc_I420_frame(frmBuffer[uiCur], frmBuffer[uiNext]);
@@ -78,10 +66,10 @@ mfxStatus MFX_PTIR_Plugin::PTIR_ProcessFrame(mfxFrameSurface1 *surf_in, mfxFrame
                 frmBuffer[uiCur]->frmProperties.processed = TRUE;
                 dSAD = frmBuffer[uiCur]->plaY.ucStats.ucSAD;
                 dRs = frmBuffer[uiCur]->plaY.ucStats.ucRs;
-    //#if PRINTX == 2
-    //            printf("%i\t%4.3lf\t%4.3lf\t%4.3lf\t%4.3lf\t%4.3lf\t%4.3lf\t%4.3lf\t%4.3lf\t%4.3lf\t%4.0lf\t%4.3lf\t%4.0lf\t%4.3lf\t%4.3lf\t%4.3lf\t%4.3lf\n", uiFrame + 1, dSAD[0], dSAD[1], dSAD[2], dSAD[3], dSAD[4], dRs[0], dRs[1], dRs[2], dRs[3], dRs[4], dRs[5] / dPicSize * 1000, dRs[6], dRs[7] / dPicSize * 1000, dRs[8], dRs[9], dRs[10]);
-    //#endif
-                if ((uiCur == BUFMINSIZE - 1) || (uiFrame == (uiCount - 1)))
+
+                //if ((uiCur == BUFMINSIZE - 1) || (uiFrame == (uiCount - 1)))
+                                                 //if the last frame
+                if ((uiCur == BUFMINSIZE - 1) || (bEOS && 1 == inSurfs.size()))
                 {
                     Analyze_Buffer_Stats(frmBuffer, &mainPattern, &uiDispatch, &bisInterlaced);
                     if(mainPattern.ucPatternFound && !bisInterlaced)
@@ -155,6 +143,7 @@ mfxStatus MFX_PTIR_Plugin::PTIR_ProcessFrame(mfxFrameSurface1 *surf_in, mfxFrame
                                     memcpy(frmIn->plaY.ucStats.ucRs,frmBuffer[0]->plaY.ucStats.ucRs,sizeof(double) * 10);
 
                                     //Timestamp
+                                    frmBuffer[BUFMINSIZE]->frmProperties.tindex = frmBuffer[0]->frmProperties.tindex;
                                     frmBuffer[BUFMINSIZE]->frmProperties.timestamp = frmBuffer[0]->frmProperties.timestamp + dDeIntTime;
                                     frmBuffer[1]->frmProperties.timestamp = frmBuffer[BUFMINSIZE]->frmProperties.timestamp + dDeIntTime;
                                     frmIn->frmProperties.timestamp = frmBuffer[0]->frmProperties.timestamp;
@@ -199,9 +188,7 @@ mfxStatus MFX_PTIR_Plugin::PTIR_ProcessFrame(mfxFrameSurface1 *surf_in, mfxFrame
             {
                 uiLastFrameNumber = fqIn.pfrmHead->pfrmItem->frmProperties.tindex;
                 frmIn = FrameQueue_Get(&fqIn);
-                //----------------------------------------
-                // Saving Test Output
-                //----------------------------------------
+
                 if (frmIn)
                 {
                     ferror = FALSE;
@@ -209,8 +196,6 @@ mfxStatus MFX_PTIR_Plugin::PTIR_ProcessFrame(mfxFrameSurface1 *surf_in, mfxFrame
                     TrimBorders(&frmIn->plaU, &frmIO[LASTFRAME].plaU);
                     TrimBorders(&frmIn->plaV, &frmIO[LASTFRAME].plaV);
 
-                    //fprintf(fTCodeOut,"%4.3lf\n",frmIn->frmProperties.timestamp);
-                    //ferror = WriteFile(hOut, frmIO[LASTFRAME].ucMem, frmIO[LASTFRAME].uiSize, &uiBytesRead, NULL);
                     memcpy(surf_out->Data.Y, frmIO[LASTFRAME].ucMem, frmIO[LASTFRAME].uiSize);
                     Frame_Release(frmIn);
                     free(frmIn);
@@ -255,13 +240,6 @@ mfxStatus MFX_PTIR_Plugin::PTIR_ProcessFrame(mfxFrameSurface1 *surf_in, mfxFrame
                 }
             }
         }
-        //QueryPerformanceCounter(&liTime[uiTimer++]);
-
-        //// Update Time Counters
-        //for (i = 0; i < uiTimer - 1; ++i)
-        //    dTime[i] += (double)(liTime[i+1].QuadPart - liTime[i].QuadPart) / liFreq.QuadPart;
-    //}
-
         if(uiCur && !surf_in)
         {
             for(mfxU32 i = 0; i < uiCur; i++)
@@ -400,11 +378,6 @@ mfxStatus MFX_PTIR_Plugin::Process(mfxFrameSurface1 *surface_in, mfxFrameSurface
             m_pmfxCore->FrameAllocator.Unlock(m_pmfxCore->FrameAllocator.pthis, surface_in->Data.MemId, &(surface_in->Data));
             isUnlockReq = false;
         }
-        if(MFX_ERR_MORE_SURFACE == mfxSts)
-            bMoreOutFrames = true;
-        else
-            bMoreOutFrames = false;
-
         return mfxSts;
     }
     else if(NULL != surface_in && NULL == surface_out)
@@ -477,10 +450,6 @@ mfxStatus MFX_PTIR_Plugin::Process(mfxFrameSurface1 *surface_in, mfxFrameSurface
             m_pmfxCore->FrameAllocator.Unlock(m_pmfxCore->FrameAllocator.pthis, surface_out->Data.MemId, &(surface_out->Data));
             isUnlockReq = false;
         }
-        if(MFX_ERR_MORE_SURFACE == mfxSts)
-            bMoreOutFrames = true;
-        else
-            bMoreOutFrames = false;
         return mfxSts;
     }
 

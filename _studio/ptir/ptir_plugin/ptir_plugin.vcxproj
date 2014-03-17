@@ -102,7 +102,7 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;PTIR_PLUGIN_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>false</SDLCheck>
-      <AdditionalIncludeDirectories>$(MfxIppIncludeDir);.\include;..\include;..\..\include;..\..\..\include;..\..\..\_studio\mfx_lib\shared\include;..\..\..\_studio\shared\umc\core\vm\include;..\..\..\_studio\shared\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(MfxIppIncludeDir);.\include;..\include;..\..\include;..\..\..\include;..\..\..\_studio\mfx_lib\shared\include;..\..\..\_studio\shared\umc\core\vm\include;..\..\..\_studio\shared\include;..\..\..\_studio\shared\umc\core\vm_plus\include;..\..\..\_studio\shared\umc\core\umc\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
     </ClCompile>
     <Link>
@@ -136,7 +136,7 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;PTIR_PLUGIN_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>$(MfxIppIncludeDir);.\include;..\include;..\..\include;..\..\..\include;..\..\..\_studio\mfx_lib\shared\include;..\..\..\_studio\shared\umc\core\vm\include;..\..\..\_studio\shared\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(MfxIppIncludeDir);.\include;..\include;..\..\include;..\..\..\include;..\..\..\_studio\mfx_lib\shared\include;..\..\..\_studio\shared\umc\core\vm\include;..\..\..\_studio\shared\include;..\..\..\_studio\shared\umc\core\vm_plus\include;..\..\..\_studio\shared\umc\core\umc\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
     </ClCompile>
     <Link>
@@ -172,7 +172,8 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;PTIR_PLUGIN_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>$(MfxIppIncludeDir);.\include;..\include;..\..\include;..\..\..\include;..\..\..\_studio\mfx_lib\shared\include;..\..\..\_studio\shared\umc\core\vm\include;..\..\..\_studio\shared\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(MfxIppIncludeDir);.\include;..\include;..\..\include;..\..\..\include;..\..\..\_studio\mfx_lib\shared\include;..\..\..\_studio\shared\umc\core\vm\include;..\..\..\_studio\shared\include;..\..\..\_studio\shared\umc\core\vm_plus\include;..\..\..\_studio\shared\umc\core\umc\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -209,7 +210,8 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;PTIR_PLUGIN_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>$(MfxIppIncludeDir);.\include;..\include;..\..\include;..\..\..\include;..\..\..\_studio\mfx_lib\shared\include;..\..\..\_studio\shared\umc\core\vm\include;..\..\..\_studio\shared\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(MfxIppIncludeDir);.\include;..\include;..\..\include;..\..\..\include;..\..\..\_studio\mfx_lib\shared\include;..\..\..\_studio\shared\umc\core\vm\include;..\..\..\_studio\shared\include;..\..\..\_studio\shared\umc\core\vm_plus\include;..\..\..\_studio\shared\umc\core\umc\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -245,6 +247,15 @@
     <ClCompile Include="src\ptir_wrapper.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\shared\umc\core\umc\base_classes.vcxproj">
+      <Project>{31991d83-f6a2-49d9-bdc5-64e85d055a1c}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\..\shared\umc\core\vm\vm.vcxproj">
+      <Project>{d41d3178-5c65-4868-bdb1-42c44643274e}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\..\shared\umc\core\vm_plus\vm_plus.vcxproj">
+      <Project>{04854e7f-2a17-4b40-a14f-4e1d9b1d4785}</Project>
+    </ProjectReference>
     <ProjectReference Include="..\pa\pa.vcxproj">
       <Project>{7be3ee72-070f-4bf8-a6cc-1a8bf6cd4481}</Project>
     </ProjectReference>

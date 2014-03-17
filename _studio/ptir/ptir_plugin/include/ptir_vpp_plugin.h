@@ -20,7 +20,7 @@ File Name: ptir_vpp_plugin.h
 #include <vector>
 #include "mfxvideo.h"
 #include "mfxplugin++.h"
-
+#include <umc_mutex.h>
 
 
 extern "C" {
@@ -106,14 +106,15 @@ protected:
     mfxPluginParam      m_PluginParam;
     bool                m_createdByDispatcher;
     std::auto_ptr<MFXPluginAdapter<MFXVPPPlugin> > m_adapter;
+    UMC::Mutex m_guard;
 
     mfxStatus PTIR_ProcessFrame(mfxFrameSurface1 *surf_in, mfxFrameSurface1 *surf_out);
     mfxStatus Process(mfxFrameSurface1 *surf_in, mfxFrameSurface1 *surf_out);
+    inline mfxStatus PrepareTask(PTIR_Task *ptir_task, mfxThreadTask *task, mfxFrameSurface1 *surface_out);
 
     bool b_firstFrameProceed;
     bool bInited;
-    bool bInExecution;
-    bool bMoreOutFrames;
+    bool bEOS;
     mfxFrameSurface1* prevSurf;
     std::vector<PTIR_Task*> vTasks;
     std::vector<mfxFrameSurface1*> inSurfs;

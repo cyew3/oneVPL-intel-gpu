@@ -125,18 +125,28 @@ mfxStatus MFX_PTIR_Plugin::GetPluginParam(mfxPluginParam *par)
 
 mfxStatus MFX_PTIR_Plugin::VPPFrameSubmit(mfxFrameSurface1 *surface_in, mfxFrameSurface1 *surface_out, mfxExtVppAuxData *aux, mfxThreadTask *task)
 {
-    if(bInExecution)
+    if(vTasks.size() != 0)
         return MFX_WRN_DEVICE_BUSY;
+    if(UMC::UMC_OK != m_guard.TryLock())
+        return MFX_WRN_DEVICE_BUSY;
+
     mfxStatus mfxSts = MFX_ERR_NONE;
     PTIR_Task *ptir_task = 0;
     if(NULL == surface_out)
+    {
+        m_guard.Unlock();
         return MFX_ERR_NULL_PTR;
+    }
+    if(!surface_in)
+        bEOS = true;
+    else
+        bEOS = false;
 
     if(0 != fqIn.iCount)
     {
         /*if previous submit call returned ERR_MORE_SURFACE, application should not update input frame,
         however, plugin can handle it */
-        if(surface_in && prevSurf != surface_in)
+        if(surface_in && prevSurf != surface_in && inSurfs.size() != 0 && inSurfs.back() != surface_in)
         {
             if(inSurfs.end() == std::find (inSurfs.begin(), inSurfs.end(), surface_in))
             {
@@ -144,20 +154,11 @@ mfxStatus MFX_PTIR_Plugin::VPPFrameSubmit(mfxFrameSurface1 *surface_in, mfxFrame
                 m_pmfxCore->IncreaseReference(m_pmfxCore->pthis, &surface_in->Data);
             }
         }
-        if(vTasks.size() == 0)
-        {
-            ptir_task = new PTIR_Task;
-            memset(ptir_task, 0, sizeof(PTIR_Task));
-            vTasks.push_back(ptir_task);
-        }
-        else
-            ptir_task = vTasks[0];
+        mfxSts = PrepareTask(ptir_task, task, surface_out);
+        if(mfxSts)
+            return mfxSts;
 
-        *task = ptir_task;
-        ptir_task->filled = true;
-        ptir_task->surface_out = surface_out;
-        m_pmfxCore->IncreaseReference(m_pmfxCore->pthis, &surface_out->Data);
-
+        m_guard.Unlock();
         if(1 == fqIn.iCount)
             return MFX_ERR_NONE;
         else
@@ -165,60 +166,57 @@ mfxStatus MFX_PTIR_Plugin::VPPFrameSubmit(mfxFrameSurface1 *surface_in, mfxFrame
     }
     else if(surface_in && inSurfs.size() < 8)
     {
-        //add in surface to the queue
-        inSurfs.push_back(surface_in);
-        m_pmfxCore->IncreaseReference(m_pmfxCore->pthis, &surface_in->Data);
+        //add in surface to the queue if it is not already here
+        if(inSurfs.end() == std::find (inSurfs.begin(), inSurfs.end(), surface_in))
+        {
+            inSurfs.push_back(surface_in);
+            m_pmfxCore->IncreaseReference(m_pmfxCore->pthis, &surface_in->Data);
+        }
 
+        m_guard.Unlock();
         return MFX_ERR_MORE_DATA;
     }
     else if(surface_in && inSurfs.size() > 7 )
     {
-        //queue is full, ready to create task for execution
-        inSurfs.push_back(surface_in);
-        m_pmfxCore->IncreaseReference(m_pmfxCore->pthis, &surface_in->Data);
-
-        if(vTasks.size() == 0)
+        //add in surface to the queue if it is not already here
+        if(inSurfs.end() == std::find (inSurfs.begin(), inSurfs.end(), surface_in))
         {
-            ptir_task = new PTIR_Task;
-            memset(ptir_task, 0, sizeof(PTIR_Task));
-            vTasks.push_back(ptir_task);
+            inSurfs.push_back(surface_in);
+            m_pmfxCore->IncreaseReference(m_pmfxCore->pthis, &surface_in->Data);
         }
-        else
-            ptir_task = vTasks[0];
+        //queue is full, ready to create task for execution
+        mfxSts = PrepareTask(ptir_task, task, surface_out);
+        if(mfxSts)
+            return mfxSts;
 
-        *task = ptir_task;
-        ptir_task->filled = true;
-        ptir_task->surface_out = surface_out;
-        m_pmfxCore->IncreaseReference(m_pmfxCore->pthis, &surface_out->Data);
+        m_guard.Unlock();
         return MFX_ERR_NONE;
     }
     else if(0 != uiCur)
     {
-        if(vTasks.size() == 0)
-        {
-            ptir_task = new PTIR_Task;
-            memset(ptir_task, 0, sizeof(PTIR_Task));
-            vTasks.push_back(ptir_task);
-        }
-        else
-            ptir_task = vTasks[0];
+        //input surface is 0, end of stream case, and there are smth in PTIR cache
+        mfxSts = PrepareTask(ptir_task, task, surface_out);
+        if(mfxSts)
+            return mfxSts;
 
-        *task = ptir_task;
-        ptir_task->filled = true;
-        ptir_task->surface_out = surface_out;
-        m_pmfxCore->IncreaseReference(m_pmfxCore->pthis, &surface_out->Data);
-        return MFX_ERR_NONE;
+        m_guard.Unlock();
+        if(uiCur > 1)
+            return MFX_ERR_MORE_SURFACE;
+        else
+            return MFX_ERR_NONE;
     }
     else if(0 == fqIn.iCount && 0 == uiCur)
     {
+        m_guard.Unlock();
         return MFX_ERR_MORE_DATA;
     }
 
+    m_guard.Unlock();
     return MFX_ERR_MORE_DATA;
 }
 mfxStatus MFX_PTIR_Plugin::Execute(mfxThreadTask task, mfxU32 , mfxU32 )
 {
-    bInExecution = true;
+    UMC::AutomaticUMCMutex guard(m_guard);
     PTIR_Task *ptir_task = (PTIR_Task*) task;
     if(!ptir_task->filled)
         return MFX_ERR_UNDEFINED_BEHAVIOR;
@@ -273,6 +271,8 @@ mfxStatus MFX_PTIR_Plugin::Execute(mfxThreadTask task, mfxU32 , mfxU32 )
         {
             m_pmfxCore->DecreaseReference(m_pmfxCore->pthis, &surface_out->Data);
             surface_out = 0;
+            if(0 == uiCur && 0 == fqIn.iCount)
+                uiCur = 0;
         }
         else if(MFX_ERR_MORE_DATA != mfxSts)
         {
@@ -285,10 +285,11 @@ mfxStatus MFX_PTIR_Plugin::Execute(mfxThreadTask task, mfxU32 , mfxU32 )
     {
         //smth wrong, execute should always generate output!
         assert(0);
+        m_pmfxCore->DecreaseReference(m_pmfxCore->pthis, &surface_out->Data);
+        surface_out = 0;
         return MFX_ERR_UNDEFINED_BEHAVIOR;
     }
 
-    bInExecution = false;
     return MFX_ERR_NONE;
 }
 mfxStatus MFX_PTIR_Plugin::FreeResources(mfxThreadTask task, mfxStatus )
@@ -300,12 +301,12 @@ mfxStatus MFX_PTIR_Plugin::FreeResources(mfxThreadTask task, mfxStatus )
             vTasks.erase(vTasks.begin() + i);
         }
     }
-    bInExecution = false;
 
     return MFX_ERR_NONE;
 }
 mfxStatus MFX_PTIR_Plugin::Query(mfxVideoParam *in, mfxVideoParam *out)
 {
+    bool bWarnIsNeeded = false;
     if(!in)
         return MFX_ERR_NULL_PTR;
 
@@ -314,7 +315,15 @@ mfxStatus MFX_PTIR_Plugin::Query(mfxVideoParam *in, mfxVideoParam *out)
         out = &tmp_param;
 
     memcpy(&out->vpp, &in->vpp, sizeof(mfxInfoVPP));
-    out->AsyncDepth = in->AsyncDepth;
+    if(in->AsyncDepth == 0 || in->AsyncDepth == 1)
+    {
+        out->AsyncDepth = in->AsyncDepth;
+    }
+    else
+    {
+        out->AsyncDepth = 1;
+        bWarnIsNeeded = true;
+    }
     out->IOPattern  = in->IOPattern;
 
     if(in->vpp.Out.PicStruct == in->vpp.In.PicStruct)
@@ -355,7 +364,7 @@ mfxStatus MFX_PTIR_Plugin::Query(mfxVideoParam *in, mfxVideoParam *out)
         return MFX_ERR_UNSUPPORTED;
     }
 
-    return MFX_ERR_NONE;
+    return bWarnIsNeeded ? MFX_WRN_INCOMPATIBLE_VIDEO_PARAM : MFX_ERR_NONE;
 }
 mfxStatus MFX_PTIR_Plugin::QueryIOSurf(mfxVideoParam *par, mfxFrameAllocRequest *in, mfxFrameAllocRequest *out)
 {
@@ -439,7 +448,7 @@ mfxStatus MFX_PTIR_Plugin::Init(mfxVideoParam *par)
     mfxStatus mfxSts;
 
     mfxSts = Query(par, 0);
-    if(mfxSts)
+    if(!(MFX_ERR_NONE == mfxSts || MFX_WRN_INCOMPATIBLE_VIDEO_PARAM == mfxSts))
         return MFX_ERR_INVALID_VIDEO_PARAM;
 
     //uiInWidth  = uiWidth  = par->vpp.In.Width;
@@ -453,7 +462,6 @@ mfxStatus MFX_PTIR_Plugin::Init(mfxVideoParam *par)
 
     bisInterlaced = false;
     bFullFrameRate = false;
-    bInExecution = false;
     uiLastFrameNumber = 0;
     if(MFX_PICSTRUCT_UNKNOWN == par->vpp.In.PicStruct &&
        0 == par->vpp.In.FrameRateExtN && 0 == par->vpp.Out.FrameRateExtN)
@@ -530,7 +538,6 @@ mfxStatus MFX_PTIR_Plugin::Init(mfxVideoParam *par)
         return MFX_ERR_UNKNOWN;
     }
 
-    bMoreOutFrames = false;
     bInited = true;
 
     return MFX_ERR_NONE;
@@ -567,5 +574,28 @@ mfxStatus MFX_PTIR_Plugin::Close()
 }
 mfxStatus MFX_PTIR_Plugin::GetVideoParam(mfxVideoParam *par)
 {
+    return MFX_ERR_NONE;
+}
+
+inline mfxStatus MFX_PTIR_Plugin::PrepareTask(PTIR_Task *ptir_task, mfxThreadTask *task, mfxFrameSurface1 *surface_out)
+{
+    try
+    {
+        ptir_task = new PTIR_Task;
+        memset(ptir_task, 0, sizeof(PTIR_Task));
+        vTasks.push_back(ptir_task);
+        *task = ptir_task;
+        ptir_task->filled = true;
+        ptir_task->surface_out = surface_out;
+        m_pmfxCore->IncreaseReference(m_pmfxCore->pthis, &surface_out->Data);
+    }
+    catch(std::bad_alloc&)
+    {
+        return MFX_ERR_MEMORY_ALLOC;
+    }
+    catch(...) 
+    { 
+        return MFX_ERR_UNKNOWN;
+    }
     return MFX_ERR_NONE;
 }
