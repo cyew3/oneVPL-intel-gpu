@@ -342,7 +342,7 @@ void GetCalcParams( mfxVideoParam *parMfx, const RcParams* rc, Ipp32s rcMode )
     if (rcMode == MFX_RATECONTROL_AVBR)
         maxVal = IPP_MAX(rc->TargetKbps, maxVal);
     else if (rcMode != MFX_RATECONTROL_CQP)
-        maxVal = IPP_MAX( IPP_MAX( rc->InitialDelayInKB, rc->MaxKbps), maxVal);
+        maxVal = IPP_MAX(rc->TargetKbps, IPP_MAX( IPP_MAX( rc->InitialDelayInKB, rc->MaxKbps), maxVal));
 
     Ipp32s mult = (Ipp32u)(maxVal + 0xffff) >> 16;
     if (mult == 0)
