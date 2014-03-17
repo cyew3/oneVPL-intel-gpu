@@ -566,7 +566,7 @@ void ReconstructorT<bitDepth, H265PlaneType>::PredictIntra(Ipp32s predMode, H265
         switch(predMode)
         {
         case INTRA_LUMA_PLANAR_IDX:
-            MFX_HEVC_PP::h265_PredictIntra_Planar_8u(PredPel, pRec, pitch, width);
+            MFX_HEVC_PP::NAME(h265_PredictIntra_Planar_8u)(PredPel, pRec, pitch, width);
             break;
         case INTRA_LUMA_DC_IDX:
             MFX_HEVC_PP::h265_PredictIntra_DC_8u(PredPel, pRec, pitch, width, 1);
