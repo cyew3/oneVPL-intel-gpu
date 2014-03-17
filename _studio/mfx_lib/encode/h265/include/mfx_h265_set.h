@@ -250,6 +250,7 @@ public:
     // kolya
     // to match HM's lambda in HAD search
     Ipp64f rd_lambda_sqrt;
+    Ipp64f ChromaDistWeight;
 };
 
 } // namespace

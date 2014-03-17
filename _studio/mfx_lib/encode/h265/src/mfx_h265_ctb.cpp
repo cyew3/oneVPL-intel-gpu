@@ -593,6 +593,7 @@ void H265CU::InitCu(H265VideoParam *_par, H265CUData *_data, H265CUData *_dataTe
 
         //kolya
         m_rdLambdaSqrt = m_cslice->rd_lambda_sqrt;
+        m_ChromaDistWeight = m_cslice->ChromaDistWeight;
 
         m_rdLambdaInter = m_cslice->rd_lambda_inter;
         m_rdLambdaInterMv = m_cslice->rd_lambda_inter_mv;
@@ -3414,6 +3415,11 @@ void H265CU::EncAndRecChromaTu(Ipp32u absPartIdx, Ipp32s offset, Ipp32s width, I
             }
         }
     }
+
+    //kolya //WEIGHTED_CHROMA_DISTORTION
+    if (0 && cost)
+        (*cost) *= (this->m_ChromaDistWeight);
+
     if (m_rdOptFlag && cost) {
         m_bsf->Reset();
         if (cbf[0])

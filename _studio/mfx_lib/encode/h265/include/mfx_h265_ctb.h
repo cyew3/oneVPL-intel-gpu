@@ -200,6 +200,7 @@ public:
     //kolya
     //to match HM's HAD search for Intra modes
     Ipp64f m_rdLambdaSqrt;
+    Ipp64f m_ChromaDistWeight;
 
     H265Slice *m_cslice;
     Ipp8u m_depthMin;          // for Cu-tree branch to know if there is not SPLIT_MUST cu at lower depth

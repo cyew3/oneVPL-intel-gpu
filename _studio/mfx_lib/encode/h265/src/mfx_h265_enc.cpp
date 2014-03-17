@@ -636,6 +636,7 @@ mfxStatus H265Encoder::SetSlice(H265Slice *slice, Ipp32u curr_slice)
 
     //kolya
     slice->rd_lambda_sqrt = sqrt(slice->rd_lambda*256);
+    slice->ChromaDistWeight = pow(2.0, (m_videoParam.QP - h265_QPtoChromaQP[m_videoParam.QP])/3.0);
 
     return MFX_ERR_NONE;
 }
@@ -773,6 +774,8 @@ mfxStatus H265Encoder::SetSlice(H265Slice *slice, Ipp32u curr_slice, H265Frame *
 
     //kolya
     slice->rd_lambda_sqrt = sqrt(slice->rd_lambda*256);
+    //no chroma QP offset (from PPS) is implemented yet
+    slice->ChromaDistWeight = pow(2.0, (m_videoParam.QP - h265_QPtoChromaQP[m_videoParam.QP])/3.0);
 
     return MFX_ERR_NONE;
 }
