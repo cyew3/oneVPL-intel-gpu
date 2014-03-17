@@ -353,7 +353,7 @@ mfxStatus H265Encoder::SetVPS()
     vps->vps_max_sub_layers = 1;
     vps->vps_temporal_id_nesting_flag = 1;
     if (m_videoParam.BPyramid)
-        vps->vps_max_dec_pic_buffering[0] = m_videoParam.GopRefDist == 8 ? 4 : 2;
+        vps->vps_max_dec_pic_buffering[0] = m_videoParam.GopRefDist == 8 ? 4 : 3;
     else
         vps->vps_max_dec_pic_buffering[0] = (Ipp8u)(MAX(m_videoParam.MaxRefIdxL0,m_videoParam.MaxBRefIdxL0) +
             m_videoParam.MaxRefIdxL1);
