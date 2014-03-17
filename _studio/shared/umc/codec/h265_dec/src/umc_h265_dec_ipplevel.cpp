@@ -102,11 +102,11 @@ namespace UMC_HEVC_DECODER
 #endif
 
 #define read_data_through_boundary_table_8u read_data_through_boundary_table_8u_pxmx
-typedef void (*pH264Interpolation_8u) (H264InterpolationParams_8u *pParams);
+typedef void (*pH264Interpolation_8u) (H265InterpolationParams_8u *pParams);
 extern pH264Interpolation_8u read_data_through_boundary_table_8u_pxmx[16];
 
 #define read_data_through_boundary_table_16u read_data_through_boundary_table_16u_pxmx
-typedef void (*pH264Interpolation_16u) (H264InterpolationParams_16u *pParams);
+typedef void (*pH264Interpolation_16u) (H265InterpolationParams_16u *pParams);
 extern pH264Interpolation_16u read_data_through_boundary_table_16u_pxmx[16];
 
 #define read_data_through_boundary_table_nv12_8u read_data_through_boundary_table_nv12_8u_pxmx
@@ -123,53 +123,35 @@ IppStatus ippiInterpolateBoundaryLumaBlock_H264(Ipp32s iOverlappingType, Interpo
 
     /* read data into temporal buffer */
     {
-        PixType *pDst = pParams->pDst;
-        /*SIZE_T*/size_t dstStep = pParams->dstStep;
-
         pParams->pDst = pTmp;
         pParams->dstStep = tmpStep;
 
         if (sizeof(PixType) == 1)
         {
-            read_data_through_boundary_table_8u[iOverlappingType]((H264InterpolationParams_8u*)pParams);
+            read_data_through_boundary_table_8u[iOverlappingType]((H265InterpolationParams_8u*)pParams);
         }
         else
         {
-            read_data_through_boundary_table_16u[iOverlappingType]((H264InterpolationParams_16u*)pParams);
+            read_data_through_boundary_table_16u[iOverlappingType]((H265InterpolationParams_16u*)pParams);
         }
 
         pParams->pSrc = pTmp +
                         ((pParams->iType & 0x0c) ? (1) : (0)) * 3 * tmpStep +
                         ((pParams->iType & 0x03) ? (1) : (0)) * 3;
         pParams->srcStep = tmpStep;
-        pParams->pDst = pDst;
-        pParams->dstStep = dstStep;
     }
 
     return ippStsNoErr;
 }
 
-template<typename PixType, typename InterpolationStruct, typename InterpolationStructInternal>
+template<typename PixType, typename InterpolationStruct>
 IppStatus ippiInterpolateLumaBlock_H265Internal(InterpolationStruct *interpolateInfo, PixType *temporary_buffer)
 {
-    InterpolationStructInternal params;
-
-    /* prepare pointers */
-    params.pDst = interpolateInfo->pDst[0];
-    params.dstStep = interpolateInfo->dstStep;
-    params.pSrc = interpolateInfo->pSrc[0];
-    params.srcStep = interpolateInfo->srcStep;
-
-    params.blockWidth = interpolateInfo->sizeBlock.width;
-    params.blockHeight = interpolateInfo->sizeBlock.height;
-
     /* the most probably case - just copying */
     if (0 == (interpolateInfo->pointVector.x | interpolateInfo->pointVector.y))
     {
         /* set the current source pointer */
-        params.pSrc += interpolateInfo->pointBlockPos.y * params.srcStep +
-                       interpolateInfo->pointBlockPos.x;
-
+        interpolateInfo->pSrc += interpolateInfo->pointBlockPos.y * interpolateInfo->srcStep + interpolateInfo->pointBlockPos.x;
         return ippStsNoOperation;
     }
     /* prepare interpolation type and data dimensions */
@@ -187,8 +169,8 @@ IppStatus ippiInterpolateLumaBlock_H265Internal(InterpolationStruct *interpolate
                 Ipp32s iAddition;
 
                 iAddition = (hFraction) ? (1) : (0);
-                params.xPos = interpolateInfo->pointBlockPos.x + (pointVector.x >>= 2) - iAddition * 3;
-                params.dataWidth = params.blockWidth + iAddition * 8;
+                interpolateInfo->xPos = interpolateInfo->pointBlockPos.x + (pointVector.x >>= 2) - iAddition * 3;
+                interpolateInfo->dataWidth = interpolateInfo->blockWidth + iAddition * 8;
             }
 
             /* prepare vertical vector values */
@@ -197,11 +179,11 @@ IppStatus ippiInterpolateLumaBlock_H265Internal(InterpolationStruct *interpolate
                 Ipp32s iAddition;
 
                 iAddition = (vFraction) ? (1) : (0);
-                params.yPos = interpolateInfo->pointBlockPos.y + (pointVector.y >>= 2) - iAddition * 3;
-                params.dataHeight = params.blockHeight + iAddition * 8;
+                interpolateInfo->yPos = interpolateInfo->pointBlockPos.y + (pointVector.y >>= 2) - iAddition * 3;
+                interpolateInfo->dataHeight = interpolateInfo->blockHeight + iAddition * 8;
             }
 
-            params.iType = (vFraction << 2) | hFraction;
+            interpolateInfo->iType = (vFraction << 2) | hFraction;
         }
 
 
@@ -212,37 +194,23 @@ IppStatus ippiInterpolateLumaBlock_H265Internal(InterpolationStruct *interpolate
             second bit means y position of top data boundary lie out of frame,
             third bit means y position of bottom data boundary lie out of frame */
         iOverlappingType = 0;
-        iOverlappingType |= ((0 > params.xPos) ? (1) : (0)) << 0;
-        iOverlappingType |= ((interpolateInfo->sizeFrame.width < params.xPos + params.dataWidth) ? (1) : (0)) << 1;
-        iOverlappingType |= ((0 > params.yPos) ? (1) : (0)) << 2;
-        iOverlappingType |= ((interpolateInfo->sizeFrame.height < params.yPos + params.dataHeight) ? (1) : (0)) << 3;
+        iOverlappingType |= (0 > interpolateInfo->xPos ? 1 : 0) << 0;
+        iOverlappingType |= ((interpolateInfo->frameSize.width < interpolateInfo->xPos + interpolateInfo->dataWidth) ? 1 : 0) << 1;
+        iOverlappingType |= (0 > interpolateInfo->yPos ? 1 : 0) << 2;
+        iOverlappingType |= ((interpolateInfo->frameSize.height < interpolateInfo->yPos + interpolateInfo->dataHeight) ? 1 : 0) << 3;
 
         /* call appropriate function */
         if (0 == iOverlappingType)
         {
             /* set the current source pointer */
-            params.pSrc += (interpolateInfo->pointBlockPos.y + pointVector.y) * params.srcStep +
-                           (interpolateInfo->pointBlockPos.x + pointVector.x);
-
-            /* call optimized function from the table */
-            //h264_interpolate_luma_type_table_8u[params.iType](&params);
-
-            //return ippStsNoErr;
+            interpolateInfo->pSrc += (interpolateInfo->pointBlockPos.y + pointVector.y) * interpolateInfo->srcStep + (interpolateInfo->pointBlockPos.x + pointVector.x);
             return ippStsNoOperation;
         }
         else
         {
             /* save additional parameters */
-            params.frameSize.width = interpolateInfo->sizeFrame.width;
-            params.frameSize.height = interpolateInfo->sizeFrame.height;
-
             /* there is something wrong, try to work through a temporal buffer */
-            IppStatus sts = ippiInterpolateBoundaryLumaBlock_H264<PixType, InterpolationStructInternal> (iOverlappingType, &params, temporary_buffer);
-
-
-            interpolateInfo->pSrc[0] = params.pSrc;
-            interpolateInfo->srcStep = (Ipp32s)params.srcStep;
-            return sts;
+            return ippiInterpolateBoundaryLumaBlock_H264<PixType, InterpolationStruct> (iOverlappingType, interpolateInfo, temporary_buffer);
         }
     }
 }
@@ -255,63 +223,35 @@ IppStatus ippiInterpolateBoundaryChromaBlock_NV12_H264(Ipp32s iOverlappingType, 
 
     /* read data into temporal buffer */
     {
-        PixType *pDst = pParams->pDst;
-        size_t dstStep = pParams->dstStep;
-
         pParams->pDst = pTmp;
         pParams->dstStep = tmpStep;
 
         if (sizeof(PixType) == 1)
         {
-            read_data_through_boundary_table_nv12_8u[iOverlappingType]((H264InterpolationParams_8u*)pParams);
+            read_data_through_boundary_table_nv12_8u[iOverlappingType]((H265InterpolationParams_8u*)pParams);
         }
         else
         {
-            read_data_through_boundary_table_nv12_16u[iOverlappingType]((H264InterpolationParams_16u*)pParams);
+            read_data_through_boundary_table_nv12_16u[iOverlappingType]((H265InterpolationParams_16u*)pParams);
         }
 
         pParams->pSrc = pTmp +
                         ((pParams->iType & 0x02) ? (1) : (0)) * 1 * tmpStep +
                         ((pParams->iType & 0x01) ? (1) : (0)) * 2;
         pParams->srcStep = tmpStep;
-        pParams->pDst = pDst;
-        pParams->dstStep = dstStep;
     }
 
     return ippStsNoErr;
 }
 
-template<typename PixType, typename InterpolationStruct, typename InterpolationStructInternal>
+template<typename PixType, typename InterpolationStruct>
 IppStatus ippiInterpolateChromaBlock_H264Internal(InterpolationStruct *interpolateInfo, PixType *temporary_buffer)
 {
-    InterpolationStructInternal params;
-
-    /* check error(s) */
-    IPP_BAD_PTR1_RET(interpolateInfo);
-    IPP_BAD_PTR1_RET(interpolateInfo->pSrc[0]);
-
-    /* prepare pointers */
-    params.pDst = interpolateInfo->pDst[0];
-    params.dstStep = interpolateInfo->dstStep;
-    params.pSrc = interpolateInfo->pSrc[0];
-    params.srcStep = interpolateInfo->srcStep;
-
-    params.blockWidth = interpolateInfo->sizeBlock.width;
-    params.blockHeight = interpolateInfo->sizeBlock.height;
-
     /* the most probably case - just copying */
     if (0 == (interpolateInfo->pointVector.x | interpolateInfo->pointVector.y))
     {
-        size_t iRefOffset;
-
-        /* set the current reference offset */
-        iRefOffset = interpolateInfo->pointBlockPos.y * params.srcStep +
-                     interpolateInfo->pointBlockPos.x*2;
-
         /* set the current source pointer */
-        params.pSrc = interpolateInfo->pSrc[0] + iRefOffset;
-        params.pDst = interpolateInfo->pDst[0];
-        params.pDstComplementary = interpolateInfo->pDst[1];
+        interpolateInfo->pSrc += interpolateInfo->pointBlockPos.y * interpolateInfo->srcStep + interpolateInfo->pointBlockPos.x*2;
     }
     /* prepare interpolation type and data dimensions */
     else
@@ -323,29 +263,26 @@ IppStatus ippiInterpolateChromaBlock_H264Internal(InterpolationStruct *interpola
             Ipp32s hFraction, vFraction;
 
             /* prepare horizontal vector values */
-            params.hFraction =
-            hFraction = interpolateInfo->pointVector.x & 7;
+            interpolateInfo->hFraction = hFraction = interpolateInfo->pointVector.x & 7;
             {
                 Ipp32s iAddition;
 
                 iAddition = (hFraction) ? (1) : (0);
-                params.xPos = interpolateInfo->pointBlockPos.x + (pointVector.x >>= 3) - iAddition;
-                params.dataWidth = params.blockWidth + iAddition*4;
+                interpolateInfo->xPos = interpolateInfo->pointBlockPos.x + (pointVector.x >>= 3) - iAddition;
+                interpolateInfo->dataWidth = interpolateInfo->blockWidth + iAddition*4;
             }
 
             /* prepare vertical vector values */
-            params.vFraction =
-            vFraction = pointVector.y & 7;
+            interpolateInfo->vFraction = vFraction = pointVector.y & 7;
             {
                 Ipp32s iAddition;
 
                 iAddition = (vFraction) ? (1) : (0);
-                params.yPos = interpolateInfo->pointBlockPos.y + (pointVector.y >>= 3) - iAddition;
-                params.dataHeight = params.blockHeight + iAddition*4;
+                interpolateInfo->yPos = interpolateInfo->pointBlockPos.y + (pointVector.y >>= 3) - iAddition;
+                interpolateInfo->dataHeight = interpolateInfo->blockHeight + iAddition*4;
             }
 
-            params.iType = ((vFraction ? 1 : 0) << 1) |
-                           (hFraction ? 1 : 0);
+            interpolateInfo->iType = ((vFraction ? 1 : 0) << 1) | (hFraction ? 1 : 0);
         }
 
 
@@ -356,10 +293,10 @@ IppStatus ippiInterpolateChromaBlock_H264Internal(InterpolationStruct *interpola
             second bit means y position of top data boundary lie out of frame,
             third bit means y position of bottom data boundary lie out of frame */
         iOverlappingType = 0;
-        iOverlappingType |= ((0 > params.xPos) ? (1) : (0)) << 0;
-        iOverlappingType |= ((interpolateInfo->sizeFrame.width < params.xPos + params.dataWidth) ? (1) : (0)) << 1;
-        iOverlappingType |= ((0 > params.yPos) ? (1) : (0)) << 2;
-        iOverlappingType |= ((interpolateInfo->sizeFrame.height < params.yPos + params.dataHeight) ? (1) : (0)) << 3;
+        iOverlappingType |= ((0 > interpolateInfo->xPos) ? 1 : 0) << 0;
+        iOverlappingType |= ((interpolateInfo->frameSize.width < interpolateInfo->xPos + interpolateInfo->dataWidth) ? 1 : 0) << 1;
+        iOverlappingType |= ((0 > interpolateInfo->yPos) ? 1 : 0) << 2;
+        iOverlappingType |= ((interpolateInfo->frameSize.height < interpolateInfo->yPos + interpolateInfo->dataHeight) ? 1 : 0) << 3;
 
         /* call appropriate function */
         if (0 == iOverlappingType)
@@ -367,28 +304,15 @@ IppStatus ippiInterpolateChromaBlock_H264Internal(InterpolationStruct *interpola
             size_t iRefOffset;
 
             /* set the current reference offset */
-            iRefOffset = (interpolateInfo->pointBlockPos.y + pointVector.y) * params.srcStep +
-                         (interpolateInfo->pointBlockPos.x*2 + pointVector.x*2);
+            iRefOffset = (interpolateInfo->pointBlockPos.y + pointVector.y) * interpolateInfo->srcStep + (interpolateInfo->pointBlockPos.x*2 + pointVector.x*2);
 
             /* set the current source pointer */
-            params.pSrc = interpolateInfo->pSrc[0] + iRefOffset;
-            params.pDst = interpolateInfo->pDst[0];
-            params.pDstComplementary = interpolateInfo->pDst[1];
-            params.frameSize.height = interpolateInfo->sizeFrame.height;
-            params.frameSize.width = interpolateInfo->sizeFrame.width;
-            /* call optimized function from the table */
+            interpolateInfo->pSrc += iRefOffset;
         }
         else
         {
-            /* save additional parameters */
-            params.frameSize.width = interpolateInfo->sizeFrame.width;
-            params.frameSize.height = interpolateInfo->sizeFrame.height;
-
             /* there is something wrong, try to work through a temporal buffer */
-            IppStatus sts =  ippiInterpolateBoundaryChromaBlock_NV12_H264<PixType, InterpolationStructInternal>(iOverlappingType, &params, temporary_buffer);
-            interpolateInfo->pSrc[0] = params.pSrc;
-            interpolateInfo->srcStep = (Ipp32s)params.srcStep;
-            return sts;
+            return ippiInterpolateBoundaryChromaBlock_NV12_H264<PixType, InterpolationStruct>(iOverlappingType, interpolateInfo, temporary_buffer);
         }
     }
 
@@ -1116,7 +1040,7 @@ void read_data_through_boundary_top_bottom_right_nv12_px(InterpolationStruct *pP
         read_data_through_boundary_top_right_nv12_px<PixType, InterpolationStruct>(pParams);
     else
         read_data_through_boundary_bottom_right_nv12_px<PixType, InterpolationStruct>(pParams);
-} /* void read_data_through_boundary_top_bottom_right_nv12_8u_px(H264InterpolationParams_8u *pParams) */
+} /* void read_data_through_boundary_top_bottom_right_nv12_8u_px(H265InterpolationParams_8u *pParams) */
 
 template<typename PixType, typename InterpolationStruct>
 void read_data_through_boundary_top_bottom_left_right_nv12_px(InterpolationStruct *pParams)
@@ -1140,114 +1064,114 @@ void read_data_through_boundary_top_bottom_left_right_nv12_px(InterpolationStruc
 /* declare functions for handle boundary cases */
 pH264Interpolation_8u read_data_through_boundary_table_8u_pxmx[16] =
 {
-    &read_data_through_boundary_none<Ipp8u, H264InterpolationParams_8u>,
-    &read_data_through_boundary_left_px<Ipp8u, H264InterpolationParams_8u>,
-    &read_data_through_boundary_right_px<Ipp8u, H264InterpolationParams_8u>,
-    &read_data_through_boundary_left_right_px<Ipp8u, H264InterpolationParams_8u>,
+    &read_data_through_boundary_none<Ipp8u, H265InterpolationParams_8u>,
+    &read_data_through_boundary_left_px<Ipp8u, H265InterpolationParams_8u>,
+    &read_data_through_boundary_right_px<Ipp8u, H265InterpolationParams_8u>,
+    &read_data_through_boundary_left_right_px<Ipp8u, H265InterpolationParams_8u>,
 
-    &read_data_through_boundary_top_px<Ipp8u, H264InterpolationParams_8u>,
-    &read_data_through_boundary_top_left_px<Ipp8u, H264InterpolationParams_8u>,
-    &read_data_through_boundary_top_right_px<Ipp8u, H264InterpolationParams_8u>,
-    &read_data_through_boundary_top_left_right_px<Ipp8u, H264InterpolationParams_8u>,
+    &read_data_through_boundary_top_px<Ipp8u, H265InterpolationParams_8u>,
+    &read_data_through_boundary_top_left_px<Ipp8u, H265InterpolationParams_8u>,
+    &read_data_through_boundary_top_right_px<Ipp8u, H265InterpolationParams_8u>,
+    &read_data_through_boundary_top_left_right_px<Ipp8u, H265InterpolationParams_8u>,
 
-    &read_data_through_boundary_bottom_px<Ipp8u, H264InterpolationParams_8u>,
-    &read_data_through_boundary_bottom_left_px<Ipp8u, H264InterpolationParams_8u>,
-    &read_data_through_boundary_bottom_right_px<Ipp8u, H264InterpolationParams_8u>,
-    &read_data_through_boundary_bottom_left_right_px<Ipp8u, H264InterpolationParams_8u>,
+    &read_data_through_boundary_bottom_px<Ipp8u, H265InterpolationParams_8u>,
+    &read_data_through_boundary_bottom_left_px<Ipp8u, H265InterpolationParams_8u>,
+    &read_data_through_boundary_bottom_right_px<Ipp8u, H265InterpolationParams_8u>,
+    &read_data_through_boundary_bottom_left_right_px<Ipp8u, H265InterpolationParams_8u>,
 
-    &read_data_through_boundary_top_bottom_px<Ipp8u, H264InterpolationParams_8u>,
-    &read_data_through_boundary_top_bottom_left_px<Ipp8u, H264InterpolationParams_8u>,
-    &read_data_through_boundary_top_bottom_right_px<Ipp8u, H264InterpolationParams_8u>,
-    &read_data_through_boundary_top_bottom_left_right_px<Ipp8u, H264InterpolationParams_8u>
+    &read_data_through_boundary_top_bottom_px<Ipp8u, H265InterpolationParams_8u>,
+    &read_data_through_boundary_top_bottom_left_px<Ipp8u, H265InterpolationParams_8u>,
+    &read_data_through_boundary_top_bottom_right_px<Ipp8u, H265InterpolationParams_8u>,
+    &read_data_through_boundary_top_bottom_left_right_px<Ipp8u, H265InterpolationParams_8u>
 };
 
 pH264Interpolation_8u read_data_through_boundary_table_nv12_8u_pxmx[16] =
 {
-    &read_data_through_boundary_none_nv12<Ipp8u, H264InterpolationParams_8u>,
-    &read_data_through_boundary_left_nv12_px<Ipp8u, H264InterpolationParams_8u>,
-    &read_data_through_boundary_right_nv12_px<Ipp8u, H264InterpolationParams_8u>,
-    &read_data_through_boundary_left_right_nv12_px<Ipp8u, H264InterpolationParams_8u>,
+    &read_data_through_boundary_none_nv12<Ipp8u, H265InterpolationParams_8u>,
+    &read_data_through_boundary_left_nv12_px<Ipp8u, H265InterpolationParams_8u>,
+    &read_data_through_boundary_right_nv12_px<Ipp8u, H265InterpolationParams_8u>,
+    &read_data_through_boundary_left_right_nv12_px<Ipp8u, H265InterpolationParams_8u>,
 
-    &read_data_through_boundary_top_nv12_px<Ipp8u, H264InterpolationParams_8u>,
-    &read_data_through_boundary_top_left_nv12_px<Ipp8u, H264InterpolationParams_8u>,
-    &read_data_through_boundary_top_right_nv12_px<Ipp8u, H264InterpolationParams_8u>,
-    &read_data_through_boundary_top_left_right_nv12_px<Ipp8u, H264InterpolationParams_8u>,
+    &read_data_through_boundary_top_nv12_px<Ipp8u, H265InterpolationParams_8u>,
+    &read_data_through_boundary_top_left_nv12_px<Ipp8u, H265InterpolationParams_8u>,
+    &read_data_through_boundary_top_right_nv12_px<Ipp8u, H265InterpolationParams_8u>,
+    &read_data_through_boundary_top_left_right_nv12_px<Ipp8u, H265InterpolationParams_8u>,
 
-    &read_data_through_boundary_bottom_nv12_px<Ipp8u, H264InterpolationParams_8u>,
-    &read_data_through_boundary_bottom_left_nv12_px<Ipp8u, H264InterpolationParams_8u>,
-    &read_data_through_boundary_bottom_right_nv12_px<Ipp8u, H264InterpolationParams_8u>,
-    &read_data_through_boundary_bottom_left_right_nv12_px<Ipp8u, H264InterpolationParams_8u>,
+    &read_data_through_boundary_bottom_nv12_px<Ipp8u, H265InterpolationParams_8u>,
+    &read_data_through_boundary_bottom_left_nv12_px<Ipp8u, H265InterpolationParams_8u>,
+    &read_data_through_boundary_bottom_right_nv12_px<Ipp8u, H265InterpolationParams_8u>,
+    &read_data_through_boundary_bottom_left_right_nv12_px<Ipp8u, H265InterpolationParams_8u>,
 
-    &read_data_through_boundary_top_bottom_nv12_px<Ipp8u, H264InterpolationParams_8u>,
-    &read_data_through_boundary_top_bottom_left_nv12_px<Ipp8u, H264InterpolationParams_8u>,
-    &read_data_through_boundary_top_bottom_right_nv12_px<Ipp8u, H264InterpolationParams_8u>,
-    &read_data_through_boundary_top_bottom_left_right_nv12_px<Ipp8u, H264InterpolationParams_8u>
+    &read_data_through_boundary_top_bottom_nv12_px<Ipp8u, H265InterpolationParams_8u>,
+    &read_data_through_boundary_top_bottom_left_nv12_px<Ipp8u, H265InterpolationParams_8u>,
+    &read_data_through_boundary_top_bottom_right_nv12_px<Ipp8u, H265InterpolationParams_8u>,
+    &read_data_through_boundary_top_bottom_left_right_nv12_px<Ipp8u, H265InterpolationParams_8u>
 };
 
 pH264Interpolation_16u read_data_through_boundary_table_16u_pxmx[16] =
 {
-    &read_data_through_boundary_none<Ipp16u, H264InterpolationParams_16u>,
-    &read_data_through_boundary_left_px<Ipp16u, H264InterpolationParams_16u>,
-    &read_data_through_boundary_right_px<Ipp16u, H264InterpolationParams_16u>,
-    &read_data_through_boundary_left_right_px<Ipp16u, H264InterpolationParams_16u>,
+    &read_data_through_boundary_none<Ipp16u, H265InterpolationParams_16u>,
+    &read_data_through_boundary_left_px<Ipp16u, H265InterpolationParams_16u>,
+    &read_data_through_boundary_right_px<Ipp16u, H265InterpolationParams_16u>,
+    &read_data_through_boundary_left_right_px<Ipp16u, H265InterpolationParams_16u>,
 
-    &read_data_through_boundary_top_px<Ipp16u, H264InterpolationParams_16u>,
-    &read_data_through_boundary_top_left_px<Ipp16u, H264InterpolationParams_16u>,
-    &read_data_through_boundary_top_right_px<Ipp16u, H264InterpolationParams_16u>,
-    &read_data_through_boundary_top_left_right_px<Ipp16u, H264InterpolationParams_16u>,
+    &read_data_through_boundary_top_px<Ipp16u, H265InterpolationParams_16u>,
+    &read_data_through_boundary_top_left_px<Ipp16u, H265InterpolationParams_16u>,
+    &read_data_through_boundary_top_right_px<Ipp16u, H265InterpolationParams_16u>,
+    &read_data_through_boundary_top_left_right_px<Ipp16u, H265InterpolationParams_16u>,
 
-    &read_data_through_boundary_bottom_px<Ipp16u, H264InterpolationParams_16u>,
-    &read_data_through_boundary_bottom_left_px<Ipp16u, H264InterpolationParams_16u>,
-    &read_data_through_boundary_bottom_right_px<Ipp16u, H264InterpolationParams_16u>,
-    &read_data_through_boundary_bottom_left_right_px<Ipp16u, H264InterpolationParams_16u>,
+    &read_data_through_boundary_bottom_px<Ipp16u, H265InterpolationParams_16u>,
+    &read_data_through_boundary_bottom_left_px<Ipp16u, H265InterpolationParams_16u>,
+    &read_data_through_boundary_bottom_right_px<Ipp16u, H265InterpolationParams_16u>,
+    &read_data_through_boundary_bottom_left_right_px<Ipp16u, H265InterpolationParams_16u>,
 
-    &read_data_through_boundary_top_bottom_px<Ipp16u, H264InterpolationParams_16u>,
-    &read_data_through_boundary_top_bottom_left_px<Ipp16u, H264InterpolationParams_16u>,
-    &read_data_through_boundary_top_bottom_right_px<Ipp16u, H264InterpolationParams_16u>,
-    &read_data_through_boundary_top_bottom_left_right_px<Ipp16u, H264InterpolationParams_16u>
+    &read_data_through_boundary_top_bottom_px<Ipp16u, H265InterpolationParams_16u>,
+    &read_data_through_boundary_top_bottom_left_px<Ipp16u, H265InterpolationParams_16u>,
+    &read_data_through_boundary_top_bottom_right_px<Ipp16u, H265InterpolationParams_16u>,
+    &read_data_through_boundary_top_bottom_left_right_px<Ipp16u, H265InterpolationParams_16u>
 };
 
 pH264Interpolation_16u read_data_through_boundary_table_nv12_16u_pxmx[16] =
 {
-    &read_data_through_boundary_none_nv12<Ipp16u, H264InterpolationParams_16u>,
-    &read_data_through_boundary_left_nv12_px<Ipp16u, H264InterpolationParams_16u>,
-    &read_data_through_boundary_right_nv12_px<Ipp16u, H264InterpolationParams_16u>,
-    &read_data_through_boundary_left_right_nv12_px<Ipp16u, H264InterpolationParams_16u>,
+    &read_data_through_boundary_none_nv12<Ipp16u, H265InterpolationParams_16u>,
+    &read_data_through_boundary_left_nv12_px<Ipp16u, H265InterpolationParams_16u>,
+    &read_data_through_boundary_right_nv12_px<Ipp16u, H265InterpolationParams_16u>,
+    &read_data_through_boundary_left_right_nv12_px<Ipp16u, H265InterpolationParams_16u>,
 
-    &read_data_through_boundary_top_nv12_px<Ipp16u, H264InterpolationParams_16u>,
-    &read_data_through_boundary_top_left_nv12_px<Ipp16u, H264InterpolationParams_16u>,
-    &read_data_through_boundary_top_right_nv12_px<Ipp16u, H264InterpolationParams_16u>,
-    &read_data_through_boundary_top_left_right_nv12_px<Ipp16u, H264InterpolationParams_16u>,
+    &read_data_through_boundary_top_nv12_px<Ipp16u, H265InterpolationParams_16u>,
+    &read_data_through_boundary_top_left_nv12_px<Ipp16u, H265InterpolationParams_16u>,
+    &read_data_through_boundary_top_right_nv12_px<Ipp16u, H265InterpolationParams_16u>,
+    &read_data_through_boundary_top_left_right_nv12_px<Ipp16u, H265InterpolationParams_16u>,
 
-    &read_data_through_boundary_bottom_nv12_px<Ipp16u, H264InterpolationParams_16u>,
-    &read_data_through_boundary_bottom_left_nv12_px<Ipp16u, H264InterpolationParams_16u>,
-    &read_data_through_boundary_bottom_right_nv12_px<Ipp16u, H264InterpolationParams_16u>,
-    &read_data_through_boundary_bottom_left_right_nv12_px<Ipp16u, H264InterpolationParams_16u>,
+    &read_data_through_boundary_bottom_nv12_px<Ipp16u, H265InterpolationParams_16u>,
+    &read_data_through_boundary_bottom_left_nv12_px<Ipp16u, H265InterpolationParams_16u>,
+    &read_data_through_boundary_bottom_right_nv12_px<Ipp16u, H265InterpolationParams_16u>,
+    &read_data_through_boundary_bottom_left_right_nv12_px<Ipp16u, H265InterpolationParams_16u>,
 
-    &read_data_through_boundary_top_bottom_nv12_px<Ipp16u, H264InterpolationParams_16u>,
-    &read_data_through_boundary_top_bottom_left_nv12_px<Ipp16u, H264InterpolationParams_16u>,
-    &read_data_through_boundary_top_bottom_right_nv12_px<Ipp16u, H264InterpolationParams_16u>,
-    &read_data_through_boundary_top_bottom_left_right_nv12_px<Ipp16u, H264InterpolationParams_16u>
+    &read_data_through_boundary_top_bottom_nv12_px<Ipp16u, H265InterpolationParams_16u>,
+    &read_data_through_boundary_top_bottom_left_nv12_px<Ipp16u, H265InterpolationParams_16u>,
+    &read_data_through_boundary_top_bottom_right_nv12_px<Ipp16u, H265InterpolationParams_16u>,
+    &read_data_through_boundary_top_bottom_left_right_nv12_px<Ipp16u, H265InterpolationParams_16u>
 };
 
-IppStatus ippiInterpolateLumaBlock_H265(IppVCInterpolateBlock_8u *interpolateInfo, Ipp8u *temporary_buffer)
+IppStatus ippiInterpolateLumaBlock_H265(H265InterpolationParams_8u *interpolateInfo, Ipp8u *temporary_buffer)
 {
-    return ippiInterpolateLumaBlock_H265Internal<Ipp8u, IppVCInterpolateBlock_8u, H264InterpolationParams_8u>(interpolateInfo, temporary_buffer);
+    return ippiInterpolateLumaBlock_H265Internal<Ipp8u, H265InterpolationParams_8u>(interpolateInfo, temporary_buffer);
 }
 
-IppStatus ippiInterpolateChromaBlock_H264(IppVCInterpolateBlock_8u *interpolateInfo, Ipp8u *temporary_buffer)
+IppStatus ippiInterpolateChromaBlock_H264(H265InterpolationParams_8u *interpolateInfo, Ipp8u *temporary_buffer)
 {
-    return ippiInterpolateChromaBlock_H264Internal<Ipp8u, IppVCInterpolateBlock_8u, H264InterpolationParams_8u>(interpolateInfo, temporary_buffer);
+    return ippiInterpolateChromaBlock_H264Internal<Ipp8u, H265InterpolationParams_8u>(interpolateInfo, temporary_buffer);
 }
 
-IppStatus ippiInterpolateLumaBlock_H265(IppVCInterpolateBlock_8u *interpolateInfo, Ipp16u *temporary_buffer)
+IppStatus ippiInterpolateLumaBlock_H265(H265InterpolationParams_8u *interpolateInfo, Ipp16u *temporary_buffer)
 {
-    return ippiInterpolateLumaBlock_H265Internal<Ipp16u, IppVCInterpolateBlock_16u, H264InterpolationParams_16u>((IppVCInterpolateBlock_16u*)interpolateInfo, temporary_buffer);
+    return ippiInterpolateLumaBlock_H265Internal<Ipp16u, H265InterpolationParams_16u>((H265InterpolationParams_16u*)interpolateInfo, temporary_buffer);
 }
 
-IppStatus ippiInterpolateChromaBlock_H264(IppVCInterpolateBlock_8u *interpolateInfo, Ipp16u *temporary_buffer)
+IppStatus ippiInterpolateChromaBlock_H264(H265InterpolationParams_8u *interpolateInfo, Ipp16u *temporary_buffer)
 {
-    return ippiInterpolateChromaBlock_H264Internal<Ipp16u, IppVCInterpolateBlock_16u, H264InterpolationParams_16u>((IppVCInterpolateBlock_16u*)interpolateInfo, temporary_buffer);
+    return ippiInterpolateChromaBlock_H264Internal<Ipp16u, H265InterpolationParams_16u>((H265InterpolationParams_16u*)interpolateInfo, temporary_buffer);
 }
 
 

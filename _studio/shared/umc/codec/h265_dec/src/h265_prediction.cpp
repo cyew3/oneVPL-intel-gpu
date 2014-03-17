@@ -88,9 +88,6 @@ void H265Prediction::MotionCompensation(H265CodingUnit* pCU, Ipp32u AbsPartIdx, 
 template<typename PixType>
 void H265Prediction::MotionCompensationInternal(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u Depth)
 {
-    Ipp8u weighted_prediction = pCU->m_SliceHeader->slice_type == P_SLICE ? m_context->m_pps->weighted_pred_flag :
-        m_context->m_pps->weighted_bipred_flag;
-
     Ipp32s countPart = pCU->getNumPartInter(AbsPartIdx);
     EnumPartSize PartSize = pCU->GetPartitionSize(AbsPartIdx);
     Ipp32u PUOffset = (g_PUOffset[PartSize] << ((m_context->m_sps->MaxCUDepth - Depth) << 1)) >> 4;
@@ -107,7 +104,7 @@ void H265Prediction::MotionCompensationInternal(H265CodingUnit* pCU, Ipp32u AbsP
         Ipp32s PartX = LPelX >> m_context->m_sps->log2_min_transform_block_size;
         Ipp32s PartY = TPelY >> m_context->m_sps->log2_min_transform_block_size;
 
-        PUi.interinfo = m_context->m_frame->getCD()->GetTUInfo(m_context->m_frame->getNumPartInCUSize() * m_context->m_frame->getFrameWidthInCU() * PartY + PartX);
+        PUi.interinfo = m_context->m_frame->getCD()->GetTUInfo(m_context->m_sps->NumPartitionsInFrameWidth * PartY + PartX);
         H265MVInfo &MVi = PUi.interinfo;
 
         VM_ASSERT(MVi.m_flags[REF_PIC_LIST_0] != COL_TU_INTRA);
@@ -135,7 +132,7 @@ void H265Prediction::MotionCompensationInternal(H265CodingUnit* pCU, Ipp32u AbsP
         if ((CheckIdenticalMotion(pCU, PUi) || !(RefIdx[REF_PIC_LIST_0] >= 0 && RefIdx[REF_PIC_LIST_1] >= 0)))
         {
             EnumRefPicList direction = RefIdx[REF_PIC_LIST_0] >= 0 ? REF_PIC_LIST_0 : REF_PIC_LIST_1;
-            if ( ! weighted_prediction )
+            if (!m_context->m_weighted_prediction)
             {
                 PredInterUni<TEXT_LUMA, false, PixType>(pCU, PUi, direction, &m_YUVPred[0]);
                 PredInterUni<TEXT_CHROMA, false, PixType>(pCU, PUi, direction, &m_YUVPred[0]);
@@ -151,7 +148,7 @@ void H265Prediction::MotionCompensationInternal(H265CodingUnit* pCU, Ipp32u AbsP
             bool bOnlyOneIterpY = false, bOnlyOneIterpC = false;
             EnumRefPicList picListY = REF_PIC_LIST_0, picListC = REF_PIC_LIST_0;
 
-            if ( ! weighted_prediction )
+            if (!m_context->m_weighted_prediction)
             {
                 // Check if at least one ref doesn't require subsample interpolation to add average directly from pic
                 H265MotionVector MV = MVi.m_mv[REF_PIC_LIST_0];
@@ -171,8 +168,8 @@ void H265Prediction::MotionCompensationInternal(H265CodingUnit* pCU, Ipp32u AbsP
                     picListY = REF_PIC_LIST_1;
             }
 
-            MFX_HEVC_PP::EnumAddAverageType addAverage = weighted_prediction ? MFX_HEVC_PP::AVERAGE_NO : MFX_HEVC_PP::AVERAGE_FROM_BUF;
-            H265DecYUVBufferPadded* pYuvPred = &m_YUVPred[ weighted_prediction ? REF_PIC_LIST_1 : REF_PIC_LIST_0];
+            MFX_HEVC_PP::EnumAddAverageType addAverage = m_context->m_weighted_prediction ? MFX_HEVC_PP::AVERAGE_NO : MFX_HEVC_PP::AVERAGE_FROM_BUF;
+            H265DecYUVBufferPadded* pYuvPred = &m_YUVPred[ m_context->m_weighted_prediction ? REF_PIC_LIST_1 : REF_PIC_LIST_0];
 
             if ( bOnlyOneIterpY )
                 PredInterUni<TEXT_LUMA, true, PixType>( pCU, PUi, picListY, m_YUVPred, MFX_HEVC_PP::AVERAGE_FROM_PIC );
@@ -191,7 +188,7 @@ void H265Prediction::MotionCompensationInternal(H265CodingUnit* pCU, Ipp32u AbsP
             }
         }
 
-        if (weighted_prediction)
+        if (m_context->m_weighted_prediction)
         {
             Ipp32s w0[3], w1[3], o0[3], o1[3], logWD[3], round[3];
             Ipp32u PartAddr = PUi.PartAddr;
@@ -257,7 +254,7 @@ bool H265Prediction::CheckIdenticalMotion(H265CodingUnit* pCU, H265PUInfo &PUi)
 
 template <EnumTextType c_plane_type, typename PlaneType>
 static void PrepareInterpSrc( H265CodingUnit* pCU, H265PUInfo &PUi, EnumRefPicList RefPicList,
-                              IppVCInterpolateBlock_8u& interpolateInfo, PlaneType* temp_interpolarion_buffer )
+                              H265InterpolationParams_8u& interpolateInfo, PlaneType* temp_interpolarion_buffer )
 {
     VM_ASSERT(PUi.interinfo.m_refIdx[RefPicList] >= 0);
 
@@ -277,33 +274,34 @@ static void PrepareInterpSrc( H265CodingUnit* pCU, H265PUInfo &PUi, EnumRefPicLi
                             (PlaneType*)PicYUVRef->GetCbCrAddr(pCU->CUAddr, PartAddr) + refOffset :
                             (PlaneType*)PicYUVRef->GetLumaAddr(pCU->CUAddr, PartAddr) + refOffset;
 
-    interpolateInfo.pSrc[0] = (c_plane_type == TEXT_CHROMA) ? (const Ipp8u*)PicYUVRef->m_pUVPlane : (const Ipp8u*)PicYUVRef->m_pYPlane;
+    interpolateInfo.pSrc = (c_plane_type == TEXT_CHROMA) ? (const Ipp8u*)PicYUVRef->m_pUVPlane : (const Ipp8u*)PicYUVRef->m_pYPlane;
     interpolateInfo.srcStep = in_SrcPitch;
-    interpolateInfo.pointVector.x= MV.Horizontal;
-    interpolateInfo.pointVector.y= MV.Vertical;
+
+    interpolateInfo.frameSize.width = pCU->m_SliceHeader->m_SeqParamSet->pic_width_in_luma_samples;
+    interpolateInfo.frameSize.height = pCU->m_SliceHeader->m_SeqParamSet->pic_height_in_luma_samples;
+
+    interpolateInfo.pointVector.x = MV.Horizontal;
+    interpolateInfo.pointVector.y = MV.Vertical;
 
     Ipp32u block_offset = (Ipp32u)( ( (c_plane_type == TEXT_CHROMA) ?
                                       (PlaneType*)PicYUVRef->GetCbCrAddr(pCU->CUAddr, PartAddr) :
                                       (PlaneType*)PicYUVRef->GetLumaAddr(pCU->CUAddr, PartAddr) )
-                          - (PlaneType*)interpolateInfo.pSrc[0]);
+                          - (PlaneType*)interpolateInfo.pSrc);
 
     // ML: TODO: make sure compiler generates only one division
     interpolateInfo.pointBlockPos.x = block_offset % in_SrcPitch;
     interpolateInfo.pointBlockPos.y = block_offset / in_SrcPitch;
 
-    interpolateInfo.sizeBlock.width = Width;
-    interpolateInfo.sizeBlock.height = Height;
-
-    interpolateInfo.sizeFrame.width = pCU->m_SliceHeader->m_SeqParamSet->pic_width_in_luma_samples;
-    interpolateInfo.sizeFrame.height = pCU->m_SliceHeader->m_SeqParamSet->pic_height_in_luma_samples;
+    interpolateInfo.blockWidth = Width;
+    interpolateInfo.blockHeight = Height;
 
     if ( c_plane_type == TEXT_CHROMA )
     {
         interpolateInfo.pointBlockPos.x >>= 1;
-        interpolateInfo.sizeFrame.width >>= 1;
-        interpolateInfo.sizeFrame.height >>= 1;
-        interpolateInfo.sizeBlock.width >>= 1;
-        interpolateInfo.sizeBlock.height >>= 1;
+        interpolateInfo.frameSize.width >>= 1;
+        interpolateInfo.frameSize.height >>= 1;
+        interpolateInfo.blockWidth >>= 1;
+        interpolateInfo.blockHeight >>= 1;
     }
 
     IppStatus sts = ( c_plane_type == TEXT_CHROMA ) ? 
@@ -314,7 +312,7 @@ static void PrepareInterpSrc( H265CodingUnit* pCU, H265PUInfo &PUi, EnumRefPicLi
         interpolateInfo.srcStep = 128;
     else
     {
-        interpolateInfo.pSrc[0] = (Ipp8u*)in_pSrc;
+        interpolateInfo.pSrc = (Ipp8u*)in_pSrc;
         interpolateInfo.srcStep = in_SrcPitch;
     }
 }
@@ -334,16 +332,16 @@ void H265Prediction::PredInterUni(H265CodingUnit* pCU, H265PUInfo &PUi, EnumRefP
                             (H265CoeffsPtrCommon)YUVPred->m_pUVPlane + GetAddrOffset(PartAddr, YUVPred->chromaSize().width) :
                             (H265CoeffsPtrCommon)YUVPred->m_pYPlane + GetAddrOffset(PartAddr, YUVPred->lumaSize().width);
 
-    IppVCInterpolateBlock_8u interpolateSrc;
+    H265InterpolationParams_8u interpolateSrc;
     PrepareInterpSrc <c_plane_type, PlaneType>( pCU, PUi, RefPicList, interpolateSrc, (PlaneType*)m_temp_interpolarion_buffer);
-    const PlaneType * in_pSrc = (const PlaneType *)interpolateSrc.pSrc[0];
+    const PlaneType * in_pSrc = (const PlaneType *)interpolateSrc.pSrc;
     Ipp32s in_SrcPitch = interpolateSrc.srcStep, in_SrcPic2Pitch = 0;
 
     const PlaneType *in_pSrcPic2 = NULL;
     if ( eAddAverage == MFX_HEVC_PP::AVERAGE_FROM_PIC )
     {
         PrepareInterpSrc <c_plane_type, PlaneType>( pCU, PUi, (EnumRefPicList)(RefPicList ^ 1), interpolateSrc, (PlaneType*)m_temp_interpolarion_buffer + (128*128) );
-        in_pSrcPic2 = (const PlaneType *)interpolateSrc.pSrc[0];
+        in_pSrcPic2 = (const PlaneType *)interpolateSrc.pSrc;
         in_SrcPic2Pitch = interpolateSrc.srcStep;
     }
 

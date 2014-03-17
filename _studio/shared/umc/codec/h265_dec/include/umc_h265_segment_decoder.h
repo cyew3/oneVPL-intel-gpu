@@ -129,6 +129,8 @@ public:
     H265FrameHLDNeighborsInfo *m_CurrCTBFlags;
     Ipp32s m_CurrCTBStride;
 
+    Ipp8u    m_weighted_prediction;
+
     struct
     {
         Ipp32s m_QPRem, m_QPPer;

@@ -91,6 +91,8 @@ void DecodingContext::Init(H265Slice *slice)
     m_coeffsWrite = 0;
 
     m_mvsDistortion = 0;
+
+    m_weighted_prediction = m_sh->slice_type == P_SLICE ? m_pps->weighted_pred_flag : m_pps->weighted_bipred_flag;
 }
 
 void DecodingContext::UpdateCurrCUContext(Ipp32u lastCUAddr, Ipp32u newCUAddr)
