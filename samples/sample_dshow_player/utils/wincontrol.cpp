@@ -80,7 +80,7 @@ void CreateStruct::SetBoundingRect(const Rect& rc)
 
 HINSTANCE GetInstance()
 {
-	return (HINSTANCE)GetModuleHandle(NULL);
+    return (HINSTANCE)GetModuleHandle(NULL);
 }
 
 

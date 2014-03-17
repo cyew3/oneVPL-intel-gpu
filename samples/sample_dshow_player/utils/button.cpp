@@ -37,7 +37,7 @@ HRESULT Button::CreateText(HWND hParent, const TCHAR *szCaption, int nID,
                                const Rect& rcBound)
 {
     CREATESTRUCT create;
-	ZeroMemory(&create, sizeof(CREATESTRUCT));
+    ZeroMemory(&create, sizeof(CREATESTRUCT));
 
     create.x = rcBound.left;
     create.y = rcBound.top;

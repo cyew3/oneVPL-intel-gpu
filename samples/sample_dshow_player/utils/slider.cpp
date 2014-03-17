@@ -19,74 +19,74 @@
 namespace SliderControl
 {
 
-	LPCTSTR ClassName = TEXT("SLIDER_CLASS");
+    LPCTSTR ClassName = TEXT("SLIDER_CLASS");
 
-	LPCTSTR InstanceData = TEXT("SLIDER_PROP");
+    LPCTSTR InstanceData = TEXT("SLIDER_PROP");
 
-	const LONG DEFAULT_MIN = 0;
-	const LONG DEFAULT_MAX = 100;
-	const LONG DEFAULT_THUMB = 0;
+    const LONG DEFAULT_MIN = 0;
+    const LONG DEFAULT_MAX = 100;
+    const LONG DEFAULT_THUMB = 0;
 
 
-	// GOALS of the slider class:
+    // GOALS of the slider class:
     //
     // - Application can get/set logical position.
-	// - When the usser clicks on the client area, the slider jumps to the clicked position.
+    // - When the usser clicks on the client area, the slider jumps to the clicked position.
     //   (This behavior is different from the slider control in the Windows common controls,
     //    and is more like the behavior of the seek bar in Windows Media Player.)
 
-	// Window messages:
+    // Window messages:
 
-	// set thumb position (the "thumb" is the part of the slider that the user drags)
-	// get thumb position
-	// set background brush
-	// set thumb image
+    // set thumb position (the "thumb" is the part of the slider that the user drags)
+    // get thumb position
+    // set background brush
+    // set thumb image
 
-	// Window notifications:
+    // Window notifications:
 
-	// User clicked on thumb
-	// User dragged thumb
-	// User click on non-thumb
+    // User clicked on thumb
+    // User dragged thumb
+    // User click on non-thumb
 
-	// data:
-	// image of thumb
+    // data:
+    // image of thumb
 
-	struct Slider_Info
-	{
-		// Logical units
-		LONG	posMin;		// minimum logical position
-		LONG	posMax;		// maximum logical position
-		LONG	posThumb;	// current logical position
+    struct Slider_Info
+    {
+        // Logical units
+        LONG    posMin;        // minimum logical position
+        LONG    posMax;        // maximum logical position
+        LONG    posThumb;    // current logical position
 
-		// Client area
-		SIZE    pxThumbSize;	// real size of thumb bitmap (constant until bitmap changes
-		Rect	rcThumb;		// client area of the thumb (changes with position)
+        // Client area
+        SIZE    pxThumbSize;    // real size of thumb bitmap (constant until bitmap changes
+        Rect    rcThumb;        // client area of the thumb (changes with position)
 
-		// state
-		BOOL	bThumbDown;		// User is dragging the thumb?
+        // state
+        BOOL    bThumbDown;        // User is dragging the thumb?
 
-		// GDI objects
-		HBRUSH	hBackground;
-		HBITMAP	hbmThumb;		// Thumb bitmap
-	};
+        // GDI objects
+        HBRUSH    hBackground;
+        HBITMAP    hbmThumb;        // Thumb bitmap
+    };
 
 
-	LRESULT CALLBACK Slider_WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+    LRESULT CALLBACK Slider_WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
-	// Message handlers
-	LRESULT OnCreate(HWND hwnd);
-	LRESULT OnNcDestroy(HWND hwnd, Slider_Info *pInfo);
-	LRESULT OnPaint(HWND hwnd, Slider_Info *pInfo);
-	LRESULT OnLButtonDown(HWND hwnd, LONG x, LONG y, Slider_Info *pInfo);
-	LRESULT OnLButtonUp(HWND hwnd, LONG x, LONG y, Slider_Info *pInfo);
-	LRESULT OnMouseMove(HWND hwnd, LONG x, LONG y, Slider_Info *pInfo);
+    // Message handlers
+    LRESULT OnCreate(HWND hwnd);
+    LRESULT OnNcDestroy(HWND hwnd, Slider_Info *pInfo);
+    LRESULT OnPaint(HWND hwnd, Slider_Info *pInfo);
+    LRESULT OnLButtonDown(HWND hwnd, LONG x, LONG y, Slider_Info *pInfo);
+    LRESULT OnLButtonUp(HWND hwnd, LONG x, LONG y, Slider_Info *pInfo);
+    LRESULT OnMouseMove(HWND hwnd, LONG x, LONG y, Slider_Info *pInfo);
 
-	// Private message handlers
-	LRESULT OnSetThumbBitmap(HWND hwnd, WORD nID, Slider_Info *pInfo);
-	LRESULT OnSetBackground(HWND hwnd, HBRUSH hBrush, Slider_Info *pInfo);
-	LRESULT OnSetMinMax(HWND hwnd, LONG posMin, LONG posMax, Slider_Info *pInfo);
-	LRESULT OnSetPosition(HWND hwnd, LONG pos, Slider_Info *pInfo);
-	LRESULT OnGetPosition(HWND hwnd, Slider_Info *pInfo);
+    // Private message handlers
+    LRESULT OnSetThumbBitmap(HWND hwnd, WORD nID, Slider_Info *pInfo);
+    LRESULT OnSetBackground(HWND hwnd, HBRUSH hBrush, Slider_Info *pInfo);
+    LRESULT OnSetMinMax(HWND hwnd, LONG posMin, LONG posMax, Slider_Info *pInfo);
+    LRESULT OnSetPosition(HWND hwnd, LONG pos, Slider_Info *pInfo);
+    LRESULT OnGetPosition(HWND hwnd, Slider_Info *pInfo);
 
 
     //--------------------------------------------------------------------------------------
@@ -95,9 +95,9 @@ namespace SliderControl
     //--------------------------------------------------------------------------------------
 
     inline BOOL SetInfo(HWND hwnd, Slider_Info *pInfo)
-	{
-		return SetProp(hwnd, InstanceData, pInfo);
-	}
+    {
+        return SetProp(hwnd, InstanceData, pInfo);
+    }
 
     //--------------------------------------------------------------------------------------
     // GetInfo
@@ -105,9 +105,9 @@ namespace SliderControl
     //--------------------------------------------------------------------------------------
 
     inline Slider_Info * GetInfo(HWND hwnd)
-	{
-		return (Slider_Info*)GetProp(hwnd, InstanceData);
-	}
+    {
+        return (Slider_Info*)GetProp(hwnd, InstanceData);
+    }
 
     //--------------------------------------------------------------------------------------
     // GetThumbRect
@@ -117,31 +117,31 @@ namespace SliderControl
     //--------------------------------------------------------------------------------------
 
     void GetThumbRect(HWND hwnd, Slider_Info *pInfo)
-	{
-		// 1. Convert logical position to pixels:
-		//		logical width = max position - min position
-		//		pixel width = client area - thumb width
-		//		logical thumb position = current position - min position
-		//		pixel thumb position = (logical thumb position / logical width) * pixel width
+    {
+        // 1. Convert logical position to pixels:
+        //        logical width = max position - min position
+        //        pixel width = client area - thumb width
+        //        logical thumb position = current position - min position
+        //        pixel thumb position = (logical thumb position / logical width) * pixel width
 
-		Rect rc;
-		GetClientRect(hwnd, &rc);
+        Rect rc;
+        GetClientRect(hwnd, &rc);
 
-		LONG logWidth = pInfo->posMax - pInfo->posMin;
-		LONG pixWidth = rc.Width() - pInfo->pxThumbSize.cx;
-		LONG logPosition = pInfo->posThumb - pInfo->posMin;
-		LONG left = MulDiv(logPosition, pixWidth, logWidth);
+        LONG logWidth = pInfo->posMax - pInfo->posMin;
+        LONG pixWidth = rc.Width() - pInfo->pxThumbSize.cx;
+        LONG logPosition = pInfo->posThumb - pInfo->posMin;
+        LONG left = MulDiv(logPosition, pixWidth, logWidth);
 
-		// 2. Center vertically
-		LONG top = (rc.Height() - pInfo->pxThumbSize.cy) / 2;
+        // 2. Center vertically
+        LONG top = (rc.Height() - pInfo->pxThumbSize.cy) / 2;
 
-		pInfo->rcThumb.Set(
-			left,
-			top,
-			left + pInfo->pxThumbSize.cx,
-			top + pInfo->pxThumbSize.cy
-			);
-	}
+        pInfo->rcThumb.Set(
+            left,
+            top,
+            left + pInfo->pxThumbSize.cx,
+            top + pInfo->pxThumbSize.cy
+            );
+    }
 
     //--------------------------------------------------------------------------------------
     // PixelToLogical
@@ -151,21 +151,21 @@ namespace SliderControl
     //--------------------------------------------------------------------------------------
 
     LONG PixelToLogical(HWND hwnd, LONG x, Slider_Info *pInfo)
-	{
-		// % of pixel width * logical width, max = logical max
+    {
+        // % of pixel width * logical width, max = logical max
 
-		// (x / pixel width) * logical width + logical min
+        // (x / pixel width) * logical width + logical min
 
-		Rect rc;
-		GetClientRect(hwnd, &rc);
+        Rect rc;
+        GetClientRect(hwnd, &rc);
 
-		LONG pixWidth = rc.Width();
-		LONG logWidth = pInfo->posMax - pInfo->posMin;
-		LONG pos = MulDiv(x, logWidth, pixWidth) + pInfo->posMin;
+        LONG pixWidth = rc.Width();
+        LONG logWidth = pInfo->posMax - pInfo->posMin;
+        LONG pos = MulDiv(x, logWidth, pixWidth) + pInfo->posMin;
 
-		// clamp to slider min and max
-		return max(pInfo->posMin, min(pos, pInfo->posMax));
-	}
+        // clamp to slider min and max
+        return max(pInfo->posMin, min(pos, pInfo->posMax));
+    }
 
     //--------------------------------------------------------------------------------------
     // NotifyParent
@@ -175,94 +175,94 @@ namespace SliderControl
     // code: WM_NOTIFY code. (One of the SLIDER_NOTIFY_xxx constants.)
     // pInfo: Instance data.
     //--------------------------------------------------------------------------------------
-	void NotifyParent(HWND hwnd, UINT code, Slider_Info *pInfo)
-	{
-		HWND hParent = GetParent(hwnd);
+    void NotifyParent(HWND hwnd, UINT code, Slider_Info *pInfo)
+    {
+        HWND hParent = GetParent(hwnd);
 
-		if (hParent)
-		{
-			NMSLIDER_INFO nminfo;
+        if (hParent)
+        {
+            NMSLIDER_INFO nminfo;
 
-			nminfo.hdr.hwndFrom = hwnd;
-			nminfo.hdr.idFrom = (UINT)GetMenu(hwnd);
-			nminfo.hdr.code = code;
-			nminfo.bSelected = pInfo->bThumbDown;
-			nminfo.position = pInfo->posThumb;
+            nminfo.hdr.hwndFrom = hwnd;
+            nminfo.hdr.idFrom = (UINT)GetMenu(hwnd);
+            nminfo.hdr.code = code;
+            nminfo.bSelected = pInfo->bThumbDown;
+            nminfo.position = pInfo->posThumb;
 
-			SendMessage(hParent, WM_NOTIFY, (WPARAM)nminfo.hdr.idFrom, (LPARAM)&nminfo);
-		}
-	}
+            SendMessage(hParent, WM_NOTIFY, (WPARAM)nminfo.hdr.idFrom, (LPARAM)&nminfo);
+        }
+    }
 
     //--------------------------------------------------------------------------------------
     // Slider_WndProc
     // Description: Window proc for the control.
     //--------------------------------------------------------------------------------------
 
-	LRESULT CALLBACK Slider_WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
-	{
-		Slider_Info * const pInfo = GetInfo(hwnd);
+    LRESULT CALLBACK Slider_WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+    {
+        Slider_Info * const pInfo = GetInfo(hwnd);
 
-		switch (uMsg)
-		{
-		case WM_CREATE:
-			return OnCreate(hwnd);
+        switch (uMsg)
+        {
+        case WM_CREATE:
+            return OnCreate(hwnd);
 
-		case WM_PAINT:
-			return OnPaint(hwnd, pInfo);
+        case WM_PAINT:
+            return OnPaint(hwnd, pInfo);
 
-		case WM_NCDESTROY:
-			return OnNcDestroy(hwnd, pInfo);
+        case WM_NCDESTROY:
+            return OnNcDestroy(hwnd, pInfo);
 
-		case WM_LBUTTONDOWN:
-			return OnLButtonDown(hwnd, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam), pInfo);
+        case WM_LBUTTONDOWN:
+            return OnLButtonDown(hwnd, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam), pInfo);
 
-		case WM_LBUTTONUP:
-			return OnLButtonUp(hwnd, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam), pInfo);
+        case WM_LBUTTONUP:
+            return OnLButtonUp(hwnd, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam), pInfo);
 
-		case WM_MOUSEMOVE:
-			return OnMouseMove(hwnd, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam), pInfo);
+        case WM_MOUSEMOVE:
+            return OnMouseMove(hwnd, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam), pInfo);
 
-		// Custom messages
-		case WM_SLIDER_SET_THUMB_BITMAP:
-			return OnSetThumbBitmap(hwnd, (WORD)wParam, pInfo);
+        // Custom messages
+        case WM_SLIDER_SET_THUMB_BITMAP:
+            return OnSetThumbBitmap(hwnd, (WORD)wParam, pInfo);
 
-		case WM_SLIDER_SET_BACKGROUND:
-			return OnSetBackground(hwnd, (HBRUSH)wParam, pInfo);
+        case WM_SLIDER_SET_BACKGROUND:
+            return OnSetBackground(hwnd, (HBRUSH)wParam, pInfo);
 
-		case WM_SLIDER_SET_MIN_MAX:
-			return OnSetMinMax(hwnd, (LONG)wParam, (LONG)lParam, pInfo);
+        case WM_SLIDER_SET_MIN_MAX:
+            return OnSetMinMax(hwnd, (LONG)wParam, (LONG)lParam, pInfo);
 
-		case WM_SLIDER_SET_POSITION:
-			return OnSetPosition(hwnd, (LONG)wParam, pInfo);
+        case WM_SLIDER_SET_POSITION:
+            return OnSetPosition(hwnd, (LONG)wParam, pInfo);
 
-		case WM_SLIDER_GET_POSITION:
-			return OnGetPosition(hwnd, pInfo);
+        case WM_SLIDER_GET_POSITION:
+            return OnGetPosition(hwnd, pInfo);
 
-		default:
-			return DefWindowProc(hwnd, uMsg, wParam, lParam);
-		}
+        default:
+            return DefWindowProc(hwnd, uMsg, wParam, lParam);
+        }
 
-		return 0;
-	};
+        return 0;
+    };
 
 
-	LRESULT OnCreate(HWND hwnd)
-	{
-		Slider_Info *pInfo = new Slider_Info();
+    LRESULT OnCreate(HWND hwnd)
+    {
+        Slider_Info *pInfo = new Slider_Info();
         if (!pInfo)
         {
             return (LRESULT)-1;
         }
 
-		ZeroMemory(pInfo, sizeof(Slider_Info));
+        ZeroMemory(pInfo, sizeof(Slider_Info));
 
-		pInfo->posMin = DEFAULT_MIN;
-		pInfo->posMax = DEFAULT_MAX;
-		pInfo->posThumb = DEFAULT_THUMB;
+        pInfo->posMin = DEFAULT_MIN;
+        pInfo->posMax = DEFAULT_MAX;
+        pInfo->posThumb = DEFAULT_THUMB;
 
-		pInfo->bThumbDown = FALSE;
+        pInfo->bThumbDown = FALSE;
 
-		pInfo->hBackground = CreateSolidBrush(RGB(0xFF, 0x80, 0x80));
+        pInfo->hBackground = CreateSolidBrush(RGB(0xFF, 0x80, 0x80));
 
         if (SetInfo(hwnd, pInfo))
         {
@@ -273,127 +273,127 @@ namespace SliderControl
             delete pInfo;
             return -1;
         }
-	}
+    }
 
-	LRESULT OnNcDestroy(HWND hwnd, Slider_Info *pInfo)
-	{
+    LRESULT OnNcDestroy(HWND hwnd, Slider_Info *pInfo)
+    {
         if (pInfo)
         {
-		    DeleteObject(pInfo->hBackground);
-		    DeleteObject(pInfo->hbmThumb);
-		    delete pInfo;
+            DeleteObject(pInfo->hBackground);
+            DeleteObject(pInfo->hbmThumb);
+            delete pInfo;
         }
-		return 0;
-	}
+        return 0;
+    }
 
 
-	LRESULT OnPaint(HWND hwnd, Slider_Info *pInfo)
-	{
-		PAINTSTRUCT ps;
-		HDC hdc;
+    LRESULT OnPaint(HWND hwnd, Slider_Info *pInfo)
+    {
+        PAINTSTRUCT ps;
+        HDC hdc;
 
-		hdc = BeginPaint(hwnd, &ps);
+        hdc = BeginPaint(hwnd, &ps);
 
-		// Draw the background
-		if (pInfo->hBackground)
-		{
-			FillRect(hdc, &ps.rcPaint, pInfo->hBackground);
-		}
+        // Draw the background
+        if (pInfo->hBackground)
+        {
+            FillRect(hdc, &ps.rcPaint, pInfo->hBackground);
+        }
 
-		// Draw the thumb
+        // Draw the thumb
 
-		if (pInfo->hbmThumb)
-		{
-			HDC hdcCompat = CreateCompatibleDC(hdc);
+        if (pInfo->hbmThumb)
+        {
+            HDC hdcCompat = CreateCompatibleDC(hdc);
             if (!hdcCompat)
             {
                 return (LRESULT)-1;
             }
 
-			SelectObject(hdcCompat, pInfo->hbmThumb);
+            SelectObject(hdcCompat, pInfo->hbmThumb);
 
-			BOOL bResult = BitBlt(
-				hdc,
-				pInfo->rcThumb.left,
-				pInfo->rcThumb.top,
-				pInfo->pxThumbSize.cx,
-				pInfo->pxThumbSize.cy,
-				hdcCompat,
-				0, 0,
-				SRCCOPY
-				);
+            BOOL bResult = BitBlt(
+                hdc,
+                pInfo->rcThumb.left,
+                pInfo->rcThumb.top,
+                pInfo->pxThumbSize.cx,
+                pInfo->pxThumbSize.cy,
+                hdcCompat,
+                0, 0,
+                SRCCOPY
+                );
 
-			assert(bResult);
+            assert(bResult);
 
-			DeleteDC(hdcCompat);
-		}
+            DeleteDC(hdcCompat);
+        }
 
-		EndPaint(hwnd, &ps);
-		return 0;
-	}
-
-
-	void SetSliderPosition(HWND hwnd, LONG pos, Slider_Info *pInfo)
-	{
-		// Invalidate the old thumb rect
-		InvalidateRect(hwnd, &pInfo->rcThumb, FALSE);
-
-		pInfo->posThumb = pos;
-
-		GetThumbRect(hwnd, pInfo);
-
-		// Invalidate the new thumb rect
-		InvalidateRect(hwnd, &pInfo->rcThumb, FALSE);
-	}
+        EndPaint(hwnd, &ps);
+        return 0;
+    }
 
 
+    void SetSliderPosition(HWND hwnd, LONG pos, Slider_Info *pInfo)
+    {
+        // Invalidate the old thumb rect
+        InvalidateRect(hwnd, &pInfo->rcThumb, FALSE);
 
-	LRESULT OnLButtonDown(HWND hwnd, LONG x, LONG y, Slider_Info *pInfo)
-	{
+        pInfo->posThumb = pos;
+
+        GetThumbRect(hwnd, pInfo);
+
+        // Invalidate the new thumb rect
+        InvalidateRect(hwnd, &pInfo->rcThumb, FALSE);
+    }
+
+
+
+    LRESULT OnLButtonDown(HWND hwnd, LONG x, LONG y, Slider_Info *pInfo)
+    {
         // Move the slider to the mouse position.
-		SetSliderPosition(hwnd, PixelToLogical(hwnd, x, pInfo), pInfo);
+        SetSliderPosition(hwnd, PixelToLogical(hwnd, x, pInfo), pInfo);
 
         // Set the thumb-down flag.
-		pInfo->bThumbDown = TRUE;
+        pInfo->bThumbDown = TRUE;
 
         // Start capturing mouse moves so we can update the slider position.
-		SetCapture(hwnd);
+        SetCapture(hwnd);
 
         // Notify the owner window that the control was selected.
-		NotifyParent(hwnd, SLIDER_NOTIFY_SELECT, pInfo);
+        NotifyParent(hwnd, SLIDER_NOTIFY_SELECT, pInfo);
 
-		return 0;
-	}
+        return 0;
+    }
 
-	LRESULT OnLButtonUp(HWND hwnd, LONG x, LONG y, Slider_Info *pInfo)
-	{
+    LRESULT OnLButtonUp(HWND hwnd, LONG x, LONG y, Slider_Info *pInfo)
+    {
         // Reset the thumb-down flag.
-		pInfo->bThumbDown = FALSE;
+        pInfo->bThumbDown = FALSE;
 
-		InvalidateRect(hwnd, &pInfo->rcThumb, FALSE);
+        InvalidateRect(hwnd, &pInfo->rcThumb, FALSE);
 
         // Stop capturing mouse moves.
-		ReleaseCapture();
+        ReleaseCapture();
 
         // Notify the owner window that the control was deselected.
-		NotifyParent(hwnd, SLIDER_NOTIFY_RELEASE, pInfo);
+        NotifyParent(hwnd, SLIDER_NOTIFY_RELEASE, pInfo);
 
-		return 0;
-	}
+        return 0;
+    }
 
-	LRESULT OnMouseMove(HWND hwnd, LONG x, LONG y, Slider_Info *pInfo)
-	{
+    LRESULT OnMouseMove(HWND hwnd, LONG x, LONG y, Slider_Info *pInfo)
+    {
         // If the control is selected, update the slider position
         // and notify the owner window.
-		if (pInfo->bThumbDown)
-		{
-			SetSliderPosition(hwnd, PixelToLogical(hwnd, x, pInfo), pInfo);
+        if (pInfo->bThumbDown)
+        {
+            SetSliderPosition(hwnd, PixelToLogical(hwnd, x, pInfo), pInfo);
 
-			NotifyParent(hwnd, SLIDER_NOTIFY_DRAG, pInfo);
+            NotifyParent(hwnd, SLIDER_NOTIFY_DRAG, pInfo);
 
-		}
-		return 0;
-	}
+        }
+        return 0;
+    }
 
     //--------------------------------------------------------------------------------------
     // OnSetThumbBitmap
@@ -402,32 +402,32 @@ namespace SliderControl
     // Handler for WM_SLIDER_SET_THUMB_BITMAP message.
     //--------------------------------------------------------------------------------------
 
-	LRESULT OnSetThumbBitmap(HWND hwnd, WORD nID, Slider_Info *pInfo)
-	{
-		HBITMAP hbm = LoadBitmap(GetInstance(), MAKEINTRESOURCE(nID));
+    LRESULT OnSetThumbBitmap(HWND hwnd, WORD nID, Slider_Info *pInfo)
+    {
+        HBITMAP hbm = LoadBitmap(GetInstance(), MAKEINTRESOURCE(nID));
 
-		if (hbm == NULL)
-		{
-			return FALSE;
-		}
+        if (hbm == NULL)
+        {
+            return FALSE;
+        }
 
-		BITMAP bm;
-		GetObject(hbm, sizeof(BITMAP), &bm);
+        BITMAP bm;
+        GetObject(hbm, sizeof(BITMAP), &bm);
 
-		pInfo->pxThumbSize.cx = bm.bmWidth;
-		pInfo->pxThumbSize.cy = bm.bmHeight;
+        pInfo->pxThumbSize.cx = bm.bmWidth;
+        pInfo->pxThumbSize.cy = bm.bmHeight;
 
-		if (pInfo->hbmThumb)
-		{
-			DeleteObject(pInfo->hbmThumb);
-		}
+        if (pInfo->hbmThumb)
+        {
+            DeleteObject(pInfo->hbmThumb);
+        }
 
-		pInfo->hbmThumb = hbm;
+        pInfo->hbmThumb = hbm;
 
-		GetThumbRect(hwnd, pInfo);
+        GetThumbRect(hwnd, pInfo);
 
-		return TRUE;
-	}
+        return TRUE;
+    }
 
     //--------------------------------------------------------------------------------------
     // OnSetBackground
@@ -437,16 +437,16 @@ namespace SliderControl
     //--------------------------------------------------------------------------------------
 
     LRESULT OnSetBackground(HWND hwnd, HBRUSH hBrush, Slider_Info *pInfo)
-	{
-		if (pInfo->hBackground)
-		{
-			DeleteObject(pInfo->hBackground);
-		}
+    {
+        if (pInfo->hBackground)
+        {
+            DeleteObject(pInfo->hBackground);
+        }
 
-		pInfo->hBackground = hBrush;
+        pInfo->hBackground = hBrush;
 
-		return TRUE;
-	}
+        return TRUE;
+    }
 
 
     //--------------------------------------------------------------------------------------
@@ -455,21 +455,21 @@ namespace SliderControl
     //
     // Handler for WM_SLIDER_SET_MIN_MAX message.
     //--------------------------------------------------------------------------------------
-	LRESULT OnSetMinMax(HWND hwnd, LONG posMin, LONG posMax, Slider_Info *pInfo)
-	{
-		pInfo->posMin = posMin;
-		pInfo->posMax = posMax;
+    LRESULT OnSetMinMax(HWND hwnd, LONG posMin, LONG posMax, Slider_Info *pInfo)
+    {
+        pInfo->posMin = posMin;
+        pInfo->posMax = posMax;
 
-		if (pInfo->posThumb < posMin)
-		{
-			SetSliderPosition(hwnd, posMin, pInfo);
-		}
-		else if (pInfo->posThumb > posMax)
-		{
-			SetSliderPosition(hwnd, posMax, pInfo);
-		}
-		return TRUE;
-	}
+        if (pInfo->posThumb < posMin)
+        {
+            SetSliderPosition(hwnd, posMin, pInfo);
+        }
+        else if (pInfo->posThumb > posMax)
+        {
+            SetSliderPosition(hwnd, posMax, pInfo);
+        }
+        return TRUE;
+    }
 
     //--------------------------------------------------------------------------------------
     // OnSetPosition
@@ -479,17 +479,17 @@ namespace SliderControl
     //--------------------------------------------------------------------------------------
 
     LRESULT OnSetPosition(HWND hwnd, LONG pos, Slider_Info *pInfo)
-	{
+    {
         if (pos < pInfo->posMin || pos > pInfo->posMax)
         {
             return FALSE;
         }
         else
         {
-    		SetSliderPosition(hwnd, pos, pInfo);
-	    	return TRUE;
+            SetSliderPosition(hwnd, pos, pInfo);
+            return TRUE;
         }
-	}
+    }
 
     //--------------------------------------------------------------------------------------
     // OnSetPosition
@@ -499,9 +499,9 @@ namespace SliderControl
     //--------------------------------------------------------------------------------------
 
     LRESULT OnGetPosition(HWND hwnd, Slider_Info *pInfo)
-	{
-		return pInfo->posThumb;
-	}
+    {
+        return pInfo->posThumb;
+    }
 
 }  // namespace SliderControl
 
@@ -517,26 +517,26 @@ namespace SliderControl
 
 HRESULT Slider_Init()
 {
-	WNDCLASSEX wce;
-	ZeroMemory(&wce, sizeof(wce));
+    WNDCLASSEX wce;
+    ZeroMemory(&wce, sizeof(wce));
 
-	wce.cbSize = sizeof(WNDCLASSEX);
-	wce.lpfnWndProc = SliderControl::Slider_WndProc;
-	wce.hInstance = GetInstance();
-	wce.lpszClassName = SliderControl::ClassName;
-	wce.cbWndExtra = sizeof(SliderControl::Slider_Info);		// Reserve space for slider instance data
+    wce.cbSize = sizeof(WNDCLASSEX);
+    wce.lpfnWndProc = SliderControl::Slider_WndProc;
+    wce.hInstance = GetInstance();
+    wce.lpszClassName = SliderControl::ClassName;
+    wce.cbWndExtra = sizeof(SliderControl::Slider_Info);        // Reserve space for slider instance data
 
 
-	ATOM a = RegisterClassEx(&wce);
+    ATOM a = RegisterClassEx(&wce);
 
-	if (a == 0)
-	{
-		return __HRESULT_FROM_WIN32(GetLastError());
-	}
-	else
-	{
-		return S_OK;
-	}
+    if (a == 0)
+    {
+        return __HRESULT_FROM_WIN32(GetLastError());
+    }
+    else
+    {
+        return S_OK;
+    }
 }
 
 //--------------------------------------------------------------------------------------
@@ -546,7 +546,7 @@ HRESULT Slider_Init()
 
 HRESULT Slider_Create(HWND hParent, const Rect rc, DWORD_PTR id, HWND *pHwnd)
 {
-	HINSTANCE hInstance = GetInstance();
+    HINSTANCE hInstance = GetInstance();
 
     if (!hInstance)
     {
@@ -554,26 +554,26 @@ HRESULT Slider_Create(HWND hParent, const Rect rc, DWORD_PTR id, HWND *pHwnd)
     }
 
     HWND hwnd = CreateWindowEx(
-		WS_EX_WINDOWEDGE,
-		SliderControl::ClassName,
-		NULL,
-		WS_CHILD | WS_CLIPCHILDREN | WS_CLIPSIBLINGS,
-		rc.left, rc.top, rc.Width(), rc.Height(),
-		hParent,
-		(HMENU)id,
-		hInstance,
-		NULL
-		);
+        WS_EX_WINDOWEDGE,
+        SliderControl::ClassName,
+        NULL,
+        WS_CHILD | WS_CLIPCHILDREN | WS_CLIPSIBLINGS,
+        rc.left, rc.top, rc.Width(), rc.Height(),
+        hParent,
+        (HMENU)id,
+        hInstance,
+        NULL
+        );
 
-	if (hwnd == 0)
-	{
-		return E_FAIL;
-	}
-	else
-	{
-		*pHwnd = hwnd;
-		return S_OK;
-	}
+    if (hwnd == 0)
+    {
+        return E_FAIL;
+    }
+    else
+    {
+        *pHwnd = hwnd;
+        return S_OK;
+    }
 }
 
 
@@ -581,20 +581,20 @@ HRESULT Slider_Create(HWND hParent, const Rect rc, DWORD_PTR id, HWND *pHwnd)
 
 HRESULT Slider::Create(HWND hParent, const Rect& rcSize, DWORD_PTR id)
 {
-	if (m_hwnd != 0)
-	{
-		return E_FAIL;
-	}
+    if (m_hwnd != 0)
+    {
+        return E_FAIL;
+    }
 
-	return Slider_Create(hParent, rcSize, id, &m_hwnd);
+    return Slider_Create(hParent, rcSize, id, &m_hwnd);
 }
 
 
 HRESULT Slider::SetThumbBitmap(UINT nId)
 {
-	if (SendMessage(WM_SLIDER_SET_THUMB_BITMAP, nId, 0))
+    if (SendMessage(WM_SLIDER_SET_THUMB_BITMAP, nId, 0))
     {
-    	return S_OK;
+        return S_OK;
     }
     else
     {
@@ -604,9 +604,9 @@ HRESULT Slider::SetThumbBitmap(UINT nId)
 
 HRESULT Slider::SetBackground(HBRUSH hBackground)
 {
-	if (SendMessage(WM_SLIDER_SET_BACKGROUND, (WPARAM)hBackground, 0))
+    if (SendMessage(WM_SLIDER_SET_BACKGROUND, (WPARAM)hBackground, 0))
     {
-    	return S_OK;
+        return S_OK;
     }
     else
     {
@@ -616,14 +616,14 @@ HRESULT Slider::SetBackground(HBRUSH hBackground)
 
 LONG Slider::GetPosition() const
 {
-	return (LONG)SendMessage(WM_SLIDER_GET_POSITION, 0, 0);
+    return (LONG)SendMessage(WM_SLIDER_GET_POSITION, 0, 0);
 }
 
 HRESULT Slider::SetPosition(LONG pos)
 {
-	if (SendMessage(WM_SLIDER_SET_POSITION, pos, 0))
+    if (SendMessage(WM_SLIDER_SET_POSITION, pos, 0))
     {
-    	return S_OK;
+        return S_OK;
     }
     else
     {
@@ -633,9 +633,9 @@ HRESULT Slider::SetPosition(LONG pos)
 
 HRESULT Slider::SetRange(LONG min, LONG max)
 {
-	if (SendMessage(WM_SLIDER_SET_MIN_MAX, min, max))
+    if (SendMessage(WM_SLIDER_SET_MIN_MAX, min, max))
     {
-    	return S_OK;
+        return S_OK;
     }
     else
     {
