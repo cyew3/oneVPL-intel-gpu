@@ -229,18 +229,6 @@ cl_int OpenCLFilter::InitD3D9SurfaceSharingExtension()
 {
     cl_int error = CL_SUCCESS;
 
-    // Check if surface sharing is available
-    size_t  len = 0;
-    const size_t max_string_size = 1024;
-    char extensions[max_string_size];
-    error = clGetPlatformInfo(m_clplatform, CL_PLATFORM_EXTENSIONS, max_string_size, extensions, &len);
-    log.info() << "OpenCLFilter: Platform extensions: " << extensions << endl;
-    if(NULL == strstr(extensions, "cl_intel_va_api_media_sharing"))
-    {
-        log.error() << "OpenCLFilter: VAAPI media sharing is not available!" << endl;
-        return CL_INVALID_PLATFORM;
-    }
-
     // Hook up the d3d sharing extension functions that we need
     INIT_CL_EXT_FUNC(clGetDeviceIDsFromVA_APIMediaAdapterINTEL);
     INIT_CL_EXT_FUNC(clCreateFromVA_APIMediaSurfaceINTEL);
@@ -269,9 +257,13 @@ cl_int OpenCLFilter::InitDevice()
     error = clGetDeviceIDsFromVA_APIMediaAdapterINTEL(m_clplatform, CL_VA_API_DISPLAY_INTEL,
                                         m_vaDisplay, CL_PREFERRED_DEVICES_FOR_VA_API_INTEL, 1, &m_cldevice, &nDevices);
     if(error) {
-        log.error() << "OpenCLFilter: clGetDeviceIDsFromDX9INTEL failed. Error code: " << error << endl;
+        log.error() << "OpenCLFilter: clGetDeviceIDsFromVA_APIMediaAdapterINTEL failed. Error code: " << error << endl;
         return error;
     }
+
+    if (!nDevices)
+        return CL_INVALID_PLATFORM;
+
 
     // Initialize the shared context
     cl_context_properties props[] = { CL_CONTEXT_VA_API_DISPLAY_INTEL, (cl_context_properties) m_vaDisplay, CL_CONTEXT_INTEROP_USER_SYNC, 1, 0};
