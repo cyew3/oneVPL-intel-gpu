@@ -1,6 +1,6 @@
 #include "ts_common.h"
 
-std::ostream g_tsLog(std::cout.rdbuf());
+tsTrace      g_tsLog(std::cout.rdbuf());
 tsStatus     g_tsStatus;
 mfxIMPL      g_tsImpl    = MFX_IMPL_AUTO;
 mfxVersion   g_tsVersion = {MFX_VERSION_MINOR, MFX_VERSION_MAJOR};
@@ -20,7 +20,7 @@ std::string ENV(const char* name, const char* def)
     if(cv)
         sv = cv;
 
-    g_tsLog << "ENV: " << name << " = " << sv << std::endl;
+    g_tsLog << "ENV: " << name << " = " << sv << "\n";
 
     return sv;
 }
@@ -73,14 +73,14 @@ bool tsStatus::check()
     g_tsLog << "CHECK STATUS(expected " << m_expected << "): " << m_status << " -- ";
     if(m_status != m_expected)
     {
-        g_tsLog << "FAILED" << std::endl;
+        g_tsLog << "FAILED\n";
         m_expected = MFX_ERR_NONE;
         ADD_FAILURE() << "returned status is wrong";
         if(m_throw_exceptions)
             throw tsFAIL;
         return m_failed = true;
     }
-    g_tsLog << "OK" << std::endl;
+    g_tsLog << "OK\n";
     m_expected = MFX_ERR_NONE;
     return m_failed;
 }

@@ -164,13 +164,17 @@
     <ClInclude Include="include\gmock\ts_alloc.h" />
     <ClInclude Include="include\gmock\ts_encoder.h" />
     <ClInclude Include="include\gmock\ts_ext_buffers.h" />
+    <ClInclude Include="include\gmock\ts_ext_buffers_decl.h" />
     <ClInclude Include="include\gmock\ts_parser.h" />
     <ClInclude Include="include\gmock\ts_session.h" />
+    <ClInclude Include="include\gmock\ts_struct.h" />
+    <ClInclude Include="include\gmock\ts_struct_decl.h" />
     <ClInclude Include="include\gmock\ts_surface.h" />
+    <ClInclude Include="include\gmock\ts_trace.h" />
     <ClInclude Include="include\test_sample_allocator.h" />
-    <ClInclude Include="include\test_trace.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="src\gmock\test_suites\avce_max_bins.cpp" />
     <ClCompile Include="src\gmock\test_suites\vp8e_encode_frame_async.cpp" />
     <ClCompile Include="src\gmock\test_suites\vp8e_get_video_param.cpp" />
     <ClCompile Include="src\gmock\test_suites\vp8e_init.cpp" />
@@ -181,9 +185,10 @@
     <ClCompile Include="src\gmock\ts_common.cpp" />
     <ClCompile Include="src\gmock\ts_encoder.cpp" />
     <ClCompile Include="src\gmock\ts_session.cpp" />
+    <ClCompile Include="src\gmock\ts_struct.cpp" />
     <ClCompile Include="src\gmock\ts_surface.cpp" />
+    <ClCompile Include="src\gmock\ts_trace.cpp" />
     <ClCompile Include="src\test_sample_allocator.cpp" />
-    <ClCompile Include="src\test_trace.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\opensource\mfx_dispatch\mfx_dispatch_trace_lib.vcxproj">

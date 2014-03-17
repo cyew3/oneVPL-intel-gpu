@@ -239,7 +239,7 @@ mfxStatus tsVideoEncoder::AllocBitstream(mfxU32 size)
         }
     }
 
-    g_tsLog << "ALLOC BITSTREAM OF SIZE " << size << std::endl;
+    g_tsLog << "ALLOC BITSTREAM OF SIZE " << size << "\n";
 
     mfxMemId mid = 0;
     TRACE_FUNC4((*m_buffer_allocator.Alloc), &m_buffer_allocator, size, (MFX_MEMTYPE_SYSTEM_MEMORY|MFX_MEMTYPE_FROM_ENCODE), &mid);
@@ -322,7 +322,7 @@ mfxStatus tsVideoEncoder::EncodeFrames(mfxU32 n)
         }
     }
 
-    g_tsLog << encoded << " FRAMES ENCODED" << std::endl;
+    g_tsLog << encoded << " FRAMES ENCODED\n";
     
     return g_tsStatus.get();
 }

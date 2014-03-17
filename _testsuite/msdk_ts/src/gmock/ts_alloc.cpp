@@ -174,7 +174,7 @@ mfxFrameSurface1* tsSurfacePool::GetSurface()
             return &(*it);
         it++;
     }
-    g_tsLog << "ALL SURFACES ARE LOCKED!" << std::endl;
+    g_tsLog << "ALL SURFACES ARE LOCKED!\n";
     g_tsStatus.check( MFX_ERR_NULL_PTR );
 
     return 0;

@@ -10,7 +10,10 @@ tsReader::tsReader(const char* fname)
     : mfxBitstream()
     , m_file(0)
 {
-    m_file = fopen(fname, "rb");
+    
+#pragma warning(disable:4996)
+    m_file = fopen(fname, "rb");    
+#pragma warning(default:4996)
 }
 
 tsReader::~tsReader()
@@ -41,7 +44,10 @@ bool tsReader::Read(mfxU8* dst, mfxU32 size)
 
 tsBitstreamWriter::tsBitstreamWriter(const char* fname)
 {
-    m_file = fopen(fname, "wb");
+    
+#pragma warning(disable:4996)
+    m_file = fopen(fname, "wb");  
+#pragma warning(default:4996)
 }
 
 tsBitstreamWriter::~tsBitstreamWriter()

@@ -17,9 +17,6 @@
     <ClInclude Include="include\test_sample_allocator.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\test_trace.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="include\gmock\ts_common.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -44,12 +41,21 @@
     <ClInclude Include="include\gmock\ts_bitstream.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="include\gmock\ts_struct.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\gmock\ts_struct_decl.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\gmock\ts_trace.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\gmock\ts_ext_buffers_decl.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\test_sample_allocator.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\test_trace.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\gmock\ts_common.cpp">
@@ -83,6 +89,15 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\gmock\test_suites\vp8e_reset.cpp">
+      <Filter>Source Files\test_suites</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gmock\ts_struct.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gmock\ts_trace.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\avce_max_bins.cpp">
       <Filter>Source Files\test_suites</Filter>
     </ClCompile>
   </ItemGroup>
