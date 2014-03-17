@@ -12,7 +12,7 @@
 
 #include "mfx_h265_sao_filter.h"
 #include "mfx_h265_ctb.h"
-
+#include <math.h>
 
 namespace H265Enc {
 
