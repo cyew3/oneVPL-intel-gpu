@@ -134,8 +134,8 @@ Ipp64s GetDistortion(
 } // Ipp64s GetDistortion(...)
 
 
-//aya: should be redesigned ASAP
-inline int EstimateIterOffset(
+//aya: could be redesigned by applying real RDO
+inline int GetBestOffset(
     int typeIdx,
     int classIdx,
     Ipp64f lambda,
@@ -146,10 +146,10 @@ inline int EstimateIterOffset(
     Ipp64s diffSum,
 
     int shift,
+    int offsetTh,
 
-    Ipp64s& bestDist,
-    Ipp64f& bestCost,
-    int offsetTh )
+    Ipp64f* bestCost = NULL,
+    Ipp64s* bestDist = NULL)// out
 {
     int iterOffset = inputOffset;
     int outputOffset = 0;
@@ -157,188 +157,145 @@ inline int EstimateIterOffset(
 
     Ipp64s tempDist, tempRate;
     Ipp64f cost, minCost;
-
-    // Assuming sending quantized value 0 results in zero offset and sending the value zero needs 1 bit.
-    // entropy coder can be used to measure the exact rate here.
+    
     minCost = lambda;
 
     const int deltaRate = (typeIdx == SAO_TYPE_BO) ? 2 : 1;
     while (iterOffset != 0)
     {
-        // Calculate the bits required for signaling the offset
         tempRate = abs(iterOffset) + deltaRate;
         if (abs(iterOffset) == offsetTh) //inclusive
         {
             tempRate --;
         }
-
-        // Do the dequantization before distortion calculation
+     
         testOffset  = iterOffset;
-
         tempDist    = EstimateDeltaDist( count, testOffset, diffSum, shift);
-
         cost    = (Ipp64f)tempDist + lambda * (Ipp64f) tempRate;
 
         if(cost < minCost)
         {
             minCost = cost;
             outputOffset = iterOffset;
-            bestDist = tempDist;
-            bestCost = cost;
+            if(bestDist) *bestDist = tempDist;
+            if(bestCost) *bestCost = cost;
         }
-
-        // offset update
+        
         iterOffset = (iterOffset > 0) ? (iterOffset-1) : (iterOffset+1);
     }
 
     return outputOffset;
 
-} // int EstimateIterOffset( ... )
+} // int GetBestOffset( ... )
 
+static int tab_numSaoClass[] = {NUM_SAO_EO_CLASSES, NUM_SAO_EO_CLASSES, NUM_SAO_EO_CLASSES, NUM_SAO_EO_CLASSES, NUM_SAO_BO_CLASSES};
 
 void GetQuantOffsets(
-    int type_idx,
+    int typeIdx,
     MFX_HEVC_PP::SaoCtuStatistics& statData,
     int* quantOffsets,
     int& typeAuxInfo,
     Ipp64f lambda)
 {
-    int bitDepth = 8;
-    int shift = 2 * DISTORTION_PRECISION_ADJUSTMENT(bitDepth-8);
-    int offsetTh = SAO_MAX_OFFSET_QVAL;
-
     memset(quantOffsets, 0, sizeof(int)*MAX_NUM_SAO_CLASSES);
+    
+    int numClasses = tab_numSaoClass[typeIdx];
+    int classIdx;
 
-    //derive initial offsets
-    int numClasses = (type_idx == SAO_TYPE_BO) ? ((int)NUM_SAO_BO_CLASSES) : ((int)NUM_SAO_EO_CLASSES);
-
-    for(int classIdx=0; classIdx < numClasses; classIdx++)
+    for(classIdx=0; classIdx < numClasses; classIdx++)
     {
-        if( (type_idx != SAO_TYPE_BO) && (classIdx==SAO_CLASS_EO_PLAIN)  )
+        if( 0 == statData.count[classIdx] || (SAO_CLASS_EO_PLAIN == classIdx && SAO_TYPE_BO != typeIdx) )
         {
             continue; //offset will be zero
         }
 
-        if(statData.count[classIdx] == 0)
-        {
-            continue; //offset will be zero
-        }
+        Ipp64f meanDiff = (Ipp64f)statData.diff[classIdx] / (Ipp64f)statData.count[classIdx];
 
-        Ipp64f mean_diff = (Ipp64f)statData.diff[classIdx] / (Ipp64f)statData.count[classIdx];
+        int offset = (int)floor(meanDiff+0.5); //(meanDiff) >=0 ? (int)(meanDiff+0.5) : (int)(meanDiff-0.5);
 
-        quantOffsets[classIdx] = (mean_diff) >=0 ? (int)(mean_diff+0.5) : (int)(mean_diff-0.5);
-
-        quantOffsets[classIdx] = Clip3(-offsetTh, offsetTh, quantOffsets[classIdx]);
+        quantOffsets[classIdx] = Clip3(-SAO_MAX_OFFSET_QVAL, SAO_MAX_OFFSET_QVAL, offset);
     }
-
-    // adjust offsets
-    switch(type_idx)
+    
+    if(SAO_TYPE_BO == typeIdx)
     {
-        case SAO_TYPE_EO_0:
-        case SAO_TYPE_EO_90:
-        case SAO_TYPE_EO_135:
-        case SAO_TYPE_EO_45:
+        Ipp64f cost[NUM_SAO_BO_CLASSES];
+        for(int classIdx=0; classIdx< NUM_SAO_BO_CLASSES; classIdx++)
         {
-            Ipp64s classDist;
-            Ipp64f classCost;
-            for(int classIdx=0; classIdx<NUM_SAO_EO_CLASSES; classIdx++)
+            cost[classIdx]= lambda;
+            if( quantOffsets[classIdx] != 0 )
             {
-                if(classIdx==SAO_CLASS_EO_FULL_VALLEY && quantOffsets[classIdx] < 0) quantOffsets[classIdx] =0;
-                if(classIdx==SAO_CLASS_EO_HALF_VALLEY && quantOffsets[classIdx] < 0) quantOffsets[classIdx] =0;
-                if(classIdx==SAO_CLASS_EO_HALF_PEAK   && quantOffsets[classIdx] > 0) quantOffsets[classIdx] =0;
-                if(classIdx==SAO_CLASS_EO_FULL_PEAK   && quantOffsets[classIdx] > 0) quantOffsets[classIdx] =0;
+                quantOffsets[classIdx] = GetBestOffset(
+                    typeIdx,
+                    classIdx,
+                    lambda,
+                    quantOffsets[classIdx],
+                    statData.count[classIdx],
+                    statData.diff[classIdx],
 
-                if( quantOffsets[classIdx] != 0 )
-                {
-                    quantOffsets[classIdx] = EstimateIterOffset(
-                        type_idx,
-                        classIdx,
-                        lambda,
-                        quantOffsets[classIdx],
-                        statData.count[classIdx],
-                        statData.diff[classIdx],
+                    0,
+                    SAO_MAX_OFFSET_QVAL,
 
-                        shift,
-
-                        classDist,
-                        classCost,
-                        offsetTh );
-                }
+                    cost + classIdx);
             }
-
-            typeAuxInfo =0;
         }
-        break;
-
-        case SAO_TYPE_BO:
+        
+        Ipp64f minCost = MAX_DOUBLE, bandCost;
+        int band, startBand = 0;
+        for(band=0; band < (NUM_SAO_BO_CLASSES - 4 + 1); band++)
         {
-            Ipp64s  distBOClasses[NUM_SAO_BO_CLASSES];
-            Ipp64f costBOClasses[NUM_SAO_BO_CLASSES];
+            bandCost  = cost[band  ] + cost[band+1] + cost[band+2] + cost[band+3];
 
-            memset(distBOClasses, 0, sizeof(Ipp64s)*NUM_SAO_BO_CLASSES);
-
-            for(int classIdx=0; classIdx< NUM_SAO_BO_CLASSES; classIdx++)
+            if(bandCost < minCost)
             {
-                costBOClasses[classIdx]= lambda;
-                if( quantOffsets[classIdx] != 0 )
-                {
-                    quantOffsets[classIdx] = EstimateIterOffset(
-                        type_idx,
-                        classIdx,
-                        lambda,
-                        quantOffsets[classIdx],
-                        statData.count[classIdx],
-                        statData.diff[classIdx],
-
-                        shift,
-
-                        distBOClasses[classIdx],
-                        costBOClasses[classIdx],
-                        offsetTh );
-                }
+                minCost = bandCost;
+                startBand = band;
             }
-
-            //decide the starting band index
-            Ipp64f minCost = MAX_DOUBLE, cost;
-            int band, startBand = 0;
-            for(band=0; band < (NUM_SAO_BO_CLASSES - 4 + 1); band++)
-            {
-                cost  = costBOClasses[band  ];
-                cost += costBOClasses[band+1];
-                cost += costBOClasses[band+2];
-                cost += costBOClasses[band+3];
-
-                if(cost < minCost)
-                {
-                    minCost = cost;
-                    startBand = band;
-                }
-            }
-
-            // clear unused bands
-            for(band = 0; band < startBand; band++)
-            {
-                quantOffsets[band] = 0;
-            }
-            for(band = startBand + 4; band < NUM_SAO_BO_CLASSES; band++)
-            {
-                quantOffsets[band] = 0;
-            }
-
-            typeAuxInfo = startBand;
         }
-        break;
 
-        default:
+        // clear unused bands
+        for(band = 0; band < startBand; band++)
         {
-            VM_ASSERT(!"Not a supported type");
+            quantOffsets[band] = 0;
         }
+        for(band = startBand + 4; band < NUM_SAO_BO_CLASSES; band++)
+        {
+            quantOffsets[band] = 0;
+        }
+
+        typeAuxInfo = startBand;
+    }
+    else
+    {
+        for(classIdx=0; classIdx<NUM_SAO_EO_CLASSES; classIdx++)
+        {
+            if(
+                SAO_CLASS_EO_FULL_PEAK == classIdx && quantOffsets[classIdx] > 0   ||
+                SAO_CLASS_EO_HALF_PEAK == classIdx && quantOffsets[classIdx] > 0   ||
+                SAO_CLASS_EO_FULL_VALLEY == classIdx && quantOffsets[classIdx] < 0 ||
+                SAO_CLASS_EO_HALF_VALLEY == classIdx && quantOffsets[classIdx] < 0) 
+            {
+                quantOffsets[classIdx] =0;
+            }
+
+            if( quantOffsets[classIdx] != 0 )
+            {
+                quantOffsets[classIdx] = GetBestOffset(
+                    typeIdx,
+                    classIdx,
+                    lambda,
+                    quantOffsets[classIdx],
+                    statData.count[classIdx],
+                    statData.diff[classIdx],
+
+                    0,
+                    SAO_MAX_OFFSET_QVAL);
+            }
+        }
+
+        typeAuxInfo =0;
     }
 
 } // void GetQuantOffsets(...)
-
-
-
 
 // --------------------------------------------------------
 void GetCtuStatistics_RBoundary_Internal(
