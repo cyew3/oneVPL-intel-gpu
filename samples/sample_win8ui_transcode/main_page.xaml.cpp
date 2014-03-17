@@ -20,10 +20,6 @@
 
 using namespace sample_win8ui_transcode;
 
-String^ MainPage::codecProperty       = "System.Video.Compression";
-String^ MainPage::frameWidthProperty  = "System.Video.FrameWidth";
-String^ MainPage::frameHeightProperty = "System.Video.FrameHeight";
-
 #define RETURN_ON_FAIL(hr) \
 { \
     if(FAILED(hr)) \
@@ -100,109 +96,85 @@ void MainPage::SelectFileButtonClick(Platform::Object^ pSender, Windows::UI::Xam
             try
             {
                 m_pInputFile = pInputFile;
-                if(m_pInputFile == nullptr)
+                if(m_pInputFile != nullptr)
                 {
-                    DisplayError("Can't open file.");
+                    return pInputFile->OpenAsync(FileAccessMode::Read);
+                }
+                else
+                {
+                    statusTextBlock->Foreground = ref new Windows::UI::Xaml::Media::SolidColorBrush(Windows::UI::Colors::Green);
+                    statusTextBlock->Text += "\nPlease, select file.";
+                }
+            }
+            catch (Platform::Exception^ pException)
+            {
+                DisplayError(pException->Message);
+            }
+            cancel_current_task();
+        }).then(
+            [this](IRandomAccessStream^ pInputStream)
+        {
+            try
+            {
+                HRESULT hr = S_OK;
+                ComPtr<IMFByteStream> pInputByteStream;
+                inputVideoMediaElement->SetSource(pInputStream, m_pInputFile->ContentType);
+
+                hr = MFCreateMFByteStreamOnStreamEx((IUnknown*)pInputStream, &pInputByteStream);
+                if (FAILED(hr))
+                {
+                    DisplayError("Can't create the byte stream from the input stream.");
                     cancel_current_task();
                 }
-                task<FileProperties::VideoProperties^> getVideoPropertiesTask(pInputFile->Properties->GetVideoPropertiesAsync());
-                getVideoPropertiesTask.then([this](FileProperties::VideoProperties^ pVideoProperties)
+                hr = CreateD3D11DeviceManager();
+                if (FAILED(hr))
                 {
-                    auto propertiesName = ref new Vector<String^>();
-                    propertiesName->Append(codecProperty);
-                    propertiesName->Append(frameWidthProperty);
-                    propertiesName->Append(frameHeightProperty);
-                    return pVideoProperties->RetrievePropertiesAsync(propertiesName);
-                }).then([this](IMap<String^, Object^>^ extraProperties)
+                    DisplayError("Can't create the D3D11 device manager.");
+                    cancel_current_task();
+                }
+                ComPtr<IMFAttributes> pMediaAttributes;
+                hr = MFCreateAttributes(&pMediaAttributes,1);
+                if (FAILED(hr))
                 {
-                    auto codecPropertyValue = extraProperties->Lookup(codecProperty);
-                    auto frameWidthPropertyValue = extraProperties->Lookup(frameWidthProperty);
-                    auto frameHeightPropertyValue = extraProperties->Lookup(frameHeightProperty);
-                    if (codecPropertyValue != nullptr && frameWidthPropertyValue != nullptr && frameHeightPropertyValue != nullptr)
-                    {
-                        GUID codec;
-                        HRESULT hr = CLSIDFromString(codecPropertyValue->ToString()->Data(), &codec);
-                        if (SUCCEEDED(hr) &&
-                            (codec == MFVideoFormat_H264 || codec == MFVideoFormat_H264_ES || codec == MFVideoFormat_MPG1 || codec == MFVideoFormat_MPEG2) &&
-                            ((UINT32) frameWidthPropertyValue > 1920 || (UINT32) frameHeightPropertyValue > 1088))
-                        {
-                            DisplayError("This resolution is not supported for this codec.");
-                            cancel_current_task();
-                        }
-                    }
-                }).then([this]()
+                    DisplayError("Can't create the attributes for the source reader.");
+                    selectFileButton->IsEnabled = true;
+                    cancel_current_task();
+                }
+                hr = pMediaAttributes->SetUINT32(MF_READWRITE_ENABLE_HARDWARE_TRANSFORMS, true);
+                if (FAILED(hr))
                 {
-                    return m_pInputFile->OpenAsync(FileAccessMode::Read);
-                }).then(
-                    [this](IRandomAccessStream^ pInputStream)
+                    DisplayError("Can't add the attribute to the source reader attributes.");
+                    selectFileButton->IsEnabled = true;
+                    cancel_current_task();
+                }
+                hr = pMediaAttributes->SetUINT32(MF_SOURCE_READER_ENABLE_ADVANCED_VIDEO_PROCESSING, true);
+                if (FAILED(hr))
                 {
-                    try
-                    {
-                        HRESULT hr = S_OK;
-                        ComPtr<IMFByteStream> pInputByteStream;
-                        inputVideoMediaElement->SetSource(pInputStream, m_pInputFile->ContentType);
-
-                        hr = MFCreateMFByteStreamOnStreamEx((IUnknown*)pInputStream, &pInputByteStream);
-                        if (FAILED(hr))
-                        {
-                            DisplayError("Can't create the byte stream from the input stream.");
-                            cancel_current_task();
-                        }
-                        hr = CreateD3D11DeviceManager();
-                        if (FAILED(hr))
-                        {
-                            DisplayError("Can't create the D3D11 device manager.");
-                            cancel_current_task();
-                        }
-                        ComPtr<IMFAttributes> pMediaAttributes;
-                        hr = MFCreateAttributes(&pMediaAttributes,1);
-                        if (FAILED(hr))
-                        {
-                            DisplayError("Can't create the attributes for the source reader.");
-                            selectFileButton->IsEnabled = true;
-                            cancel_current_task();
-                        }
-                        hr = pMediaAttributes->SetUINT32(MF_READWRITE_ENABLE_HARDWARE_TRANSFORMS, true);
-                        if (FAILED(hr))
-                        {
-                            DisplayError("Can't add the attribute to the source reader attributes.");
-                            selectFileButton->IsEnabled = true;
-                            cancel_current_task();
-                        }
-                        hr = pMediaAttributes->SetUINT32(MF_SOURCE_READER_ENABLE_ADVANCED_VIDEO_PROCESSING, true);
-                        if (FAILED(hr))
-                        {
-                            DisplayError("Can't add the attribute to the source reader attributes.");
-                            selectFileButton->IsEnabled = true;
-                            cancel_current_task();
-                        }
-                        hr = pMediaAttributes->SetUnknown(MF_SOURCE_READER_D3D_MANAGER, m_deviceManager.Get());
-                        if (FAILED(hr))
-                        {
-                            DisplayError("Can't add the attribute to the source reader attributes.");
-                            selectFileButton->IsEnabled = true;
-                            cancel_current_task();
-                        }
-                        hr = MFCreateSourceReaderFromByteStream(pInputByteStream.Get(), pMediaAttributes.Get(), &m_pSourceReader);
-                        if (FAILED(hr))
-                        {
-                            DisplayError("Can't create the source reader from the byte stream.");
-                            cancel_current_task();
-                        }
-                        hr = SetDefaultParams();
-                        if (FAILED(hr))
-                        {
-                            DisplayError("Can't set default params.");
-                            cancel_current_task();
-                        }
-                        EnableElements(true);
-                        EnablePlayButtons();
-                    }
-                    catch (Platform::Exception^ pException)
-                    {
-                        DisplayError(pException->Message);
-                    }
-                });
+                    DisplayError("Can't add the attribute to the source reader attributes.");
+                    selectFileButton->IsEnabled = true;
+                    cancel_current_task();
+                }
+                hr = pMediaAttributes->SetUnknown(MF_SOURCE_READER_D3D_MANAGER, m_deviceManager.Get());
+                if (FAILED(hr))
+                {
+                    DisplayError("Can't add the attribute to the source reader attributes.");
+                    selectFileButton->IsEnabled = true;
+                    cancel_current_task();
+                }
+                hr = MFCreateSourceReaderFromByteStream(pInputByteStream.Get(), pMediaAttributes.Get(), &m_pSourceReader);
+                if (FAILED(hr))
+                {
+                    DisplayError("Can't create the source reader from the byte stream.");
+                    cancel_current_task();
+                }
+                hr = SetDefaultParams();
+                if (FAILED(hr))
+                {
+                    DisplayError("Can't set default params.");
+                    cancel_current_task();
+                }
+                EnableElements(true);
+                EnablePlayButtons();
             }
             catch (Platform::Exception^ pException)
             {
