@@ -310,6 +310,11 @@ mfxStatus DISPATCHER_EXPOSED_PREFIX(MFXInit)(mfxIMPL impl, mfxVersion *pVer, mfx
             } 
             else 
             {
+                // Registering default plugins
+                //TODO:     MFXDefaultPlugins(currentAPIVersion)
+                MFX::MFXDefaultPlugins defaultPugins(apiVerActual, pHandle, implMethod);
+                allocatedHandle->pluginHive.insert(allocatedHandle->pluginHive.end(), defaultPugins.begin(), defaultPugins.end());
+
                 //loaded HW plugins in subkey of library
                 const msdk_disp_char *subkeyName = NULL;
                 if (libIterator.GetSubKeyName(subkeyName))

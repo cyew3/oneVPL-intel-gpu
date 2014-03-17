@@ -32,14 +32,18 @@ File Name: mfx_plugin_hive_linux.cpp
 
 #include "mfx_plugin_hive.h"
 #include "mfx_library_iterator.h"
+#include "mfx_dispatcher.h"
 #include "mfx_dispatcher_log.h"
-
+#include "mfx_load_dll.h"
 #include "mfx_plugin_cfg_parser.h"
+#include "mfx_default_plugins.h"
+
 #include <dirent.h>
 #include <ctype.h>
 #include <stdlib.h>
 #include <unistd.h>
-
+#include <dlfcn.h>
+#include <sys/stat.h>
 
 #define TRACE_HIVE_ERROR(str, ...) DISPATCHER_LOG_ERROR((("[HIVE]: "str), __VA_ARGS__))
 #define TRACE_HIVE_INFO(str, ...) DISPATCHER_LOG_INFO((("[HIVE]: "str), __VA_ARGS__))
@@ -72,6 +76,7 @@ namespace
     const char pluginSearchPattern[] = "????????????????????????????????";
     const mfxU32 pluginCfgFileNameLen = 10;
     const mfxU32 pluginDirNameLen = 32;
+    const mfxU32 defaultPluginNameLen = 25;
     const mfxU32 charsPermfxU8 = 2;
     const mfxU32 slashLen = 1;
     enum 
@@ -353,6 +358,58 @@ MFXPluginsInFS::MFXPluginsInFS(mfxVersion currentAPIVersion)
 
         }
         free(namelist);
+    }
+}
+
+MFXDefaultPlugins::MFXDefaultPlugins(mfxVersion currentAPIVersion, MFX_DISP_HANDLE * hdl, int implType)
+    : MFXPluginStorageBase(currentAPIVersion)
+{    
+    msdk_disp_char libModuleName[MAX_PLUGIN_PATH];
+
+    Dl_info  DlInfo;
+    int  nRet;
+
+    if ((nRet = dladdr((const void *)hdl->callTable[eMFXInit], &DlInfo)) == 0)
+    {
+        TRACE_HIVE_ERROR("dladdr() reported an error: %s\n", dlerror());
+        return;
+    }
+    msdk_disp_char_cpy_s(libModuleName, sizeof(libModuleName), DlInfo.dli_sname);
+
+    msdk_disp_char *lastSlashPos = strrchr(libModuleName, '/');
+    if (!lastSlashPos) {
+        lastSlashPos = libModuleName;
+    }
+    mfxU32 executableDirLen = (mfxU32)(lastSlashPos - libModuleName) + slashLen;
+    if (executableDirLen + defaultPluginNameLen >= MAX_PLUGIN_PATH) 
+    {
+        TRACE_HIVE_ERROR("MAX_PLUGIN_PATH which is %d, not enough to locate plugin path\n", MAX_PLUGIN_PATH);
+        return;
+    }
+
+    mfx_get_default_plugin_name(lastSlashPos + slashLen, MAX_PLUGIN_PATH - executableDirLen, (eMfxImplType)implType);
+
+    struct stat   buffer;
+    if (stat (libModuleName, &buffer) == 0)
+    {
+        // add default plugin descriptions
+        for (int i = 0; i < sizeof(defaultPluginRecords)/sizeof(defaultPluginRecords[0]); i++)
+        {
+            PluginDescriptionRecord descriptionRecord;
+            descriptionRecord.APIVersion = currentAPIVersion;
+            descriptionRecord.PluginUID  = defaultPluginRecords[i].PluginUID;
+            descriptionRecord.Type       = defaultPluginRecords[i].Type;
+            descriptionRecord.CodecId    = defaultPluginRecords[i].CodecId;
+
+            msdk_disp_char_cpy_s(descriptionRecord.sPath
+                , sizeof(descriptionRecord.sPath) / sizeof(*descriptionRecord.sPath), libModuleName);
+
+            push_back(descriptionRecord);
+        }
+    }
+    else
+    {
+        TRACE_HIVE_INFO("GetFileAttributesW() unable to locate default plugin dll named %s\n", libModuleName);
     }
 }
 

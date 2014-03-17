@@ -45,9 +45,14 @@ wchar_t * const defaultDLLName[2] = {L"libmfxhw64.dll",
                                      L"libmfxsw64.dll"};
 const
 wchar_t * const defaultAudioDLLName[2] = {L"libmfxaudiosw64.dll",
-                                     L"libmfxaudiosw64.dll"};
+                                          L"libmfxaudiosw64.dll"};
 
-const wchar_t  * const defaultRTName = {L"libmfxrt64.dll"};
+const 
+wchar_t  * const defaultRTName = {L"libmfxrt64.dll"};
+
+const 
+wchar_t  * const defaultPluginDLLName[2] = {L"libmfxplugin64_hw.dll",
+                                            L"libmfxplugin64_sw.dll"};
 
 #elif defined(_WIN32)
 const
@@ -56,9 +61,13 @@ wchar_t * const defaultDLLName[2] = {L"libmfxhw32.dll",
 
 const
 wchar_t * const defaultAudioDLLName[2] = {L"libmfxaudiosw32.dll",
-                                     L"libmfxaudiosw32.dll"};
+                                          L"libmfxaudiosw32.dll"};
 
 const wchar_t  * const defaultRTName = {L"libmfxrt32.dll"};
+
+const 
+wchar_t  * const defaultPluginDLLName[2] = {L"libmfxplugin32_hw.dll",
+                                            L"libmfxplugin32_sw.dll"};
 
 #endif // (defined(_WIN64))
 
@@ -66,26 +75,34 @@ const wchar_t  * const defaultRTName = {L"libmfxrt32.dll"};
 
 #if defined(_WIN64)
 const
-msdk_disp_char * const defaultDLLName[2] = {L"libmfxhw64_d.dll",
-                                            L"libmfxsw64_d.dll"};
+wchar_t * const defaultDLLName[2] = {L"libmfxhw64_d.dll",
+                                     L"libmfxsw64_d.dll"};
 const
-msdk_disp_char * const defaultAudioDLLName[2] = {L"libmfxaudiosw64_d.dll",
-                                            L"libmfxaudiosw64_d.dll"};
+wchar_t * const defaultAudioDLLName[2] = {L"libmfxaudiosw64_d.dll",
+                                          L"libmfxaudiosw64_d.dll"};
 
-const wchar_t  * const defaultRTName = {L"libmfxrt64_d.dll"};
+const 
+wchar_t  * const defaultRTName = {L"libmfxrt64_d.dll"};
+
+const 
+wchar_t  * const defaultPluginDLLName[2] = {L"libmfxplugin64_hw_d.dll",
+                                            L"libmfxplugin64_sw_d.dll"};
 
 #elif defined(WIN32)
 const
-msdk_disp_char * const defaultDLLName[2] = {L"libmfxhw32_d.dll",
-                                            L"libmfxsw32_d.dll"};
+wchar_t * const defaultDLLName[2] = {L"libmfxhw32_d.dll",
+                                     L"libmfxsw32_d.dll"};
 
 
 const
-msdk_disp_char * const defaultAudioDLLName[2] = {L"libmfxaudiosw32_d.dll",
-                                            L"libmfxaudiosw32_d.dll"};
+wchar_t * const defaultAudioDLLName[2] = {L"libmfxaudiosw32_d.dll",
+                                          L"libmfxaudiosw32_d.dll"};
 
 const wchar_t  * const defaultRTName = {L"libmfxrt32_d.dll"};
 
+const 
+wchar_t  * const defaultPluginDLLName[2] = {L"libmfxplugin32_hw_d.dll",
+                                            L"libmfxplugin32_sw_d.dll"};
 
 #endif // (defined(_WIN64))
 
@@ -118,6 +135,7 @@ mfxStatus mfx_get_default_dll_name(msdk_disp_char *pPath, size_t pathSize, eMfxI
         return MFX_ERR_NULL_PTR;
     }
     
+
     // there are only 2 implementation with default DLL names
 #if _MSC_VER >= 1400
     return 0 == wcscpy_s(pPath, pathSize, defaultDLLName[implType & 1])
@@ -127,6 +145,24 @@ mfxStatus mfx_get_default_dll_name(msdk_disp_char *pPath, size_t pathSize, eMfxI
     return MFX_ERR_NONE;
 #endif
 } // mfxStatus mfx_get_default_dll_name(wchar_t *pPath, size_t pathSize, eMfxImplType implType)
+
+mfxStatus mfx_get_default_plugin_name(msdk_disp_char *pPath, size_t pathSize, eMfxImplType implType)
+{
+    if (!pPath)
+    {
+        return MFX_ERR_NULL_PTR;
+    }
+
+
+    // there are only 2 implementation with default DLL names
+#if _MSC_VER >= 1400
+    return 0 == wcscpy_s(pPath, pathSize, defaultPluginDLLName[implType & 1])
+        ? MFX_ERR_NONE : MFX_ERR_UNKNOWN;
+#else    
+    wcscpy(pPath, defaultPluginDLLName[implType & 1]);
+    return MFX_ERR_NONE;
+#endif
+}
 
 mfxStatus mfx_get_default_audio_dll_name(msdk_disp_char *pPath, size_t pathSize, eMfxImplType implType)
 {

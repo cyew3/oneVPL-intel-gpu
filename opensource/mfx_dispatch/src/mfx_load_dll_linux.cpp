@@ -40,8 +40,12 @@ File Name: mfx_load_dll_linux.cpp
 const msdk_disp_char * defaultDLLName[2] = {"libmfxhw64.so",
                                             "libmfxsw64.so"};
 const msdk_disp_char * defaultAudioDLLName[2] = {"libmfxaudiosw64.so",
-                                            "libmfxaudiosw64.so"};
+                                                 "libmfxaudiosw64.so"};
 const msdk_disp_char * defaultRTName =  {"libmfxrt64.so"};
+
+const msdk_disp_char * defaultPluginDLLName[2] = {"libmfxplugin64_hw.so",
+                                                 "libmfxplugin64_sw.so"};
+
 
 #elif defined(__APPLE__)
 #ifdef __i386__
@@ -50,12 +54,18 @@ const msdk_disp_char * defaultDLLName[2] = {"libmfxhw32.dylib",
 const msdk_disp_char * defaultAudioDLLName[2] = {"libmfxaudiosw32.dylib",
                                             "libmfxaudiosw32.dylib"};
 const msdk_disp_char * defaultRTName =  {"libmfxrt32.dylib"};
+
+const msdk_disp_char * defaultPluginDLLName[2] = {"libmfxplugin32_hw.dylib",
+                                                  "libmfxplugin32_sw.dylib"};
 #else
 const msdk_disp_char * defaultDLLName[2] = {"libmfxhw64.dylib",
                                             "libmfxsw64.dylib"};
 const msdk_disp_char * defaultAudioDLLName[2] = {"libmfxaudiosw64.dylib",
                                             "libmfxaudiosw64.dylib"};
 const msdk_disp_char * defaultRTName =  {"libmfxrt64.dylib"};
+
+const msdk_disp_char * defaultPluginDLLName[2] = {"libmfxplugin64_hw.dylib",
+                                                  "libmfxplugin64_sw.dylib"};
 
 #endif // #ifdef __i386__ for __APPLE__
 
@@ -65,6 +75,9 @@ const msdk_disp_char * defaultDLLName[2] = {"libmfxhw32.so",
 const msdk_disp_char * defaultAudioDLLName[2] = {"libmfxaudiosw32.so",
                                             "libmfxaudiosw32.so"};
 const msdk_disp_char * defaultRTName =  {"libmfxrt32.so"};
+
+const msdk_disp_char * defaultPluginDLLName[2] = {"libmfxplugin32_hw.so",
+                                                  "libmfxplugin32_sw.so"};
 #endif // (defined(WIN64))
 
 #else // defined(_DEBUG)
@@ -76,6 +89,8 @@ const msdk_disp_char * defaultAudioDLLName[2] = {"libmfxaudiosw64_d.so",
                                             "libmfxaudiosw64_d.so"};
 const msdk_disp_char * defaultRTName =  {"libmfxrt64_d.so"};
 
+const msdk_disp_char * defaultPluginDLLName[2] = {"libmfxplugin64_hw_d.so",
+                                                  "libmfxplugin64_sw_d.so"};
 #elif defined(__APPLE__)
 #ifdef __i386__
 const msdk_disp_char * defaultDLLName[2] = {"libmfxhw32_d.dylib",
@@ -85,6 +100,9 @@ const msdk_disp_char * defaultAudioDLLName[2] = {"libmfxaudiosw32_d.dylib",
 
 const msdk_disp_char * defaultRTName =  {"libmfxrt32_d.dylib"};
 
+const msdk_disp_char * defaultPluginDLLName[2] = {"libmfxplugin32_hw_d.dylib",
+                                                  "libmfxplugin32_sw_d.dylib"};
+
 #else
 const msdk_disp_char * defaultDLLName[2] = {"libmfxhw64_d.dylib",
                                             "libmfxsw64_d.dylib"};
@@ -93,6 +111,8 @@ const msdk_disp_char * defaultAudioDLLName[2] = {"libmfxaudiosw64_d.dylib",
 
 const msdk_disp_char * defaultRTName =  {"libmfxrt64_d.dylib"};
 
+const msdk_disp_char * defaultPluginDLLName[2] = {"libmfxplugin64_hw_d.dylib",
+                                                  "libmfxplugin64_sw_d.dylib"};
 #endif // #ifdef __i386__ for __APPLE__
 
 #else // for Linux32 and Android
@@ -102,6 +122,8 @@ const msdk_disp_char * defaultAudioDLLName[2] = {"libmfxaudiosw32_d.so",
                                             "libmfxaudiosw32_d.so"};
 const msdk_disp_char * defaultRTName =  {"libmfxrt32_d.so"};
 
+const msdk_disp_char * defaultPluginDLLName[2] = {"libmfxplugin32_hw_d.so",
+                                                  "libmfxplugin32_sw_d.so"};
 #endif // (defined(WIN64))
 
 #endif // !defined(_DEBUG)
@@ -123,11 +145,20 @@ mfxStatus mfx_get_rt_dll_name(msdk_disp_char *pPath, size_t /*pathSize*/)
 
 mfxStatus mfx_get_default_dll_name(msdk_disp_char *pPath, size_t /*pathSize*/, eMfxImplType implType)
 {
-    strcpy(pPath, defaultDLLName[implType]);
+    strcpy(pPath, defaultDLLName[implType & 1]);
 
     return MFX_ERR_NONE;
 
 } // mfxStatus GetDefaultDLLName(wchar_t *pPath, size_t pathSize, eMfxImplType implType)
+
+
+mfxStatus mfx_get_default_plugin_name(msdk_disp_char *pPath, size_t pathSize, eMfxImplType implType)
+{
+    strcpy(pPath, defaultPluginDLLName[implType & 1]);
+
+    return MFX_ERR_NONE;
+}
+
 
 mfxStatus mfx_get_default_audio_dll_name(msdk_disp_char *pPath, size_t /*pathSize*/, eMfxImplType implType)
 {

@@ -285,6 +285,7 @@
   <ItemGroup>
     <ClInclude Include="include\mfxaudio_exposed_functions_list.h" />
     <ClInclude Include="include\mfx_critical_section.h" />
+    <ClInclude Include="include\mfx_default_plugins.h" />
     <ClInclude Include="include\mfx_dispatcher.h" />
     <ClInclude Include="include\mfx_dispatcher_defs.h" />
     <ClInclude Include="include\mfx_dispatcher_log.h" />
