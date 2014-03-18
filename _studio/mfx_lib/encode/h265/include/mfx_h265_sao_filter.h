@@ -196,11 +196,6 @@ public:
 
      void ReconstructCtuSaoParam(SaoCtuParam& recParam);
 
-     void ApplyCtuSao(
-        mfxFrameData* srcYuv,
-        mfxFrameData* resYuv,
-        SaoCtuParam& saoParam,
-        int ctu);
 
 private:
     void GetCtuSaoStatistics(

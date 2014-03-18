@@ -2490,56 +2490,6 @@ mfxStatus H265Encoder::ApplySAOThread(Ipp32s ithread)
 } // mfxStatus H265Encoder::ApplySAOThread(Ipp32s ithread)
 
 
-mfxStatus H265Encoder::ApplySAOThread_old(Ipp32s ithread)
-{
-    Ipp8u* tmpBufferY = new Ipp8u[m_videoParam.Height * m_pReconstructFrame->pitch_luma];
-    mfxFrameData srcReconY;
-    srcReconY.Pitch = (mfxU16)m_pReconstructFrame->pitch_luma;
-    srcReconY.Y = tmpBufferY;
-
-    // copy from recon to srcrecon
-    IppiSize roiSize;
-    roiSize.width = m_videoParam.Width;
-    roiSize.height = m_videoParam.Height;
-
-    ippiCopy_8u_C1R(
-        m_pReconstructFrame->y,
-        m_pReconstructFrame->pitch_luma,
-        srcReconY.Y,
-        srcReconY.Pitch,
-        roiSize);
-
-    mfxFrameData dstReconY;
-    dstReconY.Y = m_pReconstructFrame->y;
-    dstReconY.Pitch = (mfxU16)m_pReconstructFrame->pitch_luma;
-
-    SaoEncodeFilter saoFilter;
-
-    Ipp8u* p_srcStart = srcReconY.Y;
-    Ipp8u* p_dstStart = dstReconY.Y;
-    int numCTU = m_videoParam.PicHeightInCtbs * m_videoParam.PicWidthInCtbs;
-
-    saoFilter.Init(m_videoParam.Width, m_videoParam.Height, m_videoParam.MaxCUSize, 0,
-                   m_videoParam.saoOpt);
-    for(int ctu = 0; ctu < numCTU; ctu++)
-    {
-        // update #1
-        int ctb_pelx           = ( ctu % m_videoParam.PicWidthInCtbs ) * m_videoParam.MaxCUSize;
-        int ctb_pely           = ( ctu / m_videoParam.PicWidthInCtbs ) * m_videoParam.MaxCUSize;
-        // update offset
-        srcReconY.Y = p_srcStart + ctb_pelx + ctb_pely * m_pReconstructFrame->pitch_luma;
-        dstReconY.Y = p_dstStart + ctb_pelx + ctb_pely * m_pReconstructFrame->pitch_luma;
-
-        saoFilter.ApplyCtuSao(&srcReconY, &dstReconY, m_saoParam[ctu], ctu);
-    }
-
-    saoFilter.Close();
-    delete [] tmpBufferY;
-
-    return MFX_ERR_NONE;
-
-} // mfxStatus H265Encoder::ApplySAOThread_old(Ipp32s ithread)
-
 
 mfxStatus H265Encoder::EncodeThread(Ipp32s ithread) {
     Ipp32u ctb_row = 0, ctb_col = 0, ctb_addr = 0;
