@@ -199,10 +199,10 @@ void H265_FASTCALL MAKE_NAME(h265_SATD_4x4_Pair_8u)(const Ipp8u* pSrcCur, int sr
  */
 Ipp32s H265_FASTCALL MAKE_NAME(h265_SATD_8x8_8u)(const Ipp8u* pSrcCur, int srcCurStep, const Ipp8u* pSrcRef, int srcRefStep)
 {
-    Ipp8u *pCT, *pCB, *pRT, *pRB;
+    Ipp8u *pCT, *pRT;
     int stepC4, stepR4;
-    __m128i xmm0, xmm1, xmm2, xmm3, xmm4, xmm5, xmm6, xmm7;
-    __m256i ymm0, ymm1, ymm2, ymm3, ymm4, ymm5, ymm6, ymm7;
+    __m128i xmm0, xmm1, xmm2, xmm3, xmm4, xmm5;
+    __m256i ymm0, ymm1, ymm2, ymm3, ymm4, ymm5;
 
     pCT = (Ipp8u*)pSrcCur;
     pRT = (Ipp8u*)pSrcRef;
@@ -349,7 +349,6 @@ void H265_FASTCALL MAKE_NAME(h265_SATD_8x8_Pair_8u)(const Ipp8u* pSrcCur, int sr
     const Ipp8u *pS1, *pS2;
     Ipp32s  s;
 
-    __m128i xmm0, xmm1, xmm2, xmm3, xmm4, xmm5, xmm6, xmm7;
     __m256i ymm0, ymm1, ymm2, ymm3, ymm4, ymm5, ymm6, ymm7;
     __m256i ymm_s0, ymm_s1, ymm_s2, ymm_one;
 
