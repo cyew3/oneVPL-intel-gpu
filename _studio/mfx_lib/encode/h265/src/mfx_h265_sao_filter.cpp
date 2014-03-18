@@ -1379,55 +1379,55 @@ int SaoEncodeFilter::getMergeList(
 void SaoEncodeFilter::ModeDecision_Merge(
     std::vector<SaoCtuParam*>& mergeList,
     bool* sliceEnabled,
-    SaoCtuParam& modeParam,
-    Ipp64f& modeNormCost,
+    SaoCtuParam& bestParam,
+    Ipp64f& bestCost,
     int cabac)
 {
-    int mergeCount = (int)mergeList.size();
-    modeNormCost = MAX_DOUBLE;
+    int modeCount = (int)mergeList.size();
+    bestCost = MAX_DOUBLE;
 
     Ipp64f cost;
-    SaoCtuParam testBlkParam;
+    SaoCtuParam testParam;
 
-    for(int mergeIdx=0; mergeIdx< mergeCount; mergeIdx++)
+    for(int mode=0; mode< modeCount; mode++)
     {
-        if(mergeList[mergeIdx] == NULL)
+        if(NULL == mergeList[mode])
         {
             continue;
         }
 
-        testBlkParam = *(mergeList[mergeIdx]);
-        Ipp64f normDist=0;
+        testParam = *(mergeList[mode]);
+        Ipp64f distortion=0;
         for(int compIdx=0; compIdx< 1; compIdx++)
         {
-            testBlkParam[compIdx].mode_idx = SAO_MODE_MERGE;
-            testBlkParam[compIdx].type_idx = mergeIdx;
+            testParam[compIdx].mode_idx = SAO_MODE_MERGE;
+            testParam[compIdx].type_idx = mode;
 
-            SaoOffsetParam& mergedOffsetParam = (*(mergeList[mergeIdx]))[compIdx];
+            SaoOffsetParam& mergedOffset = (*(mergeList[mode]))[compIdx];
 
-            if( SAO_MODE_OFF != mergedOffsetParam.mode_idx )
+            if( SAO_MODE_OFF != mergedOffset.mode_idx )
             {
-                normDist += (((Ipp64f)GetDistortion(
-                    mergedOffsetParam.type_idx,
-                    mergedOffsetParam.typeAuxInfo,
-                    mergedOffsetParam.offset,
-                    m_statData[compIdx][mergedOffsetParam.type_idx])) / m_labmda[compIdx]);
+                distortion += (Ipp64f)GetDistortion(
+                    mergedOffset.type_idx,
+                    mergedOffset.typeAuxInfo,
+                    mergedOffset.offset,
+                    m_statData[compIdx][mergedOffset.type_idx]);
             }
         }
 
         m_bsf->CtxRestore(m_ctxSAO[cabac], tab_ctxIdxOffset[SAO_MERGE_FLAG_HEVC], 2);
         m_bsf->Reset();
 
-        CodeSaoCtbParam(m_bsf, testBlkParam, sliceEnabled, (mergeList[SAO_MERGE_LEFT]!= NULL), (mergeList[SAO_MERGE_ABOVE]!= NULL), false);
+        CodeSaoCtbParam(m_bsf, testParam, sliceEnabled, (NULL != mergeList[SAO_MERGE_LEFT]), (NULL != mergeList[SAO_MERGE_ABOVE]), false);
 
         int rate = GetNumWrittenBits();
 
-        cost = normDist + (Ipp64f)rate;
+        cost = distortion / m_labmda[0] + (Ipp64f)rate;
 
-        if(cost < modeNormCost)
+        if(cost < bestCost)
         {
-            modeNormCost = cost;
-            modeParam    = testBlkParam;
+            bestCost = cost;
+            bestParam= testParam;
             m_bsf->CtxSave(m_ctxSAO[SAO_CABACSTATE_BLK_TEMP], tab_ctxIdxOffset[SAO_MERGE_FLAG_HEVC], 2);
         }
     }
@@ -1448,8 +1448,7 @@ void SaoEncodeFilter::ModeDecision_Base(std::vector<SaoCtuParam *> &mergeList,  
     int compIdx;
 
     modeDist[SAO_Y]= modeDist[SAO_Cb] = modeDist[SAO_Cr] = 0;
-
-    //pre-encode merge flags
+        
     modeParam[SAO_Y].mode_idx = SAO_MODE_OFF;
 
     m_bsf->CtxRestore(m_ctxSAO[SAO_CABACSTATE_BLK_CUR], tab_ctxIdxOffset[SAO_MERGE_FLAG_HEVC], 2);
@@ -1457,9 +1456,7 @@ void SaoEncodeFilter::ModeDecision_Base(std::vector<SaoCtuParam *> &mergeList,  
                     mergeList[SAO_MERGE_ABOVE] != NULL, true);
     m_bsf->CtxSave(m_ctxSAO[SAO_CABACSTATE_BLK_MID], tab_ctxIdxOffset[SAO_MERGE_FLAG_HEVC], 2);
 
-    //------ luma ---
     compIdx = SAO_Y;
-    //"off" case as initial cost
     modeParam[compIdx].mode_idx = SAO_MODE_OFF;
 
     m_bsf->Reset();
@@ -1471,8 +1468,10 @@ void SaoEncodeFilter::ModeDecision_Base(std::vector<SaoCtuParam *> &mergeList,  
 
     m_bsf->CtxSave(m_ctxSAO[SAO_CABACSTATE_BLK_TEMP], tab_ctxIdxOffset[SAO_MERGE_FLAG_HEVC], 2);
 
-    if (sliceEnabled[compIdx]) {
-        for (Ipp32s type_idx = 0; type_idx < m_numSaoModes; type_idx++) {
+    if (sliceEnabled[compIdx]) 
+    {
+        for (Ipp32s type_idx = 0; type_idx < m_numSaoModes; type_idx++) 
+        {
             testOffset[compIdx].mode_idx = SAO_MODE_ON;
             testOffset[compIdx].type_idx = type_idx;
 
@@ -1490,7 +1489,8 @@ void SaoEncodeFilter::ModeDecision_Base(std::vector<SaoCtuParam *> &mergeList,  
             rate = GetNumWrittenBits();
 
             cost = (Ipp64f)dist[compIdx] + m_labmda[compIdx]*((Ipp64f)rate);
-            if(cost < minCost) {
+            if(cost < minCost) 
+            {
                 minCost = cost;
                 minRate = rate;
                 modeDist[compIdx] = dist[compIdx];
@@ -1503,42 +1503,34 @@ void SaoEncodeFilter::ModeDecision_Base(std::vector<SaoCtuParam *> &mergeList,  
 
     m_bsf->CtxRestore(m_ctxSAO[SAO_CABACSTATE_BLK_TEMP], tab_ctxIdxOffset[SAO_MERGE_FLAG_HEVC], 2);
     m_bsf->CtxSave(m_ctxSAO[SAO_CABACSTATE_BLK_MID], tab_ctxIdxOffset[SAO_MERGE_FLAG_HEVC], 2);
-
-    // aya - temporal solution
+    
     bool isChromaEnabled = (NUM_USED_SAO_COMPONENTS > 1); // ? true : false;
     Ipp64f chromaLambda = m_labmda[SAO_Cb];
-
-    // ======================================================
-    // aya potential issue???
-    // ======================================================
-    if( isChromaEnabled ) {
-        //------ chroma --------//
+    
+    if( isChromaEnabled ) 
+    {
         VM_ASSERT(m_labmda[SAO_Cb] == m_labmda[SAO_Cr]);
         Ipp64f chromaLambda = m_labmda[SAO_Cb];
 
-        //"off" case as initial cost
-        //m_pcRDGoOnSbacCoder->resetBits();
         m_bsf->Reset();
 
         modeParam[SAO_Cb].mode_idx = SAO_MODE_OFF;
-        //m_pcRDGoOnSbacCoder->CodeSaoCtbOffsetParam(SAO_Cb, modeParam[SAO_Cb], sliceEnabled[SAO_Cb]);
         CodeSaoCtbOffsetParam(m_bsf, SAO_Cb, modeParam[SAO_Cb], sliceEnabled[SAO_Cb]);
 
         modeParam[SAO_Cr].mode_idx = SAO_MODE_OFF;
-        //m_pcRDGoOnSbacCoder->CodeSaoCtbOffsetParam(SAO_Cr, modeParam[SAO_Cr], sliceEnabled[SAO_Cr]);
         CodeSaoCtbOffsetParam(m_bsf, SAO_Cr, modeParam[SAO_Cr], sliceEnabled[SAO_Cr]);
-
-        //minRate= m_pcRDGoOnSbacCoder->getNumberOfWrittenBits();
+        
         minRate = GetNumWrittenBits();
 
         modeDist[SAO_Cb] = modeDist[SAO_Cr]= 0;
         minCost= chromaLambda*((Ipp64f)minRate);
 
-        //doesn't need to store cabac status here since the whole CTU parameters will be re-encoded at the end of this function
-
-        for (Ipp32s type_idx = 0; type_idx < NUM_SAO_BASE_TYPES; type_idx++) {
-            for (compIdx = SAO_Cb; compIdx < NUM_SAO_COMPONENTS; compIdx++) {
-                if (!sliceEnabled[compIdx]) {
+        for (Ipp32s type_idx = 0; type_idx < NUM_SAO_BASE_TYPES; type_idx++) 
+        {
+            for (compIdx = SAO_Cb; compIdx < NUM_SAO_COMPONENTS; compIdx++) 
+            {
+                if (!sliceEnabled[compIdx]) 
+                {
                     testOffset[compIdx].mode_idx = SAO_MODE_OFF;
                     dist[compIdx]= 0;
                     continue;
@@ -1547,21 +1539,12 @@ void SaoEncodeFilter::ModeDecision_Base(std::vector<SaoCtuParam *> &mergeList,  
                 testOffset[compIdx].type_idx = type_idx;
 
                 GetQuantOffsets(type_idx, m_statData[compIdx][type_idx], testOffset[compIdx].offset,
-                                testOffset[compIdx].typeAuxInfo, m_labmda[compIdx]);
-
-                //InvertQuantOffsets(type_idx, testOffset[compIdx].typeAuxInfo, invQuantOffset, testOffset[compIdx].offset);
+                                testOffset[compIdx].typeAuxInfo, m_labmda[compIdx]);                
 
                 dist[compIdx]= GetDistortion(type_idx, testOffset[compIdx].typeAuxInfo,
                                              testOffset[compIdx].offset,
                                              m_statData[compIdx][type_idx]);
             }
-
-            //get rate
-            /*m_pcRDGoOnSbacCoder->load(cabacCoderRDO[SAO_CABACSTATE_BLK_MID]);
-            m_pcRDGoOnSbacCoder->resetBits();
-            m_pcRDGoOnSbacCoder->CodeSaoCtbOffsetParam(SAO_Cb, testOffset[SAO_Cb], sliceEnabled[SAO_Cb]);
-            m_pcRDGoOnSbacCoder->CodeSaoCtbOffsetParam(SAO_Cr, testOffset[SAO_Cr], sliceEnabled[SAO_Cr]);
-            rate = m_pcRDGoOnSbacCoder->getNumberOfWrittenBits();*/
 
             m_bsf->CtxRestore(m_ctxSAO[SAO_CABACSTATE_BLK_MID], tab_ctxIdxOffset[SAO_MERGE_FLAG_HEVC], 2);
             m_bsf->Reset();
@@ -1570,7 +1553,8 @@ void SaoEncodeFilter::ModeDecision_Base(std::vector<SaoCtuParam *> &mergeList,  
             rate = GetNumWrittenBits();
 
             cost = (Ipp64f)(dist[SAO_Cb]+ dist[SAO_Cr]) + chromaLambda*((Ipp64f)rate);
-            if (cost < minCost) {
+            if (cost < minCost) 
+            {
                 minCost = cost;
                 minRate = rate;
                 modeDist[SAO_Cb] = dist[SAO_Cb];
@@ -1580,11 +1564,11 @@ void SaoEncodeFilter::ModeDecision_Base(std::vector<SaoCtuParam *> &mergeList,  
             }
         }
     }
-
-    //----- re-gen rate & normalized cost----//
+        
     modeNormCost = (Ipp64f)modeDist[SAO_Y]/m_labmda[SAO_Y];
 
-    if (isChromaEnabled) {
+    if (isChromaEnabled) 
+    {
         modeNormCost += (Ipp64f)(modeDist[SAO_Cb]+ modeDist[SAO_Cr])/chromaLambda;
     }
 
@@ -1592,9 +1576,8 @@ void SaoEncodeFilter::ModeDecision_Base(std::vector<SaoCtuParam *> &mergeList,  
     m_bsf->Reset();
     CodeSaoCtbParam(m_bsf, modeParam, sliceEnabled, (mergeList[SAO_MERGE_LEFT]!= NULL), (mergeList[SAO_MERGE_ABOVE]!= NULL), false);
     modeNormCost += (Ipp64f)GetNumWrittenBits();
-}
 
-
+} // void SaoEncodeFilter::ModeDecision_Base(...)
 
 // ========================================================
 // SAO DECODE FILTER
