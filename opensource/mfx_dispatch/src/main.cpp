@@ -310,8 +310,7 @@ mfxStatus DISPATCHER_EXPOSED_PREFIX(MFXInit)(mfxIMPL impl, mfxVersion *pVer, mfx
             } 
             else 
             {
-                // Registering default plugins
-                //TODO:     MFXDefaultPlugins(currentAPIVersion)
+                // Registering default plugins set
                 MFX::MFXDefaultPlugins defaultPugins(apiVerActual, pHandle, implMethod);
                 allocatedHandle->pluginHive.insert(allocatedHandle->pluginHive.end(), defaultPugins.begin(), defaultPugins.end());
 
@@ -467,10 +466,15 @@ mfxStatus DISPATCHER_EXPOSED_PREFIX(MFXVideoUSER_Load)(mfxSession session, const
         , MFXGUIDTOHEX(uid)
         , version))
         size_t pluginsChecked = 0;
+    PluginDescriptionRecord defaultPluginRecord;
     for (MFX::MFXPluginStorage::iterator i = pHandle.pluginHive.begin();i != pHandle.pluginHive.end(); i++, pluginsChecked++)
     {
         if (i->PluginUID != *uid)
         {
+            if (i->Default) // PluginUID == 0 for default set
+            {
+                defaultPluginRecord = *i;
+            }
             continue;
         }
         //check rest in records
@@ -488,6 +492,19 @@ mfxStatus DISPATCHER_EXPOSED_PREFIX(MFXVideoUSER_Load)(mfxSession session, const
             return MFX_ERR_UNKNOWN;
         }
     }
+
+    // Specified UID was not found among individually registed plugins, now try load it from default set if any
+    if (defaultPluginRecord.Default)
+    {
+        defaultPluginRecord.PluginUID = *uid;
+        try {
+            return pHandle.pluginFactory.Create(defaultPluginRecord);
+        }
+        catch(...) {
+            return MFX_ERR_UNKNOWN;
+        }
+    }
+
     DISPATCHER_LOG_ERROR((("MFXVideoUSER_Load: cannot find registered plugin with requested UID, total plugins available=%d\n"), pHandle.pluginHive.size()));
     return MFX_ERR_NOT_FOUND;
 }

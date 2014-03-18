@@ -36,7 +36,6 @@ File Name: mfx_plugin_hive_linux.cpp
 #include "mfx_dispatcher_log.h"
 #include "mfx_load_dll.h"
 #include "mfx_plugin_cfg_parser.h"
-#include "mfx_default_plugins.h"
 
 #include <dirent.h>
 #include <ctype.h>
@@ -392,24 +391,19 @@ MFXDefaultPlugins::MFXDefaultPlugins(mfxVersion currentAPIVersion, MFX_DISP_HAND
     struct stat   buffer;
     if (stat (libModuleName, &buffer) == 0)
     {
-        // add default plugin descriptions
-        for (int i = 0; i < sizeof(defaultPluginRecords)/sizeof(defaultPluginRecords[0]); i++)
-        {
-            PluginDescriptionRecord descriptionRecord;
-            descriptionRecord.APIVersion = currentAPIVersion;
-            descriptionRecord.PluginUID  = defaultPluginRecords[i].PluginUID;
-            descriptionRecord.Type       = defaultPluginRecords[i].Type;
-            descriptionRecord.CodecId    = defaultPluginRecords[i].CodecId;
+        // add single default plugin description
+        PluginDescriptionRecord descriptionRecord;
+        descriptionRecord.APIVersion = currentAPIVersion;
+        descriptionRecord.Default = true;
 
-            msdk_disp_char_cpy_s(descriptionRecord.sPath
-                , sizeof(descriptionRecord.sPath) / sizeof(*descriptionRecord.sPath), libModuleName);
+        msdk_disp_char_cpy_s(descriptionRecord.sPath
+            , sizeof(descriptionRecord.sPath) / sizeof(*descriptionRecord.sPath), libModuleName);
 
-            push_back(descriptionRecord);
-        }
+        push_back(descriptionRecord);
     }
     else
     {
-        TRACE_HIVE_INFO("GetFileAttributesW() unable to locate default plugin dll named %s\n", libModuleName);
+        TRACE_HIVE_INFO("stat() unable to locate default plugin dll named %s\n", libModuleName);
     }
 }
 

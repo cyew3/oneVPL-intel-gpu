@@ -34,7 +34,6 @@ File Name: mfx_plugin_hive.cpp
 #include "mfx_library_iterator.h"
 #include "mfx_dispatcher.h"
 #include "mfx_dispatcher_log.h"
-#include "mfx_default_plugins.h"
 #include "mfx_load_dll.h"
 
 #define TRACE_HIVE_ERROR(str, ...) DISPATCHER_LOG_ERROR((("[HIVE]: "str), __VA_ARGS__))
@@ -506,20 +505,15 @@ MFX::MFXDefaultPlugins::MFXDefaultPlugins(mfxVersion currentAPIVersion, MFX_DISP
 
     if (-1 != GetFileAttributesW(libModuleName))
     {
-        // add default plugin descriptions
-        for (int i = 0; i < sizeof(defaultPluginRecords)/sizeof(defaultPluginRecords[0]); i++)
-        {
-            PluginDescriptionRecord descriptionRecord;
-            descriptionRecord.APIVersion = currentAPIVersion;
-            descriptionRecord.PluginUID  = defaultPluginRecords[i].PluginUID;
-            descriptionRecord.Type       = defaultPluginRecords[i].Type;
-            descriptionRecord.CodecId    = defaultPluginRecords[i].CodecId;
+        // add single default plugin description
+        PluginDescriptionRecord descriptionRecord;
+        descriptionRecord.APIVersion = currentAPIVersion;
+        descriptionRecord.Default = true;
 
-            msdk_disp_char_cpy_s(descriptionRecord.sPath
-              , sizeof(descriptionRecord.sPath) / sizeof(*descriptionRecord.sPath), libModuleName);
+        msdk_disp_char_cpy_s(descriptionRecord.sPath
+            , sizeof(descriptionRecord.sPath) / sizeof(*descriptionRecord.sPath), libModuleName);
 
-            push_back(descriptionRecord);
-        }
+        push_back(descriptionRecord);
     }
     else
     {
