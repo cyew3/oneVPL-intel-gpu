@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="8,00"
+	Version="8.00"
 	Name="sample_common"
 	ProjectGUID="{DB71B91D-16D8-4339-9621-D81798E46E8F}"
 	RootNamespace="sample_common"
@@ -331,11 +331,11 @@
 				>
 			</File>
 			<File
-				RelativePath=".\src\mfx_plugin_uids.h"
+				RelativePath=".\include\mfx_buffering.h"
 				>
 			</File>
 			<File
-				RelativePath=".\src\mfx_buffering.h"
+				RelativePath=".\include\mfx_plugin_uids.h"
 				>
 			</File>
 			<File
@@ -413,11 +413,11 @@
 				>
 			</File>
 			<File
-				RelativePath=".\src\mfx_plugin_uids.cpp"
+				RelativePath=".\src\mfx_buffering.cpp"
 				>
 			</File>
 			<File
-				RelativePath=".\src\mfx_buffering.cpp"
+				RelativePath=".\src\mfx_plugin_uids.cpp"
 				>
 			</File>
 			<File

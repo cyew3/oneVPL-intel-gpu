@@ -987,7 +987,14 @@ mfxStatus CDecodingPipeline::SyncOutputSurface(mfxU32 wait)
         if (m_eWorkMode == MODE_PERFORMANCE) {
             m_output_count = m_synced_count;
             ReturnSurfaceToBuffers(m_pCurrentOutputSurface);
-        } else if ((m_eWorkMode == MODE_FILE_DUMP) || (m_eWorkMode == MODE_RENDERING)) {
+        } else if (m_eWorkMode == MODE_FILE_DUMP) {
+            m_output_count = m_synced_count;
+            sts = DeliverOutput(&(m_pCurrentOutputSurface->surface->frame));
+            if (MFX_ERR_NONE != sts) {
+                sts = MFX_ERR_UNKNOWN;
+            }
+            ReturnSurfaceToBuffers(m_pCurrentOutputSurface);
+        } else if (m_eWorkMode == MODE_RENDERING) {
             m_DeliveredSurfacesPool.AddSurface(m_pCurrentOutputSurface);
             m_pDeliveredEvent->Reset();
             m_pDeliverOutputSemaphore->Post();
@@ -1012,7 +1019,7 @@ mfxStatus CDecodingPipeline::RunDecoding()
     time_t start_time = time(0);
     MSDKThread * pDeliverThread = NULL;
 
-    if ((m_eWorkMode == MODE_FILE_DUMP) || (m_eWorkMode == MODE_RENDERING)) {
+    if (m_eWorkMode == MODE_RENDERING) {
         pDeliverThread = new MSDKThread(sts, DeliverThreadFunc, this);
         m_pDeliverOutputSemaphore = new MSDKSemaphore(sts);
         m_pDeliveredEvent = new MSDKEvent(sts, false, false);
@@ -1072,9 +1079,9 @@ mfxStatus CDecodingPipeline::RunDecoding()
                 // we stuck with no free surface available, now we will sync...
                 sts = SyncOutputSurface(MSDK_DEC_WAIT_INTERVAL);
                 if (MFX_ERR_MORE_DATA == sts) {
-                    if (m_eWorkMode == MODE_PERFORMANCE) {
+                    if ((m_eWorkMode == MODE_PERFORMANCE) || (m_eWorkMode == MODE_FILE_DUMP)) {
                         sts = MFX_ERR_NOT_FOUND;
-                    } else if ((m_eWorkMode == MODE_FILE_DUMP) || (m_eWorkMode == MODE_RENDERING)) {
+                    } else if (m_eWorkMode == MODE_RENDERING) {
                         if (m_synced_count != m_output_count) {
                             sts = m_pDeliveredEvent->TimedWait(MSDK_DEC_WAIT_INTERVAL);
                         } else {
@@ -1200,7 +1207,7 @@ mfxStatus CDecodingPipeline::RunDecoding()
             CTimer::ConvertToSeconds(*std::min_element(m_vLatency.begin(), m_vLatency.end()))*1000);
     }
 
-    if ((m_eWorkMode == MODE_FILE_DUMP) || (m_eWorkMode == MODE_RENDERING)) {
+    if ((m_eWorkMode == MODE_RENDERING)) {
         m_bStopDeliverLoop = true;
         m_pDeliverOutputSemaphore->Post();
         pDeliverThread->Wait();
