@@ -98,35 +98,18 @@ Ipp64s GetDistortion(
     Ipp64s dist=0;
     int shift = 0;
 
-    switch(typeIdx)
+    int startFrom = 0;
+    int end = NUM_SAO_EO_CLASSES;
+
+    if(SAO_TYPE_BO == typeIdx)
     {
-        case SAO_TYPE_EO_0:
-        case SAO_TYPE_EO_90:
-        case SAO_TYPE_EO_135:
-        case SAO_TYPE_EO_45:
-        {
-            for (int offsetIdx=0; offsetIdx<NUM_SAO_EO_CLASSES; offsetIdx++)
-            {
-                dist += EstimateDeltaDist( statData.count[offsetIdx], quantOffset[offsetIdx], statData.diff[offsetIdx], shift);
-            }
-        }
-        break;
+        startFrom = typeAuxInfo;
+        end = startFrom + 4;
+    }
 
-        case SAO_TYPE_BO:
-        {
-            int startBand = typeAuxInfo;
-
-            for (int bandIdx=startBand; bandIdx<startBand+4; bandIdx++)
-            {
-                dist += EstimateDeltaDist( statData.count[bandIdx], quantOffset[bandIdx], statData.diff[bandIdx], shift);
-            }
-        }
-        break;
-
-        default:
-        {
-            VM_ASSERT(!"Not a supported type");
-        }
+    for (int offsetIdx=startFrom; offsetIdx < end; offsetIdx++)
+    {
+        dist += EstimateDeltaDist( statData.count[offsetIdx], quantOffset[offsetIdx], statData.diff[offsetIdx], shift);
     }
 
     return dist;
@@ -1398,45 +1381,41 @@ void SaoEncodeFilter::ModeDecision_Merge(
     bool* sliceEnabled,
     SaoCtuParam& modeParam,
     Ipp64f& modeNormCost,
-    int inCabacLabel)
+    int cabac)
 {
-    int mergeListSize = (int)mergeList.size();
+    int mergeCount = (int)mergeList.size();
     modeNormCost = MAX_DOUBLE;
 
     Ipp64f cost;
     SaoCtuParam testBlkParam;
 
-    for(int mergeType=0; mergeType< mergeListSize; mergeType++)
+    for(int mergeIdx=0; mergeIdx< mergeCount; mergeIdx++)
     {
-        if(mergeList[mergeType] == NULL)
+        if(mergeList[mergeIdx] == NULL)
         {
             continue;
         }
 
-        testBlkParam = *(mergeList[mergeType]);
-        //normalized distortion
+        testBlkParam = *(mergeList[mergeIdx]);
         Ipp64f normDist=0;
-        //for(int compIdx=0; compIdx< NUM_SAO_COMPONENTS; compIdx++)
         for(int compIdx=0; compIdx< 1; compIdx++)
         {
             testBlkParam[compIdx].mode_idx = SAO_MODE_MERGE;
-            testBlkParam[compIdx].type_idx = mergeType;
+            testBlkParam[compIdx].type_idx = mergeIdx;
 
-            SaoOffsetParam& mergedOffsetParam = (*(mergeList[mergeType]))[compIdx];
+            SaoOffsetParam& mergedOffsetParam = (*(mergeList[mergeIdx]))[compIdx];
 
-            if( mergedOffsetParam.mode_idx != SAO_MODE_OFF)
+            if( SAO_MODE_OFF != mergedOffsetParam.mode_idx )
             {
-                //offsets have been reconstructed. Don't call inversed quantization function.
                 normDist += (((Ipp64f)GetDistortion(
                     mergedOffsetParam.type_idx,
                     mergedOffsetParam.typeAuxInfo,
                     mergedOffsetParam.offset,
                     m_statData[compIdx][mergedOffsetParam.type_idx])) / m_labmda[compIdx]);
             }
-
         }
 
-        m_bsf->CtxRestore(m_ctxSAO[inCabacLabel], tab_ctxIdxOffset[SAO_MERGE_FLAG_HEVC], 2);
+        m_bsf->CtxRestore(m_ctxSAO[cabac], tab_ctxIdxOffset[SAO_MERGE_FLAG_HEVC], 2);
         m_bsf->Reset();
 
         CodeSaoCtbParam(m_bsf, testBlkParam, sliceEnabled, (mergeList[SAO_MERGE_LEFT]!= NULL), (mergeList[SAO_MERGE_ABOVE]!= NULL), false);
@@ -1455,7 +1434,8 @@ void SaoEncodeFilter::ModeDecision_Merge(
 
     m_bsf->CtxRestore(m_ctxSAO[SAO_CABACSTATE_BLK_TEMP], tab_ctxIdxOffset[SAO_MERGE_FLAG_HEVC], 2);
 
-}
+} // void SaoEncodeFilter::ModeDecision_Merge(...)
+
 
 void SaoEncodeFilter::ModeDecision_Base(std::vector<SaoCtuParam *> &mergeList,  bool *sliceEnabled,
                                         SaoCtuParam &modeParam, Ipp64f &modeNormCost,
