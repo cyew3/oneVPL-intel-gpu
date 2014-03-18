@@ -497,6 +497,8 @@ mfxStatus DISPATCHER_EXPOSED_PREFIX(MFXVideoUSER_Load)(mfxSession session, const
     if (defaultPluginRecord.Default)
     {
         defaultPluginRecord.PluginUID = *uid;
+        defaultPluginRecord.onlyVersionRegistered = true;
+        defaultPluginRecord.PluginVersion = (mfxU16)version;
         try {
             return pHandle.pluginFactory.Create(defaultPluginRecord);
         }
