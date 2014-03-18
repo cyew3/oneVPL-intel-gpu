@@ -16,6 +16,7 @@
 #pragma warning(disable: 4505) 
 #include <cm.h>
 #include <genx_vme.h>
+#include "..\include\genx_h265_cmcode.h"
 
 #define MBINTRADIST_SIZE    4 // mfxU16 intraDist;mfxU16 reserved;
 #define MBDIST_SIZE     64  // 16*mfxU32

@@ -647,7 +647,7 @@ void AllocateCmResources(mfxU32 w, mfxU32 h, mfxU16 nRefs)
     kernelDownSampleSrc = CreateKernel(device, program, "DownSampleMB", (void *)DownSampleMB);
     kernelDownSampleFwd = CreateKernel(device, program, "DownSampleMB", (void *)DownSampleMB);
     kernelMeIntra = CreateKernel(device, program, "RawMeMB_P_Intra", (void *)RawMeMB_P_Intra);
-    kernelGradient = CreateKernel(device, program, "AnalyzeGradient", (void *)AnalyzeGradient);
+    kernelGradient = CreateKernel(device, program, "AnalyzeGradient2", (void *)AnalyzeGradient2);
     kernelMe = CreateKernel(device, program, "RawMeMB_P", (void *)RawMeMB_P);
     kernelMe2x = CreateKernel(device, program, "MeP32", (void *)MeP32);
     kernelRefine32x32 = CreateKernel(device, program, "RefineMeP32x32", (void *)RefineMeP32x32);

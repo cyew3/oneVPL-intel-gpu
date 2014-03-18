@@ -23,6 +23,7 @@ void RawMeMB_P(SurfaceIndex, SurfaceIndex, SurfaceIndex, SurfaceIndex, SurfaceIn
                SurfaceIndex, SurfaceIndex, SurfaceIndex, SurfaceIndex) {}
 void RawMeMB_B(SurfaceIndex, SurfaceIndex, SurfaceIndex, SurfaceIndex) {}
 void AnalyzeGradient(SurfaceIndex, SurfaceIndex, SurfaceIndex, unsigned int) {}
+void AnalyzeGradient2(SurfaceIndex, SurfaceIndex, SurfaceIndex, unsigned int) {}
 void InterpolateFrame(SurfaceIndex, SurfaceIndex, SurfaceIndex, SurfaceIndex) {}
 };
 

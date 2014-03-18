@@ -13,6 +13,7 @@
 #include "../include/test_common.h"
 
 int TestAnalyzeGradient();
+int TestAnalyzeGradient2();
 int TestRefineMeP32x32();
 int TestRefineMeP32x16();
 int TestRefineMeP16x32();
@@ -44,5 +45,6 @@ int main()
     RunTest(TestRefineMeP32x16, "RefineMeP32x16");
     RunTest(TestRefineMeP16x32, "RefineMeP16x32");
     RunTest(TestAnalyzeGradient, "AnalyzeGradient");
+    RunTest(TestAnalyzeGradient2, "AnalyzeGradient2");
     RunTest(TestInterpolateFrame, "InterpolateFrame");
 }
