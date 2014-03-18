@@ -4,6 +4,45 @@
 namespace
 {
 
+class SFiller : public tsSurfaceFiller
+{
+private:
+    mfxU32 m_c;
+public:
+    SFiller() : m_c(0){ srand(0); };
+    mfxStatus FillSurface(mfxFrameSurface1& s);
+};
+
+ mfxStatus SFiller::FillSurface(mfxFrameSurface1& s)
+ {
+    tsFrame d(s);
+    mfxU32 mh = s.Info.Height / 10;
+    mfxU32 mw = s.Info.Width / 6 * (1 + !(m_c++ % 10));
+
+    for(mfxU32 h = 0; h < s.Info.Height; h++)
+    {
+        for(mfxU32 w = 0; w < s.Info.Width; w++)
+        {
+            d.Y(w,h) = 16;
+            d.U(w,h) = 127;
+            d.V(w,h) = 127;
+        }
+    }
+
+    for(mfxU32 w = 0; w < mw; w++)
+    {
+        for(mfxU32 h = 0; h < mh; h++)
+        {
+            d.Y(w, h) = (rand() % (235 - 16)) + 16;
+            d.U(w, h) = (rand() % (235 - 16)) + 16;
+            d.V(w, h) = (rand() % (235 - 16)) + 16;
+        }
+    }
+
+     return MFX_ERR_NONE;
+ }
+
+
 class BitstreamChecker : public tsBitstreamProcessor, public tsParserH264AU
 {
 public:
@@ -63,7 +102,7 @@ mfxStatus BitstreamChecker::ProcessBitstream(mfxBitstream& bs, mfxU32 nFrames)
                 macro_block& mb = s.mb[i];
                 if(sps.profile_idc == 100)
                 {
-                    EXPECT_LE( mb.numBits, 128 + RawMbBits / max_bits_per_mb_denom) << "FAILED at MB #" << mb.Addr;
+                    EXPECT_LE( mb.numBits, 128 + RawMbBits / max_bits_per_mb_denom) << "FAILED at MB #" << mb.Addr << " (" << mb.x << ":" << mb.y <<")";
                 } else
                 {
                     EXPECT_LE( mb.numBits, 3200) << "FAILED at MB #" << mb.Addr;
@@ -81,9 +120,9 @@ int test(unsigned int id)
 {
     TS_START;
     tsVideoEncoder enc(MFX_CODEC_AVC);
-    tsNoiseFiller f;
+    SFiller sf; 
     BitstreamChecker c;
-    enc.m_filler = &f;
+    enc.m_filler = &sf;
     enc.m_bs_processor = &c;
 
     mfxInfoMFX& mfx = enc.m_par.mfx;
@@ -115,17 +154,11 @@ int test(unsigned int id)
     co.RecoveryPointSEI     = 16;
     co.SingleSeiNalUnit     = 32;
     co.VuiVclHrdParameters  = 16;
-    co.ResetRefList         = 32;
-    co.IntraPredBlockSize   = 3;
-    co.InterPredBlockSize   = 1;
     co.AUDelimiter          = 16; 
     co.EndOfStream          = 32;
     co.PicTimingSEI         = 16;
     co.VuiNalHrdParameters  = 16;
-
-    //tsRawReader r("C:\\Users\\estarov\\Desktop\\dev\\streams\\YUV\\matrix_1920x1088_250.yuv", enc.m_par.mfx.FrameInfo);enc.m_filler = &r;
-    //tsBitstreamWriter w("out.264");enc.m_bs_processor = &w;
-
+    
     enc.EncodeFrames(300);
     
     TS_END;

@@ -43,6 +43,8 @@ inline mfxU32 NumComponents(mfxFrameInfo fi)
 tsFrame& tsFrame::operator=(tsFrame& src)
 {
     mfxU32 n = TS_MIN(NumComponents(m_info), NumComponents(src.m_info));
+    mfxU32 maxw = TS_MIN(m_info.Width, src.m_info.Width);
+    mfxU32 maxh = TS_MIN(m_info.Height, src.m_info.Height);
 
     if(    src.m_info.Width > m_info.Width
         || src.m_info.Height > m_info.Height)
@@ -52,9 +54,9 @@ tsFrame& tsFrame::operator=(tsFrame& src)
 
     if(isYUV() && src.isYUV())
     {
-        for(mfxU32 h = 0; h < m_info.Height; h ++)
+        for(mfxU32 h = 0; h < maxh; h ++)
         {
-            for(mfxU32 w = 0; w < m_info.Width; w ++)
+            for(mfxU32 w = 0; w < maxw; w ++)
             {
                 Y(w, h) = src.Y(w, h);
                 if(n == 3)
@@ -67,9 +69,9 @@ tsFrame& tsFrame::operator=(tsFrame& src)
     }
     else if(isRGB() && src.isRGB())
     {
-        for(mfxU32 h = 0; h < m_info.Height; h ++)
+        for(mfxU32 h = 0; h < maxh; h ++)
         {
-            for(mfxU32 w = 0; w < m_info.Width; w ++)
+            for(mfxU32 w = 0; w < maxw; w ++)
             {
                 R(w, h) = src.R(w, h);
                 G(w, h) = src.G(w, h);
