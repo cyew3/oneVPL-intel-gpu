@@ -209,7 +209,7 @@ typedef struct {
     mfxU16      FastSkip;           // tri-state
     mfxU16      ForceNumThread;     // 0-default
     mfxU16      FastCbfMode;        // tri-state, stop PU modes after cbf is 0
-    mfxU16      reserved[11];
+    mfxU16      reserved[10];
 } mfxExtCodingOptionHEVC;
 
 #define MFX_EXTBUFF_VP8_PARAM MFX_MAKEFOURCC('B','V','P','8')
