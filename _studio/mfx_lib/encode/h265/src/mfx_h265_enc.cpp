@@ -3203,7 +3203,7 @@ recode:
         m_pNextFrame = m_cpb.findOldestToEncode(&m_dpb, m_l1_cnt_to_start_B, 0, 0);
         if (m_pNextFrame)
         {
-            memcpy(&m_ShortRefPicSetDump, &m_ShortRefPicSet, sizeof(m_ShortRefPicSet)); // !!!TODO: not all should be saved sergo!!!
+            small_memcpy(&m_ShortRefPicSetDump, &m_ShortRefPicSet, sizeof(m_ShortRefPicSet)); // !!!TODO: not all should be saved sergo!!!
             for (Ipp8u curr_slice = 0; curr_slice < m_videoParam.NumSlices; curr_slice++) {
                 H265Slice *pSlice = m_slicesNext + curr_slice;
                 SetSlice(pSlice, curr_slice, m_pNextFrame);
@@ -3223,7 +3223,7 @@ recode:
                     m_slice_ids[i] = curr_slice;
                 }
             }
-            memcpy(&m_ShortRefPicSet, &m_ShortRefPicSetDump, sizeof(m_ShortRefPicSet));
+            small_memcpy(&m_ShortRefPicSet, &m_ShortRefPicSetDump, sizeof(m_ShortRefPicSet));
         }
 
         H265Frame **refsNext = m_pNextFrame->m_refPicList[0].m_refFrames;
