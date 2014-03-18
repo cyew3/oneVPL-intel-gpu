@@ -839,9 +839,17 @@ mfxStatus CSmplYUVWriter::WriteNextFrame(mfxFrameSurface1 *pSurface)
             }
         }
         break;
-
+        case MFX_FOURCC_P010:
+            for (i = 0; i < pInfo->CropH; i++)
+            {
+                MSDK_CHECK_NOT_EQUAL(
+                    fwrite(pData->Y + (pInfo->CropY * pData->Pitch + pInfo->CropX)+ i * pData->Pitch, 1, (mfxU32)pInfo->CropW*2, m_fDest),
+                    (mfxU32)pInfo->CropW*2, MFX_ERR_UNDEFINED_BEHAVIOR);
+            }
+        break;
         case MFX_FOURCC_RGB4:
-            // Implementation for RGB4 in the next switch below
+        case MFX_FOURCC_A2RGB10:
+            // Implementation for RGB4 and A2RGB10 in the next switch below
         break;
 
         default:
@@ -905,7 +913,17 @@ mfxStatus CSmplYUVWriter::WriteNextFrame(mfxFrameSurface1 *pSurface)
         }
         break;
 
+        case MFX_FOURCC_P010:
+            for (i = 0; i < (mfxU32)pInfo->CropH/2; i++)
+            {
+                MSDK_CHECK_NOT_EQUAL(
+                    fwrite(pData->UV + (pInfo->CropY * pData->Pitch / 2 + pInfo->CropX) + i * pData->Pitch, 1, (mfxU32)pInfo->CropW*2, m_fDest),
+                    (mfxU32)pInfo->CropW*2, MFX_ERR_UNDEFINED_BEHAVIOR);
+            }
+        break;
+
         case MFX_FOURCC_RGB4:
+        case MFX_FOURCC_A2RGB10:
         mfxU8* ptr;
 
         if (pInfo->CropH > 0 && pInfo->CropW > 0)

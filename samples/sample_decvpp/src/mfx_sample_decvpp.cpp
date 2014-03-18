@@ -19,7 +19,7 @@ void PrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage)
 
     msdk_printf(MSDK_STRING("Usage: %s <codecid> [<options>] -i InputBitstream\n"), strAppName);
     msdk_printf(MSDK_STRING("   or: %s <codecid> [<options>] -i InputBitstream -r\n"), strAppName);
-    msdk_printf(MSDK_STRING("   or: %s <codecid> [<options>] -i InputBitstream -o OutputYUVFile\n"), strAppName);
+    msdk_printf(MSDK_STRING("   or: %s <codecid> [<options>] -i InputBitstream -o OutputYUVFile <fourcc>\n"), strAppName);
     msdk_printf(MSDK_STRING("\n"));
     msdk_printf(MSDK_STRING("Supported codecs (<codecid>):\n"));
     msdk_printf(MSDK_STRING("   <codecid>=h264|mpeg2|vc1|mvc|jpeg - built-in Media SDK codecs\n"));
@@ -28,6 +28,8 @@ void PrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("   <codecid>=vp8                     - Media SDK sample user-decoder plugin (requires '-p' option to be functional)\n"));
 #endif
     msdk_printf(MSDK_STRING("\n"));
+    msdk_printf(MSDK_STRING("Supported output color format (<fourcc>):\n"));
+    msdk_printf(MSDK_STRING("   <fourcc> = -nv12 | -rgb4 | -p010 -a2rgb10 - if not specified nv12 is used\n"));
     msdk_printf(MSDK_STRING("Work models:\n"));
     msdk_printf(MSDK_STRING("  1. Performance model: decoding on MAX speed, no rendering, no YUV dumping (no -r or -o option)\n"));
     msdk_printf(MSDK_STRING("  2. Rendering model: decoding with rendering on the screen (-r option)\n"));
@@ -36,7 +38,6 @@ void PrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("Options:\n"));
     msdk_printf(MSDK_STRING("   [-hw]                   - use platform specific SDK implementation, if not specified software implementation is used\n"));
     msdk_printf(MSDK_STRING("   [-p /path/to/plugin]    - path to decoder plugin (optional for Media SDK in-box plugins, required for user-decoder ones)\n"));
-    msdk_printf(MSDK_STRING("   [-rgb]                  - forces VPP to convert into RGB4 color format, if not specified - into NV12\n"));
 #if D3D_SURFACES_SUPPORT
     msdk_printf(MSDK_STRING("   [-d3d]                  - work with d3d9 surfaces\n"));
     msdk_printf(MSDK_STRING("   [-d3d11]                - work with d3d11 surfaces\n"));
@@ -142,9 +143,21 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         {
             pParams->bUseHWLib = true;
         }
-        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-rgb")))
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-nv12")))
         {
-            pParams->bIsRgbOut = true;
+            pParams->fourcc = MFX_FOURCC_NV12;
+        }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-rgb4")))
+        {
+            pParams->fourcc = MFX_FOURCC_RGB4;
+        }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-p010")))
+        {
+            pParams->fourcc = MFX_FOURCC_P010;
+        }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-a2rgb10")))
+        {
+            pParams->fourcc = MFX_FOURCC_A2RGB10;
         }
 #if D3D_SURFACES_SUPPORT
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-d3d")))
