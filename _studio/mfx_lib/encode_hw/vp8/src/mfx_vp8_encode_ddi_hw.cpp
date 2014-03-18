@@ -1326,19 +1326,6 @@ mfxStatus D3D11Encoder::Destroy()
             quant.quantization_index_delta[i] = VP8Par->CTQPDelta[i];
         }
 
-        // delta for YDC, Y2AC, Y2DC, UAC, UDC
-        quant.quantization_index_delta[0] = 
-            quant.quantization_index_delta[1] =
-            quant.quantization_index_delta[2] =
-            quant.quantization_index_delta[3] =
-            quant.quantization_index_delta[4] = 0 ;
-
-        // index for all four segments
-        quant.quantization_index[0] =
-            quant.quantization_index[1] =
-            quant.quantization_index[2] =
-            quant.quantization_index[3] = task.m_sFrameParams.bIntra ? par.mfx.QPI:par.mfx.QPP;
-
         return MFX_ERR_NONE;
     }
 
