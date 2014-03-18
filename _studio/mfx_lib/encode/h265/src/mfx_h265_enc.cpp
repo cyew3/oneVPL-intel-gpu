@@ -2537,6 +2537,7 @@ mfxStatus H265Encoder::EncodeThread(Ipp32s ithread) {
         if (!found)
             continue;
 
+        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "EncodeThread");
         Ipp32s bs_id = 0;
         if (pars->num_threads > 1 && m_pps.entropy_coding_sync_enabled_flag)
             bs_id = ctb_row;
@@ -3010,7 +3011,7 @@ mfxStatus H265Encoder::EncodeFrame(mfxFrameSurface1 *surface, mfxBitstream *mfxB
         }
     }
 
-    if (m_videoParam.enableCmFlag)
+    if (m_videoParam.enableCmFlag && m_pCurrentFrame)
         m_pCurrentFrame->SetisShortTermRef();   // is needed for RefList of m_pNextFrame
 
     if (!mfxBS)
