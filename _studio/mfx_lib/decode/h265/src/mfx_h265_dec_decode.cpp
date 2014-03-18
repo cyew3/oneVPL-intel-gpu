@@ -1044,7 +1044,7 @@ void VideoDECODEH265::FillVideoParam(mfxVideoParamWrapper *par, bool full)
     if (!m_pH265VideoDecoder.get())
         return;
 
-    MFX_Utility::FillVideoParam(m_pH265VideoDecoder.get(), par, full, m_core->GetPlatformType() != MFX_PLATFORM_SOFTWARE);
+    MFX_Utility::FillVideoParam(m_pH265VideoDecoder.get(), par, full, MFX_Utility::GetPlatform_H265(m_core, par) != MFX_PLATFORM_SOFTWARE);
 
     RawHeader_H265 *sps = m_pH265VideoDecoder->GetSPS();
     RawHeader_H265 *pps = m_pH265VideoDecoder->GetPPS();
