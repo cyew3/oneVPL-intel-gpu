@@ -72,6 +72,8 @@ struct H265PartialEdgeData
 // picture coding data class
 class H265FrameCodingData
 {
+    DISALLOW_COPY_AND_ASSIGN(H265FrameCodingData);
+
 public:
     Ipp32u m_WidthInCU;
     Ipp32u m_HeightInCU;

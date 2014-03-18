@@ -433,7 +433,10 @@ protected:
     void MakeChange(bool isUndo, const H264DecoderFrame * frame);
     void Remove(H264DecoderFrame * frame);
     void RemoveOld();
+
+#ifdef _DEBUG
     void DebugPrintItems();
+#endif
 
     bool CheckUseless(DPBChangeItem * item);
     void ResetError();

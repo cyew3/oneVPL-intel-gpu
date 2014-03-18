@@ -590,6 +590,7 @@ void DecReferencePictureMarking::RemoveOld()
     Remove(m_commandsList.front().m_pCurrentFrame);
 }
 
+#ifdef _DEBUG
 void DecReferencePictureMarking::DebugPrintItems()
 {
     printf("==================================\n");
@@ -603,6 +604,7 @@ void DecReferencePictureMarking::DebugPrintItems()
 
     printf("==================================\n");
 }
+#endif
 
 void DecReferencePictureMarking::Remove(H264DecoderFrame * frame)
 {

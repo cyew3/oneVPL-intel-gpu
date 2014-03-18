@@ -21,7 +21,6 @@
 #endif
 
 #ifdef UMC_VA_DXVA
-#include "umc_mvc_ddi.h"
 #include "umc_va_base.h"
 #include "umc_va_dxva2_protected.h"
 #endif
@@ -69,9 +68,6 @@ Status PackerDXVA2::GetStatusReport(void * pStatusReport, size_t size)
 void PackerDXVA2::ExecuteBuffers()
 {
     Status s = m_va->Execute();
-#ifdef PRINT_TRACE
-    printf(">>> VA.Execute: status %d\n", s);
-#endif
     if(s != UMC_OK)
         throw h265_exception(s);
 }
@@ -97,9 +93,6 @@ void PackerDXVA2::GetPicParamVABuffer(DXVA_Intel_PicParams_HEVC **ppPicParam, si
             if(phase == 0)
             {
                 Status s = m_va->Execute();
-#ifdef PRINT_TRACE
-                printf("   PicParam buffer overflow: VA.Execute: status %d\n", s);
-#endif
                 if(s != UMC_OK)
                     throw h265_exception(s);
                 continue;
@@ -138,14 +131,6 @@ void PackerDXVA2::GetSliceVABuffers(
                dataBffrOffs = dataVABffr->GetDataSize();
 
         dataBffrOffs = dataAlignment ? dataAlignment*((dataBffrOffs + dataAlignment - 1)/dataAlignment) : dataBffrOffs;
-#ifdef PRINT_TRACE
-        printf("   DXVA_SLICE_CONTROL_BUFFER: buffer size: %u\n", headVABffr->GetBufferSize());
-        printf("   DXVA_SLICE_CONTROL_BUFFER: sizeof slice hdr: %u\n", headerSize);
-        printf("   DXVA_SLICE_CONTROL_BUFFER: offset of slice hdr in buffer: %u\n", headBffrOffs);
-        printf("   DXVA_BITSTREAM_DATA_BUFFER: buffer size: %u\n", dataBffrSize);
-        printf("   DXVA_BITSTREAM_DATA_BUFFER: sizeof slice data: %u\n", dataSize);
-        printf("   DXVA_BITSTREAM_DATA_BUFFER: offset of slice data in buffer: %u\n", dataBffrOffs);
-#endif
 
         if( headBffrSize - headBffrOffs < headerSize ||
             dataBffrSize - dataBffrOffs < dataSize )
@@ -153,9 +138,6 @@ void PackerDXVA2::GetSliceVABuffers(
             if(phase == 0)
             {
                 Status s = m_va->Execute();
-#ifdef PRINT_TRACE
-                printf("   Buffer overflow: VA.Execute: status %d\n", s);
-#endif
                 if(s != UMC_OK)
                     throw h265_exception(s);
                 continue;
@@ -174,11 +156,6 @@ void PackerDXVA2::GetSliceVABuffers(
         memset(*ppSliceHeader, 0, headerSize);
         (*ppSliceHeader)->BSNALunitDataLocation = dataBffrOffs;
         (*ppSliceHeader)->SliceBytesInBuffer = dataSize;
-#ifdef PRINT_TRACE
-        printf("   DXVA_SLICE_CONTROL_BUFFER: SetDataSize(%u)\n", headBffrOffs + headerSize);
-        printf("   DXVA_BITSTREAM_DATA_BUFFER: SetDataSize(%u)\n", dataBffrOffs + dataSize);
-#endif
-
         return;
     }
 }
@@ -199,9 +176,6 @@ void PackerDXVA2::GetIQMVABuffer(DXVA_Intel_Qmatrix_HEVC **ppQmatrix, size_t siz
             if(phase == 0)
             {
                 Status s = m_va->Execute();
-#ifdef PRINT_TRACE
-                printf("   IQM buffer overflow: VA.Execute: status %d\n", s);
-#endif
                 if(s != UMC_OK)
                     throw h265_exception(s);
                 continue;
@@ -228,209 +202,6 @@ void PackerDXVA2::BeginFrame()
 void PackerDXVA2::EndFrame()
 {
 }
-
-#if HEVC_SPEC_VER == MK_HEVCVER(0, 84) || HEVC_SPEC_VER == MK_HEVCVER(0, 83)
-void PackerDXVA2::PackPicParams(const H265DecoderFrame *pCurrentFrame,
-                        H265DecoderFrameInfo * pSliceInfo,
-                        TaskSupplier_H265 *supplier)
-{
-    DXVA_Intel_PicParams_HEVC* pPicParam = 0;
-    GetPicParamVABuffer(&pPicParam, sizeof(DXVA_Intel_PicParams_HEVC));
-
-    H265Slice *pSlice = pSliceInfo->GetSlice(0);
-    const H265SeqParamSet *pSeqParamSet = pSlice->GetSeqParam();
-    const H265PicParamSet *pPicParamSet = pSlice->GetPicParam();
-    
-    //
-    //
-    pPicParam->PicWidthInMinCbsY   = (USHORT)LengthInMinCb(pSeqParamSet->getPicWidthInLumaSamples(), pSeqParamSet->getLog2MinCUSize());
-    pPicParam->PicHeightInMinCbsY  = (USHORT)LengthInMinCb(pSeqParamSet->getPicHeightInLumaSamples(), pSeqParamSet->getLog2MinCUSize());
-
-    //
-    //
-    pPicParam->PicFlags.fields.chroma_format_idc                            = pSeqParamSet->getChromaFormatIdc();
-    pPicParam->PicFlags.fields.separate_colour_plane_flag                   = 0;    // 0 in HEVC spec HM10 by design
-    pPicParam->PicFlags.fields.pcm_enabled_flag                             = pSeqParamSet->getUsePCM() ? 1 : 0 ;
-    pPicParam->PicFlags.fields.scaling_list_enabled_flag                    = pSeqParamSet->scaling_list_enabled_flag ? 1 : 0 ;
-    pPicParam->PicFlags.fields.transform_skip_enabled_flag                  = pPicParamSet->transform_skip_enabled_flag ? 1 : 0 ;
-    pPicParam->PicFlags.fields.amp_enabled_flag                             = pSeqParamSet->getUseAMP() ? 1 : 0 ;
-    pPicParam->PicFlags.fields.strong_intra_smoothing_enabled_flag          = pSeqParamSet->getUseStrongIntraSmoothing() ? 1 : 0 ;
-    pPicParam->PicFlags.fields.sign_data_hiding_flag                        = pPicParamSet->sign_data_hiding_enabled_flag ? 1 : 0 ;
-    pPicParam->PicFlags.fields.constrained_intra_pred_flag                  = pPicParamSet->constrained_intra_pred_flag ? 1 : 0 ;
-    pPicParam->PicFlags.fields.cu_qp_delta_enabled_flag                     = pPicParamSet->cu_qp_delta_enabled_flag;
-    pPicParam->PicFlags.fields.weighted_pred_flag                           = pPicParamSet->weighted_pred_flag ? 1 : 0 ;
-    pPicParam->PicFlags.fields.weighted_bipred_flag                         = pPicParamSet->weighted_bipred_flag ? 1 : 0 ;
-    pPicParam->PicFlags.fields.transquant_bypass_enabled_flag               = pPicParamSet->transquant_bypass_enabled_flag ? 1 : 0 ;    
-    pPicParam->PicFlags.fields.tiles_enabled_flag                           = pPicParamSet->tiles_enabled_flag;
-    pPicParam->PicFlags.fields.entropy_coding_sync_enabled_flag             = pPicParamSet->entropy_coding_sync_enabled_flag;
-    pPicParam->PicFlags.fields.pps_loop_filter_across_slices_enabled_flag   = pPicParamSet->pps_loop_filter_across_slices_enabled_flag;
-    pPicParam->PicFlags.fields.loop_filter_across_tiles_enabled_flag        = pPicParamSet->loop_filter_across_tiles_enabled_flag;
-    pPicParam->PicFlags.fields.pcm_loop_filter_disabled_flag                = pSeqParamSet->getPCMFilterDisableFlag() ? 1 : 0 ;
-    pPicParam->PicFlags.fields.field_pic_flag                               = 0;
-    pPicParam->PicFlags.fields.bottom_field_flag                            = 0;
-    pPicParam->PicFlags.fields.NoPicReorderingFlag                          = 0;
-    pPicParam->PicFlags.fields.NoBiPredFlag                                 = 0;
-    
-    //
-    //
-    pPicParam->CurrPic.Index7bits   = pCurrentFrame->m_index;    // ?
-    pPicParam->CurrPicOrderCntVal   = pSlice->GetSliceHeader()->slice_pic_order_cnt_lsb;
-
-    int numRefPicSetStCurrBefore = 0,
-        numRefPicSetStCurrAfter  = 0,
-        numRefPicSetLtCurr       = 0,
-        index, pocList[3*8];
-    ReferencePictureSet *rps = pSlice->getRPS();
-
-    for(index = 0; index < rps->getNumberOfNegativePictures(); index++)
-        if(rps->getUsed(index))
-            pocList[numRefPicSetStCurrBefore++] = pPicParam->CurrPicOrderCntVal + rps->getDeltaPOC(index);
-
-    for(; index < rps->getNumberOfNegativePictures() + rps->getNumberOfPositivePictures(); index++)
-        if(rps->getUsed(index))
-            pocList[numRefPicSetStCurrBefore + numRefPicSetStCurrAfter++] = pPicParam->CurrPicOrderCntVal + rps->getDeltaPOC(index);
-
-    int num_ref_frames = pSeqParamSet->sps_max_dec_pic_buffering[pSlice->GetSliceHeader()->nuh_temporal_id];
-
-    pPicParam->sps_max_dec_pic_buffering_minus1 = (UCHAR)(num_ref_frames - 1);
-
-    int count = 0;
-    int cntRefPicSetStCurrBefore = 0,
-        cntRefPicSetStCurrAfter  = 0,
-        cntRefPicSetLtCurr = 0;
-    H265DBPList *dpb = supplier->GetDPBList();
-    for(H265DecoderFrame* frame = dpb->head() ; frame && count < sizeof(pPicParam->RefFrameList)/sizeof(pPicParam->RefFrameList[0]) ; frame = frame->future())
-    {
-        if(frame != pCurrentFrame)
-        {
-            int refType = frame->isShortTermRef() ? SHORT_TERM_REFERENCE : (frame->isLongTermRef() ? LONG_TERM_REFERENCE : NO_REFERENCE);
-
-            if(refType != NO_REFERENCE)
-            {
-                pPicParam->PicOrderCntValList[count] = frame->m_PicOrderCnt;
-
-                pPicParam->RefFrameList[count].Index7bits = frame->m_index;
-                pPicParam->RefFrameList[count].long_term_ref_flag = (refType == LONG_TERM_REFERENCE);
-
-                for(int n=0 ; n < numRefPicSetStCurrBefore + numRefPicSetStCurrAfter ; n++)
-                {
-                    if(frame->m_PicOrderCnt == pocList[n])
-                    {
-                        if(n < numRefPicSetStCurrBefore)
-                        {
-                            if(cntRefPicSetStCurrBefore < sizeof(pPicParam->RefPicSetStCurrBefore)/sizeof(pPicParam->RefPicSetStCurrBefore[0]))
-                                pPicParam->RefPicSetStCurrBefore[cntRefPicSetStCurrBefore++] = count;
-                        }
-                        else if(n < numRefPicSetStCurrBefore + numRefPicSetStCurrAfter)
-                        {
-                            if(cntRefPicSetStCurrAfter < sizeof(pPicParam->RefPicSetStCurrAfter)/sizeof(pPicParam->RefPicSetStCurrAfter[0]))
-                                pPicParam->RefPicSetStCurrAfter[cntRefPicSetStCurrAfter++] = count;
-                        }
-                        else if(n < numRefPicSetStCurrBefore + numRefPicSetStCurrAfter + numRefPicSetLtCurr)
-                        {
-                            if(cntRefPicSetLtCurr < sizeof(pPicParam->RefPicSetLtCurr)/sizeof(pPicParam->RefPicSetLtCurr[0]))
-                                pPicParam->RefPicSetLtCurr[cntRefPicSetLtCurr++] = count;
-                        }
-                    }
-                }
-
-                m_refFrameListCache[count].bPicEntry = pPicParam->RefFrameList[count].bPicEntry;    // save to use in slice param packer
-                count++;
-            }
-        }
-    }
-    m_refFrameListCacheSize = count;
-    for(int n=count;n < sizeof(pPicParam->RefFrameList)/sizeof(pPicParam->RefFrameList[0]);n++)
-    {
-        pPicParam->RefFrameList[n].bPicEntry = (UCHAR)0xff;
-        pPicParam->PicOrderCntValList[count] = -1;
-    }
-
-    for(int i=0;i < 8;i++)
-    {
-        if(i >= cntRefPicSetStCurrBefore)
-            pPicParam->RefPicSetStCurrBefore[i] = 0xff;
-        if(i >= cntRefPicSetStCurrAfter)
-            pPicParam->RefPicSetStCurrAfter[i] = 0xff;
-        if(i >= cntRefPicSetLtCurr)
-            pPicParam->RefPicSetLtCurr[i] = 0xff;
-    }
-
-
-    //
-    //
-    pPicParam->RefFieldPicFlag                              = 0;
-    pPicParam->RefBottomFieldFlag                           = 0;
-    pPicParam->bit_depth_luma_minus8                        = (UCHAR)(pSeqParamSet->getBitDepthY() - 8);
-    pPicParam->bit_depth_chroma_minus8                      = (UCHAR)(pSeqParamSet->getBitDepthC() - 8);
-    pPicParam->pcm_sample_bit_depth_luma_minus1             = (UCHAR)(pSeqParamSet->getPCMBitDepthLuma() - 1);
-    pPicParam->pcm_sample_bit_depth_chroma_minus1           = (UCHAR)(pSeqParamSet->getPCMBitDepthChroma() - 1);
-    pPicParam->log2_min_luma_coding_block_size_minus3       = (UCHAR)(pSeqParamSet->getLog2MinCUSize() - 3);
-    pPicParam->log2_diff_max_min_luma_coding_block_size     = (UCHAR)(pSeqParamSet->getLog2CtbSize() - pSeqParamSet->getLog2MinCUSize());
-    pPicParam->log2_min_transform_block_size_minus2         = (UCHAR)(pSeqParamSet->log2_min_transform_block_size - 2);
-    pPicParam->log2_diff_max_min_transform_block_size       = (UCHAR)(pSeqParamSet->log2_max_transform_block_size - pSeqParamSet->log2_min_transform_block_size);
-    pPicParam->log2_min_pcm_luma_coding_block_size_minus3   = (UCHAR)(pSeqParamSet->log2_min_pcm_luma_coding_block_size - 3);
-    pPicParam->log2_diff_max_min_pcm_luma_coding_block_size = (UCHAR)(pSeqParamSet->log2_max_pcm_luma_coding_block_size - pSeqParamSet->log2_min_pcm_luma_coding_block_size);
-    pPicParam->max_transform_hierarchy_depth_intra          = (UCHAR)pSeqParamSet->max_transform_hierarchy_depth_intra;
-    pPicParam->max_transform_hierarchy_depth_inter          = (UCHAR)pSeqParamSet->max_transform_hierarchy_depth_inter;
-    pPicParam->init_qp_minus26                              = (CHAR)pPicParamSet->init_qp - 26;
-    pPicParam->diff_cu_qp_delta_depth                       = (UCHAR)(pPicParamSet->diff_cu_qp_delta_depth);
-    pPicParam->pps_cb_qp_offset                             = (CHAR)pPicParamSet->pps_cb_qp_offset;
-    pPicParam->pps_cr_qp_offset                             = (CHAR)pPicParamSet->pps_cr_qp_offset;
-    if(pPicParam->PicFlags.fields.tiles_enabled_flag)
-    {
-        pPicParam->num_tile_columns_minus1          = (UCHAR)pPicParamSet->num_tile_columns - 1;
-        pPicParam->num_tile_rows_minus1             = (UCHAR)pPicParamSet->num_tile_rows - 1;
-        for (Ipp32s i = 0; i < pPicParamSet->num_tile_columns; i++)
-            pPicParam->column_width_minus1[i] = (Ipp16u)(pPicParamSet->column_width[i] - 1);
-
-        for (Ipp32s i = 0; i < pPicParamSet->num_tile_rows; i++)
-            pPicParam->row_height_minus1[i] = (Ipp16u)(pPicParamSet->row_height[i] - 1);
-    }
-    pPicParam->log2_parallel_merge_level_minus2     = (UCHAR)pPicParamSet->log2_parallel_merge_level - 2;
-    pPicParam->StatusReportFeedbackNumber = m_statusReportFeedbackCounter;
-
-    pPicParam->continuation_flag = 1;
-
-    // PicShortFormatFlags
-    //
-    pPicParam->PicShortFormatFlags.fields.lists_modification_present_flag               = pPicParamSet->lists_modification_present_flag ? 1 : 0 ;
-    pPicParam->PicShortFormatFlags.fields.long_term_ref_pics_present_flag               = pSeqParamSet->getLongTermRefsPresent() ? 1 : 0 ;
-    pPicParam->PicShortFormatFlags.fields.sps_temporal_mvp_enabled_flag                 = pSeqParamSet->getTMVPFlagsPresent() ? 1 : 0 ;
-    pPicParam->PicShortFormatFlags.fields.cabac_init_present_flag                       = pPicParamSet->cabac_init_present_flag ? 1 : 0 ;
-    pPicParam->PicShortFormatFlags.fields.output_flag_present_flag                      = pPicParamSet->output_flag_present_flag ? 1 : 0 ;
-    pPicParam->PicShortFormatFlags.fields.dependent_slice_segments_enabled_flag         = pPicParamSet->dependent_slice_segments_enabled_flag ? 1 : 0 ;
-    pPicParam->PicShortFormatFlags.fields.pps_slice_chroma_qp_offsets_present_flag      = pPicParamSet->pps_slice_chroma_qp_offsets_present_flag ? 1 : 0 ;
-    pPicParam->PicShortFormatFlags.fields.sample_adaptive_offset_enabled_flag           = pSeqParamSet->getUseSAO() ? 1 : 0 ;
-    pPicParam->PicShortFormatFlags.fields.deblocking_filter_override_enabled_flag       = pPicParamSet->deblocking_filter_override_enabled_flag ? 1 : 0 ;
-    pPicParam->PicShortFormatFlags.fields.pps_disable_deblocking_filter_flag            = pPicParamSet->pps_deblocking_filter_disabled_flag ? 1 : 0 ;
-    pPicParam->PicShortFormatFlags.fields.IrapPicFlag                                   = 0;
-    pPicParam->PicShortFormatFlags.fields.IdrPicFlag                                    = 0;
-    pPicParam->PicShortFormatFlags.fields.IntraPicFlag                                  = 0;
-    pPicParam->PicShortFormatFlags.fields.slice_segment_header_extension_present_flag   = pPicParamSet->slice_segment_header_extension_present_flag ? 1 : 0 ;
-
-    //
-    //
-    pPicParam->log2_max_pic_order_cnt_lsb_minus4    = (UCHAR)(pSeqParamSet->log2_max_pic_order_cnt_lsb - 4);
-    pPicParam->num_short_term_ref_pic_sets          = (UCHAR)pSeqParamSet->getRPSList()->getNumberOfReferencePictureSets();
-    pPicParam->num_long_term_ref_pics_sps           = (UCHAR)pSeqParamSet->getNumLongTermRefPicSPS();
-    pPicParam->num_ref_idx_l0_default_active_minus1 = (UCHAR)(pPicParamSet->num_ref_idx_l0_default_active - 1);
-    pPicParam->num_ref_idx_l1_default_active_minus1 = (UCHAR)(pPicParamSet->num_ref_idx_l1_default_active - 1);
-    pPicParam->pps_beta_offset_div2                 = (CHAR)(pPicParamSet->pps_beta_offset >> 1);
-    pPicParam->pps_tc_offset_div2                   = (CHAR)(pPicParamSet->pps_tc_offset >> 1);    
-    pPicParam->StRPSBits                            = 0;    // TODO
-    pPicParam->num_extra_slice_header_bits          = (UCHAR)pPicParamSet->num_extra_slice_header_bits;
-
-    //pPicParam->CollocatedRefIdx.Index7bits          = (UCHAR)(pSlice->getSliceType() != I_SLICE ? pSlice->GetSliceHeader()->collocated_ref_idx : -1 );
-    //pPicParam->PicShortFormatFlags.fields.deblocking_filter_control_present_flag     = pPicParamSet->getDeblockingFilterControlPresentFlag() ? 1 : 0 ;
-    //pPicParam->PicShortFormatFlags.fields.slice_temporal_mvp_enabled_flag            = pSlice->GetSliceHeader()->slice_temporal_mvp_enabled_flag ? 1 : 0 ;
-    //for(unsigned k=0;k < 32 && k < pSeqParamSet->getNumLongTermRefPicSPS();k++)
-    //    pPicParam->lt_ref_pic_poc_lsb_sps[k] = (USHORT)pSeqParamSet->getLtRefPicPocLsbSps(k);
-    //pPicParam->used_by_curr_pic_lt_sps_flags        = (UINT)0;
-
-}
-
-#elif HEVC_SPEC_VER == MK_HEVCVER(0, 85)
 
 void PackerDXVA2::PackPicParams(const H265DecoderFrame *pCurrentFrame,
                         H265DecoderFrameInfo * pSliceInfo,
@@ -639,133 +410,6 @@ void PackerDXVA2::PackPicParams(const H265DecoderFrame *pCurrentFrame,
     pPicParam->StatusReportFeedbackNumber = m_statusReportFeedbackCounter;
 }
 
-#endif
-
-
-#if HEVC_SPEC_VER == MK_HEVCVER(0, 84) || HEVC_SPEC_VER == MK_HEVCVER(0, 83)
-void PackerDXVA2::PackSliceParams(H265Slice *pSlice, bool isLong, bool isLastSlice)
-{
-    size_t headerSize = sizeof(DXVA_Intel_Slice_HEVC_Short);
-
-    if(isLong)
-        headerSize = sizeof(DXVA_Intel_Slice_HEVC_Long);
-
-    DXVA_Intel_Slice_HEVC_Long* pDXVASlice = 0;
-    void *pSliceData = 0;
-    size_t rawDataSize = pSlice->m_BitStream.BytesLeft();
-
-    GetSliceVABuffers(&pDXVASlice, headerSize, &pSliceData, rawDataSize, 64);
-
-    if(isLong)
-    {
-        const H265PicParamSet *pPicParamSet = pSlice->GetPicParam();
-        const H265DecoderFrame *pCurrentFrame = pSlice->GetCurrentFrame();
-        int sliceNum = pSlice->GetSliceNum();
-
-        pDXVASlice->ByteOffsetToSliceData = 0;  // ???
-        pDXVASlice->slice_segment_address = pSlice->GetSliceHeader()->slice_segment_address;
-        pDXVASlice->NumCTUsInSlice = 0; 
-
-        for(int iDir = 0; iDir < 2; iDir++)
-        {
-            int index = 0;
-            const H265DecoderRefPicList::ReferenceInformation* pRefPicList = pCurrentFrame->GetRefPicList(sliceNum, iDir)->m_refPicList;
-
-            for(int i=0;i < 15;i++)
-            {
-                const H265DecoderRefPicList::ReferenceInformation &frameInfo = pRefPicList[i];
-                if(frameInfo.refFrame)
-                {
-                    for(int j=0 ; j < m_refFrameListCacheSize ; j++)
-                    {
-                        if(m_refFrameListCache[j].Index7bits == (UCHAR)frameInfo.refFrame->m_index)
-                        {
-                            pDXVASlice->RefPicList[iDir][index].Index7bits = j;
-                            index++;
-
-                            break;
-                        }
-                    }
-                }
-            }
-
-            for(;index < 15;index++)
-                pDXVASlice->RefPicList[iDir][index].bPicEntry = (UCHAR)-1;
-        }
-
-
-        // picFlags
-        //
-
-        pDXVASlice->LongSliceFlags.fields.LastSliceOfPic                                = isLastSlice;
-        pDXVASlice->LongSliceFlags.fields.dependent_slice_segment_flag                  = (UINT)pPicParamSet->dependent_slice_segments_enabled_flag;   // dependent_slices_enabled_flag
-        pDXVASlice->LongSliceFlags.fields.slice_type                                    = (UINT)pSlice->GetSliceHeader()->slice_type;
-        pDXVASlice->LongSliceFlags.fields.color_plane_id                                = 0; // field is left for future expansion
-        pDXVASlice->LongSliceFlags.fields.slice_sao_luma_flag                           = (UINT)pSlice->GetSliceHeader()->slice_sao_luma_flag; 
-        pDXVASlice->LongSliceFlags.fields.slice_sao_chroma_flag                         = (UINT)pSlice->GetSliceHeader()->slice_sao_chroma_flag;
-        pDXVASlice->LongSliceFlags.fields.mvd_l1_zero_flag                              = (UINT)pSlice->GetSliceHeader()->mvd_l1_zero_flag;
-        pDXVASlice->LongSliceFlags.fields.cabac_init_flag                               = (UINT)pSlice->GetSliceHeader()->cabac_init_flag;
-        pDXVASlice->LongSliceFlags.fields.slice_temporal_mvp_enabled_flag               = (UINT)pSlice->GetSliceHeader()->slice_temporal_mvp_enabled_flag;
-        pDXVASlice->LongSliceFlags.fields.slice_deblocking_filter_disabled_flag         = (UINT)pSlice->GetSliceHeader()->m_deblockingFilterDisable;
-        pDXVASlice->LongSliceFlags.fields.collocated_from_l0_flag                       = (UINT)pSlice->GetSliceHeader()->collocated_from_l0_flag;
-        pDXVASlice->LongSliceFlags.fields.slice_loop_filter_across_slices_enabled_flag  = (UINT)pPicParamSet->pps_loop_filter_across_slices_enabled_flag;
-
-#if HEVC_SPEC_VER == MK_HEVCVER(0, 84)
-        pDXVASlice->collocated_ref_idx              = (UCHAR)(pSlice->GetSliceHeader()->slice_type != I_SLICE ? pSlice->GetSliceHeader()->collocated_ref_idx : -1 );
-#else
-        pDXVASlice->CollocatedRefIdx.Index7bits     = (UCHAR)(pSlice->GetSliceHeader()->slice_type != I_SLICE ? pSlice->GetSliceHeader()->collocated_ref_idx : -1 );
-#endif
-        pDXVASlice->num_ref_idx_l0_active_minus1    = (UCHAR)pSlice->getNumRefIdx(REF_PIC_LIST_0) - 1;
-        pDXVASlice->num_ref_idx_l1_active_minus1    = (UCHAR)pSlice->getNumRefIdx(REF_PIC_LIST_1) - 1;
-        pDXVASlice->slice_qp_delta                  = (CHAR)(pSlice->GetSliceHeader()->SliceQP - (pPicParamSet->init_qp));
-        pDXVASlice->slice_cb_qp_offset              = (CHAR)pSlice->GetSliceHeader()->slice_cb_qp_offset;
-        pDXVASlice->slice_cr_qp_offset              = (CHAR)pSlice->GetSliceHeader()->slice_cr_qp_offset;
-        pDXVASlice->slice_beta_offset_div2          = (CHAR)(pPicParamSet->pps_beta_offset >> 1);
-        pDXVASlice->slice_tc_offset_div2            = (CHAR)(pPicParamSet->pps_tc_offset >> 1);
-        pDXVASlice->luma_log2_weight_denom          = (UCHAR)pSlice->getLog2WeightDenomLuma();
-        pDXVASlice->delta_chroma_log2_weight_denom  = (UCHAR)(pSlice->getLog2WeightDenomChroma() - pSlice->getLog2WeightDenomLuma());
-
-        for(int l=0;l < 2;l++)
-        {
-            wpScalingParam *wp;
-            EnumRefPicList eRefPicList = ( l == 1 ? REF_PIC_LIST_1 : REF_PIC_LIST_0 );
-            for (int iRefIdx=0;iRefIdx < pSlice->getNumRefIdx(eRefPicList);iRefIdx++)
-            {
-                 wp = pSlice->GetSliceHeader()->pred_weight_table[eRefPicList][iRefIdx];
-
-                if(eRefPicList == REF_PIC_LIST_0)
-                {
-                    pDXVASlice->luma_offset_l0[iRefIdx]       = (CHAR)wp[0].iOffset;
-                    pDXVASlice->delta_luma_weight_l0[iRefIdx] = (CHAR)wp[0].iDeltaWeight;
-                    for(int chroma=0;chroma < 2;chroma++)
-                    {
-                        pDXVASlice->delta_chroma_weight_l0[iRefIdx][chroma] = (CHAR)wp[1 + chroma].iDeltaWeight;
-                        pDXVASlice->ChromaOffsetL0        [iRefIdx][chroma] = (CHAR)wp[1 + chroma].iOffset;
-                    }
-                }
-                else
-                {
-                    pDXVASlice->luma_offset_l1[iRefIdx]       = (CHAR)wp[0].iOffset;
-                    pDXVASlice->delta_luma_weight_l1[iRefIdx] = (CHAR)wp[0].iDeltaWeight;
-                    for(int chroma=0;chroma < 2;chroma++)
-                    {
-                        pDXVASlice->delta_chroma_weight_l1[iRefIdx][chroma] = (CHAR)wp[1 + chroma].iDeltaWeight;
-                        pDXVASlice->ChromaOffsetL1        [iRefIdx][chroma] = (CHAR)wp[1 + chroma].iOffset;
-                    }
-                }
-            }
-        }
-
-        pDXVASlice->five_minus_max_num_merge_cand = (UCHAR)(5 - pSlice->GetSliceHeader()->max_num_merge_cand);
-        pDXVASlice->num_entry_point_offsets       = pSlice->GetSliceHeader()->num_entry_point_offsets;
-    }
-
-    // copy slice data to slice data buffer
-    MFX_INTERNAL_CPY(pSliceData, pSlice->m_BitStream.GetRawDataPtr(), rawDataSize);
-}
-
-#elif HEVC_SPEC_VER == MK_HEVCVER(0, 85)
-
 void PackerDXVA2::PackSliceParams(H265Slice *pSlice, Ipp32u &, bool isLong, bool isLastSlice)
 {
     static Ipp8u start_code_prefix[] = {0, 0, 1};
@@ -926,8 +570,6 @@ void PackerDXVA2::PackSliceParams(H265Slice *pSlice, Ipp32u &, bool isLong, bool
     MFX_INTERNAL_CPY((Ipp8u*)pSliceData + sizeof(start_code_prefix), rawDataPtr, rawDataSize);
 }
 
-#endif
-
 
 template<int COUNT> static inline
 void initQMatrix(const H265ScalingList *scalingList, int sizeId, UCHAR qm[6][COUNT])
@@ -979,26 +621,6 @@ void initQMatrix(const H265ScalingList *scalingList, int sizeId, UCHAR qm[2][64]
             qm[n][i] = (UCHAR)src[i];
     }
 }
-
-/*
-void H265TrQuant::setDefaultScalingList(bool use_ts)
-{
-    H265ScalingList sl;
-
-    for(Ipp32u sizeId = 0; sizeId < SCALING_LIST_SIZE_NUM; sizeId++)
-    {
-        for(Ipp32u listId = 0; listId < g_scalingListNum[sizeId]; listId++)
-        {
-            ::MFX_INTERNAL_CPY(sl.getScalingListAddress(sizeId, listId),
-                sl.getScalingListDefaultAddress(sizeId, listId, use_ts),
-                sizeof(Ipp32s) * min(MAX_MATRIX_COEF_NUM, (Ipp32s)g_scalingListSize[sizeId]));
-            sl.setScalingListDC(sizeId, listId, SCALING_LIST_DC);
-        }
-    }
-
-    setScalingListDec(&sl);
-}
-*/
 
 static int s_quantTSDefault4x4[16] =
 {
@@ -1063,8 +685,6 @@ void PackerDXVA2::PackQmatrix(const H265Slice *pSlice/*const H265PicParamSet *pP
     GetIQMVABuffer(&pQmatrix, sizeof(DXVA_Intel_Qmatrix_HEVC));
     const H265ScalingList *scalingList = 0;
 
-#if HEVC_SPEC_VER == MK_HEVCVER(0, 85)
-
     if (pSlice->GetPicParam()->pps_scaling_list_data_present_flag)
     {
         scalingList = pSlice->GetPicParam()->getScalingList();
@@ -1113,55 +733,6 @@ void PackerDXVA2::PackQmatrix(const H265Slice *pSlice/*const H265PicParamSet *pP
                 pQmatrix->ucScalingListDCCoefSizeID3[listId] = (UCHAR)scalingList->getScalingListDC(sizeId, listId);
         }
     }
-
-#else
-
-    if(!pSlice->GetSeqParam()->sps_scaling_list_data_present_flag)
-    {
-        // TODO: build default scaling list in target buffer location
-        static bool doInit = true;
-        static H265ScalingList sl;
-
-        if(doInit)
-        {
-            for(Ipp32u sizeId = 0; sizeId < SCALING_LIST_SIZE_NUM; sizeId++)
-            {
-                for(Ipp32u listId = 0; listId < g_scalingListNum[sizeId]; listId++)
-                {
-                    const int *src = getDefaultScalingList(sizeId, listId);
-                          int *dst = sl.getScalingListAddress(sizeId, listId);
-                    int count = min(MAX_MATRIX_COEF_NUM, (Ipp32s)g_scalingListSize[sizeId]);
-                    ::MFX_INTERNAL_CPY(dst, src, sizeof(Ipp32s) * count);
-                    sl.setScalingListDC(sizeId, listId, SCALING_LIST_DC);
-                }
-            }
-            doInit = false;
-        }
-
-        scalingList = &sl;
-        memset(&pQmatrix->bScalingListDC, SCALING_LIST_DC, sizeof(pQmatrix->bScalingListDC));
-    }
-    else
-        scalingList = pSlice->GetPicParam()->getScalingList();
-
-    initQMatrix(scalingList, SCALING_LIST_4x4,   pQmatrix->ucScalingLists0);    // 4x4
-    initQMatrix(scalingList, SCALING_LIST_8x8,   pQmatrix->ucScalingLists1);    // 8x8
-    initQMatrix(scalingList, SCALING_LIST_16x16, pQmatrix->ucScalingLists2);    // 16x16
-    initQMatrix(scalingList, SCALING_LIST_32x32, pQmatrix->ucScalingLists3);    // 32x32
-
-    // DDI 0.81
-    for(int k=SCALING_LIST_16x16;k <= SCALING_LIST_32x32;k++)
-    {
-        for(int m=0;m < 3;m++)  // Y, Cb, Cr
-        {
-            for(int n=0;n < 2;n++)  // Intra, Inter
-            {
-                pQmatrix->bScalingListDC[k][m][n] = (UCHAR)scalingList->getScalingListDC(k, k == SCALING_LIST_16x16 ? 3*n + m : n );
-            }
-        }
-    }
-
-#endif
 }
 
 
@@ -1459,8 +1030,8 @@ void MSPackerDXVA2::PackSliceParams(H265Slice *pSlice, Ipp32u &sliceNum, bool , 
         return;
 
     dataBffr += dataVABffr->GetDataSize();
-    memcpy(dataBffr, start_code_prefix, sizeof(start_code_prefix));
-    memcpy(dataBffr + sizeof(start_code_prefix), rawDataPtr, rawDataSize);
+    MFX_INTERNAL_CPY(dataBffr, start_code_prefix, sizeof(start_code_prefix));
+    MFX_INTERNAL_CPY(dataBffr + sizeof(start_code_prefix), rawDataPtr, rawDataSize);
 
     size_t alignedSize = dataVABffr->GetDataSize() + storedSize;
     alignedSize = align_value<size_t>(alignedSize, 128);

@@ -193,17 +193,17 @@ void H265SegmentDecoder::DeblockTU(Ipp32u absPartIdx, Ipp32u trDepth)
         return;
     }
 
-    Ipp32s size = m_cu->GetWidth(absPartIdx) >> m_cu->GetTrIndex(absPartIdx); // m_pSeqParamSet->MaxCUSize >> trDepth;
+    Ipp32s size = m_cu->GetWidth(absPartIdx) >> m_cu->GetTrIndex(absPartIdx);
 
     for (Ipp32s edgeType = VERT_FILT; edgeType <= HOR_FILT; edgeType++)
     {
-        if (isMin4x4Block && ((edgeType == VERT_FILT) ? ((absPartIdx % 2) != 0) : ((absPartIdx-((absPartIdx>>2)<<2))/2 != 0)))
+        Ipp32u curPixelColumn = m_cu->m_rasterToPelX[absPartIdx];
+        Ipp32u curPixelRow = m_cu->m_rasterToPelY[absPartIdx];
+
+        if (isMin4x4Block && ((edgeType == VERT_FILT) ? (curPixelColumn % 8) : (curPixelRow % 8)))
         {
             continue;
         }
-
-        Ipp32u curPixelColumn = m_cu->m_rasterToPelX[absPartIdx];
-        Ipp32u curPixelRow = m_cu->m_rasterToPelY[absPartIdx];
 
         if (edgeType == VERT_FILT)
         {

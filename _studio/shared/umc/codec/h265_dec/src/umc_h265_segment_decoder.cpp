@@ -672,7 +672,7 @@ void H265SegmentDecoder::DecodeCUCABAC(Ipp32u AbsPartIdx, Ipp32u Depth, Ipp32u& 
             Idx += QNumParts;
         }
 
-        if ((m_pSeqParamSet->MaxCUSize >> Depth) == m_minCUDQPSize && m_pPicParamSet->cu_qp_delta_enabled_flag)
+        if (m_pPicParamSet->cu_qp_delta_enabled_flag && (m_pSeqParamSet->MaxCUSize >> Depth) == m_minCUDQPSize)
         {
             if (m_DecodeDQPFlag)
             {
@@ -682,7 +682,7 @@ void H265SegmentDecoder::DecodeCUCABAC(Ipp32u AbsPartIdx, Ipp32u Depth, Ipp32u& 
         return;
     }
 
-    if ((m_pSeqParamSet->MaxCUSize >> Depth) >= m_minCUDQPSize && m_pPicParamSet->cu_qp_delta_enabled_flag)
+    if (m_pPicParamSet->cu_qp_delta_enabled_flag && (m_pSeqParamSet->MaxCUSize >> Depth) >= m_minCUDQPSize)
     {
         m_DecodeDQPFlag = true;
         m_context->SetNewQP(getRefQP(AbsPartIdx));
@@ -724,7 +724,7 @@ void H265SegmentDecoder::DecodeCUCABAC(Ipp32u AbsPartIdx, Ipp32u Depth, Ipp32u& 
         UpdatePUInfo(LPelX >> m_pSeqParamSet->log2_min_transform_block_size, TPelY >> m_pSeqParamSet->log2_min_transform_block_size, PartSize, PartSize, MVi);
 
         m_cu->setCbfSubParts(0, 0, 0, AbsPartIdx, Depth);
-        if (m_cu->m_SliceHeader->m_PicParamSet->cu_qp_delta_enabled_flag)
+        if (m_pPicParamSet->cu_qp_delta_enabled_flag)
             m_context->SetNewQP(m_DecodeDQPFlag ? getRefQP(AbsPartIdx) : m_cu->m_CodedQP);
 
         BeforeCoeffs(AbsPartIdx, Depth);
@@ -747,7 +747,7 @@ void H265SegmentDecoder::DecodeCUCABAC(Ipp32u AbsPartIdx, Ipp32u Depth, Ipp32u& 
 
             if (m_cu->GetIPCMFlag(AbsPartIdx))
             {
-                if (m_cu->m_SliceHeader->m_PicParamSet->cu_qp_delta_enabled_flag)
+                if (m_pPicParamSet->cu_qp_delta_enabled_flag)
                     m_context->SetNewQP(m_DecodeDQPFlag ? getRefQP(AbsPartIdx) : m_cu->m_CodedQP);
 
                 BeforeCoeffs(AbsPartIdx, Depth);

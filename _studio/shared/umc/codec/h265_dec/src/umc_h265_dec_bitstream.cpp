@@ -1124,7 +1124,7 @@ void H265HeadersBitstream::decodeSlice(H265Slice *pSlice, const H265SeqParamSet 
                 {
                     rps->num_long_term_sps = GetVLCElementU();
                     rps->setNumberOfLongtermPictures(rps->num_long_term_sps);
-                    VM_ASSERT(rps->num_long_term_sps <= sps->sps_max_dec_pic_buffering[sps->sps_max_sub_layers - 1] - 1);
+                    VM_ASSERT((Ipp32u)rps->num_long_term_sps <= sps->sps_max_dec_pic_buffering[sps->sps_max_sub_layers - 1] - 1);
                 }
 
                 rps->num_long_term_pics = GetVLCElementU();
@@ -1677,7 +1677,7 @@ void H265Bitstream::parseShortTermRefPicSet(const H265SeqParamSet* sps, Referenc
         rps->num_positive_pics = GetVLCElementU();
 
         if (((Ipp32u)rps->getNumberOfNegativePictures() > sps->sps_max_dec_pic_buffering[sps->sps_max_sub_layers - 1]) ||
-            ((Ipp32u)rps->getNumberOfPositivePictures() > sps->sps_max_dec_pic_buffering[sps->sps_max_sub_layers - 1]))
+            ((Ipp32u)rps->getNumberOfPositivePictures() > sps->sps_max_dec_pic_buffering[sps->sps_max_sub_layers - 1] - (Ipp32u)rps->getNumberOfNegativePictures()))
             throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
 
         Ipp32s prev = 0;

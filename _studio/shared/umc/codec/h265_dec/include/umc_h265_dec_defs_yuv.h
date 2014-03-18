@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2012-2013 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2012-2014 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -24,8 +24,6 @@ namespace UMC_HEVC_DECODER
 
 class H265DecYUVBufferPadded
 {
-    DYNAMIC_CAST_DECL_BASE(H265DecYUVBufferPadded)
-
 public:
 
     Ipp32s  m_bpp;           // should be >= 8

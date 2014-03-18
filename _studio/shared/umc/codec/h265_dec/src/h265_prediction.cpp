@@ -259,20 +259,10 @@ static void PrepareInterpSrc( H265CodingUnit* pCU, H265PUInfo &PUi, EnumRefPicLi
     VM_ASSERT(PUi.interinfo.m_refIdx[RefPicList] >= 0);
 
     Ipp32u PartAddr = PUi.PartAddr;
-    Ipp32s Width = PUi.Width;
-    Ipp32s Height = PUi.Height;
     H265MotionVector MV = PUi.interinfo.m_mv[RefPicList];
     H265DecoderFrame *PicYUVRef = PUi.refFrame[RefPicList];
 
     Ipp32s in_SrcPitch = (c_plane_type == TEXT_CHROMA) ? PicYUVRef->pitch_chroma() : PicYUVRef->pitch_luma();
-
-    Ipp32s refOffset = (c_plane_type == TEXT_CHROMA) ? 
-                            (MV.Horizontal >> 3) * 2 + (MV.Vertical >> 3) * in_SrcPitch :
-                            (MV.Horizontal >> 2) + (MV.Vertical >> 2) * in_SrcPitch;
-
-    PlaneType* in_pSrc = (c_plane_type == TEXT_CHROMA) ?
-                            (PlaneType*)PicYUVRef->GetCbCrAddr(pCU->CUAddr, PartAddr) + refOffset :
-                            (PlaneType*)PicYUVRef->GetLumaAddr(pCU->CUAddr, PartAddr) + refOffset;
 
     interpolateInfo.pSrc = (c_plane_type == TEXT_CHROMA) ? (const Ipp8u*)PicYUVRef->m_pUVPlane : (const Ipp8u*)PicYUVRef->m_pYPlane;
     interpolateInfo.srcStep = in_SrcPitch;
@@ -292,8 +282,8 @@ static void PrepareInterpSrc( H265CodingUnit* pCU, H265PUInfo &PUi, EnumRefPicLi
     interpolateInfo.pointBlockPos.x = block_offset % in_SrcPitch;
     interpolateInfo.pointBlockPos.y = block_offset / in_SrcPitch;
 
-    interpolateInfo.blockWidth = Width;
-    interpolateInfo.blockHeight = Height;
+    interpolateInfo.blockWidth = PUi.Width;
+    interpolateInfo.blockHeight = PUi.Height;
 
     if ( c_plane_type == TEXT_CHROMA )
     {
@@ -304,17 +294,7 @@ static void PrepareInterpSrc( H265CodingUnit* pCU, H265PUInfo &PUi, EnumRefPicLi
         interpolateInfo.blockHeight >>= 1;
     }
 
-    IppStatus sts = ( c_plane_type == TEXT_CHROMA ) ? 
-            ippiInterpolateChromaBlock_H264(&interpolateInfo, temp_interpolarion_buffer) :
-            ippiInterpolateLumaBlock_H265(&interpolateInfo, temp_interpolarion_buffer);
-
-    if (sts != ippStsNoOperation)
-        interpolateInfo.srcStep = 128;
-    else
-    {
-        interpolateInfo.pSrc = (Ipp8u*)in_pSrc;
-        interpolateInfo.srcStep = in_SrcPitch;
-    }
+    (c_plane_type == TEXT_CHROMA) ? ippiInterpolateChromaBlock_H264(&interpolateInfo, temp_interpolarion_buffer) : ippiInterpolateLumaBlock_H265(&interpolateInfo, temp_interpolarion_buffer);
 }
 
 template <EnumTextType c_plane_type, bool c_bi, typename PlaneType>

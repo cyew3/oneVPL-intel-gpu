@@ -82,7 +82,7 @@ enum BusyStates_H265
 
 class H265DecoderFrame : public H265DecYUVBufferPadded, public RefCounter
 {
-    DYNAMIC_CAST_DECL(H265DecoderFrame, H265DecYUVBufferPadded)
+public:
 
     Ipp32s  m_PicOrderCnt;    // Display order picture count mod MAX_PIC_ORDER_CNT.
 

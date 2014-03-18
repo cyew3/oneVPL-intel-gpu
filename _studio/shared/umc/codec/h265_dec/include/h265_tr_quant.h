@@ -29,6 +29,8 @@ class DecodingContext;
 // transform and quantization class
 class H265TrQuant
 {
+    DISALLOW_COPY_AND_ASSIGN(H265TrQuant);
+
 public:
     H265TrQuant();
     ~H265TrQuant();
