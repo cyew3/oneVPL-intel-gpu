@@ -513,7 +513,6 @@ namespace MFX_VP8ENC
         sts = m_BSE.SetNextFrame(0, 0, pTask->m_sFrameParams,pTask->m_frameOrder);
         MFX_CHECK_STS(sts);
 
-        //m_BSE.GetModeProbs(pTask->modeCosts);
         mfxExtCodingOptionVP8Param * extOptVP8 = GetExtBuffer(m_video);
         bool bInsertIVF = (extOptVP8->WriteIVFHeaders != MFX_CODINGOPTION_OFF);
         bool bInsertSH  = bInsertIVF && pTask->m_frameOrder==0;
@@ -591,8 +590,10 @@ namespace MFX_VP8ENC
         MFX_CHECK_STS(sts);
 
         {
+            mfxU8 refProbs[4];
+            m_BSE.GetModeProbs(refProbs);            
             UMC::AutomaticUMCMutex guard(m_taskMutex);
-            m_taskManager.RegisterTaskOutput(*pTask);
+            m_taskManager.CacheInfoFromPak(*pTask,refProbs);
             pTask->FreeTask();
         }
 

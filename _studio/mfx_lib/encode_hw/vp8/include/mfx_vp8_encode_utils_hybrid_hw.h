@@ -17,6 +17,8 @@
 #include "mfx_vp8_encode_utils_hw.h"
 #include "mfx_vp8_encode_ddi_hw.h"
 #include <queue>
+#include "ipps.h"
+#include "umc_defs.h"
 
 #define MFX_CHECK_WITH_ASSERT(EXPR, ERR) { assert(EXPR); MFX_CHECK(EXPR, ERR); }
 
@@ -60,14 +62,16 @@ namespace MFX_VP8ENC
     public:
         sDDIFrames ddi_frames;
         mfxU8         modeCosts[4];
-        mfxU64        prevFrameSize;
-        mfxU8         brcUpdateDelay;
+        mfxU64        m_prevFrameSize;
+        mfxU8         m_brcUpdateDelay;
 
     public:
         TaskHybridDDI(): 
           TaskHybrid() 
           {
               Zero (ddi_frames);
+              m_prevFrameSize = 0;
+              m_brcUpdateDelay = 0;
           }
         virtual ~TaskHybridDDI() {}
         virtual   mfxStatus SubmitTask (sFrameEx*  pRecFrame, sDpbVP8 &dpb, sFrameParams* pParams,  sFrameEx* pRawLocalFrame, 
@@ -105,10 +109,12 @@ namespace MFX_VP8ENC
         }
     };
 
-    struct EncodedFrameInfo
+    struct FrameInfoFromPak
     {
         mfxU64 m_frameOrder;
+        mfxU8  m_frameType;
         mfxU64 m_encodedFrameSize;
+        mfxU8  m_refProbs[4];
     };
 
     class TaskManagerHybridPakDDI : public TaskManager<TaskHybridDDI>
@@ -135,7 +141,8 @@ namespace MFX_VP8ENC
 
         mfxU16           m_maxBrcUpdateDelay;
 
-        std::queue<EncodedFrameInfo> m_cachedFrameInfo;
+        std::queue<FrameInfoFromPak> m_cachedFrameInfoFromPak;
+        FrameInfoFromPak             m_latestNonKeyFrame;
 
     public:
 
@@ -143,7 +150,8 @@ namespace MFX_VP8ENC
         mfxStatus Init( VideoCORE* pCore, mfxVideoParam *par, mfxU32 reconFourCC)
         {
             MFX_CHECK_STS(BaseClass::Init(pCore,par,true,reconFourCC));
-            m_maxBrcUpdateDelay = par->AsyncDepth;
+            m_maxBrcUpdateDelay = par->AsyncDepth > 2 ? 2: par->AsyncDepth; // driver supports maximum 2-frames BRC update delay
+            memset(&m_latestNonKeyFrame, 0, sizeof(m_latestNonKeyFrame));
             return MFX_ERR_NONE;
         }
 
@@ -291,14 +299,14 @@ namespace MFX_VP8ENC
         inline 
         mfxStatus Reset(mfxVideoParam *par)
         {
-            m_maxBrcUpdateDelay = par->AsyncDepth;
+            m_maxBrcUpdateDelay = 2; // driver supports maximum 2-frames BRC update delay
             return BaseClass::Reset(par);
         }
         inline
         mfxStatus InitTask(mfxFrameSurface1* pSurface, mfxBitstream* pBitstream, Task* & pOutTask)
         {
             /*printf("TaskManagerHybridPakDDI InitTask: core %p\n", this->m_pCore);*/
-            if (m_frameNum && m_cachedFrameInfo.size() == 0)
+            if (m_frameNum && m_cachedFrameInfoFromPak.size() == 0)
             {
                 return MFX_WRN_DEVICE_BUSY;
             }
@@ -307,45 +315,64 @@ namespace MFX_VP8ENC
             if (pOutTask->m_frameOrder == 0)
             {
                 return MFX_ERR_NONE;
-            }
+            }            
 
             mfxU64 minFrameOrderToUpdateBrc = 0;
             if (pOutTask->m_frameOrder > m_maxBrcUpdateDelay)
             {
                 minFrameOrderToUpdateBrc = pOutTask->m_frameOrder - m_maxBrcUpdateDelay;
             }
-            EncodedFrameInfo newestFrame = m_cachedFrameInfo.back();
+            FrameInfoFromPak newestFrame = m_cachedFrameInfoFromPak.back();
             if (newestFrame.m_frameOrder < minFrameOrderToUpdateBrc)
             {
                 return MFX_ERR_UNDEFINED_BEHAVIOR;
             }
             TaskHybridDDI *pHybridTask = (TaskHybridDDI*)pOutTask;
-            pHybridTask->prevFrameSize = newestFrame.m_encodedFrameSize;
-            pHybridTask->brcUpdateDelay = mfxU8(pOutTask->m_frameOrder - newestFrame.m_frameOrder);
+            pHybridTask->m_prevFrameSize = newestFrame.m_encodedFrameSize;
+            pHybridTask->m_brcUpdateDelay = mfxU8(pOutTask->m_frameOrder - newestFrame.m_frameOrder);
 
-            while (m_cachedFrameInfo.size() > 1)
+            while (m_cachedFrameInfoFromPak.size() > 1)
             {
+                if (m_cachedFrameInfoFromPak.front().m_frameType)
+                    m_latestNonKeyFrame = m_cachedFrameInfoFromPak.front();
                 // remove cached information about all frames older than latest
-                m_cachedFrameInfo.pop();
+                m_cachedFrameInfoFromPak.pop();
             }
-            if (pHybridTask->brcUpdateDelay == m_maxBrcUpdateDelay)
+            if (pHybridTask->m_brcUpdateDelay == m_maxBrcUpdateDelay)
             {
+                if (m_cachedFrameInfoFromPak.front().m_frameType)
+                    m_latestNonKeyFrame = m_cachedFrameInfoFromPak.front();
                 // remove latest frame too
-                m_cachedFrameInfo.pop();
+                m_cachedFrameInfoFromPak.pop();
             }
-
+            
+            if (pHybridTask->m_frameOrder % m_video.mfx.GopPicSize != 0)
+            {
+                // use probabilities from last non-key frame
+                MFX_INTERNAL_CPY(pHybridTask->modeCosts, m_latestNonKeyFrame.m_refProbs, 4);
+            }
+            else
+            {
+                pHybridTask->modeCosts[0] = 255; // intra
+                pHybridTask->modeCosts[0] = 255; // last
+                pHybridTask->modeCosts[0] = 128; // gold
+                pHybridTask->modeCosts[0] = 128; // alt
+            }
+            
             return sts;
         }
         inline
-        mfxStatus RegisterTaskOutput(Task &task)
+        mfxStatus CacheInfoFromPak(Task &task, mfxU8 (&modeCosts)[4])
         {
             if (task.m_status != READY)
                 return MFX_ERR_UNDEFINED_BEHAVIOR;
 
-            EncodedFrameInfo justEncodedFrame;
-            justEncodedFrame.m_frameOrder = task.m_frameOrder;
-            justEncodedFrame.m_encodedFrameSize = task.m_pBitsteam->DataLength;
-            m_cachedFrameInfo.push(justEncodedFrame);
+            FrameInfoFromPak infoAboutJustEncodedFrame;
+            infoAboutJustEncodedFrame.m_frameOrder = task.m_frameOrder;
+            infoAboutJustEncodedFrame.m_encodedFrameSize = task.m_pBitsteam->DataLength;
+            MFX_INTERNAL_CPY(infoAboutJustEncodedFrame.m_refProbs, modeCosts, 4);
+            infoAboutJustEncodedFrame.m_frameType = !task.m_sFrameParams.bIntra;
+            m_cachedFrameInfoFromPak.push(infoAboutJustEncodedFrame);
 
             return MFX_ERR_NONE;
         }

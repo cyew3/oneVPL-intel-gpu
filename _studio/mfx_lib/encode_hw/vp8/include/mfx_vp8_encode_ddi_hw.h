@@ -547,10 +547,6 @@ do {                                               \
     mfxStatus FillQuantBuffer(Task const &TaskHybridDDI, mfxVideoParam const & par,
         VAQMatrixBufferVP8 & quant);
 
-#if 0 // DDI is changing
-    mfxStatus FillModeCostsBuffer(Task const &TaskHybridDDI, VAEncMiscParameterVP8HybridCost & costs);
-#endif
-
     struct sDDI_MBDATA
     { 
         /* DWORD  0 */
@@ -793,7 +789,7 @@ do {                                               \
         std::vector<ExtVASurface> m_reconQueue;
         std::vector<ExtVASurface> m_segMapQueue;
         
-        static const mfxU32 MAX_CONFIG_BUFFERS_COUNT = 5;
+        static const mfxU32 MAX_CONFIG_BUFFERS_COUNT = 6; // sps, pps, quant, seg_map, per segment par, frame update data
 
         mfxU32 m_width;
         mfxU32 m_height;

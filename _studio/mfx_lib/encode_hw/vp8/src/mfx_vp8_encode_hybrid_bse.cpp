@@ -140,7 +140,7 @@ namespace MFX_VP8ENC
         mfxExtCodingOptionVP8 *pOpt= GetExtBuffer(video);
         mfxExtCodingOptionVP8Param *pVP8Par= GetExtBuffer(video);
 
-        MFX_CHECK (video.mfx.RateControlMethod == MFX_RATECONTROL_CQP, MFX_ERR_UNSUPPORTED);
+        //MFX_CHECK (video.mfx.RateControlMethod == MFX_RATECONTROL_CQP, MFX_ERR_UNSUPPORTED);
         MFX_CHECK (pOpt->TokenPartitions < 2, MFX_ERR_UNSUPPORTED);
 
         memset(&m_Params,0,sizeof(m_Params));
@@ -1473,10 +1473,18 @@ namespace MFX_VP8ENC
 
     void Vp8CoreBSE::GetModeProbs(U8 (&modeCosts)[4])
     {
-        modeCosts[0] = m_ctrl.prIntra;
-        modeCosts[1] = 255 - m_ctrl.prIntra;
-        modeCosts[2] = 0;
-        modeCosts[3] = 0;
+        if (m_ctrl.FrameType)
+        {
+                modeCosts[0] = m_ctrl.prIntra;
+                modeCosts[1] = m_ctrl.prLast;
+                modeCosts[2] = m_ctrl.prGolden;
+                modeCosts[3] = 256 - m_ctrl.prGolden;
+        }
+        else
+        {
+                modeCosts[0] = 255;
+                modeCosts[1] = modeCosts[2] = modeCosts[3] = 128;
+        }
     }
 }
 #endif // MFX_ENABLE_VP8_VIDEO_ENCODE_HW

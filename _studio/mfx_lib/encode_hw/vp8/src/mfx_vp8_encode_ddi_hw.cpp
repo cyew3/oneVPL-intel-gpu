@@ -1431,6 +1431,58 @@ mfxStatus D3D11Encoder::Destroy()
         fflush(0);
 #endif
     }
+    
+mfxU8 ConvertRateControlMFX2VAAPI(mfxU8 rateControl)
+{
+    switch (rateControl)
+    {
+    case MFX_RATECONTROL_CBR:  return VA_RC_CBR;
+    case MFX_RATECONTROL_VBR:  return VA_RC_VBR;
+    case MFX_RATECONTROL_AVBR: return VA_RC_VBR;
+    case MFX_RATECONTROL_CQP:  return VA_RC_CQP;
+    default: assert(!"Unsupported RateControl"); return 0;
+    }
+
+} // mfxU8 ConvertRateControlMFX2VAAPI(mfxU8 rateControl)
+    
+mfxStatus SetFrameRate(
+    mfxVideoParam const & par,
+    VADisplay    m_vaDisplay,
+    VAContextID  m_vaContextEncode,
+    VABufferID & frameRateBufId)
+{
+    VAStatus vaSts;
+    VAEncMiscParameterBuffer *misc_param;
+    VAEncMiscParameterFrameRate *frameRate_param;
+
+    if ( frameRateBufId != VA_INVALID_ID)
+    {
+        vaDestroyBuffer(m_vaDisplay, frameRateBufId);
+    }
+
+    vaSts = vaCreateBuffer(m_vaDisplay,
+                   m_vaContextEncode,
+                   VAEncMiscParameterBufferType,
+                   sizeof(VAEncMiscParameterBuffer) + sizeof(VAEncMiscParameterFrameRate),
+                   1,
+                   NULL,
+                   &frameRateBufId);
+    MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+
+    vaSts = vaMapBuffer(m_vaDisplay,
+                 frameRateBufId,
+                (void **)&misc_param);
+    MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+
+    misc_param->type = VAEncMiscParameterTypeFrameRate;
+    frameRate_param = (VAEncMiscParameterFrameRate *)misc_param->data;
+
+    frameRate_param->framerate = (unsigned int)(100.0 * (mfxF64)par.mfx.FrameInfo.FrameRateExtN / (mfxF64)par.mfx.FrameInfo.FrameRateExtD);
+
+    vaUnmapBuffer(m_vaDisplay, frameRateBufId);
+
+    return MFX_ERR_NONE;
+}    
 
 #if 0  // DDI is changing  
     mfxStatus FillModeCostsBuffer(TaskHybridDDI const &task, VAEncMiscParameterVP8HybridCost & costs)
@@ -1566,8 +1618,7 @@ mfxStatus VAAPIEncoder::CreateAccelerationService(mfxVideoParam const & par)
     if ((attrib[0].value & VA_RT_FORMAT_YUV420) == 0)
         return MFX_ERR_DEVICE_FAILED;
 
-    mfxU8 vaRCType = VA_RC_CQP; // [SE] at the moment there is no BRC for VP8 on driver side
-
+    mfxU8 vaRCType = ConvertRateControlMFX2VAAPI(par.mfx.RateControlMethod); // [SE] at the moment there is no BRC for VP8 on driver side
 
     if ((attrib[1].value & vaRCType) == 0)
         return MFX_ERR_DEVICE_FAILED;
@@ -1605,7 +1656,7 @@ mfxStatus VAAPIEncoder::CreateAccelerationService(mfxVideoParam const & par)
  
     //------------------------------------------------------------------
 
-    FillSpsBuffer(par, m_sps);    
+    FillSpsBuffer(par, m_sps);
 
     vpgQueryBufferAttributes pfnVaQueryBufferAttr = NULL;
     pfnVaQueryBufferAttr = (vpgQueryBufferAttributes)vaGetLibFunc(m_vaDisplay, VPG_QUERY_BUFFER_ATTRIBUTES);
@@ -1803,6 +1854,8 @@ mfxStatus VAAPIEncoder::Execute(
     FillPpsBuffer(task, m_video, m_pps, m_reconQueue);
     FillQuantBuffer(task, m_video, m_quant);
     FillSegMap(task, m_video, m_core, m_segMapPar);
+    m_frmUpdate.prev_frame_size = task.m_prevFrameSize;
+    m_frmUpdate.two_prev_frame_flag = task.m_brcUpdateDelay == 2 ? 1 : 0;
 #if 0 // DDI is changing
     FillModeCostsBuffer(task, m_costs);
 #endif
@@ -1895,22 +1948,21 @@ mfxStatus VAAPIEncoder::Execute(
             configBuffers[buffersCount++] = m_segMapParBufferId;
         }
 
-        // 4. Reference frame and mode costs
-#if 0 // DDI is changing
+        // 6. Frame update
+        if (task.m_frameOrder)
         {
-            MFX_DESTROY_VABUFFER(m_costsBufferId, m_vaDisplay);
+            MFX_DESTROY_VABUFFER(m_frmUpdateBufferId, m_vaDisplay);
             vaSts = vaCreateBuffer(m_vaDisplay,
                                    m_vaContextEncode,
-                                   (VABufferType)VAEncMiscParameterTypeVP8HybridCost,
-                                   sizeof(m_costs),
+                                   (VABufferType)VAEncMiscParameterTypeVP8HybridFrameUpdate,
+                                   sizeof(m_frmUpdate),
                                    1,
-                                   &m_costs,
-                                   &m_costsBufferId);
+                                   &m_frmUpdate,
+                                   &m_frmUpdateBufferId);
             MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
 
-            configBuffers[buffersCount++] = m_costsBufferId;
+            configBuffers[buffersCount++] = m_frmUpdateBufferId;
         }
-#endif
     }
 
     assert(buffersCount <= configBuffers.size());
@@ -2077,6 +2129,7 @@ mfxStatus VAAPIEncoder::Destroy()
     MFX_DESTROY_VABUFFER(m_ppsBufferId, m_vaDisplay);
     MFX_DESTROY_VABUFFER(m_qMatrixBufferId, m_vaDisplay);
     MFX_DESTROY_VABUFFER(m_segMapParBufferId, m_vaDisplay);
+    MFX_DESTROY_VABUFFER(m_frmUpdateBufferId, m_vaDisplay);
 
     return MFX_ERR_NONE;
 
