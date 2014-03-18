@@ -353,7 +353,7 @@ namespace
 {
     void SetSearchPath(VmeSearchPath *spath)
     {
-        memcpy(spath->sp, Diamond, sizeof(spath->sp));
+        small_memcpy(spath->sp, Diamond, sizeof(spath->sp));
         spath->lenSp = 16;
         spath->maxNumSu = 57;
     }
@@ -370,26 +370,26 @@ namespace
             switch (meMethod)
             {
             case 2:
-                memcpy(&spath.IMESearchPath0to31[0], &SingleSU[0], 32*sizeof(mfxU8));
+                small_memcpy(&spath.IMESearchPath0to31[0], &SingleSU[0], 32*sizeof(mfxU8));
                 maxNumSU = 1;
                 break;
             case 3:
-                memcpy(&spath.IMESearchPath0to31[0], &RasterScan_48x40[0], 32*sizeof(mfxU8));
-                memcpy(&spath.IMESearchPath32to55[0], &RasterScan_48x40[32], 24*sizeof(mfxU8));
+                small_memcpy(&spath.IMESearchPath0to31[0], &RasterScan_48x40[0], 32*sizeof(mfxU8));
+                small_memcpy(&spath.IMESearchPath32to55[0], &RasterScan_48x40[32], 24*sizeof(mfxU8));
                 break;
             case 4:
-                memcpy(&spath.IMESearchPath0to31[0], &FullSpiral_48x40[0], 32*sizeof(mfxU8));
-                memcpy(&spath.IMESearchPath32to55[0], &FullSpiral_48x40[32], 24*sizeof(mfxU8));
+                small_memcpy(&spath.IMESearchPath0to31[0], &FullSpiral_48x40[0], 32*sizeof(mfxU8));
+                small_memcpy(&spath.IMESearchPath32to55[0], &FullSpiral_48x40[32], 24*sizeof(mfxU8));
                 break;
             case 5:
-                memcpy(&spath.IMESearchPath0to31[0], &FullSpiral_48x40[0], 32*sizeof(mfxU8));
-                memcpy(&spath.IMESearchPath32to55[0], &FullSpiral_48x40[32], 24*sizeof(mfxU8));
+                small_memcpy(&spath.IMESearchPath0to31[0], &FullSpiral_48x40[0], 32*sizeof(mfxU8));
+                small_memcpy(&spath.IMESearchPath32to55[0], &FullSpiral_48x40[32], 24*sizeof(mfxU8));
                 maxNumSU = 16;
                 break;
             case 6:
             default:
-                memcpy(&spath.IMESearchPath0to31[0], &Diamond[0], 32*sizeof(mfxU8));
-                memcpy(&spath.IMESearchPath32to55[0], &Diamond[32], 24*sizeof(mfxU8));
+                small_memcpy(&spath.IMESearchPath0to31[0], &Diamond[0], 32*sizeof(mfxU8));
+                small_memcpy(&spath.IMESearchPath32to55[0], &Diamond[32], 24*sizeof(mfxU8));
                 break;
             }
         }
@@ -397,13 +397,13 @@ namespace
         {
             if (meMethod == 6)
             {
-                memcpy(&spath.IMESearchPath0to31[0], &Diamond[0], 32*sizeof(mfxU8));
-                memcpy(&spath.IMESearchPath32to55[0], &Diamond[32], 24*sizeof(mfxU8));
+                small_memcpy(&spath.IMESearchPath0to31[0], &Diamond[0], 32*sizeof(mfxU8));
+                small_memcpy(&spath.IMESearchPath32to55[0], &Diamond[32], 24*sizeof(mfxU8));
             }
             else
             {
-                memcpy(&spath.IMESearchPath0to31[0], &FullSpiral_48x40[0], 32*sizeof(mfxU8));
-                memcpy(&spath.IMESearchPath32to55[0], &FullSpiral_48x40[32], 24*sizeof(mfxU8));
+                small_memcpy(&spath.IMESearchPath0to31[0], &FullSpiral_48x40[0], 32*sizeof(mfxU8));
+                small_memcpy(&spath.IMESearchPath32to55[0], &FullSpiral_48x40[32], 24*sizeof(mfxU8));
             }
         }
 
@@ -503,41 +503,41 @@ void printTime(char * name, Timers::Timer const & timer)
     double totTimeMs = timer.total / double(timer.freq) * 1000.0;
     double minTimeMs = timer.min   / double(timer.freq) * 1000.0;
     double avgTimeMs = totTimeMs / timer.callCount;
-    printf("%s (called %3u times) time min=%.3f avg=%.3f total=%.3f ms\n", name, timer.callCount, minTimeMs, avgTimeMs, totTimeMs);
+    //printf("%s (called %3u times) time min=%.3f avg=%.3f total=%.3f ms\n", name, timer.callCount, minTimeMs, avgTimeMs, totTimeMs);
 }
 
 typedef std::map<std::pair<int, int>, double> Map;
 Map interpolationTime;
 
 //struct PostMortemPrinter {~PostMortemPrinter() {
-void PrintTimes()
-{
-    TIMERS.runVme.freq = TIMERS.processMv.freq = TIMERS.readMb1x.freq = TIMERS.readMb2x.freq = getfreq();
-    TIMERS.writeSrc.freq = TIMERS.writeFwd.freq = TIMERS.readDist32x32.freq = TIMERS.readDist32x16.freq = TIMERS.readDist16x32.freq = TIMERS.dsSrc.freq =
-        TIMERS.dsFwd.freq = TIMERS.me1x.freq = TIMERS.me2x.freq = TIMERS.refine32x32.freq = TIMERS.refine32x16.freq = TIMERS.refine16x32.freq = TIMERS.refine.freq = 1000000000;
-
-    printTime("RunVme           ", TIMERS.runVme);
-    printTime("Write src        ", TIMERS.writeSrc);
-    printTime("Write fwd        ", TIMERS.writeFwd);
-    printTime("read dist32x32   ", TIMERS.readDist32x32);
-    printTime("read dist32x16   ", TIMERS.readDist32x16);
-    printTime("read dist16x32   ", TIMERS.readDist16x32);
-    printTime("Downscale src    ", TIMERS.dsSrc);
-    printTime("Downscale fwd    ", TIMERS.dsFwd);
-    printTime("ME 1x            ", TIMERS.me1x);
-    printTime("ME 2x            ", TIMERS.me2x);
-    printTime("Refine32x32      ", TIMERS.refine32x32);
-    printTime("Refine32x16      ", TIMERS.refine32x16);
-    printTime("Refine16x32      ", TIMERS.refine16x32);
-    printTime("Read Mb 1x       ", TIMERS.readMb1x);
-    printTime("Read Mb 2x       ", TIMERS.readMb2x);
-    printTime("Process Mv       ", TIMERS.processMv);
-
-    double sum = 0.0;
-    for (Map::iterator i = interpolationTime.begin(); i != interpolationTime.end(); ++i)
-        printf("Interpolate_%02dx%02d time %.3f\n", i->first.first, i->first.second, i->second), sum += i->second;
-    printf("Interpolate_AVERAGE time %.3f\n", sum/interpolationTime.size());
-}
+//void PrintTimes()
+//{
+//    TIMERS.runVme.freq = TIMERS.processMv.freq = TIMERS.readMb1x.freq = TIMERS.readMb2x.freq = getfreq();
+//    TIMERS.writeSrc.freq = TIMERS.writeFwd.freq = TIMERS.readDist32x32.freq = TIMERS.readDist32x16.freq = TIMERS.readDist16x32.freq = TIMERS.dsSrc.freq =
+//        TIMERS.dsFwd.freq = TIMERS.me1x.freq = TIMERS.me2x.freq = TIMERS.refine32x32.freq = TIMERS.refine32x16.freq = TIMERS.refine16x32.freq = TIMERS.refine.freq = 1000000000;
+//
+//    printTime("RunVme           ", TIMERS.runVme);
+//    printTime("Write src        ", TIMERS.writeSrc);
+//    printTime("Write fwd        ", TIMERS.writeFwd);
+//    printTime("read dist32x32   ", TIMERS.readDist32x32);
+//    printTime("read dist32x16   ", TIMERS.readDist32x16);
+//    printTime("read dist16x32   ", TIMERS.readDist16x32);
+//    printTime("Downscale src    ", TIMERS.dsSrc);
+//    printTime("Downscale fwd    ", TIMERS.dsFwd);
+//    printTime("ME 1x            ", TIMERS.me1x);
+//    printTime("ME 2x            ", TIMERS.me2x);
+//    printTime("Refine32x32      ", TIMERS.refine32x32);
+//    printTime("Refine32x16      ", TIMERS.refine32x16);
+//    printTime("Refine16x32      ", TIMERS.refine16x32);
+//    printTime("Read Mb 1x       ", TIMERS.readMb1x);
+//    printTime("Read Mb 2x       ", TIMERS.readMb2x);
+//    printTime("Process Mv       ", TIMERS.processMv);
+//
+//    double sum = 0.0;
+//    for (Map::iterator i = interpolationTime.begin(); i != interpolationTime.end(); ++i)
+//        printf("Interpolate_%02dx%02d time %.3f\n", i->first.first, i->first.second, i->second), sum += i->second;
+//    printf("Interpolate_AVERAGE time %.3f\n", sum/interpolationTime.size());
+//}
 //}} g_postMortemPrinter;
 
 #endif // #if defined(_WIN32) || defined(_WIN64)
