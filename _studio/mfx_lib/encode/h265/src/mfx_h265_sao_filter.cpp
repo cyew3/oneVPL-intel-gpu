@@ -1358,9 +1358,7 @@ int SaoEncodeFilter::getMergeList(
             break;
         default:
             {
-                printf("not a supported merge type");
-                //VM_ASSERT(0);
-                exit(-1);
+                VM_ASSERT(0);
             }
         }
 
