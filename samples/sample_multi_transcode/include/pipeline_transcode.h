@@ -268,6 +268,7 @@ namespace TranscodingSample
         { MSDK_CHECK_POINTER(m_pmfxSession.get(), MFX_ERR_NULL_PTR); return m_pmfxSession->QueryVersion(version); };
 
     protected:
+        virtual mfxStatus CheckRequiredAPIVersion(mfxVersion& version, sInputParams *pParams);
         virtual mfxStatus CheckExternalBSProcessor(BitstreamProcessor   *pBSProc);
 
         virtual mfxStatus Decode();
@@ -314,6 +315,8 @@ namespace TranscodingSample
         void NoMoreFramesSignal(ExtendedSurface &DecExtSurface);
 
         mfxBitstream        *m_pmfxBS;  // contains encoded input data
+
+        mfxVersion m_Version; // real API version with which library is initialized
 
         std::auto_ptr<MFXVideoSession>  m_pmfxSession;
         std::auto_ptr<MFXVideoDECODE>   m_pmfxDEC;

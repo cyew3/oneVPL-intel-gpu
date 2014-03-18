@@ -320,6 +320,7 @@ mfxStatus Launcher::ProcessResult()
     }
 } // mfxStatus Launcher::ProcessResult()
 
+
 // to compare mfxVersions
 bool operator <(const mfxVersion &left, const mfxVersion &right)
 {
@@ -418,7 +419,6 @@ mfxStatus Launcher::VerifyCrossSessionsOptions()
             m_eDevType = MFX_HANDLE_VA_DISPLAY;
 #endif
         }
-
     }
 
     if (IsSinkPresence && !IsSourcePresence)

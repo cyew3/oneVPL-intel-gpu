@@ -127,6 +127,13 @@ mfxStatus CDecodingPipeline::Init(sInputParams *pParams)
     sts = m_FileReader->Init(pParams->strSrcFile);
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
+    mfxVersion min_version;
+    mfxVersion version;     // real API version with which library is initialized
+
+    // we set version to 1.0 and later we will query actual version of the library which will got leaded
+    min_version.Major = 1;
+    min_version.Minor = 0;
+
     // Init session
     if (pParams->bUseHWLib)
     {
@@ -138,16 +145,36 @@ mfxStatus CDecodingPipeline::Init(sInputParams *pParams)
         if (D3D11_MEMORY == pParams->memType)
             impl |= MFX_IMPL_VIA_D3D11;
 
-        sts = m_mfxSession.Init(impl, NULL);
+        sts = m_mfxSession.Init(impl, &min_version);
 
         // MSDK API version may not support multiple adapters - then try initialize on the default
         if (MFX_ERR_NONE != sts)
-            sts = m_mfxSession.Init((impl & !MFX_IMPL_HARDWARE_ANY) | MFX_IMPL_HARDWARE, NULL);
+            sts = m_mfxSession.Init((impl & !MFX_IMPL_HARDWARE_ANY) | MFX_IMPL_HARDWARE, &min_version);
     }
     else
-        sts = m_mfxSession.Init(MFX_IMPL_SOFTWARE, NULL);
+        sts = m_mfxSession.Init(MFX_IMPL_SOFTWARE, &min_version);
 
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+
+    sts = MFXQueryVersion(m_mfxSession , &version); // get real API version of the loaded library
+    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+
+    if (pParams->bIsMVC && !CheckVersion(&version, MSDK_FEATURE_MVC)) {
+        msdk_printf(MSDK_STRING("error: MVC is not supported in the %d.%d API version\n"),
+            version.Major, version.Minor);
+        return MFX_ERR_UNSUPPORTED;
+
+    }
+    if ((pParams->videoType == MFX_CODEC_JPEG) && !CheckVersion(&version, MSDK_FEATURE_JPEG_DECODE)) {
+        msdk_printf(MSDK_STRING("error: Jpeg is not supported in the %d.%d API version\n"),
+            version.Major, version.Minor);
+        return MFX_ERR_UNSUPPORTED;
+    }
+    if (pParams->bLowLat && !CheckVersion(&version, MSDK_FEATURE_LOW_LATENCY)) {
+        msdk_printf(MSDK_STRING("error: Low Latency mode is not supported in the %d.%d API version\n"),
+            version.Major, version.Minor);
+        return MFX_ERR_UNSUPPORTED;
+    }
 
     // create decoder
     m_pmfxDEC = new MFXVideoDECODE(m_mfxSession);
@@ -160,57 +187,58 @@ mfxStatus CDecodingPipeline::Init(sInputParams *pParams)
     sts = InitMfxBitstream(&m_mfxBS, 1024 * 1024);
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
-    /* Here we actually define the following codec initialization scheme:
-     *  1. If plugin path specified: we load user-defined plugin (example: VP8 sample decoder plugin)
-     *  2. If plugin path not specified:
-     *    2.a) we check if codec is distributed as a mediasdk plugin and load it if yes
-     *    2.b) if codec is not in the list of mediasdk plugins, we assume, that it is supported inside mediasdk library
-     */
-    // Load user plug-in, should go after CreateAllocator function (when all callbacks were initialized)
+    if (CheckVersion(&version, MSDK_FEATURE_PLUGIN_API)) {
+        /* Here we actually define the following codec initialization scheme:
+         *  1. If plugin path specified: we load user-defined plugin (example: VP8 sample decoder plugin)
+         *  2. If plugin path not specified:
+         *    2.a) we check if codec is distributed as a mediasdk plugin and load it if yes
+         *    2.b) if codec is not in the list of mediasdk plugins, we assume, that it is supported inside mediasdk library
+         */
+        // Load user plug-in, should go after CreateAllocator function (when all callbacks were initialized)
 
-    if (msdk_strlen(pParams->strPluginPath))
-    {
-        m_pUserModule.reset(new MFXVideoUSER(m_mfxSession));
-        if (pParams->videoType == CODEC_VP8 || pParams->videoType == MFX_CODEC_HEVC)
+        if (msdk_strlen(pParams->strPluginPath))
         {
-            m_pPlugin.reset(LoadPlugin(MFX_PLUGINTYPE_VIDEO_DECODE, m_pUserModule.get(), pParams->strPluginPath));
+            m_pUserModule.reset(new MFXVideoUSER(m_mfxSession));
+            if (pParams->videoType == CODEC_VP8 || pParams->videoType == MFX_CODEC_HEVC)
+            {
+                m_pPlugin.reset(LoadPlugin(MFX_PLUGINTYPE_VIDEO_DECODE, m_pUserModule.get(), pParams->strPluginPath));
+            }
+            if (m_pPlugin.get() == NULL) sts = MFX_ERR_UNSUPPORTED;
         }
-        if (m_pPlugin.get() == NULL) sts = MFX_ERR_UNSUPPORTED;
-    }
-    else
-    {
-        if (pParams->bUseHWLib) {
-            m_pUID = msdkGetPluginUID(MSDK_VDEC | MSDK_IMPL_HW, pParams->videoType);
-        } else {
-            m_pUID = msdkGetPluginUID(MSDK_VDEC | MSDK_IMPL_SW, pParams->videoType);
-        };
-
-        if (m_pUID)
+        else
         {
-            sts = MFXVideoUSER_Load(m_mfxSession, &(m_pUID->mfx), 1);
-            if (MFX_ERR_NONE != sts)
+            if (pParams->bUseHWLib) {
+                m_pUID = msdkGetPluginUID(MSDK_VDEC | MSDK_IMPL_HW, pParams->videoType);
+            } else {
+                m_pUID = msdkGetPluginUID(MSDK_VDEC | MSDK_IMPL_SW, pParams->videoType);
+            };
+
+            if (m_pUID)
             {
-                msdk_printf(MSDK_STRING("error: failed to load Media SDK plugin:\n"));
-                msdk_printf(MSDK_STRING("error:   GUID = { 0x%08x, 0x%04x, 0x%04x, { 0x%02x, 0x%02x, 0x%02x, 0x%02x, 0x%02x, 0x%02x, 0x%02x, 0x%02x } }\n"),
-                       m_pUID->guid.data1, m_pUID->guid.data2, m_pUID->guid.data3,
-                       m_pUID->guid.data4[0], m_pUID->guid.data4[1], m_pUID->guid.data4[2], m_pUID->guid.data4[3],
-                       m_pUID->guid.data4[4], m_pUID->guid.data4[5], m_pUID->guid.data4[6], m_pUID->guid.data4[7]);
-                msdk_printf(MSDK_STRING("error:   UID (mfx raw) = %02x%02x%02x%02x %02x%02x%02x%02x %02x%02x%02x%02x %02x%02x%02x%02x\n"),
-                       m_pUID->raw[0],  m_pUID->raw[1],  m_pUID->raw[2],  m_pUID->raw[3],
-                       m_pUID->raw[4],  m_pUID->raw[5],  m_pUID->raw[6],  m_pUID->raw[7],
-                       m_pUID->raw[8],  m_pUID->raw[9],  m_pUID->raw[10], m_pUID->raw[11],
-                       m_pUID->raw[12], m_pUID->raw[13], m_pUID->raw[14], m_pUID->raw[15]);
-                msdk_printf(MSDK_STRING("error:   name = %s\n"), msdkGetPluginName(MSDK_VDEC | MSDK_IMPL_SW, pParams->videoType));
-                msdk_printf(MSDK_STRING("error:   You may need to install this plugin separately!\n"));
-            }
-            else
-            {
-                msdk_printf(MSDK_STRING("Plugin '%s' loaded successfully\n"), msdkGetPluginName(MSDK_VDEC | MSDK_IMPL_SW, pParams->videoType));
+                sts = MFXVideoUSER_Load(m_mfxSession, &(m_pUID->mfx), 1);
+                if (MFX_ERR_NONE != sts)
+                {
+                    msdk_printf(MSDK_STRING("error: failed to load Media SDK plugin:\n"));
+                    msdk_printf(MSDK_STRING("error:   GUID = { 0x%08x, 0x%04x, 0x%04x, { 0x%02x, 0x%02x, 0x%02x, 0x%02x, 0x%02x, 0x%02x, 0x%02x, 0x%02x } }\n"),
+                           m_pUID->guid.data1, m_pUID->guid.data2, m_pUID->guid.data3,
+                           m_pUID->guid.data4[0], m_pUID->guid.data4[1], m_pUID->guid.data4[2], m_pUID->guid.data4[3],
+                           m_pUID->guid.data4[4], m_pUID->guid.data4[5], m_pUID->guid.data4[6], m_pUID->guid.data4[7]);
+                    msdk_printf(MSDK_STRING("error:   UID (mfx raw) = %02x%02x%02x%02x %02x%02x%02x%02x %02x%02x%02x%02x %02x%02x%02x%02x\n"),
+                           m_pUID->raw[0],  m_pUID->raw[1],  m_pUID->raw[2],  m_pUID->raw[3],
+                           m_pUID->raw[4],  m_pUID->raw[5],  m_pUID->raw[6],  m_pUID->raw[7],
+                           m_pUID->raw[8],  m_pUID->raw[9],  m_pUID->raw[10], m_pUID->raw[11],
+                           m_pUID->raw[12], m_pUID->raw[13], m_pUID->raw[14], m_pUID->raw[15]);
+                    msdk_printf(MSDK_STRING("error:   name = %s\n"), msdkGetPluginName(MSDK_VDEC | MSDK_IMPL_SW, pParams->videoType));
+                    msdk_printf(MSDK_STRING("error:   You may need to install this plugin separately!\n"));
+                }
+                else
+                {
+                    msdk_printf(MSDK_STRING("Plugin '%s' loaded successfully\n"), msdkGetPluginName(MSDK_VDEC | MSDK_IMPL_SW, pParams->videoType));
+                }
             }
         }
+        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
     }
-
-    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
     // Populate parameters. Involves DecodeHeader call
     sts = InitMfxParams(pParams);

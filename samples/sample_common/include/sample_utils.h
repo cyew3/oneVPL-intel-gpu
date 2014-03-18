@@ -589,6 +589,21 @@ struct APIChangeFeatures {
 };
 
 mfxVersion getMinimalRequiredVersion(const APIChangeFeatures &features);
+
+enum msdkAPIFeature {
+    MSDK_FEATURE_NONE,
+    MSDK_FEATURE_MVC,
+    MSDK_FEATURE_JPEG_DECODE,
+    MSDK_FEATURE_LOW_LATENCY,
+    MSDK_FEATURE_MVC_VIEWOUTPUT,
+    MSDK_FEATURE_JPEG_ENCODE,
+    MSDK_FEATURE_LOOK_AHEAD,
+    MSDK_FEATURE_PLUGIN_API
+};
+
+/* Returns true if feature is supported in the given API version */
+bool CheckVersion(mfxVersion* version, msdkAPIFeature feature);
+
 void ConfigureAspectRatioConversion(mfxInfoVPP* pVppInfo);
 
 enum MsdkTraceLevel {

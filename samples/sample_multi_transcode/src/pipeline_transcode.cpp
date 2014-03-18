@@ -158,6 +158,36 @@ CTranscodingPipeline::~CTranscodingPipeline()
     Close();
 } //CTranscodingPipeline::CTranscodingPipeline()
 
+mfxStatus CTranscodingPipeline::CheckRequiredAPIVersion(mfxVersion& version, sInputParams *pParams)
+{
+    MSDK_CHECK_POINTER(pParams, MFX_ERR_NULL_PTR);
+
+    if (pParams->bIsMVC && !CheckVersion(&version, MSDK_FEATURE_MVC)) {
+        msdk_printf(MSDK_STRING("error: MVC is not supported in the %d.%d API version\n"),
+            version.Major, version.Minor);
+        return MFX_ERR_UNSUPPORTED;
+
+    }
+    if ((pParams->DecodeId == MFX_CODEC_JPEG) && !CheckVersion(&version, MSDK_FEATURE_JPEG_DECODE)) {
+        msdk_printf(MSDK_STRING("error: Jpeg decoder is not supported in the %d.%d API version\n"),
+            version.Major, version.Minor);
+        return MFX_ERR_UNSUPPORTED;
+    }
+    if ((pParams->EncodeId == MFX_CODEC_JPEG) && !CheckVersion(&version, MSDK_FEATURE_JPEG_ENCODE)) {
+        msdk_printf(MSDK_STRING("error: Jpeg encoder is not supported in the %d.%d API version\n"),
+            version.Major, version.Minor);
+        return MFX_ERR_UNSUPPORTED;
+    }
+
+    if ((pParams->bLABRC || pParams->nLADepth) && !CheckVersion(&version, MSDK_FEATURE_LOOK_AHEAD)) {
+        msdk_printf(MSDK_STRING("error: Look Ahead is not supported in the %d.%d API version\n"),
+            version.Major, version.Minor);
+        return MFX_ERR_UNSUPPORTED;
+    }
+
+    return MFX_ERR_NONE;
+}
+
 // initialize decode part
 mfxStatus CTranscodingPipeline::DecodePreInit(sInputParams *pParams)
 {
@@ -166,32 +196,32 @@ mfxStatus CTranscodingPipeline::DecodePreInit(sInputParams *pParams)
 
     if (m_bDecodeEnable)
     {
-        const msdk_char* path = NULL;
-        const msdkPluginUID* uid = NULL;
+        if (CheckVersion(&m_Version, MSDK_FEATURE_PLUGIN_API)) {
+            const msdk_char* path = NULL;
+            const msdkPluginUID* uid = NULL;
 
-        /* Here we actually define the following codec initialization scheme:
-         *    a) we check if codec is distributed as a user plugin and load it if yes
-         *    b) we check if codec is distributed as a mediasdk plugin and load it if yes
-         *    c) if codec is not in the list of user plugins or mediasdk plugins, we assume, that it is supported inside mediasdk library
-         */
+            /* Here we actually define the following codec initialization scheme:
+             *    a) we check if codec is distributed as a user plugin and load it if yes
+             *    b) we check if codec is distributed as a mediasdk plugin and load it if yes
+             *    c) if codec is not in the list of user plugins or mediasdk plugins, we assume, that it is supported inside mediasdk library
+             */
 
-        path = msdkGetPluginPath(MSDK_VDEC | MSDK_IMPL_USR, pParams->DecodeId);
-        if (pParams->libType != MFX_IMPL_SOFTWARE) {
-            uid = msdkGetPluginUID(MSDK_VDEC | MSDK_IMPL_HW, pParams->DecodeId);
-        } else {
-            uid = msdkGetPluginUID(MSDK_VDEC | MSDK_IMPL_SW, pParams->DecodeId);
-        }
+            path = msdkGetPluginPath(MSDK_VDEC | MSDK_IMPL_USR, pParams->DecodeId);
+            if (pParams->libType != MFX_IMPL_SOFTWARE) {
+                uid = msdkGetPluginUID(MSDK_VDEC | MSDK_IMPL_HW, pParams->DecodeId);
+            } else {
+                uid = msdkGetPluginUID(MSDK_VDEC | MSDK_IMPL_SW, pParams->DecodeId);
+            }
 
-        if (path)
-        {
-            m_pUserDecoderModule.reset(new MFXVideoUSER(*m_pmfxSession.get()));
-            m_pUserDecoderPlugin.reset(LoadPlugin(MFX_PLUGINTYPE_VIDEO_DECODE, m_pUserDecoderModule.get(), path));
-            if (m_pUserDecoderPlugin.get() == NULL) sts = MFX_ERR_UNSUPPORTED;
-        }
-        else if (uid)
-        {
-            sts = MFXVideoUSER_Load((*m_pmfxSession.get()), &(uid->mfx), 1);
-            MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+            if (path) {
+                m_pUserDecoderModule.reset(new MFXVideoUSER(*m_pmfxSession.get()));
+                m_pUserDecoderPlugin.reset(LoadPlugin(MFX_PLUGINTYPE_VIDEO_DECODE, m_pUserDecoderModule.get(), path));
+                if (m_pUserDecoderPlugin.get() == NULL) sts = MFX_ERR_UNSUPPORTED;
+            }
+            else if (uid) {
+                sts = MFXVideoUSER_Load((*m_pmfxSession.get()), &(uid->mfx), 1);
+                MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+            }
         }
 
         // create decoder
@@ -273,32 +303,32 @@ mfxStatus CTranscodingPipeline::EncodePreInit(sInputParams *pParams)
 
     if (m_bEncodeEnable)
     {
-        const msdk_char* path = NULL;
-        const msdkPluginUID* uid = NULL;
+        if (CheckVersion(&m_Version, MSDK_FEATURE_PLUGIN_API)) {
+            const msdk_char* path = NULL;
+            const msdkPluginUID* uid = NULL;
 
-        /* Here we actually define the following codec initialization scheme:
-         *    a) we check if codec is distributed as a user plugin and load it if yes
-         *    b) we check if codec is distributed as a mediasdk plugin and load it if yes
-         *    c) if codec is not in the list of user plugins or mediasdk plugins, we assume, that it is supported inside mediasdk library
-         */
+            /* Here we actually define the following codec initialization scheme:
+             *    a) we check if codec is distributed as a user plugin and load it if yes
+             *    b) we check if codec is distributed as a mediasdk plugin and load it if yes
+             *    c) if codec is not in the list of user plugins or mediasdk plugins, we assume, that it is supported inside mediasdk library
+             */
 
-        path = msdkGetPluginPath(MSDK_VENC | MSDK_IMPL_USR, pParams->EncodeId);
-        if (pParams->libType != MFX_IMPL_SOFTWARE) {
-            uid = msdkGetPluginUID(MSDK_VENC | MSDK_IMPL_HW, pParams->EncodeId);
-        } else {
-            uid = msdkGetPluginUID(MSDK_VENC | MSDK_IMPL_SW, pParams->EncodeId);
-        }
+            path = msdkGetPluginPath(MSDK_VENC | MSDK_IMPL_USR, pParams->EncodeId);
+            if (pParams->libType != MFX_IMPL_SOFTWARE) {
+                uid = msdkGetPluginUID(MSDK_VENC | MSDK_IMPL_HW, pParams->EncodeId);
+            } else {
+                uid = msdkGetPluginUID(MSDK_VENC | MSDK_IMPL_SW, pParams->EncodeId);
+            }
 
-        if (path)
-        {
-            m_pUserEncoderModule.reset(new MFXVideoUSER(*m_pmfxSession.get()));
-            m_pUserEncoderPlugin.reset(LoadPlugin(MFX_PLUGINTYPE_VIDEO_ENCODE, m_pUserEncoderModule.get(), path));
-            if (m_pUserEncoderPlugin.get() == NULL) sts = MFX_ERR_UNSUPPORTED;
-        }
-        else if (uid)
-        {
-            sts = MFXVideoUSER_Load((*m_pmfxSession.get()), &(uid->mfx), 1);
-            MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+            if (path) {
+                m_pUserEncoderModule.reset(new MFXVideoUSER(*m_pmfxSession.get()));
+                m_pUserEncoderPlugin.reset(LoadPlugin(MFX_PLUGINTYPE_VIDEO_ENCODE, m_pUserEncoderModule.get(), path));
+                if (m_pUserEncoderPlugin.get() == NULL) sts = MFX_ERR_UNSUPPORTED;
+            }
+            else if (uid) {
+                sts = MFXVideoUSER_Load((*m_pmfxSession.get()), &(uid->mfx), 1);
+                MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+            }
         }
 
         // create encoder
@@ -1498,26 +1528,34 @@ mfxStatus CTranscodingPipeline::Init(sInputParams *pParams,
 
     m_pBuffer = pBuffer;
 
+    mfxVersion min_version;
+
+    // we set version to 1.0 and later we will query actual version of the library which will got leaded
+    min_version.Major = 1;
+    min_version.Minor = 0;
+
     // init session
     m_pmfxSession.reset(new MFXVideoSession);
 
     if (pParams->libType & MFX_IMPL_HARDWARE_ANY)
     {
         // try search for MSDK on all display adapters
-        sts = m_pmfxSession->Init(pParams->libType, NULL);
+        sts = m_pmfxSession->Init(pParams->libType, &min_version);
 
         // MSDK API version may have no support for multiple adapters - then try initialize on the default
         if (MFX_ERR_NONE != sts)
-            sts = m_pmfxSession->Init((pParams->libType & !MFX_IMPL_HARDWARE_ANY) | MFX_IMPL_HARDWARE, NULL);
+            sts = m_pmfxSession->Init((pParams->libType & !MFX_IMPL_HARDWARE_ANY) | MFX_IMPL_HARDWARE, &min_version);
     }
     else
-        sts = m_pmfxSession->Init(pParams->libType, NULL);
+        sts = m_pmfxSession->Init(pParams->libType, &min_version);
 
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
     // check the API version of actually loaded library
-    mfxVersion version;
-    sts = m_pmfxSession->QueryVersion(&version);
+    sts = m_pmfxSession->QueryVersion(&m_Version);
+    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+
+    sts = CheckRequiredAPIVersion(m_Version, pParams);
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
     mfxIMPL impl = 0;
@@ -1525,7 +1563,7 @@ mfxStatus CTranscodingPipeline::Init(sInputParams *pParams,
 
     // opaque memory feature is available starting with API 1.3 and
     // can be used within 1 intra session or joined inter sessions only
-    if (version.Major >= 1 && version.Minor >= 3 &&
+    if (m_Version.Major >= 1 && m_Version.Minor >= 3 &&
         (pParams->eMode == Native || pParams->bIsJoin))
         m_bUseOpaqueMemory = true;
 
@@ -1609,7 +1647,7 @@ mfxStatus CTranscodingPipeline::Init(sInputParams *pParams,
         m_bIsJoinSession = true;
     }
 
-    if (version.Major >= 1 && version.Minor >= 1)
+    if (m_Version.Major >= 1 && m_Version.Minor >= 1)
         sts = m_pmfxSession->SetPriority(pParams->priority);
 
     // if sink - suspended allocation

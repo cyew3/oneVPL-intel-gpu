@@ -1528,6 +1528,56 @@ mfxVersion getMinimalRequiredVersion(const APIChangeFeatures &features)
     return version;
 }
 
+bool CheckVersion(mfxVersion* version, msdkAPIFeature feature)
+{
+    if (!version->Major || (version->Major > 1)) {
+        return false;
+    }
+
+    switch (feature) {
+    case MSDK_FEATURE_NONE:
+        return true;
+    case MSDK_FEATURE_MVC:
+        if ((version->Major == 1) && (version->Minor >= 3)) {
+            return true;
+        }
+        break;
+    case MSDK_FEATURE_JPEG_DECODE:
+        if ((version->Major == 1) && (version->Minor >= 3)) {
+            return true;
+        }
+        break;
+   case MSDK_FEATURE_LOW_LATENCY:
+        if ((version->Major == 1) && (version->Minor >= 3)) {
+            return true;
+        }
+        break;
+    case MSDK_FEATURE_MVC_VIEWOUTPUT:
+        if ((version->Major == 1) && (version->Minor >= 4)) {
+            return true;
+        }
+        break;
+    case MSDK_FEATURE_JPEG_ENCODE:
+        if ((version->Major == 1) && (version->Minor >= 6)) {
+            return true;
+        }
+        break;
+    case MSDK_FEATURE_LOOK_AHEAD:
+        if ((version->Major == 1) && (version->Minor >= 7)) {
+            return true;
+        }
+        break;
+    case MSDK_FEATURE_PLUGIN_API:
+        if ((version->Major == 1) && (version->Minor >= 8)) {
+            return true;
+        }
+        break;
+    default:
+        return false;
+    }
+    return false;
+}
+
 void ConfigureAspectRatioConversion(mfxInfoVPP* pVppInfo)
 {
     if (!pVppInfo) return;
