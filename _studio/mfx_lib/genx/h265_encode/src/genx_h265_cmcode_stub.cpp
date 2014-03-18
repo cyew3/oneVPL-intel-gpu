@@ -10,7 +10,8 @@
 
 #ifndef CMRT_EMU
 
-#include <cm_common.h>
+//#include <cm_common.h>
+class SurfaceIndex {};
 
 extern "C" {
 void DownSampleMB(SurfaceIndex, SurfaceIndex) {}
