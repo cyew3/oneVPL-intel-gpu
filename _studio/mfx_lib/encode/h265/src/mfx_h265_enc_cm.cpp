@@ -509,36 +509,34 @@ void printTime(char * name, Timers::Timer const & timer)
 typedef std::map<std::pair<int, int>, double> Map;
 Map interpolationTime;
 
-//struct PostMortemPrinter {~PostMortemPrinter() {
-//void PrintTimes()
-//{
-//    TIMERS.runVme.freq = TIMERS.processMv.freq = TIMERS.readMb1x.freq = TIMERS.readMb2x.freq = getfreq();
-//    TIMERS.writeSrc.freq = TIMERS.writeFwd.freq = TIMERS.readDist32x32.freq = TIMERS.readDist32x16.freq = TIMERS.readDist16x32.freq = TIMERS.dsSrc.freq =
-//        TIMERS.dsFwd.freq = TIMERS.me1x.freq = TIMERS.me2x.freq = TIMERS.refine32x32.freq = TIMERS.refine32x16.freq = TIMERS.refine16x32.freq = TIMERS.refine.freq = 1000000000;
-//
-//    printTime("RunVme           ", TIMERS.runVme);
-//    printTime("Write src        ", TIMERS.writeSrc);
-//    printTime("Write fwd        ", TIMERS.writeFwd);
-//    printTime("read dist32x32   ", TIMERS.readDist32x32);
-//    printTime("read dist32x16   ", TIMERS.readDist32x16);
-//    printTime("read dist16x32   ", TIMERS.readDist16x32);
-//    printTime("Downscale src    ", TIMERS.dsSrc);
-//    printTime("Downscale fwd    ", TIMERS.dsFwd);
-//    printTime("ME 1x            ", TIMERS.me1x);
-//    printTime("ME 2x            ", TIMERS.me2x);
-//    printTime("Refine32x32      ", TIMERS.refine32x32);
-//    printTime("Refine32x16      ", TIMERS.refine32x16);
-//    printTime("Refine16x32      ", TIMERS.refine16x32);
-//    printTime("Read Mb 1x       ", TIMERS.readMb1x);
-//    printTime("Read Mb 2x       ", TIMERS.readMb2x);
-//    printTime("Process Mv       ", TIMERS.processMv);
-//
-//    double sum = 0.0;
-//    for (Map::iterator i = interpolationTime.begin(); i != interpolationTime.end(); ++i)
-//        printf("Interpolate_%02dx%02d time %.3f\n", i->first.first, i->first.second, i->second), sum += i->second;
-//    printf("Interpolate_AVERAGE time %.3f\n", sum/interpolationTime.size());
-//}
-//}} g_postMortemPrinter;
+void PrintTimes()
+{
+    TIMERS.runVme.freq = TIMERS.processMv.freq = TIMERS.readMb1x.freq = TIMERS.readMb2x.freq = getfreq();
+    TIMERS.writeSrc.freq = TIMERS.writeFwd.freq = TIMERS.readDist32x32.freq = TIMERS.readDist32x16.freq = TIMERS.readDist16x32.freq = TIMERS.dsSrc.freq =
+        TIMERS.dsFwd.freq = TIMERS.me1x.freq = TIMERS.me2x.freq = TIMERS.refine32x32.freq = TIMERS.refine32x16.freq = TIMERS.refine16x32.freq = TIMERS.refine.freq = 1000000000;
+
+    printTime("RunVme           ", TIMERS.runVme);
+    printTime("Write src        ", TIMERS.writeSrc);
+    printTime("Write fwd        ", TIMERS.writeFwd);
+    printTime("read dist32x32   ", TIMERS.readDist32x32);
+    printTime("read dist32x16   ", TIMERS.readDist32x16);
+    printTime("read dist16x32   ", TIMERS.readDist16x32);
+    printTime("Downscale src    ", TIMERS.dsSrc);
+    printTime("Downscale fwd    ", TIMERS.dsFwd);
+    printTime("ME 1x            ", TIMERS.me1x);
+    printTime("ME 2x            ", TIMERS.me2x);
+    printTime("Refine32x32      ", TIMERS.refine32x32);
+    printTime("Refine32x16      ", TIMERS.refine32x16);
+    printTime("Refine16x32      ", TIMERS.refine16x32);
+    printTime("Read Mb 1x       ", TIMERS.readMb1x);
+    printTime("Read Mb 2x       ", TIMERS.readMb2x);
+    printTime("Process Mv       ", TIMERS.processMv);
+
+    //double sum = 0.0;
+    //for (Map::iterator i = interpolationTime.begin(); i != interpolationTime.end(); ++i)
+    //    printf("Interpolate_%02dx%02d time %.3f\n", i->first.first, i->first.second, i->second), sum += i->second;
+    //printf("Interpolate_AVERAGE time %.3f\n", sum/interpolationTime.size());
+}
 
 #endif // #if defined(_WIN32) || defined(_WIN64)
 
