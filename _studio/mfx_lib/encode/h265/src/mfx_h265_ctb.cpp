@@ -4631,13 +4631,6 @@ CostType H265CU::CalcCostSkipFast(Ipp32u absPartIdx, Ipp8u depth)
     Ipp32s cand_best = 0;
     Ipp8u inter_dir_best = 0;
     Ipp8u size = (Ipp8u)(m_par->MaxCUSize>>depth);
-    Ipp32u num_parts = ( m_par->NumPartInCU >> (depth<<1) );
-
-    Ipp32s maxDepth = m_par->Log2MaxCUSize - m_par->Log2MinTUSize;
-    Ipp32s numMinTUInLCU = 1 << maxDepth;
-    Ipp32s PURasterIdx = h265_scan_z2r[maxDepth][absPartIdx];
-    Ipp32s PUStartRow = PURasterIdx >> maxDepth;
-    Ipp32s PUStartColumn = PURasterIdx & (numMinTUInLCU - 1);
 
     MVPInfo mergeInfo;
 
