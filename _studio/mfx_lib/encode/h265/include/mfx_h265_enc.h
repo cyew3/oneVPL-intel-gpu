@@ -77,6 +77,7 @@ struct H265VideoParam {
     Ipp8u  WPPFlag; // Wavefront
     Ipp8u  fastPUDecision;
     Ipp8u  fastSkip;
+    Ipp8u  fastCbfMode;
     Ipp8u  enableCmFlag;
     Ipp16u cmIntraThreshold;// 0-no theshold
     Ipp16u tuSplitIntra;    // 0-default; 1-always; 2-never; 3-for Intra frames only

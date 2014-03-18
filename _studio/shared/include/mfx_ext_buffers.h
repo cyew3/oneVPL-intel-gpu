@@ -208,6 +208,7 @@ typedef struct {
     mfxU16      PatternIntPel;      // 0-default; 1-log; 2-fullsearch
     mfxU16      FastSkip;           // tri-state
     mfxU16      ForceNumThread;     // 0-default
+    mfxU16      FastCbfMode;        // tri-state, stop PU modes after cbf is 0
     mfxU16      reserved[11];
 } mfxExtCodingOptionHEVC;
 

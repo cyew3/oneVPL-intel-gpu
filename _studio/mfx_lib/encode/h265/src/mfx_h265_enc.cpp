@@ -227,6 +227,7 @@ mfxStatus H265Encoder::InitH265VideoParam(const mfxVideoParam *param, const mfxE
     pars->intraAngModes = opts_hevc->IntraAngModes;
     pars->fastPUDecision = (opts_hevc->FastPUDecision == MFX_CODINGOPTION_ON);
     pars->fastSkip = (opts_hevc->FastSkip == MFX_CODINGOPTION_ON);
+    pars->fastCbfMode = (opts_hevc->FastCbfMode == MFX_CODINGOPTION_ON);
     pars->hadamardMe = opts_hevc->HadamardMe;
     pars->TMVPFlag = (opts_hevc->TMVP == MFX_CODINGOPTION_ON);
     pars->deblockingFlag = (opts_hevc->Deblocking == MFX_CODINGOPTION_ON);

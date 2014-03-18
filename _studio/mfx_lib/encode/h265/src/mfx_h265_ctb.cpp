@@ -1708,6 +1708,7 @@ CostType H265CU::MeCu(Ipp32u absPartIdx, Ipp8u depth, Ipp32s offset)
 
     Ipp32u numParts = ( m_par->NumPartInCU >> (depth<<1) );
     CostType cost = 0;
+    Ipp32u nonZeroCbf = 1;
 
     meInfo.splitMode = PART_SIZE_2Nx2N;
     MePu(&meInfo, 0);
@@ -1716,6 +1717,8 @@ CostType H265CU::MeCu(Ipp32u absPartIdx, Ipp8u depth, Ipp32s offset)
     m_interResidualsYPtr = m_interResidualsYBest;
     m_interPredReady = false;
     bestCost = CuCost(absPartIdx, depth, &meInfo, m_par->fastPUDecision);
+    if (m_par->fastCbfMode)
+        nonZeroCbf = m_data[absPartIdx].cbf[0] | m_data[absPartIdx].cbf[1] | m_data[absPartIdx].cbf[2];
     m_bsf->CtxSave(ctxSave[1], 0, NUM_CABAC_CONTEXT);
     ippiCopy_8u_C1R(m_yRec + offsetLuma, m_pitchRec, m_recLumaSaveTu[depth], meInfo.width, roiSize);
     if (m_par->AnalyseFlags & HEVC_COST_CHROMA)
@@ -1726,8 +1729,7 @@ CostType H265CU::MeCu(Ipp32u absPartIdx, Ipp8u depth, Ipp32s offset)
     m_interResidualsYPtr = m_interResidualsY;
 
     // NxN prediction
-    if (depth == m_par->MaxCUDepth - m_par->AddCUDepth && meInfo.width > 8)
-    {
+    if (nonZeroCbf && depth == m_par->MaxCUDepth - m_par->AddCUDepth && meInfo.width > 8) {
         H265MEInfo bestInfo[4];
         Ipp32s allthesame = true;
         for (i=0; i<4; i++) {
@@ -1751,6 +1753,8 @@ CostType H265CU::MeCu(Ipp32u absPartIdx, Ipp8u depth, Ipp32s offset)
                 bestMeInfo[2] = bestInfo[2];
                 bestMeInfo[3] = bestInfo[3];
                 bestSplitMode = PART_SIZE_NxN;
+                if (m_par->fastCbfMode)
+                    nonZeroCbf = m_data[absPartIdx].cbf[0] | m_data[absPartIdx].cbf[1] | m_data[absPartIdx].cbf[2];
                 bestCost = cost;
                 m_bsf->CtxSave(ctxSave[1], 0, NUM_CABAC_CONTEXT);
                 ippiCopy_8u_C1R(m_yRec + offsetLuma, m_pitchRec, m_recLumaSaveTu[depth], meInfo.width, roiSize);
@@ -1766,7 +1770,7 @@ CostType H265CU::MeCu(Ipp32u absPartIdx, Ipp8u depth, Ipp32s offset)
     }
 
     // Nx2N
-    {
+    if (nonZeroCbf) {
         H265MEInfo partsInfo[2] = {meInfo, meInfo};
         partsInfo[0].width = meInfo.width / 2;
         partsInfo[1].absPartIdx = meInfo.absPartIdx + (numParts >> 2)*1;
@@ -1785,6 +1789,8 @@ CostType H265CU::MeCu(Ipp32u absPartIdx, Ipp8u depth, Ipp32s offset)
             if (bestCost > cost) {
                 bestMeInfo[0] = partsInfo[0];
                 bestMeInfo[1] = partsInfo[1];
+                if (m_par->fastCbfMode)
+                    nonZeroCbf = m_data[absPartIdx].cbf[0] | m_data[absPartIdx].cbf[1] | m_data[absPartIdx].cbf[2];
                 bestSplitMode = PART_SIZE_Nx2N;
                 bestCost = cost;
                 m_bsf->CtxSave(ctxSave[1], 0, NUM_CABAC_CONTEXT);
@@ -1801,7 +1807,7 @@ CostType H265CU::MeCu(Ipp32u absPartIdx, Ipp8u depth, Ipp32s offset)
     }
 
     // 2NxN
-    {
+    if (nonZeroCbf) {
         H265MEInfo partsInfo[2] = {meInfo, meInfo};
         partsInfo[0].height = meInfo.height / 2;
         partsInfo[1].absPartIdx = meInfo.absPartIdx + (numParts >> 2)*2;
@@ -1821,6 +1827,8 @@ CostType H265CU::MeCu(Ipp32u absPartIdx, Ipp8u depth, Ipp32s offset)
             if (bestCost > cost) {
                 bestMeInfo[0] = partsInfo[0];
                 bestMeInfo[1] = partsInfo[1];
+                if (m_par->fastCbfMode)
+                    nonZeroCbf = m_data[absPartIdx].cbf[0] | m_data[absPartIdx].cbf[1] | m_data[absPartIdx].cbf[2];
                 bestSplitMode = PART_SIZE_2NxN;
                 bestCost = cost;
                 m_bsf->CtxSave(ctxSave[1], 0, NUM_CABAC_CONTEXT);
@@ -1841,7 +1849,7 @@ CostType H265CU::MeCu(Ipp32u absPartIdx, Ipp8u depth, Ipp32s offset)
     if (m_par->AMPAcc[meInfo.depth])
     {
         // PART_SIZE_2NxnU
-        {
+        if (nonZeroCbf) {
             H265MEInfo partsInfo[2] = {meInfo, meInfo};
             partsInfo[0].height = meInfo.height / 4;
             partsInfo[1].absPartIdx = meInfo.absPartIdx + (numParts >> 3);
@@ -1859,6 +1867,8 @@ CostType H265CU::MeCu(Ipp32u absPartIdx, Ipp8u depth, Ipp32s offset)
                 m_bsf->CtxRestore(ctxSave[0], 0, NUM_CABAC_CONTEXT);
                 cost = CuCost(absPartIdx, depth, partsInfo, m_par->fastPUDecision);
                 if (bestCost > cost) {
+                    if (m_par->fastCbfMode)
+                        nonZeroCbf = m_data[absPartIdx].cbf[0] | m_data[absPartIdx].cbf[1] | m_data[absPartIdx].cbf[2];
                     bestSplitMode = PART_SIZE_2NxnU;
                     bestCost = cost;
                     m_bsf->CtxSave(ctxSave[1], 0, NUM_CABAC_CONTEXT);
@@ -1874,7 +1884,7 @@ CostType H265CU::MeCu(Ipp32u absPartIdx, Ipp8u depth, Ipp32s offset)
             }
         }
         // PART_SIZE_2NxnD
-        {
+        if (nonZeroCbf) {
             H265MEInfo partsInfo[2] = {meInfo, meInfo};
             partsInfo[0].height = meInfo.height * 3 / 4;
             partsInfo[1].absPartIdx = meInfo.absPartIdx + (numParts >> 3) * 5;
@@ -1892,6 +1902,8 @@ CostType H265CU::MeCu(Ipp32u absPartIdx, Ipp8u depth, Ipp32s offset)
                 m_bsf->CtxRestore(ctxSave[0], 0, NUM_CABAC_CONTEXT);
                 cost = CuCost(absPartIdx, depth, partsInfo, m_par->fastPUDecision);
                 if (bestCost > cost) {
+                    if (m_par->fastCbfMode)
+                        nonZeroCbf = m_data[absPartIdx].cbf[0] | m_data[absPartIdx].cbf[1] | m_data[absPartIdx].cbf[2];
                     bestSplitMode = PART_SIZE_2NxnD;
                     bestCost = cost;
                     m_bsf->CtxSave(ctxSave[1], 0, NUM_CABAC_CONTEXT);
@@ -1907,7 +1919,7 @@ CostType H265CU::MeCu(Ipp32u absPartIdx, Ipp8u depth, Ipp32s offset)
             }
         }
         // PART_SIZE_nRx2N
-        {
+        if (nonZeroCbf) {
             H265MEInfo partsInfo[2] = {meInfo, meInfo};
             partsInfo[0].width = meInfo.width * 3 / 4;
             partsInfo[1].absPartIdx = meInfo.absPartIdx + (numParts >> 4) * 5;
@@ -1925,6 +1937,8 @@ CostType H265CU::MeCu(Ipp32u absPartIdx, Ipp8u depth, Ipp32s offset)
                 m_bsf->CtxRestore(ctxSave[0], 0, NUM_CABAC_CONTEXT);
                 cost = CuCost(absPartIdx, depth, partsInfo, m_par->fastPUDecision);
                 if (bestCost > cost) {
+                    if (m_par->fastCbfMode)
+                        nonZeroCbf = m_data[absPartIdx].cbf[0] | m_data[absPartIdx].cbf[1] | m_data[absPartIdx].cbf[2];
                     bestSplitMode = PART_SIZE_nRx2N;
                     bestCost = cost;
                     m_bsf->CtxSave(ctxSave[1], 0, NUM_CABAC_CONTEXT);
@@ -1940,7 +1954,7 @@ CostType H265CU::MeCu(Ipp32u absPartIdx, Ipp8u depth, Ipp32s offset)
             }
         }
         // PART_SIZE_nLx2N
-        {
+        if (nonZeroCbf) {
             H265MEInfo partsInfo[2] = {meInfo, meInfo};
             partsInfo[0].width = meInfo.width / 4;
             partsInfo[1].absPartIdx = meInfo.absPartIdx + (numParts >> 4);
@@ -1958,6 +1972,8 @@ CostType H265CU::MeCu(Ipp32u absPartIdx, Ipp8u depth, Ipp32s offset)
                 m_bsf->CtxRestore(ctxSave[0], 0, NUM_CABAC_CONTEXT);
                 cost = CuCost(absPartIdx, depth, partsInfo, m_par->fastPUDecision);
                 if (bestCost > cost) {
+                    if (m_par->fastCbfMode)
+                        nonZeroCbf = m_data[absPartIdx].cbf[0] | m_data[absPartIdx].cbf[1] | m_data[absPartIdx].cbf[2];
                     bestSplitMode = PART_SIZE_nLx2N;
                     bestCost = cost;
                     m_bsf->CtxSave(ctxSave[1], 0, NUM_CABAC_CONTEXT);
