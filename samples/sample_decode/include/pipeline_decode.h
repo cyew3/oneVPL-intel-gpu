@@ -116,7 +116,7 @@ private:
 };
 
 class CDecodingPipeline:
-    public CDecodingBuffering,
+    public CBuffering,
     public CPipelineStatistics
 {
 public:
@@ -162,12 +162,11 @@ protected: // functions
      */
     virtual mfxStatus SyncOutputSurface(mfxU32 wait);
     virtual mfxStatus DeliverOutput(mfxFrameSurface1* frame);
-    mfxStatus DeliverLoop(void);
+    virtual void PrintPerFrameStat(bool force = false);
+
+    virtual mfxStatus DeliverLoop(void);
 
     static unsigned int MSDK_THREAD_CALLCONVENTION DeliverThreadFunc(void* ctx);
-
-    virtual void PrintPerFrameStat();
-
 
 
 protected: // variables

@@ -586,7 +586,6 @@ mfxStatus CDecodingPipeline::AllocFrames()
 
     // prepare mfxFrameSurface1 array for decoder
     nSurfNum = m_mfxResponse.NumFrameActual;
-    printf("NUM=%d\n", nSurfNum);
 
     sts = AllocBuffers(nSurfNum);
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
@@ -939,17 +938,24 @@ unsigned int MSDK_THREAD_CALLCONVENTION CDecodingPipeline::DeliverThreadFunc(voi
     return 0;
 }
 
-void CDecodingPipeline::PrintPerFrameStat()
+void CDecodingPipeline::PrintPerFrameStat(bool force)
 {
 #define MY_COUNT 1 // TODO: this will be cmd option
-    if (!(m_output_count % MY_COUNT)) {
+#define MY_THRESHOLD 10000.0
+    if ((!(m_output_count % MY_COUNT) && (m_eWorkMode != MODE_PERFORMANCE)) || force) {
+        double fps, fps_fread, fps_fwrite;
+
         m_timer_overall.Sync();
+
+        fps = (m_tick_overall)? m_output_count/CTimer::ConvertToSeconds(m_tick_overall): 0.0;
+        fps_fread = (m_tick_fread)? m_output_count/CTimer::ConvertToSeconds(m_tick_fread): 0.0;
+        fps_fwrite = (m_tick_fwrite)? m_output_count/CTimer::ConvertToSeconds(m_tick_fwrite): 0.0;
         // decoding progress
-        msdk_printf(MSDK_STRING("Frame number: %4d, fps: %0.3f, fread_fps: %0.3f, fwrite_fps: %.3f\r"),
+        msdk_printf(MSDK_STRING("Frame number: %4d, fps: %0.3f, fread_fps: %0.3f, fwrite_fps: %.3f\n"),
             m_output_count,
-            m_output_count/CTimer::ConvertToSeconds(m_tick_overall),
-            m_output_count/CTimer::ConvertToSeconds(m_tick_fread),
-            m_output_count/CTimer::ConvertToSeconds(m_tick_fwrite));
+            fps,
+            (fps_fread < MY_THRESHOLD)? fps_fread: 0.0,
+            (fps_fwrite < MY_THRESHOLD)? fps_fwrite: 0.0);
         fflush(NULL);
     }
 }
@@ -1177,7 +1183,8 @@ mfxStatus CDecodingPipeline::RunDecoding()
         }
     } //while processing
 
-    //PrintPerFrameStat(); // TODO: remove MY_COUNT and add final output...
+    PrintPerFrameStat(true);
+
     if (m_bPrintLatency) {
         unsigned int frame_idx = 0;
         msdk_tick sum = 0;

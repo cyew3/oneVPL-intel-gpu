@@ -8,8 +8,8 @@ Copyright(c) 2014 Intel Corporation. All Rights Reserved.
 
 *****************************************************************************/
 
-#ifndef __MFX_DECODE_BUFFERING_H__
-#define __MFX_DECODE_BUFFERING_H__
+#ifndef __MFX_BUFFERING_H__
+#define __MFX_BUFFERING_H__
 
 #include <stdio.h>
 
@@ -22,7 +22,7 @@ Copyright(c) 2014 Intel Corporation. All Rights Reserved.
 
 struct msdkFrameSurface
 {
-    mfxFrameSurface1 frame; // NOTE: this _should_ be the first item (see CDecodingBuffering::FindUsedSurface())
+    mfxFrameSurface1 frame; // NOTE: this _should_ be the first item (see CBuffering::FindUsedSurface())
     msdk_tick submit;       // tick when frame was submitted for processing
     mfxU16 render_lock;     // signifies that frame is locked for rendering
     msdkFrameSurface* prev;
@@ -55,12 +55,12 @@ struct msdkOutputSurface
     #define MSDK_SELF_CHECK(C)
 #endif
 
-class CDecodingBuffering;
+class CBuffering;
 
 // LIFO list of frame surfaces
 class msdkFreeSurfacesPool
 {
-    friend CDecodingBuffering;
+    friend CBuffering;
 public:
     msdkFreeSurfacesPool(MSDKMutex* mutex):
         m_pSurfaces(NULL),
@@ -126,7 +126,7 @@ private:
 // random access, predicted as FIFO
 class msdkUsedSurfacesPool
 {
-    friend CDecodingBuffering;
+    friend CBuffering;
 public:
     msdkUsedSurfacesPool(MSDKMutex* mutex):
         m_pSurfacesHead(NULL),
@@ -216,7 +216,7 @@ private:
 // FIFO list of surfaces
 class msdkOutputSurfacesPool
 {
-    friend CDecodingBuffering;
+    friend CBuffering;
 public:
     msdkOutputSurfacesPool(MSDKMutex* mutex):
         m_pSurfacesHead(NULL),
@@ -287,11 +287,11 @@ private:
 
 /** \brief Helper class defining optimal buffering operations for the Media SDK decoder.
  */
-class CDecodingBuffering
+class CBuffering
 {
 public:
-    CDecodingBuffering();
-    virtual ~CDecodingBuffering();
+    CBuffering();
+    virtual ~CBuffering();
 
 protected: // functions
     mfxStatus AllocBuffers(mfxU32 SurfaceNumber);
@@ -393,8 +393,8 @@ protected: // variables
     msdkOutputSurfacesPool  m_DeliveredSurfacesPool;
 
 private:
-    CDecodingBuffering(const CDecodingBuffering&);
-    void operator=(const CDecodingBuffering&);
+    CBuffering(const CBuffering&);
+    void operator=(const CBuffering&);
 };
 
-#endif // __MFX_DECODE_BUFFERING_H__
+#endif // __MFX_BUFFERING_H__

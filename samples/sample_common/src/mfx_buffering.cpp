@@ -12,7 +12,7 @@ Copyright(c) 2014 Intel Corporation. All Rights Reserved.
 
 #include <mfx_buffering.h>
 
-CDecodingBuffering::CDecodingBuffering():
+CBuffering::CBuffering():
     m_SurfacesNumber(0),
     m_OutputSurfacesNumber(0),
     m_pSurfaces(NULL),
@@ -27,12 +27,12 @@ CDecodingBuffering::CDecodingBuffering():
 {
 }
 
-CDecodingBuffering::~CDecodingBuffering()
+CBuffering::~CBuffering()
 {
 }
 
 mfxStatus
-CDecodingBuffering::AllocBuffers(mfxU32 SurfaceNumber)
+CBuffering::AllocBuffers(mfxU32 SurfaceNumber)
 {
     if (!SurfaceNumber) return MFX_ERR_MEMORY_ALLOC;
 
@@ -63,7 +63,7 @@ CDecodingBuffering::AllocBuffers(mfxU32 SurfaceNumber)
 }
 
 mfxStatus
-CDecodingBuffering::AllocVppBuffers(mfxU32 VppSurfaceNumber)
+CBuffering::AllocVppBuffers(mfxU32 VppSurfaceNumber)
 {
     m_OutputSurfacesNumber = VppSurfaceNumber;
     m_pVppSurfaces = (msdkFrameSurface*)calloc(m_OutputSurfacesNumber, sizeof(msdkFrameSurface));
@@ -74,7 +74,7 @@ CDecodingBuffering::AllocVppBuffers(mfxU32 VppSurfaceNumber)
 }
 
 void
-CDecodingBuffering::AllocOutputBuffer()
+CBuffering::AllocOutputBuffer()
 {
     AutomaticMutex lock(m_Mutex);
 
@@ -94,7 +94,7 @@ FreeList(msdkOutputSurface* head) {
 }
 
 void
-CDecodingBuffering::FreeBuffers()
+CBuffering::FreeBuffers()
 {
     if (m_pSurfaces) {
         free(m_pSurfaces);
@@ -112,7 +112,7 @@ CDecodingBuffering::FreeBuffers()
 }
 
 void
-CDecodingBuffering::ResetBuffers()
+CBuffering::ResetBuffers()
 {
     mfxU32 i;
     msdkFrameSurface* pFreeSurf = m_FreeSurfacesPool.m_pSurfaces = m_pSurfaces;
@@ -126,7 +126,7 @@ CDecodingBuffering::ResetBuffers()
 }
 
 void
-CDecodingBuffering::ResetVppBuffers()
+CBuffering::ResetVppBuffers()
 {
     mfxU32 i;
     msdkFrameSurface* pFreeVppSurf = m_FreeVppSurfacesPool.m_pSurfaces = m_pVppSurfaces;
@@ -140,7 +140,7 @@ CDecodingBuffering::ResetVppBuffers()
 }
 
 void
-CDecodingBuffering::SyncFrameSurfaces()
+CBuffering::SyncFrameSurfaces()
 {
     AutomaticMutex lock(m_Mutex);
     msdkFrameSurface *prev;
@@ -163,7 +163,7 @@ CDecodingBuffering::SyncFrameSurfaces()
 }
 
 void
-CDecodingBuffering::SyncVppFrameSurfaces()
+CBuffering::SyncVppFrameSurfaces()
 {
     AutomaticMutex lock(m_Mutex);
     msdkFrameSurface *prev;

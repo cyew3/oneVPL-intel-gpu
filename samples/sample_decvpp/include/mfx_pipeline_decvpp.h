@@ -117,7 +117,7 @@ private:
 };
 
 class CDecodingPipeline:
-    public CDecodingBuffering,
+    public CBuffering,
     public CPipelineStatistics
 {
 public:
