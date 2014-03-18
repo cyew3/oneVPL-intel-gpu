@@ -51,8 +51,8 @@ const
 wchar_t  * const defaultRTName = {L"libmfxrt64.dll"};
 
 const 
-wchar_t  * const defaultPluginDLLName[2] = {L"libmfxplugin64_hw.dll",
-                                            L"libmfxplugin64_sw.dll"};
+wchar_t  * const defaultPluginDLLName[2] = {L"mfxplugin64_hw.dll",
+                                            L"mfxplugin64_sw.dll"};
 
 #elif defined(_WIN32)
 const
@@ -66,8 +66,8 @@ wchar_t * const defaultAudioDLLName[2] = {L"libmfxaudiosw32.dll",
 const wchar_t  * const defaultRTName = {L"libmfxrt32.dll"};
 
 const 
-wchar_t  * const defaultPluginDLLName[2] = {L"libmfxplugin32_hw.dll",
-                                            L"libmfxplugin32_sw.dll"};
+wchar_t  * const defaultPluginDLLName[2] = {L"mfxplugin32_hw.dll",
+                                            L"mfxplugin32_sw.dll"};
 
 #endif // (defined(_WIN64))
 
@@ -85,8 +85,8 @@ const
 wchar_t  * const defaultRTName = {L"libmfxrt64_d.dll"};
 
 const 
-wchar_t  * const defaultPluginDLLName[2] = {L"libmfxplugin64_hw_d.dll",
-                                            L"libmfxplugin64_sw_d.dll"};
+wchar_t  * const defaultPluginDLLName[2] = {L"mfxplugin64_hw_d.dll",
+                                            L"mfxplugin64_sw_d.dll"};
 
 #elif defined(WIN32)
 const
@@ -101,8 +101,8 @@ wchar_t * const defaultAudioDLLName[2] = {L"libmfxaudiosw32_d.dll",
 const wchar_t  * const defaultRTName = {L"libmfxrt32_d.dll"};
 
 const 
-wchar_t  * const defaultPluginDLLName[2] = {L"libmfxplugin32_hw_d.dll",
-                                            L"libmfxplugin32_sw_d.dll"};
+wchar_t  * const defaultPluginDLLName[2] = {L"mfxplugin32_hw_d.dll",
+                                            L"mfxplugin32_sw_d.dll"};
 
 #endif // (defined(_WIN64))
 
