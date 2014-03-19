@@ -3,7 +3,7 @@
 	ProjectType="Visual C++"
 	Version="8.00"
 	Name="sample_videoconf"
-	ProjectGUID="{11A4DDFA-CF2C-470A-A0D4-747A76E21901}"
+	ProjectGUID="{A6E3D645-0F58-45F4-BDC3-CA457C87D7BC}"
 	RootNamespace="video_enc_con"
 	Keyword="Win32Proj"
 	>
@@ -358,7 +358,7 @@
 	<References>
 		<ProjectReference
 			ReferencedProjectIdentifier="{DB71B91D-16D8-4339-9621-D81798E46E8F}"
-			RelativePathToProject=".\sample_common\sample_common.vcproj"
+			RelativePathToProject="..\sample_common\sample_common.vcproj"
 		/>
 	</References>
 	<Files>

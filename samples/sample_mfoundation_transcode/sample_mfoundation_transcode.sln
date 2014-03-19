@@ -1,9 +1,9 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2012
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MediaFoundation", "MediaFoundation\MediaFoundation.csproj", "{53F77310-DE2F-4188-B60A-57154A1F77CB}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Client", "Client\Client.csproj", "{80027FF8-E887-4704-8A66-26DD40A53894}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MediaFoundation", "MediaFoundation\MediaFoundation.csproj", "{53F77310-DE2F-4188-B60A-57154A1F77CB}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

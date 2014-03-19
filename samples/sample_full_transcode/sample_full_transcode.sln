@@ -1,12 +1,12 @@
 Microsoft Visual Studio Solution File, Format Version 9.00
 # Visual Studio 2005
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "sample_common", "..\sample_common\sample_common.vcproj", "{DB71B91D-16D8-4339-9621-D81798E46E8F}"
-EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "sample_full_transcode", "sample_full_transcode.vcproj", "{D93E83D0-A1F5-4C9B-9557-C2A968E2BF59}"
 	ProjectSection(ProjectDependencies) = postProject
 		{919D48BC-615B-4C72-B5A9-EDB34F1AEF7D} = {919D48BC-615B-4C72-B5A9-EDB34F1AEF7D}
 		{DB71B91D-16D8-4339-9621-D81798E46E8F} = {DB71B91D-16D8-4339-9621-D81798E46E8F}
 	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "sample_common", "..\sample_common\sample_common.vcproj", "{DB71B91D-16D8-4339-9621-D81798E46E8F}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "sample_spl_mux_dispatcher", "..\sample_spl_mux\dispatcher\sample_spl_mux_dispatcher.vcproj", "{919D48BC-615B-4C72-B5A9-EDB34F1AEF7D}"
 EndProject

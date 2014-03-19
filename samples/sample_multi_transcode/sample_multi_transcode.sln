@@ -1,13 +1,13 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 9.00
 # Visual Studio 2005
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "sample_common", "..\sample_common\sample_common.vcproj", "{DB71B91D-16D8-4339-9621-D81798E46E8F}"
-EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "sample_multi_transcode", "sample_multi_transcode.vcproj", "{D93E83D0-A1F5-4C9B-9557-C2A968E2BF59}"
 	ProjectSection(ProjectDependencies) = postProject
 		{DB71B91D-16D8-4339-9621-D81798E46E8F} = {DB71B91D-16D8-4339-9621-D81798E46E8F}
 		{D6D9A3B9-5DC0-4025-B27A-751F91AA462D} = {D6D9A3B9-5DC0-4025-B27A-751F91AA462D}
 	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "sample_common", "..\sample_common\sample_common.vcproj", "{DB71B91D-16D8-4339-9621-D81798E46E8F}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "vpp_plugin", "..\sample_utilities\vpp_plugin\vpp_plugin.vcproj", "{D6D9A3B9-5DC0-4025-B27A-751F91AA462D}"
 EndProject
