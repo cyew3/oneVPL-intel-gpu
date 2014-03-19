@@ -207,24 +207,23 @@ private:
         mfxFrameData* srcYuv,
         SaoCtuParam* codedParam);
 
-    int getMergeList(
+    void GetMergeList(
         int ctu,
-        SaoCtuParam* blkParams,
-        std::vector<SaoCtuParam*>& mergeList);
+        SaoCtuParam* mergeList[2]);
 
     void ModeDecision_Base(
-        std::vector<SaoCtuParam*>& mergeList,
+        SaoCtuParam* mergeList[2],
         bool* sliceEnabled,
-        SaoCtuParam& modeParam,
-        double& modeNormCost,
-        int inCabacLabel);
+        SaoCtuParam& bestParam,
+        double& bestCost,
+        int cabac);
 
     void ModeDecision_Merge(
-        std::vector<SaoCtuParam*>& mergeList,
+        SaoCtuParam* mergeList[2],
         bool* sliceEnabled,
-        SaoCtuParam& modeParam,
-        double& modeNormCost,
-        int inCabacLabel);
+        SaoCtuParam& bestParam,
+        double& bestCost,
+        int cabac);
 
     int GetNumWrittenBits( void )
     {

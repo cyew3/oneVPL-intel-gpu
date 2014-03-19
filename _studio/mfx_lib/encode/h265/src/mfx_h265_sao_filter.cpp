@@ -986,44 +986,23 @@ void InvertQuantOffsets(int type_idx, int typeAuxInfo, int* dstOffsets, int* src
 
 void SaoEncodeFilter::ReconstructCtuSaoParam(SaoCtuParam& recParam)
 {
-    std::vector<SaoCtuParam*> mergeList;
-    getMergeList(
-        m_ctb_addr,
-        NULL,//reconParams,
-        mergeList);
+    SaoCtuParam* mergeList[2] = {NULL, NULL};
+    GetMergeList(m_ctb_addr, mergeList);
 
-    //for(int compIdx=0; compIdx< NUM_SAO_COMPONENTS; compIdx++)
     for(int compIdx=0; compIdx<NUM_USED_SAO_COMPONENTS; compIdx++)
     {
         SaoOffsetParam& offsetParam = recParam[compIdx];
 
-        switch(offsetParam.mode_idx)
+        if( SAO_MODE_ON == offsetParam.mode_idx )
         {
-            case SAO_MODE_OFF:
-            {
-                ;//aya: TO DO late
-            }
-            break;
+            InvertQuantOffsets(offsetParam.type_idx, offsetParam.typeAuxInfo, offsetParam.offset, offsetParam.offset);
+        }
+        else if( SAO_MODE_MERGE == offsetParam.mode_idx )
+        {
+            SaoCtuParam* mergeTarget = mergeList[offsetParam.type_idx];
+            VM_ASSERT(mergeTarget != NULL);
 
-            case SAO_MODE_ON:
-            {
-                InvertQuantOffsets(offsetParam.type_idx, offsetParam.typeAuxInfo, offsetParam.offset, offsetParam.offset);
-            }
-            break;
-
-            case SAO_MODE_MERGE:
-            {
-                SaoCtuParam* mergeTarget = mergeList[offsetParam.type_idx];
-                VM_ASSERT(mergeTarget != NULL);
-
-                offsetParam = (*mergeTarget)[compIdx];
-            }
-            break;
-
-            default:
-            {
-                VM_ASSERT(!"Not a supported mode");
-            }
+            offsetParam = (*mergeTarget)[compIdx];
         }
     }
 
@@ -1241,153 +1220,84 @@ void SaoEncodeFilter::GetBestCtuSaoParam(
 {
     m_bsf->CtxSave(m_ctxSAO[SAO_CABACSTATE_BLK_CUR], tab_ctxIdxOffset[SAO_MERGE_FLAG_HEVC], 2);
 
-//#if defined(SAO_MODE_MERGE_ENABLED)
-    //get merge list
-    std::vector<SaoCtuParam*> mergeList;
-    getMergeList(
-        m_ctb_addr,
-        NULL,//reconParams,
-        mergeList);
-//#else
-//std::vector<SaoCtuParam*> mergeList(2);
-//mergeList[0] = NULL;
-//mergeList[1] = NULL;
-//#endif
+    SaoCtuParam* mergeList[2] = {NULL, NULL};
+    GetMergeList(m_ctb_addr, mergeList);
 
     SaoCtuParam modeParam;
     Ipp64f minCost = MAX_DOUBLE, modeCost = MAX_DOUBLE;
 
-    for(int mode=0; mode < NUM_SAO_MODES; mode++)
+    ModeDecision_Base(
+        mergeList,
+        sliceEnabled,
+        modeParam,
+        modeCost,
+        SAO_CABACSTATE_BLK_CUR);
+
+    if(modeCost < minCost)
     {
-        switch(mode)
-        {
-            case SAO_MODE_OFF:
-            {
-                continue; //not necessary, since all-off case will be tested in SAO_MODE_ON case.
-            }
-            break;
-
-            case SAO_MODE_ON:
-            {
-                ModeDecision_Base(
-                    mergeList,
-                    sliceEnabled,
-                    modeParam,
-                    modeCost,
-                    SAO_CABACSTATE_BLK_CUR);
-            }
-            break;
-
-            case SAO_MODE_MERGE:
-            {
+        minCost = modeCost;
+        *codedParam = modeParam;
+        m_bsf->CtxSave(m_ctxSAO[SAO_CABACSTATE_BLK_NEXT], tab_ctxIdxOffset[SAO_MERGE_FLAG_HEVC], 2);
+    }
+            
 #if defined(SAO_MODE_MERGE_ENABLED)
-                ModeDecision_Merge(
-                    mergeList,
-                    sliceEnabled,
-                    modeParam,
-                    modeCost,
-                    SAO_CABACSTATE_BLK_CUR);
+    ModeDecision_Merge(
+        mergeList,
+        sliceEnabled,
+        modeParam,
+        modeCost,
+        SAO_CABACSTATE_BLK_CUR);
+
+    if(modeCost < minCost)
+    {
+        minCost = modeCost;
+        *codedParam = modeParam;
+        m_bsf->CtxSave(m_ctxSAO[SAO_CABACSTATE_BLK_NEXT], tab_ctxIdxOffset[SAO_MERGE_FLAG_HEVC], 2);
+    }
 #endif
-            }
-            break;
-
-            default:
-            {
-                VM_ASSERT(!"Not a supported SAO mode\n");
-            }
-        }
-
-        if(modeCost < minCost)
-        {
-            minCost = modeCost;
-            *codedParam = modeParam;
-            m_bsf->CtxSave(m_ctxSAO[SAO_CABACSTATE_BLK_NEXT], tab_ctxIdxOffset[SAO_MERGE_FLAG_HEVC], 2);
-        }
-    } //mode
-
-    m_bsf->CtxRestore(m_ctxSAO[SAO_CABACSTATE_BLK_NEXT], tab_ctxIdxOffset[SAO_MERGE_FLAG_HEVC], 2);
-
-    //ReconstructCtuSaoParam(*codedParam, mergeList);
 
 } // void SaoEncodeFilter::GetBestCtuSaoParam(...)
 
 
-int SaoEncodeFilter::getMergeList(
-    int ctu,
-    SaoCtuParam* blkParams,
-    std::vector<SaoCtuParam*>& mergeList)
+void SaoEncodeFilter::GetMergeList(int ctu, SaoCtuParam* mergeList[2])
 {
     int ctuX = ctu % m_numCTU_inWidth;
     int ctuY = ctu / m_numCTU_inWidth;
     int mergedCTUPos;
-    int numValidMergeCandidates = 0;
 
-    for(int mergeType=0; mergeType< NUM_SAO_MERGE_TYPES; mergeType++)
+    if(ctuY > 0)
     {
-        SaoCtuParam* mergeCandidate = NULL;
-
-        switch(mergeType)
+        mergedCTUPos = ctu- m_numCTU_inWidth;        
+        if( m_slice_ids[ctu] == m_slice_ids[mergedCTUPos] )
         {
-        case SAO_MERGE_ABOVE:
-            {
-                if(ctuY > 0)
-                {
-                    mergedCTUPos = ctu- m_numCTU_inWidth;
-                    //if( pic->getSAOMergeAvailability(ctu, mergedCTUPos) )
-                    if( m_slice_ids[ctu] == m_slice_ids[mergedCTUPos] )
-                    {
-                        //mergeCandidate = &(blkParams[mergedCTUPos]);
-                        mergeCandidate = &(m_codedParams_TotalFrame[mergedCTUPos]);
-                    }
-                }
-            }
-            break;
-        case SAO_MERGE_LEFT:
-            {
-                if(ctuX > 0)
-                {
-                    mergedCTUPos = ctu- 1;
-                    //if( pic->getSAOMergeAvailability(ctu, mergedCTUPos) )
-                    if( m_slice_ids[ctu] == m_slice_ids[mergedCTUPos] )
-                    {
-                        //mergeCandidate = &(blkParams[mergedCTUPos]);
-                        mergeCandidate = &(m_codedParams_TotalFrame[mergedCTUPos]);
-                    }
-                }
-            }
-            break;
-        default:
-            {
-                VM_ASSERT(0);
-            }
-        }
-
-        mergeList.push_back(mergeCandidate);
-        if (mergeCandidate != NULL)
-        {
-            numValidMergeCandidates++;
+            mergeList[SAO_MERGE_ABOVE] = &(m_codedParams_TotalFrame[mergedCTUPos]);
         }
     }
 
-    return numValidMergeCandidates;
+    if(ctuX > 0)
+    {
+        mergedCTUPos = ctu- 1;
+        if( m_slice_ids[ctu] == m_slice_ids[mergedCTUPos] )
+        {
+            mergeList[SAO_MERGE_LEFT] = &(m_codedParams_TotalFrame[mergedCTUPos]);
+        }
+    }
 
-} // int SaoEncodeFilter::getMergeList(int ctu, SaoCtuParam* blkParams, std::vector<SaoCtuParam*>& mergeList)
+} // void SaoEncodeFilter::GetMergeList(int ctu, SaoCtuParam* blkParams, SaoCtuParam* mergeList[2])
 
 
 void SaoEncodeFilter::ModeDecision_Merge(
-    std::vector<SaoCtuParam*>& mergeList,
+    SaoCtuParam* mergeList[2],
     bool* sliceEnabled,
     SaoCtuParam& bestParam,
     Ipp64f& bestCost,
     int cabac)
 {
-    int modeCount = (int)mergeList.size();
     bestCost = MAX_DOUBLE;
-
     Ipp64f cost;
     SaoCtuParam testParam;
 
-    for(int mode=0; mode< modeCount; mode++)
+    for(int mode=0; mode< NUM_SAO_MERGE_TYPES; mode++)
     {
         if(NULL == mergeList[mode])
         {
@@ -1435,9 +1345,12 @@ void SaoEncodeFilter::ModeDecision_Merge(
 } // void SaoEncodeFilter::ModeDecision_Merge(...)
 
 
-void SaoEncodeFilter::ModeDecision_Base(std::vector<SaoCtuParam *> &mergeList,  bool *sliceEnabled,
-                                        SaoCtuParam &modeParam, Ipp64f &modeNormCost,
-                                        int inCabacLabel)
+void SaoEncodeFilter::ModeDecision_Base(
+    SaoCtuParam* mergeList[2],
+    bool *sliceEnabled,
+    SaoCtuParam &bestParam, 
+    Ipp64f &bestCost,
+    int cabac)
 {
     Ipp64f minCost = 0.0, cost = 0.0;
     int rate = 0, minRate = 0;
@@ -1447,18 +1360,17 @@ void SaoEncodeFilter::ModeDecision_Base(std::vector<SaoCtuParam *> &mergeList,  
 
     modeDist[SAO_Y]= modeDist[SAO_Cb] = modeDist[SAO_Cr] = 0;
         
-    modeParam[SAO_Y].mode_idx = SAO_MODE_OFF;
+    bestParam[SAO_Y].mode_idx = SAO_MODE_OFF;
 
     m_bsf->CtxRestore(m_ctxSAO[SAO_CABACSTATE_BLK_CUR], tab_ctxIdxOffset[SAO_MERGE_FLAG_HEVC], 2);
-    CodeSaoCtbParam(m_bsf, modeParam, sliceEnabled, mergeList[SAO_MERGE_LEFT] != NULL,
-                    mergeList[SAO_MERGE_ABOVE] != NULL, true);
+    CodeSaoCtbParam(m_bsf, bestParam, sliceEnabled, mergeList[SAO_MERGE_LEFT] != NULL, mergeList[SAO_MERGE_ABOVE] != NULL, true);
     m_bsf->CtxSave(m_ctxSAO[SAO_CABACSTATE_BLK_MID], tab_ctxIdxOffset[SAO_MERGE_FLAG_HEVC], 2);
 
     compIdx = SAO_Y;
-    modeParam[compIdx].mode_idx = SAO_MODE_OFF;
+    bestParam[compIdx].mode_idx = SAO_MODE_OFF;
 
     m_bsf->Reset();
-    CodeSaoCtbOffsetParam(m_bsf, compIdx, modeParam[compIdx], sliceEnabled[compIdx]);
+    CodeSaoCtbOffsetParam(m_bsf, compIdx, bestParam[compIdx], sliceEnabled[compIdx]);
     minRate = GetNumWrittenBits();
 
     modeDist[compIdx] = 0;
@@ -1492,7 +1404,7 @@ void SaoEncodeFilter::ModeDecision_Base(std::vector<SaoCtuParam *> &mergeList,  
                 minCost = cost;
                 minRate = rate;
                 modeDist[compIdx] = dist[compIdx];
-                modeParam[compIdx]= testOffset[compIdx];
+                bestParam[compIdx]= testOffset[compIdx];
 
                 m_bsf->CtxSave(m_ctxSAO[SAO_CABACSTATE_BLK_TEMP], tab_ctxIdxOffset[SAO_MERGE_FLAG_HEVC], 2);
             }
@@ -1512,11 +1424,11 @@ void SaoEncodeFilter::ModeDecision_Base(std::vector<SaoCtuParam *> &mergeList,  
 
         m_bsf->Reset();
 
-        modeParam[SAO_Cb].mode_idx = SAO_MODE_OFF;
-        CodeSaoCtbOffsetParam(m_bsf, SAO_Cb, modeParam[SAO_Cb], sliceEnabled[SAO_Cb]);
+        bestParam[SAO_Cb].mode_idx = SAO_MODE_OFF;
+        CodeSaoCtbOffsetParam(m_bsf, SAO_Cb, bestParam[SAO_Cb], sliceEnabled[SAO_Cb]);
 
-        modeParam[SAO_Cr].mode_idx = SAO_MODE_OFF;
-        CodeSaoCtbOffsetParam(m_bsf, SAO_Cr, modeParam[SAO_Cr], sliceEnabled[SAO_Cr]);
+        bestParam[SAO_Cr].mode_idx = SAO_MODE_OFF;
+        CodeSaoCtbOffsetParam(m_bsf, SAO_Cr, bestParam[SAO_Cr], sliceEnabled[SAO_Cr]);
         
         minRate = GetNumWrittenBits();
 
@@ -1557,23 +1469,23 @@ void SaoEncodeFilter::ModeDecision_Base(std::vector<SaoCtuParam *> &mergeList,  
                 minRate = rate;
                 modeDist[SAO_Cb] = dist[SAO_Cb];
                 modeDist[SAO_Cr] = dist[SAO_Cr];
-                modeParam[SAO_Cb]= testOffset[SAO_Cb];
-                modeParam[SAO_Cr]= testOffset[SAO_Cr];
+                bestParam[SAO_Cb]= testOffset[SAO_Cb];
+                bestParam[SAO_Cr]= testOffset[SAO_Cr];
             }
         }
     }
         
-    modeNormCost = (Ipp64f)modeDist[SAO_Y]/m_labmda[SAO_Y];
+    bestCost = (Ipp64f)modeDist[SAO_Y]/m_labmda[SAO_Y];
 
     if (isChromaEnabled) 
     {
-        modeNormCost += (Ipp64f)(modeDist[SAO_Cb]+ modeDist[SAO_Cr])/chromaLambda;
+        bestCost += (Ipp64f)(modeDist[SAO_Cb]+ modeDist[SAO_Cr])/chromaLambda;
     }
 
     m_bsf->CtxRestore(m_ctxSAO[SAO_CABACSTATE_BLK_CUR], tab_ctxIdxOffset[SAO_MERGE_FLAG_HEVC], 2);
     m_bsf->Reset();
-    CodeSaoCtbParam(m_bsf, modeParam, sliceEnabled, (mergeList[SAO_MERGE_LEFT]!= NULL), (mergeList[SAO_MERGE_ABOVE]!= NULL), false);
-    modeNormCost += (Ipp64f)GetNumWrittenBits();
+    CodeSaoCtbParam(m_bsf, bestParam, sliceEnabled, (mergeList[SAO_MERGE_LEFT]!= NULL), (mergeList[SAO_MERGE_ABOVE]!= NULL), false);
+    bestCost += (Ipp64f)GetNumWrittenBits();
 
 } // void SaoEncodeFilter::ModeDecision_Base(...)
 
