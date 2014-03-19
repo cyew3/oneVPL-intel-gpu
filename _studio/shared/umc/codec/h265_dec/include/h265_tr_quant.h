@@ -52,6 +52,7 @@ public:
     void InvTransformByPass(H265CoeffsPtrCommon pCoeff, DstCoeffsType* pResidual, size_t Stride, Ipp32u Size, Ipp32u bitDepth, bool inplace);
 
 private:
+    H265CoeffsPtrCommon m_pointerToMemory;
     H265CoeffsPtrCommon m_residualsBuffer;
     H265CoeffsPtrCommon m_residualsBuffer1;
 

@@ -19,22 +19,22 @@
 namespace UMC_HEVC_DECODER
 {
 
-#define RDOQ_CHROMA 1  // use of RDOQ in chroma
-
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // H265TrQuant class member functions
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 H265TrQuant::H265TrQuant()
 {
-    m_residualsBuffer = h265_new_array_throw<H265CoeffsCommon>(MAX_CU_SIZE * MAX_CU_SIZE * 2);//aligned 64 bytes
+    // it is important to align this memory because intrinsic uses movdqa.
+    m_pointerToMemory = h265_new_array_throw<H265CoeffsCommon>(MAX_CU_SIZE * MAX_CU_SIZE * 2 + 16); // 16 extra bytes for align
+    m_residualsBuffer = UMC::align_pointer<H265CoeffsCommon*>(m_pointerToMemory, 16);
     m_residualsBuffer1 = m_residualsBuffer + MAX_CU_SIZE * MAX_CU_SIZE;
     m_context = 0;
 }
 
 H265TrQuant::~H265TrQuant()
 {
-    delete[] m_residualsBuffer;
+    delete[] m_pointerToMemory;
 }
 
 
