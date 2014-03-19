@@ -71,7 +71,7 @@ struct sInputParams
     mfxU32  nWallTimeout; //timeout for -wall option
     mfxU32  numViews; // number of views for Multi-View Codec
     mfxU32  nRotation; // rotation for Motion JPEG Codec
-    bool    bIsRgbOut; //true if vpp.Out.FourCC is RGB4, false if - NV12
+    mfxU32  fourcc; // color format of VPP output
 
     msdk_char  strSrcFile[MSDK_MAX_FILENAME_LEN];
     msdk_char  strDstFile[MSDK_MAX_FILENAME_LEN];
@@ -214,7 +214,7 @@ protected: // variables
     bool                    m_bIsCompleteFrame;
     bool                    m_bPrintLatency;
     bool                    m_bStopDeliverLoop;
-    bool                    m_bIsRgbOut; // enables color conversion into RGB4 color format, if not specified - into NV12
+    mfxU32                  m_fourcc; // color format of vpp out, nv12 by default
 
     mfxExtVPPDoNotUse       m_VppDoNotUse;      // for disabling VPP algorithms
     mfxExtBuffer*           m_VppExtParams[2];

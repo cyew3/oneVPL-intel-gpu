@@ -53,7 +53,7 @@ CDecodingPipeline::CDecodingPipeline()
     m_bIsMVC = false;
     m_bIsExtBuffers = false;
     m_bStopDeliverLoop = false;
-    m_bIsRgbOut = false;
+    m_fourcc = MFX_FOURCC_NV12;
     m_eWorkMode = MODE_PERFORMANCE;
     m_pDeliverOutputSemaphore = NULL;
     m_pDeliveredEvent = NULL;
@@ -133,8 +133,10 @@ mfxStatus CDecodingPipeline::Init(sInputParams *pParams)
         }
     }
 
+    if(pParams->fourcc) {
+        m_fourcc = pParams->fourcc;
+    }
     m_memType = pParams->memType;
-    m_bIsRgbOut = pParams->bIsRgbOut;
 
     sts = m_FileReader->Init(pParams->strSrcFile);
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
@@ -619,7 +621,7 @@ mfxStatus CDecodingPipeline::InitVppParams()
     memcpy(&m_mfxVppVideoParams.vpp.In, &m_mfxVideoParams.mfx.FrameInfo, sizeof(mfxFrameInfo));
     memcpy(&m_mfxVppVideoParams.vpp.Out, &m_mfxVppVideoParams.vpp.In, sizeof(mfxFrameInfo));
 
-    m_mfxVppVideoParams.vpp.Out.FourCC = (m_bIsRgbOut) ? MFX_FOURCC_RGB4 : MFX_FOURCC_NV12;
+    m_mfxVppVideoParams.vpp.Out.FourCC  = m_fourcc;
 
     m_mfxVppVideoParams.AsyncDepth = 4;
 
@@ -647,9 +649,12 @@ mfxStatus CDecodingPipeline::AllocFrames()
     MSDK_ZERO_MEMORY(VppRequest[0]);
     MSDK_ZERO_MEMORY(VppRequest[1]);
 
-    sts = m_pmfxDEC->Query(&m_mfxVideoParams, &m_mfxVideoParams);
-    MSDK_IGNORE_MFX_STS(sts, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM);
-    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+    if (m_mfxVideoParams.mfx.CodecId != MFX_CODEC_HEVC)
+    {
+        sts = m_pmfxDEC->Query(&m_mfxVideoParams, &m_mfxVideoParams);
+        MSDK_IGNORE_MFX_STS(sts, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM);
+        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+    }
 
     // calculate number of surfaces required for decoder
     sts = m_pmfxDEC->QueryIOSurf(&m_mfxVideoParams, &Request);
@@ -1114,7 +1119,14 @@ mfxStatus CDecodingPipeline::SyncOutputSurface(mfxU32 wait)
         if (m_eWorkMode == MODE_PERFORMANCE) {
             m_output_count = m_synced_count;
             ReturnSurfaceToBuffers(m_pCurrentOutputSurface);
-        } else if ((m_eWorkMode == MODE_FILE_DUMP) || (m_eWorkMode == MODE_RENDERING)) {
+        } else if (m_eWorkMode == MODE_FILE_DUMP) {
+            m_output_count = m_synced_count;
+            sts = DeliverOutput(&(m_pCurrentOutputSurface->surface->frame));
+            if (MFX_ERR_NONE != sts) {
+                sts = MFX_ERR_UNKNOWN;
+            }
+            ReturnSurfaceToBuffers(m_pCurrentOutputSurface);
+        } else if (m_eWorkMode == MODE_RENDERING) {
             m_DeliveredSurfacesPool.AddSurface(m_pCurrentOutputSurface);
             m_pDeliveredEvent->Reset();
             m_pDeliverOutputSemaphore->Post();
@@ -1139,7 +1151,7 @@ mfxStatus CDecodingPipeline::RunDecoding()
     time_t start_time = time(0);
     MSDKThread * pDeliverThread = NULL;
 
-    if ((m_eWorkMode == MODE_FILE_DUMP) || (m_eWorkMode == MODE_RENDERING)) {
+    if (m_eWorkMode == MODE_RENDERING) {
         pDeliverThread = new MSDKThread(sts, DeliverThreadFunc, this);
         m_pDeliverOutputSemaphore = new MSDKSemaphore(sts);
         m_pDeliveredEvent = new MSDKEvent(sts, false, false);
@@ -1204,9 +1216,9 @@ mfxStatus CDecodingPipeline::RunDecoding()
                 // we stuck with no free surface available, now we will sync...
                 sts = SyncOutputSurface(MSDK_DEC_WAIT_INTERVAL);
                 if (MFX_ERR_MORE_DATA == sts) {
-                    if (m_eWorkMode == MODE_PERFORMANCE) {
+                    if ((m_eWorkMode == MODE_PERFORMANCE) || (m_eWorkMode == MODE_FILE_DUMP)) {
                         sts = MFX_ERR_NOT_FOUND;
-                    } else if ((m_eWorkMode == MODE_FILE_DUMP) || (m_eWorkMode == MODE_RENDERING)) {
+                    } else if (m_eWorkMode == MODE_RENDERING) {
                         if (m_synced_count != m_output_count) {
                             sts = m_pDeliveredEvent->TimedWait(MSDK_DEC_WAIT_INTERVAL);
                         } else {
@@ -1349,7 +1361,7 @@ mfxStatus CDecodingPipeline::RunDecoding()
 
     //PrintPerFrameStat(); // TODO: remove MY_COUNT and add final output...
 
-    if ((m_eWorkMode == MODE_FILE_DUMP) || (m_eWorkMode == MODE_RENDERING)) {
+    if (m_eWorkMode == MODE_RENDERING) {
         m_bStopDeliverLoop = true;
         m_pDeliverOutputSemaphore->Post();
         pDeliverThread->Wait();

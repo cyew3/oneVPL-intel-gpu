@@ -451,10 +451,11 @@ DXGI_FORMAT D3D11FrameAllocator::ConverColortFormat(mfxU32 fourcc)
         case MFX_FOURCC_P8_TEXTURE:
             return DXGI_FORMAT_P8;
 
-        case MFX_FOURCC_P010: // tmp !!! kta
         //case MFX_FOURCC_R16:
-            return DXGI_FORMAT_R16_UINT; // UNORM ??? kta
+            //return DXGI_FORMAT_R16_UINT; // UNORM ??? kta
 
+        case MFX_FOURCC_P010:
+            return DXGI_FORMAT_P010;
         default:
             return DXGI_FORMAT_UNKNOWN;
     }
