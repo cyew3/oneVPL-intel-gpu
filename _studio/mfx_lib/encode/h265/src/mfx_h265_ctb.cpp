@@ -1770,7 +1770,7 @@ CostType H265CU::MeCu(Ipp32u absPartIdx, Ipp8u depth, Ipp32s offset)
     }
 
     // Nx2N
-    if (nonZeroCbf) {
+    if (nonZeroCbf && m_par->partModes > 1) {
         H265MEInfo partsInfo[2] = {meInfo, meInfo};
         partsInfo[0].width = meInfo.width / 2;
         partsInfo[1].absPartIdx = meInfo.absPartIdx + (numParts >> 2)*1;
@@ -1807,7 +1807,7 @@ CostType H265CU::MeCu(Ipp32u absPartIdx, Ipp8u depth, Ipp32s offset)
     }
 
     // 2NxN
-    if (nonZeroCbf) {
+    if (nonZeroCbf && m_par->partModes > 1) {
         H265MEInfo partsInfo[2] = {meInfo, meInfo};
         partsInfo[0].height = meInfo.height / 2;
         partsInfo[1].absPartIdx = meInfo.absPartIdx + (numParts >> 2)*2;
@@ -1845,7 +1845,6 @@ CostType H265CU::MeCu(Ipp32u absPartIdx, Ipp8u depth, Ipp32s offset)
     }
 
     // advanced prediction modes
-    //if (m_par->AMPFlag && meInfo.width > 8)
     if (m_par->AMPAcc[meInfo.depth])
     {
         // PART_SIZE_2NxnU

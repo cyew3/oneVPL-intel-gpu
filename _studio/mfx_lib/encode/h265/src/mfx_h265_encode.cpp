@@ -97,7 +97,7 @@ mfxExtBuffer HEVC_HEADER = { MFX_EXTBUFF_HEVCENC, sizeof(mfxExtCodingOptionHEVC)
     tab_IntraNumCand2_6[x],\
     tab_WPP[x],\
     tab_GPB[x],\
-    tab_AMP[x],\
+    tab_PartModes[x],\
     tab_CmIntraThreshold[x],\
     tab_TUSplitIntra[x],\
     tab_CUSplit[x],\
@@ -151,7 +151,7 @@ TU_OPT(IntraNumCand2_5,                2,   2,   2,   2,   2,   2,   1)
 TU_OPT(IntraNumCand2_6,                2,   2,   2,   2,   2,   2,   1)
 TU_OPT(WPP,                          UNK, UNK, UNK, UNK, UNK, UNK, UNK)
 TU_OPT(GPB,                           ON,  ON,  ON, OFF, OFF, OFF, OFF)
-TU_OPT(AMP,                           ON,  ON,  ON, OFF, OFF, OFF, OFF)
+TU_OPT(PartModes,                      3,   3,   3,   2,   2,   2,   2)
 TU_OPT(CmIntraThreshold,               0,   0,   0,   0,   0,   0, 576)
 TU_OPT(TUSplitIntra,                   1,   1,   1,   1,   3,   3,   3)
 TU_OPT(CUSplit,                        1,   2,   2,   2,   2,   2,   2)
@@ -205,7 +205,7 @@ TU_OPT(IntraNumCand2_5,                2,   2,   2,   2,   2,   1,   1)
 TU_OPT(IntraNumCand2_6,                2,   2,   2,   2,   2,   1,   1)
 TU_OPT(WPP,                          UNK, UNK, UNK, UNK, UNK, UNK, UNK)
 TU_OPT(GPB,                           ON,  ON,  ON,  ON, OFF, OFF, OFF)
-TU_OPT(AMP,                           ON,  ON, OFF, OFF, OFF, OFF, OFF)
+TU_OPT(PartModes,                      3,   3,   3,   2,   2,   2,   1)
 TU_OPT(CmIntraThreshold,               0,   0,   0,   0,   0, 576, 576)
 TU_OPT(TUSplitIntra,                   1,   1,   1,   3,   3,   3,   3)
 TU_OPT(CUSplit,                        2,   2,   2,   2,   2,   2,   2) //CUSplit = 1 gives 2-4x slowdown in speed with less than 1% bdrate
@@ -717,8 +717,8 @@ mfxStatus MFXVideoENCODEH265::Init(mfxVideoParam* par_in)
         if (m_mfxHEVCOpts.GPB == MFX_CODINGOPTION_UNKNOWN)
             m_mfxHEVCOpts.GPB = opts_tu->GPB;
 
-        if (m_mfxHEVCOpts.AMP == MFX_CODINGOPTION_UNKNOWN)
-            m_mfxHEVCOpts.AMP = opts_tu->AMP;
+        if (m_mfxHEVCOpts.PartModes == 0)
+            m_mfxHEVCOpts.PartModes = opts_tu->PartModes;
 
         if (m_mfxHEVCOpts.SAO == MFX_CODINGOPTION_UNKNOWN)
             m_mfxHEVCOpts.SAO = opts_tu->SAO;
@@ -1057,7 +1057,7 @@ mfxStatus MFXVideoENCODEH265::Reset(mfxVideoParam *par_in)
         if (!optsNew.IntraNumCand2_6              ) optsNew.IntraNumCand2_6               = optsOld.IntraNumCand2_6              ;
         if (!optsNew.WPP                          ) optsNew.WPP                           = optsOld.WPP                          ;
         if (!optsNew.GPB                          ) optsNew.GPB                           = optsOld.GPB                          ;
-        if (!optsNew.AMP                          ) optsNew.AMP                           = optsOld.AMP                          ;
+        if (!optsNew.PartModes                    ) optsNew.PartModes                     = optsOld.PartModes                    ;
         if (!optsNew.BPyramid                     ) optsNew.BPyramid                      = optsOld.BPyramid                     ;
         if (!optsNew.CostChroma                   ) optsNew.CostChroma                    = optsOld.CostChroma                   ;
         if (!optsNew.FastSkip                     ) optsNew.FastSkip                      = optsOld.FastSkip                     ;
@@ -1218,7 +1218,7 @@ mfxStatus MFXVideoENCODEH265::Query(VideoCORE *core, mfxVideoParam *par_in, mfxV
             optsHEVC->IntraNumCand2_6 = 1;
             optsHEVC->WPP = 1;
             optsHEVC->GPB = 1;
-            optsHEVC->AMP = 1;
+            optsHEVC->PartModes = 1;
             optsHEVC->BPyramid = 1;
             optsHEVC->CostChroma = 1;
             optsHEVC->FastSkip = 1;
@@ -1580,7 +1580,6 @@ mfxStatus MFXVideoENCODEH265::Query(VideoCORE *core, mfxVideoParam *par_in, mfxV
             CHECK_OPTION(opts_in->SignBitHiding, opts_out->SignBitHiding, isInvalid);  /* tri-state option */
             CHECK_OPTION(opts_in->RDOQuant, opts_out->RDOQuant, isInvalid);            /* tri-state option */
             CHECK_OPTION(opts_in->GPB, opts_out->GPB, isInvalid);            /* tri-state option */
-            CHECK_OPTION(opts_in->AMP, opts_out->AMP, isInvalid);            /* tri-state option */
             CHECK_OPTION(opts_in->SAO, opts_out->SAO, isInvalid);            /* tri-state option */
             CHECK_OPTION(opts_in->WPP, opts_out->WPP, isInvalid);       /* tri-state option */
             CHECK_OPTION(opts_in->BPyramid, opts_out->BPyramid, isInvalid);  /* tri-state option */
@@ -1590,6 +1589,11 @@ mfxStatus MFXVideoENCODEH265::Query(VideoCORE *core, mfxVideoParam *par_in, mfxV
             CHECK_OPTION(opts_in->CostChroma, opts_out->CostChroma, isInvalid);  /* tri-state option */
             CHECK_OPTION(opts_in->FastSkip, opts_out->FastSkip, isInvalid);  /* tri-state option */
             CHECK_OPTION(opts_in->FastCbfMode, opts_out->FastCbfMode, isInvalid);  /* tri-state option */
+
+            if (opts_in->PartModes > 3) {
+                opts_out->PartModes = 0;
+                isInvalid ++;
+            } else opts_out->PartModes = opts_in->PartModes;
 
             if (opts_out->BPyramid == MFX_CODINGOPTION_ON) {
                 Ipp32s GopRefDist = out->mfx.GopRefDist;

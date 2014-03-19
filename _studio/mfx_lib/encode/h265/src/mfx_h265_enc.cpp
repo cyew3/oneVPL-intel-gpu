@@ -122,7 +122,7 @@ mfxStatus H265Encoder::InitH265VideoParam(const mfxVideoParam *param, const mfxE
     pars->QuadtreeTULog2MinSize = opts_hevc->QuadtreeTULog2MinSize; // 2;
     pars->QuadtreeTUMaxDepthIntra = opts_hevc->QuadtreeTUMaxDepthIntra; // 4;
     pars->QuadtreeTUMaxDepthInter = opts_hevc->QuadtreeTUMaxDepthInter; // 4;
-    pars->AMPFlag = (opts_hevc->AMP == MFX_CODINGOPTION_ON);
+    pars->partModes = opts_hevc->PartModes;
     pars->TMVPFlag = (opts_hevc->TMVP == MFX_CODINGOPTION_ON);
     pars->QPI = (Ipp8s)param->mfx.QPI;
     pars->QPP = (Ipp8s)param->mfx.QPP;
@@ -322,7 +322,7 @@ mfxStatus H265Encoder::InitH265VideoParam(const mfxVideoParam *param, const mfxE
 
     for (Ipp32s i = 0; i < pars->MaxCUDepth; i++ )
     {
-        pars->AMPAcc[i] = i < pars->MaxCUDepth-pars->AddCUDepth ? pars->AMPFlag : 0;
+        pars->AMPAcc[i] = i < pars->MaxCUDepth-pars->AddCUDepth ? (pars->partModes==3) : 0;
     }
 
     pars->UseDQP = 0;
@@ -426,7 +426,7 @@ mfxStatus H265Encoder::SetSPS()
     sps->max_transform_hierarchy_depth_intra = (Ipp8u)pars->QuadtreeTUMaxDepthIntra;
     sps->max_transform_hierarchy_depth_inter = (Ipp8u)pars->QuadtreeTUMaxDepthInter;
 
-    sps->amp_enabled_flag = pars->AMPFlag;
+    sps->amp_enabled_flag = (pars->partModes==3);
     sps->sps_temporal_mvp_enabled_flag = pars->TMVPFlag;
     sps->sample_adaptive_offset_enabled_flag = pars->SAOFlag;
     sps->strong_intra_smoothing_enabled_flag = 1;

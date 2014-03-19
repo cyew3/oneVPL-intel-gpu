@@ -248,7 +248,7 @@ void MFXStructureRef <mfxExtCodingOptionHEVC>::ConstructValues() const
     SERIALIZE_INT(IntraNumCand2_6);
     SERIALIZE_INT(WPP);
     SERIALIZE_INT(GPB);
-    SERIALIZE_INT(AMP);
+    SERIALIZE_INT(PartModes);
     SERIALIZE_INT(CmIntraThreshold);
     SERIALIZE_INT(TUSplitIntra);
     SERIALIZE_INT(CUSplit);

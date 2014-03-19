@@ -41,7 +41,7 @@ struct H265VideoParam {
     Ipp8s  QPI;
     Ipp8s  QPP;
     Ipp8s  QPB;
-    Ipp8u  AMPFlag;
+    Ipp8u  partModes;
     Ipp8u  TMVPFlag;
 
     Ipp32s NumSlices;
