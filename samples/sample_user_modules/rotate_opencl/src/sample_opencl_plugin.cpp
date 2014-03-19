@@ -355,7 +355,7 @@ mfxStatus Rotate::Init(mfxVideoParam *mfxParam)
         if (error)
         {
             error = CL_SUCCESS;
-            std::cout << "\nWARNING: Initializing plugin with dx9 sharing failed" << std::endl;
+            std::cout << "\nWARNING: Initializing plugin with media sharing failed" << std::endl;
             m_bOpenCLSurfaceSharing = false; // try init plugin without sharing
         }
         else
@@ -378,9 +378,9 @@ mfxStatus Rotate::Init(mfxVideoParam *mfxParam)
     }
 
     if (m_bOpenCLSurfaceSharing) {
-        msdk_printf(MSDK_STRING("info: using GPU OpenCL processing\n"));
+        msdk_printf(MSDK_STRING("info: using GPU OpenCL device with media sharing extension\n"));
     } else {
-        msdk_printf(MSDK_STRING("info: using CPU OpenCL processing\n"));
+        msdk_printf(MSDK_STRING("info: using CPU OpenCL device without media sharing extension\n"));
     }
 
     m_bInited = true;
