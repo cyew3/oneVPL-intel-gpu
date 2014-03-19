@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2009-2013 Intel Corporation. All Rights Reserved.
+Copyright(c) 2009-2014 Intel Corporation. All Rights Reserved.
 
 File Name: dump.cpp
 
@@ -653,6 +653,12 @@ void dump_ExtBuffers(FILE *fd, int level, TCHAR *prefix, TCHAR* prefix2, int cod
                 dump_format_wprefix(fd,level, 3,prefix,prefix2,TEXT(".mfxExtCodingOption2.ExtBRC="),TEXT("%d"), co2->ExtBRC);
                 dump_format_wprefix(fd,level, 3,prefix,prefix2,TEXT(".mfxExtCodingOption2.LookAheadDepth="),TEXT("%d"), co2->LookAheadDepth);
                 dump_format_wprefix(fd,level, 3,prefix,prefix2,TEXT(".mfxExtCodingOption2.Trellis="),TEXT("%d"), co2->Trellis);
+                dump_format_wprefix(fd,level, 3,prefix,prefix2,TEXT(".mfxExtCodingOption2.RepeatPPS="),TEXT("%d"), co2->RepeatPPS);
+                dump_format_wprefix(fd,level, 3,prefix,prefix2,TEXT(".mfxExtCodingOption2.BRefType="),TEXT("%d"), co2->BRefType);
+                dump_format_wprefix(fd,level, 3,prefix,prefix2,TEXT(".mfxExtCodingOption2.AdaptiveI="),TEXT("%d"), co2->AdaptiveI);
+                dump_format_wprefix(fd,level, 3,prefix,prefix2,TEXT(".mfxExtCodingOption2.AdaptiveB="),TEXT("%d"), co2->AdaptiveB);
+                dump_format_wprefix(fd,level, 3,prefix,prefix2,TEXT(".mfxExtCodingOption2.LookAheadDS="),TEXT("%d"), co2->LookAheadDS);
+                dump_format_wprefix(fd,level, 3,prefix,prefix2,TEXT(".mfxExtCodingOption2.NumMbPerSlice="),TEXT("%d"), co2->NumMbPerSlice);
                 break;
             }
 
