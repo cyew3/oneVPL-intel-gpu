@@ -30,8 +30,11 @@ File Name: mfx_dispatcher_defs.h
 
 #pragma once
 #include "mfxdefs.h"
+
+#if defined(MFX_DISPATCHER_LOG)
 #include <string>
 #include <string.h>
+#endif
 
 #if defined(_WIN32) || defined(_WIN64)
 typedef wchar_t  msdk_disp_char;
@@ -40,6 +43,8 @@ typedef wchar_t  msdk_disp_char;
 #else
 typedef char msdk_disp_char;
 #define msdk_disp_char_cpy_s(to, to_size, from) strcpy(to, from)
+
+#if defined(MFX_DISPATCHER_LOG)
 #define MSDK2WIDE(x) getWideString(x).c_str()
 
 inline std::wstring getWideString(const char * string)
@@ -47,6 +52,9 @@ inline std::wstring getWideString(const char * string)
     size_t len = strlen(string);
     return std::wstring(string, string + len);
 }
+#else
+    #define MSDK2WIDE(x) x  
+#endif
 
 #endif
 
