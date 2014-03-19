@@ -17,7 +17,7 @@ function is_gerrit_branch
 
 function is_first_patchset
 {
-  if echo $1 | grep -q -E refs/changes/[0-9]{2}/[1-9]{4}/1$ ; then
+  if echo $1 | grep -q -E refs/changes/[0-9]{2}/[0-9]{4}/1$ ; then
     return 0;
   else
     return 1;
