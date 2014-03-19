@@ -253,7 +253,7 @@ mfxStatus SurfaceCopy_ROI(mfxFrameSurface1* out, mfxFrameSurface1* in, bool bROI
     mfxU32  inPitch;
     mfxU32  outPitch;
 
-    if( MFX_FOURCC_RGB3 == in->Info.FourCC || MFX_FOURCC_RGB4 == in->Info.FourCC )
+    if( MFX_FOURCC_RGB3 == in->Info.FourCC || MFX_FOURCC_RGB4 == in->Info.FourCC || MFX_FOURCC_A2RGB10 == in->Info.FourCC )
     {
         // in case of RGB we process total frame
         MFX_CHECK_NULL_PTR1(inData->R);
@@ -1121,10 +1121,11 @@ mfxStatus GetPipelineList(
             pipelineList.push_back(MFX_EXTBUFF_VPP_CSC_OUT_RGB4);
         }
 
-
-        if (  ( MFX_FOURCC_P010 == par->In.FourCC && MFX_FOURCC_NV12 == par->Out.FourCC)
-           || ( MFX_FOURCC_NV12 == par->In.FourCC && MFX_FOURCC_P010 == par->Out.FourCC) ) {
-             /* Special case for p010<->nv12 conversions */
+      
+        if (  ( MFX_FOURCC_P010 == par->In.FourCC && MFX_FOURCC_NV12    == par->Out.FourCC)
+           || ( MFX_FOURCC_NV12 == par->In.FourCC && MFX_FOURCC_P010    == par->Out.FourCC)
+           || ( MFX_FOURCC_P010 == par->In.FourCC && MFX_FOURCC_A2RGB10 == par->Out.FourCC)) {
+             /* Special case for p010<->nv12 and p010->a2rgb10 conversions */
             pipelineList.push_back(MFX_EXTBUFF_VPP_CSC);
         }
         else if (  ( MFX_FOURCC_P010 == par->In.FourCC && MFX_FOURCC_P010 == par->Out.FourCC)
@@ -1362,7 +1363,12 @@ mfxStatus CheckFrameInfo(mfxFrameInfo* info, mfxU32 request)
             if (VPP_OUT == request)
                 return MFX_ERR_INVALID_VIDEO_PARAM;
             break;
-
+        case MFX_FOURCC_A2RGB10:
+            // 10bit RGB supported as output format only
+            if (VPP_IN == request)
+                return MFX_ERR_INVALID_VIDEO_PARAM;
+            
+            break;
         default:
             return MFX_ERR_INVALID_VIDEO_PARAM;
     }

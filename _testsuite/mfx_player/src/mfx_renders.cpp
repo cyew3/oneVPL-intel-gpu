@@ -458,6 +458,7 @@ mfxStatus MFXFileWriteRender::WriteSurface(mfxFrameSurface1 * pConvertedSurface)
             break;
         }
         case MFX_FOURCC_RGB4 :
+        case MFX_FOURCC_A2RGB10:
         {
             m_Current.m_comp = VM_STRING('R');
             m_Current.m_pixX = 0;

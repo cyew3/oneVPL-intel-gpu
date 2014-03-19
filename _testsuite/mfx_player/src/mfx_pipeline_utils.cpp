@@ -729,7 +729,7 @@ mfxF64 ConvertMFXTime2mfxF64(mfxU64 nTime)
 
 mfxStatus GetMFXFrameInfoFromFOURCCPatternIdx(int idx_in_pattern, mfxFrameInfo &info)
 {
-    static const char valid_pattern [] = "nv12( |:mono)|yv12( |:mono)|rgb24|rgb32|yuy2(:h|:v|:mono)|ayuv|p010|y410";
+    static const char valid_pattern [] = "nv12( |:mono)|yv12( |:mono)|rgb24|rgb32|yuy2(:h|:v|:mono)|ayuv|p010|a2rgb10";
 
     //if external pattern changed parsing need to be updated
     MFX_CHECK(!std::string(MFX_FOURCC_PATTERN()).compare(valid_pattern));
@@ -805,9 +805,9 @@ mfxStatus GetMFXFrameInfoFromFOURCCPatternIdx(int idx_in_pattern, mfxFrameInfo &
         }
         case 12:
         {
-       /*     info.FourCC = MFX_FOURCC_Y410;
+            info.FourCC = MFX_FOURCC_A2RGB10;
             info.ChromaFormat = MFX_CHROMAFORMAT_YUV444;
-            break;*/
+            break;
         }
         default:
             return MFX_ERR_UNSUPPORTED;

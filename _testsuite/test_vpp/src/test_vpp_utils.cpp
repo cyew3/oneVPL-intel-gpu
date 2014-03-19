@@ -1783,7 +1783,7 @@ mfxStatus CRawVideoWriter::WriteFrame(
             if ( m_need_crc ) CRC32(ptr + i * pitch, w);
         }
     }
-    else if (pInfo->FourCC == MFX_FOURCC_RGB4)
+    else if (pInfo->FourCC == MFX_FOURCC_RGB4 || pInfo->FourCC == MFX_FOURCC_A2RGB10)
     {
         CHECK_POINTER(pData->R, MFX_ERR_NOT_INITIALIZED);
         CHECK_POINTER(pData->G, MFX_ERR_NOT_INITIALIZED);

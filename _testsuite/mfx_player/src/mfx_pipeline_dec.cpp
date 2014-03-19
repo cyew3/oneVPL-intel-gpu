@@ -1508,8 +1508,9 @@ mfxStatus MFXDecPipeline::CreateRender()
         m_components[eREN].m_params.mfx.FrameInfo.FourCC = m_components[eDEC].m_params.mfx.FrameInfo.FourCC;
     }
 
-    if (   MFX_FOURCC_P010 == m_inParams.outFrameInfo.FourCC
-        || MFX_FOURCC_NV12 == m_inParams.outFrameInfo.FourCC
+    if (   MFX_FOURCC_P010    == m_inParams.outFrameInfo.FourCC
+        || MFX_FOURCC_NV12    == m_inParams.outFrameInfo.FourCC
+        || MFX_FOURCC_A2RGB10 == m_inParams.outFrameInfo.FourCC
         ) {
             m_components[eREN].m_params.mfx.FrameInfo.FourCC = m_inParams.outFrameInfo.FourCC;
     }

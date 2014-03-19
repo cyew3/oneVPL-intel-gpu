@@ -394,7 +394,7 @@ mfxStatus VideoVPPSW::CreatePipeline(mfxFrameInfo* In, mfxFrameInfo* Out)
                 /* COLOR SPACE_ CONVERSION specific */
                 outFrameInfo.FourCC = MFX_FOURCC_NV12;
 
-                if ( Out->FourCC == MFX_FOURCC_P010)
+                if ( Out->FourCC == MFX_FOURCC_P010 || Out->FourCC == MFX_FOURCC_A2RGB10)
                 {
                     outFrameInfo.FourCC = Out->FourCC;
                     outFrameInfo.Shift  = Out->Shift;

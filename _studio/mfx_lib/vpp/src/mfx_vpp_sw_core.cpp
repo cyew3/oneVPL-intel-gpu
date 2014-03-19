@@ -1572,7 +1572,7 @@ mfxStatus VideoVPPSW::Reset(mfxVideoParam *par)
             case MFX_EXTBUFF_VPP_CSC:
                 {
                     filtParam.vpp.Out.FourCC = MFX_FOURCC_NV12;
-                    if ( MFX_FOURCC_P010 == par->vpp.Out.FourCC )
+                    if ( MFX_FOURCC_P010 == par->vpp.Out.FourCC || MFX_FOURCC_A2RGB10 == par->vpp.Out.FourCC  )
                     {
                         filtParam.vpp.Out.FourCC = par->vpp.Out.FourCC;
                         filtParam.vpp.Out.Shift = par->vpp.Out.Shift;

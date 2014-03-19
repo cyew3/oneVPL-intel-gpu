@@ -25,12 +25,19 @@
 #define CHOP(x)     ((x < 0) ? 0 : ((x > 255) ? 255 : x))
 #endif
 
+#ifndef CHOP10
+#define CHOP10(x)     ((x < 0) ? 0 : ((x > 1023) ? 1023 : x))
+#endif
+
 /* ******************************************************************** */
 /*                 prototype of CSC algorithms                          */
 /* ******************************************************************** */
 IppStatus cc_P010_to_NV12( mfxFrameData* inData,  mfxFrameInfo* inInfo,
                            mfxFrameData* outData, mfxFrameInfo* outInfo,
                            mfxFrameData* yv12Data);
+
+IppStatus cc_P010_to_A2RGB10( mfxFrameData* inData,  mfxFrameInfo* inInfo,
+                              mfxFrameData* outData, mfxFrameInfo* outInfo);
 
 IppStatus cc_P010_to_P010( mfxFrameData* inData,  mfxFrameInfo* inInfo,
                            mfxFrameData* outData, mfxFrameInfo* outInfo);
@@ -113,7 +120,8 @@ mfxStatus MFXVideoVPPColorSpaceConversion::Reset(mfxVideoParam *par)
   dstFourCC = par->vpp.Out.FourCC;
 
   if( srcFourCC == dstFourCC 
-   && MFX_FOURCC_NV12 != dstFourCC
+   && MFX_FOURCC_NV12    != dstFourCC
+   && MFX_FOURCC_A2RGB10 != dstFourCC
    && par->vpp.In.Shift == par->vpp.Out.Shift)
   {
     return MFX_ERR_INVALID_VIDEO_PARAM;
@@ -140,6 +148,7 @@ mfxStatus MFXVideoVPPColorSpaceConversion::Reset(mfxVideoParam *par)
           case MFX_FOURCC_YUY2:
           case MFX_FOURCC_RGB4:
           case MFX_FOURCC_P010:
+          case MFX_FOURCC_A2RGB10:
               break;
 
           default:
@@ -205,6 +214,9 @@ mfxStatus MFXVideoVPPColorSpaceConversion::RunFrameVPP(mfxFrameSurface1 *in,
       break;
     case MFX_FOURCC_P010:
         ippSts = cc_P010_to_P010(inData, inInfo, outData, outInfo);
+      break;
+    case MFX_FOURCC_A2RGB10:
+        ippSts = cc_P010_to_A2RGB10(inData, inInfo, outData, outInfo);
       break;
     default:
       return MFX_ERR_INVALID_VIDEO_PARAM;
@@ -355,6 +367,7 @@ mfxStatus MFXVideoVPPColorSpaceConversion::Init(mfxFrameInfo* In, mfxFrameInfo* 
       case MFX_FOURCC_YUY2:
       case MFX_FOURCC_RGB4:
       case MFX_FOURCC_P010:
+      case MFX_FOURCC_A2RGB10:
           break;
 
       default:
@@ -617,6 +630,71 @@ IppStatus cc_P010_to_NV12( mfxFrameData* inData,  mfxFrameInfo* inInfo,
   return sts;
 
 } // IppStatus cc_P010_to_NV12( mfxFrameData* inData,  mfxFrameInfo* inInfo,...)
+
+IppStatus cc_P010_to_A2RGB10( mfxFrameData* inData,  mfxFrameInfo* inInfo,
+                              mfxFrameData* outData, mfxFrameInfo* outInfo)
+{
+  IppStatus sts = ippStsNoErr;
+  IppiSize  roiSize = {0, 0};
+  mfxU32 inPitch, outPitch;
+  mfxU16 *ptr_y, *ptr_uv;
+  mfxU32 *out;
+  mfxU32 uv_offset, out_offset;
+  mfxU16 y, v,u;
+  mfxU16 r, g, b;
+  int Y,Cb,Cr;
+
+  inPitch  = inData->Pitch;
+  outPitch = outData->Pitch;
+  outPitch >>= 2; // U32 pointer is used for output
+  inPitch  >>= 1; // U16 pointer is used for input
+  // cropping was removed
+  outInfo;
+
+  VPP_GET_REAL_WIDTH(inInfo, roiSize.width);
+  VPP_GET_REAL_HEIGHT(inInfo, roiSize.height);
+
+  if(MFX_PICSTRUCT_PROGRESSIVE & inInfo->PicStruct)
+  {
+        ptr_y  = (mfxU16*)inData->Y;
+        ptr_uv = (mfxU16*)inData->UV;
+        out = (mfxU32*)IPP_MIN( IPP_MIN(outData->R, outData->G), outData->B );
+       
+        uv_offset    = 0;
+        out_offset   = 0;
+        
+        for(mfxI32 j = 0; j < roiSize.height; j++) {
+            out_offset = j*outPitch;
+            
+            if ( j != 0 && (j%2) == 0 ){
+                // Use the same plane twice for 4:2:0
+                uv_offset += inPitch;
+            }
+
+            for (mfxI32 i = 0; i < roiSize.width; i++) {
+                y = ptr_y[j*inPitch + i];
+                u = ptr_uv[uv_offset + (i/2)*2];
+                v = ptr_uv[uv_offset + (i/2)*2 + 1];
+
+                Y = (int)y * 0x000129fa;
+                Cb = u - 512;
+                Cr = v - 512;
+                r = CHOP10((((Y + 0x00019891 * Cr + 0x00008000 )>>16)));
+                g = CHOP10((((Y - 0x00006459 * Cb - 0x0000d01f * Cr + 0x00008000  ) >> 16 )));
+                b = CHOP10((((Y + 0x00020458 * Cb + 0x00008000  )>>16)));
+                out[out_offset++] = (r <<20 | g << 10 | b << 0 );
+             }
+        }
+  }
+  else
+  {
+     /* Interlaced content is not supported... yet. */
+     return ippStsErr;
+  }
+
+  return sts;
+
+} // IppStatus cc_P010_to_A2RGB10( mfxFrameData* inData,  mfxFrameInfo* inInfo,...)
 
 IppStatus cc_P010_to_P010( mfxFrameData* inData,  mfxFrameInfo* inInfo,
                            mfxFrameData* outData, mfxFrameInfo* outInfo)
