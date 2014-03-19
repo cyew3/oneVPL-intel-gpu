@@ -93,14 +93,22 @@ public:
         }
         catch(std::bad_alloc&)
         {
-            return MFX_ERR_MEMORY_ALLOC;;
+            return MFX_ERR_MEMORY_ALLOC;
         }
         catch(MFX_CORE_CATCH_TYPE) 
         { 
-            return MFX_ERR_UNKNOWN;; 
+            return MFX_ERR_UNKNOWN;
         }
 
-        tmp_pplg->m_adapter.reset(new MFXPluginAdapter<MFXDecoderPlugin> (tmp_pplg));
+        try
+        {
+            tmp_pplg->m_adapter.reset(new MFXPluginAdapter<MFXDecoderPlugin> (tmp_pplg));
+        }
+        catch(std::bad_alloc&)
+        {
+            delete tmp_pplg;
+            return MFX_ERR_MEMORY_ALLOC;
+        }
         *mfxPlg = (mfxPlugin)*tmp_pplg->m_adapter;
         tmp_pplg->m_createdByDispatcher = true;
         return MFX_ERR_NONE;
