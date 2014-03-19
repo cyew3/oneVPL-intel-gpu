@@ -89,12 +89,13 @@ enum {
     MFX_FOURCC_NV12         = MFX_MAKEFOURCC('N','V','1','2'),   /* Native Format */
     MFX_FOURCC_YV12         = MFX_MAKEFOURCC('Y','V','1','2'),
     MFX_FOURCC_YUY2         = MFX_MAKEFOURCC('Y','U','Y','2'),
-    MFX_FOURCC_RGB3         = MFX_MAKEFOURCC('R','G','B','3'),   /* RGB24 */
-    MFX_FOURCC_RGB4         = MFX_MAKEFOURCC('R','G','B','4'),   /* RGB32 */
-    MFX_FOURCC_P8           = 41,         /*  D3DFMT_P8   */
+    MFX_FOURCC_RGB3         = MFX_MAKEFOURCC('R','G','B','3'),   /* deprecated */
+    MFX_FOURCC_RGB4         = MFX_MAKEFOURCC('R','G','B','4'),   /* ARGB in that order, A channel is 8 MSBs */
+    MFX_FOURCC_P8           = 41,                                /*  D3DFMT_P8   */
     MFX_FOURCC_P8_TEXTURE   = MFX_MAKEFOURCC('P','8','M','B'),
-    MFX_FOURCC_P010         = MFX_MAKEFOURCC('P','0','1','0'),
-    MFX_FOURCC_BGR4         = MFX_MAKEFOURCC('B','G','R','4')    /* BGR32 */
+    MFX_FOURCC_P010         = MFX_MAKEFOURCC('P','0','1','0'), 
+    MFX_FOURCC_BGR4         = MFX_MAKEFOURCC('B','G','R','4'),   /* ABGR in that order, A channel is 8 MSBs */
+    MFX_FOURCC_A2RGB10      = MFX_MAKEFOURCC('R','G','1','0')    /* ARGB in that order, A channel is two MSBs */
 };
 
 /* PicStruct */
