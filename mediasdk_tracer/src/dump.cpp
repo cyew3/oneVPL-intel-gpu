@@ -108,15 +108,18 @@ StringCodeItem tbl_frc_algm[] = {
 
 StringCodeItem tbl_impl[] = {
     CODE_STRING(MFX_IMPL_,SOFTWARE),
-    CODE_STRING(MFX_IMPL_,AUTO_ANY),
     CODE_STRING(MFX_IMPL_,HARDWARE),
+    CODE_STRING(MFX_IMPL_,AUTO_ANY),
     CODE_STRING(MFX_IMPL_,HARDWARE_ANY),
     CODE_STRING(MFX_IMPL_,HARDWARE2),
     CODE_STRING(MFX_IMPL_,HARDWARE3),
     CODE_STRING(MFX_IMPL_,HARDWARE4),
+    CODE_STRING(MFX_IMPL_,RT),
     CODE_STRING(MFX_IMPL_,VIA_ANY),
     CODE_STRING(MFX_IMPL_,VIA_D3D9),
     CODE_STRING(MFX_IMPL_,VIA_D3D11),
+    CODE_STRING(MFX_IMPL_,VIA_VAAPI),
+    CODE_STRING(MFX_IMPL_,AUDIO),
 };
 
 StringCodeItem tbl_timestamp_calc[] = {
@@ -527,10 +530,16 @@ void dump_ExtBuffers(FILE *fd, int level, TCHAR *prefix, TCHAR* prefix2, int cod
                 dump_format_wprefix(fd,level, 3, prefix, prefix2, TEXT(".mfxExtVPPComposite.V(B)="),TEXT("%d"), c->B);
                 for (int j = 0; j < c->NumInputStream; j++)
                 {
-                    dump_format_wprefix(fd,level, 3, prefix, prefix2, TEXT(".mfxExtVPPComposite.InputStream"),TEXT("[%d].DstX=%d"), j, c->InputStream[j].DstX);
-                    dump_format_wprefix(fd,level, 3, prefix, prefix2, TEXT(".mfxExtVPPComposite.InputStream"),TEXT("[%d].DstY=%d"), j, c->InputStream[j].DstY);
-                    dump_format_wprefix(fd,level, 3, prefix, prefix2, TEXT(".mfxExtVPPComposite.InputStream"),TEXT("[%d].DstW=%d"), j, c->InputStream[j].DstW);
-                    dump_format_wprefix(fd,level, 3, prefix, prefix2, TEXT(".mfxExtVPPComposite.InputStream"),TEXT("[%d].DstH=%d"), j, c->InputStream[j].DstH);
+                    dump_format_wprefix(fd,level, 3, prefix, prefix2, TEXT(".mfxExtVPPComposite.InputStream"),TEXT("[%d].DstX=%d"),              j, c->InputStream[j].DstX);
+                    dump_format_wprefix(fd,level, 3, prefix, prefix2, TEXT(".mfxExtVPPComposite.InputStream"),TEXT("[%d].DstY=%d"),              j, c->InputStream[j].DstY);
+                    dump_format_wprefix(fd,level, 3, prefix, prefix2, TEXT(".mfxExtVPPComposite.InputStream"),TEXT("[%d].DstW=%d"),              j, c->InputStream[j].DstW);
+                    dump_format_wprefix(fd,level, 3, prefix, prefix2, TEXT(".mfxExtVPPComposite.InputStream"),TEXT("[%d].DstH=%d"),              j, c->InputStream[j].DstH);
+                    dump_format_wprefix(fd,level, 3, prefix, prefix2, TEXT(".mfxExtVPPComposite.InputStream"),TEXT("[%d].LumaKeyEnable=%d"),     j, c->InputStream[j].LumaKeyEnable);
+                    dump_format_wprefix(fd,level, 3, prefix, prefix2, TEXT(".mfxExtVPPComposite.InputStream"),TEXT("[%d].LumaKeyMin=%d"),        j, c->InputStream[j].LumaKeyMin);
+                    dump_format_wprefix(fd,level, 3, prefix, prefix2, TEXT(".mfxExtVPPComposite.InputStream"),TEXT("[%d].LumaKeyMax=%d"),        j, c->InputStream[j].LumaKeyMax);
+                    dump_format_wprefix(fd,level, 3, prefix, prefix2, TEXT(".mfxExtVPPComposite.InputStream"),TEXT("[%d].GlobalAlphaEnable=%d"), j, c->InputStream[j].GlobalAlphaEnable);
+                    dump_format_wprefix(fd,level, 3, prefix, prefix2, TEXT(".mfxExtVPPComposite.InputStream"),TEXT("[%d].GlobalAlpha=%d"),       j, c->InputStream[j].GlobalAlpha);
+                    dump_format_wprefix(fd,level, 3, prefix, prefix2, TEXT(".mfxExtVPPComposite.InputStream"),TEXT("[%d].PixelAlphaEnable=%d"),  j, c->InputStream[j].PixelAlphaEnable);
                 }
                 break;
             }
@@ -724,6 +733,13 @@ void dump_ExtBuffers(FILE *fd, int level, TCHAR *prefix, TCHAR* prefix2, int cod
                 break;
             }
 
+            case MFX_EXTBUFF_VPP_DEINTERLACING:
+            {
+                mfxExtVPPDeinterlacing *vppdi=(mfxExtVPPDeinterlacing *)eb;
+                dump_format_wprefix(fd,level, 3,prefix,prefix2,TEXT(".mfxExtVPPDeinterlacing.Mode="),TEXT("%d"), vppdi->Mode);
+                break;
+            }
+
             default:
                 dump_format_wprefix(fd,level, 3,prefix,prefix2,TEXT(".BufferId="),TEXT("%d"),  eb->BufferId);
                 dump_format_wprefix(fd,level, 3,prefix,prefix2,TEXT(".BufferSz="),TEXT("%d"),  eb->BufferSz);
@@ -894,8 +910,8 @@ void dump_mfxFrameData(FILE *fd, int level, TCHAR *prefix, TCHAR *prefix2, mfxFr
         dump_format_wprefix(fd,level, 3,prefix,prefix2,TEXT(".TimeStamp=0x"),TEXT("%x"),data->TimeStamp);
         dump_format_wprefix(fd,level, 3,prefix,prefix2,TEXT(".FrameOrder="),TEXT("%d"),data->FrameOrder);
         dump_format_wprefix(fd,level, 3,prefix,prefix2,TEXT(".Locked="),TEXT("%d"),data->Locked);
-        dump_format_wprefix(fd,level, 3,prefix,prefix2,TEXT(".PitchHigh="),TEXT("%d"),data->PitchHigh);
         dump_format_wprefix(fd,level, 3,prefix,prefix2,TEXT(".Pitch="),TEXT("%d"),data->Pitch);
+        dump_format_wprefix(fd,level, 3,prefix,prefix2,TEXT(".PitchHigh="),TEXT("%d"),data->PitchHigh);
         dump_format_wprefix(fd,level, 3,prefix,prefix2,TEXT(".PitchLow="),TEXT("%d"),data->PitchLow);
         dump_format_wprefix(fd,level, 3,prefix,prefix2,TEXT(".Corrupted="),TEXT("%d"),data->Corrupted);
         RECORD_POINTERS(dump_format_wprefix(fd,level, 3,prefix,prefix2,TEXT(".Y=0x"),TEXT("%p"),data->Y));
