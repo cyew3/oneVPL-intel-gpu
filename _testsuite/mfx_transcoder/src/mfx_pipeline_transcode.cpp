@@ -956,6 +956,7 @@ mfxStatus MFXTranscodingPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI3
                 MFX_PARSE_INT(m_extEncoderRoi->ROI[i].Priority, argv[4]);
                 argv += 5;
             }
+            argv--;
         }
         else if (m_OptProc.Check(argv[0], VM_STRING("-enc_frame_info"), VM_STRING("shows encoded picture info from mfxExtAVCEncodedFrameInfo structure, for particular frame, for ranges of frames, or for every frame"), OPT_SPECIAL
         , VM_STRING("[first [last]]"))) {
