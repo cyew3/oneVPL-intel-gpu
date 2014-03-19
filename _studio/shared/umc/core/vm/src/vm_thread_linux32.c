@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//       Copyright(c) 2003-2011 Intel Corporation. All Rights Reserved.
+//       Copyright(c) 2003-2014 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -103,12 +103,18 @@ Ipp32s vm_thread_create(vm_thread *thread,
         thread->p_thread_func = vm_thread_func;
         thread->p_arg = arg;
         pthread_attr_init(&attr);
+#ifdef ANDROID
+        pthread_attr_setschedpolicy(&attr, SCHED_OTHER);
+#else
+        // SCHED_RR doesn't work on Android
         pthread_attr_setschedpolicy(&attr, geteuid() ? SCHED_OTHER : SCHED_RR);
+#endif
 
         thread->is_valid =! pthread_create(&thread->handle,
                                            &attr,
                                            vm_thread_proc,
                                            (void*)thread);
+
         i_res = (thread->is_valid) ? 1 : 0;
         vm_mutex_unlock(&thread->access_mut);
         pthread_attr_destroy(&attr);
