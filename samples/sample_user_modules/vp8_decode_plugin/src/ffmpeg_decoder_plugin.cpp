@@ -46,6 +46,12 @@ FFDecPlugin::FFDecPlugin()
 {
     mfxPluginUID uid = {0xA3, 0xD3, 0x8D, 0x30, 0xCE, 0xB0, 0x42, 0xCB, 0x8B, 0x01, 0x87, 0xB4, 0x9A, 0x83, 0xBF, 0x3A};
     m_PluginParam.reset(new MFXPluginParam(FF_CODEC_VP8, 0, uid));
+    if (m_PluginParam.get())
+    {
+        mfxPluginParam& param = ((mfxPluginParam&)(*m_PluginParam.get()));
+        param.APIVersion.Major = MFX_VERSION_MAJOR;
+        param.APIVersion.Minor = MFX_VERSION_MINOR;
+    }
 }
 
 FFDecPlugin::~FFDecPlugin()
