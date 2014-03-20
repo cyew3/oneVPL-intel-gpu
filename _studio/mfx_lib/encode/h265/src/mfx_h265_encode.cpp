@@ -118,6 +118,7 @@ mfxExtBuffer HEVC_HEADER = { MFX_EXTBUFF_HEVCENC, sizeof(mfxExtCodingOptionHEVC)
     tab_IntraNumCand0_6[x],\
     tab_CostChroma[x],\
     tab_PatternIntPel[x],\
+    tab_PatternSubPel[x],\
     tab_FastSkip[x],\
     tab_ForceNumThread[x],\
     tab_FastCbfMode[x],\
@@ -172,6 +173,7 @@ TU_OPT(IntraNumCand0_5,               35,  35,  35,  35,  35,  35,  35)
 TU_OPT(IntraNumCand0_6,               35,  35,  35,  35,  35,  35,  35)
 TU_OPT(CostChroma,                   OFF, OFF, OFF, OFF, OFF, OFF, OFF)
 TU_OPT(PatternIntPel,                  1,   1,   1,   1,   1,   1,   1)
+TU_OPT(PatternSubPel,                  3,   3,   3,   3,   3,   3,   3)
 TU_OPT(FastSkip,                     OFF, OFF, OFF, OFF, OFF, OFF, OFF)
 TU_OPT(ForceNumThread,                 0,   0,   0,   0,   0,   0,   0)
 TU_OPT(FastCbfMode,                  OFF, OFF, OFF, OFF, OFF, OFF, OFF)
@@ -179,20 +181,45 @@ Ipp8u tab_tuGopRefDist [8] = {8, 8, 8, 8, 8, 3, 2, 1};
 Ipp8u tab_tuNumRefFrame[8] = {2, 4, 3, 3, 2, 2, 1, 1};
 
 #else
-//                                    TU1  TU2  TU3  TU4  TU5  TU6  TU7
-TU_OPT(Log2MaxCUSize,                  6,   6,   6,   5,   5,   5,   5)
-TU_OPT(MaxCUDepth,                     4,   4,   4,   3,   3,   3,   2)
+// Mode Decision                      TU1  TU2  TU3  TU4  TU5  TU6  TU7
 TU_OPT(QuadtreeTULog2MaxSize,          5,   5,   5,   5,   5,   5,   5)
 TU_OPT(QuadtreeTULog2MinSize,          2,   2,   2,   2,   2,   2,   2)
-TU_OPT(QuadtreeTUMaxDepthIntra,        3,   2,   2,   2,   1,   1,   1) //intra decrease has less effect than inter. need to measure more
-TU_OPT(QuadtreeTUMaxDepthInter,        3,   3,   2,   2,   2,   1,   1)
+
+TU_OPT(Log2MaxCUSize,                  6,   6,   6,   6,   5,   5,   5)
+TU_OPT(MaxCUDepth,                     4,   4,   3,   3,   3,   3,   2) 
+TU_OPT(QuadtreeTUMaxDepthIntra,        4,   3,   3,   3,   2,   2,   2) //intra decrease has less effect than inter. need to measure more
+TU_OPT(QuadtreeTUMaxDepthInter,        4,   3,   3,   3,   3,   2,   2)
 TU_OPT(AnalyzeChroma,                 ON,  ON,  ON,  ON,  ON,  ON,  ON)
-TU_OPT(SignBitHiding,                 ON,  ON,  ON,  ON,  ON,  ON, OFF)
+TU_OPT(TUSplitIntra,                   1,   1,   1,   3,   3,   3,   3)
+TU_OPT(CUSplit,                        2,   2,   2,   2,   2,   2,   2) //CUSplit = 1 gives 2-4x slowdown in speed with less than 1% bdrate
+TU_OPT(FastPUDecision,               OFF, OFF, OFF, OFF, OFF, OFF, OFF)
+TU_OPT(CostChroma,                   OFF, OFF, OFF, OFF, OFF, OFF, OFF)
+TU_OPT(FastSkip,                     OFF, OFF, OFF, OFF,  ON,  ON,  ON)
+TU_OPT(PartModes,                      3,   3,   2,   2,   2,   2,   1)
+
+//Basic quality features
+TU_OPT(WPP,                          UNK, UNK, UNK, UNK, UNK, UNK, UNK)
+TU_OPT(SAO,                           ON,  ON,  ON,  ON,  ON,  ON, OFF) //ww11.5 TU7 OFF-> ON
+TU_OPT(SaoOpt,                         1,   1,   1,   2,   2,   2,   2)
+TU_OPT(TMVP,                          ON,  ON,  ON,  ON,  ON,  ON,  ON)//ww11.5 TU6/7 OFF->ON very small perf impact
+TU_OPT(Deblocking,                    ON,  ON,  ON,  ON,  ON,  ON,  ON)
+TU_OPT(IntraAngModes,                  1,   1,   1,   1,   2,   2,   2)
+
+//Quant optimization
+TU_OPT(SignBitHiding,                 ON,  ON,  ON,  ON,  ON, OFF, OFF)
 TU_OPT(RDOQuant,                      ON,  ON,  ON, OFF, OFF, OFF, OFF)
-TU_OPT(SAO,                           ON,  ON,  ON,  ON,  ON,  ON, OFF)
-TU_OPT(SplitThresholdStrengthCUIntra,  1,   2,   2,   2,   2,   3,   3)
-TU_OPT(SplitThresholdStrengthTUIntra,  1,   2,   2,   2,   2,   3,   3)
-TU_OPT(SplitThresholdStrengthCUInter,  1,   2,   2,   2,   2,   3,   3)
+TU_OPT(RDOQuantChroma,                ON,  ON,  ON, OFF, OFF, OFF, OFF)
+TU_OPT(RDOQuantCGZ,                   ON,  ON,  ON, OFF, OFF, OFF, OFF)
+
+//RDO
+TU_OPT(SplitThresholdStrengthCUIntra,  1,   2,   2,   2,   3,   3,   3)
+TU_OPT(SplitThresholdStrengthTUIntra,  1,   2,   2,   2,   3,   3,   3)
+TU_OPT(SplitThresholdStrengthCUInter,  1,   2,   2,   2,   3,   3,   3)
+TU_OPT(IntraNumCand0_2,               35,  35,  35,  35,  35,  35,  35)
+TU_OPT(IntraNumCand0_3,               35,  35,  35,  35,  35,  35,  35)
+TU_OPT(IntraNumCand0_4,               35,  35,  35,  35,  35,  35,  35)
+TU_OPT(IntraNumCand0_5,               35,  35,  35,  35,  35,  35,  35)
+TU_OPT(IntraNumCand0_6,               35,  35,  35,  35,  35,  35,  35)
 TU_OPT(IntraNumCand1_2,                8,   6,   6,   6,   5,   4,   4)
 TU_OPT(IntraNumCand1_3,                8,   6,   6,   6,   5,   4,   4)
 TU_OPT(IntraNumCand1_4,                4,   3,   3,   3,   3,   2,   2)
@@ -203,34 +230,23 @@ TU_OPT(IntraNumCand2_3,                4,   3,   3,   3,   3,   2,   2)
 TU_OPT(IntraNumCand2_4,                2,   2,   2,   2,   2,   1,   1)
 TU_OPT(IntraNumCand2_5,                2,   2,   2,   2,   2,   1,   1)
 TU_OPT(IntraNumCand2_6,                2,   2,   2,   2,   2,   1,   1)
-TU_OPT(WPP,                          UNK, UNK, UNK, UNK, UNK, UNK, UNK)
-TU_OPT(GPB,                           ON,  ON,  ON,  ON, OFF, OFF, OFF)
-TU_OPT(PartModes,                      3,   3,   3,   2,   2,   2,   1)
-TU_OPT(CmIntraThreshold,               0,   0,   0,   0,   0, 576, 576)
-TU_OPT(TUSplitIntra,                   1,   1,   1,   3,   3,   3,   3)
-TU_OPT(CUSplit,                        2,   2,   2,   2,   2,   2,   2) //CUSplit = 1 gives 2-4x slowdown in speed with less than 1% bdrate
-TU_OPT(IntraAngModes,                  1,   1,   1,   2,   2,   2,   2)
-TU_OPT(EnableCm,                     OFF, OFF, OFF, OFF, OFF, OFF, OFF)
-TU_OPT(BPyramid,                      ON,  ON,  ON,  ON,  ON, OFF, OFF)
-TU_OPT(FastPUDecision,               OFF, OFF, OFF, OFF, OFF, OFF, OFF)
-TU_OPT(HadamardMe,                     2,   2,   1,   1,   1,   1,   1)
-TU_OPT(TMVP,                          ON,  ON,  ON,  ON,  ON, OFF, OFF)
-TU_OPT(Deblocking,                    ON,  ON,  ON,  ON,  ON,  ON,  ON)
-TU_OPT(RDOQuantChroma,                ON,  ON,  ON, OFF, OFF, OFF, OFF)
-TU_OPT(RDOQuantCGZ,                   ON,  ON,  ON, OFF, OFF, OFF, OFF)
-TU_OPT(SaoOpt,                         1,   1,   1,   2,   2,   2,   2)
-TU_OPT(IntraNumCand0_2,               35,  35,  35,  35,  35,  35,  35)
-TU_OPT(IntraNumCand0_3,               35,  35,  35,  35,  35,  35,  35)
-TU_OPT(IntraNumCand0_4,               35,  35,  35,  35,  35,  35,  35)
-TU_OPT(IntraNumCand0_5,               35,  35,  35,  35,  35,  35,  35)
-TU_OPT(IntraNumCand0_6,               35,  35,  35,  35,  35,  35,  35)
-TU_OPT(CostChroma,                   OFF, OFF, OFF, OFF, OFF, OFF, OFF)
-TU_OPT(PatternIntPel,                  1,   1,   1,   1,   1,   1,   1)
-TU_OPT(FastSkip,                     OFF, OFF, OFF,  ON,  ON,  ON,  ON)
-TU_OPT(ForceNumThread,                 0,   0,   0,   0,   0,   0,   0)
-TU_OPT(FastCbfMode,                  OFF, OFF, OFF, OFF, OFF, OFF, OFF)
 
-Ipp8u tab_tuGopRefDist [8] = {8, 8, 8, 8, 8, 4, 1, 1};
+
+//optimizations
+TU_OPT(EnableCm,                     OFF, OFF, OFF, OFF, OFF, OFF, OFF)
+TU_OPT(CmIntraThreshold,               0,   0,   0,   0,   0, 576, 576)
+TU_OPT(ForceNumThread,                 0,   0,   0,   0,   0,   0,   0)
+
+//Motion estimation options
+TU_OPT(HadamardMe,                     2,   2,   1,   1,   1,   1,   1)
+TU_OPT(PatternIntPel,                  1,   1,   1,   1,   1,   1,   1)
+TU_OPT(PatternSubPel,                  3,   3,   3,   3,   4,   2,   1) //4 -dia subpel search; 3- square
+TU_OPT(FastCbfMode,                  OFF, OFF,  ON,  ON,  ON,  ON,  ON)
+
+// reference options
+TU_OPT(GPB,                           ON,  ON,  ON, OFF, OFF, OFF, OFF) //ww12.1 TU4 ON->OFF exchsnge 0.9% qual for 6.2% speed
+TU_OPT(BPyramid,                      ON,  ON,  ON,  ON,  ON,  ON,  ON)
+Ipp8u tab_tuGopRefDist [8] = {8, 8, 8, 8, 8, 4, 4, 4};
 Ipp8u tab_tuNumRefFrame[8] = {2, 4, 3, 2, 2, 2, 2, 2};
 
 #endif
@@ -787,6 +803,8 @@ mfxStatus MFXVideoENCODEH265::Init(mfxVideoParam* par_in)
             m_mfxHEVCOpts.SaoOpt = opts_tu->SaoOpt;
         if (m_mfxHEVCOpts.PatternIntPel == 0)
             m_mfxHEVCOpts.PatternIntPel = opts_tu->PatternIntPel;
+        if (m_mfxHEVCOpts.PatternSubPel == 0)
+            m_mfxHEVCOpts.PatternSubPel = opts_tu->PatternSubPel;
         if (m_mfxHEVCOpts.FastSkip == 0)
             m_mfxHEVCOpts.FastSkip = opts_tu->FastSkip;
         if (m_mfxHEVCOpts.FastCbfMode == 0)
@@ -1574,6 +1592,7 @@ mfxStatus MFXVideoENCODEH265::Query(VideoCORE *core, mfxVideoParam *par_in, mfxV
             opts_out->FastPUDecision = opts_in->FastPUDecision;
             opts_out->SaoOpt = opts_in->SaoOpt;
             opts_out->PatternIntPel = opts_in->PatternIntPel;
+            opts_out->PatternSubPel = opts_in->PatternSubPel;
             opts_out->ForceNumThread = opts_in->ForceNumThread;
 
             CHECK_OPTION(opts_in->AnalyzeChroma, opts_out->AnalyzeChroma, isInvalid);  /* tri-state option */

@@ -233,6 +233,7 @@ mfxStatus H265Encoder::InitH265VideoParam(const mfxVideoParam *param, const mfxE
     pars->deblockingFlag = (opts_hevc->Deblocking == MFX_CODINGOPTION_ON);
     pars->saoOpt = opts_hevc->SaoOpt;
     pars->patternIntPel = opts_hevc->PatternIntPel;
+    pars->patternSubPel = opts_hevc->PatternSubPel;
 
     for (Ipp32s i = 0; i <= 6; i++) {
         pars->num_cand_0[i] = Saturate(1, 33, pars->num_cand_0[i]);

@@ -265,6 +265,7 @@ void MFXStructureRef <mfxExtCodingOptionHEVC>::ConstructValues() const
     SERIALIZE_INT(SaoOpt);
     SERIALIZE_INT(PatternIntPel);
     SERIALIZE_INT(FastSkip);
+    SERIALIZE_INT(PatternSubPel);
     SERIALIZE_INT(ForceNumThread);
     SERIALIZE_INT(FastCbfMode);
 }

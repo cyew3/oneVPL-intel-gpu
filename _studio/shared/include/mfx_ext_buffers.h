@@ -205,12 +205,14 @@ typedef struct {
     mfxU16      IntraNumCand0_5;    // number of candidates for SATD stage after gradient analysis for TU32x32
     mfxU16      IntraNumCand0_6;    // number of candidates for SATD stage after gradient analysis for TU64x64
     mfxU16      CostChroma;         // tri-state, include chroma in cost
-    mfxU16      PatternIntPel;      // 0-default; 1-log; 2-fullsearch
+    mfxU16      PatternIntPel;      // 0-default; 1-log; 3- dia; 100-fullsearch
     mfxU16      FastSkip;           // tri-state
+    mfxU16      PatternSubPel;      // 0-default; 1-int pel only; 2-halfpel; 3-quarter pel
     mfxU16      ForceNumThread;     // 0-default
     mfxU16      FastCbfMode;        // tri-state, stop PU modes after cbf is 0
-    mfxU16      reserved[10];
+    mfxU16      reserved[9];
 } mfxExtCodingOptionHEVC;
+
 
 #define MFX_EXTBUFF_VP8_PARAM MFX_MAKEFOURCC('B','V','P','8')
 typedef struct {

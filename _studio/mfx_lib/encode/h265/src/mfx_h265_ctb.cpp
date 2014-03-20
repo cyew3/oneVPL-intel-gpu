@@ -2316,7 +2316,7 @@ void H265CU::MeIntPel(const H265MEInfo *meInfo, const MVPInfo *predInfo, Ipp32s 
     if (m_par->patternIntPel == 1) {
         return MeIntPelLog(meInfo, predInfo, list, refIdx, mv, cost, mvCost);
     }
-    else if (m_par->patternIntPel == 2) {
+    else if (m_par->patternIntPel == 100) {
         return MeIntPelFullSearch(meInfo, predInfo, list, refIdx, mv, cost, mvCost);
     }
     else {
@@ -2361,6 +2361,11 @@ void H265CU::MeIntPelFullSearch(const H265MEInfo *meInfo, const MVPInfo *predInf
     *mvCost = mvCostBest;
 }
 
+
+const Ipp16s tab_mePatternSelector[2][12][2] = {
+    {{0,0}, {0,-1},  {1,0},  {0,1},  {-1,0}, {0,0}, {0,0}, {0,0},  {0,0},  {0,0},   {0,0},  {0,0}}, //diamond
+    {{0,0}, {-1,-1}, {0,-1}, {1,-1}, {1,0},  {1,1}, {0,1}, {-1,1}, {-1,0}, {-1,-1}, {0,-1}, {1,-1}} //box
+};
 
 void H265CU::MeIntPelLog(const H265MEInfo *meInfo, const MVPInfo *predInfo, Ipp32s list,
                          Ipp32s refIdx, H265MV *mv, Ipp32s *cost, Ipp32s *mvCost) const
@@ -2446,6 +2451,23 @@ void H265CU::MeSubPel(const H265MEInfo *meInfo, const MVPInfo *predInfo, Ipp32s 
     Ipp32s costBest = *cost;
     Ipp32s mvCostBest = *mvCost;
 
+    Ipp32s endPos;
+    Ipp16s pattern_index;
+
+    if (m_par->patternSubPel == 1) {
+        return; // int pel only
+    }
+    if ((m_par->patternSubPel == 2) || (m_par->patternSubPel == 3)) 
+    {//more points with square pattern
+        endPos = 9;
+        pattern_index  = 1;
+    }
+    else // quarter pel with simplified diamond pattern
+    { 
+        endPos = 5;
+        pattern_index  = 0;
+    }
+
     H265Frame *ref = m_currFrame->m_refPicList[meDir].m_refFrames[refIdx];
     PixType *src = m_ySrc + meInfo->posx + meInfo->posy * m_pitchSrc;
 
@@ -2457,10 +2479,10 @@ void H265CU::MeSubPel(const H265MEInfo *meInfo, const MVPInfo *predInfo, Ipp32s 
 
     while (meStep) {
         Ipp32s bestPos = 0;
-        for (Ipp32s mePos = startPos; mePos < 9; mePos++) {
+        for (Ipp32s mePos = startPos; mePos < endPos; mePos++) {
             H265MV mv = {
-                static_cast<Ipp16s>(mvCenter.mvx + tab_mePattern[mePos][0] * (Ipp16s)meStep),
-                static_cast<Ipp16s>(mvCenter.mvy + tab_mePattern[mePos][1] * (Ipp16s)meStep)
+                static_cast<Ipp16s>(mvCenter.mvx + tab_mePatternSelector[pattern_index][mePos][0] * meStep),
+                static_cast<Ipp16s>(mvCenter.mvy + tab_mePatternSelector[pattern_index][mePos][1] * meStep)
             };
             if (ClipMV(mv))
                 continue;
@@ -2473,7 +2495,7 @@ void H265CU::MeSubPel(const H265MEInfo *meInfo, const MVPInfo *predInfo, Ipp32s 
                 bestPos = mePos;
             }
         }
-
+        if(m_par->patternSubPel== 2) break; //no quarter pel
         mvCenter = mvBest;
         meStep >>= 1;
         startPos = 1;

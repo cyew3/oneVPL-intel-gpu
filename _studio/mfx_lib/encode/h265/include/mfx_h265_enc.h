@@ -85,7 +85,8 @@ struct H265VideoParam {
     Ipp16u intraAngModes;   // 0-default; 1-all; 2-all even + few odd; 3-gradient analysis + few modes
     Ipp32s saoOpt;          // 0-all modes; 1-only fast 4 modes
     Ipp16u hadamardMe;      // 0-default; 1-never; 2-subpel; 3-always
-    Ipp16u patternIntPel;   // 0-default; 1-log; 2-fullsearch
+    Ipp16u patternIntPel;   // 0-default; 1-log; 3-dia; 100-fullsearch
+    Ipp16u patternSubPel;   // 0-default; 1 - int pel only, 2-halfpel; 3-quarter pels
     Ipp32u num_threads;
     Ipp32u num_thread_structs;
     Ipp8u threading_by_rows;
