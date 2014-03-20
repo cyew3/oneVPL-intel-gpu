@@ -285,6 +285,7 @@ void MfxHwH264Encode::FillConstPartOfSliceBuffer(
     std::vector<ENCODE_SET_SLICE_HEADER_H264> & slice)
 {
     mfxExtCodingOptionDDI * extDdi = GetExtBuffer(par);
+    mfxExtCodingOption2&    extOpt2 = GetExtBufferRef(par);
 
     for (size_t i = 0; i < slice.size(); ++i)
     {
@@ -296,7 +297,7 @@ void MfxHwH264Encode::FillConstPartOfSliceBuffer(
         slice[i].delta_pic_order_cnt[1]             = 0;
         slice[i].luma_log2_weight_denom             = 0;
         slice[i].chroma_log2_weight_denom           = 0;
-        slice[i].disable_deblocking_filter_idc      = 0;
+        slice[i].disable_deblocking_filter_idc      = (mfxU8)extOpt2.DisableDeblockingIdc;
         slice[i].slice_alpha_c0_offset_div2         = 0;
         slice[i].slice_beta_offset_div2             = 0;
         slice[i].cabac_init_idc                     = (mfxU8)extDdi->CabacInitIdcPlus1 - 1;

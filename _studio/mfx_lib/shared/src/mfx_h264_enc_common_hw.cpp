@@ -2028,6 +2028,7 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
     if (!CheckTriStateOption(extOpt2->MBBRC))                   changed = true;
     //if (!CheckTriStateOption(extOpt2->ExtBRC))                  changed = true;
     if (!CheckTriStateOption(extOpt2->RepeatPPS))               changed = true;
+    if (!CheckTriStateOption(extOpt2->FixedFrameRate))          changed = true;
 
     if (IsMvcProfile(par.mfx.CodecProfile) && IsOn(extOpt->FieldOutput))
     {
@@ -2577,7 +2578,6 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
             extSps->picOrderCntType == 1                                    ||
             /*extSps->gapsInFrameNumValueAllowedFlag != 0                     ||*/
             extSps->mbAdaptiveFrameFieldFlag != 0                           ||
-            extSps->vui.flags.fixedFrameRate == 0                           ||
             extSps->vui.flags.vclHrdParametersPresent != 0                  ||
             extSps->vui.nalHrdParameters.cpbCntMinus1 > 0                   ||
             extSps->vui.numReorderFrames > extSps->vui.maxDecFrameBuffering)
@@ -2920,6 +2920,8 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
         }
 */
     }
+
+    if (!CheckRangeDflt(extOpt2->DisableDeblockingIdc, 0, 1, 0)) changed = true;
 
     return unsupported
         ? MFX_ERR_UNSUPPORTED
@@ -4057,7 +4059,7 @@ void MfxHwH264Encode::SetDefaults(
         extSps->vui.flags.timingInfoPresent = 1;
         extSps->vui.numUnitsInTick          = fi.FrameRateExtD;
         extSps->vui.timeScale               = fi.FrameRateExtN * 2;
-        extSps->vui.flags.fixedFrameRate    = 1;
+        extSps->vui.flags.fixedFrameRate    = !IsOff(extOpt2->FixedFrameRate);
 
         extSps->vui.flags.nalHrdParametersPresent = IsOn(extOpt->VuiNalHrdParameters);
         extSps->vui.flags.vclHrdParametersPresent = IsOn(extOpt->VuiVclHrdParameters);
@@ -6429,6 +6431,7 @@ void HeaderPacker::Init(
     m_isMVC = numViews > 1;
 
     m_numMbPerSlice = extOpt2->NumMbPerSlice;
+    m_disableDeblockingFilterIdc = extOpt2->DisableDeblockingIdc;
 
     PrepareSpsPpsHeaders(par, m_sps, m_subset, m_pps);
 
@@ -6705,7 +6708,7 @@ mfxU32 HeaderPacker::WriteSlice(
     obs.PutSe(task.m_cqpValue[fieldId] - (pps.picInitQpMinus26 + 26));
     if (pps.deblockingFilterControlPresentFlag)
     {
-        mfxU32 disableDeblockingFilterIdc = 0;
+        mfxU32 disableDeblockingFilterIdc = m_disableDeblockingFilterIdc;
         mfxI32 sliceAlphaC0OffsetDiv2     = 0;
         mfxI32 sliceBetaOffsetDiv2        = 0;
 
