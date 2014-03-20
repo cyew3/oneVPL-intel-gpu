@@ -876,7 +876,7 @@ mfxStatus mfx_UMC_FrameAllocator::PrepareToOutput(mfxFrameSurface1 *surface_work
 
     return sts;
 }
-
+#if !defined( AS_HEVCD_PLUGIN ) // HEVC decode natively supportes NV12 format - no need to make conversion 
 UMC::Status mfx_UMC_FrameAllocator_NV12::InitMfx(UMC::FrameAllocatorParams *pParams,
                                                  VideoCORE* mfxCore,
                                                  const mfxVideoParam * params,
@@ -1075,6 +1075,7 @@ mfxStatus mfx_UMC_FrameAllocator_NV12::PrepareToOutput(mfxFrameSurface1 *surf_wo
 
     return sts;
 }
+#endif
 
 #if defined (MFX_VA)
 // D3D functionality

@@ -168,6 +168,7 @@ protected:
     bool       m_isSWDecode;
 };
 
+#if !defined( AS_HEVCD_PLUGIN ) // HEVC decode natively supportes NV12 format - no need to make conversion 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // mfx_UMC_FrameAllocator_NV12
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -199,6 +200,7 @@ protected:
     UMC::DefaultFrameAllocator    m_defaultUMCAllocator;
     UMC::VideoDataInfo  m_info_yuv420;
 };
+#endif
 
 #if defined (MFX_VA)
 class mfx_UMC_FrameAllocator_D3D : public mfx_UMC_FrameAllocator
