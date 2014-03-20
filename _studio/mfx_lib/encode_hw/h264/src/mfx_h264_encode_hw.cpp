@@ -3455,7 +3455,7 @@ mfxStatus ImplementationAvcAsync::Init(mfxVideoParam * par)
     // CQP enabled
     //mfxExtCodingOptionDDI * extDdi  = GetExtBuffer(m_video);
     mfxExtCodingOption2 *   extOpt2 = GetExtBuffer(m_video);
-    m_enabledSwBrc = IsOn(extOpt2->ExtBRC);
+    m_enabledSwBrc = (!!extOpt2) && IsOn(extOpt2->ExtBRC);
 
     // need it for both ENCODE and ENC
     m_hrd.Setup(m_video);
@@ -3596,6 +3596,9 @@ mfxStatus ImplementationAvcAsync::Reset(mfxVideoParam *par)
 
     mfxExtPAVPOption * extPavpNew = GetExtBuffer(newPar);
     mfxExtPAVPOption * extPavpOld = GetExtBuffer(m_video);
+
+    MFX_CHECK_NULL_PTR2(extPavpNew, extPavpOld);
+
     *extPavpNew = *extPavpOld; // ignore any change in mfxExtPAVPOption
 
     sts = ReadSpsPpsHeaders(newPar);
@@ -3603,6 +3606,9 @@ mfxStatus ImplementationAvcAsync::Reset(mfxVideoParam *par)
 
     mfxExtOpaqueSurfaceAlloc * extOpaqNew = GetExtBuffer(newPar);
     mfxExtOpaqueSurfaceAlloc * extOpaqOld = GetExtBuffer(m_video);
+
+    MFX_CHECK_NULL_PTR2(extOpaqNew, extOpaqOld);
+
     MFX_CHECK(
         extOpaqOld->In.Type       == extOpaqNew->In.Type       &&
         extOpaqOld->In.NumSurface == extOpaqNew->In.NumSurface,
@@ -3689,6 +3695,8 @@ mfxStatus ImplementationAvcAsync::GetVideoParam(mfxVideoParam *par)
 
                 mfxExtSpsHeader * sps = GetExtBuffer(m_video);
                 mfxExtPpsHeader * pps = GetExtBuffer(m_video);
+
+                MFX_CHECK_NULL_PTR3(dst, sps, pps);
 
                 try
                 {
@@ -4179,12 +4187,15 @@ mfxStatus ImplementationAvcAsync::EncodeFrameCheck(
     DdiTask2ndField * task2 = 0;
 
     mfxExtCodingOption * extOpt = GetExtBuffer(m_video);
+    MFX_CHECK_NULL_PTR1(extOpt);
 
     if (m_1stFieldTask)
     {
         // encoding second field in FieldOutput mode
         // use same task object adding separate bitstream
         task2 = m_2ndFieldTasks.GetFreeTask();
+        MFX_CHECK_NULL_PTR1(task2);
+
         task2->m_1stFieldTask = m_1stFieldTask;
         task2->m_2ndFieldTask = *m_1stFieldTask;
         task2->m_2ndFieldTask.m_bs = bs;
@@ -4236,6 +4247,7 @@ mfxStatus ImplementationAvcAsync::EncodeFrameCheck(
     }
     else
     {
+        MFX_CHECK_NULL_PTR1(task2);
         *reordered_surface = task2->m_2ndFieldTask.m_yuv;
     }
 
@@ -4293,6 +4305,7 @@ mfxStatus ImplementationAvcAsync::AssignTask(
     if ((task->GetFrameType() & MFX_FRAMETYPE_IDR) && (m_tasks.CountRunningTasks() > 0))
     {
         mfxExtCodingOption * opt = GetExtBuffer(m_video);
+        MFX_CHECK_NULL_PTR1(opt);
         if (IsOn(opt->VuiNalHrdParameters) || IsOn(opt->VuiVclHrdParameters))
             return MFX_WRN_DEVICE_BUSY;
     }
@@ -4325,10 +4338,10 @@ mfxStatus ImplementationAvcAsync::SubmitEncodeTask(
     if (MFX_HW_D3D11 == m_core->GetVAType())
         pSurfaceHdl = (mfxHDL *)&surfacePair;
 
-    mfxExtOpaqueSurfaceAlloc * extOpaq = GetExtBuffer(m_video);
-
+    mfxExtOpaqueSurfaceAlloc * extOpaq = GetExtBuffer(m_video);    
     mfxFrameSurface1 * nativeSurf = task.m_yuv;
-
+    
+    MFX_CHECK_NULL_PTR1 (extOpaq);
     if (m_video.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY)
     {
         nativeSurf = m_core->GetNativeSurface(task.m_yuv);
@@ -4460,6 +4473,8 @@ mfxStatus ImplementationAvcAsync::UpdateBitstream(
     else
     {
         mfxEncryptedData * edata = GetEncryptedData(*task.m_bs, fieldNumInStreamOrder);
+        
+        MFX_CHECK_NULL_PTR1(edata);
 
         bsData        = edata->Data + edata->DataOffset + edata->DataLength;
         dataLength    = &edata->DataLength;
