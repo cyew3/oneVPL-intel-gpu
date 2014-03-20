@@ -62,16 +62,21 @@ struct msdkPluginDesc {
 DEFINE_MFX_PLUGIN_ID(MSDK_NULL_GUID, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0);
 
 // mfx raw: 15dd936825ad475ea34e35f3f54217a6
-DEFINE_MFX_PLUGIN_ID(g_msdk_hevcd_uid, 0x6893dd15, 0xad25, 0x5e47, 0xa3, 0x4e, 0x35, 0xf3, 0xf5, 0x42, 0x17, 0xa6);
+DEFINE_MFX_PLUGIN_ID(g_msdk_hevcd_sw_uid, 0x6893dd15, 0xad25, 0x5e47, 0xa3, 0x4e, 0x35, 0xf3, 0xf5, 0x42, 0x17, 0xa6);
+
+// mfx raw: 33a61c0b4c27454ca8d85dde757c6f8e
+DEFINE_MFX_PLUGIN_ID(g_msdk_hevcd_hw_uid, 0x0b1ca633, 0x274c, 0x4c45, 0xa8, 0xd8, 0x5d, 0xde, 0x75, 0x7c, 0x6f, 0x8e);
 
 // mfx raw: 2fca99749fdb49aeb121a5b63ef568f7
 DEFINE_MFX_PLUGIN_ID(g_msdk_hevce_uid, 0x7499ca2f, 0xdb9f, 0xae49, 0xb1, 0x21, 0xa5, 0xb6, 0x3e, 0xf5, 0x68, 0xf7);
 
 const msdkPluginUID* msdkGetPluginUID(mfxU32 type, mfxU32 codecid);
-const msdk_char* msdkGetPluginName(mfxU32 type, mfxU32 codecid);
+const msdk_char* msdkGetPluginName(const msdkPluginUID* uid);
 
 mfxStatus msdkSetPluginPath(mfxU32 type, mfxU32 codecid, msdk_char path[MSDK_MAX_FILENAME_LEN]);
 const msdk_char* msdkGetPluginPath(mfxU32 type, mfxU32 codecid);
+
+mfxStatus LoadPluginByUID(mfxSession* session, const msdkPluginUID* uid);
 
 #ifdef __cplusplus
 }

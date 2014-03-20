@@ -972,33 +972,21 @@ mfxStatus CEncodingPipeline::Init(sInputParams *pParams)
     if (CheckVersion(&version, MSDK_FEATURE_PLUGIN_API)) {
         // we check if codec is distributed as a mediasdk plugin and load it if yes
         // else if codec is not in the list of mediasdk plugins, we assume, that it is supported inside mediasdk library
-        if (pParams->bUseHWLib){
+
+        // in case of HW library (-hw key) we will firstly try to load HW plugin
+        // in case of failure - we will try SW one
+        mfxSession session = m_mfxSession;
+
+        if (pParams->bUseHWLib) {
             m_pUID = msdkGetPluginUID(MSDK_VENC | MSDK_IMPL_HW, pParams->CodecId);
-        } else {
-            m_pUID = msdkGetPluginUID(MSDK_VENC | MSDK_IMPL_SW, pParams->CodecId);
         }
-        if (m_pUID)
-        {
-            sts = MFXVideoUSER_Load(m_mfxSession, &(m_pUID->mfx), 1);
-            if (MFX_ERR_NONE != sts)
-            {
-                printf("error: failed to load Media SDK plugin:\n");
-                printf("error:   GUID = { 0x%08x, 0x%04x, 0x%04x, { 0x%02x, 0x%02x, 0x%02x, 0x%02x, 0x%02x, 0x%02x, 0x%02x, 0x%02x } }\n",
-                        m_pUID->guid.data1, m_pUID->guid.data2, m_pUID->guid.data3,
-                        m_pUID->guid.data4[0], m_pUID->guid.data4[1], m_pUID->guid.data4[2], m_pUID->guid.data4[3],
-                        m_pUID->guid.data4[4], m_pUID->guid.data4[5], m_pUID->guid.data4[6], m_pUID->guid.data4[7]);
-                printf("error:   UID (mfx raw) = %02x%02x%02x%02x %02x%02x%02x%02x %02x%02x%02x%02x %02x%02x%02x%02x\n",
-                        m_pUID->raw[0],  m_pUID->raw[1],  m_pUID->raw[2],  m_pUID->raw[3],
-                        m_pUID->raw[4],  m_pUID->raw[5],  m_pUID->raw[6],  m_pUID->raw[7],
-                        m_pUID->raw[8],  m_pUID->raw[9],  m_pUID->raw[10], m_pUID->raw[11],
-                        m_pUID->raw[12], m_pUID->raw[13], m_pUID->raw[14], m_pUID->raw[15]);
-                const msdk_char* str = msdkGetPluginName(MSDK_VENC | MSDK_IMPL_SW, pParams->CodecId);
-                msdk_printf(MSDK_STRING("error:   name = %s\n"), str);
-                msdk_printf(MSDK_STRING("error:   You may need to install this plugin separately!\n"));
-            }
-            else
-            {
-                msdk_printf(MSDK_STRING("Plugin '%s' loaded successfully\n"), msdkGetPluginName(MSDK_VENC | MSDK_IMPL_SW, pParams->CodecId));
+        if (m_pUID) {
+            sts = LoadPluginByUID(&session, m_pUID);
+        }
+        if ((MFX_ERR_NONE != sts) || !m_pUID) {
+            m_pUID = msdkGetPluginUID(MSDK_VENC | MSDK_IMPL_SW, pParams->CodecId);
+            if (m_pUID) {
+                sts = LoadPluginByUID(&session, m_pUID);
             }
         }
         MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);

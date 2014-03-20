@@ -327,6 +327,9 @@ namespace TranscodingSample
         std::auto_ptr<MFXPlugin>        m_pUserDecoderPlugin;
         std::auto_ptr<MFXPlugin>        m_pUserEncoderPlugin;
 
+        const msdkPluginUID*            m_pDecUID;
+        const msdkPluginUID*            m_pEncUID;
+
         mfxFrameAllocResponse          m_mfxDecResponse;  // memory allocation response for decoder
         mfxFrameAllocResponse          m_mfxEncResponse;  // memory allocation response for encoder
 
