@@ -972,6 +972,11 @@ void CDecodingPipeline::PrintPerFrameStat(bool force)
             (fps_fread < MY_THRESHOLD)? fps_fread: 0.0,
             (fps_fwrite < MY_THRESHOLD)? fps_fwrite: 0.0);
         fflush(NULL);
+#if D3D_SURFACES_SUPPORT
+        m_d3dRender.UpdateTitle(fps);
+#elif LIBVA_SUPPORT
+        m_hwdev->UpdateTitle(fps);
+#endif
     }
 }
 

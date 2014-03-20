@@ -44,6 +44,7 @@ public:
     }
 
     virtual mfxStatus RenderFrame(mfxFrameSurface1 * pSurface, mfxFrameAllocator * pmfxAlloc) { return MFX_ERR_NONE; }
+    virtual void      UpdateTitle(double fps) { }
 
 protected:
     DRMLibVA m_DRMLibVA;
@@ -69,6 +70,7 @@ public:
     virtual mfxStatus GetHandle(mfxHandleType type, mfxHDL *pHdl);
 
     virtual mfxStatus RenderFrame(mfxFrameSurface1 * pSurface, mfxFrameAllocator * pmfxAlloc);
+    virtual void      UpdateTitle(double fps) { }
 
 protected:
     mfxHDL m_window;
@@ -102,6 +104,7 @@ public:
     }
 
     virtual mfxStatus RenderFrame(mfxFrameSurface1 * pSurface, mfxFrameAllocator * pmfxAlloc) { return MFX_ERR_NONE; }
+    virtual void      UpdateTitle(double fps) { }
 
 protected:
     AndroidLibVA m_AndroidLibVA;

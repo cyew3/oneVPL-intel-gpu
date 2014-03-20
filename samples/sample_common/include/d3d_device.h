@@ -49,6 +49,7 @@ public:
     virtual mfxStatus GetHandle(mfxHandleType type, mfxHDL *pHdl);
     virtual mfxStatus SetHandle(mfxHandleType type, mfxHDL hdl);
     virtual mfxStatus RenderFrame(mfxFrameSurface1 * pSurface, mfxFrameAllocator * pmfxAlloc);
+    virtual void      UpdateTitle(double /*fps*/) { }
     virtual void Close() ;
 
 protected:

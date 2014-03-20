@@ -58,7 +58,7 @@ public:
 
     virtual mfxStatus Init(sWindowParams pWParams);
     virtual mfxStatus RenderFrame(mfxFrameSurface1 *pSurface, mfxFrameAllocator *pmfxAlloc);
-
+    virtual VOID UpdateTitle(double fps);
 
     HWND GetWindowHandle() { return m_Hwnd; }
 
@@ -85,9 +85,6 @@ protected:
 
     bool                 m_bIsDwmQueueSupported;
     bool                 m_bDwmEnabled;
-    LARGE_INTEGER        m_LastInputTime;
-    LARGE_INTEGER        m_Freq;
-    int                  m_nFrames;
     int                  m_nMonitorCurrent;
     ::RECT               m_RectWindow;
 };

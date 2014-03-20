@@ -39,9 +39,6 @@ CDecodeD3DRender::CDecodeD3DRender()
 {
     m_bDwmEnabled = false;
     m_bIsDwmQueueSupported = true;
-    QueryPerformanceFrequency(&m_Freq);
-    MSDK_ZERO_MEMORY(m_LastInputTime);
-    m_nFrames = 0;
     m_nMonitorCurrent = 0;
 
     m_hwdev = NULL;
@@ -175,27 +172,17 @@ mfxStatus CDecodeD3DRender::RenderFrame(mfxFrameSurface1 *pSurface, mfxFrameAllo
     mfxStatus sts = m_hwdev->RenderFrame(pSurface, pmfxAlloc);
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
-    if (NULL != m_sWindowParams.lpWindowName)
-    {
-        double dfps = 0.;
+    return sts;
+}
 
-        if (0 == m_LastInputTime.QuadPart)
-        {
-            QueryPerformanceCounter(&m_LastInputTime);
-        }
-        else
-        {
-            LARGE_INTEGER timeEnd;
-            QueryPerformanceCounter(&timeEnd);
-            dfps = ++m_nFrames * (double)m_Freq.QuadPart / ((double)timeEnd.QuadPart - (double)m_LastInputTime.QuadPart);
-        }
-
+VOID CDecodeD3DRender::UpdateTitle(double fps)
+{
+    if (NULL != m_sWindowParams.lpWindowName) {
         TCHAR str[20];
-        _stprintf_s(str, 20, _T("fps=%.2lf"), dfps );
+        _stprintf_s(str, 20, _T("fps=%.2lf"), fps );
+
         SetWindowText(m_Hwnd, str);
     }
-
-    return sts;
 }
 
 VOID CDecodeD3DRender::OnDestroy(HWND /*hwnd*/)
