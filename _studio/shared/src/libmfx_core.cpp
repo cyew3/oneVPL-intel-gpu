@@ -1450,6 +1450,7 @@ mfxStatus CommonCORE::DoFastCopyExtended(mfxFrameSurface1 *pDst, mfxFrameSurface
                 break;
             }
         case MFX_FOURCC_RGB4:
+        case MFX_FOURCC_A2RGB10:
             {
                 MFX_CHECK_NULL_PTR1(pSrc->Data.R);
                 MFX_CHECK_NULL_PTR1(pSrc->Data.G);
@@ -1557,6 +1558,7 @@ mfxStatus CommonCORE::DoFastCopyExtended(mfxFrameSurface1 *pDst, mfxFrameSurface
                 break;
             }
         case MFX_FOURCC_RGB4:
+        case MFX_FOURCC_A2RGB10:
             {
                 MFX_CHECK_NULL_PTR1(pSrc->Data.R);
                 MFX_CHECK_NULL_PTR1(pSrc->Data.G);

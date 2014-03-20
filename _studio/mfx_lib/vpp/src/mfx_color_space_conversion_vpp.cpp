@@ -416,7 +416,7 @@ mfxStatus MFXVideoVPPColorSpaceConversion::GetBufferSize( mfxU32* pBufferSize )
       *pBufferSize = 3*(m_errPrtctState.Out.Width * m_errPrtctState.Out.Height) >> 1;
   }
 
-  if(MFX_FOURCC_P010 == m_errPrtctState.In.FourCC)
+  if(MFX_FOURCC_P010 == m_errPrtctState.In.FourCC && MFX_FOURCC_P010 == m_errPrtctState.Out.FourCC)
   {
       /// Need for shift operation
       *pBufferSize = 3*(m_errPrtctState.In.Width * m_errPrtctState.In.Height);
@@ -452,7 +452,7 @@ mfxStatus MFXVideoVPPColorSpaceConversion::SetBuffer( mfxU8* pBuffer )
       m_yv12Data.Pitch = m_errPrtctState.Out.Width;
   }
 
-  if(MFX_FOURCC_P010 == m_errPrtctState.In.FourCC)
+  if(MFX_FOURCC_P010 == m_errPrtctState.In.FourCC && MFX_FOURCC_P010 == m_errPrtctState.Out.FourCC)
   {
       MFX_CHECK_NULL_PTR1(pBuffer);
 
