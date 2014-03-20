@@ -1931,17 +1931,20 @@ mfxStatus VAAPIEncoder::Execute(
         }
 
         // 7. Frame rate (temporal "hacky" solution)
-        MFX_DESTROY_VABUFFER(m_frameRateBufferId, m_vaDisplay);
-        vaSts = vaCreateBuffer(m_vaDisplay,
-                               m_vaContextEncode,
-                               (VABufferType)VAEncHackTypeVP8HybridFrameRate,
-                               sizeof(m_frameRate),
-                               1,
-                               &m_frameRate,
-                               &m_frameRateBufferId);
-        MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+        if (m_video.mfx.RateControlMethod != MFX_RATECONTROL_CQP)
+        {
+            MFX_DESTROY_VABUFFER(m_frameRateBufferId, m_vaDisplay);
+            vaSts = vaCreateBuffer(m_vaDisplay,
+                                m_vaContextEncode,
+                                (VABufferType)VAEncHackTypeVP8HybridFrameRate,
+                                sizeof(m_frameRate),
+                                1,
+                                &m_frameRate,
+                                &m_frameRateBufferId);
+            MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
 
-        configBuffers[buffersCount++] = m_frameRateBufferId;
+            configBuffers[buffersCount++] = m_frameRateBufferId;
+        }
     }
 
     assert(buffersCount <= configBuffers.size());
