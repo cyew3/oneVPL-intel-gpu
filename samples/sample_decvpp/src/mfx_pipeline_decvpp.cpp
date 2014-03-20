@@ -141,6 +141,13 @@ mfxStatus CDecodingPipeline::Init(sInputParams *pParams)
     sts = m_FileReader->Init(pParams->strSrcFile);
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
+    mfxVersion min_version;
+    mfxVersion version;     // real API version with which library is initialized
+
+    // we set version to 1.0 and later we will query actual version of the library which will got leaded
+    min_version.Major = 1;
+    min_version.Minor = 0;
+
     // Init session
     if (pParams->bUseHWLib)
     {
@@ -152,15 +159,18 @@ mfxStatus CDecodingPipeline::Init(sInputParams *pParams)
         if (D3D11_MEMORY == pParams->memType)
             impl |= MFX_IMPL_VIA_D3D11;
 
-        sts = m_mfxSession.Init(impl, NULL);
+        sts = m_mfxSession.Init(impl, &min_version);
 
         // MSDK API version may not support multiple adapters - then try initialize on the default
         if (MFX_ERR_NONE != sts)
-            sts = m_mfxSession.Init((impl & !MFX_IMPL_HARDWARE_ANY) | MFX_IMPL_HARDWARE, NULL);
+            sts = m_mfxSession.Init((impl & !MFX_IMPL_HARDWARE_ANY) | MFX_IMPL_HARDWARE, &min_version);
     }
     else
-        sts = m_mfxSession.Init(MFX_IMPL_SOFTWARE, NULL);
+        sts = m_mfxSession.Init(MFX_IMPL_SOFTWARE, &min_version);
 
+    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+
+    sts = MFXQueryVersion(m_mfxSession , &version); // get real API version of the loaded library
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
     // create decoder
@@ -178,48 +188,51 @@ mfxStatus CDecodingPipeline::Init(sInputParams *pParams)
     sts = InitMfxBitstream(&m_mfxBS, 1024 * 1024);
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
-    /* Here we actually define the following codec initialization scheme:
-     *  1. If plugin path specified: we load user-defined plugin (example: VP8 sample decoder plugin)
-     *  2. If plugin path not specified:
-     *    2.a) we check if codec is distributed as a mediasdk plugin and load it if yes
-     *    2.b) if codec is not in the list of mediasdk plugins, we assume, that it is supported inside mediasdk library
-     */
-    // Load user plug-in, should go after CreateAllocator function (when all callbacks were initialized)
-    if (msdk_strlen(pParams->strPluginPath))
+    if (CheckVersion(&version, MSDK_FEATURE_PLUGIN_API))
     {
-        m_pUserModule.reset(new MFXVideoUSER(m_mfxSession));
-        if (pParams->videoType == CODEC_VP8)
+        /* Here we actually define the following codec initialization scheme:
+         *  1. If plugin path specified: we load user-defined plugin (example: VP8 sample decoder plugin)
+         *  2. If plugin path not specified:
+         *    2.a) we check if codec is distributed as a mediasdk plugin and load it if yes
+         *    2.b) if codec is not in the list of mediasdk plugins, we assume, that it is supported inside mediasdk library
+         */
+        // Load user plug-in, should go after CreateAllocator function (when all callbacks were initialized)
+        if (msdk_strlen(pParams->strPluginPath))
         {
-            m_pVP8_plugin.reset(LoadPlugin(MFX_PLUGINTYPE_VIDEO_DECODE, m_pUserModule.get(), pParams->strPluginPath));
-            if (m_pVP8_plugin.get() == NULL) sts = MFX_ERR_UNSUPPORTED;
+            m_pUserModule.reset(new MFXVideoUSER(m_mfxSession));
+            if (pParams->videoType == CODEC_VP8)
+            {
+                m_pVP8_plugin.reset(LoadPlugin(MFX_PLUGINTYPE_VIDEO_DECODE, m_pUserModule.get(), pParams->strPluginPath));
+                if (m_pVP8_plugin.get() == NULL) sts = MFX_ERR_UNSUPPORTED;
+            }
+            else if (pParams->videoType == MFX_CODEC_HEVC)
+            {
+                m_pHEVC_plugin.reset(LoadPlugin(MFX_PLUGINTYPE_VIDEO_DECODE, m_pUserModule.get(), pParams->strPluginPath));
+                if (m_pHEVC_plugin.get() == NULL) sts = MFX_ERR_UNSUPPORTED;
+            }
         }
-        else if (pParams->videoType == MFX_CODEC_HEVC)
+        else
         {
-            m_pHEVC_plugin.reset(LoadPlugin(MFX_PLUGINTYPE_VIDEO_DECODE, m_pUserModule.get(), pParams->strPluginPath));
-            if (m_pHEVC_plugin.get() == NULL) sts = MFX_ERR_UNSUPPORTED;
-        }
-    }
-    else
-    {
-        mfxSession session = m_mfxSession;
+            mfxSession session = m_mfxSession;
 
-        // in case of HW library (-hw key) we will firstly try to load HW plugin
-        // in case of failure - we will try SW one
-        if (pParams->bUseHWLib) {
-            m_pUID = msdkGetPluginUID(MSDK_VDEC | MSDK_IMPL_HW, pParams->videoType);
-        }
-        if (m_pUID) {
-            sts = LoadPluginByUID(&session, m_pUID);
-        }
-        if ((MFX_ERR_NONE != sts) || !m_pUID) {
-            m_pUID = msdkGetPluginUID(MSDK_VDEC | MSDK_IMPL_SW, pParams->videoType);
+            // in case of HW library (-hw key) we will firstly try to load HW plugin
+            // in case of failure - we will try SW one
+            if (pParams->bUseHWLib) {
+                m_pUID = msdkGetPluginUID(MSDK_VDEC | MSDK_IMPL_HW, pParams->videoType);
+            }
             if (m_pUID) {
                 sts = LoadPluginByUID(&session, m_pUID);
             }
+            if ((MFX_ERR_NONE != sts) || !m_pUID) {
+                m_pUID = msdkGetPluginUID(MSDK_VDEC | MSDK_IMPL_SW, pParams->videoType);
+                if (m_pUID) {
+                    sts = LoadPluginByUID(&session, m_pUID);
+
+                }
+            }
+            MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
         }
     }
-
-    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
     // Populate parameters. Involves DecodeHeader call
     sts = InitMfxParams(pParams);
@@ -694,7 +707,6 @@ mfxStatus CDecodingPipeline::AllocFrames()
 
     // prepare mfxFrameSurface1 array for decoder
     nVppSurfNum = m_mfxVppResponse.NumFrameActual;
-    printf("VPP_NUM=%d\n", nSurfNum);
 
     // AllocVppBuffers should call before AllocBuffers to set the value of m_OutputSurfacesNumber
     sts = AllocVppBuffers(nVppSurfNum);
@@ -702,7 +714,6 @@ mfxStatus CDecodingPipeline::AllocFrames()
 
     // prepare mfxFrameSurface1 array for decoder
     nSurfNum = m_mfxResponse.NumFrameActual;
-    printf("NUM=%d\n", nSurfNum);
 
     sts = AllocBuffers(nSurfNum);
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
@@ -987,7 +998,6 @@ mfxStatus CDecodingPipeline::ResetDecoder(sInputParams *pParams)
 
     // init decoder
     sts = m_pmfxDEC->Init(&m_mfxVideoParams);
-
     if (MFX_WRN_PARTIAL_ACCELERATION == sts)
     {
         msdk_printf(MSDK_STRING("WARNING: partial acceleration\n"));
@@ -1068,17 +1078,24 @@ unsigned int MSDK_THREAD_CALLCONVENTION CDecodingPipeline::DeliverThreadFunc(voi
     return 0;
 }
 
-void CDecodingPipeline::PrintPerFrameStat()
+void CDecodingPipeline::PrintPerFrameStat(bool force)
 {
 #define MY_COUNT 1 // TODO: this will be cmd option
-    if (!(m_output_count % MY_COUNT)) {
+#define MY_THRESHOLD 10000.0
+    if ((!(m_output_count % MY_COUNT) && (m_eWorkMode != MODE_PERFORMANCE)) || force) {
+        double fps, fps_fread, fps_fwrite;
+
         m_timer_overall.Sync();
+
+        fps = (m_tick_overall)? m_output_count/CTimer::ConvertToSeconds(m_tick_overall): 0.0;
+        fps_fread = (m_tick_fread)? m_output_count/CTimer::ConvertToSeconds(m_tick_fread): 0.0;
+        fps_fwrite = (m_tick_fwrite)? m_output_count/CTimer::ConvertToSeconds(m_tick_fwrite): 0.0;
         // decoding progress
         msdk_printf(MSDK_STRING("Frame number: %4d, fps: %0.3f, fread_fps: %0.3f, fwrite_fps: %.3f\r"),
             m_output_count,
-            m_output_count/CTimer::ConvertToSeconds(m_tick_overall),
-            m_output_count/CTimer::ConvertToSeconds(m_tick_fread),
-            m_output_count/CTimer::ConvertToSeconds(m_tick_fwrite));
+            fps,
+            (fps_fread < MY_THRESHOLD)? fps_fread: 0.0,
+            (fps_fwrite < MY_THRESHOLD)? fps_fwrite: 0.0);
         fflush(NULL);
     }
 }
@@ -1089,7 +1106,6 @@ mfxStatus CDecodingPipeline::SyncOutputSurface(mfxU32 wait)
         m_pCurrentOutputSurface = m_OutputSurfacesPool.GetSurface();
     }
     if (!m_pCurrentOutputSurface) {
-
         return MFX_ERR_MORE_DATA;
     }
 
@@ -1310,8 +1326,8 @@ mfxStatus CDecodingPipeline::RunDecoding()
                     (m_pCurrentFreeVppSurface->frame.Info.CropH == 0)) {
                         m_pCurrentFreeVppSurface->frame.Info.CropW = pOutSurface->Info.CropW;
                         m_pCurrentFreeVppSurface->frame.Info.CropH = pOutSurface->Info.CropH;
-                        //m_pCurrentFreeVppSurface->frame.Info.CropX = pOutSurface->Info.CropX;
-                        //m_pCurrentFreeVppSurface->frame.Info.CropY = pOutSurface->Info.CropY;
+                        m_pCurrentFreeVppSurface->frame.Info.CropX = pOutSurface->Info.CropX;
+                        m_pCurrentFreeVppSurface->frame.Info.CropY = pOutSurface->Info.CropY;
                 }
                 if (pOutSurface->Info.PicStruct != m_pCurrentFreeVppSurface->frame.Info.PicStruct) {
                     m_pCurrentFreeVppSurface->frame.Info.PicStruct = pOutSurface->Info.PicStruct;
@@ -1346,7 +1362,7 @@ mfxStatus CDecodingPipeline::RunDecoding()
         }
     } //while processing
 
-    //PrintPerFrameStat(); // TODO: remove MY_COUNT and add final output...
+    PrintPerFrameStat(true);
 
     if (m_eWorkMode == MODE_RENDERING) {
         m_bStopDeliverLoop = true;

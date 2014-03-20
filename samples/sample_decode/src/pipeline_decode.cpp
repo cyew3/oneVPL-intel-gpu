@@ -1048,6 +1048,7 @@ mfxStatus CDecodingPipeline::RunDecoding()
 
     while ((sts == MFX_ERR_NONE) || (MFX_ERR_MORE_DATA == sts) || (MFX_ERR_MORE_SURFACE == sts)) {
         if (MFX_ERR_NONE != m_error) {
+            msdk_printf(MSDK_STRING("DeliverOutput return error = %d\n"),m_error);
             break;
         }
         if (pBitstream && ((MFX_ERR_MORE_DATA == sts) || m_bIsCompleteFrame)) {
@@ -1222,7 +1223,7 @@ mfxStatus CDecodingPipeline::RunDecoding()
             CTimer::ConvertToSeconds(*std::min_element(m_vLatency.begin(), m_vLatency.end()))*1000);
     }
 
-    if ((m_eWorkMode == MODE_RENDERING)) {
+    if (m_eWorkMode == MODE_RENDERING) {
         m_bStopDeliverLoop = true;
         m_pDeliverOutputSemaphore->Post();
         pDeliverThread->Wait();
