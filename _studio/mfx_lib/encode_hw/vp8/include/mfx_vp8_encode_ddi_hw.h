@@ -776,6 +776,7 @@ do {                                               \
         VAQMatrixBufferVP8                     m_quant;
         VAEncMiscParameterVP8HybridFrameUpdate m_frmUpdate;
         VAEncMiscParameterVP8SegmentMapParams  m_segMapPar;
+        VAEncMiscParameterFrameRate            m_frameRate;
 
         // encode buffer to send vaRender()
         VABufferID m_spsBufferId;
@@ -783,13 +784,14 @@ do {                                               \
         VABufferID m_qMatrixBufferId;
         VABufferID m_frmUpdateBufferId;
         VABufferID m_segMapParBufferId;
+        VABufferID m_frameRateBufferId;
       
         std::vector<ExtVASurface> m_feedbackCache;
         std::vector<ExtVASurface> m_mbDataQueue;
         std::vector<ExtVASurface> m_reconQueue;
         std::vector<ExtVASurface> m_segMapQueue;
         
-        static const mfxU32 MAX_CONFIG_BUFFERS_COUNT = 6; // sps, pps, quant, seg_map, per segment par, frame update data
+        static const mfxU32 MAX_CONFIG_BUFFERS_COUNT = 7; // sps, pps, quant, seg_map, per segment par, frame update data, frame rate
 
         mfxU32 m_width;
         mfxU32 m_height;

@@ -61,7 +61,7 @@ namespace MFX_VP8ENC
     {
     public:
         sDDIFrames ddi_frames;
-        mfxU8         modeCosts[4];
+        mfxU8         m_refProbs[4];
         mfxU64        m_prevFrameSize;
         mfxU8         m_brcUpdateDelay;
 
@@ -312,6 +312,11 @@ namespace MFX_VP8ENC
             }
 
             mfxStatus sts = BaseClass::InitTask(pSurface,pBitstream,pOutTask);
+            TaskHybridDDI *pHybridTask = (TaskHybridDDI*)pOutTask;
+            for (mfxU8 i = 0; i <= REF_TOTAL; i ++)
+            {
+                pHybridTask->m_refProbs[i] = 0;
+            }
             if (pOutTask->m_frameOrder == 0)
             {
                 return MFX_ERR_NONE;
@@ -327,7 +332,6 @@ namespace MFX_VP8ENC
             {
                 return MFX_ERR_UNDEFINED_BEHAVIOR;
             }
-            TaskHybridDDI *pHybridTask = (TaskHybridDDI*)pOutTask;
             pHybridTask->m_prevFrameSize = newestFrame.m_encodedFrameSize;
             pHybridTask->m_brcUpdateDelay = mfxU8(pOutTask->m_frameOrder - newestFrame.m_frameOrder);
 
@@ -349,20 +353,16 @@ namespace MFX_VP8ENC
             if (pHybridTask->m_frameOrder % m_video.mfx.GopPicSize != 0)
             {
                 // use probabilities from last non-key frame
-                MFX_INTERNAL_CPY(pHybridTask->modeCosts, m_latestNonKeyFrame.m_refProbs, 4);
+                for (mfxU8 i = 0; i <= REF_TOTAL; i ++)
+                {
+                    pHybridTask->m_refProbs[i] = m_latestNonKeyFrame.m_refProbs[i];
+                }
             }
-            else
-            {
-                pHybridTask->modeCosts[0] = 255; // intra
-                pHybridTask->modeCosts[0] = 255; // last
-                pHybridTask->modeCosts[0] = 128; // gold
-                pHybridTask->modeCosts[0] = 128; // alt
-            }
-            
+
             return sts;
         }
         inline
-        mfxStatus CacheInfoFromPak(Task &task, mfxU8 (&modeCosts)[4])
+        mfxStatus CacheInfoFromPak(Task &task, mfxU8 (&m_refProbs)[4])
         {
             if (task.m_status != READY)
                 return MFX_ERR_UNDEFINED_BEHAVIOR;
@@ -370,7 +370,10 @@ namespace MFX_VP8ENC
             FrameInfoFromPak infoAboutJustEncodedFrame;
             infoAboutJustEncodedFrame.m_frameOrder = task.m_frameOrder;
             infoAboutJustEncodedFrame.m_encodedFrameSize = task.m_pBitsteam->DataLength;
-            MFX_INTERNAL_CPY(infoAboutJustEncodedFrame.m_refProbs, modeCosts, 4);
+            for (mfxU8 i = 0; i <= REF_TOTAL; i ++)
+            {
+                infoAboutJustEncodedFrame.m_refProbs[i] = m_refProbs[i];
+            }
             infoAboutJustEncodedFrame.m_frameType = !task.m_sFrameParams.bIntra;
             m_cachedFrameInfoFromPak.push(infoAboutJustEncodedFrame);
 

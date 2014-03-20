@@ -166,5 +166,8 @@ typedef struct _VAEncMiscParameterVP8SegmentMapParams
     char yac_quantization_index_delta[4];
 } VAEncMiscParameterVP8SegmentMapParams;
 
+#define VAEncHackTypeVP8HybridFrameUpdate -7
+#define VAEncHackTypeVP8HybridFrameRate   -8
+
 
 #endif

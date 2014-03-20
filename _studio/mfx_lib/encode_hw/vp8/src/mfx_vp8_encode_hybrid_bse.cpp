@@ -1310,6 +1310,9 @@ namespace MFX_VP8ENC
 #if defined (VP8_HYBRID_DUMP_WRITE)
         fwrite(pTask->ddi_frames.m_pMB_hw->pSurface->Data.Y, 1, m_bse_dump_size, m_bse_dump);
 #endif
+        ReadBRCStatusReport(pTask->ddi_frames.m_pMB_hw->pSurface->Data.Y,
+                            m_ctrl,
+                            layout);
         HLDMbDataVp8 *pHLDMbData = (HLDMbDataVp8 *)(pTask->ddi_frames.m_pMB_hw->pSurface->Data.Y + layout.MB_CODE_offset);
         HLDMvDataVp8 *pHLDMvData = (HLDMvDataVp8 *)(pTask->ddi_frames.m_pMB_hw->pSurface->Data.Y + layout.MV_offset);
 #endif
@@ -1471,19 +1474,19 @@ namespace MFX_VP8ENC
         }
     }
 
-    void Vp8CoreBSE::GetModeProbs(U8 (&modeCosts)[4])
+    void Vp8CoreBSE::GetModeProbs(U8 (&m_refProbs)[4])
     {
         if (m_ctrl.FrameType)
         {
-                modeCosts[0] = m_ctrl.prIntra;
-                modeCosts[1] = m_ctrl.prLast;
-                modeCosts[2] = m_ctrl.prGolden;
-                modeCosts[3] = 256 - m_ctrl.prGolden;
+                m_refProbs[0] = m_ctrl.prIntra;
+                m_refProbs[1] = m_ctrl.prLast;
+                m_refProbs[2] = m_ctrl.prGolden;
+                m_refProbs[3] = 256 - m_ctrl.prGolden;
         }
         else
         {
-                modeCosts[0] = 255;
-                modeCosts[1] = modeCosts[2] = modeCosts[3] = 128;
+                m_refProbs[0] = 255;
+                m_refProbs[1] = m_refProbs[2] = m_refProbs[3] = 128;
         }
     }
 }

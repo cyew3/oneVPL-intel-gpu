@@ -1469,32 +1469,7 @@ mfxStatus SetFrameRate(
     vaUnmapBuffer(m_vaDisplay, frameRateBufId);
 
     return MFX_ERR_NONE;
-}    
-
-#if 0  // DDI is changing  
-    mfxStatus FillModeCostsBuffer(TaskHybridDDI const &task, VAEncMiscParameterVP8HybridCost & costs)
-    {
-        if (task.m_frameOrder == 0)
-        {
-            costs.ref_frame_cost[0] = 255;
-            costs.ref_frame_cost[0] = costs.ref_frame_cost[1] = costs.ref_frame_cost[3] = 0;
-        }
-        else if (task.m_frameOrder == 1)
-        {
-            costs.ref_frame_cost[0] = costs.ref_frame_cost[1] = 128;
-            costs.ref_frame_cost[2] = costs.ref_frame_cost[3] = 0;
-        }
-        else
-        {
-            costs.ref_frame_cost[0] = task.modeCosts[0];
-            costs.ref_frame_cost[1] = task.modeCosts[1];
-            costs.ref_frame_cost[2] = task.modeCosts[2];
-            costs.ref_frame_cost[3] = task.modeCosts[3];
-        }
-        
-        return MFX_ERR_NONE;
-    }
-#endif
+}
 
 VAAPIEncoder::VAAPIEncoder()
 : m_core(NULL)
@@ -1506,6 +1481,7 @@ VAAPIEncoder::VAAPIEncoder()
 , m_qMatrixBufferId(VA_INVALID_ID)
 , m_frmUpdateBufferId(VA_INVALID_ID)
 , m_segMapParBufferId(VA_INVALID_ID)
+, m_frameRateBufferId(VA_INVALID_ID)
 {
 } // VAAPIEncoder::VAAPIEncoder(VideoCORE* core)
 
@@ -1644,6 +1620,8 @@ mfxStatus VAAPIEncoder::CreateAccelerationService(mfxVideoParam const & par)
     //------------------------------------------------------------------
 
     FillSpsBuffer(par, m_sps);
+    // pass frame rate in the same manner as for AVC (number of frames per 100 sec)
+    m_frameRate.framerate = (unsigned int)(100.0 * (mfxF64)par.mfx.FrameInfo.FrameRateExtN / (mfxF64)par.mfx.FrameInfo.FrameRateExtD);
 
     vpgQueryBufferAttributes pfnVaQueryBufferAttr = NULL;
     pfnVaQueryBufferAttr = (vpgQueryBufferAttributes)vaGetLibFunc(m_vaDisplay, VPG_QUERY_BUFFER_ATTRIBUTES);
@@ -1712,7 +1690,7 @@ mfxStatus VAAPIEncoder::QueryCompBufferInfo(D3DDDIFORMAT type, mfxFrameAllocRequ
         mfxU32 frameSizeInMBs = (frameWidth * frameHeight) / 256;
         request.Info.FourCC = MFX_FOURCC_VP8_MBDATA; // vaCreateSurface is required to allocate surface for MB data
         request.Info.Width = ALIGN((HYBRIDPAK_PER_MB_DATA_SIZE + HYBRIDPAK_PER_MB_MV_DATA_SIZE), 32);
-        request.Info.Height = CalculateMbSurfaceHeight(frameSizeInMBs);
+        request.Info.Height = CalculateMbSurfaceHeight(frameSizeInMBs + 1); // additional "+1" memory is used to return QP and loop filter levels from BRC to MSDK
     }
     else if (type == D3DDDIFMT_INTELENCODE_SEGMENTMAP)
     {
@@ -1843,10 +1821,11 @@ mfxStatus VAAPIEncoder::Execute(
     FillSegMap(task, m_video, m_core, m_segMapPar);
     m_frmUpdate.prev_frame_size = task.m_prevFrameSize;
     m_frmUpdate.two_prev_frame_flag = task.m_brcUpdateDelay == 2 ? 1 : 0;
-#if 0 // DDI is changing
-    FillModeCostsBuffer(task, m_costs);
-#endif
-    
+    for (mfxU8 i = 0; i <= REF_TOTAL; i ++)
+    {
+        m_frmUpdate.ref_frame_cost[i] = task.m_refProbs[i];
+    }
+
 //===============================================================================================    
 
     //------------------------------------------------------------------
@@ -1920,7 +1899,7 @@ mfxStatus VAAPIEncoder::Execute(
             configBuffers[buffersCount++] = m_segMapQueue[idxInPool].surface;
         }
 
-        // 5. Per-segment parameters (only QP delta at the moment)
+        // 5. Per-segment parameters (temporal "hacky" solution)
         {
             MFX_DESTROY_VABUFFER(m_segMapParBufferId, m_vaDisplay);
             vaSts = vaCreateBuffer(m_vaDisplay,
@@ -1935,13 +1914,13 @@ mfxStatus VAAPIEncoder::Execute(
             configBuffers[buffersCount++] = m_segMapParBufferId;
         }
 
-        // 6. Frame update
+        // 6. Frame update (temporal "hacky" solution)
         if (task.m_frameOrder)
         {
             MFX_DESTROY_VABUFFER(m_frmUpdateBufferId, m_vaDisplay);
             vaSts = vaCreateBuffer(m_vaDisplay,
                                    m_vaContextEncode,
-                                   (VABufferType)VAEncMiscParameterTypeVP8HybridFrameUpdate,
+                                   (VABufferType)VAEncHackTypeVP8HybridFrameUpdate,
                                    sizeof(m_frmUpdate),
                                    1,
                                    &m_frmUpdate,
@@ -1950,12 +1929,25 @@ mfxStatus VAAPIEncoder::Execute(
 
             configBuffers[buffersCount++] = m_frmUpdateBufferId;
         }
+
+        // 7. Frame rate (temporal "hacky" solution)
+        MFX_DESTROY_VABUFFER(m_frameRateBufferId, m_vaDisplay);
+        vaSts = vaCreateBuffer(m_vaDisplay,
+                               m_vaContextEncode,
+                               (VABufferType)VAEncHackTypeVP8HybridFrameRate,
+                               sizeof(m_frameRate),
+                               1,
+                               &m_frameRate,
+                               &m_frameRateBufferId);
+        MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+
+        configBuffers[buffersCount++] = m_frameRateBufferId;
     }
 
     assert(buffersCount <= configBuffers.size());
 #if defined (VP8_HYBRID_TIMING)
     TICK(submit[task.m_frameOrder % 2])
-#endif // VP8_HYBRID_TIMING    
+#endif // VP8_HYBRID_TIMING
 
     //------------------------------------------------------------------
     // Rendering
@@ -2117,6 +2109,7 @@ mfxStatus VAAPIEncoder::Destroy()
     MFX_DESTROY_VABUFFER(m_qMatrixBufferId, m_vaDisplay);
     MFX_DESTROY_VABUFFER(m_segMapParBufferId, m_vaDisplay);
     MFX_DESTROY_VABUFFER(m_frmUpdateBufferId, m_vaDisplay);
+    MFX_DESTROY_VABUFFER(m_frameRateBufferId, m_vaDisplay);
 
     return MFX_ERR_NONE;
 
