@@ -339,6 +339,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\include\mfx_samples_config.h"
+				>
+			</File>
+			<File
 				RelativePath=".\include\sample_defs.h"
 				>
 			</File>

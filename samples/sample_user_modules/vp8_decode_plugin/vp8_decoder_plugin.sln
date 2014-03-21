@@ -1,15 +1,15 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 9.00
 # Visual Studio 2005
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "sample_common", "..\..\sample_common\sample_common.vcproj", "{DB71B91D-16D8-4339-9621-D81798E46E8F}"
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "plugin_api", "..\plugin_api.vcproj", "{EE55D73B-F537-4B52-8514-50B7FDF5D254}"
-EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "vp8_decoder_plugin", "vp8_decoder_plugin.vcproj", "{1119372D-BA13-4730-AFF6-1994B26EFF6C}"
 	ProjectSection(ProjectDependencies) = postProject
 		{DB71B91D-16D8-4339-9621-D81798E46E8F} = {DB71B91D-16D8-4339-9621-D81798E46E8F}
 		{EE55D73B-F537-4B52-8514-50B7FDF5D254} = {EE55D73B-F537-4B52-8514-50B7FDF5D254}
 	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "sample_common", "..\..\sample_common\sample_common.vcproj", "{DB71B91D-16D8-4339-9621-D81798E46E8F}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "plugin_api", "..\plugin_api.vcproj", "{EE55D73B-F537-4B52-8514-50B7FDF5D254}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

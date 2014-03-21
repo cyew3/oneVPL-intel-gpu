@@ -158,6 +158,7 @@
     <ClInclude Include="include\d3d_allocator.h" />
     <ClInclude Include="include\d3d_device.h" />
     <ClInclude Include="include\hw_device.h" />
+    <ClInclude Include="include\mfx_samples_config.h" />
     <ClInclude Include="include\sample_defs.h" />
     <ClInclude Include="include\sample_utils.h" />
     <ClInclude Include="include\shared_ptr.h" />

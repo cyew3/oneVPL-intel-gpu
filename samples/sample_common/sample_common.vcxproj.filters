@@ -78,6 +78,9 @@
     <ClInclude Include="include\shared_ptr.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="include\mfx_samples_config.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\base_allocator.cpp">
@@ -107,7 +110,7 @@
     <ClCompile Include="src\mfx_buffering.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-		<ClCompile Include="src\vpp_ex.cpp">
+    <ClCompile Include="src\vpp_ex.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\vm\atomic.cpp">
