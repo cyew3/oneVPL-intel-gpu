@@ -35,6 +35,8 @@ VideoConfPipeline::VideoConfPipeline()
     m_pMFXAllocator = NULL;
     m_hwdev = NULL;
 
+    m_memType = SYSTEM_MEMORY;
+
     /*Initializing extendedbuffers used*/
     init_ext_buffer(m_avcRefList);
     init_ext_buffer(m_extCO);
@@ -472,6 +474,9 @@ mfxStatus VideoConfPipeline::Init(IInitParams * pParams)
 
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
+    // set memory type
+    m_memType = pVConfParams->memType;
+
     sts = InitMfxEncParamsLowLatency();
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
@@ -612,7 +617,7 @@ mfxStatus VideoConfPipeline::AllocFrames()
     EncRequest.Type = MFX_MEMTYPE_EXTERNAL_FRAME | MFX_MEMTYPE_FROM_ENCODE;
 
     // add info about memory type to request
-    EncRequest.Type |= m_initParams.bUseHWLib ? MFX_MEMTYPE_VIDEO_MEMORY_DECODER_TARGET : MFX_MEMTYPE_SYSTEM_MEMORY;
+    EncRequest.Type |= (D3D9_MEMORY == m_memType) ? MFX_MEMTYPE_VIDEO_MEMORY_DECODER_TARGET : MFX_MEMTYPE_SYSTEM_MEMORY;
 
     // alloc frames for encoder
     sts = m_pMFXAllocator->Alloc(m_pMFXAllocator->pthis, &EncRequest, &m_EncResponse);
@@ -657,7 +662,7 @@ mfxStatus VideoConfPipeline::InitMfxEncParamsLowLatency()
     ConvertFrameRate(m_initParams.sources[0].dFrameRate, &m_mfxEncParams.mfx.FrameInfo.FrameRateExtN, &m_mfxEncParams.mfx.FrameInfo.FrameRateExtD);
 
     // specify memory type
-    if (m_initParams.bUseHWLib)
+    if (D3D9_MEMORY == m_memType)
     {
         m_mfxEncParams.IOPattern = MFX_IOPATTERN_IN_VIDEO_MEMORY;
     }
@@ -708,7 +713,7 @@ mfxStatus VideoConfPipeline::CreateAllocator()
 {
     mfxStatus sts = MFX_ERR_NONE;
 
-    if (m_initParams.bUseHWLib)
+    if (D3D9_MEMORY == m_memType)
     {
 #ifdef D3D_SURFACES_SUPPORT
         sts = CreateHWDevice();
@@ -862,14 +867,13 @@ void VideoConfPipeline::PrintInfo()
      hwLibName = MSDK_STRING("va");
 #endif
 
-    const msdk_char* sMemType = m_initParams.bUseHWLib ? hwLibName : MSDK_STRING("system");
-
+    const msdk_char* sMemType = (D3D9_MEMORY == m_memType) ? MSDK_STRING("d3d") : MSDK_STRING("system");
     msdk_printf(MSDK_STRING("Memory type\t\t%s\n"), sMemType);
 
     mfxIMPL impl;
     m_mfxSession.QueryIMPL(&impl);
 
-    const msdk_char* sImpl = (MFX_IMPL_HARDWARE == impl) ? MSDK_STRING("hw") : MSDK_STRING("sw");
+    const msdk_char* sImpl = (MFX_IMPL_HARDWARE & impl) ? MSDK_STRING("hw") : MSDK_STRING("sw");
     msdk_printf(MSDK_STRING("Media SDK impl\t\t%s\n"), sImpl);
 
     mfxVersion ver;

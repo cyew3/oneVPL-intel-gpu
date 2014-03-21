@@ -36,6 +36,9 @@ void PrintHelp( const std::basic_string<msdk_char> & strAppName
     msdk_printf(MSDK_STRING("   [-f, -f1, -f2 ... frameRate] - video frame rate (frames per second) for n-th file\n"));
     msdk_printf(MSDK_STRING("   [-b bitRate] - encoded bit rate (Kbits per second)\n"));
     msdk_printf(MSDK_STRING("   [-hw] - use platform specific SDK implementation, if not specified software implementation is used\n"));
+#if D3D_SURFACES_SUPPORT
+    msdk_printf(MSDK_STRING("   [-d3d] - work with d3d surfaces\n"));
+#endif
     msdk_printf(MSDK_STRING("   [-par parameters_file] - parameters file may contain same options as a command line\n"));
     msdk_printf(MSDK_STRING("   [-bs frame_num value] - prior encoding of 'frame_num' scales current bitrate by 'value'\n"));
     msdk_printf(MSDK_STRING("   [-bf frame_num broken_frame_num] - prior encoding of 'frame_num' frame, encoder received information that already encoded frame with  number 'broken_frame_num' failed to be decoded\n"));
@@ -111,6 +114,12 @@ void ParseInputString(msdk_char** strInput, int nArgNum, VideoConfParams& params
         {
             params.bUseHWLib = true;
         }
+#if D3D_SURFACES_SUPPORT
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-d3d")))
+        {
+            params.memType = D3D9_MEMORY;
+        }
+#endif
         else if (0 == msdk_strncmp(strInput[i], MSDK_STRING("-w"), 2) && -1 != idx)
         {
             CHECK_OPTION_ARGS(1);

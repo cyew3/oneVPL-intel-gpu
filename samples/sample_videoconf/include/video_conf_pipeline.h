@@ -25,6 +25,12 @@ Copyright(c) 2011-2013 Intel Corporation. All Rights Reserved.
 #include "base_allocator.h"
 #include "interface.h"
 
+enum MemType {
+    SYSTEM_MEMORY = 0x00,
+    D3D9_MEMORY   = 0x01,
+    D3D11_MEMORY  = 0x02,
+};
+
 class VideoConfParams
     : public IInitParams
 {
@@ -33,6 +39,7 @@ public:
         nTargetKbps(0),
         bRPMRS(false),
         bUseHWLib(false),
+        memType(SYSTEM_MEMORY),
         bCalcLAtency(false),
         nTemporalScalabilityBase(0),
         nTemporalScalabilityLayers(0),
@@ -60,6 +67,7 @@ public:
 
     bool bRPMRS; //Reference Picture Marking Repetition SEI
     bool bUseHWLib; // whether to use HW mfx library
+    MemType memType; // which memory type to use: system, d3d9
     bool bCalcLAtency;// optional printing of latency information per frame
 
     std::map<int, SourceInfo> sources;
@@ -135,6 +143,7 @@ protected:
     mfxVideoParam m_mfxEncParams;
     MFXFrameAllocator* m_pMFXAllocator;
     mfxAllocatorParams* m_pmfxAllocatorParams;
+    MemType m_memType;
 
     CHWDevice *m_hwdev;
 
