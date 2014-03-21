@@ -3435,7 +3435,7 @@ void H265CU::EncAndRecChromaTu(Ipp32u absPartIdx, Ipp32s offset, Ipp32s width, I
         }
 
         // use only bit cost for chroma
-        if (cost /*&& !m_rdOptFlag*/) {
+        if (cost && (m_par->AnalyseFlags & HEVC_COST_CHROMA)) {
             *cost += TuSseNv12(pSrc + c_idx, m_pitchSrc, pRec + c_idx, m_pitchRec, width);
         }
         if (m_data[absPartIdx].flags.skippedFlag && nz) {
