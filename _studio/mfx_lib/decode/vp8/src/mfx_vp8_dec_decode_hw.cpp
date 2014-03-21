@@ -103,10 +103,10 @@ mfxStatus VideoDECODEVP8_HW::Init(mfxVideoParam *p_video_param)
     // how "D3D" cound be related to VA API code !? (crappy naming!)
     m_p_frame_allocator.reset(new mfx_UMC_FrameAllocator_D3D());
 
-   if (MFX_IOPATTERN_OUT_SYSTEM_MEMORY & p_video_param->IOPattern)
-   {
+    if (MFX_IOPATTERN_OUT_SYSTEM_MEMORY & p_video_param->IOPattern)
+    {
         m_is_software_buffer = true;
-   }
+    }
 
     if (MFX_VP8_Utility::CheckVideoParam(p_video_param, type) == false)
     {
@@ -134,13 +134,13 @@ mfxStatus VideoDECODEVP8_HW::Init(mfxVideoParam *p_video_param)
 
     sts = QueryIOSurfInternal(m_platform, &m_video_params, &request);
 
-
     MFX_CHECK_STS(sts);
 
     request.Type = MFX_MEMTYPE_INTERNAL_FRAME | MFX_MEMTYPE_FROM_DECODE | MFX_MEMTYPE_DXVA2_DECODER_TARGET;
     sts = m_p_core->AllocFrames(&request, &m_response);
 
     MFX_CHECK_STS(sts);
+
 
     sts = m_p_core->CreateVA(&m_on_init_video_params, &request, &m_response);
 
@@ -155,6 +155,7 @@ mfxStatus VideoDECODEVP8_HW::Init(mfxVideoParam *p_video_param)
     }
 
     m_p_core->GetVA((mfxHDL*)&m_p_video_accelerator, MFX_MEMTYPE_FROM_DECODE);
+
 
     m_frameOrder = (mfxU16)MFX_FRAMEORDER_UNKNOWN;
     m_is_initialized = true;
@@ -1038,6 +1039,9 @@ void VideoDECODEVP8_HW::DecodeInitDequantization(MFX_VP8_BoolDecoder &dec)
   m_frame_info.mbStep   = mbPerRow; \
 }
 
+int bitcount_saved = 0;
+int pos_saved = 0;
+
 mfxStatus VideoDECODEVP8_HW::DecodeFrameHeader(mfxBitstream *in)
 {
 
@@ -1363,9 +1367,21 @@ mfxStatus VideoDECODEVP8_HW::DecodeFrameHeader(mfxBitstream *in)
         //m_frame_info.goldProb = 0;
     }
 
+
+    bitcount_saved = m_boolDecoder[VP8_FIRST_PARTITION].bitcount();
+    pos_saved = m_boolDecoder[VP8_FIRST_PARTITION].pos();
+
+    if(bitcount_saved < 8) {
+
+        pos_saved = bitcount_saved;
+        bitcount_saved = 8 - bitcount_saved;
+
+    }
+
     int frame_data_offset = m_boolDecoder[VP8_FIRST_PARTITION].pos() +
         ((m_frame_info.frameType == I_PICTURE) ? 10 : 3);
-    m_frame_info.entropyDecSize = frame_data_offset * 8 - 16 - m_boolDecoder[VP8_FIRST_PARTITION].bitcount();
+
+    m_frame_info.entropyDecSize = frame_data_offset * 8 - 16 + (8 - m_boolDecoder[VP8_FIRST_PARTITION].bitcount());
 
     //set to zero Mb coeffs
     for (mfxU32 i = 0; i < m_frame_info.mbPerCol; i++)
@@ -1396,7 +1412,21 @@ mfxStatus VideoDECODEVP8_HW::DecodeFrameHeader(mfxBitstream *in)
         m_frame_info.entropyDecSize = m_frame_info.entropyDecSize / 8 - 3;
     }
 
-    #endif // MFX_VA_WIN
+    #else
+
+    // + Working DDI .40
+
+    if (m_frame_info.frameType == I_PICTURE)
+    {
+        m_frame_info.entropyDecSize = m_frame_info.entropyDecSize - 80;
+    }
+    else
+    {
+        m_frame_info.firstPartitionSize = m_frame_info.firstPartitionSize - Ipp32u(m_boolDecoder[VP8_FIRST_PARTITION].input() - ((Ipp8u*)in->Data) - 3) + 2;
+        m_frame_info.entropyDecSize = m_frame_info.entropyDecSize - 24;
+    }
+
+    #endif
 
     return MFX_ERR_NONE;
 }
@@ -1811,18 +1841,26 @@ mfxStatus VideoDECODEVP8_HW::PackHeaders(mfxBitstream *p_bistream)
          refI = info.currIndex;
          //same as key_frame in bitstream syntax
          picParams->pic_fields.bits.key_frame = 0;
+
+         picParams->last_ref_frame = 0;
+         picParams->golden_ref_frame = 0;
+         picParams->alt_ref_frame = 0;
+         picParams->out_of_loop_frame = 0;
+
      }
      else // inter frame
      {
 
          picParams->pic_fields.bits.key_frame = 1;
 
-         picParams->last_ref_frame    =  m_p_video_accelerator->GetSurfaceID(lastrefIndex);
+         picParams->last_ref_frame    =  m_p_video_accelerator->GetSurfaceID(info.lastrefIndex);
          picParams->golden_ref_frame  =  m_p_video_accelerator->GetSurfaceID(info.goldIndex);
          picParams->alt_ref_frame     =  m_p_video_accelerator->GetSurfaceID(info.altrefIndex);
 
-         picParams->out_of_loop_frame =  0xffffffff;
+         picParams->out_of_loop_frame =  0x0;
      }
+
+     curr_indx += 1;
 
      //same as version in bitstream syntax
      picParams->pic_fields.bits.version = m_frame_info.version;
@@ -1863,16 +1901,22 @@ mfxStatus VideoDECODEVP8_HW::PackHeaders(mfxBitstream *p_bistream)
      //same as mb_no_coeff_skip in bitstream syntax
      picParams->pic_fields.bits.mb_no_coeff_skip = m_frame_info.mbSkipEnabled;
 
-     //see section 11.1 for mb_skip_coeff
-     picParams->pic_fields.bits.mb_skip_coeff = 0; //?
+     //see section 11.1 for mb_skip_coefffff
+//   picParams->pic_fields.bits.mb_skip_coeff = 0;
 
      //flag to indicate that loop filter should be disabled
      picParams->pic_fields.bits.loop_filter_disable = 0;
 
-     if ((picParams->pic_fields.bits.version == 0) || (picParams->pic_fields.bits.version == 1))
+//     picParams->LoopFilterDisable = 0;
+/*     if (0 == m_frame_info.loopFilterLevel || (2 == m_frame_info.version || 3 == m_frame_info.version))
+     {
+         picParams->pic_fields.bits.loop_filter_disable = 1;
+     }*/
+
+/*     if ((picParams->pic_fields.bits.version == 0) || (picParams->pic_fields.bits.version == 1))
      {
          picParams->pic_fields.bits.loop_filter_disable = m_frame_info.loopFilterLevel > 0 ? 1 : 0;
-     }
+     }*/
 
      // probabilities of the segment_id decoding tree and same as
      // mb_segment_tree_probs in the spec.
@@ -1957,7 +2001,7 @@ mfxStatus VideoDECODEVP8_HW::PackHeaders(mfxBitstream *p_bistream)
      const mfxU8 *prob_y_table;
      const mfxU8 *prob_uv_table;
 
-     if (false /*I_PICTURE != m_frame_info.frameType*/)
+     if (I_PICTURE == m_frame_info.frameType)
      {
          prob_y_table = vp8_kf_mb_mode_y_probs;
          prob_uv_table = vp8_kf_mb_mode_uv_probs;
@@ -1987,7 +2031,18 @@ mfxStatus VideoDECODEVP8_HW::PackHeaders(mfxBitstream *p_bistream)
 
      picParams->bool_coder_ctx.range = m_boolDecoder[VP8_FIRST_PARTITION].range();
      picParams->bool_coder_ctx.value = (m_boolDecoder[VP8_FIRST_PARTITION].value() >> 24) & 0xff;
-     picParams->bool_coder_ctx.count = m_boolDecoder[VP8_FIRST_PARTITION].bitcount();
+     picParams->bool_coder_ctx.count = (8 - (m_boolDecoder[VP8_FIRST_PARTITION].bitcount() & 0x7));
+
+/*     {
+         static int i = 0;
+         std::stringstream ss;
+         ss << "/home/user/ivanenko/mfxdump/pp" << i;
+         std::ofstream ofs(ss.str().c_str(), std::ofstream::binary);
+         i++;
+         ofs.write((char*)picParams, sizeof(VAPictureParameterBufferVP8));
+         ofs.flush();
+         ofs.close();
+     } */
 
      compBufPic->SetDataSize(sizeof(VAPictureParameterBufferVP8));
 
@@ -1999,7 +2054,19 @@ mfxStatus VideoDECODEVP8_HW::PackHeaders(mfxBitstream *p_bistream)
      ////[4][8][3][11]
      memcpy(coeffProbs, m_frameProbs.coeff_probs, sizeof(Ipp8u) * 4 * 8 * 3 * 11);
 
-     compBufCp->SetDataSize(sizeof(Ipp8u) * 4 * 8 * 3 * 11);
+/*     {
+         static int i = 0;
+         std::stringstream ss;
+         ss << "/home/user/ivanenko/mfxdump/pd" << i;
+         std::ofstream ofs(ss.str().c_str(), std::ofstream::binary);
+         i++;
+         ofs.write((char*)coeffProbs, sizeof(VAProbabilityDataBufferVP8));
+         ofs.flush();
+         ofs.close();
+     } */
+
+//     compBufCp->SetDataSize(sizeof(Ipp8u) * 4 * 8 * 3 * 11);
+     compBufCp->SetDataSize(sizeof(VAProbabilityDataBufferVP8));
 
      //////////////////////////////////////////////////////////////////
      UMCVACompBuffer* compBufQm;
@@ -2031,19 +2098,27 @@ mfxStatus VideoDECODEVP8_HW::PackHeaders(mfxBitstream *p_bistream)
          }
      }
 
+/*     {
+         static int i = 0;
+         std::stringstream ss;
+         ss << "/home/user/ivanenko/mfxdump/iq" << i;
+         std::ofstream ofs(ss.str().c_str(), std::ofstream::binary);
+         i++;
+         ofs.write((char*)qmTable, sizeof(VAIQMatrixBufferVP8));
+         ofs.flush();
+         ofs.close();
+     } */
+
      compBufQm->SetDataSize(sizeof(VAIQMatrixBufferVP8));
 
      //////////////////////////////////////////////////////////////////
 
      Ipp32u offset = 0;
-     Ipp32u m_offset = 0;
 
      if (I_PICTURE == m_frame_info.frameType)
-         m_offset = 10;
+         offset = 10;
      else
-         m_offset = 3;
-
-     offset = 0;
+         offset = 3;
 
      Ipp32s size = p_bistream->DataLength;
 
@@ -2054,33 +2129,38 @@ mfxStatus VideoDECODEVP8_HW::PackHeaders(mfxBitstream *p_bistream)
              GetCompBuffer(VASliceParameterBufferType, &compBufSlice, sizeof(VASliceParameterBufferVP8));
 
 
-     #if defined(ANDROID)
-
      // number of bytes in the slice data buffer for the partitions
-     sliceParams->slice_data_size = (Ipp32s)size - offset;//?
+     sliceParams->slice_data_size = (Ipp32s)size - offset;
 
      //offset to the first byte of partition data
-     sliceParams->slice_data_offset = 0; //?
+     sliceParams->slice_data_offset = 0;
 
      //see VA_SLICE_DATA_FLAG_XXX definitions
      sliceParams->slice_data_flag = VA_SLICE_DATA_FLAG_ALL;
 
-     #endif
-
      //offset to the first bit of MB from the first byte of partition data
      sliceParams->macroblock_offset = m_frame_info.entropyDecSize;
-
-// sliceParams->macroblock_offset = m_frame_info.entropyDecOffset;
 
      // Partitions
      sliceParams->num_of_partitions = m_frame_info.numPartitions;
 
-     for (Ipp32s i = 0; i < m_frame_info.numPartitions; i += 1)
+     sliceParams->partition_size[0] = m_frame_info.firstPartitionSize;
+
+     for (Ipp32s i = 1; i < m_frame_info.numPartitions + 1; i += 1)
      {
-         sliceParams->partition_size[i] = m_frame_info.partitionSize[i];
+         sliceParams->partition_size[i] = m_frame_info.partitionSize[i - 1];
      }
 
-     sliceParams->partition_size[0] = m_frame_info.firstPartitionSize;
+/*     {
+         static int i = 0;
+         std::stringstream ss;
+         ss << "/home/user/ivanenko/mfxdump/sp" << i;
+         std::ofstream ofs(ss.str().c_str(), std::ofstream::binary);
+         i++;
+         ofs.write((char*)sliceParams, sizeof(VASliceParameterBufferVP8));
+         ofs.flush();
+         ofs.close();
+     } */
 
      compBufSlice->SetDataSize(sizeof(VASliceParameterBufferVP8));
 
@@ -2089,6 +2169,17 @@ mfxStatus VideoDECODEVP8_HW::PackHeaders(mfxBitstream *p_bistream)
 
      Ipp8u *pBuffer = (Ipp8u*) p_bistream->Data;
      memcpy(bistreamData, pBuffer + offset, size - offset);
+
+/*     {
+         static int i = 0;
+         std::stringstream ss;
+         ss << "/home/user/ivanenko/mfxdump/sd" << i;
+         std::ofstream ofs(ss.str().c_str(), std::ofstream::binary);
+         i++;
+         ofs.write((char*)(pBuffer + offset), size - offset);
+         ofs.flush();
+         ofs.close();
+     } */
 
      compBufBs->SetDataSize((Ipp32s)size - offset);
 
