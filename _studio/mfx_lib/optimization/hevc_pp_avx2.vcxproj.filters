@@ -40,6 +40,9 @@
     <ClCompile Include="h265\src\mfx_h265_intrapred_avx2.cpp">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="h265\src\mfx_h265_sad_multiple_avx2.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="include">

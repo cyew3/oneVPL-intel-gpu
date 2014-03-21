@@ -56,5 +56,8 @@
     <ClCompile Include="h265\src\mfx_h265_satd_sse.cpp">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="h265\src\mfx_h265_sad_multiple_sse.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

@@ -189,6 +189,9 @@ namespace MFX_HEVC_PP
     typedef  int (H265_FASTCALL *PTR_SAD_MxN_8u)(SAD_PARAMETERS_LIST_SPECIAL);
     typedef  int (H265_FASTCALL *PTR_SAD_MxN_General_8u)(SAD_PARAMETERS_LIST_GENERAL);
 
+    typedef  void (H265_FASTCALL *PTR_SAD_MxN_x3_8u)(const Ipp8u* src, Ipp32s src_stride, const Ipp8u* ref0, const Ipp8u* ref1, const Ipp8u* ref2, Ipp32s ref_stride, Ipp32s width, Ipp32s height, Ipp32s sads[3]);
+    typedef  void (H265_FASTCALL *PTR_SAD_MxN_x4_8u)(const Ipp8u* src, Ipp32s src_stride, const Ipp8u* ref0, const Ipp8u* ref1, const Ipp8u* ref2, const Ipp8u* ref3, Ipp32s ref_stride, Ipp32s width, Ipp32s height, Ipp32s sads[4]);
+
     // [PTR.SATD]
     typedef  Ipp32s (H265_FASTCALL *PTR_SATD_8u)     (const Ipp8u* pSrcCur, int srcCurStep, const Ipp8u* pSrcRef, int srcRefStep);
     typedef  void   (H265_FASTCALL *PTR_SATD_Pair_8u)(const Ipp8u* pSrcCur, int srcCurStep, const Ipp8u* pSrcRef, int srcRefStep, Ipp32s* satdPair);
@@ -403,6 +406,10 @@ namespace MFX_HEVC_PP
         PTR_SAD_MxN_General_8u  h265_SAD_64x32_general_8u;
         PTR_SAD_MxN_General_8u  h265_SAD_64x48_general_8u;
         PTR_SAD_MxN_General_8u  h265_SAD_64x64_general_8u;
+
+        // [SAD.multiple] 
+        PTR_SAD_MxN_x3_8u       h265_SAD_MxN_x3_8u;
+        PTR_SAD_MxN_x4_8u       h265_SAD_MxN_x4_8u;
 #endif
 
         // [Transform Inv]
