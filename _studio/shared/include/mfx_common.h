@@ -264,6 +264,7 @@
 #endif
 #if defined(AS_HEVCE_PLUGIN)
     #define MFX_ENABLE_H265_VIDEO_ENCODE
+    #define MFX_ENABLE_CM
 #endif
 #if defined(AS_VP8DHW_PLUGIN)
     #define MFX_ENABLE_VP8_VIDEO_DECODE
