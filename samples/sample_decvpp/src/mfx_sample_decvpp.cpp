@@ -17,19 +17,18 @@ void PrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage)
         msdk_printf(MSDK_STRING("Error: %s\n"), strErrorMessage);
     }
 
-    msdk_printf(MSDK_STRING("Usage: %s <codecid> [<options>] -i InputBitstream\n"), strAppName);
-    msdk_printf(MSDK_STRING("   or: %s <codecid> [<options>] -i InputBitstream -r\n"), strAppName);
-    msdk_printf(MSDK_STRING("   or: %s <codecid> [<options>] -i InputBitstream -o OutputYUVFile <fourcc>\n"), strAppName);
+    msdk_printf(MSDK_STRING("Usage: %s <codecid> [<fourcc>] [<options>] -i InputBitstream\n"), strAppName);
+    msdk_printf(MSDK_STRING("   or: %s <codecid> [<fourcc>] [<options>] -i InputBitstream -r\n"), strAppName);
+    msdk_printf(MSDK_STRING("   or: %s <codecid> [<fourcc>] [<options>] -i InputBitstream -o OutputYUVFile <fourcc>\n"), strAppName);
     msdk_printf(MSDK_STRING("\n"));
     msdk_printf(MSDK_STRING("Supported codecs (<codecid>):\n"));
-    msdk_printf(MSDK_STRING("   <codecid>=h264|mpeg2|vc1|mvc|jpeg - built-in Media SDK codecs\n"));
-    msdk_printf(MSDK_STRING("   <codecid>=h265                    - in-box Media SDK plugins (may require separate downloading and installation)\n"));
-#if defined(_WIN32) || defined(_WIN64)
-    msdk_printf(MSDK_STRING("   <codecid>=vp8                     - Media SDK sample user-decoder plugin (requires '-p' option to be functional)\n"));
-#endif
+    msdk_printf(MSDK_STRING("   <codecid>=h264 - built-in Media SDK codecs\n"));
+    msdk_printf(MSDK_STRING("   <codecid>=h265 - in-box Media SDK plugins (may require separate downloading and installation)\n"));
     msdk_printf(MSDK_STRING("\n"));
-    msdk_printf(MSDK_STRING("Supported output color format (<fourcc>):\n"));
-    msdk_printf(MSDK_STRING("   <fourcc> = -nv12 | -rgb4 | -p010 -a2rgb10 - if not specified nv12 is used\n"));
+    msdk_printf(MSDK_STRING("Supported output color formats (<fourcc>):\n"));
+    msdk_printf(MSDK_STRING("   <fourcc> = -nv12 | -rgb4 | -p010 | -a2rgb10 - if not specified nv12 is used\n"));
+    msdk_printf(MSDK_STRING("   Default is nv12\n"));
+    msdk_printf(MSDK_STRING("\n"));
     msdk_printf(MSDK_STRING("Work models:\n"));
     msdk_printf(MSDK_STRING("  1. Performance model: decoding on MAX speed, no rendering, no YUV dumping (no -r or -o option)\n"));
     msdk_printf(MSDK_STRING("  2. Rendering model: decoding with rendering on the screen (-r option)\n"));
@@ -42,23 +41,12 @@ void PrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("   [-d3d]                  - work with d3d9 surfaces\n"));
     msdk_printf(MSDK_STRING("   [-d3d11]                - work with d3d11 surfaces\n"));
     msdk_printf(MSDK_STRING("   [-r]                    - render decoded data in a separate window \n"));
-    msdk_printf(MSDK_STRING("   [-wall w h n m f t tmo] - same as -r, and positioned rendering window in a particular cell on specific monitor \n"));
-    msdk_printf(MSDK_STRING("       w                   - number of columns of video windows on selected monitor\n"));
-    msdk_printf(MSDK_STRING("       h                   - number of rows of video windows on selected monitor\n"));
-    msdk_printf(MSDK_STRING("       n(0,.,w*h-1)        - order of video window in table that will be rendered\n"));
-    msdk_printf(MSDK_STRING("       m(0,1..)            - monitor id \n"));
-    msdk_printf(MSDK_STRING("       f                   - rendering framerate\n"));
-    msdk_printf(MSDK_STRING("       t(0/1)              - enable/disable window's title\n"));
-    msdk_printf(MSDK_STRING("       tmo                 - timeout for -wall option\n"));
 #endif
 #if defined(LIBVA_SUPPORT)
     msdk_printf(MSDK_STRING("   [-vaapi]                - work with vaapi surfaces\n"));
     msdk_printf(MSDK_STRING("   [-r]                    - render decoded data in a separate window \n"));
 #endif
 #if defined(_WIN32) || defined(_WIN64)
-    msdk_printf(MSDK_STRING("   [-jpeg_rotate n]        - rotate jpeg frame n degrees \n"));
-    msdk_printf(MSDK_STRING("       n(90,180,270)       - number of degrees \n"));
-
     msdk_printf(MSDK_STRING("\nFeatures: \n"));
     msdk_printf(MSDK_STRING("   Press 1 to toggle fullscreen rendering on/off\n"));
 #endif
@@ -102,34 +90,13 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
     {
         if (MSDK_CHAR('-') != strInput[i][0])
         {
-            if (0 == msdk_strcmp(strInput[i], MSDK_STRING("mpeg2")))
-            {
-                pParams->videoType = MFX_CODEC_MPEG2;
-            }
-            else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("h264")))
+            if (0 == msdk_strcmp(strInput[i], MSDK_STRING("h264")))
             {
                 pParams->videoType = MFX_CODEC_AVC;
             }
             else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("h265")))
             {
                 pParams->videoType = MFX_CODEC_HEVC;
-            }
-            else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("vc1")))
-            {
-                pParams->videoType = MFX_CODEC_VC1;
-            }
-            else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("mvc")))
-            {
-                pParams->videoType = MFX_CODEC_AVC;
-                pParams->bIsMVC = true;
-            }
-            else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("jpeg")))
-            {
-                pParams->videoType = MFX_CODEC_JPEG;
-            }
-            else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("vp8")))
-            {
-                pParams->videoType = CODEC_VP8;
             }
             else
             {
@@ -175,32 +142,6 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
             if (SYSTEM_MEMORY == pParams->memType)
                 pParams->memType = D3D9_MEMORY;
         }
-        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-wall")))
-        {
-            if(i + 7 >= nArgNum)
-            {
-                PrintHelp(strInput[0], MSDK_STRING("Not enough parameters for -wall key"));
-                return MFX_ERR_UNSUPPORTED;
-            }
-            // use d3d9 rendering by default
-            if (SYSTEM_MEMORY == pParams->memType)
-                pParams->memType = D3D9_MEMORY;
-
-            pParams->mode = MODE_RENDERING;
-
-            msdk_sscanf(strInput[++i], MSDK_STRING("%d"), &pParams->nWallW);
-            msdk_sscanf(strInput[++i], MSDK_STRING("%d"), &pParams->nWallH);
-            msdk_sscanf(strInput[++i], MSDK_STRING("%d"), &pParams->nWallCell);
-            msdk_sscanf(strInput[++i], MSDK_STRING("%d"), &pParams->nWallMonitor);
-            msdk_sscanf(strInput[++i], MSDK_STRING("%d"), &pParams->nWallFPS);
-
-            int nTitle;
-            msdk_sscanf(strInput[++i], MSDK_STRING("%d"), &nTitle);
-
-            pParams->bWallNoTitle = 0 == nTitle;
-
-            msdk_sscanf(strInput[++i], MSDK_STRING("%d"), &pParams->nWallTimeout);
-        }
 #endif
 #if defined(LIBVA_SUPPORT)
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-vaapi")))
@@ -213,24 +154,6 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
             pParams->mode = MODE_RENDERING;
         }
 #endif
-        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-jpeg_rotate")))
-        {
-            if(MFX_CODEC_JPEG != pParams->videoType)
-                return MFX_ERR_UNSUPPORTED;
-
-            if(i + 1 >= nArgNum)
-            {
-                PrintHelp(strInput[0], MSDK_STRING("Not enough parameters for -jpeg_rotate key"));
-                return MFX_ERR_UNSUPPORTED;
-            }
-
-            msdk_sscanf(strInput[++i], MSDK_STRING("%d"), &pParams->nRotation);
-            if((pParams->nRotation != 90)&&(pParams->nRotation != 180)&&(pParams->nRotation != 270))
-            {
-                PrintHelp(strInput[0], MSDK_STRING("-jpeg_rotate is supported only for 90, 180 and 270 angles"));
-                return MFX_ERR_UNSUPPORTED;
-            }
-        }
         else // 1-character options
         {
             switch (strInput[i][1])
@@ -274,12 +197,8 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         return MFX_ERR_UNSUPPORTED;
     }
 
-    if (MFX_CODEC_MPEG2 != pParams->videoType &&
-        MFX_CODEC_AVC   != pParams->videoType &&
-        MFX_CODEC_HEVC  != pParams->videoType &&
-        MFX_CODEC_VC1   != pParams->videoType &&
-        MFX_CODEC_JPEG  != pParams->videoType &&
-        CODEC_VP8   != pParams->videoType)
+    if (MFX_CODEC_AVC   != pParams->videoType &&
+        MFX_CODEC_HEVC  != pParams->videoType)
     {
         PrintHelp(strInput[0], MSDK_STRING("Unknown codec"));
         return MFX_ERR_UNSUPPORTED;
@@ -301,9 +220,6 @@ int main(int argc, char *argv[])
 
     sts = ParseInputString(argv, (mfxU8)argc, &Params);
     MSDK_CHECK_PARSE_RESULT(sts, MFX_ERR_NONE, 1);
-
-    if (Params.bIsMVC)
-        Pipeline.SetMultiView();
 
     sts = Pipeline.Init(&Params);
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, 1);

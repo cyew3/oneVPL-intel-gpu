@@ -975,7 +975,7 @@ void CDecodingPipeline::PrintPerFrameStat(bool force)
 #if D3D_SURFACES_SUPPORT
         m_d3dRender.UpdateTitle(fps);
 #elif LIBVA_SUPPORT
-        m_hwdev->UpdateTitle(fps);
+        if (m_hwdev) m_hwdev->UpdateTitle(fps);
 #endif
     }
 }
