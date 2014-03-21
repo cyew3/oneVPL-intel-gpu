@@ -254,7 +254,7 @@ template <EnumTextType c_plane_type, typename PlaneType>
 static void PrepareInterpSrc( H265CodingUnit* pCU, H265PUInfo &PUi, EnumRefPicList RefPicList,
                               H265InterpolationParams_8u& interpolateInfo, PlaneType* temp_interpolarion_buffer )
 {
-    VM_ASSERT(PUi.interinfo.m_refIdx[RefPicList] >= 0);
+    VM_ASSERT(PUi.interinfo->m_refIdx[RefPicList] >= 0);
 
     Ipp32u PartAddr = PUi.PartAddr;
     H265MotionVector MV = PUi.interinfo->m_mv[RefPicList];
