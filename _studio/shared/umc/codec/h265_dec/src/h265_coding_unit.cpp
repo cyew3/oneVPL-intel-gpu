@@ -314,7 +314,7 @@ Ipp8u H265CodingUnit::getNumPartInter(Ipp32u AbsPartIdx)
     return  iNumPart;
 }
 
-void H265CodingUnit::getPartIndexAndSize(Ipp32u AbsPartIdx, Ipp32u Depth, Ipp32u uPartIdx, Ipp32u &PartAddr, Ipp32u &Width, Ipp32u &Height)
+void H265CodingUnit::getPartIndexAndSize(Ipp32u AbsPartIdx, Ipp32u Depth, Ipp32u uPartIdx, Ipp32u &Width, Ipp32u &Height)
 {
     Ipp32u NumPartition = m_NumPartition >> (Depth << 1);
     Ipp32u cuWidth = GetWidth(AbsPartIdx);
@@ -324,43 +324,35 @@ void H265CodingUnit::getPartIndexAndSize(Ipp32u AbsPartIdx, Ipp32u Depth, Ipp32u
         case PART_SIZE_2NxN:
             Width = cuWidth;
             Height = cuWidth >> 1;
-            PartAddr = (uPartIdx == 0) ? 0 : NumPartition >> 1;
             break;
         case PART_SIZE_Nx2N:
             Width = cuWidth >> 1;
             Height = cuWidth;
-            PartAddr = (uPartIdx == 0) ? 0 : NumPartition >> 2;
             break;
         case PART_SIZE_NxN:
             Width = cuWidth >> 1;
             Height = cuWidth >> 1;
-            PartAddr = (NumPartition >> 2) * uPartIdx;
             break;
         case PART_SIZE_2NxnU:
             Width    = cuWidth;
             Height   = (uPartIdx == 0) ? cuWidth >> 2 : (cuWidth >> 2) + (cuWidth >> 1);
-            PartAddr = (uPartIdx == 0) ? 0 : NumPartition >> 3;
             break;
         case PART_SIZE_2NxnD:
             Width    = cuWidth;
             Height   = (uPartIdx == 0) ?  (cuWidth >> 2) + (cuWidth>> 1) : cuWidth >> 2;
-            PartAddr = (uPartIdx == 0) ? 0 : (NumPartition >> 1) + (NumPartition >> 3);
             break;
         case PART_SIZE_nLx2N:
             Width    = (uPartIdx == 0) ? cuWidth >> 2 : (cuWidth >> 2) + (cuWidth >> 1);
             Height   = cuWidth;
-            PartAddr = (uPartIdx == 0) ? 0 : NumPartition >> 4;
             break;
         case PART_SIZE_nRx2N:
             Width    = (uPartIdx == 0) ? (cuWidth >> 2) + (cuWidth >> 1) : cuWidth >> 2;
             Height   = cuWidth;
-            PartAddr = (uPartIdx == 0) ? 0 : (NumPartition >> 2) + (NumPartition >> 4);
             break;
         default:
             VM_ASSERT(GetPartitionSize(AbsPartIdx) == PART_SIZE_2Nx2N);
             Width = cuWidth;
             Height = cuWidth;
-            PartAddr = 0;
             break;
     }
 }

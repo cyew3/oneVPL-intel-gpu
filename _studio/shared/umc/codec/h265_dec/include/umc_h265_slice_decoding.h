@@ -234,7 +234,6 @@ public:
     }
 
     void allocSubstreamSizes(unsigned);
-    void setRefPOCList();
     void CopyFromBaseSlice(const H265Slice * slice);
 };
 

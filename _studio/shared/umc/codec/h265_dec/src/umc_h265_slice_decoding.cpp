@@ -325,19 +325,6 @@ bool H265Slice::DecodeSliceHeader(PocDecoding * pocDecoding)
 
 } // bool H265Slice::DecodeSliceHeader(bool bFullInitialization)
 
-void H265Slice::setRefPOCList()
-{
-    for (Ipp32s iDir = 0; iDir < 2; iDir++)
-    {
-        H265DecoderRefPicList::ReferenceInformation *refInfo = m_pCurrentFrame->GetRefPicList(m_iNumber, iDir)->m_refPicList;
-
-        for (Ipp32s NumRefIdx = 0; NumRefIdx < m_SliceHeader.m_numRefIdx[iDir]; NumRefIdx++)
-        {
-            m_SliceHeader.RefPOCList[iDir][NumRefIdx] = refInfo[NumRefIdx].refFrame ? refInfo[NumRefIdx].refFrame->m_PicOrderCnt : 0;
-        }
-    }
-}
-
 void H265Slice::InitializeContexts()
 {
     SliceType slice_type = m_SliceHeader.slice_type;
@@ -432,15 +419,6 @@ void H265Slice::CopyFromBaseSlice(const H265Slice * s)
     m_SliceHeader.slice_qp_delta        = slice->slice_qp_delta;
     m_SliceHeader.slice_cb_qp_offset    = slice->slice_cb_qp_offset;
     m_SliceHeader.slice_cr_qp_offset    = slice->slice_cr_qp_offset;
-
-    for (Ipp32s i = 0; i < 2; i++)
-    {
-        for (Ipp32s j = 0; j < MAX_NUM_REF_PICS; j++)
-        {
-            m_SliceHeader.RefPOCList[i][j] = slice->RefPOCList[i][j];
-        }
-    }
-
 
     m_SliceHeader.m_pRPS                    = slice->m_pRPS;
     m_SliceHeader.collocated_from_l0_flag   = slice->collocated_from_l0_flag;

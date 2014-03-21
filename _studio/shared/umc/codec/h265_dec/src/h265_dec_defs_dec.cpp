@@ -1063,7 +1063,7 @@ void H265SampleAdaptiveOffsetTemplate<PlaneType>::SetOffsetsLuma(SAOLCUParam  &s
             m_OffsetBo[i] = (PlaneType)m_ClipTable[i + offset[ppLumaTable[i]]];
         }
     }
-    else if (typeIdx == SAO_EO_0 || typeIdx == SAO_EO_1 || typeIdx == SAO_EO_2 || typeIdx == SAO_EO_3)
+    else
     {
         offset[0] = 0;
         for (Ipp32s i = 0; i < SAO_OFFSETS_LEN; i++)
@@ -1105,10 +1105,11 @@ void H265SampleAdaptiveOffsetTemplate<PlaneType>::SetOffsetsChroma(SAOLCUParam &
             m_OffsetBo2Chroma[i] = (PlaneType)m_ClipTable[i + offsetCr[ppLumaTable[i]]];
         }
     }
-    else if (typeIdx == SAO_EO_0 || typeIdx == SAO_EO_1 || typeIdx == SAO_EO_2 || typeIdx == SAO_EO_3)
+    else
     {
         offsetCb[0] = 0;
         offsetCr[0] = 0;
+
         for (Ipp32s i = 0; i < SAO_OFFSETS_LEN; i++)
         {
             offsetCb[i + 1] = saoLCUParam.m_offset[1][i] << saoBitIncrease;

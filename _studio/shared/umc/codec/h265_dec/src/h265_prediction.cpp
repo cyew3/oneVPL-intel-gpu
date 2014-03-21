@@ -89,49 +89,39 @@ template<typename PixType>
 void H265Prediction::MotionCompensationInternal(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u Depth)
 {
     Ipp32s countPart = pCU->getNumPartInter(AbsPartIdx);
-    EnumPartSize PartSize = pCU->GetPartitionSize(AbsPartIdx);
-    Ipp32u PUOffset = (g_PUOffset[PartSize] << ((m_context->m_sps->MaxCUDepth - Depth) << 1)) >> 4;
+    Ipp32u PUOffset;
+
+    if (countPart > 1)
+    {
+        EnumPartSize PartSize = pCU->GetPartitionSize(AbsPartIdx);
+        PUOffset = (g_PUOffset[PartSize] << ((m_context->m_sps->MaxCUDepth - Depth) << 1)) >> 4;
+    }
 
     for (Ipp32s PartIdx = 0, subPartIdx = AbsPartIdx; PartIdx < countPart; PartIdx++, subPartIdx += PUOffset)
     {
         H265PUInfo PUi;
 
-        pCU->getPartIndexAndSize(AbsPartIdx, Depth, PartIdx, PUi.PartAddr, PUi.Width, PUi.Height);
-        PUi.PartAddr += AbsPartIdx;
+        pCU->getPartIndexAndSize(AbsPartIdx, Depth, PartIdx, PUi.Width, PUi.Height);
+        PUi.PartAddr = subPartIdx;
 
         Ipp32s LPelX = pCU->m_CUPelX + pCU->m_rasterToPelX[subPartIdx];
         Ipp32s TPelY = pCU->m_CUPelY + pCU->m_rasterToPelY[subPartIdx];
         Ipp32s PartX = LPelX >> m_context->m_sps->log2_min_transform_block_size;
         Ipp32s PartY = TPelY >> m_context->m_sps->log2_min_transform_block_size;
 
-        PUi.interinfo = m_context->m_frame->getCD()->GetTUInfo(m_context->m_sps->NumPartitionsInFrameWidth * PartY + PartX);
-        H265MVInfo &MVi = PUi.interinfo;
+        PUi.interinfo = &(m_context->m_frame->getCD()->GetTUInfo(m_context->m_sps->NumPartitionsInFrameWidth * PartY + PartX));
+        const H265MVInfo &MVi = *PUi.interinfo;
 
         VM_ASSERT(MVi.m_flags[REF_PIC_LIST_0] != COL_TU_INTRA);
 
-        Ipp32s RefIdx[2];
+        PUi.refFrame[REF_PIC_LIST_0] = MVi.m_refIdx[REF_PIC_LIST_0] >= 0 ? m_context->m_refPicList[REF_PIC_LIST_0][MVi.m_refIdx[REF_PIC_LIST_0]].refFrame : 0;
+        PUi.refFrame[REF_PIC_LIST_1] = MVi.m_refIdx[REF_PIC_LIST_1] >= 0 ? m_context->m_refPicList[REF_PIC_LIST_1][MVi.m_refIdx[REF_PIC_LIST_1]].refFrame : 0;
 
-        if (MVi.m_flags[REF_PIC_LIST_0] != COL_TU_INVALID_INTER)
+        VM_ASSERT(MVi.m_refIdx[REF_PIC_LIST_0] >= 0 || MVi.m_refIdx[REF_PIC_LIST_1] >= 0);
+
+        if ((CheckIdenticalMotion(pCU, MVi) || !(MVi.m_refIdx[REF_PIC_LIST_0] >= 0 && MVi.m_refIdx[REF_PIC_LIST_1] >= 0)))
         {
-            RefIdx[REF_PIC_LIST_0] = MVi.m_refIdx[REF_PIC_LIST_0];
-            PUi.refFrame[REF_PIC_LIST_0] = MVi.m_refIdx[REF_PIC_LIST_0] >= 0 ? m_context->m_refPicList[REF_PIC_LIST_0][MVi.m_refIdx[REF_PIC_LIST_0]].refFrame : 0;
-        }
-        else
-            RefIdx[REF_PIC_LIST_0] = -1;
-
-        if (MVi.m_flags[REF_PIC_LIST_1] != COL_TU_INVALID_INTER)
-        {
-            RefIdx[REF_PIC_LIST_1] = MVi.m_refIdx[REF_PIC_LIST_1];
-            PUi.refFrame[REF_PIC_LIST_1] = MVi.m_refIdx[REF_PIC_LIST_1] >= 0 ? m_context->m_refPicList[REF_PIC_LIST_1][MVi.m_refIdx[REF_PIC_LIST_1]].refFrame : 0;
-        }
-        else
-            RefIdx[REF_PIC_LIST_1] = -1;
-
-        VM_ASSERT(RefIdx[REF_PIC_LIST_0] >= 0 || RefIdx[REF_PIC_LIST_1] >= 0);
-
-        if ((CheckIdenticalMotion(pCU, PUi) || !(RefIdx[REF_PIC_LIST_0] >= 0 && RefIdx[REF_PIC_LIST_1] >= 0)))
-        {
-            EnumRefPicList direction = RefIdx[REF_PIC_LIST_0] >= 0 ? REF_PIC_LIST_0 : REF_PIC_LIST_1;
+            EnumRefPicList direction = MVi.m_refIdx[REF_PIC_LIST_0] >= 0 ? REF_PIC_LIST_0 : REF_PIC_LIST_1;
             if (!m_context->m_weighted_prediction)
             {
                 PredInterUni<TEXT_LUMA, false, PixType>(pCU, PUi, direction, &m_YUVPred[0]);
@@ -190,63 +180,71 @@ void H265Prediction::MotionCompensationInternal(H265CodingUnit* pCU, Ipp32u AbsP
 
         if (m_context->m_weighted_prediction)
         {
-            Ipp32s w0[3], w1[3], o0[3], o1[3], logWD[3], round[3];
-            Ipp32u PartAddr = PUi.PartAddr;
-            Ipp32s Width = PUi.Width;
-            Ipp32s Height = PUi.Height;
-
-            for (Ipp32s plane = 0; plane < 3; plane++)
-            {
-                Ipp32s bitDepth = plane ? m_context->m_sps->bit_depth_chroma : m_context->m_sps->bit_depth_luma;
-
-                if (RefIdx[1] >= 0)
-                {
-                    w1[plane] = pCU->m_SliceHeader->pred_weight_table[REF_PIC_LIST_1][RefIdx[1]][plane].weight;
-                    o1[plane] = pCU->m_SliceHeader->pred_weight_table[REF_PIC_LIST_1][RefIdx[1]][plane].offset * (1 << (bitDepth - 8));
-
-                    logWD[plane] = pCU->m_SliceHeader->pred_weight_table[REF_PIC_LIST_1][RefIdx[1]][plane].log2_weight_denom;
-                }
-
-                if (RefIdx[0] >= 0)
-                {
-                    w0[plane] = pCU->m_SliceHeader->pred_weight_table[REF_PIC_LIST_0][RefIdx[0]][plane].weight;
-                    o0[plane] = pCU->m_SliceHeader->pred_weight_table[REF_PIC_LIST_0][RefIdx[0]][plane].offset * (1 << (bitDepth - 8));
-
-                    logWD[plane] = pCU->m_SliceHeader->pred_weight_table[REF_PIC_LIST_0][RefIdx[0]][plane].log2_weight_denom;
-                }
-
-                logWD[plane] += 14 - bitDepth;
-                round[plane] = 0;
-
-                if (logWD[plane] >= 1)
-                    round[plane] = 1 << (logWD[plane] - 1);
-                else
-                    logWD[plane] = 0;
-            }
-
-            if (RefIdx[0] >= 0 && RefIdx[1] >= 0)
-            {
-                for (Ipp32s plane = 0; plane < 3; plane++)
-                {
-                    logWD[plane] += 1;
-                    round[plane] = (o0[plane] + o1[plane] + 1) << (logWD[plane] - 1);
-                }
-                CopyWeightedBidi<PixType>(pCU->m_Frame, &m_YUVPred[0], &m_YUVPred[1], pCU->CUAddr, PartAddr, Width, Height, w0, w1, logWD, round, m_context->m_sps->bit_depth_luma);
-            }
-            else if (RefIdx[0] >= 0)
-                CopyWeighted<PixType>(pCU->m_Frame, &m_YUVPred[0], pCU->CUAddr, PartAddr, Width, Height, w0, o0, logWD, round, m_context->m_sps->bit_depth_luma);
-            else
-                CopyWeighted<PixType>(pCU->m_Frame, &m_YUVPred[0], pCU->CUAddr, PartAddr, Width, Height, w1, o1, logWD, round, m_context->m_sps->bit_depth_luma);
+            WeightedPrediction<PixType>(pCU, PUi);
         }
     }
 }
 
-bool H265Prediction::CheckIdenticalMotion(H265CodingUnit* pCU, H265PUInfo &PUi)
+template<typename PixType>
+void H265Prediction::WeightedPrediction(H265CodingUnit* pCU, const H265PUInfo & PUi)
+{
+    const H265MVInfo &MVi = *PUi.interinfo;
+
+    Ipp32s w0[3], w1[3], o0[3], o1[3], logWD[3], round[3];
+    Ipp32u PartAddr = PUi.PartAddr;
+    Ipp32s Width = PUi.Width;
+    Ipp32s Height = PUi.Height;
+
+    for (Ipp32s plane = 0; plane < 3; plane++)
+    {
+        Ipp32s bitDepth = plane ? m_context->m_sps->bit_depth_chroma : m_context->m_sps->bit_depth_luma;
+
+        if (MVi.m_refIdx[1] >= 0)
+        {
+            w1[plane] = pCU->m_SliceHeader->pred_weight_table[REF_PIC_LIST_1][MVi.m_refIdx[1]][plane].weight;
+            o1[plane] = pCU->m_SliceHeader->pred_weight_table[REF_PIC_LIST_1][MVi.m_refIdx[1]][plane].offset * (1 << (bitDepth - 8));
+
+            logWD[plane] = pCU->m_SliceHeader->pred_weight_table[REF_PIC_LIST_1][MVi.m_refIdx[1]][plane].log2_weight_denom;
+        }
+
+        if (MVi.m_refIdx[0] >= 0)
+        {
+            w0[plane] = pCU->m_SliceHeader->pred_weight_table[REF_PIC_LIST_0][MVi.m_refIdx[0]][plane].weight;
+            o0[plane] = pCU->m_SliceHeader->pred_weight_table[REF_PIC_LIST_0][MVi.m_refIdx[0]][plane].offset * (1 << (bitDepth - 8));
+
+            logWD[plane] = pCU->m_SliceHeader->pred_weight_table[REF_PIC_LIST_0][MVi.m_refIdx[0]][plane].log2_weight_denom;
+        }
+
+        logWD[plane] += 14 - bitDepth;
+        round[plane] = 0;
+
+        if (logWD[plane] >= 1)
+            round[plane] = 1 << (logWD[plane] - 1);
+        else
+            logWD[plane] = 0;
+    }
+
+    if (MVi.m_refIdx[0] >= 0 && MVi.m_refIdx[1] >= 0)
+    {
+        for (Ipp32s plane = 0; plane < 3; plane++)
+        {
+            logWD[plane] += 1;
+            round[plane] = (o0[plane] + o1[plane] + 1) << (logWD[plane] - 1);
+        }
+        CopyWeightedBidi<PixType>(pCU->m_Frame, &m_YUVPred[0], &m_YUVPred[1], pCU->CUAddr, PartAddr, Width, Height, w0, w1, logWD, round, m_context->m_sps->bit_depth_luma);
+    }
+    else if (MVi.m_refIdx[0] >= 0)
+        CopyWeighted<PixType>(pCU->m_Frame, &m_YUVPred[0], pCU->CUAddr, PartAddr, Width, Height, w0, o0, logWD, round, m_context->m_sps->bit_depth_luma);
+    else
+        CopyWeighted<PixType>(pCU->m_Frame, &m_YUVPred[0], pCU->CUAddr, PartAddr, Width, Height, w1, o1, logWD, round, m_context->m_sps->bit_depth_luma);
+}
+
+bool H265Prediction::CheckIdenticalMotion(H265CodingUnit* pCU, const H265MVInfo &mvInfo)
 {
     if(pCU->m_SliceHeader->slice_type == B_SLICE && !m_context->m_pps->weighted_bipred_flag &&
-        PUi.interinfo.m_refIdx[REF_PIC_LIST_0] >= 0 && PUi.interinfo.m_refIdx[REF_PIC_LIST_1] >= 0 &&
-        PUi.refFrame[REF_PIC_LIST_0] == PUi.refFrame[REF_PIC_LIST_1] &&
-        PUi.interinfo.m_mv[REF_PIC_LIST_0] == PUi.interinfo.m_mv[REF_PIC_LIST_1])
+        mvInfo.m_refIdx[REF_PIC_LIST_0] >= 0 && mvInfo.m_refIdx[REF_PIC_LIST_1] >= 0 &&
+        mvInfo.m_index[REF_PIC_LIST_0] == mvInfo.m_index[REF_PIC_LIST_1] &&
+        mvInfo.m_mv[REF_PIC_LIST_0] == mvInfo.m_mv[REF_PIC_LIST_1])
         return true;
     else
         return false;
@@ -259,7 +257,7 @@ static void PrepareInterpSrc( H265CodingUnit* pCU, H265PUInfo &PUi, EnumRefPicLi
     VM_ASSERT(PUi.interinfo.m_refIdx[RefPicList] >= 0);
 
     Ipp32u PartAddr = PUi.PartAddr;
-    H265MotionVector MV = PUi.interinfo.m_mv[RefPicList];
+    H265MotionVector MV = PUi.interinfo->m_mv[RefPicList];
     H265DecoderFrame *PicYUVRef = PUi.refFrame[RefPicList];
 
     Ipp32s in_SrcPitch = (c_plane_type == TEXT_CHROMA) ? PicYUVRef->pitch_chroma() : PicYUVRef->pitch_luma();
@@ -330,7 +328,7 @@ void H265Prediction::PredInterUni(H265CodingUnit* pCU, H265PUInfo &PUi, EnumRefP
     Ipp16s offset = c_bi ? 0 : (1 << (shift - 1));
 
     const Ipp32s low_bits_mask = ( c_plane_type == TEXT_CHROMA ) ? 7 : 3;
-    H265MotionVector MV = PUi.interinfo.m_mv[RefPicList];
+    H265MotionVector MV = PUi.interinfo->m_mv[RefPicList];
     Ipp32s in_dx = MV.Horizontal & low_bits_mask;
     Ipp32s in_dy = MV.Vertical & low_bits_mask;
 

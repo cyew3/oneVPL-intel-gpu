@@ -49,6 +49,10 @@ public:
     inline void AlignPointerRight(void);
 
     inline Ipp32u GetBits(Ipp32u nbits);
+
+    template <Ipp32u nbits>
+    inline Ipp32u GetPredefinedBits();
+
 #if defined( __INTEL_COMPILER )
     inline Ipp32u GetBits_BMI(Ipp32u nbits);
 #endif
@@ -99,26 +103,6 @@ class H265ScalingList;
 class H265VideoParamSet;
 struct H265SeqParamSet;
 class H265Slice;
-
-// this is a compatibility wrapper for Slice object.
-// it emulates iface used in reference library
-class ReferenceCodecAdaptor
-{
-    Headers *m_headers;
-
-public:
-    ReferenceCodecAdaptor(Headers &headers) : m_headers(&headers) { }
-
-    // in reference code pointer to manager is used, wir wollen zu emulate diese Verhalten
-          ReferenceCodecAdaptor *operator ->()       { return this; }
-    const ReferenceCodecAdaptor *operator ->() const { return this; }
-
-    // interface
-    H265PicParamSet *getPrefetchedPPS(unsigned);
-    H265SeqParamSet *getPrefetchedSPS(unsigned);
-};
-
-
 
 class H265HeadersBitstream : public H265BaseBitstream
 {

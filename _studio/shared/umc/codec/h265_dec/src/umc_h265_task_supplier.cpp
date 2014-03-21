@@ -2122,8 +2122,6 @@ UMC::Status TaskSupplier_H265::AddSlice(H265Slice * pSlice, bool )
     // Set reference list
     pSlice->UpdateReferenceList(GetView()->pDPB.get());
 
-    pSlice->setRefPOCList();
-
     return UMC::UMC_ERR_NOT_ENOUGH_DATA;
 }
 

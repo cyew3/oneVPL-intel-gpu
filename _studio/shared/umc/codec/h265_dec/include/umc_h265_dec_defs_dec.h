@@ -1262,8 +1262,6 @@ struct H265SliceHeader
     bool m_CheckLDC;
     Ipp32s m_numRefIdx[3]; //  for multiple reference of current slice. IT SEEMS BE SAME AS num_ref_idx_l0_active, l1, lc
 
-    Ipp32s RefPOCList[2][MAX_NUM_REF_PICS + 1];
-
     ReferencePictureSet *m_pRPS;
     ReferencePictureSet m_localRPS;
     RefPicListModification m_RefPicListModification;

@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2012-2013 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2012-2014 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -48,7 +48,7 @@ protected:
     template <EnumTextType c_plane_type, bool bi, typename H265PlaneYCommon>
     void H265_FORCEINLINE PredInterUni(H265CodingUnit* pCU, H265PUInfo &PUi, EnumRefPicList RefPicList, H265DecYUVBufferPadded *YUVPred, MFX_HEVC_PP::EnumAddAverageType eAddAverage = MFX_HEVC_PP::AVERAGE_NO);
 
-    bool CheckIdenticalMotion(H265CodingUnit* pCU, H265PUInfo &MVi);    
+    bool CheckIdenticalMotion(H265CodingUnit* pCU, const H265MVInfo &mvInfo);
 
     template<typename PixType> 
     static void WriteAverageToPic(
@@ -80,6 +80,9 @@ protected:
 
     template<typename PixType>
     void MotionCompensationInternal(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u Depth);
+    
+    template<typename PixType>
+    void WeightedPrediction(H265CodingUnit* pCU, const H265PUInfo & PUi);
 
 public:
     H265Prediction();

@@ -54,8 +54,6 @@ public:
 
     H265MotionVector()
     {
-        Horizontal = 0;
-        Vertical = 0;
     }
 
     H265MotionVector(Ipp32s horizontal, Ipp32s vertical)

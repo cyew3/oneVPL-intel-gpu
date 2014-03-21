@@ -304,7 +304,6 @@ void H265SegmentDecoder::DeblockCURecur(Ipp32u absPartIdx, Ipp32u depth)
 
         if (countPart == 2)
         {
-            Ipp32u partAddr;
             Ipp32u width;
             Ipp32u height;
 
@@ -315,7 +314,7 @@ void H265SegmentDecoder::DeblockCURecur(Ipp32u absPartIdx, Ipp32u depth)
             if (isFourParts && edgeType == HOR_FILT)
                 subPartIdx += PUOffset;
 
-            m_cu->getPartIndexAndSize(absPartIdx, depth, 1, partAddr, width, height);
+            m_cu->getPartIndexAndSize(absPartIdx, depth, 1, width, height);
 
             Ipp32u curPixelColumn = m_cu->m_rasterToPelX[subPartIdx];
             Ipp32u curPixelRow = m_cu->m_rasterToPelY[subPartIdx];

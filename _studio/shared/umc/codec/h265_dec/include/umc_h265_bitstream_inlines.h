@@ -293,7 +293,7 @@ Ipp32u H265Bitstream::DecodeSingleBin_CABAC(Ipp32u ctxIdx)
         if (++m_bitsNeeded == 0)
         {
             m_bitsNeeded = -8;
-            m_LastByte = GetBits(8);
+            m_LastByte = GetPredefinedBits<8>();
             m_lcodIOffset += m_LastByte;
         }
 #endif // (CABAC_MAGIC_BITS > 0)
@@ -316,7 +316,7 @@ Ipp32u H265Bitstream::DecodeSingleBin_CABAC(Ipp32u ctxIdx)
 
         if (m_bitsNeeded >= 0 )
         {
-            m_LastByte = GetBits(8);
+            m_LastByte = GetPredefinedBits<8>();
             m_lcodIOffset += m_LastByte << m_bitsNeeded;
             m_bitsNeeded -= 8;
         }
@@ -363,7 +363,7 @@ Ipp32u H265Bitstream::DecodeTerminatingBit_CABAC(void)
             if (++m_bitsNeeded == 0)
             {
                 m_bitsNeeded = -8;
-                m_LastByte = GetBits(8);
+                m_LastByte = GetPredefinedBits<8>();
                 m_lcodIOffset += m_LastByte;
             }
 #endif // (CABAC_MAGIC_BITS > 0)
@@ -394,7 +394,7 @@ Ipp32u H265Bitstream::DecodeSingleBinEP_CABAC(void)
     if (++m_bitsNeeded >= 0)
     {
         m_bitsNeeded = -8;
-        m_LastByte = GetBits(8);
+        m_LastByte = GetPredefinedBits<8>();
         m_lcodIOffset += m_LastByte;
     }
 #endif // (CABAC_MAGIC_BITS > 0)
@@ -457,7 +457,7 @@ Ipp32u H265Bitstream::DecodeBypassBins_CABAC(Ipp32s numBins)
 #else // !(CABAC_MAGIC_BITS > 0)
     while (numBins > 8)
     {
-        m_LastByte = GetBits(8);
+        m_LastByte = GetPredefinedBits<8>();
         m_lcodIOffset = (m_lcodIOffset << 8) + (m_LastByte << (8 + m_bitsNeeded));
 
         Ipp32u scaledRange = (Ipp32u)(m_lcodIRange << 15);
@@ -482,7 +482,7 @@ Ipp32u H265Bitstream::DecodeBypassBins_CABAC(Ipp32s numBins)
 
     if (m_bitsNeeded >= 0)
     {
-        m_LastByte = GetBits(8);
+        m_LastByte = GetPredefinedBits<8>();
         m_lcodIOffset += m_LastByte << m_bitsNeeded;
         m_bitsNeeded -= 8;
     }
@@ -513,6 +513,15 @@ Ipp32u H265Bitstream::DecodeBypassBins_CABAC(Ipp32s numBins)
 
 inline
 Ipp32u H265BaseBitstream::GetBits(const Ipp32u nbits)
+{
+    Ipp32u w, n = nbits;
+
+    ippiGetNBits(m_pbs, m_bitOffset, n, w);
+    return(w);
+}
+
+template <Ipp32u nbits>
+inline Ipp32u H265BaseBitstream::GetPredefinedBits()
 {
     Ipp32u w, n = nbits;
 

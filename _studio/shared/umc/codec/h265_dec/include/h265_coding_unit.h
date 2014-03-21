@@ -205,7 +205,7 @@ public:
     void setIPCMFlag (bool IpcmFlag, Ipp32u AbsPartIdx);
 
     // member functions for accessing partition information -----------------------------------------------------------
-    void getPartIndexAndSize (Ipp32u AbsPartIdx, Ipp32u Depth, Ipp32u PartIdx, Ipp32u &PartAddr, Ipp32u &Width, Ipp32u &Height);
+    void getPartIndexAndSize (Ipp32u AbsPartIdx, Ipp32u Depth, Ipp32u PartIdx, Ipp32u &Width, Ipp32u &Height);
     void getPartSize(Ipp32u AbsPartIdx, Ipp32u partIdx, Ipp32s &nPSW, Ipp32s &nPSH);
     Ipp8u getNumPartInter(Ipp32u AbsPartIdx);
 
@@ -240,7 +240,7 @@ struct H265FrameHLDNeighborsInfo
 
 struct H265PUInfo
 {
-    H265MVInfo interinfo;
+    H265MVInfo *interinfo;
     H265DecoderFrame *refFrame[2];
     Ipp32u PartAddr;
     Ipp32u Width, Height;

@@ -104,23 +104,14 @@ void H265TrQuant::InvTransformNxN(bool transQuantBypass, EnumTextType TxtType, I
     Ipp32s bitDepth = TxtType == TEXT_LUMA ? m_context->m_sps->bit_depth_luma : m_context->m_sps->bit_depth_chroma;
 
     bool inplace = sizeof(DstCoeffsType) == 1;
-
-    if(transQuantBypass)
-    {
-        if (bitDepth == 8)
-            InvTransformByPass(pCoeff, pResidual, Stride, Size, bitDepth, inplace);
-        else
-        {
-            if (inplace)
-                InvTransformByPass<Ipp16u>(pCoeff, (Ipp16u*)pResidual, Stride, Size, bitDepth, inplace);
-            else
-                InvTransformByPass(pCoeff, pResidual, Stride, Size, bitDepth, inplace);
-        }
-        return;
-    }
-
     if (bitDepth == 8)
     {
+        if(transQuantBypass)
+        {
+            InvTransformByPass(pCoeff, pResidual, Stride, Size, bitDepth, inplace);
+            return;
+        }
+
         if (transformSkip)
             InvTransformSkip< 8 >(pCoeff, pResidual, Stride, Size, inplace, 8);
         else
@@ -130,6 +121,15 @@ void H265TrQuant::InvTransformNxN(bool transQuantBypass, EnumTextType TxtType, I
     }
     else
     {
+        if(transQuantBypass)
+        {
+            if (inplace)
+                InvTransformByPass<Ipp16u>(pCoeff, (Ipp16u*)pResidual, Stride, Size, bitDepth, inplace);
+            else
+                InvTransformByPass(pCoeff, pResidual, Stride, Size, bitDepth, inplace);
+            return;
+        }
+
         if (transformSkip)
         {
             if (inplace)

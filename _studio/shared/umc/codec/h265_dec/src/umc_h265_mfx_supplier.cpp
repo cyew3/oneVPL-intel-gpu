@@ -732,6 +732,7 @@ mfxStatus MFX_CDECL MFX_Utility::Query_H265(VideoCORE *core, mfxVideoParam *in, 
 
         if (MFX_PROFILE_UNKNOWN == in->mfx.CodecProfile ||
             MFX_PROFILE_HEVC_MAIN == in->mfx.CodecProfile ||
+            MFX_PROFILE_HEVC_MAIN10 == in->mfx.CodecProfile ||
             MFX_PROFILE_HEVC_MAINSP == in->mfx.CodecProfile)
             out->mfx.CodecProfile = in->mfx.CodecProfile;
         else
@@ -739,31 +740,28 @@ mfxStatus MFX_CDECL MFX_Utility::Query_H265(VideoCORE *core, mfxVideoParam *in, 
             sts = MFX_ERR_UNSUPPORTED;
         }
 
-        /*switch (in->mfx.CodecLevel)
+        switch (in->mfx.CodecLevel)
         {
         case MFX_LEVEL_UNKNOWN:
-        case MFX_LEVEL_AVC_1:
-        case MFX_LEVEL_AVC_1b:
-        case MFX_LEVEL_AVC_11:
-        case MFX_LEVEL_AVC_12:
-        case MFX_LEVEL_AVC_13:
-        case MFX_LEVEL_AVC_2:
-        case MFX_LEVEL_AVC_21:
-        case MFX_LEVEL_AVC_22:
-        case MFX_LEVEL_AVC_3:
-        case MFX_LEVEL_AVC_31:
-        case MFX_LEVEL_AVC_32:
-        case MFX_LEVEL_AVC_4:
-        case MFX_LEVEL_AVC_41:
-        case MFX_LEVEL_AVC_42:
-        case MFX_LEVEL_AVC_5:
-        case MFX_LEVEL_AVC_51:
+        case MFX_LEVEL_HEVC_1:
+        case MFX_LEVEL_HEVC_2:
+        case MFX_LEVEL_HEVC_21:
+        case MFX_LEVEL_HEVC_3:
+        case MFX_LEVEL_HEVC_31:
+        case MFX_LEVEL_HEVC_4:
+        case MFX_LEVEL_HEVC_41:
+        case MFX_LEVEL_HEVC_5:
+        case MFX_LEVEL_HEVC_51:
+        case MFX_LEVEL_HEVC_52:
+        case MFX_LEVEL_HEVC_6:
+        case MFX_LEVEL_HEVC_61:
+        case MFX_LEVEL_HEVC_62:
             out->mfx.CodecLevel = in->mfx.CodecLevel;
             break;
         default:
             sts = MFX_ERR_UNSUPPORTED;
             break;
-        }*/
+        }
 
         if (in->mfx.NumThread < 128)
         {
@@ -811,7 +809,7 @@ mfxStatus MFX_CDECL MFX_Utility::Query_H265(VideoCORE *core, mfxVideoParam *in, 
         if (in->mfx.FrameInfo.FourCC)
         {
             // mfxFrameInfo
-            if (in->mfx.FrameInfo.FourCC == MFX_FOURCC_NV12)
+            if (in->mfx.FrameInfo.FourCC == MFX_FOURCC_NV12 || in->mfx.FrameInfo.FourCC == MFX_FOURCC_P010)
                 out->mfx.FrameInfo.FourCC = in->mfx.FrameInfo.FourCC;
             else
                 sts = MFX_ERR_UNSUPPORTED;

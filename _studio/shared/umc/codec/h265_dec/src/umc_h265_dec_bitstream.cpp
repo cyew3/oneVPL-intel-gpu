@@ -879,16 +879,6 @@ UMC::Status H265HeadersBitstream::GetPictureParamSetFull(H265PicParamSet  *pcPPS
     return UMC::UMC_OK;
 }   // H265HeadersBitstream::GetPictureParamSetFull
 
-H265PicParamSet *ReferenceCodecAdaptor::getPrefetchedPPS(unsigned id)
-{
-    return m_headers->m_PicParams.GetHeader(static_cast<int>(id));
-}
-
-H265SeqParamSet *ReferenceCodecAdaptor::getPrefetchedSPS(unsigned id)
-{
-    return m_headers->m_SeqParams.GetHeader(static_cast<int>(id));
-}
-
 void H265HeadersBitstream::xParsePredWeightTable(H265SliceHeader * sliceHdr)
 {
     Ipp8u chroma_format_idc = 1;
