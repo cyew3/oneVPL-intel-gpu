@@ -168,15 +168,9 @@
     //#undef MFX_ENABLE_MP3_AUDIO_DECODE
     // HW limitation
     #if defined (MFX_VA)
-        /** @note
-         *  According to PRD for the Media SDK 2013 for Linux Server project
-         * we support only the following components (in HW variants only):
-         *   - H.264 decoder/encoder
-         *   - Mpeg2 decoder
-         *   - VPP
-         */
         // h265
         //#undef MFX_ENABLE_H265_VIDEO_DECODE
+        //#undef MFX_ENABLE_H265_VIDEO_ENCODE
         // h264
         //#undef MFX_ENABLE_H264_VIDEO_ENCODE
         #undef MFX_ENABLE_MVC_VIDEO_ENCODE
@@ -194,8 +188,8 @@
         //#undef MFX_ENABLE_MPEG2_VIDEO_BRC
 
         // mjpeg
-        #undef MFX_ENABLE_MJPEG_VIDEO_DECODE
-        #undef MFX_ENABLE_MJPEG_VIDEO_ENCODE
+        //#undef MFX_ENABLE_MJPEG_VIDEO_DECODE
+        //#undef MFX_ENABLE_MJPEG_VIDEO_ENCODE
 
         // vpp
         //#undef MFX_ENABLE_DENOISE_VIDEO_VPP
@@ -213,8 +207,6 @@
     #else // #if defined (MFX_VA)
         #undef MFX_ENABLE_VP8_VIDEO_DECODE
         #undef MFX_ENABLE_VP8_VIDEO_DECODE_HW
-
-        //#undef MFX_ENABLE_H265_VIDEO_ENCODE
     #endif // #if defined (MFX_VA)
 #endif // #if defined(LINUX32) || defined(LINUX64)
 

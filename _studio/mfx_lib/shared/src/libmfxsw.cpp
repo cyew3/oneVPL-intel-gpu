@@ -44,7 +44,7 @@ void* g_hModule = NULL; // DLL handle received in DllMain
     #define MFX_PRODUCT_VERSION "0.0.000.0000"
 #endif
 
-const char* g_MfxProductName = "mediasdk_product_name: Intel(r) Media SDK 2014 for Linux* Servers";
+const char* g_MfxProductName = "mediasdk_product_name: Intel(r) Media SDK 2014 R2 for Linux* Servers";
 const char* g_MfxCopyright = "mediasdk_copyright: Copyright(c) 2007-2014 Intel Corporation";
 const char* g_MfxFileVersion = "mediasdk_file_version: " MFX_FILE_VERSION;
 const char* g_MfxProductVersion = "mediasdk_product_version: " MFX_PRODUCT_VERSION;
