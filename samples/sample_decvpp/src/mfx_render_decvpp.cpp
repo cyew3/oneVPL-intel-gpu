@@ -104,20 +104,7 @@ mfxStatus CDecodeD3DRender::Init(sWindowParams pWParams)
 
     ::RECT displayRegion = {CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT};
 
-    //right and bottom fields consist of width and height values of displayed reqion
-    if (0 != m_sWindowParams.nx )
-    {
-        EnumDisplayMonitors(NULL, NULL, &CDecodeD3DRender::MonitorEnumProc, (LPARAM)this);
-
-        displayRegion.right  = (m_RectWindow.right - m_RectWindow.left)  / m_sWindowParams.nx;
-        displayRegion.bottom = (m_RectWindow.bottom - m_RectWindow.top)  / m_sWindowParams.ny;
-        displayRegion.left   = displayRegion.right * (m_sWindowParams.ncell % m_sWindowParams.nx) + m_RectWindow.left;
-        displayRegion.top    = displayRegion.bottom * (m_sWindowParams.ncell / m_sWindowParams.nx) + m_RectWindow.top;
-    }
-    else
-    {
-        m_sWindowParams.nMaxFPS = 10000;//hypotetical maximum
-    }
+    m_sWindowParams.nMaxFPS = 10000;//hypotetical maximum
 
     //no title window style if required
     DWORD dwStyle = NULL == m_sWindowParams.lpWindowName ?  WS_POPUP|WS_BORDER|WS_MAXIMIZE : WS_OVERLAPPEDWINDOW;
@@ -148,7 +135,6 @@ mfxStatus CDecodeD3DRender::Init(sWindowParams pWParams)
 #endif
     return MFX_ERR_NONE;
 }
-
 
 mfxStatus CDecodeD3DRender::RenderFrame(mfxFrameSurface1 *pSurface, mfxFrameAllocator *pmfxAlloc)
 {
@@ -323,7 +309,6 @@ bool CDecodeD3DRender::EnableDwmQueuing()
     dwmpp.rateSource.uiDenominator  = 1;
     dwmpp.rateSource.uiNumerator    = m_sWindowParams.nMaxFPS;
 
-
     hr = DwmSetPresentParameters(m_Hwnd, &dwmpp);
 
     if (FAILED(hr))
@@ -338,4 +323,3 @@ bool CDecodeD3DRender::EnableDwmQueuing()
     return true;
 }
 #endif // #if defined(_WIN32) || defined(_WIN64)
-

@@ -6,7 +6,6 @@
 //        Copyright (c) 2005-2013 Intel Corporation. All Rights Reserved.
 //
 
-
 #ifndef __DECODE_D3D_RENDER_H__
 #define __DECODE_D3D_RENDER_H__
 

@@ -90,7 +90,6 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
 
     MSDK_CHECK_POINTER(pParams, MFX_ERR_NULL_PTR);
 
-
     for (mfxU8 i = 1; i < nArgNum; i++)
     {
         if (MSDK_CHAR('-') != strInput[i][0])

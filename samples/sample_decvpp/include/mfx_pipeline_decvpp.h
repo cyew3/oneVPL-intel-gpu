@@ -30,8 +30,6 @@ Copyright(c) 2005-2014 Intel Corporation. All Rights Reserved.
 #include "sample_utils.h"
 #include "base_allocator.h"
 
-#include "mfxmvc.h"
-#include "mfxjpeg.h"
 #include "mfxplugin.h"
 #include "mfxplugin++.h"
 #include "mfxvideo.h"
@@ -41,10 +39,6 @@ enum MemType {
     SYSTEM_MEMORY = 0x00,
     D3D9_MEMORY   = 0x01,
     D3D11_MEMORY  = 0x02,
-};
-
-enum {
-    CODEC_VP8 = MFX_MAKEFOURCC('V','P','8',' '),
 };
 
 enum eWorkMode {
@@ -59,16 +53,6 @@ struct sInputParams
     eWorkMode mode;
     MemType memType;
     bool    bUseHWLib; // true if application wants to use HW mfx library
-    bool    bIsMVC; // true if Multi-View Codec is in use
-    bool    bLowLat; // low latency mode
-    bool    bCalLat; // latency calculation
-    mfxU32  nWallCell;
-    mfxU32  nWallW;//number of windows located in each row
-    mfxU32  nWallH;//number of windows located in each column
-    mfxU32  nWallMonitor;//monitor id, 0,1,.. etc
-    mfxU32  nWallFPS;//rendering limited by certain fps
-    bool    bWallNoTitle;//whether to show title for each window with fps value
-    mfxU32  nWallTimeout; //timeout for -wall option
     mfxU32  numViews; // number of views for Multi-View Codec
     mfxU32  nRotation; // rotation for Motion JPEG Codec
     mfxU32  fourcc; // color format of VPP output
@@ -81,10 +65,6 @@ struct sInputParams
     {
         MSDK_ZERO_MEMORY(*this);
     }
-};
-
-template<>struct mfx_ext_buffer_id<mfxExtMVCSeqDesc>{
-    enum {id = MFX_EXTBUFF_MVC_SEQ_DESC};
 };
 
 struct CPipelineStatistics
@@ -130,7 +110,6 @@ public:
     virtual mfxStatus ResetDecoder(sInputParams *pParams);
     virtual mfxStatus ResetDevice();
 
-    void SetMultiView();
     void SetExtBuffersFlag()       { m_bIsExtBuffers = true; }
     virtual void PrintInfo();
 
@@ -144,9 +123,6 @@ protected: // functions
     template <typename Buffer>
     mfxStatus AllocateExtBuffer();
     virtual void DeleteExtBuffers();
-
-    virtual mfxStatus AllocateExtMVCBuffers();
-    virtual void    DeallocateExtMVCBuffers();
 
     virtual void AttachExtParam();
 
@@ -170,7 +146,6 @@ protected: // functions
     virtual mfxStatus DeliverLoop(void);
 
     static unsigned int MSDK_THREAD_CALLCONVENTION DeliverThreadFunc(void* ctx);
-
 
 protected: // variables
     CSmplYUVWriter          m_FileWriter;
@@ -205,12 +180,9 @@ protected: // variables
     MSDKEvent*              m_pDeliveredEvent; // to signal when output surfaces will be processed
     mfxStatus               m_error; // error returned by DeliverOutput method
 
-    bool                    m_bIsMVC; // enables MVC mode (need to support several files as an output)
     bool                    m_bIsExtBuffers; // indicates if external buffers were allocated
     eWorkMode               m_eWorkMode; // work mode for the pipeline
-    bool                    m_bIsVideoWall; // indicates special mode: decoding will be done in a loop
     bool                    m_bIsCompleteFrame;
-    bool                    m_bPrintLatency;
     bool                    m_bStopDeliverLoop;
     mfxU32                  m_fourcc; // color format of vpp out, nv12 by default
 
