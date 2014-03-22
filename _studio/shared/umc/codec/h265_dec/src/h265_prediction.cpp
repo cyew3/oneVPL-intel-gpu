@@ -89,7 +89,7 @@ template<typename PixType>
 void H265Prediction::MotionCompensationInternal(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u Depth)
 {
     Ipp32s countPart = pCU->getNumPartInter(AbsPartIdx);
-    Ipp32u PUOffset;
+    Ipp32u PUOffset = 0;
 
     if (countPart > 1)
     {
