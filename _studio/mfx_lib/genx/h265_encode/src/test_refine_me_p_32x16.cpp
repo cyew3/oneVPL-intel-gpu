@@ -203,7 +203,7 @@ int RunGpu(const mfxU8 *src, const mfxU8 *ref, const mfxI16Pair *mv, OutputData 
 
     mfxU64 time;
     e->GetExecutionTime(time);
-    printf("TIME=%.3f ms\n", time / 1000000.0);
+    printf("TIME=%.3f ms ", time / 1000000.0);
 
     for (mfxI32 y = 0; y < numBlocksVer; y++)
         memcpy(outData + y * numBlocksHor, outputSys + y * outputPitch, outputWidth);

@@ -194,7 +194,7 @@ namespace {
 
     mfxU64 time;
     e->GetExecutionTime(time);
-    printf("TIME=%.3f ms\n", time / 1000000.0);
+    printf("TIME=%.3f ms ", time / 1000000.0);
 
     for (int i = 0; i < output8x8H; i++) {
         for (int j = 0; j < output8x8W; j++)

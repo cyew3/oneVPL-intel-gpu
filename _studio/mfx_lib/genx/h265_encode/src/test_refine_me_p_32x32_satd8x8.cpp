@@ -19,14 +19,14 @@
 
 #ifdef CMRT_EMU
 extern "C"
-void RefineMeP16x32(SurfaceIndex SURF_MBDIST_32x32, SurfaceIndex SURF_MBDATA_2X,
-                    SurfaceIndex SURF_SRC_1X, SurfaceIndex SURF_REF_1X, mfxU32 picWidth);
+void RefineMeP32x32Satd8x8(SurfaceIndex SURF_MBDIST_32x32, SurfaceIndex SURF_MBDATA_2X,
+                           SurfaceIndex SURF_SRC, SurfaceIndex SURF_REF_F, SurfaceIndex SURF_REF_H,
+                           SurfaceIndex SURF_REF_V, SurfaceIndex SURF_REF_D);
 #endif //CMRT_EMU
 
-const mfxI32 BLOCK_W = 16;
+const mfxI32 BLOCK_W = 32;
 const mfxI32 BLOCK_H = 32;
-#define KERNEL_NAME RefineMeP16x32
-
+#define KERNEL_NAME RefineMeP32x32Satd8x8
 
 struct OutputData
 {
@@ -38,14 +38,14 @@ int RunGpu(const mfxU8 *src, const mfxU8 *ref, const mfxI16Pair *mv, OutputData 
 int RunCpu(const mfxU8 *src, const mfxU8 *ref, const mfxI16Pair *mv, OutputData *outData);
 }
 
-int TestRefineMeP16x32()
+int TestRefineMeP32x32Satd8x8()
 {
     mfxI32 numBlocksHor = (WIDTH + BLOCK_W - 1) / BLOCK_W;
     mfxI32 numBlocksVer = (HEIGHT + BLOCK_H - 1) / BLOCK_H;
     OutputData *outputGpu = new OutputData[numBlocksHor * numBlocksVer];
     OutputData *outputCpu = new OutputData[numBlocksHor * numBlocksVer];
-    mfxU8  *src = new mfxU8[WIDTH * HEIGHT];
-    mfxU8  *ref = new mfxU8[WIDTH * HEIGHT];
+    mfxU8 *src = new mfxU8[WIDTH * HEIGHT];
+    mfxU8 *ref = new mfxU8[WIDTH * HEIGHT];
     mfxI16Pair *mv = new mfxI16Pair[numBlocksHor * numBlocksVer];
     mfxI32 res = PASSED;
 
@@ -63,8 +63,8 @@ int TestRefineMeP16x32()
     // fill motion vector field
     for (mfxI32 y = 0; y < numBlocksVer; y++) {
         for (mfxI32 x = 0; x < numBlocksHor; x++) {
-            mv[y * numBlocksHor + x].x = (mfxI16)((x - numBlocksHor / 2) * 2);
-            mv[y * numBlocksHor + x].y = (mfxI16)((y - numBlocksVer / 2) * 2);
+            mv[y * numBlocksHor + x].x = (mfxI16)((numBlocksHor / 2 - x) * 2);
+            mv[y * numBlocksHor + x].y = (mfxI16)((numBlocksVer / 2 - y) * 2);
         }
     }
 
@@ -81,7 +81,7 @@ int TestRefineMeP16x32()
             mfxU32 *sadCpu = outputCpu[y * numBlocksHor + x].sad;
             for (mfxI32 i = 0; i < 9; i++) {
                 if (sadGpu[i] != sadCpu[i]) {
-                    printf("bad sad value (%d != %d) for idx %d for block (x,y)=(%d,%d)\n",
+                    printf("bad satd value (%d != %d) for idx %d for block (x,y)=(%d,%d)\n",
                            sadGpu[i], sadCpu[i], i, x, y);
                     return FAILED;
                 }
@@ -113,8 +113,12 @@ int RunGpu(const mfxU8 *src, const mfxU8 *ref, const mfxI16Pair *mv, OutputData 
     res = device->LoadProgram((void *)genx_h265_cmcode, sizeof(genx_h265_cmcode), program);
     CHECK_CM_ERR(res);
 
-    CmKernel *kernel = 0;
-    res = device->CreateKernel(program, CM_KERNEL_FUNCTION(KERNEL_NAME), kernel);
+    CmKernel *kernelQpel = 0;
+    res = device->CreateKernel(program, CM_KERNEL_FUNCTION(KERNEL_NAME), kernelQpel);
+    CHECK_CM_ERR(res);
+
+    CmKernel *kernelHpel = 0;
+    res = device->CreateKernel(program, CM_KERNEL_FUNCTION(InterpolateFrame), kernelHpel);
     CHECK_CM_ERR(res);
 
     CmSurface2D *inSrc = 0;
@@ -127,6 +131,16 @@ int RunGpu(const mfxU8 *src, const mfxU8 *ref, const mfxI16Pair *mv, OutputData 
     res = device->CreateSurface2D(WIDTH, HEIGHT, CM_SURFACE_FORMAT_A8, inRef);
     CHECK_CM_ERR(res);
     res = inRef->WriteSurface(ref, NULL);
+    CHECK_CM_ERR(res);
+
+    CmSurface2D *refH = 0;
+    res = device->CreateSurface2D(WIDTH, HEIGHT, CM_SURFACE_FORMAT_A8, refH);
+    CHECK_CM_ERR(res);
+    CmSurface2D *refV = 0;
+    res = device->CreateSurface2D(WIDTH, HEIGHT, CM_SURFACE_FORMAT_A8, refV);
+    CHECK_CM_ERR(res);
+    CmSurface2D *refD = 0;
+    res = device->CreateSurface2D(WIDTH, HEIGHT, CM_SURFACE_FORMAT_A8, refD);
     CHECK_CM_ERR(res);
 
     CmSurface2D *inMv = 0;
@@ -148,73 +162,122 @@ int RunGpu(const mfxU8 *src, const mfxU8 *ref, const mfxI16Pair *mv, OutputData 
     SurfaceIndex *idxInSrc = 0;
     res = inSrc->GetIndex(idxInSrc);
     CHECK_CM_ERR(res);
-
     SurfaceIndex *idxInRef = 0;
     res = inRef->GetIndex(idxInRef);
     CHECK_CM_ERR(res);
-
+    SurfaceIndex *idxRefH = 0;
+    res = refH->GetIndex(idxRefH);
+    CHECK_CM_ERR(res);
+    SurfaceIndex *idxRefV = 0;
+    res = refV->GetIndex(idxRefV);
+    CHECK_CM_ERR(res);
+    SurfaceIndex *idxRefD = 0;
+    res = refD->GetIndex(idxRefD);
+    CHECK_CM_ERR(res);
     SurfaceIndex *idxInMv = 0;
     res = inMv->GetIndex(idxInMv);
     CHECK_CM_ERR(res);
-
     SurfaceIndex *idxOutputCm = 0;
     res = outputCm->GetIndex(idxOutputCm);
     CHECK_CM_ERR(res);
 
-    res = kernel->SetKernelArg(0, sizeof(*idxOutputCm), idxOutputCm);
+    res = kernelHpel->SetKernelArg(0, sizeof(SurfaceIndex), idxInRef);
     CHECK_CM_ERR(res);
-    res = kernel->SetKernelArg(1, sizeof(*idxInMv), idxInMv);
+    res = kernelHpel->SetKernelArg(1, sizeof(SurfaceIndex), idxRefH);
     CHECK_CM_ERR(res);
-    res = kernel->SetKernelArg(2, sizeof(*idxInSrc), idxInSrc);
+    res = kernelHpel->SetKernelArg(2, sizeof(SurfaceIndex), idxRefV);
     CHECK_CM_ERR(res);
-    res = kernel->SetKernelArg(3, sizeof(*idxInRef), idxInRef);
-    CHECK_CM_ERR(res);
-
-    res = kernel->SetThreadCount(numBlocksHor * numBlocksVer);
+    res = kernelHpel->SetKernelArg(3, sizeof(SurfaceIndex), idxRefD);
     CHECK_CM_ERR(res);
 
+    res = kernelQpel->SetKernelArg(0, sizeof(SurfaceIndex), idxOutputCm);
+    CHECK_CM_ERR(res);
+    res = kernelQpel->SetKernelArg(1, sizeof(SurfaceIndex), idxInMv);
+    CHECK_CM_ERR(res);
+    res = kernelQpel->SetKernelArg(2, sizeof(SurfaceIndex), idxInSrc);
+    CHECK_CM_ERR(res);
+    res = kernelQpel->SetKernelArg(3, sizeof(SurfaceIndex), idxInRef);
+    CHECK_CM_ERR(res);
+    res = kernelQpel->SetKernelArg(4, sizeof(SurfaceIndex), idxRefH);
+    CHECK_CM_ERR(res);
+    res = kernelQpel->SetKernelArg(5, sizeof(SurfaceIndex), idxRefV);
+    CHECK_CM_ERR(res);
+    res = kernelQpel->SetKernelArg(6, sizeof(SurfaceIndex), idxRefD);
+    CHECK_CM_ERR(res);
+
+    const mfxU16 BlockW = 8;
+    const mfxU16 BlockH = 8;
+    mfxU32 tsWidth = WIDTH / BlockW;
+    mfxU32 tsHeight = HEIGHT / BlockH * 2;
+    res = kernelHpel->SetThreadCount(tsWidth * tsHeight);
+    CHECK_CM_ERR(res);
     CmThreadSpace * threadSpace = 0;
-    res = device->CreateThreadSpace(numBlocksHor, numBlocksVer, threadSpace);
+    res = device->CreateThreadSpace(tsWidth, tsHeight, threadSpace);
     CHECK_CM_ERR(res);
-
     res = threadSpace->SelectThreadDependencyPattern(CM_NONE_DEPENDENCY);
     CHECK_CM_ERR(res);
-
     CmTask * task = 0;
     res = device->CreateTask(task);
     CHECK_CM_ERR(res);
-
-    res = task->AddKernel(kernel);
+    res = task->AddKernel(kernelHpel);
     CHECK_CM_ERR(res);
-
     CmQueue *queue = 0;
     res = device->CreateQueue(queue);
     CHECK_CM_ERR(res);
-
     CmEvent * e = 0;
     res = queue->Enqueue(task, e, threadSpace);
     CHECK_CM_ERR(res);
-
     device->DestroyThreadSpace(threadSpace);
     device->DestroyTask(task);
-    
     res = e->WaitForTaskFinished();
     CHECK_CM_ERR(res);
-
     mfxU64 time;
     e->GetExecutionTime(time);
     printf("TIME=%.3f ms ", time / 1000000.0);
+    queue->DestroyEvent(e);
+
+    tsWidth  = (WIDTH  + BLOCK_W - 1) / BLOCK_W;
+    tsHeight = (HEIGHT + BLOCK_H - 1) / BLOCK_H;
+    res = kernelQpel->SetThreadCount(tsWidth * tsHeight);
+    CHECK_CM_ERR(res);
+    threadSpace = 0;
+    res = device->CreateThreadSpace(tsWidth, tsHeight, threadSpace);
+    CHECK_CM_ERR(res);
+    res = threadSpace->SelectThreadDependencyPattern(CM_NONE_DEPENDENCY);
+    CHECK_CM_ERR(res);
+    task = 0;
+    res = device->CreateTask(task);
+    CHECK_CM_ERR(res);
+    res = task->AddKernel(kernelQpel);
+    CHECK_CM_ERR(res);
+    queue = 0;
+    res = device->CreateQueue(queue);
+    CHECK_CM_ERR(res);
+    e = 0;
+    res = queue->Enqueue(task, e, threadSpace);
+    CHECK_CM_ERR(res);
+    device->DestroyThreadSpace(threadSpace);
+    device->DestroyTask(task);
+    res = e->WaitForTaskFinished();
+    CHECK_CM_ERR(res);
+    time = 0;
+    e->GetExecutionTime(time);
+    printf("TIME=%.3f ms ", time / 1000000.0);
+    queue->DestroyEvent(e);
 
     for (mfxI32 y = 0; y < numBlocksVer; y++)
         memcpy(outData + y * numBlocksHor, outputSys + y * outputPitch, outputWidth);
 
-    queue->DestroyEvent(e);
     device->DestroySurface2DUP(outputCm);
     CM_ALIGNED_FREE(outputSys);
     device->DestroySurface(inMv);
     device->DestroySurface(inRef);
+    device->DestroySurface(refH);
+    device->DestroySurface(refV);
+    device->DestroySurface(refD);
     device->DestroySurface(inSrc);
-    device->DestroyKernel(kernel);
+    device->DestroyKernel(kernelHpel);
+    device->DestroyKernel(kernelQpel);
     device->DestroyProgram(program);
     ::DestroyCmDevice(device);
 
@@ -324,13 +387,82 @@ void InterpolateBlock(const mfxU8 *ref, mfxI16Pair point, mfxI32 blockW, mfxI32 
             block[x] = InterpolatePel(ref, point.x + x * 4, point.y + y * 4);
 }
 
-mfxU32 CalcSad(const mfxU8 *blockSrc, const mfxU8 *blockRef, mfxI32 blockW, mfxI32 blockH)
+mfxU32 CalcSatd8x8OneBlock(const mfxU8 *blockSrc, const mfxU8 *blockRef, mfxI32 pitch)
 {
-    mfxU32 sad = 0;
-    for (mfxI32 y = 0; y < blockH; y++, blockSrc += blockW, blockRef += blockW)
-        for (mfxI32 x = 0; x < blockW; x++)
-            sad += abs(blockSrc[x] - blockRef[x]);
-    return sad;
+    short diff[8][8];
+    mfxU32 satd = 0;
+
+    for (int i = 0; i < 8; i++) {
+        for (int j = 0; j < 8; j++)
+            diff[i][j] = (short)(blockSrc[j] - blockRef[j]);
+        blockSrc += pitch;
+        blockRef += pitch;
+    }
+
+
+    for (int i = 0; i < 8; i++) {
+        int t0 = diff[i][0] + diff[i][4];
+        int t4 = diff[i][0] - diff[i][4];
+        int t1 = diff[i][1] + diff[i][5];
+        int t5 = diff[i][1] - diff[i][5];
+        int t2 = diff[i][2] + diff[i][6];
+        int t6 = diff[i][2] - diff[i][6];
+        int t3 = diff[i][3] + diff[i][7];
+        int t7 = diff[i][3] - diff[i][7];
+        int s0 = t0 + t2;
+        int s2 = t0 - t2;
+        int s1 = t1 + t3;
+        int s3 = t1 - t3;
+        int s4 = t4 + t6;
+        int s6 = t4 - t6;
+        int s5 = t5 + t7;
+        int s7 = t5 - t7;
+        diff[i][0] = s0 + s1;
+        diff[i][1] = s0 - s1;
+        diff[i][2] = s2 + s3;
+        diff[i][3] = s2 - s3;
+        diff[i][4] = s4 + s5;
+        diff[i][5] = s4 - s5;
+        diff[i][6] = s6 + s7;
+        diff[i][7] = s6 - s7;
+    }
+    for (int i = 0; i < 8; i++) {
+        int t0 = diff[0][i] + diff[4][i];
+        int t4 = diff[0][i] - diff[4][i];
+        int t1 = diff[1][i] + diff[5][i];
+        int t5 = diff[1][i] - diff[5][i];
+        int t2 = diff[2][i] + diff[6][i];
+        int t6 = diff[2][i] - diff[6][i];
+        int t3 = diff[3][i] + diff[7][i];
+        int t7 = diff[3][i] - diff[7][i];
+        int s0 = t0 + t2;
+        int s2 = t0 - t2;
+        int s1 = t1 + t3;
+        int s3 = t1 - t3;
+        int s4 = t4 + t6;
+        int s6 = t4 - t6;
+        int s5 = t5 + t7;
+        int s7 = t5 - t7;
+        satd += abs(s0 + s1);
+        satd += abs(s0 - s1);
+        satd += abs(s2 + s3);
+        satd += abs(s2 - s3);
+        satd += abs(s4 + s5);
+        satd += abs(s4 - s5);
+        satd += abs(s6 + s7);
+        satd += abs(s6 - s7);
+    }
+
+    return satd;
+}
+
+mfxU32 CalcSatd8x8(const mfxU8 *blockSrc, const mfxU8 *blockRef, mfxI32 blockW, mfxI32 blockH)
+{
+    mfxU32 satd = 0;
+    for (mfxI32 y = 0; y < blockH; y += 4, blockSrc += 4 * blockW, blockRef += 4 * blockW)
+        for (mfxI32 x = 0; x < blockW; x += 4)
+            satd += CalcSatd8x8OneBlock(blockSrc + x, blockRef + x, blockW);
+    return satd;
 }
 
 void CopyBlock(const mfxU8 *src, mfxI32 x, mfxI32 y, mfxI32 blockW, mfxI32 blockH, mfxU8 *block)
@@ -361,7 +493,7 @@ int RunCpu(const mfxU8 *src, const mfxU8 *ref, const mfxI16Pair *mv, OutputData 
                 mfxI16Pair qpelPoint = { hpelPoint.x + dx, hpelPoint.y + dy };
 
                 InterpolateBlock(ref, qpelPoint, BLOCK_W, BLOCK_H, blockRef);
-                outData[xBlk].sad[sadIdx] = CalcSad(blockSrc, blockRef, BLOCK_W, BLOCK_H);
+                outData[xBlk].sad[sadIdx] = CalcSatd8x8(blockSrc, blockRef, BLOCK_W, BLOCK_H);
             }
         }
     }

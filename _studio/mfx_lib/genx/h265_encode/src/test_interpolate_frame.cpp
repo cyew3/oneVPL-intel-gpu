@@ -196,7 +196,7 @@ int RunGpu(const mfxU8 *in, mfxU8 *outH, mfxU8 *outV, mfxU8 *outD)
 
     mfxU64 time;
     e->GetExecutionTime(time);
-    printf("TIME=%.3f ms\n", time / 1000000.0);
+    printf("TIME=%.3f ms ", time / 1000000.0);
 
     for (mfxI32 y = 0; y < HEIGHT; y++, outH += WIDTH, outV += WIDTH, outD += WIDTH) {
         memcpy(outH, outHorzSys + y * outHorzPitch, WIDTH);

@@ -140,7 +140,7 @@ copy %25INSTALLDIR%25\runtime\lib\x86\igfxcmjit32.dll ..\..\..\..\build\win_$(Pl
       <OutputFile>$(OutDir)lib\$(ProjectName)_d.lib</OutputFile>
     </Lib>
     <PostBuildEvent>
-      <Command>$(TargetPath)</Command>
+      <Command>rem $(TargetPath)</Command>
     </PostBuildEvent>
     <ClCompile>
       <AdditionalIncludeDirectories>include;..\..\..\..\include;$(MEDIASDK_ROOT)/CMRT/compiler/include/cm;$(MEDIASDK_ROOT)/CMRT/runtime/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
@@ -323,6 +323,9 @@ $(TargetPath)</Command>
     <ClCompile Include="src\test_refine_me_p_16x32.cpp" />
     <ClCompile Include="src\test_refine_me_p_32x16.cpp" />
     <ClCompile Include="src\test_refine_me_p_32x32.cpp" />
+    <ClCompile Include="src\test_refine_me_p_32x32_sad.cpp" />
+    <ClCompile Include="src\test_refine_me_p_32x32_satd4x4.cpp" />
+    <ClCompile Include="src\test_refine_me_p_32x32_satd8x8.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\utility_genx.h" />

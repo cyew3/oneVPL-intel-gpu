@@ -158,7 +158,7 @@ int RunGpu(const mfxU8 *inData, mfxU16 *outData4x4, mfxU16 *outData8x8)
 
     mfxU64 time;
     e->GetExecutionTime(time);
-    printf("TIME=%.3f ms\n", time / 1000000.0);
+    printf("TIME=%.3f ms ", time / 1000000.0);
 
     memcpy(outData4x4, output4x4Sys, output4x4Size);
     memcpy(outData8x8, output8x8Sys, output8x8Size);

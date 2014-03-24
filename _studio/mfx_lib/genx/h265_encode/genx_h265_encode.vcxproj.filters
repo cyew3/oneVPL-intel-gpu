@@ -50,6 +50,15 @@
     <ClCompile Include="src\test_me1x_and_interpolate_frame.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\test_refine_me_p_32x32_sad.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\test_refine_me_p_32x32_satd4x4.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\test_refine_me_p_32x32_satd8x8.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\genx_h265_cmcode_isa.h">

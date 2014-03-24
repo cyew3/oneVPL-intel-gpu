@@ -19,14 +19,14 @@
 
 #ifdef CMRT_EMU
 extern "C"
-void RefineMeP16x32(SurfaceIndex SURF_MBDIST_32x32, SurfaceIndex SURF_MBDATA_2X,
-                    SurfaceIndex SURF_SRC_1X, SurfaceIndex SURF_REF_1X, mfxU32 picWidth);
+void RefineMeP32x32Sad(SurfaceIndex SURF_MBDIST_32x32, SurfaceIndex SURF_MBDATA_2X,
+                       SurfaceIndex SURF_SRC, SurfaceIndex SURF_REF_F, SurfaceIndex SURF_REF_H,
+                       SurfaceIndex SURF_REF_V, SurfaceIndex SURF_REF_D);
 #endif //CMRT_EMU
 
-const mfxI32 BLOCK_W = 16;
+const mfxI32 BLOCK_W = 32;
 const mfxI32 BLOCK_H = 32;
-#define KERNEL_NAME RefineMeP16x32
-
+#define KERNEL_NAME RefineMeP32x32Sad
 
 struct OutputData
 {
@@ -38,14 +38,14 @@ int RunGpu(const mfxU8 *src, const mfxU8 *ref, const mfxI16Pair *mv, OutputData 
 int RunCpu(const mfxU8 *src, const mfxU8 *ref, const mfxI16Pair *mv, OutputData *outData);
 }
 
-int TestRefineMeP16x32()
+int TestRefineMeP32x32Sad()
 {
     mfxI32 numBlocksHor = (WIDTH + BLOCK_W - 1) / BLOCK_W;
     mfxI32 numBlocksVer = (HEIGHT + BLOCK_H - 1) / BLOCK_H;
     OutputData *outputGpu = new OutputData[numBlocksHor * numBlocksVer];
     OutputData *outputCpu = new OutputData[numBlocksHor * numBlocksVer];
-    mfxU8  *src = new mfxU8[WIDTH * HEIGHT];
-    mfxU8  *ref = new mfxU8[WIDTH * HEIGHT];
+    mfxU8 *src = new mfxU8[WIDTH * HEIGHT];
+    mfxU8 *ref = new mfxU8[WIDTH * HEIGHT];
     mfxI16Pair *mv = new mfxI16Pair[numBlocksHor * numBlocksVer];
     mfxI32 res = PASSED;
 
@@ -63,8 +63,8 @@ int TestRefineMeP16x32()
     // fill motion vector field
     for (mfxI32 y = 0; y < numBlocksVer; y++) {
         for (mfxI32 x = 0; x < numBlocksHor; x++) {
-            mv[y * numBlocksHor + x].x = (mfxI16)((x - numBlocksHor / 2) * 2);
-            mv[y * numBlocksHor + x].y = (mfxI16)((y - numBlocksVer / 2) * 2);
+            mv[y * numBlocksHor + x].x = (mfxI16)((numBlocksHor / 2 - x) * 2);
+            mv[y * numBlocksHor + x].y = (mfxI16)((numBlocksVer / 2 - y) * 2);
         }
     }
 
@@ -113,8 +113,12 @@ int RunGpu(const mfxU8 *src, const mfxU8 *ref, const mfxI16Pair *mv, OutputData 
     res = device->LoadProgram((void *)genx_h265_cmcode, sizeof(genx_h265_cmcode), program);
     CHECK_CM_ERR(res);
 
-    CmKernel *kernel = 0;
-    res = device->CreateKernel(program, CM_KERNEL_FUNCTION(KERNEL_NAME), kernel);
+    CmKernel *kernelQpel = 0;
+    res = device->CreateKernel(program, CM_KERNEL_FUNCTION(KERNEL_NAME), kernelQpel);
+    CHECK_CM_ERR(res);
+
+    CmKernel *kernelHpel = 0;
+    res = device->CreateKernel(program, CM_KERNEL_FUNCTION(InterpolateFrame), kernelHpel);
     CHECK_CM_ERR(res);
 
     CmSurface2D *inSrc = 0;
@@ -127,6 +131,16 @@ int RunGpu(const mfxU8 *src, const mfxU8 *ref, const mfxI16Pair *mv, OutputData 
     res = device->CreateSurface2D(WIDTH, HEIGHT, CM_SURFACE_FORMAT_A8, inRef);
     CHECK_CM_ERR(res);
     res = inRef->WriteSurface(ref, NULL);
+    CHECK_CM_ERR(res);
+
+    CmSurface2D *refH = 0;
+    res = device->CreateSurface2D(WIDTH, HEIGHT, CM_SURFACE_FORMAT_A8, refH);
+    CHECK_CM_ERR(res);
+    CmSurface2D *refV = 0;
+    res = device->CreateSurface2D(WIDTH, HEIGHT, CM_SURFACE_FORMAT_A8, refV);
+    CHECK_CM_ERR(res);
+    CmSurface2D *refD = 0;
+    res = device->CreateSurface2D(WIDTH, HEIGHT, CM_SURFACE_FORMAT_A8, refD);
     CHECK_CM_ERR(res);
 
     CmSurface2D *inMv = 0;
@@ -148,73 +162,122 @@ int RunGpu(const mfxU8 *src, const mfxU8 *ref, const mfxI16Pair *mv, OutputData 
     SurfaceIndex *idxInSrc = 0;
     res = inSrc->GetIndex(idxInSrc);
     CHECK_CM_ERR(res);
-
     SurfaceIndex *idxInRef = 0;
     res = inRef->GetIndex(idxInRef);
     CHECK_CM_ERR(res);
-
+    SurfaceIndex *idxRefH = 0;
+    res = refH->GetIndex(idxRefH);
+    CHECK_CM_ERR(res);
+    SurfaceIndex *idxRefV = 0;
+    res = refV->GetIndex(idxRefV);
+    CHECK_CM_ERR(res);
+    SurfaceIndex *idxRefD = 0;
+    res = refD->GetIndex(idxRefD);
+    CHECK_CM_ERR(res);
     SurfaceIndex *idxInMv = 0;
     res = inMv->GetIndex(idxInMv);
     CHECK_CM_ERR(res);
-
     SurfaceIndex *idxOutputCm = 0;
     res = outputCm->GetIndex(idxOutputCm);
     CHECK_CM_ERR(res);
 
-    res = kernel->SetKernelArg(0, sizeof(*idxOutputCm), idxOutputCm);
+    res = kernelHpel->SetKernelArg(0, sizeof(SurfaceIndex), idxInRef);
     CHECK_CM_ERR(res);
-    res = kernel->SetKernelArg(1, sizeof(*idxInMv), idxInMv);
+    res = kernelHpel->SetKernelArg(1, sizeof(SurfaceIndex), idxRefH);
     CHECK_CM_ERR(res);
-    res = kernel->SetKernelArg(2, sizeof(*idxInSrc), idxInSrc);
+    res = kernelHpel->SetKernelArg(2, sizeof(SurfaceIndex), idxRefV);
     CHECK_CM_ERR(res);
-    res = kernel->SetKernelArg(3, sizeof(*idxInRef), idxInRef);
-    CHECK_CM_ERR(res);
-
-    res = kernel->SetThreadCount(numBlocksHor * numBlocksVer);
+    res = kernelHpel->SetKernelArg(3, sizeof(SurfaceIndex), idxRefD);
     CHECK_CM_ERR(res);
 
+    res = kernelQpel->SetKernelArg(0, sizeof(SurfaceIndex), idxOutputCm);
+    CHECK_CM_ERR(res);
+    res = kernelQpel->SetKernelArg(1, sizeof(SurfaceIndex), idxInMv);
+    CHECK_CM_ERR(res);
+    res = kernelQpel->SetKernelArg(2, sizeof(SurfaceIndex), idxInSrc);
+    CHECK_CM_ERR(res);
+    res = kernelQpel->SetKernelArg(3, sizeof(SurfaceIndex), idxInRef);
+    CHECK_CM_ERR(res);
+    res = kernelQpel->SetKernelArg(4, sizeof(SurfaceIndex), idxRefH);
+    CHECK_CM_ERR(res);
+    res = kernelQpel->SetKernelArg(5, sizeof(SurfaceIndex), idxRefV);
+    CHECK_CM_ERR(res);
+    res = kernelQpel->SetKernelArg(6, sizeof(SurfaceIndex), idxRefD);
+    CHECK_CM_ERR(res);
+
+    const mfxU16 BlockW = 8;
+    const mfxU16 BlockH = 8;
+    mfxU32 tsWidth = WIDTH / BlockW;
+    mfxU32 tsHeight = HEIGHT / BlockH * 2;
+    res = kernelHpel->SetThreadCount(tsWidth * tsHeight);
+    CHECK_CM_ERR(res);
     CmThreadSpace * threadSpace = 0;
-    res = device->CreateThreadSpace(numBlocksHor, numBlocksVer, threadSpace);
+    res = device->CreateThreadSpace(tsWidth, tsHeight, threadSpace);
     CHECK_CM_ERR(res);
-
     res = threadSpace->SelectThreadDependencyPattern(CM_NONE_DEPENDENCY);
     CHECK_CM_ERR(res);
-
     CmTask * task = 0;
     res = device->CreateTask(task);
     CHECK_CM_ERR(res);
-
-    res = task->AddKernel(kernel);
+    res = task->AddKernel(kernelHpel);
     CHECK_CM_ERR(res);
-
     CmQueue *queue = 0;
     res = device->CreateQueue(queue);
     CHECK_CM_ERR(res);
-
     CmEvent * e = 0;
     res = queue->Enqueue(task, e, threadSpace);
     CHECK_CM_ERR(res);
-
     device->DestroyThreadSpace(threadSpace);
     device->DestroyTask(task);
-    
     res = e->WaitForTaskFinished();
     CHECK_CM_ERR(res);
-
     mfxU64 time;
     e->GetExecutionTime(time);
     printf("TIME=%.3f ms ", time / 1000000.0);
+    queue->DestroyEvent(e);
+
+    tsWidth  = (WIDTH  + BLOCK_W - 1) / BLOCK_W;
+    tsHeight = (HEIGHT + BLOCK_H - 1) / BLOCK_H;
+    res = kernelQpel->SetThreadCount(tsWidth * tsHeight);
+    CHECK_CM_ERR(res);
+    threadSpace = 0;
+    res = device->CreateThreadSpace(tsWidth, tsHeight, threadSpace);
+    CHECK_CM_ERR(res);
+    res = threadSpace->SelectThreadDependencyPattern(CM_NONE_DEPENDENCY);
+    CHECK_CM_ERR(res);
+    task = 0;
+    res = device->CreateTask(task);
+    CHECK_CM_ERR(res);
+    res = task->AddKernel(kernelQpel);
+    CHECK_CM_ERR(res);
+    queue = 0;
+    res = device->CreateQueue(queue);
+    CHECK_CM_ERR(res);
+    e = 0;
+    res = queue->Enqueue(task, e, threadSpace);
+    CHECK_CM_ERR(res);
+    device->DestroyThreadSpace(threadSpace);
+    device->DestroyTask(task);
+    res = e->WaitForTaskFinished();
+    CHECK_CM_ERR(res);
+    time = 0;
+    e->GetExecutionTime(time);
+    printf("TIME=%.3f ms ", time / 1000000.0);
+    queue->DestroyEvent(e);
 
     for (mfxI32 y = 0; y < numBlocksVer; y++)
         memcpy(outData + y * numBlocksHor, outputSys + y * outputPitch, outputWidth);
 
-    queue->DestroyEvent(e);
     device->DestroySurface2DUP(outputCm);
     CM_ALIGNED_FREE(outputSys);
     device->DestroySurface(inMv);
     device->DestroySurface(inRef);
+    device->DestroySurface(refH);
+    device->DestroySurface(refV);
+    device->DestroySurface(refD);
     device->DestroySurface(inSrc);
-    device->DestroyKernel(kernel);
+    device->DestroyKernel(kernelHpel);
+    device->DestroyKernel(kernelQpel);
     device->DestroyProgram(program);
     ::DestroyCmDevice(device);
 

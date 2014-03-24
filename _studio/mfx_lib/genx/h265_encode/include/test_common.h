@@ -21,11 +21,11 @@
 
 enum { PASSED, FAILED };
 
-const mfxI32 WIDTH  = 416;
-const mfxI32 HEIGHT = 240;
-const mfxI8 YUV_NAME[] = "./test_data/basketball_pass_416x240p_2.yuv";
+//const mfxI32 WIDTH  = 416;
+//const mfxI32 HEIGHT = 240;
+//const mfxI8 YUV_NAME[] = "./test_data/basketball_pass_416x240p_2.yuv";
 
-//const mfxI32 WIDTH  = 1920;
-////const mfxI32 HEIGHT = 1088;
-//const mfxI8 YUV_NAME[] = "C:/yuv/1080p/basketball_drive_1920x1080p_501.yuv";
+const mfxI32 WIDTH  = 1920;
+const mfxI32 HEIGHT = 1080;
+const mfxI8 YUV_NAME[] = "C:/yuv/1080p/basketball_drive_1920x1080p_501.yuv";
 

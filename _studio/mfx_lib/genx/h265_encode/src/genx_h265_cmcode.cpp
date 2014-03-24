@@ -2154,3 +2154,25 @@ void Me1xAndInterpolateFrame(SurfaceIndex SURF_CONTROL, SurfaceIndex SURF_SRC_AN
         }
     }
 }
+
+extern "C" _GENX_MAIN_
+void RefineMeP32x32Sad(SurfaceIndex SURF_MBDIST_32x32, SurfaceIndex SURF_MBDATA_2X,
+                       SurfaceIndex SURF_SRC, SurfaceIndex SURF_REF_F, SurfaceIndex SURF_REF_H,
+                       SurfaceIndex SURF_REF_V, SurfaceIndex SURF_REF_D)
+{
+}
+
+extern "C" _GENX_MAIN_
+void RefineMeP32x32Satd4x4(SurfaceIndex SURF_MBDIST_32x32, SurfaceIndex SURF_MBDATA_2X,
+                           SurfaceIndex SURF_SRC, SurfaceIndex SURF_REF_F, SurfaceIndex SURF_REF_H,
+                           SurfaceIndex SURF_REF_V, SurfaceIndex SURF_REF_D)
+{
+}
+
+extern "C" _GENX_MAIN_
+void RefineMeP32x32Satd8x8(SurfaceIndex SURF_MBDIST_32x32, SurfaceIndex SURF_MBDATA_2X,
+                           SurfaceIndex SURF_SRC, SurfaceIndex SURF_REF_F, SurfaceIndex SURF_REF_H,
+                           SurfaceIndex SURF_REF_V, SurfaceIndex SURF_REF_D)
+{
+}
+

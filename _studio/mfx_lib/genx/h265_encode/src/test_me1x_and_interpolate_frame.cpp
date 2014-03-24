@@ -415,7 +415,7 @@ int RunTst(CmDevice *device, unsigned char *src, unsigned char *ref, MeControl &
 
     mfxU64 time;
     e->GetExecutionTime(time);
-    printf("TIME=%.3f ms\n", time / 1000000.0);
+    printf("TIME=%.3f ms ", time / 1000000.0);
 
     queue->DestroyEvent(e);
 
@@ -535,7 +535,7 @@ int RunRef(CmDevice *device, unsigned char *src, unsigned char *ref, MeControl &
     CHECK_CM_ERR(res);
     mfxU64 time;
     e->GetExecutionTime(time);
-    printf("TIME=%.3f ms\n", time / 1000000.0);
+    printf("TIME=%.3f ms ", time / 1000000.0);
     queue->DestroyEvent(e);
 
     const mfxU16 BlockW = 8;
@@ -566,7 +566,7 @@ int RunRef(CmDevice *device, unsigned char *src, unsigned char *ref, MeControl &
     CHECK_CM_ERR(res);
     time = 0;
     e->GetExecutionTime(time);
-    printf("TIME=%.3f ms\n", time / 1000000.0);
+    printf("TIME=%.3f ms ", time / 1000000.0);
     queue->DestroyEvent(e);
 
     device->DestroySurface(inRef);
