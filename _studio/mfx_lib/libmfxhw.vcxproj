@@ -508,9 +508,6 @@
       <LinkLibraryDependencies>true</LinkLibraryDependencies>
       <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
     </ProjectReference>
-    <ProjectReference Include="..\shared\umc\codec\h265_dec\h265_dec_hw.vcxproj">
-      <Project>{c712ba45-ac67-4a16-bd5d-2619eb325182}</Project>
-    </ProjectReference>
     <ProjectReference Include="..\shared\umc\codec\jpeg_common\jpeg_common.vcxproj">
       <Project>{80b89175-8e4e-457a-9aa6-f5b2badfbe85}</Project>
       <Private>false</Private>
@@ -711,24 +708,6 @@
       <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
       <LinkLibraryDependencies>true</LinkLibraryDependencies>
       <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
-    </ProjectReference>
-    <ProjectReference Include="optimization\hevc_pp_atom.vcxproj">
-      <Project>{77807a28-2170-4a4c-95e5-73cb0657aa47}</Project>
-    </ProjectReference>
-    <ProjectReference Include="optimization\hevc_pp_avx2.vcxproj">
-      <Project>{6ebb14f6-dca0-485a-89f7-fe803b75d0b9}</Project>
-    </ProjectReference>
-    <ProjectReference Include="optimization\hevc_pp_dispatch.vcxproj">
-      <Project>{c37d7375-76cd-400b-a030-4624b1012e08}</Project>
-    </ProjectReference>
-    <ProjectReference Include="optimization\hevc_pp_px.vcxproj">
-      <Project>{3b7a183a-c728-494f-a56e-6a993150d277}</Project>
-    </ProjectReference>
-    <ProjectReference Include="optimization\hevc_pp_sse4.vcxproj">
-      <Project>{a67aee55-e7e2-43da-9bdb-548ace4c595a}</Project>
-    </ProjectReference>
-    <ProjectReference Include="optimization\hevc_pp_ssse3.vcxproj">
-      <Project>{87cf2689-abe2-463f-ad5e-9e4ce4b8b5cd}</Project>
     </ProjectReference>
     <ProjectReference Include="pak\pak.vcxproj">
       <Project>{5ea7d17f-aae3-49c8-b1c6-de3c36d26559}</Project>
