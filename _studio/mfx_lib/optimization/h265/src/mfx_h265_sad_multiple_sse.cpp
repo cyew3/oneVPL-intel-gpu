@@ -22,7 +22,9 @@
     defined(MFX_MAKENAME_ATOM) && defined(MFX_TARGET_OPTIMIZATION_ATOM) || \
     defined(MFX_MAKENAME_SSE4) && defined(MFX_TARGET_OPTIMIZATION_SSE4)
 
-#include <intrin.h>
+#if defined(_WIN32) || defined (_WIN64)
+#   include <intrin.h>
+#endif
 
 /* from mfx_h265_sad_general_sse.cpp */
 #define _mm_loadh_epi64(A, p)  _mm_castpd_si128(_mm_loadh_pd(_mm_castsi128_pd(A), (const double *)(p)))

@@ -19,7 +19,9 @@
 
 #if defined (MFX_TARGET_OPTIMIZATION_AVX2) || defined(MFX_TARGET_OPTIMIZATION_AUTO)
 
-#include <intrin.h>
+#if defined(_WIN32) || defined (_WIN64)
+#   include <intrin.h>
+#endif
 
 #define mm128(s)               _mm256_castsi256_si128(s)     /* cast xmm = low 128 of ymm */
 #define mm256(s)               _mm256_castsi128_si256(s)     /* cast ymm = [xmm | undefined] */
