@@ -1174,7 +1174,6 @@ Ipp32u H265Encoder::DetermineFrameType()
 
     mfxEncodeStat eStat;
     mfx_video_encode_h265_ptr->GetEncodeStat(&eStat);
-///    if (m_frameCountEncoded == 0) {  !!!sergo
 
     if (eStat.NumFrameCountAsync == 0) {
         m_iProfileIndex = 0;
@@ -3191,8 +3190,9 @@ recode:
     if (m_videoParam.enableCmFlag) {
         cmCurIdx ^= 1;
         cmNextIdx ^= 1;
-        H265Frame **refsCur = m_pCurrentFrame->m_refPicList[0].m_refFrames;
-        RunVmeCurr(m_videoParam, m_pCurrentFrame, m_slices, refsCur);
+
+        m_pCurrentFrame->setEncOrderNum(m_frameCountEncoded);
+        RunVmeCurr(m_videoParam, m_pCurrentFrame, m_slices);
     }
 #endif // MFX_ENABLE_CM
 
@@ -3225,10 +3225,10 @@ recode:
                 }
             }
             small_memcpy(&m_ShortRefPicSet, &m_ShortRefPicSetDump, sizeof(m_ShortRefPicSet));
+            m_pNextFrame->setEncOrderNum(m_pCurrentFrame->EncOrderNum() + 1);
         }
 
-        H265Frame **refsNext = m_pNextFrame->m_refPicList[0].m_refFrames;
-        RunVmeNext(m_videoParam, m_pNextFrame, m_slicesNext, refsNext);
+        RunVmeNext(m_videoParam, m_pNextFrame, m_slicesNext);
     }
 #endif // MFX_ENABLE_CM
 

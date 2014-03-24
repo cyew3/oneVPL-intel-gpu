@@ -35,11 +35,9 @@ Ipp32s GetPuSize(Ipp32s puw, Ipp32s puh);
 
 void AllocateCmResources(mfxU32 w, mfxU32 h, mfxU16 nRefs);
 
-void RunVmeCurr(H265VideoParam const &param, H265Frame *pFrameCur, H265Slice *pSliceCur,
-                H265Frame **refsCur);
+void RunVmeCurr(H265VideoParam const &param, H265Frame *pFrameCur, H265Slice *pSliceCur);
 
-void RunVmeNext(H265VideoParam const &param, H265Frame *pFrameNext, H265Slice *pSliceNext,
-                H265Frame **refsNext);
+void RunVmeNext(H265VideoParam const &param, H265Frame *pFrameNext, H265Slice *pSliceNext);
 
 void FreeCmResources();
 void PrintTimes();

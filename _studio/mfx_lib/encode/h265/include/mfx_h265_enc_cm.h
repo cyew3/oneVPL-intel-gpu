@@ -49,6 +49,27 @@ public:
     CmRuntimeError() : std::exception() { assert(!"CmRuntimeError"); }
 };
 
+class H265RefMatchData
+{
+
+typedef struct {
+    Ipp32s poc;
+    Ipp8s  globi;
+    bool   avail;
+} MatchData;
+
+private:
+    MatchData refMatchTbl[MAX_NUM_REF_IDX];
+
+public:
+    H265RefMatchData();
+    virtual ~H265RefMatchData() {};
+    
+    Ipp8s RefMatchTblGetByPoc(Ipp32s poc);
+    Ipp32s RefMatchTblInsert(Ipp32s poc);
+    void RefMatchTblUpdate(H265Frame **pRefFrames, Ipp32s nFrames);
+};
+
 CmDevice * TryCreateCmDevicePtr(VideoCORE * core, mfxU32 * version = 0);
 
 CmDevice * CreateCmDevicePtr(VideoCORE * core, mfxU32 * version = 0);

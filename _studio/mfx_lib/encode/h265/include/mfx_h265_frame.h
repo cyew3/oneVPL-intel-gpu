@@ -36,6 +36,7 @@ public:
     Ipp32u   m_PicCodType;
     Ipp32s   m_RefPicListResetCount;
     Ipp32s   m_PicOrderCnt;
+    Ipp32s   m_EncOrderNum;
     Ipp32u   m_PicOrderCounterAccumulated;
     Ipp32s   m_RPSIndex;
     Ipp32s   m_PGOPIndex;
@@ -60,6 +61,7 @@ public:
         m_PicCodType = 0;
         m_RefPicListResetCount = 0;
         m_PicOrderCnt = 0;
+        m_EncOrderNum = 0;
         m_PicOrderCounterAccumulated = 0;
         m_isShortTermRef = 0;
         m_isLongTermRef = 0;
@@ -133,6 +135,16 @@ public:
     void setPicOrderCnt(Ipp32s PicOrderCnt)
     {
         m_PicOrderCnt = PicOrderCnt;
+    }
+
+    Ipp32s EncOrderNum()
+    {
+        return m_EncOrderNum;
+    }
+
+    void setEncOrderNum(Ipp32s EncOrderNum)
+    {
+        m_EncOrderNum = EncOrderNum;
     }
 
     Ipp8u isLongTermRef()

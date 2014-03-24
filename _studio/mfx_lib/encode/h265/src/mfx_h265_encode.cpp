@@ -1875,11 +1875,14 @@ mfxStatus MFXVideoENCODEH265::EncodeFrame(mfxEncodeCtrl *ctrl, mfxEncodeInternal
                 bs->FrameType |= MFX_FRAMETYPE_IDR;
             if (m_enc->m_pCurrentFrame->m_isShortTermRef || m_enc->m_pCurrentFrame->m_isLongTermRef)
                 bs->FrameType |= MFX_FRAMETYPE_REF;
+
+            m_enc->m_pCurrentFrame->setEncOrderNum(m_encodedFrames);
         }
 
-        if (bitstream->DataLength != initialDataLength )
+        if (bitstream->DataLength != initialDataLength ) {
             m_encodedFrames++;
-        m_totalBits += (bitstream->DataLength - initialDataLength) * 8;
+            m_totalBits += (bitstream->DataLength - initialDataLength) * 8;
+        }
     }
 
     if (mfxRes == MFX_ERR_MORE_DATA)
