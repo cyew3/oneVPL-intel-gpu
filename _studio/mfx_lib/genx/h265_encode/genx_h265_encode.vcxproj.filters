@@ -41,12 +41,27 @@
     <ClCompile Include="src\test_analyze_gradient.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\test_analyze_gradient8x8.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\test_analyze_gradient32x32modes.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\test_me1x_and_interpolate_frame.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\genx_h265_cmcode_isa.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\test_common.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\genx_h265_cmcode.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\utility_genx.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

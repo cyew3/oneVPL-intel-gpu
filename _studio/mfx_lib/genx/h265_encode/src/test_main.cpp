@@ -14,10 +14,13 @@
 
 int TestAnalyzeGradient();
 int TestAnalyzeGradient2();
+int TestAnalyzeGradient8x8();
+int TestAnalyzeGradient32x32Modes();
 int TestRefineMeP32x32();
 int TestRefineMeP32x16();
 int TestRefineMeP16x32();
 int TestInterpolateFrame();
+int TestMe1xAndInterpolateFrame();
 
 typedef int (*TestFuncPtr)();
 
@@ -41,10 +44,13 @@ void RunTest(TestFuncPtr testFunc, char * kernelName)
 
 int main()
 {
-    RunTest(TestRefineMeP32x32, "RefineMeP32x32");
-    RunTest(TestRefineMeP32x16, "RefineMeP32x16");
-    RunTest(TestRefineMeP16x32, "RefineMeP16x32");
-    RunTest(TestAnalyzeGradient, "AnalyzeGradient");
-    RunTest(TestAnalyzeGradient2, "AnalyzeGradient2");
-    RunTest(TestInterpolateFrame, "InterpolateFrame");
+    //RunTest(TestRefineMeP32x32, "RefineMeP32x32");
+    //RunTest(TestRefineMeP32x16, "RefineMeP32x16");
+    //RunTest(TestRefineMeP16x32, "RefineMeP16x32");
+    //RunTest(TestAnalyzeGradient, "AnalyzeGradient");
+    //RunTest(TestAnalyzeGradient32x32Modes, "AnalyzeGradient32x32Modes");
+    //RunTest(TestAnalyzeGradient2, "AnalyzeGradient2");
+    //RunTest(TestAnalyzeGradient8x8, "AnalyzeGradient8x8");
+    //RunTest(TestInterpolateFrame, "InterpolateFrame");
+    RunTest(TestMe1xAndInterpolateFrame, "Me1xAndInterpolateFrame");
 }

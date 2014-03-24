@@ -17,5 +17,15 @@
 #define CLIPVAL(VAL, MINVAL, MAXVAL) MAX(MINVAL, MIN(MAXVAL, VAL))
 #define CHECK_CM_ERR(ERR) if ((ERR) != CM_SUCCESS) return FAILED;
 #define CHECK_ERR(ERR) if ((ERR) != PASSED) return (ERR);
+#define DIVUP(a, b) ((a+b-1)/b)
 
 enum { PASSED, FAILED };
+
+const mfxI32 WIDTH  = 416;
+const mfxI32 HEIGHT = 240;
+const mfxI8 YUV_NAME[] = "./test_data/basketball_pass_416x240p_2.yuv";
+
+//const mfxI32 WIDTH  = 1920;
+////const mfxI32 HEIGHT = 1088;
+//const mfxI8 YUV_NAME[] = "C:/yuv/1080p/basketball_drive_1920x1080p_501.yuv";
+

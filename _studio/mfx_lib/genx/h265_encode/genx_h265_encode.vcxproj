@@ -122,7 +122,7 @@ SET ICLDIR=%25INSTALLDIR%25\compiler
 SET PATH=%25ICLDIR%25\bin%3b%25ICLDIR%25\lib%3b%25PATH%25
 SET INCLUDE=%25ICLDIR%25\include%3b%25ICLDIR%25\include\cm%3b%25INCLUDE%25
 SET CM_RT_PLATFORM=hsw
-icl /c /Qxcm /Qxcm_jit_target=gen7_5 .\src\genx_h265_cmcode.cpp /mCM_print_asm_count
+icl /c /Qxcm /Qxcm_jit_target=gen7_5 .\src\genx_h265_cmcode.cpp /mCM_print_asm_count /Qxcm_nonstrict /mGLOB_override_limits
 cl .\src\embed_isa.c
 embed_isa genx_h265_cmcode.isa
 move genx_h265_cmcode.cpp .\src\genx_h265_cmcode_isa.cpp
@@ -315,13 +315,18 @@ $(TargetPath)</Command>
     <ClCompile Include="src\genx_h265_cmcode_isa.cpp" />
     <ClCompile Include="src\test_analyze_gradient.cpp" />
     <ClCompile Include="src\test_analyze_gradient2.cpp" />
+    <ClCompile Include="src\test_analyze_gradient32x32modes.cpp" />
+    <ClCompile Include="src\test_analyze_gradient8x8.cpp" />
     <ClCompile Include="src\test_interpolate_frame.cpp" />
     <ClCompile Include="src\test_main.cpp" />
+    <ClCompile Include="src\test_me1x_and_interpolate_frame.cpp" />
     <ClCompile Include="src\test_refine_me_p_16x32.cpp" />
     <ClCompile Include="src\test_refine_me_p_32x16.cpp" />
     <ClCompile Include="src\test_refine_me_p_32x32.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="include\utility_genx.h" />
+    <ClInclude Include="include\genx_h265_cmcode.h" />
     <ClInclude Include="include\genx_h265_cmcode_isa.h" />
     <ClInclude Include="include\test_common.h" />
   </ItemGroup>

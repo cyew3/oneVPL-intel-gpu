@@ -23,9 +23,6 @@ void RefineMeP32x32(SurfaceIndex SURF_MBDIST_32x32, SurfaceIndex SURF_MBDATA_2X,
                     SurfaceIndex SURF_SRC_1X, SurfaceIndex SURF_REF_1X, mfxU32 picWidth);
 #endif //CMRT_EMU
 
-const mfxI32 WIDTH  = 416;
-const mfxI32 HEIGHT = 240;
-const mfxI8 YUV_NAME[] = "./test_data/basketball_pass_416x240p_2.yuv";
 const mfxI32 BLOCK_W = 32;
 const mfxI32 BLOCK_H = 32;
 #define KERNEL_NAME RefineMeP32x32
@@ -204,9 +201,9 @@ int RunGpu(const mfxU8 *src, const mfxU8 *ref, const mfxI16Pair *mv, OutputData 
     res = e->WaitForTaskFinished();
     CHECK_CM_ERR(res);
 
-    //mfxU64 time;
-    //e->GetExecutionTime(time);
-    //printf("TIME=%.3f ms\n", time / 1000000.0);
+    mfxU64 time;
+    e->GetExecutionTime(time);
+    printf("TIME=%.3f ms\n", time / 1000000.0);
 
     for (mfxI32 y = 0; y < numBlocksVer; y++)
         memcpy(outData + y * numBlocksHor, outputSys + y * outputPitch, outputWidth);

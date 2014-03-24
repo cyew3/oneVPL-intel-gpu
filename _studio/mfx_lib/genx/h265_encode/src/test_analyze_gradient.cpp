@@ -22,10 +22,6 @@ extern "C"
 void AnalyzeGradient(SurfaceIndex SURF_SRC, SurfaceIndex SURF_GRADIENT);
 #endif //CMRT_EMU
 
-const mfxI32 WIDTH  = 416;
-const mfxI32 HEIGHT = 240;
-const mfxI8 YUV_NAME[] = "./test_data/basketball_pass_416x240p_2.yuv";
-
 namespace {
 int RunGpu(const mfxU8 *inData, mfxU16 *outData4x4, mfxU16 *outData8x8);
 int RunCpu(const mfxU8 *inData, mfxU32 *outData, mfxU32 blockSize); // mfxU32 for CPU to test mfxU16 overflow on GPU
@@ -160,9 +156,9 @@ int RunGpu(const mfxU8 *inData, mfxU16 *outData4x4, mfxU16 *outData8x8)
     res = e->WaitForTaskFinished();
     CHECK_CM_ERR(res);
 
-    //mfxU64 time;
-    //e->GetExecutionTime(time);
-    //printf("TIME=%.3f ms\n", time / 1000000.0);
+    mfxU64 time;
+    e->GetExecutionTime(time);
+    printf("TIME=%.3f ms\n", time / 1000000.0);
 
     memcpy(outData4x4, output4x4Sys, output4x4Size);
     memcpy(outData8x8, output8x8Sys, output8x8Size);
@@ -240,8 +236,8 @@ void BuildHistogram(const mfxU8 *frame, mfxI32 blockX, mfxI32 blockY, mfxI32 blo
 
 int RunCpu(const mfxU8 *inData, mfxU32 *outData, mfxU32 blockSize)
 {
-    for (mfxI32 y = 0; y < HEIGHT / blockSize; y++, outData += (WIDTH / blockSize) * 40) {
-        for (mfxI32 x = 0; x < WIDTH / blockSize; x++) {
+    for (mfxI32 y = 0; y < HEIGHT / (mfxI32)blockSize; y++, outData += (WIDTH / blockSize) * 40) {
+        for (mfxI32 x = 0; x < WIDTH / (mfxI32)blockSize; x++) {
             memset(outData + x * 40, 0, sizeof(*outData) * 40);
             BuildHistogram(inData, x * blockSize, y * blockSize, blockSize, outData + x * 40);
         }
@@ -253,8 +249,8 @@ int RunCpu(const mfxU8 *inData, mfxU32 *outData, mfxU32 blockSize)
 
 int Compare(mfxU16 *outDataGpu, mfxU32 *outDataCpu, mfxU32 blockSize)
 {
-    for (mfxI32 y = 0; y < HEIGHT / blockSize; y++) {
-        for (mfxI32 x = 0; x < WIDTH / blockSize; x++) {
+    for (mfxI32 y = 0; y < HEIGHT / (mfxI32)blockSize; y++) {
+        for (mfxI32 x = 0; x < WIDTH / (mfxI32)blockSize; x++) {
             mfxU16 *histogramGpu = outDataGpu + (y * (WIDTH / blockSize) + x) * 40;
             mfxU32 *histogramCpu = outDataCpu + (y * (WIDTH / blockSize) + x) * 40;
             for (mfxI32 mode = 0; mode < 35; mode++) {

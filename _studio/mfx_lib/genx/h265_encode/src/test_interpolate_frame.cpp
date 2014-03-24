@@ -23,10 +23,6 @@ void InterpolateFrame(SurfaceIndex SURF_FPEL, SurfaceIndex SURF_HPEL_HORZ,
                       SurfaceIndex SURF_HPEL_VERT, SurfaceIndex SURF_HPEL_DIAG);
 #endif //CMRT_EMU
 
-const mfxI32 WIDTH  = 416;
-const mfxI32 HEIGHT = 240;
-const mfxI8 YUV_NAME[] = "./test_data/basketball_pass_416x240p_2.yuv";
-
 namespace {
 int RunGpu(const mfxU8 *in, mfxU8 *outH, mfxU8 *outV, mfxU8 *outD);
 int RunCpu(const mfxU8 *in, mfxU8 *outH, mfxU8 *outV, mfxU8 *outD);
@@ -162,8 +158,11 @@ int RunGpu(const mfxU8 *in, mfxU8 *outH, mfxU8 *outV, mfxU8 *outD)
     res = kernel->SetKernelArg(3, sizeof(*idxOutDiag), idxOutDiag);
     CHECK_CM_ERR(res);
 
-    mfxU32 tsWidth = 1; // !!! CHANGE TO OPTIMAL VALUE
-    mfxU32 tsHeight = 1; // !!! CHANGE TO OPTIMAL VALUE
+    const mfxU16 BlockW = 8;
+    const mfxU16 BlockH = 8;
+
+    mfxU32 tsWidth = WIDTH / BlockW;
+    mfxU32 tsHeight = HEIGHT / BlockH * 2;
     res = kernel->SetThreadCount(tsWidth * tsHeight);
     CHECK_CM_ERR(res);
 
@@ -195,14 +194,14 @@ int RunGpu(const mfxU8 *in, mfxU8 *outH, mfxU8 *outV, mfxU8 *outD)
     res = e->WaitForTaskFinished();
     CHECK_CM_ERR(res);
 
-    //mfxU64 time;
-    //e->GetExecutionTime(time);
-    //printf("TIME=%.3f ms\n", time / 1000000.0);
+    mfxU64 time;
+    e->GetExecutionTime(time);
+    printf("TIME=%.3f ms\n", time / 1000000.0);
 
     for (mfxI32 y = 0; y < HEIGHT; y++, outH += WIDTH, outV += WIDTH, outD += WIDTH) {
-        memcpy(outH, outHorzSys + y * WIDTH, WIDTH);
-        memcpy(outV, outVertSys + y * WIDTH, WIDTH);
-        memcpy(outD, outDiagSys + y * WIDTH, WIDTH);
+        memcpy(outH, outHorzSys + y * outHorzPitch, WIDTH);
+        memcpy(outV, outVertSys + y * outVertPitch, WIDTH);
+        memcpy(outD, outDiagSys + y * outDiagPitch, WIDTH);
     }
 
     queue->DestroyEvent(e);
