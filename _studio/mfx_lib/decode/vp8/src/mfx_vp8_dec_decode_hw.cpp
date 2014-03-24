@@ -1088,6 +1088,12 @@ mfxStatus VideoDECODEVP8_HW::DecodeFrameHeader(mfxBitstream *in)
                                   (data_in[1] << 3) |
                                   (data_in[2] << 11);
 
+    {
+        std::ofstream ofs("fps");
+        ofs << first_partition_size << std::endl;
+        ofs.close();
+    }
+
     m_frame_info.firstPartitionSize = first_partition_size;
     m_frame_info.partitionSize[VP8_FIRST_PARTITION] = first_partition_size;
 
@@ -1414,15 +1420,12 @@ mfxStatus VideoDECODEVP8_HW::DecodeFrameHeader(mfxBitstream *in)
 
     #else
 
-    // + Working DDI .40
-
     if (m_frame_info.frameType == I_PICTURE)
     {
         m_frame_info.entropyDecSize = m_frame_info.entropyDecSize - 80;
     }
     else
     {
-        m_frame_info.firstPartitionSize = m_frame_info.firstPartitionSize - Ipp32u(m_boolDecoder[VP8_FIRST_PARTITION].input() - ((Ipp8u*)in->Data) - 3) + 2;
         m_frame_info.entropyDecSize = m_frame_info.entropyDecSize - 24;
     }
 
@@ -1902,7 +1905,7 @@ mfxStatus VideoDECODEVP8_HW::PackHeaders(mfxBitstream *p_bistream)
      picParams->pic_fields.bits.mb_no_coeff_skip = m_frame_info.mbSkipEnabled;
 
      //see section 11.1 for mb_skip_coefffff
-//   picParams->pic_fields.bits.mb_skip_coeff = 0;
+     picParams->pic_fields.bits.mb_skip_coeff = 0;
 
      //flag to indicate that loop filter should be disabled
      picParams->pic_fields.bits.loop_filter_disable = 0;
