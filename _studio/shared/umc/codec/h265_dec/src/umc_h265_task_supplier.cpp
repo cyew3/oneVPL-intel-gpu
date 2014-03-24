@@ -2183,9 +2183,10 @@ void SetDeltaPocs(const H265DecoderFrameList * dpb, const H265DecoderFrame * fra
 
 void TaskSupplier_H265::OnFullFrame(H265DecoderFrame * pFrame)
 {
+#ifndef MFX_VA
     ViewItem_H265 *pView = GetView();
     SetDeltaPocs(pView->pDPB.get(), pFrame);
-
+#endif
     pFrame->SetFullFrame(true);
 
     if (pFrame->IsSkipped())
