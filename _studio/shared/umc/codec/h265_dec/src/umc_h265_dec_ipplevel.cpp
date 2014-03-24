@@ -115,6 +115,26 @@ extern pH264Interpolation_8u read_data_through_boundary_table_nv12_8u_pxmx[16];
 #define read_data_through_boundary_table_nv12_16u read_data_through_boundary_table_nv12_16u_pxmx
 extern pH264Interpolation_16u read_data_through_boundary_table_nv12_16u_pxmx[16];
 
+template<typename PixType, Ipp32s chromaMult>
+void memset_with_mult(PixType *pDst, const PixType* nVal, Ipp32s nNum)
+{
+    if (chromaMult == 2)
+    {
+        for (Ipp32s i = 0; i < nNum; i ++ )
+        {
+            pDst[2*i] = nVal[0];
+            pDst[2*i + 1] = nVal[1];
+        }
+    }
+    else
+    {
+        for (Ipp32s i = 0; i < nNum; i++)
+        {
+            pDst[i] = nVal[0];
+        }
+    }
+}
+
 template<typename PixType, typename InterpolationStruct>
 IppStatus ippiInterpolateBoundaryLumaBlock_H264(Ipp32s iOverlappingType, InterpolationStruct *pParams, PixType *temporary_buffer)
 {
@@ -319,14 +339,14 @@ IppStatus ippiInterpolateChromaBlock_H264Internal(InterpolationStruct *interpola
     return ippStsNoOperation;
 }
 
-template<typename PixType, typename InterpolationStruct>
+template<typename PixType, typename InterpolationStruct, Ipp32s chromaMult>
 void read_data_through_boundary_none(InterpolationStruct *pParams)
 {
     /* touch unreferenced parameter(s) */
     IPP_UNREFERENCED_PARAMETER(pParams);
 }
 
-template<typename PixType, typename InterpolationStruct>
+template<typename PixType, typename InterpolationStruct, Ipp32s chromaMult>
 void read_data_through_boundary_left_px(InterpolationStruct *pParams)
 {
     /* normalize data position */
@@ -344,8 +364,8 @@ void read_data_through_boundary_left_px(InterpolationStruct *pParams)
 
         for (i = 0; i < pParams->dataHeight; i += 1)
         {
-            std::fill(pDst, pDst + iIndent, pSrc[0]);
-            MFX_INTERNAL_CPY(pDst + iIndent, pSrc, (pParams->dataWidth - iIndent)*sizeof(PixType));
+            memset_with_mult<PixType, chromaMult>(pDst, pSrc, iIndent);
+            MFX_INTERNAL_CPY(pDst + chromaMult*iIndent, pSrc, chromaMult*(pParams->dataWidth - iIndent)*sizeof(PixType));
 
             pDst += pParams->dstStep;
             pSrc += pParams->srcStep;
@@ -353,7 +373,7 @@ void read_data_through_boundary_left_px(InterpolationStruct *pParams)
     }
 }
 
-template<typename PixType, typename InterpolationStruct>
+template<typename PixType, typename InterpolationStruct, Ipp32s chromaMult>
 void read_data_through_boundary_right_px(InterpolationStruct *pParams)
 {
     /* normalize data position */
@@ -362,7 +382,7 @@ void read_data_through_boundary_right_px(InterpolationStruct *pParams)
 
     /* preread data into temporal buffer */
     {
-        const PixType *pSrc = pParams->pSrc + pParams->yPos * pParams->srcStep + pParams->xPos;
+        const PixType *pSrc = pParams->pSrc + pParams->yPos * pParams->srcStep + chromaMult*pParams->xPos;
         PixType *pDst = pParams->pDst;
         Ipp32s i;
         Ipp32s iIndent;
@@ -371,26 +391,45 @@ void read_data_through_boundary_right_px(InterpolationStruct *pParams)
 
         for (i = 0; i < pParams->dataHeight; i += 1)
         {
-            MFX_INTERNAL_CPY(pDst, pSrc, iIndent*sizeof(PixType));
-            std::fill(pDst + iIndent, pDst + iIndent + pParams->dataWidth - iIndent, pSrc[iIndent - 1]);
+            MFX_INTERNAL_CPY(pDst, pSrc, chromaMult*iIndent*sizeof(PixType));
+            memset_with_mult<PixType, chromaMult>(pDst + chromaMult*iIndent, &pSrc[chromaMult*(iIndent - 1)], (pParams->dataWidth - iIndent));
 
             pDst += pParams->dstStep;
             pSrc += pParams->srcStep;
         }
     }
-
 }
 
-template<typename PixType, typename InterpolationStruct>
+template<typename PixType, typename InterpolationStruct, Ipp32s chromaMult>
 void read_data_through_boundary_left_right_px(InterpolationStruct *pParams)
 {
-    if (0 > pParams->xPos)
-        read_data_through_boundary_left_px<PixType, InterpolationStruct>(pParams);
-    else
-        read_data_through_boundary_right_px<PixType, InterpolationStruct>(pParams);
+    /* normalize data position */
+    if (-pParams->xPos >= pParams->dataWidth)
+        pParams->xPos = -(pParams->dataWidth - 1);
+    if (pParams->xPos >= pParams->frameSize.width)
+        pParams->xPos = pParams->frameSize.width - 1;
+
+    /* preread data into temporal buffer */
+    {
+        const PixType *pSrc = pParams->pSrc + pParams->yPos * pParams->srcStep;
+        PixType *pDst = pParams->pDst;
+
+        Ipp32s iIndentLeft = -pParams->xPos;
+        Ipp32s iIndentRight = pParams->frameSize.width - pParams->xPos;
+
+        for (Ipp32s i = 0; i < pParams->dataHeight; i += 1)
+        {
+            memset_with_mult<PixType, chromaMult>(pDst, pSrc, iIndentLeft);
+            MFX_INTERNAL_CPY(pDst + chromaMult*iIndentLeft, pSrc, chromaMult*(pParams->frameSize.width)*sizeof(PixType));
+            memset_with_mult<PixType, chromaMult>(pDst + chromaMult*iIndentRight, &pSrc[chromaMult*(iIndentRight - iIndentLeft - 1)], pParams->dataWidth - iIndentRight);
+
+            pDst += pParams->dstStep;
+            pSrc += pParams->srcStep;
+        }
+    }
 }
 
-template<typename PixType, typename InterpolationStruct>
+template<typename PixType, typename InterpolationStruct, Ipp32s chromaMult>
 void read_data_through_boundary_top_px(InterpolationStruct *pParams)
 {
     /* normalize data position */
@@ -399,30 +438,29 @@ void read_data_through_boundary_top_px(InterpolationStruct *pParams)
 
     /* preread data into temporal buffer */
     {
-        const PixType *pSrc = pParams->pSrc + pParams->xPos;
+        const PixType *pSrc = pParams->pSrc + chromaMult*pParams->xPos;
         PixType *pDst = pParams->pDst;
         Ipp32s i;
 
         /* clone upper row */
         for (i = pParams->yPos; i < 0; i += 1)
         {
-            MFX_INTERNAL_CPY(pDst, pSrc, pParams->dataWidth*sizeof(PixType));
+            MFX_INTERNAL_CPY(pDst, pSrc, chromaMult*pParams->dataWidth*sizeof(PixType));
 
             pDst += pParams->dstStep;
         }
         /* copy remain row(s) */
         for (i = 0; i < pParams->dataHeight + pParams->yPos; i += 1)
         {
-            MFX_INTERNAL_CPY(pDst, pSrc, pParams->dataWidth*sizeof(PixType));
+            MFX_INTERNAL_CPY(pDst, pSrc, chromaMult*pParams->dataWidth*sizeof(PixType));
 
             pDst += pParams->dstStep;
             pSrc += pParams->srcStep;
         }
     }
-
 }
 
-template<typename PixType, typename InterpolationStruct>
+template<typename PixType, typename InterpolationStruct, Ipp32s chromaMult>
 void read_data_through_boundary_top_left_px(InterpolationStruct *pParams)
 {
     /* normalize data position */
@@ -442,8 +480,8 @@ void read_data_through_boundary_top_left_px(InterpolationStruct *pParams)
         iIndent = -pParams->xPos;
 
         /* create upper row */
-        std::fill(pDst, pDst + iIndent, pSrc[0]);
-        MFX_INTERNAL_CPY(pDst + iIndent, pSrc, (pParams->dataWidth - iIndent)*sizeof(PixType));
+        memset_with_mult<PixType, chromaMult>(pDst, pSrc, iIndent);
+        MFX_INTERNAL_CPY(pDst + chromaMult*iIndent, pSrc, chromaMult*(pParams->dataWidth - iIndent)*sizeof(PixType));
 
         pDst += pParams->dstStep;
         pSrc += pParams->srcStep;
@@ -451,7 +489,7 @@ void read_data_through_boundary_top_left_px(InterpolationStruct *pParams)
         /* clone upper row */
         for (i = pParams->yPos + 1; i <= 0; i += 1)
         {
-            MFX_INTERNAL_CPY(pDst, pTmp, pParams->dataWidth*sizeof(PixType));
+            MFX_INTERNAL_CPY(pDst, pTmp, chromaMult*pParams->dataWidth*sizeof(PixType));
 
             pDst += pParams->dstStep;
         }
@@ -459,8 +497,8 @@ void read_data_through_boundary_top_left_px(InterpolationStruct *pParams)
         /* create remain row(s) */
         for (i = 1; i < pParams->dataHeight + pParams->yPos; i += 1)
         {
-            std::fill(pDst, pDst + iIndent, pSrc[0]);
-            MFX_INTERNAL_CPY(pDst + iIndent, pSrc, (pParams->dataWidth - iIndent)*sizeof(PixType));
+            memset_with_mult<PixType, chromaMult>(pDst, pSrc, iIndent);
+            MFX_INTERNAL_CPY(pDst + chromaMult*iIndent, pSrc, chromaMult*(pParams->dataWidth - iIndent)*sizeof(PixType));
 
             pDst += pParams->dstStep;
             pSrc += pParams->srcStep;
@@ -468,7 +506,7 @@ void read_data_through_boundary_top_left_px(InterpolationStruct *pParams)
     }
 }
 
-template<typename PixType, typename InterpolationStruct>
+template<typename PixType, typename InterpolationStruct, Ipp32s chromaMult>
 void read_data_through_boundary_top_right_px(InterpolationStruct *pParams)
 {
     /* normalize data position */
@@ -479,7 +517,7 @@ void read_data_through_boundary_top_right_px(InterpolationStruct *pParams)
 
     /* preread data into temporal buffer */
     {
-        const PixType *pSrc = pParams->pSrc + pParams->xPos;
+        const PixType *pSrc = pParams->pSrc + chromaMult*pParams->xPos;
         PixType *pDst = pParams->pDst;
         PixType *pTmp = pParams->pDst;
         Ipp32s i;
@@ -488,8 +526,8 @@ void read_data_through_boundary_top_right_px(InterpolationStruct *pParams)
         iIndent = pParams->frameSize.width - pParams->xPos;
 
         /* create upper row */
-        MFX_INTERNAL_CPY(pDst, pSrc, iIndent*sizeof(PixType));
-        std::fill(pDst + iIndent, pDst + iIndent + pParams->dataWidth - iIndent, pSrc[iIndent - 1]);
+        MFX_INTERNAL_CPY(pDst, pSrc, chromaMult*iIndent*sizeof(PixType));
+        memset_with_mult<PixType, chromaMult>(pDst + chromaMult*iIndent, &pSrc[chromaMult*(iIndent - 1)], (pParams->dataWidth - iIndent));
 
         pDst += pParams->dstStep;
         pSrc += pParams->srcStep;
@@ -497,15 +535,15 @@ void read_data_through_boundary_top_right_px(InterpolationStruct *pParams)
         /* clone upper row */
         for (i = pParams->yPos + 1; i <= 0; i += 1)
         {
-            MFX_INTERNAL_CPY(pDst, pTmp, pParams->dataWidth*sizeof(PixType));
+            MFX_INTERNAL_CPY(pDst, pTmp, chromaMult*pParams->dataWidth*sizeof(PixType));
             pDst += pParams->dstStep;
         }
 
         /* create remain row(s) */
         for (i = 1; i < pParams->dataHeight + pParams->yPos; i += 1)
         {
-            MFX_INTERNAL_CPY(pDst, pSrc, iIndent*sizeof(PixType));
-            std::fill(pDst + iIndent, pDst + iIndent + pParams->dataWidth - iIndent, pSrc[iIndent - 1]);
+            MFX_INTERNAL_CPY(pDst, pSrc, chromaMult*iIndent*sizeof(PixType));
+            memset_with_mult<PixType, chromaMult>(pDst + chromaMult*iIndent, &pSrc[chromaMult*(iIndent - 1)], pParams->dataWidth - iIndent);
 
             pDst += pParams->dstStep;
             pSrc += pParams->srcStep;
@@ -513,16 +551,57 @@ void read_data_through_boundary_top_right_px(InterpolationStruct *pParams)
     }
 }
 
-template<typename PixType, typename InterpolationStruct>
+template<typename PixType, typename InterpolationStruct, Ipp32s chromaMult>
 void read_data_through_boundary_top_left_right_px(InterpolationStruct *pParams)
 {
-    if (0 > pParams->xPos)
-        read_data_through_boundary_top_left_px<PixType, InterpolationStruct>(pParams);
-    else
-        read_data_through_boundary_top_right_px<PixType, InterpolationStruct>(pParams);
+    /* normalize data position */
+    if (-pParams->xPos >= pParams->dataWidth)
+        pParams->xPos = -(pParams->dataWidth - 1);
+    if (-pParams->yPos >= pParams->dataHeight)
+        pParams->yPos = -(pParams->dataHeight - 1);
+
+    if (pParams->xPos >= pParams->frameSize.width)
+        pParams->xPos = pParams->frameSize.width - 1;
+
+    /* preread data into temporal buffer */
+    {
+        const PixType *pSrc = pParams->pSrc;
+        PixType *pDst = pParams->pDst;
+        PixType *pTmp = pParams->pDst;
+        Ipp32s i;
+
+        Ipp32s iIndentLeft = -pParams->xPos;
+        Ipp32s iIndentRight = pParams->frameSize.width - pParams->xPos;
+
+        /* create upper row */
+        memset_with_mult<PixType, chromaMult>(pDst, pSrc, iIndentLeft);
+        MFX_INTERNAL_CPY(pDst + chromaMult*iIndentLeft, pSrc, chromaMult*(pParams->frameSize.width)*sizeof(PixType));
+        memset_with_mult<PixType, chromaMult>(pDst + chromaMult*iIndentRight, &pSrc[chromaMult*(iIndentRight - iIndentLeft - 1)], pParams->dataWidth - iIndentRight);
+
+        pDst += pParams->dstStep;
+        pSrc += pParams->srcStep;
+
+        /* clone upper row */
+        for (i = pParams->yPos + 1; i <= 0; i += 1)
+        {
+            MFX_INTERNAL_CPY(pDst, pTmp, chromaMult*pParams->dataWidth*sizeof(PixType));
+            pDst += pParams->dstStep;
+        }
+
+        /* create remain row(s) */
+        for (i = 1; i < pParams->dataHeight + pParams->yPos; i += 1)
+        {
+            memset_with_mult<PixType, chromaMult>(pDst, pSrc, iIndentLeft);
+            MFX_INTERNAL_CPY(pDst + chromaMult*iIndentLeft, pSrc, chromaMult*(pParams->frameSize.width)*sizeof(PixType));
+            memset_with_mult<PixType, chromaMult>(pDst + chromaMult*iIndentRight, &pSrc[chromaMult*(iIndentRight - iIndentLeft - 1)], pParams->dataWidth - iIndentRight);
+            
+            pDst += pParams->dstStep;
+            pSrc += pParams->srcStep;
+        }
+    }
 }
 
-template<typename PixType, typename InterpolationStruct>
+template<typename PixType, typename InterpolationStruct, Ipp32s chromaMult>
 void read_data_through_boundary_bottom_px(InterpolationStruct *pParams)
 {
     /* normalize data position */
@@ -531,14 +610,14 @@ void read_data_through_boundary_bottom_px(InterpolationStruct *pParams)
 
     /* preread data into temporal buffer */
     {
-        const PixType *pSrc = pParams->pSrc + pParams->yPos * pParams->srcStep + pParams->xPos;
+        const PixType *pSrc = pParams->pSrc + pParams->yPos * pParams->srcStep + chromaMult*pParams->xPos;
         PixType *pDst = pParams->pDst;
         Ipp32s i;
 
         /* copy existing lines */
         for (i = pParams->yPos; i < pParams->frameSize.height; i += 1)
         {
-            MFX_INTERNAL_CPY(pDst, pSrc, pParams->dataWidth*sizeof(PixType));
+            MFX_INTERNAL_CPY(pDst, pSrc, chromaMult*pParams->dataWidth*sizeof(PixType));
 
             pDst += pParams->dstStep;
             pSrc += pParams->srcStep;
@@ -548,13 +627,13 @@ void read_data_through_boundary_bottom_px(InterpolationStruct *pParams)
         pSrc = pDst - pParams->dstStep;
         for (i = pParams->frameSize.height; i < pParams->dataHeight + pParams->yPos; i += 1)
         {
-            MFX_INTERNAL_CPY(pDst, pSrc, pParams->dataWidth*sizeof(PixType));
+            MFX_INTERNAL_CPY(pDst, pSrc, chromaMult*pParams->dataWidth*sizeof(PixType));
             pDst += pParams->dstStep;
         }
     }
 }
 
-template<typename PixType, typename InterpolationStruct>
+template<typename PixType, typename InterpolationStruct, Ipp32s chromaMult>
 void read_data_through_boundary_bottom_left_px(InterpolationStruct *pParams)
 {
     /* normalize data position */
@@ -575,8 +654,8 @@ void read_data_through_boundary_bottom_left_px(InterpolationStruct *pParams)
         /* create existing lines */
         for (i = pParams->yPos; i < pParams->frameSize.height; i += 1)
         {
-            std::fill(pDst, pDst + iIndent, pSrc[0]);
-            MFX_INTERNAL_CPY(pDst + iIndent, pSrc, (pParams->dataWidth - iIndent)*sizeof(PixType));
+            memset_with_mult<PixType, chromaMult>(pDst, pSrc, iIndent);
+            MFX_INTERNAL_CPY(pDst + chromaMult*iIndent, pSrc, chromaMult*(pParams->dataWidth - iIndent)*sizeof(PixType));
 
             pDst += pParams->dstStep;
             pSrc += pParams->srcStep;
@@ -586,13 +665,13 @@ void read_data_through_boundary_bottom_left_px(InterpolationStruct *pParams)
         pSrc = pDst - pParams->dstStep;
         for (i = pParams->frameSize.height; i < pParams->dataHeight + pParams->yPos; i += 1)
         {
-            MFX_INTERNAL_CPY(pDst, pSrc, pParams->dataWidth*sizeof(PixType));
+            MFX_INTERNAL_CPY(pDst, pSrc, chromaMult*pParams->dataWidth*sizeof(PixType));
             pDst += pParams->dstStep;
         }
     }
 }
 
-template<typename PixType, typename InterpolationStruct>
+template<typename PixType, typename InterpolationStruct, Ipp32s chromaMult>
 void read_data_through_boundary_bottom_right_px(InterpolationStruct *pParams)
 {
     /* normalize data position */
@@ -603,7 +682,7 @@ void read_data_through_boundary_bottom_right_px(InterpolationStruct *pParams)
 
     /* preread data into temporal buffer */
     {
-        const PixType *pSrc = pParams->pSrc + pParams->yPos * pParams->srcStep + pParams->xPos;
+        const PixType *pSrc = pParams->pSrc + pParams->yPos * pParams->srcStep + chromaMult*pParams->xPos;
         PixType *pDst = pParams->pDst;
         Ipp32s i;
         Ipp32s iIndent;
@@ -613,8 +692,8 @@ void read_data_through_boundary_bottom_right_px(InterpolationStruct *pParams)
         /* create existing lines */
         for (i = pParams->yPos; i < pParams->frameSize.height; i += 1)
         {
-            MFX_INTERNAL_CPY(pDst, pSrc, iIndent*sizeof(PixType));
-            std::fill(pDst + iIndent, pDst + iIndent + pParams->dataWidth - iIndent, pSrc[iIndent - 1]);
+            MFX_INTERNAL_CPY(pDst, pSrc, chromaMult*iIndent*sizeof(PixType));
+            memset_with_mult<PixType, chromaMult>(pDst + chromaMult*iIndent, &pSrc[chromaMult*(iIndent - 1)], (pParams->dataWidth - iIndent));
 
             pDst += pParams->dstStep;
             pSrc += pParams->srcStep;
@@ -624,190 +703,106 @@ void read_data_through_boundary_bottom_right_px(InterpolationStruct *pParams)
         pSrc = pDst - pParams->dstStep;
         for (i = pParams->frameSize.height; i < pParams->dataHeight + pParams->yPos; i += 1)
         {
-            MFX_INTERNAL_CPY(pDst, pSrc, pParams->dataWidth*sizeof(PixType));
-
+            MFX_INTERNAL_CPY(pDst, pSrc, chromaMult*pParams->dataWidth*sizeof(PixType));
             pDst += pParams->dstStep;
         }
     }
 }
 
-template<typename PixType, typename InterpolationStruct>
+template<typename PixType, typename InterpolationStruct, Ipp32s chromaMult>
 void read_data_through_boundary_bottom_left_right_px(InterpolationStruct *pParams)
-{
-    if (0 > pParams->xPos)
-        read_data_through_boundary_bottom_left_px<PixType, InterpolationStruct>(pParams);
-    else
-        read_data_through_boundary_bottom_right_px<PixType, InterpolationStruct>(pParams);
-}
-
-template<typename PixType, typename InterpolationStruct>
-void read_data_through_boundary_top_bottom_px(InterpolationStruct *pParams)
-{
-    if (0 > pParams->yPos)
-        read_data_through_boundary_top_px<PixType, InterpolationStruct>(pParams);
-    else
-        read_data_through_boundary_bottom_px<PixType, InterpolationStruct>(pParams);
-}
-
-template<typename PixType, typename InterpolationStruct>
-void read_data_through_boundary_top_bottom_left_px(InterpolationStruct *pParams)
-{
-    if (0 > pParams->yPos)
-        read_data_through_boundary_top_left_px<PixType, InterpolationStruct>(pParams);
-    else
-        read_data_through_boundary_bottom_left_px<PixType, InterpolationStruct>(pParams);
-}
-
-template<typename PixType, typename InterpolationStruct>
-void read_data_through_boundary_top_bottom_right_px(InterpolationStruct *pParams)
-{
-    if (0 > pParams->yPos)
-        read_data_through_boundary_top_right_px<PixType, InterpolationStruct>(pParams);
-    else
-        read_data_through_boundary_bottom_right_px<PixType, InterpolationStruct>(pParams);
-}
-
-template<typename PixType, typename InterpolationStruct>
-void read_data_through_boundary_top_bottom_left_right_px(InterpolationStruct *pParams)
-{
-    if (0 > pParams->xPos)
-    {
-        if (0 > pParams->yPos)
-            read_data_through_boundary_top_left_px<PixType, InterpolationStruct>(pParams);
-        else
-            read_data_through_boundary_bottom_left_px<PixType, InterpolationStruct>(pParams);
-    }
-    else
-    {
-        if (0 > pParams->yPos)
-            read_data_through_boundary_top_right_px<PixType, InterpolationStruct>(pParams);
-        else
-            read_data_through_boundary_bottom_right_px<PixType, InterpolationStruct>(pParams);
-    }
-}
-
-/* Functions for NV12*/
-
-template<typename PixType>
-void memset_nv12(PixType *pDst, const PixType* nVal, Ipp32s nNum)
-{
-    Ipp32s i;
-
-    for (i = 0; i < nNum; i ++ )
-    {
-        pDst[2*i] = nVal[0];
-        pDst[2*i + 1] = nVal[1];
-    }
-}
-
-template<typename PixType, typename InterpolationStruct>
-void read_data_through_boundary_none_nv12(InterpolationStruct *pParams)
-{
-    /* touch unreferenced parameter(s) */
-    IPP_UNREFERENCED_PARAMETER(pParams);
-}
-
-template<typename PixType, typename InterpolationStruct>
-void read_data_through_boundary_left_nv12_px(InterpolationStruct *pParams)
 {
     /* normalize data position */
     if (-pParams->xPos >= pParams->dataWidth)
         pParams->xPos = -(pParams->dataWidth - 1);
+    if (pParams->yPos >= pParams->frameSize.height)
+        pParams->yPos = pParams->frameSize.height - 1;
+
+    if (pParams->xPos >= pParams->frameSize.width)
+        pParams->xPos = pParams->frameSize.width - 1;
 
     /* preread data into temporal buffer */
     {
         const PixType *pSrc = pParams->pSrc + pParams->yPos * pParams->srcStep;
         PixType *pDst = pParams->pDst;
         Ipp32s i;
-        Ipp32s iIndent;
 
-        iIndent = -pParams->xPos;
+        Ipp32s iIndentLeft = -pParams->xPos;
+        Ipp32s iIndentRight = pParams->frameSize.width - pParams->xPos;
 
-        for (i = 0; i < pParams->dataHeight; i += 1)
+        /* create existing lines */
+        for (i = pParams->yPos; i < pParams->frameSize.height; i += 1)
         {
-            memset_nv12<PixType>(pDst, pSrc, iIndent);
-            MFX_INTERNAL_CPY(pDst + 2*iIndent, pSrc, 2*(pParams->dataWidth - iIndent)*sizeof(PixType));
+            memset_with_mult<PixType, chromaMult>(pDst, pSrc, iIndentLeft);
+            MFX_INTERNAL_CPY(pDst + chromaMult*iIndentLeft, pSrc, chromaMult*(pParams->frameSize.width)*sizeof(PixType));
+            memset_with_mult<PixType, chromaMult>(pDst + chromaMult*iIndentRight, &pSrc[chromaMult*(iIndentRight - iIndentLeft - 1)], pParams->dataWidth - iIndentRight);
 
             pDst += pParams->dstStep;
             pSrc += pParams->srcStep;
         }
-    }
-}
 
-template<typename PixType, typename InterpolationStruct>
-void read_data_through_boundary_right_nv12_px(InterpolationStruct *pParams)
-{
-    /* normalize data position */
-    if (pParams->xPos >= pParams->frameSize.width)
-        pParams->xPos = pParams->frameSize.width - 1;
-
-    /* preread data into temporal buffer */
-    {
-        const PixType *pSrc = pParams->pSrc + pParams->yPos * pParams->srcStep + 2*pParams->xPos;
-        PixType *pDst = pParams->pDst;
-        Ipp32s i;
-        Ipp32s iIndent;
-
-        iIndent = pParams->frameSize.width - pParams->xPos;
-
-        for (i = 0; i < pParams->dataHeight; i += 1)
+        /* clone the latest line */
+        pSrc = pDst - pParams->dstStep;
+        for (i = pParams->frameSize.height; i < pParams->dataHeight + pParams->yPos; i += 1)
         {
-            MFX_INTERNAL_CPY(pDst, pSrc, 2*iIndent*sizeof(PixType));
-            memset_nv12<PixType>(pDst + 2*iIndent, &pSrc[2*iIndent - 2], 2*(pParams->dataWidth - iIndent));
-
+            MFX_INTERNAL_CPY(pDst, pSrc, chromaMult*pParams->dataWidth*sizeof(PixType));
             pDst += pParams->dstStep;
-            pSrc += pParams->srcStep;
         }
     }
 }
 
-template<typename PixType, typename InterpolationStruct>
-void read_data_through_boundary_left_right_nv12_px(InterpolationStruct *pParams)
-{
-    if (0 > pParams->xPos)
-        read_data_through_boundary_left_nv12_px<PixType, InterpolationStruct>(pParams);
-    else
-        read_data_through_boundary_right_nv12_px<PixType, InterpolationStruct>(pParams);
-}
-
-template<typename PixType, typename InterpolationStruct>
-void read_data_through_boundary_top_nv12_px(InterpolationStruct *pParams)
+template<typename PixType, typename InterpolationStruct, Ipp32s chromaMult>
+void read_data_through_boundary_top_bottom_px(InterpolationStruct *pParams)
 {
     /* normalize data position */
     if (-pParams->yPos >= pParams->dataHeight)
         pParams->yPos = -(pParams->dataHeight - 1);
+    if (pParams->yPos >= pParams->frameSize.height)
+        pParams->yPos = pParams->frameSize.height - 1;
 
     /* preread data into temporal buffer */
     {
-        const PixType *pSrc = pParams->pSrc + 2*pParams->xPos;
+        const PixType *pSrc = pParams->pSrc + chromaMult*pParams->xPos;
         PixType *pDst = pParams->pDst;
         Ipp32s i;
 
         /* clone upper row */
         for (i = pParams->yPos; i < 0; i += 1)
         {
-            MFX_INTERNAL_CPY(pDst, pSrc, 2*pParams->dataWidth*sizeof(PixType));
+            MFX_INTERNAL_CPY(pDst, pSrc, chromaMult*pParams->dataWidth*sizeof(PixType));
+
             pDst += pParams->dstStep;
         }
         /* copy remain row(s) */
-        for (i = 0; i < pParams->dataHeight + pParams->yPos; i += 1)
+        for (i = 0; i < pParams->frameSize.height; i += 1)
         {
-            MFX_INTERNAL_CPY(pDst, pSrc, 2*pParams->dataWidth*sizeof(PixType));
+            MFX_INTERNAL_CPY(pDst, pSrc, chromaMult*pParams->dataWidth*sizeof(PixType));
 
             pDst += pParams->dstStep;
             pSrc += pParams->srcStep;
         }
+
+        /* clone the latest line */
+        pSrc = pDst - pParams->dstStep;
+        for (i = pParams->frameSize.height; i < pParams->dataHeight + pParams->yPos; i += 1)
+        {
+            MFX_INTERNAL_CPY(pDst, pSrc, chromaMult*pParams->dataWidth*sizeof(PixType));
+            pDst += pParams->dstStep;
+        }
     }
 }
 
-template<typename PixType, typename InterpolationStruct>
-void read_data_through_boundary_top_left_nv12_px(InterpolationStruct *pParams)
+template<typename PixType, typename InterpolationStruct, Ipp32s chromaMult>
+void read_data_through_boundary_top_bottom_left_px(InterpolationStruct *pParams)
 {
     /* normalize data position */
     if (-pParams->xPos >= pParams->dataWidth)
         pParams->xPos = -(pParams->dataWidth - 1);
     if (-pParams->yPos >= pParams->dataHeight)
         pParams->yPos = -(pParams->dataHeight - 1);
+
+    if (pParams->yPos >= pParams->frameSize.height)
+        pParams->yPos = pParams->frameSize.height - 1;
 
     /* preread data into temporal buffer */
     {
@@ -820,8 +815,8 @@ void read_data_through_boundary_top_left_nv12_px(InterpolationStruct *pParams)
         iIndent = -pParams->xPos;
 
         /* create upper row */
-        memset_nv12<PixType>(pDst, pSrc, iIndent);
-        MFX_INTERNAL_CPY(pDst + 2*iIndent, pSrc, 2*(pParams->dataWidth - iIndent)*sizeof(PixType));
+        memset_with_mult<PixType, chromaMult>(pDst, pSrc, iIndent);
+        MFX_INTERNAL_CPY(pDst + chromaMult*iIndent, pSrc, chromaMult*(pParams->dataWidth - iIndent)*sizeof(PixType));
 
         pDst += pParams->dstStep;
         pSrc += pParams->srcStep;
@@ -829,34 +824,43 @@ void read_data_through_boundary_top_left_nv12_px(InterpolationStruct *pParams)
         /* clone upper row */
         for (i = pParams->yPos + 1; i <= 0; i += 1)
         {
-            MFX_INTERNAL_CPY(pDst, pTmp, 2*pParams->dataWidth*sizeof(PixType));
+            MFX_INTERNAL_CPY(pDst, pTmp, chromaMult*pParams->dataWidth*sizeof(PixType));
             pDst += pParams->dstStep;
         }
 
         /* create remain row(s) */
-        for (i = 1; i < pParams->dataHeight + pParams->yPos; i += 1)
+        for (i = 1; i < pParams->frameSize.height; i += 1)
         {
-            memset_nv12<PixType>(pDst, pSrc, iIndent);
-            MFX_INTERNAL_CPY(pDst + 2*iIndent, pSrc, 2*(pParams->dataWidth - iIndent)*sizeof(PixType));
+            memset_with_mult<PixType, chromaMult>(pDst, pSrc, iIndent);
+            MFX_INTERNAL_CPY(pDst + chromaMult*iIndent, pSrc, chromaMult*(pParams->dataWidth - iIndent)*sizeof(PixType));
 
             pDst += pParams->dstStep;
             pSrc += pParams->srcStep;
         }
+
+        pSrc = pDst - pParams->dstStep;
+        for (i = pParams->frameSize.height; i < pParams->dataHeight + pParams->yPos; i += 1)
+        {
+            MFX_INTERNAL_CPY(pDst, pSrc, chromaMult*pParams->dataWidth*sizeof(PixType));
+            pDst += pParams->dstStep;
+        }
     }
 }
 
-template<typename PixType, typename InterpolationStruct>
-void read_data_through_boundary_top_right_nv12_px(InterpolationStruct *pParams)
+template<typename PixType, typename InterpolationStruct, Ipp32s chromaMult>
+void read_data_through_boundary_top_bottom_right_px(InterpolationStruct *pParams)
 {
     /* normalize data position */
     if (pParams->xPos >= pParams->frameSize.width)
         pParams->xPos = pParams->frameSize.width - 1;
     if (-pParams->yPos >= pParams->dataHeight)
         pParams->yPos = -(pParams->dataHeight - 1);
+    if (pParams->yPos >= pParams->frameSize.height)
+        pParams->yPos = pParams->frameSize.height - 1;
 
     /* preread data into temporal buffer */
     {
-        const PixType *pSrc = pParams->pSrc + 2*pParams->xPos;
+        const PixType *pSrc = pParams->pSrc + chromaMult*pParams->xPos;
         PixType *pDst = pParams->pDst;
         PixType *pTmp = pParams->pDst;
         Ipp32s i;
@@ -865,8 +869,8 @@ void read_data_through_boundary_top_right_nv12_px(InterpolationStruct *pParams)
         iIndent = pParams->frameSize.width - pParams->xPos;
 
         /* create upper row */
-        MFX_INTERNAL_CPY(pDst, pSrc, 2*iIndent*sizeof(PixType));
-        memset_nv12<PixType>(pDst + 2*iIndent, &pSrc[2*iIndent - 2], 2*(pParams->dataWidth - iIndent));
+        MFX_INTERNAL_CPY(pDst, pSrc, chromaMult*iIndent*sizeof(PixType));
+        memset_with_mult<PixType, chromaMult>(pDst + chromaMult*iIndent, &pSrc[chromaMult*(iIndent - 1)], (pParams->dataWidth - iIndent));
 
         pDst += pParams->dstStep;
         pSrc += pParams->srcStep;
@@ -874,104 +878,37 @@ void read_data_through_boundary_top_right_nv12_px(InterpolationStruct *pParams)
         /* clone upper row */
         for (i = pParams->yPos + 1; i <= 0; i += 1)
         {
-            MFX_INTERNAL_CPY(pDst, pTmp, 2*pParams->dataWidth*sizeof(PixType));
+            MFX_INTERNAL_CPY(pDst, pTmp, chromaMult*pParams->dataWidth*sizeof(PixType));
             pDst += pParams->dstStep;
         }
 
         /* create remain row(s) */
-        for (i = 1; i < pParams->dataHeight + pParams->yPos; i += 1)
+        for (i = 1; i < pParams->frameSize.height; i += 1)
         {
-            MFX_INTERNAL_CPY(pDst, pSrc, 2*iIndent*sizeof(PixType));
-            memset_nv12<PixType>(pDst + 2*iIndent, &pSrc[2*iIndent - 2], 2*(pParams->dataWidth - iIndent));
+            MFX_INTERNAL_CPY(pDst, pSrc, chromaMult*iIndent*sizeof(PixType));
+            memset_with_mult<PixType, chromaMult>(pDst + chromaMult*iIndent, &pSrc[chromaMult*(iIndent - 1)], pParams->dataWidth - iIndent);
 
             pDst += pParams->dstStep;
             pSrc += pParams->srcStep;
         }
-    }
-}
 
-template<typename PixType, typename InterpolationStruct>
-void read_data_through_boundary_top_left_right_nv12_px(InterpolationStruct *pParams)
-{
-    if (0 > pParams->xPos)
-        read_data_through_boundary_top_left_nv12_px<PixType, InterpolationStruct>(pParams);
-    else
-        read_data_through_boundary_top_right_nv12_px<PixType, InterpolationStruct>(pParams);
-}
-
-template<typename PixType, typename InterpolationStruct>
-void read_data_through_boundary_bottom_nv12_px(InterpolationStruct *pParams)
-{
-    /* normalize data position */
-    if (pParams->yPos >= pParams->frameSize.height)
-        pParams->yPos = pParams->frameSize.height - 1;
-
-    /* preread data into temporal buffer */
-    {
-        const PixType *pSrc = pParams->pSrc + pParams->yPos * pParams->srcStep + 2*pParams->xPos;
-        PixType *pDst = pParams->pDst;
-        Ipp32s i;
-
-        /* copy existing lines */
-        for (i = pParams->yPos; i < pParams->frameSize.height; i += 1)
-        {
-            MFX_INTERNAL_CPY(pDst, pSrc, 2*pParams->dataWidth*sizeof(PixType));
-            pDst += pParams->dstStep;
-            pSrc += pParams->srcStep;
-        }
-
-        /* clone the latest line */
         pSrc = pDst - pParams->dstStep;
         for (i = pParams->frameSize.height; i < pParams->dataHeight + pParams->yPos; i += 1)
         {
-            MFX_INTERNAL_CPY(pDst, pSrc, 2*pParams->dataWidth*sizeof(PixType));
+            MFX_INTERNAL_CPY(pDst, pSrc, chromaMult*pParams->dataWidth*sizeof(PixType));
             pDst += pParams->dstStep;
         }
     }
 }
 
-template<typename PixType, typename InterpolationStruct>
-void read_data_through_boundary_bottom_left_nv12_px(InterpolationStruct *pParams)
+template<typename PixType, typename InterpolationStruct, Ipp32s chromaMult>
+void read_data_through_boundary_top_bottom_left_right_px(InterpolationStruct *pParams)
 {
     /* normalize data position */
     if (-pParams->xPos >= pParams->dataWidth)
         pParams->xPos = -(pParams->dataWidth - 1);
-    if (pParams->yPos >= pParams->frameSize.height)
-        pParams->yPos = pParams->frameSize.height - 1;
-
-    /* preread data into temporal buffer */
-    {
-        const PixType *pSrc = pParams->pSrc + pParams->yPos * pParams->srcStep;
-        PixType *pDst = pParams->pDst;
-        Ipp32s i;
-        Ipp32s iIndent;
-
-        iIndent = -pParams->xPos;
-
-        /* create existing lines */
-        for (i = pParams->yPos; i < pParams->frameSize.height; i += 1)
-        {
-            memset_nv12<PixType>(pDst, pSrc, iIndent);
-            MFX_INTERNAL_CPY(pDst + 2*iIndent, pSrc, 2*(pParams->dataWidth - iIndent)*sizeof(PixType));
-
-            pDst += pParams->dstStep;
-            pSrc += pParams->srcStep;
-        }
-
-        /* clone the latest line */
-        pSrc = pDst - pParams->dstStep;
-        for (i = pParams->frameSize.height; i < pParams->dataHeight + pParams->yPos; i += 1)
-        {
-            MFX_INTERNAL_CPY(pDst, pSrc, 2*pParams->dataWidth*sizeof(PixType));
-            pDst += pParams->dstStep;
-        }
-    }
-}
-
-template<typename PixType, typename InterpolationStruct>
-void read_data_through_boundary_bottom_right_nv12_px(InterpolationStruct *pParams)
-{
-    /* normalize data position */
+    if (-pParams->yPos >= pParams->dataHeight)
+        pParams->yPos = -(pParams->dataHeight - 1);
     if (pParams->xPos >= pParams->frameSize.width)
         pParams->xPos = pParams->frameSize.width - 1;
     if (pParams->yPos >= pParams->frameSize.height)
@@ -979,179 +916,139 @@ void read_data_through_boundary_bottom_right_nv12_px(InterpolationStruct *pParam
 
     /* preread data into temporal buffer */
     {
-        const PixType *pSrc = pParams->pSrc + pParams->yPos * pParams->srcStep + 2*pParams->xPos;
+        const PixType *pSrc = pParams->pSrc;
         PixType *pDst = pParams->pDst;
+        PixType *pTmp = pParams->pDst;
         Ipp32s i;
-        Ipp32s iIndent;
 
-        iIndent = pParams->frameSize.width - pParams->xPos;
+        Ipp32s iIndentLeft = -pParams->xPos;
+        Ipp32s iIndentRight = pParams->frameSize.width - pParams->xPos;
 
-        /* create existing lines */
-        for (i = pParams->yPos; i < pParams->frameSize.height; i += 1)
+        /* create upper row */
+        memset_with_mult<PixType, chromaMult>(pDst, pSrc, iIndentLeft);
+        MFX_INTERNAL_CPY(pDst + chromaMult*iIndentLeft, pSrc, chromaMult*(pParams->frameSize.width)*sizeof(PixType));
+        memset_with_mult<PixType, chromaMult>(pDst + chromaMult*iIndentRight, &pSrc[chromaMult*(iIndentRight - iIndentLeft - 1)], pParams->dataWidth - iIndentRight);
+
+        pDst += pParams->dstStep;
+        pSrc += pParams->srcStep;
+
+        /* clone upper row */
+        for (i = pParams->yPos + 1; i <= 0; i += 1)
         {
-            MFX_INTERNAL_CPY(pDst, pSrc, 2*iIndent*sizeof(PixType));
-            memset_nv12<PixType>(pDst + 2*iIndent, &pSrc[2*iIndent - 2], 2*(pParams->dataWidth - iIndent));
+            MFX_INTERNAL_CPY(pDst, pTmp, chromaMult*pParams->dataWidth*sizeof(PixType));
+            pDst += pParams->dstStep;
+        }
 
+        /* create remain row(s) */
+        for (i = 1; i < pParams->frameSize.height; i += 1)
+        {
+            memset_with_mult<PixType, chromaMult>(pDst, pSrc, iIndentLeft);
+            MFX_INTERNAL_CPY(pDst + chromaMult*iIndentLeft, pSrc, chromaMult*(pParams->frameSize.width)*sizeof(PixType));
+            memset_with_mult<PixType, chromaMult>(pDst + chromaMult*iIndentRight, &pSrc[chromaMult*(iIndentRight - iIndentLeft - 1)], pParams->dataWidth - iIndentRight);
+            
             pDst += pParams->dstStep;
             pSrc += pParams->srcStep;
         }
 
-        /* clone the latest line */
         pSrc = pDst - pParams->dstStep;
         for (i = pParams->frameSize.height; i < pParams->dataHeight + pParams->yPos; i += 1)
         {
-            MFX_INTERNAL_CPY(pDst, pSrc, 2*pParams->dataWidth*sizeof(PixType));
+            MFX_INTERNAL_CPY(pDst, pSrc, chromaMult*pParams->dataWidth*sizeof(PixType));
             pDst += pParams->dstStep;
         }
-    }
-}
-
-template<typename PixType, typename InterpolationStruct>
-void read_data_through_boundary_bottom_left_right_nv12_px(InterpolationStruct *pParams)
-{
-    if (0 > pParams->xPos)
-        read_data_through_boundary_bottom_left_nv12_px<PixType, InterpolationStruct>(pParams);
-    else
-        read_data_through_boundary_bottom_right_nv12_px<PixType, InterpolationStruct>(pParams);
-}
-
-template<typename PixType, typename InterpolationStruct>
-void read_data_through_boundary_top_bottom_nv12_px(InterpolationStruct *pParams)
-{
-    if (0 > pParams->yPos)
-        read_data_through_boundary_top_nv12_px<PixType, InterpolationStruct>(pParams);
-    else
-        read_data_through_boundary_bottom_nv12_px<PixType, InterpolationStruct>(pParams);
-}
-
-template<typename PixType, typename InterpolationStruct>
-void read_data_through_boundary_top_bottom_left_nv12_px(InterpolationStruct *pParams)
-{
-    if (0 > pParams->yPos)
-        read_data_through_boundary_top_left_nv12_px<PixType, InterpolationStruct>(pParams);
-    else
-        read_data_through_boundary_bottom_left_nv12_px<PixType, InterpolationStruct>(pParams);
-}
-
-template<typename PixType, typename InterpolationStruct>
-void read_data_through_boundary_top_bottom_right_nv12_px(InterpolationStruct *pParams)
-{
-    if (0 > pParams->yPos)
-        read_data_through_boundary_top_right_nv12_px<PixType, InterpolationStruct>(pParams);
-    else
-        read_data_through_boundary_bottom_right_nv12_px<PixType, InterpolationStruct>(pParams);
-} /* void read_data_through_boundary_top_bottom_right_nv12_8u_px(H265InterpolationParams_8u *pParams) */
-
-template<typename PixType, typename InterpolationStruct>
-void read_data_through_boundary_top_bottom_left_right_nv12_px(InterpolationStruct *pParams)
-{
-    if (0 > pParams->xPos)
-    {
-        if (0 > pParams->yPos)
-            read_data_through_boundary_top_left_nv12_px<PixType, InterpolationStruct>(pParams);
-        else
-            read_data_through_boundary_bottom_left_nv12_px<PixType, InterpolationStruct>(pParams);
-    }
-    else
-    {
-        if (0 > pParams->yPos)
-            read_data_through_boundary_top_right_nv12_px<PixType, InterpolationStruct>(pParams);
-        else
-            read_data_through_boundary_bottom_right_nv12_px<PixType, InterpolationStruct>(pParams);
     }
 }
 
 /* declare functions for handle boundary cases */
 pH264Interpolation_8u read_data_through_boundary_table_8u_pxmx[16] =
 {
-    &read_data_through_boundary_none<Ipp8u, H265InterpolationParams_8u>,
-    &read_data_through_boundary_left_px<Ipp8u, H265InterpolationParams_8u>,
-    &read_data_through_boundary_right_px<Ipp8u, H265InterpolationParams_8u>,
-    &read_data_through_boundary_left_right_px<Ipp8u, H265InterpolationParams_8u>,
+    &read_data_through_boundary_none<Ipp8u, H265InterpolationParams_8u, 1>,
+    &read_data_through_boundary_left_px<Ipp8u, H265InterpolationParams_8u, 1>,
+    &read_data_through_boundary_right_px<Ipp8u, H265InterpolationParams_8u, 1>,
+    &read_data_through_boundary_left_right_px<Ipp8u, H265InterpolationParams_8u, 1>,
 
-    &read_data_through_boundary_top_px<Ipp8u, H265InterpolationParams_8u>,
-    &read_data_through_boundary_top_left_px<Ipp8u, H265InterpolationParams_8u>,
-    &read_data_through_boundary_top_right_px<Ipp8u, H265InterpolationParams_8u>,
-    &read_data_through_boundary_top_left_right_px<Ipp8u, H265InterpolationParams_8u>,
+    &read_data_through_boundary_top_px<Ipp8u, H265InterpolationParams_8u, 1>,
+    &read_data_through_boundary_top_left_px<Ipp8u, H265InterpolationParams_8u, 1>,
+    &read_data_through_boundary_top_right_px<Ipp8u, H265InterpolationParams_8u, 1>,
+    &read_data_through_boundary_top_left_right_px<Ipp8u, H265InterpolationParams_8u, 1>,
 
-    &read_data_through_boundary_bottom_px<Ipp8u, H265InterpolationParams_8u>,
-    &read_data_through_boundary_bottom_left_px<Ipp8u, H265InterpolationParams_8u>,
-    &read_data_through_boundary_bottom_right_px<Ipp8u, H265InterpolationParams_8u>,
-    &read_data_through_boundary_bottom_left_right_px<Ipp8u, H265InterpolationParams_8u>,
+    &read_data_through_boundary_bottom_px<Ipp8u, H265InterpolationParams_8u, 1>,
+    &read_data_through_boundary_bottom_left_px<Ipp8u, H265InterpolationParams_8u, 1>,
+    &read_data_through_boundary_bottom_right_px<Ipp8u, H265InterpolationParams_8u, 1>,
+    &read_data_through_boundary_bottom_left_right_px<Ipp8u, H265InterpolationParams_8u, 1>,
 
-    &read_data_through_boundary_top_bottom_px<Ipp8u, H265InterpolationParams_8u>,
-    &read_data_through_boundary_top_bottom_left_px<Ipp8u, H265InterpolationParams_8u>,
-    &read_data_through_boundary_top_bottom_right_px<Ipp8u, H265InterpolationParams_8u>,
-    &read_data_through_boundary_top_bottom_left_right_px<Ipp8u, H265InterpolationParams_8u>
+    &read_data_through_boundary_top_bottom_px<Ipp8u, H265InterpolationParams_8u, 1>,
+    &read_data_through_boundary_top_bottom_left_px<Ipp8u, H265InterpolationParams_8u, 1>,
+    &read_data_through_boundary_top_bottom_right_px<Ipp8u, H265InterpolationParams_8u, 1>,
+    &read_data_through_boundary_top_bottom_left_right_px<Ipp8u, H265InterpolationParams_8u, 1>
 };
 
 pH264Interpolation_8u read_data_through_boundary_table_nv12_8u_pxmx[16] =
 {
-    &read_data_through_boundary_none_nv12<Ipp8u, H265InterpolationParams_8u>,
-    &read_data_through_boundary_left_nv12_px<Ipp8u, H265InterpolationParams_8u>,
-    &read_data_through_boundary_right_nv12_px<Ipp8u, H265InterpolationParams_8u>,
-    &read_data_through_boundary_left_right_nv12_px<Ipp8u, H265InterpolationParams_8u>,
+    &read_data_through_boundary_none<Ipp8u, H265InterpolationParams_8u, 2>,
+    &read_data_through_boundary_left_px<Ipp8u, H265InterpolationParams_8u, 2>,
+    &read_data_through_boundary_right_px<Ipp8u, H265InterpolationParams_8u, 2>,
+    &read_data_through_boundary_left_right_px<Ipp8u, H265InterpolationParams_8u, 2>,
 
-    &read_data_through_boundary_top_nv12_px<Ipp8u, H265InterpolationParams_8u>,
-    &read_data_through_boundary_top_left_nv12_px<Ipp8u, H265InterpolationParams_8u>,
-    &read_data_through_boundary_top_right_nv12_px<Ipp8u, H265InterpolationParams_8u>,
-    &read_data_through_boundary_top_left_right_nv12_px<Ipp8u, H265InterpolationParams_8u>,
+    &read_data_through_boundary_top_px<Ipp8u, H265InterpolationParams_8u, 2>,
+    &read_data_through_boundary_top_left_px<Ipp8u, H265InterpolationParams_8u, 2>,
+    &read_data_through_boundary_top_right_px<Ipp8u, H265InterpolationParams_8u, 2>,
+    &read_data_through_boundary_top_left_right_px<Ipp8u, H265InterpolationParams_8u, 2>,
 
-    &read_data_through_boundary_bottom_nv12_px<Ipp8u, H265InterpolationParams_8u>,
-    &read_data_through_boundary_bottom_left_nv12_px<Ipp8u, H265InterpolationParams_8u>,
-    &read_data_through_boundary_bottom_right_nv12_px<Ipp8u, H265InterpolationParams_8u>,
-    &read_data_through_boundary_bottom_left_right_nv12_px<Ipp8u, H265InterpolationParams_8u>,
+    &read_data_through_boundary_bottom_px<Ipp8u, H265InterpolationParams_8u, 2>,
+    &read_data_through_boundary_bottom_left_px<Ipp8u, H265InterpolationParams_8u, 2>,
+    &read_data_through_boundary_bottom_right_px<Ipp8u, H265InterpolationParams_8u, 2>,
+    &read_data_through_boundary_bottom_left_right_px<Ipp8u, H265InterpolationParams_8u, 2>,
 
-    &read_data_through_boundary_top_bottom_nv12_px<Ipp8u, H265InterpolationParams_8u>,
-    &read_data_through_boundary_top_bottom_left_nv12_px<Ipp8u, H265InterpolationParams_8u>,
-    &read_data_through_boundary_top_bottom_right_nv12_px<Ipp8u, H265InterpolationParams_8u>,
-    &read_data_through_boundary_top_bottom_left_right_nv12_px<Ipp8u, H265InterpolationParams_8u>
-};
+    &read_data_through_boundary_top_bottom_px<Ipp8u, H265InterpolationParams_8u, 2>,
+    &read_data_through_boundary_top_bottom_left_px<Ipp8u, H265InterpolationParams_8u, 2>,
+    &read_data_through_boundary_top_bottom_right_px<Ipp8u, H265InterpolationParams_8u, 2>,
+    &read_data_through_boundary_top_bottom_left_right_px<Ipp8u, H265InterpolationParams_8u, 2>};
 
 pH264Interpolation_16u read_data_through_boundary_table_16u_pxmx[16] =
 {
-    &read_data_through_boundary_none<Ipp16u, H265InterpolationParams_16u>,
-    &read_data_through_boundary_left_px<Ipp16u, H265InterpolationParams_16u>,
-    &read_data_through_boundary_right_px<Ipp16u, H265InterpolationParams_16u>,
-    &read_data_through_boundary_left_right_px<Ipp16u, H265InterpolationParams_16u>,
+    &read_data_through_boundary_none<Ipp16u, H265InterpolationParams_16u, 1>,
+    &read_data_through_boundary_left_px<Ipp16u, H265InterpolationParams_16u, 1>,
+    &read_data_through_boundary_right_px<Ipp16u, H265InterpolationParams_16u, 1>,
+    &read_data_through_boundary_left_right_px<Ipp16u, H265InterpolationParams_16u, 1>,
 
-    &read_data_through_boundary_top_px<Ipp16u, H265InterpolationParams_16u>,
-    &read_data_through_boundary_top_left_px<Ipp16u, H265InterpolationParams_16u>,
-    &read_data_through_boundary_top_right_px<Ipp16u, H265InterpolationParams_16u>,
-    &read_data_through_boundary_top_left_right_px<Ipp16u, H265InterpolationParams_16u>,
+    &read_data_through_boundary_top_px<Ipp16u, H265InterpolationParams_16u, 1>,
+    &read_data_through_boundary_top_left_px<Ipp16u, H265InterpolationParams_16u, 1>,
+    &read_data_through_boundary_top_right_px<Ipp16u, H265InterpolationParams_16u, 1>,
+    &read_data_through_boundary_top_left_right_px<Ipp16u, H265InterpolationParams_16u, 1>,
 
-    &read_data_through_boundary_bottom_px<Ipp16u, H265InterpolationParams_16u>,
-    &read_data_through_boundary_bottom_left_px<Ipp16u, H265InterpolationParams_16u>,
-    &read_data_through_boundary_bottom_right_px<Ipp16u, H265InterpolationParams_16u>,
-    &read_data_through_boundary_bottom_left_right_px<Ipp16u, H265InterpolationParams_16u>,
+    &read_data_through_boundary_bottom_px<Ipp16u, H265InterpolationParams_16u, 1>,
+    &read_data_through_boundary_bottom_left_px<Ipp16u, H265InterpolationParams_16u, 1>,
+    &read_data_through_boundary_bottom_right_px<Ipp16u, H265InterpolationParams_16u, 1>,
+    &read_data_through_boundary_bottom_left_right_px<Ipp16u, H265InterpolationParams_16u, 1>,
 
-    &read_data_through_boundary_top_bottom_px<Ipp16u, H265InterpolationParams_16u>,
-    &read_data_through_boundary_top_bottom_left_px<Ipp16u, H265InterpolationParams_16u>,
-    &read_data_through_boundary_top_bottom_right_px<Ipp16u, H265InterpolationParams_16u>,
-    &read_data_through_boundary_top_bottom_left_right_px<Ipp16u, H265InterpolationParams_16u>
+    &read_data_through_boundary_top_bottom_px<Ipp16u, H265InterpolationParams_16u, 1>,
+    &read_data_through_boundary_top_bottom_left_px<Ipp16u, H265InterpolationParams_16u, 1>,
+    &read_data_through_boundary_top_bottom_right_px<Ipp16u, H265InterpolationParams_16u, 1>,
+    &read_data_through_boundary_top_bottom_left_right_px<Ipp16u, H265InterpolationParams_16u, 1>
 };
 
 pH264Interpolation_16u read_data_through_boundary_table_nv12_16u_pxmx[16] =
 {
-    &read_data_through_boundary_none_nv12<Ipp16u, H265InterpolationParams_16u>,
-    &read_data_through_boundary_left_nv12_px<Ipp16u, H265InterpolationParams_16u>,
-    &read_data_through_boundary_right_nv12_px<Ipp16u, H265InterpolationParams_16u>,
-    &read_data_through_boundary_left_right_nv12_px<Ipp16u, H265InterpolationParams_16u>,
+    &read_data_through_boundary_none<Ipp16u, H265InterpolationParams_16u, 2>,
+    &read_data_through_boundary_left_px<Ipp16u, H265InterpolationParams_16u, 2>,
+    &read_data_through_boundary_right_px<Ipp16u, H265InterpolationParams_16u, 2>,
+    &read_data_through_boundary_left_right_px<Ipp16u, H265InterpolationParams_16u, 2>,
 
-    &read_data_through_boundary_top_nv12_px<Ipp16u, H265InterpolationParams_16u>,
-    &read_data_through_boundary_top_left_nv12_px<Ipp16u, H265InterpolationParams_16u>,
-    &read_data_through_boundary_top_right_nv12_px<Ipp16u, H265InterpolationParams_16u>,
-    &read_data_through_boundary_top_left_right_nv12_px<Ipp16u, H265InterpolationParams_16u>,
+    &read_data_through_boundary_top_px<Ipp16u, H265InterpolationParams_16u, 2>,
+    &read_data_through_boundary_top_left_px<Ipp16u, H265InterpolationParams_16u, 2>,
+    &read_data_through_boundary_top_right_px<Ipp16u, H265InterpolationParams_16u, 2>,
+    &read_data_through_boundary_top_left_right_px<Ipp16u, H265InterpolationParams_16u, 2>,
 
-    &read_data_through_boundary_bottom_nv12_px<Ipp16u, H265InterpolationParams_16u>,
-    &read_data_through_boundary_bottom_left_nv12_px<Ipp16u, H265InterpolationParams_16u>,
-    &read_data_through_boundary_bottom_right_nv12_px<Ipp16u, H265InterpolationParams_16u>,
-    &read_data_through_boundary_bottom_left_right_nv12_px<Ipp16u, H265InterpolationParams_16u>,
+    &read_data_through_boundary_bottom_px<Ipp16u, H265InterpolationParams_16u, 2>,
+    &read_data_through_boundary_bottom_left_px<Ipp16u, H265InterpolationParams_16u, 2>,
+    &read_data_through_boundary_bottom_right_px<Ipp16u, H265InterpolationParams_16u, 2>,
+    &read_data_through_boundary_bottom_left_right_px<Ipp16u, H265InterpolationParams_16u, 2>,
 
-    &read_data_through_boundary_top_bottom_nv12_px<Ipp16u, H265InterpolationParams_16u>,
-    &read_data_through_boundary_top_bottom_left_nv12_px<Ipp16u, H265InterpolationParams_16u>,
-    &read_data_through_boundary_top_bottom_right_nv12_px<Ipp16u, H265InterpolationParams_16u>,
-    &read_data_through_boundary_top_bottom_left_right_nv12_px<Ipp16u, H265InterpolationParams_16u>
+    &read_data_through_boundary_top_bottom_px<Ipp16u, H265InterpolationParams_16u, 2>,
+    &read_data_through_boundary_top_bottom_left_px<Ipp16u, H265InterpolationParams_16u, 2>,
+    &read_data_through_boundary_top_bottom_right_px<Ipp16u, H265InterpolationParams_16u, 2>,
+    &read_data_through_boundary_top_bottom_left_right_px<Ipp16u, H265InterpolationParams_16u, 2>
 };
 
 IppStatus ippiInterpolateLumaBlock_H265(H265InterpolationParams_8u *interpolateInfo, Ipp8u *temporary_buffer)
