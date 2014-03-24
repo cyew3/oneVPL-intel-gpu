@@ -446,6 +446,11 @@ mfxStatus D3D9VideoCORE::AllocFrames(mfxFrameAllocRequest *request,
                 MFX_CHECK_STS(sts);
                 m_bCmCopy = true;
             }
+        }else if(m_bCmCopy){
+            if(m_pCmCopy.get())
+                m_pCmCopy.get()->ReleaseCmSurfaces();
+            else
+                m_bCmCopy = false;
         }
 
 

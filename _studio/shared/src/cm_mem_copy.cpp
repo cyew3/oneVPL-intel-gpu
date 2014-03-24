@@ -171,19 +171,22 @@ mfxStatus CmCopyWrapper::Initialize()
 
 } // mfxStatus CmCopyWrapper::Initialize(void)
 
-mfxStatus CmCopyWrapper::Release(void)
+mfxStatus CmCopyWrapper::ReleaseCmSurfaces(void)
 {
     std::map<void *, CmSurface2D *>::iterator itSrc;
-    std::map<mfxU8 *, CmBufferUP *>::iterator itDst;
 
-    for (itSrc = m_tableCmRelations.begin() ; itSrc != m_tableCmRelations.end(); itSrc++)
+    for (itSrc = m_tableCmRelations2.begin() ; itSrc != m_tableCmRelations2.end(); itSrc++)
     {
         CmSurface2D *temp = itSrc->second;
         m_pCmDevice->DestroySurface(temp);
     }
-
-    m_tableCmRelations.clear();
-
+    m_tableCmRelations2.clear();
+    return MFX_ERR_NONE;
+}
+mfxStatus CmCopyWrapper::Release(void)
+{
+    std::map<mfxU8 *, CmBufferUP *>::iterator itDst;
+    ReleaseCmSurfaces();
     for (itDst = m_tableSysRelations.begin() ; itDst != m_tableSysRelations.end(); itDst++)
     {
         CmBufferUP *temp = itDst->second;
@@ -244,6 +247,7 @@ mfxStatus CmCopyWrapper::Release(void)
     return MFX_ERR_NONE;
 
 } // mfxStatus CmCopyWrapper::Release(void)
+
 CmSurface2D * CmCopyWrapper::CreateCmSurface2D(void *pSrc, mfxU32 width, mfxU32 height, bool isSecondMode, 
                                                std::map<void *, CmSurface2D *> & tableCmRelations, 
                                                std::map<CmSurface2D *, SurfaceIndex *> & tableCmIndex)

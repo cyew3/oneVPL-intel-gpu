@@ -135,6 +135,7 @@ public:
     mfxStatus CopySystemToVideoMemoryAPI(void *pDst, mfxU32 dstPitch, mfxU8 *pSrc, mfxU32 srcPitch, mfxU32 srcUVOffset, IppiSize roi);
 
     mfxStatus CopyVideoToVideoMemoryAPI(void *pDst, void *pSrc, IppiSize roi);
+    mfxStatus ReleaseCmSurfaces(void);
 
 protected:
 
