@@ -341,17 +341,17 @@ mfxStatus CmdProcessor::ParseCmdLine(int argc, msdk_char *argv[])
     }
     else if (argv[0] && m_parName)
     {
-         msdk_printf(MSDK_STRING ("error: simultaneously enabling parfile and description pipeline from command line forbidden\n"));
-         return MFX_ERR_UNSUPPORTED;
+        msdk_printf(MSDK_STRING ("error: simultaneously enabling parfile and description pipeline from command line forbidden\n"));
+        return MFX_ERR_UNSUPPORTED;
     }
     else
     {
-         sts = ParseParamsForOneSession(argc, argv);
-         if (MFX_ERR_NONE != sts)
-         {
-               msdk_printf(MSDK_STRING("error: pipeline description is invalid\n"));
-               return sts;
-         }
+        sts = ParseParamsForOneSession(argc, argv);
+        if (MFX_ERR_NONE != sts)
+        {
+            msdk_printf(MSDK_STRING("error: pipeline description is invalid\n"));
+            return sts;
+        }
     }
 
     return sts;
@@ -804,6 +804,10 @@ mfxStatus CmdProcessor::ParseParamsForOneSession(mfxU32 argc, msdk_char *argv[])
         {
             InputParams.bEnableDeinterlacing = true;
         }
+        else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-la_ext")))
+        {
+            InputParams.bEnableExtLA = true;
+        }
         else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-la")))
         {
             InputParams.bLABRC = true;
@@ -845,11 +849,11 @@ mfxStatus CmdProcessor::ParseOption__set(msdk_char* strCodecType, msdk_char* str
     //Parse codec type - decoder or encoder
     if (0 == msdk_strncmp(MSDK_STRING("-i::"), strCodecType, 4))
     {
-        type |= MSDK_VDEC;
+        type |= MSDK_VDECODE;
     }
     else if (0 == msdk_strncmp(MSDK_STRING("-o::"), strCodecType, 4))
     {
-        type |= MSDK_VENC;
+        type |= MSDK_VENCODE;
     }
     else
     {
