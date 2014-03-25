@@ -174,8 +174,6 @@ template<int shift>
 static void t_InterpLuma_s8_d16_H_AVX2(const unsigned char* pSrc, unsigned int srcPitch, short *pDst, unsigned int dstPitch, int tab_index, int width, int height)
 {
     int col;
-    const unsigned char *pSrcRef = pSrc;
-    short *pDstRef = pDst;
     const signed char* coeffs;
     __m256i ymm0, ymm1, ymm2, ymm3;
 
@@ -224,7 +222,7 @@ static void t_InterpLuma_s8_d16_H(const unsigned char* pSrc, unsigned int srcPit
 {
     int col;
     const signed char* coeffs;
-    __m128i xmm0, xmm1, xmm2, xmm3, xmm4, xmm5;
+    __m128i xmm0, xmm1, xmm2, xmm3;
 
     coeffs = filtTabLuma_S8[4 * (tab_index-1)];
 
@@ -315,8 +313,6 @@ template<int shift>
 static void t_InterpChroma_s8_d16_H_AVX2(const unsigned char* pSrc, unsigned int srcPitch, short *pDst, unsigned int dstPitch, int tab_index, int width, int height, int plane )
 {
     int col;
-    const unsigned char *pSrcRef = pSrc;
-    short *pDstRef = pDst;
     const signed char* coeffs;
     const signed char* shufTab;
     __m256i ymm0, ymm1, ymm2, ymm3;
@@ -471,8 +467,6 @@ template<int shift, int offset>
 static void t_InterpLuma_s16_d16_H_AVX2(const short* pSrc, unsigned int srcPitch, short *pDst, unsigned int dstPitch, int tab_index, int width, int height)
 {
     int col;
-    const short *pSrcRef = pSrc;
-    short *pDstRef = pDst;
     const signed char* coeffs;
     __m256i ymm0, ymm1, ymm2, ymm3;
 
@@ -600,10 +594,8 @@ template<int plane, int shift, int offset>
 static void t_InterpChroma_s16_d16_H_AVX2(const short* pSrc, unsigned int srcPitch, short *pDst, unsigned int dstPitch, int tab_index, int width, int height)
 {
     int col;
-    const short *pSrcRef = pSrc;
-    short *pDstRef = pDst;
     const signed char* coeffs;
-    __m256i ymm0, ymm1, ymm2, ymm3;
+    __m256i ymm0, ymm1;
 
     _mm256_zeroupper();
 

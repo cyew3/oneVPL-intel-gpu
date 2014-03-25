@@ -538,11 +538,6 @@ namespace MFX_HEVC_PP
         Ipp32s TPelY     = CUPelY;
         Ipp32s RPelX;
         Ipp32s BPelY;
-        Ipp32s signLeft;
-        Ipp32s signRight;
-        Ipp32s signDown;
-        Ipp32s signDown1;
-        Ipp32u edgeType;
         Ipp32s picWidthTmp;
         Ipp32s picHeightTmp;
         Ipp32s startX;
@@ -557,7 +552,7 @@ namespace MFX_HEVC_PP
         __m128i offset3 = _mm_set1_epi16((Ipp16s)pOffsetEo[3]);
         __m128i offset4 = _mm_set1_epi16((Ipp16s)pOffsetEo[4]);
         __m128i negOne = _mm_cmpeq_epi16(offset0, offset0);
-        __m128i recn, rec0, rec1, rmin;
+        __m128i recn, rec0, rec1;
         __m128i sign0, sign1, type, offs;
         __m128i xmm_min, xmm_max;
 
@@ -2140,10 +2135,9 @@ static void h265_sao_BO_sse(
         Ipp16s signLineBuf1[64+1];
         Ipp16s signLineBuf2[64+1];
 
-        int x, y, startX, startY, endX, endY;
+        int x, startX, startY, endX, endY;
         int firstLineStartX, firstLineEndX;
         int edgeType;
-        Ipp16s signLeft, signRight, signDown;
         Ipp64s *diff, *count;
 
         //const int compIdx = SAO_Y;
@@ -2265,7 +2259,7 @@ static void h265_sao_BO_sse(
                     endY   = height - skipLinesB;
 
                     //prepare 2nd line's upper sign
-                    Ipp16s *signUpLine, *signDownLine, *signTmpLine;
+                    Ipp16s *signUpLine, *signDownLine;
                     signUpLine  = signLineBuf1;
                     signDownLine= signLineBuf2;
                     recLineBelow = recLine + recStride;

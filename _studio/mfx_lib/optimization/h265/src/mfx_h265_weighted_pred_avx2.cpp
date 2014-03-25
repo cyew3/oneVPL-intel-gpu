@@ -40,7 +40,7 @@ static void h265_CopyWeighted_Kernel(Ipp16s* pSrc, Ipp16s* pSrcUV, DstCoeffsType
 {
     Ipp32s x, y, xt;
     __m128i xmm_shift;
-    __m256i ymm0, ymm1, ymm2, ymm3, ymm4, ymm5, ymm6, ymm7;
+    __m256i ymm0, ymm1, ymm2, ymm3, ymm5, ymm6, ymm7;
     __m256i ymm_max;
 
     VM_ASSERT((Height & 0x01) == 0);
@@ -194,7 +194,7 @@ static void h265_CopyWeightedBidi_Kernel(Ipp16s* pSrc0, Ipp16s* pSrcUV0, Ipp16s*
 {
     Ipp32s x, y, xt;
     __m128i xmm_shift;
-    __m256i ymm0, ymm1, ymm2, ymm3, ymm4, ymm5, ymm6, ymm7;
+    __m256i ymm0, ymm1, ymm2, ymm3, ymm5, ymm6, ymm7;
     __m256i ymm_max;
 
     VM_ASSERT((Height & 0x01) == 0);

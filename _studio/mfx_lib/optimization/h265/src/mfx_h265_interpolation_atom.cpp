@@ -227,7 +227,6 @@ static void t_InterpChroma_s8_d16_H(const unsigned char* pSrc, unsigned int srcP
 {
     int col;
     const signed char* coeffs;
-    const signed char* shufTab;
     __m128i xmm0, xmm1, xmm2, xmm3;
 
     /* avoid Klocwork warnings */

@@ -16,6 +16,8 @@
 #include "ipps.h"
 #include <immintrin.h>
 
+#pragma warning(disable: 4127)
+
 #if defined(_WIN32) || defined(_WIN64)
   #define H265_FORCEINLINE __forceinline
   #define H265_NONLINE __declspec(noinline)

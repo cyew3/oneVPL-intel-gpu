@@ -23,84 +23,6 @@ THIS FILE IS A TEMPORAL SOLUTION AND IT WILL BE REMOVED AS SOON AS THE NEW FUNCT
 namespace UMC_HEVC_DECODER
 {
 
-
-#define ABS(a)          (((a) < 0) ? (-(a)) : (a))
-#define max(a, b)       (((a) > (b)) ? (a) : (b))
-#define min(a, b)       (((a) < (b)) ? (a) : (b))
-#define ClampVal(x)  (ClampTbl[256 + (x)])
-#define clipd1(x, limit) min(limit, max(x,-limit))
-
-#define ClampTblLookup(x, y) ClampVal((x) + clipd1((y),256))
-#define ClampTblLookupNew(x) ClampVal((x))
-
-#define _IPP_ARCH_IA32    1
-#define _IPP_ARCH_IA64    2
-#define _IPP_ARCH_EM64T   4
-#define _IPP_ARCH_XSC     8
-#define _IPP_ARCH_LRB     16
-#define _IPP_ARCH_LP32    32
-#define _IPP_ARCH_LP64    64
-
-#define _IPP_ARCH    _IPP_ARCH_IA32
-
-#define _IPP_PX 0
-#define _IPP_M6 1
-#define _IPP_A6 2
-#define _IPP_W7 4
-#define _IPP_T7 8
-#define _IPP_V8 16
-#define _IPP_P8 32
-#define _IPP_G9 64
-
-#define _IPP _IPP_PX
-
-#define _IPP32E_PX _IPP_PX
-#define _IPP32E_M7 32
-#define _IPP32E_U8 64
-#define _IPP32E_Y8 128
-#define _IPP32E_E9 256
-
-#define _IPP32E _IPP32E_PX
-
-#define IPP_ERROR_RET( ErrCode )  return (ErrCode)
-
-#define IPP_BADARG_RET( expr, ErrCode )\
-            {if (expr) { IPP_ERROR_RET( ErrCode ); }}
-
-#define IPP_BAD_SIZE_RET( n )\
-            IPP_BADARG_RET( (n)<=0, ippStsSizeErr )
-
-#define IPP_BAD_STEP_RET( n )\
-            IPP_BADARG_RET( (n)<=0, ippStsStepErr )
-
-#define IPP_BAD_PTR1_RET( ptr )\
-            IPP_BADARG_RET( NULL==(ptr), ippStsNullPtrErr )
-
-#define IPP_BAD_PTR2_RET( ptr1, ptr2 )\
-            IPP_BADARG_RET(((NULL==(ptr1))||(NULL==(ptr2))), ippStsNullPtrErr)
-
-#define IPP_BAD_PTR3_RET( ptr1, ptr2, ptr3 )\
-            IPP_BADARG_RET(((NULL==(ptr1))||(NULL==(ptr2))||(NULL==(ptr3))),\
-                                                     ippStsNullPtrErr)
-
-#define IPP_BAD_PTR4_RET( ptr1, ptr2, ptr3, ptr4 )\
-                {IPP_BAD_PTR2_RET( ptr1, ptr2 ); IPP_BAD_PTR2_RET( ptr3, ptr4 )}
-
-#define IPP_BAD_RANGE_RET( val, low, high )\
-     IPP_BADARG_RET( ((val)<(low) || (val)>(high)), ippStsOutOfRangeErr)
-
-#define __ALIGN16 __declspec (align(16))
-
-
-/* Define NULL pointer value */
-#ifndef NULL
-#ifdef  __cplusplus
-#define NULL    0
-#else
-#define NULL    ((void *)0)
-#endif
-#endif
-
 #define read_data_through_boundary_table_8u read_data_through_boundary_table_8u_pxmx
 typedef void (*pH264Interpolation_8u) (H265InterpolationParams_8u *pParams);
 extern pH264Interpolation_8u read_data_through_boundary_table_8u_pxmx[16];
@@ -114,6 +36,8 @@ extern pH264Interpolation_8u read_data_through_boundary_table_nv12_8u_pxmx[16];
 
 #define read_data_through_boundary_table_nv12_16u read_data_through_boundary_table_nv12_16u_pxmx
 extern pH264Interpolation_16u read_data_through_boundary_table_nv12_16u_pxmx[16];
+
+#pragma warning(disable: 4127)
 
 template<typename PixType, Ipp32s chromaMult>
 void memset_with_mult(PixType *pDst, const PixType* nVal, Ipp32s nNum)
@@ -263,6 +187,8 @@ IppStatus ippiInterpolateBoundaryChromaBlock_NV12_H264(Ipp32s iOverlappingType, 
 
     return ippStsNoErr;
 }
+
+#pragma warning(default: 4127)
 
 template<typename PixType, typename InterpolationStruct>
 IppStatus ippiInterpolateChromaBlock_H264Internal(InterpolationStruct *interpolateInfo, PixType *temporary_buffer)

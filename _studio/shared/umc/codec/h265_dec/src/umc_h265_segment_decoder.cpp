@@ -82,7 +82,7 @@ void DecodingContext::Init(H265Slice *slice)
         SetNewQP(slice->m_SliceHeader.SliceQP);
     }
 
-    size_t rowCoeffSize = sizeof(H265CoeffsCommon) * m_sps->MaxCUSize*m_sps->MaxCUSize*m_sps->WidthInCU;
+    Ipp32u rowCoeffSize = sizeof(H265CoeffsCommon) * m_sps->MaxCUSize*m_sps->MaxCUSize*m_sps->WidthInCU;
     rowCoeffSize = rowCoeffSize*3 / 2; // add chroma coeffs
 
     m_coeffBuffer.Init(4, rowCoeffSize); // four lines
@@ -1536,23 +1536,27 @@ void H265SegmentDecoder::DecodeTransform(Ipp32u AbsPartIdx, Ipp32u Depth, Ipp32u
 
         UpdateNeighborBuffers(AbsPartIdx, Depth, false);
 
+        Ipp32u coeffSize = 1 << (log2TrafoSize << 1);
+
         if (cbfY)
         {
             ParseCoeffNxNCABAC(m_context->m_coeffsWrite, AbsPartIdx, log2TrafoSize, COMPONENT_LUMA);
-            m_context->m_coeffsWrite += 1 << (log2TrafoSize << 1);
+            m_context->m_coeffsWrite += coeffSize;
         }
 
         if (log2TrafoSize > 2)
         {
+            coeffSize = 1 << ((log2TrafoSize - 1) << 1);
+
             if (cbfU)
             {
                 ParseCoeffNxNCABAC(m_context->m_coeffsWrite, AbsPartIdx, log2TrafoSize-1, COMPONENT_CHROMA_U);
-                m_context->m_coeffsWrite += 1 << ((log2TrafoSize - 1) << 1);
+                m_context->m_coeffsWrite += coeffSize;
             }
             if (cbfV)
             {
                 ParseCoeffNxNCABAC(m_context->m_coeffsWrite, AbsPartIdx, log2TrafoSize-1, COMPONENT_CHROMA_V);
-                m_context->m_coeffsWrite += 1 << ((log2TrafoSize - 1) << 1);
+                m_context->m_coeffsWrite += coeffSize;
             }
         }
         else
@@ -1562,12 +1566,12 @@ void H265SegmentDecoder::DecodeTransform(Ipp32u AbsPartIdx, Ipp32u Depth, Ipp32u
                 if (cbfU)
                 {
                     ParseCoeffNxNCABAC(m_context->m_coeffsWrite, m_BakAbsPartIdxChroma, log2TrafoSize, COMPONENT_CHROMA_U);
-                    m_context->m_coeffsWrite += 1 << (log2TrafoSize << 1);
+                    m_context->m_coeffsWrite += coeffSize;
                 }
                 if (cbfV)
                 {
                     ParseCoeffNxNCABAC(m_context->m_coeffsWrite, m_BakAbsPartIdxChroma, log2TrafoSize, COMPONENT_CHROMA_V);
-                    m_context->m_coeffsWrite += 1 << (log2TrafoSize << 1);
+                    m_context->m_coeffsWrite += coeffSize;
                 }
             }
         }
@@ -1791,6 +1795,8 @@ void H265SegmentDecoder::ParseCoeffNxNCABAC(H265CoeffsPtrCommon pCoef, Ipp32u Ab
         ParseCoeffNxNCABACOptimized<false>(pCoef, AbsPartIdx, Log2BlockSize, plane);
     }
 }
+
+#pragma warning(disable: 4127)
 
 template <bool scaling_list_enabled_flag>
 void H265SegmentDecoder::ParseCoeffNxNCABACOptimized(H265CoeffsPtrCommon pCoef, Ipp32u AbsPartIdx, Ipp32u Log2BlockSize, ComponentPlane plane)
@@ -2086,6 +2092,7 @@ void H265SegmentDecoder::ParseCoeffNxNCABACOptimized(H265CoeffsPtrCommon pCoef, 
         LastPinCG = 15;
     }
 }
+#pragma warning(default: 4127)
 
 void H265SegmentDecoder::ParseTransformSkipFlags(Ipp32u AbsPartIdx, ComponentPlane plane)
 {

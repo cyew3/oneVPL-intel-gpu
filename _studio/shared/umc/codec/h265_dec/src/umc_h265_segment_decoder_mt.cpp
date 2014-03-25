@@ -461,6 +461,8 @@ public:
     virtual void FilterEdgeChroma(H265EdgeData *edge, H265PlaneYCommon *srcDst, size_t srcDstStride, Ipp32s x, Ipp32s y, Ipp32s dir, Ipp32s chromaCbQpOffset, Ipp32s chromaCrQpOffset, Ipp32u bit_depth);
 };
 
+#pragma warning(disable: 4127)
+
 template<bool bitDepth, typename H265PlaneType>
 void ReconstructorT<bitDepth, H265PlaneType>::FilterPredictPels(DecodingContext* sd, H265CodingUnit* pCU, H265PlaneYCommon* pels, Ipp32s width, Ipp32u TrDepth, Ipp32u AbsPartIdx)
 {
@@ -632,6 +634,8 @@ void ReconstructorT<bitDepth, H265PlaneType>::PredictIntraChroma(Ipp32s predMode
         }
     }
 }
+
+#pragma warning(default: 4127)
 
 template<bool bitDepth, typename H265PlaneType>
 void ReconstructorT<bitDepth, H265PlaneType>::GetPredPelsLuma(H265PlaneYCommon* pSrc, H265PlaneYCommon* PredPel, Ipp32s blkSize, Ipp32s srcPitch, Ipp32u tpIf, Ipp32u lfIf, Ipp32u tlIf, Ipp32u bit_depth)

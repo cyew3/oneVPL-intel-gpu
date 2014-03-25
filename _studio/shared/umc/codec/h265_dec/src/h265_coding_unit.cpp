@@ -314,7 +314,7 @@ Ipp8u H265CodingUnit::getNumPartInter(Ipp32u AbsPartIdx)
     return  iNumPart;
 }
 
-void H265CodingUnit::getPartIndexAndSize(Ipp32u AbsPartIdx, Ipp32u Depth, Ipp32u uPartIdx, Ipp32u &Width, Ipp32u &Height)
+void H265CodingUnit::getPartIndexAndSize(Ipp32u AbsPartIdx, Ipp32u uPartIdx, Ipp32u &Width, Ipp32u &Height)
 {
     Ipp32u cuWidth = GetWidth(AbsPartIdx);
 

@@ -101,7 +101,7 @@ void H265Prediction::MotionCompensationInternal(H265CodingUnit* pCU, Ipp32u AbsP
     {
         H265PUInfo PUi;
 
-        pCU->getPartIndexAndSize(AbsPartIdx, Depth, PartIdx, PUi.Width, PUi.Height);
+        pCU->getPartIndexAndSize(AbsPartIdx, PartIdx, PUi.Width, PUi.Height);
         PUi.PartAddr = subPartIdx;
 
         Ipp32s LPelX = pCU->m_CUPelX + pCU->m_rasterToPelX[subPartIdx];
@@ -313,14 +313,15 @@ void H265Prediction::PredInterUni(H265CodingUnit* pCU, H265PUInfo &PUi, EnumRefP
     H265InterpolationParams_8u interpolateSrc;
     PrepareInterpSrc <c_plane_type, PlaneType>( pCU, PUi, RefPicList, interpolateSrc, (PlaneType*)m_temp_interpolarion_buffer);
     const PlaneType * in_pSrc = (const PlaneType *)interpolateSrc.pSrc;
-    Ipp32s in_SrcPitch = interpolateSrc.srcStep, in_SrcPic2Pitch = 0;
+    Ipp32s in_SrcPitch = (Ipp32s)interpolateSrc.srcStep;
+    Ipp32s in_SrcPic2Pitch = 0;
 
     const PlaneType *in_pSrcPic2 = NULL;
     if ( eAddAverage == MFX_HEVC_PP::AVERAGE_FROM_PIC )
     {
         PrepareInterpSrc <c_plane_type, PlaneType>( pCU, PUi, (EnumRefPicList)(RefPicList ^ 1), interpolateSrc, (PlaneType*)m_temp_interpolarion_buffer + (128*128) );
         in_pSrcPic2 = (const PlaneType *)interpolateSrc.pSrc;
-        in_SrcPic2Pitch = interpolateSrc.srcStep;
+        in_SrcPic2Pitch = (Ipp32s)interpolateSrc.srcStep;
     }
 
     Ipp32s tap = ( c_plane_type == TEXT_CHROMA ) ? 4 : 8;

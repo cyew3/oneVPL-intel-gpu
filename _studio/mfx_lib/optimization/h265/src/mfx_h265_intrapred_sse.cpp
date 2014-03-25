@@ -2269,7 +2269,7 @@ namespace MFX_HEVC_PP
         Ipp8u t0, t1, t2, t3;
         Ipp8u *p0;
         Ipp32s i;
-        __m128i xmm0, xmm1, xmm2, xmm3, xmm4, xmm5, xmm6, xmm7;
+        __m128i xmm0, xmm1, xmm2, xmm7;
 
         VM_ASSERT(width == 4 || width == 8 || width == 16 || width == 32);
 
@@ -2320,7 +2320,7 @@ namespace MFX_HEVC_PP
         int topRight)
     {
         int x;
-        Ipp8u *p0, *p1;
+        Ipp8u *p0;
         __m128i xmm0, xmm1, xmm2, xmm3, xmm4, xmm5, xmm6, xmm7;
 
         /* see calling code - if any of this changes, code would need to be rewritten */

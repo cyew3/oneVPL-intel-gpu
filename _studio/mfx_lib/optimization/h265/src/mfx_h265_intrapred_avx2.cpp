@@ -39,7 +39,7 @@ void MAKE_NAME(h265_FilterPredictPels_8u)(Ipp8u* PredPel, Ipp32s width)
     Ipp8u t0, t1, t2, t3;
     Ipp8u *p0;
     Ipp32s i;
-    __m256i ymm0, ymm1, ymm2, ymm3, ymm4, ymm5, ymm6, ymm7;
+    __m256i ymm0, ymm1, ymm2, ymm7;
 
     VM_ASSERT(width == 4 || width == 8 || width == 16 || width == 32);
 
@@ -94,7 +94,7 @@ void MAKE_NAME(h265_FilterPredictPels_Bilinear_8u) (
     int topRight)
 {
     int x;
-    Ipp8u *p0, *p1;
+    Ipp8u *p0;
     __m256i ymm0, ymm1, ymm2, ymm3, ymm4, ymm5, ymm6, ymm7;
 
     _mm256_zeroupper();
