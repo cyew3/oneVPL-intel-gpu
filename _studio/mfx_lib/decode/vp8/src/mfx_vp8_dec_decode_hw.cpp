@@ -157,7 +157,7 @@ mfxStatus VideoDECODEVP8_HW::Init(mfxVideoParam *p_video_param)
     m_p_core->GetVA((mfxHDL*)&m_p_video_accelerator, MFX_MEMTYPE_FROM_DECODE);
 
 
-    m_frameOrder = (mfxU16)MFX_FRAMEORDER_UNKNOWN;
+    m_frameOrder = (mfxU16)0;
     m_is_initialized = true;
 
     return MFX_ERR_NONE;
@@ -1039,9 +1039,6 @@ void VideoDECODEVP8_HW::DecodeInitDequantization(MFX_VP8_BoolDecoder &dec)
   m_frame_info.mbStep   = mbPerRow; \
 }
 
-int bitcount_saved = 0;
-int pos_saved = 0;
-
 mfxStatus VideoDECODEVP8_HW::DecodeFrameHeader(mfxBitstream *in)
 {
 
@@ -1373,21 +1370,19 @@ mfxStatus VideoDECODEVP8_HW::DecodeFrameHeader(mfxBitstream *in)
         //m_frame_info.goldProb = 0;
     }
 
-
-    bitcount_saved = m_boolDecoder[VP8_FIRST_PARTITION].bitcount();
-    pos_saved = m_boolDecoder[VP8_FIRST_PARTITION].pos();
-
-    if(bitcount_saved < 8) {
-
-        pos_saved = bitcount_saved;
-        bitcount_saved = 8 - bitcount_saved;
-
-    }
-
     int frame_data_offset = m_boolDecoder[VP8_FIRST_PARTITION].pos() +
         ((m_frame_info.frameType == I_PICTURE) ? 10 : 3);
 
-    m_frame_info.entropyDecSize = frame_data_offset * 8 - 16 + (8 - m_boolDecoder[VP8_FIRST_PARTITION].bitcount());
+
+    #ifdef MFX_VA_WIN
+
+    m_frame_info.entropyDecSize = frame_data_offset * 8 - 16 - m_boolDecoder[VP8_FIRST_PARTITION].bitcount();
+
+    #else
+
+    m_frame_info.entropyDecSize = frame_data_offset * 8 - 16 - 8;
+
+    #endif
 
     //set to zero Mb coeffs
     for (mfxU32 i = 0; i < m_frame_info.mbPerCol; i++)
@@ -1422,11 +1417,14 @@ mfxStatus VideoDECODEVP8_HW::DecodeFrameHeader(mfxBitstream *in)
 
     if (m_frame_info.frameType == I_PICTURE)
     {
+//        m_frame_info.firstPartitionSize = m_frame_info.firstPartitionSize - Ipp32u(m_boolDecoder[VP8_FIRST_PARTITION].input() - ((Ipp8u*)in->Data) - 10) + 2;
+//        m_frame_info.entropyDecSize = m_frame_info.entropyDecSize - 80 - 16;
         m_frame_info.entropyDecSize = m_frame_info.entropyDecSize - 80;
     }
     else
     {
-        m_frame_info.entropyDecSize = m_frame_info.entropyDecSize - 24;
+        m_frame_info.firstPartitionSize = m_frame_info.firstPartitionSize - Ipp32u(m_boolDecoder[VP8_FIRST_PARTITION].input() - ((Ipp8u*)in->Data) - 3) + 2;
+//        m_frame_info.entropyDecSize = m_frame_info.entropyDecSize - 24;
     }
 
     #endif
