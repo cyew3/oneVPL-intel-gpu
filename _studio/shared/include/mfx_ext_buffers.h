@@ -210,7 +210,8 @@ typedef struct {
     mfxU16      PatternSubPel;      // 0-default; 1-int pel only; 2-halfpel; 3-quarter pel
     mfxU16      ForceNumThread;     // 0-default
     mfxU16      FastCbfMode;        // tri-state, stop PU modes after cbf is 0
-    mfxU16      reserved[9];
+    mfxU16      PuDecisionSatd;     // tri-state, use SATD for PU decision
+    mfxU16      reserved[8];
 } mfxExtCodingOptionHEVC;
 
 

@@ -250,6 +250,7 @@ MFXTranscodingPipeline::MFXTranscodingPipeline(IMFXPipelineFactory *pFactory)
         HANDLE_HEVC_OPTION(FastSkip,                 OPT_TRI_STATE,  "on/off stop decision if cbf for best merge is 0"),
         HANDLE_HEVC_OPTION(ForceNumThread,           OPT_UINT_16,    "0-default"),
         HANDLE_HEVC_OPTION(FastCbfMode,              OPT_TRI_STATE,  "on/off stop TU mode serch after zero cbf"),
+        HANDLE_HEVC_OPTION(PuDecisionSatd,           OPT_TRI_STATE,  "on/off use SATD for PU decision"),
 
         HANDLE_VP8PARAM_OPTION(VP8Version,            OPT_UINT_8,    "0-maxU8"),
         HANDLE_VP8PARAM_OPTION(LoopFilterType,        OPT_UINT_8,    "0-maxU8"),

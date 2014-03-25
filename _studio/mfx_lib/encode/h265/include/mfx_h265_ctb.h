@@ -410,6 +410,7 @@ public:
     CostType MeCu(Ipp32u absPartIdx, Ipp8u depth, Ipp32s offset);
 
     void MePu(H265MEInfo *meInfo, Ipp32s lastPredIdx);
+    Ipp32s PuCost(H265MEInfo *meInfo);
 
 #if defined (MFX_ENABLE_CM)
     void MePuGacc(H265MEInfo *meInfo, Ipp32s lastPredIdx);
