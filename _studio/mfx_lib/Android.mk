@@ -222,7 +222,7 @@ ifeq ($(MFX_IMPL_HW), true)
   LOCAL_SHARED_LIBRARIES := libstlport-mfx libgabi++-mfx libva libva-tpi libdl
 
   LOCAL_MODULE_TAGS := optional
-  ifeq ($(TARGET_ARCH_VARIANT), x86)
+  ifeq ($(TARGET_ARCH), x86)
     LOCAL_MODULE := libmfxhw32
   else
     LOCAL_MODULE := libmfxhw64
@@ -263,7 +263,7 @@ ifeq ($(MFX_IMPL_SW), true)
 
   LOCAL_MODULE_TAGS := optional
 
-  ifeq ($(TARGET_ARCH_VARIANT), x86)
+  ifeq ($(TARGET_ARCH), x86)
     LOCAL_MODULE := libmfxsw32
   else
     LOCAL_MODULE := libmfxsw64

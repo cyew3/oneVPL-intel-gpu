@@ -20,7 +20,7 @@ IPP_ROOT := $(MEDIASDK_ROOT)/ipp/linux/ia32
 MDF_ROOT := $(MEDIASDK_ROOT)/mdf
 
 # See http://software.intel.com/en-us/articles/intel-integrated-performance-primitives-intel-ipp-understanding-cpu-optimized-code-used-in-intel-ipp
-ifeq ($(TARGET_ARCH_VARIANT), x86)
+ifeq ($(TARGET_ARCH), x86)
   MFX_CFLAGS_INTERNAL += -DLINUX32
   IPP_ROOT := $(MEDIASDK_ROOT)/ipp/linux/ia32
 
