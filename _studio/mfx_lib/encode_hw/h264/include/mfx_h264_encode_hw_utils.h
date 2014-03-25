@@ -2797,6 +2797,19 @@ namespace MfxHwH264Encode
         DdiTask const & task,
         mfxU32          fieldId);
 
+    mfxStatus  CopyBitstream(
+                VideoCORE           & core,
+                MfxVideoParam const & video,
+                DdiTask const       & task,
+                mfxU32              fieldId,
+                mfxU8 *             bsData,
+                mfxU32              bsSizeAvail);
+    
+    mfxU32 GetMaxSliceSize(        
+        mfxU8 *               sbegin, // contents of source buffer may be modified
+        mfxU8 *               send,
+        mfxU32                &num);
+
     mfxU8 * PatchBitstream(
         MfxVideoParam const & video,
         DdiTask const &       task,

@@ -321,8 +321,19 @@ void MfxHwH264Encode::FillVaringPartOfSliceBuffer(
         sps.FrameWidth  / 16,
         sps.FrameHeight / 16 / numPics);
 
-    for (size_t i = 0; i < slice.size(); ++i, divider.Next())
+    if (divider.GetNumSlice() != slice.size())
     {
+        size_t old_size = slice.size();
+        slice.resize(divider.GetNumSlice());
+        for (size_t i = old_size; i < slice.size(); ++i)
+        {
+            slice[i] = slice[0];
+            slice[i].slice_id = i;
+        } 
+    }
+
+    for (size_t i = 0; i < slice.size(); ++i, divider.Next())
+    { 
         slice[i].NumMbsForSlice                     = divider.GetNumMbInSlice();
         slice[i].first_mb_in_slice                  = divider.GetFirstMbInSlice();
 
@@ -1125,6 +1136,20 @@ mfxStatus D3D9Encoder::Execute(
             m_sps.bResetBRC = true;
     }
 
+    {
+        size_t slice_size_old = m_slice.size();
+        FillVaringPartOfPpsBuffer(task, fieldId, m_pps);        
+        FillVaringPartOfSliceBuffer(m_caps, task, fieldId, m_sps, m_pps, m_slice);
+        if (slice_size_old != m_slice.size())
+        {
+            m_headerPacker.ResizeSlices(m_slice.size());
+        }    
+        m_compBufDesc.resize(10 + m_slice.size());
+        m_pps.NumSlice = mfxU8(m_slice.size());
+        
+    }
+
+
     m_compBufDesc[bufCnt].CompressedBufferType = D3DDDIFMT_INTELENCODE_SPSDATA;
     m_compBufDesc[bufCnt].DataSize = mfxU32(sizeof(m_sps));
     m_compBufDesc[bufCnt].pCompBuffer = &m_sps;
@@ -1138,18 +1163,18 @@ mfxStatus D3D9Encoder::Execute(
         bufCnt++;
     }
 
-    FillVaringPartOfPpsBuffer(task, fieldId, m_pps);
+    
     m_compBufDesc[bufCnt].CompressedBufferType = D3DDDIFMT_INTELENCODE_PPSDATA;
     m_compBufDesc[bufCnt].DataSize = mfxU32(sizeof(m_pps));
     m_compBufDesc[bufCnt].pCompBuffer = &m_pps;
     bufCnt++;
 
-    FillVaringPartOfSliceBuffer(m_caps, task, fieldId, m_sps, m_pps, m_slice);
+   
     m_compBufDesc[bufCnt].CompressedBufferType = D3DDDIFMT_INTELENCODE_SLICEDATA;
     m_compBufDesc[bufCnt].DataSize = mfxU32(sizeof(m_slice[0]) * m_slice.size());
     m_compBufDesc[bufCnt].pCompBuffer = &m_slice[0];
     bufCnt++;
-
+    
     mfxU32 bitstream = task.m_idxBs[fieldId];
     m_compBufDesc[bufCnt].CompressedBufferType = D3DDDIFMT_INTELENCODE_BITSTREAMDATA;
     m_compBufDesc[bufCnt].DataSize = mfxU32(sizeof(bitstream));

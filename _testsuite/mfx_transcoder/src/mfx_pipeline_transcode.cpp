@@ -263,6 +263,7 @@ MFXTranscodingPipeline::MFXTranscodingPipeline(IMFXPipelineFactory *pFactory)
         HANDLE_EXT_OPTION2(IntRefCycleSize,        OPT_UINT_16,   ""),
         HANDLE_EXT_OPTION2(IntRefQPDelta,          OPT_INT_16,   ""),
         HANDLE_EXT_OPTION2(MaxFrameSize,           OPT_UINT_32,   ""),
+        HANDLE_EXT_OPTION2(MaxSliceSize,           OPT_UINT_32,   ""),
         HANDLE_EXT_OPTION2(BitrateLimit,           OPT_TRI_STATE,   ""),
         HANDLE_EXT_OPTION2(MBBRC,                  OPT_TRI_STATE,   ""),
         HANDLE_EXT_OPTION2(ExtBRC,                 OPT_TRI_STATE,   ""),
@@ -721,6 +722,38 @@ mfxStatus MFXTranscodingPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI3
                 return MFX_ERR_UNKNOWN;
 
             pExt->MaxFrameSize = val;
+            m_ExtBuffers.get()->push_back(pExt);
+
+            argv++;
+        }
+        else if (m_bResetParamsStart && m_OptProc.Check(argv[0], VM_STRING("-MaxSliceSize"), VM_STRING("")))
+        {
+            mfxU32 val;
+            //file name that will be used for input after reseting encoder
+            MFX_CHECK(1 + argv != argvEnd);
+            MFX_PARSE_INT(val, argv[1]);
+
+            mfxExtCodingOption2 *pExt = NULL;
+
+            if (0 != val)
+            {
+                MFXExtBufferPtrBase *ppExt = m_ExtBuffers.get()->get_by_id(MFX_EXTBUFF_CODING_OPTION2);
+                if (!ppExt)
+                {
+                    pExt = new mfxExtCodingOption2();
+
+                    pExt->Header.BufferId = MFX_EXTBUFF_CODING_OPTION2;
+                    pExt->Header.BufferSz = sizeof(mfxExtCodingOption2);
+                }
+                else
+                {
+                    pExt = reinterpret_cast<mfxExtCodingOption2 *>(ppExt->get());
+                }
+            }
+            else
+                return MFX_ERR_UNKNOWN;
+
+            pExt->MaxSliceSize = val;
             m_ExtBuffers.get()->push_back(pExt);
 
             argv++;

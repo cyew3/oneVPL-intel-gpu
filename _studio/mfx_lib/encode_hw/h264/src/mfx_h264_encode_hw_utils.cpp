@@ -5241,7 +5241,46 @@ namespace
         reader.GetUe();
     }
 }
+mfxFrameData bitstream = { 0 };
 
+mfxStatus  MfxHwH264Encode::CopyBitstream(VideoCORE           & core,
+                                          MfxVideoParam const & video,
+                                          DdiTask const       & task,
+                                          mfxU32              fieldId,
+                                          mfxU8 *             bsData,
+                                          mfxU32              bsSizeAvail)
+{
+
+    FrameLocker lock(&core, bitstream, task.m_midBit[fieldId]);
+    MFX_CHECK(video.Protected == 0 || task.m_notProtected, MFX_ERR_UNDEFINED_BEHAVIOR);
+    if (bitstream.Y == 0)
+        return Error(MFX_ERR_LOCK_MEMORY);
+    mfxU32   bsSizeToCopy  = task.m_bsDataLength[fieldId];
+    if (bsSizeToCopy > bsSizeAvail)
+        return Error(MFX_ERR_UNDEFINED_BEHAVIOR);
+    FastCopyBufferVid2Sys(bsData, bitstream.Y, bsSizeToCopy);
+    return MFX_ERR_NONE;
+}
+mfxU32 MfxHwH264Encode::GetMaxSliceSize( 
+    mfxU8 *               sbegin, // contents of source buffer may be modified
+    mfxU8 *               send,
+    mfxU32                &num)
+{
+    
+    mfxU32 max = 0;
+    num = 0;
+    for (NaluIterator nalu(sbegin, send); nalu != NaluIterator(); ++nalu)
+    {
+        if (nalu->type == 1 || nalu->type == 5)
+        {
+            mfxU32 slice_len =  nalu->end - nalu->begin;
+            max = (max > slice_len) ? max : slice_len;  
+            num++;
+        }
+    }
+    return max;
+
+}
 mfxU8 * MfxHwH264Encode::PatchBitstream(
     MfxVideoParam const & video,
     DdiTask const &       task,

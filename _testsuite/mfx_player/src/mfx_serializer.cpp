@@ -159,6 +159,7 @@ void MFXStructureRef <mfxExtCodingOption2>::ConstructValues () const
     SERIALIZE_INT(IntRefCycleSize);
     SERIALIZE_INT(IntRefQPDelta);
     SERIALIZE_INT(MaxFrameSize);
+    SERIALIZE_INT(MaxSliceSize);
     SERIALIZE_INT(BitrateLimit);
     SERIALIZE_INT(MBBRC);
     SERIALIZE_INT(ExtBRC);

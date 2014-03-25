@@ -1237,6 +1237,8 @@ namespace MfxHwH264Encode
 
         bool isMVC() const { return m_isMVC; };
 
+        void ResizeSlices(mfxU32 num);
+
     private:
         mfxU32 WriteSlice(
             OutputBitstream & obs,

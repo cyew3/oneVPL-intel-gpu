@@ -6501,6 +6501,12 @@ void HeaderPacker::Init(
     m_hwCaps = hwCaps;
 }
 
+void HeaderPacker::ResizeSlices(mfxU32 num)
+{
+    m_packedSlices.resize(num);
+    Zero(m_packedSlices);
+}
+
 ENCODE_PACKEDHEADER_DATA const & HeaderPacker::PackAud(
     DdiTask const & task,
     mfxU32          fieldId)
