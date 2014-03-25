@@ -467,7 +467,7 @@ DEF_STRUCT_TRACE(mfxExtCodingOption2){
         << PUT_PAR(IntRefCycleSize)
         << PUT_PAR(IntRefQPDelta)
         << PUT_PAR(MaxFrameSize)
-        << PUT_PAR(reserved1)
+        << PUT_PAR(MaxSliceSize)
         << PUT_PAR(BitrateLimit)
         << PUT_PAR(MBBRC)
         << PUT_PAR(ExtBRC)

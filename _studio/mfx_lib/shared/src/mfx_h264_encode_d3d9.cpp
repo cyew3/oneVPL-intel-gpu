@@ -1143,9 +1143,9 @@ mfxStatus D3D9Encoder::Execute(
         if (slice_size_old != m_slice.size())
         {
             m_headerPacker.ResizeSlices(m_slice.size());
+            m_compBufDesc.resize(10 + m_slice.size());
+            m_pps.NumSlice = mfxU8(m_slice.size());
         }    
-        m_compBufDesc.resize(10 + m_slice.size());
-        m_pps.NumSlice = mfxU8(m_slice.size());
         
     }
 
