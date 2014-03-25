@@ -625,6 +625,24 @@ namespace
         return refListMod;
     }
 
+    bool CheckMfxExtAVCRefListsForField(mfxExtAVCRefLists const & ctrl)
+    {
+        bool isCorrect = true;
+
+        for (mfxU8 i = 0; i < 32; i ++)
+        {
+            if (ctrl.RefPicList0[i].FrameOrder != MFX_FRAMEORDER_UNKNOWN
+                && ctrl.RefPicList0[i].PicStruct != MFX_PICSTRUCT_FIELD_TFF
+                && ctrl.RefPicList0[i].PicStruct != MFX_PICSTRUCT_FIELD_BFF)
+            {
+                isCorrect = false;
+                break;
+            }
+        }
+
+        return isCorrect;
+    }
+
 
     void ModifyRefPicLists(
         MfxVideoParam const & video,
@@ -670,7 +688,18 @@ namespace
 
         mfxExtAVCRefListCtrl * ctrl = GetExtBuffer(task.m_ctrl);
 #if defined (ADVANCED_REF)
-        mfxExtAVCRefLists * advCtrl = GetExtBuffer(task.m_ctrl);
+        mfxExtAVCRefLists * advCtrl = GetExtBuffer(task.m_ctrl, fieldId);
+        if (advCtrl &&
+            (task.GetPicStructForEncode() & (MFX_PICSTRUCT_FIELD_TFF | MFX_PICSTRUCT_FIELD_BFF)))
+        {
+            // check ref list control structure for interlaced case
+            // TODO: in addition WRN should be returned from sync part if passed mfxExtAVCRefLists is incorrect
+            if (false == CheckMfxExtAVCRefListsForField(*advCtrl))
+            {
+                // just ignore incorrect mfxExtAVCRefLists structure
+                advCtrl = 0;
+            }
+        }
 #endif
         bool bCanApplyRefCtrl = video.calcParam.numTemporalLayer == 0 || video.mfx.GopRefDist == 1;
 

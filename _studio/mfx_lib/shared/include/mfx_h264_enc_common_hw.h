@@ -798,6 +798,57 @@ namespace MfxHwH264Encode
         return (par.mfx.FrameInfo.PicStruct & MFX_PICSTRUCT_PROGRESSIVE) == 0;
     }
 
+    struct mfxExtBufferProxyField
+    {
+    public:
+        template <typename T> operator T()
+        {
+            if (m_fieldId)
+            {
+                if (m_extParam == 0 || m_numExtParam < 2)
+                    return 0;
+
+                mfxU16 i;
+                mfxU32 bufId = ExtBufTypeToId<typename GetPointedType<T>::Type>::id;
+                for (i = 0; i < m_numExtParam; i++)
+                    if (m_extParam[i] != 0 && m_extParam[i]->BufferId == bufId)
+                        break;
+
+                if (i >= m_numExtParam - 1)
+                    return 0;
+
+                m_extParam = &m_extParam[i + 1];
+                m_numExtParam = m_numExtParam - (i + 1);
+            }
+
+            mfxExtBuffer * p = MfxHwH264Encode::GetExtBuffer(
+                m_extParam,
+                m_numExtParam,
+                ExtBufTypeToId<typename GetPointedType<T>::Type>::id);
+            return reinterpret_cast<T>(p);
+        }
+
+        template <typename T> friend mfxExtBufferProxyField GetExtBuffer(const T & par, mfxU32 fieldId);
+
+    protected:
+        mfxExtBufferProxyField(mfxExtBuffer ** extParam, mfxU32 numExtParam,  mfxU32 fieldId)
+            : m_extParam(extParam)
+            , m_numExtParam(numExtParam)
+            , m_fieldId(fieldId)
+        {
+        }
+
+    private:
+        mfxExtBuffer ** m_extParam;
+        mfxU32          m_numExtParam;
+        mfxU32          m_fieldId;
+    };
+
+    template <typename T> mfxExtBufferProxyField GetExtBuffer(T const & par, mfxU32 fieldId)
+    {
+        return mfxExtBufferProxyField(par.ExtParam, par.NumExtParam, fieldId);
+    }
+
     inline mfxU8 GetPayloadLayout(mfxU32 fieldPicFlag, mfxU32 secondFieldPicFlag)
     {
         return fieldPicFlag == 0
