@@ -503,7 +503,7 @@ typedef struct {
     mfxI16      IntRefQPDelta;
 
     mfxU32      MaxFrameSize;
-    mfxU32      reserved1;
+    mfxU32      MaxSliceSize;
 
     mfxU16      BitrateLimit;           /* tri-state option */
     mfxU16      MBBRC;                  /* tri-state option */
