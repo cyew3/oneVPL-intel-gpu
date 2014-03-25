@@ -729,6 +729,8 @@ mfxStatus VideoDECODEVP8_HW::DecodeFrameCheck(mfxBitstream *p_bs, mfxFrameSurfac
     (*pp_surface_out)->Data.FrameOrder = m_frameOrder;
     m_frameOrder++;
 
+    (*pp_surface_out)->Data.TimeStamp = p_bs->TimeStamp;
+
     p_entry_point->pRoutine = &VP8DECODERoutine;
     p_entry_point->pCompleteProc = &VP8CompleteProc;
     p_entry_point->pState = this;
@@ -1085,12 +1087,6 @@ mfxStatus VideoDECODEVP8_HW::DecodeFrameHeader(mfxBitstream *in)
                                   (data_in[1] << 3) |
                                   (data_in[2] << 11);
 
-    {
-        std::ofstream ofs("fps");
-        ofs << first_partition_size << std::endl;
-        ofs.close();
-    }
-
     m_frame_info.firstPartitionSize = first_partition_size;
     m_frame_info.partitionSize[VP8_FIRST_PARTITION] = first_partition_size;
 
@@ -1423,8 +1419,8 @@ mfxStatus VideoDECODEVP8_HW::DecodeFrameHeader(mfxBitstream *in)
     }
     else
     {
-        m_frame_info.firstPartitionSize = m_frame_info.firstPartitionSize - Ipp32u(m_boolDecoder[VP8_FIRST_PARTITION].input() - ((Ipp8u*)in->Data) - 3) + 2;
-//        m_frame_info.entropyDecSize = m_frame_info.entropyDecSize - 24;
+//        m_frame_info.firstPartitionSize = m_frame_info.firstPartitionSize - Ipp32u(m_boolDecoder[VP8_FIRST_PARTITION].input() - ((Ipp8u*)in->Data) - 3) + 2;
+        m_frame_info.entropyDecSize = m_frame_info.entropyDecSize - 24;
     }
 
     #endif
