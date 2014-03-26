@@ -19,6 +19,7 @@
 
 #include "d3d_allocator.h"
 #include "d3d11_allocator.h"
+#include "general_allocator.h"
 #include "hw_device.h"
 #include "d3d_device.h"
 #include "d3d11_device.h"

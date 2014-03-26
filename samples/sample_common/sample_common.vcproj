@@ -359,6 +359,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\include\general_allocator.h"
+				>
+			</File>
+			<File
 				RelativePath=".\include\vpp_ex.h"
 				>
 			</File>
@@ -430,6 +434,10 @@
 			</File>
 			<File
 				RelativePath=".\src\sysmem_allocator.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\src\general_allocator.cpp"
 				>
 			</File>
 			<File

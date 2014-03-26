@@ -24,9 +24,6 @@
 #include <map>
 #include "pipeline_transcode.h"
 
-class D3DFrameAllocator;
-class D3D11FrameAllocator;
-class SysMemFrameAllocator;
 struct D3DAllocatorParams;
 
 #pragma warning(disable: 4127) // constant expression
@@ -106,36 +103,6 @@ namespace TranscodingSample
         DISALLOW_COPY_AND_ASSIGN(CmdProcessor);
 
     };
-
-
-    // Wrapper on standard allocator for concurrent allocation of
-    // D3D and system surfaces
-    class GeneralAllocator : public BaseFrameAllocator
-    {
-    public:
-        GeneralAllocator();
-        virtual ~GeneralAllocator();
-
-        virtual mfxStatus Init(mfxAllocatorParams *pParams);
-        virtual mfxStatus Close();
-
-    protected:
-        virtual mfxStatus LockFrame(mfxMemId mid, mfxFrameData *ptr);
-        virtual mfxStatus UnlockFrame(mfxMemId mid, mfxFrameData *ptr);
-        virtual mfxStatus GetFrameHDL(mfxMemId mid, mfxHDL *handle);
-
-        virtual mfxStatus ReleaseResponse(mfxFrameAllocResponse *response);
-        virtual mfxStatus AllocImpl(mfxFrameAllocRequest *request, mfxFrameAllocResponse *response);
-
-        void    StoreFrameMids(bool isD3DFrames, mfxFrameAllocResponse *response);
-        bool    isD3DMid(mfxHDL mid);
-
-        std::map<mfxHDL, bool>                  m_Mids;
-        std::auto_ptr<BaseFrameAllocator>       m_D3DAllocator;
-        std::auto_ptr<SysMemFrameAllocator>     m_SYSAllocator;
-    private:
-       DISALLOW_COPY_AND_ASSIGN(GeneralAllocator);
-
-    };
 }
-#endif
+#endif //__TRANSCODE_UTILS_H__
+
