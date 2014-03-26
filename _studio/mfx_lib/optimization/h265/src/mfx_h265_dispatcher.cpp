@@ -612,12 +612,7 @@ using namespace MFX_HEVC_PP;
         g_dispatcher. h265_SATD_4x4_Pair_8u = &MFX_HEVC_PP::h265_SATD_4x4_Pair_8u_avx2;
         g_dispatcher. h265_SATD_8x8_Pair_8u = &MFX_HEVC_PP::h265_SATD_8x8_Pair_8u_avx2;
 #endif
-        //[transform.inv]==================================
-        g_dispatcher. h265_DST4x4Inv_16sT = &MFX_HEVC_PP::h265_DST4x4Inv_16sT_avx2;
-        g_dispatcher. h265_DCT4x4Inv_16sT = &MFX_HEVC_PP::h265_DCT4x4Inv_16sT_avx2;
-        g_dispatcher. h265_DCT8x8Inv_16sT = &MFX_HEVC_PP::h265_DCT8x8Inv_16sT_avx2;
-        g_dispatcher. h265_DCT16x16Inv_16sT = &MFX_HEVC_PP::h265_DCT16x16Inv_16sT_avx2;
-        g_dispatcher. h265_DCT32x32Inv_16sT = &MFX_HEVC_PP::h265_DCT32x32Inv_16sT_avx2;
+
 
         //[deblocking]=====================================
         g_dispatcher. h265_FilterEdgeLuma_8u_I = &MFX_HEVC_PP::h265_FilterEdgeLuma_8u_I_sse;
@@ -646,17 +641,38 @@ using namespace MFX_HEVC_PP;
         g_dispatcher.h265_AverageModeP_U16 = &MFX_HEVC_PP::h265_AverageModeP_U16_avx2;
         g_dispatcher.h265_AverageModeN_U16 = &MFX_HEVC_PP::h265_AverageModeN_U16_avx2;
 
+
+
+#ifdef __INTEL_COMPILER
         // algo
         g_dispatcher.h265_InterpLuma_s8_d16_H = &MFX_HEVC_PP::h265_InterpLuma_s8_d16_H_avx2;
         g_dispatcher.h265_InterpChroma_s8_d16_H = &MFX_HEVC_PP::h265_InterpChroma_s8_d16_H_avx2;
 
-#ifdef __INTEL_COMPILER
         g_dispatcher.h265_InterpLuma_s8_d16_V = &MFX_HEVC_PP::h265_InterpLuma_s8_d16_V_avx2;
         g_dispatcher.h265_InterpChroma_s8_d16_V = &MFX_HEVC_PP::h265_InterpChroma_s8_d16_V_avx2;
+
+        //[transform.inv]==================================
+        g_dispatcher. h265_DST4x4Inv_16sT = &MFX_HEVC_PP::h265_DST4x4Inv_16sT_avx2;
+        g_dispatcher. h265_DCT4x4Inv_16sT = &MFX_HEVC_PP::h265_DCT4x4Inv_16sT_avx2;
+        g_dispatcher. h265_DCT8x8Inv_16sT = &MFX_HEVC_PP::h265_DCT8x8Inv_16sT_avx2;
+        g_dispatcher. h265_DCT16x16Inv_16sT = &MFX_HEVC_PP::h265_DCT16x16Inv_16sT_avx2;
+        g_dispatcher. h265_DCT32x32Inv_16sT = &MFX_HEVC_PP::h265_DCT32x32Inv_16sT_avx2;
 #else
         // use sse instead of avx2 because MSVC incorrect generate _mm256_maddubs_epi16 intrinsic
+        g_dispatcher.h265_InterpLuma_s8_d16_H = &MFX_HEVC_PP::h265_InterpLuma_s8_d16_H_sse;
+        g_dispatcher.h265_InterpChroma_s8_d16_H = &MFX_HEVC_PP::h265_InterpChroma_s8_d16_H_sse;
+
+        // MSFT compiler generates wrong x64 avx2 for below functions also
         g_dispatcher.h265_InterpLuma_s8_d16_V = &MFX_HEVC_PP::h265_InterpLuma_s8_d16_V_sse;
         g_dispatcher.h265_InterpChroma_s8_d16_V = &MFX_HEVC_PP::h265_InterpChroma_s8_d16_V_sse;
+
+        //[transform.inv]==================================
+        g_dispatcher. h265_DST4x4Inv_16sT = &MFX_HEVC_PP::h265_DST4x4Inv_16sT_sse;
+        g_dispatcher. h265_DCT4x4Inv_16sT = &MFX_HEVC_PP::h265_DCT4x4Inv_16sT_sse;
+        g_dispatcher. h265_DCT8x8Inv_16sT = &MFX_HEVC_PP::h265_DCT8x8Inv_16sT_sse;
+        g_dispatcher. h265_DCT16x16Inv_16sT = &MFX_HEVC_PP::h265_DCT16x16Inv_16sT_sse;
+        g_dispatcher. h265_DCT32x32Inv_16sT = &MFX_HEVC_PP::h265_DCT32x32Inv_16sT_sse;
+
 #endif
 
         g_dispatcher.h265_InterpLuma_s16_d16_V = &MFX_HEVC_PP::h265_InterpLuma_s16_d16_V_avx2;
