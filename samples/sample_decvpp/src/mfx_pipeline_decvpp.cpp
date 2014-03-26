@@ -42,7 +42,7 @@ CDecodingPipeline::CDecodingPipeline()
     m_pmfxDEC = NULL;
     m_pmfxVPP = NULL;
     m_pUID = NULL;
-    m_pMFXAllocator = NULL;
+    m_pGeneralAllocator = NULL;
     m_pmfxAllocatorParams = NULL;
     m_memType = SYSTEM_MEMORY;
 
@@ -52,6 +52,7 @@ CDecodingPipeline::CDecodingPipeline()
     m_pCurrentOutputSurface = NULL;
 
     m_bExternalAlloc = false;
+    m_bSysmemBetween = false;
     m_bIsExtBuffers = false;
     m_bStopDeliverLoop = false;
     m_fourcc = MFX_FOURCC_NV12;
@@ -99,6 +100,7 @@ mfxStatus CDecodingPipeline::Init(sInputParams *pParams)
         m_fourcc = pParams->fourcc;
     }
     m_memType = pParams->memType;
+    m_bSysmemBetween = (pParams->bUseHWLib) ? false : true;
 
     sts = m_FileReader->Init(pParams->strSrcFile);
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
@@ -220,6 +222,10 @@ mfxStatus CDecodingPipeline::Init(sInputParams *pParams)
     {
         msdk_printf(MSDK_STRING("WARNING: partial acceleration\n"));
         MSDK_IGNORE_MFX_STS(sts, MFX_WRN_PARTIAL_ACCELERATION);
+        if(pParams->bUseHWLib)
+        {
+            m_bSysmemBetween = true;
+        }
     }
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
@@ -409,8 +415,10 @@ mfxStatus CDecodingPipeline::InitMfxParams(sInputParams *pParams)
 
     numViews = 1;
 
-    // specify memory type
-    m_mfxVideoParams.IOPattern = (mfxU16)(m_memType != SYSTEM_MEMORY ? MFX_IOPATTERN_OUT_VIDEO_MEMORY : MFX_IOPATTERN_OUT_SYSTEM_MEMORY);
+    // specify memory type between Decoder and VPP
+    m_mfxVideoParams.IOPattern = (mfxU16)( m_bSysmemBetween ?
+            MFX_IOPATTERN_OUT_SYSTEM_MEMORY:
+            MFX_IOPATTERN_OUT_VIDEO_MEMORY);
 
     m_mfxVideoParams.AsyncDepth = 4;
 
@@ -483,9 +491,13 @@ mfxStatus CDecodingPipeline::AllocAndInitVppDoNotUse()
 
 mfxStatus CDecodingPipeline::InitVppParams()
 {
-    m_mfxVppVideoParams.IOPattern = (m_memType != SYSTEM_MEMORY) ?
-            MFX_IOPATTERN_IN_VIDEO_MEMORY | MFX_IOPATTERN_OUT_VIDEO_MEMORY:
-            MFX_IOPATTERN_IN_SYSTEM_MEMORY | MFX_IOPATTERN_OUT_SYSTEM_MEMORY;
+    m_mfxVppVideoParams.IOPattern = (mfxU16)( m_bSysmemBetween?
+            MFX_IOPATTERN_IN_SYSTEM_MEMORY:
+            MFX_IOPATTERN_IN_VIDEO_MEMORY);
+
+    m_mfxVppVideoParams.IOPattern |= (m_memType != SYSTEM_MEMORY)?
+            MFX_IOPATTERN_OUT_VIDEO_MEMORY:
+            MFX_IOPATTERN_OUT_SYSTEM_MEMORY;
 
     memcpy(&m_mfxVppVideoParams.vpp.In, &m_mfxVideoParams.mfx.FrameInfo, sizeof(mfxFrameInfo));
     memcpy(&m_mfxVppVideoParams.vpp.Out, &m_mfxVppVideoParams.vpp.In, sizeof(mfxFrameInfo));
@@ -558,12 +570,12 @@ mfxStatus CDecodingPipeline::AllocFrames()
     // surfaces are shared between vpp input and decode output
     Request.Type = MFX_MEMTYPE_EXTERNAL_FRAME | MFX_MEMTYPE_FROM_DECODE | MFX_MEMTYPE_FROM_VPPIN;
 
-    Request.Type |= (m_memType != SYSTEM_MEMORY)?
-            MFX_MEMTYPE_VIDEO_MEMORY_DECODER_TARGET:
-            MFX_MEMTYPE_SYSTEM_MEMORY;
+    Request.Type |= (m_bSysmemBetween)?
+            MFX_MEMTYPE_SYSTEM_MEMORY:
+            MFX_MEMTYPE_VIDEO_MEMORY_DECODER_TARGET;
 
     // alloc frames for decoder
-    sts = m_pMFXAllocator->Alloc(m_pMFXAllocator->pthis, &Request, &m_mfxResponse);
+    sts = m_pGeneralAllocator->Alloc(m_pGeneralAllocator->pthis, &Request, &m_mfxResponse);
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
     // alloc frames for VPP
@@ -571,7 +583,7 @@ mfxStatus CDecodingPipeline::AllocFrames()
     VppRequest[1].NumFrameSuggested = nVppSurfNum;
     memcpy(&(VppRequest[1].Info), &(m_mfxVppVideoParams.vpp.Out), sizeof(mfxFrameInfo));
 
-    sts = m_pMFXAllocator->Alloc(m_pMFXAllocator->pthis, &(VppRequest[1]), &m_mfxVppResponse);
+    sts = m_pGeneralAllocator->Alloc(m_pGeneralAllocator->pthis, &(VppRequest[1]), &m_mfxVppResponse);
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
     // prepare mfxFrameSurface1 array for decoder
@@ -595,7 +607,7 @@ mfxStatus CDecodingPipeline::AllocFrames()
             m_pSurfaces[i].frame.Data.MemId = m_mfxResponse.mids[i];
         }
         else {
-            sts = m_pMFXAllocator->Lock(m_pMFXAllocator->pthis, m_mfxResponse.mids[i], &(m_pSurfaces[i].frame.Data));
+            sts = m_pGeneralAllocator->Lock(m_pGeneralAllocator->pthis, m_mfxResponse.mids[i], &(m_pSurfaces[i].frame.Data));
             MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
         }
     }
@@ -607,7 +619,7 @@ mfxStatus CDecodingPipeline::AllocFrames()
             m_pVppSurfaces[i].frame.Data.MemId = m_mfxVppResponse.mids[i];
         }
         else {
-            sts = m_pMFXAllocator->Lock(m_pMFXAllocator->pthis, m_mfxVppResponse.mids[i], &(m_pVppSurfaces[i].frame.Data));
+            sts = m_pGeneralAllocator->Lock(m_pGeneralAllocator->pthis, m_mfxVppResponse.mids[i], &(m_pVppSurfaces[i].frame.Data));
             if (MFX_ERR_NONE != sts) {
                 return sts;
             }
@@ -619,6 +631,8 @@ mfxStatus CDecodingPipeline::AllocFrames()
 mfxStatus CDecodingPipeline::CreateAllocator()
 {
     mfxStatus sts = MFX_ERR_NONE;
+
+    m_pGeneralAllocator = new GeneralAllocator();
 
     if (m_memType != SYSTEM_MEMORY)
     {
@@ -643,9 +657,6 @@ mfxStatus CDecodingPipeline::CreateAllocator()
 #if MFX_D3D11_SUPPORT
         if (D3D11_MEMORY == m_memType)
         {
-            m_pMFXAllocator = new D3D11FrameAllocator;
-            MSDK_CHECK_POINTER(m_pMFXAllocator, MFX_ERR_MEMORY_ALLOC);
-
             D3D11AllocatorParams *pd3dAllocParams = new D3D11AllocatorParams;
             MSDK_CHECK_POINTER(pd3dAllocParams, MFX_ERR_MEMORY_ALLOC);
             pd3dAllocParams->pDevice = reinterpret_cast<ID3D11Device *>(hdl);
@@ -655,9 +666,6 @@ mfxStatus CDecodingPipeline::CreateAllocator()
         else
 #endif // #if MFX_D3D11_SUPPORT
         {
-            m_pMFXAllocator = new D3DFrameAllocator;
-            MSDK_CHECK_POINTER(m_pMFXAllocator, MFX_ERR_MEMORY_ALLOC);
-
             D3DAllocatorParams *pd3dAllocParams = new D3DAllocatorParams;
             MSDK_CHECK_POINTER(pd3dAllocParams, MFX_ERR_MEMORY_ALLOC);
             pd3dAllocParams->pManager = reinterpret_cast<IDirect3DDeviceManager9 *>(hdl);
@@ -668,7 +676,7 @@ mfxStatus CDecodingPipeline::CreateAllocator()
         /* In case of video memory we must provide MediaSDK with external allocator
         thus we demonstrate "external allocator" usage model.
         Call SetAllocator to pass allocator to mediasdk */
-        sts = m_mfxSession.SetFrameAllocator(m_pMFXAllocator);
+        sts = m_mfxSession.SetFrameAllocator(m_pGeneralAllocator);
         MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
         m_bExternalAlloc = true;
@@ -685,9 +693,6 @@ mfxStatus CDecodingPipeline::CreateAllocator()
         sts = m_mfxSession.SetHandle(MFX_HANDLE_VA_DISPLAY, va_dpy);
         MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
-        // create VAAPI allocator
-        m_pMFXAllocator = new vaapiFrameAllocator;
-        MSDK_CHECK_POINTER(m_pMFXAllocator, MFX_ERR_MEMORY_ALLOC);
         vaapiAllocatorParams *p_vaapiAllocParams = new vaapiAllocatorParams;
         MSDK_CHECK_POINTER(p_vaapiAllocParams, MFX_ERR_MEMORY_ALLOC);
 
@@ -697,7 +702,7 @@ mfxStatus CDecodingPipeline::CreateAllocator()
         /* In case of video memory we must provide MediaSDK with external allocator
         thus we demonstrate "external allocator" usage model.
         Call SetAllocator to pass allocator to mediasdk */
-        sts = m_mfxSession.SetFrameAllocator(m_pMFXAllocator);
+        sts = m_mfxSession.SetFrameAllocator(m_pGeneralAllocator);
         MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
         m_bExternalAlloc = true;
@@ -723,17 +728,16 @@ mfxStatus CDecodingPipeline::CreateAllocator()
             MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
         }
 #endif
-        // create system memory allocator
-        m_pMFXAllocator = new SysMemFrameAllocator;
-        MSDK_CHECK_POINTER(m_pMFXAllocator, MFX_ERR_MEMORY_ALLOC);
-
-        /* In case of system memory we demonstrate "no external allocator" usage model.
-        We don't call SetAllocator, MediaSDK uses internal allocator.
-        We use system memory allocator simply as a memory manager for application*/
     }
 
-    // initialize memory allocator
-    sts = m_pMFXAllocator->Init(m_pmfxAllocatorParams);
+    if (!m_pmfxAllocatorParams)
+    {
+        mfxAllocatorParams* allocatorParams = new mfxAllocatorParams;
+        MSDK_CHECK_POINTER(allocatorParams, MFX_ERR_MEMORY_ALLOC);
+        m_pmfxAllocatorParams = allocatorParams;
+    }
+    // initialize general allocator
+    sts = m_pGeneralAllocator->Init(m_pmfxAllocatorParams);
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
     return MFX_ERR_NONE;
@@ -744,9 +748,10 @@ void CDecodingPipeline::DeleteFrames()
     FreeBuffers();
 
     // delete frames
-    if (m_pMFXAllocator)
+    if (m_pGeneralAllocator)
     {
-        m_pMFXAllocator->Free(m_pMFXAllocator->pthis, &m_mfxResponse);
+        m_pGeneralAllocator->FreeFrames(&m_mfxResponse);
+        m_pGeneralAllocator->FreeFrames(&m_mfxVppResponse);
     }
 
     return;
@@ -755,7 +760,7 @@ void CDecodingPipeline::DeleteFrames()
 void CDecodingPipeline::DeleteAllocator()
 {
     // delete allocator
-    MSDK_SAFE_DELETE(m_pMFXAllocator);
+    MSDK_SAFE_DELETE(m_pGeneralAllocator);
     MSDK_SAFE_DELETE(m_pmfxAllocatorParams);
     MSDK_SAFE_DELETE(m_hwdev);
 }
@@ -832,19 +837,19 @@ mfxStatus CDecodingPipeline::DeliverOutput(mfxFrameSurface1* frame)
 
     if (m_bExternalAlloc) {
         if (m_eWorkMode == MODE_FILE_DUMP) {
-            res = m_pMFXAllocator->Lock(m_pMFXAllocator->pthis, frame->Data.MemId, &(frame->Data));
+            res = m_pGeneralAllocator->Lock(m_pGeneralAllocator->pthis, frame->Data.MemId, &(frame->Data));
             if (MFX_ERR_NONE == res) {
                 res = m_FileWriter.WriteNextFrame(frame);
-                sts = m_pMFXAllocator->Unlock(m_pMFXAllocator->pthis, frame->Data.MemId, &(frame->Data));
+                sts = m_pGeneralAllocator->Unlock(m_pGeneralAllocator->pthis, frame->Data.MemId, &(frame->Data));
             }
             if ((MFX_ERR_NONE == res) && (MFX_ERR_NONE != sts)) {
                 res = sts;
             }
         } else if (m_eWorkMode == MODE_RENDERING) {
 #if D3D_SURFACES_SUPPORT
-            res = m_d3dRender.RenderFrame(frame, m_pMFXAllocator);
+            res = m_d3dRender.RenderFrame(frame, m_pGeneralAllocator);
 #elif LIBVA_SUPPORT
-            res = m_hwdev->RenderFrame(frame, m_pMFXAllocator);
+            res = m_hwdev->RenderFrame(frame, m_pGeneralAllocator);
 #endif
         }
     }

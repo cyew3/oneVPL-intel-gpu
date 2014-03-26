@@ -29,6 +29,7 @@ Copyright(c) 2005-2014 Intel Corporation. All Rights Reserved.
 #include "sample_defs.h"
 #include "sample_utils.h"
 #include "base_allocator.h"
+#include "general_allocator.h"
 
 #include "mfxplugin.h"
 #include "mfxplugin++.h"
@@ -163,10 +164,11 @@ protected: // variables
 
     std::vector<mfxExtBuffer *> m_ExtBuffers;
 
-    MFXFrameAllocator*      m_pMFXAllocator;
+    GeneralAllocator*       m_pGeneralAllocator;
     mfxAllocatorParams*     m_pmfxAllocatorParams;
     MemType                 m_memType;      // memory type of surfaces to use
     bool                    m_bExternalAlloc; // use memory allocator as external for Media SDK
+    bool                    m_bSysmemBetween; // use system memory between Decoder and VPP, if false - video memory
 
     mfxFrameAllocResponse   m_mfxResponse;      // memory allocation response for decoder
     mfxFrameAllocResponse   m_mfxVppResponse;   // memory allocation response for vpp
