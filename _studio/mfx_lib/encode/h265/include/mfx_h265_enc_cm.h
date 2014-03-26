@@ -55,19 +55,22 @@ class H265RefMatchData
 typedef struct {
     Ipp32s poc;
     Ipp8s  globi;
-    bool   avail;
+/*
+    Ipp8s  lock;    // every update decrease it by 1
+*/
 } MatchData;
 
 private:
-    MatchData refMatchTbl[MAX_NUM_REF_IDX];
+    Ipp32s refMatchBufLen;
+    MatchData *refMatchBuf;
 
 public:
-    H265RefMatchData();
-    virtual ~H265RefMatchData() {};
+    H265RefMatchData(Ipp32s bufLen);
+    virtual ~H265RefMatchData();
     
-    Ipp8s RefMatchTblGetByPoc(Ipp32s poc);
-    Ipp32s RefMatchTblInsert(Ipp32s poc);
-    void RefMatchTblUpdate(H265Frame **pRefFrames, Ipp32s nFrames);
+    Ipp8s GetByPoc(Ipp32s poc);
+    Ipp32s Add(Ipp32s poc);
+    void Update(H265Frame *pFrame, H265Slice *pSlice);
 };
 
 CmDevice * TryCreateCmDevicePtr(VideoCORE * core, mfxU32 * version = 0);

@@ -27,6 +27,8 @@
 
 namespace H265Enc {
 
+const Ipp32s CM_REF_BUF_LEN = MAX_NUM_REF_IDX + 1;
+
 enum {
     PU32x32, PU32x16, PU16x32, PU16x16, PU16x8, PU8x16, PU8x8, PU8x4, PU4x8, PU_MAX
 };
