@@ -127,32 +127,32 @@ public:
 };
 
 
-class tsSurfaceFiller
+class tsSurfaceProcessor
 {
 public:
     mfxU32 m_max;
     mfxU32 m_cur;
     bool   m_eos;
 
-    tsSurfaceFiller(mfxU32 n_frames = 0xFFFFFFFF);
-    virtual ~tsSurfaceFiller() {}
+    tsSurfaceProcessor(mfxU32 n_frames = 0xFFFFFFFF);
+    virtual ~tsSurfaceProcessor() {}
     
-    mfxFrameSurface1* FillSurface(mfxFrameSurface1* ps, mfxFrameAllocator* pfa);
-    virtual mfxStatus FillSurface(mfxFrameSurface1&) = 0;
+    mfxFrameSurface1* ProcessSurface(mfxFrameSurface1* ps, mfxFrameAllocator* pfa);
+    virtual mfxStatus ProcessSurface(mfxFrameSurface1&) = 0;
 };
 
 
-class tsNoiseFiller : public tsSurfaceFiller
+class tsNoiseFiller : public tsSurfaceProcessor
 {
 public:
     tsNoiseFiller(mfxU32 n_frames = 0xFFFFFFFF);
     ~tsNoiseFiller();
 
-    mfxStatus FillSurface(mfxFrameSurface1& s);
+    mfxStatus ProcessSurface(mfxFrameSurface1& s);
 };
 
 
-class tsRawReader : public tsSurfaceFiller, tsReader
+class tsRawReader : public tsSurfaceProcessor, tsReader
 {
 private:
     mfxFrameSurface1 m_surf;
@@ -165,5 +165,15 @@ public:
     tsRawReader(mfxBitstream bs, mfxFrameInfo fi, mfxU32 n_frames = 0xFFFFFFFF);
     ~tsRawReader();
 
-    mfxStatus FillSurface(mfxFrameSurface1& s);
+    mfxStatus ProcessSurface(mfxFrameSurface1& s);
+};
+
+class tsSurfaceWriter : public tsSurfaceProcessor
+{
+private:
+    FILE* m_file;
+public:
+    tsSurfaceWriter(const char* fname);
+    ~tsSurfaceWriter();
+    mfxStatus ProcessSurface(mfxFrameSurface1& s);
 };

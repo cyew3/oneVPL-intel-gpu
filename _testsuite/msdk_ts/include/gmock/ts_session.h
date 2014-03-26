@@ -29,4 +29,6 @@ public:
 
     mfxStatus SetFrameAllocator();
     mfxStatus SetFrameAllocator(mfxSession session, mfxFrameAllocator *allocator);
+
+    mfxStatus Load(mfxSession session, const mfxPluginUID *uid, mfxU32 version);
 };

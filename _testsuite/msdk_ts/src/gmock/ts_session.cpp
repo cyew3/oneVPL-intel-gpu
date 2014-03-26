@@ -72,3 +72,10 @@ mfxStatus tsSession::SetFrameAllocator(mfxSession session, mfxFrameAllocator *al
     g_tsStatus.check( MFXVideoCORE_SetFrameAllocator(session, allocator) );
     return g_tsStatus.get();
 }
+
+mfxStatus tsSession::Load(mfxSession session, const mfxPluginUID *uid, mfxU32 version)
+{
+    TRACE_FUNC3(MFXVideoUSER_Load, session, uid, version);
+    g_tsStatus.check( MFXVideoUSER_Load(session, uid, version) );
+    return g_tsStatus.get();
+}

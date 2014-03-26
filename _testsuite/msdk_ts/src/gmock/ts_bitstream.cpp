@@ -24,21 +24,33 @@ tsReader::~tsReader()
     }
 }
 
-bool tsReader::Read(mfxU8* dst, mfxU32 size)
+mfxU32 tsReader::Read(mfxU8* dst, mfxU32 size)
 {
     if(m_file)
     {
-        return (size == (mfxU32)fread(dst, 1, size, m_file));
+        return (mfxU32)fread(dst, 1, size, m_file);
     }
-    if (DataLength >= size)
+    else 
     {
-        memcpy(dst, Data + DataOffset, size);
-        DataOffset += size;
-        DataLength -= size;
-        return true;
+        mfxU32 sz = TS_MIN(DataLength, size);
+
+        memcpy(dst, Data + DataOffset, sz);
+
+        DataOffset += sz;
+        DataLength -= sz;
+
+        return sz;
+    }
+}
+
+mfxBitstream* tsBitstreamProcessor::ProcessBitstream(mfxBitstream& bs)
+{
+    if(ProcessBitstream(bs, 1))
+    {
+        return 0;
     }
 
-    return false;
+    return &bs;
 }
 
 
@@ -67,3 +79,48 @@ mfxStatus tsBitstreamWriter::ProcessBitstream(mfxBitstream& bs, mfxU32 nFrames)
     bs.DataLength = 0;
     return MFX_ERR_NONE; 
 }
+
+tsBitstreamReader::tsBitstreamReader(const char* fname, mfxU32 buf_size)
+    : tsReader(fname)
+    , m_eos(false)
+    , m_buf(new mfxU8[buf_size])
+    , m_buf_size(buf_size)
+{
+}
+
+tsBitstreamReader::~tsBitstreamReader()
+{
+    if(m_buf)
+    {
+        delete[] m_buf;
+    }
+}
+
+mfxStatus tsBitstreamReader::ProcessBitstream(mfxBitstream& bs, mfxU32 nFrames)
+{
+    if(m_eos)
+    {
+        return MFX_ERR_MORE_DATA;
+    }
+
+    if(bs.DataLength + bs.DataOffset > m_buf_size)
+    {
+        return MFX_ERR_UNDEFINED_BEHAVIOR;
+    }
+
+    bs.Data      = m_buf;
+    bs.MaxLength = m_buf_size;
+
+    if(bs.DataLength && bs.DataOffset)
+    {
+        memmove(bs.Data, bs.Data + bs.DataOffset, bs.DataLength);
+    }
+    bs.DataOffset = 0;
+
+    bs.DataLength += Read(bs.Data + bs.DataLength, bs.MaxLength - bs.DataLength);
+
+    m_eos = bs.DataLength != bs.MaxLength;
+
+    return MFX_ERR_NONE;
+}
+

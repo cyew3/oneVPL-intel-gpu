@@ -3,16 +3,17 @@
 #include "ts_session.h"
 #include "ts_ext_buffers.h"
 #include "ts_surface.h"
+#include <map>
 
-class tsVideoEncoder : public tsSession, public tsSurfacePool
+class tsVideoDecoder : public tsSession, public tsSurfacePool
 {
 public:
     bool                        m_default;
     bool                        m_initialized;
     bool                        m_loaded;
+    bool                        m_par_set;
     tsExtBufType<mfxVideoParam> m_par;
     tsExtBufType<mfxBitstream>  m_bitstream;
-    tsExtBufType<mfxEncodeCtrl> m_ctrl;
     mfxFrameAllocRequest        m_request;
     mfxVideoParam*              m_pPar;
     mfxVideoParam*              m_pParOut;
@@ -20,14 +21,15 @@ public:
     mfxFrameAllocRequest*       m_pRequest;
     mfxSyncPoint*               m_pSyncPoint;
     mfxFrameSurface1*           m_pSurf;
+    mfxFrameSurface1*           m_pSurfOut;
     mfxEncodeCtrl*              m_pCtrl;
-    tsSurfaceProcessor*         m_filler;
+    tsSurfaceProcessor*         m_surf_processor;
     tsBitstreamProcessor*       m_bs_processor;
-    mfxU32                      m_frames_buffered;
     mfxPluginUID*               m_uid;
+    std::map<mfxSyncPoint, mfxFrameSurface1*> m_surf_out;
 
-    tsVideoEncoder(mfxU32 CodecId = 0, bool useDefaults = true);
-    ~tsVideoEncoder();
+    tsVideoDecoder(mfxU32 CodecId = 0, bool useDefaults = true);
+    ~tsVideoDecoder();
     
     mfxStatus Init();
     mfxStatus Init(mfxSession session, mfxVideoParam *par);
@@ -47,18 +49,19 @@ public:
     mfxStatus GetVideoParam();
     mfxStatus GetVideoParam(mfxSession session, mfxVideoParam *par);
 
-    mfxStatus EncodeFrameAsync();
-    mfxStatus EncodeFrameAsync(mfxSession session, mfxEncodeCtrl *ctrl, mfxFrameSurface1 *surface, mfxBitstream *bs, mfxSyncPoint *syncp);
-
-    mfxStatus AllocBitstream(mfxU32 size = 0);
     mfxStatus AllocSurfaces();
+    
+    mfxStatus DecodeHeader();
+    mfxStatus DecodeHeader(mfxSession session, mfxBitstream *bs, mfxVideoParam *par);
 
+    mfxStatus DecodeFrameAsync();
+    mfxStatus DecodeFrameAsync(mfxSession session, mfxBitstream *bs, mfxFrameSurface1 *surface_work, mfxFrameSurface1 **surface_out, mfxSyncPoint *syncp);
     
     mfxStatus SyncOperation();
     mfxStatus SyncOperation(mfxSyncPoint syncp);
     mfxStatus SyncOperation(mfxSession session, mfxSyncPoint syncp, mfxU32 wait);
-
-    mfxStatus EncodeFrames(mfxU32 n);
+    
+    mfxStatus DecodeFrames(mfxU32 n);
 
     mfxStatus Load() { m_loaded = (0 == tsSession::Load(m_session, m_uid, 1)); return g_tsStatus.get(); }
 };

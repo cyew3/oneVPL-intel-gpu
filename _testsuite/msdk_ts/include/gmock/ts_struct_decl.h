@@ -204,6 +204,8 @@ STRUCT(mfxExtCodingOption2,
     FIELD_T(mfxU8       , MaxQPP          )
     FIELD_T(mfxU8       , MinQPB          )
     FIELD_T(mfxU8       , MaxQPB          )
+    FIELD_T(mfxU16      , FixedFrameRate       )
+    FIELD_T(mfxU16      , DisableDeblockingIdc )
 )
 
 STRUCT(mfxExtVPPDoNotUse,
@@ -472,4 +474,8 @@ STRUCT(mfxExtCodingOptionVP8,
     FIELD_T(mfxU16, EnableAutoAltRef       )
     FIELD_T(mfxU16, TokenPartitions        )
     FIELD_T(mfxU16, EnableMultipleSegments )
+)
+
+STRUCT(mfxPluginUID,
+    FIELD_T(mfxU8, Data)
 )

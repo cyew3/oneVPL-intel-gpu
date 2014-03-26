@@ -88,14 +88,14 @@ tsFrame& tsFrame::operator=(tsFrame& src)
     return *this;
 }
 
-tsSurfaceFiller::tsSurfaceFiller(mfxU32 n_frames) 
+tsSurfaceProcessor::tsSurfaceProcessor(mfxU32 n_frames) 
     : m_max(n_frames)
     , m_cur(0)
     , m_eos(false)
 {
 }
 
-mfxFrameSurface1* tsSurfaceFiller::FillSurface(mfxFrameSurface1* ps, mfxFrameAllocator* pfa)
+mfxFrameSurface1* tsSurfaceProcessor::ProcessSurface(mfxFrameSurface1* ps, mfxFrameAllocator* pfa)
 {
     if(ps)
     {
@@ -111,8 +111,8 @@ mfxFrameSurface1* tsSurfaceFiller::FillSurface(mfxFrameSurface1* ps, mfxFrameAll
             g_tsStatus.check(pfa->Lock(pfa->pthis, ps->Data.MemId, &(ps->Data)));
         }
 
-        TRACE_FUNC1(tsSurfaceFiller::FillSurface, *ps);
-        g_tsStatus.check(FillSurface(*ps));
+        TRACE_FUNC1(tsSurfaceProcessor::ProcessSurface, *ps);
+        g_tsStatus.check(ProcessSurface(*ps));
 
         if(useAllocator)
         {
@@ -131,7 +131,7 @@ mfxFrameSurface1* tsSurfaceFiller::FillSurface(mfxFrameSurface1* ps, mfxFrameAll
 }
 
 tsNoiseFiller::tsNoiseFiller(mfxU32 n_frames) 
-    : tsSurfaceFiller(n_frames)
+    : tsSurfaceProcessor(n_frames)
 {
 }
 
@@ -139,7 +139,7 @@ tsNoiseFiller::~tsNoiseFiller()
 {
 }
 
-mfxStatus tsNoiseFiller::FillSurface(mfxFrameSurface1& s)
+mfxStatus tsNoiseFiller::ProcessSurface(mfxFrameSurface1& s)
 {
     tsFrame d(s);
 
@@ -178,7 +178,7 @@ mfxStatus tsNoiseFiller::FillSurface(mfxFrameSurface1& s)
 
 tsRawReader::tsRawReader(const char* fname, mfxFrameInfo fi, mfxU32 n_frames)
     : tsReader(fname)
-    , tsSurfaceFiller(n_frames)
+    , tsSurfaceProcessor(n_frames)
     , m_fsz(0)
     , m_buf(0)
     , m_surf()
@@ -188,7 +188,7 @@ tsRawReader::tsRawReader(const char* fname, mfxFrameInfo fi, mfxU32 n_frames)
 
 tsRawReader::tsRawReader(mfxBitstream bs, mfxFrameInfo fi, mfxU32 n_frames)
     : tsReader(bs)
-    , tsSurfaceFiller(n_frames)
+    , tsSurfaceProcessor(n_frames)
     , m_fsz(0)
     , m_buf(0)
     , m_surf()
@@ -265,9 +265,9 @@ tsRawReader::~tsRawReader()
     }
 }
 
-mfxStatus tsRawReader::FillSurface(mfxFrameSurface1& s)
+mfxStatus tsRawReader::ProcessSurface(mfxFrameSurface1& s)
 {
-    m_eos = !Read(m_buf, m_fsz);
+    m_eos = (m_fsz != Read(m_buf, m_fsz));
 
     if(!m_eos)
     {
@@ -276,6 +276,44 @@ mfxStatus tsRawReader::FillSurface(mfxFrameSurface1& s)
 
         dst = src;
         s.Data.FrameOrder = m_cur - 1;
+    }
+
+    return MFX_ERR_NONE;
+}
+
+tsSurfaceWriter::tsSurfaceWriter(const char* fname)
+    : m_file(0)
+{
+#pragma warning(disable:4996)
+    m_file = fopen(fname, "wb");  
+#pragma warning(default:4996)
+}
+
+tsSurfaceWriter::~tsSurfaceWriter()
+{
+    if(m_file)
+    {
+        fclose(m_file);
+    }
+}
+
+mfxStatus tsSurfaceWriter::ProcessSurface(mfxFrameSurface1& s)
+{
+    mfxU32 pitch = (s.Data.PitchHigh << 16) + s.Data.PitchLow;
+
+    if(s.Info.FourCC != MFX_FOURCC_NV12)
+    {
+        return MFX_ERR_UNSUPPORTED;
+    }
+
+    for(mfxU32 i = s.Info.CropY; i < s.Info.CropH; i ++)
+    {
+        fwrite(s.Data.Y + pitch * i + s.Info.CropX, 1, s.Info.CropW, m_file);
+    }
+    
+    for(mfxU32 i = s.Info.CropY; i < s.Info.CropH; i ++)
+    {
+        fwrite(s.Data.UV + pitch / 2 * i + s.Info.CropX / 2, 1, s.Info.CropW / 2, m_file);
     }
 
     return MFX_ERR_NONE;

@@ -124,7 +124,7 @@ mfxStatus tsSurfacePool::AllocSurfaces(mfxFrameAllocRequest request, bool direct
             if(direct_pointers && isSW)
             {
                 LockSurface(s);
-                TS_CHECK_MFX;
+                s.Data.MemId = 0;
             }
         }
         m_pool.push_back(s);

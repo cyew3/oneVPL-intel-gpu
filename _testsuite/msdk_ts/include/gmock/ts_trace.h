@@ -40,7 +40,7 @@ public:
         return *this;
     }
 
-#define STRUCT(name, fields) virtual tsAutoTrace &operator << (name& p); virtual tsAutoTrace &operator << (name* p);
+#define STRUCT(name, fields) virtual tsAutoTrace &operator << (const name& p); virtual tsAutoTrace &operator << (const name* p);
 #define FIELD_T(type, _name)
 #define FIELD_S(type, _name)
 
@@ -77,9 +77,10 @@ public:
     tsTrace(std::streambuf* sb) : tsAutoTrace(sb), m_interpret_ext_buf(true) {}
 
     
-    tsTrace& operator << (mfxExtBuffer& p);
-    tsTrace& operator << (mfxVideoParam& p);
-    tsTrace& operator << (mfxInfoMFX& p);
+    tsTrace& operator << (const mfxExtBuffer& p);
+    tsTrace& operator << (const mfxVideoParam& p);
+    tsTrace& operator << (const mfxInfoMFX& p);
+    tsTrace& operator << (const mfxPluginUID& p);
     tsTrace& operator << (mfxStatus& p);
 
     template<typename T> tsTrace& operator << (T& p) { (tsAutoTrace&)*this << p; return *this; }

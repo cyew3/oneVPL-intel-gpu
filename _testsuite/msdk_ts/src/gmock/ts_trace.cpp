@@ -1,4 +1,5 @@
 #include "ts_trace.h"
+#include <iomanip>
 
 #define STRUCT_BODY(name, fields)\
         *this  << #name << " {\n";                 \
@@ -8,12 +9,12 @@
         *this << m_off << "}";                     \
 
 #define STRUCT(name, fields)                       \
-    tsAutoTrace& tsAutoTrace::operator<< (name& p) \
+    tsAutoTrace& tsAutoTrace::operator<< (const name& p) \
     {                                              \
         STRUCT_BODY(name, fields)                  \
         return *this;                              \
     }                                              \
-    tsAutoTrace& tsAutoTrace::operator<< (name* p)\
+    tsAutoTrace& tsAutoTrace::operator<< (const name* p)\
     {                                              \
         if(p) return *this << (void*)p << " &(" << (name&)*p << ")";\
         return *this << (void*)p;                              \
@@ -38,7 +39,7 @@
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
-tsTrace& tsTrace::operator<<(mfxExtBuffer& p)
+tsTrace& tsTrace::operator<<(const mfxExtBuffer& p)
 {
     if(!m_interpret_ext_buf)
     {
@@ -71,9 +72,9 @@ enum
     VPP     = 3
 };
 
-tsTrace& tsTrace::operator<<(mfxVideoParam& p)
+tsTrace& tsTrace::operator<<(const mfxVideoParam& p)
 {
-    m_flags = (!!(p.IOPattern & 0x0F) + !!(p.IOPattern & 0xF0));
+    m_flags = (!!(p.IOPattern & 0x0F) | 2 * !!(p.IOPattern & 0xF0));
 
     STRUCT_BODY(mfxVideoParam,
         if(m_flags != VPP || !m_flags)
@@ -110,14 +111,8 @@ tsTrace& tsTrace::operator<<(mfxVideoParam& p)
     return *this;
 }
 
-tsTrace& tsTrace::operator<<(mfxInfoMFX& p)
+tsTrace& tsTrace::operator<<(const mfxInfoMFX& p)
 {
-    if(!m_flags)
-    {
-        (tsAutoTrace&)*this << p;
-        return *this;
-    }
-
     STRUCT_BODY(mfxInfoMFX,
         FIELD_T(mfxU16, BRCParamMultiplier)
         FIELD_S(mfxFrameInfo, FrameInfo)
@@ -240,6 +235,36 @@ tsTrace& tsTrace::operator<<(mfxStatus& p)
         FIELD_E(MFX_TASK_BUSY)
     )
 
+    return *this;
+}
+
+
+typedef struct
+{
+    unsigned char* data;
+    unsigned int size;
+} rawdata;
+
+rawdata hexstr(const void* d, unsigned int s)
+{
+    rawdata r = {(unsigned char*)d, s};
+    return r;
+}
+
+std::ostream &operator << (std::ostream &os, rawdata p){
+    char f = os.fill();
+    os.fill('0');
+    os << std::hex;
+    for(unsigned int i = 0; i < p.size; i++)
+        os << std::setw(2) << (unsigned int)(p.data[i]);
+    os << std::dec;
+    os.fill(f);
+    return os;
+}
+
+tsTrace& tsTrace::operator<<(const mfxPluginUID& p)
+{
+    *this << hexstr(p.Data, sizeof(p.Data));
     return *this;
 }
 

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ts_trace.h"
+#include "ts_plugin.h"
 #include "test_sample_allocator.h"
 #include "gtest\gtest.h"
 
@@ -37,6 +38,7 @@ extern mfxVersion   g_tsVersion;
 extern tsStatus     g_tsStatus;
 extern mfxU32       g_tsTrace;
 extern tsTrace      g_tsLog;
+extern tsPlugin     g_tsPlugin;
 
 #define TS_REG_TEST_SUITE(name, routine, n_cases) \
     class name : public MFXVideoTest{};\

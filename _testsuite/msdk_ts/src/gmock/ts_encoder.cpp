@@ -16,6 +16,8 @@ tsVideoEncoder::tsVideoEncoder(mfxU32 CodecId, bool useDefaults)
     , m_filler(0)
     , m_bs_processor(0)
     , m_frames_buffered(0)
+    , m_uid(0)
+    , m_loaded(false)
 {
     m_par.mfx.CodecId = CodecId;
     if(m_default)
@@ -35,6 +37,8 @@ tsVideoEncoder::tsVideoEncoder(mfxU32 CodecId, bool useDefaults)
         m_par.mfx.FrameInfo.FrameRateExtN = 30;
         m_par.mfx.FrameInfo.FrameRateExtD = 1;
     }
+    m_uid = g_tsPlugin.UID(MFX_PLUGINTYPE_VIDEO_ENCODE, CodecId);
+    m_loaded = !m_uid;
 }
 
 tsVideoEncoder::~tsVideoEncoder() 
@@ -52,6 +56,10 @@ mfxStatus tsVideoEncoder::Init()
         if(!m_session)
         {
             MFXInit();TS_CHECK_MFX;
+        }
+        if(!m_loaded)
+        {
+            Load();
         }
         if(     !m_pFrameAllocator 
             && (   (m_request.Type & (MFX_MEMTYPE_VIDEO_MEMORY_DECODER_TARGET|MFX_MEMTYPE_VIDEO_MEMORY_PROCESSOR_TARGET))
@@ -101,9 +109,16 @@ mfxStatus tsVideoEncoder::Close(mfxSession session)
 
 mfxStatus tsVideoEncoder::Query()
 {
-    if(m_default && !m_session)
+    if(m_default)
     {
-        MFXInit();TS_CHECK_MFX;
+        if(!m_session)
+        {
+            MFXInit();
+        }
+        if(!m_loaded)
+        {
+            Load();
+        }
     }
     return Query(m_session, m_pPar, m_pParOut);
 }
@@ -119,9 +134,16 @@ mfxStatus tsVideoEncoder::Query(mfxSession session, mfxVideoParam *in, mfxVideoP
 
 mfxStatus tsVideoEncoder::QueryIOSurf()
 {
-    if(m_default && !m_session)
+    if(m_default)
     {
-        MFXInit();TS_CHECK_MFX;
+        if(!m_session)
+        {
+            MFXInit();
+        }
+        if(!m_loaded)
+        {
+            Load();
+        }
     }
     return QueryIOSurf(m_session, m_pPar, m_pRequest);
 }
@@ -136,7 +158,6 @@ mfxStatus tsVideoEncoder::QueryIOSurf(mfxSession session, mfxVideoParam *par, mf
     return g_tsStatus.get();
 }
 
-    
 mfxStatus tsVideoEncoder::Reset()
 {
     return Reset(m_session, m_pPar);
@@ -198,7 +219,7 @@ mfxStatus tsVideoEncoder::EncodeFrameAsync()
         m_pSurf = GetSurface();TS_CHECK_MFX;
         if(m_filler)
         {
-            m_pSurf = m_filler->FillSurface(m_pSurf, m_pFrameAllocator);
+            m_pSurf = m_filler->ProcessSurface(m_pSurf, m_pFrameAllocator);
         }
     }
     mfxStatus mfxRes = EncodeFrameAsync(m_session, m_pCtrl, m_pSurf, m_pBitstream, m_pSyncPoint);

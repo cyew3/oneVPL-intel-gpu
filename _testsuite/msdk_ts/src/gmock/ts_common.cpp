@@ -5,6 +5,8 @@ tsStatus     g_tsStatus;
 mfxIMPL      g_tsImpl    = MFX_IMPL_AUTO;
 mfxVersion   g_tsVersion = {MFX_VERSION_MINOR, MFX_VERSION_MAJOR};
 mfxU32       g_tsTrace   = 1;
+tsPlugin     g_tsPlugin;
+
 
 bool operator == (const mfxFrameInfo& v1, const mfxFrameInfo& v2)
 {
@@ -29,6 +31,7 @@ void MFXVideoTest::SetUp()
 {
     std::string platform = ENV("TS_PLATFORM", "auto");
     std::string trace    = ENV("TS_TRACE", "1");
+    std::string plugins  = ENV("TS_PLUGINS", "");
 
     if(platform.find("_sw_") != std::string::npos)
     {
@@ -49,6 +52,8 @@ void MFXVideoTest::SetUp()
     }
     
     sscanf(trace.c_str(), "%d", &g_tsTrace);
+
+    g_tsPlugin.Init(plugins, platform);
 }
 #pragma warning(default:4996)
 

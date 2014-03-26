@@ -4,16 +4,16 @@
 namespace
 {
 
-class SFiller : public tsSurfaceFiller
+class SFiller : public tsSurfaceProcessor
 {
 private:
     mfxU32 m_c;
 public:
     SFiller() : m_c(0){ srand(0); };
-    mfxStatus FillSurface(mfxFrameSurface1& s);
+    mfxStatus ProcessSurface(mfxFrameSurface1& s);
 };
 
- mfxStatus SFiller::FillSurface(mfxFrameSurface1& s)
+ mfxStatus SFiller::ProcessSurface(mfxFrameSurface1& s)
  {
     tsFrame d(s);
     mfxU32 mh = s.Info.Height / 10;

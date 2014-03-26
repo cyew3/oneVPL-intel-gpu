@@ -53,6 +53,12 @@
     <ClInclude Include="include\gmock\ts_ext_buffers_decl.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="include\gmock\ts_plugin.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\gmock\ts_decoder.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\test_sample_allocator.cpp">
@@ -99,6 +105,12 @@
     </ClCompile>
     <ClCompile Include="src\gmock\test_suites\avce_max_bins.cpp">
       <Filter>Source Files\test_suites</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gmock\ts_plugin.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gmock\ts_decoder.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

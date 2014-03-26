@@ -162,10 +162,12 @@
     <ClInclude Include="include\gmock\ts_bitstream.h" />
     <ClInclude Include="include\gmock\ts_common.h" />
     <ClInclude Include="include\gmock\ts_alloc.h" />
+    <ClInclude Include="include\gmock\ts_decoder.h" />
     <ClInclude Include="include\gmock\ts_encoder.h" />
     <ClInclude Include="include\gmock\ts_ext_buffers.h" />
     <ClInclude Include="include\gmock\ts_ext_buffers_decl.h" />
     <ClInclude Include="include\gmock\ts_parser.h" />
+    <ClInclude Include="include\gmock\ts_plugin.h" />
     <ClInclude Include="include\gmock\ts_session.h" />
     <ClInclude Include="include\gmock\ts_struct.h" />
     <ClInclude Include="include\gmock\ts_struct_decl.h" />
@@ -183,7 +185,9 @@
     <ClCompile Include="src\gmock\ts_alloc.cpp" />
     <ClCompile Include="src\gmock\ts_bitstream.cpp" />
     <ClCompile Include="src\gmock\ts_common.cpp" />
+    <ClCompile Include="src\gmock\ts_decoder.cpp" />
     <ClCompile Include="src\gmock\ts_encoder.cpp" />
+    <ClCompile Include="src\gmock\ts_plugin.cpp" />
     <ClCompile Include="src\gmock\ts_session.cpp" />
     <ClCompile Include="src\gmock\ts_struct.cpp" />
     <ClCompile Include="src\gmock\ts_surface.cpp" />
