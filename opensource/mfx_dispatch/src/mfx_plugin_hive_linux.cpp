@@ -373,7 +373,7 @@ MFXDefaultPlugins::MFXDefaultPlugins(mfxVersion currentAPIVersion, MFX_DISP_HAND
         TRACE_HIVE_ERROR("dladdr() reported an error: %s\n", dlerror());
         return;
     }
-    msdk_disp_char_cpy_s(libModuleName, sizeof(libModuleName), DlInfo.dli_sname);
+    msdk_disp_char_cpy_s(libModuleName, sizeof(libModuleName), DlInfo.dli_fname);
 
     msdk_disp_char *lastSlashPos = strrchr(libModuleName, '/');
     if (!lastSlashPos) {
