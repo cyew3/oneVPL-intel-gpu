@@ -73,10 +73,6 @@ mfxStatus MFXVP8DecoderPlugin::PluginInit(mfxCoreInterface *core)
     mfxRes = m_pmfxCore->GetCoreParam(m_pmfxCore->pthis, &par);
     MFX_CHECK_STS(mfxRes);
 
- #if !defined (MFX_VA) && defined (AS_VP8D_PLUGIN)
-    par.Impl = MFX_IMPL_SOFTWARE;
-#endif
-
     mfxRes = MFXInit(par.Impl, &par.Version, &m_session);
     MFX_CHECK_STS(mfxRes);
 

@@ -465,9 +465,6 @@
     <ResourceCompile Include="libmfxhw.rc" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\thirdparty\vp8_libvpx.vcxproj">
-      <Project>{18a3f3bc-74d2-4155-9be1-9b29bb7db2db}</Project>
-    </ProjectReference>
     <ProjectReference Include="..\shared\mfx_trace\mfx_trace_hw.vcxproj">
       <Project>{ee93e15e-6a4a-4cc5-8d13-892fbba5cc5f}</Project>
       <Private>false</Private>
@@ -595,9 +592,6 @@
       <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
       <LinkLibraryDependencies>true</LinkLibraryDependencies>
       <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
-    </ProjectReference>
-    <ProjectReference Include="..\shared\umc\codec\vp8_dec\vp8_dec_hw.vcxproj">
-      <Project>{ebaf2767-b73d-43fb-aaae-1698484b7c27}</Project>
     </ProjectReference>
     <ProjectReference Include="..\shared\umc\core\umc\base_classes.vcxproj">
       <Project>{31991d83-f6a2-49d9-bdc5-64e85d055a1c}</Project>

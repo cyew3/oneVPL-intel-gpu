@@ -616,8 +616,8 @@
     <ProjectReference Include="..\..\shared\umc\codec\h265_dec\h265_dec_hw.vcxproj">
       <Project>{c712ba45-ac67-4a16-bd5d-2619eb325182}</Project>
     </ProjectReference>
-    <ProjectReference Include="..\..\shared\umc\codec\vp8_dec\vp8_dec.vcxproj">
-      <Project>{27c98bcb-bcb6-4d57-9a47-d154bce0d8c9}</Project>
+    <ProjectReference Include="..\..\shared\umc\codec\vp8_dec\vp8_dec_hw.vcxproj">
+      <Project>{ebaf2767-b73d-43fb-aaae-1698484b7c27}</Project>
     </ProjectReference>
     <ProjectReference Include="..\..\shared\umc\core\umc\base_classes.vcxproj">
       <Project>{31991d83-f6a2-49d9-bdc5-64e85d055a1c}</Project>
