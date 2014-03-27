@@ -19,11 +19,11 @@ CBuffering::CBuffering():
     m_OutputSurfacesNumber(0),
     m_pSurfaces(NULL),
     m_pVppSurfaces(NULL),
-    m_pFreeOutputSurfaces(NULL),
     m_FreeSurfacesPool(&m_Mutex),
     m_FreeVppSurfacesPool(&m_Mutex),
     m_UsedSurfacesPool(&m_Mutex),
     m_UsedVppSurfacesPool(&m_Mutex),
+    m_pFreeOutputSurfaces(NULL),
     m_OutputSurfacesPool(&m_Mutex),
     m_DeliveredSurfacesPool(&m_Mutex)
 {

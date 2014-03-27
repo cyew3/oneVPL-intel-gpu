@@ -63,8 +63,6 @@ FourCC2Str( mfxU32 FourCC )
     break;
   }
 
-  return MSDK_STRING("UNKN");
-
 } // msdk_char* FourCC2Str( mfxU32 FourCC )
 
 /* ******************************************************************* */
@@ -80,8 +78,6 @@ PicStruct2Str( mfxU16  PicStruct )
   {
     return MSDK_STRING("interleave");
   }
-
-  return MSDK_STRING("unknown");
 
 } // msdk_char* PicStruct2Str( mfxU16  PicStruct )
 
