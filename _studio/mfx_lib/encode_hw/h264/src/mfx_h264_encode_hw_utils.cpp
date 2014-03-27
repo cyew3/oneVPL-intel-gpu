@@ -5273,7 +5273,7 @@ mfxU32 MfxHwH264Encode::GetMaxSliceSize(
     {
         if (nalu->type == 1 || nalu->type == 5)
         {
-            mfxU32 slice_len =  nalu->end - nalu->begin;
+            mfxU32 slice_len = (mfxU32)(nalu->end - nalu->begin);
             max = (max > slice_len) ? max : slice_len;  
             num++;
         }

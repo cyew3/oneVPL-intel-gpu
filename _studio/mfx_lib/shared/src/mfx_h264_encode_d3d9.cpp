@@ -328,7 +328,7 @@ void MfxHwH264Encode::FillVaringPartOfSliceBuffer(
         for (size_t i = old_size; i < slice.size(); ++i)
         {
             slice[i] = slice[0];
-            slice[i].slice_id = i;
+            slice[i].slice_id = (UINT)i;
         } 
     }
 
@@ -1142,7 +1142,7 @@ mfxStatus D3D9Encoder::Execute(
         FillVaringPartOfSliceBuffer(m_caps, task, fieldId, m_sps, m_pps, m_slice);
         if (slice_size_old != m_slice.size())
         {
-            m_headerPacker.ResizeSlices(m_slice.size());
+            m_headerPacker.ResizeSlices((mfxU32)m_slice.size());
             m_compBufDesc.resize(10 + m_slice.size());
             m_pps.NumSlice = mfxU8(m_slice.size());
         }    
