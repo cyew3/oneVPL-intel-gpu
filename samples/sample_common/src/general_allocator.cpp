@@ -8,6 +8,8 @@ Copyright(c) 2010-2014 Intel Corporation. All Rights Reserved.
 
 **********************************************************************************/
 
+#include "mfx_samples_config.h"
+
 #include "general_allocator.h"
 
 #if defined(_WIN32) || defined(_WIN64)

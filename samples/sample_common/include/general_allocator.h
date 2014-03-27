@@ -16,6 +16,7 @@
 #include "sample_utils.h"
 #include "base_allocator.h"
 
+#include <memory>
 #include <map>
 
 class SysMemFrameAllocator;
