@@ -1545,8 +1545,8 @@ Ipp32s PackerDXVA2::PackSliceParams(H264Slice *pSlice, Ipp32s sliceNum, Ipp32s c
             pBitstream->SetDecodedBytes(pBitstream->BytesDecoded() + NalUnitSize);
             if (chopping == CHOPPING_NONE)
                 pBitstream->SetDecodedBytes(NalUnitSize - (sliceParams->wBadSliceChopping == 0 ? sizeof(start_code_prefix) : 0));
-            sliceParams->wBadSliceChopping = chopping == CHOPPING_NONE ? 1 : 3;
-            partial_data = CHOPPING_SPLIT_SLICE_DATA;
+            //sliceParams->wBadSliceChopping = chopping == CHOPPING_NONE ? 1 : 3;
+            //partial_data = CHOPPING_SPLIT_SLICE_DATA;
         }
     }
 
