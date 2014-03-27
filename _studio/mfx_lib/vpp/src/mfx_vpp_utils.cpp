@@ -842,6 +842,13 @@ void ShowPipeline( std::vector<mfxU32> pipelineList )
                 break;
             }
 
+            case (mfxU32)MFX_EXTBUFF_VPP_CSC_OUT_A2RGB10:
+            {
+                sprintf_s(cStr, sizeof(cStr), "%s \n", "CSC_A2RGB10");
+                OutputDebugStringA(cStr);
+                break;
+            }
+
             case (mfxU32)MFX_EXTBUFF_VPP_SCENE_ANALYSIS:
             {
                 sprintf_s(cStr, sizeof(cStr), "%s \n", "SA");
@@ -1010,6 +1017,12 @@ void ReorderPipelineListForQuality( std::vector<mfxU32> & pipelineList )
         index++;
     }
 
+    if( IsFilterFound( &pipelineList[0], (mfxU32)pipelineList.size(), MFX_EXTBUFF_VPP_CSC_OUT_A2RGB10 ) )
+    {
+        newList[index] = MFX_EXTBUFF_VPP_CSC_OUT_A2RGB10;
+        index++;
+    }
+
     if( IsFilterFound( &pipelineList[0], (mfxU32)pipelineList.size(), MFX_EXTBUFF_VPP_COMPOSITE ) )
     {
         newList[index] = MFX_EXTBUFF_VPP_COMPOSITE;
@@ -1121,11 +1134,15 @@ mfxStatus GetPipelineList(
             pipelineList.push_back(MFX_EXTBUFF_VPP_CSC_OUT_RGB4);
         }
 
+         if (MFX_FOURCC_P010 == par->In.FourCC && MFX_FOURCC_A2RGB10 == par->Out.FourCC) {
+             /* Special case for p010->a2rgb10 conversions */
+            pipelineList.push_back(MFX_EXTBUFF_VPP_CSC_OUT_A2RGB10);
+        }
+
       
         if (  ( MFX_FOURCC_P010 == par->In.FourCC && MFX_FOURCC_NV12    == par->Out.FourCC)
-           || ( MFX_FOURCC_NV12 == par->In.FourCC && MFX_FOURCC_P010    == par->Out.FourCC)
-           || ( MFX_FOURCC_P010 == par->In.FourCC && MFX_FOURCC_A2RGB10 == par->Out.FourCC)) {
-             /* Special case for p010<->nv12 and p010->a2rgb10 conversions */
+           || ( MFX_FOURCC_NV12 == par->In.FourCC && MFX_FOURCC_P010    == par->Out.FourCC)) {
+             /* Special case for p010<->nv12 conversions */
             pipelineList.push_back(MFX_EXTBUFF_VPP_CSC);
         }
         else if (  ( MFX_FOURCC_P010 == par->In.FourCC && MFX_FOURCC_P010 == par->Out.FourCC)

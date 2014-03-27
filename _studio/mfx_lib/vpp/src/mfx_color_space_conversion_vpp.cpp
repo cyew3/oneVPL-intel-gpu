@@ -119,7 +119,7 @@ mfxStatus MFXVideoVPPColorSpaceConversion::Reset(mfxVideoParam *par)
   srcFourCC = par->vpp.In.FourCC;
   dstFourCC = par->vpp.Out.FourCC;
 
-  if( srcFourCC == dstFourCC 
+  if( srcFourCC == dstFourCC
    && MFX_FOURCC_NV12    != dstFourCC
    && MFX_FOURCC_A2RGB10 != dstFourCC
    && par->vpp.In.Shift == par->vpp.Out.Shift)
@@ -142,7 +142,7 @@ mfxStatus MFXVideoVPPColorSpaceConversion::Reset(mfxVideoParam *par)
   case MFX_FOURCC_YUV422V:
   case MFX_FOURCC_YUV444:
   case MFX_FOURCC_P010:
-      switch (dstFourCC) 
+      switch (dstFourCC)
       {
           case MFX_FOURCC_NV12:
           case MFX_FOURCC_YUY2:
@@ -339,7 +339,7 @@ mfxStatus MFXVideoVPPColorSpaceConversion::Init(mfxFrameInfo* In, mfxFrameInfo* 
   srcFourCC = In->FourCC;
   dstFourCC = Out->FourCC;
 
-  if( srcFourCC == dstFourCC 
+  if( srcFourCC == dstFourCC
    && In->Shift == Out->Shift ){
     // copy src2dst
     mfxSts = MFX_ERR_NONE;
@@ -361,7 +361,7 @@ mfxStatus MFXVideoVPPColorSpaceConversion::Init(mfxFrameInfo* In, mfxFrameInfo* 
   case MFX_FOURCC_YUV422V:
   case MFX_FOURCC_YUV444:
   case MFX_FOURCC_P010:
-      switch (dstFourCC) 
+      switch (dstFourCC)
       {
       case MFX_FOURCC_NV12:
       case MFX_FOURCC_YUY2:
@@ -416,7 +416,7 @@ mfxStatus MFXVideoVPPColorSpaceConversion::GetBufferSize( mfxU32* pBufferSize )
       *pBufferSize = 3*(m_errPrtctState.Out.Width * m_errPrtctState.Out.Height) >> 1;
   }
 
-  if(MFX_FOURCC_P010 == m_errPrtctState.In.FourCC && MFX_FOURCC_P010 == m_errPrtctState.Out.FourCC)
+  if(MFX_FOURCC_P010 == m_errPrtctState.In.FourCC)
   {
       /// Need for shift operation
       *pBufferSize = 3*(m_errPrtctState.In.Width * m_errPrtctState.In.Height);
@@ -452,7 +452,7 @@ mfxStatus MFXVideoVPPColorSpaceConversion::SetBuffer( mfxU8* pBuffer )
       m_yv12Data.Pitch = m_errPrtctState.Out.Width;
   }
 
-  if(MFX_FOURCC_P010 == m_errPrtctState.In.FourCC && MFX_FOURCC_P010 == m_errPrtctState.Out.FourCC)
+  if(MFX_FOURCC_P010 == m_errPrtctState.In.FourCC)
   {
       MFX_CHECK_NULL_PTR1(pBuffer);
 
@@ -659,13 +659,13 @@ IppStatus cc_P010_to_A2RGB10( mfxFrameData* inData,  mfxFrameInfo* inInfo,
         ptr_y  = (mfxU16*)inData->Y;
         ptr_uv = (mfxU16*)inData->UV;
         out = (mfxU32*)IPP_MIN( IPP_MIN(outData->R, outData->G), outData->B );
-       
+
         uv_offset    = 0;
         out_offset   = 0;
-        
+
         for(mfxI32 j = 0; j < roiSize.height; j++) {
             out_offset = j*outPitch;
-            
+
             if ( j != 0 && (j%2) == 0 ){
                 // Use the same plane twice for 4:2:0
                 uv_offset += inPitch;
@@ -715,7 +715,7 @@ IppStatus cc_P010_to_P010( mfxFrameData* inData,  mfxFrameInfo* inInfo,
       shift = inInfo->Shift - outInfo->Shift;
       right_shift = 0;
   }
-  else 
+  else
   {
       shift = outInfo->Shift - inInfo->Shift;
       right_shift = 1;
@@ -723,12 +723,12 @@ IppStatus cc_P010_to_P010( mfxFrameData* inData,  mfxFrameInfo* inInfo,
 
   if(MFX_PICSTRUCT_PROGRESSIVE & inInfo->PicStruct)
   {
-    
+
       if ( right_shift )
       {
           sts = ippiRShiftC_16u_C1R((const Ipp16u *)inData->Y, inData->Pitch /* * 2*/, shift, (Ipp16u *)outData->Y, outData->Pitch /** 2*/, roiSize);
       }
-      else 
+      else
       {
           sts = ippiLShiftC_16u_C1R((const Ipp16u *)inData->Y, inData->Pitch /** 2*/, shift, (Ipp16u *)outData->Y, outData->Pitch /** 2*/, roiSize);
       }
@@ -739,7 +739,7 @@ IppStatus cc_P010_to_P010( mfxFrameData* inData,  mfxFrameInfo* inInfo,
       {
           sts = ippiRShiftC_16u_C1R((const Ipp16u *)inData->UV, inData->Pitch /** 2*/, shift, (Ipp16u *)outData->UV, outData->Pitch * 2, roiSize);
       }
-      else 
+      else
       {
           sts = ippiLShiftC_16u_C1R((const Ipp16u *)inData->UV, inData->Pitch/** 2*/, shift, (Ipp16u *)outData->UV, outData->Pitch/** 2*/, roiSize);
       }
@@ -769,7 +769,7 @@ IppStatus cc_NV12_to_P010( mfxFrameData* inData,  mfxFrameInfo* inInfo,
 
   if(MFX_PICSTRUCT_PROGRESSIVE & inInfo->PicStruct)
   {
-      sts = ippiConvert_8u16u_C1R(inData->Y,  inData->Pitch, (Ipp16u *)outData->Y,  outData->Pitch, roiSize); 
+      sts = ippiConvert_8u16u_C1R(inData->Y,  inData->Pitch, (Ipp16u *)outData->Y,  outData->Pitch, roiSize);
       IPP_CHECK_STS( sts );
 
       sts = ippiLShiftC_16u_C1IR(2, (Ipp16u *)outData->Y, outData->Pitch, roiSize);
@@ -1136,13 +1136,13 @@ IppStatus cc_NV12_to_YUY2( mfxFrameData* inData,  mfxFrameInfo* inInfo,
 
 
 //static void tst_ycbcr420_rgb_p2c4(
-//    Ipp8u* src, 
-//    int sStep, 
-//    Ipp8u* ref, 
-//    int rStep, 
+//    Ipp8u* src,
+//    int sStep,
+//    Ipp8u* ref,
+//    int rStep,
 //    IppiSize size,
-//    Ipp8u aValue, 
-//    int typeRGB, 
+//    Ipp8u aValue,
+//    int typeRGB,
 //    int typeCBCR)
 //{
 //    Ipp8u *redL1, *greenL1, *blueL1, *alphaL1, *redH1, *greenH1, *blueH1, *alphaH1;
@@ -1248,12 +1248,12 @@ IppStatus cc_NV12_to_YUY2( mfxFrameData* inData,  mfxFrameInfo* inInfo,
 //} // void tst_ycbcr420_rgb_p2c4(...)
 
 
-IppStatus cc_NV12_to_RGB4( 
-    mfxFrameData* inData,  
+IppStatus cc_NV12_to_RGB4(
+    mfxFrameData* inData,
     mfxFrameInfo* inInfo,
-    mfxFrameData* outData, 
+    mfxFrameData* outData,
     mfxFrameInfo* outInfo,
-    
+
     mfxFrameData* yv12Data)
 {
     IppStatus ippSts;

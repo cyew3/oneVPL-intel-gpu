@@ -866,6 +866,7 @@ mfxStatus VideoVPPSW::GetVideoParam(mfxVideoParam *par)
                     case MFX_EXTBUFF_VPP_DI_30i60p:
                     case MFX_EXTBUFF_VPP_ITC:
                     case MFX_EXTBUFF_VPP_CSC_OUT_RGB4:
+                    case MFX_EXTBUFF_VPP_CSC_OUT_A2RGB10:
                     case MFX_EXTBUFF_VPP_DEINTERLACING:
                     {
                         continue;
@@ -1582,6 +1583,12 @@ mfxStatus VideoVPPSW::Reset(mfxVideoParam *par)
             case MFX_EXTBUFF_VPP_CSC_OUT_RGB4:
                 {
                     filtParam.vpp.Out.FourCC = MFX_FOURCC_RGB4;
+                    break;
+                }
+
+            case MFX_EXTBUFF_VPP_CSC_OUT_A2RGB10:
+                {
+                    filtParam.vpp.Out.FourCC = MFX_FOURCC_A2RGB10;
                     break;
                 }
 

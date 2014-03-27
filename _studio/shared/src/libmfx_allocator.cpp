@@ -184,6 +184,8 @@ mfxStatus mfxDefaultAllocator::AllocFrames(mfxHDL pthis, mfxFrameAllocRequest *r
         else
             return MFX_ERR_UNSUPPORTED;
     case MFX_FOURCC_RGB4:
+        nbytes = Pitch*Height2 + Pitch*Height2 + Pitch*Height2 + Pitch*Height2;
+        break;
     case MFX_FOURCC_A2RGB10:
         nbytes = Pitch*Height2 + Pitch*Height2 + Pitch*Height2 + Pitch*Height2;
         break;

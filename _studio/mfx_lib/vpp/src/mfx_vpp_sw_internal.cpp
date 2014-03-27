@@ -415,6 +415,17 @@ mfxStatus VideoVPPSW::CreatePipeline(mfxFrameInfo* In, mfxFrameInfo* Out)
                 break;
             }
 
+            case (mfxU32)MFX_EXTBUFF_VPP_CSC_OUT_A2RGB10:
+            {
+                sts = MFX_ERR_NONE;
+                /* COLOR SPACE_ CONVERSION specific */
+                outFrameInfo.FourCC = MFX_FOURCC_A2RGB10;
+
+                VPP_INIT_FILTER( filterIndex, MFXVideoVPPColorSpaceConversion );
+
+                break;
+            }
+
             case (mfxU32)MFX_EXTBUFF_VPP_SCENE_ANALYSIS:
             {
                 sts = MFX_ERR_NONE;
@@ -885,6 +896,7 @@ mfxStatus GetExternalFramesCount(mfxVideoParam* pParam,
 
             case (mfxU32)MFX_EXTBUFF_VPP_CSC:
             case (mfxU32)MFX_EXTBUFF_VPP_CSC_OUT_RGB4:
+            case (mfxU32)MFX_EXTBUFF_VPP_CSC_OUT_A2RGB10:
             {
                 inputFramesCount[filterIndex]  = MFXVideoVPPColorSpaceConversion::GetInFramesCountExt();
                 outputFramesCount[filterIndex] = MFXVideoVPPColorSpaceConversion::GetOutFramesCountExt();

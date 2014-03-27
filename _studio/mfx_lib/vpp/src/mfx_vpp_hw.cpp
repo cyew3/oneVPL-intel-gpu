@@ -2390,6 +2390,7 @@ mfxStatus ConfigureExecuteParams(
 
             case MFX_EXTBUFF_VPP_CSC:
             case MFX_EXTBUFF_VPP_CSC_OUT_RGB4:
+            case MFX_EXTBUFF_VPP_CSC_OUT_A2RGB10:
             {
                 break;// aya: make sense for SW_VPP only
             }

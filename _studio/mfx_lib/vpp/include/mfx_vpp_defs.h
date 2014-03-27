@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2010-2012 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2010-2014 Intel Corporation. All Rights Reserved.
 //
 //
 //                     defines for (SW)VPP processing
@@ -94,7 +94,8 @@ enum {
 
     // MSDK 2013 requires [NV12, RGB4] as output.SW algorithm designed for NV12 only.
     // the best solution is (XXX->NV12) + VPP + (NV12->RGB4)
-    MFX_EXTBUFF_VPP_CSC_OUT_RGB4 =   MFX_MAKEFOURCC('C','S','R','4') //COLOR SPACE CONVERSION FILTER
+    MFX_EXTBUFF_VPP_CSC_OUT_RGB4    =   MFX_MAKEFOURCC('C','S','R','4'), //COLOR SPACE CONVERSION FILTER
+    MFX_EXTBUFF_VPP_CSC_OUT_A2RGB10 =   MFX_MAKEFOURCC('C','S','1','0') //COLOR SPACE CONVERSION FILTER
 };
 
 typedef enum {
