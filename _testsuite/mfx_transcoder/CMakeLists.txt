@@ -50,7 +50,7 @@ foreach( variant sw drm x11 )
 #        vpp_plugin
         shared_utils
 #        sample_common_${variant}
-        umc_codecs_merged
+        umc_splmux_merged
         umc_io_merged_sw
         umc_core_merged
         ${ITT_LIBS}
@@ -74,7 +74,7 @@ foreach( variant sw drm x11 )
 #        vpp_plugin
         shared_utils_lucas
 #        sample_common_${variant}
-        umc_codecs_merged
+        umc_splmux_merged
         umc_io_merged_sw
         umc_core_merged
         ${ITT_LIBS}
