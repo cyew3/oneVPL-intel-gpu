@@ -20,6 +20,7 @@ MFX_LOCAL_DIRS = \
     vc1_enc \
     vc1_spl \
     jpeg_enc \
+    vp8_dec \
     jpeg_common
 
 MFX_LOCAL_DIRS_IMPL = \

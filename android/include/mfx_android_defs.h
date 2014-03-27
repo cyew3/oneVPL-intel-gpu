@@ -24,7 +24,7 @@ Copyright(c) 2013-2014 Intel Corporation. All Rights Reserved.
 
   #define MFX_OMX_PVR_RENDER
 
-#elif MFX_ANDROID_PLATFORM == baytrail
+#elif (MFX_ANDROID_PLATFORM == baytrail) || (MFX_ANDROID_PLATFORM == bigcore)
 
   #define MFX_ENABLE_H264_VIDEO_DECODE
   #define MFX_ENABLE_H265_VIDEO_DECODE
@@ -33,6 +33,8 @@ Copyright(c) 2013-2014 Intel Corporation. All Rights Reserved.
   #define MFX_ENABLE_H264_VIDEO_BRC
   #define MFX_ENABLE_H264_VIDEO_ENCODE_HW
   #define MFX_ENABLE_MVC_VIDEO_ENCODE_HW
+  #define MFX_ENABLE_VP8_VIDEO_DECODE
+  #define MFX_ENABLE_VP8_VIDEO_DECODE_HW
 
   #define MFX_ENABLE_VC1_VIDEO_DECODE
 
