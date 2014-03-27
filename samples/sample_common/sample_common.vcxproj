@@ -163,7 +163,7 @@
     <ClInclude Include="include\sample_utils.h" />
     <ClInclude Include="include\shared_ptr.h" />
     <ClInclude Include="include\sysmem_allocator.h" />
-	<ClCompile Include="src\general_allocator.h" />
+    <ClCompile Include="include\general_allocator.h" />
     <ClInclude Include="include\mfx_plugin_uids.h" />
     <ClInclude Include="include\mfx_buffering.h" />
     <ClInclude Include="include\vpp_ex.h" />
@@ -182,7 +182,7 @@
     <ClCompile Include="src\d3d_device.cpp" />
     <ClCompile Include="src\sample_utils.cpp" />
     <ClCompile Include="src\sysmem_allocator.cpp" />
-	<ClCompile Include="src\general_allocator.cpp" />
+    <ClCompile Include="src\general_allocator.cpp" />
     <ClCompile Include="src\mfx_plugin_uids.cpp" />
     <ClCompile Include="src\mfx_buffering.cpp" />
     <ClCompile Include="src\vm\time.cpp" />
