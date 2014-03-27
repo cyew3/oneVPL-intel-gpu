@@ -47,6 +47,17 @@ public:
     mfxU32  m_buf_size;
 
     tsBitstreamReader(const char* fname, mfxU32 buf_size);
+    tsBitstreamReader(mfxBitstream bs, mfxU32 buf_size);
     ~tsBitstreamReader();
+    mfxStatus ProcessBitstream(mfxBitstream& bs, mfxU32 nFrames);
+};
+
+class tsBitstreamReaderIVF : public tsBitstreamReader
+{
+public:
+    bool m_first_call;
+    tsBitstreamReaderIVF(const char* fname, mfxU32 buf_size) : tsBitstreamReader(fname, buf_size), m_first_call(true) {};
+    tsBitstreamReaderIVF(mfxBitstream bs, mfxU32 buf_size) : tsBitstreamReader(bs, buf_size), m_first_call(true)  {};
+    ~tsBitstreamReaderIVF(){};
     mfxStatus ProcessBitstream(mfxBitstream& bs, mfxU32 nFrames);
 };

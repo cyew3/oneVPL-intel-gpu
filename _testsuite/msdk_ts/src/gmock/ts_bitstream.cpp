@@ -88,6 +88,14 @@ tsBitstreamReader::tsBitstreamReader(const char* fname, mfxU32 buf_size)
 {
 }
 
+tsBitstreamReader::tsBitstreamReader(mfxBitstream bs, mfxU32 buf_size)
+    : tsReader(bs)
+    , m_eos(false)
+    , m_buf(new mfxU8[buf_size])
+    , m_buf_size(buf_size)
+{
+}
+
 tsBitstreamReader::~tsBitstreamReader()
 {
     if(m_buf)
@@ -124,3 +132,62 @@ mfxStatus tsBitstreamReader::ProcessBitstream(mfxBitstream& bs, mfxU32 nFrames)
     return MFX_ERR_NONE;
 }
 
+
+mfxStatus tsBitstreamReaderIVF::ProcessBitstream(mfxBitstream& bs, mfxU32 nFrames)
+{
+    mfxU32 header_size = m_first_call * 32 + 12;
+    mfxU32 frame_size = 0;
+
+    if(m_eos)
+    {
+        return MFX_ERR_MORE_DATA;
+    }
+
+    if(bs.DataLength + bs.DataOffset > m_buf_size)
+    {
+        return MFX_ERR_UNDEFINED_BEHAVIOR;
+    }
+
+    bs.Data      = m_buf;
+    bs.MaxLength = m_buf_size;
+
+    if(bs.DataLength && bs.DataOffset)
+    {
+        memmove(bs.Data, bs.Data + bs.DataOffset, bs.DataLength);
+    }
+    bs.DataOffset = 0;
+
+    if(header_size != Read(bs.Data + bs.DataLength, header_size))
+    {
+        m_eos = true;
+        return MFX_ERR_MORE_DATA;
+    }
+
+    if(m_first_call)
+    {
+        bs.DataLength += header_size; //assumed 1st call for DecodeHeader
+        m_first_call = false;
+    } 
+    else 
+    {
+        bs.DataOffset += header_size;
+    }
+
+    frame_size = *(mfxU32*)(bs.Data + bs.DataOffset + bs.DataLength - 12);
+
+    if(bs.MaxLength - bs.DataLength < frame_size)
+    {
+        return MFX_ERR_NOT_ENOUGH_BUFFER;
+    }
+
+    if(frame_size != Read(bs.Data + bs.DataOffset + bs.DataLength, frame_size))
+    {
+        m_eos = true;
+        return MFX_ERR_MORE_DATA;
+    }
+    bs.DataLength += frame_size;
+    bs.DataFlag = MFX_BITSTREAM_COMPLETE_FRAME;
+    
+
+    return MFX_ERR_NONE;
+}

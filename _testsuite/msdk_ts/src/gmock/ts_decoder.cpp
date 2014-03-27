@@ -214,6 +214,8 @@ mfxStatus tsVideoDecoder::DecodeHeader(mfxSession session, mfxBitstream *bs, mfx
     g_tsStatus.check( MFXVideoDECODE_DecodeHeader(session, bs, par) );
     TS_TRACE(par);
 
+    m_par_set = (g_tsStatus.get() >= 0);
+
     return g_tsStatus.get();
 }
 
@@ -253,7 +255,7 @@ mfxStatus tsVideoDecoder::DecodeFrameAsync()
 
     DecodeFrameAsync(m_session, m_pBitstream, m_pSurf, &m_pSurfOut, m_pSyncPoint);
 
-    if(g_tsStatus.get() >= 0)
+    if(g_tsStatus.get() == 0)
     {
         m_surf_out.insert( std::make_pair(*m_pSyncPoint, m_pSurfOut) );
         if(m_pSurfOut)
@@ -343,7 +345,7 @@ mfxStatus tsVideoDecoder::DecodeFrames(mfxU32 n)
             continue;
         }
 
-        if(MFX_ERR_MORE_SURFACE == res)
+        if(MFX_ERR_MORE_SURFACE == res || res > 0)
         {
             continue;
         }

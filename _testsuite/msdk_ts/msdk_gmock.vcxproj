@@ -169,6 +169,7 @@
     <ClInclude Include="include\gmock\ts_parser.h" />
     <ClInclude Include="include\gmock\ts_plugin.h" />
     <ClInclude Include="include\gmock\ts_session.h" />
+    <ClInclude Include="include\gmock\ts_streams.h" />
     <ClInclude Include="include\gmock\ts_struct.h" />
     <ClInclude Include="include\gmock\ts_struct_decl.h" />
     <ClInclude Include="include\gmock\ts_surface.h" />
@@ -189,6 +190,7 @@
     <ClCompile Include="src\gmock\ts_encoder.cpp" />
     <ClCompile Include="src\gmock\ts_plugin.cpp" />
     <ClCompile Include="src\gmock\ts_session.cpp" />
+    <ClCompile Include="src\gmock\ts_streams.cpp" />
     <ClCompile Include="src\gmock\ts_struct.cpp" />
     <ClCompile Include="src\gmock\ts_surface.cpp" />
     <ClCompile Include="src\gmock\ts_trace.cpp" />
