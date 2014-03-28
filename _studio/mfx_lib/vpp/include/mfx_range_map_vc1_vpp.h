@@ -56,7 +56,7 @@ public:
   virtual bool IsReadyOutput( mfxRequestType requestType );
 
 protected:
-   mfxStatus PassThrough(mfxFrameSurface1 *in, mfxFrameSurface1 *out) { return MFX_ERR_UNKNOWN; };
+   mfxStatus PassThrough(mfxFrameSurface1* /*in*/, mfxFrameSurface1* /*out*/) { return MFX_ERR_UNKNOWN; };
 
 private:
 
