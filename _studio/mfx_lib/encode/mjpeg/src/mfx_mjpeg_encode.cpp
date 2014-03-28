@@ -911,11 +911,11 @@ mfxStatus MFXVideoENCODEMJPEG::Query(mfxVideoParam *in, mfxVideoParam *out)
         mfxU32 fourCC = in->mfx.FrameInfo.FourCC;
         mfxU16 chromaFormat = in->mfx.FrameInfo.ChromaFormat;
 
-        if (fourCC == 0 && chromaFormat == 0 ||
-            fourCC == MFX_FOURCC_NV12 && (chromaFormat == MFX_CHROMAFORMAT_YUV420 || chromaFormat == MFX_CHROMAFORMAT_YUV400) ||
-            fourCC == MFX_FOURCC_YV12 && (chromaFormat == MFX_CHROMAFORMAT_YUV420 || chromaFormat == MFX_CHROMAFORMAT_YUV400) ||
-            fourCC == MFX_FOURCC_YUY2 && (chromaFormat == MFX_CHROMAFORMAT_YUV422H || chromaFormat == MFX_CHROMAFORMAT_YUV422V || chromaFormat == MFX_CHROMAFORMAT_YUV400) ||
-            fourCC == MFX_FOURCC_RGB4 && chromaFormat == MFX_CHROMAFORMAT_YUV444)
+        if ((fourCC == 0 && chromaFormat == 0) ||
+            (fourCC == MFX_FOURCC_NV12 && (chromaFormat == MFX_CHROMAFORMAT_YUV420 || chromaFormat == MFX_CHROMAFORMAT_YUV400)) ||
+            (fourCC == MFX_FOURCC_YV12 && (chromaFormat == MFX_CHROMAFORMAT_YUV420 || chromaFormat == MFX_CHROMAFORMAT_YUV400)) ||
+            (fourCC == MFX_FOURCC_YUY2 && (chromaFormat == MFX_CHROMAFORMAT_YUV422H || chromaFormat == MFX_CHROMAFORMAT_YUV422V || chromaFormat == MFX_CHROMAFORMAT_YUV400)) ||
+            (fourCC == MFX_FOURCC_RGB4 && chromaFormat == MFX_CHROMAFORMAT_YUV444))
         {
             out->mfx.FrameInfo.FourCC = in->mfx.FrameInfo.FourCC;
             out->mfx.FrameInfo.ChromaFormat = in->mfx.FrameInfo.ChromaFormat;
@@ -944,9 +944,9 @@ mfxStatus MFXVideoENCODEMJPEG::Query(mfxVideoParam *in, mfxVideoParam *out)
         } else out->mfx.FrameInfo.Height = in->mfx.FrameInfo.Height;
 
         //Check for valid framerate
-        if(!in->mfx.FrameInfo.FrameRateExtN && in->mfx.FrameInfo.FrameRateExtD ||
-            in->mfx.FrameInfo.FrameRateExtN && !in->mfx.FrameInfo.FrameRateExtD ||
-            in->mfx.FrameInfo.FrameRateExtD && ((mfxF64)in->mfx.FrameInfo.FrameRateExtN / in->mfx.FrameInfo.FrameRateExtD) > 172) 
+        if((!in->mfx.FrameInfo.FrameRateExtN && in->mfx.FrameInfo.FrameRateExtD) ||
+            (in->mfx.FrameInfo.FrameRateExtN && !in->mfx.FrameInfo.FrameRateExtD) ||
+            (in->mfx.FrameInfo.FrameRateExtD && ((mfxF64)in->mfx.FrameInfo.FrameRateExtN / in->mfx.FrameInfo.FrameRateExtD) > 172)) 
         {
             isInvalid++;
             out->mfx.FrameInfo.FrameRateExtN = out->mfx.FrameInfo.FrameRateExtD = 0;
@@ -1067,7 +1067,7 @@ mfxStatus MFXVideoENCODEMJPEG::QueryIOSurf(mfxVideoParam *par, mfxFrameAllocRequ
     // check for valid IOPattern
     mfxU16 IOPatternIn = par->IOPattern & (MFX_IOPATTERN_IN_VIDEO_MEMORY | MFX_IOPATTERN_IN_SYSTEM_MEMORY | MFX_IOPATTERN_IN_OPAQUE_MEMORY);
     if ((par->IOPattern & 0xffc8) || (par->IOPattern == 0) ||
-        (IOPatternIn != MFX_IOPATTERN_IN_VIDEO_MEMORY) && (IOPatternIn != MFX_IOPATTERN_IN_SYSTEM_MEMORY) && (IOPatternIn != MFX_IOPATTERN_IN_OPAQUE_MEMORY))
+        ((IOPatternIn != MFX_IOPATTERN_IN_VIDEO_MEMORY) && (IOPatternIn != MFX_IOPATTERN_IN_SYSTEM_MEMORY) && (IOPatternIn != MFX_IOPATTERN_IN_OPAQUE_MEMORY)))
     {
        return MFX_ERR_INVALID_VIDEO_PARAM;
     }
@@ -1647,8 +1647,8 @@ mfxStatus MFXVideoENCODEMJPEG::RunThread(MJPEGEncodeTask &task, mfxU32 threadNum
 
             if (task.auxInput.Data.Y)
             {
-                if (task.auxInput.Info.FourCC == MFX_FOURCC_YV12 && (!task.auxInput.Data.U || !task.auxInput.Data.V) ||
-                    task.auxInput.Info.FourCC == MFX_FOURCC_NV12 && !task.auxInput.Data.UV)
+                if (((task.auxInput.Info.FourCC == MFX_FOURCC_YV12) && (!task.auxInput.Data.U || !task.auxInput.Data.V)) ||
+                    ((task.auxInput.Info.FourCC == MFX_FOURCC_NV12) && !task.auxInput.Data.UV))
                 {
                     return MFX_ERR_UNDEFINED_BEHAVIOR;
                 }
@@ -1661,8 +1661,8 @@ mfxStatus MFXVideoENCODEMJPEG::RunThread(MJPEGEncodeTask &task, mfxU32 threadNum
             }
             else
             {
-                if (task.auxInput.Info.FourCC == MFX_FOURCC_YV12 && (task.auxInput.Data.U || task.auxInput.Data.V) ||
-                    task.auxInput.Info.FourCC == MFX_FOURCC_NV12 && task.auxInput.Data.UV)
+                if ((task.auxInput.Info.FourCC == MFX_FOURCC_YV12 && (task.auxInput.Data.U || task.auxInput.Data.V)) ||
+                    (task.auxInput.Info.FourCC == MFX_FOURCC_NV12 && task.auxInput.Data.UV))
                 {
                     return MFX_ERR_UNDEFINED_BEHAVIOR;
                 }
@@ -1681,8 +1681,8 @@ mfxStatus MFXVideoENCODEMJPEG::RunThread(MJPEGEncodeTask &task, mfxU32 threadNum
 
             if (surface->Data.Y)
             {
-                if (surface->Info.FourCC == MFX_FOURCC_YV12 && (!surface->Data.U || !surface->Data.V) ||
-                    surface->Info.FourCC == MFX_FOURCC_NV12 && !surface->Data.UV)
+                if ((surface->Info.FourCC == MFX_FOURCC_YV12 && (!surface->Data.U || !surface->Data.V)) ||
+                    (surface->Info.FourCC == MFX_FOURCC_NV12 && !surface->Data.UV))
                 {
                     return MFX_ERR_UNDEFINED_BEHAVIOR;
                 }
@@ -1695,8 +1695,8 @@ mfxStatus MFXVideoENCODEMJPEG::RunThread(MJPEGEncodeTask &task, mfxU32 threadNum
             }
             else
             {
-                if (surface->Info.FourCC == MFX_FOURCC_YV12 && (surface->Data.U || surface->Data.V) ||
-                    surface->Info.FourCC == MFX_FOURCC_NV12 && surface->Data.UV)
+                if ((surface->Info.FourCC == MFX_FOURCC_YV12 && (surface->Data.U || surface->Data.V)) ||
+                    (surface->Info.FourCC == MFX_FOURCC_NV12 && surface->Data.UV))
                 {
                     return MFX_ERR_UNDEFINED_BEHAVIOR;
                 }
@@ -1988,8 +1988,8 @@ mfxStatus MFXVideoENCODEMJPEG::EncodeFrameCheck(mfxEncodeCtrl *ctrl, mfxFrameSur
 
         if (surface->Data.Y)
         {
-            if (surface->Info.FourCC == MFX_FOURCC_YV12 && (!surface->Data.U || !surface->Data.V) ||
-                surface->Info.FourCC == MFX_FOURCC_NV12 && !surface->Data.UV)
+            if ((surface->Info.FourCC == MFX_FOURCC_YV12 && (!surface->Data.U || !surface->Data.V)) ||
+                (surface->Info.FourCC == MFX_FOURCC_NV12 && !surface->Data.UV))
             {
                 return MFX_ERR_UNDEFINED_BEHAVIOR;
             }
@@ -2002,8 +2002,8 @@ mfxStatus MFXVideoENCODEMJPEG::EncodeFrameCheck(mfxEncodeCtrl *ctrl, mfxFrameSur
         }
         else
         {
-            if (surface->Info.FourCC == MFX_FOURCC_YV12 && (surface->Data.U || surface->Data.V) ||
-                surface->Info.FourCC == MFX_FOURCC_NV12 && surface->Data.UV)
+            if ((surface->Info.FourCC == MFX_FOURCC_YV12 && (surface->Data.U || surface->Data.V)) ||
+                (surface->Info.FourCC == MFX_FOURCC_NV12 && surface->Data.UV))
             {
                 return MFX_ERR_UNDEFINED_BEHAVIOR;
             }
@@ -2067,7 +2067,7 @@ mfxStatus MFXVideoENCODEMJPEG::EncodeFrameCheck(mfxEncodeCtrl *ctrl, mfxFrameSur
     pEntryPoint->pState = this;
     pEntryPoint->pRoutine = MJPEGENCODERoutine;
     pEntryPoint->pCompleteProc = MJPEGENCODECompleteProc;//TaskCompleteProc;
-    pEntryPoint->pRoutineName = "EncodeMJPEG";
+    pEntryPoint->pRoutineName = (char *)"EncodeMJPEG";
 
     pOriginalSurface = GetOriginalSurface(surface);
 
@@ -2089,7 +2089,7 @@ mfxStatus MFXVideoENCODEMJPEG::EncodeFrameCheck(mfxEncodeCtrl *ctrl, mfxFrameSur
         return MFX_ERR_UNDEFINED_BEHAVIOR;
     }
 
-    if (MFX_ERR_NONE == sts || MFX_ERR_MORE_DATA_RUN_TASK == sts || MFX_WRN_INCOMPATIBLE_VIDEO_PARAM == sts || MFX_ERR_MORE_BITSTREAM == sts)
+    if (MFX_ERR_NONE == sts || (mfxStatus)MFX_ERR_MORE_DATA_RUN_TASK == sts || MFX_WRN_INCOMPATIBLE_VIDEO_PARAM == sts || MFX_ERR_MORE_BITSTREAM == sts)
     {
         // lock surface. If input surface is opaque core will lock both opaque and associated realSurface
         if (pOriginalSurface) 
@@ -2107,7 +2107,7 @@ mfxStatus MFXVideoENCODEMJPEG::EncodeFrameCheck(mfxEncodeCtrl *ctrl, mfxFrameSur
                                                   IPP_MIN(m_vParam.mfx.NumThread,
                                                           pTask->CalculateNumPieces(pOriginalSurface, &(m_vParam.mfx.FrameInfo))));
 
-        pTask->bs           = (sts == MFX_ERR_MORE_DATA_RUN_TASK) ? 0 : bs;
+        pTask->bs           = (sts == (mfxStatus)MFX_ERR_MORE_DATA_RUN_TASK) ? 0 : bs;
         pTask->ctrl         = ctrl;
         pTask->surface      = pOriginalSurface;
         pEntryPoint->pParam = pTask;

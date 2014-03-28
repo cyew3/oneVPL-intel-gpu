@@ -52,8 +52,6 @@ enum
 };
 
 
-
-
 struct ThreadTaskInfo
 {
     mfxFrameSurface1 *surface_work;
@@ -96,10 +94,10 @@ VideoDECODEMJPEG::VideoDECODEMJPEG(VideoCORE *core, mfxStatus * sts)
     : VideoDECODE()
     , m_core(core)
     , m_isInit(false)
+    , m_isOpaq(false)
     , m_frameOrder((mfxU16)MFX_FRAMEORDER_UNKNOWN)
     , m_platform(MFX_PLATFORM_SOFTWARE)
     , m_va(0)
-    , m_isOpaq(false)
 {
     memset(&m_stat, 0, sizeof(m_stat));
 
@@ -1196,7 +1194,7 @@ mfxStatus VideoDECODEMJPEG::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1 
 #endif
         }
 
-        pEntryPoint->pRoutineName = "DecodeMJPEG";
+        pEntryPoint->pRoutineName = (char *)"DecodeMJPEG";
     }
 
     return mfxSts;
@@ -2300,11 +2298,11 @@ mfxStatus MFX_JPEG_Utility::Query(VideoCORE *core, mfxVideoParam *in, mfxVideoPa
         mfxU32 fourCC = in->mfx.FrameInfo.FourCC;
         mfxU16 chromaFormat = in->mfx.FrameInfo.ChromaFormat;
 
-        if (fourCC == 0 && chromaFormat == 0 ||
-            fourCC == MFX_FOURCC_NV12 && chromaFormat == MFX_CHROMAFORMAT_MONOCHROME ||
-            fourCC == MFX_FOURCC_NV12 && chromaFormat == MFX_CHROMAFORMAT_YUV420 ||
-            fourCC == MFX_FOURCC_RGB4 && chromaFormat == MFX_CHROMAFORMAT_YUV444 ||
-            fourCC == MFX_FOURCC_YUY2 && chromaFormat == MFX_CHROMAFORMAT_YUV422H)
+        if ((fourCC == 0 && chromaFormat == 0) ||
+            (fourCC == MFX_FOURCC_NV12 && chromaFormat == MFX_CHROMAFORMAT_MONOCHROME) ||
+            (fourCC == MFX_FOURCC_NV12 && chromaFormat == MFX_CHROMAFORMAT_YUV420) ||
+            (fourCC == MFX_FOURCC_RGB4 && chromaFormat == MFX_CHROMAFORMAT_YUV444) ||
+            (fourCC == MFX_FOURCC_YUY2 && chromaFormat == MFX_CHROMAFORMAT_YUV422H))
         {
             out->mfx.FrameInfo.FourCC = in->mfx.FrameInfo.FourCC;
             out->mfx.FrameInfo.ChromaFormat = in->mfx.FrameInfo.ChromaFormat;
@@ -2540,7 +2538,7 @@ bool MFX_JPEG_Utility::CheckVideoParam(mfxVideoParam *in, eMFXHWType )
         (fourCC != DXGI_FORMAT_AYUV || chromaFormat != MFX_CHROMAFORMAT_YUV444) &&
         (fourCC != MFX_FOURCC_YUY2 || chromaFormat != MFX_CHROMAFORMAT_YUV422H))
         return false;
-#else if
+#else
     if ((fourCC != MFX_FOURCC_NV12 || chromaFormat != MFX_CHROMAFORMAT_MONOCHROME) &&
         (fourCC != MFX_FOURCC_NV12 || chromaFormat != MFX_CHROMAFORMAT_YUV420) &&
         (fourCC != MFX_FOURCC_RGB4 || chromaFormat != MFX_CHROMAFORMAT_YUV444) &&
