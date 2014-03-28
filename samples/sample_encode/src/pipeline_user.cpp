@@ -26,6 +26,8 @@ mfxStatus CUserPipeline::InitRotateParam(sInputParams *pInParams)
     m_pluginVideoParams.vpp.Out.FourCC = MFX_FOURCC_NV12;
     m_pluginVideoParams.vpp.Out.Width = m_pluginVideoParams.vpp.Out.CropW = pInParams->nWidth;
     m_pluginVideoParams.vpp.Out.Height = m_pluginVideoParams.vpp.Out.CropH = pInParams->nHeight;
+    if (pInParams->memType != SYSTEM_MEMORY)
+        m_pluginVideoParams.IOPattern = MFX_IOPATTERN_IN_VIDEO_MEMORY | MFX_IOPATTERN_OUT_VIDEO_MEMORY;
 
     m_RotateParams.Angle = pInParams->nRotationAngle;
 
