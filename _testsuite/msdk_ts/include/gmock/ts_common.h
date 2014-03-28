@@ -2,6 +2,7 @@
 
 #include "ts_trace.h"
 #include "ts_plugin.h"
+#include "ts_streams.h"
 #include "test_sample_allocator.h"
 #include "gtest\gtest.h"
 
@@ -39,16 +40,26 @@ extern tsStatus     g_tsStatus;
 extern mfxU32       g_tsTrace;
 extern tsTrace      g_tsLog;
 extern tsPlugin     g_tsPlugin;
+extern tsStreamPool g_tsStreamPool;
 
-#define TS_REG_TEST_SUITE(name, routine, n_cases) \
+
+#define _TS_REG_TEST_SUITE(name, routine, n_cases, q_mode) \
     class name : public MFXVideoTest{};\
-    TEST_P(name,) { if((routine)(GetParam())) {ADD_FAILURE();} }\
+    TEST_P(name,) { g_tsStreamPool.Init(q_mode); if((routine)(GetParam())) {ADD_FAILURE();} g_tsStreamPool.Close(); }\
     INSTANTIATE_TEST_CASE_P(, name, ::testing::Range<unsigned int>(0, (n_cases)));
 
-#define TS_REG_TEST_SUITE_CLASS(name)\
+#define TS_REG_TEST_SUITE(name, routine, n_cases) \
+    _TS_REG_TEST_SUITE(name, routine, n_cases, false)\
+    _TS_REG_TEST_SUITE(query_streams_##name, routine, n_cases, true)
+
+#define _TS_REG_TEST_SUITE_CLASS(name, q_mode)\
     class name : public MFXVideoTest{};\
-    TEST_P(name,) { TestSuite ts; if(ts.RunTest(GetParam())) {ADD_FAILURE();} }\
+    TEST_P(name,) { g_tsStreamPool.Init(q_mode); TestSuite ts; if(ts.RunTest(GetParam())) {ADD_FAILURE();} g_tsStreamPool.Close(); }\
     INSTANTIATE_TEST_CASE_P(, name, ::testing::Range<unsigned int>(0, TestSuite::n_cases));
+
+#define TS_REG_TEST_SUITE_CLASS(name)\
+    _TS_REG_TEST_SUITE_CLASS(name, false)\
+    _TS_REG_TEST_SUITE_CLASS(query_streams_##name, true)
 
 #define INC_PADDING() g_tsLog.inc_offset();
 #define DEC_PADDING() g_tsLog.dec_offset();
@@ -88,5 +99,7 @@ extern tsPlugin     g_tsPlugin;
 #define TS_MIN(x,y) ((x)<(y) ? (x) : (y))
 #define TS_START try {
 #define TS_END   } catch(tsRes r) { return r; }
+
+std::string ENV(const char* name, const char* def);
 
 bool operator == (const mfxFrameInfo&, const mfxFrameInfo&);
