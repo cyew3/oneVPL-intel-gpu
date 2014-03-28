@@ -102,7 +102,7 @@ mfxStatus MFXCamera_Plugin::PluginInit(mfxCoreInterface *core)
     if (MFX_ERR_NONE != mfxRes)
         return mfxRes;
 
-    //par.Impl = MFX_IMPL_RT;
+    //par.Impl = MFX_IMPL_RUNTIME;
 
 #if !defined (MFX_VA) && defined (AS_VPP_PLUGIN)
     par.Impl = MFX_IMPL_SOFTWARE;
