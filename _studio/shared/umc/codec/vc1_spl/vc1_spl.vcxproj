@@ -128,14 +128,10 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="src\umc_vc1_spl.cpp" />
-    <ClCompile Include="src\umc_vc1_spl_frame_constr.cpp" />
-    <ClCompile Include="src\umc_vc1_spl_tbl.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\umc_vc1_spl.h" />
     <ClInclude Include="include\umc_vc1_spl_defs.h" />
-    <ClInclude Include="include\umc_vc1_spl_frame_constr.h" />
-    <ClInclude Include="include\umc_vc1_spl_tbl.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

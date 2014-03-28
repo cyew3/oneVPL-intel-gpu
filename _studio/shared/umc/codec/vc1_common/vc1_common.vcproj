@@ -353,6 +353,14 @@
 				RelativePath=".\src\umc_vc1_common_zigzag_tbl.cpp"
 				>
 			</File>
+			<File
+				RelativePath=".\src\umc_vc1_spl_frame_constr.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\src\umc_vc1_spl_tbl.cpp"
+				>
+			</File>
 		</Filter>
 		<Filter
 			Name="Header Files"
@@ -424,6 +432,14 @@
 			</File>
 			<File
 				RelativePath=".\include\umc_vc1_common_zigzag_tbl.h"
+				>
+			</File>
+			<File
+				RelativePath=".\include\umc_vc1_spl_frame_constr.h"
+				>
+			</File>
+			<File
+				RelativePath=".\include\umc_vc1_spl_tbl.h"
 				>
 			</File>
 		</Filter>

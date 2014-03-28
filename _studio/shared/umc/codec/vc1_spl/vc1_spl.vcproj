@@ -295,14 +295,6 @@
 				RelativePath=".\src\umc_vc1_spl.cpp"
 				>
 			</File>
-			<File
-				RelativePath=".\src\umc_vc1_spl_frame_constr.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\src\umc_vc1_spl_tbl.cpp"
-				>
-			</File>
 		</Filter>
 		<Filter
 			Name="Header Files"
@@ -314,14 +306,6 @@
 			</File>
 			<File
 				RelativePath=".\include\umc_vc1_spl_defs.h"
-				>
-			</File>
-			<File
-				RelativePath=".\include\umc_vc1_spl_frame_constr.h"
-				>
-			</File>
-			<File
-				RelativePath=".\include\umc_vc1_spl_tbl.h"
 				>
 			</File>
 		</Filter>

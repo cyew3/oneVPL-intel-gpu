@@ -529,10 +529,6 @@
       <Project>{5537816b-58d7-4523-8d2c-b0fac011a1c3}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
-    <ProjectReference Include="..\shared\umc\codec\vc1_spl\vc1_spl.vcxproj">
-      <Project>{73d21914-35f0-4f04-acf0-2a7c1c13bde5}</Project>
-      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-    </ProjectReference>
     <ProjectReference Include="..\shared\umc\codec\vp8_dec\vp8_dec.vcxproj">
       <Project>{27c98bcb-bcb6-4d57-9a47-d154bce0d8c9}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>

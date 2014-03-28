@@ -142,6 +142,8 @@
     <ClCompile Include="src\umc_vc1_common_tables_adv.cpp" />
     <ClCompile Include="src\umc_vc1_common_ttmb_tbl.cpp" />
     <ClCompile Include="src\umc_vc1_common_zigzag_tbl.cpp" />
+    <ClCompile Include="src\umc_vc1_spl_frame_constr.cpp" />
+    <ClCompile Include="src\umc_vc1_spl_tbl.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\umc_vc1_common.h" />
@@ -161,6 +163,8 @@
     <ClInclude Include="include\umc_vc1_common_tables_adv.h" />
     <ClInclude Include="include\umc_vc1_common_ttmb_tbl.h" />
     <ClInclude Include="include\umc_vc1_common_zigzag_tbl.h" />
+    <ClInclude Include="include\umc_vc1_spl_frame_constr.h" />
+    <ClInclude Include="include\umc_vc1_spl_tbl.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -18,7 +18,6 @@
 
 #include "umc_vc1_spl_frame_constr.h"
 #include "umc_vc1_spl_tbl.h"
-#include "umc_vc1_spl_defs.h"
 #include "umc_vc1_common_macros_defs.h"
 #include "umc_vc1_common.h"
 #include "umc_vc1_common_defs.h"
