@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2004-2008 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2004-2014 Intel Corporation. All Rights Reserved.
 //
 //
 //          VC-1 (VC1) frame constructor
@@ -12,7 +12,7 @@
 */
 #include "umc_defs.h"
 
-#if defined (UMC_ENABLE_VC1_SPLITTER)
+#if defined (UMC_ENABLE_VC1_SPLITTER) || defined (UMC_ENABLE_VC1_VIDEO_DECODER)
 
 #ifndef __UMC_VC1_SPL_FRAME_CONSTR_H__
 #define __UMC_VC1_SPL_FRAME_CONSTR_H__
@@ -75,4 +75,4 @@ namespace UMC
 
 #endif//__UMC_VC1_SPL_FRAME_CONSTR_H__
 
-#endif //UMC_ENABLE_VC1_SPLITTER
+#endif //UMC_ENABLE_VC1_SPLITTER || UMC_ENABLE_VC1_VIDEO_DECODER
