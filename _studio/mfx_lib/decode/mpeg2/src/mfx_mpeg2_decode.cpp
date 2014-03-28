@@ -36,11 +36,11 @@ static const mfxI32 MFX_MPEG2_DECODE_ALIGNMENT = 16;
 
 enum
 {
-    PIC = 0x00,
-    SEQ = 0xb3,
-    EXT = 0xb5,
-    END = 0xb7,
-    GROUP = 0xb8
+    ePIC = 0x00,
+    eSEQ = 0xb3,
+    eEXT = 0xb5,
+    eEND = 0xb7,
+    eGROUP = 0xb8
 };
 
 static bool IsStatusReportEnable(VideoCORE * core)
@@ -3684,11 +3684,11 @@ mfxStatus VideoDECODEMPEG2::GetStatusReport(mfxFrameSurface1 *displaySurface)
 
 inline bool IsMpeg2StartCode(const mfxU8* p)
 {
-    return p[0] == 0 && p[1] == 0 && p[2] == 1 && (p[3] == PIC || p[3] == SEQ || p[3] == END || p[3] == GROUP);
+    return p[0] == 0 && p[1] == 0 && p[2] == 1 && (p[3] == ePIC || p[3] == eSEQ || p[3] == eEND || p[3] == eGROUP);
 }
 inline bool IsMpeg2StartCodeEx(const mfxU8* p)
 {
-    return p[0] == 0 && p[1] == 0 && p[2] == 1 && (p[3] == PIC || p[3] == EXT || p[3] == SEQ || p[3] == END || p[3] == GROUP);
+    return p[0] == 0 && p[1] == 0 && p[2] == 1 && (p[3] == ePIC || p[3] == eEXT || p[3] == eSEQ || p[3] == eEND || p[3] == eGROUP);
 }
 
 const mfxU8* FindStartCode(const mfxU8* begin, const mfxU8* end)
@@ -3754,7 +3754,7 @@ mfxStatus VideoDECODEMPEG2::ConstructFrame(mfxBitstream *in, mfxBitstream *out, 
 
             return MFX_ERR_MORE_DATA;
         }
-        if (SEQ == curr[3] && false == m_found_SH)
+        if (eSEQ == curr[3] && false == m_found_SH)
         {
             if(tail < curr + 6) 
             {
@@ -3774,7 +3774,7 @@ mfxStatus VideoDECODEMPEG2::ConstructFrame(mfxBitstream *in, mfxBitstream *out, 
                 return MFX_ERR_MORE_DATA;
             }
 
-            if (EXT == ptr[3])
+            if (eEXT == ptr[3])
             {
                 Ipp32u code = (ptr[4] & 0xf0);
 
@@ -3819,7 +3819,7 @@ mfxStatus VideoDECODEMPEG2::ConstructFrame(mfxBitstream *in, mfxBitstream *out, 
 
             m_first_SH = false;
 
-            if (EXT == ptr[3])
+            if (eEXT == ptr[3])
             {
                 sts = AppendBitstream(*out, curr, (mfxU32)(ptr - curr));
                 MFX_CHECK_STS(sts);
@@ -3829,10 +3829,10 @@ mfxStatus VideoDECODEMPEG2::ConstructFrame(mfxBitstream *in, mfxBitstream *out, 
 
         MoveBitstreamData(*in, (mfxU32)(curr - head));
 
-        if (curr[3] == SEQ || 
-            curr[3] == EXT ||  
-            curr[3] == PIC ||
-            curr[3] == GROUP)
+        if (curr[3] == eSEQ || 
+            curr[3] == eEXT ||  
+            curr[3] == ePIC ||
+            curr[3] == eGROUP)
         {
             sts = AppendBitstream(*out, curr, 4);
             MFX_CHECK_STS(sts);
@@ -3841,7 +3841,7 @@ mfxStatus VideoDECODEMPEG2::ConstructFrame(mfxBitstream *in, mfxBitstream *out, 
 
             m_fcState.picStart = 1;
 
-            if (PIC == curr[3])
+            if (ePIC == curr[3])
             {
                 m_fcState.picHeader = FcState::FRAME;
 
@@ -3856,11 +3856,11 @@ mfxStatus VideoDECODEMPEG2::ConstructFrame(mfxBitstream *in, mfxBitstream *out, 
 
                     // if start code found
                     if( (tail - curr) > 3 && 
-                        (curr[3] == SEQ || 
-                         curr[3] == EXT || 
-                         curr[3] == PIC || 
-                         curr[3] == END || 
-                         curr[3] == GROUP)
+                        (curr[3] == eSEQ || 
+                         curr[3] == eEXT || 
+                         curr[3] == ePIC || 
+                         curr[3] == eEND || 
+                         curr[3] == eGROUP)
                       )
                     {
                         len = (mfxU32)(curr - head);
@@ -3931,7 +3931,7 @@ mfxStatus VideoDECODEMPEG2::ConstructFrame(mfxBitstream *in, mfxBitstream *out, 
         }
         else
         {
-            if (END == curr[3] && m_fcState.picHeader == FcState::FRAME)
+            if (eEND == curr[3] && m_fcState.picHeader == FcState::FRAME)
             {
                 // append end_sequence_code to the end of current picture
                 curr += 4;
@@ -3951,7 +3951,7 @@ mfxStatus VideoDECODEMPEG2::ConstructFrame(mfxBitstream *in, mfxBitstream *out, 
                 return MFX_ERR_NONE;
             }
 
-            if (PIC == curr[3])
+            if (ePIC == curr[3])
             {
                 // FIXME: for now assume that all pictures are frames
                 m_fcState.picHeader = FcState::FRAME;
@@ -3972,11 +3972,11 @@ mfxStatus VideoDECODEMPEG2::ConstructFrame(mfxBitstream *in, mfxBitstream *out, 
 
                     // start code was found
                     if( (tail - curr) > 3 &&
-                        (curr[3] == SEQ  ||
-                         curr[3] == EXT ||
-                         curr[3] == PIC ||
-                         curr[3] == END ||
-                         curr[3] == GROUP))
+                        (curr[3] == eSEQ  ||
+                         curr[3] == eEXT ||
+                         curr[3] == ePIC ||
+                         curr[3] == eEND ||
+                         curr[3] == eGROUP))
                     {
                         len = (Ipp32u)(curr - head);
                     }

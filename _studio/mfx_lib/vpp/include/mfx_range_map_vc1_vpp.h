@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2008 - 2010 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2008 - 2014 Intel Corporation. All Rights Reserved.
 //
 //
 //          RangeMapVC1 Video Pre\Post Processing
@@ -56,7 +56,7 @@ public:
   virtual bool IsReadyOutput( mfxRequestType requestType );
 
 protected:
-   mfxStatus PassThrough(mfxFrameSurface1 *in, mfxFrameSurface1 *out);
+   mfxStatus PassThrough(mfxFrameSurface1 *in, mfxFrameSurface1 *out) { return MFX_ERR_UNKNOWN; };
 
 private:
 

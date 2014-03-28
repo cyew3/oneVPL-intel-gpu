@@ -4,9 +4,11 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2003-2008 Intel Corporation. All Rights Reserved.
-//
+//          Copyright(c) 2003-2014 Intel Corporation. All Rights Reserved.
 */
+
+#include "umc_defs.h"
+#if defined (UMC_ENABLE_AAC_AUDIO_DECODER) || defined (UMC_ENABLE_AAC_INT_AUDIO_DECODER)
 
 #include "aaccmn_const.h"
 #include "aaccmn_cce.h"
@@ -111,3 +113,5 @@ unpack_coupling_channel_element(sCoupling_channel_element * p_data, Ipp8u** pp_b
 
   return 0;
 }
+
+#endif //UMC_ENABLE_XXX
