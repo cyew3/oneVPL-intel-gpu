@@ -3116,9 +3116,6 @@ mfxStatus MFXDecPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI32 argc, 
     else if ( 0!= (nPattern1 = m_OptProc.Check(argv[0], VM_STRING("-OutputFile|-o( |:multi)"), VM_STRING("output file. If Multiple flag specified new file will be created for each view"), OPT_FILENAME)) ||
         0!= (nPattern = m_OptProc.Check(argv[0], VM_STRING("-o:(bmp|")VM_STRING(MFX_FOURCC_PATTERN())VM_STRING(")"), VM_STRING("output file in NV12 ,YV12, RGB32 color format. Default is YV12"), OPT_FILENAME)))
     {
-        MFX_CHECK(1 + argv != argvEnd);
-        argv++;
-
         m_inParams.bMultiFiles = nPattern1 == 3;///-o:multiple is 3rd case
 
         if (MFX_ERR_NONE != GetMFXFrameInfoFromFOURCCPatternIdx(nPattern - 1, m_inParams.outFrameInfo))
@@ -3135,14 +3132,23 @@ mfxStatus MFXDecPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI32 argc, 
             }
         }
 
-        MFX_CHECK(0 == vm_string_strcpy_s(m_inParams.strDstFile, MFX_ARRAY_SIZE(m_inParams.strDstFile), argv[0]));
+        if(1 + argv != argvEnd && (argv+1)[0][0] != '-' ){
+            argv++;
 
-        if (m_RenderType != MFX_METRIC_CHECK_RENDER&&
-            m_RenderType != MFX_ENC_RENDER &&
-            m_RenderType != MFX_OUTLINE_RENDER&&
-            m_RenderType != MFX_BMP_RENDER)
-        {
-            m_RenderType = MFX_FW_RENDER;
+            MFX_CHECK(0 == vm_string_strcpy_s(m_inParams.strDstFile, MFX_ARRAY_SIZE(m_inParams.strDstFile), argv[0]));
+            
+            if (m_RenderType != MFX_METRIC_CHECK_RENDER&&
+                m_RenderType != MFX_ENC_RENDER &&
+                m_RenderType != MFX_OUTLINE_RENDER&&
+                m_RenderType != MFX_BMP_RENDER)
+            {
+                m_RenderType = MFX_FW_RENDER;
+            }
+
+        } 
+        else {
+            m_RenderType = MFX_SCREEN_RENDER;
+
         }
     }
     else HANDLE_BOOL_OPTION(m_inParams.bFullscreen,  VM_STRING("-fullscreen"), VM_STRING("Render in fullscreen"));
@@ -3427,7 +3433,7 @@ mfxStatus MFXDecPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI32 argc, 
 
             ComponentsContainer::iterator component;
             component = std::find_if(m_components.begin(), m_components.end(),
-                std::bind2nd(mem_var_isequal<ComponentParams, tstring>(&ComponentParams::m_Name), tstring(argv[0]+ 1).substr(0, 3)));
+                std::bind2nd(mem_var_isequal<ComponentParams, tstring>(&ComponentParams::m_ShortName), tstring(argv[0]+ 1).substr(0, 3)));
 
             /*ComponentParams *pParam = NULL;
             GetComponentParams(pParam, argv[0][1]);*/

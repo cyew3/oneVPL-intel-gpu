@@ -37,6 +37,7 @@ D3DFORMAT ConvertMfxFourccToD3dFormat(mfxU32 fourcc)
     case MFX_FOURCC_P8:
         return D3DFMT_P8;
     case MFX_FOURCC_P010:
+    case MFX_FOURCC_A2RGB10:
         return D3DFMT_A2R10G10B10;
     default:
         return D3DFMT_UNKNOWN;
