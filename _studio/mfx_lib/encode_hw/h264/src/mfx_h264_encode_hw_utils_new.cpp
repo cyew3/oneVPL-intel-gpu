@@ -1855,7 +1855,7 @@ mfxHDL MfxHwH264Encode::ConvertMidToNativeHandle(
 }
 
 
-namespace
+namespace MfxHwH264EncodeHW
 {
     void DivideCost(std::vector<MbData> & mb, mfxI32 width, mfxI32 height, mfxU32 cost, mfxI32 x, mfxI32 y)
     {
@@ -1877,6 +1877,7 @@ namespace
             mb[width * (mby + 1) + mbx + 1].propCost += mfxU32(cost * (     xx) * (     yy) / 256);
     }
 };
+using namespace MfxHwH264EncodeHW;
 
 
 void MfxHwH264Encode::AnalyzeVmeData(DdiTaskIter begin, DdiTaskIter end, mfxU32 width, mfxU32 height)

@@ -14,6 +14,7 @@
 #define __MFX_H264_ENC_COMMON_HW_H__
 
 #include "mfx_common.h"
+#include "mfxla.h"
 
 #if defined (MFX_ENABLE_H264_VIDEO_PAK_HW) || defined (MFX_ENABLE_H264_VIDEO_ENC_HW) || defined (MFX_ENABLE_H264_VIDEO_ENCODE_HW)
 
@@ -183,6 +184,7 @@ namespace MfxHwH264Encode
     BIND_EXTBUF_TYPE_TO_ID (mfxExtEncoderCapability,    MFX_EXTBUFF_ENCODER_CAPABILITY       );
     BIND_EXTBUF_TYPE_TO_ID (mfxExtAVCEncoderWiDiUsage,  MFX_EXTBUFF_ENCODER_WIDI_USAGE       );
     BIND_EXTBUF_TYPE_TO_ID (mfxExtEncoderROI,           MFX_EXTBUFF_ENCODER_ROI              );
+    BIND_EXTBUF_TYPE_TO_ID (mfxExtLAFrameStatistics,    MFX_EXTBUFF_LOOKAHEAD_STAT           );
 #if defined (ADVANCED_REF)
     BIND_EXTBUF_TYPE_TO_ID (mfxExtAVCRefLists,          MFX_EXTBUFF_AVC_REFLISTS             );
 #endif
@@ -215,7 +217,7 @@ namespace MfxHwH264Encode
         Zero(extBuf);
         extBuf.Header.BufferId = ExtBufTypeToId<mfxExtAVCRefListCtrl>::id;
         extBuf.Header.BufferSz = sizeof(mfxExtAVCRefListCtrl);
-
+        
         for (mfxU32 i = 0; i < 32; i++)
             extBuf.PreferredRefList[i].FrameOrder = mfxU32(MFX_FRAMEORDER_UNKNOWN);
         for (mfxU32 i = 0; i < 16; i++)

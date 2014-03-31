@@ -58,4 +58,14 @@ LIBMFX {
 LIBMFX_1.8 {
   global:
     MFXGetLogMessage;
+};
+
+LIBMFX_1.9 {
+  global:
+    MFXVideoENC_Query;
+    MFXVideoENC_QueryIOSurf;
+    MFXVideoENC_Init;
+    MFXVideoENC_Reset;
+    MFXVideoENC_Close;
+    MFXVideoENC_ProcessFrameAsync;
 } LIBMFX;

@@ -83,144 +83,17 @@ endforeach( )
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/decode/h265/include )
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/encode/h265/include )
 
-
-# =============================================================================
-set ( HEVCPP_LIBS "" )
-# =============================================================================
-
-set( defs "-DAS_HEVCD_PLUGIN -DAS_HEVCE_PLUGIN" )
-set( sources "" )
-set( sources.plus "" )
-
-list( APPEND sources 
-  ${vdir_optimization}/src/mfx_h265_dispatcher.cpp
-)
-
-make_library( hevc_pp_dispatcher none static )
-set( defs "" )
-list( APPEND HEVCPP_LIBS hevc_pp_dispatcher )
-
-# =============================================================================
-
-set( defs "-DMFX_MAKENAME_ATOM -DAS_HEVCD_PLUGIN -DAS_HEVCE_PLUGIN" )
-set( sources "" )
-set( sources.plus "" )
-
-foreach( dir ${CMAKE_HOME_DIRECTORY}/_studio/mfx_lib/optimization/h265/src )
-  file( GLOB_RECURSE srcs "${dir}/*sse.c" "${dir}/*sse.cpp" )
-  list( APPEND sources ${srcs})
-endforeach()
-
-list( APPEND sources 
-  ${vdir_optimization}/src/mfx_h265_interpolation_atom.cpp
-)
-
-make_library( hevc_pp_atom none static )
-set( defs "" )
-list( APPEND HEVCPP_LIBS hevc_pp_atom )
-
-# =============================================================================
-
-set( defs "-DMFX_MAKENAME_AVX2 -DAS_HEVCD_PLUGIN -DAS_HEVCE_PLUGIN" )
-set( sources "" )
-set( sources.plus "" )
-
-foreach( dir ${CMAKE_HOME_DIRECTORY}/_studio/mfx_lib/optimization/h265/src )
-  file( GLOB_RECURSE srcs "${dir}/*avx2.c" "${dir}/*avx2.cpp" )
-  list( APPEND sources ${srcs})
-endforeach()
-
-list( APPEND sources 
-  ${vdir_optimization}/src/mfx_h265_transform_fwd_32x32_avx2_nablet.cpp
-)
-
-make_library( hevc_pp_avx2 none static )
-append_property( hevc_pp_avx2 COMPILE_FLAGS "-mavx2 -march=core-avx2")
-append_property( hevc_pp_avx2 LINK_FLAGS "-mavx2 -march=core-avx2")
-set( defs "" )
-list( APPEND HEVCPP_LIBS hevc_pp_avx2 )
-
-# =============================================================================
-
-set( defs "-DMFX_MAKENAME_PX -DAS_HEVCD_PLUGIN -DAS_HEVCE_PLUGIN" )
-set( sources "" )
-set( sources.plus "" )
-
-foreach( dir ${CMAKE_HOME_DIRECTORY}/_studio/mfx_lib/optimization/h265/src )
-  file( GLOB_RECURSE srcs "${dir}/*px.c" "${dir}/*px.cpp" )
-  list( APPEND sources ${srcs})
-endforeach()
-
-list( APPEND sources 
-    ${vdir_optimization}/src/mfx_h265_sad_ipp.cpp
-)
-
-make_library( hevc_pp_px none static )
-set( defs "" )
-list( APPEND HEVCPP_LIBS hevc_pp_px )
-
-# =============================================================================
-
-set( defs "-DMFX_MAKENAME_SSE4 -DAS_HEVCD_PLUGIN -DAS_HEVCE_PLUGIN" )
-set( sources "" )
-set( sources.plus "" )
-
-foreach( dir ${CMAKE_HOME_DIRECTORY}/_studio/mfx_lib/optimization/h265/src )
-  file( GLOB_RECURSE srcs "${dir}/*sse.c" "${dir}/*sse.cpp" )
-  list( APPEND sources ${srcs})
-endforeach()
-
-list( APPEND sources 
-  ${vdir_optimization}/src/mfx_h265_transform_consts.cpp
-)
-
-make_library( hevc_pp_sse4 none static )
-set( defs "" )
-list( APPEND HEVCPP_LIBS hevc_pp_sse4 )
-
-# =============================================================================
-
-set( defs "-DMFX_MAKENAME_SSSE3 -DAS_HEVCD_PLUGIN -DAS_HEVCE_PLUGIN" )
-set( sources "" )
-set( sources.plus "" )
-
-foreach( dir ${CMAKE_HOME_DIRECTORY}/_studio/mfx_lib/optimization/h265/src )
-  file( GLOB_RECURSE srcs "${dir}/*sse.c" "${dir}/*sse.cpp" )
-  list( APPEND sources ${srcs})
-endforeach()
-
-make_library( hevc_pp_ssse3 none static )
-append_property( hevc_pp_ssse3 COMPILE_FLAGS "-mssse3")
-append_property( hevc_pp_ssse3 LINK_FLAGS "-mssse3" )
-set( defs "" )
-list( APPEND HEVCPP_LIBS hevc_pp_ssse3 )
-
-# =============================================================================
-
-#set( sources "" )
-#set( sources.plus "" )
-#foreach( dir ${CMAKE_HOME_DIRECTORY}/_studio/mfx_lib/decode/h265 )
-#  file( GLOB_RECURSE srcs "${dir}/*.c" "${dir}/*.cpp" )
-#  list( APPEND sources ${srcs})
-#endforeach()
-
-
-#make_library( h265_dec none static )
-
 # =============================================================================
 
 set( sources "" )
 set( sources.plus "" )
-foreach( dir ${CMAKE_HOME_DIRECTORY}/_studio/mfx_lib/encode/h265/src )
+foreach( dir ${CMAKE_HOME_DIRECTORY}/_studio/mfx_lib/fei/h264_la )
   file( GLOB_RECURSE srcs "${dir}/*.c" "${dir}/*.cpp" )
   list( APPEND sources ${srcs})
 endforeach()
 
-set( defs "-DAS_HEVCE_PLUGIN" )
-make_library( h265_enc none static )
-
-set( defs "-DAS_HEVCE_PLUGIN -DHEVCE_EVALUATION" )
-make_library( eval_h265_enc none static )
+set( defs "-DMFX_VA -DAS_H264LA_PLUGIN" )
+make_library( h264_la none static )
 
 set( defs "" )
 
@@ -244,7 +117,6 @@ foreach( dir ${vdirs} )
 endforeach()
 
 make_library( mfx_vlib_merged none static )
-
 # =============================================================================
 
 set( sources "" )
@@ -266,7 +138,6 @@ foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/shared/src )
     ${prefix}/mfx_common_decode_int.cpp
     )
 endforeach()
-
 make_library( mfx_vlib_merged sw static )
 
 foreach( dir ${vdirs_hw} )
@@ -358,6 +229,10 @@ foreach( variant sw hw )
     umc_codecs_merged
     umc_io_merged_${variant}
     umc_core_merged
+    umc_brc_sw
+    umc_csc_sw
+    umc_h264_enc_sw
+    h264_la
     vpx
     ${ITT_LIBS}
     ippmsdk_l ippj_l ippvc_l ippcc_l ippcv_l ippi_l ipps_l ippcore_l
@@ -531,318 +406,6 @@ foreach( variant sw )
 
   make_library( ${mfxlibname} ${variant} shared)
   #make_library( mfxaudio${variant}_static ${variant} static)
-endforeach()
-
-###################################################################################################################
-# =============================================================================
-# Plugins section
-# =============================================================================
-
-set (HEVC_PRODUCT_NAME "Intel(R) Media SDK HEVC Software Pack")
-set (sw_HEVC_DECODER_DESCRIPTION "Intel(R) Media SDK HEVC Software Decode Plug-in")
-set (hw_HEVC_DECODER_DESCRIPTION "Intel(R) Media SDK HEVC Hardware Decode Plug-in")
-set (sw_HEVC_ENCODER_DESCRIPTION "Intel(R) Media SDK HEVC Software Encode Plug-in")
-set (hw_HEVC_ENCODER_DESCRIPTION "Intel(R) Media SDK HEVC Hardware Encode Plug-in")
-
-  if( NOT DEFINED ENV{MFX_HEVC_VERSION} )
-    set( hevc_version 0.0.000.0000 )
-  else( )
-    set( hevc_version $ENV{MFX_HEVC_VERSION} )
-  endif( )
-
-  if( Linux OR Darwin )
-    execute_process(
-      COMMAND echo
-      COMMAND cut -f 1 -d.
-      COMMAND date "+.%-y.%-m.%-d"
-      OUTPUT_VARIABLE cur_date
-      OUTPUT_STRIP_TRAILING_WHITESPACE
-      )
-    string( SUBSTRING ${hevc_version} 0 1 ver )
-
-    set(hevc_version_defs  "-DMFX_PLUGIN_FILE_VERSION=\"\\\"${ver}${cur_date}\"\\\" -DMFX_PLUGIN_PRODUCT_VERSION=\"\\\"${hevc_version}\"\\\"")
-  endif( )
-
-
-foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/shared/src )
-
-  list( APPEND plugin_common_sources
-    ${prefix}/mfx_common_int.cpp
-    ${prefix}/mfx_common_decode_int.cpp
-    ${prefix}/libmfxsw.cpp
-    ${prefix}/libmfxsw_async.cpp
-    ${prefix}/libmfxsw_plugin.cpp
-    ${prefix}/libmfxsw_query.cpp
-    ${prefix}/libmfxsw_session.cpp
-    ${prefix}/libmfxsw_decode.cpp
-    ${prefix}/mfx_session.cpp
-    ${prefix}/mfx_user_plugin.cpp
-    ${prefix}/mfx_enc_common.cpp
-  )
-
-endforeach()
-
-foreach( prefix ${CMAKE_HOME_DIRECTORY}/_studio/shared/src )
-  list( APPEND plugin_common_sources
-    ${prefix}/cm_mem_copy.cpp
-    ${prefix}/fast_copy.cpp
-    ${prefix}/libmfx_allocator.cpp
-    ${prefix}/libmfx_allocator_vaapi.cpp
-    ${prefix}/libmfx_core.cpp
-    ${prefix}/libmfx_core_factory.cpp
-    ${prefix}/libmfx_core_vaapi.cpp
-    ${prefix}/mfx_umc_alloc_wrapper.cpp
-  )
-endforeach()
-list( APPEND plugin_common_sources
-  ${CMAKE_HOME_DIRECTORY}/_studio/mfx_lib/cmrt_cross_platform/src/cmrt_cross_platform.cpp
-)
-
-foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/scheduler/src )
-  list( APPEND plugin_common_sources
-    ${prefix}/mfx_scheduler_core.cpp
-    ${prefix}/mfx_scheduler_core_iunknown.cpp
-    ${prefix}/mfx_scheduler_core_task_management.cpp
-    ${prefix}/mfx_scheduler_core_ischeduler.cpp
-    ${prefix}/mfx_scheduler_core_task.cpp
-    ${prefix}/mfx_scheduler_core_thread.cpp
-  )
-endforeach()
-
-# HEVC
-
-set( sources "" )
-set( sources.plus "" )
-
-list( APPEND sources ${plugin_common_sources} )
-
-include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/scheduler/include )
-include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/genx/h265_encode/include )
-
-foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/decode/h265/src )
-  list( APPEND sources
-    ${prefix}/mfx_h265_dec_decode.cpp
-  )
-endforeach()
-
-include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/plugin/include )
-
-set( sources.plus "" )
-foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/plugin/src )
-  list( APPEND sources.plus
-    ${prefix}/mfx_hevc_dec_plugin.cpp
-  )
-endforeach()
-
-set( USE_STRICT_NAME TRUE )
-set(MFX_LDFLAGS "${MFX_ORIG_LDFLAGS} -Wl,--version-script=${CMAKE_HOME_DIRECTORY}/_studio/mfx_lib/plugin/libmfxsw_plugin.map" )
-
-# HEVC
-
-#foreach( variant sw hw )
-foreach( variant sw )
-  if( __ARCH MATCHES intel64 )
-    set( plugin_name mfx_hevcd_${variant}64 )
-    set( eval_plugin_name mfx_eval_hevcd_${variant}64 )
-  else()
-    set( plugin_name mfx_hevcd_${variant}32 )
-    set( eval_plugin_name mfx_eval_hevcd_${variant}32 )
-  endif()
-  if( __CONFIG MATCHES debug )
-    set( plugin_name ${plugin_name}_d )
-    set( eval_plugin_name ${eval_plugin_name}_d )
-  endif()
-
-  set (description_name ${${variant}_HEVC_DECODER_DESCRIPTION})
-
-  set( LIBS "" )
-  list( APPEND LIBS
-    umc_h265_sw
-    umc_csc_sw
-    ${HEVCPP_LIBS}
-    umc_io_merged_${variant}
-    umc_core_merged 
-    ${ITT_LIBS}
-    ippmsdk_l ippj_l ippvc_l ippcc_l ippcv_l ippi_l ipps_l ippcore_l
-    pthread
-    dl
-    )
-  
-  set( defs "-DAS_HEVCD_PLUGIN -DMFX_PLUGIN_PRODUCT_NAME=\"\\\"${HEVC_PRODUCT_NAME}\"\\\" -DMFX_FILE_DESCRIPTION=\"\\\"${description_name}\"\\\" ${hevc_version_defs}" )
-  make_library( ${plugin_name} ${variant} shared)
-
-  set( defs "-DAS_HEVCD_PLUGIN -DHEVCD_EVALUATION -DMFX_PLUGIN_PRODUCT_NAME=\"\\\"${HEVC_PRODUCT_NAME}\"\\\" -DMFX_FILE_DESCRIPTION=\"\\\"${description_name}\"\\\" ${hevc_version_defs}" )
-  make_library( ${eval_plugin_name} ${variant} shared)
-
-#  append_property( ${plugin_name} COMPILE_FLAGS "-DAS_HEVCD_PLUGIN" )  
-
-#  make_library( mfx${variant}_static ${variant} static)
-#  message( STATUS "CMAKE_CURRENT_SOURCE_DIR", ${CMAKE_CURRENT_SOURCE_DIR} )
-#  message( STATUS "xxxxxxxxxxxxxxx __ARCH: "${__ARCH}, "plugin_name: "${plugin_name}, "variant: "${variant})
-endforeach()
-
-set( defs "" )
-
-foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/shared/src )
-  list( APPEND sources
-    ${prefix}/libmfxsw_encode.cpp
-    ${prefix}/mfx_enc_common.cpp
-  )
-endforeach()
-
-set( sources.plus "" )
-foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/plugin/src )
-  list( APPEND sources.plus
-    ${prefix}/mfx_hevc_enc_plugin.cpp
-    ${prefix}/watermark.cpp
-  )
-endforeach()
-foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/genx/h265_encode/src )
-  list( APPEND sources.plus
-    ${prefix}/genx_h265_cmcode_stub.cpp
-    ${prefix}/genx_h265_cmcode_isa.cpp
-  )
-endforeach()
-
-foreach( variant sw )
-  if( __ARCH MATCHES intel64 )
-    set( plugin_name mfx_hevce_${variant}64 )
-    set( eval_plugin_name mfx_eval_hevce_${variant}64 )
-  else()
-    set( plugin_name mfx_hevce_${variant}32 )
-    set( eval_plugin_name mfx_eval_hevce_${variant}32 )
-  endif()
-  if( __CONFIG MATCHES debug )
-    set( plugin_name ${plugin_name}_d )
-    set( eval_plugin_name ${eval_plugin_name}_d )
-  endif()
-
-  set (description_name ${${variant}_HEVC_ENCODER_DESCRIPTION})  
-
-  set( LIBS "" )
-  list( APPEND LIBS
-    h265_enc
-    umc_h265_sw
-    umc_csc_sw
-    ${HEVCPP_LIBS}
-    umc_io_merged_${variant}
-    umc_core_merged
-    ${ITT_LIBS}
-    ippmsdk_l ippj_l ippvc_l ippcc_l ippcv_l ippi_l ipps_l ippcore_l
-    pthread
-    dl
-    )
-
-  set( defs "-DAS_HEVCE_PLUGIN -DMFX_PLUGIN_PRODUCT_NAME=\"\\\"${HEVC_PRODUCT_NAME}\"\\\" -DMFX_FILE_DESCRIPTION=\"\\\"${description_name}\"\\\" ${hevc_version_defs}" )
-  make_library( ${plugin_name} ${variant} shared)
-
-  set( LIBS "" )
-  list( APPEND LIBS
-    eval_h265_enc
-    umc_h265_sw
-    umc_csc_sw
-    ${HEVCPP_LIBS}
-    umc_io_merged_${variant}
-    umc_core_merged 
-    ${ITT_LIBS}
-    ippmsdk_l ippj_l ippvc_l ippcc_l ippcv_l ippi_l ipps_l ippcore_l
-    pthread
-    dl
-    )
-
-  set( defs "-DAS_HEVCE_PLUGIN -DHEVCE_EVALUATION -DMFX_PLUGIN_PRODUCT_NAME=\"\\\"${HEVC_PRODUCT_NAME}\"\\\" -DMFX_FILE_DESCRIPTION=\"\\\"${description_name}\"\\\" ${hevc_version_defs}" )
-  make_library( ${eval_plugin_name} ${variant} shared)
-
-endforeach()
-set( defs "" )
-
-# VP8
-
-set( sources "" )
-set( sources.plus "" )
-
-list( APPEND sources ${plugin_common_sources} )
-
-include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/scheduler/include )
-include_directories( ${CMAKE_HOME_DIRECTORY}/thirdparty/vp8_libvpx )
-
-include_directories( ${CMAKE_HOME_DIRECTORY}/_studio/shared/umc/codec/vp8_dec/include )
-
-foreach( prefix ${CMAKE_HOME_DIRECTORY}/_studio/shared/umc/codec/vp8_dec/src )
-  list( APPEND sources
-    ${prefix}/vp8_tables.cpp
-  )
-endforeach()
-
-include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/plugin/include )
-
-set( USE_STRICT_NAME TRUE )
-set(MFX_LDFLAGS "${MFX_ORIG_LDFLAGS} -Wl,--version-script=${CMAKE_HOME_DIRECTORY}/_studio/mfx_lib/plugin/libmfxsw_plugin.map" )
-
-set( sources.plus "" )
-foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/plugin/src )
-  list( APPEND sources.plus
-    ${prefix}/mfx_vp8_dec_plugin.cpp
-  )
-endforeach()
-
-foreach( variant sw hw )
-
-  if( __ARCH MATCHES intel64 )
-    set( plugin_name mfx_vp8d_${variant}64 )
-  else()
-    set( plugin_name mfx_vp8d_${variant}32 )
-  endif()
-  if( __CONFIG MATCHES debug )
-    set( plugin_name ${plugin_name}_d )
-  endif()
-
-  set( LIBS "" )
-
-  if(${variant} MATCHES hw)
-
-    list( APPEND LIBS va )
-
-    foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/decode/vp8/src )
-    list( APPEND sources
-      ${prefix}/mfx_vp8_dec_decode_hw.cpp
-      ${prefix}/mfx_vp8_dec_decode.cpp
-    )
-    endforeach()
-
-    foreach( prefix ${CMAKE_HOME_DIRECTORY}/_studio/shared/umc/io/umc_va/src )
-    list( APPEND sources
-      ${prefix}/umc_va_linux.cpp
-    )
-    endforeach()
-
-    set( defs "-DAS_VP8D_PLUGIN -DAS_VP8DHW_PLUGIN -DUMC_ENABLE_VP8_VIDEO_DECODER -DMFX_VA")
-
-  else()
-
-    foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/decode/vp8/src )
-    list( APPEND sources
-      ${prefix}/mfx_vp8_dec_decode.cpp
-    )
-    endforeach()
-
-    set( defs "-DAS_VP8D_PLUGIN -DUMC_ENABLE_VP8_VIDEO_DECODER")
-
-  endif()
-
-  list( APPEND LIBS
-    vpx
-    umc_csc_sw
-    umc_io_merged_${variant}
-    umc_core_merged
-    ${ITT_LIBS}
-    ippmsdk_l ippj_l ippvc_l ippcc_l ippcv_l ippi_l ipps_l ippcore_l
-    pthread
-    dl
-    )
-
-  make_library( ${plugin_name} ${variant} shared)
-
 endforeach()
 
 # =============================================================================

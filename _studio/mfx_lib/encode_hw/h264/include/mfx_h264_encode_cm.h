@@ -367,7 +367,7 @@ protected:
         mfxI32 height,
         mfxU32 biWeight);
 
-private:
+protected:
     mfxVideoParam m_video;
 
     CmDevice *  m_device;

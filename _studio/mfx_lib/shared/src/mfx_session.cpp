@@ -429,6 +429,10 @@ void _mfxSession::Release(void)
     {
         m_plgEnc->PluginClose();
     }
+    if (m_plgPreEnc.get())
+    {
+        m_plgPreEnc->PluginClose();
+    }
     if (m_plgDec.get())
     {
         m_plgDec->PluginClose();

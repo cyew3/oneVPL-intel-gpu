@@ -22,10 +22,8 @@ list( APPEND adirs
 list( APPEND dirs
   asf_spl
   avi_spl
-  brc
   common
   demuxer
-  h264_enc
   h264_spl
   mpeg2_enc
   mpeg4_spl
@@ -51,7 +49,7 @@ list( APPEND dirs_impl
 
 mfx_include_dirs( )
 
-foreach( dir ${adirs} ${dirs} ${dirs_impl} )
+foreach( dir ${adirs} ${dirs} brc h264_enc ${dirs_impl} )
   include_directories( ${CMAKE_HOME_DIRECTORY}/_studio/shared/umc/codec/${dir}/include )
 endforeach( )
 
@@ -67,7 +65,7 @@ make_library( umc_acodecs_merged none static )
 
 # =============================================================================
 
-set( defs "-DAS_HEVCD_PLUGIN -DAS_HEVCE_PLUGIN" )
+set( defs "-DAS_HEVCD_PLUGIN -DAS_HEVCE_PLUGIN -DAS_H264LA_PLUGIN" )
 set( sources "" )
 foreach( dir ${dirs} )
   file( GLOB_RECURSE srcs "${dir}/*.c" "${dir}/*.cpp" )
@@ -79,7 +77,7 @@ set( defs "" )
 
 # =============================================================================
 
-set( defs "-DAS_HEVCD_PLUGIN -DAS_HEVCE_PLUGIN" )
+set( defs "-DAS_HEVCD_PLUGIN -DAS_HEVCE_PLUGIN -DAS_H264LA_PLUGIN" )
 set( sources "" )
 foreach( dir ${dirs_impl} )
   file( GLOB_RECURSE srcs "${dir}/*.c" "${dir}/*.cpp" )
@@ -91,24 +89,33 @@ foreach( variant sw hw )
 endforeach( )
 set( defs "" )
 
+# =============================================================================
+
+set( sources "" )
+file( GLOB_RECURSE srcs "brc/*.c" "brc/*.cpp" )
+list( APPEND sources ${srcs}) 
+
+make_library( umc_brc sw static )
 
 # =============================================================================
 
 set( sources "" )
-#foreach( dir h265 )
-  file( GLOB_RECURSE srcs "color_space_converter/*.c" "color_space_converter/*.cpp" )
-  list( APPEND sources ${srcs}) 
-#endforeach()
-
-#foreach( variant sw hw )
-#  make_library( umc_csc ${variant} static )
-#endforeach( )
+file( GLOB_RECURSE srcs "color_space_converter/*.c" "color_space_converter/*.cpp" )
+list( APPEND sources ${srcs}) 
 
 make_library( umc_csc sw static )
 
 # =============================================================================
 
-set( defs "-DAS_HEVCD_PLUGIN -DAS_HEVCE_PLUGIN" )
+set( sources "" )
+file( GLOB_RECURSE srcs "h264_enc/*.c" "h264_enc/*.cpp" )
+list( APPEND sources ${srcs}) 
+
+make_library( umc_h264_enc sw static )
+
+# =============================================================================
+
+set( defs "-DAS_HEVCD_PLUGIN -DAS_HEVCE_PLUGIN -DAS_H264LA_PLUGIN" )
 set( sources "" )
 #foreach( dir h265 )
   file( GLOB_RECURSE srcs "h265_dec/*.c" "h265_dec/*.cpp" )

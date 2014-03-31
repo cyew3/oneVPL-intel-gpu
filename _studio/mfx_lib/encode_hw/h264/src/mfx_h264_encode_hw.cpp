@@ -38,7 +38,7 @@ const char frameType[] = {'U','I','P','U','B'};
 using namespace MfxHwH264Encode;
 
 
-namespace
+namespace MfxHwH264EncodeHW
 {
     mfxU32 PaddingBytesToWorkAroundHrdIssue(
         MfxVideoParam const &      video,
@@ -197,6 +197,7 @@ namespace
         return oldest;
     }
 }
+using namespace MfxHwH264EncodeHW;
 
 VideoENCODE * CreateMFXHWVideoENCODEH264(
     VideoCORE * core,
@@ -664,7 +665,6 @@ ImplementationAvc::~ImplementationAvc()
 {
     DestroyDanglingCmResources();
 }
-
 void ImplementationAvc::DestroyDanglingCmResources()
 {
     if (m_cmDevice)
@@ -732,9 +732,10 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
 
     // CQP enabled
     mfxExtCodingOption2 const * extOpt2 = GetExtBuffer(m_video);
-    m_enabledSwBrc =
+    m_enabledSwBrc = 
         m_video.mfx.RateControlMethod == MFX_RATECONTROL_LA ||
-        m_video.mfx.RateControlMethod == MFX_RATECONTROL_LA_ICQ;
+        m_video.mfx.RateControlMethod == MFX_RATECONTROL_LA_ICQ ||
+        m_video.mfx.RateControlMethod == MFX_RATECONTROL_VME;
 
     // need it for both ENCODE and ENC
     m_hrd.Setup(m_video);
@@ -1718,6 +1719,9 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
     mfxExtCodingOption    const * extOpt = GetExtBuffer(m_video);
     mfxExtCodingOptionDDI const * extDdi = GetExtBuffer(m_video);
 
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "Avc::Async");
+
+
 #if USE_AGOP
     mfxExtCodingOption2 const * extOpt2 = GetExtBuffer(m_video);
     static int numCall = 0;
@@ -1745,10 +1749,25 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
     fprintf(stderr,"\n");
 #endif
 #endif
+ 
 
     if (m_stagesToGo & AsyncRoutineEmulator::STG_BIT_ACCEPT_FRAME)
     {
         DdiTask & newTask = m_incoming.front();
+
+       if (m_video.mfx.RateControlMethod == MFX_RATECONTROL_VME)
+       {
+            const mfxExtLAFrameStatistics *vmeData = GetExtBuffer(newTask.m_ctrl);
+            MFX_CHECK_NULL_PTR1(vmeData);
+            mfxLAFrameInfo *pInfo = &vmeData->FrameStat[0];
+
+  
+            newTask.m_ctrl.FrameType =  (pInfo->FrameDisplayOrder == 0) ? (mfxU8)( pInfo->FrameType |MFX_FRAMETYPE_IDR): (mfxU8) pInfo->FrameType;
+            newTask.m_type = ExtendFrameType(newTask.m_ctrl.FrameType);
+            newTask.m_frameOrder   = pInfo->FrameDisplayOrder;
+
+            MFX_CHECK(newTask.m_ctrl.FrameType, MFX_ERR_UNDEFINED_BEHAVIOR);
+       }
 
         if (!m_video.mfx.EncodedOrder)
         {
@@ -1876,7 +1895,9 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
 
     if (m_stagesToGo & AsyncRoutineEmulator::STG_BIT_START_LA)
     {
+        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "Avc::START_LA");
         bool gopStrict = !!(m_video.mfx.GopOptFlag & MFX_GOP_STRICT);
+
         DdiTaskIter task = (m_video.mfx.EncodedOrder)
             ? m_reordering.begin()
             : ReorderFrame(m_lastTask.m_dpbPostEncoding,
@@ -1958,6 +1979,7 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
 
     if (m_stagesToGo & AsyncRoutineEmulator::STG_BIT_WAIT_LA)
     {
+        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "Avc::WAIT_LA");
         if (m_video.mfx.RateControlMethod == MFX_RATECONTROL_LA || m_video.mfx.RateControlMethod == MFX_RATECONTROL_LA_ICQ)
             if (!QueryLookahead(m_lookaheadStarted.front()))
                 return MFX_TASK_BUSY;
@@ -1980,6 +2002,10 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
     {
         DdiTaskIter task = FindFrameToStartEncode(m_video, m_lookaheadFinished.begin(), m_lookaheadFinished.end());
         assert(task != m_lookaheadFinished.end());
+
+        //char task_name [40];
+        //sprintf(task_name,"Avc::START_ENCODE (%d) - %x", task->m_encOrder, task->m_yuv);
+        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "Avc::START_ENCODE");
 
         Hrd hrd = m_hrd; // tmp copy
 
@@ -2031,20 +2057,39 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
                 return Error(MFX_ERR_UNDEFINED_BEHAVIOR);
         }
 
-        // !!! HACK !!!
-        m_recFrameOrder[task->m_idxRecon] = task->m_frameOrder;
-        TEMPORAL_HACK_WITH_DPB(task->m_dpb[0],          m_rec.mids, m_recFrameOrder);
-        TEMPORAL_HACK_WITH_DPB(task->m_dpb[1],          m_rec.mids, m_recFrameOrder);
-        TEMPORAL_HACK_WITH_DPB(task->m_dpbPostEncoding, m_rec.mids, m_recFrameOrder);
+         //!!! HACK !!!
+         m_recFrameOrder[task->m_idxRecon] = task->m_frameOrder;
+         TEMPORAL_HACK_WITH_DPB(task->m_dpb[0],          m_rec.mids, m_recFrameOrder);
+         TEMPORAL_HACK_WITH_DPB(task->m_dpb[1],          m_rec.mids, m_recFrameOrder);
+         TEMPORAL_HACK_WITH_DPB(task->m_dpbPostEncoding, m_rec.mids, m_recFrameOrder);
 
 
         if (m_enabledSwBrc)
         {
-            if (m_video.mfx.RateControlMethod == MFX_RATECONTROL_LA || m_video.mfx.RateControlMethod == MFX_RATECONTROL_LA_ICQ)
+            switch(m_video.mfx.RateControlMethod)
+            {
+            case MFX_RATECONTROL_LA:
+            case MFX_RATECONTROL_LA_ICQ:
                 BrcPreEnc(*task);
+                break;
+            case MFX_RATECONTROL_VME:
+                {
+                    const mfxExtLAFrameStatistics *vmeData = GetExtBuffer(task->m_ctrl);
+                    MFX_CHECK_NULL_PTR1(vmeData);
+                    mfxStatus sts = m_brc.SetFrameVMEData(vmeData,m_video.mfx.FrameInfo.Width, m_video.mfx.FrameInfo.Height);
+                    if (sts != MFX_ERR_NONE)
+                        return Error(sts);
+                } break;
+            }
             task->m_cqpValue[0] = task->m_cqpValue[1] = m_brc.GetQp(task->m_type[task->m_fid[0]], task->m_picStruct[ENC]);
         }
 
+        //if(FILE *dump = fopen("dump1.txt", "a"))
+        //{
+        //    fprintf(dump, "%4d %4d %4d\n", task->m_encOrder, task->m_type[0], task->m_cqpValue[0]);
+        //    fclose(dump);
+        //}
+        
         for (mfxU32 f = 0; f <= task->m_fieldPicFlag; f++)
         {
             if (m_useWAForHighBitrates)
@@ -2069,6 +2114,10 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
         mfxExtCodingOption2 * extOpt2 = GetExtBuffer(m_video);
 
         DdiTaskIter task = FindFrameToWaitEncode(m_encoding.begin(), m_encoding.end());
+        
+        //char task_name [40];
+        //sprintf(task_name,"Avc::WAIT_ENCODE (%d) - %x", task->m_encOrder, task->m_yuv);
+        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "Avc::WAIT_ENCODE");
 
         mfxStatus sts = MFX_ERR_NONE;
         if (IsOff(extOpt->FieldOutput))
@@ -2205,6 +2254,7 @@ mfxStatus ImplementationAvc::AsyncRoutineHelper(void * state, void * param, mfxU
     try
     {
         sts = impl.AsyncRoutine((mfxBitstream *)param);
+        //printf("encoder sts = %d\n",sts);
         if (sts != MFX_TASK_BUSY && sts != MFX_TASK_DONE)
             impl.m_failedStatus = sts;
     }
@@ -2227,6 +2277,9 @@ mfxStatus ImplementationAvc::EncodeFrameCheck(
     MFX_ENTRY_POINT           entryPoints[],
     mfxU32 &                  numEntryPoints)
 {
+    char task_name [40];
+    sprintf(task_name,"Avc::EncodeFrameCheck - %x", surface);
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, task_name);
     mfxExtCodingOption const * extOpt = GetExtBuffer(m_video);
     if (IsOff(extOpt->FieldOutput))
     {
@@ -2345,6 +2398,15 @@ mfxStatus ImplementationAvc::EncodeFrameCheckNormalWay(
 
         mfxU16 const MaxNumOfROI = 0;
         m_free.front().m_roi.Resize(MaxNumOfROI);
+
+#ifdef SKIP_FRAME_DDI_0917
+        if (m_free.front().m_ctrl.SkipFrame != 0 && m_caps.SkipFrame == 0)
+        {
+            m_free.front().m_ctrl.SkipFrame = 0;
+            if (!status)
+                status = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
+        }
+#endif //SKIP_FRAME_DDI_0917
 
         m_stat.NumCachedFrame++;
         m_incoming.splice(m_incoming.end(), m_free, m_free.begin());

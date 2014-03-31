@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2008-2013 Intel Corporation. All Rights Reserved.
+Copyright(c) 2008-2014 Intel Corporation. All Rights Reserved.
 
 File Name: libmfxsw_enc.cpp
 
@@ -18,10 +18,17 @@ File Name: libmfxsw_enc.cpp
 // sheduling and threading stuff
 #include <mfx_task.h>
 
+#include "mfxenc.h"
+#include "mfx_enc_ext.h"
+
 #ifdef MFX_VA
 
 #ifdef MFX_ENABLE_H264_VIDEO_ENC_HW
 #include "mfx_h264_enc_hw.h"
+#endif
+
+#if defined(MFX_ENABLE_H264_VIDEO_ENCODE_HW) && defined(MFX_ENABLE_LA_H264_VIDEO_HW)
+#include "mfx_h264_la.h"
 #endif
 
 #else //MFX_VA
@@ -39,19 +46,27 @@ File Name: libmfxsw_enc.cpp
 #include "mfx_h264_enc_enc.h"
 #endif
 
+
 #endif //MFX_VA
 
-VideoENC *CreateENCSpecificClass(mfxU32 codecId, VideoCORE *pCore)
+VideoENC *CreateENCSpecificClass(mfxVideoParam *par, VideoCORE *pCore)
 {
     VideoENC *pENC = (VideoENC *) 0;
     mfxStatus mfxRes = MFX_ERR_MEMORY_ALLOC;
+    mfxU32 codecId = par->mfx.CodecId;
 
     switch (codecId)
     {
-#if defined (MFX_ENABLE_H264_VIDEO_ENC) && !defined (MFX_VA) || defined (MFX_ENABLE_H264_VIDEO_ENC_HW) && defined (MFX_VA)
+#if defined (MFX_ENABLE_H264_VIDEO_ENC) && !defined (MFX_VA) || (defined (MFX_ENABLE_H264_VIDEO_ENC_HW) || defined(MFX_ENABLE_LA_H264_VIDEO_HW))&& defined (MFX_VA)
     case MFX_CODEC_AVC:
 #ifdef MFX_VA
+#if defined (MFX_ENABLE_H264_VIDEO_ENC_HW)
         pENC = new MFXHWVideoENCH264(pCore, &mfxRes);
+#endif
+#if defined(MFX_ENABLE_LA_H264_VIDEO_HW)
+        if (bEnc_LA(par))
+            pENC = (VideoENC*) new VideoENC_LA(pCore, &mfxRes);
+#endif
 #else //MFX_VA
         pENC = new MFXVideoEncH264(pCore, &mfxRes);
 #endif //MFX_VA
@@ -68,7 +83,7 @@ VideoENC *CreateENCSpecificClass(mfxU32 codecId, VideoCORE *pCore)
     case MFX_CODEC_MPEG2:
         pENC = new MFXVideoENCMPEG2(pCore, &mfxRes);
         break;
-#endif // MFX_ENABLE_MPEG2_VIDEO_ENC && !MFX_VA
+#endif
 
     case 0: pCore;
     default:
@@ -91,9 +106,20 @@ mfxStatus MFXVideoENC_Query(mfxSession session, mfxVideoParam *in, mfxVideoParam
     MFX_CHECK(session, MFX_ERR_INVALID_HANDLE);
     MFX_CHECK(out, MFX_ERR_NULL_PTR);
 
-    mfxStatus mfxRes;
+    mfxStatus mfxRes = MFX_ERR_UNSUPPORTED;
     try
     {
+
+#ifdef MFX_ENABLE_USER_ENC
+        mfxRes = MFX_ERR_UNSUPPORTED;
+        if (session->m_plgPreEnc.get())
+        {
+            mfxRes = session->m_plgPreEnc->Query(session->m_pCORE.get(), in, out);
+        }
+        // unsupported reserved to codecid != requested codecid
+        if (MFX_ERR_UNSUPPORTED == mfxRes)
+#endif
+
         switch (out->mfx.CodecId)
         {
 #ifdef MFX_ENABLE_VC1_VIDEO_ENC
@@ -102,10 +128,16 @@ mfxStatus MFXVideoENC_Query(mfxSession session, mfxVideoParam *in, mfxVideoParam
             break;
 #endif
 
-#if defined (MFX_ENABLE_H264_VIDEO_ENC) && !defined (MFX_VA) || defined (MFX_ENABLE_H264_VIDEO_ENC_HW) && defined (MFX_VA)
+#if defined (MFX_ENABLE_H264_VIDEO_ENC) && !defined (MFX_VA) || (defined (MFX_ENABLE_H264_VIDEO_ENC_HW) || defined(MFX_ENABLE_LA_H264_VIDEO_HW))&& defined (MFX_VA)
         case MFX_CODEC_AVC:
 #ifdef MFX_VA
+#if defined (MFX_ENABLE_H264_VIDEO_ENC_HW)
             mfxRes = MFXHWVideoENCH264::Query(in, out);
+#endif
+#if defined(MFX_ENABLE_LA_H264_VIDEO_HW)
+        if (bEnc_LA(in))
+            mfxRes = VideoENC_LA::Query(session->m_pCORE.get(), in, out);
+#endif
 #else //MFX_VA
             mfxRes = MFXVideoEncH264::Query(in, out);
 #endif //MFX_VA
@@ -137,21 +169,37 @@ mfxStatus MFXVideoENC_QueryIOSurf(mfxSession session, mfxVideoParam *par, mfxFra
     MFX_CHECK(par, MFX_ERR_NULL_PTR);
     MFX_CHECK(request, MFX_ERR_NULL_PTR);
 
-    mfxStatus mfxRes;
+    mfxStatus mfxRes = MFX_ERR_UNSUPPORTED;
     try
     {
+#ifdef MFX_ENABLE_USER_ENC
+        mfxRes = MFX_ERR_UNSUPPORTED;
+        if (session->m_plgPreEnc.get())
+        {
+            mfxRes = session->m_plgPreEnc->QueryIOSurf(session->m_pCORE.get(), par, request, 0);
+        }
+        // unsupported reserved to codecid != requested codecid
+        if (MFX_ERR_UNSUPPORTED == mfxRes)
+#endif
         switch (par->mfx.CodecId)
         {
+
 #ifdef MFX_ENABLE_VC1_VIDEO_ENC
         case MFX_CODEC_VC1:
             mfxRes = MFXVideoEncVc1::QueryIOSurf(par, request);
             break;
 #endif
 
-#if defined (MFX_ENABLE_H264_VIDEO_ENC) && !defined (MFX_VA) || defined (MFX_ENABLE_H264_VIDEO_ENC_HW) && defined (MFX_VA)
+#if defined (MFX_ENABLE_H264_VIDEO_ENC) && !defined (MFX_VA) || (defined (MFX_ENABLE_H264_VIDEO_ENC_HW) || defined(MFX_ENABLE_LA_H264_VIDEO_HW))&& defined (MFX_VA)
         case MFX_CODEC_AVC:
 #ifdef MFX_VA
+#if defined (MFX_ENABLE_H264_VIDEO_ENC_HW)
             mfxRes = MFXHWVideoENCH264::QueryIOSurf(par, request);
+#endif
+#if defined(MFX_ENABLE_LA_H264_VIDEO_HW)
+        if (bEnc_LA(par))
+            mfxRes = VideoENC_LA::QueryIOSurf(session->m_pCORE.get(),par, request);
+#endif
 #else //MFX_VA
             mfxRes = MFXVideoEncH264::QueryIOSurf(par, request);
 #endif //MFX_VA
@@ -185,17 +233,36 @@ mfxStatus MFXVideoENC_Init(mfxSession session, mfxVideoParam *par)
     MFX_CHECK(par, MFX_ERR_NULL_PTR);
     try
     {
-        // close the existing encoder,
-        // if it is initialized.
-        if (session->m_pENC.get())
+#if !defined (MFX_RT)
+        // check existence of component
+        if (!session->m_pENC.get())
         {
-            MFXVideoENC_Close(session);
+            // create a new instance
+            session->m_bIsHWENCSupport = true;
+            session->m_pENC.reset(CreateENCSpecificClass(par, session->m_pCORE.get()));
+            MFX_CHECK(session->m_pENC.get(), MFX_ERR_INVALID_VIDEO_PARAM);
         }
+#endif
 
-        // create a new instance
-        session->m_pENC.reset(CreateENCSpecificClass(par->mfx.CodecId, session->m_pCORE.get()));
-        MFX_CHECK(session->m_pENC.get(), MFX_ERR_INVALID_VIDEO_PARAM);
         mfxRes = session->m_pENC->Init(par);
+
+#if !defined (MFX_RT)
+        if (MFX_WRN_PARTIAL_ACCELERATION == mfxRes)
+        {
+            session->m_bIsHWENCSupport = false;
+            session->m_pENC.reset(CreateENCSpecificClass(par, session->m_pCORE.get()));
+            MFX_CHECK(session->m_pENC.get(), MFX_ERR_NULL_PTR);
+            mfxRes = session->m_pENC->Init(par);
+        }
+#endif
+
+        // SW fallback if EncodeGUID is absence
+        if (MFX_PLATFORM_HARDWARE == session->m_currentPlatform &&
+            !session->m_bIsHWENCSupport &&
+            MFX_ERR_NONE <= mfxRes)
+        {
+            mfxRes = MFX_WRN_PARTIAL_ACCELERATION;
+        } 
     }
     // handle error(s)
     catch(MFX_CORE_CATCH_TYPE)
@@ -225,6 +292,7 @@ mfxStatus MFXVideoENC_Close(mfxSession session)
     mfxStatus mfxRes;
 
     MFX_CHECK(session, MFX_ERR_INVALID_HANDLE);
+    MFX_CHECK(session->m_pScheduler, MFX_ERR_NOT_INITIALIZED);
 
     try
     {
@@ -237,8 +305,11 @@ mfxStatus MFXVideoENC_Close(mfxSession session)
         session->m_pScheduler->WaitForTaskCompletion(session->m_pENC.get());
 
         mfxRes = session->m_pENC->Close();
-        // delete the codec's instance
-        session->m_pENC.reset((VideoENC *) 0);
+        // delete the codec's instance if not plugin
+        if (!session->m_plgPreEnc.get())
+        {
+            session->m_pENC.reset((VideoENC *) 0);
+        }
     }
     // handle error(s)
     catch(MFX_CORE_CATCH_TYPE)
@@ -288,6 +359,27 @@ mfxStatus MFXVideoENCLegacyRoutine(void *pState, void *pParam,
     return mfxRes;
 
 } // mfxStatus MFXVideoENCLegacyRoutine(void *pState, void *pParam,
+
+static
+mfxStatus MFXVideoENCLegacyRoutineExt(void *pState, void *pParam,
+                                   mfxU32 threadNumber, mfxU32 callNumber)
+{
+    VideoENC_Ext * pENC = (VideoENC_Ext  *) pState;
+    MFX_THREAD_TASK_PARAMETERS *pTaskParam = (MFX_THREAD_TASK_PARAMETERS *) pParam;
+
+    // touch unreferenced parameter(s)
+    callNumber = callNumber;
+
+    // check error(s)
+    if ((NULL == pState) ||
+        (NULL == pParam) ||
+        (0 != threadNumber))
+    {
+        return MFX_ERR_NULL_PTR;
+    }
+    return pENC->RunFrameVmeENC(pTaskParam->enc_ext.in, pTaskParam->enc_ext.out);
+} // mfxStatus MFXVideoENCLegacyRoutine(void *pState, void *pParam,
+
 
 mfxStatus MFXVideoENC_RunFrameVmeENCAsync(mfxSession session, mfxFrameCUC *cuc, mfxSyncPoint *syncp)
 {
@@ -368,6 +460,147 @@ mfxStatus MFXVideoENC_RunFrameVmeENCAsync(mfxSession session, mfxFrameCUC *cuc, 
     return mfxRes;
 
 } // mfxStatus MFXVideoENC_RunFrameVmeENCAsync(mfxSession session, mfxFrameCUC *cuc, mfxSyncPoint *syncp)
+
+
+
+enum
+{
+    MFX_NUM_ENTRY_POINTS = 2
+};
+
+
+mfxStatus  MFXVideoENC_ProcessFrameAsync(mfxSession session, mfxENCInput *in, mfxENCOutput *out, mfxSyncPoint *syncp)
+{
+    mfxStatus mfxRes;
+
+    MFX_CHECK(session, MFX_ERR_INVALID_HANDLE);
+    MFX_CHECK(session->m_pENC.get(), MFX_ERR_NOT_INITIALIZED); // TO DO : dynamic cust
+    MFX_CHECK(syncp, MFX_ERR_NULL_PTR);
+
+    VideoENC_Ext *pEnc = (VideoENC_Ext *)session->m_pENC.get();
+
+    try
+    {
+        mfxSyncPoint syncPoint = NULL;
+        MFX_ENTRY_POINT entryPoints[MFX_NUM_ENTRY_POINTS];
+        mfxU32 numEntryPoints = MFX_NUM_ENTRY_POINTS;
+        memset(&entryPoints, 0, sizeof(entryPoints));
+
+        mfxRes = pEnc->RunFrameVmeENCCheck(in,out,entryPoints,numEntryPoints);
+
+        if ((MFX_ERR_NONE == mfxRes) ||
+            (MFX_WRN_INCOMPATIBLE_VIDEO_PARAM == mfxRes) ||
+            (MFX_WRN_OUT_OF_RANGE == mfxRes) ||
+            (MFX_ERR_MORE_DATA_RUN_TASK == mfxRes) ||
+            (MFX_ERR_MORE_BITSTREAM == mfxRes))
+        {
+            // prepare the absolete kind of task.
+            // it is absolete and must be removed.
+            if (NULL == entryPoints[0].pRoutine)
+            {
+                MFX_TASK task;
+                memset(&task, 0, sizeof(task));
+                // BEGIN OF OBSOLETE PART
+                task.bObsoleteTask = true;
+                // fill task info
+                task.entryPoint.pRoutine = &MFXVideoENCLegacyRoutineExt;
+                task.entryPoint.pState = pEnc;
+                task.entryPoint.requiredNumThreads = 1;
+
+                // fill legacy parameters
+                task.obsolete_params.enc_ext.in = in;
+                task.obsolete_params.enc_ext.out = out;
+
+                task.priority = session->m_priority;
+                task.threadingPolicy = pEnc->GetThreadingPolicy();
+                // fill dependencies
+                task.pSrc[0] = in;
+                task.pDst[0] = out;
+                task.pOwner= pEnc;  
+                mfxRes = session->m_pScheduler->AddTask(task, &syncPoint);
+
+            } // END OF OBSOLETE PART
+            else if (1 == numEntryPoints)
+            {
+                MFX_TASK task;
+
+                memset(&task, 0, sizeof(task));
+                task.pOwner = pEnc;
+                task.entryPoint = entryPoints[0];
+                task.priority = session->m_priority;
+                task.threadingPolicy = pEnc->GetThreadingPolicy();
+                // fill dependencies
+
+                task.pSrc[0] = in->InSurface;
+                task.pDst[0] = out;
+
+                // register input and call the task
+                MFX_CHECK_STS(session->m_pScheduler->AddTask(task, &syncPoint));
+            }
+            else
+            {
+                MFX_TASK task;
+
+                memset(&task, 0, sizeof(task));
+                task.pOwner = pEnc;
+                task.entryPoint = entryPoints[0];
+                task.priority = session->m_priority;
+                task.threadingPolicy = MFX_TASK_THREADING_DEDICATED;
+                // fill dependencies
+                task.pSrc[0] = pEnc->GetSrcForSync(entryPoints[0]);
+                task.pDst[0] = entryPoints[0].pParam;
+
+                // register input and call the task
+                MFX_CHECK_STS(session->m_pScheduler->AddTask(task, &syncPoint));
+
+                memset(&task, 0, sizeof(task));
+                task.pOwner = pEnc;
+                task.entryPoint = entryPoints[1];
+                task.priority = session->m_priority;
+                task.threadingPolicy = MFX_TASK_THREADING_DEDICATED_WAIT;
+                // fill dependencies
+                task.pSrc[0] = entryPoints[0].pParam;
+                task.pDst[0] = pEnc->GetDstForSync(entryPoints[1]);
+
+                // register input and call the task
+                MFX_CHECK_STS(session->m_pScheduler->AddTask(task, &syncPoint));
+            }
+
+            // IT SHOULD BE REMOVED
+            if (MFX_ERR_MORE_DATA_RUN_TASK == mfxRes)
+            {
+                mfxRes = MFX_ERR_MORE_DATA;
+                syncPoint = NULL;
+            }          
+
+        }
+
+        // return pointer to synchronization point
+        *syncp = syncPoint;
+    }
+    // handle error(s)
+    catch(MFX_CORE_CATCH_TYPE)
+    {
+        // set the default error value
+        mfxRes = MFX_ERR_UNKNOWN;
+        if (0 == session)
+        {
+            mfxRes = MFX_ERR_INVALID_HANDLE;
+        }
+        else if (0 == pEnc)
+        {
+            mfxRes = MFX_ERR_NOT_INITIALIZED;
+        }
+        else if (0 == syncp)
+        {
+            return MFX_ERR_NULL_PTR;
+        }
+    }
+
+    return mfxRes;
+
+} // mfxStatus MFXVideoENC_RunFrameVmeENCAsync(mfxSession session, mfxFrameCUC *cuc, mfxSyncPoint *syncp)
+
 
 //
 // THE OTHER ENC FUNCTIONS HAVE IMPLICIT IMPLEMENTATION

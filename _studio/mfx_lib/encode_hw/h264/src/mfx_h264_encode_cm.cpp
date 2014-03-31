@@ -26,7 +26,7 @@
 #include "genx_hsw_simple_me_isa.h"
 
 
-namespace
+namespace MfxHwH264EncodeHW
 {
 
 using MfxHwH264Encode::CmRuntimeError;
@@ -104,6 +104,7 @@ void Write(CmBuffer * buffer, void * buf, CmEvent * e = 0)
 
 namespace MfxHwH264Encode
 {
+using namespace MfxHwH264EncodeHW;
 
 CmDevice * TryCreateCmDevicePtr(VideoCORE * core, mfxU32 * version)
 {
@@ -261,7 +262,7 @@ void CmSurface::Reset(CmDevice * device, mfxU32 width, mfxU32 height, mfxU32 fou
 
 SurfaceIndex const & CmSurface::GetIndex()
 {
-    return ::GetIndex(m_surface);
+    return MfxHwH264EncodeHW::GetIndex(m_surface);
 }
 
 void CmSurface::Read(void * buf, CmEvent * e)
@@ -364,17 +365,17 @@ void CmBuf::Reset(CmDevice * device, mfxU32 size)
 
 SurfaceIndex const & CmBuf::GetIndex() const
 {
-    return ::GetIndex(m_buffer);
+    return MfxHwH264EncodeHW::GetIndex(m_buffer);
 }
 
 void CmBuf::Read(void * buf, CmEvent * e) const
 {
-    ::Read(m_buffer, buf, e);
+    MfxHwH264EncodeHW::Read(m_buffer, buf, e);
 }
 
 void CmBuf::Write(void * buf, CmEvent * e) const
 {
-    ::Write(m_buffer, buf, e);
+    MfxHwH264EncodeHW::Write(m_buffer, buf, e);
 }
 
 CmBuffer * CreateBuffer(CmDevice * device, mfxU32 size)
@@ -494,9 +495,12 @@ CmContext::CmContext()
     FdsSurf = fopen("dsSurf.yuv", "wb");
 */
 }
+};
 
-namespace
+
+namespace MfxHwH264EncodeHW
 {
+    using namespace MfxHwH264Encode;
     mfxU32 Map44LutValueBack(mfxU32 val)
     {
         mfxU32 base  = val & 0xf;
@@ -777,8 +781,10 @@ namespace
     }
 
 };
+using namespace MfxHwH264EncodeHW;
 
-
+namespace MfxHwH264Encode
+{
 CmContext::CmContext(
     MfxVideoParam const & video,
     CmDevice *            cmDevice)

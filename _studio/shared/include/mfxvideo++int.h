@@ -339,7 +339,10 @@ public:
         return MFX_ERR_NONE;
     }
     virtual
-    mfxStatus RunFrameVmeENC(mfxFrameCUC *cuc) = 0;
+    mfxStatus RunFrameVmeENC(mfxFrameCUC * /*cuc*/)     
+    {
+        return MFX_ERR_UNSUPPORTED;
+    };
 
 };
 
@@ -664,6 +667,7 @@ public:
     virtual VideoENCODE* GetEncodePtr() = 0;
     virtual VideoDECODE* GetDecodePtr() = 0;
     virtual VideoVPP* GetVPPPtr() = 0;
+    virtual VideoENC* GetEncPtr() = 0;
 };
 
 #endif // __MFXVIDEOPLUSPLUS_INTERNAL_H

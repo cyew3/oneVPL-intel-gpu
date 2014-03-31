@@ -2723,7 +2723,7 @@ namespace
 #define brcprintf
 #endif // brcprintf
 
-namespace
+namespace MfxHwH264EncodeHW
 {
     mfxF64 const INTRA_QSTEP_COEFF  = 2.0;
     mfxF64 const INTRA_MODE_BITCOST = 0.0;
@@ -2772,6 +2772,7 @@ namespace
         return QStep2QpCeil(qskip);
     }
 }
+using namespace MfxHwH264EncodeHW;
 
 void LookAheadBrc2::Init(MfxVideoParam const & video)
 {
@@ -2799,6 +2800,68 @@ void LookAheadBrc2::Init(MfxVideoParam const & video)
     m_curBaseQp = -1;
 }
 
+void VMEBrc::Init(MfxVideoParam const & video)
+{
+    mfxExtCodingOptionDDI const * extDdi  = GetExtBuffer(video);
+
+    m_LaScaleFactor = extDdi->LaScaleFactor;
+    m_qpUpdateRange = extDdi->QpUpdateRange;
+    m_strength      = extDdi->StrengthN;
+
+    mfxF64 fr = mfxF64(video.mfx.FrameInfo.FrameRateExtN) / video.mfx.FrameInfo.FrameRateExtD;
+    m_totNumMb = video.mfx.FrameInfo.Width * video.mfx.FrameInfo.Height / 256;
+    m_initTargetRate = 1000 * video.mfx.TargetKbps / fr / m_totNumMb;
+    m_targetRateMin = m_initTargetRate;
+    m_targetRateMax = m_initTargetRate;
+    m_laData.reserve(100);
+
+    assert(extDdi->RegressionWindow <= m_rateCoeffHistory[0].MAX_WINDOW);
+    for (mfxU32 qp = 0; qp < 52; qp++)
+        m_rateCoeffHistory[qp].Reset(extDdi->RegressionWindow, 100.0, 100.0 * INIT_RATE_COEFF[qp]);
+    m_framesBehind = 0;
+    m_bitsBehind = 0.0;
+    m_curQp = -1;
+    m_curBaseQp = -1;
+}
+
+mfxStatus VMEBrc::SetFrameVMEData(const mfxExtLAFrameStatistics *pLaOut, mfxU32 width, mfxU32 height)
+{
+    mfxU32 resNum = 0;
+    mfxU32 numLaFrames = pLaOut->NumFrame;
+    mfxU32 k = height*width >> 7;
+    while(resNum < pLaOut->NumStream) 
+    {
+        if (pLaOut->FrameStat[resNum*numLaFrames].Height == height &&
+            pLaOut->FrameStat[resNum*numLaFrames].Width  == width) 
+            break;
+        resNum ++;
+    }
+    MFX_CHECK(resNum <  pLaOut->NumStream, MFX_ERR_UNDEFINED_BEHAVIOR);
+    mfxLAFrameInfo * pFrameData = pLaOut->FrameStat + numLaFrames*resNum;
+
+    m_lookAhead = numLaFrames;    // TODO: should be removed
+
+    if(m_laData.size() != numLaFrames)
+        m_laData.resize(numLaFrames);
+
+    for (size_t i = 0; i < numLaFrames; i++)
+    {
+        m_laData[i].encOrder  = pFrameData[i].FrameEncodeOrder;
+        m_laData[i].interCost = pFrameData[i].InterCost;
+        m_laData[i].intraCost = pFrameData[i].IntraCost;
+        m_laData[i].propCost  = pFrameData[i].DependencyCost;
+        m_laData[i].bframe    = (pFrameData[i].FrameType & MFX_FRAMETYPE_B) != 0;
+
+        MFX_CHECK(m_laData[i].intraCost, MFX_ERR_UNDEFINED_BEHAVIOR);
+
+        for (mfxU32 qp = 0; qp < 52; qp++)
+        {
+            m_laData[i].estRate[qp] = ((mfxF64)pFrameData[i].EstimatedRate[qp])/(QSTEP[qp]*k);
+        }
+    }
+    return MFX_ERR_NONE;
+}
+
 mfxU8 SelectQp(mfxF64 erate[52], mfxF64 budget)
 {
     for (mfxU8 qp = 1; qp < 52; qp++)
@@ -2815,7 +2878,29 @@ mfxF64 GetTotalRate(std::vector<LookAheadBrc2::LaFrameData> const & laData, mfxI
     return totalRate;
 }
 
+mfxF64 GetTotalRate(std::vector<VMEBrc::LaFrameData> const & laData, mfxI32 baseQp)
+{
+    mfxF64 totalRate = 0.0;
+    for (size_t i = 0; i < laData.size(); i++)
+        totalRate += laData[i].estRateTotal[CLIPVAL(0, 51, baseQp + laData[i].deltaQp)];
+    return totalRate;
+}
+
 mfxU8 SelectQp(std::vector<LookAheadBrc2::LaFrameData> const & laData, mfxF64 budget)
+{
+    mfxF64 prevTotalRate = GetTotalRate(laData, 0);
+    for (mfxU8 qp = 1; qp < 52; qp++)
+    {
+        mfxF64 totalRate = GetTotalRate(laData, qp);
+        if (totalRate < budget)
+            return (prevTotalRate + totalRate < 2 * budget) ? qp - 1 : qp;
+        else
+            prevTotalRate = totalRate;
+    }
+    return 51;
+}
+
+mfxU8 SelectQp(std::vector<VMEBrc::LaFrameData> const & laData, mfxF64 budget)
 {
     mfxF64 prevTotalRate = GetTotalRate(laData, 0);
     for (mfxU8 qp = 1; qp < 52; qp++)
@@ -2958,6 +3043,10 @@ void LookAheadBrc2::PreEnc(mfxU32 /*frameType*/, std::vector<VmeData *> const & 
     assert(m_laData.size() <= m_lookAhead);
 }
 
+void VMEBrc::PreEnc(mfxU32 /*frameType*/, std::vector<VmeData *> const & /*vmeData*/, mfxU32 /*curEncOrder*/)
+{
+}
+
 mfxU32 LookAheadBrc2::Report(mfxU32 /*frameType*/, mfxU32 dataLength, mfxU32 /*userDataLength*/, mfxU32 /*repack*/, mfxU32 /*picOrder*/)
 {
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "LookAheadBrc2::Report");
@@ -2995,6 +3084,128 @@ mfxU32 LookAheadBrc2::Report(mfxU32 /*frameType*/, mfxU32 dataLength, mfxU32 /*u
     return 0;
 }
 
+mfxU32 VMEBrc::Report(mfxU32 frameType, mfxU32 dataLength, mfxU32 /*userDataLength*/, mfxU32 /*repack*/, mfxU32 /*picOrder*/)
+{
+    frameType; // unused
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "LookAheadBrc2::Report");
+    mfxF64 realRatePerMb = 8 * dataLength / mfxF64(m_totNumMb);
+    static int size = 0;
+    static int nframe = 0;
+    size += dataLength;
+    nframe++;
+
+    m_framesBehind++;
+    m_bitsBehind += realRatePerMb;
+    mfxF64 framesBeyond = (mfxF64)(IPP_MAX(2, m_laData.size()) - 1);
+
+    m_targetRateMax = (m_initTargetRate * (m_framesBehind + (m_lookAhead - 1)) - m_bitsBehind) / framesBeyond;
+    m_targetRateMin = (m_initTargetRate * (m_framesBehind + (framesBeyond   )) - m_bitsBehind) / framesBeyond;
+
+    mfxF64 oldCoeff = m_rateCoeffHistory[m_curQp].GetCoeff();
+    mfxF64 y = IPP_MAX(0.0, realRatePerMb);
+    mfxF64 x = m_laData[0].estRate[m_curQp];
+    mfxF64 minY = NORM_EST_RATE * INIT_RATE_COEFF[m_curQp] * MIN_RATE_COEFF_CHANGE;
+    mfxF64 maxY = NORM_EST_RATE * INIT_RATE_COEFF[m_curQp] * MAX_RATE_COEFF_CHANGE;
+    y = CLIPVAL(minY, maxY, y / x * NORM_EST_RATE); 
+    m_rateCoeffHistory[m_curQp].Add(NORM_EST_RATE, y);
+
+    //static int count = 0;
+    //count++;
+    //if(FILE *dump = fopen("dump.txt", "a"))
+    //{
+    //    fprintf(dump, "%4d %4d %4d %4d %6f\n", count, frameType, dataLength, m_curQp, y);
+    //    fclose(dump);
+    //}
+
+    mfxF64 ratio = m_rateCoeffHistory[m_curQp].GetCoeff() / oldCoeff;
+    for (mfxI32 i = -m_qpUpdateRange; i <= m_qpUpdateRange; i++)
+        if (i != 0 && m_curQp + i >= 0 && m_curQp + i < 52)
+        {
+            mfxF64 r = ((ratio - 1.0) * (1.0 - abs(i)/(m_qpUpdateRange + 1)) + 1.0);
+            m_rateCoeffHistory[m_curQp + i].Add(NORM_EST_RATE,
+                NORM_EST_RATE * m_rateCoeffHistory[m_curQp + i].GetCoeff() * r);
+        }
+
+    brcprintf("rrate=%6.3f newCoeff=%5.3f\n", realRatePerMb, m_rateCoeffHistory[m_curQp].GetCoeff());
+
+    return 0;
+}
+
+mfxU8 VMEBrc::GetQp(mfxU32 frameType, mfxU32 /*picStruct*/)
+{
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "VMEBrc::GetQp");
+    frameType;
+
+    mfxF64 totalEstRate[52] = { 0.0 };
+    //static int count = 0;
+    //count++;
+    for (mfxU32 qp = 0; qp < 52; qp++)
+    {
+        mfxF64 rateCoeff = m_rateCoeffHistory[qp].GetCoeff();
+        
+        //if(FILE *dump = fopen("dump3.txt", "a"))
+        //{
+        //    fprintf(dump, "%4d %4d %4d %6f \n", count, frameType, qp, m_rateCoeffHistory[qp].sumxy);
+        //    fclose(dump);
+        //}
+
+        for (mfxU32 i = 0; i < m_laData.size(); i++)
+        {
+            m_laData[i].estRateTotal[qp] = IPP_MAX(MIN_EST_RATE, rateCoeff * m_laData[i].estRate[qp]);
+            totalEstRate[qp] += m_laData[i].estRateTotal[qp];
+        }
+    }
+
+    mfxI32 maxDeltaQp = INT_MIN;
+    if (m_lookAhead > 0)
+    {
+        mfxI32 curQp = m_curBaseQp < 0 ? SelectQp(totalEstRate, m_targetRateMin * m_laData.size()) : m_curBaseQp;
+        mfxF64 strength = 0.03 * curQp + .75;
+
+        for (mfxU32 i = 0; i < m_laData.size(); i++)
+        {
+            mfxU32 intraCost    = m_laData[i].intraCost;
+            mfxU32 interCost    = m_laData[i].interCost;
+            mfxU32 propCost     = m_laData[i].propCost;
+            mfxF64 ratio        = 1.0;//mfxF64(interCost) / intraCost;
+            mfxF64 deltaQp      = log((intraCost + propCost * ratio) / intraCost) / log(2.0);
+            m_laData[i].deltaQp = (interCost >= intraCost * 0.9)
+                ? -mfxI32(deltaQp * 2 * strength + 0.5)
+                : -mfxI32(deltaQp * 1 * strength + 0.5);
+            maxDeltaQp = IPP_MAX(maxDeltaQp, m_laData[i].deltaQp);
+        }
+    }
+    else
+    {
+        for (mfxU32 i = 0; i < m_laData.size(); i++)
+        {
+            mfxU32 intraCost    = m_laData[i].intraCost;
+            mfxU32 interCost    = m_laData[i].interCost;
+            m_laData[i].deltaQp = (interCost >= intraCost * 0.9) ? -5 : m_laData[i].bframe ? 0 : -2;
+            maxDeltaQp = IPP_MAX(maxDeltaQp, m_laData[i].deltaQp);
+        }
+    }
+
+    for (mfxU32 i = 0; i < m_laData.size(); i++)
+        m_laData[i].deltaQp -= maxDeltaQp;
+
+    mfxU8 minQp = SelectQp(m_laData, m_targetRateMax * m_laData.size());
+    mfxU8 maxQp = SelectQp(m_laData, m_targetRateMin * m_laData.size());
+
+    if (m_curBaseQp < 0)
+        m_curBaseQp = minQp; // first frame
+    else if (m_curBaseQp < minQp)
+        m_curBaseQp = CLIPVAL(m_curBaseQp - MAX_QP_CHANGE, m_curBaseQp + MAX_QP_CHANGE, minQp);
+    else if (m_curQp > maxQp)
+        m_curBaseQp = CLIPVAL(m_curBaseQp - MAX_QP_CHANGE, m_curBaseQp + MAX_QP_CHANGE, maxQp);
+    else
+        ; // do not change qp if last qp guarantees target rate interval
+    m_curQp = CLIPVAL(1, 51, m_curBaseQp + m_laData[0].deltaQp); // driver doesn't support qp=0
+
+    brcprintf("bqp=%2d qp=%2d dqp=%2d erate=%7.3f ", m_curBaseQp, m_curQp, m_laData[0].deltaQp, m_laData[0].estRateTotal[m_curQp]); 
+
+    return mfxU8(m_curQp);
+}
 
 void LookAheadCrfBrc::Init(MfxVideoParam const & video)
 {
@@ -4123,7 +4334,7 @@ mfxStatus MfxHwH264Encode::CheckEncodeFrameParam(
         MFX_CHECK_STS(sts);
     }
 
-    if (video.mfx.EncodedOrder == 1)
+    if (video.mfx.EncodedOrder == 1 && video.mfx.RateControlMethod != MFX_RATECONTROL_VME)
     {
         MFX_CHECK(surface != 0, MFX_ERR_MORE_DATA);
         MFX_CHECK_NULL_PTR1(ctrl);
@@ -4153,7 +4364,7 @@ mfxStatus MfxHwH264Encode::CheckEncodeFrameParam(
                 MFX_ERR_INVALID_VIDEO_PARAM);
         }
     }
-    else
+    else if (video.mfx.EncodedOrder != 1)
     {
         if (ctrl)
         {
@@ -5456,6 +5667,7 @@ BrcIface * MfxHwH264Encode::CreateBrc(MfxVideoParam const & video)
     {
     case MFX_RATECONTROL_LA: return new LookAheadBrc2;
     case MFX_RATECONTROL_LA_ICQ: return new LookAheadCrfBrc;
+    case MFX_RATECONTROL_VME: return new VMEBrc;
     default: return new UmcBrc;
     }
 }

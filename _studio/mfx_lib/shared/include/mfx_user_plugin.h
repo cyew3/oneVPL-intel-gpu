@@ -17,6 +17,7 @@ File Name: mfx_user_plugin.h
 
 #include <mfxplugin.h>
 #include <mfx_task.h>
+#include "mfx_enc_ext.h"
 
 class VideoUSERPlugin : public VideoCodecUSER
 {
@@ -65,16 +66,20 @@ public:
         MFX_ENTRY_POINT *pEntryPoint) ;
 
     mfxStatus VPPFrameCheck(mfxFrameSurface1 *in, mfxFrameSurface1 *out, mfxExtVppAuxData *aux, MFX_ENTRY_POINT *ep) ;
+    mfxStatus EncFrameCheck(mfxENCInput *in, mfxENCOutput *out, MFX_ENTRY_POINT *pEntryPoint);
 
     mfxStatus EncodeFrame(mfxEncodeCtrl *ctrl, mfxEncodeInternalParams *pInternalParams, mfxFrameSurface1 *surface, mfxBitstream *bs) ;
     mfxStatus CancelFrame(mfxEncodeCtrl *ctrl, mfxEncodeInternalParams *pInternalParams, mfxFrameSurface1 *surface, mfxBitstream *bs) ;
+    mfxStatus EncFrame(mfxENCInput *in, mfxENCOutput *out);
 
     //expose new encoder/decoder view
     VideoENCODE* GetEncodePtr();
     VideoDECODE* GetDecodePtr();
     VideoVPP* GetVPPPtr();
+    VideoENC* GetEncPtr();
+
 protected: 
-    class VideoENCDECImpl : public VideoENCODE, public VideoDECODE, public VideoVPP
+    class VideoENCDECImpl : public VideoENCODE, public VideoDECODE, public VideoVPP,  public VideoENC_Ext
     {
         VideoUSERPlugin *m_plg;
     public:
@@ -117,9 +122,19 @@ protected:
             return MFX_ERR_NONE;
         }
 
+        virtual
+        mfxStatus RunFrameVmeENCCheck(  mfxENCInput *in, 
+                                        mfxENCOutput *out,
+                                        MFX_ENTRY_POINT* pEntryPoint) 
+        {
+            return m_plg->EncFrameCheck(in,out,pEntryPoint);
+        }
+
+
         mfxStatus EncodeFrame(mfxEncodeCtrl *ctrl, mfxEncodeInternalParams *pInternalParams, mfxFrameSurface1 *surface, mfxBitstream *bs) {
             return m_plg->EncodeFrame(ctrl, pInternalParams, surface, bs);
         }
+ 
         mfxStatus CancelFrame(mfxEncodeCtrl *ctrl, mfxEncodeInternalParams *pInternalParams, mfxFrameSurface1 *surface, mfxBitstream *bs) {
             return m_plg->CancelFrame(ctrl, pInternalParams, surface, bs);
         }

@@ -36,5 +36,8 @@ function( mfx_include_dirs )
     ${CMAKE_HOME_DIRECTORY}/_studio/shared/umc/io/media_buffers/include
     ${CMAKE_HOME_DIRECTORY}/_studio/mfx_lib/shared/include
     ${CMAKE_HOME_DIRECTORY}/_studio/mfx_lib/optimization/h265/include
+    ${CMAKE_HOME_DIRECTORY}/_studio/mfx_lib/shared/include
+    ${CMAKE_HOME_DIRECTORY}/_studio/mfx_lib/fei/include
+    ${CMAKE_HOME_DIRECTORY}/_studio/mfx_lib/fei/h264_la
   )
 endfunction( )

@@ -152,10 +152,14 @@
 #define MFX_ENABLE_MPEG2_VIDEO_ENCODE_HW
 //#define MFX_ENABLE_H264_VIDEO_ENC_HW
 #define MFX_ENABLE_MVC_VIDEO_ENCODE_HW
+#if defined(AS_H264LA_PLUGIN)
+#define MFX_ENABLE_LA_H264_VIDEO_HW
+#endif
 
 // user plugin for decoder, encoder, and vpp
 #define MFX_ENABLE_USER_DECODE
 #define MFX_ENABLE_USER_ENCODE
+#define MFX_ENABLE_USER_ENC
 #define MFX_ENABLE_USER_VPP
 
 // aac
@@ -189,8 +193,8 @@
         //#undef MFX_ENABLE_MPEG2_VIDEO_BRC
 
         // mjpeg
-        //#undef MFX_ENABLE_MJPEG_VIDEO_DECODE
-        //#undef MFX_ENABLE_MJPEG_VIDEO_ENCODE
+        #undef MFX_ENABLE_MJPEG_VIDEO_DECODE
+        #undef MFX_ENABLE_MJPEG_VIDEO_ENCODE
 
         // vpp
         //#undef MFX_ENABLE_DENOISE_VIDEO_VPP

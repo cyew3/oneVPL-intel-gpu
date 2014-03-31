@@ -97,7 +97,7 @@ struct sFrameEncoder
     {}
 };
 
-struct sFrameEncoderEx
+/*struct sFrameEncoderEx
 {
   MFXVideoSession       session;
   MFXVideoBRC*          pmfxBRC;
@@ -113,7 +113,7 @@ struct sFrameEncoderEx
     pBufferAllocator(0),
     pFrameAllocator(0)
     {}
-};
+};*/
 
 struct sMFXPlanes
 {

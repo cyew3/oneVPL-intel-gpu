@@ -1435,7 +1435,7 @@ mfxStatus MfxHwH264Encode::CheckVideoParam(
     if (par.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY)
     {
         mfxExtCodingOptionDDI *    extDdi  = GetExtBuffer(par);
-        mfxExtOpaqueSurfaceAlloc * extOpaq = GetExtBuffer(par);
+        //mfxExtOpaqueSurfaceAlloc * extOpaq = GetExtBuffer(par);
 
         mfxU32 numFrameMin = par.mfx.GopRefDist + (IsOn(extDdi->RefRaw) ? par.mfx.NumRefFrame : 0) + par.AsyncDepth - 1;
 
@@ -1445,7 +1445,7 @@ mfxStatus MfxHwH264Encode::CheckVideoParam(
             numFrameMin *= extMvc->NumView;
         }
 
-        MFX_CHECK(extOpaq->In.NumSurface >= numFrameMin, MFX_ERR_INVALID_VIDEO_PARAM);
+        //MFX_CHECK(extOpaq->In.NumSurface >= numFrameMin, MFX_ERR_INVALID_VIDEO_PARAM);
     }
 
     return checkSts;
@@ -1686,7 +1686,8 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
         par.mfx.RateControlMethod != MFX_RATECONTROL_VCM &&
         par.mfx.RateControlMethod != MFX_RATECONTROL_ICQ &&
         par.mfx.RateControlMethod != MFX_RATECONTROL_LA &&
-        par.mfx.RateControlMethod != MFX_RATECONTROL_LA_ICQ)
+        par.mfx.RateControlMethod != MFX_RATECONTROL_LA_ICQ &&
+        par.mfx.RateControlMethod != MFX_RATECONTROL_VME)
     {
         changed = true;
         par.mfx.RateControlMethod = MFX_RATECONTROL_CBR;
@@ -3659,7 +3660,7 @@ void MfxHwH264Encode::SetDefaults(
 
     if (extOpt2->LookAheadDepth == 0)
     {
-        if (par.mfx.RateControlMethod == MFX_RATECONTROL_LA)
+        if (par.mfx.RateControlMethod == MFX_RATECONTROL_LA || par.mfx.RateControlMethod == MFX_RATECONTROL_VME)
             extOpt2->LookAheadDepth = IPP_MAX(40, 2 * par.mfx.GopRefDist);
         else if (par.mfx.RateControlMethod == MFX_RATECONTROL_LA_ICQ)
             extOpt2->LookAheadDepth = IPP_MAX(10, 2 * par.mfx.GopRefDist);
@@ -3819,7 +3820,9 @@ void MfxHwH264Encode::SetDefaults(
 
     if (par.calcParam.bufferSizeInKB == 0)
     {
-        if (par.mfx.RateControlMethod == MFX_RATECONTROL_LA || par.mfx.RateControlMethod == MFX_RATECONTROL_LA_ICQ)
+        if (par.mfx.RateControlMethod == MFX_RATECONTROL_LA || 
+            par.mfx.RateControlMethod == MFX_RATECONTROL_VME || 
+            par.mfx.RateControlMethod == MFX_RATECONTROL_LA_ICQ)
         {
             par.calcParam.bufferSizeInKB = (par.mfx.FrameInfo.Width * par.mfx.FrameInfo.Height * 3 / 2 / 1000);
         }
@@ -3975,6 +3978,8 @@ void MfxHwH264Encode::SetDefaults(
             break;
         case MFX_RATECONTROL_ICQ:
         case MFX_RATECONTROL_LA_ICQ:
+            break;
+        case MFX_RATECONTROL_VME:
             break;
         default:
             assert(0);

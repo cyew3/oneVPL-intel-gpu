@@ -109,6 +109,26 @@ mfxStatus VideoUSERPlugin::PluginInit(const mfxPlugin *pParam,
             return MFX_ERR_NULL_PTR;
         }
     }
+    else if(MFX_PLUGINTYPE_VIDEO_ENC == type)
+    {
+        if (!pParam ||
+            (0 == pParam->PluginInit) ||
+            (0 == pParam->PluginClose) ||
+            (0 == pParam->GetPluginParam) ||
+            (0 == pParam->Execute) ||
+            (0 == pParam->FreeResources) ||
+            !(pParam->Video) ||
+            (0 == pParam->Video->Query) ||
+            (0 == pParam->Video->QueryIOSurf) ||
+            (0 == pParam->Video->Init) ||
+            (0 == pParam->Video->Reset) ||
+            (0 == pParam->Video->Close) ||
+            (0 == pParam->Video->GetVideoParam) ||
+            (0 == pParam->Video->ENCFrameSubmit))
+        {
+            return MFX_ERR_NULL_PTR;
+        }
+    }
     else if(MFX_PLUGINTYPE_VIDEO_VPP == type)
     {
         if (!pParam ||
@@ -306,6 +326,24 @@ mfxStatus VideoUSERPlugin::EncodeFrameCheck(mfxEncodeCtrl *ctrl, mfxFrameSurface
 
     return MFX_ERR_NONE;
 }
+mfxStatus VideoUSERPlugin::EncFrameCheck(mfxENCInput *in, mfxENCOutput *out, MFX_ENTRY_POINT *ep)
+{
+    mfxStatus mfxRes;
+    mfxThreadTask userParam;
+
+    // check the parameters with user object
+    mfxRes = m_plugin.Video->ENCFrameSubmit(m_plugin.pthis, in,out, &userParam);
+    if (MFX_ERR_NONE != mfxRes)
+    {
+        return mfxRes;
+    }
+
+    // fill the 'entry point' structure
+    *ep = m_entryPoint;
+    ep->pParam = userParam;
+
+    return MFX_ERR_NONE;
+}
 
 mfxStatus VideoUSERPlugin::VPPFrameCheck(mfxFrameSurface1 *in, mfxFrameSurface1 *out, mfxExtVppAuxData *aux, MFX_ENTRY_POINT *ep){
     mfxStatus mfxRes;
@@ -338,7 +376,8 @@ mfxStatus VideoUSERPlugin::Reset(mfxVideoParam *par) {
 }
 
 mfxStatus VideoUSERPlugin::Close(void) {
-    return m_plugin.Video->Close(m_plugin.pthis);
+    if (m_plugin.pthis) return m_plugin.Video->Close(m_plugin.pthis);
+    return MFX_ERR_NONE;
 }
 
 mfxStatus VideoUSERPlugin::GetPayload(mfxU64 *ts, mfxPayload *payload) {
@@ -373,9 +412,19 @@ mfxStatus VideoUSERPlugin::EncodeFrame(mfxEncodeCtrl *ctrl, mfxEncodeInternalPar
 mfxStatus VideoUSERPlugin::CancelFrame(mfxEncodeCtrl *ctrl, mfxEncodeInternalParams *pInternalParams, mfxFrameSurface1 *surface, mfxBitstream *bs) {
     return MFX_ERR_NONE;
 }
+mfxStatus VideoUSERPlugin::EncFrame(mfxENCInput * /* in */, mfxENCOutput * /* out */)
+{
+    return MFX_ERR_NONE;
+}
+
 
 
 VideoENCODE* VideoUSERPlugin::GetEncodePtr()
+{
+    return new VideoENCDECImpl(this);
+}
+
+VideoENC* VideoUSERPlugin::GetEncPtr()
 {
     return new VideoENCDECImpl(this);
 }

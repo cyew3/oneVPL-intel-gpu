@@ -1160,7 +1160,9 @@ namespace MfxHwH264Encode
         mfxF64 GetCoeff() const {
             return sumxy / sumxx;
         }
-    private:
+
+    //protected:
+    public: // temporary for debugging and dumping
         mfxF64 x[N];
         mfxF64 y[N];
         mfxU32 windowSize;
@@ -1181,6 +1183,8 @@ namespace MfxHwH264Encode
         virtual void SetQp(mfxU32 qp, mfxU32 frameType) = 0;
         virtual mfxU32 Report(mfxU32 frameType, mfxU32 dataLength, mfxU32 userDataLength, mfxU32 repack, mfxU32 picOrder) = 0;
         virtual mfxU32 GetMinFrameSize() = 0;
+
+        virtual mfxStatus SetFrameVMEData(const mfxExtLAFrameStatistics*, mfxU32 , mfxU32 ) {return MFX_ERR_NONE;} 
     };
 
     BrcIface * CreateBrc(MfxVideoParam const & video);
@@ -1230,6 +1234,10 @@ namespace MfxHwH264Encode
         mfxU32 GetMinFrameSize()
         {
             return m_impl->GetMinFrameSize();
+        }
+        mfxStatus SetFrameVMEData(const mfxExtLAFrameStatistics * pLAOutput, mfxU32 width, mfxU32 height)
+        {
+            return m_impl->SetFrameVMEData(pLAOutput,width,height);
         }
     private:
         std::auto_ptr<BrcIface> m_impl;
@@ -1281,6 +1289,62 @@ namespace MfxHwH264Encode
         mfxU32 Report(mfxU32 frameType, mfxU32 dataLength, mfxU32 userDataLength, mfxU32 repack, mfxU32 picOrder);
 
         mfxU32 GetMinFrameSize() { return 0; }
+
+    public:
+        struct LaFrameData
+        {
+            mfxU32  encOrder;
+            mfxI32  poc;
+            mfxI32  deltaQp;
+            mfxF64  estRate[52];
+            mfxF64  estRateTotal[52];
+            mfxU32  interCost;
+            mfxU32  intraCost;
+            mfxU32  propCost;
+            mfxU32  bframe;
+        };
+
+    protected:
+        mfxU32  m_lookAhead;
+        mfxU32  m_lookAheadDep;
+        mfxU16  m_LaScaleFactor;
+        mfxU32  m_strength;
+        mfxU32  m_totNumMb;
+        mfxF64  m_initTargetRate;
+        mfxF64  m_targetRateMin;
+        mfxF64  m_targetRateMax;
+        mfxU32  m_framesBehind;
+        mfxF64  m_bitsBehind;
+        mfxI32  m_curBaseQp;
+        mfxI32  m_curQp;
+        mfxU16  m_qpUpdateRange;
+
+        std::vector<LaFrameData>    m_laData;
+        Regression<20>              m_rateCoeffHistory[52];
+    };
+
+    class VMEBrc : public BrcIface
+    {
+    public:
+        ~VMEBrc() { Close(); }
+
+        void Init(MfxVideoParam const & video);
+
+        void Close() {}
+
+        mfxU8 GetQp(mfxU32 frameType, mfxU32 picStruct);
+
+        mfxF32 GetFractionalQp(mfxU32 /*frameType*/, mfxU32 /*picStruct*/) { assert(0); return 26.0f; }
+
+        void SetQp(mfxU32 /*qp*/, mfxU32 /*frameType*/) { assert(0); }
+
+        void PreEnc(mfxU32 frameType, std::vector<VmeData *> const & vmeData, mfxU32 encOrder);
+
+        mfxU32 Report(mfxU32 frameType, mfxU32 dataLength, mfxU32 userDataLength, mfxU32 repack, mfxU32 picOrder);
+
+        mfxU32 GetMinFrameSize() { return 0; }
+
+        mfxStatus SetFrameVMEData(const mfxExtLAFrameStatistics *, mfxU32 widthMB, mfxU32 heightMB );
 
     public:
         struct LaFrameData
@@ -1779,7 +1843,6 @@ namespace MfxHwH264Encode
 #endif
         std::vector<SVCPAKObject>       m_mbData;
     };
-
     class ImplementationAvcAsync : public VideoENCODE
     {
     public:

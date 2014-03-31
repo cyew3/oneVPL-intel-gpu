@@ -105,6 +105,7 @@ struct _mfxSession
     
     std::auto_ptr<VideoCodecUSER> m_plgDec;
     std::auto_ptr<VideoCodecUSER> m_plgEnc;
+    std::auto_ptr<VideoCodecUSER> m_plgPreEnc;
     std::auto_ptr<VideoCodecUSER> m_plgVPP;
     std::auto_ptr<VideoCodecUSER> m_plgGen;
 

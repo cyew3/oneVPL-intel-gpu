@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2008-2009 Intel Corporation. All Rights Reserved.
+Copyright(c) 2008-2014 Intel Corporation. All Rights Reserved.
 
 File Name: mfx_thread_task.h
 
@@ -14,8 +14,8 @@ File Name: mfx_thread_task.h
 #define __MFX_THREAD_TASK_H
 
 #include <mfxvideo.h>
-
 #include <mfxvideo++int.h>
+#include "mfxenc.h"
 
 // Declare task's parameters structure
 typedef
@@ -56,8 +56,12 @@ struct MFX_THREAD_TASK_PARAMETERS
         {
             mfxFrameCUC *cuc;                                   // [IN, OUT] pointer to encoding parameters
             void *pBRC;                                         // [IN] pointer to the BRC object
-
         } enc, pak;
+        struct
+        {
+            mfxENCInput  *in; 
+            mfxENCOutput *out;
+        } enc_ext;
     };
 
 } MFX_THREAD_TASK_PARAMETERS;
