@@ -1104,7 +1104,20 @@ UMC::Status TaskSupplier_H265::xDecodePPS(H265Bitstream &bs)
 
     // Initialize tiles data
     H265SeqParamSet *sps = m_Headers.m_SeqParams.GetHeader(pps.pps_seq_parameter_set_id);
-    VM_ASSERT(sps != 0);
+    if (!sps)
+        throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
+    
+    // additional PPS members checks:
+    Ipp32s QpBdOffsetY = 6 * (sps->bit_depth_luma - 8);
+    if (pps.init_qp < -QpBdOffsetY || pps.init_qp > 25 + 26)
+        throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
+    
+    if (pps.diff_cu_qp_delta_depth > sps->log2_max_luma_coding_block_size - sps->log2_min_luma_coding_block_size)
+        throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
+
+    if (pps.log2_parallel_merge_level > sps->log2_max_luma_coding_block_size)
+        throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
+
     Ipp32u WidthInLCU = sps->WidthInCU;
     Ipp32u HeightInLCU = sps->HeightInCU;
 
@@ -1131,10 +1144,16 @@ UMC::Status TaskSupplier_H265::xDecodePPS(H265Bitstream &bs)
 
     if (pps.tiles_enabled_flag)
     {
-        Ipp32u colums = pps.num_tile_columns;
+        Ipp32u columns = pps.num_tile_columns;
         Ipp32u rows = pps.num_tile_rows;
 
-        Ipp32u *colBd = h265_new_array_throw<Ipp32u>(colums);
+        if (columns > WidthInLCU)
+            throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
+
+        if (rows > HeightInLCU)
+            throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
+
+        Ipp32u *colBd = h265_new_array_throw<Ipp32u>(columns);
         if (NULL == colBd)
         {
             pps.Reset();
@@ -1152,7 +1171,7 @@ UMC::Status TaskSupplier_H265::xDecodePPS(H265Bitstream &bs)
         {
             Ipp32u lastDiv, i;
 
-            pps.column_width = h265_new_array_throw<Ipp32u>(colums);
+            pps.column_width = h265_new_array_throw<Ipp32u>(columns);
             if (NULL == pps.column_width)
             {
                 pps.Reset();
@@ -1166,9 +1185,9 @@ UMC::Status TaskSupplier_H265::xDecodePPS(H265Bitstream &bs)
             }
 
             lastDiv = 0;
-            for (i = 0; i < colums; i++)
+            for (i = 0; i < columns; i++)
             {
-                Ipp32u tmp = ((i + 1) * WidthInLCU) / colums;
+                Ipp32u tmp = ((i + 1) * WidthInLCU) / columns;
                 pps.column_width[i] = tmp - lastDiv;
                 lastDiv = tmp;
             }
@@ -1221,7 +1240,7 @@ UMC::Status TaskSupplier_H265::xDecodePPS(H265Bitstream &bs)
         {
             Ipp32u tileX = 0, tileY = 0, CtbAddrRStoTS;
 
-            for (j = 0; j < colums; j++)
+            for (j = 0; j < columns; j++)
             {
                 if (tbX >= colBd[j])
                 {
@@ -1241,7 +1260,7 @@ UMC::Status TaskSupplier_H265::xDecodePPS(H265Bitstream &bs)
             CtbAddrRStoTS += (tbY - rowBd[tileY]) * pps.getColumnWidth(tileX) + tbX - colBd[tileX];
 
             pps.m_CtbAddrRStoTS[i] = CtbAddrRStoTS;
-            pps.m_TileIdx[i] = tileY * colums + tileX;
+            pps.m_TileIdx[i] = tileY * columns + tileX;
 
             tbX++;
             if (tbX == WidthInLCU)

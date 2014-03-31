@@ -1082,8 +1082,8 @@ struct H265PicParamSetBase
     Ipp8u   deblocking_filter_control_present_flag;
     Ipp8u   deblocking_filter_override_enabled_flag;
     Ipp8u   pps_deblocking_filter_disabled_flag;
-    Ipp32u  pps_beta_offset;
-    Ipp32u  pps_tc_offset;
+    Ipp32s  pps_beta_offset;
+    Ipp32s  pps_tc_offset;
 
     Ipp8u   pps_scaling_list_data_present_flag;
 
