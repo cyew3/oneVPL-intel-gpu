@@ -211,7 +211,8 @@ typedef struct {
     mfxU16      ForceNumThread;     // 0-default
     mfxU16      FastCbfMode;        // tri-state, stop PU modes after cbf is 0
     mfxU16      PuDecisionSatd;     // tri-state, use SATD for PU decision
-    mfxU16      reserved[8];
+    mfxU16      MinCUDepthAdapt;    // tri-state, adaptive min CU depth
+    mfxU16      reserved[7];
 } mfxExtCodingOptionHEVC;
 
 

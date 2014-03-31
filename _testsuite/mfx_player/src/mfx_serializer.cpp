@@ -270,6 +270,7 @@ void MFXStructureRef <mfxExtCodingOptionHEVC>::ConstructValues() const
     SERIALIZE_INT(ForceNumThread);
     SERIALIZE_INT(FastCbfMode);
     SERIALIZE_INT(PuDecisionSatd);
+    SERIALIZE_INT(MinCUDepthAdapt);
 }
 
 void MFXStructureRef <mfxExtCodingOptionVP8Param>::ConstructValues() const

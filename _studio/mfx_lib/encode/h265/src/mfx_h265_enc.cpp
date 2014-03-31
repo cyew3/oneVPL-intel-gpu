@@ -235,6 +235,7 @@ mfxStatus H265Encoder::InitH265VideoParam(const mfxVideoParam *param, const mfxE
     pars->patternIntPel = opts_hevc->PatternIntPel;
     pars->patternSubPel = opts_hevc->PatternSubPel;
     pars->puDecisionSatd = (opts_hevc->PuDecisionSatd == MFX_CODINGOPTION_ON);
+    pars->minCUDepthAdapt = (opts_hevc->MinCUDepthAdapt == MFX_CODINGOPTION_ON);
 
     for (Ipp32s i = 0; i <= 6; i++) {
         pars->num_cand_0[i] = Saturate(1, 33, pars->num_cand_0[i]);

@@ -123,6 +123,7 @@ mfxExtBuffer HEVC_HEADER = { MFX_EXTBUFF_HEVCENC, sizeof(mfxExtCodingOptionHEVC)
     tab_ForceNumThread[x],\
     tab_FastCbfMode[x],\
     tab_PuDecisionSatd[x],\
+    tab_MinCUDepthAdapt[x],\
 }
 
 #define __old_tu_definition
@@ -179,6 +180,7 @@ TU_OPT(FastSkip,                     OFF, OFF, OFF, OFF, OFF, OFF, OFF)
 TU_OPT(ForceNumThread,                 0,   0,   0,   0,   0,   0,   0)
 TU_OPT(FastCbfMode,                  OFF, OFF, OFF, OFF, OFF, OFF, OFF)
 TU_OPT(PuDecisionSatd,               OFF, OFF, OFF, OFF, OFF, OFF, OFF)
+TU_OPT(MinCUDepthAdapt,              OFF, OFF, OFF, OFF, OFF, OFF, OFF)
 
 Ipp8u tab_tuGopRefDist [8] = {8, 8, 8, 8, 8, 3, 2, 1};
 Ipp8u tab_tuNumRefFrame[8] = {2, 4, 3, 3, 2, 2, 1, 1};
@@ -200,6 +202,7 @@ TU_OPT(CostChroma,                   OFF, OFF, OFF, OFF, OFF, OFF, OFF)
 TU_OPT(FastSkip,                     OFF, OFF, OFF, OFF,  ON,  ON,  ON)
 TU_OPT(PartModes,                      3,   3,   2,   2,   2,   2,   1)
 TU_OPT(PuDecisionSatd,               OFF, OFF, OFF, OFF, OFF, OFF, OFF)
+TU_OPT(MinCUDepthAdapt,              OFF, OFF, OFF, OFF, OFF, OFF, OFF)
 
 //Basic quality features
 TU_OPT(WPP,                          UNK, UNK, UNK, UNK, UNK, UNK, UNK)
@@ -815,6 +818,8 @@ mfxStatus MFXVideoENCODEH265::Init(mfxVideoParam* par_in)
             m_mfxHEVCOpts.FastCbfMode = opts_tu->FastCbfMode;
         if (m_mfxHEVCOpts.PuDecisionSatd == 0)
             m_mfxHEVCOpts.PuDecisionSatd = opts_tu->PuDecisionSatd;
+        if (m_mfxHEVCOpts.MinCUDepthAdapt == 0)
+            m_mfxHEVCOpts.MinCUDepthAdapt = opts_tu->MinCUDepthAdapt;
     }
 
     // uncomment here if sign bit hiding doesn't work properly
@@ -1087,6 +1092,7 @@ mfxStatus MFXVideoENCODEH265::Reset(mfxVideoParam *par_in)
         if (!optsNew.FastSkip                     ) optsNew.FastSkip                      = optsOld.FastSkip                     ;
         if (!optsNew.FastCbfMode                  ) optsNew.FastCbfMode                   = optsOld.FastCbfMode                  ;
         if (!optsNew.PuDecisionSatd               ) optsNew.PuDecisionSatd                = optsOld.PuDecisionSatd               ;
+        if (!optsNew.MinCUDepthAdapt              ) optsNew.MinCUDepthAdapt               = optsOld.MinCUDepthAdapt              ;
     }
 
     if ((parNew.IOPattern & 0xffc8) || (parNew.IOPattern == 0)) // 0 is possible after Query
@@ -1249,6 +1255,7 @@ mfxStatus MFXVideoENCODEH265::Query(VideoCORE *core, mfxVideoParam *par_in, mfxV
             optsHEVC->FastSkip = 1;
             optsHEVC->FastCbfMode = 1;
             optsHEVC->PuDecisionSatd = 1;
+            optsHEVC->MinCUDepthAdapt = 1;
         }
 
         mfxExtDumpFiles* optsDump = (mfxExtDumpFiles*)GetExtBuffer( out->ExtParam, out->NumExtParam, MFX_EXTBUFF_DUMP );
@@ -1617,6 +1624,7 @@ mfxStatus MFXVideoENCODEH265::Query(VideoCORE *core, mfxVideoParam *par_in, mfxV
             CHECK_OPTION(opts_in->FastSkip, opts_out->FastSkip, isInvalid);  /* tri-state option */
             CHECK_OPTION(opts_in->FastCbfMode, opts_out->FastCbfMode, isInvalid);  /* tri-state option */
             CHECK_OPTION(opts_in->PuDecisionSatd, opts_out->PuDecisionSatd, isInvalid);  /* tri-state option */
+            CHECK_OPTION(opts_in->MinCUDepthAdapt, opts_out->MinCUDepthAdapt, isInvalid);  /* tri-state option */
 
             if (opts_in->PartModes > 3) {
                 opts_out->PartModes = 0;

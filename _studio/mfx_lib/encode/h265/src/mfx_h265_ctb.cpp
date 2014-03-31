@@ -589,6 +589,7 @@ void H265CU::InitCu(H265VideoParam *_par, H265CUData *_data, H265CUData *_dataTe
 
     m_uvSrc = currFrame->uv + m_ctbPelX + (m_ctbPelY * m_pitchSrc >> 1);
     m_depthMin = MAX_TOTAL_DEPTH;
+    m_depthMinCollocated = MAX_TOTAL_DEPTH;
 
     if (initializeDataFlag) {
         m_rdOptFlag = m_cslice->rd_opt_flag;
@@ -661,6 +662,13 @@ void H265CU::InitCu(H265VideoParam *_par, H265CUData *_data, H265CUData *_dataTe
     m_bakAbsPartIdx = 0;
     m_bakChromaOffset = 0;
     m_isRdoq = m_par->RDOQFlag ? true : false;
+
+    m_colocatedCu[0] = m_colocatedCu[1] = NULL;
+    RefPicList *refPicList = m_currFrame->m_refPicList;
+    H265Frame *ref0 = m_cslice->slice_type != I_SLICE ? refPicList[0].m_refFrames[0] : NULL;
+    H265Frame *ref1 = m_cslice->slice_type == B_SLICE ? refPicList[1].m_refFrames[0] : NULL;
+    if (ref0) m_colocatedCu[0] = ref0->cu_data + (m_ctbAddr << m_par->Log2NumPartInCU);
+    if (ref1) m_colocatedCu[1] = ref1->cu_data + (m_ctbAddr << m_par->Log2NumPartInCU);
 
     m_interPredReady = false;
 }
@@ -1125,6 +1133,43 @@ void H265CU::ModeDecision(Ipp32u absPartIdx, Ipp32u offset, Ipp8u depth, CostTyp
     if (m_rdOptFlag) {
         m_bsf->CtxSave(ctxSave[0], 0, NUM_CABAC_CONTEXT);
         m_bsf->CtxSave(ctxSave[2], 0, NUM_CABAC_CONTEXT);
+    }
+
+    if (m_par->minCUDepthAdapt && m_cslice->slice_type != I_SLICE) {
+        H265CUData* col0 = m_colocatedCu[0];
+        H265CUData* col1 = m_colocatedCu[1];
+        Ipp8s qpCur = m_par->QP;
+        Ipp8s qpPrev = col0 ? col0[0].qp : (col1 ? col1[0].qp : qpCur);
+        Ipp8u depthDelta = 0, depthMin0 = 4, depthMin1 = 4;
+        if (depth == 0)
+        {
+            Ipp64f depthSum0 = 0, depthSum1 = 0, depthAvg0 = 0, depthAvg1 = 0, depthAvg = 0;
+            for (Ipp32u i = 0; i < m_numPartition; i += 4)
+            {
+                if (col0 && col0[i].depth < depthMin0)
+                    depthMin0 = col0[i].depth;
+                if (col1 && col1[i].depth < depthMin1)
+                    depthMin1 = col1[i].depth;
+                if (col0)
+                    depthSum0 += (col0[i].depth * 4);
+                if (col1)
+                    depthSum1 += (col1[i].depth * 4);
+            }
+
+            depthAvg0 = depthSum0 / m_numPartition;
+            depthAvg1 = depthSum1 / m_numPartition;
+            depthAvg = (depthAvg0 + depthAvg1) / 2;
+
+            m_depthMinCollocated = MIN(depthMin0, depthMin1);
+            if (((qpCur - qpPrev) < 0) || (((qpCur - qpPrev) >= 0) && ((depthAvg - m_depthMinCollocated) > 0.5)))
+                depthDelta = 0;
+            else
+                depthDelta = 1;
+            if (m_depthMinCollocated > 0)
+                m_depthMinCollocated -= depthDelta;
+        }
+        if (splitMode == SPLIT_TRY && depth < m_depthMinCollocated)
+            splitMode = SPLIT_MUST;
     }
 
     if (splitMode != SPLIT_MUST) {

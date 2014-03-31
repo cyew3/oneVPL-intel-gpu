@@ -149,7 +149,7 @@ public:
     H265CUData*   m_left;           ///< pointer of left CU
     H265CUData*   m_aboveLeft;      ///< pointer of above-left CU
     H265CUData*   m_aboveRight;     ///< pointer of above-right CU
-    H265CUData*   m_colocatedLcu[2];
+    H265CUData*   m_colocatedCu[2];
     Ipp32s m_aboveAddr;
     Ipp32s m_leftAddr;
     Ipp32s m_aboveLeftAddr;
@@ -203,7 +203,8 @@ public:
     Ipp64f m_ChromaDistWeight;
 
     H265Slice *m_cslice;
-    Ipp8u m_depthMin;          // for Cu-tree branch to know if there is not SPLIT_MUST cu at lower depth
+    Ipp8u m_depthMin;            // for Cu-tree branch to know if there is not SPLIT_MUST cu at lower depth
+    Ipp8u m_depthMinCollocated;  // min CU depth from collocated CUs
     Ipp32s HorMax;             // MV common limits in CU
     Ipp32s HorMin;
     Ipp32s VerMax;
