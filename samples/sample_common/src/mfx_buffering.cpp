@@ -55,7 +55,8 @@ CBuffering::AllocBuffers(mfxU32 SurfaceNumber)
             tail = m_pFreeOutputSurfaces = p;
         }
         else {
-            tail->next = p;
+            if (tail)
+                tail->next = p;
             tail = p;
         }
     }

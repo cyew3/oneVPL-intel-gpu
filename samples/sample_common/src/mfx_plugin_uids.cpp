@@ -88,10 +88,13 @@ const msdk_char* msdkGetPluginPath(mfxU32 type, mfxU32 codecid)
 mfxStatus LoadPluginByUID(mfxSession* session, const msdkPluginUID* uid)
 {
     mfxStatus sts = MFX_ERR_NONE;
+    const msdk_char *pluginName = NULL;
 
     if (!session || !uid) return MFX_ERR_NULL_PTR;
 
     sts = MFXVideoUSER_Load(*session, &(uid->mfx), 1);
+
+    pluginName = msdkGetPluginName(uid);
     if (MFX_ERR_NONE != sts) {
         msdk_printf(MSDK_STRING("error: failed to load Media SDK plugin:\n"));
         msdk_printf(MSDK_STRING("error:   GUID = { 0x%08x, 0x%04x, 0x%04x, { 0x%02x, 0x%02x, 0x%02x, 0x%02x, 0x%02x, 0x%02x, 0x%02x, 0x%02x } }\n"),
@@ -103,11 +106,13 @@ mfxStatus LoadPluginByUID(mfxSession* session, const msdkPluginUID* uid)
                 uid->raw[4],  uid->raw[5],  uid->raw[6],  uid->raw[7],
                 uid->raw[8],  uid->raw[9],  uid->raw[10], uid->raw[11],
                 uid->raw[12], uid->raw[13], uid->raw[14], uid->raw[15]);
-        msdk_printf(MSDK_STRING("error:   name = %s\n"), msdkGetPluginName(uid));
+        if (pluginName)
+            msdk_printf(MSDK_STRING("error:   name = %s\n"), pluginName);
         msdk_printf(MSDK_STRING("error:   You may need to install this plugin separately!\n"));
     }
     else {
-        msdk_printf(MSDK_STRING("info: plugin '%s' loaded successfully\n"), msdkGetPluginName(uid));
+        if (pluginName)
+            msdk_printf(MSDK_STRING("info: plugin '%s' loaded successfully\n"), pluginName);
     }
     return sts;
 }
