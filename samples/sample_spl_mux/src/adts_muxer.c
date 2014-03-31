@@ -190,7 +190,10 @@ mfxStatus GetAdtsBitstream(adtsMuxer mux, AVPacket *pkt, mfxBitstream *bs)
     mfxStatus sts;
     _adtsMuxer *inMux;
     int oldPktIndex;
+    int64_t oldPts, oldDts;
     oldPktIndex = pkt->stream_index;
+    oldPts = pkt->pts;
+    oldDts = pkt->dts;
 
     inMux = (_adtsMuxer*)mux;
     if(inMux == NULL)
@@ -204,6 +207,8 @@ mfxStatus GetAdtsBitstream(adtsMuxer mux, AVPacket *pkt, mfxBitstream *bs)
 
     sts = MFX_ERR_NONE;
     pkt->stream_index = 0;
+    pkt->pts = AV_NOPTS_VALUE;
+    pkt->dts = AV_NOPTS_VALUE;
 
     if (pkt->size + ADTS_HEADER_WITH_CRC_LENGTH > inMux->ioContext->buffer_size)
     {
@@ -226,6 +231,8 @@ mfxStatus GetAdtsBitstream(adtsMuxer mux, AVPacket *pkt, mfxBitstream *bs)
             sts = MFX_ERR_UNKNOWN;
         }
         pkt->stream_index = oldPktIndex;
+        pkt->pts = oldPts;
+        pkt->dts = oldDts;
     }
 
     if (sts == MFX_ERR_NONE)
