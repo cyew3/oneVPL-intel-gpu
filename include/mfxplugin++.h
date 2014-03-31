@@ -1,6 +1,6 @@
 /* ****************************************************************************** *\
 
-Copyright (C) 2007-2013 Intel Corporation.  All rights reserved.
+Copyright (C) 2007-2014 Intel Corporation.  All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
@@ -135,6 +135,13 @@ struct MFXVPPPlugin : MFXCodecPlugin
 {
     virtual mfxStatus VPPFrameSubmit(mfxFrameSurface1 *surface_in, mfxFrameSurface1 *surface_out, mfxExtVppAuxData *aux, mfxThreadTask *task) = 0;
 };
+
+struct MFXEncPlugin : MFXCodecPlugin
+{
+    virtual mfxStatus EncFrameSubmit(mfxENCInput *in, mfxENCOutput *out, mfxThreadTask *task) = 0;
+};
+
+
 
 
 class MFXCoreInterface
@@ -423,6 +430,32 @@ namespace detail
     private:
         static mfxStatus _EncodeFrameSubmit(mfxHDL pthis, mfxEncodeCtrl *ctrl, mfxFrameSurface1 *surface, mfxBitstream *bs, mfxThreadTask *task) {
             return reinterpret_cast<MFXEncoderPlugin*>(pthis)->EncodeFrameSubmit(ctrl, surface, bs, task);
+        }
+    };
+
+    template<>
+    class MFXPluginAdapterInternal<MFXEncPlugin> : public MFXCodecPluginAdapterBase<MFXEncPlugin>
+    {
+    public:
+        MFXPluginAdapterInternal(MFXEncPlugin *pPlugin)
+            : MFXCodecPluginAdapterBase<MFXEncPlugin>(pPlugin)
+        {
+            m_codecPlg.ENCFrameSubmit = _ENCFrameSubmit;
+        }
+        MFXPluginAdapterInternal(const MFXPluginAdapterInternal & that)
+            : MFXCodecPluginAdapterBase<MFXEncPlugin>(that) {
+            m_codecPlg.ENCFrameSubmit = _ENCFrameSubmit;
+        }
+
+        MFXPluginAdapterInternal<MFXEncPlugin>& operator = (const MFXPluginAdapterInternal<MFXEncPlugin> & that) {
+            MFXCodecPluginAdapterBase<MFXEncPlugin>::operator = (that);
+            m_codecPlg.ENCFrameSubmit = _ENCFrameSubmit;
+            return *this;
+        }
+
+    private:
+        static mfxStatus _ENCFrameSubmit(mfxHDL pthis,mfxENCInput *in, mfxENCOutput *out, mfxThreadTask *task) {
+            return reinterpret_cast<MFXEncPlugin*>(pthis)->EncFrameSubmit(in, out, task);
         }
     };
 

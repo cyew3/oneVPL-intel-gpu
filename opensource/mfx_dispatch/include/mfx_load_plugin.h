@@ -83,6 +83,7 @@ namespace MFX
         void DestroyPlugin( FactoryRecord & );
         static bool RunVerification( const mfxPlugin & plg, const PluginDescriptionRecord &dsc, mfxPluginParam &pluginParams );
         static bool VerifyEncoder( const mfxVideoCodecPlugin &videoCodec );
+        static bool VerifyEnc( const mfxVideoCodecPlugin &videoEnc );
         static bool VerifyVpp( const mfxVideoCodecPlugin &videoCodec );
         static bool VerifyDecoder( const mfxVideoCodecPlugin &videoCodec );
         static bool VerifyCodecCommon( const mfxVideoCodecPlugin & Video );

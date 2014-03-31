@@ -37,6 +37,7 @@ File Name: mfx_dispatcher.h
 #include <stddef.h>
 #include "mfx_dispatcher_defs.h"
 #include "mfx_load_plugin.h"
+#include "mfxenc.h"
 
 enum
 {
