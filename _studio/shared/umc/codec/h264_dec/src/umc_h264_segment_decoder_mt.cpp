@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//    Copyright (c) 2003-2013 Intel Corporation. All Rights Reserved.
+//    Copyright (c) 2003-2014 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -233,72 +233,80 @@ void H264SegmentDecoderMultiThreaded::EndProcessingSegment(H264Task &Task)
 Status H264SegmentDecoderMultiThreaded::ProcessSegment(void)
 {
     H264Task Task(m_iNumber);
-    try{
-    if (m_pTaskBroker->GetNextTask(&Task))
+    try
     {
-        Status umcRes = UMC_OK;
-
-        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "AVCDec_work");
-        VM_ASSERT(Task.pFunction);
-
-        StartProcessingSegment(Task);
-
-        if (!m_pCurrentFrame->IsSkipped() && (!m_pSlice || !m_pSlice->IsError()))
+        if (m_pTaskBroker->GetNextTask(&Task))
         {
-            try // do decoding
+            Status umcRes = UMC_OK;
+
+            MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "AVCDec_work");
+            VM_ASSERT(Task.pFunction);
+
+            StartProcessingSegment(Task);
+
+            if (!m_pCurrentFrame->IsSkipped() && (!m_pSlice || !m_pSlice->IsError()))
             {
-                Ipp32s firstMB = Task.m_iFirstMB;
-                if (m_field_index)
+                try // do decoding
                 {
-                    firstMB += mb_width*mb_height / 2;
-                }
+                    Ipp32s firstMB = Task.m_iFirstMB;
+                    if (m_field_index)
+                    {
+                        firstMB += mb_width*mb_height / 2;
+                    }
 
-                umcRes = (this->*(Task.pFunction))(firstMB, Task.m_iMBToProcess);
+                    umcRes = (this->*(Task.pFunction))(firstMB, Task.m_iMBToProcess);
 
-                if (UMC_ERR_END_OF_STREAM == umcRes)
+                    if (UMC_ERR_END_OF_STREAM == umcRes)
+                    {
+                        Task.m_iMaxMB = Task.m_iFirstMB + Task.m_iMBToProcess;
+                        VM_ASSERT(m_pSlice);
+                        // if we decode less macroblocks if we need try to recovery:
+                        RestoreErrorRect(Task.m_iFirstMB + Task.m_iMBToProcess, m_pSlice->GetMaxMB(), m_pSlice);
+                        umcRes = UMC_OK;
+                    }
+                    else if (UMC_OK != umcRes)
+                    {
+                        umcRes = UMC_ERR_INVALID_STREAM;
+                    }
+
+                    Task.m_bDone = true;
+
+                } catch(const h264_exception & ex)
                 {
-                    Task.m_iMaxMB = Task.m_iFirstMB + Task.m_iMBToProcess;
-                    VM_ASSERT(m_pSlice);
-                    // if we decode less macroblocks if we need try to recovery:
-                    RestoreErrorRect(Task.m_iFirstMB + Task.m_iMBToProcess, m_pSlice->GetMaxMB(), m_pSlice);
-                    umcRes = UMC_OK;
-                }
-                else if (UMC_OK != umcRes)
+                    umcRes = ex.GetStatus();
+                } catch(...)
                 {
                     umcRes = UMC_ERR_INVALID_STREAM;
                 }
-
-                Task.m_bDone = true;
-
-            } catch(const h264_exception & ex)
-            {
-                umcRes = ex.GetStatus();
-            } catch(...)
-            {
-                umcRes = UMC_ERR_INVALID_STREAM;
             }
-        }
 
-        if (umcRes != UMC_OK)
+            if (umcRes != UMC_OK)
+            {
+                Task.m_bError = true;
+                Task.m_iMaxMB = Task.m_iFirstMB + Task.m_iMBToProcess;
+                if (m_pSlice)
+                    RestoreErrorRect(Task.m_iFirstMB + Task.m_iMBToProcess, m_pSlice->GetMaxMB(), m_pSlice);
+                // break; // DEBUG : ADB should we return if error occur??
+            }
+
+            EndProcessingSegment(Task);
+
+            MFX_LTRACE_I(MFX_TRACE_LEVEL_INTERNAL, umcRes);
+        }
+        else
         {
-            Task.m_bError = true;
-            Task.m_iMaxMB = Task.m_iFirstMB + Task.m_iMBToProcess;
-            if (m_pSlice)
-                RestoreErrorRect(Task.m_iFirstMB + Task.m_iMBToProcess, m_pSlice->GetMaxMB(), m_pSlice);
-            // break; // DEBUG : ADB should we return if error occur??
+            return UMC_ERR_NOT_ENOUGH_DATA;
         }
-
-        EndProcessingSegment(Task);
-
-        MFX_LTRACE_I(MFX_TRACE_LEVEL_INTERNAL, umcRes);
     }
-    else
+    catch(h264_exception ex)
     {
-        return UMC_ERR_NOT_ENOUGH_DATA;
-    }
-    }catch(h264_exception ex){
         return ex.GetStatus();
     }
+    catch(...)
+    {
+        return UMC_ERR_INVALID_STREAM;
+    }
+
     return UMC_OK;
 } // Status H264SegmentDecoderMultiThreaded::ProcessSegment(void)
 

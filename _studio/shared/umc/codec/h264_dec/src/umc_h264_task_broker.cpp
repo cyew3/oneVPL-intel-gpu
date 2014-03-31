@@ -2002,8 +2002,7 @@ bool TaskBrokerTwoThread::WrapDecodingTask(H264DecoderFrameInfo * info, H264Task
         pSlice->m_coeffsBuffers = m_localResourses.AllocateCoeffBuffer(pSlice);
 
     // this is guarded function, safe to touch any variable
-    if ((1 == pSlice->m_bDecVacant) &&
-        (pSlice->GetCoeffsBuffers()->IsInputAvailable()))
+    if (1 == pSlice->m_bDecVacant && pSlice->GetCoeffsBuffers()->IsInputAvailable())
     {
         pSlice->m_bInProcess = true;
         pSlice->m_bDecVacant = 0;
@@ -2060,8 +2059,7 @@ bool TaskBrokerTwoThread::WrapReconstructTask(H264DecoderFrameInfo * info, H264T
         return false;
 #endif
 
-    if ((1 == pSlice->m_bRecVacant) &&
-        (pSlice->GetCoeffsBuffers()->IsOutputAvailable()))
+    if (1 == pSlice->m_bRecVacant && pSlice->GetCoeffsBuffers()->IsOutputAvailable())
     {
         pSlice->m_bRecVacant = 0;
 
@@ -2111,12 +2109,8 @@ bool TaskBrokerTwoThread::WrapDecRecTask(H264DecoderFrameInfo * info, H264Task *
         return false;
 #endif
 
-    if (!pSlice->GetCoeffsBuffers())
-        pSlice->m_coeffsBuffers = m_localResourses.AllocateCoeffBuffer(pSlice);
-
-    if ((1 == pSlice->m_bRecVacant) && (1 == pSlice->m_bDecVacant) &&
-        (pSlice->m_iCurMBToDec == pSlice->m_iCurMBToRec) &&
-        (pSlice->GetCoeffsBuffers()->IsInputAvailable()))
+    if (1 == pSlice->m_bRecVacant && 1 == pSlice->m_bDecVacant &&
+        pSlice->m_iCurMBToDec == pSlice->m_iCurMBToRec)
     {
         pSlice->m_bRecVacant = 0;
         pSlice->m_bDecVacant = 0;
@@ -2626,6 +2620,7 @@ H264CoeffsBuffer * LocalResources::AllocateCoeffBuffer(H264Slice * slice)
     H264CoeffsBuffer * coeffsBuffers = m_ObjHeap.AllocateObject<H264CoeffsBuffer>();
     coeffsBuffers->IncrementReference();
 
+
     Ipp32s iMBRowSize = slice->GetMBRowWidth();
     Ipp32s iMBRowBuffers;
     Ipp32s bit_depth_luma, bit_depth_chroma;
@@ -2641,8 +2636,16 @@ H264CoeffsBuffer * LocalResources::AllocateCoeffBuffer(H264Slice * slice)
     Ipp32s isU16Mode = (bit_depth_luma > 8 || bit_depth_chroma > 8) ? 2 : 1;
 
     // decide number of buffers
-    iMBRowBuffers = IPP_MAX(MINIMUM_NUMBER_OF_ROWS, MB_BUFFER_SIZE / iMBRowSize);
-    iMBRowBuffers = IPP_MIN(MAXIMUM_NUMBER_OF_ROWS, iMBRowBuffers);
+    if (slice->m_iMaxMB - slice->m_iFirstMB > iMBRowSize)
+    {
+        iMBRowBuffers = (slice->m_iMaxMB - slice->m_iFirstMB + iMBRowSize - 1) / iMBRowSize;
+        iMBRowBuffers = IPP_MIN(MINIMUM_NUMBER_OF_ROWS, iMBRowBuffers);
+    }
+    else
+    {
+        iMBRowSize = slice->m_iMaxMB - slice->m_iFirstMB;
+        iMBRowBuffers = 1;
+    }
 
     coeffsBuffers->Init(iMBRowBuffers, (Ipp32s)sizeof(Ipp16s) * isU16Mode * (iMBRowSize * COEFFICIENTS_BUFFER_SIZE + DEFAULT_ALIGN_VALUE));
     coeffsBuffers->Reset();

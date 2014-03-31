@@ -672,7 +672,7 @@ bool H264Slice::GetDeblockingCondition(void) const
 
 void H264Slice::CompleteDecoding()
 {
-    if (m_bDecoded && m_bDeblocked)
+    if (m_bDecoded)//  && m_bDeblocked) - we do not need to wait deblocking because FreeResources frees coeff buffer
         FreeResources();
 }
 

@@ -391,14 +391,16 @@ bool MFXTaskSupplier::CheckDecoding(bool should_additional_check, H264DecoderFra
 
 mfxStatus MFXTaskSupplier::RunThread(mfxU32 threadNumber)
 {
-    int sts;
-    sts = m_pSegmentDecoder[threadNumber]->ProcessSegment();
+    Status sts = m_pSegmentDecoder[threadNumber]->ProcessSegment();
     if (sts == UMC_ERR_NOT_ENOUGH_DATA)
         return MFX_TASK_BUSY;
 #if defined (MFX_VA)
     else if(sts == UMC_ERR_DEVICE_FAILED)
         return MFX_ERR_DEVICE_FAILED;
 #endif
+
+    if (sts != UMC_OK)
+        return MFX_ERR_UNDEFINED_BEHAVIOR;
 
     return MFX_TASK_WORKING;
 }
