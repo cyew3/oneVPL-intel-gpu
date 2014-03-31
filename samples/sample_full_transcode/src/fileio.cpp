@@ -79,18 +79,21 @@ mfxI64 FileIO::Seek(mfxI64 offset, mfxSeekOrigin origin)
             res = fseek(f, offset, SEEK_CUR);
             break;
         case MFX_SEEK_ORIGIN_END: {
-            mfxI64 filePos = 0;
+            mfxI64 filePos = 0, fileSize = 0;
             if (!offset) {
                 filePos = ftell(f);
             }
             res = fseek(f, offset, SEEK_END);
-            if (!offset) {
-                res = ftell(f);
-                fseek(f, filePos, SEEK_SET);
+            if (!offset && !res) {
+                fileSize = ftell(f);
+                res = fseek(f, filePos, SEEK_SET);
+                if (!res)
+                    return fileSize;
             }
             break;
         }
     }
-
+    if (!res)
+        res = ftell(f);
     return res;
 }
