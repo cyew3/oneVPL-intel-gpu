@@ -222,10 +222,6 @@ mfxStatus CDecodingPipeline::Init(sInputParams *pParams)
     {
         msdk_printf(MSDK_STRING("WARNING: partial acceleration\n"));
         MSDK_IGNORE_MFX_STS(sts, MFX_WRN_PARTIAL_ACCELERATION);
-        if(pParams->bUseHWLib)
-        {
-            m_bSysmemBetween = true;
-        }
     }
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
@@ -543,7 +539,18 @@ mfxStatus CDecodingPipeline::AllocFrames()
     {
         msdk_printf(MSDK_STRING("WARNING: partial acceleration\n"));
         MSDK_IGNORE_MFX_STS(sts, MFX_WRN_PARTIAL_ACCELERATION);
+        m_bSysmemBetween = true;
     }
+    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+
+    // respecify memory type between Decoder and VPP
+    m_mfxVideoParams.IOPattern = (mfxU16)( m_bSysmemBetween ?
+            MFX_IOPATTERN_OUT_SYSTEM_MEMORY:
+            MFX_IOPATTERN_OUT_VIDEO_MEMORY);
+
+    // recalculate number of surfaces required for decoder
+    sts = m_pmfxDEC->QueryIOSurf(&m_mfxVideoParams, &Request);
+    MSDK_IGNORE_MFX_STS(sts, MFX_WRN_PARTIAL_ACCELERATION);
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
     sts = InitVppParams();
@@ -634,8 +641,6 @@ mfxStatus CDecodingPipeline::CreateAllocator()
 
     m_pGeneralAllocator = new GeneralAllocator();
 
-    if (m_memType != SYSTEM_MEMORY)
-    {
 #if D3D_SURFACES_SUPPORT
         sts = CreateHWDevice();
         MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
@@ -707,9 +712,6 @@ mfxStatus CDecodingPipeline::CreateAllocator()
 
         m_bExternalAlloc = true;
 #endif
-    }
-    else
-    {
 #ifdef LIBVA_SUPPORT
         //in case of system memory allocator we also have to pass MFX_HANDLE_VA_DISPLAY to HW library
         mfxIMPL impl;
@@ -728,7 +730,6 @@ mfxStatus CDecodingPipeline::CreateAllocator()
             MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
         }
 #endif
-    }
 
     if (!m_pmfxAllocatorParams)
     {
