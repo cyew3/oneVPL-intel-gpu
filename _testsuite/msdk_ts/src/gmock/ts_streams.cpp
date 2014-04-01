@@ -6,7 +6,7 @@ tsStreamPool::tsStreamPool()
     : m_query_mode(false) 
     , m_reg(false)
 {
-    m_dir = ENV("MEDIASDK_STREAMS", "") + valid_delimeter;
+    m_dir = ENV("MEDIASDK_STREAMS", "") + valid_delimiter;
 }
 
 tsStreamPool::~tsStreamPool() 
@@ -38,7 +38,7 @@ const char* tsStreamPool::Get(std::string name, std::string path)
             throw tsFAIL;
         }
         m_pool[name] = m_dir + path + name;
-        std::replace(m_pool[name].begin(), m_pool[name].end(), invalid_delimeter, valid_delimeter);
+        std::replace(m_pool[name].begin(), m_pool[name].end(), invalid_delimiter, valid_delimiter);
     }
     return m_pool[name].c_str();
 }
@@ -53,7 +53,7 @@ void tsStreamPool::Reg()
         return;
     }
 
-    for(auto it = m_pool.begin(); it != m_pool.end(); it ++)
+    for(PoolType::iterator it = m_pool.begin(); it != m_pool.end(); it ++)
     {
         g_tsLog << "STREAM[" << i ++ << "]: " << it->second << "\n";
     }

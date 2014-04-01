@@ -32,10 +32,12 @@ public:
     }
 
     inline const T& operator[] (mfxU32 i) const { assert(i < N); return m_fields[i]; }
+    inline operator const T&() const { return *this; }
 };
 
 void check_eq(void* base, Field field, mfxU64 expected);
 void check_ne(void* base, Field field, mfxU64 expected);
+inline void set(void* base, const Field field, mfxU64 value) { memcpy((mfxU8*)base + field.offset, &value, field.size); }
 
 #define STRUCT(name, fields)                        \
     class Wrap_##name : public Field                \

@@ -33,12 +33,6 @@ private:
 
     EBStorage m_buf;
 
-    void RefreshBuffers()
-    {
-        NumExtParam = (mfxU32)m_buf.size();
-        ExtParam = NumExtParam ? m_buf.data() : 0;
-    }
-
 public:
     tsExtBufType()
     {
@@ -52,6 +46,12 @@ public:
         {
             delete [] (mfxU8*)(*it);
         }
+    }
+
+    void RefreshBuffers()
+    {
+        NumExtParam = (mfxU32)m_buf.size();
+        ExtParam = NumExtParam ? m_buf.data() : 0;
     }
 
     mfxExtBuffer* GetExtBuffer(mfxU32 id)

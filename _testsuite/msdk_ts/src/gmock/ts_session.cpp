@@ -44,6 +44,7 @@ mfxStatus tsSession::MFXClose(mfxSession session)
 {
     TRACE_FUNC1( MFXClose, session );
     g_tsStatus.check(::MFXClose(session));
+    m_initialized = false;
 
     return g_tsStatus.get();
 }

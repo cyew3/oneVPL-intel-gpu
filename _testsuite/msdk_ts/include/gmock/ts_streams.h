@@ -6,12 +6,13 @@
 class tsStreamPool
 {
 private:
-    std::map<std::string, std::string> m_pool;
+    typedef std::map<std::string, std::string> PoolType;
+    PoolType m_pool;
     std::string m_dir;
     bool m_query_mode;
     bool m_reg;
-    static const char valid_delimeter   = '/';
-    static const char invalid_delimeter = '\\';
+    static const char valid_delimiter   = '/';
+    static const char invalid_delimiter = '\\';
 
 public:
 

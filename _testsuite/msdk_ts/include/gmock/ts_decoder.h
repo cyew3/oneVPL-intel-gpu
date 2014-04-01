@@ -63,5 +63,5 @@ public:
     
     mfxStatus DecodeFrames(mfxU32 n);
 
-    mfxStatus Load() { m_loaded = (0 == tsSession::Load(m_session, m_uid, 1)); return g_tsStatus.get(); }
+    mfxStatus Load();
 };

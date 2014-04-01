@@ -8,9 +8,9 @@ tsVideoDecoder::tsVideoDecoder(mfxU32 CodecId, bool useDefaults)
     , m_request()
     , m_pPar(&m_par)
     , m_pParOut(&m_par)
-    , m_pBitstream(&m_bitstream)
     , m_pRequest(&m_request)
     , m_pSyncPoint(&m_syncpoint)
+    , m_pBitstream(&m_bitstream)
     , m_pSurf(0)
     , m_pSurfOut(0)
     , m_surf_processor(0)
@@ -22,6 +22,10 @@ tsVideoDecoder::tsVideoDecoder(mfxU32 CodecId, bool useDefaults)
     m_par.mfx.CodecId = CodecId;
     if(m_default)
     {
+        m_par.mfx.FrameInfo.Width  = m_par.mfx.FrameInfo.CropW = 720;
+        m_par.mfx.FrameInfo.Height = m_par.mfx.FrameInfo.CropH = 480;
+        m_par.mfx.FrameInfo.FourCC          = MFX_FOURCC_NV12;
+        m_par.mfx.FrameInfo.ChromaFormat    = MFX_CHROMAFORMAT_YUV420;
         m_par.IOPattern = MFX_IOPATTERN_OUT_SYSTEM_MEMORY;
     }
     m_uid = g_tsPlugin.UID(MFX_PLUGINTYPE_VIDEO_DECODE, CodecId);
@@ -59,7 +63,7 @@ mfxStatus tsVideoDecoder::Init()
             m_pFrameAllocator = GetAllocator();
             SetFrameAllocator();
         }
-        if(!m_par_set)
+        if(!m_par_set && (m_bs_processor || m_pBitstream && m_pBitstream->DataLength))
         {
             DecodeHeader();
         }
@@ -212,6 +216,7 @@ mfxStatus tsVideoDecoder::DecodeHeader(mfxSession session, mfxBitstream *bs, mfx
 {
     TRACE_FUNC3(MFXVideoDECODE_DecodeHeader, session, bs, par);
     g_tsStatus.check( MFXVideoDECODE_DecodeHeader(session, bs, par) );
+    TS_TRACE(bs);
     TS_TRACE(par);
 
     m_par_set = (g_tsStatus.get() >= 0);
@@ -277,6 +282,7 @@ mfxStatus tsVideoDecoder::DecodeFrameAsync(
     TRACE_FUNC5(MFXVideoDECODE_DecodeFrameAsync, session, bs, surface_work, surface_out, syncp);
     mfxStatus mfxRes = MFXVideoDECODE_DecodeFrameAsync(session, bs, surface_work, surface_out, syncp);
     TS_TRACE(mfxRes);
+    TS_TRACE(bs);
     TS_TRACE(surface_out);
     TS_TRACE(syncp);
     
@@ -364,4 +370,16 @@ mfxStatus tsVideoDecoder::DecodeFrames(mfxU32 n)
     g_tsLog << decoded << " FRAMES DECODED\n";
     
     return g_tsStatus.get();
+}
+
+mfxStatus tsVideoDecoder::Load() 
+{
+    if(m_default && !m_session)
+    {
+        MFXInit();
+    }
+
+    m_loaded = (0 == tsSession::Load(m_session, m_uid, 1));
+
+    return g_tsStatus.get(); 
 }
