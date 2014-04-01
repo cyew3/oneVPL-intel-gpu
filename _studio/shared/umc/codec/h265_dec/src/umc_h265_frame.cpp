@@ -83,16 +83,16 @@ H265DecoderFrame::~H265DecoderFrame()
     m_saoLcuParam = 0;
 }
 
-void H265DecoderFrame::AddReference(RefCounter * reference)
+void H265DecoderFrame::AddReferenceFrame(H265DecoderFrame * frm)
 {
-    if (!reference || reference == this)
+    if (!frm || frm == this)
         return;
 
-    if (std::find(m_references.begin(), m_references.end(), reference) != m_references.end())
+    if (std::find(m_references.begin(), m_references.end(), frm) != m_references.end())
         return;
 
-    reference->IncrementReference();
-    m_references.push_back(reference);
+    frm->IncrementReference();
+    m_references.push_back(frm);
 }
 
 void H265DecoderFrame::FreeReferenceFrames()
@@ -138,6 +138,7 @@ void H265DecoderFrame::Reset()
     m_isOriginalPTS = false;
 
     m_IsFrameExist = false;
+    m_isUsedAsReference = false;
 
     m_UserData.Reset();
 

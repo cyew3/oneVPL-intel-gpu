@@ -134,6 +134,7 @@ public:
 
     bool             m_isShortTermRef;
     bool             m_isLongTermRef;
+    bool             m_isUsedAsReference;
 
     bool IsFullFrame() const;
     void SetFullFrame(bool isFull);
@@ -154,7 +155,7 @@ public:
     typedef std::list<RefCounter *>  ReferenceList;
     ReferenceList m_references;
 
-
+    void AddReferenceFrame(H265DecoderFrame * frm);
     void FreeReferenceFrames();
 
     void Reset();
@@ -187,8 +188,6 @@ public:
     Ipp32s*  m_cuOffsetC;
     Ipp32s*  m_buOffsetY;
     Ipp32s*  m_buOffsetC;
-
-    void AddReference(RefCounter * reference);
 
     void OnDecodingCompleted();
 

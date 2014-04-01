@@ -410,10 +410,15 @@ void TaskBroker_H265::RemoveAU(H265DecoderFrameInfo * toRemove)
     if (!temp)
         return;
 
+    H265DecoderFrameInfo * reference = 0;
+
     for (; temp; temp = temp->GetNextAU())
     {
         if (temp == toRemove)
             break;
+
+        if (temp->IsReference())
+            reference = temp;
     }
 
     if (!temp)
@@ -432,6 +437,20 @@ void TaskBroker_H265::RemoveAU(H265DecoderFrameInfo * toRemove)
 
     if (temp == m_FirstAU)
         m_FirstAU = temp1;
+
+    if (temp1)
+    {
+        temp = temp1;
+
+        for (; temp; temp = temp->GetNextAU())
+        {
+            if (temp->GetRefAU())
+                temp->SetRefAU(reference);
+
+            if (temp->IsReference())
+                break;
+        }
+    }
 }
 
 void TaskBroker_H265::CompleteFrame(H265DecoderFrame * frame)
@@ -529,6 +548,7 @@ H265DecoderFrameInfo * TaskBroker_H265::FindAU()
 void TaskBroker_H265::InitAUs()
 {
     H265DecoderFrameInfo * pPrev;
+    H265DecoderFrameInfo * refAU;
 
     if (!m_FirstAU)
     {
@@ -547,15 +567,38 @@ void TaskBroker_H265::InitAUs()
         pPrev = m_FirstAU;
         m_FirstAU->SetPrevAU(0);
         m_FirstAU->SetNextAU(0);
+        m_FirstAU->SetRefAU(0);
+
+        refAU = 0;
+        if (m_FirstAU->IsReference())
+        {
+            refAU = m_FirstAU;
+        }
     }
     else
     {
         pPrev = m_FirstAU;
+        refAU = 0;
+
         pPrev->SetPrevAU(0);
+        pPrev->SetRefAU(0);
+
+        if (m_FirstAU->IsReference())
+        {
+            refAU = pPrev;
+        }
 
         while (pPrev->GetNextAU())
         {
             pPrev = pPrev->GetNextAU();
+
+            if (!refAU)
+                pPrev->SetRefAU(0);
+
+            if (pPrev->IsReference())
+            {
+                refAU = pPrev;
+            }
         };
     }
 
@@ -571,6 +614,13 @@ void TaskBroker_H265::InitAUs()
         pTemp->SetStatus(H265DecoderFrameInfo::STATUS_STARTED);
         pTemp->SetNextAU(0);
         pTemp->SetPrevAU(pPrev);
+
+        pTemp->SetRefAU(refAU);
+
+        if (pTemp->IsReference())
+        {
+            refAU = pTemp;
+        }
 
         pPrev->SetNextAU(pTemp);
         pPrev = pTemp;
@@ -847,6 +897,12 @@ void TaskBroker_H265::AddPerformedTask(H265Task *pTask)
         pSlice->m_processVacant[REC_PROCESS_ID] = 0;
         pSlice->m_processVacant[DEB_PROCESS_ID] = 1;
         pSlice->m_bInProcess = false;
+
+        if (pTask->m_bError || pSlice->m_bError)
+        {
+            pSlice->m_iMaxMB = IPP_MIN(pTask->m_iMaxMB, pSlice->m_iMaxMB);
+            pSlice->m_bError = true;
+        }
     }
     else if (TASK_DEB_SLICE_H265 == pTask->m_iTaskID)
     {
@@ -1451,7 +1507,7 @@ bool TaskBrokerTwoThread_H265::GetDecRecTask(H265DecoderFrameInfo * info, H265Ta
 
 bool TaskBrokerTwoThread_H265::GetDecodingTask(H265DecoderFrameInfo * info, H265Task *pTask)
 {
-    H265DecoderFrameInfo * refAU = info->GetPrevAU();
+    H265DecoderFrameInfo * refAU = info->GetRefAU();
     bool is_need_check = refAU != 0;
     Ipp32u readyCount = 0;
 
@@ -1493,7 +1549,7 @@ bool TaskBrokerTwoThread_H265::GetDecodingTask(H265DecoderFrameInfo * info, H265
 bool TaskBrokerTwoThread_H265::GetReconstructTask(H265DecoderFrameInfo * info, H265Task *pTask)
 {
     // this is guarded function, safe to touch any variable
-    H265DecoderFrameInfo * refAU = info->GetPrevAU();
+    H265DecoderFrameInfo * refAU = info->GetRefAU();
     bool is_need_check = refAU != 0;
     Ipp32u readyCount = 0;
 
@@ -1646,7 +1702,11 @@ bool TaskBrokerTwoThread_H265::GetNextTaskManySlices(H265DecoderFrameInfo * info
     bool useSliceMT = info->m_hasTiles;
 
     if (info != m_FirstAU && useSliceMT)
-        return false;
+    {
+        H265DecoderFrameInfo * refAU = info->GetRefAU();
+        if (refAU && refAU->GetStatus() != H265DecoderFrameInfo::STATUS_COMPLETED)
+            return false;
+    }
 
     if (GetPreparationTask(info))
         return true;

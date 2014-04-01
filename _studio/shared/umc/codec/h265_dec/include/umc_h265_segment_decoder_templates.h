@@ -29,7 +29,7 @@ class SegmentDecoderHPBase_H265
 public:
     virtual ~SegmentDecoderHPBase_H265() {}
 
-    virtual UMC::Status DecodeSegmentCABAC_Single_H265(Ipp32s curMB, Ipp32s nMacroBlocksToDecode,
+    virtual UMC::Status DecodeSegmentCABAC_Single_H265(Ipp32s curMB, Ipp32s &nMacroBlocksToDecode,
         H265SegmentDecoderMultiThreaded * sd) = 0;
 
     virtual UMC::Status DecodeSegment(Ipp32s curCUAddr, Ipp32s &nBorder, H265SegmentDecoderMultiThreaded * sd) = 0;
@@ -268,7 +268,7 @@ public:
     }
 
 
-    virtual UMC::Status DecodeSegmentCABAC_Single_H265(Ipp32s curCUAddr, Ipp32s nBorder, H265SegmentDecoderMultiThreaded * sd)
+    virtual UMC::Status DecodeSegmentCABAC_Single_H265(Ipp32s curCUAddr, Ipp32s & nBorder, H265SegmentDecoderMultiThreaded * sd)
     {
         UMC::Status umcRes = UMC::UMC_OK;
         Ipp32s rsCUAddr = sd->m_pCurrentFrame->m_CodingData->getCUOrderMap(curCUAddr);

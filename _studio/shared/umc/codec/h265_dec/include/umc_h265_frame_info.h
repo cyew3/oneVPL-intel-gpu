@@ -140,6 +140,7 @@ public:
 
         m_NextAU = 0;
         m_PrevAU = 0;
+        m_refAU = 0;
 
         m_Status = STATUS_NONE;
         m_prepared = 0;
@@ -252,6 +253,11 @@ public:
         return m_isIntraAU;
     }
 
+    bool IsReference() const
+    {
+        return m_pFrame->m_isUsedAsReference;
+    }
+
     bool HasDependentSliceSegments() const
     {
         return m_hasDependentSliceSegments;
@@ -297,11 +303,13 @@ public:
         return false;
     }
 
-    H265DecoderFrameInfo * GetNextAU() {return m_NextAU;}
-    H265DecoderFrameInfo * GetPrevAU() {return m_PrevAU;}
+    H265DecoderFrameInfo * GetNextAU() const {return m_NextAU;}
+    H265DecoderFrameInfo * GetPrevAU() const {return m_PrevAU;}
+    H265DecoderFrameInfo * GetRefAU() const {return m_refAU;}
 
     void SetNextAU(H265DecoderFrameInfo *au) {m_NextAU = au;}
     void SetPrevAU(H265DecoderFrameInfo *au) {m_PrevAU = au;}
+    void SetRefAU(H265DecoderFrameInfo *au) {m_refAU = au;}
 
     Ipp32s m_decAddrReady;
     Ipp32s m_recAddrReady;
@@ -332,6 +340,7 @@ private:
 
     H265DecoderFrameInfo *m_NextAU;
     H265DecoderFrameInfo *m_PrevAU;
+    H265DecoderFrameInfo *m_refAU;
 
     struct H264DecoderRefPicListPair
     {

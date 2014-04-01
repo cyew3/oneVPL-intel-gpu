@@ -53,7 +53,7 @@ UMC::Status H265Slice::UpdateReferenceList(H265DBPList *pDecoderFrameList)
             Ipp32s poc = GetSliceHeader()->slice_pic_order_cnt_lsb + getRPS()->getDeltaPOC(i);
 
             H265DecoderFrame *pFrm = pDecoderFrameList->findShortRefPic(poc);
-            m_pCurrentFrame->AddReference(pFrm);
+            m_pCurrentFrame->AddReferenceFrame(pFrm);
 
             if (pFrm)
                 pFrm->SetisLongTermRef(false);
@@ -70,7 +70,7 @@ UMC::Status H265Slice::UpdateReferenceList(H265DBPList *pDecoderFrameList)
             Ipp32s poc = GetSliceHeader()->slice_pic_order_cnt_lsb + getRPS()->getDeltaPOC(i);
 
             H265DecoderFrame *pFrm = pDecoderFrameList->findShortRefPic(poc);
-            m_pCurrentFrame->AddReference(pFrm);
+            m_pCurrentFrame->AddReferenceFrame(pFrm);
 
             if (pFrm)
                 pFrm->SetisLongTermRef(false);
@@ -88,7 +88,7 @@ UMC::Status H265Slice::UpdateReferenceList(H265DBPList *pDecoderFrameList)
             Ipp32s poc = getRPS()->getPOC(i);
 
             H265DecoderFrame *pFrm = pDecoderFrameList->findLongTermRefPic(m_pCurrentFrame, poc, GetSeqParam()->log2_max_pic_order_cnt_lsb, !getRPS()->getCheckLTMSBPresent(i));
-            m_pCurrentFrame->AddReference(pFrm);
+            m_pCurrentFrame->AddReferenceFrame(pFrm);
 
             if (pFrm)
                 pFrm->SetisLongTermRef(true);

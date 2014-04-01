@@ -125,6 +125,7 @@ UMC::Status DecReferencePictureMarking_H265::UpdateRefPicMarking(ViewItem_H265 &
                         isReferenced = true;
                         pTmp->SetisShortTermRef(true);
                         pTmp->SetisLongTermRef(false);
+                        pTmp->m_isUsedAsReference = true;
                     }
                 }
 
@@ -138,6 +139,7 @@ UMC::Status DecReferencePictureMarking_H265::UpdateRefPicMarking(ViewItem_H265 &
                             isReferenced = true;
                             pTmp->SetisLongTermRef(true);
                             pTmp->SetisShortTermRef(false);
+                            pTmp->m_isUsedAsReference = true;
                         }
                     }
                     else
@@ -147,6 +149,7 @@ UMC::Status DecReferencePictureMarking_H265::UpdateRefPicMarking(ViewItem_H265 &
                             isReferenced = true;
                             pTmp->SetisLongTermRef(true);
                             pTmp->SetisShortTermRef(false);
+                            pTmp->m_isUsedAsReference = true;
                         }
                     }
                 }
@@ -955,7 +958,6 @@ H265DecoderFrame *TaskSupplier_H265::GetFreeFrame()
     m_UIDFrameCounter++;
     pFrame->m_UID = m_UIDFrameCounter;
     return pFrame;
-
 }
 
 UMC::Status TaskSupplier_H265::DecodeSEI(UMC::MediaDataEx *nalUnit)

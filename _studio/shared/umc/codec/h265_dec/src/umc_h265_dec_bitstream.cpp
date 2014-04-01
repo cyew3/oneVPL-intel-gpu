@@ -1098,8 +1098,7 @@ void H265HeadersBitstream::xParsePredWeightTable(H265SliceHeader * sliceHdr)
             }
         }
 
-        Ipp32s sumWeightFlags = 0;
-        for ( int iRefIdx = sliceHdr->m_numRefIdx[eRefPicList]; iRefIdx < MAX_NUM_REF_PICS; iRefIdx++ )
+        for (int iRefIdx = sliceHdr->m_numRefIdx[eRefPicList]; iRefIdx < MAX_NUM_REF_PICS; iRefIdx++)
         {
             wp = sliceHdr->pred_weight_table[eRefPicList][iRefIdx];
             wp[0].present_flag = false;
@@ -1462,14 +1461,13 @@ void H265HeadersBitstream::decodeSlice(H265Slice *pSlice, const H265SeqParamSet 
                 (sliceHdr->collocated_from_l0_flag ==0 && pSlice->getNumRefIdx(REF_PIC_LIST_1)>1)))
             {
                 sliceHdr->collocated_ref_idx = GetVLCElementU();
+                if (sliceHdr->collocated_ref_idx >= (Ipp32u)sliceHdr->m_numRefIdx[sliceHdr->collocated_from_l0_flag ? REF_PIC_LIST_0 : REF_PIC_LIST_1])
+                    throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
             }
             else
             {
                 sliceHdr->collocated_ref_idx = 0;
             }
-
-            if (sliceHdr->collocated_ref_idx > sliceHdr->m_numRefIdx[sliceHdr->collocated_from_l0_flag ? REF_PIC_LIST_0 : REF_PIC_LIST_1])
-                throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
         }
 
         if ( (pps->weighted_pred_flag && sliceHdr->slice_type == P_SLICE) || (pps->weighted_bipred_flag && sliceHdr->slice_type == B_SLICE) )
