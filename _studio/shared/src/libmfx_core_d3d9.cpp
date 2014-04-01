@@ -1364,6 +1364,20 @@ mfxStatus D3D9VideoCORE::DoFastCopyExtended(mfxFrameSurface1 *pDst, mfxFrameSurf
             }
                 break;
 
+            case MFX_FOURCC_A2RGB10:
+            {
+                MFX_CHECK_NULL_PTR1(pSrc->Data.R);
+                MFX_CHECK_NULL_PTR1(pSrc->Data.G);
+                MFX_CHECK_NULL_PTR1(pSrc->Data.B);
+
+                mfxU8* ptrSrc = IPP_MIN(IPP_MIN(pSrc->Data.R, pSrc->Data.G), pSrc->Data.B);
+
+                roi.width *= 4;
+
+                ippiCopy_8u_C1R(ptrSrc, srcPitch, (mfxU8 *)sLockRect.pBits, dstPitch, roi);
+            }
+                break;
+
             case MFX_FOURCC_P8:
                 ippiCopy_8u_C1R(pSrc->Data.Y, srcPitch, (mfxU8 *)sLockRect.pBits, dstPitch, roi);
                 break;

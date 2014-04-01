@@ -302,6 +302,13 @@ mfxStatus mfxDefaultAllocator::LockFrame(mfxHDL pthis, mfxHDL mid, mfxFrameData 
         ptr->PitchLow  = (mfxU16)((3*ALIGN32(fs->info.Width)) % (1 << 16));
         break;
     case MFX_FOURCC_RGB4:
+        ptr->B = sptr;
+        ptr->G = ptr->B + 1;
+        ptr->R = ptr->B + 2;
+        ptr->A = ptr->B + 3;
+        ptr->PitchHigh = (mfxU16)((4*ALIGN32(fs->info.Width)) / (1 << 16));
+        ptr->PitchLow  = (mfxU16)((4*ALIGN32(fs->info.Width)) % (1 << 16));
+        break;
     case MFX_FOURCC_A2RGB10:
         ptr->B = sptr;
         ptr->G = ptr->B + 1;
