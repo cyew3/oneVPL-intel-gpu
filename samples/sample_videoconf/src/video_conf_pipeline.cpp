@@ -279,7 +279,7 @@ mfxStatus   VideoConfPipeline::AddFrameToRefList(RefListType refList, mfxU32 nFr
 
         m_ReferenceLists[refList].elements[m_ReferenceLists[refList].nSize++].FrameOrder = nFrameOrder;
 
-        msdk_printf(MSDK_STRING("Frame %4u : Inserted %4u >>> %s reflist (%2u/%2lu)\n")
+        msdk_printf(MSDK_STRING("Frame %4u : Inserted %4u >>> %s reflist (%2u/%2u)\n")
             , m_nFramesProcessed
             , nFrameOrder
             , m_ReferenceLists[refList].name.c_str()
