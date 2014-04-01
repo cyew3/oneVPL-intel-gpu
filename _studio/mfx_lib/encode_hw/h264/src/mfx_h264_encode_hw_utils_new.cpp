@@ -643,6 +643,11 @@ namespace
         return isCorrect;
     }
 
+    inline mfxU16 GetMaxNumRefActiveBL1ForHswInterlace(mfxU16 TU)
+    {
+        mfxU16 const MAX_VALUE_BY_TU[] = { 2, 2, 2, 2, 2, 2, 1, 1 };
+        return MAX_VALUE_BY_TU[TU];
+    }
 
     void ModifyRefPicLists(
         MfxVideoParam const & video,
@@ -699,6 +704,7 @@ namespace
                 // just ignore incorrect mfxExtAVCRefLists structure
                 advCtrl = 0;
             }
+            numActiveRefL1 = GetMaxNumRefActiveBL1ForHswInterlace(video.mfx.TargetUsage);
         }
 #endif
         bool bCanApplyRefCtrl = video.calcParam.numTemporalLayer == 0 || video.mfx.GopRefDist == 1;
@@ -734,13 +740,13 @@ namespace
 #if defined (ADVANCED_REF)
                 if (advCtrl) // advanced ref list control has priority
                 {
-                    mfxU32 numActiveRefL1Final = advCtrl->NumRefIdxL1Active ? IPP_MIN(advCtrl->NumRefIdxL1Active,extDdi->NumActiveRefBL1) : extDdi->NumActiveRefBL1;
+                    mfxU32 numActiveRefL1Final = advCtrl->NumRefIdxL1Active ? IPP_MIN(advCtrl->NumRefIdxL1Active,numActiveRefL1) : numActiveRefL1;
                     ReorderRefPicList(list1, dpb, (mfxRefPic*)(&advCtrl->RefPicList1[0]), numActiveRefL1Final);
                 }
                 else
 #endif // ADVANCED_REF
                 {
-                    mfxU32 numActiveRefL1Final = ctrl->NumRefIdxL1Active ? IPP_MIN(ctrl->NumRefIdxL1Active,extDdi->NumActiveRefBL1) : extDdi->NumActiveRefBL1;
+                    mfxU32 numActiveRefL1Final = ctrl->NumRefIdxL1Active ? IPP_MIN(ctrl->NumRefIdxL1Active,numActiveRefL1) : numActiveRefL1;
                     ReorderRefPicList(list1, dpb, *ctrl, numActiveRefL1Final);
                 }
             }
