@@ -933,6 +933,10 @@ mfxStatus CDecodingPipeline::DeliverLoop(void)
             continue;
         }
         msdkOutputSurface* pCurrentDeliveredSurface = m_DeliveredSurfacesPool.GetSurface();
+        if (!pCurrentDeliveredSurface) {
+            m_error = MFX_ERR_NULL_PTR;
+            continue;
+        }
         mfxFrameSurface1* frame = &(pCurrentDeliveredSurface->surface->frame);
 
         m_error = DeliverOutput(frame);
