@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2004-2013 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2004-2014 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -225,7 +225,7 @@ mfxStatus AudioDECODEAAC::GetAudioParam(mfxAudioParam *par)
 
     MFX_CHECK_NULL_PTR1(par);
 
-    memcpy(&par->mfx, &m_vPar.mfx, sizeof(mfxInfoMFX));
+    memcpy_s(&par->mfx, sizeof(mfxInfoMFX), &m_vPar.mfx, sizeof(mfxInfoMFX));
 
     UMC::AACDecoderParams params;
     UMC::Status sts = m_pAACAudioDecoder->GetInfo(&params);
@@ -675,7 +675,7 @@ mfxStatus MFX_AAC_Utility::Query(AudioCORE *core, mfxAudioParam *in, mfxAudioPar
     if (in == out)
     {
         mfxAudioParam in1;
-        memcpy(&in1, in, sizeof(mfxAudioParam));
+        memcpy_s(&in1, sizeof(mfxAudioParam), in, sizeof(mfxAudioParam));
         return Query(core, &in1, out);
     }
 
@@ -736,7 +736,7 @@ mfxStatus MFX_AAC_Utility::Query(AudioCORE *core, mfxAudioParam *in, mfxAudioPar
         }
         if(in->mfx.AACHeaderDataSize)
         {
-            memcpy(out->mfx.AACHeaderData,in->mfx.AACHeaderData,in->mfx.AACHeaderDataSize);
+            memcpy_s(out->mfx.AACHeaderData, sizeof(out->mfx.AACHeaderData), in->mfx.AACHeaderData,in->mfx.AACHeaderDataSize);
             out->mfx.AACHeaderDataSize = in->mfx.AACHeaderDataSize;
         }
     }

@@ -3,7 +3,7 @@
 //  This software is supplied under the terms of a license agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in accordance with the terms of that agreement.
-//        Copyright (c) 2008-2013 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2008-2014 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_aac_encode.h"
@@ -200,7 +200,7 @@ mfxStatus AudioENCODEAAC::GetAudioParam(mfxAudioParam *par)
 
     MFX_CHECK_NULL_PTR1(par);
 
-    memcpy(&par->mfx, &m_vPar.mfx, sizeof(mfxInfoMFX));
+    memcpy_s(&par->mfx, sizeof(mfxInfoMFX), &m_vPar.mfx, sizeof(mfxInfoMFX));
 
     UMC::AACEncoderParams params;
     UMC::Status sts = m_pAACAudioEncoder->Init(&params);
@@ -397,11 +397,11 @@ mfxStatus MFX_AAC_Encoder_Utility::Query(AudioCORE *core, mfxAudioParam *in, mfx
     if (in == out)
     {
         mfxAudioParam in1;
-        memcpy(&in1, in, sizeof(mfxAudioParam));
+        memcpy_s(&in1, sizeof(mfxAudioParam), in, sizeof(mfxAudioParam));
         return Query(core, &in1, out);
     }
 
-    memcpy(&out->mfx, &in->mfx, sizeof(mfxAudioInfoMFX));
+    memcpy_s(&out->mfx, sizeof(mfxAudioInfoMFX), &in->mfx, sizeof(mfxAudioInfoMFX));
 
     if (in)
     {
@@ -521,13 +521,13 @@ bool AudioENCODEAAC::AudioFramesCollector::UpdateBuffer() {
         }
         size_t nFrameSizeWithoutOffset = (*it)->DataLength - offset;
         if (nFrameSizeWithoutOffset <= nFreeBytesInBuffer) {
-            memcpy(&buffer.front() + CurrentFrameLength, (*it)->Data + offset, nFrameSizeWithoutOffset);
+            memcpy_s(&buffer.front() + CurrentFrameLength, buffer.size() - CurrentFrameLength, (*it)->Data + offset, nFrameSizeWithoutOffset);
             offset = 0;
             CurrentFrameLength += nFrameSizeWithoutOffset % buffer.size();
             mCore.DecreasePureReference((*it)->Locked);
             nPopFront++;
         } else {
-            memcpy(&buffer.front() + CurrentFrameLength, (*it)->Data + offset, nFreeBytesInBuffer);
+            memcpy_s(&buffer.front() + CurrentFrameLength, buffer.size() - CurrentFrameLength, (*it)->Data + offset, nFreeBytesInBuffer);
             offset += nFreeBytesInBuffer;
             break;
         }            

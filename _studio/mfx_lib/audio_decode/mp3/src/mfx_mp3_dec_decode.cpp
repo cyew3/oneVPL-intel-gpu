@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2004-2013 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2004-2014 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -157,7 +157,7 @@ mfxStatus AudioDECODEMP3::GetAudioParam(mfxAudioParam *par)
 
     MFX_CHECK_NULL_PTR1(par);
 
-    memcpy(&par->mfx, &m_vPar.mfx, sizeof(mfxInfoMFX));
+    memcpy_s(&par->mfx, sizeof(mfxAudioInfoMFX), &m_vPar.mfx, sizeof(mfxAudioInfoMFX));
 
     UMC::MP3DecoderParams params;
     UMC::Status sts = m_pMP3AudioDecoder->GetInfo(&params);
@@ -522,7 +522,7 @@ mfxStatus MFX_MP3_Utility::Query(AudioCORE *core, mfxAudioParam *in, mfxAudioPar
     if (in == out)
     {
         mfxAudioParam in1;
-        memcpy(&in1, in, sizeof(mfxAudioParam));
+        memcpy_s(&in1, sizeof(mfxAudioParam), in, sizeof(mfxAudioParam));
         return Query(core, &in1, out);
     }
 
