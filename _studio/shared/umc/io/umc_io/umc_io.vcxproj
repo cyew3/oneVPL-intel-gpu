@@ -130,16 +130,12 @@
     <ClCompile Include="src\umc_file_reader.cpp" />
     <ClCompile Include="src\umc_file_writer.cpp" />
     <ClCompile Include="src\umc_fio_reader.cpp" />
-    <ClCompile Include="src\umc_parser_cfg.cpp" />
-    <ClCompile Include="src\umc_parser_cmd.cpp" />
     <ClCompile Include="src\umc_par_file_util.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\umc_file_reader.h" />
     <ClInclude Include="include\umc_file_writer.h" />
     <ClInclude Include="include\umc_fio_reader.h" />
-    <ClInclude Include="include\umc_parser_cfg.h" />
-    <ClInclude Include="include\umc_parser_cmd.h" />
     <ClInclude Include="include\umc_par_file_util.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
