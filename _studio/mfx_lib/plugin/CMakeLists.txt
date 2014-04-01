@@ -197,7 +197,11 @@ foreach( variant sw )
     umc_h265_sw
     umc_csc_sw
     hevc_pp_dispatcher
-    ${HEVCPP_LIBS}
+    hevc_pp_atom
+    hevc_pp_avx2
+    hevc_pp_px
+    hevc_pp_sse4
+    hevc_pp_ssse3
     umc_io_merged_${variant}
     umc_core_merged 
     ${ITT_LIBS}
@@ -258,7 +262,11 @@ foreach( variant sw )
     umc_h265_sw
     umc_csc_sw
     hevc_pp_dispatcher
-    ${HEVCPP_LIBS}
+    hevc_pp_atom
+    hevc_pp_avx2
+    hevc_pp_px
+    hevc_pp_sse4
+    hevc_pp_ssse3
     umc_io_merged_${variant}
     umc_core_merged
     ${ITT_LIBS}
@@ -276,7 +284,11 @@ foreach( variant sw )
     umc_h265_sw
     umc_csc_sw
     hevc_pp_dispatcher
-    ${HEVCPP_LIBS}
+    hevc_pp_atom
+    hevc_pp_avx2
+    hevc_pp_px
+    hevc_pp_sse4
+    hevc_pp_ssse3
     umc_io_merged_${variant}
     umc_core_merged 
     ${ITT_LIBS}
