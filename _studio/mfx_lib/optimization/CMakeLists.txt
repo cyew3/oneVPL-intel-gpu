@@ -22,7 +22,6 @@ list( APPEND sources
 
 make_library( hevc_pp_dispatcher none static )
 set( defs "" )
-list( APPEND HEVCPP_LIBS hevc_pp_dispatcher )
 
 # =============================================================================
 

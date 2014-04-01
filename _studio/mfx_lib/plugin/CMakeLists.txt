@@ -196,6 +196,7 @@ foreach( variant sw )
   list( APPEND LIBS
     umc_h265_sw
     umc_csc_sw
+    hevc_pp_dispatcher
     ${HEVCPP_LIBS}
     umc_io_merged_${variant}
     umc_core_merged 
@@ -256,6 +257,7 @@ foreach( variant sw )
     h265_enc
     umc_h265_sw
     umc_csc_sw
+    hevc_pp_dispatcher
     ${HEVCPP_LIBS}
     umc_io_merged_${variant}
     umc_core_merged
@@ -273,6 +275,7 @@ foreach( variant sw )
     eval_h265_enc
     umc_h265_sw
     umc_csc_sw
+    hevc_pp_dispatcher
     ${HEVCPP_LIBS}
     umc_io_merged_${variant}
     umc_core_merged 
