@@ -370,6 +370,7 @@ int TestSuite::RunTest(unsigned int id)
             , m_par.mfx.FrameInfo.CropH);
 
         EXPECT_EQ((mfxU16)!sps.vui.field_seq_flag, m_par.mfx.FrameInfo.PicStruct);
+        EXPECT_EQ(MFX_FOURCC_NV12, m_par.mfx.FrameInfo.FourCC);
 
         if((mfxExtCodingOptionSPSPPS*)m_par)
         {

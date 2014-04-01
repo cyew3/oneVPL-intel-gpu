@@ -121,5 +121,8 @@
     <ClCompile Include="src\gmock\test_suites\hevcd_decode_header.cpp">
       <Filter>Source Files\test_suites</Filter>
     </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\hevcd_init.cpp">
+      <Filter>Source Files\test_suites</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>
