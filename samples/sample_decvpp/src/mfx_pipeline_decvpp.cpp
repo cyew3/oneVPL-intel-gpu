@@ -499,8 +499,8 @@ mfxStatus CDecodingPipeline::InitVppParams()
             MFX_IOPATTERN_OUT_VIDEO_MEMORY:
             MFX_IOPATTERN_OUT_SYSTEM_MEMORY;
 
-    memcpy(&m_mfxVppVideoParams.vpp.In, &m_mfxVideoParams.mfx.FrameInfo, sizeof(mfxFrameInfo));
-    memcpy(&m_mfxVppVideoParams.vpp.Out, &m_mfxVppVideoParams.vpp.In, sizeof(mfxFrameInfo));
+    MSDK_MEMCPY_VAR(m_mfxVppVideoParams.vpp.In, &m_mfxVideoParams.mfx.FrameInfo, sizeof(mfxFrameInfo));
+    MSDK_MEMCPY_VAR(m_mfxVppVideoParams.vpp.Out, &m_mfxVppVideoParams.vpp.In, sizeof(mfxFrameInfo));
 
     m_mfxVppVideoParams.vpp.Out.FourCC  = m_fourcc;
 
@@ -581,7 +581,7 @@ mfxStatus CDecodingPipeline::AllocFrames()
     // alloc frames for VPP
     VppRequest[1].NumFrameMin = nVppSurfNum;
     VppRequest[1].NumFrameSuggested = nVppSurfNum;
-    memcpy(&(VppRequest[1].Info), &(m_mfxVppVideoParams.vpp.Out), sizeof(mfxFrameInfo));
+    MSDK_MEMCPY_VAR(VppRequest[1].Info, &(m_mfxVppVideoParams.vpp.Out), sizeof(mfxFrameInfo));
 
     sts = m_pGeneralAllocator->Alloc(m_pGeneralAllocator->pthis, &(VppRequest[1]), &m_mfxVppResponse);
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
@@ -873,6 +873,10 @@ mfxStatus CDecodingPipeline::DeliverLoop(void)
             continue;
         }
         msdkOutputSurface* pCurrentDeliveredSurface = m_DeliveredSurfacesPool.GetSurface();
+        if (!pCurrentDeliveredSurface) {
+            m_error = MFX_ERR_NULL_PTR;
+            continue;
+        }
         mfxFrameSurface1* frame = &(pCurrentDeliveredSurface->surface->frame);
 
         m_error = DeliverOutput(frame);
