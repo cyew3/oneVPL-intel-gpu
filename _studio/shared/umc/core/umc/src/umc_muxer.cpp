@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2006-2010 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2006-2014 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -54,7 +54,7 @@ void MuxerParams::Close()
     pTrackParams = 0;
 }
 
-MuxerParams & MuxerParams::operator=(MuxerParams & p)
+MuxerParams & MuxerParams::operator=(const MuxerParams & p)
 {
     //  check for self-assignment
     if (this == &p)
