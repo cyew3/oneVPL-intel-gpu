@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2003-2010 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2003-2014 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -70,7 +70,7 @@ public:
     // Destructor
     virtual ~MuxerParams();
     // operator=
-    MuxerParams & operator = (MuxerParams & p);
+    MuxerParams & operator = (const MuxerParams & p);
 
     SystemStreamType m_SystemType;      // type of media stream
     Ipp32s      m_lFlags;               // muxer flag(s)
