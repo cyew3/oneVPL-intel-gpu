@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in accordance with the terms of that agreement.
-//    Copyright (c) 2001-2013 Intel Corporation. All Rights Reserved.
+//    Copyright (c) 2001-2014 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -958,9 +958,12 @@ JERRCODE CJPEGEncoder::SetDCTable(int numTable, Ipp8u* pBits, Ipp8u* pValues)
 
 JERRCODE CJPEGEncoder::SetDefaultQuantTable(Ipp16u quality)
 {
-    m_externalQuantTable = false;
-
     JERRCODE jerr = JPEG_OK;
+
+    if(!quality)
+        return JPEG_ERR_PARAMS;
+
+    m_externalQuantTable = false;
 
     jerr = InitQuantTable((Ipp8u*)DefaultLuminanceQuant, 0, quality);
     if(JPEG_OK != jerr)

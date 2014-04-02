@@ -1031,6 +1031,10 @@ mfxStatus MFXVideoENCODEMJPEG::Query(mfxVideoParam *in, mfxVideoParam *out)
             out->mfx.Quality = 100;
             isCorrected++;
         }
+        else
+        {
+            out->mfx.Quality = in->mfx.Quality;
+        }
 
         switch (in->mfx.FrameInfo.PicStruct)
         {
@@ -1904,6 +1908,7 @@ mfxStatus MFXVideoENCODEMJPEG::EncodeFrameCheck(mfxEncodeCtrl *ctrl, mfxFrameSur
 
     mfxExtJPEGQuantTables*   jpegQT = NULL;
     mfxExtJPEGHuffmanTables* jpegHT = NULL;
+    UMC::MJPEGVideoEncoder*  pMJPEGVideoEncoder = NULL;
 
     if(!m_isInitialized) return MFX_ERR_NOT_INITIALIZED;
     if (bs == 0) return MFX_ERR_NULL_PTR;
@@ -1936,6 +1941,30 @@ mfxStatus MFXVideoENCODEMJPEG::EncodeFrameCheck(mfxEncodeCtrl *ctrl, mfxFrameSur
                 memset(&pTask->auxInput, 0, sizeof(pTask->auxInput));
                 pTask->auxInput.Data.MemId = m_response.mids[m_tasksCount];
                 pTask->auxInput.Info = m_vParam.mfx.FrameInfo;
+            }
+
+            // Set Quant/Huffman tables if they were passed by ext buffer in init/reset
+            {
+                if (m_vParam.ExtParam && m_vParam.NumExtParam > 0)
+                {
+                    jpegQT = (mfxExtJPEGQuantTables*)   GetExtBuffer( m_vParam.ExtParam, m_vParam.NumExtParam, MFX_EXTBUFF_JPEG_QT );
+                    jpegHT = (mfxExtJPEGHuffmanTables*) GetExtBuffer( m_vParam.ExtParam, m_vParam.NumExtParam, MFX_EXTBUFF_JPEG_HUFFMAN );
+                }
+
+                pMJPEGVideoEncoder = pTask.get()->m_pMJPEGVideoEncoder.get();
+
+                if(jpegQT)
+                {
+                    umc_sts = pMJPEGVideoEncoder->SetQuantTableExtBuf(jpegQT);
+                }
+
+                if(jpegHT)
+                {
+                    umc_sts = pMJPEGVideoEncoder->SetHuffmanTableExtBuf(jpegHT);
+                }
+
+                if(umc_sts != UMC::UMC_OK)
+                    return MFX_ERR_UNDEFINED_BEHAVIOR;
             }
 
             m_tasksCount++;
@@ -2023,7 +2052,7 @@ mfxStatus MFXVideoENCODEMJPEG::EncodeFrameCheck(mfxEncodeCtrl *ctrl, mfxFrameSur
         jpegHT = (mfxExtJPEGHuffmanTables*) GetExtBuffer( ctrl->ExtParam, ctrl->NumExtParam, MFX_EXTBUFF_JPEG_HUFFMAN );
     }
 
-    UMC::MJPEGVideoEncoder* pMJPEGVideoEncoder = m_freeTasks.front()->m_pMJPEGVideoEncoder.get();
+    pMJPEGVideoEncoder = m_freeTasks.front()->m_pMJPEGVideoEncoder.get();
 
     if(jpegQT)
     {
@@ -2033,6 +2062,9 @@ mfxStatus MFXVideoENCODEMJPEG::EncodeFrameCheck(mfxEncodeCtrl *ctrl, mfxFrameSur
     {
         umc_sts = pMJPEGVideoEncoder->SetDefaultQuantTable(m_vParam.mfx.Quality);
     }
+
+    if(umc_sts != UMC::UMC_OK)
+        return MFX_ERR_UNDEFINED_BEHAVIOR;
 
     if(jpegHT)
     {

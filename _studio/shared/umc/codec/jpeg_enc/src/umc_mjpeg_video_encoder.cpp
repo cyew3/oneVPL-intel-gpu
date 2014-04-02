@@ -5,7 +5,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2003-2013 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2003-2014 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -210,9 +210,12 @@ Status MJPEGVideoEncoder::Init(BaseCodecParams* lpInit)
             return UMC_ERR_ALLOC;
         }
 
-        jerr = m_enc[i]->SetDefaultQuantTable((Ipp16u)m_EncoderParams.quality);
-        if(JPEG_OK != jerr)
-            return UMC_ERR_FAILED;
+        if(m_EncoderParams.quality)
+        {
+            jerr = m_enc[i]->SetDefaultQuantTable((Ipp16u)m_EncoderParams.quality);
+            if(JPEG_OK != jerr)
+                return UMC_ERR_FAILED;
+        }
         
         jerr = m_enc[i]->SetDefaultACTable(); 
         if(JPEG_OK != jerr)
