@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2006-2013 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2006-2014 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -181,8 +181,8 @@ sbrencRegionBordCorrect(sSBRTonalMeanInfo state,
   sbrTonalMeanFilt  = (Ipp32f) (ILOG2*3.0f*log(state.sbrTonalMeanSmooth+EPS));
   nrgMeanFilt       = (Ipp32f) (ILOG2*1.5f*log(state.meanNrg+EPS));
 
-  memcpy( quantStepsSbrTmp,  regionBordSBR,  numBordSBR  * sizeof(Ipp32f) );
-  memcpy( quantStepsOrigTmp, regionBordOrig, numBordOrig * sizeof(Ipp32f) );
+  memcpy_s( quantStepsSbrTmp,  sizeof(quantStepsSbrTmp), regionBordSBR,  numBordSBR  * sizeof(Ipp32f) );
+  memcpy_s( quantStepsOrigTmp, sizeof(quantStepsOrigTmp),  regionBordOrig, numBordOrig * sizeof(Ipp32f) );
 
   /* modification region */
   // SBR region
