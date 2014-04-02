@@ -15,6 +15,7 @@
 
 #include "mfx_common_int.h"
 #include "mfx_thread_task.h"
+#include "umc_defs.h"
 
 
 class MFX_MP3_Utility
@@ -157,7 +158,7 @@ mfxStatus AudioDECODEMP3::GetAudioParam(mfxAudioParam *par)
 
     MFX_CHECK_NULL_PTR1(par);
 
-    memcpy_s(&par->mfx, sizeof(mfxAudioInfoMFX), &m_vPar.mfx, sizeof(mfxAudioInfoMFX));
+    MFX_INTERNAL_CPY(&par->mfx, &m_vPar.mfx, sizeof(mfxAudioInfoMFX));
 
     UMC::MP3DecoderParams params;
     UMC::Status sts = m_pMP3AudioDecoder->GetInfo(&params);
@@ -522,7 +523,7 @@ mfxStatus MFX_MP3_Utility::Query(AudioCORE *core, mfxAudioParam *in, mfxAudioPar
     if (in == out)
     {
         mfxAudioParam in1;
-        memcpy_s(&in1, sizeof(mfxAudioParam), in, sizeof(mfxAudioParam));
+        MFX_INTERNAL_CPY(&in1, in, sizeof(mfxAudioParam));
         return Query(core, &in1, out);
     }
 

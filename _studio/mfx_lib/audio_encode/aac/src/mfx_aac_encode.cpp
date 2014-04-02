@@ -14,6 +14,7 @@
 #include "mfx_common_int.h"
 #include "mfx_thread_task.h"
 #include "libmfx_core.h"
+#include "umc_defs.h"
 
 class MFX_AAC_Encoder_Utility
 {
@@ -200,7 +201,7 @@ mfxStatus AudioENCODEAAC::GetAudioParam(mfxAudioParam *par)
 
     MFX_CHECK_NULL_PTR1(par);
 
-    memcpy_s(&par->mfx, sizeof(mfxInfoMFX), &m_vPar.mfx, sizeof(mfxInfoMFX));
+    MFX_INTERNAL_CPY(&par->mfx, &m_vPar.mfx, sizeof(mfxInfoMFX));
 
     UMC::AACEncoderParams params;
     UMC::Status sts = m_pAACAudioEncoder->Init(&params);
@@ -397,11 +398,11 @@ mfxStatus MFX_AAC_Encoder_Utility::Query(AudioCORE *core, mfxAudioParam *in, mfx
     if (in == out)
     {
         mfxAudioParam in1;
-        memcpy_s(&in1, sizeof(mfxAudioParam), in, sizeof(mfxAudioParam));
+        MFX_INTERNAL_CPY(&in1, in, sizeof(mfxAudioParam));
         return Query(core, &in1, out);
     }
 
-    memcpy_s(&out->mfx, sizeof(mfxAudioInfoMFX), &in->mfx, sizeof(mfxAudioInfoMFX));
+    MFX_INTERNAL_CPY(&out->mfx, &in->mfx, sizeof(mfxAudioInfoMFX));
 
     if (in)
     {
@@ -521,13 +522,13 @@ bool AudioENCODEAAC::AudioFramesCollector::UpdateBuffer() {
         }
         size_t nFrameSizeWithoutOffset = (*it)->DataLength - offset;
         if (nFrameSizeWithoutOffset <= nFreeBytesInBuffer) {
-            memcpy_s(&buffer.front() + CurrentFrameLength, buffer.size() - CurrentFrameLength, (*it)->Data + offset, nFrameSizeWithoutOffset);
+            MFX_INTERNAL_CPY(&buffer.front() + CurrentFrameLength, (*it)->Data + offset, nFrameSizeWithoutOffset);
             offset = 0;
             CurrentFrameLength += nFrameSizeWithoutOffset % buffer.size();
             mCore.DecreasePureReference((*it)->Locked);
             nPopFront++;
         } else {
-            memcpy_s(&buffer.front() + CurrentFrameLength, buffer.size() - CurrentFrameLength, (*it)->Data + offset, nFreeBytesInBuffer);
+            MFX_INTERNAL_CPY(&buffer.front() + CurrentFrameLength, (*it)->Data + offset, nFreeBytesInBuffer);
             offset += nFreeBytesInBuffer;
             break;
         }            
