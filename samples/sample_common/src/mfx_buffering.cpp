@@ -49,16 +49,16 @@ CBuffering::AllocBuffers(mfxU32 SurfaceNumber)
     msdkOutputSurface* p = NULL;
     msdkOutputSurface* tail = NULL;
 
-    for (mfxU32 i = 0; i < m_OutputSurfacesNumber; ++i) {
+    m_pFreeOutputSurfaces = (msdkOutputSurface*)calloc(1, sizeof(msdkOutputSurface));
+    if (!m_pFreeOutputSurfaces) return MFX_ERR_MEMORY_ALLOC;
+
+    tail = m_pFreeOutputSurfaces;
+
+    for (mfxU32 i = 1; i < m_OutputSurfacesNumber; ++i) {
         p = (msdkOutputSurface*)calloc(1, sizeof(msdkOutputSurface));
-        if (!m_pFreeOutputSurfaces) {
-            tail = m_pFreeOutputSurfaces = p;
-        }
-        else {
-            if (tail)
-                tail->next = p;
-            tail = p;
-        }
+        if (!p) return MFX_ERR_MEMORY_ALLOC;
+        tail->next = p;
+        tail = p;
     }
 
     ResetBuffers();
