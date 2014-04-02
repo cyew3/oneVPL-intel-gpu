@@ -180,6 +180,7 @@
     <ClCompile Include="src\gmock\test_suites\avce_max_bins.cpp" />
     <ClCompile Include="src\gmock\test_suites\hevcd_decode_header.cpp" />
     <ClCompile Include="src\gmock\test_suites\hevcd_init.cpp" />
+    <ClCompile Include="src\gmock\test_suites\hevcd_query_io_surf.cpp" />
     <ClCompile Include="src\gmock\test_suites\vp8e_encode_frame_async.cpp" />
     <ClCompile Include="src\gmock\test_suites\vp8e_get_video_param.cpp" />
     <ClCompile Include="src\gmock\test_suites\vp8e_init.cpp" />
