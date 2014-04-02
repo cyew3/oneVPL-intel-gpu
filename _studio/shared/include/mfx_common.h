@@ -193,8 +193,8 @@
         //#undef MFX_ENABLE_MPEG2_VIDEO_BRC
 
         // mjpeg
-        #undef MFX_ENABLE_MJPEG_VIDEO_DECODE
-        #undef MFX_ENABLE_MJPEG_VIDEO_ENCODE
+        //#undef MFX_ENABLE_MJPEG_VIDEO_DECODE
+        //#undef MFX_ENABLE_MJPEG_VIDEO_ENCODE
 
         // vpp
         //#undef MFX_ENABLE_DENOISE_VIDEO_VPP
