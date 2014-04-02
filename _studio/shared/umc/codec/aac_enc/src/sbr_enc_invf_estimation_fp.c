@@ -180,9 +180,8 @@ sbrencRegionBordCorrect(sSBRTonalMeanInfo state,
   origTonalMeanFilt = (Ipp32f) (ILOG2*3.0f*log(state.origTonalMeanSmooth+EPS));
   sbrTonalMeanFilt  = (Ipp32f) (ILOG2*3.0f*log(state.sbrTonalMeanSmooth+EPS));
   nrgMeanFilt       = (Ipp32f) (ILOG2*1.5f*log(state.meanNrg+EPS));
-
-  memcpy_s( quantStepsSbrTmp,  sizeof(quantStepsSbrTmp), regionBordSBR,  numBordSBR  * sizeof(Ipp32f) );
-  memcpy_s( quantStepsOrigTmp, sizeof(quantStepsOrigTmp),  regionBordOrig, numBordOrig * sizeof(Ipp32f) );
+  MFX_INTERNAL_CPY(quantStepsSbrTmp, regionBordSBR,  numBordSBR  * sizeof(Ipp32f) );
+  MFX_INTERNAL_CPY(quantStepsOrigTmp,  regionBordOrig, numBordOrig * sizeof(Ipp32f) );
 
   /* modification region */
   // SBR region
