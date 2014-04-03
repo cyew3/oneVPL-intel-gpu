@@ -416,34 +416,11 @@ mfxStatus MFXVideoDECODE_Init(mfxSession session, mfxVideoParam *par)
         if (!session->m_pDECODE.get())
         {
             // create a new instance
-            session->m_bIsHWDECSupport = true;
             session->m_pDECODE.reset(CreateDECODESpecificClass(par->mfx.CodecId, session->m_pCORE.get(), session));
             MFX_CHECK(session->m_pDECODE.get(), MFX_ERR_INVALID_VIDEO_PARAM);
         }
-#endif
-        
+#endif        
         mfxRes = session->m_pDECODE->Init(par);
-
-#if !defined (MFX_RT)
-        if (MFX_CODEC_VP8 == par->mfx.CodecId)
-        {
-            if (MFX_WRN_PARTIAL_ACCELERATION == mfxRes)
-            {
-                session->m_bIsHWDECSupport = false;
-                session->m_pDECODE.reset(CreateDECODESpecificClass(par->mfx.CodecId, session->m_pCORE.get(), session));
-                MFX_CHECK(session->m_pDECODE.get(), MFX_ERR_INVALID_VIDEO_PARAM);
-                mfxRes = session->m_pDECODE->Init(par);
-            }
-
-            // SW fallback if EncodeGUID is absence
-            if (MFX_PLATFORM_HARDWARE == session->m_currentPlatform &&
-                !session->m_bIsHWDECSupport &&
-                MFX_ERR_NONE <= mfxRes)
-            {
-                mfxRes = MFX_WRN_PARTIAL_ACCELERATION;
-            }
-        }
-#endif
 
 
     
