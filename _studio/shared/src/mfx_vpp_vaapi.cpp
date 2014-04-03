@@ -450,8 +450,6 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
             break;
         }
 
-        //m_pipelineParam[refIdx].pipeline_flags = ?? //VA_PROC_PIPELINE_FAST or VA_PROC_PIPELINE_SUBPICTURES
-
         switch (pRefSurf->frameInfo.PicStruct)
         {
             case MFX_PICSTRUCT_PROGRESSIVE:
@@ -467,15 +465,6 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
 
         m_pipelineParam[refIdx].filters  = m_filterBufs;
         m_pipelineParam[refIdx].num_filters  = m_numFilterBufs;
-        /* Special case for composition:
-         * as primary surface processed as sub-stream
-         * pipeline and filter properties should be *_FAST */
-        if (pParams->bComposite)
-        {
-            m_pipelineParam[refIdx].num_filters  = 0;
-            m_pipelineParam[refIdx].pipeline_flags |= VA_PROC_PIPELINE_FAST;
-            m_pipelineParam[refIdx].filter_flags    |= VA_FILTER_SCALING_FAST;
-        }
 
         vaSts = vaCreateBuffer(m_vaDisplay,
                             m_vaContextVPP,
@@ -504,117 +493,11 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
         }
     }
 
-    /* Final End Picture call... if there is no composition case ! */
-    if (!pParams->bComposite)
     {
         MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_SCHED, "vaEndPicture");
         vaSts = vaEndPicture(m_vaDisplay, m_vaContextVPP);
         MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
     }
-    else /* Special case for Composition */
-    {
-        unsigned int uBeginPictureCounter = 0;
-        std::vector<VAProcPipelineParameterBuffer> m_pipelineParamComp;
-        std::vector<VABufferID> m_pipelineParamCompID;
-        /* for new buffers for Begin Picture*/
-        m_pipelineParamComp.resize(pParams->fwdRefCount/7);
-        m_pipelineParamCompID.resize(pParams->fwdRefCount/7);
-
-        /* pParams->fwdRefCount actually is number of sub stream*/
-        for( refIdx = 1; refIdx <= refCount; refIdx++ )
-        {
-            /*for frames 8, 15, 22, 29,... */
-            if ((refIdx != 1) && ((refIdx %7) == 1) )
-            {
-                m_pipelineParam[refIdx].output_background_color = 0xff000000;
-                vaSts = vaBeginPicture(m_vaDisplay,
-                                    m_vaContextVPP,
-                                    *outputSurface);
-                MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
-                /*to copy initial properties of primary surface... */
-                m_pipelineParamComp[uBeginPictureCounter] = m_pipelineParam[0];
-                /* ... and to In-place output*/
-                m_pipelineParamComp[uBeginPictureCounter].surface = *outputSurface;
-                //m_pipelineParam[0].surface = *outputSurface;
-
-                vaSts = vaCreateBuffer(m_vaDisplay,
-                                    m_vaContextVPP,
-                                    VAProcPipelineParameterBufferType,
-                                    sizeof(VAProcPipelineParameterBuffer),
-                                    1,
-                                    &m_pipelineParamComp[uBeginPictureCounter],
-                                    &m_pipelineParamCompID[uBeginPictureCounter]);
-                MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
-
-                MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_SCHED, "vaBeginPicture");
-                vaSts = vaRenderPicture(m_vaDisplay, m_vaContextVPP, &m_pipelineParamCompID[uBeginPictureCounter], 1);
-                MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
-            }
-
-            m_pipelineParam[refIdx] = m_pipelineParam[0];
-            mfxDrvSurface* pRefSurf = &(pParams->pRefSurfaces[refIdx]);
-
-            VASurfaceID* srf = (VASurfaceID*)(pRefSurf->hdl.first);
-            m_pipelineParam[refIdx].surface = *srf;
-
-            /* to process input parameters of sub stream:
-             * crop info and original size*/
-            mfxFrameInfo *inInfo = &(pRefSurf->frameInfo);
-            input_region[refIdx].y   = inInfo->CropY;
-            input_region[refIdx].x   = inInfo->CropX;
-            input_region[refIdx].height = inInfo->CropH;
-            input_region[refIdx].width  = inInfo->CropW;
-            m_pipelineParam[refIdx].surface_region = &input_region[refIdx];
-
-            /* to process output parameters of sub stream:
-             *  position and destination size */
-            output_region[refIdx].y  = pParams->dstRects[refIdx].DstY;
-            output_region[refIdx].x   = pParams->dstRects[refIdx].DstX;
-            output_region[refIdx].height= pParams->dstRects[refIdx].DstH;
-            output_region[refIdx].width  = pParams->dstRects[refIdx].DstW;
-            m_pipelineParam[refIdx].output_region = &output_region[refIdx];
-
-            //m_pipelineParam[refIdx].pipeline_flags = ?? //VA_PROC_PIPELINE_FAST or VA_PROC_PIPELINE_SUBPICTURES
-            m_pipelineParam[refIdx].pipeline_flags  |= VA_PROC_PIPELINE_FAST;
-            m_pipelineParam[refIdx].filter_flags    |= VA_FILTER_SCALING_FAST;
-
-            m_pipelineParam[refIdx].filters  = m_filterBufs;
-            m_pipelineParam[refIdx].num_filters  = 0;
-
-            vaSts = vaCreateBuffer(m_vaDisplay,
-                                m_vaContextVPP,
-                                VAProcPipelineParameterBufferType,
-                                sizeof(VAProcPipelineParameterBuffer),
-                                1,
-                                &m_pipelineParam[refIdx],
-                                &m_pipelineParamID[refIdx]);
-            MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
-
-            MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_SCHED, "vaRenderPicture");
-            vaSts = vaRenderPicture(m_vaDisplay, m_vaContextVPP, &m_pipelineParamID[refIdx], 1);
-            MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
-
-            /*for frames 7, 14, 21, ...
-             * or for the last frame*/
-            if ( ((refIdx % 7) ==0) || (refCount == refIdx) )
-            {
-                MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_SCHED, "vaEndPicture");
-                vaSts = vaEndPicture(m_vaDisplay, m_vaContextVPP);
-                MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
-            }
-
-        } /* for( refIdx = 1; refIdx <= (pParams->fwdRefCount); refIdx++ )*/
-
-        for( refIdx = 0; refIdx < uBeginPictureCounter; refIdx++ )
-        {
-            if ( m_pipelineParamID[refIdx] != VA_INVALID_ID)
-            {
-                vaSts = vaDestroyBuffer(m_vaDisplay, m_pipelineParamCompID[refIdx]);
-                MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
-                m_pipelineParamCompID[refIdx] = VA_INVALID_ID;
-            }
-        }
-    } /* if (!pParams->bComposite) */
 
     for( refIdx = 0; refIdx < m_pipelineParamID.size(); refIdx++ )
     {
@@ -899,11 +782,12 @@ mfxStatus VAAPIVideoProcessing::Execute_Composition(mfxExecuteParams *pParams)
     std::vector<VABufferID> m_pipelineParamCompID;
     /* for new buffers for Begin Picture*/
     m_pipelineParamComp.resize(pParams->fwdRefCount/7);
-    m_pipelineParamCompID.resize(pParams->fwdRefCount/7);
+    m_pipelineParamCompID.resize(pParams->fwdRefCount/7, VA_INVALID_ID);
 
 
     /* pParams->fwdRefCount actually is number of sub stream*/
     for( refIdx = 1; refIdx <= (refCount + 1); refIdx++ )
+    //for( refIdx = uStartIndex; refIdx <= uEndIndex; refIdx++ )
     {
         /*for frames 8, 15, 22, 29,... */
         unsigned int uLastPass = (refCount + 1) - ( (refIdx /7) *7);
@@ -947,6 +831,8 @@ mfxStatus VAAPIVideoProcessing::Execute_Composition(mfxExecuteParams *pParams)
             MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_SCHED, "vaBeginPicture");
             vaSts = vaRenderPicture(m_vaDisplay, m_vaContextVPP, &m_pipelineParamCompID[uBeginPictureCounter], 1);
             MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+
+            uBeginPictureCounter++;
         }
 
         m_pipelineParam[refIdx] = m_pipelineParam[0];
