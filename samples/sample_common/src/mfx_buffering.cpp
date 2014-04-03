@@ -115,6 +115,7 @@ CBuffering::FreeBuffers()
 
     m_UsedSurfacesPool.m_pSurfacesHead = NULL;
     m_UsedVppSurfacesPool.m_pSurfacesHead = NULL;
+
     m_FreeSurfacesPool.m_pSurfaces = NULL;
     m_FreeVppSurfacesPool.m_pSurfaces = NULL;
 }

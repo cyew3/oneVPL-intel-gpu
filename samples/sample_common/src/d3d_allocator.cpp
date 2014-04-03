@@ -170,12 +170,6 @@ mfxStatus D3DFrameAllocator::LockFrame(mfxMemId mid, mfxFrameData *ptr)
         ptr->U = (mfxU8 *)locked.pBits + desc.Height * locked.Pitch;
         ptr->V = ptr->U + 1;
         break;
-    case D3DFMT_A2R10G10B10:
-        ptr->Pitch = (mfxU16)locked.Pitch;
-        ptr->Y = (mfxU8 *)locked.pBits;
-        ptr->U = (mfxU8 *)locked.pBits + desc.Height * locked.Pitch * 2;
-        ptr->V = ptr->U + 2;
-        break;
     case D3DFMT_YV12:
         ptr->Pitch = (mfxU16)locked.Pitch;
         ptr->Y = (mfxU8 *)locked.pBits;
@@ -195,6 +189,7 @@ mfxStatus D3DFrameAllocator::LockFrame(mfxMemId mid, mfxFrameData *ptr)
         ptr->R = ptr->B + 2;
         break;
     case D3DFMT_A8R8G8B8:
+    case D3DFMT_A2R10G10B10:
         ptr->Pitch = (mfxU16)locked.Pitch;
         ptr->B = (mfxU8 *)locked.pBits;
         ptr->G = ptr->B + 1;

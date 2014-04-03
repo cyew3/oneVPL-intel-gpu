@@ -187,7 +187,7 @@ protected: // variables
     eWorkMode               m_eWorkMode; // work mode for the pipeline
     bool                    m_bIsCompleteFrame;
     bool                    m_bStopDeliverLoop;
-    mfxU32                  m_fourcc; // color format of vpp out, nv12 by default
+    mfxU32                  m_fourcc; // color format of vpp out, i420 by default
 
     mfxExtVPPDoNotUse       m_VppDoNotUse;      // for disabling VPP algorithms
     mfxExtBuffer*           m_VppExtParams[2];

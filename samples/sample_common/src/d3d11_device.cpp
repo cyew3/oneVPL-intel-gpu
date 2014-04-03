@@ -18,7 +18,11 @@ Copyright(c) 2011-2014 Intel Corporation. All Rights Reserved.
 
 #include "sample_defs.h"
 
-CD3D11Device::CD3D11Device()
+CD3D11Device::CD3D11Device():
+    m_nViews(0),
+    m_bDefaultStereoEnabled(FALSE),
+    m_nSyncInterval(0),
+    m_bIsA2rgb10(FALSE)
 {
 }
 
@@ -32,7 +36,8 @@ mfxStatus CD3D11Device::FillSCD(mfxHDL hWindow, DXGI_SWAP_CHAIN_DESC& scd)
     scd.Windowed = TRUE;
     scd.OutputWindow = (HWND)hWindow;
     scd.SampleDesc.Count = 1;
-    scd.BufferDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
+    scd.BufferDesc.Format = DXGI_FORMAT_R10G10B10A2_UNORM;
+    scd.BufferDesc.Format = (m_bIsA2rgb10) ? DXGI_FORMAT_R10G10B10A2_UNORM : DXGI_FORMAT_B8G8R8A8_UNORM;
     scd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
     scd.BufferCount = 1;
 
@@ -120,7 +125,7 @@ mfxStatus CD3D11Device::Init(
         DXGI_SWAP_CHAIN_DESC1 swapChainDesc = {0};
         swapChainDesc.Width = 0;                                     // Use automatic sizing.
         swapChainDesc.Height = 0;
-        swapChainDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;           // This is the most common swap chain format.
+        swapChainDesc.Format = (m_bIsA2rgb10) ? DXGI_FORMAT_R10G10B10A2_UNORM : DXGI_FORMAT_B8G8R8A8_UNORM;
         swapChainDesc.Stereo = m_nViews == 2 ? TRUE : FALSE;
         swapChainDesc.SampleDesc.Count = 1;                          // Don't use multi-sampling.
         swapChainDesc.SampleDesc.Quality = 0;

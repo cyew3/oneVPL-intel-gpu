@@ -37,6 +37,7 @@ public:
     virtual mfxStatus RenderFrame(mfxFrameSurface1 * pSurface, mfxFrameAllocator * pmfxAlloc);
     virtual void      UpdateTitle(double /*fps*/) { }
     virtual void      Close();
+            void      DefineFormat(bool isA2rgb10) { m_bIsA2rgb10 = (isA2rgb10) ? TRUE : FALSE; }
 protected:
     virtual mfxStatus FillSCD(mfxHDL hWindow, DXGI_SWAP_CHAIN_DESC& scd);
     mfxStatus CreateVideoProcessor(mfxFrameSurface1 * pSrf);
@@ -67,6 +68,7 @@ private:
     mfxU16                                  m_nViews;
     BOOL                                    m_bDefaultStereoEnabled;
     UINT                                    m_nSyncInterval;
+    BOOL                                    m_bIsA2rgb10;
 };
 
 #endif //#if defined( _WIN32 ) || defined ( _WIN64 )

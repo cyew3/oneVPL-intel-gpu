@@ -436,6 +436,9 @@ mfxStatus CDecodingPipeline::CreateHWDevice()
 #if MFX_D3D11_SUPPORT
     if (D3D11_MEMORY == m_memType)
         m_hwdev = new CD3D11Device();
+        if(m_hwdev) {
+            reinterpret_cast<CD3D11Device *>(m_hwdev)->DefineFormat((m_fourcc == MFX_FOURCC_A2RGB10) ? true: false);
+        }
     else
 #endif // #if MFX_D3D11_SUPPORT
         m_hwdev = new CD3D9Device();
@@ -806,6 +809,8 @@ mfxStatus CDecodingPipeline::ResetDecoder(sInputParams *pParams)
 
     // free allocated frames
     DeleteFrames();
+    m_pCurrentFreeSurface = NULL;
+    m_pCurrentFreeOutputSurface = NULL;
 
     // initialize parameters with values from parsed header
     sts = InitMfxParams(pParams);

@@ -207,10 +207,10 @@ mfxStatus D3D11FrameAllocator::LockFrame(mfxMemId mid, mfxFrameData *ptr)
             break;
         case DXGI_FORMAT_R10G10B10A2_UNORM :
             ptr->Pitch = (mfxU16)lockedRect.RowPitch;
-            ptr->R = (mfxU8 *)lockedRect.pData;
-            ptr->G = ptr->R + 1;
-            ptr->B = ptr->R + 2;
-            ptr->A = ptr->R + 3;
+            ptr->B = (mfxU8 *)lockedRect.pData;
+            ptr->G = ptr->B + 1;
+            ptr->R = ptr->B + 2;
+            ptr->A = ptr->B + 3;
 
             break;
         case DXGI_FORMAT_R16_UNORM :
@@ -468,6 +468,10 @@ DXGI_FORMAT D3D11FrameAllocator::ConverColortFormat(mfxU32 fourcc)
 
         case MFX_FOURCC_P010:
             return DXGI_FORMAT_P010;
+
+        case MFX_FOURCC_A2RGB10:
+            return DXGI_FORMAT_R10G10B10A2_UNORM;
+
         default:
             return DXGI_FORMAT_UNKNOWN;
     }
