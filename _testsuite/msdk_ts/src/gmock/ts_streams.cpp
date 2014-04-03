@@ -48,14 +48,14 @@ void tsStreamPool::Reg()
     mfxU32 i = 0;
     m_reg = true;
 
-    if(!m_query_mode)
-    {
-        return;
-    }
-
     for(PoolType::iterator it = m_pool.begin(); it != m_pool.end(); it ++)
     {
         g_tsLog << "STREAM[" << i ++ << "]: " << it->second << "\n";
+    }
+
+    if(!m_query_mode)
+    {
+        return;
     }
 
     throw tsOK;

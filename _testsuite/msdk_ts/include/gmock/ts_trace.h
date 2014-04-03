@@ -81,8 +81,18 @@ public:
     tsTrace& operator << (const mfxVideoParam& p);
     tsTrace& operator << (const mfxInfoMFX& p);
     tsTrace& operator << (const mfxPluginUID& p);
+    tsTrace& operator << (const mfxFrameData& p);
     tsTrace& operator << (mfxStatus& p);
 
     template<typename T> tsTrace& operator << (T& p) { (tsAutoTrace&)*this << p; return *this; }
     template<typename T> tsTrace& operator << (T* p) { (tsAutoTrace&)*this << p; return *this; }
 };
+
+typedef struct 
+{
+    unsigned char* data;
+    unsigned int size;
+} rawdata;
+
+rawdata hexstr(const void* d, unsigned int s);
+std::ostream &operator << (std::ostream &os, rawdata p);

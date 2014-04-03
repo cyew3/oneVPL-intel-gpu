@@ -2,7 +2,7 @@
 
 #include "ts_common.h"
 
-class tsReader : mfxBitstream
+class tsReader : public mfxBitstream
 {
 private:
     FILE* m_file;

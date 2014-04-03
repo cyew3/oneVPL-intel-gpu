@@ -2,7 +2,7 @@
 #include "ts_parser.h"
 #include "ts_struct.h"
 
-namespace
+namespace hevcd_decode_header
 {
 
 class TestSuite : public tsVideoDecoder, public tsParserHEVC

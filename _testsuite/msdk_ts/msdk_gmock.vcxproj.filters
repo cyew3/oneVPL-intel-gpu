@@ -127,5 +127,8 @@
     <ClCompile Include="src\gmock\test_suites\hevcd_query_io_surf.cpp">
       <Filter>Source Files\test_suites</Filter>
     </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\hevcd_get_video_param.cpp">
+      <Filter>Source Files\test_suites</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

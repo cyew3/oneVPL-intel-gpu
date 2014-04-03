@@ -19,16 +19,17 @@
         if(p) return *this << (void*)p << " &(" << (name&)*p << ")";\
         return *this << (void*)p;                              \
     }
-#define FIELD_T(type, _name)                                        \
+#define FIELD_T_N(type, _name, _str_name)                           \
     {                                                               \
         mfxU32 n = sizeof(p._name) / sizeof(type);                  \
         if(n > 1) {                                                 \
-            *this << m_off << #_name << "[" << n << "] = {";        \
+            *this << m_off << _str_name << "[" << n << "] = {";     \
             type* pp = (type*)&p._name; inc_offset();               \
             for(mfxU32 i = 0; i < n; i ++) {*this << pp[i] << ", ";}\
             dec_offset();*this << "}\n";                            \
-        }else{*this << m_off << #_name << " = " << (type&)p._name << "\n";}\
+        }else{*this << m_off << _str_name << " = " << (type&)p._name << "\n";}\
     }
+#define FIELD_T(type, _name) FIELD_T_N(type, _name, #_name)
 #define FIELD_S(type, _name) FIELD_T(type, _name)
 
 #include "ts_struct_decl.h"
@@ -239,12 +240,6 @@ tsTrace& tsTrace::operator<<(mfxStatus& p)
 }
 
 
-typedef struct
-{
-    unsigned char* data;
-    unsigned int size;
-} rawdata;
-
 rawdata hexstr(const void* d, unsigned int s)
 {
     rawdata r = {(unsigned char*)d, s};
@@ -265,6 +260,28 @@ std::ostream &operator << (std::ostream &os, rawdata p){
 tsTrace& tsTrace::operator<<(const mfxPluginUID& p)
 {
     *this << hexstr(p.Data, sizeof(p.Data));
+    return *this;
+}
+
+
+tsTrace& tsTrace::operator<<(const mfxFrameData& p)
+{
+    STRUCT_BODY(mfxFrameData,
+        FIELD_T(mfxU16  , PitchHigh  )
+        FIELD_T(mfxU64  , TimeStamp  )
+        FIELD_T(mfxU32  , FrameOrder )
+        FIELD_T(mfxU16  , Locked     )
+        FIELD_T(mfxU16  , Pitch      )
+        FIELD_T(mfxU16  , PitchLow   )
+        FIELD_T_N(mfxU8 * , Y, "Y/Y16/R")
+        FIELD_T_N(mfxU8 * , U, "U/UV/G/U16/VU/CbCr/CrCb/Cb")
+        FIELD_T_N(mfxU8 * , V, "V/B/V16/Cr")
+        FIELD_T(mfxU8 * , A          )
+        FIELD_T(mfxMemId,  MemId     )
+        FIELD_T(mfxU16  , Corrupted  )
+        FIELD_T(mfxU16  , DataFlag   )
+    )
+        
     return *this;
 }
 
