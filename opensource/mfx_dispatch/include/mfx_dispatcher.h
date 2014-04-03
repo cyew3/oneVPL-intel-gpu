@@ -177,9 +177,6 @@ struct FUNCTION_DESCRIPTION
     const char *pName;
     // API version when function appeared first time
     mfxVersion apiVersion;
-    // Minimal API version, which works without this function
-    mfxVersion apiPrevVersion;
-
 } FUNCTION_DESCRIPTION;
 
 extern const
