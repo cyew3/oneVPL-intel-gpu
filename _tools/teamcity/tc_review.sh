@@ -1,8 +1,12 @@
 #!/bin/bash
 
 # Script usage:
-#  tc_review <username> <branch>
-# Call the script from the repo root folder.
+#  tc_review <username> <branch> <commitid>
+#
+# Notes:
+#  - Call the script from the repo root folder.
+#  - Processing is performed only if HEAD of the branch matches specified <commitid>
+#
 
 __STATUS=0
 
@@ -33,14 +37,24 @@ function set_status
 
 _USERNAME=$1
 _GIT_BRANCH=$2
+_COMMITID=`git rev-parse $3`
+
+_HEAD=`git rev-parse HEAD`
 
 echo "info: _USERNAME=$_USERNAME"
 echo "info: _GIT_BRANCH=$_GIT_BRANCH"
+echo "info: _COMMITID=$_COMMITID"
+echo "info: _HEAD=$_HEAD"
+
+if [ $_HEAD != $_COMMITID ]; then
+  echo "note: HEAD of the branch does not match specified commitid - no processing"
+  exit 0
+fi
 
 # Here we set reviewers. We are doing that for the first patchset only.
 if is_first_patchset $_GIT_BRANCH; then
   echo "Setting reviewers for the $_GIT_BRANCH"
-  ./_tools/set_reviewers.sh $_USERNAME `git rev-parse HEAD`
+  ./_tools/set_reviewers.sh $_USERNAME $_HEAD
   set_status $?
 else
   echo "That's not the first patch set - no need to set reviewers"
@@ -68,7 +82,7 @@ The head of the diff looks like:
 $__DIFF
 
 Consider to run and reupload the change:
-  ./_tools/tc_review.sh <username> HEAD
+  ./_tools/tc_review.sh <username> HEAD HEAD
   git commit --amend .
 "
   __VOTE=-1
