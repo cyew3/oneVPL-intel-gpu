@@ -171,9 +171,10 @@ mfxStatus D3DFrameAllocator::LockFrame(mfxMemId mid, mfxFrameData *ptr)
     case D3DFMT_A2R10G10B10:
         ptr->PitchHigh = (mfxU16)(locked.Pitch / (1 << 16));
         ptr->PitchLow  = (mfxU16)(locked.Pitch % (1 << 16));
-        ptr->Y = (mfxU8 *)locked.pBits;
-        ptr->U = (mfxU8 *)locked.pBits + desc.Height * locked.Pitch * 2;
-        ptr->V = ptr->U + 2;
+        ptr->B = (mfxU8 *)locked.pBits;
+        ptr->G = ptr->B + 1;
+        ptr->R = ptr->B + 2;
+        ptr->A = ptr->B + 3;
         break;
     case D3DFMT_YV12:
         ptr->PitchHigh = (mfxU16)(locked.Pitch / (1 << 16));
