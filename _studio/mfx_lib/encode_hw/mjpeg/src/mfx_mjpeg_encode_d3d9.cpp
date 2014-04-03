@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2009-2013 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2009-2014 Intel Corporation. All Rights Reserved.
 //
 //
 //          MJPEG encoder DXVA2
@@ -34,7 +34,6 @@ using namespace MfxHwMJpegEncode;
 D3D9Encoder::D3D9Encoder()
 : m_core(0)
 , m_pAuxDevice(0)
-, m_pDdiData(0)
 , m_infoQueried(false)
 {
 }
@@ -120,21 +119,6 @@ mfxStatus D3D9Encoder::CreateAccelerationService(mfxVideoParam const & par)
     memset(&m_capsGet, 0, sizeof(m_capsGet));
     hr = m_pAuxDevice->Execute(ENCODE_ENC_CTRL_GET_ID, (void*)0, 0, &m_capsGet, sizeof(m_capsGet));
     MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
-
-    return MFX_ERR_NONE;
-}
-
-mfxStatus D3D9Encoder::Reset(mfxVideoParam const & par)
-{
-    mfxStatus sts;
-
-    if (!m_pDdiData)
-    {
-        m_pDdiData = new MfxHwMJpegEncode::ExecuteBuffers;
-    }
-  
-    sts = m_pDdiData->Init(&par);
-    MFX_CHECK_STS(sts);
 
     return MFX_ERR_NONE;
 }
@@ -257,7 +241,7 @@ mfxStatus D3D9Encoder::Register(mfxFrameAllocResponse& response, D3DDDIFORMAT ty
 mfxStatus D3D9Encoder::Execute(DdiTask &task, mfxHDL surface)
 {
     MFX_CHECK_WITH_ASSERT(m_pAuxDevice, MFX_ERR_NOT_INITIALIZED);
-    ExecuteBuffers *pExecuteBuffers = m_pDdiData;
+    ExecuteBuffers *pExecuteBuffers = task.m_pDdiData;
 
     mfxU32 compBufferCount = 2 + 
         (pExecuteBuffers->m_pps.NumQuantTable ? 1 : 0) + 
@@ -454,12 +438,6 @@ mfxStatus D3D9Encoder::Destroy()
         m_pAuxDevice->Release();
         delete m_pAuxDevice;
         m_pAuxDevice = 0;
-    }
-    if (m_pDdiData)
-    {
-        m_pDdiData->Close();
-        delete m_pDdiData;
-        m_pDdiData = 0;
     }
 
     return sts;

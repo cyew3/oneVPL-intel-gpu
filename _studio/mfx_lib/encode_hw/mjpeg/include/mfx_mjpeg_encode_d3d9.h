@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2011-2013 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2011-2014 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -49,10 +49,6 @@ namespace MfxHwMJpegEncode
 
         virtual
         mfxStatus CreateAccelerationService(
-            mfxVideoParam const & par);
-
-        virtual
-        mfxStatus Reset(
             mfxVideoParam const & par);
 
         virtual
@@ -103,7 +99,6 @@ namespace MfxHwMJpegEncode
 
         VideoCORE       * m_core;
         AuxiliaryDevice * m_pAuxDevice;
-        ExecuteBuffers  * m_pDdiData;
         GUID              m_guid;
         mfxU32            m_width;
         mfxU32            m_height;

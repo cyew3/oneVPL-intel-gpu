@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2008-2013 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2008-2014 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -54,8 +54,9 @@ mfxStatus MfxHwMJpegEncode::QueryHwCaps(eMFXVAType va_type, mfxU32 adapterNum, E
 bool MfxHwMJpegEncode::IsJpegParamExtBufferIdSupported(mfxU32 id)
 {
     return
-        id == MFX_EXTBUFF_JPEG_QT             ||
-        id == MFX_EXTBUFF_JPEG_HUFFMAN    /*    ||
+        id == MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION ||
+        id == MFX_EXTBUFF_JPEG_QT ||
+        id == MFX_EXTBUFF_JPEG_HUFFMAN /*||
         id == MFX_EXTBUFF_JPEG_PAYLOAD*/;
 }
 
@@ -115,36 +116,6 @@ mfxStatus MfxHwMJpegEncode::CheckJpegParam(mfxVideoParam & par,
     }
 
     return MFX_ERR_NONE;
-}
-
-
-
-mfxStatus MfxHwMJpegEncode::CheckEncodeFrameParam(
-    mfxVideoParam const & video,
-    mfxEncodeCtrl       * ctrl,
-    mfxFrameSurface1    * surface,
-    mfxBitstream        * bs,
-    bool                  isExternalFrameAllocator)
-{
-    ctrl;
-    mfxStatus checkSts = MFX_ERR_NONE;
-    MFX_CHECK_NULL_PTR1(bs);
-
-    if (surface != 0)
-    {
-        MFX_CHECK((surface->Data.Y == 0) == (surface->Data.UV == 0), MFX_ERR_UNDEFINED_BEHAVIOR);
-        MFX_CHECK(surface->Data.PitchLow + ((mfxU32)surface->Data.PitchHigh << 16) < 0x8000, MFX_ERR_UNDEFINED_BEHAVIOR);
-        MFX_CHECK(surface->Data.Y != 0 || isExternalFrameAllocator, MFX_ERR_UNDEFINED_BEHAVIOR);
-
-        if (surface->Info.Width != video.mfx.FrameInfo.Width || surface->Info.Height != video.mfx.FrameInfo.Height)
-            checkSts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
-    }
-    else
-    {
-        checkSts = MFX_ERR_MORE_DATA;
-    }
-
-    return checkSts;
 }
 
 mfxStatus MfxHwMJpegEncode::FastCopyFrameBufferSys2Vid(
@@ -413,11 +384,7 @@ TaskManager::TaskManager()
 
 TaskManager::~TaskManager()
 {
-    if (m_pTaskList)
-    {
-        delete [] m_pTaskList;
-        m_pTaskList = 0;
-    }
+    Close();
 }
 
 mfxStatus TaskManager::Init(mfxU32 maxTaskNum)
@@ -441,6 +408,47 @@ mfxStatus TaskManager::Init(mfxU32 maxTaskNum)
         m_TaskNum   = 0;
         return MFX_ERR_INVALID_VIDEO_PARAM;
     }
+}
+
+mfxStatus TaskManager::Reset()
+{
+    if (m_pTaskList)
+    {
+        for (mfxU32 i = 0; i < m_TaskNum; i++)
+        {
+            if(m_pTaskList[i].m_pDdiData)
+            {
+                m_pTaskList[i].m_pDdiData->Close();
+                delete m_pTaskList[i].m_pDdiData;
+                m_pTaskList[i].m_pDdiData = NULL;
+            }
+            InterlockedExchange(&m_pTaskList[i].lInUse, 0L);
+            m_pTaskList[i].surface = 0;
+            m_pTaskList[i].bs      = 0;
+        }
+    }
+
+    return MFX_ERR_NONE;
+}
+
+mfxStatus TaskManager::Close()
+{
+    if (m_pTaskList)
+    {
+        for (mfxU32 i = 0; i < m_TaskNum; i++)
+        {
+            if(m_pTaskList[i].m_pDdiData)
+            {
+                m_pTaskList[i].m_pDdiData->Close();
+                delete m_pTaskList[i].m_pDdiData;
+                m_pTaskList[i].m_pDdiData = NULL;
+            }
+        }
+        delete [] m_pTaskList;
+        m_pTaskList = 0;
+    }
+
+    return MFX_ERR_NONE;
 }
 
 mfxStatus TaskManager::AssignTask(DdiTask *& newTask)

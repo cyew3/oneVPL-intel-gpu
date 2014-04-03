@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2008-2013 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2008-2014 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -61,14 +61,6 @@ namespace MfxHwMJpegEncode
         ENCODE_CAPS_JPEG const & hwCaps,
         bool                     setExtAlloc);
 
-
-    mfxStatus CheckEncodeFrameParam(
-        mfxVideoParam const & video,
-        mfxEncodeCtrl       * ctrl,
-        mfxFrameSurface1    * surface,
-        mfxBitstream        * bs,
-        bool                  isExternalFrameAllocator);
-
     mfxStatus FastCopyFrameBufferSys2Vid(
         VideoCORE    * core,
         mfxMemId       vidMemId,
@@ -113,6 +105,7 @@ namespace MfxHwMJpegEncode
         mfxL32             lInUse;               // 0: free, 1: used.
         mfxU32             m_statusReportNumber;
         mfxU32             m_bsDataLength;       // output bitstream length
+        ExecuteBuffers   * m_pDdiData;
     } DdiTask;
 
     class TaskManager
@@ -120,8 +113,11 @@ namespace MfxHwMJpegEncode
     public:
         TaskManager();
         ~TaskManager();
-    public:
+
         mfxStatus Init(mfxU32 maxTaskNum);
+        mfxStatus Reset();
+        mfxStatus Close();
+
         mfxStatus AssignTask(DdiTask *& newTask);
         mfxStatus RemoveTask(DdiTask & task);
     private:

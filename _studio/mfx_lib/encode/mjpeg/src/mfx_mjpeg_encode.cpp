@@ -736,7 +736,7 @@ static mfxStatus CheckExtBuffers(mfxExtBuffer** ebuffers, mfxU32 nbuffers)
 
     return MFX_ERR_NONE;
 
-} // static mfxStatus CheckExtBuffers_VP8enc(mfxExtBuffer** ebuffers, mfxU32 nbuffers)
+} // static mfxStatus CheckExtBuffers(mfxExtBuffer** ebuffers, mfxU32 nbuffers)
 
 MFXVideoENCODEMJPEG::MFXVideoENCODEMJPEG(VideoCORE *core, mfxStatus *status) : VideoENCODE()
 {

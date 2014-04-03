@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2011-2013 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2011-2014 Intel Corporation. All Rights Reserved.
 //
 //
 //          H264 encoder: support of DXVA D3D11 driver
@@ -55,7 +55,6 @@ namespace
 
 D3D11Encoder::D3D11Encoder()
 : m_core(0)
-, m_pDdiData(0)
 , m_pVideoDevice(0)
 , m_pVideoContext(0)
 , m_pDecoder(0)
@@ -96,21 +95,6 @@ mfxStatus D3D11Encoder::CreateAuxilliaryDevice(
 mfxStatus D3D11Encoder::CreateAccelerationService(mfxVideoParam const & par)
 {
     par;
-
-    return MFX_ERR_NONE;
-}
-
-mfxStatus D3D11Encoder::Reset(mfxVideoParam const & par)
-{
-    mfxStatus sts;
-
-    if (!m_pDdiData)
-    {
-        m_pDdiData = new MfxHwMJpegEncode::ExecuteBuffers;
-    }
-  
-    sts = m_pDdiData->Init(&par);
-    MFX_CHECK_STS(sts);
 
     return MFX_ERR_NONE;
 }
@@ -265,7 +249,7 @@ mfxStatus D3D11Encoder::Execute(DdiTask &task, mfxHDL surface)
     HRESULT hr  = S_OK;
     mfxHDLPair* inputPair = static_cast<mfxHDLPair*>(surface);//aya: has to be corrected
     ID3D11Resource* pInputD3D11Res = static_cast<ID3D11Resource*>(inputPair->first);
-    ExecuteBuffers* pExecuteBuffers = m_pDdiData;
+    ExecuteBuffers* pExecuteBuffers = task.m_pDdiData;
 
     // BeginFrame()
     //{ ---------------------------------------------------------
@@ -497,19 +481,10 @@ mfxStatus D3D11Encoder::UpdateBitstream(
 
 mfxStatus D3D11Encoder::Destroy()
 {
-    mfxStatus sts = MFX_ERR_NONE;
-
-    if (m_pDdiData)
-    {
-        m_pDdiData->Close();
-        delete m_pDdiData;
-        m_pDdiData = 0;
-    }
-
     SAFE_RELEASE(m_pDecoder);
     SAFE_RELEASE(m_pVDOView);
 
-    return sts;
+    return MFX_ERR_NONE;
 }
 
 mfxStatus D3D11Encoder::Init(

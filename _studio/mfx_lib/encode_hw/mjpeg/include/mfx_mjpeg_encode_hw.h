@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2008-2013 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2008-2014 Intel Corporation. All Rights Reserved.
 //
 //
 //          HW MJPEG  encoder
@@ -87,9 +87,16 @@ protected:
     mfxStatus UpdateDeviceStatus(mfxStatus sts);
     mfxStatus CheckDevice();
 
+    mfxStatus CheckEncodeFrameParam(mfxVideoParam const & video,
+                                    mfxEncodeCtrl       * ctrl,
+                                    mfxFrameSurface1    * surface,
+                                    mfxBitstream        * bs,
+                                    bool                  isExternalFrameAllocator);
+
     // pointer to video core - class for memory/frames management and allocation
     VideoCORE*          m_pCore;
-    mfxVideoParam       m_video;
+    mfxVideoParam       m_vFirstParam;
+    mfxVideoParam       m_vParam;
     std::auto_ptr<DriverEncoder> m_ddi;
 
     bool                m_bInitialized;
