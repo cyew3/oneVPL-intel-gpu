@@ -1013,7 +1013,6 @@ mfxStatus VAAPIEncoder::Register(mfxFrameAllocResponse& response, D3DDDIFORMAT t
     if( D3DDDIFMT_INTELENCODE_BITSTREAMDATA == type )
     {
         pQueue = &m_bsQueue;
-        m_feedbackCache.resize(response.NumFrameActual);
     }
     else
     {
