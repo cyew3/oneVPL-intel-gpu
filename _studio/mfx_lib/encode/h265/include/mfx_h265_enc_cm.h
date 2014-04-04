@@ -46,7 +46,9 @@ struct H265EncCURBEData;
 class CmRuntimeError : public std::exception
 {
 public:
-    CmRuntimeError() : std::exception() { assert(!"CmRuntimeError"); }
+    CmRuntimeError() : std::exception() {
+        assert(!"CmRuntimeError");
+    }
 };
 
 class H265RefMatchData
@@ -55,9 +57,6 @@ class H265RefMatchData
 typedef struct {
     Ipp32s poc;
     Ipp8s  globi;
-/*
-    Ipp8s  lock;    // every update decrease it by 1
-*/
 } MatchData;
 
 private:
@@ -70,7 +69,7 @@ public:
     
     Ipp8s GetByPoc(Ipp32s poc);
     Ipp32s Add(Ipp32s poc);
-    void Update(H265Frame *pFrame, H265Slice *pSlice);
+    void Update(H265FrameList *pDpb);
 };
 
 CmDevice * TryCreateCmDevicePtr(VideoCORE * core, mfxU32 * version = 0);

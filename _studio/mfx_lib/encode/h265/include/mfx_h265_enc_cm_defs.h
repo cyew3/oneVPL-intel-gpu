@@ -24,10 +24,11 @@
 #include "cm_def.h"
 #include "cm_vm.h"
 #include "mfx_h265_set.h"
+#include "mfx_h265_frame.h"
 
 namespace H265Enc {
 
-const Ipp32s CM_REF_BUF_LEN = MAX_NUM_REF_IDX + 1;
+const Ipp32s CM_REF_BUF_LEN = MAX_NUM_REF_IDX + 4;
 
 enum {
     PU32x32, PU32x16, PU16x32, PU16x16, PU16x8, PU8x16, PU8x8, PU8x4, PU4x8, PU_MAX
@@ -35,11 +36,11 @@ enum {
 
 Ipp32s GetPuSize(Ipp32s puw, Ipp32s puh);
 
-void AllocateCmResources(mfxU32 w, mfxU32 h, mfxU16 nRefs);
+void AllocateCmResources(mfxU32 w, mfxU32 h, mfxU8 nRefs);
 
-void RunVmeCurr(H265VideoParam const &param, H265Frame *pFrameCur, H265Slice *pSliceCur);
+void RunVmeCurr(H265VideoParam const &param, H265Frame *pFrameCur, H265Slice *pSliceCur, H265FrameList *pDpb);
 
-void RunVmeNext(H265VideoParam const &param, H265Frame *pFrameNext, H265Slice *pSliceNext);
+void RunVmeNext(H265VideoParam const &param, H265Frame *pFrameNext, H265Slice *pSliceNext, H265FrameList *pDpb);
 
 void FreeCmResources();
 void PrintTimes();

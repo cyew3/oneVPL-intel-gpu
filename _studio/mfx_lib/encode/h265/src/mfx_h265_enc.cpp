@@ -927,11 +927,6 @@ mfxStatus H265Encoder::Init(const mfxVideoParam *param, const mfxExtCodingOption
     mfxStatus sts = InitH265VideoParam(param, opts_hevc);
     MFX_CHECK_STS(sts);
 
-#if defined (MFX_ENABLE_CM)
-    if (m_videoParam.enableCmFlag)
-        AllocateCmResources(param->mfx.FrameInfo.Width, param->mfx.FrameInfo.Height, param->mfx.NumRefFrame);
-#endif // MFX_ENABLE_CM
-
     Ipp32u numCtbs = m_videoParam.PicWidthInCtbs*m_videoParam.PicHeightInCtbs;
     profile_frequency = m_videoParam.GopRefDist;
     data_temp_size = ((MAX_TOTAL_DEPTH * 2 + 1) << m_videoParam.Log2NumPartInCU);
@@ -1131,6 +1126,13 @@ mfxStatus H265Encoder::Init(const mfxVideoParam *param, const mfxExtCodingOption
                                        m_videoParam.saoOpt);
     }
     //-----------------------------------------------------
+
+#if defined (MFX_ENABLE_CM)
+    if (m_videoParam.enableCmFlag) {
+        Ipp8u nRef = m_videoParam.csps->sps_max_dec_pic_buffering[0] + 1;
+        AllocateCmResources(param->mfx.FrameInfo.Width, param->mfx.FrameInfo.Height, nRef);
+    }
+#endif // MFX_ENABLE_CM
 
     return sts;
 }
@@ -3013,8 +3015,10 @@ mfxStatus H265Encoder::EncodeFrame(mfxFrameSurface1 *surface, mfxBitstream *mfxB
         }
     }
 
+/*
     if (m_videoParam.enableCmFlag && m_pCurrentFrame)
         m_pCurrentFrame->SetisShortTermRef();   // is needed for RefList of m_pNextFrame
+*/
 
     if (!mfxBS)
         return m_pCurrentFrame ? MFX_ERR_NONE : MFX_ERR_MORE_DATA;
@@ -3194,7 +3198,28 @@ recode:
         cmNextIdx ^= 1;
 
         m_pCurrentFrame->setEncOrderNum(m_frameCountEncoded);
-        RunVmeCurr(m_videoParam, m_pCurrentFrame, m_slices);
+#if 0
+        printf("VME Curr poc = %i type = %i (0 - B, 1- P, 2 - I)\n",  m_pCurrentFrame->PicOrderCnt(), m_slices->slice_type);
+        printf("L0 pocs: ");
+        H265Frame **pFrames = m_pCurrentFrame->m_refPicList[0].m_refFrames;
+        for (int ii = 0; ii < m_slices->num_ref_idx[0]; ii++) {
+            printf("%i ", pFrames[ii]->PicOrderCnt());
+        }
+        printf("\tL1 pocs: ");
+        pFrames = m_pCurrentFrame->m_refPicList[1].m_refFrames;
+        for (int ii = 0; ii < m_slices->num_ref_idx[1]; ii++) {
+            printf("%i ", pFrames[ii]->PicOrderCnt());
+        }
+        printf("\t\t");
+        printf("DPB pocs: ");
+        H265Frame *pFr = m_dpb.head();
+        while (pFr) {
+            printf("%i ", pFr->PicOrderCnt());
+            pFr = pFr->future();
+        }
+        printf("\n");
+#endif
+        RunVmeCurr(m_videoParam, m_pCurrentFrame, m_slices, &m_dpb);
     }
 #endif // MFX_ENABLE_CM
 
@@ -3203,9 +3228,26 @@ recode:
 
 #if defined (MFX_ENABLE_CM)
     if (m_videoParam.enableCmFlag) {
-        m_pNextFrame = m_cpb.findOldestToEncode(&m_dpb, m_l1_cnt_to_start_B, 0, 0);
+
+        switch (ePic_Class)
+        {
+        case IDR_PIC:
+        case REFERENCE_PIC:
+            m_pCurrentFrame->SetisShortTermRef();
+            break;
+        case DISPOSABLE_PIC:
+        default:
+            break;
+        }
+
+        // m_Bpyramid_nextNumFrame is already updated above
+        m_pNextFrame = m_cpb.findOldestToEncode(&m_dpb, m_l1_cnt_to_start_B, m_videoParam.BPyramid, m_Bpyramid_nextNumFrame);
         if (m_pNextFrame)
         {
+            m_pCurrentFrame->setWasEncoded();   // to make it disposable in ref list for Next
+
+            CleanDPB(); // disposable frames should be removed for correct ref lists
+
             small_memcpy(&m_ShortRefPicSetDump, &m_ShortRefPicSet, sizeof(m_ShortRefPicSet)); // !!!TODO: not all should be saved sergo!!!
             for (Ipp8u curr_slice = 0; curr_slice < m_videoParam.NumSlices; curr_slice++) {
                 H265Slice *pSlice = m_slicesNext + curr_slice;
@@ -3229,8 +3271,30 @@ recode:
             small_memcpy(&m_ShortRefPicSet, &m_ShortRefPicSetDump, sizeof(m_ShortRefPicSet));
             m_pNextFrame->setEncOrderNum(m_pCurrentFrame->EncOrderNum() + 1);
         }
-
-        RunVmeNext(m_videoParam, m_pNextFrame, m_slicesNext);
+#if 0
+        if (m_pNextFrame) {
+            printf("VME Next poc = %i type = %i (0 - B, 1- P, 2 - I)\n",  m_pNextFrame->PicOrderCnt(), m_slicesNext->slice_type);
+            printf("L0 pocs: ");
+            H265Frame **pFrames = m_pNextFrame->m_refPicList[0].m_refFrames;
+            for (int ii = 0; ii < m_slicesNext->num_ref_idx[0]; ii++) {
+                printf("%i ", pFrames[ii]->PicOrderCnt());
+            }
+            printf("\tL1 pocs: ");
+            pFrames = m_pNextFrame->m_refPicList[1].m_refFrames;
+            for (int ii = 0; ii < m_slicesNext->num_ref_idx[1]; ii++) {
+                printf("%i ", pFrames[ii]->PicOrderCnt());
+            }
+            printf("\t\t");
+            printf("DPB pocs: ");
+            H265Frame *pFr = m_dpb.head();
+            while (pFr) {
+                printf("%i ", pFr->PicOrderCnt());
+                pFr = pFr->future();
+            }
+            printf("\n");
+        }
+#endif
+        RunVmeNext(m_videoParam, m_pNextFrame, m_slicesNext, &m_dpb);
     }
 #endif // MFX_ENABLE_CM
 
@@ -3391,10 +3455,13 @@ recode:
     }
 
     m_pCurrentFrame->swapData(m_pReconstructFrame);
-    m_pCurrentFrame->setWasEncoded();
+    // for enableCmFlag m_dpb does not have current frame
     m_pCurrentFrame->Dump(m_recon_dump_file_name, &m_videoParam, &m_dpb, m_frameCountEncoded);
 
-    CleanDPB();
+    if (m_videoParam.enableCmFlag == 0) {
+        m_pCurrentFrame->setWasEncoded();
+        CleanDPB();
+    }
 
     m_frameCountEncoded++;
 

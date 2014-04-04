@@ -423,17 +423,17 @@ CmMbIntraDist * cmMbIntraDist[2] = {};
 CmMbIntraGrad * cmMbIntraGrad4x4[2] = {};
 CmMbIntraGrad * cmMbIntraGrad8x8[2] = {};
 
-CmSurface2DUP * distGpu[2][CM_REF_BUF_LEN][PU_MAX] = {};
-CmSurface2DUP * mvGpu[2][CM_REF_BUF_LEN][PU_MAX] = {};
-mfxU32 * distCpu[2][CM_REF_BUF_LEN][PU_MAX] = {0};
-mfxI16Pair * mvCpu[2][CM_REF_BUF_LEN][PU_MAX] = {0};
+CmSurface2DUP * distGpu[2][2][CM_REF_BUF_LEN][PU_MAX] = {};
+CmSurface2DUP * mvGpu[2][2][CM_REF_BUF_LEN][PU_MAX] = {};
+mfxU32 * distCpu[2][2][CM_REF_BUF_LEN][PU_MAX] = {0};
+mfxI16Pair * mvCpu[2][2][CM_REF_BUF_LEN][PU_MAX] = {0};
 Ipp32u pitchDist[PU_MAX] = {};
 Ipp32u pitchMv[PU_MAX] = {};
 
 CmSurface2D * raw2x[2] = {};
 CmSurface2D * raw[2] = {};
-CmSurface2D * fwdRef[CM_REF_BUF_LEN];
-CmSurface2D * fwdRef2x[CM_REF_BUF_LEN];
+CmSurface2D ** fwdRef = 0;
+CmSurface2D ** fwdRef2x = 0;
 CmSurface2D * IntraDist = 0;
 
 CmProgram * program = 0;
@@ -564,10 +564,12 @@ void FreeCmResources()
             DestroyCmBufferUp(device, cmMbIntraGrad4x4[i], mbIntraGrad4x4[i]);
             DestroyCmBufferUp(device, cmMbIntraGrad8x8[i], mbIntraGrad8x8[i]);
 
-            for (Ipp32s j = 0; j < numBufferedRefs; j++) {
-                for (Ipp32s k = PU32x32; k < PU_MAX; k++) {
-                    DestroyCmSurface2DUp(device, distCpu[i][j][k], distGpu[i][j][k]);
-                    DestroyCmSurface2DUp(device, mvCpu[i][j][k], mvGpu[i][j][k]);
+            for (Ipp32s l = 0; l < 2; l++) {
+                for (Ipp32s j = 0; j < numBufferedRefs; j++) {
+                    for (Ipp32s k = PU32x32; k < PU_MAX; k++) {
+                        DestroyCmSurface2DUp(device, distCpu[i][l][j][k], distGpu[i][l][j][k]);
+                        DestroyCmSurface2DUp(device, mvCpu[i][l][j][k], mvGpu[i][l][j][k]);
+                    }
                 }
             }
 
@@ -579,6 +581,8 @@ void FreeCmResources()
             device->DestroySurface(fwdRef[j]);
             device->DestroySurface(fwdRef2x[j]);
         }
+        delete[] fwdRef;
+        delete[] fwdRef2x;
 
         device->DestroyProgram(program);
         ::DestroyCmDevice(device);
@@ -595,7 +599,6 @@ H265RefMatchData::H265RefMatchData(Ipp32s bufLen) {
     for (Ipp32s i = 0; i < refMatchBufLen; i++) {
         refMatchBuf[i].poc = -1;
         refMatchBuf[i].globi = -1;
-//        refMatchBuf[i].lock = 0;
     }
 }
 
@@ -624,57 +627,30 @@ Ipp32s H265RefMatchData::Add(Ipp32s poc)
         return -1;
     refMatchBuf[i].poc = poc;
     refMatchBuf[i].globi = i;
-//    refMatchBuf[i].lock = 2;    // only 2nd Update unlocks it
     return i;
 }
 
-void H265RefMatchData::Update(H265Frame *pFrame, H265Slice *pSlice)
+void H265RefMatchData::Update(H265FrameList *pDpb)
 {
-    bool exist = false;
-
-    if ((pFrame == NULL) || (pSlice == NULL))
+    if (pDpb == NULL)
         return;
-
     for (Ipp32s i = 0; i < refMatchBufLen; i++) {
         if (refMatchBuf[i].poc < 0)
             continue;
 
-        // search for stored poc in L0/L1
-        for (Ipp32s list = 0; list < 2; list++) {
-            for (Ipp32s j = 0; j < pSlice->num_ref_idx[list]; j++) {
-                H265Frame *pRef = pFrame->m_refPicList[list].m_refFrames[j];
-                if (!pRef)
-                    throw CmRuntimeError();
-
-                if (refMatchBuf[i].poc == pRef->PicOrderCnt()) {
-                    exist = true;
-                    break;
-                }
-            }
-            if (exist)  // ref is used in L0 or L1
-                break;
+        // check that this frame is steel in dpb
+        H265Frame *pExist = pDpb->findFrameByPOC(refMatchBuf[i].poc);
+        if (pExist && pExist->wasEncoded()) { // actuallu wasEncoded is set for all frames except for Current
+            continue;
         }
-
-/*
-        if (refMatchBuf[i].lock > 0)
-            refMatchBuf[i].lock--;
-*/
-        if (!exist) {
-/*
-            if (refMatchBuf[i].lock <= 0) {  // not to delete it in update for next
-*/
-                refMatchBuf[i].poc = -1;
-                refMatchBuf[i].globi = -1;
-/*
-            }
-*/
-        } else {
-            exist = false;
+        else {
+            refMatchBuf[i].poc = -1;
+            refMatchBuf[i].globi = -1;
         }
     }
 }
 
-void AllocateCmResources(mfxU32 w, mfxU32 h, mfxU16 nRefs)
+void AllocateCmResources(mfxU32 w, mfxU32 h, mfxU8 nRefs)
 {
     if (cmResurcesAllocated)
         return;
@@ -693,6 +669,8 @@ void AllocateCmResources(mfxU32 w, mfxU32 h, mfxU16 nRefs)
 
     program = ReadProgram(device, genx_h265_cmcode, sizeof(genx_h265_cmcode)/sizeof(genx_h265_cmcode[0]));
 
+    fwdRef = new CmSurface2D *[numBufferedRefs];
+    fwdRef2x = new CmSurface2D *[numBufferedRefs];
     for (Ipp32s j = 0; j < numBufferedRefs; j++) {
         fwdRef[j] = CreateSurface(device, w, h, CM_SURFACE_FORMAT_NV12);
         fwdRef2x[j] = CreateSurface(device, width2x, height2x, CM_SURFACE_FORMAT_NV12);
@@ -719,16 +697,18 @@ void AllocateCmResources(mfxU32 w, mfxU32 h, mfxU16 nRefs)
         CreateCmBufferUp(device, w * h / 16, cmMbIntraGrad4x4[i], mbIntraGrad4x4[i]);
         CreateCmBufferUp(device, w * h / 64, cmMbIntraGrad8x8[i], mbIntraGrad8x8[i]);
 
-        for (Ipp32s j = 0; j < numBufferedRefs; j++) {
-            for (Ipp32u k = PU32x32; k <= PU16x32; k++)
-                CreateCmSurface2DUp(device, cmMvW[k] * 16, cmMvH[k], CM_SURFACE_FORMAT_P8,
-                                    distCpu[i][j][k], distGpu[i][j][k], pitchDist[k]);
-            for (Ipp32u k = PU16x16; k < PU_MAX; k++)
-                CreateCmSurface2DUp(device, cmMvW[k] * 1, cmMvH[k], CM_SURFACE_FORMAT_P8,
-                                    distCpu[i][j][k], distGpu[i][j][k], pitchDist[k]);
-            for (Ipp32u k = 0; k < PU_MAX; k++)
-                CreateCmSurface2DUp(device, cmMvW[k], cmMvH[k], CM_SURFACE_FORMAT_P8,
-                                    mvCpu[i][j][k], mvGpu[i][j][k], pitchMv[k]);
+        for (Ipp32u l = 0; l < 2; l++) {
+            for (Ipp32s j = 0; j < numBufferedRefs; j++) {
+                for (Ipp32u k = PU32x32; k <= PU16x32; k++)
+                    CreateCmSurface2DUp(device, cmMvW[k] * 16, cmMvH[k], CM_SURFACE_FORMAT_P8,
+                                        distCpu[i][l][j][k], distGpu[i][l][j][k], pitchDist[k]);
+                for (Ipp32u k = PU16x16; k < PU_MAX; k++)
+                    CreateCmSurface2DUp(device, cmMvW[k] * 1, cmMvH[k], CM_SURFACE_FORMAT_P8,
+                                        distCpu[i][l][j][k], distGpu[i][l][j][k], pitchDist[k]);
+                for (Ipp32u k = 0; k < PU_MAX; k++)
+                    CreateCmSurface2DUp(device, cmMvW[k], cmMvH[k], CM_SURFACE_FORMAT_P8,
+                                        mvCpu[i][l][j][k], mvGpu[i][l][j][k], pitchMv[k]);
+            }
         }
     }
 
@@ -780,7 +760,7 @@ void AllocateCmResources(mfxU32 w, mfxU32 h, mfxU16 nRefs)
     cmNextIdx = 0;
 }
 
-void RunVmeCurr(H265VideoParam const &param, H265Frame *pFrameCur, H265Slice *pSliceCur)
+void RunVmeCurr(H265VideoParam const &param, H265Frame *pFrameCur, H265Slice *pSliceCur, H265FrameList *pDpb)
 {
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "RunVmeCurr");
 
@@ -798,14 +778,28 @@ void RunVmeCurr(H265VideoParam const &param, H265Frame *pFrameCur, H265Slice *pS
         }
     }
     else if (pFrameCur->m_PicCodType & (MFX_FRAMETYPE_P | MFX_FRAMETYPE_B)) {
-        // unused in L0 and L0 refs are removed from recBufData
-        recBufData->Update(pFrameCur, pSliceCur);
-        for (Ipp32s lNum = 0, bufIdx = 0; lNum < 1/*2*/; lNum++) {
-            for (Ipp32s refIdx = 0; refIdx < pSliceCur->num_ref_idx[lNum]; refIdx++) {
+        // unused refs are removed from recBufData
+        recBufData->Update(pDpb);
+        Ipp32s refList, refIdx;
+        for (refList = 0; refList < ((pSliceCur->slice_type == B_SLICE) ? 2 : 1); refList++) {
+            for (refIdx = 0; refIdx < pSliceCur->num_ref_idx[refList]; refIdx++) {
                 MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "RefCur");  
-                H265Frame *ref = pFrameCur->m_refPicList[lNum].m_refFrames[refIdx];
+                
+                H265Frame *ref = pFrameCur->m_refPicList[refList].m_refFrames[refIdx];
                 if (ref->EncOrderNum() != pFrameCur->EncOrderNum() - 1)
                     continue;   // everything was done in RunVmeNext
+                
+/*
+                if (refList == 1) { // TODO: use pre-build table of duplicates instead of std::find
+                    Ipp32s idx0 = pFrameCur->m_mapRefIdxL1ToL0[refIdx];
+                    if (idx0 >= 0) {
+                        // don't do ME just copy from L0
+                        distCpuWork[cmCurIdx][1][refIdx] = distCpuWork[cmCurIdx][0][idx0];
+                        mvCpuWork[cmCurIdx][1][refIdx] = mvCpuWork[cmCurIdx][0][idx0];
+                        continue;
+                    }
+                }
+*/
 
                 Ipp32s globi = recBufData->GetByPoc(ref->PicOrderCnt());
                 if (globi < 0) {
@@ -823,9 +817,9 @@ void RunVmeCurr(H265VideoParam const &param, H265Frame *pFrameCur, H265Slice *pS
                 SurfaceIndex * refs   = CreateVmeSurfaceG75(device, raw[cmCurIdx], &fwdRef[globi], 0, 1, 0);
                 SurfaceIndex * refs2x = CreateVmeSurfaceG75(device, raw2x[cmCurIdx], &fwdRef2x[globi], 0, 1, 0);
 
-                CmSurface2DUP ** dist = distGpu[cmCurIdx][globi];
-                CmSurface2DUP ** mv = mvGpu[cmCurIdx][globi];
-                    
+                CmSurface2DUP ** dist = distGpu[cmCurIdx][refList][refIdx];
+                CmSurface2DUP ** mv = mvGpu[cmCurIdx][refList][refIdx];
+
                 {   MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "RefLast_kernelMe");
                     SetKernelArg(kernelMe, me1xControl, *refs, dist[PU16x16], dist[PU16x8], dist[PU8x16],
                     dist[PU8x8], dist[PU8x4], dist[PU4x8], mv[PU16x16], mv[PU16x8],
@@ -835,22 +829,25 @@ void RunVmeCurr(H265VideoParam const &param, H265Frame *pFrameCur, H265Slice *pS
                 if (param.Log2MaxCUSize > 4) {
                     {   MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "RefLast_kernelMe2x");
                         SetKernelArg(kernelMe2x, me2xControl, *refs2x, mv[PU32x32], mv[PU32x16],
-                                     mv[PU16x32]);
+                            mv[PU16x32]);
                         EnqueueKernel(device, queue, kernelMe2x, width2x / 16, height2x / 16,
                             lastEvent[cmCurIdx]);
                     }
                     {   MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "RefLast_kernelRefine32x32");
-                        SetKernelArg(kernelRefine32x32, dist[PU32x32], mv[PU32x32], raw[cmCurIdx], fwdRef[globi]);
+                        SetKernelArg(kernelRefine32x32, dist[PU32x32], mv[PU32x32], raw[cmCurIdx],
+                            fwdRef[globi]);
                         EnqueueKernel(device, queue, kernelRefine32x32, width2x / 16, height2x / 16,
                             lastEvent[cmCurIdx]);
                     }
                     {   MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "RefLast_kernelRefine32x16");
-                        SetKernelArg(kernelRefine32x16, dist[PU32x16], mv[PU32x16], raw[cmCurIdx], fwdRef[globi]);
+                        SetKernelArg(kernelRefine32x16, dist[PU32x16], mv[PU32x16], raw[cmCurIdx],
+                            fwdRef[globi]);
                         EnqueueKernel(device, queue, kernelRefine32x16, width2x / 16, height2x / 8,
                             lastEvent[cmCurIdx]);
                     }
                     {   MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "RefLast_kernelRefine16x32");
-                        SetKernelArg(kernelRefine16x32, dist[PU16x32], mv[PU16x32], raw[cmCurIdx], fwdRef[globi]);
+                        SetKernelArg(kernelRefine16x32, dist[PU16x32], mv[PU16x32], raw[cmCurIdx],
+                            fwdRef[globi]);
                         EnqueueKernel(device, queue, kernelRefine16x32, width2x / 8, height2x / 16,
                             lastEvent[cmCurIdx]);
                     }
@@ -868,7 +865,7 @@ void RunVmeCurr(H265VideoParam const &param, H265Frame *pFrameCur, H265Slice *pS
     }
 }
 
-void RunVmeNext(H265VideoParam const & param, H265Frame * pFrameNext, H265Slice *pSliceNext)
+void RunVmeNext(H265VideoParam const & param, H265Frame * pFrameNext, H265Slice *pSliceNext, H265FrameList *pDpb)
 {
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "RunVmeNext");
     
@@ -903,12 +900,26 @@ void RunVmeNext(H265VideoParam const & param, H265Frame * pFrameNext, H265Slice 
             }
         }
 
-        for (Ipp32s lNum = 0, bufIdx = 0; lNum < 1/*2*/; lNum++) {
-            for (Ipp32s refIdx = 0; refIdx < pSliceNext->num_ref_idx[lNum]; refIdx++) {
+        Ipp32s refList, refIdx;
+        for (refList = 0; refList < ((pSliceNext->slice_type == B_SLICE) ? 2 : 1); refList++) {
+            for (refIdx = 0; refIdx < pSliceNext->num_ref_idx[refList]; refIdx++) {
                 MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "RefNext");  
-                H265Frame *ref = pFrameNext->m_refPicList[lNum].m_refFrames[refIdx];
+
+                H265Frame *ref = pFrameNext->m_refPicList[refList].m_refFrames[refIdx];
                 if (ref->EncOrderNum() == pFrameNext->EncOrderNum() - 1)
                     continue;   // prev recon is not ready yet and will be done in RunVmeCur
+
+/*
+                if (refList == 1) { // TODO: use pre-build table of duplicates instead of std::find
+                    Ipp32s idx0 = pFrameNext->m_mapRefIdxL1ToL0[refIdx];
+                    if (idx0 >= 0) {
+                        // don't do ME just copy from L0
+                        distCpuWork[cmNextIdx][1][refIdx] = distCpuWork[cmNextIdx][0][idx0];
+                        mvCpuWork[cmNextIdx][1][refIdx] = mvCpuWork[cmNextIdx][0][idx0];
+                        continue;
+                    }
+                }
+*/
 
                 Ipp32s globi = recBufData->GetByPoc(ref->PicOrderCnt());
                 if (globi < 0) { // no new ref frame should be added at this stage
@@ -917,8 +928,9 @@ void RunVmeNext(H265VideoParam const & param, H265Frame * pFrameNext, H265Slice 
 
                 SurfaceIndex *refs2x = CreateVmeSurfaceG75(device, raw2x[cmNextIdx], &fwdRef2x[globi], 0, 1, 0);
                 SurfaceIndex *refs   = CreateVmeSurfaceG75(device, raw[cmNextIdx],   &fwdRef[globi],   0, 1, 0);
-                CmSurface2DUP ** dist = distGpu[cmNextIdx][globi];
-                CmSurface2DUP ** mv = mvGpu[cmNextIdx][globi];
+
+                CmSurface2DUP ** dist = distGpu[cmNextIdx][refList][refIdx];
+                CmSurface2DUP ** mv = mvGpu[cmNextIdx][refList][refIdx];
 
                 {   MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "RefNext_kernelMe");
                     SetKernelArg(kernelMe, me1xControl, *refs, dist[PU16x16], dist[PU16x8], dist[PU8x16],
