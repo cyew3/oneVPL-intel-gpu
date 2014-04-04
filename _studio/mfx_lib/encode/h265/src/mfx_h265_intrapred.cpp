@@ -1208,27 +1208,27 @@ Ipp8u H265CU::GetTrSplitMode(Ipp32s abs_part_idx, Ipp8u depth, Ipp8u tr_depth, I
     return split_mode;
 }
 
-void H265CU::IntraPred(Ipp32u abs_part_idx, Ipp8u depth) {
-    Ipp32s depth_max = m_data[abs_part_idx].depth + m_data[abs_part_idx].trIdx;
-    Ipp32u num_parts = ( m_par->NumPartInCU >> (depth<<1) )>>2;
-    Ipp32u i;
-
-    if (depth == depth_max - 1 && (m_data[abs_part_idx].size >> m_data[abs_part_idx].trIdx) == 4) {
-        for (i = 0; i < 4; i++) {
-            Ipp32s abs_part_idx_tmp = abs_part_idx + num_parts * i;
-            IntraPredTu(abs_part_idx_tmp, m_data[abs_part_idx_tmp].size >> m_data[abs_part_idx_tmp].trIdx,
-                m_data[abs_part_idx_tmp].intraLumaDir, 1);
-        }
-        IntraPredTu(abs_part_idx, m_data[abs_part_idx].size >> m_data[abs_part_idx].trIdx << 1, m_data[abs_part_idx].intraChromaDir, 0);
-    } else if (depth == depth_max) {
-        IntraPredTu(abs_part_idx, m_data[abs_part_idx].size >> m_data[abs_part_idx].trIdx, m_data[abs_part_idx].intraLumaDir, 1);
-        IntraPredTu(abs_part_idx, m_data[abs_part_idx].size >> m_data[abs_part_idx].trIdx, m_data[abs_part_idx].intraChromaDir, 0);
-    } else {
-        for (i = 0; i < 4; i++) {
-            IntraPred(abs_part_idx + num_parts * i, depth+1);
-        }
-    }
-}
+//void H265CU::IntraPred(Ipp32u abs_part_idx, Ipp8u depth) {
+//    Ipp32s depth_max = m_data[abs_part_idx].depth + m_data[abs_part_idx].trIdx;
+//    Ipp32u num_parts = ( m_par->NumPartInCU >> (depth<<1) )>>2;
+//    Ipp32u i;
+//
+//    if (depth == depth_max - 1 && (m_data[abs_part_idx].size >> m_data[abs_part_idx].trIdx) == 4) {
+//        for (i = 0; i < 4; i++) {
+//            Ipp32s abs_part_idx_tmp = abs_part_idx + num_parts * i;
+//            IntraPredTu(abs_part_idx_tmp, m_data[abs_part_idx_tmp].size >> m_data[abs_part_idx_tmp].trIdx,
+//                m_data[abs_part_idx_tmp].intraLumaDir, 1);
+//        }
+//        IntraPredTu(abs_part_idx, m_data[abs_part_idx].size >> m_data[abs_part_idx].trIdx << 1, m_data[abs_part_idx].intraChromaDir, 0);
+//    } else if (depth == depth_max) {
+//        IntraPredTu(abs_part_idx, m_data[abs_part_idx].size >> m_data[abs_part_idx].trIdx, m_data[abs_part_idx].intraLumaDir, 1);
+//        IntraPredTu(abs_part_idx, m_data[abs_part_idx].size >> m_data[abs_part_idx].trIdx, m_data[abs_part_idx].intraChromaDir, 0);
+//    } else {
+//        for (i = 0; i < 4; i++) {
+//            IntraPred(abs_part_idx + num_parts * i, depth+1);
+//        }
+//    }
+//}
 
 
 void H265CU::GetInitAvailablity()

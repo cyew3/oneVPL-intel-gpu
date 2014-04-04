@@ -300,7 +300,7 @@ void H265CU::PredInterUni(Ipp32u PartAddr, Ipp32s Width, Ipp32s Height, EnumRefP
 
         in_dstBufPitch = m_par->MaxCUSize;
         in_dstBuf = m_predBufUv[ (eAddAverage == AVERAGE_FROM_BUF ? !listIdx : listIdx) ];
-        in_dstBuf += ((PUStartRow * m_par->MaxCUSize + PUStartColumn * 2) << m_par->Log2MinTUSize);
+        in_dstBuf += ((PUStartRow * m_par->MaxCUSize / 2 + PUStartColumn) << m_par->Log2MinTUSize);
 
         in_dstPicPitch = dst_pitch;
         in_dstPic = dst + ((PUStartRow * dst_pitch / 2 + PUStartColumn) << m_par->Log2MinTUSize);

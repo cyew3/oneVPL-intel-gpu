@@ -125,16 +125,20 @@ public:
     __ALIGN32 PixType       m_interPred[4][MAX_CU_SIZE * MAX_CU_SIZE];
     __ALIGN32 PixType       m_interPredBest[4][MAX_CU_SIZE * MAX_CU_SIZE];
     PixType               (*m_interPredPtr)[MAX_CU_SIZE * MAX_CU_SIZE];
+    __ALIGN32 PixType       m_interPredChroma[4][MAX_CU_SIZE * MAX_CU_SIZE/2];
+    __ALIGN32 PixType       m_interPredChromaBest[4][MAX_CU_SIZE * MAX_CU_SIZE/2];
+    PixType               (*m_interPredChromaPtr)[MAX_CU_SIZE * MAX_CU_SIZE/2];
     __ALIGN32 CoeffsType    m_interResidualsY[4][MAX_CU_SIZE * MAX_CU_SIZE];
     __ALIGN32 CoeffsType    m_interResidualsYBest[4][MAX_CU_SIZE * MAX_CU_SIZE];
     CoeffsType            (*m_interResidualsYPtr)[MAX_CU_SIZE * MAX_CU_SIZE];
+    __ALIGN32 CoeffsType    m_interResidualsU[4][MAX_CU_SIZE * MAX_CU_SIZE/4];
+    __ALIGN32 CoeffsType    m_interResidualsUBest[4][MAX_CU_SIZE * MAX_CU_SIZE/4];
+    CoeffsType            (*m_interResidualsUPtr)[MAX_CU_SIZE * MAX_CU_SIZE/4];
+    __ALIGN32 CoeffsType    m_interResidualsV[4][MAX_CU_SIZE * MAX_CU_SIZE/4];
+    __ALIGN32 CoeffsType    m_interResidualsVBest[4][MAX_CU_SIZE * MAX_CU_SIZE/4];
+    CoeffsType            (*m_interResidualsVPtr)[MAX_CU_SIZE * MAX_CU_SIZE/4];
     __ALIGN32 PixType       m_interRecBest[5][MAX_CU_SIZE*MAX_CU_SIZE];
     __ALIGN32 PixType       m_interRecBestChroma[5][MAX_CU_SIZE*MAX_CU_SIZE / 2];
-
-    __ALIGN32 PixType       m_interPredMerge[4][MAX_CU_SIZE * MAX_CU_SIZE];
-    __ALIGN32 PixType       m_interPredMergeBest[4][MAX_CU_SIZE * MAX_CU_SIZE];
-    __ALIGN32 CoeffsType    m_interResidualsYMerge[4][MAX_CU_SIZE * MAX_CU_SIZE];
-    __ALIGN32 CoeffsType    m_interResidualsYMergeBest[4][MAX_CU_SIZE * MAX_CU_SIZE];
 
     Ipp32s                  m_interPredReady;
 
@@ -171,16 +175,19 @@ public:
     Ipp8u *m_yRec;
     Ipp8u *m_uvRec;
     Ipp32s m_pitchRec;
-    H265CUData *m_dataSave;
-    H265CUData *m_dataBest;
-    H265CUData *m_dataTemp;
+    H265CUData *m_dataSave;  // All CU array, final best, the only source for neibours
+    H265CUData *m_dataBest;  // depth array, for ModeDecision tree
+    H265CUData *m_dataTemp;  // depth array
     H265CUData *m_dataTemp2;
-    PixType     m_recLumaSaveCu[6][MAX_CU_SIZE*MAX_CU_SIZE];
-    PixType     m_recChromaSaveCu[6][MAX_CU_SIZE*MAX_CU_SIZE/2];
-    PixType     m_recLumaSaveTu[6][MAX_CU_SIZE*MAX_CU_SIZE];
-    PixType     m_recChromaSaveTu[6][MAX_CU_SIZE*MAX_CU_SIZE/2];
-    Ipp16s m_predBufY[2][MAX_CU_SIZE*MAX_CU_SIZE];
-    Ipp16s m_predBufUv[2][MAX_CU_SIZE*MAX_CU_SIZE/2];
+    H265CUData *m_dataInter; // best Inter for current depth
+    __ALIGN32 PixType m_recLumaSaveCu[6][MAX_CU_SIZE*MAX_CU_SIZE];
+    __ALIGN32 PixType m_recChromaSaveCu[6][MAX_CU_SIZE*MAX_CU_SIZE/2];
+    __ALIGN32 PixType m_recLumaSaveTu[6][MAX_CU_SIZE*MAX_CU_SIZE];
+    __ALIGN32 PixType m_recChromaSaveTu[6][MAX_CU_SIZE*MAX_CU_SIZE/2];
+    __ALIGN32 PixType m_recLumaInter[6][MAX_CU_SIZE*MAX_CU_SIZE];
+    __ALIGN32 PixType m_recChromaInter[6][MAX_CU_SIZE*MAX_CU_SIZE/2];
+    __ALIGN32 Ipp16s  m_predBufY[2][MAX_CU_SIZE*MAX_CU_SIZE];
+    __ALIGN32 Ipp16s  m_predBufUv[2][MAX_CU_SIZE*MAX_CU_SIZE/2];
 
     // storing predictions for bidir
 #define INTERP_BUF_SZ 8 // must be power of 2
@@ -441,6 +448,8 @@ public:
 
     void TuGetSplitInter(Ipp32u absPartIdx, Ipp32s offset, Ipp8u trIdx, Ipp8u trIdxMax, Ipp8u nz[3],
                          CostType *cost, Ipp8u cbf[256][3]);
+
+    void TuMaxSplitInter(Ipp32u absPartIdx, Ipp8u trIdxMax, CostType *cost, Ipp8u cbf[256][3]);
 
     void DetailsXY(H265MEInfo *meInfo) const;
 

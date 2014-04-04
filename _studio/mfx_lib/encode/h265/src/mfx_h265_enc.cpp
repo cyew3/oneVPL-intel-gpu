@@ -1038,7 +1038,7 @@ mfxStatus H265Encoder::Init(const mfxVideoParam *param, const mfxExtCodingOption
 
     Ipp32u numCtbs = m_videoParam.PicWidthInCtbs*m_videoParam.PicHeightInCtbs;
     profile_frequency = m_videoParam.GopRefDist;
-    data_temp_size = ((MAX_TOTAL_DEPTH * 2 + 1) << m_videoParam.Log2NumPartInCU);
+    data_temp_size = ((MAX_TOTAL_DEPTH * 2 + 2) << m_videoParam.Log2NumPartInCU);
 
     // temp buf size - todo reduce
     Ipp32u streamBufSizeMain = m_videoParam.SourceWidth * m_videoParam.SourceHeight * 3 / 2 + DATA_ALIGN;
