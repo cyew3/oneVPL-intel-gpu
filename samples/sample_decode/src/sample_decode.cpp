@@ -60,6 +60,7 @@ void PrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage)
 #endif
     msdk_printf(MSDK_STRING("   [-low_latency]          - configures decoder for low latency mode (supported only for H.264 and JPEG codec)\n"));
     msdk_printf(MSDK_STRING("   [-calc_latency]         - calculates latency during decoding and prints log (supported only for H.264 and JPEG codec)\n"));
+    msdk_printf(MSDK_STRING("   [-async]                - depth of asynchronous pipeline. default value is auto\n"));
 #if defined(_WIN32) || defined(_WIN64)
     msdk_printf(MSDK_STRING("   [-jpeg_rotate n]        - rotate jpeg frame n degrees \n"));
     msdk_printf(MSDK_STRING("       n(90,180,270)       - number of degrees \n"));
@@ -256,6 +257,19 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
                      PrintHelp(strInput[0], MSDK_STRING("-calc_latency mode is suppoted only for H.264 and JPEG codecs"));
                      return MFX_ERR_UNSUPPORTED;
                 }
+            }
+        }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-async")))
+        {
+            if(i + 1 >= nArgNum)
+            {
+                PrintHelp(strInput[0], MSDK_STRING("Not enough parameters for -async key"));
+                return MFX_ERR_UNSUPPORTED;
+            }
+            if (1 != msdk_sscanf(strInput[++i], MSDK_STRING("%d"), &pParams->nAsyncDepth))
+            {
+                PrintHelp(strInput[0], MSDK_STRING("async is invalid"));
+                return MFX_ERR_UNSUPPORTED;
             }
         }
         else // 1-character options

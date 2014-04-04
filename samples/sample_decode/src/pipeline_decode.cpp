@@ -509,7 +509,7 @@ mfxStatus CDecodingPipeline::InitMfxParams(sInputParams *pParams)
     // specify memory type
     m_mfxVideoParams.IOPattern = (mfxU16)(m_memType != SYSTEM_MEMORY ? MFX_IOPATTERN_OUT_VIDEO_MEMORY : MFX_IOPATTERN_OUT_SYSTEM_MEMORY);
 
-    m_mfxVideoParams.AsyncDepth = 4;
+    m_mfxVideoParams.AsyncDepth = pParams->nAsyncDepth;
 
     return MFX_ERR_NONE;
 }
@@ -1101,7 +1101,7 @@ mfxStatus CDecodingPipeline::RunDecoding()
 #ifndef __SYNC_WA
             if (!m_pCurrentFreeSurface) {
 #else
-            if (!m_pCurrentFreeSurface || (m_OutputSurfacesPool.GetSurfaceCount() == 4)) {
+            if (!m_pCurrentFreeSurface || (m_OutputSurfacesPool.GetSurfaceCount() == m_mfxVideoParams.AsyncDepth)) {
 #endif
                 // we stuck with no free surface available, now we will sync...
                 sts = SyncOutputSurface(MSDK_DEC_WAIT_INTERVAL);

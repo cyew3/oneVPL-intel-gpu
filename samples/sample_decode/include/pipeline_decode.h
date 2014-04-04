@@ -71,6 +71,7 @@ struct sInputParams
     mfxU32  nWallTimeout; //timeout for -wall option
     mfxU32  numViews; // number of views for Multi-View Codec
     mfxU32  nRotation; // rotation for Motion JPEG Codec
+    mfxU16  nAsyncDepth; // asyncronous queue
 
     msdk_char  strSrcFile[MSDK_MAX_FILENAME_LEN];
     msdk_char  strDstFile[MSDK_MAX_FILENAME_LEN];
