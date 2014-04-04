@@ -2748,12 +2748,12 @@ void H265CU::MePu(H265MEInfo *meInfo, Ipp32s lastPredIdx)
                     mvCostRefBest[1][refIdx] = MvCost1RefLog(mvRefBest[0][idx0], (Ipp8s)refIdx, predInfo, list);
                     bitsRefBest[1][refIdx] = MVP_LX_FLAG_BITS;
                     bitsRefBest[1][refIdx] += GetFlBits(refIdx, numRefIdx);
-                    bitsRefBest[1][refIdx] += predIdxBits[list];
+                    bitsRefBest[1][refIdx] += predIdxBits[1];
                     costRefBest[1][refIdx] = costRefBest[0][idx0] - mvCostRefBest[0][idx0];
                     costRefBest[1][refIdx] -= (Ipp32s)(bitsRefBest[0][idx0] * m_cslice->rd_lambda_sqrt + 0.5);
                     costRefBest[1][refIdx] += mvCostRefBest[1][refIdx];
                     costRefBest[1][refIdx] += (Ipp32s)(bitsRefBest[1][refIdx] * m_cslice->rd_lambda_sqrt + 0.5);
-                    if (costRefBest[1][refIdxBest[1]] > costRefBest[list][1])
+                    if (costRefBest[1][refIdxBest[1]] > costRefBest[1][refIdx])
                         refIdxBest[1] = refIdx;
                     continue;
                 }
