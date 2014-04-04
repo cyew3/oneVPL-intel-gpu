@@ -48,6 +48,31 @@ extern H265RefMatchData * recBufData;
 
 #define NO_TRANSFORM_SPLIT_INTRAPRED_STAGE1 0
 
+#if defined(DUMP_COSTS_CU) || defined (DUMP_COSTS_TU)
+FILE *fp_cu = NULL, *fp_tu = NULL;
+// QP; slice I/P or TU I/P; width; costNonSplit; costSplit
+typedef struct {
+    Ipp8u QP;
+    Ipp8u isNotI;
+    Ipp8u width;
+    Ipp8u reserved;
+    Ipp32f costNotSplit;
+    Ipp32f costSplit;
+} costStat;
+
+static void inline printCostStat(FILE*fp, Ipp8u QP, Ipp8u isNotI, Ipp8u width, Ipp32f costNotSplit, Ipp32f costSplit)
+{
+    costStat stat;
+    stat.QP = QP;
+    stat.isNotI = isNotI;
+    stat.width = width;
+    stat.costNotSplit = costNotSplit;
+    stat.costSplit = costSplit;
+
+    fwrite(&stat, sizeof(stat), 1, fp);
+}
+#endif
+
 Ipp32s GetLumaOffset(const H265VideoParam *par, Ipp32s absPartIdx, Ipp32s pitch) {
     Ipp32s maxDepth = par->MaxTotalDepth;
     Ipp32s puRasterIdx = h265_scan_z2r[maxDepth][absPartIdx];
@@ -1411,9 +1436,8 @@ void H265CU::ModeDecision(Ipp32u absPartIdx, Ipp32u offset, Ipp8u depth, CostTyp
     if (splitMode != SPLIT_MUST)
         skippedFlag = (m_dataBest + ((depth + 0) << m_par->Log2NumPartInCU))[absPartIdx].flags.skippedFlag;
 
-    CostType cuSplitThresholdCu = (m_cslice->slice_type == I_SLICE)
-        ? m_par->cu_split_threshold_cu_intra[depth]
-        : m_par->cu_split_threshold_cu_inter[depth];
+    CostType cuSplitThresholdCu = m_par->cu_split_threshold_cu[m_cslice->slice_type != I_SLICE][depth];
+
     if (costBest >= cuSplitThresholdCu && splitMode != SPLIT_NONE && !(skippedFlag && m_par->cuSplit == 2)) {
         // restore ctx
         if (m_rdOptFlag)
@@ -1441,6 +1465,12 @@ void H265CU::ModeDecision(Ipp32u absPartIdx, Ipp32u offset, Ipp8u depth, CostTyp
             else
                 costSplit += BIT_COST_INTER(m_bsf->GetNumBits());
         }
+
+#ifdef DUMP_COSTS_CU
+        if (splitMode != SPLIT_MUST) {
+            printCostStat(fp_cu, m_par->QP,m_cslice->slice_type != I_SLICE, widthCu,costBest,costSplit);
+        }
+#endif
 
         // add cost of cu split flag to costSplit
         if (costBest > costSplit) {
@@ -1533,7 +1563,7 @@ void H265CU::CalcCostLuma(Ipp32u absPartIdx, Ipp32s offset, Ipp8u depth,
         }
     }
 
-    if (costBest >= m_par->cu_split_threshold_tu_intra[depth+trDepth] && splitMode != SPLIT_NONE && nz) {
+    if (costBest >= m_par->cu_split_threshold_tu[0][depth+trDepth] && splitMode != SPLIT_NONE && nz) {
         Ipp32u numParts = ( m_par->NumPartInCU >> ((depth + trDepth)<<1) );
         Ipp32s subsize = width >> 1;
         subsize *= subsize;
@@ -1556,6 +1586,12 @@ void H265CU::CalcCostLuma(Ipp32u absPartIdx, Ipp32s offset, Ipp8u depth,
             costSplit += costTemp;
         }
         m_data = m_dataSave;
+
+#ifdef DUMP_COSTS_TU
+        if (splitMode != SPLIT_MUST) {
+            printCostStat(fp_tu, m_par->QP, 0, width,costBest,costSplit);
+        }
+#endif
 
         if (costBest > costSplit) {
             costBest = costSplit;
@@ -2144,7 +2180,7 @@ void H265CU::TuGetSplitInter(Ipp32u absPartIdx, Ipp32s offset, Ipp8u tr_idx, Ipp
     } else
         nz[1] = nz[2] = 0;
 
-    if (tr_idx  < trIdxMax && hasNz) { // don't try if all zero
+    if (costBest >= m_par->cu_split_threshold_tu[1][depth+tr_idx] && tr_idx  < trIdxMax && hasNz) { // don't try if all zero
         m_bsf->CtxSave(ctxSave[1], 0, NUM_CABAC_CONTEXT);
         m_bsf->CtxRestore(ctxSave[0], 0, NUM_CABAC_CONTEXT);
         // keep not split
@@ -2186,6 +2222,10 @@ void H265CU::TuGetSplitInter(Ipp32u absPartIdx, Ipp32s offset, Ipp8u tr_idx, Ipp
 
             cost_split += BIT_COST_INTER(m_bsf->GetNumBits());
         }
+
+#ifdef DUMP_COSTS_TU
+        printCostStat(fp_tu, m_par->QP, 1, width,costBest,cost_split);
+#endif
 
         if (costBest > cost_split) {
             costBest = cost_split;

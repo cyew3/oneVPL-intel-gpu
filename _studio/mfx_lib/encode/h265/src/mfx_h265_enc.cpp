@@ -40,6 +40,109 @@ extern Ipp32s cmNextIdx;
 #endif
 #define x86_pause() _mm_pause()
 
+
+#define NEW_THRESHOLDS 1
+
+#if NEW_THRESHOLDS
+
+//[strength][isNotI][log2w-3][2]
+Ipp32f h265_split_thresholds_cu_1[3][2][4][2] = {{{{0, 0},{6.068657e+000, 1.955850e-001},{2.794428e+001, 1.643400e-001},{4.697359e+002, 1.113505e-001},},
+{{0, 0},{8.335527e+000, 2.312656e-001},{1.282028e+001, 2.317006e-001},{3.218380e+001, 2.157863e-001},},
+},{{{0, 0},{1.412660e+001, 1.845380e-001},{1.967989e+001, 1.873910e-001},{3.617037e+002, 1.257173e-001},},
+{{0, 0},{2.319860e+001, 2.194218e-001},{2.436671e+001, 2.260317e-001},{3.785467e+001, 2.252255e-001},},
+},{{{0, 0},{1.465458e+001, 1.946118e-001},{1.725847e+001, 1.969719e-001},{3.298872e+002, 1.336427e-001},},
+{{0, 0},{3.133788e+001, 2.192709e-001},{3.292004e+001, 2.266248e-001},{3.572242e+001, 2.357623e-001},},
+},};
+
+//[strength][isNotI][log2w-3][2]
+Ipp32f h265_split_thresholds_tu_1[3][2][4][2] = {{{{9.861009e+001, 2.014005e-001},{1.472963e+000, 2.407408e-001},{7.306935e+000, 2.073082e-001},{0, 0},},
+{{1.227516e+002, 1.973595e-001},{1.617983e+000, 2.342001e-001},{6.189427e+000, 2.090359e-001},{0, 0},},
+},{{{9.861009e+001, 2.014005e-001},{1.343445e+000, 2.666583e-001},{4.266056e+000, 2.504071e-001},{0, 0},},
+{{1.227516e+002, 1.973595e-001},{2.443985e+000, 2.427829e-001},{4.778531e+000, 2.343920e-001},{0, 0},},
+},{{{9.861009e+001, 2.014005e-001},{1.530746e+000, 3.027675e-001},{1.222733e+001, 2.649870e-001},{0, 0},},
+{{1.227516e+002, 1.973595e-001},{2.158767e+000, 2.696284e-001},{3.401860e+000, 2.652995e-001},{0, 0},},
+},};
+
+//[strength][isNotI][log2w-3][2]
+Ipp32f h265_split_thresholds_cu_4[3][2][4][2] = {{{{0, 0},{4.218807e+000, 2.066010e-001},{2.560569e+001, 1.677201e-001},{0, 0},},
+{{0, 0},{4.848787e+000, 2.299086e-001},{1.198510e+001, 2.170575e-001},{0, 0},},
+},{{{0, 0},{5.227898e+000, 2.117919e-001},{1.819586e+001, 1.910210e-001},{0, 0},},
+{{0, 0},{1.098668e+001, 2.226733e-001},{2.273784e+001, 2.157968e-001},{0, 0},},
+},{{{0, 0},{4.591922e+000, 2.238883e-001},{1.480393e+001, 2.032860e-001},{0, 0},},
+{{0, 0},{1.831528e+001, 2.201327e-001},{2.999500e+001, 2.175826e-001},{0, 0},},
+},};
+
+//[strength][isNotI][log2w-3][2]
+Ipp32f h265_split_thresholds_tu_4[3][2][4][2] = {{{{1.008684e+002, 2.003675e-001},{2.278697e+000, 2.226109e-001},{1.767972e+001, 1.733893e-001},{0, 0},},
+{{1.281323e+002, 1.984014e-001},{2.906725e+000, 2.063635e-001},{1.106598e+001, 1.798757e-001},{0, 0},},
+},{{{1.008684e+002, 2.003675e-001},{2.259367e+000, 2.473857e-001},{3.871648e+001, 1.789534e-001},{0, 0},},
+{{1.281323e+002, 1.984014e-001},{4.119740e+000, 2.092187e-001},{9.931154e+000, 1.907941e-001},{0, 0},},
+},{{{1.008684e+002, 2.003675e-001},{1.161667e+000, 3.112699e-001},{5.179975e+001, 2.364036e-001},{0, 0},},
+{{1.281323e+002, 1.984014e-001},{4.326205e+000, 2.262409e-001},{2.088369e+001, 1.829562e-001},{0, 0},},
+},};
+
+//[strength][isNotI][log2w-3][2]
+Ipp32f h265_split_thresholds_cu_7[3][2][4][2] = {{{{0, 0},{0, 0},{2.868749e+001, 1.759965e-001},{0, 0},},
+{{0, 0},{0, 0},{1.203077e+001, 2.066983e-001},{0, 0},},
+},{{{0, 0},{0, 0},{2.689497e+001, 1.914970e-001},{0, 0},},
+{{0, 0},{0, 0},{1.856055e+001, 2.129173e-001},{0, 0},},
+},{{{0, 0},{0, 0},{2.268480e+001, 2.049253e-001},{0, 0},},
+{{0, 0},{0, 0},{3.414455e+001, 2.067140e-001},{0, 0},},
+},};
+
+//[strength][isNotI][log2w-3][2]
+Ipp32f h265_split_thresholds_tu_7[3][2][4][2] = {{{{7.228049e+001, 1.900956e-001},{2.365207e+000, 2.211628e-001},{4.651502e+001, 1.425675e-001},{0, 0},},
+{{0, 0},{2.456053e+000, 2.100343e-001},{7.537189e+000, 1.888014e-001},{0, 0},},
+},{{{7.228049e+001, 1.900956e-001},{1.293689e+000, 2.672417e-001},{1.633606e+001, 2.076887e-001},{0, 0},},
+{{0, 0},{1.682124e+000, 2.368017e-001},{5.516403e+000, 2.080632e-001},{0, 0},},
+},{{{7.228049e+001, 1.900956e-001},{1.479032e+000, 2.785342e-001},{8.723769e+000, 2.469559e-001},{0, 0},},
+{{0, 0},{1.943537e+000, 2.548912e-001},{1.756701e+001, 1.900659e-001},{0, 0},},
+},};
+
+
+typedef Ipp32f thres_tab[2][4][2];
+
+static Ipp64f h265_calc_split_threshold(Ipp32s TU, Ipp32s isNotCu, Ipp32s isNotI, Ipp32s log2width, Ipp32s strength, Ipp32s QP) {
+    thres_tab *h265_split_thresholds_tab;
+
+    switch(TU) {
+    case 1:
+    case 2:
+    case 3:
+        h265_split_thresholds_tab = isNotCu ? h265_split_thresholds_tu_1 : h265_split_thresholds_cu_1;
+        break;
+    default:
+    case 0:
+    case 4:
+    case 5:
+    case 6:
+        h265_split_thresholds_tab = isNotCu ? h265_split_thresholds_tu_4 : h265_split_thresholds_cu_4;
+        break;
+    case 7:
+        h265_split_thresholds_tab = isNotCu ? h265_split_thresholds_tu_7 : h265_split_thresholds_cu_7;
+        break;
+    }
+
+    if (strength == 0) return 0;
+    if (strength > 3) strength = 3;
+    if (isNotCu) {
+        if((log2width < 3 || log2width > 5)) {
+//            VM_ASSERT(0);
+            return 0;
+        }
+    } else {
+        if((log2width < 4 || log2width > 6)) {
+//            VM_ASSERT(0);
+            return 0;
+        }
+    }
+    double a = h265_split_thresholds_tab[strength-1][isNotI][log2width-3][0];
+    double b = h265_split_thresholds_tab[strength-1][isNotI][log2width-3][1];
+    return a * exp(b * QP);
+}
+
+#else 
+
 double h265_split_thresholds[2][3][3][2] = {
     {{{18.784248, 0.194168}, {21.838817, 0.201511}, {5.612814, 0.271913}},
     {{82.451342, 0.165413}, {121.861526, 0.165413},{159.449629, 0.173179}},
@@ -89,6 +192,8 @@ static Ipp64f h265_calc_split_threshold(Ipp32s tu_flag, Ipp32s log2width, Ipp32s
     double b = h265_split_thresholds[tu_flag][log2width][strength-1][1];
     return a * exp(b * QP);
 }
+
+#endif
 
 static const mfxU16 tab_AspectRatio265[17][2] =
 {
@@ -917,6 +1022,10 @@ void H265Encoder::InitShortTermRefPicSet()
     m_sps.num_short_term_ref_pic_sets = (Ipp8u)m_numShortTermRefPicSets;
 }
 
+#if defined(DUMP_COSTS_CU) || defined (DUMP_COSTS_TU)
+extern FILE *fp_cu, *fp_tu;
+#endif
+
 mfxStatus H265Encoder::Init(const mfxVideoParam *param, const mfxExtCodingOptionHEVC *opts_hevc) {
 #ifdef MFX_ENABLE_WATERMARK
     m_watermark = Watermark::CreateFromResource();
@@ -1073,19 +1182,37 @@ mfxStatus H265Encoder::Init(const mfxVideoParam *param, const mfxExtCodingOption
         m_videoParam.QPChroma = m_videoParam.QPIChroma;
     }
 
+#if NEW_THRESHOLDS
+    for (Ipp32s isNotI = 0; isNotI <= 1; isNotI++) {
+        for (Ipp32s i = 0; i < m_videoParam.MaxTotalDepth; i++) {
+            m_videoParam.cu_split_threshold_cu[isNotI][i] = h265_calc_split_threshold(param->mfx.TargetUsage, 0, isNotI, m_videoParam.Log2MaxCUSize - i,
+                isNotI ? m_videoParam.SplitThresholdStrengthCUInter : m_videoParam.SplitThresholdStrengthCUIntra,
+                m_videoParam.QP);
+            m_videoParam.cu_split_threshold_tu[isNotI][i] = h265_calc_split_threshold(param->mfx.TargetUsage, 1, isNotI, m_videoParam.Log2MaxCUSize - i,
+                m_videoParam.SplitThresholdStrengthTUIntra, m_videoParam.QP);
+        }
+        for (Ipp32s i = m_videoParam.MaxTotalDepth; i < MAX_TOTAL_DEPTH; i++) {
+            m_videoParam.cu_split_threshold_cu[isNotI][i] = 0;
+            m_videoParam.cu_split_threshold_tu[isNotI][i] = 0;
+        }
+    }
+#else
     for (Ipp32s i = 0; i < m_videoParam.MaxTotalDepth; i++) {
-        m_videoParam.cu_split_threshold_cu_intra[i] = h265_calc_split_threshold(0, m_videoParam.Log2MaxCUSize - i,
+        m_videoParam.cu_split_threshold_cu[0][i] = h265_calc_split_threshold(0, m_videoParam.Log2MaxCUSize - i,
             m_videoParam.SplitThresholdStrengthCUIntra, m_videoParam.QP);
-        m_videoParam.cu_split_threshold_tu_intra[i] = h265_calc_split_threshold(1, m_videoParam.Log2MaxCUSize - i,
-            m_videoParam.SplitThresholdStrengthTUIntra, m_videoParam.QP);
-        m_videoParam.cu_split_threshold_cu_inter[i] = h265_calc_split_threshold(0, m_videoParam.Log2MaxCUSize - i,
+        m_videoParam.cu_split_threshold_cu[1][i] = h265_calc_split_threshold(0, m_videoParam.Log2MaxCUSize - i,
             m_videoParam.SplitThresholdStrengthCUInter, m_videoParam.QP);
+        m_videoParam.cu_split_threshold_tu[0][i] = h265_calc_split_threshold(1, m_videoParam.Log2MaxCUSize - i,
+            m_videoParam.SplitThresholdStrengthTUIntra, m_videoParam.QP);
+        m_videoParam.cu_split_threshold_tu[1][i] = 0;
     }
-    for (Ipp32s i = m_videoParam.MaxTotalDepth; i < MAX_TOTAL_DEPTH; i++) {
-        m_videoParam.cu_split_threshold_cu_intra[i] = m_videoParam.cu_split_threshold_tu_intra[i] =
-            m_videoParam.cu_split_threshold_cu_inter[i] = 0;
+    for (Ipp32s isNotI = 0; isNotI <= 1; isNotI++) {
+        for (Ipp32s i = m_videoParam.MaxTotalDepth; i < MAX_TOTAL_DEPTH; i++) {
+            m_videoParam.cu_split_threshold_cu[isNotI][i] = 0;
+            m_videoParam.cu_split_threshold_tu[isNotI][i] = 0;
+        }
     }
-
+#endif
 
     SetProfileLevel();
     SetVPS();
@@ -1134,6 +1261,18 @@ mfxStatus H265Encoder::Init(const mfxVideoParam *param, const mfxExtCodingOption
     }
 #endif // MFX_ENABLE_CM
 
+#if defined(DUMP_COSTS_CU) || defined (DUMP_COSTS_TU)
+    char fname[100];
+#ifdef DUMP_COSTS_CU
+    sprintf(fname, "thres_cu_%d.bin",param->mfx.TargetUsage);
+    if (!(fp_cu = fopen(fname,"ab"))) return MFX_ERR_UNKNOWN;
+#endif
+#ifdef DUMP_COSTS_TU
+    sprintf(fname, "thres_tu_%d.bin",param->mfx.TargetUsage);
+    if (!(fp_tu = fopen(fname,"ab"))) return MFX_ERR_UNKNOWN;
+#endif
+#endif
+
     return sts;
 }
 
@@ -1161,6 +1300,13 @@ void H265Encoder::Close() {
     }
 
     m_saoDecodeFilter.Close();
+
+#ifdef DUMP_COSTS_CU
+    if (fp_cu) fclose(fp_cu);
+#endif
+#ifdef DUMP_COSTS_TU
+    if (fp_tu) fclose(fp_tu);
+#endif
 
 #ifdef MFX_ENABLE_WATERMARK
     if (m_watermark)

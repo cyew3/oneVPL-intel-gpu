@@ -1648,17 +1648,17 @@ mfxStatus MFXVideoENCODEH265::Query(VideoCORE *core, mfxVideoParam *par_in, mfxV
                 isCorrected++;
             }
 
-            if (opts_in->SplitThresholdStrengthCUIntra > 3) {
+            if (opts_in->SplitThresholdStrengthCUIntra > 4) {
                 opts_out->SplitThresholdStrengthCUIntra = 0;
                 isInvalid ++;
             } else opts_out->SplitThresholdStrengthCUIntra = opts_in->SplitThresholdStrengthCUIntra;
 
-            if (opts_in->SplitThresholdStrengthTUIntra > 3) {
+            if (opts_in->SplitThresholdStrengthTUIntra > 4) {
                 opts_out->SplitThresholdStrengthTUIntra = 0;
                 isInvalid ++;
             } else opts_out->SplitThresholdStrengthTUIntra = opts_in->SplitThresholdStrengthTUIntra;
 
-            if (opts_in->SplitThresholdStrengthCUInter > 3) {
+            if (opts_in->SplitThresholdStrengthCUInter > 4) {
                 opts_out->SplitThresholdStrengthCUInter = 0;
                 isInvalid ++;
             } else opts_out->SplitThresholdStrengthCUInter = opts_in->SplitThresholdStrengthCUInter;
