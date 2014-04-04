@@ -60,7 +60,7 @@ class CBuffering;
 // LIFO list of frame surfaces
 class msdkFreeSurfacesPool
 {
-    friend CBuffering;
+    friend class CBuffering;
 public:
     msdkFreeSurfacesPool(MSDKMutex* mutex):
         m_pSurfaces(NULL),
@@ -126,7 +126,7 @@ private:
 // random access, predicted as FIFO
 class msdkUsedSurfacesPool
 {
-    friend CBuffering;
+    friend class CBuffering;
 public:
     msdkUsedSurfacesPool(MSDKMutex* mutex):
         m_pSurfacesHead(NULL),
@@ -216,7 +216,7 @@ private:
 // FIFO list of surfaces
 class msdkOutputSurfacesPool
 {
-    friend CBuffering;
+    friend class CBuffering;
 public:
     msdkOutputSurfacesPool(MSDKMutex* mutex):
         m_pSurfacesHead(NULL),

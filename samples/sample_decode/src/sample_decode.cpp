@@ -60,7 +60,7 @@ void PrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage)
 #endif
     msdk_printf(MSDK_STRING("   [-low_latency]          - configures decoder for low latency mode (supported only for H.264 and JPEG codec)\n"));
     msdk_printf(MSDK_STRING("   [-calc_latency]         - calculates latency during decoding and prints log (supported only for H.264 and JPEG codec)\n"));
-    msdk_printf(MSDK_STRING("   [-async]                - depth of asynchronous pipeline. default value is auto\n"));
+    msdk_printf(MSDK_STRING("   [-async]                - depth of asynchronous pipeline. default value is 4. must be between 1 and 20\n"));
 #if defined(_WIN32) || defined(_WIN64)
     msdk_printf(MSDK_STRING("   [-jpeg_rotate n]        - rotate jpeg frame n degrees \n"));
     msdk_printf(MSDK_STRING("       n(90,180,270)       - number of degrees \n"));
@@ -266,9 +266,14 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
                 PrintHelp(strInput[0], MSDK_STRING("Not enough parameters for -async key"));
                 return MFX_ERR_UNSUPPORTED;
             }
-            if (1 != msdk_sscanf(strInput[++i], MSDK_STRING("%d"), &pParams->nAsyncDepth))
+            if (1 != msdk_sscanf(strInput[++i], MSDK_STRING("%hu"), &pParams->nAsyncDepth))
             {
                 PrintHelp(strInput[0], MSDK_STRING("async is invalid"));
+                return MFX_ERR_UNSUPPORTED;
+            }
+            if ((pParams->nAsyncDepth < 1) || (pParams->nAsyncDepth > 20))
+            {
+                PrintHelp(strInput[0], MSDK_STRING("Async depth must be between 1 and 20"));
                 return MFX_ERR_UNSUPPORTED;
             }
         }
@@ -324,6 +329,11 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
     {
         PrintHelp(strInput[0], MSDK_STRING("Unknown codec"));
         return MFX_ERR_UNSUPPORTED;
+    }
+
+    if (pParams->nAsyncDepth == 0)
+    {
+        pParams->nAsyncDepth = 4; //set by default;
     }
 
     return MFX_ERR_NONE;

@@ -51,6 +51,7 @@ void PrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("   [-vaapi]                - work with vaapi surfaces\n"));
     msdk_printf(MSDK_STRING("   [-r]                    - render decoded data in a separate window \n"));
 #endif
+    msdk_printf(MSDK_STRING("   [-async]                - depth of asynchronous pipeline. default value is 4. must be between 1 and 20.\n"));
 #if defined(_WIN32) || defined(_WIN64)
     msdk_printf(MSDK_STRING("\nFeatures: \n"));
     msdk_printf(MSDK_STRING("   Press 1 to toggle fullscreen rendering on/off\n"));
@@ -158,6 +159,24 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
             pParams->mode = MODE_RENDERING;
         }
 #endif
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-async")))
+        {
+            if(i + 1 >= nArgNum)
+            {
+                PrintHelp(strInput[0], MSDK_STRING("Not enough parameters for -async key"));
+                return MFX_ERR_UNSUPPORTED;
+            }
+            if (1 != msdk_sscanf(strInput[++i], MSDK_STRING("%hu"), &pParams->nAsyncDepth))
+            {
+                PrintHelp(strInput[0], MSDK_STRING("async is invalid"));
+                return MFX_ERR_UNSUPPORTED;
+            }
+            if ((pParams->nAsyncDepth < 1) || (pParams->nAsyncDepth > 20))
+            {
+                PrintHelp(strInput[0], MSDK_STRING("Async depth must be between 1 and 20"));
+                return MFX_ERR_UNSUPPORTED;
+            }
+        }
         else // 1-character options
         {
             switch (strInput[i][1])
@@ -206,6 +225,11 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
     {
         PrintHelp(strInput[0], MSDK_STRING("Unknown codec"));
         return MFX_ERR_UNSUPPORTED;
+    }
+
+    if (pParams->nAsyncDepth == 0)
+    {
+        pParams->nAsyncDepth = 4; //set by default;
     }
 
     return MFX_ERR_NONE;
