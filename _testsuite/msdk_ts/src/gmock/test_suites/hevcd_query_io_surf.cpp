@@ -75,19 +75,18 @@ tc_struct GetTestCase(unsigned int id)
     tc_struct tc = {};
     id -= sizeof(test_case)/sizeof(tc_struct); // exclude pre-defined cases
 
-    // get IOPattern OUT from test-case id
-    tc.IOPattern = (id & IOP_OUT);
+    // get IOPattern IN from test-case id
+    tc.IOPattern = (id & IOP_IN);
 
-    // only one IOPattern OUT is valid
-    tc.sts = (!tc.IOPattern || (tc.IOPattern & (tc.IOPattern - 1))) ? MFX_ERR_INVALID_VIDEO_PARAM : MFX_ERR_NONE; 
-
-    // get IOPattern IN from rest of test-case id
-    id &= ~IOP_OUT;
-    while(id && (id & (~IOP_IN)))
+    // get IOPattern OUT from rest of test-case id
+    id &= ~IOP_IN;
+    while(id && (id & (~IOP_OUT)))
         id <<= 1;
     tc.IOPattern |= id;
 
-    // only one IN is valid either, but decoder shouldn't check this
+    // only one IOPattern OUT is valid
+    tc.sts = (!id || (id & (id - 1))) ? MFX_ERR_INVALID_VIDEO_PARAM : MFX_ERR_NONE; 
+
 
     return tc;
 }
