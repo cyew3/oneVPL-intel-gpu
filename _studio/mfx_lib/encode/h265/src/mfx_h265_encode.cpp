@@ -331,9 +331,9 @@ static Ipp32s Check265Level(Ipp32s inLevelTier, const mfxVideoParam *parMfx)
             continue;
         if (parMfx->mfx.FrameInfo.FrameRateExtD && lumaSr > tab_level[level].maxLumaSr)
             continue;
-        if (bitrate > tab_level[level].maxBr[1]) // try high tier
+        if (10 * bitrate > 11 * tab_level[level].maxBr[1]) // try high tier, nal
             continue;
-        if (bitrate && lumaSr * 3 / 2 * 1000 / bitrate < tab_level[level].minCr)
+        if (bitrate && lumaSr * 3 / 2 * 8 / bitrate / 1000 < tab_level[level].minCr)
             continue; // it hardly can change the case
 
         // MaxDpbSIze not checked
