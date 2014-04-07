@@ -1382,10 +1382,12 @@ void H265CU::ModeDecision(Ipp32u absPartIdx, Ipp32u offset, Ipp8u depth, CostTyp
     } // if (splitMode != SPLIT_MUST)
 
     Ipp8u skippedFlag = 0;
-    if (splitMode != SPLIT_MUST)
+    CostType cuSplitThresholdCu = 0;
+    if (splitMode == SPLIT_TRY) {
         skippedFlag = (m_dataBest + ((depth + 0) << m_par->Log2NumPartInCU))[absPartIdx].flags.skippedFlag;
-
-    CostType cuSplitThresholdCu = m_par->cu_split_threshold_cu[m_cslice->slice_type != I_SLICE][depth];
+        Ipp32s qp_best = (m_dataBest + ((depth + 0) << m_par->Log2NumPartInCU))[absPartIdx].qp;
+        cuSplitThresholdCu = m_par->cu_split_threshold_cu[qp_best][m_cslice->slice_type != I_SLICE][depth];
+    }
 
     if (costBest >= cuSplitThresholdCu && splitMode != SPLIT_NONE && !(skippedFlag && m_par->cuSplit == 2)) {
         // restore ctx
@@ -1512,7 +1514,12 @@ void H265CU::CalcCostLuma(Ipp32u absPartIdx, Ipp32s offset, Ipp8u depth,
         }
     }
 
-    if (costBest >= m_par->cu_split_threshold_tu[0][depth+trDepth] && splitMode != SPLIT_NONE && nz) {
+    CostType cuSplitThresholdTu = 0;
+    if (splitMode == SPLIT_TRY) {
+        cuSplitThresholdTu = m_par->cu_split_threshold_tu[m_data[absPartIdx].qp][0][depth+trDepth];
+    }
+
+    if (costBest >= cuSplitThresholdTu && splitMode != SPLIT_NONE && nz) {
         Ipp32u numParts = ( m_par->NumPartInCU >> ((depth + trDepth)<<1) );
         Ipp32s subsize = width >> 1;
         subsize *= subsize;
@@ -2384,7 +2391,9 @@ void H265CU::TuGetSplitInter(Ipp32u absPartIdx, Ipp32s offset, Ipp8u tr_idx, Ipp
     } else
         nz[1] = nz[2] = 0;
 
-    if (costBest >= m_par->cu_split_threshold_tu[1][depth+tr_idx] && tr_idx  < trIdxMax && hasNz) { // don't try if all zero
+    CostType cuSplitThresholdTu = m_par->cu_split_threshold_tu[m_data[absPartIdx].qp][1][depth+tr_idx];
+
+    if (costBest >= cuSplitThresholdTu && tr_idx  < trIdxMax && hasNz) { // don't try if all zero
         m_bsf->CtxSave(ctxSave[1], 0, NUM_CABAC_CONTEXT);
         m_bsf->CtxRestore(ctxSave[0], 0, NUM_CABAC_CONTEXT);
         // keep not split

@@ -41,7 +41,7 @@ extern Ipp32s cmNextIdx;
 #define x86_pause() _mm_pause()
 
 
-#define NEW_THRESHOLDS 1
+#define NEW_THRESHOLDS 0
 
 #if NEW_THRESHOLDS
 
@@ -1182,34 +1182,48 @@ mfxStatus H265Encoder::Init(const mfxVideoParam *param, const mfxExtCodingOption
         m_videoParam.QPChroma = m_videoParam.QPIChroma;
     }
 
+    memset(m_videoParam.cu_split_threshold_cu, 0, 52*2*MAX_TOTAL_DEPTH*sizeof(Ipp64f));
+    memset(m_videoParam.cu_split_threshold_tu, 0, 52*2*MAX_TOTAL_DEPTH*sizeof(Ipp64f));
+
 #if NEW_THRESHOLDS
-    for (Ipp32s isNotI = 0; isNotI <= 1; isNotI++) {
-        for (Ipp32s i = 0; i < m_videoParam.MaxTotalDepth; i++) {
-            m_videoParam.cu_split_threshold_cu[isNotI][i] = h265_calc_split_threshold(param->mfx.TargetUsage, 0, isNotI, m_videoParam.Log2MaxCUSize - i,
-                isNotI ? m_videoParam.SplitThresholdStrengthCUInter : m_videoParam.SplitThresholdStrengthCUIntra,
-                m_videoParam.QP);
-            m_videoParam.cu_split_threshold_tu[isNotI][i] = h265_calc_split_threshold(param->mfx.TargetUsage, 1, isNotI, m_videoParam.Log2MaxCUSize - i,
-                m_videoParam.SplitThresholdStrengthTUIntra, m_videoParam.QP);
+    Ipp32s qpMax = 42;
+    for (Ipp32s QP = 10; QP <= qpMax; QP++) {
+        for (Ipp32s isNotI = 0; isNotI <= 1; isNotI++) {
+            for (Ipp32s i = 0; i < m_videoParam.MaxTotalDepth; i++) {
+                m_videoParam.cu_split_threshold_cu[QP][isNotI][i] = h265_calc_split_threshold(param->mfx.TargetUsage, 0, isNotI, m_videoParam.Log2MaxCUSize - i,
+                    isNotI ? m_videoParam.SplitThresholdStrengthCUInter : m_videoParam.SplitThresholdStrengthCUIntra, QP);
+                m_videoParam.cu_split_threshold_tu[QP][isNotI][i] = h265_calc_split_threshold(param->mfx.TargetUsage, 1, isNotI, m_videoParam.Log2MaxCUSize - i,
+                    m_videoParam.SplitThresholdStrengthTUIntra, QP);
+            }
         }
-        for (Ipp32s i = m_videoParam.MaxTotalDepth; i < MAX_TOTAL_DEPTH; i++) {
-            m_videoParam.cu_split_threshold_cu[isNotI][i] = 0;
-            m_videoParam.cu_split_threshold_tu[isNotI][i] = 0;
+    }
+    for (Ipp32s QP = qpMax + 1; QP <= 51; QP++) {
+        for (Ipp32s isNotI = 0; isNotI <= 1; isNotI++) {
+            for (Ipp32s i = 0; i < m_videoParam.MaxTotalDepth; i++) {
+                m_videoParam.cu_split_threshold_cu[QP][isNotI][i] = m_videoParam.cu_split_threshold_cu[qpMax][isNotI][i];
+                m_videoParam.cu_split_threshold_tu[QP][isNotI][i] = m_videoParam.cu_split_threshold_tu[qpMax][isNotI][i];
+            }
         }
     }
 #else
+    Ipp32s QP = m_videoParam.QP;
     for (Ipp32s i = 0; i < m_videoParam.MaxTotalDepth; i++) {
-        m_videoParam.cu_split_threshold_cu[0][i] = h265_calc_split_threshold(0, m_videoParam.Log2MaxCUSize - i,
-            m_videoParam.SplitThresholdStrengthCUIntra, m_videoParam.QP);
-        m_videoParam.cu_split_threshold_cu[1][i] = h265_calc_split_threshold(0, m_videoParam.Log2MaxCUSize - i,
-            m_videoParam.SplitThresholdStrengthCUInter, m_videoParam.QP);
-        m_videoParam.cu_split_threshold_tu[0][i] = h265_calc_split_threshold(1, m_videoParam.Log2MaxCUSize - i,
-            m_videoParam.SplitThresholdStrengthTUIntra, m_videoParam.QP);
-        m_videoParam.cu_split_threshold_tu[1][i] = 0;
+        m_videoParam.cu_split_threshold_cu[QP][0][i] = h265_calc_split_threshold(0, m_videoParam.Log2MaxCUSize - i,
+            m_videoParam.SplitThresholdStrengthCUIntra, QP);
+        m_videoParam.cu_split_threshold_cu[QP][1][i] = h265_calc_split_threshold(0, m_videoParam.Log2MaxCUSize - i,
+            m_videoParam.SplitThresholdStrengthCUInter, QP);
+        m_videoParam.cu_split_threshold_tu[QP][0][i] = h265_calc_split_threshold(1, m_videoParam.Log2MaxCUSize - i,
+            m_videoParam.SplitThresholdStrengthTUIntra, QP);
+        m_videoParam.cu_split_threshold_tu[QP][1][i] = 0;
     }
-    for (Ipp32s isNotI = 0; isNotI <= 1; isNotI++) {
-        for (Ipp32s i = m_videoParam.MaxTotalDepth; i < MAX_TOTAL_DEPTH; i++) {
-            m_videoParam.cu_split_threshold_cu[isNotI][i] = 0;
-            m_videoParam.cu_split_threshold_tu[isNotI][i] = 0;
+    for (Ipp32s QP = 0; QP <= 51; QP++) {
+        if (QP != m_videoParam.QP) {
+            for (Ipp32s isNotI = 0; isNotI <= 1; isNotI++) {
+                for (Ipp32s i = 0; i < m_videoParam.MaxTotalDepth; i++) {
+                    m_videoParam.cu_split_threshold_cu[QP][isNotI][i] = m_videoParam.cu_split_threshold_cu[m_videoParam.QP][isNotI][i];
+                    m_videoParam.cu_split_threshold_tu[QP][isNotI][i] = m_videoParam.cu_split_threshold_tu[m_videoParam.QP][isNotI][i];
+                }
+            }
         }
     }
 #endif
