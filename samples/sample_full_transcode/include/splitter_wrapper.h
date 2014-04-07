@@ -42,6 +42,7 @@ public:
 
 class SplitterWrapper : public ISplitterWrapper, private no_copy
 {
+protected:
     std::auto_ptr<MFXSplitter> m_splitter;
     std::auto_ptr<MFXDataIO> m_io;
     bool m_EOF;

@@ -140,6 +140,12 @@ ISplitterWrapper* PipelineFactory::CreateSplitterWrapper(std::auto_ptr<MFXDataIO
     return new SplitterWrapper(spl, io);
 }
 
+ISplitterWrapper* PipelineFactory::CreateCircularSplitterWrapper(std::auto_ptr<MFXDataIO>&io, mfxU64 nLimit)
+{
+    std::auto_ptr<MFXSplitter> spl(CreateSplitter());
+    return reinterpret_cast<ISplitterWrapper*>(new CircularSplitterWrapper(spl, io, nLimit));
+}
+
 MFXDataIO* PipelineFactory::CreateFileIO(const msdk_string& file, const msdk_string& params) {
     return new FileIO(file, params);
 }
@@ -194,6 +200,7 @@ CmdLineParser* PipelineFactory::CreateCmdLineParser()
         (ArgHandler<kbps_t>(OPTION_VB, MSDK_CHAR("Video bitrate")))
         (ArgHandler<kbps_t>(OPTION_AB, MSDK_CHAR("Audio bitrate")))
         (ArgHandler<msdk_string>(OPTION_FORMAT, MSDK_CHAR("Output container: mp4, m2ts")))
+        (ArgHandler<mfxU64>(OPTION_LOOP, MSDK_CHAR("Transcoding in loop, times")))
         (ArgHandler<msdk_string>(OPTION_TRACELEVEL, trace_levels_str.str())),
         HelpHead.str(),
         UsageExamples.str()

@@ -38,8 +38,10 @@ FileIO::FileIO(const msdk_string& file, const msdk_string params) : f(0)
 
 FileIO::~FileIO()
 {
-    if (f)
+    if (f) {
         fclose(f);
+        f = NULL;
+    }
 }
 
 mfxI32 FileIO::Read(mfxBitstream *outBitStream)

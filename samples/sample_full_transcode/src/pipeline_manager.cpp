@@ -68,7 +68,12 @@ void PipelineManager::Run() {
 void PipelineManager::Build(CmdLineParser &parser) {
     //setting-up splitter
     std::auto_ptr<MFXDataIO> input (m_factory.CreateFileIO(parser[OPTION_I].as<msdk_string>(), MSDK_STRING("rb")));
-    m_pSource.reset(m_factory.CreateSplitterWrapper(input));
+
+    if (!parser.IsPresent(OPTION_LOOP)) {
+        m_pSource.reset(m_factory.CreateSplitterWrapper(input));
+    } else {
+        m_pSource.reset(m_factory.CreateCircularSplitterWrapper(input, parser[OPTION_LOOP].as<mfxU64>()));
+    }
 
     MFXStreamParams sp;
     m_pSource->GetInfo(sp);

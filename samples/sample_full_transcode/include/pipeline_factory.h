@@ -28,6 +28,7 @@
 #include "session_storage.h"
 #include "isink.h"
 #include "splitter_wrapper.h"
+#include "circular_splitter.h"
 #include "muxer_wrapper.h"
 #include "hw_device.h"
 
@@ -71,6 +72,7 @@ public:
     //TODO: deprecate this
     virtual MFXSplitter*             CreateSplitter();
     virtual ISplitterWrapper*        CreateSplitterWrapper(std::auto_ptr<MFXDataIO>& );
+    virtual ISplitterWrapper*        CreateCircularSplitterWrapper(std::auto_ptr<MFXDataIO>& , mfxU64 nLimit);
 
     virtual BaseFrameAllocator*      CreateFrameAllocator(AllocatorImpl );
 

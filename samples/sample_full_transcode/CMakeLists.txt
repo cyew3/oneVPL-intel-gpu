@@ -7,6 +7,7 @@ include_directories (
 list(APPEND sources
   ${CMAKE_CURRENT_SOURCE_DIR}/src/main.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/av_alloc_request.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/circular_splitter.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/cmdline_parser.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/fileio.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/muxer_wrapper.cpp

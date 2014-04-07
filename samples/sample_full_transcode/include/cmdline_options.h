@@ -12,6 +12,7 @@
 #define OPTION_ASW MSDK_CHAR("-asw")
 #define OPTION_VB MSDK_CHAR("-v:b")
 #define OPTION_AB MSDK_CHAR("-a:b")
+#define OPTION_LOOP MSDK_CHAR("-loop")
 #define OPTION_ADEPTH MSDK_CHAR("-async")
 #define OPTION_D3D11 MSDK_CHAR("-d3d11")
 #define OPTION_H MSDK_CHAR("-h")

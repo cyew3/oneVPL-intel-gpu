@@ -26,6 +26,10 @@ public:
         if (sample->HasMetaData(META_EOS)) {
             return;
         }
+        if (sample->HasMetaData(META_EOS_RESET)) {
+            m_pfio->Seek(0, MFX_SEEK_ORIGIN_BEGIN);
+            return;
+        }
         if (0 == m_pfio->Write(&sample->GetBitstream())) {
             MSDK_TRACE_ERROR(MSDK_STRING("Muxer put sample error"));
             throw MuxerPutSampleError();

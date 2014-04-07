@@ -25,7 +25,8 @@ enum {
 enum {
     META_SPSPPS,
     META_VIDEOPARAM,
-    META_EOS
+    META_EOS,
+    META_EOS_RESET
 };
 
 typedef std::vector<char> MetaData;

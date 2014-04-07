@@ -44,7 +44,10 @@ bool Transform <MFXAudioDECODE>::GetSample( SamplePtr& sample) {
     if (!m_pInput.get()) {
         return false;
     }
-
+    if (m_pInput->HasMetaData(META_EOS_RESET)) {
+        sample = m_pInput;
+        return true;
+    }
     mfxBitstream * pIn = m_bEOS ? NULL : &m_pInput->GetBitstream();
 
     for (int i = 0, WaitPortion = 10 ; i <= m_dTimeToWait; ) {
