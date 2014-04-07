@@ -176,7 +176,6 @@ public:
     void setPredMode (EnumPredMode Mode, Ipp32u AbsPartIdx);
     void setSize (Ipp32u Width, Ipp32u AbsPartIdx);
     void setTrIdx (Ipp32u TrIdx, Ipp32u AbsPartIdx, Ipp32s Depth);
-    void UpdateTUInfo (Ipp32u AbsPartIdx, Ipp32u uTrIdx, Ipp32s Depth);
     void UpdateTUQpInfo (Ipp32u AbsPartIdx, Ipp32s qp, Ipp32s Depth);
 
     Ipp32u getQuadtreeTULog2MinSizeInCU (Ipp32u Idx);

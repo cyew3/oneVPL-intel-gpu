@@ -1532,7 +1532,7 @@ void H265SegmentDecoder::DecodeTransform(Ipp32u AbsPartIdx, Ipp32u Depth, Ipp32u
             }
         }
 
-        m_cu->UpdateTUInfo(AbsPartIdx, trafoDepth, Depth);
+        m_cu->setTrIdx(trafoDepth, AbsPartIdx, Depth);
 
         UpdateNeighborBuffers(AbsPartIdx, Depth, false);
 
