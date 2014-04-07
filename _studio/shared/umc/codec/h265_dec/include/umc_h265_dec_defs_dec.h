@@ -323,7 +323,6 @@ protected:
     Ipp32s              m_OffsetEoChroma[LUMA_GROUP_NUM];
     Ipp32s              m_OffsetEo2Chroma[LUMA_GROUP_NUM];
     PlaneType       *m_OffsetBo;
-    PlaneType       *m_OffsetBo2;
     PlaneType       *m_OffsetBoChroma;
     PlaneType       *m_OffsetBo2Chroma;
     PlaneType       *m_lumaTableBo;

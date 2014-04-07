@@ -28,9 +28,7 @@ enum
     SAO_PRED_SIZE = 66
 };
 
-/** get the sign of input variable
- * \param   x
- */
+// Get the sign of input variable
 inline Ipp32s getSign(Ipp32s x)
 {
   return ((x >> 31) | ((Ipp32s)( (((Ipp32u) -x)) >> 31)));
@@ -49,6 +47,7 @@ static const Ipp8u EoTable[9] =
     0
 };
 
+// Set widths of tile colums
 void H265PicParamSetBase::setColumnWidth(Ipp32u* columnWidth)
 {
     if (uniform_spacing_flag == 0)
@@ -64,6 +63,7 @@ void H265PicParamSetBase::setColumnWidth(Ipp32u* columnWidth)
     }
 }
 
+// Set heights of tile rows
 void H265PicParamSetBase::setRowHeight(Ipp32u* rowHeight)
 {
     if (uniform_spacing_flag == 0)
@@ -77,21 +77,23 @@ void H265PicParamSetBase::setRowHeight(Ipp32u* rowHeight)
     }
 }
 
+// RPS data structure constructor
 ReferencePictureSet::ReferencePictureSet()
 {
   ::memset(this, 0, sizeof(*this));
 }
 
+// Bubble sort RPS by delta POCs placing negative values first, positive values second, increasing POS deltas
+// Negative values are stored with biggest absolute value first. See HEVC spec 8.3.2.
 void ReferencePictureSet::sortDeltaPOC()
 {
-    // sort in increasing order (smallest first)
     for (Ipp32s j = 1; j < num_pics; j++)
     {
         Ipp32s deltaPOC = m_DeltaPOC[j];
         Ipp8u Used = used_by_curr_pic_flag[j];
         for (Ipp32s k = j - 1; k >= 0; k--)
         {
-            Ipp32s temp = m_DeltaPOC[k]; //modify sort
+            Ipp32s temp = m_DeltaPOC[k];
             if (deltaPOC < temp)
             {
                 m_DeltaPOC[k + 1] = temp;
@@ -101,7 +103,6 @@ void ReferencePictureSet::sortDeltaPOC()
             }
         }
     }
-    // flip the negative values to largest first
     Ipp32s NumNegPics = (Ipp32s) num_negative_pics;
     for (Ipp32s j = 0, k = NumNegPics - 1; j < NumNegPics >> 1; j++, k--)
     {
@@ -114,11 +115,13 @@ void ReferencePictureSet::sortDeltaPOC()
     }
 }
 
+// RPS list data structure constructor
 ReferencePictureSetList::ReferencePictureSetList()
     : m_NumberOfReferencePictureSets(0)
 {
 }
 
+// Allocate RPS list data structure with a new number of RPS
 void ReferencePictureSetList::allocate(unsigned NumberOfReferencePictureSets)
 {
     if (m_NumberOfReferencePictureSets == NumberOfReferencePictureSets)
@@ -128,13 +131,13 @@ void ReferencePictureSetList::allocate(unsigned NumberOfReferencePictureSets)
     referencePictureSet.resize(NumberOfReferencePictureSets);
 }
 
+// SAO context data structure constructor
 template<typename PlaneType>
 H265SampleAdaptiveOffsetTemplate<PlaneType>::H265SampleAdaptiveOffsetTemplate()
 {
     m_ClipTable = 0;
     m_ClipTableBase = 0;
     m_OffsetBo = 0;
-    m_OffsetBo2 = 0;
     m_OffsetBoChroma = 0;
     m_OffsetBo2Chroma = 0;
     m_lumaTableBo = 0;
@@ -151,12 +154,12 @@ H265SampleAdaptiveOffsetTemplate<PlaneType>::H265SampleAdaptiveOffsetTemplate()
     m_isInitialized = false;
 }
 
+// SAO context data structure deallocator
 template<typename PlaneType>
 void H265SampleAdaptiveOffsetTemplate<PlaneType>::destroy()
 {
     delete [] m_ClipTableBase; m_ClipTableBase = 0;
     delete [] m_OffsetBo; m_OffsetBo = 0;
-    delete [] m_OffsetBo2; m_OffsetBo2 = 0;
     delete [] m_OffsetBoChroma; m_OffsetBoChroma = 0;
     delete [] m_OffsetBo2Chroma; m_OffsetBo2Chroma = 0;
     delete[] m_lumaTableBo; m_lumaTableBo = 0;
@@ -173,6 +176,7 @@ void H265SampleAdaptiveOffsetTemplate<PlaneType>::destroy()
     m_isInitialized = false;
 }
 
+// Returns whethher it is necessary to reallocate SAO context
 template<typename PlaneType>
 bool H265SampleAdaptiveOffsetTemplate<PlaneType>::isNeedReInit(const H265SeqParamSet* sps)
 {
@@ -182,6 +186,7 @@ bool H265SampleAdaptiveOffsetTemplate<PlaneType>::isNeedReInit(const H265SeqPara
     return true;
 }
 
+// SAO context initalization
 template<typename PlaneType>
 void H265SampleAdaptiveOffsetTemplate<PlaneType>::init(const H265SeqParamSet* sps)
 {
@@ -199,6 +204,7 @@ void H265SampleAdaptiveOffsetTemplate<PlaneType>::init(const H265SeqParamSet* sp
     Ipp32u uiPixelRangeY = 1 << sps->bit_depth_luma;
     Ipp32u uiBoRangeShiftY = sps->bit_depth_luma - SAO_BO_BITS;
 
+    // Initialize lookup tables for band offset for luma and NV12 chroma
     m_lumaTableBo = h265_new_array_throw<PlaneType>(uiPixelRangeY);
     for (Ipp32u k2 = 0; k2 < uiPixelRangeY; k2++)
     {
@@ -221,10 +227,10 @@ void H265SampleAdaptiveOffsetTemplate<PlaneType>::init(const H265SeqParamSet* sp
 
     m_ClipTableBase = h265_new_array_throw<PlaneType>(uiMaxY+2*iCRangeExt);
     m_OffsetBo      = h265_new_array_throw<PlaneType>(uiMaxY+2*iCRangeExt);
-    m_OffsetBo2     = h265_new_array_throw<PlaneType>(uiMaxY+2*iCRangeExt);
     m_OffsetBoChroma   = h265_new_array_throw<PlaneType>(uiMaxY+2*iCRangeExt);
     m_OffsetBo2Chroma  = h265_new_array_throw<PlaneType>(uiMaxY+2*iCRangeExt);
 
+    // Initialize lookup table to clip sample values beyond bit depth allowed range
     for (Ipp32u i = 0; i < (uiMinY + iCRangeExt);i++)
     {
         m_ClipTableBase[i] = (PlaneType)uiMinY;
@@ -248,11 +254,15 @@ void H265SampleAdaptiveOffsetTemplate<PlaneType>::init(const H265SeqParamSet* sp
     m_TmpL[0] = h265_new_array_throw<PlaneType>(2*SAO_PRED_SIZE);
     m_TmpL[1] = h265_new_array_throw<PlaneType>(2*SAO_PRED_SIZE);
 
+    // Temporary buffer to store PCM and tranquant bypass samples which may require to be skipped in filtering
     m_tempPCMBuffer = h265_new_array_throw<PlaneType>((64*64 *3) /2); // one CU data
 
     m_isInitialized = true;
 }
 
+// Apply SAO filtering to NV12 chroma plane. Filter is enabled across slices and
+// tiles so only frame boundaries are taken into account.
+// HEVC spec 8.7.3.
 template<typename PlaneType>
 void H265SampleAdaptiveOffsetTemplate<PlaneType>::processSaoCuOrgChroma(Ipp32s addr, Ipp32s saoType, PlaneType* tmpL)
 {
@@ -460,7 +470,7 @@ void H265SampleAdaptiveOffsetTemplate<PlaneType>::processSaoCuOrgChroma(Ipp32s a
             }
             break;
         }
-    case SAO_BO:
+    case SAO_BO: // band offset
         {
             for (y = 0; y < LCUHeight; y++)
             {
@@ -477,6 +487,9 @@ void H265SampleAdaptiveOffsetTemplate<PlaneType>::processSaoCuOrgChroma(Ipp32s a
     }
 }
 
+// Apply SAO filtering to NV12 chroma plane. Filter may be disabled across slices or
+// tiles so neighbour availability has to be checked for every CTB.
+// HEVC spec 8.7.3.
 template<typename PlaneType>
 void H265SampleAdaptiveOffsetTemplate<PlaneType>::processSaoCuChroma(Ipp32s addr, Ipp32s saoType, PlaneType* tmpL)
 {
@@ -801,7 +814,7 @@ void H265SampleAdaptiveOffsetTemplate<PlaneType>::processSaoCuChroma(Ipp32s addr
             }
             break;
         }
-    case SAO_BO:
+    case SAO_BO: // band offset
         {
             for (y = 0; y < LCUHeight; y++)
             {
@@ -819,6 +832,7 @@ void H265SampleAdaptiveOffsetTemplate<PlaneType>::processSaoCuChroma(Ipp32s addr
     }
 }
 
+// Apply SAO filter to a frame
 template<typename PlaneType>
 void H265SampleAdaptiveOffsetTemplate<PlaneType>::SAOProcess(H265DecoderFrame* pFrame, Ipp32s startCU, Ipp32s toProcessCU)
 {
@@ -832,6 +846,7 @@ void H265SampleAdaptiveOffsetTemplate<PlaneType>::SAOProcess(H265DecoderFrame* p
     processSaoUnits(startCU, toProcessCU);
 }
 
+// Apply SAO filter to a line or part of line of CTBs in a frame
 template<typename PlaneType>
 void H265SampleAdaptiveOffsetTemplate<PlaneType>::processSaoLine(SAOLCUParam* saoLCUParam, Ipp32s firstCU, Ipp32s endCU)
 {
@@ -854,6 +869,7 @@ void H265SampleAdaptiveOffsetTemplate<PlaneType>::processSaoLine(SAOLCUParam* sa
     PlaneType* recChroma = (PlaneType*)m_Frame->GetCbCrAddr(firstCU);
     Ipp32s stride = m_Frame->pitch_luma();
 
+    // Save a column of left samples
     if ((firstCU % frameWidthInCU) == 0)
     {
         for (Ipp32s i = 0; i < CUHeight; i++)
@@ -872,6 +888,7 @@ void H265SampleAdaptiveOffsetTemplate<PlaneType>::processSaoLine(SAOLCUParam* sa
 
     for (Ipp32s addr = firstCU; addr < endCU; addr++)
     {
+        // Save a column of right most samples of this CTB
         if ((addr % frameWidthInCU) != (frameWidthInCU - 1))
         {
             rec  = (PlaneType*)m_Frame->GetLumaAddr(addr);
@@ -892,6 +909,7 @@ void H265SampleAdaptiveOffsetTemplate<PlaneType>::processSaoLine(SAOLCUParam* sa
         bool isNeedSAOLuma = pTmpCu->m_SliceHeader->slice_sao_luma_flag && saoLCUParam[addr].m_typeIdx >= 0;
         bool isNeedSAOChroma = pTmpCu->m_SliceHeader->slice_sao_chroma_flag && saoLCUParam[addr].m_typeIdx[1] >= 0;
 
+        // Save samples that may require to skip filtering
         if (m_needPCMRestoration && (isNeedSAOLuma || isNeedSAOChroma))
             PCMCURestoration(pTmpCu, 0, 0, false);
 
@@ -957,6 +975,7 @@ void H265SampleAdaptiveOffsetTemplate<PlaneType>::processSaoLine(SAOLCUParam* sa
                 processSaoCuChroma(addr, typeIdx, m_TmpL[0] + SAO_PRED_SIZE);
         }
 
+        // Restore samples that require to skip filtering
         if (m_needPCMRestoration && (isNeedSAOLuma || isNeedSAOChroma))
             PCMCURestoration(pTmpCu, 0, 0, true);
 
@@ -964,6 +983,7 @@ void H265SampleAdaptiveOffsetTemplate<PlaneType>::processSaoLine(SAOLCUParam* sa
     }
 }
 
+// Apply SAO filter to a range of CTBs
 template<typename PlaneType>
 void H265SampleAdaptiveOffsetTemplate<PlaneType>::processSaoUnits(Ipp32s firstCU, Ipp32s toProcessCU)
 {
@@ -988,6 +1008,7 @@ void H265SampleAdaptiveOffsetTemplate<PlaneType>::processSaoUnits(Ipp32s firstCU
 
     Ipp32s endCU = firstCU + toProcessCU;
 
+    // Save top line samples
     if (!firstCU)// / frameWidthInCU == 0)
     {
         Ipp32s width = picWidthTmp;
@@ -1008,6 +1029,7 @@ void H265SampleAdaptiveOffsetTemplate<PlaneType>::processSaoUnits(Ipp32s firstCU
                       (firstCU % frameWidthInCU) +
                       frameWidthInCU);
 
+        // Save samples at the bottom of CTB row
         if ((firstCU % frameWidthInCU) == 0 && (firstCU / frameWidthInCU) != (frameHeightInCU - 1))
         {
             PlaneType* pRec = (PlaneType*)m_Frame->GetLumaAddr(firstCU) + (LCUHeight - 1)*m_Frame->pitch_luma();
@@ -1017,6 +1039,7 @@ void H265SampleAdaptiveOffsetTemplate<PlaneType>::processSaoUnits(Ipp32s firstCU
             MFX_INTERNAL_CPY(m_TmpU[1] + picWidthTmp, pRec, sizeof(PlaneType) * picWidthTmp);
         }
 
+        // Get slice and tile boundaries if needed
         if (m_UseNIF)
         {
             for (Ipp32s j = firstCU; j < endAddr; j++)
@@ -1025,6 +1048,7 @@ void H265SampleAdaptiveOffsetTemplate<PlaneType>::processSaoUnits(Ipp32s firstCU
             }
         }
 
+        // Filter CTB line
         processSaoLine(saoLCUParam, firstCU, endAddr);
 
         firstCU = endAddr;
@@ -1039,6 +1063,7 @@ void H265SampleAdaptiveOffsetTemplate<PlaneType>::processSaoUnits(Ipp32s firstCU
     }
 }
 
+// Calculate SAO lookup tables for luma offsets from bitstream data
 template<typename PlaneType>
 void H265SampleAdaptiveOffsetTemplate<PlaneType>::SetOffsetsLuma(SAOLCUParam  &saoLCUParam, Ipp32s typeIdx)
 {
@@ -1077,6 +1102,7 @@ void H265SampleAdaptiveOffsetTemplate<PlaneType>::SetOffsetsLuma(SAOLCUParam  &s
     }
 }
 
+// Calculate SAO lookup tables for chroma offsets from bitstream data
 template<typename PlaneType>
 void H265SampleAdaptiveOffsetTemplate<PlaneType>::SetOffsetsChroma(SAOLCUParam &saoLCUParam, Ipp32s typeIdx)
 {
@@ -1123,6 +1149,8 @@ void H265SampleAdaptiveOffsetTemplate<PlaneType>::SetOffsetsChroma(SAOLCUParam &
     }
 }
 
+// Calculate whether it is necessary to check slice and tile boundaries because of
+// filtering restrictions in some slice of the frame.
 template<typename PlaneType>
 void H265SampleAdaptiveOffsetTemplate<PlaneType>::createNonDBFilterInfo()
 {
@@ -1157,12 +1185,7 @@ void H265SampleAdaptiveOffsetTemplate<PlaneType>::createNonDBFilterInfo()
     m_UseNIF = independentSliceBoundaryForNDBFilter || independentTileBoundaryForNDBFilter;
 }
 
-/** PCM CU restoration.
- * \param pcCU pointer to current CU
- * \param uiAbsPartIdx part index
- * \param uiDepth CU depth
- * \returns Void
- */
+// Restore parts of CTB encoded with PCM or transquant bypass if filtering should be disabled for them
 template<typename PlaneType>
 void H265SampleAdaptiveOffsetTemplate<PlaneType>::PCMCURestoration(H265CodingUnit* pcCU, Ipp32u AbsZorderIdx, Ipp32u Depth, bool restore)
 {
@@ -1197,13 +1220,7 @@ Ipp32s GetAddrOffset(H265FrameCodingData * cd, Ipp32u PartUnitIdx, Ipp32u width)
     return blkX + blkY * width;
 }
 
-/** PCM sample restoration.
-* \param pcCU pointer to current CU
-* \param uiAbsPartIdx part index
-* \param uiDepth CU depth
-* \param ttText texture component type
-* \returns Void
-*/
+// Save/restore losless coded samples from temporary buffer back to frame
 template<typename PlaneType>
 void H265SampleAdaptiveOffsetTemplate<PlaneType>::PCMSampleRestoration(H265CodingUnit* pcCU, Ipp32u AbsZorderIdx, Ipp32u Depth, bool restore)
 {
@@ -1267,6 +1284,7 @@ void H265SampleAdaptiveOffsetTemplate<PlaneType>::PCMSampleRestoration(H265Codin
     }
 }
 
+// SAO context constructor
 H265SampleAdaptiveOffset::H265SampleAdaptiveOffset()
 {
     m_base = 0;
@@ -1274,6 +1292,7 @@ H265SampleAdaptiveOffset::H265SampleAdaptiveOffset()
     m_isInitialized = false;
 }
 
+// SAO context cleanup
 void H265SampleAdaptiveOffset::destroy()
 {
     delete m_base;
@@ -1282,6 +1301,7 @@ void H265SampleAdaptiveOffset::destroy()
     m_is10bits = false;
 }
 
+// Initialize SAO context
 void H265SampleAdaptiveOffset::init(const H265SeqParamSet* sps)
 {
     if (!sps->sample_adaptive_offset_enabled_flag)
@@ -1313,6 +1333,7 @@ void H265SampleAdaptiveOffset::init(const H265SeqParamSet* sps)
     m_isInitialized = true;
 }
 
+// Apply SAO filter to a target frame CTB range
 void H265SampleAdaptiveOffset::SAOProcess(H265DecoderFrame* pFrame, Ipp32s startCU, Ipp32s toProcessCU)
 {
     m_base->SAOProcess(pFrame, startCU, toProcessCU);
