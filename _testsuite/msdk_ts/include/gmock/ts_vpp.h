@@ -3,33 +3,32 @@
 #include "ts_session.h"
 #include "ts_ext_buffers.h"
 #include "ts_surface.h"
-#include <map>
 
-class tsVideoDecoder : public tsSession, public tsSurfacePool
+class tsVideoVPP : public tsSession
 {
 public:
     bool                        m_default;
     bool                        m_initialized;
-    bool                        m_loaded;
-    bool                        m_par_set;
     tsExtBufType<mfxVideoParam> m_par;
-    tsExtBufType<mfxBitstream>  m_bitstream;
-    mfxFrameAllocRequest        m_request;
+    mfxFrameAllocRequest        m_request[2];
     mfxVideoParam*              m_pPar;
     mfxVideoParam*              m_pParOut;
-    mfxBitstream*               m_pBitstream;
     mfxFrameAllocRequest*       m_pRequest;
     mfxSyncPoint*               m_pSyncPoint;
-    mfxFrameSurface1*           m_pSurf;
+    mfxFrameSurface1*           m_pSurfIn;
     mfxFrameSurface1*           m_pSurfOut;
-    tsSurfaceProcessor*         m_surf_processor;
-    tsBitstreamProcessor*       m_bs_processor;
-    mfxPluginUID*               m_uid;
-    std::map<mfxSyncPoint, mfxFrameSurface1*> m_surf_out;
+    tsSurfacePool*              m_pSurfPoolIn;
+    tsSurfacePool*              m_pSurfPoolOut;
+    tsSurfaceProcessor*         m_surf_in_processor;
+    tsSurfaceProcessor*         m_surf_out_processor;
 
-    tsVideoDecoder(mfxU32 CodecId = 0, bool useDefaults = true);
-    ~tsVideoDecoder();
+    std::map<mfxSyncPoint, mfxFrameSurface1*> m_surf_out;
+    tsSurfacePool               m_spool_in;
+    tsSurfacePool               m_spool_out;
     
+    tsVideoVPP(bool useDefaults = true);
+    ~tsVideoVPP();
+
     mfxStatus Init();
     mfxStatus Init(mfxSession session, mfxVideoParam *par);
 
@@ -44,23 +43,18 @@ public:
     
     mfxStatus Reset();
     mfxStatus Reset(mfxSession session, mfxVideoParam *par);
-
+    
     mfxStatus GetVideoParam();
     mfxStatus GetVideoParam(mfxSession session, mfxVideoParam *par);
 
     mfxStatus AllocSurfaces();
-    
-    mfxStatus DecodeHeader();
-    mfxStatus DecodeHeader(mfxSession session, mfxBitstream *bs, mfxVideoParam *par);
-
-    mfxStatus DecodeFrameAsync();
-    mfxStatus DecodeFrameAsync(mfxSession session, mfxBitstream *bs, mfxFrameSurface1 *surface_work, mfxFrameSurface1 **surface_out, mfxSyncPoint *syncp);
+     
+    mfxStatus RunFrameVPPAsync();
+    mfxStatus RunFrameVPPAsync(mfxSession session, mfxFrameSurface1 *in, mfxFrameSurface1 *out, mfxExtVppAuxData *aux, mfxSyncPoint *syncp);
     
     mfxStatus SyncOperation();
     mfxStatus SyncOperation(mfxSyncPoint syncp);
     mfxStatus SyncOperation(mfxSession session, mfxSyncPoint syncp, mfxU32 wait);
     
-    mfxStatus DecodeFrames(mfxU32 n);
-
-    mfxStatus Load();
+    mfxStatus ProcessFrames(mfxU32 n);
 };

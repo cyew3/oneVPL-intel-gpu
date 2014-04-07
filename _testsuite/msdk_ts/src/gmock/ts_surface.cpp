@@ -46,6 +46,15 @@ tsFrame& tsFrame::operator=(tsFrame& src)
     mfxU32 maxw = TS_MIN(m_info.Width, src.m_info.Width);
     mfxU32 maxh = TS_MIN(m_info.Height, src.m_info.Height);
 
+    if(    m_info.CropW 
+        && m_info.CropH
+        && src.m_info.CropW 
+        && src.m_info.CropH)
+    {
+        maxw = TS_MIN(m_info.CropW, src.m_info.CropW);
+        maxh = TS_MIN(m_info.CropH, src.m_info.CropH);
+    }
+
     if(    src.m_info.Width > m_info.Width
         || src.m_info.Height > m_info.Height)
     {
@@ -58,11 +67,11 @@ tsFrame& tsFrame::operator=(tsFrame& src)
         {
             for(mfxU32 w = 0; w < maxw; w ++)
             {
-                Y(w, h) = src.Y(w, h);
+                Y(w + m_info.CropX, h + m_info.CropY) = src.Y(w + src.m_info.CropX, h + src.m_info.CropY);
                 if(n == 3)
                 {
-                    U(w, h) = src.U(w, h);
-                    V(w, h) = src.V(w, h);
+                    U(w + m_info.CropX, h + m_info.CropY) = src.U(w + src.m_info.CropX, h + src.m_info.CropY);
+                    V(w + m_info.CropX, h + m_info.CropY) = src.V(w + src.m_info.CropX, h + src.m_info.CropY);
                 }
             }
         }
@@ -73,10 +82,10 @@ tsFrame& tsFrame::operator=(tsFrame& src)
         {
             for(mfxU32 w = 0; w < maxw; w ++)
             {
-                R(w, h) = src.R(w, h);
-                G(w, h) = src.G(w, h);
-                B(w, h) = src.B(w, h);
-                A(w, h) = src.A(w, h);
+                R(w + m_info.CropX, h + m_info.CropY) = src.R(w + src.m_info.CropX, h + src.m_info.CropY);
+                G(w + m_info.CropX, h + m_info.CropY) = src.G(w + src.m_info.CropX, h + src.m_info.CropY);
+                B(w + m_info.CropX, h + m_info.CropY) = src.B(w + src.m_info.CropX, h + src.m_info.CropY);
+                A(w + m_info.CropX, h + m_info.CropY) = src.A(w + src.m_info.CropX, h + src.m_info.CropY);
             }
         }
     }
@@ -198,6 +207,9 @@ tsRawReader::tsRawReader(mfxBitstream bs, mfxFrameInfo fi, mfxU32 n_frames)
 
 void tsRawReader::Init(mfxFrameInfo fi)
 {
+    if(fi.CropW) fi.Width  = fi.CropW;
+    if(fi.CropH) fi.Height = fi.CropH;
+
     mfxU32 fsz = fi.Width * fi.Height;
     mfxU32 pitch = 0;
     mfxFrameData& m_data = m_surf.Data;
@@ -311,9 +323,9 @@ mfxStatus tsSurfaceWriter::ProcessSurface(mfxFrameSurface1& s)
         fwrite(s.Data.Y + pitch * i + s.Info.CropX, 1, s.Info.CropW, m_file);
     }
     
-    for(mfxU32 i = s.Info.CropY; i < s.Info.CropH; i ++)
+    for(mfxU32 i = (s.Info.CropY / 2); i < (s.Info.CropH / 2); i ++)
     {
-        fwrite(s.Data.UV + pitch / 2 * i + s.Info.CropX / 2, 1, s.Info.CropW / 2, m_file);
+        fwrite(s.Data.UV + pitch * i + s.Info.CropX, 1, s.Info.CropW, m_file);
     }
 
     return MFX_ERR_NONE;

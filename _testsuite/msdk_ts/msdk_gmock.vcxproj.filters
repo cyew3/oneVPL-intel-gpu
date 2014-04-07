@@ -62,6 +62,9 @@
     <ClInclude Include="include\gmock\ts_streams.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="include\gmock\ts_vpp.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\test_sample_allocator.cpp">
@@ -129,6 +132,9 @@
     </ClCompile>
     <ClCompile Include="src\gmock\test_suites\hevcd_get_video_param.cpp">
       <Filter>Source Files\test_suites</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gmock\ts_vpp.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>
