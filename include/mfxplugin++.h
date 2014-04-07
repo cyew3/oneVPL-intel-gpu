@@ -34,6 +34,7 @@ File Name: mfxplugin++.h
 
 #include "mfxvideo.h"
 #include "mfxplugin.h"
+#include "stdio.h"
 
 //c++ wrapper over only 3 exposed functions from MFXVideoUSER module
 class MFXVideoUSER {
