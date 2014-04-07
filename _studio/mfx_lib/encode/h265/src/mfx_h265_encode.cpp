@@ -446,7 +446,7 @@ mfxStatus MFXVideoENCODEH265::EncodeFrameCheck(mfxEncodeCtrl *ctrl, mfxFrameSurf
 
     MFX_CHECK(m_isInitialized, MFX_ERR_NOT_INITIALIZED);
     MFX_CHECK_NULL_PTR1(bs);
-    MFX_CHECK_NULL_PTR1(bs->Data);
+    MFX_CHECK_NULL_PTR1(bs->Data || !bs->MaxLength);
 
     H265ENC_UNREFERENCED_PARAMETER(pInternalParams);
     MFX_CHECK(bs->MaxLength > (bs->DataOffset + bs->DataLength),MFX_ERR_UNDEFINED_BEHAVIOR);
