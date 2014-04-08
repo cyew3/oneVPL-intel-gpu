@@ -1014,7 +1014,7 @@ mfxStatus VideoDECODEVP8::DecodeFrameCheck(mfxBitstream *p_bs, mfxFrameSurface1 
 
     if (false == show_frame)
     {
-        return MFX_ERR_MORE_SURFACE;
+        return MFX_ERR_MORE_DATA;
     }
 
     return MFX_ERR_NONE;
