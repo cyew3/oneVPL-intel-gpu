@@ -582,7 +582,7 @@ void H265CU::InitCu(H265VideoParam *_par, H265CUData *_data, H265CUData *_dataTe
     m_bsf = _bsf;
     m_logMvCostTable = logMvCostTable + (1 << 15);
     m_dataSave = _data;
-    m_data = 0;
+    m_data = _data;
     m_dataBest = _dataTemp;
     m_dataTemp = _dataTemp + (MAX_TOTAL_DEPTH << m_par->Log2NumPartInCU);
     m_dataTemp2 = _dataTemp + ((MAX_TOTAL_DEPTH*2) << m_par->Log2NumPartInCU);
