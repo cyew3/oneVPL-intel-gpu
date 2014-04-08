@@ -12,6 +12,8 @@ File Name: mfxstructures.h
 
 #pragma once
 
+#include <stdlib.h>
+#include <string.h>
 #include <vector>
 #include "mfxpcp.h" // mfxEncryptedData
 

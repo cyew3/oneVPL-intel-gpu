@@ -140,7 +140,7 @@ static struct MKV_Element_t elements[] = {
 };
 
 bool TagHasSize(TagId id){
-    for(size_t i = 0;;i++){
+    for(int i = 0;;i++){
         if(elements[i].id == TAG_UNKNOWN){
             return false;
         }
@@ -152,7 +152,7 @@ bool TagHasSize(TagId id){
 }
 
 bool TagHasEmbedData(TagId id){
-    for(size_t i = 0;;i++){
+    for(int i = 0;;i++){
         if(elements[i].id == TAG_UNKNOWN){
             return false;
         }
@@ -163,7 +163,7 @@ bool TagHasEmbedData(TagId id){
 }
 
 DataType TagGetDataType(TagId id){
-    for(size_t i = 0;;i++){
+    for(int i = 0;;i++){
         if(elements[i].id == TAG_UNKNOWN){
             return DATATYPE_BYTE;
         }
@@ -173,14 +173,14 @@ DataType TagGetDataType(TagId id){
     }
 }
 
-int TagsMatched(byte *buffer, size_t size){
+int TagsMatched(mfxU8 *buffer, int size){
     if ( ! buffer ) {
         return -1;
     }
 
     int matched_tags = 0;
     bool match = false;
-    for(size_t i =0;; i++){
+    for(int i =0;; i++){
         if(elements[i].id == TAG_UNKNOWN){
             return matched_tags;
         }
@@ -188,7 +188,7 @@ int TagsMatched(byte *buffer, size_t size){
         if ( elements[i].size < size){
             continue;
         }
-        for(size_t j = 0; j < size; j++){
+        for(int j = 0; j < size; j++){
             if(elements[i].tag[j] != buffer[j]){
                 match = false;
                 break;
@@ -202,7 +202,7 @@ int TagsMatched(byte *buffer, size_t size){
 }
 
 char *TagToString(TagId id) {
-    for (size_t i = 0;; i++){
+    for (int i = 0;; i++){
         if(elements[i].id == TAG_UNKNOWN){
             return "unknown";
         }
@@ -213,10 +213,10 @@ char *TagToString(TagId id) {
     return "unknown";
  }
 
-void PrintValue(DataType type, void *value, size_t size){
+void PrintValue(DataType type, void *value, int size){
     switch(type){
         case DATATYPE_BYTE:
-            fprintf(stderr, " Value(byte): %d\n", *((byte *)value));
+            fprintf(stderr, " Value(byte): %d\n", *((mfxU8 *)value));
             break;
         case DATATYPE_INT:
             fprintf(stderr, " Value(int):  %d\n", *((int *)value));
@@ -237,7 +237,7 @@ void PrintValue(DataType type, void *value, size_t size){
             fprintf(stderr, " Value(bin): ");
             size_t i = 0;
             while(size--){
-                fprintf(stderr, "0x%x ", ((byte*)value)[i]);
+                fprintf(stderr, "0x%x ", ((mfxU8*)value)[i]);
                 i++;
             }
             fprintf(stderr, "\n");
@@ -246,7 +246,7 @@ void PrintValue(DataType type, void *value, size_t size){
     }
 }
 
-TagId FindTagId(byte *buffer, size_t size){
+TagId FindTagId(mfxU8 *buffer, int size){
     size_t i = 0;
     bool matched = false;
     for (i = 0;; i++){
@@ -255,7 +255,7 @@ TagId FindTagId(byte *buffer, size_t size){
         }
         if ( size == elements[i].size ){
             matched = true;
-            for(size_t j = 0; j < size; j++){
+            for(int j = 0; j < size; j++){
                 if (buffer[j] != elements[i].tag[j]){
                     matched = false;
                     break;
@@ -283,7 +283,7 @@ mfxU32 MKVReader::GetSize(){
         result = 0;
         rewind = -7;
     } else if ( BYTE1MASK & buffer[0] ){
-        result = (size_t)(buffer[0] ^ BYTE1MASK);
+        result = (mfxU32)(buffer[0] ^ BYTE1MASK);
         rewind = -7;
     }else if ( BYTE2MASK & buffer[0] ){
         result = ((buffer[0] ^ BYTE2MASK) << 8 | buffer[1] );
@@ -341,16 +341,16 @@ void MKVReader::ReadValue(mfxU32 size, DataType type, void *value){
     return;
 }
 
-void PrintSize(size_t size){
+void PrintSize(int size){
     fprintf(stderr, " Size: %d\n", size);
 }
 
 /* Save codec's private info. Only h264 supported so far */
-mfxStatus MKVReader::SaveCodecPrivate(byte *content, int block_size){
-    byte sets;
+mfxStatus MKVReader::SaveCodecPrivate(mfxU8 *content, int block_size){
+    mfxU8 sets;
     short set_len;
     mfxU32 shift = 0;
-    byte prefix[4] = { 0x00, 0x00, 0x00, 0x01 };
+    mfxU8 prefix[4] = { 0x00, 0x00, 0x00, 0x01 };
     switch(m_codec){
         case MFX_CODEC_AVC:
             m_codec_private = (mfxU8 *)malloc(block_size);
@@ -401,7 +401,7 @@ mfxStatus MKVReader::SaveCodecPrivate(byte *content, int block_size){
 TagId MKVReader::GetTag(){
     mfxU8 buffer[16];
     memset(buffer, 0, 16);
-    size_t size = 0;
+    mfxU32 size = 0;
     Ipp32s read;
 
     for(;;){
@@ -428,7 +428,7 @@ TagId MKVReader::GetTag(){
 mfxStatus MKVReader::ReadEBMLHeader(void){
     TagId tag = GetTag();
     CHECK_TAG(tag, TAG_EBML);
-    size_t size = GetSize();
+    mfxU32 size = GetSize();
     return 0 == vm_file_fseek(m_fSource, size, VM_FILE_SEEK_CUR) ? MFX_ERR_NONE : MFX_ERR_UNKNOWN;
 }
 
@@ -436,7 +436,7 @@ mfxStatus MKVReader::ReadEBMLHeader(void){
 mfxStatus MKVReader::ReadMetaSeek(void)
 {
     TagId tag;
-    size_t size;
+    mfxU32 size;
 
     tag = GetTag();
     CHECK_TAG(tag, TAG_Segment);
@@ -468,7 +468,7 @@ mfxStatus MKVReader::ReadMetaSeek(void)
 mfxStatus MKVReader::ReadSegment(void)
 {
     TagId tag;
-    size_t size;
+    mfxU32 size;
 
     tag = GetTag();
     CHECK_TAG(tag, TAG_Info);
@@ -482,7 +482,7 @@ mfxStatus MKVReader::ReadTrack(void){
     int    value_int;
     short  value_short;
     char   value_str[1024];
-    byte   value_byte = 0;
+    mfxU8   value_byte = 0;
     Ipp32s size;
     mfxU8  *codec_private = 0;
     TagId  tag;
@@ -633,8 +633,8 @@ SEEK:
             data = new mfxU8[block_size];
             vm_file_fread(data, 1, block_size, m_fSource);
  
-            size_t internal = 0;
-            size_t jump;
+            mfxU32 internal = 0;
+            mfxU32 jump;
 
             for(;;){
                 // Decode data
@@ -683,13 +683,13 @@ mfxStatus MKVReader::ReadCluster(mfxBitstream2 &bs)
 
     int  value_int;
     short value_short;
-    byte value_byte;
+    mfxU8 value_byte;
     TagId tag;
 
     for(;;){
         tag = GetTag();
         if ( tag == TAG_Attachments || tag == TAG_Chapters || tag == TAG_EBMLVoid){
-            size_t size = GetSize();
+            mfxU32 size = GetSize();
             vm_file_fseek(m_fSource, size, VM_FILE_SEEK_CUR);
             continue;
         }

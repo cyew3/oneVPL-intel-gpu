@@ -11,6 +11,7 @@
 */
 
 #pragma once
+#include <stdlib.h>
 #include "app_defs.h"
 #include "mfx_ibitstream_reader.h"
 
@@ -98,7 +99,7 @@ struct MKV_Element_t{
     /* ID */
     TagId     id;
     /* Tag's binary mark */
-    byte      tag[16];
+    mfxU8      tag[16];
     /* Printable name of the tag */
     char      *name;
     /* Tag has size */
@@ -184,7 +185,7 @@ protected:
     TagId     GetTag(void);
     mfxU32    GetSize();
     void      ReadValue(mfxU32 size, DataType type, void *value);
-    mfxStatus SaveCodecPrivate(byte *content, int block_size);
+    mfxStatus SaveCodecPrivate(mfxU8 *content, int block_size);
 
     bool             m_bInited;
     sStreamInfo      m_sInfo;
