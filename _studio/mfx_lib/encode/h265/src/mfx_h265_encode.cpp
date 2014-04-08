@@ -126,7 +126,7 @@ mfxExtBuffer HEVC_HEADER = { MFX_EXTBUFF_HEVCENC, sizeof(mfxExtCodingOptionHEVC)
     tab_MinCUDepthAdapt[x],\
 }
 
-#define __old_tu_definition
+//#define __old_tu_definition
 #ifdef __old_tu_definition
 //                                    TU1  TU2  TU3  TU4  TU4  TU6  TU7
 TU_OPT(Log2MaxCUSize,                  6,   6,   6,   5,   5,   5,   5)
@@ -200,6 +200,9 @@ TU_OPT(FastPUDecision,               OFF, OFF, OFF, OFF, OFF, OFF, OFF)
 TU_OPT(CostChroma,                    ON,  ON,  ON,  ON,  ON, OFF, OFF)
 TU_OPT(FastSkip,                     OFF, OFF, OFF, OFF, OFF, OFF,  ON)
 TU_OPT(PartModes,                      3,   2,   2,   1,   1,   1,   1) //TU2 AMP?
+TU_OPT(FastCbfMode,                  OFF, OFF,  ON,  ON,  ON,  ON,  ON)
+TU_OPT(PuDecisionSatd,               OFF, OFF, OFF, OFF, OFF, OFF, OFF)
+TU_OPT(MinCUDepthAdapt,              OFF, OFF, OFF, OFF, OFF, OFF, OFF)
 
 //Basic quality features
 TU_OPT(WPP,                          UNK, UNK, UNK, UNK, UNK, UNK, UNK)
@@ -245,7 +248,6 @@ TU_OPT(ForceNumThread,                 0,   0,   0,   0,   0,   0,   0)
 TU_OPT(HadamardMe,                     2,   2,   2,   2,   2,   2,   1)
 TU_OPT(PatternIntPel,                  1,   1,   1,   1,   1,   1,   1)
 TU_OPT(PatternSubPel,                  3,   3,   3,   3,   3,   3,   1) //4 -dia subpel search; 3- square
-TU_OPT(FastCbfMode,                  OFF, OFF,  ON,  ON,  ON,  ON,  ON)
 
 // reference options
 TU_OPT(GPB,                           ON,  ON,  ON,  ON,  ON, OFF, OFF) //ww12.1 TU4 ON->OFF exchsnge 0.9% qual for 6.2% speed
