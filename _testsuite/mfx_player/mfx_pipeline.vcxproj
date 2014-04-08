@@ -279,6 +279,7 @@
     <ClCompile Include="src\mfx_frame_constructor.cpp" />
     <ClCompile Include="src\mfx_loop_decoder.cpp" />
     <ClCompile Include="src\mfx_mediasdk_spl_wrapper.cpp" />
+    <ClCompile Include="src\mfx_mkv_reader.cpp" />
     <ClCompile Include="src\mfx_pipeline_dec.cpp" />
     <ClCompile Include="src\mfx_pipeline_protected.cpp" />
     <ClCompile Include="src\mfx_pipeline_utils.cpp" />
@@ -363,6 +364,7 @@
     <ClInclude Include="include\mfx_mediasdk_spl_wrapper.h" />
     <ClInclude Include="include\mfx_mem_fun_any.h" />
     <ClInclude Include="include\mfx_message_notifier.h" />
+    <ClInclude Include="include\mfx_mkv_reader.h" />
     <ClInclude Include="include\mfx_mvc_handler.h" />
     <ClInclude Include="include\mfx_perfcounter_time.h" />
     <ClInclude Include="include\mfx_pipeline_config.h" />
