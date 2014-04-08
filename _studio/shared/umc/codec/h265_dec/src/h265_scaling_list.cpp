@@ -19,6 +19,8 @@
 namespace UMC_HEVC_DECODER
 {
 
+static const Ipp32u g_scalingListSizeX[4] = { 4, 8, 16, 32 };
+
 void H265ScalingList::init()
 {
     VM_ASSERT(!m_initialized);

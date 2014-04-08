@@ -25,6 +25,7 @@ namespace UMC_HEVC_DECODER
 class H265CodingUnit;
 struct H265CodingUnitData;
 
+// Partition indexes conversion tables
 class PartitionInfo
 {
 public:
@@ -59,6 +60,7 @@ enum
     COL_TU_LT_INTER      = 3
 };
 
+// Deblocking edge description
 struct H265PartialEdgeData
 {
     Ipp8u deblockP  : 1;
@@ -69,7 +71,7 @@ struct H265PartialEdgeData
 }; // sizeof - 2 bytes
 
 
-// picture coding data class
+// Picture coding data class
 class H265FrameCodingData
 {
     DISALLOW_COPY_AND_ASSIGN(H265FrameCodingData);
@@ -132,7 +134,7 @@ public:
         return m_colocatedInfo[partNumber];
     }
 
-    void create (Ipp32s iPicWidth, Ipp32s iPicHeight, Ipp32u uiMaxWidth, Ipp32u uiMaxHeight, Ipp32u uiMaxDepth);
+    void create(Ipp32s iPicWidth, Ipp32s iPicHeight, Ipp32u uiMaxWidth, Ipp32u uiMaxHeight, Ipp32u uiMaxDepth);
     void destroy();
 
     H265FrameCodingData();

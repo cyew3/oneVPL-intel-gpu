@@ -202,7 +202,7 @@ void DecodingContext::UpdateRecCurrCTBContext(Ipp32s lastCUAddr, Ipp32s newCUAdd
     }
 
     Ipp32u tDiag, diagIds;
-        
+
     tDiag = (((Ipp32u)(m_RecTpIntraRowFlags[(nCTBXx4>>4)-1])) | ((Ipp32u)(m_RecTpIntraRowFlags[(nCTBXx4>>4)]) << 16)) >> 15;
     tDiag = (tDiag >> ((nCTBXx4 & 0xF))) & 0x1;
 
@@ -986,7 +986,7 @@ void H265SegmentDecoder::DecodeIPCMInfoCABAC(Ipp32u AbsPartIdx, Ipp32u Depth)
     Ipp32u Width = m_cu->GetWidth(AbsPartIdx);
     H265PlanePtrYCommon PCMSampleY = (H265PlanePtrYCommon)m_context->m_coeffsWrite;
     m_context->m_coeffsWrite += Width*Width;
-    
+
     Ipp32u SampleBits = m_pSeqParamSet->pcm_sample_bit_depth_luma;
 
     for (Ipp32u Y = 0; Y < Width; Y++)
@@ -1426,7 +1426,7 @@ void H265SegmentDecoder::DecodeTransform(Ipp32u AbsPartIdx, Ipp32u Depth, Ipp32u
 
     Ipp32s IntraSplitFlag = m_cu->GetPredictionMode(AbsPartIdx) == MODE_INTRA && m_cu->GetPartitionSize(AbsPartIdx) == PART_SIZE_NxN;
 
-    Ipp32u Log2MaxTrafoSize = m_pSeqParamSet->log2_max_transform_block_size; 
+    Ipp32u Log2MaxTrafoSize = m_pSeqParamSet->log2_max_transform_block_size;
     Ipp32u Log2MinTrafoSize = m_pSeqParamSet->log2_min_transform_block_size;
 
     Ipp32u MaxTrafoDepth = m_cu->GetPredictionMode(AbsPartIdx) == MODE_INTRA ? (m_pSeqParamSet->max_transform_hierarchy_depth_intra + IntraSplitFlag ) : m_pSeqParamSet->max_transform_hierarchy_depth_inter;
@@ -1766,7 +1766,7 @@ static H265_FORCEINLINE Ipp32u getSigCtxInc(Ipp32s patternSigCtx,
 
     Ipp32s posXinSubset = PosX & 0x3;
     Ipp32s posYinSubset = PosY & 0x3;
- 
+
     Ipp32s cnt = (lCtx[patternSigCtx] >> (((posXinSubset<<2) + posYinSubset)<<1)) & 0x3;
 
     return ((IsLuma && ((PosX|PosY) > 3) ) ? 3 : 0) + Offset + cnt;
@@ -1813,7 +1813,7 @@ void H265SegmentDecoder::ParseCoeffNxNCABACOptimized(H265CoeffsPtrCommon pCoef, 
 
     if (m_pPicParamSet->transform_skip_enabled_flag && !L2Width && !isBypass)
         ParseTransformSkipFlags(AbsPartIdx, plane);
-    
+
     memset(pCoef, 0, sizeof(H265CoeffsCommon) << (Log2BlockSize << 1));
 
     Ipp32u ScanIdx = m_cu->getCoefScanIdx(AbsPartIdx, Log2BlockSize, IsLuma, m_cu->GetPredictionMode(AbsPartIdx) == MODE_INTRA);
@@ -1823,7 +1823,7 @@ void H265SegmentDecoder::ParseCoeffNxNCABACOptimized(H265CoeffsPtrCommon pCoef, 
     pCoef[BlkPosLast] = 1;
 
     Ipp32u LastScanSet;
-    
+
     Ipp32u CGPosX    = PosLastX >> 2;
     Ipp32u CGPosY    = PosLastY >> 2;
     Ipp32u LastXinCG = PosLastX & 0x3;
@@ -1888,7 +1888,7 @@ void H265SegmentDecoder::ParseCoeffNxNCABACOptimized(H265CoeffsPtrCommon pCoef, 
         Add = 1 << (Shift - 1);
         Scale = m_context->m_ScaledQP[plane].m_QPScale;
     }
-    
+
     for (Ipp32s SubSet = LastScanSet; SubSet >= 0; SubSet--)
     {
         Ipp32u absSum;
@@ -1929,7 +1929,7 @@ void H265SegmentDecoder::ParseCoeffNxNCABACOptimized(H265CoeffsPtrCommon pCoef, 
                 PosX    = (CGPosX<<2) + ((stXoffs[ScanIdx] >> xyOffs) & 0x3);
                 BlkPos  = (PosY << Log2BlockSize) + PosX;
                 xyOffs -=2;
-    
+
                 if (cPos < LastPinCG || SubSet == 0 || numNonZero)
                 {
                     CtxSig = getSigCtxInc(patternSigCtx, ScanIdx, PosX, PosY, Log2BlockSize, IsLuma);
@@ -2267,7 +2267,7 @@ void H265SegmentDecoder::ReconPCM(Ipp32u AbsPartIdx, Ipp32u Depth)
 {
     // Luma
     Ipp32u Size  = (m_pSeqParamSet->MaxCUSize >> Depth);
-    
+
     H265PlanePtrYCommon pPcmY = (H265PlanePtrYCommon)m_context->m_coeffsRead;
     m_context->m_coeffsRead += Size*Size;
 
@@ -3125,6 +3125,7 @@ bool H265SegmentDecoder::AddMVPCand(AMVPInfo* pInfo, EnumRefPicList RefPicList, 
     return false;
 }
 
+// Compute scaling factor from POC difference
 static Ipp32s GetDistScaleFactor(Ipp32s DiffPocB, Ipp32s DiffPocD)
 {
     if (DiffPocD == DiffPocB)

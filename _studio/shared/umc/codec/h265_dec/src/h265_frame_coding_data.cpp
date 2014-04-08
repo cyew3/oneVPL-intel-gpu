@@ -22,6 +22,7 @@ PartitionInfo::PartitionInfo()
 {
 }
 
+// Initialize conversion table of Z-order partition indexes to raster order partition indexes inside of CTB
 void PartitionInfo::InitZscanToRaster(Ipp32s MaxDepth, Ipp32s Depth, Ipp32u StartVal, Ipp32u*& CurrIdx)
 {
     Ipp32s Stride = 1 << (MaxDepth - 1);
@@ -41,6 +42,7 @@ void PartitionInfo::InitZscanToRaster(Ipp32s MaxDepth, Ipp32s Depth, Ipp32u Star
     }
 }
 
+// Initialize conversion table of raster order partition indexes to Z-order partition indexes inside of CTB
 void PartitionInfo::InitRasterToZscan(const H265SeqParamSet* sps)
 {
     Ipp32u  NumPartInSize  = sps->MaxCUSize  / sps->MinCUSize;
@@ -51,13 +53,14 @@ void PartitionInfo::InitRasterToZscan(const H265SeqParamSet* sps)
     }
 }
 
+// Initialize lookup table for raster partition coordinates from raster index inside of CTB
 void PartitionInfo::InitRasterToPelXY(const H265SeqParamSet* sps)
 {
     Ipp32u* TempX = &m_rasterToPelX[0];
     Ipp32u* TempY = &m_rasterToPelY[0];
 
     Ipp32u NumPartInSize = sps->MaxCUSize / sps->MinCUSize;
-    
+
     for (Ipp32u i = 0; i < NumPartInSize*NumPartInSize; i++)
     {
         TempX[i] = (m_zscanToRaster[i] % NumPartInSize) * sps->MinCUSize;
@@ -69,6 +72,7 @@ void PartitionInfo::InitRasterToPelXY(const H265SeqParamSet* sps)
     }
 };
 
+// Initialize all lookup tables
 void PartitionInfo::Init(const H265SeqParamSet* sps)
 {
     if (m_MaxCUDepth == sps->MaxCUDepth && m_MaxCUSize == sps->MaxCUSize)
@@ -91,6 +95,7 @@ void PartitionInfo::Init(const H265SeqParamSet* sps)
     InitRasterToPelXY(sps);
 }
 
+// Frame CTB data structure constructor
 H265FrameCodingData::H265FrameCodingData()
     : m_WidthInCU(0)
     , m_HeightInCU(0)
@@ -106,11 +111,13 @@ H265FrameCodingData::H265FrameCodingData()
 {
 }
 
+// Frame CTB data structure destructor
 H265FrameCodingData::~H265FrameCodingData()
 {
     destroy();
 }
 
+// Allocate frame CTB array table
 void H265FrameCodingData::create(Ipp32s iPicWidth, Ipp32s iPicHeight, Ipp32u uiMaxWidth, Ipp32u uiMaxHeight, Ipp32u uiMaxDepth)
 {
     m_MaxCUDepth = (Ipp8u) uiMaxDepth;
@@ -125,6 +132,7 @@ void H265FrameCodingData::create(Ipp32s iPicWidth, Ipp32s iPicHeight, Ipp32u uiM
     m_WidthInCU = (iPicWidth % uiMaxWidth) ? iPicWidth / uiMaxWidth + 1 : iPicWidth / uiMaxWidth;
     m_HeightInCU = (iPicHeight % uiMaxHeight) ? iPicHeight / uiMaxHeight + 1 : iPicHeight / uiMaxHeight;
 
+    // Allocate main CTB table
     m_NumCUsInFrame = m_WidthInCU * m_HeightInCU;
     m_CU = h265_new_array_throw<H265CodingUnit*>(m_NumCUsInFrame + 1);
 
@@ -137,6 +145,7 @@ void H265FrameCodingData::create(Ipp32s iPicWidth, Ipp32s iPicHeight, Ipp32u uiM
     Ipp8u*                    lumaIntraDir;    // array of intra directions (luma)
     Ipp8u*                    chromaIntraDir;  // array of intra directions (chroma)
 
+    // Allocate additional CTB buffers
     m_cumulativeMemoryPtr = CumulativeArraysAllocation(5, // number of parameters
                                 32, // align
                                 &lumaIntraDir, sizeof(Ipp8u) * m_NumPartitions * m_NumCUsInFrame,
@@ -156,7 +165,7 @@ void H265FrameCodingData::create(Ipp32s iPicWidth, Ipp32s iPicHeight, Ipp32u uiM
 
         lumaIntraDir += m_NumPartitions;
         chromaIntraDir += m_NumPartitions;
-       
+
         m_CU[i]->m_cbf[0] = cbf[0];
         m_CU[i]->m_cbf[1] = cbf[1];
         m_CU[i]->m_cbf[2] = cbf[2];
@@ -168,12 +177,14 @@ void H265FrameCodingData::create(Ipp32s iPicWidth, Ipp32s iPicHeight, Ipp32u uiM
 
     m_CU[m_NumCUsInFrame] = 0;
 
+    // Allocate edges array for deblocking
     Ipp32s m_edgesInCTBSize = m_MaxCUWidth >> 3;
     m_edgesInFrameWidth = (m_edgesInCTBSize * m_WidthInCU) * 2;
     Ipp32s edgesInFrameHeight = m_edgesInCTBSize * m_HeightInCU;
     m_edge = h265_new_array_throw<H265PartialEdgeData>(m_edgesInFrameWidth * edgesInFrameHeight);
 }
 
+// Deallocate frame CTB array table
 void H265FrameCodingData::destroy()
 {
     if (m_cumulativeMemoryPtr)

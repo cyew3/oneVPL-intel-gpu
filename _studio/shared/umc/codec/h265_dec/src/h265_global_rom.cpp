@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2012-2013 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2012-2014 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -17,10 +17,11 @@
 namespace UMC_HEVC_DECODER
 {
 
+// Lookup table used for decoding coefficients and groups of coefficients
 ALIGN_DECL(32) const Ipp8u scanGCZr[128] = {
      0,  0,  0,  0,  3,  1,  2,  0,  3,  2,  1,  0,  3,  1,  2,  0,
     15, 11, 14,  7, 10, 13,  3,  6,  9, 12,  2,  5,  8,  1,  4,  0,
-    15, 14, 13, 12, 11, 10,  9,  8,  7,  6,  5,  4,  3,  2,  1,  0, 
+    15, 14, 13, 12, 11, 10,  9,  8,  7,  6,  5,  4,  3,  2,  1,  0,
     15, 11,  7,  3, 14, 10,  6,  2, 13,  9,  5,  1, 12,  8,  4,  0,
     63, 55, 62, 47, 54, 61, 39, 46, 53, 60, 31, 38, 45, 52, 59, 23,
     30, 37, 44, 51, 58, 15, 22, 29, 36, 43, 50, 57,  7, 14, 21, 28,
@@ -28,42 +29,22 @@ ALIGN_DECL(32) const Ipp8u scanGCZr[128] = {
     40,  4, 11, 18, 25, 32,  3, 10, 17, 24,  2,  9, 16,  1,  8,  0
 };
 
-/* Need this only for scaling lists, to be removed later */
-const Ipp16u g_sigLastScanCG32x32[64] =
-{
-     0,    8,    1,   16,    9,    2,   24,   17,
-    10,    3,   32,   25,   18,   11,    4,   40,
-    33,   26,   19,   12,    5,   48,   41,   34,
-    27,   20,   13,    6,   56,   49,   42,   35,
-    28,   21,   14,    7,   57,   50,   43,   36,
-    29,   22,   15,   58,   51,   44,   37,   30,
-    23,   59,   52,   45,   38,   31,   60,   53,
-    46,   39,   61,   54,   47,   62,   55,   63
-};
+// XY coefficient position inside of transform block lookup table
+const Ipp32u g_MinInGroup[10] = { 0, 1, 2, 3, 4, 6, 8, 12, 16, 24 };
 
-const Ipp16u ScanTableDiag4x4[16] =
-{
-  0,  4,  1,  8,
-  5,  2, 12,  9,
-  6,  3, 13, 10,
-  7, 14, 11, 15
-};
+// Group index inside of transfrom block lookup table
+const Ipp32u g_GroupIdx[32] = { 0, 1, 2, 3, 4, 4, 5, 5, 6, 6, 6, 6, 7, 7, 7, 7, 8, 8, 8, 8, 8, 8, 8, 8, 9, 9, 9, 9, 9, 9, 9, 9 };
 
-// Data structure related table & variable -----------------------------------------------------------------------------
+// Prediction unit partition index increment inside of CU
 Ipp32u g_PUOffset[8] = { 0, 8, 4, 4, 2, 10, 1, 5};
 
-// ML: OPT: 16-bit allow compiler to use PMULLW/PMULHW instead of PMULLD
-Ipp16u g_quantScales[6] =
-{
-    26214,23302,20560,18396,16384,14564
-};
-
-// ML: OPT: 16-bit allow compiler to use PMULLW/PMULHW instead of PMULLD
+// Inverse QP scale lookup table
 Ipp16u g_invQuantScales[6] =
 {
     40,45,51,57,64,72
 };
 
+// Inverse transform 4x4 multiplication matrix
 const Ipp16s g_T4[4][4] =
 {
     { 64, 64, 64, 64},
@@ -72,6 +53,7 @@ const Ipp16s g_T4[4][4] =
     { 36,-83, 83,-36}
 };
 
+// Inverse transform 8x8 multiplication matrix
 const Ipp16s g_T8[8][8] =
 {
     { 64, 64, 64, 64, 64, 64, 64, 64},
@@ -84,6 +66,7 @@ const Ipp16s g_T8[8][8] =
     { 18,-50, 75,-89, 89,-75, 50,-18}
 };
 
+// Inverse transform 16x16 multiplication matrix
 const Ipp16s g_T16[16][16] =
 {
     { 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64},
@@ -104,6 +87,7 @@ const Ipp16s g_T16[16][16] =
     {  9,-25, 43,-57, 70,-80, 87,-90, 90,-87, 80,-70, 57,-43, 25, -9}
 };
 
+// Inverse transform 32x32 multiplication matrix
 const Ipp16s g_T32[32][32] =
 {
     { 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64},
@@ -140,6 +124,7 @@ const Ipp16s g_T32[32][32] =
     {  4,-13, 22,-31, 38,-46, 54,-61, 67,-73, 78,-82, 85,-88, 90,-90, 90,-90, 88,-85, 82,-78, 73,-67, 61,-54, 46,-38, 31,-22, 13, -4}
 };
 
+// Luma to chroma QP scale lookup table. HEVC spec 8.6.1
 const Ipp8u g_ChromaScale[58] =
 {
    0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,15,16,
@@ -148,15 +133,7 @@ const Ipp8u g_ChromaScale[58] =
   45,46,47,48,49,50,51
 };
 
-const Ipp8u g_AngModeMapping[4][34] = // intra mode conversion for most probable
-{
-    {2,3,2,2,4, 4,4,0,0,0, 0,0,0,0,2, 2,2,2,2,2, 2,1,1,1,1, 1,1,1,1,1, 2,2,2,2},               // conversion to 5 modes
-    {2,3,3,2,4, 4,4,2,0,0, 0,2,5,5,5, 2,6,6,3,2, 7,7,7,2,1, 1,1,2,8,8, 8,2,2,2},               // conversion to 9 modes
-    {2,3,3,10,10, 4,11,11,0,0, 0,12,12,5,5, 13,13,6,14,14, 7,7,15,15,1, 1,1,16,16,8, 8,2,2,9}, // conversion to 17 modes
-    {2,2,2,2,2, 2,2,0,0,0, 0,0,0,0,2, 2,2,2,2,2, 2,1,1,1,1, 1,1,1,1,1, 2,2,2,2}                // conversion to 3 modes
-};
-
-// Misc. -------------------------------------------------------------------------------------------------------------------
+// Lookup table for converting number log2(number)-2
 Ipp8s  g_ConvertToBit[MAX_CU_SIZE + 1] =
 {
     -1,
@@ -164,34 +141,32 @@ Ipp8s  g_ConvertToBit[MAX_CU_SIZE + 1] =
     -1, -1, -1,  1,
     -1, -1, -1, -1, -1, -1, -1,  2,
     -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,  3,
-    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,  4    
+    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,  4
 };
 
-// Scanning order & context model mapping ------------------------------------------------------------------------------------
-
-// scanning order table
-Ipp32u *g_sigScanNSQT[4]; // scan for non-square partitions
-Ipp32u g_sigCGScanNSQT[4][16] =
+// Scaling list initialization scan lookup table
+const Ipp16u g_sigLastScanCG32x32[64] =
 {
-    { 0, 1, 2, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
-    { 0, 2, 1, 4, 3, 6, 5, 8, 7, 10, 9, 12, 11, 14, 13, 15 },
-    { 0, 1, 2, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
-    { 0, 8, 1, 9, 2, 10, 3, 11, 4, 12, 5, 13, 6, 14, 7, 15 }
+    0, 8, 1, 16, 9, 2, 24, 17,
+    10, 3, 32, 25, 18, 11, 4, 40,
+    33, 26, 19, 12, 5, 48, 41, 34,
+    27, 20, 13, 6, 56, 49, 42, 35,
+    28, 21, 14, 7, 57, 50, 43, 36,
+    29, 22, 15, 58, 51, 44, 37, 30,
+    23, 59, 52, 45, 38, 31, 60, 53,
+    46, 39, 61, 54, 47, 62, 55, 63
 };
 
-const Ipp32u g_MinInGroup[10] = {0,1,2,3,4,6,8,12,16,24};
-const Ipp32u g_GroupIdx[32]   = {0,1,2,3,4,4,5,5,6,6,6,6,7,7,7,7,8,8,8,8,8,8,8,8,9,9,9,9,9,9,9,9};
-
-// Rice parameters for absolute transform levels
-const Ipp32u g_GoRiceRange[5] =
+// Scaling list initialization scan lookup table
+const Ipp16u ScanTableDiag4x4[16] =
 {
-    7, 14, 26, 46, 78
-};
-const Ipp32u g_GoRicePrefixLen[5] =
-{
-    8, 7, 6, 5, 4
+    0, 4, 1, 8,
+    5, 2, 12, 9,
+    6, 3, 13, 10,
+    7, 14, 11, 15
 };
 
+// Default scaling list 4x4
 Ipp32s g_quantTSDefault4x4[16] =
 {
   16,16,16,16,
@@ -200,6 +175,7 @@ Ipp32s g_quantTSDefault4x4[16] =
   16,16,16,16
 };
 
+// Default scaling list 8x8 for intra prediction
 Ipp32s g_quantIntraDefault8x8[64] =
 {
   16,16,16,16,17,18,21,24,
@@ -212,6 +188,7 @@ Ipp32s g_quantIntraDefault8x8[64] =
   24,25,29,36,47,65,88,115
 };
 
+// Default scaling list 8x8 for inter prediction
 Ipp32s g_quantInterDefault8x8[64] =
 {
   16,16,16,16,17,18,20,24,

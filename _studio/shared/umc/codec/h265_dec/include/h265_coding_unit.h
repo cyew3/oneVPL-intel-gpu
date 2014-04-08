@@ -32,6 +32,7 @@ class H265Pattern;
 class H265SegmentDecoderMultiThreaded;
 
 #pragma pack(1)
+// Data structure describing CTB partition state
 struct H265CodingUnitData
 {
     struct
@@ -50,6 +51,7 @@ struct H265CodingUnitData
 };
 #pragma pack()
 
+// Data structure of frame CTB
 class H265CodingUnit
 {
 public:
@@ -76,12 +78,10 @@ public:
     //CU data ----------------------------------------------------------------------------------------
     H265CodingUnitData         *m_cuData;
 
-public:
     Ipp8u*                    m_cbf[3];         // array of coded block flags (CBF)
 
     Ipp8u*                    m_lumaIntraDir;    // array of intra directions (luma)
     Ipp8u*                    m_chromaIntraDir;  // array of intra directions (chroma)
-public:
 
     inline H265CodingUnitData * GetCUData(Ipp32s addr) const
     {
@@ -133,32 +133,29 @@ public:
         return m_cuData[partAddr].cu_transform_bypass;
     }
 
-    // misc. variables -------------------------------------------------------------------------------------
     Ipp8s                   m_CodedQP;
 
+    // Return whether TU is coded without quantization. For such blocks SAO should be skipped.
     bool isLosslessCoded(Ipp32u absPartIdx);
-
-protected:
-
-    // compute scaling factor from POC difference
-    Ipp32s GetDistScaleFactor(Ipp32s DiffPocB, Ipp32s DiffPocD);
-
-public:
 
     H265CodingUnit();
     virtual ~H265CodingUnit();
 
-    // create / destroy / init  / copy -----------------------------------------------------------------------------
+    // Initialize coding data dependent fields
+    void create(H265FrameCodingData * frameCD, Ipp32s cuAddr);
+    // Clean up CTB references
+    void destroy();
 
-    void create (H265FrameCodingData * frameCD, Ipp32s cuAddr);
-    void destroy ();
+    // Initialize coding unit coordinates and references to frame and slice
+    void initCU(H265SegmentDecoderMultiThreaded* sd, Ipp32u CUAddr);
+    // Initialize CU subparts' values that happen to be outside of the frame.
+    // This data may be needed later to find last valid part index if DQP is enabled.
+    void setOutsideCUPart(Ipp32u AbsPartIdx, Ipp32u Depth);
 
-    void initCU (H265SegmentDecoderMultiThreaded* sd, Ipp32u CUAddr);
-    void setOutsideCUPart (Ipp32u AbsPartIdx, Ipp32u Depth);
-
-    // member functions for CU description ------- (only functions with declaration here. simple get/set are removed)
+    // Returns CTB address in tile scan in TU units
     Ipp32u getSCUAddr();
-    void setDepth (Ipp32u Depth, Ipp32u AbsPartIdx);
+    // Set CU partition depth value in left-top corner
+    void setDepth(Ipp32u Depth, Ipp32u AbsPartIdx);
 
     // member functions for CU data ------------- (only functions with declaration here. simple get/set are removed)
     EnumPartSize GetPartitionSize (Ipp32u Idx) const
@@ -171,11 +168,17 @@ public:
         return static_cast<EnumPredMode>(m_cuData[Idx].predMode);
     }
 
-    void setPartSizeSubParts (EnumPartSize Mode, Ipp32u AbsPartIdx);
+    // Set CU partition siize value in left-top corner
+    void setPartSizeSubParts(EnumPartSize Mode, Ipp32u AbsPartIdx);
+    // Set CU partition transquant bypass flag in left-top corner
     void setCUTransquantBypass(bool flag, Ipp32u AbsPartIdx);
-    void setPredMode (EnumPredMode Mode, Ipp32u AbsPartIdx);
-    void setSize (Ipp32u Width, Ipp32u AbsPartIdx);
-    void setTrIdx (Ipp32u TrIdx, Ipp32u AbsPartIdx, Ipp32s Depth);
+    // Set CU partition prediction mode in left-top corner
+    void setPredMode(EnumPredMode Mode, Ipp32u AbsPartIdx);
+    // Set CU partition size top-left corner
+    void setSize(Ipp32u Width, Ipp32u AbsPartIdx);
+    // Set transform depth level for all subparts in CU partition
+    void setTrIdx(Ipp32u TrIdx, Ipp32u AbsPartIdx, Ipp32s Depth);
+    // Change QP specified in CU subparts after a new QP value is decoded from bitstream
     void UpdateTUQpInfo (Ipp32u AbsPartIdx, Ipp32s qp, Ipp32s Depth);
 
     Ipp32u getQuadtreeTULog2MinSizeInCU (Ipp32u Idx);
@@ -190,38 +193,54 @@ public:
         return (Ipp8u)((GetCbf(plane, Idx) >> TrDepth ) & 0x1);
     }
 
+    // Propagate CU partition data from left-top corner to all other subparts
     void SetCUDataSubParts(Ipp32u AbsPartIdx, Ipp32u Depth);
 
+    // Set CBF flags for all planes in CU partition
     void setCbfSubParts (Ipp32u CbfY, Ipp32u CbfU, Ipp32u CbfV, Ipp32u AbsPartIdx, Ipp32u Depth);
+    // Set CBF flags for one plane in CU partition
     void setCbfSubParts (Ipp32u m_Cbf, ComponentPlane plane, Ipp32u AbsPartIdx, Ipp32u Depth);
 
-    // member functions for coding tool information (only functions with declaration here. simple get/set are removed)
-    void setLumaIntraDirSubParts (Ipp32u Dir, Ipp32u AbsPartIdx, Ipp32u Depth);
-    void setChromIntraDirSubParts (Ipp32u Dir, Ipp32u AbsPartIdx, Ipp32u Depth);
+    // Set intra luma prediction direction for all partition subparts
+    void setLumaIntraDirSubParts(Ipp32u Dir, Ipp32u AbsPartIdx, Ipp32u Depth);
+    // Set chroma intra prediction direction for all partition subparts
+    void setChromIntraDirSubParts(Ipp32u Dir, Ipp32u AbsPartIdx, Ipp32u Depth);
 
+    // Set CU transform skip flag in left-top corner for specified plane
     void setTransformSkip(Ipp32u useTransformSkip, ComponentPlane plane, Ipp32u AbsPartIdx);
 
+    // Set IPCM flag in top-left corner of CU partition
     void setIPCMFlag (bool IpcmFlag, Ipp32u AbsPartIdx);
 
-    // member functions for accessing partition information -----------------------------------------------------------
+    // Returns number of prediction units in CU partition and prediction unit size in pixels
     void getPartIndexAndSize (Ipp32u AbsPartIdx, Ipp32u PartIdx, Ipp32u &Width, Ipp32u &Height);
+    // Returns prediction unit size in pixels
     void getPartSize(Ipp32u AbsPartIdx, Ipp32u partIdx, Ipp32s &nPSW, Ipp32s &nPSH);
+    // Returns number of prediction units in CU partition
     Ipp8u getNumPartInter(Ipp32u AbsPartIdx);
 
     bool isDiffMER(Ipp32s xN, Ipp32s yN, Ipp32s xP, Ipp32s yP);
 
-    // member functions for modes ---------------------- (only functions with declaration here. simple get/set are removed)
+    // Returns whether partition is too small to be predicted not only from L0 reflist
+    // (see HEVC specification 8.5.3.2.2).
     bool isBipredRestriction(Ipp32u AbsPartIdx, Ipp32u PartIdx);
 
+    // Derive chroma modes for decoded luma mode. See HEVC specification 8.4.3.
     void getAllowedChromaDir (Ipp32u AbsPartIdx, Ipp32u* ModeList);
 
-    // member functions for RD cost storage  ------------(only functions with declaration here. simple get/set are removed)
+    // Calculate possible scan order index for specified CU partition. Inter prediction always uses diagonal scan.
     Ipp32u getCoefScanIdx(Ipp32u AbsPartIdx, Ipp32u L2Width, bool IsLuma, bool IsIntra);
 
+    // Initialize border flags in all directions needed for SAO filters. This is necessary when
+    // frame contains more than one slice or more than one tile, and loop filter across slices
+    // and tiles may be disabled.
     void setNDBFilterBlockBorderAvailability(bool independentTileBoundaryEnabled);
+
+    // Find last part index which is not outside of the frame (has any mode other than MODE_NONE).
     Ipp32s getLastValidPartIdx(Ipp32s AbsPartIdx);
 };
 
+// Data structure used for current CTB context and up row state
 struct H265FrameHLDNeighborsInfo
 {
     union {
@@ -237,6 +256,7 @@ struct H265FrameHLDNeighborsInfo
     };
 };
 
+// Prediction unit information data for motion compensation
 struct H265PUInfo
 {
     H265MVInfo *interinfo;
