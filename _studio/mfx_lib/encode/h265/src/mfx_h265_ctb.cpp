@@ -1769,6 +1769,7 @@ CostType H265CU::MeCu(Ipp32u absPartIdx, Ipp8u depth, Ipp32s offset)
     m_bsf->CtxSave(ctxSave[0], 0, NUM_CABAC_CONTEXT);
 
     CostType bestCost = COST_MAX;
+    Ipp32s isCostMergeSkipBest = 1;
 
     Ipp32u numParts = ( m_par->NumPartInCU >> (depth<<1) );
     CostType cost = 0;
@@ -1946,12 +1947,17 @@ CostType H265CU::MeCu(Ipp32u absPartIdx, Ipp8u depth, Ipp32s offset)
     m_interResidualsVPtr = m_interResidualsV;
 
     if (m_par->puDecisionSatd) {
-        bestCost = PuCost(&meInfo);
-        nonZeroCbf = bestCost != 0;
+        cost = PuCost(&meInfo);
     } else {
+        m_bsf->CtxRestore(ctxSave[0], 0, NUM_CABAC_CONTEXT);
         cost = CuCost(absPartIdx, depth, &meInfo, m_par->fastPUDecision);
-        if (bestCost > cost) {
-            bestCost = cost;
+    }
+    if (bestCost > cost) {
+        bestCost = cost;
+        isCostMergeSkipBest = 0;
+        if (m_par->puDecisionSatd) {
+            nonZeroCbf = bestCost != 0;
+        } else {
             if (m_par->fastCbfMode)
                 nonZeroCbf = m_data[absPartIdx].cbf[0] | m_data[absPartIdx].cbf[1] | m_data[absPartIdx].cbf[2];
             m_bsf->CtxSave(ctxSave[1], 0, NUM_CABAC_CONTEXT);
@@ -1959,17 +1965,17 @@ CostType H265CU::MeCu(Ipp32u absPartIdx, Ipp8u depth, Ipp32s offset)
             if (m_par->AnalyseFlags & HEVC_COST_CHROMA) {
                 ippiCopy_8u_C1R(pRecUv, m_pitchRec, m_recChromaInter[depth], meInfo.width, roiSizeChr);
                 ippiCopy_8u_C1R(m_interPredChromaPtr[depth] + offsetPredChroma, MAX_CU_SIZE,
-                                m_interPredChromaBest[depth] + offsetPredChroma, MAX_CU_SIZE, roiSizeChr);
+                    m_interPredChromaBest[depth] + offsetPredChroma, MAX_CU_SIZE, roiSizeChr);
                 ippiCopy_16s_C1R(m_interResidualsUPtr[depth] + offsetPredChroma/2, MAX_CU_SIZE,
-                                 m_interResidualsUBest[depth] + offsetPredChroma/2, MAX_CU_SIZE, roiSizeU);
+                    m_interResidualsUBest[depth] + offsetPredChroma/2, MAX_CU_SIZE, roiSizeU);
                 ippiCopy_16s_C1R(m_interResidualsVPtr[depth] + offsetPredChroma/2, MAX_CU_SIZE,
-                                 m_interResidualsVBest[depth] + offsetPredChroma/2, MAX_CU_SIZE, roiSizeU);
+                    m_interResidualsVBest[depth] + offsetPredChroma/2, MAX_CU_SIZE, roiSizeU);
             }
             small_memcpy(m_dataInter, m_data + absPartIdx, sizeof(H265CUData) * numParts);
             ippiCopy_8u_C1R(m_interPredPtr[depth] + offsetPred, MAX_CU_SIZE,
-                            m_interPredBest[depth] + offsetPred, MAX_CU_SIZE, roiSize);
+                m_interPredBest[depth] + offsetPred, MAX_CU_SIZE, roiSize);
             ippiCopy_16s_C1R(m_interResidualsYPtr[depth] + offsetPred, MAX_CU_SIZE * 2,
-                             m_interResidualsYBest[depth] + offsetPred, MAX_CU_SIZE * 2, roiSize);
+                m_interResidualsYBest[depth] + offsetPred, MAX_CU_SIZE * 2, roiSize);
         }
     }
 
@@ -2004,6 +2010,7 @@ CostType H265CU::MeCu(Ipp32u absPartIdx, Ipp8u depth, Ipp32s offset)
                 bestMeInfo[2] = bestInfo[2];
                 bestMeInfo[3] = bestInfo[3];
                 bestCost = cost;
+                isCostMergeSkipBest = 0;
 
                 if (m_par->puDecisionSatd) {
                     nonZeroCbf = bestCost != 0;
@@ -2056,6 +2063,7 @@ CostType H265CU::MeCu(Ipp32u absPartIdx, Ipp8u depth, Ipp32s offset)
                 bestMeInfo[0] = partsInfo[0];
                 bestMeInfo[1] = partsInfo[1];
                 bestCost = cost;
+                isCostMergeSkipBest = 0;
 
                 if (m_par->puDecisionSatd) {
                     nonZeroCbf = bestCost != 0;
@@ -2109,6 +2117,7 @@ CostType H265CU::MeCu(Ipp32u absPartIdx, Ipp8u depth, Ipp32s offset)
                 bestMeInfo[0] = partsInfo[0];
                 bestMeInfo[1] = partsInfo[1];
                 bestCost = cost;
+                isCostMergeSkipBest = 0;
 
                 if (m_par->puDecisionSatd) {
                     nonZeroCbf = bestCost != 0;
@@ -2165,6 +2174,7 @@ CostType H265CU::MeCu(Ipp32u absPartIdx, Ipp8u depth, Ipp32s offset)
                     bestMeInfo[0] = partsInfo[0];
                     bestMeInfo[1] = partsInfo[1];
                     bestCost = cost;
+                    isCostMergeSkipBest = 0;
 
                     if (m_par->puDecisionSatd) {
                         nonZeroCbf = bestCost != 0;
@@ -2217,6 +2227,7 @@ CostType H265CU::MeCu(Ipp32u absPartIdx, Ipp8u depth, Ipp32s offset)
                     bestMeInfo[0] = partsInfo[0];
                     bestMeInfo[1] = partsInfo[1];
                     bestCost = cost;
+                    isCostMergeSkipBest = 0;
 
                     if (m_par->puDecisionSatd) {
                         nonZeroCbf = bestCost != 0;
@@ -2269,6 +2280,7 @@ CostType H265CU::MeCu(Ipp32u absPartIdx, Ipp8u depth, Ipp32s offset)
                     bestMeInfo[0] = partsInfo[0];
                     bestMeInfo[1] = partsInfo[1];
                     bestCost = cost;
+                    isCostMergeSkipBest = 0;
 
                     if (m_par->puDecisionSatd) {
                         nonZeroCbf = bestCost != 0;
@@ -2321,6 +2333,7 @@ CostType H265CU::MeCu(Ipp32u absPartIdx, Ipp8u depth, Ipp32s offset)
                     bestMeInfo[0] = partsInfo[0];
                     bestMeInfo[1] = partsInfo[1];
                     bestCost = cost;
+                    isCostMergeSkipBest = 0;
 
                     if (m_par->puDecisionSatd) {
                         nonZeroCbf = bestCost != 0;
@@ -2355,8 +2368,8 @@ CostType H265CU::MeCu(Ipp32u absPartIdx, Ipp8u depth, Ipp32s offset)
     m_interResidualsUPtr = m_interResidualsUBest;
     m_interResidualsVPtr = m_interResidualsVBest;
 
-    if (m_par->puDecisionSatd) {
-        //return CuCost(absPartIdx, depth, bestMeInfo, 0);
+    if (m_par->puDecisionSatd && !isCostMergeSkipBest) {
+        m_bsf->CtxRestore(ctxSave[0], 0, NUM_CABAC_CONTEXT);
         cost = CuCost(absPartIdx, depth, bestMeInfo, 0);
         small_memcpy(m_dataInter, m_data + absPartIdx, sizeof(H265CUData) * numParts);
         ippiCopy_8u_C1R(pRec, m_pitchRec, m_recLumaInter[depth], meInfo.width, roiSize);
