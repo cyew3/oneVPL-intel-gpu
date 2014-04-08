@@ -141,7 +141,6 @@ mfxStatus VideoDECODEVP8_HW::Init(mfxVideoParam *p_video_param)
 
     MFX_CHECK_STS(sts);
 
-
     sts = m_p_core->CreateVA(&m_on_init_video_params, &request, &m_response);
 
     MFX_CHECK_STS(sts);
@@ -207,7 +206,7 @@ static bool IsSameVideoParam(mfxVideoParam *newPar, mfxVideoParam *oldPar)
 
 mfxStatus VideoDECODEVP8_HW::Reset(mfxVideoParam *p_video_param)
 {
-    if (true == m_is_initialized)
+    if (false == m_is_initialized)
     {
         return MFX_ERR_NOT_INITIALIZED;
     }
@@ -240,7 +239,7 @@ mfxStatus VideoDECODEVP8_HW::Reset(mfxVideoParam *p_video_param)
         return MFX_ERR_MEMORY_ALLOC;
     }
 
-    m_frameOrder = (mfxU16)MFX_FRAMEORDER_UNKNOWN;
+    m_frameOrder = (mfxU16)0;
     memset(&m_stat, 0, sizeof(m_stat));
 
     m_on_init_video_params = *p_video_param;
@@ -250,6 +249,10 @@ mfxStatus VideoDECODEVP8_HW::Reset(mfxVideoParam *p_video_param)
     {
         //return MFX_WRN_PARTIAL_ACCELERATION;
     }
+
+    curr_indx = 0;
+    gold_indx = 0;
+    altref_indx = 0;
 
     return MFX_ERR_NONE;
 
@@ -272,10 +275,9 @@ mfxStatus VideoDECODEVP8_HW::Close()
         m_p_core->FreeFrames(&m_response);
     }
 
-    m_is_initialized = false;
     m_is_software_buffer = false;
 
-    m_frameOrder = (mfxU16)MFX_FRAMEORDER_UNKNOWN;
+    m_frameOrder = (mfxU16)0;
 
     m_p_video_accelerator = 0;
 
@@ -563,6 +565,15 @@ static mfxStatus VP8CompleteProc(void *, void *pp_param, mfxStatus)
 mfxStatus VideoDECODEVP8_HW::DecodeFrameCheck(mfxBitstream *p_bs, mfxFrameSurface1 *p_surface_work, mfxFrameSurface1 **pp_surface_out, MFX_ENTRY_POINT * p_entry_point)
 {
 
+    {
+        std::ofstream ofs("sizes.txt", std::ofstream::app);
+        ofs << p_bs->DataLength << " " << p_bs->DataOffset << std::endl;
+        ofs.close();
+    }
+
+    std::cout << "DecodeFrameCheck 0 : " << p_bs->DataLength << std::endl;
+
+
     mfxStatus sts = MFX_ERR_NONE;
 
     if (false == m_is_initialized)
@@ -571,6 +582,8 @@ mfxStatus VideoDECODEVP8_HW::DecodeFrameCheck(mfxBitstream *p_bs, mfxFrameSurfac
     }
 
     MFX_CHECK_NULL_PTR2(p_surface_work, pp_surface_out);
+
+    std::cout << "DecodeFrameCheck 1" << std::endl;
 
     if (0 != p_surface_work->Data.Locked)
     {
@@ -586,20 +599,29 @@ mfxStatus VideoDECODEVP8_HW::DecodeFrameCheck(mfxBitstream *p_bs, mfxFrameSurfac
     sts = p_bs ? CheckBitstream(p_bs) : MFX_ERR_NONE;
     MFX_CHECK_STS(sts);
 
+    std::cout << "DecodeFrameCheck 2" << std::endl;
+
     if (NULL == p_bs)
     {
+        std::cout << "DecodeFrameCheck 2.1" << std::endl;
         return MFX_ERR_MORE_DATA;
     }
 
     bool show_frame;
     FrameType frame_type;
 
+    std::cout << "DecodeFrameCheck 2.15" << std::endl;
+
     if (0 == p_bs->DataLength)
         return MFX_ERR_MORE_DATA;
+
+    std::cout << "DecodeFrameCheck 2.2" << std::endl;
 
     mfxU8 *pTemp = p_bs->Data + p_bs->DataOffset;
     frame_type = (pTemp[0] & 1) ? P_PICTURE : I_PICTURE; // 1 bits
     show_frame = (pTemp[0] >> 4) & 0x1;
+
+    std::cout << "DecodeFrameCheck 2.3" << std::endl;
 
     if (0 == p_surface_work->Info.CropW)
     {
@@ -613,9 +635,12 @@ mfxStatus VideoDECODEVP8_HW::DecodeFrameCheck(mfxBitstream *p_bs, mfxFrameSurfac
 
     if (I_PICTURE == frame_type)
     {
+        std::cout << "DecodeFrameCheck 2.5" << std::endl;
         sts = PreDecodeFrame(p_bs, p_surface_work);
         MFX_CHECK_STS(sts);
     }
+
+    std::cout << "DecodeFrameCheck 3" << std::endl;
 
     IVF_FRAME frame;
     memset(&frame, 0, sizeof(IVF_FRAME));
@@ -642,6 +667,8 @@ mfxStatus VideoDECODEVP8_HW::DecodeFrameCheck(mfxBitstream *p_bs, mfxFrameSurfac
             break;
         }
     }
+
+    std::cout << "DecodeFrameCheck 4" << std::endl;
 
     UMC::FrameMemID mem_id = m_p_curr_frame->GetFrameMID();
 
@@ -702,6 +729,8 @@ mfxStatus VideoDECODEVP8_HW::DecodeFrameCheck(mfxBitstream *p_bs, mfxFrameSurfac
 
     m_frames.push_back(info);
 
+    std::cout << "DecodeFrameCheck 5" << std::endl;
+
     m_p_frame_allocator->IncreaseReference(mem_id);
 
     PackHeaders(&m_bs);
@@ -727,7 +756,12 @@ mfxStatus VideoDECODEVP8_HW::DecodeFrameCheck(mfxBitstream *p_bs, mfxFrameSurfac
     (*pp_surface_out)->Data.Corrupted = 0;
 
     (*pp_surface_out)->Data.FrameOrder = m_frameOrder;
+    //(*pp_surface_out)->Data.FrameOrder = p_surface_work->Data.FrameOrder;
     m_frameOrder++;
+
+    std::cout << "DecodeFrameCheck 6" << std::endl;
+
+    //p_surface_work->Data.FrameOrder
 
     (*pp_surface_out)->Data.TimeStamp = p_bs->TimeStamp;
 
@@ -735,6 +769,8 @@ mfxStatus VideoDECODEVP8_HW::DecodeFrameCheck(mfxBitstream *p_bs, mfxFrameSurfac
     p_entry_point->pCompleteProc = &VP8CompleteProc;
     p_entry_point->pState = this;
     p_entry_point->requiredNumThreads = 1;
+
+    std::cout << "DecodeFrameCheck 7" << std::endl;
 
     return show_frame ? MFX_ERR_NONE : MFX_ERR_MORE_DATA;
 
