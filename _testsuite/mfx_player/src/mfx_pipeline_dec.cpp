@@ -45,6 +45,7 @@ File Name: .h
 #include "mfx_latency_decoder.h"
 #include "mfx_perfcounter_time.h"
 #include "mfx_bitrate_limited_reader.h"
+#include "mfx_mkv_reader.h"
 #include "mfx_burst_render.h"
 #include "mfx_fps_limit_render.h"
 #include "mfx_pts_based_activator.h"
@@ -1333,6 +1334,9 @@ mfxStatus MFXDecPipeline::CreateSplitter()
     if (m_inParams.bMediaSDKSplitter)
     {
         pSpl.reset(new MediaSDKSplWrapper(m_inParams.extractedAudioFile));
+    }
+    else if (MFX_CONTAINER_MKV == m_inParams.m_container){
+         pSpl.reset(new MKVReader());
     }
     else if (!m_inParams.bYuvReaderMode && 0 == m_inParams.InputCodecType)
     {
@@ -3043,7 +3047,7 @@ mfxStatus MFXDecPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI32 argc, 
                 m_inParams.FrameInfo.FourCC = MFX_FOURCC_YV12;
             }
 
-
+            m_inParams.m_container = MFX_CONTAINER_RAW;
             vm_string_strcpy_s(m_inParams.strSrcFile, MFX_ARRAY_SIZE(m_inParams.strSrcFile), argv[0]);
         }
         else if (0!=(nPattern = m_OptProc.Check(argv[0], VM_STRING("-i:(h264|mpeg2|vc1|mvc|jpeg|hevc|hevc10b|vp8|null)"), VM_STRING("input stream is raw(non container), pipeline works without demuxing"), OPT_UNDEFINED)))
@@ -3086,6 +3090,7 @@ mfxStatus MFXDecPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI32 argc, 
                 m_inParams.InputCodecType = MFX_CODEC_CAPTURE;
                 break;
             }
+            m_inParams.m_container = MFX_CONTAINER_RAW;
         }
         else HANDLE_INT_OPTION(m_inParams.nLimitChunkSize, VM_STRING("-i:maxdatachunk"), VM_STRING("restrict file reading by special size"))
     else if (0!=(nPattern = m_OptProc.Check(argv[0], VM_STRING("-i:maxbitrate"), VM_STRING("limit input bitrate"), OPT_SPECIAL, VM_STRING("bits/sec"))))
@@ -3880,15 +3885,19 @@ mfxStatus MFXDecPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI32 argc, 
         else if (m_OptProc.Check(argv[0], VM_STRING("-in_h264"), VM_STRING("directly specify codec type as h264"), OPT_UNDEFINED))
         {
             m_inParams.InputCodecType = MFX_CODEC_AVC;
+            m_inParams.m_container = MFX_CONTAINER_RAW;
         } else if (m_OptProc.Check(argv[0], VM_STRING("-in_mpeg2"), VM_STRING("directly specify codec type as mpeg2"), OPT_UNDEFINED))
         {
             m_inParams.InputCodecType = MFX_CODEC_MPEG2;
+            m_inParams.m_container = MFX_CONTAINER_RAW;
         } else if (m_OptProc.Check(argv[0], VM_STRING("-in_vc1"), VM_STRING("directly specify codec type as vc1"), OPT_UNDEFINED))
         {
             m_inParams.InputCodecType = MFX_CODEC_VC1;
+            m_inParams.m_container = MFX_CONTAINER_RAW;
         } else if (m_OptProc.Check(argv[0], VM_STRING("-in_jpeg"), VM_STRING("directly specify codec type as jpeg"), OPT_UNDEFINED))
         {
             m_inParams.InputCodecType = MFX_CODEC_JPEG;
+            m_inParams.m_container = MFX_CONTAINER_RAW;
         } else if (m_OptProc.Check(argv[0], VM_STRING("-in_vp8"), VM_STRING("directly specify codec type as vp8"), OPT_UNDEFINED))
         {
 #ifndef MFX_PIPELINE_SUPPORT_VP8
@@ -3955,6 +3964,13 @@ mfxStatus MFXDecPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI32 argc, 
                 MFX_CHECK(1 + argv != argvEnd);
                 MFX_PARSE_INT(m_inParams.nBurstDecodeFrames, argv[1])
                     argv++;
+            }
+            else if (0!=(nPattern = m_OptProc.Check(argv[0], VM_STRING("-i:mkv"), VM_STRING("input stream is mkv container pipeline works with demuxing"), OPT_UNDEFINED)))
+            {
+                MFX_CHECK(1 + argv != argvEnd);
+                argv++;
+                vm_string_strcpy_s(m_inParams.strSrcFile, MFX_ARRAY_SIZE(m_inParams.strSrcFile), argv[0]);
+                m_inParams.m_container = MFX_CONTAINER_MKV;
             }
             else HANDLE_INT_OPTION(m_inParams.targetViewsTemporalId, VM_STRING("-dec:temporalid"), VM_STRING("in case of MVC->AVC and MVC->MVC transcoding,  specifies coresponding field in mfxExtMVCTargetViews structure"))
             else HANDLE_INT_OPTION(m_inParams.nTestId, VM_STRING("-testid"), VM_STRING("testid value used in SendNotifyMessages(WNDBROADCAST,,testid)"))

@@ -157,6 +157,9 @@ struct sCommandlineParams
 
   mfxI32         m_ExtOptions;
 
+  // Splitting params
+  mfxContainer  m_container;
+
   // video wall
   mfxU32        m_WallW;
   mfxU32        m_WallH;

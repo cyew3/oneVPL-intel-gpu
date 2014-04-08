@@ -63,6 +63,15 @@ File Name: .h
 //TODO: need to link dependencies without recompiling core
 #include "mfx_conditional_linking.h"
 
+
+
+//////////////////////////////////////////////////////////////////////////
+typedef enum {
+    MFX_CONTAINER_RAW,
+    MFX_CONTAINER_MKV
+} mfxContainer;
+
+
 //////////////////////////////////////////////////////////////////////////
 #if defined(WIN32) || defined(WIN64)
 #define PAVP_BUILD
