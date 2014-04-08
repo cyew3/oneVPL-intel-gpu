@@ -101,14 +101,7 @@ VideoDECODE *CreateDECODESpecificClass(mfxU32 CodecId, VideoCORE *core, mfxSessi
 #if defined (MFX_ENABLE_VP8_VIDEO_DECODE)
      case MFX_CODEC_VP8:
 #if defined(MFX_VA) && defined(MFX_ENABLE_VP8_VIDEO_DECODE_HW)
-        if (session->m_bIsHWDECSupport)
-        {
-            pDECODE = new VideoDECODEVP8_HW(core, &mfxRes);
-        }
-        else
-        {
-            pDECODE = new VideoDECODEVP8(core, &mfxRes);
-        }
+        pDECODE = new VideoDECODEVP8_HW(core, &mfxRes);
 #else // MFX_VA
         pDECODE = new VideoDECODEVP8(core, &mfxRes);
 
@@ -150,9 +143,6 @@ mfxStatus MFXVideoDECODE_Query(mfxSession session, mfxVideoParam *in, mfxVideoPa
     MFX_LTRACE_BUFFER(MFX_TRACE_LEVEL_API, in);
 
     mfxStatus mfxRes;
-
-    bool bIsHWDECSupport = false;
-    bIsHWDECSupport = bIsHWDECSupport;
 
     try
     {
@@ -201,15 +191,6 @@ mfxStatus MFXVideoDECODE_Query(mfxSession session, mfxVideoParam *in, mfxVideoPa
         case MFX_CODEC_VP8:
 #if defined(MFX_VA) && defined (MFX_ENABLE_VP8_VIDEO_DECODE_HW)
             mfxRes = VideoDECODEVP8_HW::Query(session->m_pCORE.get(), in, out);
-
-            if (MFX_WRN_PARTIAL_ACCELERATION == mfxRes)
-            {
-                mfxRes = VideoDECODEVP8::Query(session->m_pCORE.get(), in, out);
-            }
-            else
-            {
-                bIsHWDECSupport = true;
-            }
 #else
             mfxRes = VideoDECODEVP8::Query(session->m_pCORE.get(), in, out);
 #endif // MFX_VA && MFX_ENABLE_VP8_VIDEO_DECODE_HW
@@ -239,9 +220,6 @@ mfxStatus MFXVideoDECODE_QueryIOSurf(mfxSession session, mfxVideoParam *par, mfx
 
     MFX_AUTO_LTRACE_FUNC(MFX_TRACE_LEVEL_API);
     MFX_LTRACE_BUFFER(MFX_TRACE_LEVEL_API, par);
-
-    bool bIsHWDECSupport = false;
-    bIsHWDECSupport = bIsHWDECSupport;
 
     mfxStatus mfxRes;
     try
@@ -291,15 +269,6 @@ mfxStatus MFXVideoDECODE_QueryIOSurf(mfxSession session, mfxVideoParam *par, mfx
         case MFX_CODEC_VP8:
 #if defined(MFX_VA) && defined (MFX_ENABLE_VP8_VIDEO_DECODE_HW)
             mfxRes = VideoDECODEVP8_HW::QueryIOSurf(session->m_pCORE.get(), par, request);
-
-            if (MFX_WRN_PARTIAL_ACCELERATION == mfxRes)
-            {
-                mfxRes = VideoDECODEVP8::QueryIOSurf(session->m_pCORE.get(), par, request);
-            }
-            else
-            {
-                bIsHWDECSupport = true;
-            }
 #else
             mfxRes = VideoDECODEVP8::QueryIOSurf(session->m_pCORE.get(), par, request);
 #endif // MFX_VA && MFX_ENABLE_VP8_VIDEO_DECODE_HW
@@ -409,8 +378,6 @@ mfxStatus MFXVideoDECODE_Init(mfxSession session, mfxVideoParam *par)
     MFX_AUTO_LTRACE_FUNC(MFX_TRACE_LEVEL_API);
     MFX_LTRACE_BUFFER(MFX_TRACE_LEVEL_API, par);
 
-
-
 #if !defined (MFX_RT)
         // check existence of component
         if (!session->m_pDECODE.get())
@@ -420,10 +387,8 @@ mfxStatus MFXVideoDECODE_Init(mfxSession session, mfxVideoParam *par)
             MFX_CHECK(session->m_pDECODE.get(), MFX_ERR_INVALID_VIDEO_PARAM);
         }
 #endif        
-        mfxRes = session->m_pDECODE->Init(par);
 
-
-    
+    mfxRes = session->m_pDECODE->Init(par);
 
     MFX_LTRACE_I(MFX_TRACE_LEVEL_API, mfxRes);
     return mfxRes;
