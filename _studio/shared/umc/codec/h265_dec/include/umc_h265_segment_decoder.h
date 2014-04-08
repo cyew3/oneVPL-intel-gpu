@@ -235,15 +235,19 @@ public:
     void ReadCoefRemainExGolombCABAC(Ipp32u &Symbol, Ipp32u &GoRiceParam);
 
     void ReconstructCU(Ipp32u AbsPartIdx, Ipp32u Depth);
+    // Reconstruct intra quad tree including handling IPCM
     void ReconIntraQT(Ipp32u AbsPartIdx, Ipp32u Depth);
     void ReconInter(Ipp32u AbsPartIdx, Ipp32u Depth);
     void ReconPCM(Ipp32u AbsPartIdx, Ipp32u Depth);
 
+    // Reconstruct intra (no IPCM) quad tree recursively
     void IntraRecQT(Ipp32u TrDepth, Ipp32u AbsPartIdx, Ipp32u ChromaPredMode);
 
+    // Reconstruct intra luma block
     void IntraRecLumaBlk(Ipp32u TrDepth,
                          Ipp32u AbsPartIdx,
                          Ipp32u tpIf, Ipp32u lfIf, Ipp32u tlIf);
+    // Reconstruct intra NV12 chroma block
     void IntraRecChromaBlk(Ipp32u TrDepth,
                            Ipp32u AbsPartIdx,
                            Ipp32u ChromaPredMode,

@@ -44,7 +44,7 @@ T Clip3(const T& Min, const T& Max, T Value)
 
 #pragma pack(1)
 
-//structure vector class
+// Motion vector class
 struct H265MotionVector
 {
 public:
@@ -97,7 +97,7 @@ public:
     }
 };
 
-//parameters for AMVP
+// Parameters for AMVP
 struct AMVPInfo
 {
     H265MotionVector MVCandidate[AMVP_MAX_NUM_CAND + 1]; //array of motion vector predictor candidates

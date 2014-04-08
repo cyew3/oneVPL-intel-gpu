@@ -16,6 +16,7 @@
 
 namespace UMC_HEVC_DECODER
 {
+    // Reconstruct intra quad tree including handling IPCM
     void H265SegmentDecoder::ReconIntraQT(Ipp32u AbsPartIdx, Ipp32u Depth)
     {
         Ipp32u InitTrDepth = (m_cu->GetPartitionSize(AbsPartIdx) == PART_SIZE_2Nx2N ? 0 : 1);
@@ -46,6 +47,7 @@ namespace UMC_HEVC_DECODER
         }
     }
 
+    // Reconstruct intra (no IPCM) quad tree recursively
     void H265SegmentDecoder::IntraRecQT(
         Ipp32u TrDepth,
         Ipp32u AbsPartIdx,
@@ -95,6 +97,7 @@ namespace UMC_HEVC_DECODER
         }
     }
 
+    // Reconstruct intra luma block
     void H265SegmentDecoder::IntraRecLumaBlk(
         Ipp32u TrDepth,
         Ipp32u AbsPartIdx,
@@ -102,7 +105,6 @@ namespace UMC_HEVC_DECODER
     {
         Ipp32u width = m_cu->GetWidth(AbsPartIdx) >> TrDepth;
 
-        //===== get Predicted Pels =====
         Ipp8u PredPel[(4*64+1) * 2];
 
         const Ipp32s FilteredModes[] = {10, 7, 1, 0, 10};
@@ -112,6 +114,7 @@ namespace UMC_HEVC_DECODER
             5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 6
         };
 
+        // Get prediction from neighbours
         m_reconstructor->GetPredPelsLuma(m_pCurrentFrame->GetLumaAddr(m_cu->CUAddr, AbsPartIdx),
             PredPel, width, m_pCurrentFrame->pitch_luma(), tpIf, lfIf, tlIf, m_pSeqParamSet->bit_depth_luma);
 
@@ -137,13 +140,13 @@ namespace UMC_HEVC_DECODER
             m_reconstructor->FilterPredictPels(m_context, m_cu, PredPel, width, TrDepth, AbsPartIdx);
         }
 
-        //===== get prediction signal =====    
+        // Do prediction from neighbours
         H265PlanePtrYCommon pRec = m_context->m_frame->GetLumaAddr(m_cu->CUAddr, AbsPartIdx);
         Ipp32u pitch = m_context->m_frame->pitch_luma();
 
         m_reconstructor->PredictIntra(LumaPredMode, PredPel, pRec, pitch, width, m_pSeqParamSet->bit_depth_luma);
 
-        //===== inverse transform =====
+        // Inverse transform and addition of residual and prediction
         if (!m_cu->GetCbf(COMPONENT_LUMA, AbsPartIdx, TrDepth))
             return;
 
@@ -153,9 +156,9 @@ namespace UMC_HEVC_DECODER
 
         m_TrQuant->InvTransformNxN(m_cu->GetCUTransquantBypass(AbsPartIdx), TEXT_LUMA, m_cu->GetLumaIntra(AbsPartIdx),
             pRec, pitch, pCoeff, width, useTransformSkip);
-
     } // void H265SegmentDecoder::IntraRecLumaBlk(...)
 
+    // Add residual to prediction for NV12 chroma
     template <typename PixType>
     void SumOfResidAndPred(H265CoeffsPtrCommon p_ResiU, H265CoeffsPtrCommon p_ResiV, size_t residualPitch, PixType *pRecIPred, size_t RecIPredStride, Ipp32u Size,
         bool chromaUPresent, bool chromaVPresent, Ipp32u bit_depth)
@@ -179,6 +182,7 @@ namespace UMC_HEVC_DECODER
         }
     }
 
+    // Reconstruct intra NV12 chroma block
     void H265SegmentDecoder::IntraRecChromaBlk(Ipp32u TrDepth,
         Ipp32u AbsPartIdx,
         Ipp32u ChromaPredMode,
@@ -189,11 +193,12 @@ namespace UMC_HEVC_DECODER
         m_reconstructor->GetPredPelsChromaNV12(m_pCurrentFrame->GetCbCrAddr(m_cu->CUAddr, AbsPartIdx),
             PredPel, m_cu->GetWidth(AbsPartIdx) >> TrDepth, m_pCurrentFrame->pitch_chroma(), tpIf, lfIf, tlIf, m_pSeqParamSet->bit_depth_chroma);
 
-        //===== get prediction signal =====
+        // Get prediction from neighbours
         Ipp32u Size = m_cu->GetWidth(AbsPartIdx) >> (TrDepth + 1);
         H265PlanePtrUVCommon pRecIPred = m_pCurrentFrame->GetCbCrAddr(m_cu->CUAddr, AbsPartIdx);
         Ipp32u RecIPredStride = m_pCurrentFrame->pitch_chroma();
 
+        // Do prediction from neighbours
         m_reconstructor->PredictIntraChroma(ChromaPredMode, PredPel, pRecIPred, RecIPredStride, Size);
 
         bool chromaUPresent = m_cu->GetCbf(COMPONENT_CHROMA_U, AbsPartIdx, TrDepth) != 0;
@@ -202,7 +207,7 @@ namespace UMC_HEVC_DECODER
         if (!chromaUPresent && !chromaVPresent)
             return;
 
-        //===== inverse transform =====
+        // Inverse transform and addition of residual and prediction
         Ipp32u residualPitch = m_ppcYUVResi->pitch_chroma() >> 1;
 
         // Cb
