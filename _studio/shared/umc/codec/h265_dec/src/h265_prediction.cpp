@@ -27,15 +27,14 @@ namespace UMC_HEVC_DECODER
 
 H265Prediction::H265Prediction()
 {
-    m_YUVExt = 0;
+    m_MaxCUSize = 0;
     m_temp_interpolarion_buffer = 0;
     m_context = 0;
 }
 
 H265Prediction::~H265Prediction()
 {
-    delete[] m_YUVExt;
-    m_YUVExt = 0;
+    m_MaxCUSize = 0;
 
     m_YUVPred[0].destroy();
     m_YUVPred[1].destroy();
@@ -44,27 +43,22 @@ H265Prediction::~H265Prediction()
     m_temp_interpolarion_buffer = 0;
 }
 
+// Allocate temporal buffers which may be necessary to store interpolated reference frames
 void H265Prediction::InitTempBuff(DecodingContext* context)
 {
     m_context = context;
     const H265SeqParamSet * sps = m_context->m_sps;
 
-    if (m_YUVExt && m_YUVExtHeight == ((sps->MaxCUSize + 2) << 4) && 
-        m_YUVExtStride == ((sps->MaxCUSize  + 8) << 4))
+    if (m_MaxCUSize == sps->MaxCUSize)
         return;
 
-    if (m_YUVExt)
+    if (m_MaxCUSize > 0)
     {
-        delete[] m_YUVExt;
-
         m_YUVPred[0].destroy();
         m_YUVPred[1].destroy();
     }
 
-    // ML: OPT: TODO: Allocate only when we need it
-    m_YUVExtHeight = ((sps->MaxCUSize + 2) << 4);
-    m_YUVExtStride = ((sps->MaxCUSize  + 8) << 4);
-    m_YUVExt = h265_new_array_throw<H265PlaneYCommon>(m_YUVExtStride * m_YUVExtHeight);
+    m_MaxCUSize = sps->MaxCUSize;
 
     // new structure
     m_YUVPred[0].create(sps->MaxCUSize, sps->MaxCUSize, sizeof(Ipp16s), sizeof(Ipp16s));
@@ -74,9 +68,7 @@ void H265Prediction::InitTempBuff(DecodingContext* context)
         m_temp_interpolarion_buffer = h265_new_array_throw<Ipp8u>(2*128*128*2);
 }
 
-//---------------------------------------------------------
-// Motion Compensation
-//---------------------------------------------------------
+// Perform motion compensation prediction for a partition of CU
 void H265Prediction::MotionCompensation(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u Depth)
 {
     if (m_context->m_sps->bit_depth_luma > 8 || m_context->m_sps->bit_depth_chroma > 8)
@@ -85,6 +77,7 @@ void H265Prediction::MotionCompensation(H265CodingUnit* pCU, Ipp32u AbsPartIdx, 
         MotionCompensationInternal<Ipp8u>(pCU, AbsPartIdx, Depth);
 }
 
+// Motion compensation with bit depth constant
 template<typename PixType>
 void H265Prediction::MotionCompensationInternal(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u Depth)
 {
@@ -97,6 +90,7 @@ void H265Prediction::MotionCompensationInternal(H265CodingUnit* pCU, Ipp32u AbsP
         PUOffset = (g_PUOffset[PartSize] << ((m_context->m_sps->MaxCUDepth - Depth) << 1)) >> 4;
     }
 
+    // Loop over prediction units
     for (Ipp32s PartIdx = 0, subPartIdx = AbsPartIdx; PartIdx < countPart; PartIdx++, subPartIdx += PUOffset)
     {
         H265PUInfo PUi;
@@ -121,6 +115,7 @@ void H265Prediction::MotionCompensationInternal(H265CodingUnit* pCU, Ipp32u AbsP
 
         if ((CheckIdenticalMotion(pCU, MVi) || !(MVi.m_refIdx[REF_PIC_LIST_0] >= 0 && MVi.m_refIdx[REF_PIC_LIST_1] >= 0)))
         {
+            // One reference frame
             EnumRefPicList direction = MVi.m_refIdx[REF_PIC_LIST_0] >= 0 ? REF_PIC_LIST_0 : REF_PIC_LIST_1;
             if (!m_context->m_weighted_prediction)
             {
@@ -135,6 +130,7 @@ void H265Prediction::MotionCompensationInternal(H265CodingUnit* pCU, Ipp32u AbsP
         }
         else
         {
+            // Two reference frames
             bool bOnlyOneIterpY = false, bOnlyOneIterpC = false;
             EnumRefPicList picListY = REF_PIC_LIST_0, picListC = REF_PIC_LIST_0;
 
@@ -185,6 +181,7 @@ void H265Prediction::MotionCompensationInternal(H265CodingUnit* pCU, Ipp32u AbsP
     }
 }
 
+// Perform weighted addition from one or two reference sources
 template<typename PixType>
 void H265Prediction::WeightedPrediction(H265CodingUnit* pCU, const H265PUInfo & PUi)
 {
@@ -239,6 +236,7 @@ void H265Prediction::WeightedPrediction(H265CodingUnit* pCU, const H265PUInfo & 
         CopyWeighted<PixType>(pCU->m_Frame, &m_YUVPred[0], pCU->CUAddr, PartAddr, Width, Height, w1, o1, logWD, round, m_context->m_sps->bit_depth_luma);
 }
 
+// Returns true if reference indexes in ref lists point to the same frame and motion vectors in these references are equal
 bool H265Prediction::CheckIdenticalMotion(H265CodingUnit* pCU, const H265MVInfo &mvInfo)
 {
     if(pCU->m_SliceHeader->slice_type == B_SLICE && !m_context->m_pps->weighted_bipred_flag &&
@@ -250,6 +248,7 @@ bool H265Prediction::CheckIdenticalMotion(H265CodingUnit* pCU, const H265MVInfo 
         return false;
 }
 
+// Expand source border in case motion vector points outside of the frame
 template <EnumTextType c_plane_type, typename PlaneType>
 static void PrepareInterpSrc( H265CodingUnit* pCU, H265PUInfo &PUi, EnumRefPicList RefPicList,
                               H265InterpolationParams_8u& interpolateInfo, PlaneType* temp_interpolarion_buffer )
@@ -295,6 +294,7 @@ static void PrepareInterpSrc( H265CodingUnit* pCU, H265PUInfo &PUi, EnumRefPicLi
     (c_plane_type == TEXT_CHROMA) ? ippiInterpolateChromaBlock_H264(&interpolateInfo, temp_interpolarion_buffer) : ippiInterpolateLumaBlock_H265(&interpolateInfo, temp_interpolarion_buffer);
 }
 
+// Interpolate one reference frame block
 template <EnumTextType c_plane_type, bool c_bi, typename PlaneType>
 void H265Prediction::PredInterUni(H265CodingUnit* pCU, H265PUInfo &PUi, EnumRefPicList RefPicList, H265DecYUVBufferPadded *YUVPred, MFX_HEVC_PP::EnumAddAverageType eAddAverage )
 {
@@ -347,6 +347,7 @@ void H265Prediction::PredInterUni(H265CodingUnit* pCU, H265PUInfo &PUi, EnumRefP
 
     if ((in_dx == 0) && (in_dy == 0))
     {
+        // No subpel interpolation is needed
         if ( ! c_bi )
         {
             VM_ASSERT( eAddAverage == MFX_HEVC_PP::AVERAGE_NO );
@@ -378,6 +379,7 @@ void H265Prediction::PredInterUni(H265CodingUnit* pCU, H265PUInfo &PUi, EnumRefP
     }
     else if (in_dy == 0)
     {
+        // Only horizontal interpolation is needed
         if (!c_bi) // Write directly into buffer
             Interpolate<c_plane_type>( MFX_HEVC_PP::INTERP_HOR, in_pSrc, in_SrcPitch, pPicDst, PicDstStride, in_dx, Width, Height, shift, offset, bitDepth);
         else if (eAddAverage == MFX_HEVC_PP::AVERAGE_NO)
@@ -389,6 +391,7 @@ void H265Prediction::PredInterUni(H265CodingUnit* pCU, H265PUInfo &PUi, EnumRefP
     }
     else if (in_dx == 0)
     {
+        // Only vertical interpolation is needed
         if (!c_bi) // Write directly into buffer
             Interpolate<c_plane_type>( MFX_HEVC_PP::INTERP_VER, in_pSrc, in_SrcPitch, pPicDst, PicDstStride, in_dy, Width, Height, shift, offset, bitDepth);
         else if (eAddAverage == MFX_HEVC_PP::AVERAGE_NO)
@@ -403,6 +406,7 @@ void H265Prediction::PredInterUni(H265CodingUnit* pCU, H265PUInfo &PUi, EnumRefP
         Ipp16s tmpBuf[80 * 80];
         Ipp32u tmpStride = iPUWidth + tap;
 
+        // Do horizontal interpolation into a temporal buffer
         Interpolate<c_plane_type>( MFX_HEVC_PP::INTERP_HOR, 
                                    in_pSrc - ((tap >> 1) - 1) * in_SrcPitch, in_SrcPitch, tmpBuf, tmpStride,
                                    in_dx, Width, Height + tap - 1, bitDepth - 8, 0, bitDepth);
@@ -430,7 +434,7 @@ void H265Prediction::PredInterUni(H265CodingUnit* pCU, H265PUInfo &PUi, EnumRefP
 }
 
 
-//=================================================================================================
+// Calculate mean average from two references
 template<typename PixType>
 void H265Prediction::WriteAverageToPic(
                 const PixType * pSrc0,
@@ -456,11 +460,7 @@ void H265Prediction::WriteAverageToPic(
     }
 }
 
-/* ****************************************************************************** *\
-FUNCTION: CopyPU
-DESCRIPTION:
-\* ****************************************************************************** */
-
+// Copy prediction unit extending its bits for later addition with PU from another reference
 // ML: OPT: TODO: Parameterize for const shift
 template <typename PixType>
 void H265Prediction::CopyExtendPU(const PixType * in_pSrc,
@@ -489,6 +489,7 @@ void H265Prediction::CopyExtendPU(const PixType * in_pSrc,
     }
 }
 
+// Do weighted prediction from one reference frame
 template<typename PixType>
 void H265Prediction::CopyWeighted(H265DecoderFrame* frame, H265DecYUVBufferPadded* src, Ipp32u CUAddr, Ipp32u PartIdx, Ipp32u Width, Ipp32u Height, Ipp32s *w, Ipp32s *o, Ipp32s *logWD, Ipp32s *round, Ipp32u bit_depth)
 {
@@ -513,7 +514,7 @@ void H265Prediction::CopyWeighted(H265DecoderFrame* frame, H265DecYUVBufferPadde
     }
 }
 
-
+// Do weighted prediction from two reference frames
 template<typename PixType>
 void H265Prediction::CopyWeightedBidi(H265DecoderFrame* frame, H265DecYUVBufferPadded* src0, H265DecYUVBufferPadded* src1, Ipp32u CUAddr, Ipp32u PartIdx, Ipp32u Width, Ipp32u Height, Ipp32s *w0, Ipp32s *w1, Ipp32s *logWD, Ipp32s *round, Ipp32u bit_depth)
 {
@@ -541,6 +542,7 @@ void H265Prediction::CopyWeightedBidi(H265DecoderFrame* frame, H265DecYUVBufferP
     }
 }
 
+// Calculate address offset inside of source frame
 Ipp32s H265Prediction::GetAddrOffset(Ipp32u PartUnitIdx, Ipp32u width)
 {
     Ipp32s blkX = m_context->m_frame->getCD()->m_partitionInfo.m_rasterToPelX[PartUnitIdx];

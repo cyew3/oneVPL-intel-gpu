@@ -1502,6 +1502,7 @@ inline size_t CalculateSuggestedSize(const H265SeqParamSet * sps)
 #endif
 }
 
+// Fast memcpy inline function for small memory blocks like 4-32 bytes, used in interpolation
 static void H265_FORCEINLINE  small_memcpy( void* dst, const void* src, int len )
 {
 #if defined( __INTEL_COMPILER ) // || defined( __GNUC__ )  // TODO: check with GCC
