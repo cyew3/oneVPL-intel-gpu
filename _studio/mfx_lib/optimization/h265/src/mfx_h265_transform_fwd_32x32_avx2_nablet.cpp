@@ -109,7 +109,9 @@ namespace MFX_HEVC_PP
 
 #if (1) // just to roll up this text in MSVC
     // koefs for horizontal 1-D transform
-    M256I_D4x2C(rounder_4, 8, 8, 8, 8);
+    M256I_D4x2C(rounder_8,   8,  8,  8,  8);
+    M256I_D4x2C(rounder_16, 16, 16, 16, 16);
+    M256I_D4x2C(rounder_32, 32, 32, 32, 32);
 
 #if defined(_WIN32) || defined(_WIN64)
     ALIGNED_AVX __m256i kefh_shuff = {14,15,12,13,10,11,8,9,6,7,4,5,2,3,0,1,  14,15,12,13,10,11,8,9,6,7,4,5,2,3,0,1};
@@ -415,8 +417,11 @@ namespace MFX_HEVC_PP
         }
     }
 
+    #define SHIFT_FRW32_1ST_BASE 4
+
     //void FASTCALL fwd_32x32_dct_avx2(short *__restrict src, short *__restrict dest)
-    void H265_FASTCALL MAKE_NAME(h265_DCT32x32Fwd_16s)(const short *H265_RESTRICT src, short *H265_RESTRICT dst)
+    template <int SHIFT_FRW32_1ST>
+    static void h265_DCT32x32Fwd_16s_Kernel(const short *H265_RESTRICT src, short *H265_RESTRICT dst)
     {
         short ALIGN_DECL(32) temp[32*32];
         // temporal buffer short[32*4]. Intermediate results will be stored here. Rotate 4x4 and moved to temp[]
@@ -427,7 +432,6 @@ namespace MFX_HEVC_PP
 
         // Horizontal 1-D forward transform
 
-#define shift       4
 #define src_stride  32  // linear input buffer
 
         for (int i=0; i<32; i+=2) 
@@ -500,10 +504,18 @@ namespace MFX_HEVC_PP
             y6 = _mm256_madd_epi16(y6, kefh_0015);
             y5 = _mm256_add_epi32(y5,  y6);
 
-            y4 = _mm256_add_epi32(y4, rounder_4);
-            y5 = _mm256_add_epi32(y5, rounder_4);
-            y4 = _mm256_srai_epi32(y4,  shift);   // (r03 r02 r01 r00 + add) >>= shift
-            y5 = _mm256_srai_epi32(y5,  shift);   // (r07 r06 r05 r04 + add) >>= shift
+            if (SHIFT_FRW32_1ST == 4) {
+                y4 = _mm256_add_epi32(y4, rounder_8);
+                y5 = _mm256_add_epi32(y5, rounder_8);
+            } else if (SHIFT_FRW32_1ST == 5) {
+                y4 = _mm256_add_epi32(y4, rounder_16);
+                y5 = _mm256_add_epi32(y5, rounder_16);
+            } else if (SHIFT_FRW32_1ST == 6) {
+                y4 = _mm256_add_epi32(y4, rounder_32);
+                y5 = _mm256_add_epi32(y5, rounder_32);
+            }
+            y4 = _mm256_srai_epi32(y4,  SHIFT_FRW32_1ST);   // (r03 r02 r01 r00 + add) >>= SHIFT_FRW32_1ST
+            y5 = _mm256_srai_epi32(y5,  SHIFT_FRW32_1ST);   // (r07 r06 r05 r04 + add) >>= SHIFT_FRW32_1ST
             y4 = _mm256_packs_epi32(y4, y5);      // r07 r06 r05 r04 r03 r02 r01 r00: clip(-32768, 32767)
 
             // Store first results
@@ -557,10 +569,18 @@ namespace MFX_HEVC_PP
             y6 = _mm256_madd_epi16(y6, kefh_0115);
             y5 = _mm256_add_epi32(y5,  y6);
 
-            y4 = _mm256_add_epi32(y4,  rounder_4);
-            y5 = _mm256_add_epi32(y5,  rounder_4);
-            y4 = _mm256_srai_epi32(y4,  shift);   // (r11 r10 r09 r08 + add) >>= shift
-            y5 = _mm256_srai_epi32(y5,  shift);   // (r15 r14 r13 r12 + add) >>= shift
+            if (SHIFT_FRW32_1ST == 4) {
+                y4 = _mm256_add_epi32(y4, rounder_8);
+                y5 = _mm256_add_epi32(y5, rounder_8);
+            } else if (SHIFT_FRW32_1ST == 5) {
+                y4 = _mm256_add_epi32(y4, rounder_16);
+                y5 = _mm256_add_epi32(y5, rounder_16);
+            } else if (SHIFT_FRW32_1ST == 6) {
+                y4 = _mm256_add_epi32(y4, rounder_32);
+                y5 = _mm256_add_epi32(y5, rounder_32);
+            }
+            y4 = _mm256_srai_epi32(y4,  SHIFT_FRW32_1ST);   // (r11 r10 r09 r08 + add) >>= SHIFT_FRW32_1ST
+            y5 = _mm256_srai_epi32(y5,  SHIFT_FRW32_1ST);   // (r15 r14 r13 r12 + add) >>= SHIFT_FRW32_1ST
             y4 = _mm256_packs_epi32(y4, y5);      // r15 r14 r13 r12 r11 r10 r09 r08: clip(-32768, 32767)
 
             // Store second results
@@ -599,10 +619,18 @@ namespace MFX_HEVC_PP
             y6 = _mm256_madd_epi16(y6, kefh_0207);
             y5 = _mm256_add_epi32(y5,  y6);
 
-            y4 = _mm256_add_epi32(y4,  rounder_4);
-            y5 = _mm256_add_epi32(y5,  rounder_4);
-            y4 = _mm256_srai_epi32(y4,  shift);   // (r03 r02 r01 r00 + add) >>= shift
-            y5 = _mm256_srai_epi32(y5,  shift);   // (r07 r06 r05 r04 + add) >>= shift
+            if (SHIFT_FRW32_1ST == 4) {
+                y4 = _mm256_add_epi32(y4, rounder_8);
+                y5 = _mm256_add_epi32(y5, rounder_8);
+            } else if (SHIFT_FRW32_1ST == 5) {
+                y4 = _mm256_add_epi32(y4, rounder_16);
+                y5 = _mm256_add_epi32(y5, rounder_16);
+            } else if (SHIFT_FRW32_1ST == 6) {
+                y4 = _mm256_add_epi32(y4, rounder_32);
+                y5 = _mm256_add_epi32(y5, rounder_32);
+            }
+            y4 = _mm256_srai_epi32(y4,  SHIFT_FRW32_1ST);   // (r03 r02 r01 r00 + add) >>= SHIFT_FRW32_1ST
+            y5 = _mm256_srai_epi32(y5,  SHIFT_FRW32_1ST);   // (r07 r06 r05 r04 + add) >>= SHIFT_FRW32_1ST
             y4 = _mm256_packs_epi32(y4, y5);      // r07 r06 r05 r04 r03 r02 r01 r00
 
             // Store 3th results
@@ -634,10 +662,18 @@ namespace MFX_HEVC_PP
             y6 = _mm256_unpacklo_epi32(y6, y6);
             y5 = _mm256_madd_epi16(y6, kefh_0400);
 
-            y4 = _mm256_add_epi32(y4,  rounder_4);
-            y5 = _mm256_add_epi32(y5,  rounder_4);
-            y4 = _mm256_srai_epi32(y4,  shift);
-            y5 = _mm256_srai_epi32(y5,  shift);
+            if (SHIFT_FRW32_1ST == 4) {
+                y4 = _mm256_add_epi32(y4, rounder_8);
+                y5 = _mm256_add_epi32(y5, rounder_8);
+            } else if (SHIFT_FRW32_1ST == 5) {
+                y4 = _mm256_add_epi32(y4, rounder_16);
+                y5 = _mm256_add_epi32(y5, rounder_16);
+            } else if (SHIFT_FRW32_1ST == 6) {
+                y4 = _mm256_add_epi32(y4, rounder_32);
+                y5 = _mm256_add_epi32(y5, rounder_32);
+            }
+            y4 = _mm256_srai_epi32(y4,  SHIFT_FRW32_1ST);
+            y5 = _mm256_srai_epi32(y5,  SHIFT_FRW32_1ST);
             y4 = _mm256_packs_epi32(y4, y5);
 
             // Store 4th results
@@ -715,10 +751,18 @@ namespace MFX_HEVC_PP
             y6 = _mm256_madd_epi16(y6, y7);
             y5 = _mm256_add_epi32(y5,  y6);
 
-            y4 = _mm256_add_epi32(y4,  _mm256_load_const(&rounder_4));
-            y5 = _mm256_add_epi32(y5,  _mm256_load_const(&rounder_4));
-            y4 = _mm256_srai_epi32(y4,  shift);   // (r03 r02 r01 r00 + add) >>= shift
-            y5 = _mm256_srai_epi32(y5,  shift);   // (r07 r06 r05 r04 + add) >>= shift
+            if (SHIFT_FRW32_1ST == 4) {
+                y4 = _mm256_add_epi32(y4,  _mm256_load_const(&rounder_8));
+                y5 = _mm256_add_epi32(y5,  _mm256_load_const(&rounder_8));
+            } else if (SHIFT_FRW32_1ST == 5) {
+                y4 = _mm256_add_epi32(y4,  _mm256_load_const(&rounder_16));
+                y5 = _mm256_add_epi32(y5,  _mm256_load_const(&rounder_16));
+            } else if (SHIFT_FRW32_1ST == 6) {
+                y4 = _mm256_add_epi32(y4,  _mm256_load_const(&rounder_32));
+                y5 = _mm256_add_epi32(y5,  _mm256_load_const(&rounder_32));
+            }
+            y4 = _mm256_srai_epi32(y4,  SHIFT_FRW32_1ST);   // (r03 r02 r01 r00 + add) >>= SHIFT_FRW32_1ST
+            y5 = _mm256_srai_epi32(y5,  SHIFT_FRW32_1ST);   // (r07 r06 r05 r04 + add) >>= SHIFT_FRW32_1ST
             y4 = _mm256_packs_epi32(y4, y5);      // r07 r06 r05 r04 r03 r02 r01 r00: clip(-32768, 32767)
 
             // Store first results
@@ -788,10 +832,18 @@ namespace MFX_HEVC_PP
             y6 = _mm256_madd_epi16(y6, y7);
             y5 = _mm256_add_epi32(y5,  y6);
 
-            y4 = _mm256_add_epi32(y4,  _mm256_load_const(&rounder_4));
-            y5 = _mm256_add_epi32(y5,  _mm256_load_const(&rounder_4));
-            y4 = _mm256_srai_epi32(y4,  shift);   // (r11 r10 r09 r08 + add) >>= shift
-            y5 = _mm256_srai_epi32(y5,  shift);   // (r15 r14 r13 r12 + add) >>= shift
+            if (SHIFT_FRW32_1ST == 4) {
+                y4 = _mm256_add_epi32(y4,  _mm256_load_const(&rounder_8));
+                y5 = _mm256_add_epi32(y5,  _mm256_load_const(&rounder_8));
+            } else if (SHIFT_FRW32_1ST == 5) {
+                y4 = _mm256_add_epi32(y4,  _mm256_load_const(&rounder_16));
+                y5 = _mm256_add_epi32(y5,  _mm256_load_const(&rounder_16));
+            } else if (SHIFT_FRW32_1ST == 6) {
+                y4 = _mm256_add_epi32(y4,  _mm256_load_const(&rounder_32));
+                y5 = _mm256_add_epi32(y5,  _mm256_load_const(&rounder_32));
+            }
+            y4 = _mm256_srai_epi32(y4,  SHIFT_FRW32_1ST);   // (r11 r10 r09 r08 + add) >>= SHIFT_FRW32_1ST
+            y5 = _mm256_srai_epi32(y5,  SHIFT_FRW32_1ST);   // (r15 r14 r13 r12 + add) >>= SHIFT_FRW32_1ST
             y4 = _mm256_packs_epi32(y4, y5);      // r15 r14 r13 r12 r11 r10 r09 r08: clip(-32768, 32767)
 
             // Store second results
@@ -838,10 +890,18 @@ namespace MFX_HEVC_PP
             y6 = _mm256_madd_epi16(y6, y7);
             y5 = _mm256_add_epi32(y5,  y6);
 
-            y4 = _mm256_add_epi32(y4,  _mm256_load_const(&rounder_4));
-            y5 = _mm256_add_epi32(y5,  _mm256_load_const(&rounder_4));
-            y4 = _mm256_srai_epi32(y4,  shift);   // (r03 r02 r01 r00 + add) >>= shift
-            y5 = _mm256_srai_epi32(y5,  shift);   // (r07 r06 r05 r04 + add) >>= shift
+            if (SHIFT_FRW32_1ST == 4) {
+                y4 = _mm256_add_epi32(y4,  _mm256_load_const(&rounder_8));
+                y5 = _mm256_add_epi32(y5,  _mm256_load_const(&rounder_8));
+            } else if (SHIFT_FRW32_1ST == 5) {
+                y4 = _mm256_add_epi32(y4,  _mm256_load_const(&rounder_16));
+                y5 = _mm256_add_epi32(y5,  _mm256_load_const(&rounder_16));
+            } else if (SHIFT_FRW32_1ST == 6) {
+                y4 = _mm256_add_epi32(y4,  _mm256_load_const(&rounder_32));
+                y5 = _mm256_add_epi32(y5,  _mm256_load_const(&rounder_32));
+            }
+            y4 = _mm256_srai_epi32(y4,  SHIFT_FRW32_1ST);   // (r03 r02 r01 r00 + add) >>= SHIFT_FRW32_1ST
+            y5 = _mm256_srai_epi32(y5,  SHIFT_FRW32_1ST);   // (r07 r06 r05 r04 + add) >>= SHIFT_FRW32_1ST
             y4 = _mm256_packs_epi32(y4, y5);      // r07 r06 r05 r04 r03 r02 r01 r00
 
             // Store 3th results
@@ -876,10 +936,18 @@ namespace MFX_HEVC_PP
             y6 = _mm256_unpacklo_epi32(y6, y6);
             y5 = _mm256_madd_epi16(y5, y6);
 
-            y4 = _mm256_add_epi32(y4,  _mm256_load_const(&rounder_4));
-            y5 = _mm256_add_epi32(y5,  _mm256_load_const(&rounder_4));
-            y4 = _mm256_srai_epi32(y4,  shift);
-            y5 = _mm256_srai_epi32(y5,  shift);
+            if (SHIFT_FRW32_1ST == 4) {
+                y4 = _mm256_add_epi32(y4,  _mm256_load_const(&rounder_8));
+                y5 = _mm256_add_epi32(y5,  _mm256_load_const(&rounder_8));
+            } else if (SHIFT_FRW32_1ST == 5) {
+                y4 = _mm256_add_epi32(y4,  _mm256_load_const(&rounder_16));
+                y5 = _mm256_add_epi32(y5,  _mm256_load_const(&rounder_16));
+            } else if (SHIFT_FRW32_1ST == 6) {
+                y4 = _mm256_add_epi32(y4,  _mm256_load_const(&rounder_32));
+                y5 = _mm256_add_epi32(y5,  _mm256_load_const(&rounder_32));
+            }
+            y4 = _mm256_srai_epi32(y4,  SHIFT_FRW32_1ST);
+            y5 = _mm256_srai_epi32(y5,  SHIFT_FRW32_1ST);
             y4 = _mm256_packs_epi32(y4, y5);
 
             // Store 4th results
@@ -889,7 +957,6 @@ namespace MFX_HEVC_PP
 #endif
             src += 2*src_stride;
         }
-#undef shift
 
         transpose1(temp, buff);
 
@@ -1693,6 +1760,15 @@ namespace MFX_HEVC_PP
             tmp += 2*tmp_stride;
         }
         transpose2(dst, buff);
+    }
+
+    void H265_FASTCALL MAKE_NAME(h265_DCT32x32Fwd_16s)(const short *H265_RESTRICT src, short *H265_RESTRICT dst, Ipp32u bitDepth)
+    {
+        switch (bitDepth) {
+        case  8: h265_DCT32x32Fwd_16s_Kernel<SHIFT_FRW32_1ST_BASE + 0>(src, dst);   break;
+        case  9: h265_DCT32x32Fwd_16s_Kernel<SHIFT_FRW32_1ST_BASE + 1>(src, dst);   break;
+        case 10: h265_DCT32x32Fwd_16s_Kernel<SHIFT_FRW32_1ST_BASE + 2>(src, dst);   break;
+        }
     }
 
 } // namespace

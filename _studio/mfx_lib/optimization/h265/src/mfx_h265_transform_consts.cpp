@@ -25,7 +25,9 @@ namespace MFX_HEVC_PP
 #define ALIGNED_SSE2 ALIGN_DECL(16)
 
 // koefs for horizontal 1-D transform
-ALIGNED_SSE2 signed int rounder_4[]   = {8, 8, 8, 8};
+ALIGNED_SSE2 signed int rounder_8[]   = {8, 8, 8, 8};
+ALIGNED_SSE2 signed int rounder_16[]   = {16, 16, 16, 16};
+ALIGNED_SSE2 signed int rounder_32[]   = {32, 32, 32, 32};
 ALIGNED_SSE2 unsigned char kfh_shuff[] = {14,15,12,13,10,11,8,9,6,7,4,5,2,3,0,1};
 
 ALIGNED_SSE2 signed short kfh_0000[]  = {90, 90,  90, 82,  88, 67,  85, 46};

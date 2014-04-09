@@ -20,7 +20,9 @@ namespace MFX_HEVC_PP
 #define ALIGNED_SSE2 ALIGN_DECL(16)
 
 // koefs for horizontal 1-D transform
-extern ALIGNED_SSE2 signed int rounder_4[];
+extern ALIGNED_SSE2 signed int rounder_8[];
+extern ALIGNED_SSE2 signed int rounder_16[];
+extern ALIGNED_SSE2 signed int rounder_32[];
 extern ALIGNED_SSE2 unsigned char kfh_shuff[];
 
 extern ALIGNED_SSE2 signed short kfh_0000[];

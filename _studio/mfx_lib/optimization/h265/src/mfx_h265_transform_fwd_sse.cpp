@@ -122,19 +122,22 @@ namespace MFX_HEVC_PP
 
 //---------------------------------------------------------
 
-#define SHIFT_FRW4_1ST 1
+#define SHIFT_FRW4_1ST_BASE 1
 #define SHIFT_FRW4_2ND 8
 
-#define SHIFT_FRW8_1ST 2
+#define SHIFT_FRW8_1ST_BASE 2
 #define SHIFT_FRW8_2ND 9
 
-#define SHIFT_FRW16_1ST 3
+#define SHIFT_FRW16_1ST_BASE 3
 #define SHIFT_FRW16_2ND 10
+
+#define SHIFT_FRW32_1ST_BASE 4
 
 #define org_stride  4
 #define coef_stride 4
 
-    void H265_FASTCALL MAKE_NAME(h265_DST4x4Fwd_16s)(const short *H265_RESTRICT src, short *H265_RESTRICT dst)
+    template <int SHIFT_FRW4_1ST>
+    static void h265_DST4x4Fwd_16s_Kernel(const short *H265_RESTRICT src, short *H265_RESTRICT dst)
     {
         //const short iDST4[4][4] =
         //{
@@ -213,8 +216,17 @@ namespace MFX_HEVC_PP
         _mm_storeh_epi64((__m128i*)(dst + 3*coef_stride), R23L);
     }
 
+    void H265_FASTCALL MAKE_NAME(h265_DST4x4Fwd_16s)(const short *H265_RESTRICT src, short *H265_RESTRICT dst, Ipp32u bitDepth)
+    {
+        switch (bitDepth) {
+        case  8: h265_DST4x4Fwd_16s_Kernel<SHIFT_FRW4_1ST_BASE + 0>(src, dst);  break;
+        case  9: h265_DST4x4Fwd_16s_Kernel<SHIFT_FRW4_1ST_BASE + 1>(src, dst);  break;
+        case 10: h265_DST4x4Fwd_16s_Kernel<SHIFT_FRW4_1ST_BASE + 2>(src, dst);  break;
+        }
+    }
 
-    void H265_FASTCALL MAKE_NAME(h265_DCT4x4Fwd_16s)(const short *H265_RESTRICT src, short *H265_RESTRICT dst)
+    template <int SHIFT_FRW4_1ST>
+    static void h265_DCT4x4Fwd_16s_Kernel(const short *H265_RESTRICT src, short *H265_RESTRICT dst)
     {
         //const short iDCT4[4][4] =
         //{
@@ -293,13 +305,23 @@ namespace MFX_HEVC_PP
         _mm_storeh_epi64((__m128i*)(dst + 3*coef_stride), R23L);
     }
 
+    void H265_FASTCALL MAKE_NAME(h265_DCT4x4Fwd_16s)(const short *H265_RESTRICT src, short *H265_RESTRICT dst, Ipp32u bitDepth)
+    {
+        switch (bitDepth) {
+        case  8: h265_DCT4x4Fwd_16s_Kernel<SHIFT_FRW4_1ST_BASE + 0>(src, dst);  break;
+        case  9: h265_DCT4x4Fwd_16s_Kernel<SHIFT_FRW4_1ST_BASE + 1>(src, dst);  break;
+        case 10: h265_DCT4x4Fwd_16s_Kernel<SHIFT_FRW4_1ST_BASE + 2>(src, dst);  break;
+        }
+    }
+
 #undef org_stride
 #undef coef_stride
 
 #define org_stride  8
 #define coef_stride 8
 
-    void H265_FASTCALL MAKE_NAME(h265_DCT8x8Fwd_16s)(const short *H265_RESTRICT src, short *H265_RESTRICT dst)
+    template <int SHIFT_FRW8_1ST>
+    static void h265_DCT8x8Fwd_16s_Kernel(const short *H265_RESTRICT src, short *H265_RESTRICT dst)
     {
         //static const short g_aiT8[8][8] =
         //{
@@ -505,13 +527,23 @@ namespace MFX_HEVC_PP
         }
     }
 
+    void H265_FASTCALL MAKE_NAME(h265_DCT8x8Fwd_16s)(const short *H265_RESTRICT src, short *H265_RESTRICT dst, Ipp32u bitDepth)
+    {
+        switch (bitDepth) {
+        case  8: h265_DCT8x8Fwd_16s_Kernel<SHIFT_FRW8_1ST_BASE + 0>(src, dst);  break;
+        case  9: h265_DCT8x8Fwd_16s_Kernel<SHIFT_FRW8_1ST_BASE + 1>(src, dst);  break;
+        case 10: h265_DCT8x8Fwd_16s_Kernel<SHIFT_FRW8_1ST_BASE + 2>(src, dst);  break;
+        }
+    }
+
 #undef org_stride
 #undef coef_stride
 
 #define org_stride  16
 #define coef_stride 16
 
-    void H265_FASTCALL MAKE_NAME(h265_DCT16x16Fwd_16s)(const short *H265_RESTRICT src, short *H265_RESTRICT dst)
+    template <int SHIFT_FRW16_1ST>
+    static void h265_DCT16x16Fwd_16s_Kernel(const short *H265_RESTRICT src, short *H265_RESTRICT dst)
     {
         M128I_W8C( tf_dct16_f0123_01,  90, 87,  87, 57,  80,  9,  70,-43);
         M128I_W8C( tf_dct16_f4567_01,  57,-80,  43,-90,  25,-70,   9,-25);
@@ -848,6 +880,15 @@ namespace MFX_HEVC_PP
         }
     }
 
+    void H265_FASTCALL MAKE_NAME(h265_DCT16x16Fwd_16s)(const short *H265_RESTRICT src, short *H265_RESTRICT dst, Ipp32u bitDepth)
+    {
+        switch (bitDepth) {
+        case  8: h265_DCT16x16Fwd_16s_Kernel<SHIFT_FRW16_1ST_BASE + 0>(src, dst);   break;
+        case  9: h265_DCT16x16Fwd_16s_Kernel<SHIFT_FRW16_1ST_BASE + 1>(src, dst);   break;
+        case 10: h265_DCT16x16Fwd_16s_Kernel<SHIFT_FRW16_1ST_BASE + 2>(src, dst);   break;
+        }
+    }
+
 #undef org_stride
 #undef coef_stride
 
@@ -862,7 +903,8 @@ namespace MFX_HEVC_PP
 #define _mm_movehl_epi64(A, B) _mm_castps_si128(_mm_movehl_ps(_mm_castsi128_ps(A), _mm_castsi128_ps(B)))
 #define _mm_storeh_epi64(p, A) _mm_storeh_pd((double *)(p), _mm_castsi128_pd(A))
 
-    void H265_FASTCALL MAKE_NAME(h265_DCT32x32Fwd_16s)(const short *H265_RESTRICT src, short *H265_RESTRICT dest)
+    template <int SHIFT_FRW32_1ST>
+    static void h265_DCT32x32Fwd_16s_Kernel(const short *H265_RESTRICT src, short *H265_RESTRICT dest)
     {
         short ALIGNED_SSE2 temp[32*32];
         // temporal buffer short[32*4]. Intermediate results will be stored here. Rotate 4x4 and moved to temp[]
@@ -875,8 +917,6 @@ namespace MFX_HEVC_PP
 
         // Horizontal 1-D forward transform
 
-#define shift       4
-#define rounder     rounder_4
 #define src_stride  32  // linear input buffer
 #define tmp_stride  32  // stride in temp[] buffer
 
@@ -971,10 +1011,18 @@ namespace MFX_HEVC_PP
             s6 = _mm_madd_epi16(s6, s7);
             s5 = _mm_add_epi32(s5,  s6);
 
-            s4 = _mm_add_epi32(s4,  _mm_load_const((const __m128i *)rounder));
-            s5 = _mm_add_epi32(s5,  _mm_load_const((const __m128i *)rounder));
-            s4 = _mm_srai_epi32(s4,  shift);   // (r03 r02 r01 r00 + add) >>= shift
-            s5 = _mm_srai_epi32(s5,  shift);   // (r07 r06 r05 r04 + add) >>= shift
+            if (SHIFT_FRW32_1ST == 4) {
+                s4 = _mm_add_epi32(s4,  _mm_load_const((const __m128i *)rounder_8));
+                s5 = _mm_add_epi32(s5,  _mm_load_const((const __m128i *)rounder_8));
+            } else if (SHIFT_FRW32_1ST == 5) {
+                s4 = _mm_add_epi32(s4,  _mm_load_const((const __m128i *)rounder_16));
+                s5 = _mm_add_epi32(s5,  _mm_load_const((const __m128i *)rounder_16));
+            } else if (SHIFT_FRW32_1ST == 6) {
+                s4 = _mm_add_epi32(s4,  _mm_load_const((const __m128i *)rounder_32));
+                s5 = _mm_add_epi32(s5,  _mm_load_const((const __m128i *)rounder_32));
+            }
+            s4 = _mm_srai_epi32(s4,  SHIFT_FRW32_1ST);   // (r03 r02 r01 r00 + add) >>= shift
+            s5 = _mm_srai_epi32(s5,  SHIFT_FRW32_1ST);   // (r07 r06 r05 r04 + add) >>= shift
             s4 = _mm_packs_epi32(s4, s5);      // r07 r06 r05 r04 r03 r02 r01 r00: clip(-32768, 32767)
 
             // Store first results
@@ -1042,10 +1090,18 @@ namespace MFX_HEVC_PP
             s6 = _mm_madd_epi16(s6, s7);
             s5 = _mm_add_epi32(s5,  s6);
 
-            s4 = _mm_add_epi32(s4,  _mm_load_const((const __m128i *)rounder));
-            s5 = _mm_add_epi32(s5,  _mm_load_const((const __m128i *)rounder));
-            s4 = _mm_srai_epi32(s4,  shift);   // (r11 r10 r09 r08 + add) >>= shift
-            s5 = _mm_srai_epi32(s5,  shift);   // (r15 r14 r13 r12 + add) >>= shift
+            if (SHIFT_FRW32_1ST == 4) {
+                s4 = _mm_add_epi32(s4,  _mm_load_const((const __m128i *)rounder_8));
+                s5 = _mm_add_epi32(s5,  _mm_load_const((const __m128i *)rounder_8));
+            } else if (SHIFT_FRW32_1ST == 5) {
+                s4 = _mm_add_epi32(s4,  _mm_load_const((const __m128i *)rounder_16));
+                s5 = _mm_add_epi32(s5,  _mm_load_const((const __m128i *)rounder_16));
+            } else if (SHIFT_FRW32_1ST == 6) {
+                s4 = _mm_add_epi32(s4,  _mm_load_const((const __m128i *)rounder_32));
+                s5 = _mm_add_epi32(s5,  _mm_load_const((const __m128i *)rounder_32));
+            }
+            s4 = _mm_srai_epi32(s4,  SHIFT_FRW32_1ST);   // (r11 r10 r09 r08 + add) >>= shift
+            s5 = _mm_srai_epi32(s5,  SHIFT_FRW32_1ST);   // (r15 r14 r13 r12 + add) >>= shift
             s4 = _mm_packs_epi32(s4, s5);      // r15 r14 r13 r12 r11 r10 r09 r08: clip(-32768, 32767)
 
             // Store second results
@@ -1090,10 +1146,18 @@ namespace MFX_HEVC_PP
             s6 = _mm_madd_epi16(s6, s7);
             s5 = _mm_add_epi32(s5,  s6);
 
-            s4 = _mm_add_epi32(s4,  _mm_load_const((const __m128i *)rounder));
-            s5 = _mm_add_epi32(s5,  _mm_load_const((const __m128i *)rounder));
-            s4 = _mm_srai_epi32(s4,  shift);   // (r03 r02 r01 r00 + add) >>= shift
-            s5 = _mm_srai_epi32(s5,  shift);   // (r07 r06 r05 r04 + add) >>= shift
+            if (SHIFT_FRW32_1ST == 4) {
+                s4 = _mm_add_epi32(s4,  _mm_load_const((const __m128i *)rounder_8));
+                s5 = _mm_add_epi32(s5,  _mm_load_const((const __m128i *)rounder_8));
+            } else if (SHIFT_FRW32_1ST == 5) {
+                s4 = _mm_add_epi32(s4,  _mm_load_const((const __m128i *)rounder_16));
+                s5 = _mm_add_epi32(s5,  _mm_load_const((const __m128i *)rounder_16));
+            } else if (SHIFT_FRW32_1ST == 6) {
+                s4 = _mm_add_epi32(s4,  _mm_load_const((const __m128i *)rounder_32));
+                s5 = _mm_add_epi32(s5,  _mm_load_const((const __m128i *)rounder_32));
+            }
+            s4 = _mm_srai_epi32(s4,  SHIFT_FRW32_1ST);   // (r03 r02 r01 r00 + add) >>= shift
+            s5 = _mm_srai_epi32(s5,  SHIFT_FRW32_1ST);   // (r07 r06 r05 r04 + add) >>= shift
             s4 = _mm_packs_epi32(s4, s5);      // r07 r06 r05 r04 r03 r02 r01 r00
 
             // Store 3th results
@@ -1126,10 +1190,18 @@ namespace MFX_HEVC_PP
             s6 = _mm_unpacklo_epi32(s6, s6);
             s5 = _mm_madd_epi16(s5, s6);
 
-            s4 = _mm_add_epi32(s4,  _mm_load_const((const __m128i *)rounder));
-            s5 = _mm_add_epi32(s5,  _mm_load_const((const __m128i *)rounder));
-            s4 = _mm_srai_epi32(s4,  shift);
-            s5 = _mm_srai_epi32(s5,  shift);
+            if (SHIFT_FRW32_1ST == 4) {
+                s4 = _mm_add_epi32(s4,  _mm_load_const((const __m128i *)rounder_8));
+                s5 = _mm_add_epi32(s5,  _mm_load_const((const __m128i *)rounder_8));
+            } else if (SHIFT_FRW32_1ST == 5) {
+                s4 = _mm_add_epi32(s4,  _mm_load_const((const __m128i *)rounder_16));
+                s5 = _mm_add_epi32(s5,  _mm_load_const((const __m128i *)rounder_16));
+            } else if (SHIFT_FRW32_1ST == 6) {
+                s4 = _mm_add_epi32(s4,  _mm_load_const((const __m128i *)rounder_32));
+                s5 = _mm_add_epi32(s5,  _mm_load_const((const __m128i *)rounder_32));
+            }
+            s4 = _mm_srai_epi32(s4,  SHIFT_FRW32_1ST);
+            s5 = _mm_srai_epi32(s5,  SHIFT_FRW32_1ST);
             s4 = _mm_packs_epi32(s4, s5);
 
             // Store 4th results
@@ -1244,8 +1316,6 @@ namespace MFX_HEVC_PP
 
             src += src_stride;
         }
-#undef shift
-#undef rounder
 
         // Vertical 1-D forward transform
 
@@ -1805,6 +1875,15 @@ namespace MFX_HEVC_PP
                 dest += 4;
             }
             tmp += tmp_stride;
+        }
+    }
+
+    void H265_FASTCALL MAKE_NAME(h265_DCT32x32Fwd_16s)(const short *H265_RESTRICT src, short *H265_RESTRICT dst, Ipp32u bitDepth)
+    {
+        switch (bitDepth) {
+        case  8: h265_DCT32x32Fwd_16s_Kernel<SHIFT_FRW32_1ST_BASE + 0>(src, dst);   break;
+        case  9: h265_DCT32x32Fwd_16s_Kernel<SHIFT_FRW32_1ST_BASE + 1>(src, dst);   break;
+        case 10: h265_DCT32x32Fwd_16s_Kernel<SHIFT_FRW32_1ST_BASE + 2>(src, dst);   break;
         }
     }
 
