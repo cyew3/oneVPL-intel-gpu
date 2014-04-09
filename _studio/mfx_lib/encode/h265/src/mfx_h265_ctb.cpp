@@ -1719,6 +1719,7 @@ static void TuDiffNv12(CoeffsType *residual, Ipp32s pitchDst,  const PixType *sr
                        const PixType *pred, Ipp32s pitchPred, Ipp32s size);
 static bool IsCandFound(const Ipp8s *curRefIdx, const H265MV *curMV, const MVPInfo *mergeInfo,
                         Ipp32s candIdx, Ipp32s numRefLists);
+static Ipp32s GetFlBits(Ipp32s val, Ipp32s maxVal);
 
 static Ipp32s IsDuplicatedMergeCand(const MVPInfo * mergeInfo, Ipp32s mergeIdxCur) // FIXME: try using IsCandFound()
 {
@@ -1811,7 +1812,7 @@ CostType H265CU::MeCu(Ipp32u absPartIdx, Ipp8u depth, Ipp32s offset)
     { /*if (mergeInfo.numCand > 0) */
         for (Ipp32s i = 0; i < mergeInfo.numCand; i++) {
             Ipp8s *ref_idx = &(mergeInfo.refIdx[2*i]);
-            if (m_cslice->slice_type != B_SLICE)
+            if (m_cslice->slice_type != B_SLICE || (ref_idx[0] >= 0 && meInfo.width + meInfo.height == 12))
                 ref_idx[1] = -1;
 
             if (i > 0 && IsDuplicatedMergeCand(&mergeInfo, i))
@@ -1824,13 +1825,11 @@ CostType H265CU::MeCu(Ipp32u absPartIdx, Ipp8u depth, Ipp32s offset)
                 inter_dir |= INTER_DIR_PRED_L1;
 
             H265MV *mv = &(mergeInfo.mvCand[2*i]);
+            cost_temp = COST_MAX;
             if (inter_dir == (INTER_DIR_PRED_L0 | INTER_DIR_PRED_L1)) {
                 H265Frame *PicYUVRefF = m_currFrame->m_refPicList[0].m_refFrames[ref_idx[0]];
                 H265Frame *PicYUVRefB = m_currFrame->m_refPicList[1].m_refFrames[ref_idx[1]];
-                if (PicYUVRefF && PicYUVRefB)
-                    cost_temp = MatchingMetricBipredPu(pSrc, &meInfo, PicYUVRefF->y, PicYUVRefF->pitch_luma, PicYUVRefB->y, PicYUVRefB->pitch_luma, mv, 0);
-                else
-                    cost_temp = COST_MAX;
+                cost_temp = MatchingMetricBipredPu(pSrc, &meInfo, PicYUVRefF->y, PicYUVRefF->pitch_luma, PicYUVRefB->y, PicYUVRefB->pitch_luma, mv, 0);
             } else {
                 EnumRefPicList dir = inter_dir == INTER_DIR_PRED_L0 ? REF_PIC_LIST_0 : REF_PIC_LIST_1;
                 H265Frame *PicYUVRef = m_currFrame->m_refPicList[dir].m_refFrames[ref_idx[dir]];
@@ -1838,9 +1837,12 @@ CostType H265CU::MeCu(Ipp32u absPartIdx, Ipp8u depth, Ipp32s offset)
             }
 
             if (bestCost > cost_temp) {
-                bestCost = cost_temp;
-                cand_best = i;
-                inter_dir_best = inter_dir;
+                cost_temp += (Ipp32s)(GetFlBits(i, mergeInfo.numCand) * m_cslice->rd_lambda_sqrt + 0.5);
+                if (bestCost > cost_temp) {
+                    bestCost = cost_temp;
+                    cand_best = i;
+                    inter_dir_best = inter_dir;
+                }
             }
         }
         for (Ipp32s dir = 0; dir < 2; dir++) {
@@ -2936,7 +2938,7 @@ void H265CU::MeSubPel(const H265MEInfo *meInfo, const MVPInfo *predInfo, Ipp32s 
     *mv = mvBest;
 }
 
-Ipp32s GetFlBits(Ipp32s val, Ipp32s maxVal)
+static Ipp32s GetFlBits(Ipp32s val, Ipp32s maxVal)
 {
     if (maxVal < 2)
         return 0;
