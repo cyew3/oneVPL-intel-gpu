@@ -526,12 +526,9 @@ mfxStatus CDecodingPipeline::AllocFrames()
     MSDK_ZERO_MEMORY(VppRequest[0]);
     MSDK_ZERO_MEMORY(VppRequest[1]);
 
-    if (m_mfxVideoParams.mfx.CodecId != MFX_CODEC_HEVC)
-    {
-        sts = m_pmfxDEC->Query(&m_mfxVideoParams, &m_mfxVideoParams);
-        MSDK_IGNORE_MFX_STS(sts, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM);
-        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
-    }
+    sts = m_pmfxDEC->Query(&m_mfxVideoParams, &m_mfxVideoParams);
+    MSDK_IGNORE_MFX_STS(sts, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM);
+    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
     // calculate number of surfaces required for decoder
     sts = m_pmfxDEC->QueryIOSurf(&m_mfxVideoParams, &Request);
@@ -554,6 +551,10 @@ mfxStatus CDecodingPipeline::AllocFrames()
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
     sts = InitVppParams();
+    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+
+    sts = m_pmfxVPP->Query(&m_mfxVppVideoParams, &m_mfxVppVideoParams);
+    MSDK_IGNORE_MFX_STS(sts, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM);
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
     // VppRequest[0] for input frames request, VppRequest[1] for output frames request

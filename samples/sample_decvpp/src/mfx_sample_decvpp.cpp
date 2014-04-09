@@ -31,8 +31,8 @@ void PrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("   <codecid>=h265 - in-box Media SDK plugins (may require separate downloading and installation)\n"));
     msdk_printf(MSDK_STRING("\n"));
     msdk_printf(MSDK_STRING("Supported output color formats (<fourcc>):\n"));
-    msdk_printf(MSDK_STRING("   <fourcc> = -nv12 | -rgb4 | -p010 | -a2rgb10 - if not specified nv12 is used\n"));
-    msdk_printf(MSDK_STRING("   Default is nv12\n"));
+    msdk_printf(MSDK_STRING("   <fourcc> = -i420 | -rgb4 | -p010 | -a2rgb10 - if not specified i420 is used\n"));
+    msdk_printf(MSDK_STRING("   Default is i420\n"));
     msdk_printf(MSDK_STRING("\n"));
     msdk_printf(MSDK_STRING("Work models:\n"));
     msdk_printf(MSDK_STRING("  1. Performance model: decoding on MAX speed, no rendering, no YUV dumping (no -r or -o option)\n"));
@@ -115,7 +115,7 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         {
             pParams->bUseHWLib = true;
         }
-        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-nv12")))
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-i420")))
         {
             pParams->fourcc = MFX_FOURCC_NV12;
         }
