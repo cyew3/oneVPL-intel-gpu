@@ -1128,6 +1128,11 @@ mfxStatus GetPipelineList(
     /* ************************************************************************** */
     if( (MFX_FOURCC_RGB4 != par->In.FourCC) || (MFX_FOURCC_RGB4 != par->Out.FourCC) )
     {
+        if ( MFX_FOURCC_A2RGB10 == par->Out.FourCC && MFX_FOURCC_P010 != par->In.FourCC)
+        {
+            return MFX_ERR_INVALID_VIDEO_PARAM;
+        }
+
         if( MFX_FOURCC_RGB4 == par->Out.FourCC )
         {
             /* [RGB4 output format support] */
