@@ -165,6 +165,7 @@ public:
     H265BsFake *bsf;
     Ipp8u *memBuf;
     Ipp32s m_frameCountEncoded;
+    mfxU32 m_frameCountSend;
     H265CU *cu;
 
     // SAO!!!

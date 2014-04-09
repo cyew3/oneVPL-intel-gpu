@@ -1124,6 +1124,7 @@ mfxStatus H265Encoder::Init(const mfxVideoParam *param, const mfxExtCodingOption
     m_PicOrderCnt_Accu = 0;
     m_PGOPIndex = 0;
     m_frameCountEncoded = 0;
+    m_frameCountSend = 0;
 
     m_Bpyramid_currentNumFrame = 0;
     m_Bpyramid_nextNumFrame = 0;
@@ -1336,10 +1337,7 @@ Ipp32u H265Encoder::DetermineFrameType()
 
     m_bMakeNextFrameIDR = false;
 
-    mfxEncodeStat eStat;
-    mfx_video_encode_h265_ptr->GetEncodeStat(&eStat);
-
-    if (eStat.NumFrameCountAsync == 0) {
+    if (m_frameCountSend == 0) {
         m_iProfileIndex = 0;
         m_uIntraFrameInterval = 0;
         m_uIDRFrameInterval = 0;
@@ -3062,6 +3060,7 @@ mfxStatus H265Encoder::EncodeFrame(mfxFrameSurface1 *surface, mfxBitstream *mfxB
         Ipp32u  ePictureType;
 
         ePictureType = DetermineFrameType();
+        m_frameCountSend++;   // is used to determine 1st I frame
         mfxU64 prevTimeStamp = m_pLastFrame ? m_pLastFrame->TimeStamp : MFX_TIMESTAMP_UNKNOWN;
         /*m_pLastFrame = */m_pCurrentFrame = m_cpb.InsertFrame(surface, &m_videoParam);
         if (m_pCurrentFrame)

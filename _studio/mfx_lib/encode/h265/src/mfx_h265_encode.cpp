@@ -1786,7 +1786,6 @@ mfxStatus MFXVideoENCODEH265::GetEncodeStat(mfxEncodeStat *stat)
     stat->NumCachedFrame = m_frameCountBufferedSync; //(mfxU32)m_inFrames.size();
     stat->NumBit = m_totalBits;
     stat->NumFrame = m_encodedFrames;
-    stat->NumFrameCountAsync = m_frameCount;
     return MFX_ERR_NONE;
 }
 
