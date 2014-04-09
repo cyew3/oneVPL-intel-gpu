@@ -80,3 +80,10 @@ mfxStatus tsSession::Load(mfxSession session, const mfxPluginUID *uid, mfxU32 ve
     g_tsStatus.check( MFXVideoUSER_Load(session, uid, version) );
     return g_tsStatus.get();
 }
+
+mfxStatus tsSession::SetHandle(mfxSession session, mfxHandleType type, mfxHDL handle)
+{
+    TRACE_FUNC3(MFXVideoCORE_SetHandle, session, type, handle);
+    g_tsStatus.check( MFXVideoCORE_SetHandle(session, type, handle) );
+    return g_tsStatus.get();
+}
