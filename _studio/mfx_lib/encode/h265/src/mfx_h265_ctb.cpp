@@ -3681,7 +3681,6 @@ void H265CU::EncAndRecChroma(Ipp32u absPartIdx, Ipp32s offset, Ipp8u depth, Ipp8
     Ipp32u numParts = ( m_par->NumPartInCU >> (depth<<1) )>>2;
     Ipp32s width = m_data[absPartIdx].size >> m_data[absPartIdx].trIdx << (depthMax - depth);
     width >>= 1;
-    Ipp8u nzt[2];
 
     if(nz) nz[0] = nz[1] = 0;
 
@@ -3721,6 +3720,7 @@ void H265CU::EncAndRecChroma(Ipp32u absPartIdx, Ipp32s offset, Ipp8u depth, Ipp8
         if (cost) *cost = 0;
         for (Ipp32u i = 0; i < 4; i++) {
             CostType cost_temp;
+            Ipp8u nzt[2];
             EncAndRecChroma(absPartIdx + numParts * i, offset, depth+1, nz ? nzt : NULL, cost ? &cost_temp : 0);
             if (cost) *cost += cost_temp;
             offset += subsize;

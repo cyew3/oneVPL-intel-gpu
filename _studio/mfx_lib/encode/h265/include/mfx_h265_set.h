@@ -172,8 +172,8 @@ typedef struct sH265PicParameterSet {
     Ipp8u pps_extension_flag;
 } H265PicParameterSet;
 
-class H265SliceHeader {
-public:
+struct H265SliceHeader
+{
     Ipp8u first_slice_segment_in_pic_flag;
     Ipp8u no_output_of_prior_pics_flag;
     Ipp8u slice_pic_parameter_set_id;
@@ -219,9 +219,8 @@ public:
     Ipp8u  chroma_log2_weight_denom;           // chroma weighting denominator
 };
 
-class H265Slice : public H265SliceHeader
+struct H265Slice : public H265SliceHeader
 {
-public:
     Ipp32s num_ref_idx[2];
     Ipp32s DependentSliceCurStartCUAddr;
     Ipp32s DependentSliceCurEndCUAddr;

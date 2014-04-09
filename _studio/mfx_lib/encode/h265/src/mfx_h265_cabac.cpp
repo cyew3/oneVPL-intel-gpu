@@ -1448,7 +1448,7 @@ void CodeSaoCtbOffsetParam(H265Bs *bs, int compIdx, SaoOffsetParam& ctbParam, bo
     if(ctbParam.mode_idx == SAO_MODE_ON)
     {
         int numClasses = (ctbParam.type_idx == SAO_TYPE_BO)?4:NUM_SAO_EO_CLASSES;
-        int offset[4];
+        int offset[5]; // only 4 are used, 5th is added for KW
         int k=0;
         for(int i=0; i< numClasses; i++)
         {
