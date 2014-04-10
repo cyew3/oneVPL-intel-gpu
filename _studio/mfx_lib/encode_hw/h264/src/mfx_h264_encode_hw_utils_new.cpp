@@ -1120,9 +1120,6 @@ namespace
             // when frameOrder is sent first time corresponsing 'short-term' reference is marked 'long-term'
             if (ctrl)
             {
-                // adaptive marking is supported only for progressive encoding
-                assert(task.GetPicStructForEncode() == MFX_PICSTRUCT_PROGRESSIVE);
-
                 for (mfxU32 i = 0; i < 16 && ctrl->RejectedRefList[i].FrameOrder != MFX_FRAMEORDER_UNKNOWN; i++)
                 {
                     DpbFrame * ref = std::find_if(
@@ -1134,12 +1131,20 @@ namespace
                     {
                         if (ref->m_longterm)
                         {
+                            // adaptive marking for long-term references is supported only for progressive encoding
+                            assert(task.GetPicStructForEncode() == MFX_PICSTRUCT_PROGRESSIVE);
                             marking.PushBack(MMCO_LT_TO_UNUSED, ref->m_longTermPicNum[0]);
                             usedLtIdx[ref->m_longTermIdxPlus1 - 1] = 0;
                         }
                         else
                         {
                             marking.PushBack(MMCO_ST_TO_UNUSED, task.m_picNum[fid] - ref->m_picNum[0] - 1);
+                            if (task.GetPicStructForEncode() & (MFX_PICSTRUCT_FIELD_TFF | MFX_PICSTRUCT_FIELD_BFF))
+                            {
+                                // second field should be removed from DPB as well
+                                marking.PushBack(MMCO_ST_TO_UNUSED, task.m_picNum[fid] - ref->m_picNum[1] - 1);
+                            }
+
                         }
 
                         currDpb.Erase(ref);
@@ -1148,6 +1153,8 @@ namespace
 
                 for (mfxU32 i = 0; i < 16 && ctrl->LongTermRefList[i].FrameOrder != MFX_FRAMEORDER_UNKNOWN; i++)
                 {
+                    // adaptive marking for long-term references is supported only for progressive encoding
+                    assert(task.GetPicStructForEncode() == MFX_PICSTRUCT_PROGRESSIVE);
                     DpbFrame * ref = std::find_if(
                         currDpb.Begin(),
                         currDpb.End(),
