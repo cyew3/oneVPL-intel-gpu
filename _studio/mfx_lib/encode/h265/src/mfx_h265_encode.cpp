@@ -202,7 +202,7 @@ TU_OPT(FastSkip,                     OFF, OFF, OFF, OFF, OFF, OFF,  ON)
 TU_OPT(PartModes,                      3,   2,   2,   1,   1,   1,   1) //TU2 AMP?
 TU_OPT(FastCbfMode,                  OFF, OFF,  ON,  ON,  ON,  ON,  ON)
 TU_OPT(PuDecisionSatd,               OFF, OFF, OFF, OFF, OFF, OFF, OFF)
-TU_OPT(MinCUDepthAdapt,              OFF, OFF, OFF, OFF, OFF, OFF, OFF)
+TU_OPT(MinCUDepthAdapt,              OFF, OFF, OFF,  ON,  ON,  ON,  ON)
 
 //Basic quality features
 TU_OPT(WPP,                          UNK, UNK, UNK, UNK, UNK, UNK, UNK)
