@@ -19,8 +19,7 @@
 namespace UMC_HEVC_DECODER
 {
 
-static const Ipp32u g_scalingListSizeX[4] = { 4, 8, 16, 32 };
-
+// Allocate and initialize scaling list tables
 void H265ScalingList::init()
 {
     VM_ASSERT(!m_initialized);
@@ -51,6 +50,7 @@ void H265ScalingList::init()
     m_initialized = true;
 }
 
+// Deallocate scaling list tables
 void H265ScalingList::destroy()
 {
     if (!m_initialized)
@@ -65,9 +65,12 @@ void H265ScalingList::destroy()
     m_initialized = false;
 }
 
+// Calculated coefficients used for dequantization
 void H265ScalingList::calculateDequantCoef(void)
 {
     VM_ASSERT(m_initialized);
+
+    static const Ipp32u g_scalingListSizeX[4] = { 4, 8, 16, 32 };
 
     for (Ipp32u sizeId = 0; sizeId < SCALING_LIST_SIZE_NUM; sizeId++)
     {
@@ -89,6 +92,7 @@ void H265ScalingList::calculateDequantCoef(void)
     }
 }
 
+// Initialize scaling list with default data
 void H265ScalingList::initFromDefaultScalingList()
 {
     VM_ASSERT (!m_initialized);
@@ -109,6 +113,7 @@ void H265ScalingList::initFromDefaultScalingList()
     calculateDequantCoef();
 }
 
+// Calculated coefficients used for dequantization in one scaling list matrix
 void H265ScalingList::processScalingListDec(Ipp32s *coeff, Ipp16s *dequantcoeff, Ipp32s invQuantScales, Ipp32u height, Ipp32u width, Ipp32u ratio, Ipp32u sizuNum, Ipp32u dc)
 {
     for(Ipp32u j = 0; j < height; j++)
@@ -127,6 +132,7 @@ void H265ScalingList::processScalingListDec(Ipp32s *coeff, Ipp16s *dequantcoeff,
     }
 }
 
+// Returns default scaling matrix for specified parameters
 int* H265ScalingList::getScalingListDefaultAddress(unsigned sizeId, unsigned listId)
 {
     int *src = 0;
@@ -152,6 +158,7 @@ int* H265ScalingList::getScalingListDefaultAddress(unsigned sizeId, unsigned lis
     return src;
 }
 
+// Copy data from predefined scaling matrixes
 void H265ScalingList::processRefMatrix(unsigned sizeId, unsigned listId , unsigned refListId)
 {
   MFX_INTERNAL_CPY(getScalingListAddress(sizeId, listId),

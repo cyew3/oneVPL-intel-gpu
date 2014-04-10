@@ -528,14 +528,19 @@ public:
     void     setRefMatrixId           (unsigned sizeId, unsigned listId, unsigned u)   { m_refMatrixId[sizeId][listId] = u; }
     unsigned getRefMatrixId           (unsigned sizeId, unsigned listId)           { return m_refMatrixId[sizeId][listId]; }
     void     setScalingListDC         (unsigned sizeId, unsigned listId, unsigned u)   { m_scalingListDC[sizeId][listId] = u; }
-    void     processRefMatrix         (unsigned sizeId, unsigned listId , unsigned refListId);
+    // Copy data from predefined scaling matrixes
+    void     processRefMatrix(unsigned sizeId, unsigned listId, unsigned refListId);
     int      getScalingListDC         (unsigned sizeId, unsigned listId) const     { return m_scalingListDC[sizeId][listId]; }
 
+    // Allocate and initialize scaling list tables
     void init();
     bool is_initialized(void) { return m_initialized; }
+    // Initialize scaling list with default data
     void initFromDefaultScalingList(void);
+    // Calculated coefficients used for dequantization
     void calculateDequantCoef(void);
 
+    // Deallocate scaling list tables
     void destroy();
 
     Ipp16s *m_dequantCoef[SCALING_LIST_SIZE_NUM][SCALING_LIST_NUM][SCALING_LIST_REM_NUM];
@@ -545,8 +550,10 @@ private:
     {
         return m_dequantCoef[size][list][qp];
     }
+    // Calculated coefficients used for dequantization in one scaling list matrix
     __inline void processScalingListDec(Ipp32s *coeff, Ipp16s *dequantcoeff, Ipp32s invQuantScales, Ipp32u height, Ipp32u width, Ipp32u ratio, Ipp32u sizuNum, Ipp32u dc);
-    static int *getScalingListDefaultAddress (unsigned sizeId, unsigned listId);
+    // Returns default scaling matrix for specified parameters
+    static int *getScalingListDefaultAddress(unsigned sizeId, unsigned listId);
 
     int      m_scalingListDC               [SCALING_LIST_SIZE_NUM][SCALING_LIST_NUM];
     unsigned m_refMatrixId                 [SCALING_LIST_SIZE_NUM][SCALING_LIST_NUM];

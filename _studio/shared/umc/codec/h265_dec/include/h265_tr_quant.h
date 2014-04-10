@@ -26,28 +26,32 @@ namespace UMC_HEVC_DECODER
 {
 class DecodingContext;
 
-// transform and quantization class
+// Transform and dequantization class
 class H265TrQuant
 {
     DISALLOW_COPY_AND_ASSIGN(H265TrQuant);
 
 public:
+    // Allocate inverse transform and dequantization buffers
     H265TrQuant();
     ~H265TrQuant();
 
     DecodingContext * m_context;
 
-    // transform & inverse transform functions
+    // Do inverse transform of specified size
     template <typename DstCoeffsType>
     void InvTransformNxN(bool transQuantBypass, EnumTextType TxtType, Ipp32u Mode, DstCoeffsType* pResidual, size_t Stride,
         H265CoeffsPtrCommon pCoeff, Ipp32u Size, bool transformSkip);
 
+    // Recursively descend to basic transform blocks, inverse transform coefficients in them and/
+    // add the result to prediction for complete reconstruct
     void InvRecurTransformNxN(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u Size, Ipp32u TrMode);
 
-    // ML: OPT: allows to propogate convert const shift
+    // Process coefficients with transform skip flag
     template <int bitDepth, typename DstCoeffsType>
     void InvTransformSkip(H265CoeffsPtrCommon pCoeff, DstCoeffsType* pResidual, size_t Stride, Ipp32u Size, bool inplace, Ipp32u bit_depth);
 
+    // Process coefficients with transquant bypass flag
     template <typename DstCoeffsType>
     void InvTransformByPass(H265CoeffsPtrCommon pCoeff, DstCoeffsType* pResidual, size_t Stride, Ipp32u Size, Ipp32u bitDepth, bool inplace);
 
