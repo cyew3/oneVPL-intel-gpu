@@ -118,8 +118,8 @@ mfxExtBuffer HEVC_HEADER = { MFX_EXTBUFF_HEVCENC, sizeof(mfxExtCodingOptionHEVC)
     tab_IntraNumCand0_6[x],\
     tab_CostChroma[x],\
     tab_PatternIntPel[x],\
-    tab_PatternSubPel[x],\
     tab_FastSkip[x],\
+    tab_PatternSubPel[x],\
     tab_ForceNumThread[x],\
     tab_FastCbfMode[x],\
     tab_PuDecisionSatd[x],\
