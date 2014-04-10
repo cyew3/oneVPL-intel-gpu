@@ -41,7 +41,7 @@ extern Ipp32s cmNextIdx;
 #define x86_pause() _mm_pause()
 
 
-#define NEW_THRESHOLDS 0
+#define NEW_THRESHOLDS 1
 
 #if NEW_THRESHOLDS
 
