@@ -247,7 +247,7 @@ TU_OPT(ForceNumThread,                 0,   0,   0,   0,   0,   0,   0)
 //Motion estimation options
 TU_OPT(HadamardMe,                     2,   2,   2,   2,   2,   2,   1)
 TU_OPT(PatternIntPel,                  1,   1,   1,   1,   1,   1,   1)
-TU_OPT(PatternSubPel,                  3,   3,   3,   3,   3,   3,   1) //4 -dia subpel search; 3- square
+TU_OPT(PatternSubPel,                  3,   3,   3,   3,   3,   3,   4) //4 -dia subpel search; 3- square
 
 // reference options
 TU_OPT(GPB,                           ON,  ON,  ON,  ON,  ON, OFF, OFF) //ww12.1 TU4 ON->OFF exchsnge 0.9% qual for 6.2% speed
