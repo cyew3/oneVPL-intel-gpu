@@ -61,6 +61,7 @@ namespace MFX_HEVC_PP
         575,   565,   555,   546,   537,   529,   520,   512
     };
 
+#if defined(MFX_TARGET_OPTIMIZATION_AUTO) || defined(MFX_TARGET_OPTIMIZATION_PX)
     void MAKE_NAME(h265_FilterPredictPels_8u)(
         Ipp8u* PredPel,
         Ipp32s width)
@@ -111,6 +112,7 @@ namespace MFX_HEVC_PP
         }
 
     } // void h265_FilterPredictPels_Bilinear_8u(...)
+#endif
 
     void h265_GetPredPelsLuma_8u(Ipp8u* pSrc, Ipp8u* pPredPel, Ipp32s blkSize, Ipp32s srcPitch, Ipp32u tpIf, Ipp32u lfIf, Ipp32u tlIf)
     {
@@ -618,7 +620,7 @@ namespace MFX_HEVC_PP
 
 #endif // #if defined(MFX_TARGET_OPTIMIZATION_PX)  || defined(MFX_TARGET_OPTIMIZATION_AUTO)
 
-
+#if defined(MFX_TARGET_OPTIMIZATION_AUTO) || defined(MFX_TARGET_OPTIMIZATION_PX)
     void MAKE_NAME(h265_PredictIntra_Planar_8u)(
         Ipp8u* PredPel,
         Ipp8u* pels,
@@ -662,6 +664,7 @@ namespace MFX_HEVC_PP
             }
         }
     } // void h265_PredictIntra_Planar_8u(...)
+#endif
 
     void h265_PredictIntra_Planar_ChromaNV12_8u(Ipp8u* PredPel, Ipp8u* pDst, Ipp32s dstStride, Ipp32s blkSize)
     {
