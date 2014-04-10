@@ -1481,7 +1481,7 @@ namespace MFX_VP8ENC
                 m_refProbs[0] = m_ctrl.prIntra;
                 m_refProbs[1] = m_ctrl.prLast;
                 m_refProbs[2] = m_ctrl.prGolden;
-                m_refProbs[3] = 256 - m_ctrl.prGolden;
+                m_refProbs[3] = mfxU8(256 - m_ctrl.prGolden);
         }
         else
         {
