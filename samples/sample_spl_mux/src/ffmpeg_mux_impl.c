@@ -490,7 +490,6 @@ mfxStatus MFXMuxer_PutBitstream(mfxMuxer mux, mfxU32 track_num, mfxBitstream *bs
             if ( (inMux->streams[track_num]->nb_frames != 0) && (packet.dts <= inMux->lastDts[track_num]) ) {
                 packet.dts  = inMux->lastDts[track_num] + 1;
             }
-            inMux->lastDts[track_num] = packet.dts;
         }
 
         if ( (packet.pts != AV_NOPTS_VALUE) && (packet.dts != AV_NOPTS_VALUE) )
@@ -533,6 +532,10 @@ mfxStatus MFXMuxer_PutBitstream(mfxMuxer mux, mfxU32 track_num, mfxBitstream *bs
             sts = MFX_ERR_UNKNOWN;
         }
         inMux->streams[track_num]->nb_frames++;
+        if ( (track_num < sizeof(inMux->lastDts) / sizeof(*inMux->lastDts)) && (packet.dts != AV_NOPTS_VALUE) )
+        {
+            inMux->lastDts[track_num] = packet.dts;
+        }
     }
 
     return sts;
