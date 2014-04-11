@@ -3,7 +3,8 @@ mfx_include_dirs( )
 include_directories (
   ${CMAKE_HOME_DIRECTORY}/_testsuite/test_vpp/include
   ${CMAKE_HOME_DIRECTORY}/_testsuite/shared/include
-  ${CMAKE_HOME_DIRECTORY}/samples/sample_common/include
+  ${CMAKE_HOME_DIRECTORY}/_testsuite/test_vpp/common/include
+  ${CMAKE_HOME_DIRECTORY}/_testsuite/test_vpp/common/include/vm
 )
 
 # =============================================================================
@@ -11,6 +12,8 @@ include_directories (
 set( sources "" )
 set( sources.plus "" )
 file( GLOB_RECURSE srcs "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp" )
+list( APPEND sources ${srcs})
+file( GLOB_RECURSE srcs "${CMAKE_CURRENT_SOURCE_DIR}/common/src/*.cpp" )
 list( APPEND sources ${srcs})
 
 foreach( variant sw drm x11 )

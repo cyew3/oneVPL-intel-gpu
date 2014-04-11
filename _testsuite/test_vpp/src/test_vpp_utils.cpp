@@ -90,6 +90,9 @@ vm_char* FourCC2Str( mfxU32 FourCC )
     case MFX_FOURCC_P010:
         strFourCC = VM_STRING("P010");
         break;
+    case MFX_FOURCC_A2RGB10:
+        strFourCC = VM_STRING("A2RGB10");
+        break;
 
     }
 
