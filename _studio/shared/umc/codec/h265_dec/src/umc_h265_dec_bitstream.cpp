@@ -41,6 +41,7 @@ H265BaseBitstream::~H265BaseBitstream()
 {
 }
 
+// Reset the bitstream with new data pointer
 void H265BaseBitstream::Reset(Ipp8u * const pb, const Ipp32u maxsize)
 {
     m_pbs       = (Ipp32u*)pb;
@@ -50,6 +51,7 @@ void H265BaseBitstream::Reset(Ipp8u * const pb, const Ipp32u maxsize)
 
 } // void Reset(Ipp8u * const pb, const Ipp32u maxsize)
 
+// Reset the bitstream with new data pointer and bit offset
 void H265BaseBitstream::Reset(Ipp8u * const pb, Ipp32s offset, const Ipp32u maxsize)
 {
     m_pbs       = (Ipp32u*)pb;
@@ -59,26 +61,12 @@ void H265BaseBitstream::Reset(Ipp8u * const pb, Ipp32s offset, const Ipp32u maxs
 
 } // void Reset(Ipp8u * const pb, Ipp32s offset, const Ipp32u maxsize)
 
+// Check that position in bitstream didn't move outside the limit
 void H265BaseBitstream::CheckBSLeft()
 {
     size_t bitsDecoded = BitsDecoded();
     if (bitsDecoded > m_maxBsSize*8)
         throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
-}
-
-void H265BaseBitstream::ReadToByteAlignment()
-{
-    VM_ASSERT(m_bitOffset >= 0 && m_bitOffset <= 31);
-
-    Ipp32u code;
-    // get top bit, it can be "rbsp stop" bit
-    ippiGetNBits(m_pbs, m_bitOffset, 1, code);
-    VM_ASSERT(1 == code);
-
-    // get remain bits, which is less then byte
-    Ipp32u tmp = (m_bitOffset + 1) & 7;
-    if (tmp)
-        ippiSkipNBits(m_pbs, m_bitOffset, tmp);
 }
 
 bool H265BaseBitstream::More_RBSP_Data()

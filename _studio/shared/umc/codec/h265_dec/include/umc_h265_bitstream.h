@@ -33,7 +33,7 @@ namespace UMC_HEVC_DECODER
 template <typename T> class HeaderSet;
 class Headers;
 
-
+// Bitstream low level parsing class
 class H265BaseBitstream
 {
 public:
@@ -44,48 +44,55 @@ public:
 
     // Reset the bitstream with new data pointer
     void Reset(Ipp8u * const pb, const Ipp32u maxsize);
+    // Reset the bitstream with new data pointer and bit offset
     void Reset(Ipp8u * const pb, Ipp32s offset, const Ipp32u maxsize);
 
+    // Align bitstream position to byte boundary
     inline void AlignPointerRight(void);
 
+    // Read N bits from bitstream array
     inline Ipp32u GetBits(Ipp32u nbits);
 
+    // Read N bits from bitstream array
     template <Ipp32u nbits>
     inline Ipp32u GetPredefinedBits();
 
 #if defined( __INTEL_COMPILER )
+    // Optimized function which uses bit manipulation instructions (BMI)
     inline Ipp32u GetBits_BMI(Ipp32u nbits);
 #endif
 
-    // Read one VLC Ipp32s or Ipp32u value from bitstream
+    // Read variable length coded unsigned element
     Ipp32u GetVLCElementU();
 
+    // Read variable length coded signed element
     Ipp32s GetVLCElementS();
 
     // Reads one bit from the buffer.
     Ipp8u Get1Bit();
 
-    // Move pointer to nearest byte
-    void ReadToByteAlignment();
-
+    // Check that position in bitstream didn't move outside the limit
     void CheckBSLeft();
 
     // Check amount of data
     bool More_RBSP_Data();
 
+    // Returns number of decoded bytes since last reset
     size_t BytesDecoded() const;
 
+    // Returns number of decoded bits since last reset
     size_t BitsDecoded() const;
 
+    // Returns number of bytes left in bitstream array
     size_t BytesLeft() const;
 
-    //h265:
+    // Returns number of bits needed for byte alignment
     unsigned getNumBitsUntilByteAligned() const;
-    unsigned getNumBitsLeft() const;
-    void readOutTrailingBits();
-    // Align bitstream pointer to the right
-    //virtual void H265BaseBitstream::AlignPointerRight();
 
+    // Align bitstream to byte boundary
+    void readOutTrailingBits();
+
+    // Returns bitstream current buffer pointer
     const Ipp8u *GetRawDataPtr() const    {
         return (const Ipp8u *)m_pbs + (31 - m_bitOffset)/8;
     }
@@ -96,7 +103,6 @@ protected:
     Ipp32s m_bitOffset;                                         // (Ipp32s) the bit position (0 to 31) in the dword pointed by m_pbs.
     Ipp32u *m_pbsBase;                                          // (Ipp32u *) pointer to the first byte of the buffer.
     Ipp32u m_maxBsSize;                                         // (Ipp32u) maximum buffer size in bytes.
-
 };
 
 class H265ScalingList;
@@ -104,6 +110,7 @@ class H265VideoParamSet;
 struct H265SeqParamSet;
 class H265Slice;
 
+// Bitstream headers parsing class
 class H265HeadersBitstream : public H265BaseBitstream
 {
 public:
@@ -146,6 +153,7 @@ protected:
     void  parseProfileTier    (H265PTL *ptl);
 };
 
+// General HEVC bitstream parsing class
 class H265Bitstream  : public H265HeadersBitstream
 {
 public:

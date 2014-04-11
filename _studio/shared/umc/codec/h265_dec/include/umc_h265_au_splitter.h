@@ -30,6 +30,7 @@ namespace UMC_HEVC_DECODER
 
 class NALUnitSplitter_H265;
 
+// NAL unit splitter wrapper class
 class AU_Splitter_H265
 {
 public:
@@ -41,9 +42,12 @@ public:
 
     void Reset();
 
+    // Wrapper for NAL unit splitter CheckNalUnitType
     Ipp32s CheckNalUnitType(UMC::MediaData * pSource);
 
+    // Wrapper for NAL unit splitter CheckNalUnitType GetNalUnit
     UMC::MediaDataEx * GetNalUnit(UMC::MediaData * src);
+    // Returns internal NAL unit splitter
     NALUnitSplitter_H265 * GetNalUnitSplitter();
 
 protected:

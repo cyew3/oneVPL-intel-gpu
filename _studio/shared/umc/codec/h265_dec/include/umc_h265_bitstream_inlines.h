@@ -24,6 +24,7 @@ namespace UMC_HEVC_DECODER
 
 const Ipp64u g_scaled256 = (Ipp64u)0x100 << (7+ CABAC_MAGIC_BITS);
 
+// Read N bits from 32-bit array
 #define _h265GetBits(current_data, offset, nbits, data) \
 { \
     Ipp32u x; \
@@ -52,6 +53,7 @@ const Ipp64u g_scaled256 = (Ipp64u)0x100 << (7+ CABAC_MAGIC_BITS);
     (data) = x & bits_data[nbits]; \
 }
 
+// Skip N bits in 32-bit array
 #define ippiSkipNBits(current_data, offset, nbits) \
 { \
     /* check error(s) */ \
@@ -69,7 +71,7 @@ const Ipp64u g_scaled256 = (Ipp64u)0x100 << (7+ CABAC_MAGIC_BITS);
     VM_ASSERT(offset >= 0 && offset <= 31); \
  }
 
-
+// Read 1 bit from 32-bit array
 #define ippiGetBits1(current_data, offset, data) \
 { \
     data = ((current_data[0] >> (offset)) & 1);  \
@@ -81,15 +83,15 @@ const Ipp64u g_scaled256 = (Ipp64u)0x100 << (7+ CABAC_MAGIC_BITS);
     } \
 }
 
-/*#define ippiGetBits1( current_data, offset, data) \
-    _h264GetBits(current_data, offset, 1, data);
-*/
+// Read 8 bits from 32-bit array
 #define ippiGetBits8( current_data, offset, data) \
     _h265GetBits(current_data, offset, 8, data);
 
+// Read N bits from 32-bit array
 #define ippiGetNBits( current_data, offset, nbits, data) \
     _h265GetBits(current_data, offset, nbits, data);
 
+// Return bitstream position pointers N bits back
 #define ippiUngetNBits(current_data, offset, nbits) \
 { \
     VM_ASSERT(offset >= 0 && offset <= 31); \
@@ -104,10 +106,7 @@ const Ipp64u g_scaled256 = (Ipp64u)0x100 << (7+ CABAC_MAGIC_BITS);
     VM_ASSERT(offset >= 0 && offset <= 31); \
 }
 
-#define ippiUngetBits32(current_data, offset) \
-    VM_ASSERT(offset >= 0 && offset <= 31); \
-    current_data--;
-
+// Align bitstream position to byte boundary
 #define ippiAlignBSPointerRight(current_data, offset) \
 { \
     if ((offset & 0x07) != 0x07) \
@@ -121,6 +120,7 @@ const Ipp64u g_scaled256 = (Ipp64u)0x100 << (7+ CABAC_MAGIC_BITS);
     } \
 }
 
+// Read N bits from 32-bit array
 #define ippiNextBits(current_data, bp, nbits, data) \
 { \
     Ipp32u x; \
@@ -178,13 +178,13 @@ const Ipp64u g_scaled256 = (Ipp64u)0x100 << (7+ CABAC_MAGIC_BITS);
     iBits += 24; \
 }
 #endif
+
+// Align bitstream position to byte boundary
 inline void H265BaseBitstream::AlignPointerRight(void)
 {
     ippiAlignBSPointerRight(m_pbs, m_bitOffset);
+}
 
-} // void H265BaseBitstream::AlignPointerRight(void)
-
-//hevc CABAC from HM50
 const Ipp32u c_RenormTable[32] =
 {
   6,  5,  4,  4,
@@ -199,6 +199,7 @@ const Ipp32u c_RenormTable[32] =
 
 #if defined( __INTEL_COMPILER )
 
+// Optimized function which uses bit manipulation instructions (BMI)
 H265_FORCEINLINE
 Ipp32u H265BaseBitstream::GetBits_BMI(Ipp32u nbits)
 {
@@ -240,6 +241,7 @@ Ipp32u H265BaseBitstream::GetBits_BMI(Ipp32u nbits)
 typedef Ipp32u (H265Bitstream::* t_DecodeSingleBin_CABAC)(Ipp32u ctxIdx);
 extern t_DecodeSingleBin_CABAC s_pDecodeSingleBin_CABAC_dispatched;
 
+// Call optimized function by pointer either cmov_BMI or just cmov versions
 H265_FORCEINLINE
 Ipp32u H265Bitstream::DecodeSingleBin_CABAC(Ipp32u ctxIdx)
 {
@@ -248,6 +250,7 @@ Ipp32u H265Bitstream::DecodeSingleBin_CABAC(Ipp32u ctxIdx)
 
 #else // defined( __INTEL_COMPILER ) && (defined( __x86_64__ ) || defined ( _WIN64 ))
 
+// Decode one bin from CABAC stream
 inline
 Ipp32u H265Bitstream::DecodeSingleBin_CABAC(Ipp32u ctxIdx)
 {
@@ -332,6 +335,7 @@ Ipp32u H265Bitstream::DecodeSingleBin_CABAC(Ipp32u ctxIdx)
 
 #endif // defined( __INTEL_COMPILER ) && (defined( __x86_64__ ) || defined ( _WIN64 ))
 
+// Decode terminating flag for slice end or row end in WPP case
 H265_FORCEINLINE
 Ipp32u H265Bitstream::DecodeTerminatingBit_CABAC(void)
 {
@@ -376,7 +380,7 @@ Ipp32u H265Bitstream::DecodeTerminatingBit_CABAC(void)
     return Bin;
 } //Ipp32u H265Bitstream::DecodeTerminatingBit_CABAC(void)
 
-
+// Decode one bit encoded with CABAC bypass
 H265_FORCEINLINE
 Ipp32u H265Bitstream::DecodeSingleBinEP_CABAC(void)
 {
@@ -418,6 +422,7 @@ Ipp32u H265Bitstream::DecodeSingleBinEP_CABAC(void)
     return Bin;
 } //Ipp32u H265Bitstream::DecodeSingleBinEP_CABAC(void)
 
+// Decode N bits encoded with CABAC bypass
 H265_FORCEINLINE
 Ipp32u H265Bitstream::DecodeBypassBins_CABAC(Ipp32s numBins)
 {
@@ -511,6 +516,7 @@ Ipp32u H265Bitstream::DecodeBypassBins_CABAC(Ipp32s numBins)
     return bins;
 }
 
+// Read N bits from bitstream array
 inline
 Ipp32u H265BaseBitstream::GetBits(const Ipp32u nbits)
 {
@@ -520,6 +526,7 @@ Ipp32u H265BaseBitstream::GetBits(const Ipp32u nbits)
     return(w);
 }
 
+// Read N bits from bitstream array
 template <Ipp32u nbits>
 inline Ipp32u H265BaseBitstream::GetPredefinedBits()
 {
@@ -529,6 +536,7 @@ inline Ipp32u H265BaseBitstream::GetPredefinedBits()
     return(w);
 }
 
+// Read variable length coded unsigned element
 inline Ipp32u H265BaseBitstream::GetVLCElementU()
 {
     Ipp32s sval = 0;
@@ -541,6 +549,7 @@ inline Ipp32u H265BaseBitstream::GetVLCElementU()
     return (Ipp32u)sval;
 }
 
+// Read variable length coded signed element
 inline Ipp32s H265BaseBitstream::GetVLCElementS()
 {
     Ipp32s sval = 0;
@@ -553,6 +562,7 @@ inline Ipp32s H265BaseBitstream::GetVLCElementS()
     return sval;
 }
 
+// Read one bit
 inline Ipp8u H265BaseBitstream::Get1Bit()
 {
     Ipp32u w;
@@ -562,29 +572,33 @@ inline Ipp8u H265BaseBitstream::Get1Bit()
 
 } // H265Bitstream::Get1Bit()
 
+// Returns number of decoded bytes since last reset
 inline size_t H265BaseBitstream::BytesDecoded() const
 {
     return static_cast<size_t>((Ipp8u*)m_pbs - (Ipp8u*)m_pbsBase) +
             ((31 - m_bitOffset) >> 3);
 }
 
+// Returns number of decoded bits since last reset
 inline size_t H265BaseBitstream::BitsDecoded() const
 {
     return static_cast<size_t>((Ipp8u*)m_pbs - (Ipp8u*)m_pbsBase) * 8 +
         (31 - m_bitOffset);
 }
 
+// Returns number of bytes left in bitstream array
 inline size_t H265BaseBitstream::BytesLeft() const
 {
     return (Ipp32s)m_maxBsSize - (Ipp32s) BytesDecoded();
 }
 
-////h265:
+// Returns number of bits needed for byte alignment
 inline unsigned H265BaseBitstream::getNumBitsUntilByteAligned() const
 {
-    return ((m_bitOffset + 1) % 8); //WTF from HM
+    return ((m_bitOffset + 1) % 8);
 }
 
+// Align bitstream to byte boundary
 inline void H265BaseBitstream::readOutTrailingBits()
 {
     Ipp32u uVal = Get1Bit();
@@ -594,7 +608,6 @@ inline void H265BaseBitstream::readOutTrailingBits()
 
     if (bits)
     {
-//        VM_ASSERT(getNumBitsLeft() <= bits); TODO: Implement this assertion correctly
         uVal = GetBits(bits);
         //VM_ASSERT(0 == uVal);
     }

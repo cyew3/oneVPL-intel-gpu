@@ -18,43 +18,6 @@
 namespace UMC_HEVC_DECODER
 {
 
-#if 0
-static bool IsNeedSPSInvalidate(const H265SeqParamSet *old_sps, const H265SeqParamSet *new_sps)
-{
-    if (!old_sps || !new_sps)
-        return false;
-
-    //if (new_sps->no_output_of_prior_pics_flag)
-      //  return true;
-
-    if (old_sps->pic_width_in_luma_samples != new_sps->pic_width_in_luma_samples)
-        return true;
-
-    if (old_sps->pic_height_in_luma_samples != new_sps->pic_height_in_luma_samples)
-        return true;
-
-    //if (old_sps->max_dec_frame_buffering != new_sps->max_dec_frame_buffering)
-      //  return true;
-
-    /*if (old_sps->frame_cropping_rect_bottom_offset != new_sps->frame_cropping_rect_bottom_offset)
-        return true;
-
-    if (old_sps->frame_cropping_rect_left_offset != new_sps->frame_cropping_rect_left_offset)
-        return true;
-
-    if (old_sps->frame_cropping_rect_right_offset != new_sps->frame_cropping_rect_right_offset)
-        return true;
-
-    if (old_sps->frame_cropping_rect_top_offset != new_sps->frame_cropping_rect_top_offset)
-        return true;
-
-    if (old_sps->aspect_ratio_idc != new_sps->aspect_ratio_idc)
-        return true; */
-
-    return false;
-}
-#endif
-
 AU_Splitter_H265::AU_Splitter_H265(Heap_Objects *objectHeap)
     : m_Headers(objectHeap)
     , m_objHeap(objectHeap)
@@ -87,16 +50,19 @@ void AU_Splitter_H265::Reset()
     m_Headers.Reset();
 }
 
+// Wrapper for NAL unit splitter CheckNalUnitType
 Ipp32s AU_Splitter_H265::CheckNalUnitType(UMC::MediaData * src)
 {
     return m_pNALSplitter->CheckNalUnitType(src);
 }
 
+// Wrapper for NAL unit splitter CheckNalUnitType GetNalUnit
 UMC::MediaDataEx * AU_Splitter_H265::GetNalUnit(UMC::MediaData * src)
 {
     return m_pNALSplitter->GetNalUnits(src);
 }
 
+// Returns internal NAL unit splitter
 NALUnitSplitter_H265 * AU_Splitter_H265::GetNalUnitSplitter()
 {
     return m_pNALSplitter.get();
