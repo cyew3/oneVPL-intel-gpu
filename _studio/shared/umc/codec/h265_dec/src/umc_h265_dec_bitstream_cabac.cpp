@@ -18,6 +18,7 @@
 namespace UMC_HEVC_DECODER
 {
 
+// Table for CABAC contexts initialization
 const Ipp8u cabacInitTable[3][NUM_CTX] = 
 {
     { 107, 139, 126, 197, 185, 201, 154, 137, 154, 139, 154, 154, 154, 134, 183, 152, 139,  95,  79,  63,  31,  31, 169, 198, 153,
@@ -46,6 +47,7 @@ const Ipp8u cabacInitTable[3][NUM_CTX] =
       152, 154, 154, 153, 200, 153, 138, 138, 139, 139, 154 }
 };
 
+// Initialize one CABAC context
 void InitializeContext(Ipp8u *pContext, Ipp8u initVal, Ipp32s SliceQPy)
 {
     Ipp32s slope      = (initVal >> 4) * 5 - 45;
@@ -55,6 +57,7 @@ void InitializeContext(Ipp8u *pContext, Ipp8u initVal, Ipp32s SliceQPy)
     *pContext = Ipp8u(((mpState? (initState - 64) : (63 - initState)) << 1) + mpState);
 }
 
+// Initialize all CABAC contexts. HEVC spec 9.3.2.2
 void H265Bitstream::InitializeContextVariablesHEVC_CABAC(Ipp32s initializationType, Ipp32s SliceQPy)
 {
     Ipp32u l = 0;
@@ -67,11 +70,9 @@ void H265Bitstream::InitializeContextVariablesHEVC_CABAC(Ipp32s initializationTy
     }
 } //InitializeContextVariablesHEVC_CABAC
 
-
+// Initialize CABAC decoding engine. HEVC spec 9.3.2.2
 void H265Bitstream::InitializeDecodingEngine_CABAC()
 {
-    // See subclause 9.3.1.2 of H.264 standard
-
     AlignPointerRight();
 
     m_lcodIRange = 0x01fe;
@@ -97,6 +98,7 @@ void H265Bitstream::InitializeDecodingEngine_CABAC()
 
 } // void H265Bitstream::InitializeDecodingEngine_CABAC(void)
 
+// Terminate CABAC decoding engine, rollback preread bits
 void H265Bitstream::TerminateDecode_CABAC(void)
 {
 #if (CABAC_MAGIC_BITS > 0)
@@ -112,6 +114,7 @@ void H265Bitstream::TerminateDecode_CABAC(void)
 
 } // void H265Bitstream::TerminateDecode_CABAC(void)
 
+// Reset CABAC state
 void H265Bitstream::ResetBac_CABAC()
 {
     m_lcodIRange = 510;

@@ -303,7 +303,7 @@ Ipp32u H265Bitstream::DecodeSingleBin_CABAC(Ipp32u ctxIdx)
     }
     else
     {
-        Ipp32s numBits = RenormTable[codIRangeLPS >> 3];
+        Ipp32s numBits = c_RenormTable[codIRangeLPS >> 3];
         m_lcodIOffset = (m_lcodIOffset - scaledRange) << numBits;
         m_lcodIRange = codIRangeLPS << (CABAC_MAGIC_BITS + numBits);
 

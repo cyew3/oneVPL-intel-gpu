@@ -74,7 +74,7 @@ public:
     // Check that position in bitstream didn't move outside the limit
     void CheckBSLeft();
 
-    // Check amount of data
+    // Check whether more data is present
     bool More_RBSP_Data();
 
     // Returns number of decoded bytes since last reset
@@ -118,23 +118,28 @@ public:
     H265HeadersBitstream();
     H265HeadersBitstream(Ipp8u * const pb, const Ipp32u maxsize);
 
+    // Parse remaining of slice header after GetSliceHeaderPart1
     void decodeSlice(H265Slice *, const H265SeqParamSet *, const H265PicParamSet *);
+    // Parse slice header part which contains PPS ID
     UMC::Status GetSliceHeaderPart1(H265SliceHeader * sliceHdr);
+    // Parse full slice header
     UMC::Status GetSliceHeaderFull(H265Slice *, const H265SeqParamSet *, const H265PicParamSet *);
 
+    // Parse scaling list information in SPS or PPS
     void parseScalingList(H265ScalingList *);
+    // Reserved for future header extensions
     bool MoreRbspData();
 
+    // Part VPS header
     UMC::Status GetVideoParamSet(H265VideoParamSet *vps);
 
-    // Decode sequence parameter set
+    // Parse SPS header
     UMC::Status GetSequenceParamSet(H265SeqParamSet *sps);
-
-    //H265
 
     UMC::Status GetSliceHeaderFull(H265SliceHeader *pSliceHeader,
                                H265PicParamSet *pps,
                                const H265SeqParamSet *sps);
+    // Parse PPS header
     UMC::Status GetPictureParamSetFull(H265PicParamSet  *pps);
     UMC::Status GetWPPTileInfo(H265SliceHeader *hdr,
                             const H265PicParamSet *pps,
@@ -143,14 +148,20 @@ public:
 
 protected:
 
+    // Parse video usability information block in SPS
     void parseVUI(H265SeqParamSet *sps);
 
+    // Parse weighted prediction table in slice header
     void xParsePredWeightTable(H265SliceHeader * sliceHdr);
+    // Parse scaling list data block
     void xDecodeScalingList(H265ScalingList *scalingList, unsigned sizeId, unsigned listId);
+    // Parse HRD information in VPS or in VUI block of SPS
     void parseHrdParameters(H265HRD *hrd, Ipp8u commonInfPresentFlag, Ipp32u vps_max_sub_layers);
 
-    void  parsePTL            ( H265ProfileTierLevel *rpcPTL, int maxNumSubLayersMinus1);
-    void  parseProfileTier    (H265PTL *ptl);
+    // Parse profile tier layers header part in VPS or SPS
+    void  parsePTL(H265ProfileTierLevel *rpcPTL, int maxNumSubLayersMinus1);
+    // Parse one profile tier layer
+    void  parseProfileTier(H265PTL *ptl);
 };
 
 // General HEVC bitstream parsing class
@@ -172,15 +183,20 @@ public:
     H265Bitstream(Ipp8u * const pb, const Ipp32u maxsize);
     virtual ~H265Bitstream(void);
 
-    // Get type of current NAL
+    // Read and return NAL unit type and NAL storage idc.
+    // Bitstream position is expected to be at the start of a NAL unit.
     UMC::Status GetNALUnitType(NalUnitType &nal_unit_type, Ipp32u &nuh_temporal_id);
+    // Read optional access unit delimiter from bitstream.
     UMC::Status GetAccessUnitDelimiter(Ipp32u &PicCodType);
 
     // Parse SEI message
     Ipp32s ParseSEI(const HeaderSet<H265SeqParamSet> & sps, Ipp32s current_sps, H265SEIPayLoad *spl);
 
+    // Return bitstream array base address and size
     void GetOrg(Ipp32u **pbs, Ipp32u *size);
+    // Return current bitstream address and bit offset
     void GetState(Ipp32u **pbs, Ipp32u *bitOffset);
+    // Set current bitstream address and bit offset
     void SetState(Ipp32u *pbs, Ipp32u bitOffset);
 
     // Set current decoding position
@@ -201,12 +217,12 @@ public:
     // CABAC decoding function(s)
     //
 
-    // Initialize CABAC decoding engine
+    // Initialize CABAC decoding engine. HEVC spec 9.3.2.2
     void InitializeDecodingEngine_CABAC(void);
     // Terminate CABAC decoding engine, rollback prereaded bits
     void TerminateDecode_CABAC(void);
 
-    // Initialize CABAC contexts
+    // Initialize all CABAC contexts. HEVC spec 9.3.2.2
     void InitializeContextVariablesHEVC_CABAC(Ipp32s initializationType,
                                               Ipp32s SliceQPy);
 
@@ -221,23 +237,21 @@ public:
 #endif
 
     // Decode single bin using bypass decoding
-    //inline
-    //Ipp32u DecodeBypass_CABAC();
-
     inline
     Ipp32u DecodeSingleBinEP_CABAC();
 
+    // Decode N bits encoded with CABAC bypass
     inline
     Ipp32u DecodeBypassBins_CABAC(Ipp32s numBins);
 
-
-    inline //from h265
+    // Decode terminating flag for slice end or row end in WPP case
+    inline
     Ipp32u DecodeTerminatingBit_CABAC(void);
 
-    //from h265 reset
+    // Reset CABAC state
     void ResetBac_CABAC();
 
-    //h265:
+    // Parse RPS part in SPS or slice header
     void parseShortTermRefPicSet(const H265SeqParamSet* sps, ReferencePictureSet* pRPS, Ipp32u idx);
 
     Ipp8u  context_hevc[NUM_CTX];
@@ -256,9 +270,6 @@ protected:
     Ipp32s m_bitsNeeded;
 #endif
     Ipp32u m_LastByte;
-    //hevc CABAC from HM50
-    static const
-    Ipp8u RenormTable[32];
 
     // Decoding SEI message functions
     Ipp32s sei_message(const HeaderSet<H265SeqParamSet> & sps,Ipp32s current_sps,H265SEIPayLoad *spl);

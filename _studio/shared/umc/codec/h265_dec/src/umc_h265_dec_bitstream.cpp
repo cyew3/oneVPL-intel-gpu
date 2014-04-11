@@ -69,6 +69,7 @@ void H265BaseBitstream::CheckBSLeft()
         throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
 }
 
+// Check whether more data is present
 bool H265BaseBitstream::More_RBSP_Data()
 {
     Ipp32s code, tmp;
@@ -131,6 +132,7 @@ H265HeadersBitstream::H265HeadersBitstream(Ipp8u * const pb, const Ipp32u maxsiz
 {
 }
 
+// Parse HRD information in VPS or in VUI block of SPS
 void H265HeadersBitstream::parseHrdParameters(H265HRD *hrd, Ipp8u cprms_present_flag, Ipp32u vps_max_sub_layers)
 {
     hrd->initial_cpb_removal_delay_length = 23 + 1;
@@ -224,6 +226,7 @@ void H265HeadersBitstream::parseHrdParameters(H265HRD *hrd, Ipp8u cprms_present_
     }
 }
 
+// Part VPS header
 UMC::Status H265HeadersBitstream::GetVideoParamSet(H265VideoParamSet *pcVPS)
 {
     UMC::Status ps = UMC::UMC_OK;
@@ -354,6 +357,7 @@ UMC::Status H265HeadersBitstream::GetVideoParamSet(H265VideoParamSet *pcVPS)
     return ps;
 }
 
+// Parse scaling list data block
 void H265HeadersBitstream::xDecodeScalingList(H265ScalingList *scalingList, unsigned sizeId, unsigned listId)
 {
     int i,coefNum = IPP_MIN(MAX_MATRIX_COEF_NUM,(int)g_scalingListSize[sizeId]);
@@ -383,6 +387,7 @@ void H265HeadersBitstream::xDecodeScalingList(H265ScalingList *scalingList, unsi
     }
 }
 
+// Parse scaling list information in SPS or PPS
 void H265HeadersBitstream::parseScalingList(H265ScalingList *scalingList)
 {
     //for each size
@@ -413,6 +418,7 @@ void H265HeadersBitstream::parseScalingList(H265ScalingList *scalingList)
     }
 }
 
+// Parse profile tier layers header part in VPS or SPS
 void H265HeadersBitstream::parsePTL(H265ProfileTierLevel *rpcPTL, int maxNumSubLayersMinus1 )
 {
     parseProfileTier(rpcPTL->GetGeneralPTL());
@@ -451,6 +457,7 @@ void H265HeadersBitstream::parsePTL(H265ProfileTierLevel *rpcPTL, int maxNumSubL
     }
 }
 
+// Parse one profile tier layer
 void H265HeadersBitstream::parseProfileTier(H265PTL *ptl)
 {
     ptl->profile_space = GetBits(2);
@@ -484,10 +491,7 @@ void H265HeadersBitstream::parseProfileTier(H265PTL *ptl)
         throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
 }
 
-// ---------------------------------------------------------------------------
-//  H265Bitstream::GetSequenceParamSet()
-//    Read sequence parameter set data from bitstream.
-// ---------------------------------------------------------------------------
+// Parse SPS header
 UMC::Status H265HeadersBitstream::GetSequenceParamSet(H265SeqParamSet *pcSPS)
 {
     pcSPS->sps_video_parameter_set_id = GetBits(4);
@@ -721,6 +725,7 @@ UMC::Status H265HeadersBitstream::GetSequenceParamSet(H265SeqParamSet *pcSPS)
     return UMC::UMC_OK;
 }    // GetSequenceParamSet
 
+// Parse video usability information block in SPS
 void H265HeadersBitstream::parseVUI(H265SeqParamSet *pSPS)
 {
     pSPS->aspect_ratio_info_present_flag = Get1Bit();
@@ -826,11 +831,13 @@ void H265HeadersBitstream::parseVUI(H265SeqParamSet *pSPS)
     }
 }
 
+// Reserved for future header extensions
 bool H265HeadersBitstream::MoreRbspData()
 {
     return false;
 }
 
+// Parse PPS header
 UMC::Status H265HeadersBitstream::GetPictureParamSetFull(H265PicParamSet  *pcPPS)
 {
     pcPPS->pps_pic_parameter_set_id = GetVLCElementU();
@@ -988,6 +995,7 @@ UMC::Status H265HeadersBitstream::GetPictureParamSetFull(H265PicParamSet  *pcPPS
     return UMC::UMC_OK;
 }   // H265HeadersBitstream::GetPictureParamSetFull
 
+// Parse weighted prediction table in slice header
 void H265HeadersBitstream::xParsePredWeightTable(H265SliceHeader * sliceHdr)
 {
     Ipp8u chroma_format_idc = 1;
@@ -1099,7 +1107,7 @@ void H265HeadersBitstream::xParsePredWeightTable(H265SliceHeader * sliceHdr)
     }
 }
 
-
+// Parse slice header part which contains PPS ID
 UMC::Status H265HeadersBitstream::GetSliceHeaderPart1(H265SliceHeader * sliceHdr)
 {
     sliceHdr->IdrPicFlag = (sliceHdr->nal_unit_type == NAL_UT_CODED_SLICE_IDR_W_RADL || sliceHdr->nal_unit_type == NAL_UT_CODED_SLICE_IDR_N_LP) ? 1 : 0;
@@ -1123,6 +1131,7 @@ UMC::Status H265HeadersBitstream::GetSliceHeaderPart1(H265SliceHeader * sliceHdr
     return UMC::UMC_OK;
 }
 
+// Parse remaining of slice header after GetSliceHeaderPart1
 void H265HeadersBitstream::decodeSlice(H265Slice *pSlice, const H265SeqParamSet *sps, const H265PicParamSet *pps)
 {
     if (!pps || !sps)
@@ -1638,6 +1647,7 @@ void H265HeadersBitstream::decodeSlice(H265Slice *pSlice, const H265SeqParamSet 
     return;
 }
 
+// Parse full slice header
 UMC::Status H265HeadersBitstream::GetSliceHeaderFull(H265Slice *rpcSlice, const H265SeqParamSet *sps, const H265PicParamSet *pps)
 {
     UMC::Status sts = GetSliceHeaderPart1(rpcSlice->GetSliceHeader());
@@ -1648,24 +1658,14 @@ UMC::Status H265HeadersBitstream::GetSliceHeaderFull(H265Slice *rpcSlice, const 
     return UMC::UMC_OK;
 }
 
-static
-const Ipp32u GetBitsMask[25] =
-{
-    0x00000000, 0x00000001, 0x00000003, 0x00000007,
-    0x0000000f, 0x0000001f, 0x0000003f, 0x0000007f,
-    0x000000ff, 0x000001ff, 0x000003ff, 0x000007ff,
-    0x00000fff, 0x00001fff, 0x00003fff, 0x00007fff,
-    0x0000ffff, 0x0001ffff, 0x0003ffff, 0x0007ffff,
-    0x000fffff, 0x001fffff, 0x003fffff, 0x007fffff,
-    0x00ffffff
-};
-
+// Return bitstream array base address and size
 void H265Bitstream::GetOrg(Ipp32u **pbs, Ipp32u *size)
 {
     *pbs       = m_pbsBase;
     *size      = m_maxBsSize;
 }
 
+// Return current bitstream address and bit offset
 void H265Bitstream::GetState(Ipp32u** pbs,Ipp32u* bitOffset)
 {
     *pbs       = m_pbs;
@@ -1673,7 +1673,8 @@ void H265Bitstream::GetState(Ipp32u** pbs,Ipp32u* bitOffset)
 
 } // H265Bitstream::GetState()
 
-void H265Bitstream::SetState(Ipp32u* pbs,Ipp32u bitOffset)
+// Set current bitstream address and bit offset
+void H265Bitstream::SetState(Ipp32u* pbs, Ipp32u bitOffset)
 {
     m_pbs = pbs;
     m_bitOffset = bitOffset;
@@ -1704,11 +1705,8 @@ H265Bitstream::~H265Bitstream()
 #endif
 } // H265Bitstream::~H265Bitstream()
 
-// ---------------------------------------------------------------------------
-//  H265Bitstream::GetNALUnitType()
-//    Bitstream position is expected to be at the start of a NAL unit.
-//    Read and return NAL unit type and NAL storage idc.
-// ---------------------------------------------------------------------------
+// Read and return NAL unit type and NAL storage idc.
+// Bitstream position is expected to be at the start of a NAL unit.
 UMC::Status H265Bitstream::GetNALUnitType(NalUnitType &nal_unit_type, Ipp32u &nuh_temporal_id)
 {
     Ipp32u forbidden_zero_bit = Get1Bit();
@@ -1747,22 +1745,21 @@ UMC::Status H265Bitstream::GetNALUnitType(NalUnitType &nal_unit_type, Ipp32u &nu
     return UMC::UMC_OK;
 }
 
-// ---------------------------------------------------------------------------
-//  H265Bitstream::GetAccessUnitDelimiter()
-//    Read optional access unit delimiter from bitstream.
-// ---------------------------------------------------------------------------
+// Read optional access unit delimiter from bitstream.
 UMC::Status H265Bitstream::GetAccessUnitDelimiter(Ipp32u &PicCodType)
 {
     PicCodType = GetBits(3);
     return UMC::UMC_OK;
 }    // GetAccessUnitDelimiter
 
+// Set current decoding position
 void H265Bitstream::SetDecodedBytes(size_t nBytes)
 {
     m_pbs = m_pbsBase + (nBytes / 4);
     m_bitOffset = 31 - ((Ipp32s) ((nBytes % sizeof(Ipp32u)) * 8));
 } // void H265Bitstream::SetDecodedBytes(size_t nBytes)
 
+// Parse RPS part in SPS or slice header
 void H265Bitstream::parseShortTermRefPicSet(const H265SeqParamSet* sps, ReferencePictureSet* rps, Ipp32u idx)
 {
     if (idx > 0)
@@ -1860,19 +1857,6 @@ void H265Bitstream::parseShortTermRefPicSet(const H265SeqParamSet* sps, Referenc
         rps->num_pics = rps->getNumberOfNegativePictures()+rps->getNumberOfPositivePictures();
     }
 }
-
-//hevc CABAC from HM50
-const Ipp8u H265Bitstream::RenormTable[32] =
-{
-  6,  5,  4,  4,
-  3,  3,  3,  3,
-  2,  2,  2,  2,
-  2,  2,  2,  2,
-  1,  1,  1,  1,
-  1,  1,  1,  1,
-  1,  1,  1,  1,
-  1,  1,  1,  1
-};
 
 } // namespace UMC_HEVC_DECODER
 #endif // UMC_ENABLE_H265_VIDEO_DECODER
