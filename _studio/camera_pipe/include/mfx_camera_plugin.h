@@ -20,6 +20,7 @@ File Name: mfx_camera_plugin.h
 #include "mfxvideo.h"
 #include "mfxplugin++.h"
 #include "mfx_session.h"
+#include "mfxcamera.h"
 
 #include "mfx_camera_plugin_utils.h"
 
@@ -51,25 +52,13 @@ public:
         return MFX_ERR_NONE;
     }
     //virtual mfxStatus Query(mfxVideoParam *in, mfxVideoParam *out)
-    virtual mfxStatus Query(mfxVideoParam *, mfxVideoParam *)
-    {
-        return MFX_ERR_NONE;
-        //return MFXVideoVPP_Query(m_session, in, out);
-    }
+    virtual mfxStatus Query(mfxVideoParam *, mfxVideoParam *);
     virtual mfxStatus QueryIOSurf(mfxVideoParam *par, mfxFrameAllocRequest *in, mfxFrameAllocRequest *out);
 
     virtual mfxStatus Init(mfxVideoParam *par);
-//    {
-//        return MFXVideoVPP_Init(m_session, par);
-//    }
-    virtual mfxStatus Reset(mfxVideoParam *par)
-    {
-        return MFXVideoVPP_Reset(m_session, par);
-    }
-    virtual mfxStatus Close()
-    {
-        return MFXVideoVPP_Close(m_session);
-    }
+    virtual mfxStatus Reset(mfxVideoParam *par);
+    virtual mfxStatus Close();
+
     virtual mfxStatus GetVideoParam(mfxVideoParam *par);
     //{
     //    return MFXVideoVPP_GetVideoParam(m_session, par);
@@ -120,6 +109,8 @@ protected:
         mfxMemId outBufUP;
         mfxMemId outBuf;
 
+        mfxMemId outSurf2D;
+
         void     *pMemIn;
         void     *pMemOut;
 
@@ -137,6 +128,7 @@ protected:
     bool                m_createdByDispatcher;
 
     mfxStatus           AllocateInternalSurfaces();
+    mfxStatus           ReallocateInternalSurfaces(mfxVideoParam &newParam, CameraFrameSizeExtra &frameSizeExtra);
     //mfxStatus           SetExternalSurfaces(mfxFrameSurface1 *surfIn, mfxFrameSurface1 *surfOut);
     mfxStatus           SetExternalSurfaces(AsyncParams *pParam);
 
@@ -146,7 +138,7 @@ protected:
     static mfxStatus    CameraRoutine(void *pState, void *pParam, mfxU32 threadNumber, mfxU32 callNumber);
     static mfxStatus    CompleteCameraRoutine(void *pState, void *pParam, mfxStatus taskRes);
 
-
+    mfxStatus           ProcessExtendedBuffers(mfxVideoParam *par);
 
     mfxStatus           SetTasks(); //mfxFrameSurface1 *surfIn, mfxFrameSurface1 *surfOut);
     //mfxStatus           EnqueueTasks();
@@ -160,18 +152,11 @@ protected:
     std::auto_ptr<CmContext>    m_cmCtx;
 
     mfxCameraCaps       m_Caps;
-    CameraPipeWhiteBalanceParams m_WBparams;
+    //CameraPipeWhiteBalanceParams m_WBparams;
     CameraPipeForwardGammaParams m_GammaParams;
-
-    bool                m_bInMemGPUShared;
-    bool                m_bInMemGPUCopy;
-    bool                m_bInMemCPUCopy;
-
-    mfxU32              m_FrameWidth64;
-    mfxU32              m_PaddedFrameWidth;
-    mfxU32              m_PaddedFrameHeight;
+    CameraPipePaddingParams      m_PaddingParams;
+    CameraFrameSizeExtra     m_FrameSizeExtra;
     mfxU32              m_InputBitDepth;
-    mfxU32              m_VSliceWidth;
 
     CmSurface2D         *m_cmSurfIn; // CmSurface2DUP or CmSurface2D
     CmSurface2DUP       *m_cmSurfUPIn; // CmSurface2DUP or CmSurface2D
@@ -193,16 +178,12 @@ protected:
 
 private:
 
-    //MfxFrameAllocResponse   m_internalVidSurf[2];
-    MfxFrameAllocResponse   m_raw16;
+    //MfxFrameAllocResponse   m_raw16;
     MfxFrameAllocResponse   m_raw16padded;
     MfxFrameAllocResponse   m_raw16aligned;
     MfxFrameAllocResponse   m_aux8;
 
     MfxFrameAllocResponse   m_rawIn;
-    
-
-
 };
 #endif //#if defined( AS_VPP_PLUGIN )
 

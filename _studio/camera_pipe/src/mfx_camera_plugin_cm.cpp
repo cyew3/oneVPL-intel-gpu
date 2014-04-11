@@ -29,9 +29,6 @@ namespace
 
 using MfxCameraPlugin::CmRuntimeError;
 
-const char   CESDK_PROGRAM_NAME[] = "CameraPipe_genx.txt";
-//const mfxU32 BATCHBUFFER_END   = 0x5000000;
-
 
 CmProgram * ReadProgram(CmDevice * device, const mfxU8 * buffer, size_t len)
 {
@@ -44,7 +41,6 @@ CmProgram * ReadProgram(CmDevice * device, const mfxU8 * buffer, size_t len)
 
     return program;
 }
-
 
 CmKernel * CreateKernel(CmDevice * device, CmProgram * program, char const * name, void * funcptr)
 {
@@ -458,15 +454,14 @@ CmContext::CmContext()
 {
 }
 
-
 CmContext::CmContext(
     mfxVideoParam const & video,
-    CmDevice *            cmDevice,
-    pipeline_config *pPipeFlags)
+    CmDevice *          cmDevice,
+    mfxCameraCaps *     pCaps)
 {
 #ifdef CAM_PIPE_VERTICAL_SLICE_ENABLE
 //    Zero(task_WhiteBalanceManual);
-    Zero(task_GoodPixelCheck);
+//    Zero(task_GoodPixelCheck);
     Zero(task_RestoreGreen);
     Zero(task_RestoreBlueRed);
     Zero(task_SAD);
@@ -474,9 +469,9 @@ CmContext::CmContext(
 //    Zero(task_CheckConfidence);
 //    Zero(task_BadPixelCheck);
 //    Zero(task_3x3CCM);
-    Zero(task_FwGamma);
+//    Zero(task_FwGamma);
 #endif
-    Setup(video, cmDevice, pPipeFlags);
+    Setup(video, cmDevice, pCaps);
 }
 
 #ifdef CAM_PIPE_VERTICAL_SLICE_ENABLE
@@ -484,7 +479,7 @@ CmContext::CmContext(
 void CmContext::CreateCameraKernels()
 {
     int i;
-    //if (m_pipeline_flags.wbFlag)
+    //if (m_caps.bWhiteBalance)
     //    kernel_whitebalance_manual = CreateKernel(m_device, m_program, CM_KERNEL_FUNCTION(BAYER_GAIN), NULL);
     //CreateKernel(m_device,m_program, CM_KERNEL_FUNCTION(Padding_16bpp) , (void*)kernel_padding16bpp); // no padding currently
 
@@ -503,7 +498,12 @@ void CmContext::CreateCameraKernels()
         CAM_PIPE_KERNEL_ARRAY(kernel_decide_average, i) = CreateKernel(m_device, m_program, CM_KERNEL_FUNCTION(GPU_DECIDE_AVG16x16_SKL), NULL);
     }
 
-    kernel_FwGamma = CreateKernel(m_device, m_program, CM_KERNEL_FUNCTION(GAMMA_GPUV5_ARGB8_LINEAR), NULL);
+    if (m_caps.bForwardGammaCorrection) {
+        if (m_caps.OutputMemoryOperationMode == MEM_FASTGPUCPY)
+            kernel_FwGamma = CreateKernel(m_device, m_program, CM_KERNEL_FUNCTION(GAMMA_GPUV4_ARGB8_2D), NULL);
+        else
+            kernel_FwGamma = CreateKernel(m_device, m_program, CM_KERNEL_FUNCTION(GAMMA_GPUV5_ARGB8_LINEAR), NULL);
+    }
 }
 #else
 
@@ -599,14 +599,13 @@ void CmContext::CreateTask(CmTask *&task)
 void CmContext::CreateCmTasks()
 {
 
-
     for (int i = 0; i < CAM_PIPE_NUM_TASK_BUFFERS; i++) {
 
 
         //if (m_pipeline_flags.wbFlag) {
         //    CreateTask(CAM_PIPE_TASK_ARRAY(task_WhiteBalanceManual, i));
         //}
-        CreateTask(CAM_PIPE_TASK_ARRAY(task_GoodPixelCheck, i));
+        //CreateTask(CAM_PIPE_TASK_ARRAY(task_GoodPixelCheck, i));
 
         for (int j = 0; j < CAM_PIPE_KERNEL_SPLIT; j++) {
             CreateTask(CAM_PIPE_KERNEL_ARRAY(CAM_PIPE_TASK_ARRAY(task_RestoreGreen, i), j));
@@ -625,11 +624,34 @@ void CmContext::CreateCmTasks()
 //        CreateTask(CAM_PIPE_TASK_ARRAY(task_3x3CCM, i));
         //}
 
-        CreateTask(CAM_PIPE_TASK_ARRAY(task_FwGamma, i));
+         //!!! currently not used 
+        //CreateTask(CAM_PIPE_TASK_ARRAY(task_FwGamma, i));
     }
+
 }
 
-
+//CmEvent *CmContext::EnqueueTasks()
+//{
+//    int result, sliceNum;
+//    CmEvent *e = CM_NO_EVENT;
+//
+//
+//    if ((result = m_queue->Enqueue(task_GoodPixelCheck, e, m_TS_16x16)) != CM_SUCCESS)
+//        throw CmRuntimeError();
+//
+//    for (sliceNum = 0; sliceNum < CAM_PIPE_KERNEL_SPLIT; sliceNum++) {
+//        if ((result = m_queue->Enqueue(CAM_PIPE_KERNEL_ARRAY(task_RestoreGreen, sliceNum), e, m_TS_Slice_8x8)) != CM_SUCCESS)
+//            throw CmRuntimeError();
+//        if ((result = m_queue->Enqueue(CAM_PIPE_KERNEL_ARRAY(task_RestoreBlueRed, sliceNum), e, m_TS_Slice_8x8)) != CM_SUCCESS)
+//            throw CmRuntimeError();
+//        if ((result = m_queue->Enqueue(CAM_PIPE_KERNEL_ARRAY(task_SAD, sliceNum), e, m_TS_Slice_8x8_np)) != CM_SUCCESS)
+//            throw CmRuntimeError();
+//        if ((result = m_queue->Enqueue(CAM_PIPE_KERNEL_ARRAY(task_DecideAvg, sliceNum), e, m_TS_Slice_16x16_np)) != CM_SUCCESS)
+//            throw CmRuntimeError();
+//    }
+//    return e;
+//}
+//
 
 //void CmContext::CreateTask_ManualWhiteBalance(CmSurface2D *pInSurf, CmSurface2D *pOutSurf, mfxF32 R, mfxF32 G1, mfxF32 B, mfxF32 G2, mfxU32 bitDepth, mfxU32 task_bufId)
 //void CmContext::CreateTask_ManualWhiteBalance(SurfaceIndex inSurfIndex, CmSurface2D *pOutSurf, mfxF32 R, mfxF32 G1, mfxF32 B, mfxF32 G2, mfxU32 bitDepth, mfxU32 task_bufId)
@@ -660,14 +682,17 @@ CmEvent *CmContext::CreateEnqueueTask_GoodPixelCheck(SurfaceIndex inSurfIndex, C
     if ((result = m_device->CreateTask(cmTask)) != CM_SUCCESS)
         throw CmRuntimeError();
 
+    //task_GoodPixelCheck->Reset();
+
     if ((result = cmTask->AddKernel(kernel_good_pixel_check)) != CM_SUCCESS)
+//    if ((result = task_GoodPixelCheck->AddKernel(kernel_good_pixel_check)) != CM_SUCCESS)
         throw CmRuntimeError();
 
     CmEvent *e = CM_NO_EVENT;
     if ((result = m_queue->Enqueue(cmTask, e, m_TS_16x16)) != CM_SUCCESS)
+    //if ((result = m_queue->Enqueue(task_GoodPixelCheck, e, m_TS_16x16)) != CM_SUCCESS)
         throw CmRuntimeError();
 
-    //m_device->DestroyThreadSpace(cmThreadSpace);
     m_device->DestroyTask(cmTask);
     
     return e;
@@ -679,7 +704,6 @@ void CmContext::CreateTask_RestoreGreen(SurfaceIndex inSurfIndex, CmSurface2D *g
 {
     int result;
     mfxU16  MaxIntensity = (1 << bitDepth) - 1;
-    //CmEvent *e = CM_NO_EVENT;
 
     for (int i = 0; i < CAM_PIPE_KERNEL_SPLIT; i++)
     {
@@ -701,11 +725,6 @@ void CmContext::CreateTask_RestoreGreen(SurfaceIndex inSurfIndex, CmSurface2D *g
 
         if ((result = CAM_PIPE_KERNEL_ARRAY(task_RestoreGreen, i)->AddKernel(CAM_PIPE_KERNEL_ARRAY(kernel_restore_green, i))) != CM_SUCCESS)
             throw CmRuntimeError();
-        
-        //if ((result = m_queue->Enqueue(cmTask, e, m_TS_Slice_8x8)) != CM_SUCCESS)
-        //    throw CmRuntimeError();
-
-        //m_device->DestroyTask(cmTask);
     }
 }
 
@@ -988,7 +1007,11 @@ CmEvent *CmContext::CreateEnqueueTask_ForwardGamma(CmSurface2D *correctSurf, CmS
     if ((result = m_device->CreateTask(cmTask)) != CM_SUCCESS)
         throw CmRuntimeError();
 
+    //task_FwGamma->Reset();
+
+
     if ((result = cmTask->AddKernel(kernel_FwGamma)) != CM_SUCCESS)
+    //if ((result = task_FwGamma->AddKernel(kernel_FwGamma)) != CM_SUCCESS)
         throw CmRuntimeError();
 
     CmEvent *e = NULL;
@@ -997,7 +1020,9 @@ CmEvent *CmContext::CreateEnqueueTask_ForwardGamma(CmSurface2D *correctSurf, CmS
         throw CmRuntimeError();
 
     if ((result = m_queue->EnqueueWithGroup(cmTask, e, pTGS)) !=  CM_SUCCESS)
+    //if ((result = m_queue->EnqueueWithGroup(task_FwGamma, e, pTGS)) !=  CM_SUCCESS)
         throw CmRuntimeError();
+
 
     m_device->DestroyThreadGroupSpace(pTGS);
     m_device->DestroyTask(cmTask);
@@ -1009,11 +1034,11 @@ CmEvent *CmContext::CreateEnqueueTask_ForwardGamma(CmSurface2D *correctSurf, CmS
 void CmContext::Setup(
     mfxVideoParam const & video,
     CmDevice *            cmDevice,
-    pipeline_config      *pPipeFlags)
+    mfxCameraCaps      *pCaps)
 {
     m_video  = video;
     m_device = cmDevice;
-    m_pipeline_flags = *pPipeFlags;
+    m_caps = *pCaps;
 
     if (m_device->CreateQueue(m_queue) != CM_SUCCESS)
         throw CmRuntimeError();
@@ -1025,6 +1050,45 @@ void CmContext::Setup(
     CreateCmTasks();
 #endif
 
+}
+
+void CmContext::Reset(
+    mfxVideoParam const & video,
+    mfxCameraCaps      *pCaps)
+{
+    m_video  = video;
+
+    // Demosaic is always on, so the DM kernels must be here already
+
+    //if (m_video.IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY)
+    //    kernel_FwGamma = CreateKernel(m_device, m_program, CM_KERNEL_FUNCTION(GAMMA_GPUV4_ARGB8_2D), NULL);
+    //else
+    //    kernel_FwGamma = CreateKernel(m_device, m_program, CM_KERNEL_FUNCTION(GAMMA_GPUV5_ARGB8_LINEAR), NULL);
+
+    if (pCaps->bForwardGammaCorrection) {
+        bool recreate = true;
+        if (m_caps.bForwardGammaCorrection) {
+            if (m_caps.OutputMemoryOperationMode != pCaps->OutputMemoryOperationMode)
+                m_device->DestroyKernel(kernel_FwGamma);
+            else
+                recreate = false;
+        }
+
+        if (recreate) {
+            if (pCaps->OutputMemoryOperationMode == MEM_FASTGPUCPY)
+                kernel_FwGamma = CreateKernel(m_device, m_program, CM_KERNEL_FUNCTION(GAMMA_GPUV4_ARGB8_2D), NULL);
+            else
+                kernel_FwGamma = CreateKernel(m_device, m_program, CM_KERNEL_FUNCTION(GAMMA_GPUV5_ARGB8_LINEAR), NULL);
+        }
+
+        //if (!m_caps.bForwardGammaCorrection) {
+        //    for (int i = 0; i < CAM_PIPE_NUM_TASK_BUFFERS; i++) {
+        //        CreateTask(CAM_PIPE_TASK_ARRAY(task_FwGamma, i));
+        //    }
+        //}
+    }
+
+    m_caps = *pCaps;
 }
 
 }

@@ -20,15 +20,17 @@ File Name: mfx_camera_plugin_utils.h
 #include "mfxplugin++.h"
 #include "mfx_camera_plugin_cm.h"
 
+//#define CAMP_PIPE_ITT
 
 #if !defined(_MFX_CAMERA_PLUGIN_UTILS_)
 #define _MFX_CAMERA_PLUGIN_UTILS_
 
 #if defined( AS_VPP_PLUGIN )
 
+#define CAMERA_CLIP(a, l, r) if (a < (l)) a = l; else if (a > (r)) a = r
+
 namespace MfxCameraPlugin
 {
-
 static const mfxU32 NO_INDEX      = 0xffffffff;
 static const mfxU8  NO_INDEX_U8   = 0xff;
 static const mfxU16  NO_INDEX_U16 = 0xffff;
@@ -56,6 +58,13 @@ static const mfxU16 MFX_MEMTYPE_D3D_EXT_IN =
 static const mfxU16 MFX_MEMTYPE_D3D_EXT_OUT =
     MFX_MEMTYPE_FROM_VPPOUT | MFX_MEMTYPE_DXVA2_PROCESSOR_TARGET | MFX_MEMTYPE_EXTERNAL_FRAME;
 
+enum {
+    MFX_CAM_QUERY_SET0 = 0,
+    MFX_CAM_QUERY_SET1,
+    MFX_CAM_QUERY_RETURN_STATUS,
+    MFX_CAM_QUERY_SIGNAL,
+    MFX_CAM_QUERY_CHECK_RANGE
+};
 
 // GPU memory access mode
 enum
@@ -65,6 +74,7 @@ enum
     MEM_CPUCPY
 };
 
+mfxStatus CheckExtBuffers(mfxVideoParam *param, mfxVideoParam *out, mfxU32 mode);
 
 class MfxFrameAllocResponse : public mfxFrameAllocResponse
 {
@@ -72,17 +82,6 @@ public:
     MfxFrameAllocResponse();
 
     ~MfxFrameAllocResponse();
-
-    mfxStatus Alloc(
-        VideoCORE *            core,
-        mfxFrameAllocRequest & req,
-        bool isCopyRequired = true);
-
-    mfxStatus Alloc(
-        VideoCORE *            core,
-        mfxFrameAllocRequest & req,
-        mfxFrameSurface1 **    opaqSurf,
-        mfxU32                 numOpaqSurf);
 
     mfxStatus AllocCmBuffers(
         CmDevice *             device,
@@ -105,10 +104,8 @@ public:
     mfxU32 Unlock(mfxU32 idx);
 
     mfxU32 Locked(mfxU32 idx) const;
-#if USE_AGOP //for debug
-    mfxI32 CountNonLocked(){ return std::count_if(m_locked.begin(), m_locked.end(), IsZero); }
-    mfxI32 CountLocked(){ return m_locked.size() - std::count_if(m_locked.begin(), m_locked.end(), IsZero); }
-#endif
+
+    void Free();
 
 private:
     MfxFrameAllocResponse(MfxFrameAllocResponse const &);
@@ -153,25 +150,34 @@ void ReleaseResource(
     mfxMemId                mid);
 
 
+typedef struct 
+{
+    mfxU32              frameWidth64;
+    mfxU32              paddedFrameWidth;
+    mfxU32              paddedFrameHeight;
+    mfxU32              vSliceWidth;
+} CameraFrameSizeExtra;
+
+
 typedef struct _mfxCameraCaps
 {
     mfxU32    Version;
     union {
-      struct {
-        mfxU32    bBlackLevelCorrection             : 1;
-        mfxU32    bVignetteCorrection               : 1;
-        mfxU32    bWhiteBalance                     : 1;
-        mfxU32    bHotPixel                         : 1;
-        mfxU32    bDemosaic                         : 1; // must be ON
-        mfxU32    bColorConversionMaxtrix           : 1;
-        mfxU32    bForwardGammaCorrection           : 1;
-        mfxU32    bColorConversion3D16              : 1;
-        mfxU32    bLensDistortionCorrection         : 1;
-        mfxU32    bOutToARGB8                       : 1;
-        mfxU32    bOutToARGB16                      : 1;
-        mfxU32    Reserved                          : 21;
-      };
-      mfxU32      ModuleConfiguration;
+        struct {
+            mfxU32    bBlackLevelCorrection             : 1;
+            mfxU32    bVignetteCorrection               : 1;
+            mfxU32    bWhiteBalance                     : 1;
+            mfxU32    bHotPixel                         : 1;
+            mfxU32    bDemosaic                         : 1; // must be ON
+            mfxU32    bColorConversionMatrix            : 1;
+            mfxU32    bForwardGammaCorrection           : 1;
+            mfxU32    bBayerDenoise                     : 1;
+            mfxU32    bOutToARGB8                       : 1;
+            mfxU32    bOutToARGB16                      : 1;
+            mfxU32    bNoPadding                        : 1; // must be ON now, zero meaning that padding needs to be done
+            mfxU32    Reserved                          : 21;
+        };
+        mfxU32      ModuleConfiguration;
     };
     mfxU32        FrameSurfWidth                    :16;
     mfxU32        FrameSurfHeight                   :16;
@@ -183,14 +189,13 @@ typedef struct _mfxCameraCaps
       };
       mfxU32       MemoryOperationMode;
     };
-    mfxU16    bNoPadding;                  // must be zero now.
     mfxU16    API_Mode;
 }   mfxCameraCaps;
 
 
 typedef struct _CameraPipeWhiteBalanceParams
 {
-    bool        bActive;
+    //bool        bActive;
     //mfxU32        Mode;
     mfxF32      RedCorrection;
     mfxF32      GreenTopCorrection;
@@ -200,30 +205,48 @@ typedef struct _CameraPipeWhiteBalanceParams
 
 
 // from CanonLog10ToRec709_10_LUT_Ver.1.1, picked up 64 points
-extern unsigned int gamma_point[64];
 
-extern unsigned int gamma_correct[64];
+#define MFX_CAM_DEFAULT_NUM_GAMMA_POINTS 64
+#define MFX_CAM_DEFAULT_GAMMA_DEPTH 10
+
+extern mfxU16 default_gamma_point[MFX_CAM_DEFAULT_NUM_GAMMA_POINTS];
+extern mfxU16 default_gamma_correct[MFX_CAM_DEFAULT_NUM_GAMMA_POINTS];
 
 //// Gamma parameters
-typedef struct {
-    mfxU16    Points[64];
-    mfxU16    Correct[64];
-} CP_FORWARD_GAMMA_HW_PARAMS;
-
-typedef struct {
-    mfxU16    Gamma_value;
-} CP_FORWARD_GAMMA_SW_PARAMS;
+typedef struct 
+{
+    mfxU16     numPoints;
+    mfxU16    *gammaPoints;
+    mfxU16    *gammaCorrect;
+} CameraGammaLut;
 
 typedef struct
 {
-    mfxU16    bActive;
-    union {
-        CP_FORWARD_GAMMA_HW_PARAMS  gamma_hw_params; // will not be exposed externally
-        CP_FORWARD_GAMMA_SW_PARAMS  gamma; // 2.2, 1.8 etc
-    };
+    //mfxU16          bActive;
+    mfxU16          gamma_depth;
+    CameraGammaLut  gamma_lut; // will not be exposed externally (???)
+    mfxF64          gamma_value; // 2.2, 1.8 etc
 } CameraPipeForwardGammaParams;
 
+// move to mfxcamera.h ???
+#define MFX_CAM_MIN_REQUIRED_PADDING_TOP    8
+#define MFX_CAM_MIN_REQUIRED_PADDING_BOTTOM 8
+#define MFX_CAM_MIN_REQUIRED_PADDING_LEFT   8
+#define MFX_CAM_MIN_REQUIRED_PADDING_RIGHT  8
 
+#define MFX_CAM_DEFAULT_PADDING_TOP    MFX_CAM_MIN_REQUIRED_PADDING_TOP
+#define MFX_CAM_DEFAULT_PADDING_BOTTOM MFX_CAM_MIN_REQUIRED_PADDING_BOTTOM
+#define MFX_CAM_DEFAULT_PADDING_LEFT   MFX_CAM_MIN_REQUIRED_PADDING_LEFT
+#define MFX_CAM_DEFAULT_PADDING_RIGHT  MFX_CAM_MIN_REQUIRED_PADDING_RIGHT
+
+typedef struct 
+{
+    //mfxU16 mode;
+    mfxU16 top;
+    mfxU16 bottom;
+    mfxU16 left;
+    mfxU16 right;
+} CameraPipePaddingParams;
 /*
 class MfxFrameAllocResponse : public mfxFrameAllocResponse
 {

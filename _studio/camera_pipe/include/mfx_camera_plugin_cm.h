@@ -15,6 +15,8 @@
 #include <assert.h>
 
 #include "cmrt_cross_platform.h"
+#include "mfx_camera_plugin_utils.h"
+
 
 class CmDevice;
 class CmBuffer;
@@ -213,13 +215,6 @@ void SetKernelArg(CmKernel * kernel, T0 const & arg0, T1 const & arg1, T2 const 
     SetKernelArgLast(kernel, arg9, 9);
 }
 
-
-typedef struct {
-    mfxU8 wbFlag;
-    mfxU8 gammaFlag;
-} pipeline_config;
-
-
 #define CAM_PIPE_VERTICAL_SLICE_ENABLE
 
 #define CAM_PIPE_KERNEL_SPLIT 4
@@ -243,13 +238,13 @@ public:
 
     CmContext(
         mfxVideoParam const & video,
-        CmDevice *            cmDevice,
-        pipeline_config       *pPipeFlags);
+        CmDevice            *cmDevice,
+        mfxCameraCaps       *pCaps);
 
     void Setup(
         mfxVideoParam const & video,
-        CmDevice *            cmDevice,
-        pipeline_config       *pPipeFlags);
+        CmDevice            *cmDevice,
+        mfxCameraCaps       *pCaps);
 
     //CmEvent* EnqueueKernel(
     //    CmKernel *            kernel,
@@ -257,6 +252,9 @@ public:
     //    unsigned int          tsHeight,
     //    CM_DEPENDENCY_PATTERN tsPattern);
 
+    void Reset(
+        mfxVideoParam const & video,
+        mfxCameraCaps       *pCaps);
 
     int DestroyEvent( CmEvent*& e ){
         if(m_queue) {
@@ -307,6 +305,7 @@ public:
     CmEvent *CreateEnqueueTask_DecideAverage(CmSurface2D *redAvgSurf, CmSurface2D *greenAvgSurf, CmSurface2D *blueAvgSurf, CmSurface2D *avgFlagSurf, CmSurface2D *redOutSurf, CmSurface2D *greenOutSurf, CmSurface2D *blueOutSurf);
     CmEvent *CreateEnqueueTask_ForwardGamma(CmSurface2D *correcSurf, CmSurface2D *pointSurf,  CmSurface2D *redSurf, CmSurface2D *greenSurf, CmSurface2D *blueSurf, SurfaceIndex outSurfIndex, mfxU32 bitDepth);
 
+//    CmEvent *EnqueueTasks();
 
     CmEvent *EnqueueSliceTasks(mfxU32 sliceNum)
     {
@@ -333,6 +332,7 @@ private:
     void CreateTask(CmTask *&task);
 
     mfxVideoParam m_video;
+    mfxCameraCaps m_caps;
 
     CmDevice *  m_device;
     CmQueue *   m_queue;
@@ -357,10 +357,6 @@ private:
     mfxU32 m_widthIn16;
     mfxU32 m_heightIn16;
 #endif
-
-
-    pipeline_config m_pipeline_flags;
-
 
     //mfxU32 m_SrcFrameWidth;
     //mfxU32 m_SrcFrameHeight;
@@ -414,7 +410,7 @@ private:
 
 #ifdef CAM_PIPE_VERTICAL_SLICE_ENABLE
     // Demosaic - good pix check
-    CmTask*         CAM_PIPE_TASK_ARRAY(task_GoodPixelCheck, CAM_PIPE_NUM_TASK_BUFFERS);
+    //CmTask*         CAM_PIPE_TASK_ARRAY(task_GoodPixelCheck, CAM_PIPE_NUM_TASK_BUFFERS);
 
 
     // Demosaic - restore green
@@ -440,7 +436,7 @@ private:
 //    CmBuffer*       CCM_Matrix;
 
     // Forward Gamma Correction
-    CmTask*         CAM_PIPE_TASK_ARRAY(task_FwGamma, CAM_PIPE_NUM_TASK_BUFFERS);
+    //CmTask*         CAM_PIPE_TASK_ARRAY(task_FwGamma, CAM_PIPE_NUM_TASK_BUFFERS);
 #endif
 };
 
