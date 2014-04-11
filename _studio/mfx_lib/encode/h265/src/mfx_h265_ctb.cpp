@@ -1333,6 +1333,14 @@ void H265CU::ModeDecision(Ipp32u absPartIdx, Ipp32u offset, Ipp8u depth, CostTyp
                             data_b[i].intraChromaDir = m_data[i].intraChromaDir = allowedChromaDir[chromaDir];
                         chromaDirLast = allowedChromaDir[chromaDir];
                         EncAndRecChroma(absPartIdx, offset >> 2, m_data[absPartIdx].depth, NULL, &costTemp);
+
+                        //kolya
+                        //HM_MATCH
+                        //add bits spent on chromaDir - commented out, gives loss
+                        //m_bsf->Reset();
+                        //xEncIntraHeaderChroma(m_bsf);
+                        //costTemp += BIT_COST(m_bsf->GetNumBits());
+
                         if (costChromaBest >= costTemp) {
                             costChromaBest = costTemp;
                             chromaDirBest = allowedChromaDir[chromaDir];
@@ -2892,7 +2900,7 @@ void H265CU::MeSubPel(const H265MEInfo *meInfo, const MVPInfo *predInfo, Ipp32s 
     {
         case 1:               // int pel only
             return; 
-        case 2:               // more points with square patterns
+        case 2:               // more points with square patterns, no quarter-pel
             endPos = 9;
             pattern_index = 1;
             break;
@@ -4208,7 +4216,7 @@ void H265CU::EncAndRecChromaTu(Ipp32u absPartIdx, Ipp32s offset, Ipp32s width, I
         *cost += TuSseNv12(pSrc + 1, m_pitchSrc, pRec + 1, m_pitchRec, width);
     }
 
-    //kolya //WEIGHTED_CHROMA_DISTORTION
+    //kolya //WEIGHTED_CHROMA_DISTORTION (JCTVC-F386)
     if (0 && cost)
         (*cost) *= (this->m_ChromaDistWeight);
 

@@ -206,6 +206,7 @@ public:
     Ipp64f m_rdLambdaInterMv;
     //kolya
     //to match HM's HAD search for Intra modes
+    template <class H265Bs> void xEncIntraHeaderChroma(H265Bs* bs);
     Ipp64f m_rdLambdaSqrt;
     Ipp64f m_ChromaDistWeight;
 

@@ -600,6 +600,18 @@ void h265_code_last_significant_xy(H265Bs *bs, Ipp32u pos_x, Ipp32u pos_y,
     }
 }
 int tcu = 0;
+
+// HM_MATCH
+//kolya
+//intra header for chroma
+template <class H265Bs>
+void H265CU::xEncIntraHeaderChroma(H265Bs* bs)
+{
+   h265_code_intradir_chroma(bs, this, 0);
+}
+template void H265CU::xEncIntraHeaderChroma<H265BsFake> (H265BsFake* bs);
+template void H265CU::xEncIntraHeaderChroma<H265BsReal> (H265BsReal* bs);
+
 template <class H265Bs>
 void H265CU::CodeCoeffNxN(H265Bs *bs, H265CU* pCU, CoeffsType* coeffs, Ipp32u abs_part_idx,
                   Ipp32u width, Ipp32u height, EnumTextType type )
