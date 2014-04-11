@@ -624,7 +624,7 @@ Ipp32s H265RefMatchData::Add(Ipp32s poc)
     while ((refMatchBuf[i].poc >= 0) && (i < refMatchBufLen))
         i++;
     if (i == refMatchBufLen)
-        return -1;
+        throw CmRuntimeError();
     refMatchBuf[i].poc = poc;
     refMatchBuf[i].globi = i;
     return i;
