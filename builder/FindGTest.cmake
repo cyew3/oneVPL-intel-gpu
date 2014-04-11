@@ -40,7 +40,7 @@ if(NOT GTEST_INCLUDE MATCHES NOTFOUND)
 endif( )
 
 if(NOT DEFINED GTEST_FOUND)
-  message( FATAL_ERROR "Google tests libraries was not found (required)! Build and set libgtest.a libgtest_main.a to /usr/local/lib" )
+  message( WARNING "Google tests libraries was not found! Build and set libgtest.a libgtest_main.a to /usr/local/lib to enable behavior tests." )
 else ( )
   message( STATUS "Google tests libraries were found here /usr/local/lib" )
 endif( )
