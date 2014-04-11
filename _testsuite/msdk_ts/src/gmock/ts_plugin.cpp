@@ -21,6 +21,7 @@ void tsPlugin::Init(std::string env, std::string platform)
 
     Reg(MFX_PLUGINTYPE_VIDEO_ENCODE, MFX_CODEC_HEVC, MFX_PLUGINID_HEVCE_SW);
     Reg(MFX_PLUGINTYPE_VIDEO_DECODE, MFX_CODEC_HEVC, MFX_PLUGINID_HEVCD_SW);
+    Reg(MFX_PLUGINTYPE_VIDEO_VPP, MFX_MAKEFOURCC('P','T','I','R'), MFX_PLUGINID_ITELECINE_HW);
 
     if(isHW)
     {
@@ -28,6 +29,7 @@ void tsPlugin::Init(std::string env, std::string platform)
         Reg(MFX_PLUGINTYPE_VIDEO_DECODE, MFX_CODEC_VP8, MFX_PLUGINID_VP8D_HW);
     }
 
+    // Example: TS_PLUGINS=HEVC,1,15dd936825ad475ea34e35f3f54217a6
     while(env.size())
     {
         std::string::size_type pos = env.find_first_of(';');
