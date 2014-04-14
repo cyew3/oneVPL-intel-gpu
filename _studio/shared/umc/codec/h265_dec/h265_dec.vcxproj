@@ -52,8 +52,6 @@
     <ClCompile Include="src\umc_h265_dec_mfx.cpp" />
     <ClCompile Include="src\umc_h265_dec_sei.cpp" />
     <ClCompile Include="src\umc_h265_dec_slice_decoder_decode_pic.cpp" />
-    <ClCompile Include="src\umc_h265_dec_tables.cpp" />
-    <ClCompile Include="src\umc_h265_dec_tables_cabac.cpp" />
     <ClCompile Include="src\umc_h265_frame.cpp" />
     <ClCompile Include="src\umc_h265_frame_list.cpp" />
     <ClCompile Include="src\umc_h265_heap.cpp" />

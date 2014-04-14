@@ -17,6 +17,7 @@
 namespace UMC_HEVC_DECODER
 {
 
+// Initialize mfxVideoParam structure based on decoded bitstream header values
 UMC::Status FillVideoParam(const H265SeqParamSet * seq, mfxVideoParam *par, bool full)
 {
     par->mfx.CodecId = MFX_CODEC_HEVC;

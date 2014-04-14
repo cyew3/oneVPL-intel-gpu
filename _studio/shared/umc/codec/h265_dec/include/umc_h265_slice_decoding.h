@@ -150,7 +150,7 @@ public:
 
     Ipp32s GetMBCount() const { return m_iMaxMB - m_iFirstMB;}
 
-    // Update reference list
+    // Build reference lists from slice reference pic set. HEVC spec 8.3.2
     UMC::Status UpdateReferenceList(H265DBPList *dpb);
 
     bool IsError() const {return m_bError;}

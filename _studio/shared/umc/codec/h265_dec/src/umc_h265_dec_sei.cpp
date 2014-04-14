@@ -18,11 +18,13 @@
 namespace UMC_HEVC_DECODER
 {
 
+// Parse SEI message
 Ipp32s H265Bitstream::ParseSEI(const HeaderSet<H265SeqParamSet> & sps, Ipp32s current_sps, H265SEIPayLoad *spl)
 {
     return sei_message(sps,current_sps,spl);
 }
 
+// Parse SEI message
 Ipp32s H265Bitstream::sei_message(const HeaderSet<H265SeqParamSet> & sps, Ipp32s current_sps, H265SEIPayLoad *spl)
 {
     Ipp32u code;
@@ -89,6 +91,7 @@ Ipp32s H265Bitstream::sei_message(const HeaderSet<H265SeqParamSet> & sps, Ipp32s
     return ret;
 }
 
+// Parse SEI payload data
 Ipp32s H265Bitstream::sei_payload(const HeaderSet<H265SeqParamSet> & sps,Ipp32s current_sps,H265SEIPayLoad *spl)
 {
     Ipp32u payloadType =spl->payLoadType;
@@ -103,6 +106,7 @@ Ipp32s H265Bitstream::sei_payload(const HeaderSet<H265SeqParamSet> & sps,Ipp32s 
     return reserved_sei_message(sps,current_sps,spl);
 }
 
+// Parse pic timing SEI data
 Ipp32s H265Bitstream::pic_timing(const HeaderSet<H265SeqParamSet> & sps, Ipp32s current_sps, H265SEIPayLoad * spl)
 {
     const H265SeqParamSet *csps = sps.GetHeader(current_sps);
@@ -156,6 +160,7 @@ Ipp32s H265Bitstream::pic_timing(const HeaderSet<H265SeqParamSet> & sps, Ipp32s 
     return current_sps;
 }
 
+// Parse recovery point SEI data
 Ipp32s H265Bitstream::recovery_point(const HeaderSet<H265SeqParamSet> & , Ipp32s current_sps, H265SEIPayLoad *spl)
 {
     H265SEIPayLoad::SEIMessages::RecoveryPoint * recPoint = &(spl->SEI_messages.recovery_point);
@@ -168,6 +173,7 @@ Ipp32s H265Bitstream::recovery_point(const HeaderSet<H265SeqParamSet> & , Ipp32s
     return current_sps;
 }
 
+// Skip unrecognized SEI message payload
 Ipp32s H265Bitstream::reserved_sei_message(const HeaderSet<H265SeqParamSet> & , Ipp32s current_sps, H265SEIPayLoad *spl)
 {
     for(Ipp32u i = 0; i < spl->payLoadSize; i++)

@@ -21,6 +21,7 @@
 namespace UMC_HEVC_DECODER
 {
 
+// Build reference lists from slice reference pic set. HEVC spec 8.3.2
 UMC::Status H265Slice::UpdateReferenceList(H265DBPList *pDecoderFrameList)
 {
     UMC::Status ps = UMC::UMC_OK;
@@ -187,7 +188,7 @@ UMC::Status H265Slice::UpdateReferenceList(H265DBPList *pDecoderFrameList)
         Ipp32s currPOC = GetSliceHeader()->slice_pic_order_cnt_lsb;
 
         H265DecoderFrame *missedReference = 0;
-        
+
         for (Ipp32s i = 0; !missedReference && i < numPocTotalCurr; i++)
         {
             missedReference = refPicListTemp0[i];
@@ -232,7 +233,7 @@ UMC::Status H265Slice::UpdateReferenceList(H265DBPList *pDecoderFrameList)
     }
 
     return ps;
-} // Status H265Slice::UpdateRefPicList(H265DecoderFrameList *pDecoderFrameList)
+} // Status H265Slice::UpdateRefPicList(H265DBPList *pDecoderFrameList)
 
 } // namespace UMC_HEVC_DECODER
 
