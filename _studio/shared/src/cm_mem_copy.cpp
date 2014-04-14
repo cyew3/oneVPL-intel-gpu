@@ -8,7 +8,8 @@
 //
 */
 
-#if !defined(OSX)
+#include "mfx_common.h"
+#if defined (MFX_VA) && !defined(OSX)
 
 #include "cm_mem_copy.h"
 #include "cm_gpu_copy_code.h"
@@ -134,9 +135,9 @@ mfxStatus CmCopyWrapper::Initialize()
 
     for (block_y = 0; block_y < xxx; block_y += 32)
     {
-        for (x = 0; x < width; x += BLOCK_PIXEL_WIDTH) 
+        for (x = 0; x < width; x += BLOCK_PIXEL_WIDTH)
         {
-            for (y = block_y; y < block_y + 32; y += BLOCK_HEIGHT) 
+            for (y = block_y; y < block_y + 32; y += BLOCK_HEIGHT)
             {
                 if (y < height)
                 {
@@ -194,7 +195,7 @@ mfxStatus CmCopyWrapper::Release(void)
     }
 
     m_tableSysRelations.clear();
-    
+
     if (m_pCmKernel1)
     {
         m_pCmDevice->DestroyKernel(m_pCmKernel1);
@@ -239,7 +240,7 @@ mfxStatus CmCopyWrapper::Release(void)
 
     if (m_pCmDevice)
     {
-        DestroyCmDevice(m_pCmDevice); 
+        DestroyCmDevice(m_pCmDevice);
     }
 
     m_pCmDevice = NULL;
@@ -248,8 +249,8 @@ mfxStatus CmCopyWrapper::Release(void)
 
 } // mfxStatus CmCopyWrapper::Release(void)
 
-CmSurface2D * CmCopyWrapper::CreateCmSurface2D(void *pSrc, mfxU32 width, mfxU32 height, bool isSecondMode, 
-                                               std::map<void *, CmSurface2D *> & tableCmRelations, 
+CmSurface2D * CmCopyWrapper::CreateCmSurface2D(void *pSrc, mfxU32 width, mfxU32 height, bool isSecondMode,
+                                               std::map<void *, CmSurface2D *> & tableCmRelations,
                                                std::map<CmSurface2D *, SurfaceIndex *> & tableCmIndex)
 {
     cmStatus cmSts = 0;
@@ -266,7 +267,7 @@ CmSurface2D * CmCopyWrapper::CreateCmSurface2D(void *pSrc, mfxU32 width, mfxU32 
         if (true == isSecondMode)
         {
 #ifdef MFX_VA_WIN
-            HRESULT hRes = S_OK; 
+            HRESULT hRes = S_OK;
             D3DLOCKED_RECT sLockRect;
 
             hRes |= ((IDirect3DSurface9 *)pSrc)->LockRect(&sLockRect, NULL, D3DLOCK_NOSYSLOCK | D3DLOCK_READONLY);
@@ -284,7 +285,7 @@ CmSurface2D * CmCopyWrapper::CreateCmSurface2D(void *pSrc, mfxU32 width, mfxU32 
         else
         {
             cmSts = m_pCmDevice->CreateSurface2D((AbstractSurfaceHandle *) pSrc, pCmSurface2D);
-            CHECK_CM_STATUS_RET_NULL(cmSts, MFX_ERR_DEVICE_FAILED); 
+            CHECK_CM_STATUS_RET_NULL(cmSts, MFX_ERR_DEVICE_FAILED);
             tableCmRelations.insert(std::pair<void *, CmSurface2D *>(pSrc, pCmSurface2D));
         }
 
@@ -302,7 +303,7 @@ CmSurface2D * CmCopyWrapper::CreateCmSurface2D(void *pSrc, mfxU32 width, mfxU32 
 
 } // CmSurface2D * CmCopyWrapper::CreateCmSurface2D(void *pSrc, mfxU32 width, mfxU32 height, bool isSecondMode)
 
-CmBufferUP * CmCopyWrapper::CreateUpBuffer(mfxU8 *pDst, mfxU32 memSize, 
+CmBufferUP * CmCopyWrapper::CreateUpBuffer(mfxU8 *pDst, mfxU32 memSize,
                                            std::map<mfxU8 *, CmBufferUP *> & tableSysRelations,
                                            std::map<CmBufferUP *,  SurfaceIndex *> & tableSysIndex)
 {
@@ -312,7 +313,7 @@ CmBufferUP * CmCopyWrapper::CreateUpBuffer(mfxU8 *pDst, mfxU32 memSize,
     SurfaceIndex *pCmDstIndex;
 
     std::map<mfxU8 *, CmBufferUP *>::iterator it;
-    it = tableSysRelations.find(pDst); 
+    it = tableSysRelations.find(pDst);
 
     if (tableSysRelations.end() == it)
     {
@@ -362,7 +363,7 @@ mfxStatus CmCopyWrapper::CopyVideoToSystemMemory(mfxU8 *pDst, mfxU32 dstPitch, v
 {
     srcPitch;
     cmStatus cmSts = 0;
-    
+
     CmEvent* e = NULL;
     CM_STATUS sts;
 
@@ -450,7 +451,7 @@ mfxStatus CmCopyWrapper::CopyVideoToSystemMemory(mfxU8 *pDst, mfxU32 dstPitch, v
 #else
     cmSts = m_pCmQueue->Enqueue(m_pCmTask1, e, m_pThreadSpace);
 #endif
-    
+
     CHECK_CM_STATUS(cmSts, MFX_ERR_DEVICE_FAILED);
 
 #ifdef DEBUG_LEVEL_1
@@ -459,7 +460,7 @@ mfxStatus CmCopyWrapper::CopyVideoToSystemMemory(mfxU8 *pDst, mfxU32 dstPitch, v
 
     e->GetStatus(sts);
 
-    while (CM_STATUS_FINISHED != sts) 
+    while (CM_STATUS_FINISHED != sts)
     {
         ii++;
         e->GetStatus(sts);
@@ -475,8 +476,8 @@ mfxStatus CmCopyWrapper::CopyVideoToSystemMemory(mfxU8 *pDst, mfxU32 dstPitch, v
 /*
     mfxU64 executionTime = 0;
     cmSts = e->GetExecutionTime(executionTime);
-        
-    while (CM_SUCCESS != cmSts) 
+
+    while (CM_SUCCESS != cmSts)
     {
         cmSts = e->GetExecutionTime(executionTime);
     }
@@ -511,7 +512,7 @@ mfxStatus CmCopyWrapper::CopySystemToVideoMemory(void *pDst, mfxU32 dstPitch, mf
 {
     dstPitch;
     cmStatus cmSts = 0;
-    
+
     CmEvent* e = NULL;
     CM_STATUS sts;
 
@@ -597,7 +598,7 @@ mfxStatus CmCopyWrapper::CopySystemToVideoMemory(void *pDst, mfxU32 dstPitch, mf
 #else
     cmSts = m_pCmQueue->Enqueue(m_pCmTask2, e, m_pThreadSpace);
 #endif
-    
+
     CHECK_CM_STATUS(cmSts, MFX_ERR_DEVICE_FAILED);
 
 #ifdef DEBUG_LEVEL_2
@@ -606,10 +607,10 @@ mfxStatus CmCopyWrapper::CopySystemToVideoMemory(void *pDst, mfxU32 dstPitch, mf
 
     e->GetStatus(sts);
 
-    while (CM_STATUS_FINISHED != sts) 
+    while (CM_STATUS_FINISHED != sts)
     {
         e->GetStatus(sts);
-    } 
+    }
 
     //unsigned char* Dst_CM = (unsigned char*) _aligned_malloc(width * height * 3 / 2, 0x1000);
     //pCmSurface2D->ReadSurface(Dst_CM, NULL);
@@ -648,7 +649,7 @@ mfxStatus CmCopyWrapper::CopySystemToVideoMemory(void *pDst, mfxU32 dstPitch, mf
 mfxStatus CmCopyWrapper::CopySystemToVideoMemoryAPI(void *pDst, mfxU32 dstPitch, mfxU8 *pSrc, mfxU32 srcPitch, mfxU32 srcUVOffset, IppiSize roi)
 {
     cmStatus cmSts = 0;
-    
+
     CmEvent* e = NULL;
     CM_STATUS sts;
     mfxStatus status = MFX_ERR_NONE;
@@ -671,8 +672,8 @@ mfxStatus CmCopyWrapper::CopySystemToVideoMemoryAPI(void *pDst, mfxU32 dstPitch,
     if (CM_SUCCESS == cmSts && e)
     {
         e->GetStatus(sts);
-        
-        while (sts != CM_STATUS_FINISHED) 
+
+        while (sts != CM_STATUS_FINISHED)
         {
             e->GetStatus(sts);
         }
@@ -687,7 +688,7 @@ mfxStatus CmCopyWrapper::CopySystemToVideoMemoryAPI(void *pDst, mfxU32 dstPitch,
 mfxStatus CmCopyWrapper::CopyVideoToSystemMemoryAPI(mfxU8 *pDst, mfxU32 dstPitch, mfxU32 dstUVOffset, void *pSrc, mfxU32 srcPitch, IppiSize roi)
 {
     cmStatus cmSts = 0;
-    
+
     CmEvent* e = NULL;
     CM_STATUS sts;
     mfxStatus status = MFX_ERR_NONE;
@@ -713,8 +714,8 @@ mfxStatus CmCopyWrapper::CopyVideoToSystemMemoryAPI(mfxU8 *pDst, mfxU32 dstPitch
     if (CM_SUCCESS == cmSts && e)
     {
         e->GetStatus(sts);
-        
-        while (sts != CM_STATUS_FINISHED) 
+
+        while (sts != CM_STATUS_FINISHED)
         {
             e->GetStatus(sts);
         }
@@ -729,7 +730,7 @@ mfxStatus CmCopyWrapper::CopyVideoToSystemMemoryAPI(mfxU8 *pDst, mfxU32 dstPitch
 mfxStatus CmCopyWrapper::CopyVideoToVideoMemoryAPI(void *pDst, void *pSrc, IppiSize roi)
 {
     cmStatus cmSts = 0;
-    
+
     CmEvent* e = NULL;
     CM_STATUS sts;
     mfxStatus status = MFX_ERR_NONE;
@@ -751,8 +752,8 @@ mfxStatus CmCopyWrapper::CopyVideoToVideoMemoryAPI(void *pDst, void *pSrc, IppiS
     if (CM_SUCCESS == cmSts && e)
     {
         e->GetStatus(sts);
-        
-        while (sts != CM_STATUS_FINISHED) 
+
+        while (sts != CM_STATUS_FINISHED)
         {
             e->GetStatus(sts);
         }
@@ -764,4 +765,4 @@ mfxStatus CmCopyWrapper::CopyVideoToVideoMemoryAPI(void *pDst, void *pSrc, IppiS
     return status;
 }
 
-#endif // !defined(OSX)
+#endif // defined (MFX_VA) && !defined(OSX)

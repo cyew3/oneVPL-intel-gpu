@@ -15,7 +15,8 @@ MFX_LOCAL_DIRS = \
     $(addprefix enc/, $(MFX_LOCAL_ENCODERS)) \
     $(addprefix encode/, $(MFX_LOCAL_ENCODERS)) \
     $(addprefix pak/, $(MFX_LOCAL_ENCODERS)) \
-    scheduler
+    scheduler \
+    fei
 
 MFX_OPTIMIZATION_DIRS = \
     optimization/h265
@@ -62,7 +63,7 @@ UMC_DIRS = \
     brc color_space_converter jpeg_common
 
 UMC_DIRS_IMPL = \
-    h265_dec h264_dec mpeg2_dec vc1_dec jpeg_dec \
+    h265_dec h264_dec mpeg2_dec vc1_dec jpeg_dec vp8_dec\
     vc1_common vc1_spl jpeg_common \
     scene_analyzer color_space_converter
 

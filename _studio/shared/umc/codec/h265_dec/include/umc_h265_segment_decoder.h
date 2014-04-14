@@ -47,6 +47,8 @@ class ReconstructorBase
 {
 public:
 
+    virtual ~ReconstructorBase(void) { };
+
     virtual void PredictIntra(Ipp32s predMode, H265PlaneYCommon* PredPel, H265PlaneYCommon* pRec, Ipp32s pitch, Ipp32s width, Ipp32u bit_depth) = 0;
 
     virtual void GetPredPelsLuma(H265PlaneYCommon* pSrc, H265PlaneYCommon* PredPel, Ipp32s blkSize, Ipp32s srcPitch, Ipp32u tpIf, Ipp32u lfIf, Ipp32u tlIf, Ipp32u bit_depth) = 0;
@@ -154,7 +156,7 @@ public:
 
     void UpdateRecCurrCTBContext(Ipp32s lastCUAddr, Ipp32s newCUAddr);
     void ResetRecRowBuffer();
-    
+
     void SetNewQP(Ipp32s newQP);
     Ipp32s GetQP(void)
     {
@@ -169,7 +171,6 @@ public:
 
 protected:
 
-    
     Ipp32s          m_LastValidQP;
 };
 

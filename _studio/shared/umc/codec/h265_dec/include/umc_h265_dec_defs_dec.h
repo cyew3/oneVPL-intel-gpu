@@ -24,7 +24,7 @@
 
 namespace UMC_HEVC_DECODER
 {
-  
+
 #if defined(_WIN32) || defined(_WIN64)
   #define H265_FORCEINLINE __forceinline
   #define H265_NONLINE __declspec(noinline)
@@ -45,7 +45,7 @@ namespace UMC_HEVC_DECODER
 #else
 # define H265_RESTRICT
 #endif
-  
+
 #define BITS_PER_PLANE 8
 // Hack to allow somewhat unconformant streams. Should be used only when decoding random ENC streams
 #define RANDOM_ENC_TESTING 1
@@ -85,7 +85,7 @@ enum
     LAST_MINUS_FIRST_SIG_SCAN_THRESHOLD = 3,
 
     NUM_CONTEXT_QT_CBF                      = 5,      // number of context models for QT CBF
-    NUM_CONTEXT_SIG_COEFF_GROUP_FLAG        = 2,      // number of contexts for sig coeff group 
+    NUM_CONTEXT_SIG_COEFF_GROUP_FLAG        = 2,      // number of contexts for sig coeff group
     NUM_CONTEXT_SIG_FLAG_LUMA               = 27,     // number of contexts for luma sig flag
     NUM_CONTEX_LAST_COEF_FLAG_XY            = 15,     // number of contexts for last coefficient position
     NUM_CONTEXT_ONE_FLAG_LUMA               = 16,     // number of contexts for greater than 1 flag of luma
@@ -103,7 +103,7 @@ enum
     INTRA_LUMA_VER_IDX      = 26,                    // index for intra vertical   mode
     INTRA_LUMA_HOR_IDX      = 10,                    // index for intra hor mode
     INTRA_LUMA_DC_IDX       = 1,                     // index for intra dc mode
-    INTRA_DM_CHROMA_IDX     = 36,                    // index for chroma from luma mode 
+    INTRA_DM_CHROMA_IDX     = 36,                    // index for chroma from luma mode
 
     INTRA_NUM_CHROMA_MODE   = 5                      // total number of chroma modes
 };
@@ -131,7 +131,7 @@ enum
 #pragma warning(disable: 981)
 #elif defined ( _MSC_VER )
     // warning C4068: unknown pragma
-    // warning C4127: conditional check is constant 
+    // warning C4127: conditional check is constant
 #pragma warning (disable: 4127 4068)
 #endif
 
@@ -173,10 +173,10 @@ enum NalUnitType
   NAL_UT_CODED_SLICE_STSA_N     = 4,
   NAL_UT_CODED_SLICE_STSA_R     = 5,
 
-  NAL_UT_CODED_SLICE_RADL_N     = 6, 
+  NAL_UT_CODED_SLICE_RADL_N     = 6,
   NAL_UT_CODED_SLICE_RADL_R     = 7,
 
-  NAL_UT_CODED_SLICE_RASL_N     = 8, 
+  NAL_UT_CODED_SLICE_RASL_N     = 8,
   NAL_UT_CODED_SLICE_RASL_R     = 9,
 
   NAL_UT_CODED_SLICE_BLA_W_LP   = 16,
@@ -388,8 +388,9 @@ protected:
 // SAO interface class
 class H265SampleAdaptiveOffset
 {
-public: 
+public:
     H265SampleAdaptiveOffset();
+    virtual ~H265SampleAdaptiveOffset(void) { };
 
     // Initialize SAO context
     virtual void init(const H265SeqParamSet* sps);
@@ -796,7 +797,7 @@ struct ReferencePictureSet
     Ipp32s num_positive_pics;
 
     Ipp32s num_pics;
-    
+
     Ipp32s num_lt_pics;
 
     Ipp32s num_long_term_pics;
@@ -805,7 +806,7 @@ struct ReferencePictureSet
     Ipp32s m_DeltaPOC[MAX_NUM_REF_PICS];
     Ipp32s m_POC[MAX_NUM_REF_PICS];
     Ipp8u used_by_curr_pic_flag[MAX_NUM_REF_PICS];
-    
+
     Ipp8u delta_poc_msb_present_flag[MAX_NUM_REF_PICS];
     Ipp8u delta_poc_msb_cycle_lt[MAX_NUM_REF_PICS];
     Ipp32s poc_lbs_lt[MAX_NUM_REF_PICS];
@@ -959,7 +960,7 @@ struct H265SeqParamSetBase
 
     Ipp8u           vui_timing_info_present_flag;
     H265TimingInfo  m_timingInfo;
-    
+
     Ipp8u           vui_hrd_parameters_present_flag;
     H265HRD         m_hrdParameters;
 
@@ -991,8 +992,8 @@ struct H265SeqParamSetBase
 
     int m_QPBDOffsetY;
     int m_QPBDOffsetC;
-    
-   
+
+
     void Reset()
     {
         H265SeqParamSetBase sps = {0};
@@ -1294,11 +1295,11 @@ struct H265SliceHeader
 
     Ipp32u m_sliceSegmentCurStartCUAddr;
     Ipp32u m_sliceSegmentCurEndCUAddr;
-    
+
     Ipp32s SliceQP;
 
     Ipp32s SliceCurStartCUAddr;
-    
+
     bool m_CheckLDC;
     Ipp32s m_numRefIdx[3]; //  for multiple reference of current slice. IT SEEMS BE SAME AS num_ref_idx_l0_active, l1, lc
 

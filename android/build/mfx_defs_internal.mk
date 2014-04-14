@@ -72,7 +72,10 @@ else # x86-64
   endif
 endif
 
-MFX_CFLAGS_INTERNAL_HW := $(MFX_CFLAGS_INTERNAL) -DMFX_VA
+MFX_CFLAGS_INTERNAL_HW := \
+    $(MFX_CFLAGS_INTERNAL) \
+    -DMFX_VA \
+    -Wno-error=non-virtual-dtor
 
 MFX_CFLAGS_LUCAS := -DLUCAS_DLL
 
