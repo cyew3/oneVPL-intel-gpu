@@ -1144,6 +1144,7 @@ mfxStatus D3D9Encoder::Execute(
         {
             m_headerPacker.ResizeSlices((mfxU32)m_slice.size());
             m_compBufDesc.resize(10 + m_slice.size());
+            encodeExecuteParams.pCompressedBuffers = Begin(m_compBufDesc);
             m_pps.NumSlice = mfxU8(m_slice.size());
         }    
         
