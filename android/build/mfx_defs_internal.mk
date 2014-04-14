@@ -70,6 +70,7 @@ else # x86-64
   ifneq ($(filter $(MFX_IPP), e9),) # AVX; Sandy Bridge
       MFX_CFLAGS_INTERNAL += -include $(IPP_ROOT)/tools/staticlib/ipp_e9.h
   endif
+endif
 
 MFX_CFLAGS_INTERNAL_HW := $(MFX_CFLAGS_INTERNAL) -DMFX_VA
 
