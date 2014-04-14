@@ -422,8 +422,7 @@ public:
     Ipp32s PuCost(H265MEInfo *meInfo);
 
 #if defined (MFX_ENABLE_CM)
-    void MePuGacc_P(H265MEInfo *meInfo, Ipp32s lastPredIdx);
-    void MePuGacc_B(H265MEInfo *meInfo, Ipp32s lastPredIdx);
+    void MePuGacc(H265MEInfo *meInfo, Ipp32s lastPredIdx);
 
     bool CheckGpuIntraCost(Ipp32s leftPelX, Ipp32s topPelY, Ipp32s depth) const;
 #endif // MFX_ENABLE_CM
