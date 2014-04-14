@@ -37,6 +37,9 @@ extern Ipp32u pitchDist[PU_MAX];
 extern mfxI16Pair * mvCpu[2][2][CM_REF_BUF_LEN][PU_MAX];
 extern Ipp32u pitchMv[PU_MAX];
 
+extern mfxU32 ** pDistCpu[2][2][CM_REF_BUF_LEN];
+extern mfxI16Pair ** pMvCpu[2][2][CM_REF_BUF_LEN];
+
 extern Ipp32u intraPitch[2];
 
 extern Ipp32s cmCurIdx;
@@ -3307,8 +3310,12 @@ void H265CU::MePuGacc(H265MEInfo *meInfo, Ipp32s lastPredIdx)
     Ipp32s numLists = (m_cslice->slice_type == B_SLICE) + 1;
     for (Ipp32s list = 0; list < numLists; list++) {
         Ipp32s numRefIdx = m_cslice->num_ref_idx[list];
+        mfxI16Pair *** cmMvs = pMvCpu[cmCurIdx][list];
+        mfxU32 *** cmDists = pDistCpu[cmCurIdx][list];
+/*
         mfxI16Pair *(* cmMvs)[PU_MAX] = mvCpu[cmCurIdx][list];
         mfxU32 *(* cmDists)[PU_MAX] = distCpu[cmCurIdx][list];
+*/
         for (Ipp32s refIdx = 0; refIdx < numRefIdx; refIdx++) {
             costRefBest[list][refIdx] = INT_MAX;
             if (list == 1) { // TODO: use pre-build table of duplicates instead of std::find
@@ -3534,18 +3541,18 @@ bool H265CU::CheckGpuIntraCost(Ipp32s leftPelX, Ipp32s topPelY, Ipp32s depth) co
 
                     mfxU32 cmInterCost16x16 = IPP_MAX_32U;
                     for (Ipp8s refIdx = 0; refIdx < m_cslice->num_ref_idx[0]; refIdx++) {
-                        mfxU32 *dist16x16line = (mfxU32 *)((Ipp8u *)(distCpu[cmCurIdx][refList][refIdx][PU16x16]) + (j        ) * pitchDist[PU16x16]);
-                        mfxU32 *dist16x8line0 = (mfxU32 *)((Ipp8u *)(distCpu[cmCurIdx][refList][refIdx][PU16x8])  + (j * 2    ) * pitchDist[PU16x8]);
-                        mfxU32 *dist16x8line1 = (mfxU32 *)((Ipp8u *)(distCpu[cmCurIdx][refList][refIdx][PU16x8])  + (j * 2 + 1) * pitchDist[PU16x8]);
-                        mfxU32 *dist8x16line  = (mfxU32 *)((Ipp8u *)(distCpu[cmCurIdx][refList][refIdx][PU8x16])  + (j        ) * pitchDist[PU8x16]);
-                        mfxU32 *dist8x8line0  = (mfxU32 *)((Ipp8u *)(distCpu[cmCurIdx][refList][refIdx][PU8x8])   + (j * 2    ) * pitchDist[PU8x8]);
-                        mfxU32 *dist8x8line1  = (mfxU32 *)((Ipp8u *)(distCpu[cmCurIdx][refList][refIdx][PU8x8])   + (j * 2 + 1) * pitchDist[PU8x8]);
-                        mfxU32 *dist8x4line0  = (mfxU32 *)((Ipp8u *)(distCpu[cmCurIdx][refList][refIdx][PU8x4])   + (j * 4    ) * pitchDist[PU8x4]);
-                        mfxU32 *dist8x4line1  = (mfxU32 *)((Ipp8u *)(distCpu[cmCurIdx][refList][refIdx][PU8x4])   + (j * 4 + 1) * pitchDist[PU8x4]);
-                        mfxU32 *dist8x4line2  = (mfxU32 *)((Ipp8u *)(distCpu[cmCurIdx][refList][refIdx][PU8x4])   + (j * 4 + 2) * pitchDist[PU8x4]);
-                        mfxU32 *dist8x4line3  = (mfxU32 *)((Ipp8u *)(distCpu[cmCurIdx][refList][refIdx][PU8x4])   + (j * 4 + 3) * pitchDist[PU8x4]);
-                        mfxU32 *dist4x8line0  = (mfxU32 *)((Ipp8u *)(distCpu[cmCurIdx][refList][refIdx][PU4x8])   + (j * 2    ) * pitchDist[PU4x8]);
-                        mfxU32 *dist4x8line1  = (mfxU32 *)((Ipp8u *)(distCpu[cmCurIdx][refList][refIdx][PU4x8])   + (j * 2 + 1) * pitchDist[PU4x8]);
+                        mfxU32 *dist16x16line = (mfxU32 *)((Ipp8u *)(pDistCpu[cmCurIdx][refList][refIdx][PU16x16]) + (j        ) * pitchDist[PU16x16]);
+                        mfxU32 *dist16x8line0 = (mfxU32 *)((Ipp8u *)(pDistCpu[cmCurIdx][refList][refIdx][PU16x8])  + (j * 2    ) * pitchDist[PU16x8]);
+                        mfxU32 *dist16x8line1 = (mfxU32 *)((Ipp8u *)(pDistCpu[cmCurIdx][refList][refIdx][PU16x8])  + (j * 2 + 1) * pitchDist[PU16x8]);
+                        mfxU32 *dist8x16line  = (mfxU32 *)((Ipp8u *)(pDistCpu[cmCurIdx][refList][refIdx][PU8x16])  + (j        ) * pitchDist[PU8x16]);
+                        mfxU32 *dist8x8line0  = (mfxU32 *)((Ipp8u *)(pDistCpu[cmCurIdx][refList][refIdx][PU8x8])   + (j * 2    ) * pitchDist[PU8x8]);
+                        mfxU32 *dist8x8line1  = (mfxU32 *)((Ipp8u *)(pDistCpu[cmCurIdx][refList][refIdx][PU8x8])   + (j * 2 + 1) * pitchDist[PU8x8]);
+                        mfxU32 *dist8x4line0  = (mfxU32 *)((Ipp8u *)(pDistCpu[cmCurIdx][refList][refIdx][PU8x4])   + (j * 4    ) * pitchDist[PU8x4]);
+                        mfxU32 *dist8x4line1  = (mfxU32 *)((Ipp8u *)(pDistCpu[cmCurIdx][refList][refIdx][PU8x4])   + (j * 4 + 1) * pitchDist[PU8x4]);
+                        mfxU32 *dist8x4line2  = (mfxU32 *)((Ipp8u *)(pDistCpu[cmCurIdx][refList][refIdx][PU8x4])   + (j * 4 + 2) * pitchDist[PU8x4]);
+                        mfxU32 *dist8x4line3  = (mfxU32 *)((Ipp8u *)(pDistCpu[cmCurIdx][refList][refIdx][PU8x4])   + (j * 4 + 3) * pitchDist[PU8x4]);
+                        mfxU32 *dist4x8line0  = (mfxU32 *)((Ipp8u *)(pDistCpu[cmCurIdx][refList][refIdx][PU4x8])   + (j * 2    ) * pitchDist[PU4x8]);
+                        mfxU32 *dist4x8line1  = (mfxU32 *)((Ipp8u *)(pDistCpu[cmCurIdx][refList][refIdx][PU4x8])   + (j * 2 + 1) * pitchDist[PU4x8]);
                         Ipp32u dist16x16 = dist16x16line[i];
                         Ipp32u dist16x8 = dist16x8line0[i] + dist16x8line1[i];
                         Ipp32u dist8x16 = dist8x16line[i * 2] + dist8x16line[i * 2 + 1];

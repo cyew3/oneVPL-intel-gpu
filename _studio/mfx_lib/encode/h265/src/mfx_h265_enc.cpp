@@ -3329,7 +3329,6 @@ recode:
         for (Ipp32s idx1 = 0; idx1 < slice->num_ref_idx[1]; idx1++) {
             Ipp32s idx0 = (Ipp32s)(std::find(list0, list0 + slice->num_ref_idx[0], list1[idx1]) - list0);
             m_pCurrentFrame->m_mapRefIdxL1ToL0[idx1] = (idx0 < slice->num_ref_idx[0]) ? idx0 : -1;
-
         }
 
         m_pCurrentFrame->m_allRefFramesAreFromThePast = true;
@@ -3430,6 +3429,13 @@ recode:
             }
             small_memcpy(&m_ShortRefPicSet, &m_ShortRefPicSetDump, sizeof(m_ShortRefPicSet));
             m_pNextFrame->setEncOrderNum(m_pCurrentFrame->EncOrderNum() + 1);
+
+            H265Frame **list0 = m_pNextFrame->m_refPicList[0].m_refFrames;
+            H265Frame **list1 = m_pNextFrame->m_refPicList[1].m_refFrames;
+            for (Ipp32s idx1 = 0; idx1 < m_slicesNext->num_ref_idx[1]; idx1++) {
+                Ipp32s idx0 = (Ipp32s)(std::find(list0, list0 + m_slicesNext->num_ref_idx[0], list1[idx1]) - list0);
+                m_pNextFrame->m_mapRefIdxL1ToL0[idx1] = (idx0 < m_slicesNext->num_ref_idx[0]) ? idx0 : -1;
+            }
         }
 #if 0
         if (m_pNextFrame) {

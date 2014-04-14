@@ -427,6 +427,8 @@ CmSurface2DUP * distGpu[2][2][CM_REF_BUF_LEN][PU_MAX] = {};
 CmSurface2DUP * mvGpu[2][2][CM_REF_BUF_LEN][PU_MAX] = {};
 mfxU32 * distCpu[2][2][CM_REF_BUF_LEN][PU_MAX] = {0};
 mfxI16Pair * mvCpu[2][2][CM_REF_BUF_LEN][PU_MAX] = {0};
+mfxU32 ** pDistCpu[2][2][CM_REF_BUF_LEN] = {0};
+mfxI16Pair ** pMvCpu[2][2][CM_REF_BUF_LEN] = {0};
 Ipp32u pitchDist[PU_MAX] = {};
 Ipp32u pitchMv[PU_MAX] = {};
 
@@ -789,17 +791,14 @@ void RunVmeCurr(H265VideoParam const &param, H265Frame *pFrameCur, H265Slice *pS
                 if (ref->EncOrderNum() != pFrameCur->EncOrderNum() - 1)
                     continue;   // everything was done in RunVmeNext
                 
-/*
-                if (refList == 1) { // TODO: use pre-build table of duplicates instead of std::find
-                    Ipp32s idx0 = pFrameCur->m_mapRefIdxL1ToL0[refIdx];
-                    if (idx0 >= 0) {
-                        // don't do ME just copy from L0
-                        distCpuWork[cmCurIdx][1][refIdx] = distCpuWork[cmCurIdx][0][idx0];
-                        mvCpuWork[cmCurIdx][1][refIdx] = mvCpuWork[cmCurIdx][0][idx0];
-                        continue;
+                    if (refList == 1) {
+                        Ipp32s idx0 = pFrameCur->m_mapRefIdxL1ToL0[refIdx];
+                        if (idx0 >= 0) {
+                            pDistCpu[cmCurIdx][1][refIdx] = distCpu[cmCurIdx][0][idx0];
+                            pMvCpu[cmCurIdx][1][refIdx] = mvCpu[cmCurIdx][0][idx0];
+                            continue;
+                        }
                     }
-                }
-*/
 
                 Ipp32s globi = recBufData->GetByPoc(ref->PicOrderCnt());
                 if (globi < 0) {
@@ -819,6 +818,9 @@ void RunVmeCurr(H265VideoParam const &param, H265Frame *pFrameCur, H265Slice *pS
 
                 CmSurface2DUP ** dist = distGpu[cmCurIdx][refList][refIdx];
                 CmSurface2DUP ** mv = mvGpu[cmCurIdx][refList][refIdx];
+
+                pDistCpu[cmCurIdx][refList][refIdx] = distCpu[cmCurIdx][refList][refIdx];
+                pMvCpu[cmCurIdx][refList][refIdx] = mvCpu[cmCurIdx][refList][refIdx];
 
                 {   MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "RefLast_kernelMe");
                     SetKernelArg(kernelMe, me1xControl, *refs, dist[PU16x16], dist[PU16x8], dist[PU8x16],
@@ -911,17 +913,14 @@ void RunVmeNext(H265VideoParam const & param, H265Frame * pFrameNext, H265Slice 
                 if (ref->EncOrderNum() == pFrameNext->EncOrderNum() - 1)
                     continue;   // prev recon is not ready yet and will be done in RunVmeCur
 
-/*
-                if (refList == 1) { // TODO: use pre-build table of duplicates instead of std::find
+                if (refList == 1) {
                     Ipp32s idx0 = pFrameNext->m_mapRefIdxL1ToL0[refIdx];
                     if (idx0 >= 0) {
-                        // don't do ME just copy from L0
-                        distCpuWork[cmNextIdx][1][refIdx] = distCpuWork[cmNextIdx][0][idx0];
-                        mvCpuWork[cmNextIdx][1][refIdx] = mvCpuWork[cmNextIdx][0][idx0];
+                        pDistCpu[cmNextIdx][1][refIdx] = distCpu[cmNextIdx][0][idx0];
+                        pMvCpu[cmNextIdx][1][refIdx] = mvCpu[cmNextIdx][0][idx0];
                         continue;
                     }
                 }
-*/
 
                 Ipp32s globi = recBufData->GetByPoc(ref->PicOrderCnt());
                 if (globi < 0) { // no new ref frame should be added at this stage
@@ -933,6 +932,9 @@ void RunVmeNext(H265VideoParam const & param, H265Frame * pFrameNext, H265Slice 
 
                 CmSurface2DUP ** dist = distGpu[cmNextIdx][refList][refIdx];
                 CmSurface2DUP ** mv = mvGpu[cmNextIdx][refList][refIdx];
+
+                pDistCpu[cmNextIdx][refList][refIdx] = distCpu[cmNextIdx][refList][refIdx];
+                pMvCpu[cmNextIdx][refList][refIdx] = mvCpu[cmNextIdx][refList][refIdx];
 
                 {   MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "RefNext_kernelMe");
                     SetKernelArg(kernelMe, me1xControl, *refs, dist[PU16x16], dist[PU16x8], dist[PU8x16],
