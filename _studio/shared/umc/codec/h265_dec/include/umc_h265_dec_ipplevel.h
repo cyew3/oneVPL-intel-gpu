@@ -81,11 +81,15 @@ typedef struct H265InterpolationParams_16u
 
 } H265InterpolationParams_16u;
 
-IPPFUN(IppStatus, ippiInterpolateLumaBlock_H265, (H265InterpolationParams_8u *interpolateInfo, Ipp8u *temporary_buffer));
-IPPFUN(IppStatus, ippiInterpolateChromaBlock_H264, (H265InterpolationParams_8u *interpolateInfo, Ipp8u *temporary_buffer));
+// Check for frame boundaries and expand luma border values if necessary
+IPPFUN(IppStatus, ippiInterpolateLumaBlock, (H265InterpolationParams_8u *interpolateInfo, Ipp8u *temporary_buffer));
+// Check for frame boundaries and expand chroma border values if necessary
+IPPFUN(IppStatus, ippiInterpolateChromaBlock, (H265InterpolationParams_8u *interpolateInfo, Ipp8u *temporary_buffer));
 
-IPPFUN(IppStatus, ippiInterpolateLumaBlock_H265, (H265InterpolationParams_8u *interpolateInfo, Ipp16u *temporary_buffer));
-IPPFUN(IppStatus, ippiInterpolateChromaBlock_H264, (H265InterpolationParams_8u *interpolateInfo, Ipp16u *temporary_buffer));
+// Check for frame boundaries and expand luma border values if necessary
+IPPFUN(IppStatus, ippiInterpolateLumaBlock, (H265InterpolationParams_8u *interpolateInfo, Ipp16u *temporary_buffer));
+// Check for frame boundaries and expand chroma border values if necessary
+IPPFUN(IppStatus, ippiInterpolateChromaBlock, (H265InterpolationParams_8u *interpolateInfo, Ipp16u *temporary_buffer));
 
 } /* namespace UMC_H265_DECODER */
 

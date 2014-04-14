@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2013 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2013-2014 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -17,7 +17,8 @@
 namespace UMC_HEVC_DECODER
 {
 
-enum // Syntax element type for HEVC
+// Syntax element type for HEVC
+enum
 {
     SPLIT_CODING_UNIT_FLAG_HEVC     = 0,
     SKIP_FLAG_HEVC                  = 1,
@@ -51,6 +52,7 @@ enum // Syntax element type for HEVC
 
 #define NUM_CTX 186
 
+// CABAC contexts initialization values offset in a common table of all contexts
 // ML: OPT: Moved into header to allow accesses be resolved at compile time
 const
 Ipp32u ctxIdxOffsetHEVC[MAIN_SYNTAX_ELEMENT_NUMBER_HEVC] =

@@ -60,7 +60,7 @@ void memset_with_mult(PixType *pDst, const PixType* nVal, Ipp32s nNum)
 }
 
 template<typename PixType, typename InterpolationStruct>
-IppStatus ippiInterpolateBoundaryLumaBlock_H264(Ipp32s iOverlappingType, InterpolationStruct *pParams, PixType *temporary_buffer)
+IppStatus ippiInterpolateBoundaryLumaBlock(Ipp32s iOverlappingType, InterpolationStruct *pParams, PixType *temporary_buffer)
 {
     PixType *pTmp = temporary_buffer;
     Ipp32s tmpStep = 128; /* !!! pitch is fixed*/
@@ -89,7 +89,7 @@ IppStatus ippiInterpolateBoundaryLumaBlock_H264(Ipp32s iOverlappingType, Interpo
 }
 
 template<typename PixType, typename InterpolationStruct>
-IppStatus ippiInterpolateLumaBlock_H265Internal(InterpolationStruct *interpolateInfo, PixType *temporary_buffer)
+IppStatus ippiInterpolateLumaBlock_Internal(InterpolationStruct *interpolateInfo, PixType *temporary_buffer)
 {
     /* the most probably case - just copying */
     if (0 == (interpolateInfo->pointVector.x | interpolateInfo->pointVector.y))
@@ -154,13 +154,13 @@ IppStatus ippiInterpolateLumaBlock_H265Internal(InterpolationStruct *interpolate
         {
             /* save additional parameters */
             /* there is something wrong, try to work through a temporal buffer */
-            return ippiInterpolateBoundaryLumaBlock_H264<PixType, InterpolationStruct> (iOverlappingType, interpolateInfo, temporary_buffer);
+            return ippiInterpolateBoundaryLumaBlock<PixType, InterpolationStruct> (iOverlappingType, interpolateInfo, temporary_buffer);
         }
     }
 }
 
 template<typename PixType, typename InterpolationStruct>
-IppStatus ippiInterpolateBoundaryChromaBlock_NV12_H264(Ipp32s iOverlappingType, InterpolationStruct *pParams, PixType *temporary_buffer)
+IppStatus ippiInterpolateBoundaryChromaBlock_NV12(Ipp32s iOverlappingType, InterpolationStruct *pParams, PixType *temporary_buffer)
 {
     PixType *pTmp = temporary_buffer;
     Ipp32s tmpStep = 128;
@@ -191,7 +191,7 @@ IppStatus ippiInterpolateBoundaryChromaBlock_NV12_H264(Ipp32s iOverlappingType, 
 #pragma warning(default: 4127)
 
 template<typename PixType, typename InterpolationStruct>
-IppStatus ippiInterpolateChromaBlock_H264Internal(InterpolationStruct *interpolateInfo, PixType *temporary_buffer)
+IppStatus ippiInterpolateChromaBlock_Internal(InterpolationStruct *interpolateInfo, PixType *temporary_buffer)
 {
     /* the most probably case - just copying */
     if (0 == (interpolateInfo->pointVector.x | interpolateInfo->pointVector.y))
@@ -258,7 +258,7 @@ IppStatus ippiInterpolateChromaBlock_H264Internal(InterpolationStruct *interpola
         else
         {
             /* there is something wrong, try to work through a temporal buffer */
-            return ippiInterpolateBoundaryChromaBlock_NV12_H264<PixType, InterpolationStruct>(iOverlappingType, interpolateInfo, temporary_buffer);
+            return ippiInterpolateBoundaryChromaBlock_NV12<PixType, InterpolationStruct>(iOverlappingType, interpolateInfo, temporary_buffer);
         }
     }
 
@@ -520,7 +520,7 @@ void read_data_through_boundary_top_left_right_px(InterpolationStruct *pParams)
             memset_with_mult<PixType, chromaMult>(pDst, pSrc, iIndentLeft);
             MFX_INTERNAL_CPY(pDst + chromaMult*iIndentLeft, pSrc, chromaMult*(pParams->frameSize.width)*sizeof(PixType));
             memset_with_mult<PixType, chromaMult>(pDst + chromaMult*iIndentRight, &pSrc[chromaMult*(iIndentRight - iIndentLeft - 1)], pParams->dataWidth - iIndentRight);
-            
+
             pDst += pParams->dstStep;
             pSrc += pParams->srcStep;
         }
@@ -871,7 +871,7 @@ void read_data_through_boundary_top_bottom_left_right_px(InterpolationStruct *pP
             memset_with_mult<PixType, chromaMult>(pDst, pSrc, iIndentLeft);
             MFX_INTERNAL_CPY(pDst + chromaMult*iIndentLeft, pSrc, chromaMult*(pParams->frameSize.width)*sizeof(PixType));
             memset_with_mult<PixType, chromaMult>(pDst + chromaMult*iIndentRight, &pSrc[chromaMult*(iIndentRight - iIndentLeft - 1)], pParams->dataWidth - iIndentRight);
-            
+
             pDst += pParams->dstStep;
             pSrc += pParams->srcStep;
         }
@@ -977,24 +977,28 @@ pH264Interpolation_16u read_data_through_boundary_table_nv12_16u_pxmx[16] =
     &read_data_through_boundary_top_bottom_left_right_px<Ipp16u, H265InterpolationParams_16u, 2>
 };
 
-IppStatus ippiInterpolateLumaBlock_H265(H265InterpolationParams_8u *interpolateInfo, Ipp8u *temporary_buffer)
+// Check for frame boundaries and expand luma border values if necessary
+IppStatus ippiInterpolateLumaBlock(H265InterpolationParams_8u *interpolateInfo, Ipp8u *temporary_buffer)
 {
-    return ippiInterpolateLumaBlock_H265Internal<Ipp8u, H265InterpolationParams_8u>(interpolateInfo, temporary_buffer);
+    return ippiInterpolateLumaBlock_Internal<Ipp8u, H265InterpolationParams_8u>(interpolateInfo, temporary_buffer);
 }
 
-IppStatus ippiInterpolateChromaBlock_H264(H265InterpolationParams_8u *interpolateInfo, Ipp8u *temporary_buffer)
+// Check for frame boundaries and expand chroma border values if necessary
+IppStatus ippiInterpolateChromaBlock(H265InterpolationParams_8u *interpolateInfo, Ipp8u *temporary_buffer)
 {
-    return ippiInterpolateChromaBlock_H264Internal<Ipp8u, H265InterpolationParams_8u>(interpolateInfo, temporary_buffer);
+    return ippiInterpolateChromaBlock_Internal<Ipp8u, H265InterpolationParams_8u>(interpolateInfo, temporary_buffer);
 }
 
-IppStatus ippiInterpolateLumaBlock_H265(H265InterpolationParams_8u *interpolateInfo, Ipp16u *temporary_buffer)
+// Check for frame boundaries and expand luma border values if necessary
+IppStatus ippiInterpolateLumaBlock(H265InterpolationParams_8u *interpolateInfo, Ipp16u *temporary_buffer)
 {
-    return ippiInterpolateLumaBlock_H265Internal<Ipp16u, H265InterpolationParams_16u>((H265InterpolationParams_16u*)interpolateInfo, temporary_buffer);
+    return ippiInterpolateLumaBlock_Internal<Ipp16u, H265InterpolationParams_16u>((H265InterpolationParams_16u*)interpolateInfo, temporary_buffer);
 }
 
-IppStatus ippiInterpolateChromaBlock_H264(H265InterpolationParams_8u *interpolateInfo, Ipp16u *temporary_buffer)
+// Check for frame boundaries and expand chroma border values if necessary
+IppStatus ippiInterpolateChromaBlock(H265InterpolationParams_8u *interpolateInfo, Ipp16u *temporary_buffer)
 {
-    return ippiInterpolateChromaBlock_H264Internal<Ipp16u, H265InterpolationParams_16u>((H265InterpolationParams_16u*)interpolateInfo, temporary_buffer);
+    return ippiInterpolateChromaBlock_Internal<Ipp16u, H265InterpolationParams_16u>((H265InterpolationParams_16u*)interpolateInfo, temporary_buffer);
 }
 
 

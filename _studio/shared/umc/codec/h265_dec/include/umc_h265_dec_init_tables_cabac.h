@@ -18,6 +18,7 @@
 
 namespace UMC_HEVC_DECODER
 {
+// LPS precalculated probability ranges. HEVC spec 9.3.4.3.1
 const
 Ipp8u rangeTabLPSH265[128][4]=
 {
@@ -154,6 +155,7 @@ Ipp8u rangeTabLPSH265[128][4]=
 #define DECL(val) \
     (val) * 2, (val) * 2 + 1
 
+// State transition table for MPS path. HEVC spec 9.3.4.3.2.2
 const
 Ipp8u transIdxMPSH265[] =
 {
@@ -167,6 +169,7 @@ Ipp8u transIdxMPSH265[] =
     DECL(57), DECL(58), DECL(59), DECL(60), DECL(61), DECL(62), DECL(62), DECL(63)
 };
 
+// State transition table for LPS path. HEVC spec 9.3.4.3.2.2
 const
 Ipp8u transIdxLPSH265[] =
 {
@@ -181,13 +184,6 @@ Ipp8u transIdxLPSH265[] =
 };
 
 } // namespace UMC_HEVC_DECODER
-
-namespace UMC
-{
-    // FIXME and remove dependency from UMC namespace
-extern const
-Ipp8u NumBitsToGetTbl[512];
-}
 
 #endif //__UMC_H264_DEC_INIT_TABLES_CABAC_H__
 #endif // UMC_ENABLE_H264_VIDEO_DECODER

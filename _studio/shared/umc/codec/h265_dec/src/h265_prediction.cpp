@@ -291,7 +291,7 @@ static void PrepareInterpSrc( H265CodingUnit* pCU, H265PUInfo &PUi, EnumRefPicLi
         interpolateInfo.blockHeight >>= 1;
     }
 
-    (c_plane_type == TEXT_CHROMA) ? ippiInterpolateChromaBlock_H264(&interpolateInfo, temp_interpolarion_buffer) : ippiInterpolateLumaBlock_H265(&interpolateInfo, temp_interpolarion_buffer);
+    (c_plane_type == TEXT_CHROMA) ? ippiInterpolateChromaBlock(&interpolateInfo, temp_interpolarion_buffer) : ippiInterpolateLumaBlock(&interpolateInfo, temp_interpolarion_buffer);
 }
 
 // Interpolate one reference frame block
@@ -306,7 +306,7 @@ void H265Prediction::PredInterUni(H265CodingUnit* pCU, H265PUInfo &PUi, EnumRefP
 
     // Hack to get correct offset in 2-byte elements
     Ipp32s in_DstPitch = (c_plane_type == TEXT_CHROMA) ? YUVPred->pitch_chroma() : YUVPred->pitch_luma();
-    H265CoeffsPtrCommon in_pDst = (c_plane_type == TEXT_CHROMA) ? 
+    H265CoeffsPtrCommon in_pDst = (c_plane_type == TEXT_CHROMA) ?
                             (H265CoeffsPtrCommon)YUVPred->m_pUVPlane + GetAddrOffset(PartAddr, YUVPred->chromaSize().width) :
                             (H265CoeffsPtrCommon)YUVPred->m_pYPlane + GetAddrOffset(PartAddr, YUVPred->lumaSize().width);
 
@@ -341,7 +341,7 @@ void H265Prediction::PredInterUni(H265CodingUnit* pCU, H265PUInfo &PUi, EnumRefP
     }
 
     Ipp32u PicDstStride = ( c_plane_type == TEXT_CHROMA ) ? pCU->m_Frame->pitch_chroma() : pCU->m_Frame->pitch_luma();
-    PlaneType *pPicDst = ( c_plane_type == TEXT_CHROMA ) ? 
+    PlaneType *pPicDst = ( c_plane_type == TEXT_CHROMA ) ?
                 (PlaneType*)pCU->m_Frame->GetCbCrAddr(pCU->CUAddr) + GetAddrOffset(PartAddr, PicDstStride >> 1) :
                 (PlaneType*)pCU->m_Frame->GetLumaAddr(pCU->CUAddr) + GetAddrOffset(PartAddr, PicDstStride);
 
@@ -369,8 +369,8 @@ void H265Prediction::PredInterUni(H265CodingUnit* pCU, H265PUInfo &PUi, EnumRefP
             else // weighted prediction still requires intermediate copies
             {
                 const int c_shift = 14 - bitDepth;
-                int copy_width = Width; 
-                if (c_plane_type == TEXT_CHROMA) 
+                int copy_width = Width;
+                if (c_plane_type == TEXT_CHROMA)
                     copy_width <<= 1;
 
                 CopyExtendPU<PlaneType>(in_pSrc, in_SrcPitch, in_pDst, in_DstPitch, copy_width, Height, c_shift);
@@ -407,7 +407,7 @@ void H265Prediction::PredInterUni(H265CodingUnit* pCU, H265PUInfo &PUi, EnumRefP
         Ipp32u tmpStride = iPUWidth + tap;
 
         // Do horizontal interpolation into a temporal buffer
-        Interpolate<c_plane_type>( MFX_HEVC_PP::INTERP_HOR, 
+        Interpolate<c_plane_type>( MFX_HEVC_PP::INTERP_HOR,
                                    in_pSrc - ((tap >> 1) - 1) * in_SrcPitch, in_SrcPitch, tmpBuf, tmpStride,
                                    in_dx, Width, Height + tap - 1, bitDepth - 8, 0, bitDepth);
 
