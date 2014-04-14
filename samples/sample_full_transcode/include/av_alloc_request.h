@@ -14,6 +14,12 @@
 
 #pragma warning(disable:4239)
 
+enum AllocatorImpl {
+    ALLOC_IMPL_SYSTEM_MEMORY,
+    ALLOC_IMPL_D3D9_MEMORY,
+    ALLOC_IMPL_D3D11_MEMORY
+};
+
 class IAllocRequest {
 public:
     virtual mfxFrameAllocRequest& Video() = 0;

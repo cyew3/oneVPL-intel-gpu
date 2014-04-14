@@ -42,7 +42,7 @@ PipelineFactory::~PipelineFactory(){
 
 MFXVideoSessionExt* PipelineFactory::CreateVideoSession()
 {
-    return new MFXVideoSessionExt();
+    return new MFXVideoSessionExt(*this);
 }
 
 MFXVideoDECODE* PipelineFactory::CreateVideoDecoder(MFXVideoSessionExt& session)

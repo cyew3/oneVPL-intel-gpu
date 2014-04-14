@@ -15,7 +15,6 @@ public:
 class DecodeHeaderError : public KnownException{};
 class DecodeInitError: public KnownException{};
 class DecodeAllocError: public KnownException{};
-class DecodeSetHandleError: public KnownException{};
 class DecodeSetAllocatorError: public KnownException{};
 class DecodeQueryIMPLError: public KnownException{};
 class DecodeQueryIOSurfaceError: public KnownException{};
@@ -23,8 +22,11 @@ class DecodeQueryIOSizeError: public KnownException{};
 class DecodeQueryError: public KnownException{};
 class DecodeGetVideoParamError: public KnownException{};
 class DecodeTimeoutError: public KnownException{};
-class DecodeHWDeviceInitError: public KnownException{};
-class DecodeAllocatorInitError: public KnownException{};
+
+class VideoSessionExtSetHandleError: public KnownException{};
+class VideoSessionExtHWDeviceInitError: public KnownException{};
+class VideoSessionExtAllocatorInitError: public KnownException{};
+class VideoSessionExtSetFrameAllocatorError: public KnownException{};
 
 class EncodeInitError: public KnownException{};
 class EncodeBitstreamEnlargeError: public KnownException{};

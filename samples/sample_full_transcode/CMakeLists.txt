@@ -25,7 +25,8 @@ list(APPEND sources
   ${CMAKE_CURRENT_SOURCE_DIR}/src/transform_vdec.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/transform_venc.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/trace_levels.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/transform_vpp.cpp )
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/transform_vpp.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/video_session.cpp )
 
 list( APPEND LIBS_VARIANT sample_common )
 list( APPEND LIBS dl pthread sample_spl_mux_dispatcher )

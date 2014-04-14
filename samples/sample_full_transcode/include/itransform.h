@@ -18,12 +18,6 @@
 
 #include "pipeline_wa.h"
 
-enum AllocatorImpl {
-    ALLOC_IMPL_SYSTEM_MEMORY,
-    ALLOC_IMPL_D3D9_MEMORY,
-    ALLOC_IMPL_D3D11_MEMORY
-};
-
 class ITransform {
 public:
     virtual ~ITransform() {};

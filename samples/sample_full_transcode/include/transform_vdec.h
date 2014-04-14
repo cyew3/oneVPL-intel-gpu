@@ -1,10 +1,12 @@
-//
-//               INTEL CORPORATION PROPRIETARY INFORMATION
-//  This software is supplied under the terms of a license agreement or
-//  nondisclosure agreement with Intel Corporation and may not be copied
-//  or disclosed except in accordance with the terms of that agreement.
-//        Copyright (c) 2013-2014 Intel Corporation. All Rights Reserved.
-//
+/*********************************************************************************
+
+INTEL CORPORATION PROPRIETARY INFORMATION
+This software is supplied under the terms of a license agreement or nondisclosure
+agreement with Intel Corporation and may not be copied or disclosed except in
+accordance with the terms of that agreement
+Copyright(c) 2013-2014 Intel Corporation. All Rights Reserved.
+
+**********************************************************************************/
 
 #pragma once
 
@@ -46,16 +48,13 @@ private:
     bool mBshouldLoad;
 
     SamplePtr m_pInput;
-    std::auto_ptr<CHWDevice> m_pDevice;
     std::auto_ptr<SamplePool> m_pSamplesSurfPool;
-    std::auto_ptr<BaseFrameAllocator> m_pAllocator;
 
     std::auto_ptr<MFXVideoDECODE> m_pDEC;
     mfxVideoParam m_decParam;
     void InitDecode(SamplePtr& sample);
     void AllocFrames(SamplePtr& sample);
-    void CreateAllocatorAndSetHandle();
-    void CreateAllocatorAndDevice(AllocatorImpl impl);
+
     //splitter complete frame WA
     std::vector<mfxU8> m_dataVec;
 protected:
