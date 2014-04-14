@@ -52,11 +52,13 @@ H265DecYUVBufferPadded::~H265DecYUVBufferPadded()
     deallocate();
 }
 
+// Returns pointer to FrameData instance
 const UMC::FrameData * H265DecYUVBufferPadded::GetFrameData() const
 {
     return &m_frameData;
 }
 
+// Deallocate all memory
 void H265DecYUVBufferPadded::deallocate()
 {
     if (m_frameData.GetFrameMID() != UMC::FRAME_MID_INVALID)
@@ -73,6 +75,7 @@ void H265DecYUVBufferPadded::deallocate()
     m_pitch_chroma = 0;
 }
 
+// Initialize variables to default values
 void H265DecYUVBufferPadded::Init(const UMC::VideoDataInfo *info)
 {
     VM_ASSERT(info);
@@ -98,6 +101,8 @@ void H265DecYUVBufferPadded::Init(const UMC::VideoDataInfo *info)
     }
 }
 
+// Allocate YUV frame buffer planes and initialize pointers to it.
+// Used to contain decoded frames.
 void H265DecYUVBufferPadded::allocate(const UMC::FrameData * frameData, const UMC::VideoDataInfo *info)
 {
     VM_ASSERT(info);
@@ -147,12 +152,14 @@ void H265DecYUVBufferPadded::allocate(const UMC::FrameData * frameData, const UM
     }
 }
 
+// Returns color formap of allocated frame
 UMC::ColorFormat H265DecYUVBufferPadded::GetColorFormat() const
 {
     return m_color_format;
 }
 
-//h265
+// Allocate memory and initialize frame plane pointers and pitches.
+// Used for temporary picture buffers, e.g. residuals.
 void H265DecYUVBufferPadded::create(Ipp32u PicWidth, Ipp32u PicHeight, Ipp32u ElementSizeY, Ipp32u ElementSizeUV)
 {
     m_lumaSize.width = PicWidth;
@@ -164,7 +171,7 @@ void H265DecYUVBufferPadded::create(Ipp32u PicWidth, Ipp32u PicHeight, Ipp32u El
     m_pitch_luma = PicWidth;
     m_pitch_chroma = PicWidth;
 
-    size_t allocationSize = (m_lumaSize.height) * m_pitch_luma * ElementSizeY + 
+    size_t allocationSize = (m_lumaSize.height) * m_pitch_luma * ElementSizeY +
         (m_chromaSize.height) * m_pitch_chroma * ElementSizeUV*2 + 512;
 
     m_pAllocatedBuffer = h265_new_array_throw<Ipp8u>((Ipp32s)allocationSize);
@@ -174,6 +181,7 @@ void H265DecYUVBufferPadded::create(Ipp32u PicWidth, Ipp32u PicHeight, Ipp32u El
     m_pVPlane = m_pUPlane + m_chromaSize.height * m_chromaSize.width * ElementSizeUV;
 }
 
+// Deallocate planes memory
 void H265DecYUVBufferPadded::destroy()
 {
     delete [] m_pAllocatedBuffer;

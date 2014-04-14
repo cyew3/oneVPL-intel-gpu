@@ -22,6 +22,7 @@
 namespace UMC_HEVC_DECODER
 {
 
+// YUV frame buffer class
 class H265DecYUVBufferPadded
 {
 public:
@@ -40,16 +41,20 @@ public:
     H265DecYUVBufferPadded(UMC::MemoryAllocator *pMemoryAllocator);
     virtual ~H265DecYUVBufferPadded();
 
+    // Initialize variables to default values
     void Init(const UMC::VideoDataInfo *info);
 
+    // Allocate YUV frame buffer planes and initialize pointers to it.
+    // Used to contain decoded frames.
     void allocate(const UMC::FrameData * frameData, const UMC::VideoDataInfo *info);
 
-    //h265
+    // Allocate memory and initialize frame plane pointers and pitches.
+    // Used for temporary picture buffers, e.g. residuals.
     void create(Ipp32u PicWidth, Ipp32u PicHeight, Ipp32u ElementSizeY, Ipp32u ElementSizeUV);
+    // Deallocate planes memory
     void destroy();
 
-    //end of h265
-
+    // Deallocate all memory
     void deallocate();
 
     const IppiSize& lumaSize() const { return m_lumaSize; }
@@ -58,22 +63,22 @@ public:
     Ipp32u pitch_luma() const { return m_pitch_luma; }
     Ipp32u pitch_chroma() const { return m_pitch_chroma; }
 
+    // Returns pointer to FrameData instance
     const UMC::FrameData * GetFrameData() const;
 
+    // Returns color formap of allocated frame
     UMC::ColorFormat GetColorFormat() const;
 
 protected:
     UMC::MemoryAllocator *m_pMemoryAllocator;                        // (MemoryAllocator *) pointer to memory allocator
     UMC::MemID m_midAllocatedBuffer;                                 // (MemID) mem id for allocated buffer
 
-    Ipp8u                 *m_pAllocatedBuffer;
     // m_pAllocatedBuffer contains the pointer returned when
     // we allocated space for the data.
+    Ipp8u                 *m_pAllocatedBuffer;
 
-    Ipp32u                 m_allocatedSize;
     // This is the size with which m_pAllocatedBuffer was allocated.
-
-    bool    m_is_external_memory;
+    Ipp32u                 m_allocatedSize;
 
     IppiSize            m_lumaSize;
     IppiSize            m_chromaSize;

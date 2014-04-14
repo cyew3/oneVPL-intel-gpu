@@ -61,6 +61,7 @@ enum {
 #define CU_DQP_TU_CMAX 5 //max number bins for truncated unary
 #define CU_DQP_EG_k 0 //expgolomb order
 
+// Plane identifiers
 enum ComponentPlane
 {
     COMPONENT_LUMA = 0,
@@ -95,6 +96,7 @@ enum
     COEFF_ABS_LEVEL_REMAIN_BIN_THRESHOLD    = 3        // maximum codeword length of coeff_abs_level_remaining reduced to 32.
 };
 
+// Luma intra modes
 enum
 {
     INTRA_LUMA_PLANAR_IDX   = 0,                     // index for intra planar mode
@@ -138,6 +140,7 @@ class H265DecoderFrame;
 class H265DecYUVBufferPadded;
 class H265CodingUnit;
 
+// Display structure modes
 enum DisplayPictureStruct_H265 {
     DPS_FRAME_H265     = 0,
     DPS_TOP_H265,         // one field
@@ -150,7 +153,6 @@ enum DisplayPictureStruct_H265 {
     DPS_FRAME_TRIPLING_H265
 };
 
-
 typedef Ipp8u H265PlaneYCommon;
 typedef Ipp8u H265PlaneUVCommon;
 typedef Ipp16s H265CoeffsCommon;
@@ -159,6 +161,7 @@ typedef H265CoeffsCommon *H265CoeffsPtrCommon;
 typedef H265PlaneYCommon *H265PlanePtrYCommon;
 typedef H265PlaneUVCommon *H265PlanePtrUVCommon;
 
+// HEVC NAL unit types
 enum NalUnitType
 {
   NAL_UT_CODED_SLICE_TRAIL_N    = 0,
@@ -196,10 +199,7 @@ enum NalUnitType
   NAL_UT_INVALID = 64
 };
 
-// Note!  The Picture Code Type values below are no longer used in the
-// core encoder.   It only knows about slice types, and whether or not
-// the frame is IDR, Reference or Disposable.  See enum above.
-
+// Slice types
 enum SliceType
 {
   B_SLICE,
@@ -207,12 +207,14 @@ enum SliceType
   I_SLICE
 };
 
+// Reference list IDs
 enum EnumRefPicList
 {
     REF_PIC_LIST_0 = 0,   ///< reference list 0
     REF_PIC_LIST_1 = 1    ///< reference list 1
 };
 
+// Prediction unit IDs
 enum EnumPartSize   // supported partition shape
 {
     PART_SIZE_2Nx2N,           ///< symmetric motion partition,  2Nx2N
@@ -225,7 +227,7 @@ enum EnumPartSize   // supported partition shape
     PART_SIZE_nRx2N,           ///< asymmetric motion partition, (3N/2)x2N + ( N/2)x2N
 };
 
-// supported prediction type
+// Supported prediction type
 enum EnumPredMode
 {
     MODE_INTER,           ///< inter-prediction mode
@@ -243,19 +245,21 @@ enum EnumPredMode
 
 enum ScalingListSize
 {
-  SCALING_LIST_4x4 = 0,
-  SCALING_LIST_8x8,
-  SCALING_LIST_16x16,
-  SCALING_LIST_32x32,
-  SCALING_LIST_SIZE_NUM
+    SCALING_LIST_4x4 = 0,
+    SCALING_LIST_8x8,
+    SCALING_LIST_16x16,
+    SCALING_LIST_32x32,
+    SCALING_LIST_SIZE_NUM
 };
 
+// SAO constants
 enum SAOTypeLen
 {
     SAO_OFFSETS_LEN = 4,
     SAO_MAX_BO_CLASSES = 32
 };
 
+// SAO modes
 enum SAOType
 {
     SAO_EO_0 = 0,
@@ -268,6 +272,7 @@ enum SAOType
 
 #pragma pack(1)
 
+// SAO CTB parameters
 struct SAOLCUParam
 {
     struct
@@ -283,6 +288,7 @@ struct SAOLCUParam
 
 #pragma pack()
 
+// SAO abstract functionality
 class H265SampleAdaptiveOffsetBase
 {
 public:
@@ -297,6 +303,7 @@ public:
     virtual void SAOProcess(H265DecoderFrame* pFrame, Ipp32s startCU, Ipp32s toProcessCU) = 0;
 };
 
+// SAO functionality and state
 template<typename PlaneType>
 class H265SampleAdaptiveOffsetTemplate : public H265SampleAdaptiveOffsetBase
 {
@@ -308,10 +315,14 @@ public:
         destroy();
     }
 
+    // Returns whethher it is necessary to reallocate SAO context
     bool isNeedReInit(const H265SeqParamSet* sps);
+    // SAO context initalization
     virtual void init(const H265SeqParamSet* sps);
+    // SAO context data structure deallocator
     virtual void destroy();
 
+    // Apply SAO filter to a frame
     virtual void SAOProcess(H265DecoderFrame* pFrame, Ipp32s startCU, Ipp32s toProcessCU);
 
 protected:
@@ -347,27 +358,45 @@ protected:
 
     bool                m_isInitialized;
 
+    // Calculate SAO lookup tables for luma offsets from bitstream data
     void SetOffsetsLuma(SAOLCUParam &saoLCUParam, Ipp32s typeIdx);
+    // Calculate SAO lookup tables for chroma offsets from bitstream data
     void SetOffsetsChroma(SAOLCUParam &saoLCUParamCb, Ipp32s typeIdx);
 
+    // Calculate whether it is necessary to check slice and tile boundaries because of
+    // filtering restrictions in some slice of the frame.
     void createNonDBFilterInfo();
+    // Restore parts of CTB encoded with PCM or transquant bypass if filtering should be disabled for them
     void PCMCURestoration(H265CodingUnit* pcCU, Ipp32u AbsZorderIdx, Ipp32u Depth, bool restore);
+    // Save/restore losless coded samples from temporary buffer back to frame
     void PCMSampleRestoration(H265CodingUnit* pcCU, Ipp32u AbsZorderIdx, Ipp32u Depth, bool restore);
 
+    // Apply SAO filtering to NV12 chroma plane. Filter is enabled across slices and
+    // tiles so only frame boundaries are taken into account.
+    // HEVC spec 8.7.3.
     void processSaoCuOrgChroma(Ipp32s Addr, Ipp32s PartIdx, PlaneType *tmpL);
+    // Apply SAO filtering to NV12 chroma plane. Filter may be disabled across slices or
+    // tiles so neighbour availability has to be checked for every CTB.
+    // HEVC spec 8.7.3.
     void processSaoCuChroma(Ipp32s addr, Ipp32s saoType, PlaneType *tmpL);
+    // Apply SAO filter to a range of CTBs
     void processSaoUnits(Ipp32s first, Ipp32s toProcess);
+    // Apply SAO filter to a line or part of line of CTBs in a frame
     void processSaoLine(SAOLCUParam* saoLCUParam, Ipp32s firstCU, Ipp32s lastCU);
 };
 
+// SAO interface class
 class H265SampleAdaptiveOffset
 {
 public: 
     H265SampleAdaptiveOffset();
 
+    // Initialize SAO context
     virtual void init(const H265SeqParamSet* sps);
+    // SAO context cleanup
     virtual void destroy();
 
+    // Apply SAO filter to a target frame CTB range
     void SAOProcess(H265DecoderFrame* pFrame, Ipp32s start, Ipp32s toProcess);
 
 protected:
@@ -377,6 +406,7 @@ protected:
     bool m_is10bits;
 };
 
+// Convert one enum to another
 inline
 UMC::FrameType SliceTypeToFrameType(SliceType slice_type)
 {
@@ -393,6 +423,7 @@ UMC::FrameType SliceTypeToFrameType(SliceType slice_type)
     return UMC::NONE_PICTURE;
 }
 
+// SEI identifiers
 typedef enum
 {
     SEI_BUFFERING_PERIOD_TYPE                   = 0,
@@ -469,9 +500,7 @@ enum
     DEFAULT_NU_TAIL_SIZE        = 8
 };
 
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// Memory class
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Memory reference counting base class
 class RefCounter
 {
 public:
@@ -500,6 +529,7 @@ protected:
     }
 };
 
+// Basic ref counting heap object class
 class HeapObject : public RefCounter
 {
 public:
@@ -513,6 +543,7 @@ public:
     virtual void Free();
 };
 
+// Scaling list data structure
 class H265ScalingList
 {
 public:
@@ -561,6 +592,7 @@ private:
     bool     m_initialized;
 };
 
+// One profile, tier, level data structure
 struct H265PTL
 {
     Ipp32u      profile_space;
@@ -576,7 +608,7 @@ struct H265PTL
     H265PTL()   { memset(this, 0, sizeof(*this)); }
 };
 
-
+// Stream profile, tiler, level data structure
 #define H265_MAX_SUBLAYER_PTL   6
 struct H265ProfileTierLevel
 {
@@ -598,6 +630,7 @@ struct H265ProfileTierLevel
     H265PTL* GetSubLayerPTL(Ipp32s i) { return &subLayerPTL[i]; }
 };
 
+// HRD information data structure
 struct H265HrdSubLayerInfo
 {
     Ipp8u       fixed_pic_rate_general_flag;
@@ -614,6 +647,7 @@ struct H265HrdSubLayerInfo
     Ipp8u       cbr_flag[MAX_CPB_CNT][2];
 };
 
+// HRD VUI information
 struct H265HRD
 {
     Ipp8u       nal_hrd_parameters_present_flag;
@@ -642,6 +676,7 @@ struct H265HRD
     H265HrdSubLayerInfo * GetHRDSubLayerParam(Ipp32u i) { return &m_HRD[i]; }
 };
 
+// VUI timing information
 struct H265TimingInfo
 {
     Ipp8u   vps_timing_info_present_flag;
@@ -752,6 +787,7 @@ public:
 
 typedef Ipp32u IntraType;
 
+// RPS data structure
 struct ReferencePictureSet
 {
     Ipp8u inter_ref_pic_set_prediction_flag;
@@ -794,6 +830,7 @@ struct ReferencePictureSet
     Ipp8u getCheckLTMSBPresent(Ipp32s bufferNum) { return delta_poc_msb_present_flag[bufferNum]; }
 };
 
+// Reference picture list data structure
 struct ReferencePictureSetList
 {
     unsigned m_NumberOfReferencePictureSets;
@@ -809,6 +846,7 @@ private:
     mutable std::vector<ReferencePictureSet> referencePictureSet;
 };
 
+// Reference picture list data structure
 struct RefPicListModification
 {
     Ipp32u ref_pic_list_modification_flag_l0;
@@ -818,7 +856,7 @@ struct RefPicListModification
     Ipp32u list_entry_l1[MAX_NUM_REF_PICS + 1];
 };
 
-// Sequence parameter set structure, corresponding to the H.264 bitstream definition.
+// Sequence parameter set structure, corresponding to the HEVC bitstream definition.
 struct H265SeqParamSetBase
 {
     // bitstream params
@@ -935,8 +973,6 @@ struct H265SeqParamSetBase
     Ipp32u  log2_max_mv_length_horizontal;
     Ipp32u  log2_max_mv_length_vertical;
 
-
-
     ///////////////////////////////////////////////////////
     // calculated params
     // These fields are calculated from values above.  They are not written to the bitstream
@@ -965,11 +1001,9 @@ struct H265SeqParamSetBase
 
 };    // H265SeqParamSetBase
 
-// Sequence parameter set structure, corresponding to the H.264 bitstream definition.
+// Sequence parameter set structure, corresponding to the HEVC bitstream definition.
 struct H265SeqParamSet : public HeapObject, public H265SeqParamSetBase
 {
-/// SCALING_LIST class
-
     H265ScalingList m_scalingList;
 
     H265SeqParamSet()
@@ -1039,13 +1073,14 @@ struct H265SeqParamSet : public HeapObject, public H265SeqParamSetBase
     H265TimingInfo* getTimingInfo() { return &m_timingInfo; }
 };    // H265SeqParamSet
 
+// Tiles description
 struct TileInfo
 {
     Ipp32s firstCUAddr;
     Ipp32s endCUAddr;
 };
 
-// Picture parameter set structure, corresponding to the H.264 bitstream definition.
+// Picture parameter set structure, corresponding to the HEVC bitstream definition.
 struct H265PicParamSetBase
 {
     Ipp32u  pps_pic_parameter_set_id;
@@ -1096,7 +1131,6 @@ struct H265PicParamSetBase
     Ipp8u   lists_modification_present_flag;
     Ipp32u  log2_parallel_merge_level;
     Ipp8u   slice_segment_header_extension_present_flag;
-
 
     ///////////////////////////////////////////////////////
     // calculated params
@@ -1179,9 +1213,9 @@ struct H265PicParamSet : public HeapObject, public H265PicParamSetBase
     H265ScalingList* getScalingList() const         { return const_cast<H265ScalingList *>(&m_scalingList); }
 };    // H265PicParamSet
 
+// Explicit weighted prediction parameters parsed in slice header,
+// or Implicit weighted prediction parameters (8 bits depth values).
 typedef struct {
-  // Explicit weighted prediction parameters parsed in slice header,
-  // or Implicit weighted prediction parameters (8 bits depth values).
   Ipp8u       present_flag;
   Ipp32u      log2_weight_denom;
   Ipp32s      weight;
@@ -1189,7 +1223,7 @@ typedef struct {
   Ipp32s      delta_weight; // for HW decoder
 } wpScalingParam;
 
-// Slice header structure, corresponding to the H.264 bitstream definition.
+// Slice header structure, corresponding to the HEVC bitstream definition.
 struct H265SliceHeader
 {
     // from nal unit header
@@ -1278,6 +1312,7 @@ struct H265SliceHeader
     Ipp32s wNumBitsForShortTermRPSInSlice;  // used in h/w decoder
 }; // H265SliceHeader
 
+// SEI data storage
 struct H265SEIPayLoadBase
 {
     SEI_TYPE payLoadType;
@@ -1309,6 +1344,7 @@ struct H265SEIPayLoadBase
     }
 };
 
+// SEI heap object
 struct H265SEIPayLoad : public HeapObject, public H265SEIPayLoadBase
 {
     std::vector<Ipp8u> user_data; // for UserDataRegistered or UserDataUnRegistered
@@ -1330,14 +1366,7 @@ struct H265SEIPayLoad : public HeapObject, public H265SEIPayLoadBase
     }
 };
 
-enum
-{
-    CHROMA_FORMAT_400_H265       = 0,
-    CHROMA_FORMAT_420_H265       = 1,
-    CHROMA_FORMAT_422_H265       = 2,
-    CHROMA_FORMAT_444_H265       = 3
-};
-
+// POC container
 class PocDecoding
 {
 public:
@@ -1357,6 +1386,7 @@ public:
     }
 };
 
+// Error exception
 class h265_exception
 {
 public:
@@ -1378,6 +1408,7 @@ private:
     Ipp32s m_Status;
 };
 
+// Allocate an array or throw exception
 template <typename T>
 inline T * h265_new_array_throw(Ipp32s size)
 {
@@ -1387,6 +1418,7 @@ inline T * h265_new_array_throw(Ipp32s size)
     return t;
 }
 
+// Allocate an object or throw exception
 template <typename T>
 inline T * h265_new_throw()
 {
@@ -1396,6 +1428,7 @@ inline T * h265_new_throw()
     return t;
 }
 
+// Allocate an object or throw exception
 template <typename T, typename T1>
 inline T * h265_new_throw_1(T1 t1)
 {
@@ -1405,6 +1438,7 @@ inline T * h265_new_throw_1(T1 t1)
     return t;
 }
 
+// Color format constants conversion
 inline UMC::ColorFormat GetUMCColorFormat_H265(Ipp32s color_format)
 {
     UMC::ColorFormat format;
@@ -1428,6 +1462,7 @@ inline UMC::ColorFormat GetUMCColorFormat_H265(Ipp32s color_format)
     return format;
 }
 
+// Color format constants conversion
 inline Ipp32s GetH265ColorFormat(UMC::ColorFormat color_format)
 {
     Ipp32s format;
@@ -1457,30 +1492,7 @@ inline Ipp32s GetH265ColorFormat(UMC::ColorFormat color_format)
     return format;
 }
 
-inline UMC::ColorFormat ConvertColorFormatToAlpha_H265(UMC::ColorFormat cf)
-{
-    UMC::ColorFormat cfAlpha = cf;
-    switch(cf)
-    {
-    case UMC::GRAY:
-        cfAlpha = UMC::GRAYA;
-        break;
-    case UMC::YUV420:
-        cfAlpha = UMC::YUV420A;
-        break;
-    case UMC::YUV422:
-        cfAlpha = UMC::YUV422A;
-        break;
-    case UMC::YUV444:
-        cfAlpha = UMC::YUV444A;
-        break;
-    default:
-        break;
-    }
-
-    return cfAlpha;
-}
-
+// Calculate maximum allowed bitstream NAL unit size based on picture resolution
 inline size_t CalculateSuggestedSize(const H265SeqParamSet * sps)
 {
     size_t base_size = sps->pic_width_in_luma_samples * sps->pic_height_in_luma_samples;

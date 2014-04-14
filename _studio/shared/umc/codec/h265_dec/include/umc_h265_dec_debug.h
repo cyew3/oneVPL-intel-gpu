@@ -43,12 +43,14 @@ static int pppp = 0;
 #define DEBUG_PRINT1(x)
 #endif
 
-/*using of class UMCTimeCounter:
+/*
+Performance timer class
+Usage of class UMCTimeCounter:
 
 static UMCTimeCounter counter("function1") // global definition
 
 counter.startTimer();
-function1()
+function1();
 counter.suspendTimer();
 */
 class UMCTimeCounter
