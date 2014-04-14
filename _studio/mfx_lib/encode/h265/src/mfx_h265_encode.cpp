@@ -124,6 +124,7 @@ mfxExtBuffer HEVC_HEADER = { MFX_EXTBUFF_HEVCENC, sizeof(mfxExtCodingOptionHEVC)
     tab_FastCbfMode[x],\
     tab_PuDecisionSatd[x],\
     tab_MinCUDepthAdapt[x],\
+    tab_NumBiRefineIter[x],\
 }
 
 //#define __old_tu_definition
@@ -248,6 +249,7 @@ TU_OPT(ForceNumThread,                 0,   0,   0,   0,   0,   0,   0)
 TU_OPT(HadamardMe,                     2,   2,   2,   2,   2,   2,   1)
 TU_OPT(PatternIntPel,                  1,   1,   1,   1,   1,   1,   1)
 TU_OPT(PatternSubPel,                  3,   3,   3,   3,   3,   3,   4) //4 -dia subpel search; 3- square
+TU_OPT(NumBiRefineIter,              999, 999, 999, 999, 999, 999, 999) //practically infinite iteration
 
 // reference options
 TU_OPT(GPB,                           ON,  ON,  ON,  ON,  ON, OFF, OFF) //ww12.1 TU4 ON->OFF exchsnge 0.9% qual for 6.2% speed
@@ -820,6 +822,8 @@ mfxStatus MFXVideoENCODEH265::Init(mfxVideoParam* par_in)
             m_mfxHEVCOpts.PuDecisionSatd = opts_tu->PuDecisionSatd;
         if (m_mfxHEVCOpts.MinCUDepthAdapt == 0)
             m_mfxHEVCOpts.MinCUDepthAdapt = opts_tu->MinCUDepthAdapt;
+        if (m_mfxHEVCOpts.NumBiRefineIter == 0)
+            m_mfxHEVCOpts.NumBiRefineIter = opts_tu->NumBiRefineIter;
     }
 
     // uncomment here if sign bit hiding doesn't work properly
@@ -1609,6 +1613,7 @@ mfxStatus MFXVideoENCODEH265::Query(VideoCORE *core, mfxVideoParam *par_in, mfxV
             opts_out->PatternIntPel = opts_in->PatternIntPel;
             opts_out->PatternSubPel = opts_in->PatternSubPel;
             opts_out->ForceNumThread = opts_in->ForceNumThread;
+            opts_out->NumBiRefineIter = opts_in->NumBiRefineIter;
 
             CHECK_OPTION(opts_in->AnalyzeChroma, opts_out->AnalyzeChroma, isInvalid);  /* tri-state option */
             CHECK_OPTION(opts_in->SignBitHiding, opts_out->SignBitHiding, isInvalid);  /* tri-state option */

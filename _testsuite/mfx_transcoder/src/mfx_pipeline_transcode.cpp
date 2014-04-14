@@ -252,6 +252,7 @@ MFXTranscodingPipeline::MFXTranscodingPipeline(IMFXPipelineFactory *pFactory)
         HANDLE_HEVC_OPTION(FastCbfMode,              OPT_TRI_STATE,  "on/off stop TU mode serch after zero cbf"),
         HANDLE_HEVC_OPTION(PuDecisionSatd,           OPT_TRI_STATE,  "on/off use SATD for PU decision"),
         HANDLE_HEVC_OPTION(MinCUDepthAdapt,          OPT_TRI_STATE,  "on/off adaptive min CU depth"),
+        HANDLE_HEVC_OPTION(NumBiRefineIter,          OPT_UINT_16,    "1-check best L0+L1; N-check best L0+L1 then N-1 refinement iterations"),
 
         HANDLE_VP8PARAM_OPTION(VP8Version,            OPT_UINT_8,    "0-maxU8"),
         HANDLE_VP8PARAM_OPTION(LoopFilterType,        OPT_UINT_8,    "0-maxU8"),

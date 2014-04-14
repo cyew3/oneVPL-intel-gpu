@@ -339,6 +339,7 @@ mfxStatus H265Encoder::InitH265VideoParam(const mfxVideoParam *param, const mfxE
     pars->saoOpt = opts_hevc->SaoOpt;
     pars->patternIntPel = opts_hevc->PatternIntPel;
     pars->patternSubPel = opts_hevc->PatternSubPel;
+    pars->numBiRefineIter = opts_hevc->NumBiRefineIter;
     pars->puDecisionSatd = (opts_hevc->PuDecisionSatd == MFX_CODINGOPTION_ON);
     pars->minCUDepthAdapt = (opts_hevc->MinCUDepthAdapt == MFX_CODINGOPTION_ON);
 

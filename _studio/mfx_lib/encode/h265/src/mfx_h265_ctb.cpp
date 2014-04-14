@@ -3167,9 +3167,9 @@ void H265CU::MePu(H265MEInfo *meInfo, Ipp32s lastPredIdx)
 
         // refine Bidir
         if (IPP_MIN(costList[0], costList[1]) * 9 > 8 * costBiBest) {
-            bool changed = false;
 
-            do {
+            bool changed = true;
+            for (Ipp32s iter = 0; iter < m_par->numBiRefineIter - 1 && changed; iter++) {
                 H265MV mvCenter[2] = { mvBiBest[0], mvBiBest[1] };
                 changed = false;
                 Ipp32s count = (refF == refB && mvBiBest[0] == mvBiBest[1]) ? 2 * 2 : 2 * 2 * 2;
@@ -3181,9 +3181,9 @@ void H265CU::MePu(H265MEInfo *meInfo, Ipp32s lastPredIdx)
                         mv[i >> 2].mvy += (i & 1) ? 1 : -1;
 
                     Ipp32s mvCost = MvCost1RefLog(mv[0], (Ipp8s)idxL0, predInfo, 0) +
-                        MvCost1RefLog(mv[1], (Ipp8s)idxL1, predInfo, 1);
+                                    MvCost1RefLog(mv[1], (Ipp8s)idxL1, predInfo, 1);
                     Ipp32s cost = MatchingMetricBipredPu(src, meInfo, refF->y, refF->pitch_luma,
-                        refB->y, refB->pitch_luma, mv, useHadamard);
+                                                         refB->y, refB->pitch_luma, mv, useHadamard);
                     cost += mvCost;
 
                     if (costBiBest > cost) {
@@ -3194,7 +3194,7 @@ void H265CU::MePu(H265MEInfo *meInfo, Ipp32s lastPredIdx)
                         changed = true;
                     }
                 }
-            } while (changed);
+            }
 
             Ipp32s bitsBiBest = MVP_LX_FLAG_BITS + predIdxBits[2];
             bitsBiBest += GetFlBits(idxL0, m_cslice->num_ref_idx[0]);
@@ -3258,7 +3258,6 @@ void H265CU::MePu(H265MEInfo *meInfo, Ipp32s lastPredIdx)
         meInfo->refIdx[1] = -1;
         meInfo->MV[0] = mvRefBest[0][idxL0];
         meInfo->MV[1] = MV_ZERO;
-///        printf("idx = %i mv: %i - %i\n", meInfo->refIdx[0], meInfo->MV[0].mvx, meInfo->MV[0].mvy);
     }
     else if (costList[1] <= costBiBest) {
         meInfo->interDir = INTER_DIR_PRED_L1;
@@ -3403,9 +3402,9 @@ void H265CU::MePuGacc(H265MEInfo *meInfo, Ipp32s lastPredIdx)
 
         // refine Bidir
         if (IPP_MIN(costList[0], costList[1]) * 9 > 8 * costBiBest) {
-            bool changed = false;
 
-            do {
+            bool changed = true;
+            for (Ipp32s iter = 0; iter < m_par->numBiRefineIter - 1 && changed; iter++) {
                 H265MV mvCenter[2] = { mvBiBest[0], mvBiBest[1] };
                 changed = false;
                 Ipp32s count = (refF == refB && mvBiBest[0] == mvBiBest[1]) ? 2 * 2 : 2 * 2 * 2;
@@ -3430,7 +3429,7 @@ void H265CU::MePuGacc(H265MEInfo *meInfo, Ipp32s lastPredIdx)
                         changed = true;
                     }
                 }
-            } while (changed);
+            }
 
             Ipp32s bitsBiBest = MVP_LX_FLAG_BITS + predIdxBits[2];
             bitsBiBest += GetFlBits(idxL0, m_cslice->num_ref_idx[0]);

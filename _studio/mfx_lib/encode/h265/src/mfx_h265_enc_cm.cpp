@@ -839,17 +839,19 @@ void RunVmeCurr(H265VideoParam const &param, H265Frame *pFrameCur, H265Slice *pS
                         EnqueueKernel(device, queue, kernelRefine32x32, width2x / 16, height2x / 16,
                             lastEvent[cmCurIdx]);
                     }
-                    {   MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "RefLast_kernelRefine32x16");
-                        SetKernelArg(kernelRefine32x16, dist[PU32x16], mv[PU32x16], raw[cmCurIdx],
-                            fwdRef[globi]);
-                        EnqueueKernel(device, queue, kernelRefine32x16, width2x / 16, height2x / 8,
-                            lastEvent[cmCurIdx]);
-                    }
-                    {   MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "RefLast_kernelRefine16x32");
-                        SetKernelArg(kernelRefine16x32, dist[PU16x32], mv[PU16x32], raw[cmCurIdx],
-                            fwdRef[globi]);
-                        EnqueueKernel(device, queue, kernelRefine16x32, width2x / 8, height2x / 16,
-                            lastEvent[cmCurIdx]);
+                    if (param.partModes > 1) {
+                        {   MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "RefLast_kernelRefine32x16");
+                            SetKernelArg(kernelRefine32x16, dist[PU32x16], mv[PU32x16], raw[cmCurIdx],
+                                fwdRef[globi]);
+                            EnqueueKernel(device, queue, kernelRefine32x16, width2x / 16, height2x / 8,
+                                lastEvent[cmCurIdx]);
+                        }
+                        {   MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "RefLast_kernelRefine16x32");
+                            SetKernelArg(kernelRefine16x32, dist[PU16x32], mv[PU16x32], raw[cmCurIdx],
+                                fwdRef[globi]);
+                            EnqueueKernel(device, queue, kernelRefine16x32, width2x / 8, height2x / 16,
+                                lastEvent[cmCurIdx]);
+                        }
                     }
                 }
                 device->DestroyVmeSurfaceG7_5(refs2x);
@@ -951,15 +953,17 @@ void RunVmeNext(H265VideoParam const & param, H265Frame * pFrameNext, H265Slice 
                         EnqueueKernel(device, queue, kernelRefine32x32, width2x / 16, height2x / 16,
                                         lastEvent[cmNextIdx]);
                     }
-                    {   MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "RefNext_kernelRefine32x16");
-                        SetKernelArg(kernelRefine32x16, dist[PU32x16], mv[PU32x16], raw[cmNextIdx], fwdRef[globi]);
-                        EnqueueKernel(device, queue, kernelRefine32x16, width2x / 16, height2x / 8,
-                                        lastEvent[cmNextIdx]);
-                    }
-                    {   MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "RefNext_kernelRefine16x32");
-                        SetKernelArg(kernelRefine16x32, dist[PU16x32], mv[PU16x32], raw[cmNextIdx], fwdRef[globi]);
-                        EnqueueKernel(device, queue, kernelRefine16x32, width2x / 8, height2x / 16,
-                                        lastEvent[cmNextIdx]);
+                    if (param.partModes > 1) {
+                        {   MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "RefNext_kernelRefine32x16");
+                            SetKernelArg(kernelRefine32x16, dist[PU32x16], mv[PU32x16], raw[cmNextIdx], fwdRef[globi]);
+                            EnqueueKernel(device, queue, kernelRefine32x16, width2x / 16, height2x / 8,
+                                            lastEvent[cmNextIdx]);
+                        }
+                        {   MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "RefNext_kernelRefine16x32");
+                            SetKernelArg(kernelRefine16x32, dist[PU16x32], mv[PU16x32], raw[cmNextIdx], fwdRef[globi]);
+                            EnqueueKernel(device, queue, kernelRefine16x32, width2x / 8, height2x / 16,
+                                            lastEvent[cmNextIdx]);
+                        }
                     }
                 }
 

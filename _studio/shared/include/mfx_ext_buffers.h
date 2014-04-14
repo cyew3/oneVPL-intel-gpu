@@ -212,7 +212,8 @@ typedef struct {
     mfxU16      FastCbfMode;        // tri-state, stop PU modes after cbf is 0
     mfxU16      PuDecisionSatd;     // tri-state, use SATD for PU decision
     mfxU16      MinCUDepthAdapt;    // tri-state, adaptive min CU depth
-    mfxU16      reserved[7];
+    mfxU16      NumBiRefineIter;    // 1-check best L0+L1; N-check best L0+L1 then N-1 refinement iterations
+    mfxU16      reserved[6];
 } mfxExtCodingOptionHEVC;
 
 
