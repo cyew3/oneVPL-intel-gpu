@@ -582,6 +582,7 @@ void H265CU::InitCu(H265VideoParam *_par, H265CUData *_data, H265CUData *_dataTe
     m_par = _par;
 
     m_cslice = _cslice;
+    m_costStat = m_par->m_costStat;
     m_bsf = _bsf;
     m_logMvCostTable = logMvCostTable + (1 << 15);
     m_dataSave = _data;
@@ -652,6 +653,9 @@ void H265CU::InitCu(H265VideoParam *_par, H265CUData *_data, H265CUData *_dataTe
             for (Ipp32u i = 1; i < m_numPartition; i++)
                 small_memcpy(m_dataSave+i,m_dataSave,sizeof(H265CUData));
         }
+        for (Ipp32u i = 0; i < 4; i++) {
+            m_costStat[m_ctbAddr].cost[i] = m_costStat[m_ctbAddr].num[i] = 0;
+        }
     }
 
     // Setting neighbor CU
@@ -659,7 +663,7 @@ void H265CU::InitCu(H265VideoParam *_par, H265CUData *_data, H265CUData *_dataTe
     m_above       = NULL;
     m_aboveLeft   = NULL;
     m_aboveRight  = NULL;
-    m_leftAddr = - 1;
+    m_leftAddr = -1;
     m_aboveAddr = -1;
     m_aboveLeftAddr = -1;
     m_aboveRightAddr = -1;
@@ -1399,6 +1403,43 @@ void H265CU::ModeDecision(Ipp32u absPartIdx, Ipp32u offset, Ipp8u depth, CostTyp
         skippedFlag = (m_dataBest + ((depth + 0) << m_par->Log2NumPartInCU))[absPartIdx].flags.skippedFlag;
         Ipp32s qp_best = (m_dataBest + ((depth + 0) << m_par->Log2NumPartInCU))[absPartIdx].qp;
         cuSplitThresholdCu = m_par->cu_split_threshold_cu[qp_best][m_cslice->slice_type != I_SLICE][depth];
+
+        if (m_par->cuSplitThreshold > 0) {
+            Ipp64u costNeigh = 0, costCur = 0, numNeigh = 0, numCur = 0;
+            Ipp64f costAvg = 0;
+            costStat* cur = m_costStat + m_ctbAddr;
+
+            costCur += cur->cost[depth] * cur->num[depth];
+            numCur += cur->num[depth];
+            if (m_aboveAddr >= m_cslice->slice_segment_address) {
+                costStat* above = m_costStat + m_aboveAddr;
+                costNeigh += above->cost[depth] * above->num[depth];
+                numNeigh += above->num[depth];
+            }
+            if (m_aboveLeftAddr >= m_cslice->slice_segment_address) {
+                costStat* aboveLeft = m_costStat + m_aboveLeftAddr;
+                costNeigh += aboveLeft->cost[depth] * aboveLeft->num[depth];
+                numNeigh += aboveLeft->num[depth];
+            }
+            if (m_aboveRightAddr >= m_cslice->slice_segment_address) {
+                costStat* aboveRight =  m_costStat + m_aboveRightAddr;
+                costNeigh += aboveRight->cost[depth] * aboveRight->num[depth];
+                numNeigh += aboveRight->num[depth];
+            }
+            if (m_leftAddr >= m_cslice->slice_segment_address) {
+                costStat* left =  m_costStat + m_leftAddr;
+                costNeigh += left->cost[depth] * left->num[depth];
+                numNeigh += left->num[depth];
+            }
+
+            if (numNeigh + numCur)
+                costAvg = ((0.61 * costCur) + (0.39 * costNeigh)) / ((0.61 * numCur) + (0.39 * numNeigh));
+
+            if (costBest < (m_par->cuSplitThreshold / 256.0) * costAvg && costAvg != 0 && depth != 0)
+            {
+                splitMode = SPLIT_NONE;
+            }
+        }
     }
 
     if (costBest >= cuSplitThresholdCu && splitMode != SPLIT_NONE && !(skippedFlag && m_par->cuSplit == 2)) {
@@ -1416,6 +1457,13 @@ void H265CU::ModeDecision(Ipp32u absPartIdx, Ipp32u offset, Ipp8u depth, CostTyp
             CostType costTemp;
             ModeDecision(absPartIdx + (numParts >> 2) * i, offset + subsize * i, depth+1, &costTemp);
             costSplit += costTemp;
+            if (m_par->cuSplitThreshold > 0 && (m_dataBest + ((depth + 1) << m_par->Log2NumPartInCU) + absPartIdx + (numParts >> 2) * i)->predMode != MODE_INTRA)
+            {
+                costStat* cur = m_costStat + m_ctbAddr;
+                Ipp64u costTotal = cur->cost[depth + 1] * cur->num[depth + 1];
+                cur->num[depth + 1] ++;
+                cur->cost[depth + 1] = (costTotal + costTemp) / cur->num[depth + 1];
+            }
         }
         if (m_rdOptFlag && splitMode != SPLIT_MUST) {
             m_bsf->Reset();
@@ -1434,6 +1482,12 @@ void H265CU::ModeDecision(Ipp32u absPartIdx, Ipp32u offset, Ipp8u depth, CostTyp
             printCostStat(fp_cu, m_par->QP,m_cslice->slice_type != I_SLICE, widthCu,costBest,costSplit);
         }
 #endif
+        if (m_par->cuSplitThreshold > 0 && splitMode == SPLIT_TRY && depth == 0) {
+            costStat* cur = m_costStat + m_ctbAddr;
+            Ipp64u costTotal = cur->cost[depth] * cur->num[depth];
+            cur->num[depth] ++;
+            cur->cost[depth] = (costTotal + costBest) / cur->num[depth];
+        }
 
         // add cost of cu split flag to costSplit
         if (costBest > costSplit) {

@@ -80,6 +80,7 @@ struct H265VideoParam {
     Ipp8u  fastCbfMode;
     Ipp8u  puDecisionSatd;
     Ipp8u  minCUDepthAdapt;
+    Ipp16u cuSplitThreshold;
     Ipp8u  enableCmFlag;
     Ipp16u cmIntraThreshold;// 0-no theshold
     Ipp16u tuSplitIntra;    // 0-default; 1-always; 2-never; 3-for Intra frames only
@@ -141,6 +142,7 @@ struct H265VideoParam {
     H265SeqParameterSet *csps;
     H265PicParameterSet *cpps;
     Ipp8u *m_slice_ids;
+    costStat *m_costStat;
 };
 
 struct H265ShortTermRefPicSet
@@ -184,6 +186,7 @@ public:
     Ipp32u data_temp_size;
     Ipp8u *m_slice_ids;
     H265EncoderRowInfo *m_row_info;
+    costStat *m_costStat;
 
     Ipp32u m_numShortTermRefPicSets;
     Ipp32s m_PicOrderCnt_Accu; // Accumulator to compensate POC resets on IDR frames.

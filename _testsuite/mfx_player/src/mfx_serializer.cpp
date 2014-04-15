@@ -272,6 +272,7 @@ void MFXStructureRef <mfxExtCodingOptionHEVC>::ConstructValues() const
     SERIALIZE_INT(PuDecisionSatd);
     SERIALIZE_INT(MinCUDepthAdapt);
     SERIALIZE_INT(NumBiRefineIter);
+    SERIALIZE_INT(CUSplitThreshold);
 }
 
 void MFXStructureRef <mfxExtCodingOptionVP8Param>::ConstructValues() const

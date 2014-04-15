@@ -75,6 +75,11 @@ public:
     };
 };
 
+typedef struct {
+    Ipp64u cost[4];
+    Ipp32u num[4];
+} costStat;
+
 struct H265CUPtr {
     H265CUData *ctbData;
     Ipp32s ctbAddr;
@@ -218,6 +223,7 @@ public:
     Ipp32s VerMax;
     Ipp32s VerMin;
     const Ipp8u *m_logMvCostTable;
+    costStat *m_costStat;
 
     SaoEncodeFilter m_saoEncodeFilter;
 

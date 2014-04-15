@@ -342,6 +342,7 @@ mfxStatus H265Encoder::InitH265VideoParam(const mfxVideoParam *param, const mfxE
     pars->numBiRefineIter = opts_hevc->NumBiRefineIter;
     pars->puDecisionSatd = (opts_hevc->PuDecisionSatd == MFX_CODINGOPTION_ON);
     pars->minCUDepthAdapt = (opts_hevc->MinCUDepthAdapt == MFX_CODINGOPTION_ON);
+    pars->cuSplitThreshold = opts_hevc->CUSplitThreshold;
 
     for (Ipp32s i = 0; i <= 6; i++) {
         pars->num_cand_0[i] = Saturate(1, 33, pars->num_cand_0[i]);
@@ -1058,6 +1059,7 @@ mfxStatus H265Encoder::Init(const mfxVideoParam *param, const mfxExtCodingOption
     //memSize += sizeof(Ipp32u) * profile_frequency + DATA_ALIGN;
     memSize += sizeof(H265CU) * m_videoParam.num_threads + DATA_ALIGN;
     memSize += (1 << 16); // for m_logMvCostTable
+    memSize += numCtbs * sizeof(costStat) + DATA_ALIGN;
 
     memBuf = (Ipp8u *)H265_Malloc(memSize);
     MFX_CHECK_STS_ALLOC(memBuf);
@@ -1108,6 +1110,9 @@ mfxStatus H265Encoder::Init(const mfxVideoParam *param, const mfxExtCodingOption
 
     m_logMvCostTable = ptr;
     ptr += (1 << 16);
+
+    m_costStat = (costStat *)ptr;
+    ptr += numCtbs * sizeof(costStat);
 
     // init lookup table for 2*log2(x)+2
     m_logMvCostTable[(1 << 15)] = 1;
@@ -1251,6 +1256,7 @@ mfxStatus H265Encoder::Init(const mfxVideoParam *param, const mfxExtCodingOption
     //}
 
     m_videoParam.m_slice_ids = m_slice_ids;
+    m_videoParam.m_costStat = m_costStat;
 
     ippsZero_8u((Ipp8u *)cu, sizeof(H265CU) * m_videoParam.num_threads);
     ippsZero_8u((Ipp8u*)data_temp, sizeof(H265CUData) * data_temp_size * m_videoParam.num_threads);
