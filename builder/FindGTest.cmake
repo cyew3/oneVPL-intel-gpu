@@ -33,14 +33,14 @@ if(NOT GTEST_INCLUDE MATCHES NOTFOUND)
   if(NOT GTEST_LIBRARY MATCHES NOTFOUND AND
 	 NOT GTEST_MAIN_LIBRARY MATCHES NOTFOUND)
     set( GTEST_FOUND TRUE )
-    include_directories( "/usr/local/include" )
 
-  link_directories( "/usr/local/bin" )
+    include_directories( "/usr/local/include" )
+    link_directories( "/usr/local/lib" )
   endif( )
 endif( )
 
 if(NOT DEFINED GTEST_FOUND)
-  message( WARNING "Google tests libraries was not found! Build and set libgtest.a libgtest_main.a to /usr/local/lib to enable behavior tests." )
+  message( WARNING "Google tests libraries were not found! Build GTest and install to the /usr/local." )
 else ( )
   message( STATUS "Google tests libraries were found here /usr/local/lib" )
 endif( )
