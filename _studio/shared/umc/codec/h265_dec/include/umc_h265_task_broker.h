@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2012-2013 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2012-2014 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -150,7 +150,13 @@ private:
     bool GetReconstructTask(H265DecoderFrameInfo * info, H265Task *pTask);
     bool GetSAOTask(H265DecoderFrameInfo * info, H265Task *pTask);
 
-    void GetResources(H265Task *pTask);
+    bool GetDecodingTileTask(H265DecoderFrameInfo * info, H265Task *pTask);
+    bool GetReconstructTileTask(H265DecoderFrameInfo * info, H265Task *pTask);
+    bool GetDecRecTileTask(H265DecoderFrameInfo * info, H265Task *pTask);
+    bool GetDeblockingTaskTile(H265DecoderFrameInfo * info, H265Task *pTask);
+    bool GetSAOTaskTile(H265DecoderFrameInfo * info, H265Task *pTask);
+
+    bool GetResources(H265Task *pTask);
     void FreeResources(H265Task *pTask);
 
 #if defined (__ICL)
@@ -163,3 +169,4 @@ private:
 
 #endif // __UMC_H264_TASK_BROKER_H
 #endif // UMC_ENABLE_H264_VIDEO_DECODER
+

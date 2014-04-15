@@ -1326,6 +1326,7 @@ UMC::Status TaskSupplier_H265::xDecodePPS(H265Bitstream &bs)
 
         pps.tilesInfo[i].endCUAddr = (startY + pps.row_height[tileY] - 1)* WidthInLCU + startX + pps.column_width[tileX] - 1;
         pps.tilesInfo[i].firstCUAddr = startY * WidthInLCU + startX;
+        pps.tilesInfo[i].width = pps.column_width[tileX];
     }
 
     m_Headers.m_PicParams.AddHeader(&pps);
@@ -1847,7 +1848,6 @@ H265Slice *TaskSupplier_H265::DecodeSliceHeader(UMC::MediaDataEx *nalUnit)
     }
 
     H265Slice * pSlice = m_ObjHeap.AllocateObject<H265Slice>();
-    pSlice->SetHeap(&m_ObjHeap);
     pSlice->IncrementReference();
 
     notifier0<H265Slice> memory_leak_preventing_slice(pSlice, &H265Slice::DecrementReference);
@@ -1893,7 +1893,6 @@ H265Slice *TaskSupplier_H265::DecodeSliceHeader(UMC::MediaDataEx *nalUnit)
     pSlice->m_pCurrentFrame = NULL;
 
     memory_leak_preventing.ClearNotification();
-    pSlice->m_dTime = pSlice->m_source.GetTime();
 
     if (!pSlice->Reset(&m_pocDecoding))
     {
@@ -2310,7 +2309,7 @@ UMC::Status TaskSupplier_H265::InitFreeFrame(H265DecoderFrame * pFrame, const H2
     //pFrame->m_CodingData->m_NumCUsInFrame = iCUCount;
 
     pFrame->m_FrameType = SliceTypeToFrameType(pSlice->GetSliceHeader()->slice_type);
-    pFrame->m_dFrameTime = pSlice->m_dTime;
+    pFrame->m_dFrameTime = pSlice->m_source.GetTime();
     pFrame->m_crop_left = SubWidthC[pSeqParam->chroma_format_idc] * (pSeqParam->conf_win_left_offset + pSeqParam->def_disp_win_left_offset);
     pFrame->m_crop_right = SubWidthC[pSeqParam->chroma_format_idc] * (pSeqParam->conf_win_right_offset + pSeqParam->def_disp_win_right_offset);
     pFrame->m_crop_top = SubHeightC[pSeqParam->chroma_format_idc] * (pSeqParam->conf_win_top_offset + pSeqParam->def_disp_win_top_offset);

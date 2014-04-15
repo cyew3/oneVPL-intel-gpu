@@ -1079,6 +1079,7 @@ struct TileInfo
 {
     Ipp32s firstCUAddr;
     Ipp32s endCUAddr;
+    Ipp32s width;
 };
 
 // Picture parameter set structure, corresponding to the HEVC bitstream definition.

@@ -42,21 +42,12 @@ enum
 // Task ID enumerator
 enum
 {
-    // whole slice is processed
-    TASK_PROCESS_H265                = 0,
-    // piece of slice is decoded
-    TASK_DEC_H265,
-    // piece of future frame's slice is decoded
-    TASK_REC_H265,
-    // whole slice is deblocked
-    TASK_DEB_SLICE_H265,
-    TASK_DEB_FRAME_H265,
-    // piece of slice is deblocked
-    TASK_DEB_H265,
-    // //whole frame is deblocked (when there is the slice groups)
-    TASK_DEC_REC_H265,
-    TASK_SAO_H265,
-    TASK_SAO_FRAME_H265
+    TASK_PROCESS_H265  = 0, // whole slice is decoded and reconstructed
+    TASK_DEC_H265, // piece of slice is decoded
+    TASK_REC_H265, // piece of slice is reconstructed
+    TASK_DEB_H265, // piece of slice is deblocked
+    TASK_DEC_REC_H265, // piece of slice is decoded and reconstructed
+    TASK_SAO_H265  // piece of slice is saoed
 };
 
 struct H265RefListInfo
@@ -82,10 +73,28 @@ class MemoryPiece;
 class H265DecoderFrame;
 class H265DecoderFrameInfo;
 
+struct CUProcessInfo
+{
+    Ipp32s m_curCUToProcess[LAST_PROCESS_ID];
+    Ipp32s m_processInProgress[LAST_PROCESS_ID];
+    bool m_isCompleted;
+    Ipp32s m_width;
+
+    void Initialize(Ipp32s firstCUAddr, Ipp32s width)
+    {
+        for (Ipp32s task = 0; task < LAST_PROCESS_ID; task++)
+        {
+            m_curCUToProcess[task] = firstCUAddr;
+            m_processInProgress[task] = 0;
+        }
+
+        m_width = width;
+        m_isCompleted = false;
+    }
+};
+
 class H265Slice : public HeapObject
 {
-    // It is OK. H264SliceStore is owner of H265Slice object.
-    // He can do what he wants.
     friend class H265SegmentDecoderMultiThreaded;
     friend class TaskBroker_H265;
     friend class TaskBrokerTwoThread_H265;
@@ -94,13 +103,11 @@ class H265Slice : public HeapObject
 
 public:
     // Default constructor
-    H265Slice(UMC::MemoryAllocator *pMemoryAllocator = 0);
+    H265Slice();
     // Destructor
     virtual
     ~H265Slice(void);
 
-    // Initialize slice
-    bool Init(Ipp32s iConsumerNumber);
     // Set slice source data
     bool Reset(PocDecoding * pocDecoding);
     // Set current slice number
@@ -115,14 +122,13 @@ public:
     //
 
     // Obtain pointer to slice header
-    const H265SliceHeader *GetSliceHeader(void) const {return &m_SliceHeader;}
-    H265SliceHeader *GetSliceHeader(void) {return &m_SliceHeader;}
+    const H265SliceHeader *GetSliceHeader() const {return &m_SliceHeader;}
+    H265SliceHeader *GetSliceHeader() {return &m_SliceHeader;}
     // Obtain bit stream object
-    H265Bitstream *GetBitStream(void){return &m_BitStream;}
-    Ipp32s GetFirstMB(void) const {return m_iFirstMB;}
-    void SetFirstMBNumber(Ipp32s x) {m_iFirstMB = x;}
+    H265Bitstream *GetBitStream(){return &m_BitStream;}
+    Ipp32s GetFirstMB() const {return m_iFirstMB;}
     // Obtain current picture parameter set
-    const H265PicParamSet *GetPicParam(void) const {return m_pPicParamSet;}
+    const H265PicParamSet *GetPicParam() const {return m_pPicParamSet;}
     void SetPicParam(const H265PicParamSet * pps)
     {
         m_pPicParamSet = pps;
@@ -148,22 +154,14 @@ public:
     Ipp32s GetMaxMB(void) const {return m_iMaxMB;}
     void SetMaxMB(Ipp32s x) {m_iMaxMB = x;}
 
-    Ipp32s GetMBCount() const { return m_iMaxMB - m_iFirstMB;}
-
     // Build reference lists from slice reference pic set. HEVC spec 8.3.2
     UMC::Status UpdateReferenceList(H265DBPList *dpb);
 
     bool IsError() const {return m_bError;}
 
-    void SetHeap(Heap_Objects  *pObjHeap)
-    {
-        m_pObjHeap = pObjHeap;
-    }
-
 public:
 
     MemoryPiece m_source;                                 // (MemoryPiece *) pointer to owning memory piece
-    Ipp64f m_dTime;                                        // (Ipp64f) slice's time stamp
 
 public:  // DEBUG !!!! should remove dependence
 
@@ -187,29 +185,14 @@ public:
     Ipp32s m_iFirstMB;                                          // (Ipp32s) first MB number in slice
     Ipp32s m_iMaxMB;                                            // (Ipp32s) last unavailable  MB number in slice
 
-    Ipp32s m_iAvailableMB;                                      // (Ipp32s) available number of macroblocks (used in "unknown mode")
+    CUProcessInfo processInfo;
 
-    Ipp32s m_mvsDistortion;
-
-    Ipp32s m_curTileRec;                                          // (Ipp32s) current MB number to reconstruct
-    Ipp32s m_curTileDec;                                          // (Ipp32s) current MB number to reconstruct
-
-    Ipp32s m_curMBToProcess[LAST_PROCESS_ID];
-
-    bool m_bInProcess;                                          // (bool) slice is under whole decoding
-    Ipp32s m_processVacant[LAST_PROCESS_ID];
     bool m_bError;                                              // (bool) there is an error in decoding
 
-    bool m_bDecoded;                                            // (bool) "slice has been decoded" flag
-    bool m_bPrevDeblocked;                                      // (bool) "previous slice has been deblocked" flag
     bool m_bDeblocked;                                          // (bool) "slice has been deblocked" flag
     bool m_bSAOed;
 
     // memory management tools
-    UMC::MemoryAllocator *m_pMemoryAllocator;                        // (MemoryAllocator *) pointer to memory allocation tool
-
-    Heap_Objects           *m_pObjHeap;
-
     DecodingContext        *m_context;
 
 public:
@@ -266,8 +249,8 @@ bool IsPictureTheSame(H265Slice *pSliceOne, H265Slice *pSliceTwo)
 } // bool IsPictureTheSame(H265SliceHeader *pOne, H265SliceHeader *pTwo)
 
 // Declaration of internal class(es)
-class H265SegmentDecoder;
 class H265SegmentDecoderMultiThreaded;
+struct TileThreadingInfo;
 
 class H265Task
 {
@@ -288,9 +271,9 @@ public:
         m_iTaskID = 0;
         m_bDone = false;
         m_bError = false;
-        m_mvsDistortion = 0;
         m_taskPreparingGuard = 0;
         m_context = 0;
+        m_threadingInfo = 0;
     }
 
     UMC::Status (H265SegmentDecoderMultiThreaded::*pFunction)(H265Task &task);
@@ -300,10 +283,10 @@ public:
 
     DecodingContext * m_context;
     H265Slice *m_pSlice;                                        // (H265Slice *) pointer to owning slice
+    TileThreadingInfo * m_threadingInfo;
     H265DecoderFrameInfo * m_pSlicesInfo;
     UMC::AutomaticUMCMutex    * m_taskPreparingGuard;
 
-    Ipp32s m_mvsDistortion;
     Ipp32s m_iThreadNumber;                                     // (Ipp32s) owning thread number
     Ipp32s m_iFirstMB;                                          // (Ipp32s) first MB in slice
     Ipp32s m_iMaxMB;                                            // (Ipp32s) maximum MB number in owning slice

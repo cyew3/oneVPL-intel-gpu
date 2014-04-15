@@ -91,6 +91,7 @@ void DecodingContext::Init(H265Slice *slice)
     m_coeffsWrite = 0;
 
     m_mvsDistortion = 0;
+    m_mvsDistortionTemp = 0;
 
     m_weighted_prediction = m_sh->slice_type == P_SLICE ? m_pps->weighted_pred_flag : m_pps->weighted_bipred_flag;
 }
@@ -367,35 +368,6 @@ UMC::Status H265SegmentDecoder::Init(Ipp32s iNumber)
     return UMC::UMC_OK;
 
 } // Status H265SegmentDecoder::Init(Ipp32s sNumber)
-
-SegmentDecoderHPBase_H265 *CreateSD_H265(Ipp32s bit_depth_luma, Ipp32s bit_depth_chroma)
-{
-    if (bit_depth_chroma > 8 || bit_depth_luma > 8)
-    {
-        return CreateSegmentDecoderWrapper<Ipp16s, Ipp8u, Ipp8u>::CreateSoftSegmentDecoder();    }
-    else
-    {
-        return CreateSegmentDecoderWrapper<Ipp16s, Ipp8u, Ipp8u>::CreateSoftSegmentDecoder();
-    }
-
-} // SegmentDecoderHPBase_H265 *CreateSD(Ipp32s bit_depth_luma,
-
-static
-void InitializeSDCreator()
-{
-    CreateSegmentDecoderWrapper<Ipp16s, Ipp8u, Ipp8u>::CreateSoftSegmentDecoder();
-}
-
-class SDInitializer
-{
-public:
-    SDInitializer()
-    {
-        InitializeSDCreator();
-    }
-};
-
-static SDInitializer tableInitializer;
 
 Ipp32s H265SegmentDecoder::parseSaoMaxUvlc(Ipp32s maxSymbol)
 {
@@ -2321,8 +2293,8 @@ void H265SegmentDecoder::UpdatePUInfo(Ipp32u PartX, Ipp32u PartY, Ipp32u PartWid
             MVi.m_index[RefListIdx] = (Ipp8s)refInfo.refFrame->m_index;
             MVi.m_flags[RefListIdx] = Ipp8u(refInfo.isLongReference ? COL_TU_LT_INTER : COL_TU_ST_INTER);
 
-            if (MVi.m_mv[RefListIdx].Vertical > m_context->m_mvsDistortion)
-                m_context->m_mvsDistortion = MVi.m_mv[RefListIdx].Vertical;
+            if (MVi.m_mv[RefListIdx].Vertical > m_context->m_mvsDistortionTemp)
+                m_context->m_mvsDistortionTemp = MVi.m_mv[RefListIdx].Vertical;
         }
         else
         {

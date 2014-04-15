@@ -22,23 +22,8 @@
 namespace UMC_HEVC_DECODER
 {
 
-#pragma warning(disable: 4127)
-
-class SegmentDecoderHPBase_H265
-{
-public:
-    virtual ~SegmentDecoderHPBase_H265() {}
-
-    virtual UMC::Status DecodeSegmentCABAC_Single_H265(Ipp32s curMB, Ipp32s &nMacroBlocksToDecode,
-        H265SegmentDecoderMultiThreaded * sd) = 0;
-
-    virtual UMC::Status DecodeSegment(Ipp32s curCUAddr, Ipp32s &nBorder, H265SegmentDecoderMultiThreaded * sd) = 0;
-
-    virtual UMC::Status ReconstructSegment(Ipp32s curCUAddr, Ipp32s nBorder, H265SegmentDecoderMultiThreaded * sd) = 0;
-};
-
-template <typename Coeffs, typename PlaneY, typename PlaneUV>
-class MBDecoder_H265
+// in past it was template. class doesn't contains data. only virtual functions.
+class SegmentDecoderRoutines
 {
 public:
 
@@ -53,18 +38,6 @@ public:
         sd->DecodeCUCABAC(0, 0, IsLast);
         return IsLast > 0;
     } // void DecodeCodingUnit_CABAC(H265SegmentDecoderMultiThreaded *sd)
-};
-
-template <class Decoder, typename Coeffs, typename PlaneY, typename PlaneUV>
-class SegmentDecoderHP_H265 : public SegmentDecoderHPBase_H265,
-    public Decoder
-{
-public:
-    typedef PlaneY * PlanePtrY;
-    typedef PlaneUV * PlanePtrUV;
-    typedef Coeffs *  CoeffsPtr;
-
-    typedef SegmentDecoderHP_H265<Decoder, Coeffs, PlaneY, PlaneUV> ThisClassType;
 
     virtual UMC::Status DecodeSegment(Ipp32s curCUAddr, Ipp32s &nBorder, H265SegmentDecoderMultiThreaded * sd)
     {
@@ -78,7 +51,7 @@ public:
 
             START_TICK;
             sd->DecodeSAOOneLCU();
-            bool is_last = Decoder::DecodeCodingUnit_CABAC(sd); //decode CU
+            bool is_last = DecodeCodingUnit_CABAC(sd); //decode CU
             END_TICK(decode_time);
 
             if (is_last)
@@ -96,114 +69,52 @@ public:
             Ipp32s newCUAddr = curCUAddr + 1;
             Ipp32s newRSCUAddr = sd->m_pCurrentFrame->m_CodingData->getCUOrderMap(newCUAddr);
 
+            if (newRSCUAddr >= sd->m_pCurrentFrame->m_CodingData->m_NumCUsInFrame)
+                break;
+
+            if (sd->m_pPicParamSet->entropy_coding_sync_enabled_flag)
+            {
+                Ipp32u CUX = rsCUAddr % sd->m_pSeqParamSet->WidthInCU;
+                bool end_of_row = (CUX == sd->m_pSeqParamSet->WidthInCU - 1);
+
+                if (end_of_row)
+                {
+                    Ipp32u uVal = sd->m_pBitStream->DecodeTerminatingBit_CABAC();
+                    VM_ASSERT(uVal);
+                }
+
+                if (CUX == 1)
+                {
+                    // Save CABAC context after 2nd CTB
+                    MFX_INTERNAL_CPY(sd->m_pBitStream->wpp_saved_cabac_context, sd->m_pBitStream->context_hevc, sizeof(sd->m_pBitStream->context_hevc));
+                }
+
+                if (end_of_row)
+                {
+                    // Reset CABAC state
+                    sd->m_pBitStream->InitializeDecodingEngine_CABAC();
+                    sd->m_context->SetNewQP(sd->m_pSliceHeader->SliceQP);
+
+                    // Should load CABAC context from saved buffer
+                    if (sd->m_pSeqParamSet->WidthInCU > 1 &&
+                        sd->m_pCurrentFrame->m_CodingData->GetInverseCUOrderMap(rsCUAddr + 2 - sd->m_pSeqParamSet->WidthInCU) >= sd->m_pSliceHeader->SliceCurStartCUAddr / sd->m_pCurrentFrame->m_CodingData->m_NumPartitions)
+                    {
+                        // Restore saved CABAC context
+                        MFX_INTERNAL_CPY(sd->m_pBitStream->context_hevc, sd->m_pBitStream->wpp_saved_cabac_context, sizeof(sd->m_pBitStream->context_hevc));
+                    }
+                    else
+                    {
+                        // Reset CABAC contexts
+                        sd->m_pSlice->InitializeContexts();
+                    }
+                }
+            }
+
+            sd->m_context->UpdateCurrCUContext(rsCUAddr, newRSCUAddr);
+
             if (newCUAddr >= nBorder)
             {
-                if (sd->m_pCurrentFrame->m_CodingData->getTileIdxMap(rsCUAddr) ==
-                    sd->m_pCurrentFrame->m_CodingData->getTileIdxMap(newRSCUAddr))
-                {
-                    if (sd->m_pPicParamSet->entropy_coding_sync_enabled_flag)
-                    {
-                        Ipp32u CUX = rsCUAddr % sd->m_pSeqParamSet->WidthInCU;
-                        bool end_of_row = (CUX == sd->m_pSeqParamSet->WidthInCU - 1);
-
-                        if (end_of_row)
-                        {
-                            Ipp32u uVal = sd->m_pBitStream->DecodeTerminatingBit_CABAC();
-                            VM_ASSERT(uVal);
-                        }
-
-                        if (CUX == 1)
-                        {
-                            // Save CABAC context after 2nd CTB
-                            MFX_INTERNAL_CPY(sd->m_pBitStream->wpp_saved_cabac_context, sd->m_pBitStream->context_hevc, sizeof(sd->m_pBitStream->context_hevc));
-                        }
-
-                        if (end_of_row)
-                        {
-                            // Reset CABAC state
-                            sd->m_pBitStream->InitializeDecodingEngine_CABAC();
-                            sd->m_context->SetNewQP(sd->m_pSliceHeader->SliceQP);
-
-                            // Should load CABAC context from saved buffer
-                            if (sd->m_pSeqParamSet->WidthInCU > 1 &&
-                                sd->m_pCurrentFrame->m_CodingData->GetInverseCUOrderMap(rsCUAddr + 2 - sd->m_pSeqParamSet->WidthInCU) >= sd->m_pSliceHeader->SliceCurStartCUAddr / sd->m_pCurrentFrame->m_CodingData->m_NumPartitions)
-                            {
-                                // Restore saved CABAC context
-                                MFX_INTERNAL_CPY(sd->m_pBitStream->context_hevc, sd->m_pBitStream->wpp_saved_cabac_context, sizeof(sd->m_pBitStream->context_hevc));
-                            }
-                            else
-                            {
-                                // Reset CABAC contexts
-                                sd->m_pSlice->InitializeContexts();
-                            }
-                        }
-                    }
-                    sd->m_context->UpdateCurrCUContext(rsCUAddr, newRSCUAddr);
-                }
-                else
-                {
-                    sd->m_context->ResetRowBuffer();
-                    sd->m_context->SetNewQP(sd->m_pSliceHeader->SliceQP);
-                    sd->m_pBitStream->DecodeTerminatingBit_CABAC();
-
-                    // reset CABAC engine
-                    sd->m_pBitStream->InitializeDecodingEngine_CABAC();
-                    sd->m_pSlice->InitializeContexts();
-                }
                 break;
-            }
-
-            if (sd->m_pCurrentFrame->m_CodingData->getTileIdxMap(rsCUAddr) !=
-                sd->m_pCurrentFrame->m_CodingData->getTileIdxMap(newRSCUAddr))
-            {
-                sd->m_context->ResetRowBuffer();
-                sd->m_context->SetNewQP(sd->m_pSliceHeader->SliceQP);
-                sd->m_pBitStream->DecodeTerminatingBit_CABAC();
-
-                // reset CABAC engine
-                sd->m_pBitStream->InitializeDecodingEngine_CABAC();
-                sd->m_pSlice->InitializeContexts();
-            }
-            else
-            {
-                if (sd->m_pPicParamSet->entropy_coding_sync_enabled_flag)
-                {
-                    Ipp32u CUX = rsCUAddr % sd->m_pSeqParamSet->WidthInCU;
-                    bool end_of_row = (CUX == sd->m_pSeqParamSet->WidthInCU - 1);
-
-                    if (end_of_row)
-                    {
-                        Ipp32u uVal = sd->m_pBitStream->DecodeTerminatingBit_CABAC();
-                        VM_ASSERT(uVal);
-                    }
-
-                    if (CUX == 1)
-                    {
-                        // Save CABAC context after 2nd CTB
-                        MFX_INTERNAL_CPY(sd->m_pBitStream->wpp_saved_cabac_context, sd->m_pBitStream->context_hevc, sizeof(sd->m_pBitStream->context_hevc));
-                    }
-
-                    if (end_of_row)
-                    {
-                        // Reset CABAC state
-                        sd->m_pBitStream->InitializeDecodingEngine_CABAC();
-                        sd->m_context->SetNewQP(sd->m_pSliceHeader->SliceQP);
-
-                        // Should load CABAC context from saved buffer
-                        if (sd->m_pSeqParamSet->WidthInCU > 1 &&
-                            sd->m_pCurrentFrame->m_CodingData->GetInverseCUOrderMap(rsCUAddr + 2 - sd->m_pSeqParamSet->WidthInCU) >= sd->m_pSliceHeader->SliceCurStartCUAddr / sd->m_pCurrentFrame->m_CodingData->m_NumPartitions)
-                        {
-                            // Restore saved CABAC context
-                            MFX_INTERNAL_CPY(sd->m_pBitStream->context_hevc, sd->m_pBitStream->wpp_saved_cabac_context, sizeof(sd->m_pBitStream->context_hevc));
-                        }
-                        else
-                        {
-                            // Reset CABAC contexts
-                            sd->m_pSlice->InitializeContexts();
-                        }
-                    }
-                }
-                sd->m_context->UpdateCurrCUContext(rsCUAddr, newRSCUAddr);
             }
 
             curCUAddr = newCUAddr;
@@ -220,46 +131,25 @@ public:
 
         sd->m_cu = sd->m_pCurrentFrame->getCU(rsCUAddr);
 
-        if (curCUAddr == sd->m_cu->m_SliceHeader->SliceCurStartCUAddr / sd->m_pCurrentFrame->m_CodingData->m_NumPartitions)
-            sd->m_context->ResetRecRowBuffer();
-
         for (;;)
         {
             START_TICK1;
             sd->ReconstructCU(0, 0);
             END_TICK1(reconstruction_time);
 
-            Ipp32s newCUAddr = curCUAddr + 1;
-            Ipp32s newRSCUAddr = sd->m_pCurrentFrame->m_CodingData->getCUOrderMap(newCUAddr);
+            curCUAddr++;
+            Ipp32s newRSCUAddr = sd->m_pCurrentFrame->m_CodingData->getCUOrderMap(curCUAddr);
 
-            if (newCUAddr >= nBorder)
+            if (newRSCUAddr >= sd->m_pCurrentFrame->m_CodingData->m_NumCUsInFrame)
+                break;
+
+            sd->m_context->UpdateRecCurrCTBContext(rsCUAddr, newRSCUAddr);
+
+            if (curCUAddr >= nBorder)
             {
-                if (newRSCUAddr < sd->m_pCurrentFrame->m_CodingData->m_NumCUsInFrame)
-                {
-                    if (sd->m_pCurrentFrame->m_CodingData->getTileIdxMap(rsCUAddr) !=
-                        sd->m_pCurrentFrame->m_CodingData->getTileIdxMap(newRSCUAddr))
-                    {
-                        sd->m_context->ResetRecRowBuffer();
-                    }
-                    else
-                    {
-                        sd->m_context->UpdateRecCurrCTBContext(rsCUAddr, newRSCUAddr);
-                    }
-                }
                 break;
             }
 
-            if (sd->m_pCurrentFrame->m_CodingData->getTileIdxMap(rsCUAddr) !=
-                sd->m_pCurrentFrame->m_CodingData->getTileIdxMap(newRSCUAddr))
-            {
-                sd->m_context->ResetRecRowBuffer();
-            }
-            else
-            {
-                sd->m_context->UpdateRecCurrCTBContext(rsCUAddr, newRSCUAddr);
-            }
-
-            curCUAddr = newCUAddr;
             rsCUAddr = newRSCUAddr;
             sd->m_cu = sd->m_pCurrentFrame->getCU(rsCUAddr);
         }
@@ -273,13 +163,6 @@ public:
         UMC::Status umcRes = UMC::UMC_OK;
         Ipp32s rsCUAddr = sd->m_pCurrentFrame->m_CodingData->getCUOrderMap(curCUAddr);
 
-        if (!sd->m_pSliceHeader->dependent_slice_segment_flag)
-        {
-            sd->m_context->ResetRowBuffer();
-            sd->m_context->SetNewQP(sd->m_pSliceHeader->SliceQP);
-            sd->m_context->ResetRecRowBuffer();
-        }
-
         H265CoeffsPtrCommon saveBuffer = sd->m_context->m_coeffsWrite;
 
         for (;;)
@@ -292,7 +175,7 @@ public:
 
             START_TICK;
             sd->DecodeSAOOneLCU();
-            bool is_last = Decoder::DecodeCodingUnit_CABAC(sd); //decode CU
+            bool is_last = DecodeCodingUnit_CABAC(sd); //decode CU
             END_TICK(decode_time);
 
             START_TICK1;
@@ -314,8 +197,8 @@ public:
 
             Ipp32s newCUAddr = curCUAddr + 1;
             Ipp32s newRSCUAddr = sd->m_pCurrentFrame->m_CodingData->getCUOrderMap(newCUAddr);
-
-            if (newCUAddr >= nBorder)
+            
+            if (newRSCUAddr >= sd->m_pCurrentFrame->m_CodingData->m_NumCUsInFrame)
                 break;
 
             if (sd->m_pCurrentFrame->m_CodingData->getTileIdxMap(rsCUAddr) !=
@@ -373,6 +256,11 @@ public:
                 sd->m_context->UpdateRecCurrCTBContext(rsCUAddr, newRSCUAddr);
             }
 
+            if (newCUAddr >= nBorder)
+            {
+                break;
+            }
+
             curCUAddr = newCUAddr;
             rsCUAddr = newRSCUAddr;
         }
@@ -380,45 +268,6 @@ public:
         return umcRes;
     }
 };
-
-template <typename Coeffs, typename PlaneY, typename PlaneUV>
-class CreateSoftSegmentDecoderWrapper
-{
-public:
-
-    static SegmentDecoderHPBase_H265* CreateSegmentDecoder()
-    {
-        static SegmentDecoderHP_H265<
-            MBDecoder_H265<Coeffs, PlaneY, PlaneUV>,
-            Coeffs, PlaneY, PlaneUV> k;
-        return &k;
-    }
-};
-
-template <typename Coeffs, typename PlaneY, typename PlaneUV>
-class CreateSegmentDecoderWrapper
-{
-public:
-
-    static SegmentDecoderHPBase_H265* CreateSoftSegmentDecoder()
-    {
-        static SegmentDecoderHPBase_H265* global_sds_array = 0;
-
-        if (global_sds_array == 0)
-        {
-            global_sds_array = CreateSoftSegmentDecoderWrapper<Coeffs, PlaneY, PlaneUV>::CreateSegmentDecoder();
-        }
-
-        return global_sds_array;
-    }
-};
-
-#pragma warning(default: 4127)
-
-// declare functions for creating proper decoders
-extern
-SegmentDecoderHPBase_H265* CreateSD_H265(Ipp32s bit_depth_luma,
-                               Ipp32s bit_depth_chroma);
 
 } // end namespace UMC_HEVC_DECODER
 

@@ -122,6 +122,7 @@ public:
 
     CoeffsBuffer    m_coeffBuffer;
 
+    H265Bitstream              m_BitStream;
     H265CoeffsPtrCommon        m_coeffsRead;
     H265CoeffsPtrCommon        m_coeffsWrite;
 
@@ -148,6 +149,7 @@ public:
 
     // mt params
     bool m_needToSplitDecAndRec;
+    Ipp32s m_mvsDistortionTemp; // max y component of all mvs in slice
     Ipp32s m_mvsDistortion; // max y component of all mvs in slice
 
     void Init(H265Slice *slice);

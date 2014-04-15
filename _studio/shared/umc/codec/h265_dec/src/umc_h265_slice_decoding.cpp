@@ -19,9 +19,8 @@
 
 namespace UMC_HEVC_DECODER
 {
-H265Slice::H265Slice(UMC::MemoryAllocator *pMemoryAllocator)
+H265Slice::H265Slice()
     : m_pSeqParamSet(0)
-    , m_pMemoryAllocator(pMemoryAllocator)
     , m_context(0)
 {
     m_SliceHeader.m_SubstreamSizes = NULL;
@@ -68,12 +67,6 @@ void H265Slice::Release()
 {
     Reset();
 } // void H265Slice::Release(void)
-
-bool H265Slice::Init(Ipp32s )
-{
-    Release();
-    return true;
-} // bool H265Slice::Init(Ipp32s iConsumerNumber)
 
 Ipp32s H265Slice::RetrievePicParamSetNumber()
 {
@@ -125,41 +118,22 @@ bool H265Slice::Reset(PocDecoding * pocDecoding)
     m_iFirstMB = m_pPicParamSet->m_CtbAddrRStoTS[m_iFirstMB];
     m_iMaxMB = iMBInFrame;
 
-    m_iAvailableMB = iMBInFrame;
+    processInfo.Initialize(m_iFirstMB, GetSeqParam()->WidthInCU);
 
-    if (m_iFirstMB >= m_iAvailableMB)
-        return false;
-
-    // reset all internal variables
-    m_mvsDistortion = 0;
-
-    for (int i = 0; i < LAST_PROCESS_ID; i++)
-    {
-        m_curMBToProcess[i] = m_iFirstMB;
-        m_processVacant[i] = 1;
-    }
-    m_curTileDec = 0;
-    m_curTileRec = 0;
-
-    m_bInProcess = false;
     m_bError = false;
 
     // set conditional flags
-    m_bDecoded = false;
-    m_bPrevDeblocked = false;
     m_bDeblocked = GetSliceHeader()->slice_deblocking_filter_disabled_flag != 0;
     m_bSAOed = !(GetSliceHeader()->slice_sao_luma_flag || GetSliceHeader()->slice_sao_chroma_flag);
 
     if (m_bDeblocked)
     {
-        m_processVacant[DEB_PROCESS_ID] = 0;
-        m_curMBToProcess[DEB_PROCESS_ID] = m_iMaxMB;
+        processInfo.m_curCUToProcess[DEB_PROCESS_ID] = m_iMaxMB;
     }
 
     if (m_bSAOed)
     {
-        m_processVacant[SAO_PROCESS_ID] = 0;
-        m_curMBToProcess[SAO_PROCESS_ID] = m_iMaxMB;
+        processInfo.m_curCUToProcess[SAO_PROCESS_ID] = m_iMaxMB;
     }
 
     // frame is not associated yet
@@ -452,14 +426,12 @@ void H265Slice::CopyFromBaseSlice(const H265Slice * s)
 
     if (m_bDeblocked)
     {
-        m_processVacant[DEB_PROCESS_ID] = 0;
-        m_curMBToProcess[DEB_PROCESS_ID] = m_iMaxMB;
+        processInfo.m_curCUToProcess[DEB_PROCESS_ID] = m_iMaxMB;
     }
 
     if (m_bSAOed)
     {
-        m_processVacant[SAO_PROCESS_ID] = 0;
-        m_curMBToProcess[SAO_PROCESS_ID] = m_iMaxMB;
+        processInfo.m_curCUToProcess[SAO_PROCESS_ID] = m_iMaxMB;
     }
 }
 

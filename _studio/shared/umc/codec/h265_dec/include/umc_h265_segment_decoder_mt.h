@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//    Copyright (c) 2012-2013 Intel Corporation. All Rights Reserved.
+//    Copyright (c) 2012-2014 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -19,7 +19,7 @@
 namespace UMC_HEVC_DECODER
 {
 
-class SegmentDecoderHPBase_H265;
+class SegmentDecoderRoutines;
 class H265Task;
 
 class H265SegmentDecoderMultiThreaded : public H265SegmentDecoder
@@ -28,18 +28,16 @@ public:
     // Default constructor
     H265SegmentDecoderMultiThreaded(TaskBroker_H265 * pTaskBroker);
     // Destructor
-    virtual
-    ~H265SegmentDecoderMultiThreaded(void);
+    virtual ~H265SegmentDecoderMultiThreaded(void);
 
     // Initialize object
-    virtual
-    UMC::Status Init(Ipp32s iNumber);
+    virtual UMC::Status Init(Ipp32s iNumber);
 
     // Decode slice's segment
-    virtual
-    UMC::Status ProcessSegment(void);
+    virtual UMC::Status ProcessSegment(void);
 
     // asynchronous called functions
+    void InitializeDecoding(H265Task & task);
     UMC::Status DecRecSegment(H265Task & task);
     UMC::Status DecodeSegment(H265Task & task);
     UMC::Status ReconstructSegment(H265Task & task);
@@ -50,14 +48,13 @@ public:
 
     void RestoreErrorRect(Ipp32s startMb, Ipp32s endMb, H265Slice * pSlice);
 
-    SegmentDecoderHPBase_H265* m_SD;
+    SegmentDecoderRoutines* m_SD;
 
 protected:
 
-    virtual SegmentDecoderHPBase_H265* CreateSegmentDecoder();
+    virtual SegmentDecoderRoutines* CreateSegmentDecoder();
 
     virtual void StartProcessingSegment(H265Task &Task);
-//    virtual void EndProcessingSegment(H265Task &Task, H265SampleAdaptiveOffset* pSAO);
     virtual void EndProcessingSegment(H265Task &Task);
 
 private:
