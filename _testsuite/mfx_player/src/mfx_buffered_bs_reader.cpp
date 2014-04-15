@@ -211,6 +211,13 @@ mfxStatus BufferedBitstreamReader::ReadNextFrame(mfxBitstream2 &bs)
 
     mfxU32 nCanWrite = bs.MaxLength - bs.DataLength - bs.DataOffset;
 
+    if ( 0 == nCanWrite && bs.DataOffset )
+    {
+       nCanWrite = bs.DataOffset;
+       memcpy(bs.Data, bs.Data + bs.DataOffset, bs.DataLength);
+       bs.DataOffset = 0;
+    }
+
     MFX_CHECK_WITH_ERR(0 != nCanWrite || 0 != bs.DataLength,  MFX_ERR_UNKNOWN);
 
     if (nCanWrite != 0 )
