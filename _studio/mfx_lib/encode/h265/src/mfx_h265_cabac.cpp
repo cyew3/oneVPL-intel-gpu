@@ -1148,6 +1148,7 @@ void h265_encode_PU_inter(H265Bs *bs, H265CU* pCU, Ipp32u abs_part_idx)
   Ipp8u part_size = pCU->m_data[abs_part_idx].partSize;
   Ipp32u num_PU = (part_size == PART_SIZE_2Nx2N ? 1 : (part_size == PART_SIZE_NxN ? 4 : 2));
   Ipp32u depth = pCU->m_data[abs_part_idx].depth;
+  VM_ASSERT(part_size < PART_SIZE_NONE);
   Ipp32u offset = (h265_PU_offset[part_size] << ((pCU->m_par->MaxCUDepth - depth) << 1)) >> 4;
 
   Ipp32u sub_part_idx = abs_part_idx;

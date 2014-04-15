@@ -215,7 +215,7 @@ enum PartitionSize
   PART_SIZE_2NxnD,           ///< asymmetric motion partition, 2Nx(3N/2) + 2Nx( N/2)
   PART_SIZE_nLx2N,           ///< asymmetric motion partition, ( N/2)x2N + (3N/2)x2N
   PART_SIZE_nRx2N,           ///< asymmetric motion partition, (3N/2)x2N + ( N/2)x2N
-  PART_SIZE_NONE = 15
+  PART_SIZE_NONE
 };
 
 
