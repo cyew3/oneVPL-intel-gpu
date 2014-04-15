@@ -19,21 +19,17 @@
 
 #ifdef CMRT_EMU
 extern "C"
-void RefineMeP32x32Satd4x4(SurfaceIndex SURF_MBDIST_32x32, SurfaceIndex SURF_MBDATA_2X,
-                           SurfaceIndex SURF_SRC, SurfaceIndex SURF_REF_F, SurfaceIndex SURF_REF_H,
-                           SurfaceIndex SURF_REF_V, SurfaceIndex SURF_REF_D);
+void RefineMeP32x16Sad(SurfaceIndex SURF_MBDIST_32x16, SurfaceIndex SURF_MBDATA_2X,
+                       SurfaceIndex SURF_SRC, SurfaceIndex SURF_REF_F, SurfaceIndex SURF_REF_H,
+                       SurfaceIndex SURF_REF_V, SurfaceIndex SURF_REF_D);
 extern "C"
 void InterpolateFrameWithBorder(SurfaceIndex SURF_FPEL, SurfaceIndex SURF_HPEL_HORZ,
                       SurfaceIndex SURF_HPEL_VERT, SurfaceIndex SURF_HPEL_DIAG);
 #endif //CMRT_EMU
 
 const mfxI32 BLOCK_W = 32;
-const mfxI32 BLOCK_H = 32;
-#define KERNEL_NAME RefineMeP32x32Satd4x4
-
-#define BORDER 4
-#define WIDTHB (WIDTH + BORDER*2)
-#define HEIGHTB (HEIGHT + BORDER*2)
+const mfxI32 BLOCK_H = 16;
+#define KERNEL_NAME RefineMeP32x16Sad
 
 struct OutputData
 {
@@ -45,7 +41,7 @@ int RunGpu(const mfxU8 *src, const mfxU8 *ref, const mfxI16Pair *mv, OutputData 
 int RunCpu(const mfxU8 *src, const mfxU8 *ref, const mfxI16Pair *mv, OutputData *outData);
 }
 
-int TestRefineMeP32x32Satd4x4()
+int TestRefineMeP32x16Sad()
 {
     mfxI32 numBlocksHor = (WIDTH + BLOCK_W - 1) / BLOCK_W;
     mfxI32 numBlocksVer = (HEIGHT + BLOCK_H - 1) / BLOCK_H;
@@ -88,7 +84,7 @@ int TestRefineMeP32x32Satd4x4()
             mfxU32 *sadCpu = outputCpu[y * numBlocksHor + x].sad;
             for (mfxI32 i = 0; i < 9; i++) {
                 if (sadGpu[i] != sadCpu[i]) {
-                    printf("bad satd value (%d != %d) for idx %d for block (x,y)=(%d,%d)\n",
+                    printf("bad sad value (%d != %d) for idx %d for block (x,y)=(%d,%d)\n",
                            sadGpu[i], sadCpu[i], i, x, y);
                     return FAILED;
                 }
@@ -214,8 +210,8 @@ int RunGpu(const mfxU8 *src, const mfxU8 *ref, const mfxI16Pair *mv, OutputData 
 
     const mfxU16 BlockW = 8;
     const mfxU16 BlockH = 8;
-    mfxU32 tsWidth = WIDTHB / BlockW;
-    mfxU32 tsHeight = HEIGHTB / BlockH * 2;
+    mfxU32 tsWidth = (WIDTHB + BlockW - 1) / BlockW;
+    mfxU32 tsHeight = (HEIGHTB + BlockH - 1) / BlockH * 2;
     res = kernelHpel->SetThreadCount(tsWidth * tsHeight);
     CHECK_CM_ERR(res);
     CmThreadSpace * threadSpace = 0;
@@ -232,6 +228,7 @@ int RunGpu(const mfxU8 *src, const mfxU8 *ref, const mfxI16Pair *mv, OutputData 
     res = device->CreateQueue(queue);
     CHECK_CM_ERR(res);
     CmEvent * e = 0;
+    for (int i=0; i<500; i++)
     res = queue->Enqueue(task, e, threadSpace);
     CHECK_CM_ERR(res);
     device->DestroyThreadSpace(threadSpace);
@@ -261,6 +258,7 @@ int RunGpu(const mfxU8 *src, const mfxU8 *ref, const mfxI16Pair *mv, OutputData 
     res = device->CreateQueue(queue);
     CHECK_CM_ERR(res);
     e = 0;
+    for (int i=0; i<500; i++)
     res = queue->Enqueue(task, e, threadSpace);
     CHECK_CM_ERR(res);
     device->DestroyThreadSpace(threadSpace);
@@ -394,49 +392,13 @@ void InterpolateBlock(const mfxU8 *ref, mfxI16Pair point, mfxI32 blockW, mfxI32 
             block[x] = InterpolatePel(ref, point.x + x * 4, point.y + y * 4);
 }
 
-mfxU32 CalcSatd4x4OneBlock(const mfxU8 *blockSrc, const mfxU8 *blockRef, mfxI32 pitch)
+mfxU32 CalcSad(const mfxU8 *blockSrc, const mfxU8 *blockRef, mfxI32 blockW, mfxI32 blockH)
 {
-    short tmpBuff[4][4];
-    short diffBuff[4][4];
-    mfxU32 satd = 0;
-
-    for (mfxI32 i = 0; i < 4; i++) {
-        for (mfxI32 j = 0; j < 4; j++)
-            diffBuff[i][j] = (short)(blockSrc[j] - blockRef[j]);
-        blockSrc += pitch;
-        blockRef += pitch;
-    }
-
-    for (int b = 0; b < 4; b ++) {
-        int a01, a23, b01, b23;
-        a01 = diffBuff[b][0] + diffBuff[b][1];
-        a23 = diffBuff[b][2] + diffBuff[b][3];
-        b01 = diffBuff[b][0] - diffBuff[b][1];
-        b23 = diffBuff[b][2] - diffBuff[b][3];
-        tmpBuff[b][0] = a01 + a23;
-        tmpBuff[b][1] = a01 - a23;
-        tmpBuff[b][2] = b01 - b23;
-        tmpBuff[b][3] = b01 + b23;
-    }
-    for (int b = 0; b < 4; b ++) {
-        int a01, a23, b01, b23;
-        a01 = tmpBuff[0][b] + tmpBuff[1][b];
-        a23 = tmpBuff[2][b] + tmpBuff[3][b];
-        b01 = tmpBuff[0][b] - tmpBuff[1][b];
-        b23 = tmpBuff[2][b] - tmpBuff[3][b];
-        satd += abs(a01 + a23) + abs(a01 - a23) + abs(b01 - b23) + abs(b01 + b23);
-    }
-
-    return satd;
-}
-
-mfxU32 CalcSatd4x4(const mfxU8 *blockSrc, const mfxU8 *blockRef, mfxI32 blockW, mfxI32 blockH)
-{
-    mfxU32 satd = 0;
-    for (mfxI32 y = 0; y < blockH; y += 4, blockSrc += 4 * blockW, blockRef += 4 * blockW)
-        for (mfxI32 x = 0; x < blockW; x += 4)
-            satd += CalcSatd4x4OneBlock(blockSrc + x, blockRef + x, blockW);
-    return satd;
+    mfxU32 sad = 0;
+    for (mfxI32 y = 0; y < blockH; y++, blockSrc += blockW, blockRef += blockW)
+        for (mfxI32 x = 0; x < blockW; x++)
+            sad += abs(blockSrc[x] - blockRef[x]);
+    return sad;
 }
 
 void CopyBlock(const mfxU8 *src, mfxI32 x, mfxI32 y, mfxI32 blockW, mfxI32 blockH, mfxU8 *block)
@@ -467,7 +429,7 @@ int RunCpu(const mfxU8 *src, const mfxU8 *ref, const mfxI16Pair *mv, OutputData 
                 mfxI16Pair qpelPoint = { hpelPoint.x + dx, hpelPoint.y + dy };
 
                 InterpolateBlock(ref, qpelPoint, BLOCK_W, BLOCK_H, blockRef);
-                outData[xBlk].sad[sadIdx] = CalcSatd4x4(blockSrc, blockRef, BLOCK_W, BLOCK_H);
+                outData[xBlk].sad[sadIdx] = CalcSad(blockSrc, blockRef, BLOCK_W, BLOCK_H);
             }
         }
     }

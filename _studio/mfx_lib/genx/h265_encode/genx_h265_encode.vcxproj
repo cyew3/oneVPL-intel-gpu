@@ -101,6 +101,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <OutDir>.\</OutDir>
     <IntDir>$(OutDir)objs\$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
+    <PreBuildEventUseInBuild>true</PreBuildEventUseInBuild>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <OutDir>..\..\..\build\win_$(Platform)\</OutDir>
@@ -183,7 +184,7 @@ SET ICLDIR=%25INSTALLDIR%25\compiler
 SET PATH=%25ICLDIR%25\bin%3b%25ICLDIR%25\lib%3b%25PATH%25
 SET INCLUDE=%25ICLDIR%25\include%3b%25ICLDIR%25\include\cm%3b%25INCLUDE%25
 SET CM_RT_PLATFORM=hsw
-icl /c /Qunroll1 /Qxcm /Qxcm_jit_target=gen7_5 .\src\genx_h265_cmcode.cpp /mCM_print_asm_count
+icl /c /Qunroll1 /Qxcm /Qxcm_jit_target=gen7_5 .\src\genx_h265_cmcode.cpp /mGLOB_override_limits /mCM_print_asm_count
 cl .\src\embed_isa.c
 embed_isa genx_h265_cmcode.isa
 move genx_h265_cmcode.cpp .\src\genx_h265_cmcode_isa.cpp
@@ -321,11 +322,16 @@ $(TargetPath)</Command>
     <ClCompile Include="src\test_main.cpp" />
     <ClCompile Include="src\test_me1x_and_interpolate_frame.cpp" />
     <ClCompile Include="src\test_refine_me_p_16x32.cpp" />
+    <ClCompile Include="src\test_refine_me_p_16x32_sad.cpp" />
     <ClCompile Include="src\test_refine_me_p_32x16.cpp" />
+    <ClCompile Include="src\test_refine_me_p_32x16_sad.cpp" />
     <ClCompile Include="src\test_refine_me_p_32x32.cpp" />
     <ClCompile Include="src\test_refine_me_p_32x32_sad.cpp" />
     <ClCompile Include="src\test_refine_me_p_32x32_satd4x4.cpp" />
     <ClCompile Include="src\test_refine_me_p_32x32_satd8x8.cpp" />
+    <ClCompile Include="src\test_refine_me_p_combine.cpp" />
+    <ClCompile Include="src\test_refine_me_p_satd4x4_combine.cpp" />
+    <ClCompile Include="src\test_refine_me_p_satd8x8_combine.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\utility_genx.h" />

@@ -21,6 +21,8 @@
 #define MBINTRADIST_SIZE    4 // mfxU16 intraDist;mfxU16 reserved;
 #define MBDIST_SIZE     64  // 16*mfxU32
 #define MVDATA_SIZE     4 // mfxI16Pair
+#define MBDIST_SIZE2    64 * 2  // 48*mfxU32
+#define MVDATA_SIZE2    4 * 3   // 3 MVs
 #define DIST_SIZE       4
 #define CURBEDATA_SIZE  160             //sizeof(H265EncCURBEData_t)
 
@@ -1942,11 +1944,32 @@ void InterpolateFrame(SurfaceIndex SURF_FPEL, SurfaceIndex SURF_HPEL_HORZ,
 
     if (y%2 == 0)
     {
-        InterpolateBlockV<BlockW, BlockH>(SURF_FPEL, SURF_HPEL_HORZ, SURF_HPEL_VERT, SURF_HPEL_DIAG, x, y/2);
+        InterpolateBlockV<BlockW, BlockH, 0>(SURF_FPEL, SURF_HPEL_HORZ, SURF_HPEL_VERT, SURF_HPEL_DIAG, x, y/2);
     }
     else if (y%2 == 1)
     {
-        InterpolateBlockHD<BlockW, BlockH>(SURF_FPEL, SURF_HPEL_HORZ, SURF_HPEL_VERT, SURF_HPEL_DIAG, x, y/2);
+        InterpolateBlockHD<BlockW, BlockH, 0>(SURF_FPEL, SURF_HPEL_HORZ, SURF_HPEL_VERT, SURF_HPEL_DIAG, x, y/2);
+    }
+
+}
+
+extern "C" _GENX_MAIN_
+void InterpolateFrameWithBorder(SurfaceIndex SURF_FPEL, SurfaceIndex SURF_HPEL_HORZ,
+                      SurfaceIndex SURF_HPEL_VERT, SurfaceIndex SURF_HPEL_DIAG)
+{
+    const uint2 BlockW = 8;
+    const uint2 BlockH = 8;
+
+    uint x = get_thread_origin_x();
+    uint y = get_thread_origin_y();
+
+    if (y%2 == 0)
+    {
+        InterpolateBlockV<BlockW, BlockH, BORDER>(SURF_FPEL, SURF_HPEL_HORZ, SURF_HPEL_VERT, SURF_HPEL_DIAG, x, y/2);
+    }
+    else if (y%2 == 1)
+    {
+        InterpolateBlockHD<BlockW, BlockH, BORDER>(SURF_FPEL, SURF_HPEL_HORZ, SURF_HPEL_VERT, SURF_HPEL_DIAG, x, y/2);
     }
 
 }
@@ -2147,9 +2170,9 @@ void Me1xAndInterpolateFrame(SurfaceIndex SURF_CONTROL, SurfaceIndex SURF_SRC_AN
         for (uint dy = 0; dy < 4; dy++) {
             for (uint dx = 0; dx < 2; dx++) {
                 if ((y+dy)%2 == 0)
-                    InterpolateBlockV<BlockW, BlockH>(SURF_FPEL, SURF_HPEL_HORZ, SURF_HPEL_VERT, SURF_HPEL_DIAG, (x+dx), (y+dy)/2);
+                    InterpolateBlockV<BlockW, BlockH, 0>(SURF_FPEL, SURF_HPEL_HORZ, SURF_HPEL_VERT, SURF_HPEL_DIAG, (x+dx), (y+dy)/2);
                 else if ((y+dy)%2 == 1)
-                    InterpolateBlockHD<BlockW, BlockH>(SURF_FPEL, SURF_HPEL_HORZ, SURF_HPEL_VERT, SURF_HPEL_DIAG, (x+dx), (y+dy)/2);
+                    InterpolateBlockHD<BlockW, BlockH, 0>(SURF_FPEL, SURF_HPEL_HORZ, SURF_HPEL_VERT, SURF_HPEL_DIAG, (x+dx), (y+dy)/2);
             }
         }
     }
@@ -2160,19 +2183,311 @@ void RefineMeP32x32Sad(SurfaceIndex SURF_MBDIST_32x32, SurfaceIndex SURF_MBDATA_
                        SurfaceIndex SURF_SRC, SurfaceIndex SURF_REF_F, SurfaceIndex SURF_REF_H,
                        SurfaceIndex SURF_REF_V, SurfaceIndex SURF_REF_D)
 {
+    enum
+    {
+        CHUNKW = 32,
+        CHUNKH = 32,
+        BLOCKW = 16,
+        BLOCKH = 16
+    };
+
+    uint mbX = get_thread_origin_x();
+    uint mbY = get_thread_origin_y();
+
+    vector< uint,9 > sad;
+    vector< int2,2 > mv;
+    read(SURF_MBDATA_2X, mbX * MVDATA_SIZE, mbY, mv);
+
+    uint x = mbX * CHUNKW;
+    uint y = mbY * CHUNKH;
+
+    sad = QpelRefinement<CHUNKW, CHUNKH, BLOCKW, BLOCKH>(SURF_SRC, SURF_REF_F, SURF_REF_H, SURF_REF_V, SURF_REF_D, x, y, mv[0], mv[1]);
+
+    write(SURF_MBDIST_32x32, mbX * MBDIST_SIZE, mbY, SLICE1(sad, 0, 8));   // 32bytes is max until BDW
+    write(SURF_MBDIST_32x32, mbX * MBDIST_SIZE + 32, mbY, SLICE1(sad, 8, 1));
 }
 
 extern "C" _GENX_MAIN_
-void RefineMeP32x32Satd4x4(SurfaceIndex SURF_MBDIST_32x32, SurfaceIndex SURF_MBDATA_2X,
-                           SurfaceIndex SURF_SRC, SurfaceIndex SURF_REF_F, SurfaceIndex SURF_REF_H,
-                           SurfaceIndex SURF_REF_V, SurfaceIndex SURF_REF_D)
+void RefineMeP32x16Sad(SurfaceIndex SURF_MBDIST_32x16, SurfaceIndex SURF_MBDATA_2X,
+                       SurfaceIndex SURF_SRC, SurfaceIndex SURF_REF_F, SurfaceIndex SURF_REF_H,
+                       SurfaceIndex SURF_REF_V, SurfaceIndex SURF_REF_D)
 {
+    enum
+    {
+        CHUNKW = 32,
+        CHUNKH = 16,
+        BLOCKW = 16,
+        BLOCKH = 16
+    };
+
+    uint mbX = get_thread_origin_x();
+    uint mbY = get_thread_origin_y();
+
+    vector< uint,9 > sad;
+    vector< int2,2 > mv;
+    read(SURF_MBDATA_2X, mbX * MVDATA_SIZE, mbY, mv);
+
+    uint x = mbX * CHUNKW;
+    uint y = mbY * CHUNKH;
+
+    sad = QpelRefinement<CHUNKW, CHUNKH, BLOCKW, BLOCKH>(SURF_SRC, SURF_REF_F, SURF_REF_H, SURF_REF_V, SURF_REF_D, x, y, mv[0], mv[1]);
+
+    write(SURF_MBDIST_32x16, mbX * MBDIST_SIZE, mbY, SLICE1(sad, 0, 8));   // 32bytes is max until BDW
+    write(SURF_MBDIST_32x16, mbX * MBDIST_SIZE + 32, mbY, SLICE1(sad, 8, 1));
 }
 
 extern "C" _GENX_MAIN_
-void RefineMeP32x32Satd8x8(SurfaceIndex SURF_MBDIST_32x32, SurfaceIndex SURF_MBDATA_2X,
-                           SurfaceIndex SURF_SRC, SurfaceIndex SURF_REF_F, SurfaceIndex SURF_REF_H,
-                           SurfaceIndex SURF_REF_V, SurfaceIndex SURF_REF_D)
+void RefineMeP16x32Sad(SurfaceIndex SURF_MBDIST_16x32, SurfaceIndex SURF_MBDATA_2X,
+                       SurfaceIndex SURF_SRC, SurfaceIndex SURF_REF_F, SurfaceIndex SURF_REF_H,
+                       SurfaceIndex SURF_REF_V, SurfaceIndex SURF_REF_D)
 {
+    enum
+    {
+        CHUNKW = 16,
+        CHUNKH = 32,
+        BLOCKW = 16,
+        BLOCKH = 16
+    };
+
+    uint mbX = get_thread_origin_x();
+    uint mbY = get_thread_origin_y();
+
+    vector< uint,9 > sad;
+    vector< int2,2 > mv;
+    read(SURF_MBDATA_2X, mbX * MVDATA_SIZE, mbY, mv);
+
+    uint x = mbX * CHUNKW;
+    uint y = mbY * CHUNKH;
+
+    sad = QpelRefinement<CHUNKW, CHUNKH, BLOCKW, BLOCKH>(SURF_SRC, SURF_REF_F, SURF_REF_H, SURF_REF_V, SURF_REF_D, x, y, mv[0], mv[1]);
+
+    write(SURF_MBDIST_16x32, mbX * MBDIST_SIZE, mbY, SLICE1(sad, 0, 8));   // 32bytes is max until BDW
+    write(SURF_MBDIST_16x32, mbX * MBDIST_SIZE + 32, mbY, SLICE1(sad, 8, 1));
+}
+
+extern "C" _GENX_MAIN_
+void RefineMePCombine(SurfaceIndex SURF_MBDIST, SurfaceIndex SURF_MV,
+                    SurfaceIndex SURF_SRC, SurfaceIndex SURF_REF, SurfaceIndex SURF_HPEL_HORZ,
+                    SurfaceIndex SURF_HPEL_VERT, SurfaceIndex SURF_HPEL_DIAG)
+{
+    enum
+    {
+        CHUNKW = 16,
+        CHUNKH = 16,
+        BLOCKW = 16,
+        BLOCKH = 16
+    };
+
+    uint mbX = get_thread_origin_x();
+    uint mbY = get_thread_origin_y();
+
+    vector< uint, 27 > sad;
+    matrix_ref< uint, 3, 9 > sadm = sad.format<uint, 3, 9>();
+    vector< int2,6 > mv;
+    read(SURF_MV, mbX * MVDATA_SIZE2, mbY, mv);
+
+    uint x = mbX * CHUNKW;
+    uint y = mbY * CHUNKH;
+
+    sadm.row(0) = QpelRefinement<CHUNKW, CHUNKH, BLOCKW, BLOCKH>(SURF_SRC, SURF_REF, SURF_HPEL_HORZ, SURF_HPEL_VERT, SURF_HPEL_DIAG, x, y, mv[0], mv[1]);
+    
+    if (mv[0] == mv[2] && mv[1] == mv[3])
+    {
+        sadm.row(1) = sadm.row(0);
+    }
+    else
+    {
+        sadm.row(1) = QpelRefinement<CHUNKW, CHUNKH, BLOCKW, BLOCKH>(SURF_SRC, SURF_REF, SURF_HPEL_HORZ, SURF_HPEL_VERT, SURF_HPEL_DIAG, x, y, mv[2], mv[3]);
+    }
+
+    if (mv[0] == mv[4] && mv[1] == mv[5])
+    {
+        sadm.row(2) = sadm.row(0);
+    }   
+    else if (mv[2] == mv[4] && mv[3] == mv[5])
+    {
+        sadm.row(2) = sadm.row(1);
+    }
+    else
+    {
+        sadm.row(2) = QpelRefinement<CHUNKW, CHUNKH, BLOCKW, BLOCKH>(SURF_SRC, SURF_REF, SURF_HPEL_HORZ, SURF_HPEL_VERT, SURF_HPEL_DIAG, x, y, mv[4], mv[5]);
+    }
+   
+    write(SURF_MBDIST, mbX * MBDIST_SIZE2, mbY, SLICE1(sad, 0, 8));   // 32bytes is max until BDW
+    write(SURF_MBDIST, mbX * MBDIST_SIZE2 + 32, mbY, SLICE1(sad, 8, 8));
+    write(SURF_MBDIST, mbX * MBDIST_SIZE2 + 64, mbY, SLICE1(sad, 16, 8));
+    write(SURF_MBDIST, mbX * MBDIST_SIZE2 + 96, mbY, SLICE1(sad, 24, 3));
+
+}
+
+
+extern "C" _GENX_MAIN_
+void RefineMeP32x32Satd4x4(SurfaceIndex SURF_MBDIST, SurfaceIndex SURF_MV,
+                    SurfaceIndex SURF_SRC, SurfaceIndex SURF_REF, SurfaceIndex SURF_HPEL_HORZ,
+                    SurfaceIndex SURF_HPEL_VERT, SurfaceIndex SURF_HPEL_DIAG)
+{
+    enum
+    {
+        CHUNKW = 32,
+        CHUNKH = 32,
+        BLOCKW = SATD_BLOCKW,
+        BLOCKH = SATD_BLOCKH
+    };
+
+    uint mbX = get_thread_origin_x();
+    uint mbY = get_thread_origin_y();
+
+    vector< uint, 9 > sad;
+    vector< int2,2 > mv;
+    read(SURF_MV, mbX * MVDATA_SIZE, mbY, mv);
+
+    uint x = mbX * CHUNKW;
+    uint y = mbY * CHUNKH;
+
+    sad = QpelRefinementSATD<CHUNKW, CHUNKH, BLOCKW, BLOCKH, MODE_SATD4>(SURF_SRC, SURF_REF, SURF_HPEL_HORZ, SURF_HPEL_VERT, SURF_HPEL_DIAG, x, y, mv[0], mv[1]);
+
+    write(SURF_MBDIST, mbX * MBDIST_SIZE, mbY, SLICE1(sad, 0, 8));   // 32bytes is max until BDW
+    write(SURF_MBDIST, mbX * MBDIST_SIZE + 32, mbY, SLICE1(sad, 8, 1));
+
+}
+
+extern "C" _GENX_MAIN_
+void RefineMeP32x32Satd8x8(SurfaceIndex SURF_MBDIST, SurfaceIndex SURF_MV,
+                    SurfaceIndex SURF_SRC, SurfaceIndex SURF_REF, SurfaceIndex SURF_HPEL_HORZ,
+                    SurfaceIndex SURF_HPEL_VERT, SurfaceIndex SURF_HPEL_DIAG)
+{
+    enum
+    {
+        CHUNKW = 32,
+        CHUNKH = 32,
+        BLOCKW = SATD_BLOCKW,
+        BLOCKH = SATD_BLOCKH
+    };
+
+    uint mbX = get_thread_origin_x();
+    uint mbY = get_thread_origin_y();
+
+    vector< uint, 9 > sad;
+    vector< int2,2 > mv;
+    read(SURF_MV, mbX * MVDATA_SIZE, mbY, mv);
+
+    uint x = mbX * CHUNKW;
+    uint y = mbY * CHUNKH;
+
+    sad = QpelRefinementSATD<CHUNKW, CHUNKH, BLOCKW, BLOCKH, MODE_SATD8>(SURF_SRC, SURF_REF, SURF_HPEL_HORZ, SURF_HPEL_VERT, SURF_HPEL_DIAG, x, y, mv[0], mv[1]);
+
+    write(SURF_MBDIST, mbX * MBDIST_SIZE, mbY, SLICE1(sad, 0, 8));   // 32bytes is max until BDW
+    write(SURF_MBDIST, mbX * MBDIST_SIZE + 32, mbY, SLICE1(sad, 8, 1));
+}
+
+extern "C" _GENX_MAIN_
+void RefineMePCombineSATD4x4(SurfaceIndex SURF_MBDIST, SurfaceIndex SURF_MV,
+                    SurfaceIndex SURF_SRC, SurfaceIndex SURF_REF, SurfaceIndex SURF_HPEL_HORZ,
+                    SurfaceIndex SURF_HPEL_VERT, SurfaceIndex SURF_HPEL_DIAG)
+{
+    enum
+    {
+        CHUNKW = 16,
+        CHUNKH = 16,
+        BLOCKW = SATD_BLOCKW,
+        BLOCKH = SATD_BLOCKH
+    };
+
+    uint mbX = get_thread_origin_x();
+    uint mbY = get_thread_origin_y();
+
+    vector< uint, 27 > sad;
+    matrix_ref< uint, 3, 9 > sadm = sad.format<uint, 3, 9>();
+    vector< int2,6 > mv;
+    read(SURF_MV, mbX * MVDATA_SIZE2, mbY, mv);
+
+    uint x = mbX * CHUNKW;
+    uint y = mbY * CHUNKH;
+
+    sadm.row(0) = QpelRefinementSATD<CHUNKW, CHUNKH, BLOCKW, BLOCKH, MODE_SATD4>(SURF_SRC, SURF_REF, SURF_HPEL_HORZ, SURF_HPEL_VERT, SURF_HPEL_DIAG, x, y, mv[0], mv[1]);
+    
+    if (mv[0] == mv[2] && mv[1] == mv[3])
+    {
+        sadm.row(1) = sadm.row(0);
+    }
+    else
+    {
+        sadm.row(1) = QpelRefinementSATD<CHUNKW, CHUNKH, BLOCKW, BLOCKH, MODE_SATD4>(SURF_SRC, SURF_REF, SURF_HPEL_HORZ, SURF_HPEL_VERT, SURF_HPEL_DIAG, x, y, mv[2], mv[3]);
+    }
+
+    if (mv[0] == mv[4] && mv[1] == mv[5])
+    {
+        sadm.row(2) = sadm.row(0);
+    }   
+    else if (mv[2] == mv[4] && mv[3] == mv[5])
+    {
+        sadm.row(2) = sadm.row(1);
+    }
+    else
+    {
+        sadm.row(2) = QpelRefinementSATD<CHUNKW, CHUNKH, BLOCKW, BLOCKH, MODE_SATD4>(SURF_SRC, SURF_REF, SURF_HPEL_HORZ, SURF_HPEL_VERT, SURF_HPEL_DIAG, x, y, mv[4], mv[5]);
+    }
+   
+    write(SURF_MBDIST, mbX * MBDIST_SIZE2, mbY, SLICE1(sad, 0, 8));   // 32bytes is max until BDW
+    write(SURF_MBDIST, mbX * MBDIST_SIZE2 + 32, mbY, SLICE1(sad, 8, 8));
+    write(SURF_MBDIST, mbX * MBDIST_SIZE2 + 64, mbY, SLICE1(sad, 16, 8));
+    write(SURF_MBDIST, mbX * MBDIST_SIZE2 + 96, mbY, SLICE1(sad, 24, 3));
+
+}
+
+
+extern "C" _GENX_MAIN_
+void RefineMePCombineSATD8x8(SurfaceIndex SURF_MBDIST, SurfaceIndex SURF_MV,
+                    SurfaceIndex SURF_SRC, SurfaceIndex SURF_REF, SurfaceIndex SURF_HPEL_HORZ,
+                    SurfaceIndex SURF_HPEL_VERT, SurfaceIndex SURF_HPEL_DIAG)
+{
+    enum
+    {
+        CHUNKW = 16,
+        CHUNKH = 16,
+        BLOCKW = SATD_BLOCKW,
+        BLOCKH = SATD_BLOCKH
+    };
+
+    uint mbX = get_thread_origin_x();
+    uint mbY = get_thread_origin_y();
+
+    vector< uint, 27 > sad;
+    matrix_ref< uint, 3, 9 > sadm = sad.format<uint, 3, 9>();
+    vector< int2,6 > mv;
+    read(SURF_MV, mbX * MVDATA_SIZE2, mbY, mv);
+
+    uint x = mbX * CHUNKW;
+    uint y = mbY * CHUNKH;
+
+    sadm.row(0) = QpelRefinementSATD<CHUNKW, CHUNKH, BLOCKW, BLOCKH, MODE_SATD8>(SURF_SRC, SURF_REF, SURF_HPEL_HORZ, SURF_HPEL_VERT, SURF_HPEL_DIAG, x, y, mv[0], mv[1]);
+    
+    if (mv[0] == mv[2] && mv[1] == mv[3])
+    {
+        sadm.row(1) = sadm.row(0);
+    }
+    else
+    {
+        sadm.row(1) = QpelRefinementSATD<CHUNKW, CHUNKH, BLOCKW, BLOCKH, MODE_SATD8>(SURF_SRC, SURF_REF, SURF_HPEL_HORZ, SURF_HPEL_VERT, SURF_HPEL_DIAG, x, y, mv[2], mv[3]);
+    }
+
+    if (mv[0] == mv[4] && mv[1] == mv[5])
+    {
+        sadm.row(2) = sadm.row(0);
+    }   
+    else if (mv[2] == mv[4] && mv[3] == mv[5])
+    {
+        sadm.row(2) = sadm.row(1);
+    }
+    else
+    {
+        sadm.row(2) = QpelRefinementSATD<CHUNKW, CHUNKH, BLOCKW, BLOCKH, MODE_SATD8>(SURF_SRC, SURF_REF, SURF_HPEL_HORZ, SURF_HPEL_VERT, SURF_HPEL_DIAG, x, y, mv[4], mv[5]);
+    }
+   
+    write(SURF_MBDIST, mbX * MBDIST_SIZE2, mbY, SLICE1(sad, 0, 8));   // 32bytes is max until BDW
+    write(SURF_MBDIST, mbX * MBDIST_SIZE2 + 32, mbY, SLICE1(sad, 8, 8));
+    write(SURF_MBDIST, mbX * MBDIST_SIZE2 + 64, mbY, SLICE1(sad, 16, 8));
+    write(SURF_MBDIST, mbX * MBDIST_SIZE2 + 96, mbY, SLICE1(sad, 24, 3));
+
 }
 

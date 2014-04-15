@@ -65,7 +65,7 @@ mfxStatus MFXInit(mfxIMPL implParam, mfxVersion *ver, mfxSession *session)
 #if defined(MFX_TRACE_ENABLE)
 #if defined(_WIN32) || defined(_WIN64)
 
-    #if defined(MFX_VA)
+    #if 1//defined(MFX_VA)
     MFX_TRACE_INIT(NULL, (mfxU8)MFX_TRACE_OUTPUT_REG);
     #endif // #if defined(MFX_VA)
 

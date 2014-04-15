@@ -2700,7 +2700,7 @@ mfxStatus H265Encoder::EncodeThread(Ipp32s ithread) {
         if (!found)
             continue;
 
-        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "EncodeThread");
+        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "EncodeThread");
         Ipp32s bs_id = 0;
         if (pars->num_threads > 1 && m_pps.entropy_coding_sync_enabled_flag)
             bs_id = ctb_row;

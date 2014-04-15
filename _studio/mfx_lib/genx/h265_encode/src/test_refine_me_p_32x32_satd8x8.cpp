@@ -22,6 +22,9 @@ extern "C"
 void RefineMeP32x32Satd8x8(SurfaceIndex SURF_MBDIST_32x32, SurfaceIndex SURF_MBDATA_2X,
                            SurfaceIndex SURF_SRC, SurfaceIndex SURF_REF_F, SurfaceIndex SURF_REF_H,
                            SurfaceIndex SURF_REF_V, SurfaceIndex SURF_REF_D);
+extern "C"
+void InterpolateFrameWithBorder(SurfaceIndex SURF_FPEL, SurfaceIndex SURF_HPEL_HORZ,
+                      SurfaceIndex SURF_HPEL_VERT, SurfaceIndex SURF_HPEL_DIAG);
 #endif //CMRT_EMU
 
 const mfxI32 BLOCK_W = 32;
@@ -118,7 +121,7 @@ int RunGpu(const mfxU8 *src, const mfxU8 *ref, const mfxI16Pair *mv, OutputData 
     CHECK_CM_ERR(res);
 
     CmKernel *kernelHpel = 0;
-    res = device->CreateKernel(program, CM_KERNEL_FUNCTION(InterpolateFrame), kernelHpel);
+    res = device->CreateKernel(program, CM_KERNEL_FUNCTION(InterpolateFrameWithBorder), kernelHpel);
     CHECK_CM_ERR(res);
 
     CmSurface2D *inSrc = 0;
@@ -134,13 +137,13 @@ int RunGpu(const mfxU8 *src, const mfxU8 *ref, const mfxI16Pair *mv, OutputData 
     CHECK_CM_ERR(res);
 
     CmSurface2D *refH = 0;
-    res = device->CreateSurface2D(WIDTH, HEIGHT, CM_SURFACE_FORMAT_A8, refH);
+    res = device->CreateSurface2D(WIDTHB, HEIGHTB, CM_SURFACE_FORMAT_A8, refH);
     CHECK_CM_ERR(res);
     CmSurface2D *refV = 0;
-    res = device->CreateSurface2D(WIDTH, HEIGHT, CM_SURFACE_FORMAT_A8, refV);
+    res = device->CreateSurface2D(WIDTHB, HEIGHTB, CM_SURFACE_FORMAT_A8, refV);
     CHECK_CM_ERR(res);
     CmSurface2D *refD = 0;
-    res = device->CreateSurface2D(WIDTH, HEIGHT, CM_SURFACE_FORMAT_A8, refD);
+    res = device->CreateSurface2D(WIDTHB, HEIGHTB, CM_SURFACE_FORMAT_A8, refD);
     CHECK_CM_ERR(res);
 
     CmSurface2D *inMv = 0;
@@ -207,8 +210,8 @@ int RunGpu(const mfxU8 *src, const mfxU8 *ref, const mfxI16Pair *mv, OutputData 
 
     const mfxU16 BlockW = 8;
     const mfxU16 BlockH = 8;
-    mfxU32 tsWidth = WIDTH / BlockW;
-    mfxU32 tsHeight = HEIGHT / BlockH * 2;
+    mfxU32 tsWidth = WIDTHB / BlockW;
+    mfxU32 tsHeight = HEIGHTB / BlockH * 2;
     res = kernelHpel->SetThreadCount(tsWidth * tsHeight);
     CHECK_CM_ERR(res);
     CmThreadSpace * threadSpace = 0;
@@ -459,8 +462,8 @@ mfxU32 CalcSatd8x8OneBlock(const mfxU8 *blockSrc, const mfxU8 *blockRef, mfxI32 
 mfxU32 CalcSatd8x8(const mfxU8 *blockSrc, const mfxU8 *blockRef, mfxI32 blockW, mfxI32 blockH)
 {
     mfxU32 satd = 0;
-    for (mfxI32 y = 0; y < blockH; y += 4, blockSrc += 4 * blockW, blockRef += 4 * blockW)
-        for (mfxI32 x = 0; x < blockW; x += 4)
+    for (mfxI32 y = 0; y < blockH; y += 8, blockSrc += 8 * blockW, blockRef += 8 * blockW)
+        for (mfxI32 x = 0; x < blockW; x += 8)
             satd += CalcSatd8x8OneBlock(blockSrc + x, blockRef + x, blockW);
     return satd;
 }

@@ -19,6 +19,10 @@
 #define CHECK_ERR(ERR) if ((ERR) != PASSED) return (ERR);
 #define DIVUP(a, b) ((a+b-1)/b)
 
+#define BORDER          4
+#define WIDTHB (WIDTH + BORDER*2)
+#define HEIGHTB (HEIGHT + BORDER*2)
+
 enum { PASSED, FAILED };
 
 //const mfxI32 WIDTH  = 416;

@@ -196,12 +196,12 @@ int TestMe1xAndInterpolateFrame()
     auto dist4x8Tst   = CreateCmSurface2DUp<unsigned int>(device, WIDTH /  4, HEIGHT /  8);
     auto dist4x8Ref   = CreateCmSurface2DUp<unsigned int>(device, WIDTH /  4, HEIGHT /  8);
 
-    auto refHTst = CreateCmSurface2DUp<unsigned char>(device, WIDTH, HEIGHT);
-    auto refHRef = CreateCmSurface2DUp<unsigned char>(device, WIDTH, HEIGHT);
-    auto refVTst = CreateCmSurface2DUp<unsigned char>(device, WIDTH, HEIGHT);
-    auto refVRef = CreateCmSurface2DUp<unsigned char>(device, WIDTH, HEIGHT);
-    auto refDTst = CreateCmSurface2DUp<unsigned char>(device, WIDTH, HEIGHT);
-    auto refDRef = CreateCmSurface2DUp<unsigned char>(device, WIDTH, HEIGHT);
+    auto refHTst = CreateCmSurface2DUp<unsigned char>(device, WIDTHB, HEIGHTB);
+    auto refHRef = CreateCmSurface2DUp<unsigned char>(device, WIDTHB, HEIGHTB);
+    auto refVTst = CreateCmSurface2DUp<unsigned char>(device, WIDTHB, HEIGHTB);
+    auto refVRef = CreateCmSurface2DUp<unsigned char>(device, WIDTHB, HEIGHTB);
+    auto refDTst = CreateCmSurface2DUp<unsigned char>(device, WIDTHB, HEIGHTB);
+    auto refDRef = CreateCmSurface2DUp<unsigned char>(device, WIDTHB, HEIGHTB);
 
     auto src = new unsigned char[WIDTH * HEIGHT];
     auto ref = new unsigned char[WIDTH * HEIGHT];
