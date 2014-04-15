@@ -191,9 +191,9 @@ TU_OPT(QuadtreeTULog2MaxSize,          5,   5,   5,   5,   5,   5,   5)
 TU_OPT(QuadtreeTULog2MinSize,          2,   2,   2,   2,   2,   2,   2)
 
 TU_OPT(Log2MaxCUSize,                  6,   6,   5,   5,   5,   5,   5)
-TU_OPT(MaxCUDepth,                     4,   4,   3,   3,   3,   2,   2) 
-TU_OPT(QuadtreeTUMaxDepthIntra,        4,   3,   2,   2,   3,   2,   2) //intra decrease has less effect than inter. need to measure more
-TU_OPT(QuadtreeTUMaxDepthInter,        4,   3,   2,   2,   3,   2,   2)
+TU_OPT(MaxCUDepth,                     4,   4,   3,   3,   3,   3,   3) 
+TU_OPT(QuadtreeTUMaxDepthIntra,        4,   3,   2,   2,   3,   1,   1) //intra decrease has less effect than inter. need to measure more
+TU_OPT(QuadtreeTUMaxDepthInter,        4,   3,   2,   2,   3,   1,   1)
 TU_OPT(AnalyzeChroma,                 ON,  ON,  ON,  ON,  ON,  ON,  ON)
 TU_OPT(TUSplitIntra,                   1,   1,   3,   3,   3,   3,   3)
 TU_OPT(CUSplit,                        2,   2,   2,   2,   2,   2,   2) //CUSplit = 1 gives 2-4x slowdown in speed with less than 1% bdrate
