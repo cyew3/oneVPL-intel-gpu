@@ -72,14 +72,7 @@ private:
     ReferenceInformation m_refPicList1[MAX_NUM_REF_PICS + 3];
 };
 
-enum BusyStates_H265
-{
-    BUSY_STATE_FREE_H265 = 0,
-    BUSY_STATE_LOCK1_H265 = 1,
-    BUSY_STATE_LOCK2_H265 = 2,
-    BUSY_STATE_NOT_DECODED_H265 = 3
-};
-
+// HEVC decoder frame class
 class H265DecoderFrame : public H265DecYUVBufferPadded, public RefCounter
 {
 public:
@@ -136,7 +129,9 @@ public:
     bool             m_isLongTermRef;
     bool             m_isUsedAsReference;
 
+    // Returns whether frame has all slices found
     bool IsFullFrame() const;
+    // Set frame flag denoting that all slices for it were found
     void SetFullFrame(bool isFull);
 
     struct
@@ -155,14 +150,17 @@ public:
     typedef std::list<RefCounter *>  ReferenceList;
     ReferenceList m_references;
 
+    // Add target frame to the list of reference frames
     void AddReferenceFrame(H265DecoderFrame * frm);
+    // Clear all references to other frames
     void FreeReferenceFrames();
 
+    // Reinitialize frame structure before reusing frame
     void Reset();
+    // Clean up data after decoding is done
     void FreeResources();
 
 public:
-    //h265
     SAOLCUParam* m_saoLcuParam;
     Ipp32s m_sizeOfSAOData;
 
@@ -171,26 +169,27 @@ public:
 
     H265FrameCodingData* getCD() const {return m_CodingData;}
 
+    // Returns a CTB by its raster address
     H265CodingUnit* getCU(Ipp32u CUaddr) const;
 
+    // Returns number of CTBs in frame
     Ipp32u getNumCUsInFrame() const;
+    // Returns number of minimal partitions in CTB
     Ipp32u getNumPartInCUSize() const;
-    Ipp32u getNumPartInWidth() const;
+    // Returns number of CTBs in frame width
     Ipp32u getFrameWidthInCU() const;
+    // Returns number of CTBs in frame height
     Ipp32u getFrameHeightInCU() const;
-    Ipp32u getMinCUSize() const;
-    Ipp32u getMinCUWidth() const;
-
-    Ipp32s getMaxCUDepth() const;
-    Ipp32u getMaxCUSize() const;
 
     Ipp32s*  m_cuOffsetY;
     Ipp32s*  m_cuOffsetC;
     Ipp32s*  m_buOffsetY;
     Ipp32s*  m_buOffsetC;
 
+    // Delete unneeded references and set flags after decoding is done
     void OnDecodingCompleted();
 
+    // Free resources if possible
     virtual void Free();
 
     void SetSkipped(bool isSkipped)
@@ -203,6 +202,7 @@ public:
         return m_Flags.isSkipped != 0;
     }
 
+    // Returns whether frame has been decoded
     bool IsDecoded() const;
 
     bool IsFrameExist() const
@@ -219,8 +219,8 @@ public:
 
     virtual ~H265DecoderFrame();
 
-    // The following methods provide access to the H264Decoder's doubly
-    // linked list of H264DecoderFrames.  Note that m_pPreviousFrame can
+    // The following methods provide access to the HEVC Decoder's doubly
+    // linked list of H265DecoderFrames.  Note that m_pPreviousFrame can
     // be non-NULL even for an I frame.
     H265DecoderFrame *future() const  { return m_pFutureFrame; }
 
@@ -245,8 +245,10 @@ public:
     void StartDecoding() { m_Flags.isDecodingStarted = 1;}
 
     bool IsDecodingCompleted() const { return m_Flags.isDecodingCompleted != 0;}
+    // Flag frame as completely decoded
     void CompleteDecoding();
 
+    // Check reference frames for error status and flag this frame if error is found
     void UpdateErrorWithRefFrameStatus();
 
     void        unSetisDisplayable() { m_isDisplayable = 0; }
@@ -256,6 +258,7 @@ public:
     void        unsetWasDisplayed() { m_wasDisplayed = 0; }
 
     bool        wasOutputted()    { return m_wasOutputted != 0; }
+    // Flag frame after it was output
     void        setWasOutputted();
     void        unsetWasOutputted() { m_wasOutputted = 0; }
 
@@ -269,6 +272,7 @@ public:
         return m_isShortTermRef;
     }
 
+    // Mark frame as short term reference frame
     void SetisShortTermRef(bool isRef);
 
     Ipp32s PicOrderCnt() const
@@ -285,6 +289,7 @@ public:
         return m_isLongTermRef;
     }
 
+    // Mark frame as long term reference frame
     void SetisLongTermRef(bool isRef);
 
     void IncreaseRefPicListResetCount()
@@ -302,13 +307,13 @@ public:
         return m_RefPicListResetCount;
     }
 
-    //////////////////////////////////////////////////////////////////////////////
     // GetRefPicList
     // Returns pointer to start of specified ref pic list.
-    //////////////////////////////////////////////////////////////////////////////
     H265DecoderRefPicList* GetRefPicList(Ipp32s sliceNumber, Ipp32s list) const;
 
+    // Copy plane data from target frame
     void CopyPlanes(H265DecoderFrame *pRefFrame);
+    // Fill frame planes with default values
     void DefaultFill(Ipp32s field, bool isChromaOnly, Ipp8u defaultValue = 128);
 
     Ipp32s GetError() const
@@ -327,18 +332,26 @@ public:
     }
 
 
-    //initialization for m_sliceheaders in m_codingdata in Frame
+    // Allocate and initialize frame array of CTBs and SAO parameters
     void allocateCodingData(const H265SeqParamSet* pSeqParamSet, const H265PicParamSet *pPicParamSet);
+    // Free array of CTBs
     void deallocateCodingData();
 
-    //  Access starting position of original picture for specific coding unit (CU) or partition unit (PU)
+    //  Access starting position of original picture for specific coding unit (CU)
     H265PlanePtrYCommon GetLumaAddr(Ipp32s CUAddr) const;
+    //  Access starting position of original picture for specific coding unit (CU)
     H265PlanePtrUVCommon GetCbAddr(Ipp32s CUAddr) const;
+    //  Access starting position of original picture for specific coding unit (CU)
     H265PlanePtrUVCommon GetCrAddr(Ipp32s CUAddr) const;
+    //  Access starting position of original picture for specific coding unit (CU)
     H265PlanePtrUVCommon GetCbCrAddr(Ipp32s CUAddr) const;
+    //  Access starting position of original picture for specific coding unit (CU) and partition unit (PU)
     H265PlanePtrYCommon GetLumaAddr(Ipp32s CUAddr, Ipp32u AbsZorderIdx) const;
+    //  Access starting position of original picture for specific coding unit (CU) and partition unit (PU)
     H265PlanePtrUVCommon GetCbAddr(Ipp32s CUAddr, Ipp32u AbsZorderIdx) const;
+    //  Access starting position of original picture for specific coding unit (CU) and partition unit (PU)
     H265PlanePtrUVCommon GetCrAddr(Ipp32s CUAddr, Ipp32u AbsZorderIdx) const;
+    //  Access starting position of original picture for specific coding unit (CU) and partition unit (PU)
     H265PlanePtrUVCommon GetCbCrAddr(Ipp32s CUAddr, Ipp32u AbsZorderIdx) const;
 protected:
     // Declare memory management tools
@@ -347,6 +360,7 @@ protected:
     Heap_Objects * m_pObjHeap;
 };
 
+// Returns if frame is not needed by decoder
 inline bool isAlmostDisposable(H265DecoderFrame * pTmp)
 {
     return (!pTmp->m_isShortTermRef &&

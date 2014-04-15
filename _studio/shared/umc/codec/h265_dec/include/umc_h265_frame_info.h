@@ -361,10 +361,11 @@ private:
 };
 
 #if defined(_WIN32) || defined(_WIN64)
+// RefPicList. Returns pointer to start of specified ref pic list.
 H265_FORCEINLINE H265DecoderRefPicList* H265DecoderFrame::GetRefPicList(Ipp32s sliceNumber, Ipp32s list) const
 {
     return GetAU()->GetRefPicList(sliceNumber, list);
-}   // RefPicList. Returns pointer to start of specified ref pic list.
+}
 #endif
 
 } // namespace UMC_HEVC_DECODER

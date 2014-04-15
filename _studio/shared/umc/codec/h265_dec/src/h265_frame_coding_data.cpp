@@ -125,9 +125,9 @@ void H265FrameCodingData::create(Ipp32s iPicWidth, Ipp32s iPicHeight, Ipp32u uiM
 
     m_MaxCUWidth = uiMaxWidth;
 
-    m_MinCUWidth = uiMaxWidth >> m_MaxCUDepth;
+    Ipp32s MinCUWidth = uiMaxWidth >> m_MaxCUDepth;
 
-    m_NumPartInWidth = uiMaxWidth / m_MinCUWidth;
+    m_NumPartInWidth = uiMaxWidth / MinCUWidth;
 
     m_WidthInCU = (iPicWidth % uiMaxWidth) ? iPicWidth / uiMaxWidth + 1 : iPicWidth / uiMaxWidth;
     m_HeightInCU = (iPicHeight % uiMaxHeight) ? iPicHeight / uiMaxHeight + 1 : iPicHeight / uiMaxHeight;

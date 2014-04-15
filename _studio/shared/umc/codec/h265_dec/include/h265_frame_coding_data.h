@@ -81,7 +81,6 @@ public:
     Ipp32u m_HeightInCU;
 
     Ipp32u m_MaxCUWidth;
-    Ipp32u m_MinCUWidth;
 
     Ipp8u m_MaxCUDepth;                        // max. depth
     Ipp32s m_NumPartitions;
