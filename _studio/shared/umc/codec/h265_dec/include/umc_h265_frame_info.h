@@ -22,6 +22,7 @@ namespace UMC_HEVC_DECODER
 {
 class H265DecoderFrame;
 
+// Collection of slices that constitute one decoder frame
 class H265DecoderFrameInfo
 {
 public:

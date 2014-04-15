@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2012-2013 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2012-2014 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -30,9 +30,9 @@ H265DecoderFrameList::~H265DecoderFrameList(void)
 
 } // H265DecoderFrameList::~H265DecoderFrameList(void)
 
+// Destroy frame list
 void H265DecoderFrameList::Release(void)
 {
-    // destroy frame list
     while (m_pHead)
     {
         H265DecoderFrame *pNext = m_pHead->future();
@@ -46,10 +46,7 @@ void H265DecoderFrameList::Release(void)
 } // void H265DecoderFrameList::Release(void)
 
 
-//////////////////////////////////////////////////////////////////////////////
-// append
-//   Appends a new decoded frame buffer to the "end" of the linked list
-//////////////////////////////////////////////////////////////////////////////
+// Appends a new decoded frame buffer to the "end" of the linked list
 void H265DecoderFrameList::append(H265DecoderFrame *pFrame)
 {
     // Error check
@@ -94,6 +91,7 @@ H265DBPList::H265DBPList()
 {
 }
 
+// Searches DPB for a reusable frame with biggest POC
 H265DecoderFrame * H265DBPList::GetOldestDisposable(void)
 {
     H265DecoderFrame *pOldest = NULL;
@@ -122,45 +120,7 @@ H265DecoderFrame * H265DBPList::GetOldestDisposable(void)
     return pOldest;
 } // H265DecoderFrame *H265DBPList::GetDisposable(void)
 
-H265DecoderFrame * H265DBPList::GetLastDisposable(void)
-{
-    H265DecoderFrame *pOldest = NULL;
-
-    for (H265DecoderFrame * pTmp = m_pHead; pTmp; pTmp = pTmp->future())
-    {
-        if (pTmp->isDisposable())
-        {
-            pOldest = pTmp;
-        }
-    }
-    return pOldest;
-} // H265DecoderFrame *H265DBPList::GetDisposable(void)
-
-void H265DBPList::MoveToTail(H265DecoderFrame * pFrame)
-{
-    if (m_pHead == m_pTail || pFrame == m_pTail)
-    {
-        return;
-    }
-
-    // move to tail
-    if (pFrame == m_pHead)
-    {
-        m_pHead = pFrame->m_pFutureFrame;
-        m_pHead->m_pPreviousFrame = 0;
-    }
-    else
-    {
-        pFrame->m_pPreviousFrame->m_pFutureFrame = pFrame->m_pFutureFrame;
-        pFrame->m_pFutureFrame->m_pPreviousFrame = pFrame->m_pPreviousFrame;
-    }
-
-    m_pTail->m_pFutureFrame = pFrame;
-    pFrame->m_pPreviousFrame = m_pTail;
-    m_pTail = pFrame;
-    pFrame->m_pFutureFrame = 0;
-}
-
+// Returns whether DPB contains frames which may be reused
 bool H265DBPList::IsDisposableExist()
 {
     for (H265DecoderFrame * pTmp = m_pHead; pTmp; pTmp = pTmp->future())
@@ -174,6 +134,7 @@ bool H265DBPList::IsDisposableExist()
     return false;
 }
 
+// Returns whether DPB contains frames which may be reused after asynchronous decoding finishes
 bool H265DBPList::IsAlmostDisposableExist()
 {
     Ipp32s count = 0;
@@ -189,6 +150,7 @@ bool H265DBPList::IsAlmostDisposableExist()
     return count < m_dpbSize;
 }
 
+// Returns first reusable frame in DPB
 H265DecoderFrame * H265DBPList::GetDisposable(void)
 {
     for (H265DecoderFrame * pTmp = m_pHead; pTmp; pTmp = pTmp->future())
@@ -203,6 +165,7 @@ H265DecoderFrame * H265DBPList::GetDisposable(void)
     return NULL;
 } // H265DecoderFrame *H265DBPList::GetDisposable(void)
 
+// Searches DPB for an oldest displayable frame with maximum ref pic list reset count
 H265DecoderFrame * H265DBPList::findDisplayableByDPBDelay(void)
 {
     H265DecoderFrame *pCurr = m_pHead;
@@ -258,11 +221,8 @@ H265DecoderFrame * H265DBPList::findDisplayableByDPBDelay(void)
     return pOldest;
 }
 
-///////////////////////////////////////////////////////////////////////////////
-// findOldestDisplayable
 // Search through the list for the oldest displayable frame. It must be
 // not disposable, not outputted, and have smallest PicOrderCnt.
-///////////////////////////////////////////////////////////////////////////////
 H265DecoderFrame * H265DBPList::findOldestDisplayable(Ipp32s /*dbpSize*/ )
 {
     H265DecoderFrame *pCurr = m_pHead;
@@ -320,24 +280,7 @@ H265DecoderFrame * H265DBPList::findOldestDisplayable(Ipp32s /*dbpSize*/ )
     return pOldest;
 }    // findOldestDisplayable
 
-H265DecoderFrame * H265DBPList::findFirstDisplayable()
-{
-    VM_ASSERT(0);
-    H265DecoderFrame *pCurr = m_pHead;
-
-    while (pCurr)
-    {
-        if ((pCurr->isDisplayable() || !pCurr->IsDecoded()) && !pCurr->wasOutputted())
-        {
-            return pCurr;
-        }
-
-        pCurr = pCurr->future();
-    }
-
-    return 0;
-}    // findFirstDisplayable
-
+// Returns the number of frames in DPB
 Ipp32u H265DBPList::countAllFrames()
 {
     H265DecoderFrame *pCurr = head();
@@ -352,10 +295,7 @@ Ipp32u H265DBPList::countAllFrames()
     return count;
 }
 
-///////////////////////////////////////////////////////////////////////////////
-// countNumDisplayable
 //  Return number of displayable frames.
-///////////////////////////////////////////////////////////////////////////////
 Ipp32u H265DBPList::countNumDisplayable()
 {
     H265DecoderFrame *pCurr = head();
@@ -373,10 +313,7 @@ Ipp32u H265DBPList::countNumDisplayable()
     return NumDisplayable;
 }    // countNumDisplayable
 
-///////////////////////////////////////////////////////////////////////////////
-// countActiveRefs
-//  Return number of active Ipp16s and long term reference frames.
-///////////////////////////////////////////////////////////////////////////////
+// Return number of active short and long term reference frames.
 void H265DBPList::countActiveRefs(Ipp32u &NumShortTerm, Ipp32u &NumLongTerm)
 {
     H265DecoderFrame *pCurr = m_pHead;
@@ -394,10 +331,7 @@ void H265DBPList::countActiveRefs(Ipp32u &NumShortTerm, Ipp32u &NumLongTerm)
 
 }    // countActiveRefs
 
-///////////////////////////////////////////////////////////////////////////////
-// removeAllRef
 // Marks all frames as not used as reference frames.
-///////////////////////////////////////////////////////////////////////////////
 void H265DBPList::removeAllRef()
 {
     H265DecoderFrame *pCurr = m_pHead;
@@ -421,6 +355,7 @@ void H265DBPList::removeAllRef()
 
 }    // removeAllRef
 
+// Increase ref pic list reset count except for one frame
 void H265DBPList::IncreaseRefPicListResetCount(H265DecoderFrame *ExcludeFrame)
 {
     H265DecoderFrame *pCurr = m_pHead;
@@ -436,6 +371,7 @@ void H265DBPList::IncreaseRefPicListResetCount(H265DecoderFrame *ExcludeFrame)
 
 }    // IncreaseRefPicListResetCount
 
+// Debug print
 void H265DBPList::printDPB()
 {
     H265DecoderFrame *pCurr = m_pHead;
@@ -450,6 +386,7 @@ void H265DBPList::printDPB()
     DEBUG_PRINT((VM_STRING(")\n")));
 }
 
+// Searches DPB for a short term reference frame with specified POC
 H265DecoderFrame *H265DBPList::findShortRefPic(Ipp32s picPOC)
 {
     H265DecoderFrame *pCurr = m_pHead;
@@ -465,6 +402,7 @@ H265DecoderFrame *H265DBPList::findShortRefPic(Ipp32s picPOC)
     return pCurr;
 }
 
+// Searches DPB for a long term reference frame with specified POC
 H265DecoderFrame *H265DBPList::findLongTermRefPic(const H265DecoderFrame *excludeFrame, Ipp32s picPOC, Ipp32u bitsForPOC, bool isUseMask)
 {
     H265DecoderFrame *pCurr = m_pHead;
@@ -495,6 +433,7 @@ H265DecoderFrame *H265DBPList::findLongTermRefPic(const H265DecoderFrame *exclud
     return correctPic;
 } // findLongTermRefPic
 
+// Try to find a frame closest to specified for error recovery
 H265DecoderFrame * H265DBPList::FindClosest(H265DecoderFrame * pFrame)
 {
     Ipp32s originalPOC = pFrame->PicOrderCnt();
@@ -552,17 +491,7 @@ H265DecoderFrame * H265DBPList::FindClosest(H265DecoderFrame * pFrame)
     return pOldest;
 }
 
-H265DecoderFrame * H265DBPList::FindByIndex(Ipp32s index)
-{
-    for (H265DecoderFrame * pTmp = m_pHead; pTmp; pTmp = pTmp->future())
-    {
-        if (pTmp->m_index == index)
-            return pTmp;
-    }
-
-    return 0;
-}
-
+// Reset the buffer and reset every single frame of it
 void H265DBPList::Reset(void)
 {
     H265DecoderFrame *pFrame ;
@@ -578,6 +507,7 @@ void H265DBPList::Reset(void)
     }
 } // void H265DBPList::Reset(void)
 
+// Debug print
 void H265DBPList::DebugPrint()
 {
 #if 1

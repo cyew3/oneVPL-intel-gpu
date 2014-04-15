@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2012-2013 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2012-2014 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -73,48 +73,47 @@ public:
 
     H265DBPList();
 
+    // Searches DPB for a reusable frame with biggest POC
     H265DecoderFrame * GetOldestDisposable();
 
-    H265DecoderFrame * GetLastDisposable();
-
+    // Returns whether DPB contains frames which may be reused
     bool IsDisposableExist();
 
+    // Returns whether DPB contains frames which may be reused after asynchronous decoding finishes
     bool IsAlmostDisposableExist();
 
+    // Returns first reusable frame in DPB
     H265DecoderFrame *GetDisposable(void);
-    // Search through the list for the disposable frame to decode into
-    // Move disposable frame to tail
 
+    // Marks all frames as not used as reference frames.
     void removeAllRef();
-    // Mark all frames as not used as reference frames.
 
+    // Increase ref pic list reset count except for one frame
     void IncreaseRefPicListResetCount(H265DecoderFrame *excludeFrame);
-    // Mark all frames as not used as reference frames.
 
+    // Searches DPB for a short term reference frame with specified POC
     H265DecoderFrame *findShortRefPic(Ipp32s picPOC);
 
+    // Searches DPB for a long term reference frame with specified POC
     H265DecoderFrame *findLongTermRefPic(const H265DecoderFrame *excludeFrame, Ipp32s picPOC, Ipp32u bitsForPOC, bool isUseMask);
 
+    // Returns the number of frames in DPB
     Ipp32u countAllFrames();
 
+    // Return number of active short and long term reference frames.
     void countActiveRefs(Ipp32u &numShortTerm, Ipp32u &numLongTerm);
-    // Return number of active Ipp16s and long term reference frames.
 
-    H265DecoderFrame * findFirstDisplayable();
-
+    // Searches DPB for an oldest displayable frame with maximum ref pic list reset count
     H265DecoderFrame * findDisplayableByDPBDelay();
 
-    H265DecoderFrame *findOldestDisplayable(Ipp32s dbpSize);
     // Search through the list for the oldest displayable frame.
+    H265DecoderFrame *findOldestDisplayable(Ipp32s dbpSize);
 
-    Ipp32u countNumDisplayable();
     // Return number of displayable frames.
+    Ipp32u countNumDisplayable();
 
-    void MoveToTail(H265DecoderFrame * pFrame);
-
+    // Try to find a frame closest to specified for error recovery
     H265DecoderFrame * FindClosest(H265DecoderFrame * pFrame);
-
-    H265DecoderFrame * FindByIndex(Ipp32s index);
 
     Ipp32s GetDPBSize() const
     {
@@ -129,7 +128,9 @@ public:
     // Reset the buffer and reset every single frame of it
     void Reset(void);
 
+    // Debug print
     void DebugPrint();
+    // Debug print
     void printDPB();
 
 protected:
