@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2005-2013 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2005-2014 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -328,6 +328,8 @@ Ipp32s sbrGetFrame(Ipp32f *pSrc,
   } // END FOR PS BLOCK
 
   /* UpDate Low Bands */
+  if (ch >= sizeof(ws->XBuf)/sizeof(ws->XBuf[0]))
+      return -1;
   sbrUpDateBands(ws->XBuf[ch] );
 
 /* ---------------------------- <store ch depend> ---------------------------- */
