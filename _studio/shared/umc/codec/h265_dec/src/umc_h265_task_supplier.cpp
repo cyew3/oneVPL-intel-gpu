@@ -2223,6 +2223,7 @@ void TaskSupplier_H265::OnFullFrame(H265DecoderFrame * pFrame)
     }
 }
 
+// Check whether all slices for the frame were found
 void TaskSupplier_H265::CompleteFrame(H265DecoderFrame * pFrame)
 {
     if (!pFrame)

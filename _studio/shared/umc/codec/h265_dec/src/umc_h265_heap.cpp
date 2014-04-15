@@ -435,6 +435,7 @@ void RefCounter::DecrementReference()
     }
 }
 
+// Allocate several arrays inside of one memory buffer
 Ipp8u * CumulativeArraysAllocation(int n, int align, ...)
 {
     va_list args;
@@ -471,6 +472,7 @@ Ipp8u * CumulativeArraysAllocation(int n, int align, ...)
     return cumulativePtrSaved;
 }
 
+// Free memory allocated by CumulativeArraysAllocation
 void CumulativeFree(Ipp8u * ptr)
 {
     delete[] ptr;

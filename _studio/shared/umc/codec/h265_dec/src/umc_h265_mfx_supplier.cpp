@@ -103,6 +103,7 @@ MFXTaskSupplier_H265::~MFXTaskSupplier_H265()
     Close();
 }
 
+// Initialize task supplier
 UMC::Status MFXTaskSupplier_H265::Init(UMC::BaseCodecParams *pInit)
 {
     UMC::VideoDecoderParams *init = DynamicCast<UMC::VideoDecoderParams> (pInit);
@@ -190,6 +191,7 @@ UMC::Status MFXTaskSupplier_H265::Init(UMC::BaseCodecParams *pInit)
     return UMC::UMC_OK;
 }
 
+// Release resources
 void MFXTaskSupplier_H265::Reset()
 {
     TaskSupplier_H265::Reset();
@@ -200,6 +202,8 @@ void MFXTaskSupplier_H265::Reset()
         m_pTaskBroker->Init(m_iThreadNum, false);
 }
 
+// Check whether specified frame has been decoded, and if it was,
+// whether it is necessary to display some frame
 bool MFXTaskSupplier_H265::CheckDecoding(bool should_additional_check, H265DecoderFrame * outputFrame)
 {
     ViewItem_H265 &view = *GetView();
@@ -254,6 +258,7 @@ bool MFXTaskSupplier_H265::CheckDecoding(bool should_additional_check, H265Decod
     return false;
 }
 
+// Perform decoding task for thread number threadNumber
 mfxStatus MFXTaskSupplier_H265::RunThread(mfxU32 threadNumber)
 {
     UMC::Status sts = m_pSegmentDecoder[threadNumber]->ProcessSegment();
@@ -271,6 +276,7 @@ mfxStatus MFXTaskSupplier_H265::RunThread(mfxU32 threadNumber)
     return MFX_TASK_WORKING;
 }
 
+// Check whether all slices for the frame were found
 void MFXTaskSupplier_H265::CompleteFrame(H265DecoderFrame * pFrame)
 {
     if (!pFrame)
@@ -283,11 +289,13 @@ void MFXTaskSupplier_H265::CompleteFrame(H265DecoderFrame * pFrame)
     TaskSupplier_H265::CompleteFrame(pFrame);
 }
 
+// Set initial video params from application
 void MFXTaskSupplier_H265::SetVideoParams(mfxVideoParam * par)
 {
     m_firstVideoParams = *par;
 }
 
+// Decode headers nal unit
 UMC::Status MFXTaskSupplier_H265::DecodeHeaders(UMC::MediaDataEx *nalUnit)
 {
     UMC::Status sts = TaskSupplier_H265::DecodeHeaders(nalUnit);
@@ -345,6 +353,7 @@ UMC::Status MFXTaskSupplier_H265::DecodeHeaders(UMC::MediaDataEx *nalUnit)
     return UMC::UMC_OK;
 }
 
+// Decode SEI nal unit
 UMC::Status MFXTaskSupplier_H265::DecodeSEI(UMC::MediaDataEx *nalUnit)
 {
     if (m_Headers.m_SeqParams.GetCurrentID() == -1)
@@ -417,10 +426,12 @@ UMC::Status MFXTaskSupplier_H265::DecodeSEI(UMC::MediaDataEx *nalUnit)
     return UMC::UMC_OK;
 }
 
+// Do something in case reference frame is missing
 void MFXTaskSupplier_H265::AddFakeReferenceFrame(H265Slice * )
 {
 }
 
+// Check HW capabilities
 bool MFX_Utility::IsNeedPartialAcceleration_H265(mfxVideoParam * par, eMFXHWType )
 {
     if (!par)
@@ -432,11 +443,7 @@ bool MFX_Utility::IsNeedPartialAcceleration_H265(mfxVideoParam * par, eMFXHWType
     return false;
 }
 
-inline bool isMVCProfile(mfxU32 profile)
-{
-    return (profile == MFX_PROFILE_AVC_MULTIVIEW_HIGH || profile == MFX_PROFILE_AVC_STEREO_HIGH);
-}
-
+// Returns implementation platform
 eMFXPlatform MFX_Utility::GetPlatform_H265(VideoCORE * core, mfxVideoParam * par)
 {
 #if !defined (MFX_VA) && defined (AS_HEVCD_PLUGIN)
@@ -470,6 +477,7 @@ eMFXPlatform MFX_Utility::GetPlatform_H265(VideoCORE * core, mfxVideoParam * par
 #endif 
 }
 
+// Initialize mfxVideoParam structure based on decoded bitstream header values
 UMC::Status MFX_Utility::FillVideoParam(TaskSupplier_H265 * supplier, mfxVideoParam *par, bool full, bool isHW)
 {
     const H265SeqParamSet * seq = supplier->GetHeaders()->m_SeqParams.GetCurrentHeader();
@@ -488,14 +496,18 @@ UMC::Status MFX_Utility::FillVideoParam(TaskSupplier_H265 * supplier, mfxVideoPa
     return UMC::UMC_OK;
 }
 
+// Helper class for gathering header NAL units
 class HeadersAnalyzer
 {
 public:
     HeadersAnalyzer(TaskSupplier_H265 * supplier);
     virtual ~HeadersAnalyzer();
 
+    // Decode a memory buffer looking for header NAL units in it
     virtual UMC::Status DecodeHeader(UMC::MediaData* params, mfxBitstream *bs, mfxVideoParam *out);
+    // Find headers nal units and parse them
     virtual UMC::Status ProcessNalUnit(UMC::MediaData * data);
+    // Returns whether necessary headers are found
     virtual bool IsEnough() const;
 
 protected:
@@ -524,11 +536,13 @@ HeadersAnalyzer::~HeadersAnalyzer()
         m_lastSlice->DecrementReference();
 }
 
+// Returns whether necessary headers are found
 bool HeadersAnalyzer::IsEnough() const
 {
     return m_isSPSFound && m_isPPSFound;
 }
 
+// Decode a memory buffer looking for header NAL units in it
 UMC::Status HeadersAnalyzer::DecodeHeader(UMC::MediaData * data, mfxBitstream *bs, mfxVideoParam *)
 {
     if (!data)
@@ -581,6 +595,7 @@ UMC::Status HeadersAnalyzer::DecodeHeader(UMC::MediaData * data, mfxBitstream *b
     return UMC::UMC_ERR_NOT_ENOUGH_DATA;
 }
 
+// Find headers nal units and parse them
 UMC::Status HeadersAnalyzer::ProcessNalUnit(UMC::MediaData * data)
 {
     try
@@ -689,6 +704,7 @@ UMC::Status HeadersAnalyzer::ProcessNalUnit(UMC::MediaData * data)
     return UMC::UMC_OK;
 }
 
+// Find bitstream header NAL units, parse them and fill application parameters structure
 UMC::Status MFX_Utility::DecodeHeader(TaskSupplier_H265 * supplier, UMC::BaseCodecParams* params, mfxBitstream *bs, mfxVideoParam *out, bool isHW)
 {
     UMC::VideoDecoderParams *lpInfo = DynamicCast<UMC::VideoDecoderParams> (params);
@@ -720,6 +736,7 @@ UMC::Status MFX_Utility::DecodeHeader(TaskSupplier_H265 * supplier, UMC::BaseCod
     return umcRes;
 }
 
+// MediaSDK DECODE_Query API function
 mfxStatus MFX_CDECL MFX_Utility::Query_H265(VideoCORE *core, mfxVideoParam *in, mfxVideoParam *out, eMFXHWType type)
 {
     MFX_CHECK_NULL_PTR1(out);
@@ -1072,6 +1089,7 @@ mfxStatus MFX_CDECL MFX_Utility::Query_H265(VideoCORE *core, mfxVideoParam *in, 
     return sts;
 }
 
+// Validate input parameters
 bool MFX_CDECL MFX_Utility::CheckVideoParam_H265(mfxVideoParam *in, eMFXHWType type)
 {
     if (!in)

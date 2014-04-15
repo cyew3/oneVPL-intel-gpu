@@ -30,6 +30,7 @@ class VideoDECODEH265;
 namespace UMC_HEVC_DECODER
 {
 
+// Container for raw header binary data
 class RawHeader_H265
 {
 public:
@@ -52,6 +53,7 @@ protected:
     Ipp32s      m_id;
 };
 
+// Container for raw SPS and PPS stream headers
 class RawHeaders_H265
 {
 public:
@@ -69,7 +71,7 @@ protected:
 };
 
 /****************************************************************************************************/
-// TaskSupplier_H265
+// Task supplier which implements MediaSDK decoding API
 /****************************************************************************************************/
 class MFXTaskSupplier_H265 : public TaskSupplier_H265, public RawHeaders_H265
 {
@@ -81,24 +83,33 @@ public:
 
     virtual ~MFXTaskSupplier_H265();
 
+    // Initialize task supplier
     virtual UMC::Status Init(UMC::BaseCodecParams *pInit);
 
     virtual void Reset();
 
+    // Check whether all slices for the frame were found
     virtual void CompleteFrame(H265DecoderFrame * pFrame);
 
+    // Check whether specified frame has been decoded, and if it was,
+    // whether there is some decoding work left to be done
     bool CheckDecoding(bool should_additional_check, H265DecoderFrame * decoded);
 
+    // Set initial video params from application
     void SetVideoParams(mfxVideoParam * par);
 
 protected:
 
+    // Decode SEI nal unit
     virtual UMC::Status DecodeSEI(UMC::MediaDataEx *nalUnit);
 
+    // Do something in case reference frame is missing
     virtual void AddFakeReferenceFrame(H265Slice * pSlice);
 
+    // Decode headers nal unit
     virtual UMC::Status DecodeHeaders(UMC::MediaDataEx *nalUnit);
 
+    // Perform decoding task for thread number threadNumber
     mfxStatus RunThread(mfxU32 threadNumber);
 
     mfxVideoParam  m_firstVideoParams;
@@ -111,19 +122,26 @@ private:
     } // MFXTaskSupplier_H265 & operator = (MFXTaskSupplier_H265 &)
 };
 
+// MFX utility API functions
 class MFX_Utility
 {
 public:
 
+    // Returns implementation platform
     static eMFXPlatform MFX_CDECL GetPlatform_H265(VideoCORE * core, mfxVideoParam * par);
+    // Initialize mfxVideoParam structure based on decoded bitstream header values
     static UMC::Status MFX_CDECL FillVideoParam(TaskSupplier_H265 * supplier, ::mfxVideoParam *par, bool full, bool isHW);
+    // Find bitstream header NAL units, parse them and fill application parameters structure
     static UMC::Status MFX_CDECL DecodeHeader(TaskSupplier_H265 * supplier, UMC::BaseCodecParams* params, mfxBitstream *bs, mfxVideoParam *out, bool isHW);
 
+    // MediaSDK DECODE_Query API function
     static mfxStatus MFX_CDECL Query_H265(VideoCORE *core, mfxVideoParam *in, mfxVideoParam *out, eMFXHWType type);
+    // Validate input parameters
     static bool MFX_CDECL CheckVideoParam_H265(mfxVideoParam *in, eMFXHWType type);
 
 private:
 
+    // Check HW capabilities
     static bool IsNeedPartialAcceleration_H265(mfxVideoParam * par, eMFXHWType type);
 
 };

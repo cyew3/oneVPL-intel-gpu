@@ -22,11 +22,13 @@
 namespace UMC_HEVC_DECODER
 {
 
+// Allocate several arrays inside of one memory buffer
 Ipp8u * CumulativeArraysAllocation(int n, int align, ...);
+// Free memory allocated by CumulativeArraysAllocation
 void CumulativeFree(Ipp8u * ptr);
 
 //*********************************************************************************************/
-//
+// Memory buffer container class
 //*********************************************************************************************/
 class MemoryPiece
 {
@@ -150,7 +152,7 @@ public:
 };
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// Heap_Objects class
+// Collection of heap objects
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 class Heap_Objects
 {
@@ -291,206 +293,8 @@ private:
     UMC::Mutex m_mGuard;
 };
 
-
 //*********************************************************************************************/
-// H265_List implementation
-//*********************************************************************************************/
-template <typename T>
-class H265_List
-{
-public:
-    class Item : public HeapObject
-    {
-    public:
-        Item(T *item, Ipp32s pid)
-            : m_pNext(0)
-            , m_Item(item)
-            , m_pid(pid)
-        {
-        }
-
-        virtual void Reset()
-        {
-            m_Item->Reset();
-        }
-
-        Item * m_pNext;
-        T *m_Item;
-        Ipp32s m_pid;
-    };
-
-    H265_List(Heap_Objects * pObjHeap)
-        : m_pHead(0)
-        , m_pObjHeap(pObjHeap)
-    {
-    }
-
-    ~H265_List()
-    {
-        Reset();
-    }
-
-    void RemoveHead()
-    {
-        Item * tmp = m_pHead;
-        m_pHead = m_pHead->m_pNext;
-        m_pObjHeap->FreeObject(tmp);
-    }
-
-    void RemoveItem(T * item)
-    {
-        if (!m_pHead)
-        {
-            VM_ASSERT(false);
-            return;
-        }
-
-        Item *tmp = m_pHead;
-
-        if (tmp->m_Item == item)
-        {
-            m_pHead = m_pHead->m_pNext;
-            m_pObjHeap->FreeObject(tmp);
-            return;
-        }
-
-        while (tmp->m_pNext)
-        {
-            if (tmp->m_pNext->m_Item == item)
-            {
-                Item * list_item = tmp->m_pNext;
-                tmp->m_pNext = tmp->m_pNext->m_pNext;
-                m_pObjHeap->FreeObject(list_item);
-                return;
-            }
-
-            tmp = tmp->m_pNext;
-        }
-
-        // it was removed before
-        VM_ASSERT(false);
-    }
-
-    T * DetachItemByPid(Ipp32s pid)
-    {
-        if (!m_pHead)
-        {
-            return 0;
-        }
-
-        T * item = 0;
-        Item *tmp = m_pHead;
-        for (; tmp; tmp = tmp->m_pNext)
-        {
-            if (tmp->m_pid == pid)
-            {
-                item = tmp->m_Item;
-                break;
-            }
-        }
-
-        if (!tmp)
-            return 0;
-
-        tmp = m_pHead;
-
-        if (tmp->m_Item == item)
-        {
-            m_pHead = m_pHead->m_pNext;
-            m_pObjHeap->FreeObject(tmp);
-            return item;
-        }
-
-        while (tmp->m_pNext)
-        {
-            if (tmp->m_pNext->m_Item == item)
-            {
-                Item * list_item = tmp->m_pNext;
-                tmp->m_pNext = tmp->m_pNext->m_pNext;
-                m_pObjHeap->FreeObject(list_item);
-                return item;
-            }
-
-            tmp = tmp->m_pNext;
-        }
-
-        VM_ASSERT(false);
-        return 0;
-    }
-
-    T* FindByPid(Ipp32s pid)
-    {
-        for (Item *tmp = m_pHead; tmp; tmp = tmp->m_pNext)
-        {
-            if (tmp->m_pid == pid)
-                return tmp->m_Item;
-        }
-
-        return 0;
-    }
-
-    T* FindLastByPid(Ipp32s pid) const
-    {
-        T *last = 0;
-        for (Item *tmp = m_pHead; tmp; tmp = tmp->m_pNext)
-        {
-            if (tmp->m_pid == pid)
-                last = tmp->m_Item;
-        }
-
-        return last;
-    }
-
-    void AddItem(T *item, Ipp32s pid)
-    {
-        Item * buf = (Item*)m_pObjHeap->Allocate(sizeof(Item));
-        Item *newItem = new(buf) Item(item, pid);
-
-        Item *tmp = m_pHead;
-        if (m_pHead)
-        {
-            while (tmp->m_pNext)
-            {
-                tmp = tmp->m_pNext;
-            }
-
-            tmp->m_pNext = newItem;
-        }
-        else
-        {
-            m_pHead = newItem;
-        }
-    }
-
-    T * GetHead()
-    {
-        return m_pHead->m_Item;
-    }
-
-    const T * GetHead() const
-    {
-        return m_pHead->m_Item;
-    }
-
-    void Reset()
-    {
-        for (Item *tmp = m_pHead; tmp; )
-        {
-            Item *tmp1 = tmp;
-            tmp = tmp->m_pNext;
-            m_pObjHeap->FreeObject(tmp1);
-        }
-
-        m_pHead = 0;
-    }
-
-private:
-    Item * m_pHead;
-    Heap_Objects * m_pObjHeap;
-};
-
-//*********************************************************************************************/
-//
+// Memory buffer for storing decoded coefficients
 //*********************************************************************************************/
 class CoeffsBuffer : public HeapObject
 {

@@ -344,6 +344,7 @@ protected:
     virtual void InitFrameCounter(H265DecoderFrame *pFrame, const H265Slice *pSlice);
 
     UMC::Status AddSlice(H265Slice * pSlice, bool force);
+    // Check whether all slices for the frame were found
     virtual void CompleteFrame(H265DecoderFrame * pFrame);
     virtual void OnFullFrame(H265DecoderFrame * pFrame);
 
