@@ -20,6 +20,10 @@
 #include "mfx_h264_encode_vaapi.h"
 #include "mfx_h264_encode_hw_utils.h"
 
+#if !defined(LINUX64)
+    #define SKIP_FRAME_SUPPORT
+#endif
+
 #ifdef MFX_VA_ANDROID
     #define SKIP_FRAME_SUPPORT
 #else
