@@ -1,14 +1,12 @@
-/* ////////////////////////////////////////////////////////////////////////////// */
-/*
-//
-//              INTEL CORPORATION PROPRIETARY INFORMATION
-//  This software is supplied under the terms of a license  agreement or
-//  nondisclosure agreement with Intel Corporation and may not be copied
-//  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2005-2014 Intel Corporation. All Rights Reserved.
-//
-//
-*/
+/*********************************************************************************
+
+INTEL CORPORATION PROPRIETARY INFORMATION
+This software is supplied under the terms of a license agreement or nondisclosure
+agreement with Intel Corporation and may not be copied or disclosed except in
+accordance with the terms of that agreement
+Copyright(c) 2005-2014 Intel Corporation. All Rights Reserved.
+
+**********************************************************************************/
 
 #ifndef __SAMPLE_UTILS_H__
 #define __SAMPLE_UTILS_H__
@@ -21,6 +19,7 @@
 #include "mfxstructures.h"
 #include "mfxvideo.h"
 #include "mfxjpeg.h"
+#include "mfxplugin.h"
 
 #include "vm/strings_defs.h"
 #include "vm/file_defs.h"
@@ -73,6 +72,14 @@ struct DeletePtr {
     }
 };
 
+enum {
+    CODEC_VP8 = MFX_MAKEFOURCC('V','P','8',' '),
+    CODEC_MVC = MFX_MAKEFOURCC('M','V','C',' '),
+};
+
+bool IsDecodeCodecSupported(mfxU32 codecFormat);
+bool IsEncodeCodecSupported(mfxU32 codecFormat);
+bool IsPluginCodecSupported(mfxU32 codecFormat);
 
 class CSmplYUVReader
 {
@@ -624,5 +631,8 @@ msdk_ostream & operator <<(msdk_ostream & os, MsdkTraceLevel tt);
 
 template<typename T>
     mfxStatus msdk_opt_read(msdk_char* string, T* value);
+
+mfxStatus StrFormatToCodecFormatFourCC(msdk_char* strInput, mfxU32 &codecFormat);
+mfxStatus ConvertStringToGuid(const msdk_string & sGuid, mfxPluginUID &mfxGuid);
 
 #endif //__SAMPLE_UTILS_H__

@@ -1,12 +1,12 @@
-/* ****************************************************************************** *\
+/*********************************************************************************
 
 INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2013 Intel Corporation. All Rights Reserved.
+Copyright(c) 2013-2014 Intel Corporation. All Rights Reserved.
 
-\* ****************************************************************************** */
+**********************************************************************************/
 
 #pragma once
 
@@ -15,14 +15,24 @@ Copyright(c) 2013 Intel Corporation. All Rights Reserved.
 #include "mfx_plugin_module.h"
 #include "intrusive_ptr.h"
 #include <iostream>
+#include <memory> // for std::auto_ptr
+
+typedef enum {
+    MFX_PLUGINLOAD_TYPE_GUID = 1,
+    MFX_PLUGINLOAD_TYPE_FILE = 2
+} MfxPluginLoadType;
 
 class MsdkSoModule
 {
 protected:
     msdk_so_handle m_module;
 public:
+    MsdkSoModule()
+        : m_module(NULL)
+    {
+    }
     MsdkSoModule(const msdk_string & pluginName)
-        : m_module()
+        : m_module(NULL)
     {
         m_module = msdk_so_load(pluginName.c_str());
         if (NULL == m_module)
@@ -49,7 +59,6 @@ public:
         }
     }
 };
-
 
 /* for plugin API*/
 inline void intrusive_ptr_addref(MFXDecoderPlugin *)
@@ -121,7 +130,6 @@ struct PluginCreateTrait<MFXGenericPlugin>
     typedef PluginModuleTemplate::fncCreateGenericPlugin TCreator;
 };
 
-
 /*
 * Rationale: class to load+register any mediasdk plugin decoder/encoder/generic by given name
 */
@@ -138,11 +146,19 @@ protected:
     };
     typedef typename PluginCreateTrait<T>::TCreator TCreator;
 
+    mfxSession        m_session;
+    mfxPluginUID      m_uid;
+
+    MfxPluginLoadType plugin_load_type;
+
 public:
     PluginLoader(MFXVideoUSER *userModule, const msdk_string & pluginName)
         : m_PluginModule(pluginName)
-        , m_userModule()
+        , m_userModule(NULL)
     {
+
+        plugin_load_type = MFX_PLUGINLOAD_TYPE_FILE;
+
         TCreator pCreateFunc = m_PluginModule.GetAddr<TCreator>(PluginCreateTrait<T>::Name());
         if(NULL == pCreateFunc)
         {
@@ -167,17 +183,51 @@ public:
         m_userModule = userModule;
     }
 
-    ~PluginLoader()
+    PluginLoader(mfxSession session, const mfxPluginUID & uid, mfxU32 version)
+        : m_session()
+        , m_uid()
     {
-        if (m_userModule) {
-            mfxStatus sts = m_userModule->Unregister(ePluginType);
-            if (sts != MFX_ERR_NONE) {
-                MSDK_TRACE_INFO(MSDK_STRING("MFXVideoUSER::Unregister(type=") << ePluginType << MSDK_STRING("), mfxsts=") << sts);
+        plugin_load_type = MFX_PLUGINLOAD_TYPE_GUID;
+
+        MSDK_MEMCPY(&m_uid, &uid, sizeof(mfxPluginUID));
+
+        mfxStatus sts = MFXVideoUSER_Load(session, &m_uid, version);
+        if (MFX_ERR_NONE != sts) {
+            MSDK_TRACE_ERROR(MSDK_STRING("Failed to load plugin from GUID, mfxsts=") << sts);
+            return;
+        }
+        MSDK_TRACE_INFO(MSDK_STRING("Plugin was loaded from GUID"));
+        m_session = session;
+    }
+
+    virtual ~PluginLoader()
+    {
+        if (plugin_load_type == MFX_PLUGINLOAD_TYPE_FILE)
+        {
+            if (m_userModule) {
+                mfxStatus sts = m_userModule->Unregister(ePluginType);
+                if (sts != MFX_ERR_NONE) {
+                    MSDK_TRACE_INFO(MSDK_STRING("MFXVideoUSER::Unregister(type=") << ePluginType << MSDK_STRING("), mfxsts=") << sts);
+                }
+            }
+        }
+        else
+        {
+            if (m_session)
+            {
+                mfxStatus sts = MFXVideoUSER_UnLoad(m_session, &m_uid);
+                if (sts != MFX_ERR_NONE)
+                {
+                     MSDK_TRACE_INFO(MSDK_STRING("MFXVideoUSER_UnLoad(session=0x") << m_session << MSDK_STRING("), mfxsts=") << sts);
+                }
             }
         }
     }
     bool IsOk() {
-        return m_userModule != 0;
+        if (plugin_load_type == MFX_PLUGINLOAD_TYPE_FILE)
+            return m_userModule != 0;
+        else
+            return m_session != 0;
     }
     virtual mfxStatus Init( mfxVideoParam *par ) {
         return m_plugin->Init(par);
@@ -217,6 +267,12 @@ MFXPlugin * LoadPluginByType(MFXVideoUSER *userModule, const msdk_string & plugi
     return plg->IsOk() ? plg.release() : NULL;
 }
 
+template <class T>
+MFXPlugin * LoadPluginByGUID(mfxSession session, const mfxPluginUID & uid, mfxU32 version) {
+    std::auto_ptr<PluginLoader<T> > plg(new PluginLoader<T> (session, uid, version));
+    return plg->IsOk() ? plg.release() : NULL;
+}
+
 inline MFXPlugin * LoadPlugin(mfxPluginType type, MFXVideoUSER *userModule, const msdk_string & pluginFullPath) {
     switch(type)
     {
@@ -228,6 +284,21 @@ inline MFXPlugin * LoadPlugin(mfxPluginType type, MFXVideoUSER *userModule, cons
         return LoadPluginByType<MFXEncoderPlugin>(userModule, pluginFullPath);
     default:
         MSDK_TRACE_ERROR(MSDK_STRING("Unsupported plugin type : ")<< type << MSDK_STRING(", for plugin: ")<< pluginFullPath);
+        return NULL;
+    }
+}
+
+inline MFXPlugin * LoadPlugin(mfxPluginType type, mfxSession session, const mfxPluginUID & uid, mfxU32 version) {
+    switch(type)
+    {
+    case MFX_PLUGINTYPE_VIDEO_GENERAL:
+        return LoadPluginByGUID<MFXGenericPlugin>(session, uid, version);
+    case MFX_PLUGINTYPE_VIDEO_DECODE:
+        return LoadPluginByGUID<MFXDecoderPlugin>(session, uid, version);
+    case MFX_PLUGINTYPE_VIDEO_ENCODE:
+        return LoadPluginByGUID<MFXEncoderPlugin>(session, uid, version);
+    default:
+        MSDK_TRACE_ERROR(MSDK_STRING("Unsupported plugin type : ")<< type);
         return NULL;
     }
 }

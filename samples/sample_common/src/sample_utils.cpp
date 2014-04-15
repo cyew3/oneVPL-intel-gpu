@@ -1742,3 +1742,125 @@ msdk_opt_read(msdk_char* string, mfxPriority* value)
 }
 
 mfxStatus msdk_opt_read(msdk_char* string, mfxPriority* value);
+
+bool IsDecodeCodecSupported(mfxU32 codecFormat)
+{
+    switch(codecFormat)
+    {
+        case MFX_CODEC_MPEG2:
+        case MFX_CODEC_AVC:
+        case MFX_CODEC_HEVC:
+        case MFX_CODEC_VC1:
+        case CODEC_MVC:
+        case MFX_CODEC_JPEG:
+        case CODEC_VP8:
+        break;
+    default:
+        return false;
+    }
+    return true;
+}
+
+bool IsEncodeCodecSupported(mfxU32 codecFormat)
+{
+    switch(codecFormat)
+    {
+        case MFX_CODEC_AVC:
+        case MFX_CODEC_HEVC:
+        case MFX_CODEC_MPEG2:
+        case CODEC_MVC:
+        case MFX_CODEC_JPEG:
+        break;
+    default:
+        return false;
+    }
+    return true;
+}
+
+bool IsPluginCodecSupported(mfxU32 codecFormat)
+{
+    switch(codecFormat)
+    {
+        case MFX_CODEC_HEVC:
+        case MFX_CODEC_AVC:
+        case MFX_CODEC_MPEG2:
+        case MFX_CODEC_VC1:
+        break;
+    default:
+        return false;
+    }
+    return true;
+}
+
+mfxStatus StrFormatToCodecFormatFourCC(msdk_char* strInput, mfxU32 &codecFormat)
+{
+    mfxStatus sts = MFX_ERR_NONE;
+    codecFormat   = 0;
+
+    if (strInput == NULL)
+        sts = MFX_ERR_NULL_PTR;
+
+    if (sts == MFX_ERR_NONE)
+    {
+        if (0 == msdk_strcmp(strInput, MSDK_STRING("mpeg2")))
+        {
+            codecFormat = MFX_CODEC_MPEG2;
+        }
+        else if (0 == msdk_strcmp(strInput, MSDK_STRING("h264")))
+        {
+            codecFormat = MFX_CODEC_AVC;
+        }
+        else if (0 == msdk_strcmp(strInput, MSDK_STRING("h265")))
+        {
+            codecFormat = MFX_CODEC_HEVC;
+        }
+        else if (0 == msdk_strcmp(strInput, MSDK_STRING("vc1")))
+        {
+            codecFormat = MFX_CODEC_VC1;
+        }
+        else if (0 == msdk_strcmp(strInput, MSDK_STRING("mvc")))
+        {
+            codecFormat = CODEC_MVC;
+        }
+        else if (0 == msdk_strcmp(strInput, MSDK_STRING("jpeg")))
+        {
+            codecFormat = MFX_CODEC_JPEG;
+        }
+        else if (0 == msdk_strcmp(strInput, MSDK_STRING("vp8")))
+        {
+            codecFormat = CODEC_VP8;
+        }
+        else
+            sts = MFX_ERR_UNSUPPORTED;
+    }
+
+    return sts;
+}
+
+mfxStatus ConvertStringToGuid(const msdk_string & string_guid, mfxPluginUID & mfx_guid)
+{
+    mfxStatus sts = MFX_ERR_NONE;
+    mfxU32 i   = 0;
+    mfxU32 hex = 0;
+    for(i = 0; i != 16; i++)
+    {
+        hex = 0;
+
+#if defined(_WIN32) || defined(_WIN64)
+        if (1 != _stscanf_s(string_guid.c_str() + 2*i, MSDK_STRING("%2x"), &hex))
+#else
+        if (1 != sscanf(string_guid.c_str() + 2*i, MSDK_STRING("%2x"), &hex))
+#endif
+        {
+            sts = MFX_ERR_UNKNOWN;
+            break;
+        }
+        if (hex == 0 && (const msdk_char *)string_guid.c_str() + 2*i != msdk_strstr((const msdk_char *)string_guid.c_str() + 2*i,  MSDK_STRING("00")))
+        {
+            sts = MFX_ERR_UNKNOWN;
+            break;
+        }
+        mfx_guid.Data[i] = (mfxU8)hex;
+    }
+    return sts;
+}

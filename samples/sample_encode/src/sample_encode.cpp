@@ -40,6 +40,9 @@ void PrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("   [-dstw width] - destination picture width, invokes VPP resizing\n"));
     msdk_printf(MSDK_STRING("   [-dsth height] - destination picture height, invokes VPP resizing\n"));
     msdk_printf(MSDK_STRING("   [-hw] - use platform specific SDK implementation, if not specified software implementation is used\n"));
+    msdk_printf(MSDK_STRING("   [-p guid|path_to_plugin] - 32-character hexadecimal guid string or path to encoder plugin\n"));
+    msdk_printf(MSDK_STRING("                              (optional for Media SDK in-box plugins, required for user-encoder ones)\n"));
+    msdk_printf(MSDK_STRING("Example: %s h265 -i InputYUVFile -o OutputEncodedFile -w width -h height -hw -p 2fca99749fdb49aeb121a5b63ef568f7\n"), strAppName);
 #if D3D_SURFACES_SUPPORT
     msdk_printf(MSDK_STRING("   [-d3d] - work with d3d surfaces\n"));
     msdk_printf(MSDK_STRING("   [-d3d11] - work with d3d11 surfaces\n"));
@@ -106,31 +109,21 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
 
         if (MSDK_CHAR('-') != strInput[i][0])
         {
-            if (0 == msdk_strcmp(strInput[i], MSDK_STRING("h264")))
-            {
-                pParams->CodecId = MFX_CODEC_AVC;
-            }
-            else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("h265")))
-            {
-                pParams->CodecId = MFX_CODEC_HEVC;
-            }
-            else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("mpeg2")))
-            {
-                pParams->CodecId = MFX_CODEC_MPEG2;
-            }
-            else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("mvc")))
-            {
-                pParams->CodecId = MFX_CODEC_AVC;
-                pParams->MVC_flags |= MVC_ENABLED;
-            }
-            else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("jpeg")))
-            {
-                pParams->CodecId = MFX_CODEC_JPEG;
-            }
-            else
+            mfxStatus sts = StrFormatToCodecFormatFourCC(strInput[i], pParams->CodecId);
+            if (sts != MFX_ERR_NONE)
             {
                 PrintHelp(strInput[0], MSDK_STRING("Unknown codec"));
                 return MFX_ERR_UNSUPPORTED;
+            }
+            if (!IsEncodeCodecSupported(pParams->CodecId))
+            {
+                PrintHelp(strInput[0], MSDK_STRING("Unsupported codec"));
+                return MFX_ERR_UNSUPPORTED;
+            }
+            if (pParams->CodecId == CODEC_MVC)
+            {
+                pParams->CodecId = MFX_CODEC_AVC;
+                pParams->MVC_flags |= MVC_ENABLED;
             }
             continue;
         }
@@ -249,6 +242,18 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
             case MSDK_CHAR('q'):
                 GET_OPTION_POINTER(strArgument);
                 pParams->nQuality = (mfxU16)msdk_strtol(strArgument, &stopCharacter, 10);
+                break;
+            case MSDK_CHAR('p'):
+                GET_OPTION_POINTER(strArgument);
+                if (MFX_ERR_NONE == ConvertStringToGuid(strArgument, pParams->pluginParams.pluginGuid))
+                {
+                    pParams->pluginParams.type = MFX_PLUGINLOAD_TYPE_GUID;
+                }
+                else
+                {
+                    msdk_strcopy(pParams->pluginParams.strPluginPath, strArgument);
+                    pParams->pluginParams.type = MFX_PLUGINLOAD_TYPE_FILE;
+                }
                 break;
             case MSDK_CHAR('?'):
                 PrintHelp(strInput[0], NULL);

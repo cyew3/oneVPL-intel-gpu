@@ -74,6 +74,8 @@ struct sInputParams
 
     msdk_char strSrcFile[MSDK_MAX_FILENAME_LEN];
 
+    sPluginParams pluginParams;
+
     std::vector<msdk_char*> srcFileBuff;
     std::vector<msdk_char*> dstFileBuff;
 
@@ -153,8 +155,8 @@ protected:
 
     mfxU16 m_MVCflags; // MVC codec is in use
 
-    std::auto_ptr<MFXPlugin> m_pHEVC_plugin;
-    std::auto_ptr<MFXVideoUSER>  m_pUserModule;
+    std::auto_ptr<MFXVideoUSER> m_pUserModule;
+    std::auto_ptr<MFXPlugin> m_pPlugin;
     const msdkPluginUID*     m_pUID;
 
     MFXFrameAllocator* m_pMFXAllocator;

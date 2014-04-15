@@ -19,10 +19,20 @@ Copyright(c) 2014 Intel Corporation. All Rights Reserved.
 #include <mfxplugin.h>
 #include <mfxstructures.h>
 
+#include "../../sample_user_modules/plugin_api/plugin_loader.h"
+
 #ifdef __cplusplus
 extern "C"
 {
 #endif /* __cplusplus */
+
+struct sPluginParams {
+    union {
+        mfxPluginUID  pluginGuid;
+        msdk_char     strPluginPath[MSDK_MAX_FILENAME_LEN];
+    };
+    MfxPluginLoadType type;
+};
 
 union msdkPluginUID {
     struct {

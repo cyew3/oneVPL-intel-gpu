@@ -206,6 +206,8 @@ CmdProcessor::CmdProcessor()
 {
     m_SessionParamId = 0;
     m_SessionArray.clear();
+    m_decoderPlugins.clear();
+    m_encoderPlugins.clear();
     m_PerfFILE = NULL;
     m_parName = NULL;
     m_nTimeout = 0;
@@ -215,6 +217,8 @@ CmdProcessor::CmdProcessor()
 CmdProcessor::~CmdProcessor()
 {
     m_SessionArray.clear();
+    m_decoderPlugins.clear();
+    m_encoderPlugins.clear();
     if (m_PerfFILE)
         fclose(m_PerfFILE);
 
@@ -467,155 +471,66 @@ mfxStatus CmdProcessor::ParseParamsForOneSession(mfxU32 argc, msdk_char *argv[])
     for (i = 0; i < argc; i++)
     {
         // process multi-character options
-        if (0 == msdk_strcmp(argv[i], MSDK_STRING("-i::mpeg2")))
+        if (0 == msdk_strncmp(MSDK_STRING("-i::"), argv[i], 4))
         {
-            // only encode supports
-            if (InputParams.eMode == Source)
+            sts = StrFormatToCodecFormatFourCC(argv[i]+4, InputParams.DecodeId);
+            if (sts != MFX_ERR_NONE)
+            {
                 return MFX_ERR_UNSUPPORTED;
-
+            }
             VAL_CHECK(i+1 == argc, i, argv[i]);
             i++;
             SIZE_CHECK((msdk_strlen(argv[i])+1) > MSDK_ARRAY_LEN(InputParams.strSrcFile));
             msdk_strcopy(InputParams.strSrcFile, argv[i]);
-            InputParams.DecodeId = MFX_CODEC_MPEG2;
-        }
-        else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-i::h265")))
-        {
-            // only encode supports
             if (InputParams.eMode == Source)
-                return MFX_ERR_UNSUPPORTED;
-
-            VAL_CHECK(i+1 == argc, i, argv[i]);
-            i++;
-            SIZE_CHECK((msdk_strlen(argv[i])+1) > MSDK_ARRAY_LEN(InputParams.strSrcFile));
-            msdk_strcopy(InputParams.strSrcFile, argv[i]);
-            InputParams.DecodeId = MFX_CODEC_HEVC;
+            {
+                switch(InputParams.DecodeId)
+                {
+                    case MFX_CODEC_MPEG2:
+                    case MFX_CODEC_HEVC:
+                    case MFX_CODEC_AVC:
+                    case MFX_CODEC_VC1:
+                    case CODEC_MVC:
+                    case MFX_CODEC_JPEG:
+                        return MFX_ERR_UNSUPPORTED;
+                }
+            }
+            if (InputParams.DecodeId == CODEC_MVC)
+            {
+                InputParams.DecodeId = MFX_CODEC_AVC;
+                InputParams.bIsMVC = true;
+            }
         }
-        else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-i::h264")))
+        else if (0 == msdk_strncmp(MSDK_STRING("-o::"), argv[i], 4))
         {
-            // only encode supports
-            if (InputParams.eMode == Source)
+            sts = StrFormatToCodecFormatFourCC(argv[i]+4, InputParams.EncodeId);
+            if (sts != MFX_ERR_NONE)
+            {
                 return MFX_ERR_UNSUPPORTED;
-
-            VAL_CHECK(i+1 == argc, i, argv[i]);
-            i++;
-            SIZE_CHECK((msdk_strlen(argv[i])+1) > MSDK_ARRAY_LEN(InputParams.strSrcFile));
-            msdk_strcopy(InputParams.strSrcFile, argv[i]);
-            InputParams.DecodeId = MFX_CODEC_AVC;
-        }
-        else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-i::vc1")))
-        {
-            // only encode supports
-            if (InputParams.eMode == Source)
-                return MFX_ERR_UNSUPPORTED;
-
-            VAL_CHECK(i+1 == argc, i, argv[i]);
-            i++;
-            SIZE_CHECK((msdk_strlen(argv[i])+1) > MSDK_ARRAY_LEN(InputParams.strSrcFile));
-            msdk_strcopy(InputParams.strSrcFile, argv[i]);
-            InputParams.DecodeId = MFX_CODEC_VC1;
-        }
-        else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-i::mvc")))
-        {
-            // only encode supports
-            if (InputParams.eMode == Source)
-                return MFX_ERR_UNSUPPORTED;
-
-            VAL_CHECK(i+1 == argc, i, argv[i]);
-            i++;
-            SIZE_CHECK((msdk_strlen(argv[i])+1) > MSDK_ARRAY_LEN(InputParams.strSrcFile));
-            msdk_strcopy(InputParams.strSrcFile, argv[i]);
-            InputParams.DecodeId = MFX_CODEC_AVC;
-            InputParams.bIsMVC = true;
-        }
-        else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-i::jpeg")))
-        {
-            // only encode supports
-            if (InputParams.eMode == Source)
-                return MFX_ERR_UNSUPPORTED;
-
-            VAL_CHECK(i+1 == argc, i, argv[i]);
-            i++;
-            SIZE_CHECK((msdk_strlen(argv[i])+1) > MSDK_ARRAY_LEN(InputParams.strSrcFile));
-            msdk_strcopy(InputParams.strSrcFile, argv[i]);
-            InputParams.DecodeId = MFX_CODEC_JPEG;
-        }
-        else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-o::mpeg2")))
-        {
-            // only decode supports
-            if (InputParams.eMode == Sink)
-                return MFX_ERR_UNSUPPORTED;
-
-            // In case of MVC only MVC-MVC transcoding is supported
-            if (InputParams.bIsMVC)
-                return MFX_ERR_UNSUPPORTED;
-
+            }
             VAL_CHECK(i+1 == argc, i, argv[i]);
             i++;
             SIZE_CHECK((msdk_strlen(argv[i])+1) > MSDK_ARRAY_LEN(InputParams.strDstFile));
             msdk_strcopy(InputParams.strDstFile, argv[i]);
-            InputParams.EncodeId = MFX_CODEC_MPEG2;
-        }
-        else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-o::h265")))
-        {
-            // only decode supports
-            if (InputParams.eMode == Sink)
-                return MFX_ERR_UNSUPPORTED;
+            if (InputParams.eMode == Sink || InputParams.bIsMVC)
+            {
+                switch(InputParams.EncodeId)
+                {
+                    case MFX_CODEC_MPEG2:
+                    case MFX_CODEC_HEVC:
+                    case MFX_CODEC_AVC:
+                    case MFX_CODEC_JPEG:
+                        return MFX_ERR_UNSUPPORTED;
+                }
+            }
+            if (InputParams.EncodeId == CODEC_MVC)
+            {
+                if (InputParams.eMode == Sink)
+                    return MFX_ERR_UNSUPPORTED;
 
-            // In case of MVC only MVC-MVC transcoding is supported
-            if (InputParams.bIsMVC)
-                return MFX_ERR_UNSUPPORTED;
-
-            VAL_CHECK(i+1 == argc, i, argv[i]);
-            i++;
-            SIZE_CHECK((msdk_strlen(argv[i])+1) > MSDK_ARRAY_LEN(InputParams.strDstFile));
-            msdk_strcopy(InputParams.strDstFile, argv[i]);
-            InputParams.EncodeId = MFX_CODEC_HEVC;
-        }
-        else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-o::h264")))
-        {
-            // only decode supports
-            if (InputParams.eMode == Sink)
-                return MFX_ERR_UNSUPPORTED;
-
-            // In case of MVC only MVC-MVC transcoding is supported
-            if (InputParams.bIsMVC)
-                return MFX_ERR_UNSUPPORTED;
-
-            VAL_CHECK(i+1 == argc, i, argv[i]);
-            i++;
-            SIZE_CHECK((msdk_strlen(argv[i])+1) > MSDK_ARRAY_LEN(InputParams.strDstFile));
-            msdk_strcopy(InputParams.strDstFile, argv[i]);
-            InputParams.EncodeId = MFX_CODEC_AVC;
-        }
-        else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-o::mvc")))
-        {
-            // only decode supports
-            if (InputParams.eMode == Sink)
-                return MFX_ERR_UNSUPPORTED;
-
-            VAL_CHECK(i+1 == argc, i, argv[i]);
-            i++;
-            SIZE_CHECK((msdk_strlen(argv[i])+1) > MSDK_ARRAY_LEN(InputParams.strDstFile));
-            msdk_strcopy(InputParams.strDstFile, argv[i]);
-            InputParams.EncodeId = MFX_CODEC_AVC;
-            InputParams.bIsMVC = true;
-        }
-        else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-o::jpeg")))
-        {
-            // only decode supports
-            if (InputParams.eMode == Sink)
-                return MFX_ERR_UNSUPPORTED;
-
-            // In case of MVC only MVC-MVC transcoding is supported
-            if (InputParams.bIsMVC)
-                return MFX_ERR_UNSUPPORTED;
-
-            VAL_CHECK(i+1 == argc, i, argv[i]);
-            i++;
-            SIZE_CHECK((msdk_strlen(argv[i])+1) > MSDK_ARRAY_LEN(InputParams.strDstFile));
-            msdk_strcopy(InputParams.strDstFile, argv[i]);
-            InputParams.EncodeId = MFX_CODEC_JPEG;
+                InputParams.EncodeId = MFX_CODEC_AVC;
+                InputParams.bIsMVC = true;
+            }
         }
         else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-sw")))
         {
@@ -777,8 +692,8 @@ mfxStatus CmdProcessor::ParseParamsForOneSession(mfxU32 argc, msdk_char *argv[])
                 PrintHelp(NULL, MSDK_STRING("-angle \"%s\" is invalid"), argv[i]);
                 return MFX_ERR_UNSUPPORTED;
             }
-            if (InputParams.strPluginDLLPath[0] == '\0') {
-                msdk_strcopy(InputParams.strPluginDLLPath, MSDK_CPU_ROTATE_PLUGIN);
+            if (InputParams.strVPPPluginDLLPath[0] == '\0') {
+                msdk_strcopy(InputParams.strVPPPluginDLLPath, MSDK_CPU_ROTATE_PLUGIN);
             }
         }
         else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-timeout")))
@@ -795,7 +710,7 @@ mfxStatus CmdProcessor::ParseParamsForOneSession(mfxU32 argc, msdk_char *argv[])
 
         else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-opencl")))
         {
-            msdk_strcopy(InputParams.strPluginDLLPath, MSDK_OCL_ROTATE_PLUGIN);
+            msdk_strcopy(InputParams.strVPPPluginDLLPath, MSDK_OCL_ROTATE_PLUGIN);
         }
 
         // output PicStruct
@@ -841,18 +756,18 @@ mfxStatus CmdProcessor::ParseParamsForOneSession(mfxU32 argc, msdk_char *argv[])
 
 mfxStatus CmdProcessor::ParseOption__set(msdk_char* strCodecType, msdk_char* strPluginPath)
 {
-    mfxU32 type = MSDK_IMPL_USR;
     mfxU32 codecid = 0;
-    msdk_char path[MSDK_MAX_FILENAME_LEN] = {0};
+    mfxU32 type = 0;
+    sPluginParams pluginParams = {};
 
     //Parse codec type - decoder or encoder
     if (0 == msdk_strncmp(MSDK_STRING("-i::"), strCodecType, 4))
     {
-        type |= MSDK_VDECODE;
+        type = MSDK_VDECODE;
     }
     else if (0 == msdk_strncmp(MSDK_STRING("-o::"), strCodecType, 4))
     {
-        type |= MSDK_VENCODE;
+        type = MSDK_VENCODE;
     }
     else
     {
@@ -860,33 +775,34 @@ mfxStatus CmdProcessor::ParseOption__set(msdk_char* strCodecType, msdk_char* str
         return MFX_ERR_UNSUPPORTED;
     }
 
-    //Parse codec id
-    if (0 == msdk_strcmp(strCodecType+4, MSDK_STRING("h265")))
+    if (StrFormatToCodecFormatFourCC(strCodecType+4, codecid) != MFX_ERR_NONE)
     {
-        codecid = MFX_CODEC_HEVC;
+        msdk_printf(MSDK_STRING("error: codec is unknown\n"));
+        return MFX_ERR_UNSUPPORTED;
     }
-    else if (0 == msdk_strcmp(strCodecType+4, MSDK_STRING("h264")))
-    {
-        codecid = MFX_CODEC_AVC;
-    }
-    else if (0 == msdk_strcmp(strCodecType+4, MSDK_STRING("mpeg2")))
-    {
-        codecid = MFX_CODEC_MPEG2;
-    }
-    else if (0 == msdk_strcmp(strCodecType+4, MSDK_STRING("vc1")))
-    {
-        codecid = MFX_CODEC_VC1;
-    }
-    else
+
+    if (!IsPluginCodecSupported(codecid))
     {
         msdk_printf(MSDK_STRING("error: codec is unsupported\n"));
         return MFX_ERR_UNSUPPORTED;
     }
 
-    //Path to plugin
-    msdk_strcopy(path, strPluginPath);
+    if (MFX_ERR_NONE == ConvertStringToGuid(strPluginPath, pluginParams.pluginGuid))
+    {
+        pluginParams.type = MFX_PLUGINLOAD_TYPE_GUID;
+    }
+    else
+    {
+        msdk_strcopy(pluginParams.strPluginPath, strPluginPath);
+        pluginParams.type = MFX_PLUGINLOAD_TYPE_FILE;
+    }
 
-    return msdkSetPluginPath(type, codecid, path);
+    if (type == MSDK_VDECODE)
+        m_decoderPlugins.insert(std::pair<mfxU32, sPluginParams>(codecid, pluginParams));
+    else
+        m_encoderPlugins.insert(std::pair<mfxU32, sPluginParams>(codecid, pluginParams));
+
+    return MFX_ERR_NONE;
 };
 
 mfxStatus CmdProcessor::VerifyAndCorrectInputParams(TranscodingSample::sInputParams &InputParams)
@@ -963,6 +879,16 @@ mfxStatus CmdProcessor::VerifyAndCorrectInputParams(TranscodingSample::sInputPar
         return MFX_ERR_UNSUPPORTED;
     }
 
+    std::map<mfxU32, sPluginParams>::iterator it;
+
+    it = m_decoderPlugins.find(InputParams.DecodeId);
+    if (it != m_decoderPlugins.end())
+        InputParams.decoderPluginParams = it->second;
+
+    it = m_encoderPlugins.find(InputParams.EncodeId);
+    if (it != m_encoderPlugins.end())
+        InputParams.encoderPluginParams = it->second;
+
     return MFX_ERR_NONE;
 
 } //mfxStatus CmdProcessor::VerifyAndCorrectInputParams(TranscodingSample::sInputParams &InputParams)
@@ -976,6 +902,7 @@ bool  CmdProcessor::GetNextSessionParams(TranscodingSample::sInputParams &InputP
         return false;
     }
     InputParams = m_SessionArray[m_SessionParamId];
+
     m_SessionParamId++;
     return true;
 

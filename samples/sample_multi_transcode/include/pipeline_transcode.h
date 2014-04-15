@@ -99,7 +99,10 @@ namespace TranscodingSample
         mfxU32 numViews; // number of views for Multi-View-Codec
 
         mfxU16 nRotationAngle; // if specified, enables rotation plugin in mfx pipeline
-        msdk_char strPluginDLLPath[MSDK_MAX_FILENAME_LEN]; // plugin dll path and name
+        msdk_char strVPPPluginDLLPath[MSDK_MAX_FILENAME_LEN]; // plugin dll path and name
+
+        sPluginParams decoderPluginParams;
+        sPluginParams encoderPluginParams;
 
         mfxU32 nTimeout; // how long transcoding works in seconds
 

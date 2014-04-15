@@ -19,7 +19,6 @@ Copyright(c) 2005-2014 Intel Corporation. All Rights Reserved.
 #include <algorithm>
 #include "pipeline_decode.h"
 #include "sysmem_allocator.h"
-#include "../../sample_user_modules/plugin_api/plugin_loader.h"
 
 #if defined(_WIN32) || defined(_WIN64)
 #include "d3d_allocator.h"
@@ -191,20 +190,25 @@ mfxStatus CDecodingPipeline::Init(sInputParams *pParams)
 
     if (CheckVersion(&version, MSDK_FEATURE_PLUGIN_API)) {
         /* Here we actually define the following codec initialization scheme:
-         *  1. If plugin path specified: we load user-defined plugin (example: VP8 sample decoder plugin)
+         *  1. If plugin path or guid is specified: we load user-defined plugin (example: VP8 sample decoder plugin)
          *  2. If plugin path not specified:
          *    2.a) we check if codec is distributed as a mediasdk plugin and load it if yes
          *    2.b) if codec is not in the list of mediasdk plugins, we assume, that it is supported inside mediasdk library
          */
         // Load user plug-in, should go after CreateAllocator function (when all callbacks were initialized)
 
-        if (msdk_strlen(pParams->strPluginPath))
+        if (pParams->pluginParams.type == MFX_PLUGINLOAD_TYPE_FILE && msdk_strlen(pParams->pluginParams.strPluginPath))
         {
             m_pUserModule.reset(new MFXVideoUSER(m_mfxSession));
             if (pParams->videoType == CODEC_VP8 || pParams->videoType == MFX_CODEC_HEVC)
             {
-                m_pPlugin.reset(LoadPlugin(MFX_PLUGINTYPE_VIDEO_DECODE, m_pUserModule.get(), pParams->strPluginPath));
+                m_pPlugin.reset(LoadPlugin(MFX_PLUGINTYPE_VIDEO_DECODE, m_pUserModule.get(), pParams->pluginParams.strPluginPath));
             }
+            if (m_pPlugin.get() == NULL) sts = MFX_ERR_UNSUPPORTED;
+        }
+        else if (pParams->pluginParams.type == MFX_PLUGINLOAD_TYPE_GUID)
+        {
+            m_pPlugin.reset(LoadPlugin(MFX_PLUGINTYPE_VIDEO_DECODE, m_mfxSession, pParams->pluginParams.pluginGuid, 1));
             if (m_pPlugin.get() == NULL) sts = MFX_ERR_UNSUPPORTED;
         }
         else

@@ -43,10 +43,6 @@ enum MemType {
     D3D11_MEMORY  = 0x02,
 };
 
-enum {
-    CODEC_VP8 = MFX_MAKEFOURCC('V','P','8',' '),
-};
-
 enum eWorkMode {
   MODE_PERFORMANCE,
   MODE_RENDERING,
@@ -73,9 +69,9 @@ struct sInputParams
     mfxU32  nRotation; // rotation for Motion JPEG Codec
     mfxU16  nAsyncDepth; // asyncronous queue
 
-    msdk_char  strSrcFile[MSDK_MAX_FILENAME_LEN];
-    msdk_char  strDstFile[MSDK_MAX_FILENAME_LEN];
-    msdk_char  strPluginPath[MSDK_MAX_FILENAME_LEN];
+    msdk_char     strSrcFile[MSDK_MAX_FILENAME_LEN];
+    msdk_char     strDstFile[MSDK_MAX_FILENAME_LEN];
+    sPluginParams pluginParams;
 
     sInputParams()
     {

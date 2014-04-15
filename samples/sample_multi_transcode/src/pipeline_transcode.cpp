@@ -207,24 +207,28 @@ mfxStatus CTranscodingPipeline::DecodePreInit(sInputParams *pParams)
     if (m_bDecodeEnable)
     {
         if (CheckVersion(&m_Version, MSDK_FEATURE_PLUGIN_API)) {
-            const msdk_char* path = NULL;
-
             /* Here we actually define the following codec initialization scheme:
              *    a) we check if codec is distributed as a user plugin and load it if yes
              *    b) we check if codec is distributed as a mediasdk plugin and load it if yes
              *    c) if codec is not in the list of user plugins or mediasdk plugins, we assume, that it is supported inside mediasdk library
              */
 
-            path = msdkGetPluginPath(MSDK_VDECODE | MSDK_IMPL_USR, pParams->DecodeId);
+            mfxSession session = *m_pmfxSession.get();
 
-            if (path) {
-                m_pUserDecoderModule.reset(new MFXVideoUSER(*m_pmfxSession.get()));
-                m_pUserDecoderPlugin.reset(LoadPlugin(MFX_PLUGINTYPE_VIDEO_DECODE, m_pUserDecoderModule.get(), path));
+            if (pParams->decoderPluginParams.type == MFX_PLUGINLOAD_TYPE_FILE && msdk_strlen(pParams->decoderPluginParams.strPluginPath))
+            {
+                m_pUserDecoderModule.reset(new MFXVideoUSER(session));
+                m_pUserDecoderPlugin.reset(LoadPlugin(MFX_PLUGINTYPE_VIDEO_DECODE, m_pUserDecoderModule.get(), pParams->decoderPluginParams.strPluginPath));
+
                 if (m_pUserDecoderPlugin.get() == NULL) sts = MFX_ERR_UNSUPPORTED;
             }
-            else {
-                mfxSession session = *m_pmfxSession.get();
-
+            else if (pParams->decoderPluginParams.type == MFX_PLUGINLOAD_TYPE_GUID)
+            {
+                m_pUserDecoderPlugin.reset(LoadPlugin(MFX_PLUGINTYPE_VIDEO_DECODE,  *m_pmfxSession.get(), pParams->decoderPluginParams.pluginGuid, 1));
+                if (m_pUserDecoderPlugin.get() == NULL) sts = MFX_ERR_UNSUPPORTED;
+            }
+            else
+            {
                 // in case of HW library (-hw key) we will firstly try to load HW plugin
                 // in case of failure - we will try SW one
                 if (pParams->libType != MFX_IMPL_SOFTWARE) {
@@ -294,7 +298,7 @@ mfxStatus CTranscodingPipeline::VPPPreInit(sInputParams *pParams)
             std::auto_ptr<MFXVideoVPPPlugin> pVPPPlugin(new MFXVideoVPPPlugin(*m_pmfxSession.get()));
             MSDK_CHECK_POINTER(pVPPPlugin.get(), MFX_ERR_NULL_PTR);
 
-            sts = pVPPPlugin->LoadDLL(pParams->strPluginDLLPath);
+            sts = pVPPPlugin->LoadDLL(pParams->strVPPPluginDLLPath);
             MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
             m_RotateParam.Angle = pParams->nRotationAngle;
@@ -321,25 +325,29 @@ mfxStatus CTranscodingPipeline::EncodePreInit(sInputParams *pParams)
 
     if (m_bEncodeEnable)
     {
-        if (CheckVersion(&m_Version, MSDK_FEATURE_PLUGIN_API)) {
-            const msdk_char* path = NULL;
-
+        if (CheckVersion(&m_Version, MSDK_FEATURE_PLUGIN_API) && (m_pUserEncPlugin.get() == NULL))
+        {
             /* Here we actually define the following codec initialization scheme:
              *    a) we check if codec is distributed as a user plugin and load it if yes
              *    b) we check if codec is distributed as a mediasdk plugin and load it if yes
              *    c) if codec is not in the list of user plugins or mediasdk plugins, we assume, that it is supported inside mediasdk library
              */
+            mfxSession session = *m_pmfxSession.get();
 
-            path = msdkGetPluginPath(MSDK_VENCODE | MSDK_IMPL_USR, pParams->EncodeId);
+            if (pParams->encoderPluginParams.type == MFX_PLUGINLOAD_TYPE_FILE && msdk_strlen(pParams->encoderPluginParams.strPluginPath))
+            {
+                m_pUserEncoderModule.reset(new MFXVideoUSER(session));
+                m_pUserEncoderPlugin.reset(LoadPlugin(MFX_PLUGINTYPE_VIDEO_ENCODE, m_pUserEncoderModule.get(), pParams->encoderPluginParams.strPluginPath));
 
-            if (path) {
-                m_pUserEncoderModule.reset(new MFXVideoUSER(*m_pmfxSession.get()));
-                m_pUserEncoderPlugin.reset(LoadPlugin(MFX_PLUGINTYPE_VIDEO_ENCODE, m_pUserEncoderModule.get(), path));
                 if (m_pUserEncoderPlugin.get() == NULL) sts = MFX_ERR_UNSUPPORTED;
             }
-            else {
-                mfxSession session = *m_pmfxSession.get();
-
+            else if (pParams->encoderPluginParams.type == MFX_PLUGINLOAD_TYPE_GUID)
+            {
+                m_pUserEncoderPlugin.reset(LoadPlugin(MFX_PLUGINTYPE_VIDEO_ENCODE, session, pParams->encoderPluginParams.pluginGuid, 1));
+                if (m_pUserEncoderPlugin.get() == NULL) sts = MFX_ERR_UNSUPPORTED;
+            }
+            else
+            {
                 // in case of HW library (-hw key) we will firstly try to load HW plugin
                 // in case of failure - we will try SW one
                 if (pParams->libType != MFX_IMPL_SOFTWARE) {

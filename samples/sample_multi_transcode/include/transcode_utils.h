@@ -96,6 +96,8 @@ namespace TranscodingSample
         mfxStatus VerifyAndCorrectInputParams(TranscodingSample::sInputParams &InputParams);
         mfxU32                                       m_SessionParamId;
         std::vector<TranscodingSample::sInputParams> m_SessionArray;
+        std::map<mfxU32, sPluginParams>              m_decoderPlugins;
+        std::map<mfxU32, sPluginParams>              m_encoderPlugins;
         FILE                                         *m_PerfFILE;
         msdk_char                                    *m_parName;
         mfxU32                                        m_nTimeout;

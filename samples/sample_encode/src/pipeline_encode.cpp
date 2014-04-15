@@ -973,23 +973,41 @@ mfxStatus CEncodingPipeline::Init(sInputParams *pParams)
     }
 
     if (CheckVersion(&version, MSDK_FEATURE_PLUGIN_API)) {
-        // we check if codec is distributed as a mediasdk plugin and load it if yes
-        // else if codec is not in the list of mediasdk plugins, we assume, that it is supported inside mediasdk library
+        /* Here we actually define the following codec initialization scheme:
+         *  1. If plugin path or guid is specified: we load user-defined plugin (example: HEVC encoder plugin)
+         *  2. If plugin path not specified:
+         *    2.a) we check if codec is distributed as a mediasdk plugin and load it if yes
+         *    2.b) if codec is not in the list of mediasdk plugins, we assume, that it is supported inside mediasdk library
+         */
 
-        // in case of HW library (-hw key) we will firstly try to load HW plugin
-        // in case of failure - we will try SW one
-        mfxSession session = m_mfxSession;
+        if (pParams->pluginParams.type == MFX_PLUGINLOAD_TYPE_FILE && msdk_strlen(pParams->pluginParams.strPluginPath))
+        {
+            m_pUserModule.reset(new MFXVideoUSER(m_mfxSession));
+            m_pPlugin.reset(LoadPlugin(MFX_PLUGINTYPE_VIDEO_ENCODE, m_pUserModule.get(), pParams->pluginParams.strPluginPath));
+            if (m_pPlugin.get() == NULL) sts = MFX_ERR_UNSUPPORTED;
+        }
+        else if (pParams->pluginParams.type == MFX_PLUGINLOAD_TYPE_GUID)
+        {
+            m_pPlugin.reset(LoadPlugin(MFX_PLUGINTYPE_VIDEO_ENCODE, m_mfxSession, pParams->pluginParams.pluginGuid, 1));
+            if (m_pPlugin.get() == NULL) sts = MFX_ERR_UNSUPPORTED;
+        }
+        else
+        {
+            mfxSession session = m_mfxSession;
 
-        if (pParams->bUseHWLib) {
-            m_pUID = msdkGetPluginUID(MSDK_VENCODE | MSDK_IMPL_HW, pParams->CodecId);
-        }
-        if (m_pUID) {
-            sts = LoadPluginByUID(&session, m_pUID);
-        }
-        if ((MFX_ERR_NONE != sts) || !m_pUID) {
-            m_pUID = msdkGetPluginUID(MSDK_VENCODE | MSDK_IMPL_SW, pParams->CodecId);
+            // in case of HW library (-hw key) we will firstly try to load HW plugin
+            // in case of failure - we will try SW one
+            if (pParams->bUseHWLib) {
+                m_pUID = msdkGetPluginUID(MSDK_VENCODE | MSDK_IMPL_HW, pParams->CodecId);
+            }
             if (m_pUID) {
                 sts = LoadPluginByUID(&session, m_pUID);
+            }
+            if ((MFX_ERR_NONE != sts) || !m_pUID) {
+                m_pUID = msdkGetPluginUID(MSDK_VENCODE | MSDK_IMPL_SW, pParams->CodecId);
+                if (m_pUID) {
+                    sts = LoadPluginByUID(&session, m_pUID);
+                }
             }
         }
         MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
@@ -1047,14 +1065,14 @@ void CEncodingPipeline::Close()
 
     if (m_pUID) MFXVideoUSER_UnLoad(m_mfxSession, &(m_pUID->mfx));
 
-    m_pHEVC_plugin.reset();
-
     FreeMVCSeqDesc();
     FreeVppDoNotUse();
 
     DeleteFrames();
     // allocator if used as external for MediaSDK must be deleted after SDK components
     DeleteAllocator();
+
+    m_pPlugin.reset();
 
     m_TaskPool.Close();
     m_mfxSession.Close();

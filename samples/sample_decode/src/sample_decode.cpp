@@ -39,36 +39,39 @@ void PrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("  3. Dump model: decoding with YUV dumping (-o option)\n"));
     msdk_printf(MSDK_STRING("\n"));
     msdk_printf(MSDK_STRING("Options:\n"));
-    msdk_printf(MSDK_STRING("   [-hw]                   - use platform specific SDK implementation, if not specified software implementation is used\n"));
-    msdk_printf(MSDK_STRING("   [-p /path/to/plugin]    - path to decoder plugin (optional for Media SDK in-box plugins, required for user-decoder ones)\n"));
+    msdk_printf(MSDK_STRING("   [-hw]                     - use platform specific SDK implementation, if not specified software implementation is used\n"));
+    msdk_printf(MSDK_STRING("   [-p guid|path_to_plugin]  - 32-character hexadecimal guid string or path to decoder plugin\n"));
+    msdk_printf(MSDK_STRING("                               (optional for Media SDK in-box plugins, required for user-decoder ones)\n"));
 #if D3D_SURFACES_SUPPORT
-    msdk_printf(MSDK_STRING("   [-d3d]                  - work with d3d9 surfaces\n"));
-    msdk_printf(MSDK_STRING("   [-d3d11]                - work with d3d11 surfaces\n"));
-    msdk_printf(MSDK_STRING("   [-r]                    - render decoded data in a separate window \n"));
-    msdk_printf(MSDK_STRING("   [-wall w h n m f t tmo] - same as -r, and positioned rendering window in a particular cell on specific monitor \n"));
-    msdk_printf(MSDK_STRING("       w                   - number of columns of video windows on selected monitor\n"));
-    msdk_printf(MSDK_STRING("       h                   - number of rows of video windows on selected monitor\n"));
-    msdk_printf(MSDK_STRING("       n(0,.,w*h-1)        - order of video window in table that will be rendered\n"));
-    msdk_printf(MSDK_STRING("       m(0,1..)            - monitor id \n"));
-    msdk_printf(MSDK_STRING("       f                   - rendering framerate\n"));
-    msdk_printf(MSDK_STRING("       t(0/1)              - enable/disable window's title\n"));
-    msdk_printf(MSDK_STRING("       tmo                 - timeout for -wall option\n"));
+    msdk_printf(MSDK_STRING("   [-d3d]                    - work with d3d9 surfaces\n"));
+    msdk_printf(MSDK_STRING("   [-d3d11]                  - work with d3d11 surfaces\n"));
+    msdk_printf(MSDK_STRING("   [-r]                      - render decoded data in a separate window \n"));
+    msdk_printf(MSDK_STRING("   [-wall w h n m f t tmo]   - same as -r, and positioned rendering window in a particular cell on specific monitor \n"));
+    msdk_printf(MSDK_STRING("       w                     - number of columns of video windows on selected monitor\n"));
+    msdk_printf(MSDK_STRING("       h                     - number of rows of video windows on selected monitor\n"));
+    msdk_printf(MSDK_STRING("       n(0,.,w*h-1)          - order of video window in table that will be rendered\n"));
+    msdk_printf(MSDK_STRING("       m(0,1..)              - monitor id \n"));
+    msdk_printf(MSDK_STRING("       f                     - rendering framerate\n"));
+    msdk_printf(MSDK_STRING("       t(0/1)                - enable/disable window's title\n"));
+    msdk_printf(MSDK_STRING("       tmo                   - timeout for -wall option\n"));
 #endif
 #if defined(LIBVA_SUPPORT)
-    msdk_printf(MSDK_STRING("   [-vaapi]                - work with vaapi surfaces\n"));
-    msdk_printf(MSDK_STRING("   [-r]                    - render decoded data in a separate window \n"));
+    msdk_printf(MSDK_STRING("   [-vaapi]                  - work with vaapi surfaces\n"));
+    msdk_printf(MSDK_STRING("   [-r]                      - render decoded data in a separate window \n"));
 #endif
-    msdk_printf(MSDK_STRING("   [-low_latency]          - configures decoder for low latency mode (supported only for H.264 and JPEG codec)\n"));
-    msdk_printf(MSDK_STRING("   [-calc_latency]         - calculates latency during decoding and prints log (supported only for H.264 and JPEG codec)\n"));
-    msdk_printf(MSDK_STRING("   [-async]                - depth of asynchronous pipeline. default value is 4. must be between 1 and 20\n"));
+    msdk_printf(MSDK_STRING("   [-low_latency]            - configures decoder for low latency mode (supported only for H.264 and JPEG codec)\n"));
+    msdk_printf(MSDK_STRING("   [-calc_latency]           - calculates latency during decoding and prints log (supported only for H.264 and JPEG codec)\n"));
+    msdk_printf(MSDK_STRING("   [-async]                  - depth of asynchronous pipeline. default value is 4. must be between 1 and 20\n"));
 #if defined(_WIN32) || defined(_WIN64)
-    msdk_printf(MSDK_STRING("   [-jpeg_rotate n]        - rotate jpeg frame n degrees \n"));
-    msdk_printf(MSDK_STRING("       n(90,180,270)       - number of degrees \n"));
+    msdk_printf(MSDK_STRING("   [-jpeg_rotate n]          - rotate jpeg frame n degrees \n"));
+    msdk_printf(MSDK_STRING("       n(90,180,270)         - number of degrees \n"));
 
     msdk_printf(MSDK_STRING("\nFeatures: \n"));
     msdk_printf(MSDK_STRING("   Press 1 to toggle fullscreen rendering on/off\n"));
 #endif
     msdk_printf(MSDK_STRING("\n"));
+    msdk_printf(MSDK_STRING("Example:\n"));
+    msdk_printf(MSDK_STRING("  %s h265 -i in.bit -o out.yuv -p 15dd936825ad475ea34e35f3f54217a6\n"), strAppName);
 }
 
 #define GET_OPTION_POINTER(PTR)        \
@@ -108,39 +111,21 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
     {
         if (MSDK_CHAR('-') != strInput[i][0])
         {
-            if (0 == msdk_strcmp(strInput[i], MSDK_STRING("mpeg2")))
-            {
-                pParams->videoType = MFX_CODEC_MPEG2;
-            }
-            else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("h264")))
-            {
-                pParams->videoType = MFX_CODEC_AVC;
-            }
-            else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("h265")))
-            {
-                pParams->videoType = MFX_CODEC_HEVC;
-            }
-            else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("vc1")))
-            {
-                pParams->videoType = MFX_CODEC_VC1;
-            }
-            else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("mvc")))
-            {
-                pParams->videoType = MFX_CODEC_AVC;
-                pParams->bIsMVC = true;
-            }
-            else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("jpeg")))
-            {
-                pParams->videoType = MFX_CODEC_JPEG;
-            }
-            else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("vp8")))
-            {
-                pParams->videoType = CODEC_VP8;
-            }
-            else
+            mfxStatus sts = StrFormatToCodecFormatFourCC(strInput[i], pParams->videoType);
+            if (sts != MFX_ERR_NONE)
             {
                 PrintHelp(strInput[0], MSDK_STRING("Unknown codec"));
                 return MFX_ERR_UNSUPPORTED;
+            }
+            if (!IsDecodeCodecSupported(pParams->videoType))
+            {
+                PrintHelp(strInput[0], MSDK_STRING("Unsupported codec"));
+                return MFX_ERR_UNSUPPORTED;
+            }
+            if (pParams->videoType == CODEC_MVC)
+            {
+                pParams->videoType = MFX_CODEC_AVC;
+                pParams->bIsMVC = true;
             }
             continue;
         }
@@ -283,7 +268,15 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
             {
             case MSDK_CHAR('p'):
                 GET_OPTION_POINTER(strArgument);
-                msdk_strcopy(pParams->strPluginPath, strArgument);
+                if (MFX_ERR_NONE == ConvertStringToGuid(strArgument, pParams->pluginParams.pluginGuid))
+                {
+                    pParams->pluginParams.type = MFX_PLUGINLOAD_TYPE_GUID;
+                }
+                else
+                {
+                    msdk_strcopy(pParams->pluginParams.strPluginPath, strArgument);
+                    pParams->pluginParams.type = MFX_PLUGINLOAD_TYPE_FILE;
+                }
                 break;
             case MSDK_CHAR('i'):
                 GET_OPTION_POINTER(strArgument);
