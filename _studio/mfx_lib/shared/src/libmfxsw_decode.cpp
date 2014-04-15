@@ -42,9 +42,11 @@ File Name: libmfxsw_decode.cpp
 #endif
 
 #if defined (MFX_ENABLE_VP8_VIDEO_DECODE)
-#include "mfx_vp8_dec_decode.h"
+#include "mfx_vp8_dec_decode_common.h"
 #if defined(MFX_VA) && defined(MFX_ENABLE_VP8_VIDEO_DECODE_HW)
 #include "mfx_vp8_dec_decode_hw.h"
+#else
+#include "mfx_vp8_dec_decode.h"
 #endif
 #endif
 
@@ -348,7 +350,7 @@ mfxStatus MFXVideoDECODE_DecodeHeader(mfxSession session, mfxBitstream *bs, mfxV
 
 #ifdef MFX_ENABLE_VP8_VIDEO_DECODE
         case MFX_CODEC_VP8:
-            mfxRes = VideoDECODEVP8::DecodeHeader(session->m_pCORE.get(), bs, par);
+            mfxRes = VP8DecodeCommon::DecodeHeader(session->m_pCORE.get(), bs, par);
             break;
 #endif
 

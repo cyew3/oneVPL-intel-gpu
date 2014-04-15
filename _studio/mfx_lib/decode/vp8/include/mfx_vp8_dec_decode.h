@@ -33,15 +33,9 @@
 #include "mfx_task.h"
 #include "mfxpcp.h"
 
+#include "mfx_vp8_dec_decode_common.h"
+
 using namespace UMC;
-
-typedef struct _IVF_FRAME
-{
-    Ipp32u frame_size;
-    Ipp64u time_stamp;
-    Ipp8u *p_frame_data;
-
-} IVF_FRAME;
 
 typedef struct _THREAD_TASK_INFO
 {
@@ -53,7 +47,7 @@ typedef struct _THREAD_TASK_INFO
 
     mfx_UMC_FrameAllocator *m_p_mfx_umc_frame_allocator;
 
-    IVF_FRAME  m_frame;
+    VP8DecodeCommon::IVF_FRAME  m_frame;
     UMC::FrameMemID m_memId;
 
     mfxVideoParamWrapper m_video_params;
@@ -72,7 +66,6 @@ class VideoDECODEVP8: public VideoDECODE
 
         static mfxStatus Query(VideoCORE *pCore, mfxVideoParam *pIn, mfxVideoParam *pOut);
         static mfxStatus QueryIOSurf(VideoCORE *pCore, mfxVideoParam *pPar, mfxFrameAllocRequest *pRequest);
-        static mfxStatus DecodeHeader(VideoCORE *pCore, mfxBitstream *pBs, mfxVideoParam *pPar);
 
         mfxStatus Init(mfxVideoParam *pPar);
         virtual mfxStatus Reset(mfxVideoParam *pPar);
@@ -97,7 +90,7 @@ class VideoDECODEVP8: public VideoDECODE
         void SetOutputParams(mfxFrameSurface1 *p_surface_work);
 
         static mfxStatus QueryIOSurfInternal(eMFXPlatform platform, mfxVideoParam *pPar, mfxFrameAllocRequest *pRequest);
-        mfxStatus ConstructFrame(mfxBitstream *in, mfxBitstream *out, IVF_FRAME & frame);
+        mfxStatus ConstructFrame(mfxBitstream *in, mfxBitstream *out, VP8DecodeCommon::IVF_FRAME & frame);
 
         mfxStatus PreDecodeFrame(mfxBitstream *p_bs, mfxFrameSurface1 *p_surface);
 
@@ -145,19 +138,6 @@ class VideoDECODEVP8: public VideoDECODE
         
         mfxU32 m_init_w;
         mfxU32 m_init_h;
-};
-
-class MFX_VP8_Utility
-{
-public:
-
-    static eMFXPlatform GetPlatform(VideoCORE *pCore, mfxVideoParam *pPar);
-    static mfxStatus Query(VideoCORE *pCore, mfxVideoParam *pIn, mfxVideoParam *pOut, eMFXHWType type);
-    static bool CheckVideoParam(mfxVideoParam *pIn, eMFXHWType type);
-
-private:
-
-    static bool IsNeedPartialAcceleration(mfxVideoParam * pPar);
 };
 
 #endif // _MFX_VP8_DEC_DECODE_H_

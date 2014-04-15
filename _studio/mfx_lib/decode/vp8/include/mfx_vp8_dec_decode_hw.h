@@ -26,10 +26,9 @@
 #include "umc_vp8_decoder.h"
 #include "umc_vp8_mfx_decode_hw.h"
 
-#include "mfx_vp8_dec_decode.h"
-
 #include <map>
 
+#include "mfx_vp8_dec_decode_common.h"
 
 class MFX_VP8_BoolDecoder
 {
@@ -195,7 +194,7 @@ public:
 
 protected:
     void CalculateTimeSteps(mfxFrameSurface1 *);
-    mfxStatus ConstructFrame(mfxBitstream *, mfxBitstream *, IVF_FRAME&);
+    mfxStatus ConstructFrame(mfxBitstream *, mfxBitstream *, VP8DecodeCommon::IVF_FRAME&);
     mfxStatus PreDecodeFrame(mfxBitstream *, mfxFrameSurface1 *);
     mfxStatus QueryIOSurfInternal(eMFXPlatform, mfxVideoParam *, mfxFrameAllocRequest *);
 

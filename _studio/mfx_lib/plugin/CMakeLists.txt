@@ -473,6 +473,7 @@ foreach( variant sw hw )
     list( APPEND sources
       ${prefix}/mfx_vp8_dec_decode_hw.cpp
       ${prefix}/mfx_vp8_dec_decode.cpp
+      ${prefix}/mfx_vp8_dec_decode_common.cpp
     )
     endforeach()
 
@@ -489,6 +490,7 @@ foreach( variant sw hw )
     foreach( prefix ${CMAKE_HOME_DIRECTORY}/_studio/mfx_lib/decode/vp8/src )
     list( APPEND sources
       ${prefix}/mfx_vp8_dec_decode.cpp
+      ${prefix}/mfx_vp8_dec_decode_common.cpp
     )
     endforeach()
 
