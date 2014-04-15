@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2007-2013 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2007-2014 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -1216,7 +1216,7 @@ static Ipp32s ownStereoProcessing_PSDec_32fc(Ipp32fc** ppSrcL,
       pPSDecState->h22Prev[bin] = pPSDecState->h22Curr[bin];
     }
 
-    for( bin = 0; bin < pCom->nIpdOpdBands; bin++ ){
+    for( bin = 0; (bin < pCom->nIpdOpdBands) && (env < sizeof(pCom->indxIpdMapped) / sizeof(pCom->indxIpdMapped[0])); bin++ ){
       pCom->indxIpdMapped_2[bin] = pCom->indxIpdMapped_1[bin];
       pCom->indxOpdMapped_2[bin] = pCom->indxOpdMapped_1[bin];
       pCom->indxIpdMapped_1[bin] = pCom->indxIpdMapped[env][bin];

@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2003-2013 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2003-2014 Intel Corporation. All Rights Reserved.
 //
 //     Intel(R) Integrated Performance Primitives AAC Decode Sample for Windows*
 //
@@ -464,6 +464,9 @@ void coupling_gain_calculation(sCoupling_channel_element *pElement,
   Ipp32s shift = (3 - pData->gain_element_scale);
   Ipp32s ch = 0;
   Ipp32s c, g, sfb;
+
+  if (pElement->stream.num_window_groups > MAX_GROUP_NUMBER)
+      return;
 
   for (c = 0; c < pData->num_gain_element_lists; c++) {
     if (pData->cge[c]) {
