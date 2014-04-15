@@ -13,11 +13,12 @@ Copyright(c) 2014 Intel Corporation. All Rights Reserved.
 #include "circular_splitter.h"
 #include "sample_metadata.h"
 
-CircularSplitterWrapper::CircularSplitterWrapper (std::auto_ptr<MFXSplitter>& splitter , std::auto_ptr<MFXDataIO>&io, mfxU64 limit)
+CircularSplitterWrapper::CircularSplitterWrapper (std::auto_ptr<MFXSplitter>& splitter , std::auto_ptr<MFXDataIO>&io, mfxU64 nSeconds)
     : SplitterWrapper(splitter, io)
-    , m_nCycleCounter(0)
-    , m_nCycleLimit(limit)
+    , m_nTimeLimit(nSeconds)
+    , m_bEOS(false)
 {
+    m_timer.Start();
 }
 
 bool CircularSplitterWrapper::GetSample(SamplePtr & sample) {
@@ -35,8 +36,7 @@ bool CircularSplitterWrapper::GetSample(SamplePtr & sample) {
     // get current sample
     mfxStatus sts = m_splitter->GetBitstream(&OutputTrack, &bs);
     if (sts == MFX_ERR_MORE_DATA) {
-        m_nCycleCounter++;
-        if (m_nCycleCounter < m_nCycleLimit) {
+        if (m_timer.GetTime() < m_nTimeLimit) {
             sample.reset(new MetaSample(META_EOS_RESET, 0, 0, 0));
             m_splitter->Seek(0);
         } else {

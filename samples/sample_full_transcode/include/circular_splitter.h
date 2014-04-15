@@ -21,9 +21,10 @@ Copyright(c) 2014 Intel Corporation. All Rights Reserved.
 
 class CircularSplitterWrapper : private SplitterWrapper {
 public:
-    CircularSplitterWrapper( std::auto_ptr<MFXSplitter>& splitter , std::auto_ptr<MFXDataIO>&io, mfxU64 limit);
+    CircularSplitterWrapper( std::auto_ptr<MFXSplitter>& splitter , std::auto_ptr<MFXDataIO>&io, mfxU64 nSeconds);
     virtual bool GetSample(SamplePtr & sample);
 protected:
-    mfxU64 m_nCycleCounter;
-    mfxU64 m_nCycleLimit;
+    mfxU64 m_nTimeLimit;
+    CTimer m_timer;
+    bool   m_bEOS;
 };

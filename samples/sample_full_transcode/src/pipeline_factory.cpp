@@ -200,7 +200,7 @@ CmdLineParser* PipelineFactory::CreateCmdLineParser()
         (ArgHandler<kbps_t>(OPTION_VB, MSDK_CHAR("Video bitrate")))
         (ArgHandler<kbps_t>(OPTION_AB, MSDK_CHAR("Audio bitrate")))
         (ArgHandler<msdk_string>(OPTION_FORMAT, MSDK_CHAR("Output container: mp4, m2ts")))
-        (ArgHandler<mfxU64>(OPTION_LOOP, MSDK_CHAR("Transcoding in loop, times")))
+        (ArgHandler<mfxU64>(OPTION_LOOP, MSDK_CHAR("Transcoding in loop, seconds")))
         (ArgHandler<msdk_string>(OPTION_TRACELEVEL, trace_levels_str.str())),
         HelpHead.str(),
         UsageExamples.str()
