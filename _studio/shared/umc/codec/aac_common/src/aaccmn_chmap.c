@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2003-2013 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2003-2014 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -27,6 +27,8 @@ Ipp32s chmap_create_by_pce(sProgram_config_element* p_pce,
   Ipp32s numElem = 0;
 
   if(p_pce->num_front_channels >= MAX_CHANNELS_ELEMENTS)
+      return -1;
+  if(p_pce->num_front_channel_elements >= MAX_CHANNELS_ELEMENTS)
       return -1;
   if(p_pce->num_back_channel_elements >= MAX_CHANNELS_ELEMENTS)
       return -1;
