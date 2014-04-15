@@ -3,6 +3,7 @@
 *.sdf
 *.suo
 *.ncb
+*.user
 _build
 # CMake intermidiate files
 __cmake
