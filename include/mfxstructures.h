@@ -892,7 +892,8 @@ typedef struct {
     mfxU32          MAD;
     mfxU16          BRCPanicMode;
     mfxU16          QP;
-    mfxU16          reserved[4];
+    mfxU32          SecondFieldOffset;
+    mfxU16          reserved[2];
 
     struct {
             mfxU32      FrameOrder;
