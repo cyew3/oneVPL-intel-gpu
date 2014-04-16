@@ -1310,12 +1310,14 @@ namespace MFX_VP8ENC
 #if defined (VP8_HYBRID_DUMP_WRITE)
         fwrite(pTask->ddi_frames.m_pMB_hw->pSurface->Data.Y, 1, m_bse_dump_size, m_bse_dump);
 #endif
-        ReadBRCStatusReport(pTask->ddi_frames.m_pMB_hw->pSurface->Data.Y,
-                            m_ctrl,
-                            layout);
         HLDMbDataVp8 *pHLDMbData = (HLDMbDataVp8 *)(pTask->ddi_frames.m_pMB_hw->pSurface->Data.Y + layout.MB_CODE_offset);
         HLDMvDataVp8 *pHLDMvData = (HLDMvDataVp8 *)(pTask->ddi_frames.m_pMB_hw->pSurface->Data.Y + layout.MV_offset);
 #endif
+        // get QP and loop_filter_levels provided by BRC
+        ReadBRCStatusReport(pTask->ddi_frames.m_pMB_hw->pSurface->Data.Y,
+                            m_ctrl,
+                            layout);
+
         mPitch      = ((pHLDMbData[m_Params.fSizeInMBs-1].data[0]) & 0x3FF) + 1;
         mRowCnt     = ((pHLDMbData[m_Params.fSizeInMBs-1].data[0]>>10) & 0x3FF) + 1;
         cMb         = m_Mbs1;

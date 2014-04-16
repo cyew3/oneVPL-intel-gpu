@@ -397,9 +397,10 @@ namespace MFX_VP8ENC
         VideoCORE *                       m_core;
         std::auto_ptr<AuxiliaryDeviceHlp> m_auxDevice;
 
-        ENCODE_SET_SEQUENCE_PARAMETERS_VP8 m_sps;        
+        ENCODE_SET_SEQUENCE_PARAMETERS_VP8 m_sps;
         ENCODE_SET_PICTURE_PARAMETERS_VP8  m_pps;
-        ENCODE_SET_QUANT_DATA_VP8             m_quant;
+        ENCODE_SET_QUANT_DATA_VP8          m_quant;
+        ENCODE_CPUPAK_FRAMEUPDATE_VP8      m_frmUpdate;
         
         GUID                 m_guid;
         mfxU32               m_width;

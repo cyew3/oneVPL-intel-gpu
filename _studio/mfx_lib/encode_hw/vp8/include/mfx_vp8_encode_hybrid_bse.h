@@ -1193,16 +1193,16 @@ namespace MFX_VP8ENC
         Vp8FrameParamsEnc():FrameCtrl1(0),FrameCtrl2(0){};
     };
 
-#define QP_BYTE_FFSET      0
-#define LFLEVEL_BYTE_OFFEST 4
+#define QP_BYTE_OFFSET      0
+#define LFLEVEL_BYTE_OFFSET 4
 
     inline void ReadBRCStatusReport(mfxU8 * MBDataMemory, Vp8FrameParamsEnc &ctrl, const MBDATA_LAYOUT &layout)
     {
         if (layout.MB_CODE_offset != 0)
         {
             // QP and loop filter levels are passed in the beginning of MB data surface
-            ctrl.qIndex = MBDataMemory[QP_BYTE_FFSET];
-            ctrl.LoopFilterLevel = MBDataMemory[LFLEVEL_BYTE_OFFEST];
+            ctrl.qIndex = MBDataMemory[QP_BYTE_OFFSET];
+            ctrl.LoopFilterLevel = MBDataMemory[LFLEVEL_BYTE_OFFSET];
         }
     }    
 

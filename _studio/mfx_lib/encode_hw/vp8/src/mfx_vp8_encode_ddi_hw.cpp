@@ -170,7 +170,8 @@ mfxStatus CachedFeedback::Remove(mfxU32 feedbackNumber)
         //sps.UserMaxFrameSize               = extDdi->UserMaxFrameSize;
         sps.AVBRAccuracy                   = par.mfx.Accuracy;
         sps.AVBRConvergence                = par.mfx.Convergence * 100;
-
+        if (par.mfx.RateControlMethod != MFX_RATECONTROL_CQP)
+            sps.FramesPer100Sec[0]             = mfxU16(mfxU64(100) * par.mfx.FrameInfo.FrameRateExtN / par.mfx.FrameInfo.FrameRateExtD);
     } 
 
     mfxStatus FillPpsBuffer(TaskHybridDDI const & task, mfxVideoParam const & par, ENCODE_SET_PICTURE_PARAMETERS_VP8 & pps)
@@ -383,9 +384,10 @@ mfxStatus D3D9Encoder::CreateAccelerationService(mfxVideoParam const & par)
     MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
 #endif
 
-    Zero(m_sps);    
+    Zero(m_sps);
     Zero(m_pps);
     Zero(m_quant);
+    Zero(m_frmUpdate);
 
     FillSpsBuffer(par, m_sps);
 
@@ -396,9 +398,10 @@ mfxStatus D3D9Encoder::CreateAccelerationService(mfxVideoParam const & par)
 
 mfxStatus D3D9Encoder::Reset(mfxVideoParam const & par)
 {
-    Zero(m_sps);    
+    Zero(m_sps);
     Zero(m_pps);
     Zero(m_quant);
+    Zero(m_frmUpdate);
 
 
     FillSpsBuffer(par, m_sps);
@@ -418,7 +421,8 @@ mfxStatus D3D9Encoder::QueryCompBufferInfo(D3DDDIFORMAT type, mfxFrameAllocReque
     frameWidth; frameHeight;
     MFX_CHECK(m_auxDevice.get(), MFX_ERR_NOT_INITIALIZED);
 
-    if (type == D3DDDIFMT_INTELENCODE_SEGMENTMAP)
+    if (type == D3DDDIFMT_INTELENCODE_SEGMENTMAP || 
+        type == D3DDDIFMT_INTELENCODE_DISTORTIONDATA)
     {
         // [SE]: WA to have same pipeline for Windows/Linux
         request.NumFrameMin = request.NumFrameSuggested = 0;
@@ -582,12 +586,19 @@ mfxStatus D3D9Encoder::Execute(TaskHybridDDI const &task, mfxHDL surface)
     encodeCompBufferDesc[bufCnt].pCompBuffer = &mb;
     bufCnt++;
 
-
-    mfxU32 distort = task.m_pRecFrame->idInPool;
-    encodeCompBufferDesc[bufCnt].CompressedBufferType = D3DDDIFMT_INTELENCODE_DISTORTIONDATA;
-    encodeCompBufferDesc[bufCnt].DataSize = mfxU32(sizeof(distort));
-    encodeCompBufferDesc[bufCnt].pCompBuffer = &distort;
+    // frame update
+    m_frmUpdate.PrevFrameSize = (UINT)task.m_prevFrameSize;
+    m_frmUpdate.TwoPrevFrameFlag = task.m_brcUpdateDelay == 2 ? 1 : 0;
+    encodeCompBufferDesc[bufCnt].CompressedBufferType = D3DDDIFMT_INTELENCODE_SLICEDATA;
+    encodeCompBufferDesc[bufCnt].DataSize = mfxU32(sizeof(m_frmUpdate));
+    encodeCompBufferDesc[bufCnt].pCompBuffer = &m_frmUpdate;
     bufCnt++;
+
+    //mfxU32 distort = task.m_pRecFrame->idInPool;
+    //encodeCompBufferDesc[bufCnt].CompressedBufferType = D3DDDIFMT_INTELENCODE_DISTORTIONDATA;
+    //encodeCompBufferDesc[bufCnt].DataSize = mfxU32(sizeof(distort));
+    //encodeCompBufferDesc[bufCnt].pCompBuffer = &distort;
+    //bufCnt++;
 
     try
     {

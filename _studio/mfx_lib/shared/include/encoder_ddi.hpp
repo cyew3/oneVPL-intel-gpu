@@ -1620,7 +1620,8 @@ typedef struct tagENCODE_SET_SEQUENCE_PARAMETERS_VP8
     
     UINT   UserMaxFrameSize; 
     USHORT AVBRAccuracy; 
-    USHORT AVBRConvergence; 
+    USHORT AVBRConvergence;
+    USHORT FramesPer100Sec[256];
 } ENCODE_SET_SEQUENCE_PARAMETERS_VP8;
 
 
@@ -1686,6 +1687,18 @@ typedef struct tagENCODE_SET_QUANT_DATA_VP8
     UCHAR    QIndex[4];
     CHAR     QIndexDelta[5];
 }ENCODE_SET_QUANT_DATA_VP8;
+
+typedef struct tagENCODE_CPUPAK_FRAMEUPDATE_VP8
+{
+    UINT    PrevFrameSize;
+    BOOL    TwoPrevFrameFlag;
+    USHORT  RefFrameCost[4];
+    USHORT  IntraModeCost[4][4];
+    USHORT  InterModeCost[4];
+    UCHAR   IntraNonDCPenalty16x16[4];
+    UCHAR   IntraNonDCPenalty4x4[4];
+} ENCODE_CPUPAK_FRAMEUPDATE_VP8;
+
 
 #endif /* defined(_WIN32) || defined(_WIN64) */
 #endif /* _ENCODER_DDI_HPP_ */
