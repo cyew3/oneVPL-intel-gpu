@@ -38,8 +38,6 @@ Ipp32s h265_quant_getSigCtxInc(
     Ipp32s pos_x,
     Ipp32s pos_y,
     Ipp32s block_type,
-    Ipp32s width,
-    Ipp32s height,
     EnumTextType type);
 
 void h265_quant_inv(

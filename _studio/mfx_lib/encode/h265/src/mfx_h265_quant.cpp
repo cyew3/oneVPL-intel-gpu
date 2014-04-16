@@ -25,6 +25,50 @@ static const Ipp32s ctxIndMap[16] =
     7, 7, 8, 8
 };
 
+/* [pattern_sig_ctx][posY][posX] */
+static const Ipp8u cntTab[4*4*4] = {
+    2, 1, 1, 0,
+    1, 1, 0, 0,
+    1, 0, 0, 0,
+    0, 0, 0, 0,
+
+    2, 2, 2, 2,
+    1, 1, 1, 1,
+    0, 0, 0, 0,
+    0, 0, 0, 0,
+
+    2, 1, 0, 0,
+    2, 1, 0, 0,
+    2, 1, 0, 0,
+    2, 1, 0, 0,
+
+    2, 2, 2, 2,
+    2, 2, 2, 2,
+    2, 2, 2, 2,
+    2, 2, 2, 2,
+};
+
+/* [type][scan_idx][block_type] */
+static const Ipp8u offTab[3*4*8] = {
+    /* luma */
+    21, 21, 21, 15, 21, 21, 21, 0,
+    21, 21, 21, 15, 21, 21, 21, 0,
+    21, 21, 21, 15, 21, 21, 21, 0,
+    21, 21, 21,  9, 21, 21, 21, 0,
+
+    /* chroma */
+    12, 12, 12, 15, 12, 12, 12, 0,
+    12, 12, 12, 15, 12, 12, 12, 0,
+    12, 12, 12, 15, 12, 12, 12, 0,
+    12, 12, 12,  9, 12, 12, 12, 0,
+
+    /* luma with offset - roll in extra +3 */
+    24, 24, 24, 18, 24, 24, 24, 0,
+    24, 24, 24, 18, 24, 24, 24, 0,
+    24, 24, 24, 18, 24, 24, 24, 0,
+    24, 24, 24, 12, 24, 24, 24, 0,
+};
+
 static const Ipp8u h265_qp_rem[90]=
 {
     0,   1,   2,   3,   4,   5,   0,   1,   2,   3,   4,   5,   0,   1,   2,  3,   4,   5,
@@ -101,52 +145,45 @@ Ipp32u h265_quant_getSigCoeffGroupCtxInc  ( const Ipp32u*               sig_coef
 }
 
 
+/* return context for significant coeff flag - fast lookup table implementation
+ * supported ranges of input parameters:
+ *   pattern_sig_ctx = [0,3]
+ *   scan_idx = [0,3]
+ *   posX,posY = [0,31] (position in transform block)
+ *   block_type = [1,5] (log2_block_size for 2x2 to 32x32) 
+ *   width, height unused (can be removed)
+ *   type = 0 (luma) or 1 (chroma)
+ */
 Ipp32s h265_quant_getSigCtxInc(Ipp32s pattern_sig_ctx,
                                Ipp32s scan_idx,
                                Ipp32s posX,
                                Ipp32s posY,
                                Ipp32s block_type,
-                               Ipp32s width,
-                               Ipp32s height,
                                EnumTextType type)
 {
+    Ipp32s ret, typeOff, typeNew;
 
-
-    if( posX + posY == 0 )
-    {
+    /* special case - (0,0) */
+    if (posX + posY == 0)
         return 0;
-    }
 
-    if ( block_type == 2 )
-    {
-        return ctxIndMap[ 4 * posY + posX ];
-    }
+    /* special case - 4x4 block */
+    if (block_type == 2)
+       return ctxIndMap[4*posY + posX];
 
-    Ipp32s offset = block_type == 3 ? (scan_idx == COEFF_SCAN_DIAG ? 9 : 15) : (type == TEXT_LUMA ? 21 : 12);
+    /* should compile into cmov - verify no branches */
+    typeOff  = ( ((posX >> 2) | (posY >> 2)) ? 2 : 0 );
+    typeOff &= (type - 1);
+    typeNew  = (Ipp32s)type + typeOff;
 
-    Ipp32s posXinSubset = posX-((posX>>2)<<2);
-    Ipp32s posYinSubset = posY-((posY>>2)<<2);
-    Ipp32s cnt = 0;
-    if(pattern_sig_ctx==0)
-    {
-        cnt = posXinSubset+posYinSubset<=2 ? (posXinSubset+posYinSubset==0 ? 2 : 1) : 0;
-    }
-    else if(pattern_sig_ctx==1)
-    {
-        cnt = posYinSubset<=1 ? (posYinSubset==0 ? 2 : 1) : 0;
-    }
-    else if(pattern_sig_ctx==2)
-    {
-        cnt = posXinSubset<=1 ? (posXinSubset==0 ? 2 : 1) : 0;
-    }
-    else
-    {
-        cnt = 2;
-    }
+    /* should compile into successive shifts/adds: ((x << 2) + y) << 3... */
+    posX &= 0x03;
+    posY &= 0x03;
+    ret  = offTab[8*(4*typeNew + scan_idx) + block_type];   /* offset */
+    ret += cntTab[4*(4*pattern_sig_ctx + posY) + posX];     /* count */
 
-    return (( type == TEXT_LUMA && ((posX>>2) + (posY>>2)) > 0 ) ? 3 : 0) + offset + cnt;
+    return ret;
 }
-
 
 void H265CU::QuantInvTu(Ipp32u abs_part_idx, Ipp32s offset, Ipp32s width, Ipp32s is_luma)
 {

@@ -516,8 +516,6 @@ void RDOQuant::DoAlgorithm(
                         pos_x,
                         pos_y,
                         log2_tr_size,
-                        width,
-                        height,
                         type);
                     if (SBH)  {
                         sig_rate_delta[blk_pos] = m_cabacBits.significantBits[ctx_sig_inc][1] -

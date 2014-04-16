@@ -767,7 +767,7 @@ void H265CU::CodeCoeffNxN(H265Bs *bs, H265CU* pCU, CoeffsType* coeffs, Ipp32u ab
                 sig     = (coeffs[blk_pos] != 0);
                 if (scan_pos_sig > sub_pos || subset == 0 || num_nonzero)
                 {
-                    ctx_sig  = h265_quant_getSigCtxInc( pattern_sig_ctx, scan_idx, pos_x, pos_y, block_type, width, height, type );
+                    ctx_sig  = h265_quant_getSigCtxInc( pattern_sig_ctx, scan_idx, pos_x, pos_y, block_type, type );
                     bs->EncodeSingleBin_CABAC(baseCtx + ctx_sig, sig);
                 }
                 if (sig)
