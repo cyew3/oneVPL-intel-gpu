@@ -2575,7 +2575,7 @@ mfxStatus ImplementationAvc::UpdateBitstream(
 
     mfxU32 seconfFieldOffset = 0;
     if (fid)
-        seconfFieldOffset = task.m_bs->DataOffset + task.m_bs->DataLength;
+        seconfFieldOffset = task.m_bs->DataLength;
 
     if (m_video.Protected == 0 || task.m_notProtected)
     {
