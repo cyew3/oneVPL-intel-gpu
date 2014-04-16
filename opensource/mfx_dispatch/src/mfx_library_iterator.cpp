@@ -36,6 +36,10 @@ File Name: mfx_library_iterator.cpp
 #include "mfx_dispatcher_log.h"
 
 #include "mfx_dxva2_device.h"
+#include "mfx_load_dll.h"
+
+#include <tchar.h>
+#include <windows.h>
 
 namespace MFX
 {
@@ -158,9 +162,6 @@ void MFXLibraryIterator::Release(void)
 
 mfxStatus MFXLibraryIterator::Init(eMfxImplType implType, mfxIMPL implInterface, const mfxU32 adapterNum, int storageID)
 {
-    HKEY rootHKey;
-    bool bRes;
-
     // check error(s)
     if ((MFX_LIB_SOFTWARE != implType) &&
         (MFX_LIB_HARDWARE != implType))
@@ -171,6 +172,32 @@ mfxStatus MFXLibraryIterator::Init(eMfxImplType implType, mfxIMPL implInterface,
     // release the object before initialization
     Release();
 
+    if (storageID == MFX_CURRENT_USER_KEY || storageID == MFX_LOCAL_MACHINE_KEY)
+    {
+        return InitRegistry(implType, implInterface, adapterNum, storageID);
+    }
+    else if (storageID == MFX_APP_FOLDER)
+    {
+        msdk_disp_char path[_MAX_PATH] = {};
+
+        ::GetModuleFileName(0, path, _MAX_PATH);
+        msdk_disp_char * dirSeparator = _tcsrchr(path, '\\');
+        if (dirSeparator < (path + _MAX_PATH))
+        {
+            *++dirSeparator = 0;
+        }        
+        
+        return InitFolder(implType, implInterface, adapterNum, path);
+    }
+
+    return MFX_ERR_UNSUPPORTED;
+} // mfxStatus MFXLibraryIterator::Init(eMfxImplType implType, const mfxU32 adapterNum, int storageID)
+
+mfxStatus MFXLibraryIterator::InitRegistry(eMfxImplType implType, mfxIMPL implInterface, const mfxU32 adapterNum, int storageID)
+{
+    HKEY rootHKey;
+    bool bRes;
+
     // open required registry key
     m_StorageID = storageID;
     rootHKey = (MFX_LOCAL_MACHINE_KEY == storageID) ? (HKEY_LOCAL_MACHINE) : (HKEY_CURRENT_USER);
@@ -178,16 +205,16 @@ mfxStatus MFXLibraryIterator::Init(eMfxImplType implType, mfxIMPL implInterface,
     if (false == bRes)
     {
         DISPATCHER_LOG_WRN((("Can't open %s\\%S : RegOpenKeyExA()==0x%x\n"),
-                       (MFX_LOCAL_MACHINE_KEY == storageID) ? ("HKEY_LOCAL_MACHINE") : ("HKEY_CURRENT_USER"),
-                       rootDispPath, GetLastError()))
-        return MFX_ERR_UNKNOWN;
+            (MFX_LOCAL_MACHINE_KEY == storageID) ? ("HKEY_LOCAL_MACHINE") : ("HKEY_CURRENT_USER"),
+            rootDispPath, GetLastError()))
+            return MFX_ERR_UNKNOWN;
     }
 
     // set the required library's implementation type
     m_implType = implType;
     m_implInterface = implInterface != 0 
-                    ? implInterface
-                    : MFX_IMPL_VIA_ANY;
+        ? implInterface
+        : MFX_IMPL_VIA_ANY;
 
     //deviceID and vendorID are not actual for SW library loading
     if (m_implInterface != MFX_LIB_SOFTWARE)
@@ -200,18 +227,55 @@ mfxStatus MFXLibraryIterator::Init(eMfxImplType implType, mfxIMPL implInterface,
     }
 
     DISPATCHER_LOG_INFO((("Inspecting %s\\%S\n"),
-                   (MFX_LOCAL_MACHINE_KEY == storageID) ? ("HKEY_LOCAL_MACHINE") : ("HKEY_CURRENT_USER"),
-                   rootDispPath))
+        (MFX_LOCAL_MACHINE_KEY == storageID) ? ("HKEY_LOCAL_MACHINE") : ("HKEY_CURRENT_USER"),
+        rootDispPath))
 
     return MFX_ERR_NONE;
+} // mfxStatus MFXLibraryIterator::InitRegistry(eMfxImplType implType, mfxIMPL implInterface, const mfxU32 adapterNum, int storageID)
 
-} // mfxStatus MFXLibraryIterator::Init(eMfxImplType implType, const mfxU32 adapterNum, int storageID)
+mfxStatus MFXLibraryIterator::InitFolder(eMfxImplType implType, mfxIMPL implInterface, const mfxU32 adapterNum, const msdk_disp_char * path)
+{
+     const int maxPathLen = sizeof(m_path)/sizeof(m_path[0]);
+     m_path[0] = 0;
+     msdk_disp_char_cpy_s(m_path, maxPathLen, path);
+     size_t pathLen = _tcslen(m_path);
+
+     mfx_get_default_dll_name(m_path + pathLen, maxPathLen - pathLen, implType);
+
+     // set the required library's implementation type
+     m_implType = implType;
+     m_implInterface = implInterface != 0 
+         ? implInterface
+         : MFX_IMPL_VIA_ANY;
+
+     //deviceID and vendorID are not actual for SW library loading
+     if (m_implInterface != MFX_LIB_SOFTWARE)
+     {
+         mfxStatus mfxRes = MFX::GetImplementationType(adapterNum, &m_implInterface, &m_vendorID, &m_deviceID);
+         if (MFX_ERR_NONE != mfxRes)
+         {
+             return mfxRes;
+         }
+     }
+     return MFX_ERR_NONE;
+} // mfxStatus MFXLibraryIterator::InitFolder(eMfxImplType implType, mfxIMPL implInterface, const mfxU32 adapterNum, const msdk_disp_char * path)
 
 mfxStatus MFXLibraryIterator::SelectDLLVersion(wchar_t *pPath
                                              , size_t pathSize
                                              , eMfxImplType *pImplType, mfxVersion minVersion)
 {
     UNREFERENCED_PARAMETER(minVersion);
+
+    if (m_StorageID == MFX_APP_FOLDER)
+    {
+        if (minVersion.Major > 1 || minVersion.Minor < 8)
+            return MFX_ERR_UNSUPPORTED;
+
+
+        msdk_disp_char_cpy_s(pPath, pathSize, m_path);
+        return MFX_ERR_NONE;
+    }
+
     wchar_t libPath[MFX_MAX_DLL_PATH] = L"";
     DWORD libIndex = 0;
     DWORD libMerit = 0;
@@ -321,7 +385,7 @@ mfxStatus MFXLibraryIterator::SelectDLLVersion(wchar_t *pPath
                         if (0 != vendorID) 
                         {
                             bRes = false;
-                            DISPATCHER_LOG_WRN((("%S conflict, required = 0x%x shoul be 0 for software implementation\n"), vendorIDKeyName, vendorID));
+                            DISPATCHER_LOG_WRN((("%S conflict, required = 0x%x should be 0 for software implementation\n"), vendorIDKeyName, vendorID));
                         }
                         if (bRes && 0 != deviceID)
                         {

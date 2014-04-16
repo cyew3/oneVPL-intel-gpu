@@ -166,6 +166,20 @@ bool operator == (const mfxVersion &one, const mfxVersion &two)
 
 } // bool operator == (const mfxVersion &one, const mfxVersion &two)
 
+inline
+bool operator < (const mfxVersion &one, const mfxVersion &two)
+{
+    return (one.Major == two.Major) && (one.Minor < two.Minor);
+
+} // bool operator < (const mfxVersion &one, const mfxVersion &two)
+
+inline
+bool operator <= (const mfxVersion &one, const mfxVersion &two)
+{
+    return (one == two) || (one < two);
+} // bool operator <= (const mfxVersion &one, const mfxVersion &two)
+
+
 //
 // declare a table with functions descriptions
 //

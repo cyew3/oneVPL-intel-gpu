@@ -70,17 +70,19 @@ enum
     MFX_UNKNOWN_KEY             = -1,
     MFX_CURRENT_USER_KEY        = 0,
     MFX_LOCAL_MACHINE_KEY       = 1,
+    MFX_APP_FOLDER              = 2,
 
     MFX_STORAGE_ID_FIRST    = MFX_CURRENT_USER_KEY,
-    MFX_STORAGE_ID_LAST     = MFX_LOCAL_MACHINE_KEY
+    MFX_STORAGE_ID_LAST     = MFX_APP_FOLDER
 };
 #else
 enum
 {
     MFX_STORAGE_ID_OPT  = 0, // storage is: /opt/intel
+    MFX_APP_FOLDER      = 1,
 
-    MFX_STORAGE_ID_FIRST    = MFX_STORAGE_ID_OPT,
-    MFX_STORAGE_ID_LAST     = MFX_STORAGE_ID_OPT
+    MFX_STORAGE_ID_FIRST   =  MFX_STORAGE_ID_OPT,
+    MFX_STORAGE_ID_LAST    = MFX_STORAGE_ID_OPT
 };
 #endif
 
@@ -113,6 +115,12 @@ protected:
     // Release the iterator
     void Release(void);
 
+    // Initialize the registry iterator
+    mfxStatus InitRegistry(eMfxImplType implType, mfxIMPL implInterface, const mfxU32 adapterNum, int storageID);
+    // Initialize the app folder iterator
+    mfxStatus InitFolder(eMfxImplType implType, mfxIMPL implInterface, const mfxU32 adapterNum, const msdk_disp_char * path);
+
+
     eMfxImplType m_implType;                                    // Required library implementation 
     mfxIMPL m_implInterface;                                    // Required interface (D3D9, D3D11)
 
@@ -134,8 +142,10 @@ protected:
     struct mfx_disp_adapters* m_adapters;
     mfxU32 m_libs_num;
     struct mfx_libs* m_libs;
-    char m_path[260];
 #endif // #if defined(_WIN32) || defined(_WIN64)
+
+    msdk_disp_char  m_path[260];
+
 private:
     // unimplemented by intent to make this class non-copyable
     MFXLibraryIterator(const MFXLibraryIterator &);
