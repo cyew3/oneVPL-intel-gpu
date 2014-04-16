@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2012-2013 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2012-2014 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -31,11 +31,13 @@ H265Thread::~H265Thread()
     Release();
 } // ~H265Thread(void)
 
+// Returns stored decoder instance
 H265SegmentDecoderMultiThreaded * H265Thread::GetSegmentDecoder()
 {
     return m_segmentDecoder;
 }
 
+// Initialize decoder thread
 UMC::Status H265Thread::Init(Ipp32s iNumber, H265SegmentDecoderMultiThreaded * segmentDecoder)
 {
     // release object before initialization
@@ -61,6 +63,7 @@ UMC::Status H265Thread::Init(Ipp32s iNumber, H265SegmentDecoderMultiThreaded * s
     return UMC::UMC_OK;
 } // Status Init(Ipp32u nNumber)
 
+// Sleep until task broker wakes the thread
 void H265Thread::Sleep()
 {
     m_mGuard.Lock();
@@ -70,6 +73,7 @@ void H265Thread::Sleep()
     m_sleepEvent.Wait();
 }
 
+// Wake up the thread
 void H265Thread::Awake()
 {
     UMC::AutomaticUMCMutex guard(m_mGuard);
@@ -81,6 +85,7 @@ void H265Thread::Awake()
     }
 }
 
+// Reset state
 void H265Thread::Reset()
 {
     // threading tools
@@ -99,6 +104,7 @@ void H265Thread::Reset()
     }
 } // void Reset(void)
 
+// Release resources
 void H265Thread::Release()
 {
     Reset();
@@ -113,6 +119,7 @@ void H265Thread::Release()
     Close();
 } // void Release(void)
 
+// Starting routine for decoding thread
 Ipp32u VM_THREAD_CALLCONVENTION H265Thread::DecodingThreadRoutine(void *p)
 {
     H265Thread *pObj = (H265Thread *) p;
@@ -170,16 +177,7 @@ H265ThreadGroup::~H265ThreadGroup()
     Release();
 }
 
-/*void H265ThreadGroup::WaitThreads()
-{
-    AutomaticUMCMutex guard(m_mGuard);
-
-    for (Ipp32u i = 0; i < m_threads.size(); i++)
-    {
-        //m_threads[i]->WaitForEndOfProcessing();
-    }
-}*/
-
+// Release memory and resources
 void H265ThreadGroup::Release()
 {
     m_rejectAwake = true;
@@ -198,6 +196,7 @@ void H265ThreadGroup::Release()
     m_rejectAwake = false;
 }
 
+// Reset threads state
 void H265ThreadGroup::Reset()
 {
     UMC::AutomaticUMCMutex guard(m_mGuard);
@@ -212,19 +211,14 @@ void H265ThreadGroup::Reset()
     m_rejectAwake = false;
 }
 
+// Add a new thread to the group
 void H265ThreadGroup::AddThread(H265Thread * thread)
 {
     UMC::AutomaticUMCMutex guard(m_mGuard);
     m_threads.push_back(thread);
 }
 
-void H265ThreadGroup::RemoveThread(H265Thread * thread)
-{
-    UMC::AutomaticUMCMutex guard(m_mGuard);
-    ThreadsList::iterator iter = std::remove(m_threads.begin(), m_threads.end(), thread);
-    m_threads.erase(iter, m_threads.end());
-}
-
+// Wake all threads in group
 void H265ThreadGroup::AwakeThreads()
 {
     if (m_rejectAwake)
@@ -236,11 +230,6 @@ void H265ThreadGroup::AwakeThreads()
     {
         m_threads[i]->Awake();
     }
-}
-
-Ipp32u H265ThreadGroup::GetThreadNum() const
-{
-    return (Ipp32u)m_threads.size();
 }
 
 } // namespace UMC_HEVC_DECODER

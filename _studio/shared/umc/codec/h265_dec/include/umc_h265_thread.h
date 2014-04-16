@@ -25,22 +25,28 @@ namespace UMC_HEVC_DECODER
 
 class H265SegmentDecoderMultiThreaded;
 
+// Decoder thread class
 class H265Thread : public UMC::Thread
 {
 public:
     H265Thread();
     virtual ~H265Thread();
 
+    // Reset state
     void Reset();
 
+    // Initialize decoder thread
     UMC::Status Init(Ipp32s iNumber, H265SegmentDecoderMultiThreaded * segmentDecoder);
 
     H265SegmentDecoderMultiThreaded * GetSegmentDecoder();
 
+    // Sleep until task broker wakes the thread
     void Sleep();
 
+    // Wake up the thread
     void Awake();
 
+    // Release resources
     void Release(void);
 
 protected:
@@ -75,6 +81,7 @@ private:
 
 };
 
+// Decoder thread group class
 class H265ThreadGroup
 {
 public:
@@ -83,19 +90,17 @@ public:
 
     virtual ~H265ThreadGroup();
 
+    // Add a new thread to the group
     void AddThread(H265Thread * thread);
 
-    void RemoveThread(H265Thread * thread);
-
+    // Wake all threads in group
     void AwakeThreads();
 
-    //void WaitThreads();
-
+    // Reset threads state
     void Reset();
 
+    // Release memory and resources
     void Release();
-
-    Ipp32u GetThreadNum() const;
 
 private:
     typedef std::vector<H265Thread *> ThreadsList;

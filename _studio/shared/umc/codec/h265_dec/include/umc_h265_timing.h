@@ -26,6 +26,7 @@ namespace UMC_HEVC_DECODER
 
 #define GET_TIMING_TICKS vm_time_get_tick()
 
+// Performance statistics timers
 class TimingInfo
 {
 public:

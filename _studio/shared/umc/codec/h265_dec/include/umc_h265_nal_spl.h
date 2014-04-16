@@ -30,8 +30,6 @@ public:
 
     virtual void SwapMemory(Ipp8u *pDestination, size_t &nDstSize, Ipp8u *pSource, size_t nSrcSize, std::vector<Ipp32u> *pRemovedOffsets) = 0;
     virtual void SwapMemory(MemoryPiece * pMemDst, MemoryPiece * pMemSrc, std::vector<Ipp32u> *pRemovedOffsets) = 0;
-
-    virtual void CopyBitStream(Ipp8u *pDestination, Ipp8u *pSource, size_t &nSrcSize) = 0;
 };
 
 // NAL unit start code search class
@@ -64,16 +62,18 @@ public:
         return (Ipp32s)(m_pSource - m_pSourceBase);
     }
 
+    // Set maximum NAL unit size
     virtual void SetSuggestedSize(size_t size)
     {
         if (size > m_suggestedSize)
             m_suggestedSize = size;
     }
 
-    virtual Ipp32s GetNext() = 0;
-
+    // Returns first NAL unit ID in memory buffer
     virtual Ipp32s CheckNalUnitType(UMC::MediaData * pSource) = 0;
+    // Set bitstream pointer to start code address
     virtual Ipp32s MoveToStartCode(UMC::MediaData * pSource) = 0;
+    // Set destination bitstream pointer and size to NAL unit
     virtual Ipp32s GetNALUnit(UMC::MediaData * pSource, UMC::MediaData * pDst) = 0;
 
     virtual void Reset() = 0;
@@ -97,15 +97,22 @@ public:
 
     virtual ~NALUnitSplitter_H265();
 
+    // Initialize splitter with default values
     virtual void Init();
+    // Free resources
     virtual void Release();
 
+    // Returns first NAL unit ID in memory buffer
     virtual Ipp32s CheckNalUnitType(UMC::MediaData * pSource);
+    // Set bitstream pointer to start code address
     virtual Ipp32s MoveToStartCode(UMC::MediaData * pSource);
+    // Set destination bitstream pointer and size to NAL unit
     virtual UMC::MediaDataEx * GetNalUnits(UMC::MediaData * in);
 
+    // Reset state
     virtual void Reset();
 
+    // Set maximum NAL unit size
     virtual void SetSuggestedSize(size_t size)
     {
         if (!m_pStartCodeIter)

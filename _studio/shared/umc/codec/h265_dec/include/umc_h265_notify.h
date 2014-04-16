@@ -19,6 +19,7 @@
 namespace UMC_HEVC_DECODER
 {
 
+// Abstract notification class
 class notifier_base
 {
 public:
@@ -41,6 +42,7 @@ protected:
     bool m_isNeedNotification;
 };
 
+// Destructor callback class
 template <typename Object>
 class notifier0 : public notifier_base
 {
@@ -58,6 +60,7 @@ public:
         Notify();
     }
 
+    // Call callback function
     virtual void Notify()
     {
         if (m_isNeedNotification)
@@ -70,113 +73,6 @@ public:
 private:
     Object* object_;
     Function function_;
-};
-
-template <typename Object, typename Param1>
-class notifierH : public notifier_base
-{
-public:
-    notifierH(Object* object, Param1 param1)
-        : object_(object)
-        , param1_(param1)
-    {
-    }
-
-    ~notifierH()
-    {
-        Notify();
-    }
-
-    virtual void Notify()
-    {
-        if (m_isNeedNotification)
-        {
-            m_isNeedNotification = false;
-            (object_->Signal)(param1_);
-        }
-    }
-
-private:
-    Object* object_;
-    Param1 param1_;
-};
-
-template <typename Object, typename Param1>
-class notifier1 : public notifier_base
-{
-public:
-    typedef void (Object::*Function)(Param1 param1);
-
-    notifier1(Object* object, Function function, Param1 param1)
-        : object_(object)
-        , function_(function)
-        , param1_(param1)
-    {
-    }
-
-    ~notifier1()
-    {
-        Notify();
-    }
-
-    virtual void Notify()
-    {
-        if (m_isNeedNotification)
-        {
-            m_isNeedNotification = false;
-            (object_->*function_)(param1_);
-        }
-    }
-
-private:
-    Object* object_;
-    Function function_;
-    Param1 param1_;
-};
-
-template <typename Object, typename Param1, typename Param2>
-class notifier2 : public notifier_base
-{
-public:
-    typedef void (Object::*Function)(Param1 param1, Param2 param2);
-
-    notifier2(Object* object, Function function, Param1 param1, Param2 param2)
-        : object_(object)
-        , function_(function)
-        , param1_(param1)
-        , param2_(param2)
-    {
-    }
-
-    ~notifier2()
-    {
-        Notify();
-    }
-
-    void SetParam1(Param1 param1)
-    {
-        param1_ = param1;
-    }
-
-    void SetParam2(Param2 param2)
-    {
-        param2_ = param2;
-    }
-
-    virtual void Notify()
-    {
-        if (m_isNeedNotification)
-        {
-            m_isNeedNotification = false;
-            (object_->*function_)(param1_, param2_);
-        }
-    }
-
-private:
-    Object* object_;
-    Function function_;
-    Param1 param1_;
-    Param2 param2_;
 };
 
 } // namespace UMC_HEVC_DECODER

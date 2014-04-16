@@ -22,10 +22,12 @@ enum
     NAL_UNITTYPE_BITS_H265      = 0x7e,
 };
 
+// Change memory region to little endian for reading with 32-bit DWORDs and remove start code emulation prevention byteps
 void SwapMemoryAndRemovePreventingBytes_H265(void *pDestination, size_t &nDstSize, void *pSource, size_t nSrcSize, std::vector<Ipp32u> *pRemovedOffsets);
 
 static Ipp8u start_code_prefix[] = {0, 0, 0, 1};
 
+// Search bitstream for start code
 static Ipp32s FindStartCode(const Ipp8u *pb, size_t &nSize)
 {
     // there is no data
@@ -48,6 +50,7 @@ static Ipp32s FindStartCode(const Ipp8u *pb, size_t &nSize)
 
 } // Ipp32s FindStartCode(Ipp8u * (&pb), size_t &nSize)
 
+// NAL unit splitter class
 class StartCodeIterator : public StartCodeIteratorBase
 {
 public:
@@ -66,6 +69,7 @@ public:
         m_prev.clear();
     }
 
+    // Initialize with bitstream buffer
     virtual Ipp32s Init(UMC::MediaData * pSource)
     {
         Reset();
@@ -74,15 +78,7 @@ public:
         return iCode;
     }
 
-    virtual Ipp32s GetNext()
-    {
-        m_pSource += 3;
-        m_nSourceSize -= 3;
-        Ipp32s iCode = UMC_HEVC_DECODER::FindStartCode(m_pSource, m_nSourceSize);
-
-        return iCode;
-    }
-
+    // Returns first NAL unit ID in memory buffer
     virtual Ipp32s CheckNalUnitType(UMC::MediaData * pSource)
     {
         if (!pSource)
@@ -95,6 +91,7 @@ public:
         return FindStartCode(source, size, startCodeSize);
     }
 
+    // Set bitstream pointer to start code address
     virtual Ipp32s MoveToStartCode(UMC::MediaData * pSource)
     {
         if (!pSource)
@@ -118,6 +115,7 @@ public:
         return iCodeNext;
     }
 
+    // Set destination bitstream pointer and size to NAL unit
     virtual Ipp32s GetNALUnit(UMC::MediaData * pSource, UMC::MediaData * pDst)
     {
         if (!pSource)
@@ -134,6 +132,7 @@ public:
         return iCode;
     }
 
+    // Set destination bitstream pointer and size to NAL unit
     Ipp32s GetNALUnitInternal(UMC::MediaData * pSource, UMC::MediaData * pDst)
     {
         static Ipp8u start_code_prefix[] = {0, 0, 1};
@@ -151,6 +150,7 @@ public:
 
         Ipp32s iCodeNext = FindStartCode(source, size, startCodeSize);
 
+        // Use start code data which is saved from previous call because start code could be split between input buffers from application
         if (m_prev.size())
         {
             if (iCodeNext == -1)
@@ -246,6 +246,7 @@ public:
         return code;
     }
 
+    // Reset state because stream is finished
     Ipp32s EndOfStream(UMC::MediaData * pDst)
     {
         if (m_code == -1)
@@ -274,6 +275,7 @@ private:
     Ipp32s   m_code;
     Ipp64f   m_pts;
 
+    // Searches NAL unit start code, places input pointer to it and fills up size paramters
     // ML: OPT: TODO: Replace with MaxL's fast start code search
     Ipp32s FindStartCode(Ipp8u * (&pb), size_t & size, Ipp32s & startCodeSize)
     {
@@ -354,6 +356,7 @@ private:
     }
 };
 
+// Memory big-to-little endian converter implementation
 class Swapper : public SwapperBase
 {
 public:
@@ -389,11 +392,6 @@ public:
             pMemDst->SetTime(pMemSrc->GetTime());
         }
     }
-
-    virtual void CopyBitStream(Ipp8u *pDestination, Ipp8u *pSource, size_t &nSrcSize)
-    {
-        MFX_INTERNAL_CPY(pDestination, pSource, nSrcSize);
-    }
 };
 
 NALUnitSplitter_H265::NALUnitSplitter_H265()
@@ -408,6 +406,7 @@ NALUnitSplitter_H265::~NALUnitSplitter_H265()
     Release();
 }
 
+// Initialize splitter with default values
 void NALUnitSplitter_H265::Init()
 {
     Release();
@@ -416,6 +415,7 @@ void NALUnitSplitter_H265::Init()
     m_pStartCodeIter = new StartCodeIterator();
 }
 
+// Reset state
 void NALUnitSplitter_H265::Reset()
 {
     if (m_pStartCodeIter)
@@ -424,6 +424,7 @@ void NALUnitSplitter_H265::Reset()
     }
 }
 
+// Free resources
 void NALUnitSplitter_H265::Release()
 {
     delete m_pSwapper;
@@ -432,16 +433,19 @@ void NALUnitSplitter_H265::Release()
     m_pStartCodeIter = 0;
 }
 
+// Returns first NAL unit ID in memory buffer
 Ipp32s NALUnitSplitter_H265::CheckNalUnitType(UMC::MediaData * pSource)
 {
     return m_pStartCodeIter->CheckNalUnitType(pSource); // find first start code
 }
 
+// Set bitstream pointer to start code address
 Ipp32s NALUnitSplitter_H265::MoveToStartCode(UMC::MediaData * pSource)
 {
     return m_pStartCodeIter->MoveToStartCode(pSource); // find first start code
 }
 
+// Set destination bitstream pointer and size to NAL unit
 UMC::MediaDataEx * NALUnitSplitter_H265::GetNalUnits(UMC::MediaData * pSource)
 {
     UMC::MediaDataEx * out = &m_MediaData;
@@ -464,7 +468,7 @@ UMC::MediaDataEx * NALUnitSplitter_H265::GetNalUnits(UMC::MediaData * pSource)
     return out;
 }
 
-/* temporal class definition */
+// Utility class for writing 32-bit little endian integers
 class H265DwordPointer_
 {
 public:
@@ -513,6 +517,7 @@ protected:
     Ipp32u m_iCur;                                              // (Ipp32u) current dword
 };
 
+// Utility class for reading big endian bitstream
 class H265SourcePointer_
 {
 public:
@@ -574,6 +579,7 @@ protected:
     Ipp32u m_nRemovedBytes;                                     // (Ipp32u) number of removed bytes
 };
 
+// Change memory region to little endian for reading with 32-bit DWORDs and remove start code emulation prevention byteps
 void SwapMemoryAndRemovePreventingBytes_H265(void *pDestination, size_t &nDstSize, void *pSource, size_t nSrcSize, std::vector<Ipp32u> *pRemovedOffsets)
 {
     H265DwordPointer_ pDst;
