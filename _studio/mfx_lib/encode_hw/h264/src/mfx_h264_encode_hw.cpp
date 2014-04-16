@@ -2573,6 +2573,10 @@ mfxStatus ImplementationAvc::UpdateBitstream(
     mfxU8 *  bsData        = task.m_bs->Data + task.m_bs->DataOffset + task.m_bs->DataLength;
     mfxU32 * dataLength    = &task.m_bs->DataLength;
 
+    mfxU32 seconfFieldOffset = 0;
+    if (fid)
+        seconfFieldOffset = task.m_bs->DataOffset + task.m_bs->DataLength;
+
     if (m_video.Protected == 0 || task.m_notProtected)
     {
         if (needIntermediateBitstreamBuffer)
@@ -2666,45 +2670,52 @@ mfxStatus ImplementationAvc::UpdateBitstream(
     if (task.m_fieldPicFlag)
         task.m_bs->FrameType = mfxU16(task.m_bs->FrameType | ((task.m_type[!task.GetFirstField()]& ~MFX_FRAMETYPE_KEYPIC) << 8));
 
-    // to support WinBlue HMFT API related to LTR control Intel HMFT should return actual reference lists to application
-    // MSDK release for WinBlie officially uses API 1.6 which is insufficient to provide HMFT with required data
-    // encoder unofficially uses new MSDK API 1.7 to return ref lists to HMFT
-    if (task.m_fieldPicFlag == 0)
+    mfxExtCodingOption * extOpt = GetExtBuffer(m_video);
+
+    // setting of mfxExtAVCEncodedFrameInfo isn't supported for FieldOutput mode at the moment
+    if (IsOff(extOpt->FieldOutput))
     {
-        // use updated structure mfxBitstream from API 1.7 to attach ext buffer
-        mfxBitstream * bs = (mfxBitstream*)task.m_bs;
-        if (bs->NumExtParam == 1)  //olny 1 ext buffer is supported for mfxBitstream at the moment. Treat other number as incorrect and ignore ext buffers
+        if (task.m_bs->NumExtParam == 1)  //olny 1 ext buffer is supported for mfxBitstream at the moment. Treat other number as incorrect and ignore ext buffers
         {
-            mfxExtAVCEncodedFrameInfo * encFrameInfo = (mfxExtAVCEncodedFrameInfo*)GetExtBuffer(bs->ExtParam, bs->NumExtParam, MFX_EXTBUFF_ENCODED_FRAME_INFO);
+            mfxExtAVCEncodedFrameInfo * encFrameInfo = (mfxExtAVCEncodedFrameInfo*)GetExtBuffer(task.m_bs->ExtParam, task.m_bs->NumExtParam, MFX_EXTBUFF_ENCODED_FRAME_INFO);
             if (encFrameInfo)
             {
-                encFrameInfo->FrameOrder = task.m_extFrameTag;
-                encFrameInfo->LongTermIdx = task.m_longTermFrameIdx == NO_INDEX_U8 ? NO_INDEX_U16 : task.m_longTermFrameIdx;
-
-                if (   m_video.mfx.RateControlMethod == MFX_RATECONTROL_CQP
-                    || m_video.mfx.RateControlMethod == MFX_RATECONTROL_LA)
-                    encFrameInfo->QP = task.m_cqpValue[fid];
-                else
-                    encFrameInfo->QP = task.m_qpY[fid];
-
-                // only return of ref list L0 is supported at the moment
-                mfxU8 i = 0;
-                for (i = 0; i < task.m_list0[0].Size(); i ++)
+                if (task.m_fieldPicFlag == 0)
                 {
-                    DpbFrame& refFrame = task.m_dpb[0][task.m_list0[0][i] & 127]; // retrieve corresponding ref frame from DPB
-                    encFrameInfo->UsedRefListL0[i].FrameOrder = refFrame.m_extFrameTag;
-                    if (refFrame.m_longterm && refFrame.m_longTermIdxPlus1) // reference frame is LTR with valid LTR idx
-                        encFrameInfo->UsedRefListL0[i].LongTermIdx = refFrame.m_longTermIdxPlus1 - 1;
+                    // to support WinBlue HMFT API related to LTR control Intel HMFT should return actual reference lists to application
+                    // at the moment it's supported for progressive encoding only
+                    encFrameInfo->FrameOrder = task.m_extFrameTag;
+                    encFrameInfo->LongTermIdx = task.m_longTermFrameIdx == NO_INDEX_U8 ? NO_INDEX_U16 : task.m_longTermFrameIdx;
+
+                    if (   m_video.mfx.RateControlMethod == MFX_RATECONTROL_CQP
+                        || m_video.mfx.RateControlMethod == MFX_RATECONTROL_LA)
+                        encFrameInfo->QP = task.m_cqpValue[fid];
                     else
-                        encFrameInfo->UsedRefListL0[i].LongTermIdx = NO_INDEX_U16;
-                    encFrameInfo->UsedRefListL0[i].PicStruct = (mfxU16)MFX_PICSTRUCT_PROGRESSIVE;
-                }
+                        encFrameInfo->QP = task.m_qpY[fid];
 
-                for (; i < 32; i ++)
+                    // only return of ref list L0 is supported at the moment
+                    mfxU8 i = 0;
+                    for (i = 0; i < task.m_list0[0].Size(); i ++)
+                    {
+                        DpbFrame& refFrame = task.m_dpb[0][task.m_list0[0][i] & 127]; // retrieve corresponding ref frame from DPB
+                        encFrameInfo->UsedRefListL0[i].FrameOrder = refFrame.m_extFrameTag;
+                        if (refFrame.m_longterm && refFrame.m_longTermIdxPlus1) // reference frame is LTR with valid LTR idx
+                            encFrameInfo->UsedRefListL0[i].LongTermIdx = refFrame.m_longTermIdxPlus1 - 1;
+                        else
+                            encFrameInfo->UsedRefListL0[i].LongTermIdx = NO_INDEX_U16;
+                        encFrameInfo->UsedRefListL0[i].PicStruct = (mfxU16)MFX_PICSTRUCT_PROGRESSIVE;
+                    }
+
+                    for (; i < 32; i ++)
+                    {
+                        encFrameInfo->UsedRefListL0[i].FrameOrder  = (mfxU32)MFX_FRAMEORDER_UNKNOWN;
+                        encFrameInfo->UsedRefListL0[i].LongTermIdx = NO_INDEX_U16;
+                        encFrameInfo->UsedRefListL0[i].PicStruct   = (mfxU16)MFX_PICSTRUCT_UNKNOWN;
+                    }
+                }
+                else if (fid)
                 {
-                    encFrameInfo->UsedRefListL0[i].FrameOrder  = (mfxU32)MFX_FRAMEORDER_UNKNOWN;
-                    encFrameInfo->UsedRefListL0[i].LongTermIdx = NO_INDEX_U16;
-                    encFrameInfo->UsedRefListL0[i].PicStruct   = (mfxU16)MFX_PICSTRUCT_UNKNOWN;
+                    encFrameInfo->SecondFieldOffset = seconfFieldOffset;
                 }
             }
         }
