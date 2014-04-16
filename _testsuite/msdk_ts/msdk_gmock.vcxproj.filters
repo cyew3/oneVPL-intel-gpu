@@ -142,5 +142,8 @@
     <ClCompile Include="src\gmock\test_suites\ptir_init.cpp">
       <Filter>Source Files\test_suites</Filter>
     </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\avce_roi.cpp">
+      <Filter>Source Files\test_suites</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

@@ -285,3 +285,17 @@ tsTrace& tsTrace::operator<<(const mfxFrameData& p)
     return *this;
 }
 
+tsTrace& tsTrace::operator<<(const mfxExtEncoderROI& p)
+{
+    STRUCT_BODY(mfxExtEncoderROI,
+        FIELD_S(mfxExtBuffer, Header)
+        FIELD_T(mfxU16  , NumROI  )
+        for(mfxU32 i = 0; i < p.NumROI; ++i)
+        {
+            FIELD_S(mfxExtEncoderROI_Entry, ROI[i])
+        }
+    )
+
+    return *this;
+}
+

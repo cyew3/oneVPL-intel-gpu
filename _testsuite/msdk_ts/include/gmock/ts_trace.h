@@ -79,6 +79,7 @@ public:
     
     tsTrace& operator << (const mfxExtBuffer& p);
     tsTrace& operator << (const mfxVideoParam& p);
+    tsTrace& operator << (const mfxExtEncoderROI& p);
     tsTrace& operator << (const mfxInfoMFX& p);
     tsTrace& operator << (const mfxPluginUID& p);
     tsTrace& operator << (const mfxFrameData& p);
