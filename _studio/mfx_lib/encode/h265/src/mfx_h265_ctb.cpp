@@ -250,14 +250,14 @@ Ipp8s H265CU::GetRefQp( Ipp32u currAbsIdxInLcu )
 
 void H265CU::SetQpSubCUs(int qp, int absPartIdx, int depth, bool &foundNonZeroCbf)
 {
-    uint32_t curPartNumb = m_par->NumPartInCU >> (depth << 1);
-    uint32_t curPartNumQ = curPartNumb >> 2;
+    Ipp32u curPartNumb = m_par->NumPartInCU >> (depth << 1);
+    Ipp32u curPartNumQ = curPartNumb >> 2;
 
     if (!foundNonZeroCbf)
     {
         if(m_data[absPartIdx].depth > depth)
         {
-            for (uint32_t partUnitIdx = 0; partUnitIdx < 4; partUnitIdx++)
+            for (Ipp32u partUnitIdx = 0; partUnitIdx < 4; partUnitIdx++)
             {
                 SetQpSubCUs(qp, absPartIdx + partUnitIdx * curPartNumQ, depth + 1, foundNonZeroCbf);
             }
@@ -766,7 +766,7 @@ void H265CU::UpdateCuQp(void)
         //printf("\n updateDQP \n");fflush(stderr);
 
         bool hasResidual = false;
-        for (uint32_t blkIdx = 0; blkIdx < m_numPartition; blkIdx++)
+        for (Ipp32u blkIdx = 0; blkIdx < m_numPartition; blkIdx++)
         {
             /*if (GetCbf(blkIdx, TEXT_LUMA) || outTempCU->getCbf(blkIdx, TEXT_CHROMA_U) ||
             outTempCU->getCbf(blkIdx, TEXT_CHROMA_V))*/
@@ -777,7 +777,7 @@ void H265CU::UpdateCuQp(void)
             }
         }
 
-        uint32_t targetPartIdx;
+        Ipp32u targetPartIdx;
         targetPartIdx = 0;
         if (hasResidual)
         {
