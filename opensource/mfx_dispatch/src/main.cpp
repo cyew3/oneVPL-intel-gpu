@@ -335,6 +335,7 @@ mfxStatus DISPATCHER_EXPOSED_PREFIX(MFXInit)(mfxIMPL impl, mfxVersion *pVer, mfx
     // check the final result of loading
     try 
     {
+        pHandle = *candidate;
         //pulling up current mediasdk version, that required to match plugin version
         mfxVersion apiVerActual;
         mfxStatus stsQueryVersion;
