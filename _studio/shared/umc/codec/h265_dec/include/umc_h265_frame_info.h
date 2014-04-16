@@ -246,12 +246,12 @@ public:
 
         if (m_hasTiles && !HasDependentSliceSegments())
         {
-            Ipp32s tileCount = m_tilesThreadingInfo.size();
+            size_t tileCount = m_tilesThreadingInfo.size();
             if (!tileCount) // it is not completed yet, because it was not fully initialized
                 return false;
 
             bool isCompleted = true;
-            for (Ipp32s i = 0; i < tileCount; i ++)
+            for (size_t i = 0; i < tileCount; i ++)
             {
                 if (!m_tilesThreadingInfo[i].processInfo.m_isCompleted)
                 {
