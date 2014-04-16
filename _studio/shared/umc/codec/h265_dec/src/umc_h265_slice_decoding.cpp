@@ -126,16 +126,6 @@ bool H265Slice::Reset(PocDecoding * pocDecoding)
     m_bDeblocked = GetSliceHeader()->slice_deblocking_filter_disabled_flag != 0;
     m_bSAOed = !(GetSliceHeader()->slice_sao_luma_flag || GetSliceHeader()->slice_sao_chroma_flag);
 
-    if (m_bDeblocked)
-    {
-        processInfo.m_curCUToProcess[DEB_PROCESS_ID] = m_iMaxMB;
-    }
-
-    if (m_bSAOed)
-    {
-        processInfo.m_curCUToProcess[SAO_PROCESS_ID] = m_iMaxMB;
-    }
-
     // frame is not associated yet
     m_pCurrentFrame = NULL;
     return true;
@@ -423,16 +413,6 @@ void H265Slice::CopyFromBaseSlice(const H265Slice * s)
 
     m_bDeblocked = GetSliceHeader()->slice_deblocking_filter_disabled_flag != 0;
     m_bSAOed = !(GetSliceHeader()->slice_sao_luma_flag || GetSliceHeader()->slice_sao_chroma_flag);
-
-    if (m_bDeblocked)
-    {
-        processInfo.m_curCUToProcess[DEB_PROCESS_ID] = m_iMaxMB;
-    }
-
-    if (m_bSAOed)
-    {
-        processInfo.m_curCUToProcess[SAO_PROCESS_ID] = m_iMaxMB;
-    }
 }
 
 } // namespace UMC_HEVC_DECODER

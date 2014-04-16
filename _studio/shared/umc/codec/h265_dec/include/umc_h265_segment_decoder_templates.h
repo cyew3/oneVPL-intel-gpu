@@ -69,7 +69,8 @@ public:
             Ipp32s newCUAddr = curCUAddr + 1;
             Ipp32s newRSCUAddr = sd->m_pCurrentFrame->m_CodingData->getCUOrderMap(newCUAddr);
 
-            if (newRSCUAddr >= sd->m_pCurrentFrame->m_CodingData->m_NumCUsInFrame)
+            if (newRSCUAddr >= sd->m_pCurrentFrame->m_CodingData->m_NumCUsInFrame ||
+                sd->m_pCurrentFrame->m_CodingData->getTileIdxMap(rsCUAddr) != sd->m_pCurrentFrame->m_CodingData->getTileIdxMap(newRSCUAddr))
                 break;
 
             if (sd->m_pPicParamSet->entropy_coding_sync_enabled_flag)

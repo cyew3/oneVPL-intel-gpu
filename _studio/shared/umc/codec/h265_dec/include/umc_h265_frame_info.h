@@ -372,6 +372,22 @@ public:
         {
             m_curCUToProcess[DEB_PROCESS_ID] = m_pFrame->getCD()->m_NumCUsInFrame;
         }
+
+        for (Ipp32s i = 0; i < m_SliceCount; i ++)
+        {
+            H265Slice *slice = m_pSliceQueue[i];
+
+            if (slice->m_bDeblocked)
+            {
+                slice->processInfo.m_curCUToProcess[DEB_PROCESS_ID] = slice->m_iMaxMB;
+            }
+
+            if (slice->m_bSAOed)
+            {
+                slice->processInfo.m_curCUToProcess[SAO_PROCESS_ID] = slice->m_iMaxMB;
+            }
+        }
+
     }
 
     H265DecoderFrameInfo * GetNextAU() const {return m_nextAU;}
