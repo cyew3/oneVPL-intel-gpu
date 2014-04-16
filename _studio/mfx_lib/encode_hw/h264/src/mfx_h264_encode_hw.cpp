@@ -841,9 +841,10 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
         request.Info.Height = m_video.calcParam.heightLa;
 
         mfxU32 numMb = request.Info.Width * request.Info.Height / 256;
-        m_vmeDataStorage.resize(
-            m_emulatorForSyncPart.GetStageGreediness(AsyncRoutineEmulator::STG_WAIT_LA) +
-            m_emulatorForSyncPart.GetStageGreediness(AsyncRoutineEmulator::STG_START_ENCODE) - 1);
+        mfxI32 numVME = m_emulatorForSyncPart.GetStageGreediness(AsyncRoutineEmulator::STG_WAIT_LA) +
+                        m_emulatorForSyncPart.GetStageGreediness(AsyncRoutineEmulator::STG_START_ENCODE) - 1;
+        numVME = numVME < (m_video.mfx.GopRefDist + 1) ? (m_video.mfx.GopRefDist + 1) : numVME;
+        m_vmeDataStorage.resize(numVME);
         for (size_t i = 0; i < m_vmeDataStorage.size(); i++)
             m_vmeDataStorage[i].mb.resize(numMb);
         m_tmpVmeData.reserve(extOpt2->LookAheadDepth);
@@ -1256,6 +1257,12 @@ struct CompareByMidRaw
     CompareByMidRaw(mfxMemId cmSurf) : m_cmSurf(cmSurf) {}
     bool operator ()(DpbFrame const & frame) const { return frame.m_cmRaw == m_cmSurf; }
 };
+struct CompareByFrameOrder
+{
+    mfxU32 m_FrameOrder;
+    CompareByFrameOrder(mfxU32 frameOrder) : m_FrameOrder(frameOrder) {}
+    bool operator ()(DpbFrame const & frame) const { return frame.m_frameOrder == m_FrameOrder; }
+};
 
 void ImplementationAvc::OnNewFrame()
 {
@@ -1582,7 +1589,7 @@ void ImplementationAvc::OnLookaheadQueried()
     for (mfxU32 i = 0; i < iniDpb.Size(); i++)
     {
         // m_cmRaw is always filled
-        if (std::find_if(finDpb.Begin(), finDpb.End(), CompareByMidRaw(iniDpb[i].m_cmRaw)) == finDpb.End())
+        if (std::find_if(finDpb.Begin(), finDpb.End(), CompareByFrameOrder(iniDpb[i].m_frameOrder)) == finDpb.End())
         {
             ReleaseResource(m_rawLa, iniDpb[i].m_cmRawLa);
             ReleaseResource(m_mb,    iniDpb[i].m_cmMb);
@@ -1679,6 +1686,7 @@ namespace
     {
         mfxFrameData bitstream = { 0 };
 
+        task.m_numLeadingFF[fid] = 0;
         FrameLocker lock(&core, bitstream, task.m_midBit[fid]);
         if (bitstream.Y == 0)
             return Error(MFX_ERR_LOCK_MEMORY);
@@ -1693,6 +1701,7 @@ namespace
         return MFX_ERR_NONE;
     }
 }
+
 
 
 void ImplementationAvc::BrcPreEnc(
@@ -1718,6 +1727,7 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
 {
     mfxExtCodingOption    const * extOpt = GetExtBuffer(m_video);
     mfxExtCodingOptionDDI const * extDdi = GetExtBuffer(m_video);
+    mfxExtCodingOption2    const * extOpt2 = GetExtBuffer(m_video);
 
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "Avc::Async");
 
@@ -1939,10 +1949,12 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
         }
 
         ConfigureTask(*task, m_lastTask, m_video);
-        m_lastTask = *task;
+       
 
         if (m_video.mfx.RateControlMethod == MFX_RATECONTROL_LA || m_video.mfx.RateControlMethod == MFX_RATECONTROL_LA_ICQ)
         {
+            mfxExtCodingOption2 * extOpt2 = GetExtBuffer(m_video);
+
             int ffid = task->m_fid[0];
             ArrayDpbFrame const & dpb = task->m_dpb[ffid];
             ArrayU8x33 const &    l0  = task->m_list0[ffid];
@@ -1957,6 +1969,11 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
             if (l1.Size() > 0)
                 bwd = find_if_ptr2(m_lookaheadFinished, m_lookaheadStarted,
                     FindByFrameOrder(dpb[l1[0] & 127].m_frameOrder));
+
+            if ((!fwd) && l0.Size() >0  && extOpt2->MaxSliceSize) //TO DO
+            {
+                fwd = &m_lastTask;
+            }
 
             task->m_cmRefs = CreateVmeSurfaceG75(m_cmDevice, task->m_cmRaw,
                 fwd ? &fwd->m_cmRaw : 0, bwd ? &bwd->m_cmRaw : 0, !!fwd, !!bwd);
@@ -1973,7 +1990,10 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
         }
 
         //printf("\rLA_SUBMITTED  do=%4d eo=%4d type=%d\n", task->m_frameOrder, task->m_encOrder, task->m_type[0]); fflush(stdout);
-        OnLookaheadSubmitted(task);
+        m_lastTask = *task;
+        OnLookaheadSubmitted(task);     
+        
+
     }
 
 
@@ -1994,9 +2014,9 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
             std::advance(beg, -extDdi->LookAheadDependency);
 
             AnalyzeVmeData(beg, end, m_video.calcParam.widthLa, m_video.calcParam.heightLa);
+
         }
     }
-
 
     if (m_stagesToGo & AsyncRoutineEmulator::STG_BIT_START_ENCODE)
     {
@@ -2082,6 +2102,14 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
                 } break;
             }
             task->m_cqpValue[0] = task->m_cqpValue[1] = m_brc.GetQp(task->m_type[task->m_fid[0]], task->m_picStruct[ENC]);
+            
+            if (extOpt2 ->MaxSliceSize)
+            {
+                mfxStatus sts = FillSliceInfo(*task, extOpt2 ->MaxSliceSize, m_brc.GetDistFrameSize());
+                if (sts != MFX_ERR_NONE)
+                    return Error(sts);
+                //printf("EST frameSize %d\n", m_brc.GetDistFrameSize());
+            }
         }
 
         //if(FILE *dump = fopen("dump1.txt", "a"))
@@ -2110,105 +2138,136 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
 
     if (m_stagesToGo & AsyncRoutineEmulator::STG_BIT_WAIT_ENCODE)
     {
-        mfxExtCodingOption const * extOpt = GetExtBuffer(m_video);
         mfxExtCodingOption2 * extOpt2 = GetExtBuffer(m_video);
-
         DdiTaskIter task = FindFrameToWaitEncode(m_encoding.begin(), m_encoding.end());
-        
-        //char task_name [40];
-        //sprintf(task_name,"Avc::WAIT_ENCODE (%d) - %x", task->m_encOrder, task->m_yuv);
-        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "Avc::WAIT_ENCODE");
+        mfxU8*      pBuff[2] ={0,0};
 
         mfxStatus sts = MFX_ERR_NONE;
-        if (IsOff(extOpt->FieldOutput))
+        if (m_enabledSwBrc)
         {
-            mfxU32 ffid = task->m_fid[0];
-            mfxU32 sfid = task->m_fid[1];
-
             for (;; ++task->m_repack)
             {
-                if ((sts = QueryStatus(*task, sfid)) != MFX_ERR_NONE)
-                    return sts;
-
-                if (task->m_fieldPicFlag)
-                    if ((sts = QueryStatus(*task, ffid)) != MFX_ERR_NONE)
-                        return Error(sts);
-
-                if (m_enabledSwBrc)
+                mfxU32 bsDataLength = 0; 
+                for (mfxU32 f = 0; f <= task->m_fieldPicFlag; f++)
                 {
-                    mfxU32 bsDataLength = task->m_bsDataLength[0];
-                    if(task->m_fieldPicFlag)
-                        bsDataLength += task->m_bsDataLength[1];
-
-                    mfxU32 sliceSizeLimit = extOpt2->MaxSliceSize;  // TO DO
-                    
-                    if (sliceSizeLimit)
-                    {
-                        mfxU32   bsSizeAvail = mfxU32(m_tmpBsBuf.size());
-                        mfxU8    *pBS = &m_tmpBsBuf[0];
-                        mfxU32    maxSliceSize = 0;
-                        mfxU32    numSlices = 0;
+                    if ((sts = QueryStatus(*task, task->m_fid[f])) != MFX_ERR_NONE)
+                        return sts;
+                    bsDataLength += task->m_bsDataLength[task->m_fid[f]];
+                }
+                //printf("Real frameSize %d, repack %d\n", bsDataLength, task->m_repack);
+                bool bRecoding = false;
+                if (extOpt2->MaxSliceSize)
+                {
+                    mfxU32   bsSizeAvail = mfxU32(m_tmpBsBuf.size());
+                    mfxU8    *pBS = &m_tmpBsBuf[0];
                         
-                        for (mfxU32 f = 0; f <= task->m_fieldPicFlag; f++)
-                        {
-                            
-                            if ((sts = CopyBitstream(*m_core, m_video,*task, task->m_fid[f], pBS, bsSizeAvail)) != MFX_ERR_NONE)
-                                return Error(sts);
-                            mfxU32 tmp = GetMaxSliceSize(pBS, pBS + bsDataLength, numSlices);
-                            maxSliceSize = (tmp > maxSliceSize) ? tmp : maxSliceSize;
-                            pBS += task->m_bsDataLength[f];
-                            bsSizeAvail -= task->m_bsDataLength[f];
-                        }
-                        if (maxSliceSize > sliceSizeLimit)
-                        {
-                            mfxU32 numMbPerSlice = m_video.mfx.FrameInfo.Width * m_video.mfx.FrameInfo.Height /(numSlices<<8) ;
-                            mfxU32 minMBInRow = m_video.mfx.FrameInfo.Width >> 4;
-                            numMbPerSlice = (mfxU32)((mfxF32)numMbPerSlice* ((mfxF32)sliceSizeLimit * 0.8f /(mfxF32) maxSliceSize));
-                            
-                            // whole MB row
-                            numMbPerSlice = (numMbPerSlice/minMBInRow)*minMBInRow;
-                            numMbPerSlice = numMbPerSlice < minMBInRow ? minMBInRow : numMbPerSlice;
-                            
-                            if (task->m_numMbPerSlice == (mfxU16)numMbPerSlice)
-                            {
-                                if (numMbPerSlice == minMBInRow)
-                                    return Error(MFX_ERR_UNDEFINED_BEHAVIOR);
-                                else
-                                    numMbPerSlice = numMbPerSlice - minMBInRow;
-                            }
+                    for (mfxU32 f = 0; f <= 0 /*task->m_fieldPicFlag */; f++)
+                    {                            
+                        if ((sts = CopyBitstream(*m_core, m_video,*task, task->m_fid[f], pBS, bsSizeAvail)) != MFX_ERR_NONE)
+                            return Error(sts);
 
-                            extOpt2->NumMbPerSlice = task->m_numMbPerSlice = (mfxU16)numMbPerSlice;
-                            
-                            sts = m_ddi->Execute(task->m_handleRaw.first, *task, task->m_fid[0], m_sei);
-                            if (sts != MFX_ERR_NONE)
-                                return Error(sts);
-                            continue;                    
-                        }
-
-                       
-
-                    }
-
-                    mfxU32 res = m_brc.Report(task->m_type[0], bsDataLength, 0, !!task->m_repack, task->m_frameOrder);
-                    if (res == 1) // ERR_BIG_FRAME
-                    {
-                        task->m_bsDataLength[0] = task->m_bsDataLength[1] = 0;
-                        task->m_cqpValue[0] = task->m_cqpValue[1] = m_brc.GetQp(task->m_type[task->m_fid[0]], task->m_picStruct[ENC]);
-                        sts = m_ddi->Execute(task->m_handleRaw.first, *task, task->m_fid[0], m_sei);
+                        sts = UpdateSliceInfo(pBS, pBS + task->m_bsDataLength[task->m_fid[f]], extOpt2->MaxSliceSize, task->m_repack, *task, bRecoding);
                         if (sts != MFX_ERR_NONE)
                             return Error(sts);
-                        continue;
+                        
+                        if (bRecoding)
+                        {
+                           if (task->m_repack < 2)
+                           {
+                               sts = CorrectSliceInfo(*task, 95 - (task->m_repack)*5);
+                               if (sts != MFX_ERR_NONE && sts != MFX_ERR_UNDEFINED_BEHAVIOR)
+                                    return Error(sts);
+                               if (sts == MFX_ERR_UNDEFINED_BEHAVIOR)
+                                   task->m_repack = 2;
+                           }
+                           if (task->m_repack >=2)
+                           {
+                               //printf("!!!!!!!!!!!!!! forsed mode\n");
+                               mfxStatus sts = CorrectSliceInfoForsed(*task);
+                               if (sts != MFX_ERR_NONE)
+                                    return Error(sts);
+                           }
+                           if (task->m_repack >=3)
+                           {
+                               task->m_cqpValue[0] += 5;
+                               task->m_cqpValue[1] = task->m_cqpValue[0];
+                           }
+                        }
+
+                        pBuff[f] = pBS;
+                        pBS += task->m_bsDataLength[task->m_fid[f]];                            
+                        bsSizeAvail -= task->m_bsDataLength[task->m_fid[f]];
+                    }   
+                } // extOpt2->MaxSliceSize
+                if (!bRecoding)
+                {
+                    mfxU32 res = m_brc.Report(task->m_fid[0], bsDataLength, 0, !!task->m_repack, task->m_frameOrder);
+                    if (res == 1)
+                    {
+                        task->m_cqpValue[0] = task->m_cqpValue[1] = m_brc.GetQp(task->m_type[task->m_fid[0]], task->m_picStruct[ENC]);
+                        bRecoding = true;
                     }
                 }
+                if (bRecoding)
+                {
+
+                    DdiTaskIter curTask = task;
+                    DdiTaskIter nextTask;
+
+                    // wait for next tasks
+                    while ((nextTask = FindFrameToWaitEncodeNext(m_encoding.begin(), m_encoding.end(), curTask)) != curTask) 
+                    {                           
+                        for (mfxU32 f = 0; f <= nextTask->m_fieldPicFlag; f++)
+                        {
+                            if ((sts = QueryStatus(*nextTask, nextTask->m_fid[f])) != MFX_ERR_NONE)
+                                return sts;
+                        }
+                        curTask = nextTask;
+                    }
+                    // restart  encoded task
+                    nextTask = task;
+                    do 
+                    {
+                        curTask = nextTask;
+                        curTask->m_bsDataLength[0] = curTask->m_bsDataLength[1] = 0;
+                        for (mfxU32 f = 0; f <= curTask->m_fieldPicFlag; f++)
+                        {    
+                            if ( (sts = m_ddi->Execute(curTask->m_handleRaw.first, *curTask, curTask->m_fid[f], m_sei)) != MFX_ERR_NONE)
+                                return Error(sts);
+                        }
+                    } while ((nextTask = FindFrameToWaitEncodeNext(m_encoding.begin(), m_encoding.end(), curTask)) != curTask) ;
+
+                    continue;                    
+                } 
+                
 
                 break;
             }
             task->m_bs = bs;
             for (mfxU32 f = 0; f <= task->m_fieldPicFlag; f++)
+            {
+                //printf("Update bitstream: %d, len %d\n",task->m_encOrder, task->m_bsDataLength[task->m_fid[f]]);
+
                 if ((sts = UpdateBitstream(*task, task->m_fid[f])) != MFX_ERR_NONE)
                     return Error(sts);
+            }
 
-            //printf("\rENC_SYNCED    do=%4d eo=%4d type=%d qp=%d size=%d\n", task->m_frameOrder, task->m_encOrder, task->m_type[0], task->m_cqpValue[0], task->m_bsDataLength[0]); fflush(stdout);
+            OnEncodingQueried(task);
+        }
+        else if (IsOff(extOpt->FieldOutput))
+        {
+            for (mfxU32 f = 0; f <= task->m_fieldPicFlag; f++)
+            {
+                if ((sts = QueryStatus(*task, task->m_fid[f])) != MFX_ERR_NONE)
+                    return sts;
+            }
+            task->m_bs = bs;
+            for (mfxU32 f = 0; f <= task->m_fieldPicFlag; f++)
+            {
+
+                if ((sts = UpdateBitstream(*task, task->m_fid[f])) != MFX_ERR_NONE)
+                    return Error(sts);
+            }
             OnEncodingQueried(task);
         }
         else
@@ -2229,7 +2288,8 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
                 UMC::AutomaticUMCMutex guard(m_listMutex);
                 m_listOfPairsForStupidFieldOutputMode.pop_front();
                 m_listOfPairsForStupidFieldOutputMode.pop_front();
-            }
+            }       
+        
         }
     }
 
@@ -2462,6 +2522,7 @@ mfxStatus ImplementationAvc::QueryStatus(
     if (task.m_bsDataLength[fid] == 0)
     {
         mfxStatus sts = m_ddi->QueryStatus(task, fid);
+        //printf("m_ddi->QueryStatus 1: %d, %d\n", task.m_encOrder, sts);
         if (sts == MFX_WRN_DEVICE_BUSY)
             return MFX_TASK_BUSY;
         if (sts != MFX_ERR_NONE)

@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2011-2013 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2011-2014 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -112,6 +112,15 @@ namespace MfxHwH264Encode
         ENCODE_SET_SEQUENCE_PARAMETERS_H264 const & sps,
         ENCODE_SET_PICTURE_PARAMETERS_H264 const &  pps,
         std::vector<ENCODE_SET_SLICE_HEADER_H264> & slice);
+
+    mfxStatus FillVaringPartOfSliceBufferSizeLimited(
+        ENCODE_CAPS const &                         hwCaps,
+        DdiTask const &                             task,
+        mfxU32                                      fieldId,
+        ENCODE_SET_SEQUENCE_PARAMETERS_H264 const & sps,
+        ENCODE_SET_PICTURE_PARAMETERS_H264 const &  pps,
+        std::vector<ENCODE_SET_SLICE_HEADER_H264> & slice);
+
 
     void FillSpsBuffer(
         MfxVideoParam const &                par,

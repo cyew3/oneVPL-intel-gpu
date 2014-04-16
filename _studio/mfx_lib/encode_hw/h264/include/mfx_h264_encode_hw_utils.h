@@ -800,6 +800,13 @@ namespace MfxHwH264Encode
         mfxU8                original_bottom_field_flag;
         DecRefPicMarkingInfo dec_ref_pic_marking;
     };
+    struct SliceStructInfo
+    {
+        mfxU32 startMB;
+        mfxU32 numMB;
+        mfxU32 weight;
+        mfxU32 cost;
+    };
 
     class DdiTask : public Reconstruct
     {
@@ -874,6 +881,7 @@ namespace MfxHwH264Encode
             , m_timeStamp(0)
             , m_minQP(0)
             , m_maxQP(0)
+
         {
             Zero(m_ctrl);
             Zero(m_internalListCtrl);
@@ -1009,6 +1017,8 @@ namespace MfxHwH264Encode
 
         mfxU8   m_minQP;
         mfxU8   m_maxQP;
+
+        std::vector<SliceStructInfo> m_SliceInfo;
     };
 
     typedef std::list<DdiTask>::iterator DdiTaskIter;
@@ -1183,6 +1193,7 @@ namespace MfxHwH264Encode
         virtual void SetQp(mfxU32 qp, mfxU32 frameType) = 0;
         virtual mfxU32 Report(mfxU32 frameType, mfxU32 dataLength, mfxU32 userDataLength, mfxU32 repack, mfxU32 picOrder) = 0;
         virtual mfxU32 GetMinFrameSize() = 0;
+        virtual mfxU32 GetDistFrameSize() = 0;
 
         virtual mfxStatus SetFrameVMEData(const mfxExtLAFrameStatistics*, mfxU32 , mfxU32 ) {return MFX_ERR_NONE;} 
     };
@@ -1231,6 +1242,10 @@ namespace MfxHwH264Encode
         {
             return m_impl->Report(frameType, dataLength, userDataLength, repack, picOrder);
         }
+        mfxU32 GetDistFrameSize()
+        {
+            return m_impl->GetDistFrameSize();        
+        }
         mfxU32 GetMinFrameSize()
         {
             return m_impl->GetMinFrameSize();
@@ -1263,6 +1278,7 @@ namespace MfxHwH264Encode
         mfxU32 Report(mfxU32 frameType, mfxU32 dataLength, mfxU32 userDataLength, mfxU32 repack, mfxU32 picOrder);
 
         mfxU32 GetMinFrameSize();
+        mfxU32 GetDistFrameSize() {return 0;};
 
     private:
         UMC::H264BRC m_impl;
@@ -1289,6 +1305,8 @@ namespace MfxHwH264Encode
         mfxU32 Report(mfxU32 frameType, mfxU32 dataLength, mfxU32 userDataLength, mfxU32 repack, mfxU32 picOrder);
 
         mfxU32 GetMinFrameSize() { return 0; }
+
+        mfxU32 GetDistFrameSize();
 
     public:
         struct LaFrameData
@@ -1318,6 +1336,7 @@ namespace MfxHwH264Encode
         mfxI32  m_curBaseQp;
         mfxI32  m_curQp;
         mfxU16  m_qpUpdateRange;
+        mfxF32  m_coef;
 
         std::vector<LaFrameData>    m_laData;
         Regression<20>              m_rateCoeffHistory[52];
@@ -1345,6 +1364,8 @@ namespace MfxHwH264Encode
         mfxU32 GetMinFrameSize() { return 0; }
 
         mfxStatus SetFrameVMEData(const mfxExtLAFrameStatistics *, mfxU32 widthMB, mfxU32 heightMB );
+        
+        mfxU32 GetDistFrameSize() { return 0; }
 
     public:
         struct LaFrameData
@@ -1399,6 +1420,7 @@ namespace MfxHwH264Encode
         mfxU32 Report(mfxU32 frameType, mfxU32 dataLength, mfxU32 userDataLength, mfxU32 repack, mfxU32 picOrder);
 
         mfxU32 GetMinFrameSize() { return 0; }
+        mfxU32 GetDistFrameSize() {return 0;};
 
     protected:
         mfxU32  m_lookAhead;
@@ -1686,6 +1708,7 @@ namespace MfxHwH264Encode
         mfxStatus UpdateBitstream(
             DdiTask & task,
             mfxU32    fid); // 0 - top/progressive, 1 - bottom
+
 
         mfxStatus AsyncRoutine(
             mfxBitstream * bs);
@@ -2868,10 +2891,13 @@ namespace MfxHwH264Encode
                 mfxU8 *             bsData,
                 mfxU32              bsSizeAvail);
     
-    mfxU32 GetMaxSliceSize(        
+    mfxStatus UpdateSliceInfo(        
         mfxU8 *               sbegin, // contents of source buffer may be modified
         mfxU8 *               send,
-        mfxU32                &num);
+        mfxU32                maxSliceSize,
+        mfxU32                nRecoded,
+        DdiTask&              task,
+        bool&                 bRecoding);
 
     mfxU8 * PatchBitstream(
         MfxVideoParam const & video,
@@ -2887,6 +2913,19 @@ namespace MfxHwH264Encode
         mfxU8 *               send,
         mfxU8 *               dbegin,
         mfxU8 *               dend);
+
+    mfxStatus FillSliceInfo(
+        DdiTask &           task, 
+        mfxU32              MaxSliceSize, 
+        mfxU32              FrameSize);
+
+    mfxStatus CorrectSliceInfo(
+        DdiTask &           task,
+        mfxU32              sliceWeight);
+    mfxStatus CorrectSliceInfoForsed(
+        DdiTask &           task);
+
+
 
     mfxU32 CalcBiWeight(
         DdiTask const & task,
@@ -2934,6 +2973,10 @@ namespace MfxHwH264Encode
     DdiTaskIter FindFrameToWaitEncode(
         DdiTaskIter begin,
         DdiTaskIter end);
+    DdiTaskIter FindFrameToWaitEncodeNext(
+        DdiTaskIter begin,
+        DdiTaskIter end,
+        DdiTaskIter cur);
 
     PairU8 GetFrameType(
         MfxVideoParam const & video,
@@ -2999,6 +3042,16 @@ namespace MfxHwH264Encode
         typename T::pointer p = find_if_ptr(container1, pred);
         if (p == 0)
             p = find_if_ptr(container2, pred);
+        return p;
+    }
+    template <class T, class P> typename T::pointer find_if_ptr3(T & container1, T & container2, T & container3, P pred)
+    {
+        typename T::pointer p = find_if_ptr(container1, pred);
+        if (p == 0)
+            p = find_if_ptr(container2, pred);
+        if (p == 0)
+            p = find_if_ptr(container3, pred);
+
         return p;
     }
 

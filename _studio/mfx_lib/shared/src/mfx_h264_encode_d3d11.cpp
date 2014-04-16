@@ -525,7 +525,7 @@ mfxStatus D3D11Encoder::Execute(
     } 
     else
     {
-        std::vector<ENCODE_PACKEDHEADER_DATA> const & packedSlices = m_headerPacker.PackSlices(task, fieldId);
+        std::vector<ENCODE_PACKEDHEADER_DATA> const & packedSlices = m_headerPacker.PackSlices(task, fieldId,m_slice);
         for (mfxU32 i = 0; i < packedSlices.size(); i++)
         {
             m_compBufDesc[bufCnt].CompressedBufferType = (D3DDDIFORMAT)D3D11_DDI_VIDEO_ENCODER_BUFFER_PACKEDSLICEDATA;

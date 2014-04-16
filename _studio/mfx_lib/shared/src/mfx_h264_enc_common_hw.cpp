@@ -1692,8 +1692,52 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
         changed = true;
         par.mfx.RateControlMethod = MFX_RATECONTROL_CBR;
     }
+    if (extOpt2->MaxSliceSize)
+    {
+        if (par.mfx.GopRefDist > 1)
+        {
+            changed = true;
+            par.mfx.GopRefDist = 1;
+        }
+        if (par.mfx.RateControlMethod != MFX_RATECONTROL_LA)
+        {
+            par.mfx.RateControlMethod = MFX_RATECONTROL_LA;
+            changed = true;
+        }
+        if (extOpt2->LookAheadDepth > 1)
+        {
+            extOpt2->LookAheadDepth = 1;
+            changed = true;
+        }
+        if (IsOn(extOpt->FieldOutput))
+        {
+            unsupported = true;
+            extOpt->FieldOutput = MFX_CODINGOPTION_UNKNOWN;
+        }
+        if ((par.mfx.FrameInfo.PicStruct & MFX_PICSTRUCT_PROGRESSIVE) == 0)
+        {
+            par.mfx.FrameInfo.PicStruct = MFX_PICSTRUCT_PROGRESSIVE;
+            changed = true;
+        }
+        if (extDdi->LaScaleFactor > 1)
+        {
+            extDdi->LaScaleFactor = 1;
+            changed = true;        
+        }
+        if (extDdi->LookAheadDependency != 0)
+        {
+            extDdi->LookAheadDependency = 0;
+            changed = true;        
+        }
+        if (par.AsyncDepth > 1)
+        {
+            par.AsyncDepth  = 1;
+            changed = true;        
+        }
 
-    if (extOpt2->LookAheadDepth > 0)
+
+    }
+    else if (extOpt2->LookAheadDepth > 0)
     {
         if (extOpt2->LookAheadDepth < MIN_LOOKAHEAD_DEPTH)
         {
@@ -1718,6 +1762,7 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
             extOpt2->LookAheadDepth = 2 * par.mfx.GopRefDist;
         }
     }
+    
 
     if (par.mfx.FrameInfo.PicStruct & MFX_PICSTRUCT_PART2)
     { // repeat/double/triple flags are for EncodeFrameAsync
@@ -3423,6 +3468,22 @@ void MfxHwH264Encode::SetDefaults(
     mfxExtPpsHeader *          extPps  = GetExtBuffer(par);
     mfxExtSVCSeqDesc *         extSvc  = GetExtBuffer(par);
     mfxExtSVCRateControl *     extRc   = GetExtBuffer(par);
+    
+    if (extOpt2->MaxSliceSize)
+    {
+        if (par.mfx.GopRefDist == 0)
+            par.mfx.GopRefDist = 1;
+        if (par.mfx.RateControlMethod == 0)
+            par.mfx.RateControlMethod = MFX_RATECONTROL_LA;
+        if (extOpt2->LookAheadDepth == 0)
+            extOpt2->LookAheadDepth = 1;
+        if (par.mfx.FrameInfo.PicStruct  == 0)
+            par.mfx.FrameInfo.PicStruct = MFX_PICSTRUCT_PROGRESSIVE;
+        if (extDdi->LaScaleFactor == 0)
+            extDdi->LaScaleFactor = 1;
+        if (par.AsyncDepth == 0)
+            par.AsyncDepth = 1;
+    }
 
     if (IsProtectionPavp(par.Protected))
     {
@@ -3665,7 +3726,6 @@ void MfxHwH264Encode::SetDefaults(
         else if (par.mfx.RateControlMethod == MFX_RATECONTROL_LA_ICQ)
             extOpt2->LookAheadDepth = IPP_MAX(10, 2 * par.mfx.GopRefDist);
     }
-
     if (extDdi->LookAheadDependency == 0)
         extDdi->LookAheadDependency = (par.mfx.RateControlMethod == MFX_RATECONTROL_LA)
             ? IPP_MIN(10, extOpt2->LookAheadDepth / 2)
@@ -6506,11 +6566,7 @@ void HeaderPacker::Init(
     m_hwCaps = hwCaps;
 }
 
-void HeaderPacker::ResizeSlices(mfxU32 num)
-{
-    m_packedSlices.resize(num);
-    Zero(m_packedSlices);
-}
+
 
 ENCODE_PACKEDHEADER_DATA const & HeaderPacker::PackAud(
     DdiTask const & task,
@@ -6525,6 +6581,44 @@ ENCODE_PACKEDHEADER_DATA const & HeaderPacker::PackAud(
     return m_packedAud;
 }
 
+std::vector<ENCODE_PACKEDHEADER_DATA> const & HeaderPacker::PackSlices(
+    DdiTask const & task,
+    mfxU32          fieldId,
+    std::vector<ENCODE_SET_SLICE_HEADER_H264>   slices )
+{
+
+    mfxU32 numSlices = (mfxU32)slices.size();
+    m_numMbPerSlice = 0;    
+    m_packedSlices.resize(numSlices);
+    if (m_sliceBuffer.size() < (size_t) (numSlices*50))
+    {
+        m_sliceBuffer.resize(numSlices*50);    
+    }
+    Zero(m_sliceBuffer);
+    Zero(m_packedSlices);
+
+    mfxU8 * sliceBufferBegin = Begin(m_sliceBuffer);
+    mfxU8 * sliceBufferEnd   = End(m_sliceBuffer);
+
+    for (mfxU32 i = 0; i < m_packedSlices.size(); i++)
+    {
+        mfxU8 * endOfPrefix = m_needPrefixNalUnit && task.m_did == 0 && task.m_qid == 0
+            ? PackPrefixNalUnitSvc(sliceBufferBegin, sliceBufferEnd, true, task, fieldId)
+            : sliceBufferBegin;
+
+        OutputBitstream obs(endOfPrefix, sliceBufferEnd, false); // pack without emulation control
+        WriteSlice(obs, task, fieldId, slices[i].first_mb_in_slice, slices[i].NumMbsForSlice);
+
+        m_packedSlices[i].pData                  = sliceBufferBegin;
+        m_packedSlices[i].DataLength             = mfxU32((endOfPrefix - sliceBufferBegin) * 8 + obs.GetNumBits()); // for slices length is in bits
+        m_packedSlices[i].BufferSize             = (m_packedSlices[i].DataLength + 7) / 8;
+        m_packedSlices[i].SkipEmulationByteCount = mfxU32(endOfPrefix - sliceBufferBegin + 3);
+
+        sliceBufferBegin += m_packedSlices[i].BufferSize;
+    }
+
+    return m_packedSlices;
+}
 std::vector<ENCODE_PACKEDHEADER_DATA> const & HeaderPacker::PackSlices(
     DdiTask const & task,
     mfxU32          fieldId)
@@ -6554,8 +6648,6 @@ std::vector<ENCODE_PACKEDHEADER_DATA> const & HeaderPacker::PackSlices(
     return m_packedSlices;
 }
 
-
-// FIXME: add svc extension here
 mfxU32 HeaderPacker::WriteSlice(
     OutputBitstream & obs,
     DdiTask const &   task,
@@ -6781,6 +6873,252 @@ mfxU32 HeaderPacker::WriteSlice(
             obs.PutBit(sliceSkipFlag);
             if (sliceSkipFlag)
                 obs.PutUe(divider.GetNumMbInSlice() - 1);
+            else
+            {
+                obs.PutBit(adaptiveBaseModeFlag);
+                if (!adaptiveBaseModeFlag)
+                    obs.PutBit(defaultBaseModeFlag);
+                if (!defaultBaseModeFlag)
+                {
+                    obs.PutBit(adaptiveMotionPredictionFlag);
+                    if (!adaptiveMotionPredictionFlag)
+                        obs.PutBit(defaultMotionPredictionFlag);
+                }
+                obs.PutBit(adaptiveResidualPredictionFlag);
+                if (!adaptiveResidualPredictionFlag)
+                    obs.PutBit(defaultResidualPredictionFlag);
+            }
+            if (adaptiveTcoeffLevelPredictionFlag)
+                obs.PutBit(subset.seqTcoeffLevelPredictionFlag);
+        }
+
+        if (!sliceHeaderRestrictionFlag && !sliceSkipFlag)
+        {
+            mfxU32 scanIdxStart = 0;
+            mfxU32 scanIdxEnd = 15;
+            obs.PutBits(scanIdxStart, 4);
+            obs.PutBits(scanIdxEnd, 4);
+        }
+    }
+
+    return obs.GetNumBits();
+}// FIXME: add svc extension here
+
+mfxU32 HeaderPacker::WriteSlice(
+    OutputBitstream & obs,
+    DdiTask const &   task,
+    mfxU32            fieldId,
+    mfxU32            firstMbInSlice,
+    mfxU32            numMbInSlice)
+{
+    mfxU32 sliceType    = ConvertMfxFrameType2SliceType(task.m_type[fieldId]) % 5;
+    mfxU32 refPicFlag   = !!(task.m_type[fieldId] & MFX_FRAMETYPE_REF);
+    mfxU32 idrPicFlag   = !!(task.m_type[fieldId] & MFX_FRAMETYPE_IDR);
+    mfxU32 nalRefIdc    = task.m_nalRefIdc[fieldId];
+    mfxU32 nalUnitType  = (task.m_did == 0 && task.m_qid == 0) ? (idrPicFlag ? 5 : 1) : 20;
+    mfxU32 fieldPicFlag = task.GetPicStructForEncode() != MFX_PICSTRUCT_PROGRESSIVE;
+
+    mfxExtSpsHeader const & sps = task.m_viewIdx ? m_sps[task.m_viewIdx] : m_sps[m_spsIdx[task.m_did][task.m_qid]];
+    mfxExtPpsHeader const & pps = task.m_viewIdx ? m_pps[task.m_viewIdx] : m_pps[m_ppsIdx[task.m_did][task.m_qid]];
+
+    // if frame_mbs_only_flag = 0 and current task implies encoding of progressive frame
+    // then picture height in MBs isn't equal to PicHeightInMapUnits. Multiplier required
+    //mfxU32 picHeightMultiplier = (sps.frameMbsOnlyFlag == 0) && (fieldPicFlag == 0) ? 2 : 1;
+    //mfxU32 picHeightInMBs      = (sps.picHeightInMapUnitsMinus1 + 1) * picHeightMultiplier;
+
+    mfxU32 sliceHeaderRestrictionFlag = 0;
+    mfxU32 sliceSkipFlag = 0;
+
+    mfxU8 startcode[3] = { 0, 0, 1 };
+    obs.PutRawBytes(startcode, startcode + sizeof startcode);
+    obs.PutBit(0);
+    obs.PutBits(nalRefIdc, 2);
+    obs.PutBits(nalUnitType, 5);
+
+    mfxU32 noInterLayerPredFlag = (task.m_qid == 0) ? m_simulcast[task.m_did] : 0;
+    if (nalUnitType == 20)
+    {
+        mfxU32 useRefBasePicFlag = (task.m_type[fieldId] & MFX_FRAMETYPE_KEYPIC) ? 1 : 0;
+        obs.PutBits(1, 1);          // svc_extension_flag
+        obs.PutBits(idrPicFlag, 1);
+        obs.PutBits(task.m_pid, 6);
+        obs.PutBits(noInterLayerPredFlag, 1);
+        obs.PutBits(task.m_did, 3);
+        obs.PutBits(task.m_qid, 4);
+        obs.PutBits(task.m_tid, 3);
+        obs.PutBits(useRefBasePicFlag, 1);      // use_ref_base_pic_flag
+        obs.PutBits(1, 1);          // discardable_flag
+        obs.PutBits(1, 1);          // output_flag
+        obs.PutBits(0x3, 2);        // reserved_three_2bits
+    }
+
+    obs.PutUe(firstMbInSlice);
+    obs.PutUe(sliceType + 5);
+    obs.PutUe(pps.picParameterSetId);
+    obs.PutBits(task.m_frameNum, sps.log2MaxFrameNumMinus4 + 4);
+    if (!sps.frameMbsOnlyFlag)
+    {
+        obs.PutBit(fieldPicFlag);
+        if (fieldPicFlag)
+            obs.PutBit(fieldId);
+    }
+    if (idrPicFlag)
+        obs.PutUe(task.m_idrPicId);
+    if (sps.picOrderCntType == 0)
+    {
+        obs.PutBits(task.GetPoc(fieldId), sps.log2MaxPicOrderCntLsbMinus4 + 4);
+        if (pps.bottomFieldPicOrderInframePresentFlag && !fieldPicFlag)
+            obs.PutSe(0); // delta_pic_order_cnt_bottom
+    }
+    if (sps.picOrderCntType == 1 && !sps.deltaPicOrderAlwaysZeroFlag)
+    {
+        obs.PutSe(0); // delta_pic_order_cnt[0]
+        if (pps.bottomFieldPicOrderInframePresentFlag && !fieldPicFlag)
+            obs.PutSe(0); // delta_pic_order_cnt[1]
+    }
+    if (task.m_qid == 0)
+    {
+        if (sliceType == SLICE_TYPE_B)
+            obs.PutBit(IsOn(m_directSpatialMvPredFlag));
+        if (sliceType != SLICE_TYPE_I)
+        {
+            mfxU32 numRefIdxL0ActiveMinus1 = IPP_MAX(1, task.m_list0[fieldId].Size()) - 1;
+            mfxU32 numRefIdxL1ActiveMinus1 = IPP_MAX(1, task.m_list1[fieldId].Size()) - 1;
+            mfxU32 numRefIdxActiveOverrideFlag =
+                (numRefIdxL0ActiveMinus1 != pps.numRefIdxL0DefaultActiveMinus1) ||
+                (numRefIdxL1ActiveMinus1 != pps.numRefIdxL1DefaultActiveMinus1 && sliceType == SLICE_TYPE_B);
+
+            obs.PutBit(numRefIdxActiveOverrideFlag);
+            if (numRefIdxActiveOverrideFlag)
+            {
+                obs.PutUe(numRefIdxL0ActiveMinus1);
+                if (sliceType == SLICE_TYPE_B)
+                    obs.PutUe(numRefIdxL1ActiveMinus1);
+            }
+        }
+        if (sliceType != SLICE_TYPE_I)
+            WriteRefPicListModification(obs, task.m_refPicList0Mod[fieldId]);
+        if (sliceType == SLICE_TYPE_B)
+            WriteRefPicListModification(obs, task.m_refPicList1Mod[fieldId]);
+        if (pps.weightedPredFlag  == 1 && sliceType == SLICE_TYPE_P ||
+            pps.weightedBipredIdc == 1 && sliceType == SLICE_TYPE_B)
+        {
+            mfxU32 chromaArrayType = sps.separateColourPlaneFlag ? 0 : sps.chromaFormatIdc;
+            mfxI32 numRefIdxL0ActiveMinus1 = IPP_MAX(1, task.m_list0[fieldId].Size()) - 1;
+            //mfxI32 numRefIdxL1ActiveMinus1 = IPP_MAX(1, task.m_list1[fieldId].Size()) - 1;
+
+            if(sliceType == SLICE_TYPE_P)
+            {
+                obs.PutUe(task.m_lumaLog2WeightDenom[fieldId]);
+                if( chromaArrayType != 0 )
+                {
+                    obs.PutUe(task.m_chromaLog2WeightDenom[fieldId]);
+                }
+                
+                for(int i=0; i<=numRefIdxL0ActiveMinus1; i++)
+                {
+                    const mfxU8 lumaFlag = task.m_weightTab[fieldId][i].m_lumaWeightL0Flag;
+                    obs.PutBit(lumaFlag);
+                    if( lumaFlag )
+                    {
+                        obs.PutSe(task.m_weightTab[fieldId][i].m_lumaWeightL0);
+                        obs.PutSe(task.m_weightTab[fieldId][i].m_lumaOffsetL0);
+                    }
+                    if( chromaArrayType != 0 )
+                    {
+                        const mfxU8 chromaFlag = task.m_weightTab[fieldId][i].m_chromaWeightL0Flag;
+                        obs.PutBit(chromaFlag);
+                        if( chromaFlag )
+                        {
+                            for(int j=0; j<2; j++)
+                            {
+                                obs.PutSe(task.m_weightTab[fieldId][i].m_chromaWeightL0[j]);
+                                obs.PutSe(task.m_weightTab[fieldId][i].m_chromaOffsetL0[j]);
+                            }
+                        }
+                    }
+                }
+            }
+            else if( sliceType == SLICE_TYPE_B)
+            {
+                assert(!"explicit weighted prediction for B slices is unsupported");
+            }
+        }
+        if (refPicFlag)
+        {
+            WriteDecRefPicMarking(obs, task.m_decRefPicMrk[fieldId], idrPicFlag);
+            mfxU32 storeRefBasePicFlag = 0;
+            if (nalUnitType == 20 && !sliceHeaderRestrictionFlag)
+                obs.PutBit(storeRefBasePicFlag);
+        }
+    }
+    if (pps.entropyCodingModeFlag && sliceType != SLICE_TYPE_I)
+        obs.PutUe(m_cabacInitIdc);
+    obs.PutSe(task.m_cqpValue[fieldId] - (pps.picInitQpMinus26 + 26));
+    if (pps.deblockingFilterControlPresentFlag)
+    {
+        mfxU32 disableDeblockingFilterIdc = m_disableDeblockingFilterIdc;
+        mfxI32 sliceAlphaC0OffsetDiv2     = 0;
+        mfxI32 sliceBetaOffsetDiv2        = 0;
+
+        obs.PutUe(disableDeblockingFilterIdc);
+        if (disableDeblockingFilterIdc != 1)
+        {
+            obs.PutSe(sliceAlphaC0OffsetDiv2);
+            obs.PutSe(sliceBetaOffsetDiv2);
+        }
+    }
+    if (nalUnitType == 20)
+    {
+        mfxExtSpsSvcHeader const & subset = m_subset[m_spsIdx[task.m_did][task.m_qid] - 1];
+
+        if (!noInterLayerPredFlag && task.m_qid == 0)
+        {
+            mfxU32 interLayerDeblockingFilterIdc    = (task.m_did || task.m_qid) ? 0 : 1;
+            mfxU32 interLayerSliceAlphaC0OffsetDiv2 = 0;
+            mfxU32 interLayerSliceBetaOffsetDiv2    = 0;
+            mfxU32 constrainedIntraResamplingFlag   = 0;
+
+            obs.PutUe(m_refDqId[task.m_did]);
+
+            if (subset.interLayerDeblockingFilterControlPresentFlag)
+            {
+                obs.PutUe(interLayerDeblockingFilterIdc);
+                if (interLayerDeblockingFilterIdc != 1)
+                {
+                    obs.PutSe(interLayerSliceAlphaC0OffsetDiv2);
+                    obs.PutSe(interLayerSliceBetaOffsetDiv2);
+                }
+            }
+            obs.PutBit(constrainedIntraResamplingFlag);
+            if (subset.extendedSpatialScalabilityIdc == 2)
+            {
+                if (sps.chromaFormatIdc > 0)
+                {
+                    obs.PutBit(subset.seqRefLayerChromaPhaseXPlus1Flag);
+                    obs.PutBits(subset.seqRefLayerChromaPhaseYPlus1, 2);
+                }
+                obs.PutSe(subset.seqScaledRefLayerLeftOffset);
+                obs.PutSe(subset.seqScaledRefLayerTopOffset);
+                obs.PutSe(subset.seqScaledRefLayerRightOffset);
+                obs.PutSe(subset.seqScaledRefLayerBottomOffset);
+            }
+        }
+
+        if (!noInterLayerPredFlag)
+        {
+            mfxU32 sliceSkipFlag                     = 0;
+            mfxU32 adaptiveBaseModeFlag              = !m_simulcast[task.m_did];
+            mfxU32 defaultBaseModeFlag               = 0;
+            mfxU32 adaptiveMotionPredictionFlag      = !m_simulcast[task.m_did];
+            mfxU32 defaultMotionPredictionFlag       = 0;
+            mfxU32 adaptiveResidualPredictionFlag    = !m_simulcast[task.m_did];
+            mfxU32 defaultResidualPredictionFlag     = 0;
+            mfxU32 adaptiveTcoeffLevelPredictionFlag = 0;
+
+            obs.PutBit(sliceSkipFlag);
+            if (sliceSkipFlag)
+                obs.PutUe(numMbInSlice - 1);
             else
             {
                 obs.PutBit(adaptiveBaseModeFlag);

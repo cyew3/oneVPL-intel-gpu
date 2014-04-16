@@ -1266,9 +1266,14 @@ namespace MfxHwH264Encode
             ENCODE_CAPS const &   hwCaps,
             bool                  emulPrev = true); // insert emualtion prevention bytes when possible (sps/pps/sei/aud)
 
-        std::vector<ENCODE_PACKEDHEADER_DATA> const & PackSlices(
+        std::vector<ENCODE_PACKEDHEADER_DATA> const & HeaderPacker::PackSlices(
             DdiTask const & task,
             mfxU32          fieldId);
+
+        std::vector<ENCODE_PACKEDHEADER_DATA> const & PackSlices(
+            DdiTask const                               & task,
+            mfxU32                                      fieldId,
+            std::vector<ENCODE_SET_SLICE_HEADER_H264>   slices );
 
         ENCODE_PACKEDHEADER_DATA const & PackSkippedSlice(
             DdiTask const & task,
@@ -1290,14 +1295,21 @@ namespace MfxHwH264Encode
 
         bool isMVC() const { return m_isMVC; };
 
-        void ResizeSlices(mfxU32 num);
 
     private:
+
         mfxU32 WriteSlice(
             OutputBitstream & obs,
             DdiTask const &   task,
             mfxU32            fieldId,
             mfxU32            sliceId);
+
+        mfxU32 WriteSlice(
+            OutputBitstream & obs,
+            DdiTask const &   task,
+            mfxU32            fieldId,
+            mfxU32            firstMbInSlice,
+            mfxU32            numMbInSlice);
 
         // for header packing
         std::vector<mfxExtSpsHeader>    m_sps;

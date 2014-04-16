@@ -1515,6 +1515,21 @@ DdiTaskIter MfxHwH264Encode::FindFrameToWaitEncode(
             oldest = begin;
     return oldest;
 }
+DdiTaskIter MfxHwH264Encode::FindFrameToWaitEncodeNext(
+    DdiTaskIter begin,
+    DdiTaskIter end,
+    DdiTaskIter cur)
+{
+    if (begin == end)
+        return cur;
+
+    DdiTaskIter oldest = cur;
+
+    for (begin; begin != end; ++begin)
+        if (((oldest->m_encOrder > begin->m_encOrder)&&(oldest != cur)) || ( (oldest == cur) && (begin->m_encOrder > cur->m_encOrder)))
+            oldest = begin;
+    return oldest;
+}
 
 
 namespace
