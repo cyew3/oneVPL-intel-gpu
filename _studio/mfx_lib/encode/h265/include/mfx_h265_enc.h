@@ -122,14 +122,15 @@ struct H265VideoParam {
     Ipp64f cu_split_threshold_tu[52][2][MAX_TOTAL_DEPTH];
     Ipp32s MaxTotalDepth;
 
+    // QP control
     Ipp8u UseDQP;
     Ipp32u MaxCuDQPDepth;
-    Ipp32u MinCuDQPSize;
-    Ipp8s QPIChroma;
-    Ipp8s QPPChroma;
-    Ipp8s QPBChroma;
-    Ipp8s QP;
-    Ipp8s QPChroma;
+    Ipp32u MinCuDQPSize; 
+    int m_maxDeltaQP;
+    Ipp8s* m_lcuQps; // array for LCU QPs
+
+    //use slice QP_Y for the frame level math and m_lcuQps[ctbAddr] for the CTB level math.
+    Ipp8s m_sliceQpY;
 
     Ipp32u  FrameRateExtN;
     Ipp32u  FrameRateExtD;

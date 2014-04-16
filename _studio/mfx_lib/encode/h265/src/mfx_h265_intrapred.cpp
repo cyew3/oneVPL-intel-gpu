@@ -951,7 +951,7 @@ void H265CU::IntraLumaModeDecision(Ipp32s absPartIdx, Ipp32u offset, Ipp8u depth
         m_intraCosts[INTRA_PLANAR] = tuHad(src, m_pitchSrc, predPtr, width, width, width);
         predPtr += width * width;
         m_data = m_dataSave;
-        FillSubPart(absPartIdx, depth, trDepth, partSize, INTRA_PLANAR, m_par->QP);
+        FillSubPart(absPartIdx, depth, trDepth, partSize, INTRA_PLANAR, m_par->m_lcuQps[m_ctbAddr]);
         m_intraBits[INTRA_PLANAR] = GetIntraLumaBitCost(this, absPartIdx);
         m_intraCosts[INTRA_PLANAR] += m_intraBits[INTRA_PLANAR] * lambdaSatd;
         m_intraModes[INTRA_PLANAR] = INTRA_PLANAR;
@@ -1005,7 +1005,7 @@ void H265CU::IntraLumaModeDecision(Ipp32s absPartIdx, Ipp32u offset, Ipp8u depth
     else
     {
         m_data = m_dataSave;
-        FillSubPart(absPartIdx, depth, trDepth, partSize, INTRA_PLANAR, m_par->QP);
+        FillSubPart(absPartIdx, depth, trDepth, partSize, INTRA_PLANAR, m_par->m_lcuQps[m_ctbAddr]);
         CalcCostLuma(absPartIdx, offset, depth, trDepth, COST_PRED_TR_0, partSize, INTRA_PLANAR,
                      m_intraCosts + INTRA_PLANAR);
         m_intraBits[INTRA_PLANAR] = GetIntraLumaBitCost(this, absPartIdx);

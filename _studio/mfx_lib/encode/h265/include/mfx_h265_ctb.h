@@ -185,6 +185,7 @@ public:
     H265CUData *m_dataTemp;  // depth array
     H265CUData *m_dataTemp2;
     H265CUData *m_dataInter; // best Inter for current depth
+    H265CUData* m_ctbData;//all data
     __ALIGN32 PixType m_recLumaSaveCu[6][MAX_CU_SIZE*MAX_CU_SIZE];
     __ALIGN32 PixType m_recChromaSaveCu[6][MAX_CU_SIZE*MAX_CU_SIZE/2];
     __ALIGN32 PixType m_recLumaSaveTu[6][MAX_CU_SIZE*MAX_CU_SIZE];
@@ -290,11 +291,7 @@ public:
     Ipp32u GetSCuAddr();
 
     Ipp8u GetNumPartInter(Ipp32s absPartIdx);
-
-    Ipp32s GetLastValidPartIdx(Ipp32s absPartIdx);
-
-    Ipp8s GetLastCodedQP(Ipp32u absPartIdx);
-
+    
     Ipp32u GetQuadtreeTuLog2MinSizeInCu(Ipp32u absPartIdx);
 
     H265CUData *GetQpMinCuLeft(Ipp32u &uiLPartUnitIdx, Ipp32u uiCurrAbsIdxInLCU,
@@ -306,6 +303,9 @@ public:
                                 bool enforceDependentSliceRestriction = true);
 
     Ipp8s GetRefQp(Ipp32u uiCurrAbsIdxInLCU);
+    void SetQpSubParts(int qp, int absPartIdx, int depth);
+    void SetQpSubCUs(int qp, int absPartIdx, int depth, bool &foundNonZeroCbf);
+    void CheckDeltaQp(void);
 
     Ipp32u GetIntraSizeIdx(Ipp32u absPartIdx);
 
@@ -342,6 +342,8 @@ public:
 
     template <class H265Bs>
     void EncodeCU(H265Bs *bs, Ipp32u absPartIdx, Ipp32s depth, Ipp8u rdMode = 0);
+
+    void UpdateCuQp(void);
 
     template <class H265Bs>
     void EncodeCoeff(H265Bs *bs, Ipp32u absPartIdx, Ipp32u depth, Ipp32u width, Ipp32u height,
@@ -480,8 +482,12 @@ public:
 
     void ModeDecision(Ipp32u absPartIdx, Ipp32u offset, Ipp8u depth, CostType *cost);
 
+    bool getdQPFlag           ()                        { return m_bEncodeDQP;        }
+    void setdQPFlag           ( bool b )                { m_bEncodeDQP = b;           }
 private:
     Ipp32s m_isRdoq;
+    bool m_bEncodeDQP;
+
     // random generation code, for development purposes
     //void FillRandom(Ipp32u absPartIdx, Ipp8u depth);
     //void FillZero(Ipp32u absPartIdx, Ipp8u depth);
@@ -503,6 +509,11 @@ Ipp32s tuHad(const PixType *src, Ipp32s pitch_src, const PixType *rec, Ipp32s pi
 Ipp32u GetQuadtreeTuLog2MinSizeInCu(const H265VideoParam *par, Ipp32u absPartIdx, Ipp32s size,
                                     Ipp8u partSize, Ipp8u predMode);
 
+template <class H265CuBase>
+Ipp32s GetLastValidPartIdx(H265CuBase* cu, Ipp32s absPartIdx);
+
+template <class H265CuBase>
+Ipp8s GetLastCodedQP(H265CuBase* cu, Ipp32u absPartIdx);
 } // namespace
 
 #endif // __MFX_H265_CTB_H__

@@ -150,7 +150,8 @@ Ipp32s h265_quant_getSigCtxInc(Ipp32s pattern_sig_ctx,
 
 void H265CU::QuantInvTu(Ipp32u abs_part_idx, Ipp32s offset, Ipp32s width, Ipp32s is_luma)
 {
-    Ipp32s QP = is_luma ? m_par->QP : m_par->QPChroma;
+    //Ipp32s QP = is_luma ? m_par->QP : m_par->QPChroma;
+    Ipp32s QP = is_luma ? m_data[abs_part_idx].qp :  h265_QPtoChromaQP[m_data[abs_part_idx].qp];
     Ipp32s log2TrSize = h265_log2table[width - 4];
 
     VM_ASSERT(!m_par->csps->sps_scaling_list_data_present_flag);
@@ -168,7 +169,8 @@ void H265CU::QuantFwdTu(
     Ipp32s width,
     Ipp32s is_luma)
 {
-    Ipp32s QP = is_luma ? m_par->QP : m_par->QPChroma;
+    //Ipp32s QP = is_luma ? m_par->QP : m_par->QPChroma;
+    Ipp32s QP = is_luma ? m_data[abs_part_idx].qp :  h265_QPtoChromaQP[m_data[abs_part_idx].qp];
     Ipp32s log2TrSize = h265_log2table[width - 4];
 
     VM_ASSERT(!m_par->csps->sps_scaling_list_data_present_flag);

@@ -245,7 +245,59 @@ Ipp8s H265CU::GetRefQp( Ipp32u currAbsIdxInLcu )
     Ipp32u        lPartIdx, aPartIdx;
     H265CUData* cULeft  = GetQpMinCuLeft ( lPartIdx, m_absIdxInLcu + currAbsIdxInLcu );
     H265CUData* cUAbove = GetQpMinCuAbove( aPartIdx, m_absIdxInLcu + currAbsIdxInLcu );
-    return (((cULeft? cULeft[lPartIdx].qp: GetLastCodedQP( currAbsIdxInLcu )) + (cUAbove? cUAbove[aPartIdx].qp: GetLastCodedQP( currAbsIdxInLcu )) + 1) >> 1);
+    return (((cULeft? cULeft[lPartIdx].qp: GetLastCodedQP( this, currAbsIdxInLcu )) + (cUAbove? cUAbove[aPartIdx].qp: GetLastCodedQP( this, currAbsIdxInLcu )) + 1) >> 1);
+}
+
+void H265CU::SetQpSubCUs(int qp, int absPartIdx, int depth, bool &foundNonZeroCbf)
+{
+    uint32_t curPartNumb = m_par->NumPartInCU >> (depth << 1);
+    uint32_t curPartNumQ = curPartNumb >> 2;
+
+    if (!foundNonZeroCbf)
+    {
+        if(m_data[absPartIdx].depth > depth)
+        {
+            for (uint32_t partUnitIdx = 0; partUnitIdx < 4; partUnitIdx++)
+            {
+                SetQpSubCUs(qp, absPartIdx + partUnitIdx * curPartNumQ, depth + 1, foundNonZeroCbf);
+            }
+        }
+        else
+        {
+            if(m_data[absPartIdx].cbf[0] || m_data[absPartIdx].cbf[1] || m_data[absPartIdx].cbf[2])
+            {
+                foundNonZeroCbf = true;
+            }
+            else
+            {
+                SetQpSubParts(qp, absPartIdx, depth);
+            }
+        }
+    }
+}
+
+void H265CU::SetQpSubParts(int qp, int absPartIdx, int depth)
+{
+    int partNum = m_par->NumPartInCU >> (depth << 1);
+
+    for (int idx = absPartIdx; idx < absPartIdx + partNum; idx++)
+    {
+        m_data[idx].qp = qp;
+    }
+}
+
+
+void H265CU::CheckDeltaQp(void)
+{
+    int depth = m_data[0].depth;
+    
+    if( m_par->UseDQP && (m_par->MaxCUSize >> depth) >= m_par->MinCuDQPSize )
+    {
+        if( ! (m_data[0].cbf[0] & 0x1) && !(m_data[0].cbf[1] & 0x1) && !(m_data[0].cbf[2] & 0x1) )
+        {
+            SetQpSubParts(GetRefQp(0), 0, depth); // set QP to default QP
+        }
+    }
 }
 
 Ipp32u H265CU::GetCoefScanIdx(Ipp32u absPartIdx, Ipp32u width, Ipp32s isLuma, Ipp32s isIntra)
@@ -559,22 +611,188 @@ void H265CU::GetPuLeft(H265CUPtr *cu,
 
 H265CUData* H265CU::GetQpMinCuLeft( Ipp32u& uiLPartUnitIdx, Ipp32u uiCurrAbsIdxInLCU, bool bEnforceSliceRestriction, bool bEnforceDependentSliceRestriction)
 {
+    Ipp32u unumPartInCUWidth = m_par->NumPartInCUSize;
+    Ipp32u shift = ((m_par->MaxCUDepth - m_par->MaxCuDQPDepth) << 1);
+    Ipp32u absZorderQpMinCUIdx = (uiCurrAbsIdxInLCU >> shift) << shift;
+    Ipp32u absRorderQpMinCUIdx = h265_scan_z2r[m_par->MaxCUDepth][absZorderQpMinCUIdx];
+
+    // check for left LCU boundary
+    if ( isZeroCol(absRorderQpMinCUIdx, unumPartInCUWidth) )
+    {
+        return NULL;
+    }
+
+    // get index of left-CU relative to top-left corner of current quantization group
+    uiLPartUnitIdx = h265_scan_r2z[m_par->MaxCUDepth][absRorderQpMinCUIdx - 1];
+
+    // return pointer to current LCU
+    return m_data;
+
     // not implemented
-    return NULL;
+    //return NULL;
 }
 
 H265CUData* H265CU::GetQpMinCuAbove( Ipp32u& aPartUnitIdx, Ipp32u currAbsIdxInLCU, bool enforceSliceRestriction, bool enforceDependentSliceRestriction )
 {
     // not implemented
-    return NULL;
+    //return NULL;
+
+    Ipp32u unumPartInCUWidth = m_par->NumPartInCUSize;
+    Ipp32u shift = ((m_par->MaxCUDepth - m_par->MaxCuDQPDepth) << 1);
+    Ipp32u absZorderQpMinCUIdx = (currAbsIdxInLCU >> shift) << shift;
+    Ipp32u absRorderQpMinCUIdx = h265_scan_z2r[m_par->MaxCUDepth][absZorderQpMinCUIdx];
+
+    // check for top LCU boundary
+    if ( isZeroRow( absRorderQpMinCUIdx, unumPartInCUWidth) )
+    {
+        return NULL;
+    }
+
+    // get index of top-CU relative to top-left corner of current quantization group
+    aPartUnitIdx = h265_scan_r2z[m_par->MaxCUDepth][absRorderQpMinCUIdx - unumPartInCUWidth];
+
+    return m_data;
 }
 
-Ipp8s H265CU::GetLastCodedQP( Ipp32u absPartIdx )
+//-----------------------------------------------------------------------------
+// aya: temporal solution to provide GetLastValidPartIdx() and GetLastCodedQP()
+//-----------------------------------------------------------------------------
+class H265CUFake
 {
-    // not implemented
-    return 0;
+public:
+    H265CUFake(
+        Ipp32u ctbAddr,
+        H265VideoParam*  par,
+        H265CUData* data,
+        H265CUData* ctbData,
+        Ipp32u absIdxInLcu)
+    :m_ctbAddr(ctbAddr)
+    ,m_par(par)
+    ,m_data(data)
+    ,m_ctbData(ctbData)
+    ,m_absIdxInLcu(absIdxInLcu)
+    {};
+
+    ~H265CUFake(){};
+
+    Ipp32u m_ctbAddr;
+    H265VideoParam*  m_par;
+    H265CUData* m_data;
+    H265CUData* m_ctbData;
+    Ipp32u m_absIdxInLcu;
+
+private:
+    // copy, etc
+};
+//---------------------------------------------------------
+
+template <class H265CuBase>
+Ipp32s GetLastValidPartIdx(H265CuBase* cu, Ipp32s iAbsPartIdx)
+{
+    Ipp32s iLastValidPartIdx = iAbsPartIdx - 1;
+
+    while (iLastValidPartIdx >= 0 && cu->m_data[iLastValidPartIdx].predMode == MODE_NONE)
+    {
+        int depth = cu->m_data[iLastValidPartIdx].depth;
+        //iLastValidPartIdx--;
+        iLastValidPartIdx -= cu->m_par->NumPartInCU >> (depth << 1);
+    }
+
+    return iLastValidPartIdx;
 }
 
+
+template <class H265CuBase>
+Ipp8s GetLastCodedQP(H265CuBase* cu, Ipp32u absPartIdx )
+{
+    Ipp32u uiQUPartIdxMask = ~((1 << ((cu->m_par->MaxCUDepth - cu->m_par->MaxCuDQPDepth) << 1)) - 1);
+    Ipp32s iLastValidPartIdx = GetLastValidPartIdx(cu, absPartIdx & uiQUPartIdxMask);
+
+    if (iLastValidPartIdx >= 0)
+    {
+        return cu->m_data[iLastValidPartIdx].qp;
+    }
+    else  /* assume TilesOrEntropyCodingSyncIdc == 0 */
+    {
+        if( cu->m_absIdxInLcu > 0 )
+        {
+            //H265CU tmpCtb;
+            //memset(&tmpCtb, 0, sizeof(H265CU));
+            //tmpCtb.m_ctbAddr = m_ctbAddr;
+            //tmpCtb.m_par = m_par;
+            //tmpCtb.m_data = m_ctbData + (m_ctbAddr << m_par->Log2NumPartInCU);
+            ////return GetLastCodedQP(m_absIdxInLcu );
+            //return tmpCtb.GetLastCodedQP(m_absIdxInLcu);
+
+            VM_ASSERT(!"NOT IMPLEMENTED");
+            return 0;
+        } 
+        else if( cu->m_ctbAddr > 0  && !(cu->m_par->cpps->entropy_coding_sync_enabled_flag && 
+            cu->m_ctbAddr % cu->m_par->PicWidthInCtbs == 0))
+        {
+            int curAddr = cu->m_ctbAddr;
+            //aya: quick patcj for multi-slice mode
+            if(cu->m_par->m_slice_ids[curAddr] == cu->m_par->m_slice_ids[curAddr-1] )
+            {
+               H265CUFake tmpCtb(
+                    cu->m_ctbAddr-1, 
+                    cu->m_par,
+                    cu->m_ctbData + ((cu->m_ctbAddr-1) << cu->m_par->Log2NumPartInCU),
+                    cu->m_ctbData,
+                    cu->m_absIdxInLcu);
+
+                Ipp8s qp = GetLastCodedQP(&tmpCtb, cu->m_par->NumPartInCU);
+                return qp;
+            }
+            else
+            {
+                return cu->m_par->m_sliceQpY;
+            }
+        }
+        else
+        {
+            return cu->m_par->m_sliceQpY;
+        }
+    }
+
+} // Ipp8s H265CU::GetLastCodedQP( Ipp32u absPartIdx )
+
+
+void H265CU::UpdateCuQp(void)
+{
+    int depth = 0;
+    if( (m_par->MaxCUSize >> depth) == m_par->MinCuDQPSize && m_par->UseDQP )
+    {
+        //printf("\n updateDQP \n");fflush(stderr);
+
+        bool hasResidual = false;
+        for (uint32_t blkIdx = 0; blkIdx < m_numPartition; blkIdx++)
+        {
+            /*if (GetCbf(blkIdx, TEXT_LUMA) || outTempCU->getCbf(blkIdx, TEXT_CHROMA_U) ||
+            outTempCU->getCbf(blkIdx, TEXT_CHROMA_V))*/
+            if(m_data[blkIdx].cbf[0] || m_data[blkIdx].cbf[1] || m_data[blkIdx].cbf[2])
+            {
+                hasResidual = true;
+                break;
+            }
+        }
+
+        uint32_t targetPartIdx;
+        targetPartIdx = 0;
+        if (hasResidual)
+        {
+            bool foundNonZeroCbf = false;
+            SetQpSubCUs(GetRefQp(targetPartIdx), 0, depth, foundNonZeroCbf);
+            assert(foundNonZeroCbf);
+        }
+        else
+        {
+            SetQpSubParts(GetRefQp(targetPartIdx), 0, depth); // set QP to default QP
+        }
+    }
+}
+
+//---------------------------------------------------------
 void H265CU::InitCu(H265VideoParam *_par, H265CUData *_data, H265CUData *_dataTemp, Ipp32s cuAddr,
                     PixType *_y, PixType *_uv, Ipp32s _pitch, H265Frame *currFrame, H265BsFake *_bsf,
                     H265Slice *_cslice, Ipp32s initializeDataFlag, const Ipp8u *logMvCostTable) 
@@ -644,7 +862,8 @@ void H265CU::InitCu(H265VideoParam *_par, H265CUData *_data, H265CUData *_dataTe
             m_dataSave->mvpIdx[1] = -1;
             m_dataSave->mvpNum[0] = -1;
             m_dataSave->mvpNum[1] = -1;
-            m_dataSave->qp = m_par->QP;
+            //m_data->qp = m_par->QP;
+            m_data->qp = m_par->m_lcuQps[m_ctbAddr];
             m_dataSave->_flags = 0;
             m_dataSave->intraLumaDir = INTRA_DC;
             m_dataSave->intraChromaDir = INTRA_DM_CHROMA;
@@ -703,7 +922,10 @@ void H265CU::InitCu(H265VideoParam *_par, H265CUData *_data, H265CUData *_dataTe
     H265Frame *ref0 = m_cslice->slice_type != I_SLICE ? refPicList[0].m_refFrames[0] : NULL;
     H265Frame *ref1 = m_cslice->slice_type == B_SLICE ? refPicList[1].m_refFrames[0] : NULL;
     if (ref0) m_colocatedCu[0] = ref0->cu_data + (m_ctbAddr << m_par->Log2NumPartInCU);
-    if (ref1) m_colocatedCu[1] = ref1->cu_data + (m_ctbAddr << m_par->Log2NumPartInCU);
+    if (ref1) m_colocatedCu[1] = ref1->cu_data + (m_ctbAddr << m_par->Log2NumPartInCU);    
+
+    //aya:quick fix for MB BRC!!!    
+    m_ctbData = _data - (m_ctbAddr << m_par->Log2NumPartInCU);
 
     m_interPredReady = false;
 }
@@ -1135,6 +1357,14 @@ void H265CU::CopySubPartTo(H265CUData *dataCopy, Ipp32s absPartIdx, Ipp8u depthC
 
 void H265CU::ModeDecision(Ipp32u absPartIdx, Ipp32u offset, Ipp8u depth, CostType *cost)
 {
+    if( m_par->UseDQP )
+    {
+        if(0 == absPartIdx && 0 == depth)
+        {
+            setdQPFlag(true);
+        }
+    }
+
     CABAC_CONTEXT_H265 ctxSave[4][NUM_CABAC_CONTEXT];
     Ipp32u numParts = ( m_par->NumPartInCU >> (depth<<1) );
     Ipp32u lPelX   = m_ctbPelX +
@@ -1174,7 +1404,8 @@ void H265CU::ModeDecision(Ipp32u absPartIdx, Ipp32u offset, Ipp8u depth, CostTyp
     if (m_par->minCUDepthAdapt && m_cslice->slice_type != I_SLICE) {
         H265CUData* col0 = m_colocatedCu[0];
         H265CUData* col1 = m_colocatedCu[1];
-        Ipp8s qpCur = m_par->QP;
+        //Ipp8s qpCur = m_par->QP;
+        Ipp8s qpCur = m_par->m_lcuQps[m_ctbAddr];
         Ipp8s qpPrev = col0 ? col0[0].qp : (col1 ? col1[0].qp : qpCur);
         Ipp8u depthDelta = 0, depthMin0 = 4, depthMin1 = 4;
         if (depth == 0)
@@ -1273,7 +1504,7 @@ void H265CU::ModeDecision(Ipp32u absPartIdx, Ipp32u offset, Ipp8u depth, CostTyp
 
                     if (lPelXTu >= m_par->Width || tPelYTu >= m_par->Height) {
                         m_data = m_dataBest + ((depth + trDepth) << m_par->Log2NumPartInCU);
-                        FillSubPart(absPartIdxTu, depth, trDepth, partSize, 0, m_par->QP);
+                        FillSubPart(absPartIdxTu, depth, trDepth, partSize, 0, m_par->m_lcuQps[m_ctbAddr]);
                         CopySubPartTo(m_dataSave, absPartIdxTu, depth, trDepth);
                         continue;
                     }
@@ -1566,7 +1797,7 @@ void H265CU::CalcCostLuma(Ipp32u absPartIdx, Ipp32s offset, Ipp8u depth,
         Ipp8u costPredFlag = costOpt == COST_PRED_TR_0;
 
         m_data = data_t;
-        FillSubPart(absPartIdx, depth, trDepth, partSize, lumaDir, m_par->QP);
+        FillSubPart(absPartIdx, depth, trDepth, partSize, lumaDir,m_par->m_lcuQps[m_ctbAddr]);
         if (m_rdOptFlag) {
             // cp data subpart to main
             CopySubPartTo(m_dataSave, absPartIdx, depth, trDepth);
@@ -1611,7 +1842,7 @@ void H265CU::CalcCostLuma(Ipp32u absPartIdx, Ipp32s offset, Ipp8u depth,
 
 #ifdef DUMP_COSTS_TU
         if (splitMode != SPLIT_MUST) {
-            printCostStat(fp_tu, m_par->QP, 0, width,costBest,costSplit);
+            printCostStat(fp_tu, m_par->m_lcuQps[m_ctbAddr], 0, width,costBest,costSplit);
         }
 #endif
 
@@ -1859,7 +2090,7 @@ CostType H265CU::MeCu(Ipp32u absPartIdx, Ipp8u depth, Ipp32s offset)
     m_data[absPartIdx].size = size;
     m_data[absPartIdx].predMode = MODE_INTER;
     m_data[absPartIdx].partSize = PART_SIZE_2Nx2N;
-    m_data[absPartIdx].qp = m_par->QP;
+    m_data[absPartIdx].qp = m_par->m_lcuQps[m_ctbAddr];
     m_data[absPartIdx].depth = depth;
     m_data[absPartIdx].trIdx = 0;
     m_data[absPartIdx].cbf[0] = m_data[absPartIdx].cbf[1] = m_data[absPartIdx].cbf[2] = 0;
@@ -2524,7 +2755,7 @@ void H265CU::TuGetSplitInter(Ipp32u absPartIdx, Ipp32s offset, Ipp8u tr_idx, Ipp
 
         if (costBest > cost_split) { // count split flag if split is still better
             m_bsf->Reset();
-            Ipp8u code_dqp;
+            Ipp8u code_dqp = getdQPFlag();;
             PutTransform(m_bsf, offset, offset>>2, absPartIdx, absPartIdx,
                           m_data[absPartIdx].depth + m_data[absPartIdx].trIdx,
                           width, width, m_data[absPartIdx].trIdx, code_dqp, 1);
@@ -2655,7 +2886,7 @@ CostType H265CU::CuCost(Ipp32u absPartIdx, Ipp8u depth, const H265MEInfo *bestIn
         m_data[i].depth = depth;
         m_data[i].size = (Ipp8u)(m_par->MaxCUSize>>depth);
         m_data[i].partSize = bestSplitMode;
-        m_data[i].qp = m_par->QP;
+        m_data[i].qp = m_par->m_lcuQps[m_ctbAddr];
         m_data[i].flags.skippedFlag = 0;
         //m_data[i].tr_idx = tr_depth; // not decided thoroughly here
         m_data[i].interDir = mei->interDir;
@@ -4090,7 +4321,7 @@ void H265CU::EncAndRecLumaTu(Ipp32u absPartIdx, Ipp32s offset, Ipp32s width, Ipp
     }
 
     if (m_rdOptFlag && cost) {
-        Ipp8u code_dqp;
+        Ipp8u code_dqp = getdQPFlag();
         m_bsf->Reset();
         if (cbf) {
             SetCbfOne(absPartIdx, TEXT_LUMA, m_data[absPartIdx].trIdx);

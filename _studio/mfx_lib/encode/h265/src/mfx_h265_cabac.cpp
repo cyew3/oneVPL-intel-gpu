@@ -1229,6 +1229,12 @@ void H265CU::EncodeCU(H265Bs *bs, Ipp32u abs_part_idx, Ipp32s depth, Ipp8u rd_mo
         boundary = true;
     }
 
+    {
+        if ((m_par->MaxCUSize>>depth) >= m_par->MinCuDQPSize && m_par->UseDQP)
+        {
+            setdQPFlag(true);
+        }
+    }
     if (rd_mode == RD_CU_SPLITFLAG) return;
 
     if (((depth < m_data[abs_part_idx].depth) && (depth < (m_par->MaxCUDepth-m_par->AddCUDepth))) || boundary)
@@ -1298,10 +1304,10 @@ void H265CU::EncodeCU(H265Bs *bs, Ipp32u abs_part_idx, Ipp32s depth, Ipp8u rd_mo
     if (rd_mode == RD_CU_MODES) return;
 
     // Encode Coefficients
-    Ipp8u code_dqp = false;//getdQPFlag();
+    Ipp8u code_dqp = getdQPFlag();
     EncodeCoeff( bs, abs_part_idx, depth, m_data[abs_part_idx].size,
         m_data[abs_part_idx].size, code_dqp );
-    //  setdQPFlag( code_dqp );
+    setdQPFlag( code_dqp );
 
     // --- write terminating bit ---
     //  finishCU(pCU,abs_part_idx,depth);
