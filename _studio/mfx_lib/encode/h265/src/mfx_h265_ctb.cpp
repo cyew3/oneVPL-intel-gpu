@@ -2132,7 +2132,7 @@ CostType H265CU::MeCu(Ipp32u absPartIdx, Ipp8u depth, Ipp32s offset)
             m_data[absPartIdx + i].size = size;
             m_data[absPartIdx + i].predMode = MODE_INTER;
             m_data[absPartIdx + i].partSize = PART_SIZE_2Nx2N;
-            m_data[absPartIdx + i].qp = m_lcuQps[m_ctbAddr];
+            m_data[absPartIdx + i].qp = m_par->m_lcuQps[m_ctbAddr];
             m_data[absPartIdx + i].depth = depth;
             m_data[absPartIdx + i].trIdx = 0;
             m_data[absPartIdx + i].cbf[0] = m_data[absPartIdx + i].cbf[1] = m_data[absPartIdx + i].cbf[2] = 0;
