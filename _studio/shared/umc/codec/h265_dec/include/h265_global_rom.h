@@ -106,4 +106,4 @@ static const Ipp32u g_scalingListNum[SCALING_LIST_SIZE_NUM]={6, 6, 6, 2};
 } // end namespace UMC_HEVC_DECODER
 
 #endif //h265_global_rom_h
-#endif // UMC_ENABLE_H264_VIDEO_DECODER
+#endif // UMC_ENABLE_H265_VIDEO_DECODER

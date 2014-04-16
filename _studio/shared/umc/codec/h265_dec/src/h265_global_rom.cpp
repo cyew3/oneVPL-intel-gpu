@@ -203,4 +203,4 @@ Ipp32s g_quantInterDefault8x8[64] =
 
 } // end namespace UMC_HEVC_DECODER
 
-#endif // UMC_ENABLE_H264_VIDEO_DECODER
+#endif // UMC_ENABLE_H265_VIDEO_DECODER

@@ -266,7 +266,7 @@ Ipp32u H265Bitstream::DecodeSingleBin_CABAC(Ipp32u ctxIdx)
     codIRangeLPS = rangeTabLPSH265[pState][(m_lcodIRange >> (6 + CABAC_MAGIC_BITS)) - 4];
     m_lcodIRange -= codIRangeLPS << CABAC_MAGIC_BITS;
 #if (CABAC_MAGIC_BITS > 0)
-    Ipp64u 
+    Ipp64u
 #else
     Ipp32u
 #endif
@@ -324,7 +324,7 @@ Ipp32u H265Bitstream::DecodeSingleBin_CABAC(Ipp32u ctxIdx)
             m_bitsNeeded -= 8;
         }
 #endif // (CABAC_MAGIC_BITS > 0)
- 
+
     }
 #if INSTRUMENTED_CABAC
     PRINT_CABAC_VALUES(binVal, range);
@@ -346,7 +346,7 @@ Ipp32u H265Bitstream::DecodeTerminatingBit_CABAC(void)
     Ipp32u Bin = 1;
     m_lcodIRange -= (2<<CABAC_MAGIC_BITS);
 #if (CABAC_MAGIC_BITS > 0)
-    Ipp64u 
+    Ipp64u
 #else
     Ipp32u
 #endif
@@ -371,7 +371,7 @@ Ipp32u H265Bitstream::DecodeTerminatingBit_CABAC(void)
                 m_lcodIOffset += m_LastByte;
             }
 #endif // (CABAC_MAGIC_BITS > 0)
-        
+
         }
     }
 #if INSTRUMENTED_CABAC
@@ -405,10 +405,10 @@ Ipp32u H265Bitstream::DecodeSingleBinEP_CABAC(void)
 
     Ipp32u Bin = 0;
 #if (CABAC_MAGIC_BITS > 0)
-    Ipp64u 
+    Ipp64u
 #else
     Ipp32u
-#endif 
+#endif
     scaledRange = m_lcodIRange << 7;
     if (m_lcodIOffset >= scaledRange)
     {
@@ -494,7 +494,7 @@ Ipp32u H265Bitstream::DecodeBypassBins_CABAC(Ipp32s numBins)
 #endif // (CABAC_MAGIC_BITS > 0)
 
 #if (CABAC_MAGIC_BITS > 0)
-    Ipp64u 
+    Ipp64u
 #else
     Ipp32u
 #endif
@@ -615,5 +615,5 @@ inline void H265BaseBitstream::readOutTrailingBits()
 
 } // namespace UMC_HEVC_DECODER
 
-#endif // __UMC_H264_BITSTREAM_INLINES_H
-#endif // UMC_ENABLE_H264_VIDEO_DECODER
+#endif // __UMC_H265_BITSTREAM_INLINES_H
+#endif // UMC_ENABLE_H265_VIDEO_DECODER

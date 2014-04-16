@@ -133,7 +133,7 @@ namespace UMC_HEVC_DECODER
             {
                 isFilterNeeded = false;
             }
-        }   
+        }
 
         if (isFilterNeeded)
         {
@@ -249,8 +249,8 @@ namespace UMC_HEVC_DECODER
                     {
                         __m128i ResiU = _mm_loadl_epi64((__m128i *)&p_ResiU[x]);
                         __m128i ResiV = _mm_setzero_si128();
-                        __m128i IPred = _mm_loadl_epi64((__m128i *)&pRecIPred[2*x]);        
-                
+                        __m128i IPred = _mm_loadl_epi64((__m128i *)&pRecIPred[2*x]);
+
                         IPred = _mm_cvtepu8_epi16(IPred);
                         ResiU = _mm_unpacklo_epi16(ResiU, ResiV);
                         IPred = _mm_add_epi16(IPred, ResiU);
@@ -273,7 +273,7 @@ namespace UMC_HEVC_DECODER
                         __m128i ResiU = _mm_setzero_si128();
                         __m128i ResiV = _mm_loadl_epi64((__m128i *)&p_ResiV[x]);
                         __m128i IPred = _mm_loadl_epi64((__m128i *)&pRecIPred[2*x]);
-                
+
                         IPred = _mm_cvtepu8_epi16(IPred);
                         ResiU = _mm_unpacklo_epi16(ResiU, ResiV);
                         IPred = _mm_add_epi16(IPred, ResiU);
@@ -295,8 +295,8 @@ namespace UMC_HEVC_DECODER
                     {
                         __m128i ResiU = _mm_loadl_epi64((__m128i *)&p_ResiU[x]);        // load 4x16
                         __m128i ResiV = _mm_loadl_epi64((__m128i *)&p_ResiV[x]);        // load 4x16
-                        __m128i IPred = _mm_loadl_epi64((__m128i *)&pRecIPred[2*x]);    // load 8x8           
-                
+                        __m128i IPred = _mm_loadl_epi64((__m128i *)&pRecIPred[2*x]);    // load 8x8
+
                         IPred = _mm_cvtepu8_epi16(IPred);           // zero-extend
                         ResiU = _mm_unpacklo_epi16(ResiU, ResiV);   // interleave residuals
                         IPred = _mm_add_epi16(IPred, ResiU);        // add residuals
@@ -321,9 +321,8 @@ namespace UMC_HEVC_DECODER
                 SumOfResidAndPred<Ipp16u>(p_ResiU, p_ResiV, residualPitch, (Ipp16u*)pRecIPred, RecIPredStride, Size, chromaUPresent, chromaVPresent, m_pSeqParamSet->bit_depth_chroma);
             else
                 SumOfResidAndPred<Ipp8u>(p_ResiU, p_ResiV, residualPitch, pRecIPred, RecIPredStride, Size, chromaUPresent, chromaVPresent, m_pSeqParamSet->bit_depth_chroma);
-                
         }
     }
 } // end namespace UMC_HEVC_DECODER
 
-#endif // UMC_ENABLE_H264_VIDEO_DECODER
+#endif // UMC_ENABLE_H265_VIDEO_DECODER

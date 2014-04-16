@@ -22,6 +22,7 @@
 namespace UMC_HEVC_DECODER
 {
 
+// Big endian to little endian converter class
 class SwapperBase
 {
 public:
@@ -33,6 +34,7 @@ public:
     virtual void CopyBitStream(Ipp8u *pDestination, Ipp8u *pSource, size_t &nSrcSize) = 0;
 };
 
+// NAL unit start code search class
 class StartCodeIteratorBase
 {
 public:
@@ -86,6 +88,7 @@ protected:
     size_t  m_suggestedSize;
 };
 
+// NAL unit splitter utility class
 class NALUnitSplitter_H265
 {
 public:
@@ -127,5 +130,5 @@ protected:
 
 } // namespace UMC_HEVC_DECODER
 
-#endif // __UMC_H264_NAL_SPL_H
-#endif // UMC_ENABLE_H264_VIDEO_DECODER
+#endif // __UMC_H265_NAL_SPL_H
+#endif // UMC_ENABLE_H265_VIDEO_DECODER

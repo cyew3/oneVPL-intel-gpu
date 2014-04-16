@@ -429,5 +429,5 @@ extern Ipp32s __CDECL CalculateDPBSize(Ipp32u level_idc, Ipp32s width, Ipp32s he
 
 } // namespace UMC_HEVC_DECODER
 
-#endif // __UMC_H264_TASK_SUPPLIER_H
-#endif // UMC_ENABLE_H264_VIDEO_DECODER
+#endif // __UMC_H265_TASK_SUPPLIER_H
+#endif // UMC_ENABLE_H265_VIDEO_DECODER

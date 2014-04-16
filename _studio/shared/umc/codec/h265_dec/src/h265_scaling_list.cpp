@@ -168,4 +168,4 @@ void H265ScalingList::processRefMatrix(unsigned sizeId, unsigned listId , unsign
 
 } // end namespace UMC_HEVC_DECODER
 
-#endif // UMC_ENABLE_H264_VIDEO_DECODER
+#endif // UMC_ENABLE_H265_VIDEO_DECODER

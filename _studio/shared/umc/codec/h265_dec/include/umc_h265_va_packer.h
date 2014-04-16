@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//    Copyright (c) 2013 Intel Corporation. All Rights Reserved.
+//    Copyright (c) 2013-2014 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -87,10 +87,10 @@ public:
     void ExecuteBuffers();
 
 protected:
-    void AddReferenceFrame(DXVA_Intel_PicParams_HEVC * pPicParams_H264, Ipp32s &pos,
+    void AddReferenceFrame(DXVA_Intel_PicParams_HEVC * pPicParams_H265, Ipp32s &pos,
         H265DecoderFrame * pFrame, Ipp32s reference);
 
-    void PackSliceGroups(DXVA_Intel_PicParams_HEVC * pPicParams_H264, H265DecoderFrame * frame);
+    void PackSliceGroups(DXVA_Intel_PicParams_HEVC * pPicParams_H265, H265DecoderFrame * frame);
 
     void SendPAVPStructure(Ipp32s numSlicesOfPrevField, H265Slice *pSlice);
     //check correctness of encrypted data
@@ -139,5 +139,5 @@ inline bool IsVLDProfile (Ipp32s profile)
 } // namespace UMC_HEVC_DECODER
 
 #endif // UMC_RESTRICTED_CODE_VA
-#endif /* __UMC_H264_VA_PACKER_H */
-#endif // UMC_ENABLE_H264_VIDEO_DECODER
+#endif /* __UMC_H265_VA_PACKER_H */
+#endif // UMC_ENABLE_H265_VIDEO_DECODER

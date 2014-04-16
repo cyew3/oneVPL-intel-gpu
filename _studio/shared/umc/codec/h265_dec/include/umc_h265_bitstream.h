@@ -288,6 +288,6 @@ protected:
 
 #include "umc_h265_bitstream_inlines.h"
 
-#endif // __UMC_H264_BITSTREAM_H_
+#endif // __UMC_H265_BITSTREAM_H_
 
-#endif // UMC_ENABLE_H264_VIDEO_DECODER
+#endif // UMC_ENABLE_H265_VIDEO_DECODER

@@ -375,7 +375,7 @@ bool TaskBroker_H265::GetPreparationTask(H265DecoderFrameInfo * info)
         sliceHeader->SliceCurStartCUAddr = pFrame->m_CodingData->GetInverseCUOrderMap(sliceHeader->SliceCurStartCUAddr / numPartitions) * numPartitions;
         sliceHeader->m_sliceSegmentCurStartCUAddr = pFrame->m_CodingData->GetInverseCUOrderMap(sliceHeader->m_sliceSegmentCurStartCUAddr / numPartitions) * numPartitions;
         sliceHeader->m_sliceSegmentCurEndCUAddr = pFrame->m_CodingData->GetInverseCUOrderMap(sliceHeader->m_sliceSegmentCurEndCUAddr / numPartitions) * numPartitions;
-        
+
         /*size_t currOffset = pSlice->GetSliceHeader()->m_HeaderBitstreamOffset;
         for (Ipp32u tile = 0; tile < pSlice->getTileLocationCount(); tile++)
         {
@@ -727,7 +727,7 @@ bool TaskBroker_H265::GetSAOFrameTask(H265DecoderFrameInfo * info, H265Task *pTa
     Ipp32s iMBWidth = info->m_pFrame->getCD()->m_WidthInCU;
     Ipp32s prevProcessMBReady = info->IsNeedDeblocking() ? DEB_PROCESS_ID : REC_PROCESS_ID;
     Ipp32s availableToProcess = info->m_curCUToProcess[prevProcessMBReady] - info->m_curCUToProcess[SAO_PROCESS_ID];
-    
+
     if (availableToProcess > iMBWidth || (availableToProcess && info->m_curCUToProcess[prevProcessMBReady] >= info->m_pFrame->getCD()->m_NumCUsInFrame))
     {
         info->m_processInProgress[SAO_PROCESS_ID] = 1;
@@ -871,7 +871,7 @@ void TaskBroker_H265::AddPerformedTask(H265Task *pTask)
             {
                 TileThreadingInfo *tileInfo = pTask->m_threadingInfo;
                 processInfo->m_processInProgress[DEC_PROCESS_ID] = 0;
-                
+
                 processInfo->m_curCUToProcess[DEC_PROCESS_ID] += pTask->m_iMBToProcess;
 
                 if (processInfo->m_curCUToProcess[DEC_PROCESS_ID] > tileInfo->m_maxCUToProcess)
@@ -1228,7 +1228,7 @@ void TaskBroker_H265::AddPerformedTask(H265Task *pTask)
                         }
                     }
 
-                    processInfo->m_processInProgress[DEC_PROCESS_ID] = 1; // completed 
+                    processInfo->m_processInProgress[DEC_PROCESS_ID] = 1; // completed
                     processInfo->m_processInProgress[REC_PROCESS_ID] = 1;
                 }
                 else
@@ -1361,7 +1361,7 @@ void TaskBroker_H265::AddPerformedTask(H265Task *pTask)
                if (info->m_curCUToProcess[SAO_PROCESS_ID] < info->m_pFrame->getCD()->m_NumCUsInFrame)
                     info->m_processInProgress[SAO_PROCESS_ID] = 0;
             }
-            
+
 #if defined(ECHO)
             PrintTaskDoneAdditional(pTask, info);
 #endif
@@ -1604,7 +1604,7 @@ bool TaskBrokerTwoThread_H265::WrapDecodingTask(H265DecoderFrameInfo * info, H26
 
     return true;
 
-} // bool TaskBrokerTwoThread::WrapDecodingTask(H264Task *pTask, H264Slice *pSlice)
+} // bool TaskBrokerTwoThread_H265::WrapDecodingTask(H265DecoderFrameInfo * info, H265Task *pTask, H265Slice *pSlice)
 
 bool TaskBrokerTwoThread_H265::WrapReconstructTask(H265DecoderFrameInfo * info, H265Task *pTask, H265Slice *pSlice)
 {
@@ -1650,7 +1650,7 @@ bool TaskBrokerTwoThread_H265::WrapReconstructTask(H265DecoderFrameInfo * info, 
 
     return true;
 
-} // bool TaskBrokerTwoThread::WrapReconstructTask(H264Task *pTaskm H264Slice *pSlice)
+} // bool TaskBrokerTwoThread_H265::WrapReconstructTask(H265DecoderFrameInfo * info, H265Task *pTask, H265Slice *pSlice)
 
 bool TaskBrokerTwoThread_H265::WrapDecRecTask(H265DecoderFrameInfo * info, H265Task *pTask, H265Slice *pSlice)
 {
@@ -1790,7 +1790,7 @@ bool TaskBrokerTwoThread_H265::GetDecodingTileTask(H265DecoderFrameInfo * info, 
     CUProcessInfo * processInfo = &tileToWrap->processInfo;
     Ipp32s firstCUToProcess = processInfo->m_curCUToProcess[DEC_PROCESS_ID];
 
-    // find slice 
+    // find slice
     Ipp32s sliceCount = info->GetSliceCount();
     for (Ipp32s i = 0; i < sliceCount; ++i)
     {
@@ -1909,11 +1909,10 @@ bool TaskBrokerTwoThread_H265::GetReconstructTileTask(H265DecoderFrameInfo * inf
     // wrap task
     H265Slice *slice = 0;
 
-    
     CUProcessInfo * processInfo = &tileToWrap->processInfo;
     Ipp32s firstCUToProcess = processInfo->m_curCUToProcess[REC_PROCESS_ID];
 
-    // find slice 
+    // find slice
     Ipp32s sliceCount = info->GetSliceCount();
     for (Ipp32s i = 0; i < sliceCount; ++i)
     {
@@ -2024,7 +2023,6 @@ bool TaskBrokerTwoThread_H265::GetDecRecTileTask(H265DecoderFrameInfo * info, H2
         return false;
 
     // wrap task
-    
     CUProcessInfo * processInfo = &tileToWrap->processInfo;
     Ipp32s firstCUToProcess = processInfo->m_curCUToProcess[DEC_PROCESS_ID];
 
@@ -2033,7 +2031,7 @@ bool TaskBrokerTwoThread_H265::GetDecRecTileTask(H265DecoderFrameInfo * info, H2
 
     H265Slice *slice = 0;
 
-    // find slice 
+    // find slice
     Ipp32s sliceCount = info->GetSliceCount();
     for (Ipp32s i = 0; i < sliceCount; ++i)
     {
@@ -2119,7 +2117,7 @@ bool TaskBrokerTwoThread_H265::GetDecodingTask(H265DecoderFrameInfo * info, H265
 
     return false;
 
-} // bool TaskBrokerTwoThread::GetDecodingTask(H264DecoderFrameInfo * info, H264Task *pTask)
+} // bool TaskBrokerTwoThread_H265::GetDecodingTask(H265DecoderFrameInfo * info, H265Task *pTask)
 
 bool TaskBrokerTwoThread_H265::GetReconstructTask(H265DecoderFrameInfo * info, H265Task *pTask)
 {
@@ -2166,7 +2164,7 @@ bool TaskBrokerTwoThread_H265::GetReconstructTask(H265DecoderFrameInfo * info, H
 
     return false;
 
-} // bool TaskBrokerTwoThread::GetReconstructTask(H264Task *pTask)
+} // bool TaskBrokerTwoThread_H265::GetReconstructTask(H265DecoderFrameInfo * info, H265Task *pTask)
 
 bool TaskBrokerTwoThread_H265::GetDeblockingTask(H265DecoderFrameInfo * info, H265Task *pTask)
 {
@@ -2312,7 +2310,7 @@ bool TaskBrokerTwoThread_H265::GetSAOTaskTile(H265DecoderFrameInfo * info, H265T
     Ipp32s iMBWidth = info->m_pFrame->getCD()->m_WidthInCU;
     Ipp32s prevProcessMBReady = info->IsNeedDeblocking() ? DEB_PROCESS_ID : REC_PROCESS_ID;
     Ipp32s availableToProcess = info->m_curCUToProcess[prevProcessMBReady] - info->m_curCUToProcess[SAO_PROCESS_ID];
-    
+
     if (availableToProcess > iMBWidth || (availableToProcess && info->m_curCUToProcess[prevProcessMBReady] >= info->m_pFrame->getCD()->m_NumCUsInFrame))
     {
         info->m_processInProgress[SAO_PROCESS_ID] = 1;

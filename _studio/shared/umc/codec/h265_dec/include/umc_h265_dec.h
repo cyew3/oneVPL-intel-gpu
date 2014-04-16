@@ -45,5 +45,5 @@ enum
 
 } // namespace UMC_HEVC_DECODER
 
-#endif // __UMC_H264_DEC_H__
-#endif // UMC_ENABLE_H264_VIDEO_DECODER
+#endif // __UMC_H265_DEC_H__
+#endif // UMC_ENABLE_H265_VIDEO_DECODER

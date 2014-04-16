@@ -62,5 +62,5 @@ protected:
 
 } // namespace UMC_HEVC_DECODER
 
-#endif // __UMC_H264_AU_SPLITTER_H
-#endif // UMC_ENABLE_H264_VIDEO_DECODER
+#endif // __UMC_H265_AU_SPLITTER_H
+#endif // UMC_ENABLE_H265_VIDEO_DECODER

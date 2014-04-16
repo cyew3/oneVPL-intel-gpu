@@ -864,7 +864,7 @@ void H265SampleAdaptiveOffsetTemplate<PlaneType>::processSaoLine(SAOLCUParam* sa
         CUHeight = picHeightTmp - idxY * LCUHeight;
         CUHeightChroma = CUHeight >> 1;
     }
-    
+
     PlaneType* rec = (PlaneType*)m_Frame->GetLumaAddr(firstCU);
     PlaneType* recChroma = (PlaneType*)m_Frame->GetCbCrAddr(firstCU);
     Ipp32s stride = m_Frame->pitch_luma();
@@ -920,7 +920,7 @@ void H265SampleAdaptiveOffsetTemplate<PlaneType>::processSaoLine(SAOLCUParam* sa
             {
                 SetOffsetsLuma(saoLCUParam[addr], typeIdx);
             }
-            
+
             if (!m_UseNIF)
             {
                 h265_ProcessSaoCuOrg_Luma(
@@ -997,13 +997,13 @@ void H265SampleAdaptiveOffsetTemplate<PlaneType>::processSaoUnits(Ipp32s firstCU
 
     m_slice_sao_luma_flag = slice->GetSliceHeader()->slice_sao_luma_flag != 0;
     m_slice_sao_chroma_flag = slice->GetSliceHeader()->slice_sao_chroma_flag != 0;
-    
+
     m_needPCMRestoration = (slice->GetSliceHeader()->m_SeqParamSet->pcm_enabled_flag && slice->GetSliceHeader()->m_SeqParamSet->pcm_loop_filter_disabled_flag) ||
         slice->GetSliceHeader()->m_PicParamSet->transquant_bypass_enabled_flag;
 
     m_SaoBitIncreaseY = IPP_MAX((Ipp32s)slice->GetSeqParam()->bit_depth_luma - 10, 0);
     m_SaoBitIncreaseC = IPP_MAX((Ipp32s)slice->GetSeqParam()->bit_depth_chroma - 10, 0);
-    
+
     createNonDBFilterInfo();
 
     Ipp32s endCU = firstCU + toProcessCU;
@@ -1341,4 +1341,4 @@ void H265SampleAdaptiveOffset::SAOProcess(H265DecoderFrame* pFrame, Ipp32s start
 
 } // end namespace UMC_HEVC_DECODER
 
-#endif // UMC_ENABLE_H264_VIDEO_DECODER
+#endif // UMC_ENABLE_H265_VIDEO_DECODER

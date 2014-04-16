@@ -299,7 +299,7 @@ H265SegmentDecoder::H265SegmentDecoder(TaskBroker_H265 * pTaskBroker)
 
     m_context = 0;
     m_context_single_thread.reset(new DecodingContext());
-} // H265SegmentDecoder::H265SegmentDecoder(H264SliceStore &Store)
+} // H265SegmentDecoder::H265SegmentDecoder(TaskBroker_H265 * pTaskBroker)
 
 H265SegmentDecoder::~H265SegmentDecoder(void)
 {

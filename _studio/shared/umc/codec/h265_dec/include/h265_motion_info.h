@@ -32,14 +32,14 @@ namespace UMC_HEVC_DECODER
                                                               (m_Value) ) )
 #else
 // ML: OPT: TODO: Not sure why the below template is not as good (fast) as the macro above
-template <class T> 
-H265_FORCEINLINE 
+template <class T>
+H265_FORCEINLINE
 T Clip3(const T& Min, const T& Max, T Value)
 {
     Value = (Value < Min) ? Min : Value;
     Value = (Value > Max) ? Max : Value;
     return ( Value );
-    // return ( Value < Min ? Min : (Value > Max) ? Max : Value ); 
+    // return ( Value < Min ? Min : (Value > Max) ? Max : Value );
 #endif
 
 #pragma pack(1)
@@ -128,4 +128,4 @@ public:
 } // end namespace UMC_HEVC_DECODER
 
 #endif //__H265_MOTION_INFO_H
-#endif // UMC_ENABLE_H264_VIDEO_DECODER
+#endif // UMC_ENABLE_H265_VIDEO_DECODER

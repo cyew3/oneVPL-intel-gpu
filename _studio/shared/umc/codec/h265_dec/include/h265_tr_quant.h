@@ -67,4 +67,4 @@ private:
 } // end namespace UMC_HEVC_DECODER
 
 #endif //__H265_TR_QUANT_H
-#endif // UMC_ENABLE_H264_VIDEO_DECODER
+#endif // UMC_ENABLE_H265_VIDEO_DECODER

@@ -197,7 +197,7 @@ public:
 
             Ipp32s newCUAddr = curCUAddr + 1;
             Ipp32s newRSCUAddr = sd->m_pCurrentFrame->m_CodingData->getCUOrderMap(newCUAddr);
-            
+
             if (newRSCUAddr >= sd->m_pCurrentFrame->m_CodingData->m_NumCUsInFrame)
                 break;
 
@@ -271,5 +271,5 @@ public:
 
 } // end namespace UMC_HEVC_DECODER
 
-#endif // __UMC_H264_SEGMENT_DECODER_TEMPLATES_H
-#endif // UMC_ENABLE_H264_VIDEO_DECODER
+#endif // __UMC_H265_SEGMENT_DECODER_TEMPLATES_H
+#endif // UMC_ENABLE_H265_VIDEO_DECODER

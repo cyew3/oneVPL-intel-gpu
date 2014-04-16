@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2012-2013 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2012-2014 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -71,7 +71,7 @@ private:
     H265Thread & operator = (H265Thread &)
     {
         return *this;
-    } // H264SliceDecoder & operator = (H264SliceDecoder &)
+    } // H265Thread & operator = (H265Thread &)
 
 };
 
@@ -106,5 +106,5 @@ private:
 
 } // namespace UMC_HEVC_DECODER
 
-#endif // __UMC_H264_THREAD_H
-#endif // UMC_ENABLE_H264_VIDEO_DECODER
+#endif // __UMC_H265_THREAD_H
+#endif // UMC_ENABLE_H265_VIDEO_DECODER

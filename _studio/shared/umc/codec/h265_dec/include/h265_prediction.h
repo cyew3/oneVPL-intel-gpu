@@ -33,14 +33,14 @@ class DecodingContext;
 class H265Prediction
 {
 public:
-    
+
 protected:
     H265PlanePtrYCommon m_temp_interpolarion_buffer;
     Ipp32u m_MaxCUSize;
 
     DecodingContext* m_context;
 
-    H265DecYUVBufferPadded m_YUVPred[2];    
+    H265DecYUVBufferPadded m_YUVPred[2];
 
     // Interpolate one reference frame block
     template <EnumTextType c_plane_type, bool bi, typename H265PlaneYCommon>
@@ -85,7 +85,7 @@ protected:
     // Motion compensation with bit depth constant
     template<typename PixType>
     void MotionCompensationInternal(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u Depth);
-    
+
     // Perform weighted addition from one or two reference sources
     template<typename PixType>
     void WeightedPrediction(H265CodingUnit* pCU, const H265PUInfo & PUi);
@@ -103,4 +103,4 @@ public:
 } // end namespace UMC_HEVC_DECODER
 
 #endif // __H265_PREDICTION_H
-#endif // UMC_ENABLE_H264_VIDEO_DECODER
+#endif // UMC_ENABLE_H265_VIDEO_DECODER

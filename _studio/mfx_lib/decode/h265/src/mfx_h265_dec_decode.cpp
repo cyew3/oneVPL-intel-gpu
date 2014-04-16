@@ -1482,4 +1482,4 @@ mfxFrameSurface1 *VideoDECODEH265::GetOriginalSurface(mfxFrameSurface1 *surface)
     return surface;
 }
 
-#endif // MFX_ENABLE_H264_VIDEO_DECODE
+#endif // MFX_ENABLE_H265_VIDEO_DECODE

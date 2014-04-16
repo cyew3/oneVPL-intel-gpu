@@ -70,5 +70,5 @@ private:
 
 } // namespace UMC_HEVC_DECODER
 
-#endif /* __UMC_H264_SEGMENT_DECODER_MT_H */
-#endif // UMC_ENABLE_H264_VIDEO_DECODER
+#endif /* __UMC_H265_SEGMENT_DECODER_MT_H */
+#endif // UMC_ENABLE_H265_VIDEO_DECODER

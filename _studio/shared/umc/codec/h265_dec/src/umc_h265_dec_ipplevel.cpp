@@ -24,18 +24,18 @@ namespace UMC_HEVC_DECODER
 {
 
 #define read_data_through_boundary_table_8u read_data_through_boundary_table_8u_pxmx
-typedef void (*pH264Interpolation_8u) (H265InterpolationParams_8u *pParams);
-extern pH264Interpolation_8u read_data_through_boundary_table_8u_pxmx[16];
+typedef void (*pH265Interpolation_8u) (H265InterpolationParams_8u *pParams);
+extern pH265Interpolation_8u read_data_through_boundary_table_8u_pxmx[16];
 
 #define read_data_through_boundary_table_16u read_data_through_boundary_table_16u_pxmx
-typedef void (*pH264Interpolation_16u) (H265InterpolationParams_16u *pParams);
-extern pH264Interpolation_16u read_data_through_boundary_table_16u_pxmx[16];
+typedef void (*pH265Interpolation_16u) (H265InterpolationParams_16u *pParams);
+extern pH265Interpolation_16u read_data_through_boundary_table_16u_pxmx[16];
 
 #define read_data_through_boundary_table_nv12_8u read_data_through_boundary_table_nv12_8u_pxmx
-extern pH264Interpolation_8u read_data_through_boundary_table_nv12_8u_pxmx[16];
+extern pH265Interpolation_8u read_data_through_boundary_table_nv12_8u_pxmx[16];
 
 #define read_data_through_boundary_table_nv12_16u read_data_through_boundary_table_nv12_16u_pxmx
-extern pH264Interpolation_16u read_data_through_boundary_table_nv12_16u_pxmx[16];
+extern pH265Interpolation_16u read_data_through_boundary_table_nv12_16u_pxmx[16];
 
 #pragma warning(disable: 4127)
 
@@ -886,7 +886,7 @@ void read_data_through_boundary_top_bottom_left_right_px(InterpolationStruct *pP
 }
 
 /* declare functions for handle boundary cases */
-pH264Interpolation_8u read_data_through_boundary_table_8u_pxmx[16] =
+pH265Interpolation_8u read_data_through_boundary_table_8u_pxmx[16] =
 {
     &read_data_through_boundary_none<Ipp8u, H265InterpolationParams_8u, 1>,
     &read_data_through_boundary_left_px<Ipp8u, H265InterpolationParams_8u, 1>,
@@ -909,7 +909,7 @@ pH264Interpolation_8u read_data_through_boundary_table_8u_pxmx[16] =
     &read_data_through_boundary_top_bottom_left_right_px<Ipp8u, H265InterpolationParams_8u, 1>
 };
 
-pH264Interpolation_8u read_data_through_boundary_table_nv12_8u_pxmx[16] =
+pH265Interpolation_8u read_data_through_boundary_table_nv12_8u_pxmx[16] =
 {
     &read_data_through_boundary_none<Ipp8u, H265InterpolationParams_8u, 2>,
     &read_data_through_boundary_left_px<Ipp8u, H265InterpolationParams_8u, 2>,
@@ -931,7 +931,7 @@ pH264Interpolation_8u read_data_through_boundary_table_nv12_8u_pxmx[16] =
     &read_data_through_boundary_top_bottom_right_px<Ipp8u, H265InterpolationParams_8u, 2>,
     &read_data_through_boundary_top_bottom_left_right_px<Ipp8u, H265InterpolationParams_8u, 2>};
 
-pH264Interpolation_16u read_data_through_boundary_table_16u_pxmx[16] =
+pH265Interpolation_16u read_data_through_boundary_table_16u_pxmx[16] =
 {
     &read_data_through_boundary_none<Ipp16u, H265InterpolationParams_16u, 1>,
     &read_data_through_boundary_left_px<Ipp16u, H265InterpolationParams_16u, 1>,
@@ -954,7 +954,7 @@ pH264Interpolation_16u read_data_through_boundary_table_16u_pxmx[16] =
     &read_data_through_boundary_top_bottom_left_right_px<Ipp16u, H265InterpolationParams_16u, 1>
 };
 
-pH264Interpolation_16u read_data_through_boundary_table_nv12_16u_pxmx[16] =
+pH265Interpolation_16u read_data_through_boundary_table_nv12_16u_pxmx[16] =
 {
     &read_data_through_boundary_none<Ipp16u, H265InterpolationParams_16u, 2>,
     &read_data_through_boundary_left_px<Ipp16u, H265InterpolationParams_16u, 2>,

@@ -31,7 +31,7 @@ H265SegmentDecoderMultiThreaded::H265SegmentDecoderMultiThreaded(TaskBroker_H265
     : H265SegmentDecoder(pTaskBroker)
     , m_SD(0)
 {
-} // H265SegmentDecoderMultiThreaded::H265SegmentDecoderMultiThreaded(H264SliceStore *Store)
+} // H265SegmentDecoderMultiThreaded::H265SegmentDecoderMultiThreaded(TaskBroker_H265 * pTaskBroker)
 
 H265SegmentDecoderMultiThreaded::~H265SegmentDecoderMultiThreaded(void)
 {
@@ -233,7 +233,7 @@ void H265SegmentDecoderMultiThreaded::RestoreErrorRect(Ipp32s startMb , Ipp32s e
             return;
         }
 
-        //H264DecoderFrame * pRefFrame = pCurrentFrame->GetRefPicList(m_pSlice->GetSliceNum(), 0)->m_RefPicList[0];
+        //H265DecoderFrame * pRefFrame = pCurrentFrame->GetRefPicList(m_pSlice->GetSliceNum(), 0)->m_RefPicList[0];
 
         pCurrentFrame->SetErrorFlagged(UMC::ERROR_FRAME_MAJOR);
 
@@ -373,13 +373,12 @@ UMC::Status H265SegmentDecoderMultiThreaded::DecodeSegment(H265Task & task)
     {
         umcRes = m_SD->DecodeSegment(task.m_iFirstMB, iMaxCUNumber, this);
         task.m_iMBToProcess = iMaxCUNumber - task.m_iFirstMB;
-        
     } catch(...)
     {
         task.m_iMBToProcess = iMaxCUNumber - task.m_iFirstMB;
         throw;
     }
-    
+
     return umcRes;
 }
 
@@ -411,7 +410,7 @@ UMC::Status H265SegmentDecoderMultiThreaded::DecRecSegment(H265Task & task)
         task.m_iMBToProcess = iMaxCUNumber - task.m_iFirstMB;
         throw;
     }
-    
+
     return umcRes;
 }
 
@@ -444,7 +443,7 @@ UMC::Status H265SegmentDecoderMultiThreaded::ProcessSlice(H265Task & task)
 
     m_pSlice->GetBitStream()->InitializeDecodingEngine_CABAC();
     m_pSlice->InitializeContexts();
-    
+
     if (m_pSliceHeader->dependent_slice_segment_flag)
     {
         Ipp32s CUAddr = m_pCurrentFrame->m_CodingData->getCUOrderMap(iFirstCU);
@@ -508,7 +507,7 @@ UMC::Status H265SegmentDecoderMultiThreaded::ProcessSlice(H265Task & task)
         {
             umcRes = UMC::UMC_ERR_END_OF_STREAM;
         }
-        
+
     } catch(...)
     {
         task.m_iMBToProcess = iMaxCUNumber - task.m_iFirstMB;
@@ -558,7 +557,7 @@ void ReconstructorT<bitDepth, H265PlaneType>::FilterPredictPels(DecodingContext*
         Ipp32s bottomLeft = PredPel[4*width];
         Ipp32s midVer = PredPel[3*width];
 
-        bool bilinearLeft = IPP_ABS(topLeft + topRight - 2*midHor) < threshold; 
+        bool bilinearLeft = IPP_ABS(topLeft + topRight - 2*midHor) < threshold;
         bool bilinearAbove = IPP_ABS(topLeft + bottomLeft - 2*midVer) < threshold;
 
         if (CUSize >= blkSize && (bilinearLeft && bilinearAbove))
@@ -567,7 +566,7 @@ void ReconstructorT<bitDepth, H265PlaneType>::FilterPredictPels(DecodingContext*
             return;
         }
     }
-  
+
     h265_FilterPredictPels(PredPel, width);
 }
 
@@ -595,7 +594,7 @@ void ReconstructorT<bitDepth, H265PlaneType>::FilterEdgeChroma(H265EdgeData *edg
     {
         Ipp16u* srcDst_ = (Ipp16u*)srcDst;
         MFX_HEVC_PP::NAME(h265_FilterEdgeChroma_Interleaved_16u_I)(
-            edge, 
+            edge,
             srcDst_ + 2*x + y*srcDstStride,
             (Ipp32s)srcDstStride,
             dir,
@@ -605,7 +604,7 @@ void ReconstructorT<bitDepth, H265PlaneType>::FilterEdgeChroma(H265EdgeData *edg
     else
     {
         MFX_HEVC_PP::NAME(h265_FilterEdgeChroma_Interleaved_8u_I)(
-            edge, 
+            edge,
             srcDst + 2*x + y*srcDstStride,
             (Ipp32s)srcDstStride,
             dir,

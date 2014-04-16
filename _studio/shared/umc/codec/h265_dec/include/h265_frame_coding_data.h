@@ -160,4 +160,4 @@ public:
 } // end namespace UMC_HEVC_DECODER
 
 #endif //__H265_FRAME_CODING_DATA_H
-#endif // UMC_ENABLE_H264_VIDEO_DECODER
+#endif // UMC_ENABLE_H265_VIDEO_DECODER

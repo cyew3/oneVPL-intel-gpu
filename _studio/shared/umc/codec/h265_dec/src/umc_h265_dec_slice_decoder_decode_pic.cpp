@@ -11,9 +11,6 @@
 #include "umc_defs.h"
 #ifdef UMC_ENABLE_H265_VIDEO_DECODER
 
-/*  DEBUG: this file is requred to changing name
-    to umc_h264_dec_slice_decode_pic */
-
 #include "umc_h265_slice_decoding.h"
 #include "umc_h265_frame_list.h"
 #include "umc_h265_task_supplier.h"

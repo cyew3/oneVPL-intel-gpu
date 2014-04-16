@@ -72,5 +72,5 @@ const Ipp32u bits_data[] =
 
 } // namespace UMC_HEVC_DECODER
 
-#endif //__UMC_H264_DEC_TABLES_H__
-#endif // UMC_ENABLE_H264_VIDEO_DECODER
+#endif //__UMC_H265_DEC_TABLES_H__
+#endif // UMC_ENABLE_H265_VIDEO_DECODER

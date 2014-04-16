@@ -302,5 +302,5 @@ void SwapMemoryAndRemovePreventingBytes_H265(void *pDst, size_t &nDstSize, void 
 
 } // namespace UMC_HEVC_DECODER
 
-#endif // __UMC_H264_SLICE_DECODING_H
-#endif // UMC_ENABLE_H264_VIDEO_DECODER
+#endif // __UMC_H265_SLICE_DECODING_H
+#endif // UMC_ENABLE_H265_VIDEO_DECODER

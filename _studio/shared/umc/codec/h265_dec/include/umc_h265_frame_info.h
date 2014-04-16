@@ -414,14 +414,14 @@ private:
     H265DecoderFrameInfo *m_prevAU;
     H265DecoderFrameInfo *m_refAU;
 
-    struct H264DecoderRefPicListPair
+    struct H265DecoderRefPicListPair
     {
     public:
         H265DecoderRefPicList m_refPicList[2];
     };
 
     // ML: OPT: TODO: std::vector<> results with relatively slow access code
-    std::vector<H264DecoderRefPicListPair> m_refPicList;
+    std::vector<H265DecoderRefPicListPair> m_refPicList;
 
     class FakeFrameInitializer
     {
@@ -442,5 +442,5 @@ H265_FORCEINLINE H265DecoderRefPicList* H265DecoderFrame::GetRefPicList(Ipp32s s
 
 } // namespace UMC_HEVC_DECODER
 
-#endif // __UMC_H264_FRAME_INFO_H
-#endif // UMC_ENABLE_H264_VIDEO_DECODER
+#endif // __UMC_H265_FRAME_INFO_H
+#endif // UMC_ENABLE_H265_VIDEO_DECODER

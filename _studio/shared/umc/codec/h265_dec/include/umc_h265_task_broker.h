@@ -167,6 +167,5 @@ private:
 
 } // namespace UMC_HEVC_DECODER
 
-#endif // __UMC_H264_TASK_BROKER_H
-#endif // UMC_ENABLE_H264_VIDEO_DECODER
-
+#endif // __UMC_H265_TASK_BROKER_H
+#endif // UMC_ENABLE_H265_VIDEO_DECODER

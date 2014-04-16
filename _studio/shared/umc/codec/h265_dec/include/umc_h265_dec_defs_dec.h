@@ -1555,4 +1555,4 @@ static void H265_FORCEINLINE  small_memcpy( void* dst, const void* src, int len 
 
 
 #endif // H265_GLOBAL_ROM_H
-#endif // UMC_ENABLE_H264_VIDEO_DECODER
+#endif // UMC_ENABLE_H265_VIDEO_DECODER
