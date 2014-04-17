@@ -1440,8 +1440,6 @@ void CodeSaoCtbOffsetParam(H265Bs *bs, int compIdx, SaoOffsetParam& ctbParam, bo
     Ipp32u code;
     if(!sliceEnabled)
     {
-        // aya!!!
-        //VM_ASSERT(ctbParam.mode_idx == SAO_MODE_OFF);
         return;
     }
 

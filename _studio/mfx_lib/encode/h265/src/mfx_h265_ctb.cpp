@@ -768,8 +768,6 @@ void H265CU::UpdateCuQp(void)
         bool hasResidual = false;
         for (Ipp32u blkIdx = 0; blkIdx < m_numPartition; blkIdx++)
         {
-            /*if (GetCbf(blkIdx, TEXT_LUMA) || outTempCU->getCbf(blkIdx, TEXT_CHROMA_U) ||
-            outTempCU->getCbf(blkIdx, TEXT_CHROMA_V))*/
             if(m_data[blkIdx].cbf[0] || m_data[blkIdx].cbf[1] || m_data[blkIdx].cbf[2])
             {
                 hasResidual = true;
@@ -783,7 +781,7 @@ void H265CU::UpdateCuQp(void)
         {
             bool foundNonZeroCbf = false;
             SetQpSubCUs(GetRefQp(targetPartIdx), 0, depth, foundNonZeroCbf);
-            assert(foundNonZeroCbf);
+            VM_ASSERT(foundNonZeroCbf);
         }
         else
         {

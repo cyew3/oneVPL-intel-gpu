@@ -296,27 +296,17 @@ void GetCtuStatistics_RBoundary_Internal(
     const MFX_HEVC_PP::CTBBorders& borders,
     MFX_HEVC_PP::SaoCtuStatistics* statsDataTypes)
 {
-//    Ipp16s signLineBuf1[64+1];
-    //Ipp16s signLineBuf2[64+1];
-
     int x, y, startX, startY, endX, endY;
-  //  int firstLineStartX, firstLineEndX;
     int edgeType;
     Ipp16s signLeft, signRight;//, signDown;
     Ipp64s *diff, *count;
 
-    //const int compIdx = SAO_Y;
     int skipLinesR = g_skipLinesR[compIdx];
     int skipLinesB = g_skipLinesB[compIdx];
 
     const PixType *recLine, *orgLine;
     const PixType* recLineAbove;
     const PixType* recLineBelow;
-
-    //aya!!!
-    //int offset = ;
-    //recBlk = recBlk + offset*recStride;
-    //orgBlk = orgBlk + offset*orgStride;
 
     for(int typeIdx=0; typeIdx< NUM_SAO_BASE_TYPES; typeIdx++)
     {
@@ -335,7 +325,7 @@ void GetCtuStatistics_RBoundary_Internal(
                 count+=2;
                 endY   = height - skipLinesB;
 
-                startX = width - skipLinesR + 1;//aya + 1
+                startX = width - skipLinesR + 1;
                 endX   = width -1;
 
                 for (y=0; y<endY; y++)
@@ -361,7 +351,7 @@ void GetCtuStatistics_RBoundary_Internal(
                 diff +=2;
                 count+=2;
 
-                startX = width - skipLinesR + 1;//aya +1
+                startX = width - skipLinesR + 1;
                 endX   = width;
 
                 startY = borders.m_top ? 0 : 1;
@@ -395,7 +385,7 @@ void GetCtuStatistics_RBoundary_Internal(
                 diff +=2;
                 count+=2;
 
-                startX = width - skipLinesR+1;//aya +1
+                startX = width - skipLinesR+1;
                 endX   = width - 1;
 
                 startY = borders.m_top ? 0 : 1;
@@ -431,7 +421,7 @@ void GetCtuStatistics_RBoundary_Internal(
                 diff +=2;
                 count+=2;
 
-                startX = width - skipLinesR+1;//aya +1
+                startX = width - skipLinesR+1;
                 endX   = width - 1;
 
                 startY = borders.m_top ? 0 : 1;
@@ -509,26 +499,19 @@ void GetCtuStatistics_BottomBoundary_Internal(
     const MFX_HEVC_PP::CTBBorders& borders,
     MFX_HEVC_PP::SaoCtuStatistics* statsDataTypes)
 {
-//    Ipp16s signLineBuf1[64+1];
-//    Ipp16s signLineBuf2[64+1];
-
     int x, y, startX, startY, endX, endY;
-//    int /*firstLineStartX,*/ firstLineEndX;
     int edgeType;
     Ipp16s signLeft;
     Ipp16s signRight;//, signDown;
     Ipp64s *diff, *count;
 
-    //const int compIdx = SAO_Y;
-    //int skipLinesR = g_skipLinesR[compIdx];
+
     int skipLinesB = g_skipLinesB[compIdx];
 
     const PixType *recLine, *orgLine;
     const PixType* recLineAbove;
     const PixType* recLineBelow;
 
-
-    //aya!!!
     int offset = (height - skipLinesB);
     recBlk = recBlk + offset*recStride;
     orgBlk = orgBlk + offset*orgStride;

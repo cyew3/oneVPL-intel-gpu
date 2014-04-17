@@ -635,8 +635,7 @@ mfxStatus H265Encoder::SetPPS()
     pps->num_ref_idx_l1_default_active = m_videoParam.MaxRefIdxL1;
 
     pps->sign_data_hiding_enabled_flag = m_videoParam.SBHFlag;
-
-    //aya: deltaQP
+    
     if(m_videoParam.UseDQP)
     {
         pps->cu_qp_delta_enabled_flag = 1;
@@ -729,7 +728,7 @@ mfxStatus H265Encoder::SetSlice(H265Slice *slice, Ipp32u curr_slice)
     slice->slice_num = curr_slice;
 
     slice->five_minus_max_num_merge_cand = 5 - MAX_NUM_MERGE_CANDS;
-    //aya!!!
+    
     slice->slice_qp_delta = m_videoParam.m_sliceQpY - m_pps.init_qp;
 
     if (m_pps.entropy_coding_sync_enabled_flag) {
@@ -1073,10 +1072,10 @@ mfxStatus H265Encoder::Init(const mfxVideoParam *param, const mfxExtCodingOption
     MFX_CHECK_STS(sts);
 
     Ipp32u numCtbs = m_videoParam.PicWidthInCtbs*m_videoParam.PicHeightInCtbs;
-    //aya!!!-----------------------------------------------
+    
     m_videoParam.m_lcuQps = NULL;
     m_videoParam.m_lcuQps = new Ipp8s[numCtbs];
-    //aya!!!-----------------------------------------------
+    
     profile_frequency = m_videoParam.GopRefDist;
     data_temp_size = ((MAX_TOTAL_DEPTH * 2 + 2) << m_videoParam.Log2NumPartInCU);
 
@@ -2580,14 +2579,12 @@ mfxStatus H265Encoder::DeblockThread(Ipp32s ithread)
                 data_temp + ithread * data_temp_size, ctb_addr, m_pReconstructFrame->y,
                 m_pReconstructFrame->uv, m_pReconstructFrame->pitch_luma, m_pCurrentFrame,
                 &bsf[ithread], m_slices + curr_slice, 0, m_logMvCostTable);
-
-            // Update Qp 
-            //---------------------------------------------
+            
             if(pars->UseDQP)
             {
                 cu[ithread].UpdateCuQp();
             }
-            //-------------------------------------------------
+            
             cu[ithread].Deblock();
         }
     }
@@ -2819,13 +2816,11 @@ mfxStatus H265Encoder::EncodeThread(Ipp32s ithread) {
                     cu[ithread].GetStatisticsCtuSaoPredeblocked( borders );
                 }
 #endif
-                // Update Qp 
-            //---------------------------------------------
-            if(pars->UseDQP)
-            {
-                cu[ithread].UpdateCuQp();
-            }
-            //-------------------------------------------------
+                if(pars->UseDQP)
+                {
+                    cu[ithread].UpdateCuQp();
+                }
+            
                 cu[ithread].Deblock();
                 if(m_sps.sample_adaptive_offset_enabled_flag)
                 {
@@ -2991,13 +2986,10 @@ mfxStatus H265Encoder::EncodeThreadByRow(Ipp32s ithread) {
                     cu[ithread].GetStatisticsCtuSaoPredeblocked( borders );
                 }
 #endif
-                // Update Qp 
-                //---------------------------------------------
                 if(pars->UseDQP)
                 {
                     cu[ithread].UpdateCuQp();
                 }
-                //-------------------------------------------------
                 cu[ithread].Deblock();
                 if(m_sps.sample_adaptive_offset_enabled_flag)
                 {
@@ -3373,26 +3365,26 @@ recode:
         memset(m_videoParam.m_lcuQps, m_videoParam.m_sliceQpY, sizeof(m_videoParam.m_sliceQpY)*numCtb);
     }
 
-    if(m_videoParam.UseDQP)
-    {
-        int numCtb = m_videoParam.PicWidthInCtbs * m_videoParam.PicHeightInCtbs;
-        int testQP = 25;
-        int testDeltaQP = 0;
-        /*if(curLCU->CurLCUAddr == 0 || curLCU->CurLCUAddr == 7 || curLCU->CurLCUAddr == 14 || curLCU->CurLCUAddr == 21 || curLCU->CurLCUAddr == 28)
-        {
-        testDeltaQP = 10;
-        }*/
-        for(int ctb = 0; ctb < numCtb; ctb++)
-        {
-            testDeltaQP = 0;
-            //m_videoParam.m_lcuQps[ctb] = m_videoParam.m_sliceQpY;
-            if(ctb == 0 || ctb == 7 || ctb == 14 || ctb == 21 || ctb == 28)
-            {
-                testDeltaQP = 10;
-            }
-            m_videoParam.m_lcuQps[ctb] = testQP + testDeltaQP;
-        }
-    }
+    //if(m_videoParam.UseDQP)
+    //{
+    //    int numCtb = m_videoParam.PicWidthInCtbs * m_videoParam.PicHeightInCtbs;
+    //    int testQP = 25;
+    //    int testDeltaQP = 0;
+    //    /*if(curLCU->CurLCUAddr == 0 || curLCU->CurLCUAddr == 7 || curLCU->CurLCUAddr == 14 || curLCU->CurLCUAddr == 21 || curLCU->CurLCUAddr == 28)
+    //    {
+    //    testDeltaQP = 10;
+    //    }*/
+    //    for(int ctb = 0; ctb < numCtb; ctb++)
+    //    {
+    //        testDeltaQP = 0;
+    //        //m_videoParam.m_lcuQps[ctb] = m_videoParam.m_sliceQpY;
+    //        if(ctb == 0 || ctb == 7 || ctb == 14 || ctb == 21 || ctb == 28)
+    //        {
+    //            testDeltaQP = 10;
+    //        }
+    //        m_videoParam.m_lcuQps[ctb] = testQP + testDeltaQP;
+    //    }
+    //}
 
     for (Ipp8u curr_slice = 0; curr_slice < m_videoParam.NumSlices; curr_slice++) {
         H265Slice *slice = m_slices + curr_slice;
@@ -3568,8 +3560,8 @@ recode:
         DeblockThread(0);
         mfx_video_encode_h265_ptr->ParallelRegionEnd();
     }
-    //SAO
-    if( m_sps.sample_adaptive_offset_enabled_flag ) // aya is it enough???
+
+    if( m_sps.sample_adaptive_offset_enabled_flag ) // aya: is it enough???
     {
         ApplySAOThread(0);
     }
