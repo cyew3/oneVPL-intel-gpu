@@ -443,12 +443,12 @@ mfxStatus H265Encoder::InitH265VideoParam(const mfxVideoParam *param, const mfxE
     pars->UseDQP = 0;
     
     // reconfig
-    if(0)
+    /*if(1)
     {
         pars->MaxCuDQPDepth = 0;
         pars->m_maxDeltaQP = 0;
         pars->UseDQP = 1;
-    }
+    }*/
 
     if( pars->MaxCuDQPDepth > 0 || pars->m_maxDeltaQP > 0)
     {
@@ -3373,26 +3373,26 @@ recode:
         memset(m_videoParam.m_lcuQps, m_videoParam.m_sliceQpY, sizeof(m_videoParam.m_sliceQpY)*numCtb);
     }
 
-    //if(m_videoParam.UseDQP)
-    //{
-    //    int numCtb = m_videoParam.PicWidthInCtbs * m_videoParam.PicHeightInCtbs;
-    //    int testQP = 25;
-    //    int testDeltaQP = 0;
-    //    /*if(curLCU->CurLCUAddr == 0 || curLCU->CurLCUAddr == 7 || curLCU->CurLCUAddr == 14 || curLCU->CurLCUAddr == 21 || curLCU->CurLCUAddr == 28)
-    //    {
-    //    testDeltaQP = 10;
-    //    }*/
-    //    for(int ctb = 0; ctb < numCtb; ctb++)
-    //    {
-    //        testDeltaQP = 0;
-    //        //m_videoParam.m_lcuQps[ctb] = m_videoParam.m_sliceQpY;
-    //        if(ctb == 0 || ctb == 7 || ctb == 14 || ctb == 21 || ctb == 28)
-    //        {
-    //            testDeltaQP = 10;
-    //        }
-    //        m_videoParam.m_lcuQps[ctb] = testQP + testDeltaQP;
-    //    }
-    //}
+    if(m_videoParam.UseDQP)
+    {
+        int numCtb = m_videoParam.PicWidthInCtbs * m_videoParam.PicHeightInCtbs;
+        int testQP = 25;
+        int testDeltaQP = 0;
+        /*if(curLCU->CurLCUAddr == 0 || curLCU->CurLCUAddr == 7 || curLCU->CurLCUAddr == 14 || curLCU->CurLCUAddr == 21 || curLCU->CurLCUAddr == 28)
+        {
+        testDeltaQP = 10;
+        }*/
+        for(int ctb = 0; ctb < numCtb; ctb++)
+        {
+            testDeltaQP = 0;
+            //m_videoParam.m_lcuQps[ctb] = m_videoParam.m_sliceQpY;
+            if(ctb == 0 || ctb == 7 || ctb == 14 || ctb == 21 || ctb == 28)
+            {
+                testDeltaQP = 10;
+            }
+            m_videoParam.m_lcuQps[ctb] = testQP + testDeltaQP;
+        }
+    }
 
     for (Ipp8u curr_slice = 0; curr_slice < m_videoParam.NumSlices; curr_slice++) {
         H265Slice *slice = m_slices + curr_slice;
