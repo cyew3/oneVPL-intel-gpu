@@ -59,11 +59,11 @@ enum eFunc
 {
     eMFXInit,
     eMFXClose,
-    eMFXJoinSession,
-    eMFXCloneSession,
     eMFXQueryIMPL,
     eMFXQueryVersion,
+    eMFXJoinSession,
     eMFXDisjoinSession,
+    eMFXCloneSession,
     eMFXSetPriority,
     eMFXGetPriority,
 #include "mfx_exposed_functions_list.h"

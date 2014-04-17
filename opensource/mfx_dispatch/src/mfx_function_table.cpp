@@ -43,12 +43,12 @@ FUNCTION_DESCRIPTION APIFunc[eVideoFuncTotal] =
 {
     {"MFXInit", {{0, 1}}},
     {"MFXClose", {{0, 1}}},
+    {"MFXQueryIMPL", {{0, 1}}},
+    {"MFXQueryVersion", {{0, 1}}},
 
     {"MFXJoinSession", {{1, 1}}},
-    {"MFXCloneSession", {{1, 1}}},
-    {"MFXQueryIMPL", {{1, 1}}},
-    {"MFXQueryVersion", {{1, 1}}},
     {"MFXDisjoinSession", {{1, 1}}},
+    {"MFXCloneSession", {{1, 1}}},
     {"MFXSetPriority", {{1, 1}}},
     {"MFXGetPriority", {{1, 1}}},
 
