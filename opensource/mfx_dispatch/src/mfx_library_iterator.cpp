@@ -172,6 +172,7 @@ mfxStatus MFXLibraryIterator::Init(eMfxImplType implType, mfxIMPL implInterface,
     // release the object before initialization
     Release();
     m_StorageID = storageID;
+    m_lastLibIndex = 0;
 
     if (storageID == MFX_CURRENT_USER_KEY || storageID == MFX_LOCAL_MACHINE_KEY)
     {
@@ -240,7 +241,8 @@ mfxStatus MFXLibraryIterator::InitFolder(eMfxImplType implType, mfxIMPL implInte
      msdk_disp_char_cpy_s(m_path, maxPathLen, path);
      size_t pathLen = wcslen(m_path);
 
-     mfx_get_default_dll_name(m_path + pathLen, maxPathLen - pathLen, implType);
+     // we looking for runtime in application folder, it should be named libmfxsw64 or libmfxsw32
+     mfx_get_default_dll_name(m_path + pathLen, maxPathLen - pathLen,  MFX_LIB_SOFTWARE);
 
      // set the required library's implementation type
      m_implType = implType;

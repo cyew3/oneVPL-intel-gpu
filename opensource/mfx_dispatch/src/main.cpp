@@ -122,6 +122,34 @@ private:
     void operator=(const VectorHandleGuard&);
 };
 
+
+int HandleSort (const void * plhs, const void * prhs)
+{
+    const MFX_DISP_HANDLE * lhs = *(const MFX_DISP_HANDLE **)plhs;
+    const MFX_DISP_HANDLE * rhs = *(const MFX_DISP_HANDLE **)prhs;
+
+    if (lhs->apiVersion < rhs->apiVersion) 
+    {
+        return -1;
+    }
+    if (rhs->apiVersion < lhs->apiVersion) 
+    {
+        return 1;
+    }
+
+    // if versions are equal prefer library with HW 
+    if (lhs->loadStatus == MFX_WRN_PARTIAL_ACCELERATION && rhs->loadStatus == MFX_ERR_NONE)
+    {
+        return 1;
+    }
+    if (lhs->loadStatus == MFX_ERR_NONE && rhs->loadStatus == MFX_WRN_PARTIAL_ACCELERATION)
+    {
+        return -1;
+    }
+
+    return 0;
+}
+
 mfxStatus DISPATCHER_EXPOSED_PREFIX(MFXInit)(mfxIMPL impl, mfxVersion *pVer, mfxSession *session)
 {
     MFX::MFXAutomaticCriticalSection guard(&dispGuard);
@@ -313,6 +341,11 @@ mfxStatus DISPATCHER_EXPOSED_PREFIX(MFXInit)(mfxIMPL impl, mfxVersion *pVer, mfx
                 {
                     pHandle->Close();
                 }
+                else
+                {
+                    allocatedHandle.push_back(pHandle);
+                    pHandle = 0;
+                }
         }
     }
     while ((MFX_ERR_NONE > mfxRes) && (++curImplIdx <= maxImplIdx));
@@ -324,15 +357,8 @@ mfxStatus DISPATCHER_EXPOSED_PREFIX(MFXInit)(mfxIMPL impl, mfxVersion *pVer, mfx
     }
 
     // select dll with version with lowest version number still greater or equal to requested
-    HandleVector::iterator candidate = allocatedHandle.begin(),
-                           it = allocatedHandle.begin(), 
-                           et = allocatedHandle.end();
-    ++it;
-    for ( ; it != et; ++it)
-    {
-        if (((*it)->apiVersion < (*candidate)->apiVersion) && (requiredVersion <= (*it)->apiVersion))
-            candidate = it;
-    }
+    qsort(&(*allocatedHandle.begin()), allocatedHandle.size(), sizeof(MFX_DISP_HANDLE*), &HandleSort);
+    HandleVector::iterator candidate = allocatedHandle.begin();
 
     // check the final result of loading
     try 
@@ -345,7 +371,7 @@ mfxStatus DISPATCHER_EXPOSED_PREFIX(MFXInit)(mfxIMPL impl, mfxVersion *pVer, mfx
         if (MFX_ERR_NONE !=  stsQueryVersion) 
         {
             DISPATCHER_LOG_ERROR((("MFXQueryVersion returned: %d, cannot load plugins\n"), mfxRes))
-        } 
+        }
         else 
         {
             MFX::MFXPluginStorage & hive = (*candidate)->pluginHive;
