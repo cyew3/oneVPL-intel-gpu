@@ -1266,7 +1266,7 @@ namespace MfxHwH264Encode
             ENCODE_CAPS const &   hwCaps,
             bool                  emulPrev = true); // insert emualtion prevention bytes when possible (sps/pps/sei/aud)
 
-        std::vector<ENCODE_PACKEDHEADER_DATA> const & HeaderPacker::PackSlices(
+        std::vector<ENCODE_PACKEDHEADER_DATA> const & PackSlices(
             DdiTask const & task,
             mfxU32          fieldId);
 
