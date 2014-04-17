@@ -1,31 +1,10 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClCompile Include="..\mfx_lib\scheduler\src\mfx_scheduler_core.cpp">
-      <Filter>scheduler</Filter>
-    </ClCompile>
-    <ClCompile Include="..\mfx_lib\scheduler\src\mfx_scheduler_core_ischeduler.cpp">
-      <Filter>scheduler</Filter>
-    </ClCompile>
-    <ClCompile Include="..\mfx_lib\scheduler\src\mfx_scheduler_core_iunknown.cpp">
-      <Filter>scheduler</Filter>
-    </ClCompile>
-    <ClCompile Include="..\mfx_lib\scheduler\src\mfx_scheduler_core_task.cpp">
-      <Filter>scheduler</Filter>
-    </ClCompile>
-    <ClCompile Include="..\mfx_lib\scheduler\src\mfx_scheduler_core_task_management.cpp">
-      <Filter>scheduler</Filter>
-    </ClCompile>
-    <ClCompile Include="..\mfx_lib\scheduler\src\mfx_scheduler_core_thread.cpp">
-      <Filter>scheduler</Filter>
-    </ClCompile>
     <ClCompile Include="src\mfx_camera_plugin.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\mfx_camera_plugin_cm.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\mfx_camera_plugin_session.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\mfx_camera_plugin_utils.cpp">
@@ -36,24 +15,6 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\mfx_lib\scheduler\include\mfx_dependency_item.h">
-      <Filter>scheduler</Filter>
-    </ClInclude>
-    <ClInclude Include="..\mfx_lib\scheduler\include\mfx_scheduler_core.h">
-      <Filter>scheduler</Filter>
-    </ClInclude>
-    <ClInclude Include="..\mfx_lib\scheduler\include\mfx_scheduler_core_handle.h">
-      <Filter>scheduler</Filter>
-    </ClInclude>
-    <ClInclude Include="..\mfx_lib\scheduler\include\mfx_scheduler_core_task.h">
-      <Filter>scheduler</Filter>
-    </ClInclude>
-    <ClInclude Include="..\mfx_lib\scheduler\include\mfx_scheduler_core_thread.h">
-      <Filter>scheduler</Filter>
-    </ClInclude>
-    <ClInclude Include="..\mfx_lib\scheduler\include\mfx_scheduler_dx11_event.h">
-      <Filter>scheduler</Filter>
-    </ClInclude>
     <ClInclude Include="genx\include\genx_hsw_camerapipe_isa.h">
       <Filter>genx</Filter>
     </ClInclude>
@@ -68,9 +29,6 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <Filter Include="scheduler">
-      <UniqueIdentifier>{52b72e06-5182-4cea-b67c-1510dde66266}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source Files">
       <UniqueIdentifier>{58b6999c-4e73-4745-be71-8592e4f3ce2c}</UniqueIdentifier>
       <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>

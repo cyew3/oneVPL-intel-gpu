@@ -9,7 +9,7 @@ Copyright(c) 2014 Intel Corporation. All Rights Reserved.
 File Name: mfx_camera_plugin_session.cpp
 
 \* ****************************************************************************** */
-
+#if 0
 
 #include "mfx_session.h"
 
@@ -148,3 +148,4 @@ mfxStatus MFXInternalPseudoDisjoinSession(mfxSession session)
 } // mfxStatus MFXDisjoinSession(mfxSession session)
 
 
+#endif

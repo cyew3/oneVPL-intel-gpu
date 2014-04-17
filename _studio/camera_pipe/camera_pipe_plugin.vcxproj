@@ -125,7 +125,7 @@
     <Link>
       <ImportLibrary>$(OutDir)\..\lib\$(TargetName).lib</ImportLibrary>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>ippcoremt.lib;ippsmt.lib;ippvcmt.lib;ippimt.lib;ippccmt.lib;ippcvmt.lib;ippjmt.lib;ippmsdkmt.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>ippcoremt.lib;ippsmt.lib;ippvcmt.lib;ippimt.lib;ippccmt.lib;ippcvmt.lib;ippjmt.lib;ippmsdkmt.lib;d3d9.lib;d3d11.lib;dxgi.lib;dxva2.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(MfxBuildDir)win_$(Platform)\lib;$(MfxIppLibraryDir);$(MEDIASDK_ROOT)\cmrt\compiler\lib\x86;$(MEDIASDK_ROOT)\cmrt\runtime\lib\x86;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <IgnoreSpecificDefaultLibraries>svml_disp.lib;libirc.lib;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
     </Link>
@@ -152,7 +152,7 @@
     </ClCompile>
     <Link>
       <ImportLibrary>$(OutDir)\..\lib\$(TargetName).lib</ImportLibrary>
-      <AdditionalDependencies>ippcoremt.lib;ippsmt.lib;ippvcmt.lib;ippimt.lib;ippccmt.lib;ippcvmt.lib;ippjmt.lib;ippmsdkmt.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>ippcoremt.lib;ippsmt.lib;ippvcmt.lib;ippimt.lib;ippccmt.lib;ippcvmt.lib;ippjmt.lib;ippmsdkmt.lib;d3d9.lib;d3d11.lib;dxgi.lib;dxva2.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <AdditionalLibraryDirectories>$(MfxBuildDir)win_$(Platform)\lib;$(MfxIppLibraryDir);$(MEDIASDK_ROOT)\cmrt\compiler\lib\x64;$(MEDIASDK_ROOT)\cmrt\runtime\lib\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -182,7 +182,7 @@
       <OptimizeReferences>true</OptimizeReferences>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <TargetMachine>MachineX86</TargetMachine>
-      <AdditionalDependencies>ippcoremt.lib;ippsmt.lib;ippvcmt.lib;ippimt.lib;ippccmt.lib;ippcvmt.lib;ippjmt.lib;ippmsdkmt.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>ippcoremt.lib;ippsmt.lib;ippvcmt.lib;ippimt.lib;ippccmt.lib;ippcvmt.lib;ippjmt.lib;ippmsdkmt.lib;d3d9.lib;d3d11.lib;dxgi.lib;dxva2.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <AdditionalLibraryDirectories>$(MfxBuildDir)win_$(Platform)\lib;$(MfxIppLibraryDir);$(MEDIASDK_ROOT)\cmrt\compiler\lib\x86;$(MEDIASDK_ROOT)\cmrt\runtime\lib\x86;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
@@ -211,7 +211,7 @@
       <OptimizeReferences>true</OptimizeReferences>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <AdditionalLibraryDirectories>$(MfxBuildDir)win_$(Platform)\lib;$(MfxIppLibraryDir);$(MEDIASDK_ROOT)\cmrt\compiler\lib\x64;$(MEDIASDK_ROOT)\cmrt\runtime\lib\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>ippcoremt.lib;ippsmt.lib;ippvcmt.lib;ippimt.lib;ippccmt.lib;ippcvmt.lib;ippjmt.lib;ippmsdkmt.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>ippcoremt.lib;ippsmt.lib;ippvcmt.lib;ippimt.lib;ippccmt.lib;ippcvmt.lib;ippjmt.lib;ippmsdkmt.lib;d3d9.lib;d3d11.lib;dxgi.lib;dxva2.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
     </Link>
     <PostBuildEvent>
@@ -223,12 +223,6 @@
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="..\mfx_lib\scheduler\include\mfx_dependency_item.h" />
-    <ClInclude Include="..\mfx_lib\scheduler\include\mfx_scheduler_core.h" />
-    <ClInclude Include="..\mfx_lib\scheduler\include\mfx_scheduler_core_handle.h" />
-    <ClInclude Include="..\mfx_lib\scheduler\include\mfx_scheduler_core_task.h" />
-    <ClInclude Include="..\mfx_lib\scheduler\include\mfx_scheduler_core_thread.h" />
-    <ClInclude Include="..\mfx_lib\scheduler\include\mfx_scheduler_dx11_event.h" />
     <ClInclude Include="genx\include\genx_hsw_camerapipe_isa.h" />
     <ClInclude Include="include\mfx_camera_plugin.h" />
     <ClInclude Include="include\mfx_camera_plugin_cm.h" />
@@ -244,6 +238,9 @@
     <ProjectReference Include="..\shared\mfx_trace\mfx_trace.vcxproj">
       <Project>{ff93e15e-6a4a-4cc5-8d13-892fbba5cc5f}</Project>
     </ProjectReference>
+    <ProjectReference Include="..\shared\mfx_trace\mfx_trace_hw.vcxproj">
+      <Project>{ee93e15e-6a4a-4cc5-8d13-892fbba5cc5f}</Project>
+    </ProjectReference>
     <ProjectReference Include="..\shared\umc\core\umc\base_classes.vcxproj">
       <Project>{31991d83-f6a2-49d9-bdc5-64e85d055a1c}</Project>
     </ProjectReference>
@@ -256,21 +253,17 @@
     <ProjectReference Include="..\mfx_lib\shared\mfx_common.vcxproj">
       <Project>{7929e69f-b47f-4a1e-a038-6be3343ce855}</Project>
     </ProjectReference>
-    <ProjectReference Include="..\mfx_lib\libmfxrt.vcxproj">
-      <Project>{D719372D-BA13-4730-AFF6-1994B26EFF6C}</Project>
+    <ProjectReference Include="..\shared\umc\io\umc_va\umc_va_elk.vcxproj">
+      <Project>{0e971ee7-4430-47d9-92cd-9822bc664642}</Project>
+    </ProjectReference>
+    <ProjectReference Include="libmfxhw_camera.vcxproj">
+      <Project>{d719372d-ba13-4730-aff6-1994b26eff6c}</Project>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\mfx_lib\scheduler\src\mfx_scheduler_core.cpp" />
-    <ClCompile Include="..\mfx_lib\scheduler\src\mfx_scheduler_core_ischeduler.cpp" />
-    <ClCompile Include="..\mfx_lib\scheduler\src\mfx_scheduler_core_iunknown.cpp" />
-    <ClCompile Include="..\mfx_lib\scheduler\src\mfx_scheduler_core_task.cpp" />
-    <ClCompile Include="..\mfx_lib\scheduler\src\mfx_scheduler_core_task_management.cpp" />
-    <ClCompile Include="..\mfx_lib\scheduler\src\mfx_scheduler_core_thread.cpp" />
     <ClCompile Include="genx\src\genx_hsw_camerapipe_isa.cpp" />
     <ClCompile Include="src\mfx_camera_plugin.cpp" />
     <ClCompile Include="src\mfx_camera_plugin_cm.cpp" />
-    <ClCompile Include="src\mfx_camera_plugin_session.cpp" />
     <ClCompile Include="src\mfx_camera_plugin_utils.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

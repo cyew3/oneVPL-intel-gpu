@@ -548,7 +548,7 @@ mfxStatus MFXCamera_Plugin::Close()
 }
 
 
-
+/*
 mfxExtBuffer* GetExtendedBuffer(mfxExtBuffer** extBuf, mfxU32 numExtBuf, mfxU32 id)
 {
     if (extBuf != 0)
@@ -561,7 +561,7 @@ mfxExtBuffer* GetExtendedBuffer(mfxExtBuffer** extBuf, mfxU32 numExtBuf, mfxU32 
     }
     return 0;
 }
-
+*/
 
 mfxStatus MFXCamera_Plugin::ProcessExtendedBuffers(mfxVideoParam *par)
 {

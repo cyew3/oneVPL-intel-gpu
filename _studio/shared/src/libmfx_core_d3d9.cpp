@@ -308,7 +308,7 @@ D3D9VideoCORE::~D3D9VideoCORE()
 void D3D9VideoCORE::Close()
 {
     m_pVA.reset();
-    #if defined (MFX_ENABLE_VPP)
+    #if defined (MFX_ENABLE_VPP) && !defined(MFX_RT)
     m_pVideoProcessing.reset();
     #endif
     // Should be enabled after merge from SNB branch
@@ -589,7 +589,7 @@ mfxStatus D3D9VideoCORE::CreateVA(mfxVideoParam * param, mfxFrameAllocRequest *r
 mfxStatus D3D9VideoCORE::CreateVideoProcessing(mfxVideoParam * param)
 {
     mfxStatus sts = MFX_ERR_NONE;
-    #if defined (MFX_ENABLE_VPP)
+    #if defined (MFX_ENABLE_VPP) && !defined(MFX_RT)
     m_pVideoProcessing.reset( MfxHwVideoProcessing::CreateVideoProcessing(this) );
     if (m_pVideoProcessing.get() == 0)
     {
