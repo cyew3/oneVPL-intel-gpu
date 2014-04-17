@@ -58,14 +58,14 @@ enum {
 typedef struct {
     mfxExtBuffer    Header;
     mfxU16  Mode;
-    mfxU16  BitDepth;
+    mfxU16  reserved1;
     mfxF64  GammaValue;
 
-    mfxU16  reserved[3];
+    mfxU16  reserved2[3];
     mfxU16  NumPoints;
     mfxU16  GammaPoint[1024];
     mfxU16  GammaCorrected[1024];
-    mfxU32  reserved2[4]; 
+    mfxU32  reserved3[4]; 
 } mfxExtCamGammaCorrection;
 
 enum {
@@ -142,14 +142,13 @@ enum {
     MFX_CAM_BAYER_BGGR   = 0x0000,
     MFX_CAM_BAYER_RGGB   = 0x0001,
     MFX_CAM_BAYER_GRBG   = 0x0002,
-    MFX_CAM_BAYER_GBRG   = 0x0003,
-    MFX_CAM_BAYER_RMF    = 0x0004 //???
+    MFX_CAM_BAYER_GBRG   = 0x0003
 };
 
 typedef struct {
     mfxExtBuffer    Header;
-    mfxU16          Mode; //???
-    mfxU16          RawFormat;   // incl RMF (?)
+    mfxU16          RawFormat;
+    mfxU16          reserved1;
     mfxU32          reserved[5];
 } mfxExtCamPipeControl;
 
