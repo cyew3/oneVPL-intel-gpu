@@ -850,14 +850,14 @@ bool IsFilterFound(const mfxU32* pList, mfxU32 len, mfxU32 filterName)
 } // bool IsFilterFound( mfxU32* pList, mfxU32 len, mfxU32 filterName )
 
 
-void GetDoUseFilterList(mfxVideoParam* par, mfxU32** ppList, mfxU32* pLen)
+void GetDoUseFilterList(mfxVideoParam* par, mfxU32** ppList, mfxU32** ppLen)
 {
     mfxU32 i = 0;
     mfxExtVPPDoUse* pVPPHint = NULL;
 
     /* robustness */
     *ppList = NULL;
-    *pLen = 0;
+    *ppLen = NULL;
 
     for (i = 0; i < par->NumExtParam; i++)
     {
@@ -865,7 +865,7 @@ void GetDoUseFilterList(mfxVideoParam* par, mfxU32** ppList, mfxU32* pLen)
         {
             pVPPHint  = (mfxExtVPPDoUse*)(par->ExtParam[i]);
             *ppList = pVPPHint->AlgList;
-            *pLen  = pVPPHint->NumAlg;
+            *ppLen  = &pVPPHint->NumAlg;
             break;
         }
     }
@@ -1078,6 +1078,22 @@ mfxStatus QueryExtBuf(mfxExtBuffer *extBuf, mfxU32 action)
     return sts;
 }
 
+void correctDoUseList(mfxU32 *pList, mfxU32 extCount, mfxU32 supportedCount)
+{
+    mfxU32 i, j;
+    for (i = 0; i < supportedCount; i++) {
+        if (pList[i] == 0) {
+            for (j = i + 1; j < extCount; j++) {
+                if (pList[j]) {
+                    pList[i] = pList[j];
+                    pList[j] = 0;
+                    break;
+                }
+            }
+        }
+    }
+}
+
 
 mfxStatus MfxCameraPlugin::CheckExtBuffers(mfxVideoParam *param, mfxVideoParam *out, mfxU32 mode)
 {
@@ -1091,15 +1107,21 @@ mfxStatus MfxCameraPlugin::CheckExtBuffers(mfxVideoParam *param, mfxVideoParam *
     mfxU32    i;
     mfxU32*   pOutList = NULL;
     mfxU32    outCount = 0;
+    mfxU32    *pNumAlg = NULL;
 
-    GetDoUseFilterList(param, &pExtList, &extCount);
+    GetDoUseFilterList(param, &pExtList, &pNumAlg);
+    if (pNumAlg)
+        extCount = *pNumAlg;
     if (out) {
-        GetDoUseFilterList(out, &pOutList, &outCount);
+        GetDoUseFilterList(out, &pOutList, &pNumAlg);
+        if (pNumAlg)
+            outCount = *pNumAlg;
         if (extCount != outCount || (pExtList && !pOutList) || (!pExtList && pOutList) || (extCount && !pExtList)) // just in case - should be checked by now
             return MFX_ERR_UNDEFINED_BEHAVIOR;
     }
 
     mfxU32 searchCount = sizeof(g_TABLE_CAMERA_ALGS) / sizeof(*g_TABLE_CAMERA_ALGS);
+    mfxU32 supportedCount = extCount;
     for (i = 0; i < extCount; i++) {
         if (!IsFilterFound(g_TABLE_CAMERA_ALGS, searchCount, pExtList[i])) {
             if (mode != MFX_CAM_QUERY_RETURN_STATUS) {
@@ -1107,11 +1129,17 @@ mfxStatus MfxCameraPlugin::CheckExtBuffers(mfxVideoParam *param, mfxVideoParam *
                     pExtList[i] = 0;
                 else
                     pOutList[i] = 0;
+                supportedCount--;
             }
             sts = MFX_ERR_UNSUPPORTED;
         } else if (out) {
             pOutList[i] = pExtList[i];
         }
+    }
+    if (supportedCount != extCount) {
+        mfxU32 *pList = out ? pOutList : pExtList;
+        correctDoUseList(pList, extCount, supportedCount);
+        *pNumAlg = supportedCount;
     }
     MFX_CHECK_STS(sts);
 
@@ -1143,11 +1171,18 @@ mfxStatus MfxCameraPlugin::CheckExtBuffers(mfxVideoParam *param, mfxVideoParam *
                     pExtList[i] = 0;
                 else
                     pOutList[i] = 0;
+                supportedCount--;
             }
             sts = MFX_WRN_FILTER_SKIPPED;
         } else if (out) {
             pOutList[i] = pExtList[i];
         }
+    }
+
+    if (supportedCount != extCount) {
+        mfxU32 *pList = out ? pOutList : pExtList;
+        correctDoUseList(pList, extCount, supportedCount);
+        *pNumAlg = supportedCount;
     }
 
     for (i = 0; i < param->NumExtParam; i++) {
