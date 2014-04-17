@@ -175,13 +175,12 @@ mfxStatus DISPATCHER_EXPOSED_PREFIX(MFXInit)(mfxIMPL impl, mfxVersion *pVer, mfx
         *session = 0;
 
         // allocate the dispatching handle and call-table
-        allocatedHandle.push_back(new MFX_DISP_HANDLE(requiredVersion));
+        pHandle = new MFX_DISP_HANDLE(requiredVersion);
     }
     catch(...)
     {
         return MFX_ERR_MEMORY_ALLOC;
     }
-    pHandle = allocatedHandle[0];
 
     DISPATCHER_LOG_OPERATION({
         if (pVer)
@@ -250,8 +249,8 @@ mfxStatus DISPATCHER_EXPOSED_PREFIX(MFXInit)(mfxIMPL impl, mfxVersion *pVer, mfx
                     else
                     {
                         // Have to check application folder for alternative runtime
-                        pHandle = new MFX_DISP_HANDLE(requiredVersion);
                         allocatedHandle.push_back(pHandle);
+                        pHandle = new MFX_DISP_HANDLE(requiredVersion);
                         mfxRes = MFX_ERR_NOT_FOUND;
                     }
 

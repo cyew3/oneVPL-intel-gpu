@@ -171,6 +171,7 @@ mfxStatus MFXLibraryIterator::Init(eMfxImplType implType, mfxIMPL implInterface,
 
     // release the object before initialization
     Release();
+    m_StorageID = storageID;
 
     if (storageID == MFX_CURRENT_USER_KEY || storageID == MFX_LOCAL_MACHINE_KEY)
     {
@@ -199,7 +200,6 @@ mfxStatus MFXLibraryIterator::InitRegistry(eMfxImplType implType, mfxIMPL implIn
     bool bRes;
 
     // open required registry key
-    m_StorageID = storageID;
     rootHKey = (MFX_LOCAL_MACHINE_KEY == storageID) ? (HKEY_LOCAL_MACHINE) : (HKEY_CURRENT_USER);
     bRes = m_baseRegKey.Open(rootHKey, rootDispPath, KEY_READ);
     if (false == bRes)
@@ -217,7 +217,7 @@ mfxStatus MFXLibraryIterator::InitRegistry(eMfxImplType implType, mfxIMPL implIn
         : MFX_IMPL_VIA_ANY;
 
     //deviceID and vendorID are not actual for SW library loading
-    if (m_implInterface != MFX_LIB_SOFTWARE)
+    if (m_implType != MFX_LIB_SOFTWARE)
     {
         mfxStatus mfxRes = MFX::GetImplementationType(adapterNum, &m_implInterface, &m_vendorID, &m_deviceID);
         if (MFX_ERR_NONE != mfxRes)
@@ -249,7 +249,7 @@ mfxStatus MFXLibraryIterator::InitFolder(eMfxImplType implType, mfxIMPL implInte
          : MFX_IMPL_VIA_ANY;
 
      //deviceID and vendorID are not actual for SW library loading
-     if (m_implInterface != MFX_LIB_SOFTWARE)
+     if (m_implType != MFX_LIB_SOFTWARE)
      {
          mfxStatus mfxRes = MFX::GetImplementationType(adapterNum, &m_implInterface, &m_vendorID, &m_deviceID);
          if (MFX_ERR_NONE != mfxRes)

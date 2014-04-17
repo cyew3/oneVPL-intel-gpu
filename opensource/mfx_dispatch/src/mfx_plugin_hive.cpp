@@ -517,7 +517,7 @@ MFX::MFXDefaultPlugins::MFXDefaultPlugins(mfxVersion currentAPIVersion, MFX_DISP
     }
     else
     {
-        TRACE_HIVE_INFO("GetFileAttributesW() unable to locate default plugin dll named %s\n", libModuleName);
+        TRACE_HIVE_INFO("GetFileAttributesW() unable to locate default plugin dll named %S\n", libModuleName);
     }
 }
 
