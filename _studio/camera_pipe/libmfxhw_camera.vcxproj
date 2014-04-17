@@ -654,7 +654,6 @@
     <ClCompile Include="..\mfx_lib\scheduler\src\mfx_scheduler_core_thread.cpp" />
     <ClCompile Include="..\mfx_lib\shared\src\libmfxsw.cpp" />
     <ClCompile Include="..\mfx_lib\shared\src\libmfxsw_async.cpp" />
-    <ClCompile Include="..\mfx_lib\shared\src\libmfxsw_ext.cpp" />
     <ClCompile Include="..\mfx_lib\shared\src\libmfxsw_plugin.cpp" />
     <ClCompile Include="..\mfx_lib\shared\src\libmfxsw_query.cpp" />
     <ClCompile Include="..\mfx_lib\shared\src\libmfxsw_session.cpp" />
@@ -662,9 +661,6 @@
     <ClCompile Include="..\mfx_lib\shared\src\mfx_check_hardware_support.cpp" />
     <ClCompile Include="..\mfx_lib\shared\src\mfx_common_decode_int.cpp" />
     <ClCompile Include="..\mfx_lib\shared\src\mfx_common_int.cpp" />
-    <ClCompile Include="..\mfx_lib\shared\src\mfx_ddi_enc_dump.cpp" />
-    <ClCompile Include="..\mfx_lib\shared\src\mfx_enc_common.cpp" />
-    <ClCompile Include="..\mfx_lib\shared\src\mfx_log.cpp" />
     <ClCompile Include="..\mfx_lib\shared\src\mfx_session.cpp" />
     <ClCompile Include="..\mfx_lib\shared\src\mfx_user_plugin.cpp" />
     <ClCompile Include="..\mfx_lib\vpp\src\mfx_vpp_hw.cpp" />
@@ -677,20 +673,14 @@
     <ClCompile Include="..\shared\src\libmfx_allocator.cpp" />
     <ClCompile Include="..\shared\src\libmfx_allocator_d3d11.cpp" />
     <ClCompile Include="..\shared\src\libmfx_allocator_d3d9.cpp" />
-    <ClCompile Include="..\shared\src\libmfx_allocator_vaapi.cpp" />
-    <ClCompile Include="..\shared\src\libmfx_allocator_vdaapi.cpp" />
     <ClCompile Include="..\shared\src\libmfx_core.cpp" />
     <ClCompile Include="..\shared\src\libmfx_core_d3d11.cpp" />
     <ClCompile Include="..\shared\src\libmfx_core_d3d9.cpp" />
     <ClCompile Include="..\shared\src\libmfx_core_factory.cpp" />
     <ClCompile Include="..\shared\src\libmfx_core_hw.cpp" />
-    <ClCompile Include="..\shared\src\libmfx_core_vaapi.cpp" />
-    <ClCompile Include="..\shared\src\libmfx_core_vdaapi.cpp" />
     <ClCompile Include="..\shared\src\mfx_dxva2_device.cpp" />
-    <ClCompile Include="..\shared\src\mfx_search_dll.cpp" />
     <ClCompile Include="..\shared\src\mfx_timing.cpp" />
     <ClCompile Include="..\shared\src\mfx_umc_alloc_wrapper.cpp" />
-    <ClCompile Include="..\shared\src\mfx_vpp_vaapi.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\include\mfxcamera.h" />
@@ -710,19 +700,12 @@
     <ClInclude Include="..\mfx_lib\scheduler\include\mfx_scheduler_core_task.h" />
     <ClInclude Include="..\mfx_lib\scheduler\include\mfx_scheduler_core_thread.h" />
     <ClInclude Include="..\mfx_lib\scheduler\include\mfx_scheduler_dx11_event.h" />
-    <ClInclude Include="..\mfx_lib\shared\include\encoder_ddi.hpp" />
-    <ClInclude Include="..\mfx_lib\shared\include\encoding_ddi.h" />
     <ClInclude Include="..\mfx_lib\shared\include\libmfxsw.h" />
     <ClInclude Include="..\mfx_lib\shared\include\mfx_check_hardware_support.h" />
-    <ClInclude Include="..\mfx_lib\shared\include\mfx_common_decode_int.h" />
     <ClInclude Include="..\mfx_lib\shared\include\mfx_common_int.h" />
-    <ClInclude Include="..\mfx_lib\shared\include\mfx_ddi_enc_dump.h" />
-    <ClInclude Include="..\mfx_lib\shared\include\mfx_enc_common.h" />
     <ClInclude Include="..\mfx_lib\shared\include\mfx_frames.h" />
     <ClInclude Include="..\mfx_lib\shared\include\mfx_interface.h" />
     <ClInclude Include="..\mfx_lib\shared\include\mfx_interface_scheduler.h" />
-    <ClInclude Include="..\mfx_lib\shared\include\mfx_log.h" />
-    <ClInclude Include="..\mfx_lib\shared\include\mfx_msg.h" />
     <ClInclude Include="..\mfx_lib\shared\include\mfx_platform_headers.h" />
     <ClInclude Include="..\mfx_lib\shared\include\mfx_task.h" />
     <ClInclude Include="..\mfx_lib\shared\include\mfx_task_threading_policy.h" />
@@ -732,18 +715,15 @@
     <ClInclude Include="..\mfx_lib\vpp\include\mfx_vpp_hw.h" />
     <ClInclude Include="..\shared\include\all_functions.h" />
     <ClInclude Include="..\shared\include\auxiliary_device.h" />
-    <ClInclude Include="..\shared\include\cm_gpu_copy_code.h" />
     <ClInclude Include="..\shared\include\cm_mem_copy.h" />
     <ClInclude Include="..\shared\include\d3d11_decode_accelerator.h" />
     <ClInclude Include="..\shared\include\d3d11_video_processor.h" />
-    <ClInclude Include="..\shared\include\dispatch_session.h" />
     <ClInclude Include="..\shared\include\fast_compositing_ddi.h" />
     <ClInclude Include="..\shared\include\fast_copy.h" />
     <ClInclude Include="..\shared\include\fast_copy_ddi.h" />
     <ClInclude Include="..\shared\include\libmfx_allocator.h" />
     <ClInclude Include="..\shared\include\libmfx_allocator_d3d11.h" />
     <ClInclude Include="..\shared\include\libmfx_allocator_d3d9.h" />
-    <ClInclude Include="..\shared\include\libmfx_allocator_vaapi.h" />
     <ClInclude Include="..\shared\include\libmfx_core.h" />
     <ClInclude Include="..\shared\include\libmfx_core_d3d11.h" />
     <ClInclude Include="..\shared\include\libmfx_core_d3d9.h" />
@@ -751,8 +731,6 @@
     <ClInclude Include="..\shared\include\libmfx_core_hw.h" />
     <ClInclude Include="..\shared\include\libmfx_core_interface.h" />
     <ClInclude Include="..\shared\include\libmfx_core_operation.h" />
-    <ClInclude Include="..\shared\include\libmfx_core_vaapi.h" />
-    <ClInclude Include="..\shared\include\libmfx_core_vdaapi.h" />
     <ClInclude Include="..\shared\include\mfxstructures-int.h" />
     <ClInclude Include="..\shared\include\mfxstructurespro.h" />
     <ClInclude Include="..\shared\include\mfxvideo++int.h" />
@@ -761,7 +739,6 @@
     <ClInclude Include="..\shared\include\mfx_common.h" />
     <ClInclude Include="..\shared\include\mfx_dxva2_device.h" />
     <ClInclude Include="..\shared\include\mfx_ext_buffers.h" />
-    <ClInclude Include="..\shared\include\mfx_search_dll.h" />
     <ClInclude Include="..\shared\include\mfx_timing.h" />
     <ClInclude Include="..\shared\include\mfx_trace.h" />
     <ClInclude Include="..\shared\include\mfx_umc_alloc_wrapper.h" />
@@ -769,8 +746,6 @@
     <ClInclude Include="..\shared\include\mfx_vpp_ddi_win_simulation.h" />
     <ClInclude Include="..\shared\include\mfx_vpp_hint_buf.h" />
     <ClInclude Include="..\shared\include\mfx_vpp_interface.h" />
-    <ClInclude Include="..\shared\include\mfx_vpp_struct_linux.h" />
-    <ClInclude Include="..\shared\include\mfx_vpp_vaapi.h" />
     <ClInclude Include="..\shared\include\mfx_vpp_vaapi_simulation.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
