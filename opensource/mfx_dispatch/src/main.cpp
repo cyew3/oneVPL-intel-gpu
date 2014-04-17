@@ -36,6 +36,7 @@ File Name: main.cpp
 
 #include <string.h> /* for memset on Linux */
 #include <memory>
+#include <stdlib.h> /* for qsort on Linux */
 #include "mfx_load_plugin.h"
 #include "mfx_plugin_hive.h"
 
