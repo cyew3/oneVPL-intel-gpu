@@ -547,7 +547,6 @@ mfxStatus MFXCamera_Plugin::Close()
     return MFX_ERR_NONE;
 }
 
-
 /*
 mfxExtBuffer* GetExtendedBuffer(mfxExtBuffer** extBuf, mfxU32 numExtBuf, mfxU32 id)
 {
@@ -592,7 +591,6 @@ mfxStatus MFXCamera_Plugin::ProcessExtendedBuffers(mfxVideoParam *par)
 
                 if (gammaExtBufParams && (gammaExtBufParams->Mode == MFX_CAM_GAMMA_LUT || gammaExtBufParams->Mode == MFX_CAM_GAMMA_VALUE)) 
                 {
-                    m_GammaParams.gamma_depth = gammaExtBufParams->BitDepth;
                     if (gammaExtBufParams->Mode == MFX_CAM_GAMMA_LUT) 
                     {
                         if (gammaExtBufParams->GammaPoint && gammaExtBufParams->GammaCorrected && gammaExtBufParams->NumPoints == MFX_CAM_DEFAULT_NUM_GAMMA_POINTS) // only 64-point gamma is currently supported  
@@ -632,7 +630,6 @@ mfxStatus MFXCamera_Plugin::ProcessExtendedBuffers(mfxVideoParam *par)
     {
         if (!gammaset) 
         {
-            m_GammaParams.gamma_depth = MFX_CAM_DEFAULT_GAMMA_DEPTH;
             m_GammaParams.gamma_lut.gammaPoints = default_gamma_point;
             m_GammaParams.gamma_lut.gammaCorrect = default_gamma_correct;
             m_GammaParams.gamma_lut.numPoints = MFX_CAM_DEFAULT_NUM_GAMMA_POINTS;

@@ -312,13 +312,10 @@ mfxStatus MFXCamera_Plugin::ReallocateInternalSurfaces(mfxVideoParam &newParam, 
     if (m_Caps.bDemosaic)
         frNum += 9;
 
-    mfxU32 inputBitDepth = newParam.vpp.In.BitDepthLuma;
-
-    mfxU16 vSliceWidth = frameSizeExtra.vSliceWidth;
-    mfxU16 frameWidth64 = frameSizeExtra.frameWidth64;
-    mfxU16 paddedFrameHeight = frameSizeExtra.paddedFrameHeight;
-    mfxU16 paddedFrameWidth = frameSizeExtra.paddedFrameWidth;
-
+    mfxU16 vSliceWidth = (mfxU16)frameSizeExtra.vSliceWidth;
+    mfxU16 frameWidth64 = (mfxU16)frameSizeExtra.frameWidth64;
+    mfxU16 paddedFrameHeight = (mfxU16)frameSizeExtra.paddedFrameHeight;
+    mfxU16 paddedFrameWidth = (mfxU16)frameSizeExtra.paddedFrameWidth;
 
     mfxFrameAllocRequest request = { { 0 } };
 
@@ -958,9 +955,6 @@ void ConvertCaps2ListDoUse(mfxCameraCaps& caps, std::vector<mfxU32>& list)
 #define MFX_CAM_DEFAULT_GAMMA_VALUE 2.2
 #define MFX_CAM_GAMMA_VALUE_MIN 0.1 //??? 1.0?
 
-#define MFX_CAM_GAMMA_DEPTH_MIN 8
-#define MFX_CAM_GAMMA_DEPTH_MAX 16
-
 #define MFX_CAM_GAMMA_NUM_POINTS_MIN 8 // ???
 
 mfxStatus GammaCorrectionCheckParam(mfxExtCamGammaCorrection * pGammaBuf)
@@ -968,7 +962,6 @@ mfxStatus GammaCorrectionCheckParam(mfxExtCamGammaCorrection * pGammaBuf)
     mfxStatus sts = MFX_ERR_NONE;
     if (pGammaBuf->Mode != MFX_CAM_GAMMA_VALUE && pGammaBuf->Mode != MFX_CAM_GAMMA_LUT && pGammaBuf->Mode != MFX_CAM_GAMMA_DEFAULT) {
         pGammaBuf->Mode = MFX_CAM_GAMMA_DEFAULT;
-        pGammaBuf->BitDepth = 0;
         pGammaBuf->GammaValue = (mfxF64)0;
         pGammaBuf->NumPoints = 0;
         return MFX_WRN_INCOMPATIBLE_VIDEO_PARAM; // ??? CLIP and MFX_ERR_UNSUPPORTED ???
@@ -978,13 +971,9 @@ mfxStatus GammaCorrectionCheckParam(mfxExtCamGammaCorrection * pGammaBuf)
             return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM; //MFX_WRN_INCOMPATIBLE_VIDEO_PARAM ???
         }
     } else if (pGammaBuf->Mode == MFX_CAM_GAMMA_LUT) {
-        if (pGammaBuf->BitDepth < MFX_CAM_GAMMA_DEPTH_MIN || pGammaBuf->BitDepth > MFX_CAM_GAMMA_DEPTH_MAX) {
-            CAMERA_CLIP(pGammaBuf->BitDepth, MFX_CAM_GAMMA_DEPTH_MIN, MFX_CAM_GAMMA_DEPTH_MAX);
-            return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM; //MFX_WRN_INCOMPATIBLE_VIDEO_PARAM ??? 
-        }
         mfxU32 maxNumPoints = sizeof(pGammaBuf->GammaPoint)/sizeof(mfxU16);
         if (pGammaBuf->NumPoints < MFX_CAM_GAMMA_NUM_POINTS_MIN || pGammaBuf->NumPoints > maxNumPoints) {
-            CAMERA_CLIP(pGammaBuf->NumPoints, MFX_CAM_GAMMA_DEPTH_MIN, MFX_CAM_GAMMA_DEPTH_MAX);
+            CAMERA_CLIP(pGammaBuf->NumPoints, MFX_CAM_GAMMA_NUM_POINTS_MIN, (mfxU16)maxNumPoints);
             return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
         }
     }
@@ -1002,7 +991,7 @@ mfxStatus QueryExtBuf(mfxExtBuffer *extBuf, mfxU32 action)
             if (action >= MFX_CAM_QUERY_CHECK_RANGE)
                 sts = GammaCorrectionCheckParam(gammaBuf);
             else {
-                gammaBuf->Mode = gammaBuf->BitDepth = gammaBuf->NumPoints = (mfxU16)action;
+                gammaBuf->Mode = gammaBuf->NumPoints = (mfxU16)action;
                 gammaBuf->GammaValue = (mfxF64)action;
             }
         }

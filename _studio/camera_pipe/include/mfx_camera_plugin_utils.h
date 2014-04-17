@@ -222,8 +222,6 @@ typedef struct
 
 typedef struct
 {
-    //mfxU16          bActive;
-    mfxU16          gamma_depth;
     CameraGammaLut  gamma_lut; // will not be exposed externally (???)
     mfxF64          gamma_value; // 2.2, 1.8 etc
 } CameraPipeForwardGammaParams;
