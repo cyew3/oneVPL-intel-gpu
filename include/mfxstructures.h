@@ -95,7 +95,9 @@ enum {
     MFX_FOURCC_P8_TEXTURE   = MFX_MAKEFOURCC('P','8','M','B'),
     MFX_FOURCC_P010         = MFX_MAKEFOURCC('P','0','1','0'), 
     MFX_FOURCC_BGR4         = MFX_MAKEFOURCC('B','G','R','4'),   /* ABGR in that order, A channel is 8 MSBs */
-    MFX_FOURCC_A2RGB10      = MFX_MAKEFOURCC('R','G','1','0')    /* ARGB in that order, A channel is two MSBs */
+    MFX_FOURCC_A2RGB10      = MFX_MAKEFOURCC('R','G','1','0'),   /* ARGB in that order, A channel is two MSBs */
+    MFX_FOURCC_ARGB16       = MFX_MAKEFOURCC('R','G','1','6'),   /* ARGB in that order, 64 bits, A channel is 16 MSBs */
+    MFX_FOURCC_R16          = MFX_MAKEFOURCC('R','1','6','U') 
 };
 
 /* PicStruct */
