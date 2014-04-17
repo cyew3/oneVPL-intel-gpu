@@ -1183,19 +1183,17 @@ UMC::Status PosibleMVC::ProcessNalUnit(UMC::MediaData * data)
     return UMC::UMC_OK;
 }
 
-UMC::Status MFX_Utility::DecodeHeader(UMC::TaskSupplier * supplier, UMC::BaseCodecParams* params, mfxBitstream *bs, mfxVideoParam *out)
+UMC::Status MFX_Utility::DecodeHeader(UMC::TaskSupplier * supplier, UMC::H264VideoDecoderParams* lpInfo, mfxBitstream *bs, mfxVideoParam *out)
 {
-    UMC::VideoDecoderParams *lpInfo = DynamicCast<UMC::VideoDecoderParams> (params);
-
     UMC::Status umcRes = UMC::UMC_OK;
 
-    if (!params->m_pData)
+    if (!lpInfo->m_pData)
         return UMC::UMC_ERR_NULL_PTR;
 
-    if (!params->m_pData->GetDataSize())
+    if (!lpInfo->m_pData->GetDataSize())
         return UMC::UMC_ERR_NOT_ENOUGH_DATA;
 
-    umcRes = supplier->PreInit(params);
+    umcRes = supplier->PreInit(lpInfo);
     if (umcRes != UMC::UMC_OK)
         return UMC::UMC_ERR_FAILED;
 

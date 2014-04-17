@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2003-2013 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2003-2014 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -88,7 +88,7 @@ Status H264VideoDecoder::Init(BaseCodecParams *pInit)
     m_pTaskSupplier.reset(new RATaskSupplier());
 #elif !(defined (UMC_RESTRICTED_CODE_VA))
     m_pTaskSupplier.reset(init->pVideoAccelerator ? new VATaskSupplier() : new TaskSupplier());
-    ((VATaskSupplier*)m_pTaskSupplier.get())->SetVideoHardwareAccelerator(init->pVideoAccelerator);
+    static_cast<VATaskSupplier*>(m_pTaskSupplier.get())->SetVideoHardwareAccelerator(init->pVideoAccelerator);
 #else
     m_pTaskSupplier.reset(new TaskSupplier());
 #endif

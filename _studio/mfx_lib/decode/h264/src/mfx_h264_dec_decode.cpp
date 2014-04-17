@@ -391,7 +391,7 @@ mfxStatus VideoDECODEH264::Init(mfxVideoParam *par)
     {
         m_core->GetVA((mfxHDL*)&m_va, MFX_MEMTYPE_FROM_DECODE);
         umcVideoParams.pVideoAccelerator = m_va;
-        ((UMC::VATaskSupplier*)m_pH264VideoDecoder.get())->SetVideoHardwareAccelerator(m_va);
+        static_cast<UMC::VATaskSupplier*>(m_pH264VideoDecoder.get())->SetVideoHardwareAccelerator(m_va);
 #if defined(MFX_VA_WIN) || defined (MFX_VA_LINUX)
         if (m_va->GetProtectedVA())
         {

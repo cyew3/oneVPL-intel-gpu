@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2003-2013 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2003-2014 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -150,7 +150,7 @@ public:
     static eMFXPlatform GetPlatform(VideoCORE * core, mfxVideoParam * par);
     static UMC::Status FillVideoParam(UMC::TaskSupplier * supplier, ::mfxVideoParam *par, bool full);
     static UMC::Status FillVideoParamMVCEx(UMC::TaskSupplier * supplier, ::mfxVideoParam *par);
-    static UMC::Status DecodeHeader(UMC::TaskSupplier * supplier, UMC::BaseCodecParams* params, mfxBitstream *bs, mfxVideoParam *out);
+    static UMC::Status DecodeHeader(UMC::TaskSupplier * supplier, UMC::H264VideoDecoderParams* params, mfxBitstream *bs, mfxVideoParam *out);
 
     static mfxStatus Query(VideoCORE *core, mfxVideoParam *in, mfxVideoParam *out, eMFXHWType type);
     static bool CheckVideoParam(mfxVideoParam *in, eMFXHWType type);

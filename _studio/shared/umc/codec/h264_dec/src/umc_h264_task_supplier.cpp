@@ -2734,6 +2734,8 @@ Status TaskSupplier::GetInfoFromData(BaseCodecParams* params)
 {
     Status umcRes = UMC_OK;
     VideoDecoderParams *lpInfo = DynamicCast<VideoDecoderParams> (params);
+    if (!lpInfo)
+        return UMC_ERR_FAILED;
 
     if (!m_isInitialized)
     {
@@ -6217,8 +6219,8 @@ H264DecoderFrame * TaskSupplier::AllocateNewFrame(const H264Slice *slice)
     if (slice->IsAuxiliary())
     {
         VM_ASSERT(view.pCurFrame && !view.pCurFrame->IsAuxiliaryFrame());
-        ((H264DecoderFrameExtension *)view.pCurFrame)->AllocateAuxiliary();
-        ((H264DecoderFrameExtension *)view.pCurFrame)->FillInfoToAuxiliary();
+        static_cast<H264DecoderFrameExtension *>(view.pCurFrame)->AllocateAuxiliary();
+        static_cast<H264DecoderFrameExtension *>(view.pCurFrame)->FillInfoToAuxiliary();
         pFrame = UMC::GetAuxiliaryFrame(view.pCurFrame);
     }
     else

@@ -36,7 +36,7 @@ VATaskSupplier::VATaskSupplier()
 
 Status VATaskSupplier::Init(BaseCodecParams *pInit)
 {
-    SetVideoHardwareAccelerator(((UMC::VideoDecoderParams*)pInit)->pVideoAccelerator);
+    SetVideoHardwareAccelerator(static_cast<UMC::VideoDecoderParams*>(pInit)->pVideoAccelerator);
     m_pMemoryAllocator = pInit->lpMemoryAllocator;
 
     Status umsRes = TaskSupplier::Init(pInit);
@@ -71,7 +71,7 @@ Status VATaskSupplier::Init(BaseCodecParams *pInit)
 
     if (m_va && !m_va->IsSimulate())
     {
-        ((TaskBrokerSingleThreadDXVA*)m_pTaskBroker)->DXVAStatusReportingMode(m_va->IsUseStatusReport());
+        static_cast<TaskBrokerSingleThreadDXVA*>(m_pTaskBroker)->DXVAStatusReportingMode(m_va->IsUseStatusReport());
     }
 
     H264VideoDecoderParams *initH264 = DynamicCast<H264VideoDecoderParams> (pInit);
@@ -167,7 +167,7 @@ bool VATaskSupplier::GetFrameToDisplay(MediaData *dst, bool force)
 
     if (m_va && !m_va->IsSimulate())
     {
-        m_va->DisplayFrame(pFrame->m_index, (VideoData*)dst);
+        m_va->DisplayFrame(pFrame->m_index, static_cast<VideoData*>(dst));
         pFrame->IncrementReference();
     }
     else

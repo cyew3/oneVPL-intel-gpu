@@ -151,7 +151,7 @@ void TaskBrokerSingleThreadDXVA::Start()
     TaskBrokerSingleThread::Start();
     m_completedQueue.clear();
 
-    H264_DXVA_SegmentDecoder * dxva_sd = ((H264_DXVA_SegmentDecoder *)m_pTaskSupplier->m_pSegmentDecoder[0]);
+    H264_DXVA_SegmentDecoder * dxva_sd = static_cast<H264_DXVA_SegmentDecoder *>(m_pTaskSupplier->m_pSegmentDecoder[0]);
 
     if (dxva_sd && dxva_sd->GetPacker() && dxva_sd->GetPacker()->GetVideoAccelerator())
     {
@@ -185,7 +185,7 @@ bool TaskBrokerSingleThreadDXVA::GetNextTaskInternal(H264Task *)
     if (!m_useDXVAStatusReporting)
         return false;
 
-    H264_DXVA_SegmentDecoder * dxva_sd = ((H264_DXVA_SegmentDecoder *)m_pTaskSupplier->m_pSegmentDecoder[0]);
+    H264_DXVA_SegmentDecoder * dxva_sd = static_cast<H264_DXVA_SegmentDecoder *>(m_pTaskSupplier->m_pSegmentDecoder[0]);
 
     if (!dxva_sd->GetPacker())
         return false;
