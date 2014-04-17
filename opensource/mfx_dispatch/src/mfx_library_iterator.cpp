@@ -181,8 +181,8 @@ mfxStatus MFXLibraryIterator::Init(eMfxImplType implType, mfxIMPL implInterface,
     {
         msdk_disp_char path[_MAX_PATH] = {};
 
-        ::GetModuleFileName(0, path, _MAX_PATH);
-        msdk_disp_char * dirSeparator = _tcsrchr(path, '\\');
+        ::GetModuleFileNameW(0, path, _MAX_PATH);
+        msdk_disp_char * dirSeparator = wcsrchr(path, L'\\');
         if (dirSeparator < (path + _MAX_PATH))
         {
             *++dirSeparator = 0;
@@ -238,7 +238,7 @@ mfxStatus MFXLibraryIterator::InitFolder(eMfxImplType implType, mfxIMPL implInte
      const int maxPathLen = sizeof(m_path)/sizeof(m_path[0]);
      m_path[0] = 0;
      msdk_disp_char_cpy_s(m_path, maxPathLen, path);
-     size_t pathLen = _tcslen(m_path);
+     size_t pathLen = wcslen(m_path);
 
      mfx_get_default_dll_name(m_path + pathLen, maxPathLen - pathLen, implType);
 
