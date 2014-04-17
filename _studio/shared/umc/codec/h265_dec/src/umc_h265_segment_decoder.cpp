@@ -36,12 +36,14 @@ DecodingContext::DecodingContext()
     m_needToSplitDecAndRec = true;
 }
 
+// Clear all flags in left and top buffers
 void DecodingContext::Reset()
 {
     if (m_needToSplitDecAndRec)
         ResetRowBuffer();
 }
 
+// Allocate context buffers
 void DecodingContext::Init(H265Slice *slice)
 {
     m_sps = slice->GetSeqParam();
@@ -63,12 +65,21 @@ void DecodingContext::Init(H265Slice *slice)
     m_RecTLIntraFlags    = m_RecIntraFlagsHolder + 34;
     m_RecTpIntraRowFlags = (Ipp16u*)(m_RecIntraFlagsHolder + 35) + 1;
 
+    // One element outside of CTB at each side for neighbour CTBs
     m_CurrCTBStride = (m_sps->NumPartitionsInCUSize + 2);
     if (m_CurrCTBFlagsHolder.size() < (Ipp32u)(m_CurrCTBStride * m_CurrCTBStride))
     {
         m_CurrCTBFlagsHolder.resize(m_CurrCTBStride * m_CurrCTBStride);
     }
 
+    // Pointer to the beginning of current CTB, so negative offsets are allowed for top elements
+    //
+    // +--------
+    // |*Array start ptr is here
+    // | +------
+    // | |*CTB start ptr is here
+    // | |
+    // | |
     m_CurrCTBFlags = &m_CurrCTBFlagsHolder[m_CurrCTBStride + 1];
 
     Ipp32s sliceNum = slice->GetSliceNum();
@@ -96,6 +107,7 @@ void DecodingContext::Init(H265Slice *slice)
     m_weighted_prediction = m_sh->slice_type == P_SLICE ? m_pps->weighted_pred_flag : m_pps->weighted_bipred_flag;
 }
 
+// Fill up decoder context for new CTB using previous CTB values and values stored for top row
 void DecodingContext::UpdateCurrCUContext(Ipp32u lastCUAddr, Ipp32u newCUAddr)
 {
     // Set local pointers to real array start positions
@@ -185,6 +197,7 @@ void DecodingContext::UpdateCurrCUContext(Ipp32u lastCUAddr, Ipp32u newCUAddr)
             CurrCTBFlags[i * m_CurrCTBStride + j].data = 0;
 }
 
+// Update reconstruct information with neighbour information for intra prediction
 void DecodingContext::UpdateRecCurrCTBContext(Ipp32s lastCUAddr, Ipp32s newCUAddr)
 {
     Ipp32s maxCUSzIn4x4 = m_sps->MaxCUSize >> 2;
@@ -225,6 +238,7 @@ void DecodingContext::UpdateRecCurrCTBContext(Ipp32s lastCUAddr, Ipp32s newCUAdd
     *m_RecTLIntraFlags = diagIds;
 }
 
+// Clean up all availability information for decoder
 void DecodingContext::ResetRowBuffer()
 {
     H265FrameHLDNeighborsInfo *CurrCTBFlags = &m_CurrCTBFlagsHolder[0];
@@ -237,11 +251,13 @@ void DecodingContext::ResetRowBuffer()
         CurrCTBFlags[i].data = 0;
 }
 
+// Clean up all availability information for reconstruct
 void DecodingContext::ResetRecRowBuffer()
 {
     memset(m_RecIntraFlagsHolder, 0, sizeof(m_RecIntraFlagsHolder));
 }
 
+// Set new QP value and calculate scaled values for luma and chroma
 void DecodingContext::SetNewQP(Ipp32s newQP)
 {
     if (newQP == m_LastValidQP)
@@ -306,12 +322,7 @@ H265SegmentDecoder::~H265SegmentDecoder(void)
     Release();
 } // H265SegmentDecoder::~H265SegmentDecoder(void)
 
-/**
- \param    uiMaxDepth    total number of allowable depth
- \param    uiMaxWidth    largest CU width
- \param    uiMaxHeight   largest CU height
- */
-
+// Initialize new slice decoder instance
 void H265SegmentDecoder::create(H265SeqParamSet* sps)
 {
     static PartitionInfo g_rasterOffsets;
@@ -343,6 +354,7 @@ void H265SegmentDecoder::destroy()
 {
 }
 
+// Release memory
 void H265SegmentDecoder::Release(void)
 {
     delete m_TrQuant;
@@ -357,6 +369,7 @@ void H265SegmentDecoder::Release(void)
 
 } // void H265SegmentDecoder::Release(void)
 
+// Initialize decoder's number
 UMC::Status H265SegmentDecoder::Init(Ipp32s iNumber)
 {
     // release object before initialization
@@ -369,6 +382,7 @@ UMC::Status H265SegmentDecoder::Init(Ipp32s iNumber)
 
 } // Status H265SegmentDecoder::Init(Ipp32s sNumber)
 
+// Decode SAO truncated rice offset value. HEVC spec 9.3.3.2
 Ipp32s H265SegmentDecoder::parseSaoMaxUvlc(Ipp32s maxSymbol)
 {
     VM_ASSERT(maxSymbol != 0);
@@ -401,6 +415,7 @@ Ipp32s H265SegmentDecoder::parseSaoMaxUvlc(Ipp32s maxSymbol)
     return i;
 }
 
+// Decode SAO type idx
 Ipp32s H265SegmentDecoder::parseSaoTypeIdx()
 {
     if (m_pBitStream->DecodeSingleBin_CABAC(ctxIdxOffsetHEVC[SAO_TYPE_IDX_HEVC]) == 0)
@@ -413,6 +428,7 @@ Ipp32s H265SegmentDecoder::parseSaoTypeIdx()
     }
 }
 
+// Decode SAO plane type and offsets
 void H265SegmentDecoder::parseSaoOffset(SAOLCUParam* psSaoLcuParam, Ipp32u compIdx)
 {
     Ipp32s typeIdx;
@@ -435,6 +451,7 @@ void H265SegmentDecoder::parseSaoOffset(SAOLCUParam* psSaoLcuParam, Ipp32u compI
 
     if (typeIdx == SAO_BO)
     {
+        // Band offset
         for (Ipp32s i = 0; i < SAO_OFFSETS_LEN; i++)
         {
             psSaoLcuParam->m_offset[compIdx][i] = parseSaoMaxUvlc(offsetTh);
@@ -457,6 +474,7 @@ void H265SegmentDecoder::parseSaoOffset(SAOLCUParam* psSaoLcuParam, Ipp32u compI
     }
     else if (typeIdx < 4)
     {
+        // Edge offsets
         psSaoLcuParam->m_offset[compIdx][0] = parseSaoMaxUvlc(offsetTh);
         psSaoLcuParam->m_offset[compIdx][1] = parseSaoMaxUvlc(offsetTh);
         psSaoLcuParam->m_offset[compIdx][2] = - parseSaoMaxUvlc(offsetTh);
@@ -470,6 +488,7 @@ void H265SegmentDecoder::parseSaoOffset(SAOLCUParam* psSaoLcuParam, Ipp32u compI
     }
 }
 
+// Decode CTB SAO information
 void H265SegmentDecoder::DecodeSAOOneLCU()
 {
     if (m_pSliceHeader->slice_sao_luma_flag || m_pSliceHeader->slice_sao_chroma_flag)
@@ -506,6 +525,7 @@ void H265SegmentDecoder::DecodeSAOOneLCU()
     }
 }
 
+// Parse merge flags and offsets if needed
 void H265SegmentDecoder::parseSaoOneLcuInterleaving(bool saoLuma,
                                                     bool saoChroma,
                                                     Ipp32s allowMergeLeft,
@@ -548,6 +568,7 @@ void H265SegmentDecoder::parseSaoOneLcuInterleaving(bool saoLuma,
     }
 }
 
+// Parse truncated rice symbol. HEVC spec 9.3.3.2
 void H265SegmentDecoder::ReadUnaryMaxSymbolCABAC(Ipp32u& uVal, Ipp32u CtxIdx, Ipp32s Offset, Ipp32u MaxSymbol)
 {
     if (0 == MaxSymbol)
@@ -557,7 +578,6 @@ void H265SegmentDecoder::ReadUnaryMaxSymbolCABAC(Ipp32u& uVal, Ipp32u CtxIdx, Ip
     }
 
     uVal = m_pBitStream->DecodeSingleBin_CABAC(CtxIdx);
-    //m_pcTDecBinIf->decodeBin( ruiSymbol, pcSCModel[0] );
 
     if (uVal == 0 || MaxSymbol == 1)
     {
@@ -570,7 +590,6 @@ void H265SegmentDecoder::ReadUnaryMaxSymbolCABAC(Ipp32u& uVal, Ipp32u CtxIdx, Ip
     do
     {
         cont = m_pBitStream->DecodeSingleBin_CABAC(CtxIdx + Offset);
-        //m_pcTDecBinIf->decodeBin( uiCont, pcSCModel[ iOffset ] );
         val++;
     }
     while( cont && ( val < MaxSymbol - 1 ) );
@@ -583,6 +602,7 @@ void H265SegmentDecoder::ReadUnaryMaxSymbolCABAC(Ipp32u& uVal, Ipp32u CtxIdx, Ip
     uVal = val;
 }
 
+// Decode CU recursively
 void H265SegmentDecoder::DecodeCUCABAC(Ipp32u AbsPartIdx, Ipp32u Depth, Ipp32u& IsLast)
 {
     Ipp32u CurNumParts = m_pCurrentFrame->getCD()->getNumPartInCU() >> (Depth << 1);
@@ -600,6 +620,7 @@ void H265SegmentDecoder::DecodeCUCABAC(Ipp32u AbsPartIdx, Ipp32u Depth, Ipp32u& 
     Ipp32u BPelY = TPelY + (m_pCurrentFrame->getCD()->m_MaxCUWidth >> Depth) - 1;
     Ipp32s PartSize = m_pSeqParamSet->MaxCUSize >> (Depth + m_pSeqParamSet->log2_min_transform_block_size);
 
+    // Check for split implicit and explicit
     if (RPelX < m_pSeqParamSet->pic_width_in_luma_samples && BPelY < m_pSeqParamSet->pic_height_in_luma_samples)
     {
         if (Depth == m_pSeqParamSet->MaxCUDepth - m_pSeqParamSet->AddCUDepth)
@@ -638,9 +659,6 @@ void H265SegmentDecoder::DecodeCUCABAC(Ipp32u AbsPartIdx, Ipp32u Depth, Ipp32u& 
                 m_cu->setOutsideCUPart(Idx, Depth + 1);
             }
 
-            //if (IsLast) // comment it for calling setOutsideCUPart for all CU parts
-             //   break;
-
             Idx += QNumParts;
         }
 
@@ -670,6 +688,7 @@ void H265SegmentDecoder::DecodeCUCABAC(Ipp32u AbsPartIdx, Ipp32u Depth, Ipp32u& 
 
     if (skipped)
     {
+        // Handle skip
         m_cu->setPredMode(MODE_INTER, AbsPartIdx);
         m_cu->setPartSizeSubParts(PART_SIZE_2Nx2N, AbsPartIdx);
         m_cu->setSize(m_context->m_sps->MaxCUSize >> Depth, AbsPartIdx);
@@ -713,7 +732,6 @@ void H265SegmentDecoder::DecodeCUCABAC(Ipp32u AbsPartIdx, Ipp32u Depth, Ipp32u& 
 
     if (MODE_INTRA == PredMode)
     {
-        // Inter mode is marked later when RefIdx is read from bitstream
         if (PART_SIZE_2Nx2N == m_cu->GetPartitionSize(AbsPartIdx))
         {
             DecodeIPCMInfoCABAC(AbsPartIdx, Depth);
@@ -751,6 +769,7 @@ void H265SegmentDecoder::DecodeCUCABAC(Ipp32u AbsPartIdx, Ipp32u Depth, Ipp32u& 
     FinishDecodeCU(AbsPartIdx, Depth, IsLast);
 }
 
+// Decode CU split flag
 bool H265SegmentDecoder::DecodeSplitFlagCABAC(Ipp32s PartX, Ipp32s PartY, Ipp32u Depth)
 {
     Ipp32u uVal;
@@ -759,6 +778,7 @@ bool H265SegmentDecoder::DecodeSplitFlagCABAC(Ipp32s PartX, Ipp32s PartY, Ipp32u
     return uVal != 0;
 }
 
+// Decode CU transquant bypass flag
 bool H265SegmentDecoder::DecodeCUTransquantBypassFlag(Ipp32u AbsPartIdx)
 {
     Ipp32u uVal;
@@ -767,6 +787,7 @@ bool H265SegmentDecoder::DecodeCUTransquantBypassFlag(Ipp32u AbsPartIdx)
     return uVal ? true : false;
 }
 
+// Decode CU skip flag
 bool H265SegmentDecoder::DecodeSkipFlagCABAC(Ipp32s PartX, Ipp32s PartY)
 {
     if (I_SLICE == m_pSliceHeader->slice_type)
@@ -781,6 +802,7 @@ bool H265SegmentDecoder::DecodeSkipFlagCABAC(Ipp32s PartX, Ipp32s PartY)
     return uVal != 0;
 }
 
+// Decode inter PU merge index
 Ipp32u H265SegmentDecoder::DecodeMergeIndexCABAC(void)
 {
     Ipp32u NumCand = MERGE_MAX_NUM_CAND;
@@ -806,6 +828,7 @@ Ipp32u H265SegmentDecoder::DecodeMergeIndexCABAC(void)
     return UnaryIdx;
 }
 
+// Decode inter PU MV predictor index
 void H265SegmentDecoder::DecodeMVPIdxPUCABAC(Ipp32u AbsPartAddr, Ipp32u PartIdx, EnumRefPicList RefList, H265MVInfo &MVi, Ipp8u InterDir)
 {
     Ipp32u MVPIdx = 0;
@@ -828,6 +851,7 @@ void H265SegmentDecoder::DecodeMVPIdxPUCABAC(Ipp32u AbsPartAddr, Ipp32u PartIdx,
         MVi.m_mv[RefList] = AMVPInfo.MVCandidate[MVPIdx] + MVi.m_mv[RefList];
 }
 
+// Decode CU prediction mode
 Ipp32s H265SegmentDecoder::DecodePredModeCABAC(Ipp32u AbsPartIdx)
 {
     Ipp32s PredMode = MODE_INTER;
@@ -847,12 +871,7 @@ Ipp32s H265SegmentDecoder::DecodePredModeCABAC(Ipp32u AbsPartIdx)
     return PredMode;
 }
 
-/** parse partition size
- * \param pcCU
- * \param uiAbsPartIdx
- * \param uiDepth
- * \returns Void
- */
+// Decode partition size. HEVC spec 9.3.3.5
 void H265SegmentDecoder::DecodePartSizeCABAC(Ipp32u AbsPartIdx, Ipp32u Depth)
 {
     Ipp32u uVal, uMode = 0;
@@ -929,6 +948,7 @@ void H265SegmentDecoder::DecodePartSizeCABAC(Ipp32u AbsPartIdx, Ipp32u Depth)
     m_cu->setPartSizeSubParts(Mode, AbsPartIdx);
 }
 
+// Decode IPCM CU flag and samples
 void H265SegmentDecoder::DecodeIPCMInfoCABAC(Ipp32u AbsPartIdx, Ipp32u Depth)
 {
     if (!m_pSeqParamSet->pcm_enabled_flag
@@ -1018,6 +1038,7 @@ void H265SegmentDecoder::DecodePCMAlignBits()
         m_pBitStream->GetBits(iVal);
 }
 
+// Decode luma intra direction
 void H265SegmentDecoder::DecodeIntraDirLumaAngCABAC(Ipp32u AbsPartIdx, Ipp32u Depth)
 {
     EnumPartSize mode = m_cu->GetPartitionSize(AbsPartIdx);
@@ -1030,6 +1051,7 @@ void H265SegmentDecoder::DecodeIntraDirLumaAngCABAC(Ipp32u AbsPartIdx, Ipp32u De
     if (mode == PART_SIZE_NxN)
         Depth++;
 
+    // Prev intra luma pred flag
     for (Ipp32u j = 0; j < PartNum; j++)
     {
         uVal = m_pBitStream->DecodeSingleBin_CABAC(ctxIdxOffsetHEVC[INTRA_LUMA_PRED_MODE_HEVC]);
@@ -1045,6 +1067,7 @@ void H265SegmentDecoder::DecodeIntraDirLumaAngCABAC(Ipp32u AbsPartIdx, Ipp32u De
 
         if (mpmPred[j])
         {
+            // mpm idx
             uVal = m_pBitStream->DecodeSingleBinEP_CABAC();
             if (uVal)
             {
@@ -1056,10 +1079,10 @@ void H265SegmentDecoder::DecodeIntraDirLumaAngCABAC(Ipp32u AbsPartIdx, Ipp32u De
         else
         {
             IPredMode = 0;
+            // Rem intra luma pred mode
             uVal = m_pBitStream->DecodeBypassBins_CABAC(5);
             IPredMode = uVal;
 
-            //postponed sorting of MPMs (only in remaining branch)
             if (Preds[0] > Preds[1])
             {
                 std::swap(Preds[0], Preds[1]);
@@ -1081,6 +1104,7 @@ void H265SegmentDecoder::DecodeIntraDirLumaAngCABAC(Ipp32u AbsPartIdx, Ipp32u De
     }
 }
 
+// Decode intra chroma direction. HEVC spec 9.3.3.6
 void H265SegmentDecoder::DecodeIntraDirChromaCABAC(Ipp32u AbsPartIdx, Ipp32u Depth)
 {
     Ipp32u uVal;
@@ -1105,6 +1129,7 @@ void H265SegmentDecoder::DecodeIntraDirChromaCABAC(Ipp32u AbsPartIdx, Ipp32u Dep
     return;
 }
 
+// Decode inter PU information
 bool H265SegmentDecoder::DecodePUWiseCABAC(Ipp32u AbsPartIdx, Ipp32u Depth)
 {
     EnumPartSize PartSize = m_cu->GetPartitionSize(AbsPartIdx);
@@ -1122,6 +1147,7 @@ bool H265SegmentDecoder::DecodePUWiseCABAC(Ipp32u AbsPartIdx, Ipp32u Depth)
     for (Ipp32u PartIdx = 0, SubPartIdx = AbsPartIdx; PartIdx < NumPU; PartIdx++, SubPartIdx += PUOffset)
     {
         Ipp8u InterDir = 0;
+        // Decode merge flag
         bool bMergeFlag = DecodeMergeFlagCABAC();
         if (0 == PartIdx)
             isFirstMerge = bMergeFlag;
@@ -1141,6 +1167,7 @@ bool H265SegmentDecoder::DecodePUWiseCABAC(Ipp32u AbsPartIdx, Ipp32u Depth)
 
         if (bMergeFlag)
         {
+            // Merge branch
             Ipp32u MergeIndex = DecodeMergeIndexCABAC();
 
             if ((m_pPicParamSet->log2_parallel_merge_level - 2) > 0 && PartSize != PART_SIZE_2Nx2N && m_cu->GetWidth(AbsPartIdx) <= 8)
@@ -1167,6 +1194,7 @@ bool H265SegmentDecoder::DecodePUWiseCABAC(Ipp32u AbsPartIdx, Ipp32u Depth)
         }
         else
         {
+            // AMVP branch
             InterDir = DecodeInterDirPUCABAC(SubPartIdx);
             for (Ipp32u RefListIdx = 0; RefListIdx < 2; RefListIdx++)
             {
@@ -1182,12 +1210,14 @@ bool H265SegmentDecoder::DecodePUWiseCABAC(Ipp32u AbsPartIdx, Ipp32u Depth)
         if ((InterDir == 3) && m_cu->isBipredRestriction(AbsPartIdx, PartIdx))
             MVi.m_refIdx[REF_PIC_LIST_1] = -1;
 
+        // Fill up local context and colocated lookup map
         UpdatePUInfo(PartX, PartY, PartWidth, PartHeight, MVi);
     }
 
     return isFirstMerge;
 }
 
+// Decode merge flag
 bool H265SegmentDecoder::DecodeMergeFlagCABAC(void)
 {
     Ipp32u uVal;
@@ -1195,7 +1225,7 @@ bool H265SegmentDecoder::DecodeMergeFlagCABAC(void)
     return uVal ? true : false;
 }
 
-// decode inter direction for a PU block
+// Decode inter direction for a PU block. HEVC spec 9.3.3.7
 Ipp8u H265SegmentDecoder::DecodeInterDirPUCABAC(Ipp32u AbsPartIdx)
 {
     Ipp8u InterDir;
@@ -1230,6 +1260,7 @@ Ipp8u H265SegmentDecoder::DecodeInterDirPUCABAC(Ipp32u AbsPartIdx)
     return InterDir;
 }
 
+// Decode truncated rice reference frame index for AMVP PU
 RefIndexType H265SegmentDecoder::DecodeRefFrmIdxPUCABAC(EnumRefPicList RefList, Ipp8u InterDir)
 {
     RefIndexType RefFrmIdx;
@@ -1268,6 +1299,7 @@ RefIndexType H265SegmentDecoder::DecodeRefFrmIdxPUCABAC(EnumRefPicList RefList, 
     return RefFrmIdx;
 }
 
+// Decode MV delta. HEVC spec 7.3.8.9
 void H265SegmentDecoder::DecodeMVdPUCABAC(EnumRefPicList RefList, H265MotionVector &MVd, Ipp8u InterDir)
 {
     if (InterDir & (1 << RefList))
@@ -1335,6 +1367,7 @@ void H265SegmentDecoder::DecodeMVdPUCABAC(EnumRefPicList RefList, H265MotionVect
     }
 }
 
+// Decode EG1 coded abs_mvd_minus2 values
 void H265SegmentDecoder::ReadEpExGolombCABAC(Ipp32u& Value, Ipp32u Count)
 {
     Ipp32u uVal = 0;
@@ -1358,13 +1391,13 @@ void H265SegmentDecoder::ReadEpExGolombCABAC(Ipp32u& Value, Ipp32u Count)
     return;
 }
 
-
-// decode coefficients
+// Decode all CU coefficients
 void H265SegmentDecoder::DecodeCoeff(Ipp32u AbsPartIdx, Ipp32u Depth, bool& CodeDQP, bool isFirstPartMerge)
 {
     if (MODE_INTRA != m_cu->GetPredictionMode(AbsPartIdx))
     {
         Ipp32u QtRootCbf = 1;
+        // 2Nx2N merge cannot have a zero root CBF because in that case it should be skip CU
         if (!(m_cu->GetPartitionSize(AbsPartIdx) == PART_SIZE_2Nx2N && isFirstPartMerge))
         {
             ParseQtRootCbfCABAC(QtRootCbf);
@@ -1384,6 +1417,7 @@ void H265SegmentDecoder::DecodeCoeff(Ipp32u AbsPartIdx, Ipp32u Depth, bool& Code
     DecodeTransform(AbsPartIdx, Depth, Log2TrafoSize, 0, CodeDQP);
 }
 
+// Recursively decode TU data
 void H265SegmentDecoder::DecodeTransform(Ipp32u AbsPartIdx, Ipp32u Depth, Ipp32u  log2TrafoSize, Ipp32u trafoDepth, bool& CodeDQP)
 {
     Ipp32u Subdiv;
@@ -1403,6 +1437,7 @@ void H265SegmentDecoder::DecodeTransform(Ipp32u AbsPartIdx, Ipp32u Depth, Ipp32u
 
     Ipp32u MaxTrafoDepth = m_cu->GetPredictionMode(AbsPartIdx) == MODE_INTRA ? (m_pSeqParamSet->max_transform_hierarchy_depth_intra + IntraSplitFlag ) : m_pSeqParamSet->max_transform_hierarchy_depth_inter;
 
+    // Check for implicit or explicit TU split
     if (log2TrafoSize <= Log2MaxTrafoSize && log2TrafoSize > Log2MinTrafoSize && trafoDepth < MaxTrafoDepth && !(IntraSplitFlag && (trafoDepth == 0)) )
     {
         VM_ASSERT(log2TrafoSize > m_cu->getQuadtreeTULog2MinSizeInCU(AbsPartIdx));
@@ -1446,6 +1481,7 @@ void H265SegmentDecoder::DecodeTransform(Ipp32u AbsPartIdx, Ipp32u Depth, Ipp32u
         Ipp32u UCbf = 0;
         Ipp32u VCbf = 0;
 
+        // Recursively parse sub-TUs
         for (Ipp32s i = 0; i < 4; i++)
         {
             DecodeTransform(AbsPartIdx, Depth, log2TrafoSize, trafoDepth+1, CodeDQP);
@@ -1494,10 +1530,11 @@ void H265SegmentDecoder::DecodeTransform(Ipp32u AbsPartIdx, Ipp32u Depth, Ipp32u
 
         if (cbfY || cbfU || cbfV)
         {
-            // dQP: only for LCU
+            // Update TU QP value
             if (m_pPicParamSet->cu_qp_delta_enabled_flag && CodeDQP)
             {
                 DecodeQP(m_bakAbsPartIdxQp);
+                // Change QP recorded in CU block of local context to a new value
                 UpdateNeighborDecodedQP(m_bakAbsPartIdxQp, m_cu->GetDepth(AbsPartIdx));
                 m_cu->UpdateTUQpInfo(m_bakAbsPartIdxQp, m_context->GetQP(), m_cu->GetDepth(AbsPartIdx));
                 CodeDQP = false;
@@ -1506,16 +1543,19 @@ void H265SegmentDecoder::DecodeTransform(Ipp32u AbsPartIdx, Ipp32u Depth, Ipp32u
 
         m_cu->setTrIdx(trafoDepth, AbsPartIdx, Depth);
 
+        // At this place all necessary TU data is known, so store it in local context
         UpdateNeighborBuffers(AbsPartIdx, Depth, false);
 
         Ipp32u coeffSize = 1 << (log2TrafoSize << 1);
 
+        // Parse luma coefficients
         if (cbfY)
         {
             ParseCoeffNxNCABAC(m_context->m_coeffsWrite, AbsPartIdx, log2TrafoSize, COMPONENT_LUMA);
             m_context->m_coeffsWrite += coeffSize;
         }
 
+        // Parse chroma coefficients
         if (log2TrafoSize > 2)
         {
             coeffSize = 1 << ((log2TrafoSize - 1) << 1);
@@ -1547,15 +1587,16 @@ void H265SegmentDecoder::DecodeTransform(Ipp32u AbsPartIdx, Ipp32u Depth, Ipp32u
                 }
             }
         }
-        // transform_unit end
     }
 }
 
+// Decode explicit TU split
 void H265SegmentDecoder::ParseTransformSubdivFlagCABAC(Ipp32u& SubdivFlag, Ipp32u Log2TransformBlockSize)
 {
     SubdivFlag = m_pBitStream->DecodeSingleBin_CABAC(ctxIdxOffsetHEVC[TRANS_SUBDIV_FLAG_HEVC] + Log2TransformBlockSize);
 }
 
+// Returns selected CABAC context for CBF with specified depth
 Ipp32u getCtxQtCbf(ComponentPlane plane, Ipp32u TrDepth)
 {
     if (plane)
@@ -1568,6 +1609,7 @@ Ipp32u getCtxQtCbf(ComponentPlane plane, Ipp32u TrDepth)
     }
 }
 
+// Decode quad tree CBF value
 void H265SegmentDecoder::ParseQtCbfCABAC(Ipp32u AbsPartIdx, ComponentPlane plane, Ipp32u TrDepth, Ipp32u Depth)
 {
     const Ipp32u Ctx = getCtxQtCbf(plane, TrDepth);
@@ -1577,6 +1619,7 @@ void H265SegmentDecoder::ParseQtCbfCABAC(Ipp32u AbsPartIdx, ComponentPlane plane
     m_cu->setCbfSubParts(uVal << TrDepth, plane, AbsPartIdx, Depth);
 }
 
+// Decode root CU CBF value
 void H265SegmentDecoder::ParseQtRootCbfCABAC(Ipp32u& QtRootCbf)
 {
     Ipp32u uVal;
@@ -1585,6 +1628,7 @@ void H265SegmentDecoder::ParseQtRootCbfCABAC(Ipp32u& QtRootCbf)
     QtRootCbf = uVal;
 }
 
+// Decode and set new QP value
 void H265SegmentDecoder::DecodeQP(Ipp32u AbsPartIdx)
 {
     if (m_pPicParamSet->cu_qp_delta_enabled_flag)
@@ -1593,6 +1637,7 @@ void H265SegmentDecoder::DecodeQP(Ipp32u AbsPartIdx)
     }
 }
 
+// Decode and set new QP value. HEVC spec 9.3.3.8
 void H265SegmentDecoder::ParseDeltaQPCABAC(Ipp32u AbsPartIdx)
 {
     Ipp32s qp;
@@ -1631,35 +1676,14 @@ void H265SegmentDecoder::ParseDeltaQPCABAC(Ipp32u AbsPartIdx)
     m_cu->m_CodedQP = (Ipp8u)qp;
 }
 
-void H265SegmentDecoder::ReadUnarySymbolCABAC(Ipp32u& Value, Ipp32s ctxIdx, Ipp32s Offset)
-{
-    Value = m_pBitStream->DecodeSingleBin_CABAC(ctxIdx);
-    //m_pcTDecBinIf->decodeBin( ruiSymbol, pcSCModel[0] );
-
-    if (!Value)
-    {
-        return;
-    }
-
-    Ipp32u uVal = 0;
-    Ipp32u Cont;
-
-    do
-    {
-        Cont = m_pBitStream->DecodeSingleBin_CABAC(ctxIdx + Offset);
-        //m_pcTDecBinIf->decodeBin( uiCont, pcSCModel[ iOffset ] );
-        uVal++;
-    }
-    while (Cont);
-
-    Value = uVal;
-}
-
+// Check whether this CU was last in slice
 void H265SegmentDecoder::FinishDecodeCU(Ipp32u AbsPartIdx, Ipp32u Depth, Ipp32u& IsLast)
 {
     IsLast = DecodeSliceEnd(AbsPartIdx, Depth);
 }
 
+// Copy CU data from position 0 to all other subparts
+// This information is needed for reconstruct which may be done in another thread
 void H265SegmentDecoder::BeforeCoeffs(Ipp32u AbsPartIdx, Ipp32u Depth)
 {
     H265CodingUnitData * data = m_cu->GetCUData(AbsPartIdx);
@@ -1667,12 +1691,7 @@ void H265SegmentDecoder::BeforeCoeffs(Ipp32u AbsPartIdx, Ipp32u Depth)
     m_cu->SetCUDataSubParts(AbsPartIdx, Depth);
 }
 
-/**decode end-of-slice flag
- * \param pcCU
- * \param uiAbsPartIdx
- * \param uiDepth
- * \returns Bool
- */
+// Decode slice end flag if necessary
 bool H265SegmentDecoder::DecodeSliceEnd(Ipp32u AbsPartIdx, Ipp32u Depth)
 {
     Ipp32u IsLast;
@@ -1719,6 +1738,7 @@ static const Ipp32u ctxIndMap[16] =
 
 static const Ipp32u lCtx[4] = {0x00010516, 0x06060606, 0x000055AA, 0xAAAAAAAA};
 
+// Returns CABAC context index for sig_coeff_flag. HEVC spec 9.3.4.2.5
 static H265_FORCEINLINE Ipp32u getSigCtxInc(Ipp32s patternSigCtx,
                                  Ipp32u scanIdx,
                                  const Ipp32u PosX,
@@ -1748,6 +1768,7 @@ static const Ipp8u diagOffs[8] = {0, 1, 3, 6, 10, 15, 21, 28};
 static const Ipp32u stXoffs[3] = { 0xFB9E4910, 0xE4E4E4E4, 0xFFAA5500 };
 static const Ipp32u stYoffs[3] = { 0xEDB1B184, 0xFFAA5500, 0xE4E4E4E4 };
 
+// Raster to Z-scan conversion
 static H265_FORCEINLINE Ipp32u Rst2ZS(const Ipp32u x, const Ipp32u y, const Ipp32u l2w)
 {
     const Ipp32u diagId = x + y;
@@ -1756,6 +1777,7 @@ static H265_FORCEINLINE Ipp32u Rst2ZS(const Ipp32u x, const Ipp32u y, const Ipp3
     return (diagId < w) ? (diagOffs[diagId] + x) : ((1<<(l2w<<1)) - diagOffs[((w<<1)-1)-diagId] + (w-y-1));
 }
 
+// Parse TU coefficients
 void H265SegmentDecoder::ParseCoeffNxNCABAC(H265CoeffsPtrCommon pCoef, Ipp32u AbsPartIdx, Ipp32u Log2BlockSize, ComponentPlane plane)
 {
     if (m_pSeqParamSet->scaling_list_enabled_flag)
@@ -1770,6 +1792,7 @@ void H265SegmentDecoder::ParseCoeffNxNCABAC(H265CoeffsPtrCommon pCoef, Ipp32u Ab
 
 #pragma warning(disable: 4127)
 
+// Parse TU coefficients
 template <bool scaling_list_enabled_flag>
 void H265SegmentDecoder::ParseCoeffNxNCABACOptimized(H265CoeffsPtrCommon pCoef, Ipp32u AbsPartIdx, Ipp32u Log2BlockSize, ComponentPlane plane)
 {
@@ -2066,6 +2089,7 @@ void H265SegmentDecoder::ParseCoeffNxNCABACOptimized(H265CoeffsPtrCommon pCoef, 
 }
 #pragma warning(default: 4127)
 
+// Parse TU transform skip flag
 void H265SegmentDecoder::ParseTransformSkipFlags(Ipp32u AbsPartIdx, ComponentPlane plane)
 {
     Ipp32u CtxIdx = ctxIdxOffsetHEVC[TRANSFORM_SKIP_HEVC] + (plane ? NUM_CONTEXT_TRANSFORMSKIP_FLAG : 0);
@@ -2074,17 +2098,7 @@ void H265SegmentDecoder::ParseTransformSkipFlags(Ipp32u AbsPartIdx, ComponentPla
     m_cu->setTransformSkip(useTransformSkip, plane, AbsPartIdx);
 }
 
-/** Parse (X,Y) position of the last significant coefficient
- * \param uiPosLastX reference to X component of last coefficient
- * \param uiPosLastY reference to Y component of last coefficient
- * \param uiWidth block width
- * \param eTType plane type / luminance or chrominance
- * \param uiCTXIdx block size context
- * \param uiScanIdx scan type (zig-zag, hor, ver)
- * \returns Void
- * This method decodes the X and Y component within a block of the last significant coefficient.
- */
-
+// Decode X and Y coordinates of last significant coefficient in a TU block
 Ipp32u H265SegmentDecoder::ParseLastSignificantXYCABAC(Ipp32u &PosLastX, Ipp32u &PosLastY, Ipp32u L2Width, bool IsLuma, Ipp32u ScanIdx)
 {
     Ipp32u mGIdx = g_GroupIdx[(1<<(L2Width+2)) - 1];
@@ -2094,6 +2108,7 @@ Ipp32u H265SegmentDecoder::ParseLastSignificantXYCABAC(Ipp32u &PosLastX, Ipp32u 
     Ipp32u CtxIdxX = ctxIdxOffsetHEVC[LAST_X_HEVC] + blkSizeOffset;
     Ipp32u CtxIdxY = ctxIdxOffsetHEVC[LAST_Y_HEVC] + blkSizeOffset;
 
+    // Context selection is in HEVC spec 9.3.4.2.3
     for (PosLastX = 0; PosLastX < mGIdx; PosLastX++)
     {
         if (!m_pBitStream->DecodeSingleBin_CABAC(CtxIdxX + (PosLastX >> shift))) break;
@@ -2135,11 +2150,7 @@ Ipp32u H265SegmentDecoder::ParseLastSignificantXYCABAC(Ipp32u &PosLastX, Ipp32u 
     return PosLastX + (PosLastY << (L2Width+2));
 }
 
-/** Parsing of coeff_abs_level_minus3
- * \param ruiSymbol reference to coeff_abs_level_minus3
- * \param ruiGoRiceParam reference to Rice parameter
- * \returns Void
- */
+// Decode coeff_abs_level_remaining value. HEVC spec 9.3.3.9
 void H265SegmentDecoder::ReadCoefRemainExGolombCABAC(Ipp32u &Symbol, Ipp32u &Param)
 {
     Ipp32u prefix = 0;
@@ -2168,6 +2179,7 @@ void H265SegmentDecoder::ReadCoefRemainExGolombCABAC(Ipp32u &Symbol, Ipp32u &Par
     }
 }
 
+// Recursively produce CU reconstruct from decoded values
 void H265SegmentDecoder::ReconstructCU(Ipp32u AbsPartIdx, Ipp32u Depth)
 {
     bool BoundaryFlag = false;
@@ -2221,6 +2233,7 @@ void H265SegmentDecoder::ReconstructCU(Ipp32u AbsPartIdx, Ipp32u Depth)
     }
 }
 
+// Perform inter CU reconstruction
 void H265SegmentDecoder::ReconInter(Ipp32u AbsPartIdx, Ipp32u Depth)
 {
     // inter prediction
@@ -2235,6 +2248,7 @@ void H265SegmentDecoder::ReconInter(Ipp32u AbsPartIdx, Ipp32u Depth)
     }
 }
 
+// Place IPCM decoded samples to reconstruct frame
 void H265SegmentDecoder::ReconPCM(Ipp32u AbsPartIdx, Ipp32u Depth)
 {
     // Luma
@@ -2281,6 +2295,7 @@ void H265SegmentDecoder::ReconPCM(Ipp32u AbsPartIdx, Ipp32u Depth)
     }
 }
 
+// Fill up inter information in local decoding context and colocated lookup table
 void H265SegmentDecoder::UpdatePUInfo(Ipp32u PartX, Ipp32u PartY, Ipp32u PartWidth, Ipp32u PartHeight, H265MVInfo &MVi)
 {
     VM_ASSERT(MVi.m_refIdx[REF_PIC_LIST_0] >= 0 || MVi.m_refIdx[REF_PIC_LIST_1] >= 0);
@@ -2309,6 +2324,7 @@ void H265SegmentDecoder::UpdatePUInfo(Ipp32u PartX, Ipp32u PartY, Ipp32u PartWid
 
     Ipp32s stride = m_context->m_CurrCTBStride;
 
+    // Colocated table
     Ipp32s CUX = (m_cu->m_CUPelX >> m_pSeqParamSet->log2_min_transform_block_size) + PartX;
     Ipp32s CUY = (m_cu->m_CUPelY >> m_pSeqParamSet->log2_min_transform_block_size) + PartY;
     H265MVInfo *colInfo = m_pCurrentFrame->m_CodingData->m_colocatedInfo + CUY * m_pSeqParamSet->NumPartitionsInFrameWidth + CUX;
@@ -2322,6 +2338,7 @@ void H265SegmentDecoder::UpdatePUInfo(Ipp32u PartX, Ipp32u PartY, Ipp32u PartWid
         colInfo += m_pSeqParamSet->NumPartitionsInFrameWidth;
     }
 
+    // Decoding context
     H265FrameHLDNeighborsInfo *pInfo;
     H265FrameHLDNeighborsInfo info;
     info.data = 0;
@@ -2343,6 +2360,7 @@ void H265SegmentDecoder::UpdatePUInfo(Ipp32u PartX, Ipp32u PartY, Ipp32u PartWid
     }
 }
 
+// Fill up basic CU information in local decoder context
 void H265SegmentDecoder::UpdateNeighborBuffers(Ipp32u AbsPartIdx, Ipp32u Depth, bool isSkipped)
 {
     Ipp32s XInc = m_cu->m_rasterToPelX[AbsPartIdx] >> m_pSeqParamSet->log2_min_transform_block_size;
@@ -2391,6 +2409,7 @@ void H265SegmentDecoder::UpdateNeighborBuffers(Ipp32u AbsPartIdx, Ipp32u Depth, 
     }
 }
 
+// Change QP recorded in CU block of local context to a new value
 void H265SegmentDecoder::UpdateNeighborDecodedQP(Ipp32u AbsPartIdx, Ipp32u Depth)
 {
     Ipp32s XInc = m_cu->m_rasterToPelX[AbsPartIdx] >> m_pSeqParamSet->log2_min_transform_block_size;
@@ -2405,6 +2424,7 @@ void H265SegmentDecoder::UpdateNeighborDecodedQP(Ipp32u AbsPartIdx, Ipp32u Depth
             m_context->m_CurrCTBFlags[m_context->m_CurrCTBStride * y + x].members.qp = (Ipp8s)qp;
 }
 
+// Update intra availability flags for reconstruct
 void H265SegmentDecoder::UpdateRecNeighboursBuffersN(Ipp32s PartX, Ipp32s PartY, Ipp32s PartSize, bool IsIntra)
 {
     Ipp32u maskL, maskT, maskTL;
@@ -2479,6 +2499,7 @@ void H265SegmentDecoder::UpdateRecNeighboursBuffersN(Ipp32s PartX, Ipp32s PartY,
     }
 }
 
+// Calculate CABAC context for split flag. HEVC spec 9.3.4.2.2
 Ipp32u H265SegmentDecoder::getCtxSplitFlag(Ipp32s PartX, Ipp32s PartY, Ipp32u Depth)
 {
     Ipp32u uiCtx;
@@ -2498,6 +2519,7 @@ Ipp32u H265SegmentDecoder::getCtxSplitFlag(Ipp32s PartX, Ipp32s PartY, Ipp32u De
     return uiCtx;
 }
 
+// Calculate CABAC context for skip flag. HEVC spec 9.3.4.2.2
 Ipp32u H265SegmentDecoder::getCtxSkipFlag(Ipp32s PartX, Ipp32s PartY)
 {
     Ipp32u uiCtx = 0;
@@ -2515,6 +2537,7 @@ Ipp32u H265SegmentDecoder::getCtxSkipFlag(Ipp32s PartX, Ipp32s PartY)
     return uiCtx;
 }
 
+// Get predictor array of intra directions for intra luma direction decoding. HEVC spec 8.4.2
 void H265SegmentDecoder::getIntraDirLumaPredictor(Ipp32u AbsPartIdx, Ipp32s IntraDirPred[])
 {
     Ipp32s LeftIntraDir = INTRA_LUMA_DC_IDX;
@@ -2577,6 +2600,7 @@ void H265SegmentDecoder::getIntraDirLumaPredictor(Ipp32u AbsPartIdx, Ipp32s Intr
     }
 }
 
+// Calculate CU QP value based on previously used QP values. HEVC spec 8.6.1
 Ipp32s H265SegmentDecoder::getRefQP(Ipp32s AbsPartIdx)
 {
     Ipp32s shift = (m_pSeqParamSet->MaxCUDepth - m_pPicParamSet->diff_cu_qp_delta_depth) << 1;
@@ -2611,6 +2635,7 @@ Ipp32s H265SegmentDecoder::getRefQP(Ipp32s AbsPartIdx)
     return (qpL + qpA + 1) >> 1;
 }
 
+// Returns whether two motion vectors are different enough based on merge parallel level
 static bool inline isDiffMER(Ipp32u plevel, Ipp32s xN, Ipp32s yN, Ipp32s xP, Ipp32s yP)
 {
     if ((xN >> plevel) != (xP >> plevel))
@@ -2624,6 +2649,7 @@ static bool inline isDiffMER(Ipp32u plevel, Ipp32s xN, Ipp32s yN, Ipp32s xP, Ipp
     return false;
 }
 
+// Returns whether motion information in two cells of collocated motion table is the same
 bool H265SegmentDecoder::hasEqualMotion(Ipp32s dir1, Ipp32s dir2)
 {
     H265MVInfo &motionInfo1 = m_pCurrentFrame->m_CodingData->m_colocatedInfo[dir1];
@@ -2669,6 +2695,7 @@ bool H265SegmentDecoder::hasEqualMotion(Ipp32s dir1, Ipp32s dir2)
 static Ipp32u PriorityList0[12] = {0 , 1, 0, 2, 1, 2, 0, 3, 1, 3, 2, 3};
 static Ipp32u PriorityList1[12] = {1 , 0, 2, 0, 2, 1, 3, 0, 3, 1, 3, 2};
 
+// Prepare an array of motion vector candidates for merge mode. HEVC spec 8.5.3.2.2
 void H265SegmentDecoder::getInterMergeCandidates(Ipp32u AbsPartIdx, Ipp32u PartIdx, H265MVInfo *MVBufferNeighbours,
                                                  Ipp8u *InterDirNeighbours, Ipp32s mrgCandIdx)
 {
@@ -2781,6 +2808,7 @@ void H265SegmentDecoder::getInterMergeCandidates(Ipp32u AbsPartIdx, Ipp32u PartI
     if (Count == m_pSliceHeader->max_num_merge_cand)
         return;
 
+    // Temporal MV prediction. HEVC spec 8.5.3.2.8
     if (m_pSliceHeader->slice_temporal_mvp_enabled_flag)
     {
         Ipp32u bottomRightPartX = PartX + PartWidth;
@@ -2849,6 +2877,7 @@ void H265SegmentDecoder::getInterMergeCandidates(Ipp32u AbsPartIdx, Ipp32u PartI
     Ipp32s ArrayAddr = Count;
     Ipp32s Cutoff = ArrayAddr;
 
+    // Combine candidates. HEVC spec 8.5.3.2.4
     if (m_pSliceHeader->slice_type == B_SLICE)
     {
         for (Ipp32s idx = 0; idx < Cutoff * (Cutoff - 1) && ArrayAddr != m_pSliceHeader->max_num_merge_cand; idx++)
@@ -2886,6 +2915,7 @@ void H265SegmentDecoder::getInterMergeCandidates(Ipp32u AbsPartIdx, Ipp32u PartI
     Ipp8s r = 0;
     Ipp32s refcnt = 0;
 
+    // Add zero MVs. HEVC spec 8.5.3.2.5
     while (ArrayAddr < m_pSliceHeader->max_num_merge_cand)
     {
         CandIsInter[ArrayAddr] = true;
@@ -2910,6 +2940,7 @@ void H265SegmentDecoder::getInterMergeCandidates(Ipp32u AbsPartIdx, Ipp32u PartI
     }
 }
 
+// Prepare an array of motion vector candidates for AMVP mode. HEVC spec 8.5.3.2.6
 void H265SegmentDecoder::fillMVPCand(Ipp32u AbsPartIdx, Ipp32u PartIdx, EnumRefPicList RefPicList, Ipp32s RefIdx, AMVPInfo* pInfo)
 {
     H265MotionVector MvPred;
@@ -3028,6 +3059,7 @@ void H265SegmentDecoder::fillMVPCand(Ipp32u AbsPartIdx, Ipp32u PartIdx, EnumRefP
         }
     }
 
+    // Temporal MV prediction. HEVC spec 8.5.3.2.8
     if (m_pSliceHeader->slice_temporal_mvp_enabled_flag)
     {
         Ipp32u bottomRightPartX = PartX + PartWidth;
@@ -3058,6 +3090,7 @@ void H265SegmentDecoder::fillMVPCand(Ipp32u AbsPartIdx, Ipp32u PartIdx, EnumRefP
         }
     }
 
+    // Add zero MVs. HEVC spec 8.5.3.2.5
     if (pInfo->NumbOfCands > AMVP_MAX_NUM_CAND)
     {
         pInfo->NumbOfCands = AMVP_MAX_NUM_CAND;
@@ -3071,6 +3104,7 @@ void H265SegmentDecoder::fillMVPCand(Ipp32u AbsPartIdx, Ipp32u PartIdx, EnumRefP
     return;
 }
 
+// Check availability of spatial MV candidate which points to the same reference frame. HEVC spec 8.5.3.2.7 #6
 bool H265SegmentDecoder::AddMVPCand(AMVPInfo* pInfo, EnumRefPicList RefPicList, Ipp32s RefIdx, Ipp32s NeibAddr, const H265MVInfo &motionInfo)
 {
     if (!m_context->m_CurrCTBFlags[NeibAddr].members.IsAvailable || m_context->m_CurrCTBFlags[NeibAddr].members.IsIntra)
@@ -3114,6 +3148,7 @@ static Ipp32s GetDistScaleFactor(Ipp32s DiffPocB, Ipp32s DiffPocD)
     }
 }
 
+// Check availability of spatial motion vector candidate for any reference frame. HEVC spec 8.5.3.2.7 #7
 bool H265SegmentDecoder::AddMVPCandOrder(AMVPInfo* pInfo, EnumRefPicList RefPicList, Ipp32s RefIdx, Ipp32s NeibAddr, const H265MVInfo &motionInfo)
 {
     if (!m_context->m_CurrCTBFlags[NeibAddr].members.IsAvailable || m_context->m_CurrCTBFlags[NeibAddr].members.IsIntra)
@@ -3159,6 +3194,7 @@ bool H265SegmentDecoder::AddMVPCandOrder(AMVPInfo* pInfo, EnumRefPicList RefPicL
     return false;
 }
 
+// Check availability of collocated motion vector with given coordinates. HEVC spec 8.5.3.2.9
 bool H265SegmentDecoder::GetColMVP(EnumRefPicList refPicListIdx, Ipp32u PartX, Ipp32u PartY, H265MotionVector &rcMv, Ipp32s refIdx)
 {
     bool isCurrRefLongTerm, isColRefLongTerm;

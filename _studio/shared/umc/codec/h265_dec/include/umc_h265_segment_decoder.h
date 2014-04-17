@@ -102,12 +102,14 @@ struct Context
     std::auto_ptr<ReconstructorBase>  m_reconstructor;
 };
 
+// Slice decoder local state
 class DecodingContext : public HeapObject
 {
 public:
 
     DecodingContext();
 
+    // Clear all flags in left and top buffers
     virtual void Reset();
 
     const H265SeqParamSet *m_sps;
@@ -152,13 +154,19 @@ public:
     Ipp32s m_mvsDistortionTemp; // max y component of all mvs in slice
     Ipp32s m_mvsDistortion; // max y component of all mvs in slice
 
+    // Allocate context buffers
     void Init(H265Slice *slice);
+    // Fill up decoder context for new CTB using previous CTB values and values stored for top row
     void UpdateCurrCUContext(Ipp32u lastCUAddr, Ipp32u newCUAddr);
+    // Clean up all availability information for decoder
     void ResetRowBuffer();
 
+    // Update reconstruct information with neighbour information for intra prediction
     void UpdateRecCurrCTBContext(Ipp32s lastCUAddr, Ipp32s newCUAddr);
+    // Clean up all availability information for reconstruct
     void ResetRecRowBuffer();
 
+    // Set new QP value and calculate scaled values for luma and chroma
     void SetNewQP(Ipp32s newQP);
     Ipp32s GetQP(void)
     {
@@ -179,68 +187,106 @@ protected:
 class H265SegmentDecoder : public Context
 {
 public:
-    //create internal buffers
+    // Initialize new slice decoder instance
     void create(H265SeqParamSet* pSPS);
     //destroy internal buffers
     void destroy();
+    // Decode CTB SAO information
     void DecodeSAOOneLCU();
+    // Parse merge flags and offsets if needed
     void parseSaoOneLcuInterleaving(bool saoLuma,
                                     bool saoChroma,
                                     Ipp32s allowMergeLeft,
                                     Ipp32s allowMergeUp);
 
+    // Decode SAO truncated rice offset value. HEVC spec 9.3.3.2
     Ipp32s parseSaoMaxUvlc(Ipp32s maxSymbol);
+    // Decode SAO type idx
     Ipp32s parseSaoTypeIdx();
+    // Decode SAO plane type and offsets
     void parseSaoOffset(SAOLCUParam* psSaoLcuParam, Ipp32u compIdx);
 
+    // Parse truncated rice symbol. HEVC spec 9.3.3.2
     void ReadUnaryMaxSymbolCABAC(Ipp32u& uVal, Ipp32u CtxIdx, Ipp32s Offset, Ipp32u MaxSymbol);
+    // Decode CU split flag
     bool DecodeSplitFlagCABAC(Ipp32s PartX, Ipp32s PartY, Ipp32u Depth);
+    // Decode inter PU merge index
     Ipp32u DecodeMergeIndexCABAC(void);
-
+    // Decode CU skip flag
     bool DecodeSkipFlagCABAC(Ipp32s PartX, Ipp32s PartY);
     bool DecodeCUTransquantBypassFlag(Ipp32u AbsPartIdx);
+    // Decode inter PU MV predictor index
     void DecodeMVPIdxPUCABAC(Ipp32u AbsPartAddr, Ipp32u PartIdx, EnumRefPicList RefList, H265MVInfo &MVi, Ipp8u InterDir);
+    // Decode CU prediction mode
     Ipp32s DecodePredModeCABAC(Ipp32u AbsPartIdx);
+    // Decode partition size. HEVC spec 9.3.3.5
     void DecodePartSizeCABAC(Ipp32u AbsPartIdx, Ipp32u Depth);
+    // Decode IPCM CU flag and samples
     void DecodeIPCMInfoCABAC(Ipp32u AbsPartIdx, Ipp32u Depth);
+    // Decode PCM alignment zero bits.
     void DecodePCMAlignBits();
+    // Decode luma intra direction
     void DecodeIntraDirLumaAngCABAC(Ipp32u AbsPartIdx, Ipp32u Depth);
+    // Decode intra chroma direction. HEVC spec 9.3.3.6
     void DecodeIntraDirChromaCABAC(Ipp32u AbsPartIdx, Ipp32u Depth);
+    // Decode inter PU information
     bool DecodePUWiseCABAC(Ipp32u AbsPartIdx, Ipp32u Depth);
+    // Decode merge flag
     bool DecodeMergeFlagCABAC(void);
     Ipp8u DecodeInterDirPUCABAC(Ipp32u AbsPartIdx);
+    // Decode truncated rice reference frame index for AMVP PU
     RefIndexType DecodeRefFrmIdxPUCABAC(EnumRefPicList RefList, Ipp8u InterDir);
+    // Decode MV delta. HEVC spec 7.3.8.9
     void DecodeMVdPUCABAC(EnumRefPicList RefList, H265MotionVector &MVd, Ipp8u InterDir);
+    // Decode explicit TU split
     void ParseTransformSubdivFlagCABAC(Ipp32u& SubdivFlag, Ipp32u Log2TransformBlockSize);
+    // Decode EG1 coded abs_mvd_minus2 values
     void ReadEpExGolombCABAC(Ipp32u& Value, Ipp32u Count);
+    // Decode all CU coefficients
     void DecodeCoeff(Ipp32u AbsPartIdx, Ipp32u Depth, bool& CodeDQP, bool isFirstPartMerge);
+    // Recursively decode TU data
     void DecodeTransform(Ipp32u AbsPartIdx, Ipp32u Depth, Ipp32u  l2width, Ipp32u TrIdx, bool& CodeDQP);
+    // Decode quad tree CBF value
     void ParseQtCbfCABAC(Ipp32u AbsPartIdx, ComponentPlane plane, Ipp32u TrDepth, Ipp32u Depth);
+    // Decode root CU CBF value
     void ParseQtRootCbfCABAC(Ipp32u& QtRootCbf);
+    // Decode and set new QP value
     void DecodeQP(Ipp32u AbsPartIdx);
+    // Calculate CU QP value based on previously used QP values. HEVC spec 8.6.1
     Ipp32s getRefQP(Ipp32s AbsPartIdx);
+    // Decode and set new QP value. HEVC spec 9.3.3.8
     void ParseDeltaQPCABAC(Ipp32u AbsPartIdx);
-    void ReadUnarySymbolCABAC(Ipp32u& Value, Ipp32s ctxIdx, Ipp32s Offset);
     void FinishDecodeCU(Ipp32u AbsPartIdx, Ipp32u Depth, Ipp32u& IsLast);
+    // Copy CU data from position 0 to all other subparts
+    // This information is needed for reconstruct which may be done in another thread
     void BeforeCoeffs(Ipp32u AbsPartIdx, Ipp32u Depth);
+    // Decode CU recursively
     void DecodeCUCABAC(Ipp32u AbsPartIdx, Ipp32u Depth, Ipp32u& IsLast);
+    // Decode slice end flag if necessary
     bool DecodeSliceEnd(Ipp32u AbsPartIdx, Ipp32u Depth);
 
+    // Decode X and Y coordinates of last significant coefficient in a TU block
     Ipp32u ParseLastSignificantXYCABAC(Ipp32u &PosLastX, Ipp32u &PosLastY, Ipp32u L2Width, bool IsLuma, Ipp32u ScanIdx);
 
+    // Parse TU coefficients
     template <bool scaling_list_enabled_flag>
     void ParseCoeffNxNCABACOptimized(H265CoeffsPtrCommon pCoef, Ipp32u AbsPartIdx, Ipp32u Log2BlockSize, ComponentPlane plane);
 
+    // Parse TU coefficients
     void ParseCoeffNxNCABAC(H265CoeffsPtrCommon pCoef, Ipp32u AbsPartIdx, Ipp32u Log2BlockSize, ComponentPlane plane);
 
+    // Parse TU transform skip flag
     void ParseTransformSkipFlags(Ipp32u AbsPartIdx, ComponentPlane plane);
 
     void ReadCoefRemainExGolombCABAC(Ipp32u &Symbol, Ipp32u &GoRiceParam);
 
+    // Recursively produce CU reconstruct from decoded values
     void ReconstructCU(Ipp32u AbsPartIdx, Ipp32u Depth);
     // Reconstruct intra quad tree including handling IPCM
     void ReconIntraQT(Ipp32u AbsPartIdx, Ipp32u Depth);
+    // Perform inter CU reconstruction
     void ReconInter(Ipp32u AbsPartIdx, Ipp32u Depth);
+    // Place IPCM decoded samples to reconstruct frame
     void ReconPCM(Ipp32u AbsPartIdx, Ipp32u Depth);
 
     // Reconstruct intra (no IPCM) quad tree recursively
@@ -294,9 +340,13 @@ public:
     DecodingContext * m_context;
     std::auto_ptr<DecodingContext> m_context_single_thread;
 
+    // Fill up basic CU information in local decoder context
     void UpdateNeighborBuffers(Ipp32u AbsPartIdx, Ipp32u Depth, bool isSkipped);
+    // Change QP recorded in CU block of local context to a new value
     void UpdateNeighborDecodedQP(Ipp32u AbsPartIdx, Ipp32u Depth);
+    // Fill up inter information in local decoding context and colocated lookup table
     void UpdatePUInfo(Ipp32u PartX, Ipp32u PartY, Ipp32u PartWidth, Ipp32u PartHeight, H265MVInfo &mvInfo);
+    // Update intra availability flags for reconstruct
     void UpdateRecNeighboursBuffersN(Ipp32s PartX, Ipp32s PartY, Ipp32s PartSize, bool IsIntra);
 
     Ipp32s m_iNumber;                                           // (Ipp32s) ordinal number of decoder
@@ -309,7 +359,7 @@ public:
     // Destructor
     virtual ~H265SegmentDecoder(void);
 
-    // Initialize object
+    // Initialize decoder's number
     virtual UMC::Status Init(Ipp32s iNumber);
 
     // Decode slice's segment
@@ -318,23 +368,30 @@ public:
     virtual UMC::Status ProcessSlice(H265Task & task) = 0;
 
 //protected:
-    // Release object
+    // Release memory
     void Release(void);
 
     // Function to de-block partition of macro block row
     virtual void DeblockSegment(H265Task & task);
 
 private:
+    // Calculate CABAC context for split flag. HEVC spec 9.3.4.2.2
     Ipp32u getCtxSplitFlag(Ipp32s PartX, Ipp32s PartY, Ipp32u Depth);
+    // Calculate CABAC context for skip flag. HEVC spec 9.3.4.2.2
     Ipp32u getCtxSkipFlag(Ipp32s PartX, Ipp32s PartY);
+    // Get predictor array of intra directions for intra luma direction decoding. HEVC spec 8.4.2
     void getIntraDirLumaPredictor(Ipp32u AbsPartIdx, Ipp32s IntraDirPred[]);
+    // Prepare an array of motion vector candidates for merge mode. HEVC spec 8.5.3.2.2
     void getInterMergeCandidates(Ipp32u AbsPartIdx, Ipp32u PUIdx, H265MVInfo *MVBufferNeighbours,
         Ipp8u* InterDirNeighbours, Ipp32s mrgCandIdx);
+    // Prepare an array of motion vector candidates for AMVP mode. HEVC spec 8.5.3.2.6
     void fillMVPCand(Ipp32u AbsPartIdx, Ipp32u PartIdx, EnumRefPicList RefPicList, Ipp32s RefIdx, AMVPInfo* pInfo);
-    // add possible motion vector predictor candidates
+    // Check availability of spatial MV candidate which points to the same reference frame. HEVC spec 8.5.3.2.7 #6
     bool AddMVPCand(AMVPInfo* pInfo, EnumRefPicList RefPicList, Ipp32s RefIdx, Ipp32s NeibAddr, const H265MVInfo &motionInfo);
     bool AddMVPCandOrder(AMVPInfo* pInfo, EnumRefPicList RefPicList, Ipp32s RefIdx, Ipp32s NeibAddr, const H265MVInfo &motionInfo);
+    // Check availability of collocated motion vector with given coordinates. HEVC spec 8.5.3.2.9
     bool GetColMVP(EnumRefPicList refPicListIdx, Ipp32u PartX, Ipp32u PartY, H265MotionVector& rcMV, Ipp32s RefIdx);
+    // Returns whether motion information in two cells of collocated motion table is the same
     bool hasEqualMotion(Ipp32s dir1, Ipp32s dir2);
 
     // constrained intra prediction in reconstruct
