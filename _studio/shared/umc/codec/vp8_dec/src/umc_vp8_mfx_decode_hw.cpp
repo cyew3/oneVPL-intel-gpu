@@ -51,6 +51,9 @@ Status VP8VideoDecoderHardware::Init(BaseCodecParams *pInit)
 
     VideoDecoderParams* pDecoderParams;
     pDecoderParams = DynamicCast<VideoDecoderParams>(pInit);
+
+    if(!pDecoderParams) return UMC_ERR_FAILED;
+
     m_pVideoAccelerator = pDecoderParams->pVideoAccelerator;
 
     return VP8VideoDecoderSoftware::Init(pInit);

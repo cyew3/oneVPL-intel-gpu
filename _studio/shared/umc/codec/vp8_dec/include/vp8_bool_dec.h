@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2011 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2014 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -129,7 +129,7 @@ typedef struct _vp8BooleanDecoder
   if (bitcount == 8) \
   { \
     bitcount = 0; \
-    value |= *((booldec)->pData); \
+    value |= static_cast<Ipp32u>(*((booldec)->pData)); \
     (booldec)->pData++; \
   } \
   (booldec)->bitcount = bitcount; \

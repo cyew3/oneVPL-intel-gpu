@@ -91,6 +91,8 @@ Status VP8VideoDecoder::Init(BaseCodecParams* init)
 
   VideoDecoderParams* params = DynamicCast<VideoDecoderParams, BaseCodecParams>(init);
 
+  if(!params) return UMC_ERR_INIT;
+
   m_Params = *params;
 
   for (i = 0; i < 16; i++)
@@ -251,7 +253,7 @@ Status VP8VideoDecoder::GetFrame(MediaData* in, MediaData* out)
   return UMC_OK;
 } // VP8VideoDecoder::GetFrame()
 
-#include <iostream>
+//#include <iostream>
 
 Status VP8VideoDecoder::GetFrame(MediaData* in, FrameData **out)
 {
@@ -340,7 +342,7 @@ Status VP8VideoDecoder::GetFrame(MediaData* in, FrameData **out)
     (*out)->SetPlanePointer(m_CurrFrame->data_u, 1, m_CurrFrame->step_uv);
 
 // temp frame saving
-  if(m_FrameInfo.showFrame)
+/*  if(m_FrameInfo.showFrame)
   {
     Ipp32s i;
 
@@ -363,7 +365,7 @@ Status VP8VideoDecoder::GetFrame(MediaData* in, FrameData **out)
     }
 
     fclose(pFile);
-  }
+  }*/
 // end temp saving
 
 

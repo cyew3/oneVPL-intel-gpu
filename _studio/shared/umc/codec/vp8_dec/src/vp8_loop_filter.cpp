@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2011 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2014 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -499,27 +499,30 @@ void VP8VideoDecoder::LoopFilterNormal(void)
       {
         if(mb_col) // inter Mb VertEdges
         {
-          vp8_loop_filter_normal_mb_ve(ptr_y, step_y,
-                                       ptr_u, ptr_v, 
-                                       step_uv,
-                                       currMb->lfInfo.filterLevel,
-                                       currMb->lfInfo.interiorLimit,
-                                       vp8_hev_thresh_lut[m_FrameInfo.frameType - 1][currMb->lfInfo.filterLevel]);
+          if(m_FrameInfo.frameType < 3)
+            vp8_loop_filter_normal_mb_ve(ptr_y, step_y,
+                                           ptr_u, ptr_v, 
+                                           step_uv,
+                                           currMb->lfInfo.filterLevel,
+                                           currMb->lfInfo.interiorLimit,
+                                           vp8_hev_thresh_lut[m_FrameInfo.frameType - 1][currMb->lfInfo.filterLevel]);
         }
 
         if(!currMb->lfInfo.skipBlockFilter) // inter subBlock VertEdges
         {
-          vp8_loop_filter_normal_sb_ve(ptr_y, step_y,
-                                       ptr_u, ptr_v, 
-                                       step_uv,
-                                       currMb->lfInfo.filterLevel,
-                                       currMb->lfInfo.interiorLimit,
-                                       vp8_hev_thresh_lut[m_FrameInfo.frameType - 1][currMb->lfInfo.filterLevel]);
+          if(m_FrameInfo.frameType < 3)
+              vp8_loop_filter_normal_sb_ve(ptr_y, step_y,
+                                           ptr_u, ptr_v, 
+                                           step_uv,
+                                           currMb->lfInfo.filterLevel,
+                                           currMb->lfInfo.interiorLimit,
+                                           vp8_hev_thresh_lut[m_FrameInfo.frameType - 1][currMb->lfInfo.filterLevel]);
         }
 
         if(mb_row) // inter Mb HorEdges
         {
-          vp8_loop_filter_normal_mb_he(ptr_y, step_y,
+          if(m_FrameInfo.frameType < 3)
+            vp8_loop_filter_normal_mb_he(ptr_y, step_y,
                                        ptr_u, ptr_v, 
                                        step_uv,
                                        currMb->lfInfo.filterLevel,
@@ -529,12 +532,13 @@ void VP8VideoDecoder::LoopFilterNormal(void)
 
         if(!currMb->lfInfo.skipBlockFilter) // inter subBlock HorEdges
         {
-          vp8_loop_filter_normal_sb_he(ptr_y, step_y,
-                                       ptr_u, ptr_v, 
-                                       step_uv,
-                                       currMb->lfInfo.filterLevel,
-                                       currMb->lfInfo.interiorLimit,
-                                       vp8_hev_thresh_lut[m_FrameInfo.frameType - 1][currMb->lfInfo.filterLevel]);
+          if(m_FrameInfo.frameType < 3)
+              vp8_loop_filter_normal_sb_he(ptr_y, step_y,
+                                           ptr_u, ptr_v, 
+                                           step_uv,
+                                           currMb->lfInfo.filterLevel,
+                                           currMb->lfInfo.interiorLimit,
+                                           vp8_hev_thresh_lut[m_FrameInfo.frameType - 1][currMb->lfInfo.filterLevel]);
         }
       }
 

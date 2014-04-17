@@ -217,8 +217,10 @@ Status VP8VideoDecoder::DecodeMbModes_Intra(vp8BooleanDecoder *pBoolDec)
       }
       else
       {
-        for (i = 0; i < 4; i++)
-          *(Ipp32u*)(pMb->blockMode + 4*i) = vp8_mbmode_2_blockmode_u32[pMb->mode];
+        if(pMb->mode < sizeof(vp8_mbmode_2_blockmode_u32) / sizeof(vp8_mbmode_2_blockmode_u32[0]))
+            for (i = 0; i < 4; i++)
+                *(Ipp32u*)(pMb->blockMode + 4*i) = vp8_mbmode_2_blockmode_u32[pMb->mode];
+        // else what ? 
       }
 
       pMb->modeUV = (Ipp8u)vp8_ReadTree(pBooldec, vp8_mb_mode_uv_tree, vp8_kf_mb_mode_uv_probs);
