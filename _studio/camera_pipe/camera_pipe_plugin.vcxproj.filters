@@ -27,6 +27,9 @@
     <ClInclude Include="include\mfx_camera_plugin_utils.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="resource.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Source Files">
@@ -40,5 +43,8 @@
       <UniqueIdentifier>{6862453c-80ab-4c87-becc-5544d45ceb7e}</UniqueIdentifier>
       <Extensions>h;hpp;hxx;hm;inl;inc;xsd</Extensions>
     </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="camera_pipe.rc" />
   </ItemGroup>
 </Project>

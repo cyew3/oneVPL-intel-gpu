@@ -227,6 +227,7 @@
     <ClInclude Include="include\mfx_camera_plugin.h" />
     <ClInclude Include="include\mfx_camera_plugin_cm.h" />
     <ClInclude Include="include\mfx_camera_plugin_utils.h" />
+    <ClInclude Include="resource.h" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\mfx_lib\cmrt_cross_platform\cmrt_cross_platform.vcxproj">
@@ -256,6 +257,9 @@
     <ClCompile Include="src\mfx_camera_plugin.cpp" />
     <ClCompile Include="src\mfx_camera_plugin_cm.cpp" />
     <ClCompile Include="src\mfx_camera_plugin_utils.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="camera_pipe.rc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
