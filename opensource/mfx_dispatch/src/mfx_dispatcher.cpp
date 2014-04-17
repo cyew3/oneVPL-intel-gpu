@@ -48,6 +48,7 @@ MFX_DISP_HANDLE::MFX_DISP_HANDLE(const mfxVersion requiredVersion) :
 {
     implType = MFX_LIB_SOFTWARE;
     impl = MFX_IMPL_SOFTWARE;
+    loadStatus = MFX_ERR_NOT_FOUND;
     dispVersion.Major = MFX_DISPATCHER_VERSION_MAJOR;
     dispVersion.Minor = MFX_DISPATCHER_VERSION_MINOR;
     session = (mfxSession) 0;
@@ -76,6 +77,7 @@ mfxStatus MFX_DISP_HANDLE::Close(void)
     {
         implType = MFX_LIB_SOFTWARE;
         impl = MFX_IMPL_SOFTWARE;
+        loadStatus = MFX_ERR_NOT_FOUND;
         dispVersion.Major = MFX_DISPATCHER_VERSION_MAJOR;
         dispVersion.Minor = MFX_DISPATCHER_VERSION_MINOR;
         session = (mfxSession) 0;
@@ -100,7 +102,8 @@ mfxStatus MFX_DISP_HANDLE::LoadSelectedDLL(const msdk_disp_char *pPath, eMfxImpl
         (MFX_LIB_HARDWARE != implType))
     {
         DISPATCHER_LOG_ERROR((("implType == %s, should be either MFX_LIB_SOFTWARE ot MFX_LIB_HARDWARE\n"), DispatcherLog_GetMFXImplString(implType).c_str()));
-        return MFX_ERR_ABORTED;
+        loadStatus = MFX_ERR_ABORTED;
+        return loadStatus;
     }
     // only exact types of implementation is allowed
     if (!(impl & MFX_IMPL_AUDIO) &&
@@ -111,7 +114,8 @@ mfxStatus MFX_DISP_HANDLE::LoadSelectedDLL(const msdk_disp_char *pPath, eMfxImpl
         (MFX_IMPL_HARDWARE4 != impl))
     {
         DISPATCHER_LOG_ERROR((("invalid implementation impl == %s\n"), DispatcherLog_GetMFXImplString(impl).c_str()));
-        return MFX_ERR_ABORTED;
+        loadStatus = MFX_ERR_ABORTED;
+        return loadStatus;
     }        
 
     // close the handle before initialization
@@ -248,6 +252,7 @@ mfxStatus MFX_DISP_HANDLE::LoadSelectedDLL(const msdk_disp_char *pPath, eMfxImpl
         }
     }
 
+    loadStatus = mfxRes;
     return mfxRes;
 
 } // mfxStatus MFX_DISP_HANDLE::LoadSelectedDLL(const msdk_disp_char *pPath, eMfxImplType implType, mfxIMPL impl)

@@ -141,6 +141,9 @@ struct MFX_DISP_HANDLE
     const
     mfxVersion apiVersion;
 
+    // Status of loaded dll
+    mfxStatus loadStatus;
+
     // Library's module handle
     mfxModuleHandle hModule;
 

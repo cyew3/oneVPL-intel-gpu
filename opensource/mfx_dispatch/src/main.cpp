@@ -317,8 +317,11 @@ mfxStatus DISPATCHER_EXPOSED_PREFIX(MFXInit)(mfxIMPL impl, mfxVersion *pVer, mfx
     }
     while ((MFX_ERR_NONE > mfxRes) && (++curImplIdx <= maxImplIdx));
 
-    if (allocatedHandle.size() == 1 && allocatedHandle[0]->hModule == 0)
+    if (allocatedHandle.size() == 0)
+    {
+        delete pHandle;
         return MFX_ERR_NOT_FOUND;
+    }
 
     // select dll with version with lowest version number still greater or equal to requested
     HandleVector::iterator candidate = allocatedHandle.begin(),
@@ -376,11 +379,10 @@ mfxStatus DISPATCHER_EXPOSED_PREFIX(MFXInit)(mfxIMPL impl, mfxVersion *pVer, mfx
     }
 
     // everything is OK. Save pointers to the output variable
-    pHandle = *candidate;
-    *candidate = 0;
+    *candidate = 0; // keep this one safe from guard destructor 
     *((MFX_DISP_HANDLE **) session) = pHandle;
 
-    return mfxRes;
+    return pHandle->loadStatus;
 
 } // mfxStatus MFXInit(mfxIMPL impl, mfxVersion *ver, mfxSession *session)
 

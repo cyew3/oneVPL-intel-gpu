@@ -271,9 +271,16 @@ mfxStatus MFXLibraryIterator::SelectDLLVersion(wchar_t *pPath
         if (minVersion.Major > 1 || minVersion.Minor < 8)
             return MFX_ERR_UNSUPPORTED;
 
-
-        msdk_disp_char_cpy_s(pPath, pathSize, m_path);
-        return MFX_ERR_NONE;
+        if (m_lastLibIndex == 0)
+        {
+            m_lastLibIndex = 1;
+            msdk_disp_char_cpy_s(pPath, pathSize, m_path);
+            return MFX_ERR_NONE;
+        }
+        else
+        {
+            return MFX_ERR_NOT_FOUND;
+        }
     }
 
     wchar_t libPath[MFX_MAX_DLL_PATH] = L"";
