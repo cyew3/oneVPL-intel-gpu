@@ -81,6 +81,7 @@ Ipp32u DecReferencePictureMarking_H265::GetDPBError() const
     return m_isDPBErrorFound;
 }
 
+// Update DPB contents marking frames for reuse
 UMC::Status DecReferencePictureMarking_H265::UpdateRefPicMarking(ViewItem_H265 &view, const H265Slice * pSlice)
 {
     UMC::Status umcRes = UMC::UMC_OK;
@@ -169,9 +170,7 @@ UMC::Status DecReferencePictureMarking_H265::UpdateRefPicMarking(ViewItem_H265 &
     return umcRes;
 }
 
-/****************************************************************************************************/
-//
-/****************************************************************************************************/
+// Check if bitstream resolution has changed
 bool IsNeedSPSInvalidate(const H265SeqParamSet *old_sps, const H265SeqParamSet *new_sps)
 {
     if (!old_sps || !new_sps)
@@ -264,21 +263,25 @@ void Skipping_H265::Reset()
     m_NumberOfSkippedFrames = 0;
 }
 
+// Disable deblocking filter to increase performance
 void Skipping_H265::PermanentDisableDeblocking(bool disable)
 {
     m_PermanentTurnOffDeblocking = disable ? 3 : 0;
 }
 
+// Check if deblocking should be skipped
 bool Skipping_H265::IsShouldSkipDeblocking(H265DecoderFrame *)
 {
     return (IS_SKIP_DEBLOCKING_MODE_PREVENTIVE || IS_SKIP_DEBLOCKING_MODE_PERMANENT);
 }
 
+// Check if frame should be skipped to decrease decoding delays
 bool Skipping_H265::IsShouldSkipFrame(H265DecoderFrame * )
 {
     return false;
 }
 
+// Set decoding skip frame mode
 void Skipping_H265::ChangeVideoDecodingSpeed(Ipp32s & num)
 {
     m_VideoDecodingSpeed += num;
@@ -295,6 +298,7 @@ void Skipping_H265::ChangeVideoDecodingSpeed(Ipp32s & num)
         m_PermanentTurnOffDeblocking = 3;
 }
 
+// Get current skip mode state
 Skipping_H265::SkipInfo Skipping_H265::GetSkipInfo() const
 {
     SkipInfo info;
@@ -316,6 +320,7 @@ SEI_Storer_H265::~SEI_Storer_H265()
     Close();
 }
 
+// Initialize SEI storage
 void SEI_Storer_H265::Init()
 {
     Close();
@@ -325,6 +330,7 @@ void SEI_Storer_H265::Init()
     m_lastUsed = 2;
 }
 
+// Deallocate SEI storage
 void SEI_Storer_H265::Close()
 {
     Reset();
@@ -332,6 +338,7 @@ void SEI_Storer_H265::Close()
     m_payloads.clear();
 }
 
+// Reset SEI storage
 void SEI_Storer_H265::Reset()
 {
     m_lastUsed = 2;
@@ -341,6 +348,7 @@ void SEI_Storer_H265::Reset()
     }
 }
 
+// Set SEI frame for stored SEI messages
 void SEI_Storer_H265::SetFrame(H265DecoderFrame * frame)
 {
     VM_ASSERT(frame);
@@ -353,6 +361,7 @@ void SEI_Storer_H265::SetFrame(H265DecoderFrame * frame)
     }
 }
 
+// Set timestamp for stored SEI messages
 void SEI_Storer_H265::SetTimestamp(H265DecoderFrame * frame)
 {
     VM_ASSERT(frame);
@@ -371,6 +380,7 @@ void SEI_Storer_H265::SetTimestamp(H265DecoderFrame * frame)
     m_lastUsed++;
 }
 
+// Retrieve a stored SEI message which was not retrieved before
 const SEI_Storer_H265::SEI_Message * SEI_Storer_H265::GetPayloadMessage()
 {
     SEI_Storer_H265::SEI_Message * msg = 0;
@@ -392,6 +402,7 @@ const SEI_Storer_H265::SEI_Message * SEI_Storer_H265::GetPayloadMessage()
     return msg;
 }
 
+// Put a new SEI message to the storage
 SEI_Storer_H265::SEI_Message* SEI_Storer_H265::AddMessage(UMC::MediaDataEx *nalUnit, SEI_TYPE type)
 {
     size_t sz = nalUnit->GetDataSize();
@@ -477,6 +488,7 @@ ViewItem_H265::~ViewItem_H265()
 
 } // ViewItem_H265::ViewItem_H265(void)
 
+// Initialize the view, allocate resources
 UMC::Status ViewItem_H265::Init()
 {
     // release the object before initialization
@@ -500,6 +512,7 @@ UMC::Status ViewItem_H265::Init()
 
 } // Status ViewItem_H265::Init(Ipp32u view_id)
 
+// Close the view and release all resources
 void ViewItem_H265::Close(void)
 {
     // Reset the parameters before close
@@ -516,6 +529,7 @@ void ViewItem_H265::Close(void)
 
 } // void ViewItem_H265::Close(void)
 
+// Reset the view and reset all resource
 void ViewItem_H265::Reset(void)
 {
     if (pDPB.get())
@@ -530,6 +544,7 @@ void ViewItem_H265::Reset(void)
 
 } // void ViewItem_H265::Reset(void)
 
+// Reset the size of DPB for particular view item
 void ViewItem_H265::SetDPBSize(H265SeqParamSet *pSps, Ipp32u & level_idc)
 {
     Ipp32u level = level_idc ? level_idc : pSps->m_pcPTL.GetGeneralPTL()->level_idc;
@@ -584,6 +599,7 @@ TaskSupplier_H265::~TaskSupplier_H265()
     Close();
 }
 
+// Initialize task supplier and creak task broker
 UMC::Status TaskSupplier_H265::Init(UMC::BaseCodecParams *pInit)
 {
     UMC::VideoDecoderParams *init = DynamicCast<UMC::VideoDecoderParams> (pInit);
@@ -673,6 +689,7 @@ UMC::Status TaskSupplier_H265::Init(UMC::BaseCodecParams *pInit)
     return UMC::UMC_OK;
 }
 
+// Initialize what is necessary to decode bitstream header before the main part is initialized
 UMC::Status TaskSupplier_H265::PreInit(UMC::BaseCodecParams *pInit)
 {
     if (m_isInitialized)
@@ -713,6 +730,7 @@ UMC::Status TaskSupplier_H265::PreInit(UMC::BaseCodecParams *pInit)
     return UMC::UMC_OK;
 }
 
+// Release allocated resources
 void TaskSupplier_H265::Close()
 {
     if (m_pTaskBroker)
@@ -787,6 +805,7 @@ void TaskSupplier_H265::Close()
 
 } // void TaskSupplier_H265::Close()
 
+// Reset to default state
 void TaskSupplier_H265::Reset()
 {
     if (m_pTaskBroker)
@@ -835,6 +854,7 @@ void TaskSupplier_H265::Reset()
         m_pTaskBroker->Init(m_iThreadNum, true);
 }
 
+// Attempt to recover after something unexpectedly went wrong
 void TaskSupplier_H265::AfterErrorRestore()
 {
     if (m_pTaskBroker)
@@ -867,6 +887,7 @@ void TaskSupplier_H265::AfterErrorRestore()
         m_pTaskBroker->Init(m_iThreadNum, true);
 }
 
+// Fill up current bitstream information
 UMC::Status TaskSupplier_H265::GetInfo(UMC::VideoDecoderParams *lpInfo)
 {
     H265SeqParamSet *sps = m_Headers.m_SeqParams.GetCurrentHeader();
@@ -911,6 +932,7 @@ UMC::Status TaskSupplier_H265::GetInfo(UMC::VideoDecoderParams *lpInfo)
     return UMC::UMC_OK;
 }
 
+// Search DPB for a frame which may be reused
 H265DecoderFrame *TaskSupplier_H265::GetFreeFrame()
 {
     UMC::AutomaticUMCMutex guard(m_mGuard);
@@ -960,6 +982,7 @@ H265DecoderFrame *TaskSupplier_H265::GetFreeFrame()
     return pFrame;
 }
 
+// Decode SEI NAL unit
 UMC::Status TaskSupplier_H265::DecodeSEI(UMC::MediaDataEx *nalUnit)
 {
     if (m_Headers.m_SeqParams.GetCurrentID() == -1)
@@ -1013,6 +1036,7 @@ UMC::Status TaskSupplier_H265::DecodeSEI(UMC::MediaDataEx *nalUnit)
     return UMC::UMC_OK;
 }
 
+// Decode video parameters set NAL unit
 UMC::Status TaskSupplier_H265::xDecodeVPS(H265Bitstream &bs)
 {
     H265VideoParamSet vps;
@@ -1024,6 +1048,7 @@ UMC::Status TaskSupplier_H265::xDecodeVPS(H265Bitstream &bs)
     return s;
 }
 
+// Decode sequence parameters set NAL unit
 UMC::Status TaskSupplier_H265::xDecodeSPS(H265Bitstream &bs)
 {
     H265SeqParamSet sps;
@@ -1095,6 +1120,7 @@ UMC::Status TaskSupplier_H265::xDecodeSPS(H265Bitstream &bs)
     return UMC::UMC_OK;
 }
 
+// Decode picture parameters set NAL unit
 UMC::Status TaskSupplier_H265::xDecodePPS(H265Bitstream &bs)
 {
     H265PicParamSet pps;
@@ -1144,6 +1170,7 @@ UMC::Status TaskSupplier_H265::xDecodePPS(H265Bitstream &bs)
         return UMC::UMC_ERR_ALLOC;
     }
 
+    // Calculate tiles rows and columns coordinates
     if (pps.tiles_enabled_flag)
     {
         Ipp32u columns = pps.num_tile_columns;
@@ -1238,6 +1265,7 @@ UMC::Status TaskSupplier_H265::xDecodePPS(H265Bitstream &bs)
         tbX = tbY = 0;
 
 
+        // Initialize CTB index raster to tile and inverse lookup tables
         for (i = 0; i < WidthInLCU * HeightInLCU; i++)
         {
             Ipp32u tileX = 0, tileY = 0, CtbAddrRStoTS;
@@ -1306,6 +1334,7 @@ UMC::Status TaskSupplier_H265::xDecodePPS(H265Bitstream &bs)
         pps.tilesInfo[0].endCUAddr = WidthInLCU*HeightInLCU;
     }
 
+    // Initialize tiles coordinates
     for (Ipp32s i = 0; i < numberOfTiles; i++)
     {
         Ipp32s tileY = i / pps.num_tile_columns;
@@ -1334,6 +1363,7 @@ UMC::Status TaskSupplier_H265::xDecodePPS(H265Bitstream &bs)
     return s;
 }
 
+// Decode a bitstream header NAL unit
 UMC::Status TaskSupplier_H265::DecodeHeaders(UMC::MediaDataEx *nalUnit)
 {
     //ViewItem_H265 *view = GetView(BASE_VIEW);
@@ -1389,22 +1419,7 @@ UMC::Status TaskSupplier_H265::DecodeHeaders(UMC::MediaDataEx *nalUnit)
     return umcRes;
 }
 
-bool TaskSupplier_H265::IsWantToShowFrame(bool force)
-{
-    ViewItem_H265 &view = *GetView();
-
-    Ipp32u countDisplayable = view.pDPB->countNumDisplayable();
-    if (countDisplayable > view.sps_max_num_reorder_pics || force)
-    {
-        H265DecoderFrame * pTmp = view.pDPB->findOldestDisplayable(view.dpbSize);
-        if (pTmp && countDisplayable >= pTmp->GetAU()->GetSeqParam()->sps_max_num_reorder_pics[0])
-            return 0;
-        return !!pTmp;
-    }
-
-    return false;
-}
-
+// Set frame display time
 void TaskSupplier_H265::PostProcessDisplayFrame(UMC::MediaData *dst, H265DecoderFrame *pFrame)
 {
     if (!pFrame || pFrame->post_procces_complete)
@@ -1445,12 +1460,14 @@ void TaskSupplier_H265::PostProcessDisplayFrame(UMC::MediaData *dst, H265Decoder
     dst->SetTime(pFrame->m_dFrameTime);
 }
 
+// Find a next frame ready to be output from decoder
 H265DecoderFrame *TaskSupplier_H265::GetFrameToDisplayInternal(bool force)
 {
     H265DecoderFrame *pFrame = GetAnyFrameToDisplay(force);
     return pFrame;
 }
 
+// Find a next frame ready to be output from decoder
 H265DecoderFrame *TaskSupplier_H265::GetAnyFrameToDisplay(bool force)
 {
     ViewItem_H265 &view = *GetView();
@@ -1496,11 +1513,13 @@ H265DecoderFrame *TaskSupplier_H265::GetAnyFrameToDisplay(bool force)
     return 0;
 }
 
+// Try to reset in case DPB has overflown
 void TaskSupplier_H265::PreventDPBFullness()
 {
     AfterErrorRestore();
 }
 
+// If a frame has all slices found, add it to asynchronous decode queue
 UMC::Status TaskSupplier_H265::CompleteDecodedFrames(H265DecoderFrame ** decoded)
 {
     bool existCompleted = false;
@@ -1563,6 +1582,7 @@ UMC::Status TaskSupplier_H265::CompleteDecodedFrames(H265DecoderFrame ** decoded
     return existCompleted ? UMC::UMC_OK : UMC::UMC_ERR_NOT_ENOUGH_DATA;
 }
 
+// Add a new bitstream data buffer to decoding
 UMC::Status TaskSupplier_H265::AddSource(UMC::MediaData * pSource, UMC::MediaData *dst)
 {
     UMC::Status umcRes = UMC::UMC_OK;
@@ -1610,6 +1630,7 @@ UMC::Status TaskSupplier_H265::AddSource(UMC::MediaData * pSource, UMC::MediaDat
     return umcRes;
 }
 
+// Chose appropriate processing action for specified NAL unit
 UMC::Status TaskSupplier_H265::ProcessNalUnit(UMC::MediaDataEx *nalUnit)
 {
     UMC::Status umcRes = UMC::UMC_OK;
@@ -1657,6 +1678,7 @@ UMC::Status TaskSupplier_H265::ProcessNalUnit(UMC::MediaDataEx *nalUnit)
     return umcRes;
 }
 
+// Find NAL units in new bitstream buffer and process them
 UMC::Status TaskSupplier_H265::AddOneFrame(UMC::MediaData * pSource, UMC::MediaData *dst)
 {
     if (m_pLastSlice)
@@ -1839,6 +1861,7 @@ UMC::Status TaskSupplier_H265::AddOneFrame(UMC::MediaData * pSource, UMC::MediaD
     return UMC::UMC_ERR_NOT_ENOUGH_DATA;
 }
 
+// Decode slice header start, set slice links to SPS and PPS and correct tile offsets table if needed
 H265Slice *TaskSupplier_H265::DecodeSliceHeader(UMC::MediaDataEx *nalUnit)
 {
     if ((0 > m_Headers.m_SeqParams.GetCurrentID()) ||
@@ -1964,6 +1987,7 @@ H265Slice *TaskSupplier_H265::DecodeSliceHeader(UMC::MediaDataEx *nalUnit)
     return pSlice;
 }
 
+// Initialize scaling list data if needed
 void TaskSupplier_H265::ActivateHeaders(H265SeqParamSet *sps, H265PicParamSet *pps)
 {
     for (Ipp32u i = 0; i < sps->MaxCUDepth - sps->AddCUDepth; i++)
@@ -2003,6 +2027,7 @@ void TaskSupplier_H265::ActivateHeaders(H265SeqParamSet *sps, H265PicParamSet *p
     }
 }
 
+// Calculate NoRaslOutputFlag flag for specified slice
 void TaskSupplier_H265::CheckCRAOrBLA(const H265Slice *pSlice)
 {
     if (pSlice->m_SliceHeader.nal_unit_type == NAL_UT_CODED_SLICE_IDR_W_RADL
@@ -2037,6 +2062,7 @@ void TaskSupplier_H265::CheckCRAOrBLA(const H265Slice *pSlice)
     }
 }
 
+// Check whether this slice should be skipped because of random access conditions. HEVC spec 3.111
 bool TaskSupplier_H265::IsSkipForCRAorBLA(const H265Slice *pSlice)
 {
     if (NoRaslOutputFlag)
@@ -2057,6 +2083,7 @@ bool TaskSupplier_H265::IsSkipForCRAorBLA(const H265Slice *pSlice)
     return false;
 }
 
+// Add a new slice to frame
 UMC::Status TaskSupplier_H265::AddSlice(H265Slice * pSlice, bool )
 {
     m_pLastSlice = 0;
@@ -2145,6 +2172,7 @@ UMC::Status TaskSupplier_H265::AddSlice(H265Slice * pSlice, bool )
     return UMC::UMC_ERR_NOT_ENOUGH_DATA;
 }
 
+// Not implemented
 void TaskSupplier_H265::AddFakeReferenceFrame(H265Slice *)
 {
 // need to add absent ref frame logic
@@ -2180,6 +2208,7 @@ void TaskSupplier_H265::AddFakeReferenceFrame(H265Slice *)
 #endif
 }
 
+// Initialize array of POC deltas from current POC to reference frames in DPB
 void SetDeltaPocs(const H265DecoderFrameList * dpb, const H265DecoderFrame * frame)
 {
     Ipp32s max_index = 0;
@@ -2201,6 +2230,7 @@ void SetDeltaPocs(const H265DecoderFrameList * dpb, const H265DecoderFrame * fra
     }
 }
 
+// Mark frame as full with slices
 void TaskSupplier_H265::OnFullFrame(H265DecoderFrame * pFrame)
 {
 #ifndef MFX_VA
@@ -2300,6 +2330,7 @@ void TaskSupplier_H265::CompleteFrame(H265DecoderFrame * pFrame)
     slicesInfo->SetStatus(H265DecoderFrameInfo::STATUS_FILLED);
 }
 
+// Initialize just allocated frame with slice parameters
 UMC::Status TaskSupplier_H265::InitFreeFrame(H265DecoderFrame * pFrame, const H265Slice *pSlice)
 {
     UMC::Status umcRes = UMC::UMC_OK;
@@ -2349,6 +2380,7 @@ UMC::Status TaskSupplier_H265::InitFreeFrame(H265DecoderFrame * pFrame, const H2
     return umcRes;
 }
 
+// Allocate frame internals
 UMC::Status TaskSupplier_H265::AllocateFrameData(H265DecoderFrame * pFrame, IppiSize dimensions, Ipp32s bit_depth, const H265SeqParamSet* pSeqParamSet, const H265PicParamSet *pPicParamSet)
 {
     UMC::ColorFormat color_format = pFrame->GetColorFormat();
@@ -2377,6 +2409,7 @@ UMC::Status TaskSupplier_H265::AllocateFrameData(H265DecoderFrame * pFrame, Ippi
     return UMC::UMC_OK;
 }
 
+// Try to find a reusable frame or allocate a new one and initialize it with slice parameters
 H265DecoderFrame * TaskSupplier_H265::AllocateNewFrame(const H265Slice *pSlice)
 {
     H265DecoderFrame *pFrame = NULL;
@@ -2464,6 +2497,7 @@ H265DecoderFrame * TaskSupplier_H265::AllocateNewFrame(const H265Slice *pSlice)
 
 } // H265DecoderFrame * TaskSupplier_H265::AllocateNewFrame(const H265Slice *pSlice)
 
+// Initialize frame's counter and corresponding parameters
 void TaskSupplier_H265::InitFrameCounter(H265DecoderFrame * pFrame, const H265Slice *pSlice)
 {
     const H265SliceHeader *sliceHeader = pSlice->GetSliceHeader();
@@ -2484,6 +2518,7 @@ void TaskSupplier_H265::InitFrameCounter(H265DecoderFrame * pFrame, const H265Sl
 
 } // void TaskSupplier_H265::InitFrameCounter(H265DecoderFrame * pFrame, const H265Slice *pSlice)
 
+// Include a new slice into a set of frame slices
 void TaskSupplier_H265::AddSliceToFrame(H265DecoderFrame *pFrame, H265Slice *pSlice)
 {
     if (pFrame->m_FrameType < SliceTypeToFrameType(pSlice->GetSliceHeader()->slice_type))
@@ -2497,12 +2532,14 @@ void TaskSupplier_H265::AddSliceToFrame(H265DecoderFrame *pFrame, H265Slice *pSl
     au_info->AddSlice(pSlice);
 }
 
+// Update DPB contents marking frames for reuse
 void TaskSupplier_H265::DPBUpdate(const H265Slice * slice)
 {
     ViewItem_H265 &view = *GetView();
     DecReferencePictureMarking_H265::UpdateRefPicMarking(view, slice);
 }
 
+// Find a decoder frame instance with specified surface ID
 H265DecoderFrame * TaskSupplier_H265::FindSurface(UMC::FrameMemID id)
 {
     UMC::AutomaticUMCMutex guard(m_mGuard);
@@ -2517,6 +2554,7 @@ H265DecoderFrame * TaskSupplier_H265::FindSurface(UMC::FrameMemID id)
     return 0;
 }
 
+// Start asynchronous decoding
 UMC::Status TaskSupplier_H265::RunDecoding()
 {
     CompleteDecodedFrames(0);
@@ -2541,6 +2579,7 @@ UMC::Status TaskSupplier_H265::RunDecoding()
     return UMC::UMC_OK;
 }
 
+// Start asynchronous decoding and wait for any frame to get ready
 UMC::Status TaskSupplier_H265::RunDecodingAndWait(bool should_additional_check, H265DecoderFrame ** decoded)
 {
     H265DecoderFrame * outputFrame = *decoded;
@@ -2594,6 +2633,7 @@ UMC::Status TaskSupplier_H265::RunDecodingAndWait(bool should_additional_check, 
     return umcRes;
 }
 
+// Retrieve decoded SEI data with SEI_USER_DATA_REGISTERED_TYPE type
 UMC::Status TaskSupplier_H265::GetUserData(UMC::MediaData * pUD)
 {
     if(!pUD)
@@ -2616,21 +2656,7 @@ UMC::Status TaskSupplier_H265::GetUserData(UMC::MediaData * pUD)
     return UMC::UMC_ERR_NOT_ENOUGH_DATA;
 }
 
-bool TaskSupplier_H265::IsShouldSuspendDisplay()
-{
-    UMC::AutomaticUMCMutex guard(m_mGuard);
-
-    if (m_iThreadNum <= 1)
-        return true;
-
-    ViewItem_H265 &view = *GetView();
-
-    if (view.pDPB->GetDisposable() || view.pDPB->countAllFrames() < view.dpbSize + m_DPBSizeEx)
-        return false;
-
-    return true;
-}
-
+// Find an index of specified level
 Ipp32u GetLevelIDCIndex(Ipp32u level_idc)
 {
     for (Ipp32u i = 0; i < sizeof(levelIndexArray)/sizeof(levelIndexArray[0]); i++)
@@ -2642,10 +2668,11 @@ Ipp32u GetLevelIDCIndex(Ipp32u level_idc)
     return sizeof(levelIndexArray)/sizeof(levelIndexArray[0]) - 1;
 }
 
-// can increase level_idc to hold num_ref_frames
+// Calculate maximum DPB size based on level and resolution
 Ipp32s __CDECL CalculateDPBSize(Ipp32u level_idc, Ipp32s width, Ipp32s height)
 {
-    Ipp32u lumaPsArray[] = {36864, 122880, 245760, 552960, 983040, 2228224, 2228224, 8912896, 8912896, 8912896, 35651584, 35651584, 35651584};
+    // can increase level_idc to hold num_ref_frames
+    Ipp32u lumaPsArray[] = { 36864, 122880, 245760, 552960, 983040, 2228224, 2228224, 8912896, 8912896, 8912896, 35651584, 35651584, 35651584 };
     Ipp32u index = GetLevelIDCIndex(level_idc);
 
     Ipp32u MaxLumaPs = lumaPsArray[index];

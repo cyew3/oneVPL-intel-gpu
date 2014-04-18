@@ -60,9 +60,13 @@ public:
     virtual
     ~Skipping_H265();
 
+    // Disable deblocking filter to increase performance
     void PermanentDisableDeblocking(bool disable);
+    // Check if deblocking should be skipped
     bool IsShouldSkipDeblocking(H265DecoderFrame * pFrame);
+    // Check if frame should be skipped to decrease decoding delays
     bool IsShouldSkipFrame(H265DecoderFrame * pFrame);
+    // Set decoding skip frame mode
     void ChangeVideoDecodingSpeed(Ipp32s& num);
     void Reset();
 
@@ -72,6 +76,7 @@ public:
         Ipp32s numberOfSkippedFrames;
     };
 
+    // Get current skip mode state
     SkipInfo GetSkipInfo() const;
 
 private:
@@ -118,18 +123,25 @@ public:
 
     virtual ~SEI_Storer_H265();
 
+    // Initialize SEI storage
     void Init();
 
+    // Deallocate SEI storage
     void Close();
 
+    // Reset SEI storage
     void Reset();
 
+    // Set timestamp for stored SEI messages
     void SetTimestamp(H265DecoderFrame * frame);
 
+    // Put a new SEI message to the storage
     SEI_Message* AddMessage(UMC::MediaDataEx *nalUnit, SEI_TYPE type);
 
+    // Retrieve a stored SEI message which was not retrieved before
     const SEI_Message * GetPayloadMessage();
 
+    // Set SEI frame for stored SEI messages
     void SetFrame(H265DecoderFrame * frame);
 
 private:
@@ -163,7 +175,7 @@ struct ViewItem_H265
 
     ~ViewItem_H265();
 
-    // Initialize th view, allocate resources
+    // Initialize the view, allocate resources
     UMC::Status Init();
 
     // Close the view and release all resources
@@ -224,6 +236,7 @@ public:
 
     DecReferencePictureMarking_H265();
 
+    // Update DPB contents marking frames for reuse
     UMC::Status UpdateRefPicMarking(ViewItem_H265 &view, const H265Slice * pSlice);
 
     void Reset();
@@ -239,7 +252,7 @@ protected:
 };
 
 /****************************************************************************************************/
-// TaskSupplier_H265
+// Prepare data for asychronous processing
 /****************************************************************************************************/
 class TaskSupplier_H265 : public Skipping_H265, public AU_Splitter_H265, public MVC_Extension, public DecReferencePictureMarking_H265
 {
@@ -252,17 +265,24 @@ public:
     TaskSupplier_H265();
     virtual ~TaskSupplier_H265();
 
+    // Initialize task supplier and creak task broker
     virtual UMC::Status Init(UMC::BaseCodecParams *pInit);
 
+    // Initialize what is necessary to decode bitstream header before the main part is initialized
     virtual UMC::Status PreInit(UMC::BaseCodecParams *pInit);
 
+    // Reset to default state
     virtual void Reset();
+    // Release allocated resources
     virtual void Close();
 
+    // Fill up current bitstream information
     UMC::Status GetInfo(UMC::VideoDecoderParams *lpInfo);
 
+    // Add a new bitstream data buffer to decoding
     virtual UMC::Status AddSource(UMC::MediaData * pSource, UMC::MediaData *dst);
 
+    // Chose appropriate processing action for specified NAL unit
     UMC::Status ProcessNalUnit(UMC::MediaDataEx *nalUnit);
 
     void SetMemoryAllocator(UMC::MemoryAllocator *pMemoryAllocator)
@@ -275,11 +295,11 @@ public:
         m_pFrameAllocator = pFrameAllocator;
     }
 
+    // Find a next frame ready to be output from decoder
     virtual H265DecoderFrame *GetFrameToDisplayInternal(bool force);
 
+    // Retrieve decoded SEI data with SEI_USER_DATA_REGISTERED_TYPE type
     UMC::Status GetUserData(UMC::MediaData * pUD);
-
-    bool IsWantToShowFrame(bool force = false);
 
     H265DBPList *GetDPBList()
     {
@@ -298,17 +318,20 @@ public:
         return m_pTaskBroker;
     }
 
+    // Start asynchronous decoding and wait for any frame to get ready
     virtual UMC::Status RunDecodingAndWait(bool force, H265DecoderFrame ** decoded = 0);
+    // Start asynchronous decoding
     virtual UMC::Status RunDecoding();
+    // Find a decoder frame instance with specified surface ID
     virtual H265DecoderFrame * FindSurface(UMC::FrameMemID id);
 
+    // Set frame display time
     void PostProcessDisplayFrame(UMC::MediaData *dst, H265DecoderFrame *pFrame);
 
+    // Attempt to recover after something unexpectedly went wrong
     virtual void AfterErrorRestore();
 
     SEI_Storer_H265 * GetSEIStorer() const { return m_sei_messages;}
-
-    bool IsShouldSuspendDisplay();
 
     Headers * GetHeaders() { return &m_Headers;}
 
@@ -317,6 +340,7 @@ public:
         return m_Headers.m_SeqParams.GetCurrentHeader();
     }
 
+    // Decode slice header start, set slice links to SPS and PPS and correct tile offsets table if needed
     virtual H265Slice * DecodeSliceHeader(UMC::MediaDataEx *nalUnit);
 
     Heap_Objects * GetObjHeap()
@@ -328,44 +352,59 @@ protected:
 
     void InitColorConverter(H265DecoderFrame *source, UMC::VideoData * videoData);
 
+    // Include a new slice into a set of frame slices
     void AddSliceToFrame(H265DecoderFrame *pFrame, H265Slice *pSlice);
 
+    // Initialize scaling list data if needed
     void ActivateHeaders(H265SeqParamSet *sps, H265PicParamSet *pps);
 
+    // Check whether this slice should be skipped because of random access conditions. HEVC spec 3.111
     bool IsSkipForCRAorBLA(const H265Slice *pSlice);
 
+    // Calculate NoRaslOutputFlag flag for specified slice
     void CheckCRAOrBLA(const H265Slice *pSlice);
 
-    // Allocate a new frame and initialize it with slice parameters
+    // Try to find a reusable frame or allocate a new one and initialize it with slice parameters
     virtual H265DecoderFrame *AllocateNewFrame(const H265Slice *pSlice);
     // Initialize just allocated frame with slice parameters
     virtual UMC::Status InitFreeFrame(H265DecoderFrame *pFrame, const H265Slice *pSlice);
     // Initialize frame's counter and corresponding parameters
     virtual void InitFrameCounter(H265DecoderFrame *pFrame, const H265Slice *pSlice);
 
+    // Add a new slice to frame
     UMC::Status AddSlice(H265Slice * pSlice, bool force);
     // Check whether all slices for the frame were found
     virtual void CompleteFrame(H265DecoderFrame * pFrame);
+    // Mark frame as full with slices
     virtual void OnFullFrame(H265DecoderFrame * pFrame);
 
+    // Update DPB contents marking frames for reuse
     void DPBUpdate(const H265Slice * slice);
 
+    // Not implemented
     virtual void AddFakeReferenceFrame(H265Slice * pSlice);
 
+    // Find NAL units in new bitstream buffer and process them
     UMC::Status AddOneFrame(UMC::MediaData * pSource, UMC::MediaData *dst);
 
+    // Allocate frame internals
     virtual UMC::Status AllocateFrameData(H265DecoderFrame * pFrame, IppiSize dimensions, Ipp32s bit_depth, const H265SeqParamSet* pSeqParamSet, const H265PicParamSet *pPicParamSet);
 
+    // Decode a bitstream header NAL unit
     virtual UMC::Status DecodeHeaders(UMC::MediaDataEx *nalUnit);
+    // Decode SEI NAL unit
     virtual UMC::Status DecodeSEI(UMC::MediaDataEx *nalUnit);
 
-    // Obtain free frame from queue
+    // Search DPB for a frame which may be reused
     virtual H265DecoderFrame *GetFreeFrame();
 
+    // If a frame has all slices found, add it to asynchronous decode queue
     UMC::Status CompleteDecodedFrames(H265DecoderFrame ** decoded);
 
+    // Find a next frame ready to be output from decoder
     H265DecoderFrame *GetAnyFrameToDisplay(bool force);
 
+    // Try to reset in case DPB has overflown
     void PreventDPBFullness();
 
     Heap_Objects           m_ObjHeap;
@@ -413,8 +452,11 @@ protected:
     UMC::Mutex m_mGuard;
 
 private:
+    // Decode video parameters set NAL unit
     UMC::Status xDecodeVPS(H265Bitstream &);
+    // Decode sequence parameters set NAL unit
     UMC::Status xDecodeSPS(H265Bitstream &);
+    // Decode picture parameters set NAL unit
     UMC::Status xDecodePPS(H265Bitstream &);
 
     TaskSupplier_H265 & operator = (TaskSupplier_H265 &)
@@ -425,6 +467,7 @@ private:
 
 };
 
+// Calculate maximum DPB size based on level and resolution
 extern Ipp32s __CDECL CalculateDPBSize(Ipp32u level_idc, Ipp32s width, Ipp32s height);
 
 } // namespace UMC_HEVC_DECODER
