@@ -178,18 +178,18 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
 
             pParams->mode = MODE_RENDERING;
 
-            msdk_sscanf(strInput[++i], MSDK_STRING("%d"), &pParams->nWallW);
-            msdk_sscanf(strInput[++i], MSDK_STRING("%d"), &pParams->nWallH);
-            msdk_sscanf(strInput[++i], MSDK_STRING("%d"), &pParams->nWallCell);
-            msdk_sscanf(strInput[++i], MSDK_STRING("%d"), &pParams->nWallMonitor);
-            msdk_sscanf(strInput[++i], MSDK_STRING("%d"), &pParams->nWallFPS);
+            msdk_opt_read(strInput[++i], &pParams->nWallW);
+            msdk_opt_read(strInput[++i], &pParams->nWallH);
+            msdk_opt_read(strInput[++i], &pParams->nWallCell);
+            msdk_opt_read(strInput[++i], &pParams->nWallMonitor);
+            msdk_opt_read(strInput[++i], &pParams->nWallFPS);
 
-            int nTitle;
-            msdk_sscanf(strInput[++i], MSDK_STRING("%d"), &nTitle);
+            mfxU32 nTitle;
+            msdk_opt_read(strInput[++i], &nTitle);
 
             pParams->bWallNoTitle = 0 == nTitle;
 
-            msdk_sscanf(strInput[++i], MSDK_STRING("%d"), &pParams->nWallTimeout);
+            msdk_opt_read(strInput[++i], &pParams->nWallTimeout);
         }
 #endif
 #if defined(LIBVA_SUPPORT)
@@ -233,7 +233,7 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
                 return MFX_ERR_UNSUPPORTED;
             }
 
-            msdk_sscanf(strInput[++i], MSDK_STRING("%d"), &pParams->nRotation);
+            msdk_opt_read(strInput[++i], &pParams->nRotation);
             if((pParams->nRotation != 90)&&(pParams->nRotation != 180)&&(pParams->nRotation != 270))
             {
                 PrintHelp(strInput[0], MSDK_STRING("-jpeg_rotate is supported only for 90, 180 and 270 angles"));
@@ -266,7 +266,7 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
                 PrintHelp(strInput[0], MSDK_STRING("Not enough parameters for -async key"));
                 return MFX_ERR_UNSUPPORTED;
             }
-            if (1 != msdk_sscanf(strInput[++i], MSDK_STRING("%hu"), &pParams->nAsyncDepth))
+            if (MFX_ERR_NONE == msdk_opt_read(strInput[++i], &pParams->nAsyncDepth))
             {
                 PrintHelp(strInput[0], MSDK_STRING("async is invalid"));
                 return MFX_ERR_UNSUPPORTED;

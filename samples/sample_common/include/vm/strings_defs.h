@@ -33,7 +33,6 @@ typedef TCHAR msdk_char;
 #define msdk_strcmp   _tcscmp
 #define msdk_strncmp  _tcsnicmp
 #define msdk_strstr   _tcsstr
-#define msdk_sscanf   _stscanf_s
 #define msdk_atoi     _ttoi
 #define msdk_strtol   _tcstol
 #define msdk_strtod   _tcstod
@@ -69,7 +68,6 @@ typedef char msdk_char;
 #define msdk_strcmp   strcmp
 #define msdk_strncmp  strncmp
 #define msdk_strstr   strstr
-#define msdk_sscanf   sscanf
 #define msdk_atoi     atoi
 #define msdk_atoll    atoll
 #define msdk_strtol   strtol

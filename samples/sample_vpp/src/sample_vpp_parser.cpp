@@ -348,7 +348,6 @@ mfxStatus vppParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams
     MSDK_CHECK_POINTER(strInput, MFX_ERR_NULL_PTR);
 
     mfxU32 readData;
-    mfxU32 ioStatus;
 
     mfxU8 i;
 
@@ -375,84 +374,84 @@ mfxStatus vppParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams
             if ( 0 == msdk_strcmp(strInput[i], MSDK_STRING("-sw")) )
             {
                 i++;
-                msdk_sscanf(strInput[i], MSDK_STRING("%hd"), &pParams->inFrameInfo[VPP_IN].nWidth);
+                msdk_opt_read(strInput[i], &pParams->inFrameInfo[VPP_IN].nWidth);
             }
             else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-sh")))
             {
                 i++;
-                msdk_sscanf(strInput[i], MSDK_STRING("%hd"), &pParams->inFrameInfo[VPP_IN].nHeight);
+                msdk_opt_read(strInput[i], &pParams->inFrameInfo[VPP_IN].nHeight);
             }
             else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-scrX")))
             {
                 i++;
-                msdk_sscanf(strInput[i], MSDK_STRING("%hd"), &pParams->inFrameInfo[VPP_IN].CropX);
+                msdk_opt_read(strInput[i], &pParams->inFrameInfo[VPP_IN].CropX);
             }
             else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-scrY")))
             {
                 i++;
-                msdk_sscanf(strInput[i], MSDK_STRING("%hd"), &pParams->inFrameInfo[VPP_IN].CropY);
+                msdk_opt_read(strInput[i], &pParams->inFrameInfo[VPP_IN].CropY);
             }
             else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-scrW")))
             {
                 i++;
-                msdk_sscanf(strInput[i], MSDK_STRING("%hd"), &pParams->inFrameInfo[VPP_IN].CropW);
+                msdk_opt_read(strInput[i], &pParams->inFrameInfo[VPP_IN].CropW);
             }
             else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-scrH")))
             {
                 i++;
-                msdk_sscanf(strInput[i], MSDK_STRING("%hd"), &pParams->inFrameInfo[VPP_IN].CropH);
+                msdk_opt_read(strInput[i], &pParams->inFrameInfo[VPP_IN].CropH);
             }
             else if(0 == msdk_strcmp(strInput[i], MSDK_STRING("-spic")))
             {
                 i++;
-                msdk_sscanf(strInput[i], MSDK_STRING("%hhu"), &pParams->inFrameInfo[VPP_IN].PicStruct);
+                msdk_opt_read(strInput[i], &pParams->inFrameInfo[VPP_IN].PicStruct);
                 pParams->inFrameInfo[VPP_IN].PicStruct = GetPicStruct(pParams->inFrameInfo[VPP_IN].PicStruct);
             }
             else if(0 == msdk_strcmp(strInput[i], MSDK_STRING("-sf")))
             {
                 i++;
-                msdk_sscanf(strInput[i], MSDK_STRING("%lf"), &pParams->inFrameInfo[VPP_IN].dFrameRate);
+                msdk_opt_read(strInput[i], &pParams->inFrameInfo[VPP_IN].dFrameRate);
             }
             else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-dw")) )
             {
                 i++;
-                msdk_sscanf(strInput[i], MSDK_STRING("%hd"), &pParams->outFrameInfo.nWidth);
+                msdk_opt_read(strInput[i], &pParams->outFrameInfo.nWidth);
             }
             else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-dh")))
             {
                 i++;
-                msdk_sscanf(strInput[i], MSDK_STRING("%hd"), &pParams->outFrameInfo.nHeight);
+                msdk_opt_read(strInput[i], &pParams->outFrameInfo.nHeight);
             }
             else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-dcrX")))
             {
                 i++;
-                msdk_sscanf(strInput[i], MSDK_STRING("%hd"), &pParams->outFrameInfo.CropX);
+                msdk_opt_read(strInput[i], &pParams->outFrameInfo.CropX);
             }
             else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-dcrY")))
             {
                 i++;
-                msdk_sscanf(strInput[i], MSDK_STRING("%hd"), &pParams->outFrameInfo.CropY);
+                msdk_opt_read(strInput[i], &pParams->outFrameInfo.CropY);
             }
             else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-dcrW")))
             {
                 i++;
-                msdk_sscanf(strInput[i], MSDK_STRING("%hd"), &pParams->outFrameInfo.CropW);
+                msdk_opt_read(strInput[i], &pParams->outFrameInfo.CropW);
             }
             else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-dcrH")))
             {
                 i++;
-                msdk_sscanf(strInput[i], MSDK_STRING("%hd"), &pParams->outFrameInfo.CropH);
+                msdk_opt_read(strInput[i], &pParams->outFrameInfo.CropH);
             }
             else if(0 == msdk_strcmp(strInput[i], MSDK_STRING("-dpic")))
             {
                 i++;
-                msdk_sscanf(strInput[i], MSDK_STRING("%hhu"), &pParams->outFrameInfo.PicStruct);
+                msdk_opt_read(strInput[i], &pParams->outFrameInfo.PicStruct);
                 pParams->outFrameInfo.PicStruct = GetPicStruct(pParams->outFrameInfo.PicStruct);
             }
             else if(0 == msdk_strcmp(strInput[i], MSDK_STRING("-df")))
             {
                 i++;
-                msdk_sscanf(strInput[i], MSDK_STRING("%lf"), &pParams->outFrameInfo.dFrameRate);
+                msdk_opt_read(strInput[i], &pParams->outFrameInfo.dFrameRate);
             }
             //-----------------------------------------------------------------------------------
             //                   Video Enhancement Algorithms
@@ -463,8 +462,7 @@ mfxStatus vppParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams
 
                 if( i+1 < nArgNum )
                 {
-                    ioStatus = msdk_sscanf(strInput[i+1], MSDK_STRING("%du"), &readData);
-                    if ( ioStatus > 0 )
+                    if (MFX_ERR_NONE == msdk_opt_read(strInput[i+1], &readData))
                     {
                         pParams->denoiseParam.factor = (mfxU16)readData;
                         pParams->denoiseParam.mode   = VPP_FILTER_ENABLED_CONFIGURED;
@@ -478,8 +476,7 @@ mfxStatus vppParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams
 
                 if( i+1 < nArgNum )
                 {
-                    ioStatus = msdk_sscanf(strInput[i+1], MSDK_STRING("%du"), &readData);
-                    if ( ioStatus > 0 )
+                    if (MFX_ERR_NONE == msdk_opt_read(strInput[i+1], &readData))
                     {
                         pParams->detailParam.factor = (mfxU16)readData;
                         pParams->detailParam.mode   = VPP_FILTER_ENABLED_CONFIGURED;
@@ -495,25 +492,25 @@ mfxStatus vppParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams
             {
                 pParams->procampParam.mode = VPP_FILTER_ENABLED_CONFIGURED;
                 i++;
-                msdk_sscanf(strInput[i], MSDK_STRING("%lf"), &pParams->procampParam.hue);
+                msdk_opt_read(strInput[i], &pParams->procampParam.hue);
             }
             else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-pa_bri")))
             {
                 pParams->procampParam.mode = VPP_FILTER_ENABLED_CONFIGURED;
                 i++;
-                msdk_sscanf(strInput[i], MSDK_STRING("%lf"), &pParams->procampParam.brightness);
+                msdk_opt_read(strInput[i], &pParams->procampParam.brightness);
             }
             else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-pa_con")))
             {
                 pParams->procampParam.mode = VPP_FILTER_ENABLED_CONFIGURED;
                 i++;
-                msdk_sscanf(strInput[i], MSDK_STRING("%lf"), &pParams->procampParam.contrast);
+                msdk_opt_read(strInput[i], &pParams->procampParam.contrast);
             }
             else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-pa_sat")))
             {
                 pParams->procampParam.mode = VPP_FILTER_ENABLED_CONFIGURED;
                 i++;
-                msdk_sscanf(strInput[i], MSDK_STRING("%lf"), &pParams->procampParam.saturation);
+                msdk_opt_read(strInput[i], &pParams->procampParam.saturation);
             }
             else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-istab")))
             {
@@ -521,8 +518,7 @@ mfxStatus vppParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams
 
                 if( i+1 < nArgNum )
                 {
-                    ioStatus = msdk_sscanf(strInput[i+1], MSDK_STRING("%du"), &readData);
-                    if ( ioStatus > 0 )
+                    if (MFX_ERR_NONE == msdk_opt_read(strInput[i+1], &readData))
                     {
                         pParams->istabParam.istabMode = (mfxU8)readData;
                         pParams->istabParam.mode    = VPP_FILTER_ENABLED_CONFIGURED;
@@ -575,7 +571,7 @@ mfxStatus vppParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams
             else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-n")) )
             {
                 i++;
-                ioStatus = msdk_sscanf(strInput[i], MSDK_STRING("%d"), &pParams->requestedFramesCount);
+                msdk_opt_read(strInput[i], &pParams->requestedFramesCount);
             }
             else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-lib")) )
             {

@@ -622,5 +622,7 @@ bool msdk_trace_is_printable(int);
 
 msdk_ostream & operator <<(msdk_ostream & os, MsdkTraceLevel tt);
 
+template<typename T>
+    mfxStatus msdk_opt_read(msdk_char* string, T* value);
 
 #endif //__SAMPLE_UTILS_H__
