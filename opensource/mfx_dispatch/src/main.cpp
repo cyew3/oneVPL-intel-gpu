@@ -278,6 +278,8 @@ mfxStatus DISPATCHER_EXPOSED_PREFIX(MFXInit)(mfxIMPL impl, mfxVersion *pVer, mfx
                     else
                     {
                         // Have to check application folder for alternative runtime
+                        libIterator.GetSubKeyName(pHandle->subkeyName, sizeof(pHandle->subkeyName)/sizeof(pHandle->subkeyName[0])) ;
+                        pHandle->storageID = libIterator.GetStorageID();
                         allocatedHandle.push_back(pHandle);
                         pHandle = new MFX_DISP_HANDLE(requiredVersion);
                         mfxRes = MFX_ERR_NOT_FOUND;
@@ -343,7 +345,8 @@ mfxStatus DISPATCHER_EXPOSED_PREFIX(MFXInit)(mfxIMPL impl, mfxVersion *pVer, mfx
                     pHandle->Close();
                 }
                 else
-                {
+                {                    
+                    pHandle->storageID = MFX::MFX_UNKNOWN_KEY;
                     allocatedHandle.push_back(pHandle);
                     pHandle = 0;
                 }
@@ -381,11 +384,10 @@ mfxStatus DISPATCHER_EXPOSED_PREFIX(MFXInit)(mfxIMPL impl, mfxVersion *pVer, mfx
             MFX::MFXDefaultPlugins defaultPugins(apiVerActual, pHandle, pHandle->implType);
             hive.insert(hive.end(), defaultPugins.begin(), defaultPugins.end());
 
-            //loaded HW plugins in subkey of library
-            const msdk_disp_char *subkeyName = NULL;
-            if (libIterator.GetSubKeyName(subkeyName))
+            //loaded HW plugins in subkey of library            
+            if (pHandle->storageID != MFX::MFX_UNKNOWN_KEY)
             {
-                MFX::MFXPluginsInHive plgsInHive(libIterator.GetStorageID(), subkeyName, apiVerActual);
+                MFX::MFXPluginsInHive plgsInHive(pHandle->storageID, pHandle->subkeyName, apiVerActual);
                 hive.insert(hive.end(), plgsInHive.begin(), plgsInHive.end());
             }
 

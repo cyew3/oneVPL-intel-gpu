@@ -139,6 +139,8 @@ MFXLibraryIterator::MFXLibraryIterator(void)
 
     m_bIsSubKeyValid = 0;
     m_StorageID = 0;
+
+    m_SubKeyName[0] = 0;
 } // MFXLibraryIterator::MFXLibraryIterator(void)
 
 MFXLibraryIterator::~MFXLibraryIterator(void)
@@ -157,6 +159,7 @@ void MFXLibraryIterator::Release(void)
 
     m_lastLibIndex = 0;
     m_lastLibMerit = MFX_MAX_MERIT;
+    m_SubKeyName[0] = 0;
 
 } // void MFXLibraryIterator::Release(void)
 
@@ -490,9 +493,9 @@ mfxIMPL MFXLibraryIterator::GetImplementationType()
     return m_implInterface;
 } // mfxIMPL MFXLibraryIterator::GetImplementationType()
 
-bool MFXLibraryIterator::GetSubKeyName( const msdk_disp_char *&subKeyName )const
+bool MFXLibraryIterator::GetSubKeyName(msdk_disp_char *subKeyName, size_t length) const
 {
-    subKeyName = m_SubKeyName;
+    wcscpy_s(subKeyName, length, m_SubKeyName);
     return m_bIsSubKeyValid;
 }
 } // namespace MFX

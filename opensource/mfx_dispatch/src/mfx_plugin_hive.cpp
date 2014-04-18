@@ -107,7 +107,10 @@ MFX::MFXPluginsInHive::MFXPluginsInHive(int mfxStorageID, const msdk_disp_char *
 {
     HKEY rootHKey;
     bool bRes;
-    WinRegKey regKey;   
+    WinRegKey regKey;
+
+    if (MFX_LOCAL_MACHINE_KEY != mfxStorageID && MFX_CURRENT_USER_KEY != mfxStorageID)
+        return;
 
     // open required registry key
     rootHKey = (MFX_LOCAL_MACHINE_KEY == mfxStorageID) ? (HKEY_LOCAL_MACHINE) : (HKEY_CURRENT_USER);

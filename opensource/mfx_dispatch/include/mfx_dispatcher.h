@@ -137,12 +137,15 @@ struct MFX_DISP_HANDLE
     mfxVersion dispVersion;
     // A real handle passed to a called function
     mfxSession session;
-    // required API version of session initialized
+    // Required API version of session initialized
     const
     mfxVersion apiVersion;
-
     // Status of loaded dll
     mfxStatus loadStatus;
+    // Resgistry subkey name for windows version
+    msdk_disp_char subkeyName[MFX_MAX_REGISTRY_KEY_NAME];
+    // Storage ID for windows version
+    int storageID;
 
     // Library's module handle
     mfxModuleHandle hModule;

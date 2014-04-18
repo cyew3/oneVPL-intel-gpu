@@ -78,6 +78,7 @@ enum
 #else
 enum
 {
+    MFX_UNKNOWN_KEY     = -1,
     MFX_STORAGE_ID_OPT  = 0, // storage is: /opt/intel
     MFX_APP_FOLDER      = 1,
 
@@ -107,7 +108,7 @@ public:
     mfxIMPL GetImplementationType(); 
 
     // Retrun registry subkey name on which dll was selected after sucesfull call to selectDllVesion
-    bool GetSubKeyName(const msdk_disp_char *&subKeyName) const;
+    bool GetSubKeyName(msdk_disp_char *subKeyName, size_t length) const;
 
     int  GetStorageID() const { return m_StorageID; }
 protected:
