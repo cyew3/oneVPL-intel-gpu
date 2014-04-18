@@ -375,10 +375,10 @@ mfxStatus DISPATCHER_EXPOSED_PREFIX(MFXInit)(mfxIMPL impl, mfxVersion *pVer, mfx
         }
         else 
         {
-            MFX::MFXPluginStorage & hive = (*candidate)->pluginHive;
+            MFX::MFXPluginStorage & hive = pHandle->pluginHive;
 
             // Registering default plugins set
-            MFX::MFXDefaultPlugins defaultPugins(apiVerActual, pHandle, implMethod);
+            MFX::MFXDefaultPlugins defaultPugins(apiVerActual, pHandle, pHandle->implType);
             hive.insert(hive.end(), defaultPugins.begin(), defaultPugins.end());
 
             //loaded HW plugins in subkey of library
