@@ -157,7 +157,6 @@ public:
     // Set CU partition depth value in left-top corner
     void setDepth(Ipp32u Depth, Ipp32u AbsPartIdx);
 
-    // member functions for CU data ------------- (only functions with declaration here. simple get/set are removed)
     EnumPartSize GetPartitionSize (Ipp32u Idx) const
     {
         return static_cast<EnumPartSize>(m_cuData[Idx].partSize);

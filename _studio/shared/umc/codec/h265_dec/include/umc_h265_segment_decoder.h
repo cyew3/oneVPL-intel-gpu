@@ -39,33 +39,38 @@ class H265TrQuant;
 class TaskBroker_H265;
 class H265Task;
 
-//
-// Class to incapsulate functions, implementing common decoding functional.
-//
-
+// Reconstructor template base
 class ReconstructorBase
 {
 public:
 
     virtual ~ReconstructorBase(void) { };
 
+    // Do luma intra prediction
     virtual void PredictIntra(Ipp32s predMode, H265PlaneYCommon* PredPel, H265PlaneYCommon* pRec, Ipp32s pitch, Ipp32s width, Ipp32u bit_depth) = 0;
 
+    // Create a buffer of neighbour luma samples for intra prediction
     virtual void GetPredPelsLuma(H265PlaneYCommon* pSrc, H265PlaneYCommon* PredPel, Ipp32s blkSize, Ipp32s srcPitch, Ipp32u tpIf, Ipp32u lfIf, Ipp32u tlIf, Ipp32u bit_depth) = 0;
 
+    // Do chroma intra prediction
     virtual void PredictIntraChroma(Ipp32s predMode, H265PlaneYCommon* PredPel, H265PlaneYCommon* pels, Ipp32s pitch, Ipp32s width) = 0;
 
+    // Create a buffer of neighbour NV12 chroma samples for intra prediction
     virtual void GetPredPelsChromaNV12(H265PlaneYCommon* pSrc, H265PlaneYCommon* PredPel, Ipp32s blkSize, Ipp32s srcPitch, Ipp32u tpIf, Ipp32u lfIf, Ipp32u tlIf, Ipp32u bit_depth) = 0;
 
+    // Strong intra smoothing luma filter
     virtual void FilterPredictPels(DecodingContext* sd, H265CodingUnit* pCU, H265PlaneYCommon* PredPel, Ipp32s width, Ipp32u TrDepth, Ipp32u AbsPartIdx) = 0;
 
+    // Luma deblocking edge filter
     virtual void FilterEdgeLuma(H265EdgeData *edge, H265PlaneYCommon *srcDst, size_t srcDstStride, Ipp32s x, Ipp32s y, Ipp32s dir, Ipp32u bit_depth) = 0;
 
+    // Chroma deblocking edge filter
     virtual void FilterEdgeChroma(H265EdgeData *edge, H265PlaneYCommon *srcDst, size_t srcDstStride, Ipp32s x, Ipp32s y, Ipp32s dir, Ipp32s chromaCbQpOffset, Ipp32s chromaCrQpOffset, Ipp32u bit_depth) = 0;
 
 protected:
 };
 
+// Slice decoder state
 struct Context
 {
     H265DecoderRefPicList::ReferenceInformation *m_pRefPicList[2];
@@ -102,7 +107,7 @@ struct Context
     std::auto_ptr<ReconstructorBase>  m_reconstructor;
 };
 
-// Slice decoder local state
+// Slice decoder CTB local state
 class DecodingContext : public HeapObject
 {
 public:
@@ -184,6 +189,7 @@ protected:
     Ipp32s          m_LastValidQP;
 };
 
+// Main single thread decoder class
 class H265SegmentDecoder : public Context
 {
 public:
@@ -315,15 +321,21 @@ public:
         Ipp32u Size,
         Ipp32s PicStride);
 
+    // Deblock edges inside of one CTB, left and top of it
     void DeblockOneLCU(Ipp32s curLCUAddr);
+    // Deblock horizontal edge
     void DeblockOneCross(Ipp32s curPixelColumn, Ipp32s curPixelRow, bool isNeddAddHorDeblock);
 
+    // Calculate edge strength
     template <Ipp32s direction, typename EdgeType>
     void CalculateEdge(EdgeType * edge, Ipp32s x, Ipp32s y, bool diffTr);
 
+    // Recursively deblock edges inside of CU
     void DeblockCURecur(Ipp32u absPartIdx, Ipp32u depth);
+    // Recursively deblock edges inside of TU
     void DeblockTU(Ipp32u absPartIdx, Ipp32u depth);
 
+    // Edge strength calculation for two inter blocks
     inline void GetEdgeStrengthInter(H265MVInfo *mvinfoQ, H265MVInfo *mvinfoP, H265PartialEdgeData *edge);
 
     bool m_DecodeDQPFlag;
@@ -371,7 +383,7 @@ public:
     // Release memory
     void Release(void);
 
-    // Function to de-block partition of macro block row
+    // Do deblocking task for a range of CTBs specified in the task
     virtual void DeblockSegment(H265Task & task);
 
 private:

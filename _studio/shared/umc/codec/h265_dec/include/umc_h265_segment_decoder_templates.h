@@ -27,6 +27,7 @@ class SegmentDecoderRoutines
 {
 public:
 
+    // Decode one CTB
     bool DecodeCodingUnit_CABAC(H265SegmentDecoderMultiThreaded *sd)
     {
         if (sd->m_cu->m_SliceHeader->m_PicParamSet->cu_qp_delta_enabled_flag)
@@ -39,6 +40,7 @@ public:
         return IsLast > 0;
     } // void DecodeCodingUnit_CABAC(H265SegmentDecoderMultiThreaded *sd)
 
+    // Decode CTB range
     virtual UMC::Status DecodeSegment(Ipp32s curCUAddr, Ipp32s &nBorder, H265SegmentDecoderMultiThreaded * sd)
     {
         UMC::Status umcRes = UMC::UMC_OK;
@@ -125,6 +127,7 @@ public:
         return umcRes;
     }
 
+    // Reconstruct CTB range
     virtual UMC::Status ReconstructSegment(Ipp32s curCUAddr, Ipp32s nBorder, H265SegmentDecoderMultiThreaded * sd)
     {
         UMC::Status umcRes = UMC::UMC_OK;
@@ -158,7 +161,7 @@ public:
         return umcRes;
     }
 
-
+    // Both decode and reconstruct a CTB range
     virtual UMC::Status DecodeSegmentCABAC_Single_H265(Ipp32s curCUAddr, Ipp32s & nBorder, H265SegmentDecoderMultiThreaded * sd)
     {
         UMC::Status umcRes = UMC::UMC_OK;

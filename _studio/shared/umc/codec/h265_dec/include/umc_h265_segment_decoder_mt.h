@@ -22,6 +22,7 @@ namespace UMC_HEVC_DECODER
 class SegmentDecoderRoutines;
 class H265Task;
 
+// Slice decoder capable of running in parallel with other decoders
 class H265SegmentDecoderMultiThreaded : public H265SegmentDecoder
 {
 public:
@@ -30,31 +31,41 @@ public:
     // Destructor
     virtual ~H265SegmentDecoderMultiThreaded(void);
 
-    // Initialize object
+    // Initialize slice decoder
     virtual UMC::Status Init(Ipp32s iNumber);
 
-    // Decode slice's segment
+    // Initialize decoder and call task processing function
     virtual UMC::Status ProcessSegment(void);
 
-    // asynchronous called functions
+    // Initialize CABAC context appropriately depending on where starting CTB is
     void InitializeDecoding(H265Task & task);
+    // Combined decode and reconstruct task callback
     UMC::Status DecRecSegment(H265Task & task);
+    // Decode task callback
     UMC::Status DecodeSegment(H265Task & task);
+    // Reconstruct task callback
     UMC::Status ReconstructSegment(H265Task & task);
+    // Deblocking filter task callback
     virtual UMC::Status DeblockSegmentTask(H265Task & task);
+    // SAO filter task callback
     UMC::Status SAOFrameTask(H265Task & task);
 
+    // Initialize state, decode, reconstruct and filter CTB range
     virtual UMC::Status ProcessSlice(H265Task & task);
 
+    // Recover a region after error
     void RestoreErrorRect(Ipp32s startMb, Ipp32s endMb, H265Slice * pSlice);
 
     SegmentDecoderRoutines* m_SD;
 
 protected:
 
+    // Initialize decoder and reconstrutor function tables
     virtual SegmentDecoderRoutines* CreateSegmentDecoder();
 
+    // Initialize decoder with data of new slice
     virtual void StartProcessingSegment(H265Task &Task);
+    // Finish work section
     virtual void EndProcessingSegment(H265Task &Task);
 
 private:

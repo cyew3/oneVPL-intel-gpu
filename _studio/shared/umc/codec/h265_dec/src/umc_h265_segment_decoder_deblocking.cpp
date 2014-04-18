@@ -23,22 +23,7 @@ enum
 namespace UMC_HEVC_DECODER
 {
 
-static Ipp32s tcTable[] = {
-    0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
-    0,  0,  1,  1,  1,  1,  1,  1,  1,  1,  1,  2,  2,  2,  2,  3,
-    3,  3,  3,  4,  4,  4,  5,  5,  6,  6,  7,  8,  9, 10, 11, 13,
-    14, 16, 18, 20, 22, 24
-};
-
-static Ipp32s betaTable[] = {
-    0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
-    6,  7,  8,  9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 20, 22, 24,
-    26, 28, 30, 32, 34, 36, 38, 40, 42, 44, 46, 48, 50, 52, 54, 56,
-    58, 60, 62, 64
-};
-
-#define   QpUV(iQpY)  ( ((iQpY) < 0) ? (iQpY) : (((iQpY) > 57) ? ((iQpY)-6) : g_ChromaScale[(iQpY)]) )
-
+// Do deblocking task for a range of CTBs specified in the task
 void H265SegmentDecoder::DeblockSegment(H265Task & task)
 {
     for (Ipp32s i = task.m_iFirstMB; i < task.m_iFirstMB + task.m_iMBToProcess; i++)
@@ -47,12 +32,13 @@ void H265SegmentDecoder::DeblockSegment(H265Task & task)
     }
 } // void H265SegmentDecoder::DeblockSegment(Ipp32s iFirstMB, Ipp32s iNumMBs)
 
+// Compare motion vectors for equality
 static Ipp8u H265_FORCEINLINE MVIsnotEq(const H265MotionVector &mv0, const H265MotionVector &mv1)
 {
-    //return abs(mv0.Horizontal - mv1.Horizontal) >= 4 || abs(mv0.Vertical - mv1.Vertical) >= 4;
     return (7 <= (Ipp32u)(mv0.Horizontal - mv1.Horizontal + 3) || 7 <= (Ipp32u)(mv0.Vertical - mv1.Vertical + 3)) ? 1 : 0;
 }
 
+// Edge strength calculation for two inter blocks
 void H265SegmentDecoder::GetEdgeStrengthInter(H265MVInfo *mvinfoQ, H265MVInfo *mvinfoP, H265PartialEdgeData *edge)
 {
     Ipp32s numRefsQ = 0;
@@ -138,6 +124,7 @@ void H265SegmentDecoder::GetEdgeStrengthInter(H265MVInfo *mvinfoQ, H265MVInfo *m
     }
 }
 
+// Calculate number of prediction units for horizondal edge
 Ipp32s GetNumPartForHorFilt(H265CodingUnit* cu, Ipp32u absPartIdx)
 {
     Ipp32s numParts;
@@ -157,6 +144,7 @@ Ipp32s GetNumPartForHorFilt(H265CodingUnit* cu, Ipp32u absPartIdx)
     return numParts;
 }
 
+// Calculate number of prediction units for vertical edge
 Ipp32s GetNumPartForVertFilt(H265CodingUnit* cu, Ipp32u absPartIdx)
 {
     Ipp32s numParts;
@@ -176,6 +164,7 @@ Ipp32s GetNumPartForVertFilt(H265CodingUnit* cu, Ipp32u absPartIdx)
     return numParts;
 }
 
+// Recursively deblock edges inside of TU
 void H265SegmentDecoder::DeblockTU(Ipp32u absPartIdx, Ipp32u trDepth)
 {
     Ipp32u stopDepth = m_cu->GetDepth(absPartIdx) + m_cu->GetTrIndex(absPartIdx);
@@ -284,6 +273,7 @@ void H265SegmentDecoder::DeblockTU(Ipp32u absPartIdx, Ipp32u trDepth)
     }
 }
 
+// Recursively deblock edges inside of CU
 void H265SegmentDecoder::DeblockCURecur(Ipp32u absPartIdx, Ipp32u depth)
 {
     if (m_cu->GetDepth(absPartIdx) > depth)
@@ -333,6 +323,7 @@ void H265SegmentDecoder::DeblockCURecur(Ipp32u absPartIdx, Ipp32u depth)
     DeblockTU(absPartIdx, depth);
 }
 
+// Deblock horizontal edge
 void H265SegmentDecoder::DeblockOneCross(Ipp32s curPixelColumn, Ipp32s curPixelRow, bool isNeedAddHorDeblock)
 {
     Ipp32s chromaCbQpOffset = m_pPicParamSet->pps_cb_qp_offset;
@@ -433,6 +424,7 @@ void H265SegmentDecoder::DeblockOneCross(Ipp32s curPixelColumn, Ipp32s curPixelR
     }
 }
 
+// Deblock edges inside of one CTB, left and top of it
 void H265SegmentDecoder::DeblockOneLCU(Ipp32s curLCUAddr)
 {
     m_cu = m_pCurrentFrame->getCU(curLCUAddr);
@@ -586,6 +578,7 @@ void H265SegmentDecoder::DeblockOneLCU(Ipp32s curLCUAddr)
     }
 }
 
+// Calculate edge strength
 template <Ipp32s direction, typename EdgeType>
 void H265SegmentDecoder::CalculateEdge(EdgeType * edge, Ipp32s xPel, Ipp32s yPel, bool diffTr)
 {

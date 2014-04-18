@@ -39,6 +39,7 @@ H265SegmentDecoderMultiThreaded::~H265SegmentDecoderMultiThreaded(void)
 
 } // H265SegmentDecoderMultiThreaded::~H265SegmentDecoderMultiThreaded(void)
 
+// Initialize slice decoder
 UMC::Status H265SegmentDecoderMultiThreaded::Init(Ipp32s iNumber)
 {
     // release object before initialization
@@ -48,6 +49,7 @@ UMC::Status H265SegmentDecoderMultiThreaded::Init(Ipp32s iNumber)
     return H265SegmentDecoder::Init(iNumber);
 } // Status H265SegmentDecoderMultiThreaded::Init(Ipp32u nNumber)
 
+// Initialize decoder with data of new slice
 void H265SegmentDecoderMultiThreaded::StartProcessingSegment(H265Task &Task)
 {
     m_pSlice = Task.m_pSlice;
@@ -113,6 +115,7 @@ void H265SegmentDecoderMultiThreaded::StartProcessingSegment(H265Task &Task)
     m_pRefPicList[1] = m_pCurrentFrame->GetRefPicList(sliceNum, REF_PIC_LIST_1)->m_refPicList;
 }
 
+// Finish work section
 void H265SegmentDecoderMultiThreaded::EndProcessingSegment(H265Task &Task)
 {
     this->destroy();
@@ -141,6 +144,7 @@ void H265SegmentDecoderMultiThreaded::EndProcessingSegment(H265Task &Task)
     m_pTaskBroker->AddPerformedTask(&Task);
 }
 
+// Initialize decoder and call task processing function
 UMC::Status H265SegmentDecoderMultiThreaded::ProcessSegment(void)
 {
 #ifdef __EXCEPTION_HANDLER_
@@ -216,6 +220,7 @@ UMC::Status H265SegmentDecoderMultiThreaded::ProcessSegment(void)
     return UMC::UMC_OK;
 } // Status H265SegmentDecoderMultiThreaded::ProcessSegment(void)
 
+// Recover a region after error
 void H265SegmentDecoderMultiThreaded::RestoreErrorRect(Ipp32s startMb , Ipp32s endMb, H265Slice * pSlice)
 {
     if (startMb >= endMb || !pSlice)
@@ -260,6 +265,7 @@ void H265SegmentDecoderMultiThreaded::RestoreErrorRect(Ipp32s startMb , Ipp32s e
     return;
 }
 
+// Initialize CABAC context appropriately depending on where starting CTB is
 void H265SegmentDecoderMultiThreaded::InitializeDecoding(H265Task & task)
 {
     if (task.m_pSlicesInfo->m_hasTiles)
@@ -362,6 +368,7 @@ void H265SegmentDecoderMultiThreaded::InitializeDecoding(H265Task & task)
     }
 }
 
+// Decode task callback
 UMC::Status H265SegmentDecoderMultiThreaded::DecodeSegment(H265Task & task)
 {
     UMC::Status umcRes = UMC::UMC_OK;
@@ -382,6 +389,7 @@ UMC::Status H265SegmentDecoderMultiThreaded::DecodeSegment(H265Task & task)
     return umcRes;
 }
 
+// Reconstruct task callback
 UMC::Status H265SegmentDecoderMultiThreaded::ReconstructSegment(H265Task & task)
 {
     UMC::Status umcRes = UMC::UMC_OK;
@@ -394,6 +402,7 @@ UMC::Status H265SegmentDecoderMultiThreaded::ReconstructSegment(H265Task & task)
     }
 }
 
+// Combined decode and reconstruct task callback
 UMC::Status H265SegmentDecoderMultiThreaded::DecRecSegment(H265Task & task)
 {
     InitializeDecoding(task);
@@ -414,6 +423,7 @@ UMC::Status H265SegmentDecoderMultiThreaded::DecRecSegment(H265Task & task)
     return umcRes;
 }
 
+// SAO filter task callback
 UMC::Status H265SegmentDecoderMultiThreaded::SAOFrameTask(H265Task & task)
 {
     START_TICK
@@ -422,6 +432,7 @@ UMC::Status H265SegmentDecoderMultiThreaded::SAOFrameTask(H265Task & task)
     return UMC::UMC_OK;
 }
 
+// Deblocking filter task callback
 UMC::Status H265SegmentDecoderMultiThreaded::DeblockSegmentTask(H265Task & task)
 {
     START_TICK
@@ -432,6 +443,7 @@ UMC::Status H265SegmentDecoderMultiThreaded::DeblockSegmentTask(H265Task & task)
 
 } // Status H265SegmentDecoderMultiThreaded::DeblockSegmentTask(Ipp32s iCurMBNumber, Ipp32s &iMBToDeblock)
 
+// Initialize state, decode, reconstruct and filter CTB range
 UMC::Status H265SegmentDecoderMultiThreaded::ProcessSlice(H265Task & task)
 {
     UMC::Status umcRes = UMC::UMC_OK;
@@ -517,27 +529,35 @@ UMC::Status H265SegmentDecoderMultiThreaded::ProcessSlice(H265Task & task)
     return umcRes;
 }
 
-
+// Reconstructor template
 template<bool bitDepth, typename H265PlaneType>
 class ReconstructorT : public ReconstructorBase
 {
 public:
+    // Do luma intra prediction
     virtual void PredictIntra(Ipp32s predMode, H265PlaneYCommon* PredPel, H265PlaneYCommon* pels, Ipp32s pitch, Ipp32s width, Ipp32u bit_depth);
 
+    // Create a buffer of neighbour luma samples for intra prediction
     virtual void GetPredPelsLuma(H265PlaneYCommon* pSrc, H265PlaneYCommon* PredPel, Ipp32s blkSize, Ipp32s srcPitch, Ipp32u tpIf, Ipp32u lfIf, Ipp32u tlIf, Ipp32u bit_depth);
 
+    // Do chroma intra prediction
     virtual void PredictIntraChroma(Ipp32s predMode, H265PlaneYCommon* PredPel, H265PlaneYCommon* pels, Ipp32s pitch, Ipp32s width);
 
+    // Create a buffer of neighbour NV12 chroma samples for intra prediction
     virtual void GetPredPelsChromaNV12(H265PlaneYCommon* pSrc, H265PlaneYCommon* PredPel, Ipp32s blkSize, Ipp32s srcPitch, Ipp32u tpIf, Ipp32u lfIf, Ipp32u tlIf, Ipp32u bit_depth);
 
+    // Strong intra smoothing luma filter
     virtual void FilterPredictPels(DecodingContext* sd, H265CodingUnit* pCU, H265PlaneYCommon* PredPel, Ipp32s width, Ipp32u TrDepth, Ipp32u AbsPartIdx);
 
+    // Luma deblocking edge filter
     virtual void FilterEdgeLuma(H265EdgeData *edge, H265PlaneYCommon *srcDst, size_t srcDstStride, Ipp32s x, Ipp32s y, Ipp32s dir, Ipp32u bit_depth);
+    // Chroma deblocking edge filter
     virtual void FilterEdgeChroma(H265EdgeData *edge, H265PlaneYCommon *srcDst, size_t srcDstStride, Ipp32s x, Ipp32s y, Ipp32s dir, Ipp32s chromaCbQpOffset, Ipp32s chromaCrQpOffset, Ipp32u bit_depth);
 };
 
 #pragma warning(disable: 4127)
 
+// Strong intra smoothing luma filter
 template<bool bitDepth, typename H265PlaneType>
 void ReconstructorT<bitDepth, H265PlaneType>::FilterPredictPels(DecodingContext* sd, H265CodingUnit* pCU, H265PlaneYCommon* pels, Ipp32s width, Ipp32u TrDepth, Ipp32u AbsPartIdx)
 {
@@ -570,6 +590,7 @@ void ReconstructorT<bitDepth, H265PlaneType>::FilterPredictPels(DecodingContext*
     h265_FilterPredictPels(PredPel, width);
 }
 
+// Luma deblocking edge filter
 template<bool bitDepth, typename H265PlaneType>
 void ReconstructorT<bitDepth, H265PlaneType>::FilterEdgeLuma(H265EdgeData *edge, H265PlaneYCommon *srcDst, size_t srcDstStride, Ipp32s x, Ipp32s y, Ipp32s dir, Ipp32u bit_depth)
 {
@@ -586,6 +607,7 @@ void ReconstructorT<bitDepth, H265PlaneType>::FilterEdgeLuma(H265EdgeData *edge,
 
 #define   QpUV(iQpY)  ( ((iQpY) < 0) ? (iQpY) : (((iQpY) > 57) ? ((iQpY)-6) : g_ChromaScale[(iQpY)]) )
 
+// Chroma deblocking edge filter
 template<bool bitDepth, typename H265PlaneType>
 void ReconstructorT<bitDepth, H265PlaneType>::FilterEdgeChroma(H265EdgeData *edge, H265PlaneYCommon *srcDst, size_t srcDstStride, Ipp32s x, Ipp32s y, Ipp32s dir,
                                                                Ipp32s chromaCbQpOffset, Ipp32s chromaCrQpOffset, Ipp32u bit_depth)
@@ -613,6 +635,7 @@ void ReconstructorT<bitDepth, H265PlaneType>::FilterEdgeChroma(H265EdgeData *edg
     }
 }
 
+// Do luma intra prediction
 template<bool bitDepth, typename H265PlaneType>
 void ReconstructorT<bitDepth, H265PlaneType>::PredictIntra(Ipp32s predMode, H265PlaneYCommon* PredPel, H265PlaneYCommon* pRec, Ipp32s pitch, Ipp32s width, Ipp32u bit_depth)
 {
@@ -660,6 +683,7 @@ void ReconstructorT<bitDepth, H265PlaneType>::PredictIntra(Ipp32s predMode, H265
     }
 }
 
+// Do chroma intra prediction
 template<bool bitDepth, typename H265PlaneType>
 void ReconstructorT<bitDepth, H265PlaneType>::PredictIntraChroma(Ipp32s predMode, H265PlaneYCommon* PredPel, H265PlaneYCommon* pRec, Ipp32s pitch, Ipp32s Size)
 {
@@ -712,6 +736,7 @@ void ReconstructorT<bitDepth, H265PlaneType>::PredictIntraChroma(Ipp32s predMode
 
 #pragma warning(default: 4127)
 
+// Create a buffer of neighbour luma samples for intra prediction
 template<bool bitDepth, typename H265PlaneType>
 void ReconstructorT<bitDepth, H265PlaneType>::GetPredPelsLuma(H265PlaneYCommon* pSrc, H265PlaneYCommon* PredPel, Ipp32s blkSize, Ipp32s srcPitch, Ipp32u tpIf, Ipp32u lfIf, Ipp32u tlIf, Ipp32u bit_depth)
 {
@@ -721,6 +746,7 @@ void ReconstructorT<bitDepth, H265PlaneType>::GetPredPelsLuma(H265PlaneYCommon* 
     h265_GetPredPelsLuma(src, pels, blkSize, srcPitch, tpIf, lfIf, tlIf, bit_depth);
 }
 
+// Create a buffer of neighbour NV12 chroma samples for intra prediction
 template<bool bitDepth, typename H265PlaneType>
 void ReconstructorT<bitDepth, H265PlaneType>::GetPredPelsChromaNV12(H265PlaneYCommon* pSrc, H265PlaneYCommon* PredPel, Ipp32s blkSize, Ipp32s srcPitch, Ipp32u tpIf, Ipp32u lfIf, Ipp32u tlIf, Ipp32u bit_depth)
 {
@@ -730,6 +756,7 @@ void ReconstructorT<bitDepth, H265PlaneType>::GetPredPelsChromaNV12(H265PlaneYCo
     h265_GetPredPelsChromaNV12(src, pels, blkSize, srcPitch, tpIf, lfIf, tlIf, bit_depth);
 }
 
+// Initialize decoder and reconstrutor function tables
 SegmentDecoderRoutines* H265SegmentDecoderMultiThreaded::CreateSegmentDecoder()
 {
     if (m_pSeqParamSet->bit_depth_luma > 8 || m_pSeqParamSet->bit_depth_chroma > 8)
