@@ -17,7 +17,7 @@ if ( DEFINED OPENCL_FOUND )
     # for clCreateFromGLTexture2D and clCreateFromGLTexture3D in CL/cl_gl.h
     append("-DCL_USE_DEPRECATED_OPENCL_1_1_APIS" CMAKE_CXX_FLAGS)
 
-    list( APPEND LIBS "/usr/lib/x86_64-linux-gnu/libva.so" )
+    list( APPEND LIBS "libva.so" )
     list( APPEND LIBS sample_common ${OPENCL_LIBS} )
 
     make_library( sample_plugin_opencl none shared )
