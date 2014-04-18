@@ -50,7 +50,7 @@ enum {
     MFX_EXTBUF_CAM_PIPECONTROL             = MFX_MAKEFOURCC('C','P','P','C')
 };
 
-enum {
+typedef enum {
     MFX_CAM_GAMMA_VALUE      = 0x0001,
     MFX_CAM_GAMMA_LUT        = 0x0002,
     MFX_CAM_GAMMA_DEFAULT    = 0x0003 // use default internal gamma correction
@@ -69,7 +69,7 @@ typedef struct {
     mfxU32  reserved3[4]; 
 } mfxExtCamGammaCorrection;
 
-enum {
+typedef enum {
     MFX_CAM__WHITE_BALANCE_MANUAL   = 0x0001,
     MFX_CAM_WHITE_BALANCE_AUTO     = 0x0002
 } mfxCamWhiteBalanceMode;
@@ -139,7 +139,7 @@ typedef struct {
     mfxU32 reserved[4];
 } mfxExtCamPadding;
 
-enum {
+typedef enum {
     MFX_CAM_BAYER_BGGR   = 0x0000,
     MFX_CAM_BAYER_RGGB   = 0x0001,
     MFX_CAM_BAYER_GRBG   = 0x0002,
