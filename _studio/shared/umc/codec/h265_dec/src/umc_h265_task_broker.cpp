@@ -217,6 +217,7 @@ TaskBroker_H265::~TaskBroker_H265()
     Release();
 }
 
+// Initialize task broker with threads number
 bool TaskBroker_H265::Init(Ipp32s iConsumerNumber, bool isExistMainThread)
 {
     Release();
@@ -243,6 +244,7 @@ bool TaskBroker_H265::Init(Ipp32s iConsumerNumber, bool isExistMainThread)
     return true;
 }
 
+// Reset to default values, stop all activity
 void TaskBroker_H265::Reset()
 {
     UMC::AutomaticUMCMutex guard(m_mGuard);
@@ -259,6 +261,7 @@ void TaskBroker_H265::Reset()
     }
 }
 
+// Release resources
 void TaskBroker_H265::Release()
 {
     Reset();
@@ -267,11 +270,13 @@ void TaskBroker_H265::Release()
     m_nWaitingThreads = 0;
 }
 
+// Wait for event of task completion
 void TaskBroker_H265::WaitFrameCompletion()
 {
     m_Completed.Wait(500);
 }
 
+// Lock synchronization mutex
 void TaskBroker_H265::Lock()
 {
     m_mGuard.Lock();
@@ -282,35 +287,13 @@ void TaskBroker_H265::Lock()
     }*/
 }
 
+// Uncock synchronization mutex
 void TaskBroker_H265::Unlock()
 {
     m_mGuard.Unlock();
 }
 
-void TaskBroker_H265::SleepThread(Ipp32s threadNumber)
-{
-    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "AVCDec_sleep");
-
-    /*printf("\n\nstart sleeping for thrad - %d\n", threadNumber);
-    PrintInfoStatus(m_FirstAU);
-    printf("additional - \n");
-    PrintInfoStatus(m_AdditionalInfo);
-    printf("end\n");*/
-
-    m_nWaitingThreads |= (1 << threadNumber);
-
-    DEBUG_PRINT((VM_STRING("(%d) sleep\n"), threadNumber));
-    Unlock();
-
-    // sleep_count++;
-
-    m_eWaiting[threadNumber].Wait();
-
-    Lock();
-
-    m_nWaitingThreads ^= (1 << threadNumber);
-}
-
+// Resume all waiting threads
 void TaskBroker_H265::AwakeThreads()
 {
     DEBUG_PRINT((VM_STRING("awaken threads\n")));
@@ -331,6 +314,7 @@ void TaskBroker_H265::AwakeThreads()
     }
 }
 
+// Check whether frame is prepared
 bool TaskBroker_H265::PrepareFrame(H265DecoderFrame * pFrame)
 {
     if (!pFrame || pFrame->prepared)
@@ -351,6 +335,7 @@ bool TaskBroker_H265::PrepareFrame(H265DecoderFrame * pFrame)
     return true;
 }
 
+// Initialize frame slice and tile start coordinates
 bool TaskBroker_H265::GetPreparationTask(H265DecoderFrameInfo * info)
 {
     H265DecoderFrame * pFrame = info->m_pFrame;
@@ -395,6 +380,7 @@ bool TaskBroker_H265::GetPreparationTask(H265DecoderFrameInfo * info)
     return false;
 }
 
+// Add frame to decoding queue
 bool TaskBroker_H265::AddFrameToDecoding(H265DecoderFrame * frame)
 {
     if (!frame || frame->IsDecodingStarted() || !IsExistTasks(frame))
@@ -422,12 +408,13 @@ bool TaskBroker_H265::AddFrameToDecoding(H265DecoderFrame * frame)
     return true;
 }
 
+// Set event that task has been completed
 void TaskBroker_H265::AwakeCompleteWaiter()
 {
     m_Completed.Set();
 }
 
-
+// Remove access unit from the linked list of frames
 void TaskBroker_H265::RemoveAU(H265DecoderFrameInfo * toRemove)
 {
     H265DecoderFrameInfo * temp = m_FirstAU;
@@ -478,6 +465,7 @@ void TaskBroker_H265::RemoveAU(H265DecoderFrameInfo * toRemove)
     }
 }
 
+// Finish frame decoding
 void TaskBroker_H265::CompleteFrame(H265DecoderFrame * frame)
 {
     if (!frame || m_decodingQueue.empty() || !frame->IsFullFrame())
@@ -505,6 +493,7 @@ void TaskBroker_H265::CompleteFrame(H265DecoderFrame * frame)
     AwakeCompleteWaiter();
 }
 
+// Update access units list finishing completed frames
 void TaskBroker_H265::SwitchCurrentAU()
 {
     if (!m_FirstAU || !m_FirstAU->IsCompleted())
@@ -525,6 +514,7 @@ void TaskBroker_H265::SwitchCurrentAU()
         AwakeThreads();
 }
 
+// Wakes up working threads to start working on new tasks
 void TaskBroker_H265::Start()
 {
     UMC::AutomaticUMCMutex guard(m_mGuard);
@@ -549,6 +539,7 @@ void TaskBroker_H265::Start()
     DEBUG_PRINT((VM_STRING("Start\n")));
 }
 
+// Find an access unit which has all slices found
 H265DecoderFrameInfo * TaskBroker_H265::FindAU()
 {
     FrameQueue::iterator iter = m_decodingQueue.begin();
@@ -570,6 +561,7 @@ H265DecoderFrameInfo * TaskBroker_H265::FindAU()
     return 0;
 }
 
+// Try to find an access unit which to decode next
 void TaskBroker_H265::InitAUs()
 {
     H265DecoderFrameInfo * pPrev;
@@ -653,6 +645,7 @@ void TaskBroker_H265::InitAUs()
     }
 }
 
+// Returns whether frame decoding is finished
 bool TaskBroker_H265::IsFrameCompleted(H265DecoderFrame * pFrame) const
 {
     if (!pFrame)
@@ -680,6 +673,7 @@ bool TaskBroker_H265::IsFrameCompleted(H265DecoderFrame * pFrame) const
     return ret;
 }
 
+// Tries to find a new task for asynchronous processing
 bool TaskBroker_H265::GetNextTask(H265Task *pTask)
 {
     UMC::AutomaticUMCMutex guard(m_mGuard);
@@ -697,6 +691,7 @@ bool TaskBroker_H265::GetNextTask(H265Task *pTask)
     return res;
 } // bool TaskBroker_H265::GetNextTask(H265Task *pTask)
 
+// Tries to find a new slice to work on in specified access unit and initializes a task onject for it
 bool TaskBroker_H265::GetNextSlice(H265DecoderFrameInfo * info, H265Task *pTask)
 {
     // this is guarded function, safe to touch any variable
@@ -719,6 +714,7 @@ bool TaskBroker_H265::GetNextSlice(H265DecoderFrameInfo * info, H265Task *pTask)
     return GetSAOFrameTask(info, pTask);
 } // bool TaskBroker_H265::GetNextSlice(H265Task *pTask)
 
+// Tries to find a portion of SAO filtering work in the specified access unit and initializes a task object for it
 bool TaskBroker_H265::GetSAOFrameTask(H265DecoderFrameInfo * info, H265Task *pTask)
 {
     if (!info->IsNeedSAO() || info->m_processInProgress[SAO_PROCESS_ID])
@@ -749,6 +745,7 @@ bool TaskBroker_H265::GetSAOFrameTask(H265DecoderFrameInfo * info, H265Task *pTa
     return false;
 }
 
+// Initialize task object with default values
 void TaskBroker_H265::InitTask(H265DecoderFrameInfo * info, H265Task *pTask, H265Slice *pSlice)
 {
     pTask->m_bDone = false;
@@ -759,6 +756,7 @@ void TaskBroker_H265::InitTask(H265DecoderFrameInfo * info, H265Task *pTask, H26
     pTask->m_threadingInfo = 0;
 }
 
+// Tries to find a portion of decoding+reconstruction work in the specified access unit and initializes a task object for it
 bool TaskBroker_H265::GetNextSliceToDecoding(H265DecoderFrameInfo * info, H265Task *pTask)
 {
     // this is guarded function, safe to touch any variable
@@ -789,6 +787,7 @@ bool TaskBroker_H265::GetNextSliceToDecoding(H265DecoderFrameInfo * info, H265Ta
 
 } // bool TaskBroker_H265::GetNextSliceToDecoding(H265Task *pTask)
 
+// Tries to find a portion of deblocking filtering work in the specified access unit and initializes a task object for it
 bool TaskBroker_H265::GetNextSliceToDeblocking(H265DecoderFrameInfo * info, H265Task *pTask)
 {
     if (!info->IsNeedDeblocking() || info->m_processInProgress[DEB_PROCESS_ID])
@@ -820,6 +819,7 @@ bool TaskBroker_H265::GetNextSliceToDeblocking(H265DecoderFrameInfo * info, H265
 
 } // bool TaskBroker_H265::GetNextSliceToDeblocking(H265Task *pTask)
 
+// Calculate frame state after a task has been finished
 void TaskBroker_H265::AddPerformedTask(H265Task *pTask)
 {
     UMC::AutomaticUMCMutex guard(m_mGuard);
@@ -1368,6 +1368,7 @@ void TaskBroker_H265::AddPerformedTask(H265Task *pTask)
 
 #define Check_Status(status)  ((status == H265DecoderFrameInfo::STATUS_FILLED) || (status == H265DecoderFrameInfo::STATUS_STARTED))
 
+// Returns number of access units available in the list but not processed yet
 Ipp32s TaskBroker_H265::GetNumberOfTasks(void)
 {
     Ipp32s au_count = 0;
@@ -1385,6 +1386,7 @@ Ipp32s TaskBroker_H265::GetNumberOfTasks(void)
     return au_count;
 }
 
+// Returns whether enough bitstream data is evailable to start an asynchronous task
 bool TaskBroker_H265::IsEnoughForStartDecoding(bool force)
 
 {
@@ -1403,6 +1405,7 @@ bool TaskBroker_H265::IsEnoughForStartDecoding(bool force)
     return false;
 }
 
+// Returns whether there is some work available for specified frame
 bool TaskBroker_H265::IsExistTasks(H265DecoderFrame * frame)
 {
     H265DecoderFrameInfo *slicesInfo = frame->GetAU();
@@ -1471,6 +1474,7 @@ void TaskBrokerTwoThread_H265::Release()
     TaskBrokerSingleThread_H265::Release();
 }
 
+// Update access units list finishing completed frames
 void TaskBrokerTwoThread_H265::CompleteFrame()
 {
     if (!m_FirstAU)
@@ -1480,6 +1484,7 @@ void TaskBrokerTwoThread_H265::CompleteFrame()
     SwitchCurrentAU();
 }
 
+// Try to find a new task and initialize a task object for it
 bool TaskBrokerTwoThread_H265::GetNextTaskInternal(H265Task *pTask)
 {
     while (false == m_IsShouldQuit)
@@ -1550,6 +1555,7 @@ bool TaskBrokerTwoThread_H265::GetNextTaskInternal(H265Task *pTask)
     return false;
 }
 
+// Initialize CTB range for decoding task
 bool TaskBrokerTwoThread_H265::WrapDecodingTask(H265DecoderFrameInfo * info, H265Task *pTask, H265Slice *pSlice)
 {
     VM_ASSERT(pSlice);
@@ -1596,6 +1602,7 @@ bool TaskBrokerTwoThread_H265::WrapDecodingTask(H265DecoderFrameInfo * info, H26
 
 } // bool TaskBrokerTwoThread_H265::WrapDecodingTask(H265DecoderFrameInfo * info, H265Task *pTask, H265Slice *pSlice)
 
+// Initialize CTB range for reconstruct task
 bool TaskBrokerTwoThread_H265::WrapReconstructTask(H265DecoderFrameInfo * info, H265Task *pTask, H265Slice *pSlice)
 {
     VM_ASSERT(pSlice);
@@ -1642,6 +1649,7 @@ bool TaskBrokerTwoThread_H265::WrapReconstructTask(H265DecoderFrameInfo * info, 
 
 } // bool TaskBrokerTwoThread_H265::WrapReconstructTask(H265DecoderFrameInfo * info, H265Task *pTask, H265Slice *pSlice)
 
+// Initialize CTB range for decoding+reconstruct task
 bool TaskBrokerTwoThread_H265::WrapDecRecTask(H265DecoderFrameInfo * info, H265Task *pTask, H265Slice *pSlice)
 {
     VM_ASSERT(pSlice);
@@ -1689,6 +1697,7 @@ bool TaskBrokerTwoThread_H265::WrapDecRecTask(H265DecoderFrameInfo * info, H265T
     return true;
 }
 
+// Initialize decoding+reconstruct task object
 bool TaskBrokerTwoThread_H265::GetDecRecTask(H265DecoderFrameInfo * info, H265Task *pTask)
 {
     // this is guarded function, safe to touch any variable
@@ -1715,6 +1724,7 @@ bool TaskBrokerTwoThread_H265::GetDecRecTask(H265DecoderFrameInfo * info, H265Ta
     return false;
 }
 
+// Initialize tile decoding task
 bool TaskBrokerTwoThread_H265::GetDecodingTileTask(H265DecoderFrameInfo * info, H265Task *pTask)
 {
     H265DecoderFrameInfo * refAU = info->GetRefAU();
@@ -1836,6 +1846,7 @@ bool TaskBrokerTwoThread_H265::GetDecodingTileTask(H265DecoderFrameInfo * info, 
     return true;
 }
 
+// Initialize tile reconstruct task
 bool TaskBrokerTwoThread_H265::GetReconstructTileTask(H265DecoderFrameInfo * info, H265Task *pTask)
 {
     H265DecoderFrameInfo * refAU = info->GetRefAU();
@@ -1966,6 +1977,7 @@ bool TaskBrokerTwoThread_H265::GetReconstructTileTask(H265DecoderFrameInfo * inf
     return true;
 }
 
+// Initialize tile decoding+reconstruct task
 bool TaskBrokerTwoThread_H265::GetDecRecTileTask(H265DecoderFrameInfo * info, H265Task *pTask)
 {
     // this is guarded function, safe to touch any variable
@@ -2069,6 +2081,7 @@ bool TaskBrokerTwoThread_H265::GetDecRecTileTask(H265DecoderFrameInfo * info, H2
     return true;
 }
 
+// Initialize decoding task object
 bool TaskBrokerTwoThread_H265::GetDecodingTask(H265DecoderFrameInfo * info, H265Task *pTask)
 {
     H265DecoderFrameInfo * refAU = info->GetRefAU();
@@ -2111,6 +2124,7 @@ bool TaskBrokerTwoThread_H265::GetDecodingTask(H265DecoderFrameInfo * info, H265
 
 } // bool TaskBrokerTwoThread_H265::GetDecodingTask(H265DecoderFrameInfo * info, H265Task *pTask)
 
+// Initialize reconstruct task object
 bool TaskBrokerTwoThread_H265::GetReconstructTask(H265DecoderFrameInfo * info, H265Task *pTask)
 {
     // this is guarded function, safe to touch any variable
@@ -2158,6 +2172,7 @@ bool TaskBrokerTwoThread_H265::GetReconstructTask(H265DecoderFrameInfo * info, H
 
 } // bool TaskBrokerTwoThread_H265::GetReconstructTask(H265DecoderFrameInfo * info, H265Task *pTask)
 
+// Initialize deblocking task object
 bool TaskBrokerTwoThread_H265::GetDeblockingTask(H265DecoderFrameInfo * info, H265Task *pTask)
 {
     if (!info->IsNeedDeblocking())
@@ -2217,6 +2232,7 @@ bool TaskBrokerTwoThread_H265::GetDeblockingTask(H265DecoderFrameInfo * info, H2
 
 } // bool TaskBrokerTwoThread_H265::GetDeblockingTask(H265Task *pTask)
 
+// Initialize SAO task object
 bool TaskBrokerTwoThread_H265::GetSAOTask(H265DecoderFrameInfo * info, H265Task *pTask)
 {
     if (!info->IsNeedSAO() || info->m_processInProgress[SAO_PROCESS_ID])
@@ -2261,6 +2277,7 @@ bool TaskBrokerTwoThread_H265::GetSAOTask(H265DecoderFrameInfo * info, H265Task 
     return true;
 }
 
+// Initialize tile deblocking task object
 bool TaskBrokerTwoThread_H265::GetDeblockingTaskTile(H265DecoderFrameInfo * info, H265Task *pTask)
 {
     // this is guarded function, safe to touch any variable
@@ -2293,6 +2310,7 @@ bool TaskBrokerTwoThread_H265::GetDeblockingTaskTile(H265DecoderFrameInfo * info
 
 } // bool TaskBrokerTwoThread_H265::GetDeblockingTask(H265Task *pTask)
 
+// Initialize tile SAO task object
 bool TaskBrokerTwoThread_H265::GetSAOTaskTile(H265DecoderFrameInfo * info, H265Task *pTask)
 {
     if (!info->IsNeedSAO() || info->m_processInProgress[SAO_PROCESS_ID])
@@ -2325,6 +2343,7 @@ bool TaskBrokerTwoThread_H265::GetSAOTaskTile(H265DecoderFrameInfo * info, H265T
     return false;
 }
 
+// Select a new task for available frame and initialize a task object for it
 bool TaskBrokerTwoThread_H265::GetNextTaskManySlices(H265DecoderFrameInfo * info, H265Task *pTask)
 {
     if (!info)
@@ -2382,6 +2401,7 @@ bool TaskBrokerTwoThread_H265::GetNextTaskManySlices(H265DecoderFrameInfo * info
     return false;
 }
 
+// Calculate frame state after a task has been finished
 void TaskBrokerTwoThread_H265::AddPerformedTask(H265Task *pTask)
 {
     UMC::AutomaticUMCMutex guard(m_mGuard);
@@ -2418,6 +2438,7 @@ void TaskBrokerTwoThread_H265::AddPerformedTask(H265Task *pTask)
     AwakeThreads();
 } // void TaskBrokerTwoThread_H265::AddPerformedTask(H265Task *pTask)
 
+// Check if task can be started and initialize decoding context if necessary
 bool TaskBrokerTwoThread_H265::GetResources(H265Task *pTask)
 {
     bool needAllocateContext = false;
@@ -2489,6 +2510,7 @@ bool TaskBrokerTwoThread_H265::GetResources(H265Task *pTask)
     return true;
 }
 
+// Deallocate decoding context if necessary
 void TaskBrokerTwoThread_H265::FreeResources(H265Task *pTask)
 {
     bool needDeallocateContext = false;

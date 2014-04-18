@@ -347,6 +347,7 @@ public:
         return false;
     }
 
+    // Initialize tiles and slices threading information
     void FillTileInfo()
     {
         H265Slice * slice = GetAnySlice();
