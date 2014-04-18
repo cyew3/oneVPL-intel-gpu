@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2012-2013 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2012-2014 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -54,51 +54,74 @@ typedef MFXTaskSupplier_H265 MFX_AVC_Decoder_H265;
 #endif
 
 class VideoDECODE;
+// HEVC decoder interface class
 class VideoDECODEH265 : public VideoDECODE
 {
 public:
+    // MediaSDK DECODE_Query API function
     static mfxStatus Query(VideoCORE *core, mfxVideoParam *in, mfxVideoParam *out);
+    // MediaSDK DECODE_QueryIOSurf API function
     static mfxStatus QueryIOSurf(VideoCORE *core, mfxVideoParam *par, mfxFrameAllocRequest *request);
+    // Decode bitstream header and exctract parameters from it
     static mfxStatus DecodeHeader(VideoCORE *core, mfxBitstream *bs, mfxVideoParam *par);
 
     VideoDECODEH265(VideoCORE *core, mfxStatus * sts);
     virtual ~VideoDECODEH265(void);
 
+    // Initialize decoder instance
     mfxStatus Init(mfxVideoParam *par);
+    // Reset decoder with new parameters
     virtual mfxStatus Reset(mfxVideoParam *par);
+    // Free decoder resources
     virtual mfxStatus Close(void);
+    // Returns decoder threading mode
     virtual mfxTaskThreadingPolicy GetThreadingPolicy(void);
 
+    // MediaSDK DECODE_GetVideoParam API function
     virtual mfxStatus GetVideoParam(mfxVideoParam *par);
+    // MediaSDK DECODE_GetDecodeStat API function
     virtual mfxStatus GetDecodeStat(mfxDecodeStat *stat);
+    // Check if there is enough data to start decoding in async mode
     virtual mfxStatus DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1 *surface_work, mfxFrameSurface1 **surface_out);
+    // Initialize threads callbacks
     virtual mfxStatus DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1 *surface_work, mfxFrameSurface1 **surface_out, MFX_ENTRY_POINT *pEntryPoint);
+    // Wait until a frame is ready to be output and set necessary surface flags
     virtual mfxStatus DecodeFrame(mfxBitstream *bs, mfxFrameSurface1 *surface_work, mfxFrameSurface1 *surface_out);
+    // Returns closed caption data
     virtual mfxStatus GetUserData(mfxU8 *ud, mfxU32 *sz, mfxU64 *ts);
+    // Returns stored SEI messages
     virtual mfxStatus GetPayload(mfxU64 *ts, mfxPayload *payload);
+    // MediaSDK DECODE_SetSkipMode API function
     virtual mfxStatus SetSkipMode(mfxSkipMode mode);
 
+    // Decoder instance threads entry point. Do async tasks here
     mfxStatus RunThread(void * params, mfxU32 threadNumber);
 
 protected:
+    // Actually calculate needed frames number
     static mfxStatus QueryIOSurfInternal(eMFXPlatform platform, eMFXHWType type, mfxVideoParam *par, mfxFrameAllocRequest *request, VideoCORE *core);
 
+    // Check if new parameters are compatible with new parameters
     bool IsSameVideoParam(mfxVideoParam * newPar, mfxVideoParam * oldPar, eMFXHWType type);
 
+    // Fill up frame parameters before returning it to application
     void FillOutputSurface(mfxFrameSurface1 **surface_out, mfxFrameSurface1 *surface_work, H265DecoderFrame * pFrame);
+    // Find a next frame ready to be output from decoder
     H265DecoderFrame * GetFrameToDisplay_H265(UMC::VideoData * dst, bool force);
 
+    // Wait until a frame is ready to be output and set necessary surface flags
     mfxStatus DecodeFrame(mfxFrameSurface1 *surface_out, H265DecoderFrame * pFrame = 0);
 
-    void CopySurfaceInfo(mfxFrameSurface1 *in, mfxFrameSurface1 *out);
-
+    // Fill up resolution information if new header arrived
     void FillVideoParam(mfxVideoParamWrapper *par, bool full);
 
+    // Fill up frame allocator request data
     mfxStatus UpdateAllocRequest(mfxVideoParam *par,
                                 mfxFrameAllocRequest *request,
                                 mfxExtOpaqueSurfaceAlloc * &pOpaqAlloc,
                                 bool &mapping);
 
+    // Get original Surface corresponding to OpaqueSurface
     mfxFrameSurface1 * GetOriginalSurface(mfxFrameSurface1 *surface);
 
     std::auto_ptr<MFXTaskSupplier_H265>  m_pH265VideoDecoder;

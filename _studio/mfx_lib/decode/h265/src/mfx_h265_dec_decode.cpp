@@ -83,6 +83,7 @@ VideoDECODEH265::~VideoDECODEH265(void)
     Close();
 }
 
+// Initialize decoder instance
 mfxStatus VideoDECODEH265::Init(mfxVideoParam *par)
 {
     UMC::AutomaticUMCMutex guard(m_mGuard);
@@ -301,6 +302,7 @@ mfxStatus VideoDECODEH265::Init(mfxVideoParam *par)
     return MFX_ERR_NONE;
 }
 
+// Reset decoder with new parameters
 mfxStatus VideoDECODEH265::Reset(mfxVideoParam *par)
 {
     UMC::AutomaticUMCMutex guard(m_mGuard);
@@ -394,6 +396,7 @@ mfxStatus VideoDECODEH265::Reset(mfxVideoParam *par)
     return MFX_ERR_NONE;
 }
 
+// Free decoder resources
 mfxStatus VideoDECODEH265::Close(void)
 {
     UMC::AutomaticUMCMutex guard(m_mGuard);
@@ -424,11 +427,13 @@ mfxStatus VideoDECODEH265::Close(void)
     return MFX_ERR_NONE;
 }
 
+// Returns decoder threading mode
 mfxTaskThreadingPolicy VideoDECODEH265::GetThreadingPolicy(void)
 {
     return MFX_TASK_THREADING_SHARED;
 }
 
+// MediaSDK DECODE_Query API function
 mfxStatus VideoDECODEH265::Query(VideoCORE *core, mfxVideoParam *in, mfxVideoParam *out)
 {
     MFX_CHECK_NULL_PTR1(out);
@@ -444,6 +449,7 @@ mfxStatus VideoDECODEH265::Query(VideoCORE *core, mfxVideoParam *in, mfxVideoPar
     return MFX_Utility::Query_H265(core, in, out, type);
 }
 
+// MediaSDK DECODE_GetVideoParam API function
 mfxStatus VideoDECODEH265::GetVideoParam(mfxVideoParam *par)
 {
     UMC::AutomaticUMCMutex guard(m_mGuard);
@@ -531,6 +537,7 @@ mfxStatus VideoDECODEH265::GetVideoParam(mfxVideoParam *par)
     return MFX_ERR_NONE;
 }
 
+// Decode bitstream header and exctract parameters from it
 mfxStatus VideoDECODEH265::DecodeHeader(VideoCORE *core, mfxBitstream *bs, mfxVideoParam *par)
 {
     MFX_CHECK_NULL_PTR2(bs, par);
@@ -607,6 +614,7 @@ mfxStatus VideoDECODEH265::DecodeHeader(VideoCORE *core, mfxBitstream *bs, mfxVi
     return MFX_ERR_NONE;
 }
 
+// MediaSDK DECODE_QueryIOSurf API function
 mfxStatus VideoDECODEH265::QueryIOSurf(VideoCORE *core, mfxVideoParam *par, mfxFrameAllocRequest *request)
 {
     MFX_CHECK_NULL_PTR2(par, request);
@@ -685,6 +693,7 @@ mfxStatus VideoDECODEH265::QueryIOSurf(VideoCORE *core, mfxVideoParam *par, mfxF
     return MFX_ERR_NONE;
 }
 
+// Actually calculate needed frames number
 mfxStatus VideoDECODEH265::QueryIOSurfInternal(eMFXPlatform platform, eMFXHWType type, mfxVideoParam *par, mfxFrameAllocRequest *request, VideoCORE *core)
 {
     request->Info = par->mfx.FrameInfo;
@@ -712,6 +721,7 @@ mfxStatus VideoDECODEH265::QueryIOSurfInternal(eMFXPlatform platform, eMFXHWType
     return MFX_ERR_NONE;
 }
 
+// MediaSDK DECODE_GetDecodeStat API function
 mfxStatus VideoDECODEH265::GetDecodeStat(mfxDecodeStat *stat)
 {
     UMC::AutomaticUMCMutex guard(m_mGuard);
@@ -735,6 +745,7 @@ mfxStatus VideoDECODEH265::GetDecodeStat(mfxDecodeStat *stat)
     return MFX_ERR_NONE;
 }
 
+// Decoder threads entry point
 static mfxStatus __CDECL HEVCDECODERoutine(void *pState, void *pParam, mfxU32 threadNumber, mfxU32 )
 {
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_SCHED, "DecodeFrame_HEVC");
@@ -744,12 +755,14 @@ static mfxStatus __CDECL HEVCDECODERoutine(void *pState, void *pParam, mfxU32 th
     return sts;
 }
 
+// Threads complete proc callback
 static mfxStatus HEVCCompleteProc(void *, void *pParam, mfxStatus )
 {
     delete (ThreadTaskInfo *)pParam;
     return MFX_ERR_NONE;
 }
 
+// Decoder instance threads entry point. Do async tasks here
 mfxStatus VideoDECODEH265::RunThread(void * params, mfxU32 threadNumber)
 {
     ThreadTaskInfo * info = (ThreadTaskInfo *)params;
@@ -825,6 +838,7 @@ mfxStatus VideoDECODEH265::RunThread(void * params, mfxU32 threadNumber)
     return sts;
 }
 
+// Initialize threads callbacks
 mfxStatus VideoDECODEH265::DecodeFrameCheck(mfxBitstream *bs,
                                               mfxFrameSurface1 *surface_work,
                                               mfxFrameSurface1 **surface_out,
@@ -865,6 +879,7 @@ mfxStatus VideoDECODEH265::DecodeFrameCheck(mfxBitstream *bs,
     return mfxSts;
 }
 
+// Check if there is enough data to start decoding in async mode
 mfxStatus VideoDECODEH265::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1 *surface_work, mfxFrameSurface1 **surface_out)
 {
     UMC::AutomaticUMCMutex guard(m_mGuard);
@@ -1039,6 +1054,7 @@ mfxStatus VideoDECODEH265::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1 *
     return sts;
 }
 
+// Fill up resolution information if new header arrived
 void VideoDECODEH265::FillVideoParam(mfxVideoParamWrapper *par, bool full)
 {
     if (!m_pH265VideoDecoder.get())
@@ -1078,30 +1094,7 @@ void VideoDECODEH265::FillVideoParam(mfxVideoParamWrapper *par, bool full)
     }
 }
 
-void VideoDECODEH265::CopySurfaceInfo(mfxFrameSurface1 *in, mfxFrameSurface1 *out)
-{
-    out->Info.FrameId.ViewId = in->Info.FrameId.ViewId;
-    out->Info.FrameId.TemporalId = in->Info.FrameId.TemporalId;
-    out->Info.FrameId.PriorityId = in->Info.FrameId.PriorityId;
-
-    out->Info.CropH = in->Info.CropH;
-    out->Info.CropW = in->Info.CropW;
-    out->Info.CropX = in->Info.CropX;
-    out->Info.CropY = in->Info.CropY;
-
-    out->Info.AspectRatioH = in->Info.AspectRatioH;
-    out->Info.AspectRatioW = in->Info.AspectRatioW;
-
-    out->Info.FrameRateExtD = in->Info.FrameRateExtD;
-    out->Info.FrameRateExtN = in->Info.FrameRateExtN;
-    out->Info.PicStruct = in->Info.PicStruct;
-
-    out->Data.TimeStamp = in->Data.TimeStamp;
-    out->Data.FrameOrder = in->Data.FrameOrder;
-    out->Data.Corrupted = in->Data.Corrupted;
-    out->Data.DataFlag = in->Data.DataFlag;
-}
-
+// Fill up frame parameters before returning it to application
 void VideoDECODEH265::FillOutputSurface(mfxFrameSurface1 **surf_out, mfxFrameSurface1 *surface_work, H265DecoderFrame * pFrame)
 {
     m_stat.NumFrame++;
@@ -1151,6 +1144,7 @@ void VideoDECODEH265::FillOutputSurface(mfxFrameSurface1 **surf_out, mfxFrameSur
 #endif
 }
 
+// Wait until a frame is ready to be output and set necessary surface flags
 mfxStatus VideoDECODEH265::DecodeFrame(mfxFrameSurface1 *surface_out, H265DecoderFrame * pFrame)
 {
     MFX_CHECK_NULL_PTR1(surface_out);
@@ -1216,6 +1210,7 @@ mfxStatus VideoDECODEH265::DecodeFrame(mfxFrameSurface1 *surface_out, H265Decode
     return sts;
 }
 
+// Wait until a frame is ready to be output and set necessary surface flags
 mfxStatus VideoDECODEH265::DecodeFrame(mfxBitstream *, mfxFrameSurface1 *, mfxFrameSurface1 *surface_out)
 {
     if (!m_isInit)
@@ -1227,6 +1222,7 @@ mfxStatus VideoDECODEH265::DecodeFrame(mfxBitstream *, mfxFrameSurface1 *, mfxFr
     return sts;
 }
 
+// Returns closed caption data
 mfxStatus VideoDECODEH265::GetUserData(mfxU8 *ud, mfxU32 *sz, mfxU64 *ts)
 {
     if (!m_isInit)
@@ -1252,6 +1248,7 @@ mfxStatus VideoDECODEH265::GetUserData(mfxU8 *ud, mfxU32 *sz, mfxU64 *ts)
     return MFXSts;
 }
 
+// Returns stored SEI messages
 mfxStatus VideoDECODEH265::GetPayload( mfxU64 *ts, mfxPayload *payload )
 {
     UMC::AutomaticUMCMutex guard(m_mGuard);
@@ -1288,6 +1285,7 @@ mfxStatus VideoDECODEH265::GetPayload( mfxU64 *ts, mfxPayload *payload )
     return MFX_ERR_NONE;
 }
 
+// Find a next frame ready to be output from decoder
 H265DecoderFrame * VideoDECODEH265::GetFrameToDisplay_H265(UMC::VideoData * dst, bool force)
 {
     H265DecoderFrame * pFrame = 0;
@@ -1316,6 +1314,7 @@ H265DecoderFrame * VideoDECODEH265::GetFrameToDisplay_H265(UMC::VideoData * dst,
     return pFrame;
 }
 
+// MediaSDK DECODE_SetSkipMode API function
 mfxStatus VideoDECODEH265::SetSkipMode(mfxSkipMode mode)
 {
     UMC::AutomaticUMCMutex guard(m_mGuard);
@@ -1355,6 +1354,7 @@ mfxStatus VideoDECODEH265::SetSkipMode(mfxSkipMode mode)
     return test_num == num ? MFX_WRN_VALUE_NOT_CHANGED : MFX_ERR_NONE;
 }
 
+// Check if new parameters are compatible with new parameters
 bool VideoDECODEH265::IsSameVideoParam(mfxVideoParam * newPar, mfxVideoParam * oldPar, eMFXHWType type)
 {
     if ((newPar->IOPattern & (MFX_IOPATTERN_OUT_OPAQUE_MEMORY | MFX_IOPATTERN_OUT_SYSTEM_MEMORY | MFX_IOPATTERN_OUT_VIDEO_MEMORY)) !=
@@ -1450,6 +1450,7 @@ bool VideoDECODEH265::IsSameVideoParam(mfxVideoParam * newPar, mfxVideoParam * o
     return true;
 }
 
+// Fill up frame allocator request data
 mfxStatus VideoDECODEH265::UpdateAllocRequest(mfxVideoParam *par,
                                                 mfxFrameAllocRequest *request,
                                                 mfxExtOpaqueSurfaceAlloc * &pOpaqAlloc,
@@ -1475,6 +1476,7 @@ mfxStatus VideoDECODEH265::UpdateAllocRequest(mfxVideoParam *par,
     return MFX_ERR_NONE;
 }
 
+// Get original Surface corresponding to OpaqueSurface
 mfxFrameSurface1 *VideoDECODEH265::GetOriginalSurface(mfxFrameSurface1 *surface)
 {
     if (m_isOpaq)

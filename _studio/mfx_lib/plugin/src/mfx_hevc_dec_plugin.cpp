@@ -19,7 +19,7 @@ File Name: mfx_hevc_dec_plugin.cpp
 
 #include "plugin_version_linux.h"
 
-#ifndef UNIFIED_PLUGIN 
+#ifndef UNIFIED_PLUGIN
 
 MSDK_PLUGIN_API(MFXDecoderPlugin*) mfxCreateDecoderPlugin() {
     return MFXHEVCDecoderPlugin::Create();
