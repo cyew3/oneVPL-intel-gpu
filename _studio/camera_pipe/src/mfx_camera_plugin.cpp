@@ -69,6 +69,7 @@ MFXCamera_Plugin::MFXCamera_Plugin(bool CreateByDispatcher)
     Zero(m_Caps);
     m_Caps.InputMemoryOperationMode = MEM_FASTGPUCPY;
     m_Caps.OutputMemoryOperationMode = MEM_FASTGPUCPY;
+    m_Caps.BayerPatternType = MFX_CAM_BAYER_RGGB;
 
     Zero(m_GammaParams);
     m_cmSurfIn = 0;
@@ -80,6 +81,7 @@ MFXCamera_Plugin::MFXCamera_Plugin(bool CreateByDispatcher)
     m_memOutAllocPtr = 0;
 
     m_gammaPointSurf = m_gammaCorrectSurf = 0;
+    m_paddedSurf = 0;
 #ifdef CAM_PIPE_VERTICAL_SLICE_ENABLE
     m_avgFlagSurf = 0;
 #endif
@@ -341,7 +343,7 @@ mfxStatus MFXCamera_Plugin::Query(mfxVideoParam *in, mfxVideoParam *out)
             return mfxSts;
 
         mfxStatus sts = MFX_ERR_NONE;
-        if (out->vpp.In.FourCC != MFX_FOURCC_P010) // !!! change to R16 when it is added !!! 
+        if (out->vpp.In.FourCC != MFX_FOURCC_R16)
         {
             if (out->vpp.In.FourCC) // ERR_NONE if == 0 ???
             {
@@ -369,11 +371,11 @@ mfxStatus MFXCamera_Plugin::Query(mfxVideoParam *in, mfxVideoParam *out)
 
         if (out->vpp.In.Width)
         {
-            if ((out->vpp.In.Width & 15) != 0)
-            {
-                out->vpp.In.Width = 0;
-                sts = MFX_ERR_UNSUPPORTED;
-            }
+            //if ((out->vpp.In.Width & 15) != 0)
+            //{
+            //    out->vpp.In.Width = 0;
+            //    sts = MFX_ERR_UNSUPPORTED;
+            //}
 
             if (out->vpp.In.CropW > out->vpp.In.Width)
             {
@@ -390,11 +392,11 @@ mfxStatus MFXCamera_Plugin::Query(mfxVideoParam *in, mfxVideoParam *out)
 
         if (out->vpp.In.Height)
         {
-            if ((out->vpp.In.Height & 15) != 0)
-            {
-                out->vpp.In.Height = 0;
-                sts = MFX_ERR_UNSUPPORTED;
-            }
+            //if ((out->vpp.In.Height & 15) != 0)
+            //{
+            //    out->vpp.In.Height = 0;
+            //    sts = MFX_ERR_UNSUPPORTED;
+            //}
 
             if (out->vpp.In.CropH > out->vpp.In.Height)
             {
@@ -411,23 +413,23 @@ mfxStatus MFXCamera_Plugin::Query(mfxVideoParam *in, mfxVideoParam *out)
         }
         
         // todo: reconsider/correct the usage of CropW and Width ???
-        if (out->vpp.In.CropW)
-        {
-            if ((out->vpp.In.CropW & 15) != 0) // need this limitation ???
-            {
-                out->vpp.In.CropW = 0;
-                sts = MFX_ERR_UNSUPPORTED;
-            }
-        }
+        //if (out->vpp.In.CropW)
+        //{
+        //    if ((out->vpp.In.CropW & 15) != 0) // need this limitation ???
+        //    {
+        //        out->vpp.In.CropW = 0;
+        //        sts = MFX_ERR_UNSUPPORTED;
+        //    }
+        //}
 
-        if (out->vpp.In.CropH)
-        {
-            if ((out->vpp.In.CropH & 15) != 0)
-            {
-                out->vpp.In.CropH = 0;
-                sts = MFX_ERR_UNSUPPORTED;
-            }
-        }
+        //if (out->vpp.In.CropH)
+        //{
+        //    if ((out->vpp.In.CropH & 15) != 0)
+        //    {
+        //        out->vpp.In.CropH = 0;
+        //        sts = MFX_ERR_UNSUPPORTED;
+        //    }
+        //}
 
         if (!(out->vpp.Out.FrameRateExtN * out->vpp.Out.FrameRateExtD) &&
             (out->vpp.Out.FrameRateExtN + out->vpp.Out.FrameRateExtD))
@@ -439,11 +441,11 @@ mfxStatus MFXCamera_Plugin::Query(mfxVideoParam *in, mfxVideoParam *out)
 
         if (out->vpp.Out.Width)
         {
-            if ((out->vpp.Out.Width & 15) != 0)
-            {
-                out->vpp.Out.Width = 0;
-                sts = MFX_ERR_UNSUPPORTED;
-            }
+            //if ((out->vpp.Out.Width & 15) != 0)
+            //{
+            //    out->vpp.Out.Width = 0;
+            //    sts = MFX_ERR_UNSUPPORTED;
+            //}
             if (out->vpp.Out.CropW > out->vpp.Out.Width)
             {
                 out->vpp.Out.CropW = 0;
@@ -459,11 +461,11 @@ mfxStatus MFXCamera_Plugin::Query(mfxVideoParam *in, mfxVideoParam *out)
 
         if (out->vpp.Out.Height )
         {
-            if ((out->vpp.Out.Height  & 15) !=0)
-            {
-                out->vpp.Out.Height = 0;
-                sts = MFX_ERR_UNSUPPORTED;
-            }
+            //if ((out->vpp.Out.Height  & 15) !=0)
+            //{
+            //    out->vpp.Out.Height = 0;
+            //    sts = MFX_ERR_UNSUPPORTED;
+            //}
             if (out->vpp.Out.CropH > out->vpp.Out.Height)
             {
                 out->vpp.Out.CropH = 0;
@@ -542,6 +544,9 @@ mfxStatus MFXCamera_Plugin::Close()
     if (m_gammaPointSurf)
         m_cmDevice->DestroySurface(m_gammaPointSurf);
 
+    if (m_paddedSurf)
+        m_cmDevice->DestroySurface(m_paddedSurf);
+
     m_cmDevice.Reset(0);
 
     return MFX_ERR_NONE;
@@ -582,6 +587,8 @@ mfxStatus MFXCamera_Plugin::ProcessExtendedBuffers(mfxVideoParam *par)
                         m_Caps.bForwardGammaCorrection = 1;
                     else if (MFX_EXTBUF_CAM_PADDING == pDoUse->AlgList[j])
                         m_Caps.bNoPadding = 1;
+                    else if (MFX_EXTBUF_CAM_PIPECONTROL == pDoUse->AlgList[j])
+                        m_Caps.BayerPatternType = MFX_CAM_BAYER_BGGR;
                 }
             } 
             else if (MFX_EXTBUF_CAM_GAMMA_CORRECTION == par->ExtParam[i]->BufferId)
@@ -622,7 +629,11 @@ mfxStatus MFXCamera_Plugin::ProcessExtendedBuffers(mfxVideoParam *par)
                 m_PaddingParams.left = paddingExtBufParams->Left;
                 m_PaddingParams.right = paddingExtBufParams->Right;
             }
-
+            else if (MFX_EXTBUF_CAM_PIPECONTROL == par->ExtParam[i]->BufferId) 
+            {
+                mfxExtCamPipeControl* pipeExtBufParams = (mfxExtCamPipeControl*)par->ExtParam[i];
+                m_Caps.BayerPatternType = pipeExtBufParams->RawFormat;
+            }
         }
     }
 
@@ -674,18 +685,18 @@ mfxStatus MFXCamera_Plugin::Init(mfxVideoParam *par)
     //    m_Caps.bOutToARGB8 = 1;
     //}
 
-    //if (m_Caps.bNoPadding) 
-    //{
-    //    if (m_PaddingParams.top < MFX_CAM_MIN_REQUIRED_PADDING_TOP || m_PaddingParams.bottom < MFX_CAM_MIN_REQUIRED_PADDING_BOTTOM ||
-    //        m_PaddingParams.left < MFX_CAM_MIN_REQUIRED_PADDING_LEFT || m_PaddingParams.right < MFX_CAM_MIN_REQUIRED_PADDING_RIGHT)
-    //        m_Caps.bNoPadding = 0; // padding provided by application is not sufficient - have to do it ourselves
-    //}
-    { // padding is not supported yet
-        m_Caps.bNoPadding = 1; 
-        m_PaddingParams.top = MFX_CAM_MIN_REQUIRED_PADDING_TOP;
-        m_PaddingParams.bottom = MFX_CAM_MIN_REQUIRED_PADDING_BOTTOM;
-        m_PaddingParams.left = MFX_CAM_MIN_REQUIRED_PADDING_LEFT;
-        m_PaddingParams.right = MFX_CAM_MIN_REQUIRED_PADDING_RIGHT;
+
+    if (m_Caps.bNoPadding) 
+    {
+        if (m_PaddingParams.top < MFX_CAM_MIN_REQUIRED_PADDING_TOP || m_PaddingParams.bottom < MFX_CAM_MIN_REQUIRED_PADDING_BOTTOM ||
+            m_PaddingParams.left < MFX_CAM_MIN_REQUIRED_PADDING_LEFT || m_PaddingParams.right < MFX_CAM_MIN_REQUIRED_PADDING_RIGHT)
+            m_Caps.bNoPadding = 0; // padding provided by application is not sufficient - have to do it ourselves
+    }
+    {
+        m_PaddingParams.top = MFX_CAM_DEFAULT_PADDING_TOP;
+        m_PaddingParams.bottom = MFX_CAM_DEFAULT_PADDING_BOTTOM;
+        m_PaddingParams.left = MFX_CAM_DEFAULT_PADDING_LEFT;
+        m_PaddingParams.right = MFX_CAM_DEFAULT_PADDING_RIGHT;
     }
 
     m_FrameSizeExtra.frameWidth64   = ((m_mfxVideoParam.vpp.In.CropW + 31) &~ 0x1F); // 2 bytes each for In, 4 bytes for Out, so 32 is good enough for 64 ???
@@ -760,18 +771,17 @@ mfxStatus MFXCamera_Plugin::Reset(mfxVideoParam *par)
     //    m_Caps.bOutToARGB8 = 1;
     //}
 
-    //if (m_Caps.bNoPadding) 
-    //{
-    //    if (m_PaddingParams.top < MFX_CAM_MIN_REQUIRED_PADDING_TOP || m_PaddingParams.bottom < MFX_CAM_MIN_REQUIRED_PADDING_BOTTOM ||
-    //        m_PaddingParams.left < MFX_CAM_MIN_REQUIRED_PADDING_LEFT || m_PaddingParams.right < MFX_CAM_MIN_REQUIRED_PADDING_RIGHT)
-    //        m_Caps.bNoPadding = 0; // padding provided by application is not sufficient - have to do it ourselves
-    //}
-    { // padding is not supported yet
-        m_Caps.bNoPadding = 1; 
-        m_PaddingParams.top = MFX_CAM_MIN_REQUIRED_PADDING_TOP;
-        m_PaddingParams.bottom = MFX_CAM_MIN_REQUIRED_PADDING_BOTTOM;
-        m_PaddingParams.left = MFX_CAM_MIN_REQUIRED_PADDING_LEFT;
-        m_PaddingParams.right = MFX_CAM_MIN_REQUIRED_PADDING_RIGHT;
+    if (m_Caps.bNoPadding) 
+    {
+        if (m_PaddingParams.top < MFX_CAM_MIN_REQUIRED_PADDING_TOP || m_PaddingParams.bottom < MFX_CAM_MIN_REQUIRED_PADDING_BOTTOM ||
+            m_PaddingParams.left < MFX_CAM_MIN_REQUIRED_PADDING_LEFT || m_PaddingParams.right < MFX_CAM_MIN_REQUIRED_PADDING_RIGHT)
+            m_Caps.bNoPadding = 0; // padding provided by application is not sufficient - have to do it ourselves
+    }
+    {
+        m_PaddingParams.top = MFX_CAM_DEFAULT_PADDING_TOP;
+        m_PaddingParams.bottom = MFX_CAM_DEFAULT_PADDING_BOTTOM;
+        m_PaddingParams.left = MFX_CAM_DEFAULT_PADDING_LEFT;
+        m_PaddingParams.right = MFX_CAM_DEFAULT_PADDING_RIGHT;
     }
 
     if (par->IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY)

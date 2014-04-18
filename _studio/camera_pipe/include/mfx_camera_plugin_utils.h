@@ -181,7 +181,7 @@ typedef struct _mfxCameraCaps
     };
     mfxU32        FrameSurfWidth                    :16;
     mfxU32        FrameSurfHeight                   :16;
-    //mfxU32        BayerPatternType                  :16;
+    mfxU32        BayerPatternType                  :16;
     union {
       struct {
           mfxU32   InputMemoryOperationMode         : 8;

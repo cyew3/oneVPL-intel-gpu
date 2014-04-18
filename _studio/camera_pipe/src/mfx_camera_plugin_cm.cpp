@@ -438,14 +438,6 @@ CmSurface2DUP * CreateSurface(CmDevice * device, mfxU32 width, mfxU32 height, mf
 }
 
 
-CmBufferUP *AllocCmBufferUp(CmDevice * device, mfxU32 width,  mfxU32 height)
-{
-    void *psysmem = CM_ALIGNED_MALLOC(width * height, 0x1000); // need to remember psysmem to free at the end??? PASS pMem here???
-
-                                                                // CreateBufferUP(mfxSurface1)   CreateCmSurface(mfxSurface1) ???? - ask somebody!!!???
-    return CreateBuffer(device, width * height, psysmem);
-}
-
 CmContext::CmContext()
 : m_device(0)
 , m_program(0)

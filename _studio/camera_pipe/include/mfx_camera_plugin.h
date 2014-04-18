@@ -168,6 +168,8 @@ protected:
     CmBuffer            *m_cmBufferOut;
     CmBufferUP          *m_cmBufferUPOut; // ???
 
+    CmSurface2D         *m_paddedSurf;
+
     CmSurface2D         *m_gammaCorrectSurf;
     CmSurface2D         *m_gammaPointSurf;
 
