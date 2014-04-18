@@ -63,6 +63,11 @@
 #define W      16
 #endif
 
+#define bggr 0
+#define rggb 1
+#define gbrg 2
+#define grbg 3
+
 // implementation
 
 _GENX_ inline
@@ -101,37 +106,59 @@ int get_new_origin_y(int thW, int thH, int CW)
     return out_y;
 }
 
-const int index_ini[8] = {7,6,5,4,3,2,1,0};
 extern "C" _GENX_MAIN_ void
-GPU_PADDING_16BPP_SKL( SurfaceIndex ibuf, SurfaceIndex obuf,
+Unpack(SurfaceIndex ibuf, SurfaceIndex obuf)
+{
+    int rd_h_pos = get_thread_origin_x() * 32;
+    int wr_h_pos = get_thread_origin_x() * 48;
+    int v_pos    = get_thread_origin_y() * 16;
+
+    matrix<uint  , 16, 8 > in;   //<16, 24> pixels
+    matrix<ushort, 16, 24> out;
+
+    read(ibuf, rd_h_pos   , v_pos, in.select<16,1,4,1>(0,0));
+    read(ibuf, rd_h_pos+16, v_pos, in.select<16,1,4,1>(0,4));
+
+    out.select<16,1,8,3>(0,0) = (in & 0x00000FFC) >> ( 2);
+    out.select<16,1,8,3>(0,1) = (in & 0x003FF000) >> (12);
+    out.select<16,1,8,3>(0,2) = (in & 0xFFC00000) >> (22);
+
+    write(obuf, wr_h_pos   , v_pos, out.select<16,1,8,1>(0,0 ));
+    write(obuf, wr_h_pos+16, v_pos, out.select<16,1,8,1>(0,8 ));
+    write(obuf, wr_h_pos+32, v_pos, out.select<16,1,8,1>(0,16));
+}
+const unsigned int index_ini[8] = {7,6,5,4,3,2,1,0};
+extern "C" _GENX_MAIN_ void
+Padding_16bpp(SurfaceIndex ibuf, SurfaceIndex obuf,
                        int threadwidth  , int threadheight,
                        int InFrameWidth , int InFrameHeight,
-                       int bitDepth)
+                       int bitDepth, int BayerType)
 {
     matrix<short,  8, 8> out, tmp_out;
     matrix<ushort, 8, 8> rd_in_pixels;
     int rd_h_pos, rd_v_pos;
 
-    vector<int, 8> index(index_ini);
+    vector<uint, 8> index(index_ini);
 
     int wr_hor_pos = get_thread_origin_x() * 16 * sizeof(short);
     int wr_ver_pos = get_thread_origin_y() * 16 ;
+    int byte_shift_amount = (BayerType == grbg || BayerType == gbrg)? 1 : 0;
 
     for(int wr_h_pos = wr_hor_pos; wr_h_pos < (wr_hor_pos + 32); wr_h_pos += 16) {
         for(int wr_v_pos = wr_ver_pos; wr_v_pos < (wr_ver_pos + 16); wr_v_pos += 8) {
 
             // compute rd_h_pos, rd_v_pos
             if(wr_h_pos == 0)
-                rd_h_pos = sizeof(short);
+                rd_h_pos =  byte_shift_amount * sizeof(short);
             else if(wr_h_pos == (threadwidth - 1) * 8 * sizeof(short))
-                rd_h_pos = (InFrameWidth - 9)* sizeof(short);
+                rd_h_pos = (InFrameWidth - 8 - byte_shift_amount) * sizeof(short);//(InFrameWidth - 9)* sizeof(short);
             else
-                rd_h_pos = wr_h_pos - 16;//rd_h_pos = (get_thread_origin_x() - 1) * 8 * sizeof(short);
+                rd_h_pos = wr_h_pos - 16 + byte_shift_amount * sizeof(short);//rd_h_pos = (get_thread_origin_x() - 1) * 8 * sizeof(short);
 
             if(wr_v_pos == 0)
-                rd_v_pos = 1;//0;
+                rd_v_pos = 0;//1;
             else if(wr_v_pos == (threadheight - 1) * 8)
-                rd_v_pos = (InFrameHeight - 9);//(InFrameHeight - 8);
+                rd_v_pos = (InFrameHeight - 8);//(InFrameHeight - 9);
             else
                 rd_v_pos = wr_v_pos - 8;//wr_v_pos - 7; (get_thread_origin_y() - 1) * 8;
 
@@ -168,6 +195,7 @@ GPU_PADDING_16BPP_SKL( SurfaceIndex ibuf, SurfaceIndex obuf,
                 for(int j = 0; j < 8; j++)
                     out.row(j) = rd_in_pixels.row(j);
             }
+            // SWAP IF NEEDED
             write(obuf, wr_h_pos, wr_v_pos, out);
         }
     }
@@ -747,16 +775,19 @@ GPU_SAD_CONFCHK_SKL( SurfaceIndex ibufRHOR, SurfaceIndex ibufGHOR, SurfaceIndex 
     int wr_h_pos = ((get_thread_origin_x() + wr_x) * 8) * sizeof(short);
     int wr_v_pos = ((get_thread_origin_y() + wr_y) * 8) ;
 
-    matrix_ref<short, 8, 8> out = tmp.select<4,1,16,1>(0,0).format<short, 8, 8>();
+    matrix_ref<short, 8, 8> outR = tmp.select<4,1,16,1>(0,0) .format<short, 8, 8>();
+    matrix_ref<short, 8, 8> outG = tmp.select<4,1,16,1>(4,0) .format<short, 8, 8>();
+    matrix_ref<short, 8, 8> outB = tmp.select<4,1,16,1>(8,0) .format<short, 8, 8>();
+    matrix_ref<short, 8, 8> out  = tmp.select<4,1,16,1>(12,0).format<short, 8, 8>();
+    matrix_ref<int,   8, 8> sum  = Min_cost_H;
 
-    out.merge(R_H, R_V, (HV_Flag  == 1));
-    write(obufROUT, wr_h_pos, wr_v_pos, out);
+    outR.merge(R_H, R_V, (HV_Flag  == 1));
+    outG.merge(G_H, G_V, (HV_Flag  == 1));
+    outB.merge(B_H, B_V, (HV_Flag  == 1));
 
-    out.merge(G_H, G_V, (HV_Flag  == 1));
-    write(obufGOUT, wr_h_pos, wr_v_pos, out);
-
-    out.merge(B_H, B_V, (HV_Flag  == 1));
-    write(obufBOUT, wr_h_pos, wr_v_pos, out);
+    write(obufROUT, wr_h_pos, wr_v_pos, outR);
+    write(obufGOUT, wr_h_pos, wr_v_pos, outG);
+    write(obufBOUT, wr_h_pos, wr_v_pos, outB);
 }
 
 
@@ -790,7 +821,6 @@ HORIZONTAL_CHECK(matrix_ref<short, 13, 32> srcG, matrix_ref<ushort, 8, 16> maskH
             diff.row(j) = v.row(j) - v.row(j+1);
         }
 #else
-        vector_ref<short, 32> v_rowG = m_rowG.format<short, 1, 32>();
 
         v.select<1,1,8,2>(0,0) = m_rowG.genx_select<4,4,2,1>(0,1);
         v.select<1,1,8,2>(0,1) = v.select<1,1,8,2>(0,0);
@@ -981,11 +1011,6 @@ GPU_DECIDE_AVG16x16_SKL( SurfaceIndex ibufRAVG, SurfaceIndex ibufGAVG, SurfaceIn
 #ifndef BLOCK_HEIGHT
 #define BLOCK_HEIGHT 8
 #endif
-
-#define bggr 0
-#define rggb 1
-#define gbrg 2
-#define grbg 3
 
 //#include "cm/cm.h"
 //const float offset_x[BLOCK_HEIGHT][BLOCK_WIDTH] = {{0,1,2,3,4,5,6,7},{0,1,2,3,4,5,6,7},{0,1,2,3,4,5,6,7},{0,1,2,3,4,5,6,7}
@@ -1515,10 +1540,6 @@ Bayer_MaskReduce(SurfaceIndex maskbuf,
 
 //#include "cm/cm.h"
 const unsigned int offset_init[8] = {0,1,2,3,4,5,6,7};
-#define bggr 0
-#define rggb 1
-#define gbrg 2
-#define grbg 3
 
 #define BLOCK_WIDTH 8
 #define BLOCK_HEIGHT 8
