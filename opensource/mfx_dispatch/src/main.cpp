@@ -373,7 +373,7 @@ mfxStatus DISPATCHER_EXPOSED_PREFIX(MFXInit)(mfxIMPL impl, mfxVersion *pVer, mfx
         {
             DISPATCHER_LOG_ERROR((("MFXQueryVersion returned: %d, cannot load plugins\n"), mfxRes))
         }
-        else 
+        else
         {
             MFX::MFXPluginStorage & hive = pHandle->pluginHive;
 
@@ -399,7 +399,7 @@ mfxStatus DISPATCHER_EXPOSED_PREFIX(MFXInit)(mfxIMPL impl, mfxVersion *pVer, mfx
             MFX::MFXPluginsInFS plgsInFS(apiVerActual);
             hive.insert(hive.end(), plgsInFS.begin(), plgsInFS.end());
         }
-    } 
+    }
     catch(...)
     {
         DISPATCHER_LOG_ERROR((("unknown exception while loading plugins\n")))

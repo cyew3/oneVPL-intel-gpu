@@ -146,38 +146,53 @@ bool MFX::MFXPluginFactory::RunVerification( const mfxPlugin & plg, const Plugin
         return false;
     }
 
-    if (!dsc.onlyVersionRegistered && pluginParams.CodecId != dsc.CodecId) 
+    if (dsc.Default)
     {
-        TRACE_PLUGIN_ERROR("plg->GetPluginParam() returned CodecId="MFXFOURCCTYPE()", but registration has CodecId="MFXFOURCCTYPE()"\n"
-            , MFXU32TOFOURCC(pluginParams.CodecId), MFXU32TOFOURCC(dsc.CodecId));
-        return false;
+        // for default plugins there is no description; dsc.APIVersion was set by dispatcher and equal to loaded library API
+        if (dsc.APIVersion.Major != pluginParams.APIVersion.Major ||
+            dsc.APIVersion.Minor < pluginParams.APIVersion.Minor)
+        {
+            TRACE_PLUGIN_ERROR("plg->GetPluginParam() returned APIVersion=%d.%d, but current MediasSDK version : %d.%d\n"
+                , pluginParams.APIVersion.Major, pluginParams.APIVersion.Minor
+                , dsc.APIVersion.Major, dsc.APIVersion.Minor);
+            return false;
+        }
     }
-
-    if (!dsc.onlyVersionRegistered && pluginParams.Type != dsc.Type) 
+    else
     {
-        TRACE_PLUGIN_ERROR("plg->GetPluginParam() returned Type=%d, but registration has Type=%d\n", pluginParams.Type, dsc.Type);
-        return false;
-    }
+        if (!dsc.onlyVersionRegistered && pluginParams.CodecId != dsc.CodecId) 
+        {
+            TRACE_PLUGIN_ERROR("plg->GetPluginParam() returned CodecId="MFXFOURCCTYPE()", but registration has CodecId="MFXFOURCCTYPE()"\n"
+                , MFXU32TOFOURCC(pluginParams.CodecId), MFXU32TOFOURCC(dsc.CodecId));
+            return false;
+        }
 
-    if (pluginParams.PluginUID !=  dsc.PluginUID) 
-    {
-        TRACE_PLUGIN_ERROR("plg->GetPluginParam() returned UID="MFXGUIDTYPE()", but registration has UID="MFXGUIDTYPE()"\n"
-            , MFXGUIDTOHEX(&pluginParams.PluginUID), MFXGUIDTOHEX(&dsc.PluginUID));
-        return false;
-    }
+        if (!dsc.onlyVersionRegistered && pluginParams.Type != dsc.Type) 
+        {
+            TRACE_PLUGIN_ERROR("plg->GetPluginParam() returned Type=%d, but registration has Type=%d\n", pluginParams.Type, dsc.Type);
+            return false;
+        }
 
-    if (pluginParams.PluginVersion != dsc.PluginVersion) 
-    {
-        TRACE_PLUGIN_ERROR("plg->GetPluginParam() returned PluginVersion=%d, but registration has PlgVer=%d\n", pluginParams.PluginVersion, dsc.PluginVersion);
-        return false;
-    }
+        if (pluginParams.PluginUID !=  dsc.PluginUID) 
+        {
+            TRACE_PLUGIN_ERROR("plg->GetPluginParam() returned UID="MFXGUIDTYPE()", but registration has UID="MFXGUIDTYPE()"\n"
+                , MFXGUIDTOHEX(&pluginParams.PluginUID), MFXGUIDTOHEX(&dsc.PluginUID));
+            return false;
+        }
 
-    if (pluginParams.APIVersion.Version != dsc.APIVersion.Version)
-    {
-        TRACE_PLUGIN_ERROR("plg->GetPluginParam() returned APIVersion=%d.%d, but registration has APIVer=%d.%d\n"
-            , pluginParams.APIVersion.Major, pluginParams.APIVersion.Minor
-            , dsc.APIVersion.Major, dsc.APIVersion.Minor);
-        return false;
+        if (pluginParams.PluginVersion != dsc.PluginVersion) 
+        {
+            TRACE_PLUGIN_ERROR("plg->GetPluginParam() returned PluginVersion=%d, but registration has PlgVer=%d\n", pluginParams.PluginVersion, dsc.PluginVersion);
+            return false;
+        }
+
+        if (pluginParams.APIVersion.Version != dsc.APIVersion.Version)
+        {
+            TRACE_PLUGIN_ERROR("plg->GetPluginParam() returned APIVersion=%d.%d, but registration has APIVer=%d.%d\n"
+                , pluginParams.APIVersion.Major, pluginParams.APIVersion.Minor
+                , dsc.APIVersion.Major, dsc.APIVersion.Minor);
+            return false;
+        }
     }
 
     switch(pluginParams.Type) 
