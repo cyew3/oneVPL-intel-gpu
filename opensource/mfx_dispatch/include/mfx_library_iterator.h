@@ -73,7 +73,7 @@ enum
     MFX_APP_FOLDER              = 2,
 
     MFX_STORAGE_ID_FIRST    = MFX_CURRENT_USER_KEY,
-    MFX_STORAGE_ID_LAST     = MFX_APP_FOLDER
+    MFX_STORAGE_ID_LAST     = MFX_LOCAL_MACHINE_KEY
 };
 #else
 enum
