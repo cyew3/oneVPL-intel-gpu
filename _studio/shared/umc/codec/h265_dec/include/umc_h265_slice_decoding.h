@@ -29,6 +29,7 @@ namespace UMC_HEVC_DECODER
 class H265DBPList;
 class H265DecoderFrameList;
 
+// Asynchronous task IDs
 enum
 {
     DEC_PROCESS_ID,
@@ -50,29 +51,12 @@ enum
     TASK_SAO_H265  // piece of slice is saoed
 };
 
-struct H265RefListInfo
-{
-    Ipp32s m_iNumShortEntriesInList;
-    Ipp32s m_iNumLongEntriesInList;
-    Ipp32s m_iNumFramesInL0List;
-    Ipp32s m_iNumFramesInL1List;
-    Ipp32s m_iNumFramesInLTList;
-
-    H265RefListInfo()
-        : m_iNumShortEntriesInList(0)
-        , m_iNumLongEntriesInList(0)
-        , m_iNumFramesInL0List(0)
-        , m_iNumFramesInL1List(0)
-        , m_iNumFramesInLTList(0)
-    {
-    }
-};
-
 class H265Task;
 class MemoryPiece;
 class H265DecoderFrame;
 class H265DecoderFrameInfo;
 
+// Task completeness information structure
 struct CUProcessInfo
 {
     Ipp32s m_curCUToProcess[LAST_PROCESS_ID];
@@ -93,6 +77,7 @@ struct CUProcessInfo
     }
 };
 
+// Slice descriptor class
 class H265Slice : public HeapObject
 {
     friend class H265SegmentDecoderMultiThreaded;
@@ -108,13 +93,15 @@ public:
     virtual
     ~H265Slice(void);
 
-    // Set slice source data
+    // Decode slice header and initializ slice structure with parsed values
     bool Reset(PocDecoding * pocDecoding);
     // Set current slice number
     void SetSliceNumber(Ipp32s iSliceNumber);
 
+    // Initialize CABAC context depending on slice type
     void InitializeContexts();
 
+    // Parse beginning of slice header to get PPS ID
     Ipp32s RetrievePicParamSetNumber();
 
     //
@@ -165,11 +152,13 @@ public:
 
 public:  // DEBUG !!!! should remove dependence
 
+    // Initialize slice structure to default values
     void Reset();
 
+    // Release resources
     void Release();
 
-    // Decode slice header
+    // Decoder slice header and calculate POC
     bool DecodeSliceHeader(PocDecoding * pocDecoding);
 
     H265SliceHeader m_SliceHeader;                              // (H265SliceHeader) slice header
@@ -203,6 +192,7 @@ public:
 
     int getNumRefIdx(EnumRefPicList e) const    { return m_SliceHeader.m_numRefIdx[e]; }
 
+    // Returns number of used references in RPS
     int getNumRpsCurrTempList() const;
 
     Ipp32s getTileLocationCount() const   { return m_SliceHeader.m_TileCount; }
@@ -216,10 +206,13 @@ public:
         m_SliceHeader.m_TileByteLocation = new Ipp32u[val];
     }
 
+    // Allocate a temporary array to hold slice substream offsets
     void allocSubstreamSizes(unsigned);
+    // For dependent slice copy data from another slice
     void CopyFromBaseSlice(const H265Slice * slice);
 };
 
+// Check whether two slices are from the same picture. HEVC spec 7.4.2.4.5
 inline
 bool IsPictureTheSame(H265Slice *pSliceOne, H265Slice *pSliceTwo)
 {
@@ -229,16 +222,10 @@ bool IsPictureTheSame(H265Slice *pSliceOne, H265Slice *pSliceTwo)
     const H265SliceHeader *pOne = pSliceOne->GetSliceHeader();
     const H265SliceHeader *pTwo = pSliceTwo->GetSliceHeader();
 
-    // this function checks two slices are from same picture or not
-    // 7.4.2.4.5 of hevc standard
-
     if (pOne->first_slice_segment_in_pic_flag == 1 && pOne->first_slice_segment_in_pic_flag == pTwo->first_slice_segment_in_pic_flag)
         return false;
 
-    if (/*(pOne->SliceCurStartCUAddr == pTwo->SliceCurStartCUAddr) ||
-        (pOne->m_sliceSegmentCurStartCUAddr == pTwo->m_sliceSegmentCurStartCUAddr) ||
-        (pOne->m_sliceAddr == pTwo->m_sliceAddr) ||*/
-        (pOne->slice_pic_parameter_set_id != pTwo->slice_pic_parameter_set_id))
+    if (pOne->slice_pic_parameter_set_id != pTwo->slice_pic_parameter_set_id)
         return false;
 
     if (pOne->slice_pic_order_cnt_lsb != pTwo->slice_pic_order_cnt_lsb)
@@ -252,6 +239,7 @@ bool IsPictureTheSame(H265Slice *pSliceOne, H265Slice *pSliceTwo)
 class H265SegmentDecoderMultiThreaded;
 struct TileThreadingInfo;
 
+// Asynchronous task descriptor class
 class H265Task
 {
 public:
@@ -295,10 +283,6 @@ public:
     bool m_bDone;                                               // (bool) task was done
     bool m_bError;                                              // (bool) there is a error
 };
-
-// Declare function to swapping memory
-extern
-void SwapMemoryAndRemovePreventingBytes_H265(void *pDst, size_t &nDstSize, void *pSrc, size_t nSrcSize, std::vector<Ipp32u> *pRemovedOffsets);
 
 } // namespace UMC_HEVC_DECODER
 

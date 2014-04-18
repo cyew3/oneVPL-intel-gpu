@@ -34,6 +34,7 @@ H265Slice::~H265Slice()
 
 } // H265Slice::~H265Slice(void)
 
+// Initialize slice structure to default values
 void H265Slice::Reset()
 {
     m_source.Release();
@@ -63,11 +64,13 @@ void H265Slice::Reset()
     m_SliceHeader.m_TileByteLocation = NULL;
 }
 
+// Release resources
 void H265Slice::Release()
 {
     Reset();
 } // void H265Slice::Release(void)
 
+// Parse beginning of slice header to get PPS ID
 Ipp32s H265Slice::RetrievePicParamSetNumber()
 {
     if (!m_source.GetDataSize())
@@ -97,6 +100,7 @@ Ipp32s H265Slice::RetrievePicParamSetNumber()
     return m_SliceHeader.slice_pic_parameter_set_id;
 }
 
+// Decode slice header and initializ slice structure with parsed values
 bool H265Slice::Reset(PocDecoding * pocDecoding)
 {
     m_BitStream.Reset((Ipp8u *) m_source.GetPointer(), (Ipp32u) m_source.GetDataSize());
@@ -132,12 +136,14 @@ bool H265Slice::Reset(PocDecoding * pocDecoding)
 
 } // bool H265Slice::Reset(void *pSource, size_t nSourceSize, Ipp32s iNumber)
 
+// Set current slice number
 void H265Slice::SetSliceNumber(Ipp32s iSliceNumber)
 {
     m_iNumber = iSliceNumber;
 
 } // void H265Slice::SetSliceNumber(Ipp32s iSliceNumber)
 
+// Returns true if slice is sublayer non-reference
 inline bool IsSubLayerNonReference(Ipp32s nal_unit_type)
 {
     switch (nal_unit_type)
@@ -154,6 +160,7 @@ inline bool IsSubLayerNonReference(Ipp32s nal_unit_type)
     return false;
 }
 
+// Decoder slice header and calculate POC
 bool H265Slice::DecodeSliceHeader(PocDecoding * pocDecoding)
 {
     UMC::Status umcRes = UMC::UMC_OK;
@@ -289,6 +296,7 @@ bool H265Slice::DecodeSliceHeader(PocDecoding * pocDecoding)
 
 } // bool H265Slice::DecodeSliceHeader(bool bFullInitialization)
 
+// Initialize CABAC context depending on slice type
 void H265Slice::InitializeContexts()
 {
     SliceType slice_type = m_SliceHeader.slice_type;
@@ -326,6 +334,7 @@ void H265Slice::InitializeContexts()
         m_SliceHeader.SliceQP + m_SliceHeader.slice_qp_delta);
 }
 
+// Returns number of used references in RPS
 int H265Slice::getNumRpsCurrTempList() const
 {
   int numRpsCurrTempList = 0;
@@ -346,6 +355,7 @@ int H265Slice::getNumRpsCurrTempList() const
   return numRpsCurrTempList;
 }
 
+// Allocate a temporary array to hold slice substream offsets
 void H265Slice::allocSubstreamSizes(unsigned uiNumSubstreams)
 {
     if (NULL != m_SliceHeader.m_SubstreamSizes)
@@ -353,6 +363,7 @@ void H265Slice::allocSubstreamSizes(unsigned uiNumSubstreams)
     m_SliceHeader.m_SubstreamSizes = new unsigned[uiNumSubstreams > 0 ? uiNumSubstreams - 1 : 0];
 }
 
+// For dependent slice copy data from another slice
 void H265Slice::CopyFromBaseSlice(const H265Slice * s)
 {
     if (!s || !m_SliceHeader.dependent_slice_segment_flag)
