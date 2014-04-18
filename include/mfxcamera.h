@@ -46,14 +46,15 @@ enum {
     MFX_EXTBUF_CAM_VIGNETTE_CORRECTION     = MFX_MAKEFOURCC('C','V','G','T'),
     MFX_EXTBUF_CAM_BAYER_DENOISE           = MFX_MAKEFOURCC('C','D','N','S'),
     MFX_EXTBUF_CAM_COLOR_CORRECTION_3X3    = MFX_MAKEFOURCC('C','C','3','3'),
-    MFX_EXTBUF_CAM_PADDING                 = MFX_MAKEFOURCC('C','P','A','D')
+    MFX_EXTBUF_CAM_PADDING                 = MFX_MAKEFOURCC('C','P','A','D'),
+    MFX_EXTBUF_CAM_PIPECONTROL             = MFX_MAKEFOURCC('C','P','P','C')
 };
 
 enum {
     MFX_CAM_GAMMA_VALUE      = 0x0001,
     MFX_CAM_GAMMA_LUT        = 0x0002,
     MFX_CAM_GAMMA_DEFAULT    = 0x0003 // use default internal gamma correction
-};
+} mfxCamGammaParam;
 
 typedef struct {
     mfxExtBuffer    Header;
@@ -71,7 +72,7 @@ typedef struct {
 enum {
     MFX_CAM__WHITE_BALANCE_MANUAL   = 0x0001,
     MFX_CAM_WHITE_BALANCE_AUTO     = 0x0002
-};
+} mfxCamWhiteBalanceMode;
 
 typedef struct {
     mfxExtBuffer    Header;
@@ -143,7 +144,7 @@ enum {
     MFX_CAM_BAYER_RGGB   = 0x0001,
     MFX_CAM_BAYER_GRBG   = 0x0002,
     MFX_CAM_BAYER_GBRG   = 0x0003
-};
+} mfxCamBayerFormat;
 
 typedef struct {
     mfxExtBuffer    Header;
