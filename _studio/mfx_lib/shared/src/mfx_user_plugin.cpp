@@ -144,7 +144,7 @@ mfxStatus VideoUSERPlugin::PluginInit(const mfxPlugin *pParam,
             (0 == pParam->Video->Reset) ||
             (0 == pParam->Video->Close) ||
             (0 == pParam->Video->GetVideoParam) ||
-            (0 == pParam->Video->VPPFrameSubmit))
+            ((0 == pParam->Video->VPPFrameSubmit) && (0 == pParam->Video->VPPFrameSubmitEx)))
         {
             return MFX_ERR_NULL_PTR;
         }
@@ -350,6 +350,8 @@ mfxStatus VideoUSERPlugin::VPPFrameCheck(mfxFrameSurface1 *in, mfxFrameSurface1 
     mfxThreadTask userParam;
 
     // check the parameters with user object
+    if(0 == m_plugin.Video->VPPFrameSubmit)
+        return MFX_ERR_UNDEFINED_BEHAVIOR;
     mfxRes =  m_plugin.Video->VPPFrameSubmit(m_plugin.pthis, in, out, aux, &userParam);
     if (!(MFX_ERR_NONE == mfxRes || MFX_ERR_MORE_SURFACE == mfxRes))
     {
@@ -358,6 +360,28 @@ mfxStatus VideoUSERPlugin::VPPFrameCheck(mfxFrameSurface1 *in, mfxFrameSurface1 
     // fill the 'entry point' structure
     *ep = m_entryPoint;
     ep->pParam = userParam;
+
+    return mfxRes;
+}
+
+mfxStatus VideoUSERPlugin::VPPFrameCheckEx(mfxFrameSurface1 *in, mfxFrameSurface1 *work, mfxFrameSurface1 **out, MFX_ENTRY_POINT *ep){
+    mfxStatus mfxRes;
+    mfxThreadTask userParam = 0;
+
+    // check the parameters with user object
+    if(0 == m_plugin.Video->VPPFrameSubmitEx)
+        return MFX_ERR_UNDEFINED_BEHAVIOR;
+    mfxRes =  m_plugin.Video->VPPFrameSubmitEx(m_plugin.pthis, in, work, out, &userParam);
+    if (!(MFX_ERR_NONE == mfxRes || MFX_ERR_MORE_SURFACE == mfxRes))
+    {
+        return mfxRes;
+    }
+    // fill the 'entry point' structure if required
+    if(0 != userParam)
+    {
+        *ep = m_entryPoint;
+        ep->pParam = userParam;
+    }
 
     return mfxRes;
 }

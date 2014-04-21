@@ -46,6 +46,7 @@ EXPORTS
     MFXVideoVPP_GetVideoParam
     MFXVideoVPP_GetVPPStat
     MFXVideoVPP_RunFrameVPPAsync
+    MFXVideoVPP_RunFrameVPPAsyncEx
 
     MFXVideoUSER_Register
     MFXVideoUSER_Unregister

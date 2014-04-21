@@ -498,6 +498,95 @@ mfxStatus MFXVideoVPP_RunFrameVPPAsync(mfxSession session, mfxFrameSurface1 *in,
 
 } // mfxStatus MFXVideoVPP_RunFrameVPPAsync(mfxSession session, mfxFrameSurface1 *in, mfxFrameSurface1 *out, mfxExtVppAuxData *aux, mfxSyncPoint *syncp)
 
+mfxStatus MFXVideoVPP_RunFrameVPPAsyncEx(mfxSession session, mfxFrameSurface1 *in, mfxFrameSurface1 *surface_work, mfxFrameSurface1 **surface_out, mfxSyncPoint *syncp)
+{
+    mfxStatus mfxRes;
+
+    MFX_AUTO_LTRACE_WITHID(MFX_TRACE_LEVEL_API, "MFX_RunFrameVPPAsyncEx");
+    MFX_LTRACE_BUFFER(MFX_TRACE_LEVEL_API, in);
+
+    MFX_CHECK(session, MFX_ERR_INVALID_HANDLE);
+    MFX_CHECK(session->m_pVPP.get(), MFX_ERR_NOT_INITIALIZED);
+    MFX_CHECK(syncp, MFX_ERR_NULL_PTR);
+
+    try
+    {
+#ifdef MFX_ENABLE_USER_VPP
+      if (session->m_plgVPP.get())
+      {
+          MFX_TASK task;
+          mfxSyncPoint syncPoint = NULL;
+          *syncp = NULL;
+          memset(&task, 0, sizeof(MFX_TASK));
+
+          mfxRes = session->m_plgVPP->VPPFrameCheckEx(in, surface_work, surface_out, &task.entryPoint);
+
+          if (task.entryPoint.pRoutine)
+          {
+              mfxStatus mfxAddRes;
+  
+              task.pOwner = session->m_plgVPP.get();
+              task.priority = session->m_priority;
+              task.threadingPolicy = session->m_plgVPP->GetThreadingPolicy();
+              // fill dependencies
+              task.pSrc[0] = in;
+              task.pDst[0] = surface_work;
+              if (MFX_ERR_MORE_DATA_RUN_TASK == mfxRes)
+                task.pDst[0] = NULL;
+  
+              #ifdef MFX_TRACE_ENABLE
+              task.nParentId = MFX_AUTO_TRACE_GETID();
+              task.nTaskId = MFX::CreateUniqId() + MFX_TRACE_ID_VPP;
+              #endif
+  
+              // register input and call the task
+              mfxAddRes = session->m_pScheduler->AddTask(task, &syncPoint);
+              if (MFX_ERR_NONE != mfxAddRes)
+              {
+                  return mfxAddRes;
+              }
+              *syncp = syncPoint;
+          }
+      }
+      else
+      {
+#endif
+        //MediaSDK's VPP should not work through Ex function
+        return MFX_ERR_UNDEFINED_BEHAVIOR;
+
+#ifdef MFX_ENABLE_USER_VPP
+      }
+#endif
+    }
+    // handle error(s)
+    catch(MFX_CORE_CATCH_TYPE)
+    {
+        // set the default error value
+        mfxRes = MFX_ERR_UNKNOWN;
+        if (0 == session)
+        {
+            mfxRes = MFX_ERR_INVALID_HANDLE;
+        }
+        else if (0 == session->m_pVPP.get())
+        {
+            mfxRes = MFX_ERR_NOT_INITIALIZED;
+        }
+        else if (0 == syncp)
+        {
+            return MFX_ERR_NULL_PTR;
+        }
+    }
+
+    MFX_LTRACE_BUFFER(MFX_TRACE_LEVEL_API, surface_work);
+    if (mfxRes == MFX_ERR_NONE && syncp)
+    {
+        MFX_LTRACE_P(MFX_TRACE_LEVEL_API, *syncp);
+    }
+    MFX_LTRACE_I(MFX_TRACE_LEVEL_API, mfxRes);
+    return mfxRes;
+
+} // mfxStatus MFXVideoVPP_RunFrameVPPAsyncEx(mfxSession session, mfxFrameSurface1 *in, mfxFrameSurface1 *surface_work, mfxFrameSurface1 **surface_out, mfxThreadTask *task);
+
 //
 // THE OTHER VPP FUNCTIONS HAVE IMPLICIT IMPLEMENTATION
 //
