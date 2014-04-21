@@ -126,6 +126,7 @@ typedef struct mfxVideoCodecPlugin{
     mfxStatus (MFX_CDECL *DecodeFrameSubmit)(mfxHDL pthis, mfxBitstream *bs, mfxFrameSurface1 *surface_work, mfxFrameSurface1 **surface_out,  mfxThreadTask *task);
 
     mfxStatus (MFX_CDECL *VPPFrameSubmit)(mfxHDL pthis,  mfxFrameSurface1 *in, mfxFrameSurface1 *out, mfxExtVppAuxData *aux, mfxThreadTask *task);
+    mfxStatus (MFX_CDECL *VPPFrameSubmitEx)(mfxHDL pthis,  mfxFrameSurface1 *in, mfxFrameSurface1 *surface_work, mfxFrameSurface1 **surface_out, mfxThreadTask *task);
 
     mfxStatus (MFX_CDECL *ENCFrameSubmit)(mfxHDL pthis,  mfxENCInput *in, mfxENCOutput *out, mfxThreadTask *task);
 

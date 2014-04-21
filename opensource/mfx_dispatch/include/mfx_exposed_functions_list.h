@@ -91,6 +91,7 @@ FUNCTION(mfxStatus, MFXVideoVPP_Close, (mfxSession session), (session))
 FUNCTION(mfxStatus, MFXVideoVPP_GetVideoParam, (mfxSession session, mfxVideoParam *par), (session, par))
 FUNCTION(mfxStatus, MFXVideoVPP_GetVPPStat, (mfxSession session, mfxVPPStat *stat), (session, stat))
 FUNCTION(mfxStatus, MFXVideoVPP_RunFrameVPPAsync, (mfxSession session, mfxFrameSurface1 *in, mfxFrameSurface1 *out, mfxExtVppAuxData *aux, mfxSyncPoint *syncp), (session, in, out, aux, syncp))
+FUNCTION(mfxStatus, MFXVideoVPP_RunFrameVPPAsyncEx, (mfxSession session, mfxFrameSurface1 *in, mfxFrameSurface1 *work, mfxFrameSurface1 **out, mfxSyncPoint *syncp), (session, in, work, out, syncp))
 
 #undef API_VERSION
 

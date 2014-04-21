@@ -134,6 +134,7 @@ struct MFXEncoderPlugin : MFXCodecPlugin
 struct MFXVPPPlugin : MFXCodecPlugin
 {
     virtual mfxStatus VPPFrameSubmit(mfxFrameSurface1 *surface_in, mfxFrameSurface1 *surface_out, mfxExtVppAuxData *aux, mfxThreadTask *task) = 0;
+    virtual mfxStatus VPPFrameSubmitEx(mfxFrameSurface1 *in, mfxFrameSurface1 *surface_work, mfxFrameSurface1 **surface_out, mfxThreadTask *task) = 0;
 };
 
 struct MFXEncPlugin : MFXCodecPlugin
@@ -247,6 +248,7 @@ namespace detail
         MFXPluginAdapterBase( T *plugin, mfxVideoCodecPlugin *pCodec)
         {
             SetupCallbacks(plugin, pCodec);
+            memset(&m_mfxAPI.reserved,0,sizeof(m_mfxAPI.reserved));
         }
 
         operator  mfxPlugin () const {
@@ -320,6 +322,8 @@ namespace detail
             m_codecPlg.Reset = _Reset;
             m_codecPlg.Close = _Close;
             m_codecPlg.GetVideoParam = _GetVideoParam;
+            memset(&m_codecPlg.reserved1,0,sizeof(m_codecPlg.reserved1));
+            memset(&m_codecPlg.reserved2,0,sizeof(m_codecPlg.reserved2));
         }
         static mfxStatus _Query(mfxHDL pthis, mfxVideoParam *in, mfxVideoParam *out) {
             return reinterpret_cast<T*>(pthis)->Query(in, out);
@@ -468,22 +472,29 @@ namespace detail
         MFXPluginAdapterInternal(MFXVPPPlugin *pPlugin)
             : MFXCodecPluginAdapterBase<MFXVPPPlugin>(pPlugin)
         {
-            m_codecPlg.VPPFrameSubmit = _VPPFrameSubmit;
+            SetupCallbacks();
         }
         MFXPluginAdapterInternal(const MFXPluginAdapterInternal & that)
             : MFXCodecPluginAdapterBase<MFXVPPPlugin>(that) {
-            m_codecPlg.VPPFrameSubmit = _VPPFrameSubmit;
+            SetupCallbacks();
         }
 
         MFXPluginAdapterInternal<MFXVPPPlugin>& operator = (const MFXPluginAdapterInternal<MFXVPPPlugin> & that) {
             MFXCodecPluginAdapterBase<MFXVPPPlugin>::operator = (that);
-            m_codecPlg.VPPFrameSubmit = _VPPFrameSubmit;
+            SetupCallbacks();
             return *this;
         }
 
     private:
+        void SetupCallbacks() {
+            m_codecPlg.VPPFrameSubmit = _VPPFrameSubmit;
+            m_codecPlg.VPPFrameSubmitEx = _VPPFrameSubmitEx;
+        }
         static mfxStatus _VPPFrameSubmit(mfxHDL pthis, mfxFrameSurface1 *surface_in, mfxFrameSurface1 *surface_out, mfxExtVppAuxData *aux, mfxThreadTask *task) {
             return reinterpret_cast<MFXVPPPlugin*>(pthis)->VPPFrameSubmit(surface_in, surface_out, aux, task);
+        }
+        static mfxStatus _VPPFrameSubmitEx(mfxHDL pthis, mfxFrameSurface1 *surface_in, mfxFrameSurface1 *surface_work, mfxFrameSurface1 **surface_out, mfxThreadTask *task) {
+            return reinterpret_cast<MFXVPPPlugin*>(pthis)->VPPFrameSubmitEx(surface_in, surface_work, surface_out, task);
         }
     };
 }
