@@ -8,6 +8,8 @@ Copyright(c) 2014 Intel Corporation. All Rights Reserved.
 
 **********************************************************************************/
 
+#include "mfx_samples_config.h"
+
 #include "video_session.h"
 #include "pipeline_factory.h"
 #include "itransform.h"

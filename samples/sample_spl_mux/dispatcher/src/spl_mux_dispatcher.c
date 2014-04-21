@@ -212,17 +212,18 @@ mfxStatus LoadMuxFunctions(retMfxMux *mfxMux)
 
 mfxStatus MFXSplitter_Init(mfxDataIO *data_io, mfxSplitter *spl)
 {
-    retMfxSpl *r;
+    retMfxSpl *r = NULL;
     mfxStatus mfxRes = MFX_ERR_INVALID_HANDLE;
 
-    if (spl == 0)
+    if (spl == NULL)
         return MFX_ERR_NULL_PTR;
 
     *spl = 0;
 
     r = (retMfxSpl*) malloc(sizeof(retMfxSpl));
-    if (r == 0)
+    if (r == NULL)
         return MFX_ERR_MEMORY_ALLOC;
+    memset((void*)r, 0, sizeof(retMfxSpl));
 
     mfxRes = LoadSplFunctions(r);
     if (mfxRes == MFX_ERR_NONE)
@@ -249,7 +250,7 @@ mfxStatus MFXSplitter_Close(mfxSplitter spl)
     retMfxSpl* r;
     mfxStatus mfxRes = MFX_ERR_NONE;
     r = (retMfxSpl*) spl;
-    if (r != 0)
+    if (r != NULL)
     {
         if ((r->hModule))
         {
@@ -270,17 +271,18 @@ mfxStatus MFXSplitter_Close(mfxSplitter spl)
 
 mfxStatus MFXMuxer_Init(mfxStreamParams* par, mfxDataIO *data_io, mfxMuxer *mux)
 {
-    retMfxMux *r;
+    retMfxMux *r = NULL;
     mfxStatus mfxRes = MFX_ERR_INVALID_HANDLE;
 
-    if (mux == 0)
+    if (mux == NULL)
         return MFX_ERR_NULL_PTR;
 
     *mux = 0;
 
     r = (retMfxMux*) malloc(sizeof(retMfxMux));
-    if (r == 0)
+    if (r == NULL)
         return MFX_ERR_MEMORY_ALLOC;
+    memset((void*)r, 0, sizeof(retMfxSpl));
 
     mfxRes = LoadMuxFunctions(r);
     if (mfxRes == MFX_ERR_NONE)
@@ -308,7 +310,7 @@ mfxStatus MFXMuxer_Close(mfxMuxer mux)
     retMfxMux* r;
     mfxStatus mfxRes = MFX_ERR_INVALID_HANDLE;
     r = (retMfxMux*) mux;
-    if (r == 0)
+    if (r == NULL)
         return MFX_ERR_NULL_PTR;
 
     if ((r->hModule))

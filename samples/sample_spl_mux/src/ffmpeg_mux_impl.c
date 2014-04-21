@@ -111,10 +111,10 @@ mfxStatus SetStreamInfo(mfxHDL mux, mfxU16 trackNum)
 
     //TODO: convert and set duration
     codecContext = inMux->streams[trackNum]->codec;
-    codecContext->profile = GetAVCodecProfileFromMFXCodecProfile(inMux->streamParams.TrackInfo[trackNum]->Type, inMux->streamParams.TrackInfo[trackNum]->VideoParam.CodecProfile);
     if (inMux->streamParams.TrackInfo[trackNum]->Type & MFX_TRACK_ANY_VIDEO)
     {
         codecContext->codec_type     = AVMEDIA_TYPE_VIDEO;
+        codecContext->profile        = GetAVCodecProfileFromMFXCodecProfile(inMux->streamParams.TrackInfo[trackNum]->Type, inMux->streamParams.TrackInfo[trackNum]->VideoParam.CodecProfile);
         codecContext->codec_id       = GetAVCodecIDFromMFXTrackType(inMux->streamParams.TrackInfo[trackNum]->Type);
         codecContext->width          = inMux->streamParams.TrackInfo[trackNum]->VideoParam.FrameInfo.Width;
         codecContext->height         = inMux->streamParams.TrackInfo[trackNum]->VideoParam.FrameInfo.Height;
@@ -126,6 +126,7 @@ mfxStatus SetStreamInfo(mfxHDL mux, mfxU16 trackNum)
     else if (inMux->streamParams.TrackInfo[trackNum]->Type & MFX_TRACK_ANY_AUDIO)
     {
         codecContext->codec_type  = AVMEDIA_TYPE_AUDIO;
+        codecContext->profile     = GetAVCodecProfileFromMFXCodecProfile(inMux->streamParams.TrackInfo[trackNum]->Type, inMux->streamParams.TrackInfo[trackNum]->AudioParam.CodecProfile);
         codecContext->codec_id = GetAVCodecIDFromMFXTrackType(inMux->streamParams.TrackInfo[trackNum]->Type);
         codecContext->bits_per_coded_sample = inMux->streamParams.TrackInfo[trackNum]->AudioParam.BitPerSample;
         codecContext->bit_rate = inMux->streamParams.TrackInfo[trackNum]->AudioParam.Bitrate;
@@ -217,9 +218,7 @@ mfxStatus MFXMuxer_Init(mfxStreamParams* par, mfxDataIO *data_io, mfxMuxer *mux)
     {
         return MFX_ERR_MEMORY_ALLOC;
     }
-    outMux->bsfContext  = NULL;
-    memset(outMux->lastDts, 0, sizeof(outMux->lastDts));
-    outMux->ptsToDtsOffset = 0;
+    memset((void*)outMux, 0, sizeof(_mfxMuxerFFMPEG));
 
     bufferSize = 4*1024;
     contextBuffer = (mfxU8*) av_malloc(bufferSize);
@@ -283,6 +282,7 @@ mfxStatus MFXMuxer_Init(mfxStreamParams* par, mfxDataIO *data_io, mfxMuxer *mux)
                 sts = MFX_ERR_MEMORY_ALLOC;
                 break;
             }
+            memset((void*)outMux->streamParams.TrackInfo[i], 0, sizeof(mfxTrackInfo));
         }
     }
     if (sts == MFX_ERR_NONE)

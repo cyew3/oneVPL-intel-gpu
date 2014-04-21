@@ -1663,7 +1663,7 @@ msdk_ostream & operator <<(msdk_ostream & os, MsdkTraceLevel tl) {
 }
 
 msdk_string NoFullPath(const msdk_string & file_path) {
-    size_t pos = file_path.find_last_of(MSDK_CHAR("\\/"));
+    size_t pos = file_path.find_last_of(MSDK_STRING("\\/"));
     if (pos != msdk_string::npos) {
         return file_path.substr(pos + 1);
     }
