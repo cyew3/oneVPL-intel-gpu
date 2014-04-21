@@ -454,7 +454,7 @@ mfxStatus MFXVideoENCODEH265::EncodeFrameCheck(mfxEncodeCtrl *ctrl, mfxFrameSurf
     MFX_CHECK_NULL_PTR1(bs->Data || !bs->MaxLength);
 
     H265ENC_UNREFERENCED_PARAMETER(pInternalParams);
-    MFX_CHECK(bs->MaxLength > (bs->DataOffset + bs->DataLength),MFX_ERR_UNDEFINED_BEHAVIOR);
+    MFX_CHECK(bs->MaxLength >= (bs->DataOffset + bs->DataLength),MFX_ERR_UNDEFINED_BEHAVIOR);
 
     Ipp32s brcMult = IPP_MAX(1, m_mfxVideoParam.mfx.BRCParamMultiplier);
     if( (Ipp32s)(bs->MaxLength - bs->DataOffset - bs->DataLength) < m_mfxVideoParam.mfx.BufferSizeInKB * brcMult * 1000)
