@@ -1717,7 +1717,7 @@ mfxStatus MFXVideoENCODEH265::Query(VideoCORE *core, mfxVideoParam *par_in, mfxV
         } // EO mfxExtCodingOptionHEVC
 
         if (optsDump_in) {
-            vm_string_strcpy_s(optsDump_out->ReconFilename, sizeof(optsDump_out->ReconFilename), optsDump_in->ReconFilename);
+            vm_string_strncpy_s(optsDump_out->ReconFilename, sizeof(optsDump_out->ReconFilename), optsDump_in->ReconFilename, sizeof(optsDump_out->ReconFilename)-1);
         }
 
         // reserved for any case
