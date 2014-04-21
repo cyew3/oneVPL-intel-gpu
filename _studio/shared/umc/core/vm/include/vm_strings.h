@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//       Copyright(c) 2003-2013 Intel Corporation. All Rights Reserved.
+//       Copyright(c) 2003-2014 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -25,7 +25,6 @@
 # include <dirent.h>
 # include <errno.h>
 # include <ipps.h>
-
 
 typedef char vm_char;
 
@@ -50,7 +49,7 @@ typedef char vm_char;
 #define vm_string_strcpy    strcpy
 #define vm_string_strcpy_s(dest, size, src)  (strncpy((dest), (src), (size)),0)
 #define vm_string_strncpy   strncpy
-#define vm_string_strncpy_s strncpy_s
+#define vm_string_strncpy_s(dst, dst_size, src, n) (strncpy(dst,src,n))
 #define vm_string_strcspn   strcspn
 #define vm_string_strspn    strspn
 
