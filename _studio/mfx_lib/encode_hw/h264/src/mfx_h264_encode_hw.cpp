@@ -731,7 +731,7 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
         checkStatus = spsppsSts;
 
     // CQP enabled
-    mfxExtCodingOption2 const * extOpt2 = GetExtBuffer(m_video);
+    mfxExtCodingOption2 * extOpt2 = GetExtBuffer(m_video);
     m_enabledSwBrc = 
         m_video.mfx.RateControlMethod == MFX_RATECONTROL_LA ||
         m_video.mfx.RateControlMethod == MFX_RATECONTROL_LA_ICQ ||
@@ -747,8 +747,24 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
 
     if (m_enabledSwBrc)
     {
-        m_brc.Init(m_video);
         mfxU16 storedRateControlMethod = m_video.mfx.RateControlMethod;
+        mfxU16 storedLookAheadDepth = extOpt2->LookAheadDepth;
+        mfxU16 storedMaxKbps = m_video.mfx.MaxKbps;
+
+        if (extOpt2->MaxSliceSize)
+        {
+            m_video.mfx.RateControlMethod = MFX_RATECONTROL_VBR;
+            m_video.mfx.MaxKbps = m_video.mfx.TargetKbps*2;
+            extOpt2->LookAheadDepth = 0;
+        }
+        if (extOpt2->MaxSliceSize)
+        {
+            m_video.mfx.RateControlMethod = MFX_RATECONTROL_VBR;
+            m_video.mfx.MaxKbps = storedMaxKbps;
+            extOpt2->LookAheadDepth = storedLookAheadDepth;
+        }
+        m_brc.Init(m_video);
+        
         m_video.mfx.RateControlMethod = MFX_RATECONTROL_CQP;
         sts = m_ddi->CreateAccelerationService(m_video);
         if (sts != MFX_ERR_NONE)
@@ -2105,7 +2121,7 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
             
             if (extOpt2 ->MaxSliceSize)
             {
-                mfxStatus sts = FillSliceInfo(*task, extOpt2 ->MaxSliceSize, m_brc.GetDistFrameSize());
+                mfxStatus sts = FillSliceInfo(*task, extOpt2 ->MaxSliceSize, extOpt2 ->MaxSliceSize * 128);
                 if (sts != MFX_ERR_NONE)
                     return Error(sts);
                 //printf("EST frameSize %d\n", m_brc.GetDistFrameSize());
@@ -2166,7 +2182,7 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
                         if ((sts = CopyBitstream(*m_core, m_video,*task, task->m_fid[f], pBS, bsSizeAvail)) != MFX_ERR_NONE)
                             return Error(sts);
 
-                        sts = UpdateSliceInfo(pBS, pBS + task->m_bsDataLength[task->m_fid[f]], extOpt2->MaxSliceSize, task->m_repack, *task, bRecoding);
+                        sts = UpdateSliceInfo(pBS, pBS + task->m_bsDataLength[task->m_fid[f]], extOpt2->MaxSliceSize, *task, bRecoding);
                         if (sts != MFX_ERR_NONE)
                             return Error(sts);
                         
@@ -2187,7 +2203,7 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
                                if (sts != MFX_ERR_NONE)
                                     return Error(sts);
                            }
-                           if (task->m_repack >=3)
+                           if (task->m_repack >=4)
                            {
                                task->m_cqpValue[0] += 5;
                                task->m_cqpValue[1] = task->m_cqpValue[0];
@@ -2201,8 +2217,8 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
                 } // extOpt2->MaxSliceSize
                 if (!bRecoding)
                 {
-                    mfxU32 res = m_brc.Report(task->m_fid[0], bsDataLength, 0, !!task->m_repack, task->m_frameOrder);
-                    if (res == 1)
+                    mfxU32 res = m_brc.Report(task->m_type[task->m_fid[0]], bsDataLength, 0, extOpt2->MaxSliceSize ? 0 : !!task->m_repack, task->m_frameOrder);
+                    if (res == 1 && !extOpt2->MaxSliceSize)
                     {
                         task->m_cqpValue[0] = task->m_cqpValue[1] = m_brc.GetQp(task->m_type[task->m_fid[0]], task->m_picStruct[ENC]);
                         bRecoding = true;

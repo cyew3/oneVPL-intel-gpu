@@ -3043,10 +3043,7 @@ void LookAheadBrc2::PreEnc(mfxU32 /*frameType*/, std::vector<VmeData *> const & 
     }
     assert(m_laData.size() <= m_lookAhead);
 }
-mfxU32 LookAheadBrc2::GetDistFrameSize()
-{
-    return (mfxU32) (m_laData[0].estRate[m_curQp]*m_totNumMb/(8*m_coef));
-}
+
 
 void VMEBrc::PreEnc(mfxU32 /*frameType*/, std::vector<VmeData *> const & /*vmeData*/, mfxU32 /*curEncOrder*/)
 {
@@ -5483,7 +5480,6 @@ mfxStatus MfxHwH264Encode::UpdateSliceInfo(
         mfxU8 *               sbegin, // contents of source buffer may be modified
         mfxU8 *               send,
         mfxU32                maxSliceSize,
-        mfxU32                /* nRecoded */,
         DdiTask &             task,
         bool&                 bRecoding)
 {    
@@ -5492,15 +5488,16 @@ mfxStatus MfxHwH264Encode::UpdateSliceInfo(
     {
         if (nalu->type == 1 || nalu->type == 5)
         {
-            size_t slice_len =  nalu->end - nalu->begin;
-            mfxU32 weight = (mfxU32)((slice_len*100 + maxSliceSize - 1)/maxSliceSize);
+            mfxF32 slice_len = (mfxF32) (nalu->end - nalu->begin);
+            mfxF32 weight = (slice_len*100)/maxSliceSize;
             task.m_SliceInfo[num].weight = weight ;
             if (weight > 100) 
                 bRecoding = true;
-            //printf ("%d\tslice len\t%d\t%d (%d)\n", num, slice_len, task.m_SliceInfo[num].weight, weight);
+            //printf ("%d \t slice len\t%d\t%f\n", num, slice_len, task.m_SliceInfo[num].weight);
             num++;
         }
     }
+   if (task.m_repack == 0) bRecoding = true;
    return (task.m_SliceInfo.size()!= num)? MFX_ERR_UNDEFINED_BEHAVIOR : MFX_ERR_NONE;
 }
 mfxU8 * MfxHwH264Encode::PatchBitstream(
@@ -5674,6 +5671,11 @@ mfxU32 MfxHwH264Encode::CalcBiWeight(
 
 BrcIface * MfxHwH264Encode::CreateBrc(MfxVideoParam const & video)
 {
+    mfxExtCodingOption2 const * ext = GetExtBuffer(video);
+
+    if (ext->MaxSliceSize)
+        return new UmcBrc;
+
     switch (video.mfx.RateControlMethod)
     {
     case MFX_RATECONTROL_LA: return new LookAheadBrc2;
@@ -5857,7 +5859,7 @@ mfxStatus MfxHwH264Encode::CorrectSliceInfoForsed(DdiTask & task)
     }
     for (; numBigSlices < freeSlisesMax; numBigSlices++)
     {
-        mfxU32 max_weight = 0;
+        mfxF32 max_weight = 0;
         mfxU32 max_index = 0;
         for (size_t j = numBigSlices; j < task.m_SliceInfo.size(); j++)
         {

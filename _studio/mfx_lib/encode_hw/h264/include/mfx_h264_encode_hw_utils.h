@@ -804,9 +804,10 @@ namespace MfxHwH264Encode
     {
         mfxU32 startMB;
         mfxU32 numMB;
-        mfxU32 weight;
+        mfxF32 weight;
         mfxU32 cost;
     };
+
 
     class DdiTask : public Reconstruct
     {
@@ -1193,7 +1194,6 @@ namespace MfxHwH264Encode
         virtual void SetQp(mfxU32 qp, mfxU32 frameType) = 0;
         virtual mfxU32 Report(mfxU32 frameType, mfxU32 dataLength, mfxU32 userDataLength, mfxU32 repack, mfxU32 picOrder) = 0;
         virtual mfxU32 GetMinFrameSize() = 0;
-        virtual mfxU32 GetDistFrameSize() = 0;
 
         virtual mfxStatus SetFrameVMEData(const mfxExtLAFrameStatistics*, mfxU32 , mfxU32 ) {return MFX_ERR_NONE;} 
     };
@@ -1242,10 +1242,6 @@ namespace MfxHwH264Encode
         {
             return m_impl->Report(frameType, dataLength, userDataLength, repack, picOrder);
         }
-        mfxU32 GetDistFrameSize()
-        {
-            return m_impl->GetDistFrameSize();        
-        }
         mfxU32 GetMinFrameSize()
         {
             return m_impl->GetMinFrameSize();
@@ -1278,7 +1274,6 @@ namespace MfxHwH264Encode
         mfxU32 Report(mfxU32 frameType, mfxU32 dataLength, mfxU32 userDataLength, mfxU32 repack, mfxU32 picOrder);
 
         mfxU32 GetMinFrameSize();
-        mfxU32 GetDistFrameSize() {return 0;};
 
     private:
         UMC::H264BRC m_impl;
@@ -1306,7 +1301,6 @@ namespace MfxHwH264Encode
 
         mfxU32 GetMinFrameSize() { return 0; }
 
-        mfxU32 GetDistFrameSize();
 
     public:
         struct LaFrameData
@@ -1365,7 +1359,6 @@ namespace MfxHwH264Encode
 
         mfxStatus SetFrameVMEData(const mfxExtLAFrameStatistics *, mfxU32 widthMB, mfxU32 heightMB );
         
-        mfxU32 GetDistFrameSize() { return 0; }
 
     public:
         struct LaFrameData
@@ -1420,7 +1413,6 @@ namespace MfxHwH264Encode
         mfxU32 Report(mfxU32 frameType, mfxU32 dataLength, mfxU32 userDataLength, mfxU32 repack, mfxU32 picOrder);
 
         mfxU32 GetMinFrameSize() { return 0; }
-        mfxU32 GetDistFrameSize() {return 0;};
 
     protected:
         mfxU32  m_lookAhead;
@@ -2895,7 +2887,6 @@ namespace MfxHwH264Encode
         mfxU8 *               sbegin, // contents of source buffer may be modified
         mfxU8 *               send,
         mfxU32                maxSliceSize,
-        mfxU32                nRecoded,
         DdiTask&              task,
         bool&                 bRecoding);
 
