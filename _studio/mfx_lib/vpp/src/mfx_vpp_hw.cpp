@@ -2848,7 +2848,63 @@ mfxStatus SetMFXISMode(const mfxVideoParam & videoParam, mfxU32 mode)
     }
 
     return MFX_WRN_VALUE_NOT_CHANGED;
-}
+} // mfxStatus SetMFXISMode(const mfxVideoParam & videoParam, mfxU32 mode)
+
+
+mfxU32 GetDeinterlacingMode(const mfxVideoParam & videoParam)
+{
+    for (mfxU32 i = 0; i < videoParam.NumExtParam; i++)
+    {
+        if (videoParam.ExtParam[i]->BufferId == MFX_EXTBUFF_VPP_DEINTERLACING)
+        {
+            mfxExtVPPDeinterlacing *extDeinterlacing = (mfxExtVPPDeinterlacing *) videoParam.ExtParam[i];
+            return extDeinterlacing->Mode;
+        }
+    }
+
+    return 0;//EMPTY
+
+} // mfxStatus GetDeinterlacingMode(const mfxVideoParam & videoParam, mfxU32 mode)
+
+
+mfxStatus SetDeinterlacingMode(const mfxVideoParam & videoParam, mfxU32 mode)
+{
+    for (mfxU32 i = 0; i < videoParam.NumExtParam; i++)
+    {
+        if (videoParam.ExtParam[i]->BufferId == MFX_EXTBUFF_VPP_DEINTERLACING)
+        {
+            mfxExtVPPDeinterlacing *extDeinterlacing = (mfxExtVPPDeinterlacing *) videoParam.ExtParam[i];
+            extDeinterlacing->Mode = (mfxU16)mode;
+
+            return MFX_ERR_NONE;
+        }
+    }
+
+    return MFX_WRN_VALUE_NOT_CHANGED;
+
+} // mfxStatus SetDeinterlacingMode(const mfxVideoParam & videoParam, mfxU32 mode)
+
+
+mfxStatus SetSignalInfo(const mfxVideoParam & videoParam, mfxU32 trMatrix, mfxU32 Range)
+{
+    for (mfxU32 i = 0; i < videoParam.NumExtParam; i++)
+    {
+        if (videoParam.ExtParam[i]->BufferId == MFX_EXTBUFF_VPP_VIDEO_SIGNAL_INFO)
+        {
+            mfxExtVPPVideoSignalInfo *extDeinterlacing = (mfxExtVPPVideoSignalInfo *) videoParam.ExtParam[i];
+
+            extDeinterlacing->In.TransferMatrix  = (mfxU16)trMatrix;
+            extDeinterlacing->In.NominalRange    = (mfxU16)Range;
+            extDeinterlacing->Out.TransferMatrix = (mfxU16)trMatrix;
+            extDeinterlacing->Out.NominalRange   = (mfxU16)Range;
+
+            return MFX_ERR_NONE;
+        }
+    }
+
+    return MFX_WRN_VALUE_NOT_CHANGED;
+
+} // mfxStatus SetMFXFrcMode(const mfxVideoParam & videoParam, mfxU32 mode)
 
 
 MfxFrameAllocResponse::MfxFrameAllocResponse()

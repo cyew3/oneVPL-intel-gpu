@@ -47,7 +47,8 @@ const mfxU32 g_TABLE_DO_USE [] =
     MFX_EXTBUFF_VPP_COMPOSITE,
     MFX_EXTBUFF_VPP_PICSTRUCT_DETECTION,
     MFX_EXTBUFF_VPP_VARIANCE_REPORT,
-    MFX_EXTBUFF_VPP_DEINTERLACING
+    MFX_EXTBUFF_VPP_DEINTERLACING,
+    MFX_EXTBUFF_VPP_VIDEO_SIGNAL_INFO
 };
 
 
@@ -60,7 +61,8 @@ const mfxU32 g_TABLE_CONFIG [] =
     MFX_EXTBUFF_VPP_FRAME_RATE_CONVERSION,
     MFX_EXTBUFF_VPP_IMAGE_STABILIZATION,
     MFX_EXTBUFF_VPP_COMPOSITE,
-    MFX_EXTBUFF_VPP_DEINTERLACING
+    MFX_EXTBUFF_VPP_DEINTERLACING,
+    MFX_EXTBUFF_VPP_VIDEO_SIGNAL_INFO
 };
 
 
@@ -80,7 +82,8 @@ const mfxU32 g_TABLE_EXT_PARAM [] =
     MFX_EXTBUFF_VPP_FRAME_RATE_CONVERSION,
     MFX_EXTBUFF_VPP_IMAGE_STABILIZATION,
     MFX_EXTBUFF_VPP_COMPOSITE,
-    MFX_EXTBUFF_VPP_DEINTERLACING
+    MFX_EXTBUFF_VPP_DEINTERLACING,
+    MFX_EXTBUFF_VPP_VIDEO_SIGNAL_INFO
 };
 
 // in according with spec rev. 22583 VPP uses new PicStruct processing
@@ -962,6 +965,11 @@ void ReorderPipelineListForQuality( std::vector<mfxU32> & pipelineList )
         newList[index] = MFX_EXTBUFF_VPP_DEINTERLACING;
         index++;
     }
+    if( IsFilterFound( &pipelineList[0], (mfxU32)pipelineList.size(), MFX_EXTBUFF_VPP_VIDEO_SIGNAL_INFO ) )
+    {
+        newList[index] = MFX_EXTBUFF_VPP_VIDEO_SIGNAL_INFO;
+        index++;
+    }
 
     /* [IStab] FILTER */
 #if defined(MFX_ENABLE_IMAGE_STABILIZATION_VPP)
@@ -1186,9 +1194,27 @@ mfxStatus GetPipelineList(
     }
 
     /* [Deinterlace] FILTER */
+    mfxU32 extParamCount        = IPP_MAX(sizeof(g_TABLE_CONFIG) / sizeof(*g_TABLE_CONFIG), videoParam->NumExtParam);
+    std::vector<mfxU32> extParamList(extParamCount);
+
+    GetConfigurableFilterList( videoParam, &extParamList[0], &extParamCount );
+
+    mfxU32*   pExtBufList = NULL;
+    mfxU32    extBufCount = 0;
+
+    if( 0 != videoParam->NumExtParam && NULL == videoParam->ExtParam )
+    {
+        return MFX_ERR_NULL_PTR;
+    }
+
+    GetDoUseFilterList( videoParam, &pExtBufList, &extBufCount );
+
+    extParamList.insert(extParamList.end(), &pExtBufList[0], &pExtBufList[extBufCount]);
+    extParamCount = extParamList.size();
+
     PicStructMode picStructMode = GetPicStructMode(par->In.PicStruct, par->Out.PicStruct);
 
-    if( DYNAMIC_DI_PICSTRUCT_MODE == picStructMode )
+    if( DYNAMIC_DI_PICSTRUCT_MODE == picStructMode && !IsFilterFound( &extParamList[0], extParamCount, MFX_EXTBUFF_VPP_DEINTERLACING ) )
     {
         if( IsFrameRatesCorrespondMode60i60p(par->In.FrameRateExtN,
                                         par->In.FrameRateExtD,
@@ -1221,11 +1247,6 @@ mfxStatus GetPipelineList(
     /* *************************************************************************** */
     mfxU32*   pExtList = NULL;
     mfxU32    extCount = 0;
-
-    if( 0 != videoParam->NumExtParam && NULL == videoParam->ExtParam )
-    {
-        return MFX_ERR_NULL_PTR;
-    }
 
     GetDoUseFilterList( videoParam, &pExtList, &extCount );
 
@@ -2170,6 +2191,24 @@ mfxStatus CheckLimitationsSW(
         if(bCorrectionEnable)
         {
             SetMFXFrcMode(param, MFX_FRCALGM_PRESERVE_TIMESTAMP);
+        }
+    }
+    else if( IsFilterFound(pList, len, MFX_EXTBUFF_VPP_DEINTERLACING) && GetDeinterlacingMode(param) )
+    {
+        // [3] Deinterlacing mode isn't supported by SW yet, set to supported mode
+        sts = MFX_ERR_UNSUPPORTED;
+        if(bCorrectionEnable)
+        {
+            SetDeinterlacingMode(param, 0);
+        }
+    }
+    else if( IsFilterFound(pList, len, MFX_EXTBUFF_VPP_VIDEO_SIGNAL_INFO) )
+    {
+        // [4] Video signal info isn't supported by SW yet, set to supported mode
+        sts = MFX_ERR_UNSUPPORTED;
+        if(bCorrectionEnable)
+        {
+            SetSignalInfo(param, MFX_TRANSFERMATRIX_UNKNOWN, MFX_NOMINALRANGE_UNKNOWN);
         }
     }
 

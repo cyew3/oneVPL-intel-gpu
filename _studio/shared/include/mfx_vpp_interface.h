@@ -109,6 +109,8 @@ namespace MfxHwVideoProcessing
 
         // MSDK 2013
         mfxU32 uFrameRateConversion;
+        mfxU32 uDeinterlacing;
+        mfxU32 uVideoSignalInfo;
         FrcCaps frcCaps;
 
         mfxU32 uIStabFilter;

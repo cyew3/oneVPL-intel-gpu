@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2010 - 2013 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2010 - 2014 Intel Corporation. All Rights Reserved.
 //
 //
 //                     utilities for (SW)VPP processing
@@ -155,6 +155,11 @@ mfxU16 MapDNFactor( mfxU16 denoiseFactor );
 mfxU32 GetMFXFrcMode(const mfxVideoParam & videoParam);
 mfxStatus SetMFXFrcMode(const mfxVideoParam & videoParam, mfxU32 mode);
 mfxStatus SetMFXISMode(const mfxVideoParam & videoParam, mfxU32 mode);
+
+mfxU32 GetDeinterlacingMode(const mfxVideoParam & videoParam);
+mfxStatus SetDeinterlacingMode(const mfxVideoParam & videoParam, mfxU32 mode);
+
+mfxStatus SetSignalInfo(const mfxVideoParam & videoParam, mfxU32 trMatrix, mfxU32 Range);
 
 void ExtractDoUseList(
     mfxU32* pSrcList, 

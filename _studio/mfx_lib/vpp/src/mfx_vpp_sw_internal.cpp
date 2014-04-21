@@ -379,12 +379,14 @@ mfxStatus VideoVPPSW::CreatePipeline(mfxFrameInfo* In, mfxFrameInfo* Out)
             }
 
             case (mfxU32)MFX_EXTBUFF_VPP_DI:
+            case (mfxU32)MFX_EXTBUFF_VPP_DEINTERLACING:
             {
                 sts = MFX_ERR_NONE;
                 /* DEINTERLACE specific */
                 outFrameInfo.PicStruct = Out->PicStruct;
 
                 VPP_INIT_FILTER( filterIndex, MFXVideoVPPDeinterlace );
+
                 break;
             }
 
@@ -422,6 +424,17 @@ mfxStatus VideoVPPSW::CreatePipeline(mfxFrameInfo* In, mfxFrameInfo* Out)
                 outFrameInfo.FourCC = MFX_FOURCC_A2RGB10;
 
                 VPP_INIT_FILTER( filterIndex, MFXVideoVPPColorSpaceConversion );
+
+                break;
+            }
+
+            case (mfxU32)MFX_EXTBUFF_VPP_VIDEO_SIGNAL_INFO:
+            {
+                sts = MFX_ERR_NONE; 
+                /* COLOR SPACE_ CONVERSION specific */
+                outFrameInfo.FourCC = Out->FourCC;
+
+                VPP_INIT_FILTER( filterIndex, MFXVideoVPPColorSpaceConversion ); /* Real class implementation for VIDEO SIGNAL INFO is required */
 
                 break;
             }
@@ -897,6 +910,7 @@ mfxStatus GetExternalFramesCount(mfxVideoParam* pParam,
             case (mfxU32)MFX_EXTBUFF_VPP_CSC:
             case (mfxU32)MFX_EXTBUFF_VPP_CSC_OUT_RGB4:
             case (mfxU32)MFX_EXTBUFF_VPP_CSC_OUT_A2RGB10:
+            case (mfxU32)MFX_EXTBUFF_VPP_VIDEO_SIGNAL_INFO:
             {
                 inputFramesCount[filterIndex]  = MFXVideoVPPColorSpaceConversion::GetInFramesCountExt();
                 outputFramesCount[filterIndex] = MFXVideoVPPColorSpaceConversion::GetOutFramesCountExt();

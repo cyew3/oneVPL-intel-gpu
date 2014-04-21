@@ -326,7 +326,7 @@ mfxStatus VideoVPPSW::Init(mfxVideoParam *par)
 
     /* here, Reset == SetParam */
     mfxStatus stsReset = sts = Reset( par );
-    if(MFX_WRN_FILTER_SKIPPED ==sts || MFX_WRN_INCOMPATIBLE_VIDEO_PARAM == sts)
+    if(MFX_WRN_FILTER_SKIPPED == sts || MFX_WRN_INCOMPATIBLE_VIDEO_PARAM == sts)
     {
         sts = MFX_ERR_NONE;
     }
@@ -363,6 +363,11 @@ mfxStatus VideoVPPSW::Init(mfxVideoParam *par)
 
     bool bCorrectionEnable = false;
     sts = CheckPlatformLimitations(m_core, *par, bCorrectionEnable);
+
+    if (MFX_ERR_UNSUPPORTED == sts)
+    {
+        sts = MFX_ERR_INVALID_VIDEO_PARAM;
+    }
 
     return (MFX_ERR_NONE == sts) ? stsReset : sts;
 
@@ -868,6 +873,7 @@ mfxStatus VideoVPPSW::GetVideoParam(mfxVideoParam *par)
                     case MFX_EXTBUFF_VPP_CSC_OUT_RGB4:
                     case MFX_EXTBUFF_VPP_CSC_OUT_A2RGB10:
                     case MFX_EXTBUFF_VPP_DEINTERLACING:
+                    case MFX_EXTBUFF_VPP_VIDEO_SIGNAL_INFO:
                     {
                         continue;
                     }
@@ -911,6 +917,8 @@ mfxStatus VideoVPPSW::QueryCaps(VideoCORE * core, MfxHwVideoProcessing::mfxVppCa
     {
         sts = VideoVPPHW::QueryCaps(core, caps);
         caps.uFrameRateConversion= 1; // "1" means general FRC is supported. "Interpolation" modes descibed by caps.frcCaps
+        caps.uDeinterlacing      = 1; // "1" means general deinterlacing is supported
+        caps.uVideoSignalInfo    = 1; // "1" means general VSI is supported
     }
 
     if(MFX_ERR_NONE != sts || MFX_PLATFORM_SOFTWARE == core->GetPlatformType())
@@ -923,6 +931,8 @@ mfxStatus VideoVPPSW::QueryCaps(VideoCORE * core, MfxHwVideoProcessing::mfxVppCa
         caps.uDetailFilter       = 1;
         caps.uFieldWeavingControl= 0;
         caps.uFrameRateConversion= 1; // "1" means general FRC is supported. "Interpolation" modes descibed by caps.frcCaps
+        caps.uDeinterlacing      = 1; // "1" means general deinterlacing is supported
+        caps.uVideoSignalInfo    = 1; // "1" means general VSI is supported
         caps.uInverseTC          = 1;
         caps.uIStabFilter        = 1;
         caps.uMaxHeight          = 8096;
@@ -1604,9 +1614,16 @@ mfxStatus VideoVPPSW::Reset(mfxVideoParam *par)
                     }
                     break;
                 }
+
             case MFX_EXTBUFF_VPP_CSC_OUT_RGB4:
                 {
                     filtParam.vpp.Out.FourCC = MFX_FOURCC_RGB4;
+                    break;
+                }
+
+            case MFX_EXTBUFF_VPP_VIDEO_SIGNAL_INFO:
+                {
+                    filtParam.vpp.Out.FourCC = par->vpp.Out.FourCC;
                     break;
                 }
 
@@ -1622,6 +1639,7 @@ mfxStatus VideoVPPSW::Reset(mfxVideoParam *par)
                 filtParam.vpp.Out.FrameRateExtN = par->vpp.Out.FrameRateExtN;
 
             case MFX_EXTBUFF_VPP_DI:
+            case MFX_EXTBUFF_VPP_DEINTERLACING:
                 {
                     filtParam.vpp.Out.PicStruct = par->vpp.Out.PicStruct;
                     break;
@@ -1640,10 +1658,6 @@ mfxStatus VideoVPPSW::Reset(mfxVideoParam *par)
                     filtParam.vpp.Out.FrameRateExtN = par->vpp.Out.FrameRateExtN;
                     break;
                 }
-            case MFX_EXTBUFF_VPP_DEINTERLACING:
-                {
-                    return MFX_ERR_UNSUPPORTED;
-                }
 
             default: // DN, SA, PA, DTL, GAMUT
                 {
@@ -1653,11 +1667,17 @@ mfxStatus VideoVPPSW::Reset(mfxVideoParam *par)
             }
 
             sts = m_ppFilters[filterIndex]->Reset( &filtParam );
+
             MFX_CHECK_STS(sts);
         }
 
         bool bCorrectionEnable = false;
         sts = CheckPlatformLimitations(m_core, *par, bCorrectionEnable);
+
+        if (MFX_ERR_UNSUPPORTED == sts)
+        {
+            sts = MFX_ERR_INVALID_VIDEO_PARAM;
+        }
     }
 
     VPP_RESET;
@@ -1696,6 +1716,16 @@ void ConvertCaps2ListDoUse(MfxHwVideoProcessing::mfxVppCaps& caps, std::vector<m
     if(caps.uFrameRateConversion)
     {
         list.push_back(MFX_EXTBUFF_VPP_FRAME_RATE_CONVERSION);
+    }
+
+    if(caps.uDeinterlacing)
+    {
+        list.push_back(MFX_EXTBUFF_VPP_DEINTERLACING);
+    }
+
+    if(caps.uVideoSignalInfo)
+    {
+        list.push_back(MFX_EXTBUFF_VPP_VIDEO_SIGNAL_INFO);
     }
 
     if(caps.uIStabFilter)
