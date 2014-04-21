@@ -248,7 +248,6 @@ namespace detail
         MFXPluginAdapterBase( T *plugin, mfxVideoCodecPlugin *pCodec)
         {
             SetupCallbacks(plugin, pCodec);
-            memset(&m_mfxAPI.reserved,0,sizeof(m_mfxAPI.reserved));
         }
 
         operator  mfxPlugin () const {
@@ -322,8 +321,6 @@ namespace detail
             m_codecPlg.Reset = _Reset;
             m_codecPlg.Close = _Close;
             m_codecPlg.GetVideoParam = _GetVideoParam;
-            memset(&m_codecPlg.reserved1,0,sizeof(m_codecPlg.reserved1));
-            memset(&m_codecPlg.reserved2,0,sizeof(m_codecPlg.reserved2));
         }
         static mfxStatus _Query(mfxHDL pthis, mfxVideoParam *in, mfxVideoParam *out) {
             return reinterpret_cast<T*>(pthis)->Query(in, out);
