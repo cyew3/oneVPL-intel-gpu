@@ -321,17 +321,6 @@ mfxStatus Launcher::ProcessResult()
     }
 } // mfxStatus Launcher::ProcessResult()
 
-
-// to compare mfxVersions
-bool operator <(const mfxVersion &left, const mfxVersion &right)
-{
-    if (left.Major < right.Major)
-        return true;
-    else if (left.Major == right.Major)
-        return left.Minor < right.Minor;
-    return false;
-}
-
 mfxStatus Launcher::VerifyCrossSessionsOptions()
 {
     bool IsSinkPresence = false;

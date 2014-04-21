@@ -157,13 +157,13 @@
     <ClInclude Include="include\d3d11_device.h" />
     <ClInclude Include="include\d3d_allocator.h" />
     <ClInclude Include="include\d3d_device.h" />
+    <ClInclude Include="include\general_allocator.h" />
     <ClInclude Include="include\hw_device.h" />
     <ClInclude Include="include\mfx_samples_config.h" />
     <ClInclude Include="include\sample_defs.h" />
     <ClInclude Include="include\sample_utils.h" />
     <ClInclude Include="include\shared_ptr.h" />
     <ClInclude Include="include\sysmem_allocator.h" />
-    <ClCompile Include="include\general_allocator.h" />
     <ClInclude Include="include\mfx_plugin_uids.h" />
     <ClInclude Include="include\mfx_buffering.h" />
     <ClInclude Include="include\vpp_ex.h" />
