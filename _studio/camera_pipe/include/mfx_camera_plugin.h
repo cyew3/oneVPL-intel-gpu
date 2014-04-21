@@ -43,6 +43,10 @@ public:
     //{
     //    return MFXVideoVPP_RunFrameVPPAsync(m_session, surface_in, surface_out, aux, (mfxSyncPoint*) task);
     //}
+    virtual mfxStatus VPPFrameSubmitEx(mfxFrameSurface1 *, mfxFrameSurface1 *, mfxFrameSurface1 **, mfxThreadTask *)
+    {
+        return MFX_ERR_UNDEFINED_BEHAVIOR;
+    }
     virtual mfxStatus Execute(mfxThreadTask task, mfxU32 , mfxU32 )
     {
         return MFXVideoCORE_SyncOperation(m_session, (mfxSyncPoint) task, MFX_INFINITE);

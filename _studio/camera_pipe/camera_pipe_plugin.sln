@@ -1,6 +1,8 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2012
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mfxplugin_camera_pipe", "mfxplugin_camera_pipe.vcxproj", "{4041A665-2623-43CA-88D4-7D516875F864}"
+EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{1A8C6A5C-1DC0-4288-8033-8FE2A873DFDE}"
 	ProjectSection(SolutionItems) = preProject
 		..\mfx_lib\Intel.Mfx.Common.props = ..\mfx_lib\Intel.Mfx.Common.props
@@ -22,8 +24,6 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "umc_va_elk", "..\shared\umc\io\umc_va\umc_va_elk.vcxproj", "{0E971EE7-4430-47D9-92CD-9822BC664642}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libmfxhw_camera", "libmfxhw_camera.vcxproj", "{D719372D-BA13-4730-AFF6-1994B26EFF6C}"
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mfxplugin_camera_pipe", "mfxplugin_camera_pipe.vcxproj", "{4041A665-2623-43CA-88D4-7D516875F864}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
