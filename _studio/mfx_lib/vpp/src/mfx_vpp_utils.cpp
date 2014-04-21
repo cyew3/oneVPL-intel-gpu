@@ -1210,7 +1210,7 @@ mfxStatus GetPipelineList(
     GetDoUseFilterList( videoParam, &pExtBufList, &extBufCount );
 
     extParamList.insert(extParamList.end(), &pExtBufList[0], &pExtBufList[extBufCount]);
-    extParamCount = extParamList.size();
+    extParamCount = (mfxU32) extParamList.size();
 
     PicStructMode picStructMode = GetPicStructMode(par->In.PicStruct, par->Out.PicStruct);
 
