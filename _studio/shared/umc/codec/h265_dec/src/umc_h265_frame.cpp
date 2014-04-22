@@ -60,6 +60,7 @@ H265DecoderFrame::H265DecoderFrame(UMC::MemoryAllocator *pMemoryAllocator, Heap_
     m_Flags.isSkipped = 0;
     m_wasOutputted = 0;
     m_wasDisplayed = 0;
+    m_maxUIDWhenWasDisplayed = 0;
 
     prepared = false;
 }
@@ -136,6 +137,7 @@ void H265DecoderFrame::Reset()
     m_wasOutputted = 0;
     m_wasDisplayed = 0;
     m_dpb_output_delay = INVALID_DPB_DELAY_H265;
+    m_maxUIDWhenWasDisplayed = 0;
 
     m_dFrameTime = -1;
     m_isOriginalPTS = false;
