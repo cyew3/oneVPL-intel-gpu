@@ -655,6 +655,7 @@ ImplementationAvc::ImplementationAvc(VideoCORE * core)
 , m_video()
 , m_enabledSwBrc(false)
 , m_maxBsSize(0)
+, m_NumSlices(0)
 {
 /*
     FEncLog = fopen("EncLog.txt", "wb");
@@ -844,6 +845,8 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
     request.Info.Width  = IPP_MAX(request.Info.Width,  m_video.mfx.FrameInfo.Width);
     request.Info.Height = IPP_MAX(request.Info.Height, m_video.mfx.FrameInfo.Height * 3 / 2);
     m_maxBsSize = request.Info.Width * request.Info.Height;
+
+    m_NumSlices = m_video.mfx.FrameInfo.Height / 16;
 
     sts = m_bit.Alloc(m_core, request,false);
     MFX_CHECK_STS(sts);
@@ -2121,7 +2124,7 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
             
             if (extOpt2 ->MaxSliceSize)
             {
-                mfxStatus sts = FillSliceInfo(*task, extOpt2 ->MaxSliceSize, extOpt2 ->MaxSliceSize * 128);
+                mfxStatus sts = FillSliceInfo(*task, extOpt2 ->MaxSliceSize, extOpt2 ->MaxSliceSize * m_NumSlices);
                 if (sts != MFX_ERR_NONE)
                     return Error(sts);
                 //printf("EST frameSize %d\n", m_brc.GetDistFrameSize());
@@ -2176,7 +2179,8 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
                 {
                     mfxU32   bsSizeAvail = mfxU32(m_tmpBsBuf.size());
                     mfxU8    *pBS = &m_tmpBsBuf[0];
-                        
+
+                                    
                     for (mfxU32 f = 0; f <= 0 /*task->m_fieldPicFlag */; f++)
                     {                            
                         if ((sts = CopyBitstream(*m_core, m_video,*task, task->m_fid[f], pBS, bsSizeAvail)) != MFX_ERR_NONE)
@@ -2267,7 +2271,7 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
                 if ((sts = UpdateBitstream(*task, task->m_fid[f])) != MFX_ERR_NONE)
                     return Error(sts);
             }
-
+            m_NumSlices = task->m_SliceInfo.size();
             OnEncodingQueried(task);
         }
         else if (IsOff(extOpt->FieldOutput))

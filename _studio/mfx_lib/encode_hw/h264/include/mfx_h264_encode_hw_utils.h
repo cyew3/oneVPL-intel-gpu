@@ -1830,6 +1830,7 @@ namespace MfxHwH264Encode
         ENCODE_CAPS             m_caps;
         mfxStatus               m_failedStatus;
         mfxU32                  m_inputFrameType;
+        mfxU32                  m_NumSlices;
 
         std::vector<mfxU8>  m_tmpBsBuf;
         PreAllocatedVector  m_sei;

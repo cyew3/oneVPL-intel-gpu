@@ -5493,7 +5493,7 @@ mfxStatus MfxHwH264Encode::UpdateSliceInfo(
             task.m_SliceInfo[num].weight = weight ;
             if (weight > 100) 
                 bRecoding = true;
-            //printf ("%d \t slice len\t%d\t%f\n", num, slice_len, task.m_SliceInfo[num].weight);
+            //printf ("%d \t slice len\t%f\t%f\n", num, slice_len, task.m_SliceInfo[num].weight);
             num++;
         }
     }
