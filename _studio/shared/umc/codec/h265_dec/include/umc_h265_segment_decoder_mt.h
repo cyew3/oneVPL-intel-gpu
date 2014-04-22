@@ -73,7 +73,7 @@ protected:
     UMC::Status ReconstructSegment(Ipp32s curCUAddr, Ipp32s nBorder);
 
     // Both decode and reconstruct a CTB range
-    UMC::Status H265SegmentDecoderMultiThreaded::DecodeSegmentCABAC_Single_H265(Ipp32s curCUAddr, Ipp32s & nBorder);
+    UMC::Status DecodeSegmentCABAC_Single_H265(Ipp32s curCUAddr, Ipp32s & nBorder);
 
     // Reconstructor depends on bitdepth_luma || bitdepth_chroma
     void CreateReconstructor();
