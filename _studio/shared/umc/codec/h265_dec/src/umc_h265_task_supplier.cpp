@@ -21,7 +21,7 @@
 #include "umc_h265_nal_spl.h"
 #include "umc_h265_bitstream.h"
 
-#include "umc_h265_dec_defs_dec.h"
+#include "umc_h265_dec_defs.h"
 #include "vm_sys_info.h"
 #include "umc_h265_segment_decoder_mt.h"
 
@@ -31,7 +31,7 @@
 
 #include "umc_frame_data.h"
 
-#include "umc_h265_dec_debug.h"
+#include "umc_h265_debug.h"
 
 namespace UMC_HEVC_DECODER
 {

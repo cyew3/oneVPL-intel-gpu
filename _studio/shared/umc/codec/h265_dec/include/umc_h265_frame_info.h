@@ -83,7 +83,7 @@ public:
         m_isIntraAU = m_isIntraAU && (sliceHeader.slice_type == I_SLICE);
         m_hasDependentSliceSegments = m_hasDependentSliceSegments || sliceHeader.dependent_slice_segment_flag;
         m_isNeedDeblocking = m_isNeedDeblocking || (!sliceHeader.slice_deblocking_filter_disabled_flag);
-        m_isNeedSAO = m_isNeedSAO || !pSlice->m_bSAOed;
+        m_isNeedSAO = m_isNeedSAO || (sliceHeader.slice_sao_luma_flag || sliceHeader.slice_sao_chroma_flag);
         m_hasTiles = pSlice->GetPicParam()->getNumTiles() > 1;
 
         m_WA_diffrent_disable_deblocking = m_WA_diffrent_disable_deblocking || (sliceHeader.slice_deblocking_filter_disabled_flag != m_pSliceQueue[0]->GetSliceHeader()->slice_deblocking_filter_disabled_flag);
@@ -131,35 +131,7 @@ public:
         return -1;
     }
 
-    void Reset()
-    {
-        Free();
-
-        m_hasTiles = false;
-        memset(m_curCUToProcess, 0, sizeof(m_curCUToProcess));
-        memset(m_processInProgress, 0, sizeof(m_processInProgress));
-        m_tilesThreadingInfo.clear();
-
-        m_isNeedDeblocking = false;
-        m_isNeedSAO = false;
-
-        m_isIntraAU = true;
-        m_hasDependentSliceSegments = false;
-        m_WA_diffrent_disable_deblocking = false;
-
-        m_nextAU = 0;
-        m_prevAU = 0;
-        m_refAU = 0;
-
-        m_Status = STATUS_NONE;
-        m_prepared = 0;
-
-        if (m_sps)
-        {
-            m_sps->DecrementReference();
-            m_sps = 0;
-        }
-    }
+    void Reset();
 
     void SetStatus(FillnessStatus status)
     {
@@ -171,37 +143,8 @@ public:
         return m_Status;
     }
 
-    void Free()
-    {
-        size_t count = m_pSliceQueue.size();
-        for (size_t i = 0; i < count; i ++)
-        {
-            H265Slice * pCurSlice = m_pSliceQueue[i];
-            pCurSlice->Release();
-            pCurSlice->DecrementReference();
-        }
-
-        m_SliceCount = 0;
-
-        m_pSliceQueue.clear();
-        m_prepared = 0;
-    }
-
-    void RemoveSlice(Ipp32s num)
-    {
-        H265Slice * pCurSlice = GetSlice(num);
-
-        if (!pCurSlice) // nothing to do
-            return;
-
-        for (Ipp32s i = num; i < m_SliceCount - 1; i++)
-        {
-            m_pSliceQueue[i] = m_pSliceQueue[i + 1];
-        }
-
-        m_SliceCount--;
-        m_pSliceQueue[m_SliceCount] = pCurSlice;
-    }
+    void Free();
+    void RemoveSlice(Ipp32s num);
 
     bool IsNeedDeblocking() const
     {
@@ -213,84 +156,11 @@ public:
         return m_isNeedSAO;
     }
 
-    void SkipDeblocking()
-    {
-        m_isNeedDeblocking = false;
+    void SkipDeblocking();
 
-        for (Ipp32s i = 0; i < m_SliceCount; i ++)
-        {
-            H265Slice *pSlice = m_pSliceQueue[i];
+    void SkipSAO();
 
-            pSlice->m_bDeblocked = true;
-            pSlice->processInfo.m_curCUToProcess[DEB_PROCESS_ID] = pSlice->m_iMaxMB;
-            pSlice->GetSliceHeader()->slice_deblocking_filter_disabled_flag = true;
-        }
-    }
-
-    void SkipSAO()
-    {
-        m_isNeedSAO = false;
-
-        for (Ipp32s i = 0; i < m_SliceCount; i ++)
-        {
-            H265Slice *pSlice = m_pSliceQueue[i];
-            pSlice->m_bSAOed = true;
-            pSlice->processInfo.m_curCUToProcess[SAO_PROCESS_ID] = pSlice->m_iMaxMB;
-        }
-    }
-
-    bool IsCompleted() const
-    {
-        if (GetStatus() == H265DecoderFrameInfo::STATUS_COMPLETED)
-            return true;
-
-        if (m_hasTiles && !HasDependentSliceSegments())
-        {
-            size_t tileCount = m_tilesThreadingInfo.size();
-            if (!tileCount) // it is not completed yet, because it was not fully initialized
-                return false;
-
-            bool isCompleted = true;
-            for (size_t i = 0; i < tileCount; i ++)
-            {
-                if (!m_tilesThreadingInfo[i].processInfo.m_isCompleted)
-                {
-                    isCompleted = false;
-                    break;
-                }
-            }
-
-            if (!isCompleted) // ADB: need  to remove it after single thread refactoring
-            {
-                for (Ipp32s i = 0; i < m_SliceCount; i ++)
-                {
-                    const H265Slice *pSlice = m_pSliceQueue[i];
-
-                    if (!pSlice->processInfo.m_isCompleted || !pSlice->m_bDeblocked || !pSlice->m_bSAOed)
-                        return false;
-                }
-            }
-
-            for (Ipp32s i = 0; i < m_SliceCount; i ++)
-            {
-                const H265Slice *pSlice = m_pSliceQueue[i];
-                if (!pSlice->m_bDeblocked || !pSlice->m_bSAOed)
-                    return false;
-            }
-        }
-        else
-        {
-            for (Ipp32s i = 0; i < m_SliceCount; i ++)
-            {
-                const H265Slice *pSlice = m_pSliceQueue[i];
-
-                if (!pSlice->processInfo.m_isCompleted || !pSlice->m_bDeblocked || !pSlice->m_bSAOed)
-                    return false;
-            }
-        }
-
-        return true;
-    }
+    bool IsCompleted() const;
 
     bool IsIntraAU() const
     {
@@ -324,72 +194,10 @@ public:
         return &m_refPicList[sliceNumber].m_refPicList[list];
     };
 
-    bool CheckReferenceFrameError()
-    {
-        Ipp32u checkedErrorMask = UMC::ERROR_FRAME_MINOR | UMC::ERROR_FRAME_MAJOR | UMC::ERROR_FRAME_REFERENCE_FRAME;
-        for (size_t i = 0; i < m_refPicList.size(); i ++)
-        {
-            H265DecoderRefPicList* list = &m_refPicList[i].m_refPicList[REF_PIC_LIST_0];
-            for (size_t k = 0; list->m_refPicList[k].refFrame; k++)
-            {
-                if (list->m_refPicList[k].refFrame->GetError() & checkedErrorMask)
-                    return true;
-            }
-
-            list = &m_refPicList[i].m_refPicList[REF_PIC_LIST_1];
-            for (size_t k = 0; list->m_refPicList[k].refFrame; k++)
-            {
-                if (list->m_refPicList[k].refFrame->GetError() & checkedErrorMask)
-                    return true;
-            }
-        }
-
-        return false;
-    }
+    bool CheckReferenceFrameError();
 
     // Initialize tiles and slices threading information
-    void FillTileInfo()
-    {
-        H265Slice * slice = GetAnySlice();
-        const H265PicParamSet * pps = slice->GetPicParam();
-        Ipp32u tilesCount = pps->num_tile_columns*pps->num_tile_rows;
-        m_tilesThreadingInfo.resize(tilesCount);
-
-        for (Ipp32u i = 0; i < tilesCount; i++)
-        {
-            TileThreadingInfo & info = m_tilesThreadingInfo[i];
-            info.firstCUAddr = m_pFrame->getCD()->GetInverseCUOrderMap(pps->tilesInfo[i].firstCUAddr);
-            info.processInfo.Initialize(m_tilesThreadingInfo[i].firstCUAddr, pps->tilesInfo[i].width);
-            info.m_maxCUToProcess = m_pFrame->getCD()->GetInverseCUOrderMap(pps->tilesInfo[i].endCUAddr);
-            info.m_context = 0;
-        }
-
-        if (!IsNeedSAO())
-        {
-            m_curCUToProcess[SAO_PROCESS_ID] = m_pFrame->getCD()->m_NumCUsInFrame;
-        }
-
-        if (!IsNeedDeblocking())
-        {
-            m_curCUToProcess[DEB_PROCESS_ID] = m_pFrame->getCD()->m_NumCUsInFrame;
-        }
-
-        for (Ipp32s i = 0; i < m_SliceCount; i ++)
-        {
-            H265Slice *slice = m_pSliceQueue[i];
-
-            if (slice->m_bDeblocked)
-            {
-                slice->processInfo.m_curCUToProcess[DEB_PROCESS_ID] = slice->m_iMaxMB;
-            }
-
-            if (slice->m_bSAOed)
-            {
-                slice->processInfo.m_curCUToProcess[SAO_PROCESS_ID] = slice->m_iMaxMB;
-            }
-        }
-
-    }
+    void FillTileInfo();
 
     H265DecoderFrameInfo * GetNextAU() const {return m_nextAU;}
     H265DecoderFrameInfo * GetPrevAU() const {return m_prevAU;}

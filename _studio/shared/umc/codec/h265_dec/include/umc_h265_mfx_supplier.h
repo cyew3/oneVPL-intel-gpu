@@ -127,6 +127,9 @@ class MFX_Utility
 {
 public:
 
+    // Initialize mfxVideoParam structure based on decoded bitstream header values
+    static UMC::Status MFX_CDECL FillVideoParam(const H265SeqParamSet * seq, mfxVideoParam *par, bool full);
+
     // Returns implementation platform
     static eMFXPlatform MFX_CDECL GetPlatform_H265(VideoCORE * core, mfxVideoParam * par);
     // Initialize mfxVideoParam structure based on decoded bitstream header values

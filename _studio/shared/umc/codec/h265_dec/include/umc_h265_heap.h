@@ -16,7 +16,7 @@
 
 #include <memory>
 #include "umc_mutex.h"
-#include "umc_h265_dec_defs_dec.h"
+#include "umc_h265_dec_defs.h"
 #include "umc_media_data.h"
 
 namespace UMC_HEVC_DECODER

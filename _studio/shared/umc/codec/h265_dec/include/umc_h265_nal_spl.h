@@ -15,7 +15,7 @@
 #define __UMC_H265_NAL_SPL_H
 
 #include <vector>
-#include "umc_h265_dec_defs_dec.h"
+#include "umc_h265_dec_defs.h"
 #include "umc_media_data_ex.h"
 #include "umc_h265_heap.h"
 

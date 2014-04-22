@@ -12,24 +12,22 @@
 #ifdef UMC_ENABLE_H265_VIDEO_DECODER
 
 #include "umc_h265_segment_decoder_mt.h"
-#include "umc_h265_segment_decoder_templates.h"
 
 #include "umc_h265_task_broker.h"
 #include "umc_h265_frame_info.h"
 
 #include "umc_h265_task_supplier.h"
-#include "h265_tr_quant.h"
+#include "umc_h265_tr_quant.h"
 
 #include "umc_h265_timing.h"
 
 #include "mfx_trace.h"
-#include "umc_h265_dec_debug.h"
+#include "umc_h265_debug.h"
 
 namespace UMC_HEVC_DECODER
 {
 H265SegmentDecoderMultiThreaded::H265SegmentDecoderMultiThreaded(TaskBroker_H265 * pTaskBroker)
     : H265SegmentDecoder(pTaskBroker)
-    , m_SD(0)
 {
 } // H265SegmentDecoderMultiThreaded::H265SegmentDecoderMultiThreaded(TaskBroker_H265 * pTaskBroker)
 
@@ -62,7 +60,7 @@ void H265SegmentDecoderMultiThreaded::StartProcessingSegment(H265Task &Task)
     m_bIsNeedWADeblocking = m_pCurrentFrame->GetAU()->IsNeedWorkAroundForDeblocking();
     m_hasTiles = Task.m_pSlicesInfo->m_hasTiles;
 
-    m_SD = CreateSegmentDecoder();
+    CreateReconstructor();
 
     m_DecodeDQPFlag = false;
     m_minCUDQPSize = m_pSeqParamSet->MaxCUSize >> m_pPicParamSet->diff_cu_qp_delta_depth;
@@ -256,7 +254,7 @@ void H265SegmentDecoderMultiThreaded::RestoreErrorRect(Ipp32s startMb , Ipp32s e
             m_SD = CreateSegmentDecoder();
         }
 
-        m_SD->RestoreErrorRect(startMb, endMb, pRefFrame, this);*/
+        m_RestoreErrorRect(startMb, endMb, pRefFrame, this);*/
     } catch (...)
     {
         // nothing to do
@@ -378,7 +376,7 @@ UMC::Status H265SegmentDecoderMultiThreaded::DecodeSegment(H265Task & task)
 
     try
     {
-        umcRes = m_SD->DecodeSegment(task.m_iFirstMB, iMaxCUNumber, this);
+        umcRes = DecodeSegment(task.m_iFirstMB, iMaxCUNumber);
         task.m_iMBToProcess = iMaxCUNumber - task.m_iFirstMB;
     } catch(...)
     {
@@ -396,7 +394,7 @@ UMC::Status H265SegmentDecoderMultiThreaded::ReconstructSegment(H265Task & task)
 
     {
         Ipp32s iMaxCUNumber = task.m_iFirstMB + task.m_iMBToProcess;
-        umcRes = m_SD->ReconstructSegment(task.m_iFirstMB, iMaxCUNumber, this);
+        umcRes = ReconstructSegment(task.m_iFirstMB, iMaxCUNumber);
         task.m_iMBToProcess = iMaxCUNumber - task.m_iFirstMB;
         return umcRes;
     }
@@ -412,7 +410,7 @@ UMC::Status H265SegmentDecoderMultiThreaded::DecRecSegment(H265Task & task)
 
     try
     {
-        umcRes = m_SD->DecodeSegmentCABAC_Single_H265(task.m_iFirstMB, iMaxCUNumber, this);
+        umcRes = DecodeSegmentCABAC_Single_H265(task.m_iFirstMB, iMaxCUNumber);
         task.m_iMBToProcess = iMaxCUNumber - task.m_iFirstMB;
     } catch(...)
     {
@@ -511,7 +509,7 @@ UMC::Status H265SegmentDecoderMultiThreaded::ProcessSlice(H265Task & task)
 
     try
     {
-        umcRes = m_SD->DecodeSegmentCABAC_Single_H265(iFirstCU, iMaxCUNumber, this);
+        umcRes = DecodeSegmentCABAC_Single_H265(iFirstCU, iMaxCUNumber);
 
         task.m_iMBToProcess = iMaxCUNumber - task.m_iFirstMB;
 
@@ -529,11 +527,262 @@ UMC::Status H265SegmentDecoderMultiThreaded::ProcessSlice(H265Task & task)
     return umcRes;
 }
 
+// Decode one CTB
+bool H265SegmentDecoderMultiThreaded::DecodeCodingUnit_CABAC()
+{
+    if (m_cu->m_SliceHeader->m_PicParamSet->cu_qp_delta_enabled_flag)
+    {
+        m_DecodeDQPFlag = true;
+    }
+
+    Ipp32u IsLast = 0;
+    DecodeCUCABAC(0, 0, IsLast);
+    return IsLast > 0;
+} // void DecodeCodingUnit_CABAC(H265SegmentDecoderMultiThreaded *sd)
+
+// Decode CTB range
+UMC::Status H265SegmentDecoderMultiThreaded::DecodeSegment(Ipp32s curCUAddr, Ipp32s &nBorder)
+{
+    UMC::Status umcRes = UMC::UMC_OK;
+    Ipp32s rsCUAddr = m_pCurrentFrame->m_CodingData->getCUOrderMap(curCUAddr);
+
+    for (;;)
+    {
+        m_cu = m_pCurrentFrame->getCU(rsCUAddr);
+        m_cu->initCU(this, rsCUAddr);
+
+        START_TICK;
+        DecodeSAOOneLCU();
+        bool is_last = DecodeCodingUnit_CABAC(); //decode CU
+        END_TICK(decode_time);
+
+        if (is_last)
+        {
+            umcRes = UMC::UMC_ERR_END_OF_STREAM;
+            nBorder = curCUAddr + 1;
+            if (m_pPicParamSet->entropy_coding_sync_enabled_flag && rsCUAddr % m_pSeqParamSet->WidthInCU == 1)
+            {
+                // Save CABAC context after 2nd CTB
+                MFX_INTERNAL_CPY(m_pBitStream->wpp_saved_cabac_context, m_pBitStream->context_hevc, sizeof(m_pBitStream->context_hevc));
+            }
+            break;
+        }
+
+        Ipp32s newCUAddr = curCUAddr + 1;
+        Ipp32s newRSCUAddr = m_pCurrentFrame->m_CodingData->getCUOrderMap(newCUAddr);
+
+        if (newRSCUAddr >= m_pCurrentFrame->m_CodingData->m_NumCUsInFrame ||
+            m_pCurrentFrame->m_CodingData->getTileIdxMap(rsCUAddr) != m_pCurrentFrame->m_CodingData->getTileIdxMap(newRSCUAddr))
+            break;
+
+        if (m_pPicParamSet->entropy_coding_sync_enabled_flag)
+        {
+            Ipp32u CUX = rsCUAddr % m_pSeqParamSet->WidthInCU;
+            bool end_of_row = (CUX == m_pSeqParamSet->WidthInCU - 1);
+
+            if (end_of_row)
+            {
+                Ipp32u uVal = m_pBitStream->DecodeTerminatingBit_CABAC();
+                VM_ASSERT(uVal);
+            }
+
+            if (CUX == 1)
+            {
+                // Save CABAC context after 2nd CTB
+                MFX_INTERNAL_CPY(m_pBitStream->wpp_saved_cabac_context, m_pBitStream->context_hevc, sizeof(m_pBitStream->context_hevc));
+            }
+
+            if (end_of_row)
+            {
+                // Reset CABAC state
+                m_pBitStream->InitializeDecodingEngine_CABAC();
+                m_context->SetNewQP(m_pSliceHeader->SliceQP);
+
+                // Should load CABAC context from saved buffer
+                if (m_pSeqParamSet->WidthInCU > 1 &&
+                    m_pCurrentFrame->m_CodingData->GetInverseCUOrderMap(rsCUAddr + 2 - m_pSeqParamSet->WidthInCU) >= m_pSliceHeader->SliceCurStartCUAddr / m_pCurrentFrame->m_CodingData->m_NumPartitions)
+                {
+                    // Restore saved CABAC context
+                    MFX_INTERNAL_CPY(m_pBitStream->context_hevc, m_pBitStream->wpp_saved_cabac_context, sizeof(m_pBitStream->context_hevc));
+                }
+                else
+                {
+                    // Reset CABAC contexts
+                    m_pSlice->InitializeContexts();
+                }
+            }
+        }
+
+        m_context->UpdateCurrCUContext(rsCUAddr, newRSCUAddr);
+
+        if (newCUAddr >= nBorder)
+        {
+            break;
+        }
+
+        curCUAddr = newCUAddr;
+        rsCUAddr = newRSCUAddr;
+    }
+
+    return umcRes;
+}
+
+// Reconstruct CTB range
+UMC::Status H265SegmentDecoderMultiThreaded::ReconstructSegment(Ipp32s curCUAddr, Ipp32s nBorder)
+{
+    UMC::Status umcRes = UMC::UMC_OK;
+    Ipp32s rsCUAddr = m_pCurrentFrame->m_CodingData->getCUOrderMap(curCUAddr);
+
+    m_cu = m_pCurrentFrame->getCU(rsCUAddr);
+
+    for (;;)
+    {
+        START_TICK1;
+        ReconstructCU(0, 0);
+        END_TICK1(reconstruction_time);
+
+        curCUAddr++;
+        Ipp32s newRSCUAddr = m_pCurrentFrame->m_CodingData->getCUOrderMap(curCUAddr);
+
+        if (newRSCUAddr >= m_pCurrentFrame->m_CodingData->m_NumCUsInFrame)
+            break;
+
+        m_context->UpdateRecCurrCTBContext(rsCUAddr, newRSCUAddr);
+
+        if (curCUAddr >= nBorder)
+        {
+            break;
+        }
+
+        rsCUAddr = newRSCUAddr;
+        m_cu = m_pCurrentFrame->getCU(rsCUAddr);
+    }
+
+    return umcRes;
+}
+
+// Both decode and reconstruct a CTB range
+UMC::Status H265SegmentDecoderMultiThreaded::DecodeSegmentCABAC_Single_H265(Ipp32s curCUAddr, Ipp32s & nBorder)
+{
+    UMC::Status umcRes = UMC::UMC_OK;
+    Ipp32s rsCUAddr = m_pCurrentFrame->m_CodingData->getCUOrderMap(curCUAddr);
+
+    H265CoeffsPtrCommon saveBuffer = m_context->m_coeffsWrite;
+
+    for (;;)
+    {
+        m_cu = m_pCurrentFrame->getCU(rsCUAddr);
+        m_cu->initCU(this, rsCUAddr);
+
+        m_context->m_coeffsRead = saveBuffer;
+        m_context->m_coeffsWrite = saveBuffer;
+
+        START_TICK;
+        DecodeSAOOneLCU();
+        bool is_last = DecodeCodingUnit_CABAC(); //decode CU
+        END_TICK(decode_time);
+
+        START_TICK1;
+        ReconstructCU(0, 0);
+        END_TICK1(reconstruction_time);
+
+        if (is_last)
+        {
+            umcRes = UMC::UMC_ERR_END_OF_STREAM;
+            nBorder = curCUAddr + 1;
+
+            if (m_pPicParamSet->entropy_coding_sync_enabled_flag && rsCUAddr % m_pSeqParamSet->WidthInCU == 1)
+            {
+                // Save CABAC context after 2nd CTB
+                MFX_INTERNAL_CPY(m_pBitStream->wpp_saved_cabac_context, m_pBitStream->context_hevc, sizeof(m_pBitStream->context_hevc));
+            }
+            break;
+        }
+
+        Ipp32s newCUAddr = curCUAddr + 1;
+        Ipp32s newRSCUAddr = m_pCurrentFrame->m_CodingData->getCUOrderMap(newCUAddr);
+
+        if (newRSCUAddr >= m_pCurrentFrame->m_CodingData->m_NumCUsInFrame)
+            break;
+
+        if (m_pCurrentFrame->m_CodingData->getTileIdxMap(rsCUAddr) !=
+            m_pCurrentFrame->m_CodingData->getTileIdxMap(newRSCUAddr))
+        {
+            m_context->ResetRowBuffer();
+            m_context->SetNewQP(m_pSliceHeader->SliceQP);
+            m_context->ResetRecRowBuffer();
+            m_pBitStream->DecodeTerminatingBit_CABAC();
+
+            // reset CABAC engine
+            m_pBitStream->InitializeDecodingEngine_CABAC();
+            m_pSlice->InitializeContexts();
+        }
+        else
+        {
+            if (m_pPicParamSet->entropy_coding_sync_enabled_flag)
+            {
+                Ipp32u CUX = rsCUAddr % m_pSeqParamSet->WidthInCU;
+                bool end_of_row = (CUX == m_pSeqParamSet->WidthInCU - 1);
+
+                if (end_of_row)
+                {
+                    Ipp32u uVal = m_pBitStream->DecodeTerminatingBit_CABAC();
+                    VM_ASSERT(uVal);
+                }
+
+                if (CUX == 1)
+                {
+                    // Save CABAC context after 2nd CTB
+                    MFX_INTERNAL_CPY(m_pBitStream->wpp_saved_cabac_context, m_pBitStream->context_hevc, sizeof(m_pBitStream->context_hevc));
+                }
+
+                if (end_of_row)
+                {
+                    // Reset CABAC state
+                    m_pBitStream->InitializeDecodingEngine_CABAC();
+                    m_context->SetNewQP(m_pSliceHeader->SliceQP);
+
+                    // Should load CABAC context from saved buffer
+                    if (m_pSeqParamSet->WidthInCU > 1 &&
+                        m_pCurrentFrame->m_CodingData->GetInverseCUOrderMap(rsCUAddr + 2 - m_pSeqParamSet->WidthInCU) >= m_pSliceHeader->SliceCurStartCUAddr / m_pCurrentFrame->m_CodingData->m_NumPartitions)
+                    {
+                        // Restore saved CABAC context
+                        MFX_INTERNAL_CPY(m_pBitStream->context_hevc, m_pBitStream->wpp_saved_cabac_context, sizeof(m_pBitStream->context_hevc));
+                    }
+                    else
+                    {
+                        // Reset CABAC contexts
+                        m_pSlice->InitializeContexts();
+                    }
+                }
+            }
+            m_context->UpdateCurrCUContext(rsCUAddr, newRSCUAddr);
+            m_context->UpdateRecCurrCTBContext(rsCUAddr, newRSCUAddr);
+        }
+
+        if (newCUAddr >= nBorder)
+        {
+            break;
+        }
+
+        curCUAddr = newCUAddr;
+        rsCUAddr = newRSCUAddr;
+    }
+
+    return umcRes;
+}
+
 // Reconstructor template
 template<bool bitDepth, typename H265PlaneType>
 class ReconstructorT : public ReconstructorBase
 {
 public:
+
+    virtual bool Is8BitsReconstructor() const
+    {
+        return !bitDepth;
+    }
+
     // Do luma intra prediction
     virtual void PredictIntra(Ipp32s predMode, H265PlaneYCommon* PredPel, H265PlaneYCommon* pels, Ipp32s pitch, Ipp32s width, Ipp32u bit_depth);
 
@@ -756,9 +1005,11 @@ void ReconstructorT<bitDepth, H265PlaneType>::GetPredPelsChromaNV12(H265PlaneYCo
     h265_GetPredPelsChromaNV12(src, pels, blkSize, srcPitch, tpIf, lfIf, tlIf, bit_depth);
 }
 
-// Initialize decoder and reconstrutor function tables
-SegmentDecoderRoutines* H265SegmentDecoderMultiThreaded::CreateSegmentDecoder()
+void H265SegmentDecoderMultiThreaded::CreateReconstructor()
 {
+    if (m_reconstructor.get() && m_reconstructor->Is8BitsReconstructor() == (m_pSeqParamSet->bit_depth_luma == 8 && m_pSeqParamSet->bit_depth_chroma == 8))
+        return;
+
     if (m_pSeqParamSet->bit_depth_luma > 8 || m_pSeqParamSet->bit_depth_chroma > 8)
     {
         m_reconstructor.reset(new ReconstructorT<true, Ipp16u>);
@@ -767,11 +1018,7 @@ SegmentDecoderRoutines* H265SegmentDecoderMultiThreaded::CreateSegmentDecoder()
     {
         m_reconstructor.reset(new ReconstructorT<false, Ipp8u>);
     }
-
-    static SegmentDecoderRoutines k;
-    return &k;
 }
-
 
 } // namespace UMC_HEVC_DECODER
 #endif // UMC_ENABLE_H265_VIDEO_DECODER

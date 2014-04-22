@@ -15,8 +15,7 @@
 #define __UMC_H265_SLICE_DECODING_H
 
 #include <list>
-#include "umc_h265_dec_defs_dec.h"
-#include "umc_h265_dec.h"
+#include "umc_h265_dec_defs.h"
 #include "umc_h265_bitstream.h"
 #include "umc_automatic_mutex.h"
 #include "umc_event.h"
@@ -179,7 +178,6 @@ public:
     bool m_bError;                                              // (bool) there is an error in decoding
 
     bool m_bDeblocked;                                          // (bool) "slice has been deblocked" flag
-    bool m_bSAOed;
 
     // memory management tools
     DecodingContext        *m_context;

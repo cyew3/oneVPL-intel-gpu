@@ -16,8 +16,7 @@
 
 #include "vm_debug.h"
 #include "umc_h265_bitstream.h"
-#include "umc_h265_dec_init_tables_cabac.h"
-#include "umc_h265_dec_tables.h"
+#include "umc_h265_tables.h"
 
 namespace UMC_HEVC_DECODER
 {

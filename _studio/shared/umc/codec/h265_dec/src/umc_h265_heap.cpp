@@ -13,7 +13,7 @@
 
 #include "umc_structures.h"
 #include "umc_h265_heap.h"
-#include "umc_h265_dec_defs_dec.h"
+#include "umc_h265_dec_defs.h"
 #include <cstdarg>
 
 namespace UMC_HEVC_DECODER

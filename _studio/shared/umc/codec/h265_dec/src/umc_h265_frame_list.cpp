@@ -12,7 +12,7 @@
 #ifdef UMC_ENABLE_H265_VIDEO_DECODER
 
 #include "umc_h265_frame_list.h"
-#include "umc_h265_dec_debug.h"
+#include "umc_h265_debug.h"
 #include "umc_h265_task_supplier.h"
 
 namespace UMC_HEVC_DECODER

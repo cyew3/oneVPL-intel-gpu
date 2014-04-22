@@ -10,15 +10,14 @@
 */
 
 #include "umc_defs.h"
-#include "h265_frame_coding_data.h"
+#include "umc_h265_frame_coding_data.h"
 #ifdef UMC_ENABLE_H265_VIDEO_DECODER
 
 #ifndef __UMC_H265_FRAME_H__
 #define __UMC_H265_FRAME_H__
 
 #include <stdlib.h>
-#include "umc_h265_dec_defs_yuv.h"
-
+#include "umc_h265_yuv.h"
 #include "umc_h265_notify.h"
 
 namespace UMC_HEVC_DECODER
@@ -162,9 +161,6 @@ public:
     void FreeResources();
 
 public:
-    SAOLCUParam* m_saoLcuParam;
-    Ipp32s m_sizeOfSAOData;
-
     // FIXME: make coding data a member, not pointer
     H265FrameCodingData *m_CodingData;
 

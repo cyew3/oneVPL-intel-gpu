@@ -14,7 +14,7 @@
 #ifndef __UMC_H265_HEADERS_H
 #define __UMC_H265_HEADERS_H
 
-#include "umc_h265_dec_defs_dec.h"
+#include "umc_h265_dec_defs.h"
 #include "umc_media_data_ex.h"
 #include "umc_h265_heap.h"
 

@@ -16,7 +16,6 @@
 
 #ifndef UMC_RESTRICTED_CODE_VA
 
-#include "umc_h265_dec_mfx.h"
 #include "umc_h265_mfx_supplier.h"
 #include "umc_h265_segment_decoder_dxva.h"
 

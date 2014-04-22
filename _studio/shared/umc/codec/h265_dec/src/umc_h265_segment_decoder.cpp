@@ -12,9 +12,7 @@
 #ifdef UMC_ENABLE_H265_VIDEO_DECODER
 
 #include "umc_h265_segment_decoder.h"
-#include "umc_h265_segment_decoder_templates.h"
-#include "umc_h265_bitstream.h"
-#include "h265_tr_quant.h"
+#include "umc_h265_tr_quant.h"
 #include "umc_h265_frame_info.h"
 #include "mfx_h265_optimization.h"
 
@@ -533,7 +531,7 @@ void H265SegmentDecoder::parseSaoOneLcuInterleaving(bool saoLuma,
 {
     Ipp32s iAddr = m_cu->CUAddr;
 
-    SAOLCUParam* saoLcuParam = m_pCurrentFrame->m_saoLcuParam;
+    SAOLCUParam* saoLcuParam = m_pCurrentFrame->getCD()->m_saoLcuParam;
 
     allowMergeLeft = allowMergeLeft ? m_pBitStream->DecodeSingleBin_CABAC(ctxIdxOffsetHEVC[SAO_MERGE_FLAG_HEVC]) : 0;
     allowMergeUp = (allowMergeUp && !allowMergeLeft) ? m_pBitStream->DecodeSingleBin_CABAC(ctxIdxOffsetHEVC[SAO_MERGE_FLAG_HEVC]) : 0;

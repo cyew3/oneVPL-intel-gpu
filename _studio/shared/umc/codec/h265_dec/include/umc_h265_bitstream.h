@@ -19,9 +19,8 @@
 #include "ippvc.h"
 #include "umc_structures.h"
 #include "umc_dynamic_cast.h"
-#include "umc_h265_dec_defs_dec.h"
-#include "umc_h265_dec_tables.h"
-#include "umc_h265_dec_internal_cabac.h"
+#include "umc_h265_dec_defs.h"
+#include "umc_h265_tables.h"
 
 namespace UMC_HEVC_DECODER
 {

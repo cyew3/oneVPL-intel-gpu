@@ -18,8 +18,6 @@
 #include "umc_structures.h"
 
 #include "umc_h265_segment_decoder_dxva.h"
-
-#include "umc_h265_segment_decoder_templates.h"
 #include "umc_h265_frame_list.h"
 
 #include "umc_h265_slice_decoding.h"

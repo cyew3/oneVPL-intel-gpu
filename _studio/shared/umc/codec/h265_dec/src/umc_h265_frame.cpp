@@ -14,8 +14,10 @@
 #include <algorithm>
 #include "umc_h265_frame.h"
 #include "umc_h265_task_supplier.h"
+#include "umc_h265_ipplevel.h"
 
-#include "umc_h265_dec_debug.h"
+#include "umc_h265_debug.h"
+
 
 namespace UMC_HEVC_DECODER
 {
@@ -43,8 +45,6 @@ H265DecoderFrame::H265DecoderFrame(UMC::MemoryAllocator *pMemoryAllocator, Heap_
     m_RefPicListResetCount = 0;
     m_PicOrderCnt = 0;
     m_CodingData = NULL;
-    m_sizeOfSAOData = 0;
-    m_saoLcuParam = 0;
     // set memory managment tools
     m_pMemoryAllocator = pMemoryAllocator;
 
@@ -79,9 +79,6 @@ H265DecoderFrame::~H265DecoderFrame()
     Reset();
     deallocate();
     deallocateCodingData();
-
-    delete[] m_saoLcuParam;
-    m_saoLcuParam = 0;
 }
 
 // Add target frame to the list of reference frames
@@ -413,20 +410,8 @@ void H265DecoderFrame::allocateCodingData(const H265SeqParamSet* sps, const H265
     m_CodingData->m_InverseCUOrderMap = pps->m_CtbAddrRStoTS;
     m_CodingData->m_TileIdxMap = pps->m_TileIdx;
 
-    if (sps->sample_adaptive_offset_enabled_flag)
-    {
-        m_CodingData->m_SAO.init(sps);
+    m_CodingData->initSAO(sps);
 
-        Ipp32s size = m_CodingData->m_WidthInCU * m_CodingData->m_HeightInCU;
-        if (m_sizeOfSAOData < size)
-        {
-            delete[] m_saoLcuParam;
-            m_saoLcuParam = 0;
-
-            m_saoLcuParam = h265_new_array_throw<SAOLCUParam>(size);
-            m_sizeOfSAOData = size;
-        }
-    }
 }
 
 // Free array of CTBs

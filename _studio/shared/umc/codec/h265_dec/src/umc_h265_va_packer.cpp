@@ -77,7 +77,7 @@ static inline int LengthInMinCb(int length, int cbsize)
     return length/(1 << cbsize);
 }
 
-void PackerDXVA2::GetPicParamVABuffer(DXVA_Intel_PicParams_HEVC **ppPicParam, size_t headerSize)
+void PackerDXVA2::GetPicParamVABuffer(DXVA_Intel_PicParams_HEVC **ppPicParam, Ipp32s headerSize)
 {
     VM_ASSERT(ppPicParam);
 
@@ -85,7 +85,7 @@ void PackerDXVA2::GetPicParamVABuffer(DXVA_Intel_PicParams_HEVC **ppPicParam, si
     {
         UMCVACompBuffer *compBuf;
         void *headBffr = m_va->GetCompBuffer(DXVA_PICTURE_DECODE_BUFFER, &compBuf);
-        size_t headBffrSize = compBuf->GetBufferSize(),
+        Ipp32s headBffrSize = compBuf->GetBufferSize(),
                headBffrOffs = compBuf->GetDataSize();
 
         if( headBffrSize - headBffrOffs < headerSize )
@@ -112,9 +112,9 @@ void PackerDXVA2::GetPicParamVABuffer(DXVA_Intel_PicParams_HEVC **ppPicParam, si
 }
 
 void PackerDXVA2::GetSliceVABuffers(
-    DXVA_Intel_Slice_HEVC_Long **ppSliceHeader, size_t headerSize, 
-    void **ppSliceData, size_t dataSize, 
-    size_t dataAlignment)
+    DXVA_Intel_Slice_HEVC_Long **ppSliceHeader, Ipp32s headerSize, 
+    void **ppSliceData, Ipp32s dataSize, 
+    Ipp32s dataAlignment)
 {
     VM_ASSERT(ppSliceHeader);
     VM_ASSERT(ppSliceData);
@@ -125,9 +125,9 @@ void PackerDXVA2::GetSliceVABuffers(
         UMCVACompBuffer *dataVABffr = 0;
         void *headBffr = m_va->GetCompBuffer(DXVA_SLICE_CONTROL_BUFFER, &headVABffr);
         void *dataBffr = m_va->GetCompBuffer(DXVA_BITSTREAM_DATA_BUFFER, &dataVABffr);
-        size_t headBffrSize = headVABffr->GetBufferSize(),
+        Ipp32s headBffrSize = headVABffr->GetBufferSize(),
                headBffrOffs = headVABffr->GetDataSize();
-        size_t dataBffrSize = dataVABffr->GetBufferSize(),
+        Ipp32s dataBffrSize = dataVABffr->GetBufferSize(),
                dataBffrOffs = dataVABffr->GetDataSize();
 
         dataBffrOffs = dataAlignment ? dataAlignment*((dataBffrOffs + dataAlignment - 1)/dataAlignment) : dataBffrOffs;
@@ -160,7 +160,7 @@ void PackerDXVA2::GetSliceVABuffers(
     }
 }
 
-void PackerDXVA2::GetIQMVABuffer(DXVA_Intel_Qmatrix_HEVC **ppQmatrix, size_t size)
+void PackerDXVA2::GetIQMVABuffer(DXVA_Intel_Qmatrix_HEVC **ppQmatrix, Ipp32s size)
 {
     VM_ASSERT(ppQmatrix);
 
@@ -168,7 +168,7 @@ void PackerDXVA2::GetIQMVABuffer(DXVA_Intel_Qmatrix_HEVC **ppQmatrix, size_t siz
     {
         UMCVACompBuffer *compBuf;
         void *headBffr = m_va->GetCompBuffer(DXVA_INVERSE_QUANTIZATION_MATRIX_BUFFER, &compBuf);
-        size_t bffrSize = compBuf->GetBufferSize(),
+        Ipp32s bffrSize = compBuf->GetBufferSize(),
                bffrOffs = compBuf->GetDataSize();
 
         if( bffrSize - bffrOffs < size )
@@ -419,7 +419,7 @@ void PackerDXVA2::PackSliceParams(H265Slice *pSlice, Ipp32u &, bool isLong, bool
     void*   pSliceData = 0;
     Ipp32u  rawDataSize = 0;
     const void*   rawDataPtr = 0;
-    size_t  headerSize = sizeof(DXVA_Slice_HEVC_Short);
+    Ipp32s  headerSize = sizeof(DXVA_Slice_HEVC_Short);
 
     if(isLong)
         headerSize = sizeof(DXVA_Intel_Slice_HEVC_Long);
@@ -437,7 +437,7 @@ void PackerDXVA2::PackSliceParams(H265Slice *pSlice, Ipp32u &, bool isLong, bool
         const H265DecoderFrame *pCurrentFrame = pSlice->GetCurrentFrame();
         int sliceNum = pSlice->GetSliceNum();
 
-        pDXVASlice->ByteOffsetToSliceData = pSlice->m_BitStream.BytesDecoded() + sizeof(start_code_prefix);  // ???
+        pDXVASlice->ByteOffsetToSliceData = (UINT)(pSlice->m_BitStream.BytesDecoded() + sizeof(start_code_prefix));  // ???
         pDXVASlice->slice_segment_address = pSlice->GetSliceHeader()->slice_segment_address;
 
         Ipp32u k = 0;
@@ -1033,8 +1033,8 @@ void MSPackerDXVA2::PackSliceParams(H265Slice *pSlice, Ipp32u &sliceNum, bool , 
     MFX_INTERNAL_CPY(dataBffr, start_code_prefix, sizeof(start_code_prefix));
     MFX_INTERNAL_CPY(dataBffr + sizeof(start_code_prefix), rawDataPtr, rawDataSize);
 
-    size_t alignedSize = dataVABffr->GetDataSize() + storedSize;
-    alignedSize = align_value<size_t>(alignedSize, 128);
+    Ipp32s alignedSize = dataVABffr->GetDataSize() + storedSize;
+    alignedSize = align_value<Ipp32s>(alignedSize, 128);
 
     memset(dataBffr + storedSize, 0, alignedSize - storedSize);
     dataVABffr->SetDataSize(alignedSize);

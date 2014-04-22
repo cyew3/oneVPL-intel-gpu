@@ -56,17 +56,27 @@ public:
     // Recover a region after error
     void RestoreErrorRect(Ipp32s startMb, Ipp32s endMb, H265Slice * pSlice);
 
-    SegmentDecoderRoutines* m_SD;
-
 protected:
-
-    // Initialize decoder and reconstrutor function tables
-    virtual SegmentDecoderRoutines* CreateSegmentDecoder();
 
     // Initialize decoder with data of new slice
     virtual void StartProcessingSegment(H265Task &Task);
     // Finish work section
     virtual void EndProcessingSegment(H265Task &Task);
+
+    // Decode one CTB
+    bool DecodeCodingUnit_CABAC();
+
+    // Decode CTB range
+    UMC::Status DecodeSegment(Ipp32s curCUAddr, Ipp32s &nBorder);
+
+    // Reconstruct CTB range
+    UMC::Status ReconstructSegment(Ipp32s curCUAddr, Ipp32s nBorder);
+
+    // Both decode and reconstruct a CTB range
+    UMC::Status H265SegmentDecoderMultiThreaded::DecodeSegmentCABAC_Single_H265(Ipp32s curCUAddr, Ipp32s & nBorder);
+
+    // Reconstructor depends on bitdepth_luma || bitdepth_chroma
+    void CreateReconstructor();
 
 private:
 

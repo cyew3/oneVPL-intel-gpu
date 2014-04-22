@@ -75,14 +75,14 @@ public:
 
     virtual void PackSliceParams(H265Slice *pSlice, Ipp32u &sliceNum, bool isLong, bool isLastSlice);
 
-    void GetPicParamVABuffer(DXVA_Intel_PicParams_HEVC **ppPicParam, size_t headerSize);
+    void GetPicParamVABuffer(DXVA_Intel_PicParams_HEVC **ppPicParam, Ipp32s headerSize);
 
     void GetSliceVABuffers(
-        DXVA_Intel_Slice_HEVC_Long **ppSliceHeader, size_t headerSize,
-        void **ppSliceData, size_t dataSize,
-        size_t dataAlignment);
+        DXVA_Intel_Slice_HEVC_Long **ppSliceHeader, Ipp32s headerSize,
+        void **ppSliceData, Ipp32s dataSize,
+        Ipp32s dataAlignment);
 
-    void GetIQMVABuffer(DXVA_Intel_Qmatrix_HEVC **, size_t bffrSize);
+    void GetIQMVABuffer(DXVA_Intel_Qmatrix_HEVC **, Ipp32s bffrSize);
 
     void ExecuteBuffers();
 

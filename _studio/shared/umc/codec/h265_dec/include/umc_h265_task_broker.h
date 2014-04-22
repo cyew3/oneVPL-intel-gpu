@@ -19,7 +19,7 @@
 
 #include "umc_event.h"
 
-#include "umc_h265_dec_defs_dec.h"
+#include "umc_h265_dec_defs.h"
 #include "umc_h265_heap.h"
 
 namespace UMC_HEVC_DECODER

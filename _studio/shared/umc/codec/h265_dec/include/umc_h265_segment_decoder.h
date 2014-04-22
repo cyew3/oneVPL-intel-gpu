@@ -14,13 +14,13 @@
 #ifndef __UMC_H265_SEGMENT_DECODER_H
 #define __UMC_H265_SEGMENT_DECODER_H
 
-#include "umc_h265_dec.h"
-#include "umc_h265_dec_tables.h"
+#include "umc_h265_tables.h"
 
 #include "umc_h265_thread.h"
 #include "umc_h265_frame.h"
+#include "umc_h265_bitstream.h"
 
-#include "h265_prediction.h"
+#include "umc_h265_prediction.h"
 #include "mfx_h265_optimization.h"
 
 using namespace MFX_HEVC_PP;
@@ -45,6 +45,8 @@ class ReconstructorBase
 public:
 
     virtual ~ReconstructorBase(void) { };
+
+    virtual bool Is8BitsReconstructor() const = 0;
 
     // Do luma intra prediction
     virtual void PredictIntra(Ipp32s predMode, H265PlaneYCommon* PredPel, H265PlaneYCommon* pRec, Ipp32s pitch, Ipp32s width, Ipp32u bit_depth) = 0;
