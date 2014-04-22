@@ -112,6 +112,8 @@ public:
     // Return number of displayable frames.
     Ipp32u countNumDisplayable();
 
+    void calculateInfoForDisplay(Ipp32u &countDisplayable, Ipp32u &countDPBFullness, Ipp32s &maxUID);
+
     // Try to find a frame closest to specified for error recovery
     H265DecoderFrame * FindClosest(H265DecoderFrame * pFrame);
 

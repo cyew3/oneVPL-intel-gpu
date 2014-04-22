@@ -900,45 +900,19 @@ UMC::Status H265HeadersBitstream::GetPictureParamSetFull(H265PicParamSet  *pcPPS
 
         pcPPS->uniform_spacing_flag = Get1Bit();
 
-        if( !pcPPS->uniform_spacing_flag)
+        if (!pcPPS->uniform_spacing_flag)
         {
-            // THIS IS DIFFERENT FROM REFERENCE !!!
-            unsigned* columnWidth = h265_new_array_throw<Ipp32u>(pcPPS->num_tile_columns - 1);
-            if (NULL == columnWidth)
+            pcPPS->column_width = h265_new_array_throw<Ipp32u>(pcPPS->num_tile_columns);
+            for (Ipp32u i=0; i < pcPPS->num_tile_columns - 1; i++)
             {
-                pcPPS->Reset();
-                return UMC::UMC_ERR_ALLOC;
+                pcPPS->column_width[i] = GetVLCElementU() + 1;
             }
 
-            for(unsigned i=0; i<pcPPS->num_tile_columns - 1; i++)
-            {
-                columnWidth[i] = GetVLCElementU() + 1;
-            }
-            pcPPS->setColumnWidth(columnWidth);
-            delete[] columnWidth;
-            if (NULL == pcPPS->column_width && pcPPS->num_tile_columns - 1 > 0)
-            {
-                pcPPS->Reset();
-                return UMC::UMC_ERR_ALLOC;
-            }
+            pcPPS->row_height = h265_new_array_throw<Ipp32u>(pcPPS->num_tile_rows);
 
-            unsigned* rowHeight = h265_new_array_throw<Ipp32u>(pcPPS->num_tile_rows - 1);
-            if (NULL == rowHeight)
+            for (Ipp32u i=0; i < pcPPS->num_tile_rows - 1; i++)
             {
-                pcPPS->Reset();
-                return UMC::UMC_ERR_ALLOC;
-            }
-
-            for(unsigned i=0; i < pcPPS->num_tile_rows - 1; i++)
-            {
-                rowHeight[i] = GetVLCElementU() + 1;
-            }
-            pcPPS->setRowHeight(rowHeight);
-            delete[] rowHeight;
-            if (NULL == pcPPS->row_height && pcPPS->num_tile_rows - 1 > 0)
-            {
-                pcPPS->Reset();
-                return UMC::UMC_ERR_ALLOC;
+                pcPPS->row_height[i] = GetVLCElementU() + 1;
             }
         }
 

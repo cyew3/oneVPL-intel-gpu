@@ -146,6 +146,7 @@ public:
     Ipp8u  m_isDisplayable;
     Ipp8u  m_wasDisplayed;
     Ipp8u  m_wasOutputted;
+    Ipp32s m_maxUIDWhenWasDisplayed;
 
     typedef std::list<RefCounter *>  ReferenceList;
     ReferenceList m_references;

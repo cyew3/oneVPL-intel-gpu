@@ -638,7 +638,7 @@ UMC::Status TaskSupplier_H265::Init(UMC::BaseCodecParams *pInit)
         break;
     };
 
-    m_pTaskBroker->Init(m_iThreadNum, true);
+    m_pTaskBroker->Init(m_iThreadNum);
 
     // create slice decoder(s)
     m_pSegmentDecoder = new H265SegmentDecoderMultiThreaded *[m_iThreadNum];
@@ -851,7 +851,7 @@ void TaskSupplier_H265::Reset()
     m_pLastDisplayed = 0;
 
     if (m_pTaskBroker)
-        m_pTaskBroker->Init(m_iThreadNum, true);
+        m_pTaskBroker->Init(m_iThreadNum);
 }
 
 // Attempt to recover after something unexpectedly went wrong
@@ -884,7 +884,7 @@ void TaskSupplier_H265::AfterErrorRestore()
     m_pLastDisplayed = 0;
 
     if (m_pTaskBroker)
-        m_pTaskBroker->Init(m_iThreadNum, true);
+        m_pTaskBroker->Init(m_iThreadNum);
 }
 
 // Fill up current bitstream information
@@ -1476,14 +1476,19 @@ H265DecoderFrame *TaskSupplier_H265::GetAnyFrameToDisplay(bool force)
     {
         // show oldest frame
         DEBUG_PRINT1((VM_STRING("GetAnyFrameToDisplay DPB displayable %d, maximum %d, force = %d\n"), view.pDPB->countNumDisplayable(), view.maxDecFrameBuffering, force));
-        Ipp32u countDisplayable = view.pDPB->countNumDisplayable();
-        if (countDisplayable > view.sps_max_num_reorder_pics || force)
+        Ipp32u countDisplayable;
+        Ipp32s maxUID;
+        Ipp32u countDPBFullness;
+        
+        view.pDPB->calculateInfoForDisplay(countDisplayable, countDPBFullness, maxUID);
+
+        if (countDisplayable > view.sps_max_num_reorder_pics || countDPBFullness > view.sps_max_dec_pic_buffering || force)
         {
             H265DecoderFrame *pTmp = view.pDPB->findOldestDisplayable(view.dpbSize);
 
             if (pTmp)
             {
-                if (!force && countDisplayable <= pTmp->GetAU()->GetSeqParam()->sps_max_num_reorder_pics[0])
+                if (!force && countDisplayable <= pTmp->GetAU()->GetSeqParam()->sps_max_num_reorder_pics[0] && countDPBFullness <= view.sps_max_dec_pic_buffering)
                     return 0;
 
                 if (!pTmp->IsFrameExist())
@@ -1493,6 +1498,7 @@ H265DecoderFrame *TaskSupplier_H265::GetAnyFrameToDisplay(bool force)
                     continue;
                 }
 
+                pTmp->m_maxUIDWhenWasDisplayed = maxUID;
                 return pTmp;
             }
 
@@ -1504,7 +1510,10 @@ H265DecoderFrame *TaskSupplier_H265::GetAnyFrameToDisplay(bool force)
             {
                 H265DecoderFrame *pTmp = view.pDPB->findDisplayableByDPBDelay();
                 if (pTmp)
+                {
+                    pTmp->m_maxUIDWhenWasDisplayed = maxUID;
                     return pTmp;
+                }
             }
             break;
         }
@@ -2577,60 +2586,6 @@ UMC::Status TaskSupplier_H265::RunDecoding()
     //DEBUG_PRINT((VM_STRING("Decode POC - %d\n"), pFrame->m_PicOrderCnt[0]));
 
     return UMC::UMC_OK;
-}
-
-// Start asynchronous decoding and wait for any frame to get ready
-UMC::Status TaskSupplier_H265::RunDecodingAndWait(bool should_additional_check, H265DecoderFrame ** decoded)
-{
-    H265DecoderFrame * outputFrame = *decoded;
-    ViewItem_H265 &view = *GetView();
-
-    UMC::Status umcRes = UMC::UMC_OK;
-
-    if (!outputFrame->IsDecodingStarted())
-        return UMC::UMC_ERR_FAILED;
-
-    if (outputFrame->IsDecodingCompleted())
-        return UMC::UMC_OK;
-
-    for(;;)
-    {
-        m_pTaskBroker->WaitFrameCompletion();
-
-        if (outputFrame->IsDecodingCompleted())
-        {
-            if (!should_additional_check)
-                break;
-
-            UMC::AutomaticUMCMutex guard(m_mGuard);
-
-            Ipp32s count = 0;
-            Ipp32s notDecoded = 0;
-            for (H265DecoderFrame * pTmp = view.pDPB->head(); pTmp; pTmp = pTmp->future())
-            {
-                if (!pTmp->m_isShortTermRef &&
-                    !pTmp->m_isLongTermRef &&
-                    ((pTmp->m_wasOutputted != 0) || (pTmp->m_isDisplayable == 0)))
-                {
-                    count++;
-                    break;
-                }
-
-                if (!pTmp->IsDecoded() && !pTmp->IsDecodingCompleted() && pTmp->IsFullFrame())
-                    notDecoded++;
-            }
-
-            if (count || (view.pDPB->countAllFrames() < view.dpbSize + m_DPBSizeEx))
-                break;
-
-            if (!notDecoded)
-                break;
-        }
-    }
-
-    VM_ASSERT(outputFrame->IsDecodingCompleted());
-
-    return umcRes;
 }
 
 // Retrieve decoded SEI data with SEI_USER_DATA_REGISTERED_TYPE type

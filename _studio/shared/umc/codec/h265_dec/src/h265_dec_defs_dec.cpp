@@ -47,36 +47,6 @@ static const Ipp8u EoTable[9] =
     0
 };
 
-// Set widths of tile colums
-void H265PicParamSetBase::setColumnWidth(Ipp32u* columnWidth)
-{
-    if (uniform_spacing_flag == 0)
-    {
-        column_width = h265_new_array_throw<Ipp32u>(num_tile_columns);
-        if (NULL == column_width)
-            return;
-
-        for (Ipp32u i = 0; i < num_tile_columns - 1; i++)
-        {
-            column_width[i] = columnWidth[i];
-        }
-    }
-}
-
-// Set heights of tile rows
-void H265PicParamSetBase::setRowHeight(Ipp32u* rowHeight)
-{
-    if (uniform_spacing_flag == 0)
-    {
-        row_height = h265_new_array_throw<Ipp32u>(num_tile_rows);
-
-        for (Ipp32u i = 0; i < num_tile_rows - 1; i++)
-        {
-            row_height[i] = rowHeight[i];
-        }
-    }
-}
-
 // RPS data structure constructor
 ReferencePictureSet::ReferencePictureSet()
 {

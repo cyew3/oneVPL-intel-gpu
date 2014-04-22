@@ -1139,9 +1139,7 @@ struct H265PicParamSetBase
     // These fields are calculated from values above.  They are not written to the bitstream
     ///////////////////////////////////////////////////////
     Ipp32u getColumnWidth(Ipp32u columnIdx) { return *( column_width + columnIdx ); }
-    void setColumnWidth(Ipp32u* columnWidth);
     Ipp32u getRowHeight(Ipp32u rowIdx)    { return *( row_height + rowIdx ); }
-    void setRowHeight(Ipp32u* rowHeight);
 
     Ipp32u* m_CtbAddrRStoTS;
     Ipp32u* m_CtbAddrTStoRS;

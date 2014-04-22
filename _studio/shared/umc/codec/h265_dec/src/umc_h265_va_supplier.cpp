@@ -53,7 +53,7 @@ UMC::Status VATaskSupplier::Init(UMC::BaseCodecParams *pInit)
     m_iThreadNum = 1;
     delete m_pTaskBroker;
     m_pTaskBroker = new TaskBrokerSingleThreadDXVA(this);
-    m_pTaskBroker->Init(m_iThreadNum, true);
+    m_pTaskBroker->Init(m_iThreadNum);
 
     DXVASupport<VATaskSupplier>::Init();
 

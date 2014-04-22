@@ -295,6 +295,32 @@ Ipp32u H265DBPList::countAllFrames()
     return count;
 }
 
+void H265DBPList::calculateInfoForDisplay(Ipp32u &countDisplayable, Ipp32u &countDPBFullness, Ipp32s &maxUID)
+{
+    H265DecoderFrame *pCurr = head();
+
+    countDisplayable = 0;
+    countDPBFullness = 0;
+    maxUID = 0;
+
+    while (pCurr)
+    {
+        if ((pCurr->isDisplayable() || (!pCurr->IsDecoded() && pCurr->IsFullFrame())) && !pCurr->wasOutputted())
+        {
+            countDisplayable++;
+        }
+
+        if (((pCurr->isShortTermRef() || pCurr->isLongTermRef()) && pCurr->IsFullFrame()) || ((pCurr->isDisplayable() || (!pCurr->IsDecoded() && pCurr->IsFullFrame())) && !pCurr->wasOutputted()))
+        {
+            countDPBFullness++;
+            if (maxUID < pCurr->m_UID)
+                maxUID = pCurr->m_UID;
+        }
+
+        pCurr = pCurr->future();
+    }
+}    // countNumDisplayable
+
 //  Return number of displayable frames.
 Ipp32u H265DBPList::countNumDisplayable()
 {

@@ -48,6 +48,7 @@ struct ThreadTaskInfo
     mfxFrameSurface1 *surface_work;
     mfxFrameSurface1 *surface_out;
     mfxU32            taskID; // for task ordering
+    H265DecoderFrame *pFrame;
 };
 
 enum
@@ -64,7 +65,6 @@ VideoDECODEH265::VideoDECODEH265(VideoCORE *core, mfxStatus * sts)
     , m_platform(MFX_PLATFORM_SOFTWARE)
     , m_useDelayedDisplay(false)
     , m_va(0)
-    , m_globalTask(false)
     , m_isFirstRun(true)
 #ifdef MFX_ENABLE_WATERMARK
     , m_watermark(NULL)
@@ -272,7 +272,6 @@ mfxStatus VideoDECODEH265::Init(mfxVideoParam *par)
     m_isInit = true;
 
     m_frameOrder = (mfxU16)MFX_FRAMEORDER_UNKNOWN;
-    m_globalTask = false;
     m_isFirstRun = true;
 
 #if defined (MFX_VA)
@@ -343,7 +342,6 @@ mfxStatus VideoDECODEH265::Reset(mfxVideoParam *par)
     }
 
     m_frameOrder = (mfxU16)MFX_FRAMEORDER_UNKNOWN;
-    m_globalTask = false;
     m_isFirstRun = true;
 
     memset(&m_stat, 0, sizeof(m_stat));
@@ -769,37 +767,14 @@ mfxStatus VideoDECODEH265::RunThread(void * params, mfxU32 threadNumber)
 
     mfxStatus sts = MFX_TASK_WORKING;
 
-    if (!info->surface_out)
-    {
-        //for (Ipp32s i = 0; i < 2 && sts == MFX_TASK_WORKING; i++)
-        {
-            sts = m_pH265VideoDecoder->RunThread(threadNumber);
-        }
-
-        if (sts == MFX_TASK_BUSY && !m_pH265VideoDecoder->GetTaskBroker()->IsEnoughForStartDecoding(true))
-            m_globalTask = false;
-
-        return m_globalTask ? sts : MFX_TASK_DONE;
-    }
-
-    H265DecoderFrame * pFrame = 0;
     bool isDecoded;
     {
-        UMC::AutomaticUMCMutex guard(m_mGuard);
+        UMC::AutomaticUMCMutex guard(m_mGuardRunThread);
 
         if (!info->surface_work)
             return MFX_TASK_DONE;
 
-        mfxI32 index = m_FrameAllocator->FindSurface(info->surface_out, m_isOpaq);
-        pFrame = m_pH265VideoDecoder->FindSurface((UMC::FrameMemID)index);
-
-        if (!pFrame)
-        {
-            VM_ASSERT(false);
-            return MFX_ERR_NOT_FOUND;
-        }
-
-        isDecoded = m_pH265VideoDecoder->CheckDecoding(true, pFrame);
+        isDecoded = m_pH265VideoDecoder->CheckDecoding(true, info->pFrame);
     }
 
     if (!isDecoded)
@@ -811,11 +786,11 @@ mfxStatus VideoDECODEH265::RunThread(void * params, mfxU32 threadNumber)
     }
 
     {
-        UMC::AutomaticUMCMutex guard(m_mGuard);
+        UMC::AutomaticUMCMutex guard(m_mGuardRunThread);
         if (!info->surface_work)
             return MFX_TASK_DONE;
 
-        isDecoded = m_pH265VideoDecoder->CheckDecoding(true, pFrame);
+        isDecoded = m_pH265VideoDecoder->CheckDecoding(true, info->pFrame);
         if (isDecoded)
         {
             info->surface_work = 0;
@@ -824,9 +799,9 @@ mfxStatus VideoDECODEH265::RunThread(void * params, mfxU32 threadNumber)
 
     if (isDecoded)
     {
-        if (!pFrame->wasDisplayed())
+        if (!info->pFrame->wasDisplayed())
         {
-            mfxStatus sts = DecodeFrame(0, info->surface_work, info->surface_out);
+            mfxStatus sts = DecodeFrame(info->surface_out, info->pFrame);
 
             if (sts != MFX_ERR_NONE && sts != MFX_ERR_NOT_FOUND)
                 return sts;
@@ -852,28 +827,16 @@ mfxStatus VideoDECODEH265::DecodeFrameCheck(mfxBitstream *bs,
         info->surface_work = GetOriginalSurface(surface_work);
         info->surface_out = GetOriginalSurface(*surface_out);
 
+        mfxI32 index = m_FrameAllocator->FindSurface(info->surface_out, m_isOpaq);
+        H265DecoderFrame *pFrame = m_pH265VideoDecoder->FindSurface((UMC::FrameMemID)index);
+
+        info->pFrame = pFrame;
+
         pEntryPoint->pRoutine = &HEVCDECODERoutine;
         pEntryPoint->pCompleteProc = &HEVCCompleteProc;
         pEntryPoint->pState = this;
         pEntryPoint->requiredNumThreads = m_vPar.mfx.NumThread;
         pEntryPoint->pParam = info;
-    }
-    else
-    {
-        if (m_pH265VideoDecoder->GetTaskBroker()->IsEnoughForStartDecoding(true) && !m_globalTask)
-        {
-            ThreadTaskInfo * info = new ThreadTaskInfo();
-            info->surface_work = 0;
-            info->surface_out = 0;
-
-            pEntryPoint->pRoutine = &HEVCDECODERoutine;
-            pEntryPoint->pCompleteProc = &HEVCCompleteProc;
-            pEntryPoint->pState = this;
-            pEntryPoint->requiredNumThreads = m_vPar.mfx.NumThread;
-            pEntryPoint->pParam = info;
-
-            m_globalTask = true;
-        }
     }
 
     return mfxSts;
@@ -1158,54 +1121,40 @@ mfxStatus VideoDECODEH265::DecodeFrame(mfxFrameSurface1 *surface_out, H265Decode
     {
         index = m_FrameAllocator->FindSurface(surface_out, m_isOpaq);
         pFrame = m_pH265VideoDecoder->FindSurface((UMC::FrameMemID)index);
+        if (!pFrame)
+        {
+            VM_ASSERT(false);
+            return MFX_ERR_NOT_FOUND;
+        }
     }
 
-    if (!pFrame)
-    {
-        VM_ASSERT(false);
-        return MFX_ERR_NOT_FOUND;
-    }
+    Ipp32s error = pFrame->GetError();
 
-    UMC::Status umcRes = m_pH265VideoDecoder->RunDecodingAndWait(true, &pFrame); // decode frame
+    surface_out->Data.Corrupted = 0;
+    if (error & UMC::ERROR_FRAME_MINOR)
+        surface_out->Data.Corrupted |= MFX_CORRUPTION_MINOR;
 
-    if (umcRes != UMC::UMC_OK && umcRes != UMC::UMC_ERR_NOT_ENOUGH_DATA)
-    {
-        return ConvertUMCStatusToMfx(umcRes);
-    }
+    if (error & UMC::ERROR_FRAME_MAJOR)
+        surface_out->Data.Corrupted |= MFX_CORRUPTION_MAJOR;
 
-    if (pFrame)
-    {
-        Ipp32s error = pFrame->GetError();
+    if (error & UMC::ERROR_FRAME_REFERENCE_FRAME)
+        surface_out->Data.Corrupted |= MFX_CORRUPTION_REFERENCE_FRAME;
 
-        surface_out->Data.Corrupted = 0;
-        if (error & UMC::ERROR_FRAME_MINOR)
-            surface_out->Data.Corrupted |= MFX_CORRUPTION_MINOR;
+    if (error & UMC::ERROR_FRAME_DPB)
+        surface_out->Data.Corrupted |= MFX_CORRUPTION_REFERENCE_LIST;
 
-        if (error & UMC::ERROR_FRAME_MAJOR)
-            surface_out->Data.Corrupted |= MFX_CORRUPTION_MAJOR;
+    if (error & UMC::ERROR_FRAME_RECOVERY)
+        surface_out->Data.Corrupted |= MFX_CORRUPTION_MAJOR;
 
-        if (error & UMC::ERROR_FRAME_REFERENCE_FRAME)
-            surface_out->Data.Corrupted |= MFX_CORRUPTION_REFERENCE_FRAME;
+    if (error & UMC::ERROR_FRAME_TOP_FIELD_ABSENT)
+        surface_out->Data.Corrupted |= MFX_CORRUPTION_ABSENT_TOP_FIELD;
 
-        if (error & UMC::ERROR_FRAME_DPB)
-            surface_out->Data.Corrupted |= MFX_CORRUPTION_REFERENCE_LIST;
-
-        if (error & UMC::ERROR_FRAME_RECOVERY)
-            surface_out->Data.Corrupted |= MFX_CORRUPTION_MAJOR;
-
-        if (error & UMC::ERROR_FRAME_TOP_FIELD_ABSENT)
-            surface_out->Data.Corrupted |= MFX_CORRUPTION_ABSENT_TOP_FIELD;
-
-        if (error & UMC::ERROR_FRAME_BOTTOM_FIELD_ABSENT)
-            surface_out->Data.Corrupted |= MFX_CORRUPTION_ABSENT_BOTTOM_FIELD;
-    }
+    if (error & UMC::ERROR_FRAME_BOTTOM_FIELD_ABSENT)
+        surface_out->Data.Corrupted |= MFX_CORRUPTION_ABSENT_BOTTOM_FIELD;
 
     mfxStatus sts = m_FrameAllocator->PrepareToOutput(surface_out, index, &m_vPar, m_isOpaq);
 
-    if (pFrame)
-    {
-        pFrame->setWasDisplayed();
-    }
+    pFrame->setWasDisplayed();
 
     return sts;
 }

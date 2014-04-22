@@ -37,13 +37,9 @@ public:
     TaskBroker_H265(TaskSupplier_H265 * pTaskSupplier);
 
     // Initialize task broker with threads number
-    virtual bool Init(Ipp32s iConsumerNumber, bool isExistMainThread);
+    virtual bool Init(Ipp32s iConsumerNumber);
     virtual ~TaskBroker_H265();
 
-    // Wait for event of task completion
-    virtual void WaitFrameCompletion();
-    // Set event that task has been completed
-    void AwakeCompleteWaiter();
     // Add frame to decoding queue
     virtual bool AddFrameToDecoding(H265DecoderFrame * pFrame);
 
@@ -116,22 +112,13 @@ protected:
 
     H265DecoderFrameInfo * m_FirstAU;
 
-    std::vector<UMC::Event> m_eWaiting;                          // waiting threads events
-    volatile Ipp32u m_nWaitingThreads;                      // mask of waiting threads
-
     bool m_IsShouldQuit;
-
-    // Resume all waiting threads
-    virtual void AwakeThreads();
 
     typedef std::list<H265DecoderFrame *> FrameQueue;
     FrameQueue m_decodingQueue;
     FrameQueue m_completedQueue;
 
     UMC::Mutex m_mGuard;
-    UMC::Event m_Completed;
-
-    bool m_isExistMainThread;
 };
 
 // Task broker which uses one thread only
@@ -151,7 +138,7 @@ public:
 
     TaskBrokerTwoThread_H265(TaskSupplier_H265 * pTaskSupplier);
 
-    virtual bool Init(Ipp32s iConsumerNumber, bool isExistMainThread);
+    virtual bool Init(Ipp32s iConsumerNumber);
 
     // Select a new task for available frame and initialize a task object for it
     virtual bool GetNextTaskManySlices(H265DecoderFrameInfo * info, H265Task *pTask);

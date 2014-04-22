@@ -151,7 +151,7 @@ UMC::Status MFXTaskSupplier_H265::Init(UMC::BaseCodecParams *pInit)
         break;
     }
 
-    m_pTaskBroker->Init(m_iThreadNum, false);
+    m_pTaskBroker->Init(m_iThreadNum);
 
     // create slice decoder(s)
     m_pSegmentDecoder = new H265SegmentDecoderMultiThreaded *[m_iThreadNum];
@@ -199,7 +199,7 @@ void MFXTaskSupplier_H265::Reset()
     m_Headers.Reset();
 
     if (m_pTaskBroker)
-        m_pTaskBroker->Init(m_iThreadNum, false);
+        m_pTaskBroker->Init(m_iThreadNum);
 }
 
 // Check whether specified frame has been decoded, and if it was,
@@ -216,42 +216,27 @@ bool MFXTaskSupplier_H265::CheckDecoding(bool should_additional_check, H265Decod
         if (!should_additional_check)
             return true;
 
+        Ipp32s maxReadyUID = outputFrame->m_UID;
+        Ipp32u inDisplayStage = 0;
+
         UMC::AutomaticUMCMutex guard(m_mGuard);
 
-        Ipp32u inDisplayStage = 0;
-        Ipp32u count = 0;
-        Ipp32u notDecoded = 0;
         for (H265DecoderFrame * pTmp = view.pDPB->head(); pTmp; pTmp = pTmp->future())
         {
-            //if (!pTmp->GetRefCounter())
-              //  return true;
             if (pTmp->m_wasOutputted != 0 && pTmp->m_wasDisplayed == 0)
             {
-                inDisplayStage++;
+                inDisplayStage++; // number of outputted frames at this moment
             }
 
-            if (!pTmp->m_isShortTermRef &&
-                !pTmp->m_isLongTermRef &&
-                ((pTmp->m_wasOutputted != 0) || (pTmp->m_isDisplayable == 0)))
-            {
-                count++;
-            }
-
-            if (!pTmp->IsDecoded() && !pTmp->IsDecodingCompleted() && pTmp->IsFullFrame())
-                notDecoded++;
+            if ((pTmp->IsDecoded() || pTmp->IsDecodingCompleted()) && maxReadyUID < pTmp->m_UID)
+                maxReadyUID = pTmp->m_UID;
         }
 
         DEBUG_PRINT1((VM_STRING("output frame - %d, notDecoded - %u, count - %u\n"), outputFrame->m_PicOrderCnt, notDecoded, count));
         if (inDisplayStage > 1)
             return true;
 
-        if (notDecoded > m_DPBSizeEx)
-            return false;
-
-        if (count || (view.pDPB->countAllFrames() < view.dpbSize + m_DPBSizeEx))
-            return true;
-
-        if (!notDecoded)
+        if (outputFrame->m_maxUIDWhenWasDisplayed <= maxReadyUID)
             return true;
     }
 

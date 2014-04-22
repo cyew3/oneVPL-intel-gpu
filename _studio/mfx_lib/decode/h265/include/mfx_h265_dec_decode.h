@@ -147,6 +147,7 @@ protected:
     eMFXPlatform m_platform;
 
     UMC::Mutex m_mGuard;
+    UMC::Mutex m_mGuardRunThread;
     bool m_useDelayedDisplay;
 
     UMC::VideoAccelerator * m_va;
@@ -155,7 +156,6 @@ protected:
         NUMBER_OF_ADDITIONAL_FRAMES = 10
     };
 
-    volatile bool m_globalTask;
     bool m_isFirstRun;
 #ifdef MFX_ENABLE_WATERMARK
     Watermark *m_watermark;

@@ -318,8 +318,6 @@ public:
         return m_pTaskBroker;
     }
 
-    // Start asynchronous decoding and wait for any frame to get ready
-    virtual UMC::Status RunDecodingAndWait(bool force, H265DecoderFrame ** decoded = 0);
     // Start asynchronous decoding
     virtual UMC::Status RunDecoding();
     // Find a decoder frame instance with specified surface ID

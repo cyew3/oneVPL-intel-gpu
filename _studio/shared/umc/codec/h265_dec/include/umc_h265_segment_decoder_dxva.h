@@ -158,8 +158,6 @@ class TaskBrokerSingleThreadDXVA : public TaskBrokerSingleThread_H265
 public:
     TaskBrokerSingleThreadDXVA(TaskSupplier_H265 * pTaskSupplier);
 
-    virtual void WaitFrameCompletion();
-
     virtual bool PrepareFrame(H265DecoderFrame * pFrame);
 
     // Get next working task

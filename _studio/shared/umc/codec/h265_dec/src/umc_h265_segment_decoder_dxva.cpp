@@ -130,10 +130,6 @@ TaskBrokerSingleThreadDXVA::TaskBrokerSingleThreadDXVA(TaskSupplier_H265 * pTask
     m_counterFrequency = vm_time_get_frequency();
 }
 
-void TaskBrokerSingleThreadDXVA::WaitFrameCompletion()
-{
-}
-
 bool TaskBrokerSingleThreadDXVA::PrepareFrame(H265DecoderFrame * pFrame)
 {
     if (!pFrame || pFrame->prepared)
