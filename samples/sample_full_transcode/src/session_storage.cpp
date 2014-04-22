@@ -37,11 +37,18 @@ MFXAudioSession * SessionStorage::GetAudioSessionForID(int id){
         std::auto_ptr<MFXAudioSession> pAudioSession (m_factory.CreateAudioSession());
 
         mfxStatus sts = pAudioSession->Init(m_aInfo.IMPL(), &m_aInfo.Version());
-        if (MFX_ERR_UNSUPPORTED == sts) {
-            MSDK_TRACE_INFO(MSDK_STRING("Audio library not found"));
+        if (MFX_ERR_NOT_FOUND == sts)
+        {
+            MSDK_TRACE_INFO(MSDK_STRING("Audio library was not found"));
             return 0;
         }
-        if( MFX_ERR_NONE > sts) {
+        else if (MFX_ERR_UNSUPPORTED == sts)
+        {
+            MSDK_TRACE_INFO(MSDK_STRING("Audio library of specified version was not found"));
+            return 0;
+        }
+        if( MFX_ERR_NONE > sts)
+        {
             MSDK_TRACE_ERROR(MSDK_STRING("pAudioSession->Init(m_impl, &m_ver), sts=") << sts);
             throw MFXAudioSessionInitError();
         }
