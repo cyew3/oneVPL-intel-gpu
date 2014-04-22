@@ -172,7 +172,7 @@ Status MFXTaskSupplier::Init(BaseCodecParams *pInit)
     }
 
     AU_Splitter::Init(init);
-    DPBOutput::Reset();
+    DPBOutput::Reset(m_iThreadNum != 1);
 
     switch(m_iThreadNum)
     {

@@ -2404,7 +2404,7 @@ Status TaskSupplier::Init(BaseCodecParams *pInit)
     // It should be equal to CPU number
     m_iThreadNum = (0 == nAllowedThreadNumber) ? (vm_sys_info_get_cpu_num()) : (nAllowedThreadNumber);
 
-    DPBOutput::Reset();
+    DPBOutput::Reset(m_iThreadNum != 1);
     AU_Splitter::Init(init);
     Status umcRes = SVC_Extension::Init();
     if (UMC_OK != umcRes)
@@ -2522,7 +2522,7 @@ Status TaskSupplier::PreInit(BaseCodecParams *pInit)
     m_iThreadNum = (0 == nAllowedThreadNumber) ? (vm_sys_info_get_cpu_num()) : (nAllowedThreadNumber);
 
     AU_Splitter::Init(init);
-    DPBOutput::Reset();
+    DPBOutput::Reset(m_iThreadNum != 1);
 
     m_local_delta_frame_time = 1.0/30;
     m_frameOrder             = 0;
@@ -2590,7 +2590,7 @@ void TaskSupplier::Close()
 
     SVC_Extension::Close();
     AU_Splitter::Close();
-    DPBOutput::Reset();
+    DPBOutput::Reset(m_iThreadNum != 1);
     DecReferencePictureMarking::Reset();
 
     if (m_pLastSlice)
@@ -2657,7 +2657,7 @@ void TaskSupplier::Reset()
 
     SVC_Extension::Reset();
     AU_Splitter::Reset();
-    DPBOutput::Reset();
+    DPBOutput::Reset(m_iThreadNum != 1);
     DecReferencePictureMarking::Reset();
     m_accessUnit.Release();
 
@@ -6175,6 +6175,9 @@ void TaskSupplier::ApplyPayloadsToFrame(H264DecoderFrame * frame, H264Slice *sli
     }
 
     frame->m_dpb_output_delay = DPBOutput::GetDPBOutputDelay(payload);
+
+    if (frame->GetAU(0)->m_isBExist || frame->GetAU(1)->m_isBExist)
+        DPBOutput::GetDPBOutputDelay(0);
 
     payload = payloads->FindPayload(SEI_DEC_REF_PIC_MARKING_TYPE);
     if (payload)
