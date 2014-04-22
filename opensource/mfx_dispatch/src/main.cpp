@@ -622,7 +622,7 @@ mfxStatus DISPATCHER_EXPOSED_PREFIX(MFXVideoUSER_Load)(mfxSession session, const
             return pHandle.pluginFactory.Create(*i);
         }
         catch(...) {
-            return MFX_ERR_UNKNOWN;
+            continue;
         }
     }
 
