@@ -50,6 +50,10 @@ public:
     virtual mfxStatus PluginClose();
     virtual mfxStatus GetPluginParam(mfxPluginParam *par);
     virtual mfxStatus VPPFrameSubmit(mfxFrameSurface1 *surface_in, mfxFrameSurface1 *surface_out, mfxExtVppAuxData *aux, mfxThreadTask *task);
+    virtual mfxStatus VPPFrameSubmitEx(mfxFrameSurface1 *, mfxFrameSurface1 *, mfxFrameSurface1 **, mfxThreadTask *)
+    {
+        return MFX_ERR_UNDEFINED_BEHAVIOR;
+    }
     virtual mfxStatus Execute(mfxThreadTask task, mfxU32 , mfxU32 );
     virtual mfxStatus FreeResources(mfxThreadTask , mfxStatus );
     virtual mfxStatus Query(mfxVideoParam *in, mfxVideoParam *out);

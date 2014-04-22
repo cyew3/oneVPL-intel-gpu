@@ -15,18 +15,18 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="include\ptir_vpp_plugin.h">
+    <ClInclude Include="ptir_plugin\include\ptir_vpp_plugin.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\ptir_vpp_plugin.cpp">
+    <ClCompile Include="ptir_plugin\src\mfx_ptir_utils.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\mfx_ptir_utils.cpp">
+    <ClCompile Include="ptir_plugin\src\ptir_vpp_plugin.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\ptir_wrapper.cpp">
+    <ClCompile Include="ptir_plugin\src\ptir_wrapper.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

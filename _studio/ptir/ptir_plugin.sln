@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2012
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ptir_plugin", "ptir_plugin\ptir_plugin.vcxproj", "{C4CD82AC-5EAE-4D81-BD36-4C36766B0C98}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ptir_plugin", "ptir_plugin.vcxproj", "{C4CD82AC-5EAE-4D81-BD36-4C36766B0C98}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "pa", "pa\pa.vcxproj", "{7BE3EE72-070F-4BF8-A6CC-1A8BF6CD4481}"
 EndProject
