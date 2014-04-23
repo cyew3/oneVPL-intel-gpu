@@ -1,0 +1,77 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="deinterlacer.cpp" />
+    <ClCompile Include="deinterlace_genx.cpp" />
+    <ClCompile Include="utilities.cpp" />
+    <ClCompile Include="entry.cpp" />
+    <ClCompile Include="kernels\deinterlace_genx_hsw.cpp">
+      <Filter>kernels</Filter>
+    </ClCompile>
+    <ClCompile Include="kernels\embed_isa.c">
+      <Filter>kernels</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="CMUT">
+      <UniqueIdentifier>{310858d0-2667-428f-ad63-fe8e8bcc86a6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="kernels">
+      <UniqueIdentifier>{d664bd52-36a8-48d2-a198-8564eec979ab}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="cmut\clock.h">
+      <Filter>CMUT</Filter>
+    </ClInclude>
+    <ClInclude Include="cmut\cmassert.h">
+      <Filter>CMUT</Filter>
+    </ClInclude>
+    <ClInclude Include="cmut\cmbufferex.h">
+      <Filter>CMUT</Filter>
+    </ClInclude>
+    <ClInclude Include="cmut\cmdeviceex.h">
+      <Filter>CMUT</Filter>
+    </ClInclude>
+    <ClInclude Include="cmut\cmkernelex.h">
+      <Filter>CMUT</Filter>
+    </ClInclude>
+    <ClInclude Include="cmut\cmqueueex.h">
+      <Filter>CMUT</Filter>
+    </ClInclude>
+    <ClInclude Include="cmut\cmrtex.h">
+      <Filter>CMUT</Filter>
+    </ClInclude>
+    <ClInclude Include="cmut\cmsurface2dext.h">
+      <Filter>CMUT</Filter>
+    </ClInclude>
+    <ClInclude Include="cmut\cmsurface2dupext.h">
+      <Filter>CMUT</Filter>
+    </ClInclude>
+    <ClInclude Include="cmut\cmtaskex.h">
+      <Filter>CMUT</Filter>
+    </ClInclude>
+    <ClInclude Include="cmut\cmthreadspaceex.h">
+      <Filter>CMUT</Filter>
+    </ClInclude>
+    <ClInclude Include="cmut\cmutility.h">
+      <Filter>CMUT</Filter>
+    </ClInclude>
+    <ClInclude Include="cmut\cmutility_genx.h">
+      <Filter>CMUT</Filter>
+    </ClInclude>
+    <ClInclude Include="cmut\infrastructure.h">
+      <Filter>CMUT</Filter>
+    </ClInclude>
+    <ClInclude Include="pacm.h" />
+    <ClInclude Include="pacm_genx.h" />
+    <ClInclude Include="common_genx.h" />
+    <ClInclude Include="deinterlace_genx.h" />
+    <ClInclude Include="blocky_io_genx.h" />
+    <ClInclude Include="utilities.h" />
+    <ClInclude Include="deinterlace_buildlowedgemask_genx.h" />
+    <ClInclude Include="kernels\deinterlace_genx_hsw_isa.h">
+      <Filter>kernels</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>

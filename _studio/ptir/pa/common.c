@@ -264,7 +264,7 @@ void __stdcall CheckGenFrame(Frame **pfrmIn, unsigned int frameNum, unsigned int
     {
         Rs_measurement(pfrmIn[frameNum]);
         pfrmIn[frameNum]->frmProperties.interlaced = FALSE;
-        Artifacts_Detection_frame(pfrmIn,frameNum);
+        Artifacts_Detection_frame(pfrmIn,frameNum, FALSE);
         if(pfrmIn[frameNum]->frmProperties.interlaced)
         {
             FillBaseLinesIYUV(pfrmIn[frameNum], pfrmIn[BUFMINSIZE], FALSE, FALSE);

@@ -19,9 +19,9 @@ __inline unsigned int __stdcall EDIError(BYTE* PrvLinePixel, BYTE* NxtLinePixel,
 
 #ifdef USE_SSE4
 
-void __stdcall FilterMask_Main(Plane *s, Plane *d, unsigned int BotBase, int ybegin, int yend)
+void __stdcall FilterMask_Main(Plane *s, Plane *d, unsigned int BotBase, unsigned int ybegin, unsigned int yend)
 {
-    unsigned int x, y, i, j;
+    unsigned int x, y;
     unsigned int prevN, curN, spacer, lastCol, borderLen, borderStart;
     BYTE *tmpCur, *CurLine;
 
@@ -118,7 +118,7 @@ void __stdcall FilterMask_Main(Plane *s, Plane *d, unsigned int BotBase, int ybe
 
 #else
 
-void __stdcall FilterMask_Main(Plane *s, Plane *d, unsigned int BotBase, int ybegin, int yend)
+void __stdcall FilterMask_Main(Plane *s, Plane *d, unsigned int BotBase, unsigned int ybegin, unsigned int yend)
 {
     unsigned int x, y, i;
     unsigned int prevN, curN, spacer, lastCol, borderLen, borderStart;

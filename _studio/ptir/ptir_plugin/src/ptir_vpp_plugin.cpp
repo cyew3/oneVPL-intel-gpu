@@ -17,6 +17,8 @@ File Name: ptir_vpp_plugin.cpp
 #include "mfx_plugin_module.h"
 
 #include "plugin_version_linux.h"
+#include "mfxvideo++int.h"
+#include "hw_utils.h"
 
 PluginModuleTemplate g_PluginModule = {
     NULL,
@@ -43,6 +45,7 @@ MSDK_PLUGIN_API(MFXPlugin*) CreatePlugin(mfxPluginUID uid, mfxPlugin* plugin) {
 const mfxPluginUID MFX_PTIR_Plugin::g_VPP_PluginGuid = MFX_PLUGINID_ITELECINE_HW;
 
 MFX_PTIR_Plugin::MFX_PTIR_Plugin(bool CreateByDispatcher)
+    :m_adapter(0)
 {
     m_session = 0;
     m_pmfxCore = 0;
@@ -56,6 +59,7 @@ MFX_PTIR_Plugin::MFX_PTIR_Plugin(bool CreateByDispatcher)
     m_PluginParam.Type = MFX_PLUGINTYPE_VIDEO_VPP;
     m_PluginParam.PluginVersion = 1;
     m_createdByDispatcher = CreateByDispatcher;
+    par_accel = false;
 }
 
 MFX_PTIR_Plugin::~MFX_PTIR_Plugin()
@@ -76,26 +80,9 @@ mfxStatus MFX_PTIR_Plugin::PluginInit(mfxCoreInterface *core)
     m_pmfxCore = core;
     mfxRes = m_pmfxCore->GetCoreParam(m_pmfxCore->pthis, &par);
 
-    b_firstFrameProceed = false;
+//    b_firstFrameProceed = false;
     bInited = false;
-
-    uiDeinterlacingMode = INTL_MODE_SMART_CHECK;
-    uiDeinterlacingMeasure = 16;
-    dTimeStamp = 0.0;
-    dBaseTime = 0.0;
-    dOutBaseTime = 0.0;
-    dBaseTimeSw = 0.0;
-    dDeIntTime = 0.0;
-    //liTime[sizeof(cOperations) / sizeof(const char *) + 1] = {0},
-    liFreq;
-    liFileSize;
-    fTCodeOut = NULL;
-
-
-    FrameQueue_Initialize(&fqIn);
-    Pattern_init(&mainPattern);
-    uiCount = MFX_INFINITE / 2; // /2 to avoid overflow. TODO: fix
-    uiSupBuf = BUFMINSIZE;
+    ptir = 0;
 
     return mfxRes;
 }
@@ -106,6 +93,8 @@ mfxStatus MFX_PTIR_Plugin::PluginClose()
     mfxStatus mfxRes2 = MFX_ERR_NONE;
 
     Close();
+    if(ptir)
+        delete ptir;
 
     if (m_createdByDispatcher) {
         delete this;
@@ -123,7 +112,7 @@ mfxStatus MFX_PTIR_Plugin::GetPluginParam(mfxPluginParam *par)
     return MFX_ERR_NONE;
 }
 
-mfxStatus MFX_PTIR_Plugin::VPPFrameSubmit(mfxFrameSurface1 *surface_in, mfxFrameSurface1 *surface_out, mfxExtVppAuxData *aux, mfxThreadTask *task)
+mfxStatus MFX_PTIR_Plugin::VPPFrameSubmitEx(mfxFrameSurface1 *surface_in, mfxFrameSurface1 *surface_work, mfxFrameSurface1 **surface_out, mfxThreadTask *task)
 {
     if(vTasks.size() != 0)
         return MFX_WRN_DEVICE_BUSY;
@@ -132,7 +121,7 @@ mfxStatus MFX_PTIR_Plugin::VPPFrameSubmit(mfxFrameSurface1 *surface_in, mfxFrame
 
     mfxStatus mfxSts = MFX_ERR_NONE;
     PTIR_Task *ptir_task = 0;
-    if(NULL == surface_out)
+    if(NULL == surface_work)
     {
         m_guard.Unlock();
         return MFX_ERR_NULL_PTR;
@@ -142,75 +131,86 @@ mfxStatus MFX_PTIR_Plugin::VPPFrameSubmit(mfxFrameSurface1 *surface_in, mfxFrame
     else
         bEOS = false;
 
-    if(0 != fqIn.iCount)
+    if(!bEOS)
     {
-        /*if previous submit call returned ERR_MORE_SURFACE, application should not update input frame,
-        however, plugin can handle it */
-        if(surface_in && prevSurf != surface_in && inSurfs.size() != 0 && inSurfs.back() != surface_in)
+        if(outSurfs.size() && !bEOS)
         {
-            if(inSurfs.end() == std::find (inSurfs.begin(), inSurfs.end(), surface_in))
+            //*surface_out = outSurfs.front();
+            addInSurf(surface_in);
+            addWorkSurf(surface_work);
+
+            if(inSurfs.size() < 5 && outSurfs.size() < 3)
             {
-                inSurfs.push_back(surface_in);
-                m_pmfxCore->IncreaseReference(m_pmfxCore->pthis, &surface_in->Data);
+                m_guard.Unlock();
+                return MFX_ERR_MORE_DATA;
             }
-        }
-        mfxSts = PrepareTask(ptir_task, task, surface_out);
-        if(mfxSts)
-            return mfxSts;
+            if(workSurfs.size() < 5 && outSurfs.size() < 3)
+            {
+                m_guard.Unlock();
+                return MFX_ERR_MORE_SURFACE;
+            }
 
-        m_guard.Unlock();
-        if(1 == fqIn.iCount)
+            mfxSts = PrepareTask(ptir_task, task, surface_out);
+            if(mfxSts)
+                return mfxSts;
+            m_guard.Unlock();
             return MFX_ERR_NONE;
-        else
-            return MFX_ERR_MORE_SURFACE;
-    }
-    else if(surface_in && inSurfs.size() < 8)
-    {
-        //add in surface to the queue if it is not already here
-        if(inSurfs.end() == std::find (inSurfs.begin(), inSurfs.end(), surface_in))
-        {
-            inSurfs.push_back(surface_in);
-            m_pmfxCore->IncreaseReference(m_pmfxCore->pthis, &surface_in->Data);
         }
-
-        m_guard.Unlock();
-        return MFX_ERR_MORE_DATA;
-    }
-    else if(surface_in && inSurfs.size() > 7 )
-    {
-        //add in surface to the queue if it is not already here
-        if(inSurfs.end() == std::find (inSurfs.begin(), inSurfs.end(), surface_in))
+        else if(inSurfs.size() < 6)
         {
-            inSurfs.push_back(surface_in);
-            m_pmfxCore->IncreaseReference(m_pmfxCore->pthis, &surface_in->Data);
+            addInSurf(surface_in);
+            addWorkSurf(surface_work);
+            m_guard.Unlock();
+            return MFX_ERR_MORE_DATA;
         }
-        //queue is full, ready to create task for execution
-        mfxSts = PrepareTask(ptir_task, task, surface_out);
-        if(mfxSts)
-            return mfxSts;
-
-        m_guard.Unlock();
-        return MFX_ERR_NONE;
-    }
-    else if(0 != uiCur)
-    {
-        //input surface is 0, end of stream case, and there are smth in PTIR cache
-        mfxSts = PrepareTask(ptir_task, task, surface_out);
-        if(mfxSts)
-            return mfxSts;
-
-        m_guard.Unlock();
-        if(uiCur > 1)
+        else if((workSurfs.size() < 8 && !ptir->bFullFrameRate) || (workSurfs.size() < 14 && ptir->bFullFrameRate) )
+        {
+            addInSurf(surface_in);
+            addWorkSurf(surface_work);
+            m_guard.Unlock();
             return MFX_ERR_MORE_SURFACE;
+        }
         else
-            return MFX_ERR_NONE;
-    }
-    else if(0 == fqIn.iCount && 0 == uiCur)
+        {
+            addInSurf(surface_in);
+            addWorkSurf(surface_work);
+            mfxSts = PrepareTask(ptir_task, task, surface_out);
+            m_guard.Unlock();
+            return mfxSts;
+        }
+    } 
+    else
     {
-        m_guard.Unlock();
-        return MFX_ERR_MORE_DATA;
-    }
+        if(inSurfs.size() && (inSurfs.size() != workSurfs.size() ))
+        {
+            addWorkSurf(surface_work);
 
+            mfxSts = PrepareTask(ptir_task, task, surface_out);
+            m_guard.Unlock();
+            if(0 != ptir->uiCur || ptir->fqIn.iCount || outSurfs.size())
+                return MFX_ERR_MORE_SURFACE;
+            else
+                return MFX_ERR_NONE;
+        }
+        else if(0 != ptir->uiCur || ptir->fqIn.iCount || outSurfs.size())
+        {
+            addWorkSurf(surface_work);
+            mfxSts = PrepareTask(ptir_task, task, surface_out);
+            if(mfxSts)
+                return mfxSts;
+
+            m_guard.Unlock();
+            if((ptir->uiCur + outSurfs.size()) > 1)
+                return MFX_ERR_MORE_SURFACE;
+            else
+                return MFX_ERR_NONE;
+        }
+        else if(0 == ptir->fqIn.iCount && 0 == ptir->uiCur)
+        {
+            m_guard.Unlock();
+            return MFX_ERR_MORE_DATA;
+        }
+    }
     m_guard.Unlock();
     return MFX_ERR_MORE_DATA;
 }
@@ -220,33 +220,53 @@ mfxStatus MFX_PTIR_Plugin::Execute(mfxThreadTask task, mfxU32 , mfxU32 )
     PTIR_Task *ptir_task = (PTIR_Task*) task;
     if(!ptir_task->filled)
         return MFX_ERR_UNDEFINED_BEHAVIOR;
-    if(inSurfs.size() == 0 && 0 == fqIn.iCount && 0 == uiCur)
+    if(inSurfs.size() == 0 && 0 == ptir->fqIn.iCount && 0 == ptir->uiCur && 0 == outSurfs.size())
         return MFX_ERR_UNDEFINED_BEHAVIOR;
 
     mfxStatus mfxSts = MFX_ERR_NONE;
-    mfxFrameSurface1 *surface_out;
-    surface_out = ptir_task->surface_out;
+    mfxFrameSurface1 *surface_out = 0;
+    mfxFrameSurface1 *surface_outtt = 0;
+    //surface_out = ptir_task->surface_out;
+    //surface_out = GetFreeSurf(workSurfs);
 
-    if(inSurfs.size() != 0)
+    if(inSurfs.size() != 0 && outSurfs.size() < 2)
     {
         //process input frames until 1 output frame is generated
         for(std::vector<mfxFrameSurface1*>::iterator it = inSurfs.begin(); it != inSurfs.end(); ++it) {
-            mfxSts = Process(*it, surface_out);
+            if(0 == workSurfs.size())
+                break;
+            if(!surface_out)
+                surface_out = GetFreeSurf(workSurfs);
+            try
+            {
+                mfxSts = ptir->Process(*it, &surface_out, m_pmfxCore, &surface_outtt);
+            }
+            catch(...)
+            {
+                mfxSts = MFX_ERR_UNKNOWN;
+                return mfxSts;
+            }
+
             m_pmfxCore->DecreaseReference(m_pmfxCore->pthis, &(*it)->Data);
             prevSurf = *it;
             *it = 0;
             if(MFX_ERR_NONE == mfxSts)
             {
-                m_pmfxCore->DecreaseReference(m_pmfxCore->pthis, &surface_out->Data);
+                //outSurfs.push_back(surface_outtt);
+                //m_pmfxCore->DecreaseReference(m_pmfxCore->pthis, &surface_out->Data);
                 surface_out = 0;
-                break;
+                if(0 == workSurfs.size())
+                    break;
             }
             else if(MFX_ERR_MORE_SURFACE == mfxSts)
             {
-                m_pmfxCore->DecreaseReference(m_pmfxCore->pthis, &surface_out->Data);
+                //m_pmfxCore->DecreaseReference(m_pmfxCore->pthis, &surface_out->Data);
                 surface_out = 0;
                 mfxSts = MFX_ERR_NONE;
-                break;
+                if(/*IsSW* &&*/ workSurfs.size() && inSurfs.size())
+                    mfxSts = MFX_ERR_NONE;
+                else
+                    break;
             }
             else if(MFX_ERR_MORE_DATA != mfxSts)
             {
@@ -262,34 +282,59 @@ mfxStatus MFX_PTIR_Plugin::Execute(mfxThreadTask task, mfxU32 , mfxU32 )
                 break;
         }
     }
-    else
+    else if(outSurfs.size() != 0)
+    {
+        ;//do fucking nothing
+    }
+    //else
+    if((!(inSurfs.size() != 0 && outSurfs.size() < 2) && !(outSurfs.size() != 0)) ||
+        (bEOS && outSurfs.size() == 1 && workSurfs.size() > 0))
     {
         //get cached frame
-        mfxSts = Process(0, surface_out);
-        if(MFX_ERR_NONE == mfxSts ||
-           MFX_ERR_MORE_SURFACE == mfxSts)
+        surface_out = GetFreeSurf(workSurfs);
+        try
+        {
+            mfxSts = ptir->Process(0, &surface_out, m_pmfxCore, &surface_outtt);
+        }
+        catch(...)
+        {
+            mfxSts = MFX_ERR_UNKNOWN;
+            return mfxSts;
+        }
+        if(MFX_ERR_NONE == mfxSts)
+        {
+            //outSurfs.push_back(surface_outtt);
+            //m_pmfxCore->DecreaseReference(m_pmfxCore->pthis, &surface_out->Data);
+            surface_out = 0;
+        }
+        else if(MFX_ERR_MORE_SURFACE == mfxSts)
         {
             m_pmfxCore->DecreaseReference(m_pmfxCore->pthis, &surface_out->Data);
             surface_out = 0;
-            if(0 == uiCur && 0 == fqIn.iCount)
-                uiCur = 0;
+            mfxSts = MFX_ERR_NONE;
         }
-        else if(MFX_ERR_MORE_DATA != mfxSts)
+        else if(MFX_ERR_MORE_DATA == mfxSts)
+        {
+            ;
+        }
+        else
         {
             assert(0);
             return mfxSts;
         }
     }
 
-    if(surface_out)
-    {
-        //smth wrong, execute should always generate output!
-        assert(0);
-        m_pmfxCore->DecreaseReference(m_pmfxCore->pthis, &surface_out->Data);
-        surface_out = 0;
-        return MFX_ERR_UNDEFINED_BEHAVIOR;
-    }
+    //if(surface_out)
+    //{
+    //    //smth wrong, execute should always generate output!
+    //    assert(0);
+    //    m_pmfxCore->DecreaseReference(m_pmfxCore->pthis, &surface_out->Data);
+    //    surface_out = 0;
+    //    return MFX_ERR_UNDEFINED_BEHAVIOR;
+    //}
 
+    m_pmfxCore->DecreaseReference(m_pmfxCore->pthis, &outSurfs.front()->Data);
+    outSurfs.erase(outSurfs.begin());
     return MFX_ERR_NONE;
 }
 mfxStatus MFX_PTIR_Plugin::FreeResources(mfxThreadTask task, mfxStatus )
@@ -306,6 +351,26 @@ mfxStatus MFX_PTIR_Plugin::FreeResources(mfxThreadTask task, mfxStatus )
 }
 mfxStatus MFX_PTIR_Plugin::Query(mfxVideoParam *in, mfxVideoParam *out)
 {
+    mfxStatus mfxSts = MFX_ERR_NONE;
+    //Check partial acceleration
+    mfxHandleType mfxDeviceType = MFX_HANDLE_DIRECT3D_DEVICE_MANAGER9;
+    mfxHDL mfxDeviceHdl;
+    mfxCoreParam mfxCorePar;
+    mfxSts = m_pmfxCore->GetCoreParam(m_pmfxCore->pthis, &mfxCorePar);
+    if(MFX_ERR_NONE > mfxSts)
+        return mfxSts;
+    if(MFX_IMPL_HARDWARE == MFX_IMPL_BASETYPE(mfxCorePar.Impl))
+    {
+        mfxSts = GetHandle(mfxDeviceHdl, mfxDeviceType);
+        if(MFX_ERR_NONE > mfxSts)
+            return mfxSts;
+        bool HWSupported = false;
+        eMFXHWType HWType = MFX_HW_UNKNOWN;
+        mfxSts = GetHWTypeAndCheckSupport(mfxCorePar.Impl, mfxDeviceHdl, HWType, HWSupported, par_accel);
+        if(MFX_ERR_NONE > mfxSts)
+            return mfxSts;
+    }
+
     bool bWarnIsNeeded = false;
     if(!in)
         return MFX_ERR_NULL_PTR;
@@ -364,11 +429,38 @@ mfxStatus MFX_PTIR_Plugin::Query(mfxVideoParam *in, mfxVideoParam *out)
         return MFX_ERR_UNSUPPORTED;
     }
 
-    return bWarnIsNeeded ? MFX_WRN_INCOMPATIBLE_VIDEO_PARAM : MFX_ERR_NONE;
+    if(bWarnIsNeeded)
+        return MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
+    else if(par_accel)
+        return MFX_WRN_PARTIAL_ACCELERATION;
+    else
+        return MFX_ERR_NONE;
 }
 mfxStatus MFX_PTIR_Plugin::QueryIOSurf(mfxVideoParam *par, mfxFrameAllocRequest *in, mfxFrameAllocRequest *out)
 {
     bool bSWLib = true;
+
+    mfxStatus mfxSts = MFX_ERR_NONE;
+    //Check partial acceleration
+    mfxHandleType mfxDeviceType = MFX_HANDLE_DIRECT3D_DEVICE_MANAGER9;
+    mfxHDL mfxDeviceHdl;
+    mfxCoreParam mfxCorePar;
+    mfxSts = m_pmfxCore->GetCoreParam(m_pmfxCore->pthis, &mfxCorePar);
+    if(MFX_ERR_NONE > mfxSts)
+        return mfxSts;
+    if(MFX_IMPL_HARDWARE == MFX_IMPL_BASETYPE(mfxCorePar.Impl))
+    {
+        mfxSts = GetHandle(mfxDeviceHdl, mfxDeviceType);
+        if(MFX_ERR_NONE > mfxSts)
+            return mfxSts;
+        bool HWSupported = false;
+        eMFXHWType HWType = MFX_HW_UNKNOWN;
+        mfxSts = GetHWTypeAndCheckSupport(mfxCorePar.Impl, mfxDeviceHdl, HWType, HWSupported, par_accel);
+        if(MFX_ERR_NONE > mfxSts)
+            return mfxSts;
+        if(!par_accel)
+            bSWLib = false;
+    }
 
     in->Info = par->vpp.In;
     out->Info = par->vpp.Out;
@@ -376,12 +468,12 @@ mfxStatus MFX_PTIR_Plugin::QueryIOSurf(mfxVideoParam *par, mfxFrameAllocRequest 
     if(par->AsyncDepth)
         AsyncDepth = par->AsyncDepth;
 
-    in->NumFrameMin = 10 * AsyncDepth;
-    in->NumFrameSuggested = 12 * AsyncDepth;
+    in->NumFrameMin = 24 * AsyncDepth;
+    in->NumFrameSuggested = 26 * AsyncDepth;
     //in->Type = MFX_MEMTYPE_DXVA2_PROCESSOR_TARGET | MFX_MEMTYPE_FROM_DECODE | MFX_MEMTYPE_FROM_VPPIN;
 
-    out->NumFrameMin = 2 * AsyncDepth;
-    out->NumFrameSuggested = 4 * AsyncDepth;
+    out->NumFrameMin = 24 * AsyncDepth;
+    out->NumFrameSuggested = 26 * AsyncDepth;
     //out->Type = MFX_MEMTYPE_DXVA2_PROCESSOR_TARGET | MFX_MEMTYPE_FROM_DECODE | MFX_MEMTYPE_FROM_VPPIN;
 
 
@@ -438,109 +530,92 @@ mfxStatus MFX_PTIR_Plugin::QueryIOSurf(mfxVideoParam *par, mfxFrameAllocRequest 
         return MFX_ERR_INVALID_VIDEO_PARAM;
     }
 
-    return MFX_ERR_NONE;
+    if(par_accel)
+        return MFX_WRN_PARTIAL_ACCELERATION;
+    else
+        return MFX_ERR_NONE;
 }
 mfxStatus MFX_PTIR_Plugin::Init(mfxVideoParam *par)
 {
     if(!par)
         return MFX_ERR_NULL_PTR;
+    if(bInited || ptir)
+        return MFX_ERR_UNDEFINED_BEHAVIOR;
 
     mfxStatus mfxSts;
 
     mfxSts = Query(par, 0);
-    if(!(MFX_ERR_NONE == mfxSts || MFX_WRN_INCOMPATIBLE_VIDEO_PARAM == mfxSts))
+    if( !(MFX_ERR_NONE == mfxSts || MFX_WRN_PARTIAL_ACCELERATION == mfxSts) )
         return MFX_ERR_INVALID_VIDEO_PARAM;
 
-    //uiInWidth  = uiWidth  = par->vpp.In.Width;
-    //uiInHeight = uiHeight = par->vpp.In.Height;
-    uiInWidth  = uiWidth  = par->vpp.In.CropW;
-    uiInHeight = uiHeight = par->vpp.In.CropH;
-    if(par->vpp.In.FrameRateExtN && par->vpp.In.FrameRateExtD)
-        dFrameRate = par->vpp.In.FrameRateExtN / par->vpp.In.FrameRateExtD;
-    else
-        dFrameRate = 30.0;
+    mfxHandleType mfxDeviceType = MFX_HANDLE_DIRECT3D_DEVICE_MANAGER9;
+    mfxHDL mfxDeviceHdl;
 
-    bisInterlaced = false;
-    bFullFrameRate = false;
-    uiLastFrameNumber = 0;
-    if(MFX_PICSTRUCT_UNKNOWN == par->vpp.In.PicStruct &&
-       0 == par->vpp.In.FrameRateExtN && 0 == par->vpp.Out.FrameRateExtN)
-    {
-        //auto-detection mode, currently equal to reverse telecine mode
-        bisInterlaced = false;
-        bFullFrameRate = false;
-    }
-    else if((MFX_PICSTRUCT_FIELD_TFF == par->vpp.In.PicStruct ||
-             MFX_PICSTRUCT_FIELD_BFF == par->vpp.In.PicStruct) &&
-       (par->vpp.In.FrameRateExtN  == 30 && par->vpp.In.FrameRateExtD == 1 &&
-        par->vpp.Out.FrameRateExtN == 24 && par->vpp.Out.FrameRateExtD == 1))
-    {
-        //reverse telecine mode
-        bisInterlaced = false;
-        bFullFrameRate = false;
-    }
-    else if(MFX_PICSTRUCT_FIELD_TFF == par->vpp.In.PicStruct ||
-           MFX_PICSTRUCT_FIELD_BFF == par->vpp.In.PicStruct)
-    {
-        //Deinterlace only mode
-        bisInterlaced = true;
+    mfxCoreParam mfxCorePar;
+    mfxSts = m_pmfxCore->GetCoreParam(m_pmfxCore->pthis, &mfxCorePar);
+    if(MFX_ERR_NONE > mfxSts)
+        return mfxSts;
+    mfxSts = GetHandle(mfxDeviceHdl, mfxDeviceType);
+    if(MFX_ERR_NONE != mfxSts &&
+       MFX_IMPL_SOFTWARE != MFX_IMPL_BASETYPE(mfxCorePar.Impl))
+        return mfxSts;
 
-        if(2 * par->vpp.In.FrameRateExtN * par->vpp.Out.FrameRateExtD ==
-            par->vpp.In.FrameRateExtD * par->vpp.Out.FrameRateExtN)
-        {
-            //30i -> 60p mode
-            bFullFrameRate = true;
-        }
-        else if(par->vpp.In.FrameRateExtN * par->vpp.Out.FrameRateExtD ==
-            par->vpp.In.FrameRateExtD * par->vpp.Out.FrameRateExtN)
-        {
-            //30i -> 30p mode
-            bFullFrameRate = false;
-        }
-        else
-        {
-            //any additional frame rate conversions are unsupported
-            return MFX_ERR_INVALID_VIDEO_PARAM;
-        }
-    }
-    else
-    {
-        //reverse telecine + additional frame rate conversion are unsupported
-        return MFX_ERR_INVALID_VIDEO_PARAM;
-    }
+    bool HWSupported = false;
+    eMFXHWType HWType = MFX_HW_UNKNOWN;
 
-    //PTIR's frames init
-    try //try is useless here since frames allocated by malloc, but probably in future it could be changed to new
+    mfxSts = GetHWTypeAndCheckSupport(mfxCorePar.Impl, mfxDeviceHdl, HWType, HWSupported, par_accel);
+    if(MFX_ERR_NONE > mfxSts)
+        return mfxSts;
+
+    try
     {
-        for(i = 0; i < LASTFRAME; i++)
-        {
-            Frame_Create(&frmIO[i], uiInWidth, uiInHeight, uiInWidth / 2, uiInHeight / 2, 0);
-            frmBuffer[i] = frmIO + i;
-            if(!frmIO[i].ucMem)
-            {
-                Close();
-                return MFX_ERR_MEMORY_ALLOC;
-            }
-        }
-        Frame_Create(&frmIO[LASTFRAME], uiWidth, uiHeight, uiWidth / 2, uiHeight / 2, 0);
-        if(!frmIO[LASTFRAME].ucMem)
-        {
-            Close();
-            return MFX_ERR_MEMORY_ALLOC;
-        }
+        frmSupply = new frameSupplier(&inSurfs, &workSurfs, &outSurfs, 0, 0, m_pmfxCore);
     }
     catch(std::bad_alloc&)
     {
         return MFX_ERR_MEMORY_ALLOC;
     }
-    catch(...) 
-    { 
+
+    try
+    {
+        if(MFX_IMPL_HARDWARE == MFX_IMPL_BASETYPE(mfxCorePar.Impl) && HWSupported )
+        {
+            ptir = new PTIR_ProcessorCM(m_pmfxCore, frmSupply, HWType);
+        } 
+        else if(MFX_IMPL_SOFTWARE == MFX_IMPL_BASETYPE(mfxCorePar.Impl) || par_accel )
+        {
+            ptir = new PTIR_ProcessorCPU(m_pmfxCore, frmSupply);
+        }
+        else
+        {
+            delete frmSupply;
+            frmSupply = 0;
+            return MFX_ERR_INVALID_VIDEO_PARAM;
+        }
+    }
+    catch(std::bad_alloc&)
+    {
+        delete frmSupply;
+        frmSupply = 0;
+        return MFX_ERR_MEMORY_ALLOC;
+    }
+    catch(...)
+    {
+        delete frmSupply;
+        frmSupply = 0;
         return MFX_ERR_UNKNOWN;
     }
 
+    mfxSts = ptir->Init(par);
+    if(mfxSts)
+        return mfxSts;
+
     bInited = true;
 
-    return MFX_ERR_NONE;
+    if(par_accel)
+        return MFX_WRN_PARTIAL_ACCELERATION;
+    else
+        return MFX_ERR_NONE;
 }
 mfxStatus MFX_PTIR_Plugin::Reset(mfxVideoParam *par)
 {
@@ -548,36 +623,24 @@ mfxStatus MFX_PTIR_Plugin::Reset(mfxVideoParam *par)
 }
 mfxStatus MFX_PTIR_Plugin::Close()
 {
-    if(bInited)
+    mfxStatus mfxSts = MFX_ERR_NONE;
+    if(ptir)
     {
-        try
-        {
-            for (mfxU32 i = 0; i <= LASTFRAME; ++i)
-                Frame_Release(&frmIO[i]);
-            bInited = false;
-
-            return MFX_ERR_NONE;
-        }
-        catch(std::bad_alloc&)
-        {
-            return MFX_ERR_UNDEFINED_BEHAVIOR;;
-        }
-        catch(...) 
-        { 
-            return MFX_ERR_UNKNOWN;; 
-        }
+        mfxSts = ptir->Close();
+        delete ptir;
+        ptir = 0;
     }
-    else
-    {
-        return MFX_ERR_NOT_INITIALIZED;
-    }
+    if(mfxSts)
+        return mfxSts;
+    return MFX_ERR_NONE;
 }
+
 mfxStatus MFX_PTIR_Plugin::GetVideoParam(mfxVideoParam *par)
 {
     return MFX_ERR_NONE;
 }
 
-inline mfxStatus MFX_PTIR_Plugin::PrepareTask(PTIR_Task *ptir_task, mfxThreadTask *task, mfxFrameSurface1 *surface_out)
+inline mfxStatus MFX_PTIR_Plugin::PrepareTask(PTIR_Task *ptir_task, mfxThreadTask *task, mfxFrameSurface1 **surface_out)
 {
     try
     {
@@ -586,8 +649,12 @@ inline mfxStatus MFX_PTIR_Plugin::PrepareTask(PTIR_Task *ptir_task, mfxThreadTas
         vTasks.push_back(ptir_task);
         *task = ptir_task;
         ptir_task->filled = true;
-        ptir_task->surface_out = surface_out;
-        m_pmfxCore->IncreaseReference(m_pmfxCore->pthis, &surface_out->Data);
+        if(outSurfs.size())
+            *surface_out = outSurfs.front();
+        else
+            *surface_out = workSurfs.front();
+        ptir_task->surface_out = *surface_out;
+        //m_pmfxCore->IncreaseReference(m_pmfxCore->pthis, &surface_out->Data);
     }
     catch(std::bad_alloc&)
     {
@@ -597,5 +664,94 @@ inline mfxStatus MFX_PTIR_Plugin::PrepareTask(PTIR_Task *ptir_task, mfxThreadTas
     { 
         return MFX_ERR_UNKNOWN;
     }
+    return MFX_ERR_NONE;
+}
+
+inline mfxFrameSurface1* MFX_PTIR_Plugin::GetFreeSurf(std::vector<mfxFrameSurface1*>& vSurfs)
+{
+    mfxFrameSurface1* s_out;
+    if(0 == vSurfs.size())
+        return 0;
+    else
+    {
+        for(std::vector<mfxFrameSurface1*>::iterator it = vSurfs.begin(); it != vSurfs.end(); ++it) {
+            if((*it)->Data.Locked < 4)
+            {
+                s_out = *it;
+                vSurfs.erase(it);
+                return s_out;
+            }
+        }
+    }
+    return 0;
+}
+
+inline mfxStatus MFX_PTIR_Plugin::addWorkSurf(mfxFrameSurface1* pSurface)
+{
+    if(!pSurface)
+        return MFX_ERR_NONE;
+    if(workSurfs.end() == std::find (workSurfs.begin(), workSurfs.end(), pSurface) && (workSurfs.size() + ptir->fqIn.iCount + ptir->uiCur) < 23)
+    {
+        workSurfs.push_back(pSurface);
+        m_pmfxCore->IncreaseReference(m_pmfxCore->pthis, &pSurface->Data);
+        return MFX_ERR_NONE;
+    }
+    return MFX_ERR_NONE;
+}
+inline mfxStatus MFX_PTIR_Plugin::addInSurf(mfxFrameSurface1* pSurface)
+{
+    if(!pSurface)
+        return MFX_ERR_NONE;
+    if(pSurface && ((inSurfs.size() == 0) || (inSurfs.size() != 0 && inSurfs.back() != pSurface)) /*&& prevSurf != pSurface*/ && (inSurfs.size() + ptir->fqIn.iCount + ptir->uiCur) < 23)
+    {
+        if(inSurfs.end() == std::find (inSurfs.begin(), inSurfs.end(), pSurface) || inSurfs.size() == 0)
+        {
+            inSurfs.push_back(pSurface);
+            m_pmfxCore->IncreaseReference(m_pmfxCore->pthis, &pSurface->Data);
+        }
+    }
+    return MFX_ERR_NONE;
+}
+
+inline mfxStatus MFX_PTIR_Plugin::GetHandle(mfxHDL& mfxDeviceHdl, mfxHandleType& mfxDeviceType)
+{
+    mfxStatus mfxSts = MFX_ERR_NONE;
+    mfxCoreParam mfxCorePar;
+    mfxSts = m_pmfxCore->GetCoreParam(m_pmfxCore->pthis, &mfxCorePar);
+    if(mfxSts) return mfxSts;
+    if(mfxCorePar.Impl & MFX_IMPL_VIA_D3D9)
+        mfxDeviceType = MFX_HANDLE_DIRECT3D_DEVICE_MANAGER9;
+    else if(mfxCorePar.Impl & MFX_IMPL_VIA_D3D11)
+        mfxDeviceType = MFX_HANDLE_D3D11_DEVICE;
+    else if(mfxCorePar.Impl & MFX_IMPL_VIA_VAAPI)
+        mfxDeviceType = MFX_HANDLE_VA_DISPLAY;
+    mfxSts = m_pmfxCore->GetHandle(m_pmfxCore->pthis, mfxDeviceType, &mfxDeviceHdl);
+    if(MFX_ERR_NONE != mfxSts &&
+       MFX_IMPL_SOFTWARE != MFX_IMPL_BASETYPE(mfxCorePar.Impl))
+        return mfxSts;
+}
+
+inline mfxStatus MFX_PTIR_Plugin::GetHWTypeAndCheckSupport(mfxIMPL& impl, mfxHDL& mfxDeviceHdl, eMFXHWType& HWType, bool& HWSupported, bool& par_accel)
+{
+    if(MFX_IMPL_HARDWARE == MFX_IMPL_BASETYPE(impl))
+    {
+        HWType = GetHWType(1,impl,&mfxDeviceHdl);
+        switch (HWType)
+        {
+        //case MFX_HW_BDW:
+        case MFX_HW_HSW_ULT:
+        case MFX_HW_HSW:
+        case MFX_HW_IVB:
+        //case MFX_HW_VLV:
+            HWSupported = true;
+            par_accel = false;
+            break;
+        default:
+            HWSupported = false;
+            par_accel = true;
+            break;
+        }
+    }
+
     return MFX_ERR_NONE;
 }

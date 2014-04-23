@@ -1,0 +1,286 @@
+/**             
+***
+*** Copyright  (C) 1985-2014 Intel Corporation. All rights reserved.
+***
+*** The information and source code contained herein is the exclusive
+*** property of Intel Corporation. and may not be disclosed, examined
+*** or reproduced in whole or in part without explicit written authorization
+*** from the company.
+***
+*** ----------------------------------------------------------------------------
+**/ 
+#pragma once
+
+//#include "cmrt_cross_platform.h"
+#include "mfxstructures.h"
+#include "cm_rt.h"
+#include "cmutility.h"
+#include "cmassert.h"
+#include "iostream"
+#include "fstream"
+#include "vector"
+using namespace std;
+
+class CmDeviceEx
+{
+  friend class CmKernelEx;
+  friend class CmBufferEx;
+  friend class CmBufferUPEx;
+  friend class CmQueueEx;
+  friend class CmSurface2DEx;
+  friend class CmSurface2DUPEx;
+  template<typename T>
+  friend class CmSurface2DUPExT;
+  template<typename T>
+  friend class CmSurface2DExT;
+
+public:
+  CmDeviceEx(const char * pIsaFileName, mfxHandleType _mfxDeviceType, mfxHDL _mfxDeviceHdl) 
+  {
+    mfxDeviceType = _mfxDeviceType;
+    mfxDeviceHdl = _mfxDeviceHdl;
+#ifdef _DEBUG
+    cout << "CmDeviceEx (\"" << pIsaFileName << "\")" << endl;
+#endif
+
+#ifdef CMRT_EMU
+    int codeSize = sizeof(int);
+    void * pCommonIsaCode = new BYTE[codeSize];
+#else
+    ifstream is;
+    is.open(pIsaFileName, ios::binary);
+    if (!is.is_open()) {
+      throw CMUT_EXCEPTION("fail to open isa file\n");
+    }
+
+    is.seekg(0, ios::end);
+    int codeSize = is.tellg();
+    is.seekg(0, ios::beg);
+
+    void * pCommonIsaCode = new BYTE[codeSize];
+
+    is.read((char *)pCommonIsaCode, codeSize);
+    is.close();
+#endif
+
+    UINT version = 0;
+    int result = CM_FAILURE;//CreateCmDevice(pDevice, version);
+    if(MFX_HANDLE_DIRECT3D_DEVICE_MANAGER9 == mfxDeviceType)
+        result = CreateCmDevice(pDevice,version,(IDirect3DDeviceManager9*) mfxDeviceHdl);
+    //else if(MFX_HANDLE_D3D11_DEVICE == mfxDeviceType)
+    //    result = CreateCmDevice(pDevice,version,(ID3D11Device*) mfxDeviceHdl);
+    CM_FAIL_IF(result != CM_SUCCESS || pDevice == NULL, result);
+
+    CmProgram * pProgram = NULL;
+    result = pDevice->LoadProgram(pCommonIsaCode, codeSize, pProgram);  
+    CM_FAIL_IF(result != CM_SUCCESS || pProgram == NULL, result);
+
+    this->programs.push_back(pProgram);
+
+    delete[] pCommonIsaCode;
+  }
+
+  CmDeviceEx(const char * pIsaFileNames[], int size, mfxHandleType _mfxDeviceType, mfxHDL _mfxDeviceHdl)
+  {
+    mfxDeviceType = _mfxDeviceType;
+    mfxDeviceHdl = _mfxDeviceHdl;
+    CMUT_ASSERT(pIsaFileNames != NULL && size > 0);
+  #ifdef _DEBUG
+    std::cout << "CmDeviceEx (\"" << pIsaFileNames[0] << "\"";
+    for (int i = 1; i < size; ++i) {
+      std::cout << ", \"" << pIsaFileNames[i] << "\"";
+    }
+    std::cout << ")" << std::endl;
+  #endif
+
+    UINT version = 0;
+    int result = CM_FAILURE;//CreateCmDevice(pDevice, version);
+    if(MFX_HANDLE_DIRECT3D_DEVICE_MANAGER9 == mfxDeviceType)
+        result = CreateCmDevice(pDevice,version,(IDirect3DDeviceManager9*) mfxDeviceHdl);
+    //else if(MFX_HANDLE_D3D11_DEVICE == mfxDeviceType)
+    //    result = CreateCmDevice(pDevice,version,(ID3D11Device*) mfxDeviceHdl);
+
+    CM_FAIL_IF(result != CM_SUCCESS || pDevice == NULL, result);
+
+    for (int i = 0; i < size; ++i) {
+      CMUT_ASSERT(pIsaFileNames[i] != NULL);
+      if (pIsaFileNames[i] == NULL) {
+        throw CMUT_EXCEPTION("fail"); 
+      }
+  #ifdef CMRT_EMU
+      int codeSize = sizeof(int);
+      void * pCommonIsaCode = new BYTE[codeSize];
+  #else
+      std::ifstream is;
+      is.open (pIsaFileNames[i], std::ios::binary);
+      if (!is.is_open ()) {
+        throw CMUT_EXCEPTION("fail to open isa file"); 
+      }
+
+      is.seekg (0, std::ios::end);
+      int codeSize = is.tellg ();
+      is.seekg (0, std::ios::beg);
+
+      void * pCommonIsaCode = new BYTE[codeSize];
+
+      is.read ((char *)pCommonIsaCode, codeSize);
+      is.close ();
+  #endif
+      CmProgram * pProgram = NULL;
+      result = pDevice->LoadProgram(pCommonIsaCode, codeSize, pProgram);  
+      CM_FAIL_IF(result != CM_SUCCESS || pProgram == NULL, result);
+
+      this->programs.push_back(pProgram);
+
+      delete[] pCommonIsaCode;
+
+    }
+  }
+
+  CmDeviceEx(const unsigned char * programm, int size, mfxHandleType _mfxDeviceType, mfxHDL _mfxDeviceHdl)
+  {
+    mfxDeviceType = _mfxDeviceType;
+    mfxDeviceHdl = _mfxDeviceHdl;
+    CMUT_ASSERT(programm != NULL && size > 0);
+
+    UINT version = 0;
+    int result = CM_FAILURE;//CreateCmDevice(pDevice, version);
+    if(MFX_HANDLE_DIRECT3D_DEVICE_MANAGER9 == mfxDeviceType)
+        result = CreateCmDevice(pDevice,version,(IDirect3DDeviceManager9*) mfxDeviceHdl);
+    //else if(MFX_HANDLE_D3D11_DEVICE == mfxDeviceType)
+    //    result = CreateCmDevice(pDevice,version,(ID3D11Device*) mfxDeviceHdl);
+
+    CM_FAIL_IF(result != CM_SUCCESS || pDevice == NULL, result);
+
+    CmProgram * pProgram = NULL;
+    result = pDevice->LoadProgram((void*)programm, size, pProgram);  
+    CM_FAIL_IF(result != CM_SUCCESS || pProgram == NULL, result);
+
+    this->programs.push_back(pProgram);
+
+  }
+
+  ~CmDeviceEx()
+  {
+    for (auto program : programs) {
+      pDevice->DestroyProgram(program);
+    }
+
+    DestroyCmDevice(pDevice);
+  }
+
+  CmDevice * operator -> () { return pDevice; }
+  //CmProgram * Program () const { return pProgram; }
+
+  void GetCaps (CM_DEVICE_CAP_NAME capName, size_t & capValueSize, void * pCapValue)
+  {
+    int result = pDevice->GetCaps(capName, capValueSize, pCapValue);
+    CM_FAIL_IF(result != CM_SUCCESS, result);
+  }
+
+  CmProgram * Program(int i)
+  {
+    return programs[i];
+  }
+
+  void CreateThreadSpace(UINT width, UINT height, CmThreadSpace* & pThreadSpace)
+  {
+    int result = pDevice->CreateThreadSpace(width, height, pThreadSpace);
+    CM_FAIL_IF(result != CM_SUCCESS || pThreadSpace == NULL, result);
+  }
+
+protected:
+  int CCCreateCmDevice(CmDevice *& pDevice, UINT version)
+  {
+      if(MFX_HANDLE_DIRECT3D_DEVICE_MANAGER9 == mfxDeviceType)
+          return ::CreateCmDevice(pDevice,version,(IDirect3DDeviceManager9*) mfxDeviceHdl);
+      //else if(MFX_HANDLE_D3D11_DEVICE == mfxDeviceType)
+      //    return ::CreateCmDevice(pDevice,version,(ID3D11Device*) mfxDeviceHdl);
+      else
+          return CM_FAILURE;
+  }
+
+  CmSurface2D * CreateSurface2D(UINT width, UINT height, CM_SURFACE_FORMAT format)
+  {
+    CmSurface2D * pCmSurface2D = NULL;
+
+    int result = pDevice->CreateSurface2D(width, height, format, pCmSurface2D);
+    if(result != CM_SUCCESS)
+        std::cout << "CM FAILURE!\n";
+    CM_FAIL_IF(result != CM_SUCCESS || pCmSurface2D == NULL, result);
+
+    return pCmSurface2D;
+  }  
+  
+  CmBuffer * CreateBuffer(UINT size)
+  {
+    CmBuffer * pCmBuffer = NULL;
+
+    int result = pDevice->CreateBuffer (size, pCmBuffer);
+    CM_FAIL_IF(result != CM_SUCCESS || pCmBuffer == NULL, result);
+
+    return pCmBuffer;
+  }
+
+  CmBufferUP * CreateBufferUP(const unsigned char * pData, UINT size)
+  {
+    CmBufferUP * pCmBuffer = NULL;
+
+    int result = pDevice->CreateBufferUP(size, (void *)pData, pCmBuffer);
+    CM_FAIL_IF(result != CM_SUCCESS || pCmBuffer == NULL, result);
+
+    return pCmBuffer;
+  }
+
+  CmSurface2DUP * CreateSurface2DUP(unsigned char * pData, UINT width, UINT height, CM_SURFACE_FORMAT format)
+  {
+    CmSurface2DUP * pCmSurface = NULL;
+
+    int result = pDevice->CreateSurface2DUP (width, height, format, (void *)pData, pCmSurface);
+    CM_FAIL_IF(result != CM_SUCCESS || pCmSurface == NULL, result);
+
+    return pCmSurface;
+  }
+
+#ifdef CMRT_EMU
+  CmKernel * CreateKernel(const char * pKernelName, const void * fncPnt)
+  {
+    CmKernel * pKernel = NULL;
+
+    for (auto program : programs) {
+      int result = pDevice->CreateKernel (program, pKernelName, fncPnt, pKernel);
+      if (result == CM_SUCCESS) {
+        return pKernel;     
+      }
+    }
+
+    throw CMUT_EXCEPTION("fail");
+  }
+#else
+  CmKernel * CreateKernel(const char * pKernelName)
+  {
+    CmKernel * pKernel = NULL;
+
+    for (auto program : programs) {
+      int result = pDevice->CreateKernel(program, pKernelName, pKernel);
+      if (result == CM_SUCCESS) {
+        return pKernel;
+      }
+    }
+
+    throw CMUT_EXCEPTION("fail");
+  }
+#endif
+
+  void DestroyKernel(CmKernel * pKernel)
+  {
+    pDevice->DestroyKernel(pKernel);
+  }
+
+protected:
+  CmDevice * pDevice;
+  std::vector<CmProgram *> programs;
+
+  mfxHandleType mfxDeviceType;
+  mfxHDL        mfxDeviceHdl;
+};

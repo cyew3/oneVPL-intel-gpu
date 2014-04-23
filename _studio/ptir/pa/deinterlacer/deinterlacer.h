@@ -38,7 +38,7 @@ File Name: api.h
 #endif
 
 __declspec(dllexport) __inline unsigned int __stdcall EDIError(BYTE* PrvLinePixel, BYTE* NxtLinePixel, int dir);
-__declspec(dllexport) void __stdcall FilterMask_Main(Plane *s, Plane *d, unsigned int BotBase, int ybegin, int yend);
+__declspec(dllexport) void __stdcall FilterMask_Main(Plane *s, Plane *d, unsigned int BotBase, unsigned int ybegin, unsigned int yend);
 __declspec(dllexport) void __stdcall FillBaseLinesIYUV(Frame *pSrc, Frame* pDst, int BottomLinesBaseY, int BottomLinesBaseUV);
 __declspec(dllexport) void __stdcall BilinearDeint(Frame *This, int BotBase);
 __declspec(dllexport) void __stdcall MedianDeinterlace(Frame *This, int BotBase);

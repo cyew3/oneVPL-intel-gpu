@@ -1,0 +1,687 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug-emu|Win32">
+      <Configuration>Debug-emu</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug-emu|x64">
+      <Configuration>Debug-emu</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release-emu|Win32">
+      <Configuration>Release-emu</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release-emu|x64">
+      <Configuration>Release-emu</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{FBD6023A-F470-462C-8C93-A8892D3AE6FD}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>pa_cmd</RootNamespace>
+    <ProjectName>pacm_cmd</ProjectName>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <CharacterSet>Unicode</CharacterSet>
+    <PlatformToolset>v110</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug-emu|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <CharacterSet>Unicode</CharacterSet>
+    <PlatformToolset>v110</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <CharacterSet>Unicode</CharacterSet>
+    <PlatformToolset>v110</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug-emu|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <CharacterSet>Unicode</CharacterSet>
+    <PlatformToolset>v110</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+    <PlatformToolset>v110</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release-emu|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v110</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v110</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release-emu|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v110</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="..\..\mfx_lib\Intel.Mfx.StaticLib.props" />
+    <Import Project="..\..\mfx_lib\Intel.Mfx.Common.props" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug-emu|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="..\..\mfx_lib\Intel.Mfx.StaticLib.props" />
+    <Import Project="..\..\mfx_lib\Intel.Mfx.Common.props" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="..\..\mfx_lib\Intel.Mfx.StaticLib.props" />
+    <Import Project="..\..\mfx_lib\Intel.Mfx.Common.props" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug-emu|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="..\..\mfx_lib\Intel.Mfx.StaticLib.props" />
+    <Import Project="..\..\mfx_lib\Intel.Mfx.Common.props" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="..\..\mfx_lib\Intel.Mfx.StaticLib.props" />
+    <Import Project="..\..\mfx_lib\Intel.Mfx.Common.props" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release-emu|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="..\..\mfx_lib\Intel.Mfx.StaticLib.props" />
+    <Import Project="..\..\mfx_lib\Intel.Mfx.Common.props" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="..\..\mfx_lib\Intel.Mfx.StaticLib.props" />
+    <Import Project="..\..\mfx_lib\Intel.Mfx.Common.props" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release-emu|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="..\..\mfx_lib\Intel.Mfx.StaticLib.props" />
+    <Import Project="..\..\mfx_lib\Intel.Mfx.Common.props" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <LinkIncremental>false</LinkIncremental>
+    <OutDir>$(SolutionDir)..\..\build\win_$(PlatformName)\lib\</OutDir>
+    <IntDir>$(OutDir)..\objs\$(Configuration)\$(ProjectName)\</IntDir>
+    <TargetExt>.lib</TargetExt>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug-emu|Win32'">
+    <LinkIncremental>false</LinkIncremental>
+    <OutDir>$(SolutionDir)..\..\build\win_$(PlatformName)\lib\</OutDir>
+    <IntDir>$(OutDir)..\objs\$(Configuration)\$(ProjectName)\</IntDir>
+    <TargetExt>.lib</TargetExt>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <LinkIncremental>false</LinkIncremental>
+    <OutDir>$(SolutionDir)..\..\build\win_$(PlatformName)\lib\</OutDir>
+    <IntDir>$(OutDir)..\objs\$(Configuration)\$(ProjectName)\</IntDir>
+    <TargetExt>.lib</TargetExt>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug-emu|x64'">
+    <LinkIncremental>false</LinkIncremental>
+    <OutDir>$(SolutionDir)..\..\build\win_$(PlatformName)\lib\</OutDir>
+    <IntDir>$(OutDir)..\objs\$(Configuration)\$(ProjectName)\</IntDir>
+    <TargetExt>.lib</TargetExt>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <LinkIncremental>false</LinkIncremental>
+    <PostBuildEventUseInBuild>true</PostBuildEventUseInBuild>
+    <IncludePath>$(IncludePath)</IncludePath>
+    <OutDir>$(SolutionDir)..\..\build\win_$(PlatformName)\lib\</OutDir>
+    <IntDir>$(OutDir)..\objs\$(Configuration)\$(ProjectName)\</IntDir>
+    <TargetExt>.lib</TargetExt>
+    <TargetName>$(ProjectName)</TargetName>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release-emu|Win32'">
+    <LinkIncremental>false</LinkIncremental>
+    <PostBuildEventUseInBuild>true</PostBuildEventUseInBuild>
+    <IncludePath>$(IncludePath)</IncludePath>
+    <OutDir>$(SolutionDir)..\..\build\win_$(PlatformName)\lib\</OutDir>
+    <IntDir>$(OutDir)..\objs\$(Configuration)\$(ProjectName)\</IntDir>
+    <TargetExt>.lib</TargetExt>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <LinkIncremental>false</LinkIncremental>
+    <OutDir>$(SolutionDir)..\..\build\win_$(PlatformName)\lib\</OutDir>
+    <IntDir>$(OutDir)..\objs\$(Configuration)\$(ProjectName)\</IntDir>
+    <TargetExt>.lib</TargetExt>
+    <TargetName>$(ProjectName)_d</TargetName>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release-emu|x64'">
+    <LinkIncremental>false</LinkIncremental>
+    <OutDir>$(SolutionDir)..\..\build\win_$(PlatformName)\lib\</OutDir>
+    <IntDir>$(OutDir)..\objs\$(Configuration)\$(ProjectName)\</IntDir>
+    <TargetExt>.lib</TargetExt>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>TurnOffAllWarnings</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(MEDIASDK_ROOT)\CMRT\compiler\include\cm;$(MEDIASDK_ROOT)/CMRT/runtime/include;$(MEDIASDK_ROOT)/CMRT/compiler/include;$(MfxIppIncludeDir);.\include;..\include;..\..\include;..\..\..\include;..\..\..\_studio\mfx_lib\shared\include;..\..\..\_studio\shared\umc\core\vm\include;..\..\..\_studio\shared\include;..\..\..\_studio\shared\umc\core\vm_plus\include;..\..\..\_studio\shared\umc\core\umc\include;..\..\..\_studio\mfx_lib\cmrt_cross_platform\include;.\kernels;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <FloatingPointModel>Precise</FloatingPointModel>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>igfxcmrt32.lib;libcm.lib;pa.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>..\Debug;.\cm\compiler\lib\x86;.\cm\runtime\lib\x86;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    </Link>
+    <PostBuildEvent>
+      <Command>
+      </Command>
+    </PostBuildEvent>
+    <PreBuildEvent>
+      <Command>SET INSTALLDIR=%MEDIASDK_ROOT%\CMRT
+SET ICLDIR=%INSTALLDIR%\compiler
+SET PATH=%ICLDIR%\bin;%ICLDIR%\lib;%PATH%
+SET INCLUDE=%ICLDIR%\include;%ICLDIR%\include\cm;%INCLUDE%
+SET CM_RT_PLATFORM=hsw
+copy /y deinterlace_genx.cpp deinterlace_genx_hsw.cpp
+icl /c /Qxcm  deinterlace_genx_hsw.cpp /mCM_emit_common_isa
+cl .\kernels\embed_isa.c
+del embed_isa.obj
+move embed_isa.exe .\kernels\embed_isa.exe
+cd kernels
+embed_isa ..\deinterlace_genx_hsw.isa
+del ..\deinterlace_genx_hsw.cpp
+del ..\deinterlace_genx_hsw.isa
+del ..\deinterlace_genx_hsw.obj
+move deinterlace_genx_hsw.h deinterlace_genx_hsw_isa.h
+
+rem FOR IVB (or any other platform)
+rem cd ..\
+rem SET CM_RT_PLATFORM=ivb
+rem copy /y deinterlace_genx.cpp deinterlace_genx_ivb.cpp
+rem icl /c /Qxcm  deinterlace_genx_ivb.cpp /mCM_emit_common_isa
+rem cd kernels
+rem embed_isa ..\deinterlace_genx_ivb.isa
+rem del ..\deinterlace_genx_ivb.cpp
+rem del ..\deinterlace_genx_ivb.isa
+rem del ..\deinterlace_genx_ivb.obj
+rem move deinterlace_genx_ivb.h deinterlace_genx_ivb_isa.h
+
+del embed_isa.exe</Command>
+    </PreBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug-emu|Win32'">
+    <ClCompile>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>USE_CM;CMRT_EMU;WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(MEDIASDK_ROOT)\CMRT\compiler\include\cm;$(MEDIASDK_ROOT)/CMRT/runtime/include;$(MEDIASDK_ROOT)/CMRT/compiler/include;$(MfxIppIncludeDir);.\include;..\include;..\..\include;..\..\..\include;..\..\..\_studio\mfx_lib\shared\include;..\..\..\_studio\shared\umc\core\vm\include;..\..\..\_studio\shared\include;..\..\..\_studio\shared\umc\core\vm_plus\include;..\..\..\_studio\shared\umc\core\umc\include;..\..\..\_studio\mfx_lib\cmrt_cross_platform\include;.\kernels;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <FloatingPointModel>Precise</FloatingPointModel>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>igfxcmrt32_emu.lib;libcm.lib;pa.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>..\Debug;.\cm\compiler\lib\x86;.\cm\runtime\lib\x86;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    </Link>
+    <PostBuildEvent>
+      <Command>copy .\cm\runtime\lib\x86\igfxcmrt32_emu.dll "$(OutDir)"
+copy .\cm\compiler\lib\x86\libcm.dll "$(OutDir)"</Command>
+    </PostBuildEvent>
+    <PreBuildEvent>
+      <Command>SET INSTALLDIR=%MEDIASDK_ROOT%\CMRT
+SET ICLDIR=%INSTALLDIR%\compiler
+SET PATH=%ICLDIR%\bin;%ICLDIR%\lib;%PATH%
+SET INCLUDE=%ICLDIR%\include;%ICLDIR%\include\cm;%INCLUDE%
+SET CM_RT_PLATFORM=hsw
+copy /y deinterlace_genx.cpp deinterlace_genx_hsw.cpp
+icl /c /Qxcm  deinterlace_genx_hsw.cpp /mCM_emit_common_isa
+cl .\kernels\embed_isa.c
+del embed_isa.obj
+move embed_isa.exe .\kernels\embed_isa.exe
+cd kernels
+embed_isa ..\deinterlace_genx_hsw.isa
+del ..\deinterlace_genx_hsw.cpp
+del ..\deinterlace_genx_hsw.isa
+del ..\deinterlace_genx_hsw.obj
+move deinterlace_genx_hsw.h deinterlace_genx_hsw_isa.h
+
+rem FOR IVB (or any other platform)
+rem cd ..\
+rem SET CM_RT_PLATFORM=ivb
+rem copy /y deinterlace_genx.cpp deinterlace_genx_ivb.cpp
+rem icl /c /Qxcm  deinterlace_genx_ivb.cpp /mCM_emit_common_isa
+rem cd kernels
+rem embed_isa ..\deinterlace_genx_ivb.isa
+rem del ..\deinterlace_genx_ivb.cpp
+rem del ..\deinterlace_genx_ivb.isa
+rem del ..\deinterlace_genx_ivb.obj
+rem move deinterlace_genx_ivb.h deinterlace_genx_ivb_isa.h
+
+del embed_isa.exe</Command>
+    </PreBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(MEDIASDK_ROOT)\CMRT\compiler\include\cm;$(MEDIASDK_ROOT)/CMRT/runtime/include;$(MEDIASDK_ROOT)/CMRT/compiler/include;$(MfxIppIncludeDir);.\include;..\include;..\..\include;..\..\..\include;..\..\..\_studio\mfx_lib\shared\include;..\..\..\_studio\shared\umc\core\vm\include;..\..\..\_studio\shared\include;..\..\..\_studio\shared\umc\core\vm_plus\include;..\..\..\_studio\shared\umc\core\umc\include;..\..\..\_studio\mfx_lib\cmrt_cross_platform\include;.\kernels;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>igfxcmrt64.lib;libcm.lib;pa.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>..\x64\Debug;.\cm\compiler\lib\x64;.\cm\runtime\lib\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    </Link>
+    <PreBuildEvent>
+      <Command>SET INSTALLDIR=%MEDIASDK_ROOT%\CMRT
+SET ICLDIR=%INSTALLDIR%\compiler
+SET PATH=%ICLDIR%\bin;%ICLDIR%\lib;%PATH%
+SET INCLUDE=%ICLDIR%\include;%ICLDIR%\include\cm;%INCLUDE%
+SET CM_RT_PLATFORM=hsw
+copy /y deinterlace_genx.cpp deinterlace_genx_hsw.cpp
+icl /c /Qxcm  deinterlace_genx_hsw.cpp /mCM_emit_common_isa
+cl .\kernels\embed_isa.c
+del embed_isa.obj
+move embed_isa.exe .\kernels\embed_isa.exe
+cd kernels
+embed_isa ..\deinterlace_genx_hsw.isa
+del ..\deinterlace_genx_hsw.cpp
+del ..\deinterlace_genx_hsw.isa
+del ..\deinterlace_genx_hsw.obj
+move deinterlace_genx_hsw.h deinterlace_genx_hsw_isa.h
+
+rem FOR IVB (or any other platform)
+rem cd ..\
+rem SET CM_RT_PLATFORM=ivb
+rem copy /y deinterlace_genx.cpp deinterlace_genx_ivb.cpp
+rem icl /c /Qxcm  deinterlace_genx_ivb.cpp /mCM_emit_common_isa
+rem cd kernels
+rem embed_isa ..\deinterlace_genx_ivb.isa
+rem del ..\deinterlace_genx_ivb.cpp
+rem del ..\deinterlace_genx_ivb.isa
+rem del ..\deinterlace_genx_ivb.obj
+rem move deinterlace_genx_ivb.h deinterlace_genx_ivb_isa.h
+
+del embed_isa.exe</Command>
+    </PreBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug-emu|x64'">
+    <ClCompile>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(MEDIASDK_ROOT)\CMRT\compiler\include\cm;$(MEDIASDK_ROOT)/CMRT/runtime/include;$(MEDIASDK_ROOT)/CMRT/compiler/include;$(MfxIppIncludeDir);.\include;..\include;..\..\include;..\..\..\include;..\..\..\_studio\mfx_lib\shared\include;..\..\..\_studio\shared\umc\core\vm\include;..\..\..\_studio\shared\include;..\..\..\_studio\shared\umc\core\vm_plus\include;..\..\..\_studio\shared\umc\core\umc\include;..\..\..\_studio\mfx_lib\cmrt_cross_platform\include;.\kernels;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>igfxcmrt64.lib;libcm.lib;pa.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>..\x64\Debug;.\cm\compiler\lib\x64;.\cm\runtime\lib\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    </Link>
+    <PreBuildEvent>
+      <Command>SET INSTALLDIR=%MEDIASDK_ROOT%\CMRT
+SET ICLDIR=%INSTALLDIR%\compiler
+SET PATH=%ICLDIR%\bin;%ICLDIR%\lib;%PATH%
+SET INCLUDE=%ICLDIR%\include;%ICLDIR%\include\cm;%INCLUDE%
+SET CM_RT_PLATFORM=hsw
+copy /y deinterlace_genx.cpp deinterlace_genx_hsw.cpp
+icl /c /Qxcm  deinterlace_genx_hsw.cpp /mCM_emit_common_isa
+cl .\kernels\embed_isa.c
+del embed_isa.obj
+move embed_isa.exe .\kernels\embed_isa.exe
+cd kernels
+embed_isa ..\deinterlace_genx_hsw.isa
+del ..\deinterlace_genx_hsw.cpp
+del ..\deinterlace_genx_hsw.isa
+del ..\deinterlace_genx_hsw.obj
+move deinterlace_genx_hsw.h deinterlace_genx_hsw_isa.h
+
+rem FOR IVB (or any other platform)
+rem cd ..\
+rem SET CM_RT_PLATFORM=ivb
+rem copy /y deinterlace_genx.cpp deinterlace_genx_ivb.cpp
+rem icl /c /Qxcm  deinterlace_genx_ivb.cpp /mCM_emit_common_isa
+rem cd kernels
+rem embed_isa ..\deinterlace_genx_ivb.isa
+rem del ..\deinterlace_genx_ivb.cpp
+rem del ..\deinterlace_genx_ivb.isa
+rem del ..\deinterlace_genx_ivb.obj
+rem move deinterlace_genx_ivb.h deinterlace_genx_ivb_isa.h
+
+del embed_isa.exe</Command>
+    </PreBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(MEDIASDK_ROOT)\CMRT\compiler\include\cm;$(MEDIASDK_ROOT)/CMRT/runtime/include;$(MEDIASDK_ROOT)/CMRT/compiler/include;$(MfxIppIncludeDir);.\include;..\include;..\..\include;..\..\..\include;..\..\..\_studio\mfx_lib\shared\include;..\..\..\_studio\shared\umc\core\vm\include;..\..\..\_studio\shared\include;..\..\..\_studio\shared\umc\core\vm_plus\include;..\..\..\_studio\shared\umc\core\umc\include;..\..\..\_studio\mfx_lib\cmrt_cross_platform\include;.\kernels;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <FloatingPointModel>Precise</FloatingPointModel>
+      <FloatingPointExpressionEvaluation>Default</FloatingPointExpressionEvaluation>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <TreatWarningAsError>false</TreatWarningAsError>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <AdditionalDependencies>igfxcmrt32.lib;libcm.lib;pa.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>..\Release;.\cm\compiler\lib\x86;.\cm\runtime\lib\x86;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    </Link>
+    <PostBuildEvent>
+      <Command>
+      </Command>
+    </PostBuildEvent>
+    <PreBuildEvent>
+      <Command>SET INSTALLDIR=%MEDIASDK_ROOT%\CMRT
+SET ICLDIR=%INSTALLDIR%\compiler
+SET PATH=%ICLDIR%\bin;%ICLDIR%\lib;%PATH%
+SET INCLUDE=%ICLDIR%\include;%ICLDIR%\include\cm;%INCLUDE%
+SET CM_RT_PLATFORM=hsw
+copy /y deinterlace_genx.cpp deinterlace_genx_hsw.cpp
+icl /c /Qxcm  deinterlace_genx_hsw.cpp /mCM_emit_common_isa
+cl .\kernels\embed_isa.c
+del embed_isa.obj
+move embed_isa.exe .\kernels\embed_isa.exe
+cd kernels
+embed_isa ..\deinterlace_genx_hsw.isa
+del ..\deinterlace_genx_hsw.cpp
+del ..\deinterlace_genx_hsw.isa
+del ..\deinterlace_genx_hsw.obj
+move deinterlace_genx_hsw.h deinterlace_genx_hsw_isa.h
+
+rem FOR IVB (or any other platform)
+rem cd ..\
+rem SET CM_RT_PLATFORM=ivb
+rem copy /y deinterlace_genx.cpp deinterlace_genx_ivb.cpp
+rem icl /c /Qxcm  deinterlace_genx_ivb.cpp /mCM_emit_common_isa
+rem cd kernels
+rem embed_isa ..\deinterlace_genx_ivb.isa
+rem del ..\deinterlace_genx_ivb.cpp
+rem del ..\deinterlace_genx_ivb.isa
+rem del ..\deinterlace_genx_ivb.obj
+rem move deinterlace_genx_ivb.h deinterlace_genx_ivb_isa.h
+
+del embed_isa.exe</Command>
+    </PreBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release-emu|Win32'">
+    <ClCompile>
+      <WarningLevel>TurnOffAllWarnings</WarningLevel>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <PreprocessorDefinitions>USE_CM;CMRT_EMU;WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(MEDIASDK_ROOT)\CMRT\compiler\include\cm;$(MEDIASDK_ROOT)/CMRT/runtime/include;$(MEDIASDK_ROOT)/CMRT/compiler/include;$(MfxIppIncludeDir);.\include;..\include;..\..\include;..\..\..\include;..\..\..\_studio\mfx_lib\shared\include;..\..\..\_studio\shared\umc\core\vm\include;..\..\..\_studio\shared\include;..\..\..\_studio\shared\umc\core\vm_plus\include;..\..\..\_studio\shared\umc\core\umc\include;..\..\..\_studio\mfx_lib\cmrt_cross_platform\include;.\kernels;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <FloatingPointModel>Precise</FloatingPointModel>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <AdditionalDependencies>igfxcmrt32_emu.lib;libcm.lib;pa.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>..\Release;.\cm\compiler\lib\x86;.\cm\runtime\lib\x86;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    </Link>
+    <PostBuildEvent>
+      <Command>
+      </Command>
+    </PostBuildEvent>
+    <PreBuildEvent>
+      <Command>SET INSTALLDIR=%MEDIASDK_ROOT%\CMRT
+SET ICLDIR=%INSTALLDIR%\compiler
+SET PATH=%ICLDIR%\bin;%ICLDIR%\lib;%PATH%
+SET INCLUDE=%ICLDIR%\include;%ICLDIR%\include\cm;%INCLUDE%
+SET CM_RT_PLATFORM=hsw
+copy /y deinterlace_genx.cpp deinterlace_genx_hsw.cpp
+icl /c /Qxcm  deinterlace_genx_hsw.cpp /mCM_emit_common_isa
+cl .\kernels\embed_isa.c
+del embed_isa.obj
+move embed_isa.exe .\kernels\embed_isa.exe
+cd kernels
+embed_isa ..\deinterlace_genx_hsw.isa
+del ..\deinterlace_genx_hsw.cpp
+del ..\deinterlace_genx_hsw.isa
+del ..\deinterlace_genx_hsw.obj
+move deinterlace_genx_hsw.h deinterlace_genx_hsw_isa.h
+
+rem FOR IVB (or any other platform)
+rem cd ..\
+rem SET CM_RT_PLATFORM=ivb
+rem copy /y deinterlace_genx.cpp deinterlace_genx_ivb.cpp
+rem icl /c /Qxcm  deinterlace_genx_ivb.cpp /mCM_emit_common_isa
+rem cd kernels
+rem embed_isa ..\deinterlace_genx_ivb.isa
+rem del ..\deinterlace_genx_ivb.cpp
+rem del ..\deinterlace_genx_ivb.isa
+rem del ..\deinterlace_genx_ivb.obj
+rem move deinterlace_genx_ivb.h deinterlace_genx_ivb_isa.h
+
+del embed_isa.exe</Command>
+    </PreBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(MEDIASDK_ROOT)\CMRT\compiler\include\cm;$(MEDIASDK_ROOT)/CMRT/runtime/include;$(MEDIASDK_ROOT)/CMRT/compiler/include;$(MfxIppIncludeDir);.\include;..\include;..\..\include;..\..\..\include;..\..\..\_studio\mfx_lib\shared\include;..\..\..\_studio\shared\umc\core\vm\include;..\..\..\_studio\shared\include;..\..\..\_studio\shared\umc\core\vm_plus\include;..\..\..\_studio\shared\umc\core\umc\include;..\..\..\_studio\mfx_lib\cmrt_cross_platform\include;.\kernels;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <TreatWarningAsError>false</TreatWarningAsError>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <AdditionalDependencies>igfxcmrt64.lib;libcm.lib;pa.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>..\x64\Release;.\cm\compiler\lib\x64;.\cm\runtime\lib\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    </Link>
+    <PreBuildEvent>
+      <Command>SET INSTALLDIR=%MEDIASDK_ROOT%\CMRT
+SET ICLDIR=%INSTALLDIR%\compiler
+SET PATH=%ICLDIR%\bin;%ICLDIR%\lib;%PATH%
+SET INCLUDE=%ICLDIR%\include;%ICLDIR%\include\cm;%INCLUDE%
+SET CM_RT_PLATFORM=hsw
+copy /y deinterlace_genx.cpp deinterlace_genx_hsw.cpp
+icl /c /Qxcm  deinterlace_genx_hsw.cpp /mCM_emit_common_isa
+cl .\kernels\embed_isa.c
+del embed_isa.obj
+move embed_isa.exe .\kernels\embed_isa.exe
+cd kernels
+embed_isa ..\deinterlace_genx_hsw.isa
+del ..\deinterlace_genx_hsw.cpp
+del ..\deinterlace_genx_hsw.isa
+del ..\deinterlace_genx_hsw.obj
+move deinterlace_genx_hsw.h deinterlace_genx_hsw_isa.h
+
+rem FOR IVB (or any other platform)
+rem cd ..\
+rem SET CM_RT_PLATFORM=ivb
+rem copy /y deinterlace_genx.cpp deinterlace_genx_ivb.cpp
+rem icl /c /Qxcm  deinterlace_genx_ivb.cpp /mCM_emit_common_isa
+rem cd kernels
+rem embed_isa ..\deinterlace_genx_ivb.isa
+rem del ..\deinterlace_genx_ivb.cpp
+rem del ..\deinterlace_genx_ivb.isa
+rem del ..\deinterlace_genx_ivb.obj
+rem move deinterlace_genx_ivb.h deinterlace_genx_ivb_isa.h
+
+del embed_isa.exe</Command>
+    </PreBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release-emu|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(MEDIASDK_ROOT)\CMRT\compiler\include\cm;$(MEDIASDK_ROOT)/CMRT/runtime/include;$(MEDIASDK_ROOT)/CMRT/compiler/include;$(MfxIppIncludeDir);.\include;..\include;..\..\include;..\..\..\include;..\..\..\_studio\mfx_lib\shared\include;..\..\..\_studio\shared\umc\core\vm\include;..\..\..\_studio\shared\include;..\..\..\_studio\shared\umc\core\vm_plus\include;..\..\..\_studio\shared\umc\core\umc\include;..\..\..\_studio\mfx_lib\cmrt_cross_platform\include;.\kernels;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <AdditionalDependencies>igfxcmrt64.lib;libcm.lib;pa.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>..\x64\Release;.\cm\compiler\lib\x64;.\cm\runtime\lib\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    </Link>
+    <PreBuildEvent>
+      <Command>SET INSTALLDIR=%MEDIASDK_ROOT%\CMRT
+SET ICLDIR=%INSTALLDIR%\compiler
+SET PATH=%ICLDIR%\bin;%ICLDIR%\lib;%PATH%
+SET INCLUDE=%ICLDIR%\include;%ICLDIR%\include\cm;%INCLUDE%
+SET CM_RT_PLATFORM=hsw
+copy /y deinterlace_genx.cpp deinterlace_genx_hsw.cpp
+icl /c /Qxcm  deinterlace_genx_hsw.cpp /mCM_emit_common_isa
+cl .\kernels\embed_isa.c
+del embed_isa.obj
+move embed_isa.exe .\kernels\embed_isa.exe
+cd kernels
+embed_isa ..\deinterlace_genx_hsw.isa
+del ..\deinterlace_genx_hsw.cpp
+del ..\deinterlace_genx_hsw.isa
+del ..\deinterlace_genx_hsw.obj
+move deinterlace_genx_hsw.h deinterlace_genx_hsw_isa.h
+
+rem FOR IVB (or any other platform)
+rem cd ..\
+rem SET CM_RT_PLATFORM=ivb
+rem copy /y deinterlace_genx.cpp deinterlace_genx_ivb.cpp
+rem icl /c /Qxcm  deinterlace_genx_ivb.cpp /mCM_emit_common_isa
+rem cd kernels
+rem embed_isa ..\deinterlace_genx_ivb.isa
+rem del ..\deinterlace_genx_ivb.cpp
+rem del ..\deinterlace_genx_ivb.isa
+rem del ..\deinterlace_genx_ivb.obj
+rem move deinterlace_genx_ivb.h deinterlace_genx_ivb_isa.h
+
+del embed_isa.exe</Command>
+    </PreBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="deinterlacer.cpp" />
+    <ClCompile Include="deinterlace_genx.cpp">
+      <Cpp0xSupport Condition="'$(Configuration)|$(Platform)'=='Debug-emu|Win32'">true</Cpp0xSupport>
+      <Cpp0xSupport Condition="'$(Configuration)|$(Platform)'=='Release-emu|Win32'">true</Cpp0xSupport>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <Cpp0xSupport Condition="'$(Configuration)|$(Platform)'=='Release-emu|x64'">true</Cpp0xSupport>
+      <Cpp0xSupport Condition="'$(Configuration)|$(Platform)'=='Debug-emu|x64'">true</Cpp0xSupport>
+      <FloatingPointModel Condition="'$(Configuration)|$(Platform)'=='Release-emu|x64'">Precise</FloatingPointModel>
+      <FloatingPointModel Condition="'$(Configuration)|$(Platform)'=='Debug-emu|x64'">Precise</FloatingPointModel>
+    </ClCompile>
+    <ClCompile Include="entry.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release-emu|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug-emu|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release-emu|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug-emu|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="kernels\deinterlace_genx_hsw.cpp" />
+    <ClCompile Include="kernels\embed_isa.c">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release-emu|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug-emu|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release-emu|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug-emu|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="utilities.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="blocky_io_genx.h" />
+    <ClInclude Include="cmut\clock.h" />
+    <ClInclude Include="cmut\cmassert.h" />
+    <ClInclude Include="cmut\cmbufferex.h" />
+    <ClInclude Include="cmut\cmdeviceex.h" />
+    <ClInclude Include="cmut\cmkernelex.h" />
+    <ClInclude Include="cmut\cmqueueex.h" />
+    <ClInclude Include="cmut\cmrtex.h" />
+    <ClInclude Include="cmut\cmsurface2dext.h" />
+    <ClInclude Include="cmut\cmsurface2dupext.h" />
+    <ClInclude Include="cmut\cmtaskex.h" />
+    <ClInclude Include="cmut\cmthreadspaceex.h" />
+    <ClInclude Include="cmut\cmutility.h" />
+    <ClInclude Include="cmut\cmutility_genx.h" />
+    <ClInclude Include="cmut\infrastructure.h" />
+    <ClInclude Include="common_genx.h" />
+    <ClInclude Include="deinterlace_buildlowedgemask_genx.h" />
+    <ClInclude Include="deinterlace_genx.h" />
+    <ClInclude Include="kernels\deinterlace_genx_hsw_isa.h" />
+    <ClInclude Include="pacm.h" />
+    <ClInclude Include="pacm_genx.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</ExcludedFromBuild>
+    </ClInclude>
+    <ClInclude Include="utilities.h" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

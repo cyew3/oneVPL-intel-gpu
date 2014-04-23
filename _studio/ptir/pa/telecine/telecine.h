@@ -50,7 +50,7 @@ __declspec(dllexport) void __stdcall Extract_Fields_I420(unsigned char *pucLine,
 __declspec(dllexport) void __stdcall sadCalc_I420_frame(Frame *pfrmCur, Frame *pfrmPrv);
 
 __declspec(dllexport) unsigned int __stdcall Artifacts_Detection(Frame **pFrm);
-__declspec(dllexport) void __stdcall Artifacts_Detection_frame(Frame **pFrm, unsigned int frameNum);
+__declspec(dllexport) void __stdcall Artifacts_Detection_frame(Frame **pFrm, unsigned int frameNum, unsigned int firstRun);
 __declspec(dllexport) void __stdcall Detect_Solve_32BlendedPatterns(Frame **pFrm, Pattern *ptrn, unsigned int *dispatch);
 __declspec(dllexport) void __stdcall Detect_Solve_32Patterns(Frame **pFrm, Pattern *ptrn, unsigned int *dispatch);
 __declspec(dllexport) void __stdcall Detect_Solve_3223Patterns(Frame **pFrm, Pattern *ptrn, unsigned int *dispatch);
@@ -61,7 +61,7 @@ __declspec(dllexport) void __stdcall Detect_32Pattern_rigorous(Frame **pFrm, Pat
 __declspec(dllexport) void __stdcall UndoPatternTypes5and7(Frame *frmBuffer[BUFMINSIZE], unsigned int firstPos);
 __declspec(dllexport) void __stdcall Undo2Frames(Frame *frmBuffer1, Frame *frmBuffer2, BOOL BFF);
 
-__declspec(dllexport) void __stdcall Analyze_Buffer_Stats(Frame *frmBuffer[BUFMINSIZE], Pattern *ptrn, unsigned int *pdispatch, BOOL *bisInterlaced);
+__declspec(dllexport) void __stdcall Analyze_Buffer_Stats(Frame *frmBuffer[BUFMINSIZE], Pattern *ptrn, unsigned int *pdispatch, unsigned int *uiisInterlaced);
 
 
 

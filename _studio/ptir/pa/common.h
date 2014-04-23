@@ -115,6 +115,13 @@ typedef struct _Frame
     Plane plaV;
 
     Meta frmProperties;
+
+    void *inSurf, *outSurf;
+    enum {
+        OUT_UNCHANGED,
+        OUT_PROCESSED,
+        OUT_DROPPED
+    } outState;
 } Frame;
 
 // fn

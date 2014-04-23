@@ -90,3 +90,37 @@ mfxStatus ColorSpaceConversionWCopy(mfxFrameSurface1* surface_in, mfxFrameSurfac
     else
         return MFX_ERR_UNSUPPORTED;
 }
+
+mfxStatus Ptir420toMfxNv12(mfxU8* buffer, mfxFrameSurface1* surface_out)
+{
+    bool isUnlockReq = false;
+    mfxFrameSurface1 work420_surface;
+    memset(&work420_surface, 0, sizeof(mfxFrameSurface1));
+    memcpy(&(work420_surface.Info), &(surface_out->Info), sizeof(mfxFrameInfo));
+    work420_surface.Info.FourCC = MFX_FOURCC_I420;
+    mfxU16& w = work420_surface.Info.CropW;
+    mfxU16& h = work420_surface.Info.CropH;
+    work420_surface.Data.Y = buffer;
+    work420_surface.Data.U = work420_surface.Data.Y+w*h;
+    work420_surface.Data.V = work420_surface.Data.U+w*h/4;
+    work420_surface.Data.Pitch = w;
+
+    return ColorSpaceConversionWCopy(&work420_surface, surface_out, MFX_FOURCC_NV12);
+}
+
+mfxStatus MfxNv12toPtir420(mfxFrameSurface1* surface_in, mfxU8* buffer)
+{
+    bool isUnlockReq = false;
+    mfxFrameSurface1 work420_surface;
+    memset(&work420_surface, 0, sizeof(mfxFrameSurface1));
+    memcpy(&(work420_surface.Info), &(surface_in->Info), sizeof(mfxFrameInfo));
+    work420_surface.Info.FourCC = MFX_FOURCC_I420;
+    mfxU16& w = work420_surface.Info.CropW;
+    mfxU16& h = work420_surface.Info.CropH;
+    work420_surface.Data.Y = buffer;
+    work420_surface.Data.U = work420_surface.Data.Y+w*h;
+    work420_surface.Data.V = work420_surface.Data.U+w*h/4;
+    work420_surface.Data.Pitch = w;
+
+    return ColorSpaceConversionWCopy(surface_in, &work420_surface, MFX_FOURCC_I420);
+}
