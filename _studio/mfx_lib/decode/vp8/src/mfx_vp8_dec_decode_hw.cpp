@@ -2053,7 +2053,7 @@ mfxStatus VideoDECODEVP8_HW::PackHeaders(mfxBitstream *p_bistream)
              GetCompBuffer(VAProbabilityBufferType, &compBufCp, sizeof(VAProbabilityDataBufferVP8));
 
      std::copy(reinterpret_cast<const char*>(m_frameProbs.coeff_probs), 
-               reinterpret_cast<const char*>(m_frameProbs.coeff_probs) + sizeof(m_frameProbs.coeff_probs)), 
+               reinterpret_cast<const char*>(m_frameProbs.coeff_probs) + sizeof(m_frameProbs.coeff_probs), 
                reinterpret_cast<char*>(coeffProbs));
 
 /*     {
