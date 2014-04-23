@@ -36,6 +36,8 @@
 #include <stdio.h>
 #endif // defined(MFX_SCHEDULER_LOG)
 
+//#define EXTERNAL_THREADING
+
 enum
 {
     MFX_TIME_INFINITE           = 0x7fffffff,
@@ -45,9 +47,16 @@ enum
 mfxStatus mfxSchedulerCore::Initialize(const MFX_SCHEDULER_PARAM *pParam)
 {
     UMC::Status umcRes;
-    mfxU32 i, iRes;
+    mfxU32 i;
+    
     mfxU32 numThreads;
+
+#if !defined (EXTERNAL_THREADING)
+    mfxU32 iRes;
     mfxStatus mfxRes;
+#endif
+
+
 
     // release the object before initialization
     Close();
@@ -146,6 +155,8 @@ mfxStatus mfxSchedulerCore::Initialize(const MFX_SCHEDULER_PARAM *pParam)
         // allocate thread contexts
         m_pThreadCtx = new MFX_SCHEDULER_THREAD_CONTEXT[m_param.numberOfThreads];
         memset(m_pThreadCtx, 0, sizeof(MFX_SCHEDULER_THREAD_CONTEXT) * m_param.numberOfThreads);
+
+#if !defined (EXTERNAL_THREADING)
         // start threads
         for (i = 0; i < m_param.numberOfThreads; i += 1)
         {
@@ -168,6 +179,7 @@ mfxStatus mfxSchedulerCore::Initialize(const MFX_SCHEDULER_PARAM *pParam)
             //    vm_thread_set_priority(&(m_pThreadCtx[i].threadHandle), VM_THREAD_PRIORITY_HIGH);
             //}
         }
+#endif
 
         // 02.2012 vcherepa: DON'T set CPU affinity for particular internal
         // threads. it leads to unpredictable stops and hangings up to 60ms.
@@ -184,11 +196,14 @@ mfxStatus mfxSchedulerCore::Initialize(const MFX_SCHEDULER_PARAM *pParam)
     }
 
     // to run HW listen thread. Will be enabled if tests are OK
+
+#if !defined (EXTERNAL_THREADING)
     mfxRes = StartWakeUpThread();
     if (MFX_ERR_NONE != mfxRes)
     {
         return mfxRes;
     }
+#endif
 
     return MFX_ERR_NONE;
 
@@ -249,6 +264,7 @@ mfxStatus mfxSchedulerCore::Synchronize(mfxSyncPoint syncPoint, mfxU32 timeToWai
 
 } // mfxStatus mfxSchedulerCore::Synchronize(mfxSyncPoint syncPoint, mfxU32 timeToWait)
 
+#if !defined (EXTERNAL_THREADING)
 mfxStatus mfxSchedulerCore::Synchronize(mfxTaskHandle handle, mfxU32 timeToWait)
 {
     MFX_SCHEDULER_TASK *pTask;
@@ -265,7 +281,6 @@ mfxStatus mfxSchedulerCore::Synchronize(mfxTaskHandle handle, mfxU32 timeToWait)
     {
         return MFX_ERR_NULL_PTR;
     }
-
     //
     // inspect the task
     //
@@ -306,6 +321,92 @@ mfxStatus mfxSchedulerCore::Synchronize(mfxTaskHandle handle, mfxU32 timeToWait)
     return MFX_ERR_NONE;
 
 } // mfxStatus mfxSchedulerCore::Synchronize(mfxTaskHandle handle, mfxU32 timeToWait)
+#else
+
+mfxStatus mfxSchedulerCore::Synchronize(mfxTaskHandle handle, mfxU32 timeToWait)
+{
+    MFX_SCHEDULER_TASK *pTask;
+
+    // check error(s)
+    if (0 == m_param.numberOfThreads)
+    {
+        return MFX_ERR_NOT_INITIALIZED;
+    }
+
+    // look up the task
+    pTask = m_ppTaskLookUpTable[handle.taskID];
+    if (NULL == pTask)
+    {
+        return MFX_ERR_NULL_PTR;
+    }
+
+
+    //let really run task to 
+    {
+        MFX_CALL_INFO call = {0};
+        mfxTaskHandle previousTaskHandle = {0, 0};
+        
+        mfxStatus task_sts = MFX_ERR_NONE;
+        mfxU64 start = GetHighPerformanceCounter();
+        mfxU64 frequency = vm_time_get_frequency();
+        while (MFX_WRN_IN_EXECUTION == pTask->opRes)
+        {
+            task_sts = GetTask(call, previousTaskHandle, 0);
+            
+            if (task_sts != MFX_ERR_NONE)
+                continue;
+
+            call.res = call.pTask->entryPoint.pRoutine(call.pTask->entryPoint.pState,
+                                                       call.pTask->entryPoint.pParam,
+                                                       call.threadNum,
+                                                       call.callNum);
+            
+
+            // save the previous task's handle
+            previousTaskHandle = call.taskHandle;
+            
+            MarkTaskCompleted(&call, 0);
+
+                                   
+            if ((mfxU32)((GetHighPerformanceCounter() - start)/frequency) > timeToWait)
+                break;
+            
+            Sleep(1);
+
+        }
+    }
+
+    //
+    // inspect the task
+    //
+
+    // the handle is outdated,
+    // the previous task job is over and completed with successful status
+    // NOTE: it make sense to read task result and job ID the following order.
+    if ((MFX_ERR_NONE == pTask->opRes) ||
+        (pTask->jobID != handle.jobID))
+    {
+        return MFX_ERR_NONE;
+    }
+
+    // wait the result on the event
+    if (MFX_WRN_IN_EXECUTION == pTask->opRes)
+    {
+        return MFX_WRN_IN_EXECUTION;
+    }
+
+    // check error status
+    if ((MFX_ERR_NONE != pTask->opRes) &&
+        (pTask->jobID == handle.jobID))
+    {
+        return pTask->opRes;
+    }
+
+    // in all other cases task is complete
+    return MFX_ERR_NONE;
+
+} // mfxStatus mfxSchedulerCore::Synchronize(mfxTaskHandle handle, mfxU32 timeToWait)
+#endif
 
 mfxStatus mfxSchedulerCore::WaitForDependencyResolved(const void *pDependency)
 {
@@ -518,10 +619,12 @@ mfxStatus mfxSchedulerCore::AdjustPerformance(const mfxSchedulerMessage message)
         break;
 
     case MFX_SCHEDULER_START_HW_LISTENING:
+#if !defined (EXTERNAL_THREADING)
         if (0 == vm_thread_is_valid(&m_hwWakeUpThread))
         {
             mfxRes = StartWakeUpThread();
         }
+#endif
         break;
 
     case MFX_SCHEDULER_STOP_HW_LISTENING:
@@ -632,6 +735,7 @@ mfxStatus mfxSchedulerCore::AddTask(const MFX_TASK &task, mfxSyncPoint *pSyncPoi
 
 #if defined  (MFX_VA)
 #if defined  (MFX_D3D11_ENABLED)
+#if !defined (EXTERNAL_THREADING)
     if (!m_pdx11event && !m_hwTaskDone.handle)
     {
         m_pdx11event = new DX11GlobalEvent(m_param.pCore);
@@ -643,6 +747,7 @@ mfxStatus mfxSchedulerCore::AddTask(const MFX_TASK &task, mfxSyncPoint *pSyncPoi
 
         StartWakeUpThread();
     }
+#endif
 #endif
 #endif
 
