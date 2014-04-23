@@ -2209,7 +2209,7 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
                            }
                            if (task->m_repack >=4)
                            {
-                               task->m_cqpValue[0] += 5;
+                               task->m_cqpValue[0] += 1;
                                task->m_cqpValue[1] = task->m_cqpValue[0];
                            }
                         }
