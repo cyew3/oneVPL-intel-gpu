@@ -795,11 +795,12 @@ void VAAPIEncoder::FillSps(
 
         sps.frame_cropping_flag                     = extSps->frameCroppingFlag;
 
-#if VA_CHECK_VERSION(0, 34, 0)
+//#if VA_CHECK_VERSION(0, 34, 0)
+//after backport of va to OTC staging 0.33 also has the same fields. TODO: fully remove after validation
         sps.sar_height        = extSps->vui.sarHeight;
         sps.sar_width         = extSps->vui.sarWidth;
         sps.aspect_ratio_idc  = extSps->vui.aspectRatioIdc;
-#endif
+//#endif
 /*
  *  In Windows DDI Trellis Quantization in SPS, while for VA in miscEnc.
  *  keep is here to have processed in Execute
