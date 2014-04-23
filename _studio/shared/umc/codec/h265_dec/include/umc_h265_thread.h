@@ -23,7 +23,7 @@
 namespace UMC_HEVC_DECODER
 {
 
-class H265SegmentDecoderMultiThreaded;
+class H265SegmentDecoderBase;
 
 // Decoder thread class
 class H265Thread : public UMC::Thread
@@ -36,9 +36,9 @@ public:
     void Reset();
 
     // Initialize decoder thread
-    UMC::Status Init(Ipp32s iNumber, H265SegmentDecoderMultiThreaded * segmentDecoder);
+    UMC::Status Init(Ipp32s iNumber, H265SegmentDecoderBase * segmentDecoder);
 
-    H265SegmentDecoderMultiThreaded * GetSegmentDecoder();
+    H265SegmentDecoderBase * GetSegmentDecoder();
 
     // Sleep until task broker wakes the thread
     void Sleep();
@@ -69,7 +69,7 @@ protected:
     volatile bool m_bQuit;                                     // quit flag for additional thread(s)
     UMC::Status m_Status;                                           // async return value
 
-    H265SegmentDecoderMultiThreaded * m_segmentDecoder;
+    H265SegmentDecoderBase * m_segmentDecoder;
 
 private:
     // we lock assignment operator to avoid any

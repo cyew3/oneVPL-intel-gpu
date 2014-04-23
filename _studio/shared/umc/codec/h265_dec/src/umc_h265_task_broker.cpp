@@ -592,60 +592,6 @@ bool TaskBroker_H265::GetNextTask(H265Task *pTask)
     return res;
 } // bool TaskBroker_H265::GetNextTask(H265Task *pTask)
 
-// Tries to find a new slice to work on in specified access unit and initializes a task onject for it
-bool TaskBroker_H265::GetNextSlice(H265DecoderFrameInfo * info, H265Task *pTask)
-{
-    // this is guarded function, safe to touch any variable
-    // check error(s)
-    if (!info)
-        return false;
-
-    if (GetPreparationTask(info))
-        return true;
-
-    if (info->m_prepared != 2)
-        return false;
-
-    if (GetNextSliceToDecoding(info, pTask))
-        return true;
-
-    if (GetNextSliceToDeblocking(info, pTask))
-        return true;
-
-    return GetSAOFrameTask(info, pTask);
-} // bool TaskBroker_H265::GetNextSlice(H265Task *pTask)
-
-// Tries to find a portion of SAO filtering work in the specified access unit and initializes a task object for it
-bool TaskBroker_H265::GetSAOFrameTask(H265DecoderFrameInfo * info, H265Task *pTask)
-{
-    if (!info->IsNeedSAO() || info->m_processInProgress[SAO_PROCESS_ID])
-        return false;
-
-    Ipp32s iMBWidth = info->m_pFrame->getCD()->m_WidthInCU;
-    Ipp32s prevProcessMBReady = info->IsNeedDeblocking() ? DEB_PROCESS_ID : REC_PROCESS_ID;
-    Ipp32s availableToProcess = info->m_curCUToProcess[prevProcessMBReady] - info->m_curCUToProcess[SAO_PROCESS_ID];
-
-    if (availableToProcess > iMBWidth || (availableToProcess && info->m_curCUToProcess[prevProcessMBReady] >= info->m_pFrame->getCD()->m_NumCUsInFrame))
-    {
-        info->m_processInProgress[SAO_PROCESS_ID] = 1;
-
-        InitTask(info, pTask, info->GetAnySlice());
-        pTask->m_iFirstMB = info->m_curCUToProcess[SAO_PROCESS_ID];
-        pTask->m_iMBToProcess = IPP_MIN(iMBWidth - (info->m_curCUToProcess[SAO_PROCESS_ID] % iMBWidth), availableToProcess);
-
-        pTask->m_iTaskID = TASK_SAO_H265;
-        pTask->pFunction = &H265SegmentDecoderMultiThreaded::SAOFrameTask;
-
-#ifdef ECHO_DEB
-        PrintTask(pTask);
-#endif // ECHO_DEB
-
-        return true;
-    }
-
-    return false;
-}
-
 // Initialize task object with default values
 void TaskBroker_H265::InitTask(H265DecoderFrameInfo * info, H265Task *pTask, H265Slice *pSlice)
 {
@@ -656,69 +602,6 @@ void TaskBroker_H265::InitTask(H265DecoderFrameInfo * info, H265Task *pTask, H26
     pTask->m_pSlicesInfo = info;
     pTask->m_threadingInfo = 0;
 }
-
-// Tries to find a portion of decoding+reconstruction work in the specified access unit and initializes a task object for it
-bool TaskBroker_H265::GetNextSliceToDecoding(H265DecoderFrameInfo * info, H265Task *pTask)
-{
-    // this is guarded function, safe to touch any variable
-    Ipp32s sliceCount = info->GetSliceCount();
-    for (Ipp32s i = 0; i < sliceCount; i += 1)
-    {
-        H265Slice *pSlice = info->GetSlice(i);
-
-        if (!pSlice->processInfo.m_processInProgress[DEC_PROCESS_ID] && !pSlice->processInfo.m_isCompleted)
-        {
-            InitTask(info, pTask, pSlice);
-            pTask->m_iFirstMB = pSlice->m_iFirstMB;
-            pTask->m_iMBToProcess = pSlice->m_iMaxMB - pSlice->m_iFirstMB;
-            pTask->m_iTaskID = TASK_PROCESS_H265;
-            pTask->m_pBuffer = 0;
-            pTask->pFunction = &H265SegmentDecoderMultiThreaded::ProcessSlice;
-            pSlice->processInfo.m_processInProgress[DEC_PROCESS_ID] = 1;
-
-#ifdef ECHO
-            DEBUG_PRINT((VM_STRING("(%d) (%d) slice dec - % 4d to % 4d\n"), pTask->m_iThreadNumber, pSlice->m_pCurrentFrame->m_PicOrderCnt, pTask->m_iFirstMB, pTask->m_iFirstMB + pTask->m_iMBToProcess));
-#endif // ECHO
-
-            return true;
-        }
-    }
-
-    return false;
-
-} // bool TaskBroker_H265::GetNextSliceToDecoding(H265Task *pTask)
-
-// Tries to find a portion of deblocking filtering work in the specified access unit and initializes a task object for it
-bool TaskBroker_H265::GetNextSliceToDeblocking(H265DecoderFrameInfo * info, H265Task *pTask)
-{
-    if (!info->IsNeedDeblocking() || info->m_processInProgress[DEB_PROCESS_ID])
-        return false;
-
-    Ipp32s iMBWidth = info->m_pFrame->getCD()->m_WidthInCU;
-    Ipp32s availableToProcess = info->m_curCUToProcess[REC_PROCESS_ID] - info->m_curCUToProcess[DEB_PROCESS_ID];
-
-    if (availableToProcess > iMBWidth || (availableToProcess && info->m_curCUToProcess[REC_PROCESS_ID] >= info->m_pFrame->getCD()->m_NumCUsInFrame))
-    {
-        info->m_processInProgress[DEB_PROCESS_ID] = 1;
-
-        pTask->m_taskPreparingGuard->Unlock();
-        InitTask(info, pTask, info->GetAnySlice());
-        pTask->m_iFirstMB = info->m_curCUToProcess[DEB_PROCESS_ID];
-        pTask->m_iMBToProcess = IPP_MIN(iMBWidth - (info->m_curCUToProcess[DEB_PROCESS_ID] % iMBWidth), availableToProcess);
-
-        pTask->m_iTaskID = TASK_DEB_H265;
-        pTask->pFunction = &H265SegmentDecoderMultiThreaded::DeblockSegmentTask;
-
-#ifdef ECHO_DEB
-        PrintTask(pTask);
-#endif // ECHO_DEB
-
-        return true;
-    }
-
-    return false;
-
-} // bool TaskBroker_H265::GetNextSliceToDeblocking(H265Task *pTask)
 
 // Calculate frame state after a task has been finished
 void TaskBroker_H265::AddPerformedTask(H265Task *pTask)
@@ -1298,6 +1181,8 @@ bool TaskBroker_H265::IsExistTasks(H265DecoderFrame * frame)
     return Check_Status(slicesInfo->GetStatus());
 }
 
+#ifndef MFX_VA
+
 TaskBrokerSingleThread_H265::TaskBrokerSingleThread_H265(TaskSupplier_H265 * pTaskSupplier)
     : TaskBroker_H265(pTaskSupplier)
 {
@@ -1320,6 +1205,123 @@ bool TaskBrokerSingleThread_H265::GetNextTaskInternal(H265Task *pTask)
         }
 
         break;
+    }
+
+    return false;
+}
+
+// Tries to find a portion of decoding+reconstruction work in the specified access unit and initializes a task object for it
+bool TaskBrokerSingleThread_H265::GetNextSliceToDecoding(H265DecoderFrameInfo * info, H265Task *pTask)
+{
+    // this is guarded function, safe to touch any variable
+    Ipp32s sliceCount = info->GetSliceCount();
+    for (Ipp32s i = 0; i < sliceCount; i += 1)
+    {
+        H265Slice *pSlice = info->GetSlice(i);
+
+        if (!pSlice->processInfo.m_processInProgress[DEC_PROCESS_ID] && !pSlice->processInfo.m_isCompleted)
+        {
+            InitTask(info, pTask, pSlice);
+            pTask->m_iFirstMB = pSlice->m_iFirstMB;
+            pTask->m_iMBToProcess = pSlice->m_iMaxMB - pSlice->m_iFirstMB;
+            pTask->m_iTaskID = TASK_PROCESS_H265;
+            pTask->m_pBuffer = 0;
+            pTask->pFunction = &H265SegmentDecoderMultiThreaded::ProcessSlice;
+            pSlice->processInfo.m_processInProgress[DEC_PROCESS_ID] = 1;
+
+#ifdef ECHO
+            DEBUG_PRINT((VM_STRING("(%d) (%d) slice dec - % 4d to % 4d\n"), pTask->m_iThreadNumber, pSlice->m_pCurrentFrame->m_PicOrderCnt, pTask->m_iFirstMB, pTask->m_iFirstMB + pTask->m_iMBToProcess));
+#endif // ECHO
+
+            return true;
+        }
+    }
+
+    return false;
+
+} // bool TaskBroker_H265::GetNextSliceToDecoding(H265Task *pTask)
+
+// Tries to find a portion of deblocking filtering work in the specified access unit and initializes a task object for it
+bool TaskBrokerSingleThread_H265::GetNextSliceToDeblocking(H265DecoderFrameInfo * info, H265Task *pTask)
+{
+    if (!info->IsNeedDeblocking() || info->m_processInProgress[DEB_PROCESS_ID])
+        return false;
+
+    Ipp32s iMBWidth = info->m_pFrame->getCD()->m_WidthInCU;
+    Ipp32s availableToProcess = info->m_curCUToProcess[REC_PROCESS_ID] - info->m_curCUToProcess[DEB_PROCESS_ID];
+
+    if (availableToProcess > iMBWidth || (availableToProcess && info->m_curCUToProcess[REC_PROCESS_ID] >= info->m_pFrame->getCD()->m_NumCUsInFrame))
+    {
+        info->m_processInProgress[DEB_PROCESS_ID] = 1;
+
+        pTask->m_taskPreparingGuard->Unlock();
+        InitTask(info, pTask, info->GetAnySlice());
+        pTask->m_iFirstMB = info->m_curCUToProcess[DEB_PROCESS_ID];
+        pTask->m_iMBToProcess = IPP_MIN(iMBWidth - (info->m_curCUToProcess[DEB_PROCESS_ID] % iMBWidth), availableToProcess);
+
+        pTask->m_iTaskID = TASK_DEB_H265;
+        pTask->pFunction = &H265SegmentDecoderMultiThreaded::DeblockSegmentTask;
+
+#ifdef ECHO_DEB
+        PrintTask(pTask);
+#endif // ECHO_DEB
+
+        return true;
+    }
+
+    return false;
+
+} // bool TaskBroker_H265::GetNextSliceToDeblocking(H265Task *pTask)
+
+// Tries to find a new slice to work on in specified access unit and initializes a task onject for it
+bool TaskBrokerSingleThread_H265::GetNextSlice(H265DecoderFrameInfo * info, H265Task *pTask)
+{
+    // this is guarded function, safe to touch any variable
+    // check error(s)
+    if (!info)
+        return false;
+
+    if (GetPreparationTask(info))
+        return true;
+
+    if (info->m_prepared != 2)
+        return false;
+
+    if (GetNextSliceToDecoding(info, pTask))
+        return true;
+
+    if (GetNextSliceToDeblocking(info, pTask))
+        return true;
+
+    return GetSAOFrameTask(info, pTask);
+} // bool TaskBroker_H265::GetNextSlice(H265Task *pTask)
+
+// Tries to find a portion of SAO filtering work in the specified access unit and initializes a task object for it
+bool TaskBrokerSingleThread_H265::GetSAOFrameTask(H265DecoderFrameInfo * info, H265Task *pTask)
+{
+    if (!info->IsNeedSAO() || info->m_processInProgress[SAO_PROCESS_ID])
+        return false;
+
+    Ipp32s iMBWidth = info->m_pFrame->getCD()->m_WidthInCU;
+    Ipp32s prevProcessMBReady = info->IsNeedDeblocking() ? DEB_PROCESS_ID : REC_PROCESS_ID;
+    Ipp32s availableToProcess = info->m_curCUToProcess[prevProcessMBReady] - info->m_curCUToProcess[SAO_PROCESS_ID];
+
+    if (availableToProcess > iMBWidth || (availableToProcess && info->m_curCUToProcess[prevProcessMBReady] >= info->m_pFrame->getCD()->m_NumCUsInFrame))
+    {
+        info->m_processInProgress[SAO_PROCESS_ID] = 1;
+
+        InitTask(info, pTask, info->GetAnySlice());
+        pTask->m_iFirstMB = info->m_curCUToProcess[SAO_PROCESS_ID];
+        pTask->m_iMBToProcess = IPP_MIN(iMBWidth - (info->m_curCUToProcess[SAO_PROCESS_ID] % iMBWidth), availableToProcess);
+
+        pTask->m_iTaskID = TASK_SAO_H265;
+        pTask->pFunction = &H265SegmentDecoderMultiThreaded::SAOFrameTask;
+
+#ifdef ECHO_DEB
+        PrintTask(pTask);
+#endif // ECHO_DEB
+
+        return true;
     }
 
     return false;
@@ -2165,6 +2167,8 @@ TileThreadingInfo * FindTileForProcess(H265DecoderFrameInfo * info, Ipp32s taskI
 
     return tileToWrap;
 }
+
+#endif // MFX_VA
 
 } // namespace UMC_HEVC_DECODER
 #endif // UMC_ENABLE_H265_VIDEO_DECODER

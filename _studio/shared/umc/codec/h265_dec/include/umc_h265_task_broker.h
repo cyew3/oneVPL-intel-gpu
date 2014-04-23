@@ -79,21 +79,13 @@ protected:
     // Returns whether frame decoding is finished
     bool IsFrameCompleted(H265DecoderFrame * pFrame) const;
 
-    virtual bool GetNextTaskInternal(H265Task *pTask) = 0;
-
-    // Tries to find a new slice to work on in specified access unit and initializes a task for it
-    bool GetNextSlice(H265DecoderFrameInfo * info, H265Task *pTask);
-    // Tries to find a portion of decoding+reconstruction work in the specified access unit and initializes a task object for it
-    bool GetNextSliceToDecoding(H265DecoderFrameInfo * info, H265Task *pTask);
-
-    // Tries to find a portion of deblocking filtering work in the specified access unit and initializes a task object for it
-    bool GetNextSliceToDeblocking(H265DecoderFrameInfo * info, H265Task *pTask);
+    virtual bool GetNextTaskInternal(H265Task *)
+    {
+        return false;
+    }
 
     // Initialize frame slice and tile start coordinates
     bool GetPreparationTask(H265DecoderFrameInfo * info);
-
-    // Tries to find a portion of SAO filtering work in the specified access unit and initializes a task object for it
-    bool GetSAOFrameTask(H265DecoderFrameInfo * info, H265Task *pTask);
 
     // Initialize task object with default values
     void InitTask(H265DecoderFrameInfo * info, H265Task *pTask, H265Slice *pSlice);
@@ -121,6 +113,7 @@ protected:
     UMC::Mutex m_mGuard;
 };
 
+#ifndef MFX_VA
 // Task broker which uses one thread only
 class TaskBrokerSingleThread_H265 : public TaskBroker_H265
 {
@@ -129,6 +122,18 @@ public:
 
     // Get next working task
     virtual bool GetNextTaskInternal(H265Task *pTask);
+
+protected:
+    // Tries to find a new slice to work on in specified access unit and initializes a task for it
+    bool GetNextSlice(H265DecoderFrameInfo * info, H265Task *pTask);
+    // Tries to find a portion of decoding+reconstruction work in the specified access unit and initializes a task object for it
+    bool GetNextSliceToDecoding(H265DecoderFrameInfo * info, H265Task *pTask);
+
+    // Tries to find a portion of deblocking filtering work in the specified access unit and initializes a task object for it
+    bool GetNextSliceToDeblocking(H265DecoderFrameInfo * info, H265Task *pTask);
+
+    // Tries to find a portion of SAO filtering work in the specified access unit and initializes a task object for it
+    bool GetSAOFrameTask(H265DecoderFrameInfo * info, H265Task *pTask);
 };
 
 // Task broker which uses multiple threads
@@ -194,6 +199,8 @@ private:
     // Update access units list finishing completed frames
     void CompleteFrame();
 };
+
+#endif // MFX_VA
 
 } // namespace UMC_HEVC_DECODER
 

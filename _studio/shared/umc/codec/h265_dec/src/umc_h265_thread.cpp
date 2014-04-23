@@ -32,13 +32,13 @@ H265Thread::~H265Thread()
 } // ~H265Thread(void)
 
 // Returns stored decoder instance
-H265SegmentDecoderMultiThreaded * H265Thread::GetSegmentDecoder()
+H265SegmentDecoderBase * H265Thread::GetSegmentDecoder()
 {
     return m_segmentDecoder;
 }
 
 // Initialize decoder thread
-UMC::Status H265Thread::Init(Ipp32s iNumber, H265SegmentDecoderMultiThreaded * segmentDecoder)
+UMC::Status H265Thread::Init(Ipp32s iNumber, H265SegmentDecoderBase * segmentDecoder)
 {
     // release object before initialization
     Release();
@@ -123,7 +123,7 @@ void H265Thread::Release()
 Ipp32u VM_THREAD_CALLCONVENTION H265Thread::DecodingThreadRoutine(void *p)
 {
     H265Thread *pObj = (H265Thread *) p;
-    H265SegmentDecoderMultiThreaded * segmentDecoder = pObj->GetSegmentDecoder();
+    H265SegmentDecoderBase * segmentDecoder = pObj->GetSegmentDecoder();
 
     // check error(s)
     if (NULL == p)

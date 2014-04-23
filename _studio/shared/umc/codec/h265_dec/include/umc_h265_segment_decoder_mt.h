@@ -54,7 +54,7 @@ public:
     virtual UMC::Status ProcessSlice(H265Task & task);
 
     // Recover a region after error
-    void RestoreErrorRect(Ipp32s startMb, Ipp32s endMb, H265Slice * pSlice);
+    virtual void RestoreErrorRect(Ipp32s startMb, Ipp32s endMb, H265Slice * pSlice);
 
 protected:
 

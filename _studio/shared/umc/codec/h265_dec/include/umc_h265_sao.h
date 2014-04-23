@@ -14,13 +14,7 @@
 #ifndef __UMC_H265_SAO_H__
 #define __UMC_H265_SAO_H__
 
-//#include <vector>
-//#include "ipps.h"
-
-//#include "umc_memory_allocator.h"
 #include "umc_structures.h"
-
-#include "mfx_h265_optimization.h"
 
 namespace UMC_HEVC_DECODER
 {

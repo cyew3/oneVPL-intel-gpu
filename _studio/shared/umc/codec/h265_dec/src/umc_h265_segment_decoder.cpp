@@ -297,9 +297,8 @@ void DecodingContext::SetNewQP(Ipp32s newQP)
 }
 
 H265SegmentDecoder::H265SegmentDecoder(TaskBroker_H265 * pTaskBroker)
+    : H265SegmentDecoderBase(pTaskBroker)
 {
-    m_pTaskBroker = pTaskBroker;
-
     m_pSlice = 0;
 
     m_cu = 0;

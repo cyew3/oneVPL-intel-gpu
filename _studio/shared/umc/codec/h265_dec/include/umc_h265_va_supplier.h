@@ -43,7 +43,10 @@ public:
 
     virtual void Reset();
 
+    virtual void CreateTaskBroker();
+
     void SetBufferedFramesNumber(Ipp32u buffered);
+
 
 protected:
     virtual UMC::Status AllocateFrameData(H265DecoderFrame * pFrame, IppiSize dimensions, Ipp32s bit_depth, const H265SeqParamSet* pSeqParamSet, const H265PicParamSet *pPicParamSet);

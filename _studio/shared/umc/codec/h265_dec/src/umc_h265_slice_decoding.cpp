@@ -639,5 +639,59 @@ UMC::Status H265Slice::UpdateReferenceList(H265DBPList *pDecoderFrameList)
     return ps;
 } // Status H265Slice::UpdateRefPicList(H265DBPList *pDecoderFrameList)
 
+// RPS data structure constructor
+ReferencePictureSet::ReferencePictureSet()
+{
+  ::memset(this, 0, sizeof(*this));
+}
+
+// Bubble sort RPS by delta POCs placing negative values first, positive values second, increasing POS deltas
+// Negative values are stored with biggest absolute value first. See HEVC spec 8.3.2.
+void ReferencePictureSet::sortDeltaPOC()
+{
+    for (Ipp32s j = 1; j < num_pics; j++)
+    {
+        Ipp32s deltaPOC = m_DeltaPOC[j];
+        Ipp8u Used = used_by_curr_pic_flag[j];
+        for (Ipp32s k = j - 1; k >= 0; k--)
+        {
+            Ipp32s temp = m_DeltaPOC[k];
+            if (deltaPOC < temp)
+            {
+                m_DeltaPOC[k + 1] = temp;
+                used_by_curr_pic_flag[k + 1] = used_by_curr_pic_flag[k];
+                m_DeltaPOC[k] = deltaPOC;
+                used_by_curr_pic_flag[k] = Used;
+            }
+        }
+    }
+    Ipp32s NumNegPics = (Ipp32s) num_negative_pics;
+    for (Ipp32s j = 0, k = NumNegPics - 1; j < NumNegPics >> 1; j++, k--)
+    {
+        Ipp32s deltaPOC = m_DeltaPOC[j];
+        Ipp8u Used = used_by_curr_pic_flag[j];
+        m_DeltaPOC[j] = m_DeltaPOC[k];
+        used_by_curr_pic_flag[j] = used_by_curr_pic_flag[k];
+        m_DeltaPOC[k] = deltaPOC;
+        used_by_curr_pic_flag[k] = Used;
+    }
+}
+
+// RPS list data structure constructor
+ReferencePictureSetList::ReferencePictureSetList()
+    : m_NumberOfReferencePictureSets(0)
+{
+}
+
+// Allocate RPS list data structure with a new number of RPS
+void ReferencePictureSetList::allocate(unsigned NumberOfReferencePictureSets)
+{
+    if (m_NumberOfReferencePictureSets == NumberOfReferencePictureSets)
+        return;
+
+    m_NumberOfReferencePictureSets = NumberOfReferencePictureSets;
+    referencePictureSet.resize(NumberOfReferencePictureSets);
+}
+
 } // namespace UMC_HEVC_DECODER
 #endif // UMC_ENABLE_H265_VIDEO_DECODER

@@ -35,7 +35,7 @@
 namespace UMC_HEVC_DECODER
 {
 H265_DXVA_SegmentDecoderCommon::H265_DXVA_SegmentDecoderCommon(TaskSupplier_H265 * pTaskSupplier)
-    : H265SegmentDecoderMultiThreaded(pTaskSupplier->GetTaskBroker())
+    : H265SegmentDecoderBase(pTaskSupplier->GetTaskBroker())
     , m_va(0)
     , m_pTaskSupplier(pTaskSupplier)
 {
@@ -59,7 +59,7 @@ H265_DXVA_SegmentDecoder::~H265_DXVA_SegmentDecoder()
 
 UMC::Status H265_DXVA_SegmentDecoder::Init(Ipp32s iNumber)
 {
-    return H265SegmentDecoderMultiThreaded::Init(iNumber);
+    return H265SegmentDecoderBase::Init(iNumber);
 }
 
 void H265_DXVA_SegmentDecoder::PackAllHeaders(H265DecoderFrame * pFrame)
@@ -121,7 +121,7 @@ UMC::Status H265_DXVA_SegmentDecoder::ProcessSegment(void)
 
 
 TaskBrokerSingleThreadDXVA::TaskBrokerSingleThreadDXVA(TaskSupplier_H265 * pTaskSupplier)
-    : TaskBrokerSingleThread_H265(pTaskSupplier)
+    : TaskBroker_H265(pTaskSupplier)
     , m_lastCounter(0)
     , m_useDXVAStatusReporting(true)
 {
@@ -147,14 +147,14 @@ bool TaskBrokerSingleThreadDXVA::PrepareFrame(H265DecoderFrame * pFrame)
 void TaskBrokerSingleThreadDXVA::Reset()
 {
     m_lastCounter = 0;
-    TaskBrokerSingleThread_H265::Reset();
+    TaskBroker_H265::Reset();
 }
 
 void TaskBrokerSingleThreadDXVA::Start()
 {
     UMC::AutomaticUMCMutex guard(m_mGuard);
 
-    TaskBrokerSingleThread_H265::Start();
+    TaskBroker_H265::Start();
     m_completedQueue.clear();
 
     if (m_useDXVAStatusReporting)

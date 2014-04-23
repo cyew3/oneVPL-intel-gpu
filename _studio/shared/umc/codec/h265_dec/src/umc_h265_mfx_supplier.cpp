@@ -136,39 +136,13 @@ UMC::Status MFXTaskSupplier_H265::Init(UMC::BaseCodecParams *pInit)
 
     AU_Splitter_H265::Init(init);
 
-    switch(m_iThreadNum)
-    {
-    case 1:
-        m_pTaskBroker = new TaskBrokerSingleThread_H265(this);
-        break;
-    case 4:
-    case 3:
-    case 2:
-        m_pTaskBroker = new TaskBrokerTwoThread_H265(this);
-        break;
-    default:
-        m_pTaskBroker = new TaskBrokerTwoThread_H265(this);
-        break;
-    }
+    m_pSegmentDecoder = new H265SegmentDecoderBase *[m_iThreadNum];
+    memset(m_pSegmentDecoder, 0, sizeof(H265SegmentDecoderBase *) * m_iThreadNum);
 
+    CreateTaskBroker();
     m_pTaskBroker->Init(m_iThreadNum);
 
-    // create slice decoder(s)
-    m_pSegmentDecoder = new H265SegmentDecoderMultiThreaded *[m_iThreadNum];
-    if (NULL == m_pSegmentDecoder)
-        return UMC::UMC_ERR_ALLOC;
-    memset(m_pSegmentDecoder, 0, sizeof(H265SegmentDecoderMultiThreaded *) * m_iThreadNum);
-
-    Ipp32u i;
-    for (i = 0; i < m_iThreadNum; i += 1)
-    {
-        m_pSegmentDecoder[i] = new H265SegmentDecoderMultiThreaded(m_pTaskBroker);
-
-        if (NULL == m_pSegmentDecoder[i])
-            return UMC::UMC_ERR_ALLOC;
-    }
-
-    for (i = 0; i < m_iThreadNum; i += 1)
+    for (Ipp32u i = 0; i < m_iThreadNum; i += 1)
     {
         if (UMC::UMC_OK != m_pSegmentDecoder[i]->Init(i))
             return UMC::UMC_ERR_INIT;

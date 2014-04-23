@@ -16,7 +16,6 @@
 #include "mfx_common_decode_int.h"
 #include "umc_h265_mfx_supplier.h"
 #include "umc_h265_frame_list.h"
-#include "mfx_enc_common.h"
 
 #ifdef MFX_VA
 #include "umc_h265_va_supplier.h"

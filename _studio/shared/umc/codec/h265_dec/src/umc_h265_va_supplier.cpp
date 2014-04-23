@@ -43,8 +43,7 @@ UMC::Status VATaskSupplier::Init(UMC::BaseCodecParams *pInit)
     if (umsRes != UMC::UMC_OK)
         return umsRes;
 
-    Ipp32u i;
-    for (i = 0; i < m_iThreadNum; i += 1)
+    for (Ipp32u i = 0; i < m_iThreadNum; i += 1)
     {
         delete m_pSegmentDecoder[i];
         m_pSegmentDecoder[i] = 0;
@@ -52,19 +51,10 @@ UMC::Status VATaskSupplier::Init(UMC::BaseCodecParams *pInit)
 
     m_iThreadNum = 1;
     delete m_pTaskBroker;
-    m_pTaskBroker = new TaskBrokerSingleThreadDXVA(this);
-    m_pTaskBroker->Init(m_iThreadNum);
 
     DXVASupport<VATaskSupplier>::Init();
 
-    for (i = 0; i < m_iThreadNum; i += 1)
-    {
-        m_pSegmentDecoder[i] = new H265_DXVA_SegmentDecoder(this);
-        if (0 == m_pSegmentDecoder[i])
-            return UMC::UMC_ERR_ALLOC;
-    }
-
-    for (i = 0; i < m_iThreadNum; i += 1)
+    for (Ipp32u i = 0; i < m_iThreadNum; i += 1)
     {
         if (UMC::UMC_OK != m_pSegmentDecoder[i]->Init(i))
             return UMC::UMC_ERR_INIT;
@@ -80,6 +70,16 @@ UMC::Status VATaskSupplier::Init(UMC::BaseCodecParams *pInit)
     m_sei_messages->Init();
 
     return UMC::UMC_OK;
+}
+
+void VATaskSupplier::CreateTaskBroker()
+{
+    m_pTaskBroker = new TaskBrokerSingleThreadDXVA(this);
+
+    for (Ipp32u i = 0; i < m_iThreadNum; i += 1)
+    {
+        m_pSegmentDecoder[i] = new H265_DXVA_SegmentDecoder(this);
+    }
 }
 
 void VATaskSupplier::SetBufferedFramesNumber(Ipp32u buffered)

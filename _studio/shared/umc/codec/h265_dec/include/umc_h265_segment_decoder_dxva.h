@@ -30,7 +30,7 @@ namespace UMC_HEVC_DECODER
 {
 class TaskSupplier_H265;
 
-class H265_DXVA_SegmentDecoderCommon : public H265SegmentDecoderMultiThreaded
+class H265_DXVA_SegmentDecoderCommon : public H265SegmentDecoderBase
 {
 public:
     H265_DXVA_SegmentDecoderCommon(TaskSupplier_H265 * pTaskSupplier);
@@ -63,13 +63,9 @@ public:
     // Initialize object
     virtual UMC::Status Init(Ipp32s iNumber);
 
-    //virtual SegmentDecoderHPBase_H265* CreateSegmentDecoder();
-
     void PackAllHeaders(H265DecoderFrame * pFrame);
 
     virtual UMC::Status ProcessSegment(void);
-
-    //virtual Status ProcessSlice(Ipp32s iCurMBNumber, Ipp32s &iMBToProcess);
 
     Ipp32s m_CurrentSliceID;
 
@@ -153,7 +149,7 @@ protected:
     BaseClass * m_Base;
 };
 
-class TaskBrokerSingleThreadDXVA : public TaskBrokerSingleThread_H265
+class TaskBrokerSingleThreadDXVA : public TaskBroker_H265
 {
 public:
     TaskBrokerSingleThreadDXVA(TaskSupplier_H265 * pTaskSupplier);

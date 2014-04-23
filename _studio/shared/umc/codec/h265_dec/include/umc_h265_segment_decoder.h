@@ -28,15 +28,46 @@ using namespace MFX_HEVC_PP;
 namespace UMC_HEVC_DECODER
 {
 
+class TaskBroker_H265;
+
+class H265SegmentDecoderBase
+{
+public:
+    H265SegmentDecoderBase(TaskBroker_H265 * pTaskBroker)
+        : m_pTaskBroker(pTaskBroker)
+        , m_iNumber(0)
+    {
+    }
+
+    virtual ~H265SegmentDecoderBase()
+    {
+    }
+
+    virtual UMC::Status Init(Ipp32s iNumber)
+    {
+        m_iNumber = iNumber;
+        return UMC::UMC_OK;
+    }
+
+    // Decode slice's segment
+    virtual UMC::Status ProcessSegment(void) = 0;
+
+    virtual void RestoreErrorRect(Ipp32s , Ipp32s , H265Slice * )
+    {
+    }
+
+protected:
+    Ipp32s m_iNumber;                                           // (Ipp32s) ordinal number of decoder
+    TaskBroker_H265 * m_pTaskBroker;
+};
+
 struct H265SliceHeader;
 struct H265FrameHLDNeighborsInfo;
 struct H265MotionVector;
 struct H265MVInfo;
-struct SAOParams;
 struct AMVPInfo;
 class H265Prediction;
 class H265TrQuant;
-class TaskBroker_H265;
 class H265Task;
 
 // Reconstructor template base
@@ -192,7 +223,7 @@ protected:
 };
 
 // Main single thread decoder class
-class H265SegmentDecoder : public Context
+class H265SegmentDecoder : public H265SegmentDecoderBase, public Context
 {
 public:
     // Initialize new slice decoder instance
@@ -363,10 +394,8 @@ public:
     // Update intra availability flags for reconstruct
     void UpdateRecNeighboursBuffersN(Ipp32s PartX, Ipp32s PartY, Ipp32s PartSize, bool IsIntra);
 
-    Ipp32s m_iNumber;                                           // (Ipp32s) ordinal number of decoder
     H265Slice *m_pSlice;                                        // (H265Slice *) current slice pointer
     H265SliceHeader *m_pSliceHeader;                      // (H265SliceHeader *) current slice header
-    TaskBroker_H265 * m_pTaskBroker;
 
     // Default constructor
     H265SegmentDecoder(TaskBroker_H265 * pTaskBroker);

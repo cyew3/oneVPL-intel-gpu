@@ -268,6 +268,9 @@ public:
     // Initialize task supplier and creak task broker
     virtual UMC::Status Init(UMC::BaseCodecParams *pInit);
 
+    // create broker and segment decoders
+    virtual void CreateTaskBroker();
+
     // Initialize what is necessary to decode bitstream header before the main part is initialized
     virtual UMC::Status PreInit(UMC::BaseCodecParams *pInit);
 
@@ -407,7 +410,7 @@ protected:
 
     Heap_Objects           m_ObjHeap;
 
-    H265SegmentDecoderMultiThreaded **m_pSegmentDecoder;
+    H265SegmentDecoderBase **m_pSegmentDecoder;
     Ipp32u m_iThreadNum;
 
     H265ThreadGroup  m_threadGroup;
