@@ -286,7 +286,7 @@ void H265SegmentDecoderMultiThreaded::InitializeDecoding(H265Task & task)
                 {
                     Ipp32s maxCUNumber = task.m_pSlicesInfo->m_tilesThreadingInfo[i].m_maxCUToProcess;
 
-                    if (firstSliceCU >= maxCUNumber)
+                    if (firstSliceCU > maxCUNumber)
                     {
                         uselessTiles++;
                         continue;
