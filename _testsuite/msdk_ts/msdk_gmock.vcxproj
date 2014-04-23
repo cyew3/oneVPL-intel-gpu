@@ -179,6 +179,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\gmock\test_suites\avce_max_bins.cpp" />
+    <ClCompile Include="src\gmock\test_suites\avce_roi.cpp" />
     <ClCompile Include="src\gmock\test_suites\hevcd_decode_header.cpp" />
     <ClCompile Include="src\gmock\test_suites\hevcd_get_video_param.cpp" />
     <ClCompile Include="src\gmock\test_suites\hevcd_init.cpp" />
