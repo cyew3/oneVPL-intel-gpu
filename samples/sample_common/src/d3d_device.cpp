@@ -19,6 +19,8 @@ Copyright(c) 2011 - 2013 Intel Corporation. All Rights Reserved.
 #include "sample_defs.h"
 #include "igfx_s3dcontrol.h"
 
+#include "atlbase.h"
+
 CD3D9Device::CD3D9Device()
 {
     m_pD3D9 = NULL;
@@ -81,6 +83,8 @@ CD3D9Device::CD3D9Device()
     m_Sample.SampleFormat = format;
     m_Sample.PlanarAlpha.Fraction = 0;
     m_Sample.PlanarAlpha.Value = 1;
+
+    m_bIsA2rgb10 = FALSE;
 }
 
 bool CD3D9Device::CheckOverlaySupport()
@@ -137,7 +141,7 @@ mfxStatus CD3D9Device::FillD3DPP(mfxHDL hWindow, mfxU16 nViews, D3DPRESENT_PARAM
     D3DPP.FullScreen_RefreshRateInHz = D3DPRESENT_RATE_DEFAULT;
     D3DPP.PresentationInterval       = D3DPRESENT_INTERVAL_ONE; // note that this setting leads to an implicit timeBeginPeriod call
     D3DPP.BackBufferCount            = 1;
-    D3DPP.BackBufferFormat           = D3DFMT_X8R8G8B8;
+    D3DPP.BackBufferFormat           = (m_bIsA2rgb10) ? D3DFMT_A2R10G10B10 : D3DFMT_X8R8G8B8;
 
     D3DPP.BackBufferWidth  = GetSystemMetrics(SM_CXSCREEN);
     D3DPP.BackBufferHeight = GetSystemMetrics(SM_CYSCREEN);
@@ -182,7 +186,6 @@ mfxStatus CD3D9Device::Init(
     sts = FillD3DPP(hWindow, nViews, m_D3DPP);
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
-
     hr = m_pD3D9->CreateDeviceEx(
         nAdapterNum,
         D3DDEVTYPE_HAL,
@@ -199,7 +202,6 @@ mfxStatus CD3D9Device::Init(
         hr = m_pD3DD9->ResetEx(&m_D3DPP, NULL);
         if (FAILED(hr))
             return MFX_ERR_UNDEFINED_BEHAVIOR;
-
         hr = m_pD3DD9->Clear(0, NULL, D3DCLEAR_TARGET, D3DCOLOR_XRGB(0, 0, 0), 1.0f, 0);
         if (FAILED(hr))
             return MFX_ERR_UNDEFINED_BEHAVIOR;
@@ -296,8 +298,6 @@ mfxStatus CD3D9Device::SetHandle(mfxHandleType type, mfxHDL hdl)
 mfxStatus CD3D9Device::RenderFrame(mfxFrameSurface1 * pSurface, mfxFrameAllocator * pmfxAlloc)
 {
     HRESULT hr = S_OK;
-    mfxStatus sts = MFX_ERR_NONE;
-    IDirectXVideoProcessor* pVideoProcessor = NULL;
 
     if (!(1 == m_nViews || (2 == m_nViews && NULL != m_pS3DControl)))
         return MFX_ERR_UNDEFINED_BEHAVIOR;
@@ -310,75 +310,53 @@ mfxStatus CD3D9Device::RenderFrame(mfxFrameSurface1 * pSurface, mfxFrameAllocato
     if ((2 == m_nViews && (0 != pSurface->Info.FrameId.ViewId) && NULL == m_pRenderSurface))
         return MFX_ERR_NONE;
 
-    // First call to create video processors
-    if (NULL == m_pDXVAVP_Right)
-    {
-        sts = CreateVideoProcessors();
-        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
-    }
-
     hr = m_pD3DD9->TestCooperativeLevel();
 
-    if (SUCCEEDED(hr))
+    switch (hr)
     {
-        if (1 == m_nViews || 0 == pSurface->Info.FrameId.ViewId)
+        case D3D_OK :
+            break;
+
+        case D3DERR_DEVICELOST :
         {
-            GetClientRect(m_D3DPP.hDeviceWindow, &m_targetRect);
-            // Ensure target rect fits back buffer (when window bigger than monitor).
-            if (NULL != m_pDeviceManager9 &&
-               (m_targetRect.right - m_targetRect.left > (LONG)m_backBufferDesc.Width ||
-                m_targetRect.bottom - m_targetRect.top > (LONG)m_backBufferDesc.Height))
+            return MFX_ERR_DEVICE_LOST;
+        }
+
+        case D3DERR_DEVICENOTRESET :
             {
-                m_targetRect.right = min(m_targetRect.right, m_targetRect.left + (LONG)m_backBufferDesc.Width);
-                m_targetRect.bottom = min(m_targetRect.bottom, m_targetRect.top + (LONG)m_backBufferDesc.Height);
-            }
+            return MFX_ERR_UNKNOWN;
         }
 
-        // source rectangle
-        RECT source = { pSurface->Info.CropX, pSurface->Info.CropY,
-            pSurface->Info.CropX + pSurface->Info.CropW,
-            pSurface->Info.CropY + pSurface->Info.CropH };
-
-        m_BltParams.TargetRect = m_targetRect;
-        m_Sample.SrcRect = source;
-        m_Sample.DstRect = m_targetRect;
-
-        // get IDirect3DSurface9 handle
-        mfxHDL surfHDL = {0};
-        pmfxAlloc->GetHDL(pmfxAlloc->pthis, pSurface->Data.MemId, &surfHDL);
-        m_Sample.SrcSurface = (IDirect3DSurface9*)surfHDL;
-
-        // select processor based on the view id
-        pVideoProcessor = m_pDXVAVP_Left;
-        if (1 == m_nViews || 1 == pSurface->Info.FrameId.ViewId)
+        default :
         {
-            pVideoProcessor = m_pDXVAVP_Right;
-        }
-
-        // this is the key moment:
-        // a new rendering surface must be retrieved for every s3d frame (L+R) and then released
-        if (1 == m_nViews || 0 == pSurface->Info.FrameId.ViewId)
-        {
-            hr = m_pD3DD9->GetBackBuffer(0, 0, D3DBACKBUFFER_TYPE_MONO, &m_pRenderSurface);
+            return MFX_ERR_UNKNOWN;
         }
     }
-    MSDK_CHECK_POINTER(pVideoProcessor, MFX_ERR_DEVICE_FAILED);
-    if (SUCCEEDED(hr))
+
+    // source rectangle
+    RECT source = { pSurface->Info.CropX, pSurface->Info.CropY,
+                    pSurface->Info.CropX + pSurface->Info.CropW,
+                    pSurface->Info.CropY + pSurface->Info.CropH };
+
+    CComPtr<IDirect3DSurface9> pBackBuffer;
+    hr = m_pD3DD9->GetBackBuffer(0, 0, D3DBACKBUFFER_TYPE_MONO, &pBackBuffer);
+
+    D3DSURFACE_DESC dsc ;
+    pBackBuffer->GetDesc(&dsc);
+
+    RECT targetRect = {0}, dest = {0};
+    GetClientRect(m_D3DPP.hDeviceWindow, &targetRect);
+    dest = targetRect;
+
+    hr = m_pD3DD9->StretchRect((IDirect3DSurface9*)pSurface->Data.MemId, &source, pBackBuffer, &dest, D3DTEXF_LINEAR);
+    if (FAILED(hr))
     {
-        // process the surface
-        hr = pVideoProcessor->VideoProcessBlt(m_pRenderSurface,
-            &m_BltParams,
-            &m_Sample,
-            1,
-            NULL);
-        if (1 == m_nViews || 1 == pSurface->Info.FrameId.ViewId)
-        {
-            MSDK_SAFE_RELEASE(m_pRenderSurface);
-        }
+        return MFX_ERR_UNKNOWN;
     }
+
     if (SUCCEEDED(hr)&& (1 == m_nViews || pSurface->Info.FrameId.ViewId == 1))
     {
-        hr = m_pD3DD9->Present(&m_targetRect, &m_targetRect, NULL, NULL);
+        hr = m_pD3DD9->Present(&targetRect, &targetRect, NULL, NULL);
     }
 
     return SUCCEEDED(hr) ? MFX_ERR_NONE : MFX_ERR_DEVICE_FAILED;
@@ -432,7 +410,7 @@ mfxStatus CD3D9Device::CreateVideoProcessors()
            // Create VPP device for the L channel
            hr = m_pDXVAVPS->CreateVideoProcessor(DXVA2_VideoProcProgressiveDevice,
                &m_VideoDesc,
-               OVERLAY_BACKBUFFER_FORMAT,
+               m_D3DPP.BackBufferFormat,
                1,
                &m_pDXVAVP_Left);
         }
@@ -448,7 +426,7 @@ mfxStatus CD3D9Device::CreateVideoProcessors()
    {
        hr = m_pDXVAVPS->CreateVideoProcessor(DXVA2_VideoProcProgressiveDevice,
            &m_VideoDesc,
-           OVERLAY_BACKBUFFER_FORMAT,
+           m_D3DPP.BackBufferFormat,
            1,
            &m_pDXVAVP_Right);
    }

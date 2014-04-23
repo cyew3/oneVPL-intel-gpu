@@ -436,12 +436,15 @@ mfxStatus CDecodingPipeline::CreateHWDevice()
 #if MFX_D3D11_SUPPORT
     if (D3D11_MEMORY == m_memType)
         m_hwdev = new CD3D11Device();
-        if(m_hwdev) {
+        if (m_hwdev) {
             reinterpret_cast<CD3D11Device *>(m_hwdev)->DefineFormat((m_fourcc == MFX_FOURCC_A2RGB10) ? true: false);
         }
     else
 #endif // #if MFX_D3D11_SUPPORT
         m_hwdev = new CD3D9Device();
+        if (m_hwdev) {
+            reinterpret_cast<CD3D9Device *>(m_hwdev)->DefineFormat((m_fourcc == MFX_FOURCC_A2RGB10) ? true: false);
+        }
 
     if (NULL == m_hwdev)
         return MFX_ERR_MEMORY_ALLOC;
