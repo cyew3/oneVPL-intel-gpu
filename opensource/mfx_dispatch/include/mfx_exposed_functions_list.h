@@ -107,26 +107,17 @@ FUNCTION(mfxStatus, MFXVideoUSER_ProcessFrameAsync, (mfxSession session, const m
 #undef API_VERSION
 
 //
-// API version 1.9 functions
+// API version 1.10 functions
 //
 
-#define API_VERSION {{9, 1}}
+#define API_VERSION {{10, 1}}
 
 FUNCTION(mfxStatus, MFXVideoENC_Query,(mfxSession session, mfxVideoParam *in, mfxVideoParam *out), (session,in,out))
 FUNCTION(mfxStatus, MFXVideoENC_QueryIOSurf,(mfxSession session, mfxVideoParam *par, mfxFrameAllocRequest *request), (session,par,request))
 FUNCTION(mfxStatus, MFXVideoENC_Init,(mfxSession session, mfxVideoParam *par), (session,par))
 FUNCTION(mfxStatus, MFXVideoENC_Reset,(mfxSession session, mfxVideoParam *par), (session,par))
 FUNCTION(mfxStatus, MFXVideoENC_Close,(mfxSession session),(session))
-
 FUNCTION(mfxStatus, MFXVideoENC_ProcessFrameAsync,(mfxSession session, mfxENCInput *in, mfxENCOutput *out, mfxSyncPoint *syncp),(session,in,out,syncp))
-
-#undef API_VERSION
-
-//
-// API version 1.10 functions
-//
-
-#define API_VERSION {{10, 1}}
 
 FUNCTION(mfxStatus, MFXVideoVPP_RunFrameVPPAsyncEx, (mfxSession session, mfxFrameSurface1 *in, mfxFrameSurface1 *work, mfxFrameSurface1 **out, mfxSyncPoint *syncp), (session, in, work, out, syncp))
 
