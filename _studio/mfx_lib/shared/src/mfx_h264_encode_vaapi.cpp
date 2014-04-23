@@ -592,6 +592,100 @@ void UpdateSlice(
 
 } // void UpdateSlice(...)
 
+void UpdateSliceSizeLimited(
+    ENCODE_CAPS const &                         hwCaps,
+    DdiTask const &                             task,
+    mfxU32                                      fieldId,
+    VAEncSequenceParameterBufferH264 const     & sps,
+    VAEncPictureParameterBufferH264 const      & pps,
+    std::vector<VAEncSliceParameterBufferH264> & slice,
+    MfxVideoParam const                        & par,
+    std::vector<ExtVASurface> const & reconQueue)
+{
+    mfxU32 numPics  = task.GetPicStructForEncode() == MFX_PICSTRUCT_PROGRESSIVE ? 1 : 2;
+    mfxU32 numSlice = slice.size();
+    mfxU32 idx = 0, ref = 0;
+
+    mfxExtCodingOptionDDI * extDdi = GetExtBuffer(par);
+    assert( extDdi != 0 );
+
+    size_t numSlices = task.m_SliceInfo.size();   
+    if (numSlices != slice.size())
+    {
+        size_t old_size = slice.size();
+        slice.resize(numSlices);
+        for (size_t i = old_size; i < slice.size(); ++i)
+        {
+            slice[i] = slice[0];
+            //slice[i].slice_id = (mfxU32)i;
+        } 
+    }
+
+    ArrayDpbFrame const & dpb = task.m_dpb[fieldId];
+    ArrayU8x33 const & list0 = task.m_list0[fieldId];
+    ArrayU8x33 const & list1 = task.m_list1[fieldId];
+
+    for( size_t i = 0; i < slice.size(); ++i)
+    {
+        slice[i].macroblock_address = task.m_SliceInfo[i].startMB;
+        slice[i].num_macroblocks = task.m_SliceInfo[i].numMB;
+
+        for (ref = 0; ref < list0.Size(); ref++)
+        {
+            slice[i].RefPicList0[ref].frame_idx    = idx  = dpb[list0[ref] & 0x7f].m_frameIdx & 0x7f;
+            slice[i].RefPicList0[ref].picture_id          = reconQueue[idx].surface;
+            if (task.GetPicStructForEncode() != MFX_PICSTRUCT_PROGRESSIVE)
+                slice[i].RefPicList0[ref].flags               = list0[ref] >> 7 ? VA_PICTURE_H264_BOTTOM_FIELD : VA_PICTURE_H264_TOP_FIELD;
+        }
+        for (; ref < 32; ref++)
+        {
+            slice[i].RefPicList0[ref].picture_id = VA_INVALID_ID;
+            slice[i].RefPicList0[ref].flags      = VA_PICTURE_H264_INVALID;
+        }
+
+        for (ref = 0; ref < list1.Size(); ref++)
+        {
+            slice[i].RefPicList1[ref].frame_idx    = idx  = dpb[list1[ref] & 0x7f].m_frameIdx & 0x7f;
+            slice[i].RefPicList1[ref].picture_id          = reconQueue[idx].surface;
+            if (task.GetPicStructForEncode() != MFX_PICSTRUCT_PROGRESSIVE)
+                slice[i].RefPicList1[ref].flags               = list0[ref] >> 7 ? VA_PICTURE_H264_BOTTOM_FIELD : VA_PICTURE_H264_TOP_FIELD;
+        }
+        for (; ref < 32; ref++)
+        {
+            slice[i].RefPicList1[ref].picture_id = VA_INVALID_ID;
+            slice[i].RefPicList1[ref].flags      = VA_PICTURE_H264_INVALID;
+        }
+
+        slice[i].pic_parameter_set_id = pps.pic_parameter_set_id;
+        slice[i].slice_type = ConvertMfxFrameType2SliceType( task.m_type[fieldId] );
+
+        slice[i].direct_spatial_mv_pred_flag = 1;
+
+        slice[i].num_ref_idx_l0_active_minus1 = mfxU8(IPP_MAX(1, task.m_list0[fieldId].Size()) - 1);
+        slice[i].num_ref_idx_l1_active_minus1 = mfxU8(IPP_MAX(1, task.m_list1[fieldId].Size()) - 1);
+        slice[i].num_ref_idx_active_override_flag   =
+                    slice[i].num_ref_idx_l0_active_minus1 != pps.num_ref_idx_l0_active_minus1 ||
+                    slice[i].num_ref_idx_l1_active_minus1 != pps.num_ref_idx_l1_active_minus1;
+
+        slice[i].idr_pic_id = task.m_idrPicId;
+        slice[i].pic_order_cnt_lsb = mfxU16(task.GetPoc(fieldId));
+
+        slice[i].delta_pic_order_cnt_bottom         = 0;
+        slice[i].delta_pic_order_cnt[0]             = 0;
+        slice[i].delta_pic_order_cnt[1]             = 0;
+        slice[i].luma_log2_weight_denom             = 0;
+        slice[i].chroma_log2_weight_denom           = 0;
+
+        slice[i].cabac_init_idc                     = extDdi ? (mfxU8)extDdi->CabacInitIdcPlus1 - 1 : 0;
+        slice[i].slice_qp_delta                     = mfxI8(task.m_cqpValue[fieldId] - pps.pic_init_qp);
+
+        slice[i].disable_deblocking_filter_idc = 0;
+        slice[i].slice_alpha_c0_offset_div2 = 0;
+        slice[i].slice_beta_offset_div2 = 0;
+    }
+
+} // void UpdateSlice(...)
+
 
 ////////////////////////////////////////////////////////////////////////////////////////////
 //                    HWEncoder based on VAAPI
@@ -1093,11 +1187,26 @@ mfxStatus VAAPIEncoder::Execute(
     VAStatus    vaSts;
     mfxU8 skipFlag = task.SkipFlag();
 
-    configBuffers.resize(MAX_CONFIG_BUFFERS_COUNT + m_slice.size()*2);
-
     // update params
-    UpdatePPS(task, fieldId, m_pps, m_reconQueue);
-    UpdateSlice(m_caps, task, fieldId, m_sps, m_pps, m_slice, m_videoParam, m_reconQueue);
+    {
+        size_t slice_size_old = m_slice.size();
+
+        UpdatePPS(task, fieldId, m_pps, m_reconQueue);
+
+        if (task.m_SliceInfo.size())
+            UpdateSliceSizeLimited(m_caps, task, fieldId, m_sps, m_pps, m_slice, m_videoParam, m_reconQueue);
+        else
+            UpdateSlice(m_caps, task, fieldId, m_sps, m_pps, m_slice, m_videoParam, m_reconQueue);
+
+        if (slice_size_old != m_slice.size())
+        {
+            m_sliceBufferId.resize(m_slice.size());
+            m_packeSliceHeaderBufferId.resize(m_slice.size());
+            m_packedSliceBufferId.resize(m_slice.size());
+        }
+
+        configBuffers.resize(MAX_CONFIG_BUFFERS_COUNT + m_slice.size()*2);
+    }
 
     //------------------------------------------------------------------
     // find bitstream
