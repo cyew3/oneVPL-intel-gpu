@@ -3,7 +3,7 @@
 //  This software is supplied under the terms of a license agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in accordance with the terms of that agreement.
-//        Copyright (c) 2004 - 2013 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2004 - 2014 Intel Corporation. All Rights Reserved.
 //
 
 #include <vm_thread.h>
@@ -238,6 +238,10 @@ Status H264ENC_MAKE_NAME(H264CoreEncoder_Create)(
     core_enc->lSR_MBT = NULL;
     core_enc->gd_MBT = NULL;
     vm_mutex_set_invalid(&core_enc->mutexIncRow);
+#ifdef H264_RECODE_PCM
+    core_enc->m_nPCM = 0;
+    core_enc->m_mbPCM = NULL;
+#endif //H264_RECODE_PCM
 #ifdef MB_THREADING_VM
     core_enc->m_ThreadDataVM = NULL;
     core_enc->m_ThreadVM_MBT = NULL;
@@ -1762,6 +1766,11 @@ Status H264ENC_MAKE_NAME(H264CoreEncoder_Init)(
 
     vm_mutex_set_invalid(&core_enc->mutexIncRow);
     vm_mutex_init(&core_enc->mutexIncRow);
+#ifdef H264_RECODE_PCM
+    core_enc->m_mbPCM = (Ipp32s*)H264_Malloc(core_enc->m_HeightInMBs * core_enc->m_WidthInMBs * 2 * sizeof(Ipp32s));
+    if (!core_enc->m_mbPCM)
+        return UMC_ERR_ALLOC;
+#endif //H264_RECODE_PCM
 #ifdef MB_THREADING_VM
     core_enc->m_ThreadVM_MBT = (vm_thread*)H264_Malloc(sizeof(vm_thread) * core_enc->m_info.numThreads);
     if (!core_enc->m_ThreadVM_MBT)
@@ -2111,6 +2120,10 @@ Status H264ENC_MAKE_NAME(H264CoreEncoder_Close)(
         H264_Free((void*)core_enc->gd_MBT);
         core_enc->gd_MBT = NULL;
     }
+#ifdef H264_RECODE_PCM
+    H264_Free((void*)core_enc->m_mbPCM);
+    core_enc->m_mbPCM = NULL;
+#endif H264_RECODE_PCM
 #ifdef MB_THREADING_VM
     H264_Free((void*)core_enc->m_ThreadVM_MBT);
     core_enc->m_ThreadVM_MBT = NULL;

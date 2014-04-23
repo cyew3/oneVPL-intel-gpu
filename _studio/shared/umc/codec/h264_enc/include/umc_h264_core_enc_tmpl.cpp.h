@@ -3,7 +3,7 @@
 //  This software is supplied under the terms of a license agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in accordance with the terms of that agreement.
-//        Copyright (c) 2004 - 2013 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2004 - 2014 Intel Corporation. All Rights Reserved.
 //
 
 #if PIXBITS == 8
@@ -693,6 +693,75 @@ void H264ENC_MAKE_NAME(H264CoreEncoder_ReconstuctCBP)(
     }
 }
 
+
+void H264ENC_MAKE_NAME(H264CoreEncoder_Reconstruct_PCM_MB)(
+    void* state,
+    H264SliceType *curr_slice)
+{
+    H264CoreEncoderType* core_enc = (H264CoreEncoderType *)state;
+    Ipp32u row, col;
+    PIXTYPE*  pSrcPlane;     // start of plane to encode
+    PIXTYPE*  pRecPlane;     // start of reconstructed plane
+    Ipp32s    pitchPixels;   // buffer pitch in pixels.
+    Ipp32s    offset;        // to upper left corner of block from start of plane (in pixels)
+    Ipp32u uv_col_step = core_enc->m_pCurrentFrame->m_data.GetColorFormat() == NV12 ? 2 : 1;
+
+    offset = core_enc->m_pMBOffsets[curr_slice->m_cur_mb.uMB].uLumaOffset[core_enc->m_is_cur_pic_afrm][curr_slice->m_is_cur_mb_field];
+    pSrcPlane = &((PIXTYPE*)core_enc->m_pCurrentFrame->m_pYPlane)[offset];
+    pRecPlane = &((PIXTYPE*)core_enc->m_pReconstructFrame->m_pYPlane)[offset];
+    pitchPixels = core_enc->m_pCurrentFrame->m_pitchPixels<<curr_slice->m_is_cur_mb_field;
+
+    // Y plane first
+
+    for (row=0; row<16; row++) {
+        for (col=0; col<16; col++) {
+            pRecPlane[col] = pSrcPlane[col];
+            if (!pRecPlane[col])    // Replace forbidden zero samples with 1. // BUG!? don't replace for 44, 100... profile
+                pRecPlane[col] = 1;
+        }
+        pSrcPlane += pitchPixels;
+        pRecPlane += pitchPixels;
+    }
+
+    if(curr_slice->m_cur_mb.chroma_format_idc == 0) {
+        // Monochrome mode.
+        return;
+    }
+
+    offset = core_enc->m_pMBOffsets[curr_slice->m_cur_mb.uMB].uChromaOffset[core_enc->m_is_cur_pic_afrm][curr_slice->m_is_cur_mb_field];
+    pSrcPlane = &((PIXTYPE*)core_enc->m_pCurrentFrame->m_pUPlane)[offset];
+    pRecPlane = &((PIXTYPE*)core_enc->m_pReconstructFrame->m_pUPlane)[offset];
+
+
+    // U plane next
+
+    for (row=0; row<8; row++) {
+        for (col=0; col<(8*uv_col_step); col += uv_col_step) {
+            pRecPlane[col] = pSrcPlane[col];
+            if (!pRecPlane[col])    // Replace forbidden zero samples with 1.
+                pRecPlane[col] = 1;
+        }
+        pSrcPlane += pitchPixels;
+        pRecPlane += pitchPixels;
+    }
+
+    pSrcPlane = &((PIXTYPE*)core_enc->m_pCurrentFrame->m_pVPlane)[offset];
+    pRecPlane = &((PIXTYPE*)core_enc->m_pReconstructFrame->m_pVPlane)[offset];
+
+    // V plane last
+
+    for (row=0; row<8; row++) {
+        for (col=0; col<(8*uv_col_step); col += uv_col_step) {
+            pRecPlane[col] = pSrcPlane[col];
+            if (!pRecPlane[col])    // Replace forbidden zero samples with 1.
+                pRecPlane[col] = 1;
+        }
+        pSrcPlane += pitchPixels;
+        pRecPlane += pitchPixels;
+    }
+
+}   // Reconstruct_PCM_MB
+
 //////////////////////////////////
 // Compress one slice
 Status H264ENC_MAKE_NAME(H264CoreEncoder_Compress_Slice)(
@@ -867,8 +936,15 @@ Status H264ENC_MAKE_NAME(H264CoreEncoder_Compress_Slice)(
         uUsePCM = 0;    // Don't use the PCM mode initially.
         //cur_mb.LocalMacroblockInfo->QP = curr_slice->m_iLastXmittedQP;
 
-        H264ENC_MAKE_NAME(H264CoreEncoder_setInCropWindow)(state, curr_slice);
+#ifdef H264_RECODE_PCM
+        if (core_enc->m_info.entropy_coding_mode)
+        {
+            H264ENC_MAKE_NAME(H264BsReal_StoreIppCABACState)(pBitstream);
+        }
+#endif //H264_RECODE_PCM
 
+        H264ENC_MAKE_NAME(H264CoreEncoder_setInCropWindow)(state, curr_slice);
+        
         do {    // this is to recompress MBs that are too big.
             //if (core_enc->m_uFrames_Num == 1// && cur_mb.uMBx == 1 && cur_mb.uMBy == 0
             //    &&core_enc->m_svc_layer.svc_ext.dependency_id == 0
@@ -961,6 +1037,16 @@ Status H264ENC_MAKE_NAME(H264CoreEncoder_Compress_Slice)(
                 mb_bits -= uStartBitOffset - uEndBitOffset;
 
             //printf("x = %i, y = %i, nbits = %i\n", cur_mb.uMBx, cur_mb.uMBy, mb_bits);
+
+#ifdef H264_RECODE_PCM
+            if (   core_enc->m_PicParamSet->entropy_coding_mode 
+                &&  3200 < H264ENC_MAKE_NAME(H264BsReal_GetNotStoredStreamSize_CABAC)(pBitstream))
+            {
+                H264ENC_MAKE_NAME(H264BsReal_RestoreIppCABACState)(pBitstream);
+                pSetMB8x8TSFlag(curr_slice->m_cur_mb.GlobalMacroblockInfo, 0);
+                uUsePCM = 1;
+            }
+#endif //H264_RECODE_PCM
 
 #ifdef ALT_BITSTREAM_ALLOC
             //Expand buffer if it is nearly full

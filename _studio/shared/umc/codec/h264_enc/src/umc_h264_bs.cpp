@@ -3,7 +3,7 @@
 //  This software is supplied under the terms of a license agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in accordance with the terms of that agreement.
-//        Copyright (c) 2004 - 2013 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2004 - 2014 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -2152,6 +2152,49 @@ IppStatus ippiCABACInitOwn_H264(
     }
 }
 
+IppStatus ippiCABACInitAEEOwn_H264( 
+    IppvcCABACState* pCabacState_,
+    Ipp8u*          pBitStream,
+    Ipp32u          nBitStreamOffsetBits,
+    Ipp32u          nBitStreamSize)
+{
+    IppvcCABACState_internal* pCabacState = (IppvcCABACState_internal *)pCabacState_;
+    {
+        Ipp32u nBitStreamOffsetBytes = ( nBitStreamOffsetBits + 7 ) / 8;
+        Ipp8u* pBitStreamCurrentByte = pBitStream + nBitStreamOffsetBytes;
+        pCabacState->lcodIOffset = 0;
+        pCabacState->lcodIRange = 0x1FE;
+        pCabacState->pBitStreamStart = pBitStream;
+        pCabacState->pBitStreamEnd = (Ipp32u *)ippAlignPtr( pBitStream + nBitStreamSize - 4, 4 );
+        pCabacState->nPreCabacBitOffset = nBitStreamOffsetBits;
+
+        switch( IPP_UINT_PTR( pBitStreamCurrentByte ) % 4 ) {
+            case 0:
+                pCabacState->pBitStream = (Ipp32u*)( pBitStreamCurrentByte - 4 );
+                pCabacState->nBitsVacant = 1;
+                pCabacState->nRegister = SwapBytes_32u( *( pCabacState->pBitStream ) );
+                break;
+            case 1:
+                pCabacState->pBitStream = (Ipp32u*)( pBitStreamCurrentByte - 1 );
+                pCabacState->nBitsVacant = 25;
+                pCabacState->nRegister = SwapBytes_32u( *( pCabacState->pBitStream ) ) & 0xFF000000U;
+                break;
+            case 2:
+                pCabacState->pBitStream = (Ipp32u*)( pBitStreamCurrentByte - 2 );
+                pCabacState->nBitsVacant = 17;
+                pCabacState->nRegister = SwapBytes_32u( *( pCabacState->pBitStream ) ) & 0xFFFF0000U;
+                break;
+            case 3:
+                pCabacState->pBitStream = (Ipp32u*)( pBitStreamCurrentByte - 3 );
+                pCabacState->nBitsVacant = 9;
+                pCabacState->nRegister = SwapBytes_32u( *( pCabacState->pBitStream ) ) & 0xFFFFFF00U;
+                break;
+        }
+
+        return ippStsNoErr;
+    }
+}
+
 IppStatus ippiCABACInitAllocOwn_H264(
     IppvcCABACState** ppCabacState,
     Ipp8u*           pBitStream,
@@ -2193,9 +2236,13 @@ IppStatus ippiCABACEncodeBins_H264(
     Ipp32u ctxIdx,
     Ipp32u bitString,
     Ipp32u length,
-    IppvcCABACState* pCabacState)
+    IppvcCABACState* pCabacState,
+    Ipp32u& numBins )
 {
     IppStatus status = ippStsNoErr;
+
+    numBins += length;
+
     while( length > 0 ) {
         length--;
         {
@@ -2210,7 +2257,8 @@ IppStatus ippiCABACEncodeBins_H264(
 
 IppStatus ippiCABACEncodeExG0Symbol_H264(
     Ipp32u code,
-    IppvcCABACState* pCabacState)
+    IppvcCABACState* pCabacState,
+    Ipp32u& numBins)
 {
     Ipp32u log2ex = 0;
     IppStatus status = ippStsNoErr;
@@ -2222,14 +2270,17 @@ IppStatus ippiCABACEncodeExG0Symbol_H264(
                 return status;
             code -= ( 1U<<log2ex );
             log2ex++;
+            numBins++;
         } else {
             status = ippiCABACEncodeBinBypass_H264( 0, pCabacState );
             if( status != ippStsNoErr )
                 return status;
+            numBins++;
             while( log2ex-- ) {
                 status = ippiCABACEncodeBinBypass_H264( ( code >> log2ex ) & 1, pCabacState );
                 if( status != ippStsNoErr )
                     return status;
+                numBins++;
             }
             return ippStsNoErr;
         }
@@ -2239,19 +2290,21 @@ IppStatus ippiCABACEncodeExG0Symbol_H264(
 IppStatus ippiCABACEncodeResidualLevel_H264(
     Ipp32u ctxIdx,
     Ipp32u code,
-    IppvcCABACState* pCabacState)
+    IppvcCABACState* pCabacState,
+    Ipp32u& numBins)
 {
     /* 2^(i+1)-2 except last=2^(i+1)-1 */
     static Ipp32u c[14] = {0,2,6,14,30,62,126,254,510,1022,2046,4094,8190,16383};
 
     if( code == 0 ) {
+        numBins++;
         return ippiCABACEncodeBin_H264( ctxIdx, 0, pCabacState );
     } else {
         if( code < 13 ) {
-            ippiCABACEncodeBins_H264( ctxIdx, c[code], code + 1, pCabacState );
+            ippiCABACEncodeBins_H264( ctxIdx, c[code], code + 1, pCabacState, numBins );
         } else {
-            ippiCABACEncodeBins_H264( ctxIdx, c[13], 13, pCabacState );
-            ippiCABACEncodeExG0Symbol_H264( code - 13, pCabacState );
+            ippiCABACEncodeBins_H264( ctxIdx, c[13], 13, pCabacState, numBins );
+            ippiCABACEncodeExG0Symbol_H264( code - 13, pCabacState, numBins );
         }
     }
     return ippStsNoErr;
@@ -2326,6 +2379,7 @@ Status H264BsReal_ResidualBlock_CABAC(
 {
     IppvcCABACState* pCabacState = ((H264BsReal_8u16s *)bs)->m_base.pCabacState;
     Ipp32s logNumC8x8 = ((H264BsReal_8u16s *)bs)->num8x8Cshift2;
+    Ipp32u& numBins = ((H264BsReal_8u16s *)bs)->m_base.m_numBins;
 
     IppStatus status;
     Ipp32u maxNumCoeff = maxNumCoeffTable[ctxBlockCat] << logNumC8x8;
@@ -2382,6 +2436,7 @@ Status H264BsReal_ResidualBlock_CABAC(
                 status = ippiCABACEncodeBin_H264(ctxIdx_SignificantCoeffFlag, pResidualCoeffs[levelListIdx] != 0, pCabacState);
                 if( status != ippStsNoErr )
                     goto errorExit;
+                numBins++;
 
                 if( pResidualCoeffs[levelListIdx] != 0 ) {
                     sigCoeff[numSigCoeff++] = pResidualCoeffs[levelListIdx];
@@ -2389,6 +2444,7 @@ Status H264BsReal_ResidualBlock_CABAC(
                     status = ippiCABACEncodeBin_H264( ctxIdx_LastSignificantCoeffFlag, levelListIdx == nLastNonZeroCoeff, pCabacState );
                     if( status != ippStsNoErr )
                         goto errorExit;
+                    numBins++;
                     if( levelListIdx == nLastNonZeroCoeff )
                         break;
                 }
@@ -2427,6 +2483,7 @@ Status H264BsReal_ResidualBlock_CABAC(
 
                 if( status != ippStsNoErr )
                     goto errorExit;
+                numBins++;
 
                 if( pResidualCoeffs[levelListIdx] != 0 ) {
                     sigCoeff[numSigCoeff++] = pResidualCoeffs[levelListIdx];
@@ -2438,6 +2495,7 @@ Status H264BsReal_ResidualBlock_CABAC(
 
                     if (status != ippStsNoErr)
                         goto errorExit;
+                    numBins++;
                     if (levelListIdx == nLastNonZeroCoeff)
                         break;
                 }
@@ -2476,6 +2534,7 @@ Status H264BsReal_ResidualBlock_CABAC(
                 status = ippiCABACEncodeBin_H264( ctxIdx_SignificantCoeffFlag, pResidualCoeffs[levelListIdx] != 0, pCabacState );
                 if( status != ippStsNoErr )
                     goto errorExit;
+                numBins++;
 
                 if( pResidualCoeffs[levelListIdx] != 0 ) {
                     sigCoeff[numSigCoeff++] = pResidualCoeffs[levelListIdx];
@@ -2483,6 +2542,7 @@ Status H264BsReal_ResidualBlock_CABAC(
                     status = ippiCABACEncodeBin_H264(ctxIdx_LastSignificantCoeffFlag, levelListIdx == nLastNonZeroCoeff, pCabacState );
                     if( status != ippStsNoErr )
                         goto errorExit;
+                    numBins++;
                     if( levelListIdx == nLastNonZeroCoeff )
                         break;
                 }
@@ -2518,10 +2578,11 @@ Status H264BsReal_ResidualBlock_CABAC(
                 Ipp32u ctx = ctxIdxOffset_CoeffAbsLevelMinus1 + ctxIdxBlockCatOffset_CoeffAbsLevelMinus1 + ctx_neq1p1[ctx_id];
                 cabprintf("range = %d\n",((__IppvcCABACState*)(pCabacState))->lcodIRange);
                 ippiCABACEncodeBin_H264(ctx, 1, pCabacState);
+                numBins++;
 
                 ctx = ctxIdxOffset_CoeffAbsLevelMinus1 + ctxIdxBlockCatOffset_CoeffAbsLevelMinus1 + ctx_ngt1[ctx_id];
                 cabprintf("range = %d\n",((__IppvcCABACState*)(pCabacState))->lcodIRange);
-                ippiCABACEncodeResidualLevel_H264(ctx, --level, pCabacState);
+                ippiCABACEncodeResidualLevel_H264(ctx, --level, pCabacState, numBins);
                 ctx_id = ctx_trans1[ctx_id];
             }
             else
@@ -2529,10 +2590,12 @@ Status H264BsReal_ResidualBlock_CABAC(
                 Ipp32u ctx = ctxIdxOffset_CoeffAbsLevelMinus1 + ctxIdxBlockCatOffset_CoeffAbsLevelMinus1 + ctx_neq1p1[ctx_id];
                 cabprintf("range = %d\n",((__IppvcCABACState*)(pCabacState))->lcodIRange);
                 ippiCABACEncodeBin_H264(ctx, 0, pCabacState);
+                numBins++;
                 ctx_id = ctx_trans0 [ctx_id];
             }
 
             ippiCABACEncodeBinBypass_H264(sign & 1, pCabacState);
+            numBins++;
         }
     }
     return ippStsNoErr;

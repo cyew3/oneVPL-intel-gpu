@@ -3,7 +3,7 @@
 //  This software is supplied under the terms of a license agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in accordance with the terms of that agreement.
-//        Copyright (c) 2008-2013 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2008-2014 Intel Corporation. All Rights Reserved.
 //
 //#define USE_TEMPTEMP
 
@@ -1035,6 +1035,10 @@ Status MFXVideoENCODEH264::ThreadCallBackVM_MBT(threadSpecificDataH264 &tsd)
                     cur_mb.lumaQP51 = getLumaQP51(cur_mb.LocalMacroblockInfo->QP, core_enc->m_PicParamSet->bit_depth_luma);
                     cur_mb.chromaQP = getChromaQP(cur_mb.LocalMacroblockInfo->QP, core_enc->m_PicParamSet->chroma_qp_index_offset, core_enc->m_SeqParamSet->bit_depth_chroma);
                     while (core_enc->mbReady_MBT[tRow] < tCol);
+            
+#ifdef H264_RECODE_PCM
+                    H264BsReal_StoreIppCABACState_8u16s(pBitstream);
+#endif //H264_RECODE_PCM
 
                     ////if (rd_frame_num == 1) {
                     ////    printf("r frame = %d, did = %d, qid = %d, x = %d, y = %d\n", rd_frame_num,
@@ -1044,13 +1048,29 @@ Status MFXVideoENCODEH264::ThreadCallBackVM_MBT(threadSpecificDataH264 &tsd)
                     ////    fflush(stdout);
                     ////}
 
-                    sts = H264CoreEncoder_Put_MB_Real_8u16s(state, curr_slice);
+#ifdef H264_RECODE_PCM
+                    if(core_enc->m_mbPCM[uMB])
+                    {
+                        H264CoreEncoder_Put_MBHeader_Real_8u16s(state, curr_slice);   // PCM values are written in the MB Header.
+                    } else
+#endif //H264_RECODE_PCM
+                        sts = H264CoreEncoder_Put_MB_Real_8u16s(state, curr_slice);
                     if (sts != UMC_OK) {
                         status = sts;
                         break;
                     }
                     H264BsReal_EncodeFinalSingleBin_CABAC_8u16s(pBitstream, (uMB == uFirstMB + uNumMBs - 1) || (core_enc->m_pCurrentFrame->m_mbinfo.mbs[uMB + 1].slice_id != curr_slice->m_slice_number));
                     H264CoreEncoder_ReconstuctCBP_8u16s(&cur_mb);
+                    
+#ifdef H264_RECODE_PCM
+                    if (   core_enc->m_PicParamSet->entropy_coding_mode 
+                        && !core_enc->m_mbPCM[uMB]
+                        && 3200 < H264BsReal_GetNotStoredStreamSize_CABAC_8u16s(pBitstream))
+                    {
+                        vm_interlocked_inc32((volatile Ipp32u*)&core_enc->m_nPCM);
+                        core_enc->m_mbPCM[uMB] = 1;
+                    }
+#endif //H264_RECODE_PCM
                 }
             }
         } else {
@@ -1130,17 +1150,42 @@ Status MFXVideoENCODEH264::ThreadCallBackVM_MBT(threadSpecificDataH264 &tsd)
                             MFX_INTERNAL_CPY(cur_s->m_cur_mb.intra_types_save, cur_s->m_cur_mb.intra_types, 16*sizeof(T_AIMode));
                         }
 
-                        if (core_enc->m_svc_layer.isActive)
-                            SVC_MB_Decision(state, cur_s);
-                        else
-                            H264CoreEncoder_MB_Decision_8u16s(state, cur_s);
+#ifdef H264_RECODE_PCM
+                        if(core_enc->m_mbPCM[uMB])
+                        {
+                            cur_mb.GlobalMacroblockInfo->mbtype = MBTYPE_PCM;
+                            cur_mb.LocalMacroblockInfo->cbp_luma = 0xffff;
 
-                        cur_mb.LocalMacroblockInfo->cbp_bits = 0;
-                        cur_mb.LocalMacroblockInfo->cbp_bits_chroma = 0;
-                        if (core_enc->m_svc_layer.isActive) // SVC case
-                            H264CoreEncoder_CEncAndRecMB_SVC_8u16s(state, cur_s);
-                        else // AVC case
-                            H264CoreEncoder_CEncAndRecMB_8u16s(state, cur_s);
+                            memset(cur_mb.MacroblockCoeffsInfo->numCoeff, 16, 24);
+
+                            Ipp32s  k;     // block number, 0 to 15
+                            for (k = 0; k < 16; k++) {
+                                cur_mb.intra_types[k] = 2;
+                                cur_mb.MVs[LIST_0]->MotionVectors[k] = null_mv;
+                                cur_mb.MVs[LIST_1]->MotionVectors[k] = null_mv;
+                                cur_mb.RefIdxs[LIST_0]->RefIdxs[k] = -1;
+                                cur_mb.RefIdxs[LIST_1]->RefIdxs[k] = -1;
+                            }
+
+                            H264CoreEncoder_Reconstruct_PCM_MB_8u16s(state, curr_slice);
+                        } else {
+#endif //H264_RECODE_PCM
+
+                            if (core_enc->m_svc_layer.isActive)
+                                SVC_MB_Decision(state, cur_s);
+                            else
+                                H264CoreEncoder_MB_Decision_8u16s(state, cur_s);
+
+                            cur_mb.LocalMacroblockInfo->cbp_bits = 0;
+                            cur_mb.LocalMacroblockInfo->cbp_bits_chroma = 0;
+                            if (core_enc->m_svc_layer.isActive) // SVC case
+                                H264CoreEncoder_CEncAndRecMB_SVC_8u16s(state, cur_s);
+                            else // AVC case
+                                H264CoreEncoder_CEncAndRecMB_8u16s(state, cur_s);
+                        
+#ifdef H264_RECODE_PCM
+                        }
+#endif //H264_RECODE_PCM
                         if (core_enc->m_PicParamSet->entropy_coding_mode && cur_mb.GlobalMacroblockInfo->mbtype == MBTYPE_INTER_8x8_REF0) {
                             cur_mb.GlobalMacroblockInfo->mbtype = MBTYPE_INTER_8x8;
                         }
@@ -1518,6 +1563,10 @@ Status MFXVideoENCODEH264::H264CoreEncoder_Compress_Slice_MBT(void* state, H264S
                 cur_mb.lumaQP51 = getLumaQP51(cur_mb.LocalMacroblockInfo->QP, core_enc->m_PicParamSet->bit_depth_luma);
                 cur_mb.chromaQP = getChromaQP(cur_mb.LocalMacroblockInfo->QP, core_enc->m_PicParamSet->chroma_qp_index_offset, core_enc->m_SeqParamSet->bit_depth_chroma);
 
+#ifdef H264_RECODE_PCM
+                H264BsReal_StoreIppCABACState_8u16s(pBitstream);
+#endif //H264_RECODE_PCM
+
                 ////if (rd_frame_num == 1) {
                 ////    printf("r frame = %d, did = %d, qid = %d, x = %d, y = %d\n", rd_frame_num,
                 ////        core_enc->m_svc_layer.svc_ext.dependency_id,
@@ -1526,13 +1575,29 @@ Status MFXVideoENCODEH264::H264CoreEncoder_Compress_Slice_MBT(void* state, H264S
                 ////    fflush(stdout);
                 ////}
 
-                sts = H264CoreEncoder_Put_MB_Real_8u16s(state, curr_slice);
+#ifdef H264_RECODE_PCM
+                if(core_enc->m_mbPCM[uMB])
+                {
+                    H264CoreEncoder_Put_MBHeader_Real_8u16s(state, curr_slice);   // PCM values are written in the MB Header.
+                } else
+#endif //H264_RECODE_PCM
+                    sts = H264CoreEncoder_Put_MB_Real_8u16s(state, curr_slice);
                 if (sts != UMC_OK) {
                     status = sts;
                     break;
                 }
                 H264BsReal_EncodeFinalSingleBin_CABAC_8u16s(pBitstream, (uMB == m_first_mb_in_slice + (Ipp32s)curr_slice->m_MB_Counter - 1) || (core_enc->m_pCurrentFrame->m_mbinfo.mbs[uMB + 1].slice_id != curr_slice->m_slice_number));
                 H264CoreEncoder_ReconstuctCBP_8u16s(&cur_mb);
+
+#ifdef H264_RECODE_PCM
+                if (   core_enc->m_PicParamSet->entropy_coding_mode 
+                    && !core_enc->m_mbPCM[uMB]
+                    && 3200 < H264BsReal_GetNotStoredStreamSize_CABAC_8u16s(pBitstream))
+                {
+                    core_enc->m_nPCM ++;
+                    core_enc->m_mbPCM[uMB] = 1;
+                }
+#endif //H264_RECODE_PCM
             }
         }
     }
@@ -8651,6 +8716,14 @@ Status MFXVideoENCODEH264::H264CoreEncoder_CompressFrame(
     // reencode loop
     for (core_enc->m_field_index=0;core_enc->m_field_index<=(Ipp8u)(core_enc->m_pCurrentFrame->m_PictureStructureForDec<FRM_STRUCTURE);core_enc->m_field_index++) {
 
+#ifdef H264_RECODE_PCM
+        if(core_enc->useMBT && !recodePicture)
+        {
+            core_enc->m_nPCM = 0;
+            memset(core_enc->m_mbPCM, 0, core_enc->m_HeightInMBs * core_enc->m_WidthInMBs * 2 * sizeof(Ipp32s));
+        }
+#endif //H264_RECODE_PCM
+
         if (core_enc->m_svc_layer.isActive &&
             (core_enc->m_SeqParamSet->seq_tcoeff_level_prediction_flag || core_enc->m_SeqParamSet->adaptive_tcoeff_level_prediction_flag))
         {
@@ -9132,6 +9205,17 @@ re_encode_slice:
 #ifdef SLICE_CHECK_LIMIT
         if( !core_enc->m_MaxSliceSize ){
 #endif // SLICE_CHECK_LIMIT
+            
+#ifdef H264_INSERT_CABAC_ZERO_WORDS
+        Ipp64u AvgBinCountPerSlice = 0;
+        if (core_enc->m_info.entropy_coding_mode)
+        {
+            for (slice = (Ipp32s)core_enc->m_info.num_slices*core_enc->m_field_index; slice < core_enc->m_info.num_slices*(core_enc->m_field_index+1); slice++)
+                AvgBinCountPerSlice += core_enc->m_Slices[slice].m_pbitstream->m_numBins;
+            AvgBinCountPerSlice = (AvgBinCountPerSlice + core_enc->m_info.num_slices - 1) / core_enc->m_info.num_slices;
+        }
+#endif //H264_INSERT_CABAC_ZERO_WORDS
+
         for (slice = (Ipp32s)core_enc->m_info.num_slices*core_enc->m_field_index; slice < core_enc->m_info.num_slices*(core_enc->m_field_index+1); slice++){
             size_t oldsize = dst->GetDataSize();
 
@@ -9180,6 +9264,30 @@ re_encode_slice:
 #endif // ALPHA_BLENDING_H264
                     uUnitType, startPicture,
                     nal_header_ext));
+                
+#ifdef H264_INSERT_CABAC_ZERO_WORDS
+                if (core_enc->m_info.entropy_coding_mode)
+                {
+                    Ipp8u* data = (Ipp8u*)dst->GetDataPointer() + dst->GetDataSize();
+                    Ipp64u RawMbBits = 3072;//256 * BitDepthY + 2 * MbWidthC * MbHeightC * BitDepthC
+                    Ipp64u PicSizeInMbs = core_enc->m_WidthInMBs * core_enc->m_HeightInMBs;
+                    Ipp64u nBytes = (dst->GetDataSize() - oldsize);
+                    Ipp64u nBytesAvailable = (dst->GetBufferSize() - dst->GetDataSize());
+
+                    while( AvgBinCountPerSlice > (((nBytes * 32 / 3) + (RawMbBits*PicSizeInMbs) / 32) / core_enc->m_info.num_slices) 
+                        && nBytesAvailable > 3)
+                    {
+                        //cabac_zero_word
+                        data[0] = 0; 
+                        data[1] = 0; 
+                        data[2] = 3; 
+                        data += 3;
+                        nBytes += 3;
+                        nBytesAvailable -= 3;
+                    }
+                    dst->SetDataSize(oldsize + nBytes);
+                }
+#endif //H264_INSERT_CABAC_ZERO_WORDS
             }
             buffersNotFull = buffersNotFull && H264BsBase_CheckBsLimit(core_enc->m_Slices[slice].m_pbitstream);
         }
@@ -9221,6 +9329,27 @@ re_encode_slice:
                 }
             }
         }
+
+#ifdef H264_RECODE_PCM
+        if(core_enc->m_nPCM > 0 && !core_enc->brc)
+        {
+            core_enc->m_nPCM = 0;
+            dst->SetDataSize(brc_data_size);
+            brcRecode = UMC::BRC_RECODE_QP;
+            core_enc->recodeFlag = UMC::BRC_RECODE_QP;
+            if (ePic_Class == IDR_PIC && (!core_enc->m_field_index)) {
+                if (core_enc->m_svc_layer.svc_ext.quality_id == 0) /* first quality layer */
+                {
+                    core_enc->m_SliceHeader.idr_pic_id--;
+                    core_enc->m_SliceHeader.idr_pic_id &= 0xff; //Restrict to 255 to reduce number of bits(max value 65535 in standard)
+                }
+            }
+            core_enc->m_field_index--;
+            recodePicture = true;
+            core_enc->m_HeightInMBs <<= (Ipp8u)(core_enc->m_pCurrentFrame->m_PictureStructureForDec < FRM_STRUCTURE); //Do we need it here?
+            goto brc_recode;
+        }
+#endif //H264_RECODE_PCM
 
 #define FRAME_SIZE_RATIO_THRESH_MAX 16.0
 #define FRAME_SIZE_RATIO_THRESH_MIN 8.0
@@ -9264,6 +9393,22 @@ re_encode_slice:
                 core_enc->brc->SetQP(m_ConstQP, B_PICTURE);
                 hrdSts = BRC_OK;
             }
+            
+#ifdef H264_RECODE_PCM
+            if(core_enc->m_nPCM > 0)
+            {
+                core_enc->m_nPCM = 0;
+                if(hrdSts == BRC_OK)
+                {
+                    hrdSts = BRC_ERR_BIG_FRAME;
+                }
+                else
+                {
+                    memset(core_enc->m_mbPCM, 0, core_enc->m_HeightInMBs * core_enc->m_WidthInMBs * 2 * sizeof(Ipp32s));
+                }
+            }
+#endif //H264_RECODE_PCM
+
             if (BRC_OK != hrdSts && (core_enc->m_Analyse & ANALYSE_RECODE_FRAME)) {
                 Ipp32s qp = core_enc->brc->GetQP(picType);
                 if ((hrdSts & BRC_ERR_SMALL_FRAME) && qp < min_qp) { // min_qp set in recode_check or = 0

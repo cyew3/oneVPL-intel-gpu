@@ -3,7 +3,7 @@
 //  This software is supplied under the terms of a license agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in accordance with the terms of that agreement.
-//        Copyright (c) 2004 - 2013 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2004 - 2014 Intel Corporation. All Rights Reserved.
 //
 
 
@@ -907,6 +907,8 @@ static Status H264ENC_MAKE_NAME_BS_DEP(H264CoreEncoder_PackSubBlockChroma)(
             if (upper.mb_num>=0)
             {
                 upper_bit = BIT_SET(core_enc->m_mbinfo.mbs[upper.mb_num].cbp_bits_chroma, uBlock - 16 + blocks - block_pitch );
+                if (core_enc->m_pCurrentFrame->m_mbinfo.mbs[upper.mb_num].mbtype == MBTYPE_PCM)
+                    upper_bit = 1;
             }
         } else {
             upper_bit = BIT_SET(cur_mb.LocalMacroblockInfo->cbp_bits_chroma, bit - block_pitch);
@@ -918,6 +920,8 @@ static Status H264ENC_MAKE_NAME_BS_DEP(H264CoreEncoder_PackSubBlockChroma)(
             if (left.mb_num>=0)
             {
                 left_bit = BIT_SET(core_enc->m_mbinfo.mbs[left.mb_num].cbp_bits_chroma, bit+block_pitch-1);
+                if (core_enc->m_pCurrentFrame->m_mbinfo.mbs[left.mb_num].mbtype == MBTYPE_PCM)
+                    left_bit = 1;
             }
         } else {
             left_bit = BIT_SET(cur_mb.LocalMacroblockInfo->cbp_bits_chroma, bit-1);
@@ -1025,16 +1029,23 @@ static Status H264ENC_MAKE_NAME_BS_DEP(H264CoreEncoder_PackDC)(
         // Put coeff_token and trailing ones signs
         if (core_enc->m_PicParamSet->entropy_coding_mode) {
             bool is_intra = IS_TRUEINTRA_MBTYPE(cur_mb.GlobalMacroblockInfo->mbtype);
+            Ipp32s mbAddrA = cur_mb.BlockNeighbours.mb_above.mb_num;
+            Ipp32s mbAddrL = cur_mb.BlockNeighbours.mbs_left[0].mb_num;
             if (c_data->uNumSigCoeffs != 0)
                 cur_mb.LocalMacroblockInfo->cbp_bits |= 1;
 
-            Ipp32s upper_bit = cur_mb.BlockNeighbours.mb_above.mb_num>=0 ?
-                BIT_SET(core_enc->m_mbinfo.mbs[cur_mb.BlockNeighbours.mb_above.mb_num].cbp_bits, 0)
+            Ipp32s upper_bit = mbAddrA>=0 ?
+                BIT_SET(core_enc->m_mbinfo.mbs[mbAddrA].cbp_bits, 0)
                 : is_intra;
 
-            Ipp32s left_bit = cur_mb.BlockNeighbours.mbs_left[0].mb_num>=0 ?
-                BIT_SET(core_enc->m_mbinfo.mbs[cur_mb.BlockNeighbours.mbs_left[0].mb_num].cbp_bits, 0)
+            Ipp32s left_bit = mbAddrL>=0 ?
+                BIT_SET(core_enc->m_mbinfo.mbs[mbAddrL].cbp_bits, 0)
                 : is_intra;
+
+            if(mbAddrA>=0 && core_enc->m_pCurrentFrame->m_mbinfo.mbs[mbAddrA].mbtype == MBTYPE_PCM)
+                upper_bit = 1;
+            if(mbAddrL>=0 && core_enc->m_pCurrentFrame->m_mbinfo.mbs[mbAddrL].mbtype == MBTYPE_PCM)
+                left_bit = 1;
 
             Ipp32s CtxInc = 2*upper_bit + left_bit;
 
@@ -1069,6 +1080,8 @@ static Status H264ENC_MAKE_NAME_BS_DEP(H264CoreEncoder_PackDC)(
         if (core_enc->m_PicParamSet->entropy_coding_mode)
         {
             bool is_intra = IS_TRUEINTRA_MBTYPE(cur_mb.GlobalMacroblockInfo->mbtype);
+            Ipp32s mbAddrA = cur_mb.BlockNeighbours.mb_above_chroma[uPlane==V_DC_RLE].mb_num;
+            Ipp32s mbAddrL = cur_mb.BlockNeighbours.mbs_left_chroma[uPlane==V_DC_RLE][0].mb_num;
 
             if (pGetMBBaseModeFlag(cur_mb.GlobalMacroblockInfo))
             {
@@ -1078,13 +1091,18 @@ static Status H264ENC_MAKE_NAME_BS_DEP(H264CoreEncoder_PackDC)(
             if (c_data->uNumSigCoeffs != 0)
                 cur_mb.LocalMacroblockInfo->cbp_bits |= (1<<(17+uPlane-U_DC_RLE));
 
-            Ipp32s upper_bit  = cur_mb.BlockNeighbours.mb_above_chroma[uPlane==V_DC_RLE].mb_num>=0 ?
-                BIT_SET(core_enc->m_mbinfo.mbs[cur_mb.BlockNeighbours.mb_above_chroma[uPlane==V_DC_RLE].mb_num].cbp_bits, 17+uPlane-U_DC_RLE)
+            Ipp32s upper_bit  = mbAddrA>=0 ?
+                BIT_SET(core_enc->m_mbinfo.mbs[mbAddrA].cbp_bits, 17+uPlane-U_DC_RLE)
                 : is_intra;
 
-            Ipp32s left_bit  = cur_mb.BlockNeighbours.mbs_left_chroma[uPlane==V_DC_RLE][0].mb_num>=0?
-                BIT_SET(core_enc->m_mbinfo.mbs[cur_mb.BlockNeighbours.mbs_left_chroma[uPlane==V_DC_RLE][0].mb_num].cbp_bits, 17+uPlane-U_DC_RLE)
+            Ipp32s left_bit  = mbAddrL>=0 ?
+                BIT_SET(core_enc->m_mbinfo.mbs[mbAddrL].cbp_bits, 17+uPlane-U_DC_RLE)
                 : is_intra;
+
+            if(mbAddrA>=0 && core_enc->m_pCurrentFrame->m_mbinfo.mbs[mbAddrA].mbtype == MBTYPE_PCM)
+                upper_bit = 1;
+            if(mbAddrL>=0 && core_enc->m_pCurrentFrame->m_mbinfo.mbs[mbAddrL].mbtype == MBTYPE_PCM)
+                left_bit = 1;
 
             Ipp32s CtxInc = 2*upper_bit+left_bit;
 
@@ -1291,6 +1309,7 @@ static void H264ENC_MAKE_NAME_BS_DEP(H264CoreEncoder_Encode_AIC_Type)(
 
             if (cur_mb.IntraNeighbours.mb_A >= 0) {
                 if (core_enc->m_mbinfo.mbs[cur_mb.IntraNeighbours.mb_A].intra_chroma_mode &&
+                    core_enc->m_pCurrentFrame->m_mbinfo.mbs[cur_mb.IntraNeighbours.mb_A].mbtype != MBTYPE_PCM &&
                     !pGetMBBaseModeFlag(core_enc->m_pCurrentFrame->m_mbinfo.mbs + cur_mb.IntraNeighbours.mb_A)) {
                         left_p = 1;
                         if (curr_slice->m_tcoeff_level_prediction_flag &&
@@ -1300,6 +1319,7 @@ static void H264ENC_MAKE_NAME_BS_DEP(H264CoreEncoder_Encode_AIC_Type)(
             }
             if (cur_mb.IntraNeighbours.mb_B >= 0) {
                 if (core_enc->m_mbinfo.mbs[cur_mb.IntraNeighbours.mb_B].intra_chroma_mode &&
+                    core_enc->m_pCurrentFrame->m_mbinfo.mbs[cur_mb.IntraNeighbours.mb_B].mbtype != MBTYPE_PCM &&
                     !pGetMBBaseModeFlag(core_enc->m_pCurrentFrame->m_mbinfo.mbs + cur_mb.IntraNeighbours.mb_B)) {
                         top_p = 1;
                         if (curr_slice->m_tcoeff_level_prediction_flag &&
@@ -1356,6 +1376,7 @@ static void H264ENC_MAKE_NAME_BS_DEP(H264CoreEncoder_Encode_AIC_Type_16x16)(
 
             if (cur_mb.IntraNeighbours.mb_A >= 0) {
                 if (core_enc->m_mbinfo.mbs[cur_mb.IntraNeighbours.mb_A].intra_chroma_mode &&
+                    core_enc->m_pCurrentFrame->m_mbinfo.mbs[cur_mb.IntraNeighbours.mb_A].mbtype != MBTYPE_PCM &&
                     !pGetMBBaseModeFlag(core_enc->m_pCurrentFrame->m_mbinfo.mbs + cur_mb.IntraNeighbours.mb_A)) {
                         left_p = 1;
                         if (curr_slice->m_tcoeff_level_prediction_flag &&
@@ -1365,6 +1386,7 @@ static void H264ENC_MAKE_NAME_BS_DEP(H264CoreEncoder_Encode_AIC_Type_16x16)(
             }
             if (cur_mb.IntraNeighbours.mb_B >= 0) {
                 if (core_enc->m_mbinfo.mbs[cur_mb.IntraNeighbours.mb_B].intra_chroma_mode &&
+                    core_enc->m_pCurrentFrame->m_mbinfo.mbs[cur_mb.IntraNeighbours.mb_B].mbtype != MBTYPE_PCM &&
                     !pGetMBBaseModeFlag(core_enc->m_pCurrentFrame->m_mbinfo.mbs + cur_mb.IntraNeighbours.mb_B)) {
                         top_p = 1;
                         if (curr_slice->m_tcoeff_level_prediction_flag &&
@@ -1398,24 +1420,54 @@ static void H264ENC_MAKE_NAME_BS_DEP(H264CoreEncoder_Encode_PCM_MB)(
     H264CoreEncoderType* core_enc = (H264CoreEncoderType *)state;
     Ipp32u row, col;
     Ipp32s N;
-    PIXTYPE*  pSrcPlane;     // start of plane to encode
+    //PIXTYPE*  pSrcPlane;     // start of plane to encode
     PIXTYPE*  pRecPlane;     // start of reconstructed plane
     Ipp32s    pitchPixels;   // buffer pitch in pixels.
     Ipp32s    offset;        // to upper left corner of block from start of plane (in pixels)
     H264BsBase  *pBitstream = curr_slice->m_pbitstream;
+    Ipp32u uv_col_step = core_enc->m_pCurrentFrame->m_data.GetColorFormat() == NV12 ? 2 : 1;
 
     // Encode MB_Type
     N = CALC_PCM_MB_TYPE(curr_slice->m_slice_type);
 
-    H264ENC_MAKE_NAME_BS(PutVLCCode)(pBitstream, N);
+    if (core_enc->m_info.entropy_coding_mode)
+    {
+        H264CurrentMacroblockDescriptorType &cur_mb = curr_slice->m_cur_mb;
+        EnumSliceType slice_type = curr_slice->m_slice_type;
+        
+        Ipp32s left_n = cur_mb.BlockNeighbours.mbs_left[0].mb_num < 0 ? NUMBER_OF_MBTYPES :
+                core_enc->m_pCurrentFrame->m_mbinfo.mbs[cur_mb.BlockNeighbours.mbs_left[0].mb_num].mbtype;
+        Ipp32s top_n = cur_mb.BlockNeighbours.mb_above.mb_num < 0 ? NUMBER_OF_MBTYPES :
+                core_enc->m_pCurrentFrame->m_mbinfo.mbs[cur_mb.BlockNeighbours.mb_above.mb_num].mbtype;
+
+        H264ENC_MAKE_NAME_BS(MBTypeInfo_CABAC)(
+            pBitstream,
+            slice_type,
+            N,
+            MBTYPE_PCM,
+            (MB_Type)left_n,
+            (MB_Type)top_n,
+            cur_mb.BlockNeighbours.mbs_left[0].mb_num < 0 ? 0 : pGetMBBaseModeFlag(core_enc->m_pCurrentFrame->m_mbinfo.mbs + cur_mb.BlockNeighbours.mbs_left[0].mb_num),
+            cur_mb.BlockNeighbours.mb_above.mb_num < 0 ? 0 : pGetMBBaseModeFlag(core_enc->m_pCurrentFrame->m_mbinfo.mbs + cur_mb.BlockNeighbours.mb_above.mb_num));
+
+        H264ENC_MAKE_NAME_BS(TerminateEncode_CABAC)(pBitstream);
+    } 
+    else
+    {
+        H264ENC_MAKE_NAME_BS(PutVLCCode)(pBitstream, N);
+    }
 
     // Write the pcm_alignment bit(s) if necessary.
     H264BsBase_ByteAlignWithOnes(pBitstream); // BUG!? it is "pcm_alignment_zero_bit"
 
+    if(!core_enc->useMBT)
+    {
+        H264ENC_MAKE_NAME(H264CoreEncoder_Reconstruct_PCM_MB)(state, curr_slice);
+    }
+
     // Now, write the pcm_bytes and update the reconstructed buffer...
 
     offset = core_enc->m_pMBOffsets[curr_slice->m_cur_mb.uMB].uLumaOffset[core_enc->m_is_cur_pic_afrm][curr_slice->m_is_cur_mb_field];
-    pSrcPlane = &((PIXTYPE*)core_enc->m_pCurrentFrame->m_pYPlane)[offset];
     pRecPlane = &((PIXTYPE*)core_enc->m_pReconstructFrame->m_pYPlane)[offset];
     pitchPixels = core_enc->m_pCurrentFrame->m_pitchPixels<<curr_slice->m_is_cur_mb_field;
 
@@ -1423,14 +1475,9 @@ static void H264ENC_MAKE_NAME_BS_DEP(H264CoreEncoder_Encode_PCM_MB)(
 
     for (row=0; row<16; row++) {
         for (col=0; col<16; col++) {
-
-            if (!pSrcPlane[col])    // Replace forbidden zero samples with 1. // BUG!? don't replace for 44, 100... profile
-                pSrcPlane[col] = 1;
             // Write sample to BS // What if BitDepthY != 8 ??
-            H264ENC_MAKE_NAME_BS(PutBits)(pBitstream, pSrcPlane[col], 8); // PERF BUG: it is byte aligned!!
+            H264ENC_MAKE_NAME_BS(PutBits)(pBitstream, pRecPlane[col], 8); // PERF BUG: it is byte aligned!!
         }
-        MFX_INTERNAL_CPY(pRecPlane, pSrcPlane, 16*sizeof(PIXTYPE));   // Copy row to reconstructed buffer
-        pSrcPlane += pitchPixels;
         pRecPlane += pitchPixels;
     }
 
@@ -1440,43 +1487,38 @@ static void H264ENC_MAKE_NAME_BS_DEP(H264CoreEncoder_Encode_PCM_MB)(
     }
 
     offset = core_enc->m_pMBOffsets[curr_slice->m_cur_mb.uMB].uChromaOffset[core_enc->m_is_cur_pic_afrm][curr_slice->m_is_cur_mb_field];
-    pSrcPlane = &((PIXTYPE*)core_enc->m_pCurrentFrame->m_pUPlane)[offset];
     pRecPlane = &((PIXTYPE*)core_enc->m_pReconstructFrame->m_pUPlane)[offset];
+
 
     // U plane next
 
     for (row=0; row<8; row++) {
-        for (col=0; col<8; col++) {
-
-            if (!pSrcPlane[col])    // Replace forbidden zero samples with 1.
-                pSrcPlane[col] = 1;
+        for (col=0; col<(8*uv_col_step); col += uv_col_step) {
             // Write sample to BS
-            H264ENC_MAKE_NAME_BS(PutBits)(pBitstream, pSrcPlane[col], 8);
+            H264ENC_MAKE_NAME_BS(PutBits)(pBitstream, pRecPlane[col], 8);
         }
-        MFX_INTERNAL_CPY(pRecPlane, pSrcPlane, 8*sizeof(PIXTYPE));    // Copy row to reconstructed buffer
-        pSrcPlane += pitchPixels;
         pRecPlane += pitchPixels;
     }
 
-    pSrcPlane = &((PIXTYPE*)core_enc->m_pCurrentFrame->m_pVPlane)[offset];
     pRecPlane = &((PIXTYPE*)core_enc->m_pReconstructFrame->m_pVPlane)[offset];
 
     // V plane last
 
     for (row=0; row<8; row++) {
-        for (col=0; col<8; col++) {
-
-            if (!pSrcPlane[col])    // Replace forbidden zero samples with 1.
-                pSrcPlane[col] = 1;
+        for (col=0; col<(8*uv_col_step); col += uv_col_step) {
             // Write sample to BS
-            H264ENC_MAKE_NAME_BS(PutBits)(pBitstream, pSrcPlane[col], 8);
+            H264ENC_MAKE_NAME_BS(PutBits)(pBitstream, pRecPlane[col], 8);
         }
-        MFX_INTERNAL_CPY(pRecPlane, pSrcPlane, 8*sizeof(PIXTYPE));    // Copy row to reconstructed buffer
-        pSrcPlane += pitchPixels;
         pRecPlane += pitchPixels;
     }
+    
+    if (core_enc->m_info.entropy_coding_mode)
+    {
+        H264ENC_MAKE_NAME_BS(InitializeAEE_CABAC)(pBitstream);
+    } 
 
 }   // Encode_PCM_MB
+
 
 //////////////////////
 // Extern functions
@@ -1692,7 +1734,7 @@ Status H264ENC_MAKE_NAME_BS_DEP(H264CoreEncoder_Put_MBHeader)(
             // Always Send Delta_QP for Intra 16x16 mode (needed for DC coeffs)
             if (core_enc->m_PicParamSet->entropy_coding_mode)
             {
-                Ipp32s prevMB = (cur_mb.uMB > 0)? prev_dquant != 0 : 0;
+                Ipp32s prevMB = (cur_mb.uMB > 0) && core_enc->m_pCurrentFrame->m_mbinfo.mbs[cur_mb.uMB-1].mbtype != MBTYPE_PCM ? prev_dquant != 0 : 0;
                 H264ENC_MAKE_NAME_BS(DQuant_CABAC)(
                     pBitstream,
                     cur_mb.LocalMacroblockInfo->QP - iLastXmittedQP,
@@ -1715,7 +1757,7 @@ Status H264ENC_MAKE_NAME_BS_DEP(H264CoreEncoder_Put_MBHeader)(
             if (uCBP > 0) { // Only Send Delta_QP if there are residuals to follow.
                 if (core_enc->m_PicParamSet->entropy_coding_mode)
                 {
-                    Ipp32s prevMB = (cur_mb.uMB > 0)? curr_slice->m_prev_dquant != 0 : 0;
+                    Ipp32s prevMB = (cur_mb.uMB > 0) && core_enc->m_pCurrentFrame->m_mbinfo.mbs[cur_mb.uMB-1].mbtype != MBTYPE_PCM ? curr_slice->m_prev_dquant != 0 : 0;
                     H264ENC_MAKE_NAME_BS(DQuant_CABAC)(
                         pBitstream,
                         cur_mb.LocalMacroblockInfo->QP - iLastXmittedQP,
@@ -1923,7 +1965,7 @@ Status H264ENC_MAKE_NAME_BS_DEP(H264CoreEncoder_Put_MBHeader)(
                     // Always Send Delta_QP for Intra 16x16 mode (needed for DC coeffs)
                     if (core_enc->m_PicParamSet->entropy_coding_mode)
                     {
-                        Ipp32s prevMB = (cur_mb.uMB > 0)? curr_slice->m_prev_dquant != 0 : 0;
+                        Ipp32s prevMB = (cur_mb.uMB > 0 && core_enc->m_pCurrentFrame->m_mbinfo.mbs[cur_mb.uMB-1].mbtype != MBTYPE_PCM) ? curr_slice->m_prev_dquant != 0 : 0;
                         H264ENC_MAKE_NAME_BS(DQuant_CABAC)(
                             pBitstream,
                             cur_mb.LocalMacroblockInfo->QP - iLastXmittedQP,
@@ -1945,7 +1987,7 @@ Status H264ENC_MAKE_NAME_BS_DEP(H264CoreEncoder_Put_MBHeader)(
                     if (uCBP > 0) { // Only Send Delta_QP if there are residuals to follow.
                         if (core_enc->m_PicParamSet->entropy_coding_mode)
                         {
-                            Ipp32s prevMB = (cur_mb.uMB > 0)? curr_slice->m_prev_dquant !=0: 0;
+                            Ipp32s prevMB = (cur_mb.uMB > 0 && core_enc->m_pCurrentFrame->m_mbinfo.mbs[cur_mb.uMB-1].mbtype != MBTYPE_PCM) ? curr_slice->m_prev_dquant !=0: 0;
                             H264ENC_MAKE_NAME_BS(DQuant_CABAC)(
                                 pBitstream,
                                 cur_mb.LocalMacroblockInfo->QP - iLastXmittedQP,
@@ -2022,7 +2064,7 @@ Status H264ENC_MAKE_NAME_BS_DEP(H264CoreEncoder_Put_MBHeader)(
 
                     if (core_enc->m_PicParamSet->entropy_coding_mode)
                     {
-                        Ipp32s prevMB = (cur_mb.uMB > 0)? curr_slice->m_prev_dquant !=0: 0;
+                        Ipp32s prevMB = (cur_mb.uMB > 0 && core_enc->m_pCurrentFrame->m_mbinfo.mbs[cur_mb.uMB-1].mbtype != MBTYPE_PCM) ? curr_slice->m_prev_dquant !=0: 0;
                         H264ENC_MAKE_NAME_BS(DQuant_CABAC)(
                             pBitstream,
                             cur_mb.LocalMacroblockInfo->QP - iLastXmittedQP,
@@ -2093,7 +2135,7 @@ void H264ENC_MAKE_NAME_BS_DEP(H264CoreEncoder_Encode_MacroblockBaseMode)(
     if (uCBP > 0) { // Only Send Delta_QP if there are residuals to follow.
         if (core_enc->m_PicParamSet->entropy_coding_mode)
         {
-            Ipp32s prevMB = (cur_mb.uMB > 0)? curr_slice->m_prev_dquant != 0 : 0;
+            Ipp32s prevMB = (cur_mb.uMB > 0 && core_enc->m_pCurrentFrame->m_mbinfo.mbs[cur_mb.uMB-1].mbtype != MBTYPE_PCM) ? curr_slice->m_prev_dquant != 0 : 0;
             H264ENC_MAKE_NAME_BS(DQuant_CABAC)(
                 pBitstream,
                 cur_mb.LocalMacroblockInfo->QP - iLastXmittedQP,
@@ -2333,6 +2375,8 @@ Status H264ENC_MAKE_NAME_BS_DEP(H264CoreEncoder_PackSubBlockLuma)(
                         upper_bit = BIT_SET(core_enc->m_mbinfo.mbs[iMBAbove].cbp_bits,
                             cur_mb.BlockNeighbours.mb_above.block_num + sbx + 1);
                         // +1 since 0=DC
+                        if(core_enc->m_pCurrentFrame->m_mbinfo.mbs[iMBAbove].mbtype == MBTYPE_PCM)
+                            upper_bit = 1;
                     }
 
                 }
@@ -2348,6 +2392,8 @@ Status H264ENC_MAKE_NAME_BS_DEP(H264CoreEncoder_PackSubBlockLuma)(
                         left_bit = BIT_SET(core_enc->m_mbinfo.mbs[iMBLeft].cbp_bits,
                             cur_mb.BlockNeighbours.mbs_left[sby].block_num + 1);
                         // +1 since 0=DC
+                        if(core_enc->m_pCurrentFrame->m_mbinfo.mbs[iMBLeft].mbtype == MBTYPE_PCM)
+                            left_bit = 1;
                     }
                 }
             } else {

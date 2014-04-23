@@ -3,7 +3,7 @@
 //  This software is supplied under the terms of a license agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in accordance with the terms of that agreement.
-//        Copyright (c) 2004 - 2013 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2004 - 2014 Intel Corporation. All Rights Reserved.
 //
 
 #if PIXBITS == 8
@@ -64,6 +64,9 @@ Status H264ENC_MAKE_NAME(H264BsReal_Create)(
     bs->m_base.m_bitOffset = 0;
     bs->m_base.m_maxBsSize = maxsize;
     bs->m_base.pCabacState = 0;
+    bs->m_base.m_pStoredCabacState = 0;
+    bs->m_base.m_numBins = 0;
+    bs->m_base.m_storedNumBins = 0;
 
     bs->m_pbsRBSPBase = pb;
     plr = UMC_OK;
@@ -87,6 +90,14 @@ Status H264ENC_MAKE_NAME(H264BsReal_Create)(
     if (bs->m_base.pCabacState == 0)
         return UMC_ERR_ALLOC;
 
+    bs->m_base.m_cabacStateSize = sizeOfCabacState;
+    
+    bs->m_base.m_pStoredCabacState = (IppvcCABACState *)ippMalloc(sizeOfCabacState);
+    if (bs->m_base.m_pStoredCabacState == 0)
+        return UMC_ERR_ALLOC;
+
+    memset(bs->m_base.pCabacState, 0, sizeof(Ipp32u*) * 3);
+
     return UMC_OK;
 }
 
@@ -98,6 +109,81 @@ void H264ENC_MAKE_NAME(H264BsReal_Destroy)(H264BsRealType* bs)
     //    ippFree(bs->m_base.pCabacState);
     //    bs->m_base.pCabacState = NULL;
     //}
+    if (bs->m_base.m_pStoredCabacState)
+    {
+        ippFree(bs->m_base.m_pStoredCabacState);
+        bs->m_base.m_pStoredCabacState = 0;
+    }
+}
+
+void H264ENC_MAKE_NAME(H264BsReal_StoreIppCABACState)(
+    void* state)
+{
+    H264BsRealType* bs = (H264BsRealType *)state;
+    Ipp32u* bsData      = *((Ipp32u**)bs->m_base.pCabacState) - 1;
+    Ipp32u* bsDataStart = *((Ipp32u**)bs->m_base.pCabacState + 1);
+    Ipp32u* bsDataEnd   = *((Ipp32u**)bs->m_base.pCabacState + 2);
+
+    MFX_INTERNAL_CPY(bs->m_base.m_pStoredCabacState, bs->m_base.pCabacState, bs->m_base.m_cabacStateSize);
+    bs->m_base.m_storedNumBins = bs->m_base.m_numBins;
+
+    if(bsData)
+    {
+        if(bsData >= bsDataStart)
+            bs->m_base.m_storedBsLastBytes[0] = bsData[0];
+        if(bsData < bsDataEnd)
+            bs->m_base.m_storedBsLastBytes[1] = bsData[1];
+    }
+}
+
+void H264ENC_MAKE_NAME(H264BsReal_RestoreIppCABACState)(
+    void* state)
+{
+    H264BsRealType* bs = (H264BsRealType *)state;
+    Ipp32u* bsData      = *((Ipp32u**)bs->m_base.m_pStoredCabacState) - 1;
+    Ipp32u* bsDataStart = *((Ipp32u**)bs->m_base.m_pStoredCabacState + 1);
+    Ipp32u* bsDataEnd   = *((Ipp32u**)bs->m_base.m_pStoredCabacState + 2);
+
+    MFX_INTERNAL_CPY(bs->m_base.pCabacState, bs->m_base.m_pStoredCabacState, bs->m_base.m_cabacStateSize);
+    bs->m_base.m_numBins = bs->m_base.m_storedNumBins;
+    
+    if(bsData)
+    {
+        if(bsData >= bsDataStart)
+            bsData[0] = bs->m_base.m_storedBsLastBytes[0];
+        if(bsData < bsDataEnd)
+            bsData[1] = bs->m_base.m_storedBsLastBytes[1];
+    }
+}
+
+void H264ENC_MAKE_NAME(H264BsReal_InitializeAEE_CABAC)(
+    void* state)
+{
+    H264BsRealType* bs = (H264BsRealType *)state;
+
+    ippiCABACInitAEEOwn_H264(
+        bs->m_base.pCabacState,
+        bs->m_base.m_pbsBase,
+        bs->m_base.m_bitOffset + (Ipp32u)(bs->m_base.m_pbs - bs->m_base.m_pbsBase) * 8,
+        bs->m_base.m_maxBsSize);
+}
+
+void H264ENC_MAKE_NAME(H264BsFake_InitializeAEE_CABAC)(
+    void* state)
+{
+    state;
+}
+
+Ipp32u H264ENC_MAKE_NAME(H264BsReal_GetNotStoredStreamSize_CABAC)(
+    void* state)
+{
+    H264BsRealType* bs = (H264BsRealType *)state;
+    Ipp32u n0 = 0, n1 = 0;
+
+    ippiCABACGetStreamSize_H264(&n0, bs->m_base.m_pStoredCabacState);
+    ippiCABACGetStreamSize_H264(&n1, bs->m_base.pCabacState);
+
+    return (n1 - n0);
 }
 
 Status H264ENC_MAKE_NAME(H264BsFake_Create)(
@@ -113,6 +199,8 @@ Status H264ENC_MAKE_NAME(H264BsFake_Create)(
     bs->m_base.m_bitOffset = 0;
     bs->m_base.m_maxBsSize = maxsize;
     bs->m_base.pCabacState = 0;
+    bs->m_base.m_pStoredCabacState = 0;
+    bs->m_base.m_numBins = 0;
 
     bs->m_pbsRBSPBase = pb;
     plr = UMC_OK;
@@ -265,6 +353,7 @@ void H264ENC_MAKE_NAME(H264BsReal_EncodeSingleBin_CABAC)(
 {
     H264BsRealType* bs = (H264BsRealType *)state;
     ippiCABACEncodeBin_H264(ctx, code, bs->m_base.pCabacState);
+    bs->m_base.m_numBins++;
 
     /* old implementation
     Ipp8u pStateIdx = *ctx;
@@ -351,6 +440,7 @@ void H264ENC_MAKE_NAME(H264BsReal_EncodeSingleBinExtra_CABAC)(
     contexts[position] = contexts[ctx];
 
     ippiCABACEncodeBin_H264(position, code, bs->m_base.pCabacState);
+    bs->m_base.m_numBins++;
 
     contexts[ctx] = contexts[position];
     contexts[position] = savedCtx;
@@ -363,6 +453,7 @@ void H264ENC_MAKE_NAME(H264BsReal_EncodeBins_CABAC)(
     Ipp32s len)
 {
     H264BsRealType* bs = (H264BsRealType *)state;
+    bs->m_base.m_numBins += len;
     while (len > 0)
     {
         len--;
@@ -406,6 +497,7 @@ void H264ENC_MAKE_NAME(H264BsReal_EncodeBypass_CABAC)(
 {
     H264BsRealType* bs = (H264BsRealType *)state;
     ippiCABACEncodeBinBypass_H264(code, bs->m_base.pCabacState);
+    bs->m_base.m_numBins++;
 
     /*
      * old EncodeBypass_CABAC implementation
@@ -626,6 +718,7 @@ void H264ENC_MAKE_NAME(H264BsReal_InitializeContextVariablesIntra_CABAC)(
     Ipp32s SliceQPy)
 {
     H264BsRealType* bs = (H264BsRealType *)state;
+    bs->m_base.m_numBins = 0;
 
     ippiCABACInit_H264(
         bs->m_base.pCabacState,
@@ -658,6 +751,7 @@ void H264ENC_MAKE_NAME(H264BsReal_InitializeContextVariablesInter_CABAC)(
     Ipp32s cabac_init_idc)
 {
     H264BsRealType* bs = (H264BsRealType *)state;
+    bs->m_base.m_numBins = 0;
 
     ippiCABACInit_H264(
         bs->m_base.pCabacState,

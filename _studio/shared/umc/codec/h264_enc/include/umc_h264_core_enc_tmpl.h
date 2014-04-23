@@ -3,7 +3,7 @@
 //  This software is supplied under the terms of a license agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in accordance with the terms of that agreement.
-//        Copyright (c) 2004 - 2012 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2004 - 2014 Intel Corporation. All Rights Reserved.
 //
 
 
@@ -654,6 +654,10 @@ Ipp32u H264ENC_MAKE_NAME(H264CoreEncoder_IntraSelectChromaRD_NV12)(
     PIXTYPE *pVPredBuf,
     Ipp32s   isCurMBSeparated);
 #endif // USE_NV12
+
+void H264ENC_MAKE_NAME(H264CoreEncoder_Reconstruct_PCM_MB)(
+    void* state,
+    H264SliceType *curr_slice);
 
 void H264ENC_MAKE_NAME(H264CoreEncoder_ReconstuctCBP)( //stateless
     H264CurrentMacroblockDescriptorType *cur_mb);
@@ -1308,6 +1312,11 @@ typedef struct sH264CoreEncoderType
 #ifdef DEBLOCK_THREADING
     volatile Ipp8u      *mbs_deblock_ready;
 #endif // _OPENMP
+
+#ifdef H264_RECODE_PCM
+    volatile Ipp32u m_nPCM;
+    Ipp32s* m_mbPCM;
+#endif //H264_RECODE_PCM
 
 #ifndef UMC_RESTRICTED_CODE_MBT
 #ifdef MB_THREADING

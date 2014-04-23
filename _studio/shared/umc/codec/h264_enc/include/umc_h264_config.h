@@ -3,7 +3,7 @@
 //  This software is supplied under the terms of a license agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in accordance with the terms of that agreement.
-//        Copyright (c) 2004 - 2012 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2004 - 2014 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -14,6 +14,12 @@
 
 //#define H264_LOG
 #undef H264_LOG
+
+//#define H264_RECODE_PCM
+#undef H264_RECODE_PCM
+
+//#define H264_INSERT_CABAC_ZERO_WORDS
+#undef H264_INSERT_CABAC_ZERO_WORDS
 
 #define H264_INTRA_REFRESH
 //#undef H264_INTRA_REFRESH

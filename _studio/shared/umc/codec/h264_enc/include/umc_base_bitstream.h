@@ -214,7 +214,11 @@ typedef struct sH264BaseBs
     Ipp32u m_lcodIRange;                                    // arithmetic encoding engine variable
 
     IppvcCABACState* pCabacState;
-
+    IppvcCABACState* m_pStoredCabacState;
+    Ipp32u m_cabacStateSize;
+    Ipp32u m_numBins;
+    Ipp32u m_storedNumBins;
+    Ipp32u m_storedBsLastBytes[2];
 } H264BsBase;
 
 // Returns the bit position of the buffer pointer relative to the beginning of the buffer.

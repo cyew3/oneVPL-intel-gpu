@@ -3,7 +3,7 @@
 //  This software is supplied under the terms of a license agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in accordance with the terms of that agreement.
-//        Copyright (c) 2004 - 2012 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2004 - 2014 Intel Corporation. All Rights Reserved.
 //
 
 #if PIXBITS == 8
@@ -72,6 +72,21 @@ Status H264ENC_MAKE_NAME(H264BsReal_Create)(
 
 void H264ENC_MAKE_NAME(H264BsReal_Destroy)(
     H264BsRealType* state);
+
+void H264ENC_MAKE_NAME(H264BsReal_StoreIppCABACState)(
+    void* state);
+
+void H264ENC_MAKE_NAME(H264BsReal_RestoreIppCABACState)(
+    void* state);
+
+void H264ENC_MAKE_NAME(H264BsReal_InitializeAEE_CABAC)(
+    void* state);
+
+void H264ENC_MAKE_NAME(H264BsFake_InitializeAEE_CABAC)(
+    void* state);
+
+Ipp32u H264ENC_MAKE_NAME(H264BsReal_GetNotStoredStreamSize_CABAC)(
+    void* state);
 
 void H264ENC_MAKE_NAME(H264BsReal_SaveCABACState)(
     void* state);
