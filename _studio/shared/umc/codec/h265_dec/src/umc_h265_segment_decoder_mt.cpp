@@ -425,7 +425,9 @@ UMC::Status H265SegmentDecoderMultiThreaded::DecRecSegment(H265Task & task)
 UMC::Status H265SegmentDecoderMultiThreaded::SAOFrameTask(H265Task & task)
 {
     START_TICK
+#ifndef MFX_VA
     m_pCurrentFrame->getCD()->m_SAO.SAOProcess(m_pCurrentFrame, task.m_iFirstMB, task.m_iMBToProcess);
+#endif
     END_TICK(sao_time)
     return UMC::UMC_OK;
 }
