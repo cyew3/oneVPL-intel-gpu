@@ -136,6 +136,8 @@ void H265FrameCodingData::create(Ipp32s iPicWidth, Ipp32s iPicHeight, Ipp32u uiM
 
     // Allocate main CTB table
     m_NumCUsInFrame = m_WidthInCU * m_HeightInCU;
+
+#ifndef MFX_VA
     m_CU = h265_new_array_throw<H265CodingUnit*>(m_NumCUsInFrame + 1);
 
     m_colocatedInfo = h265_new_array_throw<H265MVInfo>(m_NumCUsInFrame * m_NumPartitions);
@@ -184,11 +186,13 @@ void H265FrameCodingData::create(Ipp32s iPicWidth, Ipp32s iPicHeight, Ipp32u uiM
     m_edgesInFrameWidth = (m_edgesInCTBSize * m_WidthInCU) * 2;
     Ipp32s edgesInFrameHeight = m_edgesInCTBSize * m_HeightInCU;
     m_edge = h265_new_array_throw<H265PartialEdgeData>(m_edgesInFrameWidth * edgesInFrameHeight);
+#endif
 }
 
 // Deallocate frame CTB array table
 void H265FrameCodingData::destroy()
 {
+#ifndef MFX_VA
     if (m_cumulativeMemoryPtr)
     {
         CumulativeFree(m_cumulativeMemoryPtr);
@@ -215,11 +219,13 @@ void H265FrameCodingData::destroy()
 
     delete[] m_saoLcuParam;
     m_saoLcuParam = 0;
+#endif
 }
 
 // Deallocate frame CTB array table
 void H265FrameCodingData::initSAO(const H265SeqParamSet* sps)
 {
+#ifndef MFX_VA
     if (sps->sample_adaptive_offset_enabled_flag)
     {
         m_SAO.init(sps);
@@ -234,6 +240,7 @@ void H265FrameCodingData::initSAO(const H265SeqParamSet* sps)
             m_sizeOfSAOData = size;
         }
     }
+#endif
 }
 
 } // end namespace UMC_HEVC_DECODER

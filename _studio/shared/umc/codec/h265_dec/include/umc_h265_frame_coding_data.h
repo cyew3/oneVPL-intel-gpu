@@ -100,8 +100,9 @@ public:
     Ipp32s m_sizeOfSAOData;
 
     PartitionInfo m_partitionInfo;
+#ifndef MFX_VA
     H265SampleAdaptiveOffset m_SAO;
-
+#endif
     // Deblocking data
     H265PartialEdgeData *m_edge;
     Ipp32s m_edgesInCTBSize, m_edgesInFrameWidth;
