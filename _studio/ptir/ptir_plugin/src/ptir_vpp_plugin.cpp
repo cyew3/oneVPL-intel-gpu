@@ -352,24 +352,6 @@ mfxStatus MFX_PTIR_Plugin::FreeResources(mfxThreadTask task, mfxStatus )
 mfxStatus MFX_PTIR_Plugin::Query(mfxVideoParam *in, mfxVideoParam *out)
 {
     mfxStatus mfxSts = MFX_ERR_NONE;
-    //Check partial acceleration
-    mfxHandleType mfxDeviceType = MFX_HANDLE_DIRECT3D_DEVICE_MANAGER9;
-    mfxHDL mfxDeviceHdl;
-    mfxCoreParam mfxCorePar;
-    mfxSts = m_pmfxCore->GetCoreParam(m_pmfxCore->pthis, &mfxCorePar);
-    if(MFX_ERR_NONE > mfxSts)
-        return mfxSts;
-    if(MFX_IMPL_HARDWARE == MFX_IMPL_BASETYPE(mfxCorePar.Impl))
-    {
-        mfxSts = GetHandle(mfxDeviceHdl, mfxDeviceType);
-        if(MFX_ERR_NONE > mfxSts)
-            return mfxSts;
-        bool HWSupported = false;
-        eMFXHWType HWType = MFX_HW_UNKNOWN;
-        mfxSts = GetHWTypeAndCheckSupport(mfxCorePar.Impl, mfxDeviceHdl, HWType, HWSupported, par_accel);
-        if(MFX_ERR_NONE > mfxSts)
-            return mfxSts;
-    }
 
     bool bWarnIsNeeded = false;
     if(!in)
@@ -391,21 +373,44 @@ mfxStatus MFX_PTIR_Plugin::Query(mfxVideoParam *in, mfxVideoParam *out)
     }
     out->IOPattern  = in->IOPattern;
 
+    if(!(in->IOPattern == (MFX_IOPATTERN_IN_VIDEO_MEMORY |MFX_IOPATTERN_OUT_VIDEO_MEMORY )||
+         in->IOPattern == (MFX_IOPATTERN_IN_SYSTEM_MEMORY|MFX_IOPATTERN_OUT_SYSTEM_MEMORY)))
+    {
+        //other IOPatterns temporary unsupported
+        in->IOPattern = 0;
+        return MFX_ERR_UNSUPPORTED;
+    }
+
+    if(in->ExtParam || in->NumExtParam)
+    {
+        return MFX_ERR_UNSUPPORTED;
+    }
+    if(in->Protected)
+    {
+        out->Protected = 0;
+        return MFX_ERR_UNSUPPORTED;
+    }
+
     if(in->vpp.Out.PicStruct == in->vpp.In.PicStruct)
     {
         out->vpp.Out.PicStruct = 0;
         out->vpp.In.PicStruct = 0;
         return MFX_ERR_UNSUPPORTED;
     }
-    // auto-detection mode
-    //if(in->vpp.In.PicStruct == MFX_PICSTRUCT_UNKNOWN)
-    //{
-    //    out->vpp.In.PicStruct = 65535; // MFX_PICSTRUCT_UNKNOWN == 0, so that 0 is meaningless here
-    //    return MFX_ERR_UNSUPPORTED;
-    //}
+    // auto-detection mode is allowed only for unknown picstruct and unknown input frame rate
+    if(in->vpp.In.PicStruct == MFX_PICSTRUCT_UNKNOWN && 
+       (in->vpp.In.FrameRateExtN || in->vpp.In.FrameRateExtD || in->vpp.Out.FrameRateExtN || in->vpp.Out.FrameRateExtD))
+    {
+        out->vpp.In.PicStruct = 0; // MFX_PICSTRUCT_UNKNOWN == 0, so that 0 is meaningless here
+        in->vpp.In.FrameRateExtN = 0;
+        in->vpp.In.FrameRateExtD = 0;
+        in->vpp.Out.FrameRateExtN = 0;
+        in->vpp.Out.FrameRateExtD = 0;
+        return MFX_ERR_UNSUPPORTED;
+    }
     if(in->vpp.Out.PicStruct == MFX_PICSTRUCT_UNKNOWN)
     {
-        out->vpp.Out.PicStruct = 65535; // MFX_PICSTRUCT_UNKNOWN == 0, so that 0 is meaningless here
+        out->vpp.Out.PicStruct = 0; // MFX_PICSTRUCT_UNKNOWN == 0, so that 0 is meaningless here
         return MFX_ERR_UNSUPPORTED;
     }
     if(in->vpp.Out.PicStruct != MFX_PICSTRUCT_PROGRESSIVE)
@@ -423,11 +428,102 @@ mfxStatus MFX_PTIR_Plugin::Query(mfxVideoParam *in, mfxVideoParam *out)
     {
         return MFX_ERR_UNSUPPORTED;
     }
-    if(in->vpp.In.FourCC != in->vpp.Out.FourCC &&
-       in->vpp.In.FourCC != MFX_FOURCC_NV12)
+    if(in->vpp.In.FourCC != MFX_FOURCC_NV12)
     {
+        out->vpp.In.FourCC = 0;
         return MFX_ERR_UNSUPPORTED;
     }
+    if(in->vpp.In.FourCC != in->vpp.Out.FourCC)
+    {
+        out->vpp.Out.FourCC = 0;
+        return MFX_ERR_UNSUPPORTED;
+    }
+    if(in->vpp.In.ChromaFormat != MFX_CHROMAFORMAT_YUV420)
+    {
+        out->vpp.In.ChromaFormat = 0;
+        return MFX_ERR_UNSUPPORTED;
+    }
+    if(in->vpp.In.ChromaFormat != in->vpp.Out.ChromaFormat)
+    {
+        out->vpp.Out.ChromaFormat = 0;
+        return MFX_ERR_UNSUPPORTED;
+    }
+    
+    //find suitable mode
+    if(MFX_PICSTRUCT_UNKNOWN == in->vpp.In.PicStruct &&
+       0 == in->vpp.In.FrameRateExtN && 0 == in->vpp.Out.FrameRateExtN)
+    {
+        ;//auto-detection mode
+    }
+    else if((MFX_PICSTRUCT_FIELD_TFF == in->vpp.In.PicStruct ||
+             MFX_PICSTRUCT_FIELD_BFF == in->vpp.In.PicStruct) &&
+       (4 * in->vpp.In.FrameRateExtN * in->vpp.In.FrameRateExtD ==
+        5 * in->vpp.Out.FrameRateExtN * in->vpp.Out.FrameRateExtD))
+    {
+        ;//reverse telecine mode
+    }
+    else if(MFX_PICSTRUCT_FIELD_TFF == in->vpp.In.PicStruct ||
+           MFX_PICSTRUCT_FIELD_BFF == in->vpp.In.PicStruct)
+    {
+        ;//Deinterlace only mode
+        if(2 * in->vpp.In.FrameRateExtN * in->vpp.Out.FrameRateExtD ==
+            in->vpp.In.FrameRateExtD * in->vpp.Out.FrameRateExtN)
+        {
+            ;//30i -> 60p mode
+        }
+        else if(in->vpp.In.FrameRateExtN * in->vpp.Out.FrameRateExtD ==
+            in->vpp.In.FrameRateExtD * in->vpp.Out.FrameRateExtN)
+        {
+            ;//30i -> 30p mode
+        }
+        else
+        {
+            if(in->vpp.In.FrameRateExtD &&
+               (30 != in->vpp.In.FrameRateExtN / in->vpp.In.FrameRateExtD))
+            {
+                in->vpp.In.FrameRateExtN = 0;
+                in->vpp.In.FrameRateExtD = 0;
+            }
+            if(in->vpp.Out.FrameRateExtD &&
+               ((30 != in->vpp.Out.FrameRateExtN / in->vpp.Out.FrameRateExtD) || (60 != in->vpp.Out.FrameRateExtN / in->vpp.Out.FrameRateExtD)))
+            {
+                out->vpp.Out.FrameRateExtN = 0;
+                out->vpp.Out.FrameRateExtD = 0;
+            }
+            ;//any additional frame rate conversions are unsupported
+            return MFX_ERR_UNSUPPORTED;
+        }
+    }
+    else
+    {
+        //reverse telecine + additional frame rate conversion are unsupported
+        out->vpp.In.FrameRateExtN = 0;
+        out->vpp.In.FrameRateExtD = 0;
+        out->vpp.Out.FrameRateExtN = 0;
+        out->vpp.Out.FrameRateExtD = 0;
+
+        return MFX_ERR_UNSUPPORTED;
+    }
+
+    //Check partial acceleration
+    mfxHandleType mfxDeviceType = MFX_HANDLE_DIRECT3D_DEVICE_MANAGER9;
+    mfxHDL mfxDeviceHdl;
+    mfxCoreParam mfxCorePar;
+    mfxSts = m_pmfxCore->GetCoreParam(m_pmfxCore->pthis, &mfxCorePar);
+    if(MFX_ERR_NONE > mfxSts)
+        return mfxSts;
+    if(MFX_IMPL_HARDWARE == MFX_IMPL_BASETYPE(mfxCorePar.Impl))
+    {
+        mfxSts = GetHandle(mfxDeviceHdl, mfxDeviceType);
+        if(MFX_ERR_NONE > mfxSts)
+            return mfxSts;
+        bool HWSupported = false;
+        eMFXHWType HWType = MFX_HW_UNKNOWN;
+        mfxSts = GetHWTypeAndCheckSupport(mfxCorePar.Impl, mfxDeviceHdl, HWType, HWSupported, par_accel);
+        if(MFX_ERR_NONE > mfxSts)
+            return mfxSts;
+    }
+
 
     if(bWarnIsNeeded)
         return MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
@@ -729,6 +825,8 @@ inline mfxStatus MFX_PTIR_Plugin::GetHandle(mfxHDL& mfxDeviceHdl, mfxHandleType&
     if(MFX_ERR_NONE != mfxSts &&
        MFX_IMPL_SOFTWARE != MFX_IMPL_BASETYPE(mfxCorePar.Impl))
         return mfxSts;
+
+    return MFX_ERR_NONE;
 }
 
 inline mfxStatus MFX_PTIR_Plugin::GetHWTypeAndCheckSupport(mfxIMPL& impl, mfxHDL& mfxDeviceHdl, eMFXHWType& HWType, bool& HWSupported, bool& par_accel)
@@ -751,7 +849,11 @@ inline mfxStatus MFX_PTIR_Plugin::GetHWTypeAndCheckSupport(mfxIMPL& impl, mfxHDL
             par_accel = true;
             break;
         }
+
+        return MFX_ERR_NONE;
     }
+    par_accel = false;
+    HWSupported = false;
 
     return MFX_ERR_NONE;
 }

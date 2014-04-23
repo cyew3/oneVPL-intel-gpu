@@ -72,8 +72,8 @@ mfxStatus PTIR_ProcessorCPU::Init(mfxVideoParam *par)
     }
     else if((MFX_PICSTRUCT_FIELD_TFF == par->vpp.In.PicStruct ||
              MFX_PICSTRUCT_FIELD_BFF == par->vpp.In.PicStruct) &&
-       (par->vpp.In.FrameRateExtN  == 30 && par->vpp.In.FrameRateExtD == 1 &&
-        par->vpp.Out.FrameRateExtN == 24 && par->vpp.Out.FrameRateExtD == 1))
+       (4 * par->vpp.In.FrameRateExtN * par->vpp.In.FrameRateExtD ==
+        5 * par->vpp.Out.FrameRateExtN * par->vpp.Out.FrameRateExtD))
     {
         //reverse telecine mode
         uiisInterlaced = 2;
