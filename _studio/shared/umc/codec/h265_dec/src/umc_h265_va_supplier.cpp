@@ -42,23 +42,9 @@ UMC::Status VATaskSupplier::Init(UMC::BaseCodecParams *pInit)
     UMC::Status umsRes = TaskSupplier_H265::Init(pInit);
     if (umsRes != UMC::UMC_OK)
         return umsRes;
-
-    for (Ipp32u i = 0; i < m_iThreadNum; i += 1)
-    {
-        delete m_pSegmentDecoder[i];
-        m_pSegmentDecoder[i] = 0;
-    }
-
     m_iThreadNum = 1;
-    delete m_pTaskBroker;
 
     DXVASupport<VATaskSupplier>::Init();
-
-    for (Ipp32u i = 0; i < m_iThreadNum; i += 1)
-    {
-        if (UMC::UMC_OK != m_pSegmentDecoder[i]->Init(i))
-            return UMC::UMC_ERR_INIT;
-    }
 
     if (m_va && !m_va->IsSimulate())
     {
