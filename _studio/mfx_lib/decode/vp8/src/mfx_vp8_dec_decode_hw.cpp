@@ -308,7 +308,8 @@ mfxStatus VideoDECODEVP8_HW::Query(VideoCORE *p_core, mfxVideoParam *p_in, mfxVi
 
 mfxStatus VideoDECODEVP8_HW::QueryIOSurfInternal(eMFXPlatform platform, mfxVideoParam *p_params, mfxFrameAllocRequest *p_request)
 {
-    memcpy(&p_request->Info, &p_params->mfx.FrameInfo, sizeof(mfxFrameInfo));
+
+    p_request->Info = p_params->mfx.FrameInfo;
 
     p_request->NumFrameMin = mfxU16 (4);
 
@@ -340,8 +341,7 @@ mfxStatus VideoDECODEVP8_HW::QueryIOSurf(VideoCORE *p_core, mfxVideoParam *p_vid
         type = p_core->GetHWType();
     }
 
-    mfxVideoParam p_params;
-    memcpy(&p_params, p_video_param, sizeof(mfxVideoParam));
+    mfxVideoParam p_params = *p_video_param;
 
     if (!(p_params.IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY) && !(p_params.IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY))
     {
@@ -353,7 +353,7 @@ mfxStatus VideoDECODEVP8_HW::QueryIOSurf(VideoCORE *p_core, mfxVideoParam *p_vid
         return MFX_ERR_INVALID_VIDEO_PARAM;
     }
 
-    memcpy(&p_request->Info, &p_video_param->mfx.FrameInfo, sizeof(mfxFrameInfo));
+    p_request->Info = p_video_param->mfx.FrameInfo;
 
     p_request->NumFrameMin = mfxU16 (5);
     p_request->NumFrameSuggested = p_request->NumFrameMin;
@@ -474,7 +474,8 @@ mfxStatus VideoDECODEVP8_HW::ConstructFrame(mfxBitstream *p_in, mfxBitstream *p_
 
     p_out->Data = (Ipp8u*)ippMalloc(p_in->DataLength);
 
-    memcpy(p_out->Data, p_bs_start, p_in->DataLength);
+    std::copy(p_bs_start, p_bs_start + p_in->DataLength, p_out->Data);
+
     p_out->DataLength = p_in->DataLength;
     p_out->DataOffset = 0;
 
@@ -1093,8 +1094,9 @@ mfxStatus VideoDECODEVP8_HW::DecodeFrameHeader(mfxBitstream *in)
 
     if (!m_refresh_info.refreshProbabilities)
     {
-        memcpy(&m_frameProbs, &m_frameProbs_saved, sizeof(m_frameProbs));
-        memcpy(m_frameProbs.mvContexts, vp8_default_mv_contexts, sizeof(vp8_default_mv_contexts));
+        m_frameProbs = m_frameProbs_saved;
+        for(int i = 0;i < 2;i++)
+            std::copy(vp8_default_mv_contexts[i], vp8_default_mv_contexts[i] + VP8_NUM_MV_PROBS, m_frameProbs.mvContexts[i]);
     }
 
     if (m_frame_info.frameType == I_PICTURE)  // if VP8_KEY_FRAME
@@ -1135,9 +1137,9 @@ mfxStatus VideoDECODEVP8_HW::DecodeFrameHeader(mfxBitstream *in)
 
         data_in += 7;
 
-        memcpy((Ipp8u*)(m_frameProbs.coeff_probs),
-               (Ipp8u*)vp8_default_coeff_probs,
-               sizeof(vp8_default_coeff_probs)); //???
+        std::copy(reinterpret_cast<const char*>(vp8_default_coeff_probs), 
+                  reinterpret_cast<const char*>(vp8_default_coeff_probs) + sizeof(vp8_default_coeff_probs), 
+                  reinterpret_cast<char*>(m_frameProbs.coeff_probs));
 
         UMC_SET_ZERO(m_frame_info.segmentFeatureData);
         m_frame_info.segmentAbsMode = 0;
@@ -1157,7 +1159,9 @@ mfxStatus VideoDECODEVP8_HW::DecodeFrameHeader(mfxBitstream *in)
             m_frameProbs.mbModeProbUV[i] = vp8_mb_mode_uv_probs[i];
 
         // restore default MV contexts
-        memcpy(m_frameProbs.mvContexts, vp8_default_mv_contexts, sizeof(vp8_default_mv_contexts));
+        std::copy(reinterpret_cast<const char*>(vp8_default_mv_contexts), 
+                  reinterpret_cast<const char*>(vp8_default_mv_contexts) + sizeof(vp8_default_mv_contexts), 
+                  reinterpret_cast<char*>(m_frameProbs.mvContexts));
 
     }
 
@@ -1274,7 +1278,7 @@ mfxStatus VideoDECODEVP8_HW::DecodeFrameHeader(mfxBitstream *in)
     m_refresh_info.refreshProbabilities = (Ipp8u)m_boolDecoder[VP8_FIRST_PARTITION].decode();
 
     if (!m_refresh_info.refreshProbabilities)
-        memcpy(&m_frameProbs_saved, &m_frameProbs, sizeof(m_frameProbs));
+        m_frameProbs_saved = m_frameProbs;
 
     if (m_frame_info.frameType != I_PICTURE)
     {
@@ -1444,7 +1448,7 @@ mfxStatus VideoDECODEVP8_HW::GetVideoParam(mfxVideoParam *pPar)
 
     MFX_CHECK_NULL_PTR1(pPar);
 
-    memcpy(&pPar->mfx, &m_on_init_video_params.mfx, sizeof(mfxInfoMFX));
+    pPar->mfx = m_on_init_video_params.mfx;
 
     pPar->Protected = m_on_init_video_params.Protected;
     pPar->IOPattern = m_on_init_video_params.IOPattern;
@@ -1487,7 +1491,8 @@ mfxStatus VideoDECODEVP8_HW::GetDecodeStat(mfxDecodeStat *pStat)
     m_stat.NumSkippedFrame = 0;
     m_stat.NumCachedFrame = 0;
 
-    memcpy(pStat, &m_stat, sizeof(m_stat));
+    *pStat = m_stat;
+
     return MFX_ERR_NONE;
 
 }
@@ -1721,7 +1726,7 @@ mfxStatus VideoDECODEVP8_HW::PackHeaders(mfxBitstream *p_bistream)
     UMCVACompBuffer* compBufQm;
     VP8_DECODE_QM_TABLE *qmTable = (VP8_DECODE_QM_TABLE*)m_p_video_accelerator->GetCompBuffer(D3D9_VIDEO_DECODER_BUFFER_INVERSE_QUANTIZATION_MATRIX, &compBufQm);
 
-    if (0 == m_frame_info.segmentationEnabled)
+    if (m_frame_info.segmentationEnabled == 0)
     {
         // when segmentation is disabled, use the first entry 0 for the quantization values
         qmTable->Qvalue[0][0] = (USHORT)m_quantInfo.ydcQ[0];
@@ -2047,8 +2052,9 @@ mfxStatus VideoDECODEVP8_HW::PackHeaders(mfxBitstream *p_bistream)
      VAProbabilityDataBufferVP8 *coeffProbs = (VAProbabilityDataBufferVP8*)m_p_video_accelerator->
              GetCompBuffer(VAProbabilityBufferType, &compBufCp, sizeof(VAProbabilityDataBufferVP8));
 
-     ////[4][8][3][11]
-     memcpy(coeffProbs, m_frameProbs.coeff_probs, sizeof(Ipp8u) * 4 * 8 * 3 * 11);
+     std::copy(reinterpret_cast<const char*>(m_frameProbs.coeff_probs), 
+               reinterpret_cast<const char*>(m_frameProbs.coeff_probs) + sizeof(m_frameProbs.coeff_probs)), 
+               reinterpret_cast<char*>(coeffProbs));
 
 /*     {
          static int i = 0;
@@ -2068,8 +2074,8 @@ mfxStatus VideoDECODEVP8_HW::PackHeaders(mfxBitstream *p_bistream)
      UMCVACompBuffer* compBufQm;
      VAIQMatrixBufferVP8 *qmTable = (VAIQMatrixBufferVP8*)m_p_video_accelerator->
              GetCompBuffer(VAIQMatrixBufferType, &compBufQm, sizeof(VAIQMatrixBufferVP8));
-
-     if (false/*0 == m_frame_info.segmentationEnabled*/)
+     
+     if (m_frame_info.segmentationEnabled == 0)
      {
 
          // when segmentation is disabled, use the first entry 0 for the quantization values
@@ -2167,7 +2173,8 @@ mfxStatus VideoDECODEVP8_HW::PackHeaders(mfxBitstream *p_bistream)
      Ipp8u *bistreamData = (Ipp8u *)m_p_video_accelerator->GetCompBuffer(VASliceDataBufferType, &compBufBs, p_bistream->DataLength - offset);
 
      Ipp8u *pBuffer = (Ipp8u*) p_bistream->Data;
-     memcpy(bistreamData, pBuffer + offset, size - offset);
+
+     std::copy(pBuffer + offset, pBuffer + size, bistreamData);
 
 /*     {
          static int i = 0;
