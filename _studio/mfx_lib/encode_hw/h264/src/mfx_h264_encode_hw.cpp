@@ -2271,7 +2271,7 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
                 if ((sts = UpdateBitstream(*task, task->m_fid[f])) != MFX_ERR_NONE)
                     return Error(sts);
             }
-            m_NumSlices = task->m_SliceInfo.size();
+            m_NumSlices = (mfxU32)task->m_SliceInfo.size();
             OnEncodingQueried(task);
         }
         else if (IsOff(extOpt->FieldOutput))
