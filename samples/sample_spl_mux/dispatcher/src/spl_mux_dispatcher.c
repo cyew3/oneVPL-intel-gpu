@@ -8,6 +8,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #if defined(_WIN32) || defined(_WIN64)
 #include <windows.h>
@@ -282,7 +283,7 @@ mfxStatus MFXMuxer_Init(mfxStreamParams* par, mfxDataIO *data_io, mfxMuxer *mux)
     r = (retMfxMux*) malloc(sizeof(retMfxMux));
     if (r == NULL)
         return MFX_ERR_MEMORY_ALLOC;
-    memset((void*)r, 0, sizeof(retMfxSpl));
+    memset((void*)r, 0, sizeof(retMfxMux));
 
     mfxRes = LoadMuxFunctions(r);
     if (mfxRes == MFX_ERR_NONE)
