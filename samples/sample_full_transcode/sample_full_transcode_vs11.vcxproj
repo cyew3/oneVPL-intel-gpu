@@ -220,6 +220,7 @@
     <ClCompile Include="include\output_format.h" />
     <ClCompile Include="include\sample_metadata.h" />
     <ClCompile Include="src\av_alloc_request.cpp" />
+    <ClCompile Include="src\circular_splitter.cpp" />
     <ClCompile Include="src\cmdline_parser.cpp" />
     <ClCompile Include="src\fileio.cpp" />
     <ClCompile Include="src\trace_levels.cpp" />
@@ -237,9 +238,11 @@
     <ClCompile Include="src\transform_vdec.cpp" />
     <ClCompile Include="src\transform_venc.cpp" />
     <ClCompile Include="src\transform_vpp.cpp" />
+    <ClCompile Include="src\video_session.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\av_alloc_request.h" />
+    <ClInclude Include="include\circular_splitter.h" />
     <ClInclude Include="include\cmdline_options.h" />
     <ClInclude Include="include\cmdline_parser.h" />
     <ClInclude Include="include\exceptions.h" />
