@@ -456,6 +456,8 @@ void UpdatePPS(
     pps.CurrPic.BottomFieldOrderCnt = task.GetPoc(BFIELD);
     if (task.GetPicStructForEncode() != MFX_PICSTRUCT_PROGRESSIVE)
         pps.CurrPic.flags = TFIELD == fieldId ? VA_PICTURE_H264_TOP_FIELD : VA_PICTURE_H264_BOTTOM_FIELD;
+    else
+        pps.CurrPic.flags = 0;
 
     mfxU32 i = 0;
     mfxU32 idx = 0;
