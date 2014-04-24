@@ -438,8 +438,10 @@ enum {
     MFX_RATECONTROL_ICQ       =9,
     MFX_RATECONTROL_VCM       =10,
     MFX_RATECONTROL_LA_ICQ    =11,
-    MFX_RATECONTROL_VME       = 12
+    MFX_RATECONTROL_LA_EXT    = 12
 };
+
+
 
 /* Trellis control*/
 enum {
