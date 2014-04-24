@@ -12,6 +12,7 @@ public:
     bool                        m_initialized;
     bool                        m_loaded;
     bool                        m_par_set;
+    bool                        m_use_memid;
     tsExtBufType<mfxVideoParam> m_par;
     tsExtBufType<mfxBitstream>  m_bitstream;
     mfxFrameAllocRequest        m_request;
@@ -63,4 +64,6 @@ public:
     mfxStatus DecodeFrames(mfxU32 n);
 
     mfxStatus Load();
+
+    void SetPar4_DecodeFrameAsync();
 };

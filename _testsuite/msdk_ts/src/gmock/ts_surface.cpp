@@ -318,12 +318,12 @@ mfxStatus tsSurfaceWriter::ProcessSurface(mfxFrameSurface1& s)
         return MFX_ERR_UNSUPPORTED;
     }
 
-    for(mfxU32 i = s.Info.CropY; i < s.Info.CropH; i ++)
+    for(mfxU16 i = s.Info.CropY; i < s.Info.CropH; i ++)
     {
         fwrite(s.Data.Y + pitch * i + s.Info.CropX, 1, s.Info.CropW, m_file);
     }
     
-    for(mfxU32 i = (s.Info.CropY / 2); i < (s.Info.CropH / 2); i ++)
+    for(mfxU16 i = (s.Info.CropY / 2); i < (s.Info.CropH / 2); i ++)
     {
         fwrite(s.Data.UV + pitch * i + s.Info.CropX, 1, s.Info.CropW, m_file);
     }

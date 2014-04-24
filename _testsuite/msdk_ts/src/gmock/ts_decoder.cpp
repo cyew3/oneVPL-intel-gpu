@@ -18,6 +18,7 @@ tsVideoDecoder::tsVideoDecoder(mfxU32 CodecId, bool useDefaults)
     , m_uid(0)
     , m_loaded(false)
     , m_par_set(false)
+    , m_use_memid(false)
 {
     m_par.mfx.CodecId = CodecId;
     if(m_default)
@@ -54,11 +55,15 @@ mfxStatus tsVideoDecoder::Init()
         }
         if(     !m_pFrameAllocator 
             && (   (m_request.Type & (MFX_MEMTYPE_VIDEO_MEMORY_DECODER_TARGET|MFX_MEMTYPE_VIDEO_MEMORY_PROCESSOR_TARGET))
-                || (m_par.IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY)))
+                || (m_par.IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY)
+                || m_use_memid))
         {
             if(!GetAllocator())
             {
-                UseDefaultAllocator(false);
+                UseDefaultAllocator(
+                       (m_par.IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY) 
+                    || (m_request.Type & MFX_MEMTYPE_SYSTEM_MEMORY)
+                );
             }
             m_pFrameAllocator = GetAllocator();
             SetFrameAllocator();
@@ -67,7 +72,7 @@ mfxStatus tsVideoDecoder::Init()
         {
             DecodeHeader();
         }
-        if(m_par.IOPattern & MFX_IOPATTERN_IN_OPAQUE_MEMORY)
+        if(m_par.IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY)
         {
             QueryIOSurf();
             AllocOpaque(m_request, m_par);
@@ -200,11 +205,22 @@ mfxStatus tsVideoDecoder::AllocSurfaces()
     {
         QueryIOSurf();
     }
-    return tsSurfacePool::AllocSurfaces(m_request);
+    return tsSurfacePool::AllocSurfaces(m_request, !m_use_memid);
 }
 
 mfxStatus tsVideoDecoder::DecodeHeader()
 {
+    if(m_default)
+    {
+        if(!m_session)
+        {
+            MFXInit();
+        }
+        if(!m_loaded)
+        {
+            Load();
+        }
+    }
     if(m_bs_processor)
     {
         m_pBitstream = m_bs_processor->ProcessBitstream(m_bitstream);
@@ -223,39 +239,43 @@ mfxStatus tsVideoDecoder::DecodeHeader(mfxSession session, mfxBitstream *bs, mfx
 
     return g_tsStatus.get();
 }
+void tsVideoDecoder::SetPar4_DecodeFrameAsync()
+{
+    if(!PoolSize())
+    {
+        if(m_pFrameAllocator && !GetAllocator())
+        {
+            SetAllocator(m_pFrameAllocator, true);
+        }
+        AllocSurfaces();
+        if(!m_pFrameAllocator && (m_request.Type & (MFX_MEMTYPE_VIDEO_MEMORY_DECODER_TARGET|MFX_MEMTYPE_VIDEO_MEMORY_PROCESSOR_TARGET)))
+        {
+            m_pFrameAllocator = GetAllocator();
+            SetFrameAllocator();
+        }
+    }
+    if(!m_initialized)
+    {
+        Init();
+    }
+    if(g_tsStatus.get() != MFX_ERR_MORE_DATA)
+    {
+        m_pSurf = GetSurface();
+    }
+    else
+    {
+        if(m_bs_processor)
+        {
+            m_pBitstream = m_bs_processor->ProcessBitstream(m_bitstream);
+        }
+    }
+}
 
 mfxStatus tsVideoDecoder::DecodeFrameAsync()
 {
     if(m_default)
     {
-        if(!PoolSize())
-        {
-            if(m_pFrameAllocator && !GetAllocator())
-            {
-                SetAllocator(m_pFrameAllocator, true);
-            }
-            AllocSurfaces();
-            if(!m_pFrameAllocator && (m_request.Type & (MFX_MEMTYPE_VIDEO_MEMORY_DECODER_TARGET|MFX_MEMTYPE_VIDEO_MEMORY_PROCESSOR_TARGET)))
-            {
-                m_pFrameAllocator = GetAllocator();
-                SetFrameAllocator();
-            }
-        }
-        if(!m_initialized)
-        {
-            Init();
-        }
-        if(g_tsStatus.get() != MFX_ERR_MORE_DATA)
-        {
-            m_pSurf = GetSurface();
-        }
-        else
-        {
-            if(m_bs_processor)
-            {
-                m_pBitstream = m_bs_processor->ProcessBitstream(m_bitstream);
-            }
-        }
+        SetPar4_DecodeFrameAsync();
     }
 
     DecodeFrameAsync(m_session, m_pBitstream, m_pSurf, &m_pSurfOut, m_pSyncPoint);
