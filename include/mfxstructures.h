@@ -528,7 +528,8 @@ typedef struct {
     mfxU8       MaxQPB;                 /* 1..51, 0 = default */
     mfxU16      FixedFrameRate;         /* tri-state option */
     mfxU16      DisableDeblockingIdc;
-    mfxU16      reserved2[4];
+    mfxU16      DisableVUI;
+    mfxU16      reserved2[3];
 } mfxExtCodingOption2;
 
 /* IntraPredBlockSize/InterPredBlockSize */
