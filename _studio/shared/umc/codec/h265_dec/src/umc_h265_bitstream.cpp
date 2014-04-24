@@ -1181,26 +1181,23 @@ void H265HeadersBitstream::decodeSlice(H265Slice *pSlice, const H265SeqParamSet 
         if (sliceHdr->IdrPicFlag)
         {
             sliceHdr->slice_pic_order_cnt_lsb = 0;
-            ReferencePictureSet* rps = pSlice->getLocalRPS();
+            ReferencePictureSet* rps = pSlice->getRPS();
             rps->num_negative_pics = 0;
             rps->num_positive_pics = 0;
             rps->setNumberOfLongtermPictures(0);
             rps->num_pics = 0;
-            pSlice->setRPS(rps);
         }
         else
         {
             sliceHdr->slice_pic_order_cnt_lsb = GetBits(sps->log2_max_pic_order_cnt_lsb);
 
-            ReferencePictureSet* rps;
             sliceHdr->short_term_ref_pic_set_sps_flag = Get1Bit();
             if (!sliceHdr->short_term_ref_pic_set_sps_flag) // short term ref pic is signalled
             {
                 size_t bitsDecoded = BitsDecoded();
 
-                rps = pSlice->getLocalRPS();
+                ReferencePictureSet* rps = pSlice->getRPS();
                 parseShortTermRefPicSet(sps, rps, sps->getRPSList()->getNumberOfReferencePictureSets());
-                pSlice->setRPS(rps);
 
                 sliceHdr->wNumBitsForShortTermRPSInSlice = (Ipp32s)(BitsDecoded() - bitsDecoded);
             }
@@ -1214,15 +1211,14 @@ void H265HeadersBitstream::decodeSlice(H265Slice *pSlice, const H265SeqParamSet 
                 if (short_term_ref_pic_set_idx >= sps->getRPSList()->getNumberOfReferencePictureSets())
                     throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
 
-                rps = pSlice->getLocalRPS();
-                *rps = *sps->getRPSList()->getReferencePictureSet(short_term_ref_pic_set_idx);
+                *pSlice->getRPS() = *sps->getRPSList()->getReferencePictureSet(short_term_ref_pic_set_idx);
 
-                pSlice->setRPS(rps);
                 sliceHdr->wNumBitsForShortTermRPSInSlice = 0;
             }
 
             if (sps->long_term_ref_pics_present_flag)
             {
+                ReferencePictureSet* rps = pSlice->getRPS();
                 int offset = rps->getNumberOfNegativePictures()+rps->getNumberOfPositivePictures();
                 if (sps->num_long_term_ref_pics_sps > 0)
                 {
@@ -1275,12 +1271,11 @@ void H265HeadersBitstream::decodeSlice(H265Slice *pSlice, const H265SeqParamSet 
                 || sliceHdr->nal_unit_type == NAL_UT_CODED_SLICE_BLA_W_RADL
                 || sliceHdr->nal_unit_type == NAL_UT_CODED_SLICE_BLA_N_LP )
             {
-                rps = pSlice->getLocalRPS();
+                ReferencePictureSet* rps = pSlice->getRPS();
                 rps->num_negative_pics = 0;
                 rps->num_positive_pics = 0;
                 rps->setNumberOfLongtermPictures(0);
                 rps->num_pics = 0;
-                pSlice->setRPS(rps);
             }
 
             if (sps->sps_temporal_mvp_enabled_flag)
@@ -1528,8 +1523,8 @@ void H265HeadersBitstream::decodeSlice(H265Slice *pSlice, const H265SeqParamSet 
 
     if (!pps->tiles_enabled_flag)
     {
-        pSlice->setTileLocationCount(1);
-        sliceHdr->m_TileByteLocation[0] = 0;
+        pSlice->allocateTileLocation(1);
+        pSlice->m_tileByteLocation[0] = 0;
     }
 
     if (pps->tiles_enabled_flag || pps->entropy_coding_sync_enabled_flag)
@@ -1565,32 +1560,19 @@ void H265HeadersBitstream::decodeSlice(H265Slice *pSlice, const H265SeqParamSet 
 
         if (pps->tiles_enabled_flag)
         {
-            pSlice->setTileLocationCount(sliceHdr->num_entry_point_offsets + 1);
+            pSlice->allocateTileLocation(sliceHdr->num_entry_point_offsets + 1);
 
             unsigned prevPos = 0;
-            sliceHdr->m_TileByteLocation[0] = 0;
+            pSlice->m_tileByteLocation[0] = 0;
             for (int idx=1; idx < pSlice->getTileLocationCount() ; idx++)
             {
-                sliceHdr->m_TileByteLocation[idx] = prevPos + entryPointOffset[idx - 1];
+                pSlice->m_tileByteLocation[idx] = prevPos + entryPointOffset[idx - 1];
                 prevPos += entryPointOffset[ idx - 1 ];
             }
         }
         else if (pps->entropy_coding_sync_enabled_flag)
         {
-            Ipp32u numSubstreams = sliceHdr->num_entry_point_offsets+1;
-            pSlice->allocSubstreamSizes(numSubstreams);
-            unsigned *pSubstreamSizes       = sliceHdr->m_SubstreamSizes;
-            for (Ipp32u idx = 0; idx < numSubstreams-1; idx++)
-            {
-                if (idx < sliceHdr->num_entry_point_offsets)
-                {
-                    pSubstreamSizes[idx] = (entryPointOffset[idx] << 3) ;
-                }
-                else
-                {
-                    pSubstreamSizes[idx] = 0;
-                }
-            }
+            // we don't use wpp offsets
         }
 
         if (entryPointOffset)

@@ -536,7 +536,8 @@ struct H265HRD
 
     H265HrdSubLayerInfo m_HRD[MAX_TEMPORAL_LAYER];
 
-    H265HRD() {
+    H265HRD()
+    {
         ::memset(this, 0, sizeof(*this));
     }
 
@@ -692,9 +693,9 @@ struct ReferencePictureSet
     Ipp8u getUsed(int index) const           { return used_by_curr_pic_flag[index]; }
 
     void setPOC(int bufferNum, int POC)     { m_POC[bufferNum] = POC; }
-    int getPOC(int index)                   { return m_POC[index]; }
+    int getPOC(int index) const             { return m_POC[index]; }
 
-    Ipp8u getCheckLTMSBPresent(Ipp32s bufferNum) { return delta_poc_msb_present_flag[bufferNum]; }
+    Ipp8u getCheckLTMSBPresent(Ipp32s bufferNum) const { return delta_poc_msb_present_flag[bufferNum]; }
 };
 
 // Reference picture list data structure
@@ -1153,10 +1154,6 @@ struct H265SliceHeader
     //h265 elements of slice header ----------------------------------------------------------------------------------------------------------------
     const H265SeqParamSet* m_SeqParamSet;
     const H265PicParamSet* m_PicParamSet;
-    Ipp32u *m_TileByteLocation;
-    Ipp32s m_TileCount;
-
-    Ipp32u* m_SubstreamSizes;
 
     Ipp32u m_sliceSegmentCurStartCUAddr;
     Ipp32u m_sliceSegmentCurEndCUAddr;
@@ -1168,8 +1165,7 @@ struct H265SliceHeader
     bool m_CheckLDC;
     Ipp32s m_numRefIdx[3]; //  for multiple reference of current slice. IT SEEMS BE SAME AS num_ref_idx_l0_active, l1, lc
 
-    ReferencePictureSet *m_pRPS;
-    ReferencePictureSet m_localRPS;
+    ReferencePictureSet m_rps;
     RefPicListModification m_RefPicListModification;
 
     // flag equal 1 means that the slice belong to IDR or anchor access unit

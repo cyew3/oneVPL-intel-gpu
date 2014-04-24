@@ -194,9 +194,7 @@ void H265TrQuant::InvRecurTransformNxN(H265CodingUnit* pCU, Ipp32u AbsPartIdx, I
 
     if(TrMode == StopTrMode)
     {
-        H265CoeffsPtrCommon pCoeff;
-
-        Ipp32u NumCoeffInc = pCU->m_SliceHeader->m_SeqParamSet->MinCUSize * pCU->m_SliceHeader->m_SeqParamSet->MinCUSize;
+        Ipp32u NumCoeffInc = m_context->m_sps->MinCUSize * m_context->m_sps->MinCUSize;
         size_t coeffsOffset = NumCoeffInc * AbsPartIdx;
 
         if (lumaPresent)
@@ -204,7 +202,7 @@ void H265TrQuant::InvRecurTransformNxN(H265CodingUnit* pCU, Ipp32u AbsPartIdx, I
             Ipp32u DstStride = pCU->m_Frame->pitch_luma();
             H265PlanePtrYCommon ptrLuma = pCU->m_Frame->GetLumaAddr(pCU->CUAddr, AbsPartIdx);
 
-            pCoeff = m_context->m_coeffsRead;
+            H265CoeffsPtrCommon pCoeff = m_context->m_coeffsRead;
             m_context->m_coeffsRead += Size*Size;
 
             InvTransformNxN(pCU->GetCUTransquantBypass(AbsPartIdx), TEXT_LUMA, REG_DCT, ptrLuma, DstStride, pCoeff, Size,
@@ -232,7 +230,7 @@ void H265TrQuant::InvRecurTransformNxN(H265CodingUnit* pCU, Ipp32u AbsPartIdx, I
 
             if (chromaUPresent)
             {
-                pCoeff = m_context->m_coeffsRead;
+                H265CoeffsPtrCommon pCoeff = m_context->m_coeffsRead;
                 m_context->m_coeffsRead += Size*Size;
                 InvTransformNxN(pCU->GetCUTransquantBypass(AbsPartIdx), TEXT_CHROMA_U, REG_DCT, residualsTempBuffer, res_pitch, pCoeff, Size,
                     pCU->GetTransformSkip(COMPONENT_CHROMA_U, AbsPartIdx) != 0);
@@ -240,7 +238,7 @@ void H265TrQuant::InvRecurTransformNxN(H265CodingUnit* pCU, Ipp32u AbsPartIdx, I
 
             if (chromaVPresent)
             {
-                pCoeff = m_context->m_coeffsRead;
+                H265CoeffsPtrCommon pCoeff = m_context->m_coeffsRead;
                 m_context->m_coeffsRead += Size*Size;
                 InvTransformNxN(pCU->GetCUTransquantBypass(AbsPartIdx), TEXT_CHROMA_V, REG_DCT, residualsTempBuffer1, res_pitch, pCoeff, Size,
                     pCU->GetTransformSkip(COMPONENT_CHROMA_V, AbsPartIdx) != 0);

@@ -1474,9 +1474,9 @@ void H265SegmentDecoder::DecodeTransform(Ipp32u AbsPartIdx, Ipp32u Depth, Ipp32u
 
         const Ipp32u QPartNum = m_pCurrentFrame->getCD()->getNumPartInCU() >> (Depth << 1);
         const Ipp32u StartAbsPartIdx = AbsPartIdx;
-        Ipp32u YCbf = 0;
-        Ipp32u UCbf = 0;
-        Ipp32u VCbf = 0;
+        Ipp8u YCbf = 0;
+        Ipp8u UCbf = 0;
+        Ipp8u VCbf = 0;
 
         // Recursively parse sub-TUs
         for (Ipp32s i = 0; i < 4; i++)
@@ -1510,9 +1510,9 @@ void H265SegmentDecoder::DecodeTransform(Ipp32u AbsPartIdx, Ipp32u Depth, Ipp32u
         }
 
         // transform_unit begin
-        Ipp32u cbfY = m_cu->GetCbf(COMPONENT_LUMA, AbsPartIdx, trafoDepth);
-        Ipp32u cbfU;
-        Ipp32u cbfV;
+        Ipp8u cbfY = m_cu->GetCbf(COMPONENT_LUMA, AbsPartIdx, trafoDepth);
+        Ipp8u cbfU;
+        Ipp8u cbfV;
 
         if (log2TrafoSize == 2 && (AbsPartIdx & 0x3) == 0x3 )
         {
@@ -2186,8 +2186,7 @@ void H265SegmentDecoder::ReconstructCU(Ipp32u AbsPartIdx, Ipp32u Depth)
     Ipp32u YInc = m_cu->m_rasterToPelY[AbsPartIdx];
     Ipp32u TPelY = m_cu->m_CUPelY + YInc;
 
-    H265SliceHeader* pSliceHeader = m_cu->m_SliceHeader;
-    if (LPelX + Size > pSliceHeader->m_SeqParamSet->pic_width_in_luma_samples || TPelY + Size > pSliceHeader->m_SeqParamSet->pic_height_in_luma_samples)
+    if (LPelX + Size > m_pSeqParamSet->pic_width_in_luma_samples || TPelY + Size > m_pSeqParamSet->pic_height_in_luma_samples)
     {
         BoundaryFlag = true;
     }
@@ -2203,8 +2202,8 @@ void H265SegmentDecoder::ReconstructCU(Ipp32u AbsPartIdx, Ipp32u Depth)
             {
                 LPelX = m_cu->m_CUPelX + m_cu->m_rasterToPelX[Idx];
                 TPelY = m_cu->m_CUPelY + m_cu->m_rasterToPelY[Idx];
-                if (LPelX >= pSliceHeader->m_SeqParamSet->pic_width_in_luma_samples ||
-                    TPelY >= pSliceHeader->m_SeqParamSet->pic_height_in_luma_samples)
+                if (LPelX >= m_pSeqParamSet->pic_width_in_luma_samples ||
+                    TPelY >= m_pSeqParamSet->pic_height_in_luma_samples)
                 { // !insideFrame
                     continue;
                 }

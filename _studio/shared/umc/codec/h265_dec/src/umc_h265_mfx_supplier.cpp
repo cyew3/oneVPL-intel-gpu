@@ -346,8 +346,7 @@ UMC::Status MFXTaskSupplier_H265::DecodeSEI(UMC::MediaDataEx *nalUnit)
 
             size_t decoded1 = bitStream.BytesDecoded();
 
-            /*Ipp32s target_sps =*/ bitStream.ParseSEI(m_Headers.m_SeqParams,
-                m_Headers.m_SeqParams.GetCurrentID(), &m_SEIPayLoads);
+            bitStream.ParseSEI(m_Headers.m_SeqParams, m_Headers.m_SeqParams.GetCurrentID(), &m_SEIPayLoads);
 
             if (m_SEIPayLoads.payLoadType == SEI_USER_DATA_REGISTERED_TYPE)
             {
@@ -740,10 +739,8 @@ UMC::Status HeadersAnalyzer::ProcessNalUnit(UMC::MediaData * data)
 }
 
 // Find bitstream header NAL units, parse them and fill application parameters structure
-UMC::Status MFX_Utility::DecodeHeader(TaskSupplier_H265 * supplier, UMC::BaseCodecParams* params, mfxBitstream *bs, mfxVideoParam *out, bool isHW)
+UMC::Status MFX_Utility::DecodeHeader(TaskSupplier_H265 * supplier, UMC::VideoDecoderParams* params, mfxBitstream *bs, mfxVideoParam *out, bool isHW)
 {
-    UMC::VideoDecoderParams *lpInfo = DynamicCast<UMC::VideoDecoderParams> (params);
-
     UMC::Status umcRes = UMC::UMC_OK;
 
     if (!params->m_pData)
@@ -757,12 +754,12 @@ UMC::Status MFX_Utility::DecodeHeader(TaskSupplier_H265 * supplier, UMC::BaseCod
         return UMC::UMC_ERR_FAILED;
 
     HeadersAnalyzer headersDecoder(supplier);
-    umcRes = headersDecoder.DecodeHeader(lpInfo->m_pData, bs, out);
+    umcRes = headersDecoder.DecodeHeader(params->m_pData, bs, out);
 
     if (umcRes != UMC::UMC_OK)
         return umcRes;
 
-    umcRes = supplier->GetInfo(lpInfo);
+    umcRes = supplier->GetInfo(params);
     if (umcRes == UMC::UMC_OK)
     {
         FillVideoParam(supplier, out, false, isHW);

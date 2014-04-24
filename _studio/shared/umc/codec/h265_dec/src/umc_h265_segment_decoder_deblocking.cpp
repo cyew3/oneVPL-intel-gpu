@@ -462,7 +462,7 @@ void H265SegmentDecoder::DeblockOneLCU(Ipp32s curLCUAddr)
     m_cu->m_AvailBorder.m_left = !picLBoundary;
     m_cu->m_AvailBorder.m_top = !picTBoundary;
 
-    if (!m_cu->m_SliceHeader->m_PicParamSet->loop_filter_across_tiles_enabled_flag)
+    if (!m_pPicParamSet->loop_filter_across_tiles_enabled_flag)
     {
         Ipp32u tileID = m_pCurrentFrame->m_CodingData->getTileIdxMap(curLCUAddr);
 

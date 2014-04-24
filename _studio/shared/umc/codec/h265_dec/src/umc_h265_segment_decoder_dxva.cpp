@@ -179,7 +179,7 @@ bool TaskBrokerSingleThreadDXVA::GetNextTaskInternal(H265Task *)
     if (!m_useDXVAStatusReporting)
         return false;
 
-    H265_DXVA_SegmentDecoder * dxva_sd = ((H265_DXVA_SegmentDecoder *)m_pTaskSupplier->m_pSegmentDecoder[0]);
+    H265_DXVA_SegmentDecoder * dxva_sd = static_cast<H265_DXVA_SegmentDecoder *>(m_pTaskSupplier->m_pSegmentDecoder[0]);
 
     if (!dxva_sd->GetPacker())
         return false;

@@ -177,35 +177,33 @@ public:
 
     bool m_bError;                                              // (bool) there is an error in decoding
 
-    bool m_bDeblocked;                                          // (bool) "slice has been deblocked" flag
-
     // memory management tools
     DecodingContext        *m_context;
 
 public:
 
-    ReferencePictureSet*  getRPS() const    { return m_SliceHeader.m_pRPS; }
-    void setRPS(ReferencePictureSet *rps)   { m_SliceHeader.m_pRPS = rps; }
-    ReferencePictureSet*  getLocalRPS()     { return &m_SliceHeader.m_localRPS; }
+    ReferencePictureSet*  getRPS() { return &m_SliceHeader.m_rps; }
+
+    const ReferencePictureSet*  getRPS() const { return &GetSliceHeader()->m_rps; }
 
     int getNumRefIdx(EnumRefPicList e) const    { return m_SliceHeader.m_numRefIdx[e]; }
 
     // Returns number of used references in RPS
     int getNumRpsCurrTempList() const;
 
-    Ipp32s getTileLocationCount() const   { return m_SliceHeader.m_TileCount; }
-    void setTileLocationCount(Ipp32s val)
+    Ipp32s m_tileCount;
+    Ipp32u *m_tileByteLocation;
+
+    Ipp32s getTileLocationCount() const   { return m_tileCount; }
+    void allocateTileLocation(Ipp32s val)
     {
-        m_SliceHeader.m_TileCount = val;
+        if (m_tileCount < val)
+            delete[] m_tileByteLocation;
 
-        if (NULL != m_SliceHeader.m_TileByteLocation)
-            delete[] m_SliceHeader.m_TileByteLocation;
-
-        m_SliceHeader.m_TileByteLocation = new Ipp32u[val];
+        m_tileCount = val;
+        m_tileByteLocation = new Ipp32u[val];
     }
 
-    // Allocate a temporary array to hold slice substream offsets
-    void allocSubstreamSizes(unsigned);
     // For dependent slice copy data from another slice
     void CopyFromBaseSlice(const H265Slice * slice);
 };

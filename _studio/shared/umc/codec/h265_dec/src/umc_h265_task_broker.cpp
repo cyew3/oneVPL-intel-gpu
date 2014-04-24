@@ -1059,16 +1059,6 @@ void TaskBroker_H265::AddPerformedTask(H265Task *pTask)
         {
             info->m_processInProgress[DEB_PROCESS_ID] = 0;
             info->m_curCUToProcess[DEB_PROCESS_ID] += pTask->m_iMBToProcess;
-
-            if (info->m_curCUToProcess[DEB_PROCESS_ID] == info->m_pFrame->getCD()->m_NumCUsInFrame)
-            {
-                Ipp32s sliceCount = info->GetSliceCount();
-                for (Ipp32s i = 0; i < sliceCount; i += 1)
-                {
-                    H265Slice *pSlice = info->GetSlice(i);
-                    pSlice->m_bDeblocked = true;
-                }
-            }
         }
         else
         {
@@ -1105,8 +1095,6 @@ void TaskBroker_H265::AddPerformedTask(H265Task *pTask)
                             break;
                     }
                 }
-
-                pSlice->m_bDeblocked = true;
             }
             else
             {
@@ -1746,10 +1734,9 @@ bool TaskBrokerTwoThread_H265::GetDeblockingTask(H265DecoderFrameInfo * info, H2
         Ipp32s iMBWidth = info->m_pFrame->getCD()->m_WidthInCU;
         Ipp32s iAvailableToDeblock = processInfo->m_curCUToProcess[REC_PROCESS_ID] - processInfo->m_curCUToProcess[DEB_PROCESS_ID];
 
-        if (!pSlice->m_bDeblocked &&
-            (bPrevDeblocked || !pSlice->GetSliceHeader()->slice_loop_filter_across_slices_enabled_flag) &&
+        if ((bPrevDeblocked || !pSlice->GetSliceHeader()->slice_loop_filter_across_slices_enabled_flag) &&
             !processInfo->m_processInProgress[DEB_PROCESS_ID] &&
-            (iAvailableToDeblock > iMBWidth || processInfo->m_curCUToProcess[REC_PROCESS_ID] >= pSlice->m_iMaxMB))
+            (iAvailableToDeblock > iMBWidth || processInfo->m_isCompleted))
         {
             processInfo->m_processInProgress[DEB_PROCESS_ID] = 1;
 
@@ -1760,22 +1747,11 @@ bool TaskBrokerTwoThread_H265::GetDeblockingTask(H265DecoderFrameInfo * info, H2
 
             pTask->m_iTaskID = TASK_DEB_H265;
             pTask->pFunction = &H265SegmentDecoderMultiThreaded::DeblockSegmentTask;
-
             return true;
         }
-        else
-        {
-            if (0 >= iAvailableToDeblock && processInfo->m_curCUToProcess[REC_PROCESS_ID] >= pSlice->m_iMaxMB)
-            {
-                pSlice->m_bDeblocked = true;
-                bPrevDeblocked = true;
-            }
-        }
 
-        // save previous slices deblocking condition
-        if (!pSlice->m_bDeblocked || processInfo->m_curCUToProcess[REC_PROCESS_ID] < pSlice->m_iMaxMB)
+        if (processInfo->m_curCUToProcess[DEB_PROCESS_ID] < pSlice->m_iMaxMB || !processInfo->m_isCompleted)
         {
-            bPrevDeblocked = false;
             break;
         }
     }
@@ -1798,16 +1774,16 @@ bool TaskBrokerTwoThread_H265::GetSAOTask(H265DecoderFrameInfo * info, H265Task 
     for (Ipp32s i = 0; i < sliceCount; i += 1)
     {
         H265Slice *slice = info->GetSlice(i);
-        CUProcessInfo * processInfo = &slice->processInfo;
 
-        Ipp32s prevProcessMBReady = slice->m_bDeblocked ? REC_PROCESS_ID : DEB_PROCESS_ID;
         if (slice->m_iMaxMB < info->m_curCUToProcess[SAO_PROCESS_ID])
             continue;
 
         if (slice->m_iFirstMB > nextMBtoSAO)
             break;
 
-        if (processInfo->m_curCUToProcess[prevProcessMBReady] <= nextMBtoSAO && processInfo->m_curCUToProcess[prevProcessMBReady] < slice->m_iMaxMB)
+        Ipp32s prevCUAddrReady = IPP_MIN(info->m_curCUToProcess[REC_PROCESS_ID], info->m_curCUToProcess[DEB_PROCESS_ID]);
+
+        if (prevCUAddrReady <= nextMBtoSAO && prevCUAddrReady < slice->m_iMaxMB)
             return false;
     }
 
@@ -1862,10 +1838,10 @@ bool TaskBrokerTwoThread_H265::GetSAOTaskTile(H265DecoderFrameInfo * info, H265T
 
     // this is guarded function, safe to touch any variable
     Ipp32s iMBWidth = info->m_pFrame->getCD()->m_WidthInCU;
-    Ipp32s prevProcessMBReady = info->IsNeedDeblocking() ? DEB_PROCESS_ID : REC_PROCESS_ID;
-    Ipp32s availableToProcess = info->m_curCUToProcess[prevProcessMBReady] - info->m_curCUToProcess[SAO_PROCESS_ID];
+    Ipp32s prevCUAddrReady = IPP_MIN(info->m_curCUToProcess[REC_PROCESS_ID], info->m_curCUToProcess[DEB_PROCESS_ID]); //info->IsNeedDeblocking() ? DEB_PROCESS_ID : REC_PROCESS_ID;
+    Ipp32s availableToProcess = prevCUAddrReady - info->m_curCUToProcess[SAO_PROCESS_ID];
 
-    if (availableToProcess > iMBWidth || (availableToProcess && info->m_curCUToProcess[prevProcessMBReady] >= info->m_pFrame->getCD()->m_NumCUsInFrame))
+    if (availableToProcess > iMBWidth || (availableToProcess && prevCUAddrReady >= info->m_pFrame->getCD()->m_NumCUsInFrame))
     {
         info->m_processInProgress[SAO_PROCESS_ID] = 1;
 

@@ -23,9 +23,8 @@ namespace UMC_HEVC_DECODER
 H265Slice::H265Slice()
     : m_pSeqParamSet(0)
     , m_context(0)
+    , m_tileByteLocation (0)
 {
-    m_SliceHeader.m_SubstreamSizes = NULL;
-    m_SliceHeader.m_TileByteLocation = NULL;
     Reset();
 } // H265Slice::H265Slice()
 
@@ -56,13 +55,10 @@ void H265Slice::Reset()
     m_SliceHeader.m_CheckLDC = false;
     m_SliceHeader.slice_deblocking_filter_disabled_flag = false;
     m_SliceHeader.num_entry_point_offsets = 0;
-    m_SliceHeader.m_TileCount = 0;
 
-    delete[] m_SliceHeader.m_SubstreamSizes;
-    m_SliceHeader.m_SubstreamSizes = NULL;
-
-    delete[] m_SliceHeader.m_TileByteLocation;
-    m_SliceHeader.m_TileByteLocation = NULL;
+    m_tileCount = 0;
+    delete[] m_tileByteLocation;
+    m_tileByteLocation = 0;
 }
 
 // Release resources
@@ -126,9 +122,6 @@ bool H265Slice::Reset(PocDecoding * pocDecoding)
     processInfo.Initialize(m_iFirstMB, GetSeqParam()->WidthInCU);
 
     m_bError = false;
-
-    // set conditional flags
-    m_bDeblocked = GetSliceHeader()->slice_deblocking_filter_disabled_flag != 0;
 
     // frame is not associated yet
     m_pCurrentFrame = NULL;
@@ -211,13 +204,12 @@ bool H265Slice::DecodeSliceHeader(PocDecoding * pocDecoding)
 
                 m_SliceHeader.slice_pic_order_cnt_lsb = PicOrderCntMsb + slice_pic_order_cnt_lsb;
 
-                ReferencePictureSet *rps = getRPS();
-
                 const H265SeqParamSet * sps = m_pSeqParamSet;
                 H265SliceHeader * sliceHdr = &m_SliceHeader;
 
                 if (GetSeqParam()->long_term_ref_pics_present_flag)
                 {
+                    ReferencePictureSet *rps = getRPS();
                     int offset = rps->getNumberOfNegativePictures()+rps->getNumberOfPositivePictures();
 
                     Ipp32s prevDeltaMSB = 0;
@@ -261,12 +253,11 @@ bool H265Slice::DecodeSliceHeader(PocDecoding * pocDecoding)
                     || sliceHdr->nal_unit_type == NAL_UT_CODED_SLICE_BLA_W_RADL
                     || sliceHdr->nal_unit_type == NAL_UT_CODED_SLICE_BLA_N_LP )
                 {
-                    rps = getLocalRPS();
+                    ReferencePictureSet *rps = getRPS();
                     rps->num_negative_pics = 0;
                     rps->num_positive_pics = 0;
                     rps->setNumberOfLongtermPictures(0);
                     rps->num_pics = 0;
-                    setRPS(rps);
                 }
 
                 if (GetSliceHeader()->nuh_temporal_id == 0 && sliceHdr->nal_unit_type != NAL_UT_CODED_SLICE_RADL_R &&
@@ -341,7 +332,7 @@ int H265Slice::getNumRpsCurrTempList() const
 
   if (GetSliceHeader()->slice_type != I_SLICE)
   {
-      ReferencePictureSet *rps = getRPS();
+      const ReferencePictureSet *rps = getRPS();
 
       for(int i=0;i < rps->getNumberOfNegativePictures() + rps->getNumberOfPositivePictures() + rps->getNumberOfLongtermPictures();i++)
       {
@@ -353,14 +344,6 @@ int H265Slice::getNumRpsCurrTempList() const
   }
 
   return numRpsCurrTempList;
-}
-
-// Allocate a temporary array to hold slice substream offsets
-void H265Slice::allocSubstreamSizes(unsigned uiNumSubstreams)
-{
-    if (NULL != m_SliceHeader.m_SubstreamSizes)
-        delete[] m_SliceHeader.m_SubstreamSizes;
-    m_SliceHeader.m_SubstreamSizes = new unsigned[uiNumSubstreams > 0 ? uiNumSubstreams - 1 : 0];
 }
 
 // For dependent slice copy data from another slice
@@ -395,7 +378,7 @@ void H265Slice::CopyFromBaseSlice(const H265Slice * s)
     m_SliceHeader.slice_cb_qp_offset    = slice->slice_cb_qp_offset;
     m_SliceHeader.slice_cr_qp_offset    = slice->slice_cr_qp_offset;
 
-    m_SliceHeader.m_pRPS                    = slice->m_pRPS;
+    m_SliceHeader.m_rps                     = slice->m_rps;
     m_SliceHeader.collocated_from_l0_flag   = slice->collocated_from_l0_flag;
     m_SliceHeader.collocated_ref_idx        = slice->collocated_ref_idx;
     m_SliceHeader.nuh_temporal_id           = slice->nuh_temporal_id;
@@ -421,8 +404,6 @@ void H265Slice::CopyFromBaseSlice(const H265Slice * s)
     m_SliceHeader.SliceCurStartCUAddr = slice->SliceCurStartCUAddr;
 
     m_SliceHeader.m_RefPicListModification = slice->m_RefPicListModification;
-
-    m_bDeblocked = GetSliceHeader()->slice_deblocking_filter_disabled_flag != 0;
 }
 
 // Build reference lists from slice reference pic set. HEVC spec 8.3.2

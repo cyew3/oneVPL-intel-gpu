@@ -42,7 +42,7 @@ public:
 
     H265DecoderRefPicList()
     {
-        memset(this, 0, sizeof(H265DecoderRefPicList));
+        memset(m_refPicList1, 0, sizeof(m_refPicList1));
 
         m_refPicList = &(m_refPicList1[1]);
 

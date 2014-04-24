@@ -36,7 +36,7 @@ VATaskSupplier::VATaskSupplier()
 
 UMC::Status VATaskSupplier::Init(UMC::BaseCodecParams *pInit)
 {
-    SetVideoHardwareAccelerator(((UMC::VideoDecoderParams*)pInit)->pVideoAccelerator);
+    SetVideoHardwareAccelerator(static_cast<UMC::VideoDecoderParams*>(pInit)->pVideoAccelerator);
     m_pMemoryAllocator = pInit->lpMemoryAllocator;
 
     UMC::Status umsRes = TaskSupplier_H265::Init(pInit);
@@ -48,7 +48,7 @@ UMC::Status VATaskSupplier::Init(UMC::BaseCodecParams *pInit)
 
     if (m_va && !m_va->IsSimulate())
     {
-        ((TaskBrokerSingleThreadDXVA*)m_pTaskBroker)->DXVAStatusReportingMode(false);//m_va->m_HWPlatform != UMC::VA_HW_LAKE);
+        static_cast<TaskBrokerSingleThreadDXVA*>(m_pTaskBroker)->DXVAStatusReportingMode(false);//m_va->m_HWPlatform != UMC::VA_HW_LAKE);
         m_DPBSizeEx = 1;
     }
 
