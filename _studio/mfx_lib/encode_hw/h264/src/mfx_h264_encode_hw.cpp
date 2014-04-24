@@ -4445,6 +4445,7 @@ mfxStatus ImplementationAvcAsync::EncodeFrameCheck(
     // Do not confirm task when encoding second field in FieldOutput mode
     if (IsOff(extOpt->FieldOutput) || m_1stFieldTask)
     {
+        MFX_CHECK_NULL_PTR1(task);
         m_tasks.ConfirmTask(*task);
         *reordered_surface = task->m_yuv;
     }
@@ -4807,6 +4808,7 @@ mfxStatus ImplementationAvcAsync::UpdateBitstream(
     {
         // Return aes counter compressed picture encrypted with
         mfxEncryptedData * edata = GetEncryptedData(*task.m_bs, fieldNumInStreamOrder);
+        MFX_CHECK_NULL_PTR1(edata);
         edata->CipherCounter = task.m_aesCounter[fieldId];
     }
 
