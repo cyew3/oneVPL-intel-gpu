@@ -1967,7 +1967,7 @@ H265Slice *TaskSupplier_H265::DecodeSliceHeader(UMC::MediaDataEx *nalUnit)
 
         for (Ipp32s tile = 0; tile < (Ipp32s)pSlice->getTileLocationCount(); tile++)
         {
-            if (pSlice->m_tileByteLocation[tile] > offset && removed_bytes < offsets)
+            while (pSlice->m_tileByteLocation[tile] > offset && removed_bytes < offsets)
             {
                 removed_bytes++;
                 if (removed_bytes < offsets)
