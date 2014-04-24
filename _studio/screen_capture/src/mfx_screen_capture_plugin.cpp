@@ -307,6 +307,8 @@ mfxStatus MFXScreenCapture_Plugin::DecodeFrameSubmit(mfxBitstream *bs, mfxFrameS
     surface_work->Info.CropH = m_par.mfx.FrameInfo.Height;
     surface_work->Info.CropW = m_par.mfx.FrameInfo.Width;
 
+    surface_work->Info.PicStruct = MFX_PICSTRUCT_PROGRESSIVE;
+
     *surface_out = surface_work;
     return MFX_ERR_NONE;
     
