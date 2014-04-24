@@ -389,9 +389,21 @@ mfxStatus D3D11Encoder::Execute(
     }
 
     // update pps and slice structures
-    FillVaringPartOfPpsBuffer(task, fieldId, m_pps);
-    FillVaringPartOfSliceBuffer(m_caps, task, fieldId, m_sps, m_pps, m_slice);
-       
+    {
+        size_t slice_size_old = m_slice.size();
+        FillVaringPartOfPpsBuffer(task, fieldId, m_pps);
+
+        if (task.m_SliceInfo.size())
+            FillVaringPartOfSliceBufferSizeLimited(m_caps, task, fieldId, m_sps, m_pps, m_slice);
+        else
+            FillVaringPartOfSliceBuffer(m_caps, task, fieldId, m_sps, m_pps,m_slice);
+
+        if (slice_size_old != m_slice.size())
+        {
+            m_compBufDesc.resize(10 + m_slice.size());
+            m_pps.NumSlice = mfxU8(m_slice.size());
+        }
+    }       
     // prepare resource list
     // it contains resources in video memory that needed for the encoding operation
     mfxU32       RES_ID_BITSTREAM   = 0;          // bitstream surface takes first place in resourceList

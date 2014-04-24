@@ -2194,7 +2194,7 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
                         {
                            if (task->m_repack < 2)
                            {
-                               sts = CorrectSliceInfo(*task, 95 - (task->m_repack)*5);
+                               sts = CorrectSliceInfo(*task, 90);
                                if (sts != MFX_ERR_NONE && sts != MFX_ERR_UNDEFINED_BEHAVIOR)
                                     return Error(sts);
                                if (sts == MFX_ERR_UNDEFINED_BEHAVIOR)
@@ -2202,15 +2202,28 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
                            }
                            if (task->m_repack >=2)
                            {
-                               //printf("!!!!!!!!!!!!!! forsed mode\n");
-                               mfxStatus sts = CorrectSliceInfoForsed(*task);
-                               if (sts != MFX_ERR_NONE)
-                                    return Error(sts);
+                               if (task->m_repack > 5 && task->m_SliceInfo.size() > 255)
+                               {
+                                  sts = CorrectSliceInfo(*task, 90);
+                                  if (sts != MFX_ERR_NONE && sts != MFX_ERR_UNDEFINED_BEHAVIOR)
+                                      return Error(sts);                               
+                               }
+                               else
+                               {
+                                   mfxStatus sts = CorrectSliceInfoForsed(*task);
+                                   if (sts != MFX_ERR_NONE)
+                                        return Error(sts);
+                               }
                            }
                            if (task->m_repack >=4)
                            {
-                               task->m_cqpValue[0] += 1;
-                               task->m_cqpValue[1] = task->m_cqpValue[0];
+                               if (task->m_cqpValue[0] < 51)
+                               {
+                                    task->m_cqpValue[0] += 1;
+                                    task->m_cqpValue[1] = task->m_cqpValue[0];
+                               }
+                               else if ( task->m_SliceInfo.size() > 255)
+                                   return MFX_ERR_UNDEFINED_BEHAVIOR;
                            }
                         }
 
