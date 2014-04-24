@@ -474,9 +474,6 @@
     <ResourceCompile Include="libmfxsw.rc" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\thirdparty\vp8_libvpx.vcxproj">
-      <Project>{18a3f3bc-74d2-4155-9be1-9b29bb7db2db}</Project>
-    </ProjectReference>
     <ProjectReference Include="..\shared\mfx_trace\mfx_trace.vcxproj">
       <Project>{ff93e15e-6a4a-4cc5-8d13-892fbba5cc5f}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
@@ -527,10 +524,6 @@
     </ProjectReference>
     <ProjectReference Include="..\shared\umc\codec\vc1_dec\vc1_dec.vcxproj">
       <Project>{5537816b-58d7-4523-8d2c-b0fac011a1c3}</Project>
-      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-    </ProjectReference>
-    <ProjectReference Include="..\shared\umc\codec\vp8_dec\vp8_dec.vcxproj">
-      <Project>{27c98bcb-bcb6-4d57-9a47-d154bce0d8c9}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
     <ProjectReference Include="..\shared\umc\core\umc\base_classes.vcxproj">

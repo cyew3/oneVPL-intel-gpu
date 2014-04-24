@@ -131,7 +131,6 @@
     <ClCompile Include="mpeg2\src\mfx_mpeg2_encode.cpp" />
     <ClCompile Include="h264\src\mfx_mvc_encode.cpp" />
     <ClCompile Include="vc1\src\mfx_vc1_enc_encode.cpp" />
-    <ClCompile Include="vp8\src\mfx_vp8_encode.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="h264\include\mfx_h264_encode.h" />
@@ -139,7 +138,6 @@
     <ClInclude Include="mpeg2\include\mfx_mpeg2_encode.h" />
     <ClInclude Include="h264\include\mfx_mvc_encode.h" />
     <ClInclude Include="vc1\include\mfx_vc1_enc_encode.h" />
-    <ClInclude Include="vp8\include\mfx_vp8_encode.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
