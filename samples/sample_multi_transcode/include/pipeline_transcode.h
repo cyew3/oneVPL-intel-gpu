@@ -36,6 +36,7 @@
 #include "mfxvideo++.h"
 #include "mfxmvc.h"
 #include "mfxjpeg.h"
+#include "mfxla.h"
 
 #if defined(_WIN32) || defined(_WIN64)
     #define MSDK_CPU_ROTATE_PLUGIN  MSDK_STRING("sample_rotate_plugin.dll")
@@ -104,23 +105,34 @@ namespace TranscodingSample
 
         bool bLABRC; // use look ahead bitrate control algorithm
         mfxU16 nLADepth; // depth of the look ahead bitrate control  algorithm
+        bool bEnableExtLA;
+    };
+
+    struct PreEncAuxBuffer
+    {
+       mfxEncodeCtrl     encCtrl;
+       mfxU16            Locked;
+       mfxENCInput       encInput;
+       mfxENCOutput      encOutput;
     };
 
     struct ExtendedSurface
     {
         mfxFrameSurface1 *pSurface;
+        PreEncAuxBuffer  *pCtrl;
         mfxSyncPoint      Syncp;
     };
 
     struct ExtendedBS
     {
-        ExtendedBS(): Syncp(NULL), IsFree(true)
+        ExtendedBS(): IsFree(true), Syncp(NULL), pCtrl(NULL)
         {
             MSDK_ZERO_MEMORY(Bitstream);
         };
-        mfxBitstream   Bitstream;
-        mfxSyncPoint   Syncp;
-        bool           IsFree;
+        bool IsFree;
+        mfxBitstream Bitstream;
+        mfxSyncPoint Syncp;
+        PreEncAuxBuffer* pCtrl;
     };
 
     class ExtendedBSStore
@@ -276,32 +288,44 @@ namespace TranscodingSample
         virtual mfxStatus Transcode();
         virtual mfxStatus DecodeOneFrame(ExtendedSurface *pExtSurface);
         virtual mfxStatus DecodeLastFrame(ExtendedSurface *pExtSurface);
-        virtual mfxStatus VPPOneFrame(mfxFrameSurface1 *pSurfaceIn, ExtendedSurface *pExtSurface);
+        virtual mfxStatus VPPOneFrame(ExtendedSurface *pSurfaceIn, ExtendedSurface *pExtSurface);
         virtual mfxStatus EncodeOneFrame(ExtendedSurface *pExtSurface, mfxBitstream *pBS);
+        virtual mfxStatus PreEncOneFrame(ExtendedSurface *pInSurface, ExtendedSurface *pOutSurface);
 
         virtual mfxStatus DecodePreInit(sInputParams *pParams);
         virtual mfxStatus VPPPreInit(sInputParams *pParams);
         virtual mfxStatus EncodePreInit(sInputParams *pParams);
+        virtual mfxStatus PreEncPreInit(sInputParams *pParams);
 
-        mfxVideoParam GetDecodeParam() const {return m_mfxDecParams;};
-        mfxExtOpaqueSurfaceAlloc GetDecOpaqueAlloc() const {return m_DecOpaqueAlloc;};
+        mfxVideoParam GetDecodeParam();
+        mfxExtOpaqueSurfaceAlloc GetDecOpaqueAlloc() const { return m_pmfxVPP.get() ? m_VppOpaqueAlloc: m_DecOpaqueAlloc; };
+
         mfxExtMVCSeqDesc GetDecMVCSeqDesc() const {return m_MVCSeqDesc;};
 
         // alloc frames for all component
         mfxStatus AllocFrames(mfxFrameAllocRequest  *pRequest, bool isDecAlloc);
         mfxStatus AllocFrames();
+
+        mfxStatus CorrectPreEncAuxPool(mfxU32 num_frames_in_pool);
+        mfxStatus AllocPreEncAuxPool();
+
         // need for heterogeneous pipeline
-        mfxStatus CalculateNumberOfReqFrames(mfxFrameAllocRequest  *pRequest);
+        mfxStatus CalculateNumberOfReqFrames(mfxFrameAllocRequest  &pRequestDecOut, mfxFrameAllocRequest  &pRequestVPPOut);
         void      CorrectNumberOfAllocatedFrames(mfxFrameAllocRequest  *pRequest);
         void      FreeFrames();
 
+        void      FreePreEncAuxPool();
+
         mfxFrameSurface1* GetFreeSurface(bool isDec);
+        PreEncAuxBuffer*  GetFreePreEncAuxBuffer();
 
         // parameters configuration functions
         mfxStatus InitDecMfxParams(sInputParams *pInParams);
         mfxStatus InitVppMfxParams(sInputParams *pInParams);
         mfxStatus InitEncMfxParams(sInputParams *pInParams);
         mfxStatus InitPluginMfxParams(sInputParams *pInParams);
+        mfxStatus InitPreEncMfxParams(sInputParams *pInParams);
+
         mfxStatus AllocAndInitVppDoNotUse();
         mfxStatus AllocMVCSeqDesc();
         mfxStatus InitOpaqueAllocBuffers();
@@ -313,6 +337,10 @@ namespace TranscodingSample
         mfxStatus PutBS();
 
         void NoMoreFramesSignal(ExtendedSurface &DecExtSurface);
+        mfxStatus AddLaStreams(mfxU16 width, mfxU16 height);
+
+        void LockPreEncAuxBuffer(PreEncAuxBuffer* pBuff);
+        void UnPreEncAuxBuffer  (PreEncAuxBuffer* pBuff);
 
         mfxBitstream        *m_pmfxBS;  // contains encoded input data
 
@@ -322,10 +350,13 @@ namespace TranscodingSample
         std::auto_ptr<MFXVideoDECODE>   m_pmfxDEC;
         std::auto_ptr<MFXVideoENCODE>   m_pmfxENC;
         std::auto_ptr<MFXVideoMultiVPP> m_pmfxVPP; // either VPP or VPPPlugin which wraps [VPP]-Plugin-[VPP] pipeline
+        std::auto_ptr<MFXVideoENC>      m_pmfxPreENC;
         std::auto_ptr<MFXVideoUSER>     m_pUserDecoderModule;
         std::auto_ptr<MFXVideoUSER>     m_pUserEncoderModule;
+        std::auto_ptr<MFXVideoUSER>     m_pUserEncModule;
         std::auto_ptr<MFXPlugin>        m_pUserDecoderPlugin;
         std::auto_ptr<MFXPlugin>        m_pUserEncoderPlugin;
+        std::auto_ptr<MFXPlugin>        m_pUserEncPlugin;
 
         const msdkPluginUID*            m_pDecUID;
         const msdkPluginUID*            m_pEncUID;
@@ -336,11 +367,16 @@ namespace TranscodingSample
         MFXFrameAllocator              *m_pMFXAllocator;
         void*                           m_hdl; // Diret3D device manager
 
+        mfxU32                          m_numEncoders;
+
         typedef std::vector<mfxFrameSurface1*> SurfPointersArray;
         SurfPointersArray  m_pSurfaceDecPool;
         SurfPointersArray  m_pSurfaceEncPool;
         mfxU16 m_EncSurfaceType; // actual type of encoder surface pool
         mfxU16 m_DecSurfaceType; // actual type of decoder surface pool
+
+        typedef std::vector<PreEncAuxBuffer>    PreEncAuxArray;
+        PreEncAuxArray                          m_pPreEncAuxPool;
 
         // transcoding pipeline specific
         typedef std::list<ExtendedBS*>       BSList;
@@ -353,6 +389,7 @@ namespace TranscodingSample
         bool                           m_bIsVpp; // true if there's VPP in the pipeline
         bool                           m_bIsPlugin; //true if there's Plugin in the pipeline
         RotateParam                    m_RotateParam;
+        mfxVideoParam                  m_mfxPreEncParams;
         mfxU32                         m_nTimeout;
         // various external buffers
         // for disabling VPP algorithms
@@ -360,17 +397,22 @@ namespace TranscodingSample
         // for MVC decoder and encoder configuration
         mfxExtMVCSeqDesc m_MVCSeqDesc;
         bool m_bOwnMVCSeqDescMemory; // true if the pipeline owns memory allocated for MVCSeqDesc structure fields
+
+        mfxExtLAControl          m_ExtLAControl;
+
         // for opaque memory
         mfxExtOpaqueSurfaceAlloc m_EncOpaqueAlloc;
         mfxExtOpaqueSurfaceAlloc m_VppOpaqueAlloc;
         mfxExtOpaqueSurfaceAlloc m_DecOpaqueAlloc;
         mfxExtOpaqueSurfaceAlloc m_PluginOpaqueAlloc;
+        mfxExtOpaqueSurfaceAlloc m_PreEncOpaqueAlloc;
 
         // external parameters for each component are stored in a vector
         std::vector<mfxExtBuffer*> m_VppExtParams;
         std::vector<mfxExtBuffer*> m_EncExtParams;
         std::vector<mfxExtBuffer*> m_DecExtParams;
         std::vector<mfxExtBuffer*> m_PluginExtParams;
+        std::vector<mfxExtBuffer*> m_PreEncExtParams;
 
         mfxU16         m_AsyncDepth;
         mfxU32         m_nProcessedFramesNum;
