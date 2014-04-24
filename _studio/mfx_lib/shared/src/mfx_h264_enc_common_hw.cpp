@@ -1687,7 +1687,7 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
         par.mfx.RateControlMethod != MFX_RATECONTROL_ICQ &&
         par.mfx.RateControlMethod != MFX_RATECONTROL_LA &&
         par.mfx.RateControlMethod != MFX_RATECONTROL_LA_ICQ &&
-        par.mfx.RateControlMethod != MFX_RATECONTROL_VME)
+        par.mfx.RateControlMethod != MFX_RATECONTROL_LA_EXT)
     {
         changed = true;
         par.mfx.RateControlMethod = MFX_RATECONTROL_CBR;
@@ -3721,7 +3721,7 @@ void MfxHwH264Encode::SetDefaults(
 
     if (extOpt2->LookAheadDepth == 0)
     {
-        if (par.mfx.RateControlMethod == MFX_RATECONTROL_LA || par.mfx.RateControlMethod == MFX_RATECONTROL_VME)
+        if (par.mfx.RateControlMethod == MFX_RATECONTROL_LA || par.mfx.RateControlMethod == MFX_RATECONTROL_LA_EXT)
             extOpt2->LookAheadDepth = IPP_MAX(40, 2 * par.mfx.GopRefDist);
         else if (par.mfx.RateControlMethod == MFX_RATECONTROL_LA_ICQ)
             extOpt2->LookAheadDepth = IPP_MAX(10, 2 * par.mfx.GopRefDist);
@@ -3881,7 +3881,7 @@ void MfxHwH264Encode::SetDefaults(
     if (par.calcParam.bufferSizeInKB == 0)
     {
         if (par.mfx.RateControlMethod == MFX_RATECONTROL_LA || 
-            par.mfx.RateControlMethod == MFX_RATECONTROL_VME || 
+            par.mfx.RateControlMethod == MFX_RATECONTROL_LA_EXT || 
             par.mfx.RateControlMethod == MFX_RATECONTROL_LA_ICQ)
         {
             par.calcParam.bufferSizeInKB = (par.mfx.FrameInfo.Width * par.mfx.FrameInfo.Height * 3 / 2 / 1000);
@@ -4039,7 +4039,7 @@ void MfxHwH264Encode::SetDefaults(
         case MFX_RATECONTROL_ICQ:
         case MFX_RATECONTROL_LA_ICQ:
             break;
-        case MFX_RATECONTROL_VME:
+        case MFX_RATECONTROL_LA_EXT:
             break;
         default:
             assert(0);

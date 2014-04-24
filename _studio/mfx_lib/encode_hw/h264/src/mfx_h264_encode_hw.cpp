@@ -736,7 +736,7 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
     m_enabledSwBrc = 
         m_video.mfx.RateControlMethod == MFX_RATECONTROL_LA ||
         m_video.mfx.RateControlMethod == MFX_RATECONTROL_LA_ICQ ||
-        m_video.mfx.RateControlMethod == MFX_RATECONTROL_VME;
+        m_video.mfx.RateControlMethod == MFX_RATECONTROL_LA_EXT;
 
     // need it for both ENCODE and ENC
     m_hrd.Setup(m_video);
@@ -1784,7 +1784,7 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
     {
         DdiTask & newTask = m_incoming.front();
 
-       if (m_video.mfx.RateControlMethod == MFX_RATECONTROL_VME)
+       if (m_video.mfx.RateControlMethod == MFX_RATECONTROL_LA_EXT)
        {
             const mfxExtLAFrameStatistics *vmeData = GetExtBuffer(newTask.m_ctrl);
             MFX_CHECK_NULL_PTR1(vmeData);
@@ -2111,7 +2111,7 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
             case MFX_RATECONTROL_LA_ICQ:
                 BrcPreEnc(*task);
                 break;
-            case MFX_RATECONTROL_VME:
+            case MFX_RATECONTROL_LA_EXT:
                 {
                     const mfxExtLAFrameStatistics *vmeData = GetExtBuffer(task->m_ctrl);
                     MFX_CHECK_NULL_PTR1(vmeData);
