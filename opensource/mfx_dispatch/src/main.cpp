@@ -408,18 +408,16 @@ mfxStatus DISPATCHER_EXPOSED_PREFIX(MFXInit)(mfxIMPL impl, mfxVersion *pVer, mfx
                     {                    
                         pHandle->storageID = MFX::MFX_UNKNOWN_KEY;
                         allocatedHandle.push_back(pHandle);
-                        pHandle = 0;
+                        pHandle = new MFX_DISP_HANDLE(requiredVersion);
                     }
             }
         }
         while ((MFX_ERR_NONE > mfxRes) && (++curImplIdx <= maxImplIdx));
     }
+     delete pHandle;
 
     if (allocatedHandle.size() == 0)
-    {
-        delete pHandle;
         return MFX_ERR_NOT_FOUND;
-    }
 
     // select dll with version with lowest version number still greater or equal to requested
     qsort(&(*allocatedHandle.begin()), allocatedHandle.size(), sizeof(MFX_DISP_HANDLE*), &HandleSort);
