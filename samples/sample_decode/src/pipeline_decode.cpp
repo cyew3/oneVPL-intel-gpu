@@ -214,13 +214,13 @@ mfxStatus CDecodingPipeline::Init(sInputParams *pParams)
             // in case of HW library (-hw key) we will firstly try to load HW plugin
             // in case of failure - we will try SW one
             if (pParams->bUseHWLib) {
-                m_pUID = msdkGetPluginUID(MSDK_VDECODE | MSDK_IMPL_HW, pParams->videoType);
+                m_pUID = msdkGetPluginUID(MSDK_VDEC | MSDK_IMPL_HW, pParams->videoType);
             }
             if (m_pUID) {
                 sts = LoadPluginByUID(&session, m_pUID);
             }
             if ((MFX_ERR_NONE != sts) || !m_pUID) {
-                m_pUID = msdkGetPluginUID(MSDK_VDECODE | MSDK_IMPL_SW, pParams->videoType);
+                m_pUID = msdkGetPluginUID(MSDK_VDEC | MSDK_IMPL_SW, pParams->videoType);
                 if (m_pUID) {
                     sts = LoadPluginByUID(&session, m_pUID);
                 }

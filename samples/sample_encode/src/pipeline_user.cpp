@@ -201,13 +201,13 @@ mfxStatus CUserPipeline::Init(sInputParams *pParams)
         mfxSession session = m_mfxSession;
 
         if (pParams->bUseHWLib) {
-            m_pUID = msdkGetPluginUID(MSDK_VENCODE | MSDK_IMPL_HW, pParams->CodecId);
+            m_pUID = msdkGetPluginUID(MSDK_VENC | MSDK_IMPL_HW, pParams->CodecId);
         }
         if (m_pUID) {
             sts = LoadPluginByUID(&session, m_pUID);
         }
         if ((MFX_ERR_NONE != sts) || !m_pUID) {
-            m_pUID = msdkGetPluginUID(MSDK_VENCODE | MSDK_IMPL_SW, pParams->CodecId);
+            m_pUID = msdkGetPluginUID(MSDK_VENC | MSDK_IMPL_SW, pParams->CodecId);
             if (m_pUID) {
                 sts = LoadPluginByUID(&session, m_pUID);
             }

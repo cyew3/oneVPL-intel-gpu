@@ -19,20 +19,19 @@ Copyright(c) 2014 Intel Corporation. All Rights Reserved.
 
 static msdkPluginDesc g_msdk_supported_plugins[] = {
     //Supported Decoder Plugins
-    { MSDK_VDECODE | MSDK_IMPL_SW, MFX_CODEC_HEVC,  { g_msdk_hevcd_sw_uid, {0} }, MSDK_STRING("Intel (R) Media SDK plugin for HEVC DECODE") },
-    { MSDK_VDECODE | MSDK_IMPL_HW, MFX_CODEC_HEVC,  { g_msdk_hevcd_hw_uid, {0} }, MSDK_STRING("Intel (R) Media SDK HW plugin for HEVC DECODE") },
-    { MSDK_VDECODE | MSDK_IMPL_USR, MFX_CODEC_HEVC, { MSDK_NULL_GUID, {0} },   MSDK_STRING("User defined HEVC Plug-in") },
-    { MSDK_VDECODE | MSDK_IMPL_USR, MFX_CODEC_AVC,  { MSDK_NULL_GUID, {0} },   MSDK_STRING("User defined AVC Plug-in") },
-    { MSDK_VDECODE | MSDK_IMPL_USR, MFX_CODEC_MPEG2,{ MSDK_NULL_GUID, {0} },   MSDK_STRING("User defined MPEG2 Plug-in") },
-    { MSDK_VDECODE | MSDK_IMPL_USR, MFX_CODEC_VC1,  { MSDK_NULL_GUID, {0} },   MSDK_STRING("User defined VC1 Plug-in") },
+    { MSDK_VDEC | MSDK_IMPL_SW, MFX_CODEC_HEVC,  { g_msdk_hevcd_sw_uid, {0} }, MSDK_STRING("Intel (R) Media SDK plugin for HEVC DECODE") },
+    { MSDK_VDEC | MSDK_IMPL_HW, MFX_CODEC_HEVC,  { g_msdk_hevcd_hw_uid, {0} }, MSDK_STRING("Intel (R) Media SDK HW plugin for HEVC DECODE") },
+    { MSDK_VDEC | MSDK_IMPL_USR, MFX_CODEC_HEVC, { MSDK_NULL_GUID, {0} },   MSDK_STRING("User defined HEVC Plug-in") },
+    { MSDK_VDEC | MSDK_IMPL_USR, MFX_CODEC_AVC,  { MSDK_NULL_GUID, {0} },   MSDK_STRING("User defined AVC Plug-in") },
+    { MSDK_VDEC | MSDK_IMPL_USR, MFX_CODEC_MPEG2,{ MSDK_NULL_GUID, {0} },   MSDK_STRING("User defined MPEG2 Plug-in") },
+    { MSDK_VDEC | MSDK_IMPL_USR, MFX_CODEC_VC1,  { MSDK_NULL_GUID, {0} },   MSDK_STRING("User defined VC1 Plug-in") },
     //Supported Encoder Plugins
-    { MSDK_VENCODE | MSDK_IMPL_SW, MFX_CODEC_HEVC,  { g_msdk_hevce_uid, {0} }, MSDK_STRING("Intel (R) Media SDK plugin for HEVC ENCODE") },
-    { MSDK_VENCODE | MSDK_IMPL_USR, MFX_CODEC_HEVC, { MSDK_NULL_GUID, {0} },   MSDK_STRING("User defined HEVC Plug-in") },
-    { MSDK_VENCODE | MSDK_IMPL_USR, MFX_CODEC_AVC,  { MSDK_NULL_GUID, {0} },   MSDK_STRING("User defined AVC Plug-in") },
-    { MSDK_VENCODE | MSDK_IMPL_USR, MFX_CODEC_MPEG2,{ MSDK_NULL_GUID, {0} },   MSDK_STRING("User defined MPEG2 Plug-in") },
-    { MSDK_VENCODE | MSDK_IMPL_USR, MFX_CODEC_VC1,  { MSDK_NULL_GUID, {0} },   MSDK_STRING("User defined VC1 Plug-in") },
-    //{ MSDK_VDECODE | MSDK_IMPL_USR, MFX_CODEC_VP8,  { MSDK_NULL_GUID, {0} }, "User defined VP8 Plug-in" },
-    { MSDK_VENC | MSDK_IMPL_HW, MFX_CODEC_AVC,  { g_msdk_h264la_uid, {0} }, MSDK_STRING("Intel (R) Media SDK plugin for LA ENC") },
+    { MSDK_VENC | MSDK_IMPL_SW, MFX_CODEC_HEVC,  { g_msdk_hevce_uid, {0} }, MSDK_STRING("Intel (R) Media SDK plugin for HEVC ENCODE") },
+    { MSDK_VENC | MSDK_IMPL_USR, MFX_CODEC_HEVC, { MSDK_NULL_GUID, {0} },   MSDK_STRING("User defined HEVC Plug-in") },
+    { MSDK_VENC | MSDK_IMPL_USR, MFX_CODEC_AVC,  { MSDK_NULL_GUID, {0} },   MSDK_STRING("User defined AVC Plug-in") },
+    { MSDK_VENC | MSDK_IMPL_USR, MFX_CODEC_MPEG2,{ MSDK_NULL_GUID, {0} },   MSDK_STRING("User defined MPEG2 Plug-in") },
+    { MSDK_VENC | MSDK_IMPL_USR, MFX_CODEC_VC1,  { MSDK_NULL_GUID, {0} },   MSDK_STRING("User defined VC1 Plug-in") },
+    //{ MSDK_VDEC | MSDK_IMPL_USR, MFX_CODEC_VP8,  { MSDK_NULL_GUID, {0} }, "User defined VP8 Plug-in" },
 };
 
 const msdkPluginUID* msdkGetPluginUID(mfxU32 type, mfxU32 codecid)
