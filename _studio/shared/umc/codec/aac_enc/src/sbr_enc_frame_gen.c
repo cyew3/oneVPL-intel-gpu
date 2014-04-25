@@ -786,7 +786,7 @@ sbrencSBRGrid2FrameInfo (sSBRGrid* pGridState, sSBRFrameInfoState* pFIState)
 
     if (nEnv == 1) {
       out->bordersNoise[1] = out->bordersEnv[nEnv];
-    } else if (nEnv < sizeof(out->bordersEnv)/sizeof(Ipp32s))
+    } else if (nEnv < sizeof(out->bordersEnv)/sizeof(out->bordersEnv[0]))
     {
       out->bordersNoise[2] = out->bordersEnv[nEnv];
     }
