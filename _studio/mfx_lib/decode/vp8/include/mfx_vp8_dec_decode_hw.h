@@ -79,7 +79,7 @@ private:
                 if (!--count)
                 {
                     count = 8;
-                    value |= this->m_input[this->m_pos];
+                    value |= static_cast<Ipp32u>(this->m_input[this->m_pos]);
                     this->m_pos++;
                 }
              }

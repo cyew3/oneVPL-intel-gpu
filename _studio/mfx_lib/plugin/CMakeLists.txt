@@ -474,6 +474,7 @@ foreach( variant sw hw )
       ${prefix}/mfx_vp8_dec_decode_hw.cpp
       ${prefix}/mfx_vp8_dec_decode.cpp
       ${prefix}/mfx_vp8_dec_decode_common.cpp
+      ${prefix}/mfx_vp8_dec_decode_vaapi.cpp
     )
     endforeach()
 

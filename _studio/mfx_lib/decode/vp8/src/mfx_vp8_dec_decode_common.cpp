@@ -24,7 +24,7 @@ using namespace UMC;
 
 #define VP8_START_CODE_FOUND(ptr) ((ptr)[0] == 0x9d && (ptr)[1] == 0x01 && (ptr)[2] == 0x2a)
 
-namespace VP8DecodeCommon 
+namespace VP8DecodeCommon
 {
 
     mfxStatus DecodeHeader(VideoCORE *, mfxBitstream *p_bs, mfxVideoParam *p_params)
@@ -62,12 +62,12 @@ namespace VP8DecodeCommon
             n_bytes_offset += 1;
         }
 
-        if (false == start_code_found)
+        if (!start_code_found)
         {
             // set offset, but leave last six bytes
             // since they can be start bytes of start code and frame tag
     
-            MoveBitstreamData2(*p_bs, n_bytes_offset - 6);
+            MoveBitstreamData(*p_bs, n_bytes_offset - 6);
 
             return MFX_ERR_MORE_DATA;
         }
@@ -79,7 +79,7 @@ namespace VP8DecodeCommon
 
         p_params->mfx.CodecProfile = ((p_bitstream[0] >> 1) & 0x7) + 1;
 
-        if (I_PICTURE != frame_type)
+        if (frame_type != I_PICTURE)
         {
             return MFX_ERR_MORE_DATA;
         }
@@ -112,13 +112,13 @@ namespace VP8DecodeCommon
         p_params->mfx.FrameInfo.FourCC = MFX_FOURCC_NV12;
         p_params->mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
     
-        MoveBitstreamData2(*p_bs, n_bytes_offset);
+        MoveBitstreamData(*p_bs, n_bytes_offset);
 
         return MFX_ERR_NONE;
 
     }
 
-    void MoveBitstreamData2(mfxBitstream& bs, mfxU32 offset)
+    void MoveBitstreamData(mfxBitstream& bs, mfxU32 offset)
     {
         VM_ASSERT(offset <= bs.DataLength);
         bs.DataOffset += offset;

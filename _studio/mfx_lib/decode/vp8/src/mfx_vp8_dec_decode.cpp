@@ -1065,7 +1065,7 @@ mfxStatus VideoDECODEVP8::ConstructFrame(mfxBitstream *p_in, mfxBitstream *p_out
 
     frame.frame_size = p_in->DataLength;
 
-    VP8DecodeCommon::MoveBitstreamData2(*p_in, p_in->DataLength);
+    VP8DecodeCommon::MoveBitstreamData(*p_in, p_in->DataLength);
 
     return MFX_ERR_NONE;
 

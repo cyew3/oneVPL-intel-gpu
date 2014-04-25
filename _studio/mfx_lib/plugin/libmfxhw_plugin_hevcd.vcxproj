@@ -651,6 +651,7 @@
     <ClCompile Include="..\decode\vp8\src\mfx_vp8_dec_decode.cpp" />
     <ClCompile Include="..\decode\vp8\src\mfx_vp8_dec_decode_common.cpp" />
     <ClCompile Include="..\decode\vp8\src\mfx_vp8_dec_decode_hw.cpp" />
+    <ClCompile Include="..\decode\vp8\src\mfx_vp8_dec_decode_hw_dxva.cpp" />
     <ClCompile Include="..\shared\src\libmfxsw.cpp" />
     <ClCompile Include="..\shared\src\libmfxsw_async.cpp" />
     <ClCompile Include="..\shared\src\libmfxsw_decode.cpp" />

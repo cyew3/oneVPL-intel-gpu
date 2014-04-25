@@ -17,7 +17,7 @@ namespace VP8DecodeCommon
 {
 
     mfxStatus DecodeHeader(VideoCORE *p_core, mfxBitstream *p_bs, mfxVideoParam *p_params);
-    void MoveBitstreamData2(mfxBitstream& bs, mfxU32 offset);
+    void MoveBitstreamData(mfxBitstream& bs, mfxU32 offset);
 
     typedef struct _IVF_FRAME
     {
