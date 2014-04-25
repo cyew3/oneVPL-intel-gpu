@@ -590,10 +590,9 @@ namespace MFX_VP8ENC
         MFX_CHECK_STS(sts);
 
         {
-            mfxU8 refProbs[4];
-            m_BSE.GetModeProbs(refProbs);            
+            VP8HybridCosts updatedCosts = m_BSE.GetUpdatedCosts();
             UMC::AutomaticUMCMutex guard(m_taskMutex);
-            m_taskManager.CacheInfoFromPak(*pTask,refProbs);
+            m_taskManager.CacheInfoFromPak(*pTask,updatedCosts);
             pTask->FreeTask();
         }
 

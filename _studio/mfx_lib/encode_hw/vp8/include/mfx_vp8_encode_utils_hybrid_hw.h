@@ -57,13 +57,22 @@ namespace MFX_VP8ENC
 
     };
 
+    typedef struct 
+    {
+        mfxU16  RefFrameCost[4];
+        mfxU16  IntraModeCost[4];
+        mfxU16  InterModeCost[4];
+        mfxU8   IntraNonDCPenalty16x16;
+        mfxU8   IntraNonDCPenalty4x4;
+    } VP8HybridCosts;
+
     class TaskHybridDDI: public TaskHybrid
     {
     public:
         sDDIFrames ddi_frames;
-        mfxU8         m_refProbs[4];
-        mfxU64        m_prevFrameSize;
-        mfxU8         m_brcUpdateDelay;
+        VP8HybridCosts m_costs;
+        mfxU64         m_prevFrameSize;
+        mfxU8          m_brcUpdateDelay;
 
     public:
         TaskHybridDDI(): 
@@ -111,10 +120,10 @@ namespace MFX_VP8ENC
 
     struct FrameInfoFromPak
     {
-        mfxU64 m_frameOrder;
-        mfxU8  m_frameType;
-        mfxU64 m_encodedFrameSize;
-        mfxU8  m_refProbs[4];
+        mfxU64         m_frameOrder;
+        mfxU8          m_frameType;
+        mfxU64         m_encodedFrameSize;
+        VP8HybridCosts m_updatedCosts;
     };
 
     class TaskManagerHybridPakDDI : public TaskManager<TaskHybridDDI>
@@ -142,6 +151,7 @@ namespace MFX_VP8ENC
         mfxU16           m_maxBrcUpdateDelay;
 
         std::queue<FrameInfoFromPak> m_cachedFrameInfoFromPak;
+        FrameInfoFromPak             m_latestKeyFrame;
         FrameInfoFromPak             m_latestNonKeyFrame;
 
     public:
@@ -151,7 +161,8 @@ namespace MFX_VP8ENC
         {
             MFX_CHECK_STS(BaseClass::Init(pCore,par,true,reconFourCC));
             m_maxBrcUpdateDelay = par->AsyncDepth > 2 ? 2: par->AsyncDepth; // driver supports maximum 2-frames BRC update delay
-            memset(&m_latestNonKeyFrame, 0, sizeof(m_latestNonKeyFrame));
+            Zero(m_latestNonKeyFrame);
+            Zero(m_latestKeyFrame);
             return MFX_ERR_NONE;
         }
 
@@ -313,10 +324,7 @@ namespace MFX_VP8ENC
 
             mfxStatus sts = BaseClass::InitTask(pSurface,pBitstream,pOutTask);
             TaskHybridDDI *pHybridTask = (TaskHybridDDI*)pOutTask;
-            for (mfxU8 i = 0; i <= REF_TOTAL; i ++)
-            {
-                pHybridTask->m_refProbs[i] = 0;
-            }
+            Zero(pHybridTask->m_costs);
             if (pOutTask->m_frameOrder == 0)
             {
                 return MFX_ERR_NONE;
@@ -335,34 +343,36 @@ namespace MFX_VP8ENC
             pHybridTask->m_prevFrameSize = newestFrame.m_encodedFrameSize;
             pHybridTask->m_brcUpdateDelay = mfxU8(pOutTask->m_frameOrder - newestFrame.m_frameOrder);
 
-            while (m_cachedFrameInfoFromPak.size() > 1)
+            while (m_cachedFrameInfoFromPak.size())
             {
-                if (m_cachedFrameInfoFromPak.front().m_frameType)
+                // store costs from last key and last non-key frames
+                if (m_cachedFrameInfoFromPak.front().m_frameType == 0)
+                    m_latestKeyFrame = m_cachedFrameInfoFromPak.front();
+                else
                     m_latestNonKeyFrame = m_cachedFrameInfoFromPak.front();
-                // remove cached information about all frames older than latest
-                m_cachedFrameInfoFromPak.pop();
-            }
-            if (pHybridTask->m_brcUpdateDelay == m_maxBrcUpdateDelay)
-            {
-                if (m_cachedFrameInfoFromPak.front().m_frameType)
-                    m_latestNonKeyFrame = m_cachedFrameInfoFromPak.front();
-                // remove latest frame too
-                m_cachedFrameInfoFromPak.pop();
-            }
-            
-            if (pHybridTask->m_frameOrder % m_video.mfx.GopPicSize != 0)
-            {
-                // use probabilities from last non-key frame
-                for (mfxU8 i = 0; i <= REF_TOTAL; i ++)
+
+                if (m_cachedFrameInfoFromPak.size() > 1 || pHybridTask->m_brcUpdateDelay == m_maxBrcUpdateDelay)
                 {
-                    pHybridTask->m_refProbs[i] = m_latestNonKeyFrame.m_refProbs[i];
+                    // remove cached information if it's not longer required
+                    m_cachedFrameInfoFromPak.pop();
                 }
+            }
+
+            if (pHybridTask->m_frameOrder % m_video.mfx.GopPicSize == 0)
+            {
+                // key-frame
+                pHybridTask->m_costs = m_latestKeyFrame.m_updatedCosts;
+            }
+            else
+            {
+                // non key-frame
+                pHybridTask->m_costs = m_latestNonKeyFrame.m_updatedCosts;
             }
 
             return sts;
         }
         inline
-        mfxStatus CacheInfoFromPak(Task &task, mfxU8 (&m_refProbs)[4])
+        mfxStatus CacheInfoFromPak(Task &task, VP8HybridCosts & updatedCosts)
         {
             if (task.m_status != READY)
                 return MFX_ERR_UNDEFINED_BEHAVIOR;
@@ -370,10 +380,7 @@ namespace MFX_VP8ENC
             FrameInfoFromPak infoAboutJustEncodedFrame;
             infoAboutJustEncodedFrame.m_frameOrder = task.m_frameOrder;
             infoAboutJustEncodedFrame.m_encodedFrameSize = task.m_pBitsteam->DataLength;
-            for (mfxU8 i = 0; i <= REF_TOTAL; i ++)
-            {
-                infoAboutJustEncodedFrame.m_refProbs[i] = m_refProbs[i];
-            }
+            infoAboutJustEncodedFrame.m_updatedCosts = updatedCosts;
             infoAboutJustEncodedFrame.m_frameType = !task.m_sFrameParams.bIntra;
             m_cachedFrameInfoFromPak.push(infoAboutJustEncodedFrame);
 

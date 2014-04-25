@@ -277,6 +277,23 @@ mfxStatus CachedFeedback::Remove(mfxU32 feedbackNumber)
         return MFX_ERR_NONE;
     }
 
+    mfxStatus FillFrameUpdateBuffer(TaskHybridDDI const & task,ENCODE_CPUPAK_FRAMEUPDATE_VP8 & frmUpdate)
+    {
+        frmUpdate.PrevFrameSize = (UINT)task.m_prevFrameSize;
+        frmUpdate.TwoPrevFrameFlag = task.m_brcUpdateDelay == 2 ? 1 : 0;
+        for (mfxU8 i = 0; i < 4; i++)
+        {
+            frmUpdate.IntraModeCost[i] = task.m_costs.IntraModeCost[i];
+            frmUpdate.InterModeCost[i] = task.m_costs.InterModeCost[i];
+            frmUpdate.RefFrameCost[i]  = task.m_costs.RefFrameCost[i];
+        }
+        frmUpdate.IntraNonDCPenalty16x16 = task.m_costs.IntraNonDCPenalty16x16;
+        frmUpdate.IntraNonDCPenalty4x4 = task.m_costs.IntraNonDCPenalty4x4;
+
+        return MFX_ERR_NONE;
+    }
+
+
 //---------------------------------------------------------
 // D3D9 encoder functionality 
 //---------------------------------------------------------
@@ -587,12 +604,14 @@ mfxStatus D3D9Encoder::Execute(TaskHybridDDI const &task, mfxHDL surface)
     bufCnt++;
 
     // frame update
-    m_frmUpdate.PrevFrameSize = (UINT)task.m_prevFrameSize;
-    m_frmUpdate.TwoPrevFrameFlag = task.m_brcUpdateDelay == 2 ? 1 : 0;
-    encodeCompBufferDesc[bufCnt].CompressedBufferType = D3DDDIFMT_INTELENCODE_SLICEDATA;
-    encodeCompBufferDesc[bufCnt].DataSize = mfxU32(sizeof(m_frmUpdate));
-    encodeCompBufferDesc[bufCnt].pCompBuffer = &m_frmUpdate;
-    bufCnt++;
+    if (m_video.mfx.RateControlMethod != MFX_RATECONTROL_CQP)
+    {
+        FillFrameUpdateBuffer(task, m_frmUpdate);
+        encodeCompBufferDesc[bufCnt].CompressedBufferType = D3DDDIFMT_INTELENCODE_SLICEDATA;
+        encodeCompBufferDesc[bufCnt].DataSize = mfxU32(sizeof(m_frmUpdate));
+        encodeCompBufferDesc[bufCnt].pCompBuffer = &m_frmUpdate;
+        bufCnt++;
+    }
 
     //mfxU32 distort = task.m_pRecFrame->idInPool;
     //encodeCompBufferDesc[bufCnt].CompressedBufferType = D3DDDIFMT_INTELENCODE_DISTORTIONDATA;

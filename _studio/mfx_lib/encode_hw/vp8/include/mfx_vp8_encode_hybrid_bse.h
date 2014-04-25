@@ -372,6 +372,8 @@ namespace MFX_VP8ENC
     const Vp8Prob vp8_mb_mode_uv_probs[VP8_NUM_MB_MODES_UV - 1] = {162, 101, 204};
     const Vp8Prob vp8_block_mode_probs[VP8_NUM_INTRA_BLOCK_MODES - 1] = { 120, 90, 79, 133, 87, 85, 80, 111, 151 };
 
+    const U16 mbmodecost[VP8_MB_B_PRED+1+VP8_NUM_MV_MODES] = {657,    869,    915,    917,    208,    0,      0,      0,      0,      0}; 
+
     const Vp8Prob vp8_default_coeff_probs[VP8_NUM_COEFF_PLANES][VP8_NUM_COEFF_BANDS][VP8_NUM_LOCAL_COMPLEXITIES][VP8_NUM_COEFF_NODES] =
     {
         {
@@ -817,6 +819,8 @@ namespace MFX_VP8ENC
         2, 8, 4, 6, 0 /*000*/, -1 /*001*/, -2 /*010*/, -3 /*011*/, 10, 12, -4 /*100*/, -5 /*101*/, -6 /*110*/, -7 /*111*/
     };
     const U8 vp8_short_mv_map[VP8_MV_LONG - VP8_MV_SHORT + 1] = { 0x00, 0x04, 0x02, 0x06, 0x01, 0x05, 0x03, 0x07 };
+
+    const Vp8Prob vp8_block_mv_default_prob[VP8_NUM_B_MV_MODES-1] = { 180, 162, 25};
 
     typedef struct _vp8CPBECState {
         U32   a;          // Lower interval value
@@ -1273,6 +1277,18 @@ namespace MFX_VP8ENC
     class Vp8PakMfd;
 #endif
 
+    enum {
+        MODE_INTRA_16x16 = 0,
+        MODE_INTRA_4x4
+    };
+
+    enum {
+        MODE_INTER_16x16 = 0,
+        MODE_INTER_16x8,
+        MODE_INTER_8x8,
+        MODE_INTER_4x4
+    };
+
     class Vp8CoreBSE
     {
     private:
@@ -1292,6 +1308,8 @@ namespace MFX_VP8ENC
         U16              *m_TokensE[VP8_MAX_NUM_OF_PARTITIONS];
         U16              *m_TokensB[VP8_MAX_NUM_OF_PARTITIONS];
 
+        VP8HybridCosts    m_costs;
+
         mfxStatus InitVp8VideoParam(const mfxVideoParam &video);
         void DetermineFrameType(const sFrameParams &frameParams);
         void PrepareFrameControls(const sFrameParams &frameParams);
@@ -1302,6 +1320,7 @@ namespace MFX_VP8ENC
         void EncodeFrameMBs(void);
         void EncodeKeyFrameMB(void);
         void UpdateEntropyModel(void);
+        void CalculateCosts(void);
         mfxStatus OutputBitstream(void);
         void TokenizeAndCnt(TaskHybridDDI *pTask, MBDATA_LAYOUT const & layout, VideoCORE * pCore
 #if defined (VP8_HYBRID_DUMP_READ) || defined (VP8_HYBRID_DUMP_WRITE)
@@ -1343,7 +1362,7 @@ namespace MFX_VP8ENC
         void CopyInputFrame(mfxFrameData *iFrame);
 #endif
 
-        void GetModeProbs(U8 (&m_refProbs)[4]);
+        VP8HybridCosts GetUpdatedCosts();
     };
 }
 

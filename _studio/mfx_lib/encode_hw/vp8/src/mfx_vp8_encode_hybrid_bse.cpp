@@ -439,6 +439,7 @@ namespace MFX_VP8ENC
 #endif
             );
         UpdateEntropyModel();
+        CalculateCosts();
         EncodeTokenPartitions();
         EncodeFirstPartition();
         sts = OutputBitstream();
@@ -1059,6 +1060,50 @@ namespace MFX_VP8ENC
                 }
     }
 
+    void Vp8CoreBSE::CalculateCosts(void)
+    {
+
+        U16     IntraModeCostLuma[VP8_NUM_MB_MODES_Y];
+        U16     IntraSubModeCost[VP8_NUM_INTRA_BLOCK_MODES];
+        U16     MvPartitionCost[VP8_MV_NUM_PARTITIONS];
+        U16     SubMvRefCost[VP8_NUM_B_MV_MODES];
+
+        Zero(m_costs);
+
+        if (m_ctrl.FrameType == 0)
+        {
+            m_costs.IntraModeCost[MODE_INTRA_16x16] = mbmodecost[VP8_MB_DC_PRED];
+            m_costs.IntraModeCost[MODE_INTRA_4x4]   = mbmodecost[VP8_MB_B_PRED] + 3645;
+            //m_costs.IntraNonDCPenalty16x16 = (899 - mbmodecost[VP8_MB_DC_PRED]);
+            //m_costs.IntraNonDCPenalty4x4 = 1157;
+        }
+        else
+        {
+            m_costs.RefFrameCost[VP8_INTRA_FRAME]  = U16(vp8_c0(m_ctrl.prIntra));
+            m_costs.RefFrameCost[VP8_LAST_FRAME]   = U16(vp8_c1(m_ctrl.prIntra) + vp8_c0(m_ctrl.prLast));
+            m_costs.RefFrameCost[VP8_GOLDEN_FRAME] = U16(vp8_c1(m_ctrl.prIntra) + vp8_c1(m_ctrl.prLast) + vp8_c0(m_ctrl.prGolden));
+            m_costs.RefFrameCost[VP8_ALTREF_FRAME] = U16(vp8_c1(m_ctrl.prIntra) + vp8_c1(m_ctrl.prLast) + vp8_c1(m_ctrl.prGolden));
+
+            vp8GetTreeTokenCostArr(vp8_mb_mode_y_map, vp8_mb_mode_y_tree, m_ctrl.mbModeProbY, VP8_NUM_MB_MODES_Y, IntraModeCostLuma);
+            vp8GetTreeTokenCostArr(vp8_block_mode_map, vp8_block_mode_tree, vp8_block_mode_probs, VP8_NUM_INTRA_BLOCK_MODES, IntraSubModeCost);
+            vp8GetTreeTokenCostArr(vp8_mv_partitions_map, vp8_mv_partitions_tree, vp8_mv_partitions_probs, VP8_MV_NUM_PARTITIONS, MvPartitionCost);
+            vp8GetTreeTokenCostArr(vp8_block_mv_map, vp8_block_mv_tree, vp8_block_mv_default_prob, VP8_NUM_B_MV_MODES, SubMvRefCost);
+
+            m_costs.IntraModeCost[MODE_INTRA_16x16] = IntraModeCostLuma[VP8_MB_DC_PRED];
+            m_costs.IntraModeCost[MODE_INTRA_4x4] = IntraModeCostLuma[VP8_MB_B_PRED] + IntraSubModeCost[VP8_B_DC_PRED]*16;
+            m_costs.IntraNonDCPenalty16x16 = U8(IntraModeCostLuma[VP8_MB_V_PRED] - IntraModeCostLuma[VP8_MB_DC_PRED]);
+            m_costs.IntraNonDCPenalty4x4 = U8(IntraSubModeCost[VP8_B_HE_PRED] - IntraModeCostLuma[VP8_B_DC_PRED]);
+        
+            m_costs.InterModeCost[MODE_INTER_16x16] =0;
+            m_costs.InterModeCost[MODE_INTER_16x8] = MvPartitionCost[VP8_MV_TOP_BOTTOM] +  SubMvRefCost[VP8_B_MV_NEW]
+                                                + ((SubMvRefCost[VP8_B_MV_LEFT] + SubMvRefCost[VP8_B_MV_ABOVE])>>1);
+            m_costs.InterModeCost[MODE_INTER_8x8] = (MvPartitionCost[VP8_MV_QUARTERS]
+                                                + ((SubMvRefCost[VP8_B_MV_LEFT] + SubMvRefCost[VP8_B_MV_ABOVE])>>1)
+                                                + 3 * SubMvRefCost[VP8_B_MV_NEW])/4;
+            m_costs.InterModeCost[MODE_INTER_4x4] = (MvPartitionCost[VP8_MV_16] +  + 16 * SubMvRefCost[VP8_B_MV_NEW])/4;
+        }
+    }
+
     mfxStatus Vp8CoreBSE::OutputBitstream(void)
     {
         I32     i;
@@ -1476,20 +1521,9 @@ namespace MFX_VP8ENC
         }
     }
 
-    void Vp8CoreBSE::GetModeProbs(U8 (&m_refProbs)[4])
+    VP8HybridCosts Vp8CoreBSE::GetUpdatedCosts()
     {
-        if (m_ctrl.FrameType)
-        {
-                m_refProbs[0] = m_ctrl.prIntra;
-                m_refProbs[1] = m_ctrl.prLast;
-                m_refProbs[2] = m_ctrl.prGolden;
-                m_refProbs[3] = mfxU8(256 - m_ctrl.prGolden);
-        }
-        else
-        {
-                m_refProbs[0] = 255;
-                m_refProbs[1] = m_refProbs[2] = m_refProbs[3] = 128;
-        }
+        return m_costs;
     }
 }
 #endif // MFX_ENABLE_VP8_VIDEO_ENCODE_HW
