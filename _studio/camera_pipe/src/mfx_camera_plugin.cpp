@@ -67,8 +67,8 @@ MFXCamera_Plugin::MFXCamera_Plugin(bool CreateByDispatcher)
     m_createdByDispatcher = CreateByDispatcher;
 
     Zero(m_Caps);
-    m_Caps.InputMemoryOperationMode = MEM_FASTGPUCPY;
-    m_Caps.OutputMemoryOperationMode = MEM_FASTGPUCPY;
+    m_Caps.InputMemoryOperationMode = MEM_GPU;
+    m_Caps.OutputMemoryOperationMode = MEM_GPU;
     m_Caps.BayerPatternType = MFX_CAM_BAYER_RGGB;
 
     Zero(m_GammaParams);
@@ -81,6 +81,7 @@ MFXCamera_Plugin::MFXCamera_Plugin(bool CreateByDispatcher)
     m_memOutAllocPtr = 0;
 
     m_gammaPointSurf = m_gammaCorrectSurf = 0;
+    m_gammaOutSurf = 0;
     m_paddedSurf = 0;
 #ifdef CAM_PIPE_VERTICAL_SLICE_ENABLE
     m_avgFlagSurf = 0;
@@ -544,6 +545,9 @@ mfxStatus MFXCamera_Plugin::Close()
     if (m_gammaPointSurf)
         m_cmDevice->DestroySurface(m_gammaPointSurf);
 
+    if (m_gammaOutSurf)
+        m_cmDevice->DestroySurface(m_gammaOutSurf);
+
     if (m_paddedSurf)
         m_cmDevice->DestroySurface(m_paddedSurf);
 
@@ -633,6 +637,9 @@ mfxStatus MFXCamera_Plugin::ProcessExtendedBuffers(mfxVideoParam *par)
             {
                 mfxExtCamPipeControl* pipeExtBufParams = (mfxExtCamPipeControl*)par->ExtParam[i];
                 m_Caps.BayerPatternType = pipeExtBufParams->RawFormat;
+                
+                /// !!!
+                m_Caps.Reserved = pipeExtBufParams->reserved1; // tmp for testing reasons: switching between GPUSHARED and FASTGPUSPY
             }
         }
     }
@@ -710,15 +717,16 @@ mfxStatus MFXCamera_Plugin::Init(mfxVideoParam *par)
 #endif
     m_InputBitDepth = m_mfxVideoParam.vpp.In.BitDepthLuma;
 
-        // get Caps and algo params from the ExtBuffers (?) or QueryCaps???
 
     if (par->IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY)
-        m_Caps.OutputMemoryOperationMode = MEM_FASTGPUCPY;
+        m_Caps.OutputMemoryOperationMode = MEM_GPU;
     else
-        m_Caps.OutputMemoryOperationMode = MEM_GPUSHARED;
+        m_Caps.OutputMemoryOperationMode = (m_Caps.Reserved ? MEM_FASTGPUCPY : MEM_GPUSHARED);
+        //m_Caps.OutputMemoryOperationMode = MEM_GPUSHARED;
+        //m_Caps.OutputMemoryOperationMode = MEM_FASTGPUCPY;
 
     if (par->IOPattern & MFX_IOPATTERN_IN_VIDEO_MEMORY)
-        m_Caps.InputMemoryOperationMode = MEM_FASTGPUCPY;
+        m_Caps.InputMemoryOperationMode = MEM_GPU;
     else
         m_Caps.InputMemoryOperationMode = MEM_GPUSHARED;
 
@@ -765,7 +773,7 @@ mfxStatus MFXCamera_Plugin::Reset(mfxVideoParam *par)
     ProcessExtendedBuffers(&newParam);
 
     m_Caps.bOutToARGB8 = 1;
-    // uncomment and midify below when 16-bit output is supported
+    // uncomment and modify below when 16-bit output is supported
     //if (m_mfxVideoParam.vpp.Out.FourCC != MFX_FOURCC_RGB4) {
     //    m_Caps.bOutToARGB8 = 0;
     //    m_Caps.bOutToARGB8 = 1;
@@ -785,12 +793,13 @@ mfxStatus MFXCamera_Plugin::Reset(mfxVideoParam *par)
     }
 
     if (par->IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY)
-        m_Caps.OutputMemoryOperationMode = MEM_FASTGPUCPY;
+        m_Caps.OutputMemoryOperationMode = MEM_GPU;
     else
-        m_Caps.OutputMemoryOperationMode = MEM_GPUSHARED;
+        m_Caps.OutputMemoryOperationMode = (m_Caps.Reserved ? MEM_FASTGPUCPY : MEM_GPUSHARED);
+//        m_Caps.OutputMemoryOperationMode = MEM_GPUSHARED;
 
     if (par->IOPattern & MFX_IOPATTERN_IN_VIDEO_MEMORY)
-        m_Caps.InputMemoryOperationMode = MEM_FASTGPUCPY;
+        m_Caps.InputMemoryOperationMode = MEM_GPU;
     else
         m_Caps.InputMemoryOperationMode = MEM_GPUSHARED;
 

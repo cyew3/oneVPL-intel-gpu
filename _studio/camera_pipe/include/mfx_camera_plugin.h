@@ -176,6 +176,7 @@ protected:
 
     CmSurface2D         *m_gammaCorrectSurf;
     CmSurface2D         *m_gammaPointSurf;
+    CmSurface2D         *m_gammaOutSurf;
 
 #ifdef CAM_PIPE_VERTICAL_SLICE_ENABLE
     CmSurface2D         *m_avgFlagSurf;

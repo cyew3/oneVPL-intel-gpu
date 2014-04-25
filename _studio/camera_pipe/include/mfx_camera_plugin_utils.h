@@ -71,7 +71,8 @@ enum
 {
     MEM_GPUSHARED   =  0,
     MEM_FASTGPUCPY,
-    MEM_CPUCPY
+    MEM_CPUCPY,
+    MEM_GPU
 };
 
 mfxStatus CheckExtBuffers(mfxVideoParam *param, mfxVideoParam *out, mfxU32 mode);

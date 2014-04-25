@@ -362,13 +362,22 @@ mfxStatus MFXCamera_Plugin::ReallocateInternalSurfaces(mfxVideoParam &newParam, 
         MFX_CHECK_STS(sts);
     }
 
-
 #ifdef CAM_PIPE_VERTICAL_SLICE_ENABLE
     if (vSliceWidth != m_FrameSizeExtra.vSliceWidth || paddedFrameHeight != m_FrameSizeExtra.paddedFrameHeight) {
         m_cmDevice->DestroySurface(m_avgFlagSurf);
         m_avgFlagSurf = CreateSurface(m_cmDevice, m_FrameSizeExtra.vSliceWidth, m_FrameSizeExtra.paddedFrameHeight, CM_SURFACE_FORMAT_A8);
     }
 #endif
+
+    if (m_Caps.OutputMemoryOperationMode == MEM_FASTGPUCPY) {
+        if (newParam.vpp.In.CropH != m_mfxVideoParam.vpp.In.CropH || newParam.vpp.In.CropW != m_mfxVideoParam.vpp.In.CropW || !m_gammaOutSurf) {
+            if (m_gammaOutSurf)
+                m_cmDevice->DestroySurface(m_gammaOutSurf);
+            m_gammaOutSurf = CreateSurface(m_cmDevice, newParam.vpp.Out.CropW * 4,  newParam.vpp.Out.CropH, CM_SURFACE_FORMAT_A8);
+        }
+    } else if (m_gammaOutSurf)
+        m_cmDevice->DestroySurface(m_gammaOutSurf);
+
     return sts;
 }
 
@@ -439,7 +448,7 @@ mfxStatus MFXCamera_Plugin::AllocateInternalSurfaces()
     m_gammaCorrectSurf->WriteSurface(pGammaCor, NULL);
     m_gammaPointSurf->WriteSurface((unsigned char *)pGammaPts, NULL);
 
-    if (m_Caps.InputMemoryOperationMode == MEM_FASTGPUCPY) {
+    if (m_Caps.InputMemoryOperationMode == MEM_GPU) {
         request.Info = m_mfxVideoParam.vpp.In;
         request.Info.Width = m_mfxVideoParam.vpp.In.Width*sizeof(mfxU16);
         request.Info.Height = m_mfxVideoParam.vpp.In.Height;
@@ -451,13 +460,17 @@ mfxStatus MFXCamera_Plugin::AllocateInternalSurfaces()
 //        m_cmSurfIn = CreateSurface(m_cmDevice, m_mfxVideoParam.vpp.In.Width*sizeof(mfxU16),  m_mfxVideoParam.vpp.In.Height, CM_SURFACE_FORMAT_A8);
     } // add MEM_GPUSHARED support !!!
 
-
+    if (m_Caps.OutputMemoryOperationMode == MEM_FASTGPUCPY) {
+        if (m_mfxVideoParam.vpp.Out.FourCC == MFX_FOURCC_RGB4)
+            m_gammaOutSurf = CreateSurface(m_cmDevice, m_mfxVideoParam.vpp.Out.CropW * 4,  m_mfxVideoParam.vpp.Out.CropH, CM_SURFACE_FORMAT_A8);
+        // else todo
+    }
 
     if (!m_Caps.bNoPadding)
         m_paddedSurf = CreateSurface(m_cmDevice, (mfxU16)m_FrameSizeExtra.frameWidth64*sizeof(mfxU16), (mfxU16)m_FrameSizeExtra.paddedFrameHeight, CM_SURFACE_FORMAT_A8);
 
 
-    // create buffer pool for (m_Caps.OutputMemoryOperationMode == MEM_FASTGPUCPY) !!!
+    // create buffer pool for (m_Caps.OutputMemoryOperationMode == MEM_GPU) !!!
     
     return sts;
 }
@@ -504,7 +517,7 @@ mfxStatus MFXCamera_Plugin::SetExternalSurfaces(AsyncParams *pParam)
             }
             pParam->inSurf2D = 0;
         }
-        else if (m_Caps.InputMemoryOperationMode == MEM_FASTGPUCPY) {
+        else if (m_Caps.InputMemoryOperationMode == MEM_GPU) {
             //m_cmSurfIn = CreateSurface(m_cmDevice, inWidth*sizeof(mfxU16),  inHeight, CM_SURFACE_FORMAT_A8);
 
             CmSurface2D *in2DSurf = (CmSurface2D *)AcquireResource(m_rawIn);
@@ -564,7 +577,7 @@ mfxStatus MFXCamera_Plugin::SetExternalSurfaces(AsyncParams *pParam)
             pParam->outBufUP = CreateBuffer(m_cmDevice, outWidth*outHeight*4, pParam->pMemOut);
         }
         pParam->outBuf = 0;
-    } else if (m_Caps.OutputMemoryOperationMode == MEM_FASTGPUCPY) {
+    } else if (m_Caps.OutputMemoryOperationMode == MEM_GPU) {
 
         mfxHDLPair outHdl;
         //m_core->GetFrameHDL(surfOut->Data.MemId, &outHdl);
@@ -594,9 +607,6 @@ mfxStatus MFXCamera_Plugin::SetExternalSurfaces(AsyncParams *pParam)
 
 mfxStatus MFXCamera_Plugin::CreateEnqueueTasks(AsyncParams *pParam)
 {
-#ifdef CAMP_PIPE_ITT
-    __itt_task_begin(CamPipeAccel, __itt_null, __itt_null, task2);
-#endif    
     CmEvent *e = NULL;
 
     //UMC::AutomaticUMCMutex guard(m_guard);
@@ -660,7 +670,9 @@ mfxStatus MFXCamera_Plugin::CreateEnqueueTasks(AsyncParams *pParam)
 
         SurfaceIndex *pOutputSurfaceIndex;
 
-        if (pParam->outBufUP) {
+        if (m_Caps.OutputMemoryOperationMode == MEM_FASTGPUCPY) {
+            m_gammaOutSurf->GetIndex(pOutputSurfaceIndex);
+        } else if (pParam->outBufUP) {
             CmBufferUP *outBuffer = (CmBufferUP *)pParam->outBufUP;
             outBuffer->GetIndex(pOutputSurfaceIndex);
         } else if (pParam->outBuf) {
@@ -694,13 +706,12 @@ mfxStatus MFXCamera_Plugin::CreateEnqueueTasks(AsyncParams *pParam)
     __itt_task_end(CamPipeAccel);
 #endif
 
-    pParam->pEvent = e;
-
-#ifdef CAMP_PIPE_ITT
-    __itt_task_end(CamPipeAccel);
-#endif
-
-    if (pParam->outBufUP) {
+    if (m_Caps.OutputMemoryOperationMode == MEM_FASTGPUCPY) {
+        if (pParam->surf_out->Info.Width*4 == pParam->surf_out->Data.Pitch)
+            e = m_cmCtx->EnqueueCopyGPUToCPU(m_gammaOutSurf, pParam->surf_out->Data.B);
+        else
+            e = m_cmCtx->EnqueueCopyGPUToCPU(m_gammaOutSurf, pParam->surf_out->Data.B, pParam->surf_out->Data.Pitch);
+    } else if (pParam->outBufUP) {
         CmBufferUP *buf = (CmBufferUP *)pParam->outBufUP;
         if (pParam->pMemOut) {
             // copy mem to out mfx surface - to implement !!!
@@ -712,6 +723,9 @@ mfxStatus MFXCamera_Plugin::CreateEnqueueTasks(AsyncParams *pParam)
     } else if (pParam->outBuf) {
         // copy from CmBuffer to out mfx surface - to implement !!! 
     }
+
+    pParam->pEvent = e;
+
 
     return MFX_ERR_NONE;
 }
@@ -835,8 +849,8 @@ void QueryCaps(mfxCameraCaps &caps)
     caps.bForwardGammaCorrection = 1;
     caps.bOutToARGB8 = 1; // ???
 
-    caps.InputMemoryOperationMode = MEM_GPUSHARED; //MEM_FASTGPUCPY; 
-    caps.OutputMemoryOperationMode = MEM_GPUSHARED; //MEM_FASTGPUCPY;
+    caps.InputMemoryOperationMode = MEM_GPUSHARED; //MEM_GPU; 
+    caps.OutputMemoryOperationMode = MEM_GPUSHARED; //MEM_GPU;
 
     caps.bNoPadding = 1;
 }

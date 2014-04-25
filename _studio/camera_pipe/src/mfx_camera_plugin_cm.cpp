@@ -200,148 +200,6 @@ CmDevicePtr::operator CmDevice * ()
     return m_device;
 }
 
-
-CmSurface::CmSurface()
-: m_device(0)
-, m_surface(0)
-{
-}
-
-CmSurface::CmSurface(CmDevice * device, IDirect3DSurface9 * d3dSurface)
-: m_device(0)
-, m_surface(0)
-{
-    Reset(device, d3dSurface);
-}
-
-CmSurface::CmSurface(CmDevice * device, mfxU32 width, mfxU32 height, mfxU32 fourcc)
-: m_device(0)
-, m_surface(0)
-{
-    Reset(device, width, height, fourcc);
-}
-
-CmSurface::~CmSurface()
-{
-    Reset(0, 0);
-}
-
-CmSurface2D * CmSurface::operator -> ()
-{
-    return m_surface;
-}
-
-CmSurface::operator CmSurface2D * ()
-{
-    return m_surface;
-}
-
-void CmSurface::Reset(CmDevice * device, IDirect3DSurface9 * d3dSurface)
-{
-    CmSurface2D * newSurface = CreateSurface(device, d3dSurface);
-
-    if (m_device && m_surface)
-    {
-        int result = m_device->DestroySurface(m_surface);
-        result; assert(result == CM_SUCCESS);
-    }
-
-    m_device  = device;
-    m_surface = newSurface;
-}
-
-void CmSurface::Reset(CmDevice * device, mfxU32 width, mfxU32 height, mfxU32 fourcc)
-{
-    CmSurface2D * newSurface = CreateSurface(device, width, height, D3DFORMAT(fourcc));
-
-    if (m_device && m_surface)
-    {
-        int result = m_device->DestroySurface(m_surface);
-        result; assert(result == CM_SUCCESS);
-    }
-
-    m_device  = device;
-    m_surface = newSurface;
-}
-
-SurfaceIndex const & CmSurface::GetIndex()
-{
-    return ::GetIndex(m_surface);
-}
-
-void CmSurface::Read(void * buf, CmEvent * e)
-{
-    int result = m_surface->ReadSurface(reinterpret_cast<unsigned char *>(buf), e);
-    if (result != CM_SUCCESS)
-        throw CmRuntimeError();
-}
-
-void CmSurface::Write(void * buf, CmEvent * e)
-{
-    int result = m_surface->WriteSurface(reinterpret_cast<unsigned char *>(buf), e);
-    if (result != CM_SUCCESS)
-        throw CmRuntimeError();
-}
-
-
-
-CmBuf::CmBuf()
-: m_device(0)
-, m_buffer(0)
-{
-}
-
-CmBuf::CmBuf(CmDevice * device, mfxU32 size)
-: m_device(0)
-, m_buffer(0)
-{
-    Reset(device, size);
-}
-
-CmBuf::~CmBuf()
-{
-    Reset(0, 0);
-}
-
-CmBuffer * CmBuf::operator -> ()
-{
-    return m_buffer;
-}
-
-CmBuf::operator CmBuffer * ()
-{
-    return m_buffer;
-}
-
-void CmBuf::Reset(CmDevice * device, mfxU32 size)
-{
-    CmBuffer * buffer = (device && size) ? CreateBuffer(device, size) : 0;
-
-    if (m_device && m_buffer)
-    {
-        int result = m_device->DestroySurface(m_buffer);
-        result; assert(result == CM_SUCCESS);
-    }
-
-    m_device = device;
-    m_buffer = buffer;
-}
-
-SurfaceIndex const & CmBuf::GetIndex() const
-{
-    return ::GetIndex(m_buffer);
-}
-
-void CmBuf::Read(void * buf, CmEvent * e) const
-{
-    ::Read(m_buffer, buf, e);
-}
-
-void CmBuf::Write(void * buf, CmEvent * e) const
-{
-    ::Write(m_buffer, buf, e);
-}
-
 CmBuffer * CreateBuffer(CmDevice * device, mfxU32 size)
 {
     CmBuffer * buffer;
@@ -491,7 +349,7 @@ void CmContext::CreateCameraKernels()
     }
 
     if (m_caps.bForwardGammaCorrection) {
-        if (m_caps.OutputMemoryOperationMode == MEM_FASTGPUCPY)
+        if (m_caps.OutputMemoryOperationMode == MEM_GPU || m_caps.OutputMemoryOperationMode == MEM_FASTGPUCPY)
             kernel_FwGamma = CreateKernel(m_device, m_program, CM_KERNEL_FUNCTION(GAMMA_GPUV4_ARGB8_2D), NULL);
         else
             kernel_FwGamma = CreateKernel(m_device, m_program, CM_KERNEL_FUNCTION(GAMMA_GPUV5_ARGB8_LINEAR), NULL);
@@ -577,6 +435,23 @@ void CmContext::CopyMemToCmSurf(CmSurface2D *cmSurf, void *mem) //, gpucopy/cpuc
     CmEvent* event_transfer = NULL;
     if ((result = m_queue->EnqueueCopyCPUToGPU(cmSurf, (const unsigned char *)mem, event_transfer)) != CM_SUCCESS)
         throw CmRuntimeError();
+}
+
+
+CmEvent *CmContext::EnqueueCopyGPUToCPU(CmSurface2D *cmSurf, void *mem, mfxU16 stride)
+{
+    int result = CM_SUCCESS;
+    CmEvent* event_transfer = NULL;
+
+    if (stride > 0)
+        result = m_queue->EnqueueCopyGPUToCPUStride(cmSurf, (unsigned char *)mem, (unsigned int)stride, event_transfer);
+    else
+        result = m_queue->EnqueueCopyGPUToCPU(cmSurf, (unsigned char *)mem, event_transfer);
+
+    if (result != CM_SUCCESS)        
+        throw CmRuntimeError();
+
+    return event_transfer;
 }
 
 
@@ -1028,10 +903,8 @@ CmEvent *CmContext::EnqueueTask_ForwardGamma()
 {
     int result;
     int threadswidth = m_video.vpp.In.CropW/16; // Out.Width/Height ??? here and below
-    int threadsheight = m_video.vpp.In.CropH/16;
     mfxU32 gamma_threads_per_group = 64;
     mfxU32 gamma_groups_vert = ((threadswidth % gamma_threads_per_group) == 0)? (threadswidth/gamma_threads_per_group) : (threadswidth/gamma_threads_per_group + 1);
-    int threadcount =  gamma_threads_per_group * gamma_groups_vert;
 
     CmEvent *e = NULL;
     CmThreadGroupSpace* pTGS = NULL;
@@ -1126,14 +999,15 @@ void CmContext::Reset(
     if (pCaps->bForwardGammaCorrection) {
         bool recreate = true;
         if (m_caps.bForwardGammaCorrection) {
-            if (m_caps.OutputMemoryOperationMode != pCaps->OutputMemoryOperationMode)
-                m_device->DestroyKernel(kernel_FwGamma);
-            else
+            if ((m_caps.OutputMemoryOperationMode == pCaps->OutputMemoryOperationMode) ||
+                ((pCaps->OutputMemoryOperationMode == MEM_GPU || pCaps->OutputMemoryOperationMode == MEM_FASTGPUCPY) && (m_caps.OutputMemoryOperationMode == MEM_GPU || m_caps.OutputMemoryOperationMode == MEM_FASTGPUCPY)))
                 recreate = false;
+            else
+                m_device->DestroyKernel(kernel_FwGamma);
         }
 
         if (recreate) {
-            if (pCaps->OutputMemoryOperationMode == MEM_FASTGPUCPY)
+            if (pCaps->OutputMemoryOperationMode == MEM_GPU || pCaps->OutputMemoryOperationMode == MEM_FASTGPUCPY)
                 kernel_FwGamma = CreateKernel(m_device, m_program, CM_KERNEL_FUNCTION(GAMMA_GPUV4_ARGB8_2D), NULL);
             else
                 kernel_FwGamma = CreateKernel(m_device, m_program, CM_KERNEL_FUNCTION(GAMMA_GPUV5_ARGB8_LINEAR), NULL);

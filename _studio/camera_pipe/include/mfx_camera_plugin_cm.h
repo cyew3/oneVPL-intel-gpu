@@ -17,7 +17,6 @@
 #include "cmrt_cross_platform.h"
 #include "mfx_camera_plugin_utils.h"
 
-
 class CmDevice;
 class CmBuffer;
 class CmBufferUP;
@@ -37,7 +36,6 @@ class CmRuntimeError : public std::exception
 public:
     CmRuntimeError() : std::exception() { assert(!"CmRuntimeError"); }
 };
-
 
 class CmDevicePtr
 {
@@ -59,63 +57,6 @@ private:
     void operator = (CmDevicePtr const &);
 
     CmDevice * m_device;
-};
-
-
-class CmSurface
-{
-public:
-    CmSurface();
-
-    CmSurface(CmDevice * device, IDirect3DSurface9 * d3dSurface);
-
-    CmSurface(CmDevice * device, mfxU32 width, mfxU32 height, mfxU32 fourcc);
-
-    ~CmSurface();
-
-    CmSurface2D * operator -> ();
-
-    operator CmSurface2D * ();
-
-    void Reset(CmDevice * device, IDirect3DSurface9 * d3dSurface);
-
-    void Reset(CmDevice * device, mfxU32 width, mfxU32 height, mfxU32 fourcc);
-
-    SurfaceIndex const & GetIndex();
-
-    void Read(void * buf, CmEvent * e = 0);
-
-    void Write(void * buf, CmEvent * e = 0);
-
-private:
-    CmDevice *      m_device;
-    CmSurface2D *   m_surface;
-};
-
-class CmBuf
-{
-public:
-    CmBuf();
-
-    CmBuf(CmDevice * device, mfxU32 size);
-
-    ~CmBuf();
-
-    CmBuffer * operator -> ();
-
-    operator CmBuffer * ();
-
-    void Reset(CmDevice * device, mfxU32 size);
-
-    SurfaceIndex const & GetIndex() const;
-
-    void Read(void * buf, CmEvent * e = 0) const;
-
-    void Write(void * buf, CmEvent * e = 0) const;
-
-private:
-    CmDevice *  m_device;
-    CmBuffer *  m_buffer;
 };
 
 CmDevice * TryCreateCmDevicePtr(VideoCORE * core, mfxU32 * version = 0);
@@ -278,6 +219,7 @@ public:
 
     void CopyMfxSurfToCmSurf(CmSurface2D *cmSurf, mfxFrameSurface1* mfxSurf);
     void CopyMemToCmSurf(CmSurface2D *cmSurf, void *mem);
+    CmEvent *EnqueueCopyGPUToCPU(CmSurface2D *cmSurf, void *mem, mfxU16 stride = 0);
 
     void CreateTask_ManualWhiteBalance(SurfaceIndex inSurfIndex, CmSurface2D *pOutSurf, mfxF32 R, mfxF32 G1, mfxF32 B, mfxF32 G2, mfxU32 bitDepth, mfxU32 taks_bufId = 0);
     void CreateTask_GoodPixelCheck(SurfaceIndex inSurfIndex, CmSurface2D *goodPixCntSurf, CmSurface2D *bigPixCntSurf, mfxU32 bitDepth, mfxU32 task_bufId = 0);
