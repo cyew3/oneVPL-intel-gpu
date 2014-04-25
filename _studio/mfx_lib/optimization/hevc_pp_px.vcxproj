@@ -37,6 +37,7 @@
   <ItemGroup>
     <ClCompile Include="h265\src\mfx_h265_deblocking_px.cpp" />
     <ClCompile Include="h265\src\mfx_h265_interpolation_px.cpp" />
+    <ClCompile Include="h265\src\mfx_h265_intragrad_px.cpp" />
     <ClCompile Include="h265\src\mfx_h265_intrapred_16u_px.cpp" />
     <ClCompile Include="h265\src\mfx_h265_intrapred_px.cpp" />
     <ClCompile Include="h265\src\mfx_h265_quantization_px.cpp" />

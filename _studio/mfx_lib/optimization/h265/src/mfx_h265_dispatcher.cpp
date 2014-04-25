@@ -354,6 +354,8 @@ using namespace MFX_HEVC_PP;
         g_dispatcher.h265_FilterPredictPels_Bilinear_8u = &MFX_HEVC_PP::h265_FilterPredictPels_Bilinear_8u_sse;
         g_dispatcher.h265_PredictIntra_Planar_8u = &MFX_HEVC_PP::h265_PredictIntra_Planar_8u_sse;
 
+        g_dispatcher.h265_AnalyzeGradient_8u = &MFX_HEVC_PP::h265_AnalyzeGradient_8u_sse;
+
         // [WeightedPred]
         g_dispatcher.h265_CopyWeighted_S16U8 = &MFX_HEVC_PP::h265_CopyWeighted_S16U8_sse;
         g_dispatcher.h265_CopyWeightedBidi_S16U8 = &MFX_HEVC_PP::h265_CopyWeightedBidi_S16U8_sse;
@@ -510,6 +512,8 @@ using namespace MFX_HEVC_PP;
         g_dispatcher.h265_FilterPredictPels_8u = &MFX_HEVC_PP::h265_FilterPredictPels_8u_px;
         g_dispatcher.h265_FilterPredictPels_Bilinear_8u = &MFX_HEVC_PP::h265_FilterPredictPels_Bilinear_8u_px;
         g_dispatcher.h265_PredictIntra_Planar_8u = &MFX_HEVC_PP::h265_PredictIntra_Planar_8u_px;
+
+        g_dispatcher.h265_AnalyzeGradient_8u = &MFX_HEVC_PP::h265_AnalyzeGradient_8u_px;
 
         // [WeightedPred]
         g_dispatcher.h265_CopyWeighted_S16U8 = &MFX_HEVC_PP::h265_CopyWeighted_S16U8_ssse3;
@@ -692,6 +696,8 @@ using namespace MFX_HEVC_PP;
         g_dispatcher.h265_FilterPredictPels_Bilinear_8u = &MFX_HEVC_PP::h265_FilterPredictPels_Bilinear_8u_avx2;
         g_dispatcher.h265_PredictIntra_Planar_8u = &MFX_HEVC_PP::h265_PredictIntra_Planar_8u_avx2;
 
+        g_dispatcher.h265_AnalyzeGradient_8u = &MFX_HEVC_PP::h265_AnalyzeGradient_8u_avx2;
+
         // [WeightedPred]
         g_dispatcher.h265_CopyWeighted_S16U8 = &MFX_HEVC_PP::h265_CopyWeighted_S16U8_avx2;
         g_dispatcher.h265_CopyWeightedBidi_S16U8 = &MFX_HEVC_PP::h265_CopyWeightedBidi_S16U8_avx2;
@@ -848,6 +854,8 @@ using namespace MFX_HEVC_PP;
         g_dispatcher.h265_FilterPredictPels_8u = &MFX_HEVC_PP::h265_FilterPredictPels_8u_px;
         g_dispatcher.h265_FilterPredictPels_Bilinear_8u = &MFX_HEVC_PP::h265_FilterPredictPels_Bilinear_8u_px;
         g_dispatcher.h265_PredictIntra_Planar_8u = &MFX_HEVC_PP::h265_PredictIntra_Planar_8u_px;
+
+        g_dispatcher.h265_AnalyzeGradient_8u = &MFX_HEVC_PP::h265_AnalyzeGradient_8u_px;
 
         // [WeightedPred]
         g_dispatcher.h265_CopyWeighted_S16U8 = &MFX_HEVC_PP::h265_CopyWeighted_S16U8_px;

@@ -538,6 +538,10 @@ namespace MFX_HEVC_PP
     void h265_PredictIntra_Planar_8u_sse(Ipp8u* PredPel, Ipp8u* pels, Ipp32s pitch, Ipp32s width);
     void h265_PredictIntra_Planar_8u_avx2(Ipp8u* PredPel, Ipp8u* pels, Ipp32s pitch, Ipp32s width);
 
+    void h265_AnalyzeGradient_8u_px  (const mfxU8 *inData, mfxU16 *outData4, mfxU16 *outData8, mfxI32 width, mfxI32 height, mfxI32 pitch);
+    void h265_AnalyzeGradient_8u_sse (const mfxU8 *inData, mfxU16 *outData4, mfxU16 *outData8, mfxI32 width, mfxI32 height, mfxI32 pitch);
+    void h265_AnalyzeGradient_8u_avx2(const mfxU8 *inData, mfxU16 *outData4, mfxU16 *outData8, mfxI32 width, mfxI32 height, mfxI32 pitch);
+
     // Interpolation
     void h265_InterpLuma_s8_d16_H_px(INTERP_S8_D16_PARAMETERS_LIST);
     void h265_InterpLuma_s8_d16_H_sse(INTERP_S8_D16_PARAMETERS_LIST);

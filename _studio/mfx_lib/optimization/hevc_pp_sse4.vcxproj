@@ -54,6 +54,7 @@
       <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release_Intel|x64'">/Qopt-ra-region-strategy:routine /QxSSSE3_ATOM %(AdditionalOptions)</AdditionalOptions>
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Release_Intel|x64'">MaxSpeedHighLevel</Optimization>
     </ClCompile>
+    <ClCompile Include="h265\src\mfx_h265_intragrad_sse.cpp" />
     <ClCompile Include="h265\src\mfx_h265_intrapred_sse.cpp" />
     <ClCompile Include="h265\src\mfx_h265_quantization_sse.cpp" />
     <ClCompile Include="h265\src\mfx_h265_sad_general_sse.cpp" />

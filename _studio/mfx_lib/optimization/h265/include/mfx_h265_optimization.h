@@ -269,6 +269,8 @@ namespace MFX_HEVC_PP
     typedef void (* PTR_FilterPredictPels_Bilinear_8u)(Ipp8u* pSrcDst, int width, int topLeft, int bottomLeft, int topRight);
     typedef void (* PTR_PredictIntra_Planar_8u)(Ipp8u* PredPel, Ipp8u* pels, Ipp32s pitch, Ipp32s width);
 
+    typedef void (* PTR_AnalyzeGradient_8u)(const mfxU8 *inData, mfxU16 *outData4, mfxU16 *outData8, mfxI32 width, mfxI32 height, mfxI32 pitch);
+
     //-----------------------------------------------------
     // aya: approach from Ken/Jon
     // [PTR.Interpolation]
@@ -484,6 +486,8 @@ namespace MFX_HEVC_PP
         HEVCPP_API( PTR_FilterPredictPels_8u,          void, h265_FilterPredictPels_8u,          (Ipp8u* PredPel, Ipp32s width) );
         HEVCPP_API( PTR_FilterPredictPels_Bilinear_8u, void, h265_FilterPredictPels_Bilinear_8u, (Ipp8u* pSrcDst, int width, int topLeft, int bottomLeft, int topRight) );
         HEVCPP_API( PTR_PredictIntra_Planar_8u,        void, h265_PredictIntra_Planar_8u,        (Ipp8u* PredPel, Ipp8u* pels, Ipp32s pitch, Ipp32s width) );
+
+        HEVCPP_API( PTR_AnalyzeGradient_8u, void, h265_AnalyzeGradient_8u, (const mfxU8 *inData, mfxU16 *outData4, mfxU16 *outData8, mfxI32 width, mfxI32 height, mfxI32 pitch) );
 
         // [Interpolation]
         HEVCPP_API( PTR_Interp_s8_d16, void, h265_InterpLuma_s8_d16_H,   ( INTERP_S8_D16_PARAMETERS_LIST));
