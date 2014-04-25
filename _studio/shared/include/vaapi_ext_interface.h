@@ -144,13 +144,13 @@ typedef struct _VAEncMiscParameterVP8HybridFrameUpdate
     unsigned short ref_frame_cost[4];
     // Mode costs, one per segment. INTRA_NONPRED(0), INTRA_16x16(1), INTRA_8x8(2), INTRA_4x4(3)
     // Note 0-3 correspond to Universal VME Input Message DW2.0.  See BSPEC for details.
-    unsigned short intra_mode_cost[4][4];
+    unsigned short intra_mode_cost[4];
     // MB's encoded by 16x16(0), 16x8(1), 8x8(2), 4x4(3).
     unsigned short inter_mode_cost[4];
     // one per segment
-    unsigned char  intra_non_dc_penalty_16x16[4];
+    unsigned char  intra_non_dc_penalty_16x16;
     // one per segment
-    unsigned char  intra_non_dc_penalty_4x4[4];
+    unsigned char  intra_non_dc_penalty_4x4;
 
 } VAEncMiscParameterVP8HybridFrameUpdate;
 

@@ -604,7 +604,7 @@ mfxStatus D3D9Encoder::Execute(TaskHybridDDI const &task, mfxHDL surface)
     bufCnt++;
 
     // frame update
-    if (m_video.mfx.RateControlMethod != MFX_RATECONTROL_CQP)
+    if (task.m_frameOrder)
     {
         FillFrameUpdateBuffer(task, m_frmUpdate);
         encodeCompBufferDesc[bufCnt].CompressedBufferType = D3DDDIFMT_INTELENCODE_SLICEDATA;
@@ -1460,6 +1460,22 @@ mfxStatus D3D11Encoder::Destroy()
 #endif
     }
     
+    mfxStatus FillFrameUpdateBuffer(TaskHybridDDI const & task, VAEncHackTypeVP8HybridFrameUpdate & frmUpdate)
+    {
+        frmUpdate.prev_frame_size = (UINT)task.m_prevFrameSize;
+        frmUpdate.two_prev_frame_flag = task.m_brcUpdateDelay == 2 ? 1 : 0;
+        for (mfxU8 i = 0; i < 4; i++)
+        {
+            frmUpdate.intra_mode_cost[i] = task.m_costs.IntraModeCost[i];
+            frmUpdate.inter_mode_cost[i] = task.m_costs.InterModeCost[i];
+            frmUpdate.ref_frame_cost[i]  = task.m_costs.RefFrameCost[i];
+        }
+        frmUpdate.intra_non_dc_penalty_16x16 = task.m_costs.IntraNonDCPenalty16x16;
+        frmUpdate.intra_non_dc_penalty_4x4 = task.m_costs.IntraNonDCPenalty4x4;
+
+        return MFX_ERR_NONE;
+    }    
+    
 mfxU8 ConvertRateControlMFX2VAAPI(mfxU8 rateControl)
 {
     switch (rateControl)
@@ -1860,12 +1876,7 @@ mfxStatus VAAPIEncoder::Execute(
     FillPpsBuffer(task, m_video, m_pps, m_reconQueue);
     FillQuantBuffer(task, m_video, m_quant);
     FillSegMap(task, m_video, m_core, m_segMapPar);
-    m_frmUpdate.prev_frame_size = task.m_prevFrameSize;
-    m_frmUpdate.two_prev_frame_flag = task.m_brcUpdateDelay == 2 ? 1 : 0;
-    for (mfxU8 i = 0; i <= REF_TOTAL; i ++)
-    {
-        m_frmUpdate.ref_frame_cost[i] = task.m_refProbs[i];
-    }
+    FillFrameUpdateBuffer(task, m_frmUpdate);
 
 //===============================================================================================    
 
@@ -1939,7 +1950,7 @@ mfxStatus VAAPIEncoder::Execute(
             // segmentation map buffer is already allocated and filled. Need just to attach it
             configBuffers[buffersCount++] = m_segMapQueue[idxInPool].surface;
         }
-
+        if (task.m_frameOrder)
         // 5. Per-segment parameters (temporal "hacky" solution)
         {
             MFX_DESTROY_VABUFFER(m_segMapParBufferId, m_vaDisplay);
