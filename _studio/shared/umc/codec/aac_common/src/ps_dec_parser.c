@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2011-2013 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2011-2014 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -99,7 +99,7 @@ Ipp32s ps_extension_parser(sBitsreamBuffer* pBS,
 
         nIpdOpdBands = tabNumIpdOpdBands[pPSDec->bs_iid_mode];
 
-        for( env = 0; env < pPSDec->nEnv; env++){
+        for( env = 0; (env < pPSDec->nEnv) && (env < MAX_PS_ENV); env++){
 
           GET_BITS(pBS, pPSDec->bs_ipd_dt[env], 1, Ipp32s);
           // ipd_data

@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2006-2013 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2006-2014 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -786,7 +786,8 @@ sbrencSBRGrid2FrameInfo (sSBRGrid* pGridState, sSBRFrameInfoState* pFIState)
 
     if (nEnv == 1) {
       out->bordersNoise[1] = out->bordersEnv[nEnv];
-    } else {
+    } else if (nEnv < sizeof(out->bordersEnv)/sizeof(Ipp32s))
+    {
       out->bordersNoise[2] = out->bordersEnv[nEnv];
     }
   }
