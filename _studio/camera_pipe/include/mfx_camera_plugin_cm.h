@@ -306,6 +306,8 @@ public:
     CmEvent *CreateEnqueueTask_ForwardGamma(CmSurface2D *correcSurf, CmSurface2D *pointSurf,  CmSurface2D *redSurf, CmSurface2D *greenSurf, CmSurface2D *blueSurf, SurfaceIndex outSurfIndex, mfxU32 bitDepth);
 
 //    CmEvent *EnqueueTasks();
+    CmEvent *EnqueueTask_GoodPixelCheck();
+    CmEvent *EnqueueTask_ForwardGamma();
 
     CmEvent *EnqueueSliceTasks(mfxU32 sliceNum)
     {
@@ -410,7 +412,7 @@ private:
 
 #ifdef CAM_PIPE_VERTICAL_SLICE_ENABLE
     // Demosaic - good pix check
-    //CmTask*         CAM_PIPE_TASK_ARRAY(task_GoodPixelCheck, CAM_PIPE_NUM_TASK_BUFFERS);
+    CmTask*         CAM_PIPE_TASK_ARRAY(task_GoodPixelCheck, CAM_PIPE_NUM_TASK_BUFFERS);
 
 
     // Demosaic - restore green
@@ -435,8 +437,8 @@ private:
 //    CmTask*         CAM_PIPE_TASK_ARRAY(task_3x3CCM, CAM_PIPE_NUM_TASK_BUFFERS);
 //    CmBuffer*       CCM_Matrix;
 
-    // Forward Gamma Correction
-    //CmTask*         CAM_PIPE_TASK_ARRAY(task_FwGamma, CAM_PIPE_NUM_TASK_BUFFERS);
+     //Forward Gamma Correction
+    CmTask*         CAM_PIPE_TASK_ARRAY(task_FwGamma, CAM_PIPE_NUM_TASK_BUFFERS);
 #endif
 };
 

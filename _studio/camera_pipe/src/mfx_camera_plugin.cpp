@@ -56,9 +56,9 @@ MFXCamera_Plugin::MFXCamera_Plugin(bool CreateByDispatcher)
     m_pmfxCore = 0;
     memset(&m_PluginParam, 0, sizeof(mfxPluginParam));
 
-//    m_PluginParam.ThreadPolicy = MFX_THREADPOLICY_PARALLEL;//MFX_THREADPOLICY_SERIAL;
-    m_PluginParam.ThreadPolicy = MFX_THREADPOLICY_SERIAL;
-    m_PluginParam.MaxThreadNum = 1;
+    m_PluginParam.ThreadPolicy = MFX_THREADPOLICY_PARALLEL;//MFX_THREADPOLICY_SERIAL;
+    //m_PluginParam.ThreadPolicy = MFX_THREADPOLICY_SERIAL;
+    m_PluginParam.MaxThreadNum = 4;
     m_PluginParam.APIVersion.Major = MFX_VERSION_MAJOR;
     m_PluginParam.APIVersion.Minor = MFX_VERSION_MINOR;
     m_PluginParam.PluginUID = g_Camera_PluginGuid;

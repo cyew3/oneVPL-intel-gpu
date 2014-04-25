@@ -453,7 +453,7 @@ CmContext::CmContext(
 {
 #ifdef CAM_PIPE_VERTICAL_SLICE_ENABLE
 //    Zero(task_WhiteBalanceManual);
-//    Zero(task_GoodPixelCheck);
+    Zero(task_GoodPixelCheck);
     Zero(task_RestoreGreen);
     Zero(task_RestoreBlueRed);
     Zero(task_SAD);
@@ -461,7 +461,7 @@ CmContext::CmContext(
 //    Zero(task_CheckConfidence);
 //    Zero(task_BadPixelCheck);
 //    Zero(task_3x3CCM);
-//    Zero(task_FwGamma);
+    Zero(task_FwGamma);
 #endif
     Setup(video, cmDevice, pCaps);
 }
@@ -597,7 +597,7 @@ void CmContext::CreateCmTasks()
         //if (m_pipeline_flags.wbFlag) {
         //    CreateTask(CAM_PIPE_TASK_ARRAY(task_WhiteBalanceManual, i));
         //}
-        //CreateTask(CAM_PIPE_TASK_ARRAY(task_GoodPixelCheck, i));
+        CreateTask(CAM_PIPE_TASK_ARRAY(task_GoodPixelCheck, i));
 
         for (int j = 0; j < CAM_PIPE_KERNEL_SPLIT; j++) {
             CreateTask(CAM_PIPE_KERNEL_ARRAY(CAM_PIPE_TASK_ARRAY(task_RestoreGreen, i), j));
@@ -616,8 +616,7 @@ void CmContext::CreateCmTasks()
 //        CreateTask(CAM_PIPE_TASK_ARRAY(task_3x3CCM, i));
         //}
 
-         //!!! currently not used 
-        //CreateTask(CAM_PIPE_TASK_ARRAY(task_FwGamma, i));
+        CreateTask(CAM_PIPE_TASK_ARRAY(task_FwGamma, i));
     }
 
 }
@@ -662,6 +661,28 @@ void CmContext::CreateCmTasks()
 //        throw CmRuntimeError();
 //}
 
+
+void CmContext::CreateTask_GoodPixelCheck(SurfaceIndex inSurfIndex, CmSurface2D *goodPixCntSurf, CmSurface2D *bigPixCntSurf, mfxU32 bitDepth, mfxU32)
+{
+    int result;
+    mfxI32 shift_amount = (bitDepth - 8);
+    kernel_good_pixel_check->SetThreadCount(m_widthIn16 * m_heightIn16);
+    SetKernelArg(kernel_good_pixel_check, inSurfIndex, GetIndex(goodPixCntSurf), GetIndex(bigPixCntSurf), shift_amount);
+
+    task_GoodPixelCheck->Reset();
+
+    if ((result = task_GoodPixelCheck->AddKernel(kernel_good_pixel_check)) != CM_SUCCESS)
+        throw CmRuntimeError();
+}
+
+CmEvent *CmContext::EnqueueTask_GoodPixelCheck()
+{
+    int result;
+    CmEvent *e = CM_NO_EVENT;
+    if ((result = m_queue->Enqueue(task_GoodPixelCheck, e, m_TS_16x16)) != CM_SUCCESS)
+        throw CmRuntimeError();
+    return e;
+}
 
 CmEvent *CmContext::CreateEnqueueTask_GoodPixelCheck(SurfaceIndex inSurfIndex, CmSurface2D *goodPixCntSurf, CmSurface2D *bigPixCntSurf, mfxU32 bitDepth)
 {
@@ -978,6 +999,51 @@ CmEvent *CmContext::CreateEnqueueTask_DecideAverage(CmSurface2D *redAvgSurf, CmS
 }
 
 #endif
+
+void CmContext::CreateTask_ForwardGamma(CmSurface2D *correctSurf, CmSurface2D *pointSurf,  CmSurface2D *redSurf, CmSurface2D *greenSurf, CmSurface2D *blueSurf, SurfaceIndex outSurfIndex, mfxU32 bitDepth, mfxU32)
+{
+
+    int result;
+    int threadswidth = m_video.vpp.In.CropW/16; // Out.Width/Height ??? here and below
+    int threadsheight = m_video.vpp.In.CropH/16;
+    mfxU32 gamma_threads_per_group = 64;
+    mfxU32 gamma_groups_vert = ((threadswidth % gamma_threads_per_group) == 0)? (threadswidth/gamma_threads_per_group) : (threadswidth/gamma_threads_per_group + 1);
+    int threadcount =  gamma_threads_per_group * gamma_groups_vert;
+
+    kernel_FwGamma->SetThreadCount(threadcount);
+    int framewidth_in_bytes = m_video.vpp.In.CropW * sizeof(int);
+
+    mfxU32 height = (mfxU32)m_video.vpp.In.CropH;
+
+    SetKernelArg(kernel_FwGamma, GetIndex(correctSurf), GetIndex(pointSurf), GetIndex(redSurf), GetIndex(greenSurf), GetIndex(blueSurf), outSurfIndex, threadsheight, bitDepth, framewidth_in_bytes,  height);
+
+    task_FwGamma->Reset();
+
+    if ((result = task_FwGamma->AddKernel(kernel_FwGamma)) != CM_SUCCESS)
+        throw CmRuntimeError();
+
+}
+
+CmEvent *CmContext::EnqueueTask_ForwardGamma()
+{
+    int result;
+    int threadswidth = m_video.vpp.In.CropW/16; // Out.Width/Height ??? here and below
+    int threadsheight = m_video.vpp.In.CropH/16;
+    mfxU32 gamma_threads_per_group = 64;
+    mfxU32 gamma_groups_vert = ((threadswidth % gamma_threads_per_group) == 0)? (threadswidth/gamma_threads_per_group) : (threadswidth/gamma_threads_per_group + 1);
+    int threadcount =  gamma_threads_per_group * gamma_groups_vert;
+
+    CmEvent *e = NULL;
+    CmThreadGroupSpace* pTGS = NULL;
+    if ((result = m_device->CreateThreadGroupSpace(1, gamma_threads_per_group, 1, gamma_groups_vert, pTGS)) != CM_SUCCESS)
+        throw CmRuntimeError();
+
+    if ((result = m_queue->EnqueueWithGroup(task_FwGamma, e, pTGS)) !=  CM_SUCCESS)
+        throw CmRuntimeError();
+
+    m_device->DestroyThreadGroupSpace(pTGS);
+    return e;
+}
 
 CmEvent *CmContext::CreateEnqueueTask_ForwardGamma(CmSurface2D *correctSurf, CmSurface2D *pointSurf,  CmSurface2D *redSurf, CmSurface2D *greenSurf, CmSurface2D *blueSurf, SurfaceIndex outSurfIndex, mfxU32 bitDepth)
 {
