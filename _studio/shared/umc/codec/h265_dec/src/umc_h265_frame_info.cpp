@@ -66,18 +66,21 @@ void H265DecoderFrameInfo::FillTileInfo()
         m_curCUToProcess[DEB_PROCESS_ID] = m_pFrame->getCD()->m_NumCUsInFrame;
     }
 
-    bool deblStopped = !IsNeedDeblocking();
-    for (Ipp32s i = 0; i < m_SliceCount; i ++)
+    if (!m_hasTiles)
     {
-        H265Slice *slice = m_pSliceQueue[i];
-
-        if (slice->GetSliceHeader()->slice_deblocking_filter_disabled_flag)
+        bool deblStopped = !IsNeedDeblocking();
+        for (Ipp32s i = 0; i < m_SliceCount; i ++)
         {
-            slice->processInfo.m_curCUToProcess[DEB_PROCESS_ID] = slice->m_iMaxMB;
-            if (!deblStopped)
-                m_curCUToProcess[DEB_PROCESS_ID] = slice->m_iMaxMB;
-        }else
-            deblStopped = true;
+            H265Slice *slice = m_pSliceQueue[i];
+
+            if (slice->GetSliceHeader()->slice_deblocking_filter_disabled_flag)
+            {
+                slice->processInfo.m_curCUToProcess[DEB_PROCESS_ID] = slice->m_iMaxMB;
+                if (!deblStopped)
+                    m_curCUToProcess[DEB_PROCESS_ID] = slice->m_iMaxMB;
+            }else
+                deblStopped = true;
+        }
     }
 }
 
@@ -165,11 +168,11 @@ void H265DecoderFrameInfo::SkipDeblocking()
     for (Ipp32s i = 0; i < m_SliceCount; i ++)
     {
         H265Slice *pSlice = m_pSliceQueue[i];
-
         pSlice->processInfo.m_curCUToProcess[DEB_PROCESS_ID] = pSlice->m_iMaxMB;
-        m_curCUToProcess[DEB_PROCESS_ID] = m_pFrame->getCD()->m_NumCUsInFrame;
         pSlice->GetSliceHeader()->slice_deblocking_filter_disabled_flag = true;
     }
+
+    m_curCUToProcess[DEB_PROCESS_ID] = m_pFrame->getCD()->m_NumCUsInFrame;
 }
 
 void H265DecoderFrameInfo::SkipSAO()
@@ -180,8 +183,9 @@ void H265DecoderFrameInfo::SkipSAO()
     {
         H265Slice *pSlice = m_pSliceQueue[i];
         pSlice->processInfo.m_curCUToProcess[SAO_PROCESS_ID] = pSlice->m_iMaxMB;
-        m_curCUToProcess[SAO_PROCESS_ID] = m_pFrame->getCD()->m_NumCUsInFrame;
     }
+
+    m_curCUToProcess[SAO_PROCESS_ID] = m_pFrame->getCD()->m_NumCUsInFrame;
 }
 
 } // namespace UMC_HEVC_DECODER
