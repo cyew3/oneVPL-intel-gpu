@@ -2030,9 +2030,10 @@ static Ipp32s IsDuplicatedMergeCand(const MVPInfo * mergeInfo, Ipp32s mergeIdxCu
 
 static Ipp32s SamePrediction(const H265MEInfo* a, const H265MEInfo* b)
 {
+    // TODO fix for GPB: same ref for different indices
     if (a->interDir != b->interDir ||
-        (a->interDir | INTER_DIR_PRED_L0) && (a->MV[0] != b->MV[0] || a->refIdx[0] != b->refIdx[0]) ||
-        (a->interDir | INTER_DIR_PRED_L1) && (a->MV[1] != b->MV[1] || a->refIdx[1] != b->refIdx[1]) )
+        (a->interDir & INTER_DIR_PRED_L0) && (a->MV[0] != b->MV[0] || a->refIdx[0] != b->refIdx[0]) ||
+        (a->interDir & INTER_DIR_PRED_L1) && (a->MV[1] != b->MV[1] || a->refIdx[1] != b->refIdx[1]) )
         return false;
     else
         return true;
@@ -2068,6 +2069,7 @@ CostType H265CU::MeCu(Ipp32u absPartIdx, Ipp8u depth, Ipp32s offset)
 
     Ipp32u numParts = ( m_par->NumPartInCU >> (depth<<1) );
     CostType cost = 0;
+
 
 // Try skips
 //{
@@ -2124,32 +2126,29 @@ CostType H265CU::MeCu(Ipp32u absPartIdx, Ipp8u depth, Ipp32s offset)
             }
         }
         for (Ipp32u i = 0; i < numParts; i++) {
-            m_data[absPartIdx + i].mvpNum[0] = m_data[absPartIdx + i].mvpNum[1] = 0;
-            m_data[absPartIdx + i].flags.skippedFlag = 1;
-            m_data[absPartIdx + i].flags.mergeFlag = 1;
-            m_data[absPartIdx + i].size = size;
-            m_data[absPartIdx + i].predMode = MODE_INTER;
-            m_data[absPartIdx + i].partSize = PART_SIZE_2Nx2N;
-            m_data[absPartIdx + i].qp = m_par->m_lcuQps[m_ctbAddr];
             m_data[absPartIdx + i].depth = depth;
+            m_data[absPartIdx + i].size = size;
+            m_data[absPartIdx + i].partSize = PART_SIZE_2Nx2N;
+            m_data[absPartIdx + i].predMode = MODE_INTER;
             m_data[absPartIdx + i].trIdx = 0;
+            m_data[absPartIdx + i].qp = m_par->m_lcuQps[m_ctbAddr];
             m_data[absPartIdx + i].cbf[0] = m_data[absPartIdx + i].cbf[1] = m_data[absPartIdx + i].cbf[2] = 0;
+            m_data[absPartIdx + i].interDir = inter_dir_best;
+            m_data[absPartIdx + i].mergeIdx = (Ipp8u)cand_best;
+            m_data[absPartIdx + i].mvpNum[0] = m_data[absPartIdx + i].mvpNum[1] = 0;
             m_data[absPartIdx + i].mv[0] = mergeInfo.mvCand[2*cand_best+0];
             m_data[absPartIdx + i].mv[1] = mergeInfo.mvCand[2*cand_best+1];
             m_data[absPartIdx + i].refIdx[0] = mergeInfo.refIdx[2*cand_best+0];
             m_data[absPartIdx + i].refIdx[1] = mergeInfo.refIdx[2*cand_best+1];
-            m_data[absPartIdx + i].mergeIdx = (Ipp8u)cand_best;
-            m_data[absPartIdx + i].interDir = inter_dir_best;
+            m_data[absPartIdx + i].curIdx = 0;
+            m_data[absPartIdx + i].flags.mergeFlag = 1;
+            m_data[absPartIdx + i].flags.skippedFlag = 1;
         }
 
-        m_interPredPtr = m_interPredBest;
-        m_interPredChromaPtr = m_interPredChromaBest;
-        m_interResidualsYPtr = m_interResidualsYBest;
-        m_interResidualsUPtr = m_interResidualsUBest;
-        m_interResidualsVPtr = m_interResidualsVBest;
         m_interPredReady = false;
-        PixType* pred = m_interPredPtr[depth];
-        PixType* predChr = m_interPredChromaPtr[depth];
+        const Ipp8u curIdx = 0; // idx: current, idx^1: best (== m_data[absPartIdx].curIdx)
+        PixType* pred = m_interPred[curIdx][depth];
+        PixType* predChr = m_interPredChroma[curIdx][depth];
 
         InterPredCu(absPartIdx, depth, pred, MAX_CU_SIZE, 1);
         InterPredCu(absPartIdx, depth, predChr, MAX_CU_SIZE, 0);
@@ -2167,16 +2166,15 @@ CostType H265CU::MeCu(Ipp32u absPartIdx, Ipp8u depth, Ipp32s offset)
         CostType fastCost = COST_MAX;
 
         if (m_par->fastSkip) { // check if all cbf are zero
-            Ipp8u nzt[3], nz[3] = {0};
             Ipp8u cbf[256][3]; // use from [absPartIdx]
 
             Ipp8u tr_depth_min, tr_depth_max;
             GetTrDepthMinMax(m_par, absPartIdx, depth, PART_SIZE_2Nx2N, &tr_depth_min, &tr_depth_max);
             tr_depth_min = tr_depth_max; // will try with minimal transform size
 
-            TuDiff(m_interResidualsYPtr[depth] + offsetPred, MAX_CU_SIZE, pSrc, m_pitchSrc, pred + offsetPred, MAX_CU_SIZE, size);
-            TuDiffNv12(m_interResidualsUPtr[depth] + offsetPredChroma/2, MAX_CU_SIZE/2, pSrcUv, m_pitchSrc, predChr + offsetPredChroma, MAX_CU_SIZE, size/2);
-            TuDiffNv12(m_interResidualsVPtr[depth] + offsetPredChroma/2, MAX_CU_SIZE/2, pSrcUv+1, m_pitchSrc, predChr + offsetPredChroma + 1, MAX_CU_SIZE, size/2);
+            TuDiff(m_interResidualsY[curIdx][depth] + offsetPred, MAX_CU_SIZE, pSrc, m_pitchSrc, pred + offsetPred, MAX_CU_SIZE, size);
+            TuDiffNv12(m_interResidualsU[curIdx][depth] + offsetPredChroma/2, MAX_CU_SIZE/2, pSrcUv, m_pitchSrc, predChr + offsetPredChroma, MAX_CU_SIZE, size/2);
+            TuDiffNv12(m_interResidualsV[curIdx][depth] + offsetPredChroma/2, MAX_CU_SIZE/2, pSrcUv+1, m_pitchSrc, predChr + offsetPredChroma + 1, MAX_CU_SIZE, size/2);
 
             for (Ipp32u i = 0; i < numParts; i++) {
                 m_data[absPartIdx + i].flags.skippedFlag = 0;
@@ -2212,21 +2210,23 @@ CostType H265CU::MeCu(Ipp32u absPartIdx, Ipp8u depth, Ipp32s offset)
         if (fastCost < bestCost) {
             m_bsf->CtxSave(ctxSave[1], 0, NUM_CABAC_CONTEXT);
             small_memcpy(m_dataInter, m_data + absPartIdx, sizeof(H265CUData) * numParts);
+        } else if (!m_par->fastSkip) { // TODO check if needed
+            TuDiff(m_interResidualsY[curIdx][depth] + offsetPred, MAX_CU_SIZE, pSrc, m_pitchSrc, pred + offsetPred, MAX_CU_SIZE, size);
+            if (m_par->AnalyseFlags & HEVC_COST_CHROMA) {
+                TuDiffNv12(m_interResidualsU[curIdx][depth] + offsetPredChroma/2, MAX_CU_SIZE/2, pSrcUv, m_pitchSrc, predChr + offsetPredChroma, MAX_CU_SIZE, size/2);
+                TuDiffNv12(m_interResidualsV[curIdx][depth] + offsetPredChroma/2, MAX_CU_SIZE/2, pSrcUv+1, m_pitchSrc, predChr + offsetPredChroma + 1, MAX_CU_SIZE, size/2);
+            }
         }
     }
 
 //} tried skips
 
+    m_data[absPartIdx].curIdx = 1;
     //meInfo.splitMode = PART_SIZE_2Nx2N;
     MePu(&meInfo, 0);
 
     Ipp32u nonZeroCbf = 1;
     bestMeInfo[0] = meInfo;
-    m_interPredPtr = m_interPred;
-    m_interPredChromaPtr = m_interPredChroma;
-    m_interResidualsYPtr = m_interResidualsY;
-    m_interResidualsUPtr = m_interResidualsU;
-    m_interResidualsVPtr = m_interResidualsV;
 
     bestCostMergeSkip = bestCost;
 
@@ -2244,18 +2244,9 @@ CostType H265CU::MeCu(Ipp32u absPartIdx, Ipp8u depth, Ipp32s offset)
             ippiCopy_8u_C1R(pRec, m_pitchRec, m_recLumaInter[depth], meInfo.width, roiSize);
             if (m_par->AnalyseFlags & HEVC_COST_CHROMA) {
                 ippiCopy_8u_C1R(pRecUv, m_pitchRec, m_recChromaInter[depth], meInfo.width, roiSizeChr);
-                ippiCopy_8u_C1R(m_interPredChromaPtr[depth] + offsetPredChroma, MAX_CU_SIZE,
-                                m_interPredChromaBest[depth] + offsetPredChroma, MAX_CU_SIZE, roiSizeChr);
-                ippiCopy_16s_C1R(m_interResidualsUPtr[depth] + offsetPredChroma/2, MAX_CU_SIZE,
-                                 m_interResidualsUBest[depth] + offsetPredChroma/2, MAX_CU_SIZE, roiSizeU);
-                ippiCopy_16s_C1R(m_interResidualsVPtr[depth] + offsetPredChroma/2, MAX_CU_SIZE,
-                                 m_interResidualsVBest[depth] + offsetPredChroma/2, MAX_CU_SIZE, roiSizeU);
             }
             small_memcpy(m_dataInter, m_data + absPartIdx, sizeof(H265CUData) * numParts);
-            ippiCopy_8u_C1R(m_interPredPtr[depth] + offsetPred, MAX_CU_SIZE,
-                            m_interPredBest[depth] + offsetPred, MAX_CU_SIZE, roiSize);
-            ippiCopy_16s_C1R(m_interResidualsYPtr[depth] + offsetPred, MAX_CU_SIZE * 2,
-                             m_interResidualsYBest[depth] + offsetPred, MAX_CU_SIZE * 2, roiSize);
+            m_data[absPartIdx].curIdx ^= 1;
         }
     }
 
@@ -2300,18 +2291,9 @@ CostType H265CU::MeCu(Ipp32u absPartIdx, Ipp8u depth, Ipp32s offset)
                     ippiCopy_8u_C1R(pRec, m_pitchRec, m_recLumaInter[depth], meInfo.width, roiSize);
                     if (m_par->AnalyseFlags & HEVC_COST_CHROMA) {
                         ippiCopy_8u_C1R(pRecUv, m_pitchRec, m_recChromaInter[depth], meInfo.width, roiSizeChr);
-                        ippiCopy_8u_C1R(m_interPredChromaPtr[depth] + offsetPredChroma, MAX_CU_SIZE,
-                                        m_interPredChromaBest[depth] + offsetPredChroma, MAX_CU_SIZE, roiSizeChr);
-                        ippiCopy_16s_C1R(m_interResidualsUPtr[depth] + offsetPredChroma/2, MAX_CU_SIZE,
-                                         m_interResidualsUBest[depth] + offsetPredChroma/2, MAX_CU_SIZE, roiSizeU);
-                        ippiCopy_16s_C1R(m_interResidualsVPtr[depth] + offsetPredChroma/2, MAX_CU_SIZE,
-                                         m_interResidualsVBest[depth] + offsetPredChroma/2, MAX_CU_SIZE, roiSizeU);
                     }
                     small_memcpy(m_dataInter, m_data + absPartIdx, sizeof(H265CUData) * numParts);
-                    ippiCopy_8u_C1R(m_interPredPtr[depth] + offsetPred, MAX_CU_SIZE,
-                                    m_interPredBest[depth] + offsetPred, MAX_CU_SIZE, roiSize);
-                    ippiCopy_16s_C1R(m_interResidualsYPtr[depth] + offsetPred, MAX_CU_SIZE * 2,
-                                     m_interResidualsYBest[depth] + offsetPred, MAX_CU_SIZE * 2, roiSize);
+                    m_data[absPartIdx].curIdx ^= 1;
                 }
             }
         }
@@ -2352,18 +2334,9 @@ CostType H265CU::MeCu(Ipp32u absPartIdx, Ipp8u depth, Ipp32s offset)
                     ippiCopy_8u_C1R(pRec, m_pitchRec, m_recLumaInter[depth], meInfo.width, roiSize);
                     if (m_par->AnalyseFlags & HEVC_COST_CHROMA) {
                         ippiCopy_8u_C1R(pRecUv, m_pitchRec, m_recChromaInter[depth], meInfo.width, roiSizeChr);
-                        ippiCopy_8u_C1R(m_interPredChromaPtr[depth] + offsetPredChroma, MAX_CU_SIZE,
-                                        m_interPredChromaBest[depth] + offsetPredChroma, MAX_CU_SIZE, roiSizeChr);
-                        ippiCopy_16s_C1R(m_interResidualsUPtr[depth] + offsetPredChroma/2, MAX_CU_SIZE,
-                                         m_interResidualsUBest[depth] + offsetPredChroma/2, MAX_CU_SIZE, roiSizeU);
-                        ippiCopy_16s_C1R(m_interResidualsVPtr[depth] + offsetPredChroma/2, MAX_CU_SIZE,
-                                         m_interResidualsVBest[depth] + offsetPredChroma/2, MAX_CU_SIZE, roiSizeU);
                     }
                     small_memcpy(m_dataInter, m_data + absPartIdx, sizeof(H265CUData) * numParts);
-                    ippiCopy_8u_C1R(m_interPredPtr[depth] + offsetPred, MAX_CU_SIZE,
-                                    m_interPredBest[depth] + offsetPred, MAX_CU_SIZE, roiSize);
-                    ippiCopy_16s_C1R(m_interResidualsYPtr[depth] + offsetPred, MAX_CU_SIZE*2,
-                                     m_interResidualsYBest[depth] + offsetPred, MAX_CU_SIZE*2, roiSize);
+                    m_data[absPartIdx].curIdx ^= 1;
                 }
             }
         }
@@ -2405,18 +2378,9 @@ CostType H265CU::MeCu(Ipp32u absPartIdx, Ipp8u depth, Ipp32s offset)
                     ippiCopy_8u_C1R(pRec, m_pitchRec, m_recLumaInter[depth], meInfo.width, roiSize);
                     if (m_par->AnalyseFlags & HEVC_COST_CHROMA) {
                         ippiCopy_8u_C1R(pRecUv, m_pitchRec, m_recChromaInter[depth], meInfo.width, roiSizeChr);
-                        ippiCopy_8u_C1R(m_interPredChromaPtr[depth] + offsetPredChroma, MAX_CU_SIZE,
-                                        m_interPredChromaBest[depth] + offsetPredChroma, MAX_CU_SIZE, roiSizeChr);
-                        ippiCopy_16s_C1R(m_interResidualsUPtr[depth] + offsetPredChroma/2, MAX_CU_SIZE,
-                                         m_interResidualsUBest[depth] + offsetPredChroma/2, MAX_CU_SIZE, roiSizeU);
-                        ippiCopy_16s_C1R(m_interResidualsVPtr[depth] + offsetPredChroma/2, MAX_CU_SIZE,
-                                         m_interResidualsVBest[depth] + offsetPredChroma/2, MAX_CU_SIZE, roiSizeU);
                     }
                     small_memcpy(m_dataInter, m_data + absPartIdx, sizeof(H265CUData) * numParts);
-                    ippiCopy_8u_C1R(m_interPredPtr[depth] + offsetPred, MAX_CU_SIZE,
-                                    m_interPredBest[depth] + offsetPred, MAX_CU_SIZE, roiSize);
-                    ippiCopy_16s_C1R(m_interResidualsYPtr[depth] + offsetPred, MAX_CU_SIZE*2,
-                                     m_interResidualsYBest[depth] + offsetPred, MAX_CU_SIZE*2, roiSize);
+                    m_data[absPartIdx].curIdx ^= 1;
                 }
             }
         }
@@ -2461,18 +2425,9 @@ CostType H265CU::MeCu(Ipp32u absPartIdx, Ipp8u depth, Ipp32s offset)
                         ippiCopy_8u_C1R(pRec, m_pitchRec, m_recLumaInter[depth], meInfo.width, roiSize);
                         if (m_par->AnalyseFlags & HEVC_COST_CHROMA) {
                             ippiCopy_8u_C1R(pRecUv, m_pitchRec, m_recChromaInter[depth], meInfo.width, roiSizeChr);
-                            ippiCopy_8u_C1R(m_interPredChromaPtr[depth] + offsetPredChroma, MAX_CU_SIZE,
-                                            m_interPredChromaBest[depth] + offsetPredChroma, MAX_CU_SIZE, roiSizeChr);
-                            ippiCopy_16s_C1R(m_interResidualsUPtr[depth] + offsetPredChroma/2, MAX_CU_SIZE,
-                                             m_interResidualsUBest[depth] + offsetPredChroma/2, MAX_CU_SIZE, roiSizeU);
-                            ippiCopy_16s_C1R(m_interResidualsVPtr[depth] + offsetPredChroma/2, MAX_CU_SIZE,
-                                             m_interResidualsVBest[depth] + offsetPredChroma/2, MAX_CU_SIZE, roiSizeU);
                         }
                         small_memcpy(m_dataInter, m_data + absPartIdx, sizeof(H265CUData) * numParts);
-                        ippiCopy_8u_C1R(m_interPredPtr[depth] + offsetPred, MAX_CU_SIZE,
-                                        m_interPredBest[depth] + offsetPred, MAX_CU_SIZE, roiSize);
-                        ippiCopy_16s_C1R(m_interResidualsYPtr[depth] + offsetPred, MAX_CU_SIZE*2,
-                                         m_interResidualsYBest[depth] + offsetPred, MAX_CU_SIZE*2, roiSize);
+                        m_data[absPartIdx].curIdx ^= 1;
                     }
                 }
             }
@@ -2513,18 +2468,9 @@ CostType H265CU::MeCu(Ipp32u absPartIdx, Ipp8u depth, Ipp32s offset)
                         ippiCopy_8u_C1R(pRec, m_pitchRec, m_recLumaInter[depth], meInfo.width, roiSize);
                         if (m_par->AnalyseFlags & HEVC_COST_CHROMA) {
                             ippiCopy_8u_C1R(pRecUv, m_pitchRec, m_recChromaInter[depth], meInfo.width, roiSizeChr);
-                            ippiCopy_8u_C1R(m_interPredChromaPtr[depth] + offsetPredChroma, MAX_CU_SIZE,
-                                            m_interPredChromaBest[depth] + offsetPredChroma, MAX_CU_SIZE, roiSizeChr);
-                            ippiCopy_16s_C1R(m_interResidualsUPtr[depth] + offsetPredChroma/2, MAX_CU_SIZE,
-                                             m_interResidualsUBest[depth] + offsetPredChroma/2, MAX_CU_SIZE, roiSizeU);
-                            ippiCopy_16s_C1R(m_interResidualsVPtr[depth] + offsetPredChroma/2, MAX_CU_SIZE,
-                                             m_interResidualsVBest[depth] + offsetPredChroma/2, MAX_CU_SIZE, roiSizeU);
                         }
                         small_memcpy(m_dataInter, m_data + absPartIdx, sizeof(H265CUData) * numParts);
-                        ippiCopy_8u_C1R(m_interPredPtr[depth] + offsetPred, MAX_CU_SIZE,
-                                        m_interPredBest[depth] + offsetPred, MAX_CU_SIZE, roiSize);
-                        ippiCopy_16s_C1R(m_interResidualsYPtr[depth] + offsetPred, MAX_CU_SIZE*2,
-                                         m_interResidualsYBest[depth] + offsetPred, MAX_CU_SIZE*2, roiSize);
+                        m_data[absPartIdx].curIdx ^= 1;
                     }
                 }
             }
@@ -2565,18 +2511,9 @@ CostType H265CU::MeCu(Ipp32u absPartIdx, Ipp8u depth, Ipp32s offset)
                         ippiCopy_8u_C1R(pRec, m_pitchRec, m_recLumaInter[depth], meInfo.width, roiSize);
                         if (m_par->AnalyseFlags & HEVC_COST_CHROMA) {
                             ippiCopy_8u_C1R(pRecUv, m_pitchRec, m_recChromaInter[depth], meInfo.width, roiSizeChr);
-                            ippiCopy_8u_C1R(m_interPredChromaPtr[depth] + offsetPredChroma, MAX_CU_SIZE,
-                                            m_interPredChromaBest[depth] + offsetPredChroma, MAX_CU_SIZE, roiSizeChr);
-                            ippiCopy_16s_C1R(m_interResidualsUPtr[depth] + offsetPredChroma/2, MAX_CU_SIZE,
-                                             m_interResidualsUBest[depth] + offsetPredChroma/2, MAX_CU_SIZE, roiSizeU);
-                            ippiCopy_16s_C1R(m_interResidualsVPtr[depth] + offsetPredChroma/2, MAX_CU_SIZE,
-                                             m_interResidualsVBest[depth] + offsetPredChroma/2, MAX_CU_SIZE, roiSizeU);
                         }
                         small_memcpy(m_dataInter, m_data + absPartIdx, sizeof(H265CUData) * numParts);
-                        ippiCopy_8u_C1R(m_interPredPtr[depth] + offsetPred, MAX_CU_SIZE,
-                                        m_interPredBest[depth] + offsetPred, MAX_CU_SIZE, roiSize);
-                        ippiCopy_16s_C1R(m_interResidualsYPtr[depth] + offsetPred, MAX_CU_SIZE*2,
-                                         m_interResidualsYBest[depth] + offsetPred, MAX_CU_SIZE*2, roiSize);
+                        m_data[absPartIdx].curIdx ^= 1;
                     }
                 }
             }
@@ -2617,29 +2554,16 @@ CostType H265CU::MeCu(Ipp32u absPartIdx, Ipp8u depth, Ipp32s offset)
                         ippiCopy_8u_C1R(pRec, m_pitchRec, m_recLumaInter[depth], meInfo.width, roiSize);
                         if (m_par->AnalyseFlags & HEVC_COST_CHROMA) {
                             ippiCopy_8u_C1R(pRecUv, m_pitchRec, m_recChromaInter[depth], meInfo.width, roiSizeChr);
-                            ippiCopy_8u_C1R(m_interPredChromaPtr[depth] + offsetPredChroma, MAX_CU_SIZE,
-                                            m_interPredChromaBest[depth] + offsetPredChroma, MAX_CU_SIZE, roiSizeChr);
-                            ippiCopy_16s_C1R(m_interResidualsUPtr[depth] + offsetPredChroma/2, MAX_CU_SIZE,
-                                             m_interResidualsUBest[depth] + offsetPredChroma/2, MAX_CU_SIZE, roiSizeU);
-                            ippiCopy_16s_C1R(m_interResidualsVPtr[depth] + offsetPredChroma/2, MAX_CU_SIZE,
-                                             m_interResidualsVBest[depth] + offsetPredChroma/2, MAX_CU_SIZE, roiSizeU);
                         }
                         small_memcpy(m_dataInter, m_data + absPartIdx, sizeof(H265CUData) * numParts);
-                        ippiCopy_8u_C1R(m_interPredPtr[depth] + offsetPred, MAX_CU_SIZE,
-                                        m_interPredBest[depth] + offsetPred, MAX_CU_SIZE, roiSize);
-                        ippiCopy_16s_C1R(m_interResidualsYPtr[depth] + offsetPred, MAX_CU_SIZE*2,
-                                         m_interResidualsYBest[depth] + offsetPred, MAX_CU_SIZE*2, roiSize);
+                        m_data[absPartIdx].curIdx ^= 1;
                     }
                 }
             }
         }
     }
 
-    m_interPredPtr = m_interPredBest;
-    m_interPredChromaPtr = m_interPredChromaBest;
-    m_interResidualsYPtr = m_interResidualsYBest;
-    m_interResidualsUPtr = m_interResidualsUBest;
-    m_interResidualsVPtr = m_interResidualsVBest;
+    m_data[absPartIdx].curIdx ^= 1; // set to best
 
     if (m_par->puDecisionSatd) {
         bestCost = bestCostMergeSkip;
@@ -2856,9 +2780,10 @@ CostType H265CU::CuCost(Ipp32u absPartIdx, Ipp8u depth, const H265MEInfo *bestIn
     Ipp32u yborder = bestInfo[0].posy + bestInfo[0].height;
 
     Ipp8u tr_depth_min, tr_depth_max;
+    const Ipp8u curIdx = m_data[absPartIdx].curIdx; 
     GetTrDepthMinMax(m_par, absPartIdx, depth, bestSplitMode, &tr_depth_min, &tr_depth_max);
 
-    memset(&m_data[absPartIdx], 0, numParts * sizeof(H265CUData));
+    //memset(&m_data[absPartIdx], 0, numParts * sizeof(H265CUData));
     for (Ipp32u i = absPartIdx; i < absPartIdx + numParts; i++) {
         Ipp32u posx = (h265_scan_z2r[m_par->MaxCUDepth][i] & (m_par->NumMinTUInMaxCU - 1)) << m_par->QuadtreeTULog2MinSize;
         Ipp32u posy = (h265_scan_z2r[m_par->MaxCUDepth][i] >> m_par->MaxCUDepth) << m_par->QuadtreeTULog2MinSize;
@@ -2867,11 +2792,12 @@ CostType H265CU::CuCost(Ipp32u absPartIdx, Ipp8u depth, const H265MEInfo *bestIn
         const H265MEInfo* mei = &bestInfo[part];
 
         VM_ASSERT(mei->interDir >= 1 && mei->interDir <= 3);
-        m_data[i].predMode = MODE_INTER;
-        m_data[i].depth = depth;
-        m_data[i].size = (Ipp8u)(m_par->MaxCUSize>>depth);
+        //m_data[i].predMode = MODE_INTER;
+        //m_data[i].depth = depth;
+        //m_data[i].size = (Ipp8u)(m_par->MaxCUSize>>depth);
         m_data[i].partSize = bestSplitMode;
-        m_data[i].qp = m_par->m_lcuQps[m_ctbAddr];
+        //m_data[i].qp = m_par->m_lcuQps[m_ctbAddr];
+        m_data[i].cbf[0] =  m_data[i].cbf[1] =  m_data[i].cbf[2] = 0;
         m_data[i].flags.skippedFlag = 0;
         //m_data[i].tr_idx = tr_depth; // not decided thoroughly here
         m_data[i].interDir = mei->interDir;
@@ -2885,6 +2811,7 @@ CostType H265CU::CuCost(Ipp32u absPartIdx, Ipp8u depth, const H265MEInfo *bestIn
             m_data[i].refIdx[1] = mei->refIdx[1];
             m_data[i].mv[1] = mei->MV[1];
         }
+        m_data[i].curIdx = curIdx;
     }
     // set mv
     for (Ipp32u i = 0; i < GetNumPartInter(absPartIdx); i++)
@@ -2906,19 +2833,19 @@ CostType H265CU::CuCost(Ipp32u absPartIdx, Ipp8u depth, const H265MEInfo *bestIn
         //    m_bsf->CtxSave(ctxSave, 0, NUM_CABAC_CONTEXT);
 
         if (!m_interPredReady) {
-            InterPredCu(absPartIdx, depth, m_interPredPtr[depth], MAX_CU_SIZE, 1);
+            InterPredCu(absPartIdx, depth, m_interPred[m_data[absPartIdx].curIdx][depth], MAX_CU_SIZE, 1);
             if (m_par->AnalyseFlags & HEVC_COST_CHROMA)
-                InterPredCu(absPartIdx, depth, m_interPredChromaPtr[depth], MAX_CU_SIZE, 0);
+                InterPredCu(absPartIdx, depth, m_interPredChroma[m_data[absPartIdx].curIdx][depth], MAX_CU_SIZE, 0);
 
             Ipp32s offsetPred = GetLumaOffset(m_par, absPartIdx, MAX_CU_SIZE);
             Ipp32s offsetPredChroma = GetChromaOffset(m_par, absPartIdx, MAX_CU_SIZE);
             PixType *pSrc = m_ySrc + GetLumaOffset(m_par, absPartIdx, m_pitchSrc);
             PixType *pSrcUv = m_uvSrc + GetChromaOffset(m_par, absPartIdx, m_pitchSrc);
 
-            TuDiff(m_interResidualsYPtr[depth] + offsetPred, MAX_CU_SIZE, pSrc, m_pitchSrc, m_interPredPtr[depth] + offsetPred, MAX_CU_SIZE, m_data[absPartIdx].size);
+            TuDiff(m_interResidualsY[m_data[absPartIdx].curIdx][depth] + offsetPred, MAX_CU_SIZE, pSrc, m_pitchSrc, m_interPred[m_data[absPartIdx].curIdx][depth] + offsetPred, MAX_CU_SIZE, m_data[absPartIdx].size);
             if (m_par->AnalyseFlags & HEVC_COST_CHROMA) {
-                TuDiffNv12(m_interResidualsUPtr[depth] + offsetPredChroma/2, MAX_CU_SIZE/2, pSrcUv, m_pitchSrc, m_interPredChromaPtr[depth] + offsetPredChroma, MAX_CU_SIZE, m_data[absPartIdx].size/2);
-                TuDiffNv12(m_interResidualsVPtr[depth] + offsetPredChroma/2, MAX_CU_SIZE/2, pSrcUv+1, m_pitchSrc, m_interPredChromaPtr[depth] + offsetPredChroma + 1, MAX_CU_SIZE, m_data[absPartIdx].size/2);
+                TuDiffNv12(m_interResidualsU[m_data[absPartIdx].curIdx][depth] + offsetPredChroma/2, MAX_CU_SIZE/2, pSrcUv, m_pitchSrc, m_interPredChroma[m_data[absPartIdx].curIdx][depth] + offsetPredChroma, MAX_CU_SIZE, m_data[absPartIdx].size/2);
+                TuDiffNv12(m_interResidualsV[m_data[absPartIdx].curIdx][depth] + offsetPredChroma/2, MAX_CU_SIZE/2, pSrcUv+1, m_pitchSrc, m_interPredChroma[m_data[absPartIdx].curIdx][depth] + offsetPredChroma + 1, MAX_CU_SIZE, m_data[absPartIdx].size/2);
             }
         }
 
@@ -3871,12 +3798,12 @@ void H265CU::EncAndRecLuma(Ipp32u absPartIdx, Ipp32s offset, Ipp8u depth, Ipp8u 
 
     if (nz) *nz = 0;
 
-    if (depth == m_data[absPartIdx].depth && m_data[absPartIdx].predMode == MODE_INTER) {
-        //InterPredCu(absPartIdx, depth, m_yRec, m_pitchRec, 1);
-        Ipp32s offsetPred = GetLumaOffset(m_par, absPartIdx, MAX_CU_SIZE);
-        PixType *pSrc = m_ySrc + GetLumaOffset(m_par, absPartIdx, m_pitchSrc);
-        TuDiff(m_interResidualsYPtr[depth] + offsetPred, MAX_CU_SIZE, pSrc, m_pitchSrc, m_interPredPtr[depth] + offsetPred, MAX_CU_SIZE, m_data[absPartIdx].size);
-    }
+    //if (depth == m_data[absPartIdx].depth && m_data[absPartIdx].predMode == MODE_INTER) {
+    //    //InterPredCu(absPartIdx, depth, m_yRec, m_pitchRec, 1);
+    //    Ipp32s offsetPred = GetLumaOffset(m_par, absPartIdx, MAX_CU_SIZE);
+    //    PixType *pSrc = m_ySrc + GetLumaOffset(m_par, absPartIdx, m_pitchSrc);
+    //    TuDiff(m_interResidualsY[m_data[absPartIdx].curIdx][depth] + offsetPred, MAX_CU_SIZE, pSrc, m_pitchSrc, m_interPred[m_data[absPartIdx].curIdx][depth] + offsetPred, MAX_CU_SIZE, m_data[absPartIdx].size);
+    //}
 
     VM_ASSERT(depth <= depthMax);
 
@@ -3918,13 +3845,13 @@ void H265CU::EncAndRecChroma(Ipp32u absPartIdx, Ipp32s offset, Ipp8u depth, Ipp8
     if(nz) nz[0] = nz[1] = 0;
 
     if (depth == m_data[absPartIdx].depth && m_data[absPartIdx].predMode == MODE_INTER) {
-        if (!(m_par->AnalyseFlags & HEVC_COST_CHROMA))
-            InterPredCu(absPartIdx, depth, m_interPredChromaPtr[depth], MAX_CU_SIZE, 0);
-        Ipp32s offsetPred = GetLumaOffset(m_par, absPartIdx, MAX_CU_SIZE);
-        Ipp32s offsetPredChroma = GetChromaOffset(m_par, absPartIdx, MAX_CU_SIZE);
-        PixType *pSrcUv = m_uvSrc + GetChromaOffset(m_par, absPartIdx, m_pitchSrc);
-        TuDiffNv12(m_interResidualsUPtr[depth] + offsetPredChroma/2, MAX_CU_SIZE/2, pSrcUv, m_pitchSrc, m_interPredChromaPtr[depth] + offsetPredChroma, MAX_CU_SIZE, m_data[absPartIdx].size/2);
-        TuDiffNv12(m_interResidualsVPtr[depth] + offsetPredChroma/2, MAX_CU_SIZE/2, pSrcUv+1, m_pitchSrc, m_interPredChromaPtr[depth] + offsetPredChroma + 1, MAX_CU_SIZE, m_data[absPartIdx].size/2);
+        if (!(m_par->AnalyseFlags & HEVC_COST_CHROMA)) {
+            InterPredCu(absPartIdx, depth, m_interPredChroma[m_data[absPartIdx].curIdx][depth], MAX_CU_SIZE, 0);
+            Ipp32s offsetPredChroma = GetChromaOffset(m_par, absPartIdx, MAX_CU_SIZE);
+            PixType *pSrcUv = m_uvSrc + GetChromaOffset(m_par, absPartIdx, m_pitchSrc);
+            TuDiffNv12(m_interResidualsU[m_data[absPartIdx].curIdx][depth] + offsetPredChroma/2, MAX_CU_SIZE/2, pSrcUv, m_pitchSrc, m_interPredChroma[m_data[absPartIdx].curIdx][depth] + offsetPredChroma, MAX_CU_SIZE, m_data[absPartIdx].size/2);
+            TuDiffNv12(m_interResidualsV[m_data[absPartIdx].curIdx][depth] + offsetPredChroma/2, MAX_CU_SIZE/2, pSrcUv+1, m_pitchSrc, m_interPredChroma[m_data[absPartIdx].curIdx][depth] + offsetPredChroma + 1, MAX_CU_SIZE, m_data[absPartIdx].size/2);
+        }
     }
 
     if (depth == depthMax || width == 4) {
@@ -4227,6 +4154,7 @@ void H265CU::EncAndRecLumaTu(Ipp32u absPartIdx, Ipp32s offset, Ipp32s width, Ipp
     PixType *pred = NULL;
     Ipp32s  pitch_pred = 0;
     Ipp32s  is_pred_transposed = 0;
+    const Ipp8u depth = m_data[absPartIdx].depth;
     if (m_data[absPartIdx].predMode == MODE_INTRA) {
         if (pred_opt == INTRA_PRED_IN_BUF) {
             pred = m_predIntraAll + m_data[absPartIdx].intraLumaDir * width * width;
@@ -4239,7 +4167,7 @@ void H265CU::EncAndRecLumaTu(Ipp32u absPartIdx, Ipp32s offset, Ipp32s width, Ipp
         }
     } else {
         pitch_pred = MAX_CU_SIZE;
-        pred = m_interPredPtr[ m_data[absPartIdx].depth ];
+        pred = m_interPred[m_data[absPartIdx].curIdx][ depth ];
         pred += (PUStartRow * pitch_pred + PUStartColumn) << m_par->Log2MinTUSize;
     }
 
@@ -4261,7 +4189,7 @@ void H265CU::EncAndRecLumaTu(Ipp32u absPartIdx, Ipp32s offset, Ipp32s width, Ipp
             else
                 TuDiff(m_residualsY + offset, width, src, m_pitchSrc, pred, pitch_pred, width);
         } else {
-            Ipp16s *resid = m_interResidualsYPtr[ m_data[absPartIdx].depth ];
+            Ipp16s *resid = m_interResidualsY[m_data[absPartIdx].curIdx][ depth ];
             resid += (PUStartRow * MAX_CU_SIZE + PUStartColumn) << m_par->Log2MinTUSize;
             IppiSize roiSize = {width, width};
             ippiCopy_16s_C1R(resid, MAX_CU_SIZE*2, m_residualsY + offset, width*2, roiSize);
@@ -4295,6 +4223,11 @@ void H265CU::EncAndRecLumaTu(Ipp32u absPartIdx, Ipp32s offset, Ipp32s width, Ipp
         memset(m_trCoeffY + offset, 0, sizeof(CoeffsType) * width * width);
     }
 
+    //if (m_data[absPartIdx].flags.skippedFlag) { // TODO check if needed
+    //    IppiSize roi = { width, width };
+    //    ippiCopy_8u_C1R(pred, pitch_pred, rec, m_pitchRec, roi);
+    //}
+
     if (cost) {
         CostType cost_rec = TuSse(src, m_pitchSrc, rec, m_pitchRec, width);
         *cost = cost_rec;
@@ -4311,7 +4244,7 @@ void H265CU::EncAndRecLumaTu(Ipp32u absPartIdx, Ipp32s offset, Ipp32s width, Ipp
         if (cbf) {
             SetCbfOne(absPartIdx, TEXT_LUMA, m_data[absPartIdx].trIdx);
             PutTransform(m_bsf, offset, offset>>2, absPartIdx, absPartIdx,
-                m_data[absPartIdx].depth + m_data[absPartIdx].trIdx,
+                depth + m_data[absPartIdx].trIdx,
                 width, width, m_data[absPartIdx].trIdx, code_dqp);
         }
         else {
@@ -4348,11 +4281,12 @@ void H265CU::EncAndRecChromaTu(Ipp32u absPartIdx, Ipp32s offset, Ipp32s width, I
     Ipp32s pitchPred;
     PixType *pSrc = m_uvSrc + (((PUStartRow * m_pitchSrc >> 1) + PUStartColumn) << m_par->Log2MinTUSize);
     PixType *pRec = m_uvRec + (((PUStartRow * m_pitchRec >> 1) + PUStartColumn) << m_par->Log2MinTUSize);
+    const Ipp8u depth = m_data[absPartIdx].depth;
 
     if (m_data[absPartIdx].predMode == MODE_INTRA) {
         Ipp8u intra_pred_mode = m_data[absPartIdx].intraChromaDir;
         if (intra_pred_mode == INTRA_DM_CHROMA) {
-            Ipp32s shift = h265_log2m2[m_par->NumPartInCU >> (m_data[absPartIdx].depth<<1)] + 2;
+            Ipp32s shift = h265_log2m2[m_par->NumPartInCU >> (depth<<1)] + 2;
             Ipp32s absPartIdx_0 = absPartIdx >> shift << shift;
             intra_pred_mode = m_data[absPartIdx_0].intraLumaDir;
         }
@@ -4360,7 +4294,7 @@ void H265CU::EncAndRecChromaTu(Ipp32u absPartIdx, Ipp32s offset, Ipp32s width, I
         pPred = pRec;
         pitchPred = m_pitchRec;
     } else {
-        pPred = m_interPredChromaPtr[m_data[absPartIdx].depth] + ((PUStartRow * (MAX_CU_SIZE >> 1) + PUStartColumn) << m_par->Log2MinTUSize);
+        pPred = m_interPredChroma[m_data[absPartIdx].curIdx][depth] + ((PUStartRow * (MAX_CU_SIZE >> 1) + PUStartColumn) << m_par->Log2MinTUSize);
         pitchPred = MAX_CU_SIZE;
     }
 
@@ -4372,8 +4306,8 @@ void H265CU::EncAndRecChromaTu(Ipp32u absPartIdx, Ipp32s offset, Ipp32s width, I
         } else {
             IppiSize roiSize = {width, width};
             Ipp32s offsetU = (PUStartRow * (MAX_CU_SIZE>>1) + PUStartColumn) << (m_par->Log2MinTUSize-1);
-            ippiCopy_16s_C1R( m_interResidualsUPtr[m_data[absPartIdx].depth] + offsetU, MAX_CU_SIZE, m_residualsU + offset, width*2, roiSize);
-            ippiCopy_16s_C1R( m_interResidualsVPtr[m_data[absPartIdx].depth] + offsetU, MAX_CU_SIZE, m_residualsV + offset, width*2, roiSize);
+            ippiCopy_16s_C1R( m_interResidualsU[m_data[absPartIdx].curIdx][depth] + offsetU, MAX_CU_SIZE, m_residualsU + offset, width*2, roiSize);
+            ippiCopy_16s_C1R( m_interResidualsV[m_data[absPartIdx].curIdx][depth] + offsetU, MAX_CU_SIZE, m_residualsV + offset, width*2, roiSize);
         }
 
         TransformFwd(offset, width, 0, 0);

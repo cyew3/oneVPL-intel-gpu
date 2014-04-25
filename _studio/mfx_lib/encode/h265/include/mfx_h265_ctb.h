@@ -62,6 +62,8 @@ public:
     H265MV mv[2];
     H265MV mvd[2];
     Ipp8s refIdx[2];
+    Ipp8u curIdx; // index to interleaving cur/best buffers in ME
+
 
     Ipp8u transformSkipFlag[3];
     union {
@@ -127,25 +129,24 @@ public:
     __ALIGN32 CoeffsType    m_residualsV[MAX_CU_SIZE * MAX_CU_SIZE / 4];
     __ALIGN32 PixType       m_predIntraAll[35*32*32];
     __ALIGN32 PixType       m_tuSrcTransposed[32*32];
-    __ALIGN32 PixType       m_interPred[4][MAX_CU_SIZE * MAX_CU_SIZE];
-    __ALIGN32 PixType       m_interPredBest[4][MAX_CU_SIZE * MAX_CU_SIZE];
-    PixType               (*m_interPredPtr)[MAX_CU_SIZE * MAX_CU_SIZE];
-    __ALIGN32 PixType       m_interPredChroma[4][MAX_CU_SIZE * MAX_CU_SIZE/2];
-    __ALIGN32 PixType       m_interPredChromaBest[4][MAX_CU_SIZE * MAX_CU_SIZE/2];
-    PixType               (*m_interPredChromaPtr)[MAX_CU_SIZE * MAX_CU_SIZE/2];
-    __ALIGN32 CoeffsType    m_interResidualsY[4][MAX_CU_SIZE * MAX_CU_SIZE];
-    __ALIGN32 CoeffsType    m_interResidualsYBest[4][MAX_CU_SIZE * MAX_CU_SIZE];
-    CoeffsType            (*m_interResidualsYPtr)[MAX_CU_SIZE * MAX_CU_SIZE];
-    __ALIGN32 CoeffsType    m_interResidualsU[4][MAX_CU_SIZE * MAX_CU_SIZE/4];
-    __ALIGN32 CoeffsType    m_interResidualsUBest[4][MAX_CU_SIZE * MAX_CU_SIZE/4];
-    CoeffsType            (*m_interResidualsUPtr)[MAX_CU_SIZE * MAX_CU_SIZE/4];
-    __ALIGN32 CoeffsType    m_interResidualsV[4][MAX_CU_SIZE * MAX_CU_SIZE/4];
-    __ALIGN32 CoeffsType    m_interResidualsVBest[4][MAX_CU_SIZE * MAX_CU_SIZE/4];
-    CoeffsType            (*m_interResidualsVPtr)[MAX_CU_SIZE * MAX_CU_SIZE/4];
+
+    //[idxBest][depth][raster CTU]
+    __ALIGN32 PixType       m_interPred[2][4][MAX_CU_SIZE * MAX_CU_SIZE];
+    //PixType               (*m_interPredPtr)[MAX_CU_SIZE * MAX_CU_SIZE];
+    __ALIGN32 PixType       m_interPredChroma[2][4][MAX_CU_SIZE * MAX_CU_SIZE/2];
+    //PixType               (*m_interPredChromaPtr)[MAX_CU_SIZE * MAX_CU_SIZE/2];
+    __ALIGN32 CoeffsType    m_interResidualsY[2][4][MAX_CU_SIZE * MAX_CU_SIZE];
+    //CoeffsType            (*m_interResidualsYPtr)[MAX_CU_SIZE * MAX_CU_SIZE];
+    __ALIGN32 CoeffsType    m_interResidualsU[2][4][MAX_CU_SIZE * MAX_CU_SIZE/4];
+    //CoeffsType            (*m_interResidualsUPtr)[MAX_CU_SIZE * MAX_CU_SIZE/4];
+    __ALIGN32 CoeffsType    m_interResidualsV[2][4][MAX_CU_SIZE * MAX_CU_SIZE/4];
+    //CoeffsType            (*m_interResidualsVPtr)[MAX_CU_SIZE * MAX_CU_SIZE/4];
+
     __ALIGN32 PixType       m_interRecBest[5][MAX_CU_SIZE*MAX_CU_SIZE];
     __ALIGN32 PixType       m_interRecBestChroma[5][MAX_CU_SIZE*MAX_CU_SIZE / 2];
 
     Ipp32s                  m_interPredReady;
+    //Ipp32s                  m_curIdx[4];
 
     CostType m_intraCosts[35];
     Ipp8u    m_intraModes[35];
@@ -420,9 +421,7 @@ public:
     void CalcCostLuma(Ipp32u absPartIdx, Ipp32s offset, Ipp8u depth, Ipp8u trDepth, CostOpt costOpt,
                       Ipp8u partSize, Ipp8u lumaDir, CostType *cost);
 
-    CostType CalcCostSkip(Ipp32u absPartIdx, Ipp8u depth);
-    CostType CalcCostSkipExperimental(Ipp32u absPartIdx, Ipp8u depth);
-    CostType CalcCostSkipFast(Ipp32u absPartIdx, Ipp8u depth);
+    //CostType CalcCostSkipExperimental(Ipp32u absPartIdx, Ipp8u depth);
 
     CostType MeCu(Ipp32u absPartIdx, Ipp8u depth, Ipp32s offset);
 
