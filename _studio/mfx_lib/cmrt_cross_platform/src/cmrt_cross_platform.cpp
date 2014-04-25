@@ -44,9 +44,11 @@ const vm_char * DLL_NAME_LINUX = VM_STRING("igfxcmrt32.so");
 
 #ifdef CMRT_EMU
     const char * FUNC_NAME_CREATE_CM_DEVICE  = "CreateCmDeviceEmu";
+    const char * FUNC_NAME_CREATE_CM_DEVICE_EX  = "CreateCmDeviceExEmu";
     const char * FUNC_NAME_DESTROY_CM_DEVICE = "DestroyCmDeviceEmu";
 #else //CMRT_EMU
     const char * FUNC_NAME_CREATE_CM_DEVICE  = "CreateCmDevice";
+    const char * FUNC_NAME_CREATE_CM_DEVICE_EX  = "CreateCmDeviceEx";
     const char * FUNC_NAME_DESTROY_CM_DEVICE = "DestroyCmDevice";
 #endif //CMRT_EMU
 
@@ -113,6 +115,8 @@ namespace
 
 enum { DX9=1, DX11=2, VAAPI=3 };
 
+typedef INT (* CreateCmDeviceDx9FuncTypeEx)(CmDx9::CmDevice *&, UINT &, IDirect3DDeviceManager9 *, UINT);
+typedef INT (* CreateCmDeviceDx11FuncTypeEx)(CmDx11::CmDevice *&, UINT &, ID3D11Device *, UINT);
 typedef INT (* CreateCmDeviceDx9FuncType)(CmDx9::CmDevice *&, UINT &, IDirect3DDeviceManager9 *);
 typedef INT (* CreateCmDeviceDx11FuncType)(CmDx11::CmDevice *&, UINT &, ID3D11Device *);
 typedef INT (* CreateCmDeviceLinuxFuncType)(CmLinux::CmDevice *&, UINT &, VADisplay);
@@ -250,14 +254,22 @@ INT CreateCmDevice(CmDevice *& pD, UINT & version, IDirect3DDeviceManager9 * pD3
         return CM_FAILURE;
     }
 
+#ifdef CM_4_0
+    CreateCmDeviceDx9FuncTypeEx createFunc = (CreateCmDeviceDx9FuncTypeEx)vm_so_get_addr(device->m_dll, FUNC_NAME_CREATE_CM_DEVICE_EX);
+#else
     CreateCmDeviceDx9FuncType createFunc = (CreateCmDeviceDx9FuncType)vm_so_get_addr(device->m_dll, FUNC_NAME_CREATE_CM_DEVICE);
+#endif
     if (createFunc == 0)
     {
         delete device;
         return CM_FAILURE;
     }
 
+#ifdef CM_4_0
+    INT res = createFunc(device->m_dx9, version, pD3DDeviceMgr, 3 << 4);
+#else
     INT res = createFunc(device->m_dx9, version, pD3DDeviceMgr);
+#endif
     if (res != CM_SUCCESS)
     {
         delete device;
@@ -281,14 +293,22 @@ INT CreateCmDevice(CmDevice* &pD, UINT& version, ID3D11Device * pD3D11Device)
         return CM_FAILURE;
     }
 
+#ifdef CM_4_0
+    CreateCmDeviceDx11FuncTypeEx createFunc = (CreateCmDeviceDx11FuncTypeEx)vm_so_get_addr(device->m_dll, FUNC_NAME_CREATE_CM_DEVICE_EX);
+#else
     CreateCmDeviceDx11FuncType createFunc = (CreateCmDeviceDx11FuncType)vm_so_get_addr(device->m_dll, FUNC_NAME_CREATE_CM_DEVICE);
+#endif
     if (createFunc == 0)
     {
         delete device;
         return CM_FAILURE;
     }
 
+#ifdef CM_4_0
+    INT res = createFunc(device->m_dx11, version, pD3D11Device, 3 << 4);
+#else
     INT res = createFunc(device->m_dx11, version, pD3D11Device);
+#endif
     if (res != CM_SUCCESS)
     {
         delete device;
