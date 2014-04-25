@@ -235,7 +235,7 @@ mfxStatus mfxDefaultAllocator::AllocFrames(mfxHDL pthis, mfxFrameAllocRequest *r
     // check the number of allocated frames
     if (numAllocated < request->NumFrameMin)
     {
-        FreeFrames(pSelf->wbufferAllocator.bufferAllocator.pthis, response);
+        FreeFrames(pSelf, response);
         return MFX_ERR_MEMORY_ALLOC;
     }
     pSelf->NumFrames = maxNumFrames;
