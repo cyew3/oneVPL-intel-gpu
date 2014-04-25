@@ -203,6 +203,10 @@ void dump_mfxFrameInfo(FILE *fd, int level, TCHAR *prefix, TCHAR *prefix2, TCHAR
         return;
     }
 
+    dump_format_wprefix(fd,level, 4,prefix,prefix2,prefix3,TEXT(".BitDepthLuma="),TEXT("(%d)"), fi->BitDepthLuma);
+    dump_format_wprefix(fd,level, 4,prefix,prefix2,prefix3,TEXT(".BitDepthChroma="),TEXT("(%d)"), fi->BitDepthChroma);
+    dump_format_wprefix(fd,level, 4,prefix,prefix2,prefix3,TEXT(".Shift="),TEXT("(%d)"), fi->Shift);
+
     switch (fi->FourCC) {
     case MFX_FOURCC_NV12:
         dump_format_wprefix(fd,level, 4,prefix,prefix2,prefix3,TEXT(".FourCC=NV12"), TEXT(""));
@@ -218,6 +222,27 @@ void dump_mfxFrameInfo(FILE *fd, int level, TCHAR *prefix, TCHAR *prefix2, TCHAR
         break;
     case MFX_FOURCC_YUY2:
         dump_format_wprefix(fd,level, 4,prefix,prefix2,prefix3,TEXT(".FourCC=YUY2"), TEXT(""));
+        break;
+    case MFX_FOURCC_P8:
+        dump_format_wprefix(fd,level, 4,prefix,prefix2,prefix3,TEXT(".FourCC=P8"), TEXT(""));
+        break;
+    case MFX_FOURCC_P8_TEXTURE:
+        dump_format_wprefix(fd,level, 4,prefix,prefix2,prefix3,TEXT(".FourCC=P8Texture"), TEXT(""));
+        break;
+    case MFX_FOURCC_P010:
+        dump_format_wprefix(fd,level, 4,prefix,prefix2,prefix3,TEXT(".FourCC=P010"), TEXT(""));
+        break;
+    case MFX_FOURCC_BGR4:
+        dump_format_wprefix(fd,level, 4,prefix,prefix2,prefix3,TEXT(".FourCC=BGR4"), TEXT(""));
+        break;
+    case MFX_FOURCC_A2RGB10:
+        dump_format_wprefix(fd,level, 4,prefix,prefix2,prefix3,TEXT(".FourCC=ARGB10"), TEXT(""));
+        break;
+    case MFX_FOURCC_ARGB16:
+        dump_format_wprefix(fd,level, 4,prefix,prefix2,prefix3,TEXT(".FourCC=ARGB16"), TEXT(""));
+        break;
+    case MFX_FOURCC_R16:
+        dump_format_wprefix(fd,level, 4,prefix,prefix2,prefix3,TEXT(".FourCC=R16"), TEXT(""));
         break;
     default:
         dump_format_wprefix(fd,level, 4,prefix,prefix2,prefix3,TEXT(".FourCC=0x"),TEXT("%x"), fi->FourCC);
@@ -657,6 +682,7 @@ void dump_ExtBuffers(FILE *fd, int level, TCHAR *prefix, TCHAR* prefix2, int cod
                 dump_format_wprefix(fd,level, 3,prefix,prefix2,TEXT(".mfxExtCodingOption2.IntRefCycleSize="),TEXT("%d"), co2->IntRefCycleSize);
                 dump_format_wprefix(fd,level, 3,prefix,prefix2,TEXT(".mfxExtCodingOption2.IntRefQPDelta="),TEXT("%d"), co2->IntRefQPDelta);
                 dump_format_wprefix(fd,level, 3,prefix,prefix2,TEXT(".mfxExtCodingOption2.MaxFrameSize="),TEXT("%d"), co2->MaxFrameSize);
+                dump_format_wprefix(fd,level, 3,prefix,prefix2,TEXT(".mfxExtCodingOption2.MaxSliceSize="),TEXT("%d"), co2->MaxSliceSize);
                 dump_format_wprefix(fd,level, 3,prefix,prefix2,TEXT(".mfxExtCodingOption2.BitrateLimit="),TEXT("%d"), co2->BitrateLimit);
                 dump_format_wprefix(fd,level, 3,prefix,prefix2,TEXT(".mfxExtCodingOption2.MBBRC="),TEXT("%d"), co2->MBBRC);
                 dump_format_wprefix(fd,level, 3,prefix,prefix2,TEXT(".mfxExtCodingOption2.ExtBRC="),TEXT("%d"), co2->ExtBRC);
@@ -668,6 +694,16 @@ void dump_ExtBuffers(FILE *fd, int level, TCHAR *prefix, TCHAR* prefix2, int cod
                 dump_format_wprefix(fd,level, 3,prefix,prefix2,TEXT(".mfxExtCodingOption2.AdaptiveB="),TEXT("%d"), co2->AdaptiveB);
                 dump_format_wprefix(fd,level, 3,prefix,prefix2,TEXT(".mfxExtCodingOption2.LookAheadDS="),TEXT("%d"), co2->LookAheadDS);
                 dump_format_wprefix(fd,level, 3,prefix,prefix2,TEXT(".mfxExtCodingOption2.NumMbPerSlice="),TEXT("%d"), co2->NumMbPerSlice);
+                dump_format_wprefix(fd,level, 3,prefix,prefix2,TEXT(".mfxExtCodingOption2.SkipFrame="),TEXT("%d"), co2->SkipFrame);
+                dump_format_wprefix(fd,level, 3,prefix,prefix2,TEXT(".mfxExtCodingOption2.MinQPI="),TEXT("%d"), co2->MinQPI);
+                dump_format_wprefix(fd,level, 3,prefix,prefix2,TEXT(".mfxExtCodingOption2.MaxQPI="),TEXT("%d"), co2->MaxQPI);
+                dump_format_wprefix(fd,level, 3,prefix,prefix2,TEXT(".mfxExtCodingOption2.MinQPP="),TEXT("%d"), co2->MinQPP);
+                dump_format_wprefix(fd,level, 3,prefix,prefix2,TEXT(".mfxExtCodingOption2.MaxQPP="),TEXT("%d"), co2->MaxQPP);
+                dump_format_wprefix(fd,level, 3,prefix,prefix2,TEXT(".mfxExtCodingOption2.MinQPB="),TEXT("%d"), co2->MinQPB);
+                dump_format_wprefix(fd,level, 3,prefix,prefix2,TEXT(".mfxExtCodingOption2.MaxQPB="),TEXT("%d"), co2->MaxQPB);
+                dump_format_wprefix(fd,level, 3,prefix,prefix2,TEXT(".mfxExtCodingOption2.FixedFrameRate="),TEXT("%d"), co2->FixedFrameRate);
+                dump_format_wprefix(fd,level, 3,prefix,prefix2,TEXT(".mfxExtCodingOption2.DisableDeblockingIdc="),TEXT("%d"), co2->DisableDeblockingIdc);
+                dump_format_wprefix(fd,level, 3,prefix,prefix2,TEXT(".mfxExtCodingOption2.DisableVUI="),TEXT("%d"), co2->DisableVUI);
                 break;
             }
 
@@ -694,6 +730,7 @@ void dump_ExtBuffers(FILE *fd, int level, TCHAR *prefix, TCHAR* prefix2, int cod
                 dump_format_wprefix(fd,level, 3,prefix,prefix2,TEXT(".mfxExtAVCEncodedFrameInfo.LongTermIdx="),TEXT("%d"), efi->LongTermIdx);
                 dump_format_wprefix(fd,level, 3,prefix,prefix2,TEXT(".mfxExtAVCEncodedFrameInfo.MAD="),TEXT("%d"), efi->MAD);
                 dump_format_wprefix(fd,level, 3,prefix,prefix2,TEXT(".mfxExtAVCEncodedFrameInfo.BRCPanicMode="),TEXT("%d"), efi->BRCPanicMode);
+                dump_format_wprefix(fd,level, 3,prefix,prefix2,TEXT(".mfxExtAVCEncodedFrameInfo.SecondFieldOffset="),TEXT("%d"), efi->SecondFieldOffset);
 
                 for (int j = 0; j < sizeof(efi->UsedRefListL0) / sizeof(efi->UsedRefListL0[0]); j++)
                 {

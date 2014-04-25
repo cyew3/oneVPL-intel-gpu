@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2009-2013 Intel Corporation. All Rights Reserved.
+Copyright(c) 2009-2014 Intel Corporation. All Rights Reserved.
 
 File Name: exports.cpp
 
@@ -203,7 +203,7 @@ SDK_ANALYZER_EXPORT(UINT) install(TCHAR *installDir,
     {
         DWORD dw; 
         TCHAR str[10];
-    }  msdk_analyzer_versions[] = {0x101, _T("v1.1"), 0x103, _T("v1.2"), 0x103, _T("v1.3"), 0x104, _T("v1.4"), 0x106, _T("v1.6"), 0x107, _T("v1.7"), 0x108, _T("v1.8")};
+    }  msdk_analyzer_versions[] = {0x101, _T("v1.1"), 0x103, _T("v1.2"), 0x103, _T("v1.3"), 0x104, _T("v1.4"), 0x106, _T("v1.6"), 0x107, _T("v1.7"), 0x108, _T("v1.8"), 0x109, _T("v1.9")};
 
 
     int nPlatforms = IsWow64() ? 2 : 1;
