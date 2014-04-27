@@ -3751,30 +3751,30 @@ bool H265CU::CheckGpuIntraCost(Ipp32s leftPelX, Ipp32s topPelY, Ipp32s depth) co
                         mfxU32 *dist4x8line0  = (mfxU32 *)((Ipp8u *)(pDistCpu[cmCurIdx][refList][refIdx][PU4x8])   + (j * 2    ) * pitchDist[PU4x8]);
                         mfxU32 *dist4x8line1  = (mfxU32 *)((Ipp8u *)(pDistCpu[cmCurIdx][refList][refIdx][PU4x8])   + (j * 2 + 1) * pitchDist[PU4x8]);
                         Ipp32u dist16x16 = dist16x16line[i];
-                        Ipp32u dist16x8 = dist16x8line0[i] + dist16x8line1[i];
-                        Ipp32u dist8x16 = dist8x16line[i * 2] + dist8x16line[i * 2 + 1];
+                        //Ipp32u dist16x8 = dist16x8line0[i] + dist16x8line1[i];
+                        //Ipp32u dist8x16 = dist8x16line[i * 2] + dist8x16line[i * 2 + 1];
                         Ipp32u dist8x8 = dist8x8line0[i * 2] + dist8x8line0[i * 2 + 1] +
                                          dist8x8line1[i * 2] + dist8x8line1[i * 2 + 1];
-                        Ipp32u dist8x4 = dist8x4line0[i * 2] + dist8x4line0[i * 2 + 1] +
-                                         dist8x4line1[i * 2] + dist8x4line1[i * 2 + 1] +
-                                         dist8x4line2[i * 2] + dist8x4line2[i * 2 + 1] +
-                                         dist8x4line3[i * 2] + dist8x4line3[i * 2 + 1];
-                        Ipp32u dist4x8 = dist4x8line0[i * 4 + 0] + dist4x8line0[i * 4 + 1] +
-                                         dist4x8line0[i * 4 + 2] + dist4x8line0[i * 4 + 3] +
-                                         dist4x8line1[i * 4 + 0] + dist4x8line1[i * 4 + 1] +
-                                         dist4x8line1[i * 4 + 2] + dist4x8line1[i * 4 + 3];
+                        //Ipp32u dist8x4 = dist8x4line0[i * 2] + dist8x4line0[i * 2 + 1] +
+                        //                 dist8x4line1[i * 2] + dist8x4line1[i * 2 + 1] +
+                        //                 dist8x4line2[i * 2] + dist8x4line2[i * 2 + 1] +
+                        //                 dist8x4line3[i * 2] + dist8x4line3[i * 2 + 1];
+                        //Ipp32u dist4x8 = dist4x8line0[i * 4 + 0] + dist4x8line0[i * 4 + 1] +
+                        //                 dist4x8line0[i * 4 + 2] + dist4x8line0[i * 4 + 3] +
+                        //                 dist4x8line1[i * 4 + 0] + dist4x8line1[i * 4 + 1] +
+                        //                 dist4x8line1[i * 4 + 2] + dist4x8line1[i * 4 + 3];
                         if (dist16x16 < cmInterCost16x16)
                             cmInterCost16x16 = dist16x16; 
-                        if (dist16x8 < cmInterCost16x16)
-                            cmInterCost16x16 = dist16x8; 
-                        if (dist8x16 < cmInterCost16x16)
-                            cmInterCost16x16 = dist8x16; 
+                        //if (dist16x8 < cmInterCost16x16)
+                        //    cmInterCost16x16 = dist16x8; 
+                        //if (dist8x16 < cmInterCost16x16)
+                        //    cmInterCost16x16 = dist8x16; 
                         if (dist8x8 < cmInterCost16x16)
                             cmInterCost16x16 = dist8x8; 
-                        if (dist8x4 < cmInterCost16x16)
-                            cmInterCost16x16 = dist8x4; 
-                        if (dist4x8 < cmInterCost16x16)
-                            cmInterCost16x16 = dist4x8;
+                        //if (dist8x4 < cmInterCost16x16)
+                        //    cmInterCost16x16 = dist8x4; 
+                        //if (dist4x8 < cmInterCost16x16)
+                        //    cmInterCost16x16 = dist4x8;
                     }
                     cmInterCost += cmInterCost16x16;
                 }
