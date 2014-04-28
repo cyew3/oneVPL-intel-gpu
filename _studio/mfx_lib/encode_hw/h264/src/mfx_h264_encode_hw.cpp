@@ -758,14 +758,13 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
             m_video.mfx.MaxKbps = m_video.mfx.TargetKbps*2;
             extOpt2->LookAheadDepth = 0;
         }
+        m_brc.Init(m_video);
         if (extOpt2->MaxSliceSize)
         {
             m_video.mfx.RateControlMethod = MFX_RATECONTROL_VBR;
             m_video.mfx.MaxKbps = storedMaxKbps;
             extOpt2->LookAheadDepth = storedLookAheadDepth;
-        }
-        m_brc.Init(m_video);
-        
+        }        
         m_video.mfx.RateControlMethod = MFX_RATECONTROL_CQP;
         sts = m_ddi->CreateAccelerationService(m_video);
         if (sts != MFX_ERR_NONE)
