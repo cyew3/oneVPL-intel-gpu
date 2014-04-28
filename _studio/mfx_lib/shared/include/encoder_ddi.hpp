@@ -1693,10 +1693,10 @@ typedef struct tagENCODE_CPUPAK_FRAMEUPDATE_VP8
     UINT    PrevFrameSize;
     BOOL    TwoPrevFrameFlag;
     USHORT  RefFrameCost[4];
-    USHORT  IntraModeCost[4][4];
+    USHORT  IntraModeCost[4];
     USHORT  InterModeCost[4];
-    UCHAR   IntraNonDCPenalty16x16[4];
-    UCHAR   IntraNonDCPenalty4x4[4];
+    USHORT  IntraNonDCPenalty16x16;
+    USHORT  IntraNonDCPenalty4x4;
 } ENCODE_CPUPAK_FRAMEUPDATE_VP8;
 
 

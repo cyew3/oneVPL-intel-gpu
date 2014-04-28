@@ -1074,8 +1074,8 @@ namespace MFX_VP8ENC
         {
             m_costs.IntraModeCost[MODE_INTRA_16x16] = mbmodecost[VP8_MB_DC_PRED];
             m_costs.IntraModeCost[MODE_INTRA_4x4]   = mbmodecost[VP8_MB_B_PRED] + 3645;
-            //m_costs.IntraNonDCPenalty16x16 = (899 - mbmodecost[VP8_MB_DC_PRED]);
-            //m_costs.IntraNonDCPenalty4x4 = 1157;
+            m_costs.IntraNonDCPenalty16x16 = (899 - mbmodecost[VP8_MB_DC_PRED]);
+            m_costs.IntraNonDCPenalty4x4 = 1157;
         }
         else
         {
@@ -1091,8 +1091,8 @@ namespace MFX_VP8ENC
 
             m_costs.IntraModeCost[MODE_INTRA_16x16] = IntraModeCostLuma[VP8_MB_DC_PRED];
             m_costs.IntraModeCost[MODE_INTRA_4x4] = IntraModeCostLuma[VP8_MB_B_PRED] + IntraSubModeCost[VP8_B_DC_PRED]*16;
-            m_costs.IntraNonDCPenalty16x16 = U8(IntraModeCostLuma[VP8_MB_V_PRED] - IntraModeCostLuma[VP8_MB_DC_PRED]);
-            m_costs.IntraNonDCPenalty4x4 = U8(IntraSubModeCost[VP8_B_HE_PRED] - IntraModeCostLuma[VP8_B_DC_PRED]);
+            m_costs.IntraNonDCPenalty16x16 = IntraModeCostLuma[VP8_MB_V_PRED] - IntraModeCostLuma[VP8_MB_DC_PRED];
+            m_costs.IntraNonDCPenalty4x4 = IntraSubModeCost[VP8_B_HE_PRED] - IntraModeCostLuma[VP8_B_DC_PRED];
         
             m_costs.InterModeCost[MODE_INTER_16x16] =0;
             m_costs.InterModeCost[MODE_INTER_16x8] = MvPartitionCost[VP8_MV_TOP_BOTTOM] +  SubMvRefCost[VP8_B_MV_NEW]

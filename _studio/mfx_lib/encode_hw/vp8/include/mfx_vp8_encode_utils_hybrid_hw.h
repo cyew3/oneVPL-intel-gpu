@@ -62,8 +62,8 @@ namespace MFX_VP8ENC
         mfxU16  RefFrameCost[4];
         mfxU16  IntraModeCost[4];
         mfxU16  InterModeCost[4];
-        mfxU8   IntraNonDCPenalty16x16;
-        mfxU8   IntraNonDCPenalty4x4;
+        mfxU16  IntraNonDCPenalty16x16;
+        mfxU16  IntraNonDCPenalty4x4;
     } VP8HybridCosts;
 
     class TaskHybridDDI: public TaskHybrid
