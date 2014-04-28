@@ -58,11 +58,7 @@ mfxStatus mfxCOREGetCoreParam(mfxHDL pthis, mfxCoreParam *par)
         {
             return mfxRes;
         }
-        mfxRes = MFXQueryVersion(session, &(par->Version));
-        if (MFX_ERR_NONE != mfxRes)
-        {
-            return mfxRes;
-        }
+        par->Version = session->m_version;
         par->NumWorkingThread = param.numberOfThreads;
     }
     // handle error(s)

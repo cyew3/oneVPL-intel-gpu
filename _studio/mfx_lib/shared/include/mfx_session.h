@@ -124,7 +124,7 @@ struct _mfxSession
     MFXIScheduler *m_pScheduler;
     // Priority of the given session instance
     mfxPriority m_priority;
-    // actual version of API
+    // API version requested by application
     mfxVersion  m_version;
 
     MFXIPtr<OperatorCORE> m_pOperatorCore;
