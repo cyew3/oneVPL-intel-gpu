@@ -309,9 +309,10 @@ mfxDefaultAllocatorVAAPI::LockFrameHW(
     VAStatus  va_res  = VA_STATUS_SUCCESS;
     vaapiMemIdInt* vaapi_mids = (vaapiMemIdInt*)mid;
     mfxU8* pBuffer = 0;
-    mfxU32 mfx_fourcc = ConvertVP8FourccToMfxFourcc(vaapi_mids->m_fourcc);
 
     if (!vaapi_mids || !(vaapi_mids->m_surface)) return MFX_ERR_INVALID_HANDLE;
+
+    mfxU32 mfx_fourcc = ConvertVP8FourccToMfxFourcc(vaapi_mids->m_fourcc);
 
     if (MFX_FOURCC_P8 == mfx_fourcc)   // bitstream processing
     {

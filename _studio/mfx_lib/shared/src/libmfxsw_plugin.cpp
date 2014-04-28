@@ -82,6 +82,7 @@ namespace
                 _isNeedCodec = false;
                 _isNeedDeCoder = false;
                 _isNeedVPP = false;
+                _isNeedEnc = false;
                 break;
             default : 
                 //unknown plugin type
