@@ -79,29 +79,6 @@ namespace
     #define alignStr() "%-14S"
 }
 
- bool MFX::MFXPluginStorageBase::ConvertAPIVersion(mfxU32 APIVersion, PluginDescriptionRecord &descriptionRecord) const
- {
-     descriptionRecord.APIVersion.Minor = static_cast<mfxU16> (APIVersion & 0x0ff);
-     descriptionRecord.APIVersion.Major = static_cast<mfxU16> (APIVersion >> 8);
-
-     if (mCurrentAPIVersion.Version < descriptionRecord.APIVersion.Version ||
-         mCurrentAPIVersion.Major > descriptionRecord.APIVersion.Major) 
-     {
-         TRACE_HIVE_ERROR(alignStr()" : %d.%d, but current MediasSDK version : %d.%d\n"
-             , APIVerKeyName
-             , descriptionRecord.APIVersion.Major
-             , descriptionRecord.APIVersion.Minor
-             , mCurrentAPIVersion.Major
-             , mCurrentAPIVersion.Minor);
-         return false;
-     }
-
-     TRACE_HIVE_INFO(alignStr()" : {%d.%d}\n", APIVerKeyName, descriptionRecord.APIVersion.Major, descriptionRecord.APIVersion.Minor);
-     return true;
-
-}
-
-
 MFX::MFXPluginsInHive::MFXPluginsInHive(int mfxStorageID, const msdk_disp_char *msdkLibSubKey, mfxVersion currentAPIVersion)
     : MFXPluginStorageBase(currentAPIVersion)
 {
@@ -234,11 +211,8 @@ MFX::MFXPluginsInHive::MFXPluginsInHive(int mfxStorageID, const msdk_disp_char *
         {
             continue;
         }
-
-        if (!ConvertAPIVersion(APIVersion, descriptionRecord)) {
-            continue;
-        }
-
+        ConvertAPIVersion(APIVersion, descriptionRecord);
+        TRACE_HIVE_INFO(alignStr()" : %d.%d \n", APIVerKeyName, descriptionRecord.APIVersion.Major, descriptionRecord.APIVersion.Minor);
 
         try 
         {
@@ -428,11 +402,9 @@ bool MFX::MFXPluginsInFS::ParseKVPair( msdk_disp_char * key, msdk_disp_char* val
             return false;
         }
 
-        if (!ConvertAPIVersion(APIversion, descriptionRecord)) {
-            return false;
-        }
-
+        ConvertAPIVersion(APIversion, descriptionRecord);
         TRACE_HIVE_INFO("%S: %S = %d.%d \n", pluginCfgFileName, APIVerKeyName, descriptionRecord.APIVersion.Major, descriptionRecord.APIVersion.Minor);
+
         mIsAPIVersionParsed = true;
         return true;
     }

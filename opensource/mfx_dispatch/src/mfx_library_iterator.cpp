@@ -273,9 +273,6 @@ mfxStatus MFXLibraryIterator::SelectDLLVersion(wchar_t *pPath
 
     if (m_StorageID == MFX_APP_FOLDER)
     {
-        if (minVersion.Major > 1 || minVersion.Minor < 8)
-            return MFX_ERR_UNSUPPORTED;
-
         if (m_lastLibIndex != 0)
             return MFX_ERR_NOT_FOUND;
 
@@ -389,19 +386,6 @@ mfxStatus MFXLibraryIterator::SelectDLLVersion(wchar_t *pPath
                             DISPATCHER_LOG_WRN((("%S conflict, actual = 0x%x : required = 0x%x\n"), deviceIDKeyName, m_deviceID, deviceID));
                         }
                     }
-                    else if (MFX_LIB_SOFTWARE == m_implType)
-                    {
-                        if (0 != vendorID) 
-                        {
-                            bRes = false;
-                            DISPATCHER_LOG_WRN((("%S conflict, required = 0x%x should be 0 for software implementation\n"), vendorIDKeyName, vendorID));
-                        }
-                        if (bRes && 0 != deviceID)
-                        {
-                            bRes = false;
-                            DISPATCHER_LOG_WRN((("%S conflict, required = 0x%x should be 0 for software implementation\n"), deviceIDKeyName, deviceID));
-                        }
-                    }
 
                     DISPATCHER_LOG_OPERATION({
                     if (bRes)
@@ -429,14 +413,9 @@ mfxStatus MFXLibraryIterator::SelectDLLVersion(wchar_t *pPath
                         else
                         {
                             DISPATCHER_LOG_INFO((("loaded %S : %S\n"), pathKeyName, tmpPath));
-                         
-#if _MSC_VER >= 1400
-                            wcscpy_s(libPath, sizeof(libPath) / sizeof(libPath[0]), tmpPath);
-                            wcscpy_s(m_SubKeyName, sizeof(m_SubKeyName) / sizeof(m_SubKeyName[0]), subKeyName);
-#else
-                            wcscpy(libPath, tmpPath);
-                            wcscpy(m_SubKeyName, subKeyName);
-#endif
+
+                            msdk_disp_char_cpy_s(libPath, sizeof(libPath) / sizeof(libPath[0]), tmpPath);
+                            msdk_disp_char_cpy_s(m_SubKeyName, sizeof(m_SubKeyName) / sizeof(m_SubKeyName[0]), subKeyName);
 
                             libMerit = merit;
                             libIndex = index;
@@ -471,11 +450,7 @@ mfxStatus MFXLibraryIterator::SelectDLLVersion(wchar_t *pPath
         return MFX_ERR_NOT_FOUND;
     }
 
-#if _MSC_VER >= 1400
-    wcscpy_s(pPath, pathSize, libPath);
-#else
-    wcscpy(pPath, libPath);
-#endif
+    msdk_disp_char_cpy_s(pPath, pathSize, libPath);
 
     m_lastLibIndex = libIndex;
     m_lastLibMerit = libMerit;
@@ -492,7 +467,7 @@ mfxIMPL MFXLibraryIterator::GetImplementationType()
 
 bool MFXLibraryIterator::GetSubKeyName(msdk_disp_char *subKeyName, size_t length) const
 {
-    wcscpy_s(subKeyName, length, m_SubKeyName);
+    msdk_disp_char_cpy_s(subKeyName, length, m_SubKeyName);
     return m_bIsSubKeyValid;
 }
 } // namespace MFX

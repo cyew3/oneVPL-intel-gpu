@@ -138,8 +138,9 @@ struct MFX_DISP_HANDLE
     // A real handle passed to a called function
     mfxSession session;
     // Required API version of session initialized
-    const
-    mfxVersion apiVersion;
+    const mfxVersion apiVersion;
+    // Actual library API version
+    mfxVersion actualApiVersion;
     // Status of loaded dll
     mfxStatus loadStatus;
     // Resgistry subkey name for windows version

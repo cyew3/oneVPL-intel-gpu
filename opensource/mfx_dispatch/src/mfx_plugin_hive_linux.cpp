@@ -148,22 +148,6 @@ static bool CheckPluginRecord(PluginDescriptionRecord & descriptionRecord, mfxU3
     return true;
 }
 
-bool MFXPluginStorageBase::ConvertAPIVersion(mfxU32 APIVersion, PluginDescriptionRecord &descriptionRecord) const
-{
-    if (mCurrentAPIVersion.Version < descriptionRecord.APIVersion.Version ||
-        mCurrentAPIVersion.Major > descriptionRecord.APIVersion.Major) 
-    {
-        TRACE_HIVE_ERROR(alignStr()" : %d.%d, but current MediasSDK version : %d.%d\n"
-            , APIVerKeyName
-            , descriptionRecord.APIVersion.Major
-            , descriptionRecord.APIVersion.Minor
-            , mCurrentAPIVersion.Major
-            , mCurrentAPIVersion.Minor);
-        return false;
-    }
-    return true;
-}
-
 MFXPluginsInHive::MFXPluginsInHive(int, const msdk_disp_char* msdkLibSubKey, mfxVersion currentAPIVersion)
     : MFXPluginStorageBase(currentAPIVersion)
 {
@@ -214,8 +198,6 @@ MFXPluginsInHive::MFXPluginsInHive(int, const msdk_disp_char* msdkLibSubKey, mfx
 
             if (CheckPluginRecord(descriptionRecord, foundFields, reqs))
             {
-                if (!ConvertAPIVersion(0, descriptionRecord))
-                    continue;
                 (*this)[index] = descriptionRecord;
             }
             else
@@ -345,8 +327,6 @@ MFXPluginsInFS::MFXPluginsInFS(mfxVersion currentAPIVersion)
 
                 if (CheckPluginRecord(descriptionRecord, foundFields, reqs))
                 {
-                    if (!ConvertAPIVersion(0, descriptionRecord))
-                        continue;
                     push_back(descriptionRecord);
                 }
             }

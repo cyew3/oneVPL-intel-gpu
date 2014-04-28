@@ -46,6 +46,7 @@ MFX_DISP_HANDLE::MFX_DISP_HANDLE(const mfxVersion requiredVersion) :
     apiVersion(requiredVersion),
     pluginFactory((mfxSession)this)
 {
+    actualApiVersion.Version = 0;
     implType = MFX_LIB_SOFTWARE;
     impl = MFX_IMPL_SOFTWARE;
     loadStatus = MFX_ERR_NOT_FOUND;
@@ -246,9 +247,18 @@ mfxStatus MFX_DISP_HANDLE::LoadSelectedDLL(const msdk_disp_char *pPath, eMfxImpl
         }
         else
         {
-            //special hook for applications that uses sink api to get loaded library path
-            DISPATCHER_LOG_LIBRARY(("%p" , hModule));
-            DISPATCHER_LOG_INFO(("library loaded succesfully\n"))
+            mfxRes = MFXQueryVersion((mfxSession) this, &actualApiVersion);
+            if (MFX_ERR_NONE != mfxRes)
+            {
+                DISPATCHER_LOG_ERROR((("MFXQueryVersion returned: %d, skiped this library\n"), mfxRes))
+            }
+            else
+            {
+                DISPATCHER_LOG_INFO((("MFXQueryVersion returned API: %d.%d\n"), actualApiVersion.Major, actualApiVersion.Minor))
+                //special hook for applications that uses sink api to get loaded library path
+                DISPATCHER_LOG_LIBRARY(("%p" , hModule));
+                DISPATCHER_LOG_INFO(("library loaded succesfully\n"))
+            }
         }
     }
 

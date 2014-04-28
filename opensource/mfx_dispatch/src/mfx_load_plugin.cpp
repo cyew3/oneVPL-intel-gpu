@@ -149,16 +149,7 @@ bool MFX::MFXPluginFactory::RunVerification( const mfxPlugin & plg, const Plugin
     if (dsc.Default)
     {
         // for default plugins there is no description, dsc.APIVersion, dsc.PluginVersion and dsc.PluginUID were set by dispatcher
-        // dsc.APIVersion == loaded library API
-        if (dsc.APIVersion.Major != pluginParams.APIVersion.Major ||
-            dsc.APIVersion.Minor < pluginParams.APIVersion.Minor)
-        {
-            TRACE_PLUGIN_ERROR("plg->GetPluginParam() returned APIVersion=%d.%d, but current MediasSDK version : %d.%d\n"
-                , pluginParams.APIVersion.Major, pluginParams.APIVersion.Minor
-                , dsc.APIVersion.Major, dsc.APIVersion.Minor);
-            return false;
-        }
-        // dsc.PluginVersion == requested plugin version (parameter of MFXVideoUSER_Load)
+        // dsc.PluginVersion == requested plugin version (parameter of MFXVideoUSER_Load); dsc.APIVersion == loaded library API
         if (dsc.PluginVersion > pluginParams.PluginVersion)
         {
             TRACE_PLUGIN_ERROR("plg->GetPluginParam() returned PluginVersion=%d, but it is smaller than requested : %d\n", pluginParams.PluginVersion, dsc.PluginVersion);

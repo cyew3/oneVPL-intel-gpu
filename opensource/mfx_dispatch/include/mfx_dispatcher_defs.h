@@ -39,7 +39,13 @@ File Name: mfx_dispatcher_defs.h
 #if defined(_WIN32) || defined(_WIN64)
 typedef wchar_t  msdk_disp_char;
 #define MSDK2WIDE(x) x
-#define msdk_disp_char_cpy_s(to, to_size, from) wcscpy_s(to,to_size, from)
+
+#if _MSC_VER >= 1400
+    #define msdk_disp_char_cpy_s(to, to_size, from) wcscpy_s(to,to_size, from)
+#else
+    #define msdk_disp_char_cpy_s(to, to_size, from) wcscpy(to, from)
+#endif
+
 #else
 typedef char msdk_disp_char;
 #define msdk_disp_char_cpy_s(to, to_size, from) strcpy(to, from)

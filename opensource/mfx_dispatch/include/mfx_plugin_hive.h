@@ -94,7 +94,11 @@ namespace MFX {
             : mCurrentAPIVersion(currentAPIVersion)
         {
         }
-        bool ConvertAPIVersion( mfxU32 APIVersion, PluginDescriptionRecord &descriptionRecord) const;
+        void ConvertAPIVersion( mfxU32 APIVersion, PluginDescriptionRecord &descriptionRecord) const
+        {
+            descriptionRecord.APIVersion.Minor = static_cast<mfxU16> (APIVersion & 0x0ff);
+            descriptionRecord.APIVersion.Major = static_cast<mfxU16> (APIVersion >> 8);
+        }
     };
 
     //populated from registry
