@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2006-2013 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2006-2014 Intel Corporation. All Rights Reserved.
 */
 
 #ifdef _DEBUG
@@ -412,7 +412,7 @@ static const GuidProfile guidProfiles[] =
     { VA_H264 | VA_VLD | VA_PROFILE_MVC_STEREO_PROG,   sDXVA_ModeH264_VLD_Stereo_Progressive_NoFGT },
 
     { VA_H265 | VA_VLD, DXVA_ModeHEVC_VLD_Main }, // MS
-    { VA_H265 | VA_VLD, DXVA_Intel_ModeHEVC_VLD_MainProfile }
+    { VA_H265 | VA_VLD | VA_LONG_SLICE_MODE, DXVA_Intel_ModeHEVC_VLD_MainProfile }
 };
 
 const GuidProfile * GuidProfile::GetGuidProfiles()
@@ -522,7 +522,7 @@ Status DXVA2Accelerator::FindConfiguration(VideoStreamInfo *pVideoInfo)
     {
         for (Ipp32u k = 0; k < GuidProfile::GetGuidProfileSize(); k++)
         {
-            if ((m_Profile & (VA_ENTRY_POINT | VA_CODEC))!= GuidProfile::GetGuidProfile(k)->profile)
+            if ((m_Profile & (VA_ENTRY_POINT | VA_CODEC))!= (GuidProfile::GetGuidProfile(k)->profile & (VA_ENTRY_POINT | VA_CODEC)))
                 continue;
 
             m_guidDecoder = GuidProfile::GetGuidProfile(k)->guid;

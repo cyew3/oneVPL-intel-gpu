@@ -89,6 +89,9 @@ bool H265DecoderFrameInfo::IsCompleted() const
     if (GetStatus() == H265DecoderFrameInfo::STATUS_COMPLETED)
         return true;
 
+    if (!m_pFrame->getCD())
+        return false;
+
     Ipp32s maxCUAddr = m_pFrame->getCD()->m_NumCUsInFrame;
     for (Ipp32s i = 0; i < LAST_PROCESS_ID; i++)
     {

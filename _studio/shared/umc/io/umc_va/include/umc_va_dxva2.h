@@ -207,9 +207,13 @@ bool CheckDXVAConfig(Ipp32s profile_flags, T *config, ProtectedVA * protectedVA)
         break;
 
     case H265_VLD:
-        res = true;
+        if (profile_flags & VA_LONG_SLICE_MODE)
+            res = (2 == config->ConfigBitstreamRaw);
+        else if (profile_flags & VA_SHORT_SLICE_MODE)
+            res = (1 == config->ConfigBitstreamRaw);
+        else
+            res = (1 == config->ConfigBitstreamRaw || 2 == config->ConfigBitstreamRaw);
         break;
-
 
     default:
         break;
