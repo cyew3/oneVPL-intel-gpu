@@ -170,22 +170,6 @@ mfxStatus VideoUSERPlugin::PluginInit(const mfxPlugin *pParam,
         return mfxRes;
     }
 
-    if (type != MFX_PLUGINTYPE_VIDEO_GENERAL)
-    {
-        mfxVersion libAPI;
-        mfxRes = MFXQueryVersion(session, &libAPI);
-        if (MFX_ERR_NONE != mfxRes)
-        {
-            return mfxRes;
-        }
-
-        if (m_param.APIVersion.Major != libAPI.Major ||
-            m_param.APIVersion.Minor >  libAPI.Minor)
-        {
-            return MFX_ERR_UNSUPPORTED;
-        }
-    }
-
     // initialize the default 'entry point' structure
     m_entryPoint.pState = m_plugin.pthis;
     m_entryPoint.pRoutine = m_plugin.Execute;
