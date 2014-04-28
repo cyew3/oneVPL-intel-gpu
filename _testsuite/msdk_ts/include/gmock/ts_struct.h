@@ -38,6 +38,7 @@ public:
 void check_eq(void* base, Field field, mfxU64 expected);
 void check_ne(void* base, Field field, mfxU64 expected);
 inline void set(void* base, const Field field, mfxU64 value) { memcpy((mfxU8*)base + field.offset, &value, field.size); }
+inline mfxU64 get(void* base, const Field field) { mfxU64 value = 0; memcpy(&value, (mfxU8*)base + field.offset, field.size); return value; }
 
 #define STRUCT(name, fields)                        \
     class Wrap_##name : public Field                \

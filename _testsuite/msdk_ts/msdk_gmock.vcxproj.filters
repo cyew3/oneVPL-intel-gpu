@@ -148,5 +148,8 @@
     <ClCompile Include="src\gmock\test_suites\avce_roi.cpp">
       <Filter>Source Files\test_suites</Filter>
     </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\hevcd_query.cpp">
+      <Filter>Source Files\test_suites</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>
