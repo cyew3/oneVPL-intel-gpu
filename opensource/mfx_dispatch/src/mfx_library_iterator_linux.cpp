@@ -225,7 +225,8 @@ static mfxU32 mfx_list_libraries(const char* path, bool search_hw, struct mfx_li
             if (tmp_libs)
             {
                 libs = tmp_libs;
-                strncpy(libs[libs_num].name, dir_entries[i]->d_name, MFX_MAX_REAL_LIBNAME+1);
+                strncpy(libs[libs_num].name, dir_entries[i]->d_name, MFX_MAX_REAL_LIBNAME);
+                libs[libs_num].name[MFX_MAX_REAL_LIBNAME] = 0;
                 libs[libs_num].version.Major = (mfxU16)major;
                 libs[libs_num].version.Minor = (mfxU16)minor;
                 ++libs_num;
