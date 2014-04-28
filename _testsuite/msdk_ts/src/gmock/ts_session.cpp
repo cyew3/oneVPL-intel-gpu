@@ -81,6 +81,13 @@ mfxStatus tsSession::Load(mfxSession session, const mfxPluginUID *uid, mfxU32 ve
     return g_tsStatus.get();
 }
 
+mfxStatus tsSession::UnLoad(mfxSession session, const mfxPluginUID *uid)
+{
+    TRACE_FUNC2(MFXVideoUSER_UnLoad, session, uid);
+    g_tsStatus.check( MFXVideoUSER_UnLoad(session, uid) );
+    return g_tsStatus.get();
+}
+
 mfxStatus tsSession::SetHandle(mfxSession session, mfxHandleType type, mfxHDL handle)
 {
     TRACE_FUNC3(MFXVideoCORE_SetHandle, session, type, handle);

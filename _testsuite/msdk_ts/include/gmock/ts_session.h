@@ -30,6 +30,9 @@ public:
     mfxStatus SetFrameAllocator();
     mfxStatus SetFrameAllocator(mfxSession session, mfxFrameAllocator *allocator);
 
+    mfxStatus MFX_CDECL MFXQueryIMPL(mfxSession session, mfxIMPL *impl);
+
     mfxStatus Load(mfxSession session, const mfxPluginUID *uid, mfxU32 version);
+    mfxStatus UnLoad(mfxSession session, const mfxPluginUID *uid);
     mfxStatus SetHandle(mfxSession session, mfxHandleType type, mfxHDL handle);
 };
