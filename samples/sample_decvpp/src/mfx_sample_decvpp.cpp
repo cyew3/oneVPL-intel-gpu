@@ -166,7 +166,7 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
                 PrintHelp(strInput[0], MSDK_STRING("Not enough parameters for -async key"));
                 return MFX_ERR_UNSUPPORTED;
             }
-            if (MFX_ERR_NONE == msdk_opt_read(strInput[++i], &pParams->nAsyncDepth))
+            if (MFX_ERR_NONE != msdk_opt_read(strInput[++i], &pParams->nAsyncDepth))
             {
                 PrintHelp(strInput[0], MSDK_STRING("async is invalid"));
                 return MFX_ERR_UNSUPPORTED;
