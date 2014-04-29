@@ -194,9 +194,6 @@ void H265TrQuant::InvRecurTransformNxN(H265CodingUnit* pCU, Ipp32u AbsPartIdx, I
 
     if(TrMode == StopTrMode)
     {
-        Ipp32u NumCoeffInc = m_context->m_sps->MinCUSize * m_context->m_sps->MinCUSize;
-        size_t coeffsOffset = NumCoeffInc * AbsPartIdx;
-
         if (lumaPresent)
         {
             Ipp32u DstStride = pCU->m_Frame->pitch_luma();
@@ -217,7 +214,6 @@ void H265TrQuant::InvRecurTransformNxN(H265CodingUnit* pCU, Ipp32u AbsPartIdx, I
                     return;
                 }
                 AbsPartIdx -= 3;
-                coeffsOffset = NumCoeffInc * AbsPartIdx;
             } else {
                 Size >>= 1;
             }

@@ -73,8 +73,6 @@ public:
 
     void AddSlice(H265Slice * pSlice)
     {
-        m_refPicList.resize(pSlice->GetSliceNum() + 1);
-
         m_pSliceQueue.push_back(pSlice);
         m_SliceCount++;
 
@@ -86,7 +84,7 @@ public:
         m_isNeedSAO = m_isNeedSAO || (sliceHeader.slice_sao_luma_flag || sliceHeader.slice_sao_chroma_flag);
         m_hasTiles = pSlice->GetPicParam()->getNumTiles() > 1;
 
-        m_WA_diffrent_disable_deblocking = m_WA_diffrent_disable_deblocking || (sliceHeader.slice_deblocking_filter_disabled_flag != m_pSliceQueue[0]->GetSliceHeader()->slice_deblocking_filter_disabled_flag);
+        m_WA_different_disable_deblocking = m_WA_different_disable_deblocking || (sliceHeader.slice_deblocking_filter_disabled_flag != m_pSliceQueue[0]->GetSliceHeader()->slice_deblocking_filter_disabled_flag);
 
         if (!m_sps)
         {
@@ -179,22 +177,8 @@ public:
 
     bool IsNeedWorkAroundForDeblocking() const
     {
-        return m_WA_diffrent_disable_deblocking;
+        return m_WA_different_disable_deblocking;
     }
-
-    H265_FORCEINLINE H265DecoderRefPicList* GetRefPicList(Ipp32u sliceNumber, Ipp32s list)
-    {
-        VM_ASSERT(list <= REF_PIC_LIST_1 && list >= 0);
-
-        if (sliceNumber >= m_refPicList.size())
-        {
-            return 0;
-        }
-
-        return &m_refPicList[sliceNumber].m_refPicList[list];
-    };
-
-    bool CheckReferenceFrameError();
 
     // Initialize tiles and slices threading information
     void FillTileInfo();
@@ -233,37 +217,12 @@ private:
     bool m_isIntraAU;
     bool m_hasDependentSliceSegments;
 
-    bool m_WA_diffrent_disable_deblocking;
+    bool m_WA_different_disable_deblocking;
 
     H265DecoderFrameInfo *m_nextAU;
     H265DecoderFrameInfo *m_prevAU;
     H265DecoderFrameInfo *m_refAU;
-
-    struct H265DecoderRefPicListPair
-    {
-    public:
-        H265DecoderRefPicList m_refPicList[2];
-    };
-
-    // ML: OPT: TODO: std::vector<> results with relatively slow access code
-    std::vector<H265DecoderRefPicListPair> m_refPicList;
-
-    class FakeFrameInitializer
-    {
-    public:
-        FakeFrameInitializer();
-    };
-
-    static FakeFrameInitializer g_FakeFrameInitializer;
 };
-
-#if defined(_WIN32) || defined(_WIN64)
-// RefPicList. Returns pointer to start of specified ref pic list.
-H265_FORCEINLINE H265DecoderRefPicList* H265DecoderFrame::GetRefPicList(Ipp32s sliceNumber, Ipp32s list) const
-{
-    return GetAU()->GetRefPicList(sliceNumber, list);
-}
-#endif
 
 } // namespace UMC_HEVC_DECODER
 

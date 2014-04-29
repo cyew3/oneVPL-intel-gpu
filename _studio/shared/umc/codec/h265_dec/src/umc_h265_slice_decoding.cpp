@@ -415,9 +415,6 @@ UMC::Status H265Slice::UpdateReferenceList(H265DBPList *pDecoderFrameList)
 
     if (GetSliceHeader()->slice_type == I_SLICE)
     {
-        m_pCurrentFrame->GetRefPicList(m_iNumber, 0)->Reset();
-        m_pCurrentFrame->GetRefPicList(m_iNumber, 1)->Reset();
-
         for (Ipp32s number = 0; number < 3; number++)
             GetSliceHeader()->m_numRefIdx[number] = 0;
 
@@ -541,7 +538,6 @@ UMC::Status H265Slice::UpdateReferenceList(H265DBPList *pDecoderFrameList)
     if (GetSliceHeader()->slice_type == P_SLICE)
     {
         GetSliceHeader()->m_numRefIdx[1] = 0;
-        m_pCurrentFrame->GetRefPicList(m_iNumber, 1)->Reset();
     }
     else
     {

@@ -15,11 +15,8 @@
 #define __UMC_H265_SEGMENT_DECODER_H
 
 #include "umc_h265_tables.h"
-
-#include "umc_h265_thread.h"
 #include "umc_h265_frame.h"
 #include "umc_h265_bitstream.h"
-
 #include "umc_h265_prediction.h"
 #include "mfx_h265_optimization.h"
 

@@ -16,15 +16,12 @@
 #define __H265_FRAME_CODING_DATA_H
 
 #include "umc_h265_dec_defs.h"
-#include "umc_h265_coding_unit.h"
 #include "umc_h265_motion_info.h"
-
 #include "umc_h265_sao.h"
+#include "umc_h265_coding_unit.h"
 
 namespace UMC_HEVC_DECODER
 {
-class H265CodingUnit;
-struct H265CodingUnitData;
 
 // Partition indexes conversion tables
 class PartitionInfo
@@ -88,7 +85,7 @@ public:
     Ipp32s m_NumPartInWidth;
     Ipp32s m_NumCUsInFrame;
 
-    H265CodingUnit **m_CU;
+    H265CodingUnit *m_CU;
     std::vector<H265CodingUnitData> m_cuData;
     Ipp8u * m_cumulativeMemoryPtr;
 
@@ -145,9 +142,9 @@ public:
     H265FrameCodingData();
     ~H265FrameCodingData();
 
-    H265CodingUnit*  getCU(Ipp32u CUAddr) const
+    H265CodingUnit* getCU(Ipp32u CUAddr) const
     {
-        return m_CU[CUAddr];
+        return &m_CU[CUAddr];
     }
 
     Ipp32u getNumPartInCU()

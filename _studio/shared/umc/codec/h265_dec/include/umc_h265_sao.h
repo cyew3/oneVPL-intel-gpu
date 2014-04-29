@@ -18,6 +18,7 @@
 
 namespace UMC_HEVC_DECODER
 {
+class H265DecoderFrame;
 
 // SAO constants
 enum SAOTypeLen

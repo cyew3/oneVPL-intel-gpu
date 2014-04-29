@@ -1008,6 +1008,10 @@ mfxStatus VideoDECODEH265::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1 *
 
         return ConvertUMCStatusToMfx(ex.GetStatus());
     }
+    catch(const std::bad_alloc &)
+    {
+        return MFX_ERR_MEMORY_ALLOC;
+    }
     catch(...)
     {
         return MFX_ERR_UNKNOWN;

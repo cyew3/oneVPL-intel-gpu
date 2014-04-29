@@ -12,6 +12,7 @@
 #ifdef UMC_ENABLE_H265_VIDEO_DECODER
 
 #include "umc_h265_frame_coding_data.h"
+#include "umc_h265_heap.h"
 
 namespace UMC_HEVC_DECODER
 {
@@ -138,7 +139,7 @@ void H265FrameCodingData::create(Ipp32s iPicWidth, Ipp32s iPicHeight, Ipp32u uiM
     m_NumCUsInFrame = m_WidthInCU * m_HeightInCU;
 
 #ifndef MFX_VA
-    m_CU = h265_new_array_throw<H265CodingUnit*>(m_NumCUsInFrame + 1);
+    m_CU = h265_new_array_throw<H265CodingUnit>(m_NumCUsInFrame + 1);
 
     m_colocatedInfo = h265_new_array_throw<H265MVInfo>(m_NumCUsInFrame * m_NumPartitions);
 
@@ -161,25 +162,22 @@ void H265FrameCodingData::create(Ipp32s iPicWidth, Ipp32s iPicHeight, Ipp32u uiM
 
     for (Ipp32s i = 0; i < m_NumCUsInFrame; i++)
     {
-        m_CU[i] = new H265CodingUnit;
-        m_CU[i]->create (this, i);
+        m_CU[i].create (this, i);
 
-        m_CU[i]->m_lumaIntraDir = lumaIntraDir;
-        m_CU[i]->m_chromaIntraDir = chromaIntraDir;
+        m_CU[i].m_lumaIntraDir = lumaIntraDir;
+        m_CU[i].m_chromaIntraDir = chromaIntraDir;
 
         lumaIntraDir += m_NumPartitions;
         chromaIntraDir += m_NumPartitions;
 
-        m_CU[i]->m_cbf[0] = cbf[0];
-        m_CU[i]->m_cbf[1] = cbf[1];
-        m_CU[i]->m_cbf[2] = cbf[2];
+        m_CU[i].m_cbf[0] = cbf[0];
+        m_CU[i].m_cbf[1] = cbf[1];
+        m_CU[i].m_cbf[2] = cbf[2];
 
         cbf[0] += m_NumPartitions;
         cbf[1] += m_NumPartitions;
         cbf[2] += m_NumPartitions;
     }
-
-    m_CU[m_NumCUsInFrame] = 0;
 
     // Allocate edges array for deblocking
     Ipp32s m_edgesInCTBSize = m_MaxCUWidth >> 3;
@@ -193,21 +191,15 @@ void H265FrameCodingData::create(Ipp32s iPicWidth, Ipp32s iPicHeight, Ipp32u uiM
 void H265FrameCodingData::destroy()
 {
 #ifndef MFX_VA
+
+    delete[] m_CU;
+    m_CU = 0;
+
     if (m_cumulativeMemoryPtr)
     {
         CumulativeFree(m_cumulativeMemoryPtr);
         m_cumulativeMemoryPtr = 0;
     }
-
-    for (Ipp32s i = 0; i < m_NumCUsInFrame; i++)
-    {
-        m_CU[i]->destroy();
-        delete m_CU[i];
-        m_CU[i] = 0;
-    }
-
-    delete [] m_CU;
-    m_CU = 0;
 
     delete[] m_colocatedInfo;
     m_colocatedInfo = 0;
@@ -240,6 +232,8 @@ void H265FrameCodingData::initSAO(const H265SeqParamSet* sps)
             m_sizeOfSAOData = size;
         }
     }
+#else
+    sps;
 #endif
 }
 

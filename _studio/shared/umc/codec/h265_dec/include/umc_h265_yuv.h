@@ -16,7 +16,6 @@
 
 #include "umc_h265_dec_defs.h"
 #include "umc_video_decoder.h"
-//#include "umc_default_memory_allocator.h"
 #include "umc_frame_data.h"
 
 namespace UMC_HEVC_DECODER

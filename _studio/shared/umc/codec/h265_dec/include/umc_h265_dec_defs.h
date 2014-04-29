@@ -852,7 +852,7 @@ struct H265SeqParamSetBase
     Ipp32s AddCUDepth;
     Ipp32u WidthInCU;
     Ipp32u HeightInCU;
-    Ipp32u NumPartitionsInCU, NumPartitionsInCUSize, NumPartitionsInFrameWidth, NumPartitionsInFrameHeight;
+    Ipp32u NumPartitionsInCU, NumPartitionsInCUSize, NumPartitionsInFrameWidth;
     Ipp32u m_maxTrSize;
 
     Ipp32s m_AMPAcc[MAX_CU_DEPTH]; //AMP Accuracy
@@ -1403,6 +1403,26 @@ static void H265_FORCEINLINE  small_memcpy( void* dst, const void* src, int len 
     MFX_INTERNAL_CPY(dst, src, len);
 #endif
 }
+
+// ML: OPT: significant overhead if not inlined (ICC does not honor implied 'inline' with -Qipo)
+// ML: OPT: TODO: Make sure compiler recognizes saturation idiom for vectorization when used
+#if 1
+#define Clip3( m_Min, m_Max, m_Value) ( (m_Value) < (m_Min) ? \
+                                                  (m_Min) : \
+                                                ( (m_Value) > (m_Max) ? \
+                                                              (m_Max) : \
+                                                              (m_Value) ) )
+#else
+// ML: OPT: TODO: Not sure why the below template is not as good (fast) as the macro above
+template <class T>
+H265_FORCEINLINE
+T Clip3(const T& Min, const T& Max, T Value)
+{
+    Value = (Value < Min) ? Min : Value;
+    Value = (Value > Max) ? Max : Value;
+    return ( Value );
+    // return ( Value < Min ? Min : (Value > Max) ? Max : Value );
+#endif
 
 } // end namespace UMC_HEVC_DECODER
 

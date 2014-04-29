@@ -13,6 +13,7 @@
 
 #include "umc_h265_segment_decoder.h"
 #include "umc_h265_frame_info.h"
+#include "umc_h265_task_broker.h"
 
 enum
 {
@@ -512,11 +513,11 @@ void H265SegmentDecoder::DeblockOneLCU(Ipp32s curLCUAddr)
         }
     }
 
-    bool isNeddAddHorDeblock = false;
+    bool isNeedAddHorDeblock = false;
 
     if ((Ipp32s)m_cu->m_CUPelX + width > frameWidthInSamples - 8)
     {
-        isNeddAddHorDeblock = true;
+        isNeedAddHorDeblock = true;
     }
     else
     {
@@ -531,10 +532,10 @@ void H265SegmentDecoder::DeblockOneLCU(Ipp32s curLCUAddr)
 
             if (m_hasTiles)
             {
-                H265CodingUnit* nextAddr = m_pCurrentFrame->m_CodingData->getCU(m_cu->CUAddr + 1);
-                if (nextAddr && nextAddr->m_SliceHeader->slice_deblocking_filter_disabled_flag)
+                H265CodingUnit* nextAddr = (m_cu->CUAddr + 1 >= (Ipp32u)m_pCurrentFrame->getCD()->m_NumCUsInFrame) ? 0 : m_pCurrentFrame->getCD()->getCU(m_cu->CUAddr + 1);
+                if (!nextAddr || nextAddr->m_SliceHeader->slice_deblocking_filter_disabled_flag)
                 {
-                    isNeddAddHorDeblock = true;
+                    isNeedAddHorDeblock = true;
                 }
             }
             else
@@ -544,7 +545,7 @@ void H265SegmentDecoder::DeblockOneLCU(Ipp32s curLCUAddr)
                     H265Slice * nextSlice = m_pCurrentFrame->GetAU()->GetSliceByNumber(m_cu->m_SliceIdx + 1);
                     if (!nextSlice || nextSlice->GetSliceHeader()->slice_deblocking_filter_disabled_flag)
                     {
-                        isNeddAddHorDeblock = true;
+                        isNeedAddHorDeblock = true;
                     }
                 }
             }
@@ -573,7 +574,7 @@ void H265SegmentDecoder::DeblockOneLCU(Ipp32s curLCUAddr)
     {
         for (Ipp32s i = 0; i < width; i += 8)
         {
-            DeblockOneCross(i, j, i == width - 8 ? isNeddAddHorDeblock : false);
+            DeblockOneCross(i, j, i == width - 8 ? isNeedAddHorDeblock : false);
         }
     }
 }

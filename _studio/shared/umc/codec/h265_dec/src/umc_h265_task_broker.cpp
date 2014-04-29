@@ -17,8 +17,6 @@
 #include "umc_h265_task_supplier.h"
 #include "umc_h265_frame_list.h"
 
-#include "mfx_trace.h"
-
 #include "umc_h265_debug.h"
 
 //#define ECHO

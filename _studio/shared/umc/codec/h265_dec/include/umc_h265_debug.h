@@ -53,6 +53,8 @@ counter.startTimer();
 function1();
 counter.suspendTimer();
 */
+
+#if 0
 class UMCTimeCounter
 {
 public:
@@ -124,6 +126,7 @@ private:
 #endif // defined(_MSC_VER)
     }
 };
+#endif
 
 #ifdef __EXCEPTION_HANDLER_
 

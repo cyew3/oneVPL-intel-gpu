@@ -17,18 +17,75 @@
 #include <vector>
 #include <list>
 
-#include "umc_event.h"
-
 #include "umc_h265_dec_defs.h"
 #include "umc_h265_heap.h"
+#include "umc_h265_segment_decoder_mt.h"
 
 namespace UMC_HEVC_DECODER
 {
 class H265DecoderFrameInfo;
 class H265DecoderFrameList;
 class H265Slice;
-class H265Task;
 class TaskSupplier_H265;
+
+class DecodingContext;
+struct TileThreadingInfo;
+
+// Task ID enumerator
+enum
+{
+    TASK_PROCESS_H265  = 0, // whole slice is decoded and reconstructed
+    TASK_DEC_H265, // piece of slice is decoded
+    TASK_REC_H265, // piece of slice is reconstructed
+    TASK_DEB_H265, // piece of slice is deblocked
+    TASK_DEC_REC_H265, // piece of slice is decoded and reconstructed
+    TASK_SAO_H265  // piece of slice is saoed
+};
+
+// Asynchronous task descriptor class
+class H265Task
+{
+public:
+    // Default constructor
+    H265Task(Ipp32s iThreadNumber)
+        : m_iThreadNumber(iThreadNumber)
+    {
+        m_pSlice = 0;
+
+        pFunction = 0;
+        m_pBuffer = 0;
+        m_WrittenSize = 0;
+
+        m_iFirstMB = -1;
+        m_iMaxMB = -1;
+        m_iMBToProcess = -1;
+        m_iTaskID = 0;
+        m_bDone = false;
+        m_bError = false;
+        m_taskPreparingGuard = 0;
+        m_context = 0;
+        m_threadingInfo = 0;
+    }
+
+    UMC::Status (H265SegmentDecoderMultiThreaded::*pFunction)(H265Task &task);
+
+    H265CoeffsPtrCommon m_pBuffer;                                  // (Ipp16s *) pointer to working buffer
+    size_t          m_WrittenSize;
+
+    DecodingContext * m_context;
+    H265Slice *m_pSlice;                                        // (H265Slice *) pointer to owning slice
+    TileThreadingInfo * m_threadingInfo;
+    H265DecoderFrameInfo * m_pSlicesInfo;
+    UMC::AutomaticUMCMutex    * m_taskPreparingGuard;
+
+    Ipp32s m_iThreadNumber;                                     // (Ipp32s) owning thread number
+    Ipp32s m_iFirstMB;                                          // (Ipp32s) first MB in slice
+    Ipp32s m_iMaxMB;                                            // (Ipp32s) maximum MB number in owning slice
+    Ipp32s m_iMBToProcess;                                      // (Ipp32s) number of MB to processing
+    Ipp32s m_iTaskID;                                           // (Ipp32s) task identificator
+    bool m_bDone;                                               // (bool) task was done
+    bool m_bError;                                              // (bool) there is a error
+};
 
 // Decoder task scheduler class
 class TaskBroker_H265
@@ -193,9 +250,6 @@ private:
     // Deallocate decoding context if necessary
     void FreeResources(H265Task *pTask);
 
-#if defined (__ICL)
-#pragma warning(disable:1125)
-#endif
     // Update access units list finishing completed frames
     void CompleteFrame();
 };

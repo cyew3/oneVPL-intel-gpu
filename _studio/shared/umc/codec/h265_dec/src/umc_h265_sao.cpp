@@ -15,8 +15,6 @@
 #include "umc_h265_yuv.h"
 #include "umc_h265_frame.h"
 #include "umc_h265_frame_info.h"
-#include "umc_h265_slice_decoding.h"
-#include "assert.h"
 #include "mfx_h265_optimization.h"
 
 namespace UMC_HEVC_DECODER
@@ -409,7 +407,7 @@ template<typename PlaneType>
 void H265SampleAdaptiveOffsetTemplate<PlaneType>::processSaoCuChroma(Ipp32s addr, Ipp32s saoType, PlaneType* tmpL)
 {
     H265CodingUnit *pTmpCu = m_Frame->getCU(addr);
-    CTBBorders pbBorderAvail = pTmpCu->m_AvailBorder;
+    MFX_HEVC_PP::CTBBorders pbBorderAvail = pTmpCu->m_AvailBorder;
     PlaneType* pRec;
     Ipp32s tmpUpBuff1[66];
     Ipp32s tmpUpBuff2[66];
@@ -838,7 +836,7 @@ void H265SampleAdaptiveOffsetTemplate<PlaneType>::processSaoLine(SAOLCUParam* sa
 
             if (!m_UseNIF)
             {
-                h265_ProcessSaoCuOrg_Luma(
+                MFX_HEVC_PP::h265_ProcessSaoCuOrg_Luma(
                     (PlaneType*)m_Frame->GetLumaAddr(addr),
                     m_Frame->pitch_luma(),
                     typeIdx,

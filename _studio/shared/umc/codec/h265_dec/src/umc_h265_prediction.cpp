@@ -16,6 +16,7 @@
 #include "umc_h265_prediction.h"
 #include "umc_h265_ipplevel.h"
 #include "umc_h265_frame_info.h"
+#include "umc_h265_segment_decoder_mt.h"
 
 using namespace MFX_HEVC_PP;
 

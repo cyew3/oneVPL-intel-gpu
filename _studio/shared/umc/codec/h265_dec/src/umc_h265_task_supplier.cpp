@@ -634,18 +634,6 @@ UMC::Status TaskSupplier_H265::Init(UMC::BaseCodecParams *pInit)
     {
         if (UMC::UMC_OK != m_pSegmentDecoder[i]->Init(i))
             return UMC::UMC_ERR_INIT;
-
-        if (!i)
-            continue;
-
-        H265Thread * thread = new H265Thread();
-        if (thread->Init(i, m_pSegmentDecoder[i]) != UMC::UMC_OK)
-        {
-            delete thread;
-            return UMC::UMC_ERR_INIT;
-        }
-
-        m_threadGroup.AddThread(thread);
     }
 
     m_isUseDelayDPBValues = true;
@@ -743,9 +731,6 @@ void TaskSupplier_H265::Close()
     }
 
 // from reset
-
-    m_threadGroup.Release();
-
     if (GetView()->pDPB.get())
     {
         for (H265DecoderFrame *pFrame = GetView()->pDPB->head(); pFrame; pFrame = pFrame->future())
@@ -815,8 +800,6 @@ void TaskSupplier_H265::Reset()
     if (m_pTaskBroker)
         m_pTaskBroker->Reset();
 
-    m_threadGroup.Reset();
-
     {
         for (H265DecoderFrame *pFrame = GetView()->pDPB->head(); pFrame; pFrame = pFrame->future())
         {
@@ -863,8 +846,6 @@ void TaskSupplier_H265::AfterErrorRestore()
 {
     if (m_pTaskBroker)
         m_pTaskBroker->Reset();
-
-    m_threadGroup.Reset();
 
     GetView()->pDPB->Reset();
 
@@ -1067,7 +1048,6 @@ UMC::Status TaskSupplier_H265::xDecodeSPS(H265Bitstream &bs)
     sps.NumPartitionsInCUSize = 1 << sps.MaxCUDepth;
     sps.NumPartitionsInCU = 1 << (sps.MaxCUDepth << 1);
     sps.NumPartitionsInFrameWidth = sps.WidthInCU * sps.NumPartitionsInCUSize;
-    sps.NumPartitionsInFrameHeight = sps.HeightInCU * sps.NumPartitionsInCUSize;
 
     Ipp8u newDPBsize = (Ipp8u)CalculateDPBSize(sps.getPTL()->GetGeneralPTL()->level_idc,
                                 sps.pic_width_in_luma_samples,
@@ -1083,7 +1063,7 @@ UMC::Status TaskSupplier_H265::xDecodeSPS(H265Bitstream &bs)
 
     if (!sps.getPTL()->GetGeneralPTL()->level_idc && sps.sps_max_dec_pic_buffering[HighestTid])
     {
-        Ipp32u level_idc = levelIndexArray[0];
+        Ipp32u level_idc;
         for (int i = 0; i < sizeof(levelIndexArray)/sizeof(levelIndexArray[0]); i++)
         {
             level_idc = levelIndexArray[i];
@@ -2537,12 +2517,7 @@ void TaskSupplier_H265::AddSliceToFrame(H265DecoderFrame *pFrame, H265Slice *pSl
     if (pFrame->m_FrameType < SliceTypeToFrameType(pSlice->GetSliceHeader()->slice_type))
         pFrame->m_FrameType = SliceTypeToFrameType(pSlice->GetSliceHeader()->slice_type);
 
-    H265DecoderFrameInfo * au_info = pFrame->GetAU();
-    Ipp32s iSliceNumber = au_info->GetSliceCount() + 1;
-
-    pSlice->SetSliceNumber(iSliceNumber);
-    pSlice->m_pCurrentFrame = pFrame;
-    au_info->AddSlice(pSlice);
+    pFrame->AddSlice(pSlice);;
 }
 
 // Update DPB contents marking frames for reuse

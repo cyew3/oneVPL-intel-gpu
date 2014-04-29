@@ -413,8 +413,6 @@ protected:
     H265SegmentDecoderBase **m_pSegmentDecoder;
     Ipp32u m_iThreadNum;
 
-    H265ThreadGroup  m_threadGroup;
-
     Ipp64f      m_local_delta_frame_time;
     bool        m_use_external_framerate;
 

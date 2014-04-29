@@ -16,9 +16,8 @@
 #define __H265_PREDICTION_H
 
 #include "umc_h265_dec_defs.h"
-#include "umc_h265_frame.h"
+#include "umc_h265_yuv.h"
 #include "umc_h265_motion_info.h"
-
 #include "mfx_h265_optimization.h" // common data types here for interpolation
 
 namespace UMC_HEVC_DECODER
@@ -28,6 +27,16 @@ namespace UMC_HEVC_DECODER
 // Class definition
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 class DecodingContext;
+class H265DecoderFrame;
+
+// Prediction unit information data for motion compensation
+struct H265PUInfo
+{
+    H265MVInfo *interinfo;
+    H265DecoderFrame *refFrame[2];
+    Ipp32u PartAddr;
+    Ipp32u Width, Height;
+};
 
 // prediction class
 class H265Prediction

@@ -155,6 +155,8 @@ void H265DecoderFrame::Reset()
     FreeReferenceFrames();
 
     deallocate();
+
+    m_refPicList.clear();
 }
 
 // Returns whether frame has all slices found
@@ -194,7 +196,7 @@ void H265DecoderFrame::CompleteDecoding()
 // Check reference frames for error status and flag this frame if error is found
 void H265DecoderFrame::UpdateErrorWithRefFrameStatus()
 {
-    if (m_pSlicesInfo->CheckReferenceFrameError())
+    if (CheckReferenceFrameError())
     {
         SetErrorFlagged(UMC::ERROR_FRAME_REFERENCE_FRAME);
     }
@@ -367,17 +369,17 @@ void H265DecoderFrame::allocateCodingData(const H265SeqParamSet* sps, const H265
         m_CodingData->create(m_lumaSize.width, m_lumaSize.height, MaxCUSize, MaxCUSize, sps->MaxCUDepth);
 
         delete[] m_cuOffsetY;
-        delete[] m_cuOffsetC;
-        delete[] m_buOffsetY;
-        delete[] m_buOffsetC;
 
         Ipp32u pixelSize = (sps->bit_depth_luma > 8 || sps->bit_depth_chroma > 8) ? 2 : 1;
-
-        // Initialize CU offset tables
         Ipp32s NumCUInWidth = m_CodingData->m_WidthInCU;
         Ipp32s NumCUInHeight = m_CodingData->m_HeightInCU;
-        m_cuOffsetY = h265_new_array_throw<Ipp32s>(NumCUInWidth * NumCUInHeight);
-        m_cuOffsetC = h265_new_array_throw<Ipp32s>(NumCUInWidth * NumCUInHeight);
+
+        Ipp32s accumulateSum = 2*NumCUInWidth * NumCUInHeight + 2*(1 << (2 * MaxCUDepth));
+
+        // Initialize CU offset tables
+        m_cuOffsetY = h265_new_array_throw<Ipp32s>(accumulateSum);
+        m_cuOffsetC = m_cuOffsetY + NumCUInWidth * NumCUInHeight;
+
         for (Ipp32s cuRow = 0; cuRow < NumCUInHeight; cuRow++)
         {
             for (Ipp32s cuCol = 0; cuCol < NumCUInWidth; cuCol++)
@@ -391,8 +393,8 @@ void H265DecoderFrame::allocateCodingData(const H265SeqParamSet* sps, const H265
         }
 
         // Initialize partition offsets tables
-        m_buOffsetY = h265_new_array_throw<Ipp32s>(1 << (2 * MaxCUDepth));
-        m_buOffsetC = h265_new_array_throw<Ipp32s>(1 << (2 * MaxCUDepth));
+        m_buOffsetY = m_cuOffsetC + NumCUInWidth * NumCUInHeight;
+        m_buOffsetC = m_buOffsetY + (1 << (2 * MaxCUDepth));
         for (Ipp32s buRow = 0; buRow < (1 << MaxCUDepth); buRow++)
         {
             for (Ipp32s buCol = 0; buCol < (1 << MaxCUDepth); buCol++)
@@ -411,35 +413,51 @@ void H265DecoderFrame::allocateCodingData(const H265SeqParamSet* sps, const H265
     m_CodingData->m_TileIdxMap = pps->m_TileIdx;
 
     m_CodingData->initSAO(sps);
-
 }
 
 // Free array of CTBs
 void H265DecoderFrame::deallocateCodingData()
 {
     delete m_CodingData;
-    m_CodingData = NULL;
+    m_CodingData = 0;
 
     delete [] m_cuOffsetY;
-    m_cuOffsetY = NULL;
-
-    delete [] m_cuOffsetC;
-    m_cuOffsetC = NULL;
-
-    delete [] m_buOffsetY;
-    m_buOffsetY = NULL;
-
-    delete [] m_buOffsetC;
-    m_buOffsetC = NULL;
+    m_cuOffsetY = 0;
 }
 
-#if !defined(_WIN32) && !defined(_WIN64)
-// RefPicList. Returns pointer to start of specified ref pic list.
-H265DecoderRefPicList* H265DecoderFrame::GetRefPicList(Ipp32s sliceNumber, Ipp32s list) const
+void H265DecoderFrame::AddSlice(H265Slice * pSlice)
 {
-    return GetAU()->GetRefPicList(sliceNumber, list);
+    Ipp32s iSliceNumber = m_pSlicesInfo->GetSliceCount() + 1;
+
+    pSlice->SetSliceNumber(iSliceNumber);
+    pSlice->m_pCurrentFrame = this;
+    m_pSlicesInfo->AddSlice(pSlice);
+
+    m_refPicList.resize(pSlice->GetSliceNum() + 1);
 }
-#endif
+
+bool H265DecoderFrame::CheckReferenceFrameError()
+{
+    Ipp32u checkedErrorMask = UMC::ERROR_FRAME_MINOR | UMC::ERROR_FRAME_MAJOR | UMC::ERROR_FRAME_REFERENCE_FRAME;
+    for (size_t i = 0; i < m_refPicList.size(); i ++)
+    {
+        H265DecoderRefPicList* list = &m_refPicList[i].m_refPicList[REF_PIC_LIST_0];
+        for (size_t k = 0; list->m_refPicList[k].refFrame; k++)
+        {
+            if (list->m_refPicList[k].refFrame->GetError() & checkedErrorMask)
+                return true;
+        }
+
+        list = &m_refPicList[i].m_refPicList[REF_PIC_LIST_1];
+        for (size_t k = 0; list->m_refPicList[k].refFrame; k++)
+        {
+            if (list->m_refPicList[k].refFrame->GetError() & checkedErrorMask)
+                return true;
+        }
+    }
+
+    return false;
+}
 
 // Returns a CTB by its raster address
 H265CodingUnit* H265DecoderFrame::getCU(Ipp32u CUaddr) const 

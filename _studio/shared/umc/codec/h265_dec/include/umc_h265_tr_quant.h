@@ -15,11 +15,6 @@
 #define __H265_TR_QUANT_H
 
 #include "umc_h265_dec_defs.h"
-#include "umc_h265_bitstream.h"
-#include "umc_h265_coding_unit.h"
-#include "assert.h"
-
-#define QP_BITS 15
 
 namespace UMC_HEVC_DECODER
 {

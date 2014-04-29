@@ -18,16 +18,15 @@
 
 #include "mfx_h265_optimization.h"
 #include "umc_h265_dec_defs.h"
-#include "umc_h265_heap.h"
-#include "umc_h265_headers.h"
-#include "umc_h265_frame.h"
 #include "umc_h265_motion_info.h"
 
 namespace UMC_HEVC_DECODER
 {
 
+class H265FrameCodingData;
 class H265Pattern;
 class H265SegmentDecoderMultiThreaded;
+class H265DecoderFrame;
 
 #pragma pack(1)
 // Data structure describing CTB partition state
@@ -137,7 +136,7 @@ public:
     bool isLosslessCoded(Ipp32u absPartIdx);
 
     H265CodingUnit();
-    virtual ~H265CodingUnit();
+    ~H265CodingUnit();
 
     // Initialize coding data dependent fields
     void create(H265FrameCodingData * frameCD, Ipp32s cuAddr);
@@ -251,15 +250,6 @@ struct H265FrameHLDNeighborsInfo
         } members;
         Ipp32u data;
     };
-};
-
-// Prediction unit information data for motion compensation
-struct H265PUInfo
-{
-    H265MVInfo *interinfo;
-    H265DecoderFrame *refFrame[2];
-    Ipp32u PartAddr;
-    Ipp32u Width, Height;
 };
 
 } // end namespace UMC_HEVC_DECODER

@@ -317,7 +317,6 @@ private:
                 startCodeSize = IPP_MIN(zeroCount + 1, 4);
                 size -= i + 1;
                 pb++; // remove 0x01 symbol
-                zeroCount = 0;
                 if (size >= 1)
                 {
                     return (pb[0] & NAL_UNITTYPE_BITS_H265) >> NAL_UNITTYPE_SHIFT_H265;

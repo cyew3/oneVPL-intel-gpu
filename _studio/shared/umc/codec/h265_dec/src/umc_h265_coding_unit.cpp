@@ -61,8 +61,8 @@ void H265CodingUnit::create(H265FrameCodingData * frameCD, Ipp32s cuAddr)
 // Clean up CTB references
 void H265CodingUnit::destroy()
 {
-    m_Frame = NULL;
-    m_SliceHeader = NULL;
+    m_Frame = 0;
+    m_SliceHeader = 0;
 }
 
 // Initialize coding unit coordinates and references to frame and slice

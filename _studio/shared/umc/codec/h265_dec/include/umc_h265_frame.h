@@ -10,7 +10,6 @@
 */
 
 #include "umc_defs.h"
-#include "umc_h265_frame_coding_data.h"
 #ifdef UMC_ENABLE_H265_VIDEO_DECODER
 
 #ifndef __UMC_H265_FRAME_H__
@@ -19,9 +18,12 @@
 #include <stdlib.h>
 #include "umc_h265_yuv.h"
 #include "umc_h265_notify.h"
+#include "umc_h265_heap.h"
+#include "umc_h265_frame_coding_data.h"
 
 namespace UMC_HEVC_DECODER
 {
+class H265Slice;
 class H265DecoderFrameInfo;
 class H265FrameCodingData;
 class H265CodingUnit;
@@ -306,7 +308,17 @@ public:
 
     // GetRefPicList
     // Returns pointer to start of specified ref pic list.
-    H265DecoderRefPicList* GetRefPicList(Ipp32s sliceNumber, Ipp32s list) const;
+    H265_FORCEINLINE const H265DecoderRefPicList* GetRefPicList(Ipp32s sliceNumber, Ipp32s list) const
+    {
+        VM_ASSERT(list <= REF_PIC_LIST_1 && list >= 0);
+
+        if (sliceNumber >= (Ipp32s)m_refPicList.size())
+        {
+            return 0;
+        }
+
+        return &m_refPicList[sliceNumber].m_refPicList[list];
+    }
 
     // Copy plane data from target frame
     void CopyPlanes(H265DecoderFrame *pRefFrame);
@@ -350,11 +362,33 @@ public:
     H265PlanePtrUVCommon GetCrAddr(Ipp32s CUAddr, Ipp32u AbsZorderIdx) const;
     //  Access starting position of original picture for specific coding unit (CU) and partition unit (PU)
     H265PlanePtrUVCommon GetCbCrAddr(Ipp32s CUAddr, Ipp32u AbsZorderIdx) const;
+
+    void AddSlice(H265Slice * pSlice);
+
 protected:
     // Declare memory management tools
     UMC::MemoryAllocator *m_pMemoryAllocator;   // FIXME: should be removed because it duplicated in base class
 
     Heap_Objects * m_pObjHeap;
+
+    struct H265DecoderRefPicListPair
+    {
+    public:
+        H265DecoderRefPicList m_refPicList[2];
+    };
+
+    // ML: OPT: TODO: std::vector<> results with relatively slow access code
+    std::vector<H265DecoderRefPicListPair> m_refPicList;
+
+    class FakeFrameInitializer
+    {
+    public:
+        FakeFrameInitializer();
+    };
+
+    static FakeFrameInitializer g_FakeFrameInitializer;
+
+    bool CheckReferenceFrameError();
 };
 
 // Returns if frame is not needed by decoder

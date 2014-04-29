@@ -16,29 +16,6 @@
 
 namespace UMC_HEVC_DECODER
 {
-bool H265DecoderFrameInfo::CheckReferenceFrameError()
-{
-    Ipp32u checkedErrorMask = UMC::ERROR_FRAME_MINOR | UMC::ERROR_FRAME_MAJOR | UMC::ERROR_FRAME_REFERENCE_FRAME;
-    for (size_t i = 0; i < m_refPicList.size(); i ++)
-    {
-        H265DecoderRefPicList* list = &m_refPicList[i].m_refPicList[REF_PIC_LIST_0];
-        for (size_t k = 0; list->m_refPicList[k].refFrame; k++)
-        {
-            if (list->m_refPicList[k].refFrame->GetError() & checkedErrorMask)
-                return true;
-        }
-
-        list = &m_refPicList[i].m_refPicList[REF_PIC_LIST_1];
-        for (size_t k = 0; list->m_refPicList[k].refFrame; k++)
-        {
-            if (list->m_refPicList[k].refFrame->GetError() & checkedErrorMask)
-                return true;
-        }
-    }
-
-    return false;
-}
-
 // Initialize tiles and slices threading information
 void H265DecoderFrameInfo::FillTileInfo()
 {
@@ -116,7 +93,7 @@ void H265DecoderFrameInfo::Reset()
 
     m_isIntraAU = true;
     m_hasDependentSliceSegments = false;
-    m_WA_diffrent_disable_deblocking = false;
+    m_WA_different_disable_deblocking = false;
 
     m_nextAU = 0;
     m_prevAU = 0;

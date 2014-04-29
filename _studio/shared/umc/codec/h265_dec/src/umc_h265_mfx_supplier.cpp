@@ -549,8 +549,6 @@ protected:
     bool m_isSPSFound;
     bool m_isPPSFound;
 
-    bool m_isFrameLooked;
-
     TaskSupplier_H265 * m_supplier;
     H265Slice * m_lastSlice;
 };

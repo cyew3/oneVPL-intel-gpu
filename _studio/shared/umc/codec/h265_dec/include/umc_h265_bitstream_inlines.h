@@ -600,14 +600,14 @@ inline unsigned H265BaseBitstream::getNumBitsUntilByteAligned() const
 // Align bitstream to byte boundary
 inline void H265BaseBitstream::readOutTrailingBits()
 {
-    Ipp32u uVal = Get1Bit();
+    Get1Bit();
     //VM_ASSERT(1 == uVal);
 
     Ipp32u bits = getNumBitsUntilByteAligned();
 
     if (bits)
     {
-        uVal = GetBits(bits);
+        GetBits(bits);
         //VM_ASSERT(0 == uVal);
     }
 }
