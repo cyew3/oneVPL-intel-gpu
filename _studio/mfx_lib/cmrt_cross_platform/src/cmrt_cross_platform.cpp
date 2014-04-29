@@ -242,7 +242,7 @@ public:
 };
 
 #ifndef __GNUC__
-INT CreateCmDevice(CmDevice *& pD, UINT & version, IDirect3DDeviceManager9 * pD3DDeviceMgr)
+INT CreateCmDevice(CmDevice *& pD, UINT & version, IDirect3DDeviceManager9 * pD3DDeviceMgr, UINT mode )
 {
     CmDeviceImpl * device = new CmDeviceImpl;
 
@@ -254,22 +254,17 @@ INT CreateCmDevice(CmDevice *& pD, UINT & version, IDirect3DDeviceManager9 * pD3
         return CM_FAILURE;
     }
 
-#ifdef CM_4_0
     CreateCmDeviceDx9FuncTypeEx createFunc = (CreateCmDeviceDx9FuncTypeEx)vm_so_get_addr(device->m_dll, FUNC_NAME_CREATE_CM_DEVICE_EX);
-#else
-    CreateCmDeviceDx9FuncType createFunc = (CreateCmDeviceDx9FuncType)vm_so_get_addr(device->m_dll, FUNC_NAME_CREATE_CM_DEVICE);
-#endif
+
     if (createFunc == 0)
     {
         delete device;
         return CM_FAILURE;
     }
 
-#ifdef CM_4_0
-    INT res = createFunc(device->m_dx9, version, pD3DDeviceMgr, 3 << 4);
-#else
-    INT res = createFunc(device->m_dx9, version, pD3DDeviceMgr);
-#endif
+
+    INT res = createFunc(device->m_dx9, version, pD3DDeviceMgr, mode);
+
     if (res != CM_SUCCESS)
     {
         delete device;
@@ -281,7 +276,7 @@ INT CreateCmDevice(CmDevice *& pD, UINT & version, IDirect3DDeviceManager9 * pD3
 }
 
 
-INT CreateCmDevice(CmDevice* &pD, UINT& version, ID3D11Device * pD3D11Device)
+INT CreateCmDevice(CmDevice* &pD, UINT& version, ID3D11Device * pD3D11Device, UINT mode )
 {
     CmDeviceImpl * device = new CmDeviceImpl;
 
@@ -293,22 +288,18 @@ INT CreateCmDevice(CmDevice* &pD, UINT& version, ID3D11Device * pD3D11Device)
         return CM_FAILURE;
     }
 
-#ifdef CM_4_0
+
     CreateCmDeviceDx11FuncTypeEx createFunc = (CreateCmDeviceDx11FuncTypeEx)vm_so_get_addr(device->m_dll, FUNC_NAME_CREATE_CM_DEVICE_EX);
-#else
-    CreateCmDeviceDx11FuncType createFunc = (CreateCmDeviceDx11FuncType)vm_so_get_addr(device->m_dll, FUNC_NAME_CREATE_CM_DEVICE);
-#endif
+
     if (createFunc == 0)
     {
         delete device;
         return CM_FAILURE;
     }
 
-#ifdef CM_4_0
-    INT res = createFunc(device->m_dx11, version, pD3D11Device, 3 << 4);
-#else
-    INT res = createFunc(device->m_dx11, version, pD3D11Device);
-#endif
+
+    INT res = createFunc(device->m_dx11, version, pD3D11Device, mode);
+
     if (res != CM_SUCCESS)
     {
         delete device;
@@ -321,7 +312,7 @@ INT CreateCmDevice(CmDevice* &pD, UINT& version, ID3D11Device * pD3D11Device)
 
 #else /* #ifndef __GNUC__ */  
 
-INT CreateCmDevice(CmDevice *& pD, UINT & version, VADisplay va_dpy)
+INT CreateCmDevice(CmDevice *& pD, UINT & version, VADisplay va_dpy, UINT mode)
 {
     CmDeviceImpl * device = new CmDeviceImpl;
 

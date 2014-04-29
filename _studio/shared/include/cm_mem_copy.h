@@ -84,7 +84,7 @@ public:
         if (m_pCmDevice)
             return m_pCmDevice;
 
-        cmSts = ::CreateCmDevice(m_pCmDevice, version, pD3D);
+        cmSts = ::CreateCmDevice(m_pCmDevice, version, pD3D, CM_DEVICE_CREATE_OPTION_SCRATCH_SPACE_DISABLE);
         if (cmSts != CM_SUCCESS)
             return NULL;
 

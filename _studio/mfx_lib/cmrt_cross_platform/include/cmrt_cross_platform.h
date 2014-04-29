@@ -1352,16 +1352,14 @@ EXTERN_C CM_RT_API INT CMRT_SetEventCallback(CmEvent* pEvent, callback_function 
 EXTERN_C CM_RT_API INT CMRT_Enqueue(CmQueue* pQueue, CmTask* pTask, CmEvent** pEvent, const CmThreadSpace* pTS = NULL);
 
 #ifndef __GNUC__
-INT CreateCmDevice(CmDevice* &pD, UINT& version, IDirect3DDeviceManager9 * pD3DDeviceMgr = NULL);
-INT CreateCmDevice(CmDevice* &pD, UINT& version, ID3D11Device * pD3D11Device = NULL);
-INT CreateCmDeviceEx(CmDevice* &pD, UINT& version, IDirect3DDeviceManager9 * pD3DDeviceMgr = NULL, UINT mode = CM_DEVICE_CREATE_OPTION_DEFAULT );
-INT CreateCmDeviceEx(CmDevice* &pD, UINT& version, ID3D11Device * pD3D11Device = NULL, UINT mode = CM_DEVICE_CREATE_OPTION_DEFAULT );
+INT CreateCmDevice(CmDevice* &pD, UINT& version, IDirect3DDeviceManager9 * pD3DDeviceMgr = NULL, UINT mode = CM_DEVICE_CREATE_OPTION_DEFAULT );
+INT CreateCmDevice(CmDevice* &pD, UINT& version, ID3D11Device * pD3D11Device = NULL, UINT mode = CM_DEVICE_CREATE_OPTION_DEFAULT );
 INT CreateCmDeviceEmu(CmDevice* &pDevice, UINT& version, IDirect3DDeviceManager9 * pD3DDeviceMgr = NULL);
 INT CreateCmDeviceEmu(CmDevice* &pDevice, UINT& version, ID3D11Device * pD3D11Device = NULL);
 INT CreateCmDeviceSim(CmDevice* &pDevice, UINT& version, IDirect3DDeviceManager9 * pD3DDeviceMgr = NULL);
 INT CreateCmDeviceSim(CmDevice* &pDevice, UINT& version, ID3D11Device * pD3D11Device = NULL);
 #else //__GNUC__
-INT CreateCmDevice(CmDevice* &pD, UINT& version, VADisplay va_dpy = NULL);
+INT CreateCmDevice(CmDevice* &pD, UINT& version, VADisplay va_dpy = NULL,, UINT mode = CM_DEVICE_CREATE_OPTION_DEFAULT );
 INT CreateCmDeviceEmu(CmDevice* &pDevice, UINT& version, VADisplay va_dpy = NULL);
 INT CreateCmDeviceSim(CmDevice* &pDevice, UINT& version);
 #endif //__GNUC__

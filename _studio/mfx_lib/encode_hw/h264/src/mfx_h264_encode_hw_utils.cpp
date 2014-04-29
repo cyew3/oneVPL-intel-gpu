@@ -5738,7 +5738,7 @@ mfxStatus MfxHwH264Encode::FillSliceInfo(DdiTask &  task, mfxU32 MaxSliceSize, m
 
     mfxU32  curMB = 0;
     mfxF32  maxSliceCost = 0.0;        
-    for (size_t i = 0; i < numMB; i ++)
+    for (mfxU32 i = 0; i < numMB; i ++)
     {
        maxSliceCost = maxSliceCost + GetMBCost(task, i);
     } 
