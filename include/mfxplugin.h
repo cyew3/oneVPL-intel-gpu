@@ -130,7 +130,7 @@ typedef struct mfxVideoCodecPlugin{
 
     mfxStatus (MFX_CDECL *ENCFrameSubmit)(mfxHDL pthis,  mfxENCInput *in, mfxENCOutput *out, mfxThreadTask *task);
 
-    mfxHDL reserved1[4];
+    mfxHDL reserved1[3];
     mfxU32 reserved2[8];
 } mfxVideoCodecPlugin;
 
