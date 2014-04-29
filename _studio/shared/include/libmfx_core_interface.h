@@ -134,6 +134,9 @@ protected:
     GUID   m_encode_guid;
     mfxHDL m_caps;
     mfxU32 m_size;
+private:
+    EncodeHWCaps(const EncodeHWCaps&);
+    void operator=(const EncodeHWCaps&);
 
 };
 
