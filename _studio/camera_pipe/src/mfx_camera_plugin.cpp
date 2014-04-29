@@ -721,9 +721,9 @@ mfxStatus MFXCamera_Plugin::Init(mfxVideoParam *par)
     if (par->IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY)
         m_Caps.OutputMemoryOperationMode = MEM_GPU;
     else
-        m_Caps.OutputMemoryOperationMode = (m_Caps.Reserved ? MEM_FASTGPUCPY : MEM_GPUSHARED);
+        //m_Caps.OutputMemoryOperationMode = (m_Caps.Reserved ? MEM_FASTGPUCPY : MEM_GPUSHARED);
         //m_Caps.OutputMemoryOperationMode = MEM_GPUSHARED;
-        //m_Caps.OutputMemoryOperationMode = MEM_FASTGPUCPY;
+        m_Caps.OutputMemoryOperationMode = MEM_FASTGPUCPY;
 
     if (par->IOPattern & MFX_IOPATTERN_IN_VIDEO_MEMORY)
         m_Caps.InputMemoryOperationMode = MEM_GPU;
