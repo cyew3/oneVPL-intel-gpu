@@ -847,7 +847,7 @@ Status MPEG2VideoDecoderBase::GetPictureHeader(MediaData* input, int task_num, i
       {
         if(!m_IsLastFrameProcessed)
         {
-            Ipp64f currentTime = (Ipp64f)(-1);
+            Ipp64f currentTime = frame_buffer.frame_p_c_n [frame_buffer.curr_index[task_num]].frame_time;
             bool isOriginal = false;
             frame_buffer.ret_index = frame_buffer.latest_next;
             frame_buffer.curr_index[task_num] = frame_buffer.latest_next;
