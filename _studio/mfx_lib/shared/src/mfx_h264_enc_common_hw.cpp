@@ -17,7 +17,10 @@
 
 #include <limits>
 #include <limits.h>
+
+#if defined (MFX_VA_LINUX)
 #include <va/va_enc_h264.h>
+#endif 
 
 #include "ippi.h"
 #include "libmfx_core_interface.h"
