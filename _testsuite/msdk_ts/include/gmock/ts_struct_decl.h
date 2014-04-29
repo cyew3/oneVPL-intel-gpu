@@ -410,6 +410,7 @@ STRUCT(mfxExtAVCEncodedFrameInfo,
     FIELD_T(mfxU32, MAD         )
     FIELD_T(mfxU16, BRCPanicMode)
     FIELD_T(mfxU16, QP          )
+    FIELD_T(mfxU32, SecondFieldOffset  )
     FIELD_S(mfxExtAVCEncodedFrameInfo_RefList, UsedRefListL0)
     FIELD_S(mfxExtAVCEncodedFrameInfo_RefList, UsedRefListL1)
 )

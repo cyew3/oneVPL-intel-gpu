@@ -151,6 +151,12 @@
     <ClCompile Include="src\gmock\test_suites\hevcd_query.cpp">
       <Filter>Source Files\test_suites</Filter>
     </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\avce_2014r2_unsupport.cpp">
+      <Filter>Source Files\test_suites</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\vpp_2014r2_unsupport.cpp">
+      <Filter>Source Files\test_suites</Filter>
+    </ClCompile>
     <ClCompile Include="src\gmock\test_suites\hevcd_reset.cpp">
       <Filter>Source Files\test_suites</Filter>
     </ClCompile>
