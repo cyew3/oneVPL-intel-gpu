@@ -226,7 +226,11 @@ void Write(CmBuffer * buffer, void * buf, CmEvent * e = 0)
     if ((result = buffer->WriteSurface(reinterpret_cast<unsigned char *>(buf), e)) != CM_SUCCESS)
         throw CmRuntimeError();
 }
-
+#ifdef CM_4_0
+    #define TASKNUMALLOC 3
+#else
+    #define TASKNUMALLOC 0
+#endif
 CmDevice * TryCreateCmDevicePtr(VideoCORE * core, mfxU32 * version)
 {
     mfxU32 versionPlaceholder = 0;
@@ -237,7 +241,7 @@ CmDevice * TryCreateCmDevicePtr(VideoCORE * core, mfxU32 * version)
 
     int result = CM_SUCCESS;
 #if defined(_WIN32) || defined(_WIN64)
-        if ((result = ::CreateCmDevice(device, *version, (IDirect3DDeviceManager9 *)0)) != CM_SUCCESS)
+        if ((result = ::CreateCmDevice(device, *version, (IDirect3DDeviceManager9 *)0, (TASKNUMALLOC<<4)+1)) != CM_SUCCESS)
             return 0;
 #endif  // #if defined(_WIN32) || defined(_WIN64)
 #if defined(LINUX32) || defined(LINUX64)
