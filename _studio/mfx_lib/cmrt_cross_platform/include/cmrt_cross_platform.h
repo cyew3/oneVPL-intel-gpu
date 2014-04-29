@@ -1359,7 +1359,7 @@ INT CreateCmDeviceEmu(CmDevice* &pDevice, UINT& version, ID3D11Device * pD3D11De
 INT CreateCmDeviceSim(CmDevice* &pDevice, UINT& version, IDirect3DDeviceManager9 * pD3DDeviceMgr = NULL);
 INT CreateCmDeviceSim(CmDevice* &pDevice, UINT& version, ID3D11Device * pD3D11Device = NULL);
 #else //__GNUC__
-INT CreateCmDevice(CmDevice* &pD, UINT& version, VADisplay va_dpy = NULL,, UINT mode = CM_DEVICE_CREATE_OPTION_DEFAULT );
+INT CreateCmDevice(CmDevice* &pD, UINT& version, VADisplay va_dpy = NULL, UINT mode = CM_DEVICE_CREATE_OPTION_DEFAULT );
 INT CreateCmDeviceEmu(CmDevice* &pDevice, UINT& version, VADisplay va_dpy = NULL);
 INT CreateCmDeviceSim(CmDevice* &pDevice, UINT& version);
 #endif //__GNUC__
