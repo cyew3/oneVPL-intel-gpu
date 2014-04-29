@@ -1460,7 +1460,7 @@ mfxStatus D3D11Encoder::Destroy()
 #endif
     }
     
-    mfxStatus FillFrameUpdateBuffer(TaskHybridDDI const & task, VAEncHackTypeVP8HybridFrameUpdate & frmUpdate)
+    mfxStatus FillFrameUpdateBuffer(TaskHybridDDI const & task, VAEncMiscParameterVP8HybridFrameUpdate & frmUpdate)
     {
         frmUpdate.prev_frame_size = (UINT)task.m_prevFrameSize;
         frmUpdate.two_prev_frame_flag = task.m_brcUpdateDelay == 2 ? 1 : 0;
