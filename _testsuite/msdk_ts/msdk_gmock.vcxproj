@@ -186,6 +186,7 @@
     <ClCompile Include="src\gmock\test_suites\hevcd_decode_header.cpp" />
     <ClCompile Include="src\gmock\test_suites\hevcd_get_video_param.cpp" />
     <ClCompile Include="src\gmock\test_suites\hevcd_init.cpp" />
+    <ClCompile Include="src\gmock\test_suites\hevcd_pts.cpp" />
     <ClCompile Include="src\gmock\test_suites\hevcd_query.cpp" />
     <ClCompile Include="src\gmock\test_suites\hevcd_reset.cpp" />
     <ClCompile Include="src\gmock\test_suites\hevcd_res_change.cpp" />

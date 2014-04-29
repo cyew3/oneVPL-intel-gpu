@@ -19,6 +19,7 @@ tsVideoDecoder::tsVideoDecoder(mfxU32 CodecId, bool useDefaults)
     , m_loaded(false)
     , m_par_set(false)
     , m_use_memid(false)
+    , m_update_bs(false)
 {
     m_par.mfx.CodecId = CodecId;
     if(m_default)
@@ -262,7 +263,7 @@ void tsVideoDecoder::SetPar4_DecodeFrameAsync()
     {
         m_pSurf = GetSurface();
     }
-    else
+    if(m_update_bs || g_tsStatus.get() == MFX_ERR_MORE_DATA)
     {
         if(m_bs_processor)
         {

@@ -13,6 +13,7 @@ public:
     bool                        m_loaded;
     bool                        m_par_set;
     bool                        m_use_memid;
+    bool                        m_update_bs;
     tsExtBufType<mfxVideoParam> m_par;
     tsExtBufType<mfxBitstream>  m_bitstream;
     mfxFrameAllocRequest        m_request;

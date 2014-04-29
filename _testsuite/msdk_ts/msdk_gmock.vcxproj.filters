@@ -166,5 +166,8 @@
     <ClCompile Include="src\gmock\test_suites\hevcd_res_change.cpp">
       <Filter>Source Files\test_suites</Filter>
     </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\hevcd_pts.cpp">
+      <Filter>Source Files\test_suites</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>
