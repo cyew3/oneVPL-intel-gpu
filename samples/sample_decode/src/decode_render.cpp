@@ -152,14 +152,6 @@ mfxStatus CDecodeD3DRender::Init(sWindowParams pWParams)
 
 mfxStatus CDecodeD3DRender::RenderFrame(mfxFrameSurface1 *pSurface, mfxFrameAllocator *pmfxAlloc)
 {
-    MSG msg;
-    MSDK_ZERO_MEMORY(msg);
-    while (msg.message != WM_QUIT && PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
-    {
-        TranslateMessage(&msg);
-        DispatchMessage(&msg);
-    }
-
     RECT rect;
     GetClientRect(m_Hwnd, &rect);
     if (IsRectEmpty(&rect))
@@ -181,11 +173,22 @@ mfxStatus CDecodeD3DRender::RenderFrame(mfxFrameSurface1 *pSurface, mfxFrameAllo
 
 VOID CDecodeD3DRender::UpdateTitle(double fps)
 {
-    if (NULL != m_sWindowParams.lpWindowName) {
-        TCHAR str[20];
-        _stprintf_s(str, 20, _T("fps=%.2lf"), fps );
+    if (m_Hwnd)
+    {
+        MSG msg;
+        MSDK_ZERO_MEMORY(msg);
+        while (msg.message != WM_QUIT && PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
+        {
+            TranslateMessage(&msg);
+            DispatchMessage(&msg);
+        }
 
-        SetWindowText(m_Hwnd, str);
+        if (NULL != m_sWindowParams.lpWindowName) {
+            TCHAR str[20];
+            _stprintf_s(str, 20, _T("fps=%.2lf"), fps );
+
+            SetWindowText(m_Hwnd, str);
+        }
     }
 }
 
