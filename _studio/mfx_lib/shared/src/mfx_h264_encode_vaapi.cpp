@@ -537,6 +537,7 @@ void UpdateSlice(
     {
         slice[i].macroblock_address = divider.GetFirstMbInSlice();
         slice[i].num_macroblocks = divider.GetNumMbInSlice();
+        slice[i].macroblock_info = VA_INVALID_ID;
 
         for (ref = 0; ref < list0.Size(); ref++)
         {
@@ -605,7 +606,6 @@ void UpdateSliceSizeLimited(
     std::vector<ExtVASurface> const & reconQueue)
 {
     mfxU32 numPics  = task.GetPicStructForEncode() == MFX_PICSTRUCT_PROGRESSIVE ? 1 : 2;
-    mfxU32 numSlice = slice.size();
     mfxU32 idx = 0, ref = 0;
 
     mfxExtCodingOptionDDI * extDdi = GetExtBuffer(par);
@@ -631,6 +631,7 @@ void UpdateSliceSizeLimited(
     {
         slice[i].macroblock_address = task.m_SliceInfo[i].startMB;
         slice[i].num_macroblocks = task.m_SliceInfo[i].numMB;
+        slice[i].macroblock_info = VA_INVALID_ID;
 
         for (ref = 0; ref < list0.Size(); ref++)
         {
@@ -1193,6 +1194,12 @@ mfxStatus VAAPIEncoder::Execute(
     // update params
     {
         size_t slice_size_old = m_slice.size();
+        //Destroy old buffers
+        for(int i=0; i<slice_size_old; i++){
+            MFX_DESTROY_VABUFFER(m_sliceBufferId[i], m_vaDisplay);
+            MFX_DESTROY_VABUFFER(m_packeSliceHeaderBufferId[i], m_vaDisplay);
+            MFX_DESTROY_VABUFFER(m_packedSliceBufferId[i], m_vaDisplay);
+        }
 
         UpdatePPS(task, fieldId, m_pps, m_reconQueue);
 
@@ -1206,6 +1213,7 @@ mfxStatus VAAPIEncoder::Execute(
             m_sliceBufferId.resize(m_slice.size());
             m_packeSliceHeaderBufferId.resize(m_slice.size());
             m_packedSliceBufferId.resize(m_slice.size());
+            
         }
 
         configBuffers.resize(MAX_CONFIG_BUFFERS_COUNT + m_slice.size()*2);
@@ -1274,7 +1282,7 @@ mfxStatus VAAPIEncoder::Execute(
         // 3. Slice level
         for( i = 0; i < m_slice.size(); i++ )
         {
-            MFX_DESTROY_VABUFFER(m_sliceBufferId[i], m_vaDisplay);
+            //MFX_DESTROY_VABUFFER(m_sliceBufferId[i], m_vaDisplay);
             vaSts = vaCreateBuffer(m_vaDisplay,
                                     m_vaContextEncode,
                                     VAEncSliceParameterBufferType,
@@ -1493,7 +1501,7 @@ mfxStatus VAAPIEncoder::Execute(
             if (m_core->GetHWType() >= MFX_HW_HSW)
             {
                 //Slice headers only
-                std::vector<ENCODE_PACKEDHEADER_DATA> const & packedSlices = m_headerPacker.PackSlices(task, fieldId);
+                std::vector<ENCODE_PACKEDHEADER_DATA> const & packedSlices = m_headerPacker.PackSlices(task, fieldId, m_slice);
                 for (size_t i = 0; i < packedSlices.size(); i++)
                 {
                     ENCODE_PACKEDHEADER_DATA const & packedSlice = packedSlices[i];
@@ -1502,7 +1510,7 @@ mfxStatus VAAPIEncoder::Execute(
                     packed_header_param_buffer.has_emulation_bytes = !packedSlice.SkipEmulationByteCount;
                     packed_header_param_buffer.bit_length = packedSlice.DataLength; // DataLength is already in bits !
 
-                    MFX_DESTROY_VABUFFER(m_packeSliceHeaderBufferId[i], m_vaDisplay);
+                    //MFX_DESTROY_VABUFFER(m_packeSliceHeaderBufferId[i], m_vaDisplay);
                     vaSts = vaCreateBuffer(m_vaDisplay,
                             m_vaContextEncode,
                             VAEncPackedHeaderParameterBufferType,
@@ -1512,7 +1520,7 @@ mfxStatus VAAPIEncoder::Execute(
                             &m_packeSliceHeaderBufferId[i]);
                     MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
 
-                    MFX_DESTROY_VABUFFER(m_packedSliceBufferId[i], m_vaDisplay);
+                    //MFX_DESTROY_VABUFFER(m_packedSliceBufferId[i], m_vaDisplay);
                     vaSts = vaCreateBuffer(m_vaDisplay,
                                         m_vaContextEncode,
                                         VAEncPackedHeaderDataBufferType,
@@ -1526,7 +1534,7 @@ mfxStatus VAAPIEncoder::Execute(
             }
         }
     }
-
+    
     configBuffers[buffersCount++] = m_hrdBufferId;
     MFX_CHECK_WITH_ASSERT(MFX_ERR_NONE == SetRateControl(m_videoParam, m_mbbrc, task.m_minQP, task.m_maxQP,
                                                          m_vaDisplay, m_vaContextEncode, m_rateParamBufferId), MFX_ERR_DEVICE_FAILED);
@@ -1599,6 +1607,7 @@ mfxStatus VAAPIEncoder::Execute(
         //------------------------------------------------------------------
         {
             MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_SCHED, "Enc vaBeginPicture");
+
             vaSts = vaBeginPicture(
                 m_vaDisplay,
                 m_vaContextEncode,
@@ -1626,6 +1635,7 @@ mfxStatus VAAPIEncoder::Execute(
         }
         {
             MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_SCHED, "Enc vaEndPicture");
+
             vaSts = vaEndPicture(m_vaDisplay, m_vaContextEncode);
             MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
         }
@@ -1725,7 +1735,7 @@ mfxStatus VAAPIEncoder::QueryStatus(
     mfxU32 waitIdxBs;
     mfxU32 waitSize;
     mfxU32 indxSurf;
-
+    
     std::auto_ptr<UMC::AutomaticUMCMutex> guard( new UMC::AutomaticUMCMutex(m_guard) );
 
     for( indxSurf = 0; indxSurf < m_feedbackCache.size(); indxSurf++ )

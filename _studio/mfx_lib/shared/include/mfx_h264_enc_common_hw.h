@@ -32,6 +32,12 @@
 #include "mfx_h264_encode_struct_vaapi.h"
 #endif
 
+#if defined(MFX_VA_LINUX)
+#include <va/va.h>
+#include <va/va_enc.h>
+#include <va/va_enc_h264.h>
+#endif
+
 #include "mfxpcp.h"
 #include "mfxhdcp.h"
 #include "mfxmvc.h"
@@ -1274,6 +1280,13 @@ namespace MfxHwH264Encode
             DdiTask const                               & task,
             mfxU32                                      fieldId,
             std::vector<ENCODE_SET_SLICE_HEADER_H264>   slices );
+        
+#if defined(MFX_VA_LINUX)        
+        std::vector<ENCODE_PACKEDHEADER_DATA> const & PackSlices(
+                DdiTask const & task,
+                mfxU32 fieldId,
+                std::vector<VAEncSliceParameterBufferH264> slices);        
+#endif        
 
         ENCODE_PACKEDHEADER_DATA const & PackSkippedSlice(
             DdiTask const & task,

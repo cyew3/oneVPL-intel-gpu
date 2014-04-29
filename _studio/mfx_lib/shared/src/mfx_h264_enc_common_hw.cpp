@@ -17,6 +17,7 @@
 
 #include <limits>
 #include <limits.h>
+#include <va/va_enc_h264.h>
 
 #include "ippi.h"
 #include "libmfx_core_interface.h"
@@ -6619,6 +6620,48 @@ std::vector<ENCODE_PACKEDHEADER_DATA> const & HeaderPacker::PackSlices(
 
     return m_packedSlices;
 }
+
+#if defined(MFX_VA_LINUX)
+std::vector<ENCODE_PACKEDHEADER_DATA> const & HeaderPacker::PackSlices(
+    DdiTask const & task,
+    mfxU32          fieldId,
+    std::vector<VAEncSliceParameterBufferH264>   slices )
+{
+
+    mfxU32 numSlices = (mfxU32)slices.size();
+    m_numMbPerSlice = 0;    
+    m_packedSlices.resize(numSlices);
+    if (m_sliceBuffer.size() < (size_t) (numSlices*50))
+    {
+        m_sliceBuffer.resize(numSlices*50);    
+    }
+    Zero(m_sliceBuffer);
+    Zero(m_packedSlices);
+
+    mfxU8 * sliceBufferBegin = Begin(m_sliceBuffer);
+    mfxU8 * sliceBufferEnd   = End(m_sliceBuffer);
+
+    for (mfxU32 i = 0; i < m_packedSlices.size(); i++)
+    {
+        mfxU8 * endOfPrefix = m_needPrefixNalUnit && task.m_did == 0 && task.m_qid == 0
+            ? PackPrefixNalUnitSvc(sliceBufferBegin, sliceBufferEnd, true, task, fieldId)
+            : sliceBufferBegin;
+
+        OutputBitstream obs(endOfPrefix, sliceBufferEnd, false); // pack without emulation control
+        WriteSlice(obs, task, fieldId, slices[i].macroblock_address, slices[i].num_macroblocks);
+
+        m_packedSlices[i].pData                  = sliceBufferBegin;
+        m_packedSlices[i].DataLength             = mfxU32((endOfPrefix - sliceBufferBegin) * 8 + obs.GetNumBits()); // for slices length is in bits
+        m_packedSlices[i].BufferSize             = (m_packedSlices[i].DataLength + 7) / 8;
+        m_packedSlices[i].SkipEmulationByteCount = mfxU32(endOfPrefix - sliceBufferBegin + 3);
+
+        sliceBufferBegin += m_packedSlices[i].BufferSize;
+    }
+
+    return m_packedSlices;
+}
+#endif
+
 std::vector<ENCODE_PACKEDHEADER_DATA> const & HeaderPacker::PackSlices(
     DdiTask const & task,
     mfxU32          fieldId)
