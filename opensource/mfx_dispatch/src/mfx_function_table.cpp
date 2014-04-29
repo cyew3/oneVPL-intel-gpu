@@ -60,12 +60,12 @@ FUNCTION_DESCRIPTION APIAudioFunc[eAudioFuncTotal] =
 {
     {"MFXInit", {{8, 1}}},
     {"MFXClose", {{8, 1}}},
-
-    {"MFXJoinSession", {{8, 1}}},
-    {"MFXCloneSession", {{8, 1}}},
     {"MFXQueryIMPL", {{8, 1}}},
     {"MFXQueryVersion", {{8, 1}}},
+
+    {"MFXJoinSession", {{8, 1}}},
     {"MFXDisjoinSession", {{8, 1}}},
+    {"MFXCloneSession", {{8, 1}}},
     {"MFXSetPriority", {{8, 1}}},
     {"MFXGetPriority", {{8, 1}}},
 
