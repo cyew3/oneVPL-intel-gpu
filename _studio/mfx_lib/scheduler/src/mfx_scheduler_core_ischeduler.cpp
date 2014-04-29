@@ -53,7 +53,6 @@ mfxStatus mfxSchedulerCore::Initialize(const MFX_SCHEDULER_PARAM *pParam)
 
 #if !defined (EXTERNAL_THREADING)
     mfxU32 iRes;
-    mfxStatus mfxRes;
 #endif
 
 
@@ -195,14 +194,11 @@ mfxStatus mfxSchedulerCore::Initialize(const MFX_SCHEDULER_PARAM *pParam)
         return MFX_ERR_MEMORY_ALLOC;
     }
 
-    // to run HW listen thread. Will be enabled if tests are OK
-
+ // to run HW listen thread. Will be enabled if tests are OK
+#if defined (MFX_VA)
 #if !defined (EXTERNAL_THREADING)
-    mfxRes = StartWakeUpThread();
-    if (MFX_ERR_NONE != mfxRes)
-    {
-        return mfxRes;
-    }
+    MFX_CHECK_STS(StartWakeUpThread());
+#endif
 #endif
 
     return MFX_ERR_NONE;
@@ -619,19 +615,25 @@ mfxStatus mfxSchedulerCore::AdjustPerformance(const mfxSchedulerMessage message)
         break;
 
     case MFX_SCHEDULER_START_HW_LISTENING:
+#if defined (MFX_VA)
 #if !defined (EXTERNAL_THREADING)
         if (0 == vm_thread_is_valid(&m_hwWakeUpThread))
         {
             mfxRes = StartWakeUpThread();
         }
 #endif
+#endif
         break;
 
     case MFX_SCHEDULER_STOP_HW_LISTENING:
+#if defined (MFX_VA)
+#if !defined (EXTERNAL_THREADING)
         if (vm_thread_is_valid(&m_hwWakeUpThread))
         {
             mfxRes = StopWakeUpThread();
         }
+#endif
+#endif
         break;
 
         // unknown message
