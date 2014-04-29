@@ -186,6 +186,7 @@
     <ClCompile Include="src\gmock\test_suites\hevcd_init.cpp" />
     <ClCompile Include="src\gmock\test_suites\hevcd_query.cpp" />
     <ClCompile Include="src\gmock\test_suites\hevcd_reset.cpp" />
+    <ClCompile Include="src\gmock\test_suites\hevcd_res_change.cpp" />
     <ClCompile Include="src\gmock\test_suites\plugin_load_unload.cpp" />
     <ClCompile Include="src\gmock\test_suites\ptir_init.cpp" />
     <ClCompile Include="src\gmock\test_suites\vp8d_init.cpp" />
