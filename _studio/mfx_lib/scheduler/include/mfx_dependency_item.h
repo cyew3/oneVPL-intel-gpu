@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2009-2013 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2009-2014 Intel Corporation. All Rights Reserved.
 //
 //
 //
@@ -167,7 +167,7 @@ public:
             // unlink item from all dependency lists
             for (i = 0; i < dependency_level; i += 1)
             {
-                if (m_dependency[i].pNext)
+                if (m_dependency[i].pPrev && m_dependency[i].pNext)
                 {
                     m_dependency[i].pNext->pPrev = m_dependency[i].pPrev;
                     m_dependency[i].pPrev->pNext = m_dependency[i].pNext;
