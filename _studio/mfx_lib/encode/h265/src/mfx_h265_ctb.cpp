@@ -2210,6 +2210,7 @@ CostType H265CU::MeCu(Ipp32u absPartIdx, Ipp8u depth, Ipp32s offset)
         if (fastCost < bestCost) {
             m_bsf->CtxSave(ctxSave[1], 0, NUM_CABAC_CONTEXT);
             small_memcpy(m_dataInter, m_data + absPartIdx, sizeof(H265CUData) * numParts);
+            bestCost = fastCost;
         } else if (!m_par->fastSkip) { // TODO check if needed
             TuDiff(m_interResidualsY[curIdx][depth] + offsetPred, MAX_CU_SIZE, pSrc, m_pitchSrc, pred + offsetPred, MAX_CU_SIZE, size);
             if (m_par->AnalyseFlags & HEVC_COST_CHROMA) {
@@ -3408,7 +3409,7 @@ void H265CU::MePu(H265MEInfo *meInfo, Ipp32s lastPredIdx)
     Ipp32s bestMergeCost = INT_MAX;
     H265MV bestMergeMv[2] = {};
     Ipp8s  bestMergeRef[2] = { -1, -1 };
-    /*EXPERIMENTAL SKIP CHECK: if (meInfo->splitMode != PART_SIZE_2Nx2N)*/ {
+    if (!(m_par->fastSkip && meInfo->splitMode == PART_SIZE_2Nx2N)) {
         for (Ipp32s mergeIdx = 0; mergeIdx < mergeInfo.numCand; mergeIdx++) {
             H265MV *mv = &mergeInfo.mvCand[2 * mergeIdx];
             Ipp8s *refIdx = &mergeInfo.refIdx[2 * mergeIdx];
@@ -3647,7 +3648,7 @@ void H265CU::MePuGacc(H265MEInfo *meInfo, Ipp32s lastPredIdx)
     Ipp32s bestMergeCost = INT_MAX;
     H265MV bestMergeMv[2] = {};
     Ipp8s  bestMergeRef[2] = { -1, -1 };
-    /*EXPERIMENTAL SKIP CHECK: if (meInfo->splitMode != PART_SIZE_2Nx2N)*/ {
+    if (!(m_par->fastSkip && meInfo->splitMode == PART_SIZE_2Nx2N)) {
         for (Ipp32s mergeIdx = 0; mergeIdx < mergeInfo.numCand; mergeIdx++) {
             H265MV *mv = &mergeInfo.mvCand[2 * mergeIdx];
             Ipp8s *refIdx = &mergeInfo.refIdx[2 * mergeIdx];

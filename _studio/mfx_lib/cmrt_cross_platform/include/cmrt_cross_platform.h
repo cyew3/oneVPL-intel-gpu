@@ -63,7 +63,7 @@ typedef unsigned int VADisplay;
 #define CM_2_3 203
 #define CM_2_4 204
 #define CM_3_0 300
-//#define CM_4_0 400
+#define CM_4_0 400
 
 #define CM_SUCCESS                                  0
 #define CM_FAILURE                                  -1
