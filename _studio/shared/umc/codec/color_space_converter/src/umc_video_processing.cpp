@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2003-2012 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2003-2014 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -281,12 +281,13 @@ Status VideoProcessing::SetParams(BaseCodecParams *params)
   UMC_CHECK(p_params, UMC_OK);
 
   Param = *p_params;
+  /* KW fix */
   if (pFilter[iDeinterlacing]) {
-    ((Deinterlacing*)pFilter[iDeinterlacing])->SetMethod(Param.m_DeinterlacingMethod);
+    ( static_cast<Deinterlacing*>(pFilter[iDeinterlacing])->SetMethod(Param.m_DeinterlacingMethod));
   }
 #if defined (UMC_ENABLE_VPP_RESIZE)
   if (pFilter[iResizing]) {
-    ((VideoResizing*)pFilter[iResizing])->SetMethod(Param.InterpolationMethod);
+    ( static_cast<VideoResizing*> (pFilter[iResizing])->SetMethod(Param.InterpolationMethod));
   }
 #endif
   bSrcCropArea = Param.SrcCropArea.left || Param.SrcCropArea.right ||

@@ -387,7 +387,6 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
     // WA:
     mfxU32 SampleCount = 1;
     mfxU32 refIdx = 0;
-    mfxU32 refCount = (mfxU32) pParams->fwdRefCount;
 
     //m_pipelineParam.resize(SampleCount);
     //m_pipelineParam.clear();

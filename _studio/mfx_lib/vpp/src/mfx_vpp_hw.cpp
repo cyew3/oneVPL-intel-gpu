@@ -57,6 +57,40 @@ enum
 // Utils
 ////////////////////////////////////////////////////////////////////////////////////
 
+static void MemSetZero4mfxExecuteParams (mfxExecuteParams *pMfxExecuteParams )
+{
+    memset(&pMfxExecuteParams->targetSurface, 0, sizeof(mfxDrvSurface));
+    memset(pMfxExecuteParams->pRefSurfaces, 0, sizeof(mfxDrvSurface));
+    pMfxExecuteParams->dstRects.clear(); /* NB! Due to STL container memset can not be used */
+    memset(&pMfxExecuteParams->customRateData, 0, sizeof(CustomRateData));
+    pMfxExecuteParams->targetTimeStamp = 0;
+    pMfxExecuteParams->refCount = 0;
+    pMfxExecuteParams->bkwdRefCount = 0;
+    pMfxExecuteParams->fwdRefCount = 0;
+    pMfxExecuteParams->iDeinterlacingAlgorithm = 0;
+    pMfxExecuteParams->bFMDEnable = 0;
+    pMfxExecuteParams->bDenoiseAutoAdjust = 0;
+    pMfxExecuteParams->denoiseFactor = 0;
+    pMfxExecuteParams->detailFactor = 0;
+    pMfxExecuteParams->iTargetInterlacingMode = 0;
+    pMfxExecuteParams->bEnableProcAmp = false;
+    pMfxExecuteParams->Brightness = 0;
+    pMfxExecuteParams->Contrast = 0;
+    pMfxExecuteParams->Hue = 0;
+    pMfxExecuteParams->Saturation = 0;
+    pMfxExecuteParams->bSceneDetectionEnable = false;
+    pMfxExecuteParams->bVarianceEnable = false;
+    pMfxExecuteParams->bImgStabilizationEnable = false;
+    pMfxExecuteParams->istabMode = 0;
+    pMfxExecuteParams->bFRCEnable = false;
+    pMfxExecuteParams->bComposite  = false;;
+    pMfxExecuteParams->iBackgroundColor = 0;
+    pMfxExecuteParams->statusReportID = 0;
+    pMfxExecuteParams->bFieldWeaving;
+} /*void MemSetZero4mfxExecuteParams (mfxExecuteParams *pMfxExecuteParams )*/
+
+
+
 template<typename T> mfxU32 FindFreeSurface(std::vector<T> const & vec)
 {
     for (size_t j = 0; j < vec.size(); j++)
@@ -646,7 +680,10 @@ ReleaseResource* ResMngr::CreateSubResource(void)
 {
     // fill resource to remove after task slot completion
     ReleaseResource* subRes = new ReleaseResource;
-    memset(subRes, 0, sizeof(ReleaseResource));
+    /* KW fix*/
+    //memset(subRes, 0, sizeof(ReleaseResource));
+    subRes->refCount = 0;
+    subRes->surfaceListForRelease.clear();
 
     subRes->refCount = m_outputIndexCountPerCycle;
 
@@ -669,7 +706,11 @@ ReleaseResource* ResMngr::CreateSubResourceForMode30i60p(void)
 {
     // fill resource to remove after task slot completion
     ReleaseResource* subRes = new ReleaseResource;
-    memset(subRes, 0, sizeof(ReleaseResource));
+    /* KW fix*/
+    //memset(subRes, 0, sizeof(ReleaseResource));
+    subRes->refCount = 0;
+    subRes->surfaceListForRelease.clear();
+
 
     subRes->refCount = m_outputIndexCountPerCycle;
 
@@ -1333,7 +1374,9 @@ VideoVPPHW::VideoVPPHW(IOMode mode, VideoCORE *core)
 
     m_asyncDepth = ACCEPTED_DEVICE_ASYNC_DEPTH;
 
-    memset(&m_executeParams, 0, sizeof(mfxExecuteParams));
+    /* KW fix */
+    //memset(&m_executeParams, 0, sizeof(mfxExecuteParams));
+    MemSetZero4mfxExecuteParams(&m_executeParams);
 
     // sync workload mode by default
     m_workloadMode = VPP_SYNC_WORKLOAD;

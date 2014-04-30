@@ -25,6 +25,39 @@ Copyright(c) 2008-2014 Intel Corporation. All Rights Reserved.
 
 using namespace MfxHwVideoProcessing;
 
+static void MemSetZero4mfxExecuteParams (mfxExecuteParams *pMfxExecuteParams )
+{
+    memset(&pMfxExecuteParams->targetSurface, 0, sizeof(mfxDrvSurface));
+    memset(pMfxExecuteParams->pRefSurfaces, 0, sizeof(mfxDrvSurface));
+    pMfxExecuteParams->dstRects.clear(); /* NB! Due to STL container memset can not be used */
+    memset(&pMfxExecuteParams->customRateData, 0, sizeof(CustomRateData));
+    pMfxExecuteParams->targetTimeStamp = 0;
+    pMfxExecuteParams->refCount = 0;
+    pMfxExecuteParams->bkwdRefCount = 0;
+    pMfxExecuteParams->fwdRefCount = 0;
+    pMfxExecuteParams->iDeinterlacingAlgorithm = 0;
+    pMfxExecuteParams->bFMDEnable = 0;
+    pMfxExecuteParams->bDenoiseAutoAdjust = 0;
+    pMfxExecuteParams->denoiseFactor = 0;
+    pMfxExecuteParams->detailFactor = 0;
+    pMfxExecuteParams->iTargetInterlacingMode = 0;
+    pMfxExecuteParams->bEnableProcAmp = false;
+    pMfxExecuteParams->Brightness = 0;
+    pMfxExecuteParams->Contrast = 0;
+    pMfxExecuteParams->Hue = 0;
+    pMfxExecuteParams->Saturation = 0;
+    pMfxExecuteParams->bSceneDetectionEnable = false;
+    pMfxExecuteParams->bVarianceEnable = false;
+    pMfxExecuteParams->bImgStabilizationEnable = false;
+    pMfxExecuteParams->istabMode = 0;
+    pMfxExecuteParams->bFRCEnable = false;
+    pMfxExecuteParams->bComposite  = false;;
+    pMfxExecuteParams->iBackgroundColor = 0;
+    pMfxExecuteParams->statusReportID = 0;
+    pMfxExecuteParams->bFieldWeaving;
+} /*void MemSetZero4mfxExecuteParams (mfxExecuteParams *pMfxExecuteParams )*/
+
+
 enum QueryStatus
 {
     VPREP_GPU_READY         =   0,
@@ -157,7 +190,9 @@ mfxStatus VideoVppJpegD3D9::BeginHwJpegProcessing(mfxFrameSurface1 *pInputSurfac
     MfxHwVideoProcessing::mfxExecuteParams m_executeParams;
 
     memset(&m_pExecuteSurface, 0, sizeof(MfxHwVideoProcessing::mfxDrvSurface));
-    memset(&m_executeParams, 0, sizeof(MfxHwVideoProcessing::mfxExecuteParams));
+    /* KW fix */
+    //memset(&m_executeParams, 0, sizeof(MfxHwVideoProcessing::mfxExecuteParams));
+    MemSetZero4mfxExecuteParams(&m_executeParams);
 
     if(m_isD3DToSys)
     {
@@ -242,7 +277,9 @@ mfxStatus VideoVppJpegD3D9::BeginHwJpegProcessing(mfxFrameSurface1 *pInputSurfac
 
     memset(&m_pExecuteSurface[0], 0, sizeof(MfxHwVideoProcessing::mfxDrvSurface));
     memset(&m_pExecuteSurface[1], 0, sizeof(MfxHwVideoProcessing::mfxDrvSurface));
-    memset(&m_executeParams, 0, sizeof(MfxHwVideoProcessing::mfxExecuteParams));
+    /* KW fix */
+    //memset(&m_executeParams, 0, sizeof(MfxHwVideoProcessing::mfxExecuteParams));
+    MemSetZero4mfxExecuteParams(&m_executeParams);
 
     if(m_isD3DToSys)
     {

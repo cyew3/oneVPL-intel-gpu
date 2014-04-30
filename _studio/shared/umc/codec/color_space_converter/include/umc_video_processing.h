@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//        Copyright(c) 2003-2011 Intel Corporation. All Rights Reserved.
+//        Copyright(c) 2003-2014 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -43,7 +43,12 @@ public:
   {
     InterpolationMethod = 0;
     m_DeinterlacingMethod = NO_DEINTERLACING; //DEINTERLACING_BLEND;//DEINTERLACING_DUPLICATE;
-    memset(&SrcCropArea, 0, sizeof(SrcCropArea));
+    /* KW fix*/
+    //memset(&SrcCropArea, 0, sizeof(SrcCropArea));
+    SrcCropArea.bottom = 0;
+    SrcCropArea.left = 0;
+    SrcCropArea.right = 0;
+    SrcCropArea.top = 0;
   }
 };
 
