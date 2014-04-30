@@ -1614,7 +1614,9 @@ static void SumAllocRequest(mfxFrameAllocRequest  &curReq, mfxFrameAllocRequest 
     curReq.NumFrameSuggested = curReq.NumFrameSuggested + newReq.NumFrameSuggested + nAsync;
     curReq.Type = curReq.Type | newReq.Type;
 
-    if ((curReq.Type & (MFX_MEMTYPE_DXVA2_PROCESSOR_TARGET|MFX_MEMTYPE_DXVA2_DECODER_TARGET)) == (MFX_MEMTYPE_DXVA2_PROCESSOR_TARGET|MFX_MEMTYPE_DXVA2_DECODER_TARGET))
+    if ((curReq.Type & MFX_MEMTYPE_SYSTEM_MEMORY) && ((curReq.Type & 0xf0) != MFX_MEMTYPE_SYSTEM_MEMORY))
+        curReq.Type = (curReq.Type & (~ MFX_MEMTYPE_SYSTEM_MEMORY));
+    if ((curReq.Type & MFX_MEMTYPE_DXVA2_PROCESSOR_TARGET) && ((curReq.Type & 0xf0) != MFX_MEMTYPE_DXVA2_PROCESSOR_TARGET))
         curReq.Type = (curReq.Type & (~ MFX_MEMTYPE_DXVA2_PROCESSOR_TARGET));
 
     if (curReq.Info.Width == 0)
@@ -1630,11 +1632,13 @@ static void SumAllocRequest(mfxFrameAllocRequest  &curReq, mfxFrameAllocRequest 
 
 static void CheckAllocRequest(mfxFrameAllocRequest  &curReq, mfxFrameAllocRequest  &newReq)
 {
-    curReq.NumFrameMin = curReq.NumFrameMin <  newReq.NumFrameMin ? newReq.NumFrameMin : curReq.NumFrameMin;
+    curReq.NumFrameMin = curReq.NumFrameMin < newReq.NumFrameMin ? newReq.NumFrameMin : curReq.NumFrameMin;
     curReq.NumFrameSuggested = curReq.NumFrameSuggested <  newReq.NumFrameSuggested ? newReq.NumFrameSuggested : curReq.NumFrameSuggested;
     curReq.Type = curReq.Type | newReq.Type;
 
-    if ((curReq.Type & (MFX_MEMTYPE_DXVA2_PROCESSOR_TARGET|MFX_MEMTYPE_DXVA2_DECODER_TARGET)) == (MFX_MEMTYPE_DXVA2_PROCESSOR_TARGET|MFX_MEMTYPE_DXVA2_DECODER_TARGET))
+    if ((curReq.Type & MFX_MEMTYPE_SYSTEM_MEMORY) && ((curReq.Type & 0xf0) != MFX_MEMTYPE_SYSTEM_MEMORY))
+        curReq.Type = (curReq.Type & (~ MFX_MEMTYPE_SYSTEM_MEMORY));
+    if ((curReq.Type & MFX_MEMTYPE_DXVA2_PROCESSOR_TARGET) && ((curReq.Type & 0xf0) != MFX_MEMTYPE_DXVA2_PROCESSOR_TARGET))
         curReq.Type = (curReq.Type & (~ MFX_MEMTYPE_DXVA2_PROCESSOR_TARGET));
 
     if (curReq.Info.Width == 0)
