@@ -641,24 +641,6 @@
     <ProjectReference Include="..\cmrt_cross_platform\cmrt_cross_platform.vcxproj">
       <Project>{811626eb-8608-4cac-abee-cd99daec38c4}</Project>
     </ProjectReference>
-    <ProjectReference Include="..\optimization\hevc_pp_atom.vcxproj">
-      <Project>{77807a28-2170-4a4c-95e5-73cb0657aa47}</Project>
-    </ProjectReference>
-    <ProjectReference Include="..\optimization\hevc_pp_avx2.vcxproj">
-      <Project>{6ebb14f6-dca0-485a-89f7-fe803b75d0b9}</Project>
-    </ProjectReference>
-    <ProjectReference Include="..\optimization\hevc_pp_dispatch.vcxproj">
-      <Project>{c37d7375-76cd-400b-a030-4624b1012e08}</Project>
-    </ProjectReference>
-    <ProjectReference Include="..\optimization\hevc_pp_px.vcxproj">
-      <Project>{3b7a183a-c728-494f-a56e-6a993150d277}</Project>
-    </ProjectReference>
-    <ProjectReference Include="..\optimization\hevc_pp_sse4.vcxproj">
-      <Project>{a67aee55-e7e2-43da-9bdb-548ace4c595a}</Project>
-    </ProjectReference>
-    <ProjectReference Include="..\optimization\hevc_pp_ssse3.vcxproj">
-      <Project>{87cf2689-abe2-463f-ad5e-9e4ce4b8b5cd}</Project>
-    </ProjectReference>
     <ProjectReference Include="libmfxhw_plugin_hevcd.vcxproj">
       <Project>{d719372d-ba13-4730-aff6-1994b26eff6c}</Project>
     </ProjectReference>

@@ -161,7 +161,9 @@ UMC::Status MFXTaskSupplier_H265::Init(UMC::BaseCodecParams *pInit)
     GetView()->dpbSize = 16;
     m_DPBSizeEx = m_iThreadNum;
 
+#ifndef MFX_VA
     MFX_HEVC_PP::InitDispatcher();
+#endif
     return UMC::UMC_OK;
 }
 
