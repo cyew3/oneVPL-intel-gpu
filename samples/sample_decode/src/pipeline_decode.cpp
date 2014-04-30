@@ -864,6 +864,8 @@ mfxStatus CDecodingPipeline::ResetDecoder(sInputParams *pParams)
 
     // free allocated frames
     DeleteFrames();
+    m_pCurrentFreeSurface = NULL;
+    m_pCurrentFreeOutputSurface = NULL;
 
     // initialize parameters with values from parsed header
     sts = InitMfxParams(pParams);
