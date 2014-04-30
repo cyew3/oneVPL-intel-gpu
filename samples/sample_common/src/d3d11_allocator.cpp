@@ -10,7 +10,11 @@ Copyright(c) 2011-2014 Intel Corporation. All Rights Reserved.
 
 #include "mfx_samples_config.h"
 
-#if (defined(_WIN32) || defined(_WIN64))
+#if defined(_WIN32) || defined(_WIN64)
+
+#include "sample_defs.h"
+
+#if MFX_D3D11_SUPPORT
 
 #include <objbase.h>
 #include <initguid.h>
@@ -19,7 +23,6 @@ Copyright(c) 2011-2014 Intel Corporation. All Rights Reserved.
 #include <functional>
 #include <iterator>
 #include "d3d11_allocator.h"
-#include "sample_defs.h"
 
 #define D3DFMT_NV12 (DXGI_FORMAT)MAKEFOURCC('N','V','1','2')
 #define D3DFMT_YV12 (DXGI_FORMAT)MAKEFOURCC('Y','V','1','2')
@@ -477,4 +480,5 @@ DXGI_FORMAT D3D11FrameAllocator::ConverColortFormat(mfxU32 fourcc)
     }
 }
 
-#endif // #if (defined(_WIN32) || defined(_WIN64)) && (MFX_D3D11_SUPPORT)
+#endif // #if MFX_D3D11_SUPPORT
+#endif // #if defined(_WIN32) || defined(_WIN64)

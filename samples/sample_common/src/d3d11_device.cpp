@@ -10,13 +10,13 @@ Copyright(c) 2011-2014 Intel Corporation. All Rights Reserved.
 
 #include "mfx_samples_config.h"
 
-#if defined(WIN32) || defined(WIN64)
+#if defined(_WIN32) || defined(_WIN64)
 
-#include "d3d11_device.h"
+#include "sample_defs.h"
 
 #if MFX_D3D11_SUPPORT
 
-#include "sample_defs.h"
+#include "d3d11_device.h"
 
 CD3D11Device::CD3D11Device():
     m_nViews(0),
@@ -360,4 +360,4 @@ void CD3D11Device::Close()
 }
 
 #endif // #if MFX_D3D11_SUPPORT
-#endif // #if defined(WIN32) || defined(WIN64)
+#endif // #if defined(_WIN32) || defined(_WIN64)
