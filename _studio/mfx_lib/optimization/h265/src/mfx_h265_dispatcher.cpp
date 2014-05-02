@@ -279,6 +279,7 @@ using namespace MFX_HEVC_PP;
 
         g_dispatcher. h265_SAD_MxN_x3_8u        =  &MFX_HEVC_PP::h265_SAD_MxN_x3_8u_sse;
         g_dispatcher. h265_SAD_MxN_x4_8u        =  &MFX_HEVC_PP::h265_SAD_MxN_x4_8u_sse;
+        g_dispatcher. h265_SAD_MxN_general_16s  =  &MFX_HEVC_PP::h265_SAD_MxN_general_16s_sse;
 
         //[transform.fwd]==================================
         g_dispatcher. h265_DST4x4Fwd_16s = &MFX_HEVC_PP::h265_DST4x4Fwd_16s_sse;
@@ -438,6 +439,7 @@ using namespace MFX_HEVC_PP;
 
         g_dispatcher. h265_SAD_MxN_x3_8u        =  &MFX_HEVC_PP::h265_SAD_MxN_x3_8u_px;
         g_dispatcher. h265_SAD_MxN_x4_8u        =  &MFX_HEVC_PP::h265_SAD_MxN_x4_8u_px;
+        g_dispatcher. h265_SAD_MxN_general_16s  =  &MFX_HEVC_PP::h265_SAD_MxN_general_16s_px;
 
         //[transform.fwd]==================================
         g_dispatcher. h265_DST4x4Fwd_16s = &MFX_HEVC_PP::h265_DST4x4Fwd_16s_ssse3;
@@ -597,6 +599,7 @@ using namespace MFX_HEVC_PP;
 
         g_dispatcher. h265_SAD_MxN_x3_8u        =  &MFX_HEVC_PP::h265_SAD_MxN_x3_8u_avx2;
         g_dispatcher. h265_SAD_MxN_x4_8u        =  &MFX_HEVC_PP::h265_SAD_MxN_x4_8u_avx2;
+        g_dispatcher. h265_SAD_MxN_general_16s  =  &MFX_HEVC_PP::h265_SAD_MxN_general_16s_avx2;
 
         //[transform.fwd]==================================
         g_dispatcher. h265_DST4x4Fwd_16s = &MFX_HEVC_PP::h265_DST4x4Fwd_16s_avx2;
@@ -780,6 +783,7 @@ using namespace MFX_HEVC_PP;
 
         g_dispatcher. h265_SAD_MxN_x3_8u        =  &MFX_HEVC_PP::h265_SAD_MxN_x3_8u_px;
         g_dispatcher. h265_SAD_MxN_x4_8u        =  &MFX_HEVC_PP::h265_SAD_MxN_x4_8u_px;
+        g_dispatcher. h265_SAD_MxN_general_16s  =  &MFX_HEVC_PP::h265_SAD_MxN_general_16s_px;
 
         //[transform.fwd]==================================
         g_dispatcher. h265_DST4x4Fwd_16s = &MFX_HEVC_PP::h265_DST4x4Fwd_16s_px;

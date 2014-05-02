@@ -3,7 +3,7 @@
 //  This software is supplied under the terms of a license agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in accordance with the terms of that agreement.
-//        Copyright (c) 2013 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2013-2014 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -814,6 +814,24 @@ MAKE_SAD_GENERAL(64, 64)
 
 
 #endif
+
+/* reference 16-bit SAD */
+int H265_FASTCALL MAKE_NAME(h265_SAD_MxN_general_16s)(const Ipp16s* src, Ipp32s src_stride, const Ipp16s* ref, Ipp32s ref_stride, Ipp32s width, Ipp32s height)
+{
+    Ipp32s var, sad;
+
+    sad = 0;
+    for (int j = 0; j < height; j++)
+    {
+        for (int i = 0; i < width; i++)
+        {
+            var = src[i + j*src_stride] - ref[i + j*ref_stride];
+            sad += abs(var);
+        }
+    }
+
+    return sad;
+}
 
 } // end namespace MFX_HEVC_PP
 

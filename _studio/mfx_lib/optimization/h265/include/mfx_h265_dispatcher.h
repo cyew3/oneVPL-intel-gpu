@@ -306,6 +306,10 @@ namespace MFX_HEVC_PP
     void H265_FASTCALL h265_SAD_MxN_x4_8u_sse (const Ipp8u* src, Ipp32s src_stride, const Ipp8u* ref0, const Ipp8u* ref1, const Ipp8u* ref2, const Ipp8u* ref3, Ipp32s ref_stride, Ipp32s width, Ipp32s height, Ipp32s sads[4]);
     void H265_FASTCALL h265_SAD_MxN_x4_8u_avx2(const Ipp8u* src, Ipp32s src_stride, const Ipp8u* ref0, const Ipp8u* ref1, const Ipp8u* ref2, const Ipp8u* ref3, Ipp32s ref_stride, Ipp32s width, Ipp32s height, Ipp32s sads[4]);
 
+    int H265_FASTCALL h265_SAD_MxN_general_16s_px  (const Ipp16s* src, Ipp32s src_stride, const Ipp16s* ref, Ipp32s ref_stride, Ipp32s width, Ipp32s height);
+    int H265_FASTCALL h265_SAD_MxN_general_16s_sse (const Ipp16s* src, Ipp32s src_stride, const Ipp16s* ref, Ipp32s ref_stride, Ipp32s width, Ipp32s height);
+    int H265_FASTCALL h265_SAD_MxN_general_16s_avx2(const Ipp16s* src, Ipp32s src_stride, const Ipp16s* ref, Ipp32s ref_stride, Ipp32s width, Ipp32s height);
+
     // SATD
     Ipp32s H265_FASTCALL h265_SATD_4x4_8u_px  (const Ipp8u* pSrcCur, int srcCurStep, const Ipp8u* pSrcRef, int srcRefStep);
     Ipp32s H265_FASTCALL h265_SATD_4x4_8u_sse (const Ipp8u* pSrcCur, int srcCurStep, const Ipp8u* pSrcRef, int srcRefStep);
