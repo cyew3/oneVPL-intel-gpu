@@ -68,7 +68,7 @@ mfxStatus D3D11VideoCORE::InternalInit()
 
     //need to replace with specific D3D11 approach
     m_HWType = MFX::GetHardwareType(m_adapterNum, platformFromDriver);
-    if (m_HWType >= MFX_HW_BDW) m_bCmCopyAllowed = false;
+    //if (m_HWType >= MFX_HW_BDW) m_bCmCopyAllowed = false;
     return MFX_ERR_NONE;
 }
 

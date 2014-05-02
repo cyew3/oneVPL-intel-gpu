@@ -285,8 +285,8 @@ mfxStatus D3D9VideoCORE::InternalInit()
         OnDeblockingInWinRegistry(MFX_CODEC_VC1);
     }
 
-    if (m_HWType >= MFX_HW_BDW)
-        m_bCmCopyAllowed = false;
+    //if (m_HWType >= MFX_HW_BDW)
+    //    m_bCmCopyAllowed = false;
 
     if (platformFromDriver == 12) // 12 - IGFX_GT, sandybridge
         m_bCmCopyAllowed = false;
