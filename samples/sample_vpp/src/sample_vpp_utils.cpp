@@ -386,6 +386,8 @@ mfxStatus InitMemoryAllocator(sFrameProcessor* pProcessor, sMemoryAllocator* pAl
 {
   mfxStatus sts = MFX_ERR_NONE;
   mfxFrameAllocRequest request[2];// [0] - in, [1] - out
+  mfxFrameAllocRequest request_RGB;
+  mfxFrameInfo requestFrameInfoRGB;
 
   MSDK_CHECK_POINTER(pProcessor,          MFX_ERR_NULL_PTR);
   MSDK_CHECK_POINTER(pAllocator,          MFX_ERR_NULL_PTR);
@@ -394,6 +396,7 @@ mfxStatus InitMemoryAllocator(sFrameProcessor* pProcessor, sMemoryAllocator* pAl
 
   MSDK_ZERO_MEMORY(request[VPP_IN]);
   MSDK_ZERO_MEMORY(request[VPP_OUT]);
+  MSDK_ZERO_MEMORY(request_RGB);
 
   // VppRequest[0] for input frames request, VppRequest[1] for output frames request
   MSDK_CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, sts, WipeMemoryAllocator(pAllocator));
@@ -495,9 +498,19 @@ mfxStatus InitMemoryAllocator(sFrameProcessor* pProcessor, sMemoryAllocator* pAl
   sts = pProcessor->pmfxVPP->QueryIOSurf(pParams, request);
   MSDK_IGNORE_MFX_STS(sts, MFX_WRN_PARTIAL_ACCELERATION);
 
+  MSDK_MEMCPY(&request_RGB,&(request[VPP_IN]),sizeof(mfxFrameAllocRequest) );
   // alloc frames for vpp
   // [IN]
   sts = InitSurfaces(pAllocator, &(request[VPP_IN]), &(pParams->vpp.In), VPP_IN);
+  MSDK_CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, sts, WipeMemoryAllocator(pAllocator));
+  /**/
+  request_RGB.Info.FourCC = MFX_FOURCC_RGB4;
+  request_RGB.Info.ChromaFormat = 0;
+  MSDK_MEMCPY(&requestFrameInfoRGB, &(pParams->vpp.In), sizeof(mfxFrameInfo));
+  requestFrameInfoRGB.ChromaFormat = 0;
+  requestFrameInfoRGB.FourCC = MFX_FOURCC_RGB4;
+
+  sts = InitSurfaces(pAllocator, &request_RGB, &requestFrameInfoRGB, VPP_IN_RGB);
   MSDK_CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, sts, WipeMemoryAllocator(pAllocator));
 
   // [OUT]

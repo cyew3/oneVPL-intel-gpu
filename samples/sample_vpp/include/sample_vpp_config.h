@@ -87,6 +87,7 @@ typedef struct
 {
     msdk_char             streamName[MSDK_MAX_FILENAME_LEN];
     mfxVPPCompInputStream compStream;
+    mfxU32 streamFourcc;
 } sCompositionStreamInfo;
 
 typedef struct

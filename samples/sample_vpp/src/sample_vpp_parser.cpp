@@ -269,6 +269,15 @@ mfxStatus ParseCompositionParfile(const msdk_char* parFileName, sInputParams* pP
         {
             pParams->inFrameInfo[nStreamInd].dFrameRate = (mfxF64) atof(value.c_str());
         }
+        else if (key.compare("fourcc") == 0)
+        {
+            const mfxU16 len_size = 5;
+            msdk_char fourcc[len_size];
+            for (mfxU16 i = 0; i < (value.size() > len_size ? len_size : value.size()); i++)
+                fourcc[i] = value.at(i);
+            fourcc[len_size-1]=0;
+            pParams->inFrameInfo[nStreamInd].FourCC = Str2FourCC(fourcc);
+        }
         else if (key.compare("picstruct") == 0)
         {
             pParams->inFrameInfo[nStreamInd].PicStruct = (mfxU8) atoi(value.c_str());
@@ -294,10 +303,14 @@ mfxStatus ParseCompositionParfile(const msdk_char* parFileName, sInputParams* pP
         {
             pParams->compositionParam.streamInfo[nStreamInd].compStream.GlobalAlphaEnable = (mfxU16) atoi(value.c_str());
         }
-        else if ((key.compare("Alpha") == 0) &&
+        else if ((key.compare("GlobalAlpha") == 0) &&
                (pParams->compositionParam.streamInfo[nStreamInd].compStream.GlobalAlphaEnable != 0))
         {
             pParams->compositionParam.streamInfo[nStreamInd].compStream.GlobalAlpha = (mfxU16) atoi(value.c_str());
+        }
+        else if (key.compare("PixelAlphaEnable") == 0)
+        {
+            pParams->compositionParam.streamInfo[nStreamInd].compStream.PixelAlphaEnable = (mfxU16) atoi(value.c_str());
         }
         else if (key.compare("LumaKeyEnable") == 0)
         {

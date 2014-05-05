@@ -47,6 +47,7 @@
 
 #define VPP_IN       (0)
 #define VPP_OUT      (1)
+#define VPP_IN_RGB   2
 
 #define MFX_MAX_32U   ( 0xFFFFFFFF )
 
@@ -116,8 +117,8 @@ struct sMemoryAllocator
   bool                bd3dAlloc;
   bool                bUsedAsExternalAllocator;
 
-  mfxFrameSurface1*     pSurfaces[2];
-  mfxFrameAllocResponse response[2];
+  mfxFrameSurface1*     pSurfaces[3];
+  mfxFrameAllocResponse response[3];
 
 #if D3D_SURFACES_SUPPORT
   IDirect3DDeviceManager9* pd3dDeviceManager;

@@ -111,7 +111,9 @@ int main(int argc, char *argv[])
 
   mfxU32              readFramesCount = 0;
 
-  mfxU32              i;
+  mfxU32              i, j;
+
+  mfxU32              argbSurfaceIndex = 0;
 
   //reset pointers to the all internal resources
   MSDK_ZERO_MEMORY(Resources);
@@ -190,12 +192,32 @@ int main(int argc, char *argv[])
   {
     for (i = 0; i < Resources.numSrcFiles; i++)
     {
-        MSDK_MEMCPY(&(Allocator.pSurfaces[VPP_IN][i].Info), &(inFrameInfo[i]), sizeof (mfxFrameInfo));
-        //Composition need the whole frame reading
-        inFrameInfo[i].CropX = 0;
-        inFrameInfo[i].CropY = 0;
-        inFrameInfo[i].CropW = inFrameInfo[i].Width;
-        inFrameInfo[i].CropH = inFrameInfo[i].Height;
+        /* Normal case of processing */
+        if (inFrameInfo[i].FourCC != MFX_FOURCC_RGB4)
+        {
+            MSDK_MEMCPY(&(Allocator.pSurfaces[VPP_IN][i].Info), &(inFrameInfo[i]), sizeof (mfxFrameInfo));
+            //Composition need the whole frame reading
+            inFrameInfo[i].CropX = 0;
+            inFrameInfo[i].CropY = 0;
+            inFrameInfo[i].CropW = inFrameInfo[i].Width;
+            inFrameInfo[i].CropH = inFrameInfo[i].Height;
+
+        }
+        else if (inFrameInfo[i].FourCC == MFX_FOURCC_RGB4)
+        {
+            /* This is case for mixed processing NV12 plus RGB4:
+             * all (all surface from pool, does not only current one!)
+             * RGB4 surfaces should be properly initialised */
+            for (j = 0; j < Allocator.response[VPP_IN_RGB].NumFrameActual; j++)
+            {
+                MSDK_MEMCPY(&(Allocator.pSurfaces[VPP_IN_RGB][j].Info), &(inFrameInfo[i]), sizeof (mfxFrameInfo));
+                Allocator.pSurfaces[VPP_IN_RGB][j].Info.CropH = inFrameInfo[i].CropH;
+                Allocator.pSurfaces[VPP_IN_RGB][j].Info.CropW = inFrameInfo[i].CropW;
+            }
+            inFrameInfo[i].CropX = 0;
+            inFrameInfo[i].CropY = 0;
+            argbSurfaceIndex = i;
+        }
     }
   }
   msdk_printf(MSDK_STRING("VPP started\n"));
@@ -210,9 +232,20 @@ int main(int argc, char *argv[])
     }
     if( !isMultipleOut )
     {
-        sts = GetFreeSurface(Allocator.pSurfaces[VPP_IN],
-                             Allocator.response[VPP_IN].NumFrameActual,
-                             &pInSurf[nInStreamInd]);
+        if (nInStreamInd == argbSurfaceIndex)
+        {
+            sts = GetFreeSurface(Allocator.pSurfaces[VPP_IN_RGB],
+                                 Allocator.response[VPP_IN_RGB].NumFrameActual,
+                                 &pInSurf[nInStreamInd]);
+        }
+        else
+        {
+            sts = GetFreeSurface(Allocator.pSurfaces[VPP_IN],
+                                 Allocator.response[VPP_IN].NumFrameActual,
+                                 &pInSurf[nInStreamInd]);
+        }
+
+
         MSDK_BREAK_ON_ERROR(sts);
         if (readFramesCount++ == Params.requestedFramesCount)
         {
