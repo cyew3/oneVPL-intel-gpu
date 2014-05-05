@@ -1499,30 +1499,7 @@ void SaoDecodeFilter::Close()
         delete [] m_OffsetBo;
         m_OffsetBo = NULL;
     }
-
-    /*if(m_OffsetBo2)
-    {
-        delete [] m_OffsetBo2;
-        m_OffsetBo2 = NULL;
-    }
-
-    if(m_OffsetBoChroma)
-    {
-        delete [] m_OffsetBoChroma;
-        m_OffsetBoChroma = NULL;
-    }
-
-    if(m_OffsetBo2Chroma)
-    {
-        delete [] m_OffsetBo2Chroma;
-        m_OffsetBo2Chroma = NULL;
-    }*/
-
-    /*if(m_ClipTable)
-    {
-        delete [] m_ClipTable;
-        m_ClipTable = NULL;
-    }*/
+    
     m_ClipTable = NULL;
 
     if(m_ClipTableBase)
