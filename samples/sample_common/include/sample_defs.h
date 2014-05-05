@@ -72,6 +72,7 @@
 #define MSDK_BREAK_ON_ERROR(P)                   {if (MFX_ERR_NONE != (P)) break;}
 #define MSDK_SAFE_DELETE_ARRAY(P)                {if (P) {delete[] P; P = NULL;}}
 #define MSDK_SAFE_RELEASE(X)                     {if (X) { X->Release(); X = NULL; }}
+#define MSDK_SAFE_FREE(X)                        {if (X) { free(X); X = NULL; }}
 
 #ifndef MSDK_SAFE_DELETE
 #define MSDK_SAFE_DELETE(P)                      {if (P) {delete P; P = NULL;}}

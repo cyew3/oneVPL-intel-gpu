@@ -4,11 +4,9 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2014 Intel Corporation. All Rights Reserved.
+Copyright(c) 2005-2014 Intel Corporation. All Rights Reserved.
 
 **********************************************************************************/
-
-#include "mfx_samples_config.h"
 
 #include <stdio.h>
 #include <stdexcept> // for std::exception on Linux
@@ -565,8 +563,12 @@ mfxStatus OpenCLFilterRotator180::Process(DataChunk * /*chunk*/)
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
     sts = m_pAlloc->GetHDL(m_pAlloc->pthis, m_pOut->Data.MemId, reinterpret_cast<mfxHDL *>(&out));
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
-
-    cl_int error = m_pOpenCLFilter->ProcessSurface(m_pIn->Info.Width, m_pIn->Info.Height, in, out);
+    cl_int error = CL_SUCCESS;
+#if defined(_WIN32) || defined(_WIN64)
+    error = m_pOpenCLFilter->ProcessSurface(m_pIn->Info.Width, m_pIn->Info.Height, (directxMemId*)m_pIn->Data.MemId, (directxMemId*)m_pOut->Data.MemId);
+#else
+    error = m_pOpenCLFilter->ProcessSurface(m_pIn->Info.Width, m_pIn->Info.Height, in, out);
+#endif
     if (error) return MFX_ERR_DEVICE_FAILED;
 
     return MFX_ERR_NONE;

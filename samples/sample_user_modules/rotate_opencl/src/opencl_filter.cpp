@@ -25,8 +25,10 @@ Copyright(c) 2005-2014 Intel Corporation. All Rights Reserved.
 // define for <CL/cl_ext.h>
 #define DX9_MEDIA_SHARING
 #define DX_MEDIA_SHARING
+#define CL_DX9_MEDIA_SHARING_INTEL_EXT
 
 #include <CL/opencl.h>
+#include <CL/cl_d3d9.h>
 
 using std::endl;
 
@@ -360,47 +362,16 @@ cl_int OpenCLFilter::SetKernelArgs()
     return error;
 }
 
-cl_int OpenCLFilter::PrepareSharedSurfaces(int width, int height, IDirect3DSurface9* pD3DSurf)
+cl_int OpenCLFilter::PrepareSharedSurfaces(int width, int height, directxMemId* inputD3DSurf, directxMemId* outputD3DSurf)
 {
     cl_int error = CL_SUCCESS;
 
     if(m_bInit)
     {
-        HRESULT hr;
-
         if(!(m_currentWidth == width && m_currentHeight == height && m_currentFormat == m_kernels[m_activeKernel].format))
         {
             if(m_hSharedSurfaces[0])
                 ReleaseResources(); // Release existing surfaces
-
-            //
-            // Setup share surfaces/handles
-            //
-            try
-            {
-                LockedD3DDevice pD3DDevice = m_SafeD3DDeviceManager->LockDevice();
-                for(int i=0;i<c_shared_surfaces_num;i++)
-                {
-                    // Create the input surface
-                    hr = pD3DDevice.get()->CreateOffscreenPlainSurface(
-                                               width,
-                                               height,
-                                               m_kernels[m_activeKernel].format,
-                                               D3DPOOL_DEFAULT,
-                                               &m_pSharedSurfaces[i],
-                                               &m_hSharedSurfaces[i]);
-                    if (FAILED(hr))
-                    {
-                        log.error() << "OpenCLFilter: Couldn't create surfaces" << endl;
-                        return CL_DEVICE_NOT_AVAILABLE;
-                    }
-                }
-            }
-            catch (const std::exception &ex)
-            {
-                log.error() << ex.what() << endl;
-                return CL_DEVICE_NOT_AVAILABLE;
-            }
 
             m_currentWidth        = width;
             m_currentHeight       = height;
@@ -417,22 +388,22 @@ cl_int OpenCLFilter::PrepareSharedSurfaces(int width, int height, IDirect3DSurfa
                 // Working on NV12 surfaces
 
                 // Associate the shared buffer with the kernel object
-                m_clbuffer[0] = clCreateFromDX9MediaSurfaceINTEL(m_clcontext,0,m_pSharedSurfaces[0],m_hSharedSurfaces[0],0,&error);
+                m_clbuffer[0] = clCreateFromDX9MediaSurfaceINTEL(m_clcontext,0,inputD3DSurf->m_surface,inputD3DSurf->m_handle,0,&error);
                 if(error) {
                     log.error() << "clCreateFromDX9MediaSurfaceINTEL failed. Error code: " << error << endl;
                     return error;
                 }
-                m_clbuffer[1] = clCreateFromDX9MediaSurfaceINTEL(m_clcontext,0,m_pSharedSurfaces[0],m_hSharedSurfaces[0],1,&error);
+                m_clbuffer[1] = clCreateFromDX9MediaSurfaceINTEL(m_clcontext,0,inputD3DSurf->m_surface,inputD3DSurf->m_handle,1,&error);
                 if(error) {
                     log.error() << "clCreateFromDX9MediaSurfaceINTEL failed. Error code: " << error << endl;
                     return error;
                 }
-                m_clbuffer[2] = clCreateFromDX9MediaSurfaceINTEL(m_clcontext,0,m_pSharedSurfaces[1],m_hSharedSurfaces[1],0,&error);
+                m_clbuffer[2] = clCreateFromDX9MediaSurfaceINTEL(m_clcontext,0,outputD3DSurf->m_surface,outputD3DSurf->m_handle,0,&error);
                 if(error) {
                     log.error() << "clCreateFromDX9MediaSurfaceINTEL failed. Error code: " << error << endl;
                     return error;
                 }
-                m_clbuffer[3] = clCreateFromDX9MediaSurfaceINTEL(m_clcontext,0,m_pSharedSurfaces[1],m_hSharedSurfaces[1],1,&error);
+                m_clbuffer[3] = clCreateFromDX9MediaSurfaceINTEL(m_clcontext,0,outputD3DSurf->m_surface,outputD3DSurf->m_handle,1,&error);
                 if(error) {
                     log.error() << "clCreateFromDX9MediaSurfaceINTEL failed. Error code: " << error << endl;
                     return error;
@@ -462,10 +433,6 @@ cl_int OpenCLFilter::PrepareSharedSurfaces(int width, int height, IDirect3DSurfa
                 return CL_INVALID_VALUE;
             }
         }
-
-
-        // Copy the decoded surface to the input shared surface
-        error = CopySurface(pD3DSurf, m_pSharedSurfaces[0]);
 
         return error;
     }
@@ -529,50 +496,14 @@ cl_int OpenCLFilter::ProcessSurface()
     return error;
 }
 
-cl_int OpenCLFilter::CopySurface(IDirect3DSurface9* pSrc, IDirect3DSurface9* pDst)
-{
-    D3DSURFACE_DESC src_desc, dst_desc;
-    HRESULT hr = S_OK;
-    hr = pSrc->GetDesc(&src_desc);
-    if (FAILED(hr)) return CL_DEVICE_NOT_AVAILABLE;
-
-    hr = pDst->GetDesc(&dst_desc);
-    if (FAILED(hr)) return CL_DEVICE_NOT_AVAILABLE;
-
-    RECT src_rect = {0, 0, src_desc.Width, src_desc.Height};
-    RECT dst_rect = {0, 0, dst_desc.Width, dst_desc.Height};
-
-    try
-    {
-        LockedD3DDevice pD3DDevice = m_SafeD3DDeviceManager->LockDevice();
-        HRESULT hr = pD3DDevice.get()->StretchRect(
-                                           pSrc,
-                                           &src_rect,
-                                           pDst,
-                                           &dst_rect,
-                                           D3DTEXF_NONE);
-        if (FAILED(hr))
-            return CL_DEVICE_NOT_AVAILABLE;
-    }
-    catch (const std::exception &ex)
-    {
-        log.error() << ex.what() << endl;
-        return CL_DEVICE_NOT_AVAILABLE;
-    }
-    return CL_SUCCESS;
-}
-
-cl_int OpenCLFilter::ProcessSurface(int width, int height, IDirect3DSurface9* pSurfIn, IDirect3DSurface9* pSurfOut)
+cl_int OpenCLFilter::ProcessSurface(int width, int height, directxMemId* pSurfIn, directxMemId* pSurfOut)
 {
     cl_int error = CL_SUCCESS;
 
-    error = PrepareSharedSurfaces(width, height, pSurfIn);
+    error = PrepareSharedSurfaces(width, height, pSurfIn, pSurfOut);
     if (error) return error;
 
     error = ProcessSurface();
-    if (error) return error;
-
-    error = CopySurface(m_pSharedSurfaces[1], pSurfOut);
     if (error) return error;
 
     return error;

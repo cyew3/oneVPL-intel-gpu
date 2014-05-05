@@ -9,6 +9,7 @@ Copyright(c) 2008-2014 Intel Corporation. All Rights Reserved.
 **********************************************************************************/
 
 #include "mfx_samples_config.h"
+#include "sample_defs.h"
 
 #if defined(_WIN32) || defined(_WIN64)
 
@@ -40,8 +41,6 @@ D3DFORMAT ConvertMfxFourccToD3dFormat(mfxU32 fourcc)
         return D3DFMT_P8;
     case MFX_FOURCC_A2RGB10:
         return D3DFMT_A2R10G10B10;
-    //case MFX_FOURCC_R16:
-        //return D3DFMT_L16; //???
     default:
         return D3DFMT_UNKNOWN;
     }
@@ -135,12 +134,13 @@ mfxStatus D3DFrameAllocator::Close()
 
 mfxStatus D3DFrameAllocator::LockFrame(mfxMemId mid, mfxFrameData *ptr)
 {
-    IDirect3DSurface9 *pSurface = (IDirect3DSurface9 *)mid;
+    if (!ptr || !mid)
+        return MFX_ERR_NULL_PTR;
+
+    directxMemId *dxmid = (directxMemId*)mid;
+    IDirect3DSurface9 *pSurface = dxmid->m_surface;
     if (pSurface == 0)
         return MFX_ERR_INVALID_HANDLE;
-
-    if (ptr == 0)
-        return MFX_ERR_LOCK_MEMORY;
 
     D3DSURFACE_DESC desc;
     HRESULT hr = pSurface->GetDesc(&desc);
@@ -209,7 +209,11 @@ mfxStatus D3DFrameAllocator::LockFrame(mfxMemId mid, mfxFrameData *ptr)
 
 mfxStatus D3DFrameAllocator::UnlockFrame(mfxMemId mid, mfxFrameData *ptr)
 {
-    IDirect3DSurface9 *pSurface = (IDirect3DSurface9 *)mid;
+    if (!ptr || !mid)
+        return MFX_ERR_NULL_PTR;
+
+    directxMemId *dxmid = (directxMemId*)mid;
+    IDirect3DSurface9 *pSurface = dxmid->m_surface;
     if (pSurface == 0)
         return MFX_ERR_INVALID_HANDLE;
 
@@ -226,12 +230,13 @@ mfxStatus D3DFrameAllocator::UnlockFrame(mfxMemId mid, mfxFrameData *ptr)
     return MFX_ERR_NONE;
 }
 
-mfxStatus D3DFrameAllocator::GetFrameHDL(mfxMemId mid, mfxHDL *handle)
+mfxStatus D3DFrameAllocator::GetFrameHDL(mfxMemId mid, mfxHDL * handle)
 {
-    if (handle == 0)
-        return MFX_ERR_INVALID_HANDLE;
+    if (!mid || !handle)
+        return MFX_ERR_NULL_PTR;
 
-    *handle = mid;
+    directxMemId *dxMid = (directxMemId*)mid;
+    *handle = dxMid->m_surface;
     return MFX_ERR_NONE;
 }
 
@@ -254,23 +259,16 @@ mfxStatus D3DFrameAllocator::ReleaseResponse(mfxFrameAllocResponse *response)
 
     mfxStatus sts = MFX_ERR_NONE;
 
-    if (response->mids)
-    {
-        for (mfxU32 i = 0; i < response->NumFrameActual; i++)
-        {
-            if (response->mids[i])
-            {
-                IDirect3DSurface9* handle = 0;
-                sts = GetFrameHDL(response->mids[i], (mfxHDL *)&handle);
-                if (MFX_ERR_NONE != sts)
-                    return sts;
-                handle->Release();
+    if (response->mids) {
+        for (mfxU32 i = 0; i < response->NumFrameActual; i++) {
+            if (response->mids[i]) {
+                directxMemId *dxMids = (directxMemId*)response->mids[i];
+                dxMids->m_surface->Release();
             }
         }
+        MSDK_SAFE_FREE(response->mids[0]);
     }
-
-    delete [] response->mids;
-    response->mids = 0;
+    MSDK_SAFE_FREE(response->mids);
 
     return sts;
 }
@@ -283,10 +281,6 @@ mfxStatus D3DFrameAllocator::AllocImpl(mfxFrameAllocRequest *request, mfxFrameAl
 
     if (format == D3DFMT_UNKNOWN)
         return MFX_ERR_UNSUPPORTED;
-
-    safe_array<mfxMemId> mids(new mfxMemId[request->NumFrameSuggested]);
-    if (!mids.get())
-        return MFX_ERR_MEMORY_ALLOC;
 
     DWORD   target;
 
@@ -301,93 +295,70 @@ mfxStatus D3DFrameAllocator::AllocImpl(mfxFrameAllocRequest *request, mfxFrameAl
     else
         return MFX_ERR_UNSUPPORTED;
 
-    if (target == DXVA2_VideoProcessorRenderTarget)
-    {
-        if (!m_hProcessor)
-        {
-            DeviceHandle device = DeviceHandle(m_manager);
+    DeviceHandle device = DeviceHandle(m_manager);
+    IDirectXVideoAccelerationService* videoService = NULL;
 
-            if (!device)
-                return MFX_ERR_MEMORY_ALLOC;
-
-            CComPtr<IDirectXVideoProcessorService> service = 0;
-
-            hr = m_manager->GetVideoService(device, IID_IDirectXVideoProcessorService, (void**)&service);
-
+    if (!device)
+        return MFX_ERR_MEMORY_ALLOC;
+    if (target == DXVA2_VideoProcessorRenderTarget) {
+        if (!m_hProcessor) {
+            hr = m_manager->GetVideoService(device, IID_IDirectXVideoProcessorService, (void**)&m_processorService);
             if (FAILED(hr))
                 return MFX_ERR_MEMORY_ALLOC;
 
-            m_processorService = service;
             m_hProcessor = device.Detach();
         }
-
-        hr = m_processorService->CreateSurface(
-            request->Info.Width,
-            request->Info.Height,
-            request->NumFrameSuggested - 1,
-            format,
-            D3DPOOL_DEFAULT,
-            m_surfaceUsage,
-            target,
-            (IDirect3DSurface9 **)mids.get(),
-            NULL);
+        videoService = m_processorService;
     }
-    else
-    {
+    else {
         if (!m_hDecoder)
         {
-            DeviceHandle device = DeviceHandle(m_manager);
-
-            if (!device)
-                return MFX_ERR_MEMORY_ALLOC;
-
-            CComPtr<IDirectXVideoDecoderService> service = 0;
-
-            hr = m_manager->GetVideoService(device, IID_IDirectXVideoDecoderService, (void**)&service);
-
+            hr = m_manager->GetVideoService(device, IID_IDirectXVideoDecoderService, (void**)&m_decoderService);
             if (FAILED(hr))
                 return MFX_ERR_MEMORY_ALLOC;
 
-            m_decoderService = service;
             m_hDecoder = device.Detach();
         }
-
-        hr = m_decoderService->CreateSurface(
-            request->Info.Width,
-            request->Info.Height,
-            request->NumFrameSuggested - 1,
-            format,
-            D3DPOOL_DEFAULT,
-            m_surfaceUsage,
-            target,
-            (IDirect3DSurface9 **)mids.get(),
-            NULL);
+        videoService = m_decoderService;
     }
 
-    if (FAILED(hr))
-    {
+    directxMemId *dxMids = NULL, **dxMidPtrs = NULL;
+    dxMids = (directxMemId*)calloc(request->NumFrameSuggested, sizeof(directxMemId));
+    dxMidPtrs = (directxMemId**)calloc(request->NumFrameSuggested, sizeof(directxMemId*));
+
+    if (!dxMids || !dxMidPtrs) {
+        MSDK_SAFE_FREE(dxMids);
+        MSDK_SAFE_FREE(dxMidPtrs);
         return MFX_ERR_MEMORY_ALLOC;
     }
 
-#if 0 // optional, may be done on application level if needed
-    //zeroing created surfaces
-    for (mfxU32 i = 0; i < request->NumFrameSuggested; i++)
-    {
-        mfxFrameData pData;
-        if (MFX_ERR_NONE == LockFrame(mids.get()[i], &pData))
-        {
-            if (format == D3DFMT_NV12 ||
-                format == D3DFMT_YV12)
-            {
-                memset(pData.Y, 0, (pData.Pitch * request->Info.Height * 3)/2 );
-            }
-            UnlockFrame(mids.get()[i], &pData);
-        }
-    }
-#endif
-
-    response->mids = mids.release();
+    response->mids = (mfxMemId*)dxMidPtrs;
     response->NumFrameActual = request->NumFrameSuggested;
+
+    if (request->Type & MFX_MEMTYPE_EXTERNAL_FRAME) {
+        for (int i = 0; i < request->NumFrameSuggested; i++) {
+            hr = videoService->CreateSurface(request->Info.Width, request->Info.Height, 0,  format,
+                                                D3DPOOL_DEFAULT, m_surfaceUsage, target, &dxMids[i].m_surface, &dxMids[i].m_handle);
+
+            if (FAILED(hr)) {
+                ReleaseResponse(response);
+                return MFX_ERR_MEMORY_ALLOC;
+            }
+            dxMidPtrs[i] = &dxMids[i];
+        }
+    } else {
+        std::auto_ptr<IDirect3DSurface9*> dxSrf(new IDirect3DSurface9*[request->NumFrameSuggested]);
+        hr = videoService->CreateSurface(request->Info.Width, request->Info.Height, request->NumFrameSuggested - 1,  format,
+                                            D3DPOOL_DEFAULT, m_surfaceUsage, target, dxSrf.get(), NULL);
+
+            if (FAILED(hr))
+                return MFX_ERR_MEMORY_ALLOC;
+
+            for (int i = 0; i < request->NumFrameSuggested; i++) {
+                dxMids[i].m_surface = dxSrf.get()[i];
+                dxMidPtrs[i] = &dxMids[i];
+            }
+    }
     return MFX_ERR_NONE;
 }
 

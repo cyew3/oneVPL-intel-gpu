@@ -1,10 +1,12 @@
-//
-//               INTEL CORPORATION PROPRIETARY INFORMATION
-//  This software is supplied under the terms of a license agreement or
-//  nondisclosure agreement with Intel Corporation and may not be copied
-//  or disclosed except in accordance with the terms of that agreement.
-//        Copyright (c) 2005-2014 Intel Corporation. All Rights Reserved.
-//
+/*********************************************************************************
+
+INTEL CORPORATION PROPRIETARY INFORMATION
+This software is supplied under the terms of a license agreement or nondisclosure
+agreement with Intel Corporation and may not be copied or disclosed except in
+accordance with the terms of that agreement
+Copyright(c) 2005-2014 Intel Corporation. All Rights Reserved.
+
+**********************************************************************************/
 
 #pragma once
 
@@ -12,6 +14,7 @@
 
 #include "logger.h"
 #include "d3d_utils.h"
+#include "d3d_allocator.h"
 #include <vector>
 
 #include <CL/cl.h>
@@ -34,7 +37,7 @@ public:
     cl_int OCLInit(IDirect3DDeviceManager9* pD3DDeviceManager);
     cl_int AddKernel(const char* filename, const char* kernelY_name, const char* kernelUV_name, D3DFORMAT format);
     cl_int SelectKernel(unsigned kNo);
-    cl_int ProcessSurface(int width, int height, IDirect3DSurface9* pSurfIn, IDirect3DSurface9* pSurfOut);
+    cl_int ProcessSurface(int width, int height, directxMemId* pSurfIn, directxMemId* pSurfOut);
 
     static std::string readFile(const char *filename);
 private:
@@ -43,9 +46,8 @@ private:
     cl_int InitDevice();
     cl_int BuildKernels();
     cl_int SetKernelArgs();
-    cl_int PrepareSharedSurfaces(int width, int height, IDirect3DSurface9* pD3DSurf);
+    cl_int PrepareSharedSurfaces(int width, int height, directxMemId* inputD3DSurf, directxMemId* outputD3DSurf);
     cl_int ProcessSurface();
-    cl_int CopySurface(IDirect3DSurface9* pSrc, IDirect3DSurface9* pDst);
     void   ReleaseResources();
 
     static size_t chooseLocalSize(size_t globalSize, size_t preferred);
