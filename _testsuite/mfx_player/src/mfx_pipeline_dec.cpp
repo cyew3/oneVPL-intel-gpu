@@ -1528,7 +1528,7 @@ mfxStatus MFXDecPipeline::CreateRender()
 #if defined(_WIN32) || defined(_WIN64)
     case MFX_SCREEN_RENDER:
         {
-            ScreenRender::InitParams iParams(m_components[eREN].GetAdapter(), VideoWindow::InitParams(NULL, m_inParams.bFullscreen));
+            ScreenRender::InitParams iParams(m_components[eREN].GetAdapter(), VideoWindow::InitParams(m_inParams.bFullscreen));
 
             if (m_inParams.m_WallW && m_inParams.m_WallH)
             {
@@ -1558,8 +1558,16 @@ mfxStatus MFXDecPipeline::CreateRender()
                     m_inParams.svc_layer.TargetDependencyID >= MFX_ARRAY_SIZE(seqDescription->DependencyLayer)||
                     !seqDescription->DependencyLayer[m_inParams.svc_layer.TargetDependencyID].Active)
                 {
-                    iParams.window.directLocation.right = m_components[eDEC].m_params.mfx.FrameInfo.CropW;
-                    iParams.window.directLocation.bottom = m_components[eDEC].m_params.mfx.FrameInfo.CropH;
+                	if ( m_inParams.bFullscreen )
+                	{
+                    	iParams.window.directLocation.right = GetSystemMetrics(SM_CXSCREEN);
+                    	iParams.window.directLocation.bottom = GetSystemMetrics(SM_CYSCREEN);
+                	}
+                	else
+                	{
+                		iParams.window.directLocation.right = m_components[eDEC].m_params.mfx.FrameInfo.CropW;
+                    	iParams.window.directLocation.bottom = m_components[eDEC].m_params.mfx.FrameInfo.CropH;
+                	}
                 }
                 else
                 {
@@ -2089,7 +2097,7 @@ mfxStatus MFXDecPipeline::CreateDeviceManager()
                 m_pHWDevice.reset(new MFXHWDeviceInThread(*m_threadPool.get(), m_pHWDevice.release()));
             }
 
-            MFX_CHECK_STS(m_pHWDevice->Init(cparams.GetAdapter(), hWindow, !m_inParams.bFullscreen, D3DFMT_A2R10G10B10/*D3DFMT_X8R8G8B8*/, 1, m_inParams.dxva2DllName));
+            MFX_CHECK_STS(m_pHWDevice->Init(cparams.GetAdapter(), hWindow, !m_inParams.bFullscreen, D3DFMT_X8R8G8B8, 1, m_inParams.dxva2DllName));
         }
         MFX_CHECK_STS(m_pHWDevice->GetHandle(MFX_HANDLE_DIRECT3D_DEVICE_MANAGER9, (mfxHDL *)&pMgr));
 

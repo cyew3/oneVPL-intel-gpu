@@ -33,6 +33,8 @@ mfxStatus MFXD3D9Device::Init(mfxU32 nAdapter,
                               bool )
 {
     HRESULT hr;
+    D3DDISPLAYMODEEX fsc = {0};
+    D3DDISPLAYMODEEX *fullscreen = 0;
 
     hr = myDirect3DCreate9Ex(D3D_SDK_VERSION, &m_pD3D9Ex);
     if (FAILED(hr))
@@ -60,11 +62,25 @@ mfxStatus MFXD3D9Device::Init(mfxU32 nAdapter,
         int y = GetSystemMetrics(SM_CYSCREEN);
         m_D3DPP.BackBufferWidth  = min(r.right - r.left, x);
         m_D3DPP.BackBufferHeight = min(r.bottom - r.top, y);
+        m_D3DPP.FullScreen_RefreshRateInHz = D3DPRESENT_RATE_DEFAULT;
+        fullscreen = NULL;
     }
     else
     {
         m_D3DPP.BackBufferWidth  = GetSystemMetrics(SM_CXSCREEN);
         m_D3DPP.BackBufferHeight = GetSystemMetrics(SM_CYSCREEN);
+
+        fsc.Format = (D3DFORMAT)VIDEO_RENDER_TARGET_FORMAT;
+        fsc.Height = m_D3DPP.BackBufferHeight;
+        fsc.Width  = m_D3DPP.BackBufferWidth;
+        fsc.ScanLineOrdering = D3DSCANLINEORDERING_PROGRESSIVE;
+        fsc.Size = sizeof(D3DDISPLAYMODEEX);
+
+        /* Proper framerate must be specified */
+        m_D3DPP.FullScreen_RefreshRateInHz = 24;
+        fsc.RefreshRate                  = 24;
+
+        fullscreen = &fsc;
     }
 
     m_D3DPP.BackBufferFormat           = (D3DFORMAT)VIDEO_RENDER_TARGET_FORMAT;
@@ -73,8 +89,7 @@ mfxStatus MFXD3D9Device::Init(mfxU32 nAdapter,
     m_D3DPP.hDeviceWindow              = (HWND)hWindow;
     m_D3DPP.Windowed                   = bIsWindowed;
     m_D3DPP.Flags                      = D3DPRESENTFLAG_VIDEO;
-    m_D3DPP.FullScreen_RefreshRateInHz = D3DPRESENT_RATE_DEFAULT;
-    m_D3DPP.PresentationInterval       = D3DPRESENT_INTERVAL_IMMEDIATE;
+    m_D3DPP.PresentationInterval       = D3DPRESENT_INTERVAL_DEFAULT;
 
     //
     // Mark the back buffer lockable if software DXVA2 could be used.
@@ -96,10 +111,10 @@ mfxStatus MFXD3D9Device::Init(mfxU32 nAdapter,
             D3DDEVTYPE_HAL,
             (HWND)hWindow,
             D3DCREATE_SOFTWARE_VERTEXPROCESSING |
-            D3DCREATE_FPU_PRESERVE | 
+            D3DCREATE_FPU_PRESERVE |
             D3DCREATE_MULTITHREADED,
             &m_D3DPP,
-            NULL,
+            fullscreen,
             &m_pD3DD9Ex);
 
         if (FAILED(hr))
@@ -120,7 +135,7 @@ mfxStatus MFXD3D9Device::Init(mfxU32 nAdapter,
             (HWND)hWindow,
             D3DCREATE_SOFTWARE_VERTEXPROCESSING,
             &m_D3DPP,
-            NULL,
+            fullscreen,
             &m_pD3DD9Ex);
 
         if (FAILED(hr))
@@ -362,9 +377,8 @@ mfxStatus MFXD3D9Device::RenderFrame(mfxFrameSurface1 * pSurface, mfxFrameAlloca
     {
         dest.left = 0;
         dest.right = dsc.Width;
-        int height = dsc.Width/dSrcAspect;
-        dest.top = (dsc.Height - height) / 2;
-        dest.bottom = dest.top + height;
+        dest.top = 0;
+        dest.bottom = dsc.Height;
     }
     else
     {
@@ -379,7 +393,7 @@ mfxStatus MFXD3D9Device::RenderFrame(mfxFrameSurface1 * pSurface, mfxFrameAlloca
 
     {
         MPA_TRACE("D3DRender::StretchRect");
-        hr = m_pD3DD9Ex->StretchRect((IDirect3DSurface9*)pSurface->Data.MemId, &source, pBackBuffer, &dest, D3DTEXF_LINEAR);
+        hr = m_pD3DD9Ex->StretchRect((IDirect3DSurface9*)pSurface->Data.MemId, NULL, pBackBuffer, NULL, D3DTEXF_NONE);
         if (FAILED(hr))
         {
             MFX_TRACE_ERR(VM_STRING("StretchRect failed with error 0x") << std::hex<<hr);
@@ -391,7 +405,7 @@ mfxStatus MFXD3D9Device::RenderFrame(mfxFrameSurface1 * pSurface, mfxFrameAlloca
         MPA_TRACE("D3DRender::Present");
 
 
-        hr = m_pD3DD9Ex->Present(&targetRect, &targetRect, NULL, NULL);
+        hr = m_pD3DD9Ex->Present(NULL, NULL, NULL, NULL);
 
         if (FAILED(hr))
         {
