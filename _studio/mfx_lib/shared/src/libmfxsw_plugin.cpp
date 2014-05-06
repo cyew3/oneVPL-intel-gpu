@@ -71,11 +71,21 @@ namespace
                 _isNeedEnc = false;
                 break;
             case MFX_PLUGINTYPE_VIDEO_ENC :
-                _ptr = &_session->m_plgPreEnc; 
-                _isNeedCodec = false;
-                _isNeedDeCoder = false;
-                _isNeedVPP = false;
-                _isNeedEnc = true;
+                {
+                    MFXIPtr<MFXISession_1_10> newSession = TryGetSession_1_10(session);
+                    if (newSession)
+                    {
+                        _ptr = &newSession->GetPreEncPlugin(); 
+                        _isNeedCodec = false;
+                        _isNeedDeCoder = false;
+                        _isNeedVPP = false;
+                        _isNeedEnc = true;
+                    }
+                    else
+                    {
+                        throw MFX_ERR_UNDEFINED_BEHAVIOR;
+                    }
+                }
                 break;
             case MFX_PLUGINTYPE_VIDEO_GENERAL :
                 _ptr = &_session->m_plgGen; 
@@ -159,7 +169,7 @@ mfxStatus MFXVideoUSER_Register(mfxSession session, mfxU32 type,
         std::auto_ptr<VideoENCODE> &encPtr = sessionPtr.codec<VideoENCODE>();
         std::auto_ptr<VideoDECODE> &decPtr = sessionPtr.codec<VideoDECODE>();
         std::auto_ptr<VideoVPP> &vppPtr = sessionPtr.codec<VideoVPP>();
-         std::auto_ptr<VideoENC> &preEncPtr = sessionPtr.codec<VideoENC>();
+        std::auto_ptr<VideoENC> &preEncPtr = sessionPtr.codec<VideoENC>();
 
         // the plugin with the same type is already exist
         if (pluginPtr.get() || decPtr.get() || encPtr.get() || preEncPtr.get())

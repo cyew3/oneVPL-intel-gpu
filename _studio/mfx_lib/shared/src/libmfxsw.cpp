@@ -23,6 +23,11 @@ File Name: libmfxsw.cpp
 #include <tchar.h>
 #endif
 
+#if (MFX_VERSION_MAJOR == 1) && (MFX_VERSION_MINOR >= 10)
+  #define MFX_USE_VERSIONED_SESSION
+#endif
+
+
 // static section of the file
 namespace
 {
@@ -62,7 +67,12 @@ const char* g_MfxProductVersion = "mediasdk_product_version: " MFX_PRODUCT_VERSI
 
 mfxStatus MFXInit(mfxIMPL implParam, mfxVersion *ver, mfxSession *session)
 {
-    mfxSession pSession = 0;
+#if defined(MFX_USE_VERSIONED_SESSION)
+    _mfxSession_1_10 * pSession = 0;
+#else
+    _mfxSession * pSession = 0;
+#endif
+
     mfxVersion libver;
     mfxStatus mfxRes;
     int adapterNum = 0;
@@ -174,7 +184,12 @@ mfxStatus MFXInit(mfxIMPL implParam, mfxVersion *ver, mfxSession *session)
         *session = 0;
 
         // create new session instance
+#if defined(MFX_USE_VERSIONED_SESSION)
+        pSession = new _mfxSession_1_10;
+        pSession->SetAdapterNum(adapterNum);
+#else
         pSession = new _mfxSession(adapterNum);
+#endif
         mfxRes = pSession->Init(implInterface, ver);
 
         // check the library version
@@ -206,7 +221,7 @@ mfxStatus MFXInit(mfxIMPL implParam, mfxVersion *ver, mfxSession *session)
     }
 
     // save the handle
-    *session = pSession;
+    *session = dynamic_cast<_mfxSession *>(pSession);
 
     return mfxRes;
 
@@ -244,7 +259,12 @@ mfxStatus MFXClose(mfxSession session)
         }
         
         // deallocate the object
+#if defined(MFX_USE_VERSIONED_SESSION)
+        _mfxSession_1_10 *newSession  = (_mfxSession_1_10 *)session;
+        delete newSession;
+#else
         delete session;
+#endif
     }
     // handle error(s)
     catch(MFX_CORE_CATCH_TYPE)
