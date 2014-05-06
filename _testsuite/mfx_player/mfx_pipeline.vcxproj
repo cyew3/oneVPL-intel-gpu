@@ -494,6 +494,7 @@
     <ClInclude Include="include\mfx_separate_file.h" />
     <ClInclude Include="include\mfx_metric_calc.h" />
     <ClInclude Include="include\mfx_msu_adapter.h" />
+    <ClInclude Include="include\mfx_pcp.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

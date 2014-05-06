@@ -12,7 +12,7 @@
 #pragma once
 
 #include "mfx_ibitstream_reader.h"
-#include "pcp.h"
+#include "mfx_pcp.h"
 #include <memory>
 
 #include <map>
