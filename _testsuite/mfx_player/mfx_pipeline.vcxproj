@@ -319,7 +319,7 @@
     <ClCompile Include="src\mfx_pts_based_activator.cpp" />
     <ClCompile Include="src\mfx_cmd_option_processor.cpp" />
     <ClCompile Include="src\mfx_serializer.cpp" />
-    <ClCompile Include="..\..\thirdparty\metrics_calc_lite\metrics_calc_lite.cpp">
+    <ClCompile Include="..\..\..\mdp_msdk-contrib\metrics_calc_lite\metrics_calc_lite.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug (Lucas DLL)|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug (Lucas DLL)|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
@@ -393,16 +393,16 @@
     <ClInclude Include="include\mfx_vpp.h" />
     <ClInclude Include="include\mfx_vpp_hw.h" />
     <ClInclude Include="include\trace_utils.h" />
-    <ClInclude Include="..\..\include\mfxdefs.h" />
-    <ClInclude Include="..\..\include\mfxjpeg.h" />
-    <ClInclude Include="..\..\include\mfxmvc.h" />
-    <ClInclude Include="..\..\include\mfxpcp.h" />
-    <ClInclude Include="..\..\include\mfxplugin++.h" />
-    <ClInclude Include="..\..\include\mfxplugin.h" />
-    <ClInclude Include="..\..\include\mfxstructures.h" />
-    <ClInclude Include="..\..\include\mfxsvc.h" />
-    <ClInclude Include="..\..\include\mfxvideo++.h" />
-    <ClInclude Include="..\..\include\mfxvideo.h" />
+    <ClInclude Include="..\..\..\mdp_msdk-api\include\mfxdefs.h" />
+    <ClInclude Include="..\..\..\mdp_msdk-api\include\mfxjpeg.h" />
+    <ClInclude Include="..\..\..\mdp_msdk-api\include\mfxmvc.h" />
+    <ClInclude Include="..\..\..\mdp_msdk-api\include\mfxpcp.h" />
+    <ClInclude Include="..\..\..\mdp_msdk-api\include\mfxplugin++.h" />
+    <ClInclude Include="..\..\..\mdp_msdk-api\include\mfxplugin.h" />
+    <ClInclude Include="..\..\..\mdp_msdk-api\include\mfxstructures.h" />
+    <ClInclude Include="..\..\..\mdp_msdk-api\include\mfxsvc.h" />
+    <ClInclude Include="..\..\..\mdp_msdk-api\include\mfxvideo++.h" />
+    <ClInclude Include="..\..\..\mdp_msdk-api\include\mfxvideo.h" />
     <ClInclude Include="include\mfx_iadapter.h" />
     <ClInclude Include="include\mfx_iallocator_factory.h" />
     <ClInclude Include="include\mfx_ibitstream_converter.h" />

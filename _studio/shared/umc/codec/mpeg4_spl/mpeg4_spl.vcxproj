@@ -81,7 +81,7 @@
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>$(MfxIppIncludeDir);include;..\..\core\umc\include;..\..\core\vm\include;..\..\core\vm_plus\include;..\..\codec\common\include;..\..\codec\spl_common\include;./../../io/media_buffers/include;./../../io/umc_io/include;%(AdditionalIncludeDirectories);..\..\..\..\..\include;</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(MfxIppIncludeDir);include;..\..\core\umc\include;..\..\core\vm\include;..\..\core\vm_plus\include;..\..\codec\common\include;..\..\codec\spl_common\include;./../../io/media_buffers/include;./../../io/umc_io/include;%(AdditionalIncludeDirectories);..\..\..\..\..\..\mdp_msdk-api\include;</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <TreatWarningAsError>false</TreatWarningAsError>
     </ClCompile>
@@ -89,7 +89,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>include;$(MfxIppIncludeDir);..\..\core\umc\include;..\..\core\vm\include;..\..\core\vm_plus\include;..\..\codec\common\include;./../../io/media_buffers/include;./../../io/umc_io/includeXX;./../../io/media_buffers/include;./../../io/umc_io/include;..\..\codec\spl_common\include;%(AdditionalIncludeDirectories);..\..\..\..\..\include;</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>include;$(MfxIppIncludeDir);..\..\core\umc\include;..\..\core\vm\include;..\..\core\vm_plus\include;..\..\codec\common\include;./../../io/media_buffers/include;./../../io/umc_io/includeXX;./../../io/media_buffers/include;./../../io/umc_io/include;..\..\codec\spl_common\include;%(AdditionalIncludeDirectories);..\..\..\..\..\..\mdp_msdk-api\include;</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN64;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <TreatWarningAsError>false</TreatWarningAsError>
     </ClCompile>
@@ -97,7 +97,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>$(MfxIppIncludeDir);include;..\..\core\umc\include;..\..\core\vm\include;..\..\core\vm_plus\include;..\..\codec\common\include;..\..\codec\spl_common\include;./../../io/media_buffers/include;./../../io/umc_io/include;%(AdditionalIncludeDirectories);..\..\..\..\..\include;</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(MfxIppIncludeDir);include;..\..\core\umc\include;..\..\core\vm\include;..\..\core\vm_plus\include;..\..\codec\common\include;..\..\codec\spl_common\include;./../../io/media_buffers/include;./../../io/umc_io/include;%(AdditionalIncludeDirectories);..\..\..\..\..\..\mdp_msdk-api\include;</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <TreatWarningAsError>false</TreatWarningAsError>
     </ClCompile>
@@ -105,7 +105,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>include;$(MfxIppIncludeDir);..\..\core\umc\include;..\..\core\vm\include;..\..\core\vm_plus\include;..\..\codec\common\include;./../../io/media_buffers/include;./../../io/umc_io/includeXX;./../../io/media_buffers/include;./../../io/umc_io/include;..\..\codec\spl_common\include;%(AdditionalIncludeDirectories);..\..\..\..\..\include;</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>include;$(MfxIppIncludeDir);..\..\core\umc\include;..\..\core\vm\include;..\..\core\vm_plus\include;..\..\codec\common\include;./../../io/media_buffers/include;./../../io/umc_io/includeXX;./../../io/media_buffers/include;./../../io/umc_io/include;..\..\codec\spl_common\include;%(AdditionalIncludeDirectories);..\..\..\..\..\..\mdp_msdk-api\include;</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN64;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <TreatWarningAsError>false</TreatWarningAsError>
     </ClCompile>

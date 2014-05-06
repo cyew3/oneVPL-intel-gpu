@@ -164,7 +164,7 @@
     <ClCompile Include="src\mfx_serializer.cpp">
       <Filter>serial</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\thirdparty\metrics_calc_lite\metrics_calc_lite.cpp">
+    <ClCompile Include="..\..\..\mdp_msdk-contrib\metrics_calc_lite\metrics_calc_lite.cpp">
       <Filter>metrics_calc</Filter>
     </ClCompile>
     <ClCompile Include="src\mfx_metric_calc.cpp">
@@ -343,34 +343,34 @@
     <ClInclude Include="include\trace_utils.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\include\mfxdefs.h">
+    <ClInclude Include="..\..\..\mdp_msdk-api\include\mfxdefs.h">
       <Filter>mfx_headers</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\include\mfxjpeg.h">
+    <ClInclude Include="..\..\..\mdp_msdk-api\include\mfxjpeg.h">
       <Filter>mfx_headers</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\include\mfxmvc.h">
+    <ClInclude Include="..\..\..\mdp_msdk-api\include\mfxmvc.h">
       <Filter>mfx_headers</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\include\mfxpcp.h">
+    <ClInclude Include="..\..\..\mdp_msdk-api\include\mfxpcp.h">
       <Filter>mfx_headers</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\include\mfxplugin++.h">
+    <ClInclude Include="..\..\..\mdp_msdk-api\include\mfxplugin++.h">
       <Filter>mfx_headers</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\include\mfxplugin.h">
+    <ClInclude Include="..\..\..\mdp_msdk-api\include\mfxplugin.h">
       <Filter>mfx_headers</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\include\mfxstructures.h">
+    <ClInclude Include="..\..\..\mdp_msdk-api\include\mfxstructures.h">
       <Filter>mfx_headers</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\include\mfxsvc.h">
+    <ClInclude Include="..\..\..\mdp_msdk-api\include\mfxsvc.h">
       <Filter>mfx_headers</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\include\mfxvideo++.h">
+    <ClInclude Include="..\..\..\mdp_msdk-api\include\mfxvideo++.h">
       <Filter>mfx_headers</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\include\mfxvideo.h">
+    <ClInclude Include="..\..\..\mdp_msdk-api\include\mfxvideo.h">
       <Filter>mfx_headers</Filter>
     </ClInclude>
     <ClInclude Include="include\mfx_iadapter.h">
