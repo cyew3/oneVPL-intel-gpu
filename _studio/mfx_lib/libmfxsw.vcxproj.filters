@@ -166,19 +166,19 @@
     <ClInclude Include="..\shared\include\mfxvideopro.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\include\mfxdefs.h">
+    <ClInclude Include="..\..\..\mdp_msdk-api\include\mfxdefs.h">
       <Filter>MFX API</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\include\mfxplugin.h">
+    <ClInclude Include="..\..\..\mdp_msdk-api\include\mfxplugin.h">
       <Filter>MFX API</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\include\mfxstructures.h">
+    <ClInclude Include="..\..\..\mdp_msdk-api\include\mfxstructures.h">
       <Filter>MFX API</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\include\mfxvideo++.h">
+    <ClInclude Include="..\..\..\mdp_msdk-api\include\mfxvideo++.h">
       <Filter>MFX API</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\include\mfxvideo.h">
+    <ClInclude Include="..\..\..\mdp_msdk-api\include\mfxvideo.h">
       <Filter>MFX API</Filter>
     </ClInclude>
     <ClInclude Include="scheduler\include\mfx_scheduler_core.h">
