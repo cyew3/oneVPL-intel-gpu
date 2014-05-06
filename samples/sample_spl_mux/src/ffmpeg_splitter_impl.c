@@ -283,19 +283,30 @@ mfxStatus MFXSplitter_GetBitstream(mfxSplitter spl, mfxU32 *track_num, mfxBitstr
 
     inSpl->formatContext->streams[pkt->stream_index]->nb_frames++;
 
+    bs->Data = (mfxU8*)pkt->data;
+    bs->MaxLength = pkt->size;
+    bs->DataLength = pkt->size;
+    bs->DataOffset = 0;
+
     if(inSpl->formatContext->streams[pkt->stream_index]->codec->codec_id == AV_CODEC_ID_H264
         && strncmp(inSpl->formatContext->iformat->name,"mov,mp4",7) == 0)
     {
-        av_bitstream_filter_filter(inSpl->bsfContext, inSpl->formatContext->streams[pkt->stream_index]->codec,
-            NULL, outBuffer, &outBufferSize, pkt->data, pkt->size, pkt->flags & AV_PKT_FLAG_KEY);
+        ret = av_bitstream_filter_filter(inSpl->bsfContext, inSpl->formatContext->streams[pkt->stream_index]->codec,
+              NULL, outBuffer, &outBufferSize, pkt->data, pkt->size, pkt->flags & AV_PKT_FLAG_KEY);
+        if (ret > 0)
+        {
+            bs->Data = *outBuffer;
+            bs->MaxLength = outBufferSize;
+            bs->DataLength = outBufferSize;
+            bs->DataOffset = 0;
 
-        bs->Data = *outBuffer;
-        bs->MaxLength = outBufferSize;
-        bs->DataLength = outBufferSize;
-        bs->DataOffset = 0;
-
-        av_free_packet(pkt);
-        pkt->data = NULL;
+            av_free_packet(pkt);
+            pkt->data = NULL;
+        }
+        else
+        {
+            inSpl->outBufs[i] = NULL; // no need to free, outBuffer was not allocated
+        }
     }
     else if(inSpl->formatContext->streams[pkt->stream_index]->codec->codec_id == AV_CODEC_ID_AAC)
     {
@@ -327,13 +338,6 @@ mfxStatus MFXSplitter_GetBitstream(mfxSplitter spl, mfxU32 *track_num, mfxBitstr
             pkt->pts = pts;
             pkt->stream_index = streamIndex;
         }
-    }
-    else
-    {
-        bs->Data = (mfxU8*)pkt->data;
-        bs->MaxLength = pkt->size;
-        bs->DataLength = pkt->size;
-        bs->DataOffset = 0;
     }
     if (pkt->pts == AV_NOPTS_VALUE)
         bs->TimeStamp = (mfxU64) MFX_TIMESTAMP_UNKNOWN;
