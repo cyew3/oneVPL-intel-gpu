@@ -54,14 +54,6 @@ Rotate::~Rotate()
 mfxStatus Rotate::PluginInit(mfxCoreInterface *core)
 {
     MSDK_CHECK_POINTER(core, MFX_ERR_NULL_PTR);
-    mfxCoreParam core_param;
-    mfxStatus sts = core->GetCoreParam(core->pthis, &core_param);
-    MSDK_CHECK_RESULT(MFX_ERR_NONE, sts, MFX_ERR_NONE);
-    //only 1.8 or above version is supported
-    if (core_param.Version.Version < 0x00010008) {
-        printf("\nERROR: MSDK v1.8 or above is required to use this plugin \n");
-        return MFX_ERR_UNSUPPORTED;
-    }
     m_mfxCore = MFXCoreInterface(*core);
     return MFX_ERR_NONE;
 }
