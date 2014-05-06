@@ -1,0 +1,214 @@
+/********************************************************************************
+
+INTEL CORPORATION PROPRIETARY INFORMATION
+This software is supplied under the terms of a license agreement or nondisclosure
+agreement with Intel Corporation and may not be copied or disclosed except in
+accordance with the terms of that agreement
+Copyright(c) 2010-2011 Intel Corporation. All Rights Reserved.
+
+*********************************************************************************
+
+File: mfx_trace_etw.cpp
+
+Mapping of mfxTraceTaskHandle:
+    etw1 - char* - file name
+    etw2 - UINT32 - line number
+
+*********************************************************************************/
+
+#include "mfx_trace.h"
+
+#ifdef MFX_TRACE_ENABLE_TAL
+extern "C"
+{
+
+#include "mfx_trace_utils.h"
+#include "mfx_trace_tal.h"
+
+/*------------------------------------------------------------------------------*/
+
+UINT32 MFXTraceTAL_GetRegistryParams(void)
+{
+    return 0;
+}
+
+/*------------------------------------------------------------------------------*/
+
+#ifdef WIN64
+#define DLL_FILENAME    _T("mfx_tal64.dll")
+#else
+#define DLL_FILENAME    _T("mfx_tal32.dll")
+#endif
+
+typedef LONGLONG mfxTimerId;
+
+static HMODULE pDLL;
+static int (*pMFXTiming_Init)(const WCHAR *filename, int level);
+static int (*pMFXTiming_StartTimer)(const char *name, mfxTimerId *id);
+static int (*pMFXTiming_AddParam )(const char *name, mfxTimerId id, const char *param_name, const char *param_value);
+static int (*pMFXTiming_AddParami)(const char *name, mfxTimerId id, const char *param_name, int param_value);
+static int (*pMFXTiming_AddParamf)(const char *name, mfxTimerId id, const char *param_name, double param_value);
+static int (*pMFXTiming_StopTimer)(const char *name, mfxTimerId id);
+static int (*pMFXTiming_Close)();
+
+#define LOAD_FUNC(FUNC)                                         \
+    *(FARPROC*)&p##FUNC = GetProcAddress(pDLL, #FUNC);          \
+
+mfxTraceU32 MFXTraceTAL_Init(const mfxTraceChar* filename, mfxTraceU32 output_mode)
+{
+    TCHAR reg_filename[MAX_PATH];
+    mfxTraceU32 sts = 0;
+
+    if (!(output_mode & MFX_TRACE_OUTPUT_TAL)) return 1;
+    if (!filename)
+    {
+        reg_filename[0] = 0;
+        mfx_trace_get_reg_string(MFX_TRACE_REG_ROOT, MFX_TRACE_REG_PARAMS_PATH, _T("TAL"), reg_filename, sizeof(reg_filename));
+        filename = reg_filename;
+        if (!*filename) return 1;
+    }
+
+    if (pDLL && pMFXTiming_Init) return 0;
+    if (!(output_mode & MFX_TRACE_OUTPUT_TAL)) return 1;
+
+    //sts = MFXTraceTAL_Close();
+
+    if (!sts)
+    {
+        sts = MFXTraceTAL_GetRegistryParams();
+    }
+    if (!sts)
+    {
+        HMODULE pDLL = LoadLibrary(DLL_FILENAME);
+        LOAD_FUNC(MFXTiming_Init);
+        LOAD_FUNC(MFXTiming_StartTimer);
+        LOAD_FUNC(MFXTiming_AddParam);
+        LOAD_FUNC(MFXTiming_AddParami);
+        LOAD_FUNC(MFXTiming_AddParamf);
+        LOAD_FUNC(MFXTiming_StopTimer);
+        LOAD_FUNC(MFXTiming_Close);
+
+        if (!pMFXTiming_Init)
+        {
+            return 1;
+        }
+        sts = pMFXTiming_Init(filename, 0);
+    }
+    return sts;
+}
+
+/*------------------------------------------------------------------------------*/
+
+mfxTraceU32 MFXTraceTAL_Close(void)
+{
+    if (pMFXTiming_Close) pMFXTiming_Close();
+    FreeLibrary(pDLL);
+    pDLL = 0;
+    pMFXTiming_Init = 0;
+    pMFXTiming_StartTimer = 0;
+    pMFXTiming_AddParam = 0;
+    pMFXTiming_AddParami = 0;
+    pMFXTiming_AddParamf = 0;
+    pMFXTiming_StopTimer = 0;
+    pMFXTiming_Close = 0;
+    return 0;
+}
+
+/*------------------------------------------------------------------------------*/
+
+mfxTraceU32 MFXTraceTAL_SetLevel(mfxTraceChar* /*category*/, mfxTraceLevel /*level*/)
+{
+    return 1;
+}
+
+/*------------------------------------------------------------------------------*/
+
+mfxTraceU32 MFXTraceTAL_DebugMessage(mfxTraceStaticHandle* handle,
+                                 const char *file_name, mfxTraceU32 line_num,
+                                 const char *function_name,
+                                 mfxTraceChar* category, mfxTraceLevel level,
+                                 const char *message, const char *format, ...)
+{
+    mfxTraceU32 res = 0;
+    va_list args;
+
+    va_start(args, format);
+    res = MFXTraceTAL_vDebugMessage(handle,
+                                    file_name , line_num,
+                                    function_name,
+                                    category, level,
+                                    message, format, args);
+    va_end(args);
+    return res;
+}
+
+/*------------------------------------------------------------------------------*/
+
+mfxTraceU32 MFXTraceTAL_vDebugMessage(mfxTraceStaticHandle* /*handle*/,
+                                 const char* /*file_name*/, mfxTraceU32 /*line_num*/,
+                                 const char* /*function_name*/,
+                                 mfxTraceChar* /*category*/, mfxTraceLevel /*level*/,
+                                 const char* message,
+                                 const char* format, va_list args)
+{
+    if (!format)
+    {
+        if (!message) return 1;
+        if (pMFXTiming_AddParam) pMFXTiming_AddParam(0, 0, message, 0);
+    }
+    else if (!strcmp(format, MFX_TRACE_FORMAT_I) ||
+             !strcmp(format, MFX_TRACE_FORMAT_X) ||
+             !strcmp(format, MFX_TRACE_FORMAT_D))
+    {
+        if (pMFXTiming_AddParami) pMFXTiming_AddParami(0, 0, message, va_arg(args, int));
+    }
+    else if (!strcmp(format, MFX_TRACE_FORMAT_P))
+    {
+        if (pMFXTiming_AddParami) pMFXTiming_AddParami(0, 0, message, (int)va_arg(args, void*));
+    }
+    else if (!strcmp(format, MFX_TRACE_FORMAT_F))
+    {
+        if (pMFXTiming_AddParamf) pMFXTiming_AddParamf(0, 0, message, va_arg(args, double));
+    }
+    else if (pMFXTiming_AddParam)
+    {
+        char format_UNK[MFX_TRACE_MAX_LINE_LENGTH] = {0};
+        size_t format_UNK_len = MFX_TRACE_MAX_LINE_LENGTH;
+        mfx_trace_vsprintf(format_UNK, format_UNK_len, format, args);
+        pMFXTiming_AddParam(0, 0, message, format_UNK);
+    }
+
+    return 0;
+}
+
+/*------------------------------------------------------------------------------*/
+
+mfxTraceU32 MFXTraceTAL_BeginTask(mfxTraceStaticHandle * /*static_handle*/,
+                             const char * /*file_name*/, mfxTraceU32 /*line_num*/,
+                             const char *function_name,
+                             mfxTraceChar* /*category*/, mfxTraceLevel /*level*/,
+                             const char *task_name, mfxTraceTaskHandle* /*task_handle*/,
+                             const void * /*task_params*/)
+{
+    if (pMFXTiming_StartTimer)
+    {
+        const char* name = (task_name) ? task_name : function_name;
+        return pMFXTiming_StartTimer(name, 0);
+    }
+    return 1;
+}
+
+/*------------------------------------------------------------------------------*/
+
+mfxTraceU32 MFXTraceTAL_EndTask(mfxTraceStaticHandle* /*static_handle*/,
+                                mfxTraceTaskHandle* /*task_handle*/)
+{
+    if (pMFXTiming_StopTimer)
+    {
+        return pMFXTiming_StopTimer(0, 0);
+    }
+    return 1;
+}
+
+} // extern "C"
+#endif // #ifdef MFX_TRACE_ENABLE_TAL
