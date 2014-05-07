@@ -19,6 +19,7 @@
 #define OPTION_W MSDK_CHAR("-w")
 #define OPTION_ACODEC MSDK_CHAR("-acodec")
 #define OPTION_VCODEC MSDK_CHAR("-vcodec")
+#define OPTION_ACODEC_COPY MSDK_CHAR("-acodec:copy")
 //TODO: implement parsing and handling
 #define OPTION_FORMAT MSDK_CHAR("-format")
 #define OPTION_VDECPLG MSDK_CHAR("-vdecplugin")

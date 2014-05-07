@@ -23,6 +23,7 @@ protected:
     std::auto_ptr<IPipelineProfile> m_profile;
     std::map<int, bool> m_newTracks;
     MFXStreamParamsExt m_StreamParams;
+    bool m_bJustCopyAudio;
 
 public:
     PipelineManager(PipelineFactory &factory);

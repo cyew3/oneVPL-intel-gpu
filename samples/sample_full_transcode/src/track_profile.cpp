@@ -171,10 +171,14 @@ void TrackProfile <mfxAudioParam>::ParseEncodeParams( )
     }
     parse_codec_option(aInfoMFX, aInfo.AudioParam, OPTION_ACODEC);
 
-    // Audio library encoder supports only aac format
-    aInfoMFX.CodecId = MFX_CODEC_AAC;
-    aInfoMFX.OutputFormat = MFX_AUDIO_AAC_ADTS;
-    aInfoMFX.CodecProfile = MFX_PROFILE_AAC_LC;
+    if (m_parser->IsPresent(OPTION_ACODEC_COPY)) {
+        aInfoMFX = aInfo.AudioParam;
+    } else {
+        // Audio library encoder supports only aac format
+        aInfoMFX.CodecId = MFX_CODEC_AAC;
+        aInfoMFX.OutputFormat = MFX_AUDIO_AAC_ADTS;
+        aInfoMFX.CodecProfile = MFX_PROFILE_AAC_LC;
+    }
 
 }
 

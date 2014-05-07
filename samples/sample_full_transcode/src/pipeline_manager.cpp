@@ -17,6 +17,7 @@ Copyright(c) 2013-2014 Intel Corporation. All Rights Reserved.
 
 PipelineManager::PipelineManager(PipelineFactory &factory)
     : m_factory(factory)
+    , m_bJustCopyAudio(false)
 {
 }
 
@@ -75,6 +76,9 @@ void PipelineManager::Build(CmdLineParser &parser) {
         m_pSource.reset(m_factory.CreateCircularSplitterWrapper(input, parser[OPTION_LOOP].as<mfxU64>()));
     }
 
+    if (parser.IsPresent(OPTION_ACODEC_COPY))
+        m_bJustCopyAudio = true;
+
     MFXStreamParams sp;
     m_pSource->GetInfo(sp);
 
@@ -120,12 +124,19 @@ void PipelineManager::BuildAudioChain(size_t nTrack) {
     MFXAudioSession *session = m_sessions->GetAudioSessionForID(info.SID);
     if (!session)
         return;
-    std::auto_ptr<ITransform> dec(m_factory.CreateAudioDecoderTransform(*session, 60000));
+    std::auto_ptr<ITransform> dec;
+
+    m_bJustCopyAudio ? dec.reset(m_factory.CreateAudioDecoderNullTransform(*session, 60000))
+        : dec.reset(m_factory.CreateAudioDecoderTransform(*session, 60000));
+
 
     m_transforms->RegisterTransform(TransformConfigDesc(info.SID, aParam), dec);
 
     if (m_profile->isAudioEncoderExist((int)nTrack)) {
-        std::auto_ptr<ITransform> enc(m_factory.CreateAudioEncoderTransform(*session, 60000));
+        std::auto_ptr<ITransform> enc;
+        m_bJustCopyAudio ? enc.reset(m_factory.CreateAudioEncoderNullTransform(*session, 60000))
+            : enc.reset(m_factory.CreateAudioEncoderNullTransform(*session, 60000));
+
         aParam = info.Encode;
         m_transforms->RegisterTransform(TransformConfigDesc(info.SID, aParam), enc);
     }

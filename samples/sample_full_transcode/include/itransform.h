@@ -33,6 +33,10 @@ template <class T>
 class Transform : public ITransform {
 };
 
+template <class T>
+class NullTransform : public ITransform {
+};
+
 #include "transform_adec.h"
 #include "transform_aenc.h"
 #include "transform_vdec.h"

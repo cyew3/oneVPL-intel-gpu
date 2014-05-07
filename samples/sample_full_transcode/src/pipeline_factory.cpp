@@ -71,16 +71,26 @@ MFXAudioSession* PipelineFactory::CreateAudioSession(){
 MFXAudioDECODE* PipelineFactory::CreateAudioDecoder(MFXAudioSession& session) {
     return new MFXAudioDECODE(session);
 }
+
 ITransform* PipelineFactory::CreateAudioDecoderTransform(MFXAudioSession& session, int timeout) {
     return new Transform<MFXAudioDECODE>(*this, session, timeout);
+}
+
+ITransform* PipelineFactory::CreateAudioDecoderNullTransform(MFXAudioSession& session, int timeout) {
+    return new NullTransform<MFXAudioDECODE>(*this, session, timeout);
 }
 
 MFXAudioENCODE* PipelineFactory::CreateAudioEncoder(MFXAudioSession& session)
 {
     return new MFXAudioENCODE(session);
 }
-ITransform*     PipelineFactory::CreateAudioEncoderTransform(MFXAudioSession& session, int timeout) {
+
+ITransform* PipelineFactory::CreateAudioEncoderTransform(MFXAudioSession& session, int timeout) {
     return new Transform<MFXAudioENCODE>(*this, session, timeout);
+}
+
+ITransform* PipelineFactory::CreateAudioEncoderNullTransform(MFXAudioSession& session, int timeout) {
+    return new NullTransform<MFXAudioENCODE>(*this, session, timeout);
 }
 
 BaseFrameAllocator* PipelineFactory::CreateFrameAllocator(AllocatorImpl impl)
@@ -194,6 +204,7 @@ CmdLineParser* PipelineFactory::CreateCmdLineParser()
         //(ArgHandler<bool>(OPTION_ASW, MSDK_CHAR("Use software audio library, by default it is same as video")))
         //(ArgHandler<msdk_string>(OPTION_ACODEC, supported_acodec.str()))
         (ArgHandler<msdk_string>(OPTION_VCODEC, supported_vcodec.str()))
+        (ArgHandler<bool>(OPTION_ACODEC_COPY, MSDK_CHAR("Copy audio without transcoding")))
         //(ArgHandler<msdk_string>(OPTION_PLG, MSDK_CHAR("Generic MediaSDK plugin")))
         //(ArgHandler<msdk_string>(OPTION_VDECPLG, MSDK_CHAR("MediaSDK decoder plugin")))
         //(ArgHandler<msdk_string>(OPTION_VENCPLG, MSDK_CHAR("MediaSDK encoder plugin")))

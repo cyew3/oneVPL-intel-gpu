@@ -58,6 +58,7 @@ public:
     //TODO: deprecate this
     virtual MFXAudioDECODE*          CreateAudioDecoder(MFXAudioSession&);
     virtual ITransform*              CreateAudioDecoderTransform(MFXAudioSession&, int timeout);
+    virtual ITransform*              CreateAudioDecoderNullTransform(MFXAudioSession&, int timeout);
 
     virtual MFXVideoUSER*            CreateVideoUserModule(MFXVideoSessionExt&);
     //virtual MFXPlugin*               CreatePlugin(mfxPluginType , MFXVideoUSER *, const msdk_string & pluginFullPath);
@@ -68,6 +69,7 @@ public:
 
     virtual MFXAudioENCODE*          CreateAudioEncoder(MFXAudioSession&);
     virtual ITransform*              CreateAudioEncoderTransform(MFXAudioSession&, int timeout);
+    virtual ITransform*              CreateAudioEncoderNullTransform(MFXAudioSession&, int timeout);
 
     //TODO: deprecate this
     virtual MFXSplitter*             CreateSplitter();

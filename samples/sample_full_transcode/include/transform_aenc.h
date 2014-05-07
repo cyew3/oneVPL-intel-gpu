@@ -48,3 +48,22 @@ protected:
     bool m_bInited;
 
 };
+
+template <>
+class NullTransform<MFXAudioENCODE> : public ITransform, private no_copy {
+public:
+    NullTransform (PipelineFactory&, MFXAudioSession & ,int ){};
+    virtual void Configure(MFXAVParams& , ITransform *){};
+    virtual void PutSample(SamplePtr& sample) {
+        m_sample = sample;
+    }
+    virtual bool GetSample(SamplePtr& sample) {
+        if (!m_sample.get())
+            return false;
+        sample = m_sample;
+        return true;
+    }
+    virtual void GetNumSurfaces(MFXAVParams& , IAllocRequest& ){}
+protected:
+    SamplePtr m_sample;
+};
