@@ -193,17 +193,7 @@ public:
     __ALIGN32 PixType m_recChromaSaveTu[6][MAX_CU_SIZE*MAX_CU_SIZE/2];
     __ALIGN32 PixType m_recLumaInter[6][MAX_CU_SIZE*MAX_CU_SIZE];
     __ALIGN32 PixType m_recChromaInter[6][MAX_CU_SIZE*MAX_CU_SIZE/2];
-    __ALIGN32 Ipp16s  m_predBufY[2][MAX_CU_SIZE*MAX_CU_SIZE];
-    __ALIGN32 Ipp16s  m_predBufUv[2][MAX_CU_SIZE*MAX_CU_SIZE/2];
-
-    // storing predictions for bidir
-#define INTERP_BUF_SZ 8 // must be power of 2
-    struct interp_store {
-        __ALIGN32 Ipp16s predBufY[MAX_CU_SIZE*MAX_CU_SIZE];
-        PixType * pY;
-        H265MV mv;
-    } m_interpBuf[INTERP_BUF_SZ];
-    Ipp8u m_interpIdxFirst, m_interpIdxLast;
+    __ALIGN32 Ipp16s  m_tmpPredBuf[MAX_CU_SIZE*MAX_CU_SIZE]; // buffer contains the result of 1-ref interpolation between 2 PredInterUni calls
 
     H265BsFake *m_bsf;
 
@@ -280,18 +270,18 @@ public:
     void GetPuMvPredictorInfo(Ipp32s blockZScanIdx, Ipp32s partAddr, Ipp32s partMode,
                               Ipp32s curPUidx, MVPInfo *pInfo, MVPInfo & mergeInfo);
 
+    Ipp8u GetNumPartInter(Ipp32s absPartIdx);
+
     void GetPartOffsetAndSize(Ipp32s idx, Ipp32s partMode, Ipp32s cuSize, Ipp32s &partX,
                               Ipp32s &partY, Ipp32s &partWidth, Ipp32s &partHeight);
 
     void GetPartAddr(Ipp32s uPartIdx, Ipp32s partMode, Ipp32s m_NumPartition, Ipp32s &partAddr);
 
-    bool CheckIdenticalMotion(Ipp32u absPartIdx);
+    bool CheckIdenticalMotion(const Ipp8s refIdx[2], const H265MV mvs[2]) const;
 
     Ipp32s ClipMV(H265MV &rcMv) const; // returns 1 if changed, otherwise 0
 
     Ipp32u GetSCuAddr();
-
-    Ipp8u GetNumPartInter(Ipp32s absPartIdx);
     
     Ipp32u GetQuadtreeTuLog2MinSizeInCu(Ipp32u absPartIdx);
 
@@ -353,11 +343,13 @@ public:
     template <class H265Bs>
     void CodeIntradirLumaAng(H265Bs *bs, Ipp32u absPartIdx, Ipp8u multiple);
 
-    void PredInterUni(Ipp32u PartAddr, Ipp32s Width, Ipp32s Height, EnumRefPicList RefPicList,
-                      Ipp32s PartIdx, PixType *dst, Ipp32s dst_pitch, bool bi, Ipp8u isLuma,
-                      MFX_HEVC_PP::EnumAddAverageType eAddAverage);
+    template <EnumTextType PLANE_TYPE>
+    void PredInterUni(Ipp32s puX, Ipp32s puY, Ipp32s puW, Ipp32s puH, Ipp32s listIdx,
+                      const Ipp8s refIdx[2], const H265MV mvs[2], PixType *dst, Ipp32s dstPitch,
+                      Ipp32s isBiPred, MFX_HEVC_PP::EnumAddAverageType eAddAverage);
 
-    void InterPredCu(Ipp32s absPartIdx, Ipp8u depth, PixType *dst, Ipp32s pitchDst, Ipp8u isLuma);
+    template <EnumTextType PLANE_TYPE>
+    void InterPredCu(Ipp32s absPartIdx, Ipp8u depth, PixType *dst, Ipp32s pitchDst);
 
     void IntraPred(Ipp32u absPartIdx, Ipp8u depth);
 
@@ -460,18 +452,14 @@ public:
 
     void DetailsXY(H265MEInfo *meInfo) const;
 
-    void MeInterpolateOld(H265MEInfo *meInfo, H265MV *MV, PixType *in_pSrc, Ipp32s in_SrcPitch,
-                          Ipp16s *buf, Ipp32s buf_pitch) const;
-
     void MeInterpolate(const H265MEInfo* meInfo, H265MV* MV, PixType *in_pSrc, Ipp32s in_SrcPitch,
                        Ipp8u *buf, Ipp32s buf_pitch) const;
 
     Ipp32s MatchingMetricPu(PixType *src, const H265MEInfo* meInfo, H265MV* mv, H265Frame *refPic,
                             Ipp32s useHadamard) const;
 
-    Ipp32s MatchingMetricBipredPu(PixType *src, H265MEInfo* meInfo, PixType *fwd, Ipp32u pitchFwd,
-                                  PixType *bwd, Ipp32u pitchBwd, H265MV fullMV[2],
-                                  Ipp32s useHadamard);
+    Ipp32s MatchingMetricBipredPu(const PixType *src, const H265MEInfo *meInfo, const Ipp8s refIdx[2],
+                                  const H265MV mvs[2], Ipp32s useHadamard);
 
     Ipp32s MvCost1RefLog(H265MV mv, Ipp8s refIdx, const MVPInfo *predInfo, Ipp32s rlist) const;
 

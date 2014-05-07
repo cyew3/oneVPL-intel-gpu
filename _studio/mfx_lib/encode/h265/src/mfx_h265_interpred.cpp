@@ -19,16 +19,13 @@ using namespace MFX_HEVC_PP;
 
 namespace H265Enc {
 
-bool H265CU::CheckIdenticalMotion(Ipp32u abs_part_idx)
+bool H265CU::CheckIdenticalMotion(const Ipp8s refIdx[2], const H265MV mvs[2]) const
 {
-    RefPicList *refPicList = m_currFrame->m_refPicList;
-    Ipp8s ref_idx[2] = { m_data[abs_part_idx].refIdx[0], m_data[abs_part_idx].refIdx[1] };
-    // TODO optimize: check B_SLISE && !weighted on entrance, POC after mv matched
-    if(m_cslice->slice_type == B_SLICE && !m_par->cpps->weighted_bipred_flag) {
-        if(ref_idx[0] >= 0 && ref_idx[1] >= 0) {
-            Ipp32s RefPOCL0 = refPicList[0].m_refFrames[ref_idx[0]]->PicOrderCnt();
-            Ipp32s RefPOCL1 = refPicList[1].m_refFrames[ref_idx[1]]->PicOrderCnt();
-            if (RefPOCL0 == RefPOCL1 && m_data[abs_part_idx].mv[0] == m_data[abs_part_idx].mv[1])
+    if (m_cslice->slice_type == B_SLICE && !m_par->cpps->weighted_bipred_flag) {
+        if (refIdx[0] >= 0 && refIdx[1] >= 0) {
+            H265Frame *refL0 = m_currFrame->m_refPicList[0].m_refFrames[refIdx[0]];
+            H265Frame *refL1 = m_currFrame->m_refPicList[1].m_refFrames[refIdx[1]];
+            if (refL0 == refL1 && mvs[0] == mvs[1])
                 return true;
         }
     }
@@ -130,399 +127,192 @@ void WriteAverageToPic(
 }
 
 
-void H265CU::PredInterUni(Ipp32u PartAddr, Ipp32s Width, Ipp32s Height, EnumRefPicList listIdx,
-                          Ipp32s PartIdx, PixType *dst, Ipp32s dst_pitch, bool bi, Ipp8u is_luma,
-                          MFX_HEVC_PP::EnumAddAverageType eAddAverage)
+template <EnumTextType PLANE_TYPE>
+PixType *GetRefPointer(H265Frame *refFrame, Ipp32s blockX, Ipp32s blockY, const H265MV &mv)
+{
+    return (PLANE_TYPE == TEXT_LUMA)
+        ? refFrame->y  + blockX + (mv.mvx >> 2) + (blockY + (mv.mvy >> 2)) * refFrame->pitch_luma
+        : refFrame->uv + blockX + (mv.mvx >> 3 << 1) + ((blockY >> 1) + (mv.mvy >> 3)) * refFrame->pitch_luma;
+}
+
+template <EnumTextType PLANE_TYPE>
+void H265CU::PredInterUni(Ipp32s puX, Ipp32s puY, Ipp32s puW, Ipp32s puH, Ipp32s listIdx,
+                          const Ipp8s refIdx[2], const H265MV mvs[2], PixType *dst, Ipp32s dstPitch,
+                          Ipp32s isBiPred, MFX_HEVC_PP::EnumAddAverageType eAddAverage)
 {
     RefPicList *refPicList = m_currFrame->m_refPicList;
-    Ipp32s maxDepth = m_par->Log2MaxCUSize - m_par->Log2MinTUSize;
-    Ipp32s numMinTUInLCU = 1 << maxDepth;
-    Ipp32s PURasterIdx = h265_scan_z2r[maxDepth][PartAddr];
-    Ipp32s PUStartRow = PURasterIdx >> maxDepth;
-    Ipp32s PUStartColumn = PURasterIdx & (numMinTUInLCU - 1);
+    H265Frame *ref = refPicList[listIdx].m_refFrames[refIdx[listIdx]];
+    Ipp32s listIdx2 = !listIdx;
 
-    Ipp32s RefIdx = m_data[PartAddr].refIdx[listIdx];
-    VM_ASSERT(RefIdx >= 0);
-
-    H265MV MV = m_data[PartAddr].mv[listIdx];
-    ClipMV(MV);
-
-    H265Frame *PicYUVRef = refPicList[listIdx].m_refFrames[RefIdx];
-
-    Ipp32s in_SrcPitch, in_dstPicPitch, in_dstBufPitch, refOffset;
-    PixType *in_pSrc;
-    PixType *in_dstPic;
-    Ipp16s *in_dstBuf;
-
-    Ipp32s in_dx, in_dy;
-    Ipp32s bitDepth, shift, tap;
-    Ipp16s offset;
-
-    if (is_luma) {
-        // LUMA
-        using UMC_HEVC_DECODER::TEXT_LUMA;
-        Ipp32s in_SrcPitch2 = 0;
-        PixType *in_pSrc2 = 0;
-        if ( eAddAverage == AVERAGE_FROM_PIC ) {
-            EnumRefPicList RefPicList2 = (EnumRefPicList)!listIdx;
-            Ipp32s RefIdx2 = m_data[PartAddr].refIdx[RefPicList2];
-            H265Frame *PicYUVRef2 = refPicList[RefPicList2].m_refFrames[RefIdx2];
-            in_SrcPitch2 = PicYUVRef2->pitch_luma;
-            H265MV MV2 = m_data[PartAddr].mv[RefPicList2];
-            ClipMV(MV2);
-            Ipp32s refOffset2 = m_ctbPelX + (MV2.mvx >> 2) + (m_ctbPelY + (MV2.mvy >> 2)) * in_SrcPitch2;
-            in_pSrc2 = PicYUVRef2->y + ((PUStartRow * in_SrcPitch2 + PUStartColumn) << m_par->Log2MinTUSize) + refOffset2;
-        }
-
-        in_SrcPitch = PicYUVRef->pitch_luma;
-        refOffset = m_ctbPelX + (MV.mvx >> 2) + (m_ctbPelY + (MV.mvy >> 2)) * in_SrcPitch;
-        in_pSrc = PicYUVRef->y +
-            ((PUStartRow * m_pitchRec + PUStartColumn) << m_par->Log2MinTUSize) + refOffset;
-
-        in_dstBufPitch = m_par->MaxCUSize;
-        in_dstBuf = m_predBufY[ (eAddAverage == AVERAGE_FROM_BUF ? !listIdx : listIdx) ];
-        in_dstBuf += ((PUStartRow * m_par->MaxCUSize + PUStartColumn) << m_par->Log2MinTUSize);
-
-        in_dstPicPitch = dst_pitch;
-        in_dstPic = dst + ((PUStartRow * dst_pitch + PUStartColumn) << m_par->Log2MinTUSize);
-
-
+    Ipp32s bitDepth, tap, dx, dy;
+    if (PLANE_TYPE == TEXT_LUMA) {
         bitDepth = BIT_DEPTH_LUMA;
         tap = 8;
-        in_dx = MV.mvx & 3;
-        in_dy = MV.mvy & 3;
-
-        shift = 6;
-        offset = 32;
-
-        if (bi)
-        {
-            shift = bitDepth - 8;
-            offset = 0;
-        }
-
-        if ((in_dx == 0) && (in_dy == 0))
-        {
-            shift = 0;
-
-            if (bi)
-                shift = 14 - bitDepth;
-
-            if (!bi) {
-                IppiSize roi = {Width, Height};
-                ippiCopy_8u_C1R(in_pSrc, in_SrcPitch, in_dstPic, in_dstPicPitch, roi);
-                //for (Ipp32s j = 0; j < Height; j++) {
-                //    small_memcpy( in_dstPic, in_pSrc, Width );
-                //    in_pSrc += in_SrcPitch;
-                //    in_dstPic += in_dstPicPitch;
-                //}
-            }
-            else {
-                if ( eAddAverage == MFX_HEVC_PP::AVERAGE_FROM_PIC ) {
-                    WriteAverageToPic( in_pSrc, in_SrcPitch, in_pSrc2, in_SrcPitch2, in_dstPic, in_dstPicPitch, Width, Height );
-                } else {
-                    VM_ASSERT(0); // should not be here
-                }
-            }
-        }
-        else if (in_dy == 0)
-        {
-            if (!bi) // Write directly into buffer
-                Interpolate<TEXT_LUMA>( INTERP_HOR, in_pSrc, in_SrcPitch, in_dstPic, in_dstPicPitch, in_dx, Width, Height, shift, offset, bitDepth);
-            else if (eAddAverage == AVERAGE_NO)
-                Interpolate<TEXT_LUMA>( INTERP_HOR, in_pSrc, in_SrcPitch, in_dstBuf, in_dstBufPitch, in_dx, Width, Height, shift, offset, bitDepth);
-            else if (eAddAverage == AVERAGE_FROM_BUF)
-                Interpolate<TEXT_LUMA>( INTERP_HOR, in_pSrc, in_SrcPitch, in_dstPic, in_dstPicPitch, in_dx, Width, Height, shift, offset, bitDepth, AVERAGE_FROM_BUF, in_dstBuf, in_dstBufPitch);
-            else if (eAddAverage == AVERAGE_FROM_PIC)
-                Interpolate<TEXT_LUMA>( INTERP_HOR, in_pSrc, in_SrcPitch, in_dstPic, in_dstPicPitch, in_dx, Width, Height, shift, offset, bitDepth, AVERAGE_FROM_PIC, in_pSrc2, in_SrcPitch2);
-        }
-        else if (in_dx == 0)
-        {
-            if (!bi) // Write directly into buffer
-                Interpolate<TEXT_LUMA>( INTERP_VER, in_pSrc, in_SrcPitch, in_dstPic, in_dstPicPitch, in_dy, Width, Height, shift, offset, bitDepth);
-            else if (eAddAverage == AVERAGE_NO)
-                Interpolate<TEXT_LUMA>( INTERP_VER, in_pSrc, in_SrcPitch, in_dstBuf, in_dstBufPitch, in_dy, Width, Height, shift, offset, bitDepth);
-            else if (eAddAverage == AVERAGE_FROM_BUF)
-                Interpolate<TEXT_LUMA>( INTERP_VER, in_pSrc, in_SrcPitch, in_dstPic, in_dstPicPitch, in_dy, Width, Height, shift, offset, bitDepth, AVERAGE_FROM_BUF, in_dstBuf, in_dstBufPitch);
-            else if (eAddAverage == AVERAGE_FROM_PIC)
-                Interpolate<TEXT_LUMA>( INTERP_VER, in_pSrc, in_SrcPitch, in_dstPic, in_dstPicPitch, in_dy, Width, Height, shift, offset, bitDepth, AVERAGE_FROM_PIC, in_pSrc2, in_SrcPitch2);
-        }
-        else
-        {
-            Ipp16s tmp[80 * 80];
-            Ipp16s *tmpBuf = tmp + 80 * 8 + 8;
-            Ipp32s tmpPitch = 80;
-
-            Interpolate<TEXT_LUMA>( MFX_HEVC_PP::INTERP_HOR,  in_pSrc - ((tap >> 1) - 1) * in_SrcPitch, in_SrcPitch,
-                                                      tmpBuf, tmpPitch, in_dx, Width, Height + tap - 1, bitDepth - 8, 0, bitDepth);
-
-            shift = 20 - bitDepth;
-            offset = 1 << (19 - bitDepth);
-            if (bi) {
-                shift = 6;
-                offset = 0;
-            }
-
-            if (!bi) // Write directly into buffer
-                Interpolate<TEXT_LUMA>( INTERP_VER, tmpBuf + ((tap >> 1) - 1) * tmpPitch, tmpPitch, in_dstPic, in_dstPicPitch, in_dy, Width, Height, shift, offset, bitDepth);
-            else if (eAddAverage == AVERAGE_NO)
-                Interpolate<TEXT_LUMA>( INTERP_VER, tmpBuf + ((tap >> 1) - 1) * tmpPitch, tmpPitch, in_dstBuf, in_dstBufPitch, in_dy, Width, Height, shift, offset, bitDepth);
-            else if (eAddAverage == AVERAGE_FROM_BUF)
-                Interpolate<TEXT_LUMA>( INTERP_VER, tmpBuf + ((tap >> 1) - 1) * tmpPitch, tmpPitch, in_dstPic, in_dstPicPitch, in_dy, Width, Height, shift, offset, bitDepth, AVERAGE_FROM_BUF, in_dstBuf, in_dstBufPitch );
-            else // eAddAverage == AVERAGE_FROM_PIC
-                Interpolate<TEXT_LUMA>( INTERP_VER, tmpBuf + ((tap >> 1) - 1) * tmpPitch, tmpPitch, in_dstPic, in_dstPicPitch, in_dy, Width, Height, shift, offset, bitDepth, AVERAGE_FROM_PIC, in_pSrc2, in_SrcPitch2 );
-        }
-    } else {
-        // CHROMA
-        using UMC_HEVC_DECODER::TEXT_CHROMA;
-        Width >>= 1;
-        Height >>= 1;
+        dx = mvs[listIdx].mvx & 3;
+        dy = mvs[listIdx].mvy & 3;
+    }
+    else {
+        puW >>= 1;
+        puH >>= 1;
         bitDepth = BIT_DEPTH_CHROMA;
         tap = 4;
-        in_dx = MV.mvx & 7;
-        in_dy = MV.mvy & 7;
+        dx = mvs[listIdx].mvx & 7;
+        dy = mvs[listIdx].mvy & 7;
+    }
 
-        Ipp32s in_SrcPitch2 = 0;
-        PixType *in_pSrc2 = 0;
-        if ( eAddAverage == AVERAGE_FROM_PIC ) {
-            EnumRefPicList RefPicList2 = (EnumRefPicList)!listIdx;
-            Ipp32s RefIdx2 = m_data[PartAddr].refIdx[RefPicList2];
-            H265Frame *PicYUVRef2 = refPicList[RefPicList2].m_refFrames[RefIdx2];
-            in_SrcPitch2 = PicYUVRef2->pitch_luma;
-            H265MV MV2 = m_data[PartAddr].mv[RefPicList2];
-            ClipMV(MV2);
-            Ipp32s refOffset2 = (m_ctbPelX) + (MV2.mvx >> 3) * 2 + ((m_ctbPelY >> 1) + (MV2.mvy >> 3)) * in_SrcPitch2;
-            in_pSrc2 = PicYUVRef2->uv + ((PUStartRow * in_SrcPitch2 / 2 + PUStartColumn) << m_par->Log2MinTUSize) + refOffset2;
+    Ipp32s srcPitch2 = 0;
+    PixType *src2 = NULL;
+    if (eAddAverage == AVERAGE_FROM_PIC) {
+        Ipp8s refIdx2 = refIdx[listIdx2];
+        H265Frame *ref2 = refPicList[listIdx2].m_refFrames[refIdx2];
+        srcPitch2 = ref2->pitch_luma;
+        src2 = GetRefPointer<PLANE_TYPE>(ref2, (Ipp32s)m_ctbPelX + puX, (Ipp32s)m_ctbPelY + puY, mvs[listIdx2]);
+    }
+
+    Ipp32s srcPitch = ref->pitch_luma;
+    PixType *src = GetRefPointer<PLANE_TYPE>(ref, (Ipp32s)m_ctbPelX + puX, (Ipp32s)m_ctbPelY + puY, mvs[listIdx]);
+
+    Ipp32s dstBufPitch = MAX_CU_SIZE;
+    Ipp16s *dstBuf = m_tmpPredBuf;
+
+    Ipp32s dstPicPitch = dstPitch;
+    PixType *dstPic = dst;
+
+    Ipp32s shift = 6;
+    Ipp32s offset = 32;
+
+    if (isBiPred) {
+        shift = bitDepth - 8;
+        offset = 0;
+    }
+
+    const UMC_HEVC_DECODER::EnumTextType PLANE_TYPE_ = (UMC_HEVC_DECODER::EnumTextType)PLANE_TYPE;
+
+    if (dx == 0 && dy == 0) {
+        if (PLANE_TYPE == TEXT_CHROMA)
+            puW <<= 1;
+        shift = isBiPred ? 14 - bitDepth : 0;
+
+        if (!isBiPred) {
+            IppiSize roi = { puW, puH };
+            ippiCopy_8u_C1R(src, srcPitch, dstPic, dstPicPitch, roi);
         }
-        in_SrcPitch = PicYUVRef->pitch_luma;
-        refOffset = (m_ctbPelX) + (MV.mvx >> 3) * 2 + ((m_ctbPelY >> 1) + (MV.mvy >> 3)) * in_SrcPitch;
-        in_pSrc = PicYUVRef->uv + ((PUStartRow * in_SrcPitch / 2 + PUStartColumn) << m_par->Log2MinTUSize) + refOffset;
-
-        in_dstBufPitch = m_par->MaxCUSize;
-        in_dstBuf = m_predBufUv[ (eAddAverage == AVERAGE_FROM_BUF ? !listIdx : listIdx) ];
-        in_dstBuf += ((PUStartRow * m_par->MaxCUSize / 2 + PUStartColumn) << m_par->Log2MinTUSize);
-
-        in_dstPicPitch = dst_pitch;
-        in_dstPic = dst + ((PUStartRow * dst_pitch / 2 + PUStartColumn) << m_par->Log2MinTUSize);
-
-        shift = 6;
-        offset = 32;
-
-        if (bi)
-        {
-            shift = bitDepth - 8;
-            offset = 0;
-        }
-
-        if ((in_dx == 0) && (in_dy == 0))
-        {
-            shift = 0;
-
-            if (bi)
-                shift = 14 - bitDepth;
-
-            if (!bi) {
-                IppiSize roi = {Width*2, Height};
-                ippiCopy_8u_C1R(in_pSrc, in_SrcPitch, in_dstPic, in_dstPicPitch, roi);
-                //for (Ipp32s j = 0; j < Height; j++) {
-                //    small_memcpy( in_dstPic, in_pSrc, Width * 2 );
-                //    in_pSrc += in_SrcPitch;
-                //    in_dstPic += in_dstPicPitch;
-                //}
-            }
-            else {
-                if ( eAddAverage == MFX_HEVC_PP::AVERAGE_FROM_PIC ) {
-                    WriteAverageToPic( in_pSrc, in_SrcPitch, in_pSrc2, in_SrcPitch2, in_dstPic, in_dstPicPitch, Width * 2, Height );
-                } else {
-                    VM_ASSERT(0); // should not be here
-                }
+        else {
+            if (eAddAverage == MFX_HEVC_PP::AVERAGE_FROM_PIC) {
+                WriteAverageToPic(src, srcPitch, src2, srcPitch2, dstPic, dstPicPitch, puW, puH);
+            } else {
+                VM_ASSERT(0); // should not be here
             }
         }
-        else if (in_dy == 0)
-        {
-            if (!bi) // Write directly into buffer
-                Interpolate<TEXT_CHROMA>( INTERP_HOR, in_pSrc, in_SrcPitch, in_dstPic, in_dstPicPitch, in_dx, Width, Height, shift, offset, bitDepth);
-            else if (eAddAverage == AVERAGE_NO)
-                Interpolate<TEXT_CHROMA>( INTERP_HOR, in_pSrc, in_SrcPitch, in_dstBuf, in_dstBufPitch, in_dx, Width, Height, shift, offset, bitDepth);
-            else if (eAddAverage == AVERAGE_FROM_BUF)
-                Interpolate<TEXT_CHROMA>( INTERP_HOR, in_pSrc, in_SrcPitch, in_dstPic, in_dstPicPitch, in_dx, Width, Height, shift, offset, bitDepth, AVERAGE_FROM_BUF, in_dstBuf, in_dstBufPitch);
-            else if (eAddAverage == AVERAGE_FROM_PIC)
-                Interpolate<TEXT_CHROMA>( INTERP_HOR, in_pSrc, in_SrcPitch, in_dstPic, in_dstPicPitch, in_dx, Width, Height, shift, offset, bitDepth, AVERAGE_FROM_PIC, in_pSrc2, in_SrcPitch2);
-        }
-        else if (in_dx == 0)
-        {
-            if (!bi) // Write directly into buffer
-                Interpolate<TEXT_CHROMA>( INTERP_VER, in_pSrc, in_SrcPitch, in_dstPic, in_dstPicPitch, in_dy, Width, Height, shift, offset, bitDepth);
-            else if (eAddAverage == AVERAGE_NO)
-                Interpolate<TEXT_CHROMA>( INTERP_VER, in_pSrc, in_SrcPitch, in_dstBuf, in_dstBufPitch, in_dy, Width, Height, shift, offset, bitDepth);
-            else if (eAddAverage == AVERAGE_FROM_BUF)
-                Interpolate<TEXT_CHROMA>( INTERP_VER, in_pSrc, in_SrcPitch, in_dstPic, in_dstPicPitch, in_dy, Width, Height, shift, offset, bitDepth, AVERAGE_FROM_BUF, in_dstBuf, in_dstBufPitch);
-            else if (eAddAverage == AVERAGE_FROM_PIC)
-                Interpolate<TEXT_CHROMA>( INTERP_VER, in_pSrc, in_SrcPitch, in_dstPic, in_dstPicPitch, in_dy, Width, Height, shift, offset, bitDepth, AVERAGE_FROM_PIC, in_pSrc2, in_SrcPitch2);
-        }
-        else
-        {
-            Ipp16s tmp[80 * 80];
-            Ipp16s *tmpBuf = tmp + 80 * 8 + 8;
-            Ipp32s tmpPitch = 80;
-
-            Interpolate<TEXT_CHROMA>( MFX_HEVC_PP::INTERP_HOR,  in_pSrc - ((tap >> 1) - 1) * in_SrcPitch, in_SrcPitch, tmpBuf, tmpPitch, in_dx, Width, Height + tap - 1, bitDepth - 8, 0, bitDepth);
-
-            shift = 20 - bitDepth;
-            offset = 1 << (19 - bitDepth);
-            if (bi) {
-                shift = 6;
-                offset = 0;
-            }
-
-            if (!bi) // Write directly into buffer
-                Interpolate<TEXT_CHROMA>( INTERP_VER, tmpBuf + ((tap >> 1) - 1) * tmpPitch, tmpPitch, in_dstPic, in_dstPicPitch, in_dy, Width, Height, shift, offset, bitDepth);
-            else if (eAddAverage == AVERAGE_NO)
-                Interpolate<TEXT_CHROMA>( INTERP_VER, tmpBuf + ((tap >> 1) - 1) * tmpPitch, tmpPitch, in_dstBuf, in_dstBufPitch, in_dy, Width, Height, shift, offset, bitDepth);
-            else if (eAddAverage == AVERAGE_FROM_BUF)
-                Interpolate<TEXT_CHROMA>( INTERP_VER, tmpBuf + ((tap >> 1) - 1) * tmpPitch, tmpPitch, in_dstPic, in_dstPicPitch, in_dy, Width, Height, shift, offset, bitDepth, AVERAGE_FROM_BUF, in_dstBuf, in_dstBufPitch );
-            else // eAddAverage == AVERAGE_FROM_PIC
-                Interpolate<TEXT_CHROMA>( INTERP_VER, tmpBuf + ((tap >> 1) - 1) * tmpPitch, tmpPitch, in_dstPic, in_dstPicPitch, in_dy, Width, Height, shift, offset, bitDepth, AVERAGE_FROM_PIC, in_pSrc2, in_SrcPitch2 );
-        }
     }
-}
-
-
-void H265CU::InterPredCu(Ipp32s abs_part_idx, Ipp8u depth, PixType *dst, Ipp32s dst_pitch, Ipp8u is_luma)
-{
-    Ipp32s PartAddr;
-    Ipp32s PartX, PartY, Width, Height;
-    Ipp32u num_parts = ( m_par->NumPartInCU >> (depth<<1) );
-
-    for (Ipp32s PartIdx = 0; PartIdx < GetNumPartInter(abs_part_idx); PartIdx++)
-    {
-        GetPartOffsetAndSize(PartIdx, m_data[abs_part_idx].partSize,
-            m_data[abs_part_idx].size, PartX, PartY, Width, Height);
-        GetPartAddr(PartIdx, m_data[abs_part_idx].partSize, num_parts, PartAddr);
-
-        PartAddr += abs_part_idx;
-
-        Ipp32s RefIdx[2] = { m_data[PartAddr].refIdx[0], m_data[PartAddr].refIdx[1] };
-
-        if (CheckIdenticalMotion(PartAddr) || RefIdx[0] < 0 || RefIdx[1] < 0) {
-            EnumRefPicList refPicList = RefIdx[0] >= 0 ? REF_PIC_LIST_0 : REF_PIC_LIST_1;
-            PredInterUni( PartAddr, Width, Height, refPicList, PartIdx, dst, dst_pitch, false, is_luma, AVERAGE_NO );
-
-        } else {
-            H265MV MV0 = m_data[PartAddr].mv[REF_PIC_LIST_0];
-            H265MV MV1 = m_data[PartAddr].mv[REF_PIC_LIST_1];
-            ClipMV(MV0);
-            ClipMV(MV1);
-            Ipp32s mv_interp0 = (MV0.mvx | MV0.mvy) & (is_luma ? 3 : 7);
-            Ipp32s mv_interp1 = (MV1.mvx | MV1.mvy) & (is_luma ? 3 : 7);
-            bool bOnlyOneIterp = !( mv_interp0 && mv_interp1 );
-            EnumRefPicList refPicList = mv_interp0 ? REF_PIC_LIST_0 : REF_PIC_LIST_1;
-
-            if ( bOnlyOneIterp )
-                PredInterUni( PartAddr, Width, Height, refPicList, PartIdx, dst, dst_pitch, true, is_luma, AVERAGE_FROM_PIC );
-            else
-            {
-                PredInterUni( PartAddr, Width, Height, REF_PIC_LIST_0, PartIdx, dst, dst_pitch, true, is_luma, AVERAGE_NO );
-                PredInterUni( PartAddr, Width, Height, REF_PIC_LIST_1, PartIdx, dst, dst_pitch, true, is_luma, AVERAGE_FROM_BUF );
-            }
-
-                /*Ipp32s w0[3], w1[3], o0[3], o1[3], logWD[3], round[3], bitDepth = g_BitDepth;
-
-                for (Ipp32s plane = 0; plane < 3; plane++)
-                {
-                    w0[plane] = pCU->m_SliceHeader->m_weightPredTable[REF_PIC_LIST_0][RefIdx[0] >=0 ? RefIdx[0] : RefIdx[1]][plane].iWeight;
-                    w1[plane] = pCU->m_SliceHeader->m_weightPredTable[REF_PIC_LIST_1][RefIdx[0] >=0 ? RefIdx[0] : RefIdx[1]][plane].iWeight;
-                    o0[plane] = pCU->m_SliceHeader->m_weightPredTable[REF_PIC_LIST_0][RefIdx[0] >=0 ? RefIdx[0] : RefIdx[1]][plane].iOffset;
-                    o1[plane] = pCU->m_SliceHeader->m_weightPredTable[REF_PIC_LIST_1][RefIdx[0] >=0 ? RefIdx[0] : RefIdx[1]][plane].iOffset;
-
-                    logWD[plane] = pCU->m_SliceHeader->m_weightPredTable[REF_PIC_LIST_0][RefIdx[0] >=0 ? RefIdx[0] : RefIdx[1]][plane].uiLog2WeightDenom;
-                    logWD[plane] += 14 - bitDepth;
-                    round[plane] = 0;
-
-                    if (logWD[plane] >= 1)
-                        round[plane] = 1 << (logWD[plane] - 1);
-                    else
-                        logWD[plane] = 0;
-                }
-
-                if (RefIdx[0] >= 0)
-                    pPredYUV->CopyWeighted(&m_YUVPred[0], PartIdx, Width, Height, w0, o0, logWD, round);
-                else if (RefIdx[1] >= 0)
-                    pPredYUV->CopyWeighted(&m_YUVPred[1], PartIdx, Width, Height, w1, o1, logWD, round);
-                else
-                {
-                    for (Ipp32s plane = 0; plane < 3; plane++)
-                    {
-                        logWD[plane] += 1;
-                        round[plane] = (o0[plane] + o1[plane] + 1) << (logWD[plane] - 1);
-                    }
-                    pPredYUV->CopyWeightedBidi(&m_YUVPred[0], &m_YUVPred[1], PartIdx, Width, Height, w0, w1, logWD, round);
-                }*/
-        }
+    else if (dy == 0) {
+        if (!isBiPred) // Write directly into buffer
+            Interpolate<PLANE_TYPE_>(INTERP_HOR, src, srcPitch, dstPic, dstPicPitch, dx, puW, puH, shift, offset, bitDepth);
+        else if (eAddAverage == AVERAGE_NO)
+            Interpolate<PLANE_TYPE_>(INTERP_HOR, src, srcPitch, dstBuf, dstBufPitch, dx, puW, puH, shift, offset, bitDepth);
+        else if (eAddAverage == AVERAGE_FROM_BUF)
+            Interpolate<PLANE_TYPE_>(INTERP_HOR, src, srcPitch, dstPic, dstPicPitch, dx, puW, puH, shift, offset, bitDepth, AVERAGE_FROM_BUF, dstBuf, dstBufPitch);
+        else if (eAddAverage == AVERAGE_FROM_PIC)
+            Interpolate<PLANE_TYPE_>(INTERP_HOR, src, srcPitch, dstPic, dstPicPitch, dx, puW, puH, shift, offset, bitDepth, AVERAGE_FROM_PIC, src2, srcPitch2);
     }
-}
-
-
-void H265CU::MeInterpolateOld(H265MEInfo* me_info, H265MV* MV, PixType *in_pSrc, Ipp32s in_SrcPitch, Ipp16s *buf, Ipp32s buf_pitch) const
-{
-    Ipp32s width = me_info->width;
-    Ipp32s height = me_info->height;
-
-    Ipp16s *in_pDst = buf;
-    Ipp32s in_DstPitch = buf_pitch;
-
-    Ipp32s in_dx, in_dy;
-    Ipp32s bitDepth, shift, offset, tap;
-
-    Ipp32s refOffset = m_ctbPelX + me_info->posx + (MV->mvx >> 2) + (m_ctbPelY + me_info->posy + (MV->mvy >> 2)) * in_SrcPitch;
-    in_pSrc += refOffset;
-
-    bitDepth = BIT_DEPTH_LUMA;
-    tap = 8;
-    in_dx = MV->mvx & 3;
-    in_dy = MV->mvy & 3;
-
-    shift = 6;
-    offset = 32;
-
-    //if (bi)
-    //{
-    //    shift = bitDepth - 8;
-    //    offset = 0;
-    //}
-
-    if ((in_dx == 0) && (in_dy == 0))
-    {
-        shift = 0;
-
-        //    if (bi)
-        //        shift = 14 - bitDepth;
-
-        CopyPU(in_pSrc, in_SrcPitch, in_pDst, in_DstPitch, width, height, shift);
+    else if (dx == 0) {
+        if (!isBiPred) // Write directly into buffer
+            Interpolate<PLANE_TYPE_>(INTERP_VER, src, srcPitch, dstPic, dstPicPitch, dy, puW, puH, shift, offset, bitDepth);
+        else if (eAddAverage == AVERAGE_NO)
+            Interpolate<PLANE_TYPE_>(INTERP_VER, src, srcPitch, dstBuf, dstBufPitch, dy, puW, puH, shift, offset, bitDepth);
+        else if (eAddAverage == AVERAGE_FROM_BUF)
+            Interpolate<PLANE_TYPE_>(INTERP_VER, src, srcPitch, dstPic, dstPicPitch, dy, puW, puH, shift, offset, bitDepth, AVERAGE_FROM_BUF, dstBuf, dstBufPitch);
+        else if (eAddAverage == AVERAGE_FROM_PIC)
+            Interpolate<PLANE_TYPE_>(INTERP_VER, src, srcPitch, dstPic, dstPicPitch, dy, puW, puH, shift, offset, bitDepth, AVERAGE_FROM_PIC, src2, srcPitch2);
     }
-    else if (in_dy == 0)
-    {
-        Interpolate<UMC_HEVC_DECODER::TEXT_LUMA>( INTERP_HOR, in_pSrc, in_SrcPitch, in_pDst, in_DstPitch, in_dx, width, height, shift, (Ipp16s)offset, bitDepth);
-    }
-    else if (in_dx == 0)
-    {
-        Interpolate<UMC_HEVC_DECODER::TEXT_LUMA>( INTERP_VER, in_pSrc, in_SrcPitch, in_pDst, in_DstPitch, in_dy, width, height, shift, (Ipp16s)offset, bitDepth);
-    }
-    else
-    {
-        Ipp16s tmp[80 * 80];
-        Ipp16s *tmpBuf = tmp + 80 * 8 + 8;
+    else {
+        Ipp16s horBuf[80 * 80];
+        const Ipp32s horBufPitch = 80;
+        Ipp16s *horBufPtr = horBuf + 8 + 8 * horBufPitch;
+
+        Interpolate<PLANE_TYPE_>(INTERP_HOR,  src - ((tap >> 1) - 1) * srcPitch, srcPitch, horBufPtr, horBufPitch, dx, puW, puH + tap - 1, bitDepth - 8, 0, bitDepth);
 
         shift = 20 - bitDepth;
         offset = 1 << (19 - bitDepth);
+        if (isBiPred) {
+            shift = 6;
+            offset = 0;
+        }
 
-        Interpolate<UMC_HEVC_DECODER::TEXT_LUMA>( INTERP_HOR, in_pSrc - ((tap >> 1) - 1) * in_SrcPitch, in_SrcPitch, tmpBuf, 80, in_dx, width, height + tap, bitDepth - 8, 0, bitDepth);
-
-        Interpolate<UMC_HEVC_DECODER::TEXT_LUMA>( INTERP_VER, tmpBuf + ((tap >> 1) - 1) * 80, 80, in_pDst, in_DstPitch, in_dy, width, height, shift, (Ipp16s)offset, bitDepth);
+        horBufPtr += ((tap >> 1) - 1) * horBufPitch;
+        if (!isBiPred) // Write directly into buffer
+            Interpolate<PLANE_TYPE_>(INTERP_VER, horBufPtr, horBufPitch, dstPic, dstPicPitch, dy, puW, puH, shift, offset, bitDepth);
+        else if (eAddAverage == AVERAGE_NO)
+            Interpolate<PLANE_TYPE_>(INTERP_VER, horBufPtr, horBufPitch, dstBuf, dstBufPitch, dy, puW, puH, shift, offset, bitDepth);
+        else if (eAddAverage == AVERAGE_FROM_BUF)
+            Interpolate<PLANE_TYPE_>(INTERP_VER, horBufPtr, horBufPitch, dstPic, dstPicPitch, dy, puW, puH, shift, offset, bitDepth, AVERAGE_FROM_BUF, dstBuf, dstBufPitch);
+        else // eAddAverage == AVERAGE_FROM_PIC
+            Interpolate<PLANE_TYPE_>(INTERP_VER, horBufPtr, horBufPitch, dstPic, dstPicPitch, dy, puW, puH, shift, offset, bitDepth, AVERAGE_FROM_PIC, src2, srcPitch2);
     }
+}
+template
+void H265CU::PredInterUni<TEXT_LUMA>(Ipp32s puX, Ipp32s puY, Ipp32s puW, Ipp32s puH, Ipp32s listIdx,
+                                     const Ipp8s refIdx[2], const H265MV mvs[2], PixType *dst, Ipp32s dstPitch,
+                                     Ipp32s isBiPred, MFX_HEVC_PP::EnumAddAverageType eAddAverage);
+template
+void H265CU::PredInterUni<TEXT_CHROMA>(Ipp32s puX, Ipp32s puY, Ipp32s puW, Ipp32s puH, Ipp32s listIdx,
+                                       const Ipp8s refIdx[2], const H265MV mvs[2], PixType *dst, Ipp32s dstPitch,
+                                       Ipp32s isBiPred, MFX_HEVC_PP::EnumAddAverageType eAddAverage);
 
-    return;
-} // void H265CU::MeInterpolate(...)
+
+template <EnumTextType PLANE_TYPE>
+void H265CU::InterPredCu(Ipp32s absPartIdx, Ipp8u depth, PixType *dst, Ipp32s dstPitch)
+{
+    const Ipp32s isLuma = (PLANE_TYPE == TEXT_LUMA);
+    Ipp32u numParts = (m_par->NumPartInCU >> (depth << 1));
+
+    Ipp32s maxDepth = m_par->Log2MaxCUSize - m_par->Log2MinTUSize;
+    Ipp32s numMinTUInLCU = 1 << maxDepth;
+    Ipp32s cuRasterIdx = h265_scan_z2r[maxDepth][absPartIdx];
+    Ipp32s cuY = (cuRasterIdx >> maxDepth) << m_par->Log2MinTUSize;
+    Ipp32s cuX = (cuRasterIdx & (numMinTUInLCU - 1)) << m_par->Log2MinTUSize;
+
+    for (Ipp32s partIdx = 0; partIdx < GetNumPartInter(absPartIdx); partIdx++) {
+        Ipp32s puX, puY, puW, puH;
+        GetPartOffsetAndSize(partIdx, m_data[absPartIdx].partSize, m_data[absPartIdx].size, puX, puY, puW, puH);
+        puX += cuX;
+        puY += cuY;
+        PixType *dstPtr = dst + puX + (puY * dstPitch >> !isLuma);
+
+        Ipp32s partAddr;
+        GetPartAddr(partIdx, m_data[absPartIdx].partSize, numParts, partAddr);
+        partAddr += absPartIdx;
+
+        Ipp8s *refIdx = m_data[partAddr].refIdx;
+        H265MV mvs[2] = { m_data[partAddr].mv[0], m_data[partAddr].mv[1] };
+
+        if (CheckIdenticalMotion(refIdx, mvs) || refIdx[0] < 0 || refIdx[1] < 0) {
+            Ipp32s listIdx = !!(refIdx[0] < 0);
+            ClipMV(mvs[listIdx]);
+            PredInterUni<PLANE_TYPE>(puX, puY, puW, puH, listIdx, refIdx, mvs, dstPtr, dstPitch, false, AVERAGE_NO);
+        }
+        else {
+            ClipMV(mvs[0]);
+            ClipMV(mvs[1]);
+            Ipp32s interpFlag0 = (mvs[0].mvx | mvs[0].mvy) & (isLuma ? 3 : 7);
+            Ipp32s interpFlag1 = (mvs[1].mvx | mvs[1].mvy) & (isLuma ? 3 : 7);
+            bool onlyOneIterp = !(interpFlag0 && interpFlag1);
+
+            if (onlyOneIterp) {
+                Ipp32s listIdx = !interpFlag0;
+                PredInterUni<PLANE_TYPE>(puX, puY, puW, puH, listIdx, refIdx, mvs, dstPtr, dstPitch, true, AVERAGE_FROM_PIC);
+            }
+            else {
+                PredInterUni<PLANE_TYPE>(puX, puY, puW, puH, 0, refIdx, mvs, dstPtr, dstPitch, true, AVERAGE_NO);
+                PredInterUni<PLANE_TYPE>(puX, puY, puW, puH, 1, refIdx, mvs, dstPtr, dstPitch, true, AVERAGE_FROM_BUF);
+            }
+        }
+    }
+}
+template
+void H265CU::InterPredCu<TEXT_LUMA>(Ipp32s absPartIdx, Ipp8u depth, PixType *dst, Ipp32s dstPitch);
+template
+void H265CU::InterPredCu<TEXT_CHROMA>(Ipp32s absPartIdx, Ipp8u depth, PixType *dst, Ipp32s dstPitch);
 
 
 void H265CU::MeInterpolate(const H265MEInfo* me_info, H265MV* MV, PixType *src, Ipp32s srcPitch,
