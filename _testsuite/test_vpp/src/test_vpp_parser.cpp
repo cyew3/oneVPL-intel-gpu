@@ -29,6 +29,7 @@ void vppPrintHelp(vm_char *strAppName, vm_char *strErrorMessage)
     vm_string_printf(VM_STRING("   [-d3d11]            - force d3d11 interface using (def for HW is d3d9)\n"));
     vm_string_printf(VM_STRING("   [-crc CrcFile]      - calculate CRC32 and write it to specified file\n\n"));
     vm_string_printf(VM_STRING("   [-plugin_guid GUID] - use VPP plug-in with specified GUID\n\n"));
+    vm_string_printf(VM_STRING("   [-extapi]           - use RunFrameVPPAsyncEx instead of RunFrameVPPAsync. Need for PTIR.\n\n"));
 
     vm_string_printf(VM_STRING("   [-sw   width]     - width  of src video (def: 352)\n"));
     vm_string_printf(VM_STRING("   [-sh   height]    - height of src video (def: 288)\n"));
@@ -803,6 +804,10 @@ mfxStatus vppParseInputString(vm_char* strInput[], mfxU8 nArgNum, sInputParams* 
                 i++;
                 vm_string_strcpy(pParams->strPlgGuid, strInput[i]);
                 pParams->need_plugin = true;
+            }
+            else if (0 == vm_string_strcmp(strInput[i], VM_STRING("-extapi")) )
+            {
+                pParams->use_extapi = true;
             }
             else
                 return MFX_ERR_UNKNOWN;

@@ -63,8 +63,9 @@
 
 enum
 {
-    VPP_IN  = 0,
-    VPP_OUT = 1
+    VPP_IN   = 0,
+    VPP_OUT  = 1,
+    VPP_WORK = 2
 };
 
 enum
@@ -167,6 +168,9 @@ struct sInputParams
 
     vm_char  strCRCFile[MAX_FILELEN];
     bool  need_crc;
+
+    /* Use extended API (RunFrameVPPAsyncEx) */
+    bool  use_extapi;
 };
 
 struct sFrameProcessor
