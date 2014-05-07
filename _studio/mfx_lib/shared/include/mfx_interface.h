@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//       Copyright(c) 2009-2011 Intel Corporation. All Rights Reserved.
+//       Copyright(c) 2009-2014 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -112,18 +112,17 @@ class MFXIPtr
 {
 public:
     // Default constructor
-    MFXIPtr(void)
+    MFXIPtr(void) : m_pInterface(0)
     {
-        m_pInterface = NULL;
     }
     // Constructors
-    explicit
-    MFXIPtr(MFXIPtr &iPtr)
+    MFXIPtr(const MFXIPtr &iPtr) : m_pInterface(0)
     {
         operator = (iPtr);
     }
+
     explicit
-    MFXIPtr(void *pInterface)
+    MFXIPtr(void *pInterface) : m_pInterface(0)
     {
         operator = (pInterface);
     }
@@ -140,15 +139,18 @@ public:
         return m_pInterface;
     }
 
-    MFXIPtr & operator = (MFXIPtr &iPtr)
+    MFXIPtr & operator = (const MFXIPtr &iPtr)
     {
         // release the interface before setting new one
         Release();
 
         // save the pointer to interface
         m_pInterface = iPtr.m_pInterface;
-        // increment the reference counter
-        m_pInterface->AddRef();
+        if (m_pInterface)
+        {
+            // increment the reference counter
+            m_pInterface->AddRef();
+        }
 
         return *this;
     }
@@ -172,6 +174,12 @@ public:
     {
         return (p == m_pInterface);
     }
+
+    inline operator bool() const
+    {
+        return m_pInterface != 0;
+    }
+
 
 protected:
     void Release(void)

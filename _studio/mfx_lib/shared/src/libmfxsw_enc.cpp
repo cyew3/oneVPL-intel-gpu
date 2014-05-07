@@ -112,9 +112,11 @@ mfxStatus MFXVideoENC_Query(mfxSession session, mfxVideoParam *in, mfxVideoParam
 
 #ifdef MFX_ENABLE_USER_ENC
         mfxRes = MFX_ERR_UNSUPPORTED;
-        if (session->m_plgPreEnc.get())
+
+        MFXIPtr<MFXISession_1_10> newSession = TryGetSession_1_10(session);
+        if (newSession && newSession->GetPreEncPlugin().get())
         {
-            mfxRes = session->m_plgPreEnc->Query(session->m_pCORE.get(), in, out);
+            mfxRes = newSession->GetPreEncPlugin()->Query(session->m_pCORE.get(), in, out);
         }
         // unsupported reserved to codecid != requested codecid
         if (MFX_ERR_UNSUPPORTED == mfxRes)
@@ -174,9 +176,10 @@ mfxStatus MFXVideoENC_QueryIOSurf(mfxSession session, mfxVideoParam *par, mfxFra
     {
 #ifdef MFX_ENABLE_USER_ENC
         mfxRes = MFX_ERR_UNSUPPORTED;
-        if (session->m_plgPreEnc.get())
+        MFXIPtr<MFXISession_1_10> newSession = TryGetSession_1_10(session);
+        if (newSession && newSession->GetPreEncPlugin().get())
         {
-            mfxRes = session->m_plgPreEnc->QueryIOSurf(session->m_pCORE.get(), par, request, 0);
+            mfxRes = newSession->GetPreEncPlugin()->QueryIOSurf(session->m_pCORE.get(), par, request, 0);
         }
         // unsupported reserved to codecid != requested codecid
         if (MFX_ERR_UNSUPPORTED == mfxRes)
@@ -306,7 +309,8 @@ mfxStatus MFXVideoENC_Close(mfxSession session)
 
         mfxRes = session->m_pENC->Close();
         // delete the codec's instance if not plugin
-        if (!session->m_plgPreEnc.get())
+        MFXIPtr<MFXISession_1_10> newSession = TryGetSession_1_10(session);
+        if (!newSession || newSession->GetPreEncPlugin().get())
         {
             session->m_pENC.reset((VideoENC *) 0);
         }

@@ -27,6 +27,8 @@ File Name: mfx_session.h
 #include <mfx_interface_scheduler.h>
 #include <libmfx_core_operation.h>
 
+#define MSDK_STATIC_ASSERT(COND, MSG)  typedef char static_assertion_##MSG[ (COND) ? 1 : -1];
+
 // WARNING: please do not change the type of _mfxSession.
 // It is declared as 'struct' in the main header.h
 
@@ -105,7 +107,6 @@ struct _mfxSession
     
     std::auto_ptr<VideoCodecUSER> m_plgDec;
     std::auto_ptr<VideoCodecUSER> m_plgEnc;
-    std::auto_ptr<VideoCodecUSER> m_plgPreEnc;
     std::auto_ptr<VideoCodecUSER> m_plgVPP;
     std::auto_ptr<VideoCodecUSER> m_plgGen;
 
@@ -115,7 +116,6 @@ struct _mfxSession
     // Current implementation platform ID
     eMFXPlatform m_currentPlatform;
     // Current working HW adapter
-    const
     mfxU32 m_adapterNum;
     // Current working interface (D3D9 or so)
     mfxIMPL m_implInterface;
@@ -156,11 +156,11 @@ struct _mfxSession
         // child session has only 1 reference to it.
         return (NULL == m_pSchedulerAllocated);
     }
-
+    
 
 protected:
     // Release the object
-    void Release(void);
+    void Cleanup(void);
 
     // this variable is used to deteremine
     // if the object really owns the scheduler.
@@ -170,6 +170,79 @@ private:
     // Assignment operator is forbidden
     _mfxSession & operator = (const _mfxSession &);
 };
+
+#if defined(_WIN64) || defined(LINUX64)
+  MSDK_STATIC_ASSERT(sizeof(_mfxSession) == 440, size_of_session_is_fixed);
+#elif defined(_WIN32) || defined(LINUX32)
+  MSDK_STATIC_ASSERT(sizeof(_mfxSession) == 244, size_of_session_is_fixed);
+#endif
+
+
+// {90567606-C57A-447F-8941-1F14597DA475}
+static const 
+    MFX_GUID  MFXISession_1_10_GUID = {0x90567606, 0xc57a, 0x447f, {0x89, 0x41, 0x1f, 0x14, 0x59, 0x7d, 0xa4, 0x75}};
+
+// {701A88BB-E482-4374-A08D-621641EC98B2}
+//DEFINE_GUID(<<name>>, 
+//            {0x701a88bb, 0xe482, 0x4374, {0xa0, 0x8d, 0x62, 0x16, 0x41, 0xec, 0x98, 0xb2}};
+
+class MFXISession_1_10: public MFXIUnknown
+{
+public:
+    virtual ~MFXISession_1_10() {}
+
+    // Finish initialization. Should be called before Init().
+    virtual void SetAdapterNum(const mfxU32 adapterNum) = 0;
+
+    virtual std::auto_ptr<VideoCodecUSER> & GetPreEncPlugin() = 0;
+};
+
+MFXIPtr<MFXISession_1_10> TryGetSession_1_10(mfxSession session);
+
+class _mfxSession_1_10: public _mfxSession, public MFXISession_1_10
+{
+public:
+    _mfxSession_1_10();
+    // Destructor
+    virtual ~_mfxSession_1_10(void);
+
+    //
+    // MFXISession_1_9 interface
+    //
+
+    void SetAdapterNum(const mfxU32 adapterNum);
+    std::auto_ptr<VideoCodecUSER> &  GetPreEncPlugin();
+
+    //
+    // MFXIUnknown interface
+    //
+
+    // Query another interface from the object. If the pointer returned is not NULL,
+    // the reference counter is incremented automatically.
+    virtual
+        void *QueryInterface(const MFX_GUID &guid);
+
+    // Increment reference counter of the object.
+    virtual
+        void AddRef(void);
+    // Decrement reference counter of the object.
+    // If the counter is equal to zero, destructor is called and
+    // object is removed from the memory.
+    virtual
+        void Release(void);
+    // Get the current reference counter value
+    virtual
+        mfxU32 GetNumRef(void) const;
+
+public:
+    // Declare additional session's components
+    std::auto_ptr<VideoCodecUSER> m_plgPreEnc;
+
+protected:
+    // Reference counters
+    mfxU32 m_refCounter;
+};
+
 
 //
 // DEFINES FOR IMPLICIT FUNCTIONS IMPLEMENTATION
@@ -336,3 +409,4 @@ mfxStatus MFXInternalPseudoJoinSession(mfxSession session, mfxSession child_sess
 mfxStatus MFXInternalPseudoDisjoinSession(mfxSession session);
 
 #endif // _MFX_SESSION_H
+
