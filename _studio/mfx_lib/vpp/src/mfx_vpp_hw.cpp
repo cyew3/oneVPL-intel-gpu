@@ -83,10 +83,10 @@ static void MemSetZero4mfxExecuteParams (mfxExecuteParams *pMfxExecuteParams )
     pMfxExecuteParams->bImgStabilizationEnable = false;
     pMfxExecuteParams->istabMode = 0;
     pMfxExecuteParams->bFRCEnable = false;
-    pMfxExecuteParams->bComposite  = false;;
+    pMfxExecuteParams->bComposite = false;
     pMfxExecuteParams->iBackgroundColor = 0;
     pMfxExecuteParams->statusReportID = 0;
-    pMfxExecuteParams->bFieldWeaving;
+    pMfxExecuteParams->bFieldWeaving = false;
 } /*void MemSetZero4mfxExecuteParams (mfxExecuteParams *pMfxExecuteParams )*/
 
 
