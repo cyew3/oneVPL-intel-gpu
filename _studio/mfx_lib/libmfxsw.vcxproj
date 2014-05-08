@@ -484,7 +484,11 @@
     </ProjectReference>
     <ProjectReference Include="..\shared\umc\codec\color_space_converter\color_space_converter.vcxproj">
       <Project>{57fe8dac-c7c4-4df4-9a36-2fee040dff38}</Project>
+      <Private>false</Private>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
+      <LinkLibraryDependencies>true</LinkLibraryDependencies>
+      <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
     </ProjectReference>
     <ProjectReference Include="..\shared\umc\codec\h264_dec\h264_dec.vcxproj">
       <Project>{c7621c21-a2d0-4604-896d-29f1470d9281}</Project>
