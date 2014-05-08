@@ -1,10 +1,10 @@
 mfx_include_dirs( )
 
 include_directories (
-  ${CMAKE_HOME_DIRECTORY}/_testsuite/test_vpp/include
-  ${CMAKE_HOME_DIRECTORY}/_testsuite/shared/include
-  ${CMAKE_HOME_DIRECTORY}/_testsuite/test_vpp/common/include
-  ${CMAKE_HOME_DIRECTORY}/_testsuite/test_vpp/common/include/vm
+  ${CMAKE_CURRENT_SOURCE_DIR}/include
+  ${CMAKE_CURRENT_SOURCE_DIR}/../shared/include
+  ${CMAKE_CURRENT_SOURCE_DIR}/common/include
+  ${CMAKE_CURRENT_SOURCE_DIR}/common/include/vm
 )
 
 # =============================================================================

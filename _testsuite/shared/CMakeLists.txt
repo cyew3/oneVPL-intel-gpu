@@ -1,7 +1,7 @@
 mfx_include_dirs( )
 
 include_directories (
-  ${CMAKE_HOME_DIRECTORY}/_testsuite/shared/include
+  ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 
 list(APPEND sources

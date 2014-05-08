@@ -1,8 +1,8 @@
 mfx_include_dirs( )
 
 include_directories (
-  ${CMAKE_HOME_DIRECTORY}/_studio/shared/umc/test_suite/spy_test_component/include
-  ${CMAKE_HOME_DIRECTORY}/_studio/shared/umc/codec/h264_dec/include
+  ${CMAKE_CURRENT_SOURCE_DIR}/../spy_test_component/include
+  ${CMAKE_CURRENT_SOURCE_DIR}/../../codec/h264_dec/include
 )
 
 list( APPEND LIBS

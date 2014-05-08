@@ -50,7 +50,7 @@ list( APPEND dirs_impl
 mfx_include_dirs( )
 
 foreach( dir ${adirs} ${dirs} brc h264_enc ${dirs_impl} )
-  include_directories( ${CMAKE_HOME_DIRECTORY}/_studio/shared/umc/codec/${dir}/include )
+  include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/${dir}/include )
 endforeach( )
 
 # =============================================================================

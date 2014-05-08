@@ -6,8 +6,8 @@ mfx_include_dirs( )
 
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/include )
 
-include_directories( ${CMAKE_HOME_DIRECTORY}/_studio/mfx_lib/decode/h265/include )
-include_directories( ${CMAKE_HOME_DIRECTORY}/_studio/mfx_lib/encode/h265/include )
+include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../decode/h265/include )
+include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../encode/h265/include )
 
 
 list( APPEND umc_dirs
@@ -20,7 +20,7 @@ list( APPEND umc_dirs
   jpeg_common jpeg_dec jpeg_enc)
 
 foreach( dir ${umc_dirs} )
-  include_directories( ${CMAKE_HOME_DIRECTORY}/_studio/shared/umc/codec/${dir}/include )
+  include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../../shared/umc/codec/${dir}/include )
 endforeach( )
 
 list( APPEND vdecs
@@ -54,7 +54,7 @@ endforeach( )
 list( APPEND vdirs_impl vpp cmrt_cross_platform genx/h264_encode genx/h265_encode)
 
 foreach( dir  ${vdirs} ${vdirs_impl} ${vdirs_hw} )
-  include_directories( ${CMAKE_HOME_DIRECTORY}/_studio/mfx_lib/${dir}/include )
+  include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../${dir}/include )
 endforeach( )
 
 
@@ -62,7 +62,7 @@ endforeach( )
 
 set( sources "" )
 set( sources.plus "" )
-foreach( dir ${CMAKE_HOME_DIRECTORY}/_studio/mfx_lib/encode/h265/src )
+foreach( dir ${CMAKE_CURRENT_SOURCE_DIR}/../encode/h265/src )
   file( GLOB_RECURSE srcs "${dir}/*.c" "${dir}/*.cpp" )
   list( APPEND sources ${srcs})
 endforeach()
@@ -106,7 +106,7 @@ set (hw_HEVC_ENCODER_DESCRIPTION "Intel(R) Media SDK HEVC Hardware Encode Plug-i
   endif( )
 
 
-foreach( prefix ${CMAKE_HOME_DIRECTORY}/_studio/mfx_lib/shared/src )
+foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/../shared/src )
 
   list( APPEND plugin_common_sources
     ${prefix}/mfx_check_hardware_support.cpp
@@ -124,7 +124,7 @@ foreach( prefix ${CMAKE_HOME_DIRECTORY}/_studio/mfx_lib/shared/src )
 
 endforeach()
 
-foreach( prefix ${CMAKE_HOME_DIRECTORY}/_studio/shared/src )
+foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/../../shared/src )
   list( APPEND plugin_common_sources
     ${prefix}/cm_mem_copy.cpp
     ${prefix}/fast_copy.cpp
@@ -138,10 +138,10 @@ foreach( prefix ${CMAKE_HOME_DIRECTORY}/_studio/shared/src )
   )
 endforeach()
 list( APPEND plugin_common_sources
-  ${CMAKE_HOME_DIRECTORY}/_studio/mfx_lib/cmrt_cross_platform/src/cmrt_cross_platform.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/../cmrt_cross_platform/src/cmrt_cross_platform.cpp
 )
 
-foreach( prefix ${CMAKE_HOME_DIRECTORY}/_studio/mfx_lib/scheduler/src )
+foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/../scheduler/src )
   list( APPEND plugin_common_sources
     ${prefix}/mfx_scheduler_core.cpp
     ${prefix}/mfx_scheduler_core_iunknown.cpp
@@ -159,10 +159,10 @@ set( sources.plus "" )
 
 list( APPEND sources ${plugin_common_sources} )
 
-include_directories( ${CMAKE_HOME_DIRECTORY}/_studio/mfx_lib/scheduler/include )
+include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../scheduler/include )
 
-list( APPEND sources ${CMAKE_HOME_DIRECTORY}/_studio/mfx_lib/shared/src/libmfxsw_decode.cpp )
-list( APPEND sources ${CMAKE_HOME_DIRECTORY}/_studio/mfx_lib/decode/h265/src/mfx_h265_dec_decode.cpp )
+list( APPEND sources ${CMAKE_CURRENT_SOURCE_DIR}/../shared/src/libmfxsw_decode.cpp )
+list( APPEND sources ${CMAKE_CURRENT_SOURCE_DIR}/../decode/h265/src/mfx_h265_dec_decode.cpp )
 
 set( sources.plus "" )
 foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/src )
@@ -172,7 +172,7 @@ foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/src )
 endforeach()
 
 set( USE_STRICT_NAME TRUE )
-set(MFX_LDFLAGS "${MFX_ORIG_LDFLAGS} -Wl,--version-script=${CMAKE_HOME_DIRECTORY}/_studio/mfx_lib/plugin/libmfxsw_plugin.map" )
+set(MFX_LDFLAGS "${MFX_ORIG_LDFLAGS} -Wl,--version-script=${CMAKE_CURRENT_SOURCE_DIR}/libmfxsw_plugin.map" )
 
 # HEVC
 
@@ -220,7 +220,7 @@ endforeach()
 
 set( defs "" )
 
-foreach( prefix ${CMAKE_HOME_DIRECTORY}/_studio/mfx_lib/shared/src )
+foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/../shared/src )
   list( APPEND sources
     ${prefix}/libmfxsw_encode.cpp
     ${prefix}/mfx_enc_common.cpp
@@ -234,7 +234,7 @@ foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/src )
     ${prefix}/watermark.cpp
   )
 endforeach()
-foreach( prefix ${CMAKE_HOME_DIRECTORY}/_studio/mfx_lib/genx/h265_encode/src )
+foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/../genx/h265_encode/src )
   list( APPEND sources.plus
     ${prefix}/genx_h265_cmcode_stub.cpp
     ${prefix}/genx_h265_cmcode_isa.cpp
@@ -335,7 +335,7 @@ set( sources.plus "" )
 
 list( APPEND sources ${plugin_common_sources} )
 
-foreach( prefix ${CMAKE_HOME_DIRECTORY}/_studio/mfx_lib/shared/src )
+foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/../shared/src )
   list( APPEND sources
     ${prefix}/mfx_enc_common.cpp
     ${prefix}/mfx_brc_common.cpp
@@ -351,7 +351,7 @@ foreach( prefix ${CMAKE_HOME_DIRECTORY}/_studio/mfx_lib/shared/src )
   )
 endforeach()
 
-foreach( prefix ${CMAKE_HOME_DIRECTORY}/_studio/mfx_lib/encode_hw/h264/src )
+foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/../encode_hw/h264/src )
   list( APPEND sources
     ${prefix}/mfx_h264_encode_cm.cpp
     ${prefix}/mfx_h264_encode_hw_utils.cpp
@@ -360,19 +360,19 @@ foreach( prefix ${CMAKE_HOME_DIRECTORY}/_studio/mfx_lib/encode_hw/h264/src )
   )
 endforeach()
 
-foreach( prefix ${CMAKE_HOME_DIRECTORY}/_studio/mfx_lib/genx/h264_encode/src )
+foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/../genx/h264_encode/src )
   list( APPEND sources
     ${prefix}/genx_hsw_simple_me_isa.cpp
     ${prefix}/genx_hsw_simple_me_proto.cpp
   )
 endforeach()
 
-list( APPEND sources ${CMAKE_HOME_DIRECTORY}/_studio/mfx_lib/cmrt_cross_platform/src/cmrt_cross_platform.cpp )
-list( APPEND sources ${CMAKE_HOME_DIRECTORY}/_studio/mfx_lib/encode_hw/mvc/src/mfx_mvc_encode_hw.cpp )
-list( APPEND sources ${CMAKE_HOME_DIRECTORY}/_studio/mfx_lib/encode_hw/svc/src/mfx_svc_encode_hw.cpp )
-list( APPEND sources ${CMAKE_HOME_DIRECTORY}/_studio/mfx_lib/encode_hw/svc/src/mfx_svc_encode_simulcast_over_avc.cpp )
-list( APPEND sources ${CMAKE_HOME_DIRECTORY}/_studio/mfx_lib/enc_hw/h264/src/mfx_h264_enc_hw.cpp )
-list( APPEND sources ${CMAKE_HOME_DIRECTORY}/_studio/mfx_lib/fei/h264_la/mfx_h264_la.cpp )
+list( APPEND sources ${CMAKE_CURRENT_SOURCE_DIR}/../cmrt_cross_platform/src/cmrt_cross_platform.cpp )
+list( APPEND sources ${CMAKE_CURRENT_SOURCE_DIR}/../encode_hw/mvc/src/mfx_mvc_encode_hw.cpp )
+list( APPEND sources ${CMAKE_CURRENT_SOURCE_DIR}/../encode_hw/svc/src/mfx_svc_encode_hw.cpp )
+list( APPEND sources ${CMAKE_CURRENT_SOURCE_DIR}/../encode_hw/svc/src/mfx_svc_encode_simulcast_over_avc.cpp )
+list( APPEND sources ${CMAKE_CURRENT_SOURCE_DIR}/../enc_hw/h264/src/mfx_h264_enc_hw.cpp )
+list( APPEND sources ${CMAKE_CURRENT_SOURCE_DIR}/../fei/h264_la/mfx_h264_la.cpp )
 
 set( sources.plus "" )
 foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/src )
@@ -383,7 +383,7 @@ endforeach()
 
 
 set( USE_STRICT_NAME TRUE )
-set(MFX_LDFLAGS "${MFX_ORIG_LDFLAGS} -Wl,--version-script=${CMAKE_HOME_DIRECTORY}/_studio/mfx_lib/plugin/libmfxsw_plugin.map" )
+set(MFX_LDFLAGS "${MFX_ORIG_LDFLAGS} -Wl,--version-script=${CMAKE_CURRENT_SOURCE_DIR}/libmfxsw_plugin.map" )
 
 # H264LA
 
@@ -434,16 +434,16 @@ set( sources.plus "" )
 
 list( APPEND sources ${plugin_common_sources} )
 
-include_directories( ${CMAKE_HOME_DIRECTORY}/_studio/mfx_lib/scheduler/include )
-include_directories( ${CMAKE_HOME_DIRECTORY}/thirdparty/vp8_libvpx )
+include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../scheduler/include )
+include_directories( ${CMAKE_HOME_DIRECTORY}/mdp_msdk-contrib/vp8_libvpx )
 
-include_directories( ${CMAKE_HOME_DIRECTORY}/_studio/shared/umc/codec/vp8_dec/include )
+include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../../shared/umc/codec/vp8_dec/include )
 
-list( APPEND sources ${CMAKE_HOME_DIRECTORY}/_studio/mfx_lib/shared/src/libmfxsw_decode.cpp )
-list( APPEND sources ${CMAKE_HOME_DIRECTORY}/_studio/shared/umc/codec/vp8_dec/src/vp8_tables.cpp )
+list( APPEND sources ${CMAKE_CURRENT_SOURCE_DIR}/../shared/src/libmfxsw_decode.cpp )
+list( APPEND sources ${CMAKE_CURRENT_SOURCE_DIR}/../../shared/umc/codec/vp8_dec/src/vp8_tables.cpp )
 
 set( USE_STRICT_NAME TRUE )
-set(MFX_LDFLAGS "${MFX_ORIG_LDFLAGS} -Wl,--version-script=${CMAKE_HOME_DIRECTORY}/_studio/mfx_lib/plugin/libmfxsw_plugin.map" )
+set(MFX_LDFLAGS "${MFX_ORIG_LDFLAGS} -Wl,--version-script=${CMAKE_CURRENT_SOURCE_DIR}/libmfxsw_plugin.map" )
 
 set( sources.plus "" )
 foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/src )
@@ -469,7 +469,7 @@ foreach( variant sw hw )
 
     list( APPEND LIBS va )
 
-    foreach( prefix ${CMAKE_HOME_DIRECTORY}/_studio/mfx_lib/decode/vp8/src )
+    foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/../decode/vp8/src )
     list( APPEND sources
       ${prefix}/mfx_vp8_dec_decode_hw.cpp
       ${prefix}/mfx_vp8_dec_decode.cpp
@@ -478,7 +478,7 @@ foreach( variant sw hw )
     )
     endforeach()
 
-    foreach( prefix ${CMAKE_HOME_DIRECTORY}/_studio/shared/umc/io/umc_va/src )
+    foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/../../shared/umc/io/umc_va/src )
     list( APPEND sources
       ${prefix}/umc_va_linux.cpp
     )
@@ -488,7 +488,7 @@ foreach( variant sw hw )
 
   else()
 
-    foreach( prefix ${CMAKE_HOME_DIRECTORY}/_studio/mfx_lib/decode/vp8/src )
+    foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/../decode/vp8/src )
     list( APPEND sources
       ${prefix}/mfx_vp8_dec_decode.cpp
       ${prefix}/mfx_vp8_dec_decode_common.cpp

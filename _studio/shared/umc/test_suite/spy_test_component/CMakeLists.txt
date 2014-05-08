@@ -1,10 +1,10 @@
 mfx_include_dirs( )
 
 include_directories (
-  ${CMAKE_HOME_DIRECTORY}/_studio/shared/umc/test_suite/spy_test_component/include
-  ${CMAKE_HOME_DIRECTORY}/_studio/shared/umc/codec/color_space_converter/include
-  ${CMAKE_HOME_DIRECTORY}/_studio/shared/umc/codec/h264_dec/include
-  ${CMAKE_HOME_DIRECTORY}/_studio/shared/umc/test_suite/spy_test_component/xerces/include
+  ${CMAKE_CURRENT_SOURCE_DIR}/../spy_test_component/include
+  ${CMAKE_CURRENT_SOURCE_DIR}/../../codec/color_space_converter/include
+  ${CMAKE_CURRENT_SOURCE_DIR}/../../codec/h264_dec/include
+  ${CMAKE_CURRENT_SOURCE_DIR}/../spy_test_component/xerces/include
 )
 
 if( Linux )
@@ -16,19 +16,19 @@ endif ()
 
 
 if( PKG_XERCES_FOUND )
-  link_directories ( ${CMAKE_HOME_DIRECTORY}/_studio/shared/umc/test_suite/spy_test_component/xerces/lib )
+  link_directories ( ${CMAKE_CURRENT_SOURCE_DIR}/xerces/lib )
 
   list(APPEND sources
-    ${CMAKE_HOME_DIRECTORY}/_studio/shared/umc/test_suite/spy_test_component/src/checker.cpp
-    ${CMAKE_HOME_DIRECTORY}/_studio/shared/umc/test_suite/spy_test_component/src/dll_main.cpp
-    ${CMAKE_HOME_DIRECTORY}/_studio/shared/umc/test_suite/spy_test_component/src/outline.cpp
-    ${CMAKE_HOME_DIRECTORY}/_studio/shared/umc/test_suite/spy_test_component/src/outline_factory.cpp
-    ${CMAKE_HOME_DIRECTORY}/_studio/shared/umc/test_suite/spy_test_component/src/test_component.cpp
-    ${CMAKE_HOME_DIRECTORY}/_studio/shared/umc/test_suite/spy_test_component/src/video_data_checker.cpp
-    ${CMAKE_HOME_DIRECTORY}/_studio/shared/umc/test_suite/spy_test_component/src/video_data_checker_mfx.cpp
-    ${CMAKE_HOME_DIRECTORY}/_studio/shared/umc/test_suite/spy_test_component/src/xerces_entry.cpp
-    ${CMAKE_HOME_DIRECTORY}/_studio/shared/umc/test_suite/spy_test_component/src/xerces_outline_reader.cpp
-    ${CMAKE_HOME_DIRECTORY}/_studio/shared/umc/test_suite/spy_test_component/src/xerces_outline_writer.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/checker.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/dll_main.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/outline.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/outline_factory.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/test_component.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/video_data_checker.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/video_data_checker_mfx.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/xerces_entry.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/xerces_outline_reader.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/xerces_outline_writer.cpp
     )
 
   list( APPEND LIBS

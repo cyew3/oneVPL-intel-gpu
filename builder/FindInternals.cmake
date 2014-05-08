@@ -1,5 +1,5 @@
 ##******************************************************************************
-##  Copyright(C) 2012 Intel Corporation. All Rights Reserved.
+##  Copyright(C) 2012-2014 Intel Corporation. All Rights Reserved.
 ##  
 ##  The source code, information  and  material ("Material") contained herein is
 ##  owned  by Intel Corporation or its suppliers or licensors, and title to such
@@ -27,17 +27,17 @@
 
 function( mfx_include_dirs )
   include_directories (
-    ${CMAKE_HOME_DIRECTORY}/_studio/shared/include
-    ${CMAKE_HOME_DIRECTORY}/_studio/shared/umc/core/vm/include
-    ${CMAKE_HOME_DIRECTORY}/_studio/shared/umc/core/vm_plus/include
-    ${CMAKE_HOME_DIRECTORY}/_studio/shared/umc/core/umc/include
-    ${CMAKE_HOME_DIRECTORY}/_studio/shared/umc/io/umc_io/include
-    ${CMAKE_HOME_DIRECTORY}/_studio/shared/umc/io/umc_va/include
-    ${CMAKE_HOME_DIRECTORY}/_studio/shared/umc/io/media_buffers/include
-    ${CMAKE_HOME_DIRECTORY}/_studio/mfx_lib/shared/include
-    ${CMAKE_HOME_DIRECTORY}/_studio/mfx_lib/optimization/h265/include
-    ${CMAKE_HOME_DIRECTORY}/_studio/mfx_lib/shared/include
-    ${CMAKE_HOME_DIRECTORY}/_studio/mfx_lib/fei/include
-    ${CMAKE_HOME_DIRECTORY}/_studio/mfx_lib/fei/h264_la
+    ${CMAKE_HOME_DIRECTORY}/mdp_msdk-lib/_studio/shared/include
+    ${CMAKE_HOME_DIRECTORY}/mdp_msdk-lib/_studio/shared/umc/core/vm/include
+    ${CMAKE_HOME_DIRECTORY}/mdp_msdk-lib/_studio/shared/umc/core/vm_plus/include
+    ${CMAKE_HOME_DIRECTORY}/mdp_msdk-lib/_studio/shared/umc/core/umc/include
+    ${CMAKE_HOME_DIRECTORY}/mdp_msdk-lib/_studio/shared/umc/io/umc_io/include
+    ${CMAKE_HOME_DIRECTORY}/mdp_msdk-lib/_studio/shared/umc/io/umc_va/include
+    ${CMAKE_HOME_DIRECTORY}/mdp_msdk-lib/_studio/shared/umc/io/media_buffers/include
+    ${CMAKE_HOME_DIRECTORY}/mdp_msdk-lib/_studio/mfx_lib/shared/include
+    ${CMAKE_HOME_DIRECTORY}/mdp_msdk-lib/_studio/mfx_lib/optimization/h265/include
+    ${CMAKE_HOME_DIRECTORY}/mdp_msdk-lib/_studio/mfx_lib/shared/include
+    ${CMAKE_HOME_DIRECTORY}/mdp_msdk-lib/_studio/mfx_lib/fei/include
+    ${CMAKE_HOME_DIRECTORY}/mdp_msdk-lib/_studio/mfx_lib/fei/h264_la
   )
 endfunction( )

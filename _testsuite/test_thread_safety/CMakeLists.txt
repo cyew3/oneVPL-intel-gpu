@@ -1,11 +1,11 @@
 mfx_include_dirs( )
 
 include_directories (
-  ${CMAKE_HOME_DIRECTORY}/_testsuite/test_thread_safety/include
-  ${CMAKE_HOME_DIRECTORY}/_testsuite/mfx_player/include
-  ${CMAKE_HOME_DIRECTORY}/_testsuite/mfx_transcoder/include
-  ${CMAKE_HOME_DIRECTORY}/_testsuite/shared/include
-  ${CMAKE_HOME_DIRECTORY}/samples/sample_common/include
+  ${CMAKE_CURRENT_SOURCE_DIR}/include
+  ${CMAKE_CURRENT_SOURCE_DIR}/../mfx_player/include
+  ${CMAKE_CURRENT_SOURCE_DIR}/../mfx_transcoder/include
+  ${CMAKE_CURRENT_SOURCE_DIR}/../shared/include
+  ${CMAKE_HOME_DIRECTORY}/mdp_msdk-samples/samples/sample_common/include
 )
 
 foreach( variant x11 drm )

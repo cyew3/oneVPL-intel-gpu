@@ -1,14 +1,14 @@
 mfx_include_dirs( )
 
 include_directories (
-  ${CMAKE_HOME_DIRECTORY}/opensource/mfx_dispatch/include
-  ${CMAKE_HOME_DIRECTORY}/_studio/shared/umc/codec/spl_common/include
-  ${CMAKE_HOME_DIRECTORY}/_studio/shared/umc/codec/avi_spl/include
-  ${CMAKE_HOME_DIRECTORY}/_studio/shared/umc/codec/demuxer/include
-  ${CMAKE_HOME_DIRECTORY}/_studio/shared/umc/test_suite/spy_test_component/include
-  ${CMAKE_HOME_DIRECTORY}/_testsuite/mfx_player/include
-  ${CMAKE_HOME_DIRECTORY}/_testsuite/shared/include
-  ${CMAKE_HOME_DIRECTORY}/samples/sample_spl_mux/api
+  ${CMAKE_HOME_DIRECTORY}/mdp_msdk-api/opensource/mfx_dispatch/include
+  ${CMAKE_HOME_DIRECTORY}/mdp_msdk-lib/_studio/shared/umc/codec/spl_common/include
+  ${CMAKE_HOME_DIRECTORY}/mdp_msdk-lib/_studio/shared/umc/codec/avi_spl/include
+  ${CMAKE_HOME_DIRECTORY}/mdp_msdk-lib/_studio/shared/umc/codec/demuxer/include
+  ${CMAKE_HOME_DIRECTORY}/mdp_msdk-lib/_studio/shared/umc/test_suite/spy_test_component/include
+  ${CMAKE_CURRENT_SOURCE_DIR}/include
+  ${CMAKE_CURRENT_SOURCE_DIR}/../shared/include
+  ${CMAKE_HOME_DIRECTORY}/mdp_msdk-samples/samples/sample_spl_mux/api
 #  ${CMAKE_HOME_DIRECTORY}/samples/sample_common/include
 )
 

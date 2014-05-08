@@ -73,22 +73,22 @@ list( APPEND umc_dirs
 mfx_include_dirs( )
 
 foreach( dir ${umc_dirs} )
-  include_directories( ${CMAKE_HOME_DIRECTORY}/_studio/shared/umc/codec/${dir}/include )
+  include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../shared/umc/codec/${dir}/include )
 endforeach( )
 
 foreach( dir ${adirs} ${vdirs} ${vdirs_impl} ${vdirs_hw} ${vdir_optimization} )
-  include_directories( ${CMAKE_HOME_DIRECTORY}/_studio/mfx_lib/${dir}/include )
+  include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/${dir}/include )
 endforeach( )
 
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/decode/h265/include )
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/encode/h265/include )
-include_directories( ${CMAKE_HOME_DIRECTORY}/thirdparty/vp8_libvpx )
+include_directories( ${CMAKE_HOME_DIRECTORY}/mdp_msdk-contrib/vp8_libvpx )
 
 # =============================================================================
 
 set( sources "" )
 set( sources.plus "" )
-foreach( dir ${CMAKE_HOME_DIRECTORY}/_studio/mfx_lib/fei/h264_la )
+foreach( dir ${CMAKE_CURRENT_SOURCE_DIR}/fei/h264_la )
   file( GLOB_RECURSE srcs "${dir}/*.c" "${dir}/*.cpp" )
   list( APPEND sources ${srcs})
 endforeach()
@@ -182,7 +182,7 @@ foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/shared/src )
     ${prefix}/mfx_user_plugin.cpp
   )
 endforeach()
-foreach( prefix ${CMAKE_HOME_DIRECTORY}/_studio/shared/src )
+foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/../shared/src )
 
   list( APPEND sources
     ${prefix}/auxiliary_device.cpp
@@ -201,16 +201,13 @@ foreach( prefix ${CMAKE_HOME_DIRECTORY}/_studio/shared/src )
     ${prefix}/mfx_dxva2_device.cpp
   )
 endforeach()
-list( APPEND sources
-  ${CMAKE_HOME_DIRECTORY}/_studio/mfx_lib/cmrt_cross_platform/src/cmrt_cross_platform.cpp
-)
 
 list( APPEND sources
-  ${CMAKE_HOME_DIRECTORY}/_studio/mfx_lib/cmrt_cross_platform/src/cmrt_cross_platform.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/cmrt_cross_platform/src/cmrt_cross_platform.cpp
 )
 
 set( USE_STRICT_NAME TRUE )
-set(MFX_LDFLAGS "${MFX_ORIG_LDFLAGS} -Wl,--version-script=${CMAKE_HOME_DIRECTORY}/_studio/mfx_lib/libmfx.map" )
+set(MFX_LDFLAGS "${MFX_ORIG_LDFLAGS} -Wl,--version-script=${CMAKE_CURRENT_SOURCE_DIR}/libmfx.map" )
     
 foreach( variant sw hw )
   if( __ARCH MATCHES intel64 )
@@ -280,7 +277,7 @@ foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/shared/src )
 endforeach()
 
 # mfxrt library itself
-foreach( prefix ${CMAKE_HOME_DIRECTORY}/_studio/shared/src )
+foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/../shared/src )
   list( APPEND sources
     ${prefix}/auxiliary_device.cpp
     ${prefix}/cm_mem_copy.cpp    
@@ -301,10 +298,10 @@ foreach( prefix ${CMAKE_HOME_DIRECTORY}/_studio/shared/src )
   )
 endforeach()
 list( APPEND sources
-  ${CMAKE_HOME_DIRECTORY}/_studio/mfx_lib/cmrt_cross_platform/src/cmrt_cross_platform.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/cmrt_cross_platform/src/cmrt_cross_platform.cpp
 )
 
-foreach( prefix ${CMAKE_HOME_DIRECTORY}/_studio/mfx_lib )
+foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR} )
   list( APPEND sources
     ${prefix}/shared/src/libmfxsw.cpp
     ${prefix}/shared/src/libmfxsw_async.cpp
@@ -365,7 +362,7 @@ foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/shared/src )
     ${prefix}/mfx_session.cpp
   )
 endforeach()
-foreach( prefix ${CMAKE_HOME_DIRECTORY}/_studio/shared/src )
+foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/../shared/src )
   list( APPEND sources
     ${prefix}/fast_copy.cpp
     ${prefix}/libmfx_allocator.cpp
@@ -378,7 +375,7 @@ foreach( prefix ${CMAKE_HOME_DIRECTORY}/_studio/shared/src )
 endforeach()
 
 set( USE_STRICT_NAME TRUE )
-set(MFX_LDFLAGS "${MFX_ORIG_LDFLAGS} -Wl,--version-script=${CMAKE_HOME_DIRECTORY}/_studio/mfx_lib/libmfxaudio.map" )
+set(MFX_LDFLAGS "${MFX_ORIG_LDFLAGS} -Wl,--version-script=${CMAKE_CURRENT_SOURCE_DIR}/libmfxaudio.map" )
     
 foreach( variant sw )
   if( __ARCH MATCHES intel64 )

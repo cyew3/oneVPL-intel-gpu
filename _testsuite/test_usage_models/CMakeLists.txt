@@ -1,9 +1,9 @@
 mfx_include_dirs( )
 
 include_directories (
-  ${CMAKE_HOME_DIRECTORY}/_testsuite/test_usage_models/include
-  ${CMAKE_HOME_DIRECTORY}/_testsuite/shared/include
-  ${CMAKE_HOME_DIRECTORY}/samples/sample_common/include
+  ${CMAKE_CURRENT_SOURCE_DIR}/include
+  ${CMAKE_CURRENT_SOURCE_DIR}/../shared/include
+  ${CMAKE_HOME_DIRECTORY}/mdp_msdk-samples/samples/sample_common/include
 )
 
 foreach( variant x11 drm )

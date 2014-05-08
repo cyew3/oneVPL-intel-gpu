@@ -2,24 +2,24 @@ mfx_include_dirs( )
 
 include_directories (
   /usr/include/c++/4.6/bits
-  ${CMAKE_HOME_DIRECTORY}/_testsuite/msdk_ts/include
-  ${CMAKE_HOME_DIRECTORY}/_testsuite/bs_parser/include
-  ${CMAKE_HOME_DIRECTORY}/_testsuite/shared/include
-  ${CMAKE_HOME_DIRECTORY}/_studio/shared/umc/codec/demuxer/include
-  ${CMAKE_HOME_DIRECTORY}/samples/sample_common/include  
+  ${CMAKE_CURRENT_SOURCE_DIR}/include
+  ${CMAKE_CURRENT_SOURCE_DIR}/../bs_parser/include
+  ${CMAKE_CURRENT_SOURCE_DIR}/../shared/include
+  ${CMAKE_CURRENT_SOURCE_DIR}/../../_studio/shared/umc/codec/demuxer/include
+  ${CMAKE_HOME_DIRECTORY}/mdp_msdk-samples/samples/sample_common/include  
 )
 
 list(APPEND sources
-  ${CMAKE_HOME_DIRECTORY}/_testsuite/msdk_ts/src/main.cpp
-  ${CMAKE_HOME_DIRECTORY}/_testsuite/msdk_ts/src/msdk_ts.cpp
-  ${CMAKE_HOME_DIRECTORY}/_testsuite/msdk_ts/src/stdafx.cpp
-  ${CMAKE_HOME_DIRECTORY}/_testsuite/msdk_ts/src/test_blocks.cpp
-  ${CMAKE_HOME_DIRECTORY}/_testsuite/msdk_ts/src/test_tools.cpp
-  ${CMAKE_HOME_DIRECTORY}/_testsuite/msdk_ts/src/test_trace.cpp
-  ${CMAKE_HOME_DIRECTORY}/_testsuite/msdk_ts/src/test_verif.cpp
-  ${CMAKE_HOME_DIRECTORY}/_testsuite/msdk_ts/src/test_libva_utils.cpp
-  ${CMAKE_HOME_DIRECTORY}/_testsuite/msdk_ts/src/test_sample_allocator.cpp
-  ${CMAKE_HOME_DIRECTORY}/_testsuite/msdk_ts/src/debug_output.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/main.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/msdk_ts.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/stdafx.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/test_blocks.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/test_tools.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/test_trace.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/test_verif.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/test_libva_utils.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/test_sample_allocator.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/debug_output.cpp
 )
 
 add_definitions( -DUSE_SAMPLE_ALLOCATOR=1 )
@@ -92,17 +92,17 @@ include_directories (
 add_definitions( -DUSE_SAMPLE_ALLOCATOR=1 )
 
 list(APPEND sources
-  ${CMAKE_HOME_DIRECTORY}/_testsuite/msdk_ts/src/dll_main.cpp
-  ${CMAKE_HOME_DIRECTORY}/_testsuite/msdk_ts/src/msdk_ts.cpp
-  ${CMAKE_HOME_DIRECTORY}/_testsuite/msdk_ts/src/stdafx.cpp
-  ${CMAKE_HOME_DIRECTORY}/_testsuite/msdk_ts/src/test_blocks.cpp
-  ${CMAKE_HOME_DIRECTORY}/_testsuite/msdk_ts/src/test_tools.cpp
-  ${CMAKE_HOME_DIRECTORY}/_testsuite/msdk_ts/src/test_trace.cpp
-  ${CMAKE_HOME_DIRECTORY}/_testsuite/msdk_ts/src/test_verif.cpp
-  ${CMAKE_HOME_DIRECTORY}/_testsuite/msdk_ts/src/test_libva_utils.cpp
-  ${CMAKE_HOME_DIRECTORY}/_testsuite/msdk_ts/src/msdk_ts_wrap.cxx
-  ${CMAKE_HOME_DIRECTORY}/_testsuite/msdk_ts/src/test_sample_allocator.cpp
-  ${CMAKE_HOME_DIRECTORY}/_testsuite/msdk_ts/src/debug_output.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/dll_main.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/msdk_ts.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/stdafx.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/test_blocks.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/test_tools.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/test_trace.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/test_verif.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/test_libva_utils.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/msdk_ts_wrap.cxx
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/test_sample_allocator.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/debug_output.cpp
 )
 
 foreach( variant sw x11 drm)

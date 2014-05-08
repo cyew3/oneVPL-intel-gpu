@@ -4,9 +4,9 @@ set(MFX_ORIG_LDFLAGS "${MFX_LDFLAGS}" )
 
 mfx_include_dirs( )
 
-include_directories( ${CMAKE_HOME_DIRECTORY}/_studio/mfx_lib/decode/h265/include )
-include_directories( ${CMAKE_HOME_DIRECTORY}/_studio/mfx_lib/encode/h265/include )
-include_directories( ${CMAKE_HOME_DIRECTORY}/_studio/mfx_lib/optimization/h265/include )
+include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../decode/h265/include )
+include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../encode/h265/include )
+include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/h265/include )
 
 # =============================================================================
 set ( HEVCPP_LIBS "" )
@@ -29,7 +29,7 @@ set( defs "-DMFX_MAKENAME_ATOM -DAS_HEVCD_PLUGIN -DAS_HEVCE_PLUGIN" )
 set( sources "" )
 set( sources.plus "" )
 
-foreach( dir ${CMAKE_HOME_DIRECTORY}/_studio/mfx_lib/optimization/h265/src )
+foreach( dir ${CMAKE_CURRENT_SOURCE_DIR}/h265/src )
   file( GLOB_RECURSE srcs "${dir}/*sse.c" "${dir}/*sse.cpp" )
   list( APPEND sources ${srcs})
 endforeach()
@@ -48,9 +48,9 @@ set( defs "-DMFX_MAKENAME_AVX2 -DAS_HEVCD_PLUGIN -DAS_HEVCE_PLUGIN" )
 set( sources "" )
 set( sources.plus "" )
 
-foreach( dir ${CMAKE_HOME_DIRECTORY}/_studio/mfx_lib/optimization/h265/src )
+foreach( dir ${CMAKE_CURRENT_SOURCE_DIR} )
   file( GLOB_RECURSE srcs "${dir}/*avx2.c" "${dir}/*avx2.cpp" )
-  list( APPEND sources ${srcs})
+  list( APPEND sources ${srcs} )
 endforeach()
 
 list( APPEND sources 
@@ -69,7 +69,7 @@ set( defs "-DMFX_MAKENAME_PX -DAS_HEVCD_PLUGIN -DAS_HEVCE_PLUGIN" )
 set( sources "" )
 set( sources.plus "" )
 
-foreach( dir ${CMAKE_HOME_DIRECTORY}/_studio/mfx_lib/optimization/h265/src )
+foreach( dir ${CMAKE_CURRENT_SOURCE_DIR}/h265/src )
   file( GLOB_RECURSE srcs "${dir}/*px.c" "${dir}/*px.cpp" )
   list( APPEND sources ${srcs})
 endforeach()
@@ -88,7 +88,7 @@ set( defs "-DMFX_MAKENAME_SSE4 -DAS_HEVCD_PLUGIN -DAS_HEVCE_PLUGIN" )
 set( sources "" )
 set( sources.plus "" )
 
-foreach( dir ${CMAKE_HOME_DIRECTORY}/_studio/mfx_lib/optimization/h265/src )
+foreach( dir ${CMAKE_CURRENT_SOURCE_DIR}/h265/src )
   file( GLOB_RECURSE srcs "${dir}/*sse.c" "${dir}/*sse.cpp" )
   list( APPEND sources ${srcs})
 endforeach()
@@ -107,9 +107,9 @@ set( defs "-DMFX_MAKENAME_SSSE3 -DAS_HEVCD_PLUGIN -DAS_HEVCE_PLUGIN" )
 set( sources "" )
 set( sources.plus "" )
 
-foreach( dir ${CMAKE_HOME_DIRECTORY}/_studio/mfx_lib/optimization/h265/src )
+foreach( dir ${CMAKE_CURRENT_SOURCE_DIR}/h265/src )
   file( GLOB_RECURSE srcs "${dir}/*sse.c" "${dir}/*sse.cpp" )
-  list( APPEND sources ${srcs})
+  list( APPEND sources ${srcs} )
 endforeach()
 
 make_library( hevc_pp_ssse3 none static )
