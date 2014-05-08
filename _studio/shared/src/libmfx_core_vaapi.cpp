@@ -141,6 +141,8 @@ const mfx_device_item listLegalDevIDs[] = {
     /* VLV */
     { 0x0f30, MFX_HW_VLV },   /* VLV mobile */
     { 0x0f31, MFX_HW_VLV },   /* VLV mobile */
+    { 0x0f32, MFX_HW_VLV },   /* VLV mobile */
+    { 0x0f33, MFX_HW_VLV },   /* VLV mobile */
     { 0x0157, MFX_HW_VLV },
     { 0x0155, MFX_HW_VLV },
 
@@ -192,7 +194,6 @@ VideoAccelerationHW ConvertMFXToUMCType(eMFXHWType type)
     case MFX_HW_LAKE:
         umcType = VA_HW_LAKE;
         break;
-
     case MFX_HW_LRB:
         umcType = VA_HW_LRB;
         break;
@@ -202,8 +203,14 @@ VideoAccelerationHW ConvertMFXToUMCType(eMFXHWType type)
     case MFX_HW_IVB:
         umcType = VA_HW_IVB;
         break;
+    case MFX_HW_VLV:
+        umcType = VA_HW_VLV;
+        break;
     case MFX_HW_HSW:
         umcType = VA_HW_HSW;
+        break;
+    case MFX_HW_BDW:
+        umcType = VA_HW_BDW;
         break;
     default:
         break;
@@ -250,13 +257,6 @@ eMFXHWType getPlatformType (VADisplay pVaDisplay)
         }
     }
 
-#if defined(ANDROID)
-    /* Platforms corrections for Android:
-     *  - treat VLV as IVB for now
-     */
-    /*if (MFX_HW_VLV == retPlatformType)*/ retPlatformType = MFX_HW_IVB;
-#endif
-
     return retPlatformType;
 } // eMFXHWType getPlatformType (VADisplay pVaDisplay)
 
@@ -272,7 +272,7 @@ VAAPIVideoCORE::VAAPIVideoCORE(
           , m_HWType(MFX_HW_IVB) //MFX_HW_UNKNOWN
 #if !defined(ANDROID)
           , m_bCmCopy(false)
-          , m_bCmCopyAllowed(true)
+          , m_bCmCopyAllowed(false)
 #else
           , m_bCmCopy(false)
           , m_bCmCopyAllowed(false)
