@@ -1623,9 +1623,9 @@ static void SumAllocRequest(mfxFrameAllocRequest  &curReq, mfxFrameAllocRequest 
     curReq.Type = curReq.Type | newReq.Type;
 
     if ((curReq.Type & MFX_MEMTYPE_SYSTEM_MEMORY) && ((curReq.Type & 0xf0) != MFX_MEMTYPE_SYSTEM_MEMORY))
-        curReq.Type = (curReq.Type & (~ MFX_MEMTYPE_SYSTEM_MEMORY));
+        curReq.Type = (mfxU16)(curReq.Type & (~ MFX_MEMTYPE_SYSTEM_MEMORY));
     if ((curReq.Type & MFX_MEMTYPE_DXVA2_PROCESSOR_TARGET) && ((curReq.Type & 0xf0) != MFX_MEMTYPE_DXVA2_PROCESSOR_TARGET))
-        curReq.Type = (curReq.Type & (~ MFX_MEMTYPE_DXVA2_PROCESSOR_TARGET));
+        curReq.Type = (mfxU16)(curReq.Type & (~ MFX_MEMTYPE_DXVA2_PROCESSOR_TARGET));
 
     if (curReq.Info.Width == 0)
     {
@@ -1645,9 +1645,9 @@ static void CheckAllocRequest(mfxFrameAllocRequest  &curReq, mfxFrameAllocReques
     curReq.Type = curReq.Type | newReq.Type;
 
     if ((curReq.Type & MFX_MEMTYPE_SYSTEM_MEMORY) && ((curReq.Type & 0xf0) != MFX_MEMTYPE_SYSTEM_MEMORY))
-        curReq.Type = (curReq.Type & (~ MFX_MEMTYPE_SYSTEM_MEMORY));
+        curReq.Type = (mfxU16)(curReq.Type & (~ MFX_MEMTYPE_SYSTEM_MEMORY));
     if ((curReq.Type & MFX_MEMTYPE_DXVA2_PROCESSOR_TARGET) && ((curReq.Type & 0xf0) != MFX_MEMTYPE_DXVA2_PROCESSOR_TARGET))
-        curReq.Type = (curReq.Type & (~ MFX_MEMTYPE_DXVA2_PROCESSOR_TARGET));
+        curReq.Type = (mfxU16)(curReq.Type & (~ MFX_MEMTYPE_DXVA2_PROCESSOR_TARGET));
 
     if (curReq.Info.Width == 0)
     {
