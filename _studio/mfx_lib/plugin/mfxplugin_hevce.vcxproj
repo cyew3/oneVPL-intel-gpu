@@ -312,7 +312,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>.\include;$(MfxIppIncludeDir);..\..\..\include;..\..\..\_studio\shared\include;..\..\..\_studio\shared\umc\core\vm\include;..\..\..\_studio\shared\umc\core\vm_plus\include;..\..\..\samples\sample_user_modules\plugin_api;..\..\..\opensource\mfx_dispatch\include;..\..\..\_studio\mfx_lib\shared\include;..\..\..\_studio\shared\umc\core\umc\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\include;$(MfxIppIncludeDir);..\..\..\..\mdp_msdk-api\include;..\..\..\_studio\shared\include;..\..\..\_studio\shared\umc\core\vm\include;..\..\..\_studio\shared\umc\core\vm_plus\include;..\..\..\samples\sample_user_modules\plugin_api;..\..\..\opensource\mfx_dispatch\include;..\..\..\_studio\mfx_lib\shared\include;..\..\..\_studio\shared\umc\core\umc\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;AS_HEVCE_PLUGIN;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <ExceptionHandling>Async</ExceptionHandling>
@@ -338,7 +338,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug_Intel|Win32'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>.\include;$(MfxIppIncludeDir);..\..\..\include;..\..\..\_studio\shared\include;..\..\..\_studio\shared\umc\core\vm\include;..\..\..\_studio\shared\umc\core\vm_plus\include;..\..\..\samples\sample_user_modules\plugin_api;..\..\..\opensource\mfx_dispatch\include;..\..\..\_studio\mfx_lib\shared\include;..\..\..\_studio\shared\umc\core\umc\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\include;$(MfxIppIncludeDir);..\..\..\..\mdp_msdk-api\include;..\..\..\_studio\shared\include;..\..\..\_studio\shared\umc\core\vm\include;..\..\..\_studio\shared\umc\core\vm_plus\include;..\..\..\samples\sample_user_modules\plugin_api;..\..\..\opensource\mfx_dispatch\include;..\..\..\_studio\mfx_lib\shared\include;..\..\..\_studio\shared\umc\core\umc\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>MFX_D3D11_ENABLED;WIN32;_DEBUG;_WINDOWS;_USRDLL;LIBMFXSW_EXPORTS;AS_HEVCE_PLUGIN;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <ExceptionHandling>Async</ExceptionHandling>
@@ -364,7 +364,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug_HSW_Emu|Win32'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>.\include;$(MfxIppIncludeDir);..\..\..\include;..\..\..\_studio\shared\include;..\..\..\_studio\shared\umc\core\vm\include;..\..\..\_studio\shared\umc\core\vm_plus\include;..\..\..\samples\sample_user_modules\plugin_api;..\..\..\opensource\mfx_dispatch\include;..\..\..\_studio\mfx_lib\shared\include;..\..\..\_studio\shared\umc\core\umc\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\include;$(MfxIppIncludeDir);..\..\..\..\mdp_msdk-api\include;..\..\..\_studio\shared\include;..\..\..\_studio\shared\umc\core\vm\include;..\..\..\_studio\shared\umc\core\vm_plus\include;..\..\..\samples\sample_user_modules\plugin_api;..\..\..\opensource\mfx_dispatch\include;..\..\..\_studio\mfx_lib\shared\include;..\..\..\_studio\shared\umc\core\umc\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>MFX_D3D11_ENABLED;WIN32;_DEBUG;_WINDOWS;_USRDLL;LIBMFXSW_EXPORTS;AS_HEVCE_PLUGIN;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <ExceptionHandling>Async</ExceptionHandling>
@@ -390,7 +390,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug_Intel_Evaluation|Win32'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>.\include;$(MfxIppIncludeDir);..\..\..\include;..\..\..\_studio\shared\include;..\..\..\_studio\shared\umc\core\vm\include;..\..\..\_studio\shared\umc\core\vm_plus\include;..\..\..\samples\sample_user_modules\plugin_api;..\..\..\opensource\mfx_dispatch\include;..\..\..\_studio\mfx_lib\shared\include;..\..\..\_studio\shared\umc\core\umc\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\include;$(MfxIppIncludeDir);..\..\..\..\mdp_msdk-api\include;..\..\..\_studio\shared\include;..\..\..\_studio\shared\umc\core\vm\include;..\..\..\_studio\shared\umc\core\vm_plus\include;..\..\..\samples\sample_user_modules\plugin_api;..\..\..\opensource\mfx_dispatch\include;..\..\..\_studio\mfx_lib\shared\include;..\..\..\_studio\shared\umc\core\umc\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>MFX_D3D11_ENABLED;WIN32;_DEBUG;_WINDOWS;_USRDLL;LIBMFXSW_EXPORTS;AS_HEVCE_PLUGIN;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <ExceptionHandling>Async</ExceptionHandling>
@@ -416,7 +416,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>.\include;$(MfxIppIncludeDir);..\..\..\include;..\..\..\_studio\shared\include;..\..\..\_studio\shared\umc\core\vm\include;..\..\..\_studio\shared\umc\core\vm_plus\include;..\..\..\samples\sample_user_modules\plugin_api;..\..\..\opensource\mfx_dispatch\include;..\..\..\_studio\mfx_lib\shared\include;..\..\..\_studio\shared\umc\core\umc\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\include;$(MfxIppIncludeDir);..\..\..\..\mdp_msdk-api\include;..\..\..\_studio\shared\include;..\..\..\_studio\shared\umc\core\vm\include;..\..\..\_studio\shared\umc\core\vm_plus\include;..\..\..\samples\sample_user_modules\plugin_api;..\..\..\opensource\mfx_dispatch\include;..\..\..\_studio\mfx_lib\shared\include;..\..\..\_studio\shared\umc\core\umc\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;AS_HEVCE_PLUGIN;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>Async</ExceptionHandling>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -439,7 +439,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug_Intel|x64'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>.\include;$(MfxIppIncludeDir);..\..\..\include;..\..\..\_studio\shared\include;..\..\..\_studio\shared\umc\core\vm\include;..\..\..\_studio\shared\umc\core\vm_plus\include;..\..\..\samples\sample_user_modules\plugin_api;..\..\..\opensource\mfx_dispatch\include;..\..\..\_studio\mfx_lib\shared\include;..\..\..\_studio\shared\umc\core\umc\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\include;$(MfxIppIncludeDir);..\..\..\..\mdp_msdk-api\include;..\..\..\_studio\shared\include;..\..\..\_studio\shared\umc\core\vm\include;..\..\..\_studio\shared\umc\core\vm_plus\include;..\..\..\samples\sample_user_modules\plugin_api;..\..\..\opensource\mfx_dispatch\include;..\..\..\_studio\mfx_lib\shared\include;..\..\..\_studio\shared\umc\core\umc\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>MFX_D3D11_ENABLED;WIN64;_DEBUG;_WINDOWS;_USRDLL;LIBMFXSW_EXPORTS;AS_HEVCE_PLUGIN;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>Async</ExceptionHandling>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -463,7 +463,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug_HSW_Emu|x64'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>.\include;$(MfxIppIncludeDir);..\..\..\include;..\..\..\_studio\shared\include;..\..\..\_studio\shared\umc\core\vm\include;..\..\..\_studio\shared\umc\core\vm_plus\include;..\..\..\samples\sample_user_modules\plugin_api;..\..\..\opensource\mfx_dispatch\include;..\..\..\_studio\mfx_lib\shared\include;..\..\..\_studio\shared\umc\core\umc\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\include;$(MfxIppIncludeDir);..\..\..\..\mdp_msdk-api\include;..\..\..\_studio\shared\include;..\..\..\_studio\shared\umc\core\vm\include;..\..\..\_studio\shared\umc\core\vm_plus\include;..\..\..\samples\sample_user_modules\plugin_api;..\..\..\opensource\mfx_dispatch\include;..\..\..\_studio\mfx_lib\shared\include;..\..\..\_studio\shared\umc\core\umc\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>MFX_D3D11_ENABLED;WIN64;_DEBUG;_WINDOWS;_USRDLL;LIBMFXSW_EXPORTS;AS_HEVCE_PLUGIN;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>Async</ExceptionHandling>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -487,7 +487,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug_Intel_Evaluation|x64'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>.\include;$(MfxIppIncludeDir);..\..\..\include;..\..\..\_studio\shared\include;..\..\..\_studio\shared\umc\core\vm\include;..\..\..\_studio\shared\umc\core\vm_plus\include;..\..\..\samples\sample_user_modules\plugin_api;..\..\..\opensource\mfx_dispatch\include;..\..\..\_studio\mfx_lib\shared\include;..\..\..\_studio\shared\umc\core\umc\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\include;$(MfxIppIncludeDir);..\..\..\..\mdp_msdk-api\include;..\..\..\_studio\shared\include;..\..\..\_studio\shared\umc\core\vm\include;..\..\..\_studio\shared\umc\core\vm_plus\include;..\..\..\samples\sample_user_modules\plugin_api;..\..\..\opensource\mfx_dispatch\include;..\..\..\_studio\mfx_lib\shared\include;..\..\..\_studio\shared\umc\core\umc\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>MFX_D3D11_ENABLED;WIN64;_DEBUG;_WINDOWS;_USRDLL;LIBMFXSW_EXPORTS;AS_HEVCE_PLUGIN;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>Async</ExceptionHandling>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -510,7 +510,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>.\include;$(MfxIppIncludeDir);..\..\..\include;..\..\..\_studio\shared\include;..\..\..\_studio\shared\umc\core\vm\include;..\..\..\_studio\shared\umc\core\vm_plus\include;..\..\..\samples\sample_user_modules\plugin_api;..\..\..\opensource\mfx_dispatch\include;..\..\..\_studio\mfx_lib\shared\include;..\..\..\_studio\shared\umc\core\umc\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\include;$(MfxIppIncludeDir);..\..\..\..\mdp_msdk-api\include;..\..\..\_studio\shared\include;..\..\..\_studio\shared\umc\core\vm\include;..\..\..\_studio\shared\umc\core\vm_plus\include;..\..\..\samples\sample_user_modules\plugin_api;..\..\..\opensource\mfx_dispatch\include;..\..\..\_studio\mfx_lib\shared\include;..\..\..\_studio\shared\umc\core\umc\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>AS_HEVCE_PLUGIN;WIN32;NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <PrecompiledHeader>
@@ -539,7 +539,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release_Intel|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>.\include;$(MfxIppIncludeDir);..\..\..\include;..\..\..\_studio\shared\include;..\..\..\_studio\shared\umc\core\vm\include;..\..\..\_studio\shared\umc\core\vm_plus\include;..\..\..\samples\sample_user_modules\plugin_api;..\..\..\opensource\mfx_dispatch\include;..\..\..\_studio\mfx_lib\shared\include;..\..\..\_studio\shared\umc\core\umc\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\include;$(MfxIppIncludeDir);..\..\..\..\mdp_msdk-api\include;..\..\..\_studio\shared\include;..\..\..\_studio\shared\umc\core\vm\include;..\..\..\_studio\shared\umc\core\vm_plus\include;..\..\..\samples\sample_user_modules\plugin_api;..\..\..\opensource\mfx_dispatch\include;..\..\..\_studio\mfx_lib\shared\include;..\..\..\_studio\shared\umc\core\umc\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>MFX_D3D11_ENABLED;WIN32;NDEBUG;_WINDOWS;_USRDLL;LIBMFXSW_EXPORTS;AS_HEVCE_PLUGIN;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <PrecompiledHeader>
@@ -565,7 +565,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release_Intel_Evaluation|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>.\include;$(MfxIppIncludeDir);..\..\..\include;..\..\..\_studio\shared\include;..\..\..\_studio\shared\umc\core\vm\include;..\..\..\_studio\shared\umc\core\vm_plus\include;..\..\..\samples\sample_user_modules\plugin_api;..\..\..\opensource\mfx_dispatch\include;..\..\..\_studio\mfx_lib\shared\include;..\..\..\_studio\shared\umc\core\umc\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\include;$(MfxIppIncludeDir);..\..\..\..\mdp_msdk-api\include;..\..\..\_studio\shared\include;..\..\..\_studio\shared\umc\core\vm\include;..\..\..\_studio\shared\umc\core\vm_plus\include;..\..\..\samples\sample_user_modules\plugin_api;..\..\..\opensource\mfx_dispatch\include;..\..\..\_studio\mfx_lib\shared\include;..\..\..\_studio\shared\umc\core\umc\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>MFX_D3D11_ENABLED;WIN32;NDEBUG;_WINDOWS;_USRDLL;LIBMFXSW_EXPORTS;AS_HEVCE_PLUGIN;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <PrecompiledHeader>
@@ -591,7 +591,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>.\include;$(MfxIppIncludeDir);..\..\..\include;..\..\..\_studio\shared\include;..\..\..\_studio\shared\umc\core\vm\include;..\..\..\_studio\shared\umc\core\vm_plus\include;..\..\..\samples\sample_user_modules\plugin_api;..\..\..\opensource\mfx_dispatch\include;..\..\..\_studio\mfx_lib\shared\include;..\..\..\_studio\shared\umc\core\umc\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\include;$(MfxIppIncludeDir);..\..\..\..\mdp_msdk-api\include;..\..\..\_studio\shared\include;..\..\..\_studio\shared\umc\core\vm\include;..\..\..\_studio\shared\umc\core\vm_plus\include;..\..\..\samples\sample_user_modules\plugin_api;..\..\..\opensource\mfx_dispatch\include;..\..\..\_studio\mfx_lib\shared\include;..\..\..\_studio\shared\umc\core\umc\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>AS_HEVCE_PLUGIN;WIN32;NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <PrecompiledHeader>
@@ -616,7 +616,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release_Intel|x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>.\include;$(MfxIppIncludeDir);..\..\..\include;..\..\..\_studio\shared\include;..\..\..\_studio\shared\umc\core\vm\include;..\..\..\_studio\shared\umc\core\vm_plus\include;..\..\..\samples\sample_user_modules\plugin_api;..\..\..\opensource\mfx_dispatch\include;..\..\..\_studio\mfx_lib\shared\include;..\..\..\_studio\shared\umc\core\umc\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\include;$(MfxIppIncludeDir);..\..\..\..\mdp_msdk-api\include;..\..\..\_studio\shared\include;..\..\..\_studio\shared\umc\core\vm\include;..\..\..\_studio\shared\umc\core\vm_plus\include;..\..\..\samples\sample_user_modules\plugin_api;..\..\..\opensource\mfx_dispatch\include;..\..\..\_studio\mfx_lib\shared\include;..\..\..\_studio\shared\umc\core\umc\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>MFX_D3D11_ENABLED;WIN64;NDEBUG;_WINDOWS;_USRDLL;LIBMFXSW_EXPORTS;AS_HEVCE_PLUGIN;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <PrecompiledHeader>
@@ -641,7 +641,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release_Intel_Evaluation|x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>.\include;$(MfxIppIncludeDir);..\..\..\include;..\..\..\_studio\shared\include;..\..\..\_studio\shared\umc\core\vm\include;..\..\..\_studio\shared\umc\core\vm_plus\include;..\..\..\samples\sample_user_modules\plugin_api;..\..\..\opensource\mfx_dispatch\include;..\..\..\_studio\mfx_lib\shared\include;..\..\..\_studio\shared\umc\core\umc\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\include;$(MfxIppIncludeDir);..\..\..\..\mdp_msdk-api\include;..\..\..\_studio\shared\include;..\..\..\_studio\shared\umc\core\vm\include;..\..\..\_studio\shared\umc\core\vm_plus\include;..\..\..\samples\sample_user_modules\plugin_api;..\..\..\opensource\mfx_dispatch\include;..\..\..\_studio\mfx_lib\shared\include;..\..\..\_studio\shared\umc\core\umc\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>MFX_D3D11_ENABLED;WIN64;NDEBUG;_WINDOWS;_USRDLL;LIBMFXSW_EXPORTS;AS_HEVCE_PLUGIN;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <PrecompiledHeader>

@@ -139,25 +139,25 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>false</LinkIncremental>
-    <OutDir>$(SolutionDir)..\..\build\win_$(PlatformName)\lib\</OutDir>
+    <OutDir>$(SolutionDir)..\..\..\build\win_$(PlatformName)\lib\</OutDir>
     <IntDir>$(OutDir)..\objs\$(Configuration)\$(ProjectName)\</IntDir>
     <TargetExt>.lib</TargetExt>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug-emu|Win32'">
     <LinkIncremental>false</LinkIncremental>
-    <OutDir>$(SolutionDir)..\..\build\win_$(PlatformName)\lib\</OutDir>
+    <OutDir>$(SolutionDir)..\..\..\build\win_$(PlatformName)\lib\</OutDir>
     <IntDir>$(OutDir)..\objs\$(Configuration)\$(ProjectName)\</IntDir>
     <TargetExt>.lib</TargetExt>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <OutDir>$(SolutionDir)..\..\build\win_$(PlatformName)\lib\</OutDir>
+    <OutDir>$(SolutionDir)..\..\..\build\win_$(PlatformName)\lib\</OutDir>
     <IntDir>$(OutDir)..\objs\$(Configuration)\$(ProjectName)\</IntDir>
     <TargetExt>.lib</TargetExt>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug-emu|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <OutDir>$(SolutionDir)..\..\build\win_$(PlatformName)\lib\</OutDir>
+    <OutDir>$(SolutionDir)..\..\..\build\win_$(PlatformName)\lib\</OutDir>
     <IntDir>$(OutDir)..\objs\$(Configuration)\$(ProjectName)\</IntDir>
     <TargetExt>.lib</TargetExt>
   </PropertyGroup>
@@ -165,7 +165,7 @@
     <LinkIncremental>false</LinkIncremental>
     <PostBuildEventUseInBuild>true</PostBuildEventUseInBuild>
     <IncludePath>$(IncludePath)</IncludePath>
-    <OutDir>$(SolutionDir)..\..\build\win_$(PlatformName)\lib\</OutDir>
+    <OutDir>$(SolutionDir)..\..\..\build\win_$(PlatformName)\lib\</OutDir>
     <IntDir>$(OutDir)..\objs\$(Configuration)\$(ProjectName)\</IntDir>
     <TargetExt>.lib</TargetExt>
     <TargetName>$(ProjectName)</TargetName>
@@ -174,20 +174,20 @@
     <LinkIncremental>false</LinkIncremental>
     <PostBuildEventUseInBuild>true</PostBuildEventUseInBuild>
     <IncludePath>$(IncludePath)</IncludePath>
-    <OutDir>$(SolutionDir)..\..\build\win_$(PlatformName)\lib\</OutDir>
+    <OutDir>$(SolutionDir)..\..\..\build\win_$(PlatformName)\lib\</OutDir>
     <IntDir>$(OutDir)..\objs\$(Configuration)\$(ProjectName)\</IntDir>
     <TargetExt>.lib</TargetExt>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <OutDir>$(SolutionDir)..\..\build\win_$(PlatformName)\lib\</OutDir>
+    <OutDir>$(SolutionDir)..\..\..\build\win_$(PlatformName)\lib\</OutDir>
     <IntDir>$(OutDir)..\objs\$(Configuration)\$(ProjectName)\</IntDir>
     <TargetExt>.lib</TargetExt>
     <TargetName>$(ProjectName)_d</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release-emu|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <OutDir>$(SolutionDir)..\..\build\win_$(PlatformName)\lib\</OutDir>
+    <OutDir>$(SolutionDir)..\..\..\build\win_$(PlatformName)\lib\</OutDir>
     <IntDir>$(OutDir)..\objs\$(Configuration)\$(ProjectName)\</IntDir>
     <TargetExt>.lib</TargetExt>
   </PropertyGroup>
@@ -198,7 +198,7 @@
       <WarningLevel>TurnOffAllWarnings</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(MEDIASDK_ROOT)\CMRT\compiler\include\cm;$(MEDIASDK_ROOT)/CMRT/runtime/include;$(MEDIASDK_ROOT)/CMRT/compiler/include;$(MfxIppIncludeDir);.\include;..\include;..\..\include;..\..\..\include;..\..\..\_studio\mfx_lib\shared\include;..\..\..\_studio\shared\umc\core\vm\include;..\..\..\_studio\shared\include;..\..\..\_studio\shared\umc\core\vm_plus\include;..\..\..\_studio\shared\umc\core\umc\include;..\..\..\_studio\mfx_lib\cmrt_cross_platform\include;.\kernels;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(MEDIASDK_ROOT)\CMRT\compiler\include\cm;$(MEDIASDK_ROOT)/CMRT/runtime/include;$(MEDIASDK_ROOT)/CMRT/compiler/include;$(MfxIppIncludeDir);.\include;..\include;..\..\include;..\..\..\..\mdp_msdk-api\include;..\..\..\_studio\mfx_lib\shared\include;..\..\..\_studio\shared\umc\core\vm\include;..\..\..\_studio\shared\include;..\..\..\_studio\shared\umc\core\vm_plus\include;..\..\..\_studio\shared\umc\core\umc\include;..\..\..\_studio\mfx_lib\cmrt_cross_platform\include;.\kernels;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <FloatingPointModel>Precise</FloatingPointModel>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
     </ClCompile>
@@ -252,7 +252,7 @@ del embed_isa.exe</Command>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>USE_CM;CMRT_EMU;WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(MEDIASDK_ROOT)\CMRT\compiler\include\cm;$(MEDIASDK_ROOT)/CMRT/runtime/include;$(MEDIASDK_ROOT)/CMRT/compiler/include;$(MfxIppIncludeDir);.\include;..\include;..\..\include;..\..\..\include;..\..\..\_studio\mfx_lib\shared\include;..\..\..\_studio\shared\umc\core\vm\include;..\..\..\_studio\shared\include;..\..\..\_studio\shared\umc\core\vm_plus\include;..\..\..\_studio\shared\umc\core\umc\include;..\..\..\_studio\mfx_lib\cmrt_cross_platform\include;.\kernels;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(MEDIASDK_ROOT)\CMRT\compiler\include\cm;$(MEDIASDK_ROOT)/CMRT/runtime/include;$(MEDIASDK_ROOT)/CMRT/compiler/include;$(MfxIppIncludeDir);.\include;..\include;..\..\include;..\..\..\..\mdp_msdk-api\include;..\..\..\_studio\mfx_lib\shared\include;..\..\..\_studio\shared\umc\core\vm\include;..\..\..\_studio\shared\include;..\..\..\_studio\shared\umc\core\vm_plus\include;..\..\..\_studio\shared\umc\core\umc\include;..\..\..\_studio\mfx_lib\cmrt_cross_platform\include;.\kernels;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <FloatingPointModel>Precise</FloatingPointModel>
     </ClCompile>
     <Link>
@@ -305,7 +305,7 @@ del embed_isa.exe</Command>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(MEDIASDK_ROOT)\CMRT\compiler\include\cm;$(MEDIASDK_ROOT)/CMRT/runtime/include;$(MEDIASDK_ROOT)/CMRT/compiler/include;$(MfxIppIncludeDir);.\include;..\include;..\..\include;..\..\..\include;..\..\..\_studio\mfx_lib\shared\include;..\..\..\_studio\shared\umc\core\vm\include;..\..\..\_studio\shared\include;..\..\..\_studio\shared\umc\core\vm_plus\include;..\..\..\_studio\shared\umc\core\umc\include;..\..\..\_studio\mfx_lib\cmrt_cross_platform\include;.\kernels;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(MEDIASDK_ROOT)\CMRT\compiler\include\cm;$(MEDIASDK_ROOT)/CMRT/runtime/include;$(MEDIASDK_ROOT)/CMRT/compiler/include;$(MfxIppIncludeDir);.\include;..\include;..\..\include;..\..\..\..\mdp_msdk-api\include;..\..\..\_studio\mfx_lib\shared\include;..\..\..\_studio\shared\umc\core\vm\include;..\..\..\_studio\shared\include;..\..\..\_studio\shared\umc\core\vm_plus\include;..\..\..\_studio\shared\umc\core\umc\include;..\..\..\_studio\mfx_lib\cmrt_cross_platform\include;.\kernels;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
     </ClCompile>
     <Link>
@@ -354,7 +354,7 @@ del embed_isa.exe</Command>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(MEDIASDK_ROOT)\CMRT\compiler\include\cm;$(MEDIASDK_ROOT)/CMRT/runtime/include;$(MEDIASDK_ROOT)/CMRT/compiler/include;$(MfxIppIncludeDir);.\include;..\include;..\..\include;..\..\..\include;..\..\..\_studio\mfx_lib\shared\include;..\..\..\_studio\shared\umc\core\vm\include;..\..\..\_studio\shared\include;..\..\..\_studio\shared\umc\core\vm_plus\include;..\..\..\_studio\shared\umc\core\umc\include;..\..\..\_studio\mfx_lib\cmrt_cross_platform\include;.\kernels;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(MEDIASDK_ROOT)\CMRT\compiler\include\cm;$(MEDIASDK_ROOT)/CMRT/runtime/include;$(MEDIASDK_ROOT)/CMRT/compiler/include;$(MfxIppIncludeDir);.\include;..\include;..\..\include;..\..\..\..\mdp_msdk-api\include;..\..\..\_studio\mfx_lib\shared\include;..\..\..\_studio\shared\umc\core\vm\include;..\..\..\_studio\shared\include;..\..\..\_studio\shared\umc\core\vm_plus\include;..\..\..\_studio\shared\umc\core\umc\include;..\..\..\_studio\mfx_lib\cmrt_cross_platform\include;.\kernels;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -404,7 +404,7 @@ del embed_isa.exe</Command>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(MEDIASDK_ROOT)\CMRT\compiler\include\cm;$(MEDIASDK_ROOT)/CMRT/runtime/include;$(MEDIASDK_ROOT)/CMRT/compiler/include;$(MfxIppIncludeDir);.\include;..\include;..\..\include;..\..\..\include;..\..\..\_studio\mfx_lib\shared\include;..\..\..\_studio\shared\umc\core\vm\include;..\..\..\_studio\shared\include;..\..\..\_studio\shared\umc\core\vm_plus\include;..\..\..\_studio\shared\umc\core\umc\include;..\..\..\_studio\mfx_lib\cmrt_cross_platform\include;.\kernels;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(MEDIASDK_ROOT)\CMRT\compiler\include\cm;$(MEDIASDK_ROOT)/CMRT/runtime/include;$(MEDIASDK_ROOT)/CMRT/compiler/include;$(MfxIppIncludeDir);.\include;..\include;..\..\include;..\..\..\..\mdp_msdk-api\include;..\..\..\_studio\mfx_lib\shared\include;..\..\..\_studio\shared\umc\core\vm\include;..\..\..\_studio\shared\include;..\..\..\_studio\shared\umc\core\vm_plus\include;..\..\..\_studio\shared\umc\core\umc\include;..\..\..\_studio\mfx_lib\cmrt_cross_platform\include;.\kernels;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <FloatingPointModel>Precise</FloatingPointModel>
       <FloatingPointExpressionEvaluation>Default</FloatingPointExpressionEvaluation>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
@@ -464,7 +464,7 @@ del embed_isa.exe</Command>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>USE_CM;CMRT_EMU;WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(MEDIASDK_ROOT)\CMRT\compiler\include\cm;$(MEDIASDK_ROOT)/CMRT/runtime/include;$(MEDIASDK_ROOT)/CMRT/compiler/include;$(MfxIppIncludeDir);.\include;..\include;..\..\include;..\..\..\include;..\..\..\_studio\mfx_lib\shared\include;..\..\..\_studio\shared\umc\core\vm\include;..\..\..\_studio\shared\include;..\..\..\_studio\shared\umc\core\vm_plus\include;..\..\..\_studio\shared\umc\core\umc\include;..\..\..\_studio\mfx_lib\cmrt_cross_platform\include;.\kernels;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(MEDIASDK_ROOT)\CMRT\compiler\include\cm;$(MEDIASDK_ROOT)/CMRT/runtime/include;$(MEDIASDK_ROOT)/CMRT/compiler/include;$(MfxIppIncludeDir);.\include;..\include;..\..\include;..\..\..\..\mdp_msdk-api\include;..\..\..\_studio\mfx_lib\shared\include;..\..\..\_studio\shared\umc\core\vm\include;..\..\..\_studio\shared\include;..\..\..\_studio\shared\umc\core\vm_plus\include;..\..\..\_studio\shared\umc\core\umc\include;..\..\..\_studio\mfx_lib\cmrt_cross_platform\include;.\kernels;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <FloatingPointModel>Precise</FloatingPointModel>
     </ClCompile>
     <Link>
@@ -521,7 +521,7 @@ del embed_isa.exe</Command>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(MEDIASDK_ROOT)\CMRT\compiler\include\cm;$(MEDIASDK_ROOT)/CMRT/runtime/include;$(MEDIASDK_ROOT)/CMRT/compiler/include;$(MfxIppIncludeDir);.\include;..\include;..\..\include;..\..\..\include;..\..\..\_studio\mfx_lib\shared\include;..\..\..\_studio\shared\umc\core\vm\include;..\..\..\_studio\shared\include;..\..\..\_studio\shared\umc\core\vm_plus\include;..\..\..\_studio\shared\umc\core\umc\include;..\..\..\_studio\mfx_lib\cmrt_cross_platform\include;.\kernels;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(MEDIASDK_ROOT)\CMRT\compiler\include\cm;$(MEDIASDK_ROOT)/CMRT/runtime/include;$(MEDIASDK_ROOT)/CMRT/compiler/include;$(MfxIppIncludeDir);.\include;..\include;..\..\include;..\..\..\..\mdp_msdk-api\include;..\..\..\_studio\mfx_lib\shared\include;..\..\..\_studio\shared\umc\core\vm\include;..\..\..\_studio\shared\include;..\..\..\_studio\shared\umc\core\vm_plus\include;..\..\..\_studio\shared\umc\core\umc\include;..\..\..\_studio\mfx_lib\cmrt_cross_platform\include;.\kernels;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <TreatWarningAsError>false</TreatWarningAsError>
     </ClCompile>
@@ -575,7 +575,7 @@ del embed_isa.exe</Command>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(MEDIASDK_ROOT)\CMRT\compiler\include\cm;$(MEDIASDK_ROOT)/CMRT/runtime/include;$(MEDIASDK_ROOT)/CMRT/compiler/include;$(MfxIppIncludeDir);.\include;..\include;..\..\include;..\..\..\include;..\..\..\_studio\mfx_lib\shared\include;..\..\..\_studio\shared\umc\core\vm\include;..\..\..\_studio\shared\include;..\..\..\_studio\shared\umc\core\vm_plus\include;..\..\..\_studio\shared\umc\core\umc\include;..\..\..\_studio\mfx_lib\cmrt_cross_platform\include;.\kernels;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(MEDIASDK_ROOT)\CMRT\compiler\include\cm;$(MEDIASDK_ROOT)/CMRT/runtime/include;$(MEDIASDK_ROOT)/CMRT/compiler/include;$(MfxIppIncludeDir);.\include;..\include;..\..\include;..\..\..\..\mdp_msdk-api\include;..\..\..\_studio\mfx_lib\shared\include;..\..\..\_studio\shared\umc\core\vm\include;..\..\..\_studio\shared\include;..\..\..\_studio\shared\umc\core\vm_plus\include;..\..\..\_studio\shared\umc\core\umc\include;..\..\..\_studio\mfx_lib\cmrt_cross_platform\include;.\kernels;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>

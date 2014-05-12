@@ -38,6 +38,12 @@
     <ClCompile Include="src\mfx_ref_list_control_encode.cpp">
       <Filter>encode</Filter>
     </ClCompile>
+    <ClCompile Include="src\mfx_encoder_protected.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\mfx_protected_transcoding_pipeline.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\mfx_encode_decode_quality.h">
@@ -81,6 +87,12 @@
     </ClInclude>
     <ClInclude Include="include\mfx_encode_query_mod4.h">
       <Filter>encode</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mfx_encoder_protected.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mfx_protected_transcoding_pipeline.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
