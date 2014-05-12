@@ -471,7 +471,7 @@ mfxStatus CmdProcessor::ParseParamsForOneSession(mfxU32 argc, msdk_char *argv[])
     for (i = 0; i < argc; i++)
     {
         // process multi-character options
-        if (0 == msdk_strncmp(MSDK_STRING("-i::"), argv[i], 4))
+        if ( (0 == msdk_strncmp(MSDK_STRING("-i::"), argv[i], msdk_strlen(MSDK_STRING("-i::")))) && (0 != msdk_strncmp(argv[i]+4, MSDK_STRING("source"), msdk_strlen(MSDK_STRING("source")))) )
         {
             sts = StrFormatToCodecFormatFourCC(argv[i]+4, InputParams.DecodeId);
             if (sts != MFX_ERR_NONE)
@@ -501,7 +501,7 @@ mfxStatus CmdProcessor::ParseParamsForOneSession(mfxU32 argc, msdk_char *argv[])
                 InputParams.bIsMVC = true;
             }
         }
-        else if (0 == msdk_strncmp(MSDK_STRING("-o::"), argv[i], 4))
+        else if ( (0 == msdk_strncmp(MSDK_STRING("-o::"), argv[i], msdk_strlen(MSDK_STRING("-o::")))) && (0 != msdk_strncmp(argv[i]+4, MSDK_STRING("sink"), msdk_strlen(MSDK_STRING("sink")))) )
         {
             sts = StrFormatToCodecFormatFourCC(argv[i]+4, InputParams.EncodeId);
             if (sts != MFX_ERR_NONE)
