@@ -135,7 +135,7 @@ void PipelineManager::BuildAudioChain(size_t nTrack) {
     if (m_profile->isAudioEncoderExist((int)nTrack)) {
         std::auto_ptr<ITransform> enc;
         m_bJustCopyAudio ? enc.reset(m_factory.CreateAudioEncoderNullTransform(*session, 60000))
-            : enc.reset(m_factory.CreateAudioEncoderNullTransform(*session, 60000));
+            : enc.reset(m_factory.CreateAudioEncoderTransform(*session, 60000));
 
         aParam = info.Encode;
         m_transforms->RegisterTransform(TransformConfigDesc(info.SID, aParam), enc);
