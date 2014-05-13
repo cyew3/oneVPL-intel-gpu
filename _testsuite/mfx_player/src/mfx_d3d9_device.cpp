@@ -77,8 +77,8 @@ mfxStatus MFXD3D9Device::Init(mfxU32 nAdapter,
         fsc.Size = sizeof(D3DDISPLAYMODEEX);
 
         /* Proper framerate must be specified */
-        m_D3DPP.FullScreen_RefreshRateInHz = 24;
-        fsc.RefreshRate                  = 24;
+        m_D3DPP.FullScreen_RefreshRateInHz = 60;
+        fsc.RefreshRate                    = 60;
 
         fullscreen = &fsc;
     }
