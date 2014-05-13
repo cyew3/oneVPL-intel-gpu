@@ -68,22 +68,22 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <OutDir>..\..\build\win_$(Platform)\bin\</OutDir>
+    <OutDir>..\..\..\build\win_$(Platform)\bin\</OutDir>
     <IntDir>$(OutDir)..\objs\$(ProjectName)_d\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <OutDir>..\..\build\win_$(Platform)\bin\</OutDir>
+    <OutDir>..\..\..\build\win_$(Platform)\bin\</OutDir>
     <IntDir>$(OutDir)..\objs\$(ProjectName)_d\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
-    <OutDir>..\..\build\win_$(Platform)\bin\</OutDir>
+    <OutDir>..\..\..\build\win_$(Platform)\bin\</OutDir>
     <IntDir>$(OutDir)..\objs\$(ProjectName)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <OutDir>..\..\build\win_$(Platform)\bin\</OutDir>
+    <OutDir>..\..\..\build\win_$(Platform)\bin\</OutDir>
     <IntDir>$(OutDir)..\objs\$(ProjectName)\</IntDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -93,7 +93,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>_VARIADIC_MAX=10;WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>../../samples/sample_common/include/vm;../../samples/sample_common/include;../../igfx_s3dcontrol/include;../bs_parser/include;../../thirdparty/gmock/gtest/include;../../thirdparty/gmock/include;../../include;./include/gmock;./include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../../mdp_msdk-samples/samples/sample_common/include/vm;../../../mdp_msdk-samples/samples/sample_common/include;../../../mdp_msdk-contrib/igfx_s3dcontrol/include;../../../mdp_msdk-val-tools/bs_parser/include;../../../mdp_msdk-contrib/gmock/gtest/include;../../../mdp_msdk-contrib/gmock/include;../../../mdp_msdk-api/include;./include/gmock;./include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
     </ClCompile>
     <Link>
@@ -109,7 +109,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>_VARIADIC_MAX=10;WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>../../samples/sample_common/include/vm;../../samples/sample_common/include;../../igfx_s3dcontrol/include;../bs_parser/include;../../thirdparty/gmock/gtest/include;../../thirdparty/gmock/include;../../include;./include/gmock;./include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../../mdp_msdk-samples/samples/sample_common/include/vm;../../../mdp_msdk-samples/samples/sample_common/include;../../../mdp_msdk-contrib/igfx_s3dcontrol/include;../../../mdp_msdk-val-tools/bs_parser/include;../../../mdp_msdk-contrib/gmock/gtest/include;../../../mdp_msdk-contrib/gmock/include;../../../mdp_msdk-api/include;./include/gmock;./include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
     </ClCompile>
     <Link>
@@ -127,7 +127,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>_VARIADIC_MAX=10;WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>../../samples/sample_common/include/vm;../../samples/sample_common/include;../../igfx_s3dcontrol/include;../bs_parser/include;../../thirdparty/gmock/gtest/include;../../thirdparty/gmock/include;../../include;./include/gmock;./include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../../mdp_msdk-samples/samples/sample_common/include/vm;../../../mdp_msdk-samples/samples/sample_common/include;../../../mdp_msdk-contrib/igfx_s3dcontrol/include;../../../mdp_msdk-val-tools/bs_parser/include;../../../mdp_msdk-contrib/gmock/gtest/include;../../../mdp_msdk-contrib/gmock/include;../../../mdp_msdk-api/include;./include/gmock;./include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
     </ClCompile>
     <Link>
@@ -147,7 +147,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>_VARIADIC_MAX=10;WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>../../samples/sample_common/include/vm;../../samples/sample_common/include;../../igfx_s3dcontrol/include;../bs_parser/include;../../thirdparty/gmock/gtest/include;../../thirdparty/gmock/include;../../include;./include/gmock;./include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../../mdp_msdk-samples/samples/sample_common/include/vm;../../../mdp_msdk-samples/samples/sample_common/include;../../../mdp_msdk-contrib/igfx_s3dcontrol/include;../../../mdp_msdk-val-tools/bs_parser/include;../../../mdp_msdk-contrib/gmock/gtest/include;../../../mdp_msdk-contrib/gmock/include;../../../mdp_msdk-api/include;./include/gmock;./include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
     </ClCompile>
     <Link>
@@ -214,19 +214,19 @@
     <ClCompile Include="src\test_sample_allocator.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\opensource\mfx_dispatch\mfx_dispatch_trace_lib.vcxproj">
+    <ProjectReference Include="..\..\..\mdp_msdk-api\opensource\mfx_dispatch\mfx_dispatch_trace_lib.vcxproj">
       <Project>{430e22ba-bdf6-497c-bfc5-ec6907f90018}</Project>
     </ProjectReference>
-    <ProjectReference Include="..\..\samples\sample_common\sample_common.vcxproj">
-      <Project>{db71b91d-16d8-4339-9621-d81798e46e8f}</Project>
-    </ProjectReference>
-    <ProjectReference Include="..\..\thirdparty\gmock\msvc\2010\gmock.vcxproj">
+    <ProjectReference Include="..\..\..\mdp_msdk-contrib\gmock\msvc\2010\gmock.vcxproj">
       <Project>{34681f0d-ce45-415d-b5f2-5c662dfe3bd5}</Project>
     </ProjectReference>
-    <ProjectReference Include="..\..\thirdparty\gmock\msvc\2010\gmock_main.vcxproj">
+    <ProjectReference Include="..\..\..\mdp_msdk-contrib\gmock\msvc\2010\gmock_main.vcxproj">
       <Project>{e4ef614b-30df-4954-8c53-580a0bf6b589}</Project>
     </ProjectReference>
-    <ProjectReference Include="..\bs_parser\bs_parser.vcxproj">
+    <ProjectReference Include="..\..\..\mdp_msdk-samples\samples\sample_common\sample_common.vcxproj">
+      <Project>{db71b91d-16d8-4339-9621-d81798e46e8f}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\..\..\mdp_msdk-val-tools\bs_parser\bs_parser.vcxproj">
       <Project>{d08d664e-7245-40f7-9b55-3440ef95f2f7}</Project>
     </ProjectReference>
   </ItemGroup>
