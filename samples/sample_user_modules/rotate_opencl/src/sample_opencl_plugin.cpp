@@ -26,24 +26,21 @@ PluginModuleTemplate g_PluginModule = {
 
 /* Rotate class implementation */
 Rotate::Rotate() :
-m_pTasks(NULL),
-m_bInited(false),
-m_pAlloc(NULL),
-m_bIsInOpaque(false),
-m_bIsOutOpaque(false),
-#if defined(_WIN32) || defined(_WIN64)
-m_pD3D9Manager(NULL),
-#else
-m_pD3D9Manager(NULL),
-#endif
-m_bOpenCLSurfaceSharing(false)
+    m_bInited(false),
+    m_bOpenCLSurfaceSharing(false),
+    m_bIsInOpaque(false),
+    m_bIsOutOpaque(false),
+    m_device(NULL),
+    m_pmfxCore(NULL),
+    m_pTasks(NULL),
+    m_MaxNumTasks(0),
+    m_pAlloc(NULL),
+    m_pChunks(NULL),
+    m_NumChunks(0)
 {
-    m_MaxNumTasks = 0;
-
     memset(&m_VideoParam, 0, sizeof(m_VideoParam));
     memset(&m_Param, 0, sizeof(m_Param));
 
-    m_pmfxCore = NULL;
     memset(&m_PluginParam, 0, sizeof(m_PluginParam));
     m_PluginParam.MaxThreadNum = 1;
     m_PluginParam.ThreadPolicy = MFX_THREADPOLICY_SERIAL;
@@ -66,21 +63,15 @@ mfxStatus Rotate::PluginInit(mfxCoreInterface *core)
     MSDK_CHECK_POINTER(m_pmfxCore, MFX_ERR_MEMORY_ALLOC);
     *m_pmfxCore = *core;
 
-    mfxHDL hdl = 0;
 #if defined(_WIN32) || defined(_WIN64)
-    sts = m_pmfxCore->GetHandle(m_pmfxCore->pthis, MFX_HANDLE_D3D9_DEVICE_MANAGER, &hdl);
+    sts = m_pmfxCore->GetHandle(m_pmfxCore->pthis, MFX_HANDLE_D3D9_DEVICE_MANAGER, &m_device);
 #else
-    sts = m_pmfxCore->GetHandle(m_pmfxCore->pthis, MFX_HANDLE_VA_DISPLAY, &hdl);
+    sts = m_pmfxCore->GetHandle(m_pmfxCore->pthis, MFX_HANDLE_VA_DISPLAY, &m_device);
 #endif
 
     // SW lib is used if GetHandle return MFX_ERR_NOT_FOUND
     MSDK_IGNORE_MFX_STS(sts, MFX_ERR_NOT_FOUND);
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
-#if defined(_WIN32) || defined(_WIN64)
-    m_pD3D9Manager = reinterpret_cast<IDirect3DDeviceManager9*>(hdl);
-#else
-    m_pD3D9Manager = reinterpret_cast<VADisplay>(hdl);
-#endif
 
     // if external allocator not set use the one from core interface
     if (!m_pAlloc && m_pmfxCore->FrameAllocator.pthis)
@@ -333,16 +324,11 @@ mfxStatus Rotate::Init(mfxVideoParam *mfxParam)
     {
         // init OpenCLFilter
         cl_int error = CL_SUCCESS;
-#if defined(_WIN32) || defined(_WIN64)
-        error = m_OpenCLFilter.AddKernel(OpenCLFilter::readFile("ocl_rotate.cl").c_str(), "rotate_Y", "rotate_UV", D3DFMT_NV12);
-        if (error) return MFX_ERR_DEVICE_FAILED;
-        error = m_OpenCLFilter.OCLInit(m_pD3D9Manager);
-#else
-        error = m_OpenCLFilter.AddKernel(OpenCLFilter::readFile("ocl_rotate.cl").c_str(), "rotate_Y", "rotate_UV", VA_RT_FORMAT_YUV420);
-        if (error) return MFX_ERR_DEVICE_FAILED;
-        error = m_OpenCLFilter.OCLInit(&m_pD3D9Manager);
-#endif
 
+        error = m_OpenCLFilter.AddKernel(readFile("ocl_rotate.cl").c_str(), "rotate_Y", "rotate_UV", MFX_FOURCC_NV12);
+        if (error) return MFX_ERR_DEVICE_FAILED;
+
+        error = m_OpenCLFilter.OCLInit(m_device);
         if (error)
         {
             error = CL_SUCCESS;
@@ -360,7 +346,7 @@ mfxStatus Rotate::Init(mfxVideoParam *mfxParam)
     if (!m_bOpenCLSurfaceSharing)
     {
         try {
-            m_pOpenCLRotator180Context.reset(new OpenCLRotator180Context(OpenCLFilter::readFile("ocl_rotate.cl").c_str()));
+            m_pOpenCLRotator180Context.reset(new OpenCLRotator180Context(readFile("ocl_rotate.cl").c_str()));
         }
         catch (const std::exception &err) {
             std::cout << err.what() << std::endl;
@@ -424,12 +410,12 @@ mfxStatus Rotate::SetHandle(mfxHandleType type, mfxHDL hdl)
 #if defined(_WIN32) || defined(_WIN64)
     if (MFX_HANDLE_D3D9_DEVICE_MANAGER == type)
     {
-        m_pD3D9Manager = reinterpret_cast<IDirect3DDeviceManager9 *>(hdl);
+        m_device = hdl;
     }
 #else
     if (MFX_HANDLE_VA_DISPLAY == type)
     {
-        m_pD3D9Manager = reinterpret_cast<VADisplay>(hdl);
+        m_device = hdl;
     }
 #endif
     return MFX_ERR_NONE;
@@ -549,29 +535,21 @@ OpenCLFilterRotator180::~OpenCLFilterRotator180()
 {
 }
 
+mfxStatus OpenCLFilterRotator180::SetAllocator(mfxFrameAllocator * pAlloc)
+{
+    mfxStatus sts = m_pOpenCLFilter->SetAllocator(pAlloc);
+    if (MFX_ERR_NONE == sts)
+    {
+        sts = Processor::SetAllocator(pAlloc);
+    }
+    return sts;
+}
+
 mfxStatus OpenCLFilterRotator180::Process(DataChunk * /*chunk*/)
 {
-    mfxStatus sts = MFX_ERR_NONE;
-#if defined(_WIN32) || defined(_WIN64)
-    IDirect3DSurface9 *in = 0;
-    IDirect3DSurface9 *out = 0;
-#else
-    VASurfaceID* in = NULL;
-    VASurfaceID* out = NULL;
-#endif
-    sts = m_pAlloc->GetHDL(m_pAlloc->pthis, m_pIn->Data.MemId, reinterpret_cast<mfxHDL *>(&in));
-    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
-    sts = m_pAlloc->GetHDL(m_pAlloc->pthis, m_pOut->Data.MemId, reinterpret_cast<mfxHDL *>(&out));
-    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
-    cl_int error = CL_SUCCESS;
-#if defined(_WIN32) || defined(_WIN64)
-    error = m_pOpenCLFilter->ProcessSurface(m_pIn->Info.Width, m_pIn->Info.Height, (directxMemId*)m_pIn->Data.MemId, (directxMemId*)m_pOut->Data.MemId);
-#else
-    error = m_pOpenCLFilter->ProcessSurface(m_pIn->Info.Width, m_pIn->Info.Height, in, out);
-#endif
-    if (error) return MFX_ERR_DEVICE_FAILED;
+    cl_int error = m_pOpenCLFilter->ProcessSurface(m_pIn->Info.Width, m_pIn->Info.Height, m_pIn->Data.MemId, m_pOut->Data.MemId);
 
-    return MFX_ERR_NONE;
+    return (error)? MFX_ERR_DEVICE_FAILED: MFX_ERR_NONE;
 }
 
 OpenCLRotator180Context::OpenCLRotator180Context(const std::string &program_src)

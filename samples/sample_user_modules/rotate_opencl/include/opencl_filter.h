@@ -10,20 +10,21 @@ Copyright(c) 2005-2014 Intel Corporation. All Rights Reserved.
 
 #pragma once
 
-#if defined(_WIN32) || defined(_WIN64)
-
-#include "logger.h"
-#include "d3d_utils.h"
-#include "d3d_allocator.h"
-#include <vector>
-
+#include <iostream>
+#include <stdexcept>
 #include <CL/cl.h>
 
+#include "mfxvideo++.h"
+#include "logger.h"
+
+#define INIT_CL_EXT_FUNC(x) x = (x ## _fn)clGetExtensionFunctionAddress(#x);
+#define SAFE_OCL_FREE(P, FREE_FUNC) { if (P) { FREE_FUNC(P); P = NULL; } }
+
 typedef struct {
-    std::string       program_source;
-    std::string       kernelY_FuncName;
-    std::string       kernelUV_FuncName;
-    D3DFORMAT   format;
+    std::string program_source;
+    std::string kernelY_FuncName;
+    std::string kernelUV_FuncName;
+    mfxU32      format;
     cl_program  clprogram;
     cl_kernel   clkernelY;
     cl_kernel   clkernelUV;
@@ -32,45 +33,71 @@ typedef struct {
 class OpenCLFilter
 {
 public:
-    OpenCLFilter();
-    virtual ~OpenCLFilter();
-    cl_int OCLInit(IDirect3DDeviceManager9* pD3DDeviceManager);
-    cl_int AddKernel(const char* filename, const char* kernelY_name, const char* kernelUV_name, D3DFORMAT format);
-    cl_int SelectKernel(unsigned kNo);
-    cl_int ProcessSurface(int width, int height, directxMemId* pSurfIn, directxMemId* pSurfOut);
+    virtual ~OpenCLFilter() {}
 
-    static std::string readFile(const char *filename);
-private:
-    cl_int InitPlatform();
-    cl_int InitD3D9SurfaceSharingExtension();
-    cl_int InitDevice();
-    cl_int BuildKernels();
-    cl_int SetKernelArgs();
-    cl_int PrepareSharedSurfaces(int width, int height, directxMemId* inputD3DSurf, directxMemId* outputD3DSurf);
-    cl_int ProcessSurface();
-    void   ReleaseResources();
+    virtual mfxStatus SetAllocator(mfxFrameAllocator *pAlloc) = 0;
 
-    static size_t chooseLocalSize(size_t globalSize, size_t preferred);
+    virtual cl_int OCLInit(mfxHDL pD3DDeviceManager) = 0;
+    virtual cl_int AddKernel(const char* filename, const char* kernelY_name, const char* kernelUV_name, mfxU32 format) = 0;
+    virtual cl_int SelectKernel(unsigned kNo) = 0;
+    virtual cl_int ProcessSurface(int width, int height, mfxMemId pSurfIn, mfxMemId pSurfOut) = 0;
+};
 
-    bool                                m_bInit;
-    int                                 m_activeKernel;
-    int                                 m_currentWidth;
-    int                                 m_currentHeight;
-    D3DFORMAT                           m_currentFormat;
-    std::auto_ptr<SafeD3DDeviceManager> m_SafeD3DDeviceManager;
-    std::vector<OCL_YUV_kernel>         m_kernels;
+class OpenCLFilterBase: public OpenCLFilter
+{
+public:
+    OpenCLFilterBase();
+    virtual ~OpenCLFilterBase();
 
+    virtual mfxStatus SetAllocator(mfxFrameAllocator *pAlloc);
+
+    virtual cl_int OCLInit(mfxHDL device);
+    virtual cl_int AddKernel(const char* filename, const char* kernelY_name, const char* kernelUV_name, mfxU32 format);
+    virtual cl_int SelectKernel(unsigned kNo); // cl
+    virtual cl_int ProcessSurface(int width, int height, mfxMemId pSurfIn, mfxMemId pSurfOut);
+
+protected: // functions
+    virtual cl_int InitPlatform();
+    virtual cl_int BuildKernels();
+    virtual cl_int SetKernelArgs();
+    virtual cl_int ReleaseResources();
+
+    virtual cl_int InitDevice() = 0;
+    virtual cl_int InitSurfaceSharingExtension() = 0; // vaapi, d3d9, d3d11, etc. specific
+    virtual cl_int PrepareSharedSurfaces(int width, int height, mfxMemId pSurfIn, mfxMemId pSurfOut) = 0;
+    virtual cl_int ProcessSurface() = 0;
+
+    inline size_t chooseLocalSize(
+        size_t globalSize, // frame width or height
+        size_t preferred)  // preferred local size
+    {
+        size_t ret = 1;
+        while ((globalSize % ret == 0) && ret <= preferred)
+        {
+             ret <<= 1;
+        }
+
+        return ret >> 1;
+    }
+
+protected: // variables
+    bool                m_bInit;
+    mfxFrameAllocator*  m_pAlloc;
     cl_platform_id      m_clplatform;
     cl_device_id        m_cldevice;
     cl_context          m_clcontext;
     cl_command_queue    m_clqueue;
 
+    int                                 m_activeKernel;
+    int                                 m_currentWidth;
+    int                                 m_currentHeight;
+
+    std::vector<OCL_YUV_kernel>         m_kernels;
+
     static const size_t c_shared_surfaces_num = 2; // In and Out
     static const size_t c_ocl_surface_buffers_num = 2*c_shared_surfaces_num; // YIn, UVIn, YOut, UVOut
 
     cl_mem              m_clbuffer[c_ocl_surface_buffers_num];
-    HANDLE              m_hSharedSurfaces[c_shared_surfaces_num]; // d3d9 surface shared handles
-    IDirect3DSurface9*  m_pSharedSurfaces[c_shared_surfaces_num];
 
     size_t              m_GlobalWorkSizeY[2];
     size_t              m_GlobalWorkSizeUV[2];
@@ -87,4 +114,4 @@ private:
     > log;
 };
 
-#endif // #if defined(_WIN32) || defined(_WIN64)
+std::string readFile(const char *filename);

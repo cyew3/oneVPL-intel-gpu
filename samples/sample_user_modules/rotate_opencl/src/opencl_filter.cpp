@@ -1,70 +1,42 @@
-/*********************************************************************************
+/**********************************************************************************
 
-INTEL CORPORATION PROPRIETARY INFORMATION
-This software is supplied under the terms of a license agreement or nondisclosure
-agreement with Intel Corporation and may not be copied or disclosed except in
-accordance with the terms of that agreement
-Copyright(c) 2005-2014 Intel Corporation. All Rights Reserved.
+ INTEL CORPORATION PROPRIETARY INFORMATION
+ This software is supplied under the terms of a license agreement or nondisclosure
+ agreement with Intel Corporation and may not be copied or disclosed except in
+ accordance with the terms of that agreement
+ Copyright(c) 2014 Intel Corporation. All Rights Reserved.
 
-**********************************************************************************/
-
-#include "mfx_samples_config.h"
-
-#if defined(_WIN32) || defined(_WIN64)
+***********************************************************************************/
 
 #include <fstream>
+#include <stdexcept>
 
 #include "opencl_filter.h"
 #include "sample_defs.h"
 
-#include "stdexcept"
-
-// INTEL DX9 sharing functions declared deprecated in OpenCL 1.2
-#pragma warning( disable : 4996 )
-
-// define for <CL/cl_ext.h>
-#define DX9_MEDIA_SHARING
-#define DX_MEDIA_SHARING
-#define CL_DX9_MEDIA_SHARING_INTEL_EXT
-
-#include <CL/opencl.h>
-#include <CL/cl_d3d9.h>
-
 using std::endl;
 
-#define INIT_CL_EXT_FUNC(x)                x = (x ## _fn)clGetExtensionFunctionAddress(#x);
-#define SAFE_OCL_FREE(P, FREE_FUNC)        { if (P) { FREE_FUNC(P); P = NULL; } }
-
-clGetDeviceIDsFromDX9INTEL_fn            clGetDeviceIDsFromDX9INTEL             = NULL;
-clCreateFromDX9MediaSurfaceINTEL_fn      clCreateFromDX9MediaSurfaceINTEL       = NULL;
-clEnqueueAcquireDX9ObjectsINTEL_fn       clEnqueueAcquireDX9ObjectsINTEL        = NULL;
-clEnqueueReleaseDX9ObjectsINTEL_fn       clEnqueueReleaseDX9ObjectsINTEL        = NULL;
-
-OpenCLFilter::OpenCLFilter() : log(std::clog)
+OpenCLFilterBase::OpenCLFilterBase() : log(std::clog)
 {
-    m_bInit               = false;
-    m_activeKernel        = 0;
-    for(int i=0;i<c_shared_surfaces_num;i++)
-    {
-        m_hSharedSurfaces[i]    = NULL;
-        m_pSharedSurfaces[i]    = NULL;
-    }
-    for(int i=0;i<c_ocl_surface_buffers_num;i++)
-        m_clbuffer[i]            = NULL;
+    m_bInit              = false;
+    m_pAlloc             = NULL;
+    m_activeKernel       = 0;
 
+    for(size_t i=0; i < c_ocl_surface_buffers_num;i++)
+    {
+        m_clbuffer[i] = NULL;
+    }
+
+    m_cldevice           = 0;
     m_clplatform         = 0;
     m_clqueue            = 0;
     m_clcontext          = 0;
 
     m_currentWidth       = 0;
     m_currentHeight      = 0;
-    m_currentFormat      = D3DFMT_UNKNOWN;
 }
 
-OpenCLFilter::~OpenCLFilter()
-{
-    ReleaseResources();
-
+OpenCLFilterBase::~OpenCLFilterBase() {
     for(unsigned i=0;i<m_kernels.size();i++)
     {
         SAFE_OCL_FREE(m_kernels[i].clprogram, clReleaseProgram);
@@ -74,41 +46,50 @@ OpenCLFilter::~OpenCLFilter()
 
     SAFE_OCL_FREE(m_clqueue,clReleaseCommandQueue);
     SAFE_OCL_FREE(m_clcontext,clReleaseContext);
-    m_SafeD3DDeviceManager.reset();
 }
 
-void OpenCLFilter::ReleaseResources()
+mfxStatus OpenCLFilterBase::SetAllocator(mfxFrameAllocator *pAlloc)
 {
-    for(int i=0;i<c_shared_surfaces_num;i++)
-    {
-        MSDK_SAFE_RELEASE(m_pSharedSurfaces[i]);
-        m_hSharedSurfaces[i] = NULL;
-    }
-    for(int i=0;i<c_ocl_surface_buffers_num;i++)
-        SAFE_OCL_FREE(m_clbuffer[i], clReleaseMemObject);
+    m_pAlloc = pAlloc;
+    return MFX_ERR_NONE;
 }
 
-cl_int OpenCLFilter::OCLInit(IDirect3DDeviceManager9* pD3DDeviceManager)
+cl_int OpenCLFilterBase::ReleaseResources() {
+    cl_int error = CL_SUCCESS;
+
+    for(size_t i=0; i < c_ocl_surface_buffers_num; i++)
+    {
+        if (m_clbuffer[i])
+          error = clReleaseMemObject( m_clbuffer[i] );
+        if(error) {
+            log.error() << "clReleaseMemObject failed. Error code: " << error << endl;
+            return error;
+        }
+    }
+
+    error = clFinish( m_clqueue );
+    if(error)
+    {
+        log.error() << "clFinish failed. Error code: " << error << endl;
+        return error;
+    }
+
+    for(size_t i=0;i<c_ocl_surface_buffers_num;i++)
+    {
+        m_clbuffer[i] = NULL;
+    }
+
+    return error;
+}
+
+cl_int OpenCLFilterBase::OCLInit(mfxHDL /*device*/)
 {
-    MSDK_CHECK_POINTER(pD3DDeviceManager, MFX_ERR_NULL_PTR);
-
-    // store IDirect3DDeviceManager9
-    try
-    {
-        m_SafeD3DDeviceManager.reset(new SafeD3DDeviceManager(pD3DDeviceManager));
-    }
-    catch (const std::exception &ex)
-    {
-        log.error() << ex.what() << endl;
-        return CL_DEVICE_NOT_AVAILABLE;
-    }
-
     cl_int error = CL_SUCCESS;
 
     error = InitPlatform();
     if (error) return error;
 
-    error = InitD3D9SurfaceSharingExtension();
+    error = InitSurfaceSharingExtension();
     if (error) return error;
 
     error = InitDevice();
@@ -128,7 +109,7 @@ cl_int OpenCLFilter::OCLInit(IDirect3DDeviceManager9* pD3DDeviceManager)
     return error;
 }
 
-cl_int OpenCLFilter::InitPlatform()
+cl_int OpenCLFilterBase::InitPlatform()
 {
     cl_int error = CL_SUCCESS;
 
@@ -137,9 +118,9 @@ cl_int OpenCLFilter::InitPlatform()
     error = clGetPlatformIDs(0, NULL, &num_platforms);
     if(error)
     {
-        log.error() << "OpenCLFilter: Couldn't get platform IDs. "
-                        "Make sure your platform "
-                        "supports OpenCL and can find a proper dll." << endl;
+        log.error() << "OpenCLFilter: Couldn't get platform IDs. \
+                        Make sure your platform \
+                        supports OpenCL and can find a proper library." << endl;
         return error;
     }
 
@@ -174,77 +155,7 @@ cl_int OpenCLFilter::InitPlatform()
     return error;
 }
 
-cl_int OpenCLFilter::InitD3D9SurfaceSharingExtension()
-{
-    cl_int error = CL_SUCCESS;
-
-    // Check if surface sharing is available
-    size_t  len = 0;
-    const size_t max_string_size = 1024;
-    char extensions[max_string_size];
-    error = clGetPlatformInfo(m_clplatform, CL_PLATFORM_EXTENSIONS, max_string_size, extensions, &len);
-    log.info() << "OpenCLFilter: Platform extensions: " << extensions << endl;
-    if(NULL == strstr(extensions, "cl_intel_dx9_media_sharing"))
-    {
-        log.error() << "OpenCLFilter: DX9 media sharing not available!" << endl;
-        return CL_INVALID_PLATFORM;
-    }
-
-    // Hook up the d3d sharing extension functions that we need
-    INIT_CL_EXT_FUNC(clGetDeviceIDsFromDX9INTEL);
-    INIT_CL_EXT_FUNC(clCreateFromDX9MediaSurfaceINTEL);
-    INIT_CL_EXT_FUNC(clEnqueueAcquireDX9ObjectsINTEL);
-    INIT_CL_EXT_FUNC(clEnqueueReleaseDX9ObjectsINTEL);
-
-    // Check for success
-    if (!clGetDeviceIDsFromDX9INTEL ||
-        !clCreateFromDX9MediaSurfaceINTEL ||
-        !clEnqueueAcquireDX9ObjectsINTEL ||
-        !clEnqueueReleaseDX9ObjectsINTEL)
-    {
-        log.error() << "OpenCLFilter: Couldn't get all of the media sharing routines" << endl;
-        return CL_INVALID_PLATFORM;
-    }
-
-    return error;
-}
-
-cl_int OpenCLFilter::InitDevice()
-{
-    log.debug() << "OpenCLFilter: Try to init OCL device" << endl;
-
-    cl_int error = CL_SUCCESS;
-
-    try
-    {
-        LockedD3DDevice pD3DDevice = m_SafeD3DDeviceManager->LockDevice();
-        error = clGetDeviceIDsFromDX9INTEL(m_clplatform, CL_D3D9EX_DEVICE_INTEL, // note - you must use D3D9DeviceEx
-                                           pD3DDevice.get(), CL_PREFERRED_DEVICES_FOR_DX9_INTEL, 1, &m_cldevice, NULL);
-        if(error) {
-            log.error() << "OpenCLFilter: clGetDeviceIDsFromDX9INTEL failed. Error code: " << error << endl;
-            return error;
-        }
-
-        // Initialize the shared context
-        cl_context_properties props[] = { CL_CONTEXT_D3D9EX_DEVICE_INTEL, (cl_context_properties)pD3DDevice.get(), NULL};
-        m_clcontext = clCreateContext(props, 1, &m_cldevice, NULL, NULL, &error);
-        if(error) {
-            log.error() << "OpenCLFilter: clCreateContext failed. Error code: " << error << endl;
-            return error;
-        }
-    }
-    catch (const std::exception &ex)
-    {
-        log.error() << ex.what() << endl;
-        return CL_DEVICE_NOT_AVAILABLE;
-    }
-
-    log.debug() << "OpenCLFilter: OCL device inited" << endl;
-
-    return error;
-}
-
-cl_int OpenCLFilter::BuildKernels()
+cl_int OpenCLFilterBase::BuildKernels()
 {
     log.debug() << "OpenCLFilter: Reading and compiling OCL kernels" << endl;
 
@@ -252,7 +163,7 @@ cl_int OpenCLFilter::BuildKernels()
 
     char buildOptions[] = "-I. -Werror -cl-fast-relaxed-math";
 
-    for(unsigned i=0; i<m_kernels.size(); i++)
+    for(unsigned int i = 0; i < m_kernels.size(); i++)
     {
         // Create a program object from the source file
         const char *program_source_buf = m_kernels[i].program_source.c_str();
@@ -297,7 +208,7 @@ cl_int OpenCLFilter::BuildKernels()
     return error;
 }
 
-cl_int OpenCLFilter::AddKernel(const char* filename, const char* kernelY_name, const char* kernelUV_name, D3DFORMAT format)
+cl_int OpenCLFilterBase::AddKernel(const char* filename, const char* kernelY_name, const char* kernelUV_name, mfxU32 format)
 {
     OCL_YUV_kernel kernel;
     kernel.program_source = std::string(filename);
@@ -310,7 +221,7 @@ cl_int OpenCLFilter::AddKernel(const char* filename, const char* kernelY_name, c
     return CL_SUCCESS;
 }
 
-cl_int OpenCLFilter::SelectKernel(unsigned kNo)
+cl_int OpenCLFilterBase::SelectKernel(unsigned kNo)
 {
     if(m_bInit)
     {
@@ -331,7 +242,7 @@ cl_int OpenCLFilter::SelectKernel(unsigned kNo)
         return CL_DEVICE_NOT_FOUND;
 }
 
-cl_int OpenCLFilter::SetKernelArgs()
+cl_int OpenCLFilterBase::SetKernelArgs()
 {
     cl_int error = CL_SUCCESS;
 
@@ -362,141 +273,7 @@ cl_int OpenCLFilter::SetKernelArgs()
     return error;
 }
 
-cl_int OpenCLFilter::PrepareSharedSurfaces(int width, int height, directxMemId* inputD3DSurf, directxMemId* outputD3DSurf)
-{
-    cl_int error = CL_SUCCESS;
-
-    if(m_bInit)
-    {
-        if(!(m_currentWidth == width && m_currentHeight == height && m_currentFormat == m_kernels[m_activeKernel].format))
-        {
-            if(m_hSharedSurfaces[0])
-                ReleaseResources(); // Release existing surfaces
-
-            m_currentWidth        = width;
-            m_currentHeight       = height;
-            m_currentFormat       = m_kernels[m_activeKernel].format;
-        }
-
-        //
-        // Setup OpenCL buffers etc.
-        //
-        if(!m_clbuffer[0]) // Initialize OCL buffers in case of new workload
-        {
-            if(m_kernels[m_activeKernel].format == D3DFMT_NV12)
-            {
-                // Working on NV12 surfaces
-
-                // Associate the shared buffer with the kernel object
-                m_clbuffer[0] = clCreateFromDX9MediaSurfaceINTEL(m_clcontext,0,inputD3DSurf->m_surface,inputD3DSurf->m_handle,0,&error);
-                if(error) {
-                    log.error() << "clCreateFromDX9MediaSurfaceINTEL failed. Error code: " << error << endl;
-                    return error;
-                }
-                m_clbuffer[1] = clCreateFromDX9MediaSurfaceINTEL(m_clcontext,0,inputD3DSurf->m_surface,inputD3DSurf->m_handle,1,&error);
-                if(error) {
-                    log.error() << "clCreateFromDX9MediaSurfaceINTEL failed. Error code: " << error << endl;
-                    return error;
-                }
-                m_clbuffer[2] = clCreateFromDX9MediaSurfaceINTEL(m_clcontext,0,outputD3DSurf->m_surface,outputD3DSurf->m_handle,0,&error);
-                if(error) {
-                    log.error() << "clCreateFromDX9MediaSurfaceINTEL failed. Error code: " << error << endl;
-                    return error;
-                }
-                m_clbuffer[3] = clCreateFromDX9MediaSurfaceINTEL(m_clcontext,0,outputD3DSurf->m_surface,outputD3DSurf->m_handle,1,&error);
-                if(error) {
-                    log.error() << "clCreateFromDX9MediaSurfaceINTEL failed. Error code: " << error << endl;
-                    return error;
-                }
-                // Work sizes for Y plane
-                m_GlobalWorkSizeY[0] = m_currentWidth;
-                m_GlobalWorkSizeY[1] = m_currentHeight;
-                m_LocalWorkSizeY[0] = chooseLocalSize(m_GlobalWorkSizeY[0], 8);
-                m_LocalWorkSizeY[1] = chooseLocalSize(m_GlobalWorkSizeY[1], 8);
-                m_GlobalWorkSizeY[0] = m_LocalWorkSizeY[0]*(m_GlobalWorkSizeY[0]/m_LocalWorkSizeY[0]);
-                m_GlobalWorkSizeY[1] = m_LocalWorkSizeY[1]*(m_GlobalWorkSizeY[1]/m_LocalWorkSizeY[1]);
-
-                // Work size for UV plane
-                m_GlobalWorkSizeUV[0] = m_currentWidth/2;
-                m_GlobalWorkSizeUV[1] = m_currentHeight/2;
-                m_LocalWorkSizeUV[0] = chooseLocalSize(m_GlobalWorkSizeUV[0], 8);
-                m_LocalWorkSizeUV[1] = chooseLocalSize(m_GlobalWorkSizeUV[1], 8);
-                m_GlobalWorkSizeUV[0] = m_LocalWorkSizeUV[0]*(m_GlobalWorkSizeUV[0]/m_LocalWorkSizeUV[0]);
-                m_GlobalWorkSizeUV[1] = m_LocalWorkSizeUV[1]*(m_GlobalWorkSizeUV[1]/m_LocalWorkSizeUV[1]);
-
-                error = SetKernelArgs();
-                if (error) return error;
-            }
-            else
-            {
-                log.error() << "OpenCLFilter: Unsupported image format" << endl;
-                return CL_INVALID_VALUE;
-            }
-        }
-
-        return error;
-    }
-    else
-        return CL_DEVICE_NOT_FOUND;
-}
-
-cl_int OpenCLFilter::ProcessSurface()
-{
-    cl_int error = CL_SUCCESS;
-
-    if(!m_bInit)
-        error = CL_DEVICE_NOT_FOUND;
-
-    if(m_clbuffer[0] && CL_SUCCESS == error)
-    {
-        if(m_kernels[m_activeKernel].format == D3DFMT_NV12)
-        {
-            cl_mem    surfaces[4] ={m_clbuffer[0],
-                                    m_clbuffer[1],
-                                    m_clbuffer[2],
-                                    m_clbuffer[3]};
-
-            error = clEnqueueAcquireDX9ObjectsINTEL(m_clqueue,4,surfaces,0,NULL,NULL);
-            if(error) {
-                log.error() << "clEnqueueAcquireDX9ObjectsINTEL failed. Error code: " << error << endl;
-                return error;
-            }
-
-            // enqueue kernels
-            error = clEnqueueNDRangeKernel(m_clqueue, m_kernels[m_activeKernel].clkernelY, 2, NULL, m_GlobalWorkSizeY, m_LocalWorkSizeY, 0, NULL, NULL);
-            if(error) {
-                log.error() << "clEnqueueNDRangeKernel for Y plane failed. Error code: " << error << endl;
-                return error;
-            }
-            error = clEnqueueNDRangeKernel(m_clqueue, m_kernels[m_activeKernel].clkernelUV, 2, NULL, m_GlobalWorkSizeUV, m_LocalWorkSizeUV, 0, NULL, NULL);
-            if(error) {
-                log.error() << "clEnqueueNDRangeKernel for UV plane failed. Error code: " << error << endl;
-                return error;
-            }
-
-            error = clEnqueueReleaseDX9ObjectsINTEL(m_clqueue,4, surfaces,0,NULL,NULL);
-            if(error) {
-                log.error() << "clEnqueueReleaseDX9ObjectsINTEL failed. Error code: " << error << endl;
-                return error;
-            }
-
-            // flush & finish the command queue
-            error = clFlush(m_clqueue);
-            if(error) {
-                log.error() << "clFlush failed. Error code: " << error << endl;
-                return error;
-            }
-            error = clFinish(m_clqueue);
-            if(error) {
-                log.error() << "clFinish failed. Error code: " << error << endl;
-                return error;
-            }
-        }
-    }
-    return error;
-}
-
-cl_int OpenCLFilter::ProcessSurface(int width, int height, directxMemId* pSurfIn, directxMemId* pSurfOut)
+cl_int OpenCLFilterBase::ProcessSurface(int width, int height, mfxMemId pSurfIn, mfxMemId pSurfOut)
 {
     cl_int error = CL_SUCCESS;
 
@@ -506,10 +283,13 @@ cl_int OpenCLFilter::ProcessSurface(int width, int height, directxMemId* pSurfIn
     error = ProcessSurface();
     if (error) return error;
 
+    error =  ReleaseResources();
     return error;
 }
 
-std::string OpenCLFilter::readFile(const char *filename)
+#if defined(_WIN32) || defined(_WIN64)
+
+std::string readFile(const char *filename)
 {
     std::ifstream input(filename, std::ios::in | std::ios::binary);
     if(!input.good())
@@ -539,16 +319,30 @@ std::string OpenCLFilter::readFile(const char *filename)
     return std::string(program_source.begin(), program_source.end());
 }
 
-size_t OpenCLFilter::chooseLocalSize(size_t globalSize, // frame width or height
-                                     size_t preferred)  // preferred local size
-{
-    size_t ret = 1;
-    while ((globalSize % ret == 0) && ret <= preferred)
-    {
-         ret <<= 1;
-    }
+#else
 
-    return ret >> 1;
+std::string readFile(const char *filename)
+{
+    char* mfx_home = getenv("MFX_HOME");
+
+    // TODO need to process exception
+    if (!mfx_home) throw std::logic_error("MFX_HOME environment variable was not set!");
+
+    std::string path =
+        std::string(mfx_home) +
+        std::string("/") +
+        std::string("samples/sample_user_modules/rotate_opencl/src/") +
+        std::string(filename);
+
+    std::ifstream input(path.c_str(), std::ios::in | std::ios::binary);
+
+    input.seekg(0, std::ios::end);
+    std::vector<char> program_source(static_cast<int>(input.tellg()));
+    input.seekg(0);
+
+    input.read(&program_source[0], program_source.size());
+
+    return std::string(program_source.begin(), program_source.end());
 }
 
 #endif // #if defined(_WIN32) || defined(_WIN64)

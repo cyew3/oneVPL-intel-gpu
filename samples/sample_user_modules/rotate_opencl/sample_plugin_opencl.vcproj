@@ -415,6 +415,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\src\opencl_filter_dx9.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\src\sample_opencl_plugin.cpp"
 				>
 			</File>
@@ -434,6 +438,10 @@
 			</File>
 			<File
 				RelativePath=".\include\opencl_filter.h"
+				>
+			</File>
+			<File
+				RelativePath=".\include\opencl_filter_dx9.h"
 				>
 			</File>
 			<File

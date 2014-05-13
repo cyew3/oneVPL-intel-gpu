@@ -19,9 +19,9 @@ Copyright(c) 2005-2014 Intel Corporation. All Rights Reserved.
 #include "sample_defs.h"
 
 #if defined(_WIN32) || defined(_WIN64)
-#include "opencl_filter.h"
+#include "opencl_filter_dx9.h"
 #else
-#include "opencl_filter_linux.h"
+#include "opencl_filter_va.h"
 #endif
 
 // msvc ignores throw function specifications used in cl.hpp
@@ -111,6 +111,7 @@ public:
     OpenCLFilterRotator180(OpenCLFilter *pOpenCLFilter);
     virtual ~OpenCLFilterRotator180();
 
+    virtual mfxStatus SetAllocator(mfxFrameAllocator *pAlloc);
     virtual mfxStatus Process(DataChunk * /* chunk */); // operates on whole frame
 private:
     OpenCLFilter *m_pOpenCLFilter;
@@ -189,17 +190,24 @@ public:
         return new Rotate();
     }
 
-protected:
-    bool m_bInited;
+protected: // functions
+    mfxStatus CheckParam(mfxVideoParam *mfxParam, RotateParam *pRotatePar);
+    mfxStatus CheckInOutFrameInfo(mfxFrameInfo *pIn, mfxFrameInfo *pOut);
+    mfxU32 FindFreeTaskIdx();
 
+protected: // variables
+    bool m_bInited;
     bool m_bOpenCLSurfaceSharing;
-    OpenCLFilter m_OpenCLFilter;
-    std::auto_ptr<OpenCLRotator180Context> m_pOpenCLRotator180Context;
+    bool m_bIsInOpaque;
+    bool m_bIsOutOpaque;
+
 #if defined(_WIN32) || defined(_WIN64)
-    IDirect3DDeviceManager9 *m_pD3D9Manager;
+    OpenCLFilterDX9 m_OpenCLFilter;
 #else
-    VADisplay m_pD3D9Manager;
+    OpenCLFilterVA m_OpenCLFilter;
 #endif
+    std::auto_ptr<OpenCLRotator180Context> m_pOpenCLRotator180Context;
+    mfxHDL m_device;
 
     mfxCoreInterface *m_pmfxCore;
 
@@ -214,13 +222,6 @@ protected:
     DataChunk *m_pChunks;
 
     mfxU32 m_NumChunks;
-
-    mfxStatus CheckParam(mfxVideoParam *mfxParam, RotateParam *pRotatePar);
-    mfxStatus CheckInOutFrameInfo(mfxFrameInfo *pIn, mfxFrameInfo *pOut);
-    mfxU32 FindFreeTaskIdx();
-
-    bool m_bIsInOpaque;
-    bool m_bIsOutOpaque;
 };
 
-#endif __SAMPLE_PLUGIN_H__
+#endif // __SAMPLE_PLUGIN_H__
