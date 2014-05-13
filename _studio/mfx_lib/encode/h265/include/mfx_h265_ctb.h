@@ -22,18 +22,19 @@ using namespace MFX_HEVC_PP;
 
 namespace H265Enc {
 
-typedef struct
+struct H265MV
 {
     Ipp16s  mvx;
     Ipp16s  mvy;
-} H265MV;
+};
 
-typedef struct
+template <int MAX_NUM_CAND>
+struct MvPredInfo
 {
-    H265MV mvCand[10];
-    Ipp8s  refIdx[10];
+    H265MV mvCand[2 * MAX_NUM_CAND];
+    Ipp8s  refIdx[2 * MAX_NUM_CAND];
     Ipp32s numCand;
-} MVPInfo;
+};
 
 const H265MV MV_ZERO = {};
 
@@ -63,6 +64,8 @@ public:
     H265MV mvd[2];
     Ipp8s refIdx[2];
     Ipp8u curIdx; // index to interleaving cur/best buffers in ME
+    Ipp8u curRecIdx; // index to interleaving Inter recinstruct buffers
+    Ipp8u bestRecIdx; // index to interleaving Inter recinstruct buffers
 
 
     Ipp8u transformSkipFlag[3];
@@ -132,15 +135,13 @@ public:
 
     //[idxBest][depth][raster CTU]
     __ALIGN32 PixType       m_interPred[2][4][MAX_CU_SIZE * MAX_CU_SIZE];
-    //PixType               (*m_interPredPtr)[MAX_CU_SIZE * MAX_CU_SIZE];
     __ALIGN32 PixType       m_interPredChroma[2][4][MAX_CU_SIZE * MAX_CU_SIZE/2];
-    //PixType               (*m_interPredChromaPtr)[MAX_CU_SIZE * MAX_CU_SIZE/2];
     __ALIGN32 CoeffsType    m_interResidualsY[2][4][MAX_CU_SIZE * MAX_CU_SIZE];
-    //CoeffsType            (*m_interResidualsYPtr)[MAX_CU_SIZE * MAX_CU_SIZE];
     __ALIGN32 CoeffsType    m_interResidualsU[2][4][MAX_CU_SIZE * MAX_CU_SIZE/4];
-    //CoeffsType            (*m_interResidualsUPtr)[MAX_CU_SIZE * MAX_CU_SIZE/4];
     __ALIGN32 CoeffsType    m_interResidualsV[2][4][MAX_CU_SIZE * MAX_CU_SIZE/4];
-    //CoeffsType            (*m_interResidualsVPtr)[MAX_CU_SIZE * MAX_CU_SIZE/4];
+
+    __ALIGN32 PixType       m_interRec[3][5][MAX_CU_SIZE*MAX_CU_SIZE];
+    __ALIGN32 PixType       m_interRecChroma[3][5][MAX_CU_SIZE*MAX_CU_SIZE/2];
 
     __ALIGN32 PixType       m_interRecBest[5][MAX_CU_SIZE*MAX_CU_SIZE];
     __ALIGN32 PixType       m_interRecBestChroma[5][MAX_CU_SIZE*MAX_CU_SIZE / 2];
@@ -160,6 +161,11 @@ public:
     H265CUData*   m_aboveLeft;      ///< pointer of above-left CU
     H265CUData*   m_aboveRight;     ///< pointer of above-right CU
     H265CUData*   m_colocatedCu[2];
+
+    // merge and AMVP candidates shared between function calls for one CU depth, one part mode and all PUs (1, 2, or 4)
+    MvPredInfo<5> m_mergeCand[4];
+    MvPredInfo<2> m_amvpCand[4][2 * MAX_NUM_REF_IDX];
+
     Ipp32s m_aboveAddr;
     Ipp32s m_leftAddr;
     Ipp32s m_aboveLeftAddr;
@@ -191,8 +197,8 @@ public:
     __ALIGN32 PixType m_recChromaSaveCu[6][MAX_CU_SIZE*MAX_CU_SIZE/2];
     __ALIGN32 PixType m_recLumaSaveTu[6][MAX_CU_SIZE*MAX_CU_SIZE];
     __ALIGN32 PixType m_recChromaSaveTu[6][MAX_CU_SIZE*MAX_CU_SIZE/2];
-    __ALIGN32 PixType m_recLumaInter[6][MAX_CU_SIZE*MAX_CU_SIZE];
-    __ALIGN32 PixType m_recChromaInter[6][MAX_CU_SIZE*MAX_CU_SIZE/2];
+    //__ALIGN32 PixType m_recLumaInter[6][MAX_CU_SIZE*MAX_CU_SIZE];
+    //__ALIGN32 PixType m_recChromaInter[6][MAX_CU_SIZE*MAX_CU_SIZE/2];
     __ALIGN32 Ipp16s  m_tmpPredBuf[MAX_CU_SIZE*MAX_CU_SIZE]; // buffer contains the result of 1-ref interpolation between 2 PredInterUni calls
 
     H265BsFake *m_bsf;
@@ -256,21 +262,19 @@ public:
                              Ipp32s neighbourBlockRow, Ipp32s curBlockZScanIdx,
                              bool isNeedTocheckCurLCU);
 
-    bool AddMvpCand(MVPInfo *pInfo, H265CUData *data, Ipp32s blockZScanIdx, Ipp32s refPicListIdx,
+    bool AddMvpCand(MvPredInfo<2> *info, H265CUData *data, Ipp32s blockZScanIdx, Ipp32s refPicListIdx,
                     Ipp32s refIdx, bool order);
 
     void GetMvpCand(Ipp32s topLeftCUBlockZScanIdx, Ipp32s refPicListIdx, Ipp32s refIdx,
-                    Ipp32s partMode, Ipp32s partIdx, Ipp32s cuSize, MVPInfo *pInfo);
+                    Ipp32s partMode, Ipp32s partIdx, Ipp32s cuSize, MvPredInfo<2> *info);
 
-    void GetInterMergeCandidates(Ipp32s topLeftCUBlockZScanIdx, Ipp32s partMode, Ipp32s partIdx,
-                                 Ipp32s cuSize, MVPInfo *mergeInfo);
+    void GetMergeCand(Ipp32s topLeftCUBlockZScanIdx, Ipp32s partMode, Ipp32s partIdx, Ipp32s cuSize,
+                      MvPredInfo<5> *mergeInfo);
 
-    void GetPuMvInfo(Ipp32s blockZScanIdx, Ipp32s partAddr, Ipp32s partMode, Ipp32s curPUidx);
+    void GetAmvpCand(Ipp32s topLeftBlockZScanIdx, Ipp32s partMode, Ipp32s partIdx,
+                     MvPredInfo<2> amvpInfo[2 * MAX_NUM_REF_IDX]);
 
-    void GetPuMvPredictorInfo(Ipp32s blockZScanIdx, Ipp32s partAddr, Ipp32s partMode,
-                              Ipp32s curPUidx, MVPInfo *pInfo, MVPInfo & mergeInfo);
-
-    Ipp8u GetNumPartInter(Ipp32s absPartIdx);
+    void SetupMvPredictionInfo(Ipp32s blockZScanIdx, Ipp32s partMode, Ipp32s curPUidx);
 
     void GetPartOffsetAndSize(Ipp32s idx, Ipp32s partMode, Ipp32s cuSize, Ipp32s &partX,
                               Ipp32s &partY, Ipp32s &partWidth, Ipp32s &partHeight);
@@ -376,10 +380,10 @@ public:
     void EncAndRecChroma(Ipp32u absPartIdx, Ipp32s offset, Ipp8u depth, Ipp8u *nz, CostType *cost);
 
     void EncAndRecLumaTu(Ipp32u absPartIdx, Ipp32s offset, Ipp32s width, Ipp8u *nz, CostType *cost,
-                         Ipp8u cost_pred_flag, IntraPredOpt intra_pred_opt);
+                         Ipp8u cost_pred_flag, IntraPredOpt pred_opt);
 
     void EncAndRecChromaTu(Ipp32u absPartIdx, Ipp32s offset, Ipp32s width, Ipp8u *nz,
-                           CostType *cost);
+                           CostType *cost, IntraPredOpt pred_opt);
 
     void QuantInvTu(Ipp32u absPartIdx, Ipp32s offset, Ipp32s width, Ipp32s isLuma);
 
@@ -426,24 +430,19 @@ public:
     bool CheckGpuIntraCost(Ipp32s leftPelX, Ipp32s topPelY, Ipp32s depth) const;
 #endif // MFX_ENABLE_CM
 
-    Ipp32s GetMvPredictors(H265MV *mvPred, const H265MEInfo* meInfo, const MVPInfo *predInfo,
-                           const MVPInfo *mergeInfo, H265MV mvLast, Ipp32s meDir,
-                           Ipp32s refIdx) const;
+    void MeIntPel(const H265MEInfo *meInfo, const MvPredInfo<2> *predInfo, Ipp32s list,
+                  Ipp32s refIdx, H265MV *mv, Ipp32s *cost, Ipp32s *mvCost) const;
 
-    void MeIntPel(const H265MEInfo *meInfo, const MVPInfo *predInfo, Ipp32s list, Ipp32s refIdx,
-                  H265MV *mv, Ipp32s *cost, Ipp32s *mvCost) const;
-
-    void MeIntPelFullSearch(const H265MEInfo *meInfo, const MVPInfo *predInfo, Ipp32s list,
+    void MeIntPelFullSearch(const H265MEInfo *meInfo, const MvPredInfo<2> *predInfo, Ipp32s list,
                             Ipp32s refIdx, H265MV *mv, Ipp32s *cost, Ipp32s *mvCost) const;
 
-    void MeIntPelLog(const H265MEInfo *meInfo, const MVPInfo *predInfo, Ipp32s list, Ipp32s refIdx,
-                     H265MV *mv, Ipp32s *cost, Ipp32s *mvCost) const;
+    void MeIntPelLog(const H265MEInfo *meInfo, const MvPredInfo<2> *predInfo, Ipp32s list,
+                     Ipp32s refIdx, H265MV *mv, Ipp32s *cost, Ipp32s *mvCost) const;
 
-    void MeSubPel(const H265MEInfo *meInfo, const MVPInfo *predInfo, Ipp32s meDir, Ipp32s refIdx,
-                  H265MV *mv, Ipp32s *cost, Ipp32s *mvCost) const;
+    void MeSubPel(const H265MEInfo *meInfo, const MvPredInfo<2> *predInfo, Ipp32s meDir,
+                  Ipp32s refIdx, H265MV *mv, Ipp32s *cost, Ipp32s *mvCost) const;
 
-    CostType CuCost(Ipp32u absPartIdx, Ipp8u depth, const H265MEInfo* bestInfo,
-                    Ipp32s fastPuDecision);
+    CostType CuCost(Ipp32u absPartIdx, Ipp8u depth, const H265MEInfo* bestInfo);
 
     void TuGetSplitInter(Ipp32u absPartIdx, Ipp32s offset, Ipp8u trIdx, Ipp8u trIdxMax, Ipp8u nz[3],
                          CostType *cost, Ipp8u cbf[256][3]);
@@ -461,7 +460,7 @@ public:
     Ipp32s MatchingMetricBipredPu(const PixType *src, const H265MEInfo *meInfo, const Ipp8s refIdx[2],
                                   const H265MV mvs[2], Ipp32s useHadamard);
 
-    Ipp32s MvCost1RefLog(H265MV mv, Ipp8s refIdx, const MVPInfo *predInfo, Ipp32s rlist) const;
+    Ipp32s MvCost1RefLog(H265MV mv, Ipp8s refIdx, const MvPredInfo<2> *predInfo, Ipp32s rlist) const;
 
     void InitCu(H265VideoParam *_par, H265CUData *_data, H265CUData *_dataTemp, Ipp32s cuAddr,
                 PixType *_y, PixType *_uv, Ipp32s _pitch, H265Frame *currFrame, H265BsFake *_bsf,

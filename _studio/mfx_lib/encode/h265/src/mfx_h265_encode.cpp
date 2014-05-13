@@ -104,7 +104,7 @@ mfxExtBuffer HEVC_HEADER = { MFX_EXTBUFF_HEVCENC, sizeof(mfxExtCodingOptionHEVC)
     tab_IntraAngModes[x],\
     tab_EnableCm[x],\
     tab_BPyramid[x],\
-    tab_FastPUDecision[x],\
+    tab_reserved[x],\
     tab_HadamardMe[x],\
     tab_TMVP[x],\
     tab_Deblocking[x],\
@@ -163,7 +163,7 @@ TU_OPT(CUSplit,                        1,   2,   2,   2,   2,   2,   2)
 TU_OPT(IntraAngModes,                  1,   1,   1,   1,   2,   2,   2)
 TU_OPT(EnableCm,                     OFF, OFF, OFF, OFF, OFF, OFF, OFF)
 TU_OPT(BPyramid,                      ON,  ON,  ON,  ON, OFF, OFF, OFF)
-TU_OPT(FastPUDecision,               OFF, OFF, OFF, OFF, OFF, OFF, OFF)
+TU_OPT(reserved,                       0,   0,   0,   0,   0,   0,   0)
 TU_OPT(HadamardMe,                     2,   1,   1,   1,   1,   1,   1)
 TU_OPT(TMVP,                          ON,  ON,  ON, OFF, OFF, OFF, OFF)
 TU_OPT(Deblocking,                    ON,  ON,  ON,  ON,  ON,  ON,  ON)
@@ -199,7 +199,7 @@ TU_OPT(QuadtreeTUMaxDepthInter,        4,   3,   2,   2,   3,   1,   1)
 TU_OPT(AnalyzeChroma,                 ON,  ON,  ON,  ON,  ON,  ON,  ON)
 TU_OPT(TUSplitIntra,                   1,   1,   3,   3,   3,   3,   3)
 TU_OPT(CUSplit,                        2,   2,   2,   2,   2,   2,   2) //CUSplit = 1 gives 2-4x slowdown in speed with less than 1% bdrate
-TU_OPT(FastPUDecision,               OFF, OFF, OFF, OFF, OFF, OFF, OFF)
+TU_OPT(reserved,                       0,   0,   0,   0,   0,   0,   0)
 TU_OPT(CostChroma,                    ON,  ON,  ON,  ON,  ON, OFF, OFF)
 TU_OPT(FastSkip,                     OFF, OFF, OFF, OFF, OFF, OFF,  ON)
 TU_OPT(PartModes,                      3,   2,   2,   1,   1,   1,   1) //TU2 AMP?
@@ -803,8 +803,6 @@ mfxStatus MFXVideoENCODEH265::Init(mfxVideoParam* par_in)
             m_mfxHEVCOpts.TMVP = opts_tu->TMVP;
         if (m_mfxHEVCOpts.EnableCm == 0)
             m_mfxHEVCOpts.EnableCm = opts_tu->EnableCm;
-        if (m_mfxHEVCOpts.FastPUDecision == 0)
-            m_mfxHEVCOpts.FastPUDecision = opts_tu->FastPUDecision;
         if (m_mfxHEVCOpts.Deblocking == 0)
             m_mfxHEVCOpts.Deblocking = opts_tu->Deblocking;
         if (m_mfxHEVCOpts.RDOQuantChroma == 0)
@@ -1615,7 +1613,6 @@ mfxStatus MFXVideoENCODEH265::Query(VideoCORE *core, mfxVideoParam *par_in, mfxV
             opts_out->HadamardMe = opts_in->HadamardMe;
             opts_out->TMVP = opts_in->TMVP;
             opts_out->EnableCm = opts_in->EnableCm;
-            opts_out->FastPUDecision = opts_in->FastPUDecision;
             opts_out->SaoOpt = opts_in->SaoOpt;
             opts_out->PatternIntPel = opts_in->PatternIntPel;
             opts_out->PatternSubPel = opts_in->PatternSubPel;

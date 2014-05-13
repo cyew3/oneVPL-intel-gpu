@@ -13,6 +13,7 @@
 #include "mfx_h265_frame.h"
 #include "mfx_h265_enc.h"
 #include "vm_file.h"
+#include "ippi.h"
 #include "ippvc.h"
 
 namespace H265Enc {
@@ -64,45 +65,50 @@ mfxStatus H265Frame::Create(H265VideoParam *par)
 
 mfxStatus H265Frame::CopyFrame(mfxFrameSurface1 *surface)
 {
-    Ipp32s i;
-    PixType *y0 = y;
-    PixType *uv0 = uv;
-    mfxU8 *ysrc = surface->Data.Y;
-    mfxU8 *uvsrc = surface->Data.UV;
-    Ipp32s input_width =  surface->Info.Width;
-    Ipp32s input_height = surface->Info.Height;
-    if (input_width > width || input_height > height) VM_ASSERT(0);
+    IppiSize roi = { width, height };
+    ippiCopy_8u_C1R(surface->Data.Y, surface->Data.Pitch, y, pitch_luma, roi);
+    roi.height >>= 1;
+    ippiCopy_8u_C1R(surface->Data.UV, surface->Data.Pitch, uv, pitch_luma, roi);
 
-    memset(y0 - (pitch_luma + 1) * padding, 128, (pitch_luma + 1) * padding);
+    //Ipp32s i;
+    //PixType *y0 = y;
+    //PixType *uv0 = uv;
+    //mfxU8 *ysrc = surface->Data.Y;
+    //mfxU8 *uvsrc = surface->Data.UV;
+    //Ipp32s input_width =  surface->Info.Width;
+    //Ipp32s input_height = surface->Info.Height;
+    //if (input_width > width || input_height > height) VM_ASSERT(0);
 
-    for (i = 0; i < input_height; i++) {
-        small_memcpy(y0, ysrc, input_width);
-        memset(y0 + input_width, 128, padding * 2 + width - input_width);
-        y0 += pitch_luma;
-        ysrc += surface->Data.Pitch;
-    }
-    for (i = input_height; i < height; i++) {
-        memset(y0, 128, padding * 2 + width);
-        y0 += pitch_luma;
-    }
+    //memset(y0 - (pitch_luma + 1) * padding, 128, (pitch_luma + 1) * padding);
 
-    memset(y0, 128, (pitch_luma - 1) * padding);
+    //for (i = 0; i < input_height; i++) {
+    //    small_memcpy(y0, ysrc, input_width);
+    //    memset(y0 + input_width, 128, padding * 2 + width - input_width);
+    //    y0 += pitch_luma;
+    //    ysrc += surface->Data.Pitch;
+    //}
+    //for (i = input_height; i < height; i++) {
+    //    memset(y0, 128, padding * 2 + width);
+    //    y0 += pitch_luma;
+    //}
 
-    memset(uv0 - ((pitch_luma * padding >> 1) + padding), 128,
-        (pitch_luma * padding >> 1) + padding);
+    //memset(y0, 128, (pitch_luma - 1) * padding);
 
-    for (i = 0; i < input_height >> 1; i++) {
-        small_memcpy(uv0, uvsrc, input_width);
-        memset(uv0 + input_width, 128, padding * 2 + width - input_width);
-        uv0 += pitch_luma;
-        uvsrc += surface->Data.Pitch;
-    }
-    for (i = input_height >> 1; i < height >> 1; i++) {
-        memset(uv0, 128, padding * 2 + width);
-        uv0 += pitch_luma;
-    }
+    //memset(uv0 - ((pitch_luma * padding >> 1) + padding), 128,
+    //    (pitch_luma * padding >> 1) + padding);
 
-    memset(uv0, 128, (pitch_luma * padding >> 1) - padding);
+    //for (i = 0; i < input_height >> 1; i++) {
+    //    small_memcpy(uv0, uvsrc, input_width);
+    //    memset(uv0 + input_width, 128, padding * 2 + width - input_width);
+    //    uv0 += pitch_luma;
+    //    uvsrc += surface->Data.Pitch;
+    //}
+    //for (i = input_height >> 1; i < height >> 1; i++) {
+    //    memset(uv0, 128, padding * 2 + width);
+    //    uv0 += pitch_luma;
+    //}
+
+    //memset(uv0, 128, (pitch_luma * padding >> 1) - padding);
 
     return MFX_ERR_NONE;
 }

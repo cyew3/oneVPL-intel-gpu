@@ -115,7 +115,6 @@ extern int DEBUG_CABAC_PRINT;
 #define AHG6_ALF_OPTION2                 1  ///< I0157: AHG6 ALF baseline Option 2 RA- Variant 2
 #define PRED_QP_DERIVATION               1  ///< I0219: Changing cu_qp_delta parsing to enable CU-level processing
 #define ADAPTIVE_QP_SELECTION            1      ///< G382: Adaptive reconstruction levels, non-normative part for adaptive QP selection
-#define BIPRED_RESTRICT_SMALL_PU         1  ///< I0297: bi-prediction restriction by 4x8/8x4 PU
 #define FIXED_SBH_THRESHOLD              1  ///< I0156: use fixed controlling threshold for Multiple Sign Bit Hiding (SBH)
 #define SBH_THRESHOLD                    4  ///< I0156: value of the fixed SBH controlling threshold
 #define LAST_CTX_DERIVATION              1  //< I0331: table removal of LAST context derivation
@@ -239,6 +238,7 @@ enum IntraPredOpt
     INTRA_PRED_CALC,
     INTRA_PRED_IN_REC,
     INTRA_PRED_IN_BUF,
+    INTER_PRED_IN_BUF,
 };
 
 enum EnumPicClass

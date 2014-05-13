@@ -27,6 +27,8 @@ extern const Ipp16u h265_sig_scan_CG32x32[64];
 extern const Ipp16u h265_sig_last_scan_8x8[ 4 ][ 4 ];
 extern const Ipp8u h265_QPtoChromaQP[58];
 extern const Ipp32s h265_filteredModes[];
+extern const Ipp32s h265_numPu[];
+
 
 } // namespace
 

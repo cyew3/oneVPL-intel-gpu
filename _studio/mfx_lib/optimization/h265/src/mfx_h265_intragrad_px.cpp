@@ -128,7 +128,7 @@ static void BuildHistogram2(const mfxU8 *frame, mfxI32 blockX, mfxI32 blockY, mf
 
 void MAKE_NAME(h265_AnalyzeGradient_8u)(const mfxU8 *inData, mfxU16 *outData4, mfxU16 *outData8, mfxI32 width, mfxI32 height, mfxI32 pitch)
 {
-    mfxU32 blockSize;
+    mfxI32 blockSize;
 
     blockSize = 4;
     for (mfxI32 y = 0; y < height / blockSize; y++, outData4 += (width / blockSize) * 40) {
