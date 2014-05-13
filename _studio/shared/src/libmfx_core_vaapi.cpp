@@ -992,7 +992,7 @@ VAAPIVideoCORE::DoFastCopyExtended(
 
                 attribute_tpi.size = pDst->Info.Width * pDst->Info.Height * 3 / 2;
                 attribute_tpi.luma_stride = pDst->Info.Width;
-                attribute_tpi.buffers = (unsigned int*) pDst->Data.Y;
+                attribute_tpi.buffers = PointerProxy(pDst->Data.Y);
                 attribute_tpi.tiling = 0;
                 attribute_tpi.pixel_format = VA_FOURCC_NV12;
                 attribute_tpi.type = VAExternalMemoryUserPointer;

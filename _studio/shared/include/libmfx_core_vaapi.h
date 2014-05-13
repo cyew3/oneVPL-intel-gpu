@@ -147,6 +147,15 @@ public: // aya: FIXME: private???
     std::auto_ptr<VAAPIAdapter>            m_pAdapter;
 };
 
+class PointerProxy
+{
+    public:
+        PointerProxy(void* p) { mp = p; }
+        template<class T> operator T*() { return reinterpret_cast<T*>(mp); }
+    private:
+        void* mp;
+};
+
 bool IsSupported__VAEncMiscParameterPrivate(void);
 bool IsSupported__VAHDCPEncryptionParameterBuffer(void);
 
