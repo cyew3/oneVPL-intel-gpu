@@ -95,6 +95,9 @@
     <ClCompile Include="scheduler\src\mfx_scheduler_core_thread.cpp">
       <Filter>scheduler</Filter>
     </ClCompile>
+    <ClCompile Include="..\shared\src\mfx_static_assert_structs.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\shared\include\fast_copy.h">

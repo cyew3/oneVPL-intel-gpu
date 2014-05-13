@@ -391,6 +391,7 @@
     <ClCompile Include="..\shared\src\libmfx_core_hw.cpp" />
     <ClCompile Include="..\shared\src\libmfx_core_vaapi.cpp" />
     <ClCompile Include="..\shared\src\libmfx_core_vdaapi.cpp" />
+    <ClCompile Include="..\shared\src\mfx_static_assert_structs.cpp" />
     <ClCompile Include="shared\src\libmfxsw.cpp" />
     <ClCompile Include="shared\src\libmfxsw_async.cpp" />
     <ClCompile Include="shared\src\libmfxsw_brc.cpp" />
