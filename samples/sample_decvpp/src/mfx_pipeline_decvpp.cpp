@@ -899,7 +899,7 @@ mfxStatus CDecodingPipeline::DeliverLoop(void)
     return res;
 }
 
-unsigned int MSDK_THREAD_CALLCONVENTION CDecodingPipeline::DeliverThreadFunc(void* ctx)
+unsigned int MFX_STDCALL CDecodingPipeline::DeliverThreadFunc(void* ctx)
 {
     CDecodingPipeline* pipeline = (CDecodingPipeline*)ctx;
 

@@ -57,35 +57,20 @@ void PrintHelp( const std::basic_string<msdk_char> & strAppName
     msdk_printf(MSDK_STRING("\n"));
 }
 
-//convert from string to specific type, like double, int, etc
-template <class T>
-void lexical_cast(const std::basic_string<msdk_char>& from, T &value)
-{
-    std::basic_stringstream<msdk_char> sstream;
-
-    sstream.str(from);
-    if ((sstream >> value).fail() || !sstream.eof())
+template<typename T>
+    inline void read_argument(const msdk_string& option, const msdk_string& argument, T* value)
     {
-        msdk_char msg[1024];
-#ifdef UNICODE
-        msdk_sprintf(msg, MSDK_STRING("Cannot cast %s to %S\n"), from.c_str(), typeid(value).name());
-#else
-        msdk_sprintf(msg, MSDK_STRING("Cannot cast %s to %s\n"), from.c_str(), typeid(value).name());
-#endif
-        throw std::basic_string<msdk_char>(msg);
+        if (MFX_ERR_NONE != msdk_opt_read(argument.c_str(), value)) {
+            throw msdk_string(MSDK_STRING("Failed to read argument for the option ") + option);
+        }
     }
-}
 
-int get_index(const std::basic_string<msdk_char>& from, int prefix_len )
+mfxI32 get_index(const std::basic_string<msdk_char>& from, int prefix_len )
 {
-    int idx = 0;
+    mfxI32 idx = 0;
     if (from.length() != (size_t)prefix_len)
     {
-        try
-        {
-            lexical_cast(from.substr(prefix_len), idx);
-        }
-        catch (...)
+        if (MFX_ERR_NONE != msdk_opt_read(from.substr(prefix_len), &idx))
         {
             idx = -1;
         }
@@ -111,7 +96,8 @@ void ParseInputString(msdk_char** strInput, int nArgNum, VideoConfParams& params
     // parse command line parameters
     for (mfxU8 i = 0; i < nArgNum; i++)
     {
-        int idx  = get_index(strInput[i], 2);
+        msdk_char* arg = strInput[i];
+        mfxI32 idx = get_index(strInput[i], 2);
         if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-hw")))
         {
             params.bUseHWLib = true;
@@ -125,22 +111,22 @@ void ParseInputString(msdk_char** strInput, int nArgNum, VideoConfParams& params
         else if (0 == msdk_strncmp(strInput[i], MSDK_STRING("-w"), 2) && -1 != idx)
         {
             CHECK_OPTION_ARGS(1);
-            lexical_cast(strInput[++i], params.sources[idx].nWidth);
+            read_argument(arg, strInput[++i], &params.sources[idx].nWidth);
         }
         else if (0 == msdk_strncmp(strInput[i], MSDK_STRING("-h"), 2) && -1 != idx)
         {
             CHECK_OPTION_ARGS(1);
-            lexical_cast(strInput[++i], params.sources[idx].nHeight);
+            read_argument(arg, strInput[++i], &params.sources[idx].nHeight);
         }
         else if (0 == msdk_strncmp(strInput[i], MSDK_STRING("-f"), 2) && -1 != idx)
         {
             CHECK_OPTION_ARGS(1);
-            lexical_cast(strInput[++i], params.sources[idx].dFrameRate);
+            read_argument(arg, strInput[++i], &params.sources[idx].dFrameRate);
         }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-b")))
         {
             CHECK_OPTION_ARGS(1);
-            lexical_cast(strInput[++i], params.nTargetKbps);
+            read_argument(arg, strInput[++i], &params.nTargetKbps);
         }
         else if (0 == msdk_strncmp(strInput[i], MSDK_STRING("-i"), 2) && -1 != idx)
         {
@@ -149,8 +135,8 @@ void ParseInputString(msdk_char** strInput, int nArgNum, VideoConfParams& params
             if (idx != 0)
             {
                 CHECK_OPTION_ARGS(2);
-                int nFrame = 0;
-                lexical_cast(strInput[++i], nFrame);
+                mfxU32 nFrame = 0;
+                read_argument(arg, strInput[++i], &nFrame);
                 params.pActionProc->RegisterAction(nFrame, new SetSourceAction(idx));
             }
             params.sources[idx].srcFile = strInput[++i];
@@ -170,9 +156,9 @@ void ParseInputString(msdk_char** strInput, int nArgNum, VideoConfParams& params
             CHECK_OPTION_ARGS(2);
 
             double dBitrateScale = 0;
-            int nFrameOrder = 0;
-            lexical_cast(strInput[++i], nFrameOrder);
-            lexical_cast(strInput[++i], dBitrateScale);
+            mfxU32 nFrameOrder = 0;
+            read_argument(arg, strInput[++i], &nFrameOrder);
+            read_argument(arg, strInput[++i], &dBitrateScale);
 
             params.pActionProc->RegisterAction(nFrameOrder, new ChangeBitrateAction(dBitrateScale));
         }
@@ -181,9 +167,9 @@ void ParseInputString(msdk_char** strInput, int nArgNum, VideoConfParams& params
             CHECK_OPTION_ARGS(2);
 
             mfxU16 nLen = 0;
-            int nFrameOrder = 0;
-            lexical_cast(strInput[++i], nFrameOrder);
-            lexical_cast(strInput[++i], nLen);
+            mfxU32 nFrameOrder = 0;
+            read_argument(arg, strInput[++i], &nFrameOrder);
+            read_argument(arg, strInput[++i], &nLen);
 
             params.pActionProc->RegisterAction(nFrameOrder, new SetL0SizeAction(nLen));
         }
@@ -199,10 +185,10 @@ void ParseInputString(msdk_char** strInput, int nArgNum, VideoConfParams& params
         {
             CHECK_OPTION_ARGS(2);
 
-            int nFrameOrder = 0;
-            int nFrameBroken = 0;
-            lexical_cast(strInput[++i], nFrameOrder);
-            lexical_cast(strInput[++i], nFrameBroken);
+            mfxU32 nFrameOrder = 0;
+            mfxU32 nFrameBroken = 0;
+            read_argument(arg, strInput[++i], &nFrameOrder);
+            read_argument(arg, strInput[++i], &nFrameBroken);
             if (nFrameBroken >= nFrameOrder)
             {
                 std::basic_stringstream<msdk_char> stream;
@@ -216,7 +202,7 @@ void ParseInputString(msdk_char** strInput, int nArgNum, VideoConfParams& params
             //putting frame into rejected list does make this frame permanently rejected
 
             //if feedback is delayed frames predicted from broken can be already encoded, need to also remove all of them from references
-            for (int j = nFrameBroken; j < nFrameOrder; j++)
+            for (mfxU32 j = nFrameBroken; j < nFrameOrder; j++)
             {
                 params.pActionProc->RegisterAction(nFrameOrder, new PutFrameIntoRefListAction(REFLIST_REJECTED, j, false));
             }
@@ -225,8 +211,8 @@ void ParseInputString(msdk_char** strInput, int nArgNum, VideoConfParams& params
         {
             CHECK_OPTION_ARGS(1);
 
-            int nFrameOrder = 0;
-            lexical_cast(strInput[++i], nFrameOrder);
+            mfxU32 nFrameOrder = 0;
+            read_argument(arg, strInput[++i], &nFrameOrder);
 
             params.pActionProc->RegisterAction(nFrameOrder, new KeyFrameInsertAction());
         }
@@ -235,7 +221,7 @@ void ParseInputString(msdk_char** strInput, int nArgNum, VideoConfParams& params
             CHECK_OPTION_ARGS(1);
 
             mfxU32 nLTFrameOrder = 0;
-            lexical_cast(strInput[++i], nLTFrameOrder);
+            read_argument(arg, strInput[++i], &nLTFrameOrder);
 
             //firstly frame should be added to long term list once
             //NOTE: to remove this longterm, you need to put it once into rejected reflist
@@ -248,7 +234,7 @@ void ParseInputString(msdk_char** strInput, int nArgNum, VideoConfParams& params
         {
             CHECK_OPTION_ARGS(1);
             params.nTemporalScalabilityBase = 2;
-            lexical_cast(strInput[++i], params.nTemporalScalabilityLayers);
+            read_argument(arg, strInput[++i], &params.nTemporalScalabilityLayers);
             if (params.nTemporalScalabilityLayers > 4)
             {
                 throw std::basic_string<msdk_char>(MSDK_STRING("in -ts option maximum layers value is 4"));
@@ -260,14 +246,14 @@ void ParseInputString(msdk_char** strInput, int nArgNum, VideoConfParams& params
         {
             CHECK_OPTION_ARGS(2);
             params.nRefrType = 1;
-            lexical_cast(strInput[++i], params.nCycleSize);
+            read_argument(arg, strInput[++i], &params.nCycleSize);
             if (params.nCycleSize < 2 || params.nCycleSize >= VideoConfPipeline::gopLength)
             {
                 std::basic_stringstream<msdk_char> stream;
                 stream<<MSDK_STRING("in -ir option cycle_size should be more than 2 and less than ")<<VideoConfPipeline::gopLength;
                 throw stream.str();
             }
-            lexical_cast(strInput[++i], params.nQPDelta);
+            read_argument(arg, strInput[++i], &params.nQPDelta);
             if (params.nQPDelta < -51 || params.nQPDelta > 51)
             {
                 throw std::basic_string<msdk_char>(MSDK_STRING("in -ir option QP difference is signed value in [-51, 51] range"));
@@ -283,7 +269,7 @@ void ParseInputString(msdk_char** strInput, int nArgNum, VideoConfParams& params
 
 void CheckInitParams(VideoConfParams& params)
 {
-    std::map<int, VideoConfParams::SourceInfo> :: iterator i;
+    std::map<mfxU32, VideoConfParams::SourceInfo> :: iterator i;
     std::basic_stringstream<msdk_char> error;
     if (params.sources.empty())
     {
@@ -463,11 +449,7 @@ int main(int argc, char *argv[])
     }
     catch (std::exception &ex)
     {
-#ifdef UNICODE
-        wprintf(L"\nstd::exception caught: %S\n", ex.what());
-#else
-        printf("\nstd::exception caught: %s\n", ex.what());
-#endif
+        msdk_cout << "std::exception caught: " << ex.what() << '\n';
     }
     catch (...)
     {

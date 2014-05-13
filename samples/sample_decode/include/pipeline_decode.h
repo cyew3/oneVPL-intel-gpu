@@ -163,7 +163,7 @@ protected: // functions
 
     virtual mfxStatus DeliverLoop(void);
 
-    static unsigned int MSDK_THREAD_CALLCONVENTION DeliverThreadFunc(void* ctx);
+    static unsigned int MFX_STDCALL DeliverThreadFunc(void* ctx);
 
 
 protected: // variables

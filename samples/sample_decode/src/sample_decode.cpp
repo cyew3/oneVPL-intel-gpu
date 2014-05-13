@@ -74,30 +74,8 @@ void PrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("  %s h265 -i in.bit -o out.yuv -p 15dd936825ad475ea34e35f3f54217a6\n"), strAppName);
 }
 
-#define GET_OPTION_POINTER(PTR)        \
-{                                      \
-    if (2 == msdk_strlen(strInput[i]))     \
-    {                                  \
-        i++;                           \
-        if (strInput[i][0] == MSDK_CHAR('-')) \
-        {                              \
-            i = i - 1;                 \
-        }                              \
-        else                           \
-        {                              \
-            PTR = strInput[i];         \
-        }                              \
-    }                                  \
-    else                               \
-    {                                  \
-        PTR = strInput[i] + 2;         \
-    }                                  \
-}
-
 mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* pParams)
 {
-    msdk_char* strArgument = MSDK_STRING("");
-
     if (1 == nArgNum)
     {
         PrintHelp(strInput[0], NULL);
@@ -267,25 +245,35 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
             switch (strInput[i][1])
             {
             case MSDK_CHAR('p'):
-                GET_OPTION_POINTER(strArgument);
-                if (MFX_ERR_NONE == ConvertStringToGuid(strArgument, pParams->pluginParams.pluginGuid))
-                {
-                    pParams->pluginParams.type = MFX_PLUGINLOAD_TYPE_GUID;
+                if (++i < nArgNum) {
+                    if (MFX_ERR_NONE == ConvertStringToGuid(strInput[i], pParams->pluginParams.pluginGuid)) {
+                        pParams->pluginParams.type = MFX_PLUGINLOAD_TYPE_GUID;
+                    }
+                    else {
+                        msdk_strcopy(pParams->pluginParams.strPluginPath, strInput[i]);
+                        pParams->pluginParams.type = MFX_PLUGINLOAD_TYPE_FILE;
+                    }
                 }
-                else
-                {
-                    msdk_strcopy(pParams->pluginParams.strPluginPath, strArgument);
-                    pParams->pluginParams.type = MFX_PLUGINLOAD_TYPE_FILE;
+                else {
+                    msdk_printf(MSDK_STRING("error: option '-p' expects an argument\n"));
                 }
                 break;
             case MSDK_CHAR('i'):
-                GET_OPTION_POINTER(strArgument);
-                msdk_strcopy(pParams->strSrcFile, strArgument);
+                if (++i < nArgNum) {
+                    msdk_strcopy(pParams->strSrcFile, strInput[i]);
+                }
+                else {
+                    msdk_printf(MSDK_STRING("error: option '-i' expects an argument\n"));
+                }
                 break;
             case MSDK_CHAR('o'):
-                GET_OPTION_POINTER(strArgument);
-                pParams->mode = MODE_FILE_DUMP;
-                msdk_strcopy(pParams->strDstFile, strArgument);
+                if (++i < nArgNum) {
+                    pParams->mode = MODE_FILE_DUMP;
+                    msdk_strcopy(pParams->strDstFile, strInput[i]);
+                }
+                else {
+                    msdk_printf(MSDK_STRING("error: option '-o' expects an argument\n"));
+                }
                 break;
             case MSDK_CHAR('?'):
                 PrintHelp(strInput[0], NULL);

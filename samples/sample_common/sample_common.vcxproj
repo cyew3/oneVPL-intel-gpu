@@ -190,6 +190,7 @@
     <ClCompile Include="src\vm\atomic.cpp" />
     <ClCompile Include="src\vm\shared_object.cpp" />
     <ClCompile Include="src\vm\thread.cpp" />
+    <ClCompile Include="src\vm\thread_windows.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

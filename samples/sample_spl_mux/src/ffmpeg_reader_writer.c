@@ -13,7 +13,7 @@ Copyright(c) 2013-2014 Intel Corporation. All Rights Reserved.
 #include "ffmpeg_reader_writer.h"
 #include "mfxsplmux.h"
 
-mfxI32 ffmpeg_read(void *p, mfxU8 *data, mfxI32 size)
+int ffmpeg_read(void *p, uint8_t *data, int size)
 {
     mfxDataIO* pRd = (mfxDataIO*)p;
     mfxBitstream bs;
@@ -28,7 +28,7 @@ mfxI32 ffmpeg_read(void *p, mfxU8 *data, mfxI32 size)
     return bs.DataLength;
 }
 
-mfxI32 ffmpeg_write(void *p, mfxU8 *data, mfxI32 size)
+int ffmpeg_write(void *p, uint8_t *data, int size)
 {
     mfxDataIO* pRd = (mfxDataIO*)p;
     mfxBitstream bs;
@@ -43,10 +43,10 @@ mfxI32 ffmpeg_write(void *p, mfxU8 *data, mfxI32 size)
     return bs.DataLength;
 }
 
-mfxI64 ffmpeg_seek(void *p, mfxI64 offset, mfxI32 whence)
+int64_t ffmpeg_seek(void *p, int64_t offset, int whence)
 {
     mfxSeekOrigin origin;
-    mfxI64 ret;
+    int64_t ret;
     mfxDataIO* pRd = (mfxDataIO*)p;
     switch(whence)
     {

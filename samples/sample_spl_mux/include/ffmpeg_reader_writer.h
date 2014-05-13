@@ -9,11 +9,13 @@
 #ifndef __FFMPEG_READER_WRITER_H__
 #define __FFMPEG_READER_WRITER_H__
 
+#include <stdint.h>
+
 #include "mfxdefs.h"
 #include "mfxsmstructures.h"
 
-mfxI32 ffmpeg_read(void *p, mfxU8 *data, mfxI32 size);
-mfxI32 ffmpeg_write(void *p, mfxU8 *data, mfxI32 size);
-mfxI64 ffmpeg_seek(void *p, mfxI64 offset, mfxI32 whence);
+int ffmpeg_read(void *p, uint8_t *data, int size);
+int ffmpeg_write(void *p, uint8_t *data, int size);
+int64_t ffmpeg_seek(void *p, int64_t offset, int whence);
 
 #endif // __FFMPEG_READER_WRITER_H__

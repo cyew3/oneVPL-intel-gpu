@@ -630,7 +630,13 @@ bool msdk_trace_is_printable(int);
 msdk_ostream & operator <<(msdk_ostream & os, MsdkTraceLevel tt);
 
 template<typename T>
-    mfxStatus msdk_opt_read(msdk_char* string, T* value);
+    mfxStatus msdk_opt_read(const msdk_char* string, T* value);
+
+template<typename T>
+    inline mfxStatus msdk_opt_read(const msdk_string& string, T* value)
+    {
+        return msdk_opt_read(string.c_str(), value);
+    }
 
 mfxStatus StrFormatToCodecFormatFourCC(msdk_char* strInput, mfxU32 &codecFormat);
 mfxStatus ConvertStringToGuid(const msdk_string & sGuid, mfxPluginUID &mfxGuid);

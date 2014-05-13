@@ -279,7 +279,7 @@ mfxStatus   VideoConfPipeline::AddFrameToRefList(RefListType refList, mfxU32 nFr
 
         m_ReferenceLists[refList].elements[m_ReferenceLists[refList].nSize++].FrameOrder = nFrameOrder;
 
-        msdk_printf(MSDK_STRING("Frame %4u : Inserted %4u >>> %s reflist (%2u/%2u)\n")
+        msdk_printf(MSDK_STRING("Frame %4u : Inserted %4u >>> %s reflist (%2u/%2lu)\n")
             , m_nFramesProcessed
             , nFrameOrder
             , m_ReferenceLists[refList].name.c_str()
@@ -536,9 +536,9 @@ void VideoConfPipeline::InitIntraRefresh()
 {
     if (m_initParams.nRefrType)
     {
-        m_extCO2.IntRefType = (mfxU16)(m_initParams.nRefrType);
-        m_extCO2.IntRefCycleSize = (mfxU16) (m_initParams.nCycleSize);
-        m_extCO2.IntRefQPDelta = (mfxI16) (m_initParams.nQPDelta);
+        m_extCO2.IntRefType = m_initParams.nRefrType;
+        m_extCO2.IntRefCycleSize = m_initParams.nCycleSize;
+        m_extCO2.IntRefQPDelta = m_initParams.nQPDelta;
 
         m_extBuffers.push_back(reinterpret_cast<mfxExtBuffer*>(&m_extCO2));
 

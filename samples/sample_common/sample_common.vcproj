@@ -460,6 +460,10 @@
 					>
 				</File>
 				<File
+					RelativePath=".\src\vm\thread_windows.cpp"
+					>
+				</File>
+				<File
 					RelativePath=".\src\vm\time.cpp"
 					>
 				</File>

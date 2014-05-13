@@ -23,7 +23,7 @@ Copyright(c) 2010-2014 Intel Corporation. All Rights Reserved.
 
 using namespace TranscodingSample;
 
-mfxU32 MSDK_THREAD_CALLCONVENTION TranscodingSample::ThranscodeRoutine(void   *pObj)
+mfxU32 MFX_STDCALL TranscodingSample::ThranscodeRoutine(void   *pObj)
 {
     mfxU64 start = TranscodingSample::GetTick();
     ThreadTranscodeContext *pContext = (ThreadTranscodeContext*)pObj;
@@ -63,40 +63,21 @@ mfxU32 MSDK_THREAD_CALLCONVENTION TranscodingSample::ThranscodeRoutine(void   *p
 } // mfxU32 __stdcall ThranscodeRoutine(void   *pObj)
 
 // set structure to define values
-sInputParams::sInputParams():
-    bIsJoin(false),
-    priority(MFX_PRIORITY_NORMAL),
-    libType(MFX_IMPL_SOFTWARE),
-    bIsPerf(false),
-    EncodeId(0),
-    DecodeId(0),
-    nTargetUsage(),
-    dFrameRate(0),
-    nBitRate(0),
-    nQuality(0),
-    nDstWidth(0),
-    nDstHeight(0),
-    bEnableDeinterlacing(false),
-    nAsyncDepth(0),
-    eMode(Native),
-    FrameNumberPreference(0),
-    MaxFrameNumber(0xFFFFFFFF),
-    nSlices(0),
-    bIsMVC(false),
-    numViews(0),
-    nRotationAngle(0),
-    nTimeout(0),
-    bLABRC(false),
-    nLADepth(0),
-    bEnableExtLA(false)
+sInputParams::sInputParams()
 {
+    memset(static_cast<__sInputParams*>(this), 0, sizeof(__sInputParams));
 
+    priority = MFX_PRIORITY_NORMAL;
+    libType = MFX_IMPL_SOFTWARE;
+    MaxFrameNumber = 0xFFFFFFFF;
 } // sInputParams::sInputParams()
 
 void sInputParams::Reset()
 {
-    memset(this, 0, sizeof(this));
+    memset(static_cast<__sInputParams*>(this), 0, sizeof(__sInputParams));
+
     priority = MFX_PRIORITY_NORMAL;
+    libType = MFX_IMPL_SOFTWARE;
     MaxFrameNumber = 0xFFFFFFFF;
 }
 
@@ -574,7 +555,8 @@ mfxStatus CTranscodingPipeline::VPPOneFrame(ExtendedSurface *pSurfaceIn, Extende
 mfxStatus CTranscodingPipeline::EncodeOneFrame(ExtendedSurface *pExtSurface, mfxBitstream *pBS)
 {
     mfxStatus sts = MFX_ERR_NONE;
-    mfxEncodeCtrl *pCtrl = (pExtSurface && pExtSurface->pCtrl) ? &pExtSurface->pCtrl->encCtrl : NULL;
+    mfxEncodeCtrl *pCtrl = (pExtSurface->pCtrl) ? &pExtSurface->pCtrl->encCtrl : NULL;
+
     for (;;)
     {
         // at this point surface for encoder contains either a frame from file or a frame processed by vpp

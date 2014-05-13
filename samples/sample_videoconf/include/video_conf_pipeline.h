@@ -70,7 +70,7 @@ public:
     MemType memType; // which memory type to use: system, d3d9
     bool bCalcLAtency;// optional printing of latency information per frame
 
-    std::map<int, SourceInfo> sources;
+    std::map<mfxU32, SourceInfo> sources;
     std::basic_string<msdk_char> dstFile;
 
     mfxU16 nTemporalScalabilityBase;
@@ -84,9 +84,9 @@ public:
     std::auto_ptr<IBRC> pBrc;
 
     //intra refresh
-    int nRefrType; // refresh type: no refresh, vertical refresh
-    int nCycleSize; // number of pictures within refresh cycle
-    int nQPDelta; // QP delta for Intra refresh MBs
+    mfxU16 nRefrType; // refresh type: no refresh, vertical refresh
+    mfxU16 nCycleSize; // number of pictures within refresh cycle
+    mfxI16 nQPDelta; // QP delta for Intra refresh MBs
 };
 
 class VideoConfPipeline

@@ -48,7 +48,7 @@
 
 namespace TranscodingSample
 {
-    extern mfxU32 MSDK_THREAD_CALLCONVENTION ThranscodeRoutine(void   *pObj);
+    extern mfxU32 MFX_STDCALL ThranscodeRoutine(void   *pObj);
 
     enum PipelineMode
     {
@@ -57,11 +57,8 @@ namespace TranscodingSample
         Source             // means that pipeline makes vpp + encode and get data from shared buffer
     };
 
-
-    struct sInputParams
+    struct __sInputParams
     {
-        sInputParams();
-        void Reset();
         // session parameters
         bool         bIsJoin;
         mfxPriority  priority;
@@ -109,6 +106,12 @@ namespace TranscodingSample
         bool bLABRC; // use look ahead bitrate control algorithm
         mfxU16 nLADepth; // depth of the look ahead bitrate control  algorithm
         bool bEnableExtLA;
+    };
+
+    struct sInputParams: public __sInputParams
+    {
+        sInputParams();
+        void Reset();
     };
 
     struct PreEncAuxBuffer
