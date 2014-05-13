@@ -1,6 +1,8 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2012
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libmfxrt", "libmfxrt.vcxproj", "{D719372D-BA13-4730-AFF6-1994B26EFF6C}"
+EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "UMC", "UMC", "{03F908B1-B331-4B8C-9CCC-D88FAAC81551}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "vm", "..\shared\umc\core\vm\vm.vcxproj", "{D41D3178-5C65-4868-BDB1-42C44643274E}"
@@ -25,8 +27,6 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "umc", "..\shared\umc\core\umc\base_classes.vcxproj", "{31991D83-F6A2-49D9-BDC5-64E85D055A1C}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "umc_va_elk", "..\shared\umc\io\umc_va\umc_va_elk.vcxproj", "{0E971EE7-4430-47D9-92CD-9822BC664642}"
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libmfxrt", "libmfxrt.vcxproj", "{D719372D-BA13-4730-AFF6-1994B26EFF6C}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

@@ -410,6 +410,7 @@
     <ClCompile Include="..\shared\src\libmfx_allocator.cpp" />
     <ClCompile Include="..\shared\src\libmfx_core.cpp" />
     <ClCompile Include="..\shared\src\libmfx_core_factory.cpp" />
+    <ClCompile Include="..\shared\src\mfx_static_assert_structs.cpp" />
     <ClCompile Include="shared\src\libmfxsw.cpp" />
     <ClCompile Include="shared\src\libmfxsw_async.cpp" />
     <ClCompile Include="shared\src\libmfxsw_brc.cpp" />

@@ -199,6 +199,7 @@ foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/../shared/src )
     ${prefix}/libmfx_core_vdaapi.cpp
     ${prefix}/mfx_umc_alloc_wrapper.cpp
     ${prefix}/mfx_dxva2_device.cpp
+    ${prefix}/mfx_static_assert_structs.cpp
   )
 endforeach()
 
@@ -294,7 +295,8 @@ foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/../shared/src )
     ${prefix}/mfx_search_dll.cpp
     ${prefix}/mfx_timing.cpp
     ${prefix}/mfx_umc_alloc_wrapper.cpp
-    ${prefix}/mfx_vpp_vaapi.cpp    
+    ${prefix}/mfx_vpp_vaapi.cpp
+    ${prefix}/mfx_static_assert_structs.cpp
   )
 endforeach()
 list( APPEND sources
@@ -371,6 +373,7 @@ foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/../shared/src )
     ${prefix}/mfx_umc_alloc_wrapper.cpp
     ${prefix}/mfx_search_dll.cpp
     ${prefix}/mfx_timing.cpp
+    ${prefix}/mfx_static_assert_structs.cpp
   )
 endforeach()
 
