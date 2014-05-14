@@ -126,14 +126,14 @@ frame_allocator::OpaqueAllocMode getOpaqueMode   (std::string mode);
 class CVAAPIDevice : public CHWDevice
 {
 public:
-    CVAAPIDevice(){};
-    virtual ~CVAAPIDevice(){};
+    CVAAPIDevice(){}
+    virtual ~CVAAPIDevice(){}
 
     virtual mfxStatus Init(
         mfxHDL hWindow,
         mfxU16 nViews,
-        mfxU32 nAdapterNum) { return MFX_ERR_UNSUPPORTED; };
-    virtual mfxStatus Reset() { return MFX_ERR_UNSUPPORTED; };
+        mfxU32 nAdapterNum) { return MFX_ERR_UNSUPPORTED; }
+    virtual mfxStatus Reset() { return MFX_ERR_UNSUPPORTED; }
     virtual mfxStatus GetHandle(mfxHandleType type, mfxHDL *pHdl)
     {
 #if defined(LIBVA_SUPPORT)
@@ -144,9 +144,11 @@ public:
         }
 #endif
         return MFX_ERR_UNSUPPORTED;
-    };
-    virtual mfxStatus SetHandle(mfxHandleType type, mfxHDL hdl) { return MFX_ERR_UNSUPPORTED; };
-    virtual mfxStatus RenderFrame(mfxFrameSurface1 * pSurface, mfxFrameAllocator * pmfxAlloc) { return MFX_ERR_UNSUPPORTED; };
+    }
+
+    virtual mfxStatus SetHandle(mfxHandleType type, mfxHDL hdl) { return MFX_ERR_UNSUPPORTED; }
+    virtual mfxStatus RenderFrame(mfxFrameSurface1 * pSurface, mfxFrameAllocator * pmfxAlloc) { return MFX_ERR_UNSUPPORTED; }
+    virtual void      UpdateTitle(double fps) {}
     virtual void Close(){}
 
 private:
