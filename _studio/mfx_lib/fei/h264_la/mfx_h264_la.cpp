@@ -621,7 +621,7 @@ mfxStatus VideoENC_LA::RunFrameVmeENCCheck(
     MFX_CHECK_NULL_PTR1(aux);
     if (in)
     {
-        sLAInputTask  newTask = {0};
+        sLAInputTask  newTask = {};
 
         m_core->IncreaseReference(&in->Data);
         newTask.InputFrame.dispFrameOrder = m_LASyncContext.numInput ++; 
@@ -664,8 +664,8 @@ mfxStatus VideoENC_LA::RunFrameVmeENCCheck(
         MFX_ERR_MORE_SURFACE == sts)
     {
         mfxFrameSurface1* pReord = 0;
-        sAsyncParams *pAsyncParams = new sAsyncParams;
-        memset(pAsyncParams,0,sizeof(sAsyncParams));
+        std::auto_ptr<sAsyncParams> pAsyncParams(new sAsyncParams);
+        memset(pAsyncParams.get(), 0, sizeof(sAsyncParams));
 
         pReord = GetFrameToVME(m_LASyncContext.numBufferedVME);
         if (pReord)
@@ -694,16 +694,17 @@ mfxStatus VideoENC_LA::RunFrameVmeENCCheck(
         pEntryPoints[0].pCompleteProc =0;
         pEntryPoints[0].pState = this;
         pEntryPoints[0].requiredNumThreads = 1;
-        pEntryPoints[0].pParam = pAsyncParams;
+        pEntryPoints[0].pParam = pAsyncParams.get();
 
         pEntryPoints[1].pRoutine = &QueryFrameLARoutine;
         pEntryPoints[1].pCompleteProc = &CompleteFrameLARoutine;
         pEntryPoints[1].pState = this;
         pEntryPoints[1].requiredNumThreads = 1;
-        pEntryPoints[1].pParam = pAsyncParams;
-
+        pEntryPoints[1].pParam = pAsyncParams.get();
 
         numEntryPoints = 2;
+
+        pAsyncParams.release(); // memory will be freed in CompleteFrameLARoutine()
 
          /* pEntryPoints[0].pRoutine = &RunFrameVPPRoutine;
         pEntryPoints[0].pCompleteProc = &CompleteFrameVPPRoutine;

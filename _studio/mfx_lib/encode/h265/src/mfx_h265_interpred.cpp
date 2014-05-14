@@ -272,7 +272,8 @@ void H265CU::InterPredCu(Ipp32s absPartIdx, Ipp8u depth, PixType *dst, Ipp32s ds
     Ipp32s cuY = (cuRasterIdx >> maxDepth) << m_par->Log2MinTUSize;
     Ipp32s cuX = (cuRasterIdx & (numMinTUInLCU - 1)) << m_par->Log2MinTUSize;
 
-    for (Ipp32s partIdx = 0; partIdx < GetNumPartInter(absPartIdx); partIdx++) {
+    Ipp32s numPu = h265_numPu[m_data[absPartIdx].partSize];
+    for (Ipp32s partIdx = 0; partIdx < numPu; partIdx++) {
         Ipp32s puX, puY, puW, puH;
         GetPartOffsetAndSize(partIdx, m_data[absPartIdx].partSize, m_data[absPartIdx].size, puX, puY, puW, puH);
         puX += cuX;

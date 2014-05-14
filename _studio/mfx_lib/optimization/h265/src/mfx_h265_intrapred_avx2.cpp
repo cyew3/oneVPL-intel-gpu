@@ -155,6 +155,128 @@ void MAKE_NAME(h265_FilterPredictPels_Bilinear_8u) (
     }
 }
 
+/* assume PredPel buffer size is at least (4*width + 32) bytes to allow 32-byte loads (see calling code)
+ * only the data in range [0, 4*width] is actually used
+ * supported widths = 4, 8, 16, 32 (but should not require 4 - see spec)
+ */
+void MAKE_NAME(h265_FilterPredictPels_16s)(Ipp16s* PredPel, Ipp32s width)
+{
+    Ipp16s t0, t1, t2, t3;
+    Ipp16s *p0;
+    Ipp32s i;
+    __m256i ymm0, ymm1, ymm2, ymm3, ymm7;
+
+    VM_ASSERT(width == 4 || width == 8 || width == 16 || width == 32);
+
+    _mm256_zeroupper();
+
+    /* precalcuate boundary cases (0, 2*w, 2*w+1, 4*w) to allow compact kernel, write back when finished */
+    t0 = (PredPel[1] + 2 * PredPel[0] + PredPel[2*width+1] + 2) >> 2;
+    t1 = PredPel[2*width];
+    t2 = (PredPel[0] + 2 * PredPel[2*width+1] + PredPel[2*width+2] + 2) >> 2;
+    t3 = PredPel[4*width];
+
+    i = 4*width;
+    p0 = PredPel;
+    ymm0 = _mm256_loadu_si256((__m256i *)(p0 + 0));
+    ymm7 = _mm256_set1_epi16(2);
+    do {
+        /* load pixels and shift into 3 registers */
+        ymm3 = _mm256_loadu_si256((__m256i *)(p0 + 8));
+        ymm1 = _mm256_alignr_epi8(ymm3, ymm0, 2*1);
+        ymm2 = _mm256_alignr_epi8(ymm3, ymm0, 2*2);
+
+        /* y[i] = (x[i-1] + 2*x[i] + x[i+1] + 2) >> 2 */
+        ymm1 = _mm256_add_epi16(ymm1, ymm1);
+        ymm1 = _mm256_add_epi16(ymm1, ymm0);
+        ymm1 = _mm256_add_epi16(ymm1, ymm2);
+        ymm1 = _mm256_add_epi16(ymm1, ymm7);
+        ymm1 = _mm256_srli_epi16(ymm1, 2);
+
+        /* write 16 output pixels (1-16), load new data first (overwrites last pixel) */
+        ymm0 = _mm256_loadu_si256((__m256i *)(p0 + 16));
+        _mm256_storeu_si256((__m256i *)(p0 + 1), ymm1);
+
+        p0 += 16;
+        i -= 16;
+    } while (i > 0);
+
+    PredPel[0*width+0] = t0;
+    PredPel[2*width+0] = t1;
+    PredPel[2*width+1] = t2;
+    PredPel[4*width+0] = t3;
+}
+
+/* width always = 32 (see spec) */
+void MAKE_NAME(h265_FilterPredictPels_Bilinear_16s) (
+    Ipp16s* pSrcDst,
+    int width,
+    int topLeft,
+    int bottomLeft,
+    int topRight)
+{
+    int i, x;
+    Ipp16s *p0;
+    __m256i ymm0, ymm1, ymm2, ymm3, ymm4, ymm5, ymm6, ymm7;
+
+    _mm256_zeroupper();
+
+    /* see calling code - if any of this changes, code would need to be rewritten */
+    VM_ASSERT(width == 32 && pSrcDst[0] == topLeft && pSrcDst[2*width] == topRight && pSrcDst[4*width] == bottomLeft);
+
+    p0 = pSrcDst;
+    if (topLeft == 128 && topRight == 128 && bottomLeft == 128) {
+        /* fast path: set 128 consecutive pixels to 128 (verify that compiler unrolls fully) */
+        ymm0 = _mm256_set1_epi16(128);
+        for (i = 0; i < 128; i += 16)
+            _mm256_storeu_si256((__m256i *)(p0 + i), ymm0);
+    } else {
+        /* calculate 16 at a time with successive addition 
+         * p[x] = ( ((64-x)*TL + x*TR + 32) >> 6 ) = ( ((64*TL + 32) + x*(TR - TL)) >> 6 )
+         * similar for p[x+64]
+         * for 10-bit input, max intermediate value (e.g. 64*topLeft+32) just fits in 16 bits (treat as unsigned)
+         * successive addition/subtraction is correct with 2's complement math
+         */
+        ymm0 = _mm256_set1_epi16(64*topLeft + 32);
+        ymm1 = ymm0;
+
+        ymm2 = _mm256_set1_epi16(topRight - topLeft);
+        ymm3 = _mm256_set1_epi16(bottomLeft - topLeft);
+        ymm4 = _mm256_setr_epi16(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15);
+            
+        ymm6 = _mm256_slli_epi16(ymm2, 4);          /* 16*(TR-TL) */
+        ymm7 = _mm256_slli_epi16(ymm3, 4);          /* 16*(BL-TL) */
+
+        ymm2 = _mm256_mullo_epi16(ymm2, ymm4);      /* [0*(TR-TL) 1*(TR-TL) ... ] */
+        ymm3 = _mm256_mullo_epi16(ymm3, ymm4);      /* [0*(BL-TL) 1*(BL-TL) ... ] */
+
+        ymm0 = _mm256_add_epi16(ymm0, ymm2);
+        ymm1 = _mm256_add_epi16(ymm1, ymm3);
+
+        for(x = 0; x < 64; x += 32) {
+            /* calculate 2 sets of 16 pixels for each direction */
+            ymm2 = _mm256_srli_epi16(ymm0, 6);
+            ymm3 = _mm256_srli_epi16(ymm1, 6);
+            ymm0 = _mm256_add_epi16(ymm0, ymm6);
+            ymm1 = _mm256_add_epi16(ymm1, ymm7);
+
+            ymm4 = _mm256_srli_epi16(ymm0, 6);
+            ymm5 = _mm256_srli_epi16(ymm1, 6);
+            ymm0 = _mm256_add_epi16(ymm0, ymm6);
+            ymm1 = _mm256_add_epi16(ymm1, ymm7);
+
+            /* write 32 pixels for each direction */
+            _mm256_storeu_si256((__m256i *)(p0 +  0), ymm2);
+            _mm256_storeu_si256((__m256i *)(p0 + 16), ymm4);
+            _mm256_storeu_si256((__m256i *)(p0 + 64), ymm3);
+            _mm256_storeu_si256((__m256i *)(p0 + 80), ymm5);
+
+            p0 += 32;
+        }
+        pSrcDst[64] = topRight;
+    }
+}
+
 /* optimized kernel with const width and shift */
 template <Ipp32s width, Ipp32s shift>
 static void h265_PredictIntra_Planar_8u_Kernel(Ipp8u* PredPel, Ipp8u* pels, Ipp32s pitch)
@@ -343,6 +465,192 @@ void MAKE_NAME(h265_PredictIntra_Planar_8u)(Ipp8u* PredPel, Ipp8u* pels, Ipp32s 
         break;
     case 32:
         h265_PredictIntra_Planar_8u_Kernel<32, 5>(PredPel, pels, pitch);
+        break;
+    }
+}
+
+/* optimized kernel with const width and shift (16-bit version) */
+template <Ipp32s width, Ipp32s shift>
+static void h265_PredictIntra_Planar_16s_Kernel(Ipp16s* PredPel, Ipp16s* pels, Ipp32s pitch)
+{
+    ALIGN_DECL(32) Ipp16s leftColumn[32], horInc[32];
+    Ipp32s row, col;
+    __m128i xmm0, xmm1, xmm2, xmm3, xmm4, xmm5, xmm6, xmm7;
+    __m256i ymm0, ymm1, ymm2, ymm3, ymm4, ymm5, ymm6, ymm7;
+
+    _mm256_zeroupper();
+
+    if (width == 4) {
+        /* broadcast scalar values */
+        xmm7 = _mm_set1_epi16(width);
+        xmm6 = _mm_set1_epi16(PredPel[1+width]);
+        xmm1 = _mm_set1_epi16(PredPel[3*width+1]);
+
+        /* xmm6 = horInc = topRight - leftColumn, xmm5 = leftColumn = (PredPel[2*width+1+i] << shift) + width */
+        xmm5 = _mm_loadl_epi64((__m128i *)(&PredPel[2*width+1]));
+        xmm6 = _mm_sub_epi16(xmm6, xmm5);
+        xmm5 = _mm_slli_epi16(xmm5, shift);
+        xmm5 = _mm_add_epi16(xmm5, xmm7);
+
+        /* xmm2 = verInc = bottomLeft - topRow, xmm0 = topRow = (PredPel[1+i] << shift) */
+        xmm0 = _mm_loadl_epi64((__m128i *)(&PredPel[1]));
+        xmm2 = _mm_sub_epi16(xmm1, xmm0);
+        xmm0 = _mm_slli_epi16(xmm0, shift);
+        xmm7 = _mm_setr_epi16(1, 2, 3, 4, 5, 6, 7, 8);
+
+        /* generate prediction signal one row at a time */
+        for (row = 0; row < width; row++) {
+            /* calculate horizontal component */
+            xmm3 = _mm_shufflelo_epi16(xmm5, 0);
+            xmm4 = _mm_shufflelo_epi16(xmm6, 0);
+            xmm4 = _mm_mullo_epi16(xmm4, xmm7);
+            xmm3 = _mm_add_epi16(xmm3, xmm4);
+
+            /* add vertical component, scale and pack to 8 bits */
+            xmm0 = _mm_add_epi16(xmm0, xmm2);
+            xmm3 = _mm_add_epi16(xmm3, xmm0);
+            xmm3 = _mm_srli_epi16(xmm3, shift+1);
+
+            /* shift in (leftColumn[j] + width) for next row */
+            xmm5 = _mm_srli_si128(xmm5, 2);
+            xmm6 = _mm_srli_si128(xmm6, 2);
+
+            /* store 4 16-bit pixels */
+            _mm_storel_epi64((__m128i *)(&pels[row*pitch]), xmm3);
+        }
+    } else if (width == 8) {
+        /* broadcast scalar values */
+        xmm7 = _mm_set1_epi16(width);
+        xmm6 = _mm_set1_epi16(PredPel[1+width]);
+        xmm1 = _mm_set1_epi16(PredPel[3*width+1]);
+
+        /* 8x8 block (see comments for 4x4 case) */
+        xmm5 = _mm_loadu_si128((__m128i *)(&PredPel[2*width+1]));
+        xmm6 = _mm_sub_epi16(xmm6, xmm5);
+        xmm5 = _mm_slli_epi16(xmm5, shift);
+        xmm5 = _mm_add_epi16(xmm5, xmm7);
+
+        xmm0 = _mm_loadu_si128((__m128i *)(&PredPel[1]));
+        xmm2 = _mm_sub_epi16(xmm1, xmm0);
+        xmm0 = _mm_slli_epi16(xmm0, shift);
+        xmm7 = _mm_setr_epi16(1, 2, 3, 4, 5, 6, 7, 8);
+
+        for (row = 0; row < width; row++) {
+            /* generate 8 pixels per row */
+            xmm3 = _mm_shufflelo_epi16(xmm5, 0);
+            xmm4 = _mm_shufflelo_epi16(xmm6, 0);
+            xmm3 = _mm_unpacklo_epi64(xmm3, xmm3);
+            xmm4 = _mm_unpacklo_epi64(xmm4, xmm4);
+            xmm4 = _mm_mullo_epi16(xmm4, xmm7);
+            xmm3 = _mm_add_epi16(xmm3, xmm4);
+
+            xmm0 = _mm_add_epi16(xmm0, xmm2);
+            xmm3 = _mm_add_epi16(xmm3, xmm0);
+            xmm3 = _mm_srli_epi16(xmm3, shift+1);
+
+            xmm5 = _mm_srli_si128(xmm5, 2);
+            xmm6 = _mm_srli_si128(xmm6, 2);
+
+            /* store 8 16-bit pixels */
+            _mm_storeu_si128((__m128i *)(&pels[row*pitch]), xmm3);
+        }
+    } else if (width == 16) {
+        /* broadcast scalar values */
+        ymm7 = _mm256_set1_epi16(width);
+        ymm6 = _mm256_set1_epi16(PredPel[1+width]);
+        ymm1 = _mm256_set1_epi16(PredPel[3*width+1]);
+
+        /* load 16 16-bit pixels */
+        ymm5 = _mm256_loadu_si256((__m256i *)(&PredPel[2*width+1]));
+        ymm6 = _mm256_sub_epi16(ymm6, ymm5);
+        ymm5 = _mm256_slli_epi16(ymm5, shift);
+        ymm5 = _mm256_add_epi16(ymm5, ymm7);
+
+        /* store in aligned temp buffer */
+        _mm256_store_si256((__m256i*)(leftColumn), ymm5);
+        _mm256_store_si256((__m256i*)(horInc), ymm6);
+
+        ymm0 = _mm256_loadu_si256((__m256i *)(&PredPel[1]));
+        ymm2 = _mm256_sub_epi16(ymm1, ymm0);
+        ymm0 = _mm256_slli_epi16(ymm0, shift);
+        ymm7 = _mm256_setr_epi16(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16);
+
+        for (row = 0; row < width; row++) {
+            /* generate 16 pixels per row */
+            ymm3 = _mm256_set1_epi16(leftColumn[row]);
+            ymm4 = _mm256_set1_epi16(horInc[row]);
+            ymm4 = _mm256_mullo_epi16(ymm4, ymm7);
+            ymm3 = _mm256_add_epi16(ymm3, ymm4);
+
+            ymm0 = _mm256_add_epi16(ymm0, ymm2);
+            ymm3 = _mm256_add_epi16(ymm3, ymm0);
+            ymm3 = _mm256_srli_epi16(ymm3, shift+1);
+
+            /* store 16 16-bit pixels */
+            _mm256_storeu_si256((__m256i *)(&pels[row*pitch]), ymm3);
+        }
+    } else if (width == 32) {
+        /* broadcast scalar values */
+        ymm7 = _mm256_set1_epi16(width);
+        ymm6 = _mm256_set1_epi16(PredPel[1+width]);
+        ymm1 = _mm256_set1_epi16(PredPel[3*width+1]);
+
+        for (col = 0; col < width; col += 16) {
+            /* load 16 16-bit pixels */
+            ymm0 = _mm256_loadu_si256((__m256i *)(&PredPel[2*width+1+col]));
+            ymm2 = _mm256_sub_epi16(ymm6, ymm0);
+            ymm0 = _mm256_slli_epi16(ymm0, shift);
+            ymm0 = _mm256_add_epi16(ymm0, ymm7);
+
+            /* store in aligned temp buffer */
+            _mm256_store_si256((__m256i*)(horInc + col), ymm2);
+            _mm256_store_si256((__m256i*)(leftColumn + col), ymm0);
+        }
+        ymm7 = _mm256_setr_epi16(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16);
+
+        /* generate 16 pixels per row, repeat 2 times (width = 32) */
+        for (col = 0; col < width; col += 16) {
+            ymm0 = _mm256_loadu_si256((__m256i *)(&PredPel[1+col]));
+            ymm2 = _mm256_sub_epi16(ymm1, ymm0);
+            ymm0 = _mm256_slli_epi16(ymm0, shift);
+
+            for (row = 0; row < width; row++) {
+                /* generate 16 pixels per row */
+                ymm3 = _mm256_set1_epi16(leftColumn[row]);
+                ymm4 = _mm256_set1_epi16(horInc[row]);
+                ymm4 = _mm256_mullo_epi16(ymm4, ymm7);
+                ymm3 = _mm256_add_epi16(ymm3, ymm4);
+
+                ymm0 = _mm256_add_epi16(ymm0, ymm2);
+                ymm3 = _mm256_add_epi16(ymm3, ymm0);
+                ymm3 = _mm256_srli_epi16(ymm3, shift+1);
+
+                /* store 16 8-bit pixels */
+                _mm256_storeu_si256((__m256i *)(&pels[row*pitch+col]), ymm3);
+            }
+            /* add 16 to each offset for next 16 columns */
+            ymm7 = _mm256_add_epi16(ymm7, _mm256_set1_epi16(16));
+        }
+    }
+}
+
+/* planar intra prediction for 4x4, 8x8, 16x16, and 32x32 blocks (with arbitrary pitch) */
+void MAKE_NAME(h265_PredictIntra_Planar_16s)(Ipp16s* PredPel, Ipp16s* pels, Ipp32s pitch, Ipp32s width)
+{
+    VM_ASSERT(width == 4 || width == 8 || width == 16 || width == 32);
+
+    switch (width) {
+    case 4:
+        h265_PredictIntra_Planar_16s_Kernel< 4, 2>(PredPel, pels, pitch);
+        break;
+    case 8:
+        h265_PredictIntra_Planar_16s_Kernel< 8, 3>(PredPel, pels, pitch);
+        break;
+    case 16:
+        h265_PredictIntra_Planar_16s_Kernel<16, 4>(PredPel, pels, pitch);
+        break;
+    case 32:
+        h265_PredictIntra_Planar_16s_Kernel<32, 5>(PredPel, pels, pitch);
         break;
     }
 }

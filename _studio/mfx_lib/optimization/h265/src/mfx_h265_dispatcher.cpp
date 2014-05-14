@@ -355,6 +355,10 @@ using namespace MFX_HEVC_PP;
         g_dispatcher.h265_FilterPredictPels_Bilinear_8u = &MFX_HEVC_PP::h265_FilterPredictPels_Bilinear_8u_sse;
         g_dispatcher.h265_PredictIntra_Planar_8u = &MFX_HEVC_PP::h265_PredictIntra_Planar_8u_sse;
 
+        g_dispatcher.h265_FilterPredictPels_16s = &MFX_HEVC_PP::h265_FilterPredictPels_16s_sse;
+        g_dispatcher.h265_FilterPredictPels_Bilinear_16s = &MFX_HEVC_PP::h265_FilterPredictPels_Bilinear_16s_sse;
+        g_dispatcher.h265_PredictIntra_Planar_16s = &MFX_HEVC_PP::h265_PredictIntra_Planar_16s_sse;
+
         g_dispatcher.h265_AnalyzeGradient_8u = &MFX_HEVC_PP::h265_AnalyzeGradient_8u_sse;
 
         // [WeightedPred]
@@ -514,6 +518,10 @@ using namespace MFX_HEVC_PP;
         g_dispatcher.h265_FilterPredictPels_8u = &MFX_HEVC_PP::h265_FilterPredictPels_8u_px;
         g_dispatcher.h265_FilterPredictPels_Bilinear_8u = &MFX_HEVC_PP::h265_FilterPredictPels_Bilinear_8u_px;
         g_dispatcher.h265_PredictIntra_Planar_8u = &MFX_HEVC_PP::h265_PredictIntra_Planar_8u_px;
+
+        g_dispatcher.h265_FilterPredictPels_16s = &MFX_HEVC_PP::h265_FilterPredictPels_16s_px;
+        g_dispatcher.h265_FilterPredictPels_Bilinear_16s = &MFX_HEVC_PP::h265_FilterPredictPels_Bilinear_16s_px;
+        g_dispatcher.h265_PredictIntra_Planar_16s = &MFX_HEVC_PP::h265_PredictIntra_Planar_16s_px;
 
         g_dispatcher.h265_AnalyzeGradient_8u = &MFX_HEVC_PP::h265_AnalyzeGradient_8u_px;
 
@@ -699,6 +707,10 @@ using namespace MFX_HEVC_PP;
         g_dispatcher.h265_FilterPredictPels_Bilinear_8u = &MFX_HEVC_PP::h265_FilterPredictPels_Bilinear_8u_avx2;
         g_dispatcher.h265_PredictIntra_Planar_8u = &MFX_HEVC_PP::h265_PredictIntra_Planar_8u_avx2;
 
+        g_dispatcher.h265_FilterPredictPels_16s = &MFX_HEVC_PP::h265_FilterPredictPels_16s_avx2;
+        g_dispatcher.h265_FilterPredictPels_Bilinear_16s = &MFX_HEVC_PP::h265_FilterPredictPels_Bilinear_16s_avx2;
+        g_dispatcher.h265_PredictIntra_Planar_16s = &MFX_HEVC_PP::h265_PredictIntra_Planar_16s_avx2;
+
         g_dispatcher.h265_AnalyzeGradient_8u = &MFX_HEVC_PP::h265_AnalyzeGradient_8u_avx2;
 
         // [WeightedPred]
@@ -858,6 +870,10 @@ using namespace MFX_HEVC_PP;
         g_dispatcher.h265_FilterPredictPels_8u = &MFX_HEVC_PP::h265_FilterPredictPels_8u_px;
         g_dispatcher.h265_FilterPredictPels_Bilinear_8u = &MFX_HEVC_PP::h265_FilterPredictPels_Bilinear_8u_px;
         g_dispatcher.h265_PredictIntra_Planar_8u = &MFX_HEVC_PP::h265_PredictIntra_Planar_8u_px;
+
+        g_dispatcher.h265_FilterPredictPels_16s = &MFX_HEVC_PP::h265_FilterPredictPels_16s_px;
+        g_dispatcher.h265_FilterPredictPels_Bilinear_16s = &MFX_HEVC_PP::h265_FilterPredictPels_Bilinear_16s_px;
+        g_dispatcher.h265_PredictIntra_Planar_16s = &MFX_HEVC_PP::h265_PredictIntra_Planar_16s_px;
 
         g_dispatcher.h265_AnalyzeGradient_8u = &MFX_HEVC_PP::h265_AnalyzeGradient_8u_px;
 

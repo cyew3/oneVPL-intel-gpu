@@ -68,16 +68,16 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
     <_ProjectFileVersion>10.0.40117.1</_ProjectFileVersion>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\..\build\win_$(Platform)\bin\</OutDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\..\..\build\win_$(Platform)\bin\</OutDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(OutDir)..\objs\$(ProjectName)_d\</IntDir>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</LinkIncremental>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\..\build\win_$(Platform)\bin\</OutDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\..\..\build\win_$(Platform)\bin\</OutDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(OutDir)..\objs\$(ProjectName)_d\</IntDir>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</LinkIncremental>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\..\build\win_$(Platform)\bin\</OutDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\..\..\build\win_$(Platform)\bin\</OutDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(OutDir)..\objs\$(ProjectName)\</IntDir>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</LinkIncremental>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\..\build\win_$(Platform)\bin\</OutDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\..\..\build\win_$(Platform)\bin\</OutDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(OutDir)..\objs\$(ProjectName)\</IntDir>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkIncremental>
     <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">AllRules.ruleset</CodeAnalysisRuleSet>
@@ -100,7 +100,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>$(PerlDir)lib\core\;../../samples/sample_common/include;../../samples/sample_common/include/vm;../../igfx_s3dcontrol/include;$(MEDIASDK_ROOT)\ipp\ipp80gold\windows\ia32\include;./include;../../include;../../_studio\shared\include;../../_studio/shared/umc/core/vm/include;../bs_parser/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(PerlDir)lib\core\;../../../mdp_msdk-samples/samples/sample_common/include;../../../mdp_msdk-samples/samples/sample_common/include/vm;../../../mdp_msdk-contrib/igfx_s3dcontrol/external/include;$(MEDIASDK_ROOT)\ipp\ipp80gold\windows\ia32\include;./include;../../../mdp_msdk-api/include;../../../mdp_msdk-lib/_studio/shared/include;../../../mdp_msdk-lib/_studio/shared/umc/core/vm/include;../../../mdp_msdk-val-tools/bs_parser/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;MSDK_TS_DLL_EXPORTS;USE_SAMPLE_ALLOCATOR;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -128,7 +128,7 @@
     </Midl>
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>$(PerlDir)lib\core\;../../samples/sample_common/include;../../samples/sample_common/include/vm;../../igfx_s3dcontrol/include;$(MEDIASDK_ROOT)\ipp\ipp80gold\windows\em64t\include;./include;../../include;../../_studio\shared\include;../../_studio/shared/umc/core/vm/include;../bs_parser/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(PerlDir)lib\core\;../../../mdp_msdk-samples/samples/sample_common/include;../../../mdp_msdk-samples/samples/sample_common/include/vm;../../../mdp_msdk-contrib/igfx_s3dcontrol/external/include;$(MEDIASDK_ROOT)\ipp\ipp80gold\windows\em64t\include;./include;../../../mdp_msdk-api/include;../../../mdp_msdk-lib/_studio/shared/include;../../../mdp_msdk-lib/_studio/shared/umc/core/vm/include;../../../mdp_msdk-val-tools/bs_parser/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;MSDK_TS_DLL_EXPORTS;USE_SAMPLE_ALLOCATOR;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -152,7 +152,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>$(PerlDir)lib\core\;../../samples/sample_common/include;../../samples/sample_common/include/vm;../../igfx_s3dcontrol/include;$(MEDIASDK_ROOT)\ipp\ipp80gold\windows\ia32\include;./include;../../include;../../_studio\shared\include;../../_studio/shared/umc/core/vm/include;../bs_parser/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(PerlDir)lib\core\;../../../mdp_msdk-samples/samples/sample_common/include;../../../mdp_msdk-samples/samples/sample_common/include/vm;../../../mdp_msdk-contrib/igfx_s3dcontrol/external/include;$(MEDIASDK_ROOT)\ipp\ipp80gold\windows\ia32\include;./include;../../../mdp_msdk-api/include;../../../mdp_msdk-lib/_studio\shared\include;../../../mdp_msdk-lib/_studio/shared/umc/core/vm/include;../../../mdp_msdk-val-tools/bs_parser/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;MSDK_TS_DLL_EXPORTS;USE_SAMPLE_ALLOCATOR;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <PrecompiledHeader>
@@ -179,7 +179,7 @@
       <TargetEnvironment>X64</TargetEnvironment>
     </Midl>
     <ClCompile>
-      <AdditionalIncludeDirectories>$(PerlDir)lib\core\;../../samples/sample_common/include;../../samples/sample_common/include/vm;../../igfx_s3dcontrol/include;$(MEDIASDK_ROOT)\ipp\ipp80gold\windows\em64t\include;./include;../../include;../../_studio\shared\include;../../_studio/shared/umc/core/vm/include;../bs_parser/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(PerlDir)lib\core\;../../../mdp_msdk-samples/samples/sample_common/include;../../../mdp_msdk-samples/samples/sample_common/include/vm;../../../mdp_msdk-contrib/igfx_s3dcontrol/external/include;$(MEDIASDK_ROOT)\ipp\ipp80gold\windows\em64t\include;./include;../../../mdp_msdk-api/include;../../../mdp_msdk-lib/_studio/shared/include;../../../mdp_msdk-lib/_studio/shared/umc/core/vm/include;../../../mdp_msdk-val-tools/bs_parser/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;MSDK_TS_DLL_EXPORTS;USE_SAMPLE_ALLOCATOR;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <PrecompiledHeader>
@@ -202,16 +202,16 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\samples\sample_common\src\base_allocator.cpp" />
-    <ClCompile Include="..\..\samples\sample_common\src\d3d11_allocator.cpp" />
-    <ClCompile Include="..\..\samples\sample_common\src\d3d11_device.cpp" />
-    <ClCompile Include="..\..\samples\sample_common\src\d3d_allocator.cpp" />
-    <ClCompile Include="..\..\samples\sample_common\src\d3d_device.cpp" />
-    <ClCompile Include="..\..\samples\sample_common\src\sample_utils.cpp" />
-    <ClCompile Include="..\..\samples\sample_common\src\sysmem_allocator.cpp" />
-    <ClCompile Include="..\..\samples\sample_common\src\vm\atomic.cpp" />
-    <ClCompile Include="..\..\samples\sample_common\src\vm\shared_object.cpp" />
-    <ClCompile Include="..\..\samples\sample_common\src\vm\thread.cpp" />
+    <ClCompile Include="..\..\..\mdp_msdk-samples\samples\sample_common\src\base_allocator.cpp" />
+    <ClCompile Include="..\..\..\mdp_msdk-samples\samples\sample_common\src\d3d11_allocator.cpp" />
+    <ClCompile Include="..\..\..\mdp_msdk-samples\samples\sample_common\src\d3d11_device.cpp" />
+    <ClCompile Include="..\..\..\mdp_msdk-samples\samples\sample_common\src\d3d_allocator.cpp" />
+    <ClCompile Include="..\..\..\mdp_msdk-samples\samples\sample_common\src\d3d_device.cpp" />
+    <ClCompile Include="..\..\..\mdp_msdk-samples\samples\sample_common\src\sample_utils.cpp" />
+    <ClCompile Include="..\..\..\mdp_msdk-samples\samples\sample_common\src\sysmem_allocator.cpp" />
+    <ClCompile Include="..\..\..\mdp_msdk-samples\samples\sample_common\src\vm\atomic.cpp" />
+    <ClCompile Include="..\..\..\mdp_msdk-samples\samples\sample_common\src\vm\shared_object.cpp" />
+    <ClCompile Include="..\..\..\mdp_msdk-samples\samples\sample_common\src\vm\thread.cpp" />
     <ClCompile Include="src\debug_output.cpp" />
     <ClCompile Include="src\dll_main.cpp" />
     <ClCompile Include="src\msdk_ts.cpp" />
@@ -232,14 +232,14 @@
     <ClInclude Include="include\test_trace.h" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\opensource\mfx_dispatch\mfx_dispatch_trace_lib.vcxproj">
+    <ProjectReference Include="..\..\..\mdp_msdk-api\opensource\mfx_dispatch\mfx_dispatch_trace_lib.vcxproj">
       <Project>{430e22ba-bdf6-497c-bfc5-ec6907f90018}</Project>
     </ProjectReference>
     <ProjectReference Include="..\..\_studio\shared\umc\core\vm\vm.vcxproj">
       <Project>{d41d3178-5c65-4868-bdb1-42c44643274e}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
-    <ProjectReference Include="..\bs_parser\bs_parser.vcxproj">
+    <ProjectReference Include="..\..\..\mdp_msdk-val-tools\bs_parser\bs_parser.vcxproj">
       <Project>{d08d664e-7245-40f7-9b55-3440ef95f2f7}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>

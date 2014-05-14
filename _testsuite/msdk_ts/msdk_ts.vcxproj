@@ -24,7 +24,7 @@
     <Keyword>Win32Proj</Keyword>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
-  <Import Project="..\..\_studio\mfx_lib\Intel.Mfx.Common.props" />
+  <Import Project="..\..\..\mdp_msdk-lib\_studio\mfx_lib\Intel.Mfx.Common.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <CharacterSet>Unicode</CharacterSet>
@@ -99,7 +99,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>$(MfxIppIncludeDir);./include;../../include;..\..\_studio\shared\include;../../_studio/shared/umc/core/vm/include;../bs_parser/include;../../samples/sample_common/include;../../samples/sample_common/include/vm;../../igfx_s3dcontrol/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(MfxIppIncludeDir);.\include;..\..\..\mdp_msdk-api\include;..\..\..\mdp_msdk-val-tools\bs_parser\include;..\..\..\mdp_msdk-lib\_studio\shared\include;..\..\..\mdp_msdk-lib\_studio\shared\umc\core\vm\include;..\..\..\mdp_msdk-samples\samples\sample_common\include;..\..\..\mdp_msdk-lib\_studio\shared\umc\core\vm\src;..\..\..\mdp_msdk-samples\samples\sample_common\include\vm;..\..\..\mdp_msdk-contrib\igfx_s3dcontrol\external\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>MFX_D3D11_ENABLED;WIN32;_DEBUG;_CONSOLE;MFX_D3D11_ENABLED;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -121,7 +121,7 @@
     </Midl>
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>$(MfxIppIncludeDir);./include;../../include;..\..\_studio\shared\include;../../_studio/shared/umc/core/vm/include;../bs_parser/include;../../samples/sample_common/include;../../samples/sample_common/include/vm;../../igfx_s3dcontrol/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(MfxIppIncludeDir);.\include;..\..\..\mdp_msdk-api\include;..\..\..\mdp_msdk-val-tools\bs_parser\include;..\..\..\mdp_msdk-lib\_studio\shared\include;..\..\..\mdp_msdk-lib\_studio\shared\umc\core\vm\include;..\..\..\mdp_msdk-samples\samples\sample_common\include;..\..\..\mdp_msdk-lib\_studio\shared\umc\core\vm\src;..\..\..\mdp_msdk-samples\samples\sample_common\include\vm;..\..\..\mdp_msdk-contrib\igfx_s3dcontrol\external\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN64;_DEBUG;_CONSOLE;MFX_D3D11_ENABLED;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -140,7 +140,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>$(MfxIppIncludeDir);./include;../../include;..\..\_studio\shared\include;../../_studio/shared/umc/core/vm/include;../bs_parser/include;../../samples/sample_common/include;../../samples/sample_common/include/vm;../../igfx_s3dcontrol/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(MfxIppIncludeDir);.\include;..\..\..\mdp_msdk-api\include;..\..\..\mdp_msdk-val-tools\bs_parser\include;..\..\..\mdp_msdk-lib\_studio\shared\include;..\..\..\mdp_msdk-lib\_studio\shared\umc\core\vm\include;..\..\..\mdp_msdk-samples\samples\sample_common\include;..\..\..\mdp_msdk-lib\_studio\shared\umc\core\vm\src;..\..\..\mdp_msdk-samples\samples\sample_common\include\vm;..\..\..\mdp_msdk-contrib\igfx_s3dcontrol\external\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;MFX_D3D11_ENABLED;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <WarningLevel>Level3</WarningLevel>
@@ -162,7 +162,7 @@
     </Midl>
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>$(MfxIppIncludeDir);./include;../../include;..\..\_studio\shared\include;../../_studio/shared/umc/core/vm/include;../bs_parser/include;../../samples/sample_common/include;../../samples/sample_common/include/vm;../../igfx_s3dcontrol/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(MfxIppIncludeDir);.\include;..\..\..\mdp_msdk-api\include;..\..\..\mdp_msdk-val-tools\bs_parser\include;..\..\..\mdp_msdk-lib\_studio\shared\include;..\..\..\mdp_msdk-lib\_studio\shared\umc\core\vm\include;..\..\..\mdp_msdk-samples\samples\sample_common\include;..\..\..\mdp_msdk-lib\_studio\shared\umc\core\vm\src;..\..\..\mdp_msdk-samples\samples\sample_common\include\vm;..\..\..\mdp_msdk-contrib\igfx_s3dcontrol\external\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN64;NDEBUG;_CONSOLE;MFX_D3D11_ENABLED;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <WarningLevel>Level3</WarningLevel>
@@ -179,16 +179,16 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\samples\sample_common\src\base_allocator.cpp" />
-    <ClCompile Include="..\..\samples\sample_common\src\d3d11_allocator.cpp" />
-    <ClCompile Include="..\..\samples\sample_common\src\d3d11_device.cpp" />
-    <ClCompile Include="..\..\samples\sample_common\src\d3d_allocator.cpp" />
-    <ClCompile Include="..\..\samples\sample_common\src\d3d_device.cpp" />
-    <ClCompile Include="..\..\samples\sample_common\src\sample_utils.cpp" />
-    <ClCompile Include="..\..\samples\sample_common\src\sysmem_allocator.cpp" />
-    <ClCompile Include="..\..\samples\sample_common\src\vm\atomic.cpp" />
-    <ClCompile Include="..\..\samples\sample_common\src\vm\shared_object.cpp" />
-    <ClCompile Include="..\..\samples\sample_common\src\vm\thread.cpp" />
+    <ClCompile Include="..\..\..\mdp_msdk-samples\samples\sample_common\src\base_allocator.cpp" />
+    <ClCompile Include="..\..\..\mdp_msdk-samples\samples\sample_common\src\d3d11_allocator.cpp" />
+    <ClCompile Include="..\..\..\mdp_msdk-samples\samples\sample_common\src\d3d11_device.cpp" />
+    <ClCompile Include="..\..\..\mdp_msdk-samples\samples\sample_common\src\d3d_allocator.cpp" />
+    <ClCompile Include="..\..\..\mdp_msdk-samples\samples\sample_common\src\d3d_device.cpp" />
+    <ClCompile Include="..\..\..\mdp_msdk-samples\samples\sample_common\src\sample_utils.cpp" />
+    <ClCompile Include="..\..\..\mdp_msdk-samples\samples\sample_common\src\sysmem_allocator.cpp" />
+    <ClCompile Include="..\..\..\mdp_msdk-samples\samples\sample_common\src\vm\atomic.cpp" />
+    <ClCompile Include="..\..\..\mdp_msdk-samples\samples\sample_common\src\vm\shared_object.cpp" />
+    <ClCompile Include="..\..\..\mdp_msdk-samples\samples\sample_common\src\vm\thread.cpp" />
     <ClCompile Include="src\debug_output.cpp" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\msdk_ts.cpp" />
@@ -205,24 +205,24 @@
     <ClCompile Include="src\test_verif.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\samples\sample_common\include\base_allocator.h" />
-    <ClInclude Include="..\..\samples\sample_common\include\current_date.h" />
-    <ClInclude Include="..\..\samples\sample_common\include\d3d11_allocator.h" />
-    <ClInclude Include="..\..\samples\sample_common\include\d3d11_device.h" />
-    <ClInclude Include="..\..\samples\sample_common\include\d3d_allocator.h" />
-    <ClInclude Include="..\..\samples\sample_common\include\d3d_device.h" />
-    <ClInclude Include="..\..\samples\sample_common\include\hw_device.h" />
-    <ClInclude Include="..\..\samples\sample_common\include\sample_defs.h" />
-    <ClInclude Include="..\..\samples\sample_common\include\sample_utils.h" />
-    <ClInclude Include="..\..\samples\sample_common\include\sysmem_allocator.h" />
-    <ClInclude Include="..\..\samples\sample_common\include\vaapi_allocator.h" />
-    <ClInclude Include="..\..\samples\sample_common\include\vaapi_utils.h" />
-    <ClInclude Include="..\..\samples\sample_common\include\vm\atomic_defs.h" />
-    <ClInclude Include="..\..\samples\sample_common\include\vm\file_defs.h" />
-    <ClInclude Include="..\..\samples\sample_common\include\vm\so_defs.h" />
-    <ClInclude Include="..\..\samples\sample_common\include\vm\strings_defs.h" />
-    <ClInclude Include="..\..\samples\sample_common\include\vm\thread_defs.h" />
-    <ClInclude Include="..\..\samples\sample_common\include\vm\time_defs.h" />
+    <ClInclude Include="..\..\..\mdp_msdk-samples\samples\sample_common\include\base_allocator.h" />
+    <ClInclude Include="..\..\..\mdp_msdk-samples\samples\sample_common\include\current_date.h" />
+    <ClInclude Include="..\..\..\mdp_msdk-samples\samples\sample_common\include\d3d11_allocator.h" />
+    <ClInclude Include="..\..\..\mdp_msdk-samples\samples\sample_common\include\d3d11_device.h" />
+    <ClInclude Include="..\..\..\mdp_msdk-samples\samples\sample_common\include\d3d_allocator.h" />
+    <ClInclude Include="..\..\..\mdp_msdk-samples\samples\sample_common\include\d3d_device.h" />
+    <ClInclude Include="..\..\..\mdp_msdk-samples\samples\sample_common\include\hw_device.h" />
+    <ClInclude Include="..\..\..\mdp_msdk-samples\samples\sample_common\include\sample_defs.h" />
+    <ClInclude Include="..\..\..\mdp_msdk-samples\samples\sample_common\include\sample_utils.h" />
+    <ClInclude Include="..\..\..\mdp_msdk-samples\samples\sample_common\include\sysmem_allocator.h" />
+    <ClInclude Include="..\..\..\mdp_msdk-samples\samples\sample_common\include\vaapi_allocator.h" />
+    <ClInclude Include="..\..\..\mdp_msdk-samples\samples\sample_common\include\vaapi_utils.h" />
+    <ClInclude Include="..\..\..\mdp_msdk-samples\samples\sample_common\include\vm\atomic_defs.h" />
+    <ClInclude Include="..\..\..\mdp_msdk-samples\samples\sample_common\include\vm\file_defs.h" />
+    <ClInclude Include="..\..\..\mdp_msdk-samples\samples\sample_common\include\vm\so_defs.h" />
+    <ClInclude Include="..\..\..\mdp_msdk-samples\samples\sample_common\include\vm\strings_defs.h" />
+    <ClInclude Include="..\..\..\mdp_msdk-samples\samples\sample_common\include\vm\thread_defs.h" />
+    <ClInclude Include="..\..\..\mdp_msdk-samples\samples\sample_common\include\vm\time_defs.h" />
     <ClInclude Include="include\msdk_ts.h" />
     <ClInclude Include="include\msdk_ts_blocks.h" />
     <ClInclude Include="include\stdafx.h" />
@@ -234,14 +234,14 @@
     <None Include="debug.par" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\opensource\mfx_dispatch\mfx_dispatch_trace_lib.vcxproj">
+    <ProjectReference Include="..\..\..\mdp_msdk-api\opensource\mfx_dispatch\mfx_dispatch_trace_lib.vcxproj">
       <Project>{430e22ba-bdf6-497c-bfc5-ec6907f90018}</Project>
     </ProjectReference>
-    <ProjectReference Include="..\..\_studio\shared\umc\core\vm\vm.vcxproj">
+    <ProjectReference Include="..\..\..\mdp_msdk-lib\_studio\shared\umc\core\vm\vm.vcxproj">
       <Project>{d41d3178-5c65-4868-bdb1-42c44643274e}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
-    <ProjectReference Include="..\bs_parser\bs_parser.vcxproj">
+    <ProjectReference Include="..\..\..\mdp_msdk-val-tools\bs_parser\bs_parser.vcxproj">
       <Project>{d08d664e-7245-40f7-9b55-3440ef95f2f7}</Project>
     </ProjectReference>
   </ItemGroup>

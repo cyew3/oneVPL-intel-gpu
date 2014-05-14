@@ -485,6 +485,18 @@ const Ipp32s h265_filteredModes[5] =
     10, 7, 1, 0, 10
 };
 
+extern const Ipp32s h265_numPu[8] =
+{
+  1, // PART_SIZE_2Nx2N
+  2, // PART_SIZE_2NxN
+  2, // PART_SIZE_Nx2N
+  4, // PART_SIZE_NxN
+  2, // PART_SIZE_2NxnU
+  2, // PART_SIZE_2NxnD
+  2, // PART_SIZE_nLx2N
+  2, // PART_SIZE_nRx2N
+};
+
 } // namespace
 
 #endif // MFX_ENABLE_H265_VIDEO_ENCODE

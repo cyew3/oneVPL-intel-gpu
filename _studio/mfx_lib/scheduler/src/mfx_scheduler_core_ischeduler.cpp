@@ -367,7 +367,8 @@ mfxStatus mfxSchedulerCore::Synchronize(mfxTaskHandle handle, mfxU32 timeToWait)
             if ((mfxU32)((GetHighPerformanceCounter() - start)/frequency) > timeToWait)
                 break;
             
-            Sleep(1);
+            if (MFX_TASK_DONE!= call.res)
+                Sleep(1);
 
         }
     }

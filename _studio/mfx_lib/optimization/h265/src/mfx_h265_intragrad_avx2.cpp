@@ -315,7 +315,7 @@ static void BuildHistogramEdge(const mfxU8 *frame, mfxU16 *hist, mfxI32 blockX, 
  *   but might be necessary to use 32-bit for 8x8 (consider max value of 64*(abs(dx)+abs(y)))
  * for now saturate to 2^16 - 1
  */
-static void Generate8x8(const mfxU8 *inData, mfxU16 *outData4, mfxU16 *outData8, mfxI32 width, mfxI32 height)
+static void Generate8x8(const mfxU8 */*inData*/, mfxU16 *outData4, mfxU16 *outData8, mfxI32 width, mfxI32 height)
 {
     mfxI32 x, y, i, t, xBlocks4, yBlocks4, xBlocks8, yBlocks8;
     mfxU16 *pDst, *pDst8;

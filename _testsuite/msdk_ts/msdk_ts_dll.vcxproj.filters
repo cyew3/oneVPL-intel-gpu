@@ -44,37 +44,37 @@
     <ClCompile Include="src\test_sample_allocator.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\samples\sample_common\src\base_allocator.cpp">
-      <Filter>external src\sample_common</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\samples\sample_common\src\d3d_allocator.cpp">
-      <Filter>external src\sample_common</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\samples\sample_common\src\d3d_device.cpp">
-      <Filter>external src\sample_common</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\samples\sample_common\src\d3d11_allocator.cpp">
-      <Filter>external src\sample_common</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\samples\sample_common\src\d3d11_device.cpp">
-      <Filter>external src\sample_common</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\samples\sample_common\src\sample_utils.cpp">
-      <Filter>external src\sample_common</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\samples\sample_common\src\sysmem_allocator.cpp">
-      <Filter>external src\sample_common</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\samples\sample_common\src\vm\atomic.cpp">
-      <Filter>external src\sample_common</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\samples\sample_common\src\vm\shared_object.cpp">
-      <Filter>external src\sample_common</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\samples\sample_common\src\vm\thread.cpp">
-      <Filter>external src\sample_common</Filter>
-    </ClCompile>
     <ClCompile Include="src\debug_output.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\mdp_msdk-samples\samples\sample_common\src\base_allocator.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\mdp_msdk-samples\samples\sample_common\src\d3d11_allocator.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\mdp_msdk-samples\samples\sample_common\src\d3d11_device.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\mdp_msdk-samples\samples\sample_common\src\d3d_allocator.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\mdp_msdk-samples\samples\sample_common\src\d3d_device.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\mdp_msdk-samples\samples\sample_common\src\sample_utils.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\mdp_msdk-samples\samples\sample_common\src\sysmem_allocator.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\mdp_msdk-samples\samples\sample_common\src\vm\atomic.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\mdp_msdk-samples\samples\sample_common\src\vm\shared_object.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\mdp_msdk-samples\samples\sample_common\src\vm\thread.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

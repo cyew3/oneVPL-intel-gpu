@@ -3,7 +3,7 @@
   <ImportGroup Label="PropertySheets" />
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
-    <MfxBuildDir>$(MSBuildThisFileDirectory)..\..\..\build\</MfxBuildDir>
+    <MfxBuildDir>$(MSBuildThisFileDirectory)..\..\..\..\build\</MfxBuildDir>
     <PlatformToolset>v110</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Platform)'=='Win32'" Label="UserMacros" >

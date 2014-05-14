@@ -17,6 +17,7 @@ public:
     mfxSyncPoint*               m_pSyncPoint;
     mfxFrameSurface1*           m_pSurfIn;
     mfxFrameSurface1*           m_pSurfOut;
+    mfxFrameSurface1*           m_pSurfWork;
     tsSurfacePool*              m_pSurfPoolIn;
     tsSurfacePool*              m_pSurfPoolOut;
     tsSurfaceProcessor*         m_surf_in_processor;
@@ -51,6 +52,9 @@ public:
      
     mfxStatus RunFrameVPPAsync();
     mfxStatus RunFrameVPPAsync(mfxSession session, mfxFrameSurface1 *in, mfxFrameSurface1 *out, mfxExtVppAuxData *aux, mfxSyncPoint *syncp);
+
+    mfxStatus RunFrameVPPAsyncEx();
+    mfxStatus RunFrameVPPAsyncEx(mfxSession session, mfxFrameSurface1 *in, mfxFrameSurface1 *surface_work, mfxFrameSurface1 **surface_out, mfxSyncPoint *syncp);
     
     mfxStatus SyncOperation();
     mfxStatus SyncOperation(mfxSyncPoint syncp);

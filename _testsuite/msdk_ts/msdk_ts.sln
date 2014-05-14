@@ -6,17 +6,17 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "msdk_ts", "msdk_ts.vcxproj"
 		{430E22BA-BDF6-497C-BFC5-EC6907F90018} = {430E22BA-BDF6-497C-BFC5-EC6907F90018}
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "vm", "..\..\_studio\shared\umc\core\vm\vm.vcxproj", "{D41D3178-5C65-4868-BDB1-42C44643274E}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "vm", "..\..\..\mdp_msdk-lib\_studio\shared\umc\core\vm\vm.vcxproj", "{D41D3178-5C65-4868-BDB1-42C44643274E}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "bs_parser", "..\bs_parser\bs_parser.vcxproj", "{D08D664E-7245-40F7-9B55-3440EF95F2F7}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "bs_parser", "..\..\..\mdp_msdk-val-tools\bs_parser\bs_parser.vcxproj", "{D08D664E-7245-40F7-9B55-3440EF95F2F7}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{238EFD5F-FE5E-4C82-9BAC-1C7B4647FD0F}"
 	ProjectSection(SolutionItems) = preProject
-		..\..\_studio\mfx_lib\Intel.Mfx.Common.props = ..\..\_studio\mfx_lib\Intel.Mfx.Common.props
-		..\..\_studio\mfx_lib\Intel.Mfx.StaticLib.props = ..\..\_studio\mfx_lib\Intel.Mfx.StaticLib.props
+		..\..\..\mdp_msdk-lib\_studio\mfx_lib\Intel.Mfx.Common.props = ..\..\..\mdp_msdk-lib\_studio\mfx_lib\Intel.Mfx.Common.props
+		..\..\..\mdp_msdk-lib\_studio\mfx_lib\Intel.Mfx.StaticLib.props = ..\..\..\mdp_msdk-lib\_studio\mfx_lib\Intel.Mfx.StaticLib.props
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mfx_dispatch_trace", "..\..\opensource\mfx_dispatch\mfx_dispatch_trace_lib.vcxproj", "{430E22BA-BDF6-497C-BFC5-EC6907F90018}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mfx_dispatch_trace", "..\..\..\mdp_msdk-api\opensource\mfx_dispatch\mfx_dispatch_trace_lib.vcxproj", "{430E22BA-BDF6-497C-BFC5-EC6907F90018}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

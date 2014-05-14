@@ -75,7 +75,6 @@ struct H265VideoParam {
     Ipp8u  rdoqCGZFlag; // RDOQ Coeff Group Zero
     Ipp8u  SAOFlag;  // Sample Adaptive Offset
     Ipp8u  WPPFlag; // Wavefront
-    Ipp8u  fastPUDecision;
     Ipp8u  fastSkip;
     Ipp8u  fastCbfMode;
     Ipp8u  puDecisionSatd;

@@ -2608,7 +2608,6 @@ mfxU8 GetNumReorderFrames(mfxU32 BFrameRate, bool BPyramid){
 
 mfxStatus MFXVideoENCODEH264::Init(mfxVideoParam* par_in)
 {
-    UMC::MemoryAllocatorParams pParams;
     mfxStatus st, QueryStatus;
     UMC::VideoBrcParams brcParams;
     H264EncoderParams videoParams;
@@ -2845,8 +2844,8 @@ mfxStatus MFXVideoENCODEH264::Init(mfxVideoParam* par_in)
     m_allocator = new mfx_UMC_MemAllocator;
     if (!m_allocator) return MFX_ERR_MEMORY_ALLOC;
 
-    memset(&pParams, 0, sizeof(UMC::MemoryAllocatorParams));
-    m_allocator->InitMem(&pParams, m_core);
+    UMC::MemoryAllocatorParams umcAllocParams;
+    m_allocator->InitMem(&umcAllocParams, m_core);
 
     ////if(!m_VideoParams_id) m_core->AllocBuffer(sizeof(H264EncoderParams),0,&m_VideoParams_id);
     ////if(!m_VideoParams_id) return MFX_ERR_MEMORY_ALLOC;

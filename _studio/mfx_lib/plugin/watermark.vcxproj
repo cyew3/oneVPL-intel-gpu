@@ -173,7 +173,7 @@
       <WarningLevel>Level4</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>AS_HEVCD_PLUGIN;WIN32;_DEBUG;VM_DEBUG;_WINDOWS;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(MfxIppIncludeDir);include;..\..\..\include;..\..\shared\include;..\..\shared\umc\core\umc\include;..\..\..\_studio\mfx_lib\shared\include;..\..\..\_studio\shared\umc\core\vm\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(MfxIppIncludeDir);include;..\..\..\..\mdp_msdk-api\include;..\..\shared\include;..\..\shared\umc\core\umc\include;..\..\..\_studio\mfx_lib\shared\include;..\..\..\_studio\shared\umc\core\vm\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <ExceptionHandling>Async</ExceptionHandling>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
@@ -190,7 +190,7 @@
       <WarningLevel>Level4</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>AS_HEVCD_PLUGIN;WIN32;_DEBUG;VM_DEBUG;_WINDOWS;_LIB;HEVCE_EVALUATION;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(MfxIppIncludeDir);include;..\..\..\include;..\..\shared\include;..\..\shared\umc\core\umc\include;..\..\..\_studio\mfx_lib\shared\include;..\..\..\_studio\shared\umc\core\vm\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(MfxIppIncludeDir);include;..\..\..\..\mdp_msdk-api\include;..\..\shared\include;..\..\shared\umc\core\umc\include;..\..\..\_studio\mfx_lib\shared\include;..\..\..\_studio\shared\umc\core\vm\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <ExceptionHandling>Async</ExceptionHandling>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
@@ -207,7 +207,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>AS_HEVCD_PLUGIN;WIN32;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(MfxIppIncludeDir);include;..\..\..\include;..\..\shared\include;..\..\shared\umc\core\umc\include;..\..\..\_studio\mfx_lib\shared\include;..\..\..\_studio\shared\umc\core\vm\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(MfxIppIncludeDir);include;..\..\..\..\mdp_msdk-api\include;..\..\shared\include;..\..\shared\umc\core\umc\include;..\..\..\_studio\mfx_lib\shared\include;..\..\..\_studio\shared\umc\core\vm\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <ExceptionHandling>Async</ExceptionHandling>
@@ -224,7 +224,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>AS_HEVCD_PLUGIN;WIN32;_DEBUG;_LIB;HEVCE_EVALUATION;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(MfxIppIncludeDir);include;..\..\..\include;..\..\shared\include;..\..\shared\umc\core\umc\include;..\..\..\_studio\mfx_lib\shared\include;..\..\..\_studio\shared\umc\core\vm\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(MfxIppIncludeDir);include;..\..\..\..\mdp_msdk-api\include;..\..\shared\include;..\..\shared\umc\core\umc\include;..\..\..\_studio\mfx_lib\shared\include;..\..\..\_studio\shared\umc\core\vm\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <ExceptionHandling>Async</ExceptionHandling>
@@ -243,7 +243,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>AS_HEVCD_PLUGIN;WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(MfxIppIncludeDir);include;..\..\..\include;..\..\shared\include;..\..\shared\umc\core\umc\include;..\..\..\_studio\mfx_lib\shared\include;..\..\..\_studio\shared\umc\core\vm\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(MfxIppIncludeDir);include;..\..\..\..\mdp_msdk-api\include;..\..\shared\include;..\..\shared\umc\core\umc\include;..\..\..\_studio\mfx_lib\shared\include;..\..\..\_studio\shared\umc\core\vm\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <ExceptionHandling>Async</ExceptionHandling>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
     </ClCompile>
@@ -263,7 +263,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>AS_HEVCD_PLUGIN;WIN32;NDEBUG;_LIB;HEVCE_EVALUATION;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(MfxIppIncludeDir);include;..\..\..\include;..\..\shared\include;..\..\shared\umc\core\umc\include;..\..\..\_studio\mfx_lib\shared\include;..\..\..\_studio\shared\umc\core\vm\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(MfxIppIncludeDir);include;..\..\..\..\mdp_msdk-api\include;..\..\shared\include;..\..\shared\umc\core\umc\include;..\..\..\_studio\mfx_lib\shared\include;..\..\..\_studio\shared\umc\core\vm\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <ExceptionHandling>Async</ExceptionHandling>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
     </ClCompile>
@@ -283,7 +283,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>AS_HEVCD_PLUGIN;WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(MfxIppIncludeDir);include;..\..\..\include;..\..\shared\include;..\..\shared\umc\core\umc\include;..\..\..\_studio\mfx_lib\shared\include;..\..\..\_studio\shared\umc\core\vm\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(MfxIppIncludeDir);include;..\..\..\..\mdp_msdk-api\include;..\..\shared\include;..\..\shared\umc\core\umc\include;..\..\..\_studio\mfx_lib\shared\include;..\..\..\_studio\shared\umc\core\vm\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <ExceptionHandling>Async</ExceptionHandling>
     </ClCompile>
@@ -303,7 +303,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>AS_HEVCD_PLUGIN;WIN32;NDEBUG;_LIB;HEVCE_EVALUATION;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(MfxIppIncludeDir);include;..\..\..\include;..\..\shared\include;..\..\shared\umc\core\umc\include;..\..\..\_studio\mfx_lib\shared\include;..\..\..\_studio\shared\umc\core\vm\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(MfxIppIncludeDir);include;..\..\..\..\mdp_msdk-api\include;..\..\shared\include;..\..\shared\umc\core\umc\include;..\..\..\_studio\mfx_lib\shared\include;..\..\..\_studio\shared\umc\core\vm\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <ExceptionHandling>Async</ExceptionHandling>
     </ClCompile>
