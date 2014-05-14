@@ -61,4 +61,5 @@ public:
     mfxStatus SyncOperation(mfxSession session, mfxSyncPoint syncp, mfxU32 wait);
     
     mfxStatus ProcessFrames(mfxU32 n);
+    mfxStatus ProcessFramesEx(mfxU32 n);
 };

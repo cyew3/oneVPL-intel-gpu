@@ -426,3 +426,52 @@ mfxStatus tsVideoVPP::RunFrameVPPAsyncEx()
 
     return g_tsStatus.get();
 }
+
+mfxStatus tsVideoVPP::ProcessFramesEx(mfxU32 n)
+{
+    mfxU32 processed = 0;
+    mfxU32 submitted = 0;
+    mfxU32 async = TS_MAX(1, m_par.AsyncDepth);
+    mfxStatus res = MFX_ERR_NONE;
+
+    async = TS_MIN(n, async - 1);
+
+    while(processed < n)
+    {
+        res = RunFrameVPPAsyncEx();
+
+        if(MFX_ERR_MORE_DATA == res)
+        {
+            if(!m_pSurfIn)
+            {
+                if(submitted)
+                {
+                    processed += submitted;
+
+                    while(m_surf_out.size()) SyncOperation();
+                }
+                break;
+            }
+            continue;
+        }
+
+        if(MFX_ERR_MORE_SURFACE == res || res > 0)
+        {
+            continue;
+        }
+
+        if(res < 0) g_tsStatus.check();
+
+        if(++submitted >= async)
+        {
+            while(m_surf_out.size()) SyncOperation();
+            processed += submitted;
+            submitted = 0;
+            async = TS_MIN(async, (n - processed));
+        }
+    }
+
+    g_tsLog << processed << " FRAMES PROCESSED\n";
+
+    return g_tsStatus.get();
+}
