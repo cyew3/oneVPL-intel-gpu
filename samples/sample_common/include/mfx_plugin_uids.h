@@ -81,9 +81,6 @@ DEFINE_MFX_PLUGIN_ID(g_msdk_hevcd_hw_uid, 0x0b1ca633, 0x274c, 0x4c45, 0xa8, 0xd8
 // mfx raw: 2fca99749fdb49aeb121a5b63ef568f7
 DEFINE_MFX_PLUGIN_ID(g_msdk_hevce_uid, 0x7499ca2f, 0xdb9f, 0xae49, 0xb1, 0x21, 0xa5, 0xb6, 0x3e, 0xf5, 0x68, 0xf7);
 
-// mfx raw: 588f1185d47b42968dea377bb5d0dcb4
-DEFINE_MFX_PLUGIN_ID(g_msdk_h264la_uid, 0x85118f58, 0x7bd4, 0x9642, 0x8d, 0xea, 0x37, 0x7b, 0xb5, 0xd0, 0xdc, 0xb4);
-
 const msdkPluginUID* msdkGetPluginUID(mfxU32 type, mfxU32 codecid);
 const msdk_char* msdkGetPluginName(const msdkPluginUID* uid);
 

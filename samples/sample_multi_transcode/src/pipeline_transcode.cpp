@@ -363,31 +363,14 @@ mfxStatus CTranscodingPipeline::PreEncPreInit(sInputParams *pParams)
      // PreInit is allowed in decoder session only
      if (pParams->bEnableExtLA && m_bDecodeEnable)
      {
-        const msdk_char* path = NULL;
-        const msdkPluginUID* uid = NULL;
-
         /* Here we actually define the following codec initialization scheme:
          *    a) we check if codec is distributed as a user plugin and load it if yes
          *    b) we check if codec is distributed as a mediasdk plugin and load it if yes
          *    c) if codec is not in the list of user plugins or mediasdk plugins, we assume, that it is supported inside mediasdk library
          */
 
-        path = msdkGetPluginPath(MSDK_VENC | MSDK_IMPL_HW, MFX_CODEC_AVC);
-        uid = msdkGetPluginUID(MSDK_VENC | MSDK_IMPL_HW, MFX_CODEC_AVC);
-
-
-        if (path)
-        {
-            m_pUserEncModule.reset(new MFXVideoUSER(*m_pmfxSession.get()));
-            m_pUserEncPlugin.reset(LoadPlugin(MFX_PLUGINTYPE_VIDEO_ENC, m_pUserEncModule.get(), path));
-            if (m_pUserEncPlugin.get() == NULL) sts = MFX_ERR_UNSUPPORTED;
-        }
-        else if (uid)
-        {
-            sts = MFXVideoUSER_Load((*m_pmfxSession.get()), &(uid->mfx), 1);
-            MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
-        }
-
+        m_pUserEncPlugin.reset(LoadPlugin(MFX_PLUGINTYPE_VIDEO_ENCODE, *m_pmfxSession.get(), MFX_PLUGINID_H264LA_HW, 1));
+        if (m_pUserEncPlugin.get() == NULL) sts = MFX_ERR_UNSUPPORTED;
 
          // create encoder
         m_pmfxPreENC.reset(new MFXVideoENC(*m_pmfxSession.get()));

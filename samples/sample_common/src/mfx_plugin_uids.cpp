@@ -30,9 +30,8 @@ static msdkPluginDesc g_msdk_supported_plugins[] = {
     { MSDK_VENCODE | MSDK_IMPL_USR, MFX_CODEC_HEVC, { MSDK_NULL_GUID, {0} },   MSDK_STRING("User defined HEVC Plug-in") },
     { MSDK_VENCODE | MSDK_IMPL_USR, MFX_CODEC_AVC,  { MSDK_NULL_GUID, {0} },   MSDK_STRING("User defined AVC Plug-in") },
     { MSDK_VENCODE | MSDK_IMPL_USR, MFX_CODEC_MPEG2,{ MSDK_NULL_GUID, {0} },   MSDK_STRING("User defined MPEG2 Plug-in") },
-    { MSDK_VENCODE | MSDK_IMPL_USR, MFX_CODEC_VC1,  { MSDK_NULL_GUID, {0} },   MSDK_STRING("User defined VC1 Plug-in") },
+    { MSDK_VENCODE | MSDK_IMPL_USR, MFX_CODEC_VC1,  { MSDK_NULL_GUID, {0} },   MSDK_STRING("User defined VC1 Plug-in") }
     //{ MSDK_VDECODE | MSDK_IMPL_USR, MFX_CODEC_VP8,  { MSDK_NULL_GUID, {0} }, "User defined VP8 Plug-in" },
-    { MSDK_VENC | MSDK_IMPL_HW, MFX_CODEC_AVC,  { g_msdk_h264la_uid, {0} }, MSDK_STRING("Intel (R) Media SDK plugin for LA ENC") },
 };
 
 const msdkPluginUID* msdkGetPluginUID(mfxU32 type, mfxU32 codecid)
