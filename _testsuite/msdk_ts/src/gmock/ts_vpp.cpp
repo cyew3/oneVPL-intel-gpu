@@ -372,3 +372,57 @@ mfxStatus tsVideoVPP::ProcessFrames(mfxU32 n)
     
     return g_tsStatus.get();
 }
+
+mfxStatus tsVideoVPP::RunFrameVPPAsyncEx(
+    mfxSession session,
+    mfxFrameSurface1 *in,
+    mfxFrameSurface1 *surface_work,
+    mfxFrameSurface1 **surface_out,
+    mfxSyncPoint *syncp)
+{
+    TRACE_FUNC5(MFXVideoVPP_RunFrameVPPAsyncEx, session, in, surface_work, surface_out, syncp);
+    mfxStatus mfxRes = MFXVideoVPP_RunFrameVPPAsyncEx(session, in, surface_work, surface_out, syncp);
+    TS_TRACE(mfxRes);
+    TS_TRACE(surface_work);
+    TS_TRACE(surface_out);
+    TS_TRACE(syncp);
+
+    return g_tsStatus.m_status = mfxRes;
+}
+
+mfxStatus tsVideoVPP::RunFrameVPPAsyncEx()
+{
+    if(m_default)
+    {
+        if(!m_initialized)
+        {
+            Init();
+        }
+
+        if(!m_pSurfPoolIn->PoolSize() || !m_pSurfPoolOut->PoolSize())
+        {
+            AllocSurfaces();
+        }
+
+        m_pSurfIn  = m_pSurfPoolIn->GetSurface();
+        m_pSurfWork = m_pSurfPoolOut->GetSurface();
+
+        if(m_surf_in_processor)
+        {
+            m_pSurfIn = m_surf_in_processor->ProcessSurface(m_pSurfIn, m_pFrameAllocator);
+        }
+    }
+
+    RunFrameVPPAsyncEx(m_session, m_pSurfIn, m_pSurfWork, &m_pSurfOut, m_pSyncPoint);
+
+    if(g_tsStatus.get() == 0)
+    {
+        m_surf_out.insert( std::make_pair(*m_pSyncPoint, m_pSurfOut) );
+        if(m_pSurfOut)
+        {
+            m_pSurfOut->Data.Locked ++;
+        }
+    }
+
+    return g_tsStatus.get();
+}
