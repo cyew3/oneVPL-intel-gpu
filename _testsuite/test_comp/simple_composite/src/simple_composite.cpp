@@ -910,7 +910,9 @@ int main(int argc, char *argv[])
 
     free(comp.InputStream);
     mfxVPP.Close();
-    // mfxSession closed automatically on destruction
+    // If CM enabled application have to close Media SDK session before vaTerminate() call
+    // Else you will have crash at CM's destructor
+    mfxSession.Close();
 
     for (i = 0; i < nVPPSurfNumIn; i++)
     {
