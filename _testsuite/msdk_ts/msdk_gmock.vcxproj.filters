@@ -12,6 +12,15 @@
     <Filter Include="Source Files\test_suites">
       <UniqueIdentifier>{d889445b-fa70-4bbe-b22f-7fb5765c28ab}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\test_suites\hevcd">
+      <UniqueIdentifier>{1b777c97-e53c-4cf4-b729-e001659ef86e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\test_suites\vp8e">
+      <UniqueIdentifier>{e0ded1be-9f38-4e51-a4aa-1b18c50ed4f8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\test_suites\avce">
+      <UniqueIdentifier>{7863bc07-44d7-4401-a394-b73f6f31774f}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\test_sample_allocator.h">
@@ -82,35 +91,17 @@
     <ClCompile Include="src\gmock\ts_encoder.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\gmock\test_suites\vp8e_query_io_surf.cpp">
-      <Filter>Source Files\test_suites</Filter>
-    </ClCompile>
-    <ClCompile Include="src\gmock\test_suites\vp8e_init.cpp">
-      <Filter>Source Files\test_suites</Filter>
-    </ClCompile>
-    <ClCompile Include="src\gmock\test_suites\vp8e_encode_frame_async.cpp">
-      <Filter>Source Files\test_suites</Filter>
-    </ClCompile>
-    <ClCompile Include="src\gmock\test_suites\vp8e_get_video_param.cpp">
-      <Filter>Source Files\test_suites</Filter>
-    </ClCompile>
     <ClCompile Include="src\gmock\ts_surface.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\gmock\ts_bitstream.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\gmock\test_suites\vp8e_reset.cpp">
-      <Filter>Source Files\test_suites</Filter>
-    </ClCompile>
     <ClCompile Include="src\gmock\ts_struct.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\gmock\ts_trace.cpp">
       <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\gmock\test_suites\avce_max_bins.cpp">
-      <Filter>Source Files\test_suites</Filter>
     </ClCompile>
     <ClCompile Include="src\gmock\ts_plugin.cpp">
       <Filter>Source Files</Filter>
@@ -121,19 +112,7 @@
     <ClCompile Include="src\gmock\ts_streams.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\gmock\test_suites\hevcd_decode_header.cpp">
-      <Filter>Source Files\test_suites</Filter>
-    </ClCompile>
-    <ClCompile Include="src\gmock\test_suites\hevcd_init.cpp">
-      <Filter>Source Files\test_suites</Filter>
-    </ClCompile>
     <ClCompile Include="src\gmock\test_suites\vp8d_init.cpp">
-      <Filter>Source Files\test_suites</Filter>
-    </ClCompile>
-    <ClCompile Include="src\gmock\test_suites\hevcd_query_io_surf.cpp">
-      <Filter>Source Files\test_suites</Filter>
-    </ClCompile>
-    <ClCompile Include="src\gmock\test_suites\hevcd_get_video_param.cpp">
       <Filter>Source Files\test_suites</Filter>
     </ClCompile>
     <ClCompile Include="src\gmock\ts_vpp.cpp">
@@ -142,34 +121,70 @@
     <ClCompile Include="src\gmock\test_suites\ptir_init.cpp">
       <Filter>Source Files\test_suites</Filter>
     </ClCompile>
-    <ClCompile Include="src\gmock\test_suites\hevcd_decode_frame_async.cpp">
-      <Filter>Source Files\test_suites</Filter>
-    </ClCompile>
-    <ClCompile Include="src\gmock\test_suites\avce_roi.cpp">
-      <Filter>Source Files\test_suites</Filter>
-    </ClCompile>
-    <ClCompile Include="src\gmock\test_suites\hevcd_query.cpp">
-      <Filter>Source Files\test_suites</Filter>
-    </ClCompile>
-    <ClCompile Include="src\gmock\test_suites\avce_2014r2_unsupport.cpp">
-      <Filter>Source Files\test_suites</Filter>
-    </ClCompile>
     <ClCompile Include="src\gmock\test_suites\vpp_2014r2_unsupport.cpp">
-      <Filter>Source Files\test_suites</Filter>
-    </ClCompile>
-    <ClCompile Include="src\gmock\test_suites\hevcd_reset.cpp">
       <Filter>Source Files\test_suites</Filter>
     </ClCompile>
     <ClCompile Include="src\gmock\test_suites\plugin_load_unload.cpp">
       <Filter>Source Files\test_suites</Filter>
     </ClCompile>
-    <ClCompile Include="src\gmock\test_suites\hevcd_res_change.cpp">
+    <ClCompile Include="src\gmock\test_suites\ptir_query.cpp">
       <Filter>Source Files\test_suites</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\hevcd_res_change.cpp">
+      <Filter>Source Files\test_suites\hevcd</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\hevcd_decode_frame_async.cpp">
+      <Filter>Source Files\test_suites\hevcd</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\hevcd_decode_header.cpp">
+      <Filter>Source Files\test_suites\hevcd</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\hevcd_get_video_param.cpp">
+      <Filter>Source Files\test_suites\hevcd</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\hevcd_init.cpp">
+      <Filter>Source Files\test_suites\hevcd</Filter>
     </ClCompile>
     <ClCompile Include="src\gmock\test_suites\hevcd_pts.cpp">
+      <Filter>Source Files\test_suites\hevcd</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\hevcd_query.cpp">
+      <Filter>Source Files\test_suites\hevcd</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\hevcd_query_io_surf.cpp">
+      <Filter>Source Files\test_suites\hevcd</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\vp8e_encode_frame_async.cpp">
+      <Filter>Source Files\test_suites\vp8e</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\vp8e_get_video_param.cpp">
+      <Filter>Source Files\test_suites\vp8e</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\vp8e_init.cpp">
+      <Filter>Source Files\test_suites\vp8e</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\vp8e_query_io_surf.cpp">
+      <Filter>Source Files\test_suites\vp8e</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\vp8e_reset.cpp">
+      <Filter>Source Files\test_suites\vp8e</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\avce_2014r2_unsupport.cpp">
+      <Filter>Source Files\test_suites\avce</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\avce_max_bins.cpp">
+      <Filter>Source Files\test_suites\avce</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\avce_roi.cpp">
+      <Filter>Source Files\test_suites\avce</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\hevcd_reset.cpp">
+      <Filter>Source Files\test_suites\hevcd</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\hevce_spspps_get.cpp">
       <Filter>Source Files\test_suites</Filter>
     </ClCompile>
-    <ClCompile Include="src\gmock\test_suites\ptir_query.cpp">
+    <ClCompile Include="src\gmock\test_suites\vpp_frame_async_ex.cpp">
       <Filter>Source Files\test_suites</Filter>
     </ClCompile>
   </ItemGroup>
