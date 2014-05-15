@@ -37,11 +37,11 @@ else( )
 endif( )
 
 if( Linux OR Darwin )
-  find_path( MFX_INCLUDE mfxdefs.h PATHS $ENV{MFX_HOME}/include )
+  find_path( MFX_INCLUDE mfxdefs.h PATHS $ENV{MFX_HOME}/mdp_msdk-api/include )
   find_library ( MFX_LIBRARY libmfx.a PATHS $ENV{MFX_HOME}/lib PATH_SUFFIXES ${os_arch} )
 
   # required:
-  include_directories( $ENV{MFX_HOME}/include )
+  include_directories( $ENV{MFX_HOME}/mdp_msdk-api/include )
   link_directories( $ENV{MFX_HOME}/lib/${os_arch} )
 
 else( )

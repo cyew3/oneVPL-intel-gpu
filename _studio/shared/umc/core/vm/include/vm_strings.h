@@ -47,9 +47,10 @@ typedef char vm_char;
 #define vm_string_strcat_s(dest, size, src)  (strncat((dest), (src), (size)),0)
 #define vm_string_strncat   strncat
 #define vm_string_strcpy    strcpy
-#define vm_string_strcpy_s(dest, size, src)  (strncpy((dest), (src), (size)),0)
+#define vm_string_strcpy_s  strcpy
 #define vm_string_strncpy   strncpy
 #define vm_string_strncpy_s(dst, dst_size, src, n) (strncpy(dst,src,n))
+
 #define vm_string_strcspn   strcspn
 #define vm_string_strspn    strspn
 
