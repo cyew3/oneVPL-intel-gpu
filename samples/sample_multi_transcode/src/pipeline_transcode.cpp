@@ -903,6 +903,11 @@ mfxStatus CTranscodingPipeline::Transcode()
     bool bNeedDecodedFrames = true; // indicates if we need to decode frames
     bool bEndOfFile = false;
     bool bLastCycle = false;
+    bool bInsertIDR = false;
+    PreEncAuxBuffer encAuxCtrl;
+
+    MSDK_ZERO_MEMORY(encAuxCtrl);
+    encAuxCtrl.encCtrl.FrameType = MFX_FRAMETYPE_I;
 
     time_t start = time(0);
     while (MFX_ERR_NONE == sts )
@@ -971,6 +976,24 @@ mfxStatus CTranscodingPipeline::Transcode()
         m_BSPool.push_back(pBS);
 
         // encode frame only if it wasn't encoded enough
+        if (bInsertIDR)
+        {
+            if (VppExtSurface.pCtrl)
+                VppExtSurface.pCtrl->encCtrl.FrameType = MFX_FRAMETYPE_I;
+            else
+                VppExtSurface.pCtrl = &encAuxCtrl;
+            bInsertIDR = false;
+        }
+        else
+        {
+            if (VppExtSurface.pCtrl)
+            {
+                if (VppExtSurface.pCtrl != &encAuxCtrl)
+                    VppExtSurface.pCtrl->encCtrl.FrameType = 0;
+                else
+                    VppExtSurface.pCtrl = NULL;
+            }
+        }
         sts = bNeedDecodedFrames ? EncodeOneFrame(&VppExtSurface, &m_BSPool.back()->Bitstream) : MFX_ERR_MORE_DATA;
 
         // check if we need one more frame from decode
@@ -980,11 +1003,17 @@ mfxStatus CTranscodingPipeline::Transcode()
             m_BSPool.pop_back();
             m_pBSStore->Release(pBS);
 
-
             if (NULL == VppExtSurface.pSurface) // there are no more buffered frames in encoder
             {
                 if (bLastCycle)
                     break;
+
+                while(m_BSPool.size())
+                {
+                    sts = PutBS();
+                    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+                }
+                bInsertIDR = true;
                 static_cast<FileBitstreamProcessor_WithReset*>(m_pBSProcessor)->ResetInput();
                 static_cast<FileBitstreamProcessor_WithReset*>(m_pBSProcessor)->ResetOutput();
                 bEndOfFile = 0;
