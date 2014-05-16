@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2009-2012 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2009-2014 Intel Corporation. All Rights Reserved.
 //
 //
 //                     MPEG-2 bitrate control
@@ -192,7 +192,9 @@ Status MPEG2BRC::CheckHRDParams()
   if (BRC_VBR == mRCMode) {
     if (mHRD.bufSize > (Ipp32u)16384 * 0x3fffe)
       mHRD.bufSize = (Ipp32u)16384 * 0x3fffe;
-    mHRD.bufFullness = mHRD.bufSize; // vbv_delay = 0xffff in case of VBR. TODO: check the possibility of VBR with vbv_delay != 0xffff
+    //fix for HSD 5293272; allow initial delay to be different from buffer size
+    //mHRD.bufFullness = mHRD.bufSize; // vbv_delay = 0xffff in case of VBR. TODO: check the possibility of VBR with vbv_delay != 0xffff
+    //end of fix for HSD 5293272
   } else { // BRC_CBR
     Ipp32u max_buf_size = (Ipp32u)(0xfffe * (Ipp64u)mHRD.maxBitrate / 90000); // vbv_delay is coded with 16 bits:
                                                                               //  it is either 0xffff everywhere (VBR) or < 0xffff
