@@ -19,11 +19,12 @@ fi
 
 ssh -p 29418 $__USER@git-ccr-1.devtools.intel.com gerrit set-reviewers \
   -p mdp_msdk-samples \
+  -a asuhov \
   -a dvrogozh \
   -a eguschin \
+  -a imironov \
   -a jshashki \
-  -a sidorovv \
   -a msosunov \
   -a nlyalyus \
-  -a asuhov \
+  -a sidorovv \
   $__CHANGE
