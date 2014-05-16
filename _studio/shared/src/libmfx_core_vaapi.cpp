@@ -272,7 +272,7 @@ VAAPIVideoCORE::VAAPIVideoCORE(
           , m_HWType(MFX_HW_IVB) //MFX_HW_UNKNOWN
 #if !defined(ANDROID)
           , m_bCmCopy(false)
-          , m_bCmCopyAllowed(false)
+          , m_bCmCopyAllowed(true)
 #else
           , m_bCmCopy(false)
           , m_bCmCopyAllowed(false)
@@ -1040,12 +1040,12 @@ VAAPIVideoCORE::DoFastCopyExtended(
             }
             else if (m_bCmCopy == true && CM_ALIGNED(pDst->Data.Pitch) && pDst->Info.FourCC == MFX_FOURCC_RGB4 && CM_ALIGNED(IPP_MIN(IPP_MIN(pDst->Data.R,pDst->Data.G),pDst->Data.B)) && CM_SUPPORTED_COPY_SIZE(roi))
             {
-                sts = pCmCopy->CopyVideoToSystemMemoryAPI(IPP_MIN(IPP_MIN(pDst->Data.R,pDst->Data.G),pDst->Data.B), pDst->Data.Pitch,0,((mfxHDLPair*)pSrc->Data.MemId)->first, 0, roi);
+                sts = pCmCopy->CopyVideoToSystemMemoryAPI(IPP_MIN(IPP_MIN(pDst->Data.R,pDst->Data.G),pDst->Data.B), pDst->Data.Pitch,0,pSrc->Data.MemId, 0, roi);
                 MFX_CHECK_STS(sts);
             }
             else if (m_bCmCopy == true && CM_ALIGNED(pDst->Data.Pitch) && pDst->Info.FourCC != MFX_FOURCC_NV12 && pDst->Info.FourCC != MFX_FOURCC_YV12 && CM_ALIGNED(pDst->Data.Y) && CM_SUPPORTED_COPY_SIZE(roi))
             {
-                sts = pCmCopy->CopyVideoToSystemMemoryAPI(pDst->Data.Y, pDst->Data.Pitch,(mfxU32)verticalPitch,((mfxHDLPair*)pSrc->Data.MemId)->first, 0, roi);
+                sts = pCmCopy->CopyVideoToSystemMemoryAPI(pDst->Data.Y, pDst->Data.Pitch,(mfxU32)verticalPitch,pSrc->Data.MemId, 0, roi);
                 MFX_CHECK_STS(sts);
             }
             else
@@ -1270,7 +1270,7 @@ VAAPIVideoCORE::DoFastCopyExtended(
             MFX_CHECK_STS(sts);
         }
         else if(m_bCmCopy == true && CM_ALIGNED(pSrc->Data.Pitch) && pSrc->Info.FourCC != MFX_FOURCC_YV12 && pSrc->Info.FourCC != MFX_FOURCC_NV12 && CM_ALIGNED(pSrc->Data.Y) && CM_SUPPORTED_COPY_SIZE(roi)){
-            sts = pCmCopy->CopySystemToVideoMemoryAPI(((mfxHDLPair*)pDst->Data.MemId)->first, 0, pSrc->Data.Y, pSrc->Data.Pitch, (mfxU32)verticalPitch, roi);
+            sts = pCmCopy->CopySystemToVideoMemoryAPI(pDst->Data.MemId, 0, pSrc->Data.Y, pSrc->Data.Pitch, (mfxU32)verticalPitch, roi);
             MFX_CHECK_STS(sts);
         }
         else
