@@ -110,6 +110,8 @@ struct sCommandlineParams
   vm_char        perfFile[MAX_FILE_PATH];
   vm_char        refFile[MAX_FILE_PATH];
   vm_char        dxva2DllName[MAX_FILE_PATH];
+
+  vm_char        BackBufferFormat[MAX_FILE_PATH];
   //outline
   vm_char        strOutlineFile[MAX_FILE_PATH];     //output used by outline render
   vm_char        strOutlineInputFile[MAX_FILE_PATH];//input used by outline reader
