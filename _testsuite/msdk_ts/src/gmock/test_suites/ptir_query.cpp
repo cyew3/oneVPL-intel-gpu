@@ -229,6 +229,11 @@ const TestSuite::tc_struct TestSuite::test_case[] =
     {/*64*/  MFX_ERR_UNSUPPORTED, TFF_INPUT, {}, {ext_buf, EXT_BUF_PAR(mfxExtVPPComposite           )}},
     {/*65*/  MFX_ERR_UNSUPPORTED, TFF_INPUT, {}, {ext_buf, EXT_BUF_PAR(mfxExtVPPVideoSignalInfo     )}},
     {/*66*/  MFX_ERR_UNSUPPORTED, TFF_INPUT, {}, {ext_buf, EXT_BUF_PAR(mfxExtVPPDeinterlacing       )}},
+
+    // async
+    {/*67*/ MFX_ERR_NONE, TFF_INPUT, {&tsStruct::mfxVideoParam.AsyncDepth, 0}},
+    {/*68*/ MFX_ERR_NONE, TFF_INPUT, {&tsStruct::mfxVideoParam.AsyncDepth, 1}},
+    {/*69*/ MFX_ERR_UNSUPPORTED, TFF_INPUT, {&tsStruct::mfxVideoParam.AsyncDepth, 2}},
 };
 
 const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case)/sizeof(TestSuite::tc_struct);
