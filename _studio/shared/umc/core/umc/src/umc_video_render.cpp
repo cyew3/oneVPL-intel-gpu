@@ -17,7 +17,12 @@ VideoRenderParams::VideoRenderParams(void)
 {
     color_format = NONE;
     memset(&info, 0, sizeof(info));
-    memset(&disp, 0, sizeof(disp));
+    // KW fix
+    //memset(&disp, 0, sizeof(disp));
+    disp.bottom = 0;
+    disp.left = 0;
+    disp.right = 0;
+    disp.top = 0;
     memset(&range, 0, sizeof(range));
     lFlags = 0;
 
