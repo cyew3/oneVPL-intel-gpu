@@ -1458,6 +1458,7 @@ mfxStatus D3D11Encoder::Destroy()
         printf("\n\n");
         fflush(0);
 #endif
+        return MFX_ERR_NONE;
     }
     
     mfxStatus FillFrameUpdateBuffer(TaskHybridDDI const & task, VAEncMiscParameterVP8HybridFrameUpdate & frmUpdate)

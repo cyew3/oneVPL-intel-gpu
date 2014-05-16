@@ -5,7 +5,7 @@ include $(MFX_HOME)/android/mfx_env.mk
 # =============================================================================
 
 MFX_LOCAL_DECODERS = h265 h264 mpeg2 vc1 mjpeg vp8
-MFX_LOCAL_ENCODERS = h265 h264 mpeg2 vc1 mjpeg mvc svc
+MFX_LOCAL_ENCODERS = h265 h264 mpeg2 vc1 mjpeg mvc svc vp8
 
 # Setting subdirectories to march thru
 MFX_LOCAL_DIRS = \
@@ -84,9 +84,10 @@ MFX_SHARED_FILES_IMPL = $(addprefix mfx_lib/shared/src/, \
     mfx_common_int.cpp \
     mfx_enc_common.cpp \
     mfx_h264_enc_common.cpp \
+    mfx_vc1_enc_common.cpp \
+    mfx_vp8_enc_common.cpp \
     mfx_mpeg2_dec_common.cpp \
     mfx_vc1_dec_common.cpp \
-    mfx_vc1_enc_common.cpp \
     mfx_common_decode_int.cpp)
 
 MFX_SHARED_FILES_HW = \
@@ -95,7 +96,8 @@ MFX_SHARED_FILES_HW = \
 MFX_SHARED_FILES_HW += $(addprefix mfx_lib/shared/src/, \
     mfx_h264_enc_common_hw.cpp \
     mfx_h264_encode_vaapi.cpp \
-    mfx_h264_encode_factory.cpp)
+    mfx_h264_encode_factory.cpp \
+    mfx_vp8_enc_common_hw.cpp)
 
 MFX_LIB_SHARED_FILES_1 = $(addprefix mfx_lib/shared/src/, \
     libmfxsw.cpp \
@@ -213,7 +215,8 @@ ifeq ($(MFX_IMPL_HW), true)
     libmfx_optimization \
     libumc_io_merged_hw \
     libumc_core_merged \
-    libmfx_trace_hw
+    libmfx_trace_hw \
+    libvpx
 
   LOCAL_LDFLAGS += \
     $(MFX_LDFLAGS_INTERNAL_HW) \
@@ -253,7 +256,8 @@ ifeq ($(MFX_IMPL_SW), true)
     libmfx_optimization \
     libumc_io_merged_sw \
     libumc_core_merged \
-    libmfx_trace_sw
+    libmfx_trace_sw \
+    libvpx
 
   LOCAL_LDFLAGS += \
     $(MFX_LDFLAGS_INTERNAL) \
