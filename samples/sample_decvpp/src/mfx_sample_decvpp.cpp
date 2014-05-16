@@ -164,7 +164,7 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
                     msdk_strcopy(pParams->strPluginPath, strInput[i]);
                 }
                 else {
-                    msdk_printf("error: option '-p' expects an argument\n");
+                    msdk_printf(MSDK_STRING("error: option '-p' expects an argument\n"));
                 }
                 break;
             case MSDK_CHAR('i'):
@@ -172,7 +172,7 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
                     msdk_strcopy(pParams->strSrcFile, strInput[i]);
                 }
                 else {
-                    msdk_printf("error: option '-i' expects an argument\n");
+                    msdk_printf(MSDK_STRING("error: option '-i' expects an argument\n"));
                 }
                 break;
             case MSDK_CHAR('o'):
@@ -181,7 +181,7 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
                     msdk_strcopy(pParams->strDstFile, strInput[i]);
                 }
                 else {
-                    msdk_printf("error: option '-o' expects an argument\n");
+                    msdk_printf(MSDK_STRING("error: option '-o' expects an argument\n"));
                 }
                 break;
             case MSDK_CHAR('?'):
