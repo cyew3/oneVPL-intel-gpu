@@ -27,3 +27,12 @@ EXTBUF(mfxExtCodingOptionVP8        , MFX_EXTBUFF_VP8_EX_CODING_OPT         )
 //EXTBUF(mfxExtJPEGQuantTables        , MFX_EXTBUFF_JPEG_QT                   );
 //EXTBUF(mfxExtJPEGHuffmanTables      , MFX_EXTBUFF_JPEG_HUFFMAN              );
 //EXTBUF(mfxExtPAVPOption             , MFX_EXTBUFF_PAVP_OPTION               );
+EXTBUF(mfxExtCamGammaCorrection     , MFX_EXTBUF_CAM_GAMMA_CORRECTION        )
+EXTBUF(mfxExtCamWhiteBalance        , MFX_EXTBUF_CAM_WHITE_BALANCE           )
+EXTBUF(mfxExtCamHotPixelRemoval     , MFX_EXTBUF_CAM_HOT_PIXEL_REMOVAL       )
+EXTBUF(mfxExtCamBlackLevelCorrection, MFX_EXTBUF_CAM_BLACK_LEVEL_CORRECTION  )
+EXTBUF(mfxExtCamVignetteCorrection  , MFX_EXTBUF_CAM_VIGNETTE_CORRECTION     )
+EXTBUF(mfxExtCamBayerDenoise        , MFX_EXTBUF_CAM_BAYER_DENOISE           )
+EXTBUF(mfxExtCamColorCorrection3x3  , MFX_EXTBUF_CAM_COLOR_CORRECTION_3X3    )
+EXTBUF(mfxExtCamPadding             , MFX_EXTBUF_CAM_PADDING                 )
+EXTBUF(mfxExtCamPipeControl         , MFX_EXTBUF_CAM_PIPECONTROL             )
