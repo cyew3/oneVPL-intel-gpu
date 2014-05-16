@@ -117,17 +117,11 @@ mfxStatus mfxSchedulerCore::Initialize(const MFX_SCHEDULER_PARAM *pParam)
     }
 
     // decide the number of threads
-#ifdef ANDROID
-    // thread #0 submits tasks to the driver
-    // thread #1 makes synchronization by vaSyncSurface
-    m_param.numberOfThreads = numThreads = 2;
-#else
     numThreads = vm_sys_info_get_cpu_num();
     if (m_param.numberOfThreads)
     {
         numThreads = UMC::get_min(numThreads, m_param.numberOfThreads);
     }
-#endif
     //we have to create threads more than cores to support Intel plug-ins threading 
     //m_param.numberOfThreads = numThreads + 1;
 

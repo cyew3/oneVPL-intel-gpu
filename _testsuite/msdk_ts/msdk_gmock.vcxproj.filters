@@ -187,6 +187,12 @@
     <ClCompile Include="src\gmock\test_suites\vpp_frame_async_ex.cpp">
       <Filter>Source Files\test_suites</Filter>
     </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\ptir_frame_async_ex.cpp">
+      <Filter>Source Files\test_suites</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\vpp_frame_async_ex.cpp">
+      <Filter>Source Files\test_suites</Filter>
+    </ClCompile>
     <ClCompile Include="src\gmock\test_suites\camera_init.cpp">
       <Filter>Source Files\test_suites</Filter>
     </ClCompile>

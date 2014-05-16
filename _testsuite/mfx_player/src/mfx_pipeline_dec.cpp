@@ -1348,6 +1348,7 @@ mfxStatus MFXDecPipeline::CreateSplitter()
         if (!m_inParams.bYuvReaderMode && 0 != m_inParams.InputCodecType)
         {
             pSinfo = & sInfo;
+            sInfo.corrupted = m_inParams.nCorruptionLevel;
             sInfo.videoType = m_inParams.InputCodecType;
             sInfo.nWidth = 0;
             sInfo.nHeight = 0;
