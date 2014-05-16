@@ -21,6 +21,9 @@
     <Filter Include="Source Files\test_suites\avce">
       <UniqueIdentifier>{7863bc07-44d7-4401-a394-b73f6f31774f}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\test_suites\ptir">
+      <UniqueIdentifier>{30437599-beba-461b-a777-176e72b1508b}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\test_sample_allocator.h">
@@ -118,16 +121,10 @@
     <ClCompile Include="src\gmock\ts_vpp.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\gmock\test_suites\ptir_init.cpp">
-      <Filter>Source Files\test_suites</Filter>
-    </ClCompile>
     <ClCompile Include="src\gmock\test_suites\vpp_2014r2_unsupport.cpp">
       <Filter>Source Files\test_suites</Filter>
     </ClCompile>
     <ClCompile Include="src\gmock\test_suites\plugin_load_unload.cpp">
-      <Filter>Source Files\test_suites</Filter>
-    </ClCompile>
-    <ClCompile Include="src\gmock\test_suites\ptir_query.cpp">
       <Filter>Source Files\test_suites</Filter>
     </ClCompile>
     <ClCompile Include="src\gmock\test_suites\hevcd_res_change.cpp">
@@ -187,14 +184,17 @@
     <ClCompile Include="src\gmock\test_suites\vpp_frame_async_ex.cpp">
       <Filter>Source Files\test_suites</Filter>
     </ClCompile>
-    <ClCompile Include="src\gmock\test_suites\ptir_frame_async_ex.cpp">
-      <Filter>Source Files\test_suites</Filter>
-    </ClCompile>
-    <ClCompile Include="src\gmock\test_suites\vpp_frame_async_ex.cpp">
-      <Filter>Source Files\test_suites</Filter>
-    </ClCompile>
     <ClCompile Include="src\gmock\test_suites\camera_init.cpp">
       <Filter>Source Files\test_suites</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\ptir_frame_async_ex.cpp">
+      <Filter>Source Files\test_suites\ptir</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\ptir_init.cpp">
+      <Filter>Source Files\test_suites\ptir</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\ptir_query.cpp">
+      <Filter>Source Files\test_suites\ptir</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

@@ -438,7 +438,6 @@ mfxStatus tsVideoVPP::RunFrameVPPAsyncEx()
 
     return g_tsStatus.get();
 }
-}
 
 mfxStatus tsVideoVPP::ProcessFramesEx(mfxU32 n)
 {

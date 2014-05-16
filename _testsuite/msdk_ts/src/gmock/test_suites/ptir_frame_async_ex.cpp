@@ -102,7 +102,7 @@ int TestSuite::RunTest(unsigned int id)
     MFXInit();
 
     mfxPluginUID* ptir = g_tsPlugin.UID(MFX_PLUGINTYPE_VIDEO_VPP, MFX_MAKEFOURCC('P','T','I','R'));
-    Load(m_session, ptir, 1);
+    tsSession::Load(m_session, ptir, 1);
 
     m_pPar->vpp.In.PicStruct = MFX_PICSTRUCT_FIELD_TFF;
     // set up parameters for case

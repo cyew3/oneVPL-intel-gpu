@@ -233,7 +233,7 @@ const TestSuite::tc_struct TestSuite::test_case[] =
     // async
     {/*67*/ MFX_ERR_NONE, TFF_INPUT, {&tsStruct::mfxVideoParam.AsyncDepth, 0}},
     {/*68*/ MFX_ERR_NONE, TFF_INPUT, {&tsStruct::mfxVideoParam.AsyncDepth, 1}},
-    {/*69*/ MFX_ERR_UNSUPPORTED, TFF_INPUT, {&tsStruct::mfxVideoParam.AsyncDepth, 2}},
+    {/*69*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, TFF_INPUT, {&tsStruct::mfxVideoParam.AsyncDepth, 2}},
 };
 
 const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case)/sizeof(TestSuite::tc_struct);
@@ -249,7 +249,7 @@ int TestSuite::RunTest(unsigned int id)
 
         // always load plug-in
         mfxPluginUID* ptir = g_tsPlugin.UID(MFX_PLUGINTYPE_VIDEO_VPP, MFX_MAKEFOURCC('P','T','I','R'));
-        //Load(m_session, ptir, 1);
+        tsSession::Load(m_session, ptir, 1);
     }
 
     if (tc.mode == NULL_PARAMS)
@@ -308,13 +308,16 @@ int TestSuite::RunTest(unsigned int id)
     g_tsStatus.expect(tc.sts);
     Query(m_session, m_pPar, &out_par);
 
-    if (tc.sts == MFX_ERR_UNSUPPORTED)
+    if (tc.sts == MFX_ERR_UNSUPPORTED || tc.sts == MFX_WRN_INCOMPATIBLE_VIDEO_PARAM)
     {
         for(mfxU32 i = 0; i < n_par; i++)
         {
             if(tc.set_par[i].f)
             {
-                tsStruct::check_eq(&out_par, *tc.set_par[i].f, 0);
+                if (tc.sts == MFX_ERR_UNSUPPORTED)
+                    tsStruct::check_eq(&out_par, *tc.set_par[i].f, 0);
+                else if (tc.sts == MFX_WRN_INCOMPATIBLE_VIDEO_PARAM)
+                    tsStruct::check_ne(&out_par, *tc.set_par[i].f, m_pPar->AsyncDepth);
             }
         }
     }
