@@ -36,6 +36,7 @@
 #include "mfx_range_map_vc1_vpp.h"
 #include "mfx_deinterlace_vpp.h"
 #include "mfx_video_analysis_vpp.h"
+#include "mfx_video_signal_conversion_vpp.h"
 #include "mfx_frame_rate_conversion_vpp.h"
 #include "mfx_procamp_vpp.h"
 #include "mfx_detail_enhancement_vpp.h"
@@ -431,10 +432,9 @@ mfxStatus VideoVPPSW::CreatePipeline(mfxFrameInfo* In, mfxFrameInfo* Out)
             case (mfxU32)MFX_EXTBUFF_VPP_VIDEO_SIGNAL_INFO:
             {
                 sts = MFX_ERR_NONE; 
-                /* COLOR SPACE_ CONVERSION specific */
-                outFrameInfo.FourCC = Out->FourCC;
+                /* VIDEO SIGNAL CONVERSION specific */
 
-                VPP_INIT_FILTER( filterIndex, MFXVideoVPPColorSpaceConversion ); /* Real class implementation for VIDEO SIGNAL INFO is required */
+                VPP_INIT_FILTER( filterIndex, MFXVideoVPPVideoSignalConversion ); /* RunFrameVPP in not implemented yet. Init for behavior tests only */
 
                 break;
             }
