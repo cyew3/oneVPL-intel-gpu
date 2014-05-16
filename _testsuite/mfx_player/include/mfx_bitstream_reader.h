@@ -53,22 +53,22 @@ public:
     }
     virtual mfxStatus Init(const vm_char *strFileName)
     {
-        UMC::Status sts;
+        mfxStatus sts;
         vm_string_strcpy_s(m_FileReaderParams.m_file_name, (sizeof(m_FileReaderParams.m_file_name)-1), strFileName);
         m_CorruptionParams.CorruptMode   = m_CorruptLevel;
         m_CorruptionParams.pActual       = (UMC::DataReader *)m_FileReader;
         m_CorruptionParams.pActualParams = &m_FileReaderParams;
-        sts = m_CorruptionReader->Init(&m_CorruptionParams);
-        if ( UMC::UMC_OK != sts )
+        sts = (mfxStatus)m_CorruptionReader->Init(&m_CorruptionParams);
+        if ( MFX_ERR_NONE != sts )
         {
              return MFX_ERR_UNDEFINED_BEHAVIOR;
         }
 
-        return mfxStatus(sts);
+        return sts;
     }
     virtual mfxStatus ReadNextFrame(mfxBitstream2 &bs)
     {
-        UMC::Status sts;
+        mfxStatus sts;
         mfxU32 nBytesRead = 0;
 
         memcpy(bs.Data, bs.Data + bs.DataOffset, bs.DataLength);
@@ -76,7 +76,7 @@ public:
         //invalid timestamp by default, to make decoder correctly put the timestamp
         bs.TimeStamp = MFX_TIME_STAMP_INVALID;
         nBytesRead   = bs.MaxLength - bs.DataLength;
-        sts = m_CorruptionReader->ReadData(bs.Data + bs.DataLength, &nBytesRead);
+        sts = (mfxStatus)m_CorruptionReader->ReadData(bs.Data + bs.DataLength, &nBytesRead);
         if (0 == nBytesRead)
         {
             if (bs.DataFlag & MFX_BITSTREAM_EOS)
