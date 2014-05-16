@@ -56,7 +56,7 @@ const char* g_MfxProductVersion = "mediasdk_product_version: " MFX_PRODUCT_VERSI
 
 #endif // mfxhwXX_EXPORTS
 #if defined(mfxaudiosw64_EXPORTS) || defined(mfxaudiosw32_EXPORTS)
-const char* g_MfxProductName = "mediasdk_product_name: Intel(r) Media SDK 2014 Audio Library Alpha";
+const char* g_MfxProductName = "mediasdk_product_name: Intel(r) Media SDK 2014 Audio Library";
 const char* g_MfxCopyright = "mediasdk_copyright: Copyright(c) 2014 Intel Corporation";
 const char* g_MfxFileVersion = "mediasdk_file_version: " MFX_FILE_VERSION;
 const char* g_MfxProductVersion = "mediasdk_product_version: " MFX_PRODUCT_VERSION;
