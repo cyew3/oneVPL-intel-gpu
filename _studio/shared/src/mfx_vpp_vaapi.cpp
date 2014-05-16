@@ -634,9 +634,9 @@ mfxStatus VAAPIVideoProcessing::Execute_Composition(mfxExecuteParams *pParams)
     {
         mfxDrvSurface* pRefSurf = &(pParams->pRefSurfaces[refIdx]);
 
-        //VASurfaceID* srf = (VASurfaceID*)(pRefSurf->hdl.first);
-        //m_pipelineParam[refIdx].surface = *srf;
-        m_pipelineParam[refIdx].surface = m_primarySurface4Composition[0];
+        VASurfaceID* srf = (VASurfaceID*)(pRefSurf->hdl.first);
+        m_pipelineParam[refIdx].surface = *srf;
+        //m_pipelineParam[refIdx].surface = m_primarySurface4Composition[0];
         //VASurfaceID *outputSurface = (VASurfaceID*)(pParams->targetSurface.hdl.first);
         //m_pipelineParam[refIdx].surface = *outputSurface;
 
@@ -729,7 +729,7 @@ mfxStatus VAAPIVideoProcessing::Execute_Composition(mfxExecuteParams *pParams)
         {
             m_pipelineParam[refIdx].num_filters  = 0;
             m_pipelineParam[refIdx].pipeline_flags |= VA_PROC_PIPELINE_FAST;
-            m_pipelineParam[refIdx].filter_flags    |= VA_FILTER_SCALING_FAST;
+           // m_pipelineParam[refIdx].filter_flags    |= VA_FILTER_SCALING_FAST;
 
             if ((pParams->dstRects[refIdx].GlobalAlphaEnable != 0) ||
                     (pParams->dstRects[refIdx].LumaKeyEnable != 0) ||
@@ -750,7 +750,7 @@ mfxStatus VAAPIVideoProcessing::Execute_Composition(mfxExecuteParams *pParams)
     }
 
     //VASurfaceID *outputSurface = (VASurfaceID*)(pParams->targetSurface.hdl.first);
-    if ((refCount + 1) < 8)
+    //if ((refCount + 1) < 8)
     {
         MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_SCHED, "vaBeginPicture");
         vaSts = vaBeginPicture(m_vaDisplay,
@@ -758,14 +758,14 @@ mfxStatus VAAPIVideoProcessing::Execute_Composition(mfxExecuteParams *pParams)
                             *outputSurface);
         MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
     }
-    else
-    {
-        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_SCHED, "vaBeginPicture");
-        vaSts = vaBeginPicture(m_vaDisplay,
-                            m_vaContextVPP,
-                            m_primarySurface4Composition[1]);
-        MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
-    }
+//    else
+//    {
+//        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_SCHED, "vaBeginPicture");
+//        vaSts = vaBeginPicture(m_vaDisplay,
+//                            m_vaContextVPP,
+//                            m_primarySurface4Composition[1]);
+//        MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+//    }
     {
         MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_SCHED, "vaRenderPicture");
         for( refIdx = 0; refIdx < SampleCount; refIdx++ )
@@ -785,7 +785,7 @@ mfxStatus VAAPIVideoProcessing::Execute_Composition(mfxExecuteParams *pParams)
 
 
     /* pParams->fwdRefCount actually is number of sub stream*/
-    for( refIdx = 1; refIdx <= (refCount + 1); refIdx++ )
+    for( refIdx = 2; refIdx <= (refCount + 1); refIdx++ )
     //for( refIdx = uStartIndex; refIdx <= uEndIndex; refIdx++ )
     {
         /*for frames 8, 15, 22, 29,... */
@@ -793,23 +793,24 @@ mfxStatus VAAPIVideoProcessing::Execute_Composition(mfxExecuteParams *pParams)
         if ((refIdx != 1) && ((refIdx %7) == 1) )
         {
             m_pipelineParam[refIdx].output_background_color = pParams->iBackgroundColor;
-            if ((uLastPass < 8) && (refIdx != 1))
+            //if ((uLastPass < 8) && (refIdx != 1))
             {
                 vaSts = vaBeginPicture(m_vaDisplay,
                                     m_vaContextVPP,
                                     *outputSurface);
             }
-            else
-            {
-            vaSts = vaBeginPicture(m_vaDisplay,
-                                m_vaContextVPP,
-                                m_primarySurface4Composition[uOutputIndex]);
-            }
+            //else
+            //{
+            //vaSts = vaBeginPicture(m_vaDisplay,
+            //                    m_vaContextVPP,
+            //                    m_primarySurface4Composition[uOutputIndex]);
+            //}
             MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
             /*to copy initial properties of primary surface... */
             m_pipelineParamComp[uBeginPictureCounter] = m_pipelineParam[0];
             /* ... and to In-place output*/
-            m_pipelineParamComp[uBeginPictureCounter].surface = m_primarySurface4Composition[uInputIndex];
+            //m_pipelineParamComp[uBeginPictureCounter].surface = m_primarySurface4Composition[uInputIndex];
+            m_pipelineParamComp[uBeginPictureCounter].surface = *outputSurface;
             //m_pipelineParam[0].surface = *outputSurface;
             uOutputIndex++;
             uInputIndex++;
