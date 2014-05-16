@@ -54,7 +54,7 @@ int TestSuite::RunTest(unsigned int id)
     if (tc.mode == LOAD_PTIR)
     {
         mfxPluginUID* ptir = g_tsPlugin.UID(MFX_PLUGINTYPE_VIDEO_VPP, MFX_MAKEFOURCC('P','T','I','R'));
-        Load(m_session, ptir, 1);
+        tsSession::Load(m_session, ptir, 1);
     }
 
     // set up parameters for case

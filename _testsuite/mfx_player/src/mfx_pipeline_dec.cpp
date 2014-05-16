@@ -1348,6 +1348,7 @@ mfxStatus MFXDecPipeline::CreateSplitter()
         if (!m_inParams.bYuvReaderMode && 0 != m_inParams.InputCodecType)
         {
             pSinfo = & sInfo;
+            sInfo.corrupted = m_inParams.nCorruptionLevel;
             sInfo.videoType = m_inParams.InputCodecType;
             sInfo.nWidth = 0;
             sInfo.nHeight = 0;
@@ -2021,6 +2022,40 @@ BOOL CALLBACK GetMonitorRect_MonitorEnumProc(HMONITOR /*hMonitor*/,
 
     return TRUE;
 }
+
+D3DFORMAT StrToD3DFORMAT(vm_char *format_name)
+{
+     D3DFORMAT format = D3DFMT_X8R8G8B8;
+     if ( ! format )
+         return format;
+  
+     if (0 == vm_string_strcmp(VM_STRING("D3DFMT_A2B10G10R10"), format_name) ){
+         format = D3DFMT_A2B10G10R10;
+         PipelineTrace((VM_STRING("D3D back buffer format: D3DFMT_A2B10G10R10\n")));
+     }
+     else if (0 == vm_string_strcmp(VM_STRING("D3DFMT_A8B8G8R8"), format_name) ){
+         format = D3DFMT_A8B8G8R8;
+         PipelineTrace((VM_STRING("D3D back buffer format: D3DFMT_A8B8G8R8\n")));
+     }
+     else if (0 == vm_string_strcmp(VM_STRING("D3DFMT_A2R10G10B10"), format_name) ){
+         format = D3DFMT_A2R10G10B10;
+         PipelineTrace((VM_STRING("D3D back buffer format: D3DFMT_A2R10G10B10\n")));
+     }
+     else if (0 == vm_string_strcmp(VM_STRING("D3DFMT_X8R8G8B8"), format_name) ){
+         format = D3DFMT_X8R8G8B8;
+         PipelineTrace((VM_STRING("D3D back buffer format: D3DFMT_X8R8G8B8\n")));
+     }
+     else if (0 == vm_string_strcmp(VM_STRING(""), format_name) ){
+         format = D3DFMT_X8R8G8B8;
+         PipelineTrace((VM_STRING("D3D back buffer format: D3DFMT_X8R8G8B8\n")));
+     }
+     else {
+         
+         PipelineTrace((VM_STRING("Unsupported back buffer format provided\n")));
+         return (D3DFORMAT)0;
+     }
+     return format;
+}
 #endif //D3D_SURFACES_SUPPORT
 
 mfxStatus MFXDecPipeline::CreateDeviceManager()
@@ -2097,7 +2132,12 @@ mfxStatus MFXDecPipeline::CreateDeviceManager()
                 m_pHWDevice.reset(new MFXHWDeviceInThread(*m_threadPool.get(), m_pHWDevice.release()));
             }
 
-            MFX_CHECK_STS(m_pHWDevice->Init(cparams.GetAdapter(), hWindow, !m_inParams.bFullscreen, D3DFMT_X8R8G8B8, 1, m_inParams.dxva2DllName));
+            D3DFORMAT format = StrToD3DFORMAT(m_inParams.BackBufferFormat);
+            if ( 0 == format)
+            {
+                return MFX_ERR_UNSUPPORTED;
+            }
+            MFX_CHECK_STS(m_pHWDevice->Init(cparams.GetAdapter(), hWindow, !m_inParams.bFullscreen, format, 1, m_inParams.dxva2DllName));
         }
         MFX_CHECK_STS(m_pHWDevice->GetHandle(MFX_HANDLE_DIRECT3D_DEVICE_MANAGER9, (mfxHDL *)&pMgr));
 
@@ -3238,6 +3278,13 @@ mfxStatus MFXDecPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI32 argc, 
         mfxU16 asyncLevel = 0;
         MFX_PARSE_INT(asyncLevel, argv[1]);
         std::for_each(m_components.begin(), m_components.end(), mem_var_set(&ComponentParams::m_nMaxAsync, asyncLevel));
+        //SET_GLOBAL_PARAM(m_nMaxAsync, (mfxU16)vm_string_atoi(argv[1]));
+        argv++;
+    }
+    else if (m_OptProc.Check(argv[0], VM_STRING("-backbuffer"), VM_STRING("format for Directx9 backbuffer. Supported formats:\n\t\tD3DFMT_X8R8G8B8 - default\n\t\tD3DFMT_A8R8G8B8\n\t\tD3DFMT_A2R10G10B10"), OPT_FILENAME))
+    {
+        MFX_CHECK(1 + argv != argvEnd);
+        vm_string_strcpy_s(m_inParams.BackBufferFormat, MFX_ARRAY_SIZE(m_inParams.BackBufferFormat), argv[1]);
         //SET_GLOBAL_PARAM(m_nMaxAsync, (mfxU16)vm_string_atoi(argv[1]));
         argv++;
     }

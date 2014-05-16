@@ -9,6 +9,7 @@ class tsVideoVPP : public tsSession
 public:
     bool                        m_default;
     bool                        m_initialized;
+    bool                        m_loaded;
     tsExtBufType<mfxVideoParam> m_par;
     mfxFrameAllocRequest        m_request[2];
     mfxVideoParam*              m_pPar;
@@ -22,12 +23,13 @@ public:
     tsSurfacePool*              m_pSurfPoolOut;
     tsSurfaceProcessor*         m_surf_in_processor;
     tsSurfaceProcessor*         m_surf_out_processor;
+    mfxPluginUID*               m_uid;
 
     std::map<mfxSyncPoint, mfxFrameSurface1*> m_surf_out;
     tsSurfacePool               m_spool_in;
     tsSurfacePool               m_spool_out;
     
-    tsVideoVPP(bool useDefaults = true);
+    tsVideoVPP(bool useDefaults = true, mfxU32 id = 0);
     ~tsVideoVPP();
 
     mfxStatus Init();
@@ -61,4 +63,7 @@ public:
     mfxStatus SyncOperation(mfxSession session, mfxSyncPoint syncp, mfxU32 wait);
     
     mfxStatus ProcessFrames(mfxU32 n);
+    mfxStatus ProcessFramesEx(mfxU32 n);
+
+    mfxStatus Load();
 };

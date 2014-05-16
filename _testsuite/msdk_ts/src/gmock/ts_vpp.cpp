@@ -1,7 +1,7 @@
 #include "ts_vpp.h"
 
 
-tsVideoVPP::tsVideoVPP(bool useDefaults)
+tsVideoVPP::tsVideoVPP(bool useDefaults, mfxU32 plugin_id)
     : m_default(useDefaults)
     , m_initialized(false)
     , m_par()
@@ -29,6 +29,18 @@ tsVideoVPP::tsVideoVPP(bool useDefaults)
         m_par.vpp.In.FrameRateExtD   = 1;
         m_par.vpp.Out = m_par.vpp.In;
         m_par.IOPattern = MFX_IOPATTERN_IN_SYSTEM_MEMORY | MFX_IOPATTERN_OUT_SYSTEM_MEMORY;
+    }
+    if(plugin_id)
+    {
+        m_uid = g_tsPlugin.UID(MFX_PLUGINTYPE_VIDEO_VPP, plugin_id);
+        m_loaded = !m_uid;
+        if(m_default && (plugin_id == MFX_MAKEFOURCC('C','A','M','R')))
+        {
+            m_par.vpp.In.FourCC        = MFX_FOURCC_R16;
+            m_par.vpp.Out.FourCC       = MFX_FOURCC_RGB4;
+            m_par.vpp.In.ChromaFormat  = MFX_CHROMAFORMAT_YUV444;
+            m_par.vpp.Out.ChromaFormat = MFX_CHROMAFORMAT_YUV444;
+        }
     }
 }
 
@@ -425,4 +437,66 @@ mfxStatus tsVideoVPP::RunFrameVPPAsyncEx()
     }
 
     return g_tsStatus.get();
+}
+}
+
+mfxStatus tsVideoVPP::ProcessFramesEx(mfxU32 n)
+{
+    mfxU32 processed = 0;
+    mfxU32 submitted = 0;
+    mfxU32 async = TS_MAX(1, m_par.AsyncDepth);
+    mfxStatus res = MFX_ERR_NONE;
+
+    async = TS_MIN(n, async - 1);
+
+    while(processed < n)
+    {
+        res = RunFrameVPPAsyncEx();
+
+        if(MFX_ERR_MORE_DATA == res)
+        {
+            if(!m_pSurfIn)
+            {
+                if(submitted)
+                {
+                    processed += submitted;
+
+                    while(m_surf_out.size()) SyncOperation();
+                }
+                break;
+            }
+            continue;
+        }
+
+        if(MFX_ERR_MORE_SURFACE == res || res > 0)
+        {
+            continue;
+        }
+
+        if(res < 0) g_tsStatus.check();
+
+        if(++submitted >= async)
+        {
+            while(m_surf_out.size()) SyncOperation();
+            processed += submitted;
+            submitted = 0;
+            async = TS_MIN(async, (n - processed));
+        }
+    }
+
+    g_tsLog << processed << " FRAMES PROCESSED\n";
+
+    return g_tsStatus.get();
+}
+
+mfxStatus tsVideoVPP::Load() 
+{
+    if(m_default && !m_session)
+    {
+        MFXInit();
+    }
+
+    m_loaded = (0 == tsSession::Load(m_session, m_uid, 1));
+
+    return g_tsStatus.get(); 
 }

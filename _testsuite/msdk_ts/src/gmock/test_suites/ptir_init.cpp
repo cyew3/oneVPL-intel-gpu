@@ -229,6 +229,11 @@ const TestSuite::tc_struct TestSuite::test_case[] =
     {/*64*/  MFX_ERR_INVALID_VIDEO_PARAM, TFF_INPUT, {}, {ext_buf, EXT_BUF_PAR(mfxExtVPPComposite           )}},
     {/*65*/  MFX_ERR_INVALID_VIDEO_PARAM, TFF_INPUT, {}, {ext_buf, EXT_BUF_PAR(mfxExtVPPVideoSignalInfo     )}},
     {/*66*/  MFX_ERR_INVALID_VIDEO_PARAM, TFF_INPUT, {}, {ext_buf, EXT_BUF_PAR(mfxExtVPPDeinterlacing       )}},
+
+    // async
+    {/*67*/ MFX_ERR_NONE, TFF_INPUT, {&tsStruct::mfxVideoParam.AsyncDepth, 0}},
+    {/*68*/ MFX_ERR_NONE, TFF_INPUT, {&tsStruct::mfxVideoParam.AsyncDepth, 1}},
+    {/*69*/ MFX_ERR_INVALID_VIDEO_PARAM, TFF_INPUT, {&tsStruct::mfxVideoParam.AsyncDepth, 2}},
 };
 
 const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case)/sizeof(TestSuite::tc_struct);
@@ -244,7 +249,7 @@ int TestSuite::RunTest(unsigned int id)
 
         // always load plug-in
         mfxPluginUID* ptir = g_tsPlugin.UID(MFX_PLUGINTYPE_VIDEO_VPP, MFX_MAKEFOURCC('P','T','I','R'));
-        Load(m_session, ptir, 1);
+        tsSession::Load(m_session, ptir, 1);
     }
 
     if (tc.mode == NULL_PARAMS)

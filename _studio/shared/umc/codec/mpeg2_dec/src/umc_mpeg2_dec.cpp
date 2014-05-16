@@ -655,12 +655,15 @@ bool MPEG2VideoDecoderBase::IsPictureToSkip(int task_num)
       }
     }
     else if(PictureHeader[task_num].picture_coding_type == MPEG2_B_PICTURE) {
+      /*
+      //fix for VCSD100019408. Don't skip B frame with no forward prediction
       if(!sequenceHeader.first_p_occure &&
         (!sequenceHeader.closed_gop || sequenceHeader.broken_link ))
       {
           sequenceHeader.num_of_skipped++;
           return true;
       }
+      //end of fix for VCSD100019408 */
       if(m_SkipLevel >= SKIP_B)
       {
           sequenceHeader.num_of_skipped++;

@@ -25,6 +25,7 @@ struct sStreamInfo
     mfxU16 nWidth;
     mfxU16 nHeight;
     bool   isDefaultFC;
+    mfxU32 corrupted;
 };
 
 //file reader abstraction

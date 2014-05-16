@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2003-2013 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2003-2014 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -1201,6 +1201,14 @@ Status MPEG2VideoDecoderBase::DecodePictureHeader(int task_num)
             frame_buffer.frame_p_c_n[frame_buffer.curr_index[task_num]].next_index = 
                 frame_buffer.frame_p_c_n[frame_buffer.curr_index[task_num]].prev_index;
         }
+
+        //fix for VCSD100019408. B frame with no forward prediction -> use backward instead of forward
+        if (frame_buffer.frame_p_c_n[frame_buffer.curr_index[task_num]].prev_index < 0)
+        {
+            frame_buffer.frame_p_c_n[frame_buffer.curr_index[task_num]].prev_index =
+                frame_buffer.frame_p_c_n[frame_buffer.curr_index[task_num]].next_index;
+        }
+        //end of fix for VCSD100019408
 
         if (PictureHeader[task_num].picture_structure == FRAME_PICTURE
             || frame_buffer.field_buffer_index[task_num] == 1)

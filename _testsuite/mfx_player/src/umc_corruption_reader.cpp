@@ -208,17 +208,36 @@ Status CorruptionReader::CorruptData_CasualBits(void *pData, Ipp32u *nsize)
     Ipp8u value      = 0;
     Ipp32u pos        = 0;
     Ipp32u i          = 0;
+    Ipp32u frames     = 1;
+    Ipp32u frameSize  = 1024 * 32;
+    Ipp8u  *pFrame    = 0;
+    Ipp32u  size      = 0;
+    Ipp32u  done      = 0;
+    
+    frames = *nsize / frameSize;
+    frames = frames ? frames : 1;
+    size = *nsize;
+    if ( size < frameSize )
+        frameSize = *nsize;
+    
+    pFrame = (Ipp8u*)pData;
+    do {
+        if ( size - done < frameSize ){
+            frameSize = size - done;
+        }
 
-    breaksNum = rand()%7;
-
-    for(i = 0; i < breaksNum; i++)
-    {
-        pos   = rand()%(*nsize);
-        assert(pos < (*nsize));
-        value = (Ipp8u)(rand()% 128);
-        assert(value < 128);
-        ((Ipp8u*)pData)[pos] = value;
-    }
+        breaksNum = rand()%7;
+        for(i = 0; i < breaksNum; i++)
+        {
+            pos   = rand()%(frameSize);
+            assert(pos < (frameSize));
+            value = (Ipp8u)(rand()% 128);
+            assert(value < 128);
+            pFrame[pos] = value;
+        }
+        pFrame += frameSize;
+        done += frameSize;
+    } while (--frames);   
 
     return sts;
 }

@@ -480,3 +480,32 @@ STRUCT(mfxExtCodingOptionVP8,
 STRUCT(mfxPluginUID,
     FIELD_T(mfxU8, Data)
 )
+
+//Camera ext buffers printing will be added when it will be needed
+STRUCT(mfxExtCamGammaCorrection,
+    FIELD_S(mfxExtBuffer, Header)
+)
+STRUCT(mfxExtCamWhiteBalance,
+    FIELD_S(mfxExtBuffer, Header)
+)
+STRUCT(mfxExtCamHotPixelRemoval,
+    FIELD_S(mfxExtBuffer, Header)
+)
+STRUCT(mfxExtCamBlackLevelCorrection,
+    FIELD_S(mfxExtBuffer, Header)
+)
+STRUCT(mfxExtCamVignetteCorrection,
+    FIELD_S(mfxExtBuffer, Header)
+)
+STRUCT(mfxExtCamBayerDenoise,
+    FIELD_S(mfxExtBuffer, Header)
+)
+STRUCT(mfxExtCamColorCorrection3x3,
+    FIELD_S(mfxExtBuffer, Header)
+)
+STRUCT(mfxExtCamPadding,
+    FIELD_S(mfxExtBuffer, Header)
+)
+STRUCT(mfxExtCamPipeControl,
+    FIELD_S(mfxExtBuffer, Header)
+)

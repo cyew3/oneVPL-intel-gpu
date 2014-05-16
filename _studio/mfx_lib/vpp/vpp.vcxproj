@@ -127,6 +127,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="src\mfx_image_stabilization_vpp.cpp" />
+    <ClCompile Include="src\mfx_video_signal_conversion_vpp.cpp" />
     <ClCompile Include="src\mfx_vpp_factory.cpp" />
     <ClCompile Include="src\mfx_vpp_hw.cpp" />
     <ClCompile Include="src\mfx_vpp_main.cpp" />
@@ -160,6 +161,7 @@
   <ItemGroup>
     <ClInclude Include="include\meforgen7_5.h" />
     <ClInclude Include="include\mfx_image_stabilization_vpp.h" />
+    <ClInclude Include="include\mfx_video_signal_conversion_vpp.h" />
     <ClInclude Include="include\mfx_vpp_base.h" />
     <ClInclude Include="include\mfx_vpp_defs.h" />
     <ClInclude Include="include\mfx_vpp_hw.h" />
