@@ -196,5 +196,8 @@
     <ClCompile Include="src\gmock\test_suites\ptir_query.cpp">
       <Filter>Source Files\test_suites\ptir</Filter>
     </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\ptir_query_io_surf.cpp">
+      <Filter>Source Files\test_suites\ptir</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

@@ -41,6 +41,10 @@ tsVideoVPP::tsVideoVPP(bool useDefaults, mfxU32 plugin_id)
             m_par.vpp.In.ChromaFormat  = MFX_CHROMAFORMAT_YUV444;
             m_par.vpp.Out.ChromaFormat = MFX_CHROMAFORMAT_YUV444;
         }
+        if(m_default && (plugin_id == MFX_MAKEFOURCC('P','T','I','R')))
+        {
+            m_par.vpp.In.PicStruct = MFX_PICSTRUCT_FIELD_TFF;
+        }
     }
 }
 
