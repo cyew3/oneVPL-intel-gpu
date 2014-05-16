@@ -478,10 +478,11 @@ mfxStatus  MFXVideoENC_ProcessFrameAsync(mfxSession session, mfxENCInput *in, mf
     mfxStatus mfxRes;
 
     MFX_CHECK(session, MFX_ERR_INVALID_HANDLE);
-    MFX_CHECK(session->m_pENC.get(), MFX_ERR_NOT_INITIALIZED); // TO DO : dynamic cust
+    MFX_CHECK(session->m_pENC.get(), MFX_ERR_NOT_INITIALIZED);
     MFX_CHECK(syncp, MFX_ERR_NULL_PTR);
 
-    VideoENC_Ext *pEnc = (VideoENC_Ext *)session->m_pENC.get();
+    VideoENC_Ext *pEnc = dynamic_cast<VideoENC_Ext *>(session->m_pENC.get());
+    MFX_CHECK(pEnc, MFX_ERR_INVALID_HANDLE);
 
     try
     {
