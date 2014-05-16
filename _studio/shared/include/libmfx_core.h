@@ -150,6 +150,13 @@ public:
 
     virtual bool IsCompatibleForOpaq() {return true;};
 
+    // keep frame response structure dwscribing plug-in memory surfaces
+    void AddPluginAllocResponse(mfxFrameAllocResponse& response);
+
+    // get response which corresponds required conditions: same mids and number
+    mfxFrameAllocResponse* GetPluginAllocResponse(mfxFrameAllocResponse& temp_response);
+
+
 
 protected:
     

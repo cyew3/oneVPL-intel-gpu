@@ -2049,3 +2049,28 @@ mfxU16 CommonCORE::GetAutoAsyncDepth()
     return (mfxU16)vm_sys_info_get_cpu_num();
 }
 
+
+// keep frame response structure dwscribing plug-in memory surfaces
+void CommonCORE::AddPluginAllocResponse(mfxFrameAllocResponse& response)
+{
+    m_PlugInMids.push_back(response);
+}
+
+// get response which corresponds required conditions: same mids and number
+mfxFrameAllocResponse *CommonCORE::GetPluginAllocResponse(mfxFrameAllocResponse& temp_response)
+{
+    std::vector<mfxFrameAllocResponse>::iterator ref_it;
+    for (ref_it = m_PlugInMids.begin(); ref_it != m_PlugInMids.end(); ref_it++)
+    {
+        if (IsEqual(*ref_it, temp_response))
+        {
+            temp_response = *ref_it;
+            m_PlugInMids.erase(ref_it);
+            return &temp_response;
+        }
+    }
+    return NULL;
+
+}
+
+

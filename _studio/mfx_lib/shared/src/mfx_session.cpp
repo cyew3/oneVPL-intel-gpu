@@ -17,6 +17,7 @@ File Name: mfx_session.cpp
 #include <vm_sys_info.h>
 
 #include <libmfx_core_factory.h>
+#include <libmfx_core.h>
 
 #if defined (MFX_VA_WIN)
 #include <libmfx_core_d3d9.h>
@@ -92,6 +93,10 @@ mfxStatus mfxCOREMapOpaqueSurface(mfxHDL pthis, mfxU32  num, mfxU32  type, mfxFr
 
     MFX_CHECK(session, MFX_ERR_INVALID_HANDLE);
     MFX_CHECK(session->m_pCORE.get(), MFX_ERR_NOT_INITIALIZED);
+
+    CommonCORE *pCore = (CommonCORE *)session->m_pCORE->QueryCoreInterface(MFXIVideoCORE_GUID);
+    if (!pCore)
+        return MFX_ERR_INVALID_HANDLE;
     
     try
     {
@@ -108,7 +113,11 @@ mfxStatus mfxCOREMapOpaqueSurface(mfxHDL pthis, mfxU32  num, mfxU32  type, mfxFr
         request.NumFrameMin = request.NumFrameSuggested = (mfxU16)num;
         request.Info = op_surf[0]->Info;
 
-        mfxRes = session->m_pCORE->AllocFrames(&request, &response, op_surf, num);
+        mfxRes = pCore->AllocFrames(&request, &response, op_surf, num);
+        MFX_CHECK_STS(mfxRes);
+
+        pCore->AddPluginAllocResponse(response);
+
         return mfxRes;
 
     }
@@ -130,12 +139,64 @@ mfxStatus mfxCOREMapOpaqueSurface(mfxHDL pthis, mfxU32  num, mfxU32  type, mfxFr
     return mfxRes;
 
 } // mfxStatus mfxCOREMapOpaqueSurface(mfxHDL pthis, mfxU32  num, mfxU32  type, mfxFrameSurface1 **op_surf)
-mfxStatus mfxCOREUnmapOpaqueSurface(mfxHDL pthis, mfxU32  num, mfxU32  type, mfxFrameSurface1 **op_surf)
+mfxStatus mfxCOREUnmapOpaqueSurface(mfxHDL pthis, mfxU32  num, mfxU32  , mfxFrameSurface1 **op_surf)
 {
-    pthis; num; type; op_surf;
-    // not yet supported
-    return MFX_ERR_NONE;
+    mfxSession session = (mfxSession) pthis;
+    mfxStatus mfxRes;
 
+    MFX_CHECK(session, MFX_ERR_INVALID_HANDLE);
+    MFX_CHECK(session->m_pCORE.get(), MFX_ERR_NOT_INITIALIZED);
+
+    CommonCORE *pCore = (CommonCORE *)session->m_pCORE->QueryCoreInterface(MFXIVideoCORE_GUID);
+    if (!pCore)
+        return MFX_ERR_INVALID_HANDLE;
+
+    try
+    {
+        if (!op_surf)
+            return MFX_ERR_MEMORY_ALLOC;
+
+        if (!*op_surf)
+            return MFX_ERR_MEMORY_ALLOC;
+
+        mfxFrameAllocResponse response;
+        mfxFrameSurface1 *pSurf = NULL;
+
+        std::vector<mfxMemId> mids(num);
+        response.mids = &mids[0];
+        response.NumFrameActual = (mfxU16) num;
+        for (mfxU32 i=0; i < num; i++)
+        {
+            pSurf = pCore->GetNativeSurface(op_surf[i]);
+            if (!pSurf)
+                return MFX_ERR_INVALID_HANDLE;
+
+            response.mids[i] = pSurf->Data.MemId;
+        }
+
+        if (!pCore->GetPluginAllocResponse(response))
+            return MFX_ERR_INVALID_HANDLE;
+
+        mfxRes = session->m_pCORE->FreeFrames(&response);
+        return mfxRes;
+
+    }
+    // handle error(s)
+    catch(MFX_CORE_CATCH_TYPE)
+    {
+        // set the default error value
+        mfxRes = MFX_ERR_UNKNOWN;
+        if (0 == session)
+        {
+            mfxRes = MFX_ERR_INVALID_HANDLE;
+        }
+        else if (0 == session->m_pScheduler)
+        {
+            mfxRes = MFX_ERR_NOT_INITIALIZED;
+        }
+    }
+
+    return mfxRes;
 
 } // mfxStatus mfxCOREUnmapOpaqueSurface(mfxHDL pthis, mfxU32  num, mfxU32  type, mfxFrameSurface1 **op_surf)
 
