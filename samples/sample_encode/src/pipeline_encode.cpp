@@ -1069,8 +1069,6 @@ void CEncodingPipeline::Close()
     FreeVppDoNotUse();
 
     DeleteFrames();
-    // allocator if used as external for MediaSDK must be deleted after SDK components
-    DeleteAllocator();
 
     m_pPlugin.reset();
 
@@ -1079,6 +1077,9 @@ void CEncodingPipeline::Close()
 
     m_FileReader.Close();
     FreeFileWriters();
+
+    // allocator if used as external for MediaSDK must be deleted after SDK components
+    DeleteAllocator();
 }
 
 void CEncodingPipeline::FreeFileWriters()

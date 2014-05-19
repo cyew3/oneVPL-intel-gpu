@@ -837,14 +837,15 @@ mfxStatus VideoConfPipeline::Close()
     m_encoder.reset();
 
     DeleteFrames();
-    // allocator if used as external for MediaSDK must be deleted after SDK components
-    DeleteAllocator();
 
     DeleteHWDevice();
 
     m_mfxSession.Close();
     m_FileWriter.Close();
     m_FileReader.Close();
+
+    // allocator if used as external for MediaSDK must be deleted after SDK components
+    DeleteAllocator();
 
     return MFX_ERR_NONE;
 }
