@@ -677,7 +677,10 @@ mfxStatus CTranscodingPipeline::Decode()
         if (m_pmfxVPP.get())
             sts = VPPOneFrame(&DecExtSurface, &VppExtSurface);
         else // no VPP - just copy pointers
+        {
             VppExtSurface.pSurface = DecExtSurface.pSurface;
+            VppExtSurface.Syncp = DecExtSurface.Syncp;
+        }
 
         if (sts == MFX_ERR_MORE_DATA || !VppExtSurface.pSurface)
         {
@@ -703,7 +706,10 @@ mfxStatus CTranscodingPipeline::Decode()
 
         }
         else // no VPP - just copy pointers
+        {
             PreEncExtSurface.pSurface = VppExtSurface.pSurface;
+            PreEncExtSurface.Syncp = VppExtSurface.Syncp;
+        }
 
         if (sts == MFX_ERR_MORE_DATA || !PreEncExtSurface.pSurface)
         {
@@ -788,6 +794,7 @@ mfxStatus CTranscodingPipeline::Encode()
         {
             VppExtSurface.pSurface = DecExtSurface.pSurface;
             VppExtSurface.pCtrl = DecExtSurface.pCtrl;
+            VppExtSurface.Syncp = DecExtSurface.Syncp;
         }
 
         if (MFX_ERR_MORE_DATA == sts)
