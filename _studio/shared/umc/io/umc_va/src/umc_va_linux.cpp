@@ -18,8 +18,6 @@
 
 #define UMC_VA_NUM_OF_COMP_BUFFERS 8
 
-//VASurfaceID *va_surface_list = NULL;
-
 UMC::Status va_to_umc_res(VAStatus va_res)
 {
     UMC::Status umcRes = UMC::UMC_OK;
@@ -92,7 +90,8 @@ Ipp32u g_Profiles[] =
     UMC::MPEG2_VLD, UMC::MPEG2_IT,
     UMC::H264_VLD,
     UMC::VC1_VLD, UMC::VC1_MC,
-    UMC::VP8_VLD
+    UMC::VP8_VLD,
+    UMC::VP9_VLD
 };
 
 // va profile priorities for different codecs
@@ -121,6 +120,13 @@ VAProfile g_VP8Profiles[] =
     VAProfileVP8Version0_3
 };
 
+VAProfile g_VP9Profiles[] =
+{
+#ifdef VA_VP9_DECODER  // FIXME: TEMPORAL solution!!!
+    VAProfileVP9Version0
+#endif
+};
+
 VAProfile get_next_va_profile(Ipp32u umc_codec, Ipp32u profile)
 {
     VAProfile va_profile = (VAProfile)-1;
@@ -141,6 +147,9 @@ VAProfile get_next_va_profile(Ipp32u umc_codec, Ipp32u profile)
         break;
     case UMC::VA_VP8:
         if (profile < UMC_ARRAY_SIZE(g_VP8Profiles)) va_profile = g_VP8Profiles[profile];
+        break;
+    case UMC::VA_VP9:
+        if (profile < UMC_ARRAY_SIZE(g_VP9Profiles)) va_profile = g_VP9Profiles[profile];
         break;
     default:
         va_profile = (VAProfile)-1;
@@ -656,6 +665,12 @@ VACompBuffer* LinuxVideoAccelerator::GetCompBufferHW(Ipp32s type, Ipp32s size, I
                 va_size         = sizeof(VASliceParameterBufferVP8);
                 va_num_elements = size/sizeof(VASliceParameterBufferVP8);
                 break;
+#ifdef VA_VP9_DECODER
+            case UMC::VA_VP9:
+                va_size         = sizeof(VASliceParameterBufferVP9);
+                va_num_elements = size/sizeof(VASliceParameterBufferVP9);
+                break;
+#endif
             default:
                 va_size         = 0;
                 va_num_elements = 0;

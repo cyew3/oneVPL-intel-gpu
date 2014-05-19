@@ -66,8 +66,13 @@
 #pragma warning(disable : 4201)
 
 #ifdef UMC_VA_LINUX
-#include <va/va.h>//aya
+#include <va/va.h>
 #include <va/va_dec_vp8.h>
+
+#ifdef VA_VP9_DECODER // FIXME: TEMPORAL solution!!!
+#include <va/va_dec_vp9.h>
+#endif
+
 #ifndef UNREFERENCED_PARAMETER
 #define UNREFERENCED_PARAMETER(p) (p);
 #endif
@@ -121,6 +126,7 @@ enum VideoAccelerationProfile
     VA_JPEG         = 0x0005,
     VA_VP8          = 0x0006,
     VA_H265            = 0x0007,
+    VA_VP9          = 0x0008,
 
     // Entry points
     VA_ENTRY_POINT  = 0xff00,
@@ -155,6 +161,7 @@ enum VideoAccelerationProfile
     JPEG_VLD        = VA_JPEG | VA_VLD,
     VP8_VLD         = VA_VP8 | VA_VLD,
     HEVC_VLD        = VA_H265 | VA_VLD,
+    VP9_VLD         = VA_VP9 | VA_VLD,
 
     H264_VLD_MVC            = VA_H264 | VA_VLD | VA_PROFILE_MVC,
     H264_VLD_SVC_BASELINE   = VA_H264 | VA_VLD | VA_PROFILE_SVC_BASELINE,

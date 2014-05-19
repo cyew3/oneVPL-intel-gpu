@@ -15,10 +15,6 @@ File Name: .h
 
 #include "umc_splitter.h"
 
-#ifndef MAKEFOURCC_INVERT
-    #define MAKEFOURCC_INVERT(D,C,B,A)    ((((int)A))+(((int)B)<<8)+(((int)C)<<16)+(((int)D)<<24))
-#endif
-
 #define READ_BYTES(pBuf, size)\
 {\
     nBytesToread = size;\
@@ -68,8 +64,11 @@ namespace UMC
             UMC_CHECK_STATUS(sts);
 
             //check IVF format structure
-            UMC_CHECK(MAKEFOURCC_INVERT('D','K','I','F'), m_hdr.dkif);
-            UMC_CHECK(MAKEFOURCC_INVERT('V','P','8','0'), m_hdr.codec_FourCC);
+            if (MFX_MAKEFOURCC('D','K','I','F') != m_hdr.dkif)
+                return UMC_ERR_INVALID_STREAM;
+            if ((MFX_MAKEFOURCC('V','P','8','0') != m_hdr.codec_FourCC) &&
+                (MFX_MAKEFOURCC('V','P','9','0') != m_hdr.codec_FourCC))
+                return UMC_ERR_INVALID_STREAM;
 
             if (0 == m_hdr.time_scale)
                 return UMC_ERR_SYNC;
@@ -82,7 +81,11 @@ namespace UMC
             m_videoInfo.clip_info.width = m_hdr.width;
             m_videoInfo.clip_info.height = m_hdr.height;
             m_videoInfo.framerate = m_hdr.frame_rate / m_hdr.time_scale;
-            m_videoInfo.stream_type = VP8_VIDEO;
+            if (MFX_MAKEFOURCC('V','P','8','0') == m_hdr.codec_FourCC)
+                m_videoInfo.stream_type = VP8_VIDEO;
+            if (MFX_MAKEFOURCC('V','P','9','0') == m_hdr.codec_FourCC)
+                m_videoInfo.stream_type = VP9_VIDEO;
+
             if (0 != m_videoInfo.framerate)
             {
                 m_videoInfo.duration = m_hdr.num_frames * 1 / m_videoInfo.framerate;
@@ -202,7 +205,5 @@ namespace UMC
         }m_hdr;
     };
 }
-
-#undef MAKEFOURCC_INVERT
 
 #endif //__UMC_IVF_SPL_H__

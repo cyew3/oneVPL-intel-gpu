@@ -401,6 +401,7 @@ static const GuidProfile guidProfiles[] =
 
     { JPEG_VLD,  sDXVA2_Intel_IVB_ModeJPEG_VLD_NoFGT},
     { VP8_VLD,   sDXVA_Intel_ModeVP8_VLD},
+    { VP9_VLD,   sDXVA_Intel_ModeVP9_VLD},
 
     { VA_H264 | VA_VLD | VA_PROFILE_SVC_HIGH,     sDXVA_ModeH264_VLD_SVC_Scalable_Constrained_High },
     { VA_H264 | VA_VLD | VA_PROFILE_SVC_BASELINE, sDXVA_ModeH264_VLD_SVC_Scalable_Constrained_Baseline },

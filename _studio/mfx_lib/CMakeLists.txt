@@ -25,7 +25,7 @@ endforeach( )
 # =============================================================================
 
 list( APPEND vdecs
-  h264 mpeg2 vc1 mjpeg vp8
+  h264 mpeg2 vc1 mjpeg vp8 vp9
   )
 
 list( APPEND vencs

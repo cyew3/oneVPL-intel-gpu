@@ -20,6 +20,7 @@ File Name: mfxvideo++int.h
 #include "mfxsvc.h"
 #include "mfxjpeg.h"
 #include "mfxvp8.h"
+#include "mfxvp9.h"
 #include "mfxplugin.h"
 
 

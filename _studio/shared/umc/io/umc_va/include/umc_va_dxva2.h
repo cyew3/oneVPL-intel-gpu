@@ -18,6 +18,7 @@
 #include "umc_jpeg_ddi.h"
 #include "umc_svc_ddi.h"
 #include "umc_vp8_ddi.h"
+#include "umc_vp9_ddi.h"
 #include "umc_mvc_ddi.h"
 #define DEFINE_GUID_(name, l, w1, w2, b1, b2, b3, b4, b5, b6, b7, b8) \
     static const GUID name = { l, w1, w2, { b1, b2,  b3,  b4,  b5,  b6,  b7,  b8 } }
@@ -36,6 +37,7 @@ DEFINE_GUID_(sDXVA2_Intel_ModeVC1_D,       0xBCC5DB6D,0xA2B6,0x4AF0,0xAC, 0xE4,0
 DEFINE_GUID_(sDXVA2_Intel_EagleLake_ModeH264_VLD_NoFGT,    0x604f8e68,0x4951,0x4c54,0x88,0xfe,0xab,0xd2,0x5c,0x15,0xb3,0xd6);
 DEFINE_GUID_(sDXVA2_Intel_IVB_ModeJPEG_VLD_NoFGT,    0x91cd2d6e,0x897b,0x4fa1,0xb0,0xd7,0x51,0xdc,0x88,0x01,0x0e,0x0a);
 DEFINE_GUID_(sDXVA_Intel_ModeVP8_VLD, 0x442b942a, 0xb4d9, 0x4940, 0xbc, 0x45, 0xa8, 0x82, 0xe5, 0xf9, 0x19, 0xf3);
+DEFINE_GUID_(sDXVA_Intel_ModeVP9_VLD, 0x76988a52, 0xdf13, 0x419a, 0x8e, 0x64, 0xff, 0xcf, 0x4a, 0x33, 0x6c, 0xf5);
 
 DEFINE_GUID_(sDXVA_Intel_ModeH264_VLD_MVC, 0xe296bf50, 0x8808, 0x4ff8, 0x92, 0xd4, 0xf1, 0xee, 0x79, 0x9f, 0xc3, 0x3c);
 
@@ -153,7 +155,7 @@ bool CheckDXVAConfig(Ipp32s profile_flags, T *config, ProtectedVA * protectedVA)
 
     Ipp32s profile = (profile_flags & (VA_ENTRY_POINT | VA_CODEC));
 
-    if (profile == JPEG_VLD || profile == VP8_VLD)
+    if (profile == JPEG_VLD || profile == VP8_VLD || profile == VP9_VLD)
     {
         //JPEG_DECODING_CAPS * info = (JPEG_DECODING_CAPS *)pConfig;
         return true;

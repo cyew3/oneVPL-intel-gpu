@@ -27,6 +27,7 @@ File Name: .h
 #include "mfx_frame_constructor.h"
 #include "mfxjpeg.h"
 #include "mfxvp8.h"
+#include "mfxvp9.h"
 
 using namespace UMC;
 
@@ -362,6 +363,7 @@ mfxStatus UMCSplWrapper::GetStreamInfo(sStreamInfo * pParams)
         case WMV_VIDEO  :
         case VC1_VIDEO  : pParams->videoType = MFX_CODEC_VC1;   break;
         case VP8_VIDEO  : pParams->videoType = MFX_CODEC_VP8;   break;
+        case VP9_VIDEO  : pParams->videoType = MFX_CODEC_VP9;   break;
         case UNCOMPRESSED_VIDEO : 
         {
             if (m_pVideoInfo->color_format == YV12)
