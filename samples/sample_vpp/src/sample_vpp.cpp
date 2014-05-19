@@ -113,7 +113,7 @@ int main(int argc, char *argv[])
 
   mfxU32              i, j;
 
-  mfxU32              argbSurfaceIndex = 0;
+  mfxU16              argbSurfaceIndex = 0xffff;
 
   //reset pointers to the all internal resources
   MSDK_ZERO_MEMORY(Resources);
