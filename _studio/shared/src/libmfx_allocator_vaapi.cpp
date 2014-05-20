@@ -348,7 +348,8 @@ mfxDefaultAllocatorVAAPI::LockFrameHW(
             case VA_FOURCC_NV12:
                 if (mfx_fourcc == MFX_FOURCC_NV12)
                 {
-                    ptr->Pitch = (mfxU16)vaapi_mids->m_image.pitches[0];
+                    ptr->PitchHigh = (mfxU16)(vaapi_mids->m_image.pitches[0] / (1 << 16));
+                    ptr->PitchLow  = (mfxU16)(vaapi_mids->m_image.pitches[0] % (1 << 16));
                     ptr->Y = pBuffer + vaapi_mids->m_image.offsets[0];
                     ptr->U = pBuffer + vaapi_mids->m_image.offsets[1];
                     ptr->V = ptr->U + 1;
@@ -358,7 +359,8 @@ mfxDefaultAllocatorVAAPI::LockFrameHW(
             case VA_FOURCC_YV12:
                 if (mfx_fourcc == MFX_FOURCC_YV12)
                 {
-                    ptr->Pitch = (mfxU16)vaapi_mids->m_image.pitches[0];
+                    ptr->PitchHigh = (mfxU16)(vaapi_mids->m_image.pitches[0] / (1 << 16));
+                    ptr->PitchLow  = (mfxU16)(vaapi_mids->m_image.pitches[0] % (1 << 16));
                     ptr->Y = pBuffer + vaapi_mids->m_image.offsets[0];
                     ptr->V = pBuffer + vaapi_mids->m_image.offsets[1];
                     ptr->U = pBuffer + vaapi_mids->m_image.offsets[2];
@@ -368,7 +370,8 @@ mfxDefaultAllocatorVAAPI::LockFrameHW(
             case VA_FOURCC_YUY2:
                 if (mfx_fourcc == MFX_FOURCC_YUY2)
                 {
-                    ptr->Pitch = (mfxU16)vaapi_mids->m_image.pitches[0];
+                    ptr->PitchHigh = (mfxU16)(vaapi_mids->m_image.pitches[0] / (1 << 16));
+                    ptr->PitchLow  = (mfxU16)(vaapi_mids->m_image.pitches[0] % (1 << 16));
                     ptr->Y = pBuffer + vaapi_mids->m_image.offsets[0];
                     ptr->U = ptr->Y + 1;
                     ptr->V = ptr->Y + 3;
@@ -378,7 +381,8 @@ mfxDefaultAllocatorVAAPI::LockFrameHW(
             case VA_FOURCC_ARGB:
                 if (mfx_fourcc == MFX_FOURCC_RGB4)
                 {
-                    ptr->Pitch = (mfxU16)vaapi_mids->m_image.pitches[0];
+                    ptr->PitchHigh = (mfxU16)(vaapi_mids->m_image.pitches[0] / (1 << 16));
+                    ptr->PitchLow  = (mfxU16)(vaapi_mids->m_image.pitches[0] % (1 << 16));
                     ptr->B = pBuffer + vaapi_mids->m_image.offsets[0];
                     ptr->G = ptr->B + 1;
                     ptr->R = ptr->B + 2;
@@ -389,7 +393,8 @@ mfxDefaultAllocatorVAAPI::LockFrameHW(
         case VA_FOURCC_P208:
                 if (mfx_fourcc == MFX_FOURCC_NV12)
                 {
-                    ptr->Pitch = (mfxU16)vaapi_mids->m_image.pitches[0];
+                    ptr->PitchHigh = (mfxU16)(vaapi_mids->m_image.pitches[0] / (1 << 16));
+                    ptr->PitchLow  = (mfxU16)(vaapi_mids->m_image.pitches[0] % (1 << 16));
                     ptr->Y = pBuffer + vaapi_mids->m_image.offsets[0];
                 }
                 else mfx_res = MFX_ERR_LOCK_MEMORY;
@@ -431,7 +436,8 @@ mfxStatus mfxDefaultAllocatorVAAPI::UnlockFrameHW(
 
         if (NULL != ptr)
         {
-            ptr->Pitch = 0;
+            ptr->PitchLow  = 0;
+            ptr->PitchHigh = 0;
             ptr->Y     = NULL;
             ptr->U     = NULL;
             ptr->V     = NULL;

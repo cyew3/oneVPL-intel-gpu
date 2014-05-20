@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2011-2013 Intel Corporation. All Rights Reserved.
+Copyright(c) 2011-2014 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -281,7 +281,8 @@ mfxStatus vaapiFrameAllocator::LockFrame(mfxMemId mid, mfxFrameData *ptr)
             case VA_FOURCC_NV12:
                 if (vaapi_mid->m_fourcc == MFX_FOURCC_NV12)
                 {
-                    ptr->Pitch = (mfxU16)vaapi_mid->m_image.pitches[0];
+                    ptr->PitchHigh = (mfxU16)(vaapi_mid->m_image.pitches[0] / (1 << 16));
+                    ptr->PitchLow  = (mfxU16)(vaapi_mid->m_image.pitches[0] % (1 << 16));
                     ptr->Y = pBuffer + vaapi_mid->m_image.offsets[0];
                     ptr->U = pBuffer + vaapi_mid->m_image.offsets[1];
                     ptr->V = ptr->U + 1;
@@ -291,7 +292,8 @@ mfxStatus vaapiFrameAllocator::LockFrame(mfxMemId mid, mfxFrameData *ptr)
             case VA_FOURCC_YV12:
                 if (vaapi_mid->m_fourcc == MFX_FOURCC_YV12)
                 {
-                    ptr->Pitch = (mfxU16)vaapi_mid->m_image.pitches[0];
+                    ptr->PitchHigh = (mfxU16)(vaapi_mid->m_image.pitches[0] / (1 << 16));
+                    ptr->PitchLow  = (mfxU16)(vaapi_mid->m_image.pitches[0] % (1 << 16));
                     ptr->Y = pBuffer + vaapi_mid->m_image.offsets[0];
                     ptr->V = pBuffer + vaapi_mid->m_image.offsets[1];
                     ptr->U = pBuffer + vaapi_mid->m_image.offsets[2];
@@ -301,7 +303,8 @@ mfxStatus vaapiFrameAllocator::LockFrame(mfxMemId mid, mfxFrameData *ptr)
             case VA_FOURCC_YUY2:
                 if (vaapi_mid->m_fourcc == MFX_FOURCC_YUY2)
                 {
-                    ptr->Pitch = (mfxU16)vaapi_mid->m_image.pitches[0];
+                    ptr->PitchHigh = (mfxU16)(vaapi_mid->m_image.pitches[0] / (1 << 16));
+                    ptr->PitchLow  = (mfxU16)(vaapi_mid->m_image.pitches[0] % (1 << 16));
                     ptr->Y = pBuffer + vaapi_mid->m_image.offsets[0];
                     ptr->U = ptr->Y + 1;
                     ptr->V = ptr->Y + 3;
@@ -311,7 +314,8 @@ mfxStatus vaapiFrameAllocator::LockFrame(mfxMemId mid, mfxFrameData *ptr)
             case VA_FOURCC_ARGB:
                 if (vaapi_mid->m_fourcc == MFX_FOURCC_RGB4)
                 {
-                    ptr->Pitch = (mfxU16)vaapi_mid->m_image.pitches[0];
+                    ptr->PitchHigh = (mfxU16)(vaapi_mid->m_image.pitches[0] / (1 << 16));
+                    ptr->PitchLow  = (mfxU16)(vaapi_mid->m_image.pitches[0] % (1 << 16));
                     ptr->B = pBuffer + vaapi_mid->m_image.offsets[0];
                     ptr->G = ptr->B + 1;
                     ptr->R = ptr->B + 2;
@@ -345,7 +349,8 @@ mfxStatus vaapiFrameAllocator::UnlockFrame(mfxMemId mid, mfxFrameData *ptr)
 
         if (NULL != ptr)
         {
-            ptr->Pitch = 0;
+            ptr->PitchLow  = 0;
+            ptr->PitchHigh = 0;
             ptr->Y     = NULL;
             ptr->U     = NULL;
             ptr->V     = NULL;
