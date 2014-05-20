@@ -8,6 +8,10 @@
 
 #include "test_usage_models_cmdline.h"
 
+#if !defined(msdk_sscanf)
+# define msdk_sscanf sscanf
+#endif
+
 mfxU32 String2VideoFormat( msdk_char* arg );
 msdk_char* VideoFormat2String( mfxU32 FourCC );
 mfxU16 String2IOPattern( msdk_char* strInput );
