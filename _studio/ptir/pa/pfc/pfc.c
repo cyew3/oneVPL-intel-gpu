@@ -12,6 +12,7 @@ File Name: api.h
 
 #include "PFC.h"
 #include "..\Telecine\telecine.h"
+#include <assert.h> 
 
 static int DetectInterlace_I420(unsigned char *frame, unsigned char *prev_frame, int pels, int lines, int pitch)
 {
@@ -1516,7 +1517,8 @@ static void Filter_gradient(Plane *plaOut, Plane *plaIn)
 
     float rx = (float)plaIn->uiWidth / (float)plaOut->uiWidth;
     float ry = (float)plaIn->uiHeight / (float)plaOut->uiHeight;
-
+    assert(gradX != NULL);
+    assert(gradY != NULL);
     memset(gradX, 0, s);
     memset(gradY, 0, s);
 

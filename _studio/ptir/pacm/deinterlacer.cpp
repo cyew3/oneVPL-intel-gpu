@@ -134,47 +134,47 @@ DeinterlaceFilter::DeinterlaceFilter(eMFXHWType HWType, UINT width, UINT height,
 
 DeinterlaceFilter::~DeinterlaceFilter()
 {
-    printf("\n");
-    printf("%40s %9.5lf ms count:%d\n", "SAD CPU Time", clockSAD.Duration() / clockSAD.Count(), clockSAD.Count());
-    printf("%40s %9.5lf ms count:%d\n", "RS CPU Time", clockRs.Duration() / clockRs.Count(), clockRs.Count());
+    //printf("\n");
+    //printf("%40s %9.5lf ms count:%d\n", "SAD CPU Time", clockSAD.Duration() / clockSAD.Count(), clockSAD.Count());
+    //printf("%40s %9.5lf ms count:%d\n", "RS CPU Time", clockRs.Duration() / clockRs.Count(), clockRs.Count());
 
-    printf("%40s %9.5lf ms count:%d\n", "Combined SAD RS GPU Total Time", clockSADRSGPUTotal.Duration() / clockSADRSGPUTotal.Count(), clockSADRSGPUTotal.Count());
-    printf("%40s %17.5lf ms count:%d\n", "Combined SAD RS Copy to GPU Time", clockSADRSCopyToGPU.Duration() / clockSADRSCopyToGPU.Count(), clockSADRSCopyToGPU.Count());
-    printf("%40s %17.5lf ms count:%d\n", "Combined SAD RS Create Surface Time", clockSADRSCreateSurfaces.Duration() / clockSADRSCreateSurfaces.Count(), clockSADRSCreateSurfaces.Count());
-    printf("%40s %17.5lf ms count:%d\n", "Combined SAD RS Enqueue Time", clockSADRSEnqueue.Duration() / clockSADRSEnqueue.Count(), clockSADRSEnqueue.Count());
-    printf("%40s %17.5lf ms count:%d\n", "Combined SAD RS Sync Time", clockSADRSSync.Duration() / clockSADRSSync.Count(), clockSADRSSync.Count());
-    printf("%40s %17.5lf ms count:%d\n", "Combined SAD RS Post Processing Time", clockSADRSPostProcessing.Duration() / clockSADRSPostProcessing.Count(), clockSADRSPostProcessing.Count());
-    printf("%40s %17.5lf ms count:%d\n", "SAD_RS kernel Time", queue->KernelDurationAvg(kernelSadRs->KernelName()), queue->KernelCount(kernelSadRs->KernelName()));
+    //printf("%40s %9.5lf ms count:%d\n", "Combined SAD RS GPU Total Time", clockSADRSGPUTotal.Duration() / clockSADRSGPUTotal.Count(), clockSADRSGPUTotal.Count());
+    //printf("%40s %17.5lf ms count:%d\n", "Combined SAD RS Copy to GPU Time", clockSADRSCopyToGPU.Duration() / clockSADRSCopyToGPU.Count(), clockSADRSCopyToGPU.Count());
+    //printf("%40s %17.5lf ms count:%d\n", "Combined SAD RS Create Surface Time", clockSADRSCreateSurfaces.Duration() / clockSADRSCreateSurfaces.Count(), clockSADRSCreateSurfaces.Count());
+    //printf("%40s %17.5lf ms count:%d\n", "Combined SAD RS Enqueue Time", clockSADRSEnqueue.Duration() / clockSADRSEnqueue.Count(), clockSADRSEnqueue.Count());
+    //printf("%40s %17.5lf ms count:%d\n", "Combined SAD RS Sync Time", clockSADRSSync.Duration() / clockSADRSSync.Count(), clockSADRSSync.Count());
+    //printf("%40s %17.5lf ms count:%d\n", "Combined SAD RS Post Processing Time", clockSADRSPostProcessing.Duration() / clockSADRSPostProcessing.Count(), clockSADRSPostProcessing.Count());
+    //printf("%40s %17.5lf ms count:%d\n", "SAD_RS kernel Time", queue->KernelDurationAvg(kernelSadRs->KernelName()), queue->KernelCount(kernelSadRs->KernelName()));
 
-    printf("\n");
-    printf("%40s %9.5lf ms count:%d\n", "RS GPU Total Time", clockRSGPUTotal.Duration() / clockRSGPUTotal.Count(), clockRSGPUTotal.Count());
-    printf("%40s %17.5lf ms count:%d\n", "RS Copy to GPU Time", clockRSCopyToGPU.Duration() / clockRSCopyToGPU.Count(), clockRSCopyToGPU.Count());
-    printf("%40s %17.5lf ms count:%d\n", "RS kernel Time", queue->KernelDurationAvg(kernelRs->KernelName()), queue->KernelCount(kernelRs->KernelName()));
+    //printf("\n");
+    //printf("%40s %9.5lf ms count:%d\n", "RS GPU Total Time", clockRSGPUTotal.Duration() / clockRSGPUTotal.Count(), clockRSGPUTotal.Count());
+    //printf("%40s %17.5lf ms count:%d\n", "RS Copy to GPU Time", clockRSCopyToGPU.Duration() / clockRSCopyToGPU.Count(), clockRSCopyToGPU.Count());
+    //printf("%40s %17.5lf ms count:%d\n", "RS kernel Time", queue->KernelDurationAvg(kernelRs->KernelName()), queue->KernelCount(kernelRs->KernelName()));
 
-    printf("\n");
-    printf("%40s %9.5lf ms count:%d\n", "Total CPU Deinterlace Filter Time", clockDeinterlaceTotalCPU.Duration() / clockDeinterlaceTotalCPU.Count(), clockDeinterlaceTotalCPU.Count());
-    printf("%40s %17.5lf ms count:%d\n", "Deinterlace 2 Frames CPU Time", clockDeinterlace.Duration() / clockDeinterlace.Count(), clockDeinterlace.Count());
-    printf("%40s %17.5lf ms count:%d\n", "Deinterlace Top Field Only CPU Time", clockDeinterlaceOne.Duration() / clockDeinterlaceOne.Count(), clockDeinterlaceOne.Count());
-    printf("%40s %17.5lf ms count:%d\n", "FillBaseLinesIYUV CPU Time", clockFillBaseline.Duration() / clockFillBaseline.Count(), clockFillBaseline.Count());
-    printf("%40s %17.5lf ms count:%d\n", "LowEdgeMask CPU Time", clockLowEdgeMask.Duration() / clockLowEdgeMask.Count(), clockLowEdgeMask.Count());
-    printf("%40s %17.5lf ms count:%d\n", "FixEdge CPU Time", clockFixEdge.Duration() / clockFixEdge.Count(), clockFixEdge.Count());
-    printf("%40s %17.5lf ms count:%d\n", "DeinterBorder CPU Time", clockDeinterBorder.Duration() / clockDeinterBorder.Count(), clockDeinterBorder.Count());
+    //printf("\n");
+    //printf("%40s %9.5lf ms count:%d\n", "Total CPU Deinterlace Filter Time", clockDeinterlaceTotalCPU.Duration() / clockDeinterlaceTotalCPU.Count(), clockDeinterlaceTotalCPU.Count());
+    //printf("%40s %17.5lf ms count:%d\n", "Deinterlace 2 Frames CPU Time", clockDeinterlace.Duration() / clockDeinterlace.Count(), clockDeinterlace.Count());
+    //printf("%40s %17.5lf ms count:%d\n", "Deinterlace Top Field Only CPU Time", clockDeinterlaceOne.Duration() / clockDeinterlaceOne.Count(), clockDeinterlaceOne.Count());
+    //printf("%40s %17.5lf ms count:%d\n", "FillBaseLinesIYUV CPU Time", clockFillBaseline.Duration() / clockFillBaseline.Count(), clockFillBaseline.Count());
+    //printf("%40s %17.5lf ms count:%d\n", "LowEdgeMask CPU Time", clockLowEdgeMask.Duration() / clockLowEdgeMask.Count(), clockLowEdgeMask.Count());
+    //printf("%40s %17.5lf ms count:%d\n", "FixEdge CPU Time", clockFixEdge.Duration() / clockFixEdge.Count(), clockFixEdge.Count());
+    //printf("%40s %17.5lf ms count:%d\n", "DeinterBorder CPU Time", clockDeinterBorder.Duration() / clockDeinterBorder.Count(), clockDeinterBorder.Count());
 
-    printf("%40s %9.5lf ms count:%d\n", "Deintelace Copy to GPU Surface Time", clockCopyToGPU.Duration() / clockCopyToGPU.Count(), clockCopyToGPU.Count());
-    printf("%40s %9.5lf ms count:%d\n", "Deintelace Copy Surface to CPU Time", clockCopyToCPU.Duration() / clockCopyToCPU.Count(), clockCopyToCPU.Count());
-    printf("%40s %9.5lf ms count:%d\n", "Real GPU Deinterlace Filter Time", clockDeinterlaceTotalGPU.Duration() / clockDeinterlaceTotalGPU.Count(), clockDeinterlaceTotalGPU.Count());
-    printf("%40s %17.5lf ms count:%d\n", "Deinterlace 2 fields kernel Time", queue->KernelDurationAvg(kernelMedianDeinterlace->KernelName()), queue->KernelCount(kernelMedianDeinterlace->KernelName()));
-    printf("%40s %17.5lf ms count:%d\n", "Deinterlace Top field kernel Time", queue->KernelDurationAvg(kernelMedianDeinterlaceTop->KernelName()), queue->KernelCount(kernelMedianDeinterlaceTop->KernelName()));
-    printf("%40s %17.5lf ms count:%d\n", "Deinterlace Bot field kernel Time", queue->KernelDurationAvg(kernelMedianDeinterlaceBot->KernelName()), queue->KernelCount(kernelMedianDeinterlaceBot->KernelName()));
-    printf("%40s %17.5lf ms count:%d\n", "LowEdgeMask 2 fields kernel Time", queue->KernelDurationAvg(kernelLowEdgeMask2Fields->KernelName()), queue->KernelCount(kernelLowEdgeMask2Fields->KernelName()));
-    printf("%40s %17.5lf ms count:%d\n", "LowEdgeMask 1 field kernel Time", (queue->KernelDuration(kernelLowEdgeMaskTop->KernelName()) + queue->KernelDuration(kernelLowEdgeMaskBottom->KernelName())) / (queue->KernelCount(kernelLowEdgeMaskTop->KernelName()) + queue->KernelCount(kernelLowEdgeMaskBottom->KernelName())), (queue->KernelCount(kernelLowEdgeMaskTop->KernelName()) + queue->KernelCount(kernelLowEdgeMaskBottom->KernelName())));
-    printf("%40s %17.5lf ms count:%d\n", "FixEdge kernel Time", (queue->KernelDuration(kernelFixEdgeBottom->KernelName()) + queue->KernelDuration(kernelFixEdgeTop->KernelName())) / (queue->KernelCount(kernelFixEdgeBottom->KernelName()) + queue->KernelCount(kernelFixEdgeTop->KernelName())), (queue->KernelCount(kernelFixEdgeBottom->KernelName()) + queue->KernelCount(kernelFixEdgeTop->KernelName())));
-    printf("%40s %17.5lf ms count:%d\n", "DeinterlaceBorder kernel Time", (queue->KernelDuration(kernelDeinterlaceBorderTop->KernelName()) + queue->KernelDuration(kernelDeinterlaceBorderBottom->KernelName())) / (queue->KernelCount(kernelDeinterlaceBorderTop->KernelName()) + queue->KernelCount(kernelDeinterlaceBorderBottom->KernelName())), (queue->KernelCount(kernelDeinterlaceBorderTop->KernelName()) + queue->KernelCount(kernelDeinterlaceBorderBottom->KernelName())));
-    printf("%40s %17.5lf ms count:%d\n", "Deintelace Host Time", clockDeinterlaceHost.Duration() / clockDeinterlaceHost.Count(), clockDeinterlaceHost.Count());
-    printf("%40s %17.5lf ms count:%d\n", "FixEdge Host Time", clockFixEdgeHost.Duration() / clockFixEdgeHost.Count(), clockFixEdgeHost.Count());
-    printf("%40s %17.5lf ms count:%d\n", "LowEdgeMask Host Time", clockLowEdgeMaskHost.Duration() / clockLowEdgeMaskHost.Count(), clockLowEdgeMaskHost.Count());
-    printf("%40s %17.5lf ms count:%d\n", "Deinterlace borders Host Time", clockDeinterlaceBorderHost.Duration() / clockDeinterlaceBorderHost.Count(), clockDeinterlaceBorderHost.Count());
-    printf("%40s %17.5lf ms count:%d\n", "Wait GPU Complete Time", clockSync.Duration() / clockSync.Count(), clockSync.Count());
+    //printf("%40s %9.5lf ms count:%d\n", "Deintelace Copy to GPU Surface Time", clockCopyToGPU.Duration() / clockCopyToGPU.Count(), clockCopyToGPU.Count());
+    //printf("%40s %9.5lf ms count:%d\n", "Deintelace Copy Surface to CPU Time", clockCopyToCPU.Duration() / clockCopyToCPU.Count(), clockCopyToCPU.Count());
+    //printf("%40s %9.5lf ms count:%d\n", "Real GPU Deinterlace Filter Time", clockDeinterlaceTotalGPU.Duration() / clockDeinterlaceTotalGPU.Count(), clockDeinterlaceTotalGPU.Count());
+    //printf("%40s %17.5lf ms count:%d\n", "Deinterlace 2 fields kernel Time", queue->KernelDurationAvg(kernelMedianDeinterlace->KernelName()), queue->KernelCount(kernelMedianDeinterlace->KernelName()));
+    //printf("%40s %17.5lf ms count:%d\n", "Deinterlace Top field kernel Time", queue->KernelDurationAvg(kernelMedianDeinterlaceTop->KernelName()), queue->KernelCount(kernelMedianDeinterlaceTop->KernelName()));
+    //printf("%40s %17.5lf ms count:%d\n", "Deinterlace Bot field kernel Time", queue->KernelDurationAvg(kernelMedianDeinterlaceBot->KernelName()), queue->KernelCount(kernelMedianDeinterlaceBot->KernelName()));
+    //printf("%40s %17.5lf ms count:%d\n", "LowEdgeMask 2 fields kernel Time", queue->KernelDurationAvg(kernelLowEdgeMask2Fields->KernelName()), queue->KernelCount(kernelLowEdgeMask2Fields->KernelName()));
+    //printf("%40s %17.5lf ms count:%d\n", "LowEdgeMask 1 field kernel Time", (queue->KernelDuration(kernelLowEdgeMaskTop->KernelName()) + queue->KernelDuration(kernelLowEdgeMaskBottom->KernelName())) / (queue->KernelCount(kernelLowEdgeMaskTop->KernelName()) + queue->KernelCount(kernelLowEdgeMaskBottom->KernelName())), (queue->KernelCount(kernelLowEdgeMaskTop->KernelName()) + queue->KernelCount(kernelLowEdgeMaskBottom->KernelName())));
+    //printf("%40s %17.5lf ms count:%d\n", "FixEdge kernel Time", (queue->KernelDuration(kernelFixEdgeBottom->KernelName()) + queue->KernelDuration(kernelFixEdgeTop->KernelName())) / (queue->KernelCount(kernelFixEdgeBottom->KernelName()) + queue->KernelCount(kernelFixEdgeTop->KernelName())), (queue->KernelCount(kernelFixEdgeBottom->KernelName()) + queue->KernelCount(kernelFixEdgeTop->KernelName())));
+    //printf("%40s %17.5lf ms count:%d\n", "DeinterlaceBorder kernel Time", (queue->KernelDuration(kernelDeinterlaceBorderTop->KernelName()) + queue->KernelDuration(kernelDeinterlaceBorderBottom->KernelName())) / (queue->KernelCount(kernelDeinterlaceBorderTop->KernelName()) + queue->KernelCount(kernelDeinterlaceBorderBottom->KernelName())), (queue->KernelCount(kernelDeinterlaceBorderTop->KernelName()) + queue->KernelCount(kernelDeinterlaceBorderBottom->KernelName())));
+    //printf("%40s %17.5lf ms count:%d\n", "Deintelace Host Time", clockDeinterlaceHost.Duration() / clockDeinterlaceHost.Count(), clockDeinterlaceHost.Count());
+    //printf("%40s %17.5lf ms count:%d\n", "FixEdge Host Time", clockFixEdgeHost.Duration() / clockFixEdgeHost.Count(), clockFixEdgeHost.Count());
+    //printf("%40s %17.5lf ms count:%d\n", "LowEdgeMask Host Time", clockLowEdgeMaskHost.Duration() / clockLowEdgeMaskHost.Count(), clockLowEdgeMaskHost.Count());
+    //printf("%40s %17.5lf ms count:%d\n", "Deinterlace borders Host Time", clockDeinterlaceBorderHost.Duration() / clockDeinterlaceBorderHost.Count(), clockDeinterlaceBorderHost.Count());
+    //printf("%40s %17.5lf ms count:%d\n", "Wait GPU Complete Time", clockSync.Duration() / clockSync.Count(), clockSync.Count());
 
 }
 
@@ -803,6 +803,7 @@ void DeinterlaceFilter::WriteRAWI420ToGPUNV12(Frame * pFrame, void* ucMem)
 
     unsigned char *nv12Plane, *yPlane, *uvPlane;
     nv12Plane = (unsigned char*)malloc(height*width * 3 >> 1);
+    assert(nv12Plane != NULL);
     yPlane = nv12Plane;
     uvPlane = nv12Plane + height*width;
 
@@ -840,6 +841,7 @@ void DeinterlaceFilter::ReadRAWI420FromGPUNV12(Frame * pFrame, void* ucMem)
 
     unsigned char *nv12Plane, *yPlane, *uvPlane;
     nv12Plane = (unsigned char*)malloc(height*width * 3 >> 1);
+    assert(nv12Plane != NULL);
     yPlane = nv12Plane;
     uvPlane = nv12Plane + height*width;
 

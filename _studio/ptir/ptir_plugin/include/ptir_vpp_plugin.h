@@ -120,11 +120,22 @@ protected:
 
     mfxSession          m_session;
     mfxPluginParam      m_PluginParam;
+    mfxVideoParam       m_mfxpar;
     bool                m_createdByDispatcher;
     std::auto_ptr<MFXPluginAdapter<MFXVPPPlugin> > m_adapter;
     PTIR_Processor*  ptir;
     UMC::Mutex m_guard;
+
     bool bEOS;
+    bool bInited;
+    bool par_accel;
+    frameSupplier* frmSupply;
+    mfxFrameSurface1* prevSurf;
+    std::vector<PTIR_Task*> vTasks;
+    std::vector<mfxFrameSurface1*> inSurfs;
+    std::vector<mfxFrameSurface1*> workSurfs;
+    std::vector<mfxFrameSurface1*> outSurfs;
+
 
     inline mfxStatus MFX_PTIR_Plugin::GetHandle(mfxHDL& mfxDeviceHdl, mfxHandleType& mfxDeviceType);
     inline mfxStatus MFX_PTIR_Plugin::GetHWTypeAndCheckSupport(mfxIMPL& impl, mfxHDL& mfxDeviceHdl, eMFXHWType& HWType, bool& HWSupported, bool& par_accel);
@@ -133,19 +144,6 @@ protected:
     inline mfxFrameSurface1* MFX_PTIR_Plugin::GetFreeSurf(std::vector<mfxFrameSurface1*>& vSurfs);
     inline mfxStatus MFX_PTIR_Plugin::addWorkSurf(mfxFrameSurface1* pSurface);
     inline mfxStatus MFX_PTIR_Plugin::addInSurf(mfxFrameSurface1* pSurface);
-//    mfxStatus Process(mfxFrameSurface1 *surf_in, mfxFrameSurface1 *surf_out);
-
-    //bool b_firstFrameProceed;
-    bool bInited;
-    bool par_accel;
-    //bool bInExecution;
-    //bool bMoreOutFrames;
-    frameSupplier* frmSupply;
-    mfxFrameSurface1* prevSurf;
-    std::vector<PTIR_Task*> vTasks;
-    std::vector<mfxFrameSurface1*> inSurfs;
-    std::vector<mfxFrameSurface1*> workSurfs;
-    std::vector<mfxFrameSurface1*> outSurfs;
 };
 
 #if defined(_WIN32) || defined(_WIN64)

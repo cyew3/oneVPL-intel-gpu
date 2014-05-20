@@ -28,7 +28,7 @@ PTIR_ProcessorCPU::PTIR_ProcessorCPU(mfxCoreInterface* mfxCore, frameSupplier* _
 
     FrameQueue_Initialize(&fqIn);
     Pattern_init(&mainPattern);
-    uiCount = MFX_INFINITE / 2; // /2 to avoid overflow. TODO: fix
+    //uiCount = MFX_INFINITE / 2; // /2 to avoid overflow. TODO: fix
     uiSupBuf = BUFMINSIZE;
 
     b_firstFrameProceed = false;
@@ -53,7 +53,7 @@ mfxStatus PTIR_ProcessorCPU::Init(mfxVideoParam *par)
     uiInWidth  = uiWidth  = par->vpp.In.CropW;
     uiInHeight = uiHeight = par->vpp.In.CropH;
     if(par->vpp.In.FrameRateExtN && par->vpp.In.FrameRateExtD)
-        dFrameRate = par->vpp.In.FrameRateExtN / par->vpp.In.FrameRateExtD;
+        dFrameRate = (double) par->vpp.In.FrameRateExtN / par->vpp.In.FrameRateExtD;
     else
         dFrameRate = 30.0;
 
@@ -172,7 +172,7 @@ mfxStatus PTIR_ProcessorCPU::Close()
     }
 }
 
-mfxStatus PTIR_ProcessorCPU::Process(mfxFrameSurface1 *surface_in, mfxFrameSurface1 **surface_out, mfxCoreInterface *mfx_core, mfxFrameSurface1**)
+mfxStatus PTIR_ProcessorCPU::Process(mfxFrameSurface1 *surface_in, mfxFrameSurface1 **surface_out, mfxCoreInterface *mfx_core, mfxFrameSurface1**, bool beof)
 {
     mfxStatus mfxSts = MFX_ERR_NONE;
     mfxStatus mfxCCSts = MFX_ERR_NONE;
@@ -207,7 +207,7 @@ mfxStatus PTIR_ProcessorCPU::Process(mfxFrameSurface1 *surface_in, mfxFrameSurfa
         {
             mfx_core->FrameAllocator.Unlock(mfx_core->FrameAllocator.pthis, (*surface_out)->Data.MemId, &((*surface_out)->Data));
             mfx_core->FrameAllocator.Unlock(mfx_core->FrameAllocator.pthis, surface_in->Data.MemId, &(surface_in->Data));
-            mfx_core = false;
+            isUnlockReq = false;
         }
         if(MFX_ERR_NONE == mfxSts || MFX_ERR_MORE_SURFACE == mfxSts)
             (*surface_out) = 0;
@@ -324,7 +324,7 @@ mfxStatus PTIR_ProcessorCPU::PTIR_ProcessFrame(mfxFrameSurface1 *surf_in, mfxFra
             uiProgress = 0;
             uiTimer = 0;
 
-            if (uiFrame < uiStart + uiCount)
+            if (true/*uiFrame < uiStart + uiCount*/)
             {
                 ////QueryPerformanceCounter(&liTime[uiTimer++]);
                 //----------------------------------------
@@ -348,7 +348,7 @@ mfxStatus PTIR_ProcessorCPU::PTIR_ProcessFrame(mfxFrameSurface1 *surf_in, mfxFra
     //#if PRINTX == 2
     //            printf("%i\t%4.3lf\t%4.3lf\t%4.3lf\t%4.3lf\t%4.3lf\t%4.3lf\t%4.3lf\t%4.3lf\t%4.3lf\t%4.0lf\t%4.3lf\t%4.0lf\t%4.3lf\t%4.3lf\t%4.3lf\t%4.3lf\n", uiFrame + 1, dSAD[0], dSAD[1], dSAD[2], dSAD[3], dSAD[4], dRs[0], dRs[1], dRs[2], dRs[3], dRs[4], dRs[5] / dPicSize * 1000, dRs[6], dRs[7] / dPicSize * 1000, dRs[8], dRs[9], dRs[10]);
     //#endif
-                if ((uiCur == BUFMINSIZE - 1) || (uiFrame == (uiCount - 1)))
+                if ((uiCur == BUFMINSIZE - 1) /*|| (uiFrame == (uiCount - 1))*/)
                 {
                     Analyze_Buffer_Stats(frmBuffer, &mainPattern, &uiDispatch, &uiisInterlaced);
                     if(mainPattern.ucPatternFound && uiisInterlaced != 1)

@@ -59,7 +59,16 @@ MFX_PTIR_Plugin::MFX_PTIR_Plugin(bool CreateByDispatcher)
     m_PluginParam.Type = MFX_PLUGINTYPE_VIDEO_VPP;
     m_PluginParam.PluginVersion = 1;
     m_createdByDispatcher = CreateByDispatcher;
+
+    m_session = 0;
+    m_pmfxCore = 0;
+    memset(&m_mfxpar, 0, sizeof(mfxVideoParam));
+    ptir = 0;
+    bEOS = false;
+    bInited = false;
     par_accel = false;
+    frmSupply = 0;
+    prevSurf = 0;
 }
 
 MFX_PTIR_Plugin::~MFX_PTIR_Plugin()
@@ -133,7 +142,7 @@ mfxStatus MFX_PTIR_Plugin::VPPFrameSubmitEx(mfxFrameSurface1 *surface_in, mfxFra
 
     if(!bEOS)
     {
-        if(outSurfs.size() && !bEOS)
+        if(outSurfs.size())
         {
             //*surface_out = outSurfs.front();
             addInSurf(surface_in);
@@ -223,6 +232,7 @@ mfxStatus MFX_PTIR_Plugin::Execute(mfxThreadTask task, mfxU32 , mfxU32 )
     if(inSurfs.size() == 0 && 0 == ptir->fqIn.iCount && 0 == ptir->uiCur && 0 == outSurfs.size())
         return MFX_ERR_UNDEFINED_BEHAVIOR;
 
+    bool beof = false;
     mfxStatus mfxSts = MFX_ERR_NONE;
     mfxFrameSurface1 *surface_out = 0;
     mfxFrameSurface1 *surface_outtt = 0;
@@ -237,9 +247,11 @@ mfxStatus MFX_PTIR_Plugin::Execute(mfxThreadTask task, mfxU32 , mfxU32 )
                 break;
             if(!surface_out)
                 surface_out = GetFreeSurf(workSurfs);
+            if((*it == inSurfs.back()) && bEOS)
+                beof = true;
             try
             {
-                mfxSts = ptir->Process(*it, &surface_out, m_pmfxCore, &surface_outtt);
+                mfxSts = ptir->Process(*it, &surface_out, m_pmfxCore, &surface_outtt, beof);
             }
             catch(...)
             {
@@ -247,7 +259,7 @@ mfxStatus MFX_PTIR_Plugin::Execute(mfxThreadTask task, mfxU32 , mfxU32 )
                 return mfxSts;
             }
 
-            m_pmfxCore->DecreaseReference(m_pmfxCore->pthis, &(*it)->Data);
+            //m_pmfxCore->DecreaseReference(m_pmfxCore->pthis, &(*it)->Data);
             prevSurf = *it;
             *it = 0;
             if(MFX_ERR_NONE == mfxSts)
@@ -294,7 +306,7 @@ mfxStatus MFX_PTIR_Plugin::Execute(mfxThreadTask task, mfxU32 , mfxU32 )
         surface_out = GetFreeSurf(workSurfs);
         try
         {
-            mfxSts = ptir->Process(0, &surface_out, m_pmfxCore, &surface_outtt);
+            mfxSts = ptir->Process(0, &surface_out, m_pmfxCore, &surface_outtt, bEOS);
         }
         catch(...)
         {
@@ -333,8 +345,8 @@ mfxStatus MFX_PTIR_Plugin::Execute(mfxThreadTask task, mfxU32 , mfxU32 )
     //    return MFX_ERR_UNDEFINED_BEHAVIOR;
     //}
 
-    m_pmfxCore->DecreaseReference(m_pmfxCore->pthis, &outSurfs.front()->Data);
-    outSurfs.erase(outSurfs.begin());
+    //m_pmfxCore->DecreaseReference(m_pmfxCore->pthis, &outSurfs.front()->Data);
+    //outSurfs.erase(outSurfs.begin());
     return MFX_ERR_NONE;
 }
 mfxStatus MFX_PTIR_Plugin::FreeResources(mfxThreadTask task, mfxStatus )
@@ -342,6 +354,8 @@ mfxStatus MFX_PTIR_Plugin::FreeResources(mfxThreadTask task, mfxStatus )
     for(mfxU32 i=0; i < vTasks.size(); i++){
         if (vTasks[i] == (PTIR_Task*) task)
         {
+            m_pmfxCore->DecreaseReference(m_pmfxCore->pthis, &outSurfs.front()->Data);
+            outSurfs.erase(outSurfs.begin());
             delete vTasks[i];
             vTasks.erase(vTasks.begin() + i);
         }
@@ -485,7 +499,7 @@ mfxStatus MFX_PTIR_Plugin::Query(mfxVideoParam *in, mfxVideoParam *out)
                 in->vpp.In.FrameRateExtD = 0;
             }
             if(in->vpp.Out.FrameRateExtD &&
-               ((30 != in->vpp.Out.FrameRateExtN / in->vpp.Out.FrameRateExtD) || (60 != in->vpp.Out.FrameRateExtN / in->vpp.Out.FrameRateExtD)))
+               ((30 != in->vpp.Out.FrameRateExtN / in->vpp.Out.FrameRateExtD) && (60 != in->vpp.Out.FrameRateExtN / in->vpp.Out.FrameRateExtD)))
             {
                 out->vpp.Out.FrameRateExtN = 0;
                 out->vpp.Out.FrameRateExtD = 0;
@@ -506,6 +520,7 @@ mfxStatus MFX_PTIR_Plugin::Query(mfxVideoParam *in, mfxVideoParam *out)
     }
 
     //Check partial acceleration
+    bool p_accel = false;
     mfxHandleType mfxDeviceType = MFX_HANDLE_DIRECT3D_DEVICE_MANAGER9;
     mfxHDL mfxDeviceHdl;
     mfxCoreParam mfxCorePar;
@@ -519,7 +534,7 @@ mfxStatus MFX_PTIR_Plugin::Query(mfxVideoParam *in, mfxVideoParam *out)
             return mfxSts;
         bool HWSupported = false;
         eMFXHWType HWType = MFX_HW_UNKNOWN;
-        mfxSts = GetHWTypeAndCheckSupport(mfxCorePar.Impl, mfxDeviceHdl, HWType, HWSupported, par_accel);
+        mfxSts = GetHWTypeAndCheckSupport(mfxCorePar.Impl, mfxDeviceHdl, HWType, HWSupported, p_accel);
         if(MFX_ERR_NONE > mfxSts)
             return mfxSts;
     }
@@ -527,7 +542,7 @@ mfxStatus MFX_PTIR_Plugin::Query(mfxVideoParam *in, mfxVideoParam *out)
 
     if(bWarnIsNeeded)
         return MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
-    else if(par_accel)
+    else if(p_accel)
         return MFX_WRN_PARTIAL_ACCELERATION;
     else
         return MFX_ERR_NONE;
@@ -708,6 +723,8 @@ mfxStatus MFX_PTIR_Plugin::Init(mfxVideoParam *par)
 
     bInited = true;
 
+    m_mfxpar = *par;
+
     if(par_accel)
         return MFX_WRN_PARTIAL_ACCELERATION;
     else
@@ -715,7 +732,30 @@ mfxStatus MFX_PTIR_Plugin::Init(mfxVideoParam *par)
 }
 mfxStatus MFX_PTIR_Plugin::Reset(mfxVideoParam *par)
 {
-    return MFX_ERR_NONE;
+    if(!bInited)
+        return MFX_ERR_NOT_INITIALIZED;
+    if(!par)
+        return MFX_ERR_NULL_PTR;
+
+    mfxStatus mfxSts = MFX_ERR_NONE;
+    mfxStatus mfxWrn = MFX_ERR_NONE;
+    mfxSts = Query(par, 0);
+    if((MFX_WRN_PARTIAL_ACCELERATION == mfxSts) && par_accel)
+        mfxSts = MFX_ERR_NONE;
+    else if(MFX_ERR_NONE > mfxSts)
+        return mfxSts;
+    else if(MFX_ERR_NONE < mfxSts)
+        mfxWrn = mfxSts;
+
+    mfxSts = Close();
+    if(MFX_ERR_NONE >= mfxSts)
+    {
+        mfxSts = Init(par);
+        if(mfxSts)
+            mfxWrn = mfxSts;
+    }
+
+    return mfxWrn;
 }
 mfxStatus MFX_PTIR_Plugin::Close()
 {
@@ -726,6 +766,12 @@ mfxStatus MFX_PTIR_Plugin::Close()
         delete ptir;
         ptir = 0;
     }
+    if(frmSupply)
+    {
+        delete frmSupply;
+        frmSupply = 0;
+    }
+    bInited = false;
     if(mfxSts)
         return mfxSts;
     return MFX_ERR_NONE;

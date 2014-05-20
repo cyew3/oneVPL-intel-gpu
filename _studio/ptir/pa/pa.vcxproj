@@ -76,7 +76,7 @@
     <OutDir>$(SolutionDir)..\..\..\build\win_$(PlatformName)\lib\</OutDir>
     <IntDir>$(OutDir)..\objs\$(Configuration)\$(ProjectName)\</IntDir>
     <TargetExt>.lib</TargetExt>
-    <TargetName>$(ProjectName)_d</TargetName>
+    <TargetName>$(ProjectName)</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <OutDir>$(SolutionDir)..\..\..\build\win_$(PlatformName)\lib\</OutDir>
@@ -88,7 +88,7 @@
     <OutDir>$(SolutionDir)..\..\..\build\win_$(PlatformName)\lib\</OutDir>
     <IntDir>$(OutDir)..\objs\$(Configuration)\$(ProjectName)\</IntDir>
     <TargetExt>.lib</TargetExt>
-    <TargetName>$(ProjectName)_d</TargetName>
+    <TargetName>$(ProjectName)</TargetName>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>

@@ -615,12 +615,13 @@ void CheckGenFrameCM(Frame **pfrmIn, unsigned int frameNum, unsigned int pattern
     }
 }
 
-void Prepare_frame_for_queueCM(Frame **pfrmOut, Frame *pfrmIn, unsigned int uiWidth, unsigned int uiHeight, frameSupplier* frmSupply) 
+void Prepare_frame_for_queueCM(Frame **pfrmOut, Frame *pfrmIn, unsigned int uiWidth, unsigned int uiHeight, frameSupplier* frmSupply, bool bCreate)
 {
     assert(pfrmIn->inSurf != NULL && pfrmIn->outSurf != NULL);
     *pfrmOut = (Frame *)malloc(sizeof(Frame));
-    Frame_CreateCM(*pfrmOut, uiWidth, uiHeight, uiWidth / 2, uiHeight / 2, 64, false);
-    if(frmSupply)
+    assert(*pfrmOut != NULL);
+    Frame_CreateCM(*pfrmOut, uiWidth, uiHeight, uiWidth / 2, uiHeight / 2, 64, bCreate);
+    if(frmSupply && !bCreate)
         static_cast<CmSurface2DEx*>((*pfrmOut)->outSurf)->pCmSurface2D = frmSupply->GetWorkSurfaceCM();
     (*pfrmOut)->frmProperties.tindex = pfrmIn->frmProperties.tindex;
 #ifdef CPUPATH

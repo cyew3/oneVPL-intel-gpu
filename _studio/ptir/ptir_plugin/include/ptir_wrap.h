@@ -40,13 +40,14 @@ public:
     }
     virtual ~frameSupplier()
     {
+        FreeFrames();
     }
     virtual mfxStatus SetDevice(CmDeviceEx* _pCMdevice)
     {
-        mfxI32 result = -1;
-        pCMdevice      = _pCMdevice;
-        result = (*pCMdevice)->CreateQueue(m_pCmQueue);
-
+        mfxI32 result = 0;
+        pCMdevice     = _pCMdevice;
+        if(_pCMdevice)
+            result = (*pCMdevice)->CreateQueue(m_pCmQueue);
         if(!result)
             return MFX_ERR_NONE;
         else
@@ -131,14 +132,96 @@ public:
         outSurfs->push_back(outSurf);
         return MFX_ERR_NONE;
     }
+    virtual mfxStatus FreeFrames()
+    {
+        mfxStatus mfxSts = MFX_ERR_NONE;
+        mfxU32 iii = 0;
+        mfxU32 refs = 0;
+        if(CmToMfxSurfmap && pCMdevice)
+        {
+            for(std::map<CmSurface2D*,mfxFrameSurface1*>::iterator it = CmToMfxSurfmap->begin(); it != CmToMfxSurfmap->end(); it++) {
+                CmSurface2D* cm_surf = it->first;
+                mfxFrameSurface1* mfxSurf = it->second;
+                if(mfxSurf)
+                    mfxCoreIfce->DecreaseReference(mfxCoreIfce->pthis, &mfxSurf->Data);
+                if(cm_surf)
+                {
+                    int result = 0;
+                    try{
+                        result = (*pCMdevice)->DestroySurface(cm_surf);
+                    }
+                    catch(...)
+                    {
+                    }
+                }
+            }
+        }
+        if(CmToMfxSurfmap)
+            CmToMfxSurfmap->clear();
+
+        if(workSurfs && workSurfs->size() > 0)
+        {
+            for(std::vector<mfxFrameSurface1*>::iterator it = workSurfs->begin(); it != workSurfs->end(); it++) {
+                while((*it)->Data.Locked)
+                {
+                    refs = (*it)->Data.Locked;
+                    mfxSts = mfxCoreIfce->DecreaseReference(mfxCoreIfce->pthis, &(*it)->Data);
+                    if(mfxSts) break;
+                    iii++;
+                    if(iii > (refs+1)) break; //hang is unacceptable
+                }
+            }
+            workSurfs->clear();
+        }
+        if(inSurfs && inSurfs->size() > 0)
+        {
+            for(std::vector<mfxFrameSurface1*>::iterator it = inSurfs->begin(); it != inSurfs->end(); it++) {
+                while((*it)->Data.Locked)
+                {
+                    refs = (*it)->Data.Locked;
+                    mfxSts = mfxCoreIfce->DecreaseReference(mfxCoreIfce->pthis, &(*it)->Data);
+                    if(mfxSts) break;
+                    iii++;
+                    if(iii > (refs+1)) break; //hang is unacceptable
+                }
+            }
+            inSurfs->clear();
+        }
+        if(outSurfs && outSurfs->size() > 0)
+        {
+            for(std::vector<mfxFrameSurface1*>::iterator it = outSurfs->begin(); it != outSurfs->end(); it++) {
+                while((*it)->Data.Locked)
+                {
+                    refs = (*it)->Data.Locked;
+                    mfxSts = mfxCoreIfce->DecreaseReference(mfxCoreIfce->pthis, &(*it)->Data);
+                    if(mfxSts) break;
+                    iii++;
+                    if(iii > (refs+1)) break; //hang is unacceptable
+                }
+            }
+            outSurfs->clear();
+        }
+        
+        return MFX_ERR_NONE;
+    }
     virtual mfxStatus FreeSurface(CmSurface2D* cmSurf)
     {
         mfxFrameSurface1* mfxSurf;
-        mfxSurf = (*CmToMfxSurfmap)[cmSurf];
-        while(mfxSurf->Data.Locked){
-            mfxCoreIfce->DecreaseReference(mfxCoreIfce->pthis, &mfxSurf->Data);
+        std::map<CmSurface2D*,mfxFrameSurface1*>::iterator it;
+        it = CmToMfxSurfmap->find(cmSurf);
+        if(CmToMfxSurfmap->end() != it)
+        {
+            mfxSurf = (*CmToMfxSurfmap)[cmSurf];
+            if(mfxSurf)
+                mfxCoreIfce->DecreaseReference(mfxCoreIfce->pthis, &mfxSurf->Data);
+            CmToMfxSurfmap->erase(it);
         }
-        return MFX_ERR_NONE;
+        int result = -1;
+        result = (*pCMdevice)->DestroySurface(cmSurf);
+        if(result)
+            return MFX_ERR_DEVICE_FAILED;
+        else
+            return MFX_ERR_NONE;
     }
 
     virtual mfxStatus CMCopyGPUToGpu(CmSurface2D* cmSurfOut, CmSurface2D* cmSurfIn)
@@ -183,7 +266,7 @@ class PTIR_Processor
 {
 public:
     //PTIR_Processor();
-    //virtual ~PTIR_Processor();
+    virtual ~PTIR_Processor() {}
 
     unsigned int
         i,
@@ -202,7 +285,7 @@ public:
         uiWidth,
         uiHeight,
         uiStart,
-        uiCount,
+        //uiCount,
         uiFrameCount,
         uiBufferCount,
         uiSize,
@@ -266,7 +349,7 @@ public:
     //{
     //    return MFX_ERR_UNSUPPORTED;
     //}
-    virtual mfxStatus Process(mfxFrameSurface1 *surf_in, mfxFrameSurface1 **surf_work, mfxCoreInterface *core, mfxFrameSurface1 **surf_out = 0)
+    virtual mfxStatus Process(mfxFrameSurface1 *surf_in, mfxFrameSurface1 **surf_work, mfxCoreInterface *core, mfxFrameSurface1 **surf_out = 0, bool beof = false)
     {
         return MFX_ERR_UNSUPPORTED;
     }
@@ -274,8 +357,8 @@ public:
 protected:
     mfxVideoParam       work_par;
 
-    frameSupplier* frmSupply;
-    mfxCoreInterface* m_pmfxCore;
+    frameSupplier*      frmSupply;
+    mfxCoreInterface*   m_pmfxCore;
 };
 
 class PTIR_ProcessorCPU : public PTIR_Processor
@@ -287,7 +370,7 @@ public:
     virtual mfxStatus Init(mfxVideoParam *par);
     virtual mfxStatus Close();
     virtual mfxStatus PTIR_ProcessFrame(mfxFrameSurface1 *surf_in, mfxFrameSurface1 *surf_out);
-    virtual mfxStatus Process(mfxFrameSurface1 *surf_in, mfxFrameSurface1 **surf_work, mfxCoreInterface *core, mfxFrameSurface1 **surf_out = 0);
+    virtual mfxStatus Process(mfxFrameSurface1 *surf_in, mfxFrameSurface1 **surf_work, mfxCoreInterface *core, mfxFrameSurface1 **surf_out = 0, bool beof = false);
 
 protected:
 
@@ -301,8 +384,8 @@ public:
 
     virtual mfxStatus Init(mfxVideoParam *par);
     virtual mfxStatus Close();
-    virtual mfxStatus PTIR_ProcessFrame(CmSurface2D *surf_in, CmSurface2D *surf_out, mfxFrameSurface1 **surf_outt = 0);
-    virtual mfxStatus Process(mfxFrameSurface1 *surf_in, mfxFrameSurface1 **surf_work, mfxCoreInterface *core, mfxFrameSurface1 **surf_out = 0);
+    virtual mfxStatus PTIR_ProcessFrame(CmSurface2D *surf_in, CmSurface2D *surf_out, mfxFrameSurface1 **surf_outt = 0, bool beof = 0);
+    virtual mfxStatus Process(mfxFrameSurface1 *surf_in, mfxFrameSurface1 **surf_work, mfxCoreInterface *core, mfxFrameSurface1 **surf_out = 0, bool beof = false);
 
 protected:
     template <typename D3DAbstract>
@@ -326,10 +409,11 @@ protected:
     };
 
     DeinterlaceFilter *deinterlaceFilter;
-    CmDevice  *m_pCmDevice;
-    CmProgram *m_pCmProgram;
-    CmKernel  *m_pCmKernel1;
-    CmKernel  *m_pCmKernel2;
+    CmDevice          *m_pCmDevice;
+    CmProgram         *m_pCmProgram;
+    CmKernel          *m_pCmKernel1;
+    CmKernel          *m_pCmKernel2;
+    bool              mb_UsePtirSurfs;
     std::map<CmSurface2D*,mfxFrameSurface1*> CmToMfxSurfmap;
     eMFXHWType HWType;
 };

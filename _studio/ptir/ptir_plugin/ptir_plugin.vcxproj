@@ -246,6 +246,7 @@
     <ClInclude Include="include\ptir_vpp_plugin.h" />
     <ClInclude Include="include\ptir_vpp_utils.h" />
     <ClInclude Include="include\ptir_wrap.h" />
+    <ClInclude Include="resource.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\mfx_lib\shared\src\mfx_check_hardware_support.cpp" />
@@ -272,6 +273,9 @@
     <ProjectReference Include="..\pa\pa.vcxproj">
       <Project>{7be3ee72-070f-4bf8-a6cc-1a8bf6cd4481}</Project>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="ptir_plugin.rc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

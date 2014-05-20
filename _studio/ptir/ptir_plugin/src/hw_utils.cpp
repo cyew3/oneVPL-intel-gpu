@@ -58,10 +58,10 @@ mfxStatus GetIntelDataPrivateReportD3D9(const GUID guid, DXVA2_ConfigPictureDeco
 
     for (mfxU32 i = 0; i < cDecoderGuids; i++)
     {
-        if (guid == pDecoderGuids[i])
+        if (pDecoderGuids && (guid == pDecoderGuids[i]))
             isRequestedGuidPresent = true;
 
-        if (DXVADDI_Intel_Decode_PrivateData_Report == pDecoderGuids[i])
+        if (pDecoderGuids && (DXVADDI_Intel_Decode_PrivateData_Report == pDecoderGuids[i]))
             isIntelGuidPresent = true;
     }
 
