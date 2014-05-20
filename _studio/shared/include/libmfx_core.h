@@ -285,6 +285,7 @@ protected:
     EncodeHWCaps  m_encode_caps;
     EncodeHWCaps  m_encode_mbprocrate;
 
+    std::vector<mfxFrameAllocResponse> m_PlugInMids;
 
 private:
     // Forbid the assignment operator
