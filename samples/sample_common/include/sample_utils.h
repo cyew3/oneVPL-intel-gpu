@@ -630,10 +630,24 @@ bool msdk_trace_is_printable(int);
 msdk_ostream & operator <<(msdk_ostream & os, MsdkTraceLevel tt);
 
 template<typename T>
-    mfxStatus msdk_opt_read(const msdk_char* string, T* value);
+    mfxStatus msdk_opt_read(const msdk_char* string, T& value);
+
+template<size_t S>
+    mfxStatus msdk_opt_read(const msdk_char* string, msdk_char (&value)[S])
+    {
+    #if defined(_WIN32) || defined(_WIN64)
+        return (0 == _tcscpy_s(value, string))? MFX_ERR_NONE: MFX_ERR_UNKNOWN;
+    #else
+        if (strlen(string) < S) {
+            strncpy(value, string, S);
+            return MFX_ERR_NONE;
+        }
+        return MFX_ERR_UNKNOWN;
+    #endif
+    }
 
 template<typename T>
-    inline mfxStatus msdk_opt_read(const msdk_string& string, T* value)
+    inline mfxStatus msdk_opt_read(const msdk_string& string, T& value)
     {
         return msdk_opt_read(string.c_str(), value);
     }

@@ -58,7 +58,7 @@ void PrintHelp( const std::basic_string<msdk_char> & strAppName
 }
 
 template<typename T>
-    inline void read_argument(const msdk_string& option, const msdk_string& argument, T* value)
+    inline void read_argument(const msdk_string& option, const msdk_string& argument, T& value)
     {
         if (MFX_ERR_NONE != msdk_opt_read(argument.c_str(), value)) {
             throw msdk_string(MSDK_STRING("Failed to read argument for the option ") + option);
@@ -70,7 +70,7 @@ mfxI32 get_index(const std::basic_string<msdk_char>& from, int prefix_len )
     mfxI32 idx = 0;
     if (from.length() != (size_t)prefix_len)
     {
-        if (MFX_ERR_NONE != msdk_opt_read(from.substr(prefix_len), &idx))
+        if (MFX_ERR_NONE != msdk_opt_read(from.substr(prefix_len), idx))
         {
             idx = -1;
         }
@@ -111,22 +111,22 @@ void ParseInputString(msdk_char** strInput, int nArgNum, VideoConfParams& params
         else if (0 == msdk_strncmp(strInput[i], MSDK_STRING("-w"), 2) && -1 != idx)
         {
             CHECK_OPTION_ARGS(1);
-            read_argument(arg, strInput[++i], &params.sources[idx].nWidth);
+            read_argument(arg, strInput[++i], params.sources[idx].nWidth);
         }
         else if (0 == msdk_strncmp(strInput[i], MSDK_STRING("-h"), 2) && -1 != idx)
         {
             CHECK_OPTION_ARGS(1);
-            read_argument(arg, strInput[++i], &params.sources[idx].nHeight);
+            read_argument(arg, strInput[++i], params.sources[idx].nHeight);
         }
         else if (0 == msdk_strncmp(strInput[i], MSDK_STRING("-f"), 2) && -1 != idx)
         {
             CHECK_OPTION_ARGS(1);
-            read_argument(arg, strInput[++i], &params.sources[idx].dFrameRate);
+            read_argument(arg, strInput[++i], params.sources[idx].dFrameRate);
         }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-b")))
         {
             CHECK_OPTION_ARGS(1);
-            read_argument(arg, strInput[++i], &params.nTargetKbps);
+            read_argument(arg, strInput[++i], params.nTargetKbps);
         }
         else if (0 == msdk_strncmp(strInput[i], MSDK_STRING("-i"), 2) && -1 != idx)
         {
@@ -136,7 +136,7 @@ void ParseInputString(msdk_char** strInput, int nArgNum, VideoConfParams& params
             {
                 CHECK_OPTION_ARGS(2);
                 mfxU32 nFrame = 0;
-                read_argument(arg, strInput[++i], &nFrame);
+                read_argument(arg, strInput[++i], nFrame);
                 params.pActionProc->RegisterAction(nFrame, new SetSourceAction(idx));
             }
             params.sources[idx].srcFile = strInput[++i];
@@ -157,8 +157,8 @@ void ParseInputString(msdk_char** strInput, int nArgNum, VideoConfParams& params
 
             double dBitrateScale = 0;
             mfxU32 nFrameOrder = 0;
-            read_argument(arg, strInput[++i], &nFrameOrder);
-            read_argument(arg, strInput[++i], &dBitrateScale);
+            read_argument(arg, strInput[++i], nFrameOrder);
+            read_argument(arg, strInput[++i], dBitrateScale);
 
             params.pActionProc->RegisterAction(nFrameOrder, new ChangeBitrateAction(dBitrateScale));
         }
@@ -168,8 +168,8 @@ void ParseInputString(msdk_char** strInput, int nArgNum, VideoConfParams& params
 
             mfxU16 nLen = 0;
             mfxU32 nFrameOrder = 0;
-            read_argument(arg, strInput[++i], &nFrameOrder);
-            read_argument(arg, strInput[++i], &nLen);
+            read_argument(arg, strInput[++i], nFrameOrder);
+            read_argument(arg, strInput[++i], nLen);
 
             params.pActionProc->RegisterAction(nFrameOrder, new SetL0SizeAction(nLen));
         }
@@ -187,8 +187,8 @@ void ParseInputString(msdk_char** strInput, int nArgNum, VideoConfParams& params
 
             mfxU32 nFrameOrder = 0;
             mfxU32 nFrameBroken = 0;
-            read_argument(arg, strInput[++i], &nFrameOrder);
-            read_argument(arg, strInput[++i], &nFrameBroken);
+            read_argument(arg, strInput[++i], nFrameOrder);
+            read_argument(arg, strInput[++i], nFrameBroken);
             if (nFrameBroken >= nFrameOrder)
             {
                 std::basic_stringstream<msdk_char> stream;
@@ -212,7 +212,7 @@ void ParseInputString(msdk_char** strInput, int nArgNum, VideoConfParams& params
             CHECK_OPTION_ARGS(1);
 
             mfxU32 nFrameOrder = 0;
-            read_argument(arg, strInput[++i], &nFrameOrder);
+            read_argument(arg, strInput[++i], nFrameOrder);
 
             params.pActionProc->RegisterAction(nFrameOrder, new KeyFrameInsertAction());
         }
@@ -221,7 +221,7 @@ void ParseInputString(msdk_char** strInput, int nArgNum, VideoConfParams& params
             CHECK_OPTION_ARGS(1);
 
             mfxU32 nLTFrameOrder = 0;
-            read_argument(arg, strInput[++i], &nLTFrameOrder);
+            read_argument(arg, strInput[++i], nLTFrameOrder);
 
             //firstly frame should be added to long term list once
             //NOTE: to remove this longterm, you need to put it once into rejected reflist
@@ -234,7 +234,7 @@ void ParseInputString(msdk_char** strInput, int nArgNum, VideoConfParams& params
         {
             CHECK_OPTION_ARGS(1);
             params.nTemporalScalabilityBase = 2;
-            read_argument(arg, strInput[++i], &params.nTemporalScalabilityLayers);
+            read_argument(arg, strInput[++i], params.nTemporalScalabilityLayers);
             if (params.nTemporalScalabilityLayers > 4)
             {
                 throw std::basic_string<msdk_char>(MSDK_STRING("in -ts option maximum layers value is 4"));
@@ -246,14 +246,14 @@ void ParseInputString(msdk_char** strInput, int nArgNum, VideoConfParams& params
         {
             CHECK_OPTION_ARGS(2);
             params.nRefrType = 1;
-            read_argument(arg, strInput[++i], &params.nCycleSize);
+            read_argument(arg, strInput[++i], params.nCycleSize);
             if (params.nCycleSize < 2 || params.nCycleSize >= VideoConfPipeline::gopLength)
             {
                 std::basic_stringstream<msdk_char> stream;
                 stream<<MSDK_STRING("in -ir option cycle_size should be more than 2 and less than ")<<VideoConfPipeline::gopLength;
                 throw stream.str();
             }
-            read_argument(arg, strInput[++i], &params.nQPDelta);
+            read_argument(arg, strInput[++i], params.nQPDelta);
             if (params.nQPDelta < -51 || params.nQPDelta > 51)
             {
                 throw std::basic_string<msdk_char>(MSDK_STRING("in -ir option QP difference is signed value in [-51, 51] range"));

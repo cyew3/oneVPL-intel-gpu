@@ -78,7 +78,7 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
 
     MSDK_CHECK_POINTER(pParams, MFX_ERR_NULL_PTR);
 
-    msdk_strcopy(pParams->strPluginDLLPath, MSDK_STRING(PLUGIN_NAME));
+    msdk_opt_read(MSDK_CPU_ROTATE_PLUGIN, pParams->strPluginDLLPath);
 
     // parse command line parameters
     for (mfxU8 i = 1; i < nArgNum; i++)
@@ -110,12 +110,12 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-dstw")))
         {
             i++;
-            msdk_opt_read(strInput[i], &pParams->nDstWidth);
+            msdk_opt_read(strInput[i], pParams->nDstWidth);
         }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-dsth")))
         {
             i++;
-            msdk_opt_read(strInput[i], &pParams->nDstHeight);
+            msdk_opt_read(strInput[i], pParams->nDstHeight);
         }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-hw")))
         {
@@ -136,15 +136,11 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-angle")))
         {
             i++;
-            msdk_opt_read(strInput[i], &pParams->nRotationAngle);
+            msdk_opt_read(strInput[i], pParams->nRotationAngle);
         }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-opencl")))
         {
-#if defined(_WIN32) || defined(_WIN64)
-            msdk_strcopy(pParams->strPluginDLLPath, MSDK_STRING("sample_plugin_opencl.dll"));
-#else
-            msdk_strcopy(pParams->strPluginDLLPath, MSDK_STRING("libsample_plugin_opencl.so"));
-#endif
+            msdk_opt_read(MSDK_OCL_ROTATE_PLUGIN, pParams->strPluginDLLPath);
             pParams->nRotationAngle = 180;
         }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-viewoutput")))
@@ -163,7 +159,7 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-lad")))
         {
             i++;
-            msdk_opt_read(strInput[i], &pParams->nLADepth);
+            msdk_opt_read(strInput[i], pParams->nLADepth);
         }
 #if D3D_SURFACES_SUPPORT
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-d3d")))
@@ -195,7 +191,7 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
                 break;
             case MSDK_CHAR('w'):
                 if (++i < nArgNum) {
-                    msdk_opt_read(strInput[i], &pParams->nWidth);
+                    msdk_opt_read(strInput[i], pParams->nWidth);
                 }
                 else {
                     msdk_printf(MSDK_STRING("error: option '-w' expects an argument\n"));
@@ -203,7 +199,7 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
                 break;
             case MSDK_CHAR('h'):
                 if (++i < nArgNum) {
-                    msdk_opt_read(strInput[i], &pParams->nHeight);
+                    msdk_opt_read(strInput[i], pParams->nHeight);
                 }
                 else {
                     msdk_printf(MSDK_STRING("error: option '-h' expects an argument\n"));
@@ -211,7 +207,7 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
                 break;
             case MSDK_CHAR('f'):
                 if (++i < nArgNum) {
-                    msdk_opt_read(strInput[i], &pParams->dFrameRate);
+                    msdk_opt_read(strInput[i], pParams->dFrameRate);
                 }
                 else {
                     msdk_printf(MSDK_STRING("error: option '-f' expects an argument\n"));
@@ -219,7 +215,7 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
                 break;
             case MSDK_CHAR('b'):
                 if (++i < nArgNum) {
-                    msdk_opt_read(strInput[i], &pParams->nBitRate);
+                    msdk_opt_read(strInput[i], pParams->nBitRate);
                 }
                 else {
                     msdk_printf(MSDK_STRING("error: option '-b' expects an argument\n"));
@@ -227,7 +223,7 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
                 break;
             case MSDK_CHAR('i'):
                 if (++i < nArgNum) {
-                    msdk_strcopy(pParams->strSrcFile, strInput[i]);
+                    msdk_opt_read(strInput[i], pParams->strSrcFile);
                     if (MVC_ENABLED & pParams->MVC_flags)
                     {
                         pParams->srcFileBuff.push_back(strInput[i]);
@@ -247,7 +243,7 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
                 break;
             case MSDK_CHAR('q'):
                 if (++i < nArgNum) {
-                    msdk_opt_read(strInput[i], &pParams->nQuality);
+                    msdk_opt_read(strInput[i], pParams->nQuality);
                 }
                 else {
                     msdk_printf(MSDK_STRING("error: option '-q' expects an argument\n"));
@@ -261,7 +257,7 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
                     }
                     else
                     {
-                        msdk_strcopy(pParams->pluginParams.strPluginPath, strInput[i]);
+                        msdk_opt_read(strInput[i], pParams->pluginParams.strPluginPath);
                         pParams->pluginParams.type = MFX_PLUGINLOAD_TYPE_FILE;
                     }
                 }

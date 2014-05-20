@@ -144,7 +144,7 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
                 PrintHelp(strInput[0], MSDK_STRING("Not enough parameters for -async key"));
                 return MFX_ERR_UNSUPPORTED;
             }
-            if (MFX_ERR_NONE != msdk_opt_read(strInput[++i], &pParams->nAsyncDepth))
+            if (MFX_ERR_NONE != msdk_opt_read(strInput[++i], pParams->nAsyncDepth))
             {
                 PrintHelp(strInput[0], MSDK_STRING("async is invalid"));
                 return MFX_ERR_UNSUPPORTED;
@@ -161,7 +161,7 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
             {
             case MSDK_CHAR('p'):
                 if (++i < nArgNum) {
-                    msdk_strcopy(pParams->strPluginPath, strInput[i]);
+                    msdk_opt_read(strInput[i], pParams->strPluginPath);
                 }
                 else {
                     msdk_printf(MSDK_STRING("error: option '-p' expects an argument\n"));
@@ -169,7 +169,7 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
                 break;
             case MSDK_CHAR('i'):
                 if (++i < nArgNum) {
-                    msdk_strcopy(pParams->strSrcFile, strInput[i]);
+                    msdk_opt_read(strInput[i], pParams->strSrcFile);
                 }
                 else {
                     msdk_printf(MSDK_STRING("error: option '-i' expects an argument\n"));
@@ -178,7 +178,7 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
             case MSDK_CHAR('o'):
                 if (++i < nArgNum) {
                     pParams->mode = MODE_FILE_DUMP;
-                    msdk_strcopy(pParams->strDstFile, strInput[i]);
+                    msdk_opt_read(strInput[i], pParams->strDstFile);
                 }
                 else {
                     msdk_printf(MSDK_STRING("error: option '-o' expects an argument\n"));

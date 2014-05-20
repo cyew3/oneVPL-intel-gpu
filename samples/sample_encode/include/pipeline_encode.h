@@ -23,6 +23,7 @@
 
 #include "sample_utils.h"
 #include "base_allocator.h"
+#include "mfx_plugin_uids.h"
 
 #include "mfxmvc.h"
 #include "mfxvideo.h"
@@ -32,12 +33,6 @@
 
 #include <vector>
 #include <memory>
-
-#if defined(_WIN32) || defined(_WIN64)
-    #define PLUGIN_NAME "sample_rotate_plugin.dll"
-#else
-    #define PLUGIN_NAME "libsample_rotate_plugin.so"
-#endif
 
 enum {
     MVC_DISABLED          = 0x0,

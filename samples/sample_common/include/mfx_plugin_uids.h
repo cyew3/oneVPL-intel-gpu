@@ -26,6 +26,14 @@ extern "C"
 {
 #endif /* __cplusplus */
 
+#if defined(_WIN32) || defined(_WIN64)
+    #define MSDK_CPU_ROTATE_PLUGIN  MSDK_STRING("sample_rotate_plugin.dll")
+    #define MSDK_OCL_ROTATE_PLUGIN  MSDK_STRING("sample_plugin_opencl.dll")
+#else
+    #define MSDK_CPU_ROTATE_PLUGIN  MSDK_STRING("libsample_rotate_plugin.so")
+    #define MSDK_OCL_ROTATE_PLUGIN  MSDK_STRING("libsample_plugin_opencl.so")
+#endif
+
 struct sPluginParams {
     union {
         mfxPluginUID  pluginGuid;
@@ -55,7 +63,6 @@ enum {
     MSDK_IMPL_HW = 0x0200,
     MSDK_IMPL_USR = 0x0100
 };
-
 
 struct msdkPluginDesc {
     mfxU32 type;

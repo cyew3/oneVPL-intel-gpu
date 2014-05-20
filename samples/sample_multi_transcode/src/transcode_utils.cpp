@@ -269,7 +269,7 @@ mfxStatus CmdProcessor::ParseCmdLine(int argc, msdk_char *argv[])
             if (!argv[0]) {
                 msdk_printf(MSDK_STRING("error: no argument given for '-timeout' option\n"));
             }
-            if (MFX_ERR_NONE != msdk_opt_read(argv[0], &m_nTimeout))
+            if (MFX_ERR_NONE != msdk_opt_read(argv[0], m_nTimeout))
             {
                 msdk_printf(MSDK_STRING("error: -timeout \"%s\" is invalid"), argv[0]);
                 return MFX_ERR_UNSUPPORTED;
@@ -481,7 +481,7 @@ mfxStatus CmdProcessor::ParseParamsForOneSession(mfxU32 argc, msdk_char *argv[])
             VAL_CHECK(i+1 == argc, i, argv[i]);
             i++;
             SIZE_CHECK((msdk_strlen(argv[i])+1) > MSDK_ARRAY_LEN(InputParams.strSrcFile));
-            msdk_strcopy(InputParams.strSrcFile, argv[i]);
+            msdk_opt_read(argv[i], InputParams.strSrcFile);
             if (InputParams.eMode == Source)
             {
                 switch(InputParams.DecodeId)
@@ -511,7 +511,7 @@ mfxStatus CmdProcessor::ParseParamsForOneSession(mfxU32 argc, msdk_char *argv[])
             VAL_CHECK(i+1 == argc, i, argv[i]);
             i++;
             SIZE_CHECK((msdk_strlen(argv[i])+1) > MSDK_ARRAY_LEN(InputParams.strDstFile));
-            msdk_strcopy(InputParams.strDstFile, argv[i]);
+            msdk_opt_read(argv[i], InputParams.strDstFile);
             if (InputParams.eMode == Sink || InputParams.bIsMVC)
             {
                 switch(InputParams.EncodeId)
@@ -552,7 +552,7 @@ mfxStatus CmdProcessor::ParseParamsForOneSession(mfxU32 argc, msdk_char *argv[])
         {
             VAL_CHECK(i+1 == argc, i, argv[i]);
             i++;
-            if (MFX_ERR_NONE != msdk_opt_read(argv[i], &InputParams.dFrameRate))
+            if (MFX_ERR_NONE != msdk_opt_read(argv[i], InputParams.dFrameRate))
             {
                 PrintHelp(NULL, MSDK_STRING("frameRate \"%s\" is invalid"), argv[i]);
                 return MFX_ERR_UNSUPPORTED;
@@ -562,7 +562,7 @@ mfxStatus CmdProcessor::ParseParamsForOneSession(mfxU32 argc, msdk_char *argv[])
         {
             VAL_CHECK(i+1 == argc, i, argv[i]);
             i++;
-            if (MFX_ERR_NONE != msdk_opt_read(argv[i], &InputParams.nBitRate))
+            if (MFX_ERR_NONE != msdk_opt_read(argv[i], InputParams.nBitRate))
             {
                 PrintHelp(NULL, MSDK_STRING("bitRate \"%s\" is invalid"), argv[i]);
                 return MFX_ERR_UNSUPPORTED;
@@ -572,7 +572,7 @@ mfxStatus CmdProcessor::ParseParamsForOneSession(mfxU32 argc, msdk_char *argv[])
         {
             VAL_CHECK(i+1 == argc, i, argv[i]);
             i++;
-            if (MFX_ERR_NONE != msdk_opt_read(argv[i], &InputParams.nTargetUsage))
+            if (MFX_ERR_NONE != msdk_opt_read(argv[i], InputParams.nTargetUsage))
             {
                 PrintHelp(NULL, MSDK_STRING(" \"%s\" target usage is invalid"), argv[i]);
                 return MFX_ERR_UNSUPPORTED;
@@ -582,7 +582,7 @@ mfxStatus CmdProcessor::ParseParamsForOneSession(mfxU32 argc, msdk_char *argv[])
         {
             VAL_CHECK(i+1 == argc, i, argv[i]);
             i++;
-            if (MFX_ERR_NONE != msdk_opt_read(argv[i], &InputParams.nQuality))
+            if (MFX_ERR_NONE != msdk_opt_read(argv[i], InputParams.nQuality))
             {
                 PrintHelp(NULL, MSDK_STRING(" \"%s\" quality is invalid"), argv[i]);
                 return MFX_ERR_UNSUPPORTED;
@@ -592,7 +592,7 @@ mfxStatus CmdProcessor::ParseParamsForOneSession(mfxU32 argc, msdk_char *argv[])
         {
             VAL_CHECK(i+1 == argc, i, argv[i]);
             i++;
-            if (MFX_ERR_NONE != msdk_opt_read(argv[i], &InputParams.nDstWidth))
+            if (MFX_ERR_NONE != msdk_opt_read(argv[i], InputParams.nDstWidth))
             {
                 PrintHelp(NULL, MSDK_STRING("width \"%s\" is invalid"), argv[i]);
                 return MFX_ERR_UNSUPPORTED;
@@ -602,7 +602,7 @@ mfxStatus CmdProcessor::ParseParamsForOneSession(mfxU32 argc, msdk_char *argv[])
         {
             VAL_CHECK(i+1 == argc, i, argv[i]);
             i++;
-            if (MFX_ERR_NONE != msdk_opt_read(argv[i], &InputParams.nDstHeight))
+            if (MFX_ERR_NONE != msdk_opt_read(argv[i], InputParams.nDstHeight))
             {
                 PrintHelp(NULL, MSDK_STRING("height \"%s\" is invalid"), argv[i]);
                 return MFX_ERR_UNSUPPORTED;
@@ -612,7 +612,7 @@ mfxStatus CmdProcessor::ParseParamsForOneSession(mfxU32 argc, msdk_char *argv[])
         {
             VAL_CHECK(i+1 == argc, i, argv[i]);
             i++;
-            if (MFX_ERR_NONE != msdk_opt_read(argv[i], &InputParams.nSlices))
+            if (MFX_ERR_NONE != msdk_opt_read(argv[i], InputParams.nSlices))
             {
                 PrintHelp(NULL, MSDK_STRING("numSlices \"%s\" is invalid"), argv[i]);
                 return MFX_ERR_UNSUPPORTED;
@@ -622,7 +622,7 @@ mfxStatus CmdProcessor::ParseParamsForOneSession(mfxU32 argc, msdk_char *argv[])
         {
             VAL_CHECK(i+1 == argc, i, argv[i]);
             i++;
-            if (MFX_ERR_NONE != msdk_opt_read(argv[i], &InputParams.nAsyncDepth))
+            if (MFX_ERR_NONE != msdk_opt_read(argv[i], InputParams.nAsyncDepth))
             {
                 PrintHelp(NULL, MSDK_STRING("async \"%s\" is invalid"), argv[i]);
                 return MFX_ERR_UNSUPPORTED;
@@ -636,7 +636,7 @@ mfxStatus CmdProcessor::ParseParamsForOneSession(mfxU32 argc, msdk_char *argv[])
         {
             VAL_CHECK(i+1 == argc, i, argv[i]);
             i++;
-            if (MFX_ERR_NONE != msdk_opt_read(argv[i], &InputParams.priority))
+            if (MFX_ERR_NONE != msdk_opt_read(argv[i], InputParams.priority))
             {
                 PrintHelp(NULL, MSDK_STRING("priority \"%s\" is invalid"), argv[i]);
                 return MFX_ERR_UNSUPPORTED;
@@ -677,7 +677,7 @@ mfxStatus CmdProcessor::ParseParamsForOneSession(mfxU32 argc, msdk_char *argv[])
         {
             VAL_CHECK(i+1 == argc, i, argv[i]);
             i++;
-            if (MFX_ERR_NONE != msdk_opt_read(argv[i], &InputParams.MaxFrameNumber))
+            if (MFX_ERR_NONE != msdk_opt_read(argv[i], InputParams.MaxFrameNumber))
             {
                 PrintHelp(NULL, MSDK_STRING("-n \"%s\" is invalid"), argv[i]);
                 return MFX_ERR_UNSUPPORTED;
@@ -687,20 +687,20 @@ mfxStatus CmdProcessor::ParseParamsForOneSession(mfxU32 argc, msdk_char *argv[])
         {
             VAL_CHECK(i+1 == argc, i, argv[i]);
             i++;
-            if (MFX_ERR_NONE != msdk_opt_read(argv[i], &InputParams.nRotationAngle))
+            if (MFX_ERR_NONE != msdk_opt_read(argv[i], InputParams.nRotationAngle))
             {
                 PrintHelp(NULL, MSDK_STRING("-angle \"%s\" is invalid"), argv[i]);
                 return MFX_ERR_UNSUPPORTED;
             }
             if (InputParams.strVPPPluginDLLPath[0] == '\0') {
-                msdk_strcopy(InputParams.strVPPPluginDLLPath, MSDK_CPU_ROTATE_PLUGIN);
+                msdk_opt_read(MSDK_CPU_ROTATE_PLUGIN, InputParams.strVPPPluginDLLPath);
             }
         }
         else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-timeout")))
         {
             VAL_CHECK(i+1 == argc, i, argv[i]);
             i++;
-            if (MFX_ERR_NONE != msdk_opt_read(argv[i], &InputParams.nTimeout))
+            if (MFX_ERR_NONE != msdk_opt_read(argv[i], InputParams.nTimeout))
             {
                 PrintHelp(NULL, MSDK_STRING("-timeout \"%s\" is invalid"), argv[i]);
                 return MFX_ERR_UNSUPPORTED;
@@ -710,7 +710,7 @@ mfxStatus CmdProcessor::ParseParamsForOneSession(mfxU32 argc, msdk_char *argv[])
 
         else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-opencl")))
         {
-            msdk_strcopy(InputParams.strVPPPluginDLLPath, MSDK_OCL_ROTATE_PLUGIN);
+            msdk_opt_read(MSDK_OCL_ROTATE_PLUGIN, InputParams.strVPPPluginDLLPath);
         }
 
         // output PicStruct
@@ -730,7 +730,7 @@ mfxStatus CmdProcessor::ParseParamsForOneSession(mfxU32 argc, msdk_char *argv[])
         {
             VAL_CHECK(i+1 == argc, i, argv[i]);
             i++;
-            if (MFX_ERR_NONE != msdk_opt_read(argv[i], &InputParams.nLADepth))
+            if (MFX_ERR_NONE != msdk_opt_read(argv[i], InputParams.nLADepth))
             {
                 PrintHelp(NULL, MSDK_STRING("look ahead depth \"%s\" is invalid"), argv[i]);
                 return MFX_ERR_UNSUPPORTED;
@@ -793,7 +793,7 @@ mfxStatus CmdProcessor::ParseOption__set(msdk_char* strCodecType, msdk_char* str
     }
     else
     {
-        msdk_strcopy(pluginParams.strPluginPath, strPluginPath);
+        msdk_opt_read(strPluginPath, pluginParams.strPluginPath);
         pluginParams.type = MFX_PLUGINLOAD_TYPE_FILE;
     }
 
