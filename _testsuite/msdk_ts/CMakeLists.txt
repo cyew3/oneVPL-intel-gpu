@@ -3,7 +3,7 @@ mfx_include_dirs( )
 include_directories (
   /usr/include/c++/4.6/bits
   ${CMAKE_CURRENT_SOURCE_DIR}/include
-  ${CMAKE_HOME_DIRECTORY}/mdp_msdk-val-tool/bs_parser/include
+  ${CMAKE_HOME_DIRECTORY}/mdp_msdk-val-tools/bs_parser/include
   ${CMAKE_CURRENT_SOURCE_DIR}/../shared/include
   ${CMAKE_CURRENT_SOURCE_DIR}/../../_studio/shared/umc/codec/demuxer/include
   ${CMAKE_HOME_DIRECTORY}/mdp_msdk-samples/samples/sample_common/include  
