@@ -93,45 +93,28 @@ void IsAboveLeftAvailable(H265CU *pCU,
                           Ipp8u *inNeighborFlags,
                           Ipp8u *outNeighborFlags)
 {
-    Ipp32s maxDepth = pCU->m_par->Log2MaxCUSize - pCU->m_par->Log2MinTUSize;
-    Ipp32s numMinTUInLCU = 1 << maxDepth;
-    Ipp32s rasterTopLeftPartIdx = h265_scan_z2r[maxDepth][blockZScanIdx];
-    Ipp32s topLeftPartRow = rasterTopLeftPartIdx >> maxDepth;
-    Ipp32s topLeftPartColumn = rasterTopLeftPartIdx & (numMinTUInLCU - 1);
+    Ipp32s numMinTUInLCU = pCU->m_par->NumPartInCUSize;
+    Ipp32s rasterTopLeftPartIdx = h265_scan_z2r4[blockZScanIdx];
+    Ipp32s topLeftPartRow = rasterTopLeftPartIdx >> 4;
+    Ipp32s topLeftPartColumn = rasterTopLeftPartIdx & 15;
 
-    if (topLeftPartColumn != 0)
-    {
-        if (topLeftPartRow != 0)
-        {
-            Ipp32s zScanIdx = h265_scan_r2z[maxDepth][rasterTopLeftPartIdx - numMinTUInLCU - 1];
-
-            if (ConstrainedIntraPredFlag)
-            {
+    if (topLeftPartColumn != 0) {
+        if (topLeftPartRow != 0) {
+            if (ConstrainedIntraPredFlag) {
+                Ipp32s zScanIdx = h265_scan_r2z4[rasterTopLeftPartIdx - PITCH_TU - 1];
                 outNeighborFlags[0] = ((pCU->m_data[zScanIdx].predMode == MODE_INTRA) ? 1 : 0);
             }
             else
-            {
                 outNeighborFlags[0] = 1;
-            }
         }
-        else
-        {
+        else {
             /* Above CU*/
-            outNeighborFlags[0] = inNeighborFlags[numMinTUInLCU + 1 + (rasterTopLeftPartIdx - 1)];
+            outNeighborFlags[0] = inNeighborFlags[numMinTUInLCU + 1 + (topLeftPartColumn - 1)];
         }
     }
-    else
-    {
-        if (topLeftPartRow != 0)
-        {
-            /* Left CU*/
-            outNeighborFlags[0] = inNeighborFlags[numMinTUInLCU - topLeftPartRow];
-        }
-        else
-        {
-            /* Above Left CU*/
-            outNeighborFlags[0] = inNeighborFlags[numMinTUInLCU];
-        }
+    else {
+        /* Left or Above Left CU*/
+        outNeighborFlags[0] = inNeighborFlags[numMinTUInLCU - topLeftPartRow];
     }
 }
 
@@ -143,35 +126,28 @@ void IsAboveAvailable(H265CU *pCU,
                       Ipp8u *inNeighborFlags,
                       Ipp8u *outNeighborFlags)
 {
-    Ipp32s maxDepth = pCU->m_par->Log2MaxCUSize - pCU->m_par->Log2MinTUSize;
-    Ipp32s numMinTUInLCU = 1 << maxDepth;
-    Ipp32s numMinTUInPU = width >> pCU->m_par->Log2MinTUSize;
-    Ipp32s rasterTopLeftPartIdx = h265_scan_z2r[maxDepth][blockZScanIdx];
-    Ipp32s topLeftPartRow = rasterTopLeftPartIdx >> maxDepth;
-    Ipp32s topLeftPartColumn = rasterTopLeftPartIdx & (numMinTUInLCU - 1);
+    Ipp32s numMinTUInLCU = pCU->m_par->NumPartInCUSize;
+    Ipp32s numMinTUInPU = width >> pCU->m_par->QuadtreeTULog2MinSize;
+    Ipp32s rasterTopLeftPartIdx = h265_scan_z2r4[blockZScanIdx];
+    Ipp32s topLeftPartRow = rasterTopLeftPartIdx >> 4;
+    Ipp32s topLeftPartColumn = rasterTopLeftPartIdx & 15;
     Ipp32s i;
 
-    if (topLeftPartRow == 0)
-    {
+    if (topLeftPartRow == 0) {
         for (i = 0; i < numMinTUInPU; i++)
-        {
             outNeighborFlags[i] = inNeighborFlags[numMinTUInLCU + 1 + topLeftPartColumn + i];
-        }
     }
-    else
-    {
-        for (i = 0; i < numMinTUInPU; i++)
-        {
-            Ipp32s zScanIdx = h265_scan_r2z[maxDepth][rasterTopLeftPartIdx + i - numMinTUInLCU];
+    else {
 
-            if (ConstrainedIntraPredFlag)
-            {
+        if (ConstrainedIntraPredFlag) {
+            for (i = 0; i < numMinTUInPU; i++) {
+                Ipp32s zScanIdx = h265_scan_r2z4[rasterTopLeftPartIdx + i - PITCH_TU];
                 outNeighborFlags[i] = ((pCU->m_data[zScanIdx].predMode == MODE_INTRA) ? 1 : 0);
             }
-            else
-            {
+        }
+        else {
+            for (i = 0; i < numMinTUInPU; i++)
                 outNeighborFlags[i] = 1;
-            }
         }
     }
 }
@@ -184,13 +160,12 @@ void IsAboveRightAvailable(H265CU *pCU,
                           Ipp8u *inNeighborFlags,
                           Ipp8u *outNeighborFlags)
 {
-    Ipp32s maxDepth = pCU->m_par->Log2MaxCUSize - pCU->m_par->Log2MinTUSize;
-    Ipp32s numMinTUInLCU = 1 << maxDepth;
-    Ipp32s numMinTUInPU = width >> pCU->m_par->Log2MinTUSize;
-    Ipp32s rasterTopRigthPartIdx = h265_scan_z2r[maxDepth][blockZScanIdx] + numMinTUInPU - 1;
-    Ipp32s zScanTopRigthPartIdx = h265_scan_r2z[maxDepth][rasterTopRigthPartIdx];
-    Ipp32s topRightPartRow = rasterTopRigthPartIdx >> maxDepth;
-    Ipp32s topRightPartColumn = rasterTopRigthPartIdx & (numMinTUInLCU - 1);
+    Ipp32s numMinTUInLCU = pCU->m_par->NumPartInCUSize;
+    Ipp32s numMinTUInPU = width >> pCU->m_par->QuadtreeTULog2MinSize;
+    Ipp32s rasterTopRigthPartIdx = h265_scan_z2r4[blockZScanIdx] + numMinTUInPU - 1;
+    Ipp32s zScanTopRigthPartIdx = h265_scan_r2z4[rasterTopRigthPartIdx];
+    Ipp32s topRightPartRow = rasterTopRigthPartIdx >> 4;
+    Ipp32s topRightPartColumn = rasterTopRigthPartIdx & 15;
     Ipp32s i;
 
     if (topRightPartRow == 0)
@@ -199,7 +174,7 @@ void IsAboveRightAvailable(H265CU *pCU,
         {
             Ipp32s aboveRightPartColumn = topRightPartColumn + i + 1;
 
-            if ((pCU->m_ctbPelX + (aboveRightPartColumn << pCU->m_par->Log2MinTUSize)) >=
+            if ((pCU->m_ctbPelX + (aboveRightPartColumn << pCU->m_par->QuadtreeTULog2MinSize)) >=
                 pCU->m_par->Width)
             {
                 outNeighborFlags[i] = 0;
@@ -216,7 +191,7 @@ void IsAboveRightAvailable(H265CU *pCU,
         {
             Ipp32s aboveRightPartColumn = topRightPartColumn + i + 1;
 
-            if ((pCU->m_ctbPelX + (aboveRightPartColumn << pCU->m_par->Log2MinTUSize)) >=
+            if ((pCU->m_ctbPelX + (aboveRightPartColumn << pCU->m_par->QuadtreeTULog2MinSize)) >=
                 pCU->m_par->Width)
             {
                 outNeighborFlags[i] = 0;
@@ -225,7 +200,7 @@ void IsAboveRightAvailable(H265CU *pCU,
             {
                 if (aboveRightPartColumn < numMinTUInLCU)
                 {
-                    Ipp32s zScanIdx = h265_scan_r2z[maxDepth][rasterTopRigthPartIdx + 1 + i - numMinTUInLCU];
+                    Ipp32s zScanIdx = h265_scan_r2z4[rasterTopRigthPartIdx + 1 + i - PITCH_TU];
 
                     if (zScanIdx < zScanTopRigthPartIdx)
                     {
@@ -260,35 +235,28 @@ void IsLeftAvailable(H265CU *pCU,
                           Ipp8u *inNeighborFlags,
                           Ipp8u *outNeighborFlags)
 {
-    Ipp32s maxDepth = pCU->m_par->Log2MaxCUSize - pCU->m_par->Log2MinTUSize;
-    Ipp32s numMinTUInLCU = 1 << maxDepth;
-    Ipp32s numMinTUInPU = width >> pCU->m_par->Log2MinTUSize;
-    Ipp32s rasterTopLeftPartIdx = h265_scan_z2r[maxDepth][blockZScanIdx];
-    Ipp32s topLeftPartRow = rasterTopLeftPartIdx >> maxDepth;
-    Ipp32s topLeftPartColumn = rasterTopLeftPartIdx & (numMinTUInLCU - 1);
+    Ipp32s numMinTUInLCU = pCU->m_par->NumPartInCUSize;
+    Ipp32s numMinTUInPU = width >> pCU->m_par->QuadtreeTULog2MinSize;
+    Ipp32s rasterTopLeftPartIdx = h265_scan_z2r4[blockZScanIdx];
+    Ipp32s topLeftPartRow = rasterTopLeftPartIdx >> 4;
+    Ipp32s topLeftPartColumn = rasterTopLeftPartIdx & 15;
     Ipp32s i;
 
-    if (topLeftPartColumn == 0)
-    {
-        for (i = numMinTUInPU - 1; i >= 0; i--)
-        {
+    if (topLeftPartColumn == 0) {
+        for (i = numMinTUInPU - 1; i >= 0; i--) {
             outNeighborFlags[numMinTUInPU - 1 - i] = inNeighborFlags[numMinTUInLCU - 1 - (topLeftPartRow + i)];
         }
     }
-    else
-    {
-        for (i = numMinTUInPU - 1; i >= 0; i--)
-        {
-            Ipp32s zScanIdx = h265_scan_r2z[maxDepth][rasterTopLeftPartIdx - 1 + i * numMinTUInLCU];
-
-            if (ConstrainedIntraPredFlag)
-            {
+    else {
+        if (ConstrainedIntraPredFlag) {
+            for (i = numMinTUInPU - 1; i >= 0; i--) {
+                Ipp32s zScanIdx = h265_scan_r2z4[rasterTopLeftPartIdx - 1 + i * PITCH_TU];
                 outNeighborFlags[numMinTUInPU - 1 - i] = ((pCU->m_data[zScanIdx].predMode == MODE_INTRA) ? 1 : 0);
             }
-            else
-            {
+        }
+        else {
+            for (i = numMinTUInPU - 1; i >= 0; i--)
                 outNeighborFlags[numMinTUInPU - 1 - i] = 1;
-            }
         }
     }
 }
@@ -301,20 +269,19 @@ void IsBelowLeftAvailable(H265CU *pCU,
                           Ipp8u *inNeighborFlags,
                           Ipp8u *outNeighborFlags)
 {
-    Ipp32s maxDepth = pCU->m_par->Log2MaxCUSize - pCU->m_par->Log2MinTUSize;
-    Ipp32s numMinTUInLCU = 1 << maxDepth;
-    Ipp32s numMinTUInPU = width >> pCU->m_par->Log2MinTUSize;
-    Ipp32s rasterBottomLeftPartIdx = h265_scan_z2r[maxDepth][blockZScanIdx] + (numMinTUInPU - 1) * numMinTUInLCU;
-    Ipp32s zScanBottomLefPartIdx = h265_scan_r2z[maxDepth][rasterBottomLeftPartIdx];
-    Ipp32s bottomLeftPartRow = rasterBottomLeftPartIdx >> maxDepth;
-    Ipp32s bottomLeftPartColumn = rasterBottomLeftPartIdx & (numMinTUInLCU - 1);
+    Ipp32s numMinTUInLCU = pCU->m_par->NumPartInCUSize;
+    Ipp32s numMinTUInPU = width >> pCU->m_par->QuadtreeTULog2MinSize;
+    Ipp32s rasterBottomLeftPartIdx = h265_scan_z2r4[blockZScanIdx] + (numMinTUInPU - 1) * PITCH_TU;
+    Ipp32s zScanBottomLefPartIdx = h265_scan_r2z4[rasterBottomLeftPartIdx];
+    Ipp32s bottomLeftPartRow = rasterBottomLeftPartIdx >> 4;
+    Ipp32s bottomLeftPartColumn = rasterBottomLeftPartIdx & 15;
     Ipp32s i;
 
     for (i = numMinTUInPU - 1; i >= 0; i--)
     {
         Ipp32s belowLefPartRow = bottomLeftPartRow + i + 1;
 
-        if ((pCU->m_ctbPelY + (belowLefPartRow << pCU->m_par->Log2MinTUSize)) >=
+        if ((pCU->m_ctbPelY + (belowLefPartRow << pCU->m_par->QuadtreeTULog2MinSize)) >=
              pCU->m_par->Height)
         {
             outNeighborFlags[numMinTUInPU - 1 - i] = 0;
@@ -327,7 +294,7 @@ void IsBelowLeftAvailable(H265CU *pCU,
             }
             else
             {
-                Ipp32s zScanIdx = h265_scan_r2z[maxDepth][rasterBottomLeftPartIdx+(i+1)*numMinTUInLCU-1];
+                Ipp32s zScanIdx = h265_scan_r2z4[rasterBottomLeftPartIdx+(i+1)*PITCH_TU-1];
 
                 if (zScanIdx < zScanBottomLefPartIdx)
                 {
@@ -362,7 +329,7 @@ void GetAvailablity(H265CU *pCU,
                     Ipp8u *inNeighborFlags,
                     Ipp8u *outNeighborFlags)
 {
-    Ipp32s numMinTUInPU = width >> pCU->m_par->Log2MinTUSize;
+    Ipp32s numMinTUInPU = width >> pCU->m_par->QuadtreeTULog2MinSize;
 
     IsBelowLeftAvailable(pCU, blockZScanIdx, width, ConstrainedIntraPredFlag, inNeighborFlags, outNeighborFlags);
     outNeighborFlags += numMinTUInPU;
@@ -385,8 +352,8 @@ void GetPredPelsLuma(H265VideoParam *par, PixType* src, PixType* PredPel,
 {
     PixType* tmpSrcPtr;
     PixType dcval;
-    Ipp32s minTUSize = 1 << par->Log2MinTUSize;
-    Ipp32s numUnitsInCU = width >> par->Log2MinTUSize;
+    Ipp32s minTUSize = 1 << par->QuadtreeTULog2MinSize;
+    Ipp32s numUnitsInCU = width >> par->QuadtreeTULog2MinSize;
     Ipp32s numIntraNeighbor;
     Ipp32s i, j;
 
@@ -558,8 +525,8 @@ void GetPredPelsChromaNV12(H265VideoParam *par, PixType* src, PixType* PredPel,
 {
     PixType* tmpSrcPtr;
     PixType dcval = (1 << (BIT_DEPTH_CHROMA - 1));
-    Ipp32s minTUSize = (1 << par->Log2MinTUSize) >> 1;
-    Ipp32s numUnitsInCU = width >> (par->Log2MinTUSize - 1);
+    Ipp32s minTUSize = (1 << par->QuadtreeTULog2MinSize) >> 1;
+    Ipp32s numUnitsInCU = width >> (par->QuadtreeTULog2MinSize - 1);
     Ipp32s numIntraNeighbor;
     Ipp32s i, j;
     numIntraNeighbor = 0;
@@ -694,11 +661,9 @@ void GetPredPelsChromaNV12(H265VideoParam *par, PixType* src, PixType* PredPel,
 void H265CU::IntraPredTu(Ipp32s blockZScanIdx, Ipp32s width, Ipp32s pred_mode, Ipp8u is_luma)
 {
     PixType PredPel[4*2*64+1];
-    Ipp32s maxDepth = m_par->Log2MaxCUSize - m_par->Log2MinTUSize;
-    Ipp32s numMinTUInLCU = 1 << maxDepth;
-    Ipp32s PURasterIdx = h265_scan_z2r[maxDepth][blockZScanIdx];
-    Ipp32s PUStartRow = PURasterIdx >> maxDepth;
-    Ipp32s PUStartColumn = PURasterIdx & (numMinTUInLCU - 1);
+    Ipp32s PURasterIdx = h265_scan_z2r4[blockZScanIdx];
+    Ipp32s PUStartRow = PURasterIdx >> 4;
+    Ipp32s PUStartColumn = PURasterIdx & 15;
     PixType *pRec;
 
     Ipp32s pitch = m_pitchRec;
@@ -721,7 +686,7 @@ void H265CU::IntraPredTu(Ipp32s blockZScanIdx, Ipp32s width, Ipp32s pred_mode, I
             }
         }
 
-        pRec = m_yRec + ((PUStartRow * m_pitchRec + PUStartColumn) << m_par->Log2MinTUSize);
+        pRec = m_yRec + ((PUStartRow * m_pitchRec + PUStartColumn) << m_par->QuadtreeTULog2MinSize);
 
         GetAvailablity(this, blockZScanIdx, width, m_par->cpps->constrained_intra_pred_flag,
             m_inNeighborFlags, m_outNeighborFlags);
@@ -773,7 +738,7 @@ void H265CU::IntraPredTu(Ipp32s blockZScanIdx, Ipp32s width, Ipp32s pred_mode, I
     }
     else
     {
-        pRec = m_uvRec + ((PUStartRow * m_pitchRec + PUStartColumn * 2) << (m_par->Log2MinTUSize - 1));
+        pRec = m_uvRec + ((PUStartRow * m_pitchRec + PUStartColumn * 2) << (m_par->QuadtreeTULog2MinSize - 1));
         GetAvailablity(this, blockZScanIdx, width << 1, m_par->cpps->constrained_intra_pred_flag,
             m_inNeighborFlags, m_outNeighborFlags);
         GetPredPelsChromaNV12(m_par, pRec, PredPel, m_outNeighborFlags, width, pitch);
@@ -882,14 +847,12 @@ void H265CU::IntraLumaModeDecision(Ipp32s absPartIdx, Ipp32u offset, Ipp8u depth
     __ALIGN32 PixType predPelFilt[4*64+1];
     Ipp32s width = m_par->MaxCUSize >> (depth + trDepth);
     Ipp8u  partSize = (Ipp8u)(trDepth == 1 ? PART_SIZE_NxN : PART_SIZE_2Nx2N);
-    Ipp32s maxDepth = m_par->Log2MaxCUSize - m_par->Log2MinTUSize;
-    Ipp32s numMinTUInLCU = 1 << maxDepth;
-    Ipp32s puRasterIdx = h265_scan_z2r[maxDepth][absPartIdx];
-    Ipp32s puStartRow = puRasterIdx >> maxDepth;
-    Ipp32s puStartCol = puRasterIdx & (numMinTUInLCU - 1);
+    Ipp32s puRasterIdx = h265_scan_z2r4[absPartIdx];
+    Ipp32s puStartRow = puRasterIdx >> 4;
+    Ipp32s puStartCol = puRasterIdx & 15;
 
-    PixType *src = m_ySrc + ((puStartRow * m_pitchSrc + puStartCol) << m_par->Log2MinTUSize);
-    PixType *rec = m_yRec + ((puStartRow * m_pitchRec + puStartCol) << m_par->Log2MinTUSize);
+    PixType *src = m_ySrc + ((puStartRow * m_pitchSrc + puStartCol) << m_par->QuadtreeTULog2MinSize);
+    PixType *rec = m_yRec + ((puStartRow * m_pitchRec + puStartCol) << m_par->QuadtreeTULog2MinSize);
 
     std::fill_n(m_intraCosts, 35, COST_MAX);
 
@@ -907,8 +870,8 @@ void H265CU::IntraLumaModeDecision(Ipp32s absPartIdx, Ipp32u offset, Ipp8u depth
     Ipp32s numAngModeCand = 33;
 
     if (m_par->intraAngModes == 3) {
-        Ipp32s xPu = m_ctbPelX + (puStartCol << m_par->Log2MinTUSize);
-        Ipp32s yPu = m_ctbPelY + (puStartRow << m_par->Log2MinTUSize);
+        Ipp32s xPu = m_ctbPelX + (puStartCol << m_par->QuadtreeTULog2MinSize);
+        Ipp32s yPu = m_ctbPelY + (puStartRow << m_par->QuadtreeTULog2MinSize);
         Ipp32s log2BlockSize = m_par->Log2MaxCUSize - depth - trDepth;
         numAngModeCand = m_par->num_cand_0[log2BlockSize];
         GetAngModesFromHistogram(xPu, yPu, 1 << log2BlockSize, angModeCand, numAngModeCand);
@@ -1148,7 +1111,10 @@ void H265CU::IntraLumaModeDecisionRDO(Ipp32s absPartIdx, Ipp32u offset, Ipp8u de
     IppiSize roi = { width, width };
     H265CUData *dataTemp = m_dataTemp + ((depth + trDepth) << m_par->Log2NumPartInCU) + absPartIdx;
     H265CUData *dataBest = m_dataBest + ((depth + trDepth) << m_par->Log2NumPartInCU) + absPartIdx;
-    Ipp8u *rec = m_yRec + GetLumaOffset(m_par, absPartIdx, m_pitchRec);
+    Ipp32s puRasterIdx = h265_scan_z2r4[absPartIdx];
+    Ipp32s puStartRow = puRasterIdx >> 4;
+    Ipp32s puStartColumn = puRasterIdx & 15;
+    Ipp8u *rec = m_yRec + ((puStartRow * m_pitchRec + puStartColumn) << m_par->QuadtreeTULog2MinSize);
 
     m_intraCosts[0] = COST_MAX;
     bool lastCandIsBest = 0;
@@ -1195,9 +1161,9 @@ Ipp8u H265CU::GetTrSplitMode(Ipp32s abs_part_idx, Ipp8u depth, Ipp8u tr_depth, I
         (m_par->Log2MaxCUSize - depth - tr_depth > tuLog2MinSizeInCu)) {
 
         Ipp32u lpel_x = m_ctbPelX +
-            ((h265_scan_z2r[m_par->MaxCUDepth][abs_part_idx] & (m_par->NumMinTUInMaxCU - 1)) << m_par->QuadtreeTULog2MinSize);
+            ((h265_scan_z2r4[abs_part_idx] & 15) << m_par->QuadtreeTULog2MinSize);
         Ipp32u tpel_y = m_ctbPelY +
-            ((h265_scan_z2r[m_par->MaxCUDepth][abs_part_idx] >> m_par->MaxCUDepth) << m_par->QuadtreeTULog2MinSize);
+            ((h265_scan_z2r4[abs_part_idx] >> 4) << m_par->QuadtreeTULog2MinSize);
 
         if ((strict && m_par->Log2MaxCUSize - depth - tr_depth > m_par->QuadtreeTULog2MaxSize) ||
             lpel_x + width > m_par->Width || tpel_y + width > m_par->Height)
@@ -1233,9 +1199,7 @@ Ipp8u H265CU::GetTrSplitMode(Ipp32s abs_part_idx, Ipp8u depth, Ipp8u tr_depth, I
 
 void H265CU::GetInitAvailablity()
 {
-    Ipp32s maxDepth = m_par->Log2MaxCUSize - m_par->Log2MinTUSize;
-    Ipp32s numMinTUInLCU = 1 << maxDepth;
-    Ipp8u *RasterToZscanTab = (Ipp8u*)h265_scan_r2z[maxDepth];
+    Ipp32s numMinTUInLCU = m_par->NumPartInCUSize;
 
     Ipp32s rasterIdx, zScanIdx;
     Ipp32s i;
@@ -1251,8 +1215,9 @@ void H265CU::GetInitAvailablity()
     {
         for (i = 0; i < numMinTUInLCU; i++)
         {
-            rasterIdx = (numMinTUInLCU - i) * numMinTUInLCU - 1;
-            zScanIdx = RasterToZscanTab[rasterIdx];
+            //rasterIdx = (numMinTUInLCU - i) * numMinTUInLCU - 1;
+            rasterIdx = i * PITCH_TU + numMinTUInLCU - 1;
+            zScanIdx = h265_scan_r2z4[rasterIdx];
 
             if (constrained_intra_flag)
             {
@@ -1271,8 +1236,9 @@ void H265CU::GetInitAvailablity()
     /* Above Left */
     if (m_aboveLeftAddr >= m_cslice->slice_segment_address /* and in one tile */)
     {
-        rasterIdx = numMinTUInLCU * numMinTUInLCU - 1;
-        zScanIdx = RasterToZscanTab[rasterIdx];
+        //rasterIdx = numMinTUInLCU * numMinTUInLCU - 1;
+        rasterIdx = (numMinTUInLCU - 1) * PITCH_TU + numMinTUInLCU - 1;
+        zScanIdx = h265_scan_r2z4[rasterIdx];
 
         if (constrained_intra_flag)
         {
@@ -1292,8 +1258,9 @@ void H265CU::GetInitAvailablity()
     {
         for (i = 0; i < numMinTUInLCU; i++)
         {
-            rasterIdx = (numMinTUInLCU - 1) * numMinTUInLCU + i;
-            zScanIdx = RasterToZscanTab[rasterIdx];
+            //rasterIdx = (numMinTUInLCU - 1) * numMinTUInLCU + i;
+            rasterIdx = (numMinTUInLCU - 1) * PITCH_TU + i;
+            zScanIdx = h265_scan_r2z4[rasterIdx];
 
             if (constrained_intra_flag)
             {
@@ -1314,8 +1281,9 @@ void H265CU::GetInitAvailablity()
     {
         for (i = 0; i < numMinTUInLCU; i++)
         {
-            rasterIdx = (numMinTUInLCU - 1) * numMinTUInLCU + i;
-            zScanIdx = RasterToZscanTab[rasterIdx];
+            //rasterIdx = (numMinTUInLCU - 1) * numMinTUInLCU + i;
+            rasterIdx = (numMinTUInLCU - 1) * PITCH_TU + i;
+            zScanIdx = h265_scan_r2z4[rasterIdx];
 
             if (constrained_intra_flag)
             {

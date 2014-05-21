@@ -206,7 +206,7 @@ TU_OPT(PartModes,                      3,   2,   2,   1,   1,   1,   1) //TU2 AM
 TU_OPT(FastCbfMode,                  OFF, OFF,  ON,  ON,  ON,  ON,  ON)
 TU_OPT(PuDecisionSatd,               OFF, OFF, OFF, OFF, OFF, OFF, OFF)
 TU_OPT(MinCUDepthAdapt,              OFF, OFF, OFF,  ON,  ON,  ON,  ON)
-TU_OPT(CUSplitThreshold,               0,   0,   0,   0,   0,   0,   0)
+TU_OPT(CUSplitThreshold,               0,  64, 128, 192, 192, 192, 256)
 
 //Basic quality features
 TU_OPT(WPP,                          UNK, UNK, UNK, UNK, UNK, UNK, UNK)
@@ -223,9 +223,9 @@ TU_OPT(RDOQuantChroma,                ON,  ON,  ON, OFF, OFF, OFF, OFF)
 TU_OPT(RDOQuantCGZ,                   ON,  ON,  ON,  ON, OFF, OFF, OFF)
 
 //RDO
-TU_OPT(SplitThresholdStrengthCUIntra,  1,   2,   3,   3,   3,   3,   3)
-TU_OPT(SplitThresholdStrengthTUIntra,  1,   2,   3,   3,   3,   3,   3)
-TU_OPT(SplitThresholdStrengthCUInter,  1,   2,   3,   3,   3,   3,   3)
+TU_OPT(SplitThresholdStrengthCUIntra,  1,   1,   1,   1,   2,   3,   3)
+TU_OPT(SplitThresholdStrengthTUIntra,  1,   1,   1,   1,   2,   3,   3)
+TU_OPT(SplitThresholdStrengthCUInter,  1,   1,   1,   1,   2,   3,   3)
 TU_OPT(IntraNumCand0_2,               35,  35,  35,  35,  35,  35,  35)
 TU_OPT(IntraNumCand0_3,               35,  35,  35,  35,  35,  35,  35)
 TU_OPT(IntraNumCand0_4,               35,  35,  35,  35,  35,  35,  35)
@@ -1323,11 +1323,11 @@ mfxStatus MFXVideoENCODEH265::Query(VideoCORE *core, mfxVideoParam *par_in, mfxV
 
         out->AsyncDepth = in->AsyncDepth;
 
-        if ( (in->mfx.FrameInfo.Width & 15) || in->mfx.FrameInfo.Width > 3840 ) {
+        if ( (in->mfx.FrameInfo.Width & 15) || in->mfx.FrameInfo.Width > 8192 ) {
             out->mfx.FrameInfo.Width = 0;
             isInvalid ++;
         } else out->mfx.FrameInfo.Width = in->mfx.FrameInfo.Width;
-        if ( (in->mfx.FrameInfo.Height & 15) || in->mfx.FrameInfo.Height > 2160 ) {
+        if ( (in->mfx.FrameInfo.Height & 15) || in->mfx.FrameInfo.Height > 4320 ) {
             out->mfx.FrameInfo.Height = 0;
             isInvalid ++;
         } else out->mfx.FrameInfo.Height = in->mfx.FrameInfo.Height;

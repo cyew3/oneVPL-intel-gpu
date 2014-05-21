@@ -104,7 +104,7 @@ struct H265VideoParam {
     Ipp32u CropBottom;
     Ipp32s AddCUDepth;
     Ipp32u MaxCUSize;
-    Ipp32u MinCUSize;
+    Ipp32u MinCUSize; // de facto unused
     Ipp32u MinTUSize;
     Ipp32u MaxTrSize;
     Ipp32u Log2NumPartInCU;
@@ -115,11 +115,11 @@ struct H265VideoParam {
     Ipp32u PicHeightInCtbs;
     Ipp32u PicWidthInMinCbs;
     Ipp32u PicHeightInMinCbs;
-    Ipp32u Log2MinTUSize;
+    //Ipp32u Log2MinTUSize; // duplicated QuadtreeTULog2MinSize
     Ipp8u  AMPAcc[MAX_CU_DEPTH];
     Ipp64f cu_split_threshold_cu[52][2][MAX_TOTAL_DEPTH];
     Ipp64f cu_split_threshold_tu[52][2][MAX_TOTAL_DEPTH];
-    Ipp32s MaxTotalDepth;
+    //Ipp32s MaxTotalDepth; // duplicated MaxCUDepth
 
     // QP control
     Ipp8u UseDQP;
@@ -279,9 +279,6 @@ public:
     mfxStatus MoveFromCPBToDPB();
     mfxStatus CleanDPB();
 
-    void CreateRefPicSet(H265Slice *curr_slice);
-    mfxStatus CheckCurRefPicSet(H265Slice *curr_slice);
-    mfxStatus UpdateRefPicList(H265Slice *curr_slice);
     void CreateRefPicSet(H265Slice *slice, H265Frame *frame);
     mfxStatus CheckRefPicSet(H265Slice *slice, H265Frame *frame);
     mfxStatus UpdateRefPicList(H265Slice *slice, H265Frame *frame);

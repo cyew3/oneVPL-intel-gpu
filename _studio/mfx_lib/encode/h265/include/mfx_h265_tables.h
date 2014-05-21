@@ -20,8 +20,8 @@ extern const Ipp8u h265_type2idx[4];
 extern const Ipp32u h265_min_in_group[10];
 extern const Ipp32u h265_group_idx[32];
 
-extern const Ipp8u *h265_scan_z2r[];
-extern const Ipp8u *h265_scan_r2z[];
+extern const Ipp8u h265_scan_z2r4[256];
+extern const Ipp8u h265_scan_r2z4[256];
 extern const Ipp16u *h265_sig_last_scan[3][5];
 extern const Ipp16u h265_sig_scan_CG32x32[64];
 extern const Ipp16u h265_sig_last_scan_8x8[ 4 ][ 4 ];
@@ -29,6 +29,7 @@ extern const Ipp8u h265_QPtoChromaQP[58];
 extern const Ipp32s h265_filteredModes[];
 extern const Ipp32s h265_numPu[];
 
+const int PITCH_TU = 16;
 
 } // namespace
 

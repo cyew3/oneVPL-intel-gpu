@@ -1202,10 +1202,10 @@ void H265CU::EncodeCU(H265Bs *bs, Ipp32u abs_part_idx, Ipp32s depth, Ipp8u rd_mo
 
     Ipp8u boundary = false;
     Ipp32u lPelX   = m_ctbPelX +
-        ((h265_scan_z2r[m_par->MaxCUDepth][abs_part_idx] & (m_par->NumMinTUInMaxCU - 1)) << m_par->QuadtreeTULog2MinSize);
+        ((h265_scan_z2r4[abs_part_idx] & 15) << m_par->QuadtreeTULog2MinSize);
     Ipp32u rPelX   = lPelX + (m_par->MaxCUSize>>depth)  - 1;
     Ipp32u tPelY   = m_ctbPelY +
-        ((h265_scan_z2r[m_par->MaxCUDepth][abs_part_idx] >> m_par->MaxCUDepth) << m_par->QuadtreeTULog2MinSize);
+        ((h265_scan_z2r4[abs_part_idx] >> 4) << m_par->QuadtreeTULog2MinSize);
     Ipp32u bPelY   = tPelY + (m_par->MaxCUSize>>depth) - 1;
     /*
     if( getCheckBurstIPCMFlag() )
@@ -1249,9 +1249,9 @@ void H265CU::EncodeCU(H265Bs *bs, Ipp32u abs_part_idx, Ipp32s depth, Ipp8u rd_mo
         for (Ipp32u part_unit_idx = 0; part_unit_idx < 4; part_unit_idx++, abs_part_idx+=num_parts)
         {
             lPelX   = m_ctbPelX +
-                ((h265_scan_z2r[m_par->MaxCUDepth][abs_part_idx] & (m_par->NumMinTUInMaxCU - 1)) << m_par->QuadtreeTULog2MinSize);
+                ((h265_scan_z2r4[abs_part_idx] & 15) << m_par->QuadtreeTULog2MinSize);
             tPelY   = m_ctbPelY +
-                ((h265_scan_z2r[m_par->MaxCUDepth][abs_part_idx] >> m_par->MaxCUDepth) << m_par->QuadtreeTULog2MinSize);
+                ((h265_scan_z2r4[abs_part_idx] >> 4) << m_par->QuadtreeTULog2MinSize);
             if ((lPelX < m_par->Width) && (tPelY < m_par->Height))
             {
                 EncodeCU(bs, abs_part_idx, depth+1, 0);

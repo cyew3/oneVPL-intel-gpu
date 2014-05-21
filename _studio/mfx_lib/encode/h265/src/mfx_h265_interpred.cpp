@@ -266,11 +266,9 @@ void H265CU::InterPredCu(Ipp32s absPartIdx, Ipp8u depth, PixType *dst, Ipp32s ds
     const Ipp32s isLuma = (PLANE_TYPE == TEXT_LUMA);
     Ipp32u numParts = (m_par->NumPartInCU >> (depth << 1));
 
-    Ipp32s maxDepth = m_par->Log2MaxCUSize - m_par->Log2MinTUSize;
-    Ipp32s numMinTUInLCU = 1 << maxDepth;
-    Ipp32s cuRasterIdx = h265_scan_z2r[maxDepth][absPartIdx];
-    Ipp32s cuY = (cuRasterIdx >> maxDepth) << m_par->Log2MinTUSize;
-    Ipp32s cuX = (cuRasterIdx & (numMinTUInLCU - 1)) << m_par->Log2MinTUSize;
+    Ipp32s cuRasterIdx = h265_scan_z2r4[absPartIdx];
+    Ipp32s cuY = (cuRasterIdx >> 4) << m_par->QuadtreeTULog2MinSize;
+    Ipp32s cuX = (cuRasterIdx & 15) << m_par->QuadtreeTULog2MinSize;
 
     Ipp32s numPu = h265_numPu[m_data[absPartIdx].partSize];
     for (Ipp32s partIdx = 0; partIdx < numPu; partIdx++) {

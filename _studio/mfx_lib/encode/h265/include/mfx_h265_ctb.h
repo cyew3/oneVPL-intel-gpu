@@ -442,10 +442,10 @@ public:
     void MeSubPel(const H265MEInfo *meInfo, const MvPredInfo<2> *predInfo, Ipp32s meDir,
                   Ipp32s refIdx, H265MV *mv, Ipp32s *cost, Ipp32s *mvCost) const;
 
-    CostType CuCost(Ipp32u absPartIdx, Ipp8u depth, const H265MEInfo* bestInfo);
+    CostType CuCost(Ipp32u absPartIdx, Ipp8u depth, const H265MEInfo* bestInfo, CostType bestCost);
 
     void TuGetSplitInter(Ipp32u absPartIdx, Ipp32s offset, Ipp8u trIdx, Ipp8u trIdxMax, Ipp8u nz[3],
-                         CostType *cost, Ipp8u cbf[256][3]);
+                         CostType *cost, Ipp8u cbf[256][3], Ipp32s level);
 
     void TuMaxSplitInter(Ipp32u absPartIdx, Ipp8u trIdxMax, CostType *cost, Ipp8u cbf[256][3]);
 
@@ -485,9 +485,6 @@ void CodeSaoCtbOffsetParam(H265Bs *bs, int compIdx, SaoOffsetParam& ctbParam, bo
 template <class H265Bs>
 void CodeSaoCtbParam(H265Bs *bs, SaoCtuParam &saoBlkParam, bool *sliceEnabled, bool leftMergeAvail,
                      bool aboveMergeAvail, bool onlyEstMergeInfo);
-
-Ipp32s GetLumaOffset(const H265VideoParam *par, Ipp32s absPartIdx, Ipp32s pitch);
-Ipp32s GetChromaOffset(const H265VideoParam *par, Ipp32s absPartIdx, Ipp32s pitch);
 
 Ipp32s tuHad(const PixType *src, Ipp32s pitch_src, const PixType *rec, Ipp32s pitch_rec,
              Ipp32s width, Ipp32s height);

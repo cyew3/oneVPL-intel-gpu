@@ -192,17 +192,15 @@ void H265CU::GetEdgeStrength(H265CUPtr *pcCUQptr,
                              Ipp32s betaOffset,
                              Ipp32s dir)
 {
-    Ipp32s log2LCUSize = m_par->Log2MaxCUSize;
-    Ipp32s log2MinTUSize = m_par->Log2MinTUSize;
+    Ipp32s log2MinTUSize = m_par->QuadtreeTULog2MinSize;
     Ipp32u uiPartQ, uiPartP;
-    Ipp32s maxDepth = log2LCUSize - log2MinTUSize;
     H265CUPtr CUPPtr;
     H265CUData *pcCUP, *pcCUQ;
     pcCUQ = pcCUQptr->ctbData;
 
     edge->strength = 0;
 
-    uiPartQ = h265_scan_r2z[maxDepth][((curPixelRow >> log2MinTUSize) << (log2LCUSize - log2MinTUSize)) + (curPixelColumn >> log2MinTUSize)];
+    uiPartQ = h265_scan_r2z4[((curPixelRow >> log2MinTUSize) * PITCH_TU) + (curPixelColumn >> log2MinTUSize)];
 
     if (dir == HOR_FILT)
     {
