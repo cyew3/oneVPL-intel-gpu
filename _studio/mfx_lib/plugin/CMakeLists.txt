@@ -400,6 +400,8 @@ foreach( variant hw )
 #    set( eval_plugin_name ${eval_plugin_name}_d )
   endif()
 
+  set (description_name ${${variant}_H264LA_ENCODER_DESCRIPTION})
+
   set( LIBS "" )
   list( APPEND LIBS
     h264_la
