@@ -55,6 +55,7 @@ public:
     {
         mfxStatus sts;
         vm_string_strcpy_s(m_FileReaderParams.m_file_name, (sizeof(m_FileReaderParams.m_file_name)-1), strFileName);
+        m_FileReaderParams.m_portion_size = 0;
         m_CorruptionParams.CorruptMode   = m_CorruptLevel;
         m_CorruptionParams.pActual       = (UMC::DataReader *)m_FileReader;
         m_CorruptionParams.pActualParams = &m_FileReaderParams;

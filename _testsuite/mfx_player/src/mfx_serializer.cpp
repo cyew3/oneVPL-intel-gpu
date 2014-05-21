@@ -174,6 +174,7 @@ void MFXStructureRef <mfxExtCodingOption2>::ConstructValues () const
     SERIALIZE_INT(MaxQPP);
     SERIALIZE_INT(MinQPB);
     SERIALIZE_INT(MaxQPB);
+    SERIALIZE_INT(DisableVUI);
 }
 
 void MFXStructureRef <mfxExtCodingOptionDDI>::ConstructValues () const
