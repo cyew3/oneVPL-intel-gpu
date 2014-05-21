@@ -113,7 +113,9 @@ mfxStatus MFXVideoENC_Query(mfxSession session, mfxVideoParam *in, mfxVideoParam
 #ifdef MFX_ENABLE_USER_ENC
         mfxRes = MFX_ERR_UNSUPPORTED;
 
-        MFXIPtr<MFXISession_1_10> newSession = TryGetSession_1_10(session);
+        _mfxSession_1_10 * versionedSession = (_mfxSession_1_10 *)(session);
+        MFXIPtr<MFXISession_1_10> newSession(versionedSession->QueryInterface(MFXISession_1_10_GUID));
+
         if (newSession && newSession->GetPreEncPlugin().get())
         {
             mfxRes = newSession->GetPreEncPlugin()->Query(session->m_pCORE.get(), in, out);
@@ -176,7 +178,8 @@ mfxStatus MFXVideoENC_QueryIOSurf(mfxSession session, mfxVideoParam *par, mfxFra
     {
 #ifdef MFX_ENABLE_USER_ENC
         mfxRes = MFX_ERR_UNSUPPORTED;
-        MFXIPtr<MFXISession_1_10> newSession = TryGetSession_1_10(session);
+        _mfxSession_1_10 * versionedSession = (_mfxSession_1_10 *)(session);
+        MFXIPtr<MFXISession_1_10> newSession(versionedSession->QueryInterface(MFXISession_1_10_GUID));
         if (newSession && newSession->GetPreEncPlugin().get())
         {
             mfxRes = newSession->GetPreEncPlugin()->QueryIOSurf(session->m_pCORE.get(), par, request, 0);
@@ -309,7 +312,9 @@ mfxStatus MFXVideoENC_Close(mfxSession session)
 
         mfxRes = session->m_pENC->Close();
         // delete the codec's instance if not plugin
-        MFXIPtr<MFXISession_1_10> newSession = TryGetSession_1_10(session);
+        _mfxSession_1_10 * versionedSession = (_mfxSession_1_10 *)(session);
+        MFXIPtr<MFXISession_1_10> newSession(versionedSession->QueryInterface(MFXISession_1_10_GUID));
+
         if (!newSession || newSession->GetPreEncPlugin().get())
         {
             session->m_pENC.reset((VideoENC *) 0);

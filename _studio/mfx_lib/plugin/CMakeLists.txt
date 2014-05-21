@@ -114,7 +114,6 @@ foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/../shared/src )
     ${prefix}/mfx_common_decode_int.cpp
     ${prefix}/libmfxsw.cpp
     ${prefix}/libmfxsw_async.cpp
-    ${prefix}/libmfxsw_plugin.cpp
     ${prefix}/libmfxsw_query.cpp
     ${prefix}/libmfxsw_session.cpp
     ${prefix}/mfx_session.cpp

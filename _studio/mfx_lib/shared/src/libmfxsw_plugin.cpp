@@ -16,6 +16,8 @@ File Name: libmfxsw_plugin.cpp
 #include <mfx_user_plugin.h>
 #include <mfx_utils.h>
 
+#define MSDK_STATIC_ASSERT(COND, MSG)  typedef char static_assertion_##MSG[ (COND) ? 1 : -1];
+
 // static section of the file
 namespace
 {
@@ -72,7 +74,15 @@ namespace
                 break;
             case MFX_PLUGINTYPE_VIDEO_ENC :
                 {
-                    MFXIPtr<MFXISession_1_10> newSession = TryGetSession_1_10(session);
+#if defined (MFX_PLUGIN_FILE_VERSION) || defined(MFX_PLUGIN_PRODUCT_VERSION)
+                    MSDK_STATIC_ASSERT("This file under no conditions should appear in plugin code.");
+#endif
+                    // we know that this conversion is safe as this is library-only code
+                    // _mfxSession_1_10 - should be used always to get versioned session instance
+                    // interface MFXISession_1_10/MFXISession_1_10_GUID may differs
+                    // here we use MFXISession_1_10 because it is first version which introduces Pre-Enc plugins
+                    _mfxSession_1_10 * versionedSession = (_mfxSession_1_10 *)(session);
+                    MFXIPtr<MFXISession_1_10> newSession(versionedSession->QueryInterface(MFXISession_1_10_GUID));
                     if (newSession)
                     {
                         _ptr = &newSession->GetPreEncPlugin(); 
