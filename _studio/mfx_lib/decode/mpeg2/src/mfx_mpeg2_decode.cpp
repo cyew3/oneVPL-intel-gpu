@@ -2396,8 +2396,8 @@ mfxStatus VideoDECODEMPEG2::CheckFrameData(const mfxFrameSurface1 *pSurface)
     }
 
 
-    if (pSurface->Info.Width <  m_InitW ||
-        pSurface->Info.Height < m_InitH)
+    if (pSurface->Info.Width >  m_InitW ||
+        pSurface->Info.Height > m_InitH)
     {
         return MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
     }
@@ -3924,7 +3924,7 @@ mfxStatus VideoDECODEMPEG2::ConstructFrame(mfxBitstream *in, mfxBitstream *out, 
             if(m_resizing)
             {          
                 m_resizing = false; 
-                 //return MFX_WRN_VIDEO_PARAM_CHANGED;
+                return MFX_WRN_VIDEO_PARAM_CHANGED;
             }
 
             return MFX_ERR_MORE_DATA;
