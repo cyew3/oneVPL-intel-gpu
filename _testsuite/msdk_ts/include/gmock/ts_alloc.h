@@ -36,4 +36,5 @@ public:
 
     mfxFrameSurface1* GetSurface();
 
+    mfxFrameSurface1* GetSurface(mfxU32 ind);
 };

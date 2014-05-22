@@ -179,3 +179,12 @@ mfxFrameSurface1* tsSurfacePool::GetSurface()
 
     return 0;
 }
+
+mfxFrameSurface1* tsSurfacePool::GetSurface(mfxU32 ind)
+{
+    if (ind > m_pool.size())
+        return 0;
+
+    return &m_pool[ind];
+}
+
