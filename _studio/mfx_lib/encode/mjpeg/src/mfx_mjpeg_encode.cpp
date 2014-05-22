@@ -1205,10 +1205,11 @@ mfxStatus MFXVideoENCODEMJPEG::Init(mfxVideoParam *par_in)
     }
 
     // return an error if requested opaque memory type isn't equal to native
+/* outdated, SW encoder can receive opaque with video mem, typically from HW VPP.
     if (m_isOpaque)
         if ((opaqAllocReq->In.Type & MFX_MEMTYPE_FROM_ENCODE) && !(opaqAllocReq->In.Type & MFX_MEMTYPE_SYSTEM_MEMORY))
             return MFX_ERR_INVALID_VIDEO_PARAM;
-
+*/
     // Allocate Opaque frames and frame for copy from video memory (if any)
     //memset(&m_auxInput, 0, sizeof(m_auxInput));
     m_useAuxInput = false;
