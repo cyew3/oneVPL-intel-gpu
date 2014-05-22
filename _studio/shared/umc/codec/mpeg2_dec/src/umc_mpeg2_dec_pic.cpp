@@ -798,7 +798,8 @@ void MPEG2VideoDecoderBase::CalculateFrameTime(Ipp64f in_time, Ipp64f * out_time
     if (PictureHeader[task_num].picture_structure == FRAME_PICTURE || frame_buffer.field_buffer_index[task_num] == 0)
     {
         // save time provided for the frame, ignore for second field
-        frame_buffer.frame_p_c_n [frame_buffer.curr_index[task_num]].frame_time = in_time;
+        if (in_time > 0)
+            frame_buffer.frame_p_c_n [frame_buffer.curr_index[task_num]].frame_time = in_time;
 
         if (in_time >= 0 && isTelecineCalc == false)
             frame_buffer.frame_p_c_n [frame_buffer.curr_index[task_num]].is_original_frame_time = true;
