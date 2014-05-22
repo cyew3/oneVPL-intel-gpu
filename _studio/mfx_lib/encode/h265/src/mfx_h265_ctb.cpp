@@ -2782,8 +2782,8 @@ CostType H265CU::CuCost(Ipp32u absPartIdx, Ipp8u depth, const H265MEInfo *bestIn
     Ipp32u numParts = ( m_par->NumPartInCU >> (depth<<1) );
     CostType curCost = 0;
 
-    Ipp32u xborder = bestInfo[0].posx + bestInfo[0].width;
-    Ipp32u yborder = bestInfo[0].posy + bestInfo[0].height;
+    Ipp32u xborder = (bestInfo[0].posx + bestInfo[0].width) >> m_par->QuadtreeTULog2MinSize;
+    Ipp32u yborder = (bestInfo[0].posy + bestInfo[0].height) >> m_par->QuadtreeTULog2MinSize;
 
     Ipp8u tr_depth_min, tr_depth_max;
     const Ipp8u curIdx = m_data[absPartIdx].curIdx; 
@@ -2792,8 +2792,8 @@ CostType H265CU::CuCost(Ipp32u absPartIdx, Ipp8u depth, const H265MEInfo *bestIn
     GetTrDepthMinMax(m_par, absPartIdx, depth, bestSplitMode, &tr_depth_min, &tr_depth_max);
 
     for (Ipp32u i = absPartIdx; i < absPartIdx + numParts; i++) {
-        Ipp32u posx = (h265_scan_z2r4[i] & 15) << m_par->QuadtreeTULog2MinSize;
-        Ipp32u posy = (h265_scan_z2r4[i] >> 4) << m_par->QuadtreeTULog2MinSize;
+        Ipp32u posx = h265_scan_z2r4[i] & 15;
+        Ipp32u posy = h265_scan_z2r4[i] >> 4;
         Ipp32s partNxN = (posx<xborder ? 0 : 1) + (posy<yborder ? 0 : 2);
         Ipp32s part = (bestSplitMode != PART_SIZE_NxN) ? (partNxN ? 1 : 0) : partNxN;
         const H265MEInfo* mei = &bestInfo[part];
