@@ -596,8 +596,10 @@ int main(int argc, char *argv[])
         }
         else /* IF RGB4 case */
         {
-            pVPPSurfacesIn[i]->Data.U = pVPPSurfacesIn[i]->Data.Y + width*height;
-            pVPPSurfacesIn[i]->Data.V = pVPPSurfacesIn[i]->Data.Y + 2*width*height;
+            pVPPSurfacesIn[i]->Data.B = pVPPSurfacesIn[i]->Data.Y;
+            pVPPSurfacesIn[i]->Data.G = pVPPSurfacesIn[i]->Data.B + 1;
+            pVPPSurfacesIn[i]->Data.R = pVPPSurfacesIn[i]->Data.B + 2;
+            pVPPSurfacesIn[i]->Data.A = pVPPSurfacesIn[i]->Data.B + 3;
             pVPPSurfacesIn[i]->Data.Pitch = 4*width;
         }
 
@@ -658,8 +660,10 @@ int main(int argc, char *argv[])
         }
         else /* IF RGB4 case */
         {
-            pVPPSurfacesOut[i]->Data.U = pVPPSurfacesOut[i]->Data.Y + width * height;
-            pVPPSurfacesOut[i]->Data.V = pVPPSurfacesOut[i]->Data.Y + 2*width * height;
+            pVPPSurfacesOut[i]->Data.B = pVPPSurfacesOut[i]->Data.Y;
+            pVPPSurfacesOut[i]->Data.G = pVPPSurfacesOut[i]->Data.B + 1;
+            pVPPSurfacesOut[i]->Data.R = pVPPSurfacesOut[i]->Data.B + 2;
+            pVPPSurfacesOut[i]->Data.A = pVPPSurfacesOut[i]->Data.B + 3;
             pVPPSurfacesOut[i]->Data.Pitch = 4*width;
         }
     }
