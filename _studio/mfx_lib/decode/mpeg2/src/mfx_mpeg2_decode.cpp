@@ -565,8 +565,9 @@ mfxStatus VideoDECODEMPEG2::Init(mfxVideoParam *par)
 
                 m_isOpaqueMemory = true;
 
-                if (MFX_MEMTYPE_FROM_DECODE & pOpqExt->Out.Type)
-                {
+                // We shouldn't analyze MFX_MEMTYPE_FROM_DECODE
+                //if (MFX_MEMTYPE_FROM_DECODE & pOpqExt->Out.Type)
+                //{
                     /*
                     if (!(MFX_MEMTYPE_DXVA2_DECODER_TARGET & pOpqExt->Out.Type) && !(MFX_MEMTYPE_SYSTEM_MEMORY & pOpqExt->Out.Type))
                     {
@@ -578,25 +579,29 @@ mfxStatus VideoDECODEMPEG2::Init(mfxVideoParam *par)
                         return MFX_ERR_INVALID_VIDEO_PARAM;
                     }*/
 
-                    if (true == m_isSWImpl)
+                if (true == m_isSWImpl)
+                {
+                    if (MFX_MEMTYPE_SYSTEM_MEMORY & pOpqExt->Out.Type)
                     {
-                        if (MFX_MEMTYPE_SYSTEM_MEMORY & pOpqExt->Out.Type)
                         {
-                            {
-                                // map surfaces with opaque
-                                allocRequest.Type = (mfxU16)pOpqExt->Out.Type;
-                                allocRequest.NumFrameMin = allocRequest.NumFrameSuggested = (mfxU16)pOpqExt->Out.NumSurface;
-                            }
-                        }
-                        else
-                        {
-                            allocRequest.Type = MFX_MEMTYPE_OPAQUE_FRAME | MFX_MEMTYPE_FROM_DECODE;
-                            allocRequest.Type |= MFX_MEMTYPE_DXVA2_DECODER_TARGET;
+                            // map surfaces with opaque
+                            allocRequest.Type = (mfxU16)pOpqExt->Out.Type;
                             allocRequest.NumFrameMin = allocRequest.NumFrameSuggested = (mfxU16)pOpqExt->Out.NumSurface;
                         }
                     }
                     else
+                    {
+                        allocRequest.Type = MFX_MEMTYPE_OPAQUE_FRAME | MFX_MEMTYPE_FROM_DECODE;
+                        allocRequest.Type |= MFX_MEMTYPE_DXVA2_DECODER_TARGET;
                         allocRequest.NumFrameMin = allocRequest.NumFrameSuggested = (mfxU16)pOpqExt->Out.NumSurface;
+                    }
+                }
+                else
+                    allocRequest.NumFrameMin = allocRequest.NumFrameSuggested = (mfxU16)pOpqExt->Out.NumSurface;
+                
+                // We shouldn't analyze MFX_MEMTYPE_FROM_DECODE. Commented block below was the case when MFX_MEMTYPE_FROM_DECODE
+                // was not set
+                /* 
                 }
                 else
                 {
@@ -617,6 +622,7 @@ mfxStatus VideoDECODEMPEG2::Init(mfxVideoParam *par)
                     }
                     
                 }
+                */
             }
         }
 
