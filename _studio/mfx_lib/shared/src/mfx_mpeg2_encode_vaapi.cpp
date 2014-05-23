@@ -237,7 +237,8 @@ namespace
     void FillPps(
         VideoCORE * core,
         MfxHwMpeg2Encode::ExecuteBuffers* pExecuteBuffers,
-        VAEncPictureParameterBufferMPEG2 & pps)
+        VAEncPictureParameterBufferMPEG2 & pps,
+        mfxU8 *pUserData, mfxU32 userDataLen)
     {
         assert(pExecuteBuffers);
         const ENCODE_SET_PICTURE_PARAMETERS_MPEG2 & winPps = pExecuteBuffers->m_pps;
@@ -314,6 +315,13 @@ namespace
         } else 
         {
             assert(0);
+        }
+
+        if (pUserData && userDataLen > 0)
+        {
+            mfxU32 len = IPP_MIN(userDataLen - 4, sizeof(pps.user_data)/sizeof(pps.user_data[0]));
+            memcpy_s(pps.user_data, sizeof(pps.user_data)/sizeof(pps.user_data[0]), pUserData + 4, len);
+            pps.user_data_length = len;
         }
     } // void FillPps(...)
 
@@ -1155,7 +1163,7 @@ mfxStatus VAAPIEncoder::Execute(ExecuteBuffers* pExecuteBuffers, mfxU32 funcId, 
 
     // TODO: fill pps only once
     Zero(m_vaPpsBuf);    
-    FillPps(m_core, pExecuteBuffers, m_vaPpsBuf);
+    FillPps(m_core, pExecuteBuffers, m_vaPpsBuf, pUserData, userDataLen);
 
     mfxSts = FillMiscParameterBuffer(pExecuteBuffers);
     MFX_CHECK(mfxSts == MFX_ERR_NONE, MFX_ERR_DEVICE_FAILED);
