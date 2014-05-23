@@ -1070,11 +1070,12 @@ mfxStatus ConfigVideoEnhancementFilters( sInputParams* pParams, sAppResources* p
                 pResources->compositeConfig.InputStream[i].LumaKeyEnable = pParams->compositionParam.streamInfo[i].compStream.LumaKeyEnable;
                 pResources->compositeConfig.InputStream[i].LumaKeyMin = pParams->compositionParam.streamInfo[i].compStream.LumaKeyMin;
                 pResources->compositeConfig.InputStream[i].LumaKeyMax = pParams->compositionParam.streamInfo[i].compStream.LumaKeyMax;
-
             }
-
-
-        }
+            if (pParams->compositionParam.streamInfo[i].compStream.PixelAlphaEnable != 0 )
+            {
+                pResources->compositeConfig.InputStream[i].PixelAlphaEnable = pParams->compositionParam.streamInfo[i].compStream.PixelAlphaEnable;
+            }
+        } // for (int i = 0; i < pResources->compositeConfig.NumInputStream; i++)
 
         pVppParam->ExtParam[pVppParam->NumExtParam++] = (mfxExtBuffer*)&(pResources->compositeConfig);
     }

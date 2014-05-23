@@ -639,13 +639,13 @@ mfxStatus vppParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams
         return MFX_ERR_UNSUPPORTED;
     };
 
-    if (pParams->compositionParam.mode == VPP_FILTER_ENABLED_CONFIGURED)
-    {
-        for (i = 1; i < pParams->numStreams; i++)
-        {
-            pParams->inFrameInfo[i].FourCC = pParams->inFrameInfo[VPP_IN].FourCC;
-        }
-    };
+    //if (pParams->compositionParam.mode == VPP_FILTER_ENABLED_CONFIGURED)
+    //{
+    //  for (i = 1; i < pParams->numStreams; i++)
+    //    {
+    //        pParams->inFrameInfo[i].FourCC = pParams->inFrameInfo[VPP_IN].FourCC;
+    //    }
+    //};
 
     if (0 == msdk_strlen(pParams->strDstFile))
     {
