@@ -529,6 +529,8 @@ mfxStatus VAAPIVideoProcessing::Execute_Composition(mfxExecuteParams *pParams)
     VAStatus vaSts = VA_STATUS_SUCCESS;
     VASurfaceAttrib attrib;
     std::vector<VABlendState> blend_state;
+    VAImage imagePrimarySurface;
+    mfxU8* pPrimarySurfaceBuffer;
 
     MFX_CHECK_NULL_PTR1( pParams );
     MFX_CHECK_NULL_PTR1( pParams->targetSurface.hdl.first );
@@ -539,8 +541,6 @@ mfxStatus VAAPIVideoProcessing::Execute_Composition(mfxExecuteParams *pParams)
     {
         mfxDrvSurface* pRefSurf = &(pParams->pRefSurfaces[0]);
         mfxFrameInfo *inInfo = &(pRefSurf->frameInfo);
-        VAImage imagePrimarySurface;
-        mfxU8* pPrimarySurfaceBuffer;
 
         m_primarySurface4Composition = (VASurfaceID*)calloc(1,3*sizeof(VASurfaceID));
         /* KW fix, but it is true, required to check, is memory allocated o not  */
@@ -549,18 +549,19 @@ mfxStatus VAAPIVideoProcessing::Execute_Composition(mfxExecuteParams *pParams)
 
         attrib.type = VASurfaceAttribPixelFormat;
         attrib.value.type = VAGenericValueTypeInteger;
-        if (inInfo->FourCC == MFX_FOURCC_NV12)
-        {
-            attrib.value.value.i = VA_FOURCC_NV12;
-        }
-        else if (inInfo->FourCC == MFX_FOURCC_RGB4)
+
+        // default format is NV12
+        if (inInfo->FourCC == MFX_FOURCC_RGB4)
         {
             attrib.value.value.i = VA_FOURCC_ARGB;
         }
+        else
+        {
+            attrib.value.value.i = VA_FOURCC_NV12;
+        }
         attrib.flags = VA_SURFACE_ATTRIB_SETTABLE;
 
-        /* NB! Second parameter is always VA_RT_FORMAT_YUV420 even for RGB surfaces!!! */
-        vaSts = vaCreateSurfaces(m_vaDisplay, VA_RT_FORMAT_YUV420, inInfo->Width, inInfo->Height,
+        vaSts = vaCreateSurfaces(m_vaDisplay, attrib.value.value.i, inInfo->Width, inInfo->Height,
                 m_primarySurface4Composition, 3, &attrib, 1);
         MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
 
@@ -634,8 +635,8 @@ mfxStatus VAAPIVideoProcessing::Execute_Composition(mfxExecuteParams *pParams)
     {
         mfxDrvSurface* pRefSurf = &(pParams->pRefSurfaces[refIdx]);
 
-        VASurfaceID* srf = (VASurfaceID*)(pRefSurf->hdl.first);
-        m_pipelineParam[refIdx].surface = *srf;
+        VASurfaceID* srf_1 = (VASurfaceID*)(pRefSurf->hdl.first);
+        m_pipelineParam[refIdx].surface = *srf_1;
         //m_pipelineParam[refIdx].surface = m_primarySurface4Composition[0];
         //VASurfaceID *outputSurface = (VASurfaceID*)(pParams->targetSurface.hdl.first);
         //m_pipelineParam[refIdx].surface = *outputSurface;
@@ -698,28 +699,6 @@ mfxStatus VAAPIVideoProcessing::Execute_Composition(mfxExecuteParams *pParams)
                 break;
         }
 
-        /* Global alpha and luma key can not be enabled together*/
-        if (pParams->dstRects[refIdx].GlobalAlphaEnable !=0)
-        {
-            blend_state[refIdx].flags = VA_BLEND_GLOBAL_ALPHA;
-            blend_state[refIdx].global_alpha = ((float)pParams->dstRects[refIdx].GlobalAlpha) /255;
-        }
-        /* Luma color key  for YUV surfaces only.
-         * And Premultiplied alpha blending for RGBA surfaces only.
-         * So, these two flags can't combine together  */
-        if ((pParams->dstRects[refIdx].LumaKeyEnable != 0) &&
-            (pParams->dstRects[refIdx].PixelAlphaEnable == 0) )
-        {
-            blend_state[refIdx].flags |= VA_BLEND_LUMA_KEY;
-            blend_state[refIdx].min_luma = pParams->dstRects[refIdx].LumaKeyMin;
-            blend_state[refIdx].max_luma = pParams->dstRects[refIdx].LumaKeyMax;
-        }
-        if ((pParams->dstRects[refIdx].LumaKeyEnable == 0 ) &&
-            (pParams->dstRects[refIdx].PixelAlphaEnable != 0 ) )
-        {
-            blend_state[refIdx].flags |= VA_BLEND_PREMULTIPLIED_ALPHA;
-        }
-
         m_pipelineParam[refIdx].filters  = m_filterBufs;
         m_pipelineParam[refIdx].num_filters  = m_numFilterBufs;
         /* Special case for composition:
@@ -730,13 +709,6 @@ mfxStatus VAAPIVideoProcessing::Execute_Composition(mfxExecuteParams *pParams)
             m_pipelineParam[refIdx].num_filters  = 0;
             m_pipelineParam[refIdx].pipeline_flags |= VA_PROC_PIPELINE_FAST;
            // m_pipelineParam[refIdx].filter_flags    |= VA_FILTER_SCALING_FAST;
-
-            if ((pParams->dstRects[refIdx].GlobalAlphaEnable != 0) ||
-                    (pParams->dstRects[refIdx].LumaKeyEnable != 0) ||
-                    (pParams->dstRects[refIdx].PixelAlphaEnable != 0))
-            {
-                m_pipelineParam[refIdx].blend_state = &blend_state[refIdx];
-            }
         }
 
         vaSts = vaCreateBuffer(m_vaDisplay,
@@ -783,9 +755,8 @@ mfxStatus VAAPIVideoProcessing::Execute_Composition(mfxExecuteParams *pParams)
     m_pipelineParamComp.resize(pParams->fwdRefCount/7);
     m_pipelineParamCompID.resize(pParams->fwdRefCount/7, VA_INVALID_ID);
 
-
     /* pParams->fwdRefCount actually is number of sub stream*/
-    for( refIdx = 2; refIdx <= (refCount + 1); refIdx++ )
+    for( refIdx = 1; refIdx <= (refCount + 1); refIdx++ )
     //for( refIdx = uStartIndex; refIdx <= uEndIndex; refIdx++ )
     {
         /*for frames 8, 15, 22, 29,... */
@@ -839,9 +810,9 @@ mfxStatus VAAPIVideoProcessing::Execute_Composition(mfxExecuteParams *pParams)
 
         mfxDrvSurface* pRefSurf = &(pParams->pRefSurfaces[refIdx-1]);
 
-        VASurfaceID* srf = (VASurfaceID*)(pRefSurf->hdl.first);
+        VASurfaceID* srf_2 = (VASurfaceID*)(pRefSurf->hdl.first);
 
-        m_pipelineParam[refIdx].surface = *srf;
+        m_pipelineParam[refIdx].surface = *srf_2;
 
         mfxU32  refFourcc = pRefSurf->frameInfo.FourCC;
         switch (refFourcc)
