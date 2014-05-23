@@ -24,6 +24,9 @@
     <Filter Include="Source Files\test_suites\ptir">
       <UniqueIdentifier>{30437599-beba-461b-a777-176e72b1508b}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\test_suites\camera">
+      <UniqueIdentifier>{14bf7058-45b2-471f-b0f7-fb1d61752ac1}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\test_sample_allocator.h">
@@ -184,9 +187,6 @@
     <ClCompile Include="src\gmock\test_suites\vpp_frame_async_ex.cpp">
       <Filter>Source Files\test_suites</Filter>
     </ClCompile>
-    <ClCompile Include="src\gmock\test_suites\camera_init.cpp">
-      <Filter>Source Files\test_suites</Filter>
-    </ClCompile>
     <ClCompile Include="src\gmock\test_suites\ptir_frame_async_ex.cpp">
       <Filter>Source Files\test_suites\ptir</Filter>
     </ClCompile>
@@ -201,6 +201,15 @@
     </ClCompile>
     <ClCompile Include="src\gmock\test_suites\ptir_close.cpp">
       <Filter>Source Files\test_suites\ptir</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\camera_init.cpp">
+      <Filter>Source Files\test_suites\camera</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\camera_query_io_surf.cpp">
+      <Filter>Source Files\test_suites\camera</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\camera_query.cpp">
+      <Filter>Source Files\test_suites\camera</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>
