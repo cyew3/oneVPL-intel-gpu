@@ -2627,9 +2627,7 @@ void H265CU::TuGetSplitInter(Ipp32u absPartIdx, Ipp32s offset, Ipp8u tr_idx, Ipp
         Ipp32s offsetRecChroma = GetChromaOffset(m_par, absPartIdx, MAX_CU_SIZE);
         m_bsf->CtxSave(ctxSave[1], 0, NUM_CABAC_CONTEXT);
         m_bsf->CtxRestore(ctxSave[0], 0, NUM_CABAC_CONTEXT);
-        // keep not split
-        H265CUData *data_t = m_dataTemp + ((depth + tr_idx) << m_par->Log2NumPartInCU);
-        small_memcpy(data_t + absPartIdx, m_data + absPartIdx, sizeof(H265CUData) * numParts);
+
         IppiSize roi = { width, width };
         Ipp8u curRecIdx = m_data[absPartIdx].curRecIdx; // for not split and chroma at [luma]width==8
         if (level == 0) {
@@ -2689,7 +2687,11 @@ void H265CU::TuGetSplitInter(Ipp32u absPartIdx, Ipp32s offset, Ipp8u tr_idx, Ipp
             }
         } else {
             // restore not split
-            small_memcpy(m_data + absPartIdx, data_t + absPartIdx, sizeof(H265CUData) * numParts);
+            for (Ipp32s i = 0; i < numParts; i++) {
+                m_data[absPartIdx + i].trIdx = tr_idx;
+                m_data[absPartIdx + i].curRecIdx = curRecIdx;
+            }
+
             m_bsf->CtxRestore(ctxSave[1], 0, NUM_CABAC_CONTEXT);
             if (level != 0) {
                 ippiCopy_8u_C1R(m_interRecBest[depth + tr_idx], MAX_CU_SIZE, m_interRec[m_data[absPartIdx].curRecIdx][ depth ] + offsetRec, MAX_CU_SIZE, roi);
