@@ -111,7 +111,7 @@ int main(int argc, char *argv[])
 
   mfxU32              readFramesCount = 0;
 
-  mfxU32              i, j;
+  mfxU16              i, j;
 
   mfxU16              argbSurfaceIndex = 0xffff;
 
