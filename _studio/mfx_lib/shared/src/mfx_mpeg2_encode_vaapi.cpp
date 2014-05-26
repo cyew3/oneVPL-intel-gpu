@@ -22,6 +22,7 @@
 #include "mfx_mpeg2_encode_vaapi.h"
 #include "vaapi_ext_interface.h"
 #include "ippi.h"
+#include <climits>
 
 #ifndef D3DDDIFMT_NV12
 #define D3DDDIFMT_NV12 (D3DDDIFORMAT)(MFX_MAKEFOURCC('N', 'V', '1', '2'))
@@ -317,12 +318,12 @@ namespace
             assert(0);
         }
 
-        if (pUserData && userDataLen > 0)
-        {
-            mfxU32 len = IPP_MIN(userDataLen - 4, sizeof(pps.user_data)/sizeof(pps.user_data[0]));
-            memcpy_s(pps.user_data, sizeof(pps.user_data)/sizeof(pps.user_data[0]), pUserData + 4, len);
-            pps.user_data_length = len;
-        }
+//         if (pUserData && userDataLen > 0)
+//         {
+//             mfxU32 len = IPP_MIN(userDataLen - 4, sizeof(pps.user_data)/sizeof(pps.user_data[0]));
+//             memcpy_s(pps.user_data, sizeof(pps.user_data)/sizeof(pps.user_data[0]), pUserData + 4, len);
+//             pps.user_data_length = len;
+//         }
     } // void FillPps(...)
 
 /*
@@ -474,6 +475,8 @@ VAAPIEncoder::VAAPIEncoder(VideoCORE* core)
     , m_pMiscParamsPrivate(0)
     , m_miscParamFpsId(VA_INVALID_ID)
     , m_miscParamPrivateId(VA_INVALID_ID)
+    , m_packedUserDataParamsId(VA_INVALID_ID)
+    , m_packedUserDataId(VA_INVALID_ID)
     , m_vbvBufSize(0)
     , m_initFrameWidth(0)
     , m_initFrameHeight(0)
@@ -1193,6 +1196,38 @@ mfxStatus VAAPIEncoder::Execute(ExecuteBuffers* pExecuteBuffers, mfxU32 funcId, 
     if (m_miscParamPrivateId != VA_INVALID_ID)
         configBuffers[buffersCount++] = m_miscParamPrivateId;
 
+    if (pUserData && userDataLen > 0)
+    {
+        VAEncPackedHeaderParameterBuffer packedParamsBuffer = {};
+        packedParamsBuffer.type = VAEncPackedHeaderMPEG2_UserData;
+        packedParamsBuffer.has_emulation_bytes = false;
+        mfxU32 correctedLenght = IPP_MIN(userDataLen - 4, UINT_MAX/8); // minus start code
+        packedParamsBuffer.bit_length = correctedLenght * 8;
+        
+        MFX_DESTROY_VABUFFER(m_packedUserDataParamsId, m_vaDisplay);
+        vaSts = vaCreateBuffer(m_vaDisplay,
+            m_vaContextEncode,
+            VAEncPackedHeaderParameterBufferType,
+            sizeof(packedParamsBuffer),
+            1,
+            &packedParamsBuffer,
+            &m_packedUserDataParamsId);
+        MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+
+        MFX_DESTROY_VABUFFER(m_packedUserDataId, m_vaDisplay);
+        vaSts = vaCreateBuffer(m_vaDisplay,
+            m_vaContextEncode,
+            VAEncPackedHeaderDataBufferType,
+            correctedLenght, 1, pUserData + 4,
+            &m_packedUserDataId);
+        MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+
+        if (m_packedUserDataParamsId != VA_INVALID_ID)
+            configBuffers[buffersCount++] = m_packedUserDataParamsId;
+
+        if (m_packedUserDataId != VA_INVALID_ID)
+            configBuffers[buffersCount++] = m_packedUserDataId;
+    }
 
     //------------------------------------------------------------------
     // Rendering
@@ -1391,6 +1426,9 @@ mfxStatus VAAPIEncoder::Close()
 
     MFX_DESTROY_VABUFFER(m_miscParamFpsId, m_vaDisplay);
     MFX_DESTROY_VABUFFER(m_miscParamPrivateId, m_vaDisplay);
+
+    MFX_DESTROY_VABUFFER(m_packedUserDataParamsId, m_vaDisplay);
+    MFX_DESTROY_VABUFFER(m_packedUserDataId, m_vaDisplay);
 
 //    MFX_DESTROY_VABUFFER(m_packedAudHeaderBufferId, m_vaDisplay);
 //    MFX_DESTROY_VABUFFER(m_packedAudBufferId, m_vaDisplay);
