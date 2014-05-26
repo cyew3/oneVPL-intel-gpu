@@ -70,202 +70,177 @@ mfxExtBuffer HEVC_HEADER = { MFX_EXTBUFF_HEVCENC, sizeof(mfxExtCodingOptionHEVC)
 #define OFF MFX_CODINGOPTION_OFF
 #define UNK MFX_CODINGOPTION_UNKNOWN
 
-#define TU_OPT(opt, t1, t2, t3, t4, t5, t6, t7) static const mfxU16 tab_##opt[] = {t1, t2, t3, t4, t5, t6, t7};
-#define TAB_TU(x) {{MFX_EXTBUFF_HEVCENC, sizeof(mfxExtCodingOptionHEVC)}, \
-    tab_Log2MaxCUSize[x],\
-    tab_MaxCUDepth[x],\
-    tab_QuadtreeTULog2MaxSize[x],\
-    tab_QuadtreeTULog2MinSize[x],\
-    tab_QuadtreeTUMaxDepthIntra[x],\
-    tab_QuadtreeTUMaxDepthInter[x],\
-    tab_AnalyzeChroma[x],\
-    tab_SignBitHiding[x],\
-    tab_RDOQuant[x],\
-    tab_SAO[x],\
-    tab_SplitThresholdStrengthCUIntra[x],\
-    tab_SplitThresholdStrengthTUIntra[x],\
-    tab_SplitThresholdStrengthCUInter[x],\
-    tab_IntraNumCand1_2[x],\
-    tab_IntraNumCand1_3[x],\
-    tab_IntraNumCand1_4[x],\
-    tab_IntraNumCand1_5[x],\
-    tab_IntraNumCand1_6[x],\
-    tab_IntraNumCand2_2[x],\
-    tab_IntraNumCand2_3[x],\
-    tab_IntraNumCand2_4[x],\
-    tab_IntraNumCand2_5[x],\
-    tab_IntraNumCand2_6[x],\
-    tab_WPP[x],\
-    tab_GPB[x],\
-    tab_PartModes[x],\
-    tab_CmIntraThreshold[x],\
-    tab_TUSplitIntra[x],\
-    tab_CUSplit[x],\
-    tab_IntraAngModes[x],\
-    tab_EnableCm[x],\
-    tab_BPyramid[x],\
-    tab_reserved[x],\
-    tab_HadamardMe[x],\
-    tab_TMVP[x],\
-    tab_Deblocking[x],\
-    tab_RDOQuantChroma[x],\
-    tab_RDOQuantCGZ[x],\
-    tab_SaoOpt[x],\
-    tab_IntraNumCand0_2[x],\
-    tab_IntraNumCand0_3[x],\
-    tab_IntraNumCand0_4[x],\
-    tab_IntraNumCand0_5[x],\
-    tab_IntraNumCand0_6[x],\
-    tab_CostChroma[x],\
-    tab_PatternIntPel[x],\
-    tab_FastSkip[x],\
-    tab_PatternSubPel[x],\
-    tab_ForceNumThread[x],\
-    tab_FastCbfMode[x],\
-    tab_PuDecisionSatd[x],\
-    tab_MinCUDepthAdapt[x],\
-    tab_NumBiRefineIter[x],\
-    tab_CUSplitThreshold[x],\
+#define TU_OPT_SW(opt, t1, t2, t3, t4, t5, t6, t7) \
+    static const mfxU16 tab_sw_##opt[] = {t1, t2, t3, t4, t5, t6, t7}
+
+#ifdef MFX_ENABLE_CM
+    #define TU_OPT_GACC(opt, t1, t2, t3, t4, t5, t6, t7) \
+        static const mfxU16 tab_gacc_##opt[] = {t1, t2, t3, t4, t5, t6, t7};
+#else MFX_ENABLE_CM
+    #define TU_OPT_GACC(opt, t1, t2, t3, t4, t5, t6, t7)
+#endif //MFX_ENABLE_CM
+
+#define TU_OPT_ALL(opt, t1, t2, t3, t4, t5, t6, t7) \
+    TU_OPT_SW(opt, t1, t2, t3, t4, t5, t6, t7); \
+    TU_OPT_GACC(opt, t1, t2, t3, t4, t5, t6, t7)
+
+#define TAB_TU(mode, x) {{MFX_EXTBUFF_HEVCENC, sizeof(mfxExtCodingOptionHEVC)}, \
+    tab_##mode##_Log2MaxCUSize[x],\
+    tab_##mode##_MaxCUDepth[x],\
+    tab_##mode##_QuadtreeTULog2MaxSize[x],\
+    tab_##mode##_QuadtreeTULog2MinSize[x],\
+    tab_##mode##_QuadtreeTUMaxDepthIntra[x],\
+    tab_##mode##_QuadtreeTUMaxDepthInter[x],\
+    tab_##mode##_AnalyzeChroma[x],\
+    tab_##mode##_SignBitHiding[x],\
+    tab_##mode##_RDOQuant[x],\
+    tab_##mode##_SAO[x],\
+    tab_##mode##_SplitThresholdStrengthCUIntra[x],\
+    tab_##mode##_SplitThresholdStrengthTUIntra[x],\
+    tab_##mode##_SplitThresholdStrengthCUInter[x],\
+    tab_##mode##_IntraNumCand1_2[x],\
+    tab_##mode##_IntraNumCand1_3[x],\
+    tab_##mode##_IntraNumCand1_4[x],\
+    tab_##mode##_IntraNumCand1_5[x],\
+    tab_##mode##_IntraNumCand1_6[x],\
+    tab_##mode##_IntraNumCand2_2[x],\
+    tab_##mode##_IntraNumCand2_3[x],\
+    tab_##mode##_IntraNumCand2_4[x],\
+    tab_##mode##_IntraNumCand2_5[x],\
+    tab_##mode##_IntraNumCand2_6[x],\
+    tab_##mode##_WPP[x],\
+    tab_##mode##_GPB[x],\
+    tab_##mode##_PartModes[x],\
+    tab_##mode##_CmIntraThreshold[x],\
+    tab_##mode##_TUSplitIntra[x],\
+    tab_##mode##_CUSplit[x],\
+    tab_##mode##_IntraAngModes[x],\
+    tab_##mode##_EnableCm[x],\
+    tab_##mode##_BPyramid[x],\
+    tab_##mode##_reserved[x],\
+    tab_##mode##_HadamardMe[x],\
+    tab_##mode##_TMVP[x],\
+    tab_##mode##_Deblocking[x],\
+    tab_##mode##_RDOQuantChroma[x],\
+    tab_##mode##_RDOQuantCGZ[x],\
+    tab_##mode##_SaoOpt[x],\
+    tab_##mode##_IntraNumCand0_2[x],\
+    tab_##mode##_IntraNumCand0_3[x],\
+    tab_##mode##_IntraNumCand0_4[x],\
+    tab_##mode##_IntraNumCand0_5[x],\
+    tab_##mode##_IntraNumCand0_6[x],\
+    tab_##mode##_CostChroma[x],\
+    tab_##mode##_PatternIntPel[x],\
+    tab_##mode##_FastSkip[x],\
+    tab_##mode##_PatternSubPel[x],\
+    tab_##mode##_ForceNumThread[x],\
+    tab_##mode##_FastCbfMode[x],\
+    tab_##mode##_PuDecisionSatd[x],\
+    tab_##mode##_MinCUDepthAdapt[x],\
+    tab_##mode##_NumBiRefineIter[x],\
+    tab_##mode##_CUSplitThreshold[x],\
 }
 
-//#define __old_tu_definition
-#ifdef __old_tu_definition
-//                                    TU1  TU2  TU3  TU4  TU4  TU6  TU7
-TU_OPT(Log2MaxCUSize,                  6,   6,   6,   5,   5,   5,   5)
-TU_OPT(MaxCUDepth,                     4,   3,   4,   3,   3,   2,   2)
-TU_OPT(QuadtreeTULog2MaxSize,          5,   5,   5,   5,   5,   5,   5)
-TU_OPT(QuadtreeTULog2MinSize,          2,   2,   2,   2,   2,   2,   2)
-TU_OPT(QuadtreeTUMaxDepthIntra,        3,   3,   3,   2,   2,   2,   2)
-TU_OPT(QuadtreeTUMaxDepthInter,        3,   3,   3,   2,   2,   2,   2)
-TU_OPT(AnalyzeChroma,                 ON,  ON,  ON,  ON,  ON,  ON,  ON)
-TU_OPT(SignBitHiding,                 ON, OFF, OFF,  ON,  ON,  ON,  ON)
-TU_OPT(RDOQuant,                      ON,  ON,  ON, OFF, OFF, OFF, OFF)
-TU_OPT(SAO,                           ON,  ON,  ON,  ON,  ON,  ON,  ON)
-TU_OPT(SplitThresholdStrengthCUIntra,  1,   2,   2,   2,   2,   2,   3)
-TU_OPT(SplitThresholdStrengthTUIntra,  1,   2,   2,   2,   2,   2,   3)
-TU_OPT(SplitThresholdStrengthCUInter,  1,   2,   2,   2,   2,   2,   3)
-TU_OPT(IntraNumCand1_2,                8,   6,   6,   6,   6,   6,   4)
-TU_OPT(IntraNumCand1_3,                8,   6,   6,   6,   6,   6,   4)
-TU_OPT(IntraNumCand1_4,                4,   3,   3,   3,   3,   3,   2)
-TU_OPT(IntraNumCand1_5,                4,   3,   3,   3,   3,   3,   2)
-TU_OPT(IntraNumCand1_6,                4,   3,   3,   3,   3,   3,   2)
-TU_OPT(IntraNumCand2_2,                4,   3,   3,   3,   3,   3,   2)
-TU_OPT(IntraNumCand2_3,                4,   3,   3,   3,   3,   3,   2)
-TU_OPT(IntraNumCand2_4,                2,   2,   2,   2,   2,   2,   1)
-TU_OPT(IntraNumCand2_5,                2,   2,   2,   2,   2,   2,   1)
-TU_OPT(IntraNumCand2_6,                2,   2,   2,   2,   2,   2,   1)
-TU_OPT(WPP,                          UNK, UNK, UNK, UNK, UNK, UNK, UNK)
-TU_OPT(GPB,                           ON,  ON,  ON, OFF, OFF, OFF, OFF)
-TU_OPT(PartModes,                      3,   3,   3,   2,   2,   2,   2)
-TU_OPT(CmIntraThreshold,               0,   0,   0,   0,   0,   0, 576)
-TU_OPT(TUSplitIntra,                   1,   1,   1,   1,   3,   3,   3)
-TU_OPT(CUSplit,                        1,   2,   2,   2,   2,   2,   2)
-TU_OPT(IntraAngModes,                  1,   1,   1,   1,   2,   2,   2)
-TU_OPT(EnableCm,                     OFF, OFF, OFF, OFF, OFF, OFF, OFF)
-TU_OPT(BPyramid,                      ON,  ON,  ON,  ON, OFF, OFF, OFF)
-TU_OPT(reserved,                       0,   0,   0,   0,   0,   0,   0)
-TU_OPT(HadamardMe,                     2,   1,   1,   1,   1,   1,   1)
-TU_OPT(TMVP,                          ON,  ON,  ON, OFF, OFF, OFF, OFF)
-TU_OPT(Deblocking,                    ON,  ON,  ON,  ON,  ON,  ON,  ON)
-TU_OPT(RDOQuantChroma,                ON,  ON,  ON, OFF, OFF, OFF, OFF)
-TU_OPT(RDOQuantCGZ,                   ON,  ON,  ON, OFF, OFF, OFF, OFF)
-TU_OPT(SaoOpt,                         1,   1,   1,   1,   1,   1,   1)
-TU_OPT(IntraNumCand0_2,               35,  35,  35,  35,  35,  35,  35)
-TU_OPT(IntraNumCand0_3,               35,  35,  35,  35,  35,  35,  35)
-TU_OPT(IntraNumCand0_4,               35,  35,  35,  35,  35,  35,  35)
-TU_OPT(IntraNumCand0_5,               35,  35,  35,  35,  35,  35,  35)
-TU_OPT(IntraNumCand0_6,               35,  35,  35,  35,  35,  35,  35)
-TU_OPT(CostChroma,                   OFF, OFF, OFF, OFF, OFF, OFF, OFF)
-TU_OPT(PatternIntPel,                  1,   1,   1,   1,   1,   1,   1)
-TU_OPT(PatternSubPel,                  3,   3,   3,   3,   3,   3,   3)
-TU_OPT(FastSkip,                     OFF, OFF, OFF, OFF, OFF, OFF, OFF)
-TU_OPT(ForceNumThread,                 0,   0,   0,   0,   0,   0,   0)
-TU_OPT(FastCbfMode,                  OFF, OFF, OFF, OFF, OFF, OFF, OFF)
-TU_OPT(PuDecisionSatd,               OFF, OFF, OFF, OFF, OFF, OFF, OFF)
-TU_OPT(MinCUDepthAdapt,              OFF, OFF, OFF, OFF, OFF, OFF, OFF)
-TU_OPT(CUSplitThreshold,               0,   0,   0,   0,   0,   0,   0)
+TU_OPT_ALL (QuadtreeTULog2MaxSize,          5,   5,   5,   5,   5,   5,   5);
+TU_OPT_ALL (QuadtreeTULog2MinSize,          2,   2,   2,   2,   2,   2,   2);
 
-Ipp8u tab_tuGopRefDist [8] = {8, 8, 8, 8, 8, 3, 2, 1};
-Ipp8u tab_tuNumRefFrame[8] = {2, 4, 3, 3, 2, 2, 1, 1};
-
-#else
-TU_OPT(QuadtreeTULog2MaxSize,          5,   5,   5,   5,   5,   5,   5)
-TU_OPT(QuadtreeTULog2MinSize,          2,   2,   2,   2,   2,   2,   2)
-
-TU_OPT(Log2MaxCUSize,                  6,   6,   5,   5,   5,   5,   5)
-TU_OPT(MaxCUDepth,                     4,   4,   3,   3,   3,   3,   3) 
-TU_OPT(QuadtreeTUMaxDepthIntra,        4,   3,   2,   2,   3,   1,   1) //intra decrease has less effect than inter. need to measure more
-TU_OPT(QuadtreeTUMaxDepthInter,        4,   3,   2,   2,   3,   1,   1)
-TU_OPT(AnalyzeChroma,                 ON,  ON,  ON,  ON,  ON,  ON,  ON)
-TU_OPT(TUSplitIntra,                   1,   1,   3,   3,   3,   3,   3)
-TU_OPT(CUSplit,                        2,   2,   2,   2,   2,   2,   2) //CUSplit = 1 gives 2-4x slowdown in speed with less than 1% bdrate
-TU_OPT(reserved,                       0,   0,   0,   0,   0,   0,   0)
-TU_OPT(CostChroma,                    ON,  ON,  ON,  ON,  ON, OFF, OFF)
-TU_OPT(FastSkip,                     OFF, OFF, OFF, OFF, OFF, OFF,  ON)
-TU_OPT(PartModes,                      3,   2,   2,   1,   1,   1,   1) //TU2 AMP?
-TU_OPT(FastCbfMode,                  OFF, OFF,  ON,  ON,  ON,  ON,  ON)
-TU_OPT(PuDecisionSatd,               OFF, OFF, OFF, OFF, OFF, OFF, OFF)
-TU_OPT(MinCUDepthAdapt,              OFF, OFF, OFF,  ON,  ON,  ON,  ON)
-TU_OPT(CUSplitThreshold,               0,  64, 128, 192, 192, 192, 256)
+TU_OPT_ALL (Log2MaxCUSize,                  6,   6,   5,   5,   5,   5,   5);
+TU_OPT_ALL (MaxCUDepth,                     4,   4,   3,   3,   3,   3,   3);
+TU_OPT_ALL (QuadtreeTUMaxDepthIntra,        4,   3,   2,   2,   3,   1,   1);
+TU_OPT_ALL (QuadtreeTUMaxDepthInter,        4,   3,   2,   2,   3,   1,   1);
+TU_OPT_ALL (AnalyzeChroma,                 ON,  ON,  ON,  ON,  ON,  ON,  ON);
+TU_OPT_ALL (TUSplitIntra,                   1,   1,   3,   3,   3,   3,   3);
+TU_OPT_ALL (CUSplit,                        2,   2,   2,   2,   2,   2,   2);
+TU_OPT_ALL (reserved,                       0,   0,   0,   0,   0,   0,   0);
+TU_OPT_ALL (CostChroma,                    ON,  ON,  ON,  ON,  ON, OFF, OFF);
+TU_OPT_ALL (FastSkip,                     OFF, OFF, OFF, OFF, OFF, OFF,  ON);
+TU_OPT_ALL (PartModes,                      3,   2,   2,   1,   1,   1,   1);
+TU_OPT_ALL (FastCbfMode,                  OFF, OFF,  ON,  ON,  ON,  ON,  ON);
+TU_OPT_ALL (PuDecisionSatd,               OFF, OFF, OFF, OFF, OFF, OFF, OFF);
+TU_OPT_ALL (MinCUDepthAdapt,              OFF, OFF, OFF,  ON,  ON,  ON,  ON);
+TU_OPT_ALL (CUSplitThreshold,               0,  64, 128, 192, 192, 192, 256);
 
 //Basic quality features
-TU_OPT(WPP,                          UNK, UNK, UNK, UNK, UNK, UNK, UNK)
-TU_OPT(SAO,                           ON,  ON,  ON,  ON,  ON,  ON, OFF) //ww11.5 TU7 OFF-> ON
-TU_OPT(SaoOpt,                         1,   1,   2,   2,   2,   2,   2)
-TU_OPT(TMVP,                          ON,  ON,  ON,  ON,  ON,  ON,  ON)//ww11.5 TU6/7 OFF->ON very small perf impact
-TU_OPT(Deblocking,                    ON,  ON,  ON,  ON,  ON,  ON,  ON)
-TU_OPT(IntraAngModes,                  1,   1,   2,   2,   2,   2,   2)
+TU_OPT_ALL (WPP,                          UNK, UNK, UNK, UNK, UNK, UNK, UNK);
+TU_OPT_ALL (SAO,                           ON,  ON,  ON,  ON,  ON,  ON, OFF);
+TU_OPT_ALL (SaoOpt,                         1,   1,   2,   2,   2,   2,   2);
+TU_OPT_ALL (TMVP,                          ON,  ON,  ON,  ON,  ON,  ON,  ON);
+TU_OPT_ALL (Deblocking,                    ON,  ON,  ON,  ON,  ON,  ON,  ON);
+TU_OPT_SW  (IntraAngModes,                  1,   1,   2,   2,   2,   2,   2);
+TU_OPT_GACC(IntraAngModes,                  3,   3,   3,   3,   3,   3,   3);
 
 //Quant optimization
-TU_OPT(SignBitHiding,                 ON,  ON,  ON,  ON,  ON,  ON, OFF)
-TU_OPT(RDOQuant,                      ON,  ON,  ON,  ON, OFF, OFF, OFF)
-TU_OPT(RDOQuantChroma,                ON,  ON,  ON, OFF, OFF, OFF, OFF)
-TU_OPT(RDOQuantCGZ,                   ON,  ON,  ON,  ON, OFF, OFF, OFF)
+TU_OPT_ALL (SignBitHiding,                 ON,  ON,  ON,  ON,  ON,  ON, OFF);
+TU_OPT_ALL (RDOQuant,                      ON,  ON,  ON,  ON, OFF, OFF, OFF);
+TU_OPT_ALL (RDOQuantChroma,                ON,  ON,  ON, OFF, OFF, OFF, OFF);
+TU_OPT_ALL (RDOQuantCGZ,                   ON,  ON,  ON,  ON, OFF, OFF, OFF);
 
 //RDO
-TU_OPT(SplitThresholdStrengthCUIntra,  1,   1,   1,   1,   2,   3,   3)
-TU_OPT(SplitThresholdStrengthTUIntra,  1,   1,   1,   1,   2,   3,   3)
-TU_OPT(SplitThresholdStrengthCUInter,  1,   1,   1,   1,   2,   3,   3)
-TU_OPT(IntraNumCand0_2,               35,  35,  35,  35,  35,  35,  35)
-TU_OPT(IntraNumCand0_3,               35,  35,  35,  35,  35,  35,  35)
-TU_OPT(IntraNumCand0_4,               35,  35,  35,  35,  35,  35,  35)
-TU_OPT(IntraNumCand0_5,               35,  35,  35,  35,  35,  35,  35)
-TU_OPT(IntraNumCand0_6,               35,  35,  35,  35,  35,  35,  35)
-TU_OPT(IntraNumCand1_2,                8,   6,   4,   4,   4,   4,   4)
-TU_OPT(IntraNumCand1_3,                8,   6,   4,   4,   4,   4,   4)
-TU_OPT(IntraNumCand1_4,                4,   3,   2,   2,   2,   2,   2)
-TU_OPT(IntraNumCand1_5,                4,   3,   2,   2,   2,   2,   2)
-TU_OPT(IntraNumCand1_6,                4,   3,   2,   2,   2,   2,   2)
-TU_OPT(IntraNumCand2_2,                4,   3,   2,   2,   2,   2,   2)
-TU_OPT(IntraNumCand2_3,                4,   3,   2,   2,   2,   2,   2)
-TU_OPT(IntraNumCand2_4,                2,   2,   1,   1,   1,   1,   1)
-TU_OPT(IntraNumCand2_5,                2,   2,   1,   1,   1,   1,   1)
-TU_OPT(IntraNumCand2_6,                2,   2,   1,   1,   1,   1,   1)
+TU_OPT_ALL (SplitThresholdStrengthCUIntra,  1,   1,   1,   1,   2,   3,   3);
+TU_OPT_ALL (SplitThresholdStrengthTUIntra,  1,   1,   1,   1,   2,   3,   3);
+TU_OPT_ALL (SplitThresholdStrengthCUInter,  1,   1,   1,   1,   2,   3,   3);
+TU_OPT_SW  (IntraNumCand0_2,               35,  35,  35,  35,  35,  35,  35);
+TU_OPT_SW  (IntraNumCand0_3,               35,  35,  35,  35,  35,  35,  35);
+TU_OPT_SW  (IntraNumCand0_4,               35,  35,  35,  35,  35,  35,  35);
+TU_OPT_SW  (IntraNumCand0_5,               35,  35,  35,  35,  35,  35,  35);
+TU_OPT_SW  (IntraNumCand0_6,               35,  35,  35,  35,  35,  35,  35);
+TU_OPT_SW  (IntraNumCand1_2,                8,   6,   4,   4,   4,   4,   4);
+TU_OPT_SW  (IntraNumCand1_3,                8,   6,   4,   4,   4,   4,   4);
+TU_OPT_SW  (IntraNumCand1_4,                4,   3,   2,   2,   2,   2,   2);
+TU_OPT_SW  (IntraNumCand1_5,                4,   3,   2,   2,   2,   2,   2);
+TU_OPT_SW  (IntraNumCand1_6,                4,   3,   2,   2,   2,   2,   2);
+TU_OPT_SW  (IntraNumCand2_2,                4,   3,   2,   2,   2,   2,   2);
+TU_OPT_SW  (IntraNumCand2_3,                4,   3,   2,   2,   2,   2,   2);
+TU_OPT_SW  (IntraNumCand2_4,                2,   2,   1,   1,   1,   1,   1);
+TU_OPT_SW  (IntraNumCand2_5,                2,   2,   1,   1,   1,   1,   1);
+TU_OPT_SW  (IntraNumCand2_6,                2,   2,   1,   1,   1,   1,   1);
+TU_OPT_GACC(IntraNumCand0_2,                1,   1,   1,   1,   1,   1,   1);
+TU_OPT_GACC(IntraNumCand0_3,                1,   1,   1,   1,   1,   1,   1);
+TU_OPT_GACC(IntraNumCand0_4,                1,   1,   1,   1,   1,   1,   1);
+TU_OPT_GACC(IntraNumCand0_5,                1,   1,   1,   1,   1,   1,   1);
+TU_OPT_GACC(IntraNumCand0_6,                1,   1,   1,   1,   1,   1,   1);
+TU_OPT_GACC(IntraNumCand1_2,                1,   1,   1,   1,   1,   1,   1);
+TU_OPT_GACC(IntraNumCand1_3,                1,   1,   1,   1,   1,   1,   1);
+TU_OPT_GACC(IntraNumCand1_4,                1,   1,   1,   1,   1,   1,   1);
+TU_OPT_GACC(IntraNumCand1_5,                1,   1,   1,   1,   1,   1,   1);
+TU_OPT_GACC(IntraNumCand1_6,                1,   1,   1,   1,   1,   1,   1);
+TU_OPT_GACC(IntraNumCand2_2,                1,   1,   1,   1,   1,   1,   1);
+TU_OPT_GACC(IntraNumCand2_3,                1,   1,   1,   1,   1,   1,   1);
+TU_OPT_GACC(IntraNumCand2_4,                1,   1,   1,   1,   1,   1,   1);
+TU_OPT_GACC(IntraNumCand2_5,                1,   1,   1,   1,   1,   1,   1);
+TU_OPT_GACC(IntraNumCand2_6,                1,   1,   1,   1,   1,   1,   1);
 
 
 //optimizations
-TU_OPT(EnableCm,                     OFF, OFF, OFF, OFF, OFF, OFF, OFF)
-TU_OPT(CmIntraThreshold,               0,   0,   0,   0,   0, 576, 576)
-TU_OPT(ForceNumThread,                 0,   0,   0,   0,   0,   0,   0)
+TU_OPT_SW  (EnableCm,                     OFF, OFF, OFF, OFF, OFF, OFF, OFF);
+TU_OPT_GACC(EnableCm,                      ON,  ON,  ON,  ON,  ON,  ON,  ON);
+TU_OPT_SW  (CmIntraThreshold,               0,   0,   0,   0,   0,   0,   0);
+TU_OPT_GACC(CmIntraThreshold,             576, 576, 576, 576, 576, 576, 576);
+TU_OPT_ALL (ForceNumThread,                 0,   0,   0,   0,   0,   0,   0);
 
 //Motion estimation options
-TU_OPT(HadamardMe,                     2,   2,   2,   2,   2,   2,   1)
-TU_OPT(PatternIntPel,                  1,   1,   1,   1,   1,   1,   1)
-TU_OPT(PatternSubPel,                  3,   3,   3,   3,   3,   3,   4) //4 -dia subpel search; 3- square
-TU_OPT(NumBiRefineIter,              999, 999, 999, 999, 999, 999,   1) //999-practically infinite iteration
+TU_OPT_ALL (HadamardMe,                     2,   2,   2,   2,   2,   2,   1);
+TU_OPT_ALL (PatternIntPel,                  1,   1,   1,   1,   1,   1,   1);
+TU_OPT_ALL (PatternSubPel,                  3,   3,   3,   3,   3,   3,   4); //4 -dia subpel search; 3- square
+TU_OPT_ALL (NumBiRefineIter,              999, 999, 999, 999, 999, 999,   1); //999-practically infinite iteration
 
 // reference options
-TU_OPT(GPB,                           ON,  ON,  ON,  ON,  ON, OFF, OFF) //ww12.1 TU4 ON->OFF exchsnge 0.9% qual for 6.2% speed
-TU_OPT(BPyramid,                      ON,  ON,  ON,  ON,  ON,  ON,  ON)
+TU_OPT_ALL (GPB,                           ON,  ON,  ON,  ON,  ON, OFF, OFF);
+TU_OPT_ALL (BPyramid,                      ON,  ON,  ON,  ON,  ON,  ON,  ON);
+
 Ipp8u tab_tuGopRefDist [8] = {8, 8, 8, 4, 4, 4, 4, 4};
 Ipp8u tab_tuNumRefFrame[8] = {2, 4, 3, 2, 2, 2, 2, 2};
 
 
-#endif
-
 mfxExtCodingOptionHEVC tab_tu[8] = {
-    TAB_TU(3), TAB_TU(0), TAB_TU(1), TAB_TU(2), TAB_TU(3), TAB_TU(4), TAB_TU(5), TAB_TU(6)
+    TAB_TU(sw, 3), TAB_TU(sw, 0), TAB_TU(sw, 1), TAB_TU(sw, 2), TAB_TU(sw, 3), TAB_TU(sw, 4), TAB_TU(sw, 5), TAB_TU(sw, 6)
 };
+
+#ifdef MFX_ENABLE_CM
+mfxExtCodingOptionHEVC tab_tu_gacc[8] = {
+    TAB_TU(gacc, 3), TAB_TU(gacc, 0), TAB_TU(gacc, 1), TAB_TU(gacc, 2), TAB_TU(gacc, 3), TAB_TU(gacc, 4), TAB_TU(gacc, 5), TAB_TU(gacc, 6)
+};
+#endif //MFX_ENABLE_CM
 
 
 static const struct tab_hevcLevel {
@@ -675,8 +650,13 @@ mfxStatus MFXVideoENCODEH265::Init(mfxVideoParam* par_in)
     }
 
 
-
+#ifdef MFX_ENABLE_CM
+    mfxExtCodingOptionHEVC* opts_tu = (m_mfxHEVCOpts.EnableCm == MFX_CODINGOPTION_ON)
+        ? &tab_tu_gacc[m_mfxVideoParam.mfx.TargetUsage]
+        : &tab_tu[m_mfxVideoParam.mfx.TargetUsage];
+#else // MFX_ENABLE_CM
     mfxExtCodingOptionHEVC* opts_tu = &tab_tu[m_mfxVideoParam.mfx.TargetUsage];
+#endif // MFX_ENABLE_CM
 
     // check if size is aligned with CU depth
     int maxCUsize = m_mfxHEVCOpts.Log2MaxCUSize ? m_mfxHEVCOpts.Log2MaxCUSize : opts_tu->Log2MaxCUSize;
@@ -760,6 +740,17 @@ mfxStatus MFXVideoENCODEH265::Init(mfxVideoParam* par_in)
             m_mfxHEVCOpts.SplitThresholdStrengthTUIntra = opts_tu->SplitThresholdStrengthTUIntra;
         if (!m_mfxHEVCOpts.SplitThresholdStrengthCUInter)
             m_mfxHEVCOpts.SplitThresholdStrengthCUInter = opts_tu->SplitThresholdStrengthCUInter;
+
+        if (m_mfxHEVCOpts.IntraNumCand0_2 == 0)
+            m_mfxHEVCOpts.IntraNumCand0_2 = opts_tu->IntraNumCand0_2;
+        if (m_mfxHEVCOpts.IntraNumCand0_3 == 0)
+            m_mfxHEVCOpts.IntraNumCand0_3 = opts_tu->IntraNumCand0_3;
+        if (m_mfxHEVCOpts.IntraNumCand0_4 == 0)
+            m_mfxHEVCOpts.IntraNumCand0_4 = opts_tu->IntraNumCand0_4;
+        if (m_mfxHEVCOpts.IntraNumCand0_5 == 0)
+            m_mfxHEVCOpts.IntraNumCand0_5 = opts_tu->IntraNumCand0_5;
+        if (m_mfxHEVCOpts.IntraNumCand0_6 == 0)
+            m_mfxHEVCOpts.IntraNumCand0_6 = opts_tu->IntraNumCand0_6;
 
         // take from tu, but correct if contradict with provided neighbours
         int pos;

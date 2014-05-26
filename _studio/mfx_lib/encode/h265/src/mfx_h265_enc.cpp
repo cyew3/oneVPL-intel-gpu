@@ -297,27 +297,6 @@ mfxStatus H265Encoder::InitH265VideoParam(const mfxVideoParam *param, const mfxE
         pars->num_cand_2[i] = Saturate(1, pars->num_cand_1[i], pars->num_cand_2[i]);
     }
 
-    if (pars->enableCmFlag) {
-        pars->intraAngModes = 3;
-        pars->SBHFlag = 0;
-        pars->saoOpt = 2;
-        pars->num_cand_0[2] = 1;
-        pars->num_cand_0[3] = 1;
-        pars->num_cand_0[4] = 1;
-        pars->num_cand_0[5] = 1;
-        pars->num_cand_0[6] = 1;
-        pars->num_cand_1[2] = 1;
-        pars->num_cand_1[3] = 1;
-        pars->num_cand_1[4] = 1;
-        pars->num_cand_1[5] = 1;
-        pars->num_cand_1[6] = 1;
-        pars->num_cand_2[2] = 1;
-        pars->num_cand_2[3] = 1;
-        pars->num_cand_2[4] = 1;
-        pars->num_cand_2[5] = 1;
-        pars->num_cand_2[6] = 1;
-    }
-
     /* derived */
 
     pars->MaxTrSize = 1 << pars->QuadtreeTULog2MaxSize;
