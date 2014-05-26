@@ -1781,7 +1781,7 @@ mfxStatus CTranscodingPipeline::InitOpaqueAllocBuffers()
     {
         m_DecOpaqueAlloc.Out.Surfaces = &m_pSurfaceDecPool[0]; // vestor is stored linearly in memory
         m_DecOpaqueAlloc.Out.NumSurface = (mfxU16)m_pSurfaceDecPool.size();
-        m_DecOpaqueAlloc.Out.Type = (mfxU16)(MFX_MEMTYPE_BASE(m_DecSurfaceType));
+        m_DecOpaqueAlloc.Out.Type = (mfxU16)(MFX_MEMTYPE_BASE(m_DecSurfaceType) | MFX_MEMTYPE_FROM_DECODE);
     }
     else
     {
@@ -1793,7 +1793,7 @@ mfxStatus CTranscodingPipeline::InitOpaqueAllocBuffers()
     {
         m_EncOpaqueAlloc.In.Surfaces = &m_pSurfaceEncPool[0];
         m_EncOpaqueAlloc.In.NumSurface = (mfxU16)m_pSurfaceEncPool.size();
-        m_EncOpaqueAlloc.In.Type = (mfxU16)(MFX_MEMTYPE_BASE(m_EncSurfaceType));
+        m_EncOpaqueAlloc.In.Type = (mfxU16)(MFX_MEMTYPE_BASE(m_EncSurfaceType) | MFX_MEMTYPE_FROM_ENCODE);
 
         // decode will be connected with either VPP or Plugin
         if (m_bIsVpp)
