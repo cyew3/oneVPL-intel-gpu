@@ -1628,6 +1628,7 @@ mfxStatus MFXVideoENCODEH265::Query(VideoCORE *core, mfxVideoParam *par_in, mfxV
             opts_out->ForceNumThread = opts_in->ForceNumThread;
             opts_out->NumBiRefineIter = opts_in->NumBiRefineIter;
             opts_out->CUSplitThreshold = opts_in->CUSplitThreshold;
+            opts_out->DQP              = opts_in->DQP;
 
             CHECK_OPTION(opts_in->AnalyzeChroma, opts_out->AnalyzeChroma, isInvalid);  /* tri-state option */
             CHECK_OPTION(opts_in->SignBitHiding, opts_out->SignBitHiding, isInvalid);  /* tri-state option */

@@ -20,7 +20,8 @@
 #include "mfx_h265_paq.h"
 #include "vm_debug.h"
 
-#pragma warning(disable : 2557)
+#pragma warning(disable : 4018)
+#pragma warning(disable : 4389)
 
 namespace H265Enc {
 

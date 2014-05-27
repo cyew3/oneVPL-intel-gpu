@@ -276,8 +276,8 @@ mfxStatus H265Encoder::InitH265VideoParam(const mfxVideoParam *param, const mfxE
 
     pars->preEncMode = 0;
 #if defined(MFX_ENABLE_H265_PAQ)
-    //pars->preEncMode = (opts_hevc->EnableLookAhead == MFX_CODINGOPTION_ON);
-    pars->preEncMode = 0;//enabled    
+    pars->preEncMode = optsHevc->DQP;
+    //pars->preEncMode = 1;//enabled
 #endif
     pars->cmIntraThreshold = optsHevc->CmIntraThreshold;
     pars->tuSplitIntra = optsHevc->TUSplitIntra;
