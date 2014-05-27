@@ -685,7 +685,7 @@ void TVideoPreanalyzer::open( Ipp8u* pchFile, Ipp32u width, Ipp32u height, int f
     NGV_PDist_Alloc(m_np, m_corrected_width, m_corrected_height);
 
     m_dqpFile = NULL;
-    m_dqpFile = fopen("dqp_file.txt", "w+t");
+    //m_dqpFile = fopen("dqp_file.txt", "w+t");
 
     m_uLatency = 0;
     

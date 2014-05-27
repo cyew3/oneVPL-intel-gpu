@@ -1059,7 +1059,9 @@ Ipp32u SAD_8x8_Block_SSE(Ipp8u* src, Ipp8u* ref, Ipp32u sPitch, Ipp32u rPitch);
 Ipp32u SAD_8x8_Block_Intrin_SSE2(Ipp8u* src, Ipp8u* ref, Ipp32u sPitch, Ipp32u rPitch);
 
 #if defined(WIN32)
+#ifndef WIN64
 #define COMPILE_ASM_CODE
+#endif
 #endif
 
 } // namespace
