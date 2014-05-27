@@ -242,14 +242,14 @@ struct H265Slice : public H265SliceHeader
     Ipp8u pgop_idx;
 
     Ipp8u rd_opt_flag;
-    Ipp64f rd_lambda;
-    Ipp64f rd_lambda_inter;
-    Ipp64f rd_lambda_inter_mv;
+    Ipp64f rd_lambda_slice;
+    Ipp64f rd_lambda_inter_slice;
+    Ipp64f rd_lambda_inter_mv_slice;
 
     // kolya
     // to match HM's lambda in HAD search
-    Ipp64f rd_lambda_sqrt;
-    Ipp64f ChromaDistWeight;
+    Ipp64f rd_lambda_sqrt_slice;
+    Ipp64f ChromaDistWeight_slice;
 };
 
 } // namespace

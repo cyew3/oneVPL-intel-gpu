@@ -609,6 +609,31 @@ H265Frame *H265FrameList::findOldestToEncode(H265FrameList *dpb,
 
 }    // findOldestDisplayable
 
+H265Frame *H265FrameList::findOldestToLookAheadProcess(void)
+{
+    H265Frame *pCurr = m_pHead;
+    H265Frame *pOldest = NULL;
+    Ipp32s  smallestPOC = 0x7fffffff;    // very large positive
+    Ipp32s  LargestRefPicListResetCount = 0;
+    Ipp8u exclude_cur=false;
+    while (pCurr)
+    {
+        if (!pCurr->wasLAProcessed())
+        {
+            if( pCurr->PicOrderCnt() < smallestPOC)
+            {
+                pOldest = pCurr;
+                smallestPOC = pCurr->PicOrderCnt();
+            }
+        }
+        pCurr = pCurr->future();
+    }
+
+    // may be OK if NULL
+    return pOldest;
+
+}    // findOldestDisplayable
+
 void H265FrameList::unMarkAll()
 {
     H265Frame *pCurr = m_pHead;
@@ -667,6 +692,7 @@ H265Frame *H265FrameList::InsertFrame(mfxFrameSurface1 *surface,
     //Make copy of input data
     pFrm->CopyFrame(surface);
     pFrm->unsetWasEncoded();
+    pFrm->unsetWasLAProcessed();
     return pFrm;
 }
 

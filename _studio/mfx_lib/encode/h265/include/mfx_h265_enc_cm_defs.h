@@ -585,10 +585,10 @@ const mfxU8 SingleSU[56] =
 };
 
 
-#define L1  0x0F
-#define R1  0x01
-#define U1  0xF0
-#define D1  0x10
+const mfxU8 L1 = 0x0F;
+const mfxU8 R1 = 0x01;
+const mfxU8 U1 = 0xF0;
+const mfxU8 D1 = 0x10;
 
 
 const mfxU8 RasterScan_48x40[56] =

@@ -11,10 +11,13 @@
 #ifndef __MFX_H265_ENC_H__
 #define __MFX_H265_ENC_H__
 
+#include <list>
 #include "mfx_h265_defs.h"
 #include "mfx_h265_ctb.h"
 #include "mfx_h265_frame.h"
 #include "mfx_h265_encode.h"
+#include "mfx_h265_paq.h"
+#define  MAX_DQP (6)
 
 #ifdef MFX_ENABLE_WATERMARK
 class Watermark;
@@ -81,6 +84,7 @@ struct H265VideoParam {
     Ipp8u  minCUDepthAdapt;
     Ipp16u cuSplitThreshold;
     Ipp8u  enableCmFlag;
+    Ipp8u  preEncMode; // pre Encode Analysis
     Ipp16u cmIntraThreshold;// 0-no theshold
     Ipp16u tuSplitIntra;    // 0-default; 1-always; 2-never; 3-for Intra frames only
     Ipp16u cuSplit;         // 0-default; 1-always; 2-check Skip cost first
@@ -143,6 +147,7 @@ struct H265VideoParam {
     H265PicParameterSet *cpps;
     Ipp8u *m_slice_ids;
     costStat *m_costStat;
+  H265Slice m_dqpSlice[2*MAX_DQP+1];
 };
 
 struct H265ShortTermRefPicSet
@@ -171,7 +176,7 @@ public:
     mfxU32 m_frameCountSend;
     H265CU *cu;
 
-    // SAO!!!
+
     std::vector<SaoCtuParam> m_saoParam;
     SaoDecodeFilter m_saoDecodeFilter;
 
@@ -224,7 +229,9 @@ public:
     CABAC_CONTEXT_H265 *m_context_array_wpp;
 
     H265BRC *m_brc;
-
+#if defined(MFX_ENABLE_H265_PAQ)
+    TVideoPreanalyzer m_preEnc;
+#endif
     const vm_char *m_recon_dump_file_name;
 
     H265Encoder() {
@@ -263,6 +270,7 @@ public:
     mfxStatus SetPPS();
     mfxStatus SetSlice(H265Slice *slice, Ipp32u curr_slice);
     mfxStatus SetSlice(H265Slice *slice, Ipp32u curr_slice, H265Frame *frame);
+    mfxStatus SetAllLambda(H265Slice *slice, int qp, int poc);
 
     void InitShortTermRefPicSet();
     mfxStatus Init(const mfxVideoParam *param, const mfxExtCodingOptionHEVC *opts_hevc);
@@ -279,6 +287,7 @@ public:
     mfxStatus MoveFromCPBToDPB();
     mfxStatus CleanDPB();
 
+    mfxStatus PreEncAnalysis(mfxBitstream* mfxBS);
     void CreateRefPicSet(H265Slice *slice, H265Frame *frame);
     mfxStatus CheckRefPicSet(H265Slice *slice, H265Frame *frame);
     mfxStatus UpdateRefPicList(H265Slice *slice, H265Frame *frame);

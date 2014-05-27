@@ -463,22 +463,40 @@ mfxStatus MFXVideoENCODEH265::EncodeFrameCheck(mfxEncodeCtrl *ctrl, mfxFrameSurf
         //if (surface)
         //    m_core->IncreaseReference(&(surface->Data));
 
-        mfxU32 noahead = 1;
-        if (m_mfxHEVCOpts.EnableCm == MFX_CODINGOPTION_ON)
-            noahead = 0;
+        // NORMAL WAY
+        if(0 == m_enc->m_videoParam.preEncMode) {
+            mfxU32 noahead = 1;
+            if (m_mfxHEVCOpts.EnableCm == MFX_CODINGOPTION_ON)
+                noahead = 0;
 
-        if (!surface) {
-            if (m_frameCountBufferedSync == 0) { // buffered frames to be encoded
-                return MFX_ERR_MORE_DATA;
+            if (!surface) {
+                if (m_frameCountBufferedSync == 0) { // buffered frames to be encoded
+                    return MFX_ERR_MORE_DATA;
+                }
+                m_frameCountBufferedSync --;
             }
-            m_frameCountBufferedSync --;
+            else if (m_frameCountSync > noahead && m_frameCountBufferedSync <
+                (mfxU32)m_mfxVideoParam.mfx.GopRefDist - noahead ) {
+                    m_frameCountBufferedSync++;
+                    return (mfxStatus)MFX_ERR_MORE_DATA_RUN_TASK;
+            }
         }
-        else if (m_frameCountSync > noahead && m_frameCountBufferedSync <
-            (mfxU32)m_mfxVideoParam.mfx.GopRefDist - noahead ) {
-            m_frameCountBufferedSync++;
-            return (mfxStatus)MFX_ERR_MORE_DATA_RUN_TASK;
+        else {
+#if defined(MFX_ENABLE_H265_PAQ)
+                mfxStatus status;
+                mfxU32 stagesToGo = m_enc->m_preEnc.m_emulatorForSyncPart.Go(!!surface);
+                if (stagesToGo == AsyncRoutineEmulator::STG_BIT_CALL_EMULATOR) return MFX_ERR_MORE_DATA; // end of encoding session
+                if ((stagesToGo & AsyncRoutineEmulator::STG_BIT_WAIT_ENCODE) == 0) {
+                    m_frameCountBufferedSync++;
+                    status = mfxStatus(MFX_ERR_MORE_DATA_RUN_TASK);
+                    bs = 0; // no output will be generated
+                    return status;
+                }
+#else
+            return MFX_ERR_UNKNOWN;
+#endif
+            }
         }
-    }
 
     return st;
 }
@@ -1763,6 +1781,15 @@ mfxStatus MFXVideoENCODEH265::QueryIOSurf(VideoCORE *core, mfxVideoParam *par, m
         // curr + number of B-frames from target usage
         nFrames = tab_tuGopRefDist[par->mfx.TargetUsage];
     }
+
+    //if(LookAhead)
+#if defined(MFX_ENABLE_H265_PAQ)
+    //if(m_enc->m_videoParam.preEncMode)
+    {
+        mfxVideoParam tmpParam = *par;
+        nFrames = (mfxU16) AsyncRoutineEmulator(tmpParam).GetTotalGreediness() + par->AsyncDepth - 1 + 10;
+    }
+#endif
     request->NumFrameMin = nFrames;
     request->NumFrameSuggested = IPP_MAX(nFrames,par->AsyncDepth);
     request->Info = par->mfx.FrameInfo;

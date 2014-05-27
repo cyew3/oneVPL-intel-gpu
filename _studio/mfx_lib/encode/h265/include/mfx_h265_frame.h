@@ -43,6 +43,7 @@ public:
     Ipp8u    m_isShortTermRef;
     Ipp8u    m_isLongTermRef;
     Ipp8u    m_wasEncoded;
+    Ipp8u    m_wasLookAheadProcessed;
     Ipp8u    m_BpyramidNumFrame;
     Ipp8u    m_BpyramidRefLayers;
     Ipp8u    m_bIsIDRPic;
@@ -66,6 +67,7 @@ public:
         m_isShortTermRef = 0;
         m_isLongTermRef = 0;
         m_wasEncoded = 0;
+        m_wasLookAheadProcessed = 0;
         m_BpyramidNumFrame = 0;
         m_bIsIDRPic = 0;
         m_isBRef = 0;
@@ -112,6 +114,9 @@ public:
     void setWasEncoded() { m_wasEncoded = true; }
     void unsetWasEncoded() { m_wasEncoded = false; }
 
+    Ipp8u wasLAProcessed()    { return m_wasLookAheadProcessed; }
+    void setWasLAProcessed() { m_wasLookAheadProcessed = true; }
+    void unsetWasLAProcessed() { m_wasLookAheadProcessed = false; }
     bool isDisposable()
     {
         return (!m_isShortTermRef && !m_isLongTermRef && m_wasEncoded);
@@ -255,6 +260,7 @@ public:
                                          Ipp8u isByramid = 0, Ipp8u ByramidNextFrameNum = 0);
     // Search through the list for the oldest displayable frame.
 
+    H265Frame *findOldestToLookAheadProcess(void);
     H265Frame *findFrameByPOC(Ipp32s POC);
     void unMarkAll();
     void removeAllUnmarkedRef();
