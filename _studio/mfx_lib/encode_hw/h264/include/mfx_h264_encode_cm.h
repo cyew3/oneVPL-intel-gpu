@@ -282,11 +282,13 @@ public:
 
     CmContext(
         MfxVideoParam const & video,
-        CmDevice *            cmDevice);
+        CmDevice *            cmDevice,
+        VideoCORE*            core);
 
     void Setup(
         MfxVideoParam const & video,
-        CmDevice *            cmDevice);
+        CmDevice *            cmDevice,
+        VideoCORE*            core);
 
     CmEvent* EnqueueKernel(
         CmKernel *            kernel,

@@ -27,7 +27,7 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				CommandLine="SET INSTALLDIR=$(MEDIASDK_ROOT)\CMRT&#x0D;&#x0A;SET ICLDIR=%INSTALLDIR%\compiler&#x0D;&#x0A;SET PATH=%ICLDIR%\bin;%ICLDIR%\lib;%PATH%&#x0D;&#x0A;SET INCLUDE=%ICLDIR%\include;%ICLDIR%\include\cm;%INCLUDE%&#x0D;&#x0A;SET CM_RT_PLATFORM=hsw&#x0D;&#x0A;icl /c /Qxcm /Qxcm_jit_target=gen7_5 .\src\genx_hsw_simple_me.cpp /mCM_print_asm_count&#x0D;&#x0A;cl .\src\embed_isa.c&#x0D;&#x0A;embed_isa genx_hsw_simple_me.isa&#x0D;&#x0A;move genx_hsw_simple_me.cpp .\src\genx_hsw_simple_me_isa.cpp&#x0D;&#x0A;move genx_hsw_simple_me.h .\include\genx_hsw_simple_me_isa.h&#x0D;&#x0A;&#x0D;&#x0A;rem copy genx_hsw_simple_me.isa ..\..\..\..\build\win_$(PlatformName)\bin&#x0D;&#x0A;copy %INSTALLDIR%\runtime\lib\x86\igfxcmrt32.dll ..\..\..\..\build\win_$(PlatformName)\bin&#x0D;&#x0A;copy %INSTALLDIR%\runtime\lib\x86\igfxcmjit32.dll ..\..\..\..\build\win_$(PlatformName)\bin&#x0D;&#x0A;"
+				CommandLine="SET INSTALLDIR=$(MEDIASDK_ROOT)\CMRT&#x0D;&#x0A;SET ICLDIR=%INSTALLDIR%\compiler&#x0D;&#x0A;SET PATH=%ICLDIR%\bin;%ICLDIR%\lib;%PATH%&#x0D;&#x0A;SET INCLUDE=%ICLDIR%\include;%ICLDIR%\include\cm;%INCLUDE%&#x0D;&#x0A;icl /c /Qxcm /Qxcm_jit_target=gen7_5 .\src\genx_hsw_simple_me.cpp /mCM_print_asm_count&#x0D;&#x0A;icl /c /Qxcm /Qxcm_jit_target=gen8 .\src\genx_bdw_simple_me.cpp /mCM_print_asm_count&#x0D;&#x0A;cl .\src\embed_isa.c&#x0D;&#x0A;embed_isa genx_hsw_simple_me.isa&#x0D;&#x0A;move genx_hsw_simple_me.cpp .\src\genx_hsw_simple_me_isa.cpp&#x0D;&#x0A;move genx_hsw_simple_me.h .\include\genx_hsw_simple_me_isa.h&#x0D;&#x0A;embed_isa genx_bdw_simple_me.isa&#x0D;&#x0A;move genx_bdw_simple_me.cpp .\src\genx_bdw_simple_me_isa.cpp&#x0D;&#x0A;move genx_bdw_simple_me.h .\include\genx_bdw_simple_me_isa.h&#x0D;&#x0A;&#x0D;&#x0A;rem copy genx_hsw_simple_me.isa ..\..\..\..\build\win_$(PlatformName)\bin&#x0D;&#x0A;rem copy %INSTALLDIR%\runtime\lib\x86\igfxcmrt32.dll ..\..\..\..\build\win_$(PlatformName)\bin&#x0D;&#x0A;rem copy %INSTALLDIR%\runtime\lib\x86\igfxcmjit32.dll ..\..\..\..\build\win_$(PlatformName)\bin&#x0D;&#x0A;"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -86,7 +86,7 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				CommandLine="SET INSTALLDIR=$(MEDIASDK_ROOT)\CMRT&#x0D;&#x0A;SET ICLDIR=%INSTALLDIR%\compiler&#x0D;&#x0A;SET PATH=%ICLDIR%\bin;%ICLDIR%\lib;%PATH%&#x0D;&#x0A;SET INCLUDE=%ICLDIR%\include;%ICLDIR%\include\cm;%INCLUDE%&#x0D;&#x0A;SET CM_RT_PLATFORM=hsw&#x0D;&#x0A;icl /c /Qxcm /Qxcm_jit_target=gen7_5 .\src\genx_hsw_simple_me.cpp /mCM_print_asm_count&#x0D;&#x0A;cl .\src\embed_isa.c&#x0D;&#x0A;embed_isa genx_hsw_simple_me.isa&#x0D;&#x0A;move genx_hsw_simple_me.cpp .\src\genx_hsw_simple_me_isa.cpp&#x0D;&#x0A;move genx_hsw_simple_me.h .\include\genx_hsw_simple_me_isa.h&#x0D;&#x0A;&#x0D;&#x0A;rem copy genx_hsw_simple_me.isa ..\..\..\..\build\win_$(PlatformName)\bin&#x0D;&#x0A;rem copy %INSTALLDIR%\runtime\lib\x86\igfxcmrt32.dll ..\..\..\..\build\win_$(PlatformName)\bin&#x0D;&#x0A;rem copy %INSTALLDIR%\runtime\lib\x86\igfxcmjit32.dll ..\..\..\..\build\win_$(PlatformName)\bin&#x0D;&#x0A;"
+				CommandLine="SET INSTALLDIR=$(MEDIASDK_ROOT)\CMRT&#x0D;&#x0A;SET ICLDIR=%INSTALLDIR%\compiler&#x0D;&#x0A;SET PATH=%ICLDIR%\bin;%ICLDIR%\lib;%PATH%&#x0D;&#x0A;SET INCLUDE=%ICLDIR%\include;%ICLDIR%\include\cm;%INCLUDE%&#x0D;&#x0A;icl /c /Qxcm /Qxcm_jit_target=gen7_5 .\src\genx_hsw_simple_me.cpp /mCM_print_asm_count&#x0D;&#x0A;icl /c /Qxcm /Qxcm_jit_target=gen8 .\src\genx_bdw_simple_me.cpp /mCM_print_asm_count&#x0D;&#x0A;cl .\src\embed_isa.c&#x0D;&#x0A;embed_isa genx_hsw_simple_me.isa&#x0D;&#x0A;move genx_hsw_simple_me.cpp .\src\genx_hsw_simple_me_isa.cpp&#x0D;&#x0A;move genx_hsw_simple_me.h .\include\genx_hsw_simple_me_isa.h&#x0D;&#x0A;embed_isa genx_bdw_simple_me.isa&#x0D;&#x0A;move genx_bdw_simple_me.cpp .\src\genx_bdw_simple_me_isa.cpp&#x0D;&#x0A;move genx_bdw_simple_me.h .\include\genx_bdw_simple_me_isa.h&#x0D;&#x0A;&#x0D;&#x0A;rem copy genx_hsw_simple_me.isa ..\..\..\..\build\win_$(PlatformName)\bin&#x0D;&#x0A;rem copy %INSTALLDIR%\runtime\lib\x86\igfxcmrt32.dll ..\..\..\..\build\win_$(PlatformName)\bin&#x0D;&#x0A;rem copy %INSTALLDIR%\runtime\lib\x86\igfxcmjit32.dll ..\..\..\..\build\win_$(PlatformName)\bin&#x0D;&#x0A;"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -446,6 +446,30 @@
 				</FileConfiguration>
 			</File>
 			<File
+				RelativePath=".\src\genx_bdw_simple_me.cpp"
+				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\src\genx_bdw_simple_me_isa.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\src\genx_hsw_simple_me.cpp"
 				>
 				<FileConfiguration
@@ -475,6 +499,10 @@
 			Filter="h;hpp;hxx;hm;inl;inc;xsd"
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
+			<File
+				RelativePath=".\include\genx_bdw_simple_me_isa.h"
+				>
+			</File>
 			<File
 				RelativePath=".\include\genx_hsw_simple_me_isa.h"
 				>

@@ -117,8 +117,8 @@ class CmContextLA : public MfxHwH264Encode::CmContext
 public:
 
     CmContextLA() : MfxHwH264Encode::CmContext()    {};
-    CmContextLA(MfxHwH264Encode::MfxVideoParam const & video, CmDevice * cmDevice) : 
-        MfxHwH264Encode::CmContext(video,cmDevice) {};
+    CmContextLA(MfxHwH264Encode::MfxVideoParam const & video, CmDevice * cmDevice, VideoCORE * core) : 
+        MfxHwH264Encode::CmContext(video,cmDevice,core) {};
 
     CmEvent * RunVme(
         sLADdiTask const & task,

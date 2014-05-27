@@ -849,7 +849,7 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
     if (m_video.mfx.RateControlMethod == MFX_RATECONTROL_LA || m_video.mfx.RateControlMethod == MFX_RATECONTROL_LA_ICQ)
     {
         m_cmDevice.Reset(CreateCmDevicePtr(m_core));
-        m_cmCtx.reset(new CmContext(m_video, m_cmDevice));
+        m_cmCtx.reset(new CmContext(m_video, m_cmDevice, m_core));
 
         request.Info.Width  = m_video.calcParam.widthLa;
         request.Info.Height = m_video.calcParam.heightLa;

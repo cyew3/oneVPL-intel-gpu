@@ -24,14 +24,14 @@
 #include "mfx_h264_encode_cm.h"
 #include "mfx_h264_encode_hw_utils.h"
 #include "genx_hsw_simple_me_isa.h"
-
+#include "genx_bdw_simple_me_isa.h"
 
 namespace MfxHwH264EncodeHW
 {
 
 using MfxHwH264Encode::CmRuntimeError;
 
-const char   ME_PROGRAM_NAME[] = "genx_hsw_simple_me.isa";
+///const char   ME_PROGRAM_NAME[] = "genx_hsw_simple_me.isa";
 const mfxU32 SEARCHPATHSIZE    = 56;
 const mfxU32 BATCHBUFFER_END   = 0x5000000;
 
@@ -787,15 +787,17 @@ namespace MfxHwH264Encode
 {
 CmContext::CmContext(
     MfxVideoParam const & video,
-    CmDevice *            cmDevice)
+    CmDevice *            cmDevice,
+    VideoCORE *           core)
 {
-    Setup(video, cmDevice);
+    Setup(video, cmDevice, core);
 }
 
 
 void CmContext::Setup(
     MfxVideoParam const & video,
-    CmDevice *            cmDevice)
+    CmDevice *            cmDevice,
+    VideoCORE *           core)
 {
     m_video  = video;
     m_device = cmDevice;
@@ -810,7 +812,19 @@ void CmContext::Setup(
     widthLa = video.calcParam.widthLa;
     heightLa = video.calcParam.heightLa;
     LaScaleFactor = extDdi->LaScaleFactor;
-    m_program = ReadProgram(m_device, genx_hsw_simple_me, SizeOf(genx_hsw_simple_me));
+
+    switch (core->GetHWType())
+    {
+    case MFX_HW_HSW:
+    case MFX_HW_HSW_ULT:
+        m_program = ReadProgram(m_device, genx_hsw_simple_me, SizeOf(genx_hsw_simple_me));
+        break;
+    case MFX_HW_BDW:
+        m_program = ReadProgram(m_device, genx_bdw_simple_me, SizeOf(genx_bdw_simple_me));
+        break;
+    default:
+        throw CmRuntimeError();
+    }
 
     m_kernelI = CreateKernel(m_device, m_program, "SVCEncMB_I", (void *)SVCEncMB_I);
     m_kernelP = CreateKernel(m_device, m_program, "SVCEncMB_P", (void *)SVCEncMB_P);

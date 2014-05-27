@@ -968,8 +968,7 @@ bool MfxHwH264Encode::IsLookAheadSupported(
     MfxVideoParam const & /*video*/,
     eMFXHWType            platform)
 {
-    //!!! Enable LA for BDW when Kernels are ported.
-    return ((platform >= MFX_HW_HSW) && (platform != MFX_HW_VLV)&& (platform != MFX_HW_BDW) );
+    return ((platform >= MFX_HW_HSW) && (platform != MFX_HW_VLV));
 }
 
 // determine and return mode of Query operation (valid modes are 1, 2, 3, 4 - see MSDK spec for details)
