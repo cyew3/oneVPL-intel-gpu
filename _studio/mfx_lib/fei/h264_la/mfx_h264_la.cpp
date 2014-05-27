@@ -368,7 +368,7 @@ mfxStatus VideoENC_LA::Init(mfxVideoParam *par)
     }
 
     m_cmDevice.Reset(MfxHwH264Encode::CreateCmDevicePtr(m_core));
-    m_cmCtx.reset(new CmContextLA(m_video, m_cmDevice));
+    m_cmCtx.reset(new CmContextLA(m_video, m_cmDevice, m_core));
     
  
     mfxU32 numMb = m_video.calcParam.widthLa * m_video.calcParam.heightLa / 256;

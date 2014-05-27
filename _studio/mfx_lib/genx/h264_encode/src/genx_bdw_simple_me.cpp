@@ -196,7 +196,7 @@ enum
 };
 
 _GENX_ inline
-void SetUpVmeIntra(matrix_ref<uchar, 3, 32> uniIn,
+void SetUpVmeIntra(matrix_ref<uchar, 4, 32> uniIn,
                    matrix_ref<uchar, 4, 32> sicIn,
                    vector_ref<uchar, CURBEDATA_SIZE> CURBEData,
                    SurfaceIndex SrcSurfIndex,
@@ -355,8 +355,8 @@ void SetUpVmeIntra(matrix_ref<uchar, 3, 32> uniIn,
     uniIn.row(1).format<uint>().select<3, 1> (0) = CURBEData.format<uint>().select<3, 1> (0);
     VME_CLEAR_UNIInput_SkipModeEn(uniIn);
     // M1.3 Weighted SAD
-    // M1.4 Cost center 0
-    // M1.5 Cost center 1
+    // M1.4 Cost center 0 for HSW; MBZ for BDW
+    // M1.5 Cost center 1 for HSW; MBZ for BDW
     // M1.6 Fwd/Bwd Block RefID
     // M1.7 various prediction parameters
     VME_COPY_DWORD(uniIn, 1, 7, CURBEData, 7);
@@ -369,6 +369,16 @@ void SetUpVmeIntra(matrix_ref<uchar, 3, 32> uniIn,
     // M2.5 FBR parameters
     // M2.6 SIC Forward Transform Coeff Threshold Matrix
     // M2.7 SIC Forward Transform Coeff Threshold Matrix
+
+    // BDW+
+    // M3.0 FWD Cost center 0 Delta X and Y
+    // M3.1 BWD Cost center 0 Delta X and Y
+    // M3.2 FWD Cost center 1 Delta X and Y
+    // M3.3 BWD Cost center 1 Delta X and Y
+    // M3.4 FWD Cost center 2 Delta X and Y
+    // M3.5 BWD Cost center 2 Delta X and Y
+    // M3.6 FWD Cost center 3 Delta X and Y
+    // M3.7 BWD Cost center 3 Delta X and Y
 
     //
     // set up the SIC message
@@ -448,8 +458,6 @@ void SetUpPakDataISlice(vector_ref<uchar, MBDATA_SIZE> MBData,
     MBData.format<uint2>()[9] = distIntra;
 
 } // void SetUpPakDataISlice(vector_ref<uchar, MBDATA_SIZE> MBData,
-
-#ifdef USE_DOWN_SAMPLE_KERNELS
 
 extern "C" _GENX_MAIN_  void
 DownSampleMB2X(SurfaceIndex SurfIndex,
@@ -550,8 +558,6 @@ DownSampleMB4X(SurfaceIndex SurfIndex,
 
     write_plane(Surf4XIndex, GENX_SURFACE_Y_PLANE, ox2x, oy2x, outMb4x);
 }
-
-#endif
 
 _GENX_ inline
 void DownSampleMB2Xf(SurfaceIndex SurfIndex,
@@ -684,7 +690,7 @@ SVCEncMB_I(SurfaceIndex CurbeDataSurfIndex,
 #endif
 
     // declare parameters for VME
-    matrix<uchar, 3, 32> uniIn;
+    matrix<uchar, 4, 32> uniIn;
     matrix<uchar, 4, 32> sicIn;
     matrix<uchar, 7, 32> best_uniOut;
 
@@ -1074,7 +1080,7 @@ void GetNeighbourParamP(matrix_ref<uint1, 16, 1> leftBlockValues,
 
 
 _GENX_ inline
-void SetRef(matrix_ref<uchar, 3, 32> uniIn,
+void SetRef(matrix_ref<uchar, 4, 32> uniIn,
             vector_ref<int2, 2> Ref,
             vector<int2, 2> Predictor,
             vector_ref<int1, 2> Search,
@@ -1143,7 +1149,7 @@ enum
 };
 
 _GENX_ inline
-void SetUpVmePSlice(matrix_ref<uchar, 3, 32> uniIn,
+void SetUpVmePSlice(matrix_ref<uchar, 4, 32> uniIn,
                     matrix_ref<uchar, 4, 32> sicIn,
                     matrix_ref<uint4, 16, 2> Costs,
                     SurfaceIndex SrcSurfIndex,
@@ -1210,9 +1216,8 @@ void SetUpVmePSlice(matrix_ref<uchar, 3, 32> uniIn,
         uniIn.row(1)[10] = Start0[0] | (Start0[1] << 4);
     }
     // M1.3 Weighted SAD (not used for HSW)
-    // M1.4 Cost center 0 FWD
-    VME_COPY_DWORD(uniIn, 1, 4, mvPred, 0);
-    // M1.5 Cost center 1 BWD
+    // M1.4 Cost center 0 for HSW; MBZ for BDW
+    // M1.5 Cost center 1 for HSW; MBZ for BDW
     // M1.6 Fwd/Bwd Block RefID (used in B slices only)
     // M1.7 various prediction parameters
     VME_COPY_DWORD(uniIn, 1, 7, CURBEData, 7);
@@ -1224,6 +1229,18 @@ void SetUpVmePSlice(matrix_ref<uchar, 3, 32> uniIn,
     // M2.5 FBR parameters
     // M2.6/2.7 SIC Forward Transform Coeff Threshold Matrix
     uniIn.row(2).format<uint4> ().select<2, 1> (6) = CURBEData.format<uint4> ().select<2, 1> (14);
+
+    // BDW+
+    // register M3
+    // M3.0 FWD Cost center 0 Delta X and Y
+    VME_COPY_DWORD(uniIn, 3, 0, mvPred, 0);
+    // M3.1 BWD Cost center 0 Delta X and Y
+    // M3.2 FWD Cost center 1 Delta X and Y
+    // M3.3 BWD Cost center 1 Delta X and Y
+    // M3.4 FWD Cost center 2 Delta X and Y
+    // M3.5 BWD Cost center 2 Delta X and Y
+    // M3.6 FWD Cost center 3 Delta X and Y
+    // M3.7 BWD Cost center 3 Delta X and Y
 
     //
     // initialize SIC input
@@ -1270,17 +1287,17 @@ void SetUpVmePSlice(matrix_ref<uchar, 3, 32> uniIn,
     // set costs
     Costs.row(0).format<int2> ().select<2, 1> (0) = mvPred;
 
-} // void SetUpVmePSlice(matrix_ref<uchar, 3, 32> uniIn,
+} // void SetUpVmePSlice(matrix_ref<uchar, 4, 32> uniIn,
 
 _GENX_ inline
-void LoadCosts(matrix_ref<uchar, 3, 32> uniIn,
+void LoadCosts(matrix_ref<uchar, 4, 32> uniIn,
                vector_ref<uchar, CURBEDATA_SIZE> CURBEData)
 {
 
     // copy prepared costs from the CURBE data
     uniIn.row(2).format<uint4>().select<5, 1> (0) = CURBEData.format<uint4>().select<5, 1> (8);
 
-} // void LoadCosts(matrix_ref<uchar, 3, 32> uniIn,
+} // void LoadCosts(matrix_ref<uchar, 4, 32> uniIn,
 
 _GENX_ inline
 void LoadSearchPath(matrix_ref<uchar, 6, 32> imeIn,
@@ -1290,10 +1307,10 @@ void LoadSearchPath(matrix_ref<uchar, 6, 32> imeIn,
     // copy prepared search pathes from the CURBE data
     imeIn.format<uint4, 6, 8>().select<2, 1, 8, 1> (0, 0) = CURBEData.format<uint4, 5, 8>().select<2, 1, 8, 1> (2, 0);
 
-} // void LoadSearchPath(matrix_ref<uchar, 3, 32> uniIn,
+} // void LoadSearchPath(matrix_ref<uchar, 6, 32> imeIn,
 
 _GENX_ inline
-void PrepareFractionalCall(matrix_ref<uchar, 3, 32> uniIn,
+void PrepareFractionalCall(matrix_ref<uchar, 4, 32> uniIn,
                            matrix_ref<uchar, 4, 32> fbrIn,
                            matrix_ref<uchar, 7, 32> uniOut,
                            uint1 CheckBiDir)
@@ -1320,7 +1337,7 @@ void PrepareFractionalCall(matrix_ref<uchar, 3, 32> uniIn,
     // copy MVs
     fbrIn = uniOut.select<4, 1, 32, 1> (1, 0);
 
-} // void PrepareFractionalCall(matrix_ref<uchar, 3, 32> uniIn,
+} // void PrepareFractionalCall(matrix_ref<uchar, 4, 32> uniIn,
 
 template <int sliceType>
 _GENX_ inline
@@ -1602,7 +1619,7 @@ void CheckAllFractional(matrix_ref<uchar, 3, 32> uniIn,
 template <int sliceType>
 _GENX_ inline
 void DoInterFramePrediction(SurfaceIndex VMEInterPredictionSurfIndex,
-                            matrix_ref<uchar, 3, 32> uniIn,
+                            matrix_ref<uchar, 4, 32> uniIn,
                             matrix_ref<uchar, 6, 32> imeIn,
                             matrix_ref<uint4, 16, 2> Costs,
                             matrix_ref<uchar, 7, 32> best_uniOut,
@@ -1629,12 +1646,12 @@ void DoInterFramePrediction(SurfaceIndex VMEInterPredictionSurfIndex,
             {
                 matrix<uchar, 9, 32> temp = 0;
                 vector<short, 2> ref0;
-                vector<ushort, 4> costCenter;
-                matrix<uchar, 3, 32> uniIn0 = uniIn;
+                vector<ushort, 16> costCenter;
+                matrix<uchar, 4, 32> uniIn0 = uniIn;
                 matrix<uchar, 2, 32> imeIn0 = imeIn.select<2, 1, 32, 1> (0, 0);
 
                 ref0 = uniIn.row(0).format<short> ().select<2, 1> (0);
-                costCenter = uniIn.row(1).format<ushort> ().select<4, 1> (8);
+                costCenter = uniIn.row(3).format<ushort> ().select<16, 1> (0);
                 run_vme_ime(uniIn0, imeIn0, VME_STREAM_OUT, VME_SEARCH_SINGLE_REF_SINGLE_REC_SINGLE_START, VMEInterPredictionSurfIndex, ref0, NULL, costCenter, temp);
                 best_uniOut = temp.select<7, 1, 32, 1> (0, 0);
                 best_imeOut.select<2, 1, 32, 1> (0, 0) = temp.select<2, 1, 32, 1> (7, 0);
@@ -1652,7 +1669,7 @@ void DoInterFramePrediction(SurfaceIndex VMEInterPredictionSurfIndex,
 
             if (GET_CURBE_SubPelMode(CURBEData))
             {
-                matrix<uchar, 3, 32> uniIn0 = uniIn;
+                matrix<uchar, 4, 32> uniIn0 = uniIn;
                 matrix<uchar, 7, 32> temp;
                 run_vme_fbr(uniIn0, fbrIn, VMEInterPredictionSurfIndex, FBRMbMode, FBRSubMbShape, FBRSubPredMode, temp);
                 best_uniOut = temp;
@@ -1673,13 +1690,13 @@ void DoInterFramePrediction(SurfaceIndex VMEInterPredictionSurfIndex,
             {
                 matrix<uchar, 11, 32> temp;
                 vector<short, 2> ref0, ref1;
-                vector<ushort, 4> costCenter;
-                matrix<uchar, 3, 32> uniIn0 = uniIn;
+                vector<ushort, 16> costCenter;
+                matrix<uchar, 4, 32> uniIn0 = uniIn;
                 matrix<uchar, 2, 32> imeIn0 = imeIn.select<2, 1, 32, 1> (0, 0);
 
                 ref0 = uniIn.row(0).format<short> ().select<2, 1> (0);
                 ref1 = uniIn.row(0).format<short> ().select<2, 1> (2);
-                costCenter = uniIn.row(1).format<ushort> ().select<4, 1> (8);
+                costCenter = uniIn.row(3).format<ushort> ().select<16, 1> (0);
                 run_vme_ime(uniIn0, imeIn0, VME_STREAM_OUT, VME_SEARCH_DUAL_REF_DUAL_REC, VMEInterPredictionSurfIndex, ref0, ref1, costCenter, temp);
                 best_uniOut = temp.select<7, 1, 32, 1> (0, 0);
                 best_imeOut.select<4, 1, 32, 1> (0, 0) = temp.select<4, 1, 32, 1> (7, 0);
@@ -1697,7 +1714,7 @@ void DoInterFramePrediction(SurfaceIndex VMEInterPredictionSurfIndex,
 
             if (GET_CURBE_SubPelMode(CURBEData))
             {
-                matrix<uchar, 3, 32> uniIn0 = uniIn;
+                matrix<uchar, 4, 32> uniIn0 = uniIn;
                 matrix<uchar, 7, 32> temp;
                 run_vme_fbr(uniIn0, fbrIn, VMEInterPredictionSurfIndex, FBRMbMode, FBRSubMbShape, FBRSubPredMode, temp);
                 best_uniOut = temp;
@@ -1721,7 +1738,7 @@ void DoInterFramePrediction(SurfaceIndex VMEInterPredictionSurfIndex,
 } // void DoInterFramePrediction(SurfaceIndex VMEInterPredictionSurfIndex,
 
 _GENX_ inline
-void SetUpPakDataPSlice(matrix_ref<uchar, 3, 32> uniIn,
+void SetUpPakDataPSlice(matrix_ref<uchar, 4, 32> uniIn,
                         matrix_ref<uchar, 7, 32> uniOut,
                         vector_ref<uchar, MBDATA_SIZE> MBData,
                         U8 /*direct8x8pattern*/,
@@ -1775,16 +1792,16 @@ void SetUpPakDataPSlice(matrix_ref<uchar, 3, 32> uniIn,
     // DW8 num nz luma coeffs
     MBData.format<uint1>().select<4, 1>(32) = uniOut.row(6).format<uint1>().select<4, 1>(4);
 
-    // DW9-10 cost centers
-    MBData.format<uint2>().select<1, 1>(18) = VME_GET_UNIInput_CostCenter0_X(uniIn);
-    MBData.format<uint2>().select<1, 1>(19) = VME_GET_UNIInput_CostCenter0_Y(uniIn);
-    MBData.format<uint2>().select<1, 1>(20) = VME_GET_UNIInput_CostCenter1_X(uniIn);
-    MBData.format<uint2>().select<1, 1>(21) = VME_GET_UNIInput_CostCenter1_Y(uniIn);
+    // DW9-10 cost centers like in HSW (to support multiref in BDW one needs to extend MBData)
+    MBData.format<uint2>().select<1, 1>(18) = VME_GET_UNIInput_FWDCostCenter0_X(uniIn);
+    MBData.format<uint2>().select<1, 1>(19) = VME_GET_UNIInput_FWDCostCenter0_Y(uniIn);
+    MBData.format<uint2>().select<1, 1>(20) = VME_GET_UNIInput_BWDCostCenter0_X(uniIn);
+    MBData.format<uint2>().select<1, 1>(21) = VME_GET_UNIInput_BWDCostCenter0_Y(uniIn);
 
     // copy motion vectors
     SET_MBDATA_MV(MBData, LIST_0, uniOut.row(1).format<uint4>()[0]);
 
-} // void SetUpPakDataPSlice(matrix_ref<uchar, 3, 32> uniIn,
+} // void SetUpPakDataPSlice(matrix_ref<uchar, 4, 32> uniIn,
 
 extern "C" _GENX_MAIN_ void
 SVCEncMB_P(SurfaceIndex CurbeDataSurfIndex,
@@ -1813,7 +1830,7 @@ SVCEncMB_P(SurfaceIndex CurbeDataSurfIndex,
     uint MbIndex = PicWidthInMB * mbY + mbX;
 
     vector<uchar, 1> direct8x8pattern = 0;
-    matrix<uchar, 3, 32> uniIn = 0;
+    matrix<uchar, 4, 32> uniIn = 0;
     matrix<uchar, 7, 32> best_uniOut = 0;
 
     {
@@ -2157,9 +2174,9 @@ void GetNeighbourParamB(matrix_ref<uint1, 16, 1> leftBlockValues,
     MV.select<2, 1, 2, 1> (0, 0) = mvA;
     MV.select<2, 1, 2, 1> (0, 2) = mvB;
     MV.select<2, 1, 2, 1> (0, 4) = mvC;
-    refIdx.select<2, 1, 1, 3> (0, 0) = refIdxA;
-    refIdx.select<2, 1, 1, 3> (0, 1) = refIdxB;
-    refIdx.select<2, 1, 1, 3> (0, 2) = refIdxC;
+    refIdx.select<2, 1, 1, 1> (0, 0) = refIdxA;
+    refIdx.select<2, 1, 1, 1> (0, 1) = refIdxB;
+    refIdx.select<2, 1, 1, 1> (0, 2) = refIdxC;
 
     //
     // read planes
@@ -2354,7 +2371,7 @@ void ComputeBDirectMV(uint4 x, uint4 y, uint4 MbIndex,
 } // void ComputeBDirectMV(SurfaceIndex MVDataSurfIndex,
 
 _GENX_ inline
-void SetUpVmeBSlice(matrix_ref<uchar, 3, 32> uniIn,
+void SetUpVmeBSlice(matrix_ref<uchar, 4, 32> uniIn,
                     matrix_ref<uchar, 4, 32> sicIn,
                     matrix_ref<uint4, 16, 2> Costs,
                     SurfaceIndex SrcSurfIndex,
@@ -2452,10 +2469,8 @@ void SetUpVmeBSlice(matrix_ref<uchar, 3, 32> uniIn,
         uniIn.row(1)[11] = uniIn.row(1)[10];
     }
     // M1.3 Weighted SAD (not used for HSW)
-    // M1.4 Cost center 0 FWD
-    VME_COPY_DWORD(uniIn, 1, 4, AveL0, 0);
-    // M1.5 Cost center 1 BWD
-    VME_COPY_DWORD(uniIn, 1, 5, AveL1, 0);
+    // M1.4 Cost center 0 for HSW; MBZ for BDW
+    // M1.5 Cost center 1 for HSW; MBZ for BDW
     // M1.6 Fwd/Bwd Block RefID (used in B slices only)
     // M1.7 various prediction parameters
     VME_COPY_DWORD(uniIn, 1, 7, CURBEData, 7);
@@ -2479,6 +2494,19 @@ void SetUpVmeBSlice(matrix_ref<uchar, 3, 32> uniIn,
     // M2.5 FBR parameters
     // M2.6/2.7 SIC Forward Transform Coeff Threshold Matrix
     uniIn.row(2).format<uint4> ().select<2, 1> (6) = CURBEData.format<uint4> ().select<2, 1> (14);
+
+    // BDW+
+    // register M3
+    // M3.0 FWD Cost center 0 Delta X and Y
+    VME_COPY_DWORD(uniIn, 3, 0, AveL0, 0);
+    // M3.1 BWD Cost center 0 Delta X and Y
+    VME_COPY_DWORD(uniIn, 3, 1, AveL1, 0);
+    // M3.2 FWD Cost center 1 Delta X and Y
+    // M3.3 BWD Cost center 1 Delta X and Y
+    // M3.4 FWD Cost center 2 Delta X and Y
+    // M3.5 BWD Cost center 2 Delta X and Y
+    // M3.6 FWD Cost center 3 Delta X and Y
+    // M3.7 BWD Cost center 3 Delta X and Y
 
     //
     // initialize SIC input
@@ -2535,10 +2563,10 @@ void SetUpVmeBSlice(matrix_ref<uchar, 3, 32> uniIn,
     Costs.row(0).format<int2> ().select<2, 1> (0) = AveL0;
     Costs.row(0).format<int2> ().select<2, 1> (2) = AveL1;
 
-} // void SetUpVmeBSlice(matrix_ref<uchar, 3, 32> uniIn,
+} // void SetUpVmeBSlice(matrix_ref<uchar, 4, 32> uniIn,
 
 _GENX_ inline
-void SetUpPakDataBSlice(matrix_ref<uchar, 3, 32> uniIn,
+void SetUpPakDataBSlice(matrix_ref<uchar, 4, 32> uniIn,
                         matrix_ref<uchar, 7, 32> uniOut,
                         vector_ref<uchar, MBDATA_SIZE> MBData,
                         U8 direct8x8pattern,
@@ -2614,17 +2642,17 @@ void SetUpPakDataBSlice(matrix_ref<uchar, 3, 32> uniIn,
     // DW8 num nz luma coeffs
     MBData.format<uint1>().select<4, 1>(32) = uniOut.row(6).format<uint1>().select<4, 1>(4);
 
-    // DW9-10 cost centers
-    MBData.format<uint2>().select<1, 1>(18) = VME_GET_UNIInput_CostCenter0_X(uniIn);
-    MBData.format<uint2>().select<1, 1>(19) = VME_GET_UNIInput_CostCenter0_Y(uniIn);
-    MBData.format<uint2>().select<1, 1>(20) = VME_GET_UNIInput_CostCenter1_X(uniIn);
-    MBData.format<uint2>().select<1, 1>(21) = VME_GET_UNIInput_CostCenter1_Y(uniIn);
+    // DW9-10 cost centers like in HSW (to support multiref in BDW one needs to extend MBData)
+    MBData.format<uint2>().select<1, 1>(18) = VME_GET_UNIInput_FWDCostCenter0_X(uniIn);
+    MBData.format<uint2>().select<1, 1>(19) = VME_GET_UNIInput_FWDCostCenter0_Y(uniIn);
+    MBData.format<uint2>().select<1, 1>(20) = VME_GET_UNIInput_BWDCostCenter0_X(uniIn);
+    MBData.format<uint2>().select<1, 1>(21) = VME_GET_UNIInput_BWDCostCenter0_Y(uniIn);
 
     // copy motion vectors
     SET_MBDATA_MV(MBData, LIST_0, uniOut.row(1).format<uint4>()[0]);
     SET_MBDATA_MV(MBData, LIST_1, uniOut.row(1).format<uint4>()[1]);
 
-} // void SetUpPakDataBSlice(matrix_ref<uchar, 3, 32> uniIn,
+} // void SetUpPakDataBSlice(matrix_ref<uchar, 4, 32> uniIn,
 
 extern "C" _GENX_MAIN_  void
 SVCEncMB_B(SurfaceIndex CurbeDataSurfIndex,
@@ -2653,7 +2681,7 @@ SVCEncMB_B(SurfaceIndex CurbeDataSurfIndex,
     uint MbIndex = PicWidthInMB * mbY + mbX;
 
     vector<uint1, 1> direct8x8pattern = 0;
-    matrix<uchar, 3, 32> uniIn = 0;
+    matrix<uchar, 4, 32> uniIn = 0;
     matrix<uchar, 7, 32> best_uniOut = 0;
 
     {
