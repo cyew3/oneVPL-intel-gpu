@@ -50,7 +50,8 @@ static bool MVIsnotEq(H265MV mv0,
     }
 }
 
-void H265CU::DeblockOneCrossLuma(Ipp32s curPixelColumn,
+template <typename PixType>
+void H265CU<PixType>::DeblockOneCrossLuma(Ipp32s curPixelColumn,
                                  Ipp32s curPixelRow)
 {
     Ipp32s frameWidthInSamples = m_par->Width;
@@ -78,8 +79,8 @@ void H265CU::DeblockOneCrossLuma(Ipp32s curPixelColumn,
 
         if (edge->strength > 0)
         {
-            MFX_HEVC_PP::NAME(h265_FilterEdgeLuma_8u_I)(edge, baseSrcDst + 4 * (i - 1) * srcDstStride,
-                           srcDstStride, VERT_FILT);
+            h265_FilterEdgeLuma_I(edge, baseSrcDst + 4 * (i - 1) * srcDstStride,
+                           srcDstStride, VERT_FILT, m_par->bitDepthLuma);
         }
     }
 
@@ -96,7 +97,7 @@ void H265CU::DeblockOneCrossLuma(Ipp32s curPixelColumn,
 
         if (edge->strength > 0)
         {
-            MFX_HEVC_PP::NAME(h265_FilterEdgeLuma_8u_I)(edge, baseSrcDst + 4 * (i - 1), srcDstStride, HOR_FILT);
+            h265_FilterEdgeLuma_I(edge, baseSrcDst + 4 * (i - 1), srcDstStride, HOR_FILT, m_par->bitDepthLuma);
         }
     }
 }
@@ -120,7 +121,8 @@ static Ipp8u GetChromaQP(
 }
 
 
-void H265CU::DeblockOneCrossChroma(Ipp32s curPixelColumn,
+template <typename PixType>
+void H265CU<PixType>::DeblockOneCrossChroma(Ipp32s curPixelColumn,
                                    Ipp32s curPixelRow)
 {
     Ipp32s frameWidthInSamples = m_par->Width;
@@ -148,13 +150,14 @@ void H265CU::DeblockOneCrossChroma(Ipp32s curPixelColumn,
 
         if (edge->strength > 1)
         {
-            MFX_HEVC_PP::NAME(h265_FilterEdgeChroma_Interleaved_8u_I)(
+            h265_FilterEdgeChroma_Interleaved_I(
                 edge,
                 baseSrcDst + 4 * (i - 1) * srcDstStride,
                 srcDstStride,
                 VERT_FILT,
                 GetChromaQP(edge->qp, 0, 8),
-                GetChromaQP(edge->qp, 0, 8));
+                GetChromaQP(edge->qp, 0, 8),
+                m_par->bitDepthChroma);
         }
     }
 
@@ -170,19 +173,20 @@ void H265CU::DeblockOneCrossChroma(Ipp32s curPixelColumn,
 
         if (edge->strength > 1)
         {
-            MFX_HEVC_PP::NAME(h265_FilterEdgeChroma_Interleaved_8u_I)(
+            h265_FilterEdgeChroma_Interleaved_I(
                 edge,
                 baseSrcDst + 4 * 2 * (i - 1),
                 srcDstStride,
                 HOR_FILT,
                 GetChromaQP(edge->qp, 0, 8),
-                GetChromaQP(edge->qp, 0, 8));
+                GetChromaQP(edge->qp, 0, 8),
+                m_par->bitDepthChroma);
         }
     }
 }
 
-
-void H265CU::GetEdgeStrength(H265CUPtr *pcCUQptr,
+template <typename PixType>
+void H265CU<PixType>::GetEdgeStrength(H265CUPtr *pcCUQptr,
                              H265EdgeData *edge,
                              Ipp32s curPixelColumn,
                              Ipp32s curPixelRow,
@@ -413,7 +417,8 @@ void H265CU::GetEdgeStrength(H265CUPtr *pcCUQptr,
 //  |
 //  1
 
-void H265CU::SetEdges(Ipp32s width,
+template <typename PixType>
+void H265CU<PixType>::SetEdges(Ipp32s width,
                       Ipp32s height)
 {
     Ipp32s maxCUSize = m_par->MaxCUSize;
@@ -525,7 +530,8 @@ void H265CU::SetEdges(Ipp32s width,
     }
 }
 
-void H265CU::Deblock()
+template <typename PixType>
+void H265CU<PixType>::Deblock()
 {
     Ipp32s maxCUSize = m_par->MaxCUSize;
     Ipp32s frameHeightInSamples = m_par->Height;

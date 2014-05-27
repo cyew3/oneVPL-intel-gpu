@@ -20,51 +20,10 @@ namespace H265Enc {
 // UTILS
 // ========================================================
 
-const int g_bitDepthY = 8;
-const int g_bitDepthC = 8;
 
 const int   g_skipLinesR[NUM_SAO_COMPONENTS] = {5, 3, 3};
 const int   g_skipLinesB[NUM_SAO_COMPONENTS] = {4, 2, 2};
-const Ipp8u   g_offsetClipTable[] = {
-    0,0,0,0,0,0,0,0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,
-    21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,
-    43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,
-    65,66,67,68,69,70,71,72,73,74,75,76,77,78,79,80,81,82,83,84,85,86,
-    87,88,89,90,91,92,93,94,95,96,97,98,99,100,101,102,103,104,105,106,
-    107,108,109,110,111,112,113,114,115,116,117,118,119,120,121,122,123,
-    124,125,126,127,128,129,130,131,132,133,134,135,136,137,138,139,140,141,
-    142,143,144,145,146,147,148,149,150,151,152,153,154,155,156,157,158,159,160,
-    161,162,163,164,165,166,167,168,169,170,171,172,173,174,175,176,177,178,179,180,
-    181,182,183,184,185,186,187,188,189,190,191,192,193,194,195,196,197,198,199,
-    200,201,202,203,204,205,206,207,208,209,210,211,212,213,214,215,216,217,
-    218,219,220,221,222,223,224,225,226,227,228,229,230,231,232,233,234,
-    235,236,237,238,239,240,241,242,243,244,245,246,247,248,249,250,
-    251,252,253,254,255,255,255,255,255,255,255,255};
 
-const Ipp8u* g_offsetClip = &(g_offsetClipTable[SAO_MAX_OFFSET_QVAL]);
-
-//const Ipp16s g_signTable[] = {
-//    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-//    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-//    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-//    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-//    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-//    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-//    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-//    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-//    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-//    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-//    -1, -1, -1, -1, -1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-//    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-//    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-//    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-//    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-//    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-//    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-//    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-//    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1};
-//
-//const Ipp16s* g_sign = &(g_signTable[255]);
 
 inline Ipp16s getSign(Ipp32s x)
 {
@@ -76,7 +35,7 @@ inline Ipp64s EstimateDeltaDist(Ipp64s count, Ipp64s offset, Ipp64s diffSum, int
 {
     return (( count*offset*offset - diffSum*offset*2 ) >> shift);
 }
-
+/*
 inline Ipp64f xRoundIbdi2(int bitDepth, Ipp64f x)
 {
     return (x>0) ? (int)(((int)(x)+(1<<(bitDepth-8-1)))/(1<<(bitDepth-8))) : ((int)(((int)(x)-(1<<(bitDepth-8-1)))/(1<<(bitDepth-8))));
@@ -86,6 +45,7 @@ inline Ipp64f xRoundIbdi(int bitDepth, Ipp64f x)
 {
     return (bitDepth > 8 ? xRoundIbdi2(bitDepth, (x)) : ((x)>=0 ? ((int)((x)+0.5)) : ((int)((x)-0.5)))) ;
 }
+*/
 
 template <typename T> inline T Clip3( T minVal, T maxVal, T a) { return std::min<T> (std::max<T> (minVal, a) , maxVal); }  ///< general min/max clip
 
@@ -178,7 +138,9 @@ void GetQuantOffsets(
     MFX_HEVC_PP::SaoCtuStatistics& statData,
     int* quantOffsets,
     int& typeAuxInfo,
-    Ipp64f lambda)
+    Ipp64f lambda,
+    int bitDepth,
+    int saoMaxOffsetQval)
 {
     memset(quantOffsets, 0, sizeof(int)*MAX_NUM_SAO_CLASSES);
     
@@ -192,11 +154,12 @@ void GetQuantOffsets(
             continue; //offset will be zero
         }
 
-        Ipp64f meanDiff = (Ipp64f)statData.diff[classIdx] / (Ipp64f)statData.count[classIdx];
+//        Ipp64f meanDiff = (Ipp64f)statData.diff[classIdx] / (Ipp64f)statData.count[classIdx];
+        Ipp64f meanDiff = (Ipp64f)(statData.diff[classIdx] << (bitDepth - 8)) / (Ipp64f)(statData.count[classIdx]);
 
         int offset = (int)floor(meanDiff+0.5); //(meanDiff) >=0 ? (int)(meanDiff+0.5) : (int)(meanDiff-0.5);
 
-        quantOffsets[classIdx] = Clip3(-SAO_MAX_OFFSET_QVAL, SAO_MAX_OFFSET_QVAL, offset);
+        quantOffsets[classIdx] = Clip3(-saoMaxOffsetQval, saoMaxOffsetQval, offset);
     }
     
     if(SAO_TYPE_BO == typeIdx)
@@ -214,10 +177,8 @@ void GetQuantOffsets(
                     quantOffsets[classIdx],
                     statData.count[classIdx],
                     statData.diff[classIdx],
-
                     0,
-                    SAO_MAX_OFFSET_QVAL,
-
+                    saoMaxOffsetQval,
                     cost + classIdx);
             }
         }
@@ -271,7 +232,7 @@ void GetQuantOffsets(
                     statData.diff[classIdx],
 
                     0,
-                    SAO_MAX_OFFSET_QVAL);
+                    saoMaxOffsetQval);
             }
         }
 
@@ -281,6 +242,7 @@ void GetQuantOffsets(
 } // void GetQuantOffsets(...)
 
 // --------------------------------------------------------
+template <typename PixType>
 void GetCtuStatistics_RBoundary_Internal(
     int compIdx,
     const PixType* recBlk,
@@ -484,6 +446,7 @@ void GetCtuStatistics_RBoundary_Internal(
 
 // --------------------------------------------------------
 
+template <typename PixType>
 void GetCtuStatistics_BottomBoundary_Internal(
     int compIdx,
     const PixType* recBlk,
@@ -1030,6 +993,7 @@ SaoOffsetParam& SaoOffsetParam::operator= (const SaoOffsetParam& src)
     mode_idx = src.mode_idx;
     type_idx = src.type_idx;
     typeAuxInfo = src.typeAuxInfo;
+    saoMaxOffsetQVal = src.saoMaxOffsetQVal;
     small_memcpy(offset, src.offset, sizeof(int)* MAX_NUM_SAO_CLASSES);
 
     return *this;
@@ -1092,12 +1056,15 @@ SaoEncodeFilter::~SaoEncodeFilter()
 } // SaoEncodeFilter::~SaoEncodeFilter()
 
 
-void SaoEncodeFilter::Init(int width, int height, int maxCUWidth, int maxDepth, int saoOpt)
+void SaoEncodeFilter::Init(int width, int height, int maxCUWidth, int maxDepth, int bitDepth, int saoOpt)
 {
     m_frameSize.width = width;
     m_frameSize.height= height;
 
     m_maxCuSize = maxCUWidth;
+
+    m_bitDepth = bitDepth;
+    m_saoMaxOffsetQVal = (1<<(MIN(m_bitDepth,10)-5))-1;
 
     m_numCTU_inWidth = (m_frameSize.width/m_maxCuSize)  + ((m_frameSize.width % m_maxCuSize)?1:0);
     m_numCTU_inHeight= (m_frameSize.height/m_maxCuSize) + ((m_frameSize.height % m_maxCuSize)?1:0);
@@ -1105,14 +1072,14 @@ void SaoEncodeFilter::Init(int width, int height, int maxCUWidth, int maxDepth, 
     m_numSaoModes = (saoOpt == SAO_OPT_ALL_MODES) ? NUM_SAO_BASE_TYPES : NUM_SAO_BASE_TYPES - 1;
 } // void SaoEncodeFilter::Init(...)
 
-
+template <typename PixType>
 void SaoEncodeFilter::EstimateCtuSao(
     mfxFrameData* orgYuv,
     mfxFrameData* recYuv,
     bool* sliceEnabled,
     SaoCtuParam* saoParam)
 {
-    GetCtuSaoStatistics(orgYuv, recYuv);
+    GetCtuSaoStatistics<PixType>(orgYuv, recYuv);
 
 #if defined(MFX_HEVC_SAO_PREDEBLOCKED_ENABLED)
     for(int i = 0; i < NUM_SAO_BASE_TYPES; i++)
@@ -1130,7 +1097,7 @@ void SaoEncodeFilter::EstimateCtuSao(
 
 } // void SaoEncodeFilter::EstimateCtuSao()
 
-
+template <typename PixType>
 void SaoEncodeFilter::GetCtuSaoStatistics(mfxFrameData* orgYuv, mfxFrameData* recYuv)
 {
     //bool isLeftAvail, isAboveAvail, isAboveLeftAvail,isAboveRightAvail;
@@ -1168,28 +1135,28 @@ void SaoEncodeFilter::GetCtuSaoStatistics(mfxFrameData* orgYuv, mfxFrameData* re
         int shift   = 0;// YV12/NV12 Chroma dispatcher
         {
             int  recStride = recYuv->Pitch;
-            PixType* recBlk=  recYuv->Y;
+            PixType* recBlk=  (PixType*)recYuv->Y;
 
             int  orgStride  = orgYuv->Pitch;
-            PixType* orgBlk = orgYuv->Y;
+            PixType* orgBlk = (PixType*)orgYuv->Y;
 
-            MFX_HEVC_PP::NAME(h265_GetCtuStatistics_8u)(compIdx, recBlk, recStride, orgBlk, orgStride,
-                              width, height, shift, m_borders, m_numSaoModes, m_statData[compIdx]);
+            h265_GetCtuStatistics(compIdx, recBlk, recStride, orgBlk, orgStride,
+                width, height, shift, m_borders, m_numSaoModes, m_statData[compIdx]);
         }
 
         for( compIdx = 1; compIdx < NUM_USED_SAO_COMPONENTS; compIdx++ )
         {
             int  recStride = recYuv->PitchHigh;//yv12
-            PixType* recBlk=  (compIdx == SAO_Cb) ? recYuv->Cb : recYuv->Cr;
+            PixType* recBlk=  (compIdx == SAO_Cb) ? (PixType*)recYuv->Cb : (PixType*)recYuv->Cr;
 
             int  orgStride  = orgYuv->Pitch; //nv12
-            PixType* orgBlk = (compIdx == SAO_Cb) ? orgYuv->CbCr : orgYuv->CbCr + 1;
+            PixType* orgBlk = (compIdx == SAO_Cb) ? (PixType*)orgYuv->CbCr : (PixType*)orgYuv->CbCr + 1;
 
             shift = 1;
 
-            MFX_HEVC_PP::NAME(h265_GetCtuStatistics_8u)(compIdx, recBlk, recStride, orgBlk, orgStride,
-                                                        width >> 1, height >> 1, shift, m_borders,
-                                                        m_numSaoModes, m_statData[compIdx]);
+            h265_GetCtuStatistics(compIdx, recBlk, recStride, orgBlk, orgStride,
+                width >> 1, height >> 1, shift, m_borders,
+                m_numSaoModes, m_statData[compIdx]);
         }
     }
 
@@ -1238,7 +1205,6 @@ void SaoEncodeFilter::GetBestCtuSaoParam(
         m_bsf->CtxSave(m_ctxSAO[SAO_CABACSTATE_BLK_NEXT], tab_ctxIdxOffset[SAO_MERGE_FLAG_HEVC], 2);
     }
 #endif
-
 } // void SaoEncodeFilter::GetBestCtuSaoParam(...)
 
 
@@ -1344,6 +1310,7 @@ void SaoEncodeFilter::ModeDecision_Base(
     modeDist[SAO_Y]= modeDist[SAO_Cb] = modeDist[SAO_Cr] = 0;
         
     bestParam[SAO_Y].mode_idx = SAO_MODE_OFF;
+    bestParam[SAO_Y].saoMaxOffsetQVal = m_saoMaxOffsetQVal;
 
     m_bsf->CtxRestore(m_ctxSAO[SAO_CABACSTATE_BLK_CUR], tab_ctxIdxOffset[SAO_MERGE_FLAG_HEVC], 2);
     CodeSaoCtbParam(m_bsf, bestParam, sliceEnabled, mergeList[SAO_MERGE_LEFT] != NULL, mergeList[SAO_MERGE_ABOVE] != NULL, true);
@@ -1367,9 +1334,11 @@ void SaoEncodeFilter::ModeDecision_Base(
         {
             testOffset[compIdx].mode_idx = SAO_MODE_ON;
             testOffset[compIdx].type_idx = type_idx;
+            testOffset[compIdx].saoMaxOffsetQVal = m_saoMaxOffsetQVal;
 
             GetQuantOffsets(type_idx, m_statData[compIdx][type_idx], testOffset[compIdx].offset,
-                            testOffset[compIdx].typeAuxInfo, m_labmda[compIdx]);
+                            testOffset[compIdx].typeAuxInfo, m_labmda[compIdx],
+                            m_bitDepth, m_saoMaxOffsetQVal);
 
             dist[compIdx] = GetDistortion(testOffset[compIdx].type_idx,
                                           testOffset[compIdx].typeAuxInfo,
@@ -1408,9 +1377,11 @@ void SaoEncodeFilter::ModeDecision_Base(
         m_bsf->Reset();
 
         bestParam[SAO_Cb].mode_idx = SAO_MODE_OFF;
+        bestParam[SAO_Cb].saoMaxOffsetQVal = m_saoMaxOffsetQVal;
         CodeSaoCtbOffsetParam(m_bsf, SAO_Cb, bestParam[SAO_Cb], sliceEnabled[SAO_Cb]);
 
         bestParam[SAO_Cr].mode_idx = SAO_MODE_OFF;
+        bestParam[SAO_Cr].saoMaxOffsetQVal = m_saoMaxOffsetQVal;
         CodeSaoCtbOffsetParam(m_bsf, SAO_Cr, bestParam[SAO_Cr], sliceEnabled[SAO_Cr]);
         
         minRate = GetNumWrittenBits();
@@ -1430,9 +1401,11 @@ void SaoEncodeFilter::ModeDecision_Base(
                 }
                 testOffset[compIdx].mode_idx = SAO_MODE_ON;
                 testOffset[compIdx].type_idx = type_idx;
+                testOffset[compIdx].saoMaxOffsetQVal = m_saoMaxOffsetQVal;
 
                 GetQuantOffsets(type_idx, m_statData[compIdx][type_idx], testOffset[compIdx].offset,
-                                testOffset[compIdx].typeAuxInfo, m_labmda[compIdx]);                
+                                testOffset[compIdx].typeAuxInfo, m_labmda[compIdx],
+                                m_bitDepth, m_saoMaxOffsetQVal);                
 
                 dist[compIdx]= GetDistortion(type_idx, testOffset[compIdx].typeAuxInfo,
                                              testOffset[compIdx].offset,
@@ -1476,7 +1449,8 @@ void SaoEncodeFilter::ModeDecision_Base(
 // SAO DECODE FILTER
 // ========================================================
 
-SaoDecodeFilter::SaoDecodeFilter()
+template <typename PixType>
+SaoDecodeFilter<PixType>::SaoDecodeFilter()
 {
     m_OffsetBo  = NULL;
     /*m_OffsetBo2 = NULL;
@@ -1492,7 +1466,8 @@ SaoDecodeFilter::SaoDecodeFilter()
 } // SaoDecodeFilter::SaoDecodeFilter()
 
 
-void SaoDecodeFilter::Close()
+template <typename PixType>
+void SaoDecodeFilter<PixType>::Close()
 {
     if(m_OffsetBo)
     {
@@ -1539,22 +1514,25 @@ void SaoDecodeFilter::Close()
 } // void SaoDecodeFilter::Close()
 
 
-SaoDecodeFilter::~SaoDecodeFilter()
+template <typename PixType>
+SaoDecodeFilter<PixType>::~SaoDecodeFilter()
 {
     Close();
 
 } // SaoDecodeFilter::~SaoDecodeFilter()
 
 
-void SaoDecodeFilter::Init(int width, int height, int maxCUWidth, int maxDepth)
+template <typename PixType>
+void SaoDecodeFilter<PixType>::Init(int width, int height, int maxCUWidth, int maxDepth, int bitDepth)
 {
     m_PicWidth  = width;
     m_PicHeight = height;
+    m_bitDepth = bitDepth;
 
     m_maxCuSize  = maxCUWidth;
 
-    Ipp32u uiPixelRangeY = 1 << g_bitDepthY;
-    Ipp32u uiBoRangeShiftY = g_bitDepthY - SAO_BO_BITS;
+    Ipp32u uiPixelRangeY = 1 << m_bitDepth;
+    Ipp32u uiBoRangeShiftY = m_bitDepth - SAO_BO_BITS;
 
     m_lumaTableBo = new PixType[uiPixelRangeY];
     for (Ipp32u k2 = 0; k2 < uiPixelRangeY; k2++)
@@ -1562,7 +1540,7 @@ void SaoDecodeFilter::Init(int width, int height, int maxCUWidth, int maxDepth)
         m_lumaTableBo[k2] = (PixType)(1 + (k2>>uiBoRangeShiftY));
     }
 
-    Ipp32u uiMaxY  = (1 << g_bitDepthY) - 1;
+    Ipp32u uiMaxY  = (1 << m_bitDepth) - 1;
     Ipp32u uiMinY  = 0;
 
     Ipp32u iCRangeExt = uiMaxY>>1;
@@ -1596,13 +1574,14 @@ void SaoDecodeFilter::Init(int width, int height, int maxCUWidth, int maxDepth)
     m_TmpL[0] = new PixType [2*SAO_PRED_SIZE];
     m_TmpL[1] = new PixType [2*SAO_PRED_SIZE];
 
-    m_SaoBitIncreaseY = IPP_MAX(g_bitDepthY - 10, 0);
-    m_SaoBitIncreaseC = IPP_MAX(g_bitDepthC - 10, 0);
+//    m_SaoBitIncreaseY = IPP_MAX(g_bitDepthY - 10, 0);
+//    m_SaoBitIncreaseC = IPP_MAX(g_bitDepthC - 10, 0);
 
 } // void SaoDecodeFilter::Init(...)
 
 
-void SaoDecodeFilter::SetOffsetsLuma(SaoOffsetParam  &saoLCUParam, Ipp32s typeIdx)
+template <typename PixType>
+void SaoDecodeFilter<PixType>::SetOffsetsLuma(SaoOffsetParam  &saoLCUParam, Ipp32s typeIdx)
 {
     Ipp32s offset[LUMA_GROUP_NUM + 1] = {0};
     static const Ipp8u EoTable[9] =
@@ -1630,7 +1609,7 @@ void SaoDecodeFilter::SetOffsetsLuma(SaoOffsetParam  &saoLCUParam, Ipp32s typeId
         }
 
         PixType *ppLumaTable = m_lumaTableBo;
-        for (Ipp32s i = 0; i < (1 << g_bitDepthY); i++)
+        for (Ipp32s i = 0; i < (1 << m_bitDepth); i++)
         {
             m_OffsetBo[i] = m_ClipTable[i + offset[ppLumaTable[i]]];
         }
@@ -1654,7 +1633,8 @@ void SaoDecodeFilter::SetOffsetsLuma(SaoOffsetParam  &saoLCUParam, Ipp32s typeId
 //  CTU Caller
 // ========================================================
 
-void H265CU::EstimateCtuSao(
+template <typename PixType>
+void H265CU<PixType>::EstimateCtuSao(
     H265BsFake *bs,
     SaoCtuParam* saoParam,
     SaoCtuParam* saoParam_TotalFrame,
@@ -1679,17 +1659,17 @@ void H265CU::EstimateCtuSao(
     mfxFrameData orgYuv;
     mfxFrameData recYuv;
 
-    orgYuv.Y = this->m_ySrc;
-    orgYuv.UV = this->m_uvSrc;
+    orgYuv.Y = (mfxU8*)this->m_ySrc;
+    orgYuv.UV = (mfxU8*)this->m_uvSrc;
     orgYuv.Pitch = (Ipp16s)this->m_pitchSrc;
 
-    recYuv.Y = this->m_yRec;
-    recYuv.UV = this->m_uvRec;
+    recYuv.Y = (mfxU8*)this->m_yRec;
+    recYuv.UV = (mfxU8*)this->m_uvRec;
     recYuv.Pitch = (Ipp16s)this->m_pitchRec;
     recYuv.PitchHigh = (Ipp16s)this->m_pitchRec;
 
     bool    sliceEnabled[NUM_SAO_COMPONENTS] = {false, false, false};
-    m_saoEncodeFilter.EstimateCtuSao( &orgYuv, &recYuv, sliceEnabled, saoParam);
+    m_saoEncodeFilter.EstimateCtuSao<PixType>( &orgYuv, &recYuv, sliceEnabled, saoParam);
 
     // set slice param
     if( !this->m_cslice->slice_sao_luma_flag )
@@ -1706,7 +1686,8 @@ void H265CU::EstimateCtuSao(
 } // void H265CU::EstimateCtuSao( void )
 
 
-void H265CU::GetStatisticsCtuSaoPredeblocked( const MFX_HEVC_PP::CTBBorders & borders )
+template <typename PixType>
+void H265CU<PixType>::GetStatisticsCtuSaoPredeblocked( const MFX_HEVC_PP::CTBBorders & borders )
 {
     int maxCUSixe = m_saoEncodeFilter.m_maxCuSize;
     IppiSize frameSize = m_saoEncodeFilter.m_frameSize;
@@ -1718,12 +1699,12 @@ void H265CU::GetStatisticsCtuSaoPredeblocked( const MFX_HEVC_PP::CTBBorders & bo
     mfxFrameData orgYuv;
     mfxFrameData recYuv;
 
-    orgYuv.Y = this->m_ySrc;
-    orgYuv.UV = this->m_uvSrc;
+    orgYuv.Y = (mfxU8*)this->m_ySrc;
+    orgYuv.UV = (mfxU8*)this->m_uvSrc;
     orgYuv.Pitch = (Ipp16s)this->m_pitchSrc;
 
-    recYuv.Y = this->m_yRec;
-    recYuv.UV = this->m_uvRec;
+    recYuv.Y = (mfxU8*)this->m_yRec;
+    recYuv.UV = (mfxU8*)this->m_uvRec;
     recYuv.Pitch = (Ipp16s)this->m_pitchRec;
     recYuv.PitchHigh = (Ipp16s)this->m_pitchRec;
 

@@ -93,9 +93,9 @@ void h265_write_coef_remain_ex_golomb (H265Bs *bs, Ipp32u symbol, Ipp32u &param 
     }
 }
 
-template <class H265Bs>
+template <typename PixType, class H265Bs>
 static
-void h265_code_mvp_idx (H265Bs *bs, H265CU* pCU, Ipp32u abs_part_idx, EnumRefPicList ref_list )
+void h265_code_mvp_idx (H265Bs *bs, H265CU<PixType>* pCU, Ipp32u abs_part_idx, EnumRefPicList ref_list )
 {
     Ipp32s symbol = pCU->m_data[abs_part_idx].mvpIdx[ref_list];
     Ipp32s num = MAX_NUM_AMVP_CANDS;
@@ -103,9 +103,9 @@ void h265_code_mvp_idx (H265Bs *bs, H265CU* pCU, Ipp32u abs_part_idx, EnumRefPic
     h265_write_unary_max_symbol(bs, symbol, CTX(bs,MVP_IDX_HEVC), 1, num-1);
 }
 
-template <class H265Bs>
+template <typename PixType, class H265Bs>
 static
-void h265_code_part_size(H265Bs *bs, H265CU* pCU, Ipp32u abs_part_idx, Ipp32s depth )
+void h265_code_part_size(H265Bs *bs, H265CU<PixType>* pCU, Ipp32u abs_part_idx, Ipp32s depth )
 {
     H265VideoParam *par = pCU->m_par;
     Ipp8u size = pCU->m_data[abs_part_idx].partSize;
@@ -179,42 +179,42 @@ void h265_code_part_size(H265Bs *bs, H265CU* pCU, Ipp32u abs_part_idx, Ipp32s de
     }
 }
 
-template <class H265Bs>
+template <typename PixType, class H265Bs>
 static
-void h265_code_pred_mode(H265Bs *bs, H265CU* pCU, Ipp32u abs_part_idx )
+void h265_code_pred_mode(H265Bs *bs, H265CU<PixType>* pCU, Ipp32u abs_part_idx )
 {
     Ipp32s predMode = pCU->m_data[abs_part_idx].predMode;
     bs->EncodeSingleBin_CABAC(CTX(bs,PRED_MODE_HEVC), predMode == MODE_INTER ? 0 : 1);
 }
 
-template <class H265Bs>
+template <typename PixType, class H265Bs>
 static
-void h265_code_transquant_bypass_flag(H265Bs *bs, H265CU* pCU, Ipp32u abs_part_idx)
+void h265_code_transquant_bypass_flag(H265Bs *bs, H265CU<PixType>* pCU, Ipp32u abs_part_idx)
 {
     Ipp32u symbol = pCU->m_data[abs_part_idx].flags.transquantBypassFlag;
     bs->EncodeSingleBin_CABAC(CTX(bs,CU_TRANSQUANT_BYPASS_FLAG_CTX),symbol);
 }
 
-template <class H265Bs>
+template <typename PixType, class H265Bs>
 static
-void h265_code_skip_flag(H265Bs *bs, H265CU* pCU, Ipp32u abs_part_idx)
+void h265_code_skip_flag(H265Bs *bs, H265CU<PixType>* pCU, Ipp32u abs_part_idx)
 {
     Ipp32u symbol = isSkipped(pCU->m_data, abs_part_idx) ? 1 : 0;
     Ipp32u ctx_skip = pCU->GetCtxSkipFlag(abs_part_idx);
     bs->EncodeSingleBin_CABAC(CTX(bs,SKIP_FLAG_HEVC)+ctx_skip, symbol);
 }
 
-template <class H265Bs>
+template <typename PixType, class H265Bs>
 static
-void h265_code_merge_flag(H265Bs *bs, H265CU* pCU, Ipp32u abs_part_idx)
+void h265_code_merge_flag(H265Bs *bs, H265CU<PixType>* pCU, Ipp32u abs_part_idx)
 {
     const Ipp32u symbol = pCU->m_data[abs_part_idx].flags.mergeFlag ? 1 : 0;
     bs->EncodeSingleBin_CABAC(CTX(bs,MERGE_FLAG_HEVC),symbol);
 }
 
-template <class H265Bs>
+template <typename PixType, class H265Bs>
 static
-void h265_code_merge_index(H265Bs *bs, H265CU* pCU, Ipp32u abs_part_idx)
+void h265_code_merge_index(H265Bs *bs, H265CU<PixType>* pCU, Ipp32u abs_part_idx)
 {
     Ipp32u num_cand = MAX_NUM_MERGE_CANDS;
     Ipp32u unary_idx = pCU->m_data[abs_part_idx].mergeIdx;
@@ -240,9 +240,9 @@ void h265_code_merge_index(H265Bs *bs, H265CU* pCU, Ipp32u abs_part_idx)
     }
 }
 
-template <class H265Bs>
+template <typename PixType, class H265Bs>
 static
-void h265_code_split_flag(H265Bs *bs, H265CU* pCU, Ipp32u abs_part_idx, Ipp32s depth)
+void h265_code_split_flag(H265Bs *bs, H265CU<PixType>* pCU, Ipp32u abs_part_idx, Ipp32s depth)
 {
     H265VideoParam *par = pCU->m_par;
     if (depth == par->MaxCUDepth - par->AddCUDepth)
@@ -262,8 +262,9 @@ void h265_code_transform_subdiv_flag(H265Bs *bs, Ipp32u symbol, Ipp32u ctx)
     bs->EncodeSingleBin_CABAC(CTX(bs,TRANS_SUBDIV_FLAG_HEVC)+ctx,symbol);
 }
 
+template <typename PixType>
 template <class H265Bs>
-void H265CU::CodeIntradirLumaAng(H265Bs *bs, Ipp32u abs_part_idx, Ipp8u multiple)
+void H265CU<PixType>::CodeIntradirLumaAng(H265Bs *bs, Ipp32u abs_part_idx, Ipp8u multiple)
 {
     H265CU* pCU = this;
     H265VideoParam *par = pCU->m_par;
@@ -321,14 +322,13 @@ void H265CU::CodeIntradirLumaAng(H265Bs *bs, Ipp32u abs_part_idx, Ipp8u multiple
 }
 
 template
-void H265CU::CodeIntradirLumaAng(H265BsFake *bs, Ipp32u abs_part_idx, Ipp8u multiple);
+void H265CU<Ipp8u>::CodeIntradirLumaAng(H265BsFake *bs, Ipp32u abs_part_idx, Ipp8u multiple);
+template
+void H265CU<Ipp16u>::CodeIntradirLumaAng(H265BsFake *bs, Ipp32u abs_part_idx, Ipp8u multiple);
 
-// for DEBUG
-//int tca = 0;
-
-template <class H265Bs>
+template <typename PixType, class H265Bs>
 static
-void h265_code_intradir_chroma(H265Bs *bs, H265CU* pCU, Ipp32u abs_part_idx)
+void h265_code_intradir_chroma(H265Bs *bs, H265CU<PixType>* pCU, Ipp32u abs_part_idx)
 {
     Ipp8u i;
     Ipp8u intra_dir_chroma = pCU->m_data[abs_part_idx].intraChromaDir;
@@ -360,9 +360,9 @@ void h265_code_intradir_chroma(H265Bs *bs, H265CU* pCU, Ipp32u abs_part_idx)
     }
 }
 
-template <class H265Bs>
+template <typename PixType, class H265Bs>
 static
-void h265_code_interdir(H265Bs *bs, H265CU* pCU, Ipp32u abs_part_idx)
+void h265_code_interdir(H265Bs *bs, H265CU<PixType>* pCU, Ipp32u abs_part_idx)
 {
     const Ipp32u inter_dir = pCU->m_data[abs_part_idx].interDir - 1;
     const Ipp32u ctx      = pCU->m_data[abs_part_idx].depth;
@@ -378,9 +378,9 @@ void h265_code_interdir(H265Bs *bs, H265CU* pCU, Ipp32u abs_part_idx)
     }
 }
 
-template <class H265Bs>
+template <typename PixType, class H265Bs>
 static
-void h265_code_reffrm_idx(H265Bs *bs, H265CU* pCU, Ipp32u abs_part_idx, EnumRefPicList ref_list)
+void h265_code_reffrm_idx(H265Bs *bs, H265CU<PixType>* pCU, Ipp32u abs_part_idx, EnumRefPicList ref_list)
 {
     Ipp32s j;
     H265ENC_UNREFERENCED_PARAMETER(abs_part_idx);
@@ -417,9 +417,9 @@ void h265_code_reffrm_idx(H265Bs *bs, H265CU* pCU, Ipp32u abs_part_idx, EnumRefP
     }
 }
 
-template <class H265Bs>
+template <typename PixType, class H265Bs>
 static
-void h265_code_mvd(H265Bs *bs, H265CU* pCU, Ipp32u abs_part_idx, EnumRefPicList ref_list)
+void h265_code_mvd(H265Bs *bs, H265CU<PixType>* pCU, Ipp32u abs_part_idx, EnumRefPicList ref_list)
 {
     if(pCU->m_cslice->mvd_l1_zero_flag && ref_list == REF_PIC_LIST_1 && pCU->m_data[abs_part_idx].interDir==3)
     {
@@ -468,9 +468,9 @@ void h265_code_mvd(H265Bs *bs, H265CU* pCU, Ipp32u abs_part_idx, EnumRefPicList 
     }
 }
 
-template <class H265Bs>
+template <typename PixType, class H265Bs>
 static
-void h265_code_delta_qp(H265Bs *bs, H265CU* pCU, Ipp32u abs_part_idx)
+void h265_code_delta_qp(H265Bs *bs, H265CU<PixType>* pCU, Ipp32u abs_part_idx)
 {
     Ipp32s dqp  = pCU->m_data[abs_part_idx].qp - pCU->GetRefQp( abs_part_idx );
 
@@ -502,9 +502,9 @@ void h265_code_qt_cbf(H265Bs *bs, H265CU* pCU, Ipp32u abs_part_idx, EnumTextType
     bs->EncodeSingleBin_CABAC(CTX(bs,QT_CBF_HEVC) + (type ? NUM_QT_CBF_CTX : 0) + uiCtx, uiCbf);
 }
 #endif
-template <class H265Bs>
+template <typename PixType, class H265Bs>
 static
-void h265_code_transform_skip_flags(H265Bs *bs, H265CU* pCU, Ipp32u abs_part_idx,
+void h265_code_transform_skip_flags(H265Bs *bs, H265CU<PixType>* pCU, Ipp32u abs_part_idx,
                              Ipp32s width, Ipp32s height, EnumTextType type)
 {
     if (!pCU->m_data[abs_part_idx].flags.transquantBypassFlag &&
@@ -516,9 +516,9 @@ void h265_code_transform_skip_flags(H265Bs *bs, H265CU* pCU, Ipp32u abs_part_idx
     }
 }
 
-template <class H265Bs>
+template <typename PixType, class H265Bs>
 static inline
-void h265_code_qt_root_cbf(H265Bs *bs, H265CU* pCU, Ipp32u abs_part_idx)
+void h265_code_qt_root_cbf(H265Bs *bs, H265CU<PixType>* pCU, Ipp32u abs_part_idx)
 {
     bs->EncodeSingleBin_CABAC(CTX(bs,QT_ROOT_CBF_HEVC), pCU->GetQtRootCbf(abs_part_idx));
 }
@@ -599,21 +599,25 @@ void h265_code_last_significant_xy(H265Bs *bs, Ipp32u pos_x, Ipp32u pos_y,
         }
     }
 }
-int tcu = 0;
 
 // HM_MATCH
 //kolya
 //intra header for chroma
+template <typename PixType>
 template <class H265Bs>
-void H265CU::xEncIntraHeaderChroma(H265Bs* bs)
+void H265CU<PixType>::xEncIntraHeaderChroma(H265Bs* bs)
 {
    h265_code_intradir_chroma(bs, this, 0);
 }
-template void H265CU::xEncIntraHeaderChroma<H265BsFake> (H265BsFake* bs);
-template void H265CU::xEncIntraHeaderChroma<H265BsReal> (H265BsReal* bs);
 
+template void H265CU<Ipp8u>::xEncIntraHeaderChroma<H265BsFake> (H265BsFake* bs);
+template void H265CU<Ipp8u>::xEncIntraHeaderChroma<H265BsReal> (H265BsReal* bs);
+template void H265CU<Ipp16u>::xEncIntraHeaderChroma<H265BsFake> (H265BsFake* bs);
+template void H265CU<Ipp16u>::xEncIntraHeaderChroma<H265BsReal> (H265BsReal* bs);
+
+template <typename PixType>
 template <class H265Bs>
-void H265CU::CodeCoeffNxN(H265Bs *bs, H265CU* pCU, CoeffsType* coeffs, Ipp32u abs_part_idx,
+void H265CU<PixType>::CodeCoeffNxN(H265Bs *bs, H265CU<PixType>* pCU, CoeffsType* coeffs, Ipp32u abs_part_idx,
                   Ipp32u width, Ipp32u height, EnumTextType type )
 {
     H265VideoParam *par = pCU->m_par;
@@ -919,8 +923,9 @@ void h265_encode_qp(H265Bs *bs, H265CU* pCU, Ipp32s qp_bd_offset_y, Ipp32u abs_p
     }
 }
 #endif
+template <typename PixType>
 template <class H265Bs>
-void H265CU::PutTransform(H265Bs* bs,Ipp32u offset_luma, Ipp32u offset_chroma,
+void H265CU<PixType>::PutTransform(H265Bs* bs,Ipp32u offset_luma, Ipp32u offset_chroma,
                                 Ipp32u abs_part_idx, Ipp32u abs_tu_part_idx,
                                 Ipp32u depth, Ipp32u width, Ipp32u height,
                                 Ipp32u tr_idx, Ipp8u& code_dqp,
@@ -1113,8 +1118,9 @@ void H265CU::PutTransform(H265Bs* bs,Ipp32u offset_luma, Ipp32u offset_chroma,
     }
 }
 
+template <typename PixType>
 template <class H265Bs>
-void H265CU::EncodeCoeff(H265Bs* bs, Ipp32u abs_part_idx, Ipp32u depth, Ipp32u width, Ipp32u height, Ipp8u &code_dqp)
+void H265CU<PixType>::EncodeCoeff(H265Bs* bs, Ipp32u abs_part_idx, Ipp32u depth, Ipp32u width, Ipp32u height, Ipp8u &code_dqp)
 {
     Ipp32u min_coeff_size = m_par->MinTUSize * m_par->MinTUSize;
     Ipp32u luma_offset   = min_coeff_size*abs_part_idx;
@@ -1141,9 +1147,9 @@ void H265CU::EncodeCoeff(H265Bs* bs, Ipp32u abs_part_idx, Ipp32u depth, Ipp32u w
 static
 Ipp32u h265_PU_offset[8] = { 0, 8, 4, 4, 2, 10, 1, 5};
 
-template <class H265Bs>
+template <typename PixType, class H265Bs>
 static
-void h265_encode_PU_inter(H265Bs *bs, H265CU* pCU, Ipp32u abs_part_idx)
+void h265_encode_PU_inter(H265Bs *bs, H265CU<PixType>* pCU, Ipp32u abs_part_idx)
 {
   Ipp8u part_size = pCU->m_data[abs_part_idx].partSize;
   Ipp32u num_PU = (part_size == PART_SIZE_2Nx2N ? 1 : (part_size == PART_SIZE_NxN ? 4 : 2));
@@ -1180,9 +1186,9 @@ void h265_encode_PU_inter(H265Bs *bs, H265CU* pCU, Ipp32u abs_part_idx)
   }
 }
 
-template <class H265Bs>
+template <typename PixType, class H265Bs>
 static
-void h265_encode_pred_info(H265Bs *bs, H265CU* pCU, Ipp32u abs_part_idx)
+void h265_encode_pred_info(H265Bs *bs, H265CU<PixType>* pCU, Ipp32u abs_part_idx)
 {
     if (pCU->IsIntra( abs_part_idx ))
     {
@@ -1195,8 +1201,9 @@ void h265_encode_pred_info(H265Bs *bs, H265CU* pCU, Ipp32u abs_part_idx)
     }
 }
 
+template <typename PixType>
 template <class H265Bs>
-void H265CU::EncodeCU(H265Bs *bs, Ipp32u abs_part_idx, Ipp32s depth, Ipp8u rd_mode )
+void H265CU<PixType>::EncodeCU(H265Bs *bs, Ipp32u abs_part_idx, Ipp32s depth, Ipp8u rd_mode )
 {
     H265CU *pCU = this;
 
@@ -1312,6 +1319,11 @@ void H265CU::EncodeCU(H265Bs *bs, Ipp32u abs_part_idx, Ipp32s depth, Ipp8u rd_mo
     // --- write terminating bit ---
     //  finishCU(pCU,abs_part_idx,depth);
 }
+
+template void H265CU<Ipp8u>::EncodeCU(H265BsReal *bs, Ipp32u abs_part_idx, Ipp32s depth, Ipp8u rd_mode );
+template void H265CU<Ipp8u>::EncodeCU(H265BsFake *bs, Ipp32u abs_part_idx, Ipp32s depth, Ipp8u rd_mode );
+template void H265CU<Ipp16u>::EncodeCU(H265BsReal *bs, Ipp32u abs_part_idx, Ipp32s depth, Ipp8u rd_mode );
+template void H265CU<Ipp16u>::EncodeCU(H265BsFake *bs, Ipp32u abs_part_idx, Ipp32s depth, Ipp8u rd_mode );
 
 
 // ========================================================
@@ -1482,7 +1494,7 @@ void CodeSaoCtbOffsetParam(H265Bs *bs, int compIdx, SaoOffsetParam& ctbParam, bo
         {
 
             code = (Ipp32u)( offset[i] < 0) ? (-offset[i]) : (offset[i]);
-            h265_code_sao_max_uvlc (bs,  code, SAO_MAX_OFFSET_QVAL);
+            h265_code_sao_max_uvlc (bs,  code, ctbParam.saoMaxOffsetQVal);
         }
 
 
@@ -1511,8 +1523,9 @@ void CodeSaoCtbOffsetParam(H265Bs *bs, int compIdx, SaoOffsetParam& ctbParam, bo
 } // Void CodeSaoCtbOffsetParam(Int compIdx, SaoOffsetParam& ctbParam, Bool sliceEnabled)
 
 
+template <typename PixType>
 template <class H265Bs>
-void H265CU::EncodeSao(
+void H265CU<PixType>::EncodeSao(
     H265Bs *bs,
     Ipp32u abs_part_idx,
     Ipp32s depth,
@@ -1543,15 +1556,11 @@ void H265CU::EncodeSao(
 
 } // template <class H265Bs> void EncodeSao( ... )
 
-template
-void H265CU::EncodeSao(H265BsReal *bs, Ipp32u abs_part_idx, Ipp32s depth, Ipp8u rd_mode, SaoCtuParam& blkParam, bool leftMergeAvail, bool aboveMergeAvail );
-template
-void H265CU::EncodeSao(H265BsFake *bs, Ipp32u abs_part_idx, Ipp32s depth, Ipp8u rd_mode, SaoCtuParam& blkParam, bool leftMergeAvail, bool aboveMergeAvail );
+template void H265CU<Ipp8u>::EncodeSao(H265BsReal *bs, Ipp32u abs_part_idx, Ipp32s depth, Ipp8u rd_mode, SaoCtuParam& blkParam, bool leftMergeAvail, bool aboveMergeAvail );
+template void H265CU<Ipp8u>::EncodeSao(H265BsFake *bs, Ipp32u abs_part_idx, Ipp32s depth, Ipp8u rd_mode, SaoCtuParam& blkParam, bool leftMergeAvail, bool aboveMergeAvail );
+template void H265CU<Ipp16u>::EncodeSao(H265BsReal *bs, Ipp32u abs_part_idx, Ipp32s depth, Ipp8u rd_mode, SaoCtuParam& blkParam, bool leftMergeAvail, bool aboveMergeAvail );
+template void H265CU<Ipp16u>::EncodeSao(H265BsFake *bs, Ipp32u abs_part_idx, Ipp32s depth, Ipp8u rd_mode, SaoCtuParam& blkParam, bool leftMergeAvail, bool aboveMergeAvail );
 
-template
-void CodeSaoCtbOffsetParam(H265BsReal *bs, int compIdx, SaoOffsetParam& ctbParam, bool sliceEnabled);
-template
-void CodeSaoCtbOffsetParam(H265BsFake *bs, int compIdx, SaoOffsetParam& ctbParam, bool sliceEnabled);
 
 template
 void CodeSaoCtbParam(
@@ -1569,11 +1578,6 @@ void CodeSaoCtbParam(
     bool leftMergeAvail,
     bool aboveMergeAvail,
     bool onlyEstMergeInfo);
-
-template
-void H265CU::EncodeCU(H265BsReal *bs, Ipp32u abs_part_idx, Ipp32s depth, Ipp8u rd_mode );
-template
-void H265CU::EncodeCU(H265BsFake *bs, Ipp32u abs_part_idx, Ipp32s depth, Ipp8u rd_mode );
 
 } // namespace
 

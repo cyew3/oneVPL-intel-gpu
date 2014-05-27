@@ -113,6 +113,7 @@ static inline Ipp8u isSkipped (H265CUData *data, Ipp32u partIdx)
 
 #define MAX_TOTAL_DEPTH (MAX_CU_DEPTH+4)
 
+template <typename PixType>
 class H265CU
 {
 public:
@@ -181,11 +182,11 @@ public:
     // aya - may be used late to speed up SAD calculation
     //__ALIGN32 Ipp8u m_src_aligned_block[MAX_CU_SIZE*MAX_CU_SIZE];
 
-    Ipp8u *m_ySrc;
-    Ipp8u *m_uvSrc;
+    PixType *m_ySrc;
+    PixType *m_uvSrc;
     Ipp32s m_pitchSrc;
-    Ipp8u *m_yRec;
-    Ipp8u *m_uvRec;
+    PixType *m_yRec;
+    PixType *m_uvRec;
     Ipp32s m_pitchRec;
     H265CUData *m_dataSave;  // All CU array, final best, the only source for neibours
     H265CUData *m_dataBest;  // depth array, for ModeDecision tree
@@ -366,10 +367,10 @@ public:
     Ipp8u GetTrSplitMode(Ipp32s absPartIdx, Ipp8u depth, Ipp8u trDepth, Ipp8u partSize,
                          Ipp8u isLuma, Ipp8u strict = 1);
 
-    void TransformInv(Ipp32s offset, Ipp32s width, Ipp8u isLuma, Ipp8u isIntra);
+    void TransformInv(Ipp32s offset, Ipp32s width, Ipp8u isLuma, Ipp8u isIntra, Ipp8u bitDepth);
 
-    void TransformInv2(PixType * dst, Ipp32s pitch_dst, Ipp32s offset, Ipp32s width, Ipp8u isLuma,
-                       Ipp8u isIntra);
+    void TransformInv2(void *dst, Ipp32s pitch_dst, Ipp32s offset, Ipp32s width, Ipp8u isLuma,
+                       Ipp8u isIntra, Ipp8u bitDepth);
 
     void TransformFwd(Ipp32s offset, Ipp32s width, Ipp8u isLuma, Ipp8u isIntra);
 
@@ -452,7 +453,7 @@ public:
     void DetailsXY(H265MEInfo *meInfo) const;
 
     void MeInterpolate(const H265MEInfo* meInfo, H265MV* MV, PixType *in_pSrc, Ipp32s in_SrcPitch,
-                       Ipp8u *buf, Ipp32s buf_pitch) const;
+                       PixType *buf, Ipp32s buf_pitch) const;
 
     Ipp32s MatchingMetricPu(PixType *src, const H265MEInfo* meInfo, H265MV* mv, H265Frame *refPic,
                             Ipp32s useHadamard) const;
@@ -479,6 +480,9 @@ private:
     //void FillZero(Ipp32u absPartIdx, Ipp8u depth);
 };
 
+template class H265CU<Ipp8u>;
+template class H265CU<Ipp16u>;
+
 template <class H265Bs>
 void CodeSaoCtbOffsetParam(H265Bs *bs, int compIdx, SaoOffsetParam& ctbParam, bool sliceEnabled);
 
@@ -486,6 +490,7 @@ template <class H265Bs>
 void CodeSaoCtbParam(H265Bs *bs, SaoCtuParam &saoBlkParam, bool *sliceEnabled, bool leftMergeAvail,
                      bool aboveMergeAvail, bool onlyEstMergeInfo);
 
+template <typename PixType>
 Ipp32s tuHad(const PixType *src, Ipp32s pitch_src, const PixType *rec, Ipp32s pitch_rec,
              Ipp32s width, Ipp32s height);
 

@@ -27,8 +27,11 @@ public:
     Ipp32s width;
     Ipp32s height;
     Ipp32s padding;
-    Ipp32s pitch_luma;
-    Ipp32s pitch_chroma;
+    Ipp32s pitch_luma; // FIXME10BIT
+    Ipp32s pitch_luma_pix;
+    Ipp32s pitch_luma_bytes;
+    Ipp32s pitch_chroma_pix;
+    Ipp32s pitch_chroma_bytes;
     mfxU64 TimeStamp;
 
     H265Frame  *m_pPreviousFrame;
@@ -49,6 +52,11 @@ public:
     Ipp8u    m_bIsIDRPic;
     Ipp8u    m_isBRef;
     Ipp8u    m_isMarked;
+
+    Ipp8u m_bitDepthLuma;
+    Ipp8u m_bdLumaFlag;
+    Ipp8u m_bitDepthChroma;
+    Ipp8u m_bdChromaFlag;
 
     RefPicList m_refPicList[2];
     Ipp32s m_mapRefIdxL1ToL0[MAX_NUM_REF_IDX];

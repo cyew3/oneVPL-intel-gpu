@@ -45,11 +45,11 @@ struct RDOQCabacState
     Ipp32u    go_rice_param;
 };
 
-
+template <typename PixType>
 class RDOQuant
 {
 public:
-     RDOQuant(H265CU* pCU, H265BsFake* bs);
+    RDOQuant(H265CU<PixType>* pCU, H265BsFake* bs, EnumTextType type);
      ~RDOQuant();
 
      template <Ipp8u rdoqCGZ, Ipp8u SBH>
@@ -70,7 +70,7 @@ private:
 
     Ipp32u      GetCoefScanIdx(Ipp32u abs_part_idx, Ipp32u width, bool bIsLuma)
     {
-        Ipp32u scanIdx = m_pCU->GetCoefScanIdx(abs_part_idx, width, bIsLuma, m_pCU->IsIntra(abs_part_idx) );
+        Ipp32u scanIdx = ((H265CU<PixType>*)m_pCU)->GetCoefScanIdx(abs_part_idx, width, bIsLuma, ((H265CU<PixType>*)m_pCU)->IsIntra(abs_part_idx) );
 
         if (scanIdx == COEFF_SCAN_ZIGZAG)
         {
@@ -121,10 +121,11 @@ private:
         CabacBits* pBits,
         Ipp32s width);
 
-    H265CU*     m_pCU;
+    H265CU<PixType>*       m_pCU;
     H265BsFake* m_bs;
     Ipp64f      m_lambda;
     CabacBits   m_cabacBits;
+    Ipp8u m_bitDepth;
 };
 
 } // namespace

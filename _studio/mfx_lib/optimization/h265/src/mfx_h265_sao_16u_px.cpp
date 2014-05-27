@@ -536,11 +536,7 @@ namespace MFX_HEVC_PP
     const int   g_skipLinesR[3] = {5, 3, 3};//YCbCr
     const int   g_skipLinesB[3] = {4, 2, 2};//YCbCr
 
-#ifndef PixType
-#define PixType Ipp8u
-#endif
-
-    void MAKE_NAME(h265_GetCtuStatistics_16u)(SAOCU_ENCODE_PARAMETERS_LIST)
+    void MAKE_NAME(h265_GetCtuStatistics_16u)(SAOCU_ENCODE_PARAMETERS_LIST_16U)
         //(
         //int compIdx,
         //const PixType* recBlk,

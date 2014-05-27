@@ -30,6 +30,7 @@
 #include "mfxdefs.h"
 #include "ippdefs.h"
 #include "ipps.h"
+#include "ippi.h"
 #include <float.h>
 
 namespace H265Enc {
@@ -69,6 +70,46 @@ static void H265_FORCEINLINE small_memcpy( void* dst, const void* src, int len )
 #endif
 }
 
+static inline IppStatus _ippsSet(Ipp8u val, Ipp8u* pDst, int len )
+{
+    return ippsSet_8u(val, pDst, len);
+}
+
+static inline IppStatus _ippsSet(Ipp16u val, Ipp16u* pDst, int len )
+{
+    return ippsSet_16s(val, (Ipp16s*)pDst, len);
+}
+
+static inline IppStatus _ippsCopy( const Ipp8u* pSrc, Ipp8u* pDst, int len )
+{
+    return ippsCopy_8u(pSrc, pDst, len);
+}
+
+static inline IppStatus _ippsCopy( const Ipp16u* pSrc, Ipp16u* pDst, int len )
+{
+    return ippsCopy_16s((Ipp16s*)pSrc, (Ipp16s*)pDst, len);
+}
+
+static inline IppStatus _ippiCopy_C1R(Ipp8u *pSrc, Ipp32s srcStepPix, Ipp8u *pDst, Ipp32s dstStepPix, IppiSize roiSize)
+{
+    return ippiCopy_8u_C1R(pSrc, srcStepPix, pDst, dstStepPix, roiSize);
+}
+
+static inline IppStatus _ippiCopy_C1R(Ipp16u *pSrc, Ipp32s srcStepPix, Ipp16u *pDst, Ipp32s dstStepPix, IppiSize roiSize)
+{
+    return ippiCopy_16u_C1R(pSrc, srcStepPix*2, pDst, dstStepPix*2, roiSize);
+}
+
+static inline IppStatus _ippiTranspose_C1R(Ipp8u *pSrc, Ipp32s srcStepPix, Ipp8u *pDst, Ipp32s dstStepPix, IppiSize roiSize)
+{
+    return ippiTranspose_8u_C1R(pSrc, srcStepPix, pDst, dstStepPix, roiSize);
+}
+
+static inline IppStatus _ippiTranspose_C1R(Ipp16u *pSrc, Ipp32s srcStepPix, Ipp16u *pDst, Ipp32s dstStepPix, IppiSize roiSize)
+{
+    return ippiTranspose_16u_C1R(pSrc, srcStepPix*2, pDst, dstStepPix*2, roiSize);
+}
+
 //#define DEBUG_CABAC
 
 #ifdef DEBUG_CABAC
@@ -92,9 +133,6 @@ extern int DEBUG_CABAC_PRINT;
 
 #define DATA_ALIGN 64
 #define H265ENC_UNREFERENCED_PARAMETER(X) X=X
-
-#define BIT_DEPTH_LUMA 8
-#define BIT_DEPTH_CHROMA 8
 
 #define     MAX_CU_DEPTH            6 // 7                           // log2(LCUSize)
 #define     MAX_CU_SIZE             (1<<(MAX_CU_DEPTH))         // maximum allowable size of CU
@@ -149,7 +187,6 @@ extern int DEBUG_CABAC_PRINT;
 
 
 typedef Ipp16s CoeffsType;
-typedef Ipp8u PixType;
 typedef Ipp64f CostType;
 #define COST_MAX DBL_MAX
 

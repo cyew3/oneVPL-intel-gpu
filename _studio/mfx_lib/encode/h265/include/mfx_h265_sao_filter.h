@@ -34,8 +34,6 @@ namespace H265Enc {
 
 #define MAX_NUM_SAO_CLASSES  32  //(NUM_SAO_EO_GROUPS > NUM_SAO_BO_GROUPS)?NUM_SAO_EO_GROUPS:NUM_SAO_BO_GROUPS
 
-#define SAO_MAX_OFFSET_QVAL (7)
-
 enum
 {
     SAO_OPT_ALL_MODES       = 1,
@@ -152,7 +150,7 @@ struct SaoOffsetParam
   int type_idx;     //EO_0, EO_90, EO_135, EO_45, BO. MERGE: left, above
   int typeAuxInfo; //BO: starting band index
   int offset[MAX_NUM_SAO_CLASSES];
-
+  int saoMaxOffsetQVal;
 };
 
 
@@ -184,10 +182,12 @@ public:
          int height,
          int maxCUWidth,
          int maxDepth,
+         int bitDepth,
          int saoOpt);
 
      void Close(void);
 
+     template <typename PixType>
      void EstimateCtuSao(
          mfxFrameData* orgYuv,
          mfxFrameData* recYuv,
@@ -198,6 +198,7 @@ public:
 
 
 private:
+    template <typename PixType>
     void GetCtuSaoStatistics(
         mfxFrameData* orgYuv,
         mfxFrameData* recYuv);
@@ -240,6 +241,9 @@ public:
     Ipp32s   m_numCTU_inHeight;
     Ipp32s   m_numSaoModes;
 
+    Ipp32s   m_bitDepth;
+    Ipp32s   m_saoMaxOffsetQVal;
+
     // work state
     MFX_HEVC_PP::SaoCtuStatistics    m_statData[NUM_SAO_COMPONENTS][NUM_SAO_BASE_TYPES];
     Ipp8u               m_ctxSAO[NUM_SAO_CABACSTATE_MARKERS][NUM_CABAC_CONTEXT];
@@ -263,6 +267,7 @@ public:
     SaoCtuParam* m_codedParams_TotalFrame;
 };
 
+template <typename PixType>
 class SaoDecodeFilter
 {
 public:
@@ -273,7 +278,8 @@ public:
          int width,
          int height,
          int maxCUWidth,
-         int maxDepth);
+         int maxDepth,
+         int bitDepth);
 
      void Close(void);
 
@@ -281,8 +287,8 @@ public:
          SaoOffsetParam  &saoLCUParam,
          Ipp32s typeIdx);
 
-     Ipp8u   *m_TmpU[2];
-     Ipp8u   *m_TmpL[2];
+     PixType   *m_TmpU[2];
+     PixType   *m_TmpL[2];
 
 //private:
     static const int LUMA_GROUP_NUM = 32;
@@ -294,25 +300,28 @@ public:
     Ipp32s   m_OffsetEoChroma[LUMA_GROUP_NUM];
     Ipp32s   m_OffsetEo2Chroma[LUMA_GROUP_NUM];
 
-    Ipp8u   *m_OffsetBo;
-    /*Ipp8u   *m_OffsetBo2;
-    Ipp8u   *m_OffsetBoChroma;
-    Ipp8u   *m_OffsetBo2Chroma;*/
-    Ipp8u   *m_ClipTable;
-    Ipp8u   *m_ClipTableBase;
-    Ipp8u   *m_lumaTableBo;
+    PixType   *m_OffsetBo;
+    PixType   *m_ClipTable;
+    PixType   *m_ClipTableBase;
+    PixType   *m_lumaTableBo;
 
     Ipp32u   m_PicWidth;
     Ipp32u   m_PicHeight;
     Ipp32u   m_maxCuSize;
-    Ipp32u   m_SaoBitIncreaseY;
-    Ipp32u   m_SaoBitIncreaseC;
+
+    Ipp32s   m_bitDepth;
+//    Ipp32u   m_SaoBitIncreaseY;
+//    Ipp32u   m_SaoBitIncreaseC;
+
 
 private:
     SaoDecodeFilter(const SaoDecodeFilter& ){ /* do not create copies */ }
     SaoDecodeFilter& operator=(const SaoDecodeFilter&){ return *this;}
 
 };
+
+template class SaoDecodeFilter<Ipp8u>;
+template class SaoDecodeFilter<Ipp16u>;
 
 } // namespace
 

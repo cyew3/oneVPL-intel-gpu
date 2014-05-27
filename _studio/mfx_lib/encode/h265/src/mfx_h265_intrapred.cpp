@@ -30,7 +30,6 @@ namespace H265Enc {
     extern Ipp32s cmCurIdx;
 #endif // MFX_ENABLE_CM
 
-
 void GetAngModesFromHistogram(Ipp32s xPu, Ipp32s yPu, Ipp32s puSize, Ipp8s *modes, Ipp32s numModes)
 {
 #if !defined (MFX_ENABLE_CM)
@@ -85,8 +84,9 @@ void GetAngModesFromHistogram(Ipp32s xPu, Ipp32s yPu, Ipp32s puSize, Ipp8s *mode
     }
 }
 
+template <typename PixType>
 static
-void IsAboveLeftAvailable(H265CU *pCU,
+void IsAboveLeftAvailable(H265CU<PixType> *pCU,
                           Ipp32s blockZScanIdx,
                           Ipp32s width,
                           Ipp8u ConstrainedIntraPredFlag,
@@ -118,8 +118,9 @@ void IsAboveLeftAvailable(H265CU *pCU,
     }
 }
 
+template <typename PixType>
 static
-void IsAboveAvailable(H265CU *pCU,
+void IsAboveAvailable(H265CU<PixType> *pCU,
                       Ipp32s blockZScanIdx,
                       Ipp32s width,
                       Ipp8u ConstrainedIntraPredFlag,
@@ -152,8 +153,9 @@ void IsAboveAvailable(H265CU *pCU,
     }
 }
 
+template <typename PixType>
 static
-void IsAboveRightAvailable(H265CU *pCU,
+void IsAboveRightAvailable(H265CU<PixType> *pCU,
                           Ipp32s blockZScanIdx,
                           Ipp32s width,
                           Ipp8u ConstrainedIntraPredFlag,
@@ -227,8 +229,9 @@ void IsAboveRightAvailable(H265CU *pCU,
     }
 }
 
+template <typename PixType>
 static
-void IsLeftAvailable(H265CU *pCU,
+void IsLeftAvailable(H265CU<PixType> *pCU,
                           Ipp32s blockZScanIdx,
                           Ipp32s width,
                           Ipp8u ConstrainedIntraPredFlag,
@@ -261,8 +264,9 @@ void IsLeftAvailable(H265CU *pCU,
     }
 }
 
+template <typename PixType>
 static
-void IsBelowLeftAvailable(H265CU *pCU,
+void IsBelowLeftAvailable(H265CU<PixType> *pCU,
                           Ipp32s blockZScanIdx,
                           Ipp32s width,
                           Ipp8u ConstrainedIntraPredFlag,
@@ -321,8 +325,9 @@ void IsBelowLeftAvailable(H265CU *pCU,
     }
 }
 
+template <typename PixType>
 static
-void GetAvailablity(H265CU *pCU,
+void GetAvailablity(H265CU<PixType> *pCU,
                     Ipp32s blockZScanIdx,
                     Ipp32s width,
                     Ipp8u ConstrainedIntraPredFlag,
@@ -346,6 +351,7 @@ void GetAvailablity(H265CU *pCU,
     IsAboveRightAvailable(pCU, blockZScanIdx, width, ConstrainedIntraPredFlag, inNeighborFlags, outNeighborFlags);
 }
 
+template <typename PixType>
 static
 void GetPredPelsLuma(H265VideoParam *par, PixType* src, PixType* PredPel,
                      Ipp8u* neighborFlags, Ipp32s width, Ipp32s srcPitch)
@@ -357,7 +363,7 @@ void GetPredPelsLuma(H265VideoParam *par, PixType* src, PixType* PredPel,
     Ipp32s numIntraNeighbor;
     Ipp32s i, j;
 
-    dcval = (1 << (BIT_DEPTH_LUMA - 1));
+    dcval = (1 << (par->bitDepthLuma - 1));
 
     numIntraNeighbor = 0;
 
@@ -519,12 +525,13 @@ void GetPredPelsLuma(H265VideoParam *par, PixType* src, PixType* PredPel,
     }
 }
 
+template <typename PixType>
 static
 void GetPredPelsChromaNV12(H265VideoParam *par, PixType* src, PixType* PredPel,
                            Ipp8u* neighborFlags, Ipp32s width, Ipp32s srcPitch)
 {
     PixType* tmpSrcPtr;
-    PixType dcval = (1 << (BIT_DEPTH_CHROMA - 1));
+    PixType dcval = (1 << (par->bitDepthChroma - 1));
     Ipp32s minTUSize = (1 << par->QuadtreeTULog2MinSize) >> 1;
     Ipp32s numUnitsInCU = width >> (par->QuadtreeTULog2MinSize - 1);
     Ipp32s numIntraNeighbor;
@@ -538,12 +545,12 @@ void GetPredPelsChromaNV12(H265VideoParam *par, PixType* src, PixType* PredPel,
 
     if (numIntraNeighbor == 0) {
         // Fill border with DC value
-        memset(PredPel, dcval, 4 * 2 * width + 2);
+        _ippsSet(dcval, PredPel, 4 * 2 * width + 2);
 
     } else if (numIntraNeighbor == (4*numUnitsInCU + 1)) {
         // Fill top-left border with rec. samples
         // Fill top and top right border with rec. samples
-        ippsCopy_8u(src - srcPitch - 2, PredPel, 4 * width + 2);
+        _ippsCopy(src - srcPitch - 2, PredPel, 4 * width + 2);
 
         // Fill left and below left border with rec. samples
         tmpSrcPtr = src - 2;
@@ -658,7 +665,8 @@ void GetPredPelsChromaNV12(H265VideoParam *par, PixType* src, PixType* PredPel,
     }
 }
 
-void H265CU::IntraPredTu(Ipp32s blockZScanIdx, Ipp32s width, Ipp32s pred_mode, Ipp8u is_luma)
+template <typename PixType>
+void H265CU<PixType>::IntraPredTu(Ipp32s blockZScanIdx, Ipp32s width, Ipp32s pred_mode, Ipp8u is_luma)
 {
     PixType PredPel[4*2*64+1];
     Ipp32s PURasterIdx = h265_scan_z2r4[blockZScanIdx];
@@ -694,7 +702,7 @@ void H265CU::IntraPredTu(Ipp32s blockZScanIdx, Ipp32s width, Ipp32s pred_mode, I
 
         if (m_par->csps->strong_intra_smoothing_enabled_flag && isFilterNeeded)
         {
-            Ipp32s threshold = 1 << (BIT_DEPTH_LUMA - 5);
+            Ipp32s threshold = 1 << (m_par->bitDepthLuma - 5);
 
             Ipp32s topLeft = PredPel[0];
             Ipp32s topRight = PredPel[2*width];
@@ -708,32 +716,32 @@ void H265CU::IntraPredTu(Ipp32s blockZScanIdx, Ipp32s width, Ipp32s pred_mode, I
 
             if (width == 32 && (bilinearLeft && bilinearAbove))
             {
-                MFX_HEVC_PP::NAME(h265_FilterPredictPels_Bilinear_8u)(PredPel, width, topLeft, bottomLeft, topRight);
+                h265_FilterPredictPels_Bilinear(PredPel, width, topLeft, bottomLeft, topRight);
             }
             else
             {
-                MFX_HEVC_PP::NAME(h265_FilterPredictPels_8u)(PredPel, width);
+                h265_FilterPredictPels(PredPel, width);
             }
         } else if (isFilterNeeded) {
-            MFX_HEVC_PP::NAME(h265_FilterPredictPels_8u)(PredPel, width);
+            h265_FilterPredictPels(PredPel, width);
         }
 
         switch(pred_mode)
         {
         case INTRA_PLANAR:
-            MFX_HEVC_PP::NAME(h265_PredictIntra_Planar_8u)(PredPel, pRec, pitch, width);
+            h265_PredictIntra_Planar(PredPel, pRec, pitch, width);
             break;
         case INTRA_DC:
-            MFX_HEVC_PP::h265_PredictIntra_DC_8u(PredPel, pRec, pitch, width, is_luma);
+            h265_PredictIntra_DC(PredPel, pRec, pitch, width, is_luma);
             break;
         case INTRA_VER:
-            MFX_HEVC_PP::h265_PredictIntra_Ver_8u(PredPel, pRec, pitch, width, 8, is_luma);
+            h265_PredictIntra_Ver(PredPel, pRec, pitch, width, m_par->bitDepthLuma, is_luma);
             break;
         case INTRA_HOR:
-            MFX_HEVC_PP::h265_PredictIntra_Hor_8u(PredPel, pRec, pitch, width, 8, is_luma);
+            h265_PredictIntra_Hor(PredPel, pRec, pitch, width, m_par->bitDepthLuma, is_luma);
             break;
         default:
-            MFX_HEVC_PP::NAME(h265_PredictIntra_Ang_8u)(pred_mode, PredPel, pRec, pitch, width);
+            h265_PredictIntra_Ang(pred_mode, PredPel, pRec, pitch, width);
         }
     }
     else
@@ -746,24 +754,25 @@ void H265CU::IntraPredTu(Ipp32s blockZScanIdx, Ipp32s width, Ipp32s pred_mode, I
         switch(pred_mode)
         {
         case INTRA_PLANAR:
-            MFX_HEVC_PP::h265_PredictIntra_Planar_ChromaNV12_8u(PredPel, pRec, pitch, width);
+            h265_PredictIntra_Planar_ChromaNV12(PredPel, pRec, pitch, width);
             break;
         case INTRA_DC:
-            MFX_HEVC_PP::h265_PredictIntra_DC_ChromaNV12_8u(PredPel, pRec, pitch, width);
+            h265_PredictIntra_DC_ChromaNV12(PredPel, pRec, pitch, width);
             break;
         case INTRA_VER:
-            MFX_HEVC_PP::h265_PredictIntra_Ver_ChromaNV12_8u(PredPel, pRec, pitch, width);
+            h265_PredictIntra_Ver_ChromaNV12(PredPel, pRec, pitch, width);
             break;
         case INTRA_HOR:
-            MFX_HEVC_PP::h265_PredictIntra_Hor_ChromaNV12_8u(PredPel, pRec, pitch, width);
+            h265_PredictIntra_Hor_ChromaNV12(PredPel, pRec, pitch, width);
             break;
         default:
-            MFX_HEVC_PP::h265_PredictIntra_Ang_ChromaNV12_8u(PredPel, pRec, pitch, width, pred_mode);
+            h265_PredictIntra_Ang_ChromaNV12(PredPel, pRec, pitch, width, pred_mode);
         }
     }
 }
 
-Ipp32s GetIntraLumaBitCost(H265CU * cu, Ipp32u abs_part_idx)
+template <typename PixType>
+Ipp32s GetIntraLumaBitCost(H265CU<PixType> * cu, Ipp32u abs_part_idx)
 {
     if (!cu->m_rdOptFlag)
         return 0;
@@ -841,7 +850,8 @@ void SortLumaModesByCost(CostType *costs, Ipp8u *modes, Ipp32s *bits, Ipp32s num
 }
 
 #define NO_TRANSFORM_SPLIT_INTRAPRED_STAGE1 0
-void H265CU::IntraLumaModeDecision(Ipp32s absPartIdx, Ipp32u offset, Ipp8u depth, Ipp8u trDepth)
+template <typename PixType>
+void H265CU<PixType>::IntraLumaModeDecision(Ipp32s absPartIdx, Ipp32u offset, Ipp8u depth, Ipp8u trDepth)
 {
     __ALIGN32 PixType predPel[4*64+1];
     __ALIGN32 PixType predPelFilt[4*64+1];
@@ -886,7 +896,7 @@ void H265CU::IntraLumaModeDecision(Ipp32s absPartIdx, Ipp32u offset, Ipp8u depth
 
         if (m_par->csps->strong_intra_smoothing_enabled_flag && width == 32)
         {
-            Ipp32s threshold = 1 << (BIT_DEPTH_LUMA - 5);
+            Ipp32s threshold = 1 << (m_par->bitDepthLuma - 5);
             Ipp32s topLeft = predPel[0];
             Ipp32s topRight = predPel[2*width];
             Ipp32s midHor = predPel[width];
@@ -896,21 +906,21 @@ void H265CU::IntraLumaModeDecision(Ipp32s absPartIdx, Ipp32u offset, Ipp8u depth
             bool bilinearAbove = abs(topLeft + bottomLeft - 2 * midVer) < threshold;
 
             if (bilinearLeft && bilinearAbove)
-                MFX_HEVC_PP::NAME(h265_FilterPredictPels_Bilinear_8u)(predPelFilt, width, topLeft, bottomLeft, topRight);
+                h265_FilterPredictPels_Bilinear(predPelFilt, width, topLeft, bottomLeft, topRight);
             else
-                MFX_HEVC_PP::NAME(h265_FilterPredictPels_8u)(predPelFilt, width);
+                h265_FilterPredictPels(predPelFilt, width);
         } else {
-            MFX_HEVC_PP::NAME(h265_FilterPredictPels_8u)(predPelFilt, width);
+            h265_FilterPredictPels(predPelFilt, width);
         }
 
         IppiSize roi = {width, width};
-        ippiTranspose_8u_C1R(src, m_pitchSrc, m_tuSrcTransposed, width, roi);
+        _ippiTranspose_C1R(src, m_pitchSrc, m_tuSrcTransposed, width, roi);
 
         PixType *predPtr = m_predIntraAll;
 
         bool needFilter = (INTRA_HOR > h265_filteredModes[h265_log2table[width - 4] - 2]);
-        Ipp8u *predPels = needFilter ? predPelFilt : predPel;
-        MFX_HEVC_PP::NAME(h265_PredictIntra_Planar_8u)(predPels, predPtr, width, width);
+        PixType *predPels = needFilter ? predPelFilt : predPel;
+        h265_PredictIntra_Planar(predPels, predPtr, width, width);
         m_intraCosts[INTRA_PLANAR] = tuHad(src, m_pitchSrc, predPtr, width, width, width);
         predPtr += width * width;
         m_data = m_dataSave;
@@ -919,7 +929,7 @@ void H265CU::IntraLumaModeDecision(Ipp32s absPartIdx, Ipp32u offset, Ipp8u depth
         m_intraCosts[INTRA_PLANAR] += m_intraBits[INTRA_PLANAR] * lambdaSatd;
         m_intraModes[INTRA_PLANAR] = INTRA_PLANAR;
 
-        MFX_HEVC_PP::h265_PredictIntra_DC_8u(predPel, predPtr, width, width, 1);
+        h265_PredictIntra_DC(predPel, predPtr, width, width, 1);
         m_intraCosts[INTRA_DC] = tuHad(src, m_pitchSrc, predPtr, width, width, width);
         predPtr += width * width;
         FillSubPartIntraLumaDir(absPartIdx, depth, trDepth, INTRA_DC);
@@ -933,10 +943,10 @@ void H265CU::IntraLumaModeDecision(Ipp32s absPartIdx, Ipp32u offset, Ipp8u depth
 
                 Ipp32s diff = MIN(abs(lumaDir - 10), abs(lumaDir - 26));
                 bool needFilter = (diff > h265_filteredModes[h265_log2table[width - 4] - 2]);
-                Ipp8u *predPels = needFilter ? predPelFilt : predPel;
+                PixType *predPels = needFilter ? predPelFilt : predPel;
                 PixType *predPtr = m_predIntraAll + lumaDir * width * width;
 
-                MFX_HEVC_PP::NAME(h265_PredictIntra_Ang_NoTranspose_8u)(lumaDir, predPels, predPtr,
+                h265_PredictIntra_Ang_NoTranspose(lumaDir, predPels, predPtr,
                                                                         width, width);
                 m_intraCosts[lumaDir] = (lumaDir < 18)
                     ? tuHad(m_tuSrcTransposed, width, predPtr, width, width, width)
@@ -950,8 +960,8 @@ void H265CU::IntraLumaModeDecision(Ipp32s absPartIdx, Ipp32u offset, Ipp8u depth
         }
         else {
             (m_par->intraAngModes == 2)
-                ? MFX_HEVC_PP::NAME(h265_PredictIntra_Ang_All_Even_8u)(predPel, predPelFilt, predPtr, width)
-                : MFX_HEVC_PP::NAME(h265_PredictIntra_Ang_All_8u)(predPel, predPelFilt, predPtr, width);
+                ? h265_PredictIntra_Ang_All_Even(predPel, predPelFilt, predPtr, width)
+                : h265_PredictIntra_Ang_All(predPel, predPelFilt, predPtr, width, m_par->bitDepthLuma);
 
             Ipp8u step = (Ipp8u)m_par->intraAngModes;
             for (Ipp8u lumaDir = 2; lumaDir < 35; lumaDir += step, predPtr += width * width * step) {
@@ -1024,11 +1034,10 @@ void H265CU::IntraLumaModeDecision(Ipp32s absPartIdx, Ipp32u offset, Ipp8u depth
                 Ipp8u lumaDir = m_intraModes[i];
                 Ipp32s diff = MIN(abs(lumaDir - 10), abs(lumaDir - 26));
                 bool needFilter = (diff > h265_filteredModes[h265_log2table[width - 4] - 2]);
-                Ipp8u * predPels = needFilter ? predPelFilt : predPel;
+                PixType *predPels = needFilter ? predPelFilt : predPel;
                 PixType *predPtr = m_predIntraAll + lumaDir * width * width;
 
-                MFX_HEVC_PP::NAME(h265_PredictIntra_Ang_NoTranspose_8u)(lumaDir, predPels, predPtr,
-                                                                        width, width);
+                h265_PredictIntra_Ang_NoTranspose(lumaDir, predPels, predPtr, width, width);
                 m_intraCosts[i] = (lumaDir < 18)
                     ? tuHad(m_tuSrcTransposed, width, predPtr, width, width, width)
                     : tuHad(src, m_pitchSrc, predPtr, width, width, width);
@@ -1053,7 +1062,8 @@ void H265CU::IntraLumaModeDecision(Ipp32s absPartIdx, Ipp32u offset, Ipp8u depth
 }
 
 
-void H265CU::IntraLumaModeDecisionRDO(Ipp32s absPartIdx, Ipp32u offset, Ipp8u depth, Ipp8u trDepth)
+template <typename PixType>
+void H265CU<PixType>::IntraLumaModeDecisionRDO(Ipp32s absPartIdx, Ipp32u offset, Ipp8u depth, Ipp8u trDepth)
 {
     Ipp32u numParts = (m_par->NumPartInCU >> ((depth + trDepth) << 1));
     Ipp8u  partSize = (Ipp8u)(trDepth == 1 ? PART_SIZE_NxN : PART_SIZE_2Nx2N);
@@ -1114,7 +1124,7 @@ void H265CU::IntraLumaModeDecisionRDO(Ipp32s absPartIdx, Ipp32u offset, Ipp8u de
     Ipp32s puRasterIdx = h265_scan_z2r4[absPartIdx];
     Ipp32s puStartRow = puRasterIdx >> 4;
     Ipp32s puStartColumn = puRasterIdx & 15;
-    Ipp8u *rec = m_yRec + ((puStartRow * m_pitchRec + puStartColumn) << m_par->QuadtreeTULog2MinSize);
+    PixType *rec = m_yRec + ((puStartRow * m_pitchRec + puStartColumn) << m_par->QuadtreeTULog2MinSize);
 
     m_intraCosts[0] = COST_MAX;
     bool lastCandIsBest = 0;
@@ -1135,7 +1145,7 @@ void H265CU::IntraLumaModeDecisionRDO(Ipp32s absPartIdx, Ipp32u offset, Ipp8u de
             if (!lastCandIsBest) { // save current best
                 if (m_rdOptFlag)
                     m_bsf->CtxSave(bestCtx, 0, NUM_CABAC_CONTEXT);
-                ippiCopy_8u_C1R(rec, m_pitchRec, m_recLumaSaveCu[depth + trDepth], width, roi);
+                _ippiCopy_C1R(rec, m_pitchRec, m_recLumaSaveCu[depth + trDepth], width, roi);
             }
         }
     }
@@ -1143,12 +1153,13 @@ void H265CU::IntraLumaModeDecisionRDO(Ipp32s absPartIdx, Ipp32u offset, Ipp8u de
     if (!lastCandIsBest) {
         if (m_rdOptFlag)
             m_bsf->CtxRestore(bestCtx, 0, NUM_CABAC_CONTEXT);
-        ippiCopy_8u_C1R(m_recLumaSaveCu[depth + trDepth], width, rec, m_pitchRec, roi);
+        _ippiCopy_C1R(m_recLumaSaveCu[depth + trDepth], width, rec, m_pitchRec, roi);
     }
 }
 
 
-Ipp8u H265CU::GetTrSplitMode(Ipp32s abs_part_idx, Ipp8u depth, Ipp8u tr_depth, Ipp8u part_size, Ipp8u is_luma, Ipp8u strict)
+template <typename PixType>
+Ipp8u H265CU<PixType>::GetTrSplitMode(Ipp32s abs_part_idx, Ipp8u depth, Ipp8u tr_depth, Ipp8u part_size, Ipp8u is_luma, Ipp8u strict)
 {
     Ipp32s width = m_par->MaxCUSize >> (depth + tr_depth);
     Ipp8u split_mode = SPLIT_NONE;
@@ -1197,7 +1208,8 @@ Ipp8u H265CU::GetTrSplitMode(Ipp32s abs_part_idx, Ipp8u depth, Ipp8u tr_depth, I
 //}
 
 
-void H265CU::GetInitAvailablity()
+template <typename PixType>
+void H265CU<PixType>::GetInitAvailablity()
 {
     Ipp32s numMinTUInLCU = m_par->NumPartInCUSize;
 

@@ -67,8 +67,9 @@ static const Ipp32s  g_eTTable[4] = {0,3,1,2};
 #define RDOQ_DoAlgorithm(CGZ,SBH) \
     quant.DoAlgorithm<CGZ,SBH>(pSrc, pDst, log2_tr_size, bit_depth, is_slice_i, type, abs_part_idx, QP)
 
+template <typename PixType>
 void h265_quant_fwd_rdo(
-    H265CU*  pCU,
+    H265CU<PixType>*  pCU,
     Ipp16s*  pSrc,
     Ipp16s*  pDst,
     Ipp32s   log2_tr_size,
@@ -80,7 +81,7 @@ void h265_quant_fwd_rdo(
     H265BsFake *bs)
 {
 
-    RDOQuant quant(pCU, bs);
+    RDOQuant<PixType> quant(pCU, bs, type);
 
     switch((pCU->m_par->rdoqCGZFlag << 1) | pCU->m_par->SBHFlag) {
     case 0: RDOQ_DoAlgorithm(0, 0); break;
@@ -91,21 +92,46 @@ void h265_quant_fwd_rdo(
     }
 } // void h265_quant_fwd_rdo(...)
 
+template void h265_quant_fwd_rdo<Ipp8u>(H265CU<Ipp8u>*  pCU,
+    Ipp16s*  pSrc,
+    Ipp16s*  pDst,
+    Ipp32s   log2_tr_size,
+    Ipp32s   bit_depth,
+    Ipp32s   is_slice_i,
+    EnumTextType  type,
+    Ipp32u   abs_part_idx,
+    Ipp32s   QP,
+    H265BsFake *bs);
+
+template void h265_quant_fwd_rdo<Ipp16u>(H265CU<Ipp16u>*  pCU,
+    Ipp16s*  pSrc,
+    Ipp16s*  pDst,
+    Ipp32s   log2_tr_size,
+    Ipp32s   bit_depth,
+    Ipp32s   is_slice_i,
+    EnumTextType  type,
+    Ipp32u   abs_part_idx,
+    Ipp32s   QP,
+    H265BsFake *bs);
+
 //---------------------------------------------------------
 // RDOQuant
 //---------------------------------------------------------
-RDOQuant::RDOQuant(H265CU* pCU, H265BsFake* bs)
+
+template <typename PixType>
+RDOQuant<PixType>::RDOQuant(H265CU<PixType>* pCU, H265BsFake* bs, EnumTextType type)
 {
     m_pCU    = pCU;
     m_bs     = bs;
     m_lambda = m_pCU->m_rdLambda;
+    m_bitDepth = type == TEXT_LUMA ? pCU->m_par->bitDepthLuma : pCU->m_par->bitDepthChroma;
 
     m_lambda *= 256;//to meet HM10 code
 
 } // RDOQuant::RDOQuant(H265CU* pcCU, H265BsFake* bs)
 
-
-RDOQuant::~RDOQuant()
+template <typename PixType>
+RDOQuant<PixType>::~RDOQuant()
 {
     m_pCU = NULL;
     m_bs   = NULL;
@@ -125,8 +151,8 @@ Ipp32s GetEntropyBits(
     return (bits << 7);
 }
 
-
-void RDOQuant::EstimateLastXYBits(
+template <typename PixType>
+void RDOQuant<PixType>::EstimateLastXYBits(
     CabacBits* pBits,
     Ipp32s width)
 {
@@ -161,8 +187,8 @@ void RDOQuant::EstimateLastXYBits(
 
 } // void RDOQuant::EstimateLastXYBits( ... )
 
-
-void RDOQuant::EstimateCabacBits(Ipp32s log2_tr_size )
+template <typename PixType>
+void RDOQuant<PixType>::EstimateCabacBits(Ipp32s log2_tr_size )
 {
     memset(&m_cabacBits, 0, sizeof(CabacBits));
 
@@ -361,9 +387,9 @@ void EncodeOneCoeff(
 
 } // void EncodeOneCoeff(...)
 
-
+template <typename PixType>
 template <Ipp8u rdoqCGZ, Ipp8u SBH>
-void RDOQuant::DoAlgorithm(
+void RDOQuant<PixType>::DoAlgorithm(
     Ipp16s*  pSrc,
     Ipp16s*  pDst,
     Ipp32s   log2_tr_size,
@@ -752,7 +778,7 @@ void RDOQuant::DoAlgorithm(
         Ipp32s qp_rem = h265_qp_rem[QP];
         Ipp32s qp6 = h265_qp6[QP];
         Ipp32s scale = h265_quant_table_inv[qp_rem] * h265_quant_table_inv[qp_rem] * (1<<(qp6<<1));
-        Ipp64s rd_factor = (Ipp64s) (scale / m_lambda / 16 / (1<<DISTORTION_PRECISION_ADJUSTMENT(2*(BIT_DEPTH_LUMA-8))) + 0.5);
+        Ipp64s rd_factor = (Ipp64s) (scale / m_lambda / 16 / (1<<DISTORTION_PRECISION_ADJUSTMENT(2*(m_bitDepth-8))) + 0.5);
         Ipp32s lastCG = -1;
 
         const Ipp32s last_scan_set = (width * height - 1) >> LOG2_SCAN_SET_SIZE;
@@ -886,8 +912,8 @@ Ipp64f GetEPBits( )
     return 256 << 7;
 }
 
-
-Ipp64f RDOQuant::GetCost_EncodeOneCoeff(
+template <typename PixType>
+Ipp64f RDOQuant<PixType>::GetCost_EncodeOneCoeff(
     Ipp32u  qlevel,
     const RDOQCabacState & cabac)
 {
@@ -948,7 +974,8 @@ Ipp64f RDOQuant::GetCost_EncodeOneCoeff(
 } // Ipp64f RDOQuant::GetCost_EncodeOneCoeff(
 
 
-Ipp32u RDOQuant::GetBestQuantLevel (
+template <typename PixType>
+Ipp32u RDOQuant<PixType>::GetBestQuantLevel (
     Ipp64f&  cost_nz_level,
     Ipp64f&  cost_zero_level,
     Ipp64f&  cost_sig,
@@ -998,14 +1025,16 @@ Ipp32u RDOQuant::GetBestQuantLevel (
 } // Ipp32u RDOQuant::GetBestQuantLevel (...)
 
 
-Ipp64f RDOQuant::GetCost(Ipp64f bit_cost)
+template <typename PixType>
+Ipp64f RDOQuant<PixType>::GetCost(Ipp64f bit_cost)
 {
     return m_lambda * bit_cost;
 
 } // Ipp64f RDOQuant::GetCost(Ipp64f bit_cost)
 
 
-Ipp64f RDOQuant::GetCost_SigCoef(
+template <typename PixType>
+Ipp64f RDOQuant<PixType>::GetCost_SigCoef(
     Ipp16u  code,
     Ipp32u  ctx_inc)
 {
@@ -1014,7 +1043,8 @@ Ipp64f RDOQuant::GetCost_SigCoef(
 } // Ipp64f RDOQuant::GetCost_SigCoef(...)
 
 
-Ipp64f RDOQuant::GetCost_SigCoeffGroup  (
+template <typename PixType>
+Ipp64f RDOQuant<PixType>::GetCost_SigCoeffGroup  (
     Ipp16u  code,
     Ipp32u  ctx_inc )
 {
@@ -1023,7 +1053,8 @@ Ipp64f RDOQuant::GetCost_SigCoeffGroup  (
 } // Ipp64f RDOQuant::GetCost_SigCoeffGroup(...)
 
 
-Ipp64f RDOQuant::GetCost_Cbf(
+template <typename PixType>
+Ipp64f RDOQuant<PixType>::GetCost_Cbf(
     Ipp16u  code,
     Ipp32u  ctx_inc,
     bool    isRootCbf)
@@ -1033,7 +1064,8 @@ Ipp64f RDOQuant::GetCost_Cbf(
 } // Ipp64f RDOQuant::GetCost_Cbf(...)
 
 
-Ipp64f RDOQuant::GetCost_LastXY(
+template <typename PixType>
+Ipp64f RDOQuant<PixType>::GetCost_LastXY(
     Ipp32u pos_x,
     Ipp32u pos_y)
 {

@@ -244,6 +244,12 @@ namespace MFX_HEVC_PP
     #define SAOCU_ENCODE_PARAMETERS_LIST int compIdx, const Ipp8u* recBlk, int recStride, const Ipp8u* orgBlk, int orgStride, int width, \
         int height, int shift,  const MFX_HEVC_PP::CTBBorders& borders, int numSaoModes, MFX_HEVC_PP::SaoCtuStatistics* statsDataTypes
 
+    #define SAOCU_ENCODE_PARAMETERS_LIST_16U int compIdx, const Ipp16u* recBlk, int recStride, const Ipp16u* orgBlk, int orgStride, int width, \
+        int height, int shift,  const MFX_HEVC_PP::CTBBorders& borders, int numSaoModes, MFX_HEVC_PP::SaoCtuStatistics* statsDataTypes
+
+    #define SAOCU_ENCODE_PARAMETERS_LIST_CALL compIdx, recBlk, recStride, orgBlk, orgStride, width, \
+        height, shift,  borders, numSaoModes,statsDataTypes
+
     typedef void(* PTR_GetCtuStatistics_8u)( SAOCU_ENCODE_PARAMETERS_LIST );
 
     // [PTR.IntraPredict]
@@ -821,6 +827,10 @@ namespace MFX_HEVC_PP
         Ipp32s pitch,
         Ipp32s width);
 
+    void h265_PredictIntra_Ang_All_16u_px(Ipp16u* PredPel, Ipp16u* FiltPel, Ipp16u* pels, Ipp32s width, Ipp32u bit_depth);
+    void h265_PredictIntra_Ang_NoTranspose_16u_px(Ipp32s mode, Ipp16u* PredPel, Ipp16u* pels, Ipp32s pitch, Ipp32s width);
+    void h265_PredictIntra_Ang_All_Even_16u_px(Ipp16u* PredPel, Ipp16u* FiltPel, Ipp16u* pels, Ipp32s width);
+
     void h265_PredictIntra_Planar_ChromaNV12_16u(Ipp16u* PredPel, Ipp16u* pDst, Ipp32s dstStride, Ipp32s blkSize);
     void h265_PredictIntra_DC_ChromaNV12_16u(Ipp16u* PredPel, Ipp16u* pDst, Ipp32s dstStride, Ipp32s blkSize);
     void h265_PredictIntra_Ang_ChromaNV12_16u(Ipp16u* PredPel, Ipp16u* pDst, Ipp32s dstStride, Ipp32s blkSize, Ipp32u dirMode);
@@ -830,48 +840,10 @@ namespace MFX_HEVC_PP
     void h265_FilterPredictPels_16u(Ipp16u* PredPel, Ipp32s width);
     void h265_FilterPredictPels_Bilinear_16u(Ipp16u* pSrcDst, int width, int topLeft, int bottomLeft, int topRight);
 
-    inline void h265_FilterPredictPels(Ipp8u* PredPel, Ipp32s width)
-    {
-        MFX_HEVC_PP::NAME(h265_FilterPredictPels_8u)(PredPel, width);
-    }
-
-    inline void h265_FilterPredictPels(Ipp16u* PredPel, Ipp32s width)
-    {
-        h265_FilterPredictPels_16u(PredPel, width);
-    }
-
-    inline void h265_FilterPredictPels_Bilinear(Ipp8u* pSrcDst, int width, int topLeft, int bottomLeft, int topRight)
-    {
-        MFX_HEVC_PP::NAME(h265_FilterPredictPels_Bilinear_8u)(pSrcDst, width, topLeft, bottomLeft, topRight);
-    }
-
-    inline void h265_FilterPredictPels_Bilinear(Ipp16u* pSrcDst, int width, int topLeft, int bottomLeft, int topRight)
-    {
-        h265_FilterPredictPels_Bilinear_16u(pSrcDst, width, topLeft, bottomLeft, topRight);
-    }
-
     void h265_GetPredPelsLuma_16u(Ipp16u* pSrc, Ipp16u* PredPel, Ipp32s blkSize, Ipp32s srcPitch, Ipp32u tpIf, Ipp32u lfIf, Ipp32u tlIf, Ipp32u bit_depth);
     void h265_GetPredPelsChromaNV12_16u(Ipp16u* pSrc, Ipp16u* pPredPel, Ipp32s blkSize, Ipp32s srcPitch, Ipp32u tpIf, Ipp32u lfIf, Ipp32u tlIf, Ipp32u bit_depth);
 
-    inline void h265_GetPredPelsLuma(Ipp16u* pSrc, Ipp16u* PredPel, Ipp32s blkSize, Ipp32s srcPitch, Ipp32u tpIf, Ipp32u lfIf, Ipp32u tlIf, Ipp32u bit_depth)
-    {
-        h265_GetPredPelsLuma_16u(pSrc, PredPel, blkSize, srcPitch, tpIf, lfIf, tlIf, bit_depth);
-    }
-
-    inline void h265_GetPredPelsLuma(Ipp8u* pSrc, Ipp8u* PredPel, Ipp32s blkSize, Ipp32s srcPitch, Ipp32u tpIf, Ipp32u lfIf, Ipp32u tlIf, Ipp32u )
-    {
-        h265_GetPredPelsLuma_8u(pSrc, PredPel, blkSize, srcPitch, tpIf, lfIf, tlIf);
-    }
-
-    inline void h265_GetPredPelsChromaNV12(Ipp16u* pSrc, Ipp16u* PredPel, Ipp32s blkSize, Ipp32s srcPitch, Ipp32u tpIf, Ipp32u lfIf, Ipp32u tlIf, Ipp32u bit_depth)
-    {
-        h265_GetPredPelsChromaNV12_16u(pSrc, PredPel, blkSize, srcPitch, tpIf, lfIf, tlIf, bit_depth);
-    }
-
-    inline void h265_GetPredPelsChromaNV12(Ipp8u* pSrc, Ipp8u* PredPel, Ipp32s blkSize, Ipp32s srcPitch, Ipp32u tpIf, Ipp32u lfIf, Ipp32u tlIf, Ipp32u )
-    {
-        h265_GetPredPelsChromaNV12_8u(pSrc, PredPel, blkSize, srcPitch, tpIf, lfIf, tlIf);
-    }
+    void h265_GetCtuStatistics_16u_px(SAOCU_ENCODE_PARAMETERS_LIST_16U);
 
     /* interpolation, version from Jon/Ken */
     void Interp_NoAvg(
@@ -974,6 +946,217 @@ namespace MFX_HEVC_PP
         MFX_HEVC_PP::NAME(h265_ProcessSaoCu_Luma_16u)(pRec, stride, saoType, tmpL, tmpU, maxCUWidth, maxCUHeight,
             picWidth, picHeight, pOffsetEo, pOffsetBo, pClipTable, CUPelX, CUPelY, pbBorderAvail);
     }
+
+    static inline Ipp32s h265_FilterEdgeLuma_I(H265EdgeData *edge, Ipp8u *srcDst, Ipp32s srcDstStride, Ipp32s dir, Ipp32u/* bit_depth*/)
+    {
+        return MFX_HEVC_PP::NAME(h265_FilterEdgeLuma_8u_I)(edge, srcDst, srcDstStride, dir);
+    }
+
+    static inline Ipp32s h265_FilterEdgeLuma_I(H265EdgeData *edge, Ipp16u *srcDst, Ipp32s srcDstStride, Ipp32s dir, Ipp32u bit_depth)
+    {
+        return MFX_HEVC_PP::NAME(h265_FilterEdgeLuma_16u_I)(edge, srcDst, srcDstStride, dir, bit_depth);
+    }
+
+    static inline void h265_FilterEdgeChroma_Interleaved_I(H265EdgeData *edge, Ipp8u *srcDst, Ipp32s srcDstStride, Ipp32s dir, Ipp32s chromaQpCb, Ipp32s chromaQpCr, Ipp32u/* bit_depth*/)
+    {
+        MFX_HEVC_PP::NAME(h265_FilterEdgeChroma_Interleaved_8u_I)(edge, srcDst, srcDstStride, dir, chromaQpCb, chromaQpCr);
+    }
+
+    static inline void h265_FilterEdgeChroma_Interleaved_I(H265EdgeData *edge, Ipp16u *srcDst, Ipp32s srcDstStride, Ipp32s dir, Ipp32s chromaQpCb, Ipp32s chromaQpCr, Ipp32u bit_depth)
+    {
+        MFX_HEVC_PP::NAME(h265_FilterEdgeChroma_Interleaved_16u_I)(edge, srcDst, srcDstStride, dir, chromaQpCb, chromaQpCr, bit_depth);
+    }
+
+    static inline void h265_FilterEdgeChroma_Plane_I(H265EdgeData *edge, Ipp8u *srcDst, Ipp32s srcDstStride, Ipp32s dir, Ipp32s chromaQp, Ipp32u/* bit_depth*/)
+    {
+        MFX_HEVC_PP::NAME(h265_FilterEdgeChroma_Plane_8u_I)(edge, srcDst, srcDstStride, dir, chromaQp);
+    }
+
+    static inline void h265_FilterEdgeChroma_Plane_I(H265EdgeData *edge, Ipp16u *srcDst, Ipp32s srcDstStride, Ipp32s dir, Ipp32s chromaQp, Ipp32u bit_depth)
+    {
+        MFX_HEVC_PP::NAME(h265_FilterEdgeChroma_Plane_16u_I)(edge, srcDst, srcDstStride, dir, chromaQp, bit_depth);
+    }
+
+    inline void h265_GetPredPelsLuma(Ipp16u* pSrc, Ipp16u* PredPel, Ipp32s blkSize, Ipp32s srcPitch, Ipp32u tpIf, Ipp32u lfIf, Ipp32u tlIf, Ipp32u bit_depth)
+    {
+        h265_GetPredPelsLuma_16u(pSrc, PredPel, blkSize, srcPitch, tpIf, lfIf, tlIf, bit_depth);
+    }
+
+    inline void h265_GetPredPelsLuma(Ipp8u* pSrc, Ipp8u* PredPel, Ipp32s blkSize, Ipp32s srcPitch, Ipp32u tpIf, Ipp32u lfIf, Ipp32u tlIf, Ipp32u )
+    {
+        h265_GetPredPelsLuma_8u(pSrc, PredPel, blkSize, srcPitch, tpIf, lfIf, tlIf);
+    }
+
+    inline void h265_GetPredPelsChromaNV12(Ipp16u* pSrc, Ipp16u* PredPel, Ipp32s blkSize, Ipp32s srcPitch, Ipp32u tpIf, Ipp32u lfIf, Ipp32u tlIf, Ipp32u bit_depth)
+    {
+        h265_GetPredPelsChromaNV12_16u(pSrc, PredPel, blkSize, srcPitch, tpIf, lfIf, tlIf, bit_depth);
+    }
+
+    inline void h265_GetPredPelsChromaNV12(Ipp8u* pSrc, Ipp8u* PredPel, Ipp32s blkSize, Ipp32s srcPitch, Ipp32u tpIf, Ipp32u lfIf, Ipp32u tlIf, Ipp32u )
+    {
+        h265_GetPredPelsChromaNV12_8u(pSrc, PredPel, blkSize, srcPitch, tpIf, lfIf, tlIf);
+    }
+
+    static inline void h265_FilterPredictPels(Ipp8u* PredPel, Ipp32s width)
+    {
+        MFX_HEVC_PP::NAME(h265_FilterPredictPels_8u)(PredPel, width);
+    }
+
+    static inline void h265_FilterPredictPels(Ipp16u* PredPel, Ipp32s width)
+    {
+        h265_FilterPredictPels_16u(PredPel, width);
+    }
+
+    static inline void h265_FilterPredictPels_Bilinear(Ipp8u* pSrcDst, int width, int topLeft, int bottomLeft, int topRight)
+    {
+        MFX_HEVC_PP::NAME(h265_FilterPredictPels_Bilinear_8u)(pSrcDst, width, topLeft, bottomLeft, topRight);
+    }
+
+    static inline void h265_FilterPredictPels_Bilinear(Ipp16u* pSrcDst, int width, int topLeft, int bottomLeft, int topRight)
+    {
+        h265_FilterPredictPels_Bilinear_16u(pSrcDst, width, topLeft, bottomLeft, topRight);
+    }
+
+    static inline void h265_PredictIntra_Planar(Ipp8u* PredPel, Ipp8u* pels, Ipp32s pitch, Ipp32s width)
+    {
+        MFX_HEVC_PP::NAME(h265_PredictIntra_Planar_8u)(PredPel, pels, pitch, width);
+    }
+
+    static inline void h265_PredictIntra_Planar(Ipp16u* PredPel, Ipp16u* pels, Ipp32s pitch, Ipp32s width)
+    {
+        h265_PredictIntra_Planar_16u(PredPel, pels, pitch, width);
+    }
+
+    static inline void h265_PredictIntra_Ang(Ipp32s mode, Ipp8u* PredPel, Ipp8u* pels, Ipp32s pitch, Ipp32s width)
+    {
+        return MFX_HEVC_PP::NAME(h265_PredictIntra_Ang_8u)(mode, PredPel, pels, pitch, width);
+    }
+
+    static inline void h265_PredictIntra_Ang(Ipp32s mode, Ipp16u* PredPel, Ipp16u* pels, Ipp32s pitch, Ipp32s width)
+    {
+        return MFX_HEVC_PP::NAME(h265_PredictIntra_Ang_16u)(mode, PredPel, pels, pitch, width);
+    }
+        
+    static inline void h265_PredictIntra_DC(Ipp8u* PredPel, Ipp8u* pels, Ipp32s pitch, Ipp32s width, Ipp32s isLuma)
+    {
+        h265_PredictIntra_DC_8u(PredPel, pels, pitch, width, isLuma);
+    }
+
+    static inline void h265_PredictIntra_DC(Ipp16u* PredPel, Ipp16u* pels, Ipp32s pitch, Ipp32s width, Ipp32s isLuma)
+    {
+        h265_PredictIntra_DC_16u(PredPel, pels, pitch, width, isLuma);
+    }
+
+    static inline void h265_PredictIntra_Ver(Ipp8u* PredPel, Ipp8u* pels, Ipp32s pitch, Ipp32s width, Ipp32s bit_depth, Ipp32s isLuma)
+    {
+        h265_PredictIntra_Ver_8u(PredPel, pels, pitch, width, bit_depth, isLuma);
+    }
+
+    static inline void h265_PredictIntra_Ver(Ipp16u* PredPel, Ipp16u* pels, Ipp32s pitch, Ipp32s width, Ipp32s bit_depth, Ipp32s isLuma)
+    {
+        h265_PredictIntra_Ver_16u(PredPel, pels, pitch, width, bit_depth, isLuma);
+    }
+
+    static inline void h265_PredictIntra_Hor(Ipp8u* PredPel, Ipp8u* pels, Ipp32s pitch, Ipp32s width, Ipp32s bit_depth, Ipp32s isLuma)
+    {
+        h265_PredictIntra_Hor_8u(PredPel, pels, pitch, width, bit_depth, isLuma);
+    }
+
+    static inline void h265_PredictIntra_Hor(Ipp16u* PredPel, Ipp16u* pels, Ipp32s pitch, Ipp32s width, Ipp32s bit_depth, Ipp32s isLuma)
+    {
+        h265_PredictIntra_Hor_16u(PredPel, pels, pitch, width, bit_depth, isLuma);
+    }
+
+    static inline void h265_PredictIntra_Planar_ChromaNV12(Ipp8u* PredPel, Ipp8u* pDst, Ipp32s dstStride, Ipp32s blkSize)
+    {
+        h265_PredictIntra_Planar_ChromaNV12_8u(PredPel, pDst, dstStride, blkSize);
+    }
+
+    static inline void h265_PredictIntra_Planar_ChromaNV12(Ipp16u* PredPel, Ipp16u* pDst, Ipp32s dstStride, Ipp32s blkSize)
+    {
+        h265_PredictIntra_Planar_ChromaNV12_16u(PredPel, pDst, dstStride, blkSize);
+    }
+
+    static inline void h265_PredictIntra_DC_ChromaNV12(Ipp8u* PredPel, Ipp8u* pDst, Ipp32s dstStride, Ipp32s blkSize)
+    {
+        h265_PredictIntra_DC_ChromaNV12_8u(PredPel, pDst, dstStride, blkSize);
+    }
+
+    static inline void h265_PredictIntra_DC_ChromaNV12(Ipp16u* PredPel, Ipp16u* pDst, Ipp32s dstStride, Ipp32s blkSize)
+    {
+        h265_PredictIntra_DC_ChromaNV12_16u(PredPel, pDst, dstStride, blkSize);
+    }
+
+    static inline void h265_PredictIntra_Ang_ChromaNV12(Ipp8u* PredPel, Ipp8u* pDst, Ipp32s dstStride, Ipp32s blkSize, Ipp32u dirMode)
+    {
+        h265_PredictIntra_Ang_ChromaNV12_8u(PredPel, pDst, dstStride, blkSize, dirMode);
+    }
+
+    static inline void h265_PredictIntra_Ang_ChromaNV12(Ipp16u* PredPel, Ipp16u* pDst, Ipp32s dstStride, Ipp32s blkSize, Ipp32u dirMode)
+    {
+        h265_PredictIntra_Ang_ChromaNV12_16u(PredPel, pDst, dstStride, blkSize, dirMode);
+    }
+
+    static inline void h265_PredictIntra_Hor_ChromaNV12(Ipp8u* PredPel, Ipp8u* pDst, Ipp32s dstStride, Ipp32s blkSize)
+    {
+        h265_PredictIntra_Hor_ChromaNV12_8u(PredPel, pDst, dstStride, blkSize);
+    }
+
+    static inline void h265_PredictIntra_Hor_ChromaNV12(Ipp16u* PredPel, Ipp16u* pDst, Ipp32s dstStride, Ipp32s blkSize)
+    {
+        h265_PredictIntra_Hor_ChromaNV12_16u(PredPel, pDst, dstStride, blkSize);
+    }
+
+    static inline void h265_PredictIntra_Ver_ChromaNV12(Ipp8u* PredPel, Ipp8u* pDst, Ipp32s dstStride, Ipp32s blkSize)
+    {
+        h265_PredictIntra_Ver_ChromaNV12_8u(PredPel, pDst, dstStride, blkSize);
+    }
+
+    static inline void h265_PredictIntra_Ver_ChromaNV12(Ipp16u* PredPel, Ipp16u* pDst, Ipp32s dstStride, Ipp32s blkSize)
+    {
+        h265_PredictIntra_Ver_ChromaNV12_16u(PredPel, pDst, dstStride, blkSize);
+    }
+
+    static inline void h265_PredictIntra_Ang_All(Ipp8u* PredPel, Ipp8u* FiltPel, Ipp8u* pels, Ipp32s width, Ipp32u/* bit_depth*/)
+    {
+        MFX_HEVC_PP::NAME(h265_PredictIntra_Ang_All_8u)(PredPel, FiltPel, pels, width);
+    }
+
+    static inline void h265_PredictIntra_Ang_All(Ipp16u* PredPel, Ipp16u* FiltPel, Ipp16u* pels, Ipp32s width, Ipp32u bit_depth)
+    {
+        h265_PredictIntra_Ang_All_16u_px(PredPel, FiltPel, pels, width, bit_depth);
+    }
+
+    static inline void h265_PredictIntra_Ang_NoTranspose(Ipp32s mode, Ipp8u* PredPel, Ipp8u* pels, Ipp32s pitch, Ipp32s width)
+    {
+        MFX_HEVC_PP::NAME(h265_PredictIntra_Ang_NoTranspose_8u)(mode, PredPel, pels, pitch, width);
+    }
+
+    static inline void h265_PredictIntra_Ang_NoTranspose(Ipp32s mode, Ipp16u* PredPel, Ipp16u* pels, Ipp32s pitch, Ipp32s width)
+    {
+        h265_PredictIntra_Ang_NoTranspose_16u_px(mode, PredPel, pels, pitch, width);
+    }
+
+    static inline void h265_PredictIntra_Ang_All_Even(Ipp8u* PredPel, Ipp8u* FiltPel, Ipp8u* pels, Ipp32s width)
+    {
+        MFX_HEVC_PP::NAME(h265_PredictIntra_Ang_All_Even_8u)(PredPel, FiltPel, pels, width);
+    }
+
+    static inline void h265_PredictIntra_Ang_All_Even(Ipp16u* PredPel, Ipp16u* FiltPel, Ipp16u* pels, Ipp32s width)
+    {
+        h265_PredictIntra_Ang_All_Even_16u_px(PredPel, FiltPel, pels, width);
+    }
+
+    static inline void h265_GetCtuStatistics(SAOCU_ENCODE_PARAMETERS_LIST)
+    {
+        MFX_HEVC_PP::NAME(h265_GetCtuStatistics_8u)(SAOCU_ENCODE_PARAMETERS_LIST_CALL);
+    }
+
+    static inline void h265_GetCtuStatistics(SAOCU_ENCODE_PARAMETERS_LIST_16U)
+    {
+        h265_GetCtuStatistics_16u_px(SAOCU_ENCODE_PARAMETERS_LIST_CALL);
+    }
+
 } // namespace MFX_HEVC_PP
 
 #endif // __MFX_H265_OPTIMIZATION_H__

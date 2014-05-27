@@ -19,7 +19,8 @@ using namespace MFX_HEVC_PP;
 
 namespace H265Enc {
 
-bool H265CU::CheckIdenticalMotion(const Ipp8s refIdx[2], const H265MV mvs[2]) const
+template <typename PixType>
+bool H265CU<PixType>::CheckIdenticalMotion(const Ipp8s refIdx[2], const H265MV mvs[2]) const
 {
     if (m_cslice->slice_type == B_SLICE && !m_par->cpps->weighted_bipred_flag) {
         if (refIdx[0] >= 0 && refIdx[1] >= 0) {
@@ -32,7 +33,8 @@ bool H265CU::CheckIdenticalMotion(const Ipp8s refIdx[2], const H265MV mvs[2]) co
     return false;
 }
 
-Ipp32s H265CU::ClipMV(H265MV& rcMv) const
+template <typename PixType>
+Ipp32s H265CU<PixType>::ClipMV(H265MV& rcMv) const
 {
     Ipp32s change = 0;
     if (rcMv.mvx < HorMin) {
@@ -73,6 +75,7 @@ const Ipp16s g_chromaInterpolateFilter[8][4] =
     { -2, 10, 58, -2 }
 };
 
+template <typename PixType>
 static void CopyPU(const PixType *in_pSrc,
                           Ipp32u in_SrcPitch, // in samples
                           Ipp16s* in_pDst,
@@ -97,13 +100,13 @@ static void CopyPU(const PixType *in_pSrc,
     }
 }
 
-
+template <typename PixType>
 void WriteAverageToPic(
-    const Ipp8u * pSrc0,
+    const PixType * pSrc0,
     Ipp32u        in_Src0Pitch,      // in samples
-    const Ipp8u * pSrc1,
+    const PixType * pSrc1,
     Ipp32u        in_Src1Pitch,      // in samples
-    Ipp8u * H265_RESTRICT pDst,
+    PixType * H265_RESTRICT pDst,
     Ipp32u        in_DstPitch,       // in samples
     Ipp32s        width,
     Ipp32s        height)
@@ -126,17 +129,17 @@ void WriteAverageToPic(
     }
 }
 
-
-template <EnumTextType PLANE_TYPE>
+template <typename PixType, EnumTextType PLANE_TYPE>
 PixType *GetRefPointer(H265Frame *refFrame, Ipp32s blockX, Ipp32s blockY, const H265MV &mv)
 {
     return (PLANE_TYPE == TEXT_LUMA)
-        ? refFrame->y  + blockX + (mv.mvx >> 2) + (blockY + (mv.mvy >> 2)) * refFrame->pitch_luma
-        : refFrame->uv + blockX + (mv.mvx >> 3 << 1) + ((blockY >> 1) + (mv.mvy >> 3)) * refFrame->pitch_luma;
+        ? (PixType*)refFrame->y  + blockX + (mv.mvx >> 2) + (blockY + (mv.mvy >> 2)) * refFrame->pitch_luma
+        : (PixType*)refFrame->uv + blockX + (mv.mvx >> 3 << 1) + ((blockY >> 1) + (mv.mvy >> 3)) * refFrame->pitch_luma;
 }
 
+template <typename PixType>
 template <EnumTextType PLANE_TYPE>
-void H265CU::PredInterUni(Ipp32s puX, Ipp32s puY, Ipp32s puW, Ipp32s puH, Ipp32s listIdx,
+void H265CU<PixType>::PredInterUni(Ipp32s puX, Ipp32s puY, Ipp32s puW, Ipp32s puH, Ipp32s listIdx,
                           const Ipp8s refIdx[2], const H265MV mvs[2], PixType *dst, Ipp32s dstPitch,
                           Ipp32s isBiPred, MFX_HEVC_PP::EnumAddAverageType eAddAverage)
 {
@@ -146,7 +149,7 @@ void H265CU::PredInterUni(Ipp32s puX, Ipp32s puY, Ipp32s puW, Ipp32s puH, Ipp32s
 
     Ipp32s bitDepth, tap, dx, dy;
     if (PLANE_TYPE == TEXT_LUMA) {
-        bitDepth = BIT_DEPTH_LUMA;
+        bitDepth = m_par->bitDepthLuma;
         tap = 8;
         dx = mvs[listIdx].mvx & 3;
         dy = mvs[listIdx].mvy & 3;
@@ -154,7 +157,7 @@ void H265CU::PredInterUni(Ipp32s puX, Ipp32s puY, Ipp32s puW, Ipp32s puH, Ipp32s
     else {
         puW >>= 1;
         puH >>= 1;
-        bitDepth = BIT_DEPTH_CHROMA;
+        bitDepth = m_par->bitDepthChroma;
         tap = 4;
         dx = mvs[listIdx].mvx & 7;
         dy = mvs[listIdx].mvy & 7;
@@ -166,11 +169,11 @@ void H265CU::PredInterUni(Ipp32s puX, Ipp32s puY, Ipp32s puW, Ipp32s puH, Ipp32s
         Ipp8s refIdx2 = refIdx[listIdx2];
         H265Frame *ref2 = refPicList[listIdx2].m_refFrames[refIdx2];
         srcPitch2 = ref2->pitch_luma;
-        src2 = GetRefPointer<PLANE_TYPE>(ref2, (Ipp32s)m_ctbPelX + puX, (Ipp32s)m_ctbPelY + puY, mvs[listIdx2]);
+        src2 = GetRefPointer<PixType, PLANE_TYPE>(ref2, (Ipp32s)m_ctbPelX + puX, (Ipp32s)m_ctbPelY + puY, mvs[listIdx2]);
     }
 
     Ipp32s srcPitch = ref->pitch_luma;
-    PixType *src = GetRefPointer<PLANE_TYPE>(ref, (Ipp32s)m_ctbPelX + puX, (Ipp32s)m_ctbPelY + puY, mvs[listIdx]);
+    PixType *src = GetRefPointer<PixType, PLANE_TYPE>(ref, (Ipp32s)m_ctbPelX + puX, (Ipp32s)m_ctbPelY + puY, mvs[listIdx]);
 
     Ipp32s dstBufPitch = MAX_CU_SIZE;
     Ipp16s *dstBuf = m_tmpPredBuf;
@@ -195,7 +198,7 @@ void H265CU::PredInterUni(Ipp32s puX, Ipp32s puY, Ipp32s puW, Ipp32s puH, Ipp32s
 
         if (!isBiPred) {
             IppiSize roi = { puW, puH };
-            ippiCopy_8u_C1R(src, srcPitch, dstPic, dstPicPitch, roi);
+            _ippiCopy_C1R(src, srcPitch, dstPic, dstPicPitch, roi);
         }
         else {
             if (eAddAverage == MFX_HEVC_PP::AVERAGE_FROM_PIC) {
@@ -251,17 +254,26 @@ void H265CU::PredInterUni(Ipp32s puX, Ipp32s puY, Ipp32s puW, Ipp32s puH, Ipp32s
     }
 }
 template
-void H265CU::PredInterUni<TEXT_LUMA>(Ipp32s puX, Ipp32s puY, Ipp32s puW, Ipp32s puH, Ipp32s listIdx,
-                                     const Ipp8s refIdx[2], const H265MV mvs[2], PixType *dst, Ipp32s dstPitch,
+void H265CU<Ipp8u>::PredInterUni<TEXT_LUMA>(Ipp32s puX, Ipp32s puY, Ipp32s puW, Ipp32s puH, Ipp32s listIdx,
+                                     const Ipp8s refIdx[2], const H265MV mvs[2], Ipp8u *dst, Ipp32s dstPitch,
                                      Ipp32s isBiPred, MFX_HEVC_PP::EnumAddAverageType eAddAverage);
 template
-void H265CU::PredInterUni<TEXT_CHROMA>(Ipp32s puX, Ipp32s puY, Ipp32s puW, Ipp32s puH, Ipp32s listIdx,
-                                       const Ipp8s refIdx[2], const H265MV mvs[2], PixType *dst, Ipp32s dstPitch,
+void H265CU<Ipp8u>::PredInterUni<TEXT_CHROMA>(Ipp32s puX, Ipp32s puY, Ipp32s puW, Ipp32s puH, Ipp32s listIdx,
+                                       const Ipp8s refIdx[2], const H265MV mvs[2], Ipp8u *dst, Ipp32s dstPitch,
+                                       Ipp32s isBiPred, MFX_HEVC_PP::EnumAddAverageType eAddAverage);
+template
+void H265CU<Ipp16u>::PredInterUni<TEXT_LUMA>(Ipp32s puX, Ipp32s puY, Ipp32s puW, Ipp32s puH, Ipp32s listIdx,
+                                     const Ipp8s refIdx[2], const H265MV mvs[2], Ipp16u *dst, Ipp32s dstPitch,
+                                     Ipp32s isBiPred, MFX_HEVC_PP::EnumAddAverageType eAddAverage);
+template
+void H265CU<Ipp16u>::PredInterUni<TEXT_CHROMA>(Ipp32s puX, Ipp32s puY, Ipp32s puW, Ipp32s puH, Ipp32s listIdx,
+                                       const Ipp8s refIdx[2], const H265MV mvs[2], Ipp16u *dst, Ipp32s dstPitch,
                                        Ipp32s isBiPred, MFX_HEVC_PP::EnumAddAverageType eAddAverage);
 
 
+template <typename PixType>
 template <EnumTextType PLANE_TYPE>
-void H265CU::InterPredCu(Ipp32s absPartIdx, Ipp8u depth, PixType *dst, Ipp32s dstPitch)
+void H265CU<PixType>::InterPredCu(Ipp32s absPartIdx, Ipp8u depth, PixType *dst, Ipp32s dstPitch)
 {
     const Ipp32s isLuma = (PLANE_TYPE == TEXT_LUMA);
     Ipp32u numParts = (m_par->NumPartInCU >> (depth << 1));
@@ -309,19 +321,24 @@ void H265CU::InterPredCu(Ipp32s absPartIdx, Ipp8u depth, PixType *dst, Ipp32s ds
     }
 }
 template
-void H265CU::InterPredCu<TEXT_LUMA>(Ipp32s absPartIdx, Ipp8u depth, PixType *dst, Ipp32s dstPitch);
+void H265CU<Ipp8u>::InterPredCu<TEXT_LUMA>(Ipp32s absPartIdx, Ipp8u depth, Ipp8u *dst, Ipp32s dstPitch);
 template
-void H265CU::InterPredCu<TEXT_CHROMA>(Ipp32s absPartIdx, Ipp8u depth, PixType *dst, Ipp32s dstPitch);
+void H265CU<Ipp8u>::InterPredCu<TEXT_CHROMA>(Ipp32s absPartIdx, Ipp8u depth, Ipp8u *dst, Ipp32s dstPitch);
+template
+void H265CU<Ipp16u>::InterPredCu<TEXT_LUMA>(Ipp32s absPartIdx, Ipp8u depth, Ipp16u *dst, Ipp32s dstPitch);
+template
+void H265CU<Ipp16u>::InterPredCu<TEXT_CHROMA>(Ipp32s absPartIdx, Ipp8u depth, Ipp16u *dst, Ipp32s dstPitch);
 
 
-void H265CU::MeInterpolate(const H265MEInfo* me_info, H265MV* MV, PixType *src, Ipp32s srcPitch,
-                           Ipp8u *dst, Ipp32s dstPitch) const
+template <typename PixType>
+void H265CU<PixType>::MeInterpolate(const H265MEInfo* me_info, H265MV* MV, PixType *src, Ipp32s srcPitch,
+                           PixType *dst, Ipp32s dstPitch) const
 {
     Ipp32s w = me_info->width;
     Ipp32s h = me_info->height;
     Ipp32s dx = MV->mvx & 3;
     Ipp32s dy = MV->mvy & 3;
-    Ipp32s bitDepth = BIT_DEPTH_LUMA;
+    Ipp32s bitDepth = m_par->bitDepthLuma;
 
     Ipp32s refOffset = m_ctbPelX + me_info->posx + (MV->mvx >> 2) + (m_ctbPelY + me_info->posy + (MV->mvy >> 2)) * srcPitch;
     src += refOffset;

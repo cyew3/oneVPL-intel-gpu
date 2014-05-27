@@ -911,6 +911,65 @@ namespace MFX_HEVC_PP
 
 #endif // #if defined(MFX_TARGET_OPTIMIZATION_PX)  || defined(MFX_TARGET_OPTIMIZATION_AUTO)
 
+    void h265_PredictIntra_Ang_All_Even_16u_px(
+        PixType* PredPel,
+        PixType* FiltPel,
+        PixType* pels,
+        Ipp32s width)
+    {
+        PixType *pred_ptr = pels;
+        const int BIT_DEPTH_LUMA = 8;
+
+        for (int mode = 2; mode < 35; mode += 2)
+        {
+            Ipp32s diff = MIN(abs(mode - INTRA_HOR), abs(mode - INTRA_VER));
+
+            if (diff <= FilteredModes[h265_log2table[width - 4] - 2])
+            {
+                h265_PredictIntra_Ang_16u_px_no_transp(mode, PredPel, pels, width, width);
+            }
+            else
+            {
+                h265_PredictIntra_Ang_16u_px_no_transp(mode, FiltPel, pels, width, width);
+            }
+            pels += (width * width)*2;  // next buffer
+        }
+
+        // hor and ver modes require additional filtering
+        if (width <= 16)
+        {
+            pels = pred_ptr + (INTRA_HOR - 2) * width * width;
+            for (Ipp32s i = 0; i < width; i++)
+            {
+                pels[i*width] = (PixType)Saturate(0, (1 << BIT_DEPTH_LUMA) - 1,
+                    pels[i*width] + ((PredPel[1+i] - PredPel[0]) >> 1));
+            }
+            pels = pred_ptr + (INTRA_VER - 2) * width * width;
+            for (Ipp32s j = 0; j < width; j++)
+            {
+                pels[j*width] = (PixType)Saturate(0, (1 << BIT_DEPTH_LUMA) - 1,
+                    pels[j*width] + ((PredPel[2*width+1+j] - PredPel[0]) >> 1));
+            }
+        }
+    }
+
+#if defined(MFX_TARGET_OPTIMIZATION_PX)  || defined(MFX_TARGET_OPTIMIZATION_AUTO)
+#if defined(MFX_TARGET_OPTIMIZATION_PX)
+    void h265_PredictIntra_Ang_NoTranspose_16u(
+#elif defined(MFX_TARGET_OPTIMIZATION_AUTO)
+    void h265_PredictIntra_Ang_NoTranspose_16u_px(
+#endif
+        Ipp32s mode,
+        PixType* PredPel,
+        PixType* pels,
+        Ipp32s pitch,
+        Ipp32s width)
+    {
+        h265_PredictIntra_Ang_16u_px_no_transp(mode, PredPel, pels, pitch, width);
+    } // void h265_PredictIntra_Ang_8u(...)
+
+#endif // #if defined(MFX_TARGET_OPTIMIZATION_PX)  || defined(MFX_TARGET_OPTIMIZATION_AUTO)
+
 }; // namespace MFX_HEVC_PP
 
 #endif // #if defined(MFX_TARGET_OPTIMIZATION_PX) || defined(MFX_TARGET_OPTIMIZATION_SSE4) || defined(MFX_TARGET_OPTIMIZATION_AVX2)

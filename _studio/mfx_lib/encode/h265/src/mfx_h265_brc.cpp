@@ -92,13 +92,13 @@ mfxI32 H265BRC::GetInitQP()
     fs += fsLuma;
   else if (mParams.chromaFormat == MFX_CHROMAFORMAT_YUV444)
     fs += fsLuma * 2;
-  fs = fs * BIT_DEPTH_LUMA / 8;
+  fs = fs * mParams.bitDepthLuma / 8;
   mfxI32 q = (mfxI32)(1. / 1.2 * pow(10.0, (log10(fs * 2. / 3. * mFramerate / mBitrate) - x0) * (y1 - y0) / (x1 - x0) + y0) + 0.5);
   BRC_CLIP(q, 1, mQuantMax);
   return q;
 }
 
-mfxStatus H265BRC::SetParams(const mfxVideoParam *params)
+mfxStatus H265BRC::SetParams(const mfxVideoParam *params, mfxU8 bitDepthLuma)
 {
     if (!params)
         return MFX_ERR_NULL_PTR;
@@ -123,18 +123,19 @@ mfxStatus H265BRC::SetParams(const mfxVideoParam *params)
     mParams.width = params->mfx.FrameInfo.Width;
     mParams.height = params->mfx.FrameInfo.Height;
     mParams.chromaFormat = params->mfx.FrameInfo.ChromaFormat;
+    mParams.bitDepthLuma = bitDepthLuma;
 
     return MFX_ERR_NONE;
 }
 
-mfxStatus H265BRC::Init(const mfxVideoParam *params, mfxI32 enableRecode)
+mfxStatus H265BRC::Init(const mfxVideoParam *params, mfxU8 bitDepthLuma, mfxI32 enableRecode)
 {
     mfxStatus status = MFX_ERR_NONE;
 
     if (!params)
         return MFX_ERR_NULL_PTR;
 
-    status = SetParams(params);
+    status = SetParams(params, bitDepthLuma);
     if (status != MFX_ERR_NONE)
         return status;
 
@@ -167,7 +168,7 @@ mfxStatus H265BRC::Init(const mfxVideoParam *params, mfxI32 enableRecode)
     }
 */
 
-    mQuantOffset = 6 * (BIT_DEPTH_LUMA - 8);
+    mQuantOffset = 6 * (mParams.bitDepthLuma - 8);
     mQuantMax = 51 + mQuantOffset;
 
     mBitsDesiredTotal = 0;
@@ -255,7 +256,7 @@ mfxStatus H265BRC::Reset(mfxVideoParam *params, mfxI32 enableRecode)
     mRecode = enableRecode ? 1 : 0;
 
     if (!(mParams.HRDBufferSizeBytes | bufSize_new)) { // no HRD
-        status = SetParams(params);
+        status = SetParams(params, mParams.bitDepthLuma);
         if (status != MFX_ERR_NONE)
             return status;
         mBitrate = mParams.targetBitrate;

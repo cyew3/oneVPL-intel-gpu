@@ -165,6 +165,9 @@ mfxStatus H265Encoder::InitH265VideoParam(const mfxVideoParam *param, const mfxE
     Ipp32u width = param->mfx.FrameInfo.Width;
     Ipp32u height = param->mfx.FrameInfo.Height;
 
+    pars->bitDepthLuma = 8;
+    pars->bitDepthChroma = 8;
+
     pars->SourceWidth = width;
     pars->SourceHeight = height;
     pars->Log2MaxCUSize = optsHevc->Log2MaxCUSize;// 6;
@@ -446,8 +449,8 @@ mfxStatus H265Encoder::SetSPS()
 
     sps->pic_width_in_luma_samples = pars->Width;
     sps->pic_height_in_luma_samples = pars->Height;
-    sps->bit_depth_luma = BIT_DEPTH_LUMA;
-    sps->bit_depth_chroma = BIT_DEPTH_CHROMA;
+    sps->bit_depth_luma = pars->bitDepthLuma;
+    sps->bit_depth_chroma = pars->bitDepthChroma;
 
     if (pars->CropLeft | pars->CropTop | pars->CropRight | pars->CropBottom) {
         sps->conformance_window_flag = 1;
@@ -925,6 +928,7 @@ mfxStatus H265Encoder::Init(const mfxVideoParam *param, const mfxExtCodingOption
 #endif
 
     Ipp32u numCtbs = m_videoParam.PicWidthInCtbs*m_videoParam.PicHeightInCtbs;
+    Ipp32s sizeofH265CU = (m_videoParam.bitDepthLuma > 8 ? sizeof(H265CU<Ipp16u>) : sizeof(H265CU<Ipp8u>));
     
     m_videoParam.m_lcuQps = NULL;
     m_videoParam.m_lcuQps = new Ipp8s[numCtbs];
@@ -947,7 +951,7 @@ mfxStatus H265Encoder::Init(const mfxVideoParam *param, const mfxExtCodingOption
     memSize += numCtbs;
     memSize += sizeof(H265EncoderRowInfo) * m_videoParam.PicHeightInCtbs + DATA_ALIGN;
     //memSize += sizeof(Ipp32u) * profile_frequency + DATA_ALIGN;
-    memSize += sizeof(H265CU) * m_videoParam.num_threads + DATA_ALIGN;
+    memSize += sizeofH265CU * m_videoParam.num_threads + DATA_ALIGN;
     memSize += (1 << 16); // for m_logMvCostTable
     memSize += numCtbs * sizeof(costStat) + DATA_ALIGN;
 
@@ -991,8 +995,8 @@ mfxStatus H265Encoder::Init(const mfxVideoParam *param, const mfxExtCodingOption
     m_row_info = UMC::align_pointer<H265EncoderRowInfo*>(ptr, DATA_ALIGN);
     ptr += sizeof(H265EncoderRowInfo) * m_videoParam.PicHeightInCtbs + DATA_ALIGN;
 
-    cu = UMC::align_pointer<H265CU*>(ptr, DATA_ALIGN);
-    ptr += sizeof(H265CU) * m_videoParam.num_threads + DATA_ALIGN;
+    cu = UMC::align_pointer<void*>(ptr, DATA_ALIGN);
+    ptr += sizeofH265CU * m_videoParam.num_threads + DATA_ALIGN;
 
     m_logMvCostTable = ptr;
     ptr += (1 << 16);
@@ -1053,7 +1057,7 @@ mfxStatus H265Encoder::Init(const mfxVideoParam *param, const mfxExtCodingOption
 
     if (param->mfx.RateControlMethod != MFX_RATECONTROL_CQP) {
         m_brc = new H265BRC();
-        mfxStatus sts = m_brc->Init(param);
+        mfxStatus sts = m_brc->Init(param, m_videoParam.bitDepthLuma);
         if (MFX_ERR_NONE != sts)
             return sts;
         m_videoParam.m_sliceQpY = (Ipp8s)m_brc->GetQP(MFX_FRAMETYPE_I);
@@ -1100,17 +1104,26 @@ mfxStatus H265Encoder::Init(const mfxVideoParam *param, const mfxExtCodingOption
     m_videoParam.m_slice_ids = m_slice_ids;
     m_videoParam.m_costStat = m_costStat;
 
-    ippsZero_8u((Ipp8u *)cu, sizeof(H265CU) * m_videoParam.num_threads);
+    ippsZero_8u((Ipp8u *)cu, sizeofH265CU * m_videoParam.num_threads);
     ippsZero_8u((Ipp8u*)data_temp, sizeof(H265CUData) * data_temp_size * m_videoParam.num_threads);
 
     MFX_HEVC_PP::InitDispatcher();
 
-    m_saoDecodeFilter.Init(m_videoParam.Width, m_videoParam.Height, m_videoParam.MaxCUSize, 0);
-    m_saoParam.resize(m_videoParam.PicHeightInCtbs * m_videoParam.PicWidthInCtbs);
-    for (Ipp32u idx = 0; idx < m_videoParam.num_threads; idx++) {
-        cu[idx].m_saoEncodeFilter.Init(m_videoParam.Width, m_videoParam.Height,
-                                       1 << m_videoParam.Log2MaxCUSize, m_videoParam.MaxCUDepth,
-                                       m_videoParam.saoOpt);
+    if (m_videoParam.SAOFlag) {
+        m_saoParam.resize(m_videoParam.PicHeightInCtbs * m_videoParam.PicWidthInCtbs);
+
+        for(Ipp32u idx = 0; idx < m_videoParam.num_threads; idx++)
+        {
+            if (m_videoParam.bitDepthLuma == 8) {
+                ((H265CU<Ipp8u>*)cu)[idx].m_saoEncodeFilter.Init(m_videoParam.Width, m_videoParam.Height,
+                    1 << m_videoParam.Log2MaxCUSize, m_videoParam.MaxCUDepth, m_videoParam.bitDepthLuma, 
+                    m_videoParam.saoOpt);
+            } else {
+                ((H265CU<Ipp16u>*)cu)[idx].m_saoEncodeFilter.Init(m_videoParam.Width, m_videoParam.Height,
+                    1 << m_videoParam.Log2MaxCUSize, m_videoParam.MaxCUDepth, m_videoParam.bitDepthLuma,
+                    m_videoParam.saoOpt);
+            }
+        }
     }
 
 #if defined (MFX_ENABLE_CM)
@@ -1167,7 +1180,6 @@ void H265Encoder::Close() {
         delete [] m_videoParam.m_lcuQps;
         m_videoParam.m_lcuQps = NULL;
     }
-    m_saoDecodeFilter.Close();
 
 #ifdef DUMP_COSTS_CU
     if (fp_cu) fclose(fp_cu);
@@ -1681,8 +1693,10 @@ mfxStatus H265Encoder::UpdateRefPicList(H265Slice *curr_slice, H265Frame *frame)
     return MFX_ERR_NONE;
 }
 
+template <typename PixType>
 mfxStatus H265Encoder::DeblockThread(Ipp32s ithread)
 {
+    H265CU<PixType> *cu = (H265CU<PixType> *)this->cu;
     Ipp32u ctb_row;
     H265VideoParam *pars = &m_videoParam;
 
@@ -1701,8 +1715,8 @@ mfxStatus H265Encoder::DeblockThread(Ipp32s ithread)
             Ipp8u curr_slice = m_slice_ids[ctb_addr];
 
             cu[ithread].InitCu(&m_videoParam, m_pReconstructFrame->cu_data + (ctb_addr << pars->Log2NumPartInCU),
-                data_temp + ithread * data_temp_size, ctb_addr, m_pReconstructFrame->y,
-                m_pReconstructFrame->uv, m_pReconstructFrame->pitch_luma, m_pCurrentFrame,
+                data_temp + ithread * data_temp_size, ctb_addr, (PixType *)m_pReconstructFrame->y,
+                (PixType *)m_pReconstructFrame->uv, m_pReconstructFrame->pitch_luma_pix, m_pCurrentFrame,
                 &bsf[ithread], m_slices + curr_slice, 0, m_logMvCostTable);
             
             if (pars->UseDQP)
@@ -1714,7 +1728,7 @@ mfxStatus H265Encoder::DeblockThread(Ipp32s ithread)
     return MFX_ERR_NONE;
 }
 
-
+template <typename PixType>
 mfxStatus H265Encoder::ApplySAOThread(Ipp32s ithread)
 {
     IppiSize roiSize;
@@ -1723,18 +1737,19 @@ mfxStatus H265Encoder::ApplySAOThread(Ipp32s ithread)
 
     Ipp32s numCTU = m_videoParam.PicHeightInCtbs * m_videoParam.PicWidthInCtbs;
 
-    Ipp8u* pRec[2] = {m_pReconstructFrame->y, m_pReconstructFrame->uv};
-    Ipp32s pitch[3] = {m_pReconstructFrame->pitch_luma, m_pReconstructFrame->pitch_chroma, m_pReconstructFrame->pitch_chroma};
+    PixType* pRec[2] = {(PixType*)m_pReconstructFrame->y, (PixType*)m_pReconstructFrame->uv};
+    Ipp32s pitch[3] = {m_pReconstructFrame->pitch_luma_pix, m_pReconstructFrame->pitch_chroma_pix >> 1, m_pReconstructFrame->pitch_chroma_pix >> 1}; // FIXME10BIT
     Ipp32s shift[3] = {0, 1, 1};
 
-    SaoDecodeFilter saoFilter_New[NUM_USED_SAO_COMPONENTS];
+    SaoDecodeFilter<PixType> saoFilter_New[NUM_USED_SAO_COMPONENTS];
 
     for (Ipp32s compId = 0; compId < NUM_USED_SAO_COMPONENTS; compId++) {
-        saoFilter_New[compId].Init(m_videoParam.Width, m_videoParam.Height, m_videoParam.MaxCUSize, 0);
+        saoFilter_New[compId].Init(m_videoParam.Width, m_videoParam.Height, m_videoParam.MaxCUSize, 0,
+            compId < 1 ? m_videoParam.bitDepthLuma : m_videoParam.bitDepthChroma);
 
         // save boundaries
         Ipp32s width = roiSize.width >> shift[compId];
-        small_memcpy(saoFilter_New[compId].m_TmpU[0], pRec[compId], sizeof(Ipp8u) * width);
+            small_memcpy(saoFilter_New[compId].m_TmpU[0], pRec[compId], sizeof(PixType) * width);
     }
 
     // ----------------------------------------------------------------------------------------
@@ -1767,7 +1782,7 @@ mfxStatus H265Encoder::ApplySAOThread(Ipp32s ithread)
                 }
                 saoFilter_New[compId].SetOffsetsLuma(m_saoParam[ctu][compId], m_saoParam[ctu][compId].type_idx);
 
-                MFX_HEVC_PP::NAME(h265_ProcessSaoCuOrg_Luma_8u)(
+                h265_ProcessSaoCuOrg_Luma(
                     pRec[compId] + offset,
                     pitch[compId],
                     m_saoParam[ctu][compId].type_idx,
@@ -1794,7 +1809,9 @@ mfxStatus H265Encoder::ApplySAOThread(Ipp32s ithread)
     return MFX_ERR_NONE;
 }
 
+template <typename PixType>
 mfxStatus H265Encoder::EncodeThread(Ipp32s ithread) {
+    H265CU<PixType> *cu = (H265CU<PixType> *)this->cu;
     Ipp32u ctb_row = 0, ctb_col = 0, ctb_addr = 0;
     H265VideoParam *pars = &m_videoParam;
     Ipp8u nz[2];
@@ -1876,8 +1893,8 @@ mfxStatus H265Encoder::EncodeThread(Ipp32s ithread) {
             printf("CTB %d\n",ctb_addr);
 #endif
             cu[ithread].InitCu(pars, m_pReconstructFrame->cu_data + (ctb_addr << pars->Log2NumPartInCU),
-                data_temp + ithread * data_temp_size, ctb_addr, m_pReconstructFrame->y,
-                m_pReconstructFrame->uv, m_pReconstructFrame->pitch_luma, m_pCurrentFrame,
+                data_temp + ithread * data_temp_size, ctb_addr, (PixType*)m_pReconstructFrame->y,
+                (PixType*)m_pReconstructFrame->uv, m_pReconstructFrame->pitch_luma_pix, m_pCurrentFrame,
                 &bsf[ctb_row], m_slices + curr_slice, 1, m_logMvCostTable);
 
             if(m_videoParam.UseDQP && m_videoParam.preEncMode) {
@@ -1984,8 +2001,9 @@ mfxStatus H265Encoder::EncodeThread(Ipp32s ithread) {
     return MFX_ERR_NONE;
 }
 
-mfxStatus H265Encoder::EncodeThreadByRow(Ipp32s ithread)
-{
+template <typename PixType>
+mfxStatus H265Encoder::EncodeThreadByRow(Ipp32s ithread) {
+    H265CU<PixType> *cu = (H265CU<PixType> *)this->cu;
     Ipp32u ctb_row;
     H265VideoParam *pars = &m_videoParam;
     Ipp8u nz[2];
@@ -2048,8 +2066,8 @@ mfxStatus H265Encoder::EncodeThreadByRow(Ipp32s ithread)
             printf("CTB %d\n",ctb_addr);
 #endif
             cu[ithread].InitCu(pars, m_pReconstructFrame->cu_data + (ctb_addr << pars->Log2NumPartInCU),
-                data_temp + ithread * data_temp_size, ctb_addr, m_pReconstructFrame->y,
-                m_pReconstructFrame->uv, m_pReconstructFrame->pitch_luma, m_pCurrentFrame,
+                data_temp + ithread * data_temp_size, ctb_addr, (PixType*)m_pReconstructFrame->y,
+                (PixType*)m_pReconstructFrame->uv, m_pReconstructFrame->pitch_luma_pix, m_pCurrentFrame,
                 &bsf[ithread], m_slices + curr_slice, 1, m_logMvCostTable);
 
             // lambda_Ctb = F(QP_Ctb)
@@ -2649,9 +2667,9 @@ recode:
 #endif // MFX_ENABLE_CM
 
     if (m_videoParam.threading_by_rows)
-        EncodeThreadByRow(0);
+        m_videoParam.bitDepthLuma == 8 ? EncodeThreadByRow<Ipp8u>(0) : EncodeThreadByRow<Ipp16u>(0);
     else
-        EncodeThread(0);
+        m_videoParam.bitDepthLuma == 8 ? EncodeThread<Ipp8u>(0) : EncodeThread<Ipp16u>(0);
 
     if (m_videoParam.num_threads > 1)
         mfx_video_encode_h265_ptr->ParallelRegionEnd();
@@ -2661,12 +2679,12 @@ recode:
     {
         m_incRow = 0;
         mfx_video_encode_h265_ptr->ParallelRegionStart(m_videoParam.num_threads - 1, PARALLEL_REGION_DEBLOCKING);
-        DeblockThread(0);
+        m_videoParam.bitDepthLuma == 8 ? DeblockThread<Ipp8u>(0) : DeblockThread<Ipp16u>(0);
         mfx_video_encode_h265_ptr->ParallelRegionEnd();
     }
 
     if (m_sps.sample_adaptive_offset_enabled_flag)
-        ApplySAOThread(0);
+        m_videoParam.bitDepthLuma == 8 ? ApplySAOThread<Ipp8u>(0) : ApplySAOThread<Ipp16u>(0);
 
     if (m_videoParam.threading_by_rows) {
         for (Ipp8u curr_slice = 0; curr_slice < m_videoParam.NumSlices; curr_slice++) {

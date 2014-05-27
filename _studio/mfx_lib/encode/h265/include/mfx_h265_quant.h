@@ -60,8 +60,9 @@ void h265_quant_fwd_base(
     Ipp32u& abs_sum );
 
 // RDO based quantization
+template <typename PixType>
 void h265_quant_fwd_rdo(
-    H265CU* pCU,
+    H265CU<PixType>* pCU,
     Ipp16s* pSrc,
     Ipp16s* pDst,
 

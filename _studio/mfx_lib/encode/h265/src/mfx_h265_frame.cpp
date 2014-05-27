@@ -40,143 +40,157 @@ mfxStatus H265Frame::Create(H265VideoParam *par)
 
     width = par->Width;
     height = par->Height;
+    m_bitDepthLuma =  par->bitDepthLuma;
+    m_bitDepthChroma = par->bitDepthChroma;
+    m_bdLumaFlag = par->bitDepthLuma > 8;
+    m_bdChromaFlag = par->bitDepthChroma > 8;
 
-    Ipp32s plane_size = (width + padding * 2) * (height + padding * 2);
+    Ipp32s plane_size_luma = (width + padding * 2) * (height + padding * 2);
+    Ipp32s plane_size_chroma = plane_size_luma >> 1;
 
-    pitch_luma = width + padding * 2;
-    pitch_chroma = pitch_luma >> 1;
+    pitch_luma_bytes = pitch_luma_pix = width + padding * 2;
+    pitch_chroma_bytes = pitch_chroma_pix = pitch_luma_pix;
 
+    pitch_luma = pitch_luma_pix;
+
+    if (m_bdLumaFlag) {
+        plane_size_luma <<= 1;
+        pitch_luma_bytes <<= 1;
+    }
+    if (m_bdChromaFlag) {
+        plane_size_chroma <<= 1;
+        pitch_chroma_bytes <<= 1;
+    }
 
     Ipp32s len = numCtbs_parts * sizeof(H265CUData) + ALIGN_VALUE;
-    len += plane_size * 3 / 2 + ALIGN_VALUE*3;
+    len += (plane_size_luma + plane_size_chroma) + ALIGN_VALUE*3;
 
     mem = H265_Malloc(len);
     MFX_CHECK_NULL_PTR1(len);
 
     cu_data = align_pointer<H265CUData *> (mem, ALIGN_VALUE);
     y = align_pointer<Ipp8u *> (cu_data + numCtbs_parts, ALIGN_VALUE);
-    uv = align_pointer<Ipp8u *> (y + plane_size, ALIGN_VALUE);;
+    uv = align_pointer<Ipp8u *> (y + plane_size_luma, ALIGN_VALUE);;
 
-    y += (pitch_luma + 1) * padding;
-    uv += (pitch_luma * padding >> 1) + padding;
+    y += ((pitch_luma_pix + 1) * padding) << m_bdLumaFlag;
+    uv += (((pitch_chroma_pix >> 1) + 1) * padding) << m_bdChromaFlag;
 
     return MFX_ERR_NONE;
+}
+
+inline static void memset_bd(Ipp8u *dst, Ipp32s val, Ipp32s size_pix, Ipp8u bdFlag) {
+    if (bdFlag) {
+        ippsSet_16s(val, (Ipp16s *)dst, size_pix);
+    } else {
+        ippsSet_8u((Ipp8u)val, dst, size_pix);
+    }
 }
 
 mfxStatus H265Frame::CopyFrame(mfxFrameSurface1 *surface)
 {
     IppiSize roi = { width, height };
-    ippiCopy_8u_C1R(surface->Data.Y, surface->Data.Pitch, y, pitch_luma, roi);
+
+    switch ((m_bdLumaFlag << 1) | (surface->Info.BitDepthLuma > 8)) {
+    case 0:
+        ippiCopy_8u_C1R(surface->Data.Y, surface->Data.Pitch, y, pitch_luma, roi);
+        break;
+    case 1:
+        ippiConvert_16u8u_C1R((Ipp16u*)surface->Data.Y, surface->Data.Pitch, y, pitch_luma_bytes, roi);
+        break;
+    case 2:
+        ippiConvert_8u16u_C1R(surface->Data.Y, surface->Data.Pitch, (Ipp16u*)y, pitch_luma_bytes, roi);
+        ippiLShiftC_16u_C1IR(m_bitDepthLuma - 8, (Ipp16u*)y0, pitch_luma_bytes, roi);
+        break;
+    case 3:
+        ippiCopy_16u_C1R((Ipp16u*)surface->Data.Y, surface->Data.Pitch, (Ipp16u*)y, pitch_luma_bytes, roi);
+        break;
+    default:
+        VM_ASSERT(0);
+    }
+
     roi.height >>= 1;
-    ippiCopy_8u_C1R(surface->Data.UV, surface->Data.Pitch, uv, pitch_luma, roi);
 
-    //Ipp32s i;
-    //PixType *y0 = y;
-    //PixType *uv0 = uv;
-    //mfxU8 *ysrc = surface->Data.Y;
-    //mfxU8 *uvsrc = surface->Data.UV;
-    //Ipp32s input_width =  surface->Info.Width;
-    //Ipp32s input_height = surface->Info.Height;
-    //if (input_width > width || input_height > height) VM_ASSERT(0);
-
-    //memset(y0 - (pitch_luma + 1) * padding, 128, (pitch_luma + 1) * padding);
-
-    //for (i = 0; i < input_height; i++) {
-    //    small_memcpy(y0, ysrc, input_width);
-    //    memset(y0 + input_width, 128, padding * 2 + width - input_width);
-    //    y0 += pitch_luma;
-    //    ysrc += surface->Data.Pitch;
-    //}
-    //for (i = input_height; i < height; i++) {
-    //    memset(y0, 128, padding * 2 + width);
-    //    y0 += pitch_luma;
-    //}
-
-    //memset(y0, 128, (pitch_luma - 1) * padding);
-
-    //memset(uv0 - ((pitch_luma * padding >> 1) + padding), 128,
-    //    (pitch_luma * padding >> 1) + padding);
-
-    //for (i = 0; i < input_height >> 1; i++) {
-    //    small_memcpy(uv0, uvsrc, input_width);
-    //    memset(uv0 + input_width, 128, padding * 2 + width - input_width);
-    //    uv0 += pitch_luma;
-    //    uvsrc += surface->Data.Pitch;
-    //}
-    //for (i = input_height >> 1; i < height >> 1; i++) {
-    //    memset(uv0, 128, padding * 2 + width);
-    //    uv0 += pitch_luma;
-    //}
-
-    //memset(uv0, 128, (pitch_luma * padding >> 1) - padding);
+    switch ((m_bdChromaFlag << 1) | (surface->Info.BitDepthChroma > 8)) {
+    case 0:
+        ippiCopy_8u_C1R(surface->Data.UV, surface->Data.Pitch, uv, pitch_luma, roi);
+        break;
+    case 1:
+        ippiConvert_16u8u_C1R((Ipp16u*)surface->Data.UV, surface->Data.Pitch, uv, pitch_chroma_bytes, roi);
+        break;
+    case 2:
+        ippiConvert_8u16u_C1R(surface->Data.UV, surface->Data.Pitch, (Ipp16u*)uv, pitch_chroma_bytes, roi);
+        ippiLShiftC_16u_C1IR(m_bitDepthChroma - 8, (Ipp16u*)uv, pitch_chroma_bytes, roi);
+        break;
+    case 3:
+        ippiCopy_16u_C1R((Ipp16u*)surface->Data.UV, surface->Data.Pitch, (Ipp16u*)uv, pitch_chroma_bytes, roi);
+        break;
+    default:
+        VM_ASSERT(0);
+    }
 
     return MFX_ERR_NONE;
 }
-/*
-static void doPaddingPlane(PixType *piTxt, Ipp32s Stride, Ipp32s Width, Ipp32s Height, Ipp32s MarginX, Ipp32s MarginY)
-{
-    Ipp32s x, y;
-    PixType *pi;
 
-    pi = piTxt;
-    for (y = 0; y < Height; y++)
-    {
-        for (x = 0; x < MarginX; x++ )
-        {
-            pi[-MarginX + x] = pi[0];
-            pi[Width + x] = pi[Width - 1];
-        }
-        pi += Stride;
+static void ExpandPlane(Ipp8u elem_shift, Ipp8u *ptr, Ipp32s pitch_bytes, Ipp32s width, Ipp32s height, Ipp32s padding_w, Ipp32s padding_h) {
+    Ipp8u *src = ptr;
+    Ipp8u *dst = src - pitch_bytes;
+    for (Ipp32s y = 0; y < padding_h; y++, dst -= pitch_bytes)
+        ippsCopy_8u(src, dst, width<<elem_shift);
+
+    src = ptr + (height - 1) * pitch_bytes;
+    dst = src + pitch_bytes;
+    for (Ipp32s y = 0; y < padding_h; y++, dst += pitch_bytes)
+        ippsCopy_8u(src, dst, width<<elem_shift);
+
+    Ipp8u * p0 = ptr - padding_h * pitch_bytes;
+    if (elem_shift == 0) {
+        for (Ipp32s y = 0; y < height + padding_h * 2; y++, p0 += pitch_bytes)
+            ippsSet_8u(*p0, p0 - padding_w, padding_w);
+    } else if (elem_shift == 1) {
+        for (Ipp32s y = 0; y < height + padding_h * 2; y++, p0 += pitch_bytes)
+            ippsSet_16s(*(Ipp16s*)p0, (Ipp16s*)p0 - padding_w, padding_w);
+    } else if (elem_shift == 2) {
+        for (Ipp32s y = 0; y < height + padding_h * 2; y++, p0 += pitch_bytes)
+            ippsSet_32s(*(Ipp32s*)p0, (Ipp32s*)p0 - padding_w, padding_w);
     }
 
-    pi -= (Stride + MarginX);
-    for (y = 0; y < MarginY; y++)
-    {
-        ::memcpy(pi + (y + 1) * Stride, pi, sizeof(PixType) * (Width + (MarginX << 1)));
-    }
-
-    pi -= ((Height - 1) * Stride);
-    for (y = 0; y < MarginY; y++)
-    {
-        ::memcpy(pi - (y + 1) * Stride, pi, sizeof(PixType) * (Width + (MarginX << 1)));
+    p0 = ptr + ((width - 1) << elem_shift) - padding_h * pitch_bytes;
+    if (elem_shift == 0) {
+        for (Ipp32s y = 0; y < height + padding_h * 2; y++, p0 += pitch_bytes)
+            ippsSet_8u(*p0, p0 + 1, padding_w);
+    } else if (elem_shift == 1) {
+        for (Ipp32s y = 0; y < height + padding_h * 2; y++, p0 += pitch_bytes)
+            ippsSet_16s(*(Ipp16s*)p0, (Ipp16s*)p0 + 1, padding_w);
+    } else if (elem_shift == 2) {
+        for (Ipp32s y = 0; y < height + padding_h * 2; y++, p0 += pitch_bytes)
+            ippsSet_32s(*(Ipp32s*)p0, (Ipp32s*)p0 + 1, padding_w);
     }
 }
-*/
+
 void H265Frame::doPadding()
 {
-    ippiExpandPlane_H264_8u_C1R(y, width, height, pitch_luma, padding, IPPVC_FRAME);
+    if (!m_bdLumaFlag) {
+        ippiExpandPlane_H264_8u_C1R(y, width, height, pitch_luma_bytes, padding, IPPVC_FRAME);
+    } else {
+        ExpandPlane(1, y, pitch_luma_bytes, width, height, padding, padding);
+    }
 
-    Ipp32s width16 = width >> 1;
-    Ipp32s pitch16 = pitch_luma >> 1;
-    Ipp32s height_chroma = height >> 1;
-    Ipp32s padding_chroma = padding >> 1;
-
-    Ipp8u * src = uv;
-    Ipp8u * dst = src - pitch_luma;
-    for (Ipp32s y = 0; y < padding_chroma; y++, dst -= pitch_luma)
-        ippsCopy_8u(src, dst, width);
-
-    src = uv + (height_chroma - 1) * pitch_luma;
-    dst = src + pitch_luma;
-    for (Ipp32s y = 0; y < padding_chroma; y++, dst += pitch_luma)
-        ippsCopy_8u(src, dst, width);
-
-    Ipp16s * p16 = (Ipp16s *)uv - padding_chroma * pitch16;
-    for (Ipp32s y = 0; y < height_chroma + padding_chroma * 2; y++, p16 += pitch16)
-        ippsSet_16s(*p16, p16 - padding_chroma, padding_chroma);
-
-    p16 = (Ipp16s *)uv + width16 - 1 - padding_chroma * pitch16;
-    for (Ipp32s y = 0; y < height_chroma + padding_chroma * 2; y++, p16 += pitch16)
-        ippsSet_16s(*p16, p16 + 1, padding_chroma);
+    if (!m_bdChromaFlag) {
+        ExpandPlane(1, uv, pitch_chroma_bytes, width >> 1, height >> 1, padding >> 1, padding >> 1);
+    } else {
+        ExpandPlane(2, uv, pitch_chroma_bytes, width >> 1, height >> 1, padding >> 1, padding >> 1);
+    }
 }
 
 void H265Frame::Dump(const vm_char* fname, H265VideoParam *par, H265FrameList *dpb, Ipp32s frame_num)
 {
-
     vm_file *f;
     mfxU8* fbuf = NULL;
     Ipp32s W = par->Width - par->CropLeft - par->CropRight;
     Ipp32s H = par->Height - par->CropTop - par->CropBottom;
+    Ipp32s bd_shift_luma = par->bitDepthLuma > 8;
+    Ipp32s bd_shift_chroma = par->bitDepthChroma > 8;
+    Ipp32s plane_size = (W*H << bd_shift_luma) + (W*H/2 << bd_shift_chroma);
 
     if (!fname || !fname[0])
         return;
@@ -192,10 +206,10 @@ void H265Frame::Dump(const vm_char* fname, H265VideoParam *par, H265FrameList *d
     if ( numlater ) { // simple reorder for B: read last ref, replacing with B, write ref
         f = vm_file_fopen(fname,VM_STRING("r+b"));
         if (!f) return;
-        fbuf = new mfxU8[numlater*W*H*3/2];
-        vm_file_fseek(f, -numlater*W*H*3/2, VM_FILE_SEEK_END);
-        vm_file_fread(fbuf, 1, numlater*W*H*3/2, f);
-        vm_file_fseek(f, -numlater*W*H*3/2, VM_FILE_SEEK_END);
+        fbuf = new mfxU8[numlater*plane_size];
+        vm_file_fseek(f, -numlater*plane_size, VM_FILE_SEEK_END);
+        vm_file_fread(fbuf, 1, numlater*plane_size, f);
+        vm_file_fseek(f, -numlater*plane_size, VM_FILE_SEEK_END);
     } else {
         f = vm_file_fopen(fname, frame_num ? VM_STRING("a+b") : VM_STRING("wb"));
         if (!f) return;
@@ -205,28 +219,42 @@ void H265Frame::Dump(const vm_char* fname, H265VideoParam *par, H265FrameList *d
         return;
 
     int i;
-    mfxU8 *p = y + par->CropLeft + par->CropTop * pitch_luma;
+    mfxU8 *p = y + ((par->CropLeft + par->CropTop * pitch_luma_pix) << bd_shift_luma);
     for (i = 0; i < H; i++) {
-        vm_file_fwrite(p, 1, W, f);
-        p += pitch_luma;
+        vm_file_fwrite(p, 1<<bd_shift_luma, W, f);
+        p += pitch_luma_bytes;
     }
     // writing nv12 to yuv420
     // maxlinesize = 4096
     if (W <= 2048*2) { // else invalid dump
-        mfxU8 uvbuf[2048];
-        for (int part = 0; part <= 1; part++) {
-            p = uv + part + par->CropLeft + (par->CropTop>>1) * pitch_chroma;
-            for (i = 0; i < H >> 1; i++) {
-                for (int j = 0; j < W>>1; j++)
-                    uvbuf[j] = p[2*j];
-                vm_file_fwrite(uvbuf, 1, W>>1, f);
-                p += pitch_luma;
+        if (bd_shift_chroma) {
+            mfxU16 uvbuf[2048];
+            mfxU16 *p;
+            for (int part = 0; part <= 1; part++) {
+                p = (Ipp16u*)uv + part + par->CropLeft + (par->CropTop>>1) * pitch_chroma_pix;
+                for (i = 0; i < H >> 1; i++) {
+                    for (int j = 0; j < W>>1; j++)
+                        uvbuf[j] = p[2*j];
+                    vm_file_fwrite(uvbuf, 2, W>>1, f);
+                    p += pitch_chroma_pix;
+                }
+            }
+        } else {
+            mfxU8 uvbuf[2048];
+            for (int part = 0; part <= 1; part++) {
+                p = uv + part + par->CropLeft + (par->CropTop>>1) * pitch_chroma_pix;
+                for (i = 0; i < H >> 1; i++) {
+                    for (int j = 0; j < W>>1; j++)
+                        uvbuf[j] = p[2*j];
+                    vm_file_fwrite(uvbuf, 1, W>>1, f);
+                    p += pitch_chroma_pix;
+                }
             }
         }
     }
 
     if (fbuf) {
-        vm_file_fwrite(fbuf, 1, numlater*W*H*3/2, f);
+        vm_file_fwrite(fbuf, 1, numlater*plane_size, f);
         delete[] fbuf;
     }
     vm_file_fclose(f);

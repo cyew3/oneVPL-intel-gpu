@@ -2049,13 +2049,23 @@ mfxStatus MFXVideoENCODEH265::TaskRoutine(void *pState, void *pParam, mfxU32 thr
 
             mfxI32 parallel_region_selector = th->m_taskParams.parallel_region_selector;
 
+            mfxU8 bitDepth = th->m_enc->m_videoParam.bitDepthLuma > 8;
+
             if (parallel_region_selector == PARALLEL_REGION_MAIN) {
-                if (th->m_enc->m_videoParam.threading_by_rows)
-                    th->m_enc->EncodeThreadByRow(thread_number);
-                else
-                    th->m_enc->EncodeThread(thread_number);
-            } else if (parallel_region_selector == PARALLEL_REGION_DEBLOCKING)
-                th->m_enc->DeblockThread(thread_number);
+                if (th->m_enc->m_videoParam.threading_by_rows) {
+                    bitDepth ?
+                        th->m_enc->EncodeThreadByRow<Ipp16u>(thread_number):
+                        th->m_enc->EncodeThreadByRow<Ipp8u>(thread_number);
+                } else {
+                    bitDepth ?
+                        th->m_enc->EncodeThread<Ipp16u>(thread_number):
+                        th->m_enc->EncodeThread<Ipp8u>(thread_number);
+                }
+            } else if (parallel_region_selector == PARALLEL_REGION_DEBLOCKING) {
+                bitDepth ?
+                    th->m_enc->DeblockThread<Ipp16u>(thread_number):
+                    th->m_enc->DeblockThread<Ipp8u>(thread_number);
+            }
 
             vm_interlocked_dec32(reinterpret_cast<volatile Ipp32u *>(&th->m_taskParams.parallel_executing_threads));
 

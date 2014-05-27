@@ -98,6 +98,9 @@ struct H265VideoParam {
     Ipp32u num_thread_structs;
     Ipp8u threading_by_rows;
 
+    Ipp8u bitDepthLuma;
+    Ipp8u bitDepthChroma;
+
 // derived
     Ipp32s PGopPicSize;
     Ipp32u Width;
@@ -174,11 +177,10 @@ public:
     Ipp8u *memBuf;
     Ipp32s m_frameCountEncoded;
     mfxU32 m_frameCountSend;
-    H265CU *cu;
+    void *cu;
 
 
     std::vector<SaoCtuParam> m_saoParam;
-    SaoDecodeFilter m_saoDecodeFilter;
 
     H265ProfileLevelSet m_profile_level;
     H265VidParameterSet m_vps;
@@ -279,10 +281,14 @@ public:
     Ipp32u    DetermineFrameType();
     void      PrepareToEndSequence();
     mfxStatus EncodeFrame(mfxFrameSurface1 *surface, mfxBitstream *bs);
+    template <typename PixType>
     mfxStatus DeblockThread(Ipp32s ithread);
+    template <typename PixType>    
     mfxStatus ApplySAOThread(Ipp32s ithread);
     mfxStatus ApplySAOThread_old(Ipp32s ithread); //aya: for debug only
+    template <typename PixType>    
     mfxStatus EncodeThread(Ipp32s ithread);
+    template <typename PixType>    
     mfxStatus EncodeThreadByRow(Ipp32s ithread);
     mfxStatus MoveFromCPBToDPB();
     mfxStatus CleanDPB();
