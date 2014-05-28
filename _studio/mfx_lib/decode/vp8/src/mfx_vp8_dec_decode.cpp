@@ -103,12 +103,11 @@ void VideoDECODEVP8::SetOutputParams(mfxFrameSurface1 *p_surface_work)
 {
     mfxFrameSurface1 *p_surface = p_surface_work;
 
-    if (true == m_is_opaque_memory)
+    if (m_is_opaque_memory == true)
     {
         p_surface = m_p_core->GetOpaqSurface(p_surface_work->Data.MemId, true);
     }
 
-    p_surface->Data.TimeStamp = GetMfxTimeStamp(m_num_output_frames * m_in_framerate);
     p_surface->Data.FrameOrder = m_num_output_frames;
     m_num_output_frames += 1;
 
@@ -118,12 +117,12 @@ void VideoDECODEVP8::SetOutputParams(mfxFrameSurface1 *p_surface_work)
     p_surface->Info.CropX = m_on_init_video_params.mfx.FrameInfo.CropX;
     p_surface->Info.CropY = m_on_init_video_params.mfx.FrameInfo.CropY;
 
-    if (0 == p_surface->Info.CropW)
+    if(p_surface->Info.CropW == 0)
     {
         p_surface->Info.CropW = m_on_init_video_params.mfx.FrameInfo.Width;
     }
 
-    if (0 == p_surface->Info.CropH)
+    if(p_surface->Info.CropH == 0)
     {
         p_surface->Info.CropH = m_on_init_video_params.mfx.FrameInfo.Height;
     }
@@ -806,7 +805,7 @@ mfxStatus VideoDECODEVP8::DecodeFrameCheck(mfxBitstream *p_bs, mfxFrameSurface1 
     bool show_frame;
     FrameType frame_type;
 
-    if (0 == p_bs->DataLength)
+    if(p_bs->DataLength == 0)
     {
         return MFX_ERR_MORE_DATA;
     }
@@ -815,7 +814,7 @@ mfxStatus VideoDECODEVP8::DecodeFrameCheck(mfxBitstream *p_bs, mfxFrameSurface1 
     frame_type = (pTemp[0] & 1) ? P_PICTURE : I_PICTURE; // 1 bits
     show_frame = (pTemp[0] >> 4) & 0x1;
 
-    if (I_PICTURE == frame_type)
+    if(frame_type == I_PICTURE)
     {
         sts = PreDecodeFrame(p_bs, p_surface_work);
         MFX_CHECK_STS(sts);
@@ -841,14 +840,14 @@ mfxStatus VideoDECODEVP8::DecodeFrameCheck(mfxBitstream *p_bs, mfxFrameSurface1 
     UMC::FrameData *p_frame_data = NULL;
     UMC::VideoData *video_data = new UMC::VideoData;
 
-    if (true == show_frame)
+    if(show_frame)
     {
         m_p_frame_allocator->Alloc(&memId, &info, 0);
 
         // get to decode frame data
         p_frame_data = (UMC::FrameData *) m_p_frame_allocator->Lock(memId);
 
-        if (NULL == p_frame_data)
+        if(p_frame_data == NULL)
         {
             delete video_data;
             return MFX_ERR_LOCK_MEMORY;
@@ -883,6 +882,9 @@ mfxStatus VideoDECODEVP8::DecodeFrameCheck(mfxBitstream *p_bs, mfxFrameSurface1 
             //*pp_surface_out = m_p_frame_allocator->GetSurface(memId, p_surface_work, &m_video_params);
 
         SetOutputParams(p_surface_work);
+
+        (*pp_surface_out)->Data.TimeStamp = p_bs->TimeStamp;
+
     }
 
     THREAD_TASK_INFO *p_info = new THREAD_TASK_INFO;
@@ -906,7 +908,7 @@ mfxStatus VideoDECODEVP8::DecodeFrameCheck(mfxBitstream *p_bs, mfxFrameSurface1 
     p_entry_point->requiredNumThreads = 1;
     p_entry_point->pParam = p_info;
 
-    if (false == show_frame)
+    if(!show_frame)
     {
         return MFX_ERR_MORE_DATA;
     }

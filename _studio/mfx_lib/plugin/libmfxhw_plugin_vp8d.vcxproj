@@ -268,11 +268,11 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_Intel|Win32'">
     <GenerateManifest>false</GenerateManifest>
-    <IncludePath>$(ProjectDir)\..\..\..\thirdparty\vp8_libvpx;$(IncludePath)</IncludePath>
+    <IncludePath>$(ProjectDir)\..\..\..\mdp_msdk-contrib\vp8_libvpx;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_Intel_Evaluation|Win32'">
     <GenerateManifest>false</GenerateManifest>
-    <IncludePath>$(ProjectDir)\..\..\..\thirdparty\vp8_libvpx;$(IncludePath)</IncludePath>
+    <IncludePath>$(ProjectDir)\..\..\..\mdp_msdk-contrib\vp8_libvpx;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_Intel|x64'">
     <GenerateManifest>false</GenerateManifest>
@@ -281,21 +281,21 @@
     <GenerateManifest>false</GenerateManifest>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <IncludePath>$(ProjectDir)\..\..\..\thirdparty\vp8_libvpx;$(IncludePath)</IncludePath>
+    <IncludePath>$(ProjectDir)\..\..\..\mdp_msdk-contrib\vp8_libvpx;$(IncludePath)</IncludePath>
     <LibraryPath>$(WindowsSdk8Path)\Lib\win8\um\x86;$(LibraryPath)</LibraryPath>
     <ExecutablePath>$(VCInstallDir)PlatformSDK\bin;$(ExecutablePath)</ExecutablePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug_Intel_Evaluation|Win32'">
-    <IncludePath>$(ProjectDir)\..\..\..\thirdparty\vp8_libvpx;$(IncludePath)</IncludePath>
+    <IncludePath>$(ProjectDir)\..\..\..\mdp_msdk-contrib\vp8_libvpx;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <IncludePath>$(ProjectDir)\..\..\..\thirdparty\vp8_libvpx;$(IncludePath)</IncludePath>
+    <IncludePath>$(ProjectDir)\..\..\..\mdp_msdk-contrib\vp8_libvpx;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug_Intel|Win32'">
-    <IncludePath>$(ProjectDir)\..\..\..\thirdparty\vp8_libvpx;$(IncludePath)</IncludePath>
+    <IncludePath>$(ProjectDir)\..\..\..\mdp_msdk-contrib\vp8_libvpx;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <IncludePath>$(ProjectDir)\..\..\..\thirdparty\vp8_libvpx;$(IncludePath)</IncludePath>
+    <IncludePath>$(ProjectDir)\..\..\..\mdp_msdk-contrib\vp8_libvpx;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -734,7 +734,7 @@
     <None Include="libmfx.def" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\..\thirdparty\vp8_libvpx.vcxproj">
+    <ProjectReference Include="..\..\..\mdp_msdk-contrib\vp8_libvpx.vcxproj">
       <Project>{18a3f3bc-74d2-4155-9be1-9b29bb7db2db}</Project>
     </ProjectReference>
     <ProjectReference Include="..\..\shared\mfx_trace\mfx_trace.vcxproj">
@@ -742,9 +742,6 @@
     </ProjectReference>
     <ProjectReference Include="..\..\shared\umc\codec\color_space_converter\color_space_converter_hw.vcxproj">
       <Project>{57fe8dac-c7c4-4df4-9a36-2fee040dff38}</Project>
-    </ProjectReference>
-    <ProjectReference Include="..\..\shared\umc\codec\vp8_dec\vp8_dec.vcxproj">
-      <Project>{27c98bcb-bcb6-4d57-9a47-d154bce0d8c9}</Project>
     </ProjectReference>
     <ProjectReference Include="..\..\shared\umc\core\umc\base_classes.vcxproj">
       <Project>{31991d83-f6a2-49d9-bdc5-64e85d055a1c}</Project>

@@ -40,6 +40,8 @@
 mfxStatus VideoDECODEVP8_HW::PackHeaders(mfxBitstream *p_bistream)
 {
 
+    using namespace VP8Defs;
+
     UMCVACompBuffer* compBufPic;
     VP8_DECODE_PICTURE_PARAMETERS *picParams = (VP8_DECODE_PICTURE_PARAMETERS*)m_p_video_accelerator->GetCompBuffer(D3D9_VIDEO_DECODER_BUFFER_PICTURE_PARAMETERS, &compBufPic);
     memset(picParams, 0, sizeof(VP8_DECODE_PICTURE_PARAMETERS));
@@ -51,9 +53,7 @@ mfxStatus VideoDECODEVP8_HW::PackHeaders(mfxBitstream *p_bistream)
 
     picParams->CurrPicIndex = (UCHAR)info.currIndex;
 
-    char cStr[256];
-
-    if (I_PICTURE == m_frame_info.frameType)
+    if(m_frame_info.frameType == I_PICTURE)
     {
         picParams->key_frame = 1;
 
@@ -61,8 +61,6 @@ mfxStatus VideoDECODEVP8_HW::PackHeaders(mfxBitstream *p_bistream)
         picParams->GoldenRefPicIndex = (UCHAR)info.currIndex;
         picParams->AltRefPicIndex = (UCHAR)info.currIndex;
         picParams->DeblockedPicIndex = (UCHAR)info.currIndex;
-
-        sprintf(cStr, "key: cpi %d\n", picParams->CurrPicIndex);
     }
     else // inter frame
     {
@@ -72,16 +70,7 @@ mfxStatus VideoDECODEVP8_HW::PackHeaders(mfxBitstream *p_bistream)
         picParams->GoldenRefPicIndex = (UCHAR)info.goldIndex;
         picParams->AltRefPicIndex = (UCHAR)info.altrefIndex;
         picParams->DeblockedPicIndex = (UCHAR)info.currIndex;
-
-        sprintf(cStr, "inter: cpi %d | lf %d | gf %d | altf %d\n", picParams->CurrPicIndex,
-            picParams->LastRefPicIndex,
-            picParams->GoldenRefPicIndex,
-            picParams->AltRefPicIndex);
     }
-
-    curr_indx += 1;
-
-    OutputDebugStringA(cStr);
 
     picParams->version = m_frame_info.version;
     picParams->segmentation_enabled = m_frame_info.segmentationEnabled;
@@ -90,7 +79,7 @@ mfxStatus VideoDECODEVP8_HW::PackHeaders(mfxBitstream *p_bistream)
 
     picParams->filter_type = m_frame_info.loopFilterType;
 
-    if (I_PICTURE != m_frame_info.frameType)
+    if(m_frame_info.frameType != I_PICTURE)
     {
         picParams->sign_bias_golden = m_refresh_info.refFrameBiasTable[3];
         picParams->sign_bias_alternate = m_refresh_info.refFrameBiasTable[2];
@@ -267,7 +256,7 @@ mfxStatus VideoDECODEVP8_HW::PackHeaders(mfxBitstream *p_bistream)
     Ipp32s size = p_bistream->DataLength;
     Ipp32u offset = 0;
 
-    if (I_PICTURE == m_frame_info.frameType)
+    if (m_frame_info.frameType == I_PICTURE)
     {
         offset = 10;
     }

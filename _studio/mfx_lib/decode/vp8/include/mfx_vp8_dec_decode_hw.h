@@ -18,16 +18,17 @@
 
 #include "mfx_common_int.h"
 #include "mfx_umc_alloc_wrapper.h"
+#include "umc_frame_data.h"
+#include "umc_media_buffer.h"
+#include "umc_media_data.h"
+
 #include "mfx_task.h"
 
-#include "vp8_dec_defs.h"
-
 #include "umc_mutex.h"
-#include "umc_vp8_decoder.h"
-#include "umc_vp8_mfx_decode_hw.h"
 
 #include <map>
 
+#include "mfx_vp8_dec_decode_vp8_defs.h"
 #include "mfx_vp8_dec_decode_common.h"
 
 class MFX_VP8_BoolDecoder
@@ -157,16 +158,6 @@ public:
     }
 };
 
-struct sFrameInfo
-{
-    UMC::FrameType frameType;
-    mfxU16 currIndex;
-    mfxU16 goldIndex;
-    mfxU16 altrefIndex;
-    mfxU16 lastrefIndex;
-    FrameData *frmData;
-};
-
 class VideoDECODEVP8_HW : public VideoDECODE
 {
 public:
@@ -192,13 +183,12 @@ public:
     virtual mfxStatus GetPayload(mfxU64 *pTimeStamp, mfxPayload *pPayload);
     virtual mfxStatus SetSkipMode(mfxSkipMode mode);
 
-protected:
-    void CalculateTimeSteps(mfxFrameSurface1 *);
+private:
+
     mfxStatus ConstructFrame(mfxBitstream *, mfxBitstream *, VP8DecodeCommon::IVF_FRAME&);
     mfxStatus PreDecodeFrame(mfxBitstream *, mfxFrameSurface1 *);
-    mfxStatus QueryIOSurfInternal(eMFXPlatform, mfxVideoParam *, mfxFrameAllocRequest *);
+    static mfxStatus QueryIOSurfInternal(eMFXPlatform, mfxVideoParam *, mfxFrameAllocRequest *);
 
-    mfxStatus AllocateFrame();
     mfxStatus DecodeFrameHeader(mfxBitstream *p_bistream);
     void UpdateSegmentation(MFX_VP8_BoolDecoder &);
     void UpdateLoopFilterDeltas(MFX_VP8_BoolDecoder &);
@@ -209,9 +199,28 @@ protected:
 
     UMC::FrameMemID GetMemIdToUnlock();
 
-    mfxStatus GetFrame(MediaData* in, FrameData** out);
+    mfxStatus GetFrame(UMC::MediaData* in, UMC::FrameData** out);
 
-private:
+	friend static mfxStatus __CDECL VP8DECODERoutine(void *p_state, void *pp_param, mfxU32 thread_number, mfxU32);
+
+	struct VP8DECODERoutineData
+	{
+		VideoDECODEVP8_HW* decoder;
+		mfxFrameSurface1* surface_work;
+		FrameMemID memId;
+		FrameMemID memIdToUnlock;
+	};
+
+    struct sFrameInfo
+    {
+        UMC::FrameType frameType;
+        mfxU16 currIndex;
+        mfxU16 goldIndex;
+        mfxU16 altrefIndex;
+        mfxU16 lastrefIndex;
+        UMC::FrameMemID memId;
+    };
+
     bool                    m_is_initialized;
     VideoCORE*              m_p_core;
     eMFXPlatform            m_platform;
@@ -224,42 +233,32 @@ private:
     mfxF64                  m_in_framerate;
     mfxU16                  m_frameOrder;
 
-    vm_mutex                m_mutex;
+    UMC::Mutex               m_mutex;
 
     mfxBitstream            m_bs;
-    vp8_FrameInfo           m_frame_info;
+    VP8Defs::vp8_FrameInfo           m_frame_info;
     unsigned                m_CodedCoeffTokenPartition;
 
-    vp8_RefreshInfo         m_refresh_info;
-    vp8_FrameProbabilities  m_frameProbs;
-    vp8_FrameProbabilities  m_frameProbs_saved;
-    vp8_QuantInfo           m_quantInfo;
-    vp8_MbInfo*             m_pMbInfo;
-    Ipp8u                   m_RefFrameIndx[VP8_NUM_OF_REF_FRAMES];
-    MFX_VP8_BoolDecoder     m_boolDecoder[VP8_MAX_NUMBER_OF_PARTITIONS];
+    VP8Defs::vp8_RefreshInfo         m_refresh_info;
+    VP8Defs::vp8_FrameProbabilities  m_frameProbs;
+    VP8Defs::vp8_FrameProbabilities  m_frameProbs_saved;
+    VP8Defs::vp8_QuantInfo           m_quantInfo;
+    VP8Defs::vp8_MbInfo*             m_pMbInfo;
+    Ipp8u                   m_RefFrameIndx[VP8Defs::VP8_NUM_OF_REF_FRAMES];
+    MFX_VP8_BoolDecoder     m_boolDecoder[VP8Defs::VP8_MAX_NUMBER_OF_PARTITIONS];
 
-    std::auto_ptr<mfx_UMC_FrameAllocator> m_p_frame_allocator;
-
-    FrameData m_frame_data[VP8_NUM_OF_REF_FRAMES];
-    FrameData m_last_frame_data;
-    FrameData *m_p_curr_frame;
-    std::map<FrameData *, bool> m_surface_list;
-
-    mfxU16 curr_indx;
     mfxU16 gold_indx;
     mfxU16 altref_indx;
-    std::vector<sFrameInfo> m_frames;
+    mfxU16 lastrefIndex;
 
-    bool m_is_software_buffer;
+    std::vector<sFrameInfo> m_frames;
 
     mfxFrameAllocResponse   m_response;
     mfxDecodeStat           m_stat;
+    mfxFrameAllocRequest    m_request;
 
-    //////////////////////////////////////////
-
+    std::auto_ptr<mfx_UMC_FrameAllocator> m_p_frame_allocator;
     UMC::VideoAccelerator *m_p_video_accelerator;
-
-    mfxU16 lastrefIndex;
 
 };
 

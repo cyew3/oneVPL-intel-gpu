@@ -19,11 +19,8 @@
 
 #include "mfx_common_int.h"
 #include "umc_video_decoder.h"
-#if defined (MFX_VA)
-    #include "umc_vp8_mfx_decode_hw.h"
-#endif
 
-#include "umc_vp8_decoder.h"
+#include "mfx_vp8_dec_decode_vp8_defs.h"
 #include "mfx_umc_alloc_wrapper.h"
 
 #include "umc_mutex.h"
