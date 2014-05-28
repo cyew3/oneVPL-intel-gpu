@@ -324,12 +324,11 @@ public:
     Ipp32u GetCoefScanIdx(Ipp32u absPartIdx, Ipp32u width, Ipp32s bIsLuma, Ipp32s bIsIntra);
 
     template <class H265Bs>
-    void CodeCoeffNxN(H265Bs *bs, H265CU *pCU, CoeffsType *coeffs, Ipp32u absPartIdx, Ipp32u width,
-                      Ipp32u height, EnumTextType type);
+    void CodeCoeffNxN(H265Bs *bs, H265CU *pCU, CoeffsType *coeffs, Ipp32u absPartIdx, Ipp32u width, EnumTextType type);
 
     template <class H265Bs>
     void PutTransform(H265Bs *bs, Ipp32u offsetLuma, Ipp32u offsetChroma, Ipp32u absPartIdx,
-                      Ipp32u absTuPartIdx, Ipp32u depth, Ipp32u width, Ipp32u height, Ipp32u trIdx,
+                      Ipp32u absTuPartIdx, Ipp32u depth, Ipp32u width, Ipp32u trIdx,
                       Ipp8u& codeDqp, Ipp8u splitFlagOnly = 0);
 
     template <class H265Bs>
@@ -342,7 +341,7 @@ public:
     void UpdateCuQp(void);
 
     template <class H265Bs>
-    void EncodeCoeff(H265Bs *bs, Ipp32u absPartIdx, Ipp32u depth, Ipp32u width, Ipp32u height,
+    void EncodeCoeff(H265Bs *bs, Ipp32u absPartIdx, Ipp32u depth, Ipp32u width,
                      Ipp8u &codeDqp);
 
     template <class H265Bs>

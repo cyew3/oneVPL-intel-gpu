@@ -2727,7 +2727,7 @@ void H265CU<PixType>::TuGetSplitInter(Ipp32u absPartIdx, Ipp32s offset, Ipp8u tr
             Ipp8u code_dqp = getdQPFlag();
             PutTransform(m_bsf, offset, offset>>2, absPartIdx, absPartIdx,
                           m_data[absPartIdx].depth + m_data[absPartIdx].trIdx,
-                          width, width, m_data[absPartIdx].trIdx, code_dqp, 1);
+                          width, m_data[absPartIdx].trIdx, code_dqp, 1);
 
             cost_split += BIT_COST_INTER(m_bsf->GetNumBits());
         }
@@ -4513,7 +4513,7 @@ void H265CU<PixType>::EncAndRecLumaTu(Ipp32u absPartIdx, Ipp32s offset, Ipp32s w
             SetCbfOne(absPartIdx, TEXT_LUMA, m_data[absPartIdx].trIdx);
             PutTransform(m_bsf, offset, offset>>2, absPartIdx, absPartIdx,
                 depth + m_data[absPartIdx].trIdx,
-                width, width, m_data[absPartIdx].trIdx, code_dqp);
+                width, m_data[absPartIdx].trIdx, code_dqp);
         }
         else {
             m_bsf->EncodeSingleBin_CABAC(CTX(m_bsf,QT_CBF_HEVC) +
@@ -4638,11 +4638,11 @@ void H265CU<PixType>::EncAndRecChromaTu(Ipp32u absPartIdx, Ipp32s offset, Ipp32s
         m_bsf->Reset();
         if (cbf[0])
         {
-            CodeCoeffNxN(m_bsf, this, (m_trCoeffU+offset), absPartIdx, width, width, TEXT_CHROMA_U );
+            CodeCoeffNxN(m_bsf, this, (m_trCoeffU+offset), absPartIdx, width, TEXT_CHROMA_U );
         }
         if (cbf[1])
         {
-            CodeCoeffNxN(m_bsf, this, (m_trCoeffV+offset), absPartIdx, width, width, TEXT_CHROMA_V );
+            CodeCoeffNxN(m_bsf, this, (m_trCoeffV+offset), absPartIdx, width, TEXT_CHROMA_V );
         }
         if(IS_INTRA(m_data, absPartIdx))
             *cost += BIT_COST(m_bsf->GetNumBits());

@@ -495,8 +495,7 @@ void RDOQuant<PixType>::DoAlgorithm(
             sig_coeff_group_flag,
             CG_pos_x,
             CG_pos_y,
-            width,
-            height);
+            width);
 
         for (Ipp32s pos_in_CG = sizeCG-1; pos_in_CG >= 0; pos_in_CG--)
         {
@@ -620,8 +619,7 @@ void RDOQuant<PixType>::DoAlgorithm(
                     CG_pos_x,
                     CG_pos_y,
                     0,
-                    width,
-                    height);
+                    width);
 
                 if (sig_coeff_group_flag[ CG_blk_pos ] == 0)
                 {

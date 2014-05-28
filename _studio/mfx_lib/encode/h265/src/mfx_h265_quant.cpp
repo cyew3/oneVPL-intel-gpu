@@ -101,42 +101,40 @@ static const Ipp32s matrixIdTable[] = {0, 1, 2};
 
 
 Ipp32s h265_quant_calcpattern_sig_ctx( const Ipp32u* sig_coeff_group_flag, Ipp32u posXCG, Ipp32u posYCG,
-                                    Ipp32u width, Ipp32u height )
+                                    Ipp32u width )
 {
-    if( width == 4 && height == 4 ) return -1;
+    if( width == 4 ) return -1;
 
     Ipp32u sig_right = 0;
     Ipp32u sig_lower = 0;
 
     width >>= 2;
-    height >>= 2;
     if( posXCG < width - 1 )
     {
         sig_right = (sig_coeff_group_flag[ posYCG * width + posXCG + 1 ] != 0);
     }
-    if (posYCG < height - 1 )
+    if (posYCG < width - 1 )
     {
         sig_lower = (sig_coeff_group_flag[ (posYCG  + 1 ) * width + posXCG ] != 0);
     }
     return sig_right + (sig_lower<<1);
 }
 
-Ipp32u h265_quant_getSigCoeffGroupCtxInc  ( const Ipp32u*               sig_coeff_group_flag,
-                                           const Ipp32u                      uCG_pos_x,
-                                           const Ipp32u                      uCG_pos_y,
-                                           const Ipp32u                      scanIdx,
-                                           Ipp32u width, Ipp32u height)
+Ipp32u h265_quant_getSigCoeffGroupCtxInc ( const Ipp32u* sig_coeff_group_flag,
+                                           const Ipp32u   uCG_pos_x,
+                                           const Ipp32u   uCG_pos_y,
+                                           const Ipp32u   scanIdx,
+                                           Ipp32u width)
 {
     Ipp32u uiRight = 0;
     Ipp32u uiLower = 0;
 
     width >>= 2;
-    height >>= 2;
     if( uCG_pos_x < width - 1 )
     {
         uiRight = (sig_coeff_group_flag[ uCG_pos_y * width + uCG_pos_x + 1 ] != 0);
     }
-    if (uCG_pos_y < height - 1 )
+    if (uCG_pos_y < width - 1 )
     {
         uiLower = (sig_coeff_group_flag[ (uCG_pos_y  + 1 ) * width + uCG_pos_x ] != 0);
     }

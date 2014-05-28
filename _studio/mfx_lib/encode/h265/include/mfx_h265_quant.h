@@ -21,16 +21,14 @@ Ipp32s h265_quant_calcpattern_sig_ctx(
     const Ipp32u* sig_coeff_group_flag,
     Ipp32u posXCG,
     Ipp32u posYCG,
-    Ipp32u width,
-    Ipp32u height );
+    Ipp32u width );
 
 Ipp32u h265_quant_getSigCoeffGroupCtxInc  (
     const Ipp32u*   sig_coeff_group_flag,
     const Ipp32u    uCG_pos_x,
     const Ipp32u    uCG_pos_y,
     const Ipp32u    scan_idx,
-    Ipp32u          width,
-    Ipp32u          height);
+    Ipp32u          width);
 
 Ipp32s h265_quant_getSigCtxInc(
     Ipp32s pattern_sig_ctx,
