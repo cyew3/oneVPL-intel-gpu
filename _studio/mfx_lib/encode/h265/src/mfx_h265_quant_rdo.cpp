@@ -343,32 +343,27 @@ void EncodeOneCoeff(
     Ipp32s scan_pos,
     RDOQCabacState* par)
 {
-    Ipp32u baseLevel = (par->c1Idx < C1FLAG_NUMBER) ? (2 + (par->c2Idx < C2FLAG_NUMBER)) : 1;
 
-    if( qlevel >= baseLevel )
-    {
-        if(qlevel  > 3u * (1<<par->go_rice_param))
+    if (qlevel) {
+        par->c1Idx++;
+
+        if( qlevel > 1 )
         {
-            par->go_rice_param = IPP_MIN(par->go_rice_param + 1, 4);
+            if(qlevel > (3u<<par->go_rice_param))
+            {
+                par->go_rice_param = IPP_MIN(par->go_rice_param + 1, 4);
+            }
+            par->c1 = 0;
+            par->c2 += (par->c2 < 2);
+            par->c2Idx++;
+        }
+        else if( (par->c1 < 3) && (par->c1 > 0) )
+        {
+            par->c1++;
         }
     }
-    if ( qlevel >= 1)
-    {
-        par->c1Idx++;
-    }
 
-    if( qlevel > 1 )
-    {
-        par->c1 = 0;
-        par->c2 += (par->c2 < 2);
-        par->c2Idx++;
-    }
-    else if( (par->c1 < 3) && (par->c1 > 0) && qlevel)
-    {
-        par->c1++;
-    }
-
-    if( ( scan_pos % SCAN_SET_SIZE == 0 ) && ( scan_pos > 0 ) )
+    if( (scan_pos & ~(SCAN_SET_SIZE-1)) == scan_pos )
     {
         par->c2            = 0;
         par->go_rice_param = 0;

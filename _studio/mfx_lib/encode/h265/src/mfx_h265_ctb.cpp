@@ -401,10 +401,10 @@ Ipp32u H265CU<PixType>::GetCoefScanIdx(Ipp32u absPartIdx, Ipp32u width, Ipp32s i
         {
             // get number of partitions in current CU
             Ipp32u depth = m_data[absPartIdx].depth;
-            Ipp32u numParts = m_par->NumPartInCU >> (2 * depth);
+            Ipp32s mask = (-1) << (2 * (m_par->MaxCUDepth-depth));
 
             // get luma mode from upper-left corner of current CU
-            dirMode = m_data[(absPartIdx/numParts)*numParts].intraLumaDir;
+            dirMode = m_data[absPartIdx & mask].intraLumaDir;
         }
         scanIdx = COEFF_SCAN_ZIGZAG;
         if (ctxIdx > 4 && ctxIdx < 7) //if multiple scans supported for transform size
@@ -925,25 +925,25 @@ void H265CU<PixType>::InitCu(H265VideoParam *_par, H265CUData *_data, H265CUData
         m_rdLambdaInter = m_cslice->rd_lambda_inter_slice;
         m_rdLambdaInterMv = m_cslice->rd_lambda_inter_mv_slice;
 
-        if ( m_numPartition > 0 )
-        {
-            memset (m_dataSave, 0, sizeof(H265CUData));
-            m_dataSave->partSize = PART_SIZE_NONE;
-            m_dataSave->predMode = MODE_NONE;
-            m_dataSave->size = (Ipp8u)m_par->MaxCUSize;
-            m_dataSave->mvpIdx[0] = -1;
-            m_dataSave->mvpIdx[1] = -1;
-            m_dataSave->mvpNum[0] = -1;
-            m_dataSave->mvpNum[1] = -1;
-            //m_data->qp = m_par->QP;
-            m_data->qp = m_par->m_lcuQps[m_ctbAddr];
-            m_dataSave->_flags = 0;
-            m_dataSave->intraLumaDir = INTRA_DC;
-            m_dataSave->intraChromaDir = INTRA_DM_CHROMA;
-            m_dataSave->cbf[0] = m_dataSave->cbf[1] = m_dataSave->cbf[2] = 0;
+        //if ( m_numPartition > 0 )
+        //{
+        //    memset (m_dataSave, 0, sizeof(H265CUData));
+        //    m_dataSave->partSize = PART_SIZE_NONE;
+        //    m_dataSave->predMode = MODE_NONE;
+        //    m_dataSave->size = (Ipp8u)m_par->MaxCUSize;
+        //    m_dataSave->mvpIdx[0] = -1;
+        //    m_dataSave->mvpIdx[1] = -1;
+        //    m_dataSave->mvpNum[0] = -1;
+        //    m_dataSave->mvpNum[1] = -1;
+        //    //m_data->qp = m_par->QP;
+        //    m_data->qp = m_par->m_lcuQps[m_ctbAddr];
+        //    m_dataSave->_flags = 0;
+        //    m_dataSave->intraLumaDir = INTRA_DC;
+        //    m_dataSave->intraChromaDir = INTRA_DM_CHROMA;
+        //    m_dataSave->cbf[0] = m_dataSave->cbf[1] = m_dataSave->cbf[2] = 0;
 
-            PropagateSubPart(m_dataSave, m_numPartition);
-        }
+        //    PropagateSubPart(m_dataSave, m_numPartition);
+        //}
         for (Ipp32u i = 0; i < 4; i++) {
             m_costStat[m_ctbAddr].cost[i] = m_costStat[m_ctbAddr].num[i] = 0;
         }
@@ -1538,7 +1538,6 @@ void H265CU<PixType>::ModeDecision(Ipp32u absPartIdx, Ipp32u offset, Ipp8u depth
                     *cost = costInter;
                 small_memcpy(dataBest + absPartIdx, m_dataSave + absPartIdx, numParts * sizeof(H265CUData));
                 if (depth == 0) {
-                    m_data = m_dataSave;
                     for (Ipp32u i = absPartIdx; i < absPartIdx + numParts; i++) {
                         m_data[i].cbf[0] = m_data[i].cbf[1] = m_data[i].cbf[2] = 0;
                     }

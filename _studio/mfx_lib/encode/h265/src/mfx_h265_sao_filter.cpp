@@ -1066,8 +1066,8 @@ void SaoEncodeFilter::Init(int width, int height, int maxCUWidth, int maxDepth, 
     m_bitDepth = bitDepth;
     m_saoMaxOffsetQVal = (1<<(MIN(m_bitDepth,10)-5))-1;
 
-    m_numCTU_inWidth = (m_frameSize.width/m_maxCuSize)  + ((m_frameSize.width % m_maxCuSize)?1:0);
-    m_numCTU_inHeight= (m_frameSize.height/m_maxCuSize) + ((m_frameSize.height % m_maxCuSize)?1:0);
+    m_numCTU_inWidth = (m_frameSize.width  + m_maxCuSize - 1) / m_maxCuSize;
+    m_numCTU_inHeight= (m_frameSize.height + m_maxCuSize - 1) / m_maxCuSize;
 
     m_numSaoModes = (saoOpt == SAO_OPT_ALL_MODES) ? NUM_SAO_BASE_TYPES : NUM_SAO_BASE_TYPES - 1;
 } // void SaoEncodeFilter::Init(...)

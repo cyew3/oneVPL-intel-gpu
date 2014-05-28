@@ -78,7 +78,7 @@ void h265_write_coef_remain_ex_golomb (H265Bs *bs, Ipp32u symbol, Ipp32u &param 
     {
         length = code_number>>param;
         bs->EncodeBinsEP_CABAC( (1<<(length+1))-2 , length+1);
-        bs->EncodeBinsEP_CABAC((code_number%(1<<param)),param);
+        bs->EncodeBinsEP_CABAC((code_number&((1<<param)-1)), param);
     }
     else
     {
@@ -943,13 +943,14 @@ void H265CU<PixType>::PutTransform(H265Bs* bs,Ipp32u offset_luma, Ipp32u offset_
     }
     if (Log2TrafoSize == 2)
     {
-        Ipp32u part_num = m_par->NumPartInCU >> ( ( depth - 1 ) << 1 );
-        if ((abs_part_idx % part_num) == 0)
+        //Ipp32u part_num = m_par->NumPartInCU >> ( ( depth - 1 ) << 1 );
+        Ipp32u part_num_mask = (4 << ( (m_par->MaxCUDepth - depth) * 2 )) - 1;
+        if ((abs_part_idx & part_num_mask) == 0)
         {
             m_bakAbsPartIdx = abs_part_idx;
             m_bakChromaOffset = offset_chroma;
         }
-        else if ((abs_part_idx % part_num) == (part_num - 1))
+        else if ((abs_part_idx & part_num_mask) == part_num_mask)
         {
             cbfU = GetCbf( m_bakAbsPartIdx, TEXT_CHROMA_U, tr_idx );
             cbfV = GetCbf( m_bakAbsPartIdx, TEXT_CHROMA_V, tr_idx );
@@ -1099,8 +1100,9 @@ void H265CU<PixType>::PutTransform(H265Bs* bs,Ipp32u offset_luma, Ipp32u offset_
             }
             else
             {
-                Ipp32u part_num = m_par->NumPartInCU >> ( ( depth - 1 ) << 1 );
-                if ((abs_part_idx % part_num ) == (part_num - 1))
+                //Ipp32u part_num = m_par->NumPartInCU >> ( ( depth - 1 ) << 1 );
+                Ipp32u part_num_mask = (4 << ( (m_par->MaxCUDepth - depth) * 2 )) - 1;
+                if ((abs_part_idx & part_num_mask ) == part_num_mask)
                 {
                     Ipp32s tr_width = width;
                     Ipp32s tr_height = height;
