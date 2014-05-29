@@ -253,8 +253,6 @@ protected:
     mfxFrameAllocResponse            m_response;
     mfxFrameAllocResponse            m_response_op;
 
-    // if we allocate memory for another component. Need for opaq surfaces
-    mfxFrameAllocResponse            m_response_alien;
 
 #if defined (ELK_WORKAROUND)
     mfxFrameAllocResponse            m_fakeresponse;
