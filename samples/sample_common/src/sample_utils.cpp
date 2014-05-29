@@ -1673,57 +1673,37 @@ msdk_string NoFullPath(const msdk_string & file_path) {
 template<> mfxStatus
 msdk_opt_read(const msdk_char* string, mfxU8& value)
 {
-    int n;
-    msdk_char end;
+    msdk_char* stopCharacter;
+    value = (mfxU8)msdk_strtol(string, &stopCharacter, 10);
 
-#if defined(_WIN32) || defined(_WIN64)
-    n = _stscanf_s(string, MSDK_STRING("%hhu%c"), &value, &end, sizeof(end));
-#else
-    n = sscanf(string, MSDK_STRING("%hhu%c"), &value, &end);
-#endif
-    return (n == 1)? MFX_ERR_NONE: MFX_ERR_UNKNOWN;
+    return (msdk_strlen(stopCharacter) == 0)? MFX_ERR_NONE: MFX_ERR_UNKNOWN;
 }
 
 template<> mfxStatus
 msdk_opt_read(const msdk_char* string, mfxU16& value)
 {
-    int n;
-    msdk_char end;
+    msdk_char* stopCharacter;
+    value = (mfxU16)msdk_strtol(string, &stopCharacter, 10);
 
-#if defined(_WIN32) || defined(_WIN64)
-    n = _stscanf_s(string, MSDK_STRING("%hud%c"), &value, &end, sizeof(end));
-#else
-    n = sscanf(string, MSDK_STRING("%hud%c"), &value, &end);
-#endif
-    return (n == 1)? MFX_ERR_NONE: MFX_ERR_UNKNOWN;
+    return (msdk_strlen(stopCharacter) == 0)? MFX_ERR_NONE: MFX_ERR_UNKNOWN;
 }
 
 template<> mfxStatus
 msdk_opt_read(const msdk_char* string, mfxU32& value)
 {
-    int n;
-    msdk_char end;
+    msdk_char* stopCharacter;
+    value = (mfxU32)msdk_strtol(string, &stopCharacter, 10);
 
-#if defined(_WIN32) || defined(_WIN64)
-    n = _stscanf_s(string, MSDK_STRING("%ud%c"), &value, &end, sizeof(end));
-#else
-    n = sscanf(string, MSDK_STRING("%ud%c"), &value, &end);
-#endif
-    return (n == 1)? MFX_ERR_NONE: MFX_ERR_UNKNOWN;
+    return (msdk_strlen(stopCharacter) == 0)? MFX_ERR_NONE: MFX_ERR_UNKNOWN;
 }
 
 template<> mfxStatus
 msdk_opt_read(const msdk_char* string, mfxF64& value)
 {
-    int n;
-    msdk_char end;
+    msdk_char* stopCharacter;
+    value = (mfxF64)msdk_strtod(string, &stopCharacter);
 
-#if defined(_WIN32) || defined(_WIN64)
-    n = _stscanf_s(string, MSDK_STRING("%lf%c"), &value, &end, sizeof(end));
-#else
-    n = sscanf(string, MSDK_STRING("%lf%c"), &value, &end);
-#endif
-    return (n == 1)? MFX_ERR_NONE: MFX_ERR_UNKNOWN;
+    return (msdk_strlen(stopCharacter) == 0)? MFX_ERR_NONE: MFX_ERR_UNKNOWN;
 }
 
 mfxStatus msdk_opt_read(const msdk_char* string, mfxU8& value);
@@ -1734,29 +1714,19 @@ mfxStatus msdk_opt_read(const msdk_char* string, mfxF64& value);
 template<> mfxStatus
 msdk_opt_read(const msdk_char* string, mfxI16& value)
 {
-    int n;
-    msdk_char end;
+    msdk_char* stopCharacter;
+    value = (mfxI16)msdk_strtol(string, &stopCharacter, 10);
 
-#if defined(_WIN32) || defined(_WIN64)
-    n = _stscanf_s(string, MSDK_STRING("%hd%c"), &value, &end, sizeof(end));
-#else
-    n = sscanf(string, MSDK_STRING("%hd%c"), &value, &end);
-#endif
-    return (n == 1)? MFX_ERR_NONE: MFX_ERR_UNKNOWN;
+    return (msdk_strlen(stopCharacter) == 0)? MFX_ERR_NONE: MFX_ERR_UNKNOWN;
 }
 
 template<> mfxStatus
 msdk_opt_read(const msdk_char* string, mfxI32& value)
 {
-    int n;
-    msdk_char end;
+    msdk_char* stopCharacter;
+    value = (mfxI32)msdk_strtol(string, &stopCharacter, 10);
 
-#if defined(_WIN32) || defined(_WIN64)
-    n = _stscanf_s(string, MSDK_STRING("%d%c"), &value, &end, sizeof(end));
-#else
-    n = sscanf(string, MSDK_STRING("%d%c"), &value, &end);
-#endif
-    return (n == 1)? MFX_ERR_NONE: MFX_ERR_UNKNOWN;
+    return (msdk_strlen(stopCharacter) == 0)? MFX_ERR_NONE: MFX_ERR_UNKNOWN;
 }
 
 mfxStatus msdk_opt_read(const msdk_char* string, mfxI16& value);

@@ -5,7 +5,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2011-2013 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2011-2014 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -34,8 +34,8 @@ typedef TCHAR msdk_char;
 #define msdk_strncmp  _tcsnicmp
 #define msdk_strstr   _tcsstr
 #define msdk_atoi     _ttoi
-#define msdk_strtol   _tcstol // to be removed
-#define msdk_strtod   _tcstod // to be removed
+#define msdk_strtol   _tcstol
+#define msdk_strtod   _tcstod
 #define msdk_strchr   _tcschr
 #define msdk_itoa_decimal(value, str)   _itow_s(value, str, 4, 10)
 
