@@ -19,7 +19,7 @@ mfxStatus CUserPipeline::InitRotateParam(sInputParams *pInParams)
 
     MSDK_ZERO_MEMORY(m_pluginVideoParams);
 
-    m_pluginVideoParams.AsyncDepth = m_nAsyncDepth; // the maximum number of tasks that can be submitted before any task execution finishes
+    m_pluginVideoParams.AsyncDepth = pInParams->nAsyncDepth; // the maximum number of tasks that can be submitted before any task execution finishes
     m_pluginVideoParams.vpp.In.FourCC = MFX_FOURCC_NV12;
     m_pluginVideoParams.vpp.In.Width = m_pluginVideoParams.vpp.In.CropW = pInParams->nWidth;
     m_pluginVideoParams.vpp.In.Height = m_pluginVideoParams.vpp.In.CropH = pInParams->nHeight;
@@ -50,16 +50,13 @@ mfxStatus CUserPipeline::AllocFrames()
     sts = m_pmfxENC->QueryIOSurf(&m_mfxEncParams, &EncRequest);
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
-    // Rotation plugin requires 1 frame at input to produce 1 frame at output.
-    mfxU16 nRotateReqIn, nRotateReqOut;
-    nRotateReqIn = nRotateReqOut = 1;
-
-    // If surfaces are shared by 2 components, c1 and c2. NumSurf = c2_in + (c1_out - 1) + extra
-    // When surfaces are shared 1 surface at first component output contains output frame that goes to next component input
-    nEncSurfNum = EncRequest.NumFrameSuggested + (nRotateReqOut - 1) + (m_nAsyncDepth - 1);
+    nEncSurfNum = EncRequest.NumFrameSuggested;
 
     // The number of surfaces for plugin input - so that plugin can work at async depth = m_nAsyncDepth
-    nRotateSurfNum = nRotateReqIn + (m_nAsyncDepth - 1);
+    nRotateSurfNum = m_mfxEncParams.AsyncDepth;
+
+    // If surfaces are shared by 2 components, c1 and c2. NumSurf = c1_out + c2_in - AsyncDepth
+    nEncSurfNum += nRotateSurfNum - m_mfxEncParams.AsyncDepth;
 
     // prepare allocation requests
     EncRequest.NumFrameMin = EncRequest.NumFrameSuggested = nEncSurfNum;
@@ -228,8 +225,6 @@ mfxStatus CUserPipeline::Init(sInputParams *pParams)
     sts = CreateAllocator();
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
-    m_nAsyncDepth = 4; // this number can be tuned for better performance
-
     sts = ResetMFXComponents(pParams);
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
     // register plugin callbacks in Media SDK
@@ -284,7 +279,7 @@ mfxStatus CUserPipeline::ResetMFXComponents(sInputParams* pParams)
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
     mfxU32 nEncodedDataBufferSize = m_mfxEncParams.mfx.FrameInfo.Width * m_mfxEncParams.mfx.FrameInfo.Height * 4;
-    sts = m_TaskPool.Init(&m_mfxSession, m_FileWriters.first, m_nAsyncDepth * 2, nEncodedDataBufferSize, m_FileWriters.second);
+    sts = m_TaskPool.Init(&m_mfxSession, m_FileWriters.first, m_mfxEncParams.AsyncDepth, nEncodedDataBufferSize, m_FileWriters.second);
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
     return MFX_ERR_NONE;

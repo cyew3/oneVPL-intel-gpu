@@ -80,6 +80,8 @@ struct sInputParams
 
     bool bLABRC; // use look ahead bitrate control algorithm
     mfxU16 nLADepth; // depth of the look ahead bitrate control  algorithm
+
+    mfxU16 nAsyncDepth; // depth of asynchronous pipeline, this number can be tuned to achieve better performance
 };
 
 struct sTask
@@ -139,7 +141,6 @@ protected:
               CSmplBitstreamWriter *> m_FileWriters;
     CSmplYUVReader m_FileReader;
     CEncTaskPool m_TaskPool;
-    mfxU16 m_nAsyncDepth; // depth of asynchronous pipeline, this number can be tuned to achieve better performance
 
     MFXVideoSession m_mfxSession;
     MFXVideoENCODE* m_pmfxENC;

@@ -42,6 +42,7 @@ void PrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("   [-hw] - use platform specific SDK implementation, if not specified software implementation is used\n"));
     msdk_printf(MSDK_STRING("   [-p guid|path_to_plugin] - 32-character hexadecimal guid string or path to encoder plugin\n"));
     msdk_printf(MSDK_STRING("                              (optional for Media SDK in-box plugins, required for user-encoder ones)\n"));
+    msdk_printf(MSDK_STRING("   [-async]                 - depth of asynchronous pipeline. default value is 4. must be between 1 and 20.\n"));
     msdk_printf(MSDK_STRING("Example: %s h265 -i InputYUVFile -o OutputEncodedFile -w width -h height -hw -p 2fca99749fdb49aeb121a5b63ef568f7\n"), strAppName);
 #if D3D_SURFACES_SUPPORT
     msdk_printf(MSDK_STRING("   [-d3d] - work with d3d surfaces\n"));
@@ -177,6 +178,24 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
             pParams->memType = D3D9_MEMORY;
         }
 #endif
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-async")))
+        {
+            if(i + 1 >= nArgNum)
+            {
+                PrintHelp(strInput[0], MSDK_STRING("Not enough parameters for -async key"));
+                return MFX_ERR_UNSUPPORTED;
+            }
+            if (MFX_ERR_NONE != msdk_opt_read(strInput[++i], pParams->nAsyncDepth))
+            {
+                PrintHelp(strInput[0], MSDK_STRING("async is invalid"));
+                return MFX_ERR_UNSUPPORTED;
+            }
+            if ((pParams->nAsyncDepth < 1) || (pParams->nAsyncDepth > 20))
+            {
+                PrintHelp(strInput[0], MSDK_STRING("Async depth must be between 1 and 20"));
+                return MFX_ERR_UNSUPPORTED;
+            }
+        }
         else // 1-character options
         {
             switch (strInput[i][1])
@@ -406,6 +425,11 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
     {
         PrintHelp(strInput[0], MSDK_STRING("Some of the command line options are not supported with rotation plugin!"));
         return MFX_ERR_UNSUPPORTED;
+    }
+
+    if (pParams->nAsyncDepth == 0)
+    {
+        pParams->nAsyncDepth = 4; //set by default;
     }
 
     return MFX_ERR_NONE;

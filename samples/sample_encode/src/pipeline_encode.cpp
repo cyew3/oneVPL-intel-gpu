@@ -409,6 +409,8 @@ mfxStatus CEncodingPipeline::InitMfxEncParams(sInputParams *pInParams)
         MSDK_ZERO_MEMORY(m_mfxEncParams.mfx.reserved5);
     }
 
+    m_mfxEncParams.AsyncDepth = pInParams->nAsyncDepth;
+
     return MFX_ERR_NONE;
 }
 
@@ -459,6 +461,8 @@ mfxStatus CEncodingPipeline::InitMfxVppParams(sInputParams *pInParams)
 
     m_mfxVppParams.ExtParam = &m_VppExtParams[0]; // vector is stored linearly in memory
     m_mfxVppParams.NumExtParam = (mfxU16)m_VppExtParams.size();
+
+    m_mfxVppParams.AsyncDepth = pInParams->nAsyncDepth;
 
     return MFX_ERR_NONE;
 }
@@ -530,19 +534,19 @@ mfxStatus CEncodingPipeline::AllocFrames()
     sts = m_pmfxENC->QueryIOSurf(&m_mfxEncParams, &EncRequest);
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
+    // The number of surfaces shared by vpp output and encode input.
+    nEncSurfNum = EncRequest.NumFrameSuggested;
+
     if (m_pmfxVPP)
     {
         // VppRequest[0] for input frames request, VppRequest[1] for output frames request
         sts = m_pmfxVPP->QueryIOSurf(&m_mfxVppParams, VppRequest);
         MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+
+        // The number of surfaces for vpp input - so that vpp can work at async depth = m_nAsyncDepth
+        nVppSurfNum = VppRequest[0].NumFrameSuggested;
+        nEncSurfNum += nVppSurfNum - m_mfxEncParams.AsyncDepth;
     }
-
-    // The number of surfaces shared by vpp output and encode input.
-    // When surfaces are shared 1 surface at first component output contains output frame that goes to next component input
-    nEncSurfNum = EncRequest.NumFrameSuggested + MSDK_MAX(VppRequest[1].NumFrameSuggested, 1) - 1 + (m_nAsyncDepth - 1);
-
-    // The number of surfaces for vpp input - so that vpp can work at async depth = m_nAsyncDepth
-    nVppSurfNum = VppRequest[0].NumFrameSuggested + (m_nAsyncDepth - 1);
 
     // prepare allocation requests
     EncRequest.NumFrameMin = nEncSurfNum;
@@ -784,7 +788,6 @@ CEncodingPipeline::CEncodingPipeline()
     m_bExternalAlloc = false;
     m_pEncSurfaces = NULL;
     m_pVppSurfaces = NULL;
-    m_nAsyncDepth = 0;
 
     m_MVCflags = MVC_DISABLED;
     m_nNumView = 0;
@@ -1047,8 +1050,6 @@ mfxStatus CEncodingPipeline::Init(sInputParams *pParams)
         MSDK_CHECK_POINTER(m_pmfxVPP, MFX_ERR_MEMORY_ALLOC);
     }
 
-    m_nAsyncDepth = 4; // this number can be tuned for better performance
-
     sts = ResetMFXComponents(pParams);
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
@@ -1145,7 +1146,7 @@ mfxStatus CEncodingPipeline::ResetMFXComponents(sInputParams* pParams)
     }
 
     mfxU32 nEncodedDataBufferSize = m_mfxEncParams.mfx.FrameInfo.Width * m_mfxEncParams.mfx.FrameInfo.Height * 4;
-    sts = m_TaskPool.Init(&m_mfxSession, m_FileWriters.first, m_nAsyncDepth * 2, nEncodedDataBufferSize, m_FileWriters.second);
+    sts = m_TaskPool.Init(&m_mfxSession, m_FileWriters.first, m_mfxEncParams.AsyncDepth, nEncodedDataBufferSize, m_FileWriters.second);
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
     return MFX_ERR_NONE;
