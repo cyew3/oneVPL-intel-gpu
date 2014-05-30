@@ -146,8 +146,12 @@ mfxStatus CD3D9Device::FillD3DPP(mfxHDL hWindow, mfxU16 nViews, D3DPRESENT_PARAM
     D3DPP.BackBufferCount            = 1;
     D3DPP.BackBufferFormat           = (m_bIsA2rgb10) ? D3DFMT_A2R10G10B10 : D3DFMT_X8R8G8B8;
 
-    D3DPP.BackBufferWidth  = GetSystemMetrics(SM_CXSCREEN);
-    D3DPP.BackBufferHeight = GetSystemMetrics(SM_CYSCREEN);
+    RECT r;
+    GetClientRect((HWND)hWindow, &r);
+    int x = GetSystemMetrics(SM_CXSCREEN);
+    int y = GetSystemMetrics(SM_CYSCREEN);
+    m_D3DPP.BackBufferWidth  = min(r.right - r.left, x);
+    m_D3DPP.BackBufferHeight = min(r.bottom - r.top, y);
 
     //
     // Mark the back buffer lockable if software DXVA2 could be used.
@@ -349,7 +353,28 @@ mfxStatus CD3D9Device::RenderFrame(mfxFrameSurface1 * pSurface, mfxFrameAllocato
 
     RECT targetRect = {0}, dest = {0};
     GetClientRect(m_D3DPP.hDeviceWindow, &targetRect);
-    dest = targetRect;
+
+    double dTargetAspect = (double)dsc.Width / dsc.Height;
+    double dSrcAspect =
+        (double)pSurface->Info.CropW * (0 == pSurface->Info.AspectRatioW ? 1 : pSurface->Info.AspectRatioW) /
+        (double)pSurface->Info.CropH / (0 == pSurface->Info.AspectRatioH ? 1 : pSurface->Info.AspectRatioH);
+
+    if (dSrcAspect >dTargetAspect)
+    {
+        dest.left = 0;
+        dest.right = dsc.Width;
+        int height = (int) (dsc.Width/dSrcAspect);
+        dest.top = (dsc.Height - height) / 2;
+        dest.bottom = dest.top + height;
+    }
+    else
+    {
+        dest.top = 0;
+        dest.bottom = dsc.Height;
+        int width = (int) (dsc.Height * dSrcAspect);
+        dest.left = (dsc.Width - width) / 2;
+        dest.right = dest.left + width;
+    }
 
     directxMemId* dxMemId = (directxMemId*)pSurface->Data.MemId;
 
