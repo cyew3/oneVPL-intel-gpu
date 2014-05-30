@@ -45,7 +45,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories=".\utils;..\..\sample_common\include;$(INTELMEDIASDKROOT)\igfx_s3dcontrol\include;$(INTELMEDIASDKROOT)\include"
+				AdditionalIncludeDirectories=".\utils;..\..\sample_common\include;$(INTELMEDIASDKROOT)\igfx_s3dcontrol\include;..\..\..\igfx_s3dcontrol\include;$(INTELMEDIASDKROOT)\include"
 				PreprocessorDefinitions="NOMINMAX;WIN32;_DEBUG;_WINDOWS;_USRDLL;EVRPRESENTER_EXPORTS"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -71,7 +71,7 @@
 				RegisterOutput="true"
 				AdditionalDependencies="strmiids.lib dxva2.lib d3d9.lib mfuuid.lib mfplat.lib mf.lib evr.lib winmm.lib comsupp.lib igfx_s3dcontrol_d.lib Advapi32.lib Gdi32.lib"
 				LinkIncremental="2"
-				AdditionalLibraryDirectories="$(INTELMEDIASDKROOT)\igfx_s3dcontrol\lib\$(PlatformName);"
+				AdditionalLibraryDirectories="$(INTELMEDIASDKROOT)\igfx_s3dcontrol\lib\$(PlatformName);..\..\igfx_s3dcontrol\lib\$(PlatformName)"
 				IgnoreDefaultLibraryNames=""
 				ModuleDefinitionFile="EVRPresenter.def"
 				GenerateDebugInformation="true"
@@ -133,7 +133,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				AdditionalOptions="/O2"
-				AdditionalIncludeDirectories=".\utils;..\..\sample_common\include;$(INTELMEDIASDKROOT)\igfx_s3dcontrol\include;$(INTELMEDIASDKROOT)\include"
+				AdditionalIncludeDirectories=".\utils;..\..\sample_common\include;$(INTELMEDIASDKROOT)\igfx_s3dcontrol\include;..\..\..\igfx_s3dcontrol\include;$(INTELMEDIASDKROOT)\include"
 				PreprocessorDefinitions="NOMINMAX;WIN32;NDEBUG;_WINDOWS;_USRDLL;EVRPRESENTER_EXPORTS"
 				RuntimeLibrary="0"
 				UsePrecompiledHeader="0"
@@ -156,7 +156,7 @@
 				RegisterOutput="true"
 				AdditionalDependencies="strmiids.lib dxva2.lib d3d9.lib mfuuid.lib mfplat.lib mf.lib evr.lib winmm.lib  igfx_s3dcontrol.lib comsupp.lib Advapi32.lib Gdi32.lib"
 				LinkIncremental="1"
-				AdditionalLibraryDirectories="$(INTELMEDIASDKROOT)\igfx_s3dcontrol\lib\$(PlatformName);"
+				AdditionalLibraryDirectories="$(INTELMEDIASDKROOT)\igfx_s3dcontrol\lib\$(PlatformName);..\..\igfx_s3dcontrol\lib\$(PlatformName)"
 				IgnoreDefaultLibraryNames="msvcrt.lib;msvcrtd.lib;libcmtd.lib"
 				ModuleDefinitionFile="EVRPresenter.def"
 				GenerateDebugInformation="true"
@@ -218,7 +218,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories=".\utils;..\..\sample_common\include;$(INTELMEDIASDKROOT)\igfx_s3dcontrol\include;$(INTELMEDIASDKROOT)\include"
+				AdditionalIncludeDirectories=".\utils;..\..\sample_common\include;$(INTELMEDIASDKROOT)\igfx_s3dcontrol\include;..\..\..\igfx_s3dcontrol\include;$(INTELMEDIASDKROOT)\include"
 				PreprocessorDefinitions="NOMINMAX;WIN32;NDEBUG;_WINDOWS;_USRDLL;EVRPRESENTER_EXPORTS"
 				RuntimeLibrary="0"
 				UsePrecompiledHeader="0"
@@ -241,7 +241,7 @@
 				RegisterOutput="false"
 				AdditionalDependencies="strmiids.lib dxva2.lib d3d9.lib mfuuid.lib mfplat.lib mf.lib evr.lib winmm.lib  igfx_s3dcontrol.lib comsupp.lib Advapi32.lib Gdi32.lib"
 				LinkIncremental="1"
-				AdditionalLibraryDirectories="$(INTELMEDIASDKROOT)\igfx_s3dcontrol\lib\$(PlatformName);"
+				AdditionalLibraryDirectories="$(INTELMEDIASDKROOT)\igfx_s3dcontrol\lib\$(PlatformName);..\..\igfx_s3dcontrol\lib\$(PlatformName)"
 				IgnoreDefaultLibraryNames="msvcrt.lib;msvcrtd.lib;libcmtd.lib"
 				ModuleDefinitionFile="EVRPresenter.def"
 				GenerateDebugInformation="true"
@@ -304,7 +304,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories=".\utils;..\..\sample_common\include;$(INTELMEDIASDKROOT)\igfx_s3dcontrol\include;$(INTELMEDIASDKROOT)\include"
+				AdditionalIncludeDirectories=".\utils;..\..\sample_common\include;$(INTELMEDIASDKROOT)\igfx_s3dcontrol\include;..\..\..\igfx_s3dcontrol\include;$(INTELMEDIASDKROOT)\include"
 				PreprocessorDefinitions="NOMINMAX;WIN64;_DEBUG;_WINDOWS;_USRDLL;EVRPRESENTER_EXPORTS"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -329,7 +329,7 @@
 				RegisterOutput="false"
 				AdditionalDependencies="strmiids.lib dxva2.lib d3d9.lib mfuuid.lib mfplat.lib mf.lib evr.lib winmm.lib igfx_s3dcontrol_d.lib comsupp.lib Advapi32.lib Gdi32.lib"
 				LinkIncremental="2"
-				AdditionalLibraryDirectories="$(INTELMEDIASDKROOT)\igfx_s3dcontrol\lib\$(PlatformName);"
+				AdditionalLibraryDirectories="$(INTELMEDIASDKROOT)\igfx_s3dcontrol\lib\$(PlatformName);..\..\igfx_s3dcontrol\lib\$(PlatformName)"
 				IgnoreDefaultLibraryNames="libcmt.lib;libcmtd.lib"
 				ModuleDefinitionFile="EVRPresenter.def"
 				GenerateDebugInformation="true"
@@ -390,7 +390,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories=".\utils;..\..\sample_common\include;$(INTELMEDIASDKROOT)\igfx_s3dcontrol\include;$(INTELMEDIASDKROOT)\include"
+				AdditionalIncludeDirectories=".\utils;..\..\sample_common\include;$(INTELMEDIASDKROOT)\igfx_s3dcontrol\include;..\..\..\igfx_s3dcontrol\include;$(INTELMEDIASDKROOT)\include"
 				PreprocessorDefinitions="NOMINMAX;WIN32;NDEBUG;_WINDOWS;_USRDLL;EVRPRESENTER_EXPORTS"
 				RuntimeLibrary="0"
 				UsePrecompiledHeader="0"
@@ -413,7 +413,7 @@
 				RegisterOutput="false"
 				AdditionalDependencies="strmiids.lib dxva2.lib d3d9.lib mfuuid.lib mfplat.lib mf.lib evr.lib winmm.lib  igfx_s3dcontrol.lib comsupp.lib Advapi32.lib Gdi32.lib"
 				LinkIncremental="1"
-				AdditionalLibraryDirectories="$(INTELMEDIASDKROOT)\igfx_s3dcontrol\lib\$(PlatformName);"
+				AdditionalLibraryDirectories="$(INTELMEDIASDKROOT)\igfx_s3dcontrol\lib\$(PlatformName);..\..\igfx_s3dcontrol\lib\$(PlatformName)"
 				IgnoreDefaultLibraryNames="msvcrt.lib;msvcrtd.lib"
 				ModuleDefinitionFile="EVRPresenter.def"
 				GenerateDebugInformation="true"
@@ -476,7 +476,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories=".\utils;..\..\sample_common\include;$(INTELMEDIASDKROOT)\igfx_s3dcontrol\include;$(INTELMEDIASDKROOT)\include"
+				AdditionalIncludeDirectories=".\utils;..\..\sample_common\include;$(INTELMEDIASDKROOT)\igfx_s3dcontrol\include;..\..\..\igfx_s3dcontrol\include;$(INTELMEDIASDKROOT)\include"
 				PreprocessorDefinitions="NOMINMAX;WIN32;NDEBUG;_WINDOWS;_USRDLL;EVRPRESENTER_EXPORTS"
 				RuntimeLibrary="0"
 				UsePrecompiledHeader="0"
@@ -499,7 +499,7 @@
 				RegisterOutput="false"
 				AdditionalDependencies="strmiids.lib dxva2.lib d3d9.lib mfuuid.lib mfplat.lib mf.lib evr.lib winmm.lib  igfx_s3dcontrol.lib comsupp.lib Advapi32.lib Gdi32.lib"
 				LinkIncremental="1"
-				AdditionalLibraryDirectories="$(INTELMEDIASDKROOT)\igfx_s3dcontrol\lib\$(PlatformName);"
+				AdditionalLibraryDirectories="$(INTELMEDIASDKROOT)\igfx_s3dcontrol\lib\$(PlatformName);..\..\igfx_s3dcontrol\lib\$(PlatformName)"
 				IgnoreDefaultLibraryNames="msvcrt.lib;msvcrtd.lib"
 				ModuleDefinitionFile="EVRPresenter.def"
 				GenerateDebugInformation="true"

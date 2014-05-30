@@ -17,9 +17,9 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "sample_encode", "sample_enc
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "sample_full_transcode", "sample_full_transcode\sample_full_transcode.vcproj", "{D93E83D0-A1F5-4C9B-9557-C2A968E2BF59}"
 	ProjectSection(ProjectDependencies) = postProject
+		{C7E5C9B3-E00F-4FAB-ACAC-450A660C9C9C} = {C7E5C9B3-E00F-4FAB-ACAC-450A660C9C9C}
+		{C7E5C9B3-E00F-4FAB-ACAC-450A660C9C9C} = {C7E5C9B3-E00F-4FAB-ACAC-450A660C9C9C}
 		{DB71B91D-16D8-4339-9621-D81798E46E8F} = {DB71B91D-16D8-4339-9621-D81798E46E8F}
-		{C7E5C9B3-E00F-4FAB-ACAC-450A660C9C9C} = {C7E5C9B3-E00F-4FAB-ACAC-450A660C9C9C}
-		{C7E5C9B3-E00F-4FAB-ACAC-450A660C9C9C} = {C7E5C9B3-E00F-4FAB-ACAC-450A660C9C9C}
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "sample_spl_mux", "sample_spl_mux\sample_spl_mux.vcproj", "{C7E5C9B3-E00F-4FAB-ACAC-450A660C9C9C}"
@@ -29,8 +29,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "sample_spl_mux", "sample_sp
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "sample_multi_transcode", "sample_multi_transcode\sample_multi_transcode.vcproj", "{41E05510-6FDC-4F8D-88DC-F5CAD55DA676}"
 	ProjectSection(ProjectDependencies) = postProject
-		{DB71B91D-16D8-4339-9621-D81798E46E8F} = {DB71B91D-16D8-4339-9621-D81798E46E8F}
 		{D6D9A3B9-5DC0-4025-B27A-751F91AA462D} = {D6D9A3B9-5DC0-4025-B27A-751F91AA462D}
+		{DB71B91D-16D8-4339-9621-D81798E46E8F} = {DB71B91D-16D8-4339-9621-D81798E46E8F}
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "sample_utilities", "sample_utilities", "{4D2CC9E2-3FAD-42B4-986B-FC4B5D6CE8A7}"
@@ -96,11 +96,16 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "plugin_api", "sample_user_m
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "vp8_decoder_plugin", "sample_user_modules\vp8_decode_plugin\vp8_decoder_plugin.vcproj", "{CCDA24AE-9270-43A0-9410-29857B9B2F00}"
 	ProjectSection(ProjectDependencies) = postProject
-		{DB71B91D-16D8-4339-9621-D81798E46E8F} = {DB71B91D-16D8-4339-9621-D81798E46E8F}
 		{EE55D73B-F537-4B52-8514-50B7FDF5D254} = {EE55D73B-F537-4B52-8514-50B7FDF5D254}
+		{DB71B91D-16D8-4339-9621-D81798E46E8F} = {DB71B91D-16D8-4339-9621-D81798E46E8F}
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "sample_plugin_opencl", "sample_user_modules\rotate_opencl\sample_plugin_opencl.vcproj", "{D5CCF0C0-32F6-4777-AA6C-6A249016DB26}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "sample_decvpp", "sample_decvpp\sample_decvpp.vcproj", "{E51FCEF5-E27C-40F9-A0C1-B124E0CD7668}"
+	ProjectSection(ProjectDependencies) = postProject
+		{DB71B91D-16D8-4339-9621-D81798E46E8F} = {DB71B91D-16D8-4339-9621-D81798E46E8F}
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -480,6 +485,15 @@ Global
 		{D5CCF0C0-32F6-4777-AA6C-6A249016DB26}.Release|Win32.Build.0 = Release|Win32
 		{D5CCF0C0-32F6-4777-AA6C-6A249016DB26}.Release|x64.ActiveCfg = Release|x64
 		{D5CCF0C0-32F6-4777-AA6C-6A249016DB26}.Release|x64.Build.0 = Release|x64
+		{E51FCEF5-E27C-40F9-A0C1-B124E0CD7668}.Debug|Win32.ActiveCfg = Debug|Win32
+		{E51FCEF5-E27C-40F9-A0C1-B124E0CD7668}.Debug|Win32.Build.0 = Debug|Win32
+		{E51FCEF5-E27C-40F9-A0C1-B124E0CD7668}.Debug|x64.ActiveCfg = Debug|Win32
+		{E51FCEF5-E27C-40F9-A0C1-B124E0CD7668}.Release_TC|Win32.ActiveCfg = Release|Win32
+		{E51FCEF5-E27C-40F9-A0C1-B124E0CD7668}.Release_TC|Win32.Build.0 = Release|Win32
+		{E51FCEF5-E27C-40F9-A0C1-B124E0CD7668}.Release_TC|x64.ActiveCfg = Release|Win32
+		{E51FCEF5-E27C-40F9-A0C1-B124E0CD7668}.Release|Win32.ActiveCfg = Release|Win32
+		{E51FCEF5-E27C-40F9-A0C1-B124E0CD7668}.Release|Win32.Build.0 = Release|Win32
+		{E51FCEF5-E27C-40F9-A0C1-B124E0CD7668}.Release|x64.ActiveCfg = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
