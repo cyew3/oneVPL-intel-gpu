@@ -15,6 +15,7 @@ tsVideoVPP::tsVideoVPP(bool useDefaults, mfxU32 plugin_id)
     , m_surf_out_processor(0)
     , m_pSurfPoolIn(&m_spool_in)
     , m_pSurfPoolOut(&m_spool_out)
+    , m_pStat(&m_stat)
 {
     memset(m_request, 0, sizeof(m_request));
 
@@ -40,6 +41,8 @@ tsVideoVPP::tsVideoVPP(bool useDefaults, mfxU32 plugin_id)
             m_par.vpp.Out.FourCC       = MFX_FOURCC_RGB4;
             m_par.vpp.In.ChromaFormat  = MFX_CHROMAFORMAT_YUV444;
             m_par.vpp.Out.ChromaFormat = MFX_CHROMAFORMAT_YUV444;
+            mfxExtCamPipeControl& cam_ctrl = m_par; //accordingly to ashapore, this filter is mandatory
+            cam_ctrl.RawFormat         = MFX_CAM_BAYER_BGGR;
         }
         if(m_default && (plugin_id == MFX_MAKEFOURCC('P','T','I','R')))
         {
@@ -227,6 +230,24 @@ mfxStatus tsVideoVPP::GetVideoParam(mfxSession session, mfxVideoParam *par)
     TRACE_FUNC2(MFXVideoVPP_GetVideoParam, session, par);
     g_tsStatus.check( MFXVideoVPP_GetVideoParam(session, par) );
     TS_TRACE(par);
+
+    return g_tsStatus.get();
+}
+
+mfxStatus tsVideoVPP::GetVPPStat() 
+{
+    if(m_default && !m_initialized)
+    {
+        GetVPPStat();
+    }
+    return GetVPPStat(m_session, m_pStat); 
+}
+
+mfxStatus tsVideoVPP::GetVPPStat(mfxSession session, mfxVPPStat *stat)
+{
+    TRACE_FUNC2(MFXVideoVPP_GetVPPStat, session, stat);
+    g_tsStatus.check( MFXVideoVPP_GetVPPStat(session, stat) );
+    TS_TRACE(stat);
 
     return g_tsStatus.get();
 }

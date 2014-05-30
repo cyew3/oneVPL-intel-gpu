@@ -10,8 +10,10 @@ public:
     bool                        m_default;
     bool                        m_initialized;
     bool                        m_loaded;
+    bool                        m_use_memid;
     tsExtBufType<mfxVideoParam> m_par;
     mfxFrameAllocRequest        m_request[2];
+    mfxVPPStat                  m_stat;
     mfxVideoParam*              m_pPar;
     mfxVideoParam*              m_pParOut;
     mfxFrameAllocRequest*       m_pRequest;
@@ -19,6 +21,7 @@ public:
     mfxFrameSurface1*           m_pSurfIn;
     mfxFrameSurface1*           m_pSurfOut;
     mfxFrameSurface1*           m_pSurfWork;
+    mfxVPPStat*                 m_pStat;
     tsSurfacePool*              m_pSurfPoolIn;
     tsSurfacePool*              m_pSurfPoolOut;
     tsSurfaceProcessor*         m_surf_in_processor;
@@ -49,6 +52,9 @@ public:
     
     mfxStatus GetVideoParam();
     mfxStatus GetVideoParam(mfxSession session, mfxVideoParam *par);
+
+    mfxStatus GetVPPStat();
+    mfxStatus GetVPPStat(mfxSession session, mfxVPPStat *stat);
 
     mfxStatus AllocSurfaces();
      

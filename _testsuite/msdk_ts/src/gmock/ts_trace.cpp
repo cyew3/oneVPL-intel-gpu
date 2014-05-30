@@ -299,3 +299,36 @@ tsTrace& tsTrace::operator<<(const mfxExtEncoderROI& p)
     return *this;
 }
 
+tsTrace& tsTrace::operator<<(const mfxExtCamGammaCorrection& p)
+{
+    STRUCT_BODY(mfxExtCamGammaCorrection,
+        FIELD_S(mfxExtBuffer, Header     )
+        FIELD_T(mfxU16      , Mode       )
+        FIELD_T(mfxU16      , reserved1  )
+        FIELD_T(mfxF64      , GammaValue )
+        FIELD_T(mfxU16      , NumPoints  )
+        for(mfxU32 i = 0; i < p.NumPoints; ++i)
+        {
+            FIELD_T(mfxU16, GammaPoint[i])
+            FIELD_T(mfxU16, GammaCorrected[i])
+        }
+    )
+
+    return *this;
+}
+tsTrace& tsTrace::operator<<(const mfxExtCamVignetteCorrection& p)
+{
+    STRUCT_BODY(mfxExtCamVignetteCorrection,
+        FIELD_S(mfxExtBuffer,                 Header       )
+        FIELD_T(mfxU32,                       Width        )
+        FIELD_T(mfxU32,                       Height       )
+        FIELD_T(mfxU32,                       Pitch        )
+        FIELD_T(mfxU32,                       MaskPrecision)
+        if(p.CorrectionMap)
+        {
+            FIELD_S(mfxVignetteCorrectionParams*, CorrectionMap)
+        }
+    )
+
+    return *this;
+}
