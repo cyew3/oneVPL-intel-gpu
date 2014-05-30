@@ -209,7 +209,7 @@ mfxStatus D3DFrameAllocator::LockFrame(mfxMemId mid, mfxFrameData *ptr)
 
 mfxStatus D3DFrameAllocator::UnlockFrame(mfxMemId mid, mfxFrameData *ptr)
 {
-    if (!ptr || !mid)
+    if (!mid)
         return MFX_ERR_NULL_PTR;
 
     directxMemId *dxmid = (directxMemId*)mid;
