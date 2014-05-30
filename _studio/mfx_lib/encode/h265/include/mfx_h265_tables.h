@@ -14,7 +14,6 @@
 namespace H265Enc {
 
 extern const Ipp8s h265_log2m2[257];
-extern const Ipp8u h265_log2table[];
 
 extern const Ipp8u h265_type2idx[4];
 extern const Ipp32u h265_min_in_group[10];

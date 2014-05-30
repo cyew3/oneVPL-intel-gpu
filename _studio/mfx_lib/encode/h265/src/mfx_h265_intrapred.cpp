@@ -688,7 +688,7 @@ void H265CU<PixType>::IntraPredTu(Ipp32s blockZScanIdx, Ipp32s width, Ipp32s pre
         {
             Ipp32s diff = MIN(abs(pred_mode - INTRA_HOR), abs(pred_mode - INTRA_VER));
 
-            if (diff <= h265_filteredModes[h265_log2table[width - 4] - 2])
+            if (diff <= h265_filteredModes[h265_log2m2[width]])
             {
                 isFilterNeeded = false;
             }
@@ -866,7 +866,7 @@ void H265CU<PixType>::IntraLumaModeDecision(Ipp32s absPartIdx, Ipp32u offset, Ip
 
     std::fill_n(m_intraCosts, 35, COST_MAX);
 
-    Ipp8u trSplitMode = GetTrSplitMode(absPartIdx, depth, trDepth, partSize, 1, !NO_TRANSFORM_SPLIT_INTRAPRED_STAGE1);
+    Ipp8u trSplitMode = GetTrSplitMode(absPartIdx, depth, trDepth, partSize, !NO_TRANSFORM_SPLIT_INTRAPRED_STAGE1);
     m_predIntraAllWidth = 0;
 
 #define SQRT_LAMBDA 0
@@ -918,7 +918,7 @@ void H265CU<PixType>::IntraLumaModeDecision(Ipp32s absPartIdx, Ipp32u offset, Ip
 
         PixType *predPtr = m_predIntraAll;
 
-        bool needFilter = (INTRA_HOR > h265_filteredModes[h265_log2table[width - 4] - 2]);
+        bool needFilter = (INTRA_HOR > h265_filteredModes[h265_log2m2[width]]);
         PixType *predPels = needFilter ? predPelFilt : predPel;
         h265_PredictIntra_Planar(predPels, predPtr, width, width);
         m_intraCosts[INTRA_PLANAR] = tuHad(src, m_pitchSrc, predPtr, width, width, width);
@@ -942,7 +942,7 @@ void H265CU<PixType>::IntraLumaModeDecision(Ipp32s absPartIdx, Ipp32u offset, Ip
                 Ipp8s lumaDir = angModeCand[i];
 
                 Ipp32s diff = MIN(abs(lumaDir - 10), abs(lumaDir - 26));
-                bool needFilter = (diff > h265_filteredModes[h265_log2table[width - 4] - 2]);
+                bool needFilter = (diff > h265_filteredModes[h265_log2m2[width]]);
                 PixType *predPels = needFilter ? predPelFilt : predPel;
                 PixType *predPtr = m_predIntraAll + lumaDir * width * width;
 
@@ -1033,7 +1033,7 @@ void H265CU<PixType>::IntraLumaModeDecision(Ipp32s absPartIdx, Ipp32u offset, Ip
             for (Ipp32s i = numCand1; i < numCand1 + numOddModes; i++) {
                 Ipp8u lumaDir = m_intraModes[i];
                 Ipp32s diff = MIN(abs(lumaDir - 10), abs(lumaDir - 26));
-                bool needFilter = (diff > h265_filteredModes[h265_log2table[width - 4] - 2]);
+                bool needFilter = (diff > h265_filteredModes[h265_log2m2[width]]);
                 PixType *predPels = needFilter ? predPelFilt : predPel;
                 PixType *predPtr = m_predIntraAll + lumaDir * width * width;
 
@@ -1157,55 +1157,26 @@ void H265CU<PixType>::IntraLumaModeDecisionRDO(Ipp32s absPartIdx, Ipp32u offset,
     }
 }
 
-
+// Luma only
 template <typename PixType>
-Ipp8u H265CU<PixType>::GetTrSplitMode(Ipp32s abs_part_idx, Ipp8u depth, Ipp8u tr_depth, Ipp8u part_size, Ipp8u is_luma, Ipp8u strict)
+Ipp8u H265CU<PixType>::GetTrSplitMode(Ipp32s abs_part_idx, Ipp8u depth, Ipp8u tr_depth, Ipp8u part_size, Ipp8u strict)
 {
-    Ipp32s width = m_par->MaxCUSize >> (depth + tr_depth);
-    Ipp8u split_mode = SPLIT_NONE;
-    Ipp32u tuLog2MinSizeInCu = H265Enc::GetQuadtreeTuLog2MinSizeInCu(m_par, abs_part_idx, m_par->MaxCUSize >> depth, part_size, MODE_INTRA);
-
-    if (width > 32) {
-        split_mode = SPLIT_MUST;
+    if (m_par->Log2MaxCUSize - depth - tr_depth > 5)
+        return SPLIT_MUST;
+    if (m_par->Log2MaxCUSize - depth - tr_depth > 2) {
+        Ipp32u tuLog2MinSizeInCu = H265Enc::GetQuadtreeTuLog2MinSizeInCu(m_par, m_par->Log2MaxCUSize - depth, part_size, MODE_INTRA);
+        if (m_par->Log2MaxCUSize - depth - tr_depth > tuLog2MinSizeInCu) {
+            if (strict && m_par->Log2MaxCUSize - depth - tr_depth > m_par->QuadtreeTULog2MaxSize)
+                return SPLIT_MUST;
+            Ipp32u lpel_x = m_ctbPelX + ((h265_scan_z2r4[abs_part_idx] & 15) << m_par->QuadtreeTULog2MinSize);
+            Ipp32u tpel_y = m_ctbPelY + ((h265_scan_z2r4[abs_part_idx] >> 4) << m_par->QuadtreeTULog2MinSize);
+            if (lpel_x + width > m_par->Width || tpel_y + width > m_par->Height)
+                return SPLIT_MUST;
+            return SPLIT_TRY;
+        }
     }
-    else if ((m_par->MaxCUSize >> (depth + tr_depth)) > 4 &&
-        (m_par->Log2MaxCUSize - depth - tr_depth > tuLog2MinSizeInCu)) {
-
-        Ipp32u lpel_x = m_ctbPelX +
-            ((h265_scan_z2r4[abs_part_idx] & 15) << m_par->QuadtreeTULog2MinSize);
-        Ipp32u tpel_y = m_ctbPelY +
-            ((h265_scan_z2r4[abs_part_idx] >> 4) << m_par->QuadtreeTULog2MinSize);
-
-        if ((strict && m_par->Log2MaxCUSize - depth - tr_depth > m_par->QuadtreeTULog2MaxSize) ||
-            lpel_x + width > m_par->Width || tpel_y + width > m_par->Height)
-            split_mode = SPLIT_MUST;
-        else
-            split_mode = SPLIT_TRY;
-    }
-    return split_mode;
+    return SPLIT_NONE;
 }
-
-//void H265CU::IntraPred(Ipp32u abs_part_idx, Ipp8u depth) {
-//    Ipp32s depth_max = m_data[abs_part_idx].depth + m_data[abs_part_idx].trIdx;
-//    Ipp32u num_parts = ( m_par->NumPartInCU >> (depth<<1) )>>2;
-//    Ipp32u i;
-//
-//    if (depth == depth_max - 1 && (m_data[abs_part_idx].size >> m_data[abs_part_idx].trIdx) == 4) {
-//        for (i = 0; i < 4; i++) {
-//            Ipp32s abs_part_idx_tmp = abs_part_idx + num_parts * i;
-//            IntraPredTu(abs_part_idx_tmp, m_data[abs_part_idx_tmp].size >> m_data[abs_part_idx_tmp].trIdx,
-//                m_data[abs_part_idx_tmp].intraLumaDir, 1);
-//        }
-//        IntraPredTu(abs_part_idx, m_data[abs_part_idx].size >> m_data[abs_part_idx].trIdx << 1, m_data[abs_part_idx].intraChromaDir, 0);
-//    } else if (depth == depth_max) {
-//        IntraPredTu(abs_part_idx, m_data[abs_part_idx].size >> m_data[abs_part_idx].trIdx, m_data[abs_part_idx].intraLumaDir, 1);
-//        IntraPredTu(abs_part_idx, m_data[abs_part_idx].size >> m_data[abs_part_idx].trIdx, m_data[abs_part_idx].intraChromaDir, 0);
-//    } else {
-//        for (i = 0; i < 4; i++) {
-//            IntraPred(abs_part_idx + num_parts * i, depth+1);
-//        }
-//    }
-//}
 
 
 template <typename PixType>

@@ -408,13 +408,12 @@ void RDOQuant<PixType>::DoAlgorithm(
     //-----------------------------------------------------
 
     const Ipp32u width  = (Ipp32u)(1 << log2_tr_size);
-    const Ipp32u height = (Ipp32u)(1 << log2_tr_size);
-    const Ipp32u coeffCount  = width * height;
+    const Ipp32u coeffCount  = width * width;
     const Ipp32s qbits = 29 + h265_qp6[QP] - bit_depth - log2_tr_size;
     const Ipp8u  qp_rem = h265_qp_rem[QP];
     const Ipp32s uiQ    = h265_quant_table_fwd[qp_rem];
     const Ipp64f errScale = 2.0 * coeffCount / (uiQ * uiQ * 1.0);
-    const Ipp32u scan_idx = GetCoefScanIdx(abs_part_idx, width, type==TEXT_LUMA);
+    const Ipp32u scan_idx = GetCoefScanIdx(abs_part_idx, log2_tr_size, type==TEXT_LUMA);
 
     const int MAX_TU_SIZE = 32 * 32;
     Ipp64f cost_nz_level[ MAX_TU_SIZE ];
@@ -462,7 +461,7 @@ void RDOQuant<PixType>::DoAlgorithm(
     memset(cost_coeff_group_sig,   0, sizeof(Ipp64f) * MLS_GRP_NUM );
 
     const Ipp16u *scan = h265_sig_last_scan[ scan_idx -1 ][ log2_tr_size - 1 ];
-    const Ipp32s last_scan_set = (width * height - 1) >> LOG2_SCAN_SET_SIZE;
+    const Ipp32s last_scan_set = (coeffCount - 1) >> LOG2_SCAN_SET_SIZE;
 
     //--------------------------------------------------------------------------------------------------
     //  FIRST PASS: determines which coeff should be last_nz_coeff, calc optimal levels, try to zerro CG
@@ -692,7 +691,7 @@ void RDOQuant<PixType>::DoAlgorithm(
     bool isRootCbf = (!m_pCU->IsIntra(abs_part_idx) && m_pCU->GetTransformIdx( abs_part_idx ) == 0);
     if( !isRootCbf )
     {
-        ctx_cbf_inc = m_pCU->GetCtxQtCbf(abs_part_idx, type, m_pCU->GetTransformIdx(abs_part_idx) );
+        ctx_cbf_inc = m_pCU->GetCtxQtCbf(type, m_pCU->GetTransformIdx(abs_part_idx) );
     }
 
     cost_best  = cost_zero_blk;// + GetCost_Cbf(0, ctx_cbf_inc, isRootCbf);
@@ -774,7 +773,7 @@ void RDOQuant<PixType>::DoAlgorithm(
         Ipp64s rd_factor = (Ipp64s) (scale / m_lambda / 16 / (1<<DISTORTION_PRECISION_ADJUSTMENT(2*(m_bitDepth-8))) + 0.5);
         Ipp32s lastCG = -1;
 
-        const Ipp32s last_scan_set = (width * height - 1) >> LOG2_SCAN_SET_SIZE;
+        const Ipp32s last_scan_set = (coeffCount - 1) >> LOG2_SCAN_SET_SIZE;
 
         for(Ipp32s subset = last_scan_set; subset >= 0; subset--)
         {
@@ -1088,12 +1087,11 @@ void h265_sign_bit_hiding(
     Ipp16s* coeffs,
     Ipp16u const *scan,
     Ipp32s* delta_u,
-    Ipp32s width,
-    Ipp32s height )
+    Ipp32s width )
 {
     Ipp32s lastCG = -1;
 
-    const Ipp32s last_scan_set = (width * height - 1) >> LOG2_SCAN_SET_SIZE;
+    const Ipp32s last_scan_set = (width * width - 1) >> LOG2_SCAN_SET_SIZE;
 
     for(Ipp32s subset = last_scan_set; subset >= 0; subset-- )
     {

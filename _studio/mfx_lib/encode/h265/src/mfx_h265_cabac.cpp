@@ -644,7 +644,7 @@ void H265CU<PixType>::CodeCoeffNxN(H265Bs *bs, H265CU<PixType>* pCU, CoeffsType*
     type = type == TEXT_LUMA ? TEXT_LUMA : ( type == TEXT_NONE ? TEXT_NONE : TEXT_CHROMA );
 
     const Ipp32u log2_block_size = h265_log2m2[width] + 2;
-    Ipp32u scan_idx = pCU->GetCoefScanIdx(abs_part_idx, width, type==TEXT_LUMA,
+    Ipp32u scan_idx = pCU->GetCoefScanIdx(abs_part_idx, log2_block_size, type==TEXT_LUMA,
         pCU->m_data[abs_part_idx].predMode == MODE_INTRA);
     if (scan_idx == COEFF_SCAN_ZIGZAG)
     {
@@ -926,7 +926,7 @@ void H265CU<PixType>::PutTransform(H265Bs* bs,Ipp32u offset_luma, Ipp32u offset_
                                 Ipp8u split_flag_only )
 {
     const Ipp32u subdiv = (Ipp8u)(m_data[abs_part_idx].trIdx + m_data[abs_part_idx].depth) > depth;
-    const Ipp32u Log2TrafoSize = h265_log2m2[m_par->MaxCUSize]+2 - depth;
+    const Ipp32u Log2TrafoSize = m_par->Log2MaxCUSize - depth;
     Ipp32u cbfY = GetCbf( abs_part_idx, TEXT_LUMA    , tr_idx );
     Ipp32u cbfU = GetCbf( abs_part_idx, TEXT_CHROMA_U, tr_idx );
     Ipp32u cbfV = GetCbf( abs_part_idx, TEXT_CHROMA_V, tr_idx );
@@ -950,160 +950,158 @@ void H265CU<PixType>::PutTransform(H265Bs* bs,Ipp32u offset_luma, Ipp32u offset_
             cbfV = GetCbf( m_bakAbsPartIdx, TEXT_CHROMA_V, tr_idx );
         }
     }
-    {//CABAC
-        if( m_data[abs_part_idx].predMode == MODE_INTRA &&
-            m_data[abs_part_idx].partSize == PART_SIZE_NxN && depth == m_data[abs_part_idx].depth )
+
+    if( m_data[abs_part_idx].predMode == MODE_INTRA &&
+        m_data[abs_part_idx].partSize == PART_SIZE_NxN && depth == m_data[abs_part_idx].depth )
+    {
+        VM_ASSERT( subdiv );
+    }
+    else if (m_data[abs_part_idx].predMode == MODE_INTER &&
+        (m_data[abs_part_idx].partSize != PART_SIZE_2Nx2N) &&
+        depth == m_data[abs_part_idx].depth &&
+        (m_par->QuadtreeTUMaxDepthInter == 1))
+    {
+        if (Log2TrafoSize > H265Enc::GetQuadtreeTuLog2MinSizeInCu(m_par, m_par->Log2MaxCUSize - m_data[abs_part_idx].depth,
+            m_data[abs_part_idx].partSize, m_data[abs_part_idx].predMode))
         {
             VM_ASSERT( subdiv );
-        }
-        else if (m_data[abs_part_idx].predMode == MODE_INTER &&
-            (m_data[abs_part_idx].partSize != PART_SIZE_2Nx2N) &&
-            depth == m_data[abs_part_idx].depth &&
-            (m_par->QuadtreeTUMaxDepthInter == 1))
-        {
-            if (Log2TrafoSize > GetQuadtreeTuLog2MinSizeInCu(abs_part_idx))
-            {
-                VM_ASSERT( subdiv );
-            }
-            else
-            {
-                VM_ASSERT(!subdiv );
-            }
-        }
-        else if (Log2TrafoSize > m_par->QuadtreeTULog2MaxSize)
-        {
-            VM_ASSERT( subdiv );
-        }
-        else if (Log2TrafoSize == m_par->QuadtreeTULog2MinSize)
-        {
-            VM_ASSERT( !subdiv );
-        }
-        else if (Log2TrafoSize == GetQuadtreeTuLog2MinSizeInCu(abs_part_idx))
-        {
-            VM_ASSERT( !subdiv );
         }
         else
         {
-            VM_ASSERT( Log2TrafoSize > GetQuadtreeTuLog2MinSizeInCu(abs_part_idx) );
-            bs->EncodeSingleBin_CABAC(CTX(bs,TRANS_SUBDIV_FLAG_HEVC) + 5 - Log2TrafoSize, subdiv);
+            VM_ASSERT(!subdiv );
         }
+    }
+    else if (Log2TrafoSize > m_par->QuadtreeTULog2MaxSize)
+    {
+        VM_ASSERT( subdiv );
+    }
+    else if (Log2TrafoSize == m_par->QuadtreeTULog2MinSize)
+    {
+        VM_ASSERT( !subdiv );
+    }
+    else if (Log2TrafoSize == H265Enc::GetQuadtreeTuLog2MinSizeInCu(m_par, m_par->Log2MaxCUSize - m_data[abs_part_idx].depth,
+            m_data[abs_part_idx].partSize, m_data[abs_part_idx].predMode))
+    {
+        VM_ASSERT( !subdiv );
+    }
+    else
+    {
+        VM_ASSERT( Log2TrafoSize > H265Enc::GetQuadtreeTuLog2MinSizeInCu(m_par, m_par->Log2MaxCUSize - m_data[abs_part_idx].depth,
+            m_data[abs_part_idx].partSize, m_data[abs_part_idx].predMode) );
+        bs->EncodeSingleBin_CABAC(CTX(bs,TRANS_SUBDIV_FLAG_HEVC) + 5 - Log2TrafoSize, subdiv);
     }
 
     if (split_flag_only) return;
 
+    const Ipp32u tr_depth_cur = depth - m_data[abs_part_idx].depth;
+    const bool first_cbf_of_cu = tr_depth_cur == 0;
+    if (first_cbf_of_cu || Log2TrafoSize > 2)
     {
+        if (first_cbf_of_cu || GetCbf( abs_part_idx, TEXT_CHROMA_U, tr_depth_cur - 1 ))
         {
-            const Ipp32u tr_depth_cur = depth - m_data[abs_part_idx].depth;
-            const bool first_cbf_of_cu = tr_depth_cur == 0;
-            if (first_cbf_of_cu || Log2TrafoSize > 2)
-            {
-                if (first_cbf_of_cu || GetCbf( abs_part_idx, TEXT_CHROMA_U, tr_depth_cur - 1 ))
-                {
-                    bs->EncodeSingleBin_CABAC(CTX(bs,QT_CBF_HEVC) +
-                        NUM_QT_CBF_CTX +
-                        GetCtxQtCbf(abs_part_idx, TEXT_CHROMA_U, tr_depth_cur),
-                        GetCbf     ( abs_part_idx, TEXT_CHROMA_U, tr_depth_cur ));
-                }
-                if (first_cbf_of_cu || GetCbf( abs_part_idx, TEXT_CHROMA_V, tr_depth_cur - 1 ))
-                {
-                    bs->EncodeSingleBin_CABAC(CTX(bs,QT_CBF_HEVC) +
-                        NUM_QT_CBF_CTX +
-                        GetCtxQtCbf(abs_part_idx, TEXT_CHROMA_V, tr_depth_cur),
-                        GetCbf     ( abs_part_idx, TEXT_CHROMA_V, tr_depth_cur ));
-                }
-            }
-            else if(Log2TrafoSize == 2)
-            {
-                VM_ASSERT( GetCbf( abs_part_idx, TEXT_CHROMA_U, tr_depth_cur ) == GetCbf( abs_part_idx, TEXT_CHROMA_U, tr_depth_cur - 1 ) );
-                VM_ASSERT( GetCbf( abs_part_idx, TEXT_CHROMA_V, tr_depth_cur ) == GetCbf( abs_part_idx, TEXT_CHROMA_V, tr_depth_cur - 1 ) );
-            }
+            bs->EncodeSingleBin_CABAC(CTX(bs,QT_CBF_HEVC) +
+                NUM_QT_CBF_CTX +
+                GetCtxQtCbf(TEXT_CHROMA_U, tr_depth_cur),
+                GetCbf     ( abs_part_idx, TEXT_CHROMA_U, tr_depth_cur ));
         }
+        if (first_cbf_of_cu || GetCbf( abs_part_idx, TEXT_CHROMA_V, tr_depth_cur - 1 ))
+        {
+            bs->EncodeSingleBin_CABAC(CTX(bs,QT_CBF_HEVC) +
+                NUM_QT_CBF_CTX +
+                GetCtxQtCbf(TEXT_CHROMA_V, tr_depth_cur),
+                GetCbf     ( abs_part_idx, TEXT_CHROMA_V, tr_depth_cur ));
+        }
+    }
+    else if(Log2TrafoSize == 2)
+    {
+        VM_ASSERT( GetCbf( abs_part_idx, TEXT_CHROMA_U, tr_depth_cur ) == GetCbf( abs_part_idx, TEXT_CHROMA_U, tr_depth_cur - 1 ) );
+        VM_ASSERT( GetCbf( abs_part_idx, TEXT_CHROMA_V, tr_depth_cur ) == GetCbf( abs_part_idx, TEXT_CHROMA_V, tr_depth_cur - 1 ) );
+    }
 
 //        printf("CBU,V: %d %d\n",cbfU,cbfV);
 
-        if (subdiv)
+    if (subdiv)
+    {
+        Ipp32u size;
+        width  >>= 1;
+        size = width*width;
+        tr_idx++;
+        ++depth;
+        const Ipp32u part_num = m_par->NumPartInCU >> (depth << 1);
+
+        Ipp32u nsAddr = abs_part_idx;
+        PutTransform( bs, offset_luma, offset_chroma, abs_part_idx, nsAddr, depth, width, tr_idx, code_dqp );
+
+        abs_part_idx += part_num;  offset_luma += size;  offset_chroma += (size>>2);
+        PutTransform( bs, offset_luma, offset_chroma, abs_part_idx, nsAddr, depth, width, tr_idx, code_dqp );
+
+        abs_part_idx += part_num;  offset_luma += size;  offset_chroma += (size>>2);
+        PutTransform( bs, offset_luma, offset_chroma, abs_part_idx, nsAddr, depth, width, tr_idx, code_dqp );
+
+        abs_part_idx += part_num;  offset_luma += size;  offset_chroma += (size>>2);
+        PutTransform( bs, offset_luma, offset_chroma, abs_part_idx, nsAddr, depth, width, tr_idx, code_dqp );
+    }
+    else
+    {
+        Ipp32u luma_tr_mode, chroma_tr_mode;
+        ConvertTransIdx( m_data[abs_part_idx].trIdx, luma_tr_mode, chroma_tr_mode );
+
+        if (m_data[abs_part_idx].predMode != MODE_INTRA && depth == m_data[abs_part_idx].depth &&
+            !GetCbf( abs_part_idx, TEXT_CHROMA_U, 0 ) && !GetCbf( abs_part_idx, TEXT_CHROMA_V, 0 ))
         {
-            Ipp32u size;
-            width  >>= 1;
-            size = width*width;
-            tr_idx++;
-            ++depth;
-            const Ipp32u part_num = m_par->NumPartInCU >> (depth << 1);
-
-            Ipp32u nsAddr = abs_part_idx;
-            PutTransform( bs, offset_luma, offset_chroma, abs_part_idx, nsAddr, depth, width, tr_idx, code_dqp );
-
-            abs_part_idx += part_num;  offset_luma += size;  offset_chroma += (size>>2);
-            PutTransform( bs, offset_luma, offset_chroma, abs_part_idx, nsAddr, depth, width, tr_idx, code_dqp );
-
-            abs_part_idx += part_num;  offset_luma += size;  offset_chroma += (size>>2);
-            PutTransform( bs, offset_luma, offset_chroma, abs_part_idx, nsAddr, depth, width, tr_idx, code_dqp );
-
-            abs_part_idx += part_num;  offset_luma += size;  offset_chroma += (size>>2);
-            PutTransform( bs, offset_luma, offset_chroma, abs_part_idx, nsAddr, depth, width, tr_idx, code_dqp );
+            VM_ASSERT( GetCbf( abs_part_idx, TEXT_LUMA, 0 ) );
         }
         else
         {
-            Ipp32u luma_tr_mode, chroma_tr_mode;
-            ConvertTransIdx( abs_part_idx, m_data[abs_part_idx].trIdx, luma_tr_mode, chroma_tr_mode );
-
-            if (m_data[abs_part_idx].predMode != MODE_INTRA && depth == m_data[abs_part_idx].depth &&
-                !GetCbf( abs_part_idx, TEXT_CHROMA_U, 0 ) && !GetCbf( abs_part_idx, TEXT_CHROMA_V, 0 ))
-            {
-                VM_ASSERT( GetCbf( abs_part_idx, TEXT_LUMA, 0 ) );
-            }
-            else
-            {
-                bs->EncodeSingleBin_CABAC(CTX(bs,QT_CBF_HEVC) +
-                    GetCtxQtCbf(abs_part_idx, TEXT_LUMA, luma_tr_mode),
-                    GetCbf     ( abs_part_idx, TEXT_LUMA, luma_tr_mode ));
-            }
+            bs->EncodeSingleBin_CABAC(CTX(bs,QT_CBF_HEVC) +
+                GetCtxQtCbf(TEXT_LUMA, luma_tr_mode),
+                GetCbf     ( abs_part_idx, TEXT_LUMA, luma_tr_mode ));
+        }
 //    printf("CBFY: %d\n",cbfY);
 
-            if (cbfY || cbfU || cbfV)
+        if (cbfY || cbfU || cbfV)
+        {
+            // dQP: only for LCU once
+            if (m_par->UseDQP)
             {
-                // dQP: only for LCU once
-                if (m_par->UseDQP)
+                if (code_dqp)
                 {
-                    if (code_dqp)
-                    {
-                        h265_code_delta_qp(bs, this, m_bakAbsPartIdxCu);
-                        code_dqp = 0;
-                    }
+                    h265_code_delta_qp(bs, this, m_bakAbsPartIdxCu);
+                    code_dqp = 0;
                 }
             }
-            if (cbfY)
+        }
+        if (cbfY)
+        {
+            Ipp32s tr_width = width;
+            CodeCoeffNxN(bs, this, (m_trCoeffY+offset_luma), abs_part_idx, tr_width, TEXT_LUMA );
+        }
+        if (Log2TrafoSize > 2)
+        {
+            Ipp32s tr_width = width >> 1;
+            if (cbfU)
+            {
+                CodeCoeffNxN(bs, this, (m_trCoeffU+offset_chroma), abs_part_idx, tr_width, TEXT_CHROMA_U );
+            }
+            if (cbfV)
+            {
+                CodeCoeffNxN(bs, this, (m_trCoeffV+offset_chroma), abs_part_idx, tr_width, TEXT_CHROMA_V );
+            }
+        }
+        else
+        {
+            //Ipp32u part_num = m_par->NumPartInCU >> ( ( depth - 1 ) << 1 );
+            Ipp32u part_num_mask = (4 << ( (m_par->MaxCUDepth - depth) * 2 )) - 1;
+            if ((abs_part_idx & part_num_mask ) == part_num_mask)
             {
                 Ipp32s tr_width = width;
-                CodeCoeffNxN(bs, this, (m_trCoeffY+offset_luma), abs_part_idx, tr_width, TEXT_LUMA );
-            }
-            if (Log2TrafoSize > 2)
-            {
-                Ipp32s tr_width = width >> 1;
                 if (cbfU)
                 {
-                    CodeCoeffNxN(bs, this, (m_trCoeffU+offset_chroma), abs_part_idx, tr_width, TEXT_CHROMA_U );
+                    CodeCoeffNxN(bs, this, (m_trCoeffU+m_bakChromaOffset), m_bakAbsPartIdx, tr_width, TEXT_CHROMA_U );
                 }
                 if (cbfV)
                 {
-                    CodeCoeffNxN(bs, this, (m_trCoeffV+offset_chroma), abs_part_idx, tr_width, TEXT_CHROMA_V );
-                }
-            }
-            else
-            {
-                //Ipp32u part_num = m_par->NumPartInCU >> ( ( depth - 1 ) << 1 );
-                Ipp32u part_num_mask = (4 << ( (m_par->MaxCUDepth - depth) * 2 )) - 1;
-                if ((abs_part_idx & part_num_mask ) == part_num_mask)
-                {
-                    Ipp32s tr_width = width;
-                    if (cbfU)
-                    {
-                        CodeCoeffNxN(bs, this, (m_trCoeffU+m_bakChromaOffset), m_bakAbsPartIdx, tr_width, TEXT_CHROMA_U );
-                    }
-                    if (cbfV)
-                    {
-                        CodeCoeffNxN(bs, this, (m_trCoeffV+m_bakChromaOffset), m_bakAbsPartIdx, tr_width, TEXT_CHROMA_V );
-                    }
+                    CodeCoeffNxN(bs, this, (m_trCoeffV+m_bakChromaOffset), m_bakAbsPartIdx, tr_width, TEXT_CHROMA_V );
                 }
             }
         }

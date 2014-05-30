@@ -68,9 +68,9 @@ public:
 
 private:
 
-    Ipp32u      GetCoefScanIdx(Ipp32u abs_part_idx, Ipp32u width, bool bIsLuma)
+    Ipp32u      GetCoefScanIdx(Ipp32u abs_part_idx, Ipp32u log2Width, bool bIsLuma)
     {
-        Ipp32u scanIdx = ((H265CU<PixType>*)m_pCU)->GetCoefScanIdx(abs_part_idx, width, bIsLuma, ((H265CU<PixType>*)m_pCU)->IsIntra(abs_part_idx) );
+        Ipp32u scanIdx = ((H265CU<PixType>*)m_pCU)->GetCoefScanIdx(abs_part_idx, log2Width, bIsLuma, ((H265CU<PixType>*)m_pCU)->IsIntra(abs_part_idx) );
 
         if (scanIdx == COEFF_SCAN_ZIGZAG)
         {

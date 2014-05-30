@@ -188,7 +188,7 @@ void H265CU<PixType>::QuantInvTu(Ipp32u abs_part_idx, Ipp32s offset, Ipp32s widt
 {
     Ipp32s QP = is_luma ? m_data[abs_part_idx].qp  + (m_par->bitDepthLuma - 8) * 6 : 
         h265_QPtoChromaQP[m_data[abs_part_idx].qp] + (m_par->bitDepthChroma - 8) * 6;
-    Ipp32s log2TrSize = h265_log2table[width - 4];
+    Ipp32s log2TrSize = h265_log2m2[width] + 2;
 
     VM_ASSERT(!m_par->csps->sps_scaling_list_data_present_flag);
 
@@ -209,7 +209,7 @@ void H265CU<PixType>::QuantFwdTu(
     Ipp32s QP = is_luma ? m_data[abs_part_idx].qp + (m_par->bitDepthLuma - 8) * 6 :
         h265_QPtoChromaQP[m_data[abs_part_idx].qp] + (m_par->bitDepthChroma - 8) * 6;
 
-    Ipp32s log2TrSize = h265_log2table[width - 4];
+    Ipp32s log2TrSize = h265_log2m2[width] + 2;
 
     VM_ASSERT(!m_par->csps->sps_scaling_list_data_present_flag);
 
@@ -231,16 +231,14 @@ void H265CU<PixType>::QuantFwdTu(
                                  abs_sum );
 
             if(this->m_par->cpps->sign_data_hiding_enabled_flag && abs_sum >= 2) {
-                Ipp32u scan_idx = GetCoefScanIdx( abs_part_idx, width, is_luma, IsIntra(abs_part_idx) );
+                Ipp32u scan_idx = GetCoefScanIdx( abs_part_idx, log2TrSize, is_luma, IsIntra(abs_part_idx) );
 
                 if (scan_idx == COEFF_SCAN_ZIGZAG)
                     scan_idx = COEFF_SCAN_DIAG;
 
-                Ipp32s height = width;
                 const Ipp16u *scan = h265_sig_last_scan[ scan_idx -1 ][ log2TrSize - 1 ];
 
-                 h265_sign_bit_hiding( coeff + offset, residuals + offset, scan, delta_u,
-                                       width, height );
+                h265_sign_bit_hiding( coeff + offset, residuals + offset, scan, delta_u, width );
             }
         }
     }

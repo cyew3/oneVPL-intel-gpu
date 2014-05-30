@@ -80,8 +80,7 @@ void h265_sign_bit_hiding(
     Ipp16s* coeffs,
     Ipp16u const *scan,
     Ipp32s* delta_u,
-    Ipp32s width,
-    Ipp32s height);
+    Ipp32s width);
 
 } // namespace
 

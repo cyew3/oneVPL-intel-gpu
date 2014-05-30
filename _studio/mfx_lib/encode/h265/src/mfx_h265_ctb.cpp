@@ -214,34 +214,38 @@ void H265CU<PixType>::GetPartOffsetAndSize(Ipp32s idx,
     }
 }
 
-template <typename PixType>
-void H265CU<PixType>::GetPartAddr(Ipp32s partIdx,
-                         Ipp32s partMode,
-                         Ipp32s numPartition,
-                         Ipp32s& partAddr)
+
+void GetPartAddr(Ipp32s partIdx,
+                 Ipp32s partMode,
+                 Ipp32s numPartition,
+                 Ipp32s& partAddr)
 {
+    if (partIdx == 0) {
+        partAddr = 0;
+        return;
+    }
     switch (partMode)
     {
     case PART_SIZE_2NxN:
-        partAddr = (partIdx == 0) ? 0 : numPartition >> 1;
+        partAddr = numPartition >> 1;
         break;
     case PART_SIZE_Nx2N:
-        partAddr = (partIdx == 0) ? 0 : numPartition >> 2;
+        partAddr = numPartition >> 2;
         break;
     case PART_SIZE_NxN:
         partAddr = (numPartition >> 2) * partIdx;
         break;
     case PART_SIZE_2NxnU:
-        partAddr = (partIdx == 0) ? 0 : numPartition >> 3;
+        partAddr = numPartition >> 3;
         break;
     case PART_SIZE_2NxnD:
-        partAddr = (partIdx == 0) ? 0 : (numPartition >> 1) + (numPartition >> 3);
+        partAddr = (numPartition >> 1) + (numPartition >> 3);
         break;
     case PART_SIZE_nLx2N:
-        partAddr = (partIdx == 0) ? 0 : numPartition >> 4;
+        partAddr = numPartition >> 4;
         break;
     case PART_SIZE_nRx2N:
-        partAddr = (partIdx == 0) ? 0 : (numPartition >> 2) + (numPartition >> 4);
+        partAddr = (numPartition >> 2) + (numPartition >> 4);
         break;
     case PART_SIZE_2Nx2N:
     default:
@@ -312,13 +316,13 @@ Ipp8s H265CU<PixType>::GetRefQp( Ipp32u currAbsIdxInLcu )
 template <typename PixType>
 void H265CU<PixType>::SetQpSubCUs(int qp, int absPartIdx, int depth, bool &foundNonZeroCbf)
 {
-    Ipp32u curPartNumb = m_par->NumPartInCU >> (depth << 1);
-    Ipp32u curPartNumQ = curPartNumb >> 2;
 
     if (!foundNonZeroCbf)
     {
         if(m_data[absPartIdx].depth > depth)
         {
+            Ipp32u curPartNumb = m_par->NumPartInCU >> (depth << 1);
+            Ipp32u curPartNumQ = curPartNumb >> 2;
             for (Ipp32u partUnitIdx = 0; partUnitIdx < 4; partUnitIdx++)
             {
                 SetQpSubCUs(qp, absPartIdx + partUnitIdx * curPartNumQ, depth + 1, foundNonZeroCbf);
@@ -365,9 +369,9 @@ void H265CU<PixType>::CheckDeltaQp(void)
 }
 
 template <typename PixType>
-Ipp32u H265CU<PixType>::GetCoefScanIdx(Ipp32u absPartIdx, Ipp32u width, Ipp32s isLuma, Ipp32s isIntra)
+Ipp32u H265CU<PixType>::GetCoefScanIdx(Ipp32u absPartIdx, Ipp32u log2Width, Ipp32s isLuma, Ipp32s isIntra)
 {
-    Ipp32u ctxIdx;
+    Ipp32s ctxIdx;
     Ipp32u scanIdx;
     Ipp32u dirMode;
 
@@ -376,21 +380,23 @@ Ipp32u H265CU<PixType>::GetCoefScanIdx(Ipp32u absPartIdx, Ipp32u width, Ipp32s i
         return scanIdx;
     }
 
-    switch(width)
-    {
-    case  2: ctxIdx = 6; break;
-    case  4: ctxIdx = 5; break;
-    case  8: ctxIdx = 4; break;
-    case 16: ctxIdx = 3; break;
-    case 32: ctxIdx = 2; break;
-    case 64: ctxIdx = 1; break;
-    default: ctxIdx = 0; break;
-    }
+    ctxIdx = 7 - log2Width; // 2(4)->5 and 6(64)->1; so 1 <= ctxIdx <= 5
+
+    //switch(width)
+    //{
+    //case  2: ctxIdx = 6; break;
+    //case  4: ctxIdx = 5; break;
+    //case  8: ctxIdx = 4; break;
+    //case 16: ctxIdx = 3; break;
+    //case 32: ctxIdx = 2; break;
+    //case 64: ctxIdx = 1; break;
+    //default: ctxIdx = 0; break;
+    //}
 
     if (isLuma) {
         dirMode = m_data[absPartIdx].intraLumaDir;
         scanIdx = COEFF_SCAN_ZIGZAG;
-        if (ctxIdx >3 && ctxIdx < 6) //if multiple scans supported for transform size
+        if (ctxIdx >3 /*&& ctxIdx < 6*/) //if multiple scans supported for transform size
         {
             scanIdx = abs((Ipp32s) dirMode - INTRA_VER) < 5 ? 1 : (abs((Ipp32s)dirMode - INTRA_HOR) < 5 ? 2 : 0);
         }
@@ -407,7 +413,7 @@ Ipp32u H265CU<PixType>::GetCoefScanIdx(Ipp32u absPartIdx, Ipp32u width, Ipp32s i
             dirMode = m_data[absPartIdx & mask].intraLumaDir;
         }
         scanIdx = COEFF_SCAN_ZIGZAG;
-        if (ctxIdx > 4 && ctxIdx < 7) //if multiple scans supported for transform size
+        if (ctxIdx > 4 /*&& ctxIdx < 7*/) //if multiple scans supported for transform size
         {
             scanIdx = abs((Ipp32s) dirMode - INTRA_VER) < 5 ? 1 : (abs((Ipp32s)dirMode - INTRA_HOR) < 5 ? 2 : 0);
         }
@@ -417,7 +423,7 @@ Ipp32u H265CU<PixType>::GetCoefScanIdx(Ipp32u absPartIdx, Ipp32u width, Ipp32s i
 }
 
 template <typename PixType>
-Ipp32u H265CU<PixType>::GetCtxQtCbf(Ipp32u/* absPartIdx*/, EnumTextType type, Ipp32u trDepth)
+Ipp32u H265CU<PixType>::GetCtxQtCbf(EnumTextType type, Ipp32u trDepth) const
 {
   if (type) {
       return trDepth;
@@ -427,25 +433,21 @@ Ipp32u H265CU<PixType>::GetCtxQtCbf(Ipp32u/* absPartIdx*/, EnumTextType type, Ip
   }
 }
 
-template <typename PixType>
-Ipp32u H265CU<PixType>::GetQuadtreeTuLog2MinSizeInCu(Ipp32u absPartIdx)
+Ipp32u GetQuadtreeTuLog2MinSizeInCu(const H265VideoParam *par, Ipp32u log2CbSize, Ipp8u partSize, Ipp8u pred_mode)
 {
-    return H265Enc::GetQuadtreeTuLog2MinSizeInCu(m_par, absPartIdx, m_data[absPartIdx].size,
-        m_data[absPartIdx].partSize, m_data[absPartIdx].predMode);
-}
-
-Ipp32u GetQuadtreeTuLog2MinSizeInCu(const H265VideoParam *par, Ipp32u absPartIdx, Ipp32s size,
-                                    Ipp8u partSize, Ipp8u pred_mode)
-{
-    Ipp32u log2CbSize = h265_log2m2[size] + 2;
-    Ipp32u quadtreeTUMaxDepth = (pred_mode == MODE_INTRA)
-        ? par->QuadtreeTUMaxDepthIntra
-        : par->QuadtreeTUMaxDepthInter;
-    Ipp32s intraSplitFlag = ( pred_mode == MODE_INTRA && partSize == PART_SIZE_NxN ) ? 1 : 0;
-    Ipp32s interSplitFlag = ((quadtreeTUMaxDepth == 1) && (pred_mode == MODE_INTER) && (partSize != PART_SIZE_2Nx2N) );
+    Ipp32u SplitFlag;
+    Ipp32u quadtreeTUMaxDepth;
+    if (pred_mode == MODE_INTRA) {
+        quadtreeTUMaxDepth = par->QuadtreeTUMaxDepthIntra;
+        SplitFlag = ( partSize == PART_SIZE_NxN ) ? 1 : 0;
+    }
+    else {
+        quadtreeTUMaxDepth = par->QuadtreeTUMaxDepthInter;
+        SplitFlag = ( partSize != PART_SIZE_2Nx2N && quadtreeTUMaxDepth == 1 ) ? 1 : 0;
+    }
 
     Ipp32u log2MinTUSizeInCU = 0;
-    if (log2CbSize < (par->QuadtreeTULog2MinSize + quadtreeTUMaxDepth - 1 + interSplitFlag + intraSplitFlag) )
+    if (log2CbSize < par->QuadtreeTULog2MinSize + (quadtreeTUMaxDepth - 1 + SplitFlag) )
     {
         // when fully making use of signaled TUMaxDepth + inter/intraSplitFlag, resulting luma TB size is < QuadtreeTULog2MinSize
         log2MinTUSizeInCU = par->QuadtreeTULog2MinSize;
@@ -453,8 +455,8 @@ Ipp32u GetQuadtreeTuLog2MinSizeInCu(const H265VideoParam *par, Ipp32u absPartIdx
     else
     {
         // when fully making use of signaled TUMaxDepth + inter/intraSplitFlag, resulting luma TB size is still >= QuadtreeTULog2MinSize
-        log2MinTUSizeInCU = log2CbSize - ( quadtreeTUMaxDepth - 1 + interSplitFlag + intraSplitFlag); // stop when trafoDepth == hierarchy_depth = splitFlag
-        if ( log2MinTUSizeInCU > par->QuadtreeTULog2MaxSize)
+        log2MinTUSizeInCU = log2CbSize - (quadtreeTUMaxDepth - 1 + SplitFlag); // stop when trafoDepth == hierarchy_depth = splitFlag
+        if (log2MinTUSizeInCU > par->QuadtreeTULog2MaxSize)
         {
             // when fully making use of signaled TUMaxDepth + inter/intraSplitFlag, resulting luma TB size is still > QuadtreeTULog2MaxSize
             log2MinTUSizeInCU = par->QuadtreeTULog2MaxSize;
@@ -464,42 +466,23 @@ Ipp32u GetQuadtreeTuLog2MinSizeInCu(const H265VideoParam *par, Ipp32u absPartIdx
 }
 
 
-void GetTrDepthMinMax(const H265VideoParam *par, Ipp32s absPartIdx, Ipp32s depth, Ipp32s partMode,
+void GetTrDepthMinMax(const H265VideoParam *par, Ipp32s depth, Ipp32s partMode,
                       Ipp8u *trDepthMin, Ipp8u *trDepthMax)
 {
     Ipp8u trDepth = (par->QuadtreeTUMaxDepthInter == 1) && (partMode != PART_SIZE_2Nx2N);
-    Ipp32u tuLog2MinSize = GetQuadtreeTuLog2MinSizeInCu(par, absPartIdx, par->MaxCUSize >> depth, (Ipp8u)partMode, MODE_INTER);
-    while ((par->MaxCUSize >> (depth + trDepth)) > 32) trDepth++;
-    while (trDepth < (par->QuadtreeTUMaxDepthInter - 1 + (par->QuadtreeTUMaxDepthInter == 1)) &&
-        (par->MaxCUSize >> (depth + trDepth)) > 4 &&
-        (par->Log2MaxCUSize - depth - trDepth > tuLog2MinSize) &&
-        (0 || // biggest TU
-        (par->Log2MaxCUSize - depth - trDepth > par->QuadtreeTULog2MaxSize)))
-        trDepth++;
+    Ipp32u tuLog2MinSize = GetQuadtreeTuLog2MinSizeInCu(par, par->Log2MaxCUSize - depth, (Ipp8u)partMode, MODE_INTER);
+    if ((int)par->Log2MaxCUSize - depth - 5 > trDepth) trDepth = (int)par->Log2MaxCUSize - depth - 5;
+    int parmin1, parmin2;
+    parmin1 = IPP_MIN((int)par->QuadtreeTUMaxDepthInter - 1 + (par->QuadtreeTUMaxDepthInter == 1),
+        (int)par->Log2MaxCUSize - depth - 2);
+    parmin1 = IPP_MIN(parmin1, (int)par->Log2MaxCUSize - depth - (int)tuLog2MinSize);
+    parmin2 = IPP_MIN(parmin1, (int)par->Log2MaxCUSize - depth - (int)par->QuadtreeTULog2MaxSize);
+    trDepth = IPP_MAX(trDepth, parmin2);
     *trDepthMin = trDepth;
-    while (trDepth < (par->QuadtreeTUMaxDepthInter - 1 + (par->QuadtreeTUMaxDepthInter == 1)) &&
-        (par->MaxCUSize >> (depth + trDepth)) > 4 &&
-        (par->Log2MaxCUSize - depth - trDepth > tuLog2MinSize) &&
-        (1 || // smallest TU
-        (par->Log2MaxCUSize - depth - trDepth > par->QuadtreeTULog2MaxSize)))
-        trDepth++;
+    trDepth = IPP_MAX(trDepth, parmin1);
     *trDepthMax = trDepth;
 }
 
-
-template <typename PixType>
-void H265CU<PixType>::ConvertTransIdx( Ipp32u /*absPartIdx*/, Ipp32u trIdx, Ipp32u& rlumaTrMode, Ipp32u& rchromaTrMode )
-{
-    rlumaTrMode   = trIdx;
-    rchromaTrMode = trIdx;
-    return;
-}
-
-template <typename PixType>
-Ipp32u H265CU<PixType>::GetSCuAddr()
-{
-    return m_ctbAddr*(1<<(m_par->MaxCUDepth<<1))+m_absIdxInLcu;
-}
 
 template <typename PixType>
 Ipp32s H265CU<PixType>::GetIntradirLumaPred(Ipp32u absPartIdx, Ipp8u* intraDirPred)
@@ -577,29 +560,29 @@ void H265CU<PixType>::GetAllowedChromaDir(Ipp32u absPartIdx, Ipp8u* modeList)
     }
 }
 
-static inline Ipp8u isZeroRow(Ipp32s addr, Ipp32s numUnitsPerRow)
-{
-// addr / numUnitsPerRow == 0
-    return ( addr &~ ( numUnitsPerRow - 1 ) ) == 0;
-}
-
-static inline Ipp8u isEqualRow(Ipp32s addrA, Ipp32s addrB, Ipp32s numUnitsPerRow)
-{
-// addrA / numUnitsPerRow == addrB / numUnitsPerRow
-    return (( addrA ^ addrB ) &~ ( numUnitsPerRow - 1 ) ) == 0;
-}
-
-static inline Ipp8u isZeroCol(Ipp32s addr, Ipp32s numUnitsPerRow)
-{
-// addr % numUnitsPerRow == 0
-    return ( addr & ( numUnitsPerRow - 1 ) ) == 0;
-}
-
-static inline Ipp8u isEqualCol(Ipp32s addrA, Ipp32s addrB, Ipp32s numUnitsPerRow)
-{
-// addrA % numUnitsPerRow == addrB % numUnitsPerRow
-    return (( addrA ^ addrB ) &  ( numUnitsPerRow - 1 ) ) == 0;
-}
+//static inline Ipp8u isZeroRow(Ipp32s addr, Ipp32s numUnitsPerRow)
+//{
+//// addr / numUnitsPerRow == 0
+//    return ( addr &~ ( numUnitsPerRow - 1 ) ) == 0;
+//}
+//
+//static inline Ipp8u isEqualRow(Ipp32s addrA, Ipp32s addrB, Ipp32s numUnitsPerRow)
+//{
+//// addrA / numUnitsPerRow == addrB / numUnitsPerRow
+//    return (( addrA ^ addrB ) &~ ( numUnitsPerRow - 1 ) ) == 0;
+//}
+//
+//static inline Ipp8u isZeroCol(Ipp32s addr, Ipp32s numUnitsPerRow)
+//{
+//// addr % numUnitsPerRow == 0
+//    return ( addr & ( numUnitsPerRow - 1 ) ) == 0;
+//}
+//
+//static inline Ipp8u isEqualCol(Ipp32s addrA, Ipp32s addrB, Ipp32s numUnitsPerRow)
+//{
+//// addrA % numUnitsPerRow == addrB % numUnitsPerRow
+//    return (( addrA ^ addrB ) &  ( numUnitsPerRow - 1 ) ) == 0;
+//}
 
 template <typename PixType>
 void H265CU<PixType>::GetPuAbove(H265CUPtr *cu,
@@ -763,6 +746,9 @@ template <class H265CuBase>
 Ipp32s GetLastValidPartIdx(H265CuBase* cu, Ipp32s iAbsPartIdx)
 {
     Ipp32s iLastValidPartIdx = iAbsPartIdx - 1;
+
+    // kla
+    // MODE_NONE is NOWHERE set! Does it work as expected?
 
     while (iLastValidPartIdx >= 0 && cu->m_data[iLastValidPartIdx].predMode == MODE_NONE)
     {
@@ -1834,7 +1820,7 @@ void H265CU<PixType>::CalcCostLuma(Ipp32u absPartIdx, Ipp32s offset, Ipp8u depth
     Ipp8u trDepthZeroOnly = costOpt == COST_PRED_TR_0 || costOpt == COST_REC_TR_0;
     Ipp8u nz = 1;
 
-    Ipp8u splitMode = GetTrSplitMode(absPartIdx, depth, trDepth, partSize, 1);
+    Ipp8u splitMode = GetTrSplitMode(absPartIdx, depth, trDepth, partSize);
 
     if (trDepthZeroOnly && splitMode != SPLIT_MUST) {
         splitMode = SPLIT_NONE;
@@ -1895,7 +1881,7 @@ void H265CU<PixType>::CalcCostLuma(Ipp32u absPartIdx, Ipp32s offset, Ipp8u depth
         CostType costSplit = 0;
         if (m_rdOptFlag && splitMode != SPLIT_MUST) {
             m_bsf->Reset();
-            Ipp32s tr_size = h265_log2m2[m_par->MaxCUSize] + 2 - depth - trDepth;
+            Ipp32s tr_size = m_par->Log2MaxCUSize - depth - trDepth;
             m_bsf->EncodeSingleBin_CABAC(CTX(m_bsf,TRANS_SUBDIV_FLAG_HEVC) + 5 - tr_size, 1);
             costSplit += BIT_COST(m_bsf->GetNumBits());
         }
@@ -2225,7 +2211,7 @@ CostType H265CU<PixType>::MeCu(Ipp32u absPartIdx, Ipp8u depth, Ipp32s offset)
         Ipp8u cbf[256][3]; // use from [absPartIdx]
 
         Ipp8u tr_depth_min, tr_depth_max;
-        GetTrDepthMinMax(m_par, absPartIdx, depth, PART_SIZE_2Nx2N, &tr_depth_min, &tr_depth_max);
+        GetTrDepthMinMax(m_par, depth, PART_SIZE_2Nx2N, &tr_depth_min, &tr_depth_max);
         tr_depth_min = tr_depth_max; // will try with minimal transform size
 
         TuDiff(residY, MAX_CU_SIZE, srcY, m_pitchSrc, pred + offsetPred, MAX_CU_SIZE, size);
@@ -2852,7 +2838,7 @@ CostType H265CU<PixType>::CuCost(Ipp32u absPartIdx, Ipp8u depth, const H265MEInf
     const Ipp8u curIdx = m_data[absPartIdx].curIdx; 
     const Ipp8u curRecIdx = m_data[absPartIdx].curRecIdx; 
     const Ipp8u bestRecIdx = m_data[absPartIdx].bestRecIdx; 
-    GetTrDepthMinMax(m_par, absPartIdx, depth, bestSplitMode, &tr_depth_min, &tr_depth_max);
+    GetTrDepthMinMax(m_par, depth, bestSplitMode, &tr_depth_min, &tr_depth_max);
 
     for (Ipp32u i = absPartIdx; i < absPartIdx + numParts; i++) {
         Ipp32u posx = h265_scan_z2r4[i] & 15;
@@ -4517,7 +4503,7 @@ void H265CU<PixType>::EncAndRecLumaTu(Ipp32u absPartIdx, Ipp32s offset, Ipp32s w
         }
         else {
             m_bsf->EncodeSingleBin_CABAC(CTX(m_bsf,QT_CBF_HEVC) +
-                GetCtxQtCbf(absPartIdx, TEXT_LUMA, m_data[absPartIdx].trIdx),
+                GetCtxQtCbf(TEXT_LUMA, m_data[absPartIdx].trIdx),
                 0);
         }
         if(IS_INTRA(m_data, absPartIdx))
@@ -4554,8 +4540,8 @@ void H265CU<PixType>::EncAndRecChromaTu(Ipp32u absPartIdx, Ipp32s offset, Ipp32s
     if (m_data[absPartIdx].predMode == MODE_INTRA) {
         Ipp8u intra_pred_mode = m_data[absPartIdx].intraChromaDir;
         if (intra_pred_mode == INTRA_DM_CHROMA) {
-            Ipp32s shift = h265_log2m2[m_par->NumPartInCU >> (depth<<1)] + 2;
-            Ipp32s absPartIdx_0 = absPartIdx >> shift << shift;
+            Ipp32s mask = (m_par->NumPartInCU >> (depth<<1)) - 1;
+            Ipp32s absPartIdx_0 = absPartIdx & ~mask;
             intra_pred_mode = m_data[absPartIdx_0].intraLumaDir;
         }
         IntraPredTu(absPartIdx, width, intra_pred_mode, 0);

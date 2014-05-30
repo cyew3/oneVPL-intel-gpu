@@ -75,30 +75,30 @@ const Ipp16s g_chromaInterpolateFilter[8][4] =
     { -2, 10, 58, -2 }
 };
 
-template <typename PixType>
-static void CopyPU(const PixType *in_pSrc,
-                          Ipp32u in_SrcPitch, // in samples
-                          Ipp16s* in_pDst,
-                          Ipp32u in_DstPitch, // in samples
-                          Ipp32s width,
-                          Ipp32s height,
-                          Ipp32s shift)
-{
-    const PixType *pSrc = in_pSrc;
-    Ipp16s *pDst = in_pDst;
-    Ipp32s i, j;
-
-    for (j = 0; j < height; j++)
-    {
-        for (i = 0; i < width; i++)
-        {
-            pDst[i] = (Ipp16s)(((Ipp32s)pSrc[i]) << shift);
-        }
-
-        pSrc += in_SrcPitch;
-        pDst += in_DstPitch;
-    }
-}
+//template <typename PixType>
+//static void CopyPU(const PixType *in_pSrc,
+//                          Ipp32u in_SrcPitch, // in samples
+//                          Ipp16s* in_pDst,
+//                          Ipp32u in_DstPitch, // in samples
+//                          Ipp32s width,
+//                          Ipp32s height,
+//                          Ipp32s shift)
+//{
+//    const PixType *pSrc = in_pSrc;
+//    Ipp16s *pDst = in_pDst;
+//    Ipp32s i, j;
+//
+//    for (j = 0; j < height; j++)
+//    {
+//        for (i = 0; i < width; i++)
+//        {
+//            pDst[i] = (Ipp16s)(((Ipp32s)pSrc[i]) << shift);
+//        }
+//
+//        pSrc += in_SrcPitch;
+//        pDst += in_DstPitch;
+//    }
+//}
 
 template <typename PixType>
 void WriteAverageToPic(

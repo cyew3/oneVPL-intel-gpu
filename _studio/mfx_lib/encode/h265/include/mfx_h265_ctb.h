@@ -280,15 +280,9 @@ public:
     void GetPartOffsetAndSize(Ipp32s idx, Ipp32s partMode, Ipp32s cuSize, Ipp32s &partX,
                               Ipp32s &partY, Ipp32s &partWidth, Ipp32s &partHeight);
 
-    void GetPartAddr(Ipp32s uPartIdx, Ipp32s partMode, Ipp32s m_NumPartition, Ipp32s &partAddr);
-
     bool CheckIdenticalMotion(const Ipp8s refIdx[2], const H265MV mvs[2]) const;
 
     Ipp32s ClipMV(H265MV &rcMv) const; // returns 1 if changed, otherwise 0
-
-    Ipp32u GetSCuAddr();
-    
-    Ipp32u GetQuadtreeTuLog2MinSizeInCu(Ipp32u absPartIdx);
 
     H265CUData *GetQpMinCuLeft(Ipp32u &uiLPartUnitIdx, Ipp32u uiCurrAbsIdxInLCU,
                                bool bEnforceSliceRestriction = true,
@@ -305,7 +299,11 @@ public:
 
     Ipp32u GetIntraSizeIdx(Ipp32u absPartIdx);
 
-    void ConvertTransIdx(Ipp32u absPartIdx, Ipp32u trIdx, Ipp32u &lumaTrMode, Ipp32u &chromaTrMode);
+    void ConvertTransIdx(Ipp32u trIdx, Ipp32u &lumaTrMode, Ipp32u &chromaTrMode)  {
+        lumaTrMode   = trIdx;
+        chromaTrMode = trIdx;
+        return;
+    }
 
     void GetAllowedChromaDir(Ipp32u absPartIdx, Ipp8u *modeList);
 
@@ -313,7 +311,7 @@ public:
 
     Ipp32u GetCtxSplitFlag(Ipp32u absPartIdx, Ipp32u depth);
 
-    Ipp32u GetCtxQtCbf(Ipp32u absPartIdx, EnumTextType type, Ipp32u trDepth);
+    Ipp32u GetCtxQtCbf(EnumTextType type, Ipp32u trDepth) const;
 
     Ipp32u GetTransformIdx(Ipp32u absPartIdx) { return (Ipp32u)m_data[absPartIdx].trIdx; }
 
@@ -321,7 +319,7 @@ public:
 
     Ipp32u GetCtxInterDir(Ipp32u absPartIdx);
 
-    Ipp32u GetCoefScanIdx(Ipp32u absPartIdx, Ipp32u width, Ipp32s bIsLuma, Ipp32s bIsIntra);
+    Ipp32u GetCoefScanIdx(Ipp32u absPartIdx, Ipp32u log2Width, Ipp32s bIsLuma, Ipp32s bIsIntra);
 
     template <class H265Bs>
     void CodeCoeffNxN(H265Bs *bs, H265CU *pCU, CoeffsType *coeffs, Ipp32u absPartIdx, Ipp32u width, EnumTextType type);
@@ -363,8 +361,7 @@ public:
 
     void IntraLumaModeDecisionRDO(Ipp32s absPartIdx, Ipp32u offset, Ipp8u depth, Ipp8u trDepth);
 
-    Ipp8u GetTrSplitMode(Ipp32s absPartIdx, Ipp8u depth, Ipp8u trDepth, Ipp8u partSize,
-                         Ipp8u isLuma, Ipp8u strict = 1);
+    Ipp8u GetTrSplitMode(Ipp32s absPartIdx, Ipp8u depth, Ipp8u trDepth, Ipp8u partSize, Ipp8u strict = 1);
 
     void TransformInv(Ipp32s offset, Ipp32s width, Ipp8u isLuma, Ipp8u isIntra, Ipp8u bitDepth);
 
@@ -493,8 +490,11 @@ template <typename PixType>
 Ipp32s tuHad(const PixType *src, Ipp32s pitch_src, const PixType *rec, Ipp32s pitch_rec,
              Ipp32s width, Ipp32s height);
 
-Ipp32u GetQuadtreeTuLog2MinSizeInCu(const H265VideoParam *par, Ipp32u absPartIdx, Ipp32s size,
+Ipp32u GetQuadtreeTuLog2MinSizeInCu(const H265VideoParam *par, Ipp32u log2CbSize,
                                     Ipp8u partSize, Ipp8u predMode);
+
+void GetPartAddr(Ipp32s uPartIdx, Ipp32s partMode, Ipp32s m_NumPartition, Ipp32s &partAddr);
+
 
 template <class H265CuBase>
 Ipp32s GetLastValidPartIdx(H265CuBase* cu, Ipp32s absPartIdx);
