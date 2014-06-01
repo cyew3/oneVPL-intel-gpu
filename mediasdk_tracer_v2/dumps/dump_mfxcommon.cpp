@@ -18,7 +18,7 @@ void dump_mfxIMPL(const std::string structName, mfxIMPL *impl)
 void dump_mfxVersion(const std::string structName, mfxVersion version)
 {
     Log::WriteLog("mfxVersion " + structName + ":");
-    Log::WriteLog(structName+".Major=" + ToString(version.Major));
+    Log::WriteLog(structName + ".Major=" + ToString(version.Major));
     Log::WriteLog(structName + ".Minor=" + ToString(version.Minor));
     Log::WriteLog(structName + ".Version=" + ToString(version.Version) + "\n");
 }

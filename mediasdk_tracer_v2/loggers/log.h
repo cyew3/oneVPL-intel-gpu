@@ -10,10 +10,12 @@
 enum eLogType{
     LOG_FILE,
     LOG_CONSOLE,
-#ifdef linux
+#if defined(_WIN32) || defined(_WIN64)
+    LOG_ETW,
+#elif defined(ANDROID)
+    LOG_LOGCAT,
+#else
     LOG_SYSLOG,
-#elif _WIN32 || _WIN64
-    LOG_ETW
 #endif
 };
 

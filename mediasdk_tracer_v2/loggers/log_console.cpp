@@ -1,10 +1,10 @@
-#include "log_console.h"
 #include <iostream>
+
+#include "log_console.h"
 
 LogConsole::LogConsole()
 {
 }
-
 
 LogConsole::~LogConsole()
 {

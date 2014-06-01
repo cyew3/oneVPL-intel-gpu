@@ -17,4 +17,3 @@ private:
 };
 
 #endif //LOGCONSOLE_H_
-
