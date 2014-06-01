@@ -23,7 +23,7 @@ typedef enum _mfxFunction
 typedef struct _mfxFunctionsTable
 {
     mfxFunction id;
-    char* name;
+    const char* name;
 } mfxFunctionsTable;
 
 static const mfxFunctionsTable g_mfxFuncTable[] =

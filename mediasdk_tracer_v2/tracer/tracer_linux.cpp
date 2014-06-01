@@ -30,19 +30,36 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <stdlib.h>
 #include <dlfcn.h>
+
 #include <string>
+
 #include "mfxvideo.h"
-#include "../loggers/log.h"
+#include "../config/config.h"
 #include "../dumps/dump.h"
+#include "../loggers/log.h"
 #include "functions_table.h"
 
-static const char* g_mfxlibsw = "/opt/intel/mediasdk/lib64/0000/0000/facke/libmfxsw64-p.so.1.8";
-static const char* g_mfxlibhw = "libmfxhw32.so";
+static const char* g_mfxlib = NULL;
 
 void __attribute__ ((constructor)) dll_init(void)
 {
-    Log::SetLogType(LOG_CONSOLE);
-    Log::WriteLog(std::string("Init tracer lib \n"));
+    std::string type = Config::GetParam("core", "type");
+    if (type == std::string("console")) {
+        Log::SetLogType(LOG_CONSOLE);
+    } else if (type == std::string("file")) {
+        Log::SetLogType(LOG_FILE);
+    } else {
+        // TODO: what to do with incorrect setting?
+        Log::SetLogType(LOG_CONSOLE);
+    }
+    Log::WriteLog("mfx_tracer: dll_init: +\n");
+
+    std::string lib = Config::GetParam("core", "lib");
+    g_mfxlib = lib.c_str();
+
+    Log::WriteLog("mfx_tracer: lib=" + lib + "\n");
+
+    Log::WriteLog("mfx_tracer: dll_init: -\n");
 }
 
 void SetLogType(eLogType type)
@@ -58,14 +75,7 @@ mfxStatus MFXInit(mfxIMPL impl, mfxVersion *ver, mfxSession *session)
     mfxLoader* loader = (mfxLoader*)calloc(1, sizeof(mfxLoader));
     if (!loader) return MFX_ERR_MEMORY_ALLOC;
 
-    /* Loading library trying to:
-    *  1. load HW library
-    *  2. load SW library
-    */
-    if (impl & MFX_IMPL_HARDWARE) loader->dlhandle = dlopen(g_mfxlibhw, RTLD_NOW);
-    if (!loader->dlhandle) {
-    if (impl & MFX_IMPL_SOFTWARE) loader->dlhandle = dlopen(g_mfxlibsw, RTLD_NOW);
-    }
+    loader->dlhandle = dlopen(g_mfxlib, RTLD_NOW);
     if (!loader->dlhandle) return MFX_ERR_NOT_FOUND;
 
     /* Loading functions table */
@@ -97,7 +107,7 @@ mfxStatus MFXInit(mfxIMPL impl, mfxVersion *ver, mfxSession *session)
 
 mfxStatus MFXClose(mfxSession session)
 {
-    Log::WriteLog(std::string("MFXClose \n"));
+    Log::WriteLog("MFXClose\n");
     mfxLoader* loader = (mfxLoader*)session;
 
     if (!loader) return MFX_ERR_INVALID_HANDLE;

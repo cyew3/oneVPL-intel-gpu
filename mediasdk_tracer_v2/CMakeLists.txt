@@ -48,4 +48,6 @@ set(SOURCES
   "wrappers/mfx_video_vpp.cpp"
   )
 
+
 add_library(tracer_lin SHARED ${SOURCES} ${HEADERS})
+set_target_properties( tracer_lin PROPERTIES COMPILE_FLAGS "-g -O0" )

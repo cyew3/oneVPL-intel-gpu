@@ -1,14 +1,15 @@
-#include "config.h"
-#include <ctype.h>
 #include <algorithm>
-#include <sstream>
+#include <ctype.h>
 #include <iostream>
+#include <sstream>
+
+#include "config.h"
 
 Config* Config::conf = 0;
 
 Config::Config()
 {
-    _file_path = std::string("config.ini");
+    _file_path = std::string(getenv("HOME")) + "/.mfxtracer";
 
     if(!_file.is_open()){
         _file.open(_file_path.c_str(), std::ifstream::binary);
@@ -40,7 +41,7 @@ void Config::Init()
             getline(_file, inistr);
 
             //delete tabs and spaces
-            inistr.erase(remove_if(inistr.begin(), inistr.end(), &isspace));
+            inistr.erase(remove_if(inistr.begin(), inistr.end(), &::isspace), inistr.end());
 
             //delete comments
             std::basic_string <char>::size_type n1 = inistr.find("#");
@@ -79,7 +80,7 @@ void Config::Init()
         }
 
     }
-    else{
+    else {
         //TODO add init default config
     }
 }
