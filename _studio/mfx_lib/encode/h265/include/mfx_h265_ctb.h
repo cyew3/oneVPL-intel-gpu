@@ -17,6 +17,7 @@
 #include "mfx_h265_optimization.h"
 #include "mfx_h265_sao_filter.h"
 #include "mfx_h265_tables.h"
+#include "mfx_h265_paq.h"
 
 using namespace MFX_HEVC_PP;
 
@@ -467,6 +468,7 @@ public:
 
     bool getdQPFlag           ()                        { return m_bEncodeDQP;        }
     void setdQPFlag           ( bool b )                { m_bEncodeDQP = b;           }
+    int GetCalqDeltaQp(TAdapQP* sliceAQP, Ipp64f sliceLambda);
 private:
     Ipp32s m_isRdoq;
     bool m_bEncodeDQP;

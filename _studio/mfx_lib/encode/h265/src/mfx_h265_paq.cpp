@@ -2603,43 +2603,22 @@ void RFrame_Init(RFrame *t)
 /* Copy image to Enc frame */
 NGV_Bool RFrame_Convert_Image(RFrame *t, YuvImage *image)
 {
-    Ipp32u i;
-    Ipp8u *ss, *dd;
-    // copy a yuv image into the frame 
-    // extend if corrected width
-    {
-        // Y
-        ss = image->y_plane;
-        dd = t->image.y_plane;
-        for (i = 0; i < image->height; i++)
-        {
-            memcpy(dd,ss, image->width);
-            dd += t->padded_image.y_pitch;
-            ss += image->y_pitch;
-        }
+    //Ipp32u i;
+    //Ipp8u *ss, *dd;
 
-#if 0
-        // U
-        ss = image->u_plane;
-        dd = t->image.u_plane;
-        for (i = 0; i < image->height/2; i++)
-        {
-            memcpy(dd,ss, image->width/2);
-            dd += t->padded_image.u_pitch;
-            ss += image->u_pitch;
-        }
-        // V
-        ss = image->v_plane;
-        dd = t->image.v_plane;
-        for (i = 0; i < image->height/2; i++)
-        {
-            memcpy(dd,ss, image->width/2);
-            dd += t->padded_image.v_pitch;
-            ss += image->v_pitch;
-        }
-#endif
-        return TRUE;
-    }
+    //// Y
+    //ss = image->y_plane;
+    //dd = t->image.y_plane;
+    //for (i = 0; i < image->height; i++) {
+    //    memcpy(dd,ss, image->width);
+    //    dd += t->padded_image.y_pitch;
+    //    ss += image->y_pitch;
+    //}
+
+    t->image.y_plane = image->y_plane;
+    t->image.y_pitch = t->padded_image.y_pitch = image->y_pitch;
+
+    return TRUE;
 }
 
 NGV_Bool RFrame_Allocate(RFrame *t, Ipp32u width, Ipp32u height, Ipp32u padding, RFrameType type)
@@ -5045,6 +5024,266 @@ const Ipp8u ClampTbl[CLIP_RANGE] =
     ,0xff ,0xff ,0xff ,0xff ,0xff ,0xff ,0xff ,0xff
 };
 
+// -----------------AdaptQp--------------------------------
+#define NEW_CONSTS
+#ifdef NEW_CONSTS
+const double LQ_M[5][8]   = {
+    {4.2415, 3.9818, 3.9818, 3.9818, 4.0684, 4.0684, 4.0684, 4.0684},   // I
+    {4.5878, 4.5878, 4.5878, 4.5878, 4.5878, 4.2005, 4.2005, 4.2005},   // P
+    {4.3255, 4.3255, 4.3255, 4.3255, 4.3255, 4.3255, 4.3255, 4.3255},   // B1
+    {4.4052, 4.4052, 4.4052, 4.4052, 4.4052, 4.4052, 4.4052, 4.4052},   // B2
+    {4.2005, 4.2005, 4.2005, 4.2005, 4.2005, 4.2005, 4.2005, 4.2005}    // B3
+};
+const double LQ_K[5][8] = {
+    {12.8114, 13.8536, 13.8536, 13.8536, 13.8395, 13.8395, 13.8395, 13.8395},   // I
+    {12.3857, 12.3857, 12.3857, 12.3857, 12.3857, 13.7122, 13.7122, 13.7122},   // P
+    {13.7286, 13.7286, 13.7286, 13.7286, 13.7286, 13.7286, 13.7286, 13.7286},   // B1
+    {13.1463, 13.1463, 13.1463, 13.1463, 13.1463, 13.1463, 13.1463, 13.1463},   // B2 
+    {13.7122, 13.7122, 13.7122, 13.7122, 13.7122, 13.7122, 13.7122, 13.7122}    // B3
+};
+const double LQ_M16[5][8]   = {
+    {4.3281, 3.9818, 3.9818, 3.9818, 4.0684, 4.0684, 4.0684, 4.3281},   // I
+    {4.5878, 4.5878, 4.5878, 4.5878, 4.5878, 4.3281, 4.3281, 4.3281},   // P
+    {4.3255, 4.3255, 4.3255, 4.3255, 4.3255, 4.3255, 4.3255, 4.3255},   // B1
+    {4.4052, 4.4052, 4.4052, 4.4052, 4.4052, 4.4052, 4.4052, 4.4052},   // B2
+    {4.2005, 4.2005, 4.2005, 4.2005, 4.2005, 4.2005, 4.2005, 4.2005}    // B3
+};
+const double LQ_K16[5][8] = {
+    {14.4329, 14.8983, 14.8983, 14.8983, 14.9069, 14.9069, 14.9069, 14.4329},   // I
+    {12.4456, 12.4456, 12.4456, 12.4456, 12.4456, 13.5336, 13.5336, 13.5336},   // P
+    {13.7286, 13.7286, 13.7286, 13.7286, 13.7286, 13.7286, 13.7286, 13.7286},   // B1
+    {13.1463, 13.1463, 13.1463, 13.1463, 13.1463, 13.1463, 13.1463, 13.1463},   // B2 
+    {13.7122, 13.7122, 13.7122, 13.7122, 13.7122, 13.7122, 13.7122, 13.7122}    // B3
+};
+#else
+const double LQ_M[5][8]   = {
+    {4.2005, 4.2005, 4.2005, 4.2005, 4.2005, 4.2005, 4.2005, 4.2005},   // I
+    {4.2005, 4.2005, 4.2005, 4.2005, 4.2005, 4.2005, 4.2005, 4.2005},   // P
+    {4.2005, 4.2005, 4.2005, 4.2005, 4.2005, 4.2005, 4.2005, 4.2005},   // B1
+    {4.2005, 4.2005, 4.2005, 4.2005, 4.2005, 4.2005, 4.2005, 4.2005},   // B2
+    {4.2005, 4.2005, 4.2005, 4.2005, 4.2005, 4.2005, 4.2005, 4.2005}    // B3
+};
+const double LQ_K[5][8] = {
+    {13.7122, 13.7122, 13.7122, 13.7122, 13.7122, 13.7122, 13.7122, 13.7122},   // I
+    {13.7122, 13.7122, 13.7122, 13.7122, 13.7122, 13.7122, 13.7122, 13.7122},   // P
+    {13.7122, 13.7122, 13.7122, 13.7122, 13.7122, 13.7122, 13.7122, 13.7122},   // B1
+    {13.7122, 13.7122, 13.7122, 13.7122, 13.7122, 13.7122, 13.7122, 13.7122},   // B2 
+    {13.7122, 13.7122, 13.7122, 13.7122, 13.7122, 13.7122, 13.7122, 13.7122}    // B3
+};
+#endif
+
+const double CU_RSCS_TH[5][4][8] = {
+{{  4.0,  6.0,  8.0, 11.0, 14.0, 18.0, 26.0,65025.0},{  4.0,  6.0,  8.0, 11.0, 14.0, 18.0, 26.0,65025.0},{  4.0,  6.0,  9.0, 11.0, 14.0, 18.0, 26.0,65025.0},{  4.0,  6.0,  9.0, 11.0, 14.0, 18.0, 26.0,65025.0}},
+{{  5.0,  6.0,  8.0, 11.0, 14.0, 18.0, 24.0,65025.0},{  5.0,  7.0,  9.0, 11.0, 14.0, 18.0, 25.0,65025.0},{  5.0,  7.0,  9.0, 12.0, 15.0, 19.0, 25.0,65025.0},{  5.0,  7.0,  9.0, 12.0, 14.0, 18.0, 25.0,65025.0}},
+{{  5.0,  7.0, 10.0, 12.0, 15.0, 19.0, 25.0,65025.0},{  5.0,  8.0, 10.0, 13.0, 15.0, 20.0, 26.0,65025.0},{  5.0,  8.0, 10.0, 12.0, 14.0, 18.0, 24.0,65025.0},{  5.0,  8.0, 10.0, 12.0, 15.0, 18.0, 24.0,65025.0}},
+{{  6.0,  8.0, 10.0, 13.0, 16.0, 19.0, 25.0,65025.0},{  5.0,  8.0, 10.0, 13.0, 15.0, 19.0, 26.0,65025.0},{  5.0,  8.0, 10.0, 12.0, 15.0, 18.0, 24.0,65025.0},{  6.0,  9.0, 11.0, 13.0, 15.0, 19.0, 24.0,65025.0}},
+{{  6.0,  9.0, 11.0, 14.0, 17.0, 21.0, 27.0,65025.0},{  6.0,  9.0, 11.0, 13.0, 16.0, 19.0, 25.0,65025.0},{  7.0,  9.0, 12.0, 14.0, 16.0, 19.0, 25.0,65025.0},{  7.0,  9.0, 11.0, 13.0, 16.0, 19.0, 24.0,65025.0}}
+};
+
+
+const int DQP_SEQ_RSCS[5][4][8][5] = {        // [PC][QC][RC][DQ]
+{
+{{0,1,2,3,4},{1,0,2,3,4},{1,0,2,3,4},{1,0,2,3,4},{1,0,2,3,4},{1,2,0,3,4},{1,2,0,3,4},{1,2,0,3,4}},
+{{1,0,2,3,4},{1,0,2,3,4},{1,0,2,3,4},{1,0,2,3,4},{1,0,2,3,4},{1,0,2,3,4},{1,0,2,3,4},{1,2,0,3,4}},
+{{1,0,2,3,4},{0,1,2,3,4},{0,1,2,3,4},{0,1,2,3,4},{1,0,2,3,4},{1,0,2,3,4},{1,0,2,3,4},{1,0,2,3,4}},
+{{1,0,2,3,4},{0,1,2,3,4},{0,1,2,3,4},{0,1,2,3,4},{0,1,2,3,4},{0,1,2,3,4},{0,1,2,3,4},{1,0,2,3,4}}
+},
+{
+{{1,2,0,3,4},{1,2,0,3,4},{1,2,0,3,4},{1,2,3,0,4},{1,2,3,0,4},{2,1,3,0,4},{2,1,3,0,4},{2,1,3,0,4}},
+{{2,1,3,0,4},{2,1,3,0,4},{2,1,3,0,4},{2,1,3,0,4},{2,1,3,0,4},{2,1,3,0,4},{1,2,3,0,4},{2,1,3,0,4}},
+{{2,1,3,0,4},{2,1,3,0,4},{2,1,3,0,4},{2,1,3,0,4},{2,1,3,0,4},{2,1,3,0,4},{2,1,3,0,4},{2,1,3,0,4}},
+{{2,1,3,4,0},{2,1,3,0,4},{2,1,3,0,4},{2,1,3,0,4},{2,1,3,0,4},{2,1,3,0,4},{2,1,3,0,4},{2,1,3,0,4}}
+},
+{
+{{4,3,5,2,6},{3,4,5,2,6},{3,4,5,2,6},{3,4,5,2,6},{3,4,5,2,6},{3,4,5,2,6},{3,4,5,2,6},{4,3,5,2,6}},
+{{6,5,7,4,8},{6,5,7,4,8},{6,5,4,7,8},{6,5,4,7,8},{6,5,4,7,8},{6,5,4,7,8},{5,6,4,7,8},{5,6,4,7,8}},
+{{7,6,8,5,4},{7,6,8,5,4},{7,6,8,5,4},{7,6,8,5,4},{7,6,8,5,4},{7,6,8,5,4},{7,6,8,5,4},{7,6,8,5,4}},
+{{7,8,6,5,4},{7,8,6,5,4},{7,8,6,5,4},{7,8,6,5,4},{7,8,6,5,4},{7,8,6,5,4},{7,8,6,5,4},{7,8,6,5,4}}
+},
+{
+{{4,5,3,6,2},{4,5,3,6,2},{4,5,3,6,2},{4,3,5,6,2},{4,3,5,6,2},{4,3,5,6,2},{4,3,5,6,2},{4,3,5,6,2}},
+{{6,5,7,4,8},{6,5,7,4,8},{6,5,7,4,8},{6,5,7,4,8},{6,5,7,4,8},{6,5,7,4,8},{6,5,7,4,8},{6,5,7,4,8}},
+{{7,6,8,5,4},{7,6,8,5,4},{7,6,8,5,4},{7,6,8,5,4},{7,6,8,5,4},{7,6,8,5,4},{7,6,8,5,4},{7,6,8,5,4}},
+{{7,8,6,5,4},{7,8,6,5,4},{7,8,6,5,4},{7,8,6,5,4},{7,8,6,5,4},{7,8,6,5,4},{7,8,6,5,4},{7,8,6,5,4}}
+},
+{
+{{7,8,6,5,4},{7,8,6,5,4},{7,8,6,5,4},{7,8,6,5,4},{7,8,6,5,4},{7,8,6,5,4},{7,8,6,5,4},{7,8,6,5,4}},
+{{8,7,6,5,4},{8,7,6,5,4},{8,7,6,5,4},{8,7,6,5,4},{8,7,6,5,4},{8,7,6,5,4},{8,7,6,5,4},{8,7,6,5,4}},
+{{8,7,6,5,4},{8,7,6,5,4},{8,7,6,5,4},{8,7,6,5,4},{8,7,6,5,4},{8,7,6,5,4},{8,7,6,5,4},{8,7,6,5,4}},
+{{8,7,6,5,4},{8,7,6,5,4},{8,7,6,5,4},{8,7,6,5,4},{8,7,6,5,4},{8,7,6,5,4},{8,7,6,5,4},{8,7,4,6,5}}
+}};
+
+
+static int clip3(int minVal, int maxVal, int val)
+{
+    if(val < minVal)    return minVal;
+    if(val > maxVal)    return maxVal;
+
+    return val;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+
+void TAdapQP::setClass_RSCS(double dVal)
+{
+    int i, k;
+
+    k = 7;
+    for(i = 0; i < 8; i++)
+    {
+        if(dVal < CU_RSCS_TH[m_picClass][m_qpClass][i])
+        {
+            k = i;
+            break;
+        }
+    }
+
+    m_rscsClass = k;
+}
+
+void TAdapQP::setSliceQP(int iQP)            
+{
+    int pQPi[5][4] = {{22,27,32,37}, {23,28,33,38}, {24,29,34,39}, {25,30,35,40}, {26,31,36,41}};
+//    int pThQP[5][4] = {{25,30,35,37}, {23,28,33,38}, {24,29,34,39}, {25,30,35,40}, {26,31,36,41}};
+
+    m_sliceQP = iQP;
+    if(iQP < pQPi[m_picClass][0])
+        m_qpClass = 0;
+    else if(iQP > pQPi[m_picClass][3])
+        m_qpClass = 3;
+    else
+    {
+        m_qpClass = (iQP - 22 - m_picClass) / 5;
+    }
+}
+
+void TAdapQP::setQpBuffer_RSCS()
+{
+    for(int dqpIdx = 0; dqpIdx < 5; dqpIdx++)
+    {
+        m_qpBuffer[dqpIdx] = m_sliceQP + DQP_SEQ_RSCS[m_picClass][m_qpClass][m_rscsClass][dqpIdx] - 4;
+    }
+}
+
+int TAdapQP::getDeltaQPFromBase(int dQPIdx)
+{
+    return DQP_SEQ_RSCS[m_picClass][m_qpClass][m_rscsClass][dQPIdx] - 4;
+}
+
+int TAdapQP::getQPFromLambda(double dLambda)
+{
+    double QP = m_sliceQP;
+    if(m_GOPSize>8) {
+      QP = LQ_M16[m_picClass][m_rscsClass]*log( dLambda ) + LQ_K16[m_picClass][m_rscsClass];
+    } else {
+      QP = LQ_M[m_picClass][m_rscsClass]*log( dLambda ) + LQ_K[m_picClass][m_rscsClass];
+    }
+    return int(QP + 0.5);
+}
+
+void TAdapQP::set_pic_coding_class(int iGOPId)
+{
+    if(m_SliceType == I_SLICE)
+    {
+        m_picClass = 0;   // I
+    }
+    else 
+    {
+        m_picClass = m_GOPID2Class[iGOPId];
+    }
+}
+
+TAdapQP::TAdapQP()
+{
+    
+}
+
+TAdapQP::~TAdapQP()
+{
+    
+}
+
+
+/**
+ \param    uiMaxWidth    largest CU width
+ \param    uiMaxHeight   largest CU height
+ */
+void TAdapQP::create(Ipp32u uiMaxWidth, Ipp32u uiMaxHeight, Ipp32u picWidth, Ipp32u picHeight, int iGOPSize)
+{    
+    m_picWidth = picWidth;
+    m_picHeight = picHeight;
+
+    m_maxCUWidth = uiMaxWidth;
+    m_maxCUHeight = uiMaxHeight;
+    m_maxCUSize = m_maxCUWidth * m_maxCUHeight;
+    m_numPartition = m_maxCUSize >> 4;
+
+    m_picWidthInCU  = (m_picWidth + m_maxCUWidth - 1) / m_maxCUWidth;
+    m_picHeightInCU = (m_picHeight + m_maxCUHeight - 1) / m_maxCUHeight;
+
+    if( (m_picWidthInCU*m_maxCUWidth) > m_picWidth)        m_edgeCUWidth = m_maxCUWidth;
+    else    m_edgeCUWidth = m_picWidth - (m_picWidthInCU - 1)*m_maxCUWidth;
+
+    if( (m_picHeightInCU*m_maxCUHeight) > m_picHeight)        m_edgeCUHeight = m_maxCUHeight;
+    else    m_edgeCUHeight = m_picHeight - (m_picHeightInCU - 1)*m_maxCUHeight;
+
+    m_GOPSize = iGOPSize;
+    m_GOPID2Class = new int[m_GOPSize];
+    if ( iGOPSize == 4 )
+    {
+      // Setup for LowDelay
+      m_GOPID2Class[0] = 3;
+      m_GOPID2Class[1] = 2;
+      m_GOPID2Class[2] = 3;
+      m_GOPID2Class[3] = 1;
+    }
+    else if ( iGOPSize == 8 )
+    {
+      m_GOPID2Class[0] = 1;
+      m_GOPID2Class[1] = 2;
+      m_GOPID2Class[2] = 3;
+      m_GOPID2Class[3] = 4;
+      m_GOPID2Class[4] = 4;
+      m_GOPID2Class[5] = 3;
+      m_GOPID2Class[6] = 4;
+      m_GOPID2Class[7] = 4;
+    } 
+    else if ( iGOPSize == 16 )
+    {
+        m_GOPID2Class[0] = 1;
+        m_GOPID2Class[1] = 2;
+        m_GOPID2Class[2] = 3;
+        m_GOPID2Class[3] = 4;
+        m_GOPID2Class[4] = 4;
+        m_GOPID2Class[5] = 2;
+        m_GOPID2Class[6] = 3;
+        m_GOPID2Class[7] = 4;
+        m_GOPID2Class[8] = 4;
+        m_GOPID2Class[9] = 2;
+        m_GOPID2Class[10] = 3;
+        m_GOPID2Class[11] = 4;
+        m_GOPID2Class[12] = 4;
+        m_GOPID2Class[13] = 3;
+        m_GOPID2Class[14] = 4;
+        m_GOPID2Class[15] = 4;
+    } else {
+        int i;
+        for(i=0;i<iGOPSize;i++)
+            m_GOPID2Class[i] = 1;
+    }
+}
+
+void TAdapQP::destroy()
+{
+    if ( m_GOPID2Class != NULL )
+    {
+        delete[] m_GOPID2Class;
+        m_GOPID2Class = NULL;
+    }
+}
 } // namespace
 
 #endif

@@ -15,6 +15,7 @@
 
 #include <stdio.h>
 #include "mfxstructures.h"
+#include "mfx_h265_defs.h"
 
 namespace H265Enc {
 
@@ -948,6 +949,82 @@ namespace H265Enc {
         NGV_Bool        m_firstFrame;
     };
 
+    // ====================================================================================================================
+    // Class definition
+    // ====================================================================================================================
+    /// supported slice type
+   /* enum SliceType
+    {
+        B_SLICE,
+        P_SLICE,
+        I_SLICE
+    };*/
+
+    //typedef Ipp16s Pel;
+
+    class TAdapQP
+    {
+    private:
+
+        int*        m_GOPID2Class;
+        Ipp32u        m_qpClass;
+        Ipp32u        m_picWidthInCU;
+        Ipp32u        m_picHeightInCU;
+        Ipp32u        m_edgeCUWidth;
+        Ipp32u        m_edgeCUHeight;
+
+    public:
+
+        TAdapQP();
+        virtual ~TAdapQP();
+
+        Ipp32u        m_picWidth;
+        Ipp32u        m_picHeight;
+
+        int            m_qpBuffer[9];
+        int            m_cuQP;
+        double        m_rscs;
+        int            m_rscsClass;
+        int            m_picClass;
+
+
+        int            m_sliceQP;
+        EnumSliceType    m_SliceType;
+        int            m_GopSize;
+        int         m_GOPSize;//aya??? fixme
+
+        int        m_maxCUWidth;
+        int        m_maxCUHeight;
+        int        m_cuWidth;
+        int        m_cuHeight;
+        int        m_maxCUSize;
+        int        m_numPartition;
+
+        Ipp32u       m_POC;
+        int        m_Xcu;
+        int        m_Ycu;
+        int        m_cuAddr;    
+
+        /// create internal buffers
+        void    create( Ipp32u iMaxWidth, Ipp32u iMaxHeight, Ipp32u picWidth, Ipp32u picHeight, int iGOPSize);
+        void    destroy();
+
+        void    setQpBuffer_RSCS();
+        int     getDeltaQPFromBase(int dQPIdx);
+        int     getQPFromLambda(double dLambda);
+        // ===========================================================================================
+        void    setSliceQP(int QP);            
+        void    setClass_RSCS(double dVal);
+
+        void    set_pic_coding_class(int iGOPId);
+
+        // compute statistics
+        //double        compute_block_rscs(Ipp8u *pSrcBuf, int width, int height, int stride);
+
+    };
+
+    template <typename PixType>
+double compute_block_rscs(PixType *pSrcBuf, int width, int height, int stride);
 
 #define CLAMP_BIAS  (128+128+24) /* Bias in clamping table */
 #define CLIP_RANGE  (CLAMP_BIAS + 256 + CLAMP_BIAS)
@@ -1067,5 +1144,10 @@ Ipp32u SAD_8x8_Block_Intrin_SSE2(Ipp8u* src, Ipp8u* ref, Ipp32u sPitch, Ipp32u r
 } // namespace
 
 #endif // __MFX_H265_PAQ_H__
-#endif // #if defined (MFX_ENABLE_H265_VIDEO_ENCODE) && defined(MFX_ENABLE_H265_PAQ)
+#else // #if defined (MFX_ENABLE_H265_VIDEO_ENCODE) && defined(MFX_ENABLE_H265_PAQ)
+
+// fake redefenition to reduce macros in source code
+typedef void TAdapQP;
+
+#endif
 /* EOF */

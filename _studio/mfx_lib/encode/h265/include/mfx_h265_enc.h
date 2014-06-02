@@ -234,6 +234,8 @@ public:
 #if defined(MFX_ENABLE_H265_PAQ)
     TVideoPreanalyzer m_preEnc;
 #endif
+    TAdapQP *m_pAQP;
+
     const vm_char *m_recon_dump_file_name;
 
     H265Encoder() {
@@ -272,7 +274,7 @@ public:
     mfxStatus SetPPS();
     mfxStatus SetSlice(H265Slice *slice, Ipp32u curr_slice);
     mfxStatus SetSlice(H265Slice *slice, Ipp32u curr_slice, H265Frame *frame);
-    mfxStatus SetAllLambda(H265Slice *slice, int qp, int poc);
+    mfxStatus SetAllLambda(H265Slice *slice, int qp, int poc, bool isHiCmplxGop = false, bool isMidCmplxGop = false);
 
     void InitShortTermRefPicSet();
     mfxStatus Init(const mfxVideoParam *param, const mfxExtCodingOptionHEVC *opts_hevc);
@@ -294,6 +296,7 @@ public:
     mfxStatus CleanDPB();
 
     mfxStatus PreEncAnalysis(mfxBitstream* mfxBS);
+    mfxStatus UpdateAllLambda(void);
     void CreateRefPicSet(H265Slice *slice, H265Frame *frame);
     mfxStatus CheckRefPicSet(H265Slice *slice, H265Frame *frame);
     mfxStatus UpdateRefPicList(H265Slice *slice, H265Frame *frame);

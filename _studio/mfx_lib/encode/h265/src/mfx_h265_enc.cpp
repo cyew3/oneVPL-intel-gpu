@@ -551,6 +551,10 @@ mfxStatus H265Encoder::SetPPS()
 
 static Ipp32f tab_rdLambdaBPyramid[4] = {0.442f, 0.3536f, 0.3536f, 0.68f};
 
+static Ipp32f tab_rdLambdaBPyramid_LoCmplx[4]  = {0.442f, 0.3536f, 0.4f, 0.68f};
+static Ipp32f tab_rdLambdaBPyramid_MidCmplx[4] = {0.442f, 0.3536f, 0.3817, 0.6f};
+static Ipp32f tab_rdLambdaBPyramid_HiCmplx[4]  = {0.442f, 0.2793, 0.3536, 0.5f};
+
 mfxStatus H265Encoder::SetSlice(H265Slice *slice, Ipp32u curr_slice)
 {
     memset(slice, 0, sizeof(H265Slice));
@@ -736,7 +740,7 @@ mfxStatus H265Encoder::SetSlice(H265Slice *slice, Ipp32u curr_slice, H265Frame *
     return MFX_ERR_NONE;
 
 } //
-mfxStatus H265Encoder::SetAllLambda(H265Slice *slice, int qp, int poc)
+mfxStatus H265Encoder::SetAllLambda(H265Slice *slice, int qp, int poc, bool isHiCmplxGop, bool isMidCmplxGop)
 {
     //-----------------------------------------------------
     // SET LAMBDA
@@ -764,7 +768,16 @@ mfxStatus H265Encoder::SetAllLambda(H265Slice *slice, int qp, int poc)
         case B_SLICE:
             if (m_videoParam.BPyramid && OPT_LAMBDA_PYRAMID) {
                 Ipp8u layer = m_BpyramidRefLayers[poc % m_videoParam.GopRefDist];
-                slice->rd_lambda_slice *= tab_rdLambdaBPyramid[layer];
+                if(m_videoParam.preEncMode > 1)
+                {
+                    if(isHiCmplxGop) slice->rd_lambda_slice *= tab_rdLambdaBPyramid_HiCmplx[layer];
+                    else if(isMidCmplxGop) slice->rd_lambda_slice *= tab_rdLambdaBPyramid_MidCmplx[layer];
+                    else slice->rd_lambda_slice *= tab_rdLambdaBPyramid_LoCmplx[layer];
+                }
+                else
+                {
+                    slice->rd_lambda_slice *= tab_rdLambdaBPyramid[layer];
+                }
                 if (layer > 0)
                     slice->rd_lambda_slice *= MAX(2,MIN(4,(qp - 12)/6.0));
             } else {
@@ -924,6 +937,12 @@ mfxStatus H265Encoder::Init(const mfxVideoParam *param, const mfxExtCodingOption
         int framesToBeEncoded = 610;//for test only
         
         m_preEnc.open(NULL, m_videoParam.Width, m_videoParam.Height, 8, 8, frameRate, refDist, intraPeriod, framesToBeEncoded);
+
+        m_pAQP = NULL;
+        m_pAQP = new TAdapQP;
+        int g_uiMaxCUWidth = 64;
+        int g_uiMaxCUHeight = 64;
+        m_pAQP->create(g_uiMaxCUWidth, g_uiMaxCUHeight, m_videoParam.Width, m_videoParam.Height, refDist);
     }
 #endif
 
@@ -1162,6 +1181,11 @@ void H265Encoder::Close() {
 #if defined(MFX_ENABLE_H265_PAQ)
     if (m_videoParam.preEncMode) {
         m_preEnc.close();
+    }
+    if(m_pAQP)
+    {
+        m_pAQP->destroy();
+        delete m_pAQP;
     }
 #endif
     if (m_pReconstructFrame) {
@@ -1907,6 +1931,14 @@ mfxStatus H265Encoder::EncodeThread(Ipp32s ithread) {
                 cu[ithread].m_ChromaDistWeight = curSlice->ChromaDistWeight_slice;
                 cu[ithread].m_rdLambdaInter = curSlice->rd_lambda_inter_slice;
                 cu[ithread].m_rdLambdaInterMv = curSlice->rd_lambda_inter_mv_slice;
+                if(m_videoParam.preEncMode > 1)
+                {
+
+                    
+
+                    int calq = cu[ithread].GetCalqDeltaQp(m_pAQP, m_slices[curr_slice].rd_lambda_slice);
+                    m_videoParam.m_lcuQps[ctb_addr] += calq;
+                }
             }
             
             cu[ithread].GetInitAvailablity();
@@ -2083,6 +2115,10 @@ mfxStatus H265Encoder::EncodeThreadByRow(Ipp32s ithread) {
                 cu[ithread].m_ChromaDistWeight = curSlice->ChromaDistWeight_slice;
                 cu[ithread].m_rdLambdaInter = curSlice->rd_lambda_inter_slice;
                 cu[ithread].m_rdLambdaInterMv = curSlice->rd_lambda_inter_mv_slice;
+                if(m_videoParam.preEncMode > 1) {
+                    int calq = cu[ithread].GetCalqDeltaQp(m_pAQP, m_slices[curr_slice].rd_lambda_slice);
+                    m_videoParam.m_lcuQps[ctb_addr] += calq;
+                }
             }
             
             cu[ithread].GetInitAvailablity();
@@ -2486,7 +2522,10 @@ recode:
                 ctb_adapt = (ctuX >> 1) + (ctuY >> 1)*(m_videoParam.PicWidthInCtbs >> 1);
             }
 
-            m_videoParam.m_lcuQps[ctb] += m_preEnc.m_acQPMap[poc].getDQP(ctb_adapt);
+            if(m_videoParam.preEncMode != 2) // no pure CALQ
+            {
+                m_videoParam.m_lcuQps[ctb] += m_preEnc.m_acQPMap[poc].getDQP(ctb_adapt);
+            }
             frameDeltaQP += m_preEnc.m_acQPMap[poc].getDQP(ctb_adapt);
         }
     }
@@ -2495,19 +2534,8 @@ recode:
         H265Slice *slice = m_slices + curr_slice;
         SetSlice(slice, curr_slice);
 #if defined (MFX_ENABLE_H265_PAQ)
-        int  origQP = m_videoParam.m_sliceQpY;
-        if(m_videoParam.preEncMode && m_videoParam.UseDQP)
-        {
-            for(int iDQpIdx = 0; iDQpIdx < 2*(MAX_DQP)+1; iDQpIdx++)
-            {
-                int deltaQP = ((iDQpIdx+1)>>1)*(iDQpIdx%2 ? -1 : 1);
-                int curQp = origQP + deltaQP;
-
-                m_videoParam.m_dqpSlice[iDQpIdx].slice_type = m_slices[0].slice_type;
-                m_videoParam.m_dqpSlice[iDQpIdx].pgop_idx = m_slices[0].pgop_idx;
-
-                SetAllLambda(&m_videoParam.m_dqpSlice[iDQpIdx], curQp, m_pCurrentFrame->PicOrderCnt());
-            }
+        if(m_videoParam.preEncMode && m_videoParam.UseDQP)  {
+            UpdateAllLambda();
         }
 #endif
       
@@ -2886,11 +2914,168 @@ mfxStatus H265Encoder::PreEncAnalysis(mfxBitstream* mfxBS)
     return MFX_ERR_NONE;
 
 } // mfxStatus H265Encoder::PreEncAnalysis(mfxBitstream* mfxBS)
+mfxStatus H265Encoder::UpdateAllLambda(void)
+{
+    int  origQP = m_videoParam.m_sliceQpY;
+    for(int iDQpIdx = 0; iDQpIdx < 2*(MAX_DQP)+1; iDQpIdx++)  {
+        int deltaQP = ((iDQpIdx+1)>>1)*(iDQpIdx%2 ? -1 : 1);
+        int curQp = origQP + deltaQP;
+
+        m_videoParam.m_dqpSlice[iDQpIdx].slice_type = m_slices[0].slice_type;
+        m_videoParam.m_dqpSlice[iDQpIdx].pgop_idx = m_slices[0].pgop_idx;
+
+        bool IsHiCplxGOP = false;
+        bool IsMedCplxGOP = false;
+        if ( 2 == m_videoParam.preEncMode ) {
+            TQPMap *pcQPMapPOC = &m_preEnc.m_acQPMap[m_pCurrentFrame->PicOrderCnt()];
+            double SADpp = pcQPMapPOC->getAvgGopSADpp();
+            double SCpp  = pcQPMapPOC->getAvgGopSCpp();
+            if(SCpp>2.0) {
+                double minSADpp = 0;
+                if(m_videoParam.GopRefDist > 8) {
+                    minSADpp = 1.3*SCpp - 2.6;
+                    if(minSADpp>0 && minSADpp<SADpp) IsHiCplxGOP=true;
+                    if(!IsHiCplxGOP) {
+                        double minSADpp = 1.1*SCpp - 2.2;
+                        if(minSADpp>0 && minSADpp<SADpp) IsMedCplxGOP=true;
+                    }
+                } else {
+                    minSADpp = 1.1*SCpp - 1.5;
+                    if(minSADpp>0 && minSADpp<SADpp) IsHiCplxGOP=true;
+                    if(!IsHiCplxGOP) {
+                        double minSADpp = 1.0*SCpp - 2.0;
+                        if(minSADpp>0 && minSADpp<SADpp) IsMedCplxGOP=true;
+                    }
+                }
+            }
+        }
+
+        SetAllLambda(&m_videoParam.m_dqpSlice[iDQpIdx], curQp, m_pCurrentFrame->PicOrderCnt(), IsHiCplxGOP, IsMedCplxGOP);
+    }
+
+    if ( m_videoParam.preEncMode > 1 ) {
+        m_pAQP->m_POC = m_pCurrentFrame->PicOrderCnt();
+        m_pAQP->m_SliceType = B_SLICE;
+        if(MFX_FRAMETYPE_I == m_pCurrentFrame->m_PicCodType) {
+            m_pAQP->m_SliceType = I_SLICE;
+        }
+
+        int iGOPid = m_pCurrentFrame->m_BpyramidNumFrame;
+        m_pAQP->set_pic_coding_class(iGOPid);
+        m_pAQP->setSliceQP( m_videoParam.m_sliceQpY );
+    }
+
+    return MFX_ERR_NONE;
+
+} // mfxStatus H265Encoder::UpdateAllLambda(void)
+
+template <typename PixType>
+double compute_block_rscs(PixType *pSrcBuf, int width, int height, int stride)
+{
+    int        i, j;
+    int        tmpVal, CsVal, RsVal;
+    int        blkSizeC = (width-1) * height;
+    int        blkSizeR = width * (height-1);
+    double    RS, CS, RsCs;
+    PixType    *pBuf;
+
+    RS = CS = RsCs = 0.0;
+    CsVal =    0;
+    RsVal =    0;
+
+    // CS
+    CsVal =    0;
+    pBuf = pSrcBuf;
+    for(i = 0; i < height; i++) {
+        for(j = 1; j < width; j++) {
+            tmpVal = pBuf[j] - pBuf[j-1];
+            CsVal += tmpVal * tmpVal;
+        }
+        pBuf += stride;
+    }
+
+    if(blkSizeC)
+        CS = sqrt((double)CsVal / (double)blkSizeC);
+    else {
+        //fprintf(stderr, "ERROR: RSCS block %dx%d\n", width, height);
+        VM_ASSERT(!"ERROR: RSCS block");
+        CS = 0;
+    }
+
+    // RS
+    pBuf = pSrcBuf;
+    for(i = 1; i < height; i++) {
+        for(j = 0; j < width; j++) {
+            tmpVal = pBuf[j] - pBuf[j+stride];
+            RsVal += tmpVal * tmpVal;
+        }
+        pBuf += stride;
+    }
+
+    if(blkSizeR)
+        RS = sqrt((double)RsVal / (double)blkSizeR);
+    else {
+        VM_ASSERT(!"ERROR: RSCS block");
+        RS = 0;
+    }
+
+    RsCs = sqrt(CS * CS + RS * RS);
+
+    return RsCs;
+
+} // double compute_block_rscs(PixType *pSrcBuf, int width, int height, int stride)
+
+template <typename PixType>
+int H265CU<PixType>::GetCalqDeltaQp(TAdapQP* sliceAQP, Ipp64f sliceLambda)
+{
+    //int poc = m_pCurrentFrame->PicOrderCnt();
+    TAdapQP ctbAQP;
+
+    ctbAQP.m_cuAddr = m_ctbAddr;
+    ctbAQP.m_Xcu    = m_ctbPelX;
+    ctbAQP.m_Ycu    = m_ctbPelY;
+
+    if((ctbAQP.m_Xcu + sliceAQP->m_maxCUWidth) > sliceAQP->m_picWidth)  ctbAQP.m_cuWidth = sliceAQP->m_picWidth - ctbAQP.m_Xcu;
+    else	ctbAQP.m_cuWidth = sliceAQP->m_maxCUWidth;
+
+    if((ctbAQP.m_Ycu + sliceAQP->m_maxCUHeight) > sliceAQP->m_picHeight)  ctbAQP.m_cuHeight = sliceAQP->m_picHeight - ctbAQP.m_Ycu;
+    else	ctbAQP.m_cuHeight = sliceAQP->m_maxCUHeight;
+
+    ctbAQP.m_rscs = //ctbAQP.
+        compute_block_rscs(
+        m_ySrc,
+        ctbAQP.m_cuWidth,
+        ctbAQP.m_cuHeight,
+        m_pitchSrc);
+
+    ctbAQP.m_GOPSize = sliceAQP->m_GOPSize;
+    ctbAQP.m_picClass = sliceAQP->m_picClass;
+    ctbAQP.setSliceQP(sliceAQP->m_sliceQP);
+    ctbAQP.setClass_RSCS(ctbAQP.m_rscs);
+
+    int calq = (ctbAQP.getQPFromLambda(sliceLambda * 256.0) - sliceAQP->m_sliceQP);
+
+    return calq;
+
+} // int H265CU<PixType>::GetCalqDeltaQp(TAdapQP* sliceAQP, Ipp64f sliceLambda)
 #else
     mfxStatus H265Encoder::PreEncAnalysis(mfxBitstream* mfxBS)
     {
         mfxBS; return MFX_ERR_NONE;
 
+    }
+    mfxStatus H265Encoder::UpdateAllLambda(void)
+    {
+        return MFX_ERR_NONE;
+    }
+
+    template <typename PixType>
+    int H265CU<PixType>::GetCalqDeltaQp(TAdapQP* sliceAQP, Ipp64f sliceLambda)
+    {
+        sliceAQP;
+        sliceLambda;
+
+        return 0;
     }
 #endif
 
