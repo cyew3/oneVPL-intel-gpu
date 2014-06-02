@@ -18,6 +18,7 @@ Copyright(c) 2011-2014 Intel Corporation. All Rights Reserved.
 #endif
 
 #include "d3d_device.h"
+#include "d3d_allocator.h"
 #include "sample_defs.h"
 #include "igfx_s3dcontrol.h"
 
@@ -350,7 +351,9 @@ mfxStatus CD3D9Device::RenderFrame(mfxFrameSurface1 * pSurface, mfxFrameAllocato
     GetClientRect(m_D3DPP.hDeviceWindow, &targetRect);
     dest = targetRect;
 
-    hr = m_pD3DD9->StretchRect((IDirect3DSurface9*)pSurface->Data.MemId, &source, pBackBuffer, &dest, D3DTEXF_LINEAR);
+    directxMemId* dxMemId = (directxMemId*)pSurface->Data.MemId;
+
+    hr = m_pD3DD9->StretchRect(dxMemId->m_surface, &source, pBackBuffer, &dest, D3DTEXF_LINEAR);
     if (FAILED(hr))
     {
         return MFX_ERR_UNKNOWN;
