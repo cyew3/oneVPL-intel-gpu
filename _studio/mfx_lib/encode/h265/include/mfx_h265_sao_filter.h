@@ -320,9 +320,6 @@ private:
 
 };
 
-template class SaoDecodeFilter<Ipp8u>;
-template class SaoDecodeFilter<Ipp16u>;
-
 } // namespace
 
 #endif // __MFX_H265_SAO_FILTER_H__

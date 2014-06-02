@@ -5490,6 +5490,9 @@ inline Ipp32s qdist(const H265MV *mv1, const H265MV *mv2)
     return (dx + dy);
 }
 
+template class H265CU<Ipp8u>;
+template class H265CU<Ipp16u>;
+
 } // namespace
 
 #endif // MFX_ENABLE_H265_VIDEO_ENCODE

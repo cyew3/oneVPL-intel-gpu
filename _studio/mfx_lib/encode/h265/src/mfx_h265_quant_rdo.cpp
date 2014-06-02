@@ -65,7 +65,7 @@ static const Ipp32s  g_eTTable[4] = {0,3,1,2};
 
 
 #define RDOQ_DoAlgorithm(CGZ,SBH) \
-    quant.DoAlgorithm<CGZ,SBH>(pSrc, pDst, log2_tr_size, bit_depth, is_slice_i, type, abs_part_idx, QP)
+    quant.template DoAlgorithm<CGZ,SBH>(pSrc, pDst, log2_tr_size, bit_depth, is_slice_i, type, abs_part_idx, QP)
 
 template <typename PixType>
 void h265_quant_fwd_rdo(
@@ -80,7 +80,6 @@ void h265_quant_fwd_rdo(
     Ipp32s   QP,
     H265BsFake *bs)
 {
-
     RDOQuant<PixType> quant(pCU, bs, type);
 
     switch((pCU->m_par->rdoqCGZFlag << 1) | pCU->m_par->SBHFlag) {

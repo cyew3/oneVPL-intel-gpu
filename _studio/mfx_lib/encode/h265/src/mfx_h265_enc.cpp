@@ -1752,6 +1752,9 @@ mfxStatus H265Encoder::DeblockThread(Ipp32s ithread)
     return MFX_ERR_NONE;
 }
 
+template mfxStatus H265Encoder::DeblockThread<Ipp8u>(Ipp32s ithread);
+template mfxStatus H265Encoder::DeblockThread<Ipp16u>(Ipp32s ithread);
+
 template <typename PixType>
 mfxStatus H265Encoder::ApplySAOThread(Ipp32s ithread)
 {

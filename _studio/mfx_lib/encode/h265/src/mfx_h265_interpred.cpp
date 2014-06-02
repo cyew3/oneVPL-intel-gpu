@@ -253,23 +253,6 @@ void H265CU<PixType>::PredInterUni(Ipp32s puX, Ipp32s puY, Ipp32s puW, Ipp32s pu
             Interpolate<PLANE_TYPE_>(INTERP_VER, horBufPtr, horBufPitch, dstPic, dstPicPitch, dy, puW, puH, shift, offset, bitDepth, AVERAGE_FROM_PIC, src2, srcPitch2);
     }
 }
-template
-void H265CU<Ipp8u>::PredInterUni<TEXT_LUMA>(Ipp32s puX, Ipp32s puY, Ipp32s puW, Ipp32s puH, Ipp32s listIdx,
-                                     const Ipp8s refIdx[2], const H265MV mvs[2], Ipp8u *dst, Ipp32s dstPitch,
-                                     Ipp32s isBiPred, MFX_HEVC_PP::EnumAddAverageType eAddAverage);
-template
-void H265CU<Ipp8u>::PredInterUni<TEXT_CHROMA>(Ipp32s puX, Ipp32s puY, Ipp32s puW, Ipp32s puH, Ipp32s listIdx,
-                                       const Ipp8s refIdx[2], const H265MV mvs[2], Ipp8u *dst, Ipp32s dstPitch,
-                                       Ipp32s isBiPred, MFX_HEVC_PP::EnumAddAverageType eAddAverage);
-template
-void H265CU<Ipp16u>::PredInterUni<TEXT_LUMA>(Ipp32s puX, Ipp32s puY, Ipp32s puW, Ipp32s puH, Ipp32s listIdx,
-                                     const Ipp8s refIdx[2], const H265MV mvs[2], Ipp16u *dst, Ipp32s dstPitch,
-                                     Ipp32s isBiPred, MFX_HEVC_PP::EnumAddAverageType eAddAverage);
-template
-void H265CU<Ipp16u>::PredInterUni<TEXT_CHROMA>(Ipp32s puX, Ipp32s puY, Ipp32s puW, Ipp32s puH, Ipp32s listIdx,
-                                       const Ipp8s refIdx[2], const H265MV mvs[2], Ipp16u *dst, Ipp32s dstPitch,
-                                       Ipp32s isBiPred, MFX_HEVC_PP::EnumAddAverageType eAddAverage);
-
 
 template <typename PixType>
 template <EnumTextType PLANE_TYPE>
@@ -320,6 +303,7 @@ void H265CU<PixType>::InterPredCu(Ipp32s absPartIdx, Ipp8u depth, PixType *dst, 
         }
     }
 }
+
 template
 void H265CU<Ipp8u>::InterPredCu<TEXT_LUMA>(Ipp32s absPartIdx, Ipp8u depth, Ipp8u *dst, Ipp32s dstPitch);
 template
@@ -369,6 +353,9 @@ void H265CU<PixType>::MeInterpolate(const H265MEInfo* me_info, H265MV* MV, PixTy
 
     return;
 } // void H265CU::MeInterpolate(...)
+
+template class H265CU<Ipp8u>;
+template class H265CU<Ipp16u>;
 
 } // namespace
 

@@ -1283,6 +1283,9 @@ void H265CU<PixType>::GetInitAvailablity()
     }
 }
 
+template class H265CU<Ipp8u>;
+template class H265CU<Ipp16u>;
+
 } // namespace
 
 #endif // MFX_ENABLE_H265_VIDEO_ENCODE

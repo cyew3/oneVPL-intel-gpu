@@ -321,11 +321,6 @@ void H265CU<PixType>::CodeIntradirLumaAng(H265Bs *bs, Ipp32u abs_part_idx, Ipp8u
     }
 }
 
-template
-void H265CU<Ipp8u>::CodeIntradirLumaAng(H265BsFake *bs, Ipp32u abs_part_idx, Ipp8u multiple);
-template
-void H265CU<Ipp16u>::CodeIntradirLumaAng(H265BsFake *bs, Ipp32u abs_part_idx, Ipp8u multiple);
-
 template <typename PixType, class H265Bs>
 static
 void h265_code_intradir_chroma(H265Bs *bs, H265CU<PixType>* pCU, Ipp32u abs_part_idx)
@@ -606,11 +601,6 @@ void H265CU<PixType>::xEncIntraHeaderChroma(H265Bs* bs)
 {
    h265_code_intradir_chroma(bs, this, 0);
 }
-
-template void H265CU<Ipp8u>::xEncIntraHeaderChroma<H265BsFake> (H265BsFake* bs);
-template void H265CU<Ipp8u>::xEncIntraHeaderChroma<H265BsReal> (H265BsReal* bs);
-template void H265CU<Ipp16u>::xEncIntraHeaderChroma<H265BsFake> (H265BsFake* bs);
-template void H265CU<Ipp16u>::xEncIntraHeaderChroma<H265BsReal> (H265BsReal* bs);
 
 template <typename PixType>
 template <class H265Bs>
@@ -1549,24 +1539,6 @@ template void H265CU<Ipp8u>::EncodeSao(H265BsReal *bs, Ipp32u abs_part_idx, Ipp3
 template void H265CU<Ipp8u>::EncodeSao(H265BsFake *bs, Ipp32u abs_part_idx, Ipp32s depth, Ipp8u rd_mode, SaoCtuParam& blkParam, bool leftMergeAvail, bool aboveMergeAvail );
 template void H265CU<Ipp16u>::EncodeSao(H265BsReal *bs, Ipp32u abs_part_idx, Ipp32s depth, Ipp8u rd_mode, SaoCtuParam& blkParam, bool leftMergeAvail, bool aboveMergeAvail );
 template void H265CU<Ipp16u>::EncodeSao(H265BsFake *bs, Ipp32u abs_part_idx, Ipp32s depth, Ipp8u rd_mode, SaoCtuParam& blkParam, bool leftMergeAvail, bool aboveMergeAvail );
-
-
-template
-void CodeSaoCtbParam(
-    H265BsReal *bs,
-    SaoCtuParam& saoBlkParam,
-    bool* sliceEnabled,
-    bool leftMergeAvail,
-    bool aboveMergeAvail,
-    bool onlyEstMergeInfo);
-template
-void CodeSaoCtbParam(
-    H265BsFake *bs,
-    SaoCtuParam& saoBlkParam,
-    bool* sliceEnabled,
-    bool leftMergeAvail,
-    bool aboveMergeAvail,
-    bool onlyEstMergeInfo);
 
 } // namespace
 

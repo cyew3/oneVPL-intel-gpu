@@ -478,9 +478,6 @@ private:
     //void FillZero(Ipp32u absPartIdx, Ipp8u depth);
 };
 
-template class H265CU<Ipp8u>;
-template class H265CU<Ipp16u>;
-
 template <class H265Bs>
 void CodeSaoCtbOffsetParam(H265Bs *bs, int compIdx, SaoOffsetParam& ctbParam, bool sliceEnabled);
 
@@ -488,8 +485,9 @@ template <class H265Bs>
 void CodeSaoCtbParam(H265Bs *bs, SaoCtuParam &saoBlkParam, bool *sliceEnabled, bool leftMergeAvail,
                      bool aboveMergeAvail, bool onlyEstMergeInfo);
 
-template <typename PixType>
-Ipp32s tuHad(const PixType *src, Ipp32s pitch_src, const PixType *rec, Ipp32s pitch_rec,
+Ipp32s tuHad(const Ipp8u *src, Ipp32s pitch_src, const Ipp8u *rec, Ipp32s pitch_rec,
+             Ipp32s width, Ipp32s height);
+Ipp32s tuHad(const Ipp16u *src, Ipp32s pitch_src, const Ipp16u *rec, Ipp32s pitch_rec,
              Ipp32s width, Ipp32s height);
 
 Ipp32u GetQuadtreeTuLog2MinSizeInCu(const H265VideoParam *par, Ipp32u log2CbSize,

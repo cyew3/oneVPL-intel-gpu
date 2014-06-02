@@ -140,6 +140,9 @@ void H265CU<PixType>::TransformFwd(Ipp32s offset, Ipp32s width, Ipp8u is_luma, I
     }
 }
 
+template class H265CU<Ipp8u>;
+template class H265CU<Ipp16u>;
+
 } // namespace
 
 #endif // MFX_ENABLE_H265_VIDEO_ENCODE

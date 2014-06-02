@@ -1756,6 +1756,11 @@ void H265CU<PixType>::GetStatisticsCtuSaoPredeblocked( const MFX_HEVC_PP::CTBBor
 
 } // void H265CU::GetStatisticsCtuSaoPredeblocked( void )
 
+template class H265CU<Ipp8u>;
+template class H265CU<Ipp16u>;
+template class SaoDecodeFilter<Ipp8u>;
+template class SaoDecodeFilter<Ipp16u>;
+
 } // namespace
 
 #endif // MFX_ENABLE_H265_VIDEO_ENCODE
