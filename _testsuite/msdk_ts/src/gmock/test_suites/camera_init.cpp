@@ -156,7 +156,7 @@ const TestSuite::tc_struct TestSuite::test_case[] =
                                                                                  {&tsStruct::mfxVideoParam.vpp.In.FrameRateExtD, 10}, 
                                                                                  {&tsStruct::mfxVideoParam.vpp.Out.FrameRateExtN,  240},
                                                                                  {&tsStruct::mfxVideoParam.vpp.Out.FrameRateExtD, 10}} },
-    {/*31*/ MFX_ERR_INVALID_VIDEO_PARAM,   0, 1, SET_ALLOCATOR|ALLOC_MIN,       {{&tsStruct::mfxVideoParam.vpp.In.FrameRateExtN,  30},
+    {/*31*/ MFX_ERR_INVALID_VIDEO_PARAM,  0, 1, SET_ALLOCATOR|ALLOC_MIN,       {{&tsStruct::mfxVideoParam.vpp.In.FrameRateExtN,  30},
                                                                                  {&tsStruct::mfxVideoParam.vpp.In.FrameRateExtD, 0}, 
                                                                                  {&tsStruct::mfxVideoParam.vpp.Out.FrameRateExtN,  30},
                                                                                  {&tsStruct::mfxVideoParam.vpp.Out.FrameRateExtD, 0}} },
@@ -268,7 +268,7 @@ int TestSuite::RunTest(unsigned int id)
         }
     }
 
-    for(mfxU32 i = 0; i < tc.num_calls; i++)
+    for(mfxU32 i = 0; i < (tc.num_calls - 1); i++)
     {
         g_tsStatus.expect(tc.sts);
         Init(m_session, m_pPar);
@@ -288,6 +288,33 @@ int TestSuite::RunTest(unsigned int id)
 
     g_tsStatus.expect(tc.sts);
     Init(m_session, m_pPar);
+
+    if(tc.set_buf.func) //Component should not relay on provided buffer
+        m_par.RemoveExtBuffer(tc.set_buf.buf);
+
+    if((MFX_ERR_NONE == tc.sts) || 
+       (MFX_WRN_PARTIAL_ACCELERATION == tc.sts))
+    {
+        tsExtBufType<mfxVideoParam> parOut;
+        mfxExtVPPDoUse& do_use = parOut;
+        do_use.NumAlg = 5;
+        mfxU32 filter_from_getvideoparam[5] = {0,};
+        do_use.AlgList = filter_from_getvideoparam;
+
+        GetVideoParam(m_session, &parOut);
+        EXPECT_EQ(&do_use, (mfxExtVPPDoUse*) *parOut.ExtParam) << "Fail.: GetVideoParam should not change ptr to extBuffers\n";
+        if(tc.set_buf.func)
+        {
+            bool algorithm_was_reported = false;
+            for(mfxU32 i; i < do_use.NumAlg; ++i)
+                if(filter_from_getvideoparam[i] == tc.set_buf.buf) algorithm_was_reported = true;
+            EXPECT_EQ(true,algorithm_was_reported) << "Fail.: GetVideoParam should update used algoritms list in the ExtVPPDoUse\n";
+        }
+        EXPECT_EQ(m_par.vpp.In.Width,   parOut.vpp.In.Width);
+        EXPECT_EQ(m_par.vpp.In.Height,  parOut.vpp.In.Height);
+        EXPECT_EQ(m_par.vpp.Out.Width,  parOut.vpp.Out.Width);
+        EXPECT_EQ(m_par.vpp.Out.Height, parOut.vpp.Out.Height);
+    }
 
     TS_END;
     return 0;

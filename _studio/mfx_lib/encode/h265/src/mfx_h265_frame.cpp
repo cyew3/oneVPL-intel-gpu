@@ -99,7 +99,7 @@ mfxStatus H265Frame::CopyFrame(mfxFrameSurface1 *surface)
         break;
     case 2:
         ippiConvert_8u16u_C1R(surface->Data.Y, surface->Data.Pitch, (Ipp16u*)y, pitch_luma_bytes, roi);
-        ippiLShiftC_16u_C1IR(m_bitDepthLuma - 8, (Ipp16u*)y0, pitch_luma_bytes, roi);
+        ippiLShiftC_16u_C1IR(m_bitDepthLuma - 8, (Ipp16u*)y, pitch_luma_bytes, roi);
         break;
     case 3:
         ippiCopy_16u_C1R((Ipp16u*)surface->Data.Y, surface->Data.Pitch, (Ipp16u*)y, pitch_luma_bytes, roi);

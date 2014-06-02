@@ -630,7 +630,6 @@ m_bPTSTaken(false)
 {
     memset(&m_response, 0, sizeof(mfxFrameAllocResponse));
     memset(&m_response_op, 0, sizeof(m_response_op));
-    memset(&m_response_alien, 0, sizeof(m_response_alien));
 
 #if defined (ELK_WORKAROUND)
     memset(&m_fakeresponse, 0, sizeof(mfxFrameAllocResponse));
@@ -1022,15 +1021,12 @@ mfxStatus MFXVideoDECODEVC1::Close(void)
         if (m_response_op.mids)
             m_pCore->FreeFrames(&m_response_op);
 
-        if (m_response_alien.mids)
-            m_pCore->FreeFrames(&m_response_alien);
 #if defined (ELK_WORKAROUND)
         m_pCore->FreeFrames(&m_fakeresponse);
 #endif
     }
     memset(&m_response_op, 0, sizeof(m_response_op));
-    memset(&m_response_alien, 0, sizeof(m_response_alien));
-
+    
     m_qMemID.clear();
     m_qSyncMemID.clear();
     m_qTS.clear();
@@ -2476,9 +2472,6 @@ mfxStatus MFXVideoDECODEVC1::UpdateAllocRequest(mfxVideoParam *par,
         if (request->NumFrameMin > (*pOpaqAlloc)->Out.NumSurface)
             return MFX_ERR_INVALID_VIDEO_PARAM;
       
-        // we have to real allocate only self type surfaces 
-        // no makes sence what component type we have we should always alloc frames in decoder
-        if ((*pOpaqAlloc)->Out.Type & MFX_MEMTYPE_FROM_DECODE)
         {
             Mapping = true;
 
@@ -2494,7 +2487,7 @@ mfxStatus MFXVideoDECODEVC1::UpdateAllocRequest(mfxVideoParam *par,
                 if (m_isSWPlatform) // SW platform
                 {
                     // need to map surfaces with opaque
-                    request->Type = (mfxU16)(*pOpaqAlloc)->Out.Type;
+                    request->Type = MFX_MEMTYPE_OPAQUE_FRAME | MFX_MEMTYPE_FROM_DECODE | MFX_MEMTYPE_SYSTEM_MEMORY;
                     request->NumFrameMin = request->NumFrameSuggested = (mfxU16)(*pOpaqAlloc)->Out.NumSurface;
                 }
                 else
@@ -2520,7 +2513,7 @@ mfxStatus MFXVideoDECODEVC1::UpdateAllocRequest(mfxVideoParam *par,
                 if (!m_isSWPlatform) // HW platform
                 {
                     // need to map surfaces with opaque
-                    request->Type = (mfxU16)(*pOpaqAlloc)->Out.Type;
+                    request->Type = MFX_MEMTYPE_OPAQUE_FRAME | MFX_MEMTYPE_FROM_DECODE | MFX_MEMTYPE_DXVA2_DECODER_TARGET;
                     request->NumFrameMin = request->NumFrameSuggested = (mfxU16)(*pOpaqAlloc)->Out.NumSurface;
                 }
                 else
@@ -2543,24 +2536,6 @@ mfxStatus MFXVideoDECODEVC1::UpdateAllocRequest(mfxVideoParam *par,
 
             }
         }
-        else // try to allocate memory for another component
-        {
-            mfxStatus sts;
-            mfxFrameAllocRequest trequest = *request;
-            trequest.Type =  (mfxU16)(*pOpaqAlloc)->Out.Type;
-            trequest.NumFrameMin = trequest.NumFrameSuggested = (mfxU16)(*pOpaqAlloc)->Out.NumSurface;
-
-            sts = m_pCore->AllocFrames(&trequest, 
-                                       &m_response_alien,
-                                       (*pOpaqAlloc)->In.Surfaces, 
-                                       (*pOpaqAlloc)->In.NumSurface);
-
-            if (MFX_ERR_NONE != sts && 
-                MFX_ERR_UNSUPPORTED != sts) // unsupported means that current Core couldn;t allocate the surfaces
-                return sts;
-        }
-
-
         return MFX_ERR_NONE;
     }
     else

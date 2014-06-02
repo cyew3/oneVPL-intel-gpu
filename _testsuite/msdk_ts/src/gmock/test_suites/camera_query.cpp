@@ -137,7 +137,7 @@ int TestSuite::RunTest(unsigned int id)
         m_uid = 0;
     }
 
-    if(!(tc.mode & NULL_SESSION))
+    if(tc.mode ^ NULL_SESSION)
     {
         MFXInit();
         if(m_uid)
@@ -159,7 +159,7 @@ int TestSuite::RunTest(unsigned int id)
     }
 
     m_spool_in.UseDefaultAllocator(!!(m_par.IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY));
-    if (!(tc.mode & NULL_SESSION))
+    if (tc.mode ^ NULL_SESSION)
     {
         SetFrameAllocator(m_session, m_spool_in.GetAllocator());
         m_spool_out.SetAllocator(m_spool_in.GetAllocator(), true);
@@ -189,6 +189,7 @@ int TestSuite::RunTest(unsigned int id)
     tsExtBufType<mfxVideoParam> parOut;
     parOut.IOPattern = m_par.IOPattern;
     mfxVideoParam* pout = &parOut;
+    mfxExtCamPipeControl& cam_ctrl = parOut;
     if(tc.mode & INPLACE)
         pout = m_pPar;
     else if(tc.mode & NULL_OUT)
@@ -206,6 +207,13 @@ int TestSuite::RunTest(unsigned int id)
     ///////////////////////////////////////////////////////////////////////////
     g_tsStatus.expect(tc.sts);
     Query(m_session, m_pPar, pout);
+
+    if(tc.mode ^ NULL_SESSION)
+    {
+        g_tsStatus.expect(MFX_ERR_NOT_INITIALIZED);
+        GetVideoParam(m_session, m_pPar);
+        Close();
+    }
 
     if(tc.mode & SET_HANDLE_AFTER)
     {
