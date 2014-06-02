@@ -216,15 +216,6 @@ void MyThread::Wait(void)
 }
 
 /*------------------------------------------------------------------------------*/
-
-IDirect3DSurface9* mf_get_d3d_srf_from_mid(mfxMemId mid)
-{
-    IDirect3DSurface9* pSurface = (IDirect3DSurface9*)mid;
-    if (pSurface) pSurface->AddRef();
-    return pSurface;
-}
-
-/*------------------------------------------------------------------------------*/
 // CSamplesPool methods
 
 MFSamplesPool::MFSamplesPool(void):

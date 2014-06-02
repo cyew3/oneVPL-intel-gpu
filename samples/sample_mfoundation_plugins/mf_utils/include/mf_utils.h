@@ -310,8 +310,6 @@ extern mfxF64 mf_get_framerate(mfxU32 fr_n, mfxU32 fr_d);
 extern bool mf_are_framerates_equal(mfxU32 fr1_n, mfxU32 fr1_d,
                                     mfxU32 fr2_n, mfxU32 fr2_d);
 
-extern IDirect3DSurface9* mf_get_d3d_srf_from_mid(mfxMemId mid);
-
 extern mfxU16 mf_ms2mfx_imode(UINT32 imode);
 extern UINT32 mf_mfx2ms_imode(mfxU16 imode);
 

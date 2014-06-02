@@ -70,9 +70,9 @@ public:
 
 protected: // functions
     mfxStatus AllocSW(void);
-    mfxStatus AllocD3D9(IDirect3DSurface9* pSurface);
+    mfxStatus AllocD3D9(mfxMemId memId);
 #if MFX_D3D11_SUPPORT
-    mfxStatus AllocD3D11(ID3D11Texture2D* p2DTexture, mfxMemId memId);
+    mfxStatus AllocD3D11(mfxMemId memId, ID3D11Texture2D* p2DTexture);
 #endif
 
 protected: // variables

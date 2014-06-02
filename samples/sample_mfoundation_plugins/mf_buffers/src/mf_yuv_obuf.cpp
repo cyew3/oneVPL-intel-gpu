@@ -135,25 +135,34 @@ HRESULT MFYuvOutSurface::Pretend(mfxU16 w, mfxU16 h)
 
 /*------------------------------------------------------------------------------*/
 
-mfxStatus MFYuvOutSurface::AllocD3D9(IDirect3DSurface9* pSurface)
+mfxStatus MFYuvOutSurface::AllocD3D9(mfxMemId memId)
 {
     MFX_AUTO_LTRACE_FUNC(MF_TL_PERF);
     mfxStatus sts = MFX_ERR_NONE;
     HRESULT hr = S_OK;
     mfxFrameSurface1* srf = NULL;
+    IDirect3DSurface9* pSurface = NULL;
 
-    CHECK_POINTER(pSurface, MFX_ERR_NULL_PTR);
+    CHECK_POINTER(memId, MFX_ERR_NULL_PTR);
     if (!m_bDoNotAlloc)
     {
         MFX_LTRACE_S(MF_TL_PERF, "HW Sample created");
+
         if (SUCCEEDED(hr) && !m_pComMfxSurface) hr = E_FAIL;
+        if (SUCCEEDED(hr))
+        {
+            mfxHDL handle;
+            m_pAlloc->GetHDL(m_pAlloc->pthis, memId, &handle);
+            pSurface = reinterpret_cast<IDirect3DSurface9*>(handle);
+            if (!pSurface) hr = E_FAIL;
+        }
         if (SUCCEEDED(hr)) hr = MFCreateVideoSampleFromSurface(pSurface, &m_pSample);
         if (SUCCEEDED(hr)) hr = m_pSamplesPool->AddSample(m_pSample);
         if (SUCCEEDED(hr)) hr = m_pSample->SetUnknown(MF_MT_MFX_FRAME_SRF, m_pComMfxSurface);
         if (SUCCEEDED(hr))
         {
             srf = m_pComMfxSurface->GetMfxFrameSurface();
-            srf->Data.MemId = pSurface;
+            srf->Data.MemId = memId;
 
             m_bDoNotAlloc = true;
             m_State = stSurfaceReady;
@@ -172,7 +181,7 @@ mfxStatus MFYuvOutSurface::AllocD3D9(IDirect3DSurface9* pSurface)
 /*------------------------------------------------------------------------------*/
 
 #if MFX_D3D11_SUPPORT
-mfxStatus MFYuvOutSurface::AllocD3D11(ID3D11Texture2D* p2DTexture, mfxMemId memId)
+mfxStatus MFYuvOutSurface::AllocD3D11(mfxMemId memId, ID3D11Texture2D* p2DTexture)
 {
     MFX_AUTO_LTRACE_FUNC(MF_TL_PERF);
     mfxStatus sts = MFX_ERR_NONE;
@@ -328,7 +337,7 @@ mfxStatus MFYuvOutSurface::Alloc(mfxMemId memid)
             if (p2DTexture)
             {
                     p2DTexture->AddRef();
-                    sts = AllocD3D11(p2DTexture, memid);
+                    sts = AllocD3D11(memid, p2DTexture);
             }
             else sts = AllocSW();
 
@@ -337,12 +346,8 @@ mfxStatus MFYuvOutSurface::Alloc(mfxMemId memid)
         else
 #endif
         {
-            IDirect3DSurface9* pSurface = mf_get_d3d_srf_from_mid(memid);
-
-            if (pSurface) sts = AllocD3D9(pSurface);
+            if (memid) sts = AllocD3D9(memid);
             else sts = AllocSW();
-
-            SAFE_RELEASE(pSurface);
         }
     }
     MFX_LTRACE_I(MF_TL_GENERAL, m_State);

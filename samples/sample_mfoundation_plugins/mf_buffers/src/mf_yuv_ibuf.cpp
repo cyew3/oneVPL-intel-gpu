@@ -214,7 +214,9 @@ void MFYuvInSurface::DropDataToFile(void)
     if (IsFileSet())
     {
         MFX_AUTO_LTRACE_FUNC(MF_TL_GENERAL);
-        IDirect3DSurface9* pSurface = mf_get_d3d_srf_from_mid(m_mfxSurface.Data.MemId);
+        mfxHDL handle;
+        m_pAlloc->GetHDL(m_pAlloc->pthis, memId, &handle);
+        IDirect3DSurface9* pSurface = reinterpret_cast<IDirect3DSurface9*>(handle);
 
         if (pSurface)
         {
@@ -252,7 +254,6 @@ void MFYuvInSurface::DropDataToFile(void)
         {
             DumpYuvFromNv12Data(m_mfxSurface.Data.Y, &(m_mfxInSurface.Info), m_nPitch);
         }
-        SAFE_RELEASE(pSurface);
     }
 #endif
 }
