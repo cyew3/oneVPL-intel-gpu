@@ -292,7 +292,11 @@ mfxStatus MFXDSFrameAllocatorD3D::AllocImpl(mfxFrameAllocRequest *request, mfxFr
             HRESULT hr = S_OK;
             pSample[i] = new CDXVA2Sample(this, &hr);
             pSample[i]->AddRef();
-            pSample[i]->m_pd3dSurface = (IDirect3DSurface9*)Response.mids[i];
+
+            mfxHDL handle;
+            D3DFrameAllocator::GetFrameHDL(Response.mids[i], &handle);
+
+            pSample[i]->m_pd3dSurface = reinterpret_cast<IDirect3DSurface9*>(handle);
         }
 
         delete[] Response.mids;
