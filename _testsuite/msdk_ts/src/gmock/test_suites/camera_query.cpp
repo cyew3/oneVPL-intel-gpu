@@ -13,6 +13,10 @@ void ext_buf(tsExtBufType<mfxVideoParam>& par, mfxU32 id, mfxU32 size)
 {
     par.AddExtBuffer(id, size); 
 }
+void del_buf(tsExtBufType<mfxVideoParam>& par, mfxU32 id, mfxU32 /*size*/)
+{
+    par.RemoveExtBuffer(id); 
+}
 
 class TestSuite : tsVideoVPP
 {
@@ -123,6 +127,7 @@ const TestSuite::tc_struct TestSuite::test_case[] =
     {/*56*/  MFX_ERR_UNDEFINED_BEHAVIOR,        DIFFERENT_IO, {}, {{ext_buf, EXT_BUF_PAR(mfxExtCamColorCorrection3x3   )},{ext_buf, EXT_BUF_PAR(mfxExtCamPadding              )} }},
     {/*57*/  MFX_ERR_UNDEFINED_BEHAVIOR,        DIFFERENT_IO, {}, {{ext_buf, EXT_BUF_PAR(mfxExtCamPadding              )},{ext_buf, EXT_BUF_PAR(mfxExtCamPipeControl          )} }},
     {/*58*/  MFX_ERR_UNDEFINED_BEHAVIOR,        DIFFERENT_IO, {}, {{ext_buf, EXT_BUF_PAR(mfxExtCamPipeControl          )},{ext_buf, EXT_BUF_PAR(mfxExtCamGammaCorrection      )} }},
+    {/*40*/  MFX_ERR_UNSUPPORTED,               INPLACE,      {},  {del_buf, EXT_BUF_PAR(mfxExtCamPipeControl          )}},
 };
 
 const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case)/sizeof(TestSuite::tc_struct);
