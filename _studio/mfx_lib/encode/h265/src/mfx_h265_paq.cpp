@@ -235,12 +235,12 @@ NGV_Bool DeQueue(RFrameQueue *pInputFrameQueue, RFrame *pCodeThisFrame)
 {        
     if(pCodeThisFrame)
     {
-        if(pCodeThisFrame->ePicType == RV_IPIC) pCodeThisFrame->reference = TRUE;
-        else if(pCodeThisFrame->ePicType == RV_PPIC) pCodeThisFrame->reference = TRUE;
-        else pCodeThisFrame->reference = FALSE;
+        if(pCodeThisFrame->ePicType == RV_IPIC) pCodeThisFrame->reference = true;
+        else if(pCodeThisFrame->ePicType == RV_PPIC) pCodeThisFrame->reference = true;
+        else pCodeThisFrame->reference = false;
         RFrameQueue_Remove(pInputFrameQueue, pCodeThisFrame);
     }
-    return FALSE;
+    return false;
 }
 
 RFrame* past_reference_frame(RFrame *frame)
@@ -264,11 +264,11 @@ NGV_Bool past_reference_available(RFrame *frame)
     {
         if(frm->coded && frm->reference)
         {
-            return TRUE;
+            return true;
         }
         frm = frm->past_frame;
     }
-    return FALSE;
+    return false;
 }
 
 NGV_Bool future_reference_available(RFrame *frame)
@@ -278,17 +278,17 @@ NGV_Bool future_reference_available(RFrame *frame)
     {
         if(frm->coded && frm->reference)
         {
-            return TRUE;
+            return true;
         }
         frm = frm->futr_frame;
     }
-    return FALSE;
+    return false;
 }
 
 RFrame* NextReadyInQueue(RFrameQueue *pInputFrameQueue, NGV_Bool /*last_frame*/)
 {
     RFrame *ihead=pInputFrameQueue->head;    
-    NGV_Bool ready=FALSE;
+    NGV_Bool ready=false;
     RFrame *inFrame=NULL;
 
     do
@@ -299,7 +299,7 @@ RFrame* NextReadyInQueue(RFrameQueue *pInputFrameQueue, NGV_Bool /*last_frame*/)
         case RV_PPIC:
         case RV_FPIC:
             {
-                ready = TRUE;
+                ready = true;
             }
             break;
         }
@@ -331,9 +331,9 @@ void destroy_frames_in_list(RFrameVector *list)
 //*********************************************************
 bool TVideoPreanalyzer::preAnalyzeOne(TQPMap *acQPMap)
 {
-    NGV_Bool        failed                = FALSE;
-    NGV_Bool        keyFrame            = FALSE;
-    NGV_Bool        lastFrame            = FALSE;
+    NGV_Bool        failed                = false;
+    NGV_Bool        keyFrame            = false;
+    NGV_Bool        lastFrame            = false;
 
     FILE* dqpFile = m_dqpFile;
     YuvImage            inputImage;
@@ -372,8 +372,8 @@ bool TVideoPreanalyzer::preAnalyzeOne(TQPMap *acQPMap)
         {
             pInputFrame = RFrameVector_Detach_Head(m_pInputFrameList);
             RFrameVector_Append_Tail(m_pInputFrameList, pInputFrame);
-            pInputFrame->coded=FALSE;
-            pInputFrame->reference=FALSE;
+            pInputFrame->coded=false;
+            pInputFrame->reference=false;
         }
 
         // convert image
@@ -382,11 +382,11 @@ bool TVideoPreanalyzer::preAnalyzeOne(TQPMap *acQPMap)
 
         if(i%m_uiIntraPeriod == 0)    
         {
-            keyFrame    =    TRUE;
+            keyFrame    =    true;
         } 
         else 
         {
-            keyFrame = FALSE;
+            keyFrame = false;
         }
 
         // Determine Frame Type        
@@ -398,11 +398,11 @@ bool TVideoPreanalyzer::preAnalyzeOne(TQPMap *acQPMap)
             np.avgTSCid += pInputFrame->TSCindex; 
             np.totalFrames++; 
         }
-        m_firstFrame = FALSE;
+        m_firstFrame = false;
         // EnQueue
         EnQueue(m_pInputFrameQueue, pInputFrame);
         // NextReadyInQueue
-        pCodeThisFrame = NextReadyInQueue(m_pInputFrameQueue, FALSE);
+        pCodeThisFrame = NextReadyInQueue(m_pInputFrameQueue, false);
         if(pCodeThisFrame)
         {
             if(pCodeThisFrame->ePicType==0) 
@@ -474,7 +474,7 @@ bool TVideoPreanalyzer::preAnalyzeOne(TQPMap *acQPMap)
             }
 
             //if(global_log_level>0 && pCodeThisFrame->ePicType!=RV_FPIC) VisualizeAllBlks(&viz, pCodeThisFrame);
-            pCodeThisFrame->coded = TRUE;
+            pCodeThisFrame->coded = true;
             DeQueue(m_pInputFrameQueue, pCodeThisFrame);
         }
         else
@@ -501,17 +501,17 @@ bool TVideoPreanalyzer::preAnalyzeOne(TQPMap *acQPMap)
         {
             pInputFrame = RFrameVector_Detach_Head(m_pInputFrameList);
             RFrameVector_Append_Tail(m_pInputFrameList, pInputFrame);
-            pInputFrame->coded=FALSE;
-            pInputFrame->reference=FALSE;
+            pInputFrame->coded=false;
+            pInputFrame->reference=false;
         }
         // NULL inputImage
         pInputFrame->TR = i;
         // Determine Frame Type
-        failed = NGV_PDist_Determine(m_np, pInputFrame, FALSE, FALSE, TRUE);
+        failed = NGV_PDist_Determine(m_np, pInputFrame, false, false, true);
         // EnQueue
         EnQueue(m_pInputFrameQueue, pInputFrame);
         // NextReadyInQueue
-        pCodeThisFrame = NextReadyInQueue(m_pInputFrameQueue, FALSE);
+        pCodeThisFrame = NextReadyInQueue(m_pInputFrameQueue, false);
         if(pCodeThisFrame)
         {
             //LogMessage(generic_debug, LOG_LVL_VIDEO, "Encoding %s TR %d", (pCodeThisFrame->ePicType==0)?("IPIC"):((pCodeThisFrame->ePicType==1)?("PPIC"):("FPIC")), pCodeThisFrame->TR);
@@ -610,7 +610,7 @@ bool TVideoPreanalyzer::preAnalyzeOne(TQPMap *acQPMap)
                 memset( acQPMap[pCodeThisFrame->TR % m_histLength].m_aiQPLevel, 0, sizeof(int)*( acQPMap[pCodeThisFrame->TR % m_histLength].m_uiNumPartInWidth * acQPMap[pCodeThisFrame->TR % m_histLength].m_uiNumPartInHeight ) );
             }
            // if(global_log_level>0 && pCodeThisFrame->ePicType!=RV_FPIC) VisualizeAllBlks(&viz, pCodeThisFrame);
-            pCodeThisFrame->coded = TRUE;
+            pCodeThisFrame->coded = true;
             DeQueue(m_pInputFrameQueue, pCodeThisFrame);
         }
         i++;
@@ -673,13 +673,13 @@ void TVideoPreanalyzer::open( Ipp8u* pchFile, Ipp32u width, Ipp32u height, int f
     //NGV_PDist np = *m_np;
     //global_log_level    = 0; 
     m_np->uForcePDistVal   = 2;
-    m_np->bForcePDist      = TRUE;
+    m_np->bForcePDist      = true;
     m_np->uRefMod          = m_iGOPSize/2 -1;
     m_np->maxpdist         = m_iGOPSize;
     m_np->fps              = m_iFrameRate;
     ((VidData*)m_np->inData)->Key = m_uiIntraPeriod;
 
-    if(m_uiIntraPeriod < (Ipp32u)(2*m_iFrameRate)) m_np->bClosedGOP = FALSE;    // Make it automatic
+    if(m_uiIntraPeriod < (Ipp32u)(2*m_iFrameRate)) m_np->bClosedGOP = false;    // Make it automatic
 
     NGV_PDist_Alloc(m_np, m_corrected_width, m_corrected_height);
 
@@ -698,7 +698,7 @@ void TVideoPreanalyzer::open( Ipp8u* pchFile, Ipp32u width, Ipp32u height, int f
 
     m_frameNumber = 0;
 
-    m_firstFrame = TRUE;
+    m_firstFrame = true;
     // Open Files
     // Alloc Pdist
 }
@@ -892,25 +892,25 @@ void NGV_PDist_Init(NGV_PDist *t)
 #else
     t->pdistCorrect = -1;   // v326 Default
 #endif
-    t->bClosedGOP   = TRUE;
-    t->bClosedGOPSet = FALSE;
-    t->bForcePDist  = FALSE;
-    t->bRankOrder   = TRUE;     // v326 Default
-    t->bModToF      = TRUE;     // v326 Default
-    t->bAutoModToF  = FALSE;    // New Default
-    t->bPartialInOrder = FALSE;
+    t->bClosedGOP   = true;
+    t->bClosedGOPSet = false;
+    t->bForcePDist  = false;
+    t->bRankOrder   = true;     // v326 Default
+    t->bModToF      = true;     // v326 Default
+    t->bAutoModToF  = false;    // New Default
+    t->bPartialInOrder = false;
     t->uRankToF     = 1;
     
     t->uRefMod      = REFMOD_LONG_GOP;
     t->uRefModStart = 0;
-    t->bRefModSet   = FALSE;
+    t->bRefModSet   = false;
     t->uRefRankMax   = 3;
     t->uForcePDistVal = 3;
-    t->bNoSceneDetect = FALSE;
+    t->bNoSceneDetect = false;
     t->fps = 30;
     t->TR = 0;
     t->unmodTR = 0;
-    t->IPframeFound = FALSE;
+    t->IPframeFound = false;
     t->PdIndex = -1;
 #ifdef PD_LOCAL_POOL 
     t->samplePoolIndex = t->samplePoolSize = 0;
@@ -924,7 +924,7 @@ void NGV_PDist_Init(NGV_PDist *t)
 
 static NGV_Bool    SetParams(NGV_PDist *t, int width, int height)
 {
-    NGV_Bool    failed                        =    FALSE;
+    NGV_Bool    failed                        =    false;
     VidData* inData = (VidData*)t->inData;
 
     t->totalFrames = 0;
@@ -1034,7 +1034,7 @@ NGV_Bool NGV_PDist_Alloc(NGV_PDist *t, int width, int height)
     VidData* inData = (VidData*)t->inData;
     //DataWriter* SADOut = (DataWriter*)t->SADOut;
     VidRead* video = (VidRead *) t->video;
-    NGV_Bool failed = FALSE;
+    NGV_Bool failed = false;
     int d= 0;
     int RefMod0 = 0;
     int RefMod1 = t->uRefMod+1;
@@ -1169,7 +1169,7 @@ void ExtendBorders(Ipp8u* ImageToExtend, ImDetails imageInfo)
 }
 
 NGV_Bool    PdReduceImage(VidRead *video, VidData *inData, YuvImage *t, VidSample *videoIn)    {
-    NGV_Bool    failed                    =    FALSE;
+    NGV_Bool    failed                    =    false;
     Ipp32u        i;
     Ipp32u        j,k;
     Ipp32u        im7, im6, im5, im4, im3, im2, im1, i0, ip1, ip2, ip3, ip4, ip5, ip6, ip7;
@@ -1386,8 +1386,8 @@ void processMEFrame(VidRead *video, VidData *inData, VidSample *videoIn, VidSamp
     Ipp32s        tscVal, scVal, pdVal;
     Ipp32u        valNoM, valb, fPos, tbPos;
     Ipp64f        TSC, SC, RsGlobal, CsGlobal, AFD;
-    NGV_Bool    Schange                        =    FALSE;
-    NGV_Bool    Gchange                        =    FALSE;
+    NGV_Bool    Schange                        =    false;
+    NGV_Bool    Gchange                        =    false;
 
     if(firstFrame)
     {
@@ -1464,7 +1464,7 @@ void processMEFrame(VidRead *video, VidData *inData, VidSample *videoIn, VidSamp
                 &(videoIn->R16thBuffer),
                 &(videoRef->R16thBuffer),
                 &(videoIn->R4erBuffer),
-                TRUE, backward,
+                true, backward,
                 inData->accuracy, 0, 1);
             ptr->PDMV[fPos].iMVx = (Ipp16s)((videoIn->R16thBuffer.pBackward[fPos].x * inData->accuracy) + (videoIn->R16thBuffer.pBhalf[fPos].x * (inData->accuracy >> 1)) + (videoIn->R16thBuffer.pBquarter[fPos].x * (inData->accuracy >> 2)));
             ptr->PDMV[fPos].iMVy = (Ipp16s)((videoIn->R16thBuffer.pBackward[fPos].y * inData->accuracy) + (videoIn->R16thBuffer.pBhalf[fPos].y * (inData->accuracy >> 1)) + (videoIn->R16thBuffer.pBquarter[fPos].y * (inData->accuracy >> 2)));
@@ -1481,7 +1481,7 @@ void processMEFrame(VidRead *video, VidData *inData, VidSample *videoIn, VidSamp
                 &(videoIn->R4erBuffer),
                 &(videoRef->R4erBuffer),
                 &(videoIn->R1Buffer),
-                FALSE, backward,
+                false, backward,
                 inData->accuracy, 1, 1);
             /// NGVv326 Fix Thresh for extended range -N
             ptr->PDMV[fPos].iMVx = (Ipp16s)((videoIn->R4erBuffer.pBackward[fPos].x * inData->accuracy) + (videoIn->R4erBuffer.pBhalf[fPos].x * (inData->accuracy >> 1)) + (videoIn->R4erBuffer.pBquarter[fPos].x * (inData->accuracy >> 2)));
@@ -1500,7 +1500,7 @@ void processMEFrame(VidRead *video, VidData *inData, VidSample *videoIn, VidSamp
                 &(videoIn->R1Buffer),
                 &(videoRef->R1Buffer),
                 &(videoIn->R1Buffer),
-                FALSE, backward,
+                false, backward,
                 inData->accuracy);
 
             ptr->PSAD[fPos]                =    videoIn->R1Buffer.BSAD[fPos];
@@ -1577,7 +1577,7 @@ void processMEFrame(VidRead *video, VidData *inData, VidSample *videoIn, VidSamp
         }
         else if(valb == 0)
         {
-            video->logic[PdIndex].repeatedFrame    =    TRUE;
+            video->logic[PdIndex].repeatedFrame    =    true;
             video->logic[PdIndex].pdist            =    2;
         }
         else
@@ -1586,7 +1586,7 @@ void processMEFrame(VidRead *video, VidData *inData, VidSample *videoIn, VidSamp
             {
                 // Seperate Setting to disable scene cuts
                 video->logic[PdIndex].pdist    =    0;
-                video->logic[PdIndex].Gchg    =    FALSE;
+                video->logic[PdIndex].Gchg    =    false;
             }
             else if(Gchange)
             {
@@ -1621,7 +1621,7 @@ void processPDMEFrame(VidRead *video, VidData *inData, VidSample *videoIn, VidSa
                 &(videoIn->R16thBuffer),
                 &(videoRef->R16thBuffer),
                 &(videoIn->R4erBuffer),
-                TRUE, backward,
+                true, backward,
                 inData->accuracy, 0, 1);
             PDMV[fPos].iMVx = (Ipp16s)((videoIn->R16thBuffer.pBackward[fPos].x * inData->accuracy) + (videoIn->R16thBuffer.pBhalf[fPos].x * (inData->accuracy >> 1)) + (videoIn->R16thBuffer.pBquarter[fPos].x * (inData->accuracy >> 2)));
             PDMV[fPos].iMVy = (Ipp16s)((videoIn->R16thBuffer.pBackward[fPos].y * inData->accuracy) + (videoIn->R16thBuffer.pBhalf[fPos].y * (inData->accuracy >> 1)) + (videoIn->R16thBuffer.pBquarter[fPos].y * (inData->accuracy >> 2)));
@@ -1635,7 +1635,7 @@ void processPDMEFrame(VidRead *video, VidData *inData, VidSample *videoIn, VidSa
                 &(videoIn->R4erBuffer),
                 &(videoRef->R4erBuffer),
                 &(videoIn->R1Buffer),
-                FALSE, backward,
+                false, backward,
                 inData->accuracy, 1, 1);
             /// NGVv326 Fix Thresh for extended range -N
             PDMV[fPos].iMVx = (Ipp16s)((videoIn->R4erBuffer.pBackward[fPos].x * inData->accuracy) + (videoIn->R4erBuffer.pBhalf[fPos].x * (inData->accuracy >> 1)) + (videoIn->R4erBuffer.pBquarter[fPos].x * (inData->accuracy >> 2)));
@@ -1649,7 +1649,7 @@ void processPDMEFrame(VidRead *video, VidData *inData, VidSample *videoIn, VidSa
                 &(videoIn->R1Buffer),
                 &(videoRef->R1Buffer),
                 &(videoIn->R1Buffer),
-                FALSE, backward,
+                false, backward,
                 inData->accuracy);
 
             PDSAD[fPos] = videoIn->R1Buffer.BSAD[fPos];
@@ -1723,7 +1723,7 @@ void printStats2(TSCstat *data, Ipp32s fps, DataWriter    *SADOut)    {
     printf("%5d ",data->ptr->pdist);
     if(data->repeatedFrame)    {
         printf("*",data->ptr->pdist);
-        data->repeatedFrame = FALSE;
+        data->repeatedFrame = false;
     }
     if(fps > 30 && (data->pdist <= 3) && (data->pdist > 0))
         printf("+",data->ptr->pdist);
@@ -1747,7 +1747,7 @@ void printStats2(TSCstat *data, Ipp32s fps, DataWriter    *SADOut)    {
         fprintf(SADOut->pDataOut,"%5d ",data->ptr->pdist);
         if(data->repeatedFrame)    {
             fprintf(SADOut->pDataOut,"*",data->ptr->pdist);
-            data->repeatedFrame = FALSE;
+            data->repeatedFrame = false;
         }
         if(fps > 30 && (data->ptr->pdist <= 3) && (data->pdist > 0))
             fprintf(SADOut->pDataOut,"+",data->ptr->pdist);
@@ -1764,7 +1764,7 @@ NGV_Bool DetermineFrameTypes(NGV_PDist *t, VidRead *videoIn, VidData * /*inData*
     Ipp32s        pointer;
     Ipp32s        i, fgroup;
 
-    NGV_Bool PdistanceDetermined = FALSE; 
+    NGV_Bool PdistanceDetermined = false; 
 
     imaxPdIndex = t->PdIndex-t->PdIndexL;
     dcandidate = videoIn->logic[t->PdIndexL].pdist;
@@ -1789,8 +1789,8 @@ NGV_Bool DetermineFrameTypes(NGV_PDist *t, VidRead *videoIn, VidData * /*inData*
                 }
             }
             videoIn->logic[t->PdIndexL+iPdIndex].picType = RV_IPIC;
-            PdistanceDetermined            =    TRUE;
-            t->IPframeFound                =    TRUE;
+            PdistanceDetermined            =    true;
+            t->IPframeFound                =    true;
             t->IPFrame                    =    iPdIndex;
         }            
         else if(iPdIndex == (dcandidate-1))        {
@@ -1800,9 +1800,9 @@ NGV_Bool DetermineFrameTypes(NGV_PDist *t, VidRead *videoIn, VidData * /*inData*
                     videoIn->logic[t->PdIndexL+i].picType    =    RV_FPIC;
                 }
                 videoIn->logic[t->PdIndexL+fgroup].picType    =    RV_PPIC;
-                t->IPframeFound            =    TRUE;
+                t->IPframeFound            =    true;
                 t->IPFrame                =    fgroup;
-                PdistanceDetermined        =    TRUE;
+                PdistanceDetermined        =    true;
             }
             else                            {
                 fgroup                    =    pointer-1;
@@ -1810,8 +1810,8 @@ NGV_Bool DetermineFrameTypes(NGV_PDist *t, VidRead *videoIn, VidData * /*inData*
                     videoIn->logic[t->PdIndexL+i].picType    =    RV_FPIC;
                 }
                 videoIn->logic[t->PdIndexL+fgroup].picType    =    RV_PPIC;
-                PdistanceDetermined        =    TRUE;
-                t->IPframeFound            =    TRUE;
+                PdistanceDetermined        =    true;
+                t->IPframeFound            =    true;
                 t->IPFrame                =    fgroup;
             }
         }    
@@ -1821,8 +1821,8 @@ NGV_Bool DetermineFrameTypes(NGV_PDist *t, VidRead *videoIn, VidData * /*inData*
                 videoIn->logic[t->PdIndexL+i].picType        =    RV_FPIC;
             }
             videoIn->logic[t->PdIndexL+fgroup].picType        =    RV_PPIC;
-            PdistanceDetermined        =    TRUE;
-            t->IPframeFound            =    TRUE;
+            PdistanceDetermined        =    true;
+            t->IPframeFound            =    true;
             t->IPFrame                =    fgroup;
         }
     }
@@ -1834,8 +1834,8 @@ NGV_Bool DetermineFrameTypes(NGV_PDist *t, VidRead *videoIn, VidData * /*inData*
             videoIn->logic[t->PdIndexL+i].picType        =    RV_FPIC;
         }
         videoIn->logic[t->PdIndexL+fgroup].picType        =    RV_PPIC;
-        PdistanceDetermined        =    TRUE;
-        t->IPframeFound            =    TRUE;
+        PdistanceDetermined        =    true;
+        t->IPframeFound            =    true;
         t->IPFrame                =    fgroup;
     }
 
@@ -1872,7 +1872,7 @@ NGV_Bool NGV_PDist_Determine(NGV_PDist *t,
                             NGV_Bool lastFrame
                             )
 {
-    NGV_Bool failed  =   FALSE;
+    NGV_Bool failed  =   false;
     VidRead *video  = (VidRead *)t->video;
     VidSample *sampleRef = NULL, *sampleIn=NULL;
     VidData *inData     = (VidData *)t->inData;
@@ -1894,7 +1894,7 @@ NGV_Bool NGV_PDist_Determine(NGV_PDist *t,
                 void *sample;
                 sample = t->samplePool[t->samplePoolSize] = NgvMalloc(sizeof(VidSample));
                 if (!sample)
-                    return TRUE;
+                    return true;
                 VidSampleInit(sample);
                 VidSampleAlloc(t, sample, inData);
                 sampleIn = in->sample = sample;
@@ -1911,7 +1911,7 @@ NGV_Bool NGV_PDist_Determine(NGV_PDist *t,
             } else {
                 in->sample = NgvMalloc(sizeof(VidSample));
                 if (!in->sample)
-                    return TRUE;
+                    return true;
                 VidSampleInit((VidSample*)in->sample);
                 VidSampleAlloc(t, (VidSample*)in->sample, inData);
                 sampleIn = (VidSample*)in->sample;
@@ -1931,7 +1931,7 @@ NGV_Bool NGV_PDist_Determine(NGV_PDist *t,
                     {
                         VM_ASSERT(0);
                         NgvPrintf("Error NGV_PDist_Determine: at line number %d in file %s\n", __LINE__, __FILE__);
-                        return TRUE;  // Error detected need to exit
+                        return true;  // Error detected need to exit
                     }
                     VidSampleInit((VidSample*)in->past_frame->sample);
                     VidSampleAlloc(t, (VidSample*)in->past_frame->sample, inData);
@@ -1944,7 +1944,7 @@ NGV_Bool NGV_PDist_Determine(NGV_PDist *t,
         {
             VM_ASSERT(0);
             NgvPrintf("Error NGV_PDist_Determine: at line number %d in file %s\n", __LINE__, __FILE__);
-            return TRUE;  // Error detected need to exit
+            return true;  // Error detected need to exit
         }
         PdReduceImage(video, inData, &in->image, sampleIn);
         processMEFrame(video, inData, sampleIn, sampleRef, t->PdIndex, firstFrame, keyFrame, in);
@@ -1971,7 +1971,7 @@ NGV_Bool NGV_PDist_Determine(NGV_PDist *t,
         in->uPicRank = 0;
         in->uPicMod  = 0;
     }
-    t->IPframeFound                 =   FALSE;
+    t->IPframeFound                 =   false;
     if((t->PdIndex - t->PdIndexL)>=t->maxpdist || lastFrame)
     {
         t->IPframeFound = DetermineFrameTypes(t, video, inData, lastFrame, in);
@@ -1993,7 +1993,7 @@ NGV_Bool NGV_PDist_Determine(NGV_PDist *t,
                 {
                     VM_ASSERT(0);
                     NgvPrintf("Error NGV_PDist_Determine: at line number %d in file %s\n", __LINE__, __FILE__);
-                    return TRUE; // failed
+                    return true; // failed
                 }
 
                 for(i=0;i<=t->IPFrame;i++)    {
@@ -2389,10 +2389,10 @@ void PPicDetermineQpMap(NGV_PDist *np, RFrame *inFrame, RFrame *past_frame)
 
     //Ipp32u uPicRank = inFrame->uPicRank;
     double futr_qp = 6.0;
-    NGV_Bool futr_key = FALSE;
+    NGV_Bool futr_key = false;
     if(((VidData*)(np->inData))->Key<2*((VidData*)(np->inData))->fps) {
         futr_qp = 4.0;
-        if((np->TR%((VidData*)(np->inData))->Key)==0) futr_key=TRUE;
+        if((np->TR%((VidData*)(np->inData))->Key)==0) futr_key=true;
     }
     c8_height = (inFrame->oheight + 8-1)/8;
     c8_height *= 8;
@@ -2617,12 +2617,12 @@ NGV_Bool RFrame_Convert_Image(RFrame *t, YuvImage *image)
     t->image.y_plane = image->y_plane;
     t->image.y_pitch = t->padded_image.y_pitch = image->y_pitch;
 
-    return TRUE;
+    return true;
 }
 
 NGV_Bool RFrame_Allocate(RFrame *t, Ipp32u width, Ipp32u height, Ipp32u padding, RFrameType type)
 {
-    NGV_Bool failed = FALSE;
+    NGV_Bool failed = false;
     Ipp32u corrected_height = width;
     Ipp32u corrected_width = height;    
     Ipp32u padded_height = corrected_height + padding*2;
@@ -2692,7 +2692,7 @@ NGV_Bool RFrame_Allocate(RFrame *t, Ipp32u width, Ipp32u height, Ipp32u padding,
         RFrame_Clear(t);
 
     } else {
-        failed = TRUE;
+        failed = true;
     }
     t->type = type;
     if(t->type==RFrame_Input) 
@@ -2866,7 +2866,7 @@ void RFrame_Copy(RFrame *t, RFrame *src)
 */
 NGV_Bool RSubband_Allocate(RSubband *t, Ipp32u width, Ipp32u height, Ipp32u padding)
 {   
-    NGV_Bool failed=FALSE;
+    NGV_Bool failed=false;
     int band_width;
     int band_height;    
     int corrected_width;
@@ -2997,10 +2997,10 @@ NGV_Bool RSubband_Allocate(RSubband *t, Ipp32u width, Ipp32u height, Ipp32u padd
         RSubband_Clear(t);
 
     } else {
-        failed = TRUE;
+        failed = true;
     }            
 done:
-    return FALSE;
+    return false;
 }
 
 void RSubband_Clear(RSubband *t)
@@ -3800,12 +3800,12 @@ YuvImageBuffer* YuvImageBuffer_Destroy(YuvImageBuffer* t)
 
 NGV_Bool YuvImageBuffer_Alloc(YuvImageBuffer *t, Ipp32u width, Ipp32u height)
 {
-    NGV_Bool failed = FALSE;
+    NGV_Bool failed = false;
     // logic    
     if(t->m_pBuffer && t->m_uBufferSize!=width*height*3/2) { free(t->m_pBuffer); t->m_pBuffer=NULL; };
     t->m_uBufferSize = width*height*3/2;
     if(!t->m_pBuffer) t->m_pBuffer = (Ipp8u*) malloc(t->m_uBufferSize);    
-    if(!t->m_pBuffer) failed = TRUE;
+    if(!t->m_pBuffer) failed = true;
     if(!failed) YuvImage_SetPointers(&(t->image), t->m_pBuffer, width, height);
     // memset -> for debbuging purposes only
     //memset(t->image.y_plane, 0, width*height);
@@ -3868,19 +3868,19 @@ void BinImage_SetPointers(BinImage* t, Ipp8u* base, Ipp32u size)
 NGV_Bool BinImage_isBFrame(BinImage* t)
 {
     // Implement
-    return (t->frameType==2 || t->frameType==6)?TRUE:FALSE;
+    return (t->frameType==2 || t->frameType==6)?true:false;
 }
 
 NGV_Bool BinImage_isPFrame(BinImage* t)
 {
     // Implement
-    return (t->frameType==1 || t->frameType==5)?TRUE:FALSE;
+    return (t->frameType==1 || t->frameType==5)?true:false;
 }
 
 NGV_Bool BinImage_isKeyFrame(BinImage* t)
 {
     // Implement
-    return (t->frameType==0 || t->frameType==4)?TRUE:FALSE;
+    return (t->frameType==0 || t->frameType==4)?true:false;
 }
 
 /**
@@ -3911,12 +3911,12 @@ void BinImageBuffer_Init(BinImageBuffer *t)
 
 NGV_Bool BinImageBuffer_Alloc(BinImageBuffer *t, Ipp32u size)
 {
-    NGV_Bool failed = FALSE;
+    NGV_Bool failed = false;
     // logic    
     if(t->m_pBuffer && t->m_uBufferSize!=size) { free(t->m_pBuffer); t->m_pBuffer=NULL; };
     t->m_uBufferSize = size;
     if(!t->m_pBuffer) t->m_pBuffer = (Ipp8u*) malloc(t->m_uBufferSize);
-    if(!t->m_pBuffer) failed = TRUE;
+    if(!t->m_pBuffer) failed = true;
     if(!failed) BinImage_SetPointers(&(t->image), t->m_pBuffer, size);
     return failed;
 }
@@ -4119,13 +4119,13 @@ void    readerInit(VidRead *videoIn)    {
         videoIn->logic[i].AFD        =    -1.0;
         videoIn->logic[i].Cs        =    -1.0;
         videoIn->logic[i].frameNum    =    (Ipp32u)-1;  // Future Note: Conversion from int to Ipp32u. signed/unsigned mismatch
-        videoIn->logic[i].Gchg        =    FALSE;
+        videoIn->logic[i].Gchg        =    false;
         videoIn->logic[i].pdist        =    -1;
         videoIn->logic[i].picType    =    0;
         videoIn->logic[i].repeatedFrame    =    0;
         videoIn->logic[i].Rs        =    -1.0;
         videoIn->logic[i].SC        =    -1.0;
-        videoIn->logic[i].Schg        =    FALSE;
+        videoIn->logic[i].Schg        =    false;
         videoIn->logic[i].SCindex    =    -1;
         videoIn->logic[i].TSC        =    -1.0;
         videoIn->logic[i].TSCindex    =    -1;
@@ -4261,7 +4261,7 @@ NGV_Bool    VidSampleAlloc(void *vt, VidSample *videoIn, VidData *inData)
 }
 
 NGV_Bool    PdYuvFileReader_Open(VidRead *videoIn, VidData *inData)        {
-    NGV_Bool    failed                    =    FALSE;    
+    NGV_Bool    failed                    =    false;    
 
     /*Half Pixel Accuracy variables*/
     videoIn->cornerBox.Y            =    (Ipp8u*) NgvMalloc_aligned(16 * inData->R1.block_size_w,16);
@@ -4277,7 +4277,7 @@ NGV_Bool    PdYuvFileReader_Open(VidRead *videoIn, VidData *inData)        {
             memset(videoIn->spBuffer[i].Y,0,8 * inData->R1.block_size_w);
         }
         for(i=0;i<(MAXPDIST+1+MAX_LOOKAHEAD);i++)
-            videoIn->logic[i].repeatedFrame    =    FALSE;
+            videoIn->logic[i].repeatedFrame    =    false;
     }
     videoIn->bufferH                =   (Ipp8u*) NgvMalloc(sizeof(Ipp8u) * (inData->R1.width >> 1) * inData->R1.height);
     videoIn->bufferQ                =   (Ipp8u*) NgvMalloc(sizeof(Ipp8u) * (inData->R1.width >> 2) * inData->R1.height);
@@ -4373,12 +4373,12 @@ NGV_Bool VidSampleFree(void *vt, VidSample *videoIn)
     }
     t->dealloc_pdist = 0;
 
-    return FALSE;
+    return false;
 }
 
 
 NGV_Bool PdYuvFileReader_Free(VidRead *videoIn)    {
-    NGV_Bool    failed                    =    FALSE;
+    NGV_Bool    failed                    =    false;
     Ipp32u        i;
 
     /*Half Pixel Accuracy variables*/
@@ -4418,7 +4418,7 @@ Ipp32u        logBase2aligned(Ipp32u number)
 
 NGV_Bool    PdYuvImage_Alloc(YUV *pImage, Ipp32u dimVideoExtended)
 {
-    NGV_Bool    failed                    =    FALSE;
+    NGV_Bool    failed                    =    false;
     Ipp32u        dimAligned;
 
     pImage->U                        =    NULL;
@@ -4428,7 +4428,7 @@ NGV_Bool    PdYuvImage_Alloc(YUV *pImage, Ipp32u dimVideoExtended)
     //if(!pImage->Y)
     pImage->Y                    =    (Ipp8u*) NgvMalloc_aligned(dimAligned,16);    
     if(!pImage->Y)
-        failed                        =    TRUE;
+        failed                        =    true;
     if(!failed)
         memset(pImage->Y, 0, dimVideoExtended);
     return failed;
@@ -4436,7 +4436,7 @@ NGV_Bool    PdYuvImage_Alloc(YUV *pImage, Ipp32u dimVideoExtended)
 
 NGV_Bool    PdYuvImage_Alloc2(YUV *pImage, Ipp32u dimVideoExtended, Ipp32u dimColorExtended)
 {
-    NGV_Bool    failed                    =    FALSE;
+    NGV_Bool    failed                    =    false;
     Ipp32u        dimAligned;
 
     //dimAligned                        =    logBase2aligned(dimVideoExtended);
@@ -4444,7 +4444,7 @@ NGV_Bool    PdYuvImage_Alloc2(YUV *pImage, Ipp32u dimVideoExtended, Ipp32u dimCo
     if(!pImage->Y)
         pImage->Y                    =    (Ipp8u*) NgvMalloc_aligned(dimAligned,16);    
     if(!pImage->Y)
-        failed                        =    TRUE;
+        failed                        =    true;
     if(!failed)
         memset(pImage->Y, 0, dimVideoExtended);
 
@@ -4455,7 +4455,7 @@ NGV_Bool    PdYuvImage_Alloc2(YUV *pImage, Ipp32u dimVideoExtended, Ipp32u dimCo
         pImage->V                    =    (Ipp8u*) NgvMalloc_aligned(dimAligned,16);
     }
     if(!pImage->U || !pImage->V)
-        failed                        =    TRUE;
+        failed                        =    true;
     if(!failed)                        {
         memset(pImage->U, 128, dimColorExtended);
         memset(pImage->V, 128, dimColorExtended);
@@ -4488,11 +4488,11 @@ Ipp32u        numFrames(Ipp32u EndPos, Ipp32u YUVframeSize)        {
 }
 
 NGV_Bool    PdYuvFileWriter_Open(DataWriter *videoOut, const char *fileName)    {
-    NGV_Bool    failed                    =    FALSE;
+    NGV_Bool    failed                    =    false;
     int        newSize; 
 
     if(!fileName) {
-        failed                        =    TRUE;
+        failed                        =    true;
         return failed;
     }
 
@@ -4500,14 +4500,14 @@ NGV_Bool    PdYuvFileWriter_Open(DataWriter *videoOut, const char *fileName)    
     //AYA - disabled
     //videoOut->filename                =    NgvMalloc(newSize);
     if(!videoOut->filename) {
-        failed                        =    TRUE;
+        failed                        =    true;
         return failed;
     }
     strcpy_s(videoOut->filename, newSize, fileName); /* Flawfinder: ignore */
 
     fopen_s(&videoOut->pDataOut, videoOut->filename, "wb+");
     if(!videoOut->pDataOut) {
-        failed                        =    TRUE;
+        failed                        =    true;
         return failed;
     }
 
@@ -4515,11 +4515,11 @@ NGV_Bool    PdYuvFileWriter_Open(DataWriter *videoOut, const char *fileName)    
 }
 
 NGV_Bool    MvFileWriter_Open(DataWriter *mvOut, const char *fileName)    {
-    NGV_Bool    failed                    =    FALSE;
+    NGV_Bool    failed                    =    false;
     int        newSize;
 
     if(!fileName) {
-        failed                        =    TRUE;
+        failed                        =    true;
         return failed;
     }
 
@@ -4527,14 +4527,14 @@ NGV_Bool    MvFileWriter_Open(DataWriter *mvOut, const char *fileName)    {
     // aya - disabled
     //mvOut->filename                    =    NgvMalloc(newSize);
     if(!mvOut->filename) {
-        failed                        =    TRUE;
+        failed                        =    true;
         return failed;
     }
     strcpy_s(mvOut->filename, newSize, fileName); /* Flawfinder: ignore */
 
     fopen_s(&mvOut->pDataOut, mvOut->filename, "w+");
     if(!mvOut->pDataOut) {
-        failed = TRUE;
+        failed = true;
         return failed;
     }
 
@@ -4560,10 +4560,10 @@ void    MvFileWriter_Close(DataWriter *mvOut)    {
 * \param height     [IN] -  stride
 * \param height     [OUT] - YImage
 * 
-* \return TRUE or FALSE
+* \return true or false
 */
 NGV_Bool    WriteImageYOnly(DataWriter *videoOut, Ipp32u initPoint, Ipp32u width, Ipp32u height, Ipp32u stride, Ipp8u *YImage)        {
-    NGV_Bool    failed                    =    FALSE;    
+    NGV_Bool    failed                    =    false;    
     Ipp32u        i;
     Ipp8u        *ss;
     Ipp8u        *color                    =    NULL;
@@ -4575,7 +4575,7 @@ NGV_Bool    WriteImageYOnly(DataWriter *videoOut, Ipp32u initPoint, Ipp32u width
     {
         VM_ASSERT(0);
         NgvPrintf("Error WriteImageYOnly: at line number %d in file %s\n", __LINE__, __FILE__);
-        return TRUE;
+        return true;
     }
     memset(color,128,width/2);
 
@@ -4584,14 +4584,14 @@ NGV_Bool    WriteImageYOnly(DataWriter *videoOut, Ipp32u initPoint, Ipp32u width
     for(i=0;i<height;i++)    {
         if(fwrite(ss, width, 1, videoOut->pDataOut) != 1)
         {
-            failed = TRUE;
+            failed = true;
         }
         ss                            +=    stride;
     }
     for(i=0;i<height;i++)    {
         if(fwrite(color, width/2, 1, videoOut->pDataOut) != 1)
         {
-            failed = TRUE;
+            failed = true;
         }
     }
 
