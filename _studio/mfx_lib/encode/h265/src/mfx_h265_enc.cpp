@@ -279,9 +279,11 @@ mfxStatus H265Encoder::InitH265VideoParam(const mfxVideoParam *param, const mfxE
 
     pars->preEncMode = 0;
 #if defined(MFX_ENABLE_H265_PAQ)
-    pars->preEncMode = optsHevc->DQP;
-    //pars->preEncMode = 1;//enabled
+    // support for 64x64 && BPyramid && RefDist==8 (aka tu1 & tu2)
+    if( pars->BPyramid && (8 == pars->GopRefDist) && (6 == pars->Log2MaxCUSize) )
+        pars->preEncMode = optsHevc->DQP;
 #endif
+
     pars->cmIntraThreshold = optsHevc->CmIntraThreshold;
     pars->tuSplitIntra = optsHevc->TUSplitIntra;
     pars->cuSplit = optsHevc->CUSplit;
