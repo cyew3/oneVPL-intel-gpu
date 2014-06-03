@@ -155,31 +155,23 @@ void RDOQuant<PixType>::EstimateLastXYBits(
     CabacBits* pBits,
     Ipp32s width)
 {
-    Ipp32s height = width;
     Ipp32s bits_x = 0, bits_y = 0;
 
-    Ipp32s blk_size_offset_x = (h265_log2m2[ width ] *3 + ((h265_log2m2[ width ] +1)>>2));
-    Ipp32s blk_size_offset_y = (h265_log2m2[ height ]*3 + ((h265_log2m2[ height ]+1)>>2));
-    Ipp32s shift_x = ((h265_log2m2[ width  ]+3)>>2);
-    Ipp32s shift_y = ((h265_log2m2[ height ]+3)>>2);
+    Ipp32s blk_size_offset = (h265_log2m2[ width ]*3 + ((h265_log2m2[ width ]+1)>>2));
+    Ipp32s shift = ((h265_log2m2[ width ]+3)>>2);
 
     Ipp32u ctx_inc, ctx_offset;
-    CABAC_CONTEXT_H265 *ctx_base = CTX(m_bs,LAST_X_HEVC);
+    CABAC_CONTEXT_H265 *ctx_base_x = CTX(m_bs,LAST_X_HEVC);
+    CABAC_CONTEXT_H265 *ctx_base_y = CTX(m_bs,LAST_Y_HEVC);
     for (ctx_inc = 0; ctx_inc < h265_group_idx[ width - 1 ]; ctx_inc++)
     {
-        ctx_offset = blk_size_offset_x + (ctx_inc >> shift_x);
-        pBits->lastXBits[ ctx_inc ] = bits_x +  GetEntropyBits(ctx_base + ctx_offset, 0);
-        bits_x +=  GetEntropyBits(ctx_base + ctx_offset, 1);
+        ctx_offset = blk_size_offset + (ctx_inc >> shift);
+        pBits->lastXBits[ ctx_inc ] = bits_x + GetEntropyBits(ctx_base_x + ctx_offset, 0);
+        bits_x += GetEntropyBits(ctx_base_x + ctx_offset, 1);
+        pBits->lastYBits[ ctx_inc ] = bits_y + GetEntropyBits(ctx_base_y + ctx_offset, 0);
+        bits_y += GetEntropyBits(ctx_base_y + ctx_offset, 1);
     }
     pBits->lastXBits[ctx_inc] = bits_x;
-
-    ctx_base = CTX(m_bs,LAST_Y_HEVC);
-    for (ctx_inc = 0; ctx_inc < h265_group_idx[ height - 1 ]; ctx_inc++)
-    {
-        ctx_offset = blk_size_offset_y + (ctx_inc >> shift_y);
-        pBits->lastYBits[ ctx_inc ] = bits_y + GetEntropyBits(ctx_base + ctx_offset, 0);
-        bits_y += GetEntropyBits(ctx_base + ctx_offset, 1);
-    }
     pBits->lastYBits[ctx_inc] = bits_y;
 
     return;
@@ -189,10 +181,8 @@ void RDOQuant<PixType>::EstimateLastXYBits(
 template <typename PixType>
 void RDOQuant<PixType>::EstimateCabacBits(Ipp32s log2_tr_size )
 {
-    memset(&m_cabacBits, 0, sizeof(CabacBits));
-
-    Ipp32u ctx_inc = 0;
-    CABAC_CONTEXT_H265* ctx_base = NULL;
+    Ipp32u ctx_inc;
+    CABAC_CONTEXT_H265* ctx_base;
 
     ctx_base = CTX(m_bs,QT_CBF_HEVC);
     for( ctx_inc = 0; ctx_inc < NUM_QT_CBF_CTX; ctx_inc++ )

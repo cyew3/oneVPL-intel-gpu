@@ -12,6 +12,10 @@ void ext_buf(tsExtBufType<mfxVideoParam>& par, mfxU32 id, mfxU32 size)
 {
     par.AddExtBuffer(id, size); 
 }
+void del_buf(tsExtBufType<mfxVideoParam>& par, mfxU32 id, mfxU32 /*size*/)
+{
+    par.RemoveExtBuffer(id); 
+}
 
 class TestSuite : tsVideoVPP
 {
@@ -199,6 +203,7 @@ const TestSuite::tc_struct TestSuite::test_case[] =
     {/*63*/  MFX_ERR_NONE,                0, 1, SET_ALLOCATOR|ALLOC_MIN, {}, {ext_buf, EXT_BUF_PAR(mfxExtCamColorCorrection3x3   )}},
     {/*64*/  MFX_ERR_NONE,                0, 1, SET_ALLOCATOR|ALLOC_MIN, {}, {ext_buf, EXT_BUF_PAR(mfxExtCamPadding              )}},
     {/*65*/  MFX_ERR_NONE,                0, 1, SET_ALLOCATOR|ALLOC_MIN, {}, {ext_buf, EXT_BUF_PAR(mfxExtCamPipeControl          )}},
+    {/*66*/  MFX_ERR_INVALID_VIDEO_PARAM, 0, 1, SET_ALLOCATOR|ALLOC_MIN, {}, {del_buf, EXT_BUF_PAR(mfxExtCamPipeControl          )}},
 
 };
 

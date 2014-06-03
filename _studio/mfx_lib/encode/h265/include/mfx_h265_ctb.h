@@ -320,7 +320,7 @@ public:
 
     Ipp32u GetCtxInterDir(Ipp32u absPartIdx);
 
-    Ipp32u GetCoefScanIdx(Ipp32u absPartIdx, Ipp32u log2Width, Ipp32s bIsLuma, Ipp32s bIsIntra);
+    Ipp32u GetCoefScanIdx(Ipp32u absPartIdx, Ipp32u log2Width, Ipp32s bIsLuma, Ipp32s bIsIntra) const;
 
     template <class H265Bs>
     void CodeCoeffNxN(H265Bs *bs, H265CU *pCU, CoeffsType *coeffs, Ipp32u absPartIdx, Ipp32u width, EnumTextType type);

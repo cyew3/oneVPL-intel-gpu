@@ -45,6 +45,7 @@ private:
         , ALLOCATOR = 1 << 5
         , EXT_BUF   = 1 << 6
         , NULLPTR   = 1 << 7
+        , NOCAMCTRL = 1 << 7
     };
 
     enum STREAM
@@ -62,7 +63,7 @@ private:
             if(stage != (c.type & STAGE))
                 continue;
 
-            switch(c.type & ~STAGE)
+            switch(c.type & ~STAGE & ~NOCAMCTRL)
             {
             case SESSION   : base = (void**)&m_session;      break;
             case MFXVPAR   : base = (void**)&m_pPar;         break;
@@ -114,7 +115,7 @@ const TestSuite::tc_struct TestSuite::test_case[] =
     {/* 5*/ MFX_ERR_INVALID_VIDEO_PARAM,      0, {RESET|MFXVPAR, &tsStruct::mfxVideoParam.IOPattern, {MFX_IOPATTERN_OUT_VIDEO_MEMORY|MFX_IOPATTERN_OUT_VIDEO_MEMORY}}},
     {/* 6*/ MFX_ERR_INVALID_HANDLE,           0, {RESET|SESSION}},
     {/* 7*/ MFX_ERR_NOT_INITIALIZED,          0, {RESET|CLOSE_VPP}},
-    {/* 8*/ MFX_ERR_NOT_INITIALIZED,          0, {RESET|NULLPTR}},
+    {/* 8*/ MFX_ERR_NULL_PTR,                 0, {RESET|NULLPTR}},
     {/* 9*/ MFX_ERR_INVALID_VIDEO_PARAM,      0, {RESET|MFXVPAR, &tsStruct::mfxVideoParam.vpp.In.ChromaFormat, {MFX_CHROMAFORMAT_MONOCHROME}}},
     {/*10*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, 0, {RESET|MFXVPAR, &tsStruct::mfxVideoParam.vpp.In.Width, {720 + 32}}},
     {/*11*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, 0, {RESET|MFXVPAR, &tsStruct::mfxVideoParam.vpp.In.Height, {480 + 32}}},
@@ -262,7 +263,8 @@ const TestSuite::tc_struct TestSuite::test_case[] =
            {RESET|MFXVPAR, &tsStruct::mfxVideoParam.vpp.In.Width,   {2048}},
            {RESET|MFXVPAR, &tsStruct::mfxVideoParam.vpp.In.Height,  {2048}}  }
     },
-    {/*58*/ MFX_ERR_NONE, PROCESS_TRASH}, //more cases with actual file processing are TBD
+    {/*58*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, {RESET|NOCAMCTRL, 0,  0} }, //mfxExtCamPipeControl buffer is mandatory
+    {/*59*/ MFX_ERR_NONE, PROCESS_TRASH}, //more cases with actual file processing are TBD
 };
 
 const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case)/sizeof(TestSuite::tc_struct);
@@ -284,6 +286,16 @@ int TestSuite::RunTest(unsigned int id)
     Init();
     GetVideoParam();
 
+    //remove all buffers after Init and return required filter
+    //Component should not relay on provided buffer
+    mfxU32 tmpNumExtPar = m_par.NumExtParam;
+    for(mfxU32 i = 0; i < tmpNumExtPar; ++i)
+        m_par.RemoveExtBuffer(m_par.ExtParam[0]->BufferId);
+    m_par.NumExtParam = 0;
+    m_par.RefreshBuffers();
+    if( !((tc.ctrl[0].type & RESET) && (tc.ctrl[0].type & NOCAMCTRL)) )
+        mfxExtCamPipeControl& cam_ctrl = m_par;
+
     if(tc.stream_id)
     {
         {   //Workaround for buggy QueryIOSurf
@@ -295,14 +307,6 @@ int TestSuite::RunTest(unsigned int id)
         }
         ProcessFrames(2);
     }
-
-    //remove all buffers after Init and return required filter
-    mfxU32 tmpNumExtPar = m_par.NumExtParam;
-    for(mfxU32 i = 0; i < tmpNumExtPar; ++i)
-        m_par.RemoveExtBuffer(m_par.ExtParam[0]->BufferId);
-    m_par.NumExtParam = 0;
-    m_par.RefreshBuffers();
-    mfxExtCamPipeControl& cam_ctrl = m_par;
 
     apply_par(tc, RESET);
 

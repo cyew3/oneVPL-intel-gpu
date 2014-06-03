@@ -644,63 +644,56 @@ void H265CU<PixType>::CodeCoeffNxN(H265Bs *bs, H265CU<PixType>* pCU, CoeffsType*
 
     const Ipp16u *scan = h265_sig_last_scan[scan_idx - 1][log2_block_size - 1];
 
-    bool valid_flag;
-    if (pCU->m_data[abs_part_idx].flags.transquantBypassFlag)
-    {
-        valid_flag = false;
-    }
-    else
-    {
-        valid_flag = pps->sign_data_hiding_enabled_flag > 0;
-    }
+    Ipp32u sig_coeff_group_flag[MLS_GRP_NUM];
+    const Ipp32u shift = MLS_CG_SIZE >> 1;
+    const Ipp32u num_blk_side = width >> shift;
+    const Ipp32u log2_num_blk_side = log2_block_size - shift;
+    const Ipp32u mask_num_blk_side_x = num_blk_side - 1;
+    const Ipp32u mask_num_blk_side_y = mask_num_blk_side_x << log2_num_blk_side;
+    memset(sig_coeff_group_flag, 0, sizeof(Ipp32u) << (log2_num_blk_side * 2));
 
     // Find position of last coefficient
     Ipp32s scan_pos_last = -1;
     Ipp32s pos_last;
 
-    const Ipp16u *scanCG;
-    scanCG = h265_sig_last_scan[scan_idx - 1][log2_block_size > 3 ? log2_block_size-2-1 : 0];
-    if (log2_block_size == 3)
-    {
-        scanCG = h265_sig_last_scan_8x8[ scan_idx ];
-    }
-    else if (log2_block_size == 5)
-    {
-        scanCG = h265_sig_scan_CG32x32;
-    }
-
-    Ipp32u sig_coeff_group_flag[MLS_GRP_NUM];
-    static const Ipp32u shift = MLS_CG_SIZE >> 1;
-    const Ipp32u num_blk_side = width >> shift;
-
-    memset(sig_coeff_group_flag, 0, sizeof(Ipp32u) * MLS_GRP_NUM);
-
-    do
+    for(;;)
     {
         pos_last = scan[ ++scan_pos_last ];
 
-        // get L1 sig map
-        Ipp32u pos_y    = pos_last >> log2_block_size;
-        Ipp32u pos_x    = pos_last - ( pos_y << log2_block_size );
-        Ipp32u blk_idx  = num_blk_side * (pos_y >> shift) + (pos_x >> shift);
         if (coeffs[pos_last])
         {
+            // get L1 sig map
+            Ipp32u blk_idx  = ((pos_last >> 2*shift) & mask_num_blk_side_y) + ((pos_last >> shift) & mask_num_blk_side_x);
             sig_coeff_group_flag[blk_idx] = 1;
+            num_sig --;
+            if (!num_sig)
+                break;
         }
-
-        num_sig -= (coeffs[ pos_last ] != 0);
     }
-    while (num_sig > 0);
 
     // Code position of last coefficient
     Ipp32s pos_last_y = pos_last >> log2_block_size;
-    Ipp32s pos_last_x = pos_last - (pos_last_y << log2_block_size);
+    Ipp32s pos_last_x = pos_last & (width - 1);
     h265_code_last_significant_xy(bs, pos_last_x, pos_last_y, width, type, scan_idx);
 
     //===== code significance flag =====
     CABAC_CONTEXT_H265 * const baseCoeffGroupCtx = CTX(bs,SIG_COEFF_GROUP_FLAG_HEVC) + 2 * type;
     CABAC_CONTEXT_H265 * const baseCtx = (type==TEXT_LUMA) ?
         CTX(bs,SIG_FLAG_HEVC) : CTX(bs,SIG_FLAG_HEVC) + NUM_SIG_FLAG_CTX_LUMA;
+
+    const Ipp16u *scanCG;
+    if (log2_block_size == 3)
+        scanCG = h265_sig_last_scan_8x8[ scan_idx ];
+    else if (log2_block_size == 5)
+        scanCG = h265_sig_scan_CG32x32;
+    else
+        scanCG = h265_sig_last_scan[scan_idx - 1][log2_block_size > 3 ? log2_block_size-2-1 : 0];
+
+    bool valid_flag;
+    if (pCU->m_data[abs_part_idx].flags.transquantBypassFlag)
+        valid_flag = false;
+    else
+        valid_flag = pps->sign_data_hiding_enabled_flag > 0;
 
     const Ipp32s  last_scan_set = scan_pos_last >> LOG2_SCAN_SET_SIZE;
     Ipp32u c1 = 1;
@@ -729,33 +722,32 @@ void H265CU<PixType>::CodeCoeffNxN(H265Bs *bs, H265CU<PixType>* pCU, CoeffsType*
 
         // encode significant_coeffgroup_flag
         Ipp32s CG_blk_pos = scanCG[ subset ];
-        Ipp32s CG_pos_y   = CG_blk_pos / num_blk_side;
-        Ipp32s CG_pos_x   = CG_blk_pos - (CG_pos_y * num_blk_side);
+        Ipp32s CG_pos_y   = CG_blk_pos >> log2_num_blk_side;
+        Ipp32s CG_pos_x   = CG_blk_pos & (num_blk_side - 1);
         if (subset == last_scan_set || subset == 0)
         {
             sig_coeff_group_flag[ CG_blk_pos ] = 1;
         }
         else
         {
-            Ipp32u sig_coeff_group = (sig_coeff_group_flag[ CG_blk_pos ] != 0);
             Ipp32u ctx_sig  = h265_quant_getSigCoeffGroupCtxInc(sig_coeff_group_flag, CG_pos_x, CG_pos_y, scan_idx, width);
-            bs->EncodeSingleBin_CABAC(baseCoeffGroupCtx + ctx_sig, sig_coeff_group);
+            bs->EncodeSingleBin_CABAC(baseCoeffGroupCtx + ctx_sig, sig_coeff_group_flag[ CG_blk_pos ]);
         }
 
         // encode significant_coeff_flag
         if (sig_coeff_group_flag[ CG_blk_pos ])
         {
             Ipp32s pattern_sig_ctx = h265_quant_calcpattern_sig_ctx( sig_coeff_group_flag, CG_pos_x, CG_pos_y, width );
-            Ipp32u blk_pos, pos_y, pos_x, sig, ctx_sig;
             for (; scan_pos_sig >= sub_pos; scan_pos_sig--)
             {
+                Ipp32u blk_pos, sig;
                 blk_pos  = scan[ scan_pos_sig ];
-                pos_y    = blk_pos >> log2_block_size;
-                pos_x    = blk_pos - (pos_y << log2_block_size);
                 sig     = (coeffs[blk_pos] != 0);
                 if (scan_pos_sig > sub_pos || subset == 0 || num_nonzero)
                 {
-                    ctx_sig  = h265_quant_getSigCtxInc( pattern_sig_ctx, scan_idx, pos_x, pos_y, block_type, type );
+                    Ipp32u pos_y = blk_pos >> log2_block_size;
+                    Ipp32u pos_x = blk_pos & (width - 1);
+                    Ipp32u ctx_sig = h265_quant_getSigCtxInc( pattern_sig_ctx, scan_idx, pos_x, pos_y, block_type, type );
                     bs->EncodeSingleBin_CABAC(baseCtx + ctx_sig, sig);
                 }
                 if (sig)
