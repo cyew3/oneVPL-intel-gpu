@@ -193,7 +193,10 @@ void TQPMap::destroy()
 #define INPUT_IMAGE_QUEUE_SIZE MAXPDIST*(REFMOD_MAX+1)+1
 
 
-void WriteQpMap(RFrame *inFrame, TQPMap *pcQPMap) {
+void WriteQpMap(RFrame *inFrame, TQPMap *pcQPMap) 
+{
+    //memset( pcQPMap->m_aiQPLevel, 0, sizeof(int)*( pcQPMap->m_uiNumPartInWidth * pcQPMap->m_uiNumPartInHeight ) );
+
     int heightInTiles = inFrame->heightInTiles;
     int widthInTiles = inFrame->widthInTiles;
     int row, col;
@@ -328,10 +331,7 @@ void destroy_frames_in_list(RFrameVector *list)
 //*********************************************************
 bool TVideoPreanalyzer::preAnalyzeOne(TQPMap *acQPMap)
 {
-
-    //-----------------------------------------------------
     NGV_Bool        failed                = FALSE;
-    //NGV_Bool        firstFrame            = TRUE;
     NGV_Bool        keyFrame            = FALSE;
     NGV_Bool        lastFrame            = FALSE;
 
@@ -339,19 +339,14 @@ bool TVideoPreanalyzer::preAnalyzeOne(TQPMap *acQPMap)
     YuvImage            inputImage;
     RFrame *pInputFrame, *pCodeThisFrame;
 
-    int width, height;//,  corrected_height;
-    //int corrected_width;
+    int width, height;
     int& i= m_frameNumber;
     int& uLatency= m_uLatency;
-    // starting time
-//    double dResult;
-//    long lBefore;
 
     width = m_iWidth;
     height = m_iHeight;
-    
+   
     NGV_PDist& np = *m_np;
-//    int tmp_flag = 0;
     
     if(m_inputSurface)
     {
@@ -416,9 +411,9 @@ bool TVideoPreanalyzer::preAnalyzeOne(TQPMap *acQPMap)
                 NGV_PDME_Frame(&np, pCodeThisFrame, pInputFrame, pCodeThisFrame->FDSAD, pCodeThisFrame->FMV);
                 // IPic QP Map
                 IPicDetermineQpMap(&np, pCodeThisFrame);
-                WriteQpMap(pCodeThisFrame, &acQPMap[pCodeThisFrame->TR]);
+                WriteQpMap(pCodeThisFrame, &acQPMap[pCodeThisFrame->TR % m_histLength]);
 
-                double dqp_orig = acQPMap[pCodeThisFrame->TR].getAvgQP();
+                double dqp_orig = acQPMap[pCodeThisFrame->TR % m_histLength].getAvgQP();
                 int dqp = (int)floor (dqp_orig + 0.5);
                 if(dqpFile)
                 {
@@ -434,9 +429,9 @@ bool TVideoPreanalyzer::preAnalyzeOne(TQPMap *acQPMap)
                 NGV_PDME_Frame(&np, pCodeThisFrame, pInputFrame, pCodeThisFrame->FDSAD, pCodeThisFrame->FMV);
                 // PPic QP Map
                 PPicDetermineQpMap(&np, pCodeThisFrame, past_frame);
-                WriteQpMap(pCodeThisFrame, &acQPMap[pCodeThisFrame->TR]);
+                WriteQpMap(pCodeThisFrame, &acQPMap[pCodeThisFrame->TR % m_histLength]);
 
-                double dqp_orig = acQPMap[pCodeThisFrame->TR].getAvgQP();
+                double dqp_orig = acQPMap[pCodeThisFrame->TR % m_histLength].getAvgQP();
                 int dqp = (int)floor (dqp_orig + 0.5);
                 if(dqpFile)
                 {
@@ -463,8 +458,8 @@ bool TVideoPreanalyzer::preAnalyzeOne(TQPMap *acQPMap)
                     pFrame=pCodeThisFrame;
                     gop_size = 0;
                     while(past_frame!=pFrame) {
-                        acQPMap[pFrame->TR].setAvgGopSADpp(avgTSC);
-                        acQPMap[pFrame->TR].setAvgGopSCpp(avgsqrSCpp);
+                        acQPMap[pFrame->TR % m_histLength].setAvgGopSADpp(avgTSC);
+                        acQPMap[pFrame->TR % m_histLength].setAvgGopSCpp(avgsqrSCpp);
                         pFrame = pFrame->past_frame;
                         gop_size++;
                     }
@@ -475,6 +470,7 @@ bool TVideoPreanalyzer::preAnalyzeOne(TQPMap *acQPMap)
                 //printf("\n fake processing??? \n");fflush(stderr);
                 memset(pCodeThisFrame->qp_mask, 0, sizeof(int)*pCodeThisFrame->widthInTiles*pCodeThisFrame->heightInTiles);
                 memset(pCodeThisFrame->sc_mask, 0, sizeof(int)*pCodeThisFrame->widthInTiles*pCodeThisFrame->heightInTiles);
+                memset( acQPMap[pCodeThisFrame->TR % m_histLength].m_aiQPLevel, 0, sizeof(int)*( acQPMap[pCodeThisFrame->TR % m_histLength].m_uiNumPartInWidth * acQPMap[pCodeThisFrame->TR % m_histLength].m_uiNumPartInHeight ) );
             }
 
             //if(global_log_level>0 && pCodeThisFrame->ePicType!=RV_FPIC) VisualizeAllBlks(&viz, pCodeThisFrame);
@@ -534,10 +530,10 @@ bool TVideoPreanalyzer::preAnalyzeOne(TQPMap *acQPMap)
                 {
                     //LogMessage(generic_debug, LOG_LVL_ALWAYS, "Generating I Qp Map TR %d", pCodeThisFrame->TR);
                     IPicDetermineQpMap(m_np, pCodeThisFrame);
-                    WriteQpMap(pCodeThisFrame, &acQPMap[pCodeThisFrame->TR]);
+                    WriteQpMap(pCodeThisFrame, &acQPMap[pCodeThisFrame->TR % m_histLength]);
 
                     // aya=====================================================
-                    double dqp_orig = acQPMap[pCodeThisFrame->TR].getAvgQP();
+                    double dqp_orig = acQPMap[pCodeThisFrame->TR % m_histLength].getAvgQP();
                     int dqp = (int)floor (dqp_orig + 0.5);
                     if(dqpFile)
                     {
@@ -566,10 +562,10 @@ bool TVideoPreanalyzer::preAnalyzeOne(TQPMap *acQPMap)
                 {
                     //LogMessage(generic_debug, LOG_LVL_ALWAYS, "Generating P Qp Map TR %d", pCodeThisFrame->TR);
                     PPicDetermineQpMap(m_np, pCodeThisFrame, past_frame);
-                    WriteQpMap(pCodeThisFrame, &acQPMap[pCodeThisFrame->TR]);
+                    WriteQpMap(pCodeThisFrame, &acQPMap[pCodeThisFrame->TR % m_histLength]);
 
                     // aya=====================================================
-                    double dqp_orig = acQPMap[pCodeThisFrame->TR].getAvgQP();
+                    double dqp_orig = acQPMap[pCodeThisFrame->TR % m_histLength ].getAvgQP();
                     int dqp = (int)floor (dqp_orig + 0.5);
                     if(dqpFile)
                     {
@@ -603,14 +599,15 @@ bool TVideoPreanalyzer::preAnalyzeOne(TQPMap *acQPMap)
                     pFrame=pCodeThisFrame;
                     gop_size = 0;
                     while(past_frame!=pFrame) {
-                        acQPMap[pFrame->TR].setAvgGopSADpp(avgTSC);
-                        acQPMap[pFrame->TR].setAvgGopSCpp(avgsqrSCpp);
+                        acQPMap[pFrame->TR % m_histLength].setAvgGopSADpp(avgTSC);
+                        acQPMap[pFrame->TR % m_histLength].setAvgGopSCpp(avgsqrSCpp);
                         pFrame = pFrame->past_frame;
                         gop_size++;
                     }
                 }
             } else {
                 memset(pCodeThisFrame->qp_mask, 0, sizeof(int)*pCodeThisFrame->widthInTiles*pCodeThisFrame->heightInTiles);
+                memset( acQPMap[pCodeThisFrame->TR % m_histLength].m_aiQPLevel, 0, sizeof(int)*( acQPMap[pCodeThisFrame->TR % m_histLength].m_uiNumPartInWidth * acQPMap[pCodeThisFrame->TR % m_histLength].m_uiNumPartInHeight ) );
             }
            // if(global_log_level>0 && pCodeThisFrame->ePicType!=RV_FPIC) VisualizeAllBlks(&viz, pCodeThisFrame);
             pCodeThisFrame->coded = TRUE;
@@ -651,7 +648,9 @@ void TVideoPreanalyzer::open( Ipp8u* pchFile, Ipp32u width, Ipp32u height, int f
     m_iGOPSize      = iGOPSize;
     m_uiIntraPeriod  = uiIntraPeriod;
     m_uiSkipFrames  = 0;
+
     m_uiFramesToBeEncoded = framesToBeEncoded;
+    m_histLength = 4*(iGOPSize+1);
 
     m_np = NULL;
     m_np = new NGV_PDist;
@@ -690,9 +689,9 @@ void TVideoPreanalyzer::open( Ipp8u* pchFile, Ipp32u width, Ipp32u height, int f
     m_uLatency = 0;
     
     m_acQPMap = NULL;
-    m_acQPMap = new TQPMap[framesToBeEncoded];
+    m_acQPMap = new TQPMap[m_histLength];
 
-    for(Ipp32u iPoc=0; iPoc<framesToBeEncoded; iPoc++) 
+    for(Ipp32u iPoc=0; iPoc<m_histLength; iPoc++) 
     {
         m_acQPMap[iPoc].create(m_iWidth, m_iHeight, 64, 64);   // Only 64x64 supported for now
     }

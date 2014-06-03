@@ -854,11 +854,11 @@ namespace H265Enc {
     private:
         Ipp32u                   m_uiPartWidth;
         Ipp32u                   m_uiPartHeight;
-        Ipp32u                   m_uiNumPartInWidth;
-        Ipp32u                   m_uiNumPartInHeight;
+        //Ipp32u                   m_uiNumPartInWidth;
+        //Ipp32u                   m_uiNumPartInHeight;
         int                    m_iOffsetLow;
         int                    m_iOffsetHigh;
-        int*                   m_aiQPLevel;
+        //int*                   m_aiQPLevel;
         Ipp64f                 m_dAvgGopSADpp;
         Ipp64f                 m_dAvgGopSCpp;
         Ipp64f                 m_dAvgQP;
@@ -868,6 +868,10 @@ namespace H265Enc {
 
         void  create( int iWidth, int iHeight, Ipp32u uiPartWidth, Ipp32u uiPartHeight );
         void  destroy();
+
+        int*                   m_aiQPLevel;
+        Ipp32u                   m_uiNumPartInWidth;
+        Ipp32u                   m_uiNumPartInHeight;
 
         Ipp32u                   getPartWidth()        { return m_uiPartWidth;       }
         Ipp32u                   getPartHeight()       { return m_uiPartHeight;      }
@@ -936,7 +940,7 @@ namespace H265Enc {
         RFrameQueue  m_InputFrameQueue;
         RFrameVector *m_pInputFrameList;
         RFrameQueue  *m_pInputFrameQueue;
-        //Viz           m_viz;
+        
         int m_corrected_height;
         int m_corrected_width;
 
@@ -947,6 +951,8 @@ namespace H265Enc {
         TQPMap*   m_acQPMap;                                        ///< QP Offsets and array of QP Map values
         int m_frameNumber;
         NGV_Bool        m_firstFrame;
+
+        int m_histLength;
     };
 
     // ====================================================================================================================

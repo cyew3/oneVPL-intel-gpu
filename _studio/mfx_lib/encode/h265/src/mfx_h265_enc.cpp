@@ -2517,22 +2517,23 @@ recode:
         for(int ctb=0; ctb<numCtb; ctb++)
         {
             int ctb_adapt = ctb;
-            if(32 == m_videoParam.MaxCUSize)
-            {
+            if(32 == m_videoParam.MaxCUSize) {
                 int ctuX = ctb % m_videoParam.PicWidthInCtbs;
                 int ctuY = ctb / m_videoParam.PicWidthInCtbs;
 
                 ctb_adapt = (ctuX >> 1) + (ctuY >> 1)*(m_videoParam.PicWidthInCtbs >> 1);
             }
 
+            int locPoc = poc % m_preEnc.m_histLength;
             if(m_videoParam.preEncMode != 2) // no pure CALQ
             {
-                m_videoParam.m_lcuQps[ctb] += m_preEnc.m_acQPMap[poc].getDQP(ctb_adapt);
+                m_videoParam.m_lcuQps[ctb] += m_preEnc.m_acQPMap[locPoc].getDQP(ctb_adapt);
             }
-            frameDeltaQP += m_preEnc.m_acQPMap[poc].getDQP(ctb_adapt);
+            frameDeltaQP += m_preEnc.m_acQPMap[locPoc].getDQP(ctb_adapt);
         }
     }
 #endif
+
     for (Ipp8u curr_slice = 0; curr_slice < m_videoParam.NumSlices; curr_slice++) {
         H265Slice *slice = m_slices + curr_slice;
         SetSlice(slice, curr_slice);
@@ -2930,7 +2931,7 @@ mfxStatus H265Encoder::UpdateAllLambda(void)
         bool IsHiCplxGOP = false;
         bool IsMedCplxGOP = false;
         if ( 2 == m_videoParam.preEncMode ) {
-            TQPMap *pcQPMapPOC = &m_preEnc.m_acQPMap[m_pCurrentFrame->PicOrderCnt()];
+            TQPMap *pcQPMapPOC = &m_preEnc.m_acQPMap[m_pCurrentFrame->PicOrderCnt() % m_preEnc.m_histLength];
             double SADpp = pcQPMapPOC->getAvgGopSADpp();
             double SCpp  = pcQPMapPOC->getAvgGopSCpp();
             if(SCpp>2.0) {
