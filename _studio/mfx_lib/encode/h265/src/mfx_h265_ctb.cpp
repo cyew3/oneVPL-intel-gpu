@@ -369,7 +369,7 @@ void H265CU<PixType>::CheckDeltaQp(void)
 }
 
 template <typename PixType>
-Ipp32u H265CU<PixType>::GetCoefScanIdx(Ipp32u absPartIdx, Ipp32u log2Width, Ipp32s isLuma, Ipp32s isIntra)
+Ipp32u H265CU<PixType>::GetCoefScanIdx(Ipp32u absPartIdx, Ipp32u log2Width, Ipp32s isLuma, Ipp32s isIntra) const
 {
     Ipp32s ctxIdx;
     Ipp32u scanIdx;

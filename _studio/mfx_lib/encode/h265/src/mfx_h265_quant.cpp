@@ -111,11 +111,11 @@ Ipp32s h265_quant_calcpattern_sig_ctx( const Ipp32u* sig_coeff_group_flag, Ipp32
     width >>= 2;
     if( posXCG < width - 1 )
     {
-        sig_right = (sig_coeff_group_flag[ posYCG * width + posXCG + 1 ] != 0);
+        sig_right = sig_coeff_group_flag[ posYCG * width + posXCG + 1 ];
     }
     if (posYCG < width - 1 )
     {
-        sig_lower = (sig_coeff_group_flag[ (posYCG  + 1 ) * width + posXCG ] != 0);
+        sig_lower = sig_coeff_group_flag[ (posYCG  + 1 ) * width + posXCG ];
     }
     return sig_right + (sig_lower<<1);
 }
