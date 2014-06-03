@@ -74,6 +74,9 @@
     <ClCompile Include="src\test_refine_me_p_satd8x8_combine.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\genx_h265_cmcode_bdw.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\genx_h265_cmcode_isa.h">
@@ -86,6 +89,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\utility_genx.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\genx_h265_cmcode_bdw.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

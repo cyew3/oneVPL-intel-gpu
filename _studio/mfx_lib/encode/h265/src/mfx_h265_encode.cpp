@@ -964,7 +964,7 @@ mfxStatus MFXVideoENCODEH265::Init(mfxVideoParam* par_in)
     MFX_CHECK_STS_ALLOC(m_enc);
 
     m_enc->mfx_video_encode_h265_ptr = this;
-    sts =  m_enc->Init(&m_mfxVideoParam, &m_mfxHEVCOpts);
+    sts =  m_enc->Init(&m_mfxVideoParam, &m_mfxHEVCOpts, m_core);
     MFX_CHECK_STS(sts);
     m_enc->m_recon_dump_file_name = m_mfxDumpFiles.ReconFilename[0] ? m_mfxDumpFiles.ReconFilename : NULL;
 

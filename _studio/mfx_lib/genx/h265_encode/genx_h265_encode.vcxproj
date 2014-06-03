@@ -122,16 +122,19 @@
 SET ICLDIR=%25INSTALLDIR%25\compiler
 SET PATH=%25ICLDIR%25\bin%3b%25ICLDIR%25\lib%3b%25PATH%25
 SET INCLUDE=%25ICLDIR%25\include%3b%25ICLDIR%25\include\cm%3b%25INCLUDE%25
-SET CM_RT_PLATFORM=hsw
-icl /c /Qxcm /Qxcm_jit_target=gen7_5 .\src\genx_h265_cmcode.cpp /mCM_print_asm_count /Qxcm_nonstrict /mGLOB_override_limits
+icl /c /Qunroll1 /Qxcm /Qxcm_jit_target=gen7_5 .\src\genx_h265_cmcode.cpp /mGLOB_override_limits /mCM_print_asm_count
+icl /c /Qunroll1 /Qxcm /Qxcm_jit_target=gen8 .\src\genx_h265_cmcode_bdw.cpp /mGLOB_override_limits /mCM_print_asm_count
 cl .\src\embed_isa.c
 embed_isa genx_h265_cmcode.isa
+embed_isa genx_h265_cmcode_bdw.isa
 move genx_h265_cmcode.cpp .\src\genx_h265_cmcode_isa.cpp
 move genx_h265_cmcode.h .\include\genx_h265_cmcode_isa.h
+move genx_h265_cmcode_bdw.cpp .\src\genx_h265_cmcode_bdw_isa.cpp
+move genx_h265_cmcode_bdw.h .\include\genx_h265_cmcode_bdw_isa.h
 
 rem copy genx_h265_cmcode.isa ..\..\..\..\build\win_$(Platform)\bin
-copy %25INSTALLDIR%25\runtime\lib\x86\igfxcmrt32.dll ..\..\..\..\build\win_$(Platform)\bin
-copy %25INSTALLDIR%25\runtime\lib\x86\igfxcmjit32.dll ..\..\..\..\build\win_$(Platform)\bin
+rem copy %25INSTALLDIR%25\runtime\lib\x86\igfxcmrt32.dll ..\..\..\..\build\win_$(Platform)\bin
+rem copy %25INSTALLDIR%25\runtime\lib\x86\igfxcmjit32.dll ..\..\..\..\build\win_$(Platform)\bin
 </Command>
     </PreBuildEvent>
     <CustomBuildStep>
@@ -183,12 +186,15 @@ copy %25INSTALLDIR%25\runtime\lib\x86\igfxcmjit32.dll ..\..\..\..\build\win_$(Pl
 SET ICLDIR=%25INSTALLDIR%25\compiler
 SET PATH=%25ICLDIR%25\bin%3b%25ICLDIR%25\lib%3b%25PATH%25
 SET INCLUDE=%25ICLDIR%25\include%3b%25ICLDIR%25\include\cm%3b%25INCLUDE%25
-SET CM_RT_PLATFORM=hsw
 icl /c /Qunroll1 /Qxcm /Qxcm_jit_target=gen7_5 .\src\genx_h265_cmcode.cpp /mGLOB_override_limits /mCM_print_asm_count
+icl /c /Qunroll1 /Qxcm /Qxcm_jit_target=gen8 .\src\genx_h265_cmcode_bdw.cpp /mGLOB_override_limits /mCM_print_asm_count
 cl .\src\embed_isa.c
 embed_isa genx_h265_cmcode.isa
+embed_isa genx_h265_cmcode_bdw.isa
 move genx_h265_cmcode.cpp .\src\genx_h265_cmcode_isa.cpp
 move genx_h265_cmcode.h .\include\genx_h265_cmcode_isa.h
+move genx_h265_cmcode_bdw.cpp .\src\genx_h265_cmcode_bdw_isa.cpp
+move genx_h265_cmcode_bdw.h .\include\genx_h265_cmcode_bdw_isa.h
 
 rem copy genx_h265_cmcode.isa ..\..\..\..\build\win_$(Platform)\bin
 rem copy %25INSTALLDIR%25\runtime\lib\x86\igfxcmrt32.dll ..\..\..\..\build\win_$(Platform)\bin
@@ -197,10 +203,10 @@ rem copy %25INSTALLDIR%25\runtime\lib\x86\igfxcmjit32.dll ..\..\..\..\build\win_
     </PreBuildEvent>
     <CustomBuildStep>
       <Command />
-      <Outputs>genx_h265_cmcode.cpp;%(Outputs)</Outputs>
+      <Outputs>genx_h265_cmcode.cpp;genx_h265_cmcode_bdw.cpp;%(Outputs)</Outputs>
     </CustomBuildStep>
     <ClCompile>
-      <AdditionalIncludeDirectories>include;..\..\..\..\include;$(MEDIASDK_ROOT)/CMRT/compiler/include/cm;$(MEDIASDK_ROOT)/CMRT/runtime/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>include;..\..\..\..\include;$(MEDIASDK_ROOT)/CMRT/compiler/include/cm;$(MEDIASDK_ROOT)/CMRT/runtime/include;..\..\..\..\..\mdp_msdk-api\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;MFX_VA;ENABLE_CM;CM_GEN7_5;USE_HSW_VME;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>Async</ExceptionHandling>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
@@ -313,6 +319,10 @@ $(TargetPath)</Command>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClCompile>
+    <ClCompile Include="src\genx_h265_cmcode_bdw.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="src\genx_h265_cmcode_isa.cpp" />
     <ClCompile Include="src\test_analyze_gradient.cpp" />
     <ClCompile Include="src\test_analyze_gradient2.cpp" />
@@ -334,6 +344,7 @@ $(TargetPath)</Command>
     <ClCompile Include="src\test_refine_me_p_satd8x8_combine.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="include\genx_h265_cmcode_bdw.h" />
     <ClInclude Include="include\utility_genx.h" />
     <ClInclude Include="include\genx_h265_cmcode.h" />
     <ClInclude Include="include\genx_h265_cmcode_isa.h" />

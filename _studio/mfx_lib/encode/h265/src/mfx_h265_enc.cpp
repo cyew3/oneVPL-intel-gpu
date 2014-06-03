@@ -913,7 +913,7 @@ void H265Encoder::InitShortTermRefPicSet()
 extern FILE *fp_cu, *fp_tu;
 #endif
 
-mfxStatus H265Encoder::Init(const mfxVideoParam *param, const mfxExtCodingOptionHEVC *optsHevc)
+mfxStatus H265Encoder::Init(const mfxVideoParam *param, const mfxExtCodingOptionHEVC *optsHevc, VideoCORE *core)
 {
 #ifdef MFX_ENABLE_WATERMARK
     m_watermark = Watermark::CreateFromResource();
@@ -1150,7 +1150,7 @@ mfxStatus H265Encoder::Init(const mfxVideoParam *param, const mfxExtCodingOption
 #if defined (MFX_ENABLE_CM)
     if (m_videoParam.enableCmFlag) {
         Ipp8u nRef = m_videoParam.csps->sps_max_dec_pic_buffering[0] + 1;
-        AllocateCmResources(param->mfx.FrameInfo.Width, param->mfx.FrameInfo.Height, nRef);
+        AllocateCmResources(param->mfx.FrameInfo.Width, param->mfx.FrameInfo.Height, nRef, core);
     }
 #endif // MFX_ENABLE_CM
 

@@ -277,7 +277,7 @@ public:
     mfxStatus SetAllLambda(H265Slice *slice, int qp, int poc, bool isHiCmplxGop = false, bool isMidCmplxGop = false);
 
     void InitShortTermRefPicSet();
-    mfxStatus Init(const mfxVideoParam *param, const mfxExtCodingOptionHEVC *opts_hevc);
+    mfxStatus Init(const mfxVideoParam *param, const mfxExtCodingOptionHEVC *opts_hevc, VideoCORE *core);
 
     void Close();
     Ipp32u    DetermineFrameType();

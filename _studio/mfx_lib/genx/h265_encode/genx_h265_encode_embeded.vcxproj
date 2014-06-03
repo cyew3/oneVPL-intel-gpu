@@ -257,10 +257,12 @@ copy $(MEDIASDK_ROOT)\CMRT\compiler\lib\x86\libcm.dll $(OutDir)\bin
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
     </ClCompile>
+    <ClCompile Include="src\genx_h265_cmcode_bdw_isa.cpp" />
     <ClCompile Include="src\genx_h265_cmcode_isa.cpp" />
     <ClCompile Include="src\genx_h265_cmcode_stub.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="include\genx_h265_cmcode_bdw_isa.h" />
     <ClInclude Include="include\genx_h265_cmcode_isa.h" />
     <ClInclude Include="include\genx_h265_cmcode_proto.h" />
   </ItemGroup>

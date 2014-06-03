@@ -36,7 +36,7 @@ enum {
 
 Ipp32s GetPuSize(Ipp32s puw, Ipp32s puh);
 
-void AllocateCmResources(mfxU32 w, mfxU32 h, mfxU8 nRefs);
+void AllocateCmResources(mfxU32 w, mfxU32 h, mfxU8 nRefs, VideoCORE *core);
 
 void RunVmeCurr(H265VideoParam const &param, H265Frame *pFrameCur, H265Slice *pSliceCur, H265FrameList *pDpb);
 

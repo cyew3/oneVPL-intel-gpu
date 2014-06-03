@@ -25,6 +25,7 @@
 #include "mfx_h265_enc_cm.h"
 #include "genx_h265_cmcode_proto.h"
 #include "genx_h265_cmcode_isa.h"
+#include "genx_h265_cmcode_bdw_isa.h"
 
 namespace H265Enc {
 
@@ -39,7 +40,7 @@ template<class T> inline void Zero(T & obj)
     memset(&obj, 0, sizeof(obj));
 }
 
-const char   ME_PROGRAM_NAME[] = "genx_h265_cmcode.isa";
+//const char   ME_PROGRAM_NAME[] = "genx_h265_cmcode.isa";
 
 const mfxU32 SEARCHPATHSIZE    = 56;
 const mfxU32 BATCHBUFFER_END   = 0x5000000;
@@ -656,7 +657,7 @@ void H265RefMatchData::Update(H265FrameList *pDpb)
     }
 }
 
-void AllocateCmResources(mfxU32 w, mfxU32 h, mfxU8 nRefs)
+void AllocateCmResources(mfxU32 w, mfxU32 h, mfxU8 nRefs, VideoCORE *core)
 {
     if (cmResurcesAllocated)
         return;
@@ -673,7 +674,19 @@ void AllocateCmResources(mfxU32 w, mfxU32 h, mfxU8 nRefs)
     device = CreateCmDevicePtr(0);
     device->CreateQueue(queue);
 
-    program = ReadProgram(device, genx_h265_cmcode, sizeof(genx_h265_cmcode)/sizeof(genx_h265_cmcode[0]));
+    switch (core->GetHWType())
+    {
+    case MFX_HW_HSW:
+    case MFX_HW_HSW_ULT:
+        program = ReadProgram(device, genx_h265_cmcode, sizeof(genx_h265_cmcode)/sizeof(genx_h265_cmcode[0]));
+        break;
+    case MFX_HW_BDW:
+    case MFX_HW_CHV:
+        program = ReadProgram(device, genx_h265_cmcode_bdw, sizeof(genx_h265_cmcode_bdw)/sizeof(genx_h265_cmcode_bdw[0]));
+        break;
+    default:
+        throw CmRuntimeError();
+    }
 
     fwdRef = new CmSurface2D *[numBufferedRefs];
     fwdRef2x = new CmSurface2D *[numBufferedRefs];
