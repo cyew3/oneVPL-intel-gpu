@@ -719,6 +719,13 @@ mfxStatus CDecodingPipeline::CreateAllocator()
 
         m_bExternalAlloc = true;
 #endif
+
+    if (!m_pmfxAllocatorParams)
+    {
+        mfxAllocatorParams* allocatorParams = new mfxAllocatorParams;
+        MSDK_CHECK_POINTER(allocatorParams, MFX_ERR_MEMORY_ALLOC);
+        m_pmfxAllocatorParams = allocatorParams;
+
 #ifdef LIBVA_SUPPORT
         //in case of system memory allocator we also have to pass MFX_HANDLE_VA_DISPLAY to HW library
         mfxIMPL impl;
@@ -737,12 +744,6 @@ mfxStatus CDecodingPipeline::CreateAllocator()
             MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
         }
 #endif
-
-    if (!m_pmfxAllocatorParams)
-    {
-        mfxAllocatorParams* allocatorParams = new mfxAllocatorParams;
-        MSDK_CHECK_POINTER(allocatorParams, MFX_ERR_MEMORY_ALLOC);
-        m_pmfxAllocatorParams = allocatorParams;
     }
     // initialize general allocator
     sts = m_pGeneralAllocator->Init(m_pmfxAllocatorParams);

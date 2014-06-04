@@ -659,11 +659,11 @@ mfxStatus CDecodingPipeline::CreateAllocator()
             m_pMFXAllocator = new D3D11FrameAllocator;
             MSDK_CHECK_POINTER(m_pMFXAllocator, MFX_ERR_MEMORY_ALLOC);
 
-            D3D11AllocatorParams *pd3dAllocParams = new D3D11AllocatorParams;
-            MSDK_CHECK_POINTER(pd3dAllocParams, MFX_ERR_MEMORY_ALLOC);
-            pd3dAllocParams->pDevice = reinterpret_cast<ID3D11Device *>(hdl);
+            D3D11AllocatorParams *pd3d11AllocParams = new D3D11AllocatorParams;
+            MSDK_CHECK_POINTER(pd3d11AllocParams, MFX_ERR_MEMORY_ALLOC);
+            pd3d11AllocParams->pDevice = reinterpret_cast<ID3D11Device *>(hdl);
 
-            m_pmfxAllocatorParams = pd3dAllocParams;
+            m_pmfxAllocatorParams = pd3d11AllocParams;
         }
         else
 #endif // #if MFX_D3D11_SUPPORT
