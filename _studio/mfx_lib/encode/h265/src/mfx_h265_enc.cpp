@@ -1183,13 +1183,13 @@ void H265Encoder::Close() {
 #if defined(MFX_ENABLE_H265_PAQ)
     if (m_videoParam.preEncMode) {
         m_preEnc.close();
-    }
-    if(m_pAQP)
-    {
-        m_pAQP->destroy();
-        delete m_pAQP;
+        if(m_pAQP) {
+            m_pAQP->destroy();
+            delete m_pAQP;
+        }
     }
 #endif
+
     if (m_pReconstructFrame) {
         m_pReconstructFrame->Destroy();
         delete m_pReconstructFrame;
@@ -1936,11 +1936,8 @@ mfxStatus H265Encoder::EncodeThread(Ipp32s ithread) {
                 cu[ithread].m_ChromaDistWeight = curSlice->ChromaDistWeight_slice;
                 cu[ithread].m_rdLambdaInter = curSlice->rd_lambda_inter_slice;
                 cu[ithread].m_rdLambdaInterMv = curSlice->rd_lambda_inter_mv_slice;
-                if(m_videoParam.preEncMode > 1)
-                {
 
-                    
-
+                if(m_videoParam.preEncMode > 1) {
                     int calq = cu[ithread].GetCalqDeltaQp(m_pAQP, m_slices[curr_slice].rd_lambda_slice);
                     m_videoParam.m_lcuQps[ctb_addr] += calq;
                 }
