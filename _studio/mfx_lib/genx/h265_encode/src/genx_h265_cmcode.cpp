@@ -16,7 +16,7 @@
 #pragma warning(disable: 4505) 
 #include <cm.h>
 #include <genx_vme.h>
-#include "..\include\genx_h265_cmcode.h"
+#include "../include/genx_h265_cmcode.h"
 
 #define MBINTRADIST_SIZE    4 // mfxU16 intraDist;mfxU16 reserved;
 #define MBDIST_SIZE     64  // 16*mfxU32
@@ -318,6 +318,7 @@ void PrepareFractionalCall(matrix_ref<uchar, 3, 32> uniIn,
 
 #define VME_GET_UNIOutput(UNIOUT, FIELDNAME) VME_GET_UNIOutput_##FIELDNAME(UNIOUT, FIELDNAME)
 #define VME_GET_IMEOutput(UNIOUT, FIELDNAME) VME_GET_IMEOutput_##FIELDNAME(UNIOUT, FIELDNAME)
+
 
 template<size_t N>
 _GENX_ inline

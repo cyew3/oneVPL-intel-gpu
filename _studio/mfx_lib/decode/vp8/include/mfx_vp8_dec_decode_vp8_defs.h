@@ -445,4 +445,4 @@ typedef struct _vp8_FrameData
 
 #endif // __VP8_DEC_H__
 
-#endif _MFX_VP8_DEC_DECODE_VP8_DEFS_H_
+#endif // _MFX_VP8_DEC_DECODE_VP8_DEFS_H_

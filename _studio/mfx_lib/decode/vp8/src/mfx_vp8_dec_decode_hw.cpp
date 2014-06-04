@@ -455,7 +455,7 @@ UMC::FrameMemID VideoDECODEVP8_HW::GetMemIdToUnlock()
     return memId;
 }
 
-static mfxStatus __CDECL VP8DECODERoutine(void *p_state, void *pp_param, mfxU32 thread_number, mfxU32)
+static mfxStatus MFX_CDECL VP8DECODERoutine(void *p_state, void *pp_param, mfxU32 thread_number, mfxU32)
 {
     p_state; pp_param; thread_number;
 

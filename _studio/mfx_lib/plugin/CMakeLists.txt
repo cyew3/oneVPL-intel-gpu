@@ -238,6 +238,7 @@ foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/../genx/h265_encode/src )
   list( APPEND sources.plus
     ${prefix}/genx_h265_cmcode_stub.cpp
     ${prefix}/genx_h265_cmcode_isa.cpp
+    ${prefix}/genx_h265_cmcode_bdw_isa.cpp
   )
 endforeach()
 
@@ -346,7 +347,8 @@ foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/../shared/src )
     ${prefix}/mfx_mpeg2_enc_common_hw.cpp
     ${prefix}/mfx_mpeg2_encode_factory.cpp
     ${prefix}/mfx_mpeg2_encode_vaapi.cpp
-    ${prefix}/mfx_vp8_enc_common_hw.cpp
+    ${prefix}/mfx_vp8_enc_common.cpp    
+    ${prefix}/mfx_vp8_enc_common_hw.cpp    
     ${prefix}/libmfxsw_enc.cpp
   )
 endforeach()
@@ -498,6 +500,103 @@ foreach( variant sw hw )
     endforeach()
 
     set( defs "-DAS_VP8D_PLUGIN -DUMC_ENABLE_VP8_VIDEO_DECODER")
+
+  endif()
+
+  list( APPEND LIBS
+    vpx
+    umc_csc_sw
+    umc_io_merged_${variant}
+    umc_core_merged
+    ${ITT_LIBS}
+    ippmsdk_l ippj_l ippvc_l ippcc_l ippcv_l ippi_l ipps_l ippcore_l
+    pthread
+    dl
+    )
+
+  make_library( ${plugin_name} ${variant} shared)
+
+endforeach()
+
+# =============================================================================
+# VP8E
+# =============================================================================
+
+
+set( sources "" )
+set( sources.plus "" )
+
+list( APPEND sources ${plugin_common_sources} )
+
+include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../scheduler/include )
+include_directories( ${CMAKE_HOME_DIRECTORY}/mdp_msdk-contrib/vp8_libvpx )
+
+include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../../shared/umc/codec/vp8_enc/include )
+
+list( APPEND sources ${CMAKE_CURRENT_SOURCE_DIR}/../shared/src/libmfxsw_encode.cpp )
+list( APPEND sources ${CMAKE_CURRENT_SOURCE_DIR}/../shared/src/mfx_vp8_enc_common.cpp )
+list( APPEND sources ${CMAKE_CURRENT_SOURCE_DIR}/../shared/src/mfx_vp8_enc_common_hw.cpp )
+
+#list( APPEND sources ${CMAKE_CURRENT_SOURCE_DIR}/../../shared/umc/codec/vp8_enc/src/vp8_tables.cpp )
+
+set( USE_STRICT_NAME TRUE )
+set(MFX_LDFLAGS "${MFX_ORIG_LDFLAGS} -Wl,--version-script=${CMAKE_CURRENT_SOURCE_DIR}/libmfxsw_plugin.map" )
+
+set( sources.plus "" )
+foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/src )
+  list( APPEND sources.plus
+    ${prefix}/mfx_vp8_enc_plugin.cpp
+  )
+endforeach()
+
+foreach( variant sw hw )
+
+  if( __ARCH MATCHES intel64 )
+    set( plugin_name mfx_vp8e_${variant}64 )
+  else()
+    set( plugin_name mfx_vp8e_${variant}32 )
+  endif()
+  if( __CONFIG MATCHES debug )
+    set( plugin_name ${plugin_name}_d )
+  endif()
+
+  set( LIBS "" )
+
+  if(${variant} MATCHES hw)
+
+    list( APPEND LIBS va )
+
+    foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/../encode_hw/vp8/src )
+    list( APPEND sources
+      ${prefix}/mfx_vp8_encode_ddi_hw.cpp
+      ${prefix}/mfx_vp8_encode_hw.cpp
+      ${prefix}/mfx_vp8_encode_hybrid_bse.cpp
+      ${prefix}/mfx_vp8_encode_hybrid_hw.cpp
+      ${prefix}/mfx_vp8_encode_hybrid_pak.cpp
+      ${prefix}/mfx_vp8_encode_utils_hw.cpp
+      ${prefix}/mfx_vp8_encode_utils_hybrid_hw.cpp
+      
+    )
+    endforeach()
+
+
+    foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/../../shared/umc/io/umc_va/src )
+    list( APPEND sources
+      ${prefix}/umc_va_linux.cpp
+    )
+    endforeach()
+
+    set( defs "-DAS_VP8E_PLUGIN -DAS_VP8EHW_PLUGIN -DMFX_VA")
+
+  else()
+
+    foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/../encode/vp8/src )
+    list( APPEND sources
+      ${prefix}/mfx_vp8_encode.cpp
+    )
+    endforeach()
+
+    set( defs "-DAS_VP8E_PLUGIN")
 
   endif()
 

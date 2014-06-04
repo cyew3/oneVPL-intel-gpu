@@ -126,6 +126,17 @@ foreach( dir ${vdirs_impl} )
   file( GLOB_RECURSE srcs "${dir}/*.c" "${dir}/*.cpp" )
   list( APPEND sources ${srcs}) 
 endforeach()
+
+# too many test_XXX files in this dir, so have to manually specify needed ones
+foreach( dir ${CMAKE_CURRENT_SOURCE_DIR}/genx/h265_encode/src ) 
+#  list( APPEND sources ${dir}/embed_isa.c )
+#  list( APPEND sources ${dir}/genx_h265_cmcode.cpp )
+#  list( APPEND sources ${dir}/genx_h265_cmcode_bdw.cpp )
+  list( APPEND sources ${dir}/genx_h265_cmcode_bdw_isa.cpp )
+#  list( APPEND sources ${dir}/genx_h265_cmcode_isa.cpp )
+#  list( APPEND sources ${dir}/genx_h265_cmcode_stub.cpp )
+endforeach()
+
 foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/shared/src )
   list( APPEND sources
     ${prefix}/mfx_brc_common.cpp
