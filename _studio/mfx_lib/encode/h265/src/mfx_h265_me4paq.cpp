@@ -13,8 +13,9 @@
 #include <intrin.h>
 #include <math.h>
 
-#include "mfx_h265_paq.h"
 #include "vm_debug.h"
+#include "mfx_h265_paq.h"
+#include "mfx_h265_optimization.h"
 
 namespace H265Enc {
 
@@ -170,7 +171,7 @@ namespace H265Enc {
         return preSAD;
     }
 
-    Ipp32u __cdecl        ME_One(VidRead *videoIn, Ipp32u fPos, ImDetails inData, ImDetails outData, 
+    Ipp32u ME_One(VidRead *videoIn, Ipp32u fPos, ImDetails inData, ImDetails outData, 
         imageData *scale, imageData *scaleRef,
         imageData *outImage, NGV_Bool first, DIR fdir, Ipp32u accuracy, Ipp32u thres, Ipp32u pdist)    
     {
@@ -193,18 +194,18 @@ namespace H265Enc {
         Ipp32u            rSAD        =    INT_MAX;
         Ipp32u            lSAD        =    INT_MAX;
         Ipp32u            pen            =    50;
-        NGV_Bool        bottom        =    FALSE;
+        NGV_Bool        bottom        =    false;
         NGV_Bool        extraBlock    =    fPos != 0 && xLoc == (inData.wBlocks - 1) && outData.wBlocks % 2;
         NGV_Bool        extraLine    =    yLoc == (inData.hBlocks - 1) && outData.hBlocks % 2;
         Ipp32s            xpos = xLoc * inData.block_size_w;
         Ipp32s            ypos = yLoc * inData.block_size_h;
         Ipp32s            ExtWidth = inData.exwidth;
         Ipp32u            offset        =    inData.initPoint + ypos * ExtWidth + xpos;
-#ifndef _GCC_BUILD
-        __declspec (align(16))    unsigned char TempArray1[4*16];
-#else
-        unsigned char TempArray1[4*16] __attribute__ ((aligned (16)));
-#endif
+//#ifndef _GCC_BUILD
+        ALIGN_DECL(16)    unsigned char TempArray1[4*16];
+//#else
+//        unsigned char TempArray1[4*16] __attribute__ ((aligned (16)));
+//#endif
 
         objFrame                =    scale->exImage.Y + offset;
         refFrame                =    scaleRef->exImage.Y + offset;
@@ -308,11 +309,9 @@ namespace H265Enc {
             {
                 Ipp32s xx = ((limitXright-limitXleft-8)>>3);
                 Ipp32s x1;
-#ifndef _GCC_BUILD
-                __declspec (align(16)) Ipp16s TempSAD[8];
-#else
-                Ipp16s TempSAD[8] __attribute__ ((aligned (16)));
-#endif
+
+                ALIGN_DECL(16) Ipp16s TempSAD[8];
+
                 Ipp16s *pTempSAD = TempSAD;
                 for(y=limitYup;y<=limitYdown;y++)
                 {
@@ -534,7 +533,7 @@ namespace H265Enc {
             corFil                =    0;
 
         if(yLoc == inData.hBlocks - 1)
-            bottom                =    FALSE;
+            bottom                =    false;
 
         if((fPos > inData.wBlocks) && (xLoc > 0))
         {
@@ -711,7 +710,7 @@ namespace H265Enc {
         return(a);
     }
 
-    Ipp32u __cdecl        ME_One3(VidRead *video, Ipp32u fPos, ImDetails inData, ImDetails /*outData*/, 
+    Ipp32u ME_One3(VidRead *video, Ipp32u fPos, ImDetails inData, ImDetails /*outData*/, 
         imageData *scale, imageData *scaleRef,
         imageData * /*outImage*/, NGV_Bool first, DIR fdir, Ipp32u accuracy)    {
             MVector        tMV, ttMV, *current, *cHalf, *cQuarter, Nmv, preMV;            
@@ -735,9 +734,9 @@ namespace H265Enc {
             Ipp32u            tl, vid;
             Ipp32u            distance    =    INT_MAX;
             Ipp32u            uprow, left;
-            NGV_Bool        q            =    FALSE;
-            NGV_Bool        foundBetter    =    FALSE;
-            NGV_Bool        bottom        =    FALSE;
+            NGV_Bool        q            =    false;
+            NGV_Bool        foundBetter    =    false;
+            NGV_Bool        bottom        =    false;
 
             Ipp32s            xpos = xLoc * inData.block_size_w;
             Ipp32s            ypos = yLoc * inData.block_size_h;
@@ -821,7 +820,7 @@ namespace H265Enc {
                         current[fPos].x    =    preMV.x;
                         current[fPos].y    =    preMV.y;
                         outSAD[fPos]=    bestSAD;
-                        foundBetter    =    FALSE;
+                        foundBetter    =    false;
                     }
                 }
             }
@@ -831,7 +830,7 @@ namespace H265Enc {
             left                    =    fPos - 1;
             vid                        =    accuracy / 2;
             if(yLoc == inData.hBlocks - 1)
-                bottom                =    TRUE;
+                bottom                =    true;
             if((fPos > inData.wBlocks) && (xLoc > 0))   {
                 tl                  =   outSAD[fPos] + pen;
                 distance            =   INT_MAX;
@@ -845,7 +844,7 @@ namespace H265Enc {
                     current[fPos].x =   Nmv.x;
                     current[fPos].y =   Nmv.y;
                     outSAD[fPos]    =   tl;
-                    foundBetter     =   FALSE;
+                    foundBetter     =   false;
                 }
             }
             uprow++;
@@ -862,7 +861,7 @@ namespace H265Enc {
                     current[fPos].x =   Nmv.x;
                     current[fPos].y =   Nmv.y;
                     outSAD[fPos]     =   tl;
-                    foundBetter     =   FALSE;
+                    foundBetter     =   false;
                 }
             }
             uprow++;
@@ -879,7 +878,7 @@ namespace H265Enc {
                     current[fPos].x =   Nmv.x;
                     current[fPos].y =   Nmv.y;
                     outSAD[fPos]    =   tl;
-                    foundBetter     =   FALSE;
+                    foundBetter     =   false;
                 }
             }
             if(xLoc > 0)            {
@@ -895,7 +894,7 @@ namespace H265Enc {
                     current[fPos].x =   Nmv.x;
                     current[fPos].y =   Nmv.y;
                     outSAD[fPos]    =   tl;
-                    foundBetter     =   FALSE;
+                    foundBetter     =   false;
                 }
             }
             cHalf[fPos]                =    current[fPos];
@@ -905,7 +904,7 @@ namespace H265Enc {
             pRslt                    =    refFrame + cHalf[fPos].x + (cHalf[fPos].y * Rstride);
 
             if(accuracy > 2)
-                q                =    TRUE;
+                q                =    true;
             if(accuracy > 1)
                 halfpixel(&(cHalf[fPos]), &outSAD[fPos], objFrame, refFrame, inData.block_size_w,
                 fPos, inData.wBlocks, xLoc, yLoc, offset, video, &pRslt, &Rstride, inData.exwidth, q, cQuarter, accuracy, Rs, Cs);
@@ -1092,9 +1091,9 @@ namespace H265Enc {
             if((SAD < *bestSAD) ||((SAD == *(bestSAD)) && *distance > preDist))    {
                 *distance            = preDist;
                 *(bestSAD)            = SAD;
-                return TRUE;
+                return true;
             }
-            return FALSE;
+            return false;
     }
 
     NGV_Bool    searchMV2(MVector MV, Ipp8u* curY, Ipp8u* refY, ImDetails inData, Ipp32u /*fPos*/,
@@ -1117,9 +1116,9 @@ namespace H265Enc {
             if((*preSAD < *bestSAD) ||((SAD == *(bestSAD)) && *distance > preDist))    {
                 *distance            =    preDist;
                 *(bestSAD)            =    SAD;
-                return TRUE;
+                return true;
             }
-            return FALSE;
+            return false;
     }
 
     void    halfpixel(MVector *MV, Ipp32u *bestSAD, Ipp8u* curY, Ipp8u* refY, Ipp32u blockSize, Ipp32u fPos, Ipp32u wBlocks, Ipp32u xLoc,
@@ -1135,7 +1134,7 @@ namespace H265Enc {
             Ipp8u            *fCur, *fRef;
             Ipp8u*            searchLoc;
             MVector        tMV                =    {0,0};
-            NGV_Bool        betterfound        =    FALSE;
+            NGV_Bool        betterfound        =    false;
 
             Ipp8u*            objFrame;
             Ipp32u            ExtWidth = exWidth;
@@ -1188,7 +1187,7 @@ namespace H265Enc {
                             tMV.y        =    (i * 2) - 1;
                             *Rstride    =    blockSize + 3;
                             *pRslt        =    searchLoc + loc;
-                            betterfound    =    TRUE;
+                            betterfound    =    true;
                         }
                         loc++;
                         fRef++;
@@ -1210,7 +1209,7 @@ namespace H265Enc {
                         *bestSAD        =    preSAD;
                         tMV.x            =    0;
                         tMV.y            =    (i * 2) - 1;
-                        betterfound        =    TRUE;
+                        betterfound        =    true;
                     }
                 }
 
@@ -1229,7 +1228,7 @@ namespace H265Enc {
                         tMV.y            =    0;
                         *Rstride        =    blockSize + 3;
                         *pRslt            =    searchLoc + i;
-                        betterfound        =    TRUE;
+                        betterfound        =    true;
                     }
                 }
             }
@@ -1242,13 +1241,13 @@ namespace H265Enc {
             RsCs                    =    IPP_MAX(Rs[fPos4],Cs[fPos4]);
             if(q &&(RsCs <= 1.0))    
             {
-                q                    =    FALSE;
+                q                    =    false;
                 stepq[fPos].x        =    0;
                 stepq[fPos].y        =    0;
             }
 
 
-            if(accuracy > 2 && q == TRUE)
+            if(accuracy > 2 && q == true)
                 quarterpixel(videoIn, blockSize, &(stepq[fPos]), tMV, offset, fCur, fRef, bestSAD, pRslt, Rstride, exWidth);
 
     }
@@ -1260,7 +1259,7 @@ namespace H265Enc {
         Ipp32u            bi;
         Ipp32u            tSAD;
         Ipp8u            *sLA, *sLB, *sLC, *sLI;
-        NGV_Bool        betterfound    =    FALSE;
+        NGV_Bool        betterfound    =    false;
 
         sLA                        =    videoIn->cornerBox.Y + blockSize + 3 + 1;
         sLB                        =    videoIn->topBox.Y + blockSize + 3;
@@ -1382,7 +1381,7 @@ namespace H265Enc {
                     *bestSAD        =    tSAD;
                     *Rstride        =    blockSize;
                     *pRslt            =    videoIn->spBuffer[i].Y;
-                    betterfound        =    TRUE;
+                    betterfound        =    true;
                     bi                =    i;
                 }
             }
@@ -1508,7 +1507,7 @@ namespace H265Enc {
                     *bestSAD        =    tSAD;
                     *Rstride        =    blockSize;
                     *pRslt            =    videoIn->spBuffer[i].Y;
-                    betterfound        =    TRUE;
+                    betterfound        =    true;
                     bi                =    i;
                 }
             }
@@ -2658,43 +2657,43 @@ namespace H265Enc {
         posBalance                        =    abs(posBalance);
         posBalance                        /=    histTOT;
         if((RsCsDiff > 7.6) && (RsCsDiff < 10) && (gchDC > 2.9) && (posBalance > 0.18))
-            *Gchange                    =    TRUE;
+            *Gchange                    =    true;
         if((RsCsDiff >= 10) && (gchDC > 1.6) && (posBalance > 0.18))
-            *Gchange                    =    TRUE;
+            *Gchange                    =    true;
 
         if(scVal <= 3)                    {
             if(TSC > 18)
                 if(AFD > 36 && RsCsDiff > 10)
-                    *Schange            =    TRUE;
+                    *Schange            =    true;
                 else
-                    *Schange            =    FALSE;
+                    *Schange            =    false;
             else if(TSC > 15)
                 if(AFD > 35 && RsCsDiff > 19)
-                    *Schange            =    TRUE;
+                    *Schange            =    true;
                 else
-                    *Schange            =    FALSE;
+                    *Schange            =    false;
             else if(TSC > 12)
                 if(AFD > 30 && RsCsDiff > 19)
-                    *Schange            =    TRUE;
+                    *Schange            =    true;
                 else
-                    *Schange            =    FALSE;
+                    *Schange            =    false;
             else if(TSC > 10.5)
                 if(AFD > 26 && RsCsDiff > 19)
-                    *Schange            =    TRUE;
+                    *Schange            =    true;
                 else
-                    *Schange            =    FALSE;
+                    *Schange            =    false;
             else if(TSC > 6.5)
                 if(AFD > 22 && RsCsDiff > 60)
-                    *Schange            =    TRUE;
+                    *Schange            =    true;
                 else
-                    *Schange            =    FALSE;
+                    *Schange            =    false;
         }
         else                            {
             if(TSC > 35)
                 if(AFD > 80 && RsCsDiff > 1000)
-                    *Schange            =    TRUE;
+                    *Schange            =    true;
                 else
-                    *Schange            =    FALSE;
+                    *Schange            =    false;
         }
     }
 
@@ -2703,9 +2702,9 @@ namespace H265Enc {
             past                    =    position - 1;
         Ipp64f        DAFD                    =    0.0,
             radius                    =    0.0;
-        NGV_Bool    condition1                =    FALSE,
-            condition2                =    FALSE,
-            condition3                =    FALSE;
+        NGV_Bool    condition1                =    false,
+            condition2                =    false,
+            condition3                =    false;
         DAFD                            =    preAnalysis[current].AFD - preAnalysis[past].AFD;
         radius                            =    (preAnalysis[current].AFD * preAnalysis[current].AFD) + (preAnalysis[current].TSC * preAnalysis[current].TSC);
 
