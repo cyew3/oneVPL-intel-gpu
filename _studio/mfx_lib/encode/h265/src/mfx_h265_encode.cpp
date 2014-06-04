@@ -139,7 +139,12 @@ mfxExtBuffer HEVC_HEADER = { MFX_EXTBUFF_HEVCENC, sizeof(mfxExtCodingOptionHEVC)
     tab_##mode##_MinCUDepthAdapt[x],\
     tab_##mode##_NumBiRefineIter[x],\
     tab_##mode##_CUSplitThreshold[x],\
+    tab_##mode##_DQP[x],\
+    tab_##mode##_Enable10bit[x],\
 }
+
+TU_OPT_SW  (Enable10bit,                  OFF, OFF, OFF, OFF, OFF, OFF, OFF);
+TU_OPT_GACC(Enable10bit,                  OFF, OFF, OFF, OFF, OFF, OFF, OFF);
 
 TU_OPT_ALL (QuadtreeTULog2MaxSize,          5,   5,   5,   5,   5,   5,   5);
 TU_OPT_ALL (QuadtreeTULog2MinSize,          2,   2,   2,   2,   2,   2,   2);
@@ -168,6 +173,7 @@ TU_OPT_ALL (TMVP,                          ON,  ON,  ON,  ON,  ON,  ON,  ON);
 TU_OPT_ALL (Deblocking,                    ON,  ON,  ON,  ON,  ON,  ON,  ON);
 TU_OPT_SW  (IntraAngModes,                  1,   1,   2,   2,   2,   2,   2);
 TU_OPT_GACC(IntraAngModes,                  3,   3,   3,   3,   3,   3,   3);
+TU_OPT_ALL (DQP,                            0,   0,   0,   0,   0,   0,   0);
 
 //Quant optimization
 TU_OPT_ALL (SignBitHiding,                 ON,  ON,  ON,  ON,  ON,  ON, OFF);
@@ -836,6 +842,8 @@ mfxStatus MFXVideoENCODEH265::Init(mfxVideoParam* par_in)
             m_mfxHEVCOpts.NumBiRefineIter = opts_tu->NumBiRefineIter;
         if (m_mfxHEVCOpts.CUSplitThreshold == 0)
             m_mfxHEVCOpts.CUSplitThreshold = opts_tu->CUSplitThreshold;
+        if (m_mfxHEVCOpts.Enable10bit == 0)
+            m_mfxHEVCOpts.Enable10bit = opts_tu->Enable10bit;
     }
 
     // uncomment here if sign bit hiding doesn't work properly
@@ -844,7 +852,8 @@ mfxStatus MFXVideoENCODEH265::Init(mfxVideoParam* par_in)
     // check FrameInfo
 
     //FourCC to check on encode frame
-    m_mfxVideoParam.mfx.FrameInfo.FourCC = MFX_FOURCC_NV12; // to return on GetVideoParam
+    if (!m_mfxVideoParam.mfx.FrameInfo.FourCC)
+        m_mfxVideoParam.mfx.FrameInfo.FourCC = MFX_FOURCC_NV12; // to return on GetVideoParam
 
     // to be provided:
     if (!m_mfxVideoParam.mfx.FrameInfo.Width || !m_mfxVideoParam.mfx.FrameInfo.Height ||
@@ -1110,6 +1119,7 @@ mfxStatus MFXVideoENCODEH265::Reset(mfxVideoParam *par_in)
         if (!optsNew.PuDecisionSatd               ) optsNew.PuDecisionSatd                = optsOld.PuDecisionSatd               ;
         if (!optsNew.MinCUDepthAdapt              ) optsNew.MinCUDepthAdapt               = optsOld.MinCUDepthAdapt              ;
         if (!optsNew.CUSplitThreshold             ) optsNew.CUSplitThreshold              = optsOld.CUSplitThreshold             ;
+        if (!optsNew.Enable10bit                  ) optsNew.Enable10bit                   = optsOld.Enable10bit                  ;
     }
 
     if ((parNew.IOPattern & 0xffc8) || (parNew.IOPattern == 0)) // 0 is possible after Query
@@ -1274,6 +1284,7 @@ mfxStatus MFXVideoENCODEH265::Query(VideoCORE *core, mfxVideoParam *par_in, mfxV
             optsHEVC->PuDecisionSatd = 1;
             optsHEVC->MinCUDepthAdapt = 1;
             optsHEVC->CUSplitThreshold = 1;
+            optsHEVC->Enable10bit = 1;
         }
 
         mfxExtDumpFiles* optsDump = (mfxExtDumpFiles*)GetExtBuffer( out->ExtParam, out->NumExtParam, MFX_EXTBUFF_DUMP );
@@ -1317,7 +1328,10 @@ mfxStatus MFXVideoENCODEH265::Query(VideoCORE *core, mfxVideoParam *par_in, mfxV
         //    out->mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
         //    isCorrected ++;
         //} else
-        if ((in->mfx.FrameInfo.FourCC != MFX_FOURCC_NV12) != (in->mfx.FrameInfo.ChromaFormat != MFX_CHROMAFORMAT_YUV420)) {
+        Ipp8u enable10bit = opts_in && opts_in->Enable10bit == MFX_CODINGOPTION_ON;
+
+        if ((in->mfx.FrameInfo.FourCC != MFX_FOURCC_NV12 && (!enable10bit || in->mfx.FrameInfo.FourCC != MFX_FOURCC_P010)) !=
+            (in->mfx.FrameInfo.ChromaFormat != MFX_CHROMAFORMAT_YUV420)) {
             out->mfx.FrameInfo.FourCC = 0;
             out->mfx.FrameInfo.ChromaFormat = 0;
             isInvalid ++;
@@ -1645,6 +1659,7 @@ mfxStatus MFXVideoENCODEH265::Query(VideoCORE *core, mfxVideoParam *par_in, mfxV
             CHECK_OPTION(opts_in->FastCbfMode, opts_out->FastCbfMode, isInvalid);  /* tri-state option */
             CHECK_OPTION(opts_in->PuDecisionSatd, opts_out->PuDecisionSatd, isInvalid);  /* tri-state option */
             CHECK_OPTION(opts_in->MinCUDepthAdapt, opts_out->MinCUDepthAdapt, isInvalid);  /* tri-state option */
+            CHECK_OPTION(opts_in->Enable10bit, opts_out->Enable10bit, isInvalid);  /* tri-state option */
 
             if (opts_in->PartModes > 3) {
                 opts_out->PartModes = 0;
@@ -1849,7 +1864,7 @@ mfxStatus MFXVideoENCODEH265::EncodeFrame(mfxEncodeCtrl *ctrl, mfxEncodeInternal
 
     if (surface)
     {
-        if (surface->Info.FourCC != MFX_FOURCC_NV12)
+        if (surface->Info.FourCC != MFX_FOURCC_NV12 && (!m_mfxHEVCOpts.Enable10bit || surface->Info.FourCC != MFX_FOURCC_P010))
             return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
 
         bool locked = false;

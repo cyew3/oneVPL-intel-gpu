@@ -89,12 +89,20 @@ inline static void memset_bd(Ipp8u *dst, Ipp32s val, Ipp32s size_pix, Ipp8u bdFl
 mfxStatus H265Frame::CopyFrame(mfxFrameSurface1 *surface)
 {
     IppiSize roi = { width, height };
+    mfxU16 InputBitDepthLuma = 8;
+    mfxU16 InputBitDepthChroma = 8;
 
-    switch ((m_bdLumaFlag << 1) | (surface->Info.BitDepthLuma > 8)) {
+    if (surface->Info.FourCC == MFX_FOURCC_P010) {
+        InputBitDepthLuma = 10;
+        InputBitDepthChroma = 10;
+    }
+
+    switch ((m_bdLumaFlag << 1) | (InputBitDepthLuma > 8)) {
     case 0:
         ippiCopy_8u_C1R(surface->Data.Y, surface->Data.Pitch, y, pitch_luma, roi);
         break;
     case 1:
+//        ippiRShiftC_16u_C1IR(InputBitDepthLuma - 8, (Ipp16u*)surface->Data.Y, surface->Data.Pitch, roi);
         ippiConvert_16u8u_C1R((Ipp16u*)surface->Data.Y, surface->Data.Pitch, y, pitch_luma_bytes, roi);
         break;
     case 2:
@@ -110,11 +118,12 @@ mfxStatus H265Frame::CopyFrame(mfxFrameSurface1 *surface)
 
     roi.height >>= 1;
 
-    switch ((m_bdChromaFlag << 1) | (surface->Info.BitDepthChroma > 8)) {
+    switch ((m_bdChromaFlag << 1) | (InputBitDepthChroma > 8)) {
     case 0:
         ippiCopy_8u_C1R(surface->Data.UV, surface->Data.Pitch, uv, pitch_luma, roi);
         break;
     case 1:
+//        ippiRShiftC_16u_C1IR(InputBitDepthChroma - 8, (Ipp16u*)surface->Data.UV, surface->Data.Pitch, roi);
         ippiConvert_16u8u_C1R((Ipp16u*)surface->Data.UV, surface->Data.Pitch, uv, pitch_chroma_bytes, roi);
         break;
     case 2:
