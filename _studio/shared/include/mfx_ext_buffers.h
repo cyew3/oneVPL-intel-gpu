@@ -215,7 +215,8 @@ typedef struct {
     mfxU16      NumBiRefineIter;    // 1-check best L0+L1; N-check best L0+L1 then N-1 refinement iterations
     mfxU16      CUSplitThreshold;   // skip CU split check: threshold = CUSplitThreshold / 256.0
     mfxU16      DQP;                // DeltaQP modes: 0-disabled; 1-paq; 2-calq; 3-paq+calq
-    mfxU16      reserved[4];
+    mfxU16      Enable10bit;        // tri-state
+    mfxU16      reserved[3];
 } mfxExtCodingOptionHEVC;
 
 

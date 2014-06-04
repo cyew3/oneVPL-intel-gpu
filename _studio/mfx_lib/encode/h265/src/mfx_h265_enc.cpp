@@ -165,8 +165,13 @@ mfxStatus H265Encoder::InitH265VideoParam(const mfxVideoParam *param, const mfxE
     Ipp32u width = param->mfx.FrameInfo.Width;
     Ipp32u height = param->mfx.FrameInfo.Height;
 
-    pars->bitDepthLuma = 8;
-    pars->bitDepthChroma = 8;
+    if (param->mfx.FrameInfo.FourCC == MFX_FOURCC_P010 && optsHevc->Enable10bit == MFX_CODINGOPTION_ON) {
+        pars->bitDepthLuma = 10;
+        pars->bitDepthChroma = 10;
+    } else {
+        pars->bitDepthLuma = 8;
+        pars->bitDepthChroma = 8;
+    }
 
     pars->SourceWidth = width;
     pars->SourceHeight = height;
