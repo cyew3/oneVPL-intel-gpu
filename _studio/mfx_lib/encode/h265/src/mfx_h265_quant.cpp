@@ -132,13 +132,13 @@ Ipp32u h265_quant_getSigCoeffGroupCtxInc ( const Ipp32u* sig_coeff_group_flag,
     width >>= 2;
     if( uCG_pos_x < width - 1 )
     {
-        uiRight = (sig_coeff_group_flag[ uCG_pos_y * width + uCG_pos_x + 1 ] != 0);
+        uiRight = sig_coeff_group_flag[ uCG_pos_y * width + uCG_pos_x + 1 ];
     }
     if (uCG_pos_y < width - 1 )
     {
-        uiLower = (sig_coeff_group_flag[ (uCG_pos_y  + 1 ) * width + uCG_pos_x ] != 0);
+        uiLower = sig_coeff_group_flag[ (uCG_pos_y  + 1 ) * width + uCG_pos_x ];
     }
-    return (uiRight || uiLower);
+    return (uiRight | uiLower);
 
 }
 
@@ -162,7 +162,7 @@ Ipp32s h265_quant_getSigCtxInc(Ipp32s pattern_sig_ctx,
     Ipp32s ret, typeOff, typeNew;
 
     /* special case - (0,0) */
-    if (posX + posY == 0)
+    if ((posX | posY) == 0)
         return 0;
 
     /* special case - 4x4 block */
@@ -170,7 +170,7 @@ Ipp32s h265_quant_getSigCtxInc(Ipp32s pattern_sig_ctx,
        return ctxIndMap[4*posY + posX];
 
     /* should compile into cmov - verify no branches */
-    typeOff  = ( ((posX >> 2) | (posY >> 2)) ? 2 : 0 );
+    typeOff  = ((posX | posY) >> 2) ? 2 : 0;
     typeOff &= (type - 1);
     typeNew  = (Ipp32s)type + typeOff;
 

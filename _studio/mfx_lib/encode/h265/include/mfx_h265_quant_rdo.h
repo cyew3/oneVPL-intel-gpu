@@ -98,11 +98,11 @@ private:
 
     Ipp64f GetCost_SigCoef(
         Ipp16u  code,
-        Ipp32u  ctx_inc);
+        Ipp32u  ctx_inc) { return GetCost( m_cabacBits.significantBits[ ctx_inc ][ code ] ); }
 
     Ipp64f GetCost_SigCoeffGroup(
         Ipp16u  code,
-        Ipp32u  ctx_inc);
+        Ipp32u  ctx_inc) {return GetCost( m_cabacBits.significantCoeffGroupBits[ ctx_inc ][ code ] );}
 
     Ipp64f GetCost_Cbf(
         Ipp16u  code,
@@ -113,7 +113,7 @@ private:
         Ipp32u  pos_x,
         Ipp32u  pos_y);
 
-    Ipp64f GetCost( Ipp64f bit_cost ); // lambda*bits
+    Ipp64f GetCost( Ipp64f bit_cost ) { return m_lambda * bit_cost; }
 
     void EstimateCabacBits( Ipp32s log2_tr_size );
 

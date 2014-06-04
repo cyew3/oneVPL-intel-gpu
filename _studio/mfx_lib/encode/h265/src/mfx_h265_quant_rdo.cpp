@@ -346,7 +346,8 @@ void EncodeOneCoeff(
             par->c2 += (par->c2 < 2);
             par->c2Idx++;
         }
-        else if( (par->c1 < 3) && (par->c1 > 0) )
+        //else if( (par->c1 < 3) && (par->c1 > 0) )
+        else if( (Ipp32u)(par->c1 - 1) < 2)
         {
             par->c1++;
         }
@@ -396,12 +397,14 @@ void RDOQuant<PixType>::DoAlgorithm(
     //print_est_bits(m_pcEstBitsSbac);
     //-----------------------------------------------------
 
-    const Ipp32u width  = (Ipp32u)(1 << log2_tr_size);
-    const Ipp32u coeffCount  = width * width;
+    const Ipp32u width       = (Ipp32u)(1 << log2_tr_size);
+    const Ipp32u coeffCount  = (Ipp32u)(1 << 2*log2_tr_size);
+    const Ipp32u cgCount     = (Ipp32u)(1 << (2*log2_tr_size-MLS_CG_SIZE));
     const Ipp32s qbits = 29 + h265_qp6[QP] - bit_depth - log2_tr_size;
+    const Ipp32s qshift = 1 << (qbits - 1);
     const Ipp8u  qp_rem = h265_qp_rem[QP];
     const Ipp32s uiQ    = h265_quant_table_fwd[qp_rem];
-    const Ipp64f errScale = 2.0 * coeffCount / (uiQ * uiQ * 1.0);
+    const Ipp64f errScale = 2.0 * coeffCount / (uiQ * uiQ);
     const Ipp32u scan_idx = GetCoefScanIdx(abs_part_idx, log2_tr_size, type==TEXT_LUMA);
 
     const int MAX_TU_SIZE = 32 * 32;
@@ -409,11 +412,11 @@ void RDOQuant<PixType>::DoAlgorithm(
     Ipp64f cost_zero_level[ MAX_TU_SIZE ];
     Ipp64f cost_sig[ MAX_TU_SIZE ];
 
-    memset(cost_nz_level, 0, sizeof(Ipp64f) *  coeffCount );
-    memset(cost_sig,   0, sizeof(Ipp64f) *  coeffCount );
+    //memset(cost_nz_level, 0, sizeof(Ipp64f) *  coeffCount );
+    //memset(cost_sig,   0, sizeof(Ipp64f) *  coeffCount );
 
     Ipp32u qlevels[MAX_TU_SIZE];//abs levels
-    memset(qlevels, 0, sizeof(Ipp32u)*coeffCount);
+    //memset(qlevels, 0, sizeof(Ipp32u)*coeffCount);
     memset(pDst, 0, sizeof(Ipp16s)*coeffCount);
 
     Ipp32s rate_inc_up   [MAX_TU_SIZE];
@@ -439,15 +442,15 @@ void RDOQuant<PixType>::DoAlgorithm(
     }
 
     Ipp32u sig_coeff_group_flag[MLS_GRP_NUM];
-    memset( sig_coeff_group_flag,   0, sizeof(Ipp32u) * MLS_GRP_NUM );
+    memset( sig_coeff_group_flag,   0, sizeof(Ipp32u) * cgCount );
 
     const Ipp32u shift        = MLS_CG_SIZE >> 1;
     const Ipp32u num_blk_side = width >> shift;
-
+    const Ipp32u log2_num_blk_side = log2_tr_size - shift;
     const Ipp32u sizeCG = (1 << MLS_CG_SIZE);//16
 
     Ipp64f cost_coeff_group_sig[ MLS_GRP_NUM ];
-    memset(cost_coeff_group_sig,   0, sizeof(Ipp64f) * MLS_GRP_NUM );
+    memset(cost_coeff_group_sig,   0, sizeof(Ipp64f) * cgCount );
 
     const Ipp16u *scan = h265_sig_last_scan[ scan_idx -1 ][ log2_tr_size - 1 ];
     const Ipp32s last_scan_set = (coeffCount - 1) >> LOG2_SCAN_SET_SIZE;
@@ -472,12 +475,18 @@ void RDOQuant<PixType>::DoAlgorithm(
     {
         Ipp32s sub_pos    = subset << LOG2_SCAN_SET_SIZE;
         Ipp32u CG_blk_pos = scanCG[ subset ];
-        Ipp32u CG_pos_y   = CG_blk_pos / num_blk_side;
-        Ipp32u CG_pos_x   = CG_blk_pos - (CG_pos_y * num_blk_side);
+        Ipp32u CG_pos_y   = CG_blk_pos >> log2_num_blk_side;
+        Ipp32u CG_pos_x   = CG_blk_pos & (num_blk_side - 1);
         RDOQ_CoeffGroup_Report CG_report;
-        
-        if (rdoqCGZ)
-            memset( &CG_report, 0, sizeof (RDOQ_CoeffGroup_Report));
+
+        if (rdoqCGZ) {
+            //memset( &CG_report, 0, sizeof (RDOQ_CoeffGroup_Report));
+            CG_report.num_nz_before_pos0 = 0;
+            CG_report.cost_nz_levels = 0;
+            CG_report.cost_zero_levels = 0;
+            CG_report.cost_sig = 0;
+            CG_report.cost_sig_pos0 = 0;
+        }
 
         const Ipp32s pattern_sig_ctx = (Ipp32s)h265_quant_calcpattern_sig_ctx(
             sig_coeff_group_flag,
@@ -491,13 +500,13 @@ void RDOQuant<PixType>::DoAlgorithm(
             Ipp32u blk_pos  = scan[scan_pos];
 
             Ipp32s level_float        = pSrc[ blk_pos ];
-            level_float               = (Ipp32s)IPP_MIN((Ipp64s)abs(level_float) * uiQ , MAX_INT - (1 << (qbits - 1)));
+            level_float               = (Ipp32s)IPP_MIN((Ipp32s)abs(level_float) * uiQ , MAX_INT - qshift);
 
             Ipp64f quant_err         = Ipp64f( level_float );
             cost_zero_level[scan_pos]= quant_err * quant_err * errScale;
             cost_zero_blk           += cost_zero_level[ scan_pos ];
 
-            Ipp32u max_abs_level = (level_float + (1<<(qbits - 1))) >> qbits;
+            Ipp32u max_abs_level = (level_float + qshift) >> qbits;
             qlevels[ blk_pos ]   = max_abs_level;
 
             if ( max_abs_level > 0 && last_nz_pos < 0 )
@@ -516,7 +525,7 @@ void RDOQuant<PixType>::DoAlgorithm(
                 {
                     isLast = false;
                     Ipp32u pos_y = blk_pos >> log2_tr_size;
-                    Ipp32u pos_x = blk_pos - ( pos_y << log2_tr_size );
+                    Ipp32u pos_x = blk_pos & (width - 1);
 
                     ctx_sig_inc = (Ipp32u)h265_quant_getSigCtxInc(
                         pattern_sig_ctx,
@@ -674,7 +683,7 @@ void RDOQuant<PixType>::DoAlgorithm(
     //-----------------------------------------------------
     //  take into consediration CBF flag
     //-----------------------------------------------------
-    Ipp64f cost_best   = 0.0f;
+    Ipp64f cost_best   = 0;
     Ipp32u ctx_cbf_inc = 0;
 
     bool isRootCbf = (!m_pCU->IsIntra(abs_part_idx) && m_pCU->GetTransformIdx( abs_part_idx ) == 0);
@@ -700,7 +709,7 @@ void RDOQuant<PixType>::DoAlgorithm(
         {
             for (Ipp32s pos_in_CG = sizeCG-1; pos_in_CG >= 0; pos_in_CG--)
             {
-                Ipp32s scan_pos = subset*sizeCG + pos_in_CG;
+                Ipp32s scan_pos = (subset<<MLS_CG_SIZE) + pos_in_CG;
                 Ipp32u blk_pos  = scan[scan_pos];
 
                 if (scan_pos > last_nz_pos)
@@ -711,7 +720,7 @@ void RDOQuant<PixType>::DoAlgorithm(
                 if( qlevels[ blk_pos ] )
                 {
                     Ipp32u   pos_y       = blk_pos >> log2_tr_size;
-                    Ipp32u   pos_x       = blk_pos - ( pos_y << log2_tr_size );
+                    Ipp32u   pos_x       = blk_pos & ( width - 1 );
 
                     Ipp64f cost_last_xy = (scan_idx == COEFF_SCAN_VER) ? GetCost_LastXY( pos_y, pos_x) : GetCost_LastXY( pos_x, pos_y);
                     Ipp64f cost_total   = cost_base + cost_last_xy - cost_sig[ scan_pos ];
@@ -780,6 +789,9 @@ void RDOQuant<PixType>::DoAlgorithm(
                 }
             }
 
+            if (last_nz_pos_in_CG == -1)
+                continue;
+
             for(pos_in_CG = 0; pos_in_CG < SCAN_SET_SIZE; pos_in_CG++)
             {
                 if(pDst[scan[sub_pos + pos_in_CG]])
@@ -794,7 +806,7 @@ void RDOQuant<PixType>::DoAlgorithm(
                 abs_sum += pDst[scan[sub_pos + pos_in_CG]];
             }
 
-            if(last_nz_pos_in_CG >= 0 && lastCG==-1)
+            if(lastCG==-1)
             {
                 lastCG = 1; 
             } 
@@ -888,7 +900,7 @@ void RDOQuant<PixType>::DoAlgorithm(
 //---------------------------------------------------------
 // utils
 //---------------------------------------------------------
-Ipp64f GetEPBits( )
+inline Ipp64f GetEPBits( )
 {
     return 256 << 7;
 }
@@ -918,9 +930,11 @@ Ipp64f RDOQuant<PixType>::GetCost_EncodeOneCoeff(
         {
             length = cabac.go_rice_param;
             symbol  = symbol - ( COEF_REMAIN_BIN_REDUCTION << cabac.go_rice_param);
-            while (symbol >= (1u<<length))
-            {
-                symbol -=  (1<<(length++));
+            Ipp32u val = 1u<<length;
+            while (symbol >= val) {
+                symbol -= val;
+                val += val;
+                length++;
             }
 
             bit_cost += (COEF_REMAIN_BIN_REDUCTION + length + 1 - cabac.go_rice_param + length) << 15;
@@ -1006,32 +1020,29 @@ Ipp32u RDOQuant<PixType>::GetBestQuantLevel (
 } // Ipp32u RDOQuant::GetBestQuantLevel (...)
 
 
-template <typename PixType>
-Ipp64f RDOQuant<PixType>::GetCost(Ipp64f bit_cost)
-{
-    return m_lambda * bit_cost;
-
-} // Ipp64f RDOQuant::GetCost(Ipp64f bit_cost)
-
-
-template <typename PixType>
-Ipp64f RDOQuant<PixType>::GetCost_SigCoef(
-    Ipp16u  code,
-    Ipp32u  ctx_inc)
-{
-    return GetCost( m_cabacBits.significantBits[ ctx_inc ][ code ] );
-
-} // Ipp64f RDOQuant::GetCost_SigCoef(...)
+//template <typename PixType>
+//Ipp64f RDOQuant<PixType>::GetCost(Ipp64f bit_cost)
+//{
+//    return m_lambda * bit_cost;
+//} // Ipp64f RDOQuant::GetCost(Ipp64f bit_cost)
 
 
-template <typename PixType>
-Ipp64f RDOQuant<PixType>::GetCost_SigCoeffGroup  (
-    Ipp16u  code,
-    Ipp32u  ctx_inc )
-{
-    return GetCost( m_cabacBits.significantCoeffGroupBits[ ctx_inc ][ code ] );
+//template <typename PixType>
+//Ipp64f RDOQuant<PixType>::GetCost_SigCoef(
+//    Ipp16u  code,
+//    Ipp32u  ctx_inc)
+//{
+//    return GetCost( m_cabacBits.significantBits[ ctx_inc ][ code ] );
+//} // Ipp64f RDOQuant::GetCost_SigCoef(...)
 
-} // Ipp64f RDOQuant::GetCost_SigCoeffGroup(...)
+
+//template <typename PixType>
+//Ipp64f RDOQuant<PixType>::GetCost_SigCoeffGroup  (
+//    Ipp16u  code,
+//    Ipp32u  ctx_inc )
+//{
+//    return GetCost( m_cabacBits.significantCoeffGroupBits[ ctx_inc ][ code ] );
+//} // Ipp64f RDOQuant::GetCost_SigCoeffGroup(...)
 
 
 template <typename PixType>
@@ -1041,7 +1052,6 @@ Ipp64f RDOQuant<PixType>::GetCost_Cbf(
     bool    isRootCbf)
 {
     return GetCost( isRootCbf ? m_cabacBits.blkRootCbfBits[ctx_inc][code] : m_cabacBits.blkCbfBits[ctx_inc][code] );
-
 } // Ipp64f RDOQuant::GetCost_Cbf(...)
 
 
