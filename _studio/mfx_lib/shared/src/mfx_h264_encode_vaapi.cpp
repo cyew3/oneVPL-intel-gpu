@@ -845,6 +845,11 @@ mfxStatus VAAPIEncoder::CreateAuxilliaryDevice(
     attrs.push_back( {VAConfigAttribRateControl, 0});
     attrs.push_back( {VAConfigAttribEncQuantization, 0});
     attrs.push_back( {VAConfigAttribEncIntraRefresh, 0});
+    attrs.push_back( {VAConfigAttribMaxPictureHeight, 0});
+    attrs.push_back( {VAConfigAttribMaxPictureWidth, 0});
+    attrs.push_back( {VAConfigAttribEncInterlaced, 0});
+    attrs.push_back( {VAConfigAttribEncMaxRefFrames, 0});
+    attrs.push_back( {VAConfigAttribEncMaxSlices, 0});
 #ifdef SKIP_FRAME_SUPPORT
     attrs.push_back( {VAConfigAttribEncSkipFrame, 0});
 #endif
@@ -860,7 +865,7 @@ mfxStatus VAAPIEncoder::CreateAuxilliaryDevice(
     m_caps.RollingIntraRefresh = (attrs[3].value & (~VA_ATTRIB_NOT_SUPPORTED)) ? 1 : 0 ;
     m_caps.vaRollingIntraRefresh = attrs[3].value;
 #ifdef SKIP_FRAME_SUPPORT
-    m_caps.SkipFrame = (attrs[4].value & (~VA_ATTRIB_NOT_SUPPORTED)) ? 1 : 0 ;
+    m_caps.SkipFrame = (attrs[9].value & (~VA_ATTRIB_NOT_SUPPORTED)) ? 1 : 0 ;
 #endif
 
     m_caps.UserMaxFrameSizeSupport = 1; // no request on support for libVA
@@ -868,6 +873,9 @@ mfxStatus VAAPIEncoder::CreateAuxilliaryDevice(
 
     vaExtQueryEncCapabilities pfnVaExtQueryCaps = NULL;
     pfnVaExtQueryCaps = (vaExtQueryEncCapabilities)vaGetLibFunc(m_vaDisplay,VPG_EXT_QUERY_ENC_CAPS);
+    /* This is for 16.3.* approach.
+     * It was used private libVA function to get information which feature is supported
+     * */
     if (pfnVaExtQueryCaps)
     {
         VAEncQueryCapabilities VaEncCaps;
@@ -883,7 +891,7 @@ mfxStatus VAAPIEncoder::CreateAuxilliaryDevice(
         m_caps.MaxNum_Reference = VaEncCaps.MaxNum_ReferenceL0;
         m_caps.MaxNum_Reference1 = VaEncCaps.MaxNum_ReferenceL1;
     }
-    else
+    else /* this is LibVA legacy approach. Should be supported from 16.4 driver */
     {
 #ifdef MFX_VA_ANDROID
         // To replace by vaQueryConfigAttributes()
@@ -891,14 +899,37 @@ mfxStatus VAAPIEncoder::CreateAuxilliaryDevice(
         m_caps.MaxPicWidth  = 1920;
         m_caps.MaxPicHeight = 1200;
 #else
-        m_caps.MaxPicWidth  = 1920;
-        m_caps.MaxPicHeight = 1088;
+        if ((attrs[5].value != VA_ATTRIB_NOT_SUPPORTED) && (attrs[5].value != 0))
+            m_caps.MaxPicWidth  = attrs[5].value;
+        else
+            m_caps.MaxPicWidth = 1920;
+
+        if ((attrs[4].value != VA_ATTRIB_NOT_SUPPORTED) && (attrs[4].value != 0))
+            m_caps.MaxPicHeight = attrs[4].value;
+        else
+            m_caps.MaxPicHeight = 1088;
 #endif
-        m_caps.SliceStructure = m_core->GetHWType() == MFX_HW_HSW ? 2 : 1; // 1 - SliceDividerSnb; 2 - SliceDividerHsw; 3 - SliceDividerBluRay; the other - SliceDividerOneSlice
-        m_caps.NoInterlacedField = 1;
-        m_caps.MaxNum_Reference = 1;
-        m_caps.MaxNum_Reference1 = 1;
-    }
+        if (attrs[8].value != VA_ATTRIB_NOT_SUPPORTED)
+            m_caps.SliceStructure = attrs[8].value;
+        else
+            m_caps.SliceStructure = m_core->GetHWType() == MFX_HW_HSW ? 2 : 1; // 1 - SliceDividerSnb; 2 - SliceDividerHsw; 3 - SliceDividerBluRay; the other - SliceDividerOneSlice
+
+        if (attrs[6].value != VA_ATTRIB_NOT_SUPPORTED)
+            m_caps.NoInterlacedField = attrs[6].value;
+        else
+            m_caps.NoInterlacedField = 0;
+
+        if (attrs[7].value != VA_ATTRIB_NOT_SUPPORTED)
+        {
+            m_caps.MaxNum_Reference = attrs[7].value & 0xffff;
+            m_caps.MaxNum_Reference1 = (attrs[7].value >>16) & 0xffff;
+        }
+        else
+        {
+            m_caps.MaxNum_Reference = 1;
+            m_caps.MaxNum_Reference1 = 1;
+        }
+    } /* if (pfnVaExtQueryCaps) */
 
     return MFX_ERR_NONE;
 } // mfxStatus VAAPIEncoder::CreateAuxilliaryDevice(VideoCORE* core, GUID guid, mfxU32 width, mfxU32 height)
