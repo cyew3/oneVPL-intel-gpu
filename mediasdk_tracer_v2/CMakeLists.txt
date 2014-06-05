@@ -17,6 +17,8 @@ set(HEADERS
   "loggers/log_file.h"
   "loggers/log_syslog.h"
   "loggers/log_etw_events.h"
+  "loggers/timer.h"
+  "loggers/thread_info.h"
   "config/config.h"
   "dumps/dump.h"
   "tracer/functions_table.h"

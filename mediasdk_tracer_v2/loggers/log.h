@@ -19,16 +19,23 @@ enum eLogType{
 #endif
 };
 
+enum eLogLevel{
+    LOG_LEVEL_DEFAULT,
+    LOG_LEVEL_SHORT,
+};
+
 class Log
 {
 public:
     static void WriteLog(const std::string &log);
     static void SetLogType(eLogType type);
     static void SetFilePath(std::string file_path);
+    static void SetLogLevel(eLogLevel level);
 private:
     Log();
     ~Log();
     static Log *_sing_log;
+    eLogLevel _log_level;
     ILog *_log;
     std::map<eLogType, ILog*> _logmap;
 };

@@ -12,7 +12,7 @@
     #define LOG_TYPES "console, file, syslog"
 #endif
 
-#define LOG_LEVELS "trace, error"
+#define LOG_LEVELS "default, short"
 
 int main(int argc, char *argv[])
 {
@@ -37,7 +37,7 @@ int main(int argc, char *argv[])
             "\n"
             "Examples:\n"
             "  mfx-tracer config --default                                # generate default config file\n"
-            "  mfx-tracer config core.type=file core.file=~/mfxtracer.log # set trace type and log file\n"
+            "  mfx-tracer config core.type file core.file ~/mfxtracer.log # set trace type and log file\n"
             "\n"
             "Config file: ~/.mfxtracer\n"
             "\n";
@@ -58,6 +58,7 @@ int main(int argc, char *argv[])
 #else
                 default_params.insert(pair<string, string>(string("type"), string("console")));
 #endif
+                default_params.insert(pair<string, string>(string("level"), string("default")));
                 config.insert(pair<string, map<string, string> >(string("core"), default_params));
 
                 if (!ConfigManager::CreateConfig(config_path, config)) {
@@ -75,7 +76,7 @@ int main(int argc, char *argv[])
                         ini.insert(pair<string, map<string, string> >(vsection_params[0], param));
                     }
 
-                    if (++i < argc) { 
+                    if (++i < argc) {
                         if (ini[vsection_params[0]].find(vsection_params[1]) == ini[vsection_params[0]].end()) {
                             ini[vsection_params[0]].insert(pair<string, string>(vsection_params[1], argv[i]));
                         } else {

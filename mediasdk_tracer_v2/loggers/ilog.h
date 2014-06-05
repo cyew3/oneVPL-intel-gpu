@@ -2,6 +2,8 @@
 #define ILOG_H_
 
 #include <string>
+#include "timer.h"
+#include "thread_info.h"
 
 class ILog
 {

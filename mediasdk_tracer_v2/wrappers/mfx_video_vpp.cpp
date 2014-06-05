@@ -1,174 +1,254 @@
 #include "mfx_video_vpp.h"
+#include "mfx_structures.h"
+#include "../loggers/timer.h"
+#include <exception>
+#include <iostream>
 
 // VPP interface functions
 mfxStatus MFXVideoVPP_Query(mfxSession session, mfxVideoParam *in, mfxVideoParam *out)
 {
-    Log::WriteLog("MFXVideoVPP_Query");
-    mfxLoader *loader = (mfxLoader*) session;
+    try{
+        Log::WriteLog("function: MFXVideoVPP_Query(mfxSession session, mfxVideoParam *in, mfxVideoParam *out) +");
+        mfxLoader *loader = (mfxLoader*) session;
 
-    if (!loader) return MFX_ERR_INVALID_HANDLE;
+        if (!loader) return MFX_ERR_INVALID_HANDLE;
 
-    mfxFunctionPointer proc = loader->table[eMFXVideoVPP_Query];
-    if (!proc) return MFX_ERR_INVALID_HANDLE;
+        mfxFunctionPointer proc = loader->table[eMFXVideoVPP_Query];
+        if (!proc) return MFX_ERR_INVALID_HANDLE;
 
-    session = loader->session;
+        session = loader->session;
+        Log::WriteLog(dump_mfxSession("session", session));
+        if(in) Log::WriteLog(dump_mfxVideoParam("in", in));
+        if(out) Log::WriteLog(dump_mfxVideoParam("out", out));
 
-    mfxStatus status = (*(mfxStatus (MFX_CDECL*) (mfxSession session, mfxVideoParam *in, mfxVideoParam *out)) proc) (session, in, out);
-
-    dump_mfxSession("session", session);
-    if(in) dump_mfxVideoParam("in", in);
-    if(out) dump_mfxVideoParam("out", out);
-    dump_mfxStatus("status ", status);
-    Log::WriteLog("MFXVideoVPP_Query End \n\n");
-    return status;
+        Timer t;
+        mfxStatus status = (*(mfxStatus (MFX_CDECL*) (mfxSession session, mfxVideoParam *in, mfxVideoParam *out)) proc) (session, in, out);
+        std::string elapsed = ToString(t.GetTime());
+        Log::WriteLog("MFXVideoVPP_Query called");
+        Log::WriteLog(dump_mfxSession("session", session));
+        if(in) Log::WriteLog(dump_mfxVideoParam("in", in));
+        if(out) Log::WriteLog(dump_mfxVideoParam("out", out));
+        Log::WriteLog("function: MFXVideoVPP_Query(" + elapsed + " sec, " + dump_mfxStatus("status", status) + ") - \n\n");
+        return status;
+    }
+    catch (std::exception& e){
+        std::cerr << "Exception: " << e.what() << '\n';
+    }
 }
 
 mfxStatus MFXVideoVPP_QueryIOSurf(mfxSession session, mfxVideoParam *par, mfxFrameAllocRequest *request)
 {
-    Log::WriteLog("MFXVideoVPP_QueryIOSurf");
-    mfxLoader *loader = (mfxLoader*) session;
+    try{
+        Log::WriteLog("function: MFXVideoVPP_QueryIOSurf(mfxSession session, mfxVideoParam *par, mfxFrameAllocRequest *request) +");
+        mfxLoader *loader = (mfxLoader*) session;
 
-    if (!loader) return MFX_ERR_INVALID_HANDLE;
+        if (!loader) return MFX_ERR_INVALID_HANDLE;
 
-    mfxFunctionPointer proc = loader->table[eMFXVideoVPP_QueryIOSurf];
-    if (!proc) return MFX_ERR_INVALID_HANDLE;
+        mfxFunctionPointer proc = loader->table[eMFXVideoVPP_QueryIOSurf];
+        if (!proc) return MFX_ERR_INVALID_HANDLE;
 
-    session = loader->session;
+        session = loader->session;
+        Log::WriteLog(dump_mfxSession("session", session));
+        if(par) Log::WriteLog(dump_mfxVideoParam("par", par));
+        if(request) Log::WriteLog(dump_mfxFrameAllocRequest("request", request));
 
-    mfxStatus status = (*(mfxStatus (MFX_CDECL*) (mfxSession session, mfxVideoParam *par, mfxFrameAllocRequest *request)) proc) (session, par, request);
-
-    dump_mfxSession("session", session);
-    if(par) dump_mfxVideoParam("par", par);
-    if(request) dump_mfxFrameAllocRequest("request", request);
-    dump_mfxStatus("status ", status);
-    Log::WriteLog("MFXVideoVPP_QueryIOSurf End \n\n");
-    return status;
+        Timer t;
+        mfxStatus status = (*(mfxStatus (MFX_CDECL*) (mfxSession session, mfxVideoParam *par, mfxFrameAllocRequest *request)) proc) (session, par, request);
+        std::string elapsed = ToString(t.GetTime());
+        Log::WriteLog("MFXVideoVPP_QueryIOSurf called");
+        Log::WriteLog(dump_mfxSession("session", session));
+        if(par) Log::WriteLog(dump_mfxVideoParam("par", par));
+        if(request) Log::WriteLog(dump_mfxFrameAllocRequest("request", request));
+        Log::WriteLog("function: MFXVideoVPP_QueryIOSurf(" + elapsed + " sec, " + dump_mfxStatus("status", status) + ") - \n\n");
+        return status;
+    }
+    catch (std::exception& e){
+        std::cerr << "Exception: " << e.what() << '\n';
+    }
 }
 
 mfxStatus MFXVideoVPP_Init(mfxSession session, mfxVideoParam *par)
 {
-    Log::WriteLog("MFXVideoVPP_Init");
-    mfxLoader *loader = (mfxLoader*) session;
+    try{
+        Log::WriteLog("function: MFXVideoVPP_Init(mfxSession session, mfxVideoParam *par) +");
+        mfxLoader *loader = (mfxLoader*) session;
 
-    if (!loader) return MFX_ERR_INVALID_HANDLE;
+        if (!loader) return MFX_ERR_INVALID_HANDLE;
 
-    mfxFunctionPointer proc = loader->table[eMFXVideoVPP_Init];
-    if (!proc) return MFX_ERR_INVALID_HANDLE;
+        mfxFunctionPointer proc = loader->table[eMFXVideoVPP_Init];
+        if (!proc) return MFX_ERR_INVALID_HANDLE;
 
-    session = loader->session;
+        session = loader->session;
+        Log::WriteLog(dump_mfxSession("session", session));
+        if(par) Log::WriteLog(dump_mfxVideoParam("par", par));
 
-    mfxStatus status = (*(mfxStatus (MFX_CDECL*) (mfxSession session, mfxVideoParam *par)) proc) (session, par);
-
-    dump_mfxSession("session", session);
-    if(par) dump_mfxVideoParam("par", par);
-    dump_mfxStatus("status ", status);
-    Log::WriteLog("MFXVideoVPP_Init End \n\n");
-    return status;
+        Timer t;
+        mfxStatus status = (*(mfxStatus (MFX_CDECL*) (mfxSession session, mfxVideoParam *par)) proc) (session, par);
+        std::string elapsed = ToString(t.GetTime());
+        Log::WriteLog("MFXVideoVPP_Init called");
+        Log::WriteLog(dump_mfxSession("session", session));
+        if(par) Log::WriteLog(dump_mfxVideoParam("par", par));
+        Log::WriteLog("function: MFXVideoVPP_Init(" + elapsed + " sec, " + dump_mfxStatus("status", status) + ") - \n\n");
+        return status;
+    }
+    catch (std::exception& e){
+        std::cerr << "Exception: " << e.what() << '\n';
+    }
 }
 
 mfxStatus MFXVideoVPP_Reset(mfxSession session, mfxVideoParam *par)
 {
-    Log::WriteLog("MFXVideoVPP_Reset");
-    mfxLoader *loader = (mfxLoader*) session;
+    try{
+        Log::WriteLog("function: MFXVideoVPP_Reset(mfxSession session, mfxVideoParam *par) +");
+        mfxLoader *loader = (mfxLoader*) session;
 
-    if (!loader) return MFX_ERR_INVALID_HANDLE;
+        if (!loader) return MFX_ERR_INVALID_HANDLE;
 
-    mfxFunctionPointer proc = loader->table[eMFXVideoVPP_Reset];
-    if (!proc) return MFX_ERR_INVALID_HANDLE;
+        mfxFunctionPointer proc = loader->table[eMFXVideoVPP_Reset];
+        if (!proc) return MFX_ERR_INVALID_HANDLE;
 
-    session = loader->session;
+        session = loader->session;
+        Log::WriteLog(dump_mfxSession("session", session));
+        if(par) Log::WriteLog(dump_mfxVideoParam("par", par));
 
-    mfxStatus status = (*(mfxStatus (MFX_CDECL*) (mfxSession session, mfxVideoParam *par)) proc) (session, par);
-
-    dump_mfxSession("session", session);
-    if(par) dump_mfxVideoParam("par", par);
-    dump_mfxStatus("status ", status);
-    Log::WriteLog("MFXVideoVPP_Reset End \n\n");
-    return status;
+        Timer t;
+        mfxStatus status = (*(mfxStatus (MFX_CDECL*) (mfxSession session, mfxVideoParam *par)) proc) (session, par);
+        std::string elapsed = ToString(t.GetTime());
+        Log::WriteLog("MFXVideoVPP_Reset called");
+        Log::WriteLog(dump_mfxSession("session", session));
+        if(par) Log::WriteLog(dump_mfxVideoParam("par", par));
+        Log::WriteLog("function: MFXVideoVPP_Reset(" + elapsed + " sec, " + dump_mfxStatus("status", status) + ") - \n\n");
+        return status;
+    }
+    catch (std::exception& e){
+        std::cerr << "Exception: " << e.what() << '\n';
+    }
 }
 
 mfxStatus MFXVideoVPP_Close(mfxSession session)
 {
-    Log::WriteLog("MFXVideoVPP_Close");
-    mfxLoader *loader = (mfxLoader*) session;
+    try{
+        Log::WriteLog("function: MFXVideoVPP_Close(mfxSession session) +");
+        mfxLoader *loader = (mfxLoader*) session;
 
-    if (!loader) return MFX_ERR_INVALID_HANDLE;
+        if (!loader) return MFX_ERR_INVALID_HANDLE;
 
-    mfxFunctionPointer proc = loader->table[eMFXVideoVPP_Close];
-    if (!proc) return MFX_ERR_INVALID_HANDLE;
+        mfxFunctionPointer proc = loader->table[eMFXVideoVPP_Close];
+        if (!proc) return MFX_ERR_INVALID_HANDLE;
 
-    session = loader->session;
+        session = loader->session;
+        Log::WriteLog(dump_mfxSession("session", session));
 
-    mfxStatus status = (*(mfxStatus (MFX_CDECL*) (mfxSession session)) proc) (session);
-
-    dump_mfxSession("session", session);
-    dump_mfxStatus("status ", status);
-    Log::WriteLog("MFXVideoVPP_Close End \n\n");
-    return status;
+        Timer t;
+        mfxStatus status = (*(mfxStatus (MFX_CDECL*) (mfxSession session)) proc) (session);
+        std::string elapsed = ToString(t.GetTime());
+        Log::WriteLog("MFXVideoVPP_Close called");
+        Log::WriteLog(dump_mfxSession("session", session));
+        Log::WriteLog("function: MFXVideoVPP_Close(" + elapsed + " sec, " + dump_mfxStatus("status", status) + ") - \n\n");
+        return status;
+    }
+    catch (std::exception& e){
+        std::cerr << "Exception: " << e.what() << '\n';
+    }
 }
 
 mfxStatus MFXVideoVPP_GetVideoParam(mfxSession session, mfxVideoParam *par)
 {
-    Log::WriteLog("MFXVideoVPP_GetVideoParam");
-    mfxLoader *loader = (mfxLoader*) session;
+    try{
+        Log::WriteLog("function: MFXVideoVPP_GetVideoParam(mfxSession session, mfxVideoParam *par) +");
+        mfxLoader *loader = (mfxLoader*) session;
 
-    if (!loader) return MFX_ERR_INVALID_HANDLE;
+        if (!loader) return MFX_ERR_INVALID_HANDLE;
 
-    mfxFunctionPointer proc = loader->table[eMFXVideoVPP_GetVideoParam];
-    if (!proc) return MFX_ERR_INVALID_HANDLE;
+        mfxFunctionPointer proc = loader->table[eMFXVideoVPP_GetVideoParam];
+        if (!proc) return MFX_ERR_INVALID_HANDLE;
 
-    session = loader->session;
+        session = loader->session;
+        Log::WriteLog(dump_mfxSession("session", session));
+        if(par) Log::WriteLog(dump_mfxVideoParam("par", par));
 
-    mfxStatus status = (*(mfxStatus (MFX_CDECL*) (mfxSession session, mfxVideoParam *par)) proc) (session, par);
-
-    dump_mfxSession("session", session);
-    if(par) dump_mfxVideoParam("par", par);
-    dump_mfxStatus("status ", status);
-    Log::WriteLog("MFXVideoVPP_GetVideoParam End \n\n");
-    return status;
+        Timer t;
+        mfxStatus status = (*(mfxStatus (MFX_CDECL*) (mfxSession session, mfxVideoParam *par)) proc) (session, par);
+        std::string elapsed = ToString(t.GetTime());
+        Log::WriteLog("MFXVideoVPP_GetVideoParam called");
+        Log::WriteLog(dump_mfxSession("session", session));
+        if(par) Log::WriteLog(dump_mfxVideoParam("par", par));
+        Log::WriteLog("function: MFXVideoVPP_GetVideoParam(" + elapsed + " sec, " + dump_mfxStatus("status", status) + ") - \n\n");
+        return status;
+    }
+    catch (std::exception& e){
+        std::cerr << "Exception: " << e.what() << '\n';
+    }
 }
 
 mfxStatus MFXVideoVPP_GetVPPStat(mfxSession session, mfxVPPStat *stat)
 {
-    Log::WriteLog("MFXVideoVPP_GetVPPStat");
-    mfxLoader *loader = (mfxLoader*) session;
+    try{
+        Log::WriteLog("function: MFXVideoVPP_GetVPPStat(mfxSession session, mfxVPPStat *stat) +");
+        mfxLoader *loader = (mfxLoader*) session;
 
-    if (!loader) return MFX_ERR_INVALID_HANDLE;
+        if (!loader) return MFX_ERR_INVALID_HANDLE;
 
-    mfxFunctionPointer proc = loader->table[eMFXVideoVPP_GetVPPStat];
-    if (!proc) return MFX_ERR_INVALID_HANDLE;
+        mfxFunctionPointer proc = loader->table[eMFXVideoVPP_GetVPPStat];
+        if (!proc) return MFX_ERR_INVALID_HANDLE;
 
-    session = loader->session;
+        session = loader->session;
+        Log::WriteLog(dump_mfxSession("session", session));
+        if(stat) Log::WriteLog(dump_mfxVPPStat("stat", stat));
 
-    mfxStatus status = (*(mfxStatus (MFX_CDECL*) (mfxSession session, mfxVPPStat *stat)) proc) (session, stat);
-
-    dump_mfxSession("session", session);
-    if(stat) dump_mfxVPPStat("stat", stat);
-    dump_mfxStatus("status ", status);
-    Log::WriteLog("MFXVideoVPP_GetVPPStat End \n\n");
-    return status;
+        Timer t;
+        mfxStatus status = (*(mfxStatus (MFX_CDECL*) (mfxSession session, mfxVPPStat *stat)) proc) (session, stat);
+        std::string elapsed = ToString(t.GetTime());
+        Log::WriteLog("MFXVideoVPP_GetVPPStat called");
+        Log::WriteLog(dump_mfxSession("session", session));
+        if(stat) Log::WriteLog(dump_mfxVPPStat("stat", stat));
+        Log::WriteLog("function: MFXVideoVPP_GetVPPStat(" + elapsed + " sec, " + dump_mfxStatus("status", status) + ") - \n\n");
+        return status;
+    }
+    catch (std::exception& e){
+        std::cerr << "Exception: " << e.what() << '\n';
+    }
 }
 
 mfxStatus MFXVideoVPP_RunFrameVPPAsync(mfxSession session, mfxFrameSurface1 *in, mfxFrameSurface1 *out, mfxExtVppAuxData *aux, mfxSyncPoint *syncp)
 {
-    Log::WriteLog("MFXVideoVPP_RunFrameVPPAsync");
-    mfxLoader *loader = (mfxLoader*) session;
+    try{
+        TracerSyncPoint * sp = new TracerSyncPoint();
+        sp->syncPoint = (*syncp);
+        sp->component = VPP;
 
-    if (!loader) return MFX_ERR_INVALID_HANDLE;
+        Log::WriteLog("function: MFXVideoVPP_RunFrameVPPAsync(mfxSession session, mfxFrameSurface1 *in, mfxFrameSurface1 *out, mfxExtVppAuxData *aux, mfxSyncPoint *syncp) +");
+        mfxLoader *loader = (mfxLoader*) session;
 
-    mfxFunctionPointer proc = loader->table[eMFXVideoVPP_RunFrameVPPAsync];
-    if (!proc) return MFX_ERR_INVALID_HANDLE;
+        if (!loader) return MFX_ERR_INVALID_HANDLE;
 
-    session = loader->session;
+        mfxFunctionPointer proc = loader->table[eMFXVideoVPP_RunFrameVPPAsync];
+        if (!proc) return MFX_ERR_INVALID_HANDLE;
 
-    mfxStatus status = (*(mfxStatus (MFX_CDECL*) (mfxSession session, mfxFrameSurface1 *in, mfxFrameSurface1 *out, mfxExtVppAuxData *aux, mfxSyncPoint *syncp)) proc) (session, in, out, aux, syncp);
+        session = loader->session;
+        Log::WriteLog(dump_mfxSession("session", session));
+        if(in) Log::WriteLog(dump_mfxFrameSurface1("in", in));
+        if(out) Log::WriteLog(dump_mfxFrameSurface1("out", out));
+        if(aux) Log::WriteLog(dump_mfxExtVppAuxData("aux", aux));
+        if(syncp) Log::WriteLog(dump_mfxSyncPoint("syncp", syncp));
 
-    dump_mfxSession("session", session);
-    if(in) dump_mfxFrameSurface1("in", in);
-    if(out) dump_mfxFrameSurface1("out", out);
-    if(aux) dump_mfxExtVppAuxData("aux", aux);
-    if(syncp) dump_mfxSyncPoint("syncp", syncp);
-    dump_mfxStatus("status ", status);
-    Log::WriteLog("MFXVideoVPP_RunFrameVPPAsync End \n\n");
-    return status;
+        sp->timer.Restart();
+        Timer t;
+        mfxStatus status = (*(mfxStatus (MFX_CDECL*) (mfxSession session, mfxFrameSurface1 *in, mfxFrameSurface1 *out, mfxExtVppAuxData *aux, mfxSyncPoint *syncp)) proc) (session, in, out, aux, &sp->syncPoint);
+        std::string elapsed = ToString(t.GetTime());
+
+        *syncp = (mfxSyncPoint)sp;
+
+        Log::WriteLog("MFXVideoVPP_RunFrameVPPAsync called");
+        Log::WriteLog(dump_mfxSession("session", session));
+        if(in) Log::WriteLog(dump_mfxFrameSurface1("in", in));
+        if(out) Log::WriteLog(dump_mfxFrameSurface1("out", out));
+        if(aux) Log::WriteLog(dump_mfxExtVppAuxData("aux", aux));
+        if(&sp->syncPoint) Log::WriteLog(dump_mfxSyncPoint("syncp", &sp->syncPoint));
+        Log::WriteLog("function: MFXVideoVPP_RunFrameVPPAsync(" + elapsed + " sec, " + dump_mfxStatus("status", status) + ") - \n\n");
+        return status;
+    }
+    catch (std::exception& e){
+        std::cerr << "Exception: " << e.what() << '\n';
+    }
 }
