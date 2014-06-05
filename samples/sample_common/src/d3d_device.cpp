@@ -146,9 +146,20 @@ mfxStatus CD3D9Device::FillD3DPP(mfxHDL hWindow, mfxU16 nViews, D3DPRESENT_PARAM
     D3DPP.BackBufferCount            = 1;
     D3DPP.BackBufferFormat           = (m_bIsA2rgb10) ? D3DFMT_A2R10G10B10 : D3DFMT_X8R8G8B8;
 
-    D3DPP.BackBufferWidth  = GetSystemMetrics(SM_CXSCREEN);
-    D3DPP.BackBufferHeight = GetSystemMetrics(SM_CYSCREEN);
-
+    if (hWindow)
+    {
+        RECT r;
+        GetClientRect((HWND)hWindow, &r);
+        int x = GetSystemMetrics(SM_CXSCREEN);
+        int y = GetSystemMetrics(SM_CYSCREEN);
+        D3DPP.BackBufferWidth  = min(r.right - r.left, x);
+        D3DPP.BackBufferHeight = min(r.bottom - r.top, y);
+    }
+    else
+    {
+        D3DPP.BackBufferWidth  = GetSystemMetrics(SM_CYSCREEN);
+        D3DPP.BackBufferHeight = GetSystemMetrics(SM_CYSCREEN);
+    }
     //
     // Mark the back buffer lockable if software DXVA2 could be used.
     // This is because software DXVA2 device requires a lockable render target
@@ -336,24 +347,12 @@ mfxStatus CD3D9Device::RenderFrame(mfxFrameSurface1 * pSurface, mfxFrameAllocato
         }
     }
 
-    // source rectangle
-    RECT source = { pSurface->Info.CropX, pSurface->Info.CropY,
-                    pSurface->Info.CropX + pSurface->Info.CropW,
-                    pSurface->Info.CropY + pSurface->Info.CropH };
-
     CComPtr<IDirect3DSurface9> pBackBuffer;
     hr = m_pD3DD9->GetBackBuffer(0, 0, D3DBACKBUFFER_TYPE_MONO, &pBackBuffer);
 
-    D3DSURFACE_DESC dsc ;
-    pBackBuffer->GetDesc(&dsc);
-
-    RECT targetRect = {0}, dest = {0};
-    GetClientRect(m_D3DPP.hDeviceWindow, &targetRect);
-    dest = targetRect;
-
     directxMemId* dxMemId = (directxMemId*)pSurface->Data.MemId;
 
-    hr = m_pD3DD9->StretchRect(dxMemId->m_surface, &source, pBackBuffer, &dest, D3DTEXF_LINEAR);
+    hr = m_pD3DD9->StretchRect(dxMemId->m_surface, NULL, pBackBuffer, NULL, D3DTEXF_LINEAR);
     if (FAILED(hr))
     {
         return MFX_ERR_UNKNOWN;
@@ -361,7 +360,7 @@ mfxStatus CD3D9Device::RenderFrame(mfxFrameSurface1 * pSurface, mfxFrameAllocato
 
     if (SUCCEEDED(hr)&& (1 == m_nViews || pSurface->Info.FrameId.ViewId == 1))
     {
-        hr = m_pD3DD9->Present(&targetRect, &targetRect, NULL, NULL);
+        hr = m_pD3DD9->Present(NULL, NULL, NULL, NULL);
     }
 
     return SUCCEEDED(hr) ? MFX_ERR_NONE : MFX_ERR_DEVICE_FAILED;
