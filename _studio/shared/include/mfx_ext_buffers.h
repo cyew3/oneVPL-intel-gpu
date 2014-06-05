@@ -216,7 +216,7 @@ typedef struct {
     mfxU16      CUSplitThreshold;   // skip CU split check: threshold = CUSplitThreshold / 256.0
     mfxU16      DQP;                // DeltaQP modes: 0-disabled; 1-paq; 2-calq; 3-paq+calq
     mfxU16      Enable10bit;        // tri-state
-    mfxU16      reserved[3];
+    mfxU16      reserved[68];       // 256 bytes total
 } mfxExtCodingOptionHEVC;
 
 
