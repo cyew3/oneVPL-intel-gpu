@@ -11,6 +11,7 @@ tsFrame::tsFrame(mfxFrameSurface1 s)
     case MFX_FOURCC_YUY2: m_pFrame = new tsFrameYUY2(s.Data); break;
     case MFX_FOURCC_BGR4: std::swap(s.Data.B, s.Data.R);
     case MFX_FOURCC_RGB4: m_pFrame = new tsFrameRGB4(s.Data); break;
+    case MFX_FOURCC_R16:  m_pFrame = new tsFrameR16(s.Data); break;
         break;
     default: g_tsStatus.check(MFX_ERR_UNSUPPORTED);
     }
@@ -72,6 +73,21 @@ tsFrame& tsFrame::operator=(tsFrame& src)
                 {
                     U(w + m_info.CropX, h + m_info.CropY) = src.U(w + src.m_info.CropX, h + src.m_info.CropY);
                     V(w + m_info.CropX, h + m_info.CropY) = src.V(w + src.m_info.CropX, h + src.m_info.CropY);
+                }
+            }
+        }
+    }
+    if(isYUV16() && src.isYUV16())
+    {
+        for(mfxU32 h = 0; h < maxh; h ++)
+        {
+            for(mfxU32 w = 0; w < maxw; w ++)
+            {
+                Y16(w + m_info.CropX, h + m_info.CropY) = src.Y16(w + src.m_info.CropX, h + src.m_info.CropY);
+                if(n == 3)
+                {
+                    U16(w + m_info.CropX, h + m_info.CropY) = src.U16(w + src.m_info.CropX, h + src.m_info.CropY);
+                    V16(w + m_info.CropX, h + m_info.CropY) = src.V16(w + src.m_info.CropX, h + src.m_info.CropY);
                 }
             }
         }
@@ -227,6 +243,9 @@ void tsRawReader::Init(mfxFrameInfo fi)
     default: g_tsStatus.check(MFX_ERR_UNSUPPORTED);
     }
 
+    if(MFX_FOURCC_R16 == m_surf.Info.FourCC)
+        m_fsz = m_fsz * 2;
+
     m_buf = new mfxU8[m_fsz];
 
     switch(fi.FourCC)
@@ -261,6 +280,10 @@ void tsRawReader::Init(mfxFrameInfo fi)
         m_data.R     = m_data.G + fsz;
         m_data.A     = m_data.R + fsz;
         pitch        = fi.Width;
+        break;
+    case MFX_FOURCC_R16:
+        m_data.Y16   = (mfxU16*) m_buf;
+        pitch        = fi.Width * 2;
         break;
     default: g_tsStatus.check(MFX_ERR_UNSUPPORTED);
     }
@@ -313,19 +336,32 @@ mfxStatus tsSurfaceWriter::ProcessSurface(mfxFrameSurface1& s)
 {
     mfxU32 pitch = (s.Data.PitchHigh << 16) + s.Data.PitchLow;
 
-    if(s.Info.FourCC != MFX_FOURCC_NV12)
+    if(s.Info.FourCC == MFX_FOURCC_NV12)
+    {
+        for(mfxU16 i = s.Info.CropY; i < s.Info.CropH; i ++)
+        {
+            fwrite(s.Data.Y + pitch * i + s.Info.CropX, 1, s.Info.CropW, m_file);
+        }
+    
+        for(mfxU16 i = (s.Info.CropY / 2); i < (s.Info.CropH / 2); i ++)
+        {
+            fwrite(s.Data.UV + pitch * i + s.Info.CropX, 1, s.Info.CropW, m_file);
+        }
+    }
+    else if(s.Info.FourCC == MFX_FOURCC_RGB4)
+    {
+        mfxU8* ptr = 0;
+        ptr = TS_MIN( TS_MIN(s.Data.R, s.Data.G), s.Data.B );
+        ptr = ptr + s.Info.CropX + s.Info.CropY * pitch;
+
+        for(mfxU32 i = s.Info.CropY; i < s.Info.CropH; i++) 
+        {
+            fwrite(ptr + i * pitch, 1, 4*s.Info.CropW, m_file);
+        }
+    }
+    else
     {
         return MFX_ERR_UNSUPPORTED;
-    }
-
-    for(mfxU16 i = s.Info.CropY; i < s.Info.CropH; i ++)
-    {
-        fwrite(s.Data.Y + pitch * i + s.Info.CropX, 1, s.Info.CropW, m_file);
-    }
-    
-    for(mfxU16 i = (s.Info.CropY / 2); i < (s.Info.CropH / 2); i ++)
-    {
-        fwrite(s.Data.UV + pitch * i + s.Info.CropX, 1, s.Info.CropW, m_file);
     }
 
     return MFX_ERR_NONE;

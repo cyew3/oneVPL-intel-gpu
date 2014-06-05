@@ -15,7 +15,7 @@ public:
     static const unsigned int n_cases;
 
 private:
-    static const mfxU32 max_num_ctrl     = 6;
+    static const mfxU32 max_num_ctrl     = 10;
     static const mfxU32 max_num_ctrl_par = 4;
     mfxSession m_session;
     mfxU32 m_repeat;
@@ -109,7 +109,7 @@ const TestSuite::tc_struct TestSuite::test_case[] =
         {REPEAT, 0, {2}}}
     },
     {/* 4*/ MFX_ERR_NONE, 0,
-       {{INIT|MFXVPAR, &tsStruct::mfxVideoParam.IOPattern, {MFX_IOPATTERN_OUT_VIDEO_MEMORY|MFX_IOPATTERN_OUT_VIDEO_MEMORY}},
+       {{INIT|MFXVPAR, &tsStruct::mfxVideoParam.IOPattern, {MFX_IOPATTERN_IN_VIDEO_MEMORY|MFX_IOPATTERN_OUT_VIDEO_MEMORY}},
         {REPEAT, 0, {2}}}
     },
     {/* 5*/ MFX_ERR_INVALID_VIDEO_PARAM,      0, {RESET|MFXVPAR, &tsStruct::mfxVideoParam.IOPattern, {MFX_IOPATTERN_OUT_VIDEO_MEMORY|MFX_IOPATTERN_OUT_VIDEO_MEMORY}}},
@@ -117,12 +117,12 @@ const TestSuite::tc_struct TestSuite::test_case[] =
     {/* 7*/ MFX_ERR_NOT_INITIALIZED,          0, {RESET|CLOSE_VPP}},
     {/* 8*/ MFX_ERR_NULL_PTR,                 0, {RESET|NULLPTR}},
     {/* 9*/ MFX_ERR_INVALID_VIDEO_PARAM,      0, {RESET|MFXVPAR, &tsStruct::mfxVideoParam.vpp.In.ChromaFormat, {MFX_CHROMAFORMAT_MONOCHROME}}},
-    {/*10*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, 0, {RESET|MFXVPAR, &tsStruct::mfxVideoParam.vpp.In.Width, {720 + 32}}},
+    {/*10*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, 0, {RESET|MFXVPAR, &tsStruct::mfxVideoParam.vpp.In.Width,  {720 + 32}}},
     {/*11*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, 0, {RESET|MFXVPAR, &tsStruct::mfxVideoParam.vpp.In.Height, {480 + 32}}},
-    {/*12*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, 0, {RESET|MFXVPAR, &tsStruct::mfxVideoParam.AsyncDepth, {10}}},
-    {/*13*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, 0, {RESET|MFXVPAR, &tsStruct::mfxVideoParam.AsyncDepth, {1}}},
-    {/*14*/ MFX_ERR_INVALID_VIDEO_PARAM,      0, {RESET|MFXVPAR, &tsStruct::mfxVideoParam.Protected, {1}}},
-    {/*15*/ MFX_ERR_INVALID_VIDEO_PARAM,      0, {RESET|MFXVPAR, &tsStruct::mfxVideoParam.Protected, {2}}},
+    {/*12*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, 0, {RESET|MFXVPAR, &tsStruct::mfxVideoParam.AsyncDepth,    {10}}},
+    {/*13*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, 0, {RESET|MFXVPAR, &tsStruct::mfxVideoParam.AsyncDepth,    {1}}},
+    {/*14*/ MFX_ERR_INVALID_VIDEO_PARAM,      0, {RESET|MFXVPAR, &tsStruct::mfxVideoParam.Protected,     {1}}},
+    {/*15*/ MFX_ERR_INVALID_VIDEO_PARAM,      0, {RESET|MFXVPAR, &tsStruct::mfxVideoParam.Protected,     {2}}},
     {/*16*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, 0,
        {{INIT|ALLOCATOR, 0, {frame_allocator::SOFTWARE, frame_allocator::ALLOC_MAX}},
         {RESET|MFXVPAR, &tsStruct::mfxVideoParam.IOPattern, {MFX_IOPATTERN_IN_OPAQUE_MEMORY|MFX_IOPATTERN_OUT_OPAQUE_MEMORY}}}
@@ -212,9 +212,9 @@ const TestSuite::tc_struct TestSuite::test_case[] =
            {RESET|EXT_BUF, 0, {EXT_BUF_PAR(mfxExtCamBayerDenoise         )}}  }
     },
     {/*50*/ MFX_ERR_NONE, 0, 
-        {  {INIT|EXT_BUF, 0, {EXT_BUF_PAR(mfxExtCamGammaCorrection       )}},
-           {INIT|EXT_BUF, 0, {EXT_BUF_PAR(mfxExtCamWhiteBalance          )}},
-           {INIT|EXT_BUF, 0, {EXT_BUF_PAR(mfxExtCamHotPixelRemoval       )}},
+        {  {INIT|EXT_BUF,  0, {EXT_BUF_PAR(mfxExtCamGammaCorrection       )}},
+           {INIT|EXT_BUF,  0, {EXT_BUF_PAR(mfxExtCamWhiteBalance          )}},
+           {INIT|EXT_BUF,  0, {EXT_BUF_PAR(mfxExtCamHotPixelRemoval       )}},
            {RESET|EXT_BUF, 0, {EXT_BUF_PAR(mfxExtCamBlackLevelCorrection )}},
            {RESET|EXT_BUF, 0, {EXT_BUF_PAR(mfxExtCamVignetteCorrection   )}},
            {RESET|EXT_BUF, 0, {EXT_BUF_PAR(mfxExtCamBayerDenoise         )}}  }
@@ -222,49 +222,47 @@ const TestSuite::tc_struct TestSuite::test_case[] =
     {/*51*/ MFX_ERR_NONE, 0, 
         {  {INIT|MFXVPAR,  &tsStruct::mfxVideoParam.vpp.In.Width,   {4096}},
            {INIT|MFXVPAR,  &tsStruct::mfxVideoParam.vpp.In.Height,  {4096}},
+           {INIT|MFXVPAR,  &tsStruct::mfxVideoParam.vpp.Out.Width,  {4096}},
+           {INIT|MFXVPAR,  &tsStruct::mfxVideoParam.vpp.Out.Height, {4096}},
+           {RESET|MFXVPAR, &tsStruct::mfxVideoParam.vpp.Out.Width, {2048}},
+           {RESET|MFXVPAR, &tsStruct::mfxVideoParam.vpp.Out.Height,{2048}},
            {RESET|MFXVPAR, &tsStruct::mfxVideoParam.vpp.In.Width,   {2048}},
            {RESET|MFXVPAR, &tsStruct::mfxVideoParam.vpp.In.Height,  {2048}}  }
     },
     {/*52*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, 
         {  {INIT|MFXVPAR,  &tsStruct::mfxVideoParam.vpp.In.Width,   {4096}},
            {INIT|MFXVPAR,  &tsStruct::mfxVideoParam.vpp.In.Height,  {4096}},
+           {INIT|MFXVPAR,  &tsStruct::mfxVideoParam.vpp.Out.Width,  {4096}},
+           {INIT|MFXVPAR,  &tsStruct::mfxVideoParam.vpp.Out.Height, {4096}},
+           {RESET|MFXVPAR,  &tsStruct::mfxVideoParam.vpp.Out.Width, {2048 + 5}},
+           {RESET|MFXVPAR,  &tsStruct::mfxVideoParam.vpp.Out.Height,{2048 + 5}},
            {RESET|MFXVPAR, &tsStruct::mfxVideoParam.vpp.In.Width,   {2048 + 5}},
            {RESET|MFXVPAR, &tsStruct::mfxVideoParam.vpp.In.Height,  {2048 + 5}}  }
     },
     {/*53*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, 0, 
         {  {INIT|MFXVPAR,  &tsStruct::mfxVideoParam.vpp.In.Width,   {2048}},
            {INIT|MFXVPAR,  &tsStruct::mfxVideoParam.vpp.In.Height,  {2048}},
+           {INIT|MFXVPAR,  &tsStruct::mfxVideoParam.vpp.Out.Width,  {2048}},
+           {INIT|MFXVPAR,  &tsStruct::mfxVideoParam.vpp.Out.Height, {2048}},
+           {RESET|MFXVPAR, &tsStruct::mfxVideoParam.vpp.Out.Width,  {4096}},
+           {RESET|MFXVPAR, &tsStruct::mfxVideoParam.vpp.Out.Height, {4096}},
            {RESET|MFXVPAR, &tsStruct::mfxVideoParam.vpp.In.Width,   {4096}},
            {RESET|MFXVPAR, &tsStruct::mfxVideoParam.vpp.In.Height,  {4096}}  }
     },
     {/*54*/ MFX_ERR_NONE, 0, 
-        {  {INIT|MFXVPAR,  &tsStruct::mfxVideoParam.vpp.Out.Width,   {4096}},
-           {INIT|MFXVPAR,  &tsStruct::mfxVideoParam.vpp.Out.Height,  {4096}},
-           {RESET|MFXVPAR, &tsStruct::mfxVideoParam.vpp.Out.Width,   {2048}},
-           {RESET|MFXVPAR, &tsStruct::mfxVideoParam.vpp.Out.Height,  {2048}}  }
-    },
-    {/*55*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, 
-        {  {INIT|MFXVPAR,  &tsStruct::mfxVideoParam.vpp.Out.Width,   {4096}},
-           {INIT|MFXVPAR,  &tsStruct::mfxVideoParam.vpp.Out.Height,  {4096}},
-           {RESET|MFXVPAR, &tsStruct::mfxVideoParam.vpp.Out.Width,   {2048 + 5}},
-           {RESET|MFXVPAR, &tsStruct::mfxVideoParam.vpp.Out.Height,  {2048 + 5}}  }
-    },
-    {/*56*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, 0, 
-        {  {INIT|MFXVPAR,  &tsStruct::mfxVideoParam.vpp.Out.Width,   {2048}},
-           {INIT|MFXVPAR,  &tsStruct::mfxVideoParam.vpp.Out.Height,  {2048}},
-           {RESET|MFXVPAR, &tsStruct::mfxVideoParam.vpp.Out.Width,   {4096}},
-           {RESET|MFXVPAR, &tsStruct::mfxVideoParam.vpp.Out.Height,  {4096}}  }
-    },
-    {/*57*/ MFX_ERR_NONE, 0, 
         {  {INIT|MFXVPAR,  &tsStruct::mfxVideoParam.vpp.In.Width,   {4096}},
            {INIT|MFXVPAR,  &tsStruct::mfxVideoParam.vpp.In.Height,  {4096}},
-           {INIT|EXT_BUF, 0, {EXT_BUF_PAR(mfxExtCamHotPixelRemoval       )}},
+           {INIT|MFXVPAR,  &tsStruct::mfxVideoParam.vpp.Out.Width,   {4096}},
+           {INIT|MFXVPAR,  &tsStruct::mfxVideoParam.vpp.Out.Height,  {4096}},
+           {INIT|EXT_BUF,  0, {EXT_BUF_PAR(mfxExtCamHotPixelRemoval       )}},
            {RESET|EXT_BUF, 0, {EXT_BUF_PAR(mfxExtCamBlackLevelCorrection )}},
+           {RESET|MFXVPAR, &tsStruct::mfxVideoParam.vpp.Out.Width, {2048}},
+           {RESET|MFXVPAR, &tsStruct::mfxVideoParam.vpp.Out.Height,{2048}},
            {RESET|MFXVPAR, &tsStruct::mfxVideoParam.vpp.In.Width,   {2048}},
            {RESET|MFXVPAR, &tsStruct::mfxVideoParam.vpp.In.Height,  {2048}}  }
     },
-    {/*58*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, {RESET|NOCAMCTRL, 0,  0} }, //mfxExtCamPipeControl buffer is mandatory
-    {/*59*/ MFX_ERR_NONE, PROCESS_TRASH}, //more cases with actual file processing are TBD
+    {/*55*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, {RESET|NOCAMCTRL, 0,  0} }, //mfxExtCamPipeControl buffer is mandatory
+    {/*56*/ MFX_ERR_NONE, PROCESS_TRASH}, //more cases with actual file processing are TBD
 };
 
 const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case)/sizeof(TestSuite::tc_struct);

@@ -39,7 +39,7 @@ tsVideoVPP::tsVideoVPP(bool useDefaults, mfxU32 plugin_id)
         {
             m_par.vpp.In.FourCC        = MFX_FOURCC_R16;
             m_par.vpp.Out.FourCC       = MFX_FOURCC_RGB4;
-            m_par.vpp.In.ChromaFormat  = MFX_CHROMAFORMAT_YUV444;
+            m_par.vpp.In.ChromaFormat  = MFX_CHROMAFORMAT_MONOCHROME;
             m_par.vpp.Out.ChromaFormat = MFX_CHROMAFORMAT_YUV444;
             mfxExtCamPipeControl& cam_ctrl = m_par; //accordingly to ashapore, this filter is mandatory
             cam_ctrl.RawFormat         = MFX_CAM_BAYER_BGGR;

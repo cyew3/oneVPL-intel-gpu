@@ -15,7 +15,11 @@ public:
     virtual mfxU8& G(mfxU32 w, mfxU32 h) {g_tsStatus.check(MFX_ERR_UNDEFINED_BEHAVIOR); return m_t;};
     virtual mfxU8& B(mfxU32 w, mfxU32 h) {g_tsStatus.check(MFX_ERR_UNDEFINED_BEHAVIOR); return m_t;};
     virtual mfxU8& A(mfxU32 w, mfxU32 h) {g_tsStatus.check(MFX_ERR_UNDEFINED_BEHAVIOR); return m_t;};
+    virtual mfxU16& Y16(mfxU32 w, mfxU32 h) {g_tsStatus.check(MFX_ERR_UNDEFINED_BEHAVIOR); return (mfxU16&) m_t;};
+    virtual mfxU16& U16(mfxU32 w, mfxU32 h) {g_tsStatus.check(MFX_ERR_UNDEFINED_BEHAVIOR); return (mfxU16&) m_t;};
+    virtual mfxU16& V16(mfxU32 w, mfxU32 h) {g_tsStatus.check(MFX_ERR_UNDEFINED_BEHAVIOR); return (mfxU16&) m_t;};
     virtual bool isYUV() {return false;};
+    virtual bool isYUV16() {return false;};
     virtual bool isRGB() {return false;};
 };
 
@@ -104,6 +108,21 @@ public:
     inline mfxU8& A(mfxU32 w, mfxU32 h) { return m_a[h * m_pitch + w * 4]; }
 };
 
+class tsFrameR16 : public tsFrameAbstract
+{
+private:
+    mfxU32 m_pitch;
+    mfxU16* m_y16;
+public:
+    tsFrameR16(mfxFrameData d)
+        : m_pitch( mfxU32(d.PitchHigh << 16) + d.PitchLow)
+        , m_y16(d.Y16)
+    {}
+
+    inline bool isYUV16() {return true;};
+    inline mfxU16& Y16(mfxU32 w, mfxU32 h) { return m_y16[h * m_pitch/2 + w]; }
+};
+
 class tsFrame
 {
 private:
@@ -122,7 +141,11 @@ public:
     inline mfxU8& G(mfxU32 w, mfxU32 h) { return m_pFrame->G(w, h); };
     inline mfxU8& B(mfxU32 w, mfxU32 h) { return m_pFrame->B(w, h); };
     inline mfxU8& A(mfxU32 w, mfxU32 h) { return m_pFrame->A(w, h); };
+    inline mfxU16& Y16(mfxU32 w, mfxU32 h) { return m_pFrame->Y16(w, h); };
+    inline mfxU16& U16(mfxU32 w, mfxU32 h) { return m_pFrame->U16(w, h); };
+    inline mfxU16& V16(mfxU32 w, mfxU32 h) { return m_pFrame->V16(w, h); };
     inline bool isYUV() {return m_pFrame->isYUV(); };
+    inline bool isYUV16() {return m_pFrame->isYUV16(); };
     inline bool isRGB() {return m_pFrame->isRGB(); };
 };
 

@@ -26,7 +26,7 @@ public:
     static const unsigned int n_cases;
 
 private:
-    static const mfxU32 n_par = 4;
+    static const mfxU32 n_par = 8;
 
     enum NULLPTRS
     {
@@ -104,7 +104,7 @@ const TestSuite::tc_struct TestSuite::test_case[] =
     {/*12*/ MFX_ERR_INVALID_VIDEO_PARAM,  0, 1, SET_ALLOCATOR|ALLOC_MIN,        {{&tsStruct::mfxVideoParam.vpp.In.FourCC,  MFX_FOURCC_P8_TEXTURE}, 
                                                                                  {&tsStruct::mfxVideoParam.vpp.Out.FourCC, MFX_FOURCC_P8_TEXTURE}}},
     // ChromaFormat cases, only 444 for RGB formats
-    {/*13*/ MFX_ERR_NONE,                 0, 1, SET_ALLOCATOR|ALLOC_MIN,        {{&tsStruct::mfxVideoParam.vpp.In.ChromaFormat, MFX_CHROMAFORMAT_YUV444},
+    {/*13*/ MFX_ERR_NONE,                 0, 1, SET_ALLOCATOR|ALLOC_MIN,        {{&tsStruct::mfxVideoParam.vpp.In.ChromaFormat, MFX_CHROMAFORMAT_MONOCHROME},
                                                                                  {&tsStruct::mfxVideoParam.vpp.Out.ChromaFormat, MFX_CHROMAFORMAT_YUV444}}},
     {/*14*/ MFX_ERR_INVALID_VIDEO_PARAM,  0, 1, SET_ALLOCATOR|ALLOC_MIN,        {{&tsStruct::mfxVideoParam.vpp.In.ChromaFormat,  MFX_CHROMAFORMAT_YUV420    },
                                                                                  {&tsStruct::mfxVideoParam.vpp.Out.ChromaFormat, MFX_CHROMAFORMAT_YUV420}}},
@@ -122,7 +122,6 @@ const TestSuite::tc_struct TestSuite::test_case[] =
                                                                                  {&tsStruct::mfxVideoParam.vpp.Out.ChromaFormat, MFX_CHROMAFORMAT_YUV422H}}},
     {/*21*/ MFX_ERR_INVALID_VIDEO_PARAM,  0, 1, SET_ALLOCATOR|ALLOC_MIN,        {{&tsStruct::mfxVideoParam.vpp.In.ChromaFormat, MFX_CHROMAFORMAT_YUV422V   },
                                                                                  {&tsStruct::mfxVideoParam.vpp.Out.ChromaFormat, MFX_CHROMAFORMAT_YUV422V}}},
-    
     //Width, Height, Crops, AR, FR
     {/*22*/ MFX_ERR_NONE,                 0, 1, SET_ALLOCATOR|ALLOC_MIN,        {{&tsStruct::mfxVideoParam.vpp.In.Width,   1920},
                                                                                  {&tsStruct::mfxVideoParam.vpp.In.Height, 1088}, 
@@ -164,7 +163,6 @@ const TestSuite::tc_struct TestSuite::test_case[] =
                                                                                  {&tsStruct::mfxVideoParam.vpp.In.FrameRateExtD, 0}, 
                                                                                  {&tsStruct::mfxVideoParam.vpp.Out.FrameRateExtN,  30},
                                                                                  {&tsStruct::mfxVideoParam.vpp.Out.FrameRateExtD, 0}} },
-
     // IOPattern cases
     {/*32*/ MFX_ERR_NONE,                 0, 1, SET_ALLOCATOR|ALLOC_MIN,        {&tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_VIDEO_MEMORY |MFX_IOPATTERN_OUT_VIDEO_MEMORY}},
     {/*33*/ MFX_ERR_NONE,                 0, 1, SET_ALLOCATOR|ALLOC_MIN,        {&tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_SYSTEM_MEMORY|MFX_IOPATTERN_OUT_SYSTEM_MEMORY}},
@@ -205,6 +203,22 @@ const TestSuite::tc_struct TestSuite::test_case[] =
     {/*65*/  MFX_ERR_NONE,                0, 1, SET_ALLOCATOR|ALLOC_MIN, {}, {ext_buf, EXT_BUF_PAR(mfxExtCamPipeControl          )}},
     {/*66*/  MFX_ERR_INVALID_VIDEO_PARAM, 0, 1, SET_ALLOCATOR|ALLOC_MIN, {}, {del_buf, EXT_BUF_PAR(mfxExtCamPipeControl          )}},
 
+    {/*67*/ MFX_ERR_INVALID_VIDEO_PARAM,  0, 1, SET_ALLOCATOR|ALLOC_MIN,        {{&tsStruct::mfxVideoParam.vpp.In.Width,   4096}, //resize is unsupported
+                                                                                 {&tsStruct::mfxVideoParam.vpp.In.Height,  4096}, 
+                                                                                 {&tsStruct::mfxVideoParam.vpp.Out.Width,  2048},
+                                                                                 {&tsStruct::mfxVideoParam.vpp.Out.Height, 2048},
+                                                                                 {&tsStruct::mfxVideoParam.vpp.In.CropW,   4096},
+                                                                                 {&tsStruct::mfxVideoParam.vpp.In.CropH,  4096},
+                                                                                 {&tsStruct::mfxVideoParam.vpp.Out.CropW,  2048},
+                                                                                 {&tsStruct::mfxVideoParam.vpp.Out.CropH, 2048}} },
+    {/*68*/ MFX_ERR_INVALID_VIDEO_PARAM,  0, 1, SET_ALLOCATOR|ALLOC_MIN,        {{&tsStruct::mfxVideoParam.vpp.In.Width,   2048},
+                                                                                 {&tsStruct::mfxVideoParam.vpp.In.Height,  2048},
+                                                                                 {&tsStruct::mfxVideoParam.vpp.Out.Width,  4096},
+                                                                                 {&tsStruct::mfxVideoParam.vpp.Out.Height, 4096},
+                                                                                 {&tsStruct::mfxVideoParam.vpp.In.CropW,   2048},
+                                                                                 {&tsStruct::mfxVideoParam.vpp.In.CropH,   2048},
+                                                                                 {&tsStruct::mfxVideoParam.vpp.Out.CropW,  4096},
+                                                                                 {&tsStruct::mfxVideoParam.vpp.Out.CropH,  4096}} },
 };
 
 const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case)/sizeof(TestSuite::tc_struct);
