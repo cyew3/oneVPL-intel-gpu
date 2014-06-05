@@ -855,7 +855,7 @@ void H265Encoder::InitShortTermRefPicSet()
 
     if (m_videoParam.BPyramid && m_videoParam.GopRefDist > 2) {
         Ipp8u r = m_videoParam.GopRefDist == 4 ? 0 : 1;
-        for (Ipp32s i = 0; i < 8; i++) {
+        for (Ipp32s i = 0; i < m_videoParam.GopRefDist; i++) {
             m_ShortRefPicSet[i].inter_ref_pic_set_prediction_flag = 0;
             m_ShortRefPicSet[i].num_negative_pics = dpoc_neg[r][i][0];
             m_ShortRefPicSet[i].num_positive_pics = dpoc_pos[r][i][0];

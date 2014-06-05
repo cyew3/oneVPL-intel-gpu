@@ -92,16 +92,7 @@ static inline int h265_SAD_MxN_general(const Ipp8u *image,  int stride_img, cons
 
 static inline int h265_SAD_MxN_general(const Ipp16u *image,  int stride_img, const Ipp16u *ref, int stride_ref, int SizeX, int SizeY)
 {
-    Ipp32s dst = 0;
-    for (int j = 0; j < SizeY; j++)
-    {
-        for (int i = 0; i < SizeX; i++)
-        {
-            Ipp32s var = image[i + j*stride_img] - ref[i + j*stride_ref];
-            dst += abs(var);
-        }
-    }
-    return dst;
+    return MFX_HEVC_PP::NAME(h265_SAD_MxN_general_16s)((Ipp16s*)image, stride_img, (Ipp16s*)ref, stride_ref, SizeX, SizeY);
 }
 
 static inline int h265_SAD_MxN_special(const Ipp16u *image,  const Ipp16u *ref, int stride, int SizeX, int SizeY)
