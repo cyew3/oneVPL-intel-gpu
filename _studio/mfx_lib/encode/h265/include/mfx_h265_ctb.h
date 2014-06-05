@@ -245,14 +245,16 @@ public:
     inline Ipp8u GetQtRootCbf(Ipp32u idx)
     { return GetCbf( idx, TEXT_LUMA, 0 ) || GetCbf( idx, TEXT_CHROMA_U, 0 ) || GetCbf( idx, TEXT_CHROMA_V, 0 ); }
 
-    void GetPuLeft(H265CUPtr *cu, Ipp32u currPartUnitIdx, Ipp32s enforceSliceRestriction = true,
-                   Ipp32s enforceDependentSliceRestriction = true,
-                   Ipp32s enforceTileRestriction = true);
+    void GetPuLeft(H265CUPtr *cu, Ipp32u currPartUnitIdx, Ipp32s enforceSliceRestriction = true
+                   //,Ipp32s enforceDependentSliceRestriction = true
+                   //,Ipp32s enforceTileRestriction = true
+                   );
 
     void GetPuAbove(H265CUPtr *cu, Ipp32u currPartUnitIdx, Ipp32s enforceSliceRestriction = true,
-                    Ipp32s enforceDependentSliceRestriction = true,
-                    Ipp32s motionDataCompresssion = false, Ipp32s planarAtLcuBoundary = false,
-                    Ipp32s enforceTileRestriction = true);
+//                    Ipp32s enforceDependentSliceRestriction = true, Ipp32s motionDataCompresssion = false,
+                    Ipp32s planarAtLcuBoundary = false
+//                    , Ipp32s enforceTileRestriction = true
+                    );
 
     bool GetTempMvPred(const H265CUData *currPb, Ipp32s xPb, Ipp32s yPb, Ipp32s nPbW, Ipp32s nPbH,
                        Ipp32s listIdx, Ipp32s refIdx, H265MV *mvLxCol);

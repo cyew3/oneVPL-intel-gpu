@@ -212,7 +212,7 @@ void H265CU<PixType>::GetEdgeStrength(H265CUPtr *pcCUQptr,
         {
             return;
         }
-        GetPuAbove(&CUPPtr, uiPartQ, !crossSliceBoundaryFlag, false, false, false, !crossTileBoundaryFlag);
+        GetPuAbove(&CUPPtr, uiPartQ, !crossSliceBoundaryFlag, /*false, false,*/ false/*, !crossTileBoundaryFlag*/);
         if (pcCUQ != m_data && CUPPtr.ctbData) {
             // pcCUQptr is left of cur CTB, adjust CUPPtr
             CUPPtr.ctbData -= ((size_t)1 << (size_t)(m_par->Log2NumPartInCU));
@@ -225,7 +225,7 @@ void H265CU<PixType>::GetEdgeStrength(H265CUPtr *pcCUQptr,
         {
             return;
         }
-        GetPuLeft(&CUPPtr, uiPartQ, !crossSliceBoundaryFlag, false, !crossTileBoundaryFlag);
+        GetPuLeft(&CUPPtr, uiPartQ, !crossSliceBoundaryFlag/*, false, !crossTileBoundaryFlag*/);
         if (pcCUQ != m_data && CUPPtr.ctbData) {
             // pcCUQptr is above of cur CTB, adjust CUPPtr
             CUPPtr.ctbData -= m_par->PicWidthInCtbs << m_par->Log2NumPartInCU;
@@ -435,7 +435,7 @@ void H265CU<PixType>::SetEdges(Ipp32s width,
     betaOffset = m_cslice->slice_beta_offset_div2 << 1;
 
     H265CUPtr aboveLCU;
-    GetPuAbove(&aboveLCU, 0, 0, false, false, false, 0);
+    GetPuAbove(&aboveLCU, 0, 0, /*false, false,*/ false/*, 0*/);
 
 // uncomment to hide false uninitialized memory read warning
 //    memset(&edge, 0, sizeof(edge));
@@ -469,7 +469,7 @@ void H265CU<PixType>::SetEdges(Ipp32s width,
     }
 
     H265CUPtr leftLCU;
-    GetPuLeft(&leftLCU, 0, 0, false, 0);
+    GetPuLeft(&leftLCU, 0, 0/*, false, 0*/);
 
     if (leftLCU.ctbData)
     {

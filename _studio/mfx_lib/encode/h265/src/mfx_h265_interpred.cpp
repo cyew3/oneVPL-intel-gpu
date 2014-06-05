@@ -327,10 +327,8 @@ void H265CU<PixType>::MeInterpolate(const H265MEInfo* me_info, H265MV* MV, PixTy
     Ipp32s refOffset = m_ctbPelX + me_info->posx + (MV->mvx >> 2) + (m_ctbPelY + me_info->posy + (MV->mvy >> 2)) * srcPitch;
     src += refOffset;
 
-    if (dx == 0 && dy == 0)
-    {
-    }
-    else if (dy == 0)
+    VM_ASSERT (!(dx == 0 && dy == 0));
+    if (dy == 0)
     {
          Interpolate<UMC_HEVC_DECODER::TEXT_LUMA>( INTERP_HOR, src, srcPitch, dst, dstPitch, dx, w, h, 6, 32, bitDepth);
     }

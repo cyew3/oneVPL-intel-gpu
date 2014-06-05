@@ -1991,7 +1991,7 @@ mfxStatus H265Encoder::EncodeThread(Ipp32s ithread) {
 
                     // aya: here should be slice lambda always
                     cu[ithread].m_rdLambda = m_slices[curr_slice].rd_lambda_slice;
-					
+
                     cu[ithread].EstimateCtuSao(&bsf[ctb_row], &m_saoParam[ctb_addr],
                                                &m_saoParam[0], borders, m_slice_ids);
 
@@ -3043,11 +3043,11 @@ int H265CU<PixType>::GetCalqDeltaQp(TAdapQP* sliceAQP, Ipp64f sliceLambda)
     ctbAQP.m_Xcu    = m_ctbPelX;
     ctbAQP.m_Ycu    = m_ctbPelY;
 
-    if((ctbAQP.m_Xcu + sliceAQP->m_maxCUWidth) > sliceAQP->m_picWidth)  ctbAQP.m_cuWidth = sliceAQP->m_picWidth - ctbAQP.m_Xcu;
-    else	ctbAQP.m_cuWidth = sliceAQP->m_maxCUWidth;
+    if((ctbAQP.m_Xcu + sliceAQP->m_maxCUWidth) > (int)sliceAQP->m_picWidth)  ctbAQP.m_cuWidth = sliceAQP->m_picWidth - ctbAQP.m_Xcu;
+    else ctbAQP.m_cuWidth = sliceAQP->m_maxCUWidth;
 
-    if((ctbAQP.m_Ycu + sliceAQP->m_maxCUHeight) > sliceAQP->m_picHeight)  ctbAQP.m_cuHeight = sliceAQP->m_picHeight - ctbAQP.m_Ycu;
-    else	ctbAQP.m_cuHeight = sliceAQP->m_maxCUHeight;
+    if((ctbAQP.m_Ycu + sliceAQP->m_maxCUHeight) > (int)sliceAQP->m_picHeight)  ctbAQP.m_cuHeight = sliceAQP->m_picHeight - ctbAQP.m_Ycu;
+    else ctbAQP.m_cuHeight = sliceAQP->m_maxCUHeight;
 
     ctbAQP.m_rscs = //ctbAQP.
         compute_block_rscs(

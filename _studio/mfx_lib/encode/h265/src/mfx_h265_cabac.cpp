@@ -286,12 +286,14 @@ void H265CU<PixType>::CodeIntradirLumaAng(H265Bs *bs, Ipp32u abs_part_idx, Ipp8u
     {
         dir[j] = pCU->m_data[ abs_part_idx + part_offset*j ].intraLumaDir;
         pCU->GetIntradirLumaPred( abs_part_idx + part_offset*j, predictors[j] );
-
+        Ipp32s found = 0;
         for(Ipp32s i = 0; i < 3; i++) 
-            if(dir[j] == predictors[j][i])
+            if(dir[j] == predictors[j][i]) {
                 pred_idx[j] = i;
+                found = 1;
+            }
 
-        bs->EncodeSingleBin_CABAC(CTX(bs,INTRA_LUMA_PRED_MODE_HEVC), (pred_idx[j] != -1? 1 : 0) );
+        bs->EncodeSingleBin_CABAC(CTX(bs,INTRA_LUMA_PRED_MODE_HEVC), found );
     }
 
     for (Ipp32s j=0; j<part_num; j++)
