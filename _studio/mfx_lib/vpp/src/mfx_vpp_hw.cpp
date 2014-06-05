@@ -2290,11 +2290,6 @@ mfxStatus ConfigureExecuteParams(
         switch(curFilterId)
         {
             case MFX_EXTBUFF_VPP_DEINTERLACING:
-            {
-                // see below
-                break;
-            }
-
             case MFX_EXTBUFF_VPP_DI:
             {
                 // FIXME: add reference frame to use motion adaptive ADI
