@@ -14,7 +14,7 @@ public:
         , T(mode)
     {
         if(!g_tsTrace)
-            T::set_trace_level(0);
+            this->set_trace_level(0);
     }
     
     tsParser(mfxBitstream b, mfxU32 mode = 0)
@@ -22,7 +22,7 @@ public:
         , T(mode)
     {
         if(!g_tsTrace)
-            T::set_trace_level(0);
+            this->set_trace_level(0);
         SetBuffer(b);
     }
 
@@ -31,13 +31,13 @@ public:
     typename T::UnitType* Parse(bool orDie = false)
     {
         TRACE_FUNC0(BS_parser::parse_next_unit);
-        m_sts = T::parse_next_unit();
+        m_sts = this->parse_next_unit();
         if(m_sts && m_sts != BS_ERR_MORE_DATA || m_sts && orDie)
         {
             g_tsLog << "FAILED in tsParser\n";
             g_tsStatus.check(MFX_ERR_UNKNOWN);
         }
-        return (typename T::UnitType* ) T::get_header();
+        return (typename T::UnitType* ) this->get_header();
     }
 
     typename T::UnitType& ParseOrDie()
@@ -48,7 +48,7 @@ public:
     void SetBuffer(mfxBitstream b)
     {
         TRACE_FUNC2(BS_parser::set_buffer, b.Data + b.DataOffset, b.DataLength + 3);
-        T::set_buffer(b.Data + b.DataOffset, b.DataLength + 3);
+        this->set_buffer(b.Data + b.DataOffset, b.DataLength + 3);
     }
 
 };
