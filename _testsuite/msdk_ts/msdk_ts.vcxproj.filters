@@ -41,37 +41,40 @@
     <ClCompile Include="src\test_sample_allocator.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\samples\sample_common\src\base_allocator.cpp">
-      <Filter>external src\sample_common</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\samples\sample_common\src\d3d_allocator.cpp">
-      <Filter>external src\sample_common</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\samples\sample_common\src\d3d_device.cpp">
-      <Filter>external src\sample_common</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\samples\sample_common\src\d3d11_allocator.cpp">
-      <Filter>external src\sample_common</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\samples\sample_common\src\d3d11_device.cpp">
-      <Filter>external src\sample_common</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\samples\sample_common\src\sample_utils.cpp">
-      <Filter>external src\sample_common</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\samples\sample_common\src\sysmem_allocator.cpp">
-      <Filter>external src\sample_common</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\samples\sample_common\src\vm\atomic.cpp">
-      <Filter>external src\sample_common</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\samples\sample_common\src\vm\shared_object.cpp">
-      <Filter>external src\sample_common</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\samples\sample_common\src\vm\thread.cpp">
-      <Filter>external src\sample_common</Filter>
-    </ClCompile>
     <ClCompile Include="src\debug_output.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\mdp_msdk-samples\samples\sample_common\src\base_allocator.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\mdp_msdk-samples\samples\sample_common\src\d3d11_allocator.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\mdp_msdk-samples\samples\sample_common\src\d3d11_device.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\mdp_msdk-samples\samples\sample_common\src\d3d_allocator.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\mdp_msdk-samples\samples\sample_common\src\d3d_device.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\mdp_msdk-samples\samples\sample_common\src\sample_utils.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\mdp_msdk-samples\samples\sample_common\src\sysmem_allocator.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\mdp_msdk-samples\samples\sample_common\src\vm\atomic.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\mdp_msdk-samples\samples\sample_common\src\vm\shared_object.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\mdp_msdk-samples\samples\sample_common\src\vm\thread.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\mdp_msdk-samples\samples\sample_common\src\vm\thread_windows.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -94,59 +97,59 @@
     <ClInclude Include="include\test_sample_allocator.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\samples\sample_common\include\base_allocator.h">
-      <Filter>external src\sample_common</Filter>
+    <ClInclude Include="..\..\..\mdp_msdk-samples\samples\sample_common\include\base_allocator.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\samples\sample_common\include\current_date.h">
-      <Filter>external src\sample_common</Filter>
+    <ClInclude Include="..\..\..\mdp_msdk-samples\samples\sample_common\include\current_date.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\samples\sample_common\include\d3d_allocator.h">
-      <Filter>external src\sample_common</Filter>
+    <ClInclude Include="..\..\..\mdp_msdk-samples\samples\sample_common\include\d3d11_allocator.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\samples\sample_common\include\d3d_device.h">
-      <Filter>external src\sample_common</Filter>
+    <ClInclude Include="..\..\..\mdp_msdk-samples\samples\sample_common\include\d3d11_device.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\samples\sample_common\include\d3d11_allocator.h">
-      <Filter>external src\sample_common</Filter>
+    <ClInclude Include="..\..\..\mdp_msdk-samples\samples\sample_common\include\d3d_allocator.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\samples\sample_common\include\d3d11_device.h">
-      <Filter>external src\sample_common</Filter>
+    <ClInclude Include="..\..\..\mdp_msdk-samples\samples\sample_common\include\d3d_device.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\samples\sample_common\include\hw_device.h">
-      <Filter>external src\sample_common</Filter>
+    <ClInclude Include="..\..\..\mdp_msdk-samples\samples\sample_common\include\hw_device.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\samples\sample_common\include\sample_defs.h">
-      <Filter>external src\sample_common</Filter>
+    <ClInclude Include="..\..\..\mdp_msdk-samples\samples\sample_common\include\sample_defs.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\samples\sample_common\include\sample_utils.h">
-      <Filter>external src\sample_common</Filter>
+    <ClInclude Include="..\..\..\mdp_msdk-samples\samples\sample_common\include\sample_utils.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\samples\sample_common\include\sysmem_allocator.h">
-      <Filter>external src\sample_common</Filter>
+    <ClInclude Include="..\..\..\mdp_msdk-samples\samples\sample_common\include\sysmem_allocator.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\samples\sample_common\include\vaapi_allocator.h">
-      <Filter>external src\sample_common</Filter>
+    <ClInclude Include="..\..\..\mdp_msdk-samples\samples\sample_common\include\vaapi_allocator.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\samples\sample_common\include\vaapi_utils.h">
-      <Filter>external src\sample_common</Filter>
+    <ClInclude Include="..\..\..\mdp_msdk-samples\samples\sample_common\include\vaapi_utils.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\samples\sample_common\include\vm\atomic_defs.h">
-      <Filter>external src\sample_common</Filter>
+    <ClInclude Include="..\..\..\mdp_msdk-samples\samples\sample_common\include\vm\atomic_defs.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\samples\sample_common\include\vm\file_defs.h">
-      <Filter>external src\sample_common</Filter>
+    <ClInclude Include="..\..\..\mdp_msdk-samples\samples\sample_common\include\vm\file_defs.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\samples\sample_common\include\vm\so_defs.h">
-      <Filter>external src\sample_common</Filter>
+    <ClInclude Include="..\..\..\mdp_msdk-samples\samples\sample_common\include\vm\so_defs.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\samples\sample_common\include\vm\strings_defs.h">
-      <Filter>external src\sample_common</Filter>
+    <ClInclude Include="..\..\..\mdp_msdk-samples\samples\sample_common\include\vm\strings_defs.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\samples\sample_common\include\vm\thread_defs.h">
-      <Filter>external src\sample_common</Filter>
+    <ClInclude Include="..\..\..\mdp_msdk-samples\samples\sample_common\include\vm\thread_defs.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\samples\sample_common\include\vm\time_defs.h">
-      <Filter>external src\sample_common</Filter>
+    <ClInclude Include="..\..\..\mdp_msdk-samples\samples\sample_common\include\vm\time_defs.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
