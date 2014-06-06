@@ -46,13 +46,13 @@ int TestSuite::RunTest(unsigned int id)
 {
     TS_START;
     auto& tcs = test_case[id];
-    for each(auto& tc in tcs) 
+    for (auto& tc : tcs) 
         g_tsStreamPool.Get(tc.stream, stream_path);
 
     g_tsStreamPool.Reg();
     m_use_memid = true;
 
-    for each(auto& tc in tcs) 
+    for (auto& tc : tcs) 
     {
         if("" == tc.stream)
             break;

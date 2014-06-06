@@ -426,7 +426,7 @@ int TestSuite::RunTest(unsigned int id)
         m_par.vpp.In.FrameRateExtD = stream[tc.stream_id[AFTER_INIT]].frame_rate_d;
         mfxExtCamPipeControl& cam_ctrl = m_par;
         cam_ctrl.RawFormat = stream[tc.stream_id[AFTER_INIT]].bayer_format;
-        tsReader stream(g_tsStreamPool.Get(stream[tc.stream_id[AFTER_INIT]].name));
+        tsReader stream(g_tsStreamPool.Get( TestSuite::stream[tc.stream_id[AFTER_INIT] ].name ));
     }
 
     apply_par(tc, INIT);

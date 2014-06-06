@@ -96,22 +96,22 @@ private:
 
 const TestSuite::tc_struct TestSuite::test_case[] = 
 {
-    {/* 0*/ MFX_ERR_INVALID_HANDLE,  {}, {&set_par, GVP, offsetof(GVPpar, session), sizeof(mfxSession), 0} },
-    {/* 1*/ MFX_ERR_NOT_INITIALIZED, {}, {&close_encoder} },
-    {/* 2*/ MFX_ERR_NULL_PTR,        {}, {&set_par, GVP, offsetof(GVPpar, pPar), sizeof(mfxVideoParam), 0} },
+    {/* 0*/ MFX_ERR_INVALID_HANDLE,  {}, {&TestSuite::set_par, GVP, offsetof(GVPpar, session), sizeof(mfxSession), 0} },
+    {/* 1*/ MFX_ERR_NOT_INITIALIZED, {}, {&TestSuite::close_encoder} },
+    {/* 2*/ MFX_ERR_NULL_PTR,        {}, {&TestSuite::set_par, GVP, offsetof(GVPpar, pPar), sizeof(mfxVideoParam), 0} },
     {/* 3*/ MFX_ERR_NONE, {}, {} },
-    {/* 4*/ MFX_ERR_NONE, {&set_par, MFX_IN, offsetof(mfxVideoParam, AsyncDepth), sizeof(mfxU16), 4}, {} },
-    {/* 5*/ MFX_ERR_NONE, {&set_par, MFX_IN, offsetof(mfxVideoParam, IOPattern), sizeof(mfxU16), MFX_IOPATTERN_IN_VIDEO_MEMORY }, {} },
-    {/* 6*/ MFX_ERR_NONE, {&set_par, MFX_IN,   offsetof(mfxVideoParam, mfx)
+    {/* 4*/ MFX_ERR_NONE, {&TestSuite::set_par, MFX_IN, offsetof(mfxVideoParam, AsyncDepth), sizeof(mfxU16), 4}, {} },
+    {/* 5*/ MFX_ERR_NONE, {&TestSuite::set_par, MFX_IN, offsetof(mfxVideoParam, IOPattern), sizeof(mfxU16), MFX_IOPATTERN_IN_VIDEO_MEMORY }, {} },
+    {/* 6*/ MFX_ERR_NONE, {&TestSuite::set_par, MFX_IN,   offsetof(mfxVideoParam, mfx)
                                              + offsetof(mfxInfoMFX, CodecProfile), sizeof(mfxU16), MFX_PROFILE_VP8_3 }, {} },
-    {/* 7*/ MFX_ERR_NONE, {&set_par, MFX_IN,   offsetof(mfxVideoParam, mfx)
+    {/* 7*/ MFX_ERR_NONE, {&TestSuite::set_par, MFX_IN,   offsetof(mfxVideoParam, mfx)
                                              + offsetof(mfxInfoMFX, TargetUsage), sizeof(mfxU16), 0 }, {} },
-    {/* 8*/ MFX_ERR_NONE, {&set_par, MFX_IN,   offsetof(mfxVideoParam, mfx)
+    {/* 8*/ MFX_ERR_NONE, {&TestSuite::set_par, MFX_IN,   offsetof(mfxVideoParam, mfx)
                                              + offsetof(mfxInfoMFX, GopPicSize), sizeof(mfxU16), 30}, {} },
-    {/* 9*/ MFX_ERR_NONE, {&CBR}, {} },
-    {/*10*/ MFX_ERR_NONE, {&VBR}, {} },
-    {/*11*/ MFX_ERR_NONE, {}, {&COVP8, MFX_GET}, },
-    {/*12*/ MFX_ERR_NONE, {&COVP8, MFX_IN, MFX_CODINGOPTION_ON, MFX_TOKENPART_VP8_4, MFX_CODINGOPTION_ON}, {&COVP8, MFX_GET}, },
+    {/* 9*/ MFX_ERR_NONE, {&TestSuite::CBR}, {} },
+    {/*10*/ MFX_ERR_NONE, {&TestSuite::VBR}, {} },
+    {/*11*/ MFX_ERR_NONE, {}, {&TestSuite::COVP8, MFX_GET}, },
+    {/*12*/ MFX_ERR_NONE, {&TestSuite::COVP8, MFX_IN, MFX_CODINGOPTION_ON, MFX_TOKENPART_VP8_4, MFX_CODINGOPTION_ON}, {&TestSuite::COVP8, MFX_GET}, },
 };
 
 const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case)/sizeof(TestSuite::tc_struct);

@@ -32,6 +32,9 @@ list(APPEND sources
    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/ts_vpp.cpp
 )
 
+file( GLOB_RECURSE srcs "${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/*.cpp" )
+list( APPEND sources ${srcs})
+
 add_definitions( -D_VARIADIC_MAX=10 )
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x")
 

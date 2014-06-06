@@ -97,36 +97,36 @@ private:
 
 const TestSuite::tc_struct TestSuite::test_case[] = 
 {
-    {/* 0*/ MFX_ERR_INVALID_HANDLE,     {}, {&set_par, EFA, offsetof(EFApar, session), sizeof(mfxSession), 0} },
-    {/* 1*/ MFX_ERR_NONE,               {}, {&set_par, EFA, offsetof(EFApar, pCtrl),   sizeof(mfxEncodeCtrl*), 0} },
-    {/* 2*/ MFX_ERR_MORE_DATA,          {}, {&set_par, EFA, offsetof(EFApar, pSurf),   sizeof(mfxFrameSurface1*), 0} },
-    {/* 3*/ MFX_ERR_NULL_PTR,           {}, {&set_par, EFA, offsetof(EFApar, pBs),     sizeof(mfxBitstream*), 0} },
-    {/* 4*/ MFX_ERR_NULL_PTR,           {}, {&set_par, EFA, offsetof(EFApar, pSP),     sizeof(mfxSyncPoint*), 0} },
-    {/* 5*/ MFX_ERR_NOT_INITIALIZED,    {}, {&close_encoder} },
-    {/* 6*/ MFX_ERR_NOT_ENOUGH_BUFFER,  {}, {&set_par, BS, offsetof(mfxBitstream, MaxLength), sizeof(mfxU32), 100} },
-    {/* 7*/ MFX_ERR_UNDEFINED_BEHAVIOR, {}, {&set_par, BS, offsetof(mfxBitstream, DataOffset), sizeof(mfxU32), 0xFFFFFFFF} },
-    {/* 8*/ MFX_ERR_UNDEFINED_BEHAVIOR, {}, {&set_par, SURF, (offsetof(mfxFrameSurface1, Data) + offsetof(mfxFrameData, Y)), sizeof(mfxU8*), 0} },
+    {/* 0*/ MFX_ERR_INVALID_HANDLE,     {}, {&TestSuite::set_par, EFA, offsetof(EFApar, session), sizeof(mfxSession), 0} },
+    {/* 1*/ MFX_ERR_NONE,               {}, {&TestSuite::set_par, EFA, offsetof(EFApar, pCtrl),   sizeof(mfxEncodeCtrl*), 0} },
+    {/* 2*/ MFX_ERR_MORE_DATA,          {}, {&TestSuite::set_par, EFA, offsetof(EFApar, pSurf),   sizeof(mfxFrameSurface1*), 0} },
+    {/* 3*/ MFX_ERR_NULL_PTR,           {}, {&TestSuite::set_par, EFA, offsetof(EFApar, pBs),     sizeof(mfxBitstream*), 0} },
+    {/* 4*/ MFX_ERR_NULL_PTR,           {}, {&TestSuite::set_par, EFA, offsetof(EFApar, pSP),     sizeof(mfxSyncPoint*), 0} },
+    {/* 5*/ MFX_ERR_NOT_INITIALIZED,    {}, {&TestSuite::close_encoder} },
+    {/* 6*/ MFX_ERR_NOT_ENOUGH_BUFFER,  {}, {&TestSuite::set_par, BS, offsetof(mfxBitstream, MaxLength), sizeof(mfxU32), 100} },
+    {/* 7*/ MFX_ERR_UNDEFINED_BEHAVIOR, {}, {&TestSuite::set_par, BS, offsetof(mfxBitstream, DataOffset), sizeof(mfxU32), 0xFFFFFFFF} },
+    {/* 8*/ MFX_ERR_UNDEFINED_BEHAVIOR, {}, {&TestSuite::set_par, SURF, (offsetof(mfxFrameSurface1, Data) + offsetof(mfxFrameData, Y)), sizeof(mfxU8*), 0} },
     {/* 9*/ 
             MFX_ERR_UNDEFINED_BEHAVIOR, 
-            {&set_par, MFX,   offsetof(mfxVideoParam, IOPattern), sizeof(mfxU16), MFX_IOPATTERN_IN_VIDEO_MEMORY}, 
-            {&set_par, SURF, (offsetof(mfxFrameSurface1, Data) + offsetof(mfxFrameData, MemId)), sizeof(mfxMemId), 0} 
+            {&TestSuite::set_par, MFX,   offsetof(mfxVideoParam, IOPattern), sizeof(mfxU16), MFX_IOPATTERN_IN_VIDEO_MEMORY}, 
+            {&TestSuite::set_par, SURF, (offsetof(mfxFrameSurface1, Data) + offsetof(mfxFrameData, MemId)), sizeof(mfxMemId), 0} 
     },
-    {/*10*/ MFX_ERR_NULL_PTR,  {}, {&set_par, BS, offsetof(mfxBitstream, Data), sizeof(mfxU8*), 0} },
+    {/*10*/ MFX_ERR_NULL_PTR,  {}, {&TestSuite::set_par, BS, offsetof(mfxBitstream, Data), sizeof(mfxU8*), 0} },
     {/*11*/ 
             MFX_ERR_NONE, 
-            {&set_par, MFX,   offsetof(mfxVideoParam, AsyncDepth), sizeof(mfxU16), 4}, 
-            {&async, 4} 
+            {&TestSuite::set_par, MFX,   offsetof(mfxVideoParam, AsyncDepth), sizeof(mfxU16), 4}, 
+            {&TestSuite::async, 4} 
     },
-    {/*12*/ MFX_ERR_NONE,{&set_par, MFX, offsetof(mfxVideoParam, mfx) + offsetof(mfxInfoMFX, CodecProfile), sizeof(mfxU16), MFX_PROFILE_VP8_0}, {} },
-    {/*13*/ MFX_ERR_NONE,{&set_par, MFX, offsetof(mfxVideoParam, mfx) + offsetof(mfxInfoMFX, CodecProfile), sizeof(mfxU16), MFX_PROFILE_VP8_1}, {} },
-    {/*14*/ MFX_ERR_NONE,{&set_par, MFX, offsetof(mfxVideoParam, mfx) + offsetof(mfxInfoMFX, CodecProfile), sizeof(mfxU16), MFX_PROFILE_VP8_2}, {} },
-    {/*15*/ MFX_ERR_NONE,{&set_par, MFX, offsetof(mfxVideoParam, mfx) + offsetof(mfxInfoMFX, CodecProfile), sizeof(mfxU16), MFX_PROFILE_VP8_3}, {} },
-    {/*16*/ MFX_ERR_NONE,{&COVP8, MFX_CODINGOPTION_UNKNOWN, MFX_TOKENPART_VP8_1, MFX_CODINGOPTION_UNKNOWN}, {} },
-    {/*17*/ MFX_ERR_NONE,{&COVP8, MFX_CODINGOPTION_UNKNOWN, MFX_TOKENPART_VP8_2, MFX_CODINGOPTION_UNKNOWN}, {} },
-    {/*18*/ MFX_ERR_NONE,{&COVP8, MFX_CODINGOPTION_UNKNOWN, MFX_TOKENPART_VP8_4, MFX_CODINGOPTION_UNKNOWN}, {} },
-    {/*19*/ MFX_ERR_NONE,{&COVP8, MFX_CODINGOPTION_UNKNOWN, MFX_TOKENPART_VP8_8, MFX_CODINGOPTION_UNKNOWN}, {} },
-    {/*20*/ MFX_ERR_NONE,{&COVP8, MFX_CODINGOPTION_UNKNOWN, MFX_TOKENPART_VP8_UNKNOWN, MFX_CODINGOPTION_ON}, {} },
-    {/*21*/ MFX_ERR_NONE,{&COVP8, MFX_CODINGOPTION_UNKNOWN, MFX_TOKENPART_VP8_UNKNOWN, MFX_CODINGOPTION_OFF}, {} },
+    {/*12*/ MFX_ERR_NONE,{&TestSuite::set_par, MFX, offsetof(mfxVideoParam, mfx) + offsetof(mfxInfoMFX, CodecProfile), sizeof(mfxU16), MFX_PROFILE_VP8_0}, {} },
+    {/*13*/ MFX_ERR_NONE,{&TestSuite::set_par, MFX, offsetof(mfxVideoParam, mfx) + offsetof(mfxInfoMFX, CodecProfile), sizeof(mfxU16), MFX_PROFILE_VP8_1}, {} },
+    {/*14*/ MFX_ERR_NONE,{&TestSuite::set_par, MFX, offsetof(mfxVideoParam, mfx) + offsetof(mfxInfoMFX, CodecProfile), sizeof(mfxU16), MFX_PROFILE_VP8_2}, {} },
+    {/*15*/ MFX_ERR_NONE,{&TestSuite::set_par, MFX, offsetof(mfxVideoParam, mfx) + offsetof(mfxInfoMFX, CodecProfile), sizeof(mfxU16), MFX_PROFILE_VP8_3}, {} },
+    {/*16*/ MFX_ERR_NONE,{&TestSuite::COVP8, MFX_CODINGOPTION_UNKNOWN, MFX_TOKENPART_VP8_1, MFX_CODINGOPTION_UNKNOWN}, {} },
+    {/*17*/ MFX_ERR_NONE,{&TestSuite::COVP8, MFX_CODINGOPTION_UNKNOWN, MFX_TOKENPART_VP8_2, MFX_CODINGOPTION_UNKNOWN}, {} },
+    {/*18*/ MFX_ERR_NONE,{&TestSuite::COVP8, MFX_CODINGOPTION_UNKNOWN, MFX_TOKENPART_VP8_4, MFX_CODINGOPTION_UNKNOWN}, {} },
+    {/*19*/ MFX_ERR_NONE,{&TestSuite::COVP8, MFX_CODINGOPTION_UNKNOWN, MFX_TOKENPART_VP8_8, MFX_CODINGOPTION_UNKNOWN}, {} },
+    {/*20*/ MFX_ERR_NONE,{&TestSuite::COVP8, MFX_CODINGOPTION_UNKNOWN, MFX_TOKENPART_VP8_UNKNOWN, MFX_CODINGOPTION_ON}, {} },
+    {/*21*/ MFX_ERR_NONE,{&TestSuite::COVP8, MFX_CODINGOPTION_UNKNOWN, MFX_TOKENPART_VP8_UNKNOWN, MFX_CODINGOPTION_OFF}, {} },
 };
 
 const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case)/sizeof(TestSuite::tc_struct);
