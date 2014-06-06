@@ -1,10 +1,10 @@
 #pragma once
 
+#include "gtest/gtest.h"
 #include "ts_trace.h"
 #include "ts_plugin.h"
 #include "ts_streams.h"
 #include "test_sample_allocator.h"
-#include "gtest\gtest.h"
 
 typedef enum {
       tsOK = 0

@@ -232,5 +232,9 @@ function( make_executable name variant )
   
   configure_build_variant( ${target} ${ARGV1} )
 
+  foreach( lib ${LIBS_SUFFIX} )
+    target_link_libraries( ${target} ${lib} )
+  endforeach( )
+
   set( target ${target} PARENT_SCOPE )
 endfunction( )

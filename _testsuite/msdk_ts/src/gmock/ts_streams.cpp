@@ -2,6 +2,11 @@
 #include "ts_common.h"
 #include <algorithm>
 
+#if defined(LINUX32) || defined(LINUX64)
+const char tsStreamPool::valid_delimiter;
+const char tsStreamPool::invalid_delimiter;
+#endif
+
 tsStreamPool::tsStreamPool() 
     : m_query_mode(false) 
     , m_reg(false)

@@ -50,8 +50,8 @@ public:
 
     void RefreshBuffers()
     {
-        NumExtParam = (mfxU32)m_buf.size();
-        ExtParam = NumExtParam ? m_buf.data() : 0;
+        this->NumExtParam = (mfxU32)m_buf.size();
+        this->ExtParam = this->NumExtParam ? m_buf.data() : 0;
     }
 
     mfxExtBuffer* GetExtBuffer(mfxU32 id)
