@@ -47,7 +47,7 @@ using namespace H265Enc;
 
 namespace H265Enc {
 
-static const mfxU16 H265_MAXREFDIST = 8;
+static const mfxU16 H265_MAXREFDIST = 16;//8;
 
 typedef struct
 {

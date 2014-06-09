@@ -404,11 +404,17 @@ mfxStatus H265Encoder::SetVPS()
     vps->vps_max_layers = 1;
     vps->vps_max_sub_layers = 1;
     vps->vps_temporal_id_nesting_flag = 1;
-    if (m_videoParam.BPyramid)
+    
+    if (m_videoParam.BPyramid) {
         vps->vps_max_dec_pic_buffering[0] = m_videoParam.GopRefDist == 8 ? 4 : 3;
-    else
+        // in this case we use "anchor & chain" pyramid
+        if(16 == m_videoParam.GopRefDist) {
+            vps->vps_max_dec_pic_buffering[0] = 5;
+        }
+    } else {
         vps->vps_max_dec_pic_buffering[0] = (Ipp8u)(MAX(m_videoParam.MaxRefIdxL0,m_videoParam.MaxBRefIdxL0) +
             m_videoParam.MaxRefIdxL1);
+    }
 
     vps->vps_max_num_reorder_pics[0] = 0;
     if (m_videoParam.GopRefDist > 1) {
@@ -749,9 +755,8 @@ mfxStatus H265Encoder::SetSlice(H265Slice *slice, Ipp32u curr_slice, H265Frame *
 } //
 mfxStatus H265Encoder::SetAllLambda(H265Slice *slice, int qp, int poc, bool isHiCmplxGop, bool isMidCmplxGop)
 {
-    //-----------------------------------------------------
-    // SET LAMBDA
-    //-----------------------------------------------------
+    const Ipp32f tab_rdLambdaBPyramid_GOP16[4] = {0.442f, 0.3536f, 0.4f, 0.68f};
+    
     slice->rd_opt_flag = 1;
     slice->rd_lambda_slice = 1;
     if (slice->rd_opt_flag) {
@@ -760,7 +765,11 @@ mfxStatus H265Encoder::SetAllLambda(H265Slice *slice, int qp, int poc, bool isHi
         case P_SLICE:
             if (m_videoParam.BPyramid && OPT_LAMBDA_PYRAMID) {
                 Ipp8u layer = m_BpyramidRefLayers[poc % m_videoParam.GopRefDist];
-                slice->rd_lambda_slice *= tab_rdLambdaBPyramid[layer];
+                if(16 == m_videoParam.GopRefDist) {
+                    slice->rd_lambda_slice *= tab_rdLambdaBPyramid_GOP16[layer];
+                } else {
+                    slice->rd_lambda_slice *= tab_rdLambdaBPyramid[layer];
+                }
                 if (layer > 0)
                     slice->rd_lambda_slice *= MAX(2,MIN(4,(qp - 12)/6.0));
             } else {
@@ -775,15 +784,18 @@ mfxStatus H265Encoder::SetAllLambda(H265Slice *slice, int qp, int poc, bool isHi
         case B_SLICE:
             if (m_videoParam.BPyramid && OPT_LAMBDA_PYRAMID) {
                 Ipp8u layer = m_BpyramidRefLayers[poc % m_videoParam.GopRefDist];
-                if(m_videoParam.preEncMode > 1)
-                {
+                if(m_videoParam.preEncMode > 1) {
                     if(isHiCmplxGop) slice->rd_lambda_slice *= tab_rdLambdaBPyramid_HiCmplx[layer];
                     else if(isMidCmplxGop) slice->rd_lambda_slice *= tab_rdLambdaBPyramid_MidCmplx[layer];
                     else slice->rd_lambda_slice *= tab_rdLambdaBPyramid_LoCmplx[layer];
                 }
                 else
                 {
-                    slice->rd_lambda_slice *= tab_rdLambdaBPyramid[layer];
+                    if(16 == m_videoParam.GopRefDist) {
+                        slice->rd_lambda_slice *= tab_rdLambdaBPyramid_GOP16[layer];
+                    } else {
+                        slice->rd_lambda_slice *= tab_rdLambdaBPyramid[layer];
+                    }
                 }
                 if (layer > 0)
                     slice->rd_lambda_slice *= MAX(2,MIN(4,(qp - 12)/6.0));
@@ -806,14 +818,12 @@ mfxStatus H265Encoder::SetAllLambda(H265Slice *slice, int qp, int poc, bool isHi
     slice->rd_lambda_sqrt_slice = sqrt(slice->rd_lambda_slice*256);
     //no chroma QP offset (from PPS) is implemented yet
     slice->ChromaDistWeight_slice = pow(2.0, (qp - h265_QPtoChromaQP[qp])/3.0);
-    //-----------------------------------------------------
-    //-----------------------------------------------------
 
     return MFX_ERR_NONE;
 
 } // mfxStatus H265Encoder::SetAllLambda(H265Slice *slice, int qp, int poc)
 
-static Ipp8u dpoc_neg[][8][5] = {
+static Ipp8u dpoc_neg[][16][6] = {
     //GopRefDist 4
     {{2, 4, 2},
     {1, 1},
@@ -821,17 +831,36 @@ static Ipp8u dpoc_neg[][8][5] = {
     {1, 1}},
 
     //GopRefDist 8
-    {{4, 8, 2, 2, 4},
-    {1, 1},
+    {{4, 8, 2, 2, 4}, //poc 8
+    {1, 1},           //poc 1
     {2, 2, 2},
     {2, 1, 2},
     {2, 4, 2},
     {2, 1, 4},
     {3, 2, 2, 2},
     {3, 1, 2, 4}},
+
+    //GopRefDist 16. 
+    // it isn't BPyramid. it is "anchor & chain"
+    {{5, 16, 2, 2, 4, 8}, //poc 16
+    {2, 1, 16},           // poc 1
+    {3, 2, 4, 12},
+    {3, 1, 2, 16},
+    {4, 4, 4, 4, 8},
+    {2, 1, 4},
+    {3, 2, 2, 2},
+    {3, 1, 2, 4},
+    {4, 4, 2, 2, 16},
+    {2, 1, 8},
+    {3, 2, 2, 6},
+    {3, 1, 2, 8},
+    {4, 4, 2, 2, 4},
+    {3, 1, 4, 8},
+    {4, 2, 2, 2, 8},
+    {4, 1, 2, 4, 8}}  // poc 15
 };
 
-static Ipp8u dpoc_pos[][8][5] = {
+static Ipp8u dpoc_pos[][16][6] = {
     //GopRefDist 4
     {{0},
     {2, 1, 2},
@@ -846,7 +875,25 @@ static Ipp8u dpoc_pos[][8][5] = {
     {1, 4},
     {2, 1, 2},
     {1, 2},
-    {1, 1}}
+    {1, 1}},
+
+    //GopRefDist 16
+    {{0,},        // poc 16
+    {3, 1, 2, 12},// poc 1
+    {2, 2, 12},
+    {2, 1, 12},
+    {1, 12},
+    {3, 1, 2, 8},
+    {2, 2, 8},
+    {2, 1, 8},
+    {1, 8},
+    {3, 1, 2, 4},
+    {2, 2, 4},
+    {2, 1, 4},
+    {1, 4},
+    {2, 1, 2},
+    {1, 2},
+    {1, 1}} // poc 15
 };
 
 void H265Encoder::InitShortTermRefPicSet()
@@ -855,6 +902,9 @@ void H265Encoder::InitShortTermRefPicSet()
 
     if (m_videoParam.BPyramid && m_videoParam.GopRefDist > 2) {
         Ipp8u r = m_videoParam.GopRefDist == 4 ? 0 : 1;
+        if(16 == m_videoParam.GopRefDist) {
+            r = 2;
+        }
         for (Ipp32s i = 0; i < m_videoParam.GopRefDist; i++) {
             m_ShortRefPicSet[i].inter_ref_pic_set_prediction_flag = 0;
             m_ShortRefPicSet[i].num_negative_pics = dpoc_neg[r][i][0];
@@ -1077,6 +1127,18 @@ mfxStatus H265Encoder::Init(const mfxVideoParam *param, const mfxExtCodingOption
                 m_BpyramidTabRight[m_BpyramidTab[(1<<i)+(k*(1<<(i+1)))]] = m_BpyramidTab[(1<<(i+1))+(k*(1<<(i+1)))];
                 m_BpyramidRefLayers[(1<<i)+(k*(1<<(i+1)))] = (Ipp8u)(j + 1);
             }
+        }
+
+        //rewrite "universal" tables in case of (16 == refdist) due to using "anchor & chain" pyramid
+        if(16 == m_videoParam.GopRefDist) {
+            const Ipp8u BpyramidTabRight_16GOP[] = {0, 0, 1, 2, 1, 0, 5, 6, 5, 0, 9, 10, 9, 0, 13, 0};
+            small_memcpy(m_BpyramidTabRight, BpyramidTabRight_16GOP, 16);
+
+            const Ipp8u tab_BpyramidTab_16Gop[] = {0, 3, 2, 4, 1, 7, 6, 8, 5, 11, 10, 12, 9, 14, 13, 15};
+            small_memcpy(m_BpyramidTab, tab_BpyramidTab_16Gop, 16);
+
+            const Ipp8u tab_BpyramidRefLayers_GOP16[16] = {0,  3, 2, 3, 1,  3, 2, 3, 1,  3, 2, 3, 1,  3, 2, 3};
+            small_memcpy(m_BpyramidRefLayers, tab_BpyramidRefLayers_GOP16, 16);
         }
     }
     m_BpyramidRefLayers[m_videoParam.GopRefDist] = 0;
@@ -2435,6 +2497,10 @@ mfxStatus H265Encoder::EncodeFrame(mfxFrameSurface1 *surface, mfxBitstream *mfxB
          m_videoParam.m_sliceQpY = m_videoParam.QPP;
          if (m_videoParam.PGopPicSize > 1)
             m_videoParam.m_sliceQpY += h265_pgop_qp_diff[m_pCurrentFrame->m_PGOPIndex];
+        // rewrite in case of LongGop (aka "anchor & chain")
+        if(m_videoParam.BPyramid && 16 == m_videoParam.GopRefDist) {
+            m_videoParam.m_sliceQpY = m_videoParam.QPI;
+        }
         
         ePic_Class = REFERENCE_PIC;
         break;
@@ -2443,6 +2509,12 @@ mfxStatus H265Encoder::EncodeFrame(mfxFrameSurface1 *surface, mfxBitstream *mfxB
         m_videoParam.m_sliceQpY = m_videoParam.QPB;
         if (m_videoParam.BPyramid)
             m_videoParam.m_sliceQpY += m_BpyramidRefLayers[m_pCurrentFrame->m_PicOrderCnt % m_videoParam.GopRefDist];
+        // rewrite in case of LongGop (aka "anchor & chain")
+        if(m_videoParam.BPyramid && 16 == m_videoParam.GopRefDist) {
+            const int tab_BpyramidRefLayers_16Gop[16] = {0, 4, 3, 4, 2,  4, 3, 4, 2,  4, 3, 4, 2,  4, 3, 4};
+            m_videoParam.m_sliceQpY = m_videoParam.QPI;
+            m_videoParam.m_sliceQpY += tab_BpyramidRefLayers_16Gop[m_pCurrentFrame->m_PicOrderCnt % m_videoParam.GopRefDist];
+        }
         
         if (!m_videoParam.BPyramid)
         {
