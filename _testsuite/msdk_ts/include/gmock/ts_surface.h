@@ -127,8 +127,9 @@ class tsFrame
 {
 private:
     tsFrameAbstract* m_pFrame;
-    mfxFrameInfo m_info;
 public:
+    mfxFrameInfo m_info;
+
     tsFrame(mfxFrameSurface1);
     ~tsFrame();
 
@@ -200,3 +201,5 @@ public:
     ~tsSurfaceWriter();
     mfxStatus ProcessSurface(mfxFrameSurface1& s);
 };
+
+mfxF64 PSNR(tsFrame& ref, tsFrame& src, mfxU32 id);

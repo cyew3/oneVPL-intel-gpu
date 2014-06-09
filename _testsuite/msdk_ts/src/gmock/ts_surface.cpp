@@ -1,4 +1,5 @@
 #include "ts_surface.h"
+#include "math.h"
 
 tsFrame::tsFrame(mfxFrameSurface1 s)
     : m_pFrame(0)
@@ -77,7 +78,7 @@ tsFrame& tsFrame::operator=(tsFrame& src)
             }
         }
     }
-    if(isYUV16() && src.isYUV16())
+    else if(isYUV16() && src.isYUV16())
     {
         for(mfxU32 h = 0; h < maxh; h ++)
         {
@@ -365,4 +366,56 @@ mfxStatus tsSurfaceWriter::ProcessSurface(mfxFrameSurface1& s)
     }
 
     return MFX_ERR_NONE;
+}
+
+mfxF64 PSNR(tsFrame& ref, tsFrame& src, mfxU32 id)
+{
+    mfxF64 max  = (1 << 8) - 1;
+    mfxF64 size = ref.m_info.CropW * ref.m_info.CropH;
+    mfxI32 diff = 0;
+    mfxU64 dist = 0;
+    mfxU32 chroma_step = 1;
+
+#define GET_DIST(COMPONENT, STEP)                                          \
+    for(mfxU32 y = ref.m_info.CropY; y < ref.m_info.CropH; y += STEP)      \
+    {                                                                      \
+        for(mfxU32 x = ref.m_info.CropX; x < ref.m_info.CropW; x += STEP)  \
+        {                                                                  \
+            diff = ref.COMPONENT(x, y) - src.COMPONENT(x, y);              \
+            dist += (diff * diff);                                         \
+        }                                                                  \
+    }
+
+    if(ref.isYUV() && src.isYUV())
+    {
+        if( 0 != id )
+        {
+            if(    ref.m_info.ChromaFormat == MFX_CHROMAFORMAT_YUV400
+                || src.m_info.ChromaFormat == MFX_CHROMAFORMAT_YUV400)
+            {
+                g_tsStatus.check(MFX_ERR_UNSUPPORTED);
+                return 0;
+            }
+            if(    ref.m_info.ChromaFormat == MFX_CHROMAFORMAT_YUV420
+                && src.m_info.ChromaFormat == MFX_CHROMAFORMAT_YUV420)
+            {
+                chroma_step = 2;
+                size /= 4;
+            }
+        }
+
+        switch(id)
+        {
+        case 0:  GET_DIST(Y, 1); break;
+        case 1:  GET_DIST(U, chroma_step); break;
+        case 2:  GET_DIST(V, chroma_step); break;
+        default: g_tsStatus.check(MFX_ERR_UNSUPPORTED); break;
+        }
+
+    } else g_tsStatus.check(MFX_ERR_UNSUPPORTED);
+
+    if (0 == dist)
+        return 1000.;
+
+    return (10. * log10(max * max * (size / dist)));
 }
