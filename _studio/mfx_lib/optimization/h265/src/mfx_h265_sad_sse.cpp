@@ -2404,6 +2404,435 @@ namespace MFX_HEVC_PP
     }
 #endif
 
+/* special case - assume ref block has fixed stride of 64 and is 16-byte aligned */
+ALIGN_DECL(16) static const short ones16s[8] = {1, 1, 1, 1, 1, 1, 1, 1};
+
+template <int height>
+static int SAD_4xN(const Ipp16s* src, Ipp32s src_stride, const Ipp16s* ref)
+{
+    int h;
+    __m128i xmm0, xmm1, xmm2, xmm3, xmm7;
+
+    xmm7 = _mm_setzero_si128();
+
+    for (h = 0; h < height; h += 4) {
+        /* load 4x4 src block into two registers */
+        xmm0 = _mm_loadl_epi64((__m128i *)(src + 0*src_stride));
+        xmm0 = _mm_loadh_epi64(xmm0, (src + 1*src_stride));
+        xmm1 = _mm_loadl_epi64((__m128i *)(src + 2*src_stride));
+        xmm1 = _mm_loadh_epi64(xmm1, (src + 3*src_stride));
+        src += 4*src_stride;
+
+        /* load 4x4 ref block into two registers */
+        xmm2 = _mm_loadl_epi64((__m128i *)(ref + 0*block_stride));
+        xmm2 = _mm_loadh_epi64(xmm2, (ref + 1*block_stride));
+        xmm3 = _mm_loadl_epi64((__m128i *)(ref + 2*block_stride));
+        xmm3 = _mm_loadh_epi64(xmm3, (ref + 3*block_stride));
+        ref += 4*block_stride;
+
+        /* calculate SAD */
+        xmm0 = _mm_sub_epi16(xmm0, xmm2);
+        xmm1 = _mm_sub_epi16(xmm1, xmm3);
+        xmm0 = _mm_abs_epi16(xmm0);
+        xmm1 = _mm_abs_epi16(xmm1);
+        xmm0 = _mm_add_epi16(xmm0, xmm1);
+        
+        /* add to 32-bit accumulator (leaving as 16-bit lanes could overflow depending on height and bit depth) */
+        xmm0 = _mm_madd_epi16(xmm0, *(__m128i *)ones16s);
+        xmm7 = _mm_add_epi32(xmm7, xmm0);
+    }
+
+    /* add up columns */
+    xmm7 = _mm_add_epi32(xmm7, _mm_shuffle_epi32(xmm7, 0x0e));
+    xmm7 = _mm_add_epi32(xmm7, _mm_shuffle_epi32(xmm7, 0x01));
+
+    return _mm_cvtsi128_si32(xmm7);
+}
+
+template <int height>
+static int SAD_8xN(const Ipp16s* src, Ipp32s src_stride, const Ipp16s* ref)
+{
+    int h;
+    __m128i xmm0, xmm1, xmm2, xmm3, xmm7;
+
+    xmm7 = _mm_setzero_si128();
+
+    for (h = 0; h < height; h += 2) {
+        /* load 8x2 src block into two registers */
+        xmm0 = _mm_loadu_si128((__m128i *)(src + 0*src_stride));
+        xmm1 = _mm_loadu_si128((__m128i *)(src + 1*src_stride));
+        src += 2*src_stride;
+
+        /* calculate SAD */
+        xmm0 = _mm_sub_epi16(xmm0, *(__m128i *)(ref + 0*block_stride));
+        xmm1 = _mm_sub_epi16(xmm1, *(__m128i *)(ref + 1*block_stride));
+        xmm0 = _mm_abs_epi16(xmm0);
+        xmm1 = _mm_abs_epi16(xmm1);
+        xmm0 = _mm_add_epi16(xmm0, xmm1);
+        ref += 2*block_stride;
+        
+        /* add to 32-bit accumulator */
+        xmm0 = _mm_madd_epi16(xmm0, *(__m128i *)ones16s);
+        xmm7 = _mm_add_epi32(xmm7, xmm0);
+    }
+
+    /* add up columns */
+    xmm7 = _mm_add_epi32(xmm7, _mm_shuffle_epi32(xmm7, 0x0e));
+    xmm7 = _mm_add_epi32(xmm7, _mm_shuffle_epi32(xmm7, 0x01));
+
+    return _mm_cvtsi128_si32(xmm7);
+}
+
+template <int height>
+static int SAD_12xN(const Ipp16s* src, Ipp32s src_stride, const Ipp16s* ref)
+{
+    int h;
+    __m128i xmm0, xmm1, xmm2, xmm4, xmm5, xmm6, xmm7;
+
+    xmm7 = _mm_setzero_si128();
+
+    for (h = 0; h < height; h += 2) {
+        /* load 12x2 src block into three registers */
+        xmm0 = _mm_loadu_si128((__m128i *)(src + 0*src_stride));
+        xmm1 = _mm_loadl_epi64((__m128i *)(src + 0*src_stride + 8));
+        xmm2 = _mm_loadu_si128((__m128i *)(src + 1*src_stride));
+        xmm1 = _mm_loadh_epi64(xmm1, (src + 1*src_stride + 8));
+        src += 2*src_stride;
+
+        /* load 12x2 ref block into three registers */
+        xmm4 = _mm_loadu_si128((__m128i *)(ref + 0*block_stride));
+        xmm5 = _mm_loadl_epi64((__m128i *)(ref + 0*block_stride + 8));
+        xmm6 = _mm_loadu_si128((__m128i *)(ref + 1*block_stride));
+        xmm5 = _mm_loadh_epi64(xmm5, (ref + 1*block_stride + 8));
+        ref += 2*block_stride;
+
+        /* calculate SAD */
+        xmm0 = _mm_sub_epi16(xmm0, xmm4);
+        xmm1 = _mm_sub_epi16(xmm1, xmm5);
+        xmm2 = _mm_sub_epi16(xmm2, xmm6);
+        xmm0 = _mm_abs_epi16(xmm0);
+        xmm1 = _mm_abs_epi16(xmm1);
+        xmm2 = _mm_abs_epi16(xmm2);
+        xmm0 = _mm_add_epi16(xmm0, xmm1);
+        xmm0 = _mm_add_epi16(xmm0, xmm2);
+        
+        /* add to 32-bit accumulator */
+        xmm0 = _mm_madd_epi16(xmm0, *(__m128i *)ones16s);
+        xmm7 = _mm_add_epi32(xmm7, xmm0);
+    }
+
+    /* add up columns */
+    xmm7 = _mm_add_epi32(xmm7, _mm_shuffle_epi32(xmm7, 0x0e));
+    xmm7 = _mm_add_epi32(xmm7, _mm_shuffle_epi32(xmm7, 0x01));
+
+    return _mm_cvtsi128_si32(xmm7);
+}
+
+template <int height>
+static int SAD_16xN(const Ipp16s* src, Ipp32s src_stride, const Ipp16s* ref)
+{
+    int h;
+    __m128i xmm0, xmm1, xmm2, xmm3, xmm4, xmm5, xmm6, xmm7, xmm_acc;
+
+    xmm_acc = _mm_setzero_si128();
+
+    for (h = 0; h < height; h += 2) {
+        /* load 16x2 src block into four registers */
+        xmm0 = _mm_loadu_si128((__m128i *)(src + 0*src_stride));
+        xmm1 = _mm_loadu_si128((__m128i *)(src + 0*src_stride + 8));
+        xmm2 = _mm_loadu_si128((__m128i *)(src + 1*src_stride));
+        xmm3 = _mm_loadu_si128((__m128i *)(src + 1*src_stride + 8));
+        src += 2*src_stride;
+
+        /* calculate SAD */
+        xmm0 = _mm_sub_epi16(xmm0, *(__m128i *)(ref + 0*block_stride));
+        xmm1 = _mm_sub_epi16(xmm1, *(__m128i *)(ref + 0*block_stride + 8));
+        xmm2 = _mm_sub_epi16(xmm2, *(__m128i *)(ref + 1*block_stride));
+        xmm3 = _mm_sub_epi16(xmm3, *(__m128i *)(ref + 1*block_stride + 8));
+        ref += 2*block_stride;
+
+        xmm0 = _mm_abs_epi16(xmm0);
+        xmm1 = _mm_abs_epi16(xmm1);
+        xmm2 = _mm_abs_epi16(xmm2);
+        xmm3 = _mm_abs_epi16(xmm3);
+
+        xmm0 = _mm_add_epi16(xmm0, xmm1);
+        xmm0 = _mm_add_epi16(xmm0, xmm2);
+        xmm0 = _mm_add_epi16(xmm0, xmm3);
+
+        /* add to 32-bit accumulator */
+        xmm0 = _mm_madd_epi16(xmm0, *(__m128i *)ones16s);
+        xmm_acc = _mm_add_epi32(xmm_acc, xmm0);
+    }
+
+    /* add up columns */
+    xmm_acc = _mm_add_epi32(xmm_acc, _mm_shuffle_epi32(xmm_acc, 0x0e));
+    xmm_acc = _mm_add_epi32(xmm_acc, _mm_shuffle_epi32(xmm_acc, 0x01));
+
+    return _mm_cvtsi128_si32(xmm_acc);
+}
+
+template <int height>
+static int SAD_24xN(const Ipp16s* src, Ipp32s src_stride, const Ipp16s* ref)
+{
+    int h;
+    __m128i xmm0, xmm1, xmm2, xmm4, xmm5, xmm6, xmm7;
+
+    xmm7 = _mm_setzero_si128();
+
+    for (h = 0; h < height; h++) {
+        /* load 24x1 src block into three registers */
+        xmm0 = _mm_loadu_si128((__m128i *)(src +  0));
+        xmm1 = _mm_loadu_si128((__m128i *)(src +  8));
+        xmm2 = _mm_loadu_si128((__m128i *)(src + 16));
+        src += src_stride;
+
+        /* calculate SAD */
+        xmm0 = _mm_sub_epi16(xmm0, *(__m128i *)(ref +  0));
+        xmm1 = _mm_sub_epi16(xmm1, *(__m128i *)(ref +  8));
+        xmm2 = _mm_sub_epi16(xmm2, *(__m128i *)(ref + 16));
+        xmm0 = _mm_abs_epi16(xmm0);
+        xmm1 = _mm_abs_epi16(xmm1);
+        xmm2 = _mm_abs_epi16(xmm2);
+        xmm0 = _mm_add_epi16(xmm0, xmm1);
+        xmm0 = _mm_add_epi16(xmm0, xmm2);
+        ref += block_stride;
+        
+        /* add to 32-bit accumulator */
+        xmm0 = _mm_madd_epi16(xmm0, *(__m128i *)ones16s);
+        xmm7 = _mm_add_epi32(xmm7, xmm0);
+    }
+
+    /* add up columns */
+    xmm7 = _mm_add_epi32(xmm7, _mm_shuffle_epi32(xmm7, 0x0e));
+    xmm7 = _mm_add_epi32(xmm7, _mm_shuffle_epi32(xmm7, 0x01));
+
+    return _mm_cvtsi128_si32(xmm7);
+}
+
+template <int height>
+static int SAD_32xN(const Ipp16s* src, Ipp32s src_stride, const Ipp16s* ref)
+{
+    int h;
+    __m128i xmm0, xmm1, xmm2, xmm3, xmm4, xmm5, xmm6, xmm7, xmm_acc;
+
+    xmm_acc = _mm_setzero_si128();
+
+    for (h = 0; h < height; h++) {
+        /* load 32x1 src block into four registers */
+        xmm0 = _mm_loadu_si128((__m128i *)(src +  0));
+        xmm1 = _mm_loadu_si128((__m128i *)(src +  8));
+        xmm2 = _mm_loadu_si128((__m128i *)(src + 16));
+        xmm3 = _mm_loadu_si128((__m128i *)(src + 24));
+        src += src_stride;
+
+        /* calculate SAD */
+        xmm0 = _mm_sub_epi16(xmm0, *(__m128i *)(ref +  0));
+        xmm1 = _mm_sub_epi16(xmm1, *(__m128i *)(ref +  8));
+        xmm2 = _mm_sub_epi16(xmm2, *(__m128i *)(ref + 16));
+        xmm3 = _mm_sub_epi16(xmm3, *(__m128i *)(ref + 24));
+        ref += block_stride;
+
+        xmm0 = _mm_abs_epi16(xmm0);
+        xmm1 = _mm_abs_epi16(xmm1);
+        xmm2 = _mm_abs_epi16(xmm2);
+        xmm3 = _mm_abs_epi16(xmm3);
+
+        xmm0 = _mm_add_epi16(xmm0, xmm1);
+        xmm0 = _mm_add_epi16(xmm0, xmm2);
+        xmm0 = _mm_add_epi16(xmm0, xmm3);
+
+        /* add to 32-bit accumulator */
+        xmm0 = _mm_madd_epi16(xmm0, *(__m128i *)ones16s);
+        xmm_acc = _mm_add_epi32(xmm_acc, xmm0);
+    }
+
+    /* add up columns */
+    xmm_acc = _mm_add_epi32(xmm_acc, _mm_shuffle_epi32(xmm_acc, 0x0e));
+    xmm_acc = _mm_add_epi32(xmm_acc, _mm_shuffle_epi32(xmm_acc, 0x01));
+
+    return _mm_cvtsi128_si32(xmm_acc);
+}
+
+template <int height>
+static int SAD_48xN(const Ipp16s* src, Ipp32s src_stride, const Ipp16s* ref)
+{
+    int h;
+    __m128i xmm0, xmm1, xmm2, xmm3, xmm4, xmm5, xmm6, xmm7;
+
+    xmm7 = _mm_setzero_si128();
+
+    for (h = 0; h < height; h++) {
+        /* load first 24x1 src block into three registers */
+        xmm0 = _mm_loadu_si128((__m128i *)(src +  0));
+        xmm1 = _mm_loadu_si128((__m128i *)(src +  8));
+        xmm2 = _mm_loadu_si128((__m128i *)(src + 16));
+
+        /* calculate SAD */
+        xmm0 = _mm_sub_epi16(xmm0, *(__m128i *)(ref +  0));
+        xmm1 = _mm_sub_epi16(xmm1, *(__m128i *)(ref +  8));
+        xmm2 = _mm_sub_epi16(xmm2, *(__m128i *)(ref + 16));
+
+        xmm0 = _mm_abs_epi16(xmm0);
+        xmm1 = _mm_abs_epi16(xmm1);
+        xmm2 = _mm_abs_epi16(xmm2);
+
+        xmm0 = _mm_add_epi16(xmm0, xmm1);
+        xmm0 = _mm_add_epi16(xmm0, xmm2);
+        
+        /* load second 24x1 src block into three registers */
+        xmm3 = _mm_loadu_si128((__m128i *)(src + 24));
+        xmm1 = _mm_loadu_si128((__m128i *)(src + 32));
+        xmm2 = _mm_loadu_si128((__m128i *)(src + 40));
+
+        /* calculate SAD */
+        xmm3 = _mm_sub_epi16(xmm3, *(__m128i *)(ref + 24));
+        xmm1 = _mm_sub_epi16(xmm1, *(__m128i *)(ref + 32));
+        xmm2 = _mm_sub_epi16(xmm2, *(__m128i *)(ref + 40));
+
+        xmm3 = _mm_abs_epi16(xmm3);
+        xmm1 = _mm_abs_epi16(xmm1);
+        xmm2 = _mm_abs_epi16(xmm2);
+
+        xmm0 = _mm_add_epi16(xmm0, xmm1);
+        xmm0 = _mm_add_epi16(xmm0, xmm2);
+        xmm0 = _mm_add_epi16(xmm0, xmm3);
+
+        /* add to 32-bit accumulator */
+        xmm0 = _mm_madd_epi16(xmm0, *(__m128i *)ones16s);
+        xmm7 = _mm_add_epi32(xmm7, xmm0);
+
+        src += src_stride;
+        ref += block_stride;
+    }
+
+    /* add up columns */
+    xmm7 = _mm_add_epi32(xmm7, _mm_shuffle_epi32(xmm7, 0x0e));
+    xmm7 = _mm_add_epi32(xmm7, _mm_shuffle_epi32(xmm7, 0x01));
+
+    return _mm_cvtsi128_si32(xmm7);
+}
+
+template <int height>
+static int SAD_64xN(const Ipp16s* src, Ipp32s src_stride, const Ipp16s* ref)
+{
+    int h;
+    __m128i xmm0, xmm1, xmm2, xmm3, xmm4, xmm5, xmm6, xmm7, xmm_acc, xmm_tmp;
+
+    xmm_acc = _mm_setzero_si128();
+
+    for (h = 0; h < height; h++) {
+        /* load first 32x1 src block into four registers */
+        xmm0 = _mm_loadu_si128((__m128i *)(src +  0));
+        xmm1 = _mm_loadu_si128((__m128i *)(src +  8));
+        xmm2 = _mm_loadu_si128((__m128i *)(src + 16));
+        xmm3 = _mm_loadu_si128((__m128i *)(src + 24));
+
+        /* calculate SAD */
+        xmm0 = _mm_sub_epi16(xmm0, *(__m128i *)(ref +  0));
+        xmm1 = _mm_sub_epi16(xmm1, *(__m128i *)(ref +  8));
+        xmm2 = _mm_sub_epi16(xmm2, *(__m128i *)(ref + 16));
+        xmm3 = _mm_sub_epi16(xmm3, *(__m128i *)(ref + 24));
+
+        xmm0 = _mm_abs_epi16(xmm0);
+        xmm1 = _mm_abs_epi16(xmm1);
+        xmm2 = _mm_abs_epi16(xmm2);
+        xmm3 = _mm_abs_epi16(xmm3);
+
+        xmm_tmp = _mm_add_epi16(xmm0, xmm1);
+        xmm_tmp = _mm_add_epi16(xmm_tmp, xmm2);
+        xmm_tmp = _mm_add_epi16(xmm_tmp, xmm3);
+
+        /* load second 32x1 src block into four registers */
+        xmm0 = _mm_loadu_si128((__m128i *)(src + 32));
+        xmm1 = _mm_loadu_si128((__m128i *)(src + 40));
+        xmm2 = _mm_loadu_si128((__m128i *)(src + 48));
+        xmm3 = _mm_loadu_si128((__m128i *)(src + 56));
+
+        /* calculate SAD */
+        xmm0 = _mm_sub_epi16(xmm0, *(__m128i *)(ref + 32));
+        xmm1 = _mm_sub_epi16(xmm1, *(__m128i *)(ref + 40));
+        xmm2 = _mm_sub_epi16(xmm2, *(__m128i *)(ref + 48));
+        xmm3 = _mm_sub_epi16(xmm3, *(__m128i *)(ref + 56));
+
+        xmm0 = _mm_abs_epi16(xmm0);
+        xmm1 = _mm_abs_epi16(xmm1);
+        xmm2 = _mm_abs_epi16(xmm2);
+        xmm3 = _mm_abs_epi16(xmm3);
+
+        xmm0 = _mm_add_epi16(xmm0, xmm1);
+        xmm0 = _mm_add_epi16(xmm0, xmm2);
+        xmm0 = _mm_add_epi16(xmm0, xmm3);
+        xmm0 = _mm_add_epi16(xmm0, xmm_tmp);  /* add first half */
+
+        /* add to 32-bit accumulator */
+        xmm0 = _mm_madd_epi16(xmm0, *(__m128i *)ones16s);
+        xmm_acc = _mm_add_epi32(xmm_acc, xmm0);
+
+        src += src_stride;
+        ref += block_stride;
+    }
+
+    /* add up columns */
+    xmm_acc = _mm_add_epi32(xmm_acc, _mm_shuffle_epi32(xmm_acc, 0x0e));
+    xmm_acc = _mm_add_epi32(xmm_acc, _mm_shuffle_epi32(xmm_acc, 0x01));
+
+    return _mm_cvtsi128_si32(xmm_acc);
+}
+
+int H265_FASTCALL MAKE_NAME(h265_SAD_MxN_16s)(const Ipp16s* src, Ipp32s src_stride, const Ipp16s* ref, Ipp32s width, Ipp32s height)
+{
+    switch (width) {
+    case 4:
+        if (height == 4)        return SAD_4xN< 4> (src, src_stride, ref);
+        else if (height == 8)   return SAD_4xN< 8> (src, src_stride, ref);
+        else if (height == 16)  return SAD_4xN<16> (src, src_stride, ref);
+        break;
+    case 8:
+        if (height == 4)        return SAD_8xN< 4> (src, src_stride, ref);
+        else if (height == 8)   return SAD_8xN< 8> (src, src_stride, ref);
+        else if (height == 16)  return SAD_8xN<16> (src, src_stride, ref);
+        else if (height == 32)  return SAD_8xN<32> (src, src_stride, ref);
+        break;
+    case 12:
+        if (height == 16)       return SAD_12xN<16>(src, src_stride, ref);
+        break;
+    case 16:
+        if (height == 4)        return SAD_16xN< 4>(src, src_stride, ref);
+        else if (height == 8)   return SAD_16xN< 8>(src, src_stride, ref);
+        else if (height == 12)  return SAD_16xN<12>(src, src_stride, ref);
+        else if (height == 16)  return SAD_16xN<16>(src, src_stride, ref);
+        else if (height == 32)  return SAD_16xN<32>(src, src_stride, ref);
+        else if (height == 64)  return SAD_16xN<64>(src, src_stride, ref);
+        break;
+    case 24:
+        if (height == 32)       return SAD_24xN<32>(src, src_stride, ref);
+        break;
+    case 32:
+        if (height == 8)        return SAD_32xN< 8>(src, src_stride, ref);
+        else if (height == 16)  return SAD_32xN<16>(src, src_stride, ref);
+        else if (height == 24)  return SAD_32xN<24>(src, src_stride, ref);
+        else if (height == 32)  return SAD_32xN<32>(src, src_stride, ref);
+        else if (height == 64)  return SAD_32xN<64>(src, src_stride, ref);
+        break;
+    case 48:
+        if (height == 64)       return SAD_48xN<64>(src, src_stride, ref);
+        break;
+    case 64:
+        if (height == 16)       return SAD_64xN<16>(src, src_stride, ref);
+        else if (height == 32)  return SAD_64xN<32>(src, src_stride, ref);
+        else if (height == 48)  return SAD_64xN<48>(src, src_stride, ref);
+        else if (height == 64)  return SAD_64xN<64>(src, src_stride, ref);
+        break;
+    default:
+        break;
+    }
+
+    /* error - unsupported size */
+    VM_ASSERT(0);
+    return -1;
+}
+
 } // end namespace MFX_HEVC_PP
 
 #endif // #if defined(MFX_TARGET_OPTIMIZATION_AUTO) ...

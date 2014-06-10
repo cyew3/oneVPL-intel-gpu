@@ -833,6 +833,25 @@ int H265_FASTCALL MAKE_NAME(h265_SAD_MxN_general_16s)(const Ipp16s* src, Ipp32s 
     return sad;
 }
 
+/* 16-bit SAD - special (fixed stride of 64 for reference block) */
+int H265_FASTCALL MAKE_NAME(h265_SAD_MxN_16s)(const Ipp16s* src, Ipp32s src_stride, const Ipp16s* ref, Ipp32s width, Ipp32s height)
+{
+    Ipp32s var, sad;
+    const Ipp32s ref_stride = 64;
+
+    sad = 0;
+    for (int j = 0; j < height; j++)
+    {
+        for (int i = 0; i < width; i++)
+        {
+            var = src[i + j*src_stride] - ref[i + j*ref_stride];
+            sad += abs(var);
+        }
+    }
+
+    return sad;
+}
+
 } // end namespace MFX_HEVC_PP
 
 #endif // #if defined (MFX_TARGET_OPTIMIZATION_SSE4) || defined(MFX_TARGET_OPTIMIZATION_AVX2)

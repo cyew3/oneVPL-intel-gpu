@@ -310,6 +310,10 @@ namespace MFX_HEVC_PP
     int H265_FASTCALL h265_SAD_MxN_general_16s_sse (const Ipp16s* src, Ipp32s src_stride, const Ipp16s* ref, Ipp32s ref_stride, Ipp32s width, Ipp32s height);
     int H265_FASTCALL h265_SAD_MxN_general_16s_avx2(const Ipp16s* src, Ipp32s src_stride, const Ipp16s* ref, Ipp32s ref_stride, Ipp32s width, Ipp32s height);
 
+    int H265_FASTCALL h265_SAD_MxN_16s_px  (const Ipp16s* src, Ipp32s src_stride, const Ipp16s* ref, Ipp32s width, Ipp32s height);
+    int H265_FASTCALL h265_SAD_MxN_16s_sse (const Ipp16s* src, Ipp32s src_stride, const Ipp16s* ref, Ipp32s width, Ipp32s height);
+    int H265_FASTCALL h265_SAD_MxN_16s_avx2(const Ipp16s* src, Ipp32s src_stride, const Ipp16s* ref, Ipp32s width, Ipp32s height);
+
     // SATD
     Ipp32s H265_FASTCALL h265_SATD_4x4_8u_px  (const Ipp8u* pSrcCur, int srcCurStep, const Ipp8u* pSrcRef, int srcRefStep);
     Ipp32s H265_FASTCALL h265_SATD_4x4_8u_sse (const Ipp8u* pSrcCur, int srcCurStep, const Ipp8u* pSrcRef, int srcRefStep);
@@ -554,7 +558,7 @@ namespace MFX_HEVC_PP
     void h265_PredictIntra_Planar_16s_sse(Ipp16s* PredPel, Ipp16s* pels, Ipp32s pitch, Ipp32s width);
     void h265_PredictIntra_Planar_16s_avx2(Ipp16s* PredPel, Ipp16s* pels, Ipp32s pitch, Ipp32s width);
 
-	void h265_AnalyzeGradient_8u_px  (const mfxU8 *inData, mfxU16 *outData4, mfxU16 *outData8, mfxI32 width, mfxI32 height, mfxI32 pitch);
+    void h265_AnalyzeGradient_8u_px  (const mfxU8 *inData, mfxU16 *outData4, mfxU16 *outData8, mfxI32 width, mfxI32 height, mfxI32 pitch);
     void h265_AnalyzeGradient_8u_sse (const mfxU8 *inData, mfxU16 *outData4, mfxU16 *outData8, mfxI32 width, mfxI32 height, mfxI32 pitch);
     void h265_AnalyzeGradient_8u_avx2(const mfxU8 *inData, mfxU16 *outData4, mfxU16 *outData8, mfxI32 width, mfxI32 height, mfxI32 pitch);
 

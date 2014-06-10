@@ -97,7 +97,7 @@ static inline int h265_SAD_MxN_general(const Ipp16u *image,  int stride_img, con
 
 static inline int h265_SAD_MxN_special(const Ipp16u *image,  const Ipp16u *ref, int stride, int SizeX, int SizeY)
 {
-    return h265_SAD_MxN_general(image, stride, ref, 64, SizeX, SizeY);
+    return MFX_HEVC_PP::NAME(h265_SAD_MxN_16s)((Ipp16s*)image, stride, (Ipp16s*)ref, SizeX, SizeY);
 }
 
 inline Ipp32s GetLumaOffset(const H265VideoParam *par, Ipp32s absPartIdx, Ipp32s pitch)
