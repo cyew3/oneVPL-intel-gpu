@@ -17,6 +17,8 @@
 #include "mfx_h265_paq.h"
 #include "mfx_h265_optimization.h"
 
+#define NGV_ALIGN(X, ...) ALIGN_DECL(X) __VA_ARGS__
+
 namespace H265Enc {
 
     //#define TEST_ASM

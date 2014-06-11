@@ -84,11 +84,6 @@ namespace H265Enc {
     typedef int RES;
     enum                        {IntRes, HalfRes, QuRes};
 
-
-#define NgvMalloc(bytes) malloc(bytes)
-#define NgvCalloc(n, bytes) calloc(n, bytes)
-#define NgvMalloc_aligned(bytes, alignment) _aligned_malloc(bytes, alignment)
-
 #define NgvMemProfile(str)  
 
 #define NgvPrintf 
@@ -98,15 +93,21 @@ namespace H265Enc {
 
 #define MAX(a,b)            (((a) > (b)) ? (a) : (b))
 
-#define RV_CDECL               __cdecl
-#define RV_FASTCALL            __fastcall
+//#define RV_CDECL               __cdecl
+//#define RV_FASTCALL            __fastcall
 
 #define NOTREFERENCED_PARAMETER(P) (P)
 
-#define NGV_ALIGN(val, ...) __declspec(align(val)) __VA_ARGS__
-#define NGV_ALIGN_ATR(val) 
-#define NgvMalloc_aligned(bytes, alignment) _aligned_malloc(bytes, alignment)
-#define NgvFree_aligned(ptr) _aligned_free(ptr)
+//#define NGV_ALIGN(val, ...) __declspec(align(val)) __VA_ARGS__
+//#define NGV_ALIGN_ATR(val)
+
+#define NgvMalloc(bytes) malloc(bytes)
+#define NgvCalloc(n, bytes) calloc(n, bytes)
+
+//#define NgvMalloc_aligned(bytes, alignment) _aligned_malloc(bytes, alignment)
+//#define NgvFree_aligned(ptr) _aligned_free(ptr)
+#define NgvMalloc_aligned(bytes, alignment) ippMalloc(bytes)
+#define NgvFree_aligned(ptr) ippFree(ptr)
 
 #define MAX_TILE_SIZE 64
 #define MB_WIDTH 64
@@ -1066,10 +1067,10 @@ void ME_SUM_Line_Intrin_SSE2(Ipp8u *sLx, Ipp8u *sLy, Ipp8u *sLx2, Ipp8u *sLy2, I
 // mest_one.h
 //---------------------------------------------------------
 
-Ipp32u __cdecl        ME_One(VidRead *videoIn,  Ipp32u fPos, ImDetails inData, ImDetails outData, imageData *scale, imageData *scaleRef,
+Ipp32u   ME_One(VidRead *videoIn,  Ipp32u fPos, ImDetails inData, ImDetails outData, imageData *scale, imageData *scaleRef,
                        imageData *outImage, NGV_Bool first, DIR fdir, Ipp32u accuracy, Ipp32u thres, Ipp32u pdist);
 
-Ipp32u __cdecl        ME_One3(VidRead *videoIn, Ipp32u fPos, ImDetails inData, ImDetails outData, imageData *scale, imageData *scaleRef,
+Ipp32u   ME_One3(VidRead *videoIn, Ipp32u fPos, ImDetails inData, ImDetails outData, imageData *scale, imageData *scaleRef,
                        imageData *outImage, NGV_Bool first, DIR fdir, Ipp32u accuracy);
 
 void    calcLimits(Ipp32u xLoc, Ipp32u yLoc, Ipp32s *limitXleft, Ipp32s *limitXright, Ipp32s *limitYup,

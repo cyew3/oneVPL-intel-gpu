@@ -4006,8 +4006,8 @@ NGV_Bool    PdYuvImage_Alloc2(YUV *pImage, Ipp32u dimVideoExtended, Ipp32u dimCo
 void    PdYuvImage_NULL(YUV *pImage);
 void    imageInit(YUV *buffer);
 
-const __int64                x6        =    0x0008000800080008;
-const __int64                x7        =    0x0002000200020002;
+const Ipp64s                x6        =    0x0008000800080008;
+const Ipp64s                x7        =    0x0002000200020002;
 
 Ipp32s            filter1[14]                =    {0,0,0,0,0,5,11,11,5,0,0,0,0,32};     
 Ipp32s            fir2[14]                =    {2,0,-4,-3,5,19,26,19,5,-3,-4,0,2,64};
@@ -4288,25 +4288,25 @@ NGV_Bool    PdYuvFileReader_Open(VidRead *videoIn, VidData *inData)        {
 NGV_Bool VidSampleFree(void *vt, VidSample *videoIn)
 {
     NGV_PDist *t = (NGV_PDist *)vt;
-    _aligned_free(videoIn->R1Buffer.exImage.Y);
-    _aligned_free(videoIn->R4erBuffer.exImage.Y);
-    _aligned_free(videoIn->R16thBuffer.exImage.Y);
+    NgvFree_aligned(videoIn->R1Buffer.exImage.Y);
+    NgvFree_aligned(videoIn->R4erBuffer.exImage.Y);
+    NgvFree_aligned(videoIn->R16thBuffer.exImage.Y);
 
     free(videoIn->R1Buffer.Cs);
     free(videoIn->R1Buffer.Rs);
 
     /*Full Size image*/
     if(t->dealloc_pdist){
-        _aligned_free(videoIn->R1Buffer.Backward.Y);
-        //_aligned_free(videoIn->R1Buffer.Pframe.Y);
-        // _aligned_free(videoIn->R1Buffer.deltaB.Y);
-        //_aligned_free(videoIn->R1Buffer.Pframe.U);
-        // _aligned_free(videoIn->R1Buffer.deltaB.U);
-        //_aligned_free(videoIn->R1Buffer.Pframe.V);
-        //_aligned_free(videoIn->R1Buffer.deltaB.V);
-        _aligned_free(videoIn->R1Buffer.deltaF.Y);
-        _aligned_free(videoIn->R1Buffer.deltaF.U);
-        _aligned_free(videoIn->R1Buffer.deltaF.V);
+        NgvFree_aligned(videoIn->R1Buffer.Backward.Y);
+        //NgvFree_aligned(videoIn->R1Buffer.Pframe.Y);
+        // NgvFree_aligned(videoIn->R1Buffer.deltaB.Y);
+        //NgvFree_aligned(videoIn->R1Buffer.Pframe.U);
+        // NgvFree_aligned(videoIn->R1Buffer.deltaB.U);
+        //NgvFree_aligned(videoIn->R1Buffer.Pframe.V);
+        //NgvFree_aligned(videoIn->R1Buffer.deltaB.V);
+        NgvFree_aligned(videoIn->R1Buffer.deltaF.Y);
+        NgvFree_aligned(videoIn->R1Buffer.deltaF.U);
+        NgvFree_aligned(videoIn->R1Buffer.deltaF.V);
         free(videoIn->R1Buffer.BSAD);
         free(videoIn->R1Buffer.pBackward);
         free(videoIn->R1Buffer.pBhalf);
@@ -4320,16 +4320,16 @@ NGV_Bool VidSampleFree(void *vt, VidSample *videoIn)
     /*Quarter sized image*/
 
     if(t->dealloc_pdist){
-        _aligned_free(videoIn->R4erBuffer.Backward.Y);
-        // _aligned_free(videoIn->R4erBuffer.Pframe.Y);
-        // _aligned_free(videoIn->R4erBuffer.deltaB.Y);
-        //_aligned_free(videoIn->R4erBuffer.Pframe.U);
-        // _aligned_free(videoIn->R4erBuffer.deltaB.U);
-        //_aligned_free(videoIn->R4erBuffer.Pframe.V);
-        // _aligned_free(videoIn->R4erBuffer.deltaB.V);
-        _aligned_free(videoIn->R4erBuffer.deltaF.Y);
-        _aligned_free(videoIn->R4erBuffer.deltaF.U);
-        _aligned_free(videoIn->R4erBuffer.deltaF.V);
+        NgvFree_aligned(videoIn->R4erBuffer.Backward.Y);
+        // NgvFree_aligned(videoIn->R4erBuffer.Pframe.Y);
+        // NgvFree_aligned(videoIn->R4erBuffer.deltaB.Y);
+        //NgvFree_aligned(videoIn->R4erBuffer.Pframe.U);
+        // NgvFree_aligned(videoIn->R4erBuffer.deltaB.U);
+        //NgvFree_aligned(videoIn->R4erBuffer.Pframe.V);
+        // NgvFree_aligned(videoIn->R4erBuffer.deltaB.V);
+        NgvFree_aligned(videoIn->R4erBuffer.deltaF.Y);
+        NgvFree_aligned(videoIn->R4erBuffer.deltaF.U);
+        NgvFree_aligned(videoIn->R4erBuffer.deltaF.V);
 
         free(videoIn->R4erBuffer.BSAD);
         free(videoIn->R4erBuffer.pBackward);
@@ -4346,16 +4346,16 @@ NGV_Bool VidSampleFree(void *vt, VidSample *videoIn)
     /*1/16 sized image*/
 
     if(t->dealloc_pdist){
-        _aligned_free(videoIn->R16thBuffer.Backward.Y);
-        //_aligned_free(videoIn->R16thBuffer.Pframe.Y);
-        //_aligned_free(videoIn->R16thBuffer.deltaB.Y);
-        // _aligned_free(videoIn->R16thBuffer.Pframe.U);
-        //_aligned_free(videoIn->R16thBuffer.deltaB.U);
-        // _aligned_free(videoIn->R16thBuffer.Pframe.V);
-        // _aligned_free(videoIn->R16thBuffer.deltaB.V);
-        _aligned_free(videoIn->R16thBuffer.deltaF.Y);
-        _aligned_free(videoIn->R16thBuffer.deltaF.U);
-        _aligned_free(videoIn->R16thBuffer.deltaF.V);
+        NgvFree_aligned(videoIn->R16thBuffer.Backward.Y);
+        //NgvFree_aligned(videoIn->R16thBuffer.Pframe.Y);
+        //NgvFree_aligned(videoIn->R16thBuffer.deltaB.Y);
+        // NgvFree_aligned(videoIn->R16thBuffer.Pframe.U);
+        //NgvFree_aligned(videoIn->R16thBuffer.deltaB.U);
+        // NgvFree_aligned(videoIn->R16thBuffer.Pframe.V);
+        // NgvFree_aligned(videoIn->R16thBuffer.deltaB.V);
+        NgvFree_aligned(videoIn->R16thBuffer.deltaF.Y);
+        NgvFree_aligned(videoIn->R16thBuffer.deltaF.U);
+        NgvFree_aligned(videoIn->R16thBuffer.deltaF.V);
 
         free(videoIn->R16thBuffer.BSAD);
         free(videoIn->R16thBuffer.pBackward);
@@ -4383,19 +4383,19 @@ NGV_Bool PdYuvFileReader_Free(VidRead *videoIn)    {
 
     /*Half Pixel Accuracy variables*/
     if(videoIn->cornerBox.Y)
-        _aligned_free(videoIn->cornerBox.Y);
+        NgvFree_aligned(videoIn->cornerBox.Y);
     videoIn->cornerBox.Y = NULL;
     if(videoIn->topBox.Y) 
-        _aligned_free(videoIn->topBox.Y);
+        NgvFree_aligned(videoIn->topBox.Y);
     videoIn->topBox.Y = NULL;
     if(videoIn->leftBox.Y)
-        _aligned_free(videoIn->leftBox.Y);
+        NgvFree_aligned(videoIn->leftBox.Y);
     videoIn->leftBox.Y = NULL;
 
     /*Quarter Pixel Accuracy variables*/
     for(i=0;i<8;i++)                {
         if(videoIn->spBuffer[i].Y)
-            _aligned_free(videoIn->spBuffer[i].Y);
+            NgvFree_aligned(videoIn->spBuffer[i].Y);
         videoIn->spBuffer[i].Y = NULL;
     }
 
@@ -4487,59 +4487,59 @@ Ipp32u        numFrames(Ipp32u EndPos, Ipp32u YUVframeSize)        {
     return totalNumFrames;
 }
 
-NGV_Bool    PdYuvFileWriter_Open(DataWriter *videoOut, const char *fileName)    {
-    NGV_Bool    failed                    =    false;
-    int        newSize; 
+//NGV_Bool    PdYuvFileWriter_Open(DataWriter *videoOut, const char *fileName)    {
+//    NGV_Bool    failed                    =    false;
+//    int        newSize; 
+//
+//    if(!fileName) {
+//        failed                        =    true;
+//        return failed;
+//    }
+//
+//    newSize                            =    (int)strlen(fileName)+1;
+//    //AYA - disabled
+//    //videoOut->filename                =    NgvMalloc(newSize);
+//    if(!videoOut->filename) {
+//        failed                        =    true;
+//        return failed;
+//    }
+//    strcpy_s(videoOut->filename, newSize, fileName); /* Flawfinder: ignore */
+//
+//    fopen_s(&videoOut->pDataOut, videoOut->filename, "wb+");
+//    if(!videoOut->pDataOut) {
+//        failed                        =    true;
+//        return failed;
+//    }
+//
+//    return failed;
+//}
 
-    if(!fileName) {
-        failed                        =    true;
-        return failed;
-    }
-
-    newSize                            =    (int)strlen(fileName)+1;
-    //AYA - disabled
-    //videoOut->filename                =    NgvMalloc(newSize);
-    if(!videoOut->filename) {
-        failed                        =    true;
-        return failed;
-    }
-    strcpy_s(videoOut->filename, newSize, fileName); /* Flawfinder: ignore */
-
-    fopen_s(&videoOut->pDataOut, videoOut->filename, "wb+");
-    if(!videoOut->pDataOut) {
-        failed                        =    true;
-        return failed;
-    }
-
-    return failed;
-}
-
-NGV_Bool    MvFileWriter_Open(DataWriter *mvOut, const char *fileName)    {
-    NGV_Bool    failed                    =    false;
-    int        newSize;
-
-    if(!fileName) {
-        failed                        =    true;
-        return failed;
-    }
-
-    newSize                            =    (int)strlen(fileName)+1;
-    // aya - disabled
-    //mvOut->filename                    =    NgvMalloc(newSize);
-    if(!mvOut->filename) {
-        failed                        =    true;
-        return failed;
-    }
-    strcpy_s(mvOut->filename, newSize, fileName); /* Flawfinder: ignore */
-
-    fopen_s(&mvOut->pDataOut, mvOut->filename, "w+");
-    if(!mvOut->pDataOut) {
-        failed = true;
-        return failed;
-    }
-
-    return failed;
-}
+//NGV_Bool    MvFileWriter_Open(DataWriter *mvOut, const char *fileName)    {
+//    NGV_Bool    failed                    =    false;
+//    int        newSize;
+//
+//    if(!fileName) {
+//        failed                        =    true;
+//        return failed;
+//    }
+//
+//    newSize                            =    (int)strlen(fileName)+1;
+//    // aya - disabled
+//    //mvOut->filename                    =    NgvMalloc(newSize);
+//    if(!mvOut->filename) {
+//        failed                        =    true;
+//        return failed;
+//    }
+//    strcpy_s(mvOut->filename, newSize, fileName); /* Flawfinder: ignore */
+//
+//    fopen_s(&mvOut->pDataOut, mvOut->filename, "w+");
+//    if(!mvOut->pDataOut) {
+//        failed = true;
+//        return failed;
+//    }
+//
+//    return failed;
+//}
 
 void    MvFileWriter_Close(DataWriter *mvOut)    {
 
