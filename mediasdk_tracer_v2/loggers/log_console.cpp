@@ -20,7 +20,7 @@ void LogConsole::WriteLog(const std::string &log)
         spase = "";
         std::string logstr;
         getline(str_stream, logstr);
-        if(log.find("function:") == std::string::npos) spase = "    ";
+        if(log.find("function:") == std::string::npos && log.find(">>") == std::string::npos) spase = "    ";
         if(logstr.length() > 2) std::cout << ThreadInfo::GetThreadId() << " " << Timer::GetTimeStamp() << " " << spase << logstr << "\n";
         else std::cout << logstr << "\n";
         if(str_stream.eof())

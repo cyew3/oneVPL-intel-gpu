@@ -14,7 +14,7 @@ public:
     static long GetThreadId()
     {
         #if defined(_WIN32) || defined(_WIN64)
-            return (long)GetCurrentThreadId(void);
+            return (long)GetCurrentThreadId();
         #else
             return (long)syscall(SYS_gettid);
         #endif

@@ -8,7 +8,7 @@
 mfxStatus MFXVideoENCODE_Query(mfxSession session, mfxVideoParam *in, mfxVideoParam *out)
 {
     try{
-        Log::WriteLog("function: MFXVideoENCODE_Query(mfxSession session, mfxVideoParam *in, mfxVideoParam *out) +");
+        Log::WriteLog("function: MFXVideoENCODE_Query(mfxSession session=" + ToString(session) + ", mfxVideoParam *in=" + ToString(in) + ", mfxVideoParam *out=" + ToString(out) + ") +");
         mfxLoader *loader = (mfxLoader*) session;
 
         if (!loader) return MFX_ERR_INVALID_HANDLE;
@@ -18,17 +18,17 @@ mfxStatus MFXVideoENCODE_Query(mfxSession session, mfxVideoParam *in, mfxVideoPa
 
         session = loader->session;
         Log::WriteLog(dump_mfxSession("session", session));
-        if(in) Log::WriteLog(dump_mfxVideoParam("in", in));
-        if(out) Log::WriteLog(dump_mfxVideoParam("out", out));
+        Log::WriteLog(dump_mfxVideoParam("in", in));
+        Log::WriteLog(dump_mfxVideoParam("out", out));
 
         Timer t;
         mfxStatus status = (*(mfxStatus (MFX_CDECL*) (mfxSession session, mfxVideoParam *in, mfxVideoParam *out)) proc) (session, in, out);
-        std::string elapsed = ToString(t.GetTime());
-        Log::WriteLog("MFXVideoENCODE_Query called");
+        std::string elapsed = TimeToString(t.GetTime());
+        Log::WriteLog(">> MFXVideoENCODE_Query called");
         Log::WriteLog(dump_mfxSession("session", session));
-        if(in) Log::WriteLog(dump_mfxVideoParam("in", in));
-        if(out) Log::WriteLog(dump_mfxVideoParam("out", out));
-        Log::WriteLog("function: MFXVideoENCODE_Query(" + elapsed + " sec, " + dump_mfxStatus("status", status) + ") - \n\n");
+        Log::WriteLog(dump_mfxVideoParam("in", in));
+        Log::WriteLog(dump_mfxVideoParam("out", out));
+        Log::WriteLog("function: MFXVideoENCODE_Query(" + elapsed + ", " + dump_mfxStatus("status", status) + ") - \n\n");
         return status;
     }
     catch (std::exception& e){
@@ -39,7 +39,7 @@ mfxStatus MFXVideoENCODE_Query(mfxSession session, mfxVideoParam *in, mfxVideoPa
 mfxStatus MFXVideoENCODE_QueryIOSurf(mfxSession session, mfxVideoParam *par, mfxFrameAllocRequest *request)
 {
     try{
-        Log::WriteLog("function: MFXVideoENCODE_QueryIOSurf(mfxSession session, mfxVideoParam *par, mfxFrameAllocRequest *request) +");
+        Log::WriteLog("function: MFXVideoENCODE_QueryIOSurf(mfxSession session=" + ToString(session) + ", mfxVideoParam *par=" + ToString(par) + ", mfxFrameAllocRequest *request=" + ToString(request) + ") +");
         mfxLoader *loader = (mfxLoader*) session;
 
         if (!loader) return MFX_ERR_INVALID_HANDLE;
@@ -49,17 +49,17 @@ mfxStatus MFXVideoENCODE_QueryIOSurf(mfxSession session, mfxVideoParam *par, mfx
 
         session = loader->session;
         Log::WriteLog(dump_mfxSession("session", session));
-        if(par) Log::WriteLog(dump_mfxVideoParam("par", par));
-        if(request) Log::WriteLog(dump_mfxFrameAllocRequest("request", request));
+        Log::WriteLog(dump_mfxVideoParam("par", par));
+        Log::WriteLog(dump_mfxFrameAllocRequest("request", request));
 
         Timer t;
         mfxStatus status = (*(mfxStatus (MFX_CDECL*) (mfxSession session, mfxVideoParam *par, mfxFrameAllocRequest *request)) proc) (session, par, request);
-        std::string elapsed = ToString(t.GetTime());
-        Log::WriteLog("MFXVideoENCODE_QueryIOSurf called");
+        std::string elapsed = TimeToString(t.GetTime());
+        Log::WriteLog(">> MFXVideoENCODE_QueryIOSurf called");
         Log::WriteLog(dump_mfxSession("session", session));
-        if(par) Log::WriteLog(dump_mfxVideoParam("par", par));
-        if(request) Log::WriteLog(dump_mfxFrameAllocRequest("request", request));
-        Log::WriteLog("function: MFXVideoENCODE_QueryIOSurf(" + elapsed + " sec, " + dump_mfxStatus("status", status) + ") - \n\n");
+        Log::WriteLog(dump_mfxVideoParam("par", par));
+        Log::WriteLog(dump_mfxFrameAllocRequest("request", request));
+        Log::WriteLog("function: MFXVideoENCODE_QueryIOSurf(" + elapsed + ", " + dump_mfxStatus("status", status) + ") - \n\n");
         return status;
     }
     catch (std::exception& e){
@@ -70,7 +70,7 @@ mfxStatus MFXVideoENCODE_QueryIOSurf(mfxSession session, mfxVideoParam *par, mfx
 mfxStatus MFXVideoENCODE_Init(mfxSession session, mfxVideoParam *par)
 {
     try{
-        Log::WriteLog("function: MFXVideoENCODE_Init(mfxSession session, mfxVideoParam *par) +");
+        Log::WriteLog("function: MFXVideoENCODE_Init(mfxSession session=" + ToString(session) + ", mfxVideoParam *par=" + ToString(par) + ") +");
         mfxLoader *loader = (mfxLoader*) session;
 
         if (!loader) return MFX_ERR_INVALID_HANDLE;
@@ -80,15 +80,15 @@ mfxStatus MFXVideoENCODE_Init(mfxSession session, mfxVideoParam *par)
 
         session = loader->session;
         Log::WriteLog(dump_mfxSession("session", session));
-        if(par) Log::WriteLog(dump_mfxVideoParam("par", par));
+        Log::WriteLog(dump_mfxVideoParam("par", par));
 
         Timer t;
         mfxStatus status = (*(mfxStatus (MFX_CDECL*) (mfxSession session, mfxVideoParam *par)) proc) (session, par);
-        std::string elapsed = ToString(t.GetTime());
-        Log::WriteLog("MFXVideoENCODE_Init called");
+        std::string elapsed = TimeToString(t.GetTime());
+        Log::WriteLog(">> MFXVideoENCODE_Init called");
         Log::WriteLog(dump_mfxSession("session", session));
-        if(par) Log::WriteLog(dump_mfxVideoParam("par", par));
-        Log::WriteLog("function: MFXVideoENCODE_Init(" + elapsed + " sec, " + dump_mfxStatus("status", status) + ") - \n\n");
+        Log::WriteLog(dump_mfxVideoParam("par", par));
+        Log::WriteLog("function: MFXVideoENCODE_Init(" + elapsed + ", " + dump_mfxStatus("status", status) + ") - \n\n");
         return status;
     }
     catch (std::exception& e){
@@ -99,7 +99,7 @@ mfxStatus MFXVideoENCODE_Init(mfxSession session, mfxVideoParam *par)
 mfxStatus MFXVideoENCODE_Reset(mfxSession session, mfxVideoParam *par)
 {
     try{
-        Log::WriteLog("function: MFXVideoENCODE_Reset(mfxSession session, mfxVideoParam *par) +");
+        Log::WriteLog("function: MFXVideoENCODE_Reset(mfxSession session=" + ToString(session) + ", mfxVideoParam *par=" + ToString(par) + ") +");
 
         mfxLoader *loader = (mfxLoader*) session;
 
@@ -110,15 +110,15 @@ mfxStatus MFXVideoENCODE_Reset(mfxSession session, mfxVideoParam *par)
 
         session = loader->session;
         Log::WriteLog(dump_mfxSession("session", session));
-        if(par) Log::WriteLog(dump_mfxVideoParam("par", par));
+        Log::WriteLog(dump_mfxVideoParam("par", par));
 
         Timer t;
         mfxStatus status = (*(mfxStatus (MFX_CDECL*) (mfxSession session, mfxVideoParam *par)) proc) (session, par);
-        std::string elapsed = ToString(t.GetTime());
-        Log::WriteLog("MFXVideoENCODE_Reset called");
+        std::string elapsed = TimeToString(t.GetTime());
+        Log::WriteLog(">> MFXVideoENCODE_Reset called");
         Log::WriteLog(dump_mfxSession("session", session));
-        if(par) Log::WriteLog(dump_mfxVideoParam("par", par));
-        Log::WriteLog("function: MFXVideoENCODE_Reset(" + elapsed + " sec, " + dump_mfxStatus("status", status) + ") - \n\n");
+        Log::WriteLog(dump_mfxVideoParam("par", par));
+        Log::WriteLog("function: MFXVideoENCODE_Reset(" + elapsed + ", " + dump_mfxStatus("status", status) + ") - \n\n");
         return status;
     }
     catch (std::exception& e){
@@ -129,7 +129,7 @@ mfxStatus MFXVideoENCODE_Reset(mfxSession session, mfxVideoParam *par)
 mfxStatus MFXVideoENCODE_Close(mfxSession session)
 {
     try{
-        Log::WriteLog("function: MFXVideoENCODE_Close(mfxSession session) +");
+        Log::WriteLog("function: MFXVideoENCODE_Close(mfxSession session=" + ToString(session) + ") +");
         mfxLoader *loader = (mfxLoader*) session;
 
         if (!loader) return MFX_ERR_INVALID_HANDLE;
@@ -142,10 +142,10 @@ mfxStatus MFXVideoENCODE_Close(mfxSession session)
 
         Timer t;
         mfxStatus status = (*(mfxStatus (MFX_CDECL*) (mfxSession session)) proc) (session);
-        std::string elapsed = ToString(t.GetTime());
-        Log::WriteLog("MFXVideoENCODE_Close called");
+        std::string elapsed = TimeToString(t.GetTime());
+        Log::WriteLog(">> MFXVideoENCODE_Close called");
         Log::WriteLog(dump_mfxSession("session", session));
-        Log::WriteLog("function: MFXVideoENCODE_Close(" + elapsed + " sec, " + dump_mfxStatus("status", status) + ") - \n\n");
+        Log::WriteLog("function: MFXVideoENCODE_Close(" + elapsed + ", " + dump_mfxStatus("status", status) + ") - \n\n");
         return status;
     }
     catch (std::exception& e){
@@ -156,7 +156,7 @@ mfxStatus MFXVideoENCODE_Close(mfxSession session)
 mfxStatus MFXVideoENCODE_GetVideoParam(mfxSession session, mfxVideoParam *par)
 {
     try{
-        Log::WriteLog("function: MFXVideoENCODE_GetVideoParam(mfxSession session, mfxVideoParam *par) +");
+        Log::WriteLog("function: MFXVideoENCODE_GetVideoParam(mfxSession session=" + ToString(session) + ", mfxVideoParam *par=" + ToString(par) + ") +");
         mfxLoader *loader = (mfxLoader*) session;
 
         if (!loader) return MFX_ERR_INVALID_HANDLE;
@@ -166,15 +166,15 @@ mfxStatus MFXVideoENCODE_GetVideoParam(mfxSession session, mfxVideoParam *par)
 
         session = loader->session;
         Log::WriteLog(dump_mfxSession("session", session));
-        if(par) Log::WriteLog(dump_mfxVideoParam("par", par));
+        Log::WriteLog(dump_mfxVideoParam("par", par));
 
         Timer t;
         mfxStatus status = (*(mfxStatus (MFX_CDECL*) (mfxSession session, mfxVideoParam *par)) proc) (session, par);
-        std::string elapsed = ToString(t.GetTime());
-        Log::WriteLog("MFXVideoENCODE_GetVideoParam called");
+        std::string elapsed = TimeToString(t.GetTime());
+        Log::WriteLog(">> MFXVideoENCODE_GetVideoParam called");
         Log::WriteLog(dump_mfxSession("session", session));
-        if(par) Log::WriteLog(dump_mfxVideoParam("par", par));
-        Log::WriteLog("function: MFXVideoENCODE_GetVideoParam(" + elapsed + " sec, " + dump_mfxStatus("status", status) + ") - \n\n");
+        Log::WriteLog(dump_mfxVideoParam("par", par));
+        Log::WriteLog("function: MFXVideoENCODE_GetVideoParam(" + elapsed + ", " + dump_mfxStatus("status", status) + ") - \n\n");
         return status;
     }
     catch (std::exception& e){
@@ -185,7 +185,7 @@ mfxStatus MFXVideoENCODE_GetVideoParam(mfxSession session, mfxVideoParam *par)
 mfxStatus MFXVideoENCODE_GetEncodeStat(mfxSession session, mfxEncodeStat *stat)
 {
     try{
-        Log::WriteLog("function: MFXVideoENCODE_GetEncodeStat(mfxSession session, mfxEncodeStat *stat) +");
+        Log::WriteLog("function: MFXVideoENCODE_GetEncodeStat(mfxSession session=" + ToString(session) + ", mfxEncodeStat *stat=" + ToString(stat) + ") +");
         mfxLoader *loader = (mfxLoader*) session;
 
         if (!loader) return MFX_ERR_INVALID_HANDLE;
@@ -195,15 +195,15 @@ mfxStatus MFXVideoENCODE_GetEncodeStat(mfxSession session, mfxEncodeStat *stat)
 
         session = loader->session;
         Log::WriteLog(dump_mfxSession("session", session));
-        if(stat) Log::WriteLog(dump_mfxEncodeStat("stat", stat));
+        Log::WriteLog(dump_mfxEncodeStat("stat", stat));
 
         Timer t;
         mfxStatus status = (*(mfxStatus (MFX_CDECL*) (mfxSession session, mfxEncodeStat *stat)) proc) (session, stat);
-        std::string elapsed = ToString(t.GetTime());
-        Log::WriteLog("MFXVideoENCODE_GetEncodeStat called");
+        std::string elapsed = TimeToString(t.GetTime());
+        Log::WriteLog(">> MFXVideoENCODE_GetEncodeStat called");
         Log::WriteLog(dump_mfxSession("session", session));
-        if(stat) Log::WriteLog(dump_mfxEncodeStat("stat", stat));
-        Log::WriteLog("function: MFXVideoENCODE_GetEncodeStat(" + elapsed + " sec, " + dump_mfxStatus("status", status) + ") - \n\n");
+        Log::WriteLog(dump_mfxEncodeStat("stat", stat));
+        Log::WriteLog("function: MFXVideoENCODE_GetEncodeStat(" + elapsed + ", " + dump_mfxStatus("status", status) + ") - \n\n");
         return status;
     }
     catch (std::exception& e){
@@ -218,7 +218,7 @@ mfxStatus MFXVideoENCODE_EncodeFrameAsync(mfxSession session, mfxEncodeCtrl *ctr
         sp->syncPoint = (*syncp);
         sp->component = ENCODE;
 
-        Log::WriteLog("function: MFXVideoENCODE_EncodeFrameAsync(mfxSession session, mfxEncodeCtrl *ctrl, mfxFrameSurface1 *surface, mfxBitstream *bs, mfxSyncPoint *syncp) +");
+        Log::WriteLog("function: MFXVideoENCODE_EncodeFrameAsync(mfxSession session=" + ToString(session) + ", mfxEncodeCtrl *ctrl=" + ToString(ctrl) + ", mfxFrameSurface1 *surface=" + ToString(surface) + ", mfxBitstream *bs=" + ToString(bs) + ", mfxSyncPoint *syncp=" + ToString(syncp) + ") +");
         mfxLoader *loader = (mfxLoader*) session;
 
         if (!loader) return MFX_ERR_INVALID_HANDLE;
@@ -228,25 +228,25 @@ mfxStatus MFXVideoENCODE_EncodeFrameAsync(mfxSession session, mfxEncodeCtrl *ctr
 
         session = loader->session;
         Log::WriteLog(dump_mfxSession("session", session));
-        if(ctrl) Log::WriteLog(dump_mfxEncodeCtrl("ctrl", ctrl));
-        if(surface) Log::WriteLog(dump_mfxFrameSurface1("surface", surface));
-        if(bs) Log::WriteLog(dump_mfxBitstream("bs", bs));
-        if(syncp) Log::WriteLog(dump_mfxSyncPoint("syncp", syncp));
+        Log::WriteLog(dump_mfxEncodeCtrl("ctrl", ctrl));
+        Log::WriteLog(dump_mfxFrameSurface1("surface", surface));
+        Log::WriteLog(dump_mfxBitstream("bs", bs));
+        Log::WriteLog(dump_mfxSyncPoint("syncp", syncp));
 
         sp->timer.Restart();
         Timer t;
         mfxStatus status = (*(mfxStatus (MFX_CDECL*) (mfxSession session, mfxEncodeCtrl *ctrl, mfxFrameSurface1 *surface, mfxBitstream *bs, mfxSyncPoint *syncp)) proc) (session, ctrl, surface, bs, &sp->syncPoint);
-        std::string elapsed = ToString(t.GetTime());
+        std::string elapsed = TimeToString(t.GetTime());
 
         *syncp = (mfxSyncPoint)sp;
 
-        Log::WriteLog("MFXVideoENCODE_EncodeFrameAsync called");
+        Log::WriteLog(">> MFXVideoENCODE_EncodeFrameAsync called");
         Log::WriteLog(dump_mfxSession("session", session));
-        if(ctrl) Log::WriteLog(dump_mfxEncodeCtrl("ctrl", ctrl));
-        if(surface) Log::WriteLog(dump_mfxFrameSurface1("surface", surface));
-        if(bs) Log::WriteLog(dump_mfxBitstream("bs", bs));
-        if(&sp->syncPoint) Log::WriteLog(dump_mfxSyncPoint("syncp", &sp->syncPoint));
-        Log::WriteLog("function: MFXVideoENCODE_EncodeFrameAsync(" + elapsed + " sec, " + dump_mfxStatus("status", status) + ") - \n\n");
+        Log::WriteLog(dump_mfxEncodeCtrl("ctrl", ctrl));
+        Log::WriteLog(dump_mfxFrameSurface1("surface", surface));
+        Log::WriteLog(dump_mfxBitstream("bs", bs));
+        Log::WriteLog(dump_mfxSyncPoint("syncp", &sp->syncPoint));
+        Log::WriteLog("function: MFXVideoENCODE_EncodeFrameAsync(" + elapsed + ", " + dump_mfxStatus("status", status) + ") - \n\n");
         return status;
     }
     catch (std::exception& e){

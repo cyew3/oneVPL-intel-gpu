@@ -23,7 +23,7 @@ void LogFile::WriteLog(const std::string &log)
         spase = "";
         std::string logstr;
         getline(str_stream, logstr);
-        if(log.find("function:") == std::string::npos) spase = "    ";
+        if(log.find("function:") == std::string::npos && log.find(">>") == std::string::npos) spase = "    ";
         if(logstr.length() > 2) _file << ThreadInfo::GetThreadId() << " " << Timer::GetTimeStamp() << " " << spase << logstr << std::endl;
         else _file << logstr << "\n";
         if(str_stream.eof())

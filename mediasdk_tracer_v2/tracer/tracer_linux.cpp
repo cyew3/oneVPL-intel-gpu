@@ -65,9 +65,12 @@ void __attribute__ ((constructor)) dll_init(void)
         else if(log_level == std::string("short")){
             Log::SetLogLevel(LOG_LEVEL_SHORT);
         }
+        else if(log_level == std::string("full")){
+            Log::SetLogLevel(LOG_LEVEL_FULL);
+        }
         else{
             // TODO
-            Log::SetLogLevel(LOG_LEVEL_DEFAULT);
+            Log::SetLogLevel(LOG_LEVEL_FULL);
         }
 
         Log::WriteLog("mfx_tracer: dll_init: +");
@@ -77,7 +80,7 @@ void __attribute__ ((constructor)) dll_init(void)
 
         Log::WriteLog("mfx_tracer: lib=" + lib);
 
-        Log::WriteLog("mfx_tracer: dll_init: - " + ToString(t.GetTime()) + " sec \n\n");
+        Log::WriteLog("mfx_tracer: dll_init: - " + TimeToString(t.GetTime()) + " \n\n");
     }
     catch (std::exception& e){
         std::cerr << "Exception: " << e.what() << '\n';
@@ -92,25 +95,25 @@ void SetLogType(eLogType type)
 mfxStatus MFXInit(mfxIMPL impl, mfxVersion *ver, mfxSession *session)
 {
     try{
-        Log::WriteLog(std::string("function: MFXInit(mfxIMPL impl, mfxVersion *ver, mfxSession *session) +"));
+        Log::WriteLog(std::string("function: MFXInit(mfxIMPL impl=" + ToString(impl) + ", mfxVersion *ver=" + ToString(ver) + ", mfxSession *session=" + ToString(session) + ") +"));
         if (!session) {
-            if(ver) Log::WriteLog(dump_mfxVersion("ver", *ver));
-            if(session)Log::WriteLog(dump_mfxSession("session", *session));
+            Log::WriteLog(dump_mfxVersion("ver", ver));
+            Log::WriteLog(dump_mfxSession("session", *session));
             Log::WriteLog(dump_mfxStatus("status", MFX_ERR_NULL_PTR));
             return MFX_ERR_NULL_PTR;
         }
 
         mfxLoader* loader = (mfxLoader*)calloc(1, sizeof(mfxLoader));
         if (!loader) {
-            if(ver) Log::WriteLog(dump_mfxVersion("ver", *ver));
-            if(session)Log::WriteLog(dump_mfxSession("session", *session));
+            Log::WriteLog(dump_mfxVersion("ver", ver));
+            Log::WriteLog(dump_mfxSession("session", *session));
             Log::WriteLog(dump_mfxStatus("status", MFX_ERR_MEMORY_ALLOC));
             return MFX_ERR_MEMORY_ALLOC;
         }
         loader->dlhandle = dlopen(g_mfxlib, RTLD_NOW);
         if (!loader->dlhandle){
-            if(ver) Log::WriteLog(dump_mfxVersion("ver", *ver));
-            if(session)Log::WriteLog(dump_mfxSession("session", *session));
+            Log::WriteLog(dump_mfxVersion("ver", ver));
+            Log::WriteLog(dump_mfxSession("session", *session));
             Log::WriteLog(dump_mfxStatus("status", MFX_ERR_NOT_FOUND));
             return MFX_ERR_NOT_FOUND;
         }
@@ -127,33 +130,33 @@ mfxStatus MFXInit(mfxIMPL impl, mfxVersion *ver, mfxSession *session)
         if (i < eFunctionsNum) {
             dlclose(loader->dlhandle);
             free(loader);
-            if(ver) Log::WriteLog(dump_mfxVersion("ver", *ver));
-            if(session)Log::WriteLog(dump_mfxSession("session", *session));
+            Log::WriteLog(dump_mfxVersion("ver", ver));
+            Log::WriteLog(dump_mfxSession("session", *session));
             Log::WriteLog(dump_mfxStatus("status", MFX_ERR_NOT_FOUND));
             return MFX_ERR_NOT_FOUND;
         }
 
         Log::WriteLog(dump_mfxIMPL("impl", &impl));
-        if(ver) Log::WriteLog(dump_mfxVersion("ver", *ver));
+        Log::WriteLog(dump_mfxVersion("ver", ver));
         Log::WriteLog(dump_mfxSession("session", loader->session));
         /* Initializing loaded library */
         Timer t;
         mfxStatus mfx_res = (*(MFXInitPointer)loader->table[eMFXInit])(impl, ver, &(loader->session));
-        std::string elapsed = ToString(t.GetTime());
-        Log::WriteLog("MFXInit called");
+        std::string elapsed = TimeToString(t.GetTime());
+        Log::WriteLog(">> MFXInit called");
         if (MFX_ERR_NONE != mfx_res) {
             dlclose(loader->dlhandle);
             free(loader);
-            if(ver) Log::WriteLog(dump_mfxVersion("ver", *ver));
-            if(session)Log::WriteLog(dump_mfxSession("session", *session));
+            Log::WriteLog(dump_mfxVersion("ver", ver));
+            Log::WriteLog(dump_mfxSession("session", *session));
             Log::WriteLog(dump_mfxStatus("status", mfx_res));
             return mfx_res;
         }
         *session = (mfxSession)loader;
         Log::WriteLog(dump_mfxIMPL("impl", &impl));
-        if(ver) Log::WriteLog(dump_mfxVersion("ver", *ver));
+        Log::WriteLog(dump_mfxVersion("ver", ver));
         Log::WriteLog(dump_mfxSession("session", loader->session));
-        Log::WriteLog(std::string("function: MFXInit(" + elapsed + " sec, " + dump_mfxStatus("status", mfx_res) + ") - \n\n"));
+        Log::WriteLog(std::string("function: MFXInit(" + elapsed + ", " + dump_mfxStatus("status", mfx_res) + ") - \n\n"));
         return MFX_ERR_NONE;
     }
     catch (std::exception& e){
@@ -164,7 +167,7 @@ mfxStatus MFXInit(mfxIMPL impl, mfxVersion *ver, mfxSession *session)
 mfxStatus MFXClose(mfxSession session)
 {
     try{
-        Log::WriteLog("function: MFXClose(mfxSession session) +");
+        Log::WriteLog("function: MFXClose(mfxSession session=" + ToString(session) + ") +");
         mfxLoader* loader = (mfxLoader*)session;
 
         if (!loader){
@@ -175,12 +178,12 @@ mfxStatus MFXClose(mfxSession session)
         Log::WriteLog(dump_mfxSession("session", session));
         Timer t;
         mfxStatus mfx_res = (*(MFXClosePointer)loader->table[eMFXClose])(loader->session);
-        std::string elapsed = ToString(t.GetTime());
-        Log::WriteLog("MFXClose called");
+        std::string elapsed = TimeToString(t.GetTime());
+        Log::WriteLog(">> MFXClose called");
         dlclose(loader->dlhandle);
         free(loader);
         Log::WriteLog(dump_mfxSession("session", session));
-        Log::WriteLog("function: MFXClose(" + elapsed + " sec, " + dump_mfxStatus("status", mfx_res) + ") - \n\n");
+        Log::WriteLog("function: MFXClose(" + elapsed + ", " + dump_mfxStatus("status", mfx_res) + ") - \n\n");
         return mfx_res;
     }
     catch (std::exception& e){

@@ -3,25 +3,35 @@
 
 #include <string>
 #include <sstream>
+#include <iomanip>
+#include <iterator>
 #include "mfxvideo.h"
+
+std::string StringToHexString(std::string data);
 
 #define ToString( x ) dynamic_cast< std::ostringstream & >( \
         ( std::ostringstream() << std::dec << x ) ).str()
 
+#define TimeToString( x ) dynamic_cast< std::ostringstream & >( \
+        ( std::ostringstream() << std::left << std::setw(4) << std::dec << x <<" msec") ).str()
+
+//#define ToHexFormatString( x ) dynamic_cast< std::ostringstream & >( \
+//        ( std::ostringstream() << std::hex << x ) ).str()
+
+#define ToHexFormatString( x ) StringToHexString(dynamic_cast< std::ostringstream & >( ( std::ostringstream() << std::dec << x ) ).str() )
 
 //mfxdefs
 std::string dump_mfxU32(const std::string structName, mfxU32 u32);
 std::string dump_mfxU64(const std::string structName, mfxU64 u64);
 
-
 //mfxcommon
 std::string dump_mfxStatus(const std::string structName, mfxStatus status);
 std::string dump_mfxSession(const std::string structName, mfxSession session);
 std::string dump_mfxIMPL(const std::string structName, mfxIMPL *impl);
-std::string dump_mfxVersion(const std::string structName, mfxVersion version);
+std::string dump_mfxVersion(const std::string structName, mfxVersion *version);
 std::string dump_mfxHDL(const std::string structName, mfxHDL *hdl);
-std::string dump_mfxFrameId(const std::string structName, mfxFrameId frame);
-std::string dump_mfxFrameInfo(const std::string structName, mfxFrameInfo info);
+std::string dump_mfxFrameId(const std::string structName, mfxFrameId *frame);
+std::string dump_mfxFrameInfo(const std::string structName, mfxFrameInfo *info);
 std::string dump_mfxBufferAllocator(const std::string structName, mfxBufferAllocator *allocator);
 std::string dump_mfxFrameAllocator(const std::string structName, mfxFrameAllocator *allocator);
 std::string dump_mfxFrameAllocRequest(const std::string structName, mfxFrameAllocRequest *frameAllocRequest);

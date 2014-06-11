@@ -52,11 +52,11 @@ public:
         LARGE_INTEGER tick, ticksPerSecond;
         QueryPerformanceFrequency(&ticksPerSecond);
         QueryPerformanceCounter(&tick);
-        return ((double)tick.QuadPart - (double)start.QuadPart) / (double)ticksPerSecond.QuadPart;
+        return (((double)tick.QuadPart - (double)start.QuadPart) / (double)ticksPerSecond.QuadPart) * 1000;
 #else
         struct timeval now;
         gettimeofday(&now, NULL);
-        return (now.tv_sec - start.tv_sec) + (now.tv_usec - start.tv_usec)/1000000.0;
+        return ((now.tv_sec - start.tv_sec) + (now.tv_usec - start.tv_usec)/1000000.0) * 1000;
 #endif
     }
 

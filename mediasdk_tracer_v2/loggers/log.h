@@ -22,6 +22,7 @@ enum eLogType{
 enum eLogLevel{
     LOG_LEVEL_DEFAULT,
     LOG_LEVEL_SHORT,
+    LOG_LEVEL_FULL,
 };
 
 class Log
@@ -31,6 +32,7 @@ public:
     static void SetLogType(eLogType type);
     static void SetFilePath(std::string file_path);
     static void SetLogLevel(eLogLevel level);
+    static eLogLevel GetLogLevel();
 private:
     Log();
     ~Log();

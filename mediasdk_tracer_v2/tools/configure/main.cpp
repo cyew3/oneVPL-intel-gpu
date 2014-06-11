@@ -6,18 +6,21 @@
 
 #if defined(_WIN32) || defined(_WIN64)
     #define LOG_TYPES "console, file, etw"
+	#define HOME string(getenv("HOMEPATH"))
 #elif defined(ANDROID)
     #define LOG_TYPES "logcat, file"
+	#define HOME string(getenv("HOME"))
 #else
     #define LOG_TYPES "console, file, syslog"
+	#define HOME string(getenv("HOME"))
 #endif
 
-#define LOG_LEVELS "default, short"
+#define LOG_LEVELS "default, short, full"
 
 int main(int argc, char *argv[])
 {
     try {
-        string config_path = string(getenv("HOME")) + "/.mfxtracer";
+        string config_path = HOME + string("/.mfxtracer");
         const string help =
             "\n"
             "Intel Media SDK Tracer Config Generator v. 1.0 \n"
@@ -139,4 +142,5 @@ int main(int argc, char *argv[])
         cerr << string("exception: ") + ex.what() + "\n";
         return -2;
     }
+		return 0;
 }
