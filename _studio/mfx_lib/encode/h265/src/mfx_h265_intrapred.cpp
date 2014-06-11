@@ -921,7 +921,7 @@ void H265CU<PixType>::IntraLumaModeDecision(Ipp32s absPartIdx, Ipp32u offset, Ip
         bool needFilter = (INTRA_HOR > h265_filteredModes[h265_log2m2[width]]);
         PixType *predPels = needFilter ? predPelFilt : predPel;
         h265_PredictIntra_Planar(predPels, predPtr, width, width);
-        m_intraCosts[INTRA_PLANAR] = tuHad(src, m_pitchSrc, predPtr, width, width, width);
+        m_intraCosts[INTRA_PLANAR] = tuHad(src, m_pitchSrc, predPtr, width, width, width) >> m_par->bitDepthLumaShift;
         predPtr += width * width;
         m_data = m_dataSave;
         FillSubPart(absPartIdx, depth, trDepth, partSize, INTRA_PLANAR, m_par->m_lcuQps[m_ctbAddr]);
@@ -930,7 +930,7 @@ void H265CU<PixType>::IntraLumaModeDecision(Ipp32s absPartIdx, Ipp32u offset, Ip
         m_intraModes[INTRA_PLANAR] = INTRA_PLANAR;
 
         h265_PredictIntra_DC(predPel, predPtr, width, width, 1);
-        m_intraCosts[INTRA_DC] = tuHad(src, m_pitchSrc, predPtr, width, width, width);
+        m_intraCosts[INTRA_DC] = tuHad(src, m_pitchSrc, predPtr, width, width, width) >> m_par->bitDepthLumaShift;
         predPtr += width * width;
         FillSubPartIntraLumaDir(absPartIdx, depth, trDepth, INTRA_DC);
         m_intraBits[INTRA_DC] = GetIntraLumaBitCost(this, absPartIdx);
@@ -948,9 +948,9 @@ void H265CU<PixType>::IntraLumaModeDecision(Ipp32s absPartIdx, Ipp32u offset, Ip
 
                 h265_PredictIntra_Ang_NoTranspose(lumaDir, predPels, predPtr,
                                                                         width, width);
-                m_intraCosts[lumaDir] = (lumaDir < 18)
+                m_intraCosts[lumaDir] = ((lumaDir < 18)
                     ? tuHad(m_tuSrcTransposed, width, predPtr, width, width, width)
-                    : tuHad(src, m_pitchSrc, predPtr, width, width, width);
+                    : tuHad(src, m_pitchSrc, predPtr, width, width, width)) >> m_par->bitDepthLumaShift;
 
                 FillSubPartIntraLumaDir(absPartIdx, depth, trDepth, lumaDir);
                 m_intraBits[lumaDir] = GetIntraLumaBitCost(this, absPartIdx);
@@ -965,9 +965,9 @@ void H265CU<PixType>::IntraLumaModeDecision(Ipp32s absPartIdx, Ipp32u offset, Ip
 
             Ipp8u step = (Ipp8u)m_par->intraAngModes;
             for (Ipp8u lumaDir = 2; lumaDir < 35; lumaDir += step, predPtr += width * width * step) {
-                m_intraCosts[lumaDir] = (lumaDir < 18)
+                m_intraCosts[lumaDir] = ((lumaDir < 18)
                     ? tuHad(m_tuSrcTransposed, width, predPtr, width, width, width)
-                    : tuHad(src, m_pitchSrc, predPtr, width, width, width);
+                    : tuHad(src, m_pitchSrc, predPtr, width, width, width)) >> m_par->bitDepthLumaShift;
                 FillSubPartIntraLumaDir(absPartIdx, depth, trDepth, lumaDir);
                 m_intraBits[lumaDir] = GetIntraLumaBitCost(this, absPartIdx);
                 m_intraCosts[lumaDir] += m_intraBits[lumaDir] * lambdaSatd;
@@ -1038,9 +1038,9 @@ void H265CU<PixType>::IntraLumaModeDecision(Ipp32s absPartIdx, Ipp32u offset, Ip
                 PixType *predPtr = m_predIntraAll + lumaDir * width * width;
 
                 h265_PredictIntra_Ang_NoTranspose(lumaDir, predPels, predPtr, width, width);
-                m_intraCosts[i] = (lumaDir < 18)
+                m_intraCosts[i] = ((lumaDir < 18)
                     ? tuHad(m_tuSrcTransposed, width, predPtr, width, width, width)
-                    : tuHad(src, m_pitchSrc, predPtr, width, width, width);
+                    : tuHad(src, m_pitchSrc, predPtr, width, width, width)) >> m_par->bitDepthLumaShift;
 
                 FillSubPartIntraLumaDir(absPartIdx, depth, trDepth, lumaDir);
                 m_intraBits[i] = GetIntraLumaBitCost(this, absPartIdx);

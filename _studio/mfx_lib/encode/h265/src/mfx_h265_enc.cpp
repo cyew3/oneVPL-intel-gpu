@@ -172,6 +172,8 @@ mfxStatus H265Encoder::InitH265VideoParam(const mfxVideoParam *param, const mfxE
         pars->bitDepthLuma = 8;
         pars->bitDepthChroma = 8;
     }
+    pars->bitDepthLumaShift = pars->bitDepthLuma - 8;
+    pars->bitDepthChromaShift = pars->bitDepthChroma - 8;
 
     pars->SourceWidth = width;
     pars->SourceHeight = height;

@@ -1970,15 +1970,15 @@ Ipp32s H265CU<PixType>::MatchingMetricPu(PixType *src, const H265MEInfo* meInfo,
         rec = predBuf;
         pitchRec = MAX_CU_SIZE;
         
-        return (useHadamard)
+        return ((useHadamard)
             ? tuHad(src, m_pitchSrc, rec, MAX_CU_SIZE, meInfo->width, meInfo->height)
-            : h265_SAD_MxN_special(src, rec, m_pitchSrc, meInfo->width, meInfo->height);
+            : h265_SAD_MxN_special(src, rec, m_pitchSrc, meInfo->width, meInfo->height)) >> m_par->bitDepthLumaShift;
     }
     else
     {
-        return (useHadamard)
+        return ((useHadamard)
             ? tuHad(src, m_pitchSrc, rec, pitchRec, meInfo->width, meInfo->height)
-            : h265_SAD_MxN_general(rec, pitchRec, src, m_pitchSrc, meInfo->width, meInfo->height);
+            : h265_SAD_MxN_general(rec, pitchRec, src, m_pitchSrc, meInfo->width, meInfo->height)) >> m_par->bitDepthLumaShift;
     }
 }
 
@@ -2040,9 +2040,9 @@ Ipp32s H265CU<PixType>::MatchingMetricBipredPu(const PixType *src, const H265MEI
             PixType *rec = (PixType *)refFrame[listIdx]->y + refOffset;
             Ipp32s pitchRec = refFrame[listIdx]->pitch_luma;
 
-            return (useHadamard)
+            return ((useHadamard)
                 ? tuHad(src, m_pitchSrc, rec, pitchRec, meInfo->width, meInfo->height)
-                : h265_SAD_MxN_general(rec, pitchRec, src, m_pitchSrc, meInfo->width, meInfo->height);
+                : h265_SAD_MxN_general(rec, pitchRec, src, m_pitchSrc, meInfo->width, meInfo->height)) >> m_par->bitDepthLumaShift;
         }
     }
     else {
@@ -2065,18 +2065,20 @@ Ipp32s H265CU<PixType>::MatchingMetricBipredPu(const PixType *src, const H265MEI
         }
     }
 
-    return (useHadamard)
+    return ((useHadamard)
         ? tuHad(src, m_pitchSrc, predBuf, MAX_CU_SIZE, meInfo->width, meInfo->height)
-        : h265_SAD_MxN_special(src, predBuf, m_pitchSrc, meInfo->width, meInfo->height);
+        : h265_SAD_MxN_special(src, predBuf, m_pitchSrc, meInfo->width, meInfo->height)) >> (m_par->bitDepthLumaShift);
 }
 
 template <typename PixType>
 static void TuDiff(CoeffsType *residual, Ipp32s pitchDst,
                    const PixType *src, Ipp32s pitchSrc,
                    const PixType *pred, Ipp32s pitchPred, Ipp32s size);
-template <typename PixType>
-static Ipp32s TuSse(const PixType *src, Ipp32s pitchSrc,
-                    const PixType *rec, Ipp32s pitchRec, Ipp32s size);
+static Ipp32s TuSse(const Ipp8u *src, Ipp32s pitchSrc,
+                    const Ipp8u *rec, Ipp32s pitchRec, Ipp32s size, Ipp32s shift);
+static Ipp32s TuSse(const Ipp16u *src, Ipp32s pitchSrc,
+                    const Ipp16u *rec, Ipp32s pitchRec, Ipp32s size, Ipp32s shift);
+
 template <typename PixType>
 static void TuDiffNv12(CoeffsType *residual, Ipp32s pitchDst,  const PixType *src, Ipp32s pitchSrc,
                        const PixType *pred, Ipp32s pitchPred, Ipp32s size);
@@ -2233,9 +2235,9 @@ CostType H265CU<PixType>::MeCu(Ipp32u absPartIdx, Ipp8u depth, Ipp32s offset)
     }
 
     // check forced skip
-    bestCost += TuSse(srcY, m_pitchSrc, pred + offsetPred, MAX_CU_SIZE, size); // skip flag cost +=
-    CostType costChroma = TuSse(srcUv, m_pitchSrc, predChr + offsetPredChroma, MAX_CU_SIZE, size >> 1);
-    costChroma += TuSse(srcUv + (size >> 1), m_pitchSrc, predChr + offsetPredChroma + (size >> 1), MAX_CU_SIZE, size >> 1);
+    bestCost += TuSse(srcY, m_pitchSrc, pred + offsetPred, MAX_CU_SIZE, size, (m_par->bitDepthLumaShift << 1)); // skip flag cost +=
+    CostType costChroma = TuSse(srcUv, m_pitchSrc, predChr + offsetPredChroma, MAX_CU_SIZE, size >> 1, (m_par->bitDepthChromaShift << 1));
+    costChroma += TuSse(srcUv + (size >> 1), m_pitchSrc, predChr + offsetPredChroma + (size >> 1), MAX_CU_SIZE, size >> 1, (m_par->bitDepthChromaShift << 1));
     if (!(m_par->AnalyseFlags & HEVC_COST_CHROMA))
         costChroma /= 4; // add chroma with little weight
     bestCost += costChroma;
@@ -4034,14 +4036,27 @@ static void TuDiff(CoeffsType *residual, Ipp32s pitchDst,
     }
 }
 
-template <typename PixType>
-static Ipp32s TuSse(const PixType *src, Ipp32s pitchSrc,
-                    const PixType *rec, Ipp32s pitchRec, Ipp32s size)
+static Ipp32s TuSse(const Ipp8u *src, Ipp32s pitchSrc,
+                    const Ipp8u *rec, Ipp32s pitchRec, Ipp32s size, Ipp32s shift)
 {
     Ipp32s s = 0;
     for (Ipp32s j = 0; j < size; j++) {
         for (Ipp32s i = 0; i < size; i++) {
             s += ((CoeffsType)src[i] - rec[i]) * (Ipp32s)((CoeffsType)src[i] - rec[i]);
+        }
+        src += pitchSrc;
+        rec += pitchRec;
+    }
+    return s;
+}
+
+static Ipp32s TuSse(const Ipp16u *src, Ipp32s pitchSrc,
+                    const Ipp16u *rec, Ipp32s pitchRec, Ipp32s size, Ipp32s shift)
+{
+    Ipp32s s = 0;
+    for (Ipp32s j = 0; j < size; j++) {
+        for (Ipp32s i = 0; i < size; i++) {
+            s += (((CoeffsType)src[i] - rec[i]) * (Ipp32s)((CoeffsType)src[i] - rec[i])) >> shift;
         }
         src += pitchSrc;
         rec += pitchRec;
@@ -4361,9 +4376,9 @@ static Ipp32s tuSadNv12(const PixType *src, Ipp32s pitchSrc,
     return s;
 }
 // for uv can use ordinary sse twice instead
-template <typename PixType>
-static Ipp32s TuSseNv12(const PixType *src, Ipp32s pitchSrc,
-                        const PixType *rec, Ipp32s pitchRec, Ipp32s size)
+
+static Ipp32s TuSseNv12(const Ipp8u *src, Ipp32s pitchSrc,
+                        const Ipp8u *rec, Ipp32s pitchRec, Ipp32s size, Ipp32s shift)
 {
     Ipp32s i, j;
     Ipp32s s = 0;
@@ -4371,6 +4386,22 @@ static Ipp32s TuSseNv12(const PixType *src, Ipp32s pitchSrc,
     for (j = 0; j < size; j++) {
         for (i = 0; i < size; i++) {
             s += ((CoeffsType)src[i*2] - rec[i*2]) * ((CoeffsType)src[i*2] - rec[i*2]);
+        }
+        src += pitchSrc;
+        rec += pitchRec;
+    }
+    return s;
+}
+
+static Ipp32s TuSseNv12(const Ipp16u *src, Ipp32s pitchSrc,
+                        const Ipp16u *rec, Ipp32s pitchRec, Ipp32s size, Ipp32s shift)
+{
+    Ipp32s i, j;
+    Ipp32s s = 0;
+
+    for (j = 0; j < size; j++) {
+        for (i = 0; i < size; i++) {
+            s += (((CoeffsType)src[i*2] - rec[i*2]) * ((CoeffsType)src[i*2] - rec[i*2])) >> shift;
         }
         src += pitchSrc;
         rec += pitchRec;
@@ -4438,7 +4469,7 @@ void H265CU<PixType>::EncAndRecLumaTu(Ipp32u absPartIdx, Ipp32s offset, Ipp32s w
     }
 
     if (cost && cost_pred_flag) {
-        cost_pred = tuHad(src, m_pitchSrc, rec, pitch_rec, width, width);
+        cost_pred = tuHad(src, m_pitchSrc, rec, pitch_rec, width, width) >> m_par->bitDepthLumaShift;
         *cost = cost_pred;
         return;
     }
@@ -4489,7 +4520,7 @@ void H265CU<PixType>::EncAndRecLumaTu(Ipp32u absPartIdx, Ipp32s offset, Ipp32s w
     //}
 
     if (cost) {
-        CostType cost_rec = TuSse(src, m_pitchSrc, rec, pitch_rec, width);
+        CostType cost_rec = TuSse(src, m_pitchSrc, rec, pitch_rec, width, (m_par->bitDepthLumaShift << 1));
         *cost = cost_rec;
     }
 
@@ -4618,8 +4649,8 @@ void H265CU<PixType>::EncAndRecChromaTu(Ipp32u absPartIdx, Ipp32s offset, Ipp32s
     }
 
     if (cost && (m_par->AnalyseFlags & HEVC_COST_CHROMA)) {
-        *cost += TuSseNv12(pSrc + 0, m_pitchSrc, pRec + 0, pitchRec, width);
-        *cost += TuSseNv12(pSrc + 1, m_pitchSrc, pRec + 1, pitchRec, width);
+        *cost += TuSseNv12(pSrc + 0, m_pitchSrc, pRec + 0, pitchRec, width, (m_par->bitDepthChromaShift << 1));
+        *cost += TuSseNv12(pSrc + 1, m_pitchSrc, pRec + 1, pitchRec, width, (m_par->bitDepthChromaShift << 1));
     }
 
     //kolya //WEIGHTED_CHROMA_DISTORTION (JCTVC-F386)

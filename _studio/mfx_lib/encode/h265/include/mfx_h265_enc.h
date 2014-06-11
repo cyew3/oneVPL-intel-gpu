@@ -100,6 +100,8 @@ struct H265VideoParam {
 
     Ipp8u bitDepthLuma;
     Ipp8u bitDepthChroma;
+    Ipp8u bitDepthLumaShift;
+    Ipp8u bitDepthChromaShift;
 
 // derived
     Ipp32s PGopPicSize;
