@@ -224,8 +224,10 @@ tsRawReader::tsRawReader(mfxBitstream bs, mfxFrameInfo fi, mfxU32 n_frames)
 
 void tsRawReader::Init(mfxFrameInfo fi)
 {
+    //no crops for internal surface
     if(fi.CropW) fi.Width  = fi.CropW;
     if(fi.CropH) fi.Height = fi.CropH;
+    fi.CropX = fi.CropY = 0;
 
     mfxU32 fsz = fi.Width * fi.Height;
     mfxU32 pitch = 0;
@@ -339,12 +341,12 @@ mfxStatus tsSurfaceWriter::ProcessSurface(mfxFrameSurface1& s)
 
     if(s.Info.FourCC == MFX_FOURCC_NV12)
     {
-        for(mfxU16 i = s.Info.CropY; i < s.Info.CropH; i ++)
+        for(mfxU16 i = s.Info.CropY; i < (s.Info.CropH + s.Info.CropY); i ++)
         {
             fwrite(s.Data.Y + pitch * i + s.Info.CropX, 1, s.Info.CropW, m_file);
         }
     
-        for(mfxU16 i = (s.Info.CropY / 2); i < (s.Info.CropH / 2); i ++)
+        for(mfxU16 i = (s.Info.CropY / 2); i < ((s.Info.CropH + s.Info.CropY) / 2); i ++)
         {
             fwrite(s.Data.UV + pitch * i + s.Info.CropX, 1, s.Info.CropW, m_file);
         }
@@ -375,15 +377,18 @@ mfxF64 PSNR(tsFrame& ref, tsFrame& src, mfxU32 id)
     mfxI32 diff = 0;
     mfxU64 dist = 0;
     mfxU32 chroma_step = 1;
+    mfxU32 maxw = TS_MIN(ref.m_info.CropW, src.m_info.CropW);
+    mfxU32 maxh = TS_MIN(ref.m_info.CropH, src.m_info.CropH);
 
-#define GET_DIST(COMPONENT, STEP)                                          \
-    for(mfxU32 y = ref.m_info.CropY; y < ref.m_info.CropH; y += STEP)      \
-    {                                                                      \
-        for(mfxU32 x = ref.m_info.CropX; x < ref.m_info.CropW; x += STEP)  \
-        {                                                                  \
-            diff = ref.COMPONENT(x, y) - src.COMPONENT(x, y);              \
-            dist += (diff * diff);                                         \
-        }                                                                  \
+#define GET_DIST(COMPONENT, STEP)                                              \
+    for(mfxU32 y = 0; y < maxh; y += STEP)                                     \
+    {                                                                          \
+        for(mfxU32 x = 0; x < maxw; x += STEP)                                 \
+        {                                                                      \
+            diff = ref.COMPONENT(x + ref.m_info.CropX, y + ref.m_info.CropY) - \
+                   src.COMPONENT(x + src.m_info.CropX, y + src.m_info.CropY);  \
+            dist += (diff * diff);                                             \
+        }                                                                      \
     }
 
     if(ref.isYUV() && src.isYUV())
@@ -418,4 +423,90 @@ mfxF64 PSNR(tsFrame& ref, tsFrame& src, mfxU32 id)
         return 1000.;
 
     return (10. * log10(max * max * (size / dist)));
+}
+
+mfxF64 SSIM(tsFrame& ref, tsFrame& src, mfxU32 id)
+{
+    //mfxF64 max  = (1 << 8) - 1;
+    mfxF64 C1 =  6.5025;//max * max / 10000;
+    mfxF64 C2 = 58.5225;//max * max * 9 / 10000;
+    mfxU32 height      = TS_MIN(ref.m_info.CropH, src.m_info.CropH);
+    mfxU32 width       = TS_MIN(ref.m_info.CropW, src.m_info.CropW);
+    mfxU32 win_width   = 4;
+    mfxU32 win_height  = 4;
+    mfxU32 win_size    = win_width * win_height;
+    mfxU32 win_cnt     = 0;
+    mfxU32 chroma_step = 1;
+    mfxF64 dist        = 0;
+
+#undef GET_DIST
+#define GET_DIST(COMPONENT, STEP)                                                             \
+    win_width  *= STEP;                                                                       \
+    win_height *= STEP;                                                                       \
+    for(mfxU32 j = 0; j <= height - win_height; j += STEP)                                    \
+    {                                                                                         \
+        for(mfxU32 i = 0; i <= width - win_width; i += STEP)                                  \
+        {                                                                                     \
+            mfxU32 imeanRef   = 0;                                                            \
+            mfxU32 imeanSrc   = 0;                                                            \
+            mfxU32 ivarRef    = 0;                                                            \
+            mfxU32 ivarSrc    = 0;                                                            \
+            mfxU32 icovRefSrc = 0;                                                            \
+                                                                                              \
+            for(mfxU32 y = j; y < j + win_height; y += STEP)                                  \
+            {                                                                                 \
+                for(mfxU32 x = i; x < i + win_width; x += STEP)                               \
+                {                                                                             \
+                    mfxU32 rP = ref.COMPONENT(x + ref.m_info.CropX, y + ref.m_info.CropY);    \
+                    mfxU32 sP = src.COMPONENT(x + src.m_info.CropX, y + src.m_info.CropY);    \
+                                                                                              \
+                    imeanRef   += rP;                                                         \
+                    imeanSrc   += sP;                                                         \
+                    ivarRef    += rP * rP;                                                    \
+                    ivarSrc    += sP * sP;                                                    \
+                    icovRefSrc += rP * sP;                                                    \
+                }                                                                             \
+            }                                                                                 \
+                                                                                              \
+            mfxF64 meanRef   = (mfxF64) imeanRef / win_size;                                  \
+            mfxF64 meanSrc   = (mfxF64) imeanSrc / win_size;                                  \
+            mfxF64 varRef    = (mfxF64)(ivarRef    - imeanRef * meanRef) / win_size;          \
+            mfxF64 varSrc    = (mfxF64)(ivarSrc    - imeanSrc * meanSrc) / win_size;          \
+            mfxF64 covRefSrc = (mfxF64)(icovRefSrc - imeanRef * meanSrc) / win_size;          \
+                                                                                              \
+            dist += ((meanRef * meanSrc * 2 + C1) * (covRefSrc * 2 + C2)) /                   \
+                ((meanRef * meanRef + meanSrc * meanSrc + C1) * (varRef + varSrc + C2));      \
+            win_cnt++;                                                                        \
+        }                                                                                     \
+    }
+    
+    if(ref.isYUV() && src.isYUV())
+    {
+        if( 0 != id )
+        {
+            if(    ref.m_info.ChromaFormat == MFX_CHROMAFORMAT_YUV400
+                || src.m_info.ChromaFormat == MFX_CHROMAFORMAT_YUV400)
+            {
+                g_tsStatus.check(MFX_ERR_UNSUPPORTED);
+                return 0;
+            }
+            if(    ref.m_info.ChromaFormat == MFX_CHROMAFORMAT_YUV420
+                && src.m_info.ChromaFormat == MFX_CHROMAFORMAT_YUV420)
+            {
+                chroma_step = 2;
+            }
+        }
+
+        switch(id)
+        {
+        case 0:  GET_DIST(Y, 1); break;
+        case 1:  GET_DIST(U, chroma_step); break;
+        case 2:  GET_DIST(V, chroma_step); break;
+        default: g_tsStatus.check(MFX_ERR_UNSUPPORTED); break;
+        }
+
+    } else g_tsStatus.check(MFX_ERR_UNSUPPORTED);
+
+
+    return (dist / win_cnt);
 }

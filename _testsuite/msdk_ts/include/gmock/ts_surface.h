@@ -203,3 +203,4 @@ public:
 };
 
 mfxF64 PSNR(tsFrame& ref, tsFrame& src, mfxU32 id);
+mfxF64 SSIM(tsFrame& ref, tsFrame& src, mfxU32 id);
