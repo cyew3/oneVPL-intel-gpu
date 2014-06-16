@@ -816,9 +816,11 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
             : MFX_IOPATTERN_IN_VIDEO_MEMORY;
 
     // ENC+PAK always needs separate chain for reconstructions produced by PAK.
+    bool bParallelEncPak = (m_video.mfx.RateControlMethod == MFX_RATECONTROL_CQP && m_video.mfx.GopRefDist > 2 && m_video.AsyncDepth > 2);
     request.Type        = m_video.Protected ? MFX_MEMTYPE_D3D_SERPENT_INT : MFX_MEMTYPE_D3D_INT;
     request.NumFrameMin = mfxU16(m_video.mfx.NumRefFrame +
-        m_emulatorForSyncPart.GetStageGreediness(AsyncRoutineEmulator::STG_WAIT_ENCODE));
+        m_emulatorForSyncPart.GetStageGreediness(AsyncRoutineEmulator::STG_WAIT_ENCODE) +
+        bParallelEncPak);
     sts = m_rec.Alloc(m_core, request,false);
     MFX_CHECK_STS(sts);
 
@@ -826,6 +828,8 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
     MFX_CHECK_STS(sts);
 
     m_recFrameOrder.resize(request.NumFrameMin, 0xffffffff);
+
+    m_recNonRef[0] = m_recNonRef[1] = 0xffffffff;
 
     // Allocate surfaces for bitstreams.
     // Need at least one such surface and more for async-mode.
@@ -1155,6 +1159,8 @@ mfxStatus ImplementationAvc::Reset(mfxVideoParam *par)
         m_rawSys.Unlock();
         m_rec.Unlock();
         m_bit.Unlock();
+
+        m_recNonRef[0] = m_recNonRef[1] = 0xffffffff;
 
         // reset of Intra refresh
         mfxExtCodingOption2 * extOpt2New = GetExtBuffer(newPar);
@@ -2034,6 +2040,7 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
 
     if (m_stagesToGo & AsyncRoutineEmulator::STG_BIT_START_ENCODE)
     {
+        bool bParallelEncPak = (m_video.mfx.RateControlMethod == MFX_RATECONTROL_CQP && m_video.mfx.GopRefDist > 2 && m_video.AsyncDepth > 2);
         DdiTaskIter task = FindFrameToStartEncode(m_video, m_lookaheadFinished.begin(), m_lookaheadFinished.end());
         assert(task != m_lookaheadFinished.end());
 
@@ -2076,7 +2083,32 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
         task->m_initCpbRemoval       = hrd.GetInitCpbRemovalDelay();
         task->m_initCpbRemovalOffset = hrd.GetInitCpbRemovalDelayOffset();
 
-        task->m_idxRecon  = FindFreeResourceIndex(m_rec);
+        if (bParallelEncPak)
+        {
+            if (task->m_type[0] & MFX_FRAMETYPE_REF)
+            {
+                m_rec.Lock(m_recNonRef[0]);
+                m_rec.Lock(m_recNonRef[1]);
+
+                task->m_idxRecon = FindFreeResourceIndex(m_rec);
+
+                m_rec.Unlock(m_recNonRef[0]);
+                m_rec.Unlock(m_recNonRef[1]);
+                m_recNonRef[0] = m_recNonRef[1] = 0xffffffff;
+            }
+            else
+            {
+                task->m_idxRecon = FindFreeResourceIndex(m_rec);
+
+                m_recNonRef[0] = m_recNonRef[1];
+                m_recNonRef[1] = task->m_idxRecon;
+            }
+        }
+        else
+        {
+            task->m_idxRecon = FindFreeResourceIndex(m_rec);
+        }
+
         task->m_idxBs[0]  = FindFreeResourceIndex(m_bit);
         task->m_midRec    = AcquireResource(m_rec, task->m_idxRecon);
         task->m_midBit[0] = AcquireResource(m_bit, task->m_idxBs[0]);

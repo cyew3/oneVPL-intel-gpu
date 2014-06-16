@@ -1813,6 +1813,8 @@ namespace MfxHwH264Encode
 
         std::vector<mfxU32>     m_recFrameOrder; // !!! HACK !!!
 
+        mfxU32 m_recNonRef[2];
+
 #if USE_AGOP
         MfxFrameAllocResponse   m_raw4X;
         MfxFrameAllocResponse   m_mbAGOP;

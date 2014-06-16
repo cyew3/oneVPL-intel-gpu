@@ -2022,7 +2022,7 @@ void AsyncRoutineEmulator::Init(MfxVideoParam const & video)
         if (video.AsyncDepth > 1)
         { // for parallel ENC/PAK optimization
             m_stageGreediness[STG_START_ENCODE] += !!(video.mfx.GopRefDist > 1);
-            m_stageGreediness[STG_WAIT_ENCODE ] += !!(video.mfx.GopRefDist > 1);
+            m_stageGreediness[STG_WAIT_ENCODE ] += !!(video.mfx.GopRefDist > 1) + !!(video.AsyncDepth > 2 && video.mfx.GopRefDist > 2);
         }
         break;
     case MFX_RATECONTROL_LA:
