@@ -21,6 +21,12 @@
 #include "vm/time_defs.h"
 
 #if defined(WIN32) || defined(WIN64)
+
+enum {
+    MFX_HANDLE_GFXS3DCONTROL = 0x100, /* A handle to the IGFXS3DControl instance */
+    MFX_HANDLE_DEVICEWINDOW  = 0x101 /* A handle to the render window */
+}; //mfxHandleType
+
 #ifndef D3D_SURFACES_SUPPORT
 #define D3D_SURFACES_SUPPORT 1
 #endif

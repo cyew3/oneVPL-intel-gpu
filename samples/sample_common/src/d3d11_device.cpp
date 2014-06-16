@@ -22,7 +22,8 @@ CD3D11Device::CD3D11Device():
     m_nViews(0),
     m_bDefaultStereoEnabled(FALSE),
     m_nSyncInterval(0),
-    m_bIsA2rgb10(FALSE)
+    m_bIsA2rgb10(FALSE),
+    m_HandleWindow(NULL)
 {
 }
 
@@ -36,10 +37,26 @@ mfxStatus CD3D11Device::FillSCD(mfxHDL hWindow, DXGI_SWAP_CHAIN_DESC& scd)
     scd.Windowed = TRUE;
     scd.OutputWindow = (HWND)hWindow;
     scd.SampleDesc.Count = 1;
-    scd.BufferDesc.Format = DXGI_FORMAT_R10G10B10A2_UNORM;
     scd.BufferDesc.Format = (m_bIsA2rgb10) ? DXGI_FORMAT_R10G10B10A2_UNORM : DXGI_FORMAT_B8G8R8A8_UNORM;
     scd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
     scd.BufferCount = 1;
+
+    return MFX_ERR_NONE;
+}
+
+mfxStatus CD3D11Device::FillSCD1(DXGI_SWAP_CHAIN_DESC1& scd1)
+{
+    scd1.Width = 0;                                     // Use automatic sizing.
+    scd1.Height = 0;
+    scd1.Format = (m_bIsA2rgb10) ? DXGI_FORMAT_R10G10B10A2_UNORM : DXGI_FORMAT_B8G8R8A8_UNORM;
+    scd1.Stereo = m_nViews == 2 ? TRUE : FALSE;
+    scd1.SampleDesc.Count = 1;                          // Don't use multi-sampling.
+    scd1.SampleDesc.Quality = 0;
+    scd1.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
+    scd1.BufferCount = 2;                               // Use double buffering to minimize latency.
+    scd1.Scaling = DXGI_SCALING_STRETCH;
+    scd1.SwapEffect = DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL;
+    scd1.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH;
 
     return MFX_ERR_NONE;
 }
@@ -49,6 +66,7 @@ mfxStatus CD3D11Device::Init(
     mfxU16 nViews,
     mfxU32 nAdapterNum)
 {
+    m_HandleWindow = (HWND)hWindow;
     mfxStatus sts = MFX_ERR_NONE;
     HRESULT hres = S_OK;
     m_nViews = nViews;
@@ -74,6 +92,7 @@ mfxStatus CD3D11Device::Init(
         hres = m_pDXGIFactory->QueryInterface(__uuidof(IDXGIDisplayControl), (void **)&m_pDisplayControl);
         if (FAILED(hres))
             return MFX_ERR_DEVICE_FAILED;
+
         m_bDefaultStereoEnabled = m_pDisplayControl->IsStereoEnabled();
         if (!m_bDefaultStereoEnabled)
             m_pDisplayControl->SetStereoEnabled(TRUE);
@@ -114,32 +133,20 @@ mfxStatus CD3D11Device::Init(
         return MFX_ERR_DEVICE_FAILED;
 
     // create swap chain only for rendering use case (hWindow != 0)
-    DXGI_SWAP_CHAIN_DESC scd;
     if (hWindow)
     {
-        ZeroMemory(&scd, sizeof(scd));
-        sts = FillSCD(hWindow, scd);
+        MSDK_CHECK_POINTER(m_pDXGIFactory.p, MFX_ERR_NULL_PTR);
+        DXGI_SWAP_CHAIN_DESC1 swapChainDesc = {0};
+
+        sts = FillSCD1(swapChainDesc);
         MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
-        MSDK_CHECK_POINTER (m_pDXGIFactory.p, MFX_ERR_NULL_PTR);
-        DXGI_SWAP_CHAIN_DESC1 swapChainDesc = {0};
-        swapChainDesc.Width = 0;                                     // Use automatic sizing.
-        swapChainDesc.Height = 0;
-        swapChainDesc.Format = (m_bIsA2rgb10) ? DXGI_FORMAT_R10G10B10A2_UNORM : DXGI_FORMAT_B8G8R8A8_UNORM;
-        swapChainDesc.Stereo = m_nViews == 2 ? TRUE : FALSE;
-        swapChainDesc.SampleDesc.Count = 1;                          // Don't use multi-sampling.
-        swapChainDesc.SampleDesc.Quality = 0;
-        swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-        swapChainDesc.BufferCount = 2;                               // Use double buffering to minimize latency.
-        swapChainDesc.Scaling = DXGI_SCALING_STRETCH;
-        swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL;
-        swapChainDesc.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH;
         hres = m_pDXGIFactory->CreateSwapChainForHwnd(m_pD3D11Device,
             (HWND)hWindow,
             &swapChainDesc,
             NULL,
             NULL,
-            reinterpret_cast<IDXGISwapChain1**>(&m_pSwapChain) );
+            reinterpret_cast<IDXGISwapChain1**>(&m_pSwapChain));
         if (FAILED(hres))
             return MFX_ERR_DEVICE_FAILED;
     }
@@ -205,6 +212,24 @@ mfxStatus CD3D11Device::Reset()
     // Changing video mode back to the original state
     if (2 == m_nViews && !m_bDefaultStereoEnabled)
         m_pDisplayControl->SetStereoEnabled(FALSE);
+
+    MSDK_CHECK_POINTER (m_pDXGIFactory.p, MFX_ERR_NULL_PTR);
+    DXGI_SWAP_CHAIN_DESC1 swapChainDesc = {0};
+
+    mfxStatus sts = FillSCD1(swapChainDesc);
+    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+
+    HRESULT hres = S_OK;
+    hres = m_pDXGIFactory->CreateSwapChainForHwnd(m_pD3D11Device,
+        (HWND)m_HandleWindow,
+        &swapChainDesc,
+        NULL,
+        NULL,
+        reinterpret_cast<IDXGISwapChain1**>(&m_pSwapChain));
+
+    if (FAILED(hres))
+        return MFX_ERR_DEVICE_FAILED;
+
     return MFX_ERR_NONE;
 }
 
@@ -218,8 +243,13 @@ mfxStatus CD3D11Device::GetHandle(mfxHandleType type, mfxHDL *pHdl)
     return MFX_ERR_UNSUPPORTED;
 }
 
-mfxStatus CD3D11Device::SetHandle(mfxHandleType /*type*/, mfxHDL /*hdl*/)
+mfxStatus CD3D11Device::SetHandle(mfxHandleType type, mfxHDL hdl)
 {
+    if (MFX_HANDLE_DEVICEWINDOW == type && hdl != NULL) //for render window handle
+    {
+        m_HandleWindow = (HWND)hdl;
+        return MFX_ERR_NONE;
+    }
     return MFX_ERR_UNSUPPORTED;
 }
 
@@ -356,7 +386,11 @@ mfxStatus CD3D11Device::RenderFrame(mfxFrameSurface1 * pSrf, mfxFrameAllocator *
 
 void CD3D11Device::Close()
 {
-    Reset();
+    // Changing video mode back to the original state
+    if (2 == m_nViews && !m_bDefaultStereoEnabled)
+        m_pDisplayControl->SetStereoEnabled(FALSE);
+
+    m_HandleWindow = NULL;
 }
 
 #endif // #if MFX_D3D11_SUPPORT

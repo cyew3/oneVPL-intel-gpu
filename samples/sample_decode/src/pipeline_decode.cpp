@@ -241,9 +241,7 @@ mfxStatus CDecodingPipeline::Init(sInputParams *pParams)
     if (m_eWorkMode == MODE_FILE_DUMP) {
         // prepare YUV file writer
         sts = m_FileWriter.Init(pParams->strDstFile, pParams->numViews);
-    } else if (m_eWorkMode == MODE_RENDERING) {
-        sts = CreateRenderingWindow(pParams, m_bIsMVC && (m_memType == D3D9_MEMORY));
-    } else if (m_eWorkMode != MODE_PERFORMANCE) {
+    } else if ((m_eWorkMode != MODE_PERFORMANCE) && (m_eWorkMode != MODE_RENDERING)) {
         msdk_printf(MSDK_STRING("error: unsupported work mode\n"));
         sts = MFX_ERR_UNSUPPORTED;
     }
@@ -265,7 +263,13 @@ mfxStatus CDecodingPipeline::Init(sInputParams *pParams)
     }
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
-    return MFX_ERR_NONE;
+    if (m_eWorkMode == MODE_RENDERING)
+    {
+        sts = CreateRenderingWindow(pParams, m_bIsMVC && (m_memType == D3D9_MEMORY));
+        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+    }
+
+    return sts;
 }
 
 void CDecodingPipeline::Close()
@@ -320,6 +324,8 @@ bool operator < (const IGFX_DISPLAY_MODE &l, const IGFX_DISPLAY_MODE& r)
 
 mfxStatus CDecodingPipeline::CreateRenderingWindow(sInputParams *pParams, bool try_s3d)
 {
+    mfxStatus sts = MFX_ERR_NONE;
+
 #if D3D_SURFACES_SUPPORT
     if (try_s3d) {
 
@@ -356,8 +362,8 @@ mfxStatus CDecodingPipeline::CreateRenderingWindow(sInputParams *pParams, bool t
     windowParams.lpWindowName = pParams->bWallNoTitle ? NULL : MSDK_STRING("sample_decode");
     windowParams.nx           = pParams->nWallW;
     windowParams.ny           = pParams->nWallH;
-    windowParams.nWidth       = CW_USEDEFAULT;
-    windowParams.nHeight      = CW_USEDEFAULT;
+    windowParams.nWidth       = m_mfxVideoParams.mfx.FrameInfo.Width;
+    windowParams.nHeight      = m_mfxVideoParams.mfx.FrameInfo.Height;
     windowParams.ncell        = pParams->nWallCell;
     windowParams.nAdapter     = pParams->nWallMonitor;
     windowParams.nMaxFPS      = pParams->nWallFPS;
@@ -370,14 +376,15 @@ mfxStatus CDecodingPipeline::CreateRenderingWindow(sInputParams *pParams, bool t
     windowParams.lpParam      = NULL;
     windowParams.bFullScreen  = FALSE;
 
-    m_d3dRender.Init(windowParams);
+    sts = m_d3dRender.Init(windowParams);
+    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
     //setting videowall flag
     m_bIsVideoWall = 0 != windowParams.nx;
     //setting timeout value
     if (m_bIsVideoWall && (pParams->nWallTimeout>0)) m_nTimeout = pParams->nWallTimeout;
 #endif
-    return MFX_ERR_NONE;
+    return sts;
 }
 
 mfxStatus CDecodingPipeline::InitMfxParams(sInputParams *pParams)
@@ -527,7 +534,7 @@ mfxStatus CDecodingPipeline::CreateHWDevice()
     bool render = (m_eWorkMode == MODE_RENDERING);
 
     if (render) {
-        window = m_d3dRender.GetWindowHandle();
+        window = (D3D11_MEMORY == m_memType) ? NULL : m_d3dRender.GetWindowHandle();
     }
 
 #if MFX_D3D11_SUPPORT

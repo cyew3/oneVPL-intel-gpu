@@ -20,6 +20,8 @@ Copyright(c) 2005-2014 Intel Corporation. All Rights Reserved.
 #include "decode_render.h"
 #pragma warning(disable : 4100)
 
+bool CDecodeD3DRender::m_bIsMonitorFound = false;
+
 LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
 #ifdef WIN64
@@ -53,9 +55,9 @@ CDecodeD3DRender::CDecodeD3DRender()
 }
 
 BOOL CALLBACK CDecodeD3DRender::MonitorEnumProc(HMONITOR /*hMonitor*/,
-                                           HDC /*hdcMonitor*/,
-                                           LPRECT lprcMonitor,
-                                           LPARAM dwData)
+                                                HDC /*hdcMonitor*/,
+                                                LPRECT lprcMonitor,
+                                                LPARAM dwData)
 {
     CDecodeD3DRender * pRender = reinterpret_cast<CDecodeD3DRender *>(dwData);
     RECT r = {0};
@@ -65,6 +67,7 @@ BOOL CALLBACK CDecodeD3DRender::MonitorEnumProc(HMONITOR /*hMonitor*/,
     if (pRender->m_nMonitorCurrent++ == pRender->m_sWindowParams.nAdapter)
     {
         pRender->m_RectWindow = *lprcMonitor;
+        m_bIsMonitorFound = true;
     }
     return TRUE;
 }
@@ -79,6 +82,7 @@ CDecodeD3DRender::~CDecodeD3DRender()
 
 mfxStatus CDecodeD3DRender::Init(sWindowParams pWParams)
 {
+    mfxStatus sts = MFX_ERR_NONE;
     OSVERSIONINFO version;
     ZeroMemory(&version, sizeof(version));
     version.dwOSVersionInfoSize = sizeof(version);
@@ -102,13 +106,15 @@ mfxStatus CDecodeD3DRender::Init(sWindowParams pWParams)
     if (!RegisterClass(&window))
         return MFX_ERR_UNKNOWN;
 
+    EnumDisplayMonitors(NULL, NULL, &CDecodeD3DRender::MonitorEnumProc, (LPARAM)this);
+    if(!m_bIsMonitorFound)
+        return MFX_ERR_NOT_FOUND;
+
     ::RECT displayRegion = {CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT};
 
     //right and bottom fields consist of width and height values of displayed reqion
     if (0 != m_sWindowParams.nx )
     {
-        EnumDisplayMonitors(NULL, NULL, &CDecodeD3DRender::MonitorEnumProc, (LPARAM)this);
-
         displayRegion.right  = (m_RectWindow.right - m_RectWindow.left)  / m_sWindowParams.nx;
         displayRegion.bottom = (m_RectWindow.bottom - m_RectWindow.top)  / m_sWindowParams.ny;
         displayRegion.left   = displayRegion.right * (m_sWindowParams.ncell % m_sWindowParams.nx) + m_RectWindow.left;
@@ -116,7 +122,11 @@ mfxStatus CDecodeD3DRender::Init(sWindowParams pWParams)
     }
     else
     {
-        m_sWindowParams.nMaxFPS = 10000;//hypotetical maximum
+        displayRegion.right = pWParams.nWidth;
+        displayRegion.bottom = pWParams.nHeight;
+        displayRegion.left = m_RectWindow.left;
+        displayRegion.top= m_RectWindow.top;
+        m_sWindowParams.nMaxFPS = 10000; //hypotetical maximum
     }
 
     //no title window style if required
@@ -146,9 +156,13 @@ mfxStatus CDecodeD3DRender::Init(sWindowParams pWParams)
 #else
     SetWindowLong(m_Hwnd, GWL_USERDATA, PtrToLong(this));
 #endif
-    return MFX_ERR_NONE;
-}
 
+    m_hwdev->SetHandle((mfxHandleType)MFX_HANDLE_DEVICEWINDOW, m_Hwnd);
+    sts = m_hwdev->Reset();
+    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+
+    return sts;
+}
 
 mfxStatus CDecodeD3DRender::RenderFrame(mfxFrameSurface1 *pSurface, mfxFrameAllocator *pmfxAlloc)
 {
@@ -169,6 +183,19 @@ mfxStatus CDecodeD3DRender::RenderFrame(mfxFrameSurface1 *pSurface, mfxFrameAllo
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
     return sts;
+}
+
+HWND CDecodeD3DRender::GetWindowHandle()
+{
+    if (!m_Hwnd)
+    {
+        EnumDisplayMonitors(NULL, NULL, &CDecodeD3DRender::MonitorEnumProc, (LPARAM)this);
+        POINT point  = {m_RectWindow.left, m_RectWindow.top};
+        m_Hwnd = WindowFromPoint(point);
+        m_nMonitorCurrent = 0;
+        m_bIsMonitorFound = false;
+    }
+    return m_Hwnd;
 }
 
 VOID CDecodeD3DRender::UpdateTitle(double fps)
@@ -326,7 +353,6 @@ bool CDecodeD3DRender::EnableDwmQueuing()
     dwmpp.rateSource.uiDenominator  = 1;
     dwmpp.rateSource.uiNumerator    = m_sWindowParams.nMaxFPS;
 
-
     hr = DwmSetPresentParameters(m_Hwnd, &dwmpp);
 
     if (FAILED(hr))
@@ -341,4 +367,3 @@ bool CDecodeD3DRender::EnableDwmQueuing()
     return true;
 }
 #endif // #if defined(_WIN32) || defined(_WIN64)
-

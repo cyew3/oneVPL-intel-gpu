@@ -60,7 +60,7 @@ public:
     virtual mfxStatus RenderFrame(mfxFrameSurface1 *pSurface, mfxFrameAllocator *pmfxAlloc);
     virtual VOID UpdateTitle(double fps);
 
-    HWND GetWindowHandle() { return m_Hwnd; }
+    HWND GetWindowHandle();
 
     VOID OnDestroy(HWND hwnd);
     VOID OnKey(HWND hwnd, UINT vk, BOOL fDown, int cRepeat, UINT flags);
@@ -82,6 +82,7 @@ protected:
 
     bool EnableDwmQueuing();
     static BOOL CALLBACK MonitorEnumProc(HMONITOR ,HDC ,LPRECT lprcMonitor,LPARAM dwData);
+    static bool m_bIsMonitorFound;
 
     bool                 m_bIsDwmQueueSupported;
     bool                 m_bDwmEnabled;

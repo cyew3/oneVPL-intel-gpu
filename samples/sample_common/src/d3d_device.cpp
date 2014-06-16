@@ -232,29 +232,35 @@ mfxStatus CD3D9Device::Init(
 
     m_resetToken = resetToken;
 
-
     return sts;
 }
 
 mfxStatus CD3D9Device::Reset()
 {
     HRESULT hr = NO_ERROR;
+    MSDK_CHECK_POINTER(m_pD3DD9, MFX_ERR_NULL_PTR);
 
-    D3DPRESENT_PARAMETERS d3dpp=m_D3DPP;
-    ZeroMemory(&d3dpp, sizeof(d3dpp));
-
-    D3DDISPLAYMODE d3dmodeTemp;
-    m_pD3DD9->GetDisplayMode(0, &d3dmodeTemp);
-
-    d3dpp.BackBufferWidth  = d3dmodeTemp.Width;
-    d3dpp.BackBufferHeight = d3dmodeTemp.Height;
+    if (m_D3DPP.Windowed)
+    {
+        RECT r;
+        GetClientRect((HWND)m_D3DPP.hDeviceWindow, &r);
+        int x = GetSystemMetrics(SM_CXSCREEN);
+        int y = GetSystemMetrics(SM_CYSCREEN);
+        m_D3DPP.BackBufferWidth  = min(r.right - r.left, x);
+        m_D3DPP.BackBufferHeight = min(r.bottom - r.top, y);
+    }
+    else
+    {
+        m_D3DPP.BackBufferWidth  = GetSystemMetrics(SM_CXSCREEN);
+        m_D3DPP.BackBufferHeight = GetSystemMetrics(SM_CYSCREEN);
+    }
 
     // Reset will change the parameters, so use a copy instead.
-    D3DPRESENT_PARAMETERS d3dppTmp=d3dpp;
-    hr = m_pD3DD9->ResetEx(&d3dppTmp, NULL);
+    D3DPRESENT_PARAMETERS d3dpp = m_D3DPP;
+    hr = m_pD3DD9->ResetEx(&d3dpp, NULL);
+
     if (FAILED(hr))
         return MFX_ERR_UNDEFINED_BEHAVIOR;
-    m_D3DPP = d3dpp;
 
     hr = m_pDeviceManager9->ResetDevice(m_pD3DD9, m_resetToken);
     if (FAILED(hr))
@@ -303,7 +309,11 @@ mfxStatus CD3D9Device::SetHandle(mfxHandleType type, mfxHDL hdl)
     if (MFX_HANDLE_GFXS3DCONTROL == type && hdl != NULL)
     {
         m_pS3DControl = (IGFXS3DControl*)hdl;
-
+        return MFX_ERR_NONE;
+    }
+    else if (MFX_HANDLE_DEVICEWINDOW == type && hdl != NULL) //for render window handle
+    {
+        m_D3DPP.hDeviceWindow = (HWND)hdl;
         return MFX_ERR_NONE;
     }
     return MFX_ERR_UNSUPPORTED;

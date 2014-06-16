@@ -53,9 +53,9 @@ CDecodeD3DRender::CDecodeD3DRender()
 }
 
 BOOL CALLBACK CDecodeD3DRender::MonitorEnumProc(HMONITOR /*hMonitor*/,
-                                           HDC /*hdcMonitor*/,
-                                           LPRECT lprcMonitor,
-                                           LPARAM dwData)
+                                                HDC /*hdcMonitor*/,
+                                                LPRECT lprcMonitor,
+                                                LPARAM dwData)
 {
     CDecodeD3DRender * pRender = reinterpret_cast<CDecodeD3DRender *>(dwData);
     RECT r = {0};
@@ -66,6 +66,7 @@ BOOL CALLBACK CDecodeD3DRender::MonitorEnumProc(HMONITOR /*hMonitor*/,
     {
         pRender->m_RectWindow = *lprcMonitor;
     }
+
     return TRUE;
 }
 
@@ -79,6 +80,7 @@ CDecodeD3DRender::~CDecodeD3DRender()
 
 mfxStatus CDecodeD3DRender::Init(sWindowParams pWParams)
 {
+    mfxStatus sts = MFX_ERR_NONE;
     OSVERSIONINFO version;
     ZeroMemory(&version, sizeof(version));
     version.dwOSVersionInfoSize = sizeof(version);
@@ -102,8 +104,13 @@ mfxStatus CDecodeD3DRender::Init(sWindowParams pWParams)
     if (!RegisterClass(&window))
         return MFX_ERR_UNKNOWN;
 
+    EnumDisplayMonitors(NULL, NULL, &CDecodeD3DRender::MonitorEnumProc, (LPARAM)this);
     ::RECT displayRegion = {CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT};
 
+    displayRegion.right = pWParams.nWidth;
+    displayRegion.bottom = pWParams.nHeight;
+    displayRegion.left = m_RectWindow.left;
+    displayRegion.top= m_RectWindow.top;
     m_sWindowParams.nMaxFPS = 10000;//hypotetical maximum
 
     //no title window style if required
@@ -133,7 +140,12 @@ mfxStatus CDecodeD3DRender::Init(sWindowParams pWParams)
 #else
     SetWindowLong(m_Hwnd, GWL_USERDATA, PtrToLong(this));
 #endif
-    return MFX_ERR_NONE;
+
+    m_hwdev->SetHandle((mfxHandleType)MFX_HANDLE_DEVICEWINDOW, m_Hwnd);
+    sts = m_hwdev->Reset();
+    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+
+    return sts;
 }
 
 mfxStatus CDecodeD3DRender::RenderFrame(mfxFrameSurface1 *pSurface, mfxFrameAllocator *pmfxAlloc)
@@ -155,6 +167,18 @@ mfxStatus CDecodeD3DRender::RenderFrame(mfxFrameSurface1 *pSurface, mfxFrameAllo
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
     return sts;
+}
+
+HWND CDecodeD3DRender::GetWindowHandle()
+{
+    if (!m_Hwnd)
+    {
+        EnumDisplayMonitors(NULL, NULL, &CDecodeD3DRender::MonitorEnumProc, (LPARAM)this);
+        POINT point  = {m_RectWindow.left, m_RectWindow.top};
+        m_Hwnd = WindowFromPoint(point);
+        m_nMonitorCurrent = 0;
+    }
+    return m_Hwnd;
 }
 
 VOID CDecodeD3DRender::UpdateTitle(double fps)
