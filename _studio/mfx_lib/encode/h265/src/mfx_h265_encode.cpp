@@ -842,6 +842,8 @@ mfxStatus MFXVideoENCODEH265::Init(mfxVideoParam* par_in)
             m_mfxHEVCOpts.NumBiRefineIter = opts_tu->NumBiRefineIter;
         if (m_mfxHEVCOpts.CUSplitThreshold == 0)
             m_mfxHEVCOpts.CUSplitThreshold = opts_tu->CUSplitThreshold;
+        if (m_mfxHEVCOpts.DQP == 0)
+            m_mfxHEVCOpts.DQP = opts_tu->DQP;
         if (m_mfxHEVCOpts.Enable10bit == 0)
             m_mfxHEVCOpts.Enable10bit = opts_tu->Enable10bit;
     }
@@ -1119,6 +1121,7 @@ mfxStatus MFXVideoENCODEH265::Reset(mfxVideoParam *par_in)
         if (!optsNew.PuDecisionSatd               ) optsNew.PuDecisionSatd                = optsOld.PuDecisionSatd               ;
         if (!optsNew.MinCUDepthAdapt              ) optsNew.MinCUDepthAdapt               = optsOld.MinCUDepthAdapt              ;
         if (!optsNew.CUSplitThreshold             ) optsNew.CUSplitThreshold              = optsOld.CUSplitThreshold             ;
+        if (!optsNew.DQP                          ) optsNew.DQP                           = optsOld.DQP                          ;
         if (!optsNew.Enable10bit                  ) optsNew.Enable10bit                   = optsOld.Enable10bit                  ;
     }
 
@@ -1284,6 +1287,7 @@ mfxStatus MFXVideoENCODEH265::Query(VideoCORE *core, mfxVideoParam *par_in, mfxV
             optsHEVC->PuDecisionSatd = 1;
             optsHEVC->MinCUDepthAdapt = 1;
             optsHEVC->CUSplitThreshold = 1;
+            optsHEVC->DQP = 1;
             optsHEVC->Enable10bit = 1;
         }
 
