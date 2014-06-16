@@ -139,7 +139,7 @@ mfxExtBuffer HEVC_HEADER = { MFX_EXTBUFF_HEVCENC, sizeof(mfxExtCodingOptionHEVC)
     tab_##mode##_MinCUDepthAdapt[x],\
     tab_##mode##_NumBiRefineIter[x],\
     tab_##mode##_CUSplitThreshold[x],\
-    tab_##mode##_DQP[x],\
+    tab_##mode##_DeltaQpMode[x],\
     tab_##mode##_Enable10bit[x],\
 }
 
@@ -173,7 +173,7 @@ TU_OPT_ALL (TMVP,                          ON,  ON,  ON,  ON,  ON,  ON,  ON);
 TU_OPT_ALL (Deblocking,                    ON,  ON,  ON,  ON,  ON,  ON,  ON);
 TU_OPT_SW  (IntraAngModes,                  1,   1,   2,   2,   2,   2,   2);
 TU_OPT_GACC(IntraAngModes,                  3,   3,   3,   3,   3,   3,   3);
-TU_OPT_ALL (DQP,                            0,   0,   0,   0,   0,   0,   0);
+TU_OPT_ALL (DeltaQpMode,                    0,   0,   0,   0,   0,   0,   0);
 
 //Quant optimization
 TU_OPT_ALL (SignBitHiding,                 ON,  ON,  ON,  ON,  ON,  ON, OFF);
@@ -842,8 +842,8 @@ mfxStatus MFXVideoENCODEH265::Init(mfxVideoParam* par_in)
             m_mfxHEVCOpts.NumBiRefineIter = opts_tu->NumBiRefineIter;
         if (m_mfxHEVCOpts.CUSplitThreshold == 0)
             m_mfxHEVCOpts.CUSplitThreshold = opts_tu->CUSplitThreshold;
-        if (m_mfxHEVCOpts.DQP == 0)
-            m_mfxHEVCOpts.DQP = opts_tu->DQP;
+        if (m_mfxHEVCOpts.DeltaQpMode == 0)
+            m_mfxHEVCOpts.DeltaQpMode = opts_tu->DeltaQpMode;
         if (m_mfxHEVCOpts.Enable10bit == 0)
             m_mfxHEVCOpts.Enable10bit = opts_tu->Enable10bit;
     }
@@ -1121,7 +1121,7 @@ mfxStatus MFXVideoENCODEH265::Reset(mfxVideoParam *par_in)
         if (!optsNew.PuDecisionSatd               ) optsNew.PuDecisionSatd                = optsOld.PuDecisionSatd               ;
         if (!optsNew.MinCUDepthAdapt              ) optsNew.MinCUDepthAdapt               = optsOld.MinCUDepthAdapt              ;
         if (!optsNew.CUSplitThreshold             ) optsNew.CUSplitThreshold              = optsOld.CUSplitThreshold             ;
-        if (!optsNew.DQP                          ) optsNew.DQP                           = optsOld.DQP                          ;
+        if (!optsNew.DeltaQpMode                          ) optsNew.DeltaQpMode                           = optsOld.DeltaQpMode                          ;
         if (!optsNew.Enable10bit                  ) optsNew.Enable10bit                   = optsOld.Enable10bit                  ;
     }
 
@@ -1287,7 +1287,7 @@ mfxStatus MFXVideoENCODEH265::Query(VideoCORE *core, mfxVideoParam *par_in, mfxV
             optsHEVC->PuDecisionSatd = 1;
             optsHEVC->MinCUDepthAdapt = 1;
             optsHEVC->CUSplitThreshold = 1;
-            optsHEVC->DQP = 1;
+            optsHEVC->DeltaQpMode = 1;
             optsHEVC->Enable10bit = 1;
         }
 
@@ -1646,7 +1646,7 @@ mfxStatus MFXVideoENCODEH265::Query(VideoCORE *core, mfxVideoParam *par_in, mfxV
             opts_out->ForceNumThread = opts_in->ForceNumThread;
             opts_out->NumBiRefineIter = opts_in->NumBiRefineIter;
             opts_out->CUSplitThreshold = opts_in->CUSplitThreshold;
-            opts_out->DQP              = opts_in->DQP;
+            opts_out->DeltaQpMode              = opts_in->DeltaQpMode;
 
             CHECK_OPTION(opts_in->AnalyzeChroma, opts_out->AnalyzeChroma, isInvalid);  /* tri-state option */
             CHECK_OPTION(opts_in->SignBitHiding, opts_out->SignBitHiding, isInvalid);  /* tri-state option */

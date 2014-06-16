@@ -254,7 +254,7 @@ MFXTranscodingPipeline::MFXTranscodingPipeline(IMFXPipelineFactory *pFactory)
         HANDLE_HEVC_OPTION(MinCUDepthAdapt,          OPT_TRI_STATE,  "on/off adaptive min CU depth"),
         HANDLE_HEVC_OPTION(NumBiRefineIter,          OPT_UINT_16,    "1-check best L0+L1; N-check best L0+L1 then N-1 refinement iterations"),
         HANDLE_HEVC_OPTION(CUSplitThreshold,         OPT_UINT_16,    "skip CU split check: threshold = CUSplitThreshold / 256.0"),
-        HANDLE_HEVC_OPTION(DQP,                      OPT_UINT_16,    "DeltaQP modes: 0-disabled; 1-paq; 2-calq; 3-paq+calq"),
+        HANDLE_HEVC_OPTION(DeltaQpMode,              OPT_UINT_16,    "DeltaQP modes: 0-disabled; 1-paq; 2-calq; 3-paq+calq"),
         HANDLE_HEVC_OPTION(Enable10bit,              OPT_TRI_STATE,  "on/off 10 bit coding"),
 
         HANDLE_VP8PARAM_OPTION(VP8Version,            OPT_UINT_8,    "0-maxU8"),
