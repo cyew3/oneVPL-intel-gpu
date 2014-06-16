@@ -103,6 +103,7 @@ mfxStatus MFXSplitter_Init(mfxDataIO *data_io, mfxSplitter *spl)
         outSpl->formatContext->iformat = av_probe_input_format(&probeData, AVFMT_NOFILE);
         if (outSpl->formatContext->iformat == NULL)
         {
+            outSpl->formatContext->pb = NULL;
             sts = MFX_ERR_UNKNOWN;
         }
     }
