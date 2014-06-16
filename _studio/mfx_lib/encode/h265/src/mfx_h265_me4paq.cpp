@@ -10,7 +10,9 @@
 
 #if defined (MFX_ENABLE_H265_VIDEO_ENCODE) && defined(MFX_ENABLE_H265_PAQ)
 
-#include <intrin.h>
+//#if defined(_MSC_VER)
+//#include <intrin.h>
+//#endif
 #include <math.h>
 
 #include "vm_debug.h"
@@ -46,8 +48,6 @@ namespace H265Enc {
     double    conFil2[4]            =    {0.33,0.05,0.23,0.18};
     double    filter3[4]            =    {1.0,1.0,1.0,1.0};
     MVector    zero                =    {0,0};
-
-#include <intrin.h>
 
     void LoadShufStore_ObjFrame_C(Ipp8u* objFrame, Ipp32s ExtWidth, Ipp8u* pTempArray1)
     {
@@ -2226,10 +2226,10 @@ namespace H265Enc {
     }
 
 
-    const __int64                x1        =    0x0014001400140014;
-    const __int64                x2        =    0x0004000400040004;
-    const __int64                x3        =    0x0010001000100010;
-    const __int64                x4        =    0x0002000200020002;
+    const Ipp64s               x1        =    0x0014001400140014;
+    const Ipp64s                x2        =    0x0004000400040004;
+    const Ipp64s                x3        =    0x0010001000100010;
+    const Ipp64s                x4        =    0x0002000200020002;
 
     void ME_SUM_cross_8x8_C(Ipp8u *sLI, Ipp8u *sLA, Ipp8u *sLB, Ipp8u *sLC, Ipp8u *rslt)
     {
