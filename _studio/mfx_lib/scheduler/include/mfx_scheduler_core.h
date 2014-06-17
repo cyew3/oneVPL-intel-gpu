@@ -26,6 +26,9 @@
 
 #include "mfx_common.h"
 
+
+//#define EXTERNAL_THREADING
+
 // set the following define to let the scheduler write log file
 // with all its activities.
 //#define MFX_SCHEDULER_LOG

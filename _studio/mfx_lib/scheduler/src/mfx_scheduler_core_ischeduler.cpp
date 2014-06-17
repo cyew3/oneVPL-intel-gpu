@@ -36,7 +36,7 @@
 #include <stdio.h>
 #endif // defined(MFX_SCHEDULER_LOG)
 
-//#define EXTERNAL_THREADING
+
 
 enum
 {
@@ -190,7 +190,15 @@ mfxStatus mfxSchedulerCore::Initialize(const MFX_SCHEDULER_PARAM *pParam)
 
  // to run HW listen thread. Will be enabled if tests are OK
 #if defined (MFX_VA)
-#if !defined (EXTERNAL_THREADING)
+#if defined (EXTERNAL_THREADING)
+    #if defined(_WIN32) || defined(_WIN64)
+    m_hwTaskDone.handle = CreateEventExW(NULL, 
+                                        _T("Global\\IGFXKMDNotifyBatchBuffersComplete"), 
+                                        CREATE_EVENT_MANUAL_RESET, 
+                                        STANDARD_RIGHTS_ALL | EVENT_MODIFY_STATE);
+    
+    #endif
+#else
     MFX_CHECK_STS(StartWakeUpThread());
 #endif
 #endif
@@ -362,7 +370,7 @@ mfxStatus mfxSchedulerCore::Synchronize(mfxTaskHandle handle, mfxU32 timeToWait)
                 break;
             
             if (MFX_TASK_DONE!= call.res)
-                Sleep(1);
+                vm_event_timed_wait(&m_hwTaskDone, 1);
 
         }
     }
