@@ -223,5 +223,8 @@
     <ClCompile Include="src\gmock\test_suites\camera_query.cpp">
       <Filter>Source Files\test_suites\camera</Filter>
     </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\ptir_get_video_param.cpp">
+      <Filter>Source Files\test_suites\ptir</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>
