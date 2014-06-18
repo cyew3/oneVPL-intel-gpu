@@ -500,6 +500,11 @@ enum {
     MFX_LOOKAHEAD_DS_4x      = 3
 };
 
+enum {
+    MFX_SKIPFRAME_INSERT_DUMMY    = 1,
+    MFX_SKIPFRAME_INSERT_NOTHING  = 2,
+};
+
 typedef struct {
     mfxExtBuffer Header;
 
