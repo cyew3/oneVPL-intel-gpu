@@ -1,0 +1,65 @@
+THIS DOCUMENT CONTAINS INFORMATION ON PRODUCTS IN THE DESIGN PHASE OF DEVELOPMENT.
+
+Copyright(c) 2014 Intel Corporation. All Rights Reserved.
+
+
+Overview
+========
+
+Media SDK Tracer is a tool which permits to dump logging information from the calls
+of the application to the Media SDK library. Trace log obtained from this tool is a
+recommended infromation to provide to Media SDK team on submitting questions and
+issues.
+
+Media SDK tracer tool version is: v1.10.0. Note that 1.10 stands for the Media SDK API
+version this particular version of the Tracer is intended for.
+
+
+Prerequisites
+=============
+
+To use this version of the tracer, it is required to have the following products installed
+on the system:
+- Intel® Media SDL 2014 R2 for Linux* Servers
+Please, refer to the release notes of these products on how to install them
+
+
+Installation
+============
+
+1. Rename real Media SDK library:
+cd /opt/intel/mediasdk/8086/<deviceid>/
+rm libmfxhw64.so
+mv libmfxhw64-p.so.1.10 libmfxhw64-p-REAL.so.1.10
+
+2. Add Media SDK Tracer library to the search path:
+export LD_LIBRARY_PATH=$INSTALLDIR/mediasdk-tracer-1.10.0:$LD_LIBRARY_PATH
+
+4. Create symbolic link to the tracer with the name of Media SDK library:
+cd $INSTALLDIR/mediasdk-tracer-1.10.0/lib
+ln -s libmfx-tracer.so libmfxhw64.so
+
+5. Generate config file for the tracer:
+$INSTALLDIR/bin/mfx-tracer-config --default
+$INSTALLDIR/bin/mfx-tracer-config core.type file
+$INSTALLDIR/bin/mfx-tracer-config core.file ~/mfxtracer.log
+$INSTALLDIR/bin/mfx-tracer-config core.lib /opt/intel/mediasdk/8086/<deviceid>/libmfxhw64-p-REAL.so.1.10
+
+Following this procedure you will set Tracer to dump log to the file called '~/mfxtracer.log'. You may
+adjust your configuration with 'mfx-tracer-config' tool.
+
+
+Running
+=======
+
+After installing the tracer you should see the trace in the configured log file (~/mfxtracer.log)
+after each run of some Media SDK based application. Make sure that you delete or rename log file
+after each run - otherwise new logs will be added to the end of file.
+
+
+Known issues & limitations
+==========================
+
+- This is prototype release of the tracer for - not all functionality can be available
+- Syslog logger is not supported
+- Some API functions may not be covered by the tracing
