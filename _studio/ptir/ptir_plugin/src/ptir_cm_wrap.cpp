@@ -70,10 +70,10 @@ PTIR_ProcessorCM::~PTIR_ProcessorCM()
 
 mfxStatus PTIR_ProcessorCM::Init(mfxVideoParam *par)
 {
-    uiInWidth  = uiWidth  = par->vpp.In.Width;
-    uiInHeight = uiHeight = par->vpp.In.Height;
-    //uiInWidth  = uiWidth  = par->vpp.In.CropW;
-    //uiInHeight = uiHeight = par->vpp.In.CropH;
+    //uiInWidth  = uiWidth  = par->vpp.In.Width;
+    //uiInHeight = uiHeight = par->vpp.In.Height;
+    uiInWidth  = uiWidth  = par->vpp.In.CropW;
+    uiInHeight = uiHeight = par->vpp.In.CropH;
     if(par->vpp.In.FrameRateExtN && par->vpp.In.FrameRateExtD)
         dFrameRate = (double) par->vpp.In.FrameRateExtN / par->vpp.In.FrameRateExtD;
     else
@@ -163,12 +163,13 @@ mfxStatus PTIR_ProcessorCM::Init(mfxVideoParam *par)
     }
     try
     {
+        memset(frmIO,0,sizeof(Frame)*(LASTFRAME + 1));
         for(i = 0; i < LASTFRAME; i++)
         {
-            Frame_CreateCM(&frmIO[i], uiInWidth, uiInHeight, uiInWidth / 2, uiInHeight / 2, 0);
+            Frame_CreateCM(&frmIO[i], uiInWidth, uiInHeight, uiInWidth / 2, uiInHeight / 2, 0, false);
             frmBuffer[i] = frmIO + i;
         }
-        Frame_CreateCM(&frmIO[LASTFRAME], uiWidth, uiHeight, uiWidth / 2, uiHeight / 2, 0);
+        Frame_CreateCM(&frmIO[LASTFRAME], uiWidth, uiHeight, uiWidth / 2, uiHeight / 2, 0, false);
     }
     catch(std::bad_alloc&)
     {
@@ -228,15 +229,61 @@ mfxStatus PTIR_ProcessorCM::Process(mfxFrameSurface1 *surface_in, mfxFrameSurfac
         CmSurface2D *pInCmSurface2D = 0;
         CmSurface2D *pOutCmSurface2D = 0;
 
+#if defined(_DEBUG)
+                //debug: find duplicates:
+                std::map<CmSurface2D*,mfxFrameSurface1*>::iterator ittt;
+                std::map<CmSurface2D*,mfxFrameSurface1*>::iterator ittt2;
+                for (ittt = CmToMfxSurfmap.begin(); ittt != CmToMfxSurfmap.end(); ++ittt)
+                {
+                    for (ittt2 = CmToMfxSurfmap.begin(); ittt2 != CmToMfxSurfmap.end(); ++ittt2)
+                    {
+                        if(ittt2 != ittt)
+                        {
+                            if(ittt2->second == ittt->second)
+                            {
+                                assert(ittt2->second != ittt->second);
+                            }
+                        }
+                    }
+                }
+#endif
+
         if((surface_in->Data.MemId) && (work_par.IOPattern & MFX_IOPATTERN_IN_VIDEO_MEMORY || work_par.IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY))
         {
             //MemId should be a video memory surface
             CmDeviceEx& pCMdevice = this->deinterlaceFilter->DeviceEx();
             int result = -1;
-            result = pCMdevice->CreateSurface2D((IDirect3DSurface9 *) surface_in->Data.MemId, pInCmSurface2D);
-            CmToMfxSurfmap[pInCmSurface2D] = surface_in;
-            result = pCMdevice->CreateSurface2D((IDirect3DSurface9 *) (*surface_out)->Data.MemId, pOutCmSurface2D);
-            CmToMfxSurfmap[pOutCmSurface2D] = (*surface_out);
+
+            std::map<CmSurface2D*,mfxFrameSurface1*>::iterator it;
+            for (it = CmToMfxSurfmap.begin(); it != CmToMfxSurfmap.end(); ++it)
+            {
+                if(surface_in == it->second)
+                {
+                    pInCmSurface2D = it->first;
+                    break;
+                }
+            }
+            if(!pInCmSurface2D)
+            {
+                result = pCMdevice->CreateSurface2D((IDirect3DSurface9 *) surface_in->Data.MemId, pInCmSurface2D);
+                assert(result == 0);
+                CmToMfxSurfmap[pInCmSurface2D] = surface_in;
+            }
+
+            for (it = CmToMfxSurfmap.begin(); it != CmToMfxSurfmap.end(); ++it)
+            {
+                if(*surface_out == it->second)
+                {
+                    pOutCmSurface2D = it->first;
+                    break;
+                }
+            }
+            if(!pOutCmSurface2D)
+            {
+                result = pCMdevice->CreateSurface2D((IDirect3DSurface9 *) (*surface_out)->Data.MemId, pOutCmSurface2D);
+                assert(result == 0);
+                CmToMfxSurfmap[pOutCmSurface2D] = (*surface_out);
+            }
             //mfx_core->FrameAllocator.Lock(mfx_core->FrameAllocator.pthis, (*surface_out)->Data.MemId, &((*surface_out)->Data));
             //mfx_core->FrameAllocator.Lock(mfx_core->FrameAllocator.pthis, surface_in->Data.MemId, &(surface_in->Data));
             isUnlockReq = false;
@@ -259,6 +306,9 @@ mfxStatus PTIR_ProcessorCM::Process(mfxFrameSurface1 *surface_in, mfxFrameSurfac
             mfx_core->FrameAllocator.Unlock(mfx_core->FrameAllocator.pthis, surface_in->Data.MemId, &(surface_in->Data));
             isUnlockReq = false;
         }
+
+        if(beof)
+            uiCur = 0;
 
         *surface_out = 0;
         return mfxSts;
@@ -313,6 +363,7 @@ mfxStatus PTIR_ProcessorCM::Process(mfxFrameSurface1 *surface_in, mfxFrameSurfac
             CmDeviceEx& pCMdevice = this->deinterlaceFilter->DeviceEx();
             int result = -1;
             result = pCMdevice->CreateSurface2D((IDirect3DSurface9 *) (*surface_out)->Data.MemId, pOutCmSurface2D);
+            assert(result == 0);
             CmToMfxSurfmap[pOutCmSurface2D] = (*surface_out);
             isUnlockReq = false;
         }
@@ -352,22 +403,35 @@ mfxStatus PTIR_ProcessorCM::PTIR_ProcessFrame(CmSurface2D *surf_in, CmSurface2D 
     if(!b_firstFrameProceed)
     {
         CmDeviceEx& device = pdeinterlaceFilter->DeviceEx();
-        if(static_cast<CmSurface2DEx*>(frmBuffer[0]->inSurf)->pCmSurface2D && !CmToMfxSurfmap[static_cast<CmSurface2DEx*>(frmBuffer[0]->inSurf)->pCmSurface2D] && !mb_UsePtirSurfs)
+        mfxFrameSurface1* tmpSurf = 0;
+
+        if(static_cast<CmSurface2DEx*>(frmBuffer[0]->inSurf)->pCmSurface2D && static_cast<CmSurface2DEx*>(frmBuffer[0]->inSurf)->pCmSurface2D && !mb_UsePtirSurfs)
             frmSupply->FreeSurface(static_cast<CmSurface2DEx*>(frmBuffer[0]->inSurf)->pCmSurface2D);
-        if(static_cast<CmSurface2DEx*>(frmBuffer[0]->outSurf)->pCmSurface2D && !CmToMfxSurfmap[static_cast<CmSurface2DEx*>(frmBuffer[0]->outSurf)->pCmSurface2D] && !mb_UsePtirSurfs)
+
+        if(static_cast<CmSurface2DEx*>(frmBuffer[0]->outSurf)->pCmSurface2D && static_cast<CmSurface2DEx*>(frmBuffer[0]->outSurf)->pCmSurface2D && !mb_UsePtirSurfs)
             frmSupply->FreeSurface(static_cast<CmSurface2DEx*>(frmBuffer[0]->outSurf)->pCmSurface2D);
 
-        if(static_cast<CmSurface2DEx*>(frmBuffer[BUFMINSIZE]->outSurf)->pCmSurface2D && !CmToMfxSurfmap[static_cast<CmSurface2DEx*>(frmBuffer[BUFMINSIZE]->outSurf)->pCmSurface2D] && !mb_UsePtirSurfs)
+        if(static_cast<CmSurface2DEx*>(frmBuffer[BUFMINSIZE]->outSurf)->pCmSurface2D && static_cast<CmSurface2DEx*>(frmBuffer[BUFMINSIZE]->outSurf)->pCmSurface2D && !mb_UsePtirSurfs)
         {
             frmSupply->FreeSurface(static_cast<CmSurface2DEx*>(frmBuffer[BUFMINSIZE]->outSurf)->pCmSurface2D);
-            static_cast<CmSurface2DEx*>(frmBuffer[BUFMINSIZE]->outSurf)->pCmSurface2D = frmSupply->GetWorkSurfaceCM();
         }
+        if(!static_cast<CmSurface2DEx*>(frmBuffer[BUFMINSIZE]->outSurf)->pCmSurface2D)
+            static_cast<CmSurface2DEx*>(frmBuffer[BUFMINSIZE]->outSurf)->pCmSurface2D = frmSupply->GetWorkSurfaceCM();
 
-        if(static_cast<CmSurface2DEx*>(frmBuffer[BUFMINSIZE+1]->outSurf)->pCmSurface2D && !CmToMfxSurfmap[static_cast<CmSurface2DEx*>(frmBuffer[BUFMINSIZE+1]->outSurf)->pCmSurface2D])
+        //if(static_cast<CmSurface2DEx*>(frmBuffer[BUFMINSIZE]->inSurf)->pCmSurface2D == 0)
+        //{
+        //    int result = -1;
+        //    result = device->CreateSurface2D(uiWidth, uiHeight, CM_SURFACE_FORMAT_NV12, static_cast<CmSurface2DEx*>(frmBuffer[BUFMINSIZE]->inSurf)->pCmSurface2D );
+        //    assert(result == 0);
+        //}
+
+        if(static_cast<CmSurface2DEx*>(frmBuffer[BUFMINSIZE+1]->outSurf)->pCmSurface2D && static_cast<CmSurface2DEx*>(frmBuffer[BUFMINSIZE+1]->outSurf)->pCmSurface2D)
         {
             frmSupply->FreeSurface(static_cast<CmSurface2DEx*>(frmBuffer[BUFMINSIZE+1]->outSurf)->pCmSurface2D);
-            static_cast<CmSurface2DEx*>(frmBuffer[BUFMINSIZE+1]->outSurf)->pCmSurface2D = frmSupply->GetWorkSurfaceCM();
         }
+
+        if(!static_cast<CmSurface2DEx*>(frmBuffer[BUFMINSIZE+1]->outSurf)->pCmSurface2D)
+            static_cast<CmSurface2DEx*>(frmBuffer[BUFMINSIZE+1]->outSurf)->pCmSurface2D = frmSupply->GetWorkSurfaceCM();
 
         static_cast<CmSurface2DEx*>(frmBuffer[0]->inSurf)->pCmSurface2D = surf_in;
         static_cast<CmSurface2DEx*>(frmBuffer[0]->outSurf)->pCmSurface2D = surf_out;
@@ -416,7 +480,7 @@ mfxStatus PTIR_ProcessorCM::PTIR_ProcessFrame(CmSurface2D *surf_in, CmSurface2D 
         return MFX_ERR_MORE_DATA;
     }
 
-        mfxStatus mfxSts = MFX_ERR_NONE;
+    mfxStatus mfxSts = MFX_ERR_NONE;
     if(surf_in)
     {
     //for (uiFrame = uiStart, uiFrameOut = 0, uiCur = 1; uiFrame < uiCount; ++uiFrame)
@@ -428,40 +492,31 @@ mfxStatus PTIR_ProcessorCM::PTIR_ProcessFrame(CmSurface2D *surf_in, CmSurface2D 
 
         if (true/*uiFrame < uiStart + uiCount*/)
         {
-            //QueryPerformanceCounter(&liTime[uiTimer++]);
-            //----------------------------------------
-            // Loading
-            //----------------------------------------
-            //LoadNextFrameInI420(hIn, pcFormat, frmBuffer[uiCur], uiSize, pucIO);
             int result = -1;
             CmDeviceEx& device = pdeinterlaceFilter->DeviceEx();
             if(static_cast<CmSurface2DEx*>(frmBuffer[uiCur]->inSurf)->pCmSurface2D && !mb_UsePtirSurfs)
             {
-                frmSupply->FreeSurface(static_cast<CmSurface2DEx*>(frmBuffer[uiCur]->inSurf)->pCmSurface2D);
                 mfxSts = frmSupply->FreeSurface(static_cast<CmSurface2DEx*>(frmBuffer[uiCur]->inSurf)->pCmSurface2D);
             }
             if(static_cast<CmSurface2DEx*>(frmBuffer[uiCur]->outSurf)->pCmSurface2D && !mb_UsePtirSurfs)
             {
-                frmSupply->FreeSurface(static_cast<CmSurface2DEx*>(frmBuffer[uiCur]->outSurf)->pCmSurface2D);
                 mfxSts = frmSupply->FreeSurface(static_cast<CmSurface2DEx*>(frmBuffer[uiCur]->outSurf)->pCmSurface2D);
             }
 
-
-
             static_cast<CmSurface2DEx*>(frmBuffer[uiCur]->inSurf)->pCmSurface2D = surf_in;
             static_cast<CmSurface2DEx*>(frmBuffer[uiCur]->outSurf)->pCmSurface2D = surf_out;
-            //m_pmfxCore->IncreaseReference(m_pmfxCore->pthis, &CmToMfxSurfmap[surf_in]->Data);
-            //m_pmfxCore->IncreaseReference(m_pmfxCore->pthis, &CmToMfxSurfmap[surf_out]->Data);
+
             surf_out = 0;
             if(static_cast<CmSurface2DEx*>(frmBuffer[BUFMINSIZE]->outSurf)->pCmSurface2D == 0)
             {
                 static_cast<CmSurface2DEx*>(frmBuffer[BUFMINSIZE]->outSurf)->pCmSurface2D = frmSupply->GetWorkSurfaceCM();
             }
+            //if(static_cast<CmSurface2DEx*>(frmBuffer[BUFMINSIZE]->inSurf)->pCmSurface2D == 0)
+            //{
+            //    result = device->CreateSurface2D(uiWidth, uiHeight, CM_SURFACE_FORMAT_NV12, static_cast<CmSurface2DEx*>(frmBuffer[BUFMINSIZE]->inSurf)->pCmSurface2D );
+            //    assert(result == 0);
+            //}
 
-            //QueryPerformanceCounter(&liTime[uiTimer++]);
-            //----------------------------------------
-            // Picture Format Conversion
-            //----------------------------------------
             frmBuffer[uiCur]->frmProperties.tindex = uiFrame + 1;
             deinterlaceFilter->CalculateSADRs(frmBuffer[uiCur], frmBuffer[uiNext]);
             frmBuffer[uiCur]->frmProperties.processed = TRUE;
@@ -476,10 +531,15 @@ mfxStatus PTIR_ProcessorCM::PTIR_ProcessFrame(CmSurface2D *surf_in, CmSurface2D 
                     for(mfxU32 i = 0; i < (BUFMINSIZE - 1); ++i)
                     {
                         if(!static_cast<CmSurface2DEx*>(frmBuffer[i]->outSurf)->pCmSurface2D)
-                            device->CreateSurface2D(uiWidth, uiHeight, CM_SURFACE_FORMAT_NV12, static_cast<CmSurface2DEx*>(frmBuffer[i]->outSurf)->pCmSurface2D );
+                        {
+                            static_cast<CmSurface2DEx*>(frmBuffer[i]->outSurf)->pCmSurface2D = frmSupply->GetWorkSurfaceCM();
+                        }
                         if(!static_cast<CmSurface2DEx*>(frmBuffer[i]->inSurf)->pCmSurface2D)
-                            device->CreateSurface2D(uiWidth, uiHeight, CM_SURFACE_FORMAT_NV12, static_cast<CmSurface2DEx*>(frmBuffer[i]->inSurf)->pCmSurface2D );
-                        b_firstFrameProceed = false;
+                        {
+                            result = device->CreateSurface2D(uiWidth, uiHeight, CM_SURFACE_FORMAT_NV12, static_cast<CmSurface2DEx*>(frmBuffer[i]->inSurf)->pCmSurface2D );
+                            assert(result == 0);
+                            b_firstFrameProceed = false;
+                        }
                     }
                 }
                 Analyze_Buffer_Stats_CM(frmBuffer, &mainPattern, &uiDispatch, &uiisInterlaced);
@@ -494,7 +554,7 @@ mfxStatus PTIR_ProcessorCM::PTIR_ProcessFrame(CmSurface2D *surf_in, CmSurface2D 
                     {
                         if (!frmBuffer[i]->frmProperties.drop)
                         {
-                            CheckGenFrameCM(frmBuffer, i, mainPattern.ucPatternType);
+                            CheckGenFrameCM(frmBuffer, i, mainPattern.ucPatternType, uiisInterlaced);
                             Prepare_frame_for_queueCM(&frmIn, frmBuffer[i], uiWidth, uiHeight, 0, mb_UsePtirSurfs);
                             memcpy(frmIn->plaY.ucStats.ucRs, frmBuffer[i]->plaY.ucStats.ucRs, sizeof(double)* 10);
 
@@ -510,10 +570,9 @@ mfxStatus PTIR_ProcessorCM::PTIR_ProcessFrame(CmSurface2D *surf_in, CmSurface2D 
                             frmBuffer[i]->frmProperties.drop = FALSE;
                             frmSupply->FreeSurface(static_cast<CmSurface2DEx*>(frmBuffer[i]->inSurf)->pCmSurface2D);
                             frmSupply->FreeSurface(static_cast<CmSurface2DEx*>(frmBuffer[i]->outSurf)->pCmSurface2D);
-                            if(0 == surf_in)
-                                std::cout << "DEEEE\n";
-                            static_cast<CmSurface2DEx*>(frmBuffer[i]->inSurf)->pCmSurface2D  = 0;
-                            static_cast<CmSurface2DEx*>(frmBuffer[i]->outSurf)->pCmSurface2D = 0;
+
+                            //static_cast<CmSurface2DEx*>(frmBuffer[i]->inSurf)->pCmSurface2D  = 0;
+                            //static_cast<CmSurface2DEx*>(frmBuffer[i]->outSurf)->pCmSurface2D = 0;
 
                         }
                     }
@@ -617,54 +676,31 @@ mfxStatus PTIR_ProcessorCM::PTIR_ProcessFrame(CmSurface2D *surf_in, CmSurface2D 
                 //----------------------------------------
                 if (frmIn)
                 {
-                    ferror = FALSE;
-#ifndef GPUPATH
-                    TrimBorders(&frmIn->plaY, &frmIO[LASTFRAME].plaY);
-                    TrimBorders(&frmIn->plaU, &frmIO[LASTFRAME].plaU);
-                    TrimBorders(&frmIn->plaV, &frmIO[LASTFRAME].plaV);
-
-                    fprintf(fTCodeOut, "%4.3lf\n", frmIn->frmProperties.timestamp);
-                    ferror = WriteFile(hOut, frmIO[LASTFRAME].ucMem, frmIO[LASTFRAME].uiSize, &uiBytesRead, NULL);
-#else
                     mfxFrameSurface1* output = 0;
-                    mfxFrameSurface1* input = 0;
+                    //mfxFrameSurface1* input = 0;
                     std::map<CmSurface2D*,mfxFrameSurface1*>::iterator it;
                     it = CmToMfxSurfmap.find(static_cast<CmSurface2DEx*>(frmIn->outSurf)->pCmSurface2D);
                     if(it != CmToMfxSurfmap.end())
                     {
                         output = CmToMfxSurfmap[static_cast<CmSurface2DEx*>(frmIn->outSurf)->pCmSurface2D];
-                        CmToMfxSurfmap.erase(it);
+                        //CmToMfxSurfmap.erase(it);
                     }
-                    it = CmToMfxSurfmap.find(static_cast<CmSurface2DEx*>(frmIn->inSurf)->pCmSurface2D);
-                    if(it != CmToMfxSurfmap.end())
+                    assert(0 != output);
+                    if(frmIn->outState == Frame::OUT_UNCHANGED)
                     {
-                        input = CmToMfxSurfmap[static_cast<CmSurface2DEx*>(frmIn->inSurf)->pCmSurface2D];
-                        CmToMfxSurfmap.erase(it);
+                        assert(0 != static_cast<CmSurface2DEx*>(frmIn->inSurf)->pCmSurface2D);
+                        frmSupply->CMCopyGPUToGpu(static_cast<CmSurface2DEx*>(frmIn->outSurf)->pCmSurface2D, static_cast<CmSurface2DEx*>(frmIn->inSurf)->pCmSurface2D);
                     }
-
-                    //CmToMfxSurfmap.erase(it);
-                    if(input)
-                        mfxSts = m_pmfxCore->DecreaseReference(m_pmfxCore->pthis, &input->Data);
 
                     *surf_outt = output;
-                    CmDeviceEx& pCMdevice = this->deinterlaceFilter->DeviceEx();
-                    int result = -1;
-                    result = pCMdevice->DestroySurface(static_cast<CmSurface2DEx*>(frmIn->outSurf)->pCmSurface2D);
+
                     mfxSts = frmSupply->FreeSurface(static_cast<CmSurface2DEx*>(frmIn->inSurf)->pCmSurface2D);
+                    static_cast<CmSurface2DEx*>(frmIn->outSurf)->pCmSurface2D = 0;
 
                     Frame_ReleaseCM(frmIn);
                     free(frmIn);
+                    output->Data.TimeStamp = uiFrameOut;
                     frmSupply->AddOutputSurf(output);
-                            if(0 == surf_in)
-                                std::cout << "DEEEE\n";
-
-#endif
-#if PRINTX == 1
-                    dSAD = frmIn->plaY.ucStats.ucSAD;
-                    dRs = frmIn->plaY.ucStats.ucRs;
-                    printf("%i\t%4.3lf\t%4.3lf\t%4.3lf\t%4.3lf\t%4.3lf\t%6.3lf\t%4.3lf\t%4.3lf\t%4.3lf\n", frmIn->frmProperties.tindex, dSAD[0], dSAD[1], dSAD[2], dSAD[3], dSAD[4], dRs[0], dRs[1], dRs[4], dRs[5]);
-#endif
-                    //free(frmIn);
 
                     uiFrameOut++;
                 }
@@ -681,56 +717,63 @@ mfxStatus PTIR_ProcessorCM::PTIR_ProcessFrame(CmSurface2D *surf_in, CmSurface2D 
                 frmIn = FrameQueue_Get(&fqIn);
                 if (frmIn)
                 {
-                    mfxFrameSurface1* output = CmToMfxSurfmap[static_cast<CmSurface2DEx*>(frmIn->outSurf)->pCmSurface2D];
-                    mfxFrameSurface1* input = CmToMfxSurfmap[static_cast<CmSurface2DEx*>(frmIn->inSurf)->pCmSurface2D];
-
-                    if(!output)
-                        std::cout << "SMTH BAD HAPPENED!!!\n";
+                    mfxFrameSurface1* output = 0;
+                    mfxFrameSurface1* input  = 0;
 
                     std::map<CmSurface2D*,mfxFrameSurface1*>::iterator it;
                     it = CmToMfxSurfmap.find(static_cast<CmSurface2DEx*>(frmIn->outSurf)->pCmSurface2D);
-                    CmToMfxSurfmap.erase(it);
+                    if(it != CmToMfxSurfmap.end())
+                        output = CmToMfxSurfmap[static_cast<CmSurface2DEx*>(frmIn->outSurf)->pCmSurface2D];
+                    it = CmToMfxSurfmap.find(static_cast<CmSurface2DEx*>(frmIn->inSurf)->pCmSurface2D);
+                    if(it != CmToMfxSurfmap.end())
+                        input = CmToMfxSurfmap[static_cast<CmSurface2DEx*>(frmIn->inSurf)->pCmSurface2D];
 
+                    assert(0 != output);
+                    assert(0 != input);
                     if(frmIn->outState == Frame::OUT_UNCHANGED)
                     {
+                        assert(0 != static_cast<CmSurface2DEx*>(frmIn->inSurf)->pCmSurface2D);
                         frmSupply->CMCopyGPUToGpu(static_cast<CmSurface2DEx*>(frmIn->outSurf)->pCmSurface2D, static_cast<CmSurface2DEx*>(frmIn->inSurf)->pCmSurface2D);
                     }
-                    if(input)
-                    {
-                        mfxSts = m_pmfxCore->DecreaseReference(m_pmfxCore->pthis, &input->Data);
-                        it = CmToMfxSurfmap.find(static_cast<CmSurface2DEx*>(frmIn->inSurf)->pCmSurface2D);
-                        CmToMfxSurfmap.erase(it);
-                    }
-
                     *surf_outt = output;
-                    CmDeviceEx& pCMdevice = this->deinterlaceFilter->DeviceEx();
-                    int result = -1;
-                    result = pCMdevice->DestroySurface(static_cast<CmSurface2DEx*>(frmIn->outSurf)->pCmSurface2D);
-                     mfxSts = frmSupply->FreeSurface(static_cast<CmSurface2DEx*>(frmIn->inSurf)->pCmSurface2D);
-                    //if(frmIn->outState == Frame::OUT_UNCHANGED)
+
+                    mfxSts = frmSupply->FreeSurface(static_cast<CmSurface2DEx*>(frmIn->inSurf)->pCmSurface2D);
+                    static_cast<CmSurface2DEx*>(frmIn->outSurf)->pCmSurface2D = 0;
 
                     Frame_ReleaseCM(frmIn);
                     free(frmIn);
+                    output->Data.TimeStamp = uiFrameOut;
                     frmSupply->AddOutputSurf(output);
-
-                            if(0 == surf_in)
-                                std::cout << "DEEEE\n";
 
                     uiFrameOut++;
                 }
             }
         }
-        //QueryPerformanceCounter(&liTime[uiTimer++]);
 
-        // Update Time Counters
-        //for (i = 0; i < uiTimer - 1; ++i)
-        //    dTime[i] += (double)(liTime[i + 1].QuadPart - liTime[i].QuadPart) / liFreq.QuadPart;
-
-    //}
-        return MFX_ERR_MORE_DATA;
+        uiFrame++;
     }
-    else if (uiCur)
+    
+    if (uiCur && beof)
     {
+        if(beof)
+        {
+            CmDeviceEx& device = pdeinterlaceFilter->DeviceEx();
+            for(mfxU32 i = 0; i < (BUFMINSIZE - 1); ++i)
+            {
+                if(!static_cast<CmSurface2DEx*>(frmBuffer[i]->outSurf)->pCmSurface2D)
+                {
+                    static_cast<CmSurface2DEx*>(frmBuffer[i]->outSurf)->pCmSurface2D = frmSupply->GetWorkSurfaceCM();
+                }
+                if(!static_cast<CmSurface2DEx*>(frmBuffer[i]->inSurf)->pCmSurface2D)
+                {
+                    int result = -1;
+                    result = device->CreateSurface2D(uiWidth, uiHeight, CM_SURFACE_FORMAT_NV12, static_cast<CmSurface2DEx*>(frmBuffer[i]->inSurf)->pCmSurface2D );
+                    assert(result == 0);
+                    b_firstFrameProceed = false;
+                }
+            }
+        }
+
         for(i = 0; i < uiCur; i++)
         {
             if (!frmBuffer[i]->frmProperties.drop && (frmBuffer[i]->frmProperties.tindex > uiLastFrameNumber))
@@ -765,7 +808,7 @@ mfxStatus PTIR_ProcessorCM::PTIR_ProcessFrame(CmSurface2D *surf_in, CmSurface2D 
                     uiBufferCount++;
                     if (uiisInterlaced != 2 || (uiisInterlaced == 2 && uiBufferCount < 5))
                     {
-                        CheckGenFrameCM(frmBuffer, i, mainPattern.ucPatternType);
+                        CheckGenFrameCM(frmBuffer, i, mainPattern.ucPatternType,uiisInterlaced);
                         Prepare_frame_for_queueCM(&frmIn, frmBuffer[i], uiWidth, uiHeight, 0, mb_UsePtirSurfs);
                         memcpy(frmIn->plaY.ucStats.ucRs, frmBuffer[i]->plaY.ucStats.ucRs, sizeof(double)* 10);
 
@@ -779,6 +822,10 @@ mfxStatus PTIR_ProcessorCM::PTIR_ProcessFrame(CmSurface2D *surf_in, CmSurface2D 
                         uiBufferCount = 0;
                 }
             }
+            else
+            {
+                //std::cout << "DROP!\n";
+            }
         }
         uiCur = 0;
         
@@ -789,65 +836,38 @@ mfxStatus PTIR_ProcessorCM::PTIR_ProcessFrame(CmSurface2D *surf_in, CmSurface2D 
             frmIn = FrameQueue_Get(&fqIn);
             if (frmIn)
             {
-                mfxFrameSurface1* output = CmToMfxSurfmap[static_cast<CmSurface2DEx*>(frmIn->outSurf)->pCmSurface2D];
-                mfxFrameSurface1* input = CmToMfxSurfmap[static_cast<CmSurface2DEx*>(frmIn->inSurf)->pCmSurface2D];
-
+                mfxFrameSurface1* output = 0;
+                mfxFrameSurface1* input  = 0;
 
                 std::map<CmSurface2D*,mfxFrameSurface1*>::iterator it;
                 it = CmToMfxSurfmap.find(static_cast<CmSurface2DEx*>(frmIn->outSurf)->pCmSurface2D);
-                CmToMfxSurfmap.erase(it);
-                if(input)
-                {
-                    mfxSts = m_pmfxCore->DecreaseReference(m_pmfxCore->pthis, &input->Data);
-                    it = CmToMfxSurfmap.find(static_cast<CmSurface2DEx*>(frmIn->inSurf)->pCmSurface2D);
-                    CmToMfxSurfmap.erase(it);
-                }
+                if(it != CmToMfxSurfmap.end())
+                    output = CmToMfxSurfmap[static_cast<CmSurface2DEx*>(frmIn->outSurf)->pCmSurface2D];
+                it = CmToMfxSurfmap.find(static_cast<CmSurface2DEx*>(frmIn->inSurf)->pCmSurface2D);
+                if(it != CmToMfxSurfmap.end())
+                    input = CmToMfxSurfmap[static_cast<CmSurface2DEx*>(frmIn->inSurf)->pCmSurface2D];
 
+                assert(0 != output);
+                assert(0 != input);
+                if(frmIn->outState == Frame::OUT_UNCHANGED)
+                {
+                    assert(0 != static_cast<CmSurface2DEx*>(frmIn->inSurf)->pCmSurface2D);
+                    frmSupply->CMCopyGPUToGpu(static_cast<CmSurface2DEx*>(frmIn->outSurf)->pCmSurface2D, static_cast<CmSurface2DEx*>(frmIn->inSurf)->pCmSurface2D);
+                }
+                *surf_outt = output;
 
                 *surf_outt = output;
-                CmDeviceEx& pCMdevice = this->deinterlaceFilter->DeviceEx();
-                int result = -1;
-                result = pCMdevice->DestroySurface(static_cast<CmSurface2DEx*>(frmIn->outSurf)->pCmSurface2D);
                 mfxSts = frmSupply->FreeSurface(static_cast<CmSurface2DEx*>(frmIn->inSurf)->pCmSurface2D);
 
                 Frame_ReleaseCM(frmIn);
                 free(frmIn);
+                output->Data.TimeStamp = uiFrameOut;
                 frmSupply->AddOutputSurf(output);
-
 
                 uiFrameOut++;
             }
         }
     }
-    if (fqIn.iCount)
-    {
-        frmIn = FrameQueue_Get(&fqIn);
-        if (frmIn)
-        {
-            mfxFrameSurface1* output = CmToMfxSurfmap[static_cast<CmSurface2DEx*>(frmIn->outSurf)->pCmSurface2D];
-            mfxFrameSurface1* input = CmToMfxSurfmap[static_cast<CmSurface2DEx*>(frmIn->inSurf)->pCmSurface2D];
-            mfxSts = m_pmfxCore->DecreaseReference(m_pmfxCore->pthis, &input->Data);
-
-
-            std::map<CmSurface2D*,mfxFrameSurface1*>::iterator it;
-            it = CmToMfxSurfmap.find(static_cast<CmSurface2DEx*>(frmIn->outSurf)->pCmSurface2D);
-            CmToMfxSurfmap.erase(it);
-            it = CmToMfxSurfmap.find(static_cast<CmSurface2DEx*>(frmIn->inSurf)->pCmSurface2D);
-            CmToMfxSurfmap.erase(it);
-
-            *surf_outt = output;
-            CmDeviceEx& pCMdevice = this->deinterlaceFilter->DeviceEx();
-            int result = -1;
-            result = pCMdevice->DestroySurface(static_cast<CmSurface2DEx*>(frmIn->outSurf)->pCmSurface2D);
-            mfxSts = frmSupply->FreeSurface(static_cast<CmSurface2DEx*>(frmIn->inSurf)->pCmSurface2D);
-
-            Frame_ReleaseCM(frmIn);
-            free(frmIn);
-            return MFX_ERR_NONE;
-        }
-    }
-
-
 
     return MFX_ERR_MORE_DATA;
 }

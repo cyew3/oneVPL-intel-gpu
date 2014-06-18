@@ -76,11 +76,28 @@ public:
                 }
             }
             mfxI32 result = -1;
-            result = (*pCMdevice)->CreateSurface2D((IDirect3DSurface9 *) s_out->Data.MemId, cm_out);
-            if(result)
-                std::cout << "CM ERROR while creating CM surface\n";
-            mfxCoreIfce->IncreaseReference(mfxCoreIfce->pthis, &s_out->Data);
-            (*CmToMfxSurfmap)[cm_out] = s_out;
+
+            std::map<CmSurface2D*,mfxFrameSurface1*>::iterator it;
+            for (it = CmToMfxSurfmap->begin(); it != CmToMfxSurfmap->end(); ++it)
+            {
+                if(s_out == it->second)
+                {
+                    cm_out = it->first;
+                    break;
+                }
+            }
+            if(!cm_out)
+            {
+                result = (*pCMdevice)->CreateSurface2D((IDirect3DSurface9 *) s_out->Data.MemId, cm_out);
+                assert(result == 0);
+                (*CmToMfxSurfmap)[cm_out] = s_out;
+            }
+            //result = (*pCMdevice)->CreateSurface2D((IDirect3DSurface9 *) s_out->Data.MemId, cm_out);
+            //assert(result == 0);
+            //if(result)
+            //    std::cout << "CM ERROR while creating CM surface\n";
+            //mfxCoreIfce->IncreaseReference(mfxCoreIfce->pthis, &s_out->Data);
+            //(*CmToMfxSurfmap)[cm_out] = s_out;
             return cm_out;
         }
         return 0;
@@ -149,6 +166,7 @@ public:
                     int result = 0;
                     try{
                         result = (*pCMdevice)->DestroySurface(cm_surf);
+                        assert(result == 0);
                     }
                     catch(...)
                     {
@@ -204,8 +222,10 @@ public:
         
         return MFX_ERR_NONE;
     }
-    virtual mfxStatus FreeSurface(CmSurface2D* cmSurf)
+    virtual mfxStatus FreeSurface(CmSurface2D*& cmSurf)
     {
+        if(0 == cmSurf)
+            return MFX_ERR_NULL_PTR;
         mfxFrameSurface1* mfxSurf;
         std::map<CmSurface2D*,mfxFrameSurface1*>::iterator it;
         it = CmToMfxSurfmap->find(cmSurf);
@@ -214,14 +234,20 @@ public:
             mfxSurf = (*CmToMfxSurfmap)[cmSurf];
             if(mfxSurf)
                 mfxCoreIfce->DecreaseReference(mfxCoreIfce->pthis, &mfxSurf->Data);
-            CmToMfxSurfmap->erase(it);
+            //CmToMfxSurfmap->erase(it);
+            cmSurf = 0;
         }
-        int result = -1;
-        result = (*pCMdevice)->DestroySurface(cmSurf);
-        if(result)
-            return MFX_ERR_DEVICE_FAILED;
         else
-            return MFX_ERR_NONE;
+        {
+            int result = -1;
+            result = (*pCMdevice)->DestroySurface(cmSurf);
+            assert(0 == result);
+            if(result)
+                return MFX_ERR_DEVICE_FAILED;
+            else
+                return MFX_ERR_NONE;
+        }
+        return MFX_ERR_NONE;
     }
 
     virtual mfxStatus CMCopyGPUToGpu(CmSurface2D* cmSurfOut, CmSurface2D* cmSurfIn)

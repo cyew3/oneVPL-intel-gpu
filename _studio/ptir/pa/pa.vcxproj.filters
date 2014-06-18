@@ -11,6 +11,9 @@
     <ClCompile Include="PFC\PFC.c">
       <Filter>PFC</Filter>
     </ClCompile>
+    <ClCompile Include="telecine\model.c">
+      <Filter>Telecine</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="api.h" />
@@ -23,6 +26,9 @@
     </ClInclude>
     <ClInclude Include="PFC\PFC.h">
       <Filter>PFC</Filter>
+    </ClInclude>
+    <ClInclude Include="telecine\model.h">
+      <Filter>Telecine</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

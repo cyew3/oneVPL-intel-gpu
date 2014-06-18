@@ -129,6 +129,7 @@ protected:
     bool bEOS;
     bool bInited;
     bool par_accel;
+    bool in_expected;
     frameSupplier* frmSupply;
     mfxFrameSurface1* prevSurf;
     std::vector<PTIR_Task*> vTasks;

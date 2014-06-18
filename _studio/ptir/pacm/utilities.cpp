@@ -414,7 +414,7 @@ static void Detect_Interlacing_Artifacts_fast_CM(Frame **pFrm, Pattern *ptrn, un
 void Analyze_Buffer_Stats_CM(Frame *frmBuffer[BUFMINSIZE], Pattern *ptrn, unsigned int *pdispatch, unsigned int *uiisInterlaced)
 {
     unsigned int uiDropCount = 0,
-        i = 0;
+    i = 0;
 
     ptrn->uiInterlacedFramesNum = Artifacts_Detection(frmBuffer) + frmBuffer[0]->frmProperties.interlaced;
 
@@ -424,6 +424,7 @@ void Analyze_Buffer_Stats_CM(Frame *frmBuffer[BUFMINSIZE], Pattern *ptrn, unsign
             Detect_Interlacing_Artifacts_fast_CM(frmBuffer, ptrn, pdispatch);
         else
             Detect_32Pattern_rigorous_CM(frmBuffer, ptrn, pdispatch);
+
         if(!ptrn->ucLatch.ucFullLatch)
         {
             if(ptrn->uiInterlacedFramesNum < 2 && !ptrn->ucLatch.ucThalfLatch)
@@ -599,10 +600,10 @@ void UndoPatternTypes5and7CM(Frame *frmBuffer[BUFMINSIZE], unsigned int firstPos
 
 }
 
-void CheckGenFrameCM(Frame **pfrmIn, unsigned int frameNum, unsigned int patternType)
+void CheckGenFrameCM(Frame **pfrmIn, unsigned int frameNum, unsigned int patternType, unsigned int uiOPMode)
 {
     BOOL stop = FALSE;
-    if(pfrmIn[frameNum]->frmProperties.candidate || patternType == 0)
+    if ((pfrmIn[frameNum]->frmProperties.candidate || patternType == 0) && (uiOPMode == 0))
     {
         pdeinterlaceFilter->MeasureRs(pfrmIn[frameNum]);
         pfrmIn[frameNum]->frmProperties.interlaced = FALSE;
@@ -619,6 +620,7 @@ void Prepare_frame_for_queueCM(Frame **pfrmOut, Frame *pfrmIn, unsigned int uiWi
 {
     assert(pfrmIn->inSurf != NULL && pfrmIn->outSurf != NULL);
     *pfrmOut = (Frame *)malloc(sizeof(Frame));
+    memset(*pfrmOut, 0, sizeof(Frame));
     assert(*pfrmOut != NULL);
     Frame_CreateCM(*pfrmOut, uiWidth, uiHeight, uiWidth / 2, uiHeight / 2, 64, bCreate);
     if(frmSupply && !bCreate)
@@ -640,6 +642,8 @@ void Frame_CreateCM(Frame *pfrmIn, unsigned int uiYWidth, unsigned int uiYHeight
     unsigned int uiOffset;
     pfrmIn->uiSize = (uiYWidth + 2 * uiBorder) * (uiYHeight + 2 * uiBorder) + (2 * (uiUVWidth + 2 * uiBorder) * (uiUVHeight + 2 * uiBorder));
     //pfrmIn->ucMem = (unsigned char *)malloc(pfrmIn->uiSize);
+    assert(pfrmIn->inSurf == 0);
+    assert(pfrmIn->outSurf == 0);
     pfrmIn->ucMem = NULL;
     pfrmIn->inSurf = NULL;
     pfrmIn->outSurf = NULL;

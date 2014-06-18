@@ -90,7 +90,8 @@ mfxStatus MFX_PTIR_Plugin::PluginInit(mfxCoreInterface *core)
     mfxRes = m_pmfxCore->GetCoreParam(m_pmfxCore->pthis, &par);
 
 //    b_firstFrameProceed = false;
-    bInited = false;
+    bInited     = false;
+    in_expected = false;
     ptir = 0;
 
     return mfxRes;
@@ -133,6 +134,7 @@ mfxStatus MFX_PTIR_Plugin::VPPFrameSubmitEx(mfxFrameSurface1 *surface_in, mfxFra
     if(NULL == surface_work)
     {
         m_guard.Unlock();
+        in_expected = false;
         return MFX_ERR_NULL_PTR;
     }
     if(!surface_in)
@@ -145,17 +147,20 @@ mfxStatus MFX_PTIR_Plugin::VPPFrameSubmitEx(mfxFrameSurface1 *surface_in, mfxFra
         if(outSurfs.size())
         {
             //*surface_out = outSurfs.front();
-            addInSurf(surface_in);
+            if(in_expected)
+                addInSurf(surface_in);
             addWorkSurf(surface_work);
 
-            if(inSurfs.size() < 5 && outSurfs.size() < 3)
+            if(inSurfs.size() < 6 && outSurfs.size() < 3)
             {
                 m_guard.Unlock();
+                in_expected = true;
                 return MFX_ERR_MORE_DATA;
             }
-            if(workSurfs.size() < 5 && outSurfs.size() < 3)
+            if(workSurfs.size() < 6 && outSurfs.size() < 3)
             {
                 m_guard.Unlock();
+                in_expected = false;
                 return MFX_ERR_MORE_SURFACE;
             }
 
@@ -163,29 +168,36 @@ mfxStatus MFX_PTIR_Plugin::VPPFrameSubmitEx(mfxFrameSurface1 *surface_in, mfxFra
             if(mfxSts)
                 return mfxSts;
             m_guard.Unlock();
+            in_expected = false;
             return MFX_ERR_NONE;
         }
-        else if(inSurfs.size() < 6)
+        else if(inSurfs.size() < 7)
         {
-            addInSurf(surface_in);
+            if(in_expected)
+                addInSurf(surface_in);
             addWorkSurf(surface_work);
             m_guard.Unlock();
+            in_expected = true;
             return MFX_ERR_MORE_DATA;
         }
         else if((workSurfs.size() < 8 && !ptir->bFullFrameRate) || (workSurfs.size() < 14 && ptir->bFullFrameRate) )
         {
-            addInSurf(surface_in);
+            if(in_expected)
+                addInSurf(surface_in);
             addWorkSurf(surface_work);
             m_guard.Unlock();
+            in_expected = false;
             return MFX_ERR_MORE_SURFACE;
         }
         else
         {
-            addInSurf(surface_in);
+            if(in_expected)
+                addInSurf(surface_in);
             addWorkSurf(surface_work);
             mfxSts = PrepareTask(ptir_task, task, surface_out);
             m_guard.Unlock();
-            return mfxSts;
+            in_expected = false;
+            return MFX_ERR_NONE;
         }
     } 
     else
@@ -196,10 +208,8 @@ mfxStatus MFX_PTIR_Plugin::VPPFrameSubmitEx(mfxFrameSurface1 *surface_in, mfxFra
 
             mfxSts = PrepareTask(ptir_task, task, surface_out);
             m_guard.Unlock();
-            if(0 != ptir->uiCur || ptir->fqIn.iCount || outSurfs.size())
-                return MFX_ERR_MORE_SURFACE;
-            else
-                return MFX_ERR_NONE;
+            in_expected = false;
+            return MFX_ERR_NONE;
         }
         else if(0 != ptir->uiCur || ptir->fqIn.iCount || outSurfs.size())
         {
@@ -209,14 +219,13 @@ mfxStatus MFX_PTIR_Plugin::VPPFrameSubmitEx(mfxFrameSurface1 *surface_in, mfxFra
                 return mfxSts;
 
             m_guard.Unlock();
-            if((ptir->uiCur + outSurfs.size()) > 1)
-                return MFX_ERR_MORE_SURFACE;
-            else
-                return MFX_ERR_NONE;
+            in_expected = false;
+            return MFX_ERR_NONE;
         }
         else if(0 == ptir->fqIn.iCount && 0 == ptir->uiCur)
         {
             m_guard.Unlock();
+            in_expected = true;
             return MFX_ERR_MORE_DATA;
         }
     }
@@ -255,7 +264,7 @@ mfxStatus MFX_PTIR_Plugin::Execute(mfxThreadTask task, mfxU32 , mfxU32 )
             }
             catch(...)
             {
-                mfxSts = MFX_ERR_UNKNOWN;
+                mfxSts = MFX_ERR_DEVICE_FAILED;
                 return mfxSts;
             }
 
@@ -298,43 +307,43 @@ mfxStatus MFX_PTIR_Plugin::Execute(mfxThreadTask task, mfxU32 , mfxU32 )
     {
         ;//do fucking nothing
     }
-    //else
-    if((!(inSurfs.size() != 0 && outSurfs.size() < 2) && !(outSurfs.size() != 0)) ||
-        (bEOS && outSurfs.size() == 1 && workSurfs.size() > 0))
-    {
-        //get cached frame
-        surface_out = GetFreeSurf(workSurfs);
-        try
-        {
-            mfxSts = ptir->Process(0, &surface_out, m_pmfxCore, &surface_outtt, bEOS);
-        }
-        catch(...)
-        {
-            mfxSts = MFX_ERR_UNKNOWN;
-            return mfxSts;
-        }
-        if(MFX_ERR_NONE == mfxSts)
-        {
-            //outSurfs.push_back(surface_outtt);
-            //m_pmfxCore->DecreaseReference(m_pmfxCore->pthis, &surface_out->Data);
-            surface_out = 0;
-        }
-        else if(MFX_ERR_MORE_SURFACE == mfxSts)
-        {
-            m_pmfxCore->DecreaseReference(m_pmfxCore->pthis, &surface_out->Data);
-            surface_out = 0;
-            mfxSts = MFX_ERR_NONE;
-        }
-        else if(MFX_ERR_MORE_DATA == mfxSts)
-        {
-            ;
-        }
-        else
-        {
-            assert(0);
-            return mfxSts;
-        }
-    }
+    ////else
+    //if((!(inSurfs.size() != 0 && outSurfs.size() < 2) && !(outSurfs.size() != 0)) ||
+    //    (bEOS && outSurfs.size() == 1 && workSurfs.size() > 0))
+    //{
+    //    //get cached frame
+    //    surface_out = GetFreeSurf(workSurfs);
+    //    try
+    //    {
+    //        mfxSts = ptir->Process(0, &surface_out, m_pmfxCore, &surface_outtt, bEOS);
+    //    }
+    //    catch(...)
+    //    {
+    //        mfxSts = MFX_ERR_UNKNOWN;
+    //        return mfxSts;
+    //    }
+    //    if(MFX_ERR_NONE == mfxSts)
+    //    {
+    //        //outSurfs.push_back(surface_outtt);
+    //        //m_pmfxCore->DecreaseReference(m_pmfxCore->pthis, &surface_out->Data);
+    //        surface_out = 0;
+    //    }
+    //    else if(MFX_ERR_MORE_SURFACE == mfxSts)
+    //    {
+    //        m_pmfxCore->DecreaseReference(m_pmfxCore->pthis, &surface_out->Data);
+    //        surface_out = 0;
+    //        mfxSts = MFX_ERR_NONE;
+    //    }
+    //    else if(MFX_ERR_MORE_DATA == mfxSts)
+    //    {
+    //        ;
+    //    }
+    //    else
+    //    {
+    //        assert(0);
+    //        return mfxSts;
+    //    }
+    //}
 
     //if(surface_out)
     //{
@@ -832,7 +841,7 @@ inline mfxStatus MFX_PTIR_Plugin::addWorkSurf(mfxFrameSurface1* pSurface)
 {
     if(!pSurface)
         return MFX_ERR_NONE;
-    if(workSurfs.end() == std::find (workSurfs.begin(), workSurfs.end(), pSurface) && (workSurfs.size() + ptir->fqIn.iCount + ptir->uiCur) < 23)
+    if(workSurfs.end() == std::find (workSurfs.begin(), workSurfs.end(), pSurface) && (workSurfs.size() + ptir->fqIn.iCount + ptir->uiCur) < 18)
     {
         workSurfs.push_back(pSurface);
         m_pmfxCore->IncreaseReference(m_pmfxCore->pthis, &pSurface->Data);
@@ -844,13 +853,15 @@ inline mfxStatus MFX_PTIR_Plugin::addInSurf(mfxFrameSurface1* pSurface)
 {
     if(!pSurface)
         return MFX_ERR_NONE;
-    if(pSurface && ((inSurfs.size() == 0) || (inSurfs.size() != 0 && inSurfs.back() != pSurface)) /*&& prevSurf != pSurface*/ && (inSurfs.size() + ptir->fqIn.iCount + ptir->uiCur) < 23)
+    if(pSurface && ((inSurfs.size() == 0) || (inSurfs.size() != 0 && inSurfs.back() != pSurface)) /*&& prevSurf != pSurface*/ && (inSurfs.size() + ptir->fqIn.iCount + ptir->uiCur) < 18)
     {
         if(inSurfs.end() == std::find (inSurfs.begin(), inSurfs.end(), pSurface) || inSurfs.size() == 0)
         {
             inSurfs.push_back(pSurface);
             m_pmfxCore->IncreaseReference(m_pmfxCore->pthis, &pSurface->Data);
         }
+        else
+            assert(false == true);
     }
     return MFX_ERR_NONE;
 }

@@ -754,6 +754,9 @@ void DeinterlaceFilter::FrameCreateSurface(Frame * pfrmIn,  bool bcreate)
 {
     CMUT_ASSERT_MESSAGE(pfrmIn != NULL, "NULL Frame is served as input.");
     
+    assert(pfrmIn->inSurf == 0);
+    assert(pfrmIn->outSurf == 0);
+
     if(bcreate)
     {
         pfrmIn->inSurf = new CmSurface2DEx(DeviceEx(), pfrmIn->plaY.uiWidth, pfrmIn->plaY.uiHeight, CM_SURFACE_FORMAT_NV12);

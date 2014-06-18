@@ -293,7 +293,7 @@ int main(int argc, char *argv[])
                         {
                             if (!frmBuffer[i]->frmProperties.drop)
                             {
-                                CheckGenFrameCM(frmBuffer, i, mainPattern.ucPatternType);
+                                CheckGenFrameCM(frmBuffer, i, mainPattern.ucPatternType,uiisInterlaced);
                                 Prepare_frame_for_queueCM(&frmIn, frmBuffer[i], uiWidth, uiHeight);
                                 memcpy(frmIn->plaY.ucStats.ucRs, frmBuffer[i]->plaY.ucStats.ucRs, sizeof(double)* 10);
 
@@ -520,7 +520,7 @@ int main(int argc, char *argv[])
                         uiBufferCount++;
                         if (uiisInterlaced != 2 || (uiisInterlaced == 2 && uiBufferCount < 5))
                         {
-                            CheckGenFrameCM(frmBuffer, i, mainPattern.ucPatternType);
+                            CheckGenFrameCM(frmBuffer, i, mainPattern.ucPatternType,uiisInterlaced);
                             Prepare_frame_for_queueCM(&frmIn, frmBuffer[i], uiWidth, uiHeight);
                             memcpy(frmIn->plaY.ucStats.ucRs, frmBuffer[i]->plaY.ucStats.ucRs, sizeof(double)* 10);
 

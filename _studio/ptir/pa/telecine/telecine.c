@@ -6,7 +6,7 @@ agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
 Copyright(c) 2014 Intel Corporation. All Rights Reserved.
 
-File Name: api.h
+File Name: telecine.c
 
 \* ****************************************************************************** */
 
@@ -997,672 +997,220 @@ void __stdcall Detect_Solve_3223Patterns(Frame **pFrm, Pattern *ptrn, unsigned i
     }
 }
 
+unsigned int __stdcall Classifier(double dTextureLevel, double dDynDif, double dStatDif, double dStatCount, double dCountDif,
+	                              double dZeroTexture, double dRsT, double dAngle, double dSADv, double dBigTexture,
+								  double dCount, double dRsG, double dRsDif, double dRsB, double SADCBPT, double SADCTPB)
+{
+	unsigned int ui_cls = 2;
+
+	const double dCoeff[12][4] = { {     0.0,   0.997, -0.0512,   0.2375 },
+	                               {  0.1665, -3.3511,  26.426,     0.95 },
+								   {     0.0,  0.0176,  0.6726,      0.0 },
+								   {   0.058,  -0.673,   2.671,  -2.8396 },
+								   { -2.1491,  51.764, -389.04,    943.0 },
+								   {     0.0,   5.122, -76.323,   286.58 },
+								   { -2.3272,  68.832, -649.82,  2003.68 },
+								   {     0.0,  1.0189,  -19.57,   118.84 },
+								   {     0.0,  23.314, -581.74,   3671.1 },
+								   {     0.0, -4.4652,  189.79, -1624.82 },
+								   {     0.0, -0.4282,  26.396,  -241.83 },
+								   {     0.0, -1.8092,  180.44, -3081.81 } };
+
+	if (dAngle >= 999)
+		return 0;
+	else
+	{
+		if (dAngle > 0.73)
+			return 1;
+	}
+
+	if (ui_cls == 2)
+	{
+		if (dTextureLevel <= -3.5 || dCountDif <= ((dTextureLevel * dTextureLevel * dCoeff[0][1]) + (dTextureLevel * dCoeff[0][2]) + dCoeff[0][3]))
+			ui_cls = 2;
+		else
+			return 1;
+
+		if (ui_cls == 2)
+		{
+			if (dDynDif <= ((dSADv * dSADv * dSADv * dCoeff[1][0]) + (dSADv * dSADv * dCoeff[1][1]) + (dSADv * dCoeff[1][2]) + dCoeff[1][3]) || dSADv > 7)
+			{
+				if (dSADv < 4.5 && dDynDif < (dCoeff[2][1] * exp(dSADv * dCoeff[2][2])))
+					return 0;
+				else
+				{
+					if (dSADv >= 4.5 && dSADv < 7 && dDynDif <= ((dSADv * dSADv * dSADv * dCoeff[3][0]) + (dSADv * dSADv * dCoeff[3][1]) + (dSADv * dCoeff[3][2]) + dCoeff[3][3]))
+						return 0;
+					else
+						ui_cls = 2;
+				}
+			}
+			else
+				return 1;
+
+			if (ui_cls == 2)
+			{
+				if (dSADv >= 7 && dSADv < 9.6 && dDynDif >((dSADv * dSADv * dSADv * dCoeff[4][0]) + (dSADv * dSADv * dCoeff[4][1]) + (dSADv * dCoeff[4][2]) + dCoeff[4][3]))
+					return 1;
+				else
+				{
+					if (dSADv >= 7 && dSADv < 8.3 && dDynDif <= ((dSADv * dSADv * dSADv * dCoeff[3][0]) + (dSADv * dSADv * dCoeff[3][1]) + (dSADv * dCoeff[3][2]) + dCoeff[3][3]))
+						return 0;
+					else
+					{
+						if (dSADv >= 8.3 && dSADv < 9.6 && dDynDif <= ((dSADv * dSADv * dCoeff[5][1]) + (dSADv * dCoeff[5][2]) + dCoeff[5][3]))
+							return 0;
+						else
+							ui_cls = 2;
+					}
+				}
+
+				if (ui_cls == 2)
+				{
+					if (dSADv >= 9.6 && dSADv < 12.055)
+					{
+						if (dDynDif >((dSADv * dSADv * dSADv * dCoeff[6][0]) + (dSADv * dSADv * dCoeff[6][1]) + (dSADv * dCoeff[6][2]) + dCoeff[6][3]))
+							return 1;
+						else
+						{
+							if (dDynDif < ((dSADv * dSADv * dCoeff[7][1]) + (dSADv * dCoeff[7][2]) + dCoeff[7][3]))
+								return 0;
+							else
+								ui_cls = 2;
+						}
+					}
+					else
+						ui_cls = 2;
+
+					if (ui_cls == 2)
+					{
+						if (dSADv >= 12.055 && dSADv < 15.5)
+						{
+							if (dDynDif > ((dSADv * dSADv * dCoeff[8][1]) + (dSADv * dCoeff[8][2]) + dCoeff[8][3]))
+								return 1;
+							else
+							{
+								if (dDynDif < ((dSADv * dSADv * dCoeff[7][1]) + (dSADv * dCoeff[7][2]) + dCoeff[7][3]))
+									return 0;
+								else
+									ui_cls = 2;
+							}
+						}
+						else
+							ui_cls = 2;
+
+						if (ui_cls == 2)
+						{
+							if (dSADv >= 15.5 && dSADv < 22.7)
+							{
+								if (dDynDif > ((dSADv * dSADv * dCoeff[9][1]) + (dSADv * dCoeff[9][2]) + dCoeff[9][3]))
+									return 1;
+								else
+								{
+									if (dDynDif < ((dSADv * dSADv * dCoeff[10][1]) + (dSADv * dCoeff[10][2]) + dCoeff[10][3]))
+										return 0;
+									else
+										ui_cls = 2;
+								}
+
+							}
+							else
+								ui_cls = 2;
+
+							if (ui_cls == 2)
+							{
+								if (dSADv >= 22.7 && dDynDif > ((dSADv * dSADv * dCoeff[11][1]) + (dSADv * dCoeff[11][2]) + dCoeff[11][3]))
+									return 1;
+								else
+									ui_cls = 2;
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+	if (ui_cls == 2)
+		ui_cls = classify(dTextureLevel, dDynDif, dStatDif, dStatCount, dCountDif, dZeroTexture, dRsT, dAngle, dSADv, dBigTexture, dCount, dRsG, dRsDif, dRsB, SADCBPT, SADCTPB);
+
+	if (ui_cls > 1)
+		return 0;
+	else
+		return ui_cls;
+}
+
 unsigned int __stdcall Artifacts_Detection(Frame **pFrm)
 {
-    unsigned int ui, uiIACount = 0, uiConStatus = 0;
-    double dSADv, dSADt, dSADb, dCount, dStatCount, dCountDif, dAngle, dRsG, dRsT, dRsB, dRsDif, dDynDif, dStatDif, dZeroTexture, dBigTexture, dTextureLevel;
+	unsigned int ui, uiIACount = 0, uiConStatus = 0;
+	double dSADv, dSADt, dSADb, dCount, dStatCount, dCountDif, dAngle, dRsG, dRsT, dRsB, dRsDif, dDynDif, dStatDif, dZeroTexture, dBigTexture, dTextureLevel, SADCBPT, SADCTPB;
 
-    const double dIAcoefficients[12][3] =    {{1.7832, -5.3497, 0},
-                                             {0.1983,  1.4804, 0},
-                                             {2.5075,  9.5640, 0},
-                                             {0.0344,  0.3003, 0},
-                                             {-1.1642, 1.2433, 0},
-                                             {0.2742,  0.1851, 0},
-                                             {-2.9723, 1.5171, 0},
-                                             {3.3829, -2.0947, 0},
-                                             {3.3571,-20.5594, 0},
-                                             {3.0426,  0.0735, 0},
-                                             {0.4112, -0.7675, 0.4673},
-                                             {-0.162, 2.1096, 0}};
+	for (ui = 1; ui < BUFMINSIZE; ui++)
+	{
+		dSADv = pFrm[ui]->plaY.ucStats.ucSAD[4];
+		dSADt = pFrm[ui]->plaY.ucStats.ucSAD[0];
+		dSADb = pFrm[ui]->plaY.ucStats.ucSAD[1];
+		SADCBPT = pFrm[ui]->plaY.ucStats.ucSAD[3];
+		SADCTPB = pFrm[ui]->plaY.ucStats.ucSAD[2];
 
-    for(ui = 1; ui < BUFMINSIZE; ui++)
-    {
-        dSADv = pFrm[ui]->plaY.ucStats.ucSAD[4];
-        dSADt = pFrm[ui]->plaY.ucStats.ucSAD[0];
-        dSADb = pFrm[ui]->plaY.ucStats.ucSAD[1];
+		dRsDif = pFrm[ui]->plaY.ucStats.ucRs[3];
+		dDynDif = pFrm[ui]->plaY.ucStats.ucRs[7] / pFrm[ui]->plaY.uiSize * 1000;
+		dStatDif = pFrm[ui]->plaY.ucStats.ucRs[5] / pFrm[ui]->plaY.uiSize * 1000;
+		dCountDif = dDynDif - dStatDif;
+		dStatCount = pFrm[ui]->plaY.ucStats.ucRs[4];
+		dCount = pFrm[ui]->plaY.ucStats.ucRs[6];
+		dAngle = pFrm[ui]->plaY.ucStats.ucRs[8];
+		dRsG = pFrm[ui]->plaY.ucStats.ucRs[0];
+		dRsT = pFrm[ui]->plaY.ucStats.ucRs[1];
+		dRsB = pFrm[ui]->plaY.ucStats.ucRs[2];
+		dZeroTexture = pFrm[ui]->plaY.ucStats.ucRs[9];
+		dBigTexture = pFrm[ui]->plaY.ucStats.ucRs[10];
+		dTextureLevel = (dRsG - ((dRsT + dRsB) / 2));
 
-        dRsDif = pFrm[ui]->plaY.ucStats.ucRs[3];
-        dDynDif = pFrm[ui]->plaY.ucStats.ucRs[7] / pFrm[ui]->plaY.uiSize * 1000;
-        dStatDif = pFrm[ui]->plaY.ucStats.ucRs[5] / pFrm[ui]->plaY.uiSize * 1000;
-        dCountDif = dDynDif - dStatDif;
-        dStatCount = pFrm[ui]->plaY.ucStats.ucRs[4];
-        dCount = pFrm[ui]->plaY.ucStats.ucRs[6];
-        dAngle = pFrm[ui]->plaY.ucStats.ucRs[8];
-        dRsG = pFrm[ui]->plaY.ucStats.ucRs[0];
-        dRsT = pFrm[ui]->plaY.ucStats.ucRs[1];
-        dRsB = pFrm[ui]->plaY.ucStats.ucRs[2];
-        dZeroTexture = pFrm[ui]->plaY.ucStats.ucRs[9];
-        dBigTexture = pFrm[ui]->plaY.ucStats.ucRs[10];
-        dTextureLevel = (dRsG - ((dRsT + dRsB)/2));
+		pFrm[ui]->frmProperties.interlaced = FALSE;
 
-        pFrm[ui]->frmProperties.interlaced = FALSE;
+		pFrm[ui]->frmProperties.interlaced = Classifier(dTextureLevel, dDynDif, dStatDif, dStatCount, dCountDif, dZeroTexture, dRsT, dAngle, dSADv, dBigTexture, dCount, dRsG, dRsDif, dRsB, SADCBPT, SADCTPB);
 
-        if(dDynDif > 60 || dCount >= 2650 || (dTextureLevel >= 0 && dBigTexture > 0 && dAngle > 0) || dCountDif >= 1.1 || (dBigTexture >= 2 && dTextureLevel >= 0))
-            pFrm[ui]->frmProperties.interlaced = TRUE;
-        else if(dAngle == 1000 || dDynDif <= 0.05 || dStatCount < 5 || dCount < 64 || (dAngle == 0 && dBigTexture == 0))
-        {
-            if (dCount < 64 && (dDynDif >((dSADv * dIAcoefficients[9][0]) + dIAcoefficients[9][1])))
-                pFrm[ui]->frmProperties.interlaced = FALSE;// TRUE;
-            else
-                pFrm[ui]->frmProperties.interlaced = FALSE;
-        }
-        else
-        {
-            if(dZeroTexture < 0.001)
-            {
-                if (dDynDif < 2)
-                    pFrm[ui]->frmProperties.interlaced = FALSE;
-                else
-                {
-                    if((dDynDif == dStatDif) && (dDynDif < 11))
-                        pFrm[ui]->frmProperties.interlaced = FALSE;
-                    else
-                        pFrm[ui]->frmProperties.interlaced = TRUE;
-                }
-            }
-            else 
-            {
-                
-                if (dDynDif < 0.2 && dRsG < 6 && dBigTexture < 0.6)
-                {
-                    if (dZeroTexture > 0.2 && dBigTexture < 0.3 && dRsDif > 4.7)
-                        pFrm[ui]->frmProperties.interlaced = TRUE;
-                    else
-                        pFrm[ui]->frmProperties.interlaced = FALSE;
-                }
-                else if(dDynDif < ((dSADv * dIAcoefficients[0][0]) + dIAcoefficients[0][1]))
-                {
-                    if(dTextureLevel > -6.8)
-                        pFrm[ui]->frmProperties.interlaced = TRUE;
-                    else
-                        pFrm[ui]->frmProperties.interlaced = FALSE;
-                }
-                else
-                {
-                    if(dSADv >= 3.5)
-                    {
-                        if((dBigTexture <= ((dSADv * dIAcoefficients[5][0]) + dIAcoefficients[5][1]) || dRsG < 9.1) && dBigTexture < 1.29)
-                        {
-                            if(dDynDif < ((dRsG * dIAcoefficients[8][0]) + dIAcoefficients[8][1]))
-                                pFrm[ui]->frmProperties.interlaced = FALSE;
-                            else
-                                pFrm[ui]->frmProperties.interlaced = TRUE;
-                        }
-                        else
-                            pFrm[ui]->frmProperties.interlaced = TRUE;
-                    }
-                    else 
-                    {
-                        if(dCountDif >= ((dTextureLevel * dIAcoefficients[1][0]) + dIAcoefficients[1][1]))
-                            pFrm[ui]->frmProperties.interlaced = TRUE;
-                        else 
-                        {
-                            if(dCountDif > 0.4)
-                            {
-                                if((dCountDif < ((dTextureLevel * dIAcoefficients[2][0]) + dIAcoefficients[2][1])) && (dDynDif > ((dStatDif * dIAcoefficients[6][0]) + dIAcoefficients[6][1])))
-                                    pFrm[ui]->frmProperties.interlaced = TRUE;
-                                else
-                                    pFrm[ui]->frmProperties.interlaced = FALSE;
-                            }
-                            else if(dCountDif == 0.0)
-                            {
-                                if(dZeroTexture > 1)
-                                {
-                                    if(dRsG > ((dSADv * dIAcoefficients[7][0]) + dIAcoefficients[7][1]))
-                                        pFrm[ui]->frmProperties.interlaced = FALSE;
-                                    else
-                                        pFrm[ui]->frmProperties.interlaced = TRUE;
-                                }
-                                else
-                                {
-                                    if(dCount <= 500 && dRsDif < 1.8)
-                                    {
-                                        if(dZeroTexture > 0.08)
-                                            pFrm[ui]->frmProperties.interlaced = TRUE;
-                                        else
-                                        {
-                                            if(dTextureLevel < -0.5)
-                                                pFrm[ui]->frmProperties.interlaced = FALSE;
-                                            else
-                                                pFrm[ui]->frmProperties.interlaced = TRUE;
-                                        }
-                                    }
-                                    else
-                                        uiConStatus = 3;
-                                }
-                            }
-                            else
-                                uiConStatus = 3;
-                        }
 
-                        if(uiConStatus == 3)
-                        {
-                            uiConStatus = 0;
-                            if(dCountDif == 0.0)
-                            {
-                                if(dCount < 500)
-                                    pFrm[ui]->frmProperties.interlaced = FALSE;
-                                else
-                                    pFrm[ui]->frmProperties.interlaced = TRUE;
-                            }
-                            else
-                            {
-                                if(dSADv < 0.73)
-                                    pFrm[ui]->frmProperties.interlaced = FALSE;
-                                else
-                                    uiConStatus = 3;
-                            }
-                        }
-
-                        if(uiConStatus == 3)
-                        {
-                            uiConStatus = 0;
-                            if(dDynDif >= 2)
-                            {
-                                if(dCountDif >= ((dTextureLevel * dIAcoefficients[3][0]) + dIAcoefficients[3][1]))
-                                    pFrm[ui]->frmProperties.interlaced = TRUE;
-                                else
-                                    uiConStatus = 3;
-                            }
-                            else
-                                uiConStatus = 3;
-                        }
-
-                        if(uiConStatus == 3)
-                        {
-                            uiConStatus = 0;
-                            if(dDynDif <= 7)
-                            {
-                                if(dDynDif > 3)
-                                    pFrm[ui]->frmProperties.interlaced = FALSE;
-                                else
-                                    uiConStatus = 3;
-                            }
-                            else
-                            {
-                                if(dSADv >= 1.5)
-                                    pFrm[ui]->frmProperties.interlaced = TRUE;
-                                else
-                                {
-                                    if(dTextureLevel > -1.5)
-                                        pFrm[ui]->frmProperties.interlaced = FALSE;
-                                    else
-                                        pFrm[ui]->frmProperties.interlaced = TRUE;
-                                }
-                            }
-                        }
-
-                        if(uiConStatus == 3)
-                        {
-                            uiConStatus = 0;
-                            if(dAngle == 0)
-                            {
-                                if(dZeroTexture > 6)
-                                    pFrm[ui]->frmProperties.interlaced = FALSE;
-                                else if(dZeroTexture > 2)
-                                {
-                                    if(dRsG < ((dTextureLevel * dIAcoefficients[4][0]) + dIAcoefficients[4][1]))
-                                        pFrm[ui]->frmProperties.interlaced = FALSE;
-                                    else
-                                        pFrm[ui]->frmProperties.interlaced = TRUE;
-                                }
-                                else
-                                    uiConStatus = 3;
-
-                            }
-                            else
-                                uiConStatus = 3;
-                        }
-
-                        if(uiConStatus == 3)
-                        {
-                            uiConStatus = 0;
-                            if(dRsG >= 6 && dRsG <= 7)
-                            {
-                                if(dDynDif >= 0.09)
-                                {
-                                    if(dSADv < 1.7)
-                                        pFrm[ui]->frmProperties.interlaced = FALSE;
-                                    else
-                                        pFrm[ui]->frmProperties.interlaced = TRUE;
-                                }
-                                else
-                                {
-                                    if(dZeroTexture < 0.01)
-                                        pFrm[ui]->frmProperties.interlaced = FALSE;
-                                    else
-                                    {
-                                        if(dSADv >= 1.769)
-                                            pFrm[ui]->frmProperties.interlaced = TRUE;
-                                        else
-                                            pFrm[ui]->frmProperties.interlaced = FALSE;
-                                    }
-                                }
-                            }
-                            else if (dBigTexture < 0.3)
-                            {
-                                if (dRsG <= 4 || (((dZeroTexture * dZeroTexture * dIAcoefficients[10][0]) + (dZeroTexture * dIAcoefficients[10][1]) + dIAcoefficients[10][2])) > dDynDif)
-                                    pFrm[ui]->frmProperties.interlaced = FALSE;
-                                else
-                                    pFrm[ui]->frmProperties.interlaced = TRUE;
-                            }
-                            else if (dBigTexture < 0.45)
-                            {
-                                if (((dZeroTexture * dIAcoefficients[11][1]) + dIAcoefficients[11][2]) > dDynDif)
-                                    pFrm[ui]->frmProperties.interlaced = FALSE;
-                                else
-                                    pFrm[ui]->frmProperties.interlaced = TRUE;
-                            }
-                            else if (dBigTexture < 0.6)
-                                pFrm[ui]->frmProperties.interlaced = FALSE;
-                            else if (dBigTexture < 0.75)
-                            {
-                                if (dDynDif <= 1 || dZeroTexture > 1)
-                                    pFrm[ui]->frmProperties.interlaced = FALSE;
-                                else
-                                    pFrm[ui]->frmProperties.interlaced = TRUE;
-                            }
-                            else if (dBigTexture < 0.9)
-                            {
-                                if (dZeroTexture > 1)
-                                    pFrm[ui]->frmProperties.interlaced = FALSE;
-                                else
-                                {
-                                    if (dDynDif > 0.1)
-                                        pFrm[ui]->frmProperties.interlaced = TRUE;
-                                    else if (dRsDif >= 6.15 || dSADv < 1.76)
-                                        pFrm[ui]->frmProperties.interlaced = FALSE;
-                                    else
-                                        pFrm[ui]->frmProperties.interlaced = TRUE;
-                                }
-
-                            }
-                            else
-                            {
-                                if (dDynDif <= 0.55 || dZeroTexture <= 6.2)
-                                    pFrm[ui]->frmProperties.interlaced = FALSE;
-                                else if (dSADv >= 0.25 || dZeroTexture <= 9.6)
-                                    pFrm[ui]->frmProperties.interlaced = FALSE;
-                                else
-                                    pFrm[ui]->frmProperties.interlaced = TRUE;
-                            }
-                            /*else if(dRsG < 6)
-                            {
-                                if(dSADv < 0.9)
-                                    pFrm[ui]->frmProperties.interlaced = TRUE;
-                                else if(dSADv < 1.3)
-                                {
-                                    pFrm[ui]->frmProperties.interlaced = FALSE;
-                                }
-                                else 
-                                {
-                                    if(dRsG < 4.6 && dDynDif > 0.26)
-                                        pFrm[ui]->frmProperties.interlaced = TRUE;
-                                    else
-                                        pFrm[ui]->frmProperties.interlaced = FALSE;
-                                }
-                            }
-                            else
-                            {
-                                if(dDynDif < 1)
-                                    pFrm[ui]->frmProperties.interlaced = FALSE;
-                                else
-                                {
-                                    if(dZeroTexture > 9.65)
-                                        pFrm[ui]->frmProperties.interlaced = TRUE;
-                                    else
-                                    {
-                                        if(dBigTexture > 0.3)
-                                            pFrm[ui]->frmProperties.interlaced = FALSE;
-                                        else
-                                            pFrm[ui]->frmProperties.interlaced = TRUE;
-                                    }
-                                }
-                            }*/
-                        }
-                    }
-                }
-            }
-        }
-
-        if(ui < BUFMINSIZE - 1)
-            uiIACount += pFrm[ui]->frmProperties.interlaced;
-        if(pFrm[ui]->frmProperties.interlaced)
-            pFrm[ui]->frmProperties.candidate = TRUE;
-    }
-    return uiIACount;
+		if (ui < BUFMINSIZE - 1)
+			uiIACount += pFrm[ui]->frmProperties.interlaced;
+		if (pFrm[ui]->frmProperties.interlaced)
+			pFrm[ui]->frmProperties.candidate = TRUE;
+	}
+	return uiIACount;
 }
 void __stdcall Artifacts_Detection_frame(Frame **pFrm, unsigned int frameNum, unsigned int firstRun)
 {
-    unsigned int ui, uiIACount = 0, uiConStatus = 0;
-    double dSADv, dSADt, dSADb, dCount, dStatCount, dCountDif, dAngle, dRsG, dRsT, dRsB, dRsDif, dDynDif, dStatDif, dZeroTexture, dBigTexture, dTextureLevel;
+	unsigned int ui, uiIACount = 0, uiConStatus = 0;
+	double dSADv, dSADt, dSADb, dCount, dStatCount, dCountDif, dAngle, dRsG, dRsT, dRsB, dRsDif, dDynDif, dStatDif, dZeroTexture, dBigTexture, dTextureLevel, SADCBPT, SADCTPB;
 
-    const double dIAcoefficients[12][3] =    {{1.7832, -5.3497, 0},
-                                             {0.1983,  1.4804, 0},
-                                             {2.5075,  9.5640, 0},
-                                             {0.0344,  0.3003, 0},
-                                             {-1.1642, 1.2433, 0},
-                                             {0.2742,  0.1851, 0},
-                                             {-2.9723, 1.5171, 0},
-                                             {3.3829, -2.0947, 0},
-                                             {3.3571,-20.5594, 0},
-                                             {3.0426,  0.0735, 0},
-                                             {0.4112, -0.7675, 0.4673}};
+	ui = frameNum;
+	dSADv = pFrm[ui]->plaY.ucStats.ucSAD[4];
+	dSADt = pFrm[ui]->plaY.ucStats.ucSAD[0];
+	dSADb = pFrm[ui]->plaY.ucStats.ucSAD[1];
+	SADCBPT = pFrm[ui]->plaY.ucStats.ucSAD[3];
+	SADCTPB = pFrm[ui]->plaY.ucStats.ucSAD[2];
 
-    ui = frameNum;
-    dSADv = pFrm[ui]->plaY.ucStats.ucSAD[4];
-    dSADt = pFrm[ui]->plaY.ucStats.ucSAD[0];
-    dSADb = pFrm[ui]->plaY.ucStats.ucSAD[1];
-    
-    dRsDif = pFrm[ui]->plaY.ucStats.ucRs[3];
-    dDynDif = pFrm[ui]->plaY.ucStats.ucRs[7] / pFrm[ui]->plaY.uiSize * 1000;
-    dStatDif = pFrm[ui]->plaY.ucStats.ucRs[5] / pFrm[ui]->plaY.uiSize * 1000;
-    dCountDif = dDynDif - dStatDif;
-    dStatCount = pFrm[ui]->plaY.ucStats.ucRs[4];
-    dCount = pFrm[ui]->plaY.ucStats.ucRs[6];
-    dAngle = pFrm[ui]->plaY.ucStats.ucRs[8];
-    dRsG = pFrm[ui]->plaY.ucStats.ucRs[0];
-    dRsT = pFrm[ui]->plaY.ucStats.ucRs[1];
-    dRsB = pFrm[ui]->plaY.ucStats.ucRs[2];
-    dZeroTexture = pFrm[ui]->plaY.ucStats.ucRs[9];
-    dBigTexture = pFrm[ui]->plaY.ucStats.ucRs[10];
-    dTextureLevel = (dRsG - ((dRsT + dRsB)/2));
+	dRsDif = pFrm[ui]->plaY.ucStats.ucRs[3];
+	dDynDif = pFrm[ui]->plaY.ucStats.ucRs[7] / pFrm[ui]->plaY.uiSize * 1000;
+	dStatDif = pFrm[ui]->plaY.ucStats.ucRs[5] / pFrm[ui]->plaY.uiSize * 1000;
+	dCountDif = dDynDif - dStatDif;
+	dStatCount = pFrm[ui]->plaY.ucStats.ucRs[4];
+	dCount = pFrm[ui]->plaY.ucStats.ucRs[6];
+	dAngle = pFrm[ui]->plaY.ucStats.ucRs[8];
+	dRsG = pFrm[ui]->plaY.ucStats.ucRs[0];
+	dRsT = pFrm[ui]->plaY.ucStats.ucRs[1];
+	dRsB = pFrm[ui]->plaY.ucStats.ucRs[2];
+	dZeroTexture = pFrm[ui]->plaY.ucStats.ucRs[9];
+	dBigTexture = pFrm[ui]->plaY.ucStats.ucRs[10];
+	dTextureLevel = (dRsG - ((dRsT + dRsB) / 2));
 
-    pFrm[ui]->frmProperties.interlaced = FALSE;
+	pFrm[ui]->frmProperties.interlaced = FALSE;
 
-    if(dDynDif > 60 || dCount >= 2650 || (dTextureLevel >= 0 && dBigTexture > 0 && dAngle > 0) || dCountDif >= 1.1 || (dBigTexture >= 2 && dTextureLevel >= 0))
-        pFrm[ui]->frmProperties.interlaced = TRUE;
-    else if(dAngle == 1000 || dDynDif <= 0.05 || dStatCount < 5 || dCount < 64 || (dAngle == 0 && dBigTexture == 0))
-    {
-        if (dCount < 64 && (dDynDif >((dSADv * dIAcoefficients[9][0]) + dIAcoefficients[9][1])))
-            pFrm[ui]->frmProperties.interlaced = FALSE;// TRUE;
-        else
-            pFrm[ui]->frmProperties.interlaced = FALSE;
-    }
-    else
-    {
-        if (dZeroTexture < 0.001)
-        {
-            if(dDynDif < 2)
-                pFrm[ui]->frmProperties.interlaced = FALSE;
-            else
-            {
-                if((dDynDif == dStatDif) && (dDynDif < 11))
-                    pFrm[ui]->frmProperties.interlaced = FALSE;
-                else
-                    pFrm[ui]->frmProperties.interlaced = TRUE;
-            }
-        }
-        else
-        {
-            if (dDynDif < 0.2 && dRsG < 6 && dBigTexture < 0.6)
-            {
-                if (dZeroTexture > 0.2 && dBigTexture < 0.3 && dRsDif > 4.7)
-                    pFrm[ui]->frmProperties.interlaced = TRUE;
-                else
-                    pFrm[ui]->frmProperties.interlaced = FALSE;
-            }
-            else if (firstRun)
-            {
-                if (dDynDif < 0.2 && dRsG < 6 && dBigTexture < 0.6)
-                    pFrm[ui]->frmProperties.interlaced = FALSE;
-                else if(dDynDif < ((dSADv * dIAcoefficients[0][0]) + dIAcoefficients[0][1]))
-                {
-                    if(dTextureLevel > -6.8)
-                        pFrm[ui]->frmProperties.interlaced = TRUE;
-                    else
-                        pFrm[ui]->frmProperties.interlaced = FALSE;
-                }
-                else
-                {
-                    if (dSADv >= 3.5)
-                    {
-                        if ((dBigTexture <= ((dSADv * dIAcoefficients[5][0]) + dIAcoefficients[5][1]) || dRsG < 9.1) && dBigTexture < 1.29)
-                        {
-                            if (dDynDif < ((dRsG * dIAcoefficients[8][0]) + dIAcoefficients[8][1]))
-                                pFrm[ui]->frmProperties.interlaced = FALSE;
-                            else
-                                pFrm[ui]->frmProperties.interlaced = TRUE;
-                        }
-                        else
-                            pFrm[ui]->frmProperties.interlaced = TRUE;
-                    }
-                    else
-                    {
-                        if (dCountDif >= ((dTextureLevel * dIAcoefficients[1][0]) + dIAcoefficients[1][1]))
-                            pFrm[ui]->frmProperties.interlaced = TRUE;
-                        else
-                        {
-                            if (dCountDif > 0.4)
-                            {
-                                if ((dCountDif < ((dTextureLevel * dIAcoefficients[2][0]) + dIAcoefficients[2][1])) && (dDynDif >((dStatDif * dIAcoefficients[6][0]) + dIAcoefficients[6][1])))
-                                    pFrm[ui]->frmProperties.interlaced = TRUE;
-                                else
-                                    pFrm[ui]->frmProperties.interlaced = FALSE;
-                            }
-                            else if (dCountDif == 0.0)
-                            {
-                                if (dZeroTexture > 1)
-                                {
-                                    if (dRsG > ((dSADv * dIAcoefficients[7][0]) + dIAcoefficients[7][1]))
-                                        pFrm[ui]->frmProperties.interlaced = FALSE;
-                                    else
-                                        pFrm[ui]->frmProperties.interlaced = TRUE;
-                                }
-                                else
-                                {
-                                    if (dCount <= 500 && dRsDif < 1.8)
-                                    {
-                                        if (dZeroTexture > 0.08)
-                                            pFrm[ui]->frmProperties.interlaced = TRUE;
-                                        else
-                                        {
-                                            if (dTextureLevel < -0.5)
-                                                pFrm[ui]->frmProperties.interlaced = FALSE;
-                                            else
-                                                pFrm[ui]->frmProperties.interlaced = TRUE;
-                                        }
-                                    }
-                                    else
-                                        uiConStatus = 3;
-                                }
-                            }
-                            else
-                                uiConStatus = 3;
-                        }
-
-                        if (uiConStatus == 3)
-                        {
-                            uiConStatus = 0;
-                            if (dCountDif == 0.0)
-                            {
-                                if (dCount < 500)
-                                    pFrm[ui]->frmProperties.interlaced = FALSE;
-                                else
-                                    pFrm[ui]->frmProperties.interlaced = TRUE;
-                            }
-                            else
-                            {
-                                if (dSADv < 0.73)
-                                    pFrm[ui]->frmProperties.interlaced = FALSE;
-                                else
-                                    uiConStatus = 3;
-                            }
-                        }
-
-                        if (uiConStatus == 3)
-                        {
-                            uiConStatus = 0;
-                            if (dDynDif >= 2)
-                            {
-                                if (dCountDif >= ((dTextureLevel * dIAcoefficients[3][0]) + dIAcoefficients[3][1]))
-                                    pFrm[ui]->frmProperties.interlaced = TRUE;
-                                else
-                                    uiConStatus = 3;
-                            }
-                            else
-                                uiConStatus = 3;
-                        }
-
-                        if (uiConStatus == 3)
-                        {
-                            uiConStatus = 0;
-                            if (dDynDif <= 7)
-                            {
-                                if (dDynDif > 3)
-                                    pFrm[ui]->frmProperties.interlaced = FALSE;
-                                else
-                                    uiConStatus = 3;
-                            }
-                            else
-                            {
-                                if (dSADv >= 1.5)
-                                    pFrm[ui]->frmProperties.interlaced = TRUE;
-                                else
-                                {
-                                    if (dTextureLevel > -1.5)
-                                        pFrm[ui]->frmProperties.interlaced = FALSE;
-                                    else
-                                        pFrm[ui]->frmProperties.interlaced = TRUE;
-                                }
-                            }
-                        }
-
-                        if (uiConStatus == 3)
-                        {
-                            uiConStatus = 0;
-                            if (dAngle == 0)
-                            {
-                                if (dZeroTexture > 6)
-                                    pFrm[ui]->frmProperties.interlaced = FALSE;
-                                else if (dZeroTexture > 2)
-                                {
-                                    if (dRsG < ((dTextureLevel * dIAcoefficients[4][0]) + dIAcoefficients[4][1]))
-                                        pFrm[ui]->frmProperties.interlaced = FALSE;
-                                    else
-                                        pFrm[ui]->frmProperties.interlaced = TRUE;
-                                }
-                                else
-                                    uiConStatus = 3;
-
-                            }
-                            else
-                                uiConStatus = 3;
-                        }
-
-                        if (uiConStatus == 3)
-                        {
-                            pFrm[ui]->frmProperties.interlaced = TRUE;
-                            uiConStatus = 0; //<-Here
-                            if (dRsG >= 6 && dRsG <= 7)
-                            {
-                                if (dDynDif >= 0.09)
-                                {
-                                    if (dSADv < 1.7)
-                                        pFrm[ui]->frmProperties.interlaced = FALSE;
-                                    else
-                                        pFrm[ui]->frmProperties.interlaced = TRUE;
-                                }
-                                else
-                                {
-                                    if (dZeroTexture < 0.01)
-                                        pFrm[ui]->frmProperties.interlaced = FALSE;
-                                    else
-                                    {
-                                        if (dSADv >= 1.769)
-                                            pFrm[ui]->frmProperties.interlaced = TRUE;
-                                        else
-                                            pFrm[ui]->frmProperties.interlaced = FALSE;
-                                    }
-                                }
-                            }
-                            else if (dBigTexture < 0.3)
-                            {
-                                if (dRsG <= 4 || (((dZeroTexture * dZeroTexture * dIAcoefficients[10][0]) + (dZeroTexture * dIAcoefficients[10][1]) + dIAcoefficients[10][2])) > dDynDif)
-                                    pFrm[ui]->frmProperties.interlaced = FALSE;
-                                else
-                                    pFrm[ui]->frmProperties.interlaced = TRUE;
-                            }
-                            else if (dBigTexture < 0.45)
-                            {
-                                if (((dZeroTexture * dIAcoefficients[11][1]) + dIAcoefficients[11][2]) > dDynDif)
-                                    pFrm[ui]->frmProperties.interlaced = FALSE;
-                                else
-                                    pFrm[ui]->frmProperties.interlaced = TRUE;
-                            }
-                            else if (dBigTexture < 0.6)
-                                pFrm[ui]->frmProperties.interlaced = FALSE;
-                            else if (dBigTexture < 0.75)
-                            {
-                                if (dDynDif <= 1 || dZeroTexture > 1)
-                                    pFrm[ui]->frmProperties.interlaced = FALSE;
-                                else
-                                    pFrm[ui]->frmProperties.interlaced = TRUE;
-                            }
-                            else if (dBigTexture < 0.9)
-                            {
-                                if (dZeroTexture > 1)
-                                    pFrm[ui]->frmProperties.interlaced = FALSE;
-                                else
-                                {
-                                    if (dDynDif > 0.1)
-                                        pFrm[ui]->frmProperties.interlaced = TRUE;
-                                    else if (dRsDif >= 6.15 || dSADv < 1.76)
-                                        pFrm[ui]->frmProperties.interlaced = FALSE;
-                                    else
-                                        pFrm[ui]->frmProperties.interlaced = TRUE;
-                                }
-
-                            }
-                            else
-                            {
-                                if (dDynDif <= 0.55 || dZeroTexture <= 6.2)
-                                    pFrm[ui]->frmProperties.interlaced = FALSE;
-                                else if (dSADv >= 0.25 || dZeroTexture <= 9.6)
-                                    pFrm[ui]->frmProperties.interlaced = FALSE;
-                                else
-                                    pFrm[ui]->frmProperties.interlaced = TRUE;
-                            }
-                            /*else if (dRsG < 6)
-                            {
-                                if (dSADv < 0.9)
-                                    pFrm[ui]->frmProperties.interlaced = TRUE;
-                                else if (dSADv < 1.3)
-                                {
-                                    pFrm[ui]->frmProperties.interlaced = FALSE;
-                                }
-                                else
-                                {
-                                    if (dRsG < 4.6 && dDynDif > 0.26)
-                                        pFrm[ui]->frmProperties.interlaced = TRUE;
-                                    else
-                                        pFrm[ui]->frmProperties.interlaced = FALSE;
-                                }
-                            }
-                            else
-                            {
-                                if (dDynDif < 1)
-                                    pFrm[ui]->frmProperties.interlaced = FALSE;
-                                else
-                                {
-                                    if (dZeroTexture > 9.65)
-                                        pFrm[ui]->frmProperties.interlaced = TRUE;
-                                    else
-                                    {
-                                        if (dBigTexture > 0.3)
-                                            pFrm[ui]->frmProperties.interlaced = FALSE;
-                                        else
-                                            pFrm[ui]->frmProperties.interlaced = TRUE;
-                                    }
-                                }
-                            }*/
-                        }
-                    }
-                }
-            }
-        }
-    }
+	pFrm[ui]->frmProperties.interlaced = Classifier(dTextureLevel, dDynDif, dStatDif, dStatCount, dCountDif, dZeroTexture, dRsT, dAngle, dSADv, dBigTexture, dCount, dRsG, dRsDif, dRsB, SADCBPT, SADCTPB);
 }
+
+
 
 void __stdcall Detect_Interlacing_Artifacts_fast(Frame **pFrm, Pattern *ptrn, unsigned int *dispatch)
 {

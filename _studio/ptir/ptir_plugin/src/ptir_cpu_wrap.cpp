@@ -362,7 +362,7 @@ mfxStatus PTIR_ProcessorCPU::PTIR_ProcessFrame(mfxFrameSurface1 *surf_in, mfxFra
                         {
                             if(!frmBuffer[i]->frmProperties.drop)
                             {
-                                CheckGenFrame(frmBuffer, i, mainPattern.ucPatternType);
+                                CheckGenFrame(frmBuffer, i, mainPattern.ucPatternType, uiisInterlaced);
                                 Prepare_frame_for_queue(&frmIn,frmBuffer[i], uiWidth, uiHeight);
                                 memcpy(frmIn->plaY.ucStats.ucRs,frmBuffer[i]->plaY.ucStats.ucRs,sizeof(double) * 10);
 
@@ -587,7 +587,7 @@ mfxStatus PTIR_ProcessorCPU::PTIR_ProcessFrame(mfxFrameSurface1 *surf_in, mfxFra
                         uiBufferCount++;
                         if (uiisInterlaced != 2 || (uiisInterlaced == 2 && uiBufferCount < 5))
                         {
-                            CheckGenFrame(frmBuffer, i, mainPattern.ucPatternType);
+                            CheckGenFrame(frmBuffer, i, mainPattern.ucPatternType, uiisInterlaced);
                             Prepare_frame_for_queue(&frmIn, frmBuffer[i], uiWidth, uiHeight);
                             memcpy(frmIn->plaY.ucStats.ucRs, frmBuffer[i]->plaY.ucStats.ucRs, sizeof(double)* 10);
 
