@@ -2519,15 +2519,6 @@ mfxStatus ImplementationAvc::EncodeFrameCheckNormalWay(
         mfxU16 const MaxNumOfROI = 0;
         m_free.front().m_roi.Resize(MaxNumOfROI);
 
-#ifdef SKIP_FRAME_DDI_0917
-        if (m_free.front().m_ctrl.SkipFrame != 0 && m_caps.SkipFrame == 0)
-        {
-            m_free.front().m_ctrl.SkipFrame = 0;
-            if (!status)
-                status = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
-        }
-#endif //SKIP_FRAME_DDI_0917
-
         m_stat.NumCachedFrame++;
         m_incoming.splice(m_incoming.end(), m_free, m_free.begin());
     }
@@ -2732,7 +2723,8 @@ mfxStatus ImplementationAvc::UpdateBitstream(
     }
 
     // Copy compressed picture from d3d surface to buffer in system memory
-    FastCopyBufferVid2Sys(bsData, bitstream.Y, bsSizeToCopy);
+    if (bsSizeToCopy)
+        FastCopyBufferVid2Sys(bsData, bitstream.Y, bsSizeToCopy);
 
     {
         MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "Surface unlock (bitstream)");

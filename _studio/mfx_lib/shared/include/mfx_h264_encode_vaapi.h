@@ -197,6 +197,7 @@ namespace MfxHwH264Encode
 
         mfxU8 m_numSkipFrames;
         mfxU32 m_sizeSkipFrames;
+        mfxU32 m_skipMode;
 
     };
 

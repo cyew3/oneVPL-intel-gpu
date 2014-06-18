@@ -281,6 +281,7 @@ namespace MfxHwH264Encode
         mfxU16               m_forcedCodingFunction;
         mfxU8                m_numSkipFrames;
         mfxU32               m_sizeSkipFrames;
+        mfxU32               m_skipMode;
     };
 
     class D3D9SvcEncoder : public DriverEncoder

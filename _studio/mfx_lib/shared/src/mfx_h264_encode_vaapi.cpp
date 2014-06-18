@@ -727,6 +727,7 @@ VAAPIEncoder::VAAPIEncoder()
 , m_mbbrc(0)
 , m_numSkipFrames(0)
 , m_sizeSkipFrames(0)
+, m_skipMode(0)
 {
 } // VAAPIEncoder::VAAPIEncoder(VideoCORE* core)
 
@@ -1004,6 +1005,7 @@ mfxStatus VAAPIEncoder::CreateAccelerationService(MfxVideoParam const & par)
         return (MFX_ERR_UNKNOWN);
     }
     m_mbbrc = IsOn(extOpt2->MBBRC) ? 1 : IsOff(extOpt2->MBBRC) ? 2 : 0;
+    m_skipMode = extOpt2->SkipFrame;
 
     if ((attrib[1].value & vaRCType) == 0)
         return MFX_ERR_DEVICE_FAILED;
@@ -1081,6 +1083,7 @@ mfxStatus VAAPIEncoder::Reset(MfxVideoParam const & par)
         return (MFX_ERR_UNKNOWN);
     }
     m_mbbrc = IsOn(extOpt2->MBBRC) ? 1 : IsOff(extOpt2->MBBRC) ? 2 : 0;
+    m_skipMode = extOpt2->SkipFrame;
 
     FillSps(par, m_sps);
     MFX_CHECK_WITH_ASSERT(MFX_ERR_NONE == SetHRD(par, m_vaDisplay, m_vaContextEncode, m_hrdBufferId), MFX_ERR_DEVICE_FAILED);
@@ -1524,7 +1527,7 @@ mfxStatus VAAPIEncoder::Execute(
             if (PAVP_MODE == skipFlag)
             {
                 m_numSkipFrames = 1;
-                m_sizeSkipFrames = packedDataSize;
+                m_sizeSkipFrames = (m_skipMode != MFX_SKIPFRAME_INSERT_NOTHING) ? packedDataSize : 0;
             }
         }
         else
@@ -1692,43 +1695,46 @@ mfxStatus VAAPIEncoder::Execute(
         mfxU8 *  bsDataStart = (mfxU8 *)codedBufferSegment->buf;
         mfxU8 *  bsDataEnd   = bsDataStart;
 
-        for (size_t i = 0; i < packedBufferIndexes.size(); i++)
+        if (m_skipMode != MFX_SKIPFRAME_INSERT_NOTHING)
         {
-            size_t headerIndex = packedBufferIndexes[i];
-
-            void *pBufferHeader;
-            vaSts = vaMapBuffer(m_vaDisplay, configBuffers[headerIndex], &pBufferHeader);
-            MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
-
-            void *pData;
-            vaSts = vaMapBuffer(m_vaDisplay, configBuffers[headerIndex + 1], &pData);
-            MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
-
-            if (pBufferHeader && pData)
+            for (size_t i = 0; i < packedBufferIndexes.size(); i++)
             {
-                VAEncPackedHeaderParameterBuffer const & header = *(VAEncPackedHeaderParameterBuffer const *)pBufferHeader;
+                size_t headerIndex = packedBufferIndexes[i];
 
-                mfxU32 lenght = (header.bit_length+7)/8;
+                void *pBufferHeader;
+                vaSts = vaMapBuffer(m_vaDisplay, configBuffers[headerIndex], &pBufferHeader);
+                MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
 
-                assert(mfxU32(bsDataStart + m_width*m_height - bsDataEnd) > lenght);
-                assert(header.has_emulation_bytes);
+                void *pData;
+                vaSts = vaMapBuffer(m_vaDisplay, configBuffers[headerIndex + 1], &pData);
+                MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
 
-                MFX_INTERNAL_CPY(bsDataEnd, pData, lenght);
-                bsDataEnd += lenght;
+                if (pBufferHeader && pData)
+                {
+                    VAEncPackedHeaderParameterBuffer const & header = *(VAEncPackedHeaderParameterBuffer const *)pBufferHeader;
+
+                    mfxU32 lenght = (header.bit_length+7)/8;
+
+                    assert(mfxU32(bsDataStart + m_width*m_height - bsDataEnd) > lenght);
+                    assert(header.has_emulation_bytes);
+
+                    MFX_INTERNAL_CPY(bsDataEnd, pData, lenght);
+                    bsDataEnd += lenght;
+                }
+
+                vaSts = vaUnmapBuffer(m_vaDisplay, configBuffers[headerIndex]);
+                MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+
+                vaSts = vaUnmapBuffer(m_vaDisplay, configBuffers[headerIndex + 1]);
+                MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
             }
-
-            vaSts = vaUnmapBuffer(m_vaDisplay, configBuffers[headerIndex]);
-            MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
-
-            vaSts = vaUnmapBuffer(m_vaDisplay, configBuffers[headerIndex + 1]);
-            MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
         }
 
         storedSize = mfxU32(bsDataEnd - bsDataStart);
         codedBufferSegment->size = storedSize;
 
         m_numSkipFrames ++;
-        m_sizeSkipFrames += packedDataSize;
+        m_sizeSkipFrames += (m_skipMode != MFX_SKIPFRAME_INSERT_NOTHING) ? packedDataSize : 0;
 
         {
             MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_SCHED, "Enc vaUnmapBuffer");

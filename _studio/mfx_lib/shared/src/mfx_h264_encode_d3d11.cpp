@@ -63,6 +63,7 @@ D3D11Encoder::D3D11Encoder()
 , m_forcedCodingFunction(0)
 , m_numSkipFrames(0)
 , m_sizeSkipFrames(0)
+, m_skipMode(0)
 {
 }
 
@@ -103,6 +104,11 @@ mfxStatus D3D11Encoder::CreateAuxilliaryDevice(
 
 mfxStatus D3D11Encoder::CreateAccelerationService(MfxVideoParam const & par)
 {
+    mfxExtCodingOption2 const * extCO2 = GetExtBuffer(par);
+
+    if (extCO2)
+        m_skipMode = extCO2->SkipFrame;
+
     if( IsProtectionPavp(par.Protected) )
     {   
         Destroy(); //aya: release decoder device
@@ -146,6 +152,11 @@ mfxStatus D3D11Encoder::Reset(
 {
     mfxU32 oldTargetBitrate = m_sps.TargetBitRate;
     mfxU32 oldMaxBitrate    = m_sps.MaxBitRate;
+
+    mfxExtCodingOption2 const * extCO2 = GetExtBuffer(par);
+
+    if (extCO2)
+        m_skipMode = extCO2->SkipFrame;
 
     FillSpsBuffer(par, m_sps);
     FillVuiBuffer(par, m_vui);
@@ -521,7 +532,7 @@ mfxStatus D3D11Encoder::Execute(
         m_compBufDesc[bufCnt].pCompBuffer          = RemoveConst(&m_headerPacker.PackSkippedSlice(task, fieldId));
         bufCnt++;
         
-        if (SkipFlag == 2)
+        if (SkipFlag == 2 && m_skipMode != MFX_SKIPFRAME_INSERT_NOTHING)
         {
             m_sizeSkipFrames = 0;
 
@@ -579,30 +590,33 @@ mfxStatus D3D11Encoder::Execute(
     }
     else
     {
-        mfxFrameData bs = {0};
-        FrameLocker lock(m_core, bs, task.m_midBit[fieldId]);
-        assert(bs.Y);
-
-        mfxU8 *  bsDataStart = bs.Y;
-        mfxU8 *  bsEnd       = bs.Y + m_sps.FrameWidth * m_sps.FrameHeight;
-        mfxU8 *  bsDataEnd   = bsDataStart;
-        mfxU32   bsDataSize  = 0;
         ENCODE_QUERY_STATUS_PARAMS feedback = {task.m_statusReportNumber[fieldId], 0,};
 
-        for (UINT i = 0; i < bufCnt; i++)
+        if (m_skipMode != MFX_SKIPFRAME_INSERT_NOTHING)
         {
-            if (m_compBufDesc[i].CompressedBufferType == (D3DDDIFORMAT)D3D11_DDI_VIDEO_ENCODER_BUFFER_PACKEDHEADERDATA)
+            mfxFrameData bs = {0};
+            FrameLocker lock(m_core, bs, task.m_midBit[fieldId]);
+            assert(bs.Y);
+
+            mfxU8 *  bsDataStart = bs.Y;
+            mfxU8 *  bsEnd       = bs.Y + m_sps.FrameWidth * m_sps.FrameHeight;
+            mfxU8 *  bsDataEnd   = bsDataStart;
+
+            for (UINT i = 0; i < bufCnt; i++)
             {
-                ENCODE_PACKEDHEADER_DATA const & data = *(ENCODE_PACKEDHEADER_DATA*)m_compBufDesc[i].pCompBuffer;
-                bsDataEnd += AddEmulationPreventionAndCopy(data, bsDataEnd, bsEnd, !!m_pps.bEmulationByteInsertion);
+                if (m_compBufDesc[i].CompressedBufferType == (D3DDDIFORMAT)D3D11_DDI_VIDEO_ENCODER_BUFFER_PACKEDHEADERDATA)
+                {
+                    ENCODE_PACKEDHEADER_DATA const & data = *(ENCODE_PACKEDHEADER_DATA*)m_compBufDesc[i].pCompBuffer;
+                    bsDataEnd += AddEmulationPreventionAndCopy(data, bsDataEnd, bsEnd, !!m_pps.bEmulationByteInsertion);
+                }
             }
+            feedback.bitstreamSize = mfxU32(bsDataEnd - bsDataStart);
         }
-        bsDataSize = mfxU32(bsDataEnd - bsDataStart);
-        feedback.bitstreamSize = bsDataSize;
+
         m_feedbackCached.Update( CachedFeedback::FeedbackStorage(1, feedback) );
 
         m_numSkipFrames ++;
-        m_sizeSkipFrames += bsDataSize;
+        m_sizeSkipFrames += feedback.bitstreamSize;
     }
 
     m_sps.bResetBRC = false;

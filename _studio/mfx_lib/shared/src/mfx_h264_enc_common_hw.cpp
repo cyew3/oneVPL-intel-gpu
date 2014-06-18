@@ -2908,15 +2908,12 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
             changed = true;
     }
 
-    if (extOpt2->SkipFrame)
+    if (!CheckRangeDflt(extOpt2->SkipFrame, 0, 2, 0)) changed = true;
+
+    if (extOpt2->SkipFrame && par.mfx.GopRefDist > 1)
     {
-        if (   extOpt2->SkipFrame > 1
-            || hwCaps.SkipFrame == 0
-            || par.mfx.GopRefDist > 1)
-        {
-            extOpt2->SkipFrame = 0;
-            changed = true;
-        }
+        extOpt2->SkipFrame = 0;
+        changed = true;
     }
 
     if (   extOpt2->MinQPI || extOpt2->MaxQPI
