@@ -29,254 +29,24 @@ class frameSupplier
 public:
     frameSupplier(std::vector<mfxFrameSurface1*>* _inSurfs, std::vector<mfxFrameSurface1*>* _workSurfs, 
                   std::vector<mfxFrameSurface1*>* _outSurfs, std::map<CmSurface2D*,mfxFrameSurface1*>* _CmToMfxSurfmap,
-                  CmDeviceEx* _pCMdevice, mfxCoreInterface* _mfxCore)
-    {
-        inSurfs        = _inSurfs;
-        workSurfs      = _workSurfs;
-        outSurfs       = _outSurfs;
-        CmToMfxSurfmap = _CmToMfxSurfmap;
-        pCMdevice      = _pCMdevice;
-        mfxCoreIfce    = _mfxCore;
-    }
+                  CmDeviceEx* _pCMdevice, mfxCoreInterface* _mfxCore, mfxU16 _IOPattern);
     virtual ~frameSupplier()
     {
         FreeFrames();
     }
-    virtual mfxStatus SetDevice(CmDeviceEx* _pCMdevice)
-    {
-        mfxI32 result = 0;
-        pCMdevice     = _pCMdevice;
-        if(_pCMdevice)
-            result = (*pCMdevice)->CreateQueue(m_pCmQueue);
-        if(!result)
-            return MFX_ERR_NONE;
-        else
-            return MFX_ERR_DEVICE_FAILED;
-    }
-    virtual void* SetMap(std::map<CmSurface2D*,mfxFrameSurface1*>* _CmToMfxSurfmap)
-    {
-        CmToMfxSurfmap = _CmToMfxSurfmap;
-        return 0;
-    }
-
-    virtual CmSurface2D* GetWorkSurfaceCM()
-    {
-        mfxFrameSurface1* s_out = 0;
-        CmSurface2D* cm_out = 0;
-        if(0 == workSurfs->size())
-            return 0;
-        else
-        {
-            for(std::vector<mfxFrameSurface1*>::iterator it = workSurfs->begin(); it != workSurfs->end(); ++it) {
-                if((*it)->Data.Locked < 4)
-                {
-                    s_out = *it;
-                    workSurfs->erase(it);
-                    break;
-                }
-            }
-            mfxI32 result = -1;
-
-            std::map<CmSurface2D*,mfxFrameSurface1*>::iterator it;
-            for (it = CmToMfxSurfmap->begin(); it != CmToMfxSurfmap->end(); ++it)
-            {
-                if(s_out == it->second)
-                {
-                    cm_out = it->first;
-                    break;
-                }
-            }
-            if(!cm_out)
-            {
-                result = (*pCMdevice)->CreateSurface2D((IDirect3DSurface9 *) s_out->Data.MemId, cm_out);
-                assert(result == 0);
-                (*CmToMfxSurfmap)[cm_out] = s_out;
-            }
-            //result = (*pCMdevice)->CreateSurface2D((IDirect3DSurface9 *) s_out->Data.MemId, cm_out);
-            //assert(result == 0);
-            //if(result)
-            //    std::cout << "CM ERROR while creating CM surface\n";
-            //mfxCoreIfce->IncreaseReference(mfxCoreIfce->pthis, &s_out->Data);
-            //(*CmToMfxSurfmap)[cm_out] = s_out;
-            return cm_out;
-        }
-        return 0;
-    }
-    virtual mfxFrameSurface1* GetWorkSurfaceMfx()
-    {
-        mfxFrameSurface1* s_out = 0;
-        if(0 == workSurfs->size())
-            return 0;
-        else
-        {
-            for(std::vector<mfxFrameSurface1*>::iterator it = workSurfs->begin(); it != workSurfs->end(); ++it) {
-                if((*it)->Data.Locked < 4)
-                {
-                    s_out = *it;
-                    workSurfs->erase(it);
-                    break;
-                }
-            }
-            return s_out;
-        }
-        return 0;
-    }
-    virtual mfxStatus AddCPUPtirOutSurf(mfxU8* buffer, mfxFrameSurface1* surface)
-    {
-        bool unlockreq = false;
-        mfxStatus mfxSts = MFX_ERR_NONE;
-        if(surface->Data.MemId)
-        {
-            unlockreq = true;
-            mfxSts = mfxCoreIfce->FrameAllocator.Lock(mfxCoreIfce->FrameAllocator.pthis, surface->Data.MemId, &(surface->Data));
-            if(mfxSts)
-                return mfxSts;
-        }
-        mfxSts = Ptir420toMfxNv12(buffer, surface);
-        if(mfxSts)
-            return mfxSts;
-        if(unlockreq)
-        {
-            mfxSts = mfxCoreIfce->FrameAllocator.Unlock(mfxCoreIfce->FrameAllocator.pthis, surface->Data.MemId, &(surface->Data));
-            if(mfxSts)
-                return mfxSts;
-        }
-        mfxSts = AddOutputSurf(surface);
-        return mfxSts;
-    }
-    virtual mfxStatus AddOutputSurf(mfxFrameSurface1* outSurf)
-    {
-        outSurfs->push_back(outSurf);
-        return MFX_ERR_NONE;
-    }
-    virtual mfxStatus FreeFrames()
-    {
-        mfxStatus mfxSts = MFX_ERR_NONE;
-        mfxU32 iii = 0;
-        mfxU32 refs = 0;
-        if(CmToMfxSurfmap && pCMdevice)
-        {
-            for(std::map<CmSurface2D*,mfxFrameSurface1*>::iterator it = CmToMfxSurfmap->begin(); it != CmToMfxSurfmap->end(); it++) {
-                CmSurface2D* cm_surf = it->first;
-                mfxFrameSurface1* mfxSurf = it->second;
-                if(mfxSurf)
-                    mfxCoreIfce->DecreaseReference(mfxCoreIfce->pthis, &mfxSurf->Data);
-                if(cm_surf)
-                {
-                    int result = 0;
-                    try{
-                        result = (*pCMdevice)->DestroySurface(cm_surf);
-                        assert(result == 0);
-                    }
-                    catch(...)
-                    {
-                    }
-                }
-            }
-        }
-        if(CmToMfxSurfmap)
-            CmToMfxSurfmap->clear();
-
-        if(workSurfs && workSurfs->size() > 0)
-        {
-            for(std::vector<mfxFrameSurface1*>::iterator it = workSurfs->begin(); it != workSurfs->end(); it++) {
-                while((*it)->Data.Locked)
-                {
-                    refs = (*it)->Data.Locked;
-                    mfxSts = mfxCoreIfce->DecreaseReference(mfxCoreIfce->pthis, &(*it)->Data);
-                    if(mfxSts) break;
-                    iii++;
-                    if(iii > (refs+1)) break; //hang is unacceptable
-                }
-            }
-            workSurfs->clear();
-        }
-        if(inSurfs && inSurfs->size() > 0)
-        {
-            for(std::vector<mfxFrameSurface1*>::iterator it = inSurfs->begin(); it != inSurfs->end(); it++) {
-                while((*it)->Data.Locked)
-                {
-                    refs = (*it)->Data.Locked;
-                    mfxSts = mfxCoreIfce->DecreaseReference(mfxCoreIfce->pthis, &(*it)->Data);
-                    if(mfxSts) break;
-                    iii++;
-                    if(iii > (refs+1)) break; //hang is unacceptable
-                }
-            }
-            inSurfs->clear();
-        }
-        if(outSurfs && outSurfs->size() > 0)
-        {
-            for(std::vector<mfxFrameSurface1*>::iterator it = outSurfs->begin(); it != outSurfs->end(); it++) {
-                while((*it)->Data.Locked)
-                {
-                    refs = (*it)->Data.Locked;
-                    mfxSts = mfxCoreIfce->DecreaseReference(mfxCoreIfce->pthis, &(*it)->Data);
-                    if(mfxSts) break;
-                    iii++;
-                    if(iii > (refs+1)) break; //hang is unacceptable
-                }
-            }
-            outSurfs->clear();
-        }
-        
-        return MFX_ERR_NONE;
-    }
-    virtual mfxStatus FreeSurface(CmSurface2D*& cmSurf)
-    {
-        if(0 == cmSurf)
-            return MFX_ERR_NULL_PTR;
-        mfxFrameSurface1* mfxSurf;
-        std::map<CmSurface2D*,mfxFrameSurface1*>::iterator it;
-        it = CmToMfxSurfmap->find(cmSurf);
-        if(CmToMfxSurfmap->end() != it)
-        {
-            mfxSurf = (*CmToMfxSurfmap)[cmSurf];
-            if(mfxSurf)
-                mfxCoreIfce->DecreaseReference(mfxCoreIfce->pthis, &mfxSurf->Data);
-            //CmToMfxSurfmap->erase(it);
-            cmSurf = 0;
-        }
-        else
-        {
-            int result = -1;
-            result = (*pCMdevice)->DestroySurface(cmSurf);
-            assert(0 == result);
-            if(result)
-                return MFX_ERR_DEVICE_FAILED;
-            else
-                return MFX_ERR_NONE;
-        }
-        return MFX_ERR_NONE;
-    }
-
-    virtual mfxStatus CMCopyGPUToGpu(CmSurface2D* cmSurfOut, CmSurface2D* cmSurfIn)
-    {
-        mfxI32 cmSts = 0;
-        CM_STATUS sts;
-        mfxStatus mfxSts = MFX_ERR_NONE;
-        CmEvent* e = NULL;
-        cmSts = m_pCmQueue->EnqueueCopyGPUToGPU(cmSurfOut, cmSurfIn, e);
-
-        if (CM_SUCCESS == cmSts && e)
-        {
-            e->GetStatus(sts);
-        
-            while (sts != CM_STATUS_FINISHED) 
-            {
-                e->GetStatus(sts);
-            }
-        }else{
-            mfxSts = MFX_ERR_DEVICE_FAILED;
-        }
-        if(e) m_pCmQueue->DestroyEvent(e);
-
-        return mfxSts;
-    }
-    virtual mfxU32 countFreeWorkSurfs()
-    {
-        return (*workSurfs).size();
-    }
+    virtual mfxStatus SetDevice(CmDeviceEx* _pCMdevice);
+    virtual void* SetMap(std::map<CmSurface2D*,mfxFrameSurface1*>* _CmToMfxSurfmap);
+    virtual CmSurface2D* GetWorkSurfaceCM();
+    virtual mfxFrameSurface1* GetWorkSurfaceMfx();
+    virtual mfxStatus AddCPUPtirOutSurf(mfxU8* buffer, mfxFrameSurface1* surface);
+    virtual mfxStatus AddOutputSurf(mfxFrameSurface1* outSurf);
+    virtual mfxStatus FreeFrames();
+    virtual mfxStatus FreeSurface(CmSurface2D*& cmSurf);
+    virtual mfxStatus CMCopyGPUToGpu(CmSurface2D* cmSurfOut, CmSurface2D* cmSurfIn);
+    virtual mfxStatus CMCopySysToGpu(mfxFrameSurface1*& mfxSurf, CmSurface2D*& cmSurfOut);
+    virtual mfxStatus CMCopyGpuToSys(CmSurface2D*& cmSurfOut, mfxFrameSurface1*& mfxSurf);
+    virtual mfxU32 countFreeWorkSurfs();
+    virtual mfxStatus CMCreateSurface2D(mfxFrameSurface1*& mfxSurf, CmSurface2D*& cmSurfOut, bool bCopy);
 
 protected:
     CmDeviceEx* pCMdevice;
@@ -286,6 +56,7 @@ protected:
     std::vector<mfxFrameSurface1*> *workSurfs;
     std::vector<mfxFrameSurface1*> *outSurfs;
     std::map<CmSurface2D*,mfxFrameSurface1*> *CmToMfxSurfmap;
+    mfxU16  IOPattern;
 };
 
 class PTIR_Processor

@@ -259,6 +259,7 @@
     <ClCompile Include="..\..\shared\src\mfx_dxva2_device.cpp" />
     <ClCompile Include="src\hw_utils.cpp" />
     <ClCompile Include="src\mfx_ptir_utils.cpp" />
+    <ClCompile Include="src\plg_frame_supply.cpp" />
     <ClCompile Include="src\ptir_cm_wrap.cpp" />
     <ClCompile Include="src\ptir_cpu_wrap.cpp" />
     <ClCompile Include="src\ptir_vpp_plugin.cpp" />

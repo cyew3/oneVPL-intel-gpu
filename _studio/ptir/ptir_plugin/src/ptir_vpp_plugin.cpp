@@ -131,12 +131,25 @@ mfxStatus MFX_PTIR_Plugin::VPPFrameSubmitEx(mfxFrameSurface1 *surface_in, mfxFra
 
     mfxStatus mfxSts = MFX_ERR_NONE;
     PTIR_Task *ptir_task = 0;
-    if(NULL == surface_work)
+
+    if(surface_in && in_expected)
+    {
+        mfxSts = CheckInFrameSurface1(surface_in);
+        if(mfxSts)
+        {
+            m_guard.Unlock();
+            in_expected = false;
+            return mfxSts;
+        }
+    }
+    mfxSts = CheckOutFrameSurface1(surface_work);
+    if(mfxSts)
     {
         m_guard.Unlock();
         in_expected = false;
-        return MFX_ERR_NULL_PTR;
+        return mfxSts;
     }
+
     if(!surface_in)
         bEOS = true;
     else
@@ -694,7 +707,7 @@ mfxStatus MFX_PTIR_Plugin::Init(mfxVideoParam *par)
 
     try
     {
-        frmSupply = new frameSupplier(&inSurfs, &workSurfs, &outSurfs, 0, 0, m_pmfxCore);
+        frmSupply = new frameSupplier(&inSurfs, &workSurfs, &outSurfs, 0, 0, m_pmfxCore, par->IOPattern);
     }
     catch(std::bad_alloc&)
     {
@@ -734,6 +747,29 @@ mfxStatus MFX_PTIR_Plugin::Init(mfxVideoParam *par)
     mfxSts = ptir->Init(par);
     if(mfxSts)
         return mfxSts;
+
+    // Some kind of correct work with system memory provided
+    //  In case of poorly system memory provided (e.g. different memory blocks for Y and UV), without memory aligning, etc
+    //  Plugin has to copy provided data by VA ifce (d3d or libVA, e.g. by LockRect) - but in this case plugin should deal with internal VA surface allocation.
+    /* 
+    if((par->IOPattern & MFX_IOPATTERN_IN_SYSTEM_MEMORY) ||
+        (par->IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY) )
+    {
+        mfxFrameAllocRequest  in_req;
+        mfxFrameAllocRequest out_req;
+        mfxVideoParam tmp_par = *par;
+        tmp_par.IOPattern = MFX_IOPATTERN_IN_VIDEO_MEMORY | MFX_IOPATTERN_OUT_VIDEO_MEMORY;
+        mfxSts = QueryIOSurf(&tmp_par, &in_req, &out_req);
+        in_req.Type |= MFX_MEMTYPE_INTERNAL_FRAME;
+        out_req.Type |= MFX_MEMTYPE_INTERNAL_FRAME;
+        mfxFrameAllocResponse in_resp;
+        mfxFrameAllocResponse out_resp;
+
+        mfxSts = m_pmfxCore->FrameAllocator.Alloc(m_pmfxCore->FrameAllocator.pthis, &in_req, &in_resp);
+        if(MFX_ERR_NONE != mfxSts)
+            return mfxSts;
+    }
+    */
 
     bInited = true;
 
@@ -916,6 +952,64 @@ inline mfxStatus MFX_PTIR_Plugin::GetHWTypeAndCheckSupport(mfxIMPL& impl, mfxHDL
     }
     par_accel = false;
     HWSupported = false;
+
+    return MFX_ERR_NONE;
+}
+
+inline mfxStatus MFX_PTIR_Plugin::CheckInFrameSurface1(mfxFrameSurface1*& mfxSurf)
+{
+    if(!mfxSurf) return MFX_ERR_NULL_PTR;
+
+    if((m_mfxpar.vpp.In.Width  > mfxSurf->Info.Width)  ||
+        (m_mfxpar.vpp.In.Height > mfxSurf->Info.Height))
+        return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
+
+    if(!m_mfxpar.vpp.In.PicStruct)  {
+        if( !((mfxSurf->Info.PicStruct == MFX_PICSTRUCT_FIELD_TFF) || (mfxSurf->Info.PicStruct == MFX_PICSTRUCT_FIELD_BFF)))
+            return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
+    }  else if (m_mfxpar.vpp.In.PicStruct != mfxSurf->Info.PicStruct)  {
+        return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
+    }
+
+    return CheckFrameSurface1(mfxSurf);
+}
+
+inline mfxStatus MFX_PTIR_Plugin::CheckOutFrameSurface1(mfxFrameSurface1*& mfxSurf)
+{
+    if(!mfxSurf) return MFX_ERR_NULL_PTR;
+
+    if((m_mfxpar.vpp.Out.Width  > mfxSurf->Info.Width)  ||
+       (m_mfxpar.vpp.Out.Height > mfxSurf->Info.Height))
+        return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
+
+    if(mfxSurf->Info.PicStruct != MFX_PICSTRUCT_PROGRESSIVE)
+        return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
+
+    return CheckFrameSurface1(mfxSurf);
+}
+
+inline mfxStatus MFX_PTIR_Plugin::CheckFrameSurface1(mfxFrameSurface1*& mfxSurf)
+{
+    if(!mfxSurf) return MFX_ERR_NULL_PTR;
+
+    bool b_incomp = false;
+
+    if((mfxSurf->Info.ChromaFormat != MFX_CHROMAFORMAT_YUV420) ||
+       (mfxSurf->Info.FourCC      != MFX_FOURCC_NV12))
+        return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
+
+    if(!mfxSurf->Data.MemId && !(mfxSurf->Data.Y && mfxSurf->Data.UV))
+        return MFX_ERR_NULL_PTR;
+
+    if((mfxSurf->Info.CropW > mfxSurf->Info.Width)  ||
+        (mfxSurf->Info.CropH > mfxSurf->Info.Height) ||
+        (mfxSurf->Info.CropX > mfxSurf->Info.CropW)  ||
+        (mfxSurf->Info.CropY > mfxSurf->Info.CropH))
+        return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
+
+    if((mfxSurf->Info.CropH + mfxSurf->Info.CropY > mfxSurf->Info.Height) ||
+        (mfxSurf->Info.CropW + mfxSurf->Info.CropX > mfxSurf->Info.Width))
+        return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
 
     return MFX_ERR_NONE;
 }

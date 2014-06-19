@@ -65,6 +65,9 @@
     <ClCompile Include="..\..\shared\src\mfx_dxva2_device.cpp">
       <Filter>from_libmfxhw</Filter>
     </ClCompile>
+    <ClCompile Include="src\plg_frame_supply.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="ptir_plugin.rc">
