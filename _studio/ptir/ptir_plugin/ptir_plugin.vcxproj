@@ -71,6 +71,12 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <LocalDebuggerCommand>$(OutDir)..\test_vpp_d.exe</LocalDebuggerCommand>
+    <LocalDebuggerWorkingDirectory>$(OutDir)..\</LocalDebuggerWorkingDirectory>
+    <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
+    <LocalDebuggerCommandArguments>-iopattern d3d_to_d3d -plugin_guid e744753acd74402e89a2ee0635496179 -lib hw -extapi -i E:\MEDIASDK_STREAMS\PTIR\nv12\JohnnyTest_1920x1080_30.nv12 -o JohnnyTest_1920x1080_24p.nv12 -sw 1920 -sh 1080 -dw 1920 -dh 1080 -sf 30 -df 24 -spic 0 -dpic 1</LocalDebuggerCommandArguments>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
     <OutDir>$(SolutionDir)..\..\..\build\win_$(PlatformName)\bin\e744753acd74402e89a2ee0635496179\</OutDir>
     <IntDir>$(OutDir)..\..\objs\$(Configuration)\$(ProjectName)\</IntDir>

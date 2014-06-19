@@ -360,6 +360,11 @@ mfxStatus MFX_PTIR_Plugin::Execute(mfxThreadTask task, mfxU32 , mfxU32 )
 }
 mfxStatus MFX_PTIR_Plugin::FreeResources(mfxThreadTask task, mfxStatus )
 {
+    assert(0 != vTasks.size());
+    assert(0 != outSurfs.size());
+    if(0 == vTasks.size() || 0 == outSurfs.size())
+        return MFX_ERR_UNKNOWN;
+
     for(mfxU32 i=0; i < vTasks.size(); i++){
         if (vTasks[i] == (PTIR_Task*) task)
         {
