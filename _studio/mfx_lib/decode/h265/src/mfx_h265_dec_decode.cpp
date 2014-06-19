@@ -774,14 +774,13 @@ mfxStatus VideoDECODEH265::RunThread(void * params, mfxU32 threadNumber)
             return MFX_TASK_DONE;
 
         isDecoded = m_pH265VideoDecoder->CheckDecoding(true, info->pFrame);
+        if (isDecoded)
+            info->pFrame->m_maxUIDWhenWasDisplayed = 0;
     }
 
     if (!isDecoded)
     {
-        //for (Ipp32s i = 0; i < 2 && sts == MFX_TASK_WORKING; i++)
-        {
-            sts = m_pH265VideoDecoder->RunThread(threadNumber);
-        }
+        sts = m_pH265VideoDecoder->RunThread(threadNumber);
     }
 
     {
@@ -793,6 +792,7 @@ mfxStatus VideoDECODEH265::RunThread(void * params, mfxU32 threadNumber)
         if (isDecoded)
         {
             info->surface_work = 0;
+            info->pFrame->m_maxUIDWhenWasDisplayed = 0;
         }
     }
 
@@ -1240,6 +1240,9 @@ mfxStatus VideoDECODEH265::GetPayload( mfxU64 *ts, mfxPayload *payload )
 // Find a next frame ready to be output from decoder
 H265DecoderFrame * VideoDECODEH265::GetFrameToDisplay_H265(UMC::VideoData * dst, bool force)
 {
+    //if (!m_pH265VideoDecoder->IsShouldSuspendDisplay() && !force && m_platform == MFX_PLATFORM_SOFTWARE)
+      //  return 0;
+
     H265DecoderFrame * pFrame = 0;
     do
     {

@@ -156,14 +156,14 @@ public:
             if (iCodeNext == -1)
             {
                 size_t sz = source - (Ipp8u *)pSource->GetDataPointer();
+                size_t szToMove = sz;
                 if (m_prev.size() + sz >  m_suggestedSize)
                 {
-                    m_prev.clear();
-                    sz = IPP_MIN(sz, m_suggestedSize);
+                    sz = IPP_MIN(0, m_suggestedSize - m_prev.size());
                 }
 
                 m_prev.insert(m_prev.end(), (Ipp8u *)pSource->GetDataPointer(), (Ipp8u *)pSource->GetDataPointer() + sz);
-                pSource->MoveDataPointer((Ipp32s)sz);
+                pSource->MoveDataPointer((Ipp32s)szToMove);
                 return -1;
             }
 
@@ -219,6 +219,7 @@ public:
             VM_ASSERT(!m_prev.size());
 
             size_t sz = source - (Ipp8u *)pSource->GetDataPointer();
+            size_t szToMove = sz;
             if (sz >  m_suggestedSize)
             {
                 sz = m_suggestedSize;
@@ -227,7 +228,7 @@ public:
             if (!m_prev.size())
                 m_prev.insert(m_prev.end(), start_code_prefix, start_code_prefix + sizeof(start_code_prefix));
             m_prev.insert(m_prev.end(), (Ipp8u *)pSource->GetDataPointer(), (Ipp8u *)pSource->GetDataPointer() + sz);
-            pSource->MoveDataPointer((Ipp32s)sz);
+            pSource->MoveDataPointer((Ipp32s)szToMove);
             return -1;
         }
 

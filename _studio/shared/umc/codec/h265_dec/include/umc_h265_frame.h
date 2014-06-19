@@ -320,10 +320,8 @@ public:
         return &m_refPicList[sliceNumber].m_refPicList[list];
     }
 
-    // Copy plane data from target frame
-    void CopyPlanes(H265DecoderFrame *pRefFrame);
     // Fill frame planes with default values
-    void DefaultFill(Ipp32s field, bool isChromaOnly, Ipp8u defaultValue = 128);
+    void DefaultFill(bool isChromaOnly, Ipp8u defaultValue = 128);
 
     Ipp32s GetError() const
     {
@@ -347,21 +345,21 @@ public:
     void deallocateCodingData();
 
     //  Access starting position of original picture for specific coding unit (CU)
-    H265PlanePtrYCommon GetLumaAddr(Ipp32s CUAddr) const;
+    PlanePtrY GetLumaAddr(Ipp32s CUAddr) const;
     //  Access starting position of original picture for specific coding unit (CU)
-    H265PlanePtrUVCommon GetCbAddr(Ipp32s CUAddr) const;
+    PlanePtrUV GetCbAddr(Ipp32s CUAddr) const;
     //  Access starting position of original picture for specific coding unit (CU)
-    H265PlanePtrUVCommon GetCrAddr(Ipp32s CUAddr) const;
+    PlanePtrUV GetCrAddr(Ipp32s CUAddr) const;
     //  Access starting position of original picture for specific coding unit (CU)
-    H265PlanePtrUVCommon GetCbCrAddr(Ipp32s CUAddr) const;
+    PlanePtrUV GetCbCrAddr(Ipp32s CUAddr) const;
     //  Access starting position of original picture for specific coding unit (CU) and partition unit (PU)
-    H265PlanePtrYCommon GetLumaAddr(Ipp32s CUAddr, Ipp32u AbsZorderIdx) const;
+    PlanePtrY GetLumaAddr(Ipp32s CUAddr, Ipp32u AbsZorderIdx) const;
     //  Access starting position of original picture for specific coding unit (CU) and partition unit (PU)
-    H265PlanePtrUVCommon GetCbAddr(Ipp32s CUAddr, Ipp32u AbsZorderIdx) const;
+    PlanePtrUV GetCbAddr(Ipp32s CUAddr, Ipp32u AbsZorderIdx) const;
     //  Access starting position of original picture for specific coding unit (CU) and partition unit (PU)
-    H265PlanePtrUVCommon GetCrAddr(Ipp32s CUAddr, Ipp32u AbsZorderIdx) const;
+    PlanePtrUV GetCrAddr(Ipp32s CUAddr, Ipp32u AbsZorderIdx) const;
     //  Access starting position of original picture for specific coding unit (CU) and partition unit (PU)
-    H265PlanePtrUVCommon GetCbCrAddr(Ipp32s CUAddr, Ipp32u AbsZorderIdx) const;
+    PlanePtrUV GetCbCrAddr(Ipp32s CUAddr, Ipp32u AbsZorderIdx) const;
 
     void AddSlice(H265Slice * pSlice);
 

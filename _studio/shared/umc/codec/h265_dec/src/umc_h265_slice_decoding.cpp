@@ -210,12 +210,12 @@ bool H265Slice::DecodeSliceHeader(PocDecoding * pocDecoding)
                 if (GetSeqParam()->long_term_ref_pics_present_flag)
                 {
                     ReferencePictureSet *rps = getRPS();
-                    int offset = rps->getNumberOfNegativePictures()+rps->getNumberOfPositivePictures();
+                    Ipp32u offset = rps->getNumberOfNegativePictures()+rps->getNumberOfPositivePictures();
 
                     Ipp32s prevDeltaMSB = 0;
                     Ipp32s maxPicOrderCntLSB = 1 << sps->log2_max_pic_order_cnt_lsb;
                     Ipp32s DeltaPocMsbCycleLt = 0;
-                    for(Ipp32s j = offset, k = 0; k < rps->getNumberOfLongtermPictures(); j++, k++)
+                    for(Ipp32u j = offset, k = 0; k < rps->getNumberOfLongtermPictures(); j++, k++)
                     {
                         int pocLsbLt = rps->poc_lbs_lt[j];
                         if (rps->delta_poc_msb_present_flag[j])
@@ -334,7 +334,7 @@ int H265Slice::getNumRpsCurrTempList() const
   {
       const ReferencePictureSet *rps = getRPS();
 
-      for(int i=0;i < rps->getNumberOfNegativePictures() + rps->getNumberOfPositivePictures() + rps->getNumberOfLongtermPictures();i++)
+      for(Ipp32u i=0;i < rps->getNumberOfNegativePictures() + rps->getNumberOfPositivePictures() + rps->getNumberOfLongtermPictures();i++)
       {
         if(rps->getUsed(i))
         {
@@ -390,6 +390,9 @@ void H265Slice::CopyFromBaseSlice(const H265Slice * s)
             MFX_INTERNAL_CPY(m_SliceHeader.pred_weight_table[e][n], slice->pred_weight_table[e][n], sizeof(wpScalingParam)*3);
         }
     }
+
+    m_SliceHeader.luma_log2_weight_denom = slice->luma_log2_weight_denom;
+    m_SliceHeader.chroma_log2_weight_denom = slice->chroma_log2_weight_denom;
     m_SliceHeader.slice_sao_luma_flag = slice->slice_sao_luma_flag;
     m_SliceHeader.slice_sao_chroma_flag = slice->slice_sao_chroma_flag;
     m_SliceHeader.cabac_init_flag        = slice->cabac_init_flag;
@@ -427,7 +430,7 @@ UMC::Status H265Slice::UpdateReferenceList(H265DBPList *pDecoderFrameList)
     Ipp32u NumPocStCurr0 = 0;
     Ipp32u NumPocStCurr1 = 0;
     Ipp32u NumPocLtCurr = 0;
-    Ipp32s i;
+    Ipp32u i;
 
     for(i = 0; i < getRPS()->getNumberOfNegativePictures(); i++)
     {
@@ -463,7 +466,7 @@ UMC::Status H265Slice::UpdateReferenceList(H265DBPList *pDecoderFrameList)
         }
     }
 
-    for(Ipp32s i = getRPS()->getNumberOfNegativePictures() + getRPS()->getNumberOfPositivePictures();
+    for(Ipp32u i = getRPS()->getNumberOfNegativePictures() + getRPS()->getNumberOfPositivePictures();
         i < getRPS()->getNumberOfNegativePictures() + getRPS()->getNumberOfPositivePictures() + getRPS()->getNumberOfLongtermPictures(); i++)
     {
         if(getRPS()->getUsed(i))

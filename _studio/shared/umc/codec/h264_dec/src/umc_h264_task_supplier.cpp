@@ -29,6 +29,7 @@
 #include "umc_frame_data.h"
 
 #include "umc_h264_dec_debug.h"
+#include "umc_h264_timing.h"
 
 namespace UMC
 {
@@ -2041,7 +2042,6 @@ SEI_Storer::SEI_Message* SEI_Storer::AddMessage(UMC::MediaDataEx *nalUnit, SEI_T
     MFX_INTERNAL_CPY(&m_data[m_offset], (Ipp8u*)nalUnit->GetDataPointer(), (Ipp32u)sz);
 
     m_offset += sz;
-
     return &m_payloads[freeSlot];
 }
 
@@ -2368,6 +2368,7 @@ TaskSupplier::TaskSupplier()
     , m_sei_messages(0)
     , m_isInitialized(false)
 {
+    INIT_TIMING;
 }
 
 TaskSupplier::~TaskSupplier()
@@ -2592,6 +2593,7 @@ void TaskSupplier::Close()
     AU_Splitter::Close();
     DPBOutput::Reset(m_iThreadNum != 1);
     DecReferencePictureMarking::Reset();
+    ErrorStatus::Reset();
 
     if (m_pLastSlice)
     {
@@ -2660,6 +2662,7 @@ void TaskSupplier::Reset()
     DPBOutput::Reset(m_iThreadNum != 1);
     DecReferencePictureMarking::Reset();
     m_accessUnit.Release();
+    ErrorStatus::Reset();
 
     switch (m_initializationParams.info.profile) // after MVC_Extension::Init()
     {
@@ -2723,6 +2726,7 @@ void TaskSupplier::AfterErrorRestore()
     m_ObjHeap.Release();
     m_accessUnit.Release();
     m_Headers.Reset(true);
+    ErrorStatus::Reset();
 
     m_pLastDisplayed = 0;
 
@@ -3000,9 +3004,15 @@ Status TaskSupplier::DecodeHeaders(MediaDataEx *nalUnit)
         case NAL_UT_SPS:
             {
                 H264SeqParamSet sps;
+                sps.seq_parameter_set_id = MAX_NUM_SEQ_PARAM_SETS;
                 umcRes = bitStream.GetSequenceParamSet(&sps);
                 if (umcRes != UMC_OK)
+                {
+                    H264SeqParamSet * old_sps = m_Headers.m_SeqParams.GetHeader(sps.seq_parameter_set_id);
+                    if (old_sps)
+                        old_sps->errorFlags = 1;
                     return UMC_ERR_INVALID_STREAM;
+                }
 
                 Ipp8u newDPBsize = (Ipp8u)CalculateDPBSize(sps.level_idc,
                                             sps.frame_width_in_mbs * 16,
@@ -3017,7 +3027,6 @@ Status TaskSupplier::DecodeHeaders(MediaDataEx *nalUnit)
                 if (IsNeedSPSInvalidate(old_sps, &sps))
                 {
                     newResolution = true;
-                    //return UMC_NTF_NEW_RESOLUTION;
                 }
 
                 if (isNeedClean)
@@ -3056,6 +3065,8 @@ Status TaskSupplier::DecodeHeaders(MediaDataEx *nalUnit)
 
                 m_local_delta_frame_time = 1 / ((0.5 * temp->time_scale) / temp->num_units_in_tick);
 
+                ErrorStatus::isSPSError = 0;
+
                 if (newResolution)
                     return UMC_NTF_NEW_RESOLUTION;
             }
@@ -3083,7 +3094,12 @@ Status TaskSupplier::DecodeHeaders(MediaDataEx *nalUnit)
                 // Get id
                 umcRes = bitStream.GetPictureParamSetPart1(&pps);
                 if (UMC_OK != umcRes)
+                {
+                    H264PicParamSet * old_pps = m_Headers.m_PicParams.GetHeader(pps.pic_parameter_set_id);
+                    if (old_pps)
+                        old_pps->errorFlags = 1;
                     return UMC_ERR_INVALID_STREAM;
+                }
 
                 H264SeqParamSet *refSps = m_Headers.m_SeqParams.GetHeader(pps.seq_parameter_set_id);
                 Ipp32u prevActivePPS = m_Headers.m_PicParams.GetCurrentID();
@@ -3102,7 +3118,12 @@ Status TaskSupplier::DecodeHeaders(MediaDataEx *nalUnit)
                 // Get rest of pic param set
                 umcRes = bitStream.GetPictureParamSetPart2(&pps);
                 if (UMC_OK != umcRes)
+                {
+                    H264PicParamSet * old_pps = m_Headers.m_PicParams.GetHeader(pps.pic_parameter_set_id);
+                    if (old_pps)
+                        old_pps->errorFlags = 1;
                     return UMC_ERR_INVALID_STREAM;
+                }
 
                 DEBUG_PRINT((VM_STRING("debug headers PPS - %d - SPS - %d\n"), pps.pic_parameter_set_id, pps.seq_parameter_set_id));
                 m_Headers.m_PicParams.AddHeader(&pps);
@@ -3114,6 +3135,8 @@ Status TaskSupplier::DecodeHeaders(MediaDataEx *nalUnit)
                 {
                     m_Headers.m_PicParams.SetCurrentID(prevActivePPS);
                 }
+
+                ErrorStatus::isPPSError = 0;
             }
             break;
 
@@ -4547,6 +4570,19 @@ Status TaskSupplier::AddOneFrame(MediaData * pSource, MediaData *dst)
                     }
                     return umsRes;
                 }
+
+                if (m_decodingMode == AVC_DECODING_MODE || m_decodingMode == MVC_DECODING_MODE)
+                {
+                    if (pMediaDataEx->values[i] == NAL_UT_SPS || pMediaDataEx->values[i] == NAL_UT_PPS)
+                    {
+                        umsRes = AddSlice(0, !pSource);
+                        if (umsRes == UMC_ERR_NOT_ENOUGH_BUFFER || umsRes == UMC_OK)
+                        {
+                            return umsRes;
+                        }
+                    }
+                }
+                
                 is_header_readed = true;
                 break;
 
@@ -4666,6 +4702,7 @@ H264Slice * TaskSupplier::DecodeSliceHeader(MediaDataEx *nalUnit)
     Ipp32s pps_pid = pSlice->RetrievePicParamSetNumber();
     if (pps_pid == -1)
     {
+        ErrorStatus::isPPSError = 1;
         return 0;
     }
 
@@ -4724,12 +4761,19 @@ H264Slice * TaskSupplier::DecodeSliceHeader(MediaDataEx *nalUnit)
 
         if (!pSlice->m_pSeqParamSet)
         {
+            ErrorStatus::isSPSError = 0;
             return 0;
         }
 
         m_Headers.m_SeqParams.SetCurrentID(pSlice->m_pPicParamSet->seq_parameter_set_id);
         m_Headers.m_PicParams.SetCurrentID(pSlice->m_pPicParamSet->pic_parameter_set_id);
     }
+
+    if (pSlice->m_pSeqParamSet->errorFlags)
+        ErrorStatus::isSPSError = 1;
+
+    if (pSlice->m_pPicParamSet->errorFlags)
+        ErrorStatus::isPPSError = 1;
 
     Status sts = InitializePictureParamSet(m_Headers.m_PicParams.GetHeader(pps_pid), pSlice->m_pSeqParamSet, NAL_UT_CODED_SLICE_EXTENSION == pSlice->GetSliceHeader()->nal_unit_type);
     if (sts != UMC_OK)
@@ -4787,6 +4831,11 @@ Status TaskSupplier::AddSlice(H264Slice * pSlice, bool force)
     {
         if (m_sei_messages)
             m_sei_messages->SetAUID(m_accessUnit.GetAUIndentifier());
+    }
+
+    if (!pSlice)
+    {
+        m_accessUnit.AddSlice(0); // full AU
     }
 
     if ((!pSlice || m_accessUnit.IsFullAU() || !m_accessUnit.AddSlice(pSlice)) && m_accessUnit.GetLayersCount())
@@ -4966,6 +5015,10 @@ Status TaskSupplier::AddSlice(H264Slice * pSlice, bool force)
                 setOfSlices->m_frame->m_auIndex = m_accessUnit.GetAUIndentifier();
                 ApplyPayloadsToFrame(setOfSlices->m_frame, slice, &setOfSlices->m_payloads);
                 setOfSlices->m_frame->m_pLayerFrames[0] = setOfSlices->m_frame;
+
+                if (layersCount == 1)
+                    break;
+
                 return UMC_OK;
             }
         }

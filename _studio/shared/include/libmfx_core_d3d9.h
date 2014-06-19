@@ -137,7 +137,6 @@ private:
 
     HANDLE                                     m_hDirectXHandle; // if m_pDirect3DDeviceManager was used
     std::auto_ptr<UMC::DXVA2Accelerator>       m_pVA;
-    std::auto_ptr<UMC::ProtectedVA>            m_protectedVA;
     #if defined (MFX_ENABLE_VPP) && !defined(MFX_RT)
     std::auto_ptr<MfxHwVideoProcessing::DriverVideoProcessing>       m_pVideoProcessing;
     #endif

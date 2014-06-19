@@ -366,6 +366,7 @@ namespace UMC
         NONE    = -1,
         YV12    = 0,    // Planar Y, V, U (4:2:0) (note V,U order!)
         NV12    ,       // Planar Y, merged U->V (4:2:0)
+        NV16    ,       // Planar Y, merged U->V (4:2:2)
         IMC3    ,       // Planar Y, V, U (4:2:0) (pitchY = pitchU=pitchV)
         YUY2    ,       // Composite Y->U->Y->V (4:2:2)
         UYVY    ,       // Composite U->Y->V->Y (4:2:2)

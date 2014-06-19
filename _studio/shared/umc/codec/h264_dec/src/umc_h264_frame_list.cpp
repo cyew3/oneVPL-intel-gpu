@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2003-2013 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2003-2014 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -882,7 +882,7 @@ H264DecoderFrame * H264DBPList::FindClosest(H264DecoderFrame * pFrame)
 
     for (H264DecoderFrame * pTmp = m_pHead; pTmp; pTmp = pTmp->future())
     {
-        if (pTmp->IsSkipped() || pTmp == pFrame || pTmp->GetRefCounter() >= 2)
+        if (pTmp->IsSkipped() || pTmp == pFrame || !pTmp->IsDecodingCompleted())
             continue;
 
         if (pTmp->m_chroma_format != pFrame->m_chroma_format ||

@@ -24,6 +24,7 @@
 
 #ifdef UMC_VA_LINUX
 #include "umc_va_linux_protected.h"
+#include "umc_va_video_processing.h"
 #endif
 
 namespace UMC
@@ -2435,6 +2436,24 @@ Ipp32s PackerVA::PackSliceParams(H264Slice *pSlice, Ipp32s sliceNum, Ipp32s chop
     return partial_data;
 }
 
+void PackerVA::PackProcessingInfo(H264DecoderFrameInfo * sliceInfo)
+{
+    VideoProcessingVA *vpVA = m_va->GetVideoProcessingVA();
+    if (!vpVA)
+        throw h264_exception(UMC_ERR_FAILED);
+
+    UMCVACompBuffer *pipelineVABuf;
+    MFX_VAProcPipelineParameterBuffer* pipelineBuf = (MFX_VAProcPipelineParameterBuffer*)m_va->GetCompBuffer(VAProcPipelineParameterBufferType, &pipelineVABuf, sizeof(MFX_VAProcPipelineParameterBuffer));
+    if (!pipelineBuf)
+        throw h264_exception(UMC_ERR_FAILED);
+    pipelineVABuf->SetDataSize(sizeof(MFX_VAProcPipelineParameterBuffer));
+
+    MFX_INTERNAL_CPY(pipelineBuf, &vpVA->m_pipelineParams, sizeof(MFX_VAProcPipelineParameterBuffer));
+
+    pipelineBuf->surface = m_va->GetSurfaceID(sliceInfo->m_pFrame->m_index); // should filled in packer
+    pipelineBuf->additional_outputs = (VASurfaceID*)vpVA->GetCurrentOutputSurface();
+}
+
 void PackerVA::PackQmatrix(const H264ScalingPicParams * scaling)
 {
     UMCVACompBuffer *quantBuf;
@@ -2517,6 +2536,11 @@ void PackerVA::PackAU(const H264DecoderFrame *pFrame, Ipp32s isTop)
             throw h264_exception(UMC_ERR_FAILED);
 
         sliceParamBuf->SetNumOfItem(passedSliceNum);
+
+        if (m_va->GetVideoProcessingVA())
+        {
+            PackProcessingInfo(sliceInfo);
+        }
 
         Status sts = m_va->Execute();
         if (sts != UMC_OK)

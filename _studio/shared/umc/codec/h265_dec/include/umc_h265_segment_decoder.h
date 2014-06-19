@@ -25,6 +25,7 @@ using namespace MFX_HEVC_PP;
 namespace UMC_HEVC_DECODER
 {
 
+class H265Task;
 class TaskBroker_H265;
 
 class H265SegmentDecoderBase
@@ -49,7 +50,7 @@ public:
     // Decode slice's segment
     virtual UMC::Status ProcessSegment(void) = 0;
 
-    virtual void RestoreErrorRect(Ipp32s , Ipp32s , H265Slice * )
+    virtual void RestoreErrorRect(H265Task *)
     {
     }
 
@@ -77,25 +78,29 @@ public:
     virtual bool Is8BitsReconstructor() const = 0;
 
     // Do luma intra prediction
-    virtual void PredictIntra(Ipp32s predMode, H265PlaneYCommon* PredPel, H265PlaneYCommon* pRec, Ipp32s pitch, Ipp32s width, Ipp32u bit_depth) = 0;
+    virtual void PredictIntra(Ipp32s predMode, PlanePtrY PredPel, PlanePtrY pRec, Ipp32s pitch, Ipp32s width, Ipp32u bit_depth) = 0;
 
     // Create a buffer of neighbour luma samples for intra prediction
-    virtual void GetPredPelsLuma(H265PlaneYCommon* pSrc, H265PlaneYCommon* PredPel, Ipp32s blkSize, Ipp32s srcPitch, Ipp32u tpIf, Ipp32u lfIf, Ipp32u tlIf, Ipp32u bit_depth) = 0;
+    virtual void GetPredPelsLuma(PlanePtrY pSrc, PlanePtrY PredPel, Ipp32s blkSize, Ipp32s srcPitch, Ipp32u tpIf, Ipp32u lfIf, Ipp32u tlIf, Ipp32u bit_depth) = 0;
 
     // Do chroma intra prediction
-    virtual void PredictIntraChroma(Ipp32s predMode, H265PlaneYCommon* PredPel, H265PlaneYCommon* pels, Ipp32s pitch, Ipp32s width) = 0;
+    virtual void PredictIntraChroma(Ipp32s predMode, PlanePtrY PredPel, PlanePtrY pels, Ipp32s pitch, Ipp32s width) = 0;
 
     // Create a buffer of neighbour NV12 chroma samples for intra prediction
-    virtual void GetPredPelsChromaNV12(H265PlaneYCommon* pSrc, H265PlaneYCommon* PredPel, Ipp32s blkSize, Ipp32s srcPitch, Ipp32u tpIf, Ipp32u lfIf, Ipp32u tlIf, Ipp32u bit_depth) = 0;
+    virtual void GetPredPelsChromaNV12(PlanePtrY pSrc, PlanePtrY PredPel, Ipp32s blkSize, Ipp32s srcPitch, Ipp32u tpIf, Ipp32u lfIf, Ipp32u tlIf, Ipp32u bit_depth) = 0;
 
     // Strong intra smoothing luma filter
-    virtual void FilterPredictPels(DecodingContext* sd, H265CodingUnit* pCU, H265PlaneYCommon* PredPel, Ipp32s width, Ipp32u TrDepth, Ipp32u AbsPartIdx) = 0;
+    virtual void FilterPredictPels(DecodingContext* sd, H265CodingUnit* pCU, PlanePtrY PredPel, Ipp32s width, Ipp32u TrDepth, Ipp32u AbsPartIdx) = 0;
 
     // Luma deblocking edge filter
-    virtual void FilterEdgeLuma(H265EdgeData *edge, H265PlaneYCommon *srcDst, size_t srcDstStride, Ipp32s x, Ipp32s y, Ipp32s dir, Ipp32u bit_depth) = 0;
+    virtual void FilterEdgeLuma(H265EdgeData *edge, PlanePtrY srcDst, size_t srcDstStride, Ipp32s x, Ipp32s y, Ipp32s dir, Ipp32u bit_depth) = 0;
 
     // Chroma deblocking edge filter
-    virtual void FilterEdgeChroma(H265EdgeData *edge, H265PlaneYCommon *srcDst, size_t srcDstStride, Ipp32s x, Ipp32s y, Ipp32s dir, Ipp32s chromaCbQpOffset, Ipp32s chromaCrQpOffset, Ipp32u bit_depth) = 0;
+    virtual void FilterEdgeChroma(H265EdgeData *edge, PlanePtrY srcDst, size_t srcDstStride, Ipp32s x, Ipp32s y, Ipp32s dir, Ipp32s chromaCbQpOffset, Ipp32s chromaCrQpOffset, Ipp32u bit_depth) = 0;
+
+    virtual void CopyPartOfFrameFromRef(PlanePtrY pRefPlane, PlanePtrY pCurrentPlane, Ipp32s pitch,
+        Ipp32s offsetX, Ipp32s offsetY, Ipp32s offsetXL, Ipp32s offsetYL,
+        Ipp32s cuSize, IppiSize frameSize) = 0;
 
 protected:
 };
@@ -160,8 +165,8 @@ public:
     CoeffsBuffer    m_coeffBuffer;
 
     H265Bitstream              m_BitStream;
-    H265CoeffsPtrCommon        m_coeffsRead;
-    H265CoeffsPtrCommon        m_coeffsWrite;
+    CoeffsPtr        m_coeffsRead;
+    CoeffsPtr        m_coeffsWrite;
 
     // Updated after whole CTB is done for initializing external neighbour data in m_CurCTB
     H265FrameHLDNeighborsInfo *m_TopNgbrs;
@@ -190,7 +195,7 @@ public:
     Ipp32s m_mvsDistortion; // max y component of all mvs in slice
 
     // Allocate context buffers
-    void Init(H265Slice *slice);
+    void Init(H265Task *task);
     // Fill up decoder context for new CTB using previous CTB values and values stored for top row
     void UpdateCurrCUContext(Ipp32u lastCUAddr, Ipp32u newCUAddr);
     // Clean up all availability information for decoder
@@ -306,10 +311,10 @@ public:
 
     // Parse TU coefficients
     template <bool scaling_list_enabled_flag>
-    void ParseCoeffNxNCABACOptimized(H265CoeffsPtrCommon pCoef, Ipp32u AbsPartIdx, Ipp32u Log2BlockSize, ComponentPlane plane);
+    void ParseCoeffNxNCABACOptimized(CoeffsPtr pCoef, Ipp32u AbsPartIdx, Ipp32u Log2BlockSize, ComponentPlane plane);
 
     // Parse TU coefficients
-    void ParseCoeffNxNCABAC(H265CoeffsPtrCommon pCoef, Ipp32u AbsPartIdx, Ipp32u Log2BlockSize, ComponentPlane plane);
+    void ParseCoeffNxNCABAC(CoeffsPtr pCoef, Ipp32u AbsPartIdx, Ipp32u Log2BlockSize, ComponentPlane plane);
 
     // Parse TU transform skip flag
     void ParseTransformSkipFlags(Ipp32u AbsPartIdx, ComponentPlane plane);
@@ -340,8 +345,8 @@ public:
 
     void FillReferenceSamplesChroma(
         Ipp32s bitDepth,
-        H265PlanePtrUVCommon pRoiOrigin,
-        H265PlanePtrUVCommon pAdiTemp,
+        PlanePtrUV pRoiOrigin,
+        PlanePtrUV pAdiTemp,
         bool* NeighborFlags,
         Ipp32s NumIntraNeighbor,
         Ipp32s UnitSize,

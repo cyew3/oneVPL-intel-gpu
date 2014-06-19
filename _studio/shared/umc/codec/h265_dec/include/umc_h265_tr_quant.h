@@ -35,7 +35,7 @@ public:
     // Do inverse transform of specified size
     template <typename DstCoeffsType>
     void InvTransformNxN(bool transQuantBypass, EnumTextType TxtType, Ipp32u Mode, DstCoeffsType* pResidual, size_t Stride,
-        H265CoeffsPtrCommon pCoeff, Ipp32u Size, bool transformSkip);
+        CoeffsPtr pCoeff, Ipp32u Size, bool transformSkip);
 
     // Recursively descend to basic transform blocks, inverse transform coefficients in them and/
     // add the result to prediction for complete reconstruct
@@ -43,16 +43,16 @@ public:
 
     // Process coefficients with transform skip flag
     template <int bitDepth, typename DstCoeffsType>
-    void InvTransformSkip(H265CoeffsPtrCommon pCoeff, DstCoeffsType* pResidual, size_t Stride, Ipp32u Size, bool inplace, Ipp32u bit_depth);
+    void InvTransformSkip(CoeffsPtr pCoeff, DstCoeffsType* pResidual, size_t Stride, Ipp32u Size, bool inplace, Ipp32u bit_depth);
 
     // Process coefficients with transquant bypass flag
     template <typename DstCoeffsType>
-    void InvTransformByPass(H265CoeffsPtrCommon pCoeff, DstCoeffsType* pResidual, size_t Stride, Ipp32u Size, Ipp32u bitDepth, bool inplace);
+    void InvTransformByPass(CoeffsPtr pCoeff, DstCoeffsType* pResidual, size_t Stride, Ipp32u Size, Ipp32u bitDepth, bool inplace);
 
 private:
-    H265CoeffsPtrCommon m_pointerToMemory;
-    H265CoeffsPtrCommon m_residualsBuffer;
-    H265CoeffsPtrCommon m_residualsBuffer1;
+    CoeffsPtr m_pointerToMemory;
+    CoeffsPtr m_residualsBuffer;
+    CoeffsPtr m_residualsBuffer1;
 
     // forward Transform
     void Transform(Ipp32u Mode, Ipp8u* pResidual, Ipp32u Stride, Ipp32s* pCoeff, Ipp32s Width, Ipp32s Height);

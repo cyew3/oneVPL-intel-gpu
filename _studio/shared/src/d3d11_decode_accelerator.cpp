@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2011-2013 Intel Corporation. All Rights Reserved.
+Copyright(c) 2011-2014 Intel Corporation. All Rights Reserved.
 
 File Name: d3d11_decode_accelerator.cpp
 
@@ -20,6 +20,7 @@ File Name: d3d11_decode_accelerator.cpp
 
 #include "umc_va_dxva2.h"
 #include "umc_va_dxva2_protected.h"
+#include "umc_va_video_processing.h"
 #include "libmfx_core_d3d11.h"
 #include "mfx_umc_alloc_wrapper.h"
 
@@ -77,6 +78,10 @@ mfxStatus MFXD3D11Accelerator::CreateVideoAccelerator(mfxU32 hwProfile, const mf
     else
         m_bH264ShortSlice = (2 == video_config.ConfigBitstreamRaw || 4 == video_config.ConfigBitstreamRaw || 6 == video_config.ConfigBitstreamRaw);
 
+    if (IS_PROTECTION_ANY(param->Protected))
+    {
+        m_protectedVA = new UMC::ProtectedVA(param->Protected);
+    }
 
     return MFX_ERR_NONE;
 
@@ -117,8 +122,8 @@ mfxStatus MFXD3D11Accelerator::GetSuitVideoDecoderConfig(const mfxVideoParam    
 
             if (isHEVCGUID)
             {
-                if (1 == pConfig->ConfigBitstreamRaw)
-                { // short mode
+                if (2 == pConfig->ConfigBitstreamRaw)
+                { // prefer long mode
                     idxConfig = i;
                 }
             }
@@ -356,6 +361,12 @@ Status MFXD3D11Accelerator::Close()
 {
     SAFE_RELEASE(m_pVDOView);
 
+    delete m_protectedVA;
+    m_protectedVA = 0;
+
+    delete m_videoProcessingVA;
+    m_videoProcessingVA = 0;
+
     Status sts = VideoAccelerator::Close();
     return sts;
 }
@@ -363,7 +374,8 @@ Status MFXD3D11Accelerator::Close()
 bool MFXD3D11Accelerator::IsIntelCustomGUID() const
 {
     const GUID & guid = m_DecoderGuid;
-    return (guid == sDXVA2_Intel_ModeVC1_D_Super || guid == sDXVA2_Intel_EagleLake_ModeH264_VLD_NoFGT || guid == sDXVA_Intel_ModeH264_VLD_MVC || guid == DXVA_Intel_ModeHEVC_VLD_MainProfile);
+    return (guid == sDXVA2_Intel_ModeVC1_D_Super || guid == sDXVA2_Intel_EagleLake_ModeH264_VLD_NoFGT || guid == sDXVA_Intel_ModeH264_VLD_MVC || guid == DXVA_Intel_ModeHEVC_VLD_MainProfile ||
+        guid == DXVA_Intel_ModeHEVC_VLD_Main10Profile);
 }
 
 

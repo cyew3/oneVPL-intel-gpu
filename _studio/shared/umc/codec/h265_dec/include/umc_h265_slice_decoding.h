@@ -40,6 +40,8 @@ enum
 // Task completeness information structure
 struct CUProcessInfo
 {
+    Ipp32s firstCU;
+    Ipp32s maxCU;
     Ipp32s m_curCUToProcess[LAST_PROCESS_ID];
     Ipp32s m_processInProgress[LAST_PROCESS_ID];
     bool m_isCompleted;
@@ -53,6 +55,7 @@ struct CUProcessInfo
             m_processInProgress[task] = 0;
         }
 
+        firstCU = firstCUAddr;
         m_width = width;
         m_isCompleted = false;
     }

@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2007-2013 Intel Corporation. All Rights Reserved.
+Copyright(c) 2007-2014 Intel Corporation. All Rights Reserved.
 
 File Name: libmfx_allocator_d3d11.cpp
 
@@ -21,6 +21,7 @@ File Name: libmfx_allocator_d3d11.cpp
 #include "mfx_utils.h"
 
 #define D3DFMT_NV12 (D3DFORMAT)MAKEFOURCC('N','V','1','2')
+#define D3DFMT_P010 (D3DFORMAT)MAKEFOURCC('P','0','1','0')
 #define D3DFMT_YV12 (D3DFORMAT)MAKEFOURCC('Y','V','1','2')
 #define D3DFMT_IMC3 (D3DFORMAT)MAKEFOURCC('I','M','C','3')
 
@@ -45,6 +46,9 @@ DXGI_FORMAT mfxDefaultAllocatorD3D11::MFXtoDXGI(mfxU32 format)
 {
     switch (format)
     {
+    case MFX_FOURCC_P010:
+        return DXGI_FORMAT_P010;
+
     case MFX_FOURCC_NV12:
         return DXGI_FORMAT_NV12;
 
@@ -84,6 +88,7 @@ mfxStatus mfxDefaultAllocatorD3D11::AllocFramesHW(mfxHDL pthis, mfxFrameAllocReq
     switch(request->Info.FourCC)
     {
     case MFX_FOURCC_NV12:
+    case MFX_FOURCC_P010:
     case MFX_FOURCC_YUY2:
     case MFX_FOURCC_IMC3:
     case MFX_FOURCC_YUV400:
@@ -295,6 +300,13 @@ mfxStatus mfxDefaultAllocatorD3D11::LockFrameHW(mfxHDL pthis, mfxMemId mid, mfxF
     // not sure about commented formats
     switch (Desc.Format)
     {
+    case DXGI_FORMAT_P010:
+        ptr->PitchHigh = (mfxU16)(LockedRect.RowPitch / (1 << 16));
+        ptr->PitchLow  = (mfxU16)(LockedRect.RowPitch % (1 << 16));
+        ptr->Y = (mfxU8 *)LockedRect.pData;
+        ptr->U = (mfxU8 *)LockedRect.pData + Desc.Height * LockedRect.RowPitch;
+        ptr->V = ptr->U + 1;
+        break;
     case DXGI_FORMAT_NV12:
         ptr->PitchHigh = (mfxU16)(LockedRect.RowPitch / (1 << 16));
         ptr->PitchLow  = (mfxU16)(LockedRect.RowPitch % (1 << 16));

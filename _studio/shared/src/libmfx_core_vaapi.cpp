@@ -23,6 +23,7 @@ File Name: libmf_core_vaapi.cpp
 #include "mfx_check_hardware_support.h"
 #include "ippi.h"
 #include "mfx_common_decode_int.h"
+#include "mfx_enc_common.h"
 
 #include "umc_va_linux_protected.h"
 
@@ -665,29 +666,12 @@ VAAPIVideoCORE::CreateVideoAccelerator(
     if (!m_Display)
         return MFX_ERR_NOT_INITIALIZED;
 
-    if (IS_PROTECTION_ANY(param->Protected))
-    {
-        m_protectedVA.reset(new ProtectedVA(param->Protected));
-        params.m_protectedVA = m_protectedVA.get();
-        m_pVA.get()->SetProtectedVA(params.m_protectedVA);
-    }
-
     UMC::VideoStreamInfo VideoInfo;
     VideoInfo.clip_info.width = pInfo->Width;
     VideoInfo.clip_info.height = pInfo->Height;
 
     m_pVA.get()->m_Platform = UMC::VA_LINUX;
     m_pVA.get()->m_Profile = (VideoAccelerationProfile)profile;
-
-#if 0
-    // Find DXVA2 configuration
-    st = m_pVA->FindConfiguration(&VideoInfo, m_ExtOptions);
-    if(UMC_OK != st)
-    {
-        m_pVA.reset();
-        return MFX_ERR_UNSUPPORTED;
-    }
-#endif
 
     // Init Accelerator
     params.m_Display = m_Display;
@@ -696,6 +680,13 @@ VAAPIVideoCORE::CreateVideoAccelerator(
     params.isExt = true;
     params.m_surf = (void **)RenderTargets;
 
+    params.m_protectedVA = param->Protected;
+
+    if (GetExtBuffer(param->ExtParam, param->NumExtParam, MFX_EXTBUFF_DEC_VIDEO_PROCESSING))
+    {
+        params.m_needVideoProcessingVA = true;
+    }
+
     st = m_pVA.get()->Init(&params); //, m_ExtOptions);
 
     if(UMC_OK != st)
@@ -703,27 +694,6 @@ VAAPIVideoCORE::CreateVideoAccelerator(
         //m_pVA.reset(); aya must be fixed late
         return MFX_ERR_UNSUPPORTED;
     }
-
-#if 0
-    if (IS_PROTECTION_ANY(param->Protected))
-    {
-        DXVA2_DecodeExtensionData DecodeExtension;
-        DecodeExtension.Function = DXVA2_DECODE_GET_DRIVER_HANDLE;
-        DecodeExtension.pPrivateInputData = NULL;
-        DecodeExtension.PrivateInputDataSize = 0;
-        DecodeExtension.pPrivateOutputData = &m_DXVA2DecodeHandle;
-        DecodeExtension.PrivateOutputDataSize = sizeof(m_DXVA2DecodeHandle);
-        
-        st = m_pVA->ExecuteExtensionBuffer(&DecodeExtension);
-        if(UMC_OK != st)
-        {
-            m_pVA.reset();
-            return MFX_ERR_UNSUPPORTED;
-        }
-    }
-    else
-        m_DXVA2DecodeHandle = NULL;
-#endif
 
     m_pVA.get()->m_HWPlatform = ConvertMFXToUMCType(m_HWType);
 

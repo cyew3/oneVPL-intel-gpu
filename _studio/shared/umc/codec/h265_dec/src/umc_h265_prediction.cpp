@@ -107,8 +107,6 @@ void H265Prediction::MotionCompensationInternal(H265CodingUnit* pCU, Ipp32u AbsP
         PUi.interinfo = &(m_context->m_frame->getCD()->GetTUInfo(m_context->m_sps->NumPartitionsInFrameWidth * PartY + PartX));
         const H265MVInfo &MVi = *PUi.interinfo;
 
-        VM_ASSERT(MVi.m_flags[REF_PIC_LIST_0] != COL_TU_INTRA);
-
         PUi.refFrame[REF_PIC_LIST_0] = MVi.m_refIdx[REF_PIC_LIST_0] >= 0 ? m_context->m_refPicList[REF_PIC_LIST_0][MVi.m_refIdx[REF_PIC_LIST_0]].refFrame : 0;
         PUi.refFrame[REF_PIC_LIST_1] = MVi.m_refIdx[REF_PIC_LIST_1] >= 0 ? m_context->m_refPicList[REF_PIC_LIST_1][MVi.m_refIdx[REF_PIC_LIST_1]].refFrame : 0;
 
@@ -302,9 +300,9 @@ void H265Prediction::PredInterUni(H265CodingUnit* pCU, H265PUInfo &PUi, EnumRefP
 
     // Hack to get correct offset in 2-byte elements
     Ipp32s in_DstPitch = (c_plane_type == TEXT_CHROMA) ? YUVPred->pitch_chroma() : YUVPred->pitch_luma();
-    H265CoeffsPtrCommon in_pDst = (c_plane_type == TEXT_CHROMA) ?
-                            (H265CoeffsPtrCommon)YUVPred->m_pUVPlane + GetAddrOffset(PartAddr, YUVPred->chromaSize().width) :
-                            (H265CoeffsPtrCommon)YUVPred->m_pYPlane + GetAddrOffset(PartAddr, YUVPred->lumaSize().width);
+    CoeffsPtr in_pDst = (c_plane_type == TEXT_CHROMA) ?
+                            (CoeffsPtr)YUVPred->m_pUVPlane + GetAddrOffset(PartAddr, YUVPred->chromaSize().width) :
+                            (CoeffsPtr)YUVPred->m_pYPlane + GetAddrOffset(PartAddr, YUVPred->lumaSize().width);
 
     H265InterpolationParams_8u interpolateSrc;
     interpolateSrc.frameSize.width = m_context->m_sps->pic_width_in_luma_samples;
@@ -497,15 +495,15 @@ void H265Prediction::CopyExtendPU(const PixType * in_pSrc,
 template<typename PixType>
 void H265Prediction::CopyWeighted(H265DecoderFrame* frame, H265DecYUVBufferPadded* src, Ipp32u CUAddr, Ipp32u PartIdx, Ipp32u Width, Ipp32u Height, Ipp32s *w, Ipp32s *o, Ipp32s *logWD, Ipp32s *round, Ipp32u bit_depth)
 {
-    H265CoeffsPtrCommon pSrc = (H265CoeffsPtrCommon)src->m_pYPlane + GetAddrOffset(PartIdx, src->lumaSize().width);
-    H265CoeffsPtrCommon pSrcUV = (H265CoeffsPtrCommon)src->m_pUVPlane + GetAddrOffset(PartIdx, src->chromaSize().width);
+    CoeffsPtr pSrc = (CoeffsPtr)src->m_pYPlane + GetAddrOffset(PartIdx, src->lumaSize().width);
+    CoeffsPtr pSrcUV = (CoeffsPtr)src->m_pUVPlane + GetAddrOffset(PartIdx, src->chromaSize().width);
 
     Ipp32u DstStride = frame->pitch_luma();
 
     if (sizeof(PixType) == 1)
     {
-        H265PlanePtrYCommon pDst = frame->GetLumaAddr(CUAddr) + GetAddrOffset(PartIdx, DstStride);
-        H265PlanePtrYCommon pDstUV = frame->GetCbCrAddr(CUAddr) + GetAddrOffset(PartIdx, DstStride >> 1);
+        PlanePtrY pDst = frame->GetLumaAddr(CUAddr) + GetAddrOffset(PartIdx, DstStride);
+        PlanePtrUV pDstUV = frame->GetCbCrAddr(CUAddr) + GetAddrOffset(PartIdx, DstStride >> 1);
 
         MFX_HEVC_PP::NAME(h265_CopyWeighted_S16U8)(pSrc, pSrcUV, pDst, pDstUV, src->pitch_luma(), frame->pitch_luma(), src->pitch_chroma(), frame->pitch_chroma(), Width, Height, w, o, logWD, round);
     }
@@ -522,18 +520,18 @@ void H265Prediction::CopyWeighted(H265DecoderFrame* frame, H265DecYUVBufferPadde
 template<typename PixType>
 void H265Prediction::CopyWeightedBidi(H265DecoderFrame* frame, H265DecYUVBufferPadded* src0, H265DecYUVBufferPadded* src1, Ipp32u CUAddr, Ipp32u PartIdx, Ipp32u Width, Ipp32u Height, Ipp32s *w0, Ipp32s *w1, Ipp32s *logWD, Ipp32s *round, Ipp32u bit_depth)
 {
-    H265CoeffsPtrCommon pSrc0 = (H265CoeffsPtrCommon)src0->m_pYPlane + GetAddrOffset(PartIdx, src0->lumaSize().width);
-    H265CoeffsPtrCommon pSrcUV0 = (H265CoeffsPtrCommon)src0->m_pUVPlane + GetAddrOffset(PartIdx, src0->chromaSize().width);
+    CoeffsPtr pSrc0 = (CoeffsPtr)src0->m_pYPlane + GetAddrOffset(PartIdx, src0->lumaSize().width);
+    CoeffsPtr pSrcUV0 = (CoeffsPtr)src0->m_pUVPlane + GetAddrOffset(PartIdx, src0->chromaSize().width);
 
-    H265CoeffsPtrCommon pSrc1 = (H265CoeffsPtrCommon)src1->m_pYPlane + GetAddrOffset(PartIdx, src1->lumaSize().width);
-    H265CoeffsPtrCommon pSrcUV1 = (H265CoeffsPtrCommon)src1->m_pUVPlane + GetAddrOffset(PartIdx, src1->chromaSize().width);
+    CoeffsPtr pSrc1 = (CoeffsPtr)src1->m_pYPlane + GetAddrOffset(PartIdx, src1->lumaSize().width);
+    CoeffsPtr pSrcUV1 = (CoeffsPtr)src1->m_pUVPlane + GetAddrOffset(PartIdx, src1->chromaSize().width);
 
     Ipp32u DstStride = frame->pitch_luma();
 
     if (sizeof(PixType) == 1)
     {
-        H265PlanePtrYCommon pDst = frame->GetLumaAddr(CUAddr) + GetAddrOffset(PartIdx, DstStride);
-        H265PlanePtrYCommon pDstUV = frame->GetCbCrAddr(CUAddr) + GetAddrOffset(PartIdx, DstStride >> 1);
+        PlanePtrY pDst = frame->GetLumaAddr(CUAddr) + GetAddrOffset(PartIdx, DstStride);
+        PlanePtrUV pDstUV = frame->GetCbCrAddr(CUAddr) + GetAddrOffset(PartIdx, DstStride >> 1);
 
         MFX_HEVC_PP::NAME(h265_CopyWeightedBidi_S16U8)(pSrc0, pSrcUV0, pSrc1, pSrcUV1, pDst, pDstUV, src0->pitch_luma(), src1->pitch_luma(), frame->pitch_luma(), src0->pitch_chroma(), src1->pitch_chroma(), frame->pitch_chroma(), Width, Height, w0, w1, logWD, round);
     }

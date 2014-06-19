@@ -199,7 +199,7 @@ bool MFXTaskSupplier_H265::CheckDecoding(bool should_additional_check, H265Decod
 
         for (H265DecoderFrame * pTmp = view.pDPB->head(); pTmp; pTmp = pTmp->future())
         {
-            if (pTmp->m_wasOutputted != 0 && pTmp->m_wasDisplayed == 0)
+            if (pTmp->m_wasOutputted != 0 && pTmp->m_wasDisplayed == 0 && pTmp->m_maxUIDWhenWasDisplayed)
             {
                 inDisplayStage++; // number of outputted frames at this moment
             }
@@ -209,11 +209,10 @@ bool MFXTaskSupplier_H265::CheckDecoding(bool should_additional_check, H265Decod
         }
 
         DEBUG_PRINT1((VM_STRING("output frame - %d, notDecoded - %u, count - %u\n"), outputFrame->m_PicOrderCnt, notDecoded, count));
-        if (inDisplayStage > 1)
+        if (inDisplayStage > 1 || m_maxUIDWhenWasDisplayed <= maxReadyUID)
+        {
             return true;
-
-        if (outputFrame->m_maxUIDWhenWasDisplayed <= maxReadyUID)
-            return true;
+        }
     }
 
     return false;
@@ -267,7 +266,7 @@ UMC::Status MFXTaskSupplier_H265::DecodeHeaders(UMC::MediaDataEx *nalUnit)
 
     if (currSPS)
     {
-        if (currSPS->chroma_format_idc > 1)
+        if (currSPS->chroma_format_idc > 2)
             throw h265_exception(UMC::UMC_ERR_UNSUPPORTED);
     }
 
@@ -341,6 +340,7 @@ UMC::Status MFXTaskSupplier_H265::DecodeSEI(UMC::MediaDataEx *nalUnit)
         Ipp32u temporal_id;
 
         bitStream.GetNALUnitType(nal_unit_type, temporal_id);
+        nalUnit->MoveDataPointer(1); // nal_unit_type - 8 bits
 
         do
         {
@@ -369,12 +369,22 @@ UMC::Status MFXTaskSupplier_H265::DecodeSEI(UMC::MediaDataEx *nalUnit)
 
             VM_ASSERT(size == m_SEIPayLoads.payLoadSize + 2 + (m_SEIPayLoads.payLoadSize / 255) + (m_SEIPayLoads.payLoadType / 255));
 
-            UMC::MediaDataEx nalUnit1;
+            if (m_sei_messages)
+            {
+                UMC::MediaDataEx nalUnit1;
 
-            nalUnit1.SetBufferPointer((Ipp8u*)nalUnit->GetDataPointer(), decoded1 + size);
-            nalUnit1.SetDataSize(decoded1 + size);
-            nalUnit1.MoveDataPointer((Ipp32s)decoded1);
-            m_sei_messages->AddMessage(&nalUnit1, m_SEIPayLoads.payLoadType);
+                size_t nal_u_size = size;
+                for(Ipp8u *ptr = (Ipp8u*)nalUnit->GetDataPointer(); ptr < (Ipp8u*)nalUnit->GetDataPointer() + nal_u_size; ptr++)
+                    if (ptr[0]==0 && ptr[1]==0 && ptr[2]==3)
+                        nal_u_size += 1;
+
+                nalUnit1.SetBufferPointer((Ipp8u*)nalUnit->GetDataPointer(), nal_u_size);
+                nalUnit1.SetDataSize(nal_u_size);
+            
+                nalUnit->MoveDataPointer((Ipp32s)nal_u_size);
+            
+                m_sei_messages->AddMessage(&nalUnit1, m_SEIPayLoads.payLoadType);
+            }
 
         } while (bitStream.More_RBSP_Data());
 
@@ -397,18 +407,17 @@ bool MFX_Utility::IsNeedPartialAcceleration_H265(mfxVideoParam * par, eMFXHWType
     if (!par)
         return false;
 
-    if (par->mfx.FrameInfo.FourCC == MFX_FOURCC_P010)
-        return true;
-
     return false;
 }
 
 // Returns implementation platform
 eMFXPlatform MFX_Utility::GetPlatform_H265(VideoCORE * core, mfxVideoParam * par)
 {
+    if (!par)
+        return MFX_PLATFORM_SOFTWARE;
+
 #if !defined (MFX_VA) && defined (AS_HEVCD_PLUGIN)
     core;
-    par;
     //we sure that plug-in implementation is SW 
     return MFX_PLATFORM_SOFTWARE;
 #else
@@ -418,7 +427,7 @@ eMFXPlatform MFX_Utility::GetPlatform_H265(VideoCORE * core, mfxVideoParam * par
     typeHW = core->GetHWType();
 #endif
 
-    if (par && IsNeedPartialAcceleration_H265(par, typeHW) && platform != MFX_PLATFORM_SOFTWARE)
+    if (IsNeedPartialAcceleration_H265(par, typeHW) && platform != MFX_PLATFORM_SOFTWARE)
     {
         return MFX_PLATFORM_SOFTWARE;
     }
@@ -426,10 +435,20 @@ eMFXPlatform MFX_Utility::GetPlatform_H265(VideoCORE * core, mfxVideoParam * par
 #if defined (MFX_VA)
     if (platform != MFX_PLATFORM_SOFTWARE)
     {
-        if (MFX_ERR_NONE != core->IsGuidSupported(DXVA_Intel_ModeHEVC_VLD_MainProfile, par) &&
-            MFX_ERR_NONE != core->IsGuidSupported(DXVA_ModeHEVC_VLD_Main, par))
+        if (par->mfx.FrameInfo.FourCC == MFX_FOURCC_P010)
         {
-            return MFX_PLATFORM_SOFTWARE;
+            if (MFX_ERR_NONE != core->IsGuidSupported(DXVA_Intel_ModeHEVC_VLD_Main10Profile, par))
+            {
+                return MFX_PLATFORM_SOFTWARE;
+            }
+        }
+        else
+        {
+            if (MFX_ERR_NONE != core->IsGuidSupported(DXVA_Intel_ModeHEVC_VLD_MainProfile, par) &&
+                MFX_ERR_NONE != core->IsGuidSupported(DXVA_ModeHEVC_VLD_Main, par))
+            {
+                return MFX_PLATFORM_SOFTWARE;
+            }
         }
     }
 #endif
@@ -441,11 +460,14 @@ eMFXPlatform MFX_Utility::GetPlatform_H265(VideoCORE * core, mfxVideoParam * par
 UMC::Status MFX_Utility::FillVideoParam(const H265SeqParamSet * seq, mfxVideoParam *par, bool full)
 {
     par->mfx.CodecId = MFX_CODEC_HEVC;
-    par->mfx.FrameInfo.FourCC = MFX_FOURCC_NV12;
 
     if (seq->bit_depth_luma > 8 || seq->bit_depth_chroma > 8)
     {
-        par->mfx.FrameInfo.FourCC = MFX_FOURCC_P010;
+        par->mfx.FrameInfo.FourCC = (seq->chroma_format_idc == 2) ? MFX_FOURCC_P210 : MFX_FOURCC_P010;
+    }
+    else
+    {
+        par->mfx.FrameInfo.FourCC = (seq->chroma_format_idc == 2) ? MFX_FOURCC_NV16 : MFX_FOURCC_NV12;
     }
 
     par->mfx.FrameInfo.Width = (mfxU16) (seq->pic_width_in_luma_samples);
@@ -453,6 +475,10 @@ UMC::Status MFX_Utility::FillVideoParam(const H265SeqParamSet * seq, mfxVideoPar
 
     par->mfx.FrameInfo.Width = UMC::align_value<mfxU16>(par->mfx.FrameInfo.Width, 16);
     par->mfx.FrameInfo.Height = UMC::align_value<mfxU16>(par->mfx.FrameInfo.Height, 16);
+
+    par->mfx.FrameInfo.BitDepthLuma = (mfxU16) (seq->bit_depth_luma);
+    par->mfx.FrameInfo.BitDepthChroma = (mfxU16) (seq->bit_depth_chroma);
+    par->mfx.FrameInfo.Shift = 0;
 
     //if (seq->frame_cropping_flag)
     {
@@ -527,6 +553,8 @@ UMC::Status MFX_Utility::FillVideoParam(TaskSupplier_H265 * supplier, mfxVideoPa
     {
         par->mfx.FrameInfo.Width = UMC::align_value<mfxU16>(par->mfx.FrameInfo.Width, 64);
         par->mfx.FrameInfo.Height = UMC::align_value<mfxU16>(par->mfx.FrameInfo.Height, 64);
+        if (par->mfx.FrameInfo.FourCC == MFX_FOURCC_P010)
+            par->mfx.FrameInfo.Shift = (16 - par->mfx.FrameInfo.BitDepthLuma);
     }
 
     return UMC::UMC_OK;
@@ -933,6 +961,46 @@ mfxStatus MFX_CDECL MFX_Utility::Query_H265(VideoCORE *core, mfxVideoParam *in, 
             sts = MFX_ERR_UNSUPPORTED;
         }
 
+        out->mfx.FrameInfo.BitDepthLuma = in->mfx.FrameInfo.BitDepthLuma;
+
+        if (in->mfx.FrameInfo.BitDepthLuma && (in->mfx.FrameInfo.BitDepthLuma < 8 || in->mfx.FrameInfo.BitDepthLuma > 16))
+        {
+            out->mfx.FrameInfo.BitDepthLuma = 0;
+            sts = MFX_ERR_UNSUPPORTED;
+        }
+
+        out->mfx.FrameInfo.BitDepthChroma = in->mfx.FrameInfo.BitDepthChroma;
+        if (in->mfx.FrameInfo.BitDepthChroma && (in->mfx.FrameInfo.BitDepthChroma < 8 || in->mfx.FrameInfo.BitDepthChroma > 16))
+        {
+            out->mfx.FrameInfo.BitDepthChroma = 0;
+            sts = MFX_ERR_UNSUPPORTED;
+        }
+
+        if (in->mfx.FrameInfo.FourCC != MFX_FOURCC_P010 && (in->mfx.FrameInfo.BitDepthLuma > 8 || in->mfx.FrameInfo.BitDepthChroma > 8))
+        {
+            out->mfx.FrameInfo.BitDepthLuma = 0;
+            out->mfx.FrameInfo.BitDepthChroma = 0;
+            sts = MFX_ERR_UNSUPPORTED;
+        }
+        
+        out->mfx.FrameInfo.Shift = in->mfx.FrameInfo.Shift;
+        if (in->mfx.FrameInfo.FourCC == MFX_FOURCC_P010)
+        {
+            if (in->mfx.FrameInfo.Shift > 7 || (out->mfx.FrameInfo.BitDepthLuma && (16 - out->mfx.FrameInfo.BitDepthLuma < in->mfx.FrameInfo.Shift) ))
+            {
+                out->mfx.FrameInfo.Shift = 0;
+                sts = MFX_ERR_UNSUPPORTED;
+            }
+        }
+        else
+        {
+            if (in->mfx.FrameInfo.Shift)
+            {
+                out->mfx.FrameInfo.Shift = 0;
+                sts = MFX_ERR_UNSUPPORTED;
+            }
+        }
+
         switch (in->mfx.FrameInfo.PicStruct)
         {
         case MFX_PICSTRUCT_UNKNOWN:
@@ -1088,6 +1156,10 @@ mfxStatus MFX_CDECL MFX_Utility::Query_H265(VideoCORE *core, mfxVideoParam *in, 
 
         out->mfx.FrameInfo.PicStruct = MFX_PICSTRUCT_PROGRESSIVE;
 
+        out->mfx.FrameInfo.BitDepthLuma = 8;
+        out->mfx.FrameInfo.BitDepthChroma = 8;
+        out->mfx.FrameInfo.Shift = 0;
+
         if (type >= MFX_HW_SNB)
         {
             out->Protected = MFX_PROTECTION_GPUCP_PAVP;
@@ -1165,6 +1237,29 @@ bool MFX_CDECL MFX_Utility::CheckVideoParam_H265(mfxVideoParam *in, eMFXHWType t
     // both zero or not zero
     if ((in->mfx.FrameInfo.AspectRatioW || in->mfx.FrameInfo.AspectRatioH) && !(in->mfx.FrameInfo.AspectRatioW && in->mfx.FrameInfo.AspectRatioH))
         return false;
+
+    if (in->mfx.FrameInfo.FourCC == MFX_FOURCC_P010)
+    {
+        if (in->mfx.FrameInfo.BitDepthLuma < 8 || in->mfx.FrameInfo.BitDepthLuma > 16)
+            return false;
+
+        if (in->mfx.FrameInfo.BitDepthChroma < 8 || in->mfx.FrameInfo.BitDepthChroma > 16)
+            return false;
+
+        if (in->mfx.FrameInfo.Shift > 8 || (16 - in->mfx.FrameInfo.BitDepthLuma < in->mfx.FrameInfo.Shift))
+            return false;
+    }
+    else
+    {
+        if (in->mfx.FrameInfo.Shift)
+            return false;
+
+        if (in->mfx.FrameInfo.BitDepthLuma && in->mfx.FrameInfo.BitDepthLuma != 8)
+            return false;
+
+        if (in->mfx.FrameInfo.BitDepthChroma && in->mfx.FrameInfo.BitDepthChroma != 8)
+            return false;
+    }
 
     switch (in->mfx.FrameInfo.PicStruct)
     {

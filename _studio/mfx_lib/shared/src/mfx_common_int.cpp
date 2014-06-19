@@ -458,7 +458,7 @@ mfxStatus CheckFrameData(const mfxFrameSurface1 *surface)
 mfxStatus CheckDecodersExtendedBuffers(mfxVideoParam* par)
 {
     static const mfxU32 g_decoderSupportedExtBuffersAVC[] = {MFX_EXTBUFF_PAVP_OPTION, MFX_EXTBUFF_MVC_SEQ_DESC,
-        MFX_EXTBUFF_MVC_TARGET_VIEWS, MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION, MFX_EXTBUFF_SVC_SEQ_DESC, MFX_EXTBUFF_SVC_TARGET_LAYER};
+        MFX_EXTBUFF_MVC_TARGET_VIEWS, MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION, MFX_EXTBUFF_SVC_SEQ_DESC, MFX_EXTBUFF_SVC_TARGET_LAYER, MFX_EXTBUFF_DEC_VIDEO_PROCESSING};
 
     static const mfxU32 g_decoderSupportedExtBuffersHEVC[] = {MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION};
 
@@ -675,6 +675,7 @@ void mfxVideoParamWrapper::CopyVideoParam(const mfxVideoParam & par)
     {
         switch(par.ExtParam[i]->BufferId)
         {
+        case MFX_EXTBUFF_DEC_VIDEO_PROCESSING:
         case MFX_EXTBUFF_MVC_TARGET_VIEWS:
         case MFX_EXTBUFF_PAVP_OPTION:
         case MFX_EXTBUFF_VIDEO_SIGNAL_INFO:

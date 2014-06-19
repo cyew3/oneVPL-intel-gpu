@@ -450,7 +450,6 @@ SEI_Storer_H265::SEI_Message* SEI_Storer_H265::AddMessage(UMC::MediaDataEx *nalU
         freeSlot = m_payloads.size() - 1;
     }
 
-    m_payloads[freeSlot].msg_size = sz;
     m_payloads[freeSlot].offset = m_offset;
     m_payloads[freeSlot].timestamp = 0;
     m_payloads[freeSlot].frame = 0;
@@ -458,10 +457,9 @@ SEI_Storer_H265::SEI_Message* SEI_Storer_H265::AddMessage(UMC::MediaDataEx *nalU
     m_payloads[freeSlot].data = &(m_data.front()) + m_offset;
     m_payloads[freeSlot].type = type;
 
-    MFX_INTERNAL_CPY(&m_data[m_offset], (Ipp8u*)nalUnit->GetDataPointer(), sz);
+    MFX_INTERNAL_CPY(&m_data[m_offset], (Ipp8u*)nalUnit->GetDataPointer(), (Ipp32u)sz);
 
     m_offset += sz;
-
     return &m_payloads[freeSlot];
 }
 
@@ -767,6 +765,7 @@ void TaskSupplier_H265::Close()
     m_frameOrder               = 0;
 
     m_WaitForIDR        = true;
+    m_maxUIDWhenWasDisplayed = 0;
 
     m_RA_POC = 0;
     m_IRAPType = NAL_UT_INVALID;
@@ -829,6 +828,7 @@ void TaskSupplier_H265::Reset()
     m_frameOrder               = 0;
 
     m_WaitForIDR        = true;
+    m_maxUIDWhenWasDisplayed = 0;
 
     m_RA_POC = 0;
     m_IRAPType = NAL_UT_INVALID;
@@ -864,6 +864,7 @@ void TaskSupplier_H265::AfterErrorRestore()
     m_Headers.Reset(true);
 
     m_WaitForIDR        = true;
+    m_maxUIDWhenWasDisplayed = 0;
     NoRaslOutputFlag = 1;
 
     m_pLastDisplayed = 0;
@@ -1166,36 +1167,12 @@ UMC::Status TaskSupplier_H265::xDecodePPS(H265Bitstream &bs)
         if (rows > HeightInLCU)
             throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
 
-        Ipp32u *colBd = h265_new_array_throw<Ipp32u>(columns);
-        if (NULL == colBd)
-        {
-            pps.Reset();
-            return UMC::UMC_ERR_ALLOC;
-        }
-
-        Ipp32u *rowBd = h265_new_array_throw<Ipp32u>(rows);
-        if (NULL == rowBd)
-        {
-            pps.Reset();
-            return UMC::UMC_ERR_ALLOC;
-        }
-
         if (pps.uniform_spacing_flag)
         {
             Ipp32u lastDiv, i;
 
             pps.column_width = h265_new_array_throw<Ipp32u>(columns);
-            if (NULL == pps.column_width)
-            {
-                pps.Reset();
-                return UMC::UMC_ERR_ALLOC;
-            }
             pps.row_height = h265_new_array_throw<Ipp32u>(rows);
-            if (NULL == pps.row_height)
-            {
-                pps.Reset();
-                return UMC::UMC_ERR_ALLOC;
-            }
 
             lastDiv = 0;
             for (i = 0; i < columns; i++)
@@ -1220,41 +1197,55 @@ UMC::Status TaskSupplier_H265::xDecodePPS(H265Bitstream &bs)
             Ipp32u tmp = 0;
 
             for (i = 0; i < pps.num_tile_columns - 1; i++)
-                tmp += pps.getColumnWidth(i);
+            {
+                Ipp32u column = pps.getColumnWidth(i);
+                if (column > WidthInLCU)
+                    throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
+                tmp += column;
+            }
+
+            if (tmp >= WidthInLCU)
+                throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
 
             pps.column_width[pps.num_tile_columns - 1] = WidthInLCU - tmp;
 
             tmp = 0;
             for (i = 0; i < pps.num_tile_rows - 1; i++)
-                tmp += pps.getRowHeight(i);
+            {
+                Ipp32u row = pps.getRowHeight(i);
+                if (row > HeightInLCU)
+                    throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
+                tmp += row;
+            }
 
             pps.row_height[pps.num_tile_rows - 1] = HeightInLCU - tmp;
+            if (tmp >= HeightInLCU)
+                throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
         }
 
-        Ipp32u tbX, tbY;
-        Ipp32u i, j;
+        Ipp32u *colBd = h265_new_array_throw<Ipp32u>(columns);
+        Ipp32u *rowBd = h265_new_array_throw<Ipp32u>(rows);
 
         colBd[0] = 0;
-        for (i = 0; i < pps.num_tile_columns - 1; i++)
+        for (Ipp32u i = 0; i < pps.num_tile_columns - 1; i++)
         {
             colBd[i + 1] = colBd[i] + pps.getColumnWidth(i);
         }
 
         rowBd[0] = 0;
-        for (i = 0; i < pps.num_tile_rows - 1; i++)
+        for (Ipp32u i = 0; i < pps.num_tile_rows - 1; i++)
         {
             rowBd[i + 1] = rowBd[i] + pps.getRowHeight(i);
         }
 
-        tbX = tbY = 0;
-
+        Ipp32u tbX = 0, tbY = 0;
 
         // Initialize CTB index raster to tile and inverse lookup tables
-        for (i = 0; i < WidthInLCU * HeightInLCU; i++)
+        for (Ipp32u i = 0; i < WidthInLCU * HeightInLCU; i++)
         {
             Ipp32u tileX = 0, tileY = 0, CtbAddrRStoTS;
 
-            for (j = 0; j < columns; j++)
+            for (Ipp32u j = 0; j < columns; j++)
             {
                 if (tbX >= colBd[j])
                 {
@@ -1262,7 +1253,7 @@ UMC::Status TaskSupplier_H265::xDecodePPS(H265Bitstream &bs)
                 }
             }
 
-            for (j = 0; j < rows; j++)
+            for (Ipp32u j = 0; j < rows; j++)
             {
                 if (tbY >= rowBd[j])
                 {
@@ -1284,7 +1275,7 @@ UMC::Status TaskSupplier_H265::xDecodePPS(H265Bitstream &bs)
             }
         }
 
-        for (i = 0; i < WidthInLCU * HeightInLCU; i++)
+        for (Ipp32u i = 0; i < WidthInLCU * HeightInLCU; i++)
         {
             Ipp32u CtbAddrRStoTS = pps.m_CtbAddrRStoTS[i];
             pps.m_CtbAddrTStoRS[CtbAddrRStoTS] = i;
@@ -1307,7 +1298,7 @@ UMC::Status TaskSupplier_H265::xDecodePPS(H265Bitstream &bs)
         memset(pps.m_TileIdx, 0, sizeof(Ipp32u) * WidthInLCU * HeightInLCU);
     }
 
-    Ipp32s numberOfTiles = pps.tiles_enabled_flag ? pps.num_tile_columns * pps.num_tile_rows : 0;
+    Ipp32s numberOfTiles = pps.tiles_enabled_flag ? pps.getNumTiles() : 0;
 
     pps.tilesInfo.resize(numberOfTiles);
 
@@ -1431,7 +1422,6 @@ void TaskSupplier_H265::PostProcessDisplayFrame(UMC::MediaData *dst, H265Decoder
             view.localFrameTime += (m_local_delta_frame_time / 2);
         }
         break;
-
     }
 
     view.localFrameTime += m_local_delta_frame_time;
@@ -1442,6 +1432,8 @@ void TaskSupplier_H265::PostProcessDisplayFrame(UMC::MediaData *dst, H265Decoder
 
     DEBUG_PRINT((VM_STRING("Outputted POC - %d, busyState - %d, uid - %d, pppp - %d\n"), pFrame->m_PicOrderCnt, pFrame->GetRefCounter(), pFrame->m_UID, pppp++));
     dst->SetTime(pFrame->m_dFrameTime);
+
+    m_maxUIDWhenWasDisplayed = IPP_MAX(m_maxUIDWhenWasDisplayed, pFrame->m_maxUIDWhenWasDisplayed);
 }
 
 // Find a next frame ready to be output from decoder
@@ -2192,7 +2184,7 @@ void TaskSupplier_H265::AddFakeReferenceFrame(H265Slice *)
     pFrame->SetFrameExistFlag(false);
     pFrame->SetisDisplayable();
 
-    pFrame->DefaultFill(2, false);
+    pFrame->DefaultFill(false);
 
     H265SliceHeader* sliceHeader = pSlice->GetSliceHeader();
     ViewItem_H265 &view = *GetView();
@@ -2211,7 +2203,7 @@ void SetDeltaPocs(const H265DecoderFrameList * dpb, const H265DecoderFrame * fra
             max_index = curr->m_index;
     }
 
-    frame->getCD()->m_pocDelta.resize(max_index + 1);
+    frame->getCD()->m_refFrameInfo.resize(max_index + 1);
 
     for (const H265DecoderFrame *curr = dpb->head(); curr; curr = curr->future())
     {
@@ -2219,7 +2211,8 @@ void SetDeltaPocs(const H265DecoderFrameList * dpb, const H265DecoderFrame * fra
             continue;
 
         Ipp32s POCDelta = frame->m_PicOrderCnt - curr->m_PicOrderCnt;
-        frame->getCD()->m_pocDelta[curr->m_index] = POCDelta;
+        frame->getCD()->m_refFrameInfo[curr->m_index].pocDelta = POCDelta;
+        frame->getCD()->m_refFrameInfo[curr->m_index].flags = curr->isLongTermRef() ? COL_TU_LT_INTER : COL_TU_ST_INTER;
     }
 }
 
@@ -2281,43 +2274,16 @@ void TaskSupplier_H265::CompleteFrame(H265DecoderFrame * pFrame)
         }
     }
 
-    Ipp32s count = slicesInfo->GetSliceCount();
+    slicesInfo->EliminateASO();
 
-    H265Slice * pFirstSlice = 0;
-    for (Ipp32s j = 0; j < count; j ++)
+    if (slicesInfo->GetSlice(0)->GetFirstMB())
     {
-        H265Slice * pSlice = slicesInfo->GetSlice(j);
-        if (!pFirstSlice || pSlice->m_iFirstMB < pFirstSlice->m_iFirstMB)
-        {
-            pFirstSlice = pSlice;
-        }
-    }
-
-    if (pFirstSlice->m_iFirstMB)
-    {
-        m_pSegmentDecoder[0]->RestoreErrorRect(0, pFirstSlice->m_iFirstMB, pFirstSlice);
-    }
-
-    for (Ipp32s i = 0; i < count; i ++)
-    {
-        H265Slice * pCurSlice = slicesInfo->GetSlice(i);
-
-#define MAX_MB_NUMBER 0x7fffffff
-
-        Ipp32s minFirst = MAX_MB_NUMBER;
-        for (Ipp32s j = 0; j < count; j ++)
-        {
-            H265Slice * pSlice = slicesInfo->GetSlice(j);
-            if (pSlice->m_iFirstMB > pCurSlice->m_iFirstMB && minFirst > pSlice->m_iFirstMB)
-            {
-                minFirst = pSlice->m_iFirstMB;
-            }
-        }
-
-        if (minFirst != MAX_MB_NUMBER)
-        {
-            pCurSlice->m_iMaxMB = minFirst;
-        }
+        H265Task task(0);
+        task.m_iFirstMB = 0;
+        task.m_iMBToProcess = slicesInfo->GetSlice(0)->GetFirstMB();
+        task.m_pSlice = slicesInfo->GetSlice(0);
+        task.m_pSlicesInfo = slicesInfo;
+        m_pSegmentDecoder[0]->RestoreErrorRect(&task);
     }
 
     slicesInfo->SetStatus(H265DecoderFrameInfo::STATUS_FILLED);
@@ -2482,7 +2448,7 @@ H265DecoderFrame * TaskSupplier_H265::AllocateNewFrame(const H265Slice *pSlice)
     //fill chroma planes in case of 4:0:0
     if (pFrame->m_chroma_format == 0)
     {
-        pFrame->DefaultFill(2, true);
+        pFrame->DefaultFill(true);
     }
 
     InitFrameCounter(pFrame, pSlice);
@@ -2588,6 +2554,21 @@ UMC::Status TaskSupplier_H265::GetUserData(UMC::MediaData * pUD)
     }
 
     return UMC::UMC_ERR_NOT_ENOUGH_DATA;
+}
+
+bool TaskSupplier_H265::IsShouldSuspendDisplay()
+{
+    UMC::AutomaticUMCMutex guard(m_mGuard);
+
+    if (m_iThreadNum <= 1)
+        return true;
+
+    ViewItem_H265 &view = *GetView();
+
+    if (view.pDPB->GetDisposable() || view.pDPB->countAllFrames() < view.dpbSize + m_DPBSizeEx)
+        return false;
+
+    return true;
 }
 
 // Find an index of specified level

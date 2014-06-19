@@ -44,7 +44,7 @@ class H265Prediction
 public:
 
 protected:
-    H265PlanePtrYCommon m_temp_interpolarion_buffer;
+    PlanePtrY m_temp_interpolarion_buffer;
     Ipp32u m_MaxCUSize;
 
     DecodingContext* m_context;

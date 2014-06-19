@@ -142,7 +142,7 @@ namespace UMC_HEVC_DECODER
         }
 
         // Do prediction from neighbours
-        H265PlanePtrYCommon pRec = m_context->m_frame->GetLumaAddr(m_cu->CUAddr, AbsPartIdx);
+        PlanePtrY pRec = m_context->m_frame->GetLumaAddr(m_cu->CUAddr, AbsPartIdx);
         Ipp32u pitch = m_context->m_frame->pitch_luma();
 
         m_reconstructor->PredictIntra(LumaPredMode, PredPel, pRec, pitch, width, m_pSeqParamSet->bit_depth_luma);
@@ -151,7 +151,7 @@ namespace UMC_HEVC_DECODER
         if (!m_cu->GetCbf(COMPONENT_LUMA, AbsPartIdx, TrDepth))
             return;
 
-        H265CoeffsPtrCommon pCoeff = m_context->m_coeffsRead;
+        CoeffsPtr pCoeff = m_context->m_coeffsRead;
         m_context->m_coeffsRead += width*width;
         bool useTransformSkip = m_cu->GetTransformSkip(COMPONENT_LUMA, AbsPartIdx) != 0;
 
@@ -161,7 +161,7 @@ namespace UMC_HEVC_DECODER
 
     // Add residual to prediction for NV12 chroma
     template <typename PixType>
-    void SumOfResidAndPred(H265CoeffsPtrCommon p_ResiU, H265CoeffsPtrCommon p_ResiV, size_t residualPitch, PixType *pRecIPred, size_t RecIPredStride, Ipp32u Size,
+    void SumOfResidAndPred(CoeffsPtr p_ResiU, CoeffsPtr p_ResiV, size_t residualPitch, PixType *pRecIPred, size_t RecIPredStride, Ipp32u Size,
         bool chromaUPresent, bool chromaVPresent, Ipp32u bit_depth)
     {
         if (sizeof(PixType) == 1)
@@ -196,7 +196,7 @@ namespace UMC_HEVC_DECODER
 
         // Get prediction from neighbours
         Ipp32u Size = m_cu->GetWidth(AbsPartIdx) >> (TrDepth + 1);
-        H265PlanePtrUVCommon pRecIPred = m_pCurrentFrame->GetCbCrAddr(m_cu->CUAddr, AbsPartIdx);
+        PlanePtrUV pRecIPred = m_pCurrentFrame->GetCbCrAddr(m_cu->CUAddr, AbsPartIdx);
         Ipp32u RecIPredStride = m_pCurrentFrame->pitch_chroma();
 
         // Do prediction from neighbours
@@ -214,10 +214,10 @@ namespace UMC_HEVC_DECODER
         // Cb
         if (chromaUPresent)
         {
-            H265CoeffsPtrCommon pCoeff = m_context->m_coeffsRead;
+            CoeffsPtr pCoeff = m_context->m_coeffsRead;
             m_context->m_coeffsRead += Size*Size;
 
-            H265CoeffsPtrCommon pResi = (H265CoeffsPtrCommon)m_ppcYUVResi->m_pUPlane;
+            CoeffsPtr pResi = (CoeffsPtr)m_ppcYUVResi->m_pUPlane;
             bool useTransformSkip = m_cu->GetTransformSkip(COMPONENT_CHROMA_U, AbsPartIdx) != 0;
             m_TrQuant->InvTransformNxN(m_cu->GetCUTransquantBypass(AbsPartIdx), TEXT_CHROMA_U, REG_DCT,
                 pResi, residualPitch, pCoeff, Size, useTransformSkip);
@@ -226,10 +226,10 @@ namespace UMC_HEVC_DECODER
         // Cr
         if (chromaVPresent)
         {
-            H265CoeffsPtrCommon pCoeff = m_context->m_coeffsRead;
+            CoeffsPtr pCoeff = m_context->m_coeffsRead;
             m_context->m_coeffsRead += Size*Size;
 
-            H265CoeffsPtrCommon pResi = (H265CoeffsPtrCommon)m_ppcYUVResi->m_pVPlane;
+            CoeffsPtr pResi = (CoeffsPtr)m_ppcYUVResi->m_pVPlane;
             bool useTransformSkip = m_cu->GetTransformSkip(COMPONENT_CHROMA_V, AbsPartIdx) != 0;
             m_TrQuant->InvTransformNxN(m_cu->GetCUTransquantBypass(AbsPartIdx), TEXT_CHROMA_V, REG_DCT,
                 pResi, residualPitch, pCoeff, Size, useTransformSkip);
@@ -237,8 +237,8 @@ namespace UMC_HEVC_DECODER
 /*
         //===== reconstruction =====
         {
-            H265CoeffsPtrCommon p_ResiU = (H265CoeffsPtrCommon)m_ppcYUVResi->m_pUPlane;
-            H265CoeffsPtrCommon p_ResiV = (H265CoeffsPtrCommon)m_ppcYUVResi->m_pVPlane;
+            CoeffsPtr p_ResiU = (CoeffsPtr)m_ppcYUVResi->m_pUPlane;
+            CoeffsPtr p_ResiV = (CoeffsPtr)m_ppcYUVResi->m_pVPlane;
 
             switch ((chromaVPresent << 1) | chromaUPresent) {
 
@@ -315,8 +315,8 @@ namespace UMC_HEVC_DECODER
 */
         //===== reconstruction =====
           {
-            H265CoeffsPtrCommon p_ResiU = (H265CoeffsPtrCommon)m_ppcYUVResi->m_pUPlane;
-            H265CoeffsPtrCommon p_ResiV = (H265CoeffsPtrCommon)m_ppcYUVResi->m_pVPlane;
+            CoeffsPtr p_ResiU = (CoeffsPtr)m_ppcYUVResi->m_pUPlane;
+            CoeffsPtr p_ResiV = (CoeffsPtr)m_ppcYUVResi->m_pVPlane;
 
             if (m_pSeqParamSet->bit_depth_chroma > 8 || m_pSeqParamSet->bit_depth_luma > 8)
                 SumOfResidAndPred<Ipp16u>(p_ResiU, p_ResiV, residualPitch, (Ipp16u*)pRecIPred, RecIPredStride, Size, chromaUPresent, chromaVPresent, m_pSeqParamSet->bit_depth_chroma);

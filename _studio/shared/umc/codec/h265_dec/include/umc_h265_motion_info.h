@@ -91,9 +91,6 @@ public:
     H265MotionVector    m_mv[2];
     RefIndexType        m_refIdx[2];
     Ipp8s               m_index[2];
-    Ipp8u               m_flags[2];
-
-    Ipp8u               reserved[2];
 
     void setMVInfo(Ipp32s refList, RefIndexType iRefIdx, H265MotionVector const &cMV)
     {

@@ -68,6 +68,7 @@
 #ifdef UMC_VA_LINUX
 #include <va/va.h>
 #include <va/va_dec_vp8.h>
+#include <va/va_vpp.h>
 
 #ifdef VA_VP9_DECODER // FIXME: TEMPORAL solution!!!
 #include <va/va_dec_vp9.h>
@@ -144,6 +145,7 @@ enum VideoAccelerationProfile
     VA_PROFILE_MVC_STEREO       = 0x6000,
     VA_PROFILE_MVC_STEREO_PROG  = 0x7000,
     VA_PROFILE_INTEL            = 0x8000,
+    VA_PROFILE_10               = 0x9000,
 
     // configurations
     VA_CONFIGURATION    = 0x00ff0000,
@@ -169,7 +171,9 @@ enum VideoAccelerationProfile
 
     H264_VLD_MVC_MULTIVIEW      = VA_H264 | VA_VLD | VA_PROFILE_MVC_MV,
     H264_VLD_MVC_STEREO         = VA_H264 | VA_VLD | VA_PROFILE_MVC_STEREO,
-    H264_VLD_MVC_STEREO_PROG    = VA_H264 | VA_VLD | VA_PROFILE_MVC_STEREO_PROG
+    H264_VLD_MVC_STEREO_PROG    = VA_H264 | VA_VLD | VA_PROFILE_MVC_STEREO_PROG,
+
+    H265_10_VLD        = VA_H265 | VA_VLD | VA_PROFILE_10
 };
 
 #define MAX_BUFFER_TYPES    32
@@ -210,6 +214,7 @@ class VideoData;
 class UMCVACompBuffer;
 class VACompBuffer;
 class ProtectedVA;
+class VideoProcessingVA;
 
 // Convert codec type from enum VideoStreamType to enum VideoAccelerationProfile
 VideoAccelerationProfile VideoType2VAProfile(VideoStreamType video_type);
@@ -253,6 +258,7 @@ public:
         m_SurfaceWidth     = 0; // 0 means use default value
         m_SurfaceHeight    = 0; // 0 means use default value
         m_protectedVA = 0;
+        m_needVideoProcessingVA = false;
     }
     virtual ~VideoAcceleratorParams(void){}
 
@@ -260,7 +266,8 @@ public:
     Ipp32s          m_iNumberSurfaces;
     Ipp32s          m_SurfaceWidth;
     Ipp32s          m_SurfaceHeight;
-    ProtectedVA *   m_protectedVA;
+    Ipp32s          m_protectedVA;
+    bool            m_needVideoProcessingVA;
 
     // if extended surfaces exist
     bool   isExt;
@@ -277,6 +284,7 @@ public:
         m_Platform(VA_UNKNOWN_PLATFORM),
         m_HWPlatform(VA_HW_UNKNOWN),
         m_protectedVA(0),
+        m_videoProcessingVA(0),
         m_bH264ShortSlice(false),
         m_bH264MVCSupport(false),
         m_isUseStatuReport(true)
@@ -288,9 +296,7 @@ public:
         Close();
     }
 
-    virtual Status FindConfiguration(VideoStreamInfo *pVideoInfo) = 0; // Check configuration
     virtual Status Init(VideoAcceleratorParams* pInfo) = 0; // Initilize and allocate all resources
-    virtual Status GetInfo(VideoAcceleratorParams* /*pInfo*/) { return UMC_ERR_UNSUPPORTED; }
     virtual Status Close(void);
     virtual Status Reset(void);
 
@@ -315,7 +321,7 @@ public:
     virtual Ipp32s GetSurfaceID(Ipp32s idx) { return idx; }
 
     virtual ProtectedVA * GetProtectedVA() {return m_protectedVA;}
-    virtual void SetProtectedVA(ProtectedVA * va) {m_protectedVA = va;}
+    virtual VideoProcessingVA * GetVideoProcessingVA() {return m_videoProcessingVA;}
 
     bool IsLongSliceControl() const { return (!m_bH264ShortSlice); };
     bool IsMVCSupport() const {return m_bH264MVCSupport; };
@@ -330,6 +336,7 @@ public:
 
 protected:
     ProtectedVA *   m_protectedVA;
+    VideoProcessingVA * m_videoProcessingVA;
 
     bool            m_bH264ShortSlice;
     bool            m_bH264MVCSupport;

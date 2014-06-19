@@ -95,36 +95,18 @@ IPPFUN(IppStatus, ippiInterpolateChromaBlock, (H265InterpolationParams_8u *inter
 
 #pragma warning(disable: 4100)
 
-    // Set plane values to val
-    inline IppStatus SetPlane_H265(Ipp8u val, Ipp8u* pDst, Ipp32s len)
-    {
-        if (!pDst)
-            return ippStsNullPtrErr;
-
-        return ippsSet_8u(val, pDst, len);
-    }
-
-    // Copy frame plane
-    inline IppStatus CopyPlane_H265(const Ipp16s *pSrc, Ipp16s *pDst, Ipp32s len)
-    {
-        if (!pSrc || !pDst)
-            return ippStsNullPtrErr;
-
-        return ippsCopy_16s(pSrc, pDst, len);
-    }
-
     // Set plane values inside of region of interest to val
-    inline IppStatus SetPlane_H265(Ipp8u value, Ipp8u* pDst, Ipp32s dstStep,
+    inline IppStatus SetPlane(Ipp8u value, Ipp8u* pDst, Ipp32s dstStep,
                               IppiSize roiSize )
     {
         return ippiSet_8u_C1R(value, pDst, dstStep, roiSize);
     }
 
     // Copy frame plane inside of region of intereset
-    inline IppStatus CopyPlane_H265(Ipp16s* pSrc, Ipp32s srcStep, Ipp16s* pDst, Ipp32s dstStep,
+    inline IppStatus CopyPlane(Ipp8u* pSrc, Ipp32s srcStep, Ipp8u* pDst, Ipp32s dstStep,
                               IppiSize roiSize )
     {
-        return ippiCopy_16s_C1R(pSrc, srcStep, pDst, dstStep,
+        return ippiCopy_8u_C1R(pSrc, srcStep, pDst, dstStep,
                               roiSize);
     }
 
@@ -132,21 +114,8 @@ IPPFUN(IppStatus, ippiInterpolateChromaBlock, (H265InterpolationParams_8u *inter
     // 16 bits functions
     ///****************************************************************************************/
 
-    // Set plane values to val
-    inline void SetPlane_H265(Ipp16u val, Ipp16u* pDst, Ipp32s len)
-    {
-        ippsSet_16s(val, (Ipp16s *)pDst, len);
-    }
-
-    // Copy frame plane inside of region of intereset
-    inline void CopyPlane_H265(const Ipp16u *pSrc, Ipp16u *pDst, Ipp32s len)
-    {
-        ippsCopy_16s((const Ipp16s *)pSrc, (Ipp16s *)pDst, len);
-    }
-
-
     // Set plane values inside of region of interest to val
-    inline IppStatus SetPlane_H265(Ipp16u value, Ipp16u* pDst, Ipp32s dstStep,
+    inline IppStatus SetPlane(Ipp16u value, Ipp16u* pDst, Ipp32s dstStep,
                               IppiSize roiSize )
     {
         if (!pDst)
@@ -156,7 +125,7 @@ IPPFUN(IppStatus, ippiInterpolateChromaBlock, (H265InterpolationParams_8u *inter
     }
 
     // Copy frame plane inside of region of intereset
-    inline IppStatus CopyPlane_H265(const Ipp16u* pSrc, Ipp32s srcStep, Ipp16u* pDst, Ipp32s dstStep,
+    inline IppStatus CopyPlane(const Ipp16u* pSrc, Ipp32s srcStep, Ipp16u* pDst, Ipp32s dstStep,
                               IppiSize roiSize)
     {
         if (!pSrc || !pDst)

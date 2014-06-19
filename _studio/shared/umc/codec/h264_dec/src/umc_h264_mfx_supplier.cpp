@@ -546,6 +546,7 @@ Status MFXTaskSupplier::DecodeSEI(MediaDataEx *nalUnit)
         Ipp32u nal_ref_idc;
 
         bitStream.GetNALUnitType(nal_unit_type, nal_ref_idc);
+        nalUnit->MoveDataPointer(1); // nal_unit_type - 8 bits
 
         do
         {
@@ -584,14 +585,22 @@ Status MFXTaskSupplier::DecodeSEI(MediaDataEx *nalUnit)
 
             VM_ASSERT(size == m_SEIPayLoads.payLoadSize + 2 + (m_SEIPayLoads.payLoadSize / 255) + (m_SEIPayLoads.payLoadType / 255));
 
-            MediaDataEx nalUnit1;
-
-            nalUnit1.SetBufferPointer((Ipp8u*)nalUnit->GetDataPointer(), decoded1 + size);
-            nalUnit1.SetDataSize(decoded1 + size);
-            nalUnit1.MoveDataPointer((Ipp32s)decoded1);
-
             if (m_sei_messages)
+            {
+                MediaDataEx nalUnit1;
+
+                size_t nal_u_size = size;
+                for(Ipp8u *ptr = (Ipp8u*)nalUnit->GetDataPointer(); ptr < (Ipp8u*)nalUnit->GetDataPointer() + nal_u_size; ptr++)
+                    if (ptr[0]==0 && ptr[1]==0 && ptr[2]==3)
+                        nal_u_size += 1;
+
+                nalUnit1.SetBufferPointer((Ipp8u*)nalUnit->GetDataPointer(), nal_u_size);
+                nalUnit1.SetDataSize(nal_u_size);
+            
+                nalUnit->MoveDataPointer((Ipp32s)nal_u_size);
+            
                 m_sei_messages->AddMessage(&nalUnit1, m_SEIPayLoads.payLoadType, -1);
+            }
 
         } while (bitStream.More_RBSP_Data());
 

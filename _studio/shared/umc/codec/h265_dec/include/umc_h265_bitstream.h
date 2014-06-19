@@ -71,7 +71,7 @@ public:
     Ipp8u Get1Bit();
 
     // Check that position in bitstream didn't move outside the limit
-    void CheckBSLeft();
+    bool CheckBSLeft();
 
     // Check whether more data is present
     bool More_RBSP_Data();

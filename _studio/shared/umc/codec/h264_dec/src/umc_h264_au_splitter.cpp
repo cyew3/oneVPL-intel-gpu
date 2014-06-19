@@ -262,10 +262,28 @@ void SetOfSlices::SortSlices()
     {
         H264Slice * slice = GetSlice(sliceId);
         H264Slice * nextSlice = GetSlice(sliceId + 1);
-        if (nextSlice && !nextSlice->IsSliceGroups() && !slice->IsSliceGroups())
+        if (!nextSlice)
+            break;
+
+        if (nextSlice->IsSliceGroups() || slice->IsSliceGroups())
+            continue;
+
+        if (nextSlice->GetSliceHeader()->nal_ext.svc.quality_id == slice->GetSliceHeader()->nal_ext.svc.quality_id)
+            slice->SetMaxMB(nextSlice->GetStreamFirstMB());
+
+        if (slice->GetStreamFirstMB() == slice->GetMaxMB())
         {
-            if (nextSlice->GetSliceHeader()->nal_ext.svc.quality_id == slice->GetSliceHeader()->nal_ext.svc.quality_id)
-                slice->SetMaxMB(nextSlice->GetStreamFirstMB());
+            count--;
+            for (size_t i = sliceId; i < count; i++)
+            {
+                m_pSliceQueue[i] = m_pSliceQueue[i + 1];
+            }
+
+            m_pSliceQueue.resize(count);
+            slice->DecrementReference();
+
+            sliceId = Ipp32u(-1);
+            continue;
         }
     }
 }
@@ -359,6 +377,16 @@ void AccessUnit::CompleteLayer()
 
 bool AccessUnit::AddSlice(H264Slice * slice)
 {
+    if (!slice)
+    {
+        if (GetLayersCount())
+        {
+            m_isFullAU = true;
+        }
+
+        return false;
+    }
+
     SetOfSlices * setOfSlices = GetLayerBySlice(slice);
     if (!setOfSlices)
     {

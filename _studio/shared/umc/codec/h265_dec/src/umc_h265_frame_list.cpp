@@ -472,7 +472,7 @@ H265DecoderFrame * H265DBPList::FindClosest(H265DecoderFrame * pFrame)
 
     for (H265DecoderFrame * pTmp = m_pHead; pTmp; pTmp = pTmp->future())
     {
-        if (pTmp->IsSkipped() || pTmp == pFrame || pTmp->GetRefCounter() >= 2)
+        if (pTmp->IsSkipped() || pTmp == pFrame || !pTmp->IsDecodingCompleted())
             continue;
 
         if (pTmp->m_chroma_format != pFrame->m_chroma_format ||
@@ -536,18 +536,35 @@ void H265DBPList::Reset(void)
 // Debug print
 void H265DBPList::DebugPrint()
 {
-#if 1
+#ifdef ENABLE_TRACE
     Trace(VM_STRING("-==========================================\n"));
-    for (H265DecoderFrame * pTmp = m_pHead; pTmp; pTmp = pTmp->future())
-    {
-        Trace(VM_STRING("\n\nPTR = %p UID - %d POC - %d  - resetcount - %d\n"), (RefCounter *)pTmp, pTmp->m_UID, pTmp->m_PicOrderCnt, pTmp->RefPicListResetCount());
-        Trace(VM_STRING("Short - %d \n"), pTmp->isShortTermRef());
-        Trace(VM_STRING("Long - %d \n"), pTmp->isLongTermRef());
-        Trace(VM_STRING("Busy - %d \n"), pTmp->GetRefCounter());
-        Trace(VM_STRING("Skipping_H265 - %d, FrameExist - %d \n"), pTmp->IsSkipped(), pTmp->IsFrameExist());
-        Trace(VM_STRING("Disp - %d , wasOutput - %d wasDisplayed - %d\n"), pTmp->isDisplayable(), pTmp->wasOutputted(), pTmp->wasDisplayed());
-        Trace(VM_STRING("frame ID - %d \n"), pTmp->GetFrameData()->GetFrameMID());
+    Ipp32s curID = -1;
+    H265DecoderFrame * minTmp = 0;
 
+    for (;;)
+    {
+        for (H265DecoderFrame * pTmp = m_pHead; pTmp; pTmp = pTmp->future())
+        {
+            if (pTmp->m_UID > curID)
+            {
+                if (minTmp && minTmp->m_UID < pTmp->m_UID)
+                    continue;
+                minTmp = pTmp;
+            }
+        }
+
+        if (!minTmp)
+            break;
+
+        curID = minTmp->m_UID;
+
+        H265DecoderFrame * pTmp = minTmp;
+
+        Trace(VM_STRING("\n\nPTR = %p UID - %d POC - %d  - resetcount - %d, frame ID - %d\n"), (RefCounter *)pTmp, pTmp->m_UID, pTmp->m_PicOrderCnt, pTmp->RefPicListResetCount(), pTmp->GetFrameData()->GetFrameMID());
+        Trace(VM_STRING("Short - %d, Long - %d \n"), pTmp->isShortTermRef(), pTmp->isLongTermRef());
+        Trace(VM_STRING("Busy - %d, decoded - %d \n"), pTmp->GetRefCounter(), pTmp->IsDecodingCompleted());
+        Trace(VM_STRING("Disp - %d , wasOutput - %d wasDisplayed - %d, m_maxUIDWhenWasDisplayed - %d\n"), pTmp->isDisplayable(), pTmp->wasOutputted(), pTmp->wasDisplayed(), pTmp->m_maxUIDWhenWasDisplayed);
+        minTmp = 0;
     }
 
     Trace(VM_STRING("-==========================================\n"));

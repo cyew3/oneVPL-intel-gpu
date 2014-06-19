@@ -22,13 +22,15 @@
 #endif
 
 //#define __EXCEPTION_HANDLER_
+//#define ENABLE_TRACE
+//#define TIME_COUNTER
 
 namespace UMC_HEVC_DECODER
 {
 
-void Trace(vm_char * format, ...);
+#ifdef ENABLE_TRACE
+    void Trace(vm_char * format, ...);
 
-#if 0
 #if defined _DEBUG
 #define DEBUG_PRINT(x) Trace x
 static int pppp = 0;
@@ -54,7 +56,7 @@ function1();
 counter.suspendTimer();
 */
 
-#if 0
+#ifdef TIME_COUNTER
 class UMCTimeCounter
 {
 public:

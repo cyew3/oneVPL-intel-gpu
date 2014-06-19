@@ -21,6 +21,7 @@
 #include "mfx_trace.h"
 
 #include "umc_va_dxva2_protected.h"
+#include "umc_va_video_processing.h"
 
 #define OVERFLOW_CHECK_VALUE    0x11
 
@@ -413,7 +414,9 @@ static const GuidProfile guidProfiles[] =
     { VA_H264 | VA_VLD | VA_PROFILE_MVC_STEREO_PROG,   sDXVA_ModeH264_VLD_Stereo_Progressive_NoFGT },
 
     { VA_H265 | VA_VLD, DXVA_ModeHEVC_VLD_Main }, // MS
-    { VA_H265 | VA_VLD | VA_LONG_SLICE_MODE, DXVA_Intel_ModeHEVC_VLD_MainProfile }
+    { VA_H265 | VA_VLD, DXVA_Intel_ModeHEVC_VLD_MainProfile },
+    { VA_H265 | VA_VLD | VA_PROFILE_10, DXVA_Intel_ModeHEVC_VLD_Main10Profile },
+    
 };
 
 const GuidProfile * GuidProfile::GetGuidProfiles()
@@ -439,7 +442,8 @@ size_t GuidProfile::GetGuidProfileSize()
 bool DXVA2Accelerator::IsIntelCustomGUID() const
 {
     const GUID & guid = m_guidDecoder;
-    return (guid == sDXVA2_Intel_ModeVC1_D_Super || guid == sDXVA2_Intel_EagleLake_ModeH264_VLD_NoFGT || guid == sDXVA_Intel_ModeH264_VLD_MVC || guid == DXVA_Intel_ModeHEVC_VLD_MainProfile);
+    return (guid == sDXVA2_Intel_ModeVC1_D_Super || guid == sDXVA2_Intel_EagleLake_ModeH264_VLD_NoFGT || guid == sDXVA_Intel_ModeH264_VLD_MVC || guid == DXVA_Intel_ModeHEVC_VLD_MainProfile ||
+        guid == DXVA_Intel_ModeHEVC_VLD_Main10Profile);
 }
 
 //////////////////////////////////////////////////////////////
@@ -603,8 +607,8 @@ Status DXVA2Accelerator::FindConfiguration(VideoStreamInfo *pVideoInfo)
 
                     if (isHEVCGUID)
                     {
-                        if (1 == pConfig[iConfig].ConfigBitstreamRaw)
-                        { // short mode
+                        if (2 == pConfig[iConfig].ConfigBitstreamRaw)
+                        { // prefer long mode
                             idxConfig = iConfig;
                         }
                     }
@@ -667,12 +671,11 @@ Status DXVA2Accelerator::Init(VideoAcceleratorParams *pParams)
     {
         UMC_CALL(FindConfiguration(pParams->m_pVideoStreamInfo));
     }
+
     if (m_bAllocated)
     {
         UMC_RETURN(UMC_OK);
     }
-
-    m_protectedVA = pParams->m_protectedVA;
 
     // Number of surfaces
     Ipp32u numberSurfaces = pParams->m_iNumberSurfaces;
@@ -748,19 +751,25 @@ Status DXVA2Accelerator::Init(VideoAcceleratorParams *pParams)
         UMC_RETURN(UMC_ERR_INIT);
     }
 
+    if (IS_PROTECTION_ANY(pParams->m_protectedVA))
+    {
+        m_protectedVA = new UMC::ProtectedVA((mfxU16)pParams->m_protectedVA);
+    }
+
     m_isUseStatuReport = m_HWPlatform != VA_HW_LAKE;
     m_bAllocated = TRUE;
     UMC_RETURN(UMC_OK);
 }
 
-Status DXVA2Accelerator::GetInfo(VideoAcceleratorParams* pInfo)
+Status DXVA2Accelerator::Close()
 {
-    UMC_CHECK_PTR(pInfo);
-    pInfo->m_pVideoStreamInfo = NULL;
-    pInfo->m_iNumberSurfaces = (Ipp32u)m_surfaces.size();
-    pInfo->m_SurfaceWidth  = m_videoDesc.SampleWidth;
-    pInfo->m_SurfaceHeight = m_videoDesc.SampleHeight;
-    return UMC_OK;
+    delete m_protectedVA;
+    m_protectedVA = 0;
+
+    delete m_videoProcessingVA;
+    m_videoProcessingVA = 0;
+
+    return VideoAccelerator::Close();
 }
 
 //////////////////////////////////////////////////////////////

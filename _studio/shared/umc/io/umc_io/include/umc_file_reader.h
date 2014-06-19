@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2003-2009 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2003-2014 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -80,6 +80,7 @@ namespace UMC
         \param npos          integer (+/-) bytes
         \retval UMC_OK
         \retval UMC_ERR_NOT_INITIALIZED object was not initialize
+        \retval UMC_ERR_END_OF_STREAM   end of stream
         */
         Status      MovePosition(Ipp64u npos);
 

@@ -60,7 +60,6 @@ public:
         m_iMaxMB = -1;
         m_iMBToProcess = -1;
         m_iTaskID = 0;
-        m_bDone = false;
         m_bError = false;
         m_taskPreparingGuard = 0;
         m_context = 0;
@@ -69,7 +68,7 @@ public:
 
     UMC::Status (H265SegmentDecoderMultiThreaded::*pFunction)(H265Task &task);
 
-    H265CoeffsPtrCommon m_pBuffer;                                  // (Ipp16s *) pointer to working buffer
+    CoeffsPtr m_pBuffer;                                  // (Ipp16s *) pointer to working buffer
     size_t          m_WrittenSize;
 
     DecodingContext * m_context;
@@ -83,7 +82,6 @@ public:
     Ipp32s m_iMaxMB;                                            // (Ipp32s) maximum MB number in owning slice
     Ipp32s m_iMBToProcess;                                      // (Ipp32s) number of MB to processing
     Ipp32s m_iTaskID;                                           // (Ipp32s) task identificator
-    bool m_bDone;                                               // (bool) task was done
     bool m_bError;                                              // (bool) there is a error
 };
 

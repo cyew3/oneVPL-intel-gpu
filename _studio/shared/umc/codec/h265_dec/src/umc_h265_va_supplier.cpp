@@ -46,7 +46,7 @@ UMC::Status VATaskSupplier::Init(UMC::BaseCodecParams *pInit)
 
     DXVASupport<VATaskSupplier>::Init();
 
-    if (m_va && !m_va->IsSimulate())
+    if (m_va)
     {
         static_cast<TaskBrokerSingleThreadDXVA*>(m_pTaskBroker)->DXVAStatusReportingMode(false);//m_va->m_HWPlatform != UMC::VA_HW_LAKE);
         m_DPBSizeEx = 1;
@@ -111,78 +111,13 @@ void VATaskSupplier::CompleteFrame(H265DecoderFrame * pFrame)
     if (!pFrame)
         return;
 
-    H265DecoderFrameInfo * slicesInfo = pFrame->GetAU();
-
-    if (slicesInfo->GetStatus() > H265DecoderFrameInfo::STATUS_NOT_FILLED)
+    if (pFrame->GetAU()->GetStatus() > H265DecoderFrameInfo::STATUS_NOT_FILLED)
         return;
 
-    DEBUG_PRINT((VM_STRING("Complete frame POC - (%d) type - %d, count - %d, m_uid - %d, IDR - %d\n"), pFrame->m_PicOrderCnt, pFrame->m_FrameType, slicesInfo->GetSliceCount(), pFrame->m_UID, slicesInfo->GetAnySlice()->GetSliceHeader()->IdrPicFlag));
+    MFXTaskSupplier_H265::CompleteFrame(pFrame);
 
-    // skipping algorithm
-    {
-        if (IsShouldSkipFrame(pFrame) || IsSkipForCRAorBLA(slicesInfo->GetAnySlice()))
-        {
-            slicesInfo->SetStatus(H265DecoderFrameInfo::STATUS_COMPLETED);
-
-            pFrame->SetisShortTermRef(false);
-            pFrame->SetisLongTermRef(false);
-            pFrame->SetSkipped(true);
-            pFrame->OnDecodingCompleted();
-            return;
-        }
-        else
-        {
-            if (IsShouldSkipDeblocking(pFrame))
-            {
-                pFrame->GetAU()->SkipDeblocking();
-                pFrame->GetAU()->SkipSAO();
-            }
-        }
-    }
-
-        Ipp32s count = slicesInfo->GetSliceCount();
-
-        H265Slice * pFirstSlice = 0;
-        for (Ipp32s j = 0; j < count; j ++)
-        {
-            H265Slice * pSlice = slicesInfo->GetSlice(j);
-            if (!pFirstSlice || pSlice->m_iFirstMB < pFirstSlice->m_iFirstMB)
-            {
-                pFirstSlice = pSlice;
-            }
-        }
-
-        if (pFirstSlice->m_iFirstMB)
-        {
-            m_pSegmentDecoder[0]->RestoreErrorRect(0, pFirstSlice->m_iFirstMB, pFirstSlice);
-        }
-
-        for (Ipp32s i = 0; i < count; i ++)
-        {
-            H265Slice * pCurSlice = slicesInfo->GetSlice(i);
-
-#define MAX_MB_NUMBER 0x7fffffff
-
-            Ipp32s minFirst = MAX_MB_NUMBER;
-            for (Ipp32s j = 0; j < count; j ++)
-            {
-                H265Slice * pSlice = slicesInfo->GetSlice(j);
-                if (pSlice->m_iFirstMB > pCurSlice->m_iFirstMB && minFirst > pSlice->m_iFirstMB)
-                {
-                    minFirst = pSlice->m_iFirstMB;
-                }
-            }
-
-            if (minFirst != MAX_MB_NUMBER)
-            {
-                pCurSlice->m_iMaxMB = minFirst;
-            }
-        }
-
-        StartDecodingFrame(pFrame);
-        EndDecodingFrame();
-
-    slicesInfo->SetStatus(H265DecoderFrameInfo::STATUS_FILLED);
+    StartDecodingFrame(pFrame);
+    EndDecodingFrame();
 }
 
 void VATaskSupplier::InitFrameCounter(H265DecoderFrame * pFrame, const H265Slice *pSlice)

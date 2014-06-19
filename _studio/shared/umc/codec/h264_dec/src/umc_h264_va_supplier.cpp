@@ -69,7 +69,7 @@ Status VATaskSupplier::Init(BaseCodecParams *pInit)
             return UMC_ERR_INIT;
     }
 
-    if (m_va && !m_va->IsSimulate())
+    if (m_va)
     {
         static_cast<TaskBrokerSingleThreadDXVA*>(m_pTaskBroker)->DXVAStatusReportingMode(m_va->IsUseStatusReport());
     }
@@ -133,7 +133,7 @@ bool VATaskSupplier::GetFrameToDisplay(MediaData *dst, bool force)
 
     H264DecoderFrame * pPreviousFrame = m_pLastDisplayed;
 
-    if (m_va && !m_va->IsSimulate())
+    if (m_va)
     {
         if (pPreviousFrame && !pPreviousFrame->IsSkipped())
             pPreviousFrame->DecrementReference();
@@ -165,7 +165,7 @@ bool VATaskSupplier::GetFrameToDisplay(MediaData *dst, bool force)
     VideoData data;
     InitColorConverter(pFrame, &data, 0);
 
-    if (m_va && !m_va->IsSimulate())
+    if (m_va)
     {
         m_va->DisplayFrame(pFrame->m_index, static_cast<VideoData*>(dst));
         pFrame->IncrementReference();

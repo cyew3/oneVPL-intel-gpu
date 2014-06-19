@@ -10,6 +10,8 @@
 #ifndef __UMC_HEVC_DDI_H
 #define __UMC_HEVC_DDI_H
 
+#define version_0_89
+
 #pragma warning(disable: 4201)
 
 #pragma pack(1)
@@ -40,8 +42,8 @@ typedef struct _DXVA_Intel_Status_HEVC {
 
 typedef struct _DXVA_Intel_PicParams_HEVC
 {
-            USHORT  PicWidthInMinCbsY;
-            USHORT  PicHeightInMinCbsY;
+    USHORT  PicWidthInMinCbsY;
+    USHORT  PicHeightInMinCbsY;
 
     union
     {
@@ -59,33 +61,32 @@ typedef struct _DXVA_Intel_PicParams_HEVC
 
         } fields;
 
-            USHORT  wFormatAndSequenceInfoFlags;
+        USHORT  wFormatAndSequenceInfoFlags;
 
     } PicFlags;
 
-            DXVA_Intel_PicEntry_HEVC    CurrPic; 
+    DXVA_Intel_PicEntry_HEVC    CurrPic; 
 
-            UCHAR   sps_max_dec_pic_buffering_minus1;        // [0..15]
-            UCHAR   log2_min_luma_coding_block_size_minus3;     //[0..3]
-            UCHAR   log2_diff_max_min_luma_coding_block_size;    //[0..3]
-            UCHAR   log2_min_transform_block_size_minus2;        // [0..3]
-            UCHAR   log2_diff_max_min_transform_block_size;        // [0..3]
-            UCHAR   max_transform_hierarchy_depth_inter;    // [0..4]
-            UCHAR   max_transform_hierarchy_depth_intra;    // [0..4]
-            UCHAR   num_short_term_ref_pic_sets;
-            UCHAR   num_long_term_ref_pics_sps;
-            UCHAR   num_ref_idx_l0_default_active_minus1;
-            UCHAR   num_ref_idx_l1_default_active_minus1;
-            CHAR    init_qp_minus26;                // [-26..25]
-            UCHAR   ucNumDeltaPocsOfRefRpsIdx;        // [0]
-            USHORT  wNumBitsForShortTermRPSInSlice;
-            USHORT  ReservedBits2;
+    UCHAR   sps_max_dec_pic_buffering_minus1;        // [0..15]
+    UCHAR   log2_min_luma_coding_block_size_minus3;     //[0..3]
+    UCHAR   log2_diff_max_min_luma_coding_block_size;    //[0..3]
+    UCHAR   log2_min_transform_block_size_minus2;        // [0..3]
+    UCHAR   log2_diff_max_min_transform_block_size;        // [0..3]
+    UCHAR   max_transform_hierarchy_depth_inter;    // [0..4]
+    UCHAR   max_transform_hierarchy_depth_intra;    // [0..4]
+    UCHAR   num_short_term_ref_pic_sets;
+    UCHAR   num_long_term_ref_pics_sps;
+    UCHAR   num_ref_idx_l0_default_active_minus1;
+    UCHAR   num_ref_idx_l1_default_active_minus1;
+    CHAR    init_qp_minus26;                // [-26..25]
+    UCHAR   ucNumDeltaPocsOfRefRpsIdx;        // [0]
+    USHORT  wNumBitsForShortTermRPSInSlice;
+    USHORT  TotalNumEntryPointOffsets;
 
     union
     {
         struct
         {
-
             UINT32  scaling_list_enabled_flag                       : 1;
             UINT32  amp_enabled_flag                                : 1;
             UINT32  sample_adaptive_offset_enabled_flag             : 1;
@@ -104,17 +105,15 @@ typedef struct _DXVA_Intel_PicParams_HEVC
             UINT32  sign_data_hiding_flag                           : 1;
             UINT32  cabac_init_present_flag                         : 1;
             UINT32  ReservedBits3                                   : 5;
-
         } fields;
 
-            UINT32  dwCodingParamToolFlags;
+        UINT32  dwCodingParamToolFlags;
     };
 
     union
     {
         struct
         {
-
             UINT32  constrained_intra_pred_flag                 : 1;
             UINT32  transform_skip_enabled_flag                 : 1;
             UINT32  cu_qp_delta_enabled_flag                    : 1;
@@ -135,35 +134,34 @@ typedef struct _DXVA_Intel_PicParams_HEVC
             UINT32  IdrPicFlag                                  : 1;
             UINT32  IntraPicFlag                                : 1;
             UINT32  ReservedBits4                               : 13;
-
         } fields;
 
-            UINT    dwCodingSettingPicturePropertyFlags;
+        UINT    dwCodingSettingPicturePropertyFlags;
 
     } PicShortFormatFlags;
 
-            CHAR    pps_cb_qp_offset;
-            CHAR    pps_cr_qp_offset;
-            UCHAR   num_tile_columns_minus1;
-            UCHAR   num_tile_rows_minus1;
-            USHORT  column_width_minus1[19];
-            USHORT  row_height_minus1[21];
-            UCHAR   diff_cu_qp_delta_depth;            // [0..3]
-            CHAR    pps_beta_offset_div2;
-            CHAR    pps_tc_offset_div2;
-            UCHAR   log2_parallel_merge_level_minus2;
-            INT32   CurrPicOrderCntVal;
+    CHAR    pps_cb_qp_offset;
+    CHAR    pps_cr_qp_offset;
+    UCHAR   num_tile_columns_minus1;
+    UCHAR   num_tile_rows_minus1;
+    USHORT  column_width_minus1[19];
+    USHORT  row_height_minus1[21];
+    UCHAR   diff_cu_qp_delta_depth;            // [0..3]
+    CHAR    pps_beta_offset_div2;
+    CHAR    pps_tc_offset_div2;
+    UCHAR   log2_parallel_merge_level_minus2;
+    INT32   CurrPicOrderCntVal;
 
-            DXVA_Intel_PicEntry_HEVC    RefFrameList[15];
+    DXVA_Intel_PicEntry_HEVC    RefFrameList[15];
 
-            UCHAR   ReservedBits5;
-            INT32   PicOrderCntValList[15];
-            UCHAR   RefPicSetStCurrBefore[8];
-            UCHAR   RefPicSetStCurrAfter[8];
-            UCHAR   RefPicSetLtCurr[8];
-            USHORT  RefFieldPicFlag;
-            USHORT  RefBottomFieldFlag;
-            UINT32  StatusReportFeedbackNumber;
+    UCHAR   ReservedBits5;
+    INT32   PicOrderCntValList[15];
+    UCHAR   RefPicSetStCurrBefore[8];
+    UCHAR   RefPicSetStCurrAfter[8];
+    UCHAR   RefPicSetLtCurr[8];
+    USHORT  RefFieldPicFlag;
+    USHORT  RefBottomFieldFlag;
+    UINT32  StatusReportFeedbackNumber;
 
 } DXVA_Intel_PicParams_HEVC, *LPDXVA_Intel_PicParams_HEVC;
 
@@ -173,17 +171,18 @@ typedef struct _DXVA_Intel_PicParams_HEVC
 
 typedef struct _DXVA_Intel_Slice_HEVC_Long
 {
-            UINT    BSNALunitDataLocation;
-            UINT    SliceBytesInBuffer;
-            UINT    wBadSliceChopping;
-            UINT    ByteOffsetToSliceData;
-            UINT    slice_segment_address;
+    UINT    BSNALunitDataLocation;
+    UINT    SliceBytesInBuffer;
+    USHORT  wBadSliceChopping;
+    USHORT  ReservedBits;
+    UINT    ByteOffsetToSliceData;
+    UINT    slice_segment_address;
 
-            DXVA_Intel_PicEntry_HEVC    RefPicList[2][15];
+    DXVA_Intel_PicEntry_HEVC    RefPicList[2][15];
 
     union
     {
-            UINT    value;
+        UINT    value;
 
         struct
         {
@@ -204,33 +203,37 @@ typedef struct _DXVA_Intel_Slice_HEVC_Long
         fields;
     } LongSliceFlags;
 
-            UCHAR   collocated_ref_idx;
-            UCHAR   num_ref_idx_l0_active_minus1;
-            UCHAR   num_ref_idx_l1_active_minus1;
-            CHAR    slice_qp_delta;
-            CHAR    slice_cb_qp_offset;
-            CHAR    slice_cr_qp_offset;
-            CHAR    slice_beta_offset_div2;                // [-6..6]
-            CHAR    slice_tc_offset_div2;                    // [-6..6]
-            UCHAR   luma_log2_weight_denom;
-            UCHAR   delta_chroma_log2_weight_denom;
-            CHAR    delta_luma_weight_l0[15];
-            CHAR    luma_offset_l0[15];
-            CHAR    delta_chroma_weight_l0[15][2];
-            CHAR    ChromaOffsetL0[15][2];
-            CHAR    delta_luma_weight_l1[15];
-            CHAR    luma_offset_l1[15];
-            CHAR    delta_chroma_weight_l1[15][2];
-            CHAR    ChromaOffsetL1[15][2];
-            UCHAR   five_minus_max_num_merge_cand;
+    UCHAR   collocated_ref_idx;
+    UCHAR   num_ref_idx_l0_active_minus1;
+    UCHAR   num_ref_idx_l1_active_minus1;
+    CHAR    slice_qp_delta;
+    CHAR    slice_cb_qp_offset;
+    CHAR    slice_cr_qp_offset;
+    CHAR    slice_beta_offset_div2;                // [-6..6]
+    CHAR    slice_tc_offset_div2;                    // [-6..6]
+    UCHAR   luma_log2_weight_denom;
+    UCHAR   delta_chroma_log2_weight_denom;
+    CHAR    delta_luma_weight_l0[15];
+    CHAR    luma_offset_l0[15];
+    CHAR    delta_chroma_weight_l0[15][2];
+    CHAR    ChromaOffsetL0[15][2];
+    CHAR    delta_luma_weight_l1[15];
+    CHAR    luma_offset_l1[15];
+    CHAR    delta_chroma_weight_l1[15][2];
+    CHAR    ChromaOffsetL1[15][2];
+    UCHAR   five_minus_max_num_merge_cand;
 
+#ifdef version_0_89
+    USHORT  num_entry_point_offsets;               // [0..540]
+    USHORT  EntryOffsetToSubsetArray;              // [0..540]
+#endif
 } DXVA_Intel_Slice_HEVC_Long, *LPDXVA_Intel_Slice_HEVC_Long;
 
 typedef struct _DXVA_Intel_Slice_HEVC_Short
 {
-            UINT    BSNALunitDataLocation;
-            UINT    SliceBytesInBuffer;
-            UINT    wBadSliceChopping;
+    UINT    BSNALunitDataLocation;
+    UINT    SliceBytesInBuffer;
+    USHORT  wBadSliceChopping;
 } DXVA_Intel_Slice_HEVC_Short, *LPDXVA_Intel_Slice_HEVC_Short;
 
 

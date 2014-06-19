@@ -455,7 +455,7 @@ void PackerDXVA2::PackSliceParams(H265Slice *pSlice, Ipp32u &, bool isLong, bool
             }
         }
 
-        pDXVASlice->ByteOffsetToSliceData += k;
+        //pDXVASlice->ByteOffsetToSliceData += k;
 
         for(int iDir = 0; iDir < 2; iDir++)
         {

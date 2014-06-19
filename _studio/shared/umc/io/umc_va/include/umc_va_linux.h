@@ -105,7 +105,6 @@ public:
     virtual Ipp32s GetIndex (void);
 
     // Following functions are absent in menlow!!!!!!!!!!!!!!!!!!!!!!
-    virtual Status FindConfiguration(UMC::VideoStreamInfo* /*x*/) { return UMC_ERR_UNSUPPORTED;}
     virtual Status ExecuteExtensionBuffer(void* /*x*/) { return UMC_ERR_UNSUPPORTED;}
     virtual Status ExecuteStatusReportBuffer(void* /*x*/, Ipp32s /*y*/)  { return UMC_ERR_UNSUPPORTED;}
     virtual Status SyncTask(Ipp32s index);

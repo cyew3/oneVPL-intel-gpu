@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2003-2013 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2003-2014 Intel Corporation. All Rights Reserved.
 //
 */
 #include "umc_structures.h"
@@ -19,10 +19,10 @@ void PrintUsage(const vm_char* app)
 struct CommandLine
 {
     static const Ipp32u MaxLen = UMC::MAXIMUM_PATH;
-    CommandLine(char argc, const vm_char** argv) { Parse(argc, argv); }
+    CommandLine(int argc, const vm_char** argv) { Parse(argc, argv); }
     bool IsValid() const { return m_valid; }
 
-    void Parse(char argc, const vm_char** argv);
+    void Parse(int argc, const vm_char** argv);
 
     bool IsOutputOutlineNeeded() const { return m_OutputOutlineFile[0] != '\0'; }
     bool IsReferenceOutlineNeeded() const { return m_RefOutlineFile[0] != '\0'; }
@@ -36,7 +36,7 @@ private:
     bool m_valid;
 };
 
-void CommandLine::Parse(char argc, const vm_char** argv)
+void CommandLine::Parse(int argc, const vm_char** argv)
 {
     m_valid = false;
     m_OutputOutlineFile[0] = m_RefOutlineFile[0] = VM_STRING('\0');

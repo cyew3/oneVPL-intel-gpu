@@ -119,7 +119,7 @@ void H265DecYUVBufferPadded::allocate(const UMC::FrameData * frameData, const UM
     m_lumaSize = info->GetPlaneInfo(0)->m_ippSize;
     m_pitch_luma = (Ipp32s)m_frameData.GetPlaneMemoryInfo(0)->m_pitch / info->GetPlaneSampleSize(0);
 
-    m_pYPlane = (H265PlanePtrYCommon)m_frameData.GetPlaneMemoryInfo(0)->m_planePtr;
+    m_pYPlane = (PlanePtrY)m_frameData.GetPlaneMemoryInfo(0)->m_planePtr;
 
     if (m_chroma_format > 0 || GetH265ColorFormat(frameData->GetInfo()->GetColorFormat()) > 0)
     {
@@ -130,14 +130,14 @@ void H265DecYUVBufferPadded::allocate(const UMC::FrameData * frameData, const UM
 
         if (m_frameData.GetInfo()->GetColorFormat() == UMC::NV12)
         {
-            m_pUVPlane = (H265PlanePtrUVCommon)m_frameData.GetPlaneMemoryInfo(1)->m_planePtr;
+            m_pUVPlane = (PlanePtrUV)m_frameData.GetPlaneMemoryInfo(1)->m_planePtr;
             m_pUPlane = 0;
             m_pVPlane = 0;
         }
         else
         {
-            m_pUPlane = (H265PlanePtrUVCommon)m_frameData.GetPlaneMemoryInfo(1)->m_planePtr;
-            m_pVPlane = (H265PlanePtrUVCommon)m_frameData.GetPlaneMemoryInfo(2)->m_planePtr;
+            m_pUPlane = (PlanePtrUV)m_frameData.GetPlaneMemoryInfo(1)->m_planePtr;
+            m_pVPlane = (PlanePtrUV)m_frameData.GetPlaneMemoryInfo(2)->m_planePtr;
             m_pUVPlane = 0;
         }
     }
@@ -174,9 +174,9 @@ void H265DecYUVBufferPadded::create(Ipp32u PicWidth, Ipp32u PicHeight, Ipp32u El
         (m_chromaSize.height) * m_pitch_chroma * ElementSizeUV*2 + 512;
 
     m_pAllocatedBuffer = h265_new_array_throw<Ipp8u>((Ipp32s)allocationSize);
-    m_pYPlane = UMC::align_pointer<H265PlanePtrYCommon>(m_pAllocatedBuffer, 64);
+    m_pYPlane = UMC::align_pointer<PlanePtrY>(m_pAllocatedBuffer, 64);
 
-    m_pUVPlane = m_pUPlane = UMC::align_pointer<H265PlanePtrYCommon>(m_pYPlane + (m_lumaSize.height) * m_pitch_luma * ElementSizeY + 128, 64);
+    m_pUVPlane = m_pUPlane = UMC::align_pointer<PlanePtrY>(m_pYPlane + (m_lumaSize.height) * m_pitch_luma * ElementSizeY + 128, 64);
     m_pVPlane = m_pUPlane + m_chromaSize.height * m_chromaSize.width * ElementSizeUV;
 }
 

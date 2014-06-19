@@ -496,15 +496,6 @@ void _mfxSession::Clear(void)
 
 void _mfxSession::Cleanup(void)
 {
-    if (m_pScheduler)
-    {
-        m_pScheduler->Release();
-    }
-    if (m_pSchedulerAllocated)
-    {
-        m_pSchedulerAllocated->Release();
-    }
-
     // unregister plugin before closing
     if (m_plgGen.get())
     {
@@ -522,6 +513,16 @@ void _mfxSession::Cleanup(void)
     {
         m_plgVPP->PluginClose();
     }
+
+    if (m_pScheduler)
+    {
+        m_pScheduler->Release();
+    }
+    if (m_pSchedulerAllocated)
+    {
+        m_pSchedulerAllocated->Release();
+    }
+
     // release the components the excplicit way.
     // do not relay on default deallocation order,
     // somebody could change it.

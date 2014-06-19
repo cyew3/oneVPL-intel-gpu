@@ -90,6 +90,16 @@ mfxStatus D3D11VideoCORE::GetIntelDataPrivateReport(const GUID guid, mfxVideoPar
     video_desc.SampleHeight = par ? par->mfx.FrameInfo.Height : 480;
     video_desc.OutputFormat = DXGI_FORMAT_NV12;
 
+    if (!video_desc.SampleWidth)
+    {
+        video_desc.SampleWidth = 640;
+    }
+
+    if (!video_desc.SampleHeight)
+    {
+        video_desc.SampleHeight = 480;
+    }
+
     mfxU32 cDecoderProfiles = m_pD11VideoDevice->GetVideoDecoderProfileCount();
     bool isRequestedGuidPresent = false;
     bool isIntelGuidPresent = false;
@@ -436,12 +446,6 @@ mfxStatus D3D11VideoCORE::CreateVA(mfxVideoParam *param, mfxFrameAllocRequest *r
     mfxU32 hwProfile = ChooseProfile(param, GetHWType());
     if (!hwProfile)
         return MFX_ERR_UNSUPPORTED;
-
-    if (IS_PROTECTION_ANY(param->Protected))
-    {
-        m_protectedVA.reset(new UMC::ProtectedVA(param->Protected));
-        m_pAccelerator->SetProtectedVA(m_protectedVA.get());
-    }
 
     sts = m_pAccelerator->CreateVideoAccelerator(hwProfile, param, this);
     MFX_CHECK_STS(sts);

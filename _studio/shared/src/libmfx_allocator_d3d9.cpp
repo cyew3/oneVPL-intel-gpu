@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2007-2013 Intel Corporation. All Rights Reserved.
+Copyright(c) 2007-2014 Intel Corporation. All Rights Reserved.
 
 File Name: libmfx_allocator_d3d9.cpp
 
@@ -21,6 +21,7 @@ File Name: libmfx_allocator_d3d9.cpp
 #include "mfx_utils.h"
 
 #define D3DFMT_NV12 (D3DFORMAT)MAKEFOURCC('N','V','1','2')
+#define D3DFMT_P010 (D3DFORMAT)MAKEFOURCC('P','0','1','0')
 #define D3DFMT_YV12 (D3DFORMAT)MAKEFOURCC('Y','V','1','2')
 #define D3DFMT_IMC3 (D3DFORMAT)MAKEFOURCC('I','M','C','3')
 
@@ -58,6 +59,7 @@ mfxStatus mfxDefaultAllocatorD3D9::AllocFramesHW(mfxHDL pthis, mfxFrameAllocRequ
     case MFX_FOURCC_YUV422V:
     case MFX_FOURCC_YUV444:
     case MFX_FOURCC_RGBP:
+    case MFX_FOURCC_P010:
         break;
     default:
         return MFX_ERR_UNSUPPORTED;
@@ -171,6 +173,13 @@ mfxStatus mfxDefaultAllocatorD3D9::LockFrameHW(mfxHDL pthis, mfxMemId mid, mfxFr
 
     switch ((DWORD)desc.Format)
     {
+    case D3DFMT_P010:
+        ptr->PitchHigh = (mfxU16)(LockedRect.Pitch / (1 << 16));
+        ptr->PitchLow  = (mfxU16)(LockedRect.Pitch % (1 << 16));
+        ptr->Y = (mfxU8 *)LockedRect.pBits;
+        ptr->U = (mfxU8 *)LockedRect.pBits + desc.Height * LockedRect.Pitch;
+        ptr->V = ptr->U + 1;
+        break;
     case D3DFMT_NV12:
         ptr->PitchHigh = (mfxU16)(LockedRect.Pitch / (1 << 16));
         ptr->PitchLow  = (mfxU16)(LockedRect.Pitch % (1 << 16));

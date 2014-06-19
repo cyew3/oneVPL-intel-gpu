@@ -18,7 +18,6 @@
 #include "umc_default_frame_allocator.h"
 
 #include "umc_h264_task_supplier.h"
-#include "umc_h264_timing.h"
 
 #ifndef UMC_RESTRICTED_CODE_VA
 #include "umc_h264_va_supplier.h"
@@ -30,10 +29,6 @@
 
 namespace UMC
 {
-
-#ifdef USE_DETAILED_H264_TIMING
-    TimingInfo* clsTimingInfo;
-#endif
 
 // Create instance of H264 decoder
 VideoDecoder *CreateH264Decoder() { return (new H264VideoDecoder()); }
@@ -47,7 +42,6 @@ H264VideoDecoder::H264VideoDecoder ()
     , m_IsInitialized(false)
 {
     // allocator tools
-    INIT_TIMING;
 }
 
 //////////////////////////////////////////////////////////////////////////////

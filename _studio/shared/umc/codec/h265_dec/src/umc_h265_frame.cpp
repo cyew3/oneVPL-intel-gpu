@@ -288,55 +288,34 @@ void H265DecoderFrame::Free()
         Reset();
 }
 
-// Copy plane data from target frame
-void H265DecoderFrame::CopyPlanes(H265DecoderFrame *pRefFrame)
-{
-    if (pRefFrame->m_pYPlane)
-    {
-        CopyPlane_H265((Ipp16s*)pRefFrame->m_pYPlane, pRefFrame->m_pitch_luma, (Ipp16s*)m_pYPlane, m_pitch_luma, m_lumaSize);
-        CopyPlane_H265((Ipp16s*)pRefFrame->m_pUPlane, pRefFrame->m_pitch_chroma, (Ipp16s*)m_pUPlane, m_pitch_chroma, m_chromaSize);
-        CopyPlane_H265((Ipp16s*)pRefFrame->m_pVPlane, pRefFrame->m_pitch_chroma, (Ipp16s*)m_pVPlane, m_pitch_chroma, m_chromaSize);
-    }
-    else
-    {
-        DefaultFill(2, false);
-    }
-}
-
 // Fill frame planes with default values
-void H265DecoderFrame::DefaultFill(Ipp32s fields_mask, bool isChromaOnly, Ipp8u defaultValue)
+void H265DecoderFrame::DefaultFill(bool isChromaOnly, Ipp8u defaultValue)
 {
     try
     {
         IppiSize roi;
 
-        Ipp32s field_factor = fields_mask == 2 ? 0 : 1;
-        Ipp32s field = field_factor ? fields_mask : 0;
-
         if (!isChromaOnly)
         {
             roi = m_lumaSize;
-            roi.height >>= field_factor;
 
             if (m_pYPlane)
-                SetPlane_H265(defaultValue, m_pYPlane + field*pitch_luma(),
-                    pitch_luma() << field_factor, roi);
+                SetPlane(defaultValue, m_pYPlane, pitch_luma(), roi);
         }
 
         roi = m_chromaSize;
-        roi.height >>= field_factor;
 
         if (m_pUVPlane) // NV12
         {
             roi.width *= 2;
-            SetPlane_H265(defaultValue, m_pUVPlane + field*pitch_chroma(), pitch_chroma() << field_factor, roi);
+            SetPlane(defaultValue, m_pUVPlane, pitch_chroma(), roi);
         }
         else
         {
             if (m_pUPlane)
-                SetPlane_H265(defaultValue, m_pUPlane + field*pitch_chroma(), pitch_chroma() << field_factor, roi);
+                SetPlane(defaultValue, m_pUPlane, pitch_chroma(), roi);
             if (m_pVPlane)
-                SetPlane_H265(defaultValue, m_pVPlane + field*pitch_chroma(), pitch_chroma() << field_factor, roi);
+                SetPlane(defaultValue, m_pVPlane, pitch_chroma(), roi);
         }
     } catch(...)
     {
@@ -374,7 +353,8 @@ void H265DecoderFrame::allocateCodingData(const H265SeqParamSet* sps, const H265
         Ipp32s NumCUInWidth = m_CodingData->m_WidthInCU;
         Ipp32s NumCUInHeight = m_CodingData->m_HeightInCU;
 
-        Ipp32s accumulateSum = 2*NumCUInWidth * NumCUInHeight + 2*(1 << (2 * MaxCUDepth));
+        Ipp32u buOffsetSize = (1 << (2 * MaxCUDepth));
+        Ipp32s accumulateSum = 2*NumCUInWidth * NumCUInHeight + 2*buOffsetSize;
 
         // Initialize CU offset tables
         m_cuOffsetY = h265_new_array_throw<Ipp32s>(accumulateSum);
@@ -394,7 +374,7 @@ void H265DecoderFrame::allocateCodingData(const H265SeqParamSet* sps, const H265
 
         // Initialize partition offsets tables
         m_buOffsetY = m_cuOffsetC + NumCUInWidth * NumCUInHeight;
-        m_buOffsetC = m_buOffsetY + (1 << (2 * MaxCUDepth));
+        m_buOffsetC = m_buOffsetY + buOffsetSize;
         for (Ipp32s buRow = 0; buRow < (1 << MaxCUDepth); buRow++)
         {
             for (Ipp32s buCol = 0; buCol < (1 << MaxCUDepth); buCol++)
@@ -490,25 +470,25 @@ Ipp32u H265DecoderFrame::getFrameHeightInCU() const
 }
 
 //  Access starting position of original picture for specific coding unit (CU)
-H265PlanePtrYCommon H265DecoderFrame::GetLumaAddr(Ipp32s CUAddr) const
+PlanePtrY H265DecoderFrame::GetLumaAddr(Ipp32s CUAddr) const
 {
     return m_pYPlane + m_cuOffsetY[CUAddr];
 }
 
 //  Access starting position of original picture for specific coding unit (CU)
-H265PlanePtrUVCommon H265DecoderFrame::GetCbAddr(Ipp32s CUAddr) const
+PlanePtrUV H265DecoderFrame::GetCbAddr(Ipp32s CUAddr) const
 {
     return m_pUPlane + m_cuOffsetC[CUAddr];
 }
 
 //  Access starting position of original picture for specific coding unit (CU)
-H265PlanePtrUVCommon H265DecoderFrame::GetCrAddr(Ipp32s CUAddr) const
+PlanePtrUV H265DecoderFrame::GetCrAddr(Ipp32s CUAddr) const
 {
     return m_pVPlane + m_cuOffsetC[CUAddr];
 }
 
 //  Access starting position of original picture for specific coding unit (CU)
-H265PlanePtrUVCommon H265DecoderFrame::GetCbCrAddr(Ipp32s CUAddr) const
+PlanePtrUV H265DecoderFrame::GetCbCrAddr(Ipp32s CUAddr) const
 {
     // Chroma offset is already multiplied to chroma pitch (double for NV12)
     return m_pUVPlane + m_cuOffsetC[CUAddr];
@@ -516,25 +496,25 @@ H265PlanePtrUVCommon H265DecoderFrame::GetCbCrAddr(Ipp32s CUAddr) const
 
 //  Access starting position of original picture for specific coding unit (CU) and partition unit (PU)
 // ML: OPT: TODO: Make these functions available for inlining 
-H265PlanePtrYCommon H265DecoderFrame::GetLumaAddr(Ipp32s CUAddr, Ipp32u AbsZorderIdx) const
+PlanePtrY H265DecoderFrame::GetLumaAddr(Ipp32s CUAddr, Ipp32u AbsZorderIdx) const
 {
     return m_pYPlane + m_cuOffsetY[CUAddr] + m_buOffsetY[getCD()->m_partitionInfo.m_zscanToRaster[AbsZorderIdx]];
 }
 
 //  Access starting position of original picture for specific coding unit (CU) and partition unit (PU)
-H265PlanePtrUVCommon H265DecoderFrame::GetCbAddr(Ipp32s CUAddr, Ipp32u AbsZorderIdx) const
+PlanePtrUV H265DecoderFrame::GetCbAddr(Ipp32s CUAddr, Ipp32u AbsZorderIdx) const
 {
     return m_pUPlane + m_cuOffsetC[CUAddr] + m_buOffsetC[getCD()->m_partitionInfo.m_zscanToRaster[AbsZorderIdx]];
 }
 
 //  Access starting position of original picture for specific coding unit (CU) and partition unit (PU)
-H265PlanePtrUVCommon H265DecoderFrame::GetCrAddr(Ipp32s CUAddr, Ipp32u AbsZorderIdx) const
+PlanePtrUV H265DecoderFrame::GetCrAddr(Ipp32s CUAddr, Ipp32u AbsZorderIdx) const
 {
     return m_pVPlane + m_cuOffsetC[CUAddr] + m_buOffsetC[getCD()->m_partitionInfo.m_zscanToRaster[AbsZorderIdx]];
 }
 
 //  Access starting position of original picture for specific coding unit (CU) and partition unit (PU)
-H265PlanePtrUVCommon H265DecoderFrame::GetCbCrAddr(Ipp32s CUAddr, Ipp32u AbsZorderIdx) const
+PlanePtrUV H265DecoderFrame::GetCbCrAddr(Ipp32s CUAddr, Ipp32u AbsZorderIdx) const
 {
     // Chroma offset is already multiplied to chroma pitch (double for NV12)
     return m_pUVPlane + m_cuOffsetC[CUAddr] + m_buOffsetC[getCD()->m_partitionInfo.m_zscanToRaster[AbsZorderIdx]];

@@ -26,6 +26,7 @@ ExceptionHandlerInitializer exceptionHandler;
     TimingInfo* clsTimingInfo;
 #endif
 
+#ifdef ENABLE_TRACE
 // Debug output
 void Trace(vm_char * format, ...)
 {
@@ -39,6 +40,7 @@ void Trace(vm_char * format, ...)
     vm_string_printf(VM_STRING("%s"), cStr);
     //fflush(stdout);
 }
+#endif // ENABLE_TRACE
 
 } // namespace UMC_HEVC_DECODER
 

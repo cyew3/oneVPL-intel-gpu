@@ -688,12 +688,7 @@ mfxStatus D3D9VideoCORE::CreateVideoAccelerator(mfxVideoParam * param, int NumOf
 
     UMC::VideoAcceleratorParams params;
 
-    if (IS_PROTECTION_ANY(param->Protected))
-    {
-        m_protectedVA.reset(new ProtectedVA(param->Protected));
-        params.m_protectedVA = m_protectedVA.get();
-        m_pVA->SetProtectedVA(params.m_protectedVA);
-    }
+    params.m_protectedVA = param->Protected;
 
     mfxU32 profile = ChooseProfile(param, GetHWType());
 
@@ -703,23 +698,13 @@ mfxStatus D3D9VideoCORE::CreateVideoAccelerator(mfxVideoParam * param, int NumOf
     m_pVA->m_Platform = UMC::VA_DXVA2;
     m_pVA->m_Profile = (VideoAccelerationProfile)profile;
 
-    // Find DXVA2 configuration
-    Status st = m_pVA->FindConfiguration(&VideoInfo);
-    if(UMC_OK != st)
-    {
-        m_pVA.reset();
-        return MFX_ERR_UNSUPPORTED;
-    }
-
     // Init Accelerator
     params.m_pVideoStreamInfo = &VideoInfo;
     params.m_iNumberSurfaces = NumOfRenderTarget;
     params.isExt = true;
     params.m_surf = (void **)RenderTargets;
 
-    st = m_pVA->Init(&params);
-
-    if (UMC_OK != st)
+    if (UMC_OK != m_pVA->Init(&params))
     {
         m_pVA.reset();
         return MFX_ERR_UNSUPPORTED;
@@ -734,8 +719,7 @@ mfxStatus D3D9VideoCORE::CreateVideoAccelerator(mfxVideoParam * param, int NumOf
         DecodeExtension.pPrivateOutputData = &m_DXVA2DecodeHandle;
         DecodeExtension.PrivateOutputDataSize = sizeof(m_DXVA2DecodeHandle);
         
-        st = m_pVA->ExecuteExtensionBuffer(&DecodeExtension);
-        if (UMC_OK != st)
+        if (UMC_OK != m_pVA->ExecuteExtensionBuffer(&DecodeExtension))
         {
             m_pVA.reset();
             return MFX_ERR_UNSUPPORTED;

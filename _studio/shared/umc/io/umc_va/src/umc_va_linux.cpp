@@ -13,6 +13,7 @@
 
 #include "umc_va_linux.h"
 #include "umc_va_linux_protected.h"
+#include "umc_va_video_processing.h"
 #include "vm_file.h"
 #include "mfx_trace.h"
 
@@ -257,7 +258,7 @@ Status LinuxVideoAccelerator::Init(VideoAcceleratorParams* pInfo)
 {
     Status         umcRes = UMC_OK;
     VAStatus       va_res = VA_STATUS_SUCCESS;
-    VAConfigAttrib va_attributes[2];
+    VAConfigAttrib va_attributes[3];
 
     LinuxVideoAcceleratorParams* pParams = DynamicCast<LinuxVideoAcceleratorParams>(pInfo);
     Ipp32s width = 0, height = 0;
@@ -284,8 +285,17 @@ Status LinuxVideoAccelerator::Init(VideoAcceleratorParams* pInfo)
         width               = pParams->m_pVideoStreamInfo->clip_info.width;
         height              = pParams->m_pVideoStreamInfo->clip_info.height;
         m_NumOfFrameBuffers = pParams->m_iNumberSurfaces;
-        m_protectedVA       = pParams->m_protectedVA;
         m_FrameState        = lvaBeforeBegin;
+
+        if (IS_PROTECTION_ANY(pParams->m_protectedVA))
+        {
+            m_protectedVA = new ProtectedVA(pParams->m_protectedVA);
+        }
+
+        if (pParams->m_needVideoProcessingVA)
+        {
+            m_videoProcessingVA = new VideoProcessingVA();
+        }
 
         // profile or stream type should be set
         if (UNKNOWN == (m_Profile & VA_CODEC))
@@ -400,10 +410,13 @@ Status LinuxVideoAccelerator::Init(VideoAcceleratorParams* pInfo)
             va_attributes[1].type = VAConfigAttribDecSliceMode;
             va_attributes[1].value = VA_DEC_SLICE_MODE_NORMAL;
 
-            va_res = vaGetConfigAttributes(m_dpy, va_profile, va_entrypoint, va_attributes, 2);
+            va_attributes[2].type = (VAConfigAttribType)MFX_VAConfigAttribDecProcessing;
+
+            va_res = vaGetConfigAttributes(m_dpy, va_profile, va_entrypoint, va_attributes, 3);
             umcRes = va_to_umc_res(va_res);
         }
-        if ((UMC_OK == umcRes) && (!(va_attributes[0].value & VA_RT_FORMAT_YUV420)))
+
+        if (UMC_OK == umcRes && (!(va_attributes[0].value & VA_RT_FORMAT_YUV420)))
             umcRes = UMC_ERR_FAILED;
 
         if (UMC_OK == umcRes)
@@ -422,11 +435,17 @@ Status LinuxVideoAccelerator::Init(VideoAcceleratorParams* pInfo)
                 va_attributes[1].value = VA_DEC_SLICE_MODE_NORMAL;
         }
 
+        Ipp32s attribsNumber = pParams->m_needVideoProcessingVA ? 3 : 2;
+
+        if (UMC_OK == umcRes && pParams->m_needVideoProcessingVA && va_attributes[2].value == VA_DEC_PROCESSING_NONE)
+            umcRes = UMC_ERR_FAILED;
+
         if (UMC_OK == umcRes)
         {
-            va_res = vaCreateConfig(m_dpy, va_profile, va_entrypoint, va_attributes, 2, &m_config_id);
+            va_res = vaCreateConfig(m_dpy, va_profile, va_entrypoint, va_attributes, attribsNumber, &m_config_id);
             umcRes = va_to_umc_res(va_res);
         }
+
         UMC_FREE(va_profiles);
         UMC_FREE(va_entrypoints);
     }
@@ -437,6 +456,7 @@ Status LinuxVideoAccelerator::Init(VideoAcceleratorParams* pInfo)
         m_surfaces = (VASurfaceID*)ippsMalloc_8u(m_NumOfFrameBuffers*sizeof(VASurfaceID));
         if (NULL == m_surfaces) umcRes = UMC_ERR_ALLOC;
     }
+
     if (UMC_OK == umcRes)
     {
         if(!pParams->isExt)
@@ -469,6 +489,7 @@ Status LinuxVideoAccelerator::Init(VideoAcceleratorParams* pInfo)
         va_res = vaCreateContext(m_dpy, m_config_id, width, height, VA_PROGRESSIVE, m_surfaces, m_NumOfFrameBuffers, &m_context);
         umcRes = va_to_umc_res(va_res);
     }
+
     return umcRes;
 }
 
@@ -513,6 +534,12 @@ Status LinuxVideoAccelerator::Close(void)
         }
         m_dpy = NULL;
     }
+
+    delete m_protectedVA;
+    m_protectedVA = 0;
+
+    delete m_videoProcessingVA;
+    m_videoProcessingVA = 0;
 
     m_iIndex     = UMC_VA_LINUX_INDEX_UNDEF;
     m_FrameState = lvaBeforeBegin;

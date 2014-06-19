@@ -171,6 +171,12 @@ UMC::Status mfx_UMC_FrameAllocator::InitMfx(UMC::FrameAllocatorParams *,
     case MFX_FOURCC_P010:
         color_format = UMC::NV12;
         break;
+    case MFX_FOURCC_NV16:
+        color_format = UMC::NV16;
+        break;
+    case MFX_FOURCC_P210:
+        color_format = UMC::NV16;
+        break;
     case MFX_FOURCC_RGB4:
         color_format = UMC::RGB32;
         break;
@@ -284,6 +290,11 @@ UMC::Status mfx_UMC_FrameAllocator::Reset()
         m_extSurfaces[i].FrameSurface = 0;
     }
 
+    if (m_IsUseExternalFrames && m_isSWDecode)
+    {
+        m_extSurfaces.clear();
+    }
+
     return UMC::UMC_OK;
 }
 
@@ -333,6 +344,7 @@ UMC::Status mfx_UMC_FrameAllocator::Alloc(UMC::FrameMemID *pNewMemID, const UMC:
     case UMC::YUV420:
     case UMC::GRAY:
     case UMC::YV12:
+    case UMC::YUV422:
     case UMC::NV12:
     case UMC::IMC3:
     case UMC::RGB32:

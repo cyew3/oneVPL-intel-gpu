@@ -29,12 +29,12 @@ public:
     Ipp32s  m_bpp;           // should be >= 8
     Ipp32s  m_chroma_format; // AVC standard value chroma_format_idc
 
-    H265PlanePtrYCommon               m_pYPlane;
+    PlanePtrY               m_pYPlane;
 
-    H265PlanePtrUVCommon              m_pUVPlane;  // for NV12 support
+    PlanePtrUV              m_pUVPlane;  // for NV12 support
 
-    H265PlanePtrUVCommon              m_pUPlane;
-    H265PlanePtrUVCommon              m_pVPlane;
+    PlanePtrUV              m_pUPlane;
+    PlanePtrUV              m_pVPlane;
 
     H265DecYUVBufferPadded();
     H265DecYUVBufferPadded(UMC::MemoryAllocator *pMemoryAllocator);

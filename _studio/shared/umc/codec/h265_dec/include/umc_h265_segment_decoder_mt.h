@@ -54,7 +54,7 @@ public:
     virtual UMC::Status ProcessSlice(H265Task & task);
 
     // Recover a region after error
-    virtual void RestoreErrorRect(Ipp32s startMb, Ipp32s endMb, H265Slice * pSlice);
+    virtual void RestoreErrorRect(H265Task * task);
 
 protected:
 
@@ -77,6 +77,8 @@ protected:
 
     // Reconstructor depends on bitdepth_luma || bitdepth_chroma
     void CreateReconstructor();
+
+    void RestoreErrorRect(Ipp32s startMb, Ipp32s endMb, H265DecoderFrame *pRefFrame);
 
 private:
 

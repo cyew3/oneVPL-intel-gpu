@@ -304,6 +304,8 @@ public:
     // Retrieve decoded SEI data with SEI_USER_DATA_REGISTERED_TYPE type
     UMC::Status GetUserData(UMC::MediaData * pUD);
 
+    bool IsShouldSuspendDisplay();
+
     H265DBPList *GetDPBList()
     {
         ViewItem_H265 *pView = GetView();
@@ -413,6 +415,7 @@ protected:
     H265SegmentDecoderBase **m_pSegmentDecoder;
     Ipp32u m_iThreadNum;
 
+    Ipp32u      m_maxUIDWhenWasDisplayed;
     Ipp64f      m_local_delta_frame_time;
     bool        m_use_external_framerate;
 

@@ -21,16 +21,24 @@ void H265DecoderFrameInfo::FillTileInfo()
 {
     H265Slice * slice = GetAnySlice();
     const H265PicParamSet * pps = slice->GetPicParam();
-    Ipp32u tilesCount = pps->num_tile_columns*pps->num_tile_rows;
+    Ipp32u tilesCount = pps->getNumTiles();
     m_tilesThreadingInfo.resize(tilesCount);
 
     for (Ipp32u i = 0; i < tilesCount; i++)
     {
         TileThreadingInfo & info = m_tilesThreadingInfo[i];
-        info.firstCUAddr = m_pFrame->getCD()->GetInverseCUOrderMap(pps->tilesInfo[i].firstCUAddr);
-        info.processInfo.Initialize(m_tilesThreadingInfo[i].firstCUAddr, pps->tilesInfo[i].width);
-        info.m_maxCUToProcess = m_pFrame->getCD()->GetInverseCUOrderMap(pps->tilesInfo[i].endCUAddr);
+        info.processInfo.firstCU = m_pFrame->getCD()->GetInverseCUOrderMap(pps->tilesInfo[i].firstCUAddr);
+        info.processInfo.Initialize(m_tilesThreadingInfo[i].processInfo.firstCU, pps->tilesInfo[i].width);
+        info.processInfo.maxCU = m_pFrame->getCD()->GetInverseCUOrderMap(pps->tilesInfo[i].endCUAddr);
         info.m_context = 0;
+    }
+
+    if (!m_hasTiles)
+    {
+        for (Ipp32u i = 0; i < LAST_PROCESS_ID; i++)
+        {
+            m_curCUToProcess[i] = m_pSliceQueue[0]->GetFirstMB(); // it can be more then 0
+        }
     }
 
     if (!IsNeedSAO())
@@ -49,6 +57,8 @@ void H265DecoderFrameInfo::FillTileInfo()
         for (Ipp32s i = 0; i < m_SliceCount; i ++)
         {
             H265Slice *slice = m_pSliceQueue[i];
+
+            slice->processInfo.maxCU = slice->m_iMaxMB;
 
             if (slice->GetSliceHeader()->slice_deblocking_filter_disabled_flag)
             {
@@ -166,6 +176,57 @@ void H265DecoderFrameInfo::SkipSAO()
     }
 
     m_curCUToProcess[SAO_PROCESS_ID] = m_pFrame->getCD()->m_NumCUsInFrame;
+}
+
+void H265DecoderFrameInfo::EliminateASO()
+{
+    static Ipp32s MAX_MB_NUMBER = 0x7fffffff;
+
+    if (!GetSlice(0))
+        return;
+
+    Ipp32u count = GetSliceCount();
+    for (Ipp32u sliceId = 0; sliceId < count; sliceId++)
+    {
+        H265Slice * curSlice = GetSlice(sliceId);
+        Ipp32s minFirst = MAX_MB_NUMBER;
+        Ipp32u minSlice = 0;
+
+        for (Ipp32u j = sliceId; j < count; j++)
+        {
+            H265Slice * slice = GetSlice(j);
+            if (slice->GetFirstMB() < curSlice->GetFirstMB() && minFirst > slice->GetFirstMB())
+            {
+                minFirst = slice->GetFirstMB();
+                minSlice = j;
+            }
+        }
+
+        if (minFirst != MAX_MB_NUMBER)
+        {
+            H265Slice * temp = m_pSliceQueue[sliceId];
+            m_pSliceQueue[sliceId] = m_pSliceQueue[minSlice];
+            m_pSliceQueue[minSlice] = temp;
+        }
+    }
+
+    for (Ipp32u sliceId = 0; sliceId < count; sliceId++)
+    {
+        H265Slice * slice = GetSlice(sliceId);
+        H265Slice * nextSlice = GetSlice(sliceId + 1);
+
+        if (!nextSlice)
+            break;
+
+        slice->SetMaxMB(nextSlice->GetFirstMB());
+
+        if (slice->GetFirstMB() == slice->GetMaxMB())
+        {
+            RemoveSlice(sliceId);
+            sliceId = Ipp32u(-1);
+            continue;
+        }
+    }
 }
 
 } // namespace UMC_HEVC_DECODER

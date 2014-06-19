@@ -593,7 +593,6 @@ bool TaskBroker_H265::GetNextTask(H265Task *pTask)
 // Initialize task object with default values
 void TaskBroker_H265::InitTask(H265DecoderFrameInfo * info, H265Task *pTask, H265Slice *pSlice)
 {
-    pTask->m_bDone = false;
     pTask->m_bError = false;
     pTask->m_iMaxMB = pSlice ? pSlice->m_iMaxMB : 0;
     pTask->m_pSlice = pSlice;
@@ -657,12 +656,11 @@ void TaskBroker_H265::AddPerformedTask(H265Task *pTask)
             pTask->m_context->m_mvsDistortion = pTask->m_context->m_mvsDistortionTemp;
             pTask->m_context->m_coeffBuffer.UnLockInputBuffer(pTask->m_WrittenSize);
 
-            if (processInfo->m_curCUToProcess[DEC_PROCESS_ID] > tileInfo->m_maxCUToProcess)
+            if (processInfo->m_curCUToProcess[DEC_PROCESS_ID] > tileInfo->processInfo.maxCU)
             {
                 //tileInfo->isCompleted = true;
                 processInfo->m_processInProgress[DEC_PROCESS_ID] = 1;
             }
-
 
             if (info->m_curCUToProcess[DEC_PROCESS_ID] < info->m_pFrame->getCD()->m_NumCUsInFrame)
             {
@@ -678,7 +676,7 @@ void TaskBroker_H265::AddPerformedTask(H265Task *pTask)
                         TileThreadingInfo & tileInfo = info->m_tilesThreadingInfo[i];
                         currCUAddr += tileInfo.processInfo.m_width;
 
-                        if (tileInfo.processInfo.m_curCUToProcess[DEC_PROCESS_ID] == info->m_tilesThreadingInfo[i].firstCUAddr)
+                        if (tileInfo.processInfo.m_curCUToProcess[DEC_PROCESS_ID] == info->m_tilesThreadingInfo[i].processInfo.firstCU)
                         {
                             isCompleted = false;
                             break;
@@ -726,7 +724,9 @@ void TaskBroker_H265::AddPerformedTask(H265Task *pTask)
             {
                 if (isReadyIncrease)
                     info->m_curCUToProcess[DEC_PROCESS_ID] = pSlice->m_iMaxMB;
-                pSlice->m_iMaxMB = IPP_MIN(processInfo->m_curCUToProcess[DEC_PROCESS_ID], pSlice->m_iMaxMB);
+
+                processInfo->maxCU = processInfo->m_curCUToProcess[DEC_PROCESS_ID];
+                processInfo->m_curCUToProcess[DEC_PROCESS_ID] = pSlice->m_iMaxMB;
                 pSlice->m_bError = true;
             }
             else
@@ -734,7 +734,7 @@ void TaskBroker_H265::AddPerformedTask(H265Task *pTask)
                 pSlice->m_iMaxMB = pTask->m_iMaxMB;
             }
 
-            if (processInfo->m_curCUToProcess[DEC_PROCESS_ID] >= pSlice->m_iMaxMB)
+            if (processInfo->m_curCUToProcess[DEC_PROCESS_ID] >= processInfo->maxCU)
             {
                 processInfo->m_processInProgress[DEC_PROCESS_ID] = 1; // completed
                 if (isReadyIncrease)
@@ -767,7 +767,7 @@ void TaskBroker_H265::AddPerformedTask(H265Task *pTask)
 
             processInfo->m_curCUToProcess[REC_PROCESS_ID] += pTask->m_iMBToProcess;
 
-            if (processInfo->m_curCUToProcess[REC_PROCESS_ID] > tileInfo->m_maxCUToProcess)
+            if (processInfo->m_curCUToProcess[REC_PROCESS_ID] > tileInfo->processInfo.maxCU)
             {
                 processInfo->m_isCompleted = true;
                 processInfo->m_processInProgress[REC_PROCESS_ID] = 1;
@@ -788,7 +788,7 @@ void TaskBroker_H265::AddPerformedTask(H265Task *pTask)
                     {
                         currCUAddr += info->m_tilesThreadingInfo[i].processInfo.m_width;
 
-                        if (info->m_tilesThreadingInfo[i].processInfo.m_curCUToProcess[REC_PROCESS_ID] == info->m_tilesThreadingInfo[i].firstCUAddr)
+                        if (info->m_tilesThreadingInfo[i].processInfo.m_curCUToProcess[REC_PROCESS_ID] == info->m_tilesThreadingInfo[i].processInfo.firstCU)
                         {
                             isCompleted = false;
                             break;
@@ -837,11 +837,11 @@ void TaskBroker_H265::AddPerformedTask(H265Task *pTask)
                     info->m_curCUToProcess[REC_PROCESS_ID] = pSlice->m_iMaxMB;
                 }
 
-                pSlice->m_iMaxMB = IPP_MIN(processInfo->m_curCUToProcess[REC_PROCESS_ID], pSlice->m_iMaxMB);
+                processInfo->m_curCUToProcess[REC_PROCESS_ID] = pSlice->m_iMaxMB;
                 pSlice->m_bError = true;
             }
 
-            if (pSlice->m_iMaxMB <= processInfo->m_curCUToProcess[REC_PROCESS_ID])
+            if (processInfo->maxCU <= processInfo->m_curCUToProcess[REC_PROCESS_ID])
             {
                 if (isReadyIncrease)
                 {
@@ -852,7 +852,7 @@ void TaskBroker_H265::AddPerformedTask(H265Task *pTask)
                         for (; pNextSlice; pNextSlice = info->GetSlice(++pos))
                         {
                             info->m_curCUToProcess[REC_PROCESS_ID] = pNextSlice->processInfo.m_curCUToProcess[REC_PROCESS_ID];
-                            if (pNextSlice->processInfo.m_curCUToProcess[REC_PROCESS_ID] < pNextSlice->m_iMaxMB)
+                            if (pNextSlice->processInfo.m_curCUToProcess[REC_PROCESS_ID] < pNextSlice->processInfo.maxCU)
                                 break;
                         }
                     }
@@ -878,7 +878,7 @@ void TaskBroker_H265::AddPerformedTask(H265Task *pTask)
             processInfo->m_curCUToProcess[DEC_PROCESS_ID] += pTask->m_iMBToProcess;
             processInfo->m_curCUToProcess[REC_PROCESS_ID] += pTask->m_iMBToProcess;
 
-            if (processInfo->m_curCUToProcess[DEC_PROCESS_ID] > tileInfo->m_maxCUToProcess)
+            if (processInfo->m_curCUToProcess[DEC_PROCESS_ID] > tileInfo->processInfo.maxCU)
             {
                 processInfo->m_isCompleted = true;
                 processInfo->m_processInProgress[DEC_PROCESS_ID] = 1;
@@ -898,7 +898,7 @@ void TaskBroker_H265::AddPerformedTask(H265Task *pTask)
                     TileThreadingInfo & tileInfo = info->m_tilesThreadingInfo[i];
                     currCUAddr += tileInfo.processInfo.m_width;
 
-                    if (tileInfo.processInfo.m_curCUToProcess[DEC_PROCESS_ID] == tileInfo.firstCUAddr)
+                    if (tileInfo.processInfo.m_curCUToProcess[DEC_PROCESS_ID] == tileInfo.processInfo.firstCU)
                     {
                         isCompleted = false;
                         break;
@@ -937,7 +937,7 @@ void TaskBroker_H265::AddPerformedTask(H265Task *pTask)
                     TileThreadingInfo & tileInfo = info->m_tilesThreadingInfo[i];
                     currCUAddr += tileInfo.processInfo.m_width;
 
-                    if (tileInfo.processInfo.m_curCUToProcess[REC_PROCESS_ID] == tileInfo.firstCUAddr)
+                    if (tileInfo.processInfo.m_curCUToProcess[REC_PROCESS_ID] == tileInfo.processInfo.firstCU)
                     {
                         isCompleted = false;
                         break;
@@ -975,8 +975,6 @@ void TaskBroker_H265::AddPerformedTask(H265Task *pTask)
             bool isReadyIncreaseDec = pTask->m_iFirstMB == info->m_curCUToProcess[DEC_PROCESS_ID];
             bool isReadyIncreaseRec = pTask->m_iFirstMB == info->m_curCUToProcess[REC_PROCESS_ID];
 
-            pSlice->m_iMaxMB = pTask->m_iMaxMB;
-
             if (isReadyIncreaseDec)
                 info->m_curCUToProcess[DEC_PROCESS_ID] += pTask->m_iMBToProcess;
 
@@ -994,9 +992,14 @@ void TaskBroker_H265::AddPerformedTask(H265Task *pTask)
                 if (isReadyIncreaseRec)
                     info->m_curCUToProcess[REC_PROCESS_ID] = pSlice->m_iMaxMB;
 
-                pSlice->m_iMaxMB = IPP_MIN(processInfo->m_curCUToProcess[DEC_PROCESS_ID], pSlice->m_iMaxMB);
-                processInfo->m_curCUToProcess[REC_PROCESS_ID] = processInfo->m_curCUToProcess[DEC_PROCESS_ID];
+                processInfo->maxCU = processInfo->m_curCUToProcess[DEC_PROCESS_ID];
+                processInfo->m_curCUToProcess[REC_PROCESS_ID] = processInfo->m_curCUToProcess[DEC_PROCESS_ID] = pSlice->m_iMaxMB;
+                processInfo->m_isCompleted = true;
                 pSlice->m_bError = true;
+            }
+            else
+            {
+                pSlice->m_iMaxMB = pTask->m_iMaxMB;
             }
 
             if (processInfo->m_curCUToProcess[DEC_PROCESS_ID] >= pSlice->m_iMaxMB)
@@ -1438,7 +1441,7 @@ bool TaskBrokerTwoThread_H265::WrapReconstructTask(H265DecoderFrameInfo * info, 
     Ipp32s width = processInfo->m_width;
     pTask->m_iFirstMB = processInfo->m_curCUToProcess[REC_PROCESS_ID];
     pTask->m_iMBToProcess = IPP_MIN(processInfo->m_curCUToProcess[REC_PROCESS_ID] - (processInfo->m_curCUToProcess[REC_PROCESS_ID] % width) + width,
-                                    pSlice->m_iMaxMB) - processInfo->m_curCUToProcess[REC_PROCESS_ID];
+                                    processInfo->maxCU) - processInfo->m_curCUToProcess[REC_PROCESS_ID];
 
     pTask->m_taskPreparingGuard->Unlock();
 
@@ -1545,10 +1548,10 @@ bool TaskBrokerTwoThread_H265::GetDecodingTileTask(H265DecoderFrameInfo * info, 
 
     processInfo->m_processInProgress[DEC_PROCESS_ID] = 1;
 
-    Ipp32s firstAdujstedCUAddr = pTask->m_iFirstMB - tileToWrap->firstCUAddr;
+    Ipp32s firstAdujstedCUAddr = pTask->m_iFirstMB - tileToWrap->processInfo.firstCU;
 
     pTask->m_iMBToProcess = IPP_MIN(firstAdujstedCUAddr - (firstAdujstedCUAddr % processInfo->m_width) + processInfo->m_width,
-                            slice->m_iMaxMB - tileToWrap->firstCUAddr) - firstAdujstedCUAddr;
+                            slice->m_iMaxMB - tileToWrap->processInfo.firstCU) - firstAdujstedCUAddr;
     VM_ASSERT(pTask->m_iMBToProcess <= processInfo->m_width);
 
     pTask->pFunction = &H265SegmentDecoderMultiThreaded::DecodeSegment;
@@ -1596,9 +1599,9 @@ bool TaskBrokerTwoThread_H265::GetReconstructTileTask(H265DecoderFrameInfo * inf
 
     processInfo->m_processInProgress[REC_PROCESS_ID] = 1;
 
-    Ipp32s firstAdujstedCUAddr = pTask->m_iFirstMB - tileToWrap->firstCUAddr;
+    Ipp32s firstAdujstedCUAddr = pTask->m_iFirstMB - tileToWrap->processInfo.firstCU;
     pTask->m_iMBToProcess = IPP_MIN(firstAdujstedCUAddr - (firstAdujstedCUAddr % processInfo->m_width) + processInfo->m_width,
-                            slice->m_iMaxMB - tileToWrap->firstCUAddr) - firstAdujstedCUAddr;
+                            slice->m_iMaxMB - tileToWrap->processInfo.firstCU) - firstAdujstedCUAddr;
     VM_ASSERT(pTask->m_iMBToProcess <= processInfo->m_width);
 
     pTask->pFunction = &H265SegmentDecoderMultiThreaded::ReconstructSegment;
@@ -1634,9 +1637,9 @@ bool TaskBrokerTwoThread_H265::GetDecRecTileTask(H265DecoderFrameInfo * info, H2
     processInfo->m_processInProgress[DEC_PROCESS_ID] = 1;
     processInfo->m_processInProgress[REC_PROCESS_ID] = 1;
 
-    Ipp32s firstAdujstedCUAddr = pTask->m_iFirstMB - tileToWrap->firstCUAddr;
+    Ipp32s firstAdujstedCUAddr = pTask->m_iFirstMB - tileToWrap->processInfo.firstCU;
     pTask->m_iMBToProcess = IPP_MIN(firstAdujstedCUAddr - (firstAdujstedCUAddr % processInfo->m_width) + processInfo->m_width,
-                            slice->m_iMaxMB - tileToWrap->firstCUAddr) - firstAdujstedCUAddr;
+                            slice->m_iMaxMB - tileToWrap->processInfo.firstCU) - firstAdujstedCUAddr;
     VM_ASSERT(pTask->m_iMBToProcess <= processInfo->m_width);
 
     pTask->pFunction = &H265SegmentDecoderMultiThreaded::DecRecSegment;
@@ -1766,7 +1769,7 @@ bool TaskBrokerTwoThread_H265::GetSAOTask(H265DecoderFrameInfo * info, H265Task 
 
     // this is guarded function, safe to touch any variable
     Ipp32s iMBWidth = info->m_pFrame->getCD()->m_WidthInCU;
-    Ipp32s nextMBtoSAO = IPP_MIN(info->m_curCUToProcess[SAO_PROCESS_ID] + 2*iMBWidth, info->m_pFrame->getCD()->m_NumCUsInFrame);
+    Ipp32s nextMBtoSAO = IPP_MIN(iMBWidth * (info->m_curCUToProcess[SAO_PROCESS_ID] / iMBWidth) + 2*iMBWidth, info->m_pFrame->getCD()->m_NumCUsInFrame);
     Ipp32s sliceCount = info->GetSliceCount();
 
     for (Ipp32s i = 0; i < sliceCount; i += 1)
@@ -1836,10 +1839,10 @@ bool TaskBrokerTwoThread_H265::GetSAOTaskTile(H265DecoderFrameInfo * info, H265T
 
     // this is guarded function, safe to touch any variable
     Ipp32s iMBWidth = info->m_pFrame->getCD()->m_WidthInCU;
-    Ipp32s prevCUAddrReady = IPP_MIN(info->m_curCUToProcess[REC_PROCESS_ID], info->m_curCUToProcess[DEB_PROCESS_ID]); //info->IsNeedDeblocking() ? DEB_PROCESS_ID : REC_PROCESS_ID;
+    Ipp32s prevCUAddrReady = IPP_MIN(info->m_curCUToProcess[REC_PROCESS_ID], info->m_curCUToProcess[DEB_PROCESS_ID]);
     Ipp32s availableToProcess = prevCUAddrReady - info->m_curCUToProcess[SAO_PROCESS_ID];
 
-    if (availableToProcess > iMBWidth || (availableToProcess && prevCUAddrReady >= info->m_pFrame->getCD()->m_NumCUsInFrame))
+    if (availableToProcess >= 2*iMBWidth || (availableToProcess && prevCUAddrReady >= info->m_pFrame->getCD()->m_NumCUsInFrame))
     {
         info->m_processInProgress[SAO_PROCESS_ID] = 1;
 
@@ -1896,7 +1899,7 @@ bool TaskBrokerTwoThread_H265::GetNextTaskManySlices(H265DecoderFrameInfo * info
     }
     else
     {
-        if (GetSAOTask(info, pTask))
+        if (GetSAOTaskTile(info, pTask))
             return true;
 
         if (GetDeblockingTask(info, pTask))
@@ -1969,7 +1972,7 @@ bool TaskBrokerTwoThread_H265::GetResources(H265Task *pTask)
             }
             else
             {
-                if (pTask->m_threadingInfo->firstCUAddr != pTask->m_iFirstMB && pTask->m_pSlice->GetFirstMB() == pTask->m_iFirstMB)
+                if (pTask->m_threadingInfo->processInfo.firstCU != pTask->m_iFirstMB && pTask->m_pSlice->GetFirstMB() == pTask->m_iFirstMB)
                 { // new slice of same tile. Need to reinitialize context
                     if (pTask->m_threadingInfo->processInfo.m_curCUToProcess[DEC_PROCESS_ID] != pTask->m_iFirstMB ||
                         pTask->m_threadingInfo->processInfo.m_curCUToProcess[REC_PROCESS_ID] != pTask->m_iFirstMB)
@@ -2012,7 +2015,7 @@ bool TaskBrokerTwoThread_H265::GetResources(H265Task *pTask)
     {
         pTask->m_context = m_pTaskSupplier->GetObjHeap()->AllocateObject<DecodingContext>();
         pTask->m_context->IncrementReference();
-        pTask->m_context->Init(pTask->m_pSlice);
+        pTask->m_context->Init(pTask);
 
         if (pTask->m_iTaskID == TASK_DEC_H265 || pTask->m_iTaskID == TASK_DEC_REC_H265)
         {
@@ -2025,21 +2028,21 @@ bool TaskBrokerTwoThread_H265::GetResources(H265Task *pTask)
 
     if (needInitializeContext)
     {
-        pTask->m_context->Init(pTask->m_pSlice);
+        pTask->m_context->Init(pTask);
     }
 
     switch (pTask->m_iTaskID)
     {
     case TASK_DEC_REC_H265:    
     case TASK_DEC_H265:
-        pTask->m_pBuffer = (H265CoeffsPtrCommon)pTask->m_context->m_coeffBuffer.LockInputBuffer();
+        pTask->m_pBuffer = (CoeffsPtr)pTask->m_context->m_coeffBuffer.LockInputBuffer();
         break;
     case TASK_REC_H265:
         {
             Ipp8u* pointer;
             size_t size;
             pTask->m_context->m_coeffBuffer.LockOutputBuffer(pointer, size);
-            pTask->m_pBuffer = (H265CoeffsPtrCommon)pointer;
+            pTask->m_pBuffer = (CoeffsPtr)pointer;
         }
         break;
     }
@@ -2097,7 +2100,7 @@ TileThreadingInfo * FindTileForProcess(H265DecoderFrameInfo * info, Ipp32s taskI
 {
     const H265PicParamSet * pps = info->GetAnySlice()->GetPicParam();
 
-    VM_ASSERT(info->m_tilesThreadingInfo.size() == pps->num_tile_columns * pps->num_tile_rows);
+    VM_ASSERT(info->m_tilesThreadingInfo.size() == pps->getNumTiles());
 
     TileThreadingInfo * tileToWrap = 0;
     Ipp32s minLine = 0;
@@ -2122,12 +2125,12 @@ TileThreadingInfo * FindTileForProcess(H265DecoderFrameInfo * info, Ipp32s taskI
             if (!tileToWrap)
             {
                 tileToWrap = tileInfo;
-                minLine = (tileToWrap->processInfo.m_curCUToProcess[taskID] - tileToWrap->firstCUAddr) / tileToWrap->processInfo.m_width;
+                minLine = (tileToWrap->processInfo.m_curCUToProcess[taskID] - tileToWrap->processInfo.firstCU) / tileToWrap->processInfo.m_width;
                 continue;
             }
 
             // choose best tile with min completed line of CU
-            Ipp32s line = (processInfo.m_curCUToProcess[taskID] - tileInfo->firstCUAddr) / processInfo.m_width;
+            Ipp32s line = (processInfo.m_curCUToProcess[taskID] - tileInfo->processInfo.firstCU) / processInfo.m_width;
             if (line < minLine)
             {
                 tileToWrap = tileInfo;

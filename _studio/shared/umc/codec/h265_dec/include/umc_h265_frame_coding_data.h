@@ -104,7 +104,13 @@ public:
     H265PartialEdgeData *m_edge;
     Ipp32s m_edgesInCTBSize, m_edgesInFrameWidth;
 
-    std::vector<Ipp32s> m_pocDelta;
+    struct RefFrameInfo
+    {
+        Ipp32s pocDelta;
+        Ipp32s flags;
+    };
+
+    std::vector<RefFrameInfo> m_refFrameInfo;
 
 public:
 
@@ -115,14 +121,17 @@ public:
         return m_colocatedInfo[partNumber].m_mv[direction];
     }
 
-    Ipp8u & GetTUFlags(EnumRefPicList direction, Ipp32u partNumber)
+    Ipp8u GetTUFlags(EnumRefPicList direction, Ipp32u partNumber)
     {
-        return m_colocatedInfo[partNumber].m_flags[direction];
+        if (m_colocatedInfo[partNumber].m_refIdx[direction] == -1)
+            return COL_TU_INVALID_INTER;
+
+        return (Ipp8u)m_refFrameInfo[m_colocatedInfo[partNumber].m_index[direction]].flags;
     }
 
     Ipp32s GetTUPOCDelta(EnumRefPicList direction, Ipp32u partNumber)
     {
-        return m_pocDelta[m_colocatedInfo[partNumber].m_index[direction]];
+        return m_refFrameInfo[m_colocatedInfo[partNumber].m_index[direction]].pocDelta;
     }
 
     RefIndexType & GetRefIdx(EnumRefPicList direction, Ipp32u partNumber)

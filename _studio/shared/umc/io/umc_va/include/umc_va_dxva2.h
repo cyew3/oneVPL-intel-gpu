@@ -53,6 +53,8 @@ DEFINE_GUID_(sDXVA_ModeH264_VLD_Stereo_NoFGT,                     0xf9aaccbb, 0x
 DEFINE_GUID_(sDXVA_ModeH264_VLD_Stereo_Progressive_NoFGT,         0xd79be8da, 0x0cf1, 0x4c81, 0xb8, 0x2a, 0x69, 0xa4, 0xe2, 0x36, 0xf4, 0x3d);
 
 DEFINE_GUID(DXVA_Intel_ModeHEVC_VLD_MainProfile,  0x8c56eb1e, 0x2b47, 0x466f, 0x8d, 0x33, 0x7d, 0xbc, 0xd6, 0x3f, 0x3d, 0xf2);
+DEFINE_GUID(DXVA_Intel_ModeHEVC_VLD_Main10Profile, 0x75fc75f7, 0xc589, 0x4a07, 0xa2, 0x5b, 0x72, 0xe0, 0x3b, 0x03, 0x83, 0xb3);
+
 
 struct GuidProfile
 {
@@ -78,8 +80,9 @@ public:
 
     virtual Status FindConfiguration(VideoStreamInfo *pVideoInfo);
     virtual Status Init(VideoAcceleratorParams *pParams);
-    virtual Status GetInfo(VideoAcceleratorParams* pInfo);
     virtual Status CloseDirectXDecoder();
+
+    virtual Status Close(void);
 
     virtual Status BeginFrame(Ipp32s index);
     virtual void* GetCompBuffer(Ipp32s buffer_type, UMCVACompBuffer **buf = NULL, Ipp32s size = -1, Ipp32s index = -1);
@@ -209,6 +212,7 @@ bool CheckDXVAConfig(Ipp32s profile_flags, T *config, ProtectedVA * protectedVA)
         break;
 
     case H265_VLD:
+    case H265_10_VLD:
         if (profile_flags & VA_LONG_SLICE_MODE)
             res = (2 == config->ConfigBitstreamRaw);
         else if (profile_flags & VA_SHORT_SLICE_MODE)

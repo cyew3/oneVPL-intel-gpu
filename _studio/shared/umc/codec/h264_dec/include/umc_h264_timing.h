@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2003-2012 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2003-2014 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -34,6 +34,15 @@ public:
         Reset();
     }
 
+    ~TimingInfo()
+    {
+        Ipp64f cpu_freq = (Ipp64f)vm_time_get_frequency();
+        vm_string_printf(VM_STRING("decode_time - %.2f\t\n"), decode_time/cpu_freq);
+        vm_string_printf(VM_STRING("reconstruction_time - %.2f\t\n"), reconstruction_time/cpu_freq);
+        vm_string_printf(VM_STRING("deblocking_time - %.2f\t\n"), deblocking_time/cpu_freq);
+        vm_string_printf(VM_STRING("all - %.2f\t\n"), (deblocking_time + decode_time + reconstruction_time)/cpu_freq);
+    }
+
     void Reset()
     {
         vm_tick start_tick, end_tick;
@@ -54,28 +63,24 @@ public:
     vm_tick m_compensative_const;
 };
 
-extern TimingInfo* clsTimingInfo;
+extern TimingInfo* GetGlobalTimingInfo();
 
 #define INIT_TIMING \
-    if (!clsTimingInfo) \
-        clsTimingInfo = new TimingInfo; \
-    else \
-        clsTimingInfo->Reset(); \
-
+    GetGlobalTimingInfo();
 
 #define START_TICK      vm_tick start_tick = GET_TIMING_TICKS;
 
 #define END_TICK(x)         \
 {\
     vm_tick end_tick = GET_TIMING_TICKS;\
-    clsTimingInfo->x += (end_tick - start_tick) - clsTimingInfo->m_compensative_const;\
+    GetGlobalTimingInfo()->x += (end_tick - start_tick) - GetGlobalTimingInfo()->m_compensative_const;\
 }
 
 #define START_TICK1      vm_tick start_tick1 = GET_TIMING_TICKS;
 #define END_TICK1(x)         \
 {\
     vm_tick end_tick = GET_TIMING_TICKS;\
-    clsTimingInfo->x += (end_tick - start_tick1) - clsTimingInfo->m_compensative_const;\
+    GetGlobalTimingInfo()->x += (end_tick - start_tick1) - GetGlobalTimingInfo()->m_compensative_const;\
 }
 
 //#define ENABLE_OPTIONAL

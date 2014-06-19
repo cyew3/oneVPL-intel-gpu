@@ -169,5 +169,4 @@ typedef struct _VAEncMiscParameterVP8SegmentMapParams
 #define VAEncHackTypeVP8HybridFrameUpdate -7
 #define VAEncHackTypeVP8HybridFrameRate   -8
 
-
-#endif
+#endif // __VAAPI_EXT_INTERFACE_H__

@@ -24,10 +24,7 @@ class H265DecoderFrame;
 
 struct TileThreadingInfo
 {
-    Ipp32s firstCUAddr;
     CUProcessInfo processInfo;
-    Ipp32s m_maxCUToProcess;
-
     DecodingContext * m_context;
 };
 
@@ -182,6 +179,9 @@ public:
 
     // Initialize tiles and slices threading information
     void FillTileInfo();
+
+    // reorder slices and set maxCUAddr
+    void EliminateASO();
 
     H265DecoderFrameInfo * GetNextAU() const {return m_nextAU;}
     H265DecoderFrameInfo * GetPrevAU() const {return m_prevAU;}

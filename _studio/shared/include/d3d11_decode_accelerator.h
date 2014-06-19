@@ -48,7 +48,6 @@ public:
     };
 
     // I/F between core and accelerator
-    virtual UMC::Status FindConfiguration(UMC::VideoStreamInfo *pVideoInfo) {pVideoInfo; return UMC::UMC_ERR_UNSUPPORTED;}; // ExtOptions: 1=Force Intel custom guid, 2=Force standard guid
     virtual UMC::Status Init(UMC::VideoAcceleratorParams *pParams) {pParams; return UMC::UMC_ERR_UNSUPPORTED;};
     
     // Will use this function instead of previos two: FindConfiguration, Init

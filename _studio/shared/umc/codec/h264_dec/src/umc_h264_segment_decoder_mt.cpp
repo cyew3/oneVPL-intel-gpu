@@ -3986,6 +3986,8 @@ Status H264SegmentDecoderMultiThreaded::ProcessSlice(Ipp32s iCurMBNumber, Ipp32s
         return umcRes;
     }
 
+    m_CurMBAddr = iCurMBNumber;
+
     // this is a cicle for rows of MBs
     for (; iCurMBNumber < iMaxMBNumber;)
     {

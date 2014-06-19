@@ -431,7 +431,7 @@ void H265SegmentDecoder::DeblockOneLCU(Ipp32s curLCUAddr)
     m_cu = m_pCurrentFrame->getCU(curLCUAddr);
     m_pSliceHeader = m_cu->m_SliceHeader;
 
-    if (m_cu->m_SliceHeader->slice_deblocking_filter_disabled_flag)
+    if (!m_cu->m_SliceHeader || m_cu->m_SliceHeader->slice_deblocking_filter_disabled_flag)
         return;
 
     Ipp32s maxCUSize = m_pSeqParamSet->MaxCUSize;

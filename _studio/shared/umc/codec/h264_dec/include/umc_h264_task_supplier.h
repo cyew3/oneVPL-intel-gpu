@@ -52,6 +52,31 @@ enum
     INVALID_VIEW_ID             = 0xffffffff
 };
 
+class ErrorStatus
+{
+public:
+
+    bool IsExistHeadersError() const 
+    {
+        return isSPSError || isPPSError;
+    }
+
+protected:
+    Ipp32s isSPSError;
+    Ipp32s isPPSError;
+
+    ErrorStatus()
+    {
+        Reset();
+    }
+
+    void Reset()
+    {
+        isSPSError = 0;
+        isPPSError = 0;
+    }
+};
+
 /****************************************************************************************************/
 // DPBOutput class routine
 /****************************************************************************************************/
@@ -445,7 +470,8 @@ protected:
 /****************************************************************************************************/
 // TaskSupplier
 /****************************************************************************************************/
-class TaskSupplier : public Skipping, public AU_Splitter, public SVC_Extension, public DecReferencePictureMarking, public DPBOutput
+class TaskSupplier : public Skipping, public AU_Splitter, public SVC_Extension, public DecReferencePictureMarking, public DPBOutput,
+        public ErrorStatus
 {
     friend class TaskBroker;
     friend class TaskBrokerSingleThreadDXVA;

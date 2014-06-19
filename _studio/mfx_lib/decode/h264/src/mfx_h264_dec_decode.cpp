@@ -28,6 +28,7 @@
 #include "umc_h264_va_supplier.h"
 #include "umc_va_dxva2_protected.h"
 #include "umc_va_linux_protected.h"
+#include "umc_va_video_processing.h"
 #endif
 
 #if defined (MFX_VA_OSX)
@@ -243,6 +244,14 @@ mfxStatus VideoDECODEH264::Init(mfxVideoParam *par)
     m_vFirstPar = *par;
     m_vFirstPar.mfx.NumThread = 0;
 
+    m_usePostProcessing = false;
+
+    mfxExtDecVideoProcessing * videoProcessing = (mfxExtDecVideoProcessing *)GetExtBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_DEC_VIDEO_PROCESSING);
+    if (videoProcessing)
+    {
+        m_usePostProcessing = true;
+    }
+
     bool isNeedChangeVideoParamWarning = IsNeedChangeVideoParam(&m_vFirstPar);
 
     m_vPar = m_vFirstPar;
@@ -277,6 +286,9 @@ mfxStatus VideoDECODEH264::Init(mfxVideoParam *par)
     Ipp32s useInternal = (MFX_PLATFORM_SOFTWARE == m_platform) ?
         (m_vPar.IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY) : (m_vPar.IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY);
 
+    if (m_usePostProcessing)
+        useInternal = 1;
+
 #if defined (MFX_VA_OSX)
     useInternal = m_vPar.IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY;    //APPLE - forcing this to act like software version
 #endif
@@ -301,11 +313,7 @@ mfxStatus VideoDECODEH264::Init(mfxVideoParam *par)
         useInternal = (m_platform == MFX_PLATFORM_SOFTWARE) ? (pOpaqAlloc->Out.Type & MFX_MEMTYPE_DXVA2_DECODER_TARGET) : (pOpaqAlloc->Out.Type & MFX_MEMTYPE_SYSTEM_MEMORY);
     }
 
-    if (useInternal)
-        request.Type |= MFX_MEMTYPE_INTERNAL_FRAME;
-    else
-        request.Type |= MFX_MEMTYPE_EXTERNAL_FRAME;
-
+    request.Type |= useInternal ? MFX_MEMTYPE_INTERNAL_FRAME : MFX_MEMTYPE_EXTERNAL_FRAME;
     request_internal = request;
 
     // allocates external surfaces:
@@ -398,6 +406,13 @@ mfxStatus VideoDECODEH264::Init(mfxVideoParam *par)
             if (m_va->GetProtectedVA()->SetModes(par) != UMC::UMC_OK)
                 return MFX_ERR_INVALID_VIDEO_PARAM;
         }
+
+        if (m_va->GetVideoProcessingVA())
+        {
+            if (m_va->GetVideoProcessingVA()->Init(par, videoProcessing) != UMC::UMC_OK)
+                return MFX_ERR_INVALID_VIDEO_PARAM;
+        }
+        
 #endif
     }
 #endif
@@ -909,14 +924,19 @@ mfxStatus VideoDECODEH264::QueryIOSurf(VideoCORE *core, mfxVideoParam *par, mfxF
     Ipp32s isInternalManaging = (MFX_PLATFORM_SOFTWARE == platform) ?
         (params.IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY) : (params.IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY);
 
-    if (isInternalManaging)
+    bool isVideoProcessing = GetExtBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_DEC_VIDEO_PROCESSING) != 0;
+
+    if (isInternalManaging || isVideoProcessing)
     {
         request->NumFrameSuggested = request->NumFrameMin = (mfxU16)CalculateAsyncDepth(core, par);
 
-        if (MFX_PLATFORM_SOFTWARE == platform)
-            request->Type = MFX_MEMTYPE_DXVA2_DECODER_TARGET | MFX_MEMTYPE_FROM_DECODE;
-        else
-            request->Type = MFX_MEMTYPE_SYSTEM_MEMORY | MFX_MEMTYPE_FROM_DECODE;
+        if (!isVideoProcessing) // need to swap mem type
+        {
+            if (MFX_PLATFORM_SOFTWARE == platform)
+                request->Type = MFX_MEMTYPE_DXVA2_DECODER_TARGET | MFX_MEMTYPE_FROM_DECODE;
+            else
+                request->Type = MFX_MEMTYPE_SYSTEM_MEMORY | MFX_MEMTYPE_FROM_DECODE;
+        }
     }
 
     if (par->IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY)
@@ -978,6 +998,23 @@ mfxStatus VideoDECODEH264::QueryIOSurfInternal(eMFXPlatform platform, eMFXHWType
         request->Type = MFX_MEMTYPE_DXVA2_DECODER_TARGET | MFX_MEMTYPE_FROM_DECODE;
     }
 
+    mfxExtDecVideoProcessing * videoProcessing = (mfxExtDecVideoProcessing *)GetExtBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_DEC_VIDEO_PROCESSING);
+    if (videoProcessing)
+    {
+        // need to substitute output format
+        // number of surfaces is same
+        request->Info.FourCC = videoProcessing->Out.FourCC;
+
+        request->Info.ChromaFormat = videoProcessing->Out.ChromaFormat;
+        request->Info.PicStruct = videoProcessing->Out.PicStruct;
+        request->Info.Width = videoProcessing->Out.Width;
+        request->Info.Height = videoProcessing->Out.Height;
+        request->Info.CropX = videoProcessing->Out.CropX;
+        request->Info.CropY = videoProcessing->Out.CropY;
+        request->Info.CropW = videoProcessing->Out.CropW;
+        request->Info.CropH = videoProcessing->Out.CropH;
+    }
+
     return MFX_ERR_NONE;
 }
 
@@ -1003,6 +1040,8 @@ mfxStatus VideoDECODEH264::GetDecodeStat(mfxDecodeStat *stat)
                 m_stat.NumCachedFrame++;
         }
     }
+
+    m_stat.reserved[0] = m_pH264VideoDecoder->IsExistHeadersError() ? 1 : 0;
 
     *stat = m_stat;
     return MFX_ERR_NONE;
@@ -1189,6 +1228,13 @@ mfxStatus VideoDECODEH264::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1 *
             return MFX_ERR_UNDEFINED_BEHAVIOR;
 
         m_va->GetProtectedVA()->SetBitstream(bs);
+    }
+
+    if (m_va->GetVideoProcessingVA())
+    {
+        mfxHDL surfHDL;
+        m_core->GetFrameHDL(surface_work->Data.MemId, &surfHDL, false);
+        m_va->GetVideoProcessingVA()->SetOutputSurface(surfHDL);
     }
 #endif
 

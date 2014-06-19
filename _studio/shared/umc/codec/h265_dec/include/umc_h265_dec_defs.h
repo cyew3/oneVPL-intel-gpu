@@ -174,13 +174,13 @@ enum DisplayPictureStruct_H265 {
     DPS_FRAME_TRIPLING_H265
 };
 
-typedef Ipp8u H265PlaneYCommon;
-typedef Ipp8u H265PlaneUVCommon;
-typedef Ipp16s H265CoeffsCommon;
+typedef Ipp8u PlaneY;
+typedef Ipp8u PlaneUV;
+typedef Ipp16s Coeffs;
 
-typedef H265CoeffsCommon *H265CoeffsPtrCommon;
-typedef H265PlaneYCommon *H265PlanePtrYCommon;
-typedef H265PlaneUVCommon *H265PlanePtrUVCommon;
+typedef Coeffs *CoeffsPtr;
+typedef PlaneY *PlanePtrY;
+typedef PlaneUV *PlanePtrUV;
 
 // HEVC NAL unit types
 enum NalUnitType
@@ -667,8 +667,8 @@ struct ReferencePictureSet
 
     Ipp32s num_lt_pics;
 
-    Ipp32s num_long_term_pics;
-    Ipp32s num_long_term_sps;
+    Ipp32u num_long_term_pics;
+    Ipp32u num_long_term_sps;
 
     Ipp32s m_DeltaPOC[MAX_NUM_REF_PICS];
     Ipp32s m_POC[MAX_NUM_REF_PICS];
@@ -683,10 +683,10 @@ struct ReferencePictureSet
     void sortDeltaPOC();
 
     void setInterRPSPrediction(bool f)      { inter_ref_pic_set_prediction_flag = f; }
-    Ipp32s getNumberOfPictures() const    { return num_pics; }
-    Ipp32s getNumberOfNegativePictures() const    { return num_negative_pics; }
-    Ipp32s getNumberOfPositivePictures() const    { return num_positive_pics; }
-    Ipp32s getNumberOfLongtermPictures() const    { return num_lt_pics; }
+    Ipp32u getNumberOfPictures() const    { return num_pics; }
+    Ipp32u getNumberOfNegativePictures() const    { return num_negative_pics; }
+    Ipp32u getNumberOfPositivePictures() const    { return num_positive_pics; }
+    Ipp32u getNumberOfLongtermPictures() const    { return num_lt_pics; }
     void setNumberOfLongtermPictures(Ipp32s val)  { num_lt_pics = val; }
     int getDeltaPOC(int index) const        { return m_DeltaPOC[index]; }
     void setDeltaPOC(int index, int val)    { m_DeltaPOC[index] = val; }
@@ -1300,22 +1300,30 @@ inline T * h265_new_throw_1(T1 t1)
     return t;
 }
 
+enum
+{
+    CHROMA_FORMAT_400       = 0,
+    CHROMA_FORMAT_420       = 1,
+    CHROMA_FORMAT_422       = 2,
+    CHROMA_FORMAT_444       = 3
+};
+
 // Color format constants conversion
 inline UMC::ColorFormat GetUMCColorFormat_H265(Ipp32s color_format)
 {
     UMC::ColorFormat format;
     switch(color_format)
     {
-    case 0:
+    case CHROMA_FORMAT_400:
         format = UMC::GRAY;
         break;
-    case 2:
+    case CHROMA_FORMAT_422:
         format = UMC::YUV422;
         break;
-    case 3:
+    case CHROMA_FORMAT_444:
         format = UMC::YUV444;
         break;
-    case 1:
+    case CHROMA_FORMAT_420:
     default:
         format = UMC::YUV420;
         break;
@@ -1332,22 +1340,22 @@ inline Ipp32s GetH265ColorFormat(UMC::ColorFormat color_format)
     {
     case UMC::GRAY:
     case UMC::GRAYA:
-        format = 0;
+        format = CHROMA_FORMAT_400;
         break;
     case UMC::YUV422A:
     case UMC::YUV422:
-        format = 2;
+        format = CHROMA_FORMAT_422;
         break;
     case UMC::YUV444:
     case UMC::YUV444A:
-        format = 3;
+        format = CHROMA_FORMAT_444;
         break;
     case UMC::YUV420:
     case UMC::YUV420A:
     case UMC::NV12:
     case UMC::YV12:
     default:
-        format = 1;
+        format = CHROMA_FORMAT_420;
         break;
     }
 
@@ -1376,7 +1384,7 @@ inline size_t CalculateSuggestedSize(const H265SeqParamSet * sps)
         break;
     };
 
-    return size;
+    return 2*size;
 }
 
 // Fast memcpy inline function for small memory blocks like 4-32 bytes, used in interpolation

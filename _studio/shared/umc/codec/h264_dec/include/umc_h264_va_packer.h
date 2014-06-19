@@ -188,6 +188,8 @@ private:
 
     void FillFrameAsInvalid(VAPictureH264 * pic);
 
+    void PackProcessingInfo(H264DecoderFrameInfo * sliceInfo);
+
     enum
     {
         VA_FRAME_INDEX_INVALID = 0x7f

@@ -819,6 +819,9 @@ void H265SampleAdaptiveOffsetTemplate<PlaneType>::processSaoLine(SAOLCUParam* sa
         }
 
         H265CodingUnit *pTmpCu = m_Frame->getCU(addr);
+        if (!pTmpCu->m_Frame)
+            continue;
+
         bool isNeedSAOLuma = pTmpCu->m_SliceHeader->slice_sao_luma_flag && saoLCUParam[addr].m_typeIdx >= 0;
         bool isNeedSAOChroma = pTmpCu->m_SliceHeader->slice_sao_chroma_flag && saoLCUParam[addr].m_typeIdx[1] >= 0;
 

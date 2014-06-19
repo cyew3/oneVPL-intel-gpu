@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2003-2013 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2003-2014 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -538,6 +538,8 @@ struct H264SeqParamSetBase
 
     Ipp32s       poffset_for_ref_frame[MAX_REF_FRAMES_IN_POC_CYCLE];  // for pic order cnt type 1
 
+    Ipp8u        errorFlags;
+
     void Reset()
     {
         H264SeqParamSetBase sps = {0};
@@ -838,6 +840,8 @@ struct H264PicParamSetBase
     H264ScalingPicParams scaling[2];
 
     Ipp8u initialized[2];
+
+    Ipp8u errorFlags;
 
     void Reset()
     {

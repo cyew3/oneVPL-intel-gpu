@@ -149,7 +149,6 @@ private:
     // D3D11 VideoAccelrator which works with decode components on MFX/UMC levels
     // and providing HW capabilities
     std::auto_ptr<MFXD3D11Accelerator>    m_pAccelerator;
-    std::auto_ptr<UMC::ProtectedVA>       m_protectedVA;
     #if defined (MFX_ENABLE_VPP) && !defined(MFX_RT)
     std::auto_ptr<MfxHwVideoProcessing::DriverVideoProcessing>       m_pVideoProcessing;
     #endif

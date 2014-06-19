@@ -476,6 +476,9 @@ Ipp32u H265CodingUnit::getSCUAddr()
 // and tiles may be disabled.
 void H265CodingUnit::setNDBFilterBlockBorderAvailability(bool independentTileBoundaryEnabled)
 {
+    if (!m_Frame)
+        return;
+
     bool noPicLBoundary = ((m_CUPelX == 0) ? false : true);
     bool noPicTBoundary = ((m_CUPelY == 0) ? false : true);
     bool noPicRBoundary = ((m_CUPelX + m_SliceHeader->m_SeqParamSet->MaxCUSize >= m_SliceHeader->m_SeqParamSet->pic_width_in_luma_samples)  ? false : true);
