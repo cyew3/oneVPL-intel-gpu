@@ -525,7 +525,9 @@ int main(int argc, vm_char *argv[])
     }
 
 
-    bool bMultipleOut = false;
+    bool bDoNotUpdateIn = false;
+    if(Params.use_extapi)
+        bDoNotUpdateIn = true;
 
     bool bSvcMode          = (VPP_FILTER_ENABLED_CONFIGURED == Params.svcParam.mode) ? true : false;
     mfxU32 lastActiveLayer = 0;
@@ -555,7 +557,7 @@ int main(int argc, vm_char *argv[])
         }
     }
 //---------------------------------------------------------
-    while (MFX_ERR_NONE <= sts || MFX_ERR_MORE_DATA == sts || bMultipleOut )
+    while (MFX_ERR_NONE <= sts || MFX_ERR_MORE_DATA == sts || bDoNotUpdateIn )
     {
         mfxU16 viewID = 0;
         mfxU16 viewIndx = 0;
@@ -577,17 +579,17 @@ int main(int argc, vm_char *argv[])
             if( bMultipleOutStore[viewIndx] )
             {              
                 pSurf[VPP_IN] = viewSurfaceStore[viewIndx];
-                bMultipleOut = true;           
+                bDoNotUpdateIn = true;           
 
                 bMultipleOutStore[viewIndx] = false;
             }
             else
             {
-                bMultipleOut = false;  
+                bDoNotUpdateIn = false;  
             }
         }
 
-        if( !bMultipleOut )
+        if( !bDoNotUpdateIn )
         {
             sts = yuvReader.GetNextInputFrame(
                 &allocator, 
@@ -608,7 +610,7 @@ int main(int argc, vm_char *argv[])
         }
 
         // VPP processing    
-        bMultipleOut = false;
+        bDoNotUpdateIn = false;
 
         if( !bSvcMode )
         {
@@ -663,6 +665,9 @@ int main(int argc, vm_char *argv[])
                     &pSurf[VPP_OUT],
                     &syncPoint);
             }
+
+            if(MFX_ERR_MORE_DATA != sts)
+                bDoNotUpdateIn = true;
         }
         else 
         {
@@ -679,14 +684,15 @@ int main(int argc, vm_char *argv[])
             {
                 if( lastActiveLayer != did )
                 {
-                    bMultipleOut = true;
+                    bDoNotUpdateIn = true;
                 }
             }
             continue;
         }
 
-        //MFX_ERR_MORE_SURFACE means output is ready but need more surface
+        //MFX_ERR_MORE_SURFACE (&& !use_extapi) means output is ready but need more surface
         //because VPP produce multiple out. example: Frame Rate Conversion 30->60
+        //MFX_ERR_MORE_SURFACE && use_extapi means that component need more work surfaces
         if (MFX_ERR_MORE_SURFACE == sts)
         {       
             sts = MFX_ERR_NONE;
@@ -705,7 +711,7 @@ int main(int argc, vm_char *argv[])
             }
             else
             {
-                bMultipleOut = true;
+                bDoNotUpdateIn = true;
             }
             
             if ( Params.use_extapi )
@@ -730,7 +736,7 @@ int main(int argc, vm_char *argv[])
         {
             if( lastActiveLayer != did )
             {
-                bMultipleOut = true;
+                bDoNotUpdateIn = true;
             }
         }
 
@@ -797,7 +803,7 @@ int main(int argc, vm_char *argv[])
             BREAK_ON_ERROR(sts);
         }
 
-        bMultipleOut = false;
+        bDoNotUpdateIn = false;
 
         if ( Params.use_extapi )
         {
@@ -844,7 +850,7 @@ int main(int argc, vm_char *argv[])
         {
             if( lastActiveLayer != did )
             {
-                bMultipleOut = true;
+                bDoNotUpdateIn = true;
             }
         }
 

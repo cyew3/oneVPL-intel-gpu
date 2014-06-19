@@ -43,7 +43,8 @@ void vppPrintHelp(vm_char *strAppName, vm_char *strErrorMessage)
     vm_string_printf(VM_STRING("   [-spic value]     - picture structure of src video\n")); 
     vm_string_printf(VM_STRING("                        0 - interlaced top    field first\n"));
     vm_string_printf(VM_STRING("                        2 - interlaced bottom field first\n")); 
-    vm_string_printf(VM_STRING("                        1 - progressive (default)\n\n")); 
+    vm_string_printf(VM_STRING("                        1 - progressive (default)\n"));
+    vm_string_printf(VM_STRING("                       -1 - unknown\n\n"));
 
     vm_string_printf(VM_STRING("   [-dw  width]      - width  of dst video (def: 352)\n"));
     vm_string_printf(VM_STRING("   [-dh  height]     - height of dst video (def: 288)\n"));
@@ -57,7 +58,8 @@ void vppPrintHelp(vm_char *strAppName, vm_char *strErrorMessage)
     vm_string_printf(VM_STRING("   [-dpic value]     - picture structure of dst video\n")); 
     vm_string_printf(VM_STRING("                        0 - interlaced top    field first\n"));
     vm_string_printf(VM_STRING("                        2 - interlaced bottom field first\n")); 
-    vm_string_printf(VM_STRING("                        1 - progressive (default)\n\n")); 
+    vm_string_printf(VM_STRING("                        1 - progressive (default)\n"));
+    vm_string_printf(VM_STRING("                       -1 - unknown\n\n"));
 
     vm_string_printf(VM_STRING("   Video Enhancement Algorithms\n"));
 
