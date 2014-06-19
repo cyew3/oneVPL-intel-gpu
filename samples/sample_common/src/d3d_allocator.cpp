@@ -46,50 +46,6 @@ D3DFORMAT ConvertMfxFourccToD3dFormat(mfxU32 fourcc)
     }
 }
 
-class DeviceHandle
-{
-public:
-    DeviceHandle(IDirect3DDeviceManager9* manager)
-        : m_manager(manager)
-        , m_handle(0)
-    {
-        if (manager)
-        {
-            HRESULT hr = manager->OpenDeviceHandle(&m_handle);
-            if (FAILED(hr))
-                m_manager = 0;
-        }
-    }
-
-    ~DeviceHandle()
-    {
-        if (m_manager && m_handle)
-            m_manager->CloseDeviceHandle(m_handle);
-    }
-
-    HANDLE Detach()
-    {
-        HANDLE tmp = m_handle;
-        m_manager = 0;
-        m_handle = 0;
-        return tmp;
-    }
-
-    operator HANDLE()
-    {
-        return m_handle;
-    }
-
-    bool operator !() const
-    {
-        return m_handle == 0;
-    }
-
-protected:
-    CComPtr<IDirect3DDeviceManager9> m_manager;
-    HANDLE m_handle;
-};
-
 D3DFrameAllocator::D3DFrameAllocator()
 : m_decoderService(0), m_processorService(0), m_hDecoder(0), m_hProcessor(0), m_manager(0), m_surfaceUsage(0)
 {
@@ -295,29 +251,30 @@ mfxStatus D3DFrameAllocator::AllocImpl(mfxFrameAllocRequest *request, mfxFrameAl
     else
         return MFX_ERR_UNSUPPORTED;
 
-    DeviceHandle device = DeviceHandle(m_manager);
     IDirectXVideoAccelerationService* videoService = NULL;
 
-    if (!device)
-        return MFX_ERR_MEMORY_ALLOC;
     if (target == DXVA2_VideoProcessorRenderTarget) {
         if (!m_hProcessor) {
-            hr = m_manager->GetVideoService(device, IID_IDirectXVideoProcessorService, (void**)&m_processorService);
+            hr = m_manager->OpenDeviceHandle(&m_hProcessor);
             if (FAILED(hr))
                 return MFX_ERR_MEMORY_ALLOC;
 
-            m_hProcessor = device.Detach();
+            hr = m_manager->GetVideoService(m_hProcessor, IID_IDirectXVideoProcessorService, (void**)&m_processorService);
+            if (FAILED(hr))
+                return MFX_ERR_MEMORY_ALLOC;
         }
         videoService = m_processorService;
     }
     else {
         if (!m_hDecoder)
         {
-            hr = m_manager->GetVideoService(device, IID_IDirectXVideoDecoderService, (void**)&m_decoderService);
+            hr = m_manager->OpenDeviceHandle(&m_hDecoder);
             if (FAILED(hr))
                 return MFX_ERR_MEMORY_ALLOC;
 
-            m_hDecoder = device.Detach();
+            hr = m_manager->GetVideoService(m_hDecoder, IID_IDirectXVideoDecoderService, (void**)&m_decoderService);
+            if (FAILED(hr))
+                return MFX_ERR_MEMORY_ALLOC;
         }
         videoService = m_decoderService;
     }
