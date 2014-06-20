@@ -205,6 +205,7 @@
     <ClCompile Include="src\gmock\test_suites\camera_get_video_param.cpp" />
     <ClCompile Include="src\gmock\test_suites\camera_query_io_surf.cpp" />
     <ClCompile Include="src\gmock\test_suites\camera_run_frame_async.cpp" />
+    <ClCompile Include="src\gmock\test_suites\camera_unsupport.cpp" />
     <ClCompile Include="src\gmock\test_suites\camera_close.cpp" />
     <ClCompile Include="src\gmock\test_suites\hevce_spspps_get.cpp" />
     <ClCompile Include="src\gmock\test_suites\ptir_close.cpp" />

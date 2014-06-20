@@ -164,15 +164,15 @@ const TestSuite::tc_struct TestSuite::test_case[] =
                                                                                  {&tsStruct::mfxVideoParam.vpp.Out.FrameRateExtN,  30},
                                                                                  {&tsStruct::mfxVideoParam.vpp.Out.FrameRateExtD, 0}} },
     // IOPattern cases
-    {/*32*/ MFX_ERR_NONE,                 0, 1, SET_ALLOCATOR|ALLOC_MIN,        {&tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_VIDEO_MEMORY |MFX_IOPATTERN_OUT_VIDEO_MEMORY}},
+    {/*32*/  /*MFX_ERR_NONE*/MFX_ERR_INVALID_VIDEO_PARAM,                 0, 1, SET_ALLOCATOR|ALLOC_MIN,        {&tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_VIDEO_MEMORY |MFX_IOPATTERN_OUT_VIDEO_MEMORY}},
     {/*33*/ MFX_ERR_NONE,                 0, 1, SET_ALLOCATOR|ALLOC_MIN,        {&tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_SYSTEM_MEMORY|MFX_IOPATTERN_OUT_SYSTEM_MEMORY}},
-    {/*34*/ MFX_ERR_NONE,                 0, 1, SET_ALLOCATOR|ALLOC_MIN,        {&tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_VIDEO_MEMORY |MFX_IOPATTERN_OUT_SYSTEM_MEMORY}},
+    {/*34*/  /*MFX_ERR_NONE*/MFX_ERR_INVALID_VIDEO_PARAM,                 0, 1, SET_ALLOCATOR|ALLOC_MIN,        {&tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_VIDEO_MEMORY |MFX_IOPATTERN_OUT_SYSTEM_MEMORY}},
     {/*35*/ MFX_ERR_NONE,                 0, 1, SET_ALLOCATOR|ALLOC_MIN,        {&tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_SYSTEM_MEMORY|MFX_IOPATTERN_OUT_VIDEO_MEMORY}},
-    {/*36*/ MFX_ERR_NONE,                 0, 1, ALLOC_OPAQUE|ALLOC_MIN,         {&tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_OPAQUE_MEMORY|MFX_IOPATTERN_OUT_OPAQUE_MEMORY}},
-    {/*37*/ MFX_ERR_NONE,                 0, 1, ALLOC_OPAQUE|ALLOC_MIN,         {&tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_VIDEO_MEMORY |MFX_IOPATTERN_OUT_OPAQUE_MEMORY}},
-    {/*38*/ MFX_ERR_NONE,                 0, 1, ALLOC_OPAQUE|ALLOC_MIN,         {&tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_SYSTEM_MEMORY|MFX_IOPATTERN_OUT_OPAQUE_MEMORY}},
-    {/*39*/ MFX_ERR_NONE,                 0, 1, ALLOC_OPAQUE|ALLOC_MIN,         {&tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_OPAQUE_MEMORY|MFX_IOPATTERN_OUT_VIDEO_MEMORY}},
-    {/*40*/ MFX_ERR_NONE,                 0, 1, ALLOC_OPAQUE|ALLOC_MIN,         {&tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_OPAQUE_MEMORY|MFX_IOPATTERN_OUT_SYSTEM_MEMORY}},
+    {/*36*/ MFX_ERR_INVALID_VIDEO_PARAM,                 0, 1, ALLOC_OPAQUE|ALLOC_MIN,         {&tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_OPAQUE_MEMORY|MFX_IOPATTERN_OUT_OPAQUE_MEMORY}},
+    {/*37*/ /*MFX_ERR_NONE*/MFX_ERR_INVALID_VIDEO_PARAM,                 0, 1, ALLOC_OPAQUE|ALLOC_MIN,         {&tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_VIDEO_MEMORY |MFX_IOPATTERN_OUT_OPAQUE_MEMORY}},
+    {/*38*/ MFX_ERR_INVALID_VIDEO_PARAM,                 0, 1, ALLOC_OPAQUE|ALLOC_MIN,         {&tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_SYSTEM_MEMORY|MFX_IOPATTERN_OUT_OPAQUE_MEMORY}},
+    {/*39*/ MFX_ERR_INVALID_VIDEO_PARAM,                 0, 1, ALLOC_OPAQUE|ALLOC_MIN,         {&tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_OPAQUE_MEMORY|MFX_IOPATTERN_OUT_VIDEO_MEMORY}},
+    {/*40*/ MFX_ERR_INVALID_VIDEO_PARAM,                 0, 1, ALLOC_OPAQUE|ALLOC_MIN,         {&tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_OPAQUE_MEMORY|MFX_IOPATTERN_OUT_SYSTEM_MEMORY}},
     {/*41*/ MFX_ERR_INVALID_VIDEO_PARAM,  0, 1, ALLOC_OPAQUE|ALLOC_MIN_MINUS_1, {&tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_OPAQUE_MEMORY|MFX_IOPATTERN_OUT_OPAQUE_MEMORY}},
     {/*42*/ MFX_ERR_INVALID_VIDEO_PARAM,  0, 1, ALLOC_OPAQUE|ALLOC_LOTS,        {&tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_OPAQUE_MEMORY|MFX_IOPATTERN_OUT_OPAQUE_MEMORY}},
     {/*43*/ MFX_ERR_INVALID_VIDEO_PARAM,  0, 1, SET_ALLOCATOR|ALLOC_MIN,        {&tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_OPAQUE_MEMORY|MFX_IOPATTERN_OUT_OPAQUE_MEMORY}},
@@ -184,7 +184,7 @@ const TestSuite::tc_struct TestSuite::test_case[] =
     {/*47*/  MFX_ERR_INVALID_VIDEO_PARAM, 0, 1, SET_ALLOCATOR|ALLOC_MIN, {}, {ext_buf, EXT_BUF_PAR(mfxExtVPPProcAmp             )}},
     {/*48*/  MFX_ERR_INVALID_VIDEO_PARAM, 0, 1, SET_ALLOCATOR|ALLOC_MIN, {}, {ext_buf, EXT_BUF_PAR(mfxExtVPPDetail              )}},
     {/*49*/  MFX_ERR_INVALID_VIDEO_PARAM, 0, 1, SET_ALLOCATOR|ALLOC_MIN, {}, {ext_buf, EXT_BUF_PAR(mfxExtVideoSignalInfo        )}},
-    {/*50*/  MFX_ERR_INVALID_VIDEO_PARAM, 0, 1, SET_ALLOCATOR|ALLOC_MIN, {}, {ext_buf, EXT_BUF_PAR(mfxExtVPPDoUse               )}},
+    {/*50*/  MFX_ERR_UNDEFINED_BEHAVIOR,  0, 1, SET_ALLOCATOR|ALLOC_MIN, {}, {ext_buf, EXT_BUF_PAR(mfxExtVPPDoUse               )}},
     {/*51*/  MFX_ERR_INVALID_VIDEO_PARAM, 0, 1, SET_ALLOCATOR|ALLOC_MIN, {}, {ext_buf, EXT_BUF_PAR(mfxExtAVCRefListCtrl         )}},
     {/*52*/  MFX_ERR_INVALID_VIDEO_PARAM, 0, 1, SET_ALLOCATOR|ALLOC_MIN, {}, {ext_buf, EXT_BUF_PAR(mfxExtVPPFrameRateConversion )}},
     {/*53*/  MFX_ERR_INVALID_VIDEO_PARAM, 0, 1, SET_ALLOCATOR|ALLOC_MIN, {}, {ext_buf, EXT_BUF_PAR(mfxExtVPPImageStab           )}},
@@ -200,7 +200,7 @@ const TestSuite::tc_struct TestSuite::test_case[] =
     {/*62*/  MFX_ERR_NONE,                0, 1, SET_ALLOCATOR|ALLOC_MIN, {}, {ext_buf, EXT_BUF_PAR(mfxExtCamBayerDenoise         )}},
     {/*63*/  MFX_ERR_NONE,                0, 1, SET_ALLOCATOR|ALLOC_MIN, {}, {ext_buf, EXT_BUF_PAR(mfxExtCamColorCorrection3x3   )}},
     {/*64*/  MFX_ERR_NONE,                0, 1, SET_ALLOCATOR|ALLOC_MIN, {}, {ext_buf, EXT_BUF_PAR(mfxExtCamPadding              )}},
-    {/*65*/  MFX_ERR_NONE,                0, 1, SET_ALLOCATOR|ALLOC_MIN, {}, {ext_buf, EXT_BUF_PAR(mfxExtCamPipeControl          )}},
+    {/*65*/  MFX_ERR_UNDEFINED_BEHAVIOR,  0, 1, SET_ALLOCATOR|ALLOC_MIN, {}, {ext_buf, EXT_BUF_PAR(mfxExtCamPipeControl          )}},
     {/*66*/  MFX_ERR_INVALID_VIDEO_PARAM, 0, 1, SET_ALLOCATOR|ALLOC_MIN, {}, {del_buf, EXT_BUF_PAR(mfxExtCamPipeControl          )}},
 
     {/*67*/ MFX_ERR_INVALID_VIDEO_PARAM,  0, 1, SET_ALLOCATOR|ALLOC_MIN,        {{&tsStruct::mfxVideoParam.vpp.In.Width,   4096}, //resize is unsupported
@@ -279,6 +279,7 @@ int TestSuite::RunTest(unsigned int id)
             if(tc.set_par[i].f)
             {
                 tsStruct::set(m_pPar, *tc.set_par[i].f, tc.set_par[i].v);
+                std::cout << "  Set field " << tc.set_par[i].f->name << " to " << tc.set_par[i].v << "\n";
             }
         }
         if(tc.set_buf.func) // set ExtBuffer

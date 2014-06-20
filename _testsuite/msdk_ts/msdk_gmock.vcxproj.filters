@@ -217,6 +217,9 @@
     <ClCompile Include="src\gmock\test_suites\camera_close.cpp">
       <Filter>Source Files\test_suites\camera</Filter>
     </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\camera_unsupport.cpp">
+      <Filter>Source Files\test_suites\camera</Filter>
+    </ClCompile>
     <ClCompile Include="src\gmock\test_suites\camera_query_io_surf.cpp">
       <Filter>Source Files\test_suites\camera</Filter>
     </ClCompile>

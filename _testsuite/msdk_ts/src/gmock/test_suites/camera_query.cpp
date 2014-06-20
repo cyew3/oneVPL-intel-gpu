@@ -92,23 +92,23 @@ const TestSuite::tc_struct TestSuite::test_case[] =
     {/*21*/  MFX_ERR_UNSUPPORTED, SAME_IO, {}, {ext_buf, EXT_BUF_PAR(mfxExtVPPVideoSignalInfo     )}},
     {/*22*/  MFX_ERR_UNSUPPORTED, SAME_IO, {}, {ext_buf, EXT_BUF_PAR(mfxExtVPPDeinterlacing       )}},
     {/*23*/  MFX_ERR_NONE,        SAME_IO, {}, {ext_buf, EXT_BUF_PAR(mfxExtCamGammaCorrection      )}},  //Camera buffers
-    {/*24*/  MFX_ERR_NONE,        SAME_IO, {}, {ext_buf, EXT_BUF_PAR(mfxExtCamWhiteBalance         )}},
-    {/*25*/  MFX_ERR_NONE,        SAME_IO, {}, {ext_buf, EXT_BUF_PAR(mfxExtCamHotPixelRemoval      )}},
-    {/*26*/  MFX_ERR_NONE,        SAME_IO, {}, {ext_buf, EXT_BUF_PAR(mfxExtCamBlackLevelCorrection )}},
-    {/*27*/  MFX_ERR_NONE,        SAME_IO, {}, {ext_buf, EXT_BUF_PAR(mfxExtCamVignetteCorrection   )}},
-    {/*28*/  MFX_ERR_NONE,        SAME_IO, {}, {ext_buf, EXT_BUF_PAR(mfxExtCamBayerDenoise         )}},
-    {/*29*/  MFX_ERR_NONE,        SAME_IO, {}, {ext_buf, EXT_BUF_PAR(mfxExtCamColorCorrection3x3   )}},
+    {/*24*/  MFX_ERR_UNSUPPORTED,        SAME_IO, {}, {ext_buf, EXT_BUF_PAR(mfxExtCamWhiteBalance         )}},
+    {/*25*/  MFX_ERR_UNSUPPORTED,        SAME_IO, {}, {ext_buf, EXT_BUF_PAR(mfxExtCamHotPixelRemoval      )}},
+    {/*26*/  MFX_ERR_UNSUPPORTED,        SAME_IO, {}, {ext_buf, EXT_BUF_PAR(mfxExtCamBlackLevelCorrection )}},
+    {/*27*/  MFX_ERR_UNSUPPORTED,        SAME_IO, {}, {ext_buf, EXT_BUF_PAR(mfxExtCamVignetteCorrection   )}},
+    {/*28*/  MFX_ERR_UNSUPPORTED,        SAME_IO, {}, {ext_buf, EXT_BUF_PAR(mfxExtCamBayerDenoise         )}},
+    {/*29*/  MFX_ERR_UNSUPPORTED,        SAME_IO, {}, {ext_buf, EXT_BUF_PAR(mfxExtCamColorCorrection3x3   )}},
     {/*30*/  MFX_ERR_NONE,        SAME_IO, {}, {ext_buf, EXT_BUF_PAR(mfxExtCamPadding              )}},
-    {/*31*/  MFX_ERR_NONE,        SAME_IO, {}, {ext_buf, EXT_BUF_PAR(mfxExtCamPipeControl          )}},
+    {/*31*/  MFX_ERR_UNDEFINED_BEHAVIOR, SAME_IO, {}, {ext_buf, EXT_BUF_PAR(mfxExtCamPipeControl          )}},
     {/*32*/  MFX_ERR_NONE,        INPLACE, {}, {ext_buf, EXT_BUF_PAR(mfxExtCamGammaCorrection      )}},
-    {/*33*/  MFX_ERR_NONE,        INPLACE, {}, {ext_buf, EXT_BUF_PAR(mfxExtCamWhiteBalance         )}},
-    {/*34*/  MFX_ERR_NONE,        INPLACE, {}, {ext_buf, EXT_BUF_PAR(mfxExtCamHotPixelRemoval      )}},
-    {/*35*/  MFX_ERR_NONE,        INPLACE, {}, {ext_buf, EXT_BUF_PAR(mfxExtCamBlackLevelCorrection )}},
-    {/*36*/  MFX_ERR_NONE,        INPLACE, {}, {ext_buf, EXT_BUF_PAR(mfxExtCamVignetteCorrection   )}},
-    {/*37*/  MFX_ERR_NONE,        INPLACE, {}, {ext_buf, EXT_BUF_PAR(mfxExtCamBayerDenoise         )}},
-    {/*38*/  MFX_ERR_NONE,        INPLACE, {}, {ext_buf, EXT_BUF_PAR(mfxExtCamColorCorrection3x3   )}},
+    {/*33*/  MFX_WRN_FILTER_SKIPPED,        INPLACE, {}, {ext_buf, EXT_BUF_PAR(mfxExtCamWhiteBalance         )}},
+    {/*34*/  MFX_WRN_FILTER_SKIPPED,        INPLACE, {}, {ext_buf, EXT_BUF_PAR(mfxExtCamHotPixelRemoval      )}},
+    {/*35*/  MFX_WRN_FILTER_SKIPPED,        INPLACE, {}, {ext_buf, EXT_BUF_PAR(mfxExtCamBlackLevelCorrection )}},
+    {/*36*/  MFX_WRN_FILTER_SKIPPED,        INPLACE, {}, {ext_buf, EXT_BUF_PAR(mfxExtCamVignetteCorrection   )}},
+    {/*37*/  MFX_WRN_FILTER_SKIPPED,        INPLACE, {}, {ext_buf, EXT_BUF_PAR(mfxExtCamBayerDenoise         )}},
+    {/*38*/  MFX_WRN_FILTER_SKIPPED,        INPLACE, {}, {ext_buf, EXT_BUF_PAR(mfxExtCamColorCorrection3x3   )}},
     {/*39*/  MFX_ERR_NONE,        INPLACE, {}, {ext_buf, EXT_BUF_PAR(mfxExtCamPadding              )}},
-    {/*40*/  MFX_ERR_NONE,        INPLACE, {}, {ext_buf, EXT_BUF_PAR(mfxExtCamPipeControl          )}},
+    {/*40*/  MFX_ERR_UNDEFINED_BEHAVIOR,  INPLACE, {}, {ext_buf, EXT_BUF_PAR(mfxExtCamPipeControl          )}},
     {/*41*/  MFX_ERR_UNDEFINED_BEHAVIOR,  DIFFERENT_IO, {}, {ext_buf, EXT_BUF_PAR(mfxExtCamGammaCorrection      )}},
     {/*42*/  MFX_ERR_UNDEFINED_BEHAVIOR,  DIFFERENT_IO, {}, {ext_buf, EXT_BUF_PAR(mfxExtCamWhiteBalance         )}},
     {/*43*/  MFX_ERR_UNDEFINED_BEHAVIOR,  DIFFERENT_IO, {}, {ext_buf, EXT_BUF_PAR(mfxExtCamHotPixelRemoval      )}},
@@ -146,15 +146,15 @@ const TestSuite::tc_struct TestSuite::test_case[] =
     {/*65*/  MFX_ERR_UNSUPPORTED,   INPLACE,       {&tsStruct::mfxVideoParam.IOPattern,  MFX_IOPATTERN_OUT_OPAQUE_MEMORY} },
     {/*66*/  MFX_ERR_UNSUPPORTED,   INPLACE,       {&tsStruct::mfxVideoParam.IOPattern,  MFX_IOPATTERN_OUT_SYSTEM_MEMORY} },
     {/*67*/  MFX_ERR_UNSUPPORTED,   INPLACE,       {&tsStruct::mfxVideoParam.IOPattern,  MFX_IOPATTERN_OUT_VIDEO_MEMORY}  },
-    {/*68*/  MFX_ERR_NONE,          INPLACE,       {&tsStruct::mfxVideoParam.IOPattern,  MFX_IOPATTERN_IN_OPAQUE_MEMORY|MFX_IOPATTERN_OUT_OPAQUE_MEMORY} },
-    {/*69*/  MFX_ERR_NONE,          INPLACE,       {&tsStruct::mfxVideoParam.IOPattern,  MFX_IOPATTERN_IN_OPAQUE_MEMORY|MFX_IOPATTERN_OUT_SYSTEM_MEMORY} },
-    {/*70*/  MFX_ERR_NONE,          INPLACE,       {&tsStruct::mfxVideoParam.IOPattern,  MFX_IOPATTERN_IN_OPAQUE_MEMORY|MFX_IOPATTERN_OUT_VIDEO_MEMORY } },
+    {/*68*/  MFX_ERR_UNSUPPORTED,   INPLACE,       {&tsStruct::mfxVideoParam.IOPattern,  MFX_IOPATTERN_IN_OPAQUE_MEMORY|MFX_IOPATTERN_OUT_OPAQUE_MEMORY} },
+    {/*69*/  MFX_ERR_UNSUPPORTED,   INPLACE,       {&tsStruct::mfxVideoParam.IOPattern,  MFX_IOPATTERN_IN_OPAQUE_MEMORY|MFX_IOPATTERN_OUT_SYSTEM_MEMORY} },
+    {/*70*/  MFX_ERR_UNSUPPORTED,   INPLACE,       {&tsStruct::mfxVideoParam.IOPattern,  MFX_IOPATTERN_IN_OPAQUE_MEMORY|MFX_IOPATTERN_OUT_VIDEO_MEMORY } },
     {/*71*/  MFX_ERR_NONE,          INPLACE,       {&tsStruct::mfxVideoParam.IOPattern,  MFX_IOPATTERN_IN_SYSTEM_MEMORY|MFX_IOPATTERN_OUT_OPAQUE_MEMORY} },
     {/*72*/  MFX_ERR_NONE,          INPLACE,       {&tsStruct::mfxVideoParam.IOPattern,  MFX_IOPATTERN_IN_SYSTEM_MEMORY|MFX_IOPATTERN_OUT_SYSTEM_MEMORY} },
     {/*73*/  MFX_ERR_NONE,          INPLACE,       {&tsStruct::mfxVideoParam.IOPattern,  MFX_IOPATTERN_IN_SYSTEM_MEMORY|MFX_IOPATTERN_OUT_VIDEO_MEMORY } },
-    {/*74*/  MFX_ERR_NONE,          INPLACE,       {&tsStruct::mfxVideoParam.IOPattern,  MFX_IOPATTERN_IN_VIDEO_MEMORY |MFX_IOPATTERN_OUT_OPAQUE_MEMORY} },
-    {/*75*/  MFX_ERR_NONE,          INPLACE,       {&tsStruct::mfxVideoParam.IOPattern,  MFX_IOPATTERN_IN_VIDEO_MEMORY |MFX_IOPATTERN_OUT_SYSTEM_MEMORY} },
-    {/*76*/  MFX_ERR_NONE,          INPLACE,       {&tsStruct::mfxVideoParam.IOPattern,  MFX_IOPATTERN_IN_VIDEO_MEMORY |MFX_IOPATTERN_OUT_VIDEO_MEMORY } },
+    {/*74*/  /*MFX_ERR_NONE*/MFX_ERR_UNSUPPORTED,          INPLACE,       {&tsStruct::mfxVideoParam.IOPattern,  MFX_IOPATTERN_IN_VIDEO_MEMORY |MFX_IOPATTERN_OUT_OPAQUE_MEMORY} },
+    {/*75*/  /*MFX_ERR_NONE*/MFX_ERR_UNSUPPORTED,          INPLACE,       {&tsStruct::mfxVideoParam.IOPattern,  MFX_IOPATTERN_IN_VIDEO_MEMORY |MFX_IOPATTERN_OUT_SYSTEM_MEMORY} },
+    {/*76*/  /*MFX_ERR_NONE*/MFX_ERR_UNSUPPORTED,          INPLACE,       {&tsStruct::mfxVideoParam.IOPattern,  MFX_IOPATTERN_IN_VIDEO_MEMORY |MFX_IOPATTERN_OUT_VIDEO_MEMORY } },
     {/*77*/  MFX_ERR_UNSUPPORTED,   INPLACE,       {&tsStruct::mfxVideoParam.IOPattern,  MFX_IOPATTERN_IN_VIDEO_MEMORY |MFX_IOPATTERN_OUT_VIDEO_MEMORY | MFX_IOPATTERN_OUT_SYSTEM_MEMORY } },
     {/*78*/  MFX_ERR_UNSUPPORTED,   INPLACE,       {&tsStruct::mfxVideoParam.IOPattern,  MFX_IOPATTERN_IN_VIDEO_MEMORY |MFX_IOPATTERN_OUT_VIDEO_MEMORY | MFX_IOPATTERN_IN_SYSTEM_MEMORY } },
 
@@ -162,7 +162,7 @@ const TestSuite::tc_struct TestSuite::test_case[] =
                                                    {&tsStruct::mfxVideoParam.vpp.In.ChromaFormat, MFX_CHROMAFORMAT_YUV420}} },
     {/*80*/  MFX_ERR_UNSUPPORTED,   INPLACE,     { {&tsStruct::mfxVideoParam.vpp.In.FourCC,       MFX_FOURCC_YV12},
                                                    {&tsStruct::mfxVideoParam.vpp.In.ChromaFormat, MFX_CHROMAFORMAT_YUV420}} },
-    {/*81*/  MFX_ERR_UNSUPPORTED,   INPLACE,     { {&tsStruct::mfxVideoParam.vpp.In.FourCC,       /*MFX_FOURCC_NV16*/},
+    {/*81*/  MFX_ERR_UNSUPPORTED,   INPLACE,     { {&tsStruct::mfxVideoParam.vpp.In.FourCC,       MFX_MAKEFOURCC('N','V','1','6')},
                                                    {&tsStruct::mfxVideoParam.vpp.In.ChromaFormat, MFX_CHROMAFORMAT_YUV420}} },
     {/*82*/  MFX_ERR_UNSUPPORTED,   INPLACE,     { {&tsStruct::mfxVideoParam.vpp.In.FourCC,       MFX_FOURCC_YUY2},
                                                    {&tsStruct::mfxVideoParam.vpp.In.ChromaFormat, MFX_CHROMAFORMAT_YUV422}} },
@@ -178,18 +178,18 @@ const TestSuite::tc_struct TestSuite::test_case[] =
                                                    {&tsStruct::mfxVideoParam.vpp.In.ChromaFormat, MFX_CHROMAFORMAT_YUV444}} },
     {/*88*/  MFX_ERR_UNSUPPORTED,   INPLACE,     { {&tsStruct::mfxVideoParam.vpp.In.FourCC,       MFX_FOURCC_A2RGB10},
                                                    {&tsStruct::mfxVideoParam.vpp.In.ChromaFormat, MFX_CHROMAFORMAT_YUV444}} },
-    {/*89*/  MFX_ERR_NONE,          INPLACE,     { {&tsStruct::mfxVideoParam.vpp.In.FourCC,       MFX_FOURCC_RGB4},
+    {/*89*/  MFX_ERR_UNSUPPORTED,   INPLACE,     { {&tsStruct::mfxVideoParam.vpp.In.FourCC,       MFX_FOURCC_RGB4},
                                                    {&tsStruct::mfxVideoParam.vpp.In.ChromaFormat, MFX_CHROMAFORMAT_YUV444}} },
     {/*90*/  MFX_ERR_NONE,          INPLACE,     { {&tsStruct::mfxVideoParam.vpp.In.FourCC,       MFX_FOURCC_R16},
                                                    {&tsStruct::mfxVideoParam.vpp.In.ChromaFormat, MFX_CHROMAFORMAT_MONOCHROME}} },
-    {/*91*/  MFX_ERR_NONE,          INPLACE,     { {&tsStruct::mfxVideoParam.vpp.In.FourCC,       MFX_FOURCC_ARGB16},
+    {/*91*/  MFX_ERR_UNSUPPORTED,   INPLACE,     { {&tsStruct::mfxVideoParam.vpp.In.FourCC,       MFX_FOURCC_ARGB16},
                                                    {&tsStruct::mfxVideoParam.vpp.In.ChromaFormat, MFX_CHROMAFORMAT_YUV444}} },
                                     
-    {/*92*/  MFX_ERR_NONE,          INPLACE,     { {&tsStruct::mfxVideoParam.vpp.Out.FourCC,       MFX_FOURCC_NV12},
+    {/*92*/  MFX_ERR_UNSUPPORTED,   INPLACE,     { {&tsStruct::mfxVideoParam.vpp.Out.FourCC,       MFX_FOURCC_NV12},
                                                    {&tsStruct::mfxVideoParam.vpp.Out.ChromaFormat, MFX_CHROMAFORMAT_YUV420}} },
     {/*93*/  MFX_ERR_UNSUPPORTED,   INPLACE,     { {&tsStruct::mfxVideoParam.vpp.Out.FourCC,       MFX_FOURCC_YV12},
                                                    {&tsStruct::mfxVideoParam.vpp.Out.ChromaFormat, MFX_CHROMAFORMAT_YUV420}} },
-    {/*94*/  MFX_ERR_UNSUPPORTED,   INPLACE,     { {&tsStruct::mfxVideoParam.vpp.Out.FourCC,       /*MFX_FOURCC_NV16*/},
+    {/*94*/  MFX_ERR_UNSUPPORTED,   INPLACE,     { {&tsStruct::mfxVideoParam.vpp.Out.FourCC,       MFX_MAKEFOURCC('N','V','1','6')},
                                                    {&tsStruct::mfxVideoParam.vpp.Out.ChromaFormat, MFX_CHROMAFORMAT_YUV420}} },
     {/*95*/  MFX_ERR_UNSUPPORTED,   INPLACE,     { {&tsStruct::mfxVideoParam.vpp.Out.FourCC,       MFX_FOURCC_YUY2},
                                                    {&tsStruct::mfxVideoParam.vpp.Out.ChromaFormat, MFX_CHROMAFORMAT_YUV422}} },
@@ -203,14 +203,14 @@ const TestSuite::tc_struct TestSuite::test_case[] =
                                                    {&tsStruct::mfxVideoParam.vpp.Out.ChromaFormat, MFX_CHROMAFORMAT_YUV444}} },
    {/*100*/  MFX_ERR_UNSUPPORTED,   INPLACE,     { {&tsStruct::mfxVideoParam.vpp.Out.FourCC,       MFX_FOURCC_BGR4},
                                                    {&tsStruct::mfxVideoParam.vpp.Out.ChromaFormat, MFX_CHROMAFORMAT_YUV444}} },
-   {/*101*/  MFX_ERR_NONE,  INPLACE,     { {&tsStruct::mfxVideoParam.vpp.Out.FourCC,       MFX_FOURCC_A2RGB10},
-                                           {&tsStruct::mfxVideoParam.vpp.Out.ChromaFormat, MFX_CHROMAFORMAT_YUV444}} },
-   {/*102*/  MFX_ERR_NONE,  INPLACE,     { {&tsStruct::mfxVideoParam.vpp.Out.FourCC,       MFX_FOURCC_RGB4},
-                                           {&tsStruct::mfxVideoParam.vpp.Out.ChromaFormat, MFX_CHROMAFORMAT_YUV444}} },
-   {/*103*/  MFX_ERR_NONE,  INPLACE,     { {&tsStruct::mfxVideoParam.vpp.Out.FourCC,       MFX_FOURCC_R16},
-                                           {&tsStruct::mfxVideoParam.vpp.Out.ChromaFormat, MFX_CHROMAFORMAT_MONOCHROME}} },
-   {/*104*/  MFX_ERR_NONE,  INPLACE,     { {&tsStruct::mfxVideoParam.vpp.Out.FourCC,       MFX_FOURCC_ARGB16},
-                                           {&tsStruct::mfxVideoParam.vpp.Out.ChromaFormat, MFX_CHROMAFORMAT_YUV444}} },
+   {/*101*/  MFX_ERR_UNSUPPORTED,  INPLACE,     { {&tsStruct::mfxVideoParam.vpp.Out.FourCC,       MFX_FOURCC_A2RGB10},
+                                                  {&tsStruct::mfxVideoParam.vpp.Out.ChromaFormat, MFX_CHROMAFORMAT_YUV444}} },
+   {/*102*/  MFX_ERR_NONE,  INPLACE,            { {&tsStruct::mfxVideoParam.vpp.Out.FourCC,       MFX_FOURCC_RGB4},
+                                                  {&tsStruct::mfxVideoParam.vpp.Out.ChromaFormat, MFX_CHROMAFORMAT_YUV444}} },
+   {/*103*/  MFX_ERR_UNSUPPORTED,  INPLACE,     { {&tsStruct::mfxVideoParam.vpp.Out.FourCC,       MFX_FOURCC_R16},
+                                                  {&tsStruct::mfxVideoParam.vpp.Out.ChromaFormat, MFX_CHROMAFORMAT_MONOCHROME}} },
+   {/*104*/  MFX_ERR_NONE,  INPLACE,            { {&tsStruct::mfxVideoParam.vpp.Out.FourCC,       MFX_FOURCC_ARGB16},
+                                                  {&tsStruct::mfxVideoParam.vpp.Out.ChromaFormat, MFX_CHROMAFORMAT_YUV444}} },
 
    {/*105*/  MFX_ERR_UNSUPPORTED,  INPLACE,       {&tsStruct::mfxVideoParam.Protected,  1} },
    {/*106*/  MFX_ERR_UNSUPPORTED,  INPLACE,       {&tsStruct::mfxVideoParam.Protected,  2} },
@@ -218,8 +218,8 @@ const TestSuite::tc_struct TestSuite::test_case[] =
    {/*107*/  MFX_ERR_NONE,  INPLACE,       {&tsStruct::mfxVideoParam.AsyncDepth,  0} },
    {/*108*/  MFX_ERR_NONE,  INPLACE,       {&tsStruct::mfxVideoParam.AsyncDepth,  1} },
    {/*109*/  MFX_ERR_NONE,  INPLACE,       {&tsStruct::mfxVideoParam.AsyncDepth,  5} },
-   {/*109*/  MFX_ERR_UNSUPPORTED,  INPLACE,       {&tsStruct::mfxVideoParam.AsyncDepth,  100} },
-   {/*110*/  MFX_ERR_NONE,  INPLACE,           { {&tsStruct::mfxVideoParam.vpp.In.CropW,   645},
+   {/*110*/  MFX_ERR_UNSUPPORTED,  INPLACE,       {&tsStruct::mfxVideoParam.AsyncDepth,  100} },
+   {/*111*/  MFX_ERR_NONE,  INPLACE,           { {&tsStruct::mfxVideoParam.vpp.In.CropW,   645},
                                                  {&tsStruct::mfxVideoParam.vpp.In.CropH,   485},
                                                  {&tsStruct::mfxVideoParam.vpp.Out.CropW,  645},
                                                  {&tsStruct::mfxVideoParam.vpp.Out.CropH,  485}} },
@@ -255,6 +255,7 @@ int TestSuite::RunTest(unsigned int id)
         if(tc.set_par[i].f)
         {
             tsStruct::set(m_pPar, *tc.set_par[i].f, tc.set_par[i].v);
+            std::cout << "  Set field " << tc.set_par[i].f->name << " to " << tc.set_par[i].v << "\n";
         }
     }
 
@@ -312,6 +313,7 @@ int TestSuite::RunTest(unsigned int id)
     {
         g_tsStatus.expect(MFX_ERR_NOT_INITIALIZED);
         GetVideoParam(m_session, m_pPar);
+        g_tsStatus.expect(MFX_ERR_NOT_INITIALIZED);
         Close();
     }
 
@@ -349,10 +351,6 @@ int TestSuite::RunTest(unsigned int id)
         EXPECT_NE(0, pout->vpp.Out.Width);
         EXPECT_NE(0, pout->vpp.In.Height);
         EXPECT_NE(0, pout->vpp.Out.Height);
-        EXPECT_NE(0, pout->vpp.In.FrameRateExtN);
-        EXPECT_NE(0, pout->vpp.In.FrameRateExtD);
-        EXPECT_NE(0, pout->vpp.Out.FrameRateExtN);
-        EXPECT_NE(0, pout->vpp.Out.FrameRateExtD);
     }
 
     TS_END;

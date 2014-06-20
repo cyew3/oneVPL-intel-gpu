@@ -45,9 +45,9 @@ private:
         , ALLOCATOR = 1 << 5
         , EXT_BUF   = 1 << 6
         , NULLPTR   = 1 << 7
-        , NOCAMCTRL = 1 << 7
-        , FAILED    = 1 << 8
-        , WARNING   = 1 << 9
+        , NOCAMCTRL = 1 << 8
+        , FAILED    = 1 << 9
+        , WARNING   = 1 << 10
     };
 
     enum STREAM
@@ -88,7 +88,10 @@ private:
             if(base)
             {
                 if(c.field)
+                {
                     tsStruct::set(*base, *c.field, c.par[0]);
+                    std::cout << "  Set field " << c.field->name << " to " << c.par[0] << "\n";
+                }
                 else
                     *base = (void*)c.par[0];
             }
@@ -104,28 +107,28 @@ const TestSuite::tc_struct TestSuite::test_case[] =
     {/* 1*/ MFX_ERR_NONE, 0, {GETVP|REPEAT, 0, {50}}},
     {/* 2*/ MFX_ERR_NONE, 0,
        {{INIT|ALLOCATOR, 0, {frame_allocator::SOFTWARE, frame_allocator::ALLOC_MAX}},
-        {REPEAT, 0, {50}}}
+        {GETVP|REPEAT, 0, {50}}}
     },
     {/* 3*/ MFX_ERR_NONE, 0,
        {{INIT|ALLOCATOR, 0, {frame_allocator::SOFTWARE, frame_allocator::ALLOC_MAX}},
-        {REPEAT, 0, {2}}}
+        {GETVP|REPEAT, 0, {2}}}
     },
-    {/* 4*/ MFX_ERR_NONE, 0,
-       {{INIT|MFXVPAR, &tsStruct::mfxVideoParam.IOPattern, {MFX_IOPATTERN_IN_VIDEO_MEMORY|MFX_IOPATTERN_OUT_VIDEO_MEMORY}},
-        {REPEAT, 0, {2}}}
+    {/* 4*/ /*MFX_ERR_NONE*/MFX_ERR_NOT_INITIALIZED, 0,
+       {{FAILED|INIT|MFXVPAR, &tsStruct::mfxVideoParam.IOPattern, {MFX_IOPATTERN_IN_VIDEO_MEMORY|MFX_IOPATTERN_OUT_VIDEO_MEMORY}},
+        {GETVP|REPEAT, 0, {2}}}
     },
     {/* 5*/ MFX_ERR_INVALID_HANDLE,           0, {GETVP|SESSION}},
     {/* 6*/ MFX_ERR_NOT_INITIALIZED,          0, {GETVP|CLOSE_VPP}},
     {/* 7*/ MFX_ERR_NULL_PTR,                 0, {GETVP|NULLPTR}},
-    {/* 8*/ MFX_ERR_NOT_INITIALIZED,          0, {FAILED|INIT|MFXVPAR, &tsStruct::mfxVideoParam.vpp.In.ChromaFormat, {MFX_CHROMAFORMAT_MONOCHROME}}},
+    {/* 8*/ MFX_ERR_NOT_INITIALIZED,          0, {FAILED|INIT|MFXVPAR, &tsStruct::mfxVideoParam.vpp.In.ChromaFormat, {MFX_CHROMAFORMAT_YUV411}}},
     {/* 9*/ MFX_ERR_NOT_INITIALIZED,          0, {FAILED|INIT|MFXVPAR, &tsStruct::mfxVideoParam.vpp.In.Width, {720 + 31}}},
     {/*10*/ MFX_ERR_NOT_INITIALIZED,          0, {FAILED|INIT|MFXVPAR, &tsStruct::mfxVideoParam.vpp.In.Height, {480 + 31}}},
-    {/*11*/ MFX_ERR_NONE,                     0, {WARNING|INIT|MFXVPAR, &tsStruct::mfxVideoParam.AsyncDepth, {100}}},
+    {/*11*/ MFX_ERR_NOT_INITIALIZED,          0, {FAILED|INIT|MFXVPAR, &tsStruct::mfxVideoParam.AsyncDepth, {500}}},
     {/*12*/ MFX_ERR_NONE,                     0, {INIT|MFXVPAR, &tsStruct::mfxVideoParam.AsyncDepth, {1}}},
     {/*13*/ MFX_ERR_NOT_INITIALIZED,          0, {FAILED|INIT|MFXVPAR, &tsStruct::mfxVideoParam.Protected, {1}}},
     {/*14*/ MFX_ERR_NOT_INITIALIZED,          0, {FAILED|INIT|MFXVPAR, &tsStruct::mfxVideoParam.Protected, {2}}},
 
-    {/*15*/ MFX_ERR_NONE, 0, {INIT|EXT_BUF, 0, {EXT_BUF_PAR(mfxExtCamGammaCorrection      )}}},
+    {/*15*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, {INIT|EXT_BUF, 0, {EXT_BUF_PAR(mfxExtCamGammaCorrection      )}}},
     {/*16*/ MFX_ERR_NONE, 0, {INIT|EXT_BUF, 0, {EXT_BUF_PAR(mfxExtCamWhiteBalance         )}}},
     {/*17*/ MFX_ERR_NONE, 0, {INIT|EXT_BUF, 0, {EXT_BUF_PAR(mfxExtCamHotPixelRemoval      )}}},
     {/*18*/ MFX_ERR_NONE, 0, {INIT|EXT_BUF, 0, {EXT_BUF_PAR(mfxExtCamBlackLevelCorrection )}}},
@@ -342,7 +345,8 @@ int TestSuite::RunTest(unsigned int id)
         }
     }
 
-    Close();
+    if(m_initialized)
+        Close();
     TS_END;
     return 0;
 }
