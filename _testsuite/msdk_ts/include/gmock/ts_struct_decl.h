@@ -186,6 +186,7 @@ STRUCT(mfxExtCodingOption2,
     FIELD_T(mfxU16      , IntRefCycleSize )
     FIELD_T(mfxI16      , IntRefQPDelta   )
     FIELD_T(mfxU32      , MaxFrameSize    )
+    FIELD_T(mfxU32      , MaxSliceSize    )
     FIELD_T(mfxU16      , BitrateLimit    )
     FIELD_T(mfxU16      , MBBRC           )
     FIELD_T(mfxU16      , ExtBRC          )
