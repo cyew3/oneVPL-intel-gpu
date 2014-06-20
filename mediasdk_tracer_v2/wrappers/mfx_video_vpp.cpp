@@ -33,6 +33,7 @@ mfxStatus MFXVideoVPP_Query(mfxSession session, mfxVideoParam *in, mfxVideoParam
     }
     catch (std::exception& e){
         std::cerr << "Exception: " << e.what() << '\n';
+        return MFX_ERR_ABORTED;
     }
 }
 
@@ -64,6 +65,7 @@ mfxStatus MFXVideoVPP_QueryIOSurf(mfxSession session, mfxVideoParam *par, mfxFra
     }
     catch (std::exception& e){
         std::cerr << "Exception: " << e.what() << '\n';
+        return MFX_ERR_ABORTED;
     }
 }
 
@@ -93,6 +95,7 @@ mfxStatus MFXVideoVPP_Init(mfxSession session, mfxVideoParam *par)
     }
     catch (std::exception& e){
         std::cerr << "Exception: " << e.what() << '\n';
+        return MFX_ERR_ABORTED;
     }
 }
 
@@ -122,6 +125,7 @@ mfxStatus MFXVideoVPP_Reset(mfxSession session, mfxVideoParam *par)
     }
     catch (std::exception& e){
         std::cerr << "Exception: " << e.what() << '\n';
+        return MFX_ERR_ABORTED;
     }
 }
 
@@ -149,6 +153,7 @@ mfxStatus MFXVideoVPP_Close(mfxSession session)
     }
     catch (std::exception& e){
         std::cerr << "Exception: " << e.what() << '\n';
+        return MFX_ERR_ABORTED;
     }
 }
 
@@ -178,6 +183,7 @@ mfxStatus MFXVideoVPP_GetVideoParam(mfxSession session, mfxVideoParam *par)
     }
     catch (std::exception& e){
         std::cerr << "Exception: " << e.what() << '\n';
+        return MFX_ERR_ABORTED;
     }
 }
 
@@ -207,6 +213,7 @@ mfxStatus MFXVideoVPP_GetVPPStat(mfxSession session, mfxVPPStat *stat)
     }
     catch (std::exception& e){
         std::cerr << "Exception: " << e.what() << '\n';
+        return MFX_ERR_ABORTED;
     }
 }
 
@@ -250,5 +257,52 @@ mfxStatus MFXVideoVPP_RunFrameVPPAsync(mfxSession session, mfxFrameSurface1 *in,
     }
     catch (std::exception& e){
         std::cerr << "Exception: " << e.what() << '\n';
+        return MFX_ERR_ABORTED;
+    }
+}
+
+mfxStatus MFXVideoVPP_RunFrameVPPAsyncEx(mfxSession session, mfxFrameSurface1 *in, mfxFrameSurface1 *work, mfxFrameSurface1 **out, mfxSyncPoint *syncp)
+{
+    try{
+        TracerSyncPoint * sp = new TracerSyncPoint();
+        sp->syncPoint = (*syncp);
+        sp->component = VPP;
+
+        Log::WriteLog("function: MFXVideoVPP_RunFrameVPPAsyncEx(mfxSession session=" + ToString(session) + ", mfxFrameSurface1 *in, mfxFrameSurface1 *work, mfxExtVppAuxData *aux, mfxSyncPoint *syncp) +");
+        mfxLoader *loader = (mfxLoader*) session;
+
+        if (!loader) return MFX_ERR_INVALID_HANDLE;
+
+        mfxFunctionPointer proc = loader->table[eMFXVideoVPP_RunFrameVPPAsync];
+        if (!proc) return MFX_ERR_INVALID_HANDLE;
+
+        session = loader->session;
+        Log::WriteLog(dump_mfxSession("session", session));
+        Log::WriteLog(dump_mfxFrameSurface1("in", in));
+        Log::WriteLog(dump_mfxFrameSurface1("work", work));
+        if (out && (*out))
+            Log::WriteLog(dump_mfxFrameSurface1("out", *out));
+        Log::WriteLog(dump_mfxSyncPoint("syncp", syncp));
+
+        sp->timer.Restart();
+        Timer t;
+        mfxStatus status = (*(mfxStatus (MFX_CDECL*) (mfxSession session, mfxFrameSurface1 *in, mfxFrameSurface1 *work, mfxFrameSurface1 **out, mfxSyncPoint *syncp)) proc) (session, in, work, out, &sp->syncPoint);
+        std::string elapsed = TimeToString(t.GetTime());
+
+        *syncp = (mfxSyncPoint)sp;
+
+        Log::WriteLog(">> MFXVideoVPP_RunFrameVPPAsyncEx called");
+        Log::WriteLog(dump_mfxSession("session", session));
+        Log::WriteLog(dump_mfxFrameSurface1("in", in));
+        Log::WriteLog(dump_mfxFrameSurface1("work", work));
+        if (out && (*out))
+            Log::WriteLog(dump_mfxFrameSurface1("out", *out));
+        Log::WriteLog(dump_mfxSyncPoint("syncp", &sp->syncPoint));
+        Log::WriteLog("function: MFXVideoVPP_RunFrameVPPAsyncEx(" + elapsed + ", " + dump_mfxStatus("status", status) + ") - \n\n");
+        return status;
+    }
+    catch (std::exception& e){
+        std::cerr << "Exception: " << e.what() << '\n';
+        return MFX_ERR_ABORTED;
     }
 }

@@ -1,5 +1,5 @@
-#ifndef LOGGERCONSOLE_H_
-#define LOGGERCONSOLE_H_
+#ifndef LOG_CONSOLE_H_
+#define LOG_CONSOLE_H_
 
 #include "ilog.h"
 
@@ -11,4 +11,4 @@ public:
     virtual void WriteLog(const std::string &log);
 };
 
-#endif //LOGGERCONSOLE_H_
+#endif //LOG_CONSOLE_H_

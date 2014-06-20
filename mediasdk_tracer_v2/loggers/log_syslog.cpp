@@ -1,4 +1,5 @@
-#ifdef linux
+#if !defined(_WIN32) && !defined(_WIN64) && !defined(ANDROID)
+
 #include "log_syslog.h"
 
 LogSyslog::LogSyslog()
@@ -14,4 +15,5 @@ void LogSyslog::WriteLog(const std::string &log)
 {
 
 }
-#endif
+
+#endif // #if !defined(_WIN32) && !defined(_WIN64) && !defined(ANDROID)

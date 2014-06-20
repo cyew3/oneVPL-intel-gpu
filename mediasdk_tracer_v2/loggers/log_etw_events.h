@@ -1,5 +1,5 @@
-#ifndef LOGETWEVENTS_H_
-#define LOGETWEVENTS_H_
+#ifndef LOG_ETW_EVENTS_H_
+#define LOG_ETW_EVENTS_H_
 
 #if defined(_WIN32) || defined(_WIN64)
 
@@ -15,4 +15,4 @@ public:
 
 #endif // #if defined(_WIN32) || defined(_WIN64)
 
-#endif // LOGETWEVENTS_H_
+#endif // LOG_ETW_EVENTS_H_

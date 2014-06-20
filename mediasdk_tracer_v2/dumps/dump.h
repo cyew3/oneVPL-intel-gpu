@@ -15,8 +15,10 @@ std::string StringToHexString(std::string data);
 #define TimeToString( x ) dynamic_cast< std::ostringstream & >( \
         ( std::ostringstream() << std::left << std::setw(4) << std::dec << x <<" msec") ).str()
 
-//#define ToHexFormatString( x ) dynamic_cast< std::ostringstream & >( \
-//        ( std::ostringstream() << std::hex << x ) ).str()
+/*
+#define ToHexFormatString( x ) dynamic_cast< std::ostringstream & >( \
+        ( std::ostringstream() << std::hex << x ) ).str()
+*/
 
 #define ToHexFormatString( x ) StringToHexString(dynamic_cast< std::ostringstream & >( ( std::ostringstream() << std::dec << x ) ).str() )
 

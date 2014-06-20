@@ -33,6 +33,7 @@ mfxStatus MFXVideoDECODE_Query(mfxSession session, mfxVideoParam *in, mfxVideoPa
     }
     catch (std::exception& e){
         std::cerr << "Exception: " << e.what() << '\n';
+        return MFX_ERR_ABORTED;
     }
 }
 
@@ -64,6 +65,7 @@ mfxStatus MFXVideoDECODE_DecodeHeader(mfxSession session, mfxBitstream *bs, mfxV
     }
     catch (std::exception& e){
         std::cerr << "Exception: " << e.what() << '\n';
+        return MFX_ERR_ABORTED;
     }
 }
 
@@ -95,6 +97,7 @@ mfxStatus MFXVideoDECODE_QueryIOSurf(mfxSession session, mfxVideoParam *par, mfx
     }
     catch (std::exception& e){
         std::cerr << "Exception: " << e.what() << '\n';
+        return MFX_ERR_ABORTED;
     }
 }
 
@@ -124,6 +127,7 @@ mfxStatus MFXVideoDECODE_Init(mfxSession session, mfxVideoParam *par)
     }
     catch (std::exception& e){
         std::cerr << "Exception: " << e.what() << '\n';
+        return MFX_ERR_ABORTED;
     }
 }
 
@@ -153,6 +157,7 @@ mfxStatus MFXVideoDECODE_Reset(mfxSession session, mfxVideoParam *par)
     }
     catch (std::exception& e){
         std::cerr << "Exception: " << e.what() << '\n';
+        return MFX_ERR_ABORTED;
     }
 }
 
@@ -180,6 +185,7 @@ mfxStatus MFXVideoDECODE_Close(mfxSession session)
     }
     catch (std::exception& e){
         std::cerr << "Exception: " << e.what() << '\n';
+        return MFX_ERR_ABORTED;
     }
 }
 
@@ -209,6 +215,7 @@ mfxStatus MFXVideoDECODE_GetVideoParam(mfxSession session, mfxVideoParam *par)
     }
     catch (std::exception& e){
         std::cerr << "Exception: " << e.what() << '\n';
+        return MFX_ERR_ABORTED;
     }
 }
 
@@ -238,6 +245,7 @@ mfxStatus MFXVideoDECODE_GetDecodeStat(mfxSession session, mfxDecodeStat *stat)
     }
     catch (std::exception& e){
         std::cerr << "Exception: " << e.what() << '\n';
+        return MFX_ERR_ABORTED;
     }
 }
 
@@ -267,6 +275,7 @@ mfxStatus MFXVideoDECODE_SetSkipMode(mfxSession session, mfxSkipMode mode)
     }
     catch (std::exception& e){
         std::cerr << "Exception: " << e.what() << '\n';
+        return MFX_ERR_ABORTED;
     }
 }
 
@@ -298,6 +307,7 @@ mfxStatus MFXVideoDECODE_GetPayload(mfxSession session, mfxU64 *ts, mfxPayload *
     }
     catch (std::exception& e){
         std::cerr << "Exception: " << e.what() << '\n';
+        return MFX_ERR_ABORTED;
     }
 }
 
@@ -343,5 +353,6 @@ mfxStatus MFXVideoDECODE_DecodeFrameAsync(mfxSession session, mfxBitstream *bs, 
     }
     catch (std::exception& e){
         std::cerr << "Exception: " << e.what() << '\n';
+        return MFX_ERR_ABORTED;
     }
 }

@@ -1,5 +1,5 @@
-#ifndef LOGCONSOLE_H_
-#define LOGCONSOLE_H_
+#ifndef LOG_FILE_H_
+#define LOG_FILE_H_
 
 #include "ilog.h"
 #include <fstream>
@@ -16,4 +16,4 @@ private:
     std::ofstream _file;
 };
 
-#endif //LOGCONSOLE_H_
+#endif //LOG_FILE_H_

@@ -26,7 +26,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 *********************************************************************************/
 
-#ifdef linux
+#if !defined(_WIN32) && !defined(_WIN64)
 
 #include <stdlib.h>
 #include <dlfcn.h>
@@ -46,6 +46,13 @@ static const char* g_mfxlib = NULL;
 
 void __attribute__ ((constructor)) dll_init(void)
 {
+#ifdef ANDROID // temporary hardcode for Android
+    Log::SetLogLevel(LOG_LEVEL_SHORT);
+    Log::SetLogType(LOG_LOGCAT);
+    Log::WriteLog("mfx_tracer: dll_init: +");
+    g_mfxlib = "/system/lib/libmfxhw32.so";
+    Log::WriteLog("mfx_tracer: dll_init: -");
+#else
     try{
         Timer t;
         std::string type = Config::GetParam("core", "type");
@@ -85,6 +92,7 @@ void __attribute__ ((constructor)) dll_init(void)
     catch (std::exception& e){
         std::cerr << "Exception: " << e.what() << '\n';
     }
+#endif
 }
 
 void SetLogType(eLogType type)
@@ -161,6 +169,7 @@ mfxStatus MFXInit(mfxIMPL impl, mfxVersion *ver, mfxSession *session)
     }
     catch (std::exception& e){
         std::cerr << "Exception: " << e.what() << '\n';
+        return MFX_ERR_ABORTED;
     }
 }
 
@@ -188,7 +197,8 @@ mfxStatus MFXClose(mfxSession session)
     }
     catch (std::exception& e){
         std::cerr << "Exception: " << e.what() << '\n';
+        return MFX_ERR_ABORTED;
     }
 }
 
-#endif
+#endif // #if !defined(_WIN32) && !defined(_WIN64)

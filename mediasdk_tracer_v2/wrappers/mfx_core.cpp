@@ -33,8 +33,8 @@ mfxStatus MFXQueryIMPL(mfxSession session, mfxIMPL *impl)
     }
     catch (std::exception& e){
         std::cerr << "Exception: " << e.what() << '\n';
+        return MFX_ERR_ABORTED;
     }
-
 }
 
 mfxStatus MFXQueryVersion(mfxSession session, mfxVersion *version)
@@ -66,6 +66,7 @@ mfxStatus MFXQueryVersion(mfxSession session, mfxVersion *version)
     }
     catch (std::exception& e){
         std::cerr << "Exception: " << e.what() << '\n';
+        return MFX_ERR_ABORTED;
     }
 }
 
@@ -98,6 +99,7 @@ mfxStatus MFXJoinSession(mfxSession session, mfxSession child_session)
     }
     catch (std::exception& e){
         std::cerr << "Exception: " << e.what() << '\n';
+        return MFX_ERR_ABORTED;
     }
 }
 
@@ -127,6 +129,7 @@ mfxStatus MFXCloneSession(mfxSession session, mfxSession *clone)
     }
     catch (std::exception& e){
         std::cerr << "Exception: " << e.what() << '\n';
+        return MFX_ERR_ABORTED;
     }
 }
 
@@ -154,6 +157,7 @@ mfxStatus MFXDisjoinSession(mfxSession session)
     }
     catch (std::exception& e){
         std::cerr << "Exception: " << e.what() << '\n';
+        return MFX_ERR_ABORTED;
     }
 }
 
@@ -183,6 +187,7 @@ mfxStatus MFXSetPriority(mfxSession session, mfxPriority priority)
     }
     catch (std::exception& e){
         std::cerr << "Exception: " << e.what() << '\n';
+        return MFX_ERR_ABORTED;
     }
 }
 
@@ -212,5 +217,6 @@ mfxStatus MFXGetPriority(mfxSession session, mfxPriority *priority)
     }
     catch (std::exception& e){
         std::cerr << "Exception: " << e.what() << '\n';
+        return MFX_ERR_ABORTED;
     }
 }

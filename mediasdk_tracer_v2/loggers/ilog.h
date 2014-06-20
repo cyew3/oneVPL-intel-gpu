@@ -8,6 +8,7 @@
 class ILog
 {
 public:
+    virtual ~ILog(){}
     virtual void WriteLog(const std::string &log) = 0;
 };
 

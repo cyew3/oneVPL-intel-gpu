@@ -41,7 +41,7 @@ void Config::Init()
             getline(_file, inistr);
 
             //delete tabs and spaces
-            inistr.erase(remove_if(inistr.begin(), inistr.end(), &::isspace), inistr.end());
+            inistr.erase(std::remove_if(inistr.begin(), inistr.end(), &::isspace), inistr.end());
 
             //delete comments
             std::basic_string <char>::size_type n1 = inistr.find("#");

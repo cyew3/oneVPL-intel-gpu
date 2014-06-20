@@ -31,6 +31,7 @@ mfxStatus MFXVideoCORE_SetBufferAllocator(mfxSession session, mfxBufferAllocator
     }
     catch (std::exception& e){
         std::cerr << "Exception: " << e.what() << '\n';
+        return MFX_ERR_ABORTED;
     }
 }
 
@@ -60,6 +61,7 @@ mfxStatus MFXVideoCORE_SetFrameAllocator(mfxSession session, mfxFrameAllocator *
     }
     catch (std::exception& e){
         std::cerr << "Exception: " << e.what() << '\n';
+        return MFX_ERR_ABORTED;
     }
 }
 
@@ -91,6 +93,7 @@ mfxStatus MFXVideoCORE_SetHandle(mfxSession session, mfxHandleType type, mfxHDL 
     }
     catch (std::exception& e){
         std::cerr << "Exception: " << e.what() << '\n';
+        return MFX_ERR_ABORTED;
     }
 }
 
@@ -122,6 +125,7 @@ mfxStatus MFXVideoCORE_GetHandle(mfxSession session, mfxHandleType type, mfxHDL 
     }
     catch (std::exception& e){
         std::cerr << "Exception: " << e.what() << '\n';
+        return MFX_ERR_ABORTED;
     }
 }
 
@@ -156,5 +160,6 @@ mfxStatus MFXVideoCORE_SyncOperation(mfxSession session, mfxSyncPoint syncp, mfx
     }
     catch (std::exception& e){
         std::cerr << "Exception: " << e.what() << '\n';
+        return MFX_ERR_ABORTED;
     }
 }

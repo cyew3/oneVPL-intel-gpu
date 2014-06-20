@@ -6,13 +6,13 @@
 
 #if defined(_WIN32) || defined(_WIN64)
     #define LOG_TYPES "console, file, etw"
-	#define HOME string(getenv("HOMEPATH"))
+    #define HOME string(getenv("HOMEPATH"))
 #elif defined(ANDROID)
     #define LOG_TYPES "logcat, file"
-	#define HOME string(getenv("HOME"))
+    #define HOME string(getenv("HOME"))
 #else
     #define LOG_TYPES "console, file, syslog"
-	#define HOME string(getenv("HOME"))
+    #define HOME string(getenv("HOME"))
 #endif
 
 #define LOG_LEVELS "default, short, full"
@@ -142,5 +142,5 @@ int main(int argc, char *argv[])
         cerr << string("exception: ") + ex.what() + "\n";
         return -2;
     }
-		return 0;
+        return 0;
 }

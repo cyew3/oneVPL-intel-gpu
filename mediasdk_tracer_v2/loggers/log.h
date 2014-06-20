@@ -3,8 +3,9 @@
 
 #include <map>
 #include "log_console.h"
-#include "log_file.h"
 #include "log_etw_events.h"
+#include "log_file.h"
+#include "log_logcat.h"
 #include "log_syslog.h"
 
 enum eLogType{
