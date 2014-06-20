@@ -5,6 +5,7 @@
 #include "ts_plugin.h"
 #include "ts_streams.h"
 #include "test_sample_allocator.h"
+#include "ts_platforms.h"
 
 typedef enum {
       tsOK = 0
@@ -36,6 +37,7 @@ public:
 
 extern mfxIMPL      g_tsImpl;
 extern mfxVersion   g_tsVersion;
+extern HWType       g_tsHWtype;
 extern tsStatus     g_tsStatus;
 extern mfxU32       g_tsTrace;
 extern tsTrace      g_tsLog;

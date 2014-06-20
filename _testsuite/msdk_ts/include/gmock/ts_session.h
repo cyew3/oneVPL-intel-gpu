@@ -6,6 +6,7 @@ class tsSession
 {
 public:
     bool                m_initialized;
+    bool                m_sw_fallback;
     mfxSession          m_session;
     mfxIMPL             m_impl;
     mfxVersion          m_version;
@@ -36,3 +37,7 @@ public:
     mfxStatus UnLoad(mfxSession session, const mfxPluginUID *uid);
     mfxStatus SetHandle(mfxSession session, mfxHandleType type, mfxHDL handle);
 };
+
+#define IS_FALLBACK_EXPECTED(b_fallback, status)          \
+    if(b_fallback && (MFX_ERR_NONE == status.m_expected)) \
+        status.expect(MFX_WRN_PARTIAL_ACCELERATION);

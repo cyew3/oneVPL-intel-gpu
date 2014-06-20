@@ -187,6 +187,7 @@
     <ClInclude Include="include\gmock\ts_ext_buffers.h" />
     <ClInclude Include="include\gmock\ts_ext_buffers_decl.h" />
     <ClInclude Include="include\gmock\ts_parser.h" />
+    <ClInclude Include="include\gmock\ts_platforms.h" />
     <ClInclude Include="include\gmock\ts_plugin.h" />
     <ClInclude Include="include\gmock\ts_session.h" />
     <ClInclude Include="include\gmock\ts_streams.h" />

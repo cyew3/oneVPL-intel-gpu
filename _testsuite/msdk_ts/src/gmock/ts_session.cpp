@@ -8,6 +8,7 @@ tsSession::tsSession(mfxIMPL impl, mfxVersion version)
     , m_pVersion(&m_version)
     , m_pFrameAllocator(0)
     , m_initialized(false)
+    , m_sw_fallback(false)
 {
 }
 

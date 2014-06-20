@@ -43,10 +43,21 @@ tsVideoVPP::tsVideoVPP(bool useDefaults, mfxU32 plugin_id)
             m_par.vpp.Out.ChromaFormat = MFX_CHROMAFORMAT_YUV444;
             mfxExtCamPipeControl& cam_ctrl = m_par; //accordingly to ashapore, this filter is mandatory
             cam_ctrl.RawFormat         = MFX_CAM_BAYER_BGGR;
+
+            if(g_tsImpl == MFX_IMPL_HARDWARE)
+            {
+                if(g_tsHWtype < MFX_HW_HSW)
+                    m_sw_fallback = true;
+            }
         }
         if(m_default && (plugin_id == MFX_MAKEFOURCC('P','T','I','R')))
         {
             m_par.vpp.In.PicStruct = MFX_PICSTRUCT_FIELD_TFF;
+            if(g_tsImpl == MFX_IMPL_HARDWARE)
+            {
+                if(g_tsHWtype < MFX_HW_IVB)
+                    m_sw_fallback = true;
+            }
         }
     }
 }
@@ -135,6 +146,7 @@ mfxStatus tsVideoVPP::Init()
 mfxStatus tsVideoVPP::Init(mfxSession session, mfxVideoParam *par)
 {
     TRACE_FUNC2(MFXVideoVPP_Init, session, par);
+    IS_FALLBACK_EXPECTED(m_sw_fallback, g_tsStatus);
     g_tsStatus.check( MFXVideoVPP_Init(session, par) );
 
     m_initialized = (g_tsStatus.get() >= 0);
@@ -172,6 +184,7 @@ mfxStatus tsVideoVPP::Query()
 mfxStatus tsVideoVPP::Query(mfxSession session, mfxVideoParam *in, mfxVideoParam *out)
 {
     TRACE_FUNC3(MFXVideoVPP_Query, session, in, out);
+    IS_FALLBACK_EXPECTED(m_sw_fallback, g_tsStatus);
     g_tsStatus.check( MFXVideoVPP_Query(session, in, out) );
     TS_TRACE(out);
 
@@ -193,6 +206,7 @@ mfxStatus tsVideoVPP::QueryIOSurf()
 mfxStatus tsVideoVPP::QueryIOSurf(mfxSession session, mfxVideoParam *par, mfxFrameAllocRequest *request)
 {
     TRACE_FUNC3(MFXVideoVPP_QueryIOSurf, session, par, request);
+    IS_FALLBACK_EXPECTED(m_sw_fallback, g_tsStatus);
     g_tsStatus.check( MFXVideoVPP_QueryIOSurf(session, par, request) );
     TS_TRACE(request);
     if(request)
