@@ -47,7 +47,7 @@ static const char* g_mfxlib = NULL;
 void __attribute__ ((constructor)) dll_init(void)
 {
 #ifdef ANDROID // temporary hardcode for Android
-    Log::SetLogLevel(LOG_LEVEL_SHORT);
+    Log::SetLogLevel(LOG_LEVEL_DEFAULT);
     Log::SetLogType(LOG_LOGCAT);
     Log::WriteLog("mfx_tracer: dll_init: +");
     g_mfxlib = "/system/lib/libmfxhw32.so";

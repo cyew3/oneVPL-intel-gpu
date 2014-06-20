@@ -35,11 +35,11 @@ mv libmfxhw64-p.so.1.10 libmfxhw64-p-REAL.so.1.10
 2. Add Media SDK Tracer library to the search path:
 export LD_LIBRARY_PATH=$INSTALLDIR/mediasdk-tracer-1.10.0:$LD_LIBRARY_PATH
 
-4. Create symbolic link to the tracer with the name of Media SDK library:
+3. Create symbolic link to the tracer with the name of Media SDK library:
 cd $INSTALLDIR/mediasdk-tracer-1.10.0/lib
 ln -s libmfx-tracer.so libmfxhw64.so
 
-5. Generate config file for the tracer:
+4. Generate config file for the tracer:
 $INSTALLDIR/bin/mfx-tracer-config --default
 $INSTALLDIR/bin/mfx-tracer-config core.type file
 $INSTALLDIR/bin/mfx-tracer-config core.file ~/mfxtracer.log
