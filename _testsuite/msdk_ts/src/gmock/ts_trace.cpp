@@ -88,7 +88,19 @@ tsTrace& tsTrace::operator<<(const mfxVideoParam& p)
         } 
         FIELD_T(mfxU16        , AsyncDepth  )
         FIELD_T(mfxU16        , Protected   )
-        FIELD_T(mfxU16        , IOPattern   )
+        if(!p.IOPattern)
+            FIELD_T(mfxU16        , IOPattern   )
+        else
+        { 
+            *this << m_off << "IOPattern = " << p.IOPattern << " = ";
+            if(p.IOPattern & MFX_IOPATTERN_IN_VIDEO_MEMORY  ) *this << "IN_VIDEO|";
+            if(p.IOPattern & MFX_IOPATTERN_IN_SYSTEM_MEMORY ) *this << "IN_SYSTEM|";
+            if(p.IOPattern & MFX_IOPATTERN_IN_OPAQUE_MEMORY ) *this << "IN_OPAQUE|";
+            if(p.IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY ) *this << "OUT_VIDEO|";
+            if(p.IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY) *this << "OUT_SYSTEM|";
+            if(p.IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY) *this << "OUT_OPAQUE";
+            *this << "\n";
+        }
         FIELD_T(mfxU16        , NumExtParam )
         if(p.NumExtParam && p.ExtParam)
         {
