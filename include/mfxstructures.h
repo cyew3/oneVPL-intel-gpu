@@ -88,12 +88,14 @@ typedef struct {
 enum {
     MFX_FOURCC_NV12         = MFX_MAKEFOURCC('N','V','1','2'),   /* Native Format */
     MFX_FOURCC_YV12         = MFX_MAKEFOURCC('Y','V','1','2'),
+    MFX_FOURCC_NV16         = MFX_MAKEFOURCC('N','V','1','6'),
     MFX_FOURCC_YUY2         = MFX_MAKEFOURCC('Y','U','Y','2'),
     MFX_FOURCC_RGB3         = MFX_MAKEFOURCC('R','G','B','3'),   /* deprecated */
     MFX_FOURCC_RGB4         = MFX_MAKEFOURCC('R','G','B','4'),   /* ARGB in that order, A channel is 8 MSBs */
     MFX_FOURCC_P8           = 41,                                /*  D3DFMT_P8   */
     MFX_FOURCC_P8_TEXTURE   = MFX_MAKEFOURCC('P','8','M','B'),
     MFX_FOURCC_P010         = MFX_MAKEFOURCC('P','0','1','0'), 
+    MFX_FOURCC_P210         = MFX_MAKEFOURCC('P','2','1','0'),
     MFX_FOURCC_BGR4         = MFX_MAKEFOURCC('B','G','R','4'),   /* ABGR in that order, A channel is 8 MSBs */
     MFX_FOURCC_A2RGB10      = MFX_MAKEFOURCC('R','G','1','0'),   /* ARGB in that order, A channel is two MSBs */
     MFX_FOURCC_ARGB16       = MFX_MAKEFOURCC('R','G','1','6'),   /* ARGB in that order, 64 bits, A channel is 16 MSBs */
@@ -441,8 +443,6 @@ enum {
     MFX_RATECONTROL_LA_EXT    = 12
 };
 
-
-
 /* Trellis control*/
 enum {
     MFX_TRELLIS_UNKNOWN =0,
@@ -590,7 +590,8 @@ enum {
     MFX_EXTBUFF_VPP_COMPOSITE              = MFX_MAKEFOURCC('V','C','M','P'),
     MFX_EXTBUFF_VPP_VIDEO_SIGNAL_INFO      = MFX_MAKEFOURCC('V','V','S','I'),
     MFX_EXTBUFF_ENCODER_ROI                = MFX_MAKEFOURCC('E','R','O','I'),
-    MFX_EXTBUFF_VPP_DEINTERLACING          = MFX_MAKEFOURCC('V','P','D','I')
+    MFX_EXTBUFF_VPP_DEINTERLACING          = MFX_MAKEFOURCC('V','P','D','I'),
+    MFX_EXTBUFF_DEC_VIDEO_PROCESSING       = MFX_MAKEFOURCC('D','E','C','V'),
 };
 
 /* VPP Conf: Do not use certain algorithms  */
@@ -1001,6 +1002,50 @@ typedef struct {
     mfxU16  Mode;
     mfxU16  reserved[11];
 } mfxExtVPPDeinterlacing;
+
+
+typedef struct {
+    mfxExtBuffer    Header;
+
+    struct mfxIn{
+        mfxU16  CropX;
+        mfxU16  CropY;
+        mfxU16  CropW;
+        mfxU16  CropH;
+        mfxU16  reserved[12];
+    }In;
+
+    struct mfxOut{
+        mfxU32  FourCC;
+        mfxU16  ChromaFormat;
+        mfxU16  PicStruct;
+
+        mfxU16  Width;
+        mfxU16  Height;
+
+        mfxU16  CropX;
+        mfxU16  CropY;
+        mfxU16  CropW;
+        mfxU16  CropH;
+        mfxU16  reserved[22];
+    }Out;
+
+    /* background color*/
+    mfxU16  FillBackground;
+    union {
+        mfxU16   Y;
+        mfxU16   R;
+    };
+    union {
+        mfxU16   U;
+        mfxU16   G;
+    };
+    union {
+        mfxU16   V;
+        mfxU16   B;
+    };
+    mfxU16  reserved[9];
+} mfxExtDecVideoProcessing;
 
 #ifdef __cplusplus
 } // extern "C"
