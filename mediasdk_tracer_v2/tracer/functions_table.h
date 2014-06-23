@@ -2,6 +2,10 @@
 #define FUNCTIONSTABLE_H_
 
 #include "mfxvideo.h"
+#include "mfxplugin.h"
+
+#include "../loggers/log.h"
+#include "../dumps/dump.h"
 
 #undef FUNCTION
 #define FUNCTION(return_value, func_name, formal_param_list, actual_param_list) \
@@ -46,6 +50,18 @@ typedef struct _mfxLoader
     mfxFunctionPointer table[eFunctionsNum];
 } mfxLoader;
 
-#include "../wrappers/proxymfx.h"
+// function types
+#undef FUNCTION
+#define FUNCTION(return_value, func_name, formal_param_list, actual_param_list) \
+    typedef return_value (MFX_CDECL * f##func_name) formal_param_list;
+
+#include "bits/mfxfunctions.h"
+
+// forward declarations
+#undef FUNCTION
+#define FUNCTION(return_value, func_name, formal_param_list, actual_param_list) \
+    return_value func_name formal_param_list;
+
+#include "bits/mfxfunctions.h"
 
 #endif //FUNCTIONSTABLE_H_

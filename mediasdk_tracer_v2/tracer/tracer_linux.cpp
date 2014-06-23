@@ -144,7 +144,7 @@ mfxStatus MFXInit(mfxIMPL impl, mfxVersion *ver, mfxSession *session)
             return MFX_ERR_NOT_FOUND;
         }
 
-        Log::WriteLog(dump_mfxIMPL("impl", &impl));
+        Log::WriteLog(dump_mfxIMPL("impl", impl));
         Log::WriteLog(dump_mfxVersion("ver", ver));
         Log::WriteLog(dump_mfxSession("session", loader->session));
         /* Initializing loaded library */
@@ -161,7 +161,7 @@ mfxStatus MFXInit(mfxIMPL impl, mfxVersion *ver, mfxSession *session)
             return mfx_res;
         }
         *session = (mfxSession)loader;
-        Log::WriteLog(dump_mfxIMPL("impl", &impl));
+        Log::WriteLog(dump_mfxIMPL("impl", impl));
         Log::WriteLog(dump_mfxVersion("ver", ver));
         Log::WriteLog(dump_mfxSession("session", loader->session));
         Log::WriteLog(std::string("function: MFXInit(" + elapsed + ", " + dump_mfxStatus("status", mfx_res) + ") - \n\n"));

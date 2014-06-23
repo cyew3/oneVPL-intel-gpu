@@ -1,8 +1,9 @@
-#include "mfx_video_core.h"
-#include "mfx_structures.h"
-#include "../loggers/timer.h"
 #include <exception>
 #include <iostream>
+
+#include "../loggers/timer.h"
+#include "../tracer/functions_table.h"
+#include "mfx_structures.h"
 
 // CORE interface functions
 mfxStatus MFXVideoCORE_SetBufferAllocator(mfxSession session, mfxBufferAllocator *allocator)
@@ -21,7 +22,7 @@ mfxStatus MFXVideoCORE_SetBufferAllocator(mfxSession session, mfxBufferAllocator
         Log::WriteLog(dump_mfxBufferAllocator("allocator", allocator));
 
         Timer t;
-        mfxStatus status = (*(mfxStatus (MFX_CDECL*) (mfxSession session, mfxBufferAllocator *allocator)) proc) (session, allocator);
+        mfxStatus status = (*(fMFXVideoCORE_SetBufferAllocator) proc) (session, allocator);
         std::string elapsed = TimeToString(t.GetTime());
         Log::WriteLog(">> MFXVideoCORE_SetBufferAllocator called");
         Log::WriteLog(dump_mfxSession("session", session));
@@ -51,7 +52,7 @@ mfxStatus MFXVideoCORE_SetFrameAllocator(mfxSession session, mfxFrameAllocator *
         Log::WriteLog(dump_mfxFrameAllocator("allocator", allocator));
 
         Timer t;
-        mfxStatus status = (*(mfxStatus (MFX_CDECL*) (mfxSession session, mfxFrameAllocator *allocator)) proc) (session, allocator);
+        mfxStatus status = (*(fMFXVideoCORE_SetFrameAllocator) proc) (session, allocator);
         std::string elapsed = TimeToString(t.GetTime());
         Log::WriteLog(">> MFXVideoCORE_SetFrameAllocator called");
         Log::WriteLog(dump_mfxSession("session", session));
@@ -82,7 +83,7 @@ mfxStatus MFXVideoCORE_SetHandle(mfxSession session, mfxHandleType type, mfxHDL 
         Log::WriteLog(dump_mfxHDL("hdl", &hdl));
 
         Timer t;
-        mfxStatus status = (*(mfxStatus (MFX_CDECL*) (mfxSession session, mfxHandleType type, mfxHDL hdl)) proc) (session, type, hdl);
+        mfxStatus status = (*(fMFXVideoCORE_SetHandle) proc) (session, type, hdl);
         std::string elapsed = TimeToString(t.GetTime());
         Log::WriteLog(">> MFXVideoCORE_SetHandle called");
         Log::WriteLog(dump_mfxSession("session", session));
@@ -114,7 +115,7 @@ mfxStatus MFXVideoCORE_GetHandle(mfxSession session, mfxHandleType type, mfxHDL 
         Log::WriteLog(dump_mfxHDL("hdl", hdl));
 
         Timer t;
-        mfxStatus status = (*(mfxStatus (MFX_CDECL*) (mfxSession session, mfxHandleType type, mfxHDL *hdl)) proc) (session, type, hdl);
+        mfxStatus status = (*(fMFXVideoCORE_GetHandle) proc) (session, type, hdl);
         std::string elapsed = TimeToString(t.GetTime());
         Log::WriteLog(">> MFXVideoCORE_GetHandle called");
         Log::WriteLog(dump_mfxSession("session", session));
@@ -149,7 +150,7 @@ mfxStatus MFXVideoCORE_SyncOperation(mfxSession session, mfxSyncPoint syncp, mfx
         Log::WriteLog(dump_mfxU32("wait", wait));
 
         Timer t;
-        mfxStatus status = (*(mfxStatus (MFX_CDECL*) (mfxSession session, mfxSyncPoint syncp, mfxU32 wait)) proc) (session, sp->syncPoint, wait);
+        mfxStatus status = (*(fMFXVideoCORE_SyncOperation) proc) (session, sp->syncPoint, wait);
         std::string elapsed = TimeToString(t.GetTime());
         Log::WriteLog(">> MFXVideoCORE_SyncOperation called");
         Log::WriteLog(dump_mfxSession("session", session));

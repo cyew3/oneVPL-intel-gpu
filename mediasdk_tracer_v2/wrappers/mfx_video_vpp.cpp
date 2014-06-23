@@ -1,8 +1,9 @@
-#include "mfx_video_vpp.h"
-#include "mfx_structures.h"
-#include "../loggers/timer.h"
 #include <exception>
 #include <iostream>
+
+#include "../loggers/timer.h"
+#include "../tracer/functions_table.h"
+#include "mfx_structures.h"
 
 // VPP interface functions
 mfxStatus MFXVideoVPP_Query(mfxSession session, mfxVideoParam *in, mfxVideoParam *out)
@@ -22,7 +23,7 @@ mfxStatus MFXVideoVPP_Query(mfxSession session, mfxVideoParam *in, mfxVideoParam
         Log::WriteLog(dump_mfxVideoParam("out", out));
 
         Timer t;
-        mfxStatus status = (*(mfxStatus (MFX_CDECL*) (mfxSession session, mfxVideoParam *in, mfxVideoParam *out)) proc) (session, in, out);
+        mfxStatus status = (*(fMFXVideoVPP_Query) proc) (session, in, out);
         std::string elapsed = TimeToString(t.GetTime());
         Log::WriteLog(">> MFXVideoVPP_Query called");
         Log::WriteLog(dump_mfxSession("session", session));
@@ -54,7 +55,7 @@ mfxStatus MFXVideoVPP_QueryIOSurf(mfxSession session, mfxVideoParam *par, mfxFra
         Log::WriteLog(dump_mfxFrameAllocRequest("request", request));
 
         Timer t;
-        mfxStatus status = (*(mfxStatus (MFX_CDECL*) (mfxSession session, mfxVideoParam *par, mfxFrameAllocRequest *request)) proc) (session, par, request);
+        mfxStatus status = (*(fMFXVideoVPP_QueryIOSurf) proc) (session, par, request);
         std::string elapsed = TimeToString(t.GetTime());
         Log::WriteLog(">> MFXVideoVPP_QueryIOSurf called");
         Log::WriteLog(dump_mfxSession("session", session));
@@ -85,7 +86,7 @@ mfxStatus MFXVideoVPP_Init(mfxSession session, mfxVideoParam *par)
         Log::WriteLog(dump_mfxVideoParam("par", par));
 
         Timer t;
-        mfxStatus status = (*(mfxStatus (MFX_CDECL*) (mfxSession session, mfxVideoParam *par)) proc) (session, par);
+        mfxStatus status = (*(fMFXVideoVPP_Init) proc) (session, par);
         std::string elapsed = TimeToString(t.GetTime());
         Log::WriteLog(">> MFXVideoVPP_Init called");
         Log::WriteLog(dump_mfxSession("session", session));
@@ -115,7 +116,7 @@ mfxStatus MFXVideoVPP_Reset(mfxSession session, mfxVideoParam *par)
         Log::WriteLog(dump_mfxVideoParam("par", par));
 
         Timer t;
-        mfxStatus status = (*(mfxStatus (MFX_CDECL*) (mfxSession session, mfxVideoParam *par)) proc) (session, par);
+        mfxStatus status = (*(fMFXVideoVPP_Reset) proc) (session, par);
         std::string elapsed = TimeToString(t.GetTime());
         Log::WriteLog(">> MFXVideoVPP_Reset called");
         Log::WriteLog(dump_mfxSession("session", session));
@@ -144,7 +145,7 @@ mfxStatus MFXVideoVPP_Close(mfxSession session)
         Log::WriteLog(dump_mfxSession("session", session));
 
         Timer t;
-        mfxStatus status = (*(mfxStatus (MFX_CDECL*) (mfxSession session)) proc) (session);
+        mfxStatus status = (*(fMFXVideoVPP_Close) proc) (session);
         std::string elapsed = TimeToString(t.GetTime());
         Log::WriteLog(">> MFXVideoVPP_Close called");
         Log::WriteLog(dump_mfxSession("session", session));
@@ -173,7 +174,7 @@ mfxStatus MFXVideoVPP_GetVideoParam(mfxSession session, mfxVideoParam *par)
         Log::WriteLog(dump_mfxVideoParam("par", par));
 
         Timer t;
-        mfxStatus status = (*(mfxStatus (MFX_CDECL*) (mfxSession session, mfxVideoParam *par)) proc) (session, par);
+        mfxStatus status = (*(fMFXVideoVPP_GetVideoParam) proc) (session, par);
         std::string elapsed = TimeToString(t.GetTime());
         Log::WriteLog(">> MFXVideoVPP_GetVideoParam called");
         Log::WriteLog(dump_mfxSession("session", session));
@@ -203,7 +204,7 @@ mfxStatus MFXVideoVPP_GetVPPStat(mfxSession session, mfxVPPStat *stat)
         Log::WriteLog(dump_mfxVPPStat("stat", stat));
 
         Timer t;
-        mfxStatus status = (*(mfxStatus (MFX_CDECL*) (mfxSession session, mfxVPPStat *stat)) proc) (session, stat);
+        mfxStatus status = (*(fMFXVideoVPP_GetVPPStat) proc) (session, stat);
         std::string elapsed = TimeToString(t.GetTime());
         Log::WriteLog(">> MFXVideoVPP_GetVPPStat called");
         Log::WriteLog(dump_mfxSession("session", session));
@@ -241,7 +242,7 @@ mfxStatus MFXVideoVPP_RunFrameVPPAsync(mfxSession session, mfxFrameSurface1 *in,
 
         sp->timer.Restart();
         Timer t;
-        mfxStatus status = (*(mfxStatus (MFX_CDECL*) (mfxSession session, mfxFrameSurface1 *in, mfxFrameSurface1 *out, mfxExtVppAuxData *aux, mfxSyncPoint *syncp)) proc) (session, in, out, aux, &sp->syncPoint);
+        mfxStatus status = (*(fMFXVideoVPP_RunFrameVPPAsync) proc) (session, in, out, aux, &sp->syncPoint);
         std::string elapsed = TimeToString(t.GetTime());
 
         *syncp = (mfxSyncPoint)sp;
@@ -286,7 +287,7 @@ mfxStatus MFXVideoVPP_RunFrameVPPAsyncEx(mfxSession session, mfxFrameSurface1 *i
 
         sp->timer.Restart();
         Timer t;
-        mfxStatus status = (*(mfxStatus (MFX_CDECL*) (mfxSession session, mfxFrameSurface1 *in, mfxFrameSurface1 *work, mfxFrameSurface1 **out, mfxSyncPoint *syncp)) proc) (session, in, work, out, &sp->syncPoint);
+        mfxStatus status = (*(fMFXVideoVPP_RunFrameVPPAsyncEx) proc) (session, in, work, out, &sp->syncPoint);
         std::string elapsed = TimeToString(t.GetTime());
 
         *syncp = (mfxSyncPoint)sp;

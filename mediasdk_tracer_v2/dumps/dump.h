@@ -6,6 +6,8 @@
 #include <iomanip>
 #include <iterator>
 #include "mfxvideo.h"
+#include "mfxplugin.h"
+#include "mfxenc.h"
 
 std::string StringToHexString(std::string data);
 
@@ -42,16 +44,23 @@ std::string dump_reserved_array(T* data, size_t size)
 //mfxdefs
 std::string dump_mfxU32(const std::string structName, mfxU32 u32);
 std::string dump_mfxU64(const std::string structName, mfxU64 u64);
-std::string dump_mfxHDL(const std::string structName, mfxHDL *hdl);
+std::string dump_mfxHDL(const std::string structName, const mfxHDL *hdl);
 std::string dump_mfxStatus(const std::string structName, mfxStatus status);
 
 //mfxcommon
 std::string dump_mfxBitstream(const std::string structName, mfxBitstream *bitstream);
 std::string dump_mfxExtBuffer(const std::string structName, mfxExtBuffer *extBuffer);
-std::string dump_mfxIMPL(const std::string structName, mfxIMPL *impl);
+std::string dump_mfxIMPL(const std::string structName, mfxIMPL impl);
 std::string dump_mfxPriority(const std::string structName, mfxPriority priority);
 std::string dump_mfxVersion(const std::string structName, mfxVersion *version);
 std::string dump_mfxSyncPoint(const std::string structName, mfxSyncPoint *syncPoint);
+
+//mfxenc
+std::string dump_mfxENCInput(const std::string structName, mfxENCInput* encIn);
+std::string dump_mfxENCOutput(const std::string structName, mfxENCOutput* encOut);
+
+//mfxplugin
+std::string dump_mfxPlugin(const std::string structName, const mfxPlugin* plugin);
 
 //mfxstructures
 std::string dump_mfxDecodeStat(const std::string structName, mfxDecodeStat *decodeStat);

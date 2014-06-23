@@ -1,8 +1,9 @@
-#include "mfx_video_decode.h"
-#include "mfx_structures.h"
-#include "../loggers/timer.h"
 #include <exception>
 #include <iostream>
+
+#include "../loggers/timer.h"
+#include "../tracer/functions_table.h"
+#include "mfx_structures.h"
 
 // DECODE interface functions
 mfxStatus MFXVideoDECODE_Query(mfxSession session, mfxVideoParam *in, mfxVideoParam *out)
@@ -22,7 +23,7 @@ mfxStatus MFXVideoDECODE_Query(mfxSession session, mfxVideoParam *in, mfxVideoPa
         Log::WriteLog(dump_mfxVideoParam("out", out));
 
         Timer t;
-        mfxStatus status = (*(mfxStatus (MFX_CDECL*) (mfxSession session, mfxVideoParam *in, mfxVideoParam *out)) proc) (session, in, out);
+        mfxStatus status = (*(fMFXVideoDECODE_Query) proc) (session, in, out);
         std::string elapsed = TimeToString(t.GetTime());
         Log::WriteLog(">> MFXVideoDECODE_Query called");
         Log::WriteLog(dump_mfxSession("session", session));
@@ -54,7 +55,7 @@ mfxStatus MFXVideoDECODE_DecodeHeader(mfxSession session, mfxBitstream *bs, mfxV
         Log::WriteLog(dump_mfxVideoParam("par", par));
 
         Timer t;
-        mfxStatus status = (*(mfxStatus (MFX_CDECL*) (mfxSession session, mfxBitstream *bs, mfxVideoParam *par)) proc) (session, bs, par);
+        mfxStatus status = (*(fMFXVideoDECODE_DecodeHeader) proc) (session, bs, par);
         std::string elapsed = TimeToString(t.GetTime());
         Log::WriteLog(">> MFXVideoDECODE_DecodeHeader called");
         Log::WriteLog(dump_mfxSession("session", session));
@@ -86,7 +87,7 @@ mfxStatus MFXVideoDECODE_QueryIOSurf(mfxSession session, mfxVideoParam *par, mfx
         Log::WriteLog(dump_mfxFrameAllocRequest("request", request));
 
         Timer t;
-        mfxStatus status = (*(mfxStatus (MFX_CDECL*) (mfxSession session, mfxVideoParam *par, mfxFrameAllocRequest *request)) proc) (session, par, request);
+        mfxStatus status = (*(fMFXVideoDECODE_QueryIOSurf) proc) (session, par, request);
         std::string elapsed = TimeToString(t.GetTime());
         Log::WriteLog(">> MFXVideoDECODE_QueryIOSurf called");
         Log::WriteLog(dump_mfxSession("session", session));
@@ -117,7 +118,7 @@ mfxStatus MFXVideoDECODE_Init(mfxSession session, mfxVideoParam *par)
         Log::WriteLog(dump_mfxVideoParam("par", par));
 
         Timer t;
-        mfxStatus status = (*(mfxStatus (MFX_CDECL*) (mfxSession session, mfxVideoParam *par)) proc) (session, par);
+        mfxStatus status = (*(fMFXVideoDECODE_Init) proc) (session, par);
         std::string elapsed = TimeToString(t.GetTime());
         Log::WriteLog(">> MFXVideoDECODE_Init called");
         Log::WriteLog(dump_mfxSession("session", session));
@@ -147,7 +148,7 @@ mfxStatus MFXVideoDECODE_Reset(mfxSession session, mfxVideoParam *par)
         Log::WriteLog(dump_mfxVideoParam("par", par));
 
         Timer t;
-        mfxStatus status = (*(mfxStatus (MFX_CDECL*) (mfxSession session, mfxVideoParam *par)) proc) (session, par);
+        mfxStatus status = (*(fMFXVideoDECODE_Reset) proc) (session, par);
         std::string elapsed = TimeToString(t.GetTime());
         Log::WriteLog(">> MFXVideoDECODE_Reset called");
         Log::WriteLog(dump_mfxSession("session", session));
@@ -176,7 +177,7 @@ mfxStatus MFXVideoDECODE_Close(mfxSession session)
         Log::WriteLog(dump_mfxSession("session", session));
 
         Timer t;
-        mfxStatus status = (*(mfxStatus (MFX_CDECL*) (mfxSession session)) proc) (session);
+        mfxStatus status = (*(fMFXVideoDECODE_Close) proc) (session);
         std::string elapsed = TimeToString(t.GetTime());
         Log::WriteLog(">> MFXVideoDECODE_Close called");
         Log::WriteLog(dump_mfxSession("session", session));
@@ -205,7 +206,7 @@ mfxStatus MFXVideoDECODE_GetVideoParam(mfxSession session, mfxVideoParam *par)
         Log::WriteLog(dump_mfxVideoParam("par", par));
 
         Timer t;
-        mfxStatus status = (*(mfxStatus (MFX_CDECL*) (mfxSession session, mfxVideoParam *par)) proc) (session, par);
+        mfxStatus status = (*(fMFXVideoDECODE_GetVideoParam) proc) (session, par);
         std::string elapsed = TimeToString(t.GetTime());
         Log::WriteLog(">> MFXVideoDECODE_GetVideoParam called");
         Log::WriteLog(dump_mfxSession("session", session));
@@ -235,7 +236,7 @@ mfxStatus MFXVideoDECODE_GetDecodeStat(mfxSession session, mfxDecodeStat *stat)
         Log::WriteLog(dump_mfxDecodeStat("stat", stat));
 
         Timer t;
-        mfxStatus status = (*(mfxStatus (MFX_CDECL*) (mfxSession session, mfxDecodeStat *stat)) proc) (session, stat);
+        mfxStatus status = (*(fMFXVideoDECODE_GetDecodeStat) proc) (session, stat);
         std::string elapsed = TimeToString(t.GetTime());
         Log::WriteLog(">> MFXVideoDECODE_GetDecodeStat called");
         Log::WriteLog(dump_mfxSession("session", session));
@@ -265,7 +266,7 @@ mfxStatus MFXVideoDECODE_SetSkipMode(mfxSession session, mfxSkipMode mode)
         Log::WriteLog(dump_mfxSkipMode("mode", mode));
 
         Timer t;
-        mfxStatus status = (*(mfxStatus (MFX_CDECL*) (mfxSession session, mfxSkipMode mode)) proc) (session, mode);
+        mfxStatus status = (*(fMFXVideoDECODE_SetSkipMode) proc) (session, mode);
         std::string elapsed = TimeToString(t.GetTime());
         Log::WriteLog(">> MFXVideoDECODE_SetSkipMode called");
         Log::WriteLog(dump_mfxSession("session", session));
@@ -296,7 +297,7 @@ mfxStatus MFXVideoDECODE_GetPayload(mfxSession session, mfxU64 *ts, mfxPayload *
         Log::WriteLog(dump_mfxPayload("payload", payload));
 
         Timer t;
-        mfxStatus status = (*(mfxStatus (MFX_CDECL*) (mfxSession session, mfxU64 *ts, mfxPayload *payload)) proc) (session, ts, payload);
+        mfxStatus status = (*(fMFXVideoDECODE_GetPayload) proc) (session, ts, payload);
         std::string elapsed = TimeToString(t.GetTime());
         Log::WriteLog(">> MFXVideoDECODE_GetPayload called");
         Log::WriteLog(dump_mfxSession("session", session));
@@ -336,7 +337,7 @@ mfxStatus MFXVideoDECODE_DecodeFrameAsync(mfxSession session, mfxBitstream *bs, 
 
         sp->timer.Restart();
         Timer t;
-        mfxStatus status = (*(mfxStatus (MFX_CDECL*) (mfxSession session, mfxBitstream *bs, mfxFrameSurface1 *surface_work, mfxFrameSurface1 **surface_out, mfxSyncPoint *syncp)) proc) (session, bs, surface_work, surface_out, &sp->syncPoint);
+        mfxStatus status = (*(fMFXVideoDECODE_DecodeFrameAsync) proc) (session, bs, surface_work, surface_out, &sp->syncPoint);
         std::string elapsed = TimeToString(t.GetTime());
 
         *syncp = (mfxSyncPoint)sp;

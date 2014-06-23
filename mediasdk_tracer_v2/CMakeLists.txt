@@ -23,12 +23,7 @@ set(HEADERS
   "loggers/thread_info.h"
   "tracer/functions_table.h"
   "tracer/bits/mfxfunctions.h"
-  "wrappers/mfx_core.h"
   "wrappers/mfx_structures.h"
-  "wrappers/mfx_video_core.h"
-  "wrappers/mfx_video_decode.h"
-  "wrappers/mfx_video_encode.h"
-  "wrappers/mfx_video_vpp.h"
   "wrappers/proxymfx.h"
   )
 
@@ -42,6 +37,7 @@ set(SOURCES
   "dumps/dump.cpp"
   "dumps/dump_mfxcommon.cpp"
   "dumps/dump_mfxdefs.cpp"
+  "dumps/dump_mfxenc.cpp"
   "dumps/dump_mfxsession.cpp"
   "dumps/dump_mfxstructures.cpp"
   "dumps/dump_mfxvideo.cpp"
@@ -50,6 +46,7 @@ set(SOURCES
   "wrappers/mfx_core.cpp"
   "wrappers/mfx_video_core.cpp"
   "wrappers/mfx_video_decode.cpp"
+  "wrappers/mfx_video_enc.cpp"
   "wrappers/mfx_video_encode.cpp"
   "wrappers/mfx_video_vpp.cpp"
   )
@@ -65,7 +62,7 @@ set(CMAKE_C_FLAGS_DEBUG     "${debug_flags}" CACHE STRING "" FORCE)
 set(CMAKE_C_FLAGS_RELEASE   "${release_flags}" CACHE STRING "" FORCE)
 set(CMAKE_CXX_FLAGS_DEBUG   "${debug_flags}" CACHE STRING "" FORCE)
 set(CMAKE_CXX_FLAGS_RELEASE "${release_flags}" CACHE STRING "" FORCE)
-  
+
 add_library(mfx-tracer SHARED ${SOURCES} ${HEADERS})
 set_target_properties( mfx-tracer PROPERTIES LINK_FLAGS
   "-Wl,--no-undefined,-z,relro,-z,now,-z,noexecstack,--version-script=${CMAKE_HOME_DIRECTORY}/libmfx.map -fstack-protector" )

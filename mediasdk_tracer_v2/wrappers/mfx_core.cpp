@@ -1,14 +1,16 @@
-#include "mfx_core.h"
-#include "../loggers/timer.h"
 #include <exception>
 #include <iostream>
+
+#include "../loggers/timer.h"
+#include "../tracer/functions_table.h"
+#include "mfx_structures.h"
 
 mfxStatus MFXQueryIMPL(mfxSession session, mfxIMPL *impl)
 {
     try{
-        Log::WriteLog("function: MFXQueryIMPL(mfxSession session=" + ToString(session) + ", mfxIMPL *impl" + ToString(impl) + ") +");
+        Log::WriteLog("function: MFXQueryIMPL(mfxSession session=" + ToString(session) + ", mfxIMPL *impl=" + ToString(impl) + ") +");
         Log::WriteLog(dump_mfxSession("session", session));
-        Log::WriteLog(dump_mfxIMPL("impl", impl));
+        if (impl) Log::WriteLog(dump_mfxIMPL("impl", *impl));
         mfxLoader *loader = (mfxLoader*) session;
 
         if (!loader) return MFX_ERR_INVALID_HANDLE;
@@ -18,7 +20,7 @@ mfxStatus MFXQueryIMPL(mfxSession session, mfxIMPL *impl)
 
         session = loader->session;
         Log::WriteLog(dump_mfxSession("session", session));
-        Log::WriteLog(dump_mfxIMPL("impl", impl));
+        if (impl) Log::WriteLog(dump_mfxIMPL("impl", *impl));
 
         Timer t;
         mfxStatus status = (*(mfxStatus (MFX_CDECL*) (mfxSession session, mfxIMPL *impl)) proc) (session, impl);
@@ -27,7 +29,7 @@ mfxStatus MFXQueryIMPL(mfxSession session, mfxIMPL *impl)
         std::string elapsed = TimeToString(t.GetTime());
         Log::WriteLog(">> MFXQueryIMPL called");
         Log::WriteLog(dump_mfxSession("session", session));
-        Log::WriteLog(dump_mfxIMPL("impl", impl));
+        if (impl) Log::WriteLog(dump_mfxIMPL("impl", *impl));
         Log::WriteLog("function: MFXQueryIMPL(" + elapsed + ", " + dump_mfxStatus("status", status) + ") - \n\n");
         return status;
     }

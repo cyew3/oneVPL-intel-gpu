@@ -10,7 +10,7 @@ std::string dump_mfxU64(const std::string structName, mfxU64 u64)
     return std::string("mfxU64 " + structName + "=" + ToString(u64));
 }
 
-std::string dump_mfxHDL(const std::string structName, mfxHDL *hdl)
+std::string dump_mfxHDL(const std::string structName, const mfxHDL *hdl)
 {
     return std::string("mfxHDL* " + structName + "=" + ToString(hdl));
 }

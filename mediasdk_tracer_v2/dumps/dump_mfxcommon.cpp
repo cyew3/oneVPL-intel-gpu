@@ -41,7 +41,7 @@ std::string dump_mfxExtBuffer(const std::string structName, mfxExtBuffer *extBuf
     return str;
 }
 
-std::string dump_mfxIMPL(const std::string structName, mfxIMPL *impl)
+std::string dump_mfxIMPL(const std::string structName, mfxIMPL impl)
 {
     return std::string("mfxIMPL " + structName + "=" + ToString(impl));
 }
