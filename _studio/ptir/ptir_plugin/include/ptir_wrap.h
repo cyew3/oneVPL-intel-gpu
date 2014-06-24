@@ -133,6 +133,7 @@ public:
         errorT;
     bool b_firstFrameProceed;
     bool bInited;
+    bool isHW;
 
     virtual mfxStatus Init(mfxVideoParam *)
     {
@@ -166,7 +167,7 @@ public:
 
     virtual mfxStatus Init(mfxVideoParam *par);
     virtual mfxStatus Close();
-    virtual mfxStatus PTIR_ProcessFrame(mfxFrameSurface1 *surf_in, mfxFrameSurface1 *surf_out);
+    virtual mfxStatus PTIR_ProcessFrame(mfxFrameSurface1 *surf_in, mfxFrameSurface1 *surf_out, bool beof = 0);
     virtual mfxStatus Process(mfxFrameSurface1 *surf_in, mfxFrameSurface1 **surf_work, mfxCoreInterface *core, mfxFrameSurface1 **surf_out = 0, bool beof = false);
 
 protected:

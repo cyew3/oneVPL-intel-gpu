@@ -258,14 +258,13 @@ mfxStatus MFX_PTIR_Plugin::Execute(mfxThreadTask task, mfxU32 , mfxU32 )
     mfxStatus mfxSts = MFX_ERR_NONE;
     mfxFrameSurface1 *surface_out = 0;
     mfxFrameSurface1 *surface_outtt = 0;
-    //surface_out = ptir_task->surface_out;
-    //surface_out = GetFreeSurf(workSurfs);
 
     if(inSurfs.size() != 0 && outSurfs.size() < 2)
     {
-        //process input frames until 1 output frame is generated
         for(std::vector<mfxFrameSurface1*>::iterator it = inSurfs.begin(); it != inSurfs.end(); ++it) {
             if(0 == workSurfs.size())
+                break;
+            if(10 < outSurfs.size())
                 break;
             if(!surface_out)
                 surface_out = GetFreeSurf(workSurfs);
@@ -281,20 +280,16 @@ mfxStatus MFX_PTIR_Plugin::Execute(mfxThreadTask task, mfxU32 , mfxU32 )
                 return mfxSts;
             }
 
-            //m_pmfxCore->DecreaseReference(m_pmfxCore->pthis, &(*it)->Data);
             prevSurf = *it;
             *it = 0;
             if(MFX_ERR_NONE == mfxSts)
             {
-                //outSurfs.push_back(surface_outtt);
-                //m_pmfxCore->DecreaseReference(m_pmfxCore->pthis, &surface_out->Data);
                 surface_out = 0;
                 if(0 == workSurfs.size())
                     break;
             }
             else if(MFX_ERR_MORE_SURFACE == mfxSts)
             {
-                //m_pmfxCore->DecreaseReference(m_pmfxCore->pthis, &surface_out->Data);
                 surface_out = 0;
                 mfxSts = MFX_ERR_NONE;
                 if(/*IsSW* &&*/ workSurfs.size() && inSurfs.size())
@@ -316,59 +311,20 @@ mfxStatus MFX_PTIR_Plugin::Execute(mfxThreadTask task, mfxU32 , mfxU32 )
                 break;
         }
     }
-    else if(outSurfs.size() != 0)
+    if(!ptir->isHW && surface_out)
     {
-        ;//do fucking nothing
+        mfxSts = m_pmfxCore->DecreaseReference(m_pmfxCore->pthis, &surface_out->Data);
+        if(mfxSts)
+            return mfxSts;
     }
-    ////else
-    //if((!(inSurfs.size() != 0 && outSurfs.size() < 2) && !(outSurfs.size() != 0)) ||
-    //    (bEOS && outSurfs.size() == 1 && workSurfs.size() > 0))
-    //{
-    //    //get cached frame
-    //    surface_out = GetFreeSurf(workSurfs);
-    //    try
-    //    {
-    //        mfxSts = ptir->Process(0, &surface_out, m_pmfxCore, &surface_outtt, bEOS);
-    //    }
-    //    catch(...)
-    //    {
-    //        mfxSts = MFX_ERR_UNKNOWN;
-    //        return mfxSts;
-    //    }
-    //    if(MFX_ERR_NONE == mfxSts)
-    //    {
-    //        //outSurfs.push_back(surface_outtt);
-    //        //m_pmfxCore->DecreaseReference(m_pmfxCore->pthis, &surface_out->Data);
-    //        surface_out = 0;
-    //    }
-    //    else if(MFX_ERR_MORE_SURFACE == mfxSts)
-    //    {
-    //        m_pmfxCore->DecreaseReference(m_pmfxCore->pthis, &surface_out->Data);
-    //        surface_out = 0;
-    //        mfxSts = MFX_ERR_NONE;
-    //    }
-    //    else if(MFX_ERR_MORE_DATA == mfxSts)
-    //    {
-    //        ;
-    //    }
-    //    else
-    //    {
-    //        assert(0);
-    //        return mfxSts;
-    //    }
-    //}
 
-    //if(surface_out)
-    //{
-    //    //smth wrong, execute should always generate output!
-    //    assert(0);
-    //    m_pmfxCore->DecreaseReference(m_pmfxCore->pthis, &surface_out->Data);
-    //    surface_out = 0;
-    //    return MFX_ERR_UNDEFINED_BEHAVIOR;
-    //}
+#if defined(_DEBUG)
+    for(std::vector<mfxFrameSurface1*>::iterator it = outSurfs.begin(); it != outSurfs.end(); ++it)
+    {
+        assert((*it)->Data.Locked != 0);
+    }
+#endif
 
-    //m_pmfxCore->DecreaseReference(m_pmfxCore->pthis, &outSurfs.front()->Data);
-    //outSurfs.erase(outSurfs.begin());
     return MFX_ERR_NONE;
 }
 mfxStatus MFX_PTIR_Plugin::FreeResources(mfxThreadTask task, mfxStatus )
@@ -387,6 +343,16 @@ mfxStatus MFX_PTIR_Plugin::FreeResources(mfxThreadTask task, mfxStatus )
             vTasks.erase(vTasks.begin() + i);
         }
     }
+#if defined(_DEBUG)
+    for(std::vector<mfxFrameSurface1*>::iterator it = workSurfs.begin(); it != workSurfs.end(); ++it)
+    {
+        assert((*it)->Data.Locked != 0);
+    }
+    for(std::vector<mfxFrameSurface1*>::iterator it = outSurfs.begin(); it != outSurfs.end(); ++it)
+    {
+        assert((*it)->Data.Locked != 0);
+    }
+#endif
 
     return MFX_ERR_NONE;
 }
@@ -866,13 +832,11 @@ inline mfxFrameSurface1* MFX_PTIR_Plugin::GetFreeSurf(std::vector<mfxFrameSurfac
         return 0;
     else
     {
-        for(std::vector<mfxFrameSurface1*>::iterator it = vSurfs.begin(); it != vSurfs.end(); ++it) {
-            if((*it)->Data.Locked < 4)
-            {
-                s_out = *it;
-                vSurfs.erase(it);
-                return s_out;
-            }
+        for(std::vector<mfxFrameSurface1*>::iterator it = vSurfs.begin(); it != vSurfs.end(); ++it)
+        {
+            s_out = *it;
+            vSurfs.erase(it);
+            return s_out;
         }
     }
     return 0;
@@ -882,6 +846,12 @@ inline mfxStatus MFX_PTIR_Plugin::addWorkSurf(mfxFrameSurface1* pSurface)
 {
     if(!pSurface)
         return MFX_ERR_NONE;
+#if defined(_DEBUG)
+    for(std::vector<mfxFrameSurface1*>::iterator it = workSurfs.begin(); it != workSurfs.end(); ++it)
+    {
+        assert((*it)->Data.Locked != 0);
+    }
+#endif
     if(workSurfs.end() == std::find (workSurfs.begin(), workSurfs.end(), pSurface) && (workSurfs.size() + ptir->fqIn.iCount + ptir->uiCur) < 18)
     {
         workSurfs.push_back(pSurface);
@@ -991,8 +961,6 @@ inline mfxStatus MFX_PTIR_Plugin::CheckOutFrameSurface1(mfxFrameSurface1*& mfxSu
 inline mfxStatus MFX_PTIR_Plugin::CheckFrameSurface1(mfxFrameSurface1*& mfxSurf)
 {
     if(!mfxSurf) return MFX_ERR_NULL_PTR;
-
-    bool b_incomp = false;
 
     if((mfxSurf->Info.ChromaFormat != MFX_CHROMAFORMAT_YUV420) ||
        (mfxSurf->Info.FourCC      != MFX_FOURCC_NV12))

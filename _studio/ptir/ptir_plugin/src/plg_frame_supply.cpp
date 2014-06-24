@@ -92,13 +92,11 @@ mfxFrameSurface1* frameSupplier::GetWorkSurfaceMfx()
         return 0;
     else
     {
-        for(std::vector<mfxFrameSurface1*>::iterator it = workSurfs->begin(); it != workSurfs->end(); ++it) {
-            if((*it)->Data.Locked < 4)
-            {
-                s_out = *it;
-                workSurfs->erase(it);
-                break;
-            }
+        for(std::vector<mfxFrameSurface1*>::iterator it = workSurfs->begin(); it != workSurfs->end(); ++it)
+        {
+            s_out = *it;
+            workSurfs->erase(it);
+            break;
         }
         return s_out;
     }
@@ -129,6 +127,12 @@ mfxStatus frameSupplier::AddCPUPtirOutSurf(mfxU8* buffer, mfxFrameSurface1* surf
 }
 mfxStatus frameSupplier::AddOutputSurf(mfxFrameSurface1* outSurf)
 {
+#if defined(_DEBUG)
+    for(std::vector<mfxFrameSurface1*>::iterator it = outSurfs->begin(); it != outSurfs->end(); ++it)
+    {
+        assert((*it) != outSurf);
+    }
+#endif
     if(pCMdevice && (IOPattern & MFX_IOPATTERN_IN_SYSTEM_MEMORY) && (IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY))
     {
         CmSurface2D* cmSurf = 0;
@@ -152,6 +156,20 @@ mfxStatus frameSupplier::AddOutputSurf(mfxFrameSurface1* outSurf)
     }
 
     outSurfs->push_back(outSurf);
+#if defined(_DEBUG)
+    for(std::vector<mfxFrameSurface1*>::iterator wSurf = workSurfs->begin(); wSurf != workSurfs->end(); ++wSurf)
+    {
+        for(std::vector<mfxFrameSurface1*>::iterator oSurf = outSurfs->begin(); oSurf != outSurfs->end(); ++oSurf)
+        {
+            assert(*wSurf != *oSurf);
+        }
+        assert((*wSurf)->Data.Locked != 0);
+    }
+    for(std::vector<mfxFrameSurface1*>::iterator it = outSurfs->begin(); it != outSurfs->end(); ++it)
+    {
+        assert((*it)->Data.Locked != 0);
+    }
+#endif
     return MFX_ERR_NONE;
 }
 mfxStatus frameSupplier::FreeFrames()
@@ -161,11 +179,11 @@ mfxStatus frameSupplier::FreeFrames()
     mfxU32 refs = 0;
     if(CmToMfxSurfmap && pCMdevice)
     {
-        for(std::map<CmSurface2D*,mfxFrameSurface1*>::iterator it = CmToMfxSurfmap->begin(); it != CmToMfxSurfmap->end(); it++) {
+        for(std::map<CmSurface2D*,mfxFrameSurface1*>::iterator it = CmToMfxSurfmap->begin(); it != CmToMfxSurfmap->end(); ++it) {
             CmSurface2D* cm_surf = it->first;
-            mfxFrameSurface1* mfxSurf = it->second;
-            if(mfxSurf)
-                mfxCoreIfce->DecreaseReference(mfxCoreIfce->pthis, &mfxSurf->Data);
+            //mfxFrameSurface1* mfxSurf = it->second;
+            //if(mfxSurf)
+            //    mfxCoreIfce->DecreaseReference(mfxCoreIfce->pthis, &mfxSurf->Data);
             if(cm_surf)
             {
                 int result = 0;
@@ -184,21 +202,14 @@ mfxStatus frameSupplier::FreeFrames()
 
     if(workSurfs && workSurfs->size() > 0)
     {
-        for(std::vector<mfxFrameSurface1*>::iterator it = workSurfs->begin(); it != workSurfs->end(); it++) {
-            while((*it)->Data.Locked)
-            {
-                refs = (*it)->Data.Locked;
-                mfxSts = mfxCoreIfce->DecreaseReference(mfxCoreIfce->pthis, &(*it)->Data);
-                if(mfxSts) break;
-                iii++;
-                if(iii > (refs+1)) break; //hang is unacceptable
-            }
+        for(std::vector<mfxFrameSurface1*>::iterator it = workSurfs->begin(); it != workSurfs->end(); ++it) {
+            mfxSts = mfxCoreIfce->DecreaseReference(mfxCoreIfce->pthis, &(*it)->Data);
         }
         workSurfs->clear();
     }
     if(inSurfs && inSurfs->size() > 0)
     {
-        for(std::vector<mfxFrameSurface1*>::iterator it = inSurfs->begin(); it != inSurfs->end(); it++) {
+        for(std::vector<mfxFrameSurface1*>::iterator it = inSurfs->begin(); it != inSurfs->end(); ++it) {
             while((*it)->Data.Locked)
             {
                 refs = (*it)->Data.Locked;
@@ -212,7 +223,7 @@ mfxStatus frameSupplier::FreeFrames()
     }
     if(outSurfs && outSurfs->size() > 0)
     {
-        for(std::vector<mfxFrameSurface1*>::iterator it = outSurfs->begin(); it != outSurfs->end(); it++) {
+        for(std::vector<mfxFrameSurface1*>::iterator it = outSurfs->begin(); it != outSurfs->end(); ++it) {
             while((*it)->Data.Locked)
             {
                 refs = (*it)->Data.Locked;
@@ -225,7 +236,7 @@ mfxStatus frameSupplier::FreeFrames()
         outSurfs->clear();
     }
 
-    return MFX_ERR_NONE;
+    return mfxSts;
 }
 mfxStatus frameSupplier::FreeSurface(CmSurface2D*& cmSurf)
 {
