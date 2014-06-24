@@ -51,8 +51,11 @@ mfxStatus GeneralAllocator::Init(mfxAllocatorParams *pParams)
 
     m_SYSAllocator.reset(new SysMemFrameAllocator);
 
-    sts = m_D3DAllocator.get()->Init(pParams);
-    MSDK_CHECK_RESULT(MFX_ERR_NONE, sts, sts);
+    if (m_D3DAllocator.get())
+    {
+        sts = m_D3DAllocator.get()->Init(pParams);
+        MSDK_CHECK_RESULT(MFX_ERR_NONE, sts, sts);
+    }
 
     sts = m_SYSAllocator.get()->Init(0);
     MSDK_CHECK_RESULT(MFX_ERR_NONE, sts, sts);
@@ -62,8 +65,11 @@ mfxStatus GeneralAllocator::Init(mfxAllocatorParams *pParams)
 mfxStatus GeneralAllocator::Close()
 {
     mfxStatus sts = MFX_ERR_NONE;
-    sts = m_D3DAllocator.get()->Close();
-    MSDK_CHECK_RESULT(MFX_ERR_NONE, sts, sts);
+    if (m_D3DAllocator.get())
+    {
+        sts = m_D3DAllocator.get()->Close();
+        MSDK_CHECK_RESULT(MFX_ERR_NONE, sts, sts);
+    }
 
     sts = m_SYSAllocator.get()->Close();
     MSDK_CHECK_RESULT(MFX_ERR_NONE, sts, sts);
@@ -73,31 +79,39 @@ mfxStatus GeneralAllocator::Close()
 
 mfxStatus GeneralAllocator::LockFrame(mfxMemId mid, mfxFrameData *ptr)
 {
-    return isD3DMid(mid)?m_D3DAllocator.get()->Lock(m_D3DAllocator.get(), mid, ptr):
-                         m_SYSAllocator.get()->Lock(m_SYSAllocator.get(),mid, ptr);
+    if (isD3DMid(mid) && m_D3DAllocator.get())
+        return m_D3DAllocator.get()->Lock(m_D3DAllocator.get(), mid, ptr);
+    else
+        return m_SYSAllocator.get()->Lock(m_SYSAllocator.get(),mid, ptr);
 }
 mfxStatus GeneralAllocator::UnlockFrame(mfxMemId mid, mfxFrameData *ptr)
 {
-    return isD3DMid(mid)?m_D3DAllocator.get()->Unlock(m_D3DAllocator.get(), mid, ptr):
-                         m_SYSAllocator.get()->Unlock(m_SYSAllocator.get(),mid, ptr);
+    if (isD3DMid(mid) && m_D3DAllocator.get())
+        return m_D3DAllocator.get()->Unlock(m_D3DAllocator.get(), mid, ptr);
+    else
+        return m_SYSAllocator.get()->Unlock(m_SYSAllocator.get(),mid, ptr);
 }
 
 mfxStatus GeneralAllocator::GetFrameHDL(mfxMemId mid, mfxHDL *handle)
 {
-    return isD3DMid(mid)?m_D3DAllocator.get()->GetHDL(m_D3DAllocator.get(), mid, handle):
-                         m_SYSAllocator.get()->GetHDL(m_SYSAllocator.get(), mid, handle);
+    if (isD3DMid(mid) && m_D3DAllocator.get())
+        return m_D3DAllocator.get()->GetHDL(m_D3DAllocator.get(), mid, handle);
+    else
+        return m_SYSAllocator.get()->GetHDL(m_SYSAllocator.get(), mid, handle);
 }
 
 mfxStatus GeneralAllocator::ReleaseResponse(mfxFrameAllocResponse *response)
 {
     // try to ReleaseResponse via D3D allocator
-    return isD3DMid(response->mids[0])?m_D3DAllocator.get()->Free(m_D3DAllocator.get(),response):
-                                       m_SYSAllocator.get()->Free(m_SYSAllocator.get(), response);
+    if (isD3DMid(response->mids[0]) && m_D3DAllocator.get())
+        return m_D3DAllocator.get()->Free(m_D3DAllocator.get(),response);
+    else
+        return m_SYSAllocator.get()->Free(m_SYSAllocator.get(), response);
 }
 mfxStatus GeneralAllocator::AllocImpl(mfxFrameAllocRequest *request, mfxFrameAllocResponse *response)
 {
     mfxStatus sts;
-    if (request->Type & MFX_MEMTYPE_VIDEO_MEMORY_DECODER_TARGET || request->Type & MFX_MEMTYPE_VIDEO_MEMORY_PROCESSOR_TARGET)
+    if ((request->Type & MFX_MEMTYPE_VIDEO_MEMORY_DECODER_TARGET || request->Type & MFX_MEMTYPE_VIDEO_MEMORY_PROCESSOR_TARGET) && m_D3DAllocator.get())
     {
         sts = m_D3DAllocator.get()->Alloc(m_D3DAllocator.get(), request, response);
         StoreFrameMids(true, response);
