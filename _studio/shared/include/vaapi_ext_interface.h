@@ -115,11 +115,11 @@ typedef struct _VAEncMbDataLayout
 // this buffer representing VAEncMbDataLayout for function vpgQueryBufferAttributes()
 #define VAEncMbDataBufferType               -4
 
-#define VPG_QUERY_BUFFER_ATTRIBUTES "vpgQueryBufferAttributes"
+#define FUNC_QUERY_BUFFER_ATTRIBUTES "hybridQueryBufferAttributes"
 
 // VAAPI private extension for quering buffer attributes for different buffer types
 // at the moment supports only VAEncMbDataBufferType 
-typedef VAStatus (*vpgQueryBufferAttributes)(
+typedef VAStatus (*hybridQueryBufferAttributes)(
      VADisplay      dpy, 
      VAContextID    context, 
      VABufferType   bufferType,

@@ -1681,8 +1681,8 @@ mfxStatus VAAPIEncoder::CreateAccelerationService(mfxVideoParam const & par)
     // pass frame rate in the same manner as for AVC (number of frames per 100 sec)
     m_frameRate.framerate = (unsigned int)(100.0 * (mfxF64)par.mfx.FrameInfo.FrameRateExtN / (mfxF64)par.mfx.FrameInfo.FrameRateExtD);
 
-    vpgQueryBufferAttributes pfnVaQueryBufferAttr = NULL;
-    pfnVaQueryBufferAttr = (vpgQueryBufferAttributes)vaGetLibFunc(m_vaDisplay, VPG_QUERY_BUFFER_ATTRIBUTES);
+    hybridQueryBufferAttributes pfnVaQueryBufferAttr = NULL;
+    pfnVaQueryBufferAttr = (hybridQueryBufferAttributes)vaGetLibFunc(m_vaDisplay, FUNC_QUERY_BUFFER_ATTRIBUTES);
 
     if (pfnVaQueryBufferAttr)
     {
