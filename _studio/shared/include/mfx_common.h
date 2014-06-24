@@ -132,7 +132,7 @@
 // vp8
 //#ifndef MFX_VA
 //#define MFX_ENABLE_VP8_VIDEO_ENCODE
-//#define MFX_ENABLE_VP8_VIDEO_ENCODE_HW
+#define MFX_ENABLE_VP8_VIDEO_ENCODE_HW
 //#define MFX_ENABLE_VP8_VIDEO_PAK
 //#endif
 #if defined(AS_VP8D_PLUGIN)
@@ -204,14 +204,14 @@
         //#undef MFX_ENABLE_VC1_VIDEO_DECODE
 
         // vp8
-        #undef MFX_ENABLE_VP8_VIDEO_DECODE
-        #undef MFX_ENABLE_VP8_VIDEO_DECODE_HW
+        //#undef MFX_ENABLE_VP8_VIDEO_DECODE
+        //#undef MFX_ENABLE_VP8_VIDEO_DECODE_HW
 
         //#undef MFX_ENABLE_H265_VIDEO_ENCODE
     // SW limitation
     #else // #if defined (MFX_VA)
-        #undef MFX_ENABLE_VP8_VIDEO_DECODE
-        #undef MFX_ENABLE_VP8_VIDEO_DECODE_HW
+        //#undef MFX_ENABLE_VP8_VIDEO_DECODE
+        //#undef MFX_ENABLE_VP8_VIDEO_DECODE_HW
     #endif // #if defined (MFX_VA)
 #endif // #if defined(LINUX32) || defined(LINUX64)
 

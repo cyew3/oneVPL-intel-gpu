@@ -21,6 +21,7 @@
 #include "umc_frame_data.h"
 #include "umc_media_buffer.h"
 #include "umc_media_data.h"
+#include "umc_va_base.h"
 
 #include "mfx_task.h"
 
@@ -203,7 +204,7 @@ private:
 
     mfxStatus GetFrame(UMC::MediaData* in, UMC::FrameData** out);
 
-	friend static mfxStatus __CDECL VP8DECODERoutine(void *p_state, void *pp_param, mfxU32 thread_number, mfxU32);
+	friend mfxStatus VP8DECODERoutine(void *p_state, void *pp_param, mfxU32 thread_number, mfxU32);
 
 	struct VP8DECODERoutineData
 	{

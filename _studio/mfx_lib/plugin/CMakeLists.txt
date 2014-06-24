@@ -364,6 +364,7 @@ endforeach()
 foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/../genx/h264_encode/src )
   list( APPEND sources
     ${prefix}/genx_hsw_simple_me_isa.cpp
+    ${prefix}/genx_bdw_simple_me_isa.cpp
     ${prefix}/genx_hsw_simple_me_proto.cpp
   )
 endforeach()
@@ -445,6 +446,7 @@ include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../../shared/umc/codec/vp8_dec/
 list( APPEND sources ${CMAKE_CURRENT_SOURCE_DIR}/../shared/src/libmfxsw_decode.cpp )
 list( APPEND sources ${CMAKE_CURRENT_SOURCE_DIR}/../../shared/umc/codec/vp8_dec/src/vp8_tables.cpp )
 
+
 set( USE_STRICT_NAME TRUE )
 set(MFX_LDFLAGS "${MFX_ORIG_LDFLAGS} -Wl,--version-script=${CMAKE_CURRENT_SOURCE_DIR}/libmfxsw_plugin.map" )
 
@@ -478,6 +480,7 @@ foreach( variant sw hw )
       ${prefix}/mfx_vp8_dec_decode.cpp
       ${prefix}/mfx_vp8_dec_decode_common.cpp
       ${prefix}/mfx_vp8_dec_decode_hw_vaapi.cpp
+      ${prefix}/mfx_vp8_dec_decode_tables.cpp
     )
     endforeach()
 
@@ -495,6 +498,7 @@ foreach( variant sw hw )
     list( APPEND sources
       ${prefix}/mfx_vp8_dec_decode.cpp
       ${prefix}/mfx_vp8_dec_decode_common.cpp
+      ${prefix}/mfx_vp8_dec_decode_tables.cpp
     )
     endforeach()
 
@@ -573,8 +577,7 @@ foreach( variant sw hw )
       ${prefix}/mfx_vp8_encode_hybrid_hw.cpp
       ${prefix}/mfx_vp8_encode_hybrid_pak.cpp
       ${prefix}/mfx_vp8_encode_utils_hw.cpp
-      ${prefix}/mfx_vp8_encode_utils_hybrid_hw.cpp
-      
+      ${prefix}/mfx_vp8_encode_utils_hybrid_hw.cpp      
     )
     endforeach()
 

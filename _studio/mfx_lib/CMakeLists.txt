@@ -57,6 +57,8 @@ list( APPEND vdir_optimization optimization/h265 )
 list( APPEND vdirs scheduler )
 list( APPEND vdirs_impl vpp genx/h264_encode cmrt_cross_platform )
 
+include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/genx/h265_encode/include )
+
 # =============================================================================
 
 list( APPEND umc_dirs

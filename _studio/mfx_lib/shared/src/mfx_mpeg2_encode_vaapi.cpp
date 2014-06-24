@@ -24,6 +24,10 @@
 #include "ippi.h"
 #include <climits>
 
+// TODO: remove after LibVA changes merge
+#define VAEncPackedHeaderMPEG2_UserData (VAEncPackedHeaderMiscMask | 1)
+
+
 #ifndef D3DDDIFMT_NV12
 #define D3DDDIFMT_NV12 (D3DDDIFORMAT)(MFX_MAKEFOURCC('N', 'V', '1', '2'))
 #endif
