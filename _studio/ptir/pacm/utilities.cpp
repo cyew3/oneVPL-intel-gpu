@@ -618,6 +618,7 @@ void CheckGenFrameCM(Frame **pfrmIn, unsigned int frameNum, unsigned int pattern
 
 void Prepare_frame_for_queueCM(Frame **pfrmOut, Frame *pfrmIn, unsigned int uiWidth, unsigned int uiHeight, frameSupplier* frmSupply, bool bCreate)
 {
+    assert(0 != pfrmOut);
     assert(pfrmIn->inSurf != NULL && pfrmIn->outSurf != NULL);
     *pfrmOut = (Frame *)malloc(sizeof(Frame));
     memset(*pfrmOut, 0, sizeof(Frame));

@@ -36,6 +36,7 @@ PTIR_ProcessorCPU::PTIR_ProcessorCPU(mfxCoreInterface* mfxCore, frameSupplier* _
     uiStart = 0;
     m_pmfxCore = mfxCore;
     frmSupply = _frmSupply;
+    isHW = false;
 }
 
 PTIR_ProcessorCPU::~PTIR_ProcessorCPU()
@@ -189,26 +190,16 @@ mfxStatus PTIR_ProcessorCPU::Process(mfxFrameSurface1 *surface_in, mfxFrameSurfa
         mfxCCSts = MfxNv12toPtir420(surface_in, frmBuffer[uiSupBuf]->ucMem);
         assert(!mfxCCSts);
         frmBuffer[uiSupBuf]->frmProperties.fr = dFrameRate;
-
-        mfxSts = PTIR_ProcessFrame( surface_in, *surface_out );
-
-        if(MFX_ERR_NONE == mfxSts || MFX_ERR_MORE_SURFACE == mfxSts)
-        {
-            if((*surface_out)->Data.MemId)
-            {
-                mfx_core->FrameAllocator.Lock(mfx_core->FrameAllocator.pthis, (*surface_out)->Data.MemId, &((*surface_out)->Data));
-                isUnlockReq = true;
-            }
-            //mfxCCSts = Ptir420toMfxNv12(frmBuffer[uiSupBuf]->ucMem, surface_in);
-            //assert(!mfxCCSts);
-            //frmSupply->AddOutputSurf((*surface_out));
-        }
         if(isUnlockReq)
         {
-            mfx_core->FrameAllocator.Unlock(mfx_core->FrameAllocator.pthis, (*surface_out)->Data.MemId, &((*surface_out)->Data));
             mfx_core->FrameAllocator.Unlock(mfx_core->FrameAllocator.pthis, surface_in->Data.MemId, &(surface_in->Data));
             isUnlockReq = false;
         }
+        mfxSts = m_pmfxCore->DecreaseReference(m_pmfxCore->pthis, &surface_in->Data);
+        if(mfxSts)
+            return mfxSts;
+
+        mfxSts = PTIR_ProcessFrame( surface_in, *surface_out, beof);
         if(MFX_ERR_NONE == mfxSts || MFX_ERR_MORE_SURFACE == mfxSts)
             (*surface_out) = 0;
         return mfxSts;
@@ -236,7 +227,7 @@ mfxStatus PTIR_ProcessorCPU::Process(mfxFrameSurface1 *surface_in, mfxFrameSurfa
         assert(!mfxCCSts);
         frmBuffer[uiSupBuf]->frmProperties.fr = dFrameRate;
 
-        mfxSts = PTIR_ProcessFrame( &work420_surface, 0 );
+        mfxSts = PTIR_ProcessFrame( &work420_surface, 0, beof);
 
         if(isUnlockReq)
         {
@@ -254,7 +245,7 @@ mfxStatus PTIR_ProcessorCPU::Process(mfxFrameSurface1 *surface_in, mfxFrameSurfa
     {
         bool isUnlockReq = false;
 
-        mfxSts = PTIR_ProcessFrame( 0, *surface_out );
+        mfxSts = PTIR_ProcessFrame( 0, *surface_out, beof);
 
         if(MFX_ERR_NONE == mfxSts || MFX_ERR_MORE_SURFACE == mfxSts)
         {
@@ -275,7 +266,7 @@ mfxStatus PTIR_ProcessorCPU::Process(mfxFrameSurface1 *surface_in, mfxFrameSurfa
     return mfxSts;
 }
 
-mfxStatus PTIR_ProcessorCPU::PTIR_ProcessFrame(mfxFrameSurface1 *surf_in, mfxFrameSurface1 *surf_out)
+mfxStatus PTIR_ProcessorCPU::PTIR_ProcessFrame(mfxFrameSurface1 *surf_in, mfxFrameSurface1 *surf_out, bool beof)
 {
 
     if(!b_firstFrameProceed)
@@ -348,8 +339,10 @@ mfxStatus PTIR_ProcessorCPU::PTIR_ProcessFrame(mfxFrameSurface1 *surf_in, mfxFra
     //#if PRINTX == 2
     //            printf("%i\t%4.3lf\t%4.3lf\t%4.3lf\t%4.3lf\t%4.3lf\t%4.3lf\t%4.3lf\t%4.3lf\t%4.3lf\t%4.0lf\t%4.3lf\t%4.0lf\t%4.3lf\t%4.3lf\t%4.3lf\t%4.3lf\n", uiFrame + 1, dSAD[0], dSAD[1], dSAD[2], dSAD[3], dSAD[4], dRs[0], dRs[1], dRs[2], dRs[3], dRs[4], dRs[5] / dPicSize * 1000, dRs[6], dRs[7] / dPicSize * 1000, dRs[8], dRs[9], dRs[10]);
     //#endif
-                if ((uiCur == BUFMINSIZE - 1) /*|| (uiFrame == (uiCount - 1))*/)
+                if ((uiCur == BUFMINSIZE - 1) || beof/*|| (uiFrame == (uiCount - 1))*/)
                 {
+                    if(beof)
+                        b_firstFrameProceed = false;
                     Analyze_Buffer_Stats(frmBuffer, &mainPattern, &uiDispatch, &uiisInterlaced);
                     if(mainPattern.ucPatternFound && uiisInterlaced != 1)
                     {
@@ -548,11 +541,12 @@ mfxStatus PTIR_ProcessorCPU::PTIR_ProcessFrame(mfxFrameSurface1 *surf_in, mfxFra
         //    dTime[i] += (double)(liTime[i+1].QuadPart - liTime[i].QuadPart) / liFreq.QuadPart;
     //}
 
-        if(uiCur && !surf_in)
+        uiFrame++;
+        if(uiCur && beof)
         {
             for(mfxU32 i = 0; i < uiCur; i++)
             {
-                if (!frmBuffer[i]->frmProperties.drop /*&& (frmBuffer[i]->frmProperties.tindex > uiLastFrameNumber)*/)
+                if (!frmBuffer[i]->frmProperties.drop && (frmBuffer[i]->frmProperties.tindex > uiLastFrameNumber))
                 {
                     if (uiisInterlaced == 1)
                     {
@@ -633,5 +627,8 @@ mfxStatus PTIR_ProcessorCPU::PTIR_ProcessFrame(mfxFrameSurface1 *surf_in, mfxFra
             }
         }
     }
-    return MFX_ERR_MORE_DATA;
+    if(!surf_out)
+        return MFX_ERR_NONE;
+    else
+        return MFX_ERR_MORE_DATA;
 }

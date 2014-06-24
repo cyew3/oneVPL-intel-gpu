@@ -53,6 +53,7 @@ PTIR_ProcessorCM::PTIR_ProcessorCM(mfxCoreInterface* mfxCore, frameSupplier* _fr
     m_pmfxCore = mfxCore;
     frmSupply = _frmSupply;
     HWType = _HWType;
+    bool isHW = true;
 }
 
 PTIR_ProcessorCM::~PTIR_ProcessorCM()
@@ -194,6 +195,11 @@ mfxStatus PTIR_ProcessorCM::Close()
 {
     if(bInited)
     {
+        for (mfxU32 i = 0; i < LASTFRAME; ++i)
+        {
+            frmSupply->FreeSurface(static_cast<CmSurface2DEx*>(frmIO[i].inSurf)->pCmSurface2D);
+            frmSupply->FreeSurface(static_cast<CmSurface2DEx*>(frmIO[i].outSurf)->pCmSurface2D);
+        }
         try
         {
             for (mfxU32 i = 0; i <= LASTFRAME; ++i)
@@ -224,8 +230,6 @@ mfxStatus PTIR_ProcessorCM::Process(mfxFrameSurface1 *surface_in, mfxFrameSurfac
 
     if(NULL != surface_in && NULL != surface_out && NULL != (*surface_out))
     {
-        bool isUnlockReq = false;
-
         CmSurface2D *pInCmSurface2D = 0;
         CmSurface2D *pOutCmSurface2D = 0;
 
@@ -288,28 +292,12 @@ mfxStatus PTIR_ProcessorCM::Process(mfxFrameSurface1 *surface_in, mfxFrameSurfac
                 //assert(result == 0);
                 //CmToMfxSurfmap[pOutCmSurface2D] = (*surface_out);
             }
-            //mfx_core->FrameAllocator.Lock(mfx_core->FrameAllocator.pthis, (*surface_out)->Data.MemId, &((*surface_out)->Data));
-            //mfx_core->FrameAllocator.Lock(mfx_core->FrameAllocator.pthis, surface_in->Data.MemId, &(surface_in->Data));
-            isUnlockReq = false;
         }
-        //if((surface_in->Data.MemId) && (work_par.IOPattern & MFX_IOPATTERN_IN_SYSTEM_MEMORY || work_par.IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY))
-        //{
-        //    //MemId should be a video memory surface
-        //    mfx_core->FrameAllocator.Lock(mfx_core->FrameAllocator.pthis, (*surface_out)->Data.MemId, &((*surface_out)->Data));
-        //    mfx_core->FrameAllocator.Lock(mfx_core->FrameAllocator.pthis, surface_in->Data.MemId, &(surface_in->Data));
-        //    isUnlockReq = true;
-        //}
+
         frmBuffer[uiSupBuf]->frmProperties.fr = dFrameRate;
 
 
         mfxSts = PTIR_ProcessFrame( pInCmSurface2D, pOutCmSurface2D, surface_outt, beof);
-
-        //if(isUnlockReq)
-        //{
-        //    mfx_core->FrameAllocator.Unlock(mfx_core->FrameAllocator.pthis, (*surface_out)->Data.MemId, &((*surface_out)->Data));
-        //    mfx_core->FrameAllocator.Unlock(mfx_core->FrameAllocator.pthis, surface_in->Data.MemId, &(surface_in->Data));
-        //    isUnlockReq = false;
-        //}
 
         if(beof)
             uiCur = 0;
@@ -409,13 +397,13 @@ mfxStatus PTIR_ProcessorCM::PTIR_ProcessFrame(CmSurface2D *surf_in, CmSurface2D 
         CmDeviceEx& device = pdeinterlaceFilter->DeviceEx();
         mfxFrameSurface1* tmpSurf = 0;
 
-        if(static_cast<CmSurface2DEx*>(frmBuffer[0]->inSurf)->pCmSurface2D && static_cast<CmSurface2DEx*>(frmBuffer[0]->inSurf)->pCmSurface2D && !mb_UsePtirSurfs)
+        if(static_cast<CmSurface2DEx*>(frmBuffer[0]->inSurf)->pCmSurface2D && !mb_UsePtirSurfs)
             frmSupply->FreeSurface(static_cast<CmSurface2DEx*>(frmBuffer[0]->inSurf)->pCmSurface2D);
 
-        if(static_cast<CmSurface2DEx*>(frmBuffer[0]->outSurf)->pCmSurface2D && static_cast<CmSurface2DEx*>(frmBuffer[0]->outSurf)->pCmSurface2D && !mb_UsePtirSurfs)
+        if(static_cast<CmSurface2DEx*>(frmBuffer[0]->outSurf)->pCmSurface2D && !mb_UsePtirSurfs)
             frmSupply->FreeSurface(static_cast<CmSurface2DEx*>(frmBuffer[0]->outSurf)->pCmSurface2D);
 
-        if(static_cast<CmSurface2DEx*>(frmBuffer[BUFMINSIZE]->outSurf)->pCmSurface2D && static_cast<CmSurface2DEx*>(frmBuffer[BUFMINSIZE]->outSurf)->pCmSurface2D && !mb_UsePtirSurfs)
+        if(static_cast<CmSurface2DEx*>(frmBuffer[BUFMINSIZE]->outSurf)->pCmSurface2D && !mb_UsePtirSurfs)
         {
             frmSupply->FreeSurface(static_cast<CmSurface2DEx*>(frmBuffer[BUFMINSIZE]->outSurf)->pCmSurface2D);
         }
@@ -429,7 +417,7 @@ mfxStatus PTIR_ProcessorCM::PTIR_ProcessFrame(CmSurface2D *surf_in, CmSurface2D 
         //    assert(result == 0);
         //}
 
-        if(static_cast<CmSurface2DEx*>(frmBuffer[BUFMINSIZE+1]->outSurf)->pCmSurface2D && static_cast<CmSurface2DEx*>(frmBuffer[BUFMINSIZE+1]->outSurf)->pCmSurface2D)
+        if(static_cast<CmSurface2DEx*>(frmBuffer[BUFMINSIZE+1]->outSurf)->pCmSurface2D)
         {
             frmSupply->FreeSurface(static_cast<CmSurface2DEx*>(frmBuffer[BUFMINSIZE+1]->outSurf)->pCmSurface2D);
         }
@@ -759,7 +747,7 @@ mfxStatus PTIR_ProcessorCM::PTIR_ProcessFrame(CmSurface2D *surf_in, CmSurface2D 
     
     if (uiCur && beof)
     {
-        if(beof)
+        //restore temp surfaces needed for analysis
         {
             CmDeviceEx& device = pdeinterlaceFilter->DeviceEx();
             for(mfxU32 i = 0; i < (BUFMINSIZE - 1); ++i)
@@ -860,7 +848,6 @@ mfxStatus PTIR_ProcessorCM::PTIR_ProcessFrame(CmSurface2D *surf_in, CmSurface2D 
                 }
                 *surf_outt = output;
 
-                *surf_outt = output;
                 mfxSts = frmSupply->FreeSurface(static_cast<CmSurface2DEx*>(frmIn->inSurf)->pCmSurface2D);
 
                 Frame_ReleaseCM(frmIn);

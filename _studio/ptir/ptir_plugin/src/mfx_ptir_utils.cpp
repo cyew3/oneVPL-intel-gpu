@@ -93,7 +93,6 @@ mfxStatus ColorSpaceConversionWCopy(mfxFrameSurface1* surface_in, mfxFrameSurfac
 
 mfxStatus Ptir420toMfxNv12(mfxU8* buffer, mfxFrameSurface1* surface_out)
 {
-    bool isUnlockReq = false;
     mfxFrameSurface1 work420_surface;
     memset(&work420_surface, 0, sizeof(mfxFrameSurface1));
     memcpy(&(work420_surface.Info), &(surface_out->Info), sizeof(mfxFrameInfo));
@@ -110,7 +109,6 @@ mfxStatus Ptir420toMfxNv12(mfxU8* buffer, mfxFrameSurface1* surface_out)
 
 mfxStatus MfxNv12toPtir420(mfxFrameSurface1* surface_in, mfxU8* buffer)
 {
-    bool isUnlockReq = false;
     mfxFrameSurface1 work420_surface;
     memset(&work420_surface, 0, sizeof(mfxFrameSurface1));
     memcpy(&(work420_surface.Info), &(surface_in->Info), sizeof(mfxFrameInfo));
