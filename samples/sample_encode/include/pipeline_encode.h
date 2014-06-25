@@ -85,6 +85,8 @@ struct sInputParams
     mfxU16 nQPI;
     mfxU16 nQPP;
     mfxU16 nQPB;
+
+    mfxU16 nNumSlice;
 };
 
 struct sTask
