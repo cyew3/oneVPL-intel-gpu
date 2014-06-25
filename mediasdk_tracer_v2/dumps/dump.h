@@ -89,6 +89,7 @@ DEFINE_DUMP_FOR_TYPE(mfxPlugin);
 //mfxstructures
 DEFINE_DUMP_FOR_TYPE(mfxDecodeStat);
 DEFINE_DUMP_FOR_TYPE(mfxEncodeCtrl);
+DEFINE_DUMP_FOR_TYPE(mfxEncodeStat);
 DEFINE_DUMP_FOR_TYPE(mfxFrameAllocRequest);
 DEFINE_DUMP_FOR_TYPE(mfxFrameData);
 DEFINE_DUMP_FOR_TYPE(mfxFrameId);

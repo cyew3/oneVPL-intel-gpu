@@ -38,6 +38,7 @@ set(SOURCES
   "dumps/dump_mfxcommon.cpp"
   "dumps/dump_mfxdefs.cpp"
   "dumps/dump_mfxenc.cpp"
+  "dumps/dump_mfxplugin.cpp"
   "dumps/dump_mfxsession.cpp"
   "dumps/dump_mfxstructures.cpp"
   "dumps/dump_mfxvideo.cpp"
@@ -48,6 +49,7 @@ set(SOURCES
   "wrappers/mfx_video_decode.cpp"
   "wrappers/mfx_video_enc.cpp"
   "wrappers/mfx_video_encode.cpp"
+  "wrappers/mfx_video_user.cpp"
   "wrappers/mfx_video_vpp.cpp"
   )
 
