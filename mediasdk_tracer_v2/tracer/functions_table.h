@@ -35,7 +35,7 @@ static const mfxFunctionsTable g_mfxFuncTable[] =
     { eMFXInit, "MFXInit" },
     { eMFXClose, "MFXClose" },
 #include "bits/mfxfunctions.h"
-    { eNoMoreFunctions }
+    { eNoMoreFunctions, NULL }
 };
 
 typedef void (MFX_CDECL * mfxFunctionPointer)(void);

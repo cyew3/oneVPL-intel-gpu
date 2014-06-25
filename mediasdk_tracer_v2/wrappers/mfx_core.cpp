@@ -9,8 +9,8 @@ mfxStatus MFXQueryIMPL(mfxSession session, mfxIMPL *impl)
 {
     try{
         Log::WriteLog("function: MFXQueryIMPL(mfxSession session=" + ToString(session) + ", mfxIMPL *impl=" + ToString(impl) + ") +");
-        Log::WriteLog(dump_mfxSession("session", session));
-        if (impl) Log::WriteLog(dump_mfxIMPL("impl", *impl));
+        Log::WriteLog(dump("session", session));
+        if (impl) Log::WriteLog(dump("impl", *impl));
         mfxLoader *loader = (mfxLoader*) session;
 
         if (!loader) return MFX_ERR_INVALID_HANDLE;
@@ -19,8 +19,8 @@ mfxStatus MFXQueryIMPL(mfxSession session, mfxIMPL *impl)
         if (!proc) return MFX_ERR_INVALID_HANDLE;
 
         session = loader->session;
-        Log::WriteLog(dump_mfxSession("session", session));
-        if (impl) Log::WriteLog(dump_mfxIMPL("impl", *impl));
+        Log::WriteLog(dump("session", session));
+        if (impl) Log::WriteLog(dump("impl", *impl));
 
         Timer t;
         mfxStatus status = (*(mfxStatus (MFX_CDECL*) (mfxSession session, mfxIMPL *impl)) proc) (session, impl);
@@ -28,8 +28,8 @@ mfxStatus MFXQueryIMPL(mfxSession session, mfxIMPL *impl)
 
         std::string elapsed = TimeToString(t.GetTime());
         Log::WriteLog(">> MFXQueryIMPL called");
-        Log::WriteLog(dump_mfxSession("session", session));
-        if (impl) Log::WriteLog(dump_mfxIMPL("impl", *impl));
+        Log::WriteLog(dump("session", session));
+        if (impl) Log::WriteLog(dump("impl", *impl));
         Log::WriteLog("function: MFXQueryIMPL(" + elapsed + ", " + dump_mfxStatus("status", status) + ") - \n\n");
         return status;
     }
@@ -52,16 +52,16 @@ mfxStatus MFXQueryVersion(mfxSession session, mfxVersion *version)
 
         session = loader->session;
 
-        Log::WriteLog(dump_mfxSession("session", session));
-        Log::WriteLog(dump_mfxVersion("version", version));
+        Log::WriteLog(dump("session", session));
+        Log::WriteLog(dump("version", version));
 
         Timer t;
         mfxStatus status = (*(mfxStatus (MFX_CDECL*) (mfxSession session, mfxVersion *version)) proc) (session, version);
         std::string elapsed = TimeToString(t.GetTime());
 
         Log::WriteLog(">> MFXQueryVersion called");
-        Log::WriteLog(dump_mfxSession("session", session));
-        Log::WriteLog(dump_mfxVersion("version", version));
+        Log::WriteLog(dump("session", session));
+        Log::WriteLog(dump("version", version));
         Log::WriteLog("function: MFXQueryVersion(" + elapsed + ", " + dump_mfxStatus("status", status) + ") - \n\n");
 
         return status;
@@ -87,15 +87,15 @@ mfxStatus MFXJoinSession(mfxSession session, mfxSession child_session)
         if (!proc) return MFX_ERR_INVALID_HANDLE;
 
         session = loader->session;
-        Log::WriteLog(dump_mfxSession("session", session));
-        Log::WriteLog(dump_mfxSession("child_session", child_session));
+        Log::WriteLog(dump("session", session));
+        Log::WriteLog(dump("child_session", child_session));
 
         Timer t;
         mfxStatus status = (*(mfxStatus (MFX_CDECL*) (mfxSession session, mfxSession child_session)) proc) (session, child_session);
         std::string elapsed = TimeToString(t.GetTime());
         Log::WriteLog(">> MFXJoinSession called");
-        Log::WriteLog(dump_mfxSession("session", session));
-        Log::WriteLog(dump_mfxSession("child_session", child_session));
+        Log::WriteLog(dump("session", session));
+        Log::WriteLog(dump("child_session", child_session));
         Log::WriteLog("function: MFXJoinSession(" + elapsed + ", " + dump_mfxStatus("status", status) + ") - \n\n");
         return status;
     }
@@ -117,15 +117,15 @@ mfxStatus MFXCloneSession(mfxSession session, mfxSession *clone)
         if (!proc) return MFX_ERR_INVALID_HANDLE;
 
         session = loader->session;
-        Log::WriteLog(dump_mfxSession("session", session));
-        Log::WriteLog(dump_mfxSession("clone", (*clone)));
+        Log::WriteLog(dump("session", session));
+        Log::WriteLog(dump("clone", (*clone)));
 
         Timer t;
         mfxStatus status = (*(mfxStatus (MFX_CDECL*) (mfxSession session, mfxSession *clone)) proc) (session, clone);
         std::string elapsed = TimeToString(t.GetTime());
         Log::WriteLog(">> MFXCloneSession called");
-        Log::WriteLog(dump_mfxSession("session", session));
-        Log::WriteLog(dump_mfxSession("clone", (*clone)));
+        Log::WriteLog(dump("session", session));
+        Log::WriteLog(dump("clone", (*clone)));
         Log::WriteLog("function: MFXCloneSession(" + elapsed + ", " + dump_mfxStatus("status", status) + ") - \n\n");
         return status;
     }
@@ -147,13 +147,13 @@ mfxStatus MFXDisjoinSession(mfxSession session)
         if (!proc) return MFX_ERR_INVALID_HANDLE;
 
         session = loader->session;
-        Log::WriteLog(dump_mfxSession("session", session));
+        Log::WriteLog(dump("session", session));
 
         Timer t;
         mfxStatus status = (*(mfxStatus (MFX_CDECL*) (mfxSession session)) proc) (session);
         std::string elapsed = TimeToString(t.GetTime());
         Log::WriteLog(">> MFXDisjoinSession called");
-        Log::WriteLog(dump_mfxSession("session", session));
+        Log::WriteLog(dump("session", session));
         Log::WriteLog("function: MFXDisjoinSession(" + elapsed + ", " + dump_mfxStatus("status", status) + ") - \n\n");
         return status;
     }
@@ -175,15 +175,15 @@ mfxStatus MFXSetPriority(mfxSession session, mfxPriority priority)
         if (!proc) return MFX_ERR_INVALID_HANDLE;
 
         session = loader->session;
-        Log::WriteLog(dump_mfxSession("session", session));
-        Log::WriteLog(dump_mfxPriority("priority", priority));
+        Log::WriteLog(dump("session", session));
+        Log::WriteLog(dump("priority", priority));
 
         Timer t;
         mfxStatus status = (*(mfxStatus (MFX_CDECL*) (mfxSession session, mfxPriority priority)) proc) (session, priority);
         std::string elapsed = TimeToString(t.GetTime());
         Log::WriteLog(">> MFXSetPriority called");
-        Log::WriteLog(dump_mfxSession("session", session));
-        Log::WriteLog(dump_mfxPriority("priority", priority));
+        Log::WriteLog(dump("session", session));
+        Log::WriteLog(dump("priority", priority));
         Log::WriteLog("function: MFXSetPriority(" + elapsed + ", " + dump_mfxStatus("status", status) + ") - \n\n");
         return status;
     }
@@ -205,15 +205,15 @@ mfxStatus MFXGetPriority(mfxSession session, mfxPriority *priority)
         if (!proc) return MFX_ERR_INVALID_HANDLE;
 
         session = loader->session;
-        Log::WriteLog(dump_mfxSession("session", session));
-        Log::WriteLog(dump_mfxPriority("priority", *priority));
+        Log::WriteLog(dump("session", session));
+        Log::WriteLog(dump("priority", *priority));
 
         Timer t;
         mfxStatus status = (*(mfxStatus (MFX_CDECL*) (mfxSession session, mfxPriority *priority)) proc) (session, priority);
         std::string elapsed = TimeToString(t.GetTime());
         Log::WriteLog(">> MFXGetPriority called");
-        Log::WriteLog(dump_mfxSession("session", session));
-        Log::WriteLog(dump_mfxPriority("priority", *priority));
+        Log::WriteLog(dump("session", session));
+        Log::WriteLog(dump("priority", *priority));
         Log::WriteLog("function: MFXGetPriority(" + elapsed + ", " + dump_mfxStatus("status", status) + ") - \n\n");
         return status;
     }

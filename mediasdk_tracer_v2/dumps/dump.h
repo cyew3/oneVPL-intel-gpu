@@ -5,6 +5,7 @@
 #include <sstream>
 #include <iomanip>
 #include <iterator>
+#include <typeinfo>
 #include "mfxvideo.h"
 #include "mfxplugin.h"
 #include "mfxenc.h"
@@ -41,6 +42,29 @@ std::string dump_reserved_array(T* data, size_t size)
     return result.str();
 }
 
+template<typename T>
+inline const char* get_type(){ return typeid(T).name(); }
+
+#define DEFINE_GET_TYPE(type) \
+template<> \
+inline const char* get_type<type>(){ return #type; }
+
+template<typename T>
+std::string dump(const std::string structName, const T *_struct)
+{
+    std::string str = get_type<T>();
+    str += "* " + structName + "=" + ToString(_struct) + "\n";
+    if (_struct) str += dump("  " + structName, *_struct);
+    return str;
+}
+
+#define DEFINE_DUMP_FUNCTION(type) \
+  std::string dump(const std::string structName, const type &_var);
+
+#define DEFINE_DUMP_FOR_TYPE(type) \
+  DEFINE_GET_TYPE(type) \
+  DEFINE_DUMP_FUNCTION(type)
+
 //mfxdefs
 std::string dump_mfxU32(const std::string structName, mfxU32 u32);
 std::string dump_mfxU64(const std::string structName, mfxU64 u64);
@@ -48,43 +72,42 @@ std::string dump_mfxHDL(const std::string structName, const mfxHDL *hdl);
 std::string dump_mfxStatus(const std::string structName, mfxStatus status);
 
 //mfxcommon
-std::string dump_mfxBitstream(const std::string structName, mfxBitstream *bitstream);
-std::string dump_mfxExtBuffer(const std::string structName, mfxExtBuffer *extBuffer);
-std::string dump_mfxIMPL(const std::string structName, mfxIMPL impl);
-std::string dump_mfxPriority(const std::string structName, mfxPriority priority);
-std::string dump_mfxVersion(const std::string structName, mfxVersion *version);
-std::string dump_mfxSyncPoint(const std::string structName, mfxSyncPoint *syncPoint);
+DEFINE_DUMP_FOR_TYPE(mfxBitstream);
+DEFINE_DUMP_FOR_TYPE(mfxExtBuffer);
+DEFINE_DUMP_FOR_TYPE(mfxIMPL);
+DEFINE_DUMP_FOR_TYPE(mfxPriority);
+DEFINE_DUMP_FOR_TYPE(mfxVersion);
+DEFINE_DUMP_FOR_TYPE(mfxSyncPoint);
 
 //mfxenc
-std::string dump_mfxENCInput(const std::string structName, mfxENCInput* encIn);
-std::string dump_mfxENCOutput(const std::string structName, mfxENCOutput* encOut);
+DEFINE_DUMP_FOR_TYPE(mfxENCInput);
+DEFINE_DUMP_FOR_TYPE(mfxENCOutput);
 
 //mfxplugin
-std::string dump_mfxPlugin(const std::string structName, const mfxPlugin* plugin);
+DEFINE_DUMP_FOR_TYPE(mfxPlugin);
 
 //mfxstructures
-std::string dump_mfxDecodeStat(const std::string structName, mfxDecodeStat *decodeStat);
-std::string dump_mfxEncodeCtrl(const std::string structName, mfxEncodeCtrl *EncodeCtrl);
-std::string dump_mfxEncodeStat(const std::string structName, mfxEncodeStat *encodeStat);
-std::string dump_mfxFrameAllocRequest(const std::string structName, mfxFrameAllocRequest *frameAllocRequest);
-std::string dump_mfxFrameData(const std::string structName, mfxFrameData *frameData);
-std::string dump_mfxFrameId(const std::string structName, mfxFrameId *frame);
-std::string dump_mfxFrameInfo(const std::string structName, mfxFrameInfo *info);
-std::string dump_mfxFrameSurface1(const std::string structName, mfxFrameSurface1 *frameSurface1);
-std::string dump_mfxHandleType(const std::string structName, mfxHandleType handleType);
-std::string dump_mfxInfoMFX(const std::string structName, mfxInfoMFX *mfx);
-std::string dump_mfxInfoVPP(const std::string structName, mfxInfoVPP *vpp);
-std::string dump_mfxPayload(const std::string structName, mfxPayload *payload);
-std::string dump_mfxSkipMode(const std::string structName, mfxSkipMode skipMode);
-std::string dump_mfxVideoParam(const std::string structName, mfxVideoParam *videoParam);
-std::string dump_mfxVPPStat(const std::string structName, mfxVPPStat *vppStat);
-std::string dump_mfxExtVppAuxData(const std::string structName, mfxExtVppAuxData *extVppAuxData);
+DEFINE_DUMP_FOR_TYPE(mfxDecodeStat);
+DEFINE_DUMP_FOR_TYPE(mfxEncodeCtrl);
+DEFINE_DUMP_FOR_TYPE(mfxFrameAllocRequest);
+DEFINE_DUMP_FOR_TYPE(mfxFrameData);
+DEFINE_DUMP_FOR_TYPE(mfxFrameId);
+DEFINE_DUMP_FOR_TYPE(mfxFrameInfo);
+DEFINE_DUMP_FOR_TYPE(mfxFrameSurface1);
+DEFINE_DUMP_FOR_TYPE(mfxHandleType);
+DEFINE_DUMP_FOR_TYPE(mfxInfoMFX);
+DEFINE_DUMP_FOR_TYPE(mfxInfoVPP);
+DEFINE_DUMP_FOR_TYPE(mfxPayload);
+DEFINE_DUMP_FOR_TYPE(mfxSkipMode);
+DEFINE_DUMP_FOR_TYPE(mfxVideoParam);
+DEFINE_DUMP_FOR_TYPE(mfxVPPStat);
+DEFINE_DUMP_FOR_TYPE(mfxExtVppAuxData);
 
 //mfxsession
-std::string dump_mfxSession(const std::string structName, mfxSession session);
+DEFINE_DUMP_FOR_TYPE(mfxSession);
 
 //mfxvideo
-std::string dump_mfxBufferAllocator(const std::string structName, mfxBufferAllocator *allocator);
-std::string dump_mfxFrameAllocator(const std::string structName, mfxFrameAllocator *allocator);
+DEFINE_DUMP_FOR_TYPE(mfxBufferAllocator);
+DEFINE_DUMP_FOR_TYPE(mfxFrameAllocator);
 
 #endif //DUMP_H_

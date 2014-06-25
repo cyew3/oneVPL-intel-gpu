@@ -17,9 +17,9 @@ mfxStatus MFXVideoUSER_Register(mfxSession session, mfxU32 type, const mfxPlugin
         if (!proc) return MFX_ERR_INVALID_HANDLE;
 
         session = loader->session;
-        Log::WriteLog(dump_mfxSession("session", session));
+        Log::WriteLog(dump("session", session));
         Log::WriteLog(dump_mfxU32("type", type));
-        if (par) Log::WriteLog(dump_mfxPlugin("par", par));
+        if (par) Log::WriteLog(dump("par", par));
 
         Timer t;
         mfxStatus status = (*(fMFXVideoUSER_Register) proc)(session, type, par);
@@ -27,9 +27,9 @@ mfxStatus MFXVideoUSER_Register(mfxSession session, mfxU32 type, const mfxPlugin
 
         Log::WriteLog(">> MFXVideoUSER_Register called");
 
-        Log::WriteLog(dump_mfxSession("session", session));
+        Log::WriteLog(dump("session", session));
         Log::WriteLog(dump_mfxU32("type", type));
-        if (par) Log::WriteLog(dump_mfxPlugin("par", par));
+        if (par) Log::WriteLog(dump("par", par));
 
         Log::WriteLog("function: MFXVideoUSER_Register(" + elapsed + ", " + dump_mfxStatus("status", status) + ") - \n\n");
         return status;
@@ -52,7 +52,7 @@ mfxStatus MFXVideoUSER_Unregister(mfxSession session, mfxU32 type)
         if (!proc) return MFX_ERR_INVALID_HANDLE;
 
         session = loader->session;
-        Log::WriteLog(dump_mfxSession("session", session));
+        Log::WriteLog(dump("session", session));
         Log::WriteLog(dump_mfxU32("type", type));
 
         Timer t;
@@ -61,7 +61,7 @@ mfxStatus MFXVideoUSER_Unregister(mfxSession session, mfxU32 type)
 
         Log::WriteLog(">> MFXVideoUSER_Unregister called");
 
-        Log::WriteLog(dump_mfxSession("session", session));
+        Log::WriteLog(dump("session", session));
         Log::WriteLog(dump_mfxU32("type", type));
 
         Log::WriteLog("function: MFXVideoUSER_Unregister(" + elapsed + ", " + dump_mfxStatus("status", status) + ") - \n\n");
@@ -85,12 +85,12 @@ mfxStatus MFXVideoUSER_ProcessFrameAsync(mfxSession session, const mfxHDL *in, m
         if (!proc) return MFX_ERR_INVALID_HANDLE;
 
         session = loader->session;
-        Log::WriteLog(dump_mfxSession("session", session));
+        Log::WriteLog(dump("session", session));
         Log::WriteLog(dump_mfxHDL("in", in));
         Log::WriteLog(dump_mfxU32("in_num", in_num));
         Log::WriteLog(dump_mfxHDL("out", out));
         Log::WriteLog(dump_mfxU32("out_num", out_num));
-        Log::WriteLog(dump_mfxSyncPoint("syncp", syncp));
+        Log::WriteLog(dump("syncp", syncp));
 
         Timer t;
         mfxStatus status = (*(fMFXVideoUSER_ProcessFrameAsync) proc) (session, in, in_num, out, out_num, syncp);
@@ -98,12 +98,12 @@ mfxStatus MFXVideoUSER_ProcessFrameAsync(mfxSession session, const mfxHDL *in, m
 
         Log::WriteLog(">> MFXVideoUSER_ProcessFrameAsync called");
 
-        Log::WriteLog(dump_mfxSession("session", session));
+        Log::WriteLog(dump("session", session));
         Log::WriteLog(dump_mfxHDL("in", in));
         Log::WriteLog(dump_mfxU32("in_num", in_num));
         Log::WriteLog(dump_mfxHDL("out", out));
         Log::WriteLog(dump_mfxU32("out_num", out_num));
-        Log::WriteLog(dump_mfxSyncPoint("syncp", syncp));
+        Log::WriteLog(dump("syncp", syncp));
 
         Log::WriteLog("function: MFXVideoUSER_ProcessFrameAsync(" + elapsed + ", " + dump_mfxStatus("status", status) + ") - \n\n");
         return status;

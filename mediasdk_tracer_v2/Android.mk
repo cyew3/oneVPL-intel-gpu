@@ -18,7 +18,8 @@ LOCAL_C_INCLUDES += \
 
 LOCAL_CFLAGS += \
     $(MFX_CFLAGS) \
-    $(MFX_CFLAGS_STL)
+    $(MFX_CFLAGS_STL) \
+    -Wno-unknown-pragmas
 
 LOCAL_LDFLAGS += \
     $(MFX_LDFLAGS)
