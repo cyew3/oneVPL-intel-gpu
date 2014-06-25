@@ -35,7 +35,8 @@ void PrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("   [-b bitRate] - encoded bit rate (Kbits per second), valid for H.264, H.265, MPEG2 and MVC encoders \n"));
     msdk_printf(MSDK_STRING("   [-u speed|quality|balanced] - target usage, valid for H.264, H.265, MPEG2 and MVC encoders\n"));
     msdk_printf(MSDK_STRING("   [-q quality] - quality parameter for JPEG encoder. In range [1,100]. 100 is the best quality. \n"));
-    msdk_printf(MSDK_STRING("   [-la] - use the look ahead bitrate control algorithm (LA BRC) for H.264, H.265 encoder. Supported only with -hw option on 4th Generation Intel Core processors. \n"));
+    msdk_printf(MSDK_STRING("   [-la] - use the look ahead bitrate control algorithm (LA BRC) (by default constant bitrate control method is used)\n"));
+    msdk_printf(MSDK_STRING("           for H.264, H.265 encoder. Supported only with -hw option on 4th Generation Intel Core processors. \n"));
     msdk_printf(MSDK_STRING("   [-lad depth] - depth parameter for the LA BRC, the number of frames to be analyzed before encoding. In range [10,100].\n"));
     msdk_printf(MSDK_STRING("   [-dstw width] - destination picture width, invokes VPP resizing\n"));
     msdk_printf(MSDK_STRING("   [-dsth height] - destination picture height, invokes VPP resizing\n"));
@@ -43,6 +44,11 @@ void PrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("   [-p guid|path_to_plugin] - 32-character hexadecimal guid string or path to encoder plugin\n"));
     msdk_printf(MSDK_STRING("                              (optional for Media SDK in-box plugins, required for user-encoder ones)\n"));
     msdk_printf(MSDK_STRING("   [-async]                 - depth of asynchronous pipeline. default value is 4. must be between 1 and 20.\n"));
+    msdk_printf(MSDK_STRING("   [-cqp]                   - constant quantization parameter (CQP BRC) bitrate control method\n"));
+    msdk_printf(MSDK_STRING("                              (by default constant bitrate control method is used), should be used along with -qpi, -qpp, -qpb.\n"));
+    msdk_printf(MSDK_STRING("   [-qpi]                   - constant quantizer for I frames (if bitrace control method is CQP). In range [1,51]. 0 by default, i.e.no limitations on QP.\n"));
+    msdk_printf(MSDK_STRING("   [-qpp]                   - constant quantizer for P frames (if bitrace control method is CQP). In range [1,51]. 0 by default, i.e.no limitations on QP.\n"));
+    msdk_printf(MSDK_STRING("   [-qpb]                   - constant quantizer for B frames (if bitrace control method is CQP). In range [1,51]. 0 by default, i.e.no limitations on QP.\n"));
     msdk_printf(MSDK_STRING("Example: %s h265 -i InputYUVFile -o OutputEncodedFile -w width -h height -hw -p 2fca99749fdb49aeb121a5b63ef568f7\n"), strAppName);
 #if D3D_SURFACES_SUPPORT
     msdk_printf(MSDK_STRING("   [-d3d] - work with d3d surfaces\n"));
@@ -155,11 +161,12 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-la")))
         {
-            pParams->bLABRC = true;
+            pParams->nRateControlMethod = MFX_RATECONTROL_LA;
         }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-lad")))
         {
             i++;
+            pParams->nRateControlMethod = MFX_RATECONTROL_LA;
             msdk_opt_read(strInput[i], pParams->nLADepth);
         }
 #if D3D_SURFACES_SUPPORT
@@ -195,6 +202,25 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
                 PrintHelp(strInput[0], MSDK_STRING("Async depth must be between 1 and 20"));
                 return MFX_ERR_UNSUPPORTED;
             }
+        }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-cqp")))
+        {
+            pParams->nRateControlMethod = MFX_RATECONTROL_CQP;
+        }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-qpi")))
+        {
+            i++;
+            msdk_opt_read(strInput[i], pParams->nQPI);
+        }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-qpp")))
+        {
+            i++;
+            msdk_opt_read(strInput[i], pParams->nQPP);
+        }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-qpb")))
+        {
+            i++;
+            msdk_opt_read(strInput[i], pParams->nQPB);
         }
         else // 1-character options
         {
@@ -395,13 +421,13 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         pParams->nPicStruct = MFX_PICSTRUCT_PROGRESSIVE;
     }
 
-    if ((pParams->bLABRC || pParams->nLADepth) && (!pParams->bUseHWLib))
+    if ((pParams->nRateControlMethod == MFX_RATECONTROL_LA) && (!pParams->bUseHWLib))
     {
         PrintHelp(strInput[0], MSDK_STRING("Look ahead BRC is supported only with -hw option!"));
         return MFX_ERR_UNSUPPORTED;
     }
 
-    if ((pParams->bLABRC || pParams->nLADepth) && (pParams->CodecId != MFX_CODEC_AVC))
+    if ((pParams->nRateControlMethod == MFX_RATECONTROL_LA) && (pParams->CodecId != MFX_CODEC_AVC))
     {
         PrintHelp(strInput[0], MSDK_STRING("Look ahead BRC is supported only with H.264 encoder!"));
         return MFX_ERR_UNSUPPORTED;
@@ -420,8 +446,7 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         pParams->nDstHeight != pParams->nHeight ||
         MVC_ENABLED & pParams->MVC_flags ||
         pParams->memType & D3D11_MEMORY ||
-        pParams->bLABRC ||
-        pParams->nLADepth))
+        pParams->nRateControlMethod == MFX_RATECONTROL_LA))
     {
         PrintHelp(strInput[0], MSDK_STRING("Some of the command line options are not supported with rotation plugin!"));
         return MFX_ERR_UNSUPPORTED;
@@ -430,6 +455,11 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
     if (pParams->nAsyncDepth == 0)
     {
         pParams->nAsyncDepth = 4; //set by default;
+    }
+
+    if (pParams->nRateControlMethod == 0)
+    {
+        pParams->nRateControlMethod = MFX_RATECONTROL_CBR;
     }
 
     return MFX_ERR_NONE;

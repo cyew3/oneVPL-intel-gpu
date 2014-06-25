@@ -78,10 +78,13 @@ struct sInputParams
     mfxU8 nRotationAngle; // if specified, enables rotation plugin in mfx pipeline
     msdk_char strPluginDLLPath[MSDK_MAX_FILENAME_LEN]; // plugin dll path and name
 
-    bool bLABRC; // use look ahead bitrate control algorithm
-    mfxU16 nLADepth; // depth of the look ahead bitrate control  algorithm
-
     mfxU16 nAsyncDepth; // depth of asynchronous pipeline, this number can be tuned to achieve better performance
+
+    mfxU16 nRateControlMethod;
+    mfxU16 nLADepth; // depth of the look ahead bitrate control  algorithm
+    mfxU16 nQPI;
+    mfxU16 nQPP;
+    mfxU16 nQPB;
 };
 
 struct sTask

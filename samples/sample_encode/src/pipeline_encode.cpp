@@ -336,8 +336,13 @@ mfxStatus CEncodingPipeline::InitMfxEncParams(sInputParams *pInParams)
     m_mfxEncParams.mfx.CodecId                 = pInParams->CodecId;
     m_mfxEncParams.mfx.TargetUsage             = pInParams->nTargetUsage; // trade-off between quality and speed
     m_mfxEncParams.mfx.TargetKbps              = pInParams->nBitRate; // in Kbps
-    m_mfxEncParams.mfx.RateControlMethod       = (pInParams->bLABRC || pInParams->nLADepth) ?
-        (mfxU16)MFX_RATECONTROL_LA : (mfxU16)MFX_RATECONTROL_CBR;
+    m_mfxEncParams.mfx.RateControlMethod       = pInParams->nRateControlMethod;
+    if (m_mfxEncParams.mfx.RateControlMethod == MFX_RATECONTROL_CQP)
+    {
+        m_mfxEncParams.mfx.QPI = pInParams->nQPI;
+        m_mfxEncParams.mfx.QPP = pInParams->nQPP;
+        m_mfxEncParams.mfx.QPB = pInParams->nQPB;
+    }
     ConvertFrameRate(pInParams->dFrameRate, &m_mfxEncParams.mfx.FrameInfo.FrameRateExtN, &m_mfxEncParams.mfx.FrameInfo.FrameRateExtD);
     m_mfxEncParams.mfx.EncodedOrder            = 0; // binary flag, 0 signals encoder to take frames in display order
 
@@ -969,7 +974,7 @@ mfxStatus CEncodingPipeline::Init(sInputParams *pParams)
         return MFX_ERR_UNSUPPORTED;
     }
 
-    if ((pParams->bLABRC || pParams->nLADepth) && !CheckVersion(&version, MSDK_FEATURE_LOOK_AHEAD)) {
+    if ((pParams->nRateControlMethod == MFX_RATECONTROL_LA) && !CheckVersion(&version, MSDK_FEATURE_LOOK_AHEAD)) {
         msdk_printf(MSDK_STRING("error: Look ahead is not supported in the %d.%d API version\n"),
             version.Major, version.Minor);
         return MFX_ERR_UNSUPPORTED;
