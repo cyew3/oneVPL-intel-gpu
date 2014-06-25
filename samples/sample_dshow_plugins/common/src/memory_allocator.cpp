@@ -316,7 +316,8 @@ mfxStatus MFXDSFrameAllocatorD3D::LockFrame(mfxMemId mid, mfxFrameData *ptr)
 
     if (MFX_ERR_NONE == sts)
     {
-        sts = D3DFrameAllocator::LockFrame(pD3D9Surface, ptr);
+        directxMemId mid = {pD3D9Surface, 0};
+        sts = D3DFrameAllocator::LockFrame(&mid, ptr);
     }
 
     return sts;
@@ -331,7 +332,8 @@ mfxStatus MFXDSFrameAllocatorD3D::UnlockFrame(mfxMemId mid, mfxFrameData *ptr)
 
     if (MFX_ERR_NONE == sts)
     {
-        sts = D3DFrameAllocator::UnlockFrame(pD3D9Surface, ptr);
+        directxMemId mid = {pD3D9Surface, 0};
+        sts = D3DFrameAllocator::UnlockFrame(&mid, ptr);
     }
 
     return sts;
