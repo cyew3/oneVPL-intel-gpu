@@ -272,7 +272,7 @@ CHWDevice*  PipelineFactory::CreateHardwareDevice(AllocatorImpl impl ){
 #else
         MSDK_TRACE_ERROR(MSDK_STRING("VAAPI devise not supported "));
         throw HWDeviceTypeNotSupportedError();
-#endif
+#endif // defined(_WIN32) || defined(_WIN64)
         break;
     case ALLOC_IMPL_D3D11_MEMORY:
 #if MFX_D3D11_SUPPORT
@@ -280,7 +280,7 @@ CHWDevice*  PipelineFactory::CreateHardwareDevice(AllocatorImpl impl ){
 #else
         MSDK_TRACE_ERROR(MSDK_STRING("D3D11 not supported"));
         throw D3D11NotSupportedError();
-#endif
+#endif // MFX_D3D11_SUPPORT
         break;
     default:
         MSDK_TRACE_ERROR(MSDK_STRING("Device type: ")<<impl<<MSDK_STRING("not supported"));
@@ -325,26 +325,31 @@ mfxAllocatorParams* PipelineFactory::CreateAllocatorParam(CHWDevice* device, All
 #else
         MSDK_TRACE_ERROR(MSDK_STRING("D3D11 not supported"));
         throw D3D11NotSupportedError();
-#endif
+#endif // MFX_D3D11_SUPPORT
         break;
     }
 #else
     case ALLOC_IMPL_D3D9_MEMORY:
     {
+#if defined(LIBVA_SUPPORT)
         mfxHDL hdl;
         mfxStatus sts = MFX_ERR_NONE;
         params = new vaapiAllocatorParams;
         sts = device->GetHandle(MFX_HANDLE_VA_DISPLAY, &hdl);
         if (sts < 0) {
-            MSDK_TRACE_ERROR(MSDK_STRING("D3DDevice::GetHandle, sts=")<<sts);
+            MSDK_TRACE_ERROR(MSDK_STRING("VAAPIDevice::GetHandle, sts=")<<sts);
             if (params)
                 delete params;
             throw FactoryGetHWHandleError();
         }
         reinterpret_cast<vaapiAllocatorParams*>(params)->m_dpy = reinterpret_cast<VADisplay>(hdl);
         break;
+#else
+        MSDK_TRACE_ERROR(MSDK_STRING(MSDK_STRING("VAAPI not supported")));
+        throw AllocatorTypeNotSupportedError();
+#endif // LIBVA_SUPPORT
     }
-#endif
+#endif // defined(_WIN32) || defined(_WIN64)
     default: {
         params = new SysMemAllocatorParams();
         static_cast<SysMemAllocatorParams*>(params)->pBufferAllocator = 0;
