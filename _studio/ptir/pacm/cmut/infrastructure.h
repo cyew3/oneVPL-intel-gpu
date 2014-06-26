@@ -10,6 +10,7 @@
 *** ----------------------------------------------------------------------------
 **/ 
 #pragma once
+#include <memory>
 
 template<bool b>
 struct bool2type {};

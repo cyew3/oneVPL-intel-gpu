@@ -276,8 +276,8 @@ mfxStatus PTIR_ProcessorCPU::PTIR_ProcessFrame(mfxFrameSurface1 *surf_in, mfxFra
         frmBuffer[0]->frmProperties.tindex = uiStart + 1;
         sadCalc_I420_frame(frmBuffer[0],frmBuffer[0]);
         Rs_measurement(frmBuffer[0]);
-        Artifacts_Detection_frame(frmBuffer, 0, TRUE);
-        frmBuffer[0]->frmProperties.processed = FALSE;
+        Artifacts_Detection_frame(frmBuffer, 0, true);
+        frmBuffer[0]->frmProperties.processed = false;
 
         frmBuffer[0]->plaY.ucStats.ucSAD[0] = 99.999;
         frmBuffer[0]->plaY.ucStats.ucSAD[1] = 99.999;
@@ -285,8 +285,8 @@ mfxStatus PTIR_ProcessorCPU::PTIR_ProcessFrame(mfxFrameSurface1 *surf_in, mfxFra
         uiCur = 1;
         uiCurTemp = uiCur;
         uiBufferCount = 0;
-        patternFound = FALSE;
-        //bFullFrameRate = FALSE;
+        patternFound = false;
+        //bFullFrameRate = false;
         uiDispatch = 0;
         mainPattern.blendedCount = 0.0;
         mainPattern.uiIFlush = 0;
@@ -333,7 +333,7 @@ mfxStatus PTIR_ProcessorCPU::PTIR_ProcessFrame(mfxFrameSurface1 *surf_in, mfxFra
                 frmBuffer[uiCur]->frmProperties.tindex = uiFrame + 1;
                 sadCalc_I420_frame(frmBuffer[uiCur], frmBuffer[uiNext]);
                 Rs_measurement(frmBuffer[uiCur]);
-                frmBuffer[uiCur]->frmProperties.processed = TRUE;
+                frmBuffer[uiCur]->frmProperties.processed = true;
                 dSAD = frmBuffer[uiCur]->plaY.ucStats.ucSAD;
                 dRs = frmBuffer[uiCur]->plaY.ucStats.ucRs;
     //#if PRINTX == 2
@@ -368,7 +368,7 @@ mfxStatus PTIR_ProcessorCPU::PTIR_ProcessFrame(mfxFrameSurface1 *surf_in, mfxFra
                             else
                             {
                                 frmBuffer[i + 1]->frmProperties.timestamp = frmBuffer[i]->frmProperties.timestamp;
-                                frmBuffer[i]->frmProperties.drop = FALSE;
+                                frmBuffer[i]->frmProperties.drop = false;
                             }
                         }
                         Rotate_Buffer_borders(frmBuffer, uiDispatch);
@@ -382,7 +382,7 @@ mfxStatus PTIR_ProcessorCPU::PTIR_ProcessFrame(mfxFrameSurface1 *surf_in, mfxFra
                             dBaseTimeSw = (dBaseTime * 5 / 4);
                         for(i = 0; i < min(uiDispatch,uiCurTemp + 1); i++)
                         {
-                            FillBaseLinesIYUV(frmBuffer[0], frmBuffer[BUFMINSIZE], FALSE, FALSE);
+                            FillBaseLinesIYUV(frmBuffer[0], frmBuffer[BUFMINSIZE], false, false);
                             if (!frmBuffer[0]->frmProperties.drop)
                             {
                                 uiBufferCount++;
@@ -448,7 +448,7 @@ mfxStatus PTIR_ProcessorCPU::PTIR_ProcessFrame(mfxFrameSurface1 *surf_in, mfxFra
                             else
                             {
                                 uiBufferCount = 0;
-                                frmBuffer[0]->frmProperties.drop = FALSE;
+                                frmBuffer[0]->frmProperties.drop = false;
                             }
                             uiCur--;
                         }
@@ -482,7 +482,7 @@ mfxStatus PTIR_ProcessorCPU::PTIR_ProcessFrame(mfxFrameSurface1 *surf_in, mfxFra
                 //----------------------------------------
                 if (frmIn)
                 {
-                    ferror = FALSE;
+                    ferror = false;
                     TrimBorders(&frmIn->plaY, &frmIO[LASTFRAME].plaY);
                     TrimBorders(&frmIn->plaU, &frmIO[LASTFRAME].plaU);
                     TrimBorders(&frmIn->plaV, &frmIO[LASTFRAME].plaV);
@@ -503,14 +503,14 @@ mfxStatus PTIR_ProcessorCPU::PTIR_ProcessFrame(mfxFrameSurface1 *surf_in, mfxFra
         }
         else if(mainPattern.ucPatternFound)
         {
-            mainPattern.ucPatternFound = FALSE;
+            mainPattern.ucPatternFound = false;
             uiFrameCount = fqIn.iCount;
 
             for(mfxU32 i = 0; i < uiFrameCount; i++)
             {
                 if(!surf_out && !frmSupply->countFreeWorkSurfs())
                     break;
-                ferror = FALSE;
+                ferror = false;
                 uiLastFrameNumber = fqIn.pfrmHead->pfrmItem->frmProperties.tindex;
                 frmIn = FrameQueue_Get(&fqIn);
                 if (frmIn)
@@ -550,7 +550,7 @@ mfxStatus PTIR_ProcessorCPU::PTIR_ProcessFrame(mfxFrameSurface1 *surf_in, mfxFra
                 {
                     if (uiisInterlaced == 1)
                     {
-                        FillBaseLinesIYUV(frmBuffer[i], frmBuffer[BUFMINSIZE], FALSE, FALSE);
+                        FillBaseLinesIYUV(frmBuffer[i], frmBuffer[BUFMINSIZE], false, false);
                         DeinterlaceMedianFilter(frmBuffer, i, 0);
                         //Second field
                         DeinterlaceMedianFilter(frmBuffer, BUFMINSIZE, 1);
@@ -604,7 +604,7 @@ mfxStatus PTIR_ProcessorCPU::PTIR_ProcessFrame(mfxFrameSurface1 *surf_in, mfxFra
             {
                 if(!surf_out && !frmSupply->countFreeWorkSurfs())
                     break;
-                ferror = FALSE;
+                ferror = false;
                 frmIn = FrameQueue_Get(&fqIn);
                 if (frmIn)
                 {

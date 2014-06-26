@@ -11,9 +11,18 @@ File Name: telecine.c
 \* ****************************************************************************** */
 
 #include "telecine.h"
-#include "..\Deinterlacer\deinterlacer.h"
+#include "../deinterlacer/deinterlacer.h"
 
-void __stdcall Pattern_init(Pattern *ptrn)
+#if (defined(LINUX32) || defined(LINUX64))
+#ifndef min
+#define min(a,b)            (((a) < (b)) ? (a) : (b))
+#endif
+#ifndef max
+#define max(a,b)            (((a) > (b)) ? (a) : (b))
+#endif
+#endif
+
+void Pattern_init(Pattern *ptrn)
 {
     ptrn->ucLatch.ucFullLatch = FALSE;
     ptrn->ucLatch.ucSHalfLatch = FALSE;
@@ -22,7 +31,7 @@ void __stdcall Pattern_init(Pattern *ptrn)
     ptrn->ucPatternType = 0;
     ptrn->ucLatch.ucParity = 0;
 }
-void __stdcall Rotate_Buffer(Frame *frmBuffer[LASTFRAME])
+void Rotate_Buffer(Frame *frmBuffer[LASTFRAME])
 {
     unsigned char i;
     Frame *pfrmBkp;
@@ -32,7 +41,7 @@ void __stdcall Rotate_Buffer(Frame *frmBuffer[LASTFRAME])
         frmBuffer[i] = frmBuffer[i + 1];
     frmBuffer[BUFMINSIZE - 1] = pfrmBkp;
 }
-void __stdcall Rotate_Buffer_borders(Frame *frmBuffer[LASTFRAME], unsigned int LastInLatch)
+void Rotate_Buffer_borders(Frame *frmBuffer[LASTFRAME], unsigned int LastInLatch)
 {
     unsigned char i;
     Frame *pfrmBkp;
@@ -44,7 +53,7 @@ void __stdcall Rotate_Buffer_borders(Frame *frmBuffer[LASTFRAME], unsigned int L
         frmBuffer[i + LastInLatch] = pfrmBkp;
     }
 }
-void __stdcall Rotate_Buffer_deinterlaced(Frame *frmBuffer[LASTFRAME])
+void Rotate_Buffer_deinterlaced(Frame *frmBuffer[LASTFRAME])
 {
     unsigned char i;
     Frame *pfrmBkp;
@@ -197,7 +206,7 @@ void SSAD8x2_SSE4(unsigned char *pLine[10], unsigned int offset, double *pGlobal
 
 #endif    /* USE_SSE4 */
 
-double __stdcall SSAD8x2(unsigned char *line1, unsigned char *line2, unsigned int offset)
+double SSAD8x2(unsigned char *line1, unsigned char *line2, unsigned int offset)
 {
     int
         i = 0;
@@ -213,7 +222,7 @@ double __stdcall SSAD8x2(unsigned char *line1, unsigned char *line2, unsigned in
 
     return totalSAD;
 }
-void __stdcall Rs_measurement(Frame *pfrmIn)
+void Rs_measurement(Frame *pfrmIn)
 {
     unsigned int
         i = 0, j = 0;
@@ -343,7 +352,7 @@ void __stdcall Rs_measurement(Frame *pfrmIn)
     fclose(dataout);
 #endif
 }
-void __stdcall setLinePointers(unsigned char *pLine[10], Frame pfrmIn, int offset, BOOL lastStripe)
+void setLinePointers(unsigned char *pLine[10], Frame pfrmIn, int offset, BOOL lastStripe)
 {
     int i = 0;
     pLine[0] = pfrmIn.plaY.ucCorner + offset;
@@ -360,7 +369,7 @@ void __stdcall setLinePointers(unsigned char *pLine[10], Frame pfrmIn, int offse
         pLine[9] = pLine[8] + pfrmIn.plaY.uiStride;
     }
 }
-void __stdcall Line_rearrangement(unsigned char *pFrmDstTop,unsigned char *pFrmDstBottom, unsigned char **pucIn, Plane planeOut,unsigned int *off)
+void Line_rearrangement(unsigned char *pFrmDstTop,unsigned char *pFrmDstBottom, unsigned char **pucIn, Plane planeOut,unsigned int *off)
 {
     memcpy(pFrmDstTop + *off, *pucIn, planeOut.uiWidth);
     *pucIn += planeOut.uiWidth;
@@ -370,7 +379,7 @@ void __stdcall Line_rearrangement(unsigned char *pFrmDstTop,unsigned char *pFrmD
 
     *off += planeOut.uiStride;
 }
-void __stdcall Extract_Fields_I420(unsigned char *pucLine, Frame *pfrmOut, BOOL TopFieldFirst)
+void Extract_Fields_I420(unsigned char *pucLine, Frame *pfrmOut, BOOL TopFieldFirst)
 {
     unsigned int i = 0, j = 0, off = 0,
                  lines = pfrmOut->plaY.uiHeight >> 1,
@@ -407,7 +416,7 @@ void __stdcall Extract_Fields_I420(unsigned char *pucLine, Frame *pfrmOut, BOOL 
 
 #ifdef USE_SSE4
 
-void __stdcall sadCalc_I420_frame(Frame *pfrmCur, Frame *pfrmPrv)
+void sadCalc_I420_frame(Frame *pfrmCur, Frame *pfrmPrv)
 {
     unsigned int i, j, lines, halflines, width, halfpixels, rem;
     unsigned int sadU32[5];
@@ -510,7 +519,7 @@ void __stdcall sadCalc_I420_frame(Frame *pfrmCur, Frame *pfrmPrv)
 
 #else    /* USE_SSE4 */
 
-void __stdcall sadCalc_I420_frame(Frame *pfrmCur, Frame *pfrmPrv)
+void sadCalc_I420_frame(Frame *pfrmCur, Frame *pfrmPrv)
 {
     unsigned int i = 0, j = 0, off = 0, sad = 0,
                  lines = pfrmCur->plaY.uiHeight,
@@ -602,7 +611,7 @@ void __stdcall sadCalc_I420_frame(Frame *pfrmCur, Frame *pfrmPrv)
 
 #endif
 
-void __stdcall Detect_Solve_32BlendedPatterns(Frame **pFrm, Pattern *ptrn, unsigned int *dispatch)
+void Detect_Solve_32BlendedPatterns(Frame **pFrm, Pattern *ptrn, unsigned int *dispatch)
 {
     unsigned int i, count, start, previousPattern;
     BOOL condition[10];
@@ -712,7 +721,7 @@ void __stdcall Detect_Solve_32BlendedPatterns(Frame **pFrm, Pattern *ptrn, unsig
         }
     }
 }
-void __stdcall Detect_Solve_32Patterns(Frame **pFrm, Pattern *ptrn, unsigned int *dispatch)
+void Detect_Solve_32Patterns(Frame **pFrm, Pattern *ptrn, unsigned int *dispatch)
 {
     BOOL condition[10];
 
@@ -878,7 +887,7 @@ void __stdcall Detect_Solve_32Patterns(Frame **pFrm, Pattern *ptrn, unsigned int
         return;
     }
 }
-void __stdcall Detect_Solve_3223Patterns(Frame **pFrm, Pattern *ptrn, unsigned int *dispatch)
+void Detect_Solve_3223Patterns(Frame **pFrm, Pattern *ptrn, unsigned int *dispatch)
 {
     BOOL condition[10];
 
@@ -997,7 +1006,7 @@ void __stdcall Detect_Solve_3223Patterns(Frame **pFrm, Pattern *ptrn, unsigned i
     }
 }
 
-unsigned int __stdcall Classifier(double dTextureLevel, double dDynDif, double dStatDif, double dStatCount, double dCountDif,
+unsigned int Classifier(double dTextureLevel, double dDynDif, double dStatDif, double dStatCount, double dCountDif,
 	                              double dZeroTexture, double dRsT, double dAngle, double dSADv, double dBigTexture,
 								  double dCount, double dRsG, double dRsDif, double dRsB, double SADCBPT, double SADCTPB)
 {
@@ -1140,7 +1149,7 @@ unsigned int __stdcall Classifier(double dTextureLevel, double dDynDif, double d
 		return ui_cls;
 }
 
-unsigned int __stdcall Artifacts_Detection(Frame **pFrm)
+unsigned int Artifacts_Detection(Frame **pFrm)
 {
 	unsigned int ui, uiIACount = 0, uiConStatus = 0;
 	double dSADv, dSADt, dSADb, dCount, dStatCount, dCountDif, dAngle, dRsG, dRsT, dRsB, dRsDif, dDynDif, dStatDif, dZeroTexture, dBigTexture, dTextureLevel, SADCBPT, SADCTPB;
@@ -1179,7 +1188,7 @@ unsigned int __stdcall Artifacts_Detection(Frame **pFrm)
 	}
 	return uiIACount;
 }
-void __stdcall Artifacts_Detection_frame(Frame **pFrm, unsigned int frameNum, unsigned int firstRun)
+void Artifacts_Detection_frame(Frame **pFrm, unsigned int frameNum, unsigned int firstRun)
 {
 	unsigned int ui, uiIACount = 0, uiConStatus = 0;
 	double dSADv, dSADt, dSADb, dCount, dStatCount, dCountDif, dAngle, dRsG, dRsT, dRsB, dRsDif, dDynDif, dStatDif, dZeroTexture, dBigTexture, dTextureLevel, SADCBPT, SADCTPB;
@@ -1212,7 +1221,7 @@ void __stdcall Artifacts_Detection_frame(Frame **pFrm, unsigned int frameNum, un
 
 
 
-void __stdcall Detect_Interlacing_Artifacts_fast(Frame **pFrm, Pattern *ptrn, unsigned int *dispatch)
+void Detect_Interlacing_Artifacts_fast(Frame **pFrm, Pattern *ptrn, unsigned int *dispatch)
 {
     unsigned int i;
 
@@ -1240,7 +1249,7 @@ void __stdcall Detect_Interlacing_Artifacts_fast(Frame **pFrm, Pattern *ptrn, un
         pFrm[i]->frmProperties.processed = TRUE;
     
 }
-double __stdcall CalcSAD_Avg_NoSC(Frame **pFrm)
+double CalcSAD_Avg_NoSC(Frame **pFrm)
 {
     unsigned int i, control = 0;
     double max1 = 0.0, max2 = 0.0, avg = 0.0;
@@ -1273,7 +1282,7 @@ double __stdcall CalcSAD_Avg_NoSC(Frame **pFrm)
 
     return avg;
 }
-void __stdcall Detect_32Pattern_rigorous(Frame **pFrm, Pattern *ptrn, unsigned int *dispatch)
+void Detect_32Pattern_rigorous(Frame **pFrm, Pattern *ptrn, unsigned int *dispatch)
 {
     BOOL condition[10];
     int previousPattern = ptrn->ucPatternType;
@@ -1397,7 +1406,7 @@ void __stdcall Detect_32Pattern_rigorous(Frame **pFrm, Pattern *ptrn, unsigned i
             Detect_Solve_3223Patterns(pFrm, ptrn, dispatch);
     }
 }
-void __stdcall UndoPatternTypes5and7(Frame *frmBuffer[BUFMINSIZE], unsigned int firstPos)
+void UndoPatternTypes5and7(Frame *frmBuffer[BUFMINSIZE], unsigned int firstPos)
 {
     unsigned int 
         start = firstPos;
@@ -1420,7 +1429,7 @@ void __stdcall UndoPatternTypes5and7(Frame *frmBuffer[BUFMINSIZE], unsigned int 
     FillBaseLinesIYUV(frmBuffer[start], frmBuffer[BUFMINSIZE], start < (firstPos + 2), start < (firstPos + 2));
     DeinterlaceMedianFilter(frmBuffer, start, start < (firstPos + 2));
 }
-void __stdcall Undo2Frames(Frame *frmBuffer1, Frame *frmBuffer2, BOOL BFF)
+void Undo2Frames(Frame *frmBuffer1, Frame *frmBuffer2, BOOL BFF)
 {
     unsigned int 
         i,
@@ -1437,7 +1446,7 @@ void __stdcall Undo2Frames(Frame *frmBuffer1, Frame *frmBuffer2, BOOL BFF)
 
     frmBuffer1->frmProperties.candidate = TRUE;
 }
-void __stdcall Analyze_Buffer_Stats(Frame *frmBuffer[BUFMINSIZE], Pattern *ptrn, unsigned int *pdispatch, unsigned int *uiisInterlaced)
+void Analyze_Buffer_Stats(Frame *frmBuffer[BUFMINSIZE], Pattern *ptrn, unsigned int *pdispatch, unsigned int *uiisInterlaced)
 {
     unsigned int uiDropCount = 0,
         i = 0;

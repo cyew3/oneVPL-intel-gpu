@@ -15,7 +15,7 @@ File Name: api.h
 
 #pragma once
 
-#include "..\common.h"
+#include "../common.h"
 #include <assert.h> 
 
 #define    NEXTFIELD                6
@@ -37,15 +37,15 @@ File Name: api.h
 
 #endif
 
-__declspec(dllexport) __inline unsigned int __stdcall EDIError(BYTE* PrvLinePixel, BYTE* NxtLinePixel, int dir);
-__declspec(dllexport) void __stdcall FilterMask_Main(Plane *s, Plane *d, unsigned int BotBase, unsigned int ybegin, unsigned int yend);
-__declspec(dllexport) void __stdcall FillBaseLinesIYUV(Frame *pSrc, Frame* pDst, int BottomLinesBaseY, int BottomLinesBaseUV);
-__declspec(dllexport) void __stdcall BilinearDeint(Frame *This, int BotBase);
-__declspec(dllexport) void __stdcall MedianDeinterlace(Frame *This, int BotBase);
-__declspec(dllexport) void __stdcall BuildLowEdgeMask_Main(Frame **frmBuffer, unsigned int frame, unsigned int BotBase);
-__declspec(dllexport) void __stdcall CalculateEdgesIYUV(Frame **frmBuffer, unsigned int frame, int BotBase);
-__declspec(dllexport) void __stdcall EdgeDirectionalIYUV_Main(Frame **frmBuffer, unsigned int curFrame, int BotBase);
-__declspec(dllexport) void __stdcall DeinterlaceBorders(Frame **frmBuffer, unsigned int curFrame, int BotBase);
-__declspec(dllexport) void __stdcall DeinterlaceBilinearFilter(Frame **frmBuffer, unsigned int curFrame, int BotBase);
-__declspec(dllexport) void __stdcall DeinterlaceMedianFilter(Frame **frmBuffer, unsigned int curFrame, int BotBase);
+__inline unsigned int EDIError(BYTE* PrvLinePixel, BYTE* NxtLinePixel, int dir);
+void FilterMask_Main(Plane *s, Plane *d, unsigned int BotBase, unsigned int ybegin, unsigned int yend);
+void FillBaseLinesIYUV(Frame *pSrc, Frame* pDst, int BottomLinesBaseY, int BottomLinesBaseUV);
+void BilinearDeint(Frame *This, int BotBase);
+void MedianDeinterlace(Frame *This, int BotBase);
+void BuildLowEdgeMask_Main(Frame **frmBuffer, unsigned int frame, unsigned int BotBase);
+void CalculateEdgesIYUV(Frame **frmBuffer, unsigned int frame, int BotBase);
+void EdgeDirectionalIYUV_Main(Frame **frmBuffer, unsigned int curFrame, int BotBase);
+void DeinterlaceBorders(Frame **frmBuffer, unsigned int curFrame, int BotBase);
+void DeinterlaceBilinearFilter(Frame **frmBuffer, unsigned int curFrame, int BotBase);
+void DeinterlaceMedianFilter(Frame **frmBuffer, unsigned int curFrame, int BotBase);
 #endif

@@ -13,7 +13,7 @@ File Name: api.h
 #ifndef PA_PFC_H
 #define PA_PFC_H
 
-#include "..\common.h"
+#include "../common.h"
 
 // Deinterlace mode
 #define INTL_MODE_NONE                0
@@ -44,16 +44,16 @@ File Name: api.h
 #define MOVEMENT_THRESH (400)
 #define SKIP_FACTOR (4)
 
-__declspec(dllexport) int Deinterlace(Frame *frameIn, Frame *frameRef, int pels, int lines, unsigned int *mode, unsigned int *detection_measure);
-//__declspec(dllexport) int Deinterlace(unsigned char *frame, unsigned char *prev_frame, int pels, int lines, unsigned int *mode, unsigned int *detection_measure);
+int Deinterlace(Frame *frameIn, Frame *frameRef, int pels, int lines, unsigned int *mode, unsigned int *detection_measure);
+//int Deinterlace(unsigned char *frame, unsigned char *prev_frame, int pels, int lines, unsigned int *mode, unsigned int *detection_measure);
 
 #define INVTELE_RESULT_DROP_FRAME    0
 #define INVTELE_RESULT_FRAME_OK        1
 
-__declspec(dllexport) int InvTelecine(unsigned char *frame, unsigned char *prev_frame, int pels, int lines);
+int InvTelecine(unsigned char *frame, unsigned char *prev_frame, int pels, int lines);
 
-__declspec(dllexport) void ReSample(Frame *frmOut, Frame *frmIn);
+void ReSample(Frame *frmOut, Frame *frmIn);
 
-__declspec(dllexport) void Filter_CCIR601(Plane *plaOut, Plane *plaIn, int *data);
+void Filter_CCIR601(Plane *plaOut, Plane *plaIn, int *data);
 
 #endif

@@ -18,6 +18,7 @@ File Name: ptir_vpp_plugin.h
 #include <memory>
 #include <iostream>
 #include <vector>
+#include <algorithm>
 #include "mfxvideo.h"
 #include "mfxplugin++.h"
 #include <umc_mutex.h>
@@ -138,16 +139,16 @@ protected:
     std::vector<mfxFrameSurface1*> outSurfs;
 
 
-    inline mfxStatus MFX_PTIR_Plugin::GetHandle(mfxHDL& mfxDeviceHdl, mfxHandleType& mfxDeviceType);
-    inline mfxStatus MFX_PTIR_Plugin::GetHWTypeAndCheckSupport(mfxIMPL& impl, mfxHDL& mfxDeviceHdl, eMFXHWType& HWType, bool& HWSupported, bool& par_accel);
-    inline mfxStatus MFX_PTIR_Plugin::CheckInFrameSurface1(mfxFrameSurface1*& mfxSurf);
-    inline mfxStatus MFX_PTIR_Plugin::CheckOutFrameSurface1(mfxFrameSurface1*& mfxSurf);
-    inline mfxStatus MFX_PTIR_Plugin::CheckFrameSurface1(mfxFrameSurface1*& mfxSurf);
+    inline mfxStatus GetHandle(mfxHDL& mfxDeviceHdl, mfxHandleType& mfxDeviceType);
+    inline mfxStatus GetHWTypeAndCheckSupport(mfxIMPL& impl, mfxHDL& mfxDeviceHdl, eMFXHWType& HWType, bool& HWSupported, bool& par_accel);
+    inline mfxStatus CheckInFrameSurface1(mfxFrameSurface1*& mfxSurf);
+    inline mfxStatus CheckOutFrameSurface1(mfxFrameSurface1*& mfxSurf);
+    inline mfxStatus CheckFrameSurface1(mfxFrameSurface1*& mfxSurf);
 
     inline mfxStatus PrepareTask(PTIR_Task *ptir_task, mfxThreadTask *task, mfxFrameSurface1 **surface_out);
-    inline mfxFrameSurface1* MFX_PTIR_Plugin::GetFreeSurf(std::vector<mfxFrameSurface1*>& vSurfs);
-    inline mfxStatus MFX_PTIR_Plugin::addWorkSurf(mfxFrameSurface1* pSurface);
-    inline mfxStatus MFX_PTIR_Plugin::addInSurf(mfxFrameSurface1* pSurface);
+    inline mfxFrameSurface1* GetFreeSurf(std::vector<mfxFrameSurface1*>& vSurfs);
+    inline mfxStatus addWorkSurf(mfxFrameSurface1* pSurface);
+    inline mfxStatus addInSurf(mfxFrameSurface1* pSurface);
 };
 
 #if defined(_WIN32) || defined(_WIN64)

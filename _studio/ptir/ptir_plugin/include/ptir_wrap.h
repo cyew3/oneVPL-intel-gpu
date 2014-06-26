@@ -17,9 +17,9 @@ File Name: ptir_vpp_plugin.h
 #include "mfxplugin.h"
 #include "ptir_vpp_utils.h"
 extern "C" {
-#include "..\ptir\pa\api.h"
+#include "../pa/api.h"
 }
-#include "..\pacm\pacm.h"
+#include "../pacm/pacm.h"
 //#include "cmrt_cross_platform.h"
 
 typedef void * AbstractSurface;
@@ -115,8 +115,8 @@ public:
         liTime,
         liFreq,
         liFileSize;
-    CONSOLE_SCREEN_BUFFER_INFO
-        sbInfo;
+//    CONSOLE_SCREEN_BUFFER_INFO
+//        sbInfo;
     HANDLE
         hIn,
         hOut;
@@ -129,8 +129,8 @@ public:
         bFullFrameRate;
     Pattern
         mainPattern;
-    errno_t
-        errorT;
+//    errno_t
+//        errorT;
     bool b_firstFrameProceed;
     bool bInited;
     bool isHW;
@@ -139,7 +139,7 @@ public:
     {
         return MFX_ERR_UNSUPPORTED;
     }
-    virtual mfxStatus Close() = 0
+    virtual mfxStatus Close()
     {
         return MFX_ERR_UNSUPPORTED;
     }
@@ -189,7 +189,7 @@ protected:
     template <typename D3DAbstract>
     CmDevice* GetCmDevice(D3DAbstract *pD3D)
     {
-        cmStatus cmSts = CM_SUCCESS;
+        int cmSts = CM_SUCCESS;
         mfxU32 version;
 
         if (m_pCmDevice)

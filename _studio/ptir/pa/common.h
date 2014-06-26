@@ -12,18 +12,23 @@ File Name: common.h
 #ifndef PA_COMMON_H
 #define PA_COMMON_H
 
-//#ifdef PA_EXPORTS
-//#define /*PA_API*/ __declspec(dllexport)
-//#else
-//#define /*PA_API*/ __declspec(dllimport)
-//#endif
-
+#if defined(_WIN32) || defined(_WIN64)
 #include <Windows.h>
+#endif
 #include <malloc.h>
+#if defined(_WIN32) || defined(_WIN64)
 #include <intrin.h>
+#endif
 #include <memory.h>
 #include <math.h>
 #include <stdio.h>
+
+#if (defined(LINUX32) || defined(LINUX64))
+#include <stdbool.h>
+#include <inttypes.h>
+#define __int64 uint64_t
+#endif
+
 
 #ifdef __cplusplus
 extern "C" {
@@ -35,7 +40,9 @@ extern "C" {
 
 #define PA_PERF_LEVEL            PA_SSE2
 
+#if defined(_WIN32) || defined(_WIN64)
 #define USE_SSE4
+#endif
 
 #if defined(_WIN32) || defined(_WIN64)
 #define ALIGN_DECL(X) __declspec(align(X))
@@ -44,7 +51,6 @@ extern "C" {
 #endif
 
     // Latch
-    /*PA_API*/
         typedef struct _Latch
     {
             BOOL 
@@ -55,7 +61,6 @@ extern "C" {
     } Latch;
 
     // Pattern
-    /*PA_API*/
         typedef struct _Pattern
     {
             BOOL 
@@ -74,7 +79,6 @@ extern "C" {
     } Pattern;
 
     //stats
-    /*PA_API*/
         typedef struct _Stats
     {
             double ucSAD[5],
@@ -82,7 +86,6 @@ extern "C" {
     } Stats;
 
     // pla
-    /*PA_API*/
         typedef struct _Plane
     {
             unsigned char *ucData;
@@ -98,7 +101,6 @@ extern "C" {
     } Plane;
 
     // meta
-    /*PA_API*/
         typedef struct _Meta
     {
             BOOL 
@@ -113,7 +115,6 @@ extern "C" {
     } Meta;
 
     // frm
-    /*PA_API*/
         typedef struct _Frame
     {
             unsigned char *ucMem;
@@ -134,7 +135,6 @@ extern "C" {
     } Frame;
 
     // fn
-    /*PA_API*/
         typedef struct _FrameNode
     {
             Frame                *pfrmItem;
@@ -142,7 +142,6 @@ extern "C" {
     } FrameNode;
 
     // fq
-    /*PA_API*/
         typedef struct _FrameQueue
     {
             FrameNode    *pfrmHead;
@@ -150,25 +149,25 @@ extern "C" {
             int            iCount;
     } FrameQueue;
 
-    /*PA_API*/ void /*__stdcall*/ PrintOutputStats(HANDLE hStd, CONSOLE_SCREEN_BUFFER_INFO sbInfo, unsigned int uiFrame, unsigned int uiStart, unsigned int uiCount, unsigned int *uiProgress, unsigned int uiFrameOut, unsigned int uiTimer, FrameQueue fqIn, const char **cOperations, double *dTime);
+    //void PrintOutputStats(HANDLE hStd, CONSOLE_SCREEN_BUFFER_INFO sbInfo, unsigned int uiFrame, unsigned int uiStart, unsigned int uiCount, unsigned int *uiProgress, unsigned int uiFrameOut, unsigned int uiTimer, FrameQueue fqIn, const char **cOperations, double *dTime);
 
-    /*PA_API*/ void /*__stdcall*/ Plane_Create(Plane *pplaIn, unsigned int uiWidth, unsigned int uiHeight, unsigned int uiBorder);
-    /*PA_API*/ void /*__stdcall*/ Plane_Release(Plane *pplaIn);
+    void Plane_Create(Plane *pplaIn, unsigned int uiWidth, unsigned int uiHeight, unsigned int uiBorder);
+    void Plane_Release(Plane *pplaIn);
 
-    /*PA_API*/ void /*__stdcall*/ Frame_Create(Frame *pfrmIn, unsigned int uiYWidth, unsigned int uiYHeight, unsigned int uiUVWidth, unsigned int uiUVHeight, unsigned int uiBorder);
-    /*PA_API*/ void /*__stdcall*/ Frame_Release(Frame *pfrmIn);
+    void Frame_Create(Frame *pfrmIn, unsigned int uiYWidth, unsigned int uiYHeight, unsigned int uiUVWidth, unsigned int uiUVHeight, unsigned int uiBorder);
+    void Frame_Release(Frame *pfrmIn);
 
-    /*PA_API*/ void /*__stdcall*/ FrameQueue_Initialize(FrameQueue *pfq);
-    /*PA_API*/ void /*__stdcall*/ FrameQueue_Add(FrameQueue *pfq, Frame *pfrm);
-    /*PA_API*/ Frame * /*__stdcall*/ FrameQueue_Get(FrameQueue *pfq);
-    /*PA_API*/ void /*__stdcall*/ FrameQueue_Release(FrameQueue *pfq);
+    void FrameQueue_Initialize(FrameQueue *pfq);
+    void FrameQueue_Add(FrameQueue *pfq, Frame *pfrm);
+    Frame * FrameQueue_Get(FrameQueue *pfq);
+    void FrameQueue_Release(FrameQueue *pfq);
 
-    /*PA_API*/ void /*__stdcall*/ AddBorders(Plane *pplaIn, Plane *pplaOut, unsigned int uiBorder);
-    /*PA_API*/ void /*__stdcall*/ TrimBorders(Plane *pplaIn, Plane *pplaOut);
+    void AddBorders(Plane *pplaIn, Plane *pplaOut, unsigned int uiBorder);
+    void TrimBorders(Plane *pplaIn, Plane *pplaOut);
 
-    /*PA_API*/ void /*__stdcall*/ Convert_to_I420(unsigned char *pucIn, Frame *pfrmOut, char *pcFormat, double uiFrameRate);
-    /*PA_API*/ void /*__stdcall*/ CheckGenFrame(Frame **pfrmIn, unsigned int frameNum, unsigned int patternType, unsigned int uiOPMode);
-    /*PA_API*/ void /*__stdcall*/ Prepare_frame_for_queue(Frame **pfrmOut, Frame *pfrmIn, unsigned int uiWidth, unsigned int uiHeight);
+    void Convert_to_I420(unsigned char *pucIn, Frame *pfrmOut, char *pcFormat, double uiFrameRate);
+    void CheckGenFrame(Frame **pfrmIn, unsigned int frameNum, unsigned int patternType, unsigned int uiOPMode);
+    void Prepare_frame_for_queue(Frame **pfrmOut, Frame *pfrmIn, unsigned int uiWidth, unsigned int uiHeight);
 #ifdef __cplusplus
 }
 #endif 

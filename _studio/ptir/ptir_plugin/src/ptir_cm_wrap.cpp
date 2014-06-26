@@ -11,7 +11,7 @@ File Name: ptir_vpp_plugin.cpp
 \* ****************************************************************************** */
 
 #include "ptir_vpp_plugin.h"
-#include "..\pacm\utilities.h"
+#include "../pacm/utilities.h"
 #include "mfxvideo++int.h"
 
 #define GPUPATH
@@ -354,7 +354,9 @@ mfxStatus PTIR_ProcessorCM::Process(mfxFrameSurface1 *surface_in, mfxFrameSurfac
             //MemId should be a video memory surface
             CmDeviceEx& pCMdevice = this->deinterlaceFilter->DeviceEx();
             int result = -1;
+#if defined(_WIN32) || defined(_WIN64)
             result = pCMdevice->CreateSurface2D((IDirect3DSurface9 *) (*surface_out)->Data.MemId, pOutCmSurface2D);
+#endif
             assert(result == 0);
             CmToMfxSurfmap[pOutCmSurface2D] = (*surface_out);
             isUnlockReq = false;
@@ -436,8 +438,8 @@ mfxStatus PTIR_ProcessorCM::PTIR_ProcessFrame(CmSurface2D *surf_in, CmSurface2D 
 
         deinterlaceFilter->CalculateSADRs(frmBuffer[0], frmBuffer[0]);
 
-        Artifacts_Detection_frame(frmBuffer, 0, TRUE);
-        frmBuffer[0]->frmProperties.processed = FALSE;
+        Artifacts_Detection_frame(frmBuffer, 0, true);
+        frmBuffer[0]->frmProperties.processed = false;
 
         frmBuffer[0]->plaY.ucStats.ucSAD[0] = 99.999;
         frmBuffer[0]->plaY.ucStats.ucSAD[1] = 99.999;
@@ -450,7 +452,7 @@ mfxStatus PTIR_ProcessorCM::PTIR_ProcessFrame(CmSurface2D *surf_in, CmSurface2D 
         uiCur = 1;
         uiCurTemp = uiCur;
         uiBufferCount = 0;
-        patternFound = FALSE;
+        patternFound = false;
         uiDispatch = 0;
         uiStart = 1;
         mainPattern.blendedCount = 0.0;
@@ -511,7 +513,7 @@ mfxStatus PTIR_ProcessorCM::PTIR_ProcessFrame(CmSurface2D *surf_in, CmSurface2D 
 
             frmBuffer[uiCur]->frmProperties.tindex = uiFrame + 1;
             deinterlaceFilter->CalculateSADRs(frmBuffer[uiCur], frmBuffer[uiNext]);
-            frmBuffer[uiCur]->frmProperties.processed = TRUE;
+            frmBuffer[uiCur]->frmProperties.processed = true;
             dSAD = frmBuffer[uiCur]->plaY.ucStats.ucSAD;
             dRs = frmBuffer[uiCur]->plaY.ucStats.ucRs;
 
@@ -559,7 +561,7 @@ mfxStatus PTIR_ProcessorCM::PTIR_ProcessFrame(CmSurface2D *surf_in, CmSurface2D 
                         else
                         {
                             frmBuffer[i + 1]->frmProperties.timestamp = frmBuffer[i]->frmProperties.timestamp;
-                            frmBuffer[i]->frmProperties.drop = FALSE;
+                            frmBuffer[i]->frmProperties.drop = false;
                             frmSupply->FreeSurface(static_cast<CmSurface2DEx*>(frmBuffer[i]->inSurf)->pCmSurface2D);
                             frmSupply->FreeSurface(static_cast<CmSurface2DEx*>(frmBuffer[i]->outSurf)->pCmSurface2D);
 
@@ -639,7 +641,7 @@ mfxStatus PTIR_ProcessorCM::PTIR_ProcessFrame(CmSurface2D *surf_in, CmSurface2D 
                         else
                         {
                             uiBufferCount = 0;
-                            frmBuffer[0]->frmProperties.drop = FALSE;
+                            frmBuffer[0]->frmProperties.drop = false;
                         }
                         uiCur--;
                     }
@@ -700,11 +702,11 @@ mfxStatus PTIR_ProcessorCM::PTIR_ProcessFrame(CmSurface2D *surf_in, CmSurface2D 
         }
         else if (mainPattern.ucPatternFound)
         {
-            mainPattern.ucPatternFound = FALSE;
+            mainPattern.ucPatternFound = false;
             uiFrameCount = fqIn.iCount;
             for (i = 0; i < uiFrameCount; i++)
             {
-                ferror = FALSE;
+                ferror = false;
                 uiLastFrameNumber = fqIn.pfrmHead->pfrmItem->frmProperties.tindex;
                 frmIn = FrameQueue_Get(&fqIn);
                 if (frmIn)
@@ -824,7 +826,7 @@ mfxStatus PTIR_ProcessorCM::PTIR_ProcessFrame(CmSurface2D *surf_in, CmSurface2D 
         uiFrameCount = fqIn.iCount;
         for (i = 0; i < uiFrameCount; i++)
         {
-            ferror = FALSE;
+            ferror = false;
             frmIn = FrameQueue_Get(&fqIn);
             if (frmIn)
             {

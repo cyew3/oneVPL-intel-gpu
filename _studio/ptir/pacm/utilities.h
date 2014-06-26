@@ -13,10 +13,13 @@ File Name: ptir_vpp_plugin.h
 #ifndef PA_UTILITIES_H
 #define PA_UTILITIES_H
 
+#if defined(_WIN32) || defined(_WIN64)
 #include <Windows.h>
+#endif
+
 #include <stdio.h>
 #include "pacm.h"
-#include "..\ptir_plugin\include\ptir_wrap.h"
+#include "../ptir_plugin/include/ptir_wrap.h"
 
 #define TEST_UNDO2FRAMES_CM 1
 

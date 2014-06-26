@@ -65,10 +65,15 @@ public:
 
     UINT version = 0;
     int result = CM_FAILURE;//CreateCmDevice(pDevice, version);
+#if defined(_WIN32) || defined(_WIN64)
     if(MFX_HANDLE_DIRECT3D_DEVICE_MANAGER9 == mfxDeviceType)
         result = CreateCmDevice(pDevice,version,(IDirect3DDeviceManager9*) mfxDeviceHdl);
     //else if(MFX_HANDLE_D3D11_DEVICE == mfxDeviceType)
     //    result = CreateCmDevice(pDevice,version,(ID3D11Device*) mfxDeviceHdl);
+#else if defined(LINUX32) || defined (LINUX64)
+    if(MFX_HANDLE_VA_DISPLAY == mfxDeviceType)
+        result = CreateCmDevice(pDevice,version, (VADisplay) mfxDeviceHdl);
+#endif
     CM_FAIL_IF(result != CM_SUCCESS || pDevice == NULL, result);
 
     CmProgram * pProgram = NULL;
@@ -95,10 +100,15 @@ public:
 
     UINT version = 0;
     int result = CM_FAILURE;//CreateCmDevice(pDevice, version);
+#if defined(_WIN32) || defined(_WIN64)
     if(MFX_HANDLE_DIRECT3D_DEVICE_MANAGER9 == mfxDeviceType)
         result = CreateCmDevice(pDevice,version,(IDirect3DDeviceManager9*) mfxDeviceHdl);
     //else if(MFX_HANDLE_D3D11_DEVICE == mfxDeviceType)
     //    result = CreateCmDevice(pDevice,version,(ID3D11Device*) mfxDeviceHdl);
+#else if defined(LINUX32) || defined (LINUX64)
+    if(MFX_HANDLE_VA_DISPLAY == mfxDeviceType)
+        result = CreateCmDevice(pDevice,version, (VADisplay) mfxDeviceHdl);
+#endif
 
     CM_FAIL_IF(result != CM_SUCCESS || pDevice == NULL, result);
 
@@ -145,10 +155,15 @@ public:
 
     UINT version = 0;
     int result = CM_FAILURE;//CreateCmDevice(pDevice, version);
+#if defined(_WIN32) || defined(_WIN64)
     if(MFX_HANDLE_DIRECT3D_DEVICE_MANAGER9 == mfxDeviceType)
         result = CreateCmDevice(pDevice,version,(IDirect3DDeviceManager9*) mfxDeviceHdl);
     //else if(MFX_HANDLE_D3D11_DEVICE == mfxDeviceType)
     //    result = CreateCmDevice(pDevice,version,(ID3D11Device*) mfxDeviceHdl);
+#else if defined(LINUX32) || defined (LINUX64)
+    if(MFX_HANDLE_VA_DISPLAY == mfxDeviceType)
+        result = CreateCmDevice(pDevice,version, (VADisplay) mfxDeviceHdl);
+#endif
 
     CM_FAIL_IF(result != CM_SUCCESS || pDevice == NULL, result);
 
@@ -192,10 +207,15 @@ public:
 protected:
   int CCCreateCmDevice(CmDevice *& pDevice, UINT version)
   {
+#if defined(_WIN32) || defined(_WIN64)
       if(MFX_HANDLE_DIRECT3D_DEVICE_MANAGER9 == mfxDeviceType)
           return ::CreateCmDevice(pDevice,version,(IDirect3DDeviceManager9*) mfxDeviceHdl);
       //else if(MFX_HANDLE_D3D11_DEVICE == mfxDeviceType)
       //    return ::CreateCmDevice(pDevice,version,(ID3D11Device*) mfxDeviceHdl);
+#else if defined(LINUX32) || defined (LINUX64)
+      if(MFX_HANDLE_VA_DISPLAY == mfxDeviceType)
+          return ::CreateCmDevice(pDevice,version, (VADisplay) mfxDeviceHdl);
+#endif
       else
           return CM_FAILURE;
   }

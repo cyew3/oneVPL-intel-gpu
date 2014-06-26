@@ -25,7 +25,7 @@ public:
     : cmDeviceEx(cmDeviceEx)
   {
 #ifdef _DEBUG
-    cout << "CmBufferEx (" << size << ")" << endl;
+    //cout << "CmBufferEx (" << size << ")" << endl;
 #endif
     pCmBuffer = cmDeviceEx.CreateBuffer(size);
   }
@@ -34,7 +34,7 @@ public:
     : cmDeviceEx(cmDeviceEx)
   {
 #ifdef _DEBUG
-    cout << "CmBufferEx (" << size << ")" << endl;
+    //cout << "CmBufferEx (" << size << ")" << endl;
 #endif
     assert(pData != NULL);
 
@@ -79,7 +79,7 @@ public:
     : cmDeviceEx(cmDeviceEx)
   {
 #ifdef _DEBUG
-    cout << "CmBufferUPEx (0x" << std::hex << (unsigned int)pData << ", " << std::dec << size << ")" << endl;
+    //cout << "CmBufferUPEx (0x" << std::hex << (unsigned int)pData << ", " << std::dec << size << ")" << endl;
 #endif
     assert (pData != NULL);
 
@@ -179,7 +179,7 @@ public:
     : malloced(false), pitch(0), deviceEx(deviceEx), format(format), height(height), width(width), pData(NULL)
   {
 #ifdef _DEBUG
-    std::cout << "CmSurface2DUPEx (" << width << ", " << height << ")" << std::endl;
+    //std::cout << "CmSurface2DUPEx (" << width << ", " << height << ")" << std::endl;
 #endif
     int result = deviceEx->GetSurface2DInfo(width, height, format, pitch, physicalSize);
     CM_FAIL_IF(result != CM_SUCCESS, result);

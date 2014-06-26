@@ -10,9 +10,18 @@ File Name: api.h
 
 \* ****************************************************************************** */
 
-#include "PFC.h"
-#include "..\Telecine\telecine.h"
+#include "pfc.h"
+#include "../telecine/telecine.h"
 #include <assert.h> 
+
+#if (defined(LINUX32) || defined(LINUX64))
+#ifndef min
+#define min(a,b)            (((a) < (b)) ? (a) : (b))
+#endif
+#ifndef max
+#define max(a,b)            (((a) > (b)) ? (a) : (b))
+#endif
+#endif
 
 static int DetectInterlace_I420(unsigned char *frame, unsigned char *prev_frame, int pels, int lines, int pitch)
 {

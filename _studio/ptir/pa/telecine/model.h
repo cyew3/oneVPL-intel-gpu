@@ -13,7 +13,7 @@ File Name: model.h
 #ifndef MODEL_H
 #define MODEL_H
 
-__declspec(dllexport) unsigned int __stdcall classify(double dTextureLevel, double dDynDif, double dStatDif, double dStatCount, double dCountDif,
+unsigned int classify(double dTextureLevel, double dDynDif, double dStatDif, double dStatCount, double dCountDif,
 	                                                  double dZeroTexture, double dRsT, double dAngle, double dSADv, double dBigTexture,
 	                                                  double dCount, double dRsG, double dRsDif, double dRsB, double SADCBPT, double SADCTPB);
 

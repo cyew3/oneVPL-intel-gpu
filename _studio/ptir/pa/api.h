@@ -14,11 +14,11 @@ File Name: api.h
 #define PA_API_H
 
 // Picture Format Conversion
-#include "PFC\PFC.h"
+#include "pfc/pfc.h"
 
 // Telecine and Deinterlace
-#include "Telecine\telecine.h"
-#include "Deinterlacer\deinterlacer.h"
+#include "telecine/telecine.h"
+#include "deinterlacer/deinterlacer.h"
 
 
 #include "common.h"

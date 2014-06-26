@@ -21,13 +21,13 @@ template<> struct assert_static<true> {};
 #define INT2STRING2(i) #i
 #define INT2STRING(i)  INT2STRING2(i)
 
-#ifndef __LINUX__
-  #define CMUT_EXCEPTION2(message, exception) exception(__FILE__ ": " __FUNCTION__ "(" INT2STRING(__LINE__) "): error: " message);
-  #define CMUT_EXCEPTION(message) std::exception((std::string(__FILE__ ": " __FUNCTION__ "(" INT2STRING(__LINE__) "): error: ") + std::string(message)).c_str());
-#else
+//#ifndef __LINUX__
+//  #define CMUT_EXCEPTION2(message, exception) exception(__FILE__ ": " __FUNCTION__ "(" INT2STRING(__LINE__) "): error: " message);
+//  #define CMUT_EXCEPTION(message) std::exception((std::string(__FILE__ ": " __FUNCTION__ "(" INT2STRING(__LINE__) "): error: ") + std::string(message)).c_str());
+//#else
   #define CMUT_EXCEPTION2(message, exception) exception();
   #define CMUT_EXCEPTION(message) std::exception();
-#endif
+//#endif
 
 //FIXME need better name
 #define CM_FAIL_IF(condition, result) \

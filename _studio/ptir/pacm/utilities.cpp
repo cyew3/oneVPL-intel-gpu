@@ -45,7 +45,7 @@ static void CopyFrame(Frame *pSrc, Frame* pDst)
 }
 
 #if TEST_UNDO2FRAMES_CM
-void Undo2Frames_CMTest(Frame *frmBuffer1, Frame *frmBuffer2, BOOL BFF)
+void Undo2Frames_CMTest(Frame *frmBuffer1, Frame *frmBuffer2, bool BFF)
 {    
     Frame frmBackup;
     Frame *frmBuffer1_c = &frmBackup;
@@ -76,7 +76,7 @@ void Undo2Frames_CMTest(Frame *frmBuffer1, Frame *frmBuffer2, BOOL BFF)
 }
 #endif
 
-static void Undo2Frames_CM(Frame *frmBuffer1, Frame *frmBuffer2, BOOL BFF)
+static void Undo2Frames_CM(Frame *frmBuffer1, Frame *frmBuffer2, bool BFF)
 {    
     //memset(frmBuffer1->ucMem, 0, frmBuffer1->uiSize);
     //return;
@@ -91,7 +91,7 @@ static void Undo2Frames_CM(Frame *frmBuffer1, Frame *frmBuffer2, BOOL BFF)
 
 static void Detect_Solve_32Patterns_CM(Frame **pFrm, Pattern *ptrn, unsigned int *dispatch)
 {
-    BOOL condition[10];
+    bool condition[10];
 
     //Case: First and last frames have pattern, need to move buffer two frames up
     //Texture Analysis
@@ -115,8 +115,8 @@ static void Detect_Solve_32Patterns_CM(Frame **pFrm, Pattern *ptrn, unsigned int
 
     if(condition[0] && condition[1] && condition[2] && condition[3] && condition[4] && condition[5])
     {
-        pFrm[0]->frmProperties.drop = TRUE;
-        ptrn->ucLatch.ucFullLatch = TRUE;
+        pFrm[0]->frmProperties.drop = true;
+        ptrn->ucLatch.ucFullLatch = true;
         if(pFrm[4]->plaY.ucStats.ucSAD[2] > pFrm[4]->plaY.ucStats.ucSAD[3])
             ptrn->ucLatch.ucParity = 1;
         else
@@ -146,14 +146,14 @@ static void Detect_Solve_32Patterns_CM(Frame **pFrm, Pattern *ptrn, unsigned int
     condition[5] = pFrm[5]->plaY.ucStats.ucSAD[4] * T1 > min((pFrm[5]->plaY.ucStats.ucSAD[2]),(pFrm[5]->plaY.ucStats.ucSAD[3]));
     if(condition[0] && condition[1] && condition[2] && condition[3] && condition[4] && condition[5])
     {
-        pFrm[0]->frmProperties.drop = FALSE;
-        pFrm[1]->frmProperties.drop = TRUE;
-        pFrm[2]->frmProperties.drop = FALSE;
+        pFrm[0]->frmProperties.drop = false;
+        pFrm[1]->frmProperties.drop = true;
+        pFrm[2]->frmProperties.drop = false;
 
         /*if(pFrm[0]->plaY.uiWidth > 1200)
-        ptrn->ucLatch.ucFullLatch = FALSE;
+        ptrn->ucLatch.ucFullLatch = false;
         else*/
-        ptrn->ucLatch.ucFullLatch = TRUE;
+        ptrn->ucLatch.ucFullLatch = true;
 
         if(pFrm[1]->plaY.ucStats.ucSAD[2] > pFrm[1]->plaY.ucStats.ucSAD[3])
             ptrn->ucLatch.ucParity = 1;
@@ -180,14 +180,14 @@ static void Detect_Solve_32Patterns_CM(Frame **pFrm, Pattern *ptrn, unsigned int
     condition[3] = pFrm[2]->plaY.ucStats.ucSAD[4] * T1 > min((pFrm[2]->plaY.ucStats.ucSAD[2]),(pFrm[2]->plaY.ucStats.ucSAD[3]));
     if(condition[0] && condition[1] && condition[2] && condition[3])
     {
-        pFrm[0]->frmProperties.drop = FALSE;
-        pFrm[1]->frmProperties.drop = FALSE;
-        pFrm[2]->frmProperties.drop = TRUE;
-        pFrm[3]->frmProperties.drop = FALSE;
+        pFrm[0]->frmProperties.drop = false;
+        pFrm[1]->frmProperties.drop = false;
+        pFrm[2]->frmProperties.drop = true;
+        pFrm[3]->frmProperties.drop = false;
         /*if(pFrm[0]->plaY.uiWidth > 1200)
-        ptrn->ucLatch.ucFullLatch = FALSE;
+        ptrn->ucLatch.ucFullLatch = false;
         else*/
-        ptrn->ucLatch.ucFullLatch = TRUE;
+        ptrn->ucLatch.ucFullLatch = true;
         if(pFrm[2]->plaY.ucStats.ucSAD[2] > pFrm[2]->plaY.ucStats.ucSAD[3])
             ptrn->ucLatch.ucParity = 1;
         else
@@ -213,8 +213,8 @@ static void Detect_Solve_32Patterns_CM(Frame **pFrm, Pattern *ptrn, unsigned int
     condition[3] = pFrm[3]->plaY.ucStats.ucSAD[4] * T1 > min((pFrm[3]->plaY.ucStats.ucSAD[2]),(pFrm[3]->plaY.ucStats.ucSAD[3]));
     if(condition[0] && condition[1] && condition[2] && condition[3])
     {
-        pFrm[3]->frmProperties.drop = TRUE;
-        ptrn->ucLatch.ucFullLatch = TRUE;
+        pFrm[3]->frmProperties.drop = true;
+        ptrn->ucLatch.ucFullLatch = true;
         if(pFrm[3]->plaY.ucStats.ucSAD[2] > pFrm[3]->plaY.ucStats.ucSAD[3])
             ptrn->ucLatch.ucParity = 1;
         else
@@ -240,17 +240,17 @@ static void Detect_Solve_32Patterns_CM(Frame **pFrm, Pattern *ptrn, unsigned int
     condition[3] = pFrm[4]->plaY.ucStats.ucSAD[4] * T1 > min((pFrm[4]->plaY.ucStats.ucSAD[2]),(pFrm[4]->plaY.ucStats.ucSAD[3]));
     if((condition[0] && condition[1] && condition[2]) || (condition[0] && condition[1] && condition[3]))
     {
-        pFrm[0]->frmProperties.drop = FALSE;
+        pFrm[0]->frmProperties.drop = false;
         /*if(pFrm[0]->plaY.uiWidth > 1200)
-        ptrn->ucLatch.ucFullLatch = FALSE;
+        ptrn->ucLatch.ucFullLatch = false;
         else*/
-        ptrn->ucLatch.ucFullLatch = TRUE;
+        ptrn->ucLatch.ucFullLatch = true;
         if(pFrm[3]->plaY.ucStats.ucSAD[2] > pFrm[3]->plaY.ucStats.ucSAD[3])
             ptrn->ucLatch.ucParity = 1;
         else
             ptrn->ucLatch.ucParity = 0;
         ptrn->ucPatternType = 1;
-        pFrm[0]->frmProperties.candidate = TRUE;
+        pFrm[0]->frmProperties.candidate = true;
         *dispatch = 1;
         return;
     }
@@ -260,19 +260,19 @@ static void Detect_32Pattern_rigorous_CM(Frame **pFrm, Pattern *ptrn, unsigned i
 {
     //Detect_32Pattern_rigorous(pFrm, ptrn, dispatch);
     //return;
-    BOOL condition[10];
+    bool condition[10];
     int previousPattern = ptrn->ucPatternType;
     double previousAvgSAD = ptrn->ucAvgSAD;
 
-    ptrn->ucLatch.ucFullLatch = FALSE;
+    ptrn->ucLatch.ucFullLatch = false;
     ptrn->ucAvgSAD = CalcSAD_Avg_NoSC(pFrm);
 
-    pFrm[0]->frmProperties.drop = FALSE;
-    pFrm[1]->frmProperties.drop = FALSE;
-    pFrm[2]->frmProperties.drop = FALSE;
-    pFrm[3]->frmProperties.drop = FALSE;
-    pFrm[4]->frmProperties.drop = FALSE;
-    pFrm[5]->frmProperties.drop = FALSE;
+    pFrm[0]->frmProperties.drop = false;
+    pFrm[1]->frmProperties.drop = false;
+    pFrm[2]->frmProperties.drop = false;
+    pFrm[3]->frmProperties.drop = false;
+    pFrm[4]->frmProperties.drop = false;
+    pFrm[5]->frmProperties.drop = false;
 
     condition[8] = ptrn->ucAvgSAD < previousAvgSAD * T2;
 
@@ -281,7 +281,7 @@ static void Detect_32Pattern_rigorous_CM(Frame **pFrm, Pattern *ptrn, unsigned i
 
     if((!ptrn->ucLatch.ucFullLatch && !(ptrn->uiInterlacedFramesNum >= 3)) || ((previousPattern == 1 || previousPattern == 2) && ptrn->ucLatch.ucSHalfLatch))
     {
-        ptrn->ucLatch.ucSHalfLatch = FALSE;
+        ptrn->ucLatch.ucSHalfLatch = false;
         ptrn->ucPatternType = 0;
         //Texture Analysis  - To override previous pattern if needed
         condition[0] = pFrm[2]->plaY.ucStats.ucRs[0] > (pFrm[2]->plaY.ucStats.ucRs[1]) ||
@@ -311,8 +311,8 @@ static void Detect_32Pattern_rigorous_CM(Frame **pFrm, Pattern *ptrn, unsigned i
 
             if((condition[0] && condition[1] && ptrn->uiInterlacedFramesNum > 0) || (condition[2] && condition[3]) || (condition[4] && condition[5]) || (condition[6] && condition[7]))
             {
-                pFrm[3]->frmProperties.drop = TRUE;
-                ptrn->ucLatch.ucFullLatch = TRUE;
+                pFrm[3]->frmProperties.drop = true;
+                ptrn->ucLatch.ucFullLatch = true;
                 if(pFrm[3]->plaY.ucStats.ucSAD[2] > pFrm[3]->plaY.ucStats.ucSAD[3] && pFrm[2]->plaY.ucStats.ucSAD[2] > pFrm[2]->plaY.ucStats.ucSAD[3] && pFrm[2]->plaY.ucStats.ucSAD[0] > pFrm[2]->plaY.ucStats.ucSAD[1] && pFrm[4]->plaY.ucStats.ucSAD[1] > pFrm[4]->plaY.ucStats.ucSAD[0])
                     ptrn->ucLatch.ucParity = 1;
                 else
@@ -324,8 +324,8 @@ static void Detect_32Pattern_rigorous_CM(Frame **pFrm, Pattern *ptrn, unsigned i
             }
             if((condition[0] || condition[1] || condition[2] || condition[3] || (condition[4] || condition[5]) || condition[6] || condition[7] || condition[9]) && (ptrn->ucAvgSAD < 2.3))
             {
-                pFrm[3]->frmProperties.drop = TRUE;
-                ptrn->ucLatch.ucFullLatch = TRUE;
+                pFrm[3]->frmProperties.drop = true;
+                ptrn->ucLatch.ucFullLatch = true;
                 if(pFrm[2]->plaY.ucStats.ucSAD[2] > pFrm[2]->plaY.ucStats.ucSAD[3])
                     ptrn->ucLatch.ucParity = 1;
                 else
@@ -351,20 +351,20 @@ static void Detect_32Pattern_rigorous_CM(Frame **pFrm, Pattern *ptrn, unsigned i
             //condition[9] = (pFrm[0]->plaY.ucStats.ucSAD[5] == 0) && (pFrm[1]->plaY.ucStats.ucSAD[5] == 0) && (pFrm[2]->plaY.ucStats.ucSAD[5] == 0) && (pFrm[4]->plaY.ucStats.ucSAD[5] == 0);
             if(condition[0] || condition[1])
             {
-                pFrm[2]->frmProperties.candidate = TRUE;
-                pFrm[3]->frmProperties.drop = TRUE;
-                pFrm[4]->frmProperties.candidate = TRUE;
-                ptrn->ucLatch.ucFullLatch = TRUE;
+                pFrm[2]->frmProperties.candidate = true;
+                pFrm[3]->frmProperties.drop = true;
+                pFrm[4]->frmProperties.candidate = true;
+                ptrn->ucLatch.ucFullLatch = true;
                 ptrn->ucPatternType = 2;
                 *dispatch = 5;
                 return;
             }
             else if(pFrm[3]->plaY.ucStats.ucRs[7] > 0)
             {
-                pFrm[2]->frmProperties.candidate = TRUE;
-                pFrm[3]->frmProperties.drop = TRUE;
-                pFrm[4]->frmProperties.candidate = TRUE;
-                ptrn->ucLatch.ucFullLatch = TRUE;
+                pFrm[2]->frmProperties.candidate = true;
+                pFrm[3]->frmProperties.drop = true;
+                pFrm[4]->frmProperties.candidate = true;
+                ptrn->ucLatch.ucFullLatch = true;
                 if(condition[9])
                     ptrn->ucPatternType = 2;
                 else
@@ -387,13 +387,13 @@ static void Detect_Interlacing_Artifacts_fast_CM(Frame **pFrm, Pattern *ptrn, un
 {
     unsigned int i;
 
-    ptrn->ucLatch.ucFullLatch = FALSE;
+    ptrn->ucLatch.ucFullLatch = false;
     ptrn->ucPatternType = 0;
 
     for(i = 0; i < BUFMINSIZE; i++)
     {
-        pFrm[i]->frmProperties.drop = FALSE;
-        pFrm[i]->frmProperties.candidate = FALSE;
+        pFrm[i]->frmProperties.drop = false;
+        pFrm[i]->frmProperties.candidate = false;
     }
 
     ptrn->ucAvgSAD = CalcSAD_Avg_NoSC(pFrm);
@@ -408,7 +408,7 @@ static void Detect_Interlacing_Artifacts_fast_CM(Frame **pFrm, Pattern *ptrn, un
         Detect_Solve_3223Patterns(pFrm, ptrn, dispatch);
 
     for(i = 0; i < BUFMINSIZE; i++)
-        pFrm[i]->frmProperties.processed = TRUE;
+        pFrm[i]->frmProperties.processed = true;
 
 }
 void Analyze_Buffer_Stats_CM(Frame *frmBuffer[BUFMINSIZE], Pattern *ptrn, unsigned int *pdispatch, unsigned int *uiisInterlaced)
@@ -429,7 +429,7 @@ void Analyze_Buffer_Stats_CM(Frame *frmBuffer[BUFMINSIZE], Pattern *ptrn, unsign
         {
             if(ptrn->uiInterlacedFramesNum < 2 && !ptrn->ucLatch.ucThalfLatch)
             {
-                ptrn->ucLatch.ucFullLatch = TRUE;
+                ptrn->ucLatch.ucFullLatch = true;
                 ptrn->ucPatternType = 0;
                 *pdispatch = 5;
             }
@@ -467,10 +467,10 @@ void Analyze_Buffer_Stats_CM(Frame *frmBuffer[BUFMINSIZE], Pattern *ptrn, unsign
 void Detect_Solve_32BlendedPatternsCM(Frame **pFrm, Pattern *ptrn, unsigned int *dispatch)
 {
     unsigned int i, count, start, previousPattern;
-    BOOL condition[10];
+    bool condition[10];
 
-    ptrn->ucLatch.ucFullLatch = FALSE;
-    ptrn->ucLatch.ucThalfLatch = FALSE;
+    ptrn->ucLatch.ucFullLatch = false;
+    ptrn->ucLatch.ucThalfLatch = false;
     previousPattern = ptrn->ucPatternType;
     ptrn->ucPatternType = 0;
     for (i = 0; i < 10; i++)
@@ -497,7 +497,7 @@ void Detect_Solve_32BlendedPatternsCM(Frame **pFrm, Pattern *ptrn, unsigned int 
         else
         {
             if (!pFrm[5]->frmProperties.interlaced)
-                ptrn->ucLatch.ucSHalfLatch = TRUE;
+                ptrn->ucLatch.ucSHalfLatch = true;
             return;
         }
 
@@ -512,17 +512,17 @@ void Detect_Solve_32BlendedPatternsCM(Frame **pFrm, Pattern *ptrn, unsigned int 
             if (condition[0])
             {
                 start = 1;
-                pFrm[4]->frmProperties.drop = TRUE;
+                pFrm[4]->frmProperties.drop = true;
                 *dispatch = 5;
             }
             else
             {
                 start = 0;
-                pFrm[3]->frmProperties.drop = TRUE;
+                pFrm[3]->frmProperties.drop = true;
                 *dispatch = 4;
             }
             UndoPatternTypes5and7CM(pFrm, start);
-            ptrn->ucLatch.ucFullLatch = TRUE;
+            ptrn->ucLatch.ucFullLatch = true;
             if (previousPattern != 6)
                 ptrn->ucPatternType = 5;
             else
@@ -538,7 +538,7 @@ void Detect_Solve_32BlendedPatternsCM(Frame **pFrm, Pattern *ptrn, unsigned int 
         {
             if (previousPattern != 7)
             {
-                ptrn->ucLatch.ucFullLatch = TRUE;
+                ptrn->ucLatch.ucFullLatch = true;
                 ptrn->blendedCount += BLENDEDOFF;
                 if (ptrn->blendedCount > 1)
                 {
@@ -547,7 +547,7 @@ void Detect_Solve_32BlendedPatternsCM(Frame **pFrm, Pattern *ptrn, unsigned int 
                 }
                 else
                 {
-                    pFrm[1]->frmProperties.drop = TRUE;
+                    pFrm[1]->frmProperties.drop = true;
                 }
                 ptrn->ucPatternType = 6;
                 *dispatch = 2;
@@ -559,13 +559,13 @@ void Detect_Solve_32BlendedPatternsCM(Frame **pFrm, Pattern *ptrn, unsigned int 
                     count += pFrm[i]->frmProperties.interlaced;
                 if (count > 1 && pFrm[5]->frmProperties.interlaced)
                 {
-                    ptrn->ucLatch.ucFullLatch = TRUE;
+                    ptrn->ucLatch.ucFullLatch = true;
                     ptrn->ucPatternType = 8;
                     *dispatch = 2;
                 }
                 else
                 {
-                    ptrn->ucLatch.ucFullLatch = TRUE;
+                    ptrn->ucLatch.ucFullLatch = true;
                     ptrn->ucPatternType = 1;
                     *dispatch = 1;
                 }
@@ -590,7 +590,7 @@ void UndoPatternTypes5and7CM(Frame *frmBuffer[BUFMINSIZE], unsigned int firstPos
 
     //Frame 3
     start++;
-    frmBuffer[start]->frmProperties.drop = TRUE;
+    frmBuffer[start]->frmProperties.drop = true;
 
 
     //Frame 4
@@ -602,15 +602,15 @@ void UndoPatternTypes5and7CM(Frame *frmBuffer[BUFMINSIZE], unsigned int firstPos
 
 void CheckGenFrameCM(Frame **pfrmIn, unsigned int frameNum, unsigned int patternType, unsigned int uiOPMode)
 {
-    BOOL stop = FALSE;
+    bool stop = false;
     if ((pfrmIn[frameNum]->frmProperties.candidate || patternType == 0) && (uiOPMode == 0))
     {
         pdeinterlaceFilter->MeasureRs(pfrmIn[frameNum]);
-        pfrmIn[frameNum]->frmProperties.interlaced = FALSE;
-        Artifacts_Detection_frame(pfrmIn,frameNum, FALSE);
+        pfrmIn[frameNum]->frmProperties.interlaced = false;
+        Artifacts_Detection_frame(pfrmIn,frameNum, false);
         if(pfrmIn[frameNum]->frmProperties.interlaced)
         {
-            //FillBaseLinesIYUV(pfrmIn[frameNum], pfrmIn[BUFMINSIZE], FALSE, FALSE);
+            //FillBaseLinesIYUV(pfrmIn[frameNum], pfrmIn[BUFMINSIZE], false, false);
             pdeinterlaceFilter->DeinterlaceMedianFilterCM(pfrmIn, frameNum);
         }
     }

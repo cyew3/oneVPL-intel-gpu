@@ -12,9 +12,9 @@ File Name: ptir_vpp_plugin.h
 
 #pragma once
 
-#include "cmut\cmrtex.h"
+#include "cmut/cmrtex.h"
 extern "C" {
-#include "..\ptir\pa\api.h"
+#include "../pa/api.h"
 }
 #include "pacm_genx.h"
 #include "cmut/clock.h"

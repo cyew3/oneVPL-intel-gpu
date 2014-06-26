@@ -13,9 +13,11 @@ File Name: hw_utils.h
 #if !defined(__MFX_PTIR_HW_UTILS_PLUGIN_INCLUDED__)
 #define __MFX_PTIR_HW_UTILS_PLUGIN_INCLUDED__
 
+#if defined(_WIN32) || defined(_WIN64)
 #include <d3d9.h>
 #include <dxva2api.h>
 #include <d3d11.h>
+#endif
 #include "mfxvideo.h"
 #include "mfxvideo++int.h"
 

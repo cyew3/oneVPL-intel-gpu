@@ -13,8 +13,11 @@ File Name: hw_utils.cpp
 #include "hw_utils.h"
 #include "mfx_utils.h"
 #include "mfx_check_hardware_support.h"
+#if defined(_WIN32) || defined(_WIN64)
 #include <initguid.h>
+#endif
 
+#if defined(_WIN32) || defined(_WIN64)
 DEFINE_GUID(DXVADDI_Intel_Decode_PrivateData_Report, 
 0x49761bec, 0x4b63, 0x4349, 0xa5, 0xff, 0x87, 0xff, 0xdf, 0x8, 0x84, 0x66);
 DEFINE_GUID(sDXVA2_ModeH264_VLD_NoFGT,
@@ -134,15 +137,18 @@ eMFXHWType GetHWTypeD3D9(const mfxU32 adapterNum, mfxHDL* mfxDeviceHdl)
 //
 //    return MFX_ERR_NONE;
 //}
+#endif
 
 eMFXHWType GetHWType(const mfxU32 adapterNum, mfxIMPL impl, mfxHDL* mfxDeviceHdl)
 {
+#if defined(_WIN32) || defined(_WIN64)
     if(impl & MFX_IMPL_VIA_D3D9)
         return GetHWTypeD3D9(adapterNum, mfxDeviceHdl);
     else if(impl & MFX_IMPL_VIA_D3D11)
         //return GetHWTypeD3D11(adapterNum, mfxDeviceHdl);
         ;
     else
+#endif
         return MFX_HW_UNKNOWN;
 
     return MFX_HW_UNKNOWN;

@@ -12,14 +12,23 @@ File Name: api.h
 
 #include "deinterlacer.h"
 
-__inline unsigned int __stdcall EDIError(BYTE* PrvLinePixel, BYTE* NxtLinePixel, int dir)
+#if (defined(LINUX32) || defined(LINUX64))
+#ifndef min
+#define min(a,b)            (((a) < (b)) ? (a) : (b))
+#endif
+#ifndef max
+#define max(a,b)            (((a) > (b)) ? (a) : (b))
+#endif
+#endif
+
+__inline unsigned int EDIError(BYTE* PrvLinePixel, BYTE* NxtLinePixel, int dir)
 {
     return abs(PrvLinePixel[dir] - NxtLinePixel[-dir]);
 }
 
 #ifdef USE_SSE4
 
-void __stdcall FilterMask_Main(Plane *s, Plane *d, unsigned int BotBase, unsigned int ybegin, unsigned int yend)
+void FilterMask_Main(Plane *s, Plane *d, unsigned int BotBase, unsigned int ybegin, unsigned int yend)
 {
     unsigned int x, y;
     unsigned int prevN, curN, spacer, lastCol, borderLen, borderStart;
@@ -118,7 +127,7 @@ void __stdcall FilterMask_Main(Plane *s, Plane *d, unsigned int BotBase, unsigne
 
 #else
 
-void __stdcall FilterMask_Main(Plane *s, Plane *d, unsigned int BotBase, unsigned int ybegin, unsigned int yend)
+void FilterMask_Main(Plane *s, Plane *d, unsigned int BotBase, unsigned int ybegin, unsigned int yend)
 {
     unsigned int x, y, i;
     unsigned int prevN, curN, spacer, lastCol, borderLen, borderStart;
@@ -199,7 +208,7 @@ void __stdcall FilterMask_Main(Plane *s, Plane *d, unsigned int BotBase, unsigne
 
 #endif
 
-void __stdcall FillBaseLinesIYUV(Frame *pSrc, Frame* pDst, int BottomLinesBaseY, int BottomLinesBaseUV)
+void FillBaseLinesIYUV(Frame *pSrc, Frame* pDst, int BottomLinesBaseY, int BottomLinesBaseUV)
 {
     unsigned int i, val = 0;
     const unsigned char* pSrcLine;
@@ -239,7 +248,7 @@ void __stdcall FillBaseLinesIYUV(Frame *pSrc, Frame* pDst, int BottomLinesBaseY,
         memcpy(pDstLine, pSrcLine, pDst->plaV.uiWidth);
     }
 }
-void __stdcall BilinearDeint(Frame *This, int BotBase)
+void BilinearDeint(Frame *This, int BotBase)
 {
     const int wminus4 = This->plaY.uiWidth - 4;
     const int hminus4 = This->plaY.uiHeight - 4;
@@ -482,7 +491,7 @@ void FilterClip3x3(BYTE *src0, BYTE *src1, BYTE *src2, BYTE *dst, int width)
 
 #endif
 
-void __stdcall MedianDeinterlace(Frame *This, int BotBase)
+void MedianDeinterlace(Frame *This, int BotBase)
 {
     unsigned int y;
     BYTE *CurLine , *PrvLine , *NxtLine;
@@ -525,7 +534,7 @@ void __stdcall MedianDeinterlace(Frame *This, int BotBase)
     This->frmProperties.drop = 0;
 }
 
-void __stdcall BuildLowEdgeMask_Main(Frame **frmBuffer, unsigned int frame, unsigned int BotBase)
+void BuildLowEdgeMask_Main(Frame **frmBuffer, unsigned int frame, unsigned int BotBase)
 {
     const unsigned int wDiv2 = frmBuffer[frame]->plaY.uiWidth / 2;
     const unsigned int w2    = frmBuffer[frame]->plaY.uiWidth * 2;
@@ -892,7 +901,7 @@ static __inline void CalculateEdgesChroma_C(unsigned char *PrvLine, unsigned cha
     }
 }
 
-void __stdcall CalculateEdgesIYUV(Frame **frmBuffer, unsigned int frame, int BotBase)
+void CalculateEdgesIYUV(Frame **frmBuffer, unsigned int frame, int BotBase)
 {
     int xStart, xEnd, xRem, yStart, yEnd, ColorOffset;
     unsigned char * PrvLine,* NxtLine;
@@ -956,7 +965,7 @@ void __stdcall CalculateEdgesIYUV(Frame **frmBuffer, unsigned int frame, int Bot
 
 #else    /* USE_SSE4 */
 
-void __stdcall CalculateEdgesIYUV(Frame **frmBuffer, unsigned int frame, int BotBase)
+void CalculateEdgesIYUV(Frame **frmBuffer, unsigned int frame, int BotBase)
 {
     unsigned int x, y, xover2;
     char EdgeDir, dir;
@@ -1086,7 +1095,7 @@ void __stdcall CalculateEdgesIYUV(Frame **frmBuffer, unsigned int frame, int Bot
 
 #endif    /* USE_SSE4 */
 
-void __stdcall EdgeDirectionalIYUV_Main(Frame **frmBuffer, unsigned int curFrame, int BotBase)
+void EdgeDirectionalIYUV_Main(Frame **frmBuffer, unsigned int curFrame, int BotBase)
 {
     unsigned int x, y, xover2;//, dir;
     int EdgeDir;
@@ -1237,7 +1246,7 @@ void __stdcall EdgeDirectionalIYUV_Main(Frame **frmBuffer, unsigned int curFrame
         }
     }
 }
-void __stdcall DeinterlaceBorders(Frame **frmBuffer, unsigned int curFrame, int BotBase)
+void DeinterlaceBorders(Frame **frmBuffer, unsigned int curFrame, int BotBase)
 {
     BYTE *curLine;
     BYTE *prevLine;
@@ -1375,7 +1384,7 @@ void __stdcall DeinterlaceBorders(Frame **frmBuffer, unsigned int curFrame, int 
         }
     }
 }
-void __stdcall DeinterlaceBilinearFilter(Frame **frmBuffer, unsigned int curFrame, int BotBase)
+void DeinterlaceBilinearFilter(Frame **frmBuffer, unsigned int curFrame, int BotBase)
 {
         BilinearDeint(frmBuffer[curFrame], BotBase);
         BuildLowEdgeMask_Main(frmBuffer, curFrame, BotBase);
@@ -1383,7 +1392,7 @@ void __stdcall DeinterlaceBilinearFilter(Frame **frmBuffer, unsigned int curFram
         EdgeDirectionalIYUV_Main(frmBuffer, curFrame, BotBase);
         DeinterlaceBorders(frmBuffer, curFrame, BotBase);
 }
-void __stdcall DeinterlaceMedianFilter(Frame **frmBuffer, unsigned int curFrame, int BotBase)
+void DeinterlaceMedianFilter(Frame **frmBuffer, unsigned int curFrame, int BotBase)
 {
         MedianDeinterlace(frmBuffer[curFrame], BotBase);
         BuildLowEdgeMask_Main(frmBuffer, curFrame, BotBase);

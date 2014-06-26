@@ -14,7 +14,8 @@ File Name: common.c
 
 #define DEBUG_RS 0
 
-void /*__stdcall*/ PrintOutputStats(HANDLE hStd,
+#if defined(_WIN32) || defined(_WIN64)
+void PrintOutputStats(HANDLE hStd,
                                 CONSOLE_SCREEN_BUFFER_INFO sbInfo, 
                                 unsigned int uiFrame, 
                                 unsigned int uiStart, 
@@ -53,8 +54,9 @@ void /*__stdcall*/ PrintOutputStats(HANDLE hStd,
     printf("%32s %9.2lf mspf\n", "Total Time", 1000.0 * dTimeTotal / (uiFrameOut + 1));
     printf("\n");
 }
+#endif
 
-void /*__stdcall*/ Plane_Create(Plane *pplaIn, unsigned int uiWidth, unsigned int uiHeight, unsigned int uiBorder)
+void Plane_Create(Plane *pplaIn, unsigned int uiWidth, unsigned int uiHeight, unsigned int uiBorder)
 {
     pplaIn->uiSize = (uiWidth + 2 * uiBorder) * (uiHeight + 2 * uiBorder);
     pplaIn->ucData = (unsigned char *)malloc(pplaIn->uiSize);
@@ -70,12 +72,12 @@ void /*__stdcall*/ Plane_Create(Plane *pplaIn, unsigned int uiWidth, unsigned in
     else
         pplaIn->uiSize = 0;
 }
-void /*__stdcall*/ Plane_Release(Plane *pplaIn)
+void Plane_Release(Plane *pplaIn)
 {
     if (pplaIn->ucData)
         free(pplaIn->ucData);
 }
-void /*__stdcall*/ Frame_Create(Frame *pfrmIn, unsigned int uiYWidth, unsigned int uiYHeight, unsigned int uiUVWidth, unsigned int uiUVHeight, unsigned int uiBorder)
+void Frame_Create(Frame *pfrmIn, unsigned int uiYWidth, unsigned int uiYHeight, unsigned int uiUVWidth, unsigned int uiUVHeight, unsigned int uiBorder)
 {
     unsigned int uiOffset;
     pfrmIn->uiSize = (uiYWidth + 2 * uiBorder) * (uiYHeight + 2 * uiBorder) + (2 * (uiUVWidth + 2 * uiBorder) * (uiUVHeight + 2 * uiBorder));
@@ -117,18 +119,18 @@ void /*__stdcall*/ Frame_Create(Frame *pfrmIn, unsigned int uiYWidth, unsigned i
         pfrmIn->uiSize = 0;
 
 }
-void /*__stdcall*/ Frame_Release(Frame *pfrmIn)
+void Frame_Release(Frame *pfrmIn)
 {
     if (pfrmIn->ucMem)
         free(pfrmIn->ucMem);
 }
-void /*__stdcall*/ FrameQueue_Initialize(FrameQueue *pfq)
+void FrameQueue_Initialize(FrameQueue *pfq)
 {
     pfq->iCount = 0;
     pfq->pfrmHead = NULL;
     pfq->pfrmTail = NULL;
 }
-void /*__stdcall*/ FrameQueue_Add(FrameQueue *pfq, Frame *pfrm)
+void FrameQueue_Add(FrameQueue *pfq, Frame *pfrm)
 {
     FrameNode
         *pfn = (FrameNode *)malloc(sizeof(FrameNode));
@@ -147,7 +149,7 @@ void /*__stdcall*/ FrameQueue_Add(FrameQueue *pfq, Frame *pfrm)
         pfq->pfrmTail = pfn;
     }
 }
-Frame * /*__stdcall*/ FrameQueue_Get(FrameQueue *pfq)
+Frame * FrameQueue_Get(FrameQueue *pfq)
 {
     Frame *pfrm = NULL;
     if (pfq->iCount > 0)
@@ -158,7 +160,7 @@ Frame * /*__stdcall*/ FrameQueue_Get(FrameQueue *pfq)
     }
     return pfrm;
 }
-void /*__stdcall*/ FrameQueue_Release(FrameQueue *pfq)
+void FrameQueue_Release(FrameQueue *pfq)
 {
     int i;
     FrameNode
@@ -176,7 +178,7 @@ void /*__stdcall*/ FrameQueue_Release(FrameQueue *pfq)
     pfq->pfrmHead = NULL;
     pfq->pfrmTail = NULL;
 }
-void /*__stdcall*/ AddBorders(Plane *pplaIn, Plane *pplaOut, unsigned int uiBorder)
+void AddBorders(Plane *pplaIn, Plane *pplaOut, unsigned int uiBorder)
 {
     unsigned int i;
 
@@ -205,7 +207,7 @@ void /*__stdcall*/ AddBorders(Plane *pplaIn, Plane *pplaOut, unsigned int uiBord
     for (i = 0; i < pplaOut->uiHeight + 2 * pplaOut->uiBorder; ++i)
         memset(&pplaOut->ucData[i * pplaOut->uiStride + pplaOut->uiWidth + pplaOut->uiBorder], pplaOut->ucData[i * pplaOut->uiStride + (pplaOut->uiWidth + pplaOut->uiBorder - 1)], pplaOut->uiBorder);
 }
-void /*__stdcall*/ TrimBorders(Plane *pplaIn, Plane *pplaOut)
+void TrimBorders(Plane *pplaIn, Plane *pplaOut)
 {
     unsigned int i;
 
@@ -246,7 +248,7 @@ static void Convert_UYVY_to_I420(unsigned char *pucIn, Frame *pfrmOut)
         }
     }
 }
-void /*__stdcall*/ Convert_to_I420(unsigned char *pucIn, Frame *pfrmOut, char *pcFormat, double uiFrameRate)
+void Convert_to_I420(unsigned char *pucIn, Frame *pfrmOut, char *pcFormat, double uiFrameRate)
 {
     pfrmOut->frmProperties.fr = uiFrameRate;
     if (strcmp(pcFormat, "I420") == 0)
@@ -256,7 +258,7 @@ void /*__stdcall*/ Convert_to_I420(unsigned char *pucIn, Frame *pfrmOut, char *p
     else
         return;
 }
-void /*__stdcall*/ CheckGenFrame(Frame **pfrmIn, unsigned int frameNum, unsigned int patternType, unsigned int uiOPMode)
+void CheckGenFrame(Frame **pfrmIn, unsigned int frameNum, unsigned int patternType, unsigned int uiOPMode)
 {
     BOOL stop = FALSE;
     if((pfrmIn[frameNum]->frmProperties.candidate || patternType == 0) && (uiOPMode == 0))
@@ -271,7 +273,7 @@ void /*__stdcall*/ CheckGenFrame(Frame **pfrmIn, unsigned int frameNum, unsigned
         }
     }
 }
-void /*__stdcall*/ Prepare_frame_for_queue(Frame **pfrmOut, Frame *pfrmIn, unsigned int uiWidth, unsigned int uiHeight)
+void Prepare_frame_for_queue(Frame **pfrmOut, Frame *pfrmIn, unsigned int uiWidth, unsigned int uiHeight)
 {
     *pfrmOut = (Frame *)malloc(sizeof(Frame));
     Frame_Create(*pfrmOut, uiWidth, uiHeight, uiWidth / 2, uiHeight / 2, 64);

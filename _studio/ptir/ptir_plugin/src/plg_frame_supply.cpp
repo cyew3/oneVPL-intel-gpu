@@ -458,7 +458,9 @@ mfxStatus frameSupplier::CMCreateSurface2D(mfxFrameSurface1*& mfxSurf, CmSurface
     }
     else if((IOPattern & MFX_IOPATTERN_IN_VIDEO_MEMORY) && (IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY))
     {
+#if defined(_WIN32) || defined(_WIN64)
         cmSts = (*pCMdevice)->CreateSurface2D((IDirect3DSurface9 *) mfxSurf->Data.MemId, cmSurfOut);
+#endif
         assert(cmSts == 0);
         if(CM_SUCCESS != cmSts)
             return MFX_ERR_DEVICE_FAILED;
