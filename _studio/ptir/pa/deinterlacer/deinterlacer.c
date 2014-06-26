@@ -34,7 +34,12 @@ void FilterMask_Main(Plane *s, Plane *d, unsigned int BotBase, unsigned int ybeg
     unsigned int prevN, curN, spacer, lastCol, borderLen, borderStart;
     BYTE *tmpCur, *CurLine;
 
+#if defined(_WIN32) || defined(_WIN64)
     __stosb(d->ucData, 0, d->uiSize);
+#else
+    memset(d->ucData, 0, d->uiSize); //TODO FIXME: review this
+#endif
+
 
     for (y = ybegin; y < yend; y += 2)
     {
@@ -58,7 +63,12 @@ void FilterMask_Main(Plane *s, Plane *d, unsigned int BotBase, unsigned int ybeg
             //
             mask = _mm_cmpeq_epi8(_mm_loadu_si128((__m128i *)&tmpCur[x]), _mm_set1_epi8(128));
             bits = _mm_movemask_epi8(mask);
+#if defined(_WIN32) || defined(_WIN64)
             _BitScanForward(&count, ~bits);
+#endif
+#if (defined(LINUX32) || defined(LINUX64))
+            count = __builtin_ffs(~bits); //TODO FIXME: review this
+#endif
 
             if (count > 0)
             {
@@ -67,7 +77,11 @@ void FilterMask_Main(Plane *s, Plane *d, unsigned int BotBase, unsigned int ybeg
                     borderStart = (min(curN, prevN) * 3  + 2) >> 2;
                     borderLen   = borderStart * 2 + spacer;
                     borderStart += spacer + curN;
+#if defined(_WIN32) || defined(_WIN64)
                     __stosb(&CurLine[x - borderStart], 255, borderLen);    //filing mask
+#else
+                    memset(&CurLine[x - borderStart], 255, borderLen); //TODO FIXME: review this
+#endif
 
                     prevN  = 0;
                     spacer = 0;
@@ -88,7 +102,12 @@ void FilterMask_Main(Plane *s, Plane *d, unsigned int BotBase, unsigned int ybeg
             //
             else
             {
+#if defined(_WIN32) || defined(_WIN64)
                 _BitScanForward(&count, 0xffff0000 | bits);
+#endif
+#if (defined(LINUX32) || defined(LINUX64))
+                count = __builtin_ffs(0xffff0000 | bits);  //TODO FIXME: review this
+#endif
                 
                 for (count += x; x < count; x++)
                 {
@@ -110,7 +129,11 @@ void FilterMask_Main(Plane *s, Plane *d, unsigned int BotBase, unsigned int ybeg
                                 borderStart = (min(curN, prevN) * 3  + 2) >> 2;
                                 borderLen   = borderStart * 2 + spacer;
                                 borderStart += spacer + curN;
+#if defined(_WIN32) || defined(_WIN64)
                                 __stosb(&CurLine[x - borderStart], 255, borderLen);    //filing mask
+#else
+                                memset(&CurLine[x - borderStart], 255, borderLen); //TODO FIXME: review this
+#endif
 
                                 spacer = 0;
                             }

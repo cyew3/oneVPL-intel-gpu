@@ -15,6 +15,14 @@ File Name: ptir_vpp_plugin.h
 #include "cmut/cmrtex.h"
 extern "C" {
 #include "../pa/api.h"
+#if defined(LINUX32) || defined (LINUX64)
+//Undefine since cm linux include files are defining it itself which cause compilation errors
+//  (for reference, CPU version is in C-code and do not use CM headers)
+    #undef BOOL
+    #undef TRUE
+    #undef FALSE
+    #undef BYTE
+#endif
 }
 #include "pacm_genx.h"
 #include "cmut/clock.h"
@@ -41,7 +49,7 @@ public:
     void MedianDeinterlaceCM(Frame * pFrame, Frame * pFrame2);
     void FixEdgeDirectionalIYUVCM(Frame **frmBuffer, unsigned int curFrame, unsigned int curFrame2);
     void BuildLowEdgeMask_Main_CM(Frame **frmBuffer, unsigned int curFrame, unsigned int curFrame2);
-    void Undo2FramesYUVCM(Frame *frmBuffer1, Frame *frmBuffer2, BOOL BFF);
+    void Undo2FramesYUVCM(Frame *frmBuffer1, Frame *frmBuffer2, bool BFF);
     void DeinterlaceBordersCM(Frame **frmBuffer, unsigned int curFrame, unsigned int curFrame2);
     void SyncGPU();
     void FrameCreateSurface(Frame *pfrmIn, bool bcreate = true);

@@ -18,6 +18,15 @@ File Name: ptir_vpp_plugin.h
 #include "ptir_vpp_utils.h"
 extern "C" {
 #include "../pa/api.h"
+#if defined(LINUX32) || defined (LINUX64)
+
+//Undefine since cm linux include files are defining it itself which cause compilation errors
+//  (for reference, CPU version is in C-code and do not use CM headers)
+    #undef BOOL
+    #undef TRUE
+    #undef FALSE
+    #undef BYTE
+#endif
 }
 #include "../pacm/pacm.h"
 //#include "cmrt_cross_platform.h"

@@ -226,7 +226,7 @@ void DeinterlaceFilter::DeinterlaceMedianFilterCM(Frame **frmBuffer, UINT curFra
     clockDeinterlaceTotalCPU.Begin();
     if (SKIP_FIELD != curFrame2 && SKIP_FIELD != curFrame) {
         clockFillBaseline.Begin();
-        FillBaseLinesIYUV(frmBuffer[curFrame], frmBuffer[curFrame2], FALSE, FALSE);
+        FillBaseLinesIYUV(frmBuffer[curFrame], frmBuffer[curFrame2], false, false);
         clockFillBaseline.End();
         clockDeinterlace.Begin();
         MedianDeinterlace(frmBuffer[curFrame], 0);
@@ -570,12 +570,12 @@ void DeinterlaceFilter::MedianDeinterlaceCM(Frame * pFrame, Frame * pFrame2)
 
 
     if (NULL != pFrame) {
-        pFrame->frmProperties.processed = TRUE;
+        pFrame->frmProperties.processed = true;
         pFrame->frmProperties.drop = 0;
         pFrame->outState = Frame::OUT_PROCESSED;
     }
     if (NULL != pFrame2) {
-        pFrame2->frmProperties.processed = TRUE;
+        pFrame2->frmProperties.processed = true;
         pFrame2->frmProperties.drop = 0;
         pFrame2->outState = Frame::OUT_PROCESSED;
     }
@@ -672,7 +672,7 @@ void DeinterlaceFilter::BuildLowEdgeMask_Main_CM(Frame **frmBuffer, unsigned int
 
 //Thread block 32*8
 //Data out of border will be thrown, so no border risk
-void DeinterlaceFilter::Undo2FramesYUVCM(Frame *frmBuffer1, Frame *frmBuffer2, BOOL BFF)
+void DeinterlaceFilter::Undo2FramesYUVCM(Frame *frmBuffer1, Frame *frmBuffer2, bool BFF)
 {
     enum
     {
@@ -698,7 +698,7 @@ void DeinterlaceFilter::Undo2FramesYUVCM(Frame *frmBuffer1, Frame *frmBuffer2, B
     kernel->SetKernelArg(2, *GetFrameSurfaceOut(frmBuffer1));
 
     QueueEx().Enqueue(*kernel, threadSpace);
-    frmBuffer1->frmProperties.candidate = TRUE;
+    frmBuffer1->frmProperties.candidate = true;
     frmBuffer1->outState = Frame::OUT_PROCESSED;
     
     QueueEx().WaitForLastKernel();

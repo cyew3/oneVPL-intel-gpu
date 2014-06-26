@@ -23,15 +23,31 @@ File Name: common.h
 #include <math.h>
 #include <stdio.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #if (defined(LINUX32) || defined(LINUX64))
 #include <stdbool.h>
 #include <inttypes.h>
 #define __int64 uint64_t
-#endif
 
+    //Visual Studio C-compiler does not support C99, so that no bool type at all
+    //Defining bool (in lower case) will cause a lot of errors in C++ files including this file
+#define BOOL bool
+#define TRUE true
+#define FALSE false
+#define BYTE unsigned char
 
-#ifdef __cplusplus
-extern "C" {
+//#include <emmintrin.h> //SSE2 
+//#include <pmmintrin.h> //SSE3 (Prescott) Pentium(R) 4 processor (_mm_lddqu_si128() present ) 
+//#include <tmmintrin.h> // SSSE3 
+#include <smmintrin.h> // SSE4.1, Intel(R) Core(TM) 2 Duo
+//#include <nmmintrin.h> // SSE4.2, Intel(R) Core(TM) 2 Duo
+//#include <wmmintrin.h> // AES and PCLMULQDQ
+//#include <immintrin.h> // AVX, AVX2
+//#include <ammintrin.h> // AMD extention SSE5 ? FMA4
+
 #endif
 
 #define PA_C                    0
@@ -40,9 +56,7 @@ extern "C" {
 
 #define PA_PERF_LEVEL            PA_SSE2
 
-#if defined(_WIN32) || defined(_WIN64)
 #define USE_SSE4
-#endif
 
 #if defined(_WIN32) || defined(_WIN64)
 #define ALIGN_DECL(X) __declspec(align(X))
@@ -53,7 +67,7 @@ extern "C" {
     // Latch
         typedef struct _Latch
     {
-            BOOL 
+            BOOL
                 ucFullLatch,
                 ucThalfLatch,
                 ucSHalfLatch,
@@ -63,7 +77,7 @@ extern "C" {
     // Pattern
         typedef struct _Pattern
     {
-            BOOL 
+            BOOL
                 ucPatternFound;
             unsigned int
                 ucPatternType,
@@ -103,7 +117,7 @@ extern "C" {
     // meta
         typedef struct _Meta
     {
-            BOOL 
+            BOOL
                 processed,        //Indicates if frame has been processed, used for first two frames in the beginning of the run
                 interlaced,        //Indicates if frame is interlaced or not
                 drop,            //Indicates if frame has to be dropped
@@ -170,5 +184,5 @@ extern "C" {
     void Prepare_frame_for_queue(Frame **pfrmOut, Frame *pfrmIn, unsigned int uiWidth, unsigned int uiHeight);
 #ifdef __cplusplus
 }
-#endif 
+#endif
 #endif
