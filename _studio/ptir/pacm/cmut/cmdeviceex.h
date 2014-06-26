@@ -11,9 +11,9 @@
 **/ 
 #pragma once
 
-//#include "cmrt_cross_platform.h"
+#include "cmrt_cross_platform.h"
 #include "mfxstructures.h"
-#include "cm_rt.h"
+//#include "cm_rt.h"
 #include "cmutility.h"
 #include "cmassert.h"
 #include "iostream"

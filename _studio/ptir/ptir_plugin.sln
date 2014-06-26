@@ -13,6 +13,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "umc", "..\shared\umc\core\u
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "pacm_cmd", "pacm\pacm_cmd.vcxproj", "{FBD6023A-F470-462C-8C93-A8892D3AE6FD}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "cmrt_cross_platform", "..\mfx_lib\cmrt_cross_platform\cmrt_cross_platform.vcxproj", "{811626EB-8608-4CAC-ABEE-CD99DAEC38C4}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug_HSW_Emu|Win32 = Debug_HSW_Emu|Win32
@@ -147,6 +149,26 @@ Global
 		{FBD6023A-F470-462C-8C93-A8892D3AE6FD}.Release-emu|Win32.Build.0 = Release-emu|Win32
 		{FBD6023A-F470-462C-8C93-A8892D3AE6FD}.Release-emu|x64.ActiveCfg = Release-emu|x64
 		{FBD6023A-F470-462C-8C93-A8892D3AE6FD}.Release-emu|x64.Build.0 = Release-emu|x64
+		{811626EB-8608-4CAC-ABEE-CD99DAEC38C4}.Debug_HSW_Emu|Win32.ActiveCfg = Debug_HSW_Emu|Win32
+		{811626EB-8608-4CAC-ABEE-CD99DAEC38C4}.Debug_HSW_Emu|Win32.Build.0 = Debug_HSW_Emu|Win32
+		{811626EB-8608-4CAC-ABEE-CD99DAEC38C4}.Debug_HSW_Emu|x64.ActiveCfg = Debug_HSW_Emu|x64
+		{811626EB-8608-4CAC-ABEE-CD99DAEC38C4}.Debug_HSW_Emu|x64.Build.0 = Debug_HSW_Emu|x64
+		{811626EB-8608-4CAC-ABEE-CD99DAEC38C4}.Debug|Win32.ActiveCfg = Debug|Win32
+		{811626EB-8608-4CAC-ABEE-CD99DAEC38C4}.Debug|Win32.Build.0 = Debug|Win32
+		{811626EB-8608-4CAC-ABEE-CD99DAEC38C4}.Debug|x64.ActiveCfg = Debug|x64
+		{811626EB-8608-4CAC-ABEE-CD99DAEC38C4}.Debug|x64.Build.0 = Debug|x64
+		{811626EB-8608-4CAC-ABEE-CD99DAEC38C4}.Debug-emu|Win32.ActiveCfg = Debug|Win32
+		{811626EB-8608-4CAC-ABEE-CD99DAEC38C4}.Debug-emu|Win32.Build.0 = Debug|Win32
+		{811626EB-8608-4CAC-ABEE-CD99DAEC38C4}.Debug-emu|x64.ActiveCfg = Debug|x64
+		{811626EB-8608-4CAC-ABEE-CD99DAEC38C4}.Debug-emu|x64.Build.0 = Debug|x64
+		{811626EB-8608-4CAC-ABEE-CD99DAEC38C4}.Release|Win32.ActiveCfg = Release|Win32
+		{811626EB-8608-4CAC-ABEE-CD99DAEC38C4}.Release|Win32.Build.0 = Release|Win32
+		{811626EB-8608-4CAC-ABEE-CD99DAEC38C4}.Release|x64.ActiveCfg = Release|x64
+		{811626EB-8608-4CAC-ABEE-CD99DAEC38C4}.Release|x64.Build.0 = Release|x64
+		{811626EB-8608-4CAC-ABEE-CD99DAEC38C4}.Release-emu|Win32.ActiveCfg = Release|Win32
+		{811626EB-8608-4CAC-ABEE-CD99DAEC38C4}.Release-emu|Win32.Build.0 = Release|Win32
+		{811626EB-8608-4CAC-ABEE-CD99DAEC38C4}.Release-emu|x64.ActiveCfg = Release|x64
+		{811626EB-8608-4CAC-ABEE-CD99DAEC38C4}.Release-emu|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

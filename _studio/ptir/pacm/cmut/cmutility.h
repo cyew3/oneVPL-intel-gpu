@@ -11,8 +11,8 @@
 **/ 
 #pragma once
 
-//#include "cmrt_cross_platform.h"
-#include "cm_rt.h"
+#include "cmrt_cross_platform.h"
+//#include "cm_rt.h"
 #include "iostream"
 #include "string"
 using namespace std;
