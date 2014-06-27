@@ -48,9 +48,6 @@
     <ClInclude Include="include\sysmem_allocator.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\mfx_plugin_uids.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="include\mfx_buffering.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -81,6 +78,12 @@
     <ClInclude Include="include\mfx_samples_config.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="include\plugin_utils.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\sample_types.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\base_allocator.cpp">
@@ -104,9 +107,6 @@
     <ClCompile Include="src\sysmem_allocator.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\mfx_plugin_uids.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\mfx_buffering.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -127,6 +127,9 @@
     </ClCompile>
     <ClCompile Include="src\vm\time.cpp">
       <Filter>Source Files\vm</Filter>
+    </ClCompile>
+    <ClCompile Include="src\plugin_utils.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

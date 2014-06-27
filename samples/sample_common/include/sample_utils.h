@@ -26,6 +26,8 @@ Copyright(c) 2005-2014 Intel Corporation. All Rights Reserved.
 #include "vm/time_defs.h"
 #include "vm/atomic_defs.h"
 
+#include "sample_types.h"
+
 // A macro to disallow the copy constructor and operator= functions
 // This should be used in the private: declarations for a class
 #define DISALLOW_COPY_AND_ASSIGN(TypeName) \
@@ -51,19 +53,6 @@ public:
     //! Allow default construction
     no_copy() {}
 };
-
-typedef std::basic_string<msdk_char> msdk_string;
-typedef std::basic_stringstream<msdk_char> msdk_stringstream;
-typedef std::basic_ostream<msdk_char, std::char_traits<msdk_char> > msdk_ostream;
-typedef std::basic_istream<msdk_char, std::char_traits<msdk_char> > msdk_istream;
-
-#ifdef UNICODE
-    #define msdk_cout std::wcout
-    #define msdk_err std::wcerr
-#else
-    #define msdk_cout std::cout
-    #define msdk_err std::cerr
-#endif
 
 struct DeletePtr {
     template <class T> T* operator () (T* p) const {
@@ -653,6 +642,5 @@ template<typename T>
     }
 
 mfxStatus StrFormatToCodecFormatFourCC(msdk_char* strInput, mfxU32 &codecFormat);
-mfxStatus ConvertStringToGuid(const msdk_string & sGuid, mfxPluginUID &mfxGuid);
 
 #endif //__SAMPLE_UTILS_H__

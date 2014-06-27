@@ -15,12 +15,8 @@ Copyright(c) 2013-2014 Intel Corporation. All Rights Reserved.
 #include "mfx_plugin_module.h"
 #include "intrusive_ptr.h"
 #include <iostream>
+#include <iomanip> // for std::setfill, std::setw
 #include <memory> // for std::auto_ptr
-
-typedef enum {
-    MFX_PLUGINLOAD_TYPE_GUID = 1,
-    MFX_PLUGINLOAD_TYPE_FILE = 2
-} MfxPluginLoadType;
 
 class MsdkSoModule
 {
@@ -151,6 +147,21 @@ protected:
 
     MfxPluginLoadType plugin_load_type;
 
+private:
+    const msdk_char* msdkGetPluginName(const mfxPluginUID& guid)
+    {
+        if (AreGuidsEqual(guid, MFX_PLUGINID_HEVCD_SW))
+            return MSDK_STRING("Intel (R) Media SDK plugin for HEVC DECODE");
+        else if(AreGuidsEqual(guid, MFX_PLUGINID_HEVCD_HW))
+            return MSDK_STRING("Intel (R) Media SDK HW plugin for HEVC DECODE");
+        else if(AreGuidsEqual(guid, MFX_PLUGINID_HEVCE_SW))
+            return MSDK_STRING("Intel (R) Media SDK plugin for HEVC ENCODE");
+        else if(AreGuidsEqual(guid, MFX_PLUGINID_H264LA_HW))
+            return MSDK_STRING("Intel (R) Media SDK plugin for LA ENC");
+        else
+            return MSDK_STRING("Unknown plugin");
+    }
+
 public:
     PluginLoader(MFXVideoUSER *userModule, const msdk_string & pluginName)
         : m_PluginModule(pluginName)
@@ -176,7 +187,7 @@ public:
         mfxStatus sts = userModule->Register(ePluginType, &plg);
         if (MFX_ERR_NONE != sts) {
             MSDK_TRACE_ERROR(MSDK_STRING("Failed to register plugin: ") << pluginName
-                << MSDK_STRING(", MFXVideoUSER::Register(type=") << ePluginType << MSDK_STRING("), mfxsts=") << sts);
+                << MSDK_STRING(", MFXVideoUSER::Register(type=") << ePluginType << MSDK_STRING("), sts=") << sts);
             return;
         }
         MSDK_TRACE_INFO(MSDK_STRING("Plugin(type=")<< ePluginType <<MSDK_STRING("): loaded from: ")<< pluginName );
@@ -187,17 +198,26 @@ public:
         : m_session()
         , m_uid()
     {
+        msdk_stringstream strStream;
         plugin_load_type = MFX_PLUGINLOAD_TYPE_GUID;
 
         MSDK_MEMCPY(&m_uid, &uid, sizeof(mfxPluginUID));
+        for (size_t i = 0; i != sizeof(mfxPluginUID); i++)
+        {
+            strStream << MSDK_STRING("0x") << std::setfill(MSDK_CHAR('0')) << std::setw(2) << std::hex << (int)m_uid.Data[i];
+            if (i != (sizeof(mfxPluginUID)-1)) strStream << MSDK_STRING(", ");
+        }
 
         mfxStatus sts = MFXVideoUSER_Load(session, &m_uid, version);
-        if (MFX_ERR_NONE != sts) {
-            MSDK_TRACE_ERROR(MSDK_STRING("Failed to load plugin from GUID, mfxsts=") << sts);
-            return;
+        if (MFX_ERR_NONE != sts)
+        {
+            MSDK_TRACE_ERROR(MSDK_STRING("Failed to load plugin from GUID, sts=") << sts << MSDK_STRING(": { ") << strStream.str().c_str() << MSDK_STRING(" } (") << msdkGetPluginName(m_uid) << MSDK_STRING(")"));
         }
-        MSDK_TRACE_INFO(MSDK_STRING("Plugin was loaded from GUID"));
-        m_session = session;
+        else
+        {
+            MSDK_TRACE_INFO(MSDK_STRING("Plugin was loaded from GUID: { ") << strStream.str().c_str() << MSDK_STRING(" } (") << msdkGetPluginName(m_uid) << MSDK_STRING(")"));
+            m_session = session;
+        }
     }
 
     virtual ~PluginLoader()
@@ -207,7 +227,7 @@ public:
             if (m_userModule) {
                 mfxStatus sts = m_userModule->Unregister(ePluginType);
                 if (sts != MFX_ERR_NONE) {
-                    MSDK_TRACE_INFO(MSDK_STRING("MFXVideoUSER::Unregister(type=") << ePluginType << MSDK_STRING("), mfxsts=") << sts);
+                    MSDK_TRACE_INFO(MSDK_STRING("MFXVideoUSER::Unregister(type=") << ePluginType << MSDK_STRING("), sts=") << sts);
                 }
             }
         }
@@ -218,7 +238,7 @@ public:
                 mfxStatus sts = MFXVideoUSER_UnLoad(m_session, &m_uid);
                 if (sts != MFX_ERR_NONE)
                 {
-                     MSDK_TRACE_INFO(MSDK_STRING("MFXVideoUSER_UnLoad(session=0x") << m_session << MSDK_STRING("), mfxsts=") << sts);
+                     MSDK_TRACE_INFO(MSDK_STRING("MFXVideoUSER_UnLoad(session=0x") << m_session << MSDK_STRING("), sts=") << sts);
                 }
             }
         }

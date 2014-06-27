@@ -15,7 +15,6 @@ Copyright(c) 2010-2014 Intel Corporation. All Rights Reserved.
 #endif
 
 #include "sample_multi_transcode.h"
-#include "mfx_plugin_uids.h"
 
 using namespace std;
 using namespace TranscodingSample;

@@ -41,7 +41,6 @@ CDecodingPipeline::CDecodingPipeline()
 {
     m_pmfxDEC = NULL;
     m_pmfxVPP = NULL;
-    m_pUID = NULL;
     m_pGeneralAllocator = NULL;
     m_pmfxAllocatorParams = NULL;
     m_memType = SYSTEM_MEMORY;
@@ -152,44 +151,37 @@ mfxStatus CDecodingPipeline::Init(sInputParams *pParams)
     sts = InitMfxBitstream(&m_mfxBS, 1024 * 1024);
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
-    if (CheckVersion(&version, MSDK_FEATURE_PLUGIN_API))
-    {
+    if (CheckVersion(&version, MSDK_FEATURE_PLUGIN_API)) {
         /* Here we actually define the following codec initialization scheme:
-         *  1. If plugin path specified: we load user-defined plugin (example: HEVC sample decoder plugin)
-         *  2. If plugin path not specified:
-         *    2.a) we check if codec is distributed as a mediasdk plugin and load it if yes
-         *    2.b) if codec is not in the list of mediasdk plugins, we assume, that it is supported inside mediasdk library
-         */
+        *  1. If plugin path or guid is specified: we load user-defined plugin (example: VP8 sample decoder plugin)
+        *  2. If plugin path not specified:
+        *    2.a) we check if codec is distributed as a mediasdk plugin and load it if yes
+        *    2.b) if codec is not in the list of mediasdk plugins, we assume, that it is supported inside mediasdk library
+        */
         // Load user plug-in, should go after CreateAllocator function (when all callbacks were initialized)
-        if (msdk_strlen(pParams->strPluginPath))
+        if (pParams->pluginParams.type == MFX_PLUGINLOAD_TYPE_FILE && msdk_strlen(pParams->pluginParams.strPluginPath))
         {
             m_pUserModule.reset(new MFXVideoUSER(m_mfxSession));
-
-            m_pPlugin.reset(LoadPlugin(MFX_PLUGINTYPE_VIDEO_DECODE, m_pUserModule.get(), pParams->strPluginPath));
-
+            if (pParams->videoType == CODEC_VP8 || pParams->videoType == MFX_CODEC_HEVC)
+            {
+                m_pPlugin.reset(LoadPlugin(MFX_PLUGINTYPE_VIDEO_DECODE, m_pUserModule.get(), pParams->pluginParams.strPluginPath));
+            }
             if (m_pPlugin.get() == NULL) sts = MFX_ERR_UNSUPPORTED;
         }
         else
         {
-            mfxSession session = m_mfxSession;
-
-            // in case of HW library (-hw key) we will firstly try to load HW plugin
-            // in case of failure - we will try SW one
-            if (pParams->bUseHWLib) {
-                m_pUID = msdkGetPluginUID(MSDK_VDECODE | MSDK_IMPL_HW, pParams->videoType);
+            if (AreGuidsEqual(pParams->pluginParams.pluginGuid, MSDK_PLUGINGUID_NULL))
+            {
+                mfxIMPL impl = pParams->bUseHWLib ? MFX_IMPL_HARDWARE : MFX_IMPL_SOFTWARE;
+                pParams->pluginParams.pluginGuid = msdkGetPluginUID(impl, MSDK_VDECODE, pParams->videoType);
             }
-            if (m_pUID) {
-                sts = LoadPluginByUID(&session, m_pUID);
+            if (!AreGuidsEqual(pParams->pluginParams.pluginGuid, MSDK_PLUGINGUID_NULL))
+            {
+                m_pPlugin.reset(LoadPlugin(MFX_PLUGINTYPE_VIDEO_DECODE, m_mfxSession, pParams->pluginParams.pluginGuid, 1));
+                if (m_pPlugin.get() == NULL) sts = MFX_ERR_UNSUPPORTED;
             }
-            if ((MFX_ERR_NONE != sts) || !m_pUID) {
-                m_pUID = msdkGetPluginUID(MSDK_VDECODE | MSDK_IMPL_SW, pParams->videoType);
-                if (m_pUID) {
-                    sts = LoadPluginByUID(&session, m_pUID);
-
-                }
-            }
-            MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
         }
+        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
     }
 
     // Populate parameters. Involves DecodeHeader call
@@ -266,7 +258,6 @@ void CDecodingPipeline::Close()
         m_pRenderSurface = NULL;
 #endif
     m_pPlugin.reset();
-    if (m_pUID) MFXVideoUSER_UnLoad(m_mfxSession, &(m_pUID->mfx));
     m_mfxSession.Close();
     m_FileWriter.Close();
     if (m_FileReader.get())

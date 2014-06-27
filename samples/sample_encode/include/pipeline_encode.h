@@ -14,7 +14,6 @@
 #define __PIPELINE_ENCODE_H__
 
 #include "sample_defs.h"
-#include "mfx_plugin_uids.h"
 #include "hw_device.h"
 
 #ifdef D3D_SURFACES_SUPPORT
@@ -22,8 +21,8 @@
 #endif
 
 #include "sample_utils.h"
+#include "sample_params.h"
 #include "base_allocator.h"
-#include "mfx_plugin_uids.h"
 
 #include "mfxmvc.h"
 #include "mfxvideo.h"
@@ -33,6 +32,8 @@
 
 #include <vector>
 #include <memory>
+
+#include "../../sample_user_modules/plugin_api/plugin_loader.h"
 
 enum {
     MVC_DISABLED          = 0x0,
@@ -158,7 +159,6 @@ protected:
 
     std::auto_ptr<MFXVideoUSER> m_pUserModule;
     std::auto_ptr<MFXPlugin> m_pPlugin;
-    const msdkPluginUID*     m_pUID;
 
     MFXFrameAllocator* m_pMFXAllocator;
     mfxAllocatorParams* m_pmfxAllocatorParams;

@@ -195,19 +195,15 @@ mfxStatus CUserPipeline::Init(sInputParams *pParams)
 
         // in case of HW library (-hw key) we will firstly try to load HW plugin
         // in case of failure - we will try SW one
-        mfxSession session = m_mfxSession;
+        mfxIMPL impl = pParams->bUseHWLib ? MFX_IMPL_HARDWARE : MFX_IMPL_SOFTWARE;
 
-        if (pParams->bUseHWLib) {
-            m_pUID = msdkGetPluginUID(MSDK_VENCODE | MSDK_IMPL_HW, pParams->CodecId);
-        }
-        if (m_pUID) {
-            sts = LoadPluginByUID(&session, m_pUID);
-        }
-        if ((MFX_ERR_NONE != sts) || !m_pUID) {
-            m_pUID = msdkGetPluginUID(MSDK_VENCODE | MSDK_IMPL_SW, pParams->CodecId);
-            if (m_pUID) {
-                sts = LoadPluginByUID(&session, m_pUID);
-            }
+        pParams->pluginParams.pluginGuid = msdkGetPluginUID(impl, MSDK_VENCODE, pParams->CodecId);
+        if (AreGuidsEqual(pParams->pluginParams.pluginGuid, MSDK_PLUGINGUID_NULL) && impl == MFX_IMPL_HARDWARE)
+            pParams->pluginParams.pluginGuid = msdkGetPluginUID(MFX_IMPL_SOFTWARE, MSDK_VENCODE, pParams->CodecId);
+        if (!AreGuidsEqual(pParams->pluginParams.pluginGuid, MSDK_PLUGINGUID_NULL))
+        {
+            m_pPlugin.reset(LoadPlugin(MFX_PLUGINTYPE_VIDEO_ENCODE, m_mfxSession, pParams->pluginParams.pluginGuid, 1));
+            if (m_pPlugin.get() == NULL) sts = MFX_ERR_UNSUPPORTED;
         }
     }
 

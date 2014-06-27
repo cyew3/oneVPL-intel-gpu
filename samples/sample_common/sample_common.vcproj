@@ -335,15 +335,19 @@
 				>
 			</File>
 			<File
-				RelativePath=".\include\mfx_plugin_uids.h"
-				>
-			</File>
-			<File
 				RelativePath=".\include\mfx_samples_config.h"
 				>
 			</File>
 			<File
+				RelativePath=".\include\plugin_utils.h"
+				>
+			</File>
+			<File
 				RelativePath=".\include\sample_defs.h"
+				>
+			</File>
+			<File
+				RelativePath=".\include\sample_types.h"
 				>
 			</File>
 			<File
@@ -425,7 +429,7 @@
 				>
 			</File>
 			<File
-				RelativePath=".\src\mfx_plugin_uids.cpp"
+				RelativePath=".\src\plugin_utils.cpp"
 				>
 			</File>
 			<File

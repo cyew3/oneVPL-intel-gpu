@@ -12,7 +12,6 @@ Copyright(c) 2005-2014 Intel Corporation. All Rights Reserved.
 
 #include <math.h>
 #include <iostream>
-//#include <process.h>
 
 #include "vm/strings_defs.h"
 #include "sample_defs.h"
@@ -1835,33 +1834,5 @@ mfxStatus StrFormatToCodecFormatFourCC(msdk_char* strInput, mfxU32 &codecFormat)
             sts = MFX_ERR_UNSUPPORTED;
     }
 
-    return sts;
-}
-
-mfxStatus ConvertStringToGuid(const msdk_string & string_guid, mfxPluginUID & mfx_guid)
-{
-    mfxStatus sts = MFX_ERR_NONE;
-    mfxU32 i   = 0;
-    mfxU32 hex = 0;
-    for(i = 0; i != 16; i++)
-    {
-        hex = 0;
-
-#if defined(_WIN32) || defined(_WIN64)
-        if (1 != _stscanf_s(string_guid.c_str() + 2*i, MSDK_STRING("%2x"), &hex))
-#else
-        if (1 != sscanf(string_guid.c_str() + 2*i, MSDK_STRING("%2x"), &hex))
-#endif
-        {
-            sts = MFX_ERR_UNKNOWN;
-            break;
-        }
-        if (hex == 0 && (const msdk_char *)string_guid.c_str() + 2*i != msdk_strstr((const msdk_char *)string_guid.c_str() + 2*i,  MSDK_STRING("00")))
-        {
-            sts = MFX_ERR_UNKNOWN;
-            break;
-        }
-        mfx_guid.Data[i] = (mfxU8)hex;
-    }
     return sts;
 }

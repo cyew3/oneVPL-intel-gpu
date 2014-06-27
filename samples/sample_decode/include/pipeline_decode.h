@@ -12,7 +12,6 @@ Copyright(c) 2005-2014 Intel Corporation. All Rights Reserved.
 #define __PIPELINE_DECODE_H__
 
 #include "sample_defs.h"
-#include "mfx_plugin_uids.h"
 
 #if D3D_SURFACES_SUPPORT
 #pragma warning(disable : 4201)
@@ -26,8 +25,8 @@ Copyright(c) 2005-2014 Intel Corporation. All Rights Reserved.
 #include "mfx_buffering.h"
 #include <memory>
 
-#include "sample_defs.h"
 #include "sample_utils.h"
+#include "sample_params.h"
 #include "base_allocator.h"
 
 #include "mfxmvc.h"
@@ -36,6 +35,8 @@ Copyright(c) 2005-2014 Intel Corporation. All Rights Reserved.
 #include "mfxplugin++.h"
 #include "mfxvideo.h"
 #include "mfxvideo++.h"
+
+#include "../../sample_user_modules/plugin_api/plugin_loader.h"
 
 enum MemType {
     SYSTEM_MEMORY = 0x00,
@@ -176,7 +177,6 @@ protected: // variables
     mfxVideoParam           m_mfxVideoParams;
     std::auto_ptr<MFXVideoUSER>  m_pUserModule;
     std::auto_ptr<MFXPlugin> m_pPlugin;
-    const msdkPluginUID*     m_pUID;
     std::vector<mfxExtBuffer *> m_ExtBuffers;
 
     MFXFrameAllocator*      m_pMFXAllocator;

@@ -758,7 +758,7 @@ mfxStatus CmdProcessor::ParseOption__set(msdk_char* strCodecType, msdk_char* str
 {
     mfxU32 codecid = 0;
     mfxU32 type = 0;
-    sPluginParams pluginParams = {};
+    sPluginParams pluginParams;
 
     //Parse codec type - decoder or encoder
     if (0 == msdk_strncmp(MSDK_STRING("-i::"), strCodecType, 4))

@@ -785,7 +785,6 @@ void CEncodingPipeline::DeleteAllocator()
 
 CEncodingPipeline::CEncodingPipeline()
 {
-    m_pUID = NULL;
     m_pmfxENC = NULL;
     m_pmfxVPP = NULL;
     m_pMFXAllocator = NULL;
@@ -983,40 +982,28 @@ mfxStatus CEncodingPipeline::Init(sInputParams *pParams)
 
     if (CheckVersion(&version, MSDK_FEATURE_PLUGIN_API)) {
         /* Here we actually define the following codec initialization scheme:
-         *  1. If plugin path or guid is specified: we load user-defined plugin (example: HEVC encoder plugin)
-         *  2. If plugin path not specified:
-         *    2.a) we check if codec is distributed as a mediasdk plugin and load it if yes
-         *    2.b) if codec is not in the list of mediasdk plugins, we assume, that it is supported inside mediasdk library
-         */
-
+        *  1. If plugin path or guid is specified: we load user-defined plugin (example: HEVC encoder plugin)
+        *  2. If plugin path not specified:
+        *    2.a) we check if codec is distributed as a mediasdk plugin and load it if yes
+        *    2.b) if codec is not in the list of mediasdk plugins, we assume, that it is supported inside mediasdk library
+        */
         if (pParams->pluginParams.type == MFX_PLUGINLOAD_TYPE_FILE && msdk_strlen(pParams->pluginParams.strPluginPath))
         {
             m_pUserModule.reset(new MFXVideoUSER(m_mfxSession));
             m_pPlugin.reset(LoadPlugin(MFX_PLUGINTYPE_VIDEO_ENCODE, m_pUserModule.get(), pParams->pluginParams.strPluginPath));
             if (m_pPlugin.get() == NULL) sts = MFX_ERR_UNSUPPORTED;
         }
-        else if (pParams->pluginParams.type == MFX_PLUGINLOAD_TYPE_GUID)
-        {
-            m_pPlugin.reset(LoadPlugin(MFX_PLUGINTYPE_VIDEO_ENCODE, m_mfxSession, pParams->pluginParams.pluginGuid, 1));
-            if (m_pPlugin.get() == NULL) sts = MFX_ERR_UNSUPPORTED;
-        }
         else
         {
-            mfxSession session = m_mfxSession;
-
-            // in case of HW library (-hw key) we will firstly try to load HW plugin
-            // in case of failure - we will try SW one
-            if (pParams->bUseHWLib) {
-                m_pUID = msdkGetPluginUID(MSDK_VENCODE | MSDK_IMPL_HW, pParams->CodecId);
+            if (AreGuidsEqual(pParams->pluginParams.pluginGuid, MSDK_PLUGINGUID_NULL))
+            {
+                mfxIMPL impl = pParams->bUseHWLib ? MFX_IMPL_HARDWARE : MFX_IMPL_SOFTWARE;
+                pParams->pluginParams.pluginGuid = msdkGetPluginUID(impl, MSDK_VENCODE, pParams->CodecId);
             }
-            if (m_pUID) {
-                sts = LoadPluginByUID(&session, m_pUID);
-            }
-            if ((MFX_ERR_NONE != sts) || !m_pUID) {
-                m_pUID = msdkGetPluginUID(MSDK_VENCODE | MSDK_IMPL_SW, pParams->CodecId);
-                if (m_pUID) {
-                    sts = LoadPluginByUID(&session, m_pUID);
-                }
+            if (!AreGuidsEqual(pParams->pluginParams.pluginGuid, MSDK_PLUGINGUID_NULL))
+            {
+                m_pPlugin.reset(LoadPlugin(MFX_PLUGINTYPE_VIDEO_ENCODE, m_mfxSession, pParams->pluginParams.pluginGuid, 1));
+                if (m_pPlugin.get() == NULL) sts = MFX_ERR_UNSUPPORTED;
             }
         }
         MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
@@ -1069,8 +1056,6 @@ void CEncodingPipeline::Close()
 
     MSDK_SAFE_DELETE(m_pmfxENC);
     MSDK_SAFE_DELETE(m_pmfxVPP);
-
-    if (m_pUID) MFXVideoUSER_UnLoad(m_mfxSession, &(m_pUID->mfx));
 
     FreeMVCSeqDesc();
     FreeVppDoNotUse();

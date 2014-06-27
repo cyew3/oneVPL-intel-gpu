@@ -13,8 +13,6 @@
 #ifndef __SAMPLE_PIPELINE_TRANSCODE_H__
 #define __SAMPLE_PIPELINE_TRANSCODE_H__
 
-#include "mfx_plugin_uids.h"
-
 #include "mfxplugin.h"
 #include "mfxplugin++.h"
 
@@ -28,6 +26,7 @@
 
 #include "sample_defs.h"
 #include "sample_utils.h"
+#include "sample_params.h"
 #include "base_allocator.h"
 #include "rotate_plugin_api.h"
 #include "mfx_multi_vpp.h"
@@ -37,6 +36,8 @@
 #include "mfxmvc.h"
 #include "mfxjpeg.h"
 #include "mfxla.h"
+
+#include "../../sample_user_modules/plugin_api/plugin_loader.h"
 
 #if defined(_WIN32) || defined(_WIN64)
     #define MSDK_CPU_ROTATE_PLUGIN  MSDK_STRING("sample_rotate_plugin.dll")
@@ -364,11 +365,8 @@ namespace TranscodingSample
         std::auto_ptr<MFXPlugin>        m_pUserEncoderPlugin;
         std::auto_ptr<MFXPlugin>        m_pUserEncPlugin;
 
-        const msdkPluginUID*            m_pDecUID;
-        const msdkPluginUID*            m_pEncUID;
-
-        mfxFrameAllocResponse          m_mfxDecResponse;  // memory allocation response for decoder
-        mfxFrameAllocResponse          m_mfxEncResponse;  // memory allocation response for encoder
+        mfxFrameAllocResponse           m_mfxDecResponse;  // memory allocation response for decoder
+        mfxFrameAllocResponse           m_mfxEncResponse;  // memory allocation response for encoder
 
         MFXFrameAllocator              *m_pMFXAllocator;
         void*                           m_hdl; // Diret3D device manager

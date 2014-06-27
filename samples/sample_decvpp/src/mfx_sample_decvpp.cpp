@@ -41,7 +41,8 @@ void PrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("\n"));
     msdk_printf(MSDK_STRING("Options:\n"));
     msdk_printf(MSDK_STRING("   [-hw]                   - use platform specific SDK implementation, if not specified software implementation is used\n"));
-    msdk_printf(MSDK_STRING("   [-p /path/to/plugin]    - path to decoder plugin (optional for Media SDK in-box plugins, required for user-decoder ones)\n"));
+    msdk_printf(MSDK_STRING("   [-p guid|path_to_plugin]  - 32-character hexadecimal guid string or path to decoder plugin\n"));
+    msdk_printf(MSDK_STRING("                               (optional for Media SDK in-box plugins, required for user-decoder ones)\n"));
 #if D3D_SURFACES_SUPPORT
     msdk_printf(MSDK_STRING("   [-d3d]                  - work with d3d9 surfaces\n"));
     msdk_printf(MSDK_STRING("   [-d3d11]                - work with d3d11 surfaces\n"));
@@ -161,7 +162,13 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
             {
             case MSDK_CHAR('p'):
                 if (++i < nArgNum) {
-                    msdk_opt_read(strInput[i], pParams->strPluginPath);
+                    if (MFX_ERR_NONE == ConvertStringToGuid(strInput[i], pParams->pluginParams.pluginGuid)) {
+                        pParams->pluginParams.type = MFX_PLUGINLOAD_TYPE_GUID;
+                    }
+                    else {
+                        msdk_opt_read(strInput[i], pParams->pluginParams.strPluginPath);
+                        pParams->pluginParams.type = MFX_PLUGINLOAD_TYPE_FILE;
+                    }
                 }
                 else {
                     msdk_printf(MSDK_STRING("error: option '-p' expects an argument\n"));
