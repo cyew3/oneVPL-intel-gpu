@@ -145,12 +145,12 @@ int TestSuite::RunTest(unsigned int id)
     else
         g_tsStatus.expect(tc.sts);
 
-	m_par.mfx.FrameInfo.PicStruct = 1;
-	m_par.mfx.QPI = 0;
-	m_par.mfx.QPP = 0;
-	m_par.mfx.QPB = 0;
-	m_par.mfx.TargetKbps = 600;
-	mfxVideoParam out = m_par;
+    m_par.mfx.FrameInfo.PicStruct = 1;
+    m_par.mfx.QPI = 0;
+    m_par.mfx.QPP = 0;
+    m_par.mfx.QPB = 0;
+    m_par.mfx.TargetKbps = 600;
+    mfxVideoParam out = m_par;
     Query(m_session, &m_par, &out);
 
     if (g_tsImpl == MFX_IMPL_SOFTWARE)
@@ -161,7 +161,7 @@ int TestSuite::RunTest(unsigned int id)
     for(mfxU32 i = 0; i < max_num_ctrl; i++)
     {
         if (tc.ctrl[i].type & INIT) {
-			Init(m_session, &out);
+            Init(m_session, &out);
         }
     }
 
