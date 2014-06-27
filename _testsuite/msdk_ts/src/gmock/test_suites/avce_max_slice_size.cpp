@@ -17,7 +17,7 @@ public:
 
 private:
     static const char path[];
-    static const mfxU32 max_num_ctrl     = 10;
+    static const mfxU32 max_num_ctrl     = 5;
     static const mfxU32 max_num_ctrl_par = 4;
     mfxSession m_session;
     mfxU32 m_repeat;
@@ -56,36 +56,55 @@ private:
 
 const TestSuite::tc_struct TestSuite::test_case[] =
 {
+    //default
+    {/*00*/ MFX_ERR_NONE,
+        {{QUERY|INIT|BUFPAR, &tsStruct::mfxExtCodingOption2.MaxSliceSize, {1500}},
+         {MFXVPAR, &tsStruct::mfxVideoParam.AsyncDepth, {1}},
+         {MFXVPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, {MFX_RATECONTROL_LA}},
+         {BUFPAR, &tsStruct::mfxExtCodingOption2.LookAheadDepth, {1}}}
+    },
     {/*01*/ MFX_ERR_NONE,
-            {{QUERY|BUFPAR, &tsStruct::mfxExtCodingOption2.MaxSliceSize, {1536000}}}
+        {{QUERY|INIT|BUFPAR, &tsStruct::mfxExtCodingOption2.MaxSliceSize, {650}},
+         {MFXVPAR, &tsStruct::mfxVideoParam.AsyncDepth, {1}},
+         {MFXVPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, {MFX_RATECONTROL_LA}},
+         {BUFPAR, &tsStruct::mfxExtCodingOption2.LookAheadDepth, {1}}}
     },
     {/*02*/ MFX_ERR_NONE,
-            {{QUERY|INIT|BUFPAR, &tsStruct::mfxExtCodingOption2.MaxSliceSize, {1536000}}}
+        {{QUERY|INIT|BUFPAR, &tsStruct::mfxExtCodingOption2.MaxSliceSize, {100}},
+         {MFXVPAR, &tsStruct::mfxVideoParam.AsyncDepth, {1}},
+         {MFXVPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, {MFX_RATECONTROL_LA}},
+         {BUFPAR, &tsStruct::mfxExtCodingOption2.LookAheadDepth, {1}}}
     },
-    {/*03*/ MFX_ERR_NONE,
-            {{INIT|BUFPAR, &tsStruct::mfxExtCodingOption2.MaxSliceSize, {1536000}}}
+    // wrong AsyncDepth
+    {/*03*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM,
+        {{QUERY|INIT|BUFPAR, &tsStruct::mfxExtCodingOption2.MaxSliceSize, {1500}},
+         {MFXVPAR, &tsStruct::mfxVideoParam.AsyncDepth, {5}},
+         {MFXVPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, {MFX_RATECONTROL_LA}},
+         {BUFPAR, &tsStruct::mfxExtCodingOption2.LookAheadDepth, {1}}}
     },
-    {/*04*/ MFX_ERR_NONE,
-            {{QUERY|BUFPAR, &tsStruct::mfxExtCodingOption2.MaxSliceSize, {665600}}}
+    // wrong RateControlMethod
+    {/*04*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM,
+        {{QUERY|INIT|BUFPAR, &tsStruct::mfxExtCodingOption2.MaxSliceSize, {1500}},
+         {MFXVPAR, &tsStruct::mfxVideoParam.AsyncDepth, {1}},
+         {MFXVPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, {MFX_RATECONTROL_CBR}},
+         {BUFPAR, &tsStruct::mfxExtCodingOption2.LookAheadDepth, {1}}}
     },
-    {/*05*/ MFX_ERR_NONE,
-            {{QUERY|INIT|BUFPAR, &tsStruct::mfxExtCodingOption2.MaxSliceSize, {665600}}}
+    // wrong LADepth
+    {/*05*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM,
+        {{QUERY|INIT|BUFPAR, &tsStruct::mfxExtCodingOption2.MaxSliceSize, {1500}},
+         {MFXVPAR, &tsStruct::mfxVideoParam.AsyncDepth, {1}},
+         {MFXVPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, {MFX_RATECONTROL_LA}},
+         {BUFPAR, &tsStruct::mfxExtCodingOption2.LookAheadDepth, {5}}}
     },
+    // NumSlice
     {/*06*/ MFX_ERR_NONE,
-            {{INIT|BUFPAR, &tsStruct::mfxExtCodingOption2.MaxSliceSize, {665600}}}
-    },
-    {/*07*/ MFX_ERR_NONE,
-            {{QUERY|BUFPAR, &tsStruct::mfxExtCodingOption2.MaxSliceSize, {100}}}
-    },
-    {/*08*/ MFX_ERR_NONE,
-            {{QUERY|INIT|BUFPAR, &tsStruct::mfxExtCodingOption2.MaxSliceSize, {100}}}
-    },
-    {/*09*/ MFX_ERR_NONE,
-            {{INIT|BUFPAR, &tsStruct::mfxExtCodingOption2.MaxSliceSize, {100}}}
-    },
-
+        {{QUERY|INIT|BUFPAR, &tsStruct::mfxExtCodingOption2.MaxSliceSize, {1500}},
+         {QUERY|INIT|MFXVPAR, &tsStruct::mfxVideoParam.mfx.NumSlice, {30}},
+         {MFXVPAR, &tsStruct::mfxVideoParam.AsyncDepth, {1}},
+         {MFXVPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, {MFX_RATECONTROL_LA}},
+         {BUFPAR, &tsStruct::mfxExtCodingOption2.LookAheadDepth, {1}}}
+    }
 };
-
 const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case)/sizeof(TestSuite::tc_struct);
 
 int TestSuite::RunTest(unsigned int id)
@@ -101,7 +120,6 @@ int TestSuite::RunTest(unsigned int id)
         Load();
 
     // set buffer mfxExtCodingOption2
-    m_par.AddExtBuffer(EXT_BUF_PAR(mfxExtCodingOption2));
     mfxExtCodingOption2& ext_params = m_par;
 
     for(mfxU32 i = 0; i < max_num_ctrl; i++)
@@ -122,22 +140,28 @@ int TestSuite::RunTest(unsigned int id)
             }
         }
     }
-
     if (g_tsImpl == MFX_IMPL_SOFTWARE)
         g_tsStatus.expect(MFX_WRN_INCOMPATIBLE_VIDEO_PARAM);
     else
         g_tsStatus.expect(tc.sts);
-    Query();
+
+	m_par.mfx.FrameInfo.PicStruct = 1;
+	m_par.mfx.QPI = 0;
+	m_par.mfx.QPP = 0;
+	m_par.mfx.QPB = 0;
+	m_par.mfx.TargetKbps = 600;
+	mfxVideoParam out = m_par;
+    Query(m_session, &m_par, &out);
 
     if (g_tsImpl == MFX_IMPL_SOFTWARE)
         g_tsStatus.expect(MFX_WRN_INCOMPATIBLE_VIDEO_PARAM);
-    else
-        g_tsStatus.expect(tc.sts);
+   /* else
+        g_tsStatus.expect(tc.sts);*/
 
     for(mfxU32 i = 0; i < max_num_ctrl; i++)
     {
-        if (tc.ctrl[i].type & MFXVPAR) {
-            Init();
+        if (tc.ctrl[i].type & INIT) {
+			Init(m_session, &out);
         }
     }
 
