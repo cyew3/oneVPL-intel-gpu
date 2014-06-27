@@ -556,6 +556,10 @@ void mfxSchedulerCore::MarkTaskCompleted(const MFX_CALL_INFO *pCallInfo,
                     }
                     catch(...)
                     {
+                        if (MFX_ERR_NONE == pTask->curStatus)
+                        {
+                            pTask->curStatus = MFX_ERR_UNKNOWN;
+                        }
                     }
                     // enter the protected code section
                     guard.Lock();
