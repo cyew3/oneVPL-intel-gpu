@@ -30,6 +30,7 @@ File Name: mfxplugin.h
 #ifndef __MFXPLUGIN_H__
 #define __MFXPLUGIN_H__
 #include "mfxvideo.h"
+#include "mfxaudio.h"
 
 //#pragma warning(disable: 4201)
 
@@ -58,7 +59,9 @@ typedef enum {
     MFX_PLUGINTYPE_VIDEO_DECODE    = 1,
     MFX_PLUGINTYPE_VIDEO_ENCODE    = 2,
     MFX_PLUGINTYPE_VIDEO_VPP       = 3,
-    MFX_PLUGINTYPE_VIDEO_ENC       = 4
+    MFX_PLUGINTYPE_VIDEO_ENC       = 4,
+    MFX_PLUGINTYPE_AUDIO_DECODE    = 5,
+    MFX_PLUGINTYPE_AUDIO_ENCODE    = 6
 } mfxPluginType;
 
 typedef enum {
@@ -134,6 +137,24 @@ typedef struct mfxVideoCodecPlugin{
     mfxU32 reserved2[8];
 } mfxVideoCodecPlugin;
 
+typedef struct mfxAudioCodecPlugin{
+    mfxStatus (MFX_CDECL *Query)(mfxHDL pthis, mfxAudioParam *in, mfxAudioParam *out);
+    mfxStatus (MFX_CDECL *QueryIOSize)(mfxHDL pthis, mfxAudioParam *par, mfxAudioAllocRequest *request); 
+    mfxStatus (MFX_CDECL *Init)(mfxHDL pthis, mfxAudioParam *par);
+    mfxStatus (MFX_CDECL *Reset)(mfxHDL pthis, mfxAudioParam *par);
+    mfxStatus (MFX_CDECL *Close)(mfxHDL pthis);
+    mfxStatus (MFX_CDECL *GetAudioParam)(mfxHDL pthis, mfxAudioParam *par);
+
+    mfxStatus (MFX_CDECL *EncodeFrameSubmit)(mfxHDL pthis, mfxAudioFrame *aFrame, mfxBitstream *out, mfxThreadTask *task);
+    
+    mfxStatus (MFX_CDECL *DecodeHeader)(mfxHDL pthis, mfxBitstream *bs, mfxAudioParam *par);
+//    mfxStatus (MFX_CDECL *GetPayload)(mfxHDL pthis, mfxU64 *ts, mfxPayload *payload);
+    mfxStatus (MFX_CDECL *DecodeFrameSubmit)(mfxHDL pthis, mfxBitstream *in, mfxAudioFrame *out, mfxThreadTask *task);
+
+    mfxHDL reserved1[6];
+    mfxU32 reserved2[8];
+} mfxAudioCodecPlugin;
+
 typedef struct mfxPlugin{
     mfxHDL pthis;
 
@@ -146,7 +167,10 @@ typedef struct mfxPlugin{
     mfxStatus (MFX_CDECL *Execute)(mfxHDL pthis, mfxThreadTask task, mfxU32 uid_p, mfxU32 uid_a);
     mfxStatus (MFX_CDECL *FreeResources)(mfxHDL pthis, mfxThreadTask task, mfxStatus sts);
 
-    mfxVideoCodecPlugin  *Video;
+    union {
+        mfxVideoCodecPlugin  *Video;
+        mfxAudioCodecPlugin  *Audio;
+    };
 
     mfxHDL reserved[8];
 } mfxPlugin;
@@ -159,6 +183,13 @@ mfxStatus MFX_CDECL MFXVideoUSER_ProcessFrameAsync(mfxSession session, const mfx
 
 mfxStatus MFX_CDECL MFXVideoUSER_Load(mfxSession session, const mfxPluginUID *uid, mfxU32 version);
 mfxStatus MFX_CDECL MFXVideoUSER_UnLoad(mfxSession session, const mfxPluginUID *uid);
+
+mfxStatus MFX_CDECL MFXAudioUSER_Register(mfxSession session, mfxU32 type, const mfxPlugin *par);
+mfxStatus MFX_CDECL MFXAudioUSER_Unregister(mfxSession session, mfxU32 type);
+mfxStatus MFX_CDECL MFXAudioUSER_ProcessFrameAsync(mfxSession session, const mfxHDL *in, mfxU32 in_num, const mfxHDL *out, mfxU32 out_num, mfxSyncPoint *syncp);
+
+mfxStatus MFX_CDECL MFXAudioUSER_Load(mfxSession session, const mfxPluginUID *uid, mfxU32 version);
+mfxStatus MFX_CDECL MFXAudioUSER_UnLoad(mfxSession session, const mfxPluginUID *uid);
 
 #ifdef __cplusplus
 } // extern "C"
