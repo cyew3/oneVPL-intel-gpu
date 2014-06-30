@@ -294,7 +294,7 @@ mfxStatus MFXVideoUSER_ProcessFrameAsync(mfxSession session,
     mfxStatus mfxRes;
 
     MFX_CHECK(session, MFX_ERR_INVALID_HANDLE);
-    //MFX_CHECK(session->m_pUSER.get(), MFX_ERR_NOT_INITIALIZED);
+    MFX_CHECK(session->m_plgGen.get(), MFX_ERR_NOT_INITIALIZED);
     MFX_CHECK(syncp, MFX_ERR_NULL_PTR);
     try
     {
