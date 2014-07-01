@@ -15,11 +15,15 @@ Copyright(c) 2013 Intel Corporation. All Rights Reserved.
 struct PluginModuleTemplate {
     typedef MFXDecoderPlugin* (*fncCreateDecoderPlugin)();
     typedef MFXEncoderPlugin* (*fncCreateEncoderPlugin)();
+    typedef MFXAudioDecoderPlugin* (*fncCreateAudioDecoderPlugin)();
+    typedef MFXAudioEncoderPlugin* (*fncCreateAudioEncoderPlugin)();
     typedef MFXGenericPlugin* (*fncCreateGenericPlugin)();
     typedef mfxStatus (MFX_CDECL *CreatePluginPtr_t)(mfxPluginUID uid, mfxPlugin* plugin);
 
     fncCreateDecoderPlugin CreateDecoderPlugin;
     fncCreateEncoderPlugin CreateEncoderPlugin;
+    fncCreateAudioDecoderPlugin CreateAudioDecoderPlugin;
+    fncCreateAudioEncoderPlugin CreateAudioEncoderPlugin;
     fncCreateGenericPlugin CreateGenericPlugin;
     CreatePluginPtr_t CreatePlugin;
 };
