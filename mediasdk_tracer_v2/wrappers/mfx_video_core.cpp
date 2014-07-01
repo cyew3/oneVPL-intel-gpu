@@ -134,6 +134,11 @@ mfxStatus MFXVideoCORE_SyncOperation(mfxSession session, mfxSyncPoint syncp, mfx
 {
     try{
         TracerSyncPoint *sp = (TracerSyncPoint*)syncp;
+        if (!sp->syncPoint) {
+            // already synced
+            Log::WriteLog("Already synced");
+            return MFX_ERR_NONE;
+        }
         Log::WriteLog("function: MFXVideoCORE_SyncOperation(mfxSession session=" + ToString(session) + ", mfxSyncPoint syncp=" + ToString(syncp) + ", mfxU32 wait=" + ToString(wait) + ") +");
         if(sp) sp->component == ENCODE ? Log::WriteLog("SyncOperation(ENCODE," + TimeToString(sp->timer.GetTime()) + ")") : (sp->component == DECODE ? Log::WriteLog("SyncOperation(DECODE, " + ToString(sp->timer.GetTime()) + " sec)") : Log::WriteLog("SyncOperation(VPP, "  + ToString(sp->timer.GetTime()) + " sec)"));
 

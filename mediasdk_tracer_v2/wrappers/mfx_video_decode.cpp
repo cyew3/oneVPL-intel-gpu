@@ -341,6 +341,10 @@ mfxStatus MFXVideoDECODE_DecodeFrameAsync(mfxSession session, mfxBitstream *bs, 
         std::string elapsed = TimeToString(t.GetTime());
 
         *syncp = (mfxSyncPoint)sp;
+        if (!sp->syncPoint) {
+            delete sp;
+            *syncp=NULL;
+        }
 
         Log::WriteLog(">> MFXVideoDECODE_DecodeFrameAsync called");
         Log::WriteLog(dump("session", session));

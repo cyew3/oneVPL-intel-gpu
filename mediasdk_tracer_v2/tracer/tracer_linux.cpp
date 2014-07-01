@@ -30,74 +30,27 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <stdlib.h>
 #include <dlfcn.h>
-
-#include <string>
-
-#include "mfxvideo.h"
-#include "../config/config.h"
-#include "../dumps/dump.h"
-#include "../loggers/log.h"
-#include "../loggers/timer.h"
-#include "functions_table.h"
-#include <exception>
-#include <iostream>
+#include "tracer.h"
 
 static const char* g_mfxlib = NULL;
 
 void __attribute__ ((constructor)) dll_init(void)
 {
+    try {
+        tracer_init();
+
+        Log::WriteLog("mfx_tracer: dll_init() +");
 #ifdef ANDROID // temporary hardcode for Android
-    Log::SetLogLevel(LOG_LEVEL_DEFAULT);
-    Log::SetLogType(LOG_LOGCAT);
-    Log::WriteLog("mfx_tracer: dll_init: +");
-    g_mfxlib = "/system/lib/libmfxhw32.so";
-    Log::WriteLog("mfx_tracer: dll_init: -");
+        g_mfxlib = "/system/lib/libmfxhw32.so";
 #else
-    try{
-        Timer t;
-        std::string type = Config::GetParam("core", "type");
-        if (type == std::string("console")) {
-            Log::SetLogType(LOG_CONSOLE);
-        } else if (type == std::string("file")) {
-            Log::SetLogType(LOG_FILE);
-        } else {
-            // TODO: what to do with incorrect setting?
-            Log::SetLogType(LOG_CONSOLE);
-        }
-
-        std::string log_level = Config::GetParam("core", "level");
-        if(log_level == std::string("default")){
-             Log::SetLogLevel(LOG_LEVEL_DEFAULT);
-        }
-        else if(log_level == std::string("short")){
-            Log::SetLogLevel(LOG_LEVEL_SHORT);
-        }
-        else if(log_level == std::string("full")){
-            Log::SetLogLevel(LOG_LEVEL_FULL);
-        }
-        else{
-            // TODO
-            Log::SetLogLevel(LOG_LEVEL_FULL);
-        }
-
-        Log::WriteLog("mfx_tracer: dll_init: +");
-
-        std::string lib = Config::GetParam("core", "lib");
-        g_mfxlib = lib.c_str();
-
-        Log::WriteLog("mfx_tracer: lib=" + lib);
-
-        Log::WriteLog("mfx_tracer: dll_init: - " + TimeToString(t.GetTime()) + " \n\n");
+        g_mfxlib = Config::GetParam("core", "lib").c_str();
+#endif
+        Log::WriteLog("mfx_tracer: lib=" + string(g_mfxlib));
+        Log::WriteLog("mfx_tracer: dll_init() - \n\n");
     }
     catch (std::exception& e){
         std::cerr << "Exception: " << e.what() << '\n';
     }
-#endif
-}
-
-void SetLogType(eLogType type)
-{
-    Log::SetLogType(type);
 }
 
 mfxStatus MFXInit(mfxIMPL impl, mfxVersion *ver, mfxSession *session)

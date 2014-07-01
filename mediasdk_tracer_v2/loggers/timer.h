@@ -48,7 +48,7 @@ public:
 
     double GetTime()
     {
-#ifdef WIN32
+#if defined(_WIN32) || defined(_WIN64)
         LARGE_INTEGER tick, ticksPerSecond;
         QueryPerformanceFrequency(&ticksPerSecond);
         QueryPerformanceCounter(&tick);

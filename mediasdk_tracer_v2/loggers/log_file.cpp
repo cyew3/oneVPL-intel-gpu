@@ -1,8 +1,13 @@
 #include "log_file.h"
+#include "../config/config.h"
 
 LogFile::LogFile()
 {
-    _file_path = std::string("trace.log");
+    std::string file_log = Config::GetParam("core", "log");
+    if(!file_log.empty())
+        _file_path = std::string(file_log);
+    else
+        _file_path = std::string("mfxtracer.log");
 }
 
 LogFile::~LogFile()

@@ -5,14 +5,22 @@
 
 #include "config.h"
 
-Config* Config::conf = 0;
+Config* Config::conf = NULL;
 
 Config::Config()
 {
-    _file_path = std::string(getenv("HOME")) + "/.mfxtracer";
+    const char* home =
+#if defined(_WIN32) || defined(_WIN64)
+        getenv("HOMEPATH");
+#else
+        getenv("HOME");
+#endif
+    if (home) { // on Android HOME variable may absent
+        _file_path = std::string(home) + "/.mfxtracer";
 
-    if(!_file.is_open()){
-        _file.open(_file_path.c_str(), std::ifstream::binary);
+        if(!_file.is_open()){
+            _file.open(_file_path.c_str(), std::ifstream::binary);
+        }
     }
     Init();
 }

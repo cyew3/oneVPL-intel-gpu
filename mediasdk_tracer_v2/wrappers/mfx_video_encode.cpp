@@ -247,7 +247,10 @@ mfxStatus MFXVideoENCODE_EncodeFrameAsync(mfxSession session, mfxEncodeCtrl *ctr
         std::string elapsed = TimeToString(t.GetTime());
 
         *syncp = (mfxSyncPoint)sp;
-
+        if (!sp->syncPoint) {
+            delete sp;
+            *syncp=NULL;
+        }
         Log::WriteLog(">> MFXVideoENCODE_EncodeFrameAsync called");
         Log::WriteLog(dump("session", session));
         Log::WriteLog(dump("ctrl", ctrl));
