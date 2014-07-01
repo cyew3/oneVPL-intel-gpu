@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2008-2013 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2008-2014 Intel Corporation. All Rights Reserved.
 //
 //
 //          MPEG2 encoder
@@ -1016,8 +1016,9 @@ namespace MPEG2EncoderHW
             {
                 return MFX_ERR_UNSUPPORTED;
             }
+            /* Unreachable code is commented out
             if(bInvalid)
-                return MFX_ERR_INVALID_VIDEO_PARAM;
+                return MFX_ERR_INVALID_VIDEO_PARAM;*/
             if (bWarning)
             {
                 return MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
@@ -2857,12 +2858,13 @@ namespace MPEG2EncoderHW
             m_pFrameCUC->FrameParam->MPEG2.PicStructure = (m_pFrameCUC->FrameParam->MPEG2.BottomFieldFlag)?MFX_MPEG2_BOTTOM_FIELD : MFX_MPEG2_TOP_FIELD;
 
             /*  second field of intra frames is coded as P */
+            /* Unreachable code is commented out
             if (m_pFrameCUC->FrameParam->MPEG2.IntraPicFlag && 0)
             {
                 m_pFrameCUC->FrameParam->MPEG2.FrameType &= ~MFX_FRAMETYPE_I;
                 m_pFrameCUC->FrameParam->MPEG2.FrameType |= MFX_FRAMETYPE_P;
                 m_pFrameCUC->FrameParam->MPEG2.IntraPicFlag = 0;   
-            }
+            }*/
             return true;
 
         }

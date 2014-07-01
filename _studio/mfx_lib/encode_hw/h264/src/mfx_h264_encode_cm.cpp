@@ -1300,9 +1300,10 @@ void CmContext::SetCurbeData(
     int ffid = task.m_fid[0];
 
     mfxU32 skipVal = (task.m_type[ffid] & MFX_FRAMETYPE_P) ? (Dist10[qpIdx]) : (Dist25[qpIdx]);
+    /* Unreachable code is commented out
     if (!blockBasedSkip)
         skipVal *= 3;
-    else if (!transformFlag)
+    else*/ if (!transformFlag)
         skipVal /= 2;
 
     mfxVMEUNIIn costs = {0};
@@ -1552,9 +1553,10 @@ void CmContext::SetCurbeData(
     mfxU32 meMethod       = 6;
 
     mfxU32 skipVal = (frameType & MFX_FRAMETYPE_P) ? (Dist10[qpIdx]) : (Dist25[qpIdx]);
+    /* Unreachable code is commented out
     if (!blockBasedSkip)
         skipVal *= 3;
-    else if (!transformFlag)
+    else*/ if (!transformFlag)
         skipVal /= 2;
 
     mfxVMEUNIIn costs = {0};
