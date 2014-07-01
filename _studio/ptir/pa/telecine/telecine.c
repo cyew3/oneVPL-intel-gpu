@@ -22,6 +22,7 @@ File Name: telecine.c
 #endif
 #endif
 
+
 void Pattern_init(Pattern *ptrn)
 {
     ptrn->ucLatch.ucFullLatch = FALSE;
@@ -1148,6 +1149,29 @@ unsigned int Classifier(double dTextureLevel, double dDynDif, double dStatDif, d
 	else
 		return ui_cls;
 }
+unsigned int Classifier_ML(double dTextureLevel, double dDynDif, double dStatDif, double dStatCount, double dCountDif,
+	double dZeroTexture, double dRsT, double dAngle, double dSADv, double dBigTexture,
+	double dCount, double dRsG, double dRsDif, double dRsB, double SADCBPT, double SADCTPB)
+{
+	unsigned int ui_cls = 0;
+	
+	ui_cls += classify_f1(dTextureLevel, dRsG, dStatDif, dBigTexture, dSADv);
+	ui_cls += classify_f2(dRsG, dDynDif, dAngle, dSADv, dZeroTexture);
+	ui_cls += classify_f3(dTextureLevel, dRsG, dCountDif, dRsT, dCount);
+	ui_cls += classify_f4(dTextureLevel, dStatDif, dZeroTexture, dStatCount, dSADv);
+	ui_cls += classify_f5(dTextureLevel, dDynDif, dCountDif, dStatCount, dStatDif);
+	ui_cls += classify_f6(dTextureLevel, dRsG, dRsT, dStatDif, dCount);
+	ui_cls += classify_f7(dTextureLevel, dDynDif, dRsDif, dStatCount, dZeroTexture);
+	ui_cls += classify_f8(dDynDif, dAngle, SADCTPB, dRsB, dRsDif);
+	ui_cls += classify_f9(SADCBPT, dAngle, dRsT, SADCTPB, dCount);
+	ui_cls += classify_fA(dRsG, dStatDif, dBigTexture, dStatCount, dSADv);
+	ui_cls += classify_fB(dRsT, dCountDif, dStatDif, SADCTPB, dZeroTexture);
+
+	if (ui_cls > 5)
+		return 1;
+	else
+		return 0;
+}
 
 unsigned int Artifacts_Detection(Frame **pFrm)
 {
@@ -1178,7 +1202,9 @@ unsigned int Artifacts_Detection(Frame **pFrm)
 
 		pFrm[ui]->frmProperties.interlaced = FALSE;
 
-		pFrm[ui]->frmProperties.interlaced = Classifier(dTextureLevel, dDynDif, dStatDif, dStatCount, dCountDif, dZeroTexture, dRsT, dAngle, dSADv, dBigTexture, dCount, dRsG, dRsDif, dRsB, SADCBPT, SADCTPB);
+		//pFrm[ui]->frmProperties.interlaced = Classifier(dTextureLevel, dDynDif, dStatDif, dStatCount, dCountDif, dZeroTexture, dRsT, dAngle, dSADv, dBigTexture, dCount, dRsG, dRsDif, dRsB, SADCBPT, SADCTPB);
+
+		pFrm[ui]->frmProperties.interlaced = Classifier_ML(dTextureLevel, dDynDif, dStatDif, dStatCount, dCountDif, dZeroTexture, dRsT, dAngle, dSADv, dBigTexture, dCount, dRsG, dRsDif, dRsB, SADCBPT, SADCTPB);
 
 
 		if (ui < BUFMINSIZE - 1)
@@ -1221,7 +1247,7 @@ void Artifacts_Detection_frame(Frame **pFrm, unsigned int frameNum, unsigned int
 
 
 
-void Detect_Interlacing_Artifacts_fast(Frame **pFrm, Pattern *ptrn, unsigned int *dispatch)
+void Detect_Interlacing_Artifacts_fast(Frame **pFrm, Pattern *ptrn, unsigned int *dispatch, unsigned int *uiisInterlaced)
 {
     unsigned int i;
 
@@ -1236,7 +1262,7 @@ void Detect_Interlacing_Artifacts_fast(Frame **pFrm, Pattern *ptrn, unsigned int
 
     ptrn->ucAvgSAD = CalcSAD_Avg_NoSC(pFrm);
 
-    if(ptrn->uiInterlacedFramesNum >= 3 || ptrn->ucPatternType == 5 || ptrn->ucPatternType == 6 /*|| ptrn->ucPatternType == 7*/)
+	if (ptrn->uiInterlacedFramesNum >= 3 || ptrn->ucPatternType == 5 || ptrn->ucPatternType == 6 /*|| ptrn->ucPatternType == 7*/) //&& (*uiisInterlaced != 2))
         Detect_Solve_32BlendedPatterns(pFrm, ptrn, dispatch);
 
     if(!ptrn->ucLatch.ucFullLatch)
@@ -1282,7 +1308,7 @@ double CalcSAD_Avg_NoSC(Frame **pFrm)
 
     return avg;
 }
-void Detect_32Pattern_rigorous(Frame **pFrm, Pattern *ptrn, unsigned int *dispatch)
+void Detect_32Pattern_rigorous(Frame **pFrm, Pattern *ptrn, unsigned int *dispatch, unsigned int *uiisInterlaced)
 {
     BOOL condition[10];
     int previousPattern = ptrn->ucPatternType;
@@ -1300,7 +1326,7 @@ void Detect_32Pattern_rigorous(Frame **pFrm, Pattern *ptrn, unsigned int *dispat
 
     condition[8] = ptrn->ucAvgSAD < previousAvgSAD * T2;
 
-    if(ptrn->uiInterlacedFramesNum >= 3 || previousPattern == 5 || previousPattern == 6 || previousPattern == 7)
+	if (ptrn->uiInterlacedFramesNum >= 3 || previousPattern == 5 || previousPattern == 6 || previousPattern == 7)// && *uiisInterlaced != 2)
         Detect_Solve_32BlendedPatterns(pFrm, ptrn, dispatch);
 
     if((!ptrn->ucLatch.ucFullLatch && !(ptrn->uiInterlacedFramesNum >= 3)) || ((previousPattern == 1 || previousPattern == 2) && ptrn->ucLatch.ucSHalfLatch))
@@ -1456,9 +1482,9 @@ void Analyze_Buffer_Stats(Frame *frmBuffer[BUFMINSIZE], Pattern *ptrn, unsigned 
     if ((*uiisInterlaced != 1) && !(ptrn->uiInterlacedFramesNum > 4 && ptrn->ucPatternType < 1))
     {
         if(!frmBuffer[0]->frmProperties.processed)
-            Detect_Interlacing_Artifacts_fast(frmBuffer, ptrn, pdispatch);
+			Detect_Interlacing_Artifacts_fast(frmBuffer, ptrn, pdispatch, uiisInterlaced);
         else
-            Detect_32Pattern_rigorous(frmBuffer, ptrn, pdispatch);
+			Detect_32Pattern_rigorous(frmBuffer, ptrn, pdispatch, uiisInterlaced);
         if(!ptrn->ucLatch.ucFullLatch)
         {
             if(ptrn->uiInterlacedFramesNum < 2 && !ptrn->ucLatch.ucThalfLatch)
