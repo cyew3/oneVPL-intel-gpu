@@ -668,6 +668,94 @@ mfxStatus DISPATCHER_EXPOSED_PREFIX(MFXVideoUSER_UnLoad)(mfxSession session, con
     return bDestroyed ? MFX_ERR_NONE : MFX_ERR_NOT_FOUND;
 }
 
+mfxStatus DISPATCHER_EXPOSED_PREFIX(MFXAudioUSER_Load)(mfxSession session, const mfxPluginUID *uid, mfxU32 version) 
+{
+    MFX_DISP_HANDLE &pHandle = *(MFX_DISP_HANDLE *) session;
+    if (!&pHandle)
+    {
+        DISPATCHER_LOG_ERROR((("MFXAudioUSER_Load: session=NULL\n")));
+        return MFX_ERR_NULL_PTR;
+    }
+    if (!uid)
+    {
+        DISPATCHER_LOG_ERROR((("MFXAudioUSER_Load: uid=NULL\n")));
+        return MFX_ERR_NULL_PTR;
+    }
+    DISPATCHER_LOG_INFO((("MFXAudioUSER_Load: uid="MFXGUIDTYPE()" version=%d\n")
+        , MFXGUIDTOHEX(uid)
+        , version))
+        size_t pluginsChecked = 0;
+    PluginDescriptionRecord defaultPluginRecord;
+    for (MFX::MFXPluginStorage::iterator i = pHandle.pluginHive.begin();i != pHandle.pluginHive.end(); i++, pluginsChecked++)
+    {
+        if (i->PluginUID != *uid)
+        {
+            if (i->Default) // PluginUID == 0 for default set
+            {
+                defaultPluginRecord = *i;
+            }
+            continue;
+        }
+        //check rest in records
+        if (i->PluginVersion < version)
+        {
+            DISPATCHER_LOG_INFO((("MFXAudioUSER_Load: registered \"Plugin Version\" for GUID="MFXGUIDTYPE()" is %d, that is smaller that requested\n")
+                , MFXGUIDTOHEX(uid)
+                , i->PluginVersion))
+                continue;
+        }
+        try {
+            return pHandle.pluginFactory.Create(*i);
+        }
+        catch(...) {
+            return MFX_ERR_UNKNOWN;
+        }
+    }
+
+    // Specified UID was not found among individually registed plugins, now try load it from default set if any
+    if (defaultPluginRecord.Default)
+    {
+        defaultPluginRecord.PluginUID = *uid;
+        defaultPluginRecord.onlyVersionRegistered = true;
+        defaultPluginRecord.PluginVersion = (mfxU16)version;
+        try {
+            return pHandle.pluginFactory.Create(defaultPluginRecord);
+        }
+        catch(...) {
+            return MFX_ERR_UNKNOWN;
+        }
+    }
+
+    DISPATCHER_LOG_ERROR((("MFXAudioUSER_Load: cannot find registered plugin with requested UID, total plugins available=%d\n"), pHandle.pluginHive.size()));
+    return MFX_ERR_NOT_FOUND;
+}
+
+mfxStatus DISPATCHER_EXPOSED_PREFIX(MFXAudioUSER_UnLoad)(mfxSession session, const mfxPluginUID *uid) 
+{
+    MFX_DISP_HANDLE &rHandle = *(MFX_DISP_HANDLE *) session;
+    if (!&rHandle) 
+    {
+        DISPATCHER_LOG_ERROR((("MFXAudioUSER_UnLoad: session=NULL\n")));
+        return MFX_ERR_NULL_PTR;
+    }
+    if (!uid)
+    {
+        DISPATCHER_LOG_ERROR((("MFXAudioUSER_Load: uid=NULL\n")));
+        return MFX_ERR_NULL_PTR;
+    }
+
+    bool bDestroyed = rHandle.pluginFactory.Destroy(*uid);
+    if (bDestroyed) 
+    {
+        DISPATCHER_LOG_INFO((("MFXAudioUSER_UnLoad : plugin with GUID="MFXGUIDTYPE()" unloaded\n"), MFXGUIDTOHEX(uid)));
+    } else 
+    {
+        DISPATCHER_LOG_ERROR((("MFXAudioUSER_UnLoad : plugin with GUID="MFXGUIDTYPE()" not found\n"), MFXGUIDTOHEX(uid)));
+    }
+
+    return bDestroyed ? MFX_ERR_NONE : MFX_ERR_NOT_FOUND;
+}
+
 //
 // implement all other calling functions.
 // They just call a procedure of DLL library from the table.

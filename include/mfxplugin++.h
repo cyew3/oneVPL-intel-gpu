@@ -34,14 +34,26 @@ File Name: mfxplugin++.h
 
 #include "mfxplugin.h"
 
-//c++ wrapper over only 3 exposed functions from MFXVideoUSER module
-class MFXVideoUSER {
-public:
-    explicit MFXVideoUSER(mfxSession session)
-        : m_session(session){}
-    
-    virtual ~MFXVideoUSER() {};
+// base class for MFXVideoUSER/MFXAudioUSER API
 
+class MFXBaseUSER {
+public:
+    explicit MFXBaseUSER(mfxSession session = NULL)
+        : m_session(session){}
+
+    virtual ~MFXBaseUSER() {};
+
+    virtual mfxStatus Register(mfxU32 type, const mfxPlugin *par) = 0;
+    virtual mfxStatus Unregister(mfxU32 type) = 0;
+    virtual mfxStatus ProcessFrameAsync(const mfxHDL *in, mfxU32 in_num, const mfxHDL *out, mfxU32 out_num, mfxSyncPoint *syncp) = 0;
+
+protected:
+    mfxSession m_session;
+};
+
+//c++ wrapper over only 3 exposed functions from MFXVideoUSER module
+class MFXVideoUSER: public MFXBaseUSER {
+public:
     virtual mfxStatus Register(mfxU32 type, const mfxPlugin *par) {
         return MFXVideoUSER_Register(m_session, type, par);
     }
@@ -51,19 +63,11 @@ public:
     virtual mfxStatus ProcessFrameAsync(const mfxHDL *in, mfxU32 in_num, const mfxHDL *out, mfxU32 out_num, mfxSyncPoint *syncp) {
         return MFXVideoUSER_ProcessFrameAsync(m_session, in, in_num, out, out_num, syncp);
     }
-
-protected:
-    mfxSession m_session;    
 };
 
 //c++ wrapper over only 3 exposed functions from MFXAudioUSER module
-class MFXAudioUSER {
+class MFXAudioUSER: public MFXBaseUSER {
 public:
-    explicit MFXAudioUSER(mfxSession session)
-        : m_session(session){}
-    
-    virtual ~MFXAudioUSER() {};
-
     virtual mfxStatus Register(mfxU32 type, const mfxPlugin *par) {
         return MFXAudioUSER_Register(m_session, type, par);
     }
@@ -73,9 +77,6 @@ public:
     virtual mfxStatus ProcessFrameAsync(const mfxHDL *in, mfxU32 in_num, const mfxHDL *out, mfxU32 out_num, mfxSyncPoint *syncp) {
         return MFXAudioUSER_ProcessFrameAsync(m_session, in, in_num, out, out_num, syncp);
     }
-
-protected:
-    mfxSession m_session;    
 };
 
 
