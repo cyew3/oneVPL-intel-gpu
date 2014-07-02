@@ -542,7 +542,7 @@ typedef struct {
     mfxU16      DisableDeblockingIdc;
     mfxU16      DisableVUI;
     mfxU16      BufferingPeriodSEI;
-    mfxU16      reserved2;
+    mfxU16      reserved2[2];
 } mfxExtCodingOption2;
 
 typedef struct {
