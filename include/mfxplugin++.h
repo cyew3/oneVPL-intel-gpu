@@ -54,6 +54,9 @@ protected:
 //c++ wrapper over only 3 exposed functions from MFXVideoUSER module
 class MFXVideoUSER: public MFXBaseUSER {
 public:
+    explicit MFXVideoUSER(mfxSession session = NULL)
+        : MFXBaseUSER(session){}
+
     virtual mfxStatus Register(mfxU32 type, const mfxPlugin *par) {
         return MFXVideoUSER_Register(m_session, type, par);
     }
@@ -68,6 +71,9 @@ public:
 //c++ wrapper over only 3 exposed functions from MFXAudioUSER module
 class MFXAudioUSER: public MFXBaseUSER {
 public:
+    explicit MFXAudioUSER(mfxSession session = NULL)
+        : MFXBaseUSER(session){}
+
     virtual mfxStatus Register(mfxU32 type, const mfxPlugin *par) {
         return MFXAudioUSER_Register(m_session, type, par);
     }
