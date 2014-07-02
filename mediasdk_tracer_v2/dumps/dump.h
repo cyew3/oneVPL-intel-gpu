@@ -15,6 +15,12 @@ std::string StringToHexString(std::string data);
 #define GET_ARRAY_SIZE(x) sizeof(x)/sizeof(x[0])
 #define DUMP_RESERVED_ARRAY(r) dump_reserved_array(&(r[0]), GET_ARRAY_SIZE(r))
 
+#define DUMP_FIELD(_field) \
+    str += structName + "." #_field "=" + ToString(_struct._field) + "\n";
+
+#define DUMP_FIELD_RESERVED(_field) \
+    str += structName + "." #_field "[]=" + DUMP_RESERVED_ARRAY(_struct._field) + "\n";
+
 #define ToString( x ) dynamic_cast< std::ostringstream & >( \
         ( std::ostringstream() << std::dec << x ) ).str()
 
@@ -27,6 +33,8 @@ std::string StringToHexString(std::string data);
 */
 
 #define ToHexFormatString( x ) StringToHexString(dynamic_cast< std::ostringstream & >( ( std::ostringstream() << std::dec << x ) ).str() )
+
+const char* get_bufferid_str(mfxU32 bufferid);
 
 template<typename T>
 std::string dump_reserved_array(T* data, size_t size)
@@ -41,6 +49,9 @@ std::string dump_reserved_array(T* data, size_t size)
     result << " }";
     return result.str();
 }
+
+template<typename T>
+std::string dump_mfxExtParams(const std::string structName, const T& _struct);
 
 template<typename T>
 inline const char* get_type(){ return typeid(T).name(); }
@@ -90,6 +101,11 @@ DEFINE_DUMP_FOR_TYPE(mfxPlugin);
 DEFINE_DUMP_FOR_TYPE(mfxDecodeStat);
 DEFINE_DUMP_FOR_TYPE(mfxEncodeCtrl);
 DEFINE_DUMP_FOR_TYPE(mfxEncodeStat);
+DEFINE_DUMP_FOR_TYPE(mfxExtCodingOption);
+DEFINE_DUMP_FOR_TYPE(mfxExtCodingOption2);
+DEFINE_DUMP_FOR_TYPE(mfxExtCodingOption3);
+DEFINE_DUMP_FOR_TYPE(mfxExtEncoderResetOption);
+DEFINE_DUMP_FOR_TYPE(mfxExtVppAuxData);
 DEFINE_DUMP_FOR_TYPE(mfxFrameAllocRequest);
 DEFINE_DUMP_FOR_TYPE(mfxFrameData);
 DEFINE_DUMP_FOR_TYPE(mfxFrameId);
@@ -102,7 +118,6 @@ DEFINE_DUMP_FOR_TYPE(mfxPayload);
 DEFINE_DUMP_FOR_TYPE(mfxSkipMode);
 DEFINE_DUMP_FOR_TYPE(mfxVideoParam);
 DEFINE_DUMP_FOR_TYPE(mfxVPPStat);
-DEFINE_DUMP_FOR_TYPE(mfxExtVppAuxData);
 
 //mfxsession
 DEFINE_DUMP_FOR_TYPE(mfxSession);

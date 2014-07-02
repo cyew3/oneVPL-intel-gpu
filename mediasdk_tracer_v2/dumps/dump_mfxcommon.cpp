@@ -5,10 +5,7 @@ std::string dump(const std::string structName, const mfxBitstream &bitstream)
 {
     std::string str;
     str += structName + ".EncryptedData=" + ToString(bitstream.EncryptedData) + "\n";
-    str += structName + ".ExtParam=" + ToString(bitstream.ExtParam) + "\n";
-    if (bitstream.ExtParam)
-      str += dump(structName + ".ExtParam=", (*bitstream.ExtParam)) + "\n";
-    str += structName + ".NumExtParam=" + ToString(bitstream.NumExtParam) + "\n";
+    str += dump_mfxExtParams(structName, bitstream) + "\n";
     str += structName + ".reserved[]=" + DUMP_RESERVED_ARRAY(bitstream.reserved) + "\n";
     str += structName + ".DecodeTimeStamp=" + ToString(bitstream.DecodeTimeStamp) + "\n";
     str += structName + ".TimeStamp=" + ToString(bitstream.TimeStamp) + "\n";
@@ -28,7 +25,11 @@ std::string dump(const std::string structName, const mfxBitstream &bitstream)
 std::string dump(const std::string structName, const mfxExtBuffer &extBuffer)
 {
     std::string str;
-    str += structName + ".BufferId=" + ToString(extBuffer.BufferId) + "\n";
+    const char* bufid_str = get_bufferid_str(extBuffer.BufferId);
+    if (bufid_str)
+        str += structName + ".BufferId=" + std::string(bufid_str) + "\n";
+    else
+        str += structName + ".BufferId=" + ToString(extBuffer.BufferId) + "\n";
     str += structName + ".BufferSz=" + ToString(extBuffer.BufferSz);
     return str;
 }

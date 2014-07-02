@@ -9,8 +9,7 @@ std::string dump(const std::string structName, const mfxENCInput &encIn)
     str += structName + ".L0Surface=" + ToString(encIn.L0Surface) + "\n";
     str += structName + ".NumFrameL1=" + ToString(encIn.NumFrameL1) + "\n";
     str += structName + ".L1Surface=" + ToString(encIn.L1Surface) + "\n";
-    str += structName + ".NumExtParam=" + ToString(encIn.NumExtParam) + "\n";
-    str += structName + ".ExtParam=" + ToString(encIn.ExtParam) + "\n";
+    str += dump_mfxExtParams(structName, encIn);
     return str;
 }
 
@@ -18,7 +17,6 @@ std::string dump(const std::string structName, const mfxENCOutput &encOut)
 {
     std::string str;
     str += structName + ".reserved[]=" + DUMP_RESERVED_ARRAY(encOut.reserved) + "\n";
-    str += structName + ".NumExtParam=" + ToString(encOut.NumExtParam) + "\n";
-    str += structName + ".ExtParam=" + ToString(encOut.ExtParam) + "\n";
+    str += dump_mfxExtParams(structName, encOut);
     return str;
 }

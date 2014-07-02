@@ -20,10 +20,9 @@ std::string dump(const std::string structName, const mfxEncodeCtrl &EncodeCtrl)
     str += structName + ".SkipFrame=" + ToString(EncodeCtrl.SkipFrame) + "\n";
     str += structName + ".QP=" + ToString(EncodeCtrl.QP) + "\n";
     str += structName + ".FrameType=" + ToString(EncodeCtrl.FrameType) + "\n";
-    str += structName + ".NumExtParam=" + ToString(EncodeCtrl.NumExtParam) + "\n";
     str += structName + ".NumPayload=" + ToString(EncodeCtrl.NumPayload) + "\n";
     str += structName + ".reserved2=" + ToString(EncodeCtrl.reserved2) + "\n";
-    str += structName + ".ExtParam=" + ToString(EncodeCtrl.ExtParam) + "\n";
+    str += dump_mfxExtParams(structName, EncodeCtrl) + "\n";
     str += structName + ".Payload=" + ToString(EncodeCtrl.Payload);
     return str;
 }
@@ -35,6 +34,110 @@ std::string dump(const std::string structName, const mfxEncodeStat &encodeStat)
     str += structName + ".NumCachedFrame=" + ToString(encodeStat.NumCachedFrame) + "\n";
     str += structName + ".NumFrame=" + ToString(encodeStat.NumFrame) + "\n";
     str += structName + ".reserved[]=" + DUMP_RESERVED_ARRAY(encodeStat.reserved) + "\n";
+    return str;
+}
+
+std::string dump(const std::string structName, const mfxExtCodingOption &_struct)
+{
+    std::string str;
+    str += dump(structName + ".Header", _struct.Header) + "\n";
+    str += structName + ".reserved1=" + ToString(_struct.reserved1) + "\n";
+    str += structName + ".RateDistortionOpt=" + ToString(_struct.RateDistortionOpt) + "\n";
+    str += structName + ".MECostType=" + ToString(_struct.MECostType) + "\n";
+    str += structName + ".MESearchType=" + ToString(_struct.MESearchType) + "\n";
+    //mfxI16Pair  MVSearchWindow; // TODO: dump the field
+    str += structName + ".EndOfSequence=" + ToString(_struct.EndOfSequence) + "\n";
+    str += structName + ".FramePicture=" + ToString(_struct.FramePicture) + "\n";
+
+    str += structName + ".CAVLC=" + ToString(_struct.CAVLC) + "\n";
+    str += structName + ".reserved2[]=" + DUMP_RESERVED_ARRAY(_struct.reserved2) + "\n";
+    str += structName + ".RecoveryPointSEI=" + ToString(_struct.RecoveryPointSEI) + "\n";
+    str += structName + ".ViewOutput=" + ToString(_struct.ViewOutput) + "\n";
+    str += structName + ".NalHrdConformance=" + ToString(_struct.NalHrdConformance) + "\n";
+    str += structName + ".SingleSeiNalUnit=" + ToString(_struct.SingleSeiNalUnit) + "\n";
+    str += structName + ".VuiVclHrdParameters=" + ToString(_struct.VuiVclHrdParameters) + "\n";
+
+    str += structName + ".RefPicListReordering=" + ToString(_struct.RefPicListReordering) + "\n";
+    str += structName + ".ResetRefList=" + ToString(_struct.ResetRefList) + "\n";
+    str += structName + ".RefPicMarkRep=" + ToString(_struct.RefPicMarkRep) + "\n";
+    str += structName + ".FieldOutput=" + ToString(_struct.FieldOutput) + "\n";
+
+    str += structName + ".IntraPredBlockSize=" + ToString(_struct.IntraPredBlockSize) + "\n";
+    str += structName + ".InterPredBlockSize=" + ToString(_struct.InterPredBlockSize) + "\n";
+    str += structName + ".MVPrecision=" + ToString(_struct.MVPrecision) + "\n";
+    str += structName + ".MaxDecFrameBuffering=" + ToString(_struct.MaxDecFrameBuffering) + "\n";
+
+    str += structName + ".AUDelimiter=" + ToString(_struct.AUDelimiter) + "\n";
+    str += structName + ".EndOfStream=" + ToString(_struct.EndOfStream) + "\n";
+    str += structName + ".PicTimingSEI=" + ToString(_struct.PicTimingSEI) + "\n";
+    str += structName + ".VuiNalHrdParameters=" + ToString(_struct.VuiNalHrdParameters) + "\n";
+    return str;
+}
+
+std::string dump(const std::string structName, const mfxExtCodingOption2 &_struct)
+{
+    std::string str;
+    str += dump(structName + ".Header", _struct.Header) + "\n";
+    DUMP_FIELD(IntRefType);
+    DUMP_FIELD(IntRefCycleSize);
+    DUMP_FIELD(IntRefQPDelta);
+
+    DUMP_FIELD(MaxFrameSize);
+    DUMP_FIELD(MaxSliceSize);
+
+    DUMP_FIELD(BitrateLimit);
+    DUMP_FIELD(MBBRC);
+    DUMP_FIELD(ExtBRC);
+    DUMP_FIELD(LookAheadDepth);
+    DUMP_FIELD(Trellis);
+    DUMP_FIELD(RepeatPPS);
+    DUMP_FIELD(BRefType);
+    DUMP_FIELD(AdaptiveI);
+    DUMP_FIELD(AdaptiveB);
+    DUMP_FIELD(LookAheadDS);
+    DUMP_FIELD(NumMbPerSlice);
+    DUMP_FIELD(SkipFrame);
+    DUMP_FIELD(MinQPI);
+    DUMP_FIELD(MaxQPI);
+    DUMP_FIELD(MinQPP);
+    DUMP_FIELD(MaxQPP);
+    DUMP_FIELD(MinQPB);
+    DUMP_FIELD(MaxQPB);
+    DUMP_FIELD(FixedFrameRate);
+    DUMP_FIELD(DisableDeblockingIdc);
+    DUMP_FIELD(DisableVUI);
+    DUMP_FIELD(BufferingPeriodSEI);
+    DUMP_FIELD_RESERVED(reserved2);
+    return str;
+}
+
+std::string dump(const std::string structName, const mfxExtCodingOption3 &_struct)
+{
+    std::string str;
+    str += dump(structName + ".Header", _struct.Header) + "\n";
+    DUMP_FIELD(NumSliceI);
+    DUMP_FIELD(NumSliceP);
+    DUMP_FIELD(NumSliceB);
+    DUMP_FIELD_RESERVED(reserved);
+    return str;
+}
+
+std::string dump(const std::string structName, const mfxExtEncoderResetOption &_struct)
+{
+    std::string str;
+    str += dump(structName + ".Header", _struct.Header) + "\n";
+    DUMP_FIELD(StartNewSequence);
+    DUMP_FIELD_RESERVED(reserved);
+    return str;
+}
+
+std::string dump(const std::string structName, const mfxExtVPPDoNotUse &_struct)
+{
+    std::string str;
+    str += dump(structName + ".Header", _struct.Header) + "\n";
+    // TODO dump list of algs
+    DUMP_FIELD(NumAlg);
+    DUMP_FIELD(AlgList);
     return str;
 }
 
@@ -224,8 +327,7 @@ std::string dump(const std::string structName, const mfxVideoParam& videoParam)
     str += dump(structName + ".vpp", videoParam.vpp) + "\n";
     str += structName + ".Protected=" + ToString(videoParam.Protected) + "\n";
     str += structName + ".IOPattern=" + ToString(videoParam.IOPattern) + "\n";
-    str += structName + ".ExtParam=" + ToString(videoParam.ExtParam) + "\n";
-    str += structName + ".NumExtParam=" + ToString(videoParam.NumExtParam) + "\n";
+    str += dump_mfxExtParams(structName, videoParam) + "\n";
     str += structName + ".reserved2=" + ToString(videoParam.reserved2);
     return str;
 }
