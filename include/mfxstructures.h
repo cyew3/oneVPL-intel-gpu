@@ -501,6 +501,11 @@ enum {
 };
 
 enum {
+    MFX_BPSEI_DEFAULT = 0x00,
+    MFX_BPSEI_IFRAME  = 0x01
+};
+
+enum {
     MFX_SKIPFRAME_INSERT_DUMMY    = 1,
     MFX_SKIPFRAME_INSERT_NOTHING  = 2,
 };
@@ -536,7 +541,8 @@ typedef struct {
     mfxU16      FixedFrameRate;         /* tri-state option */
     mfxU16      DisableDeblockingIdc;
     mfxU16      DisableVUI;
-    mfxU16      reserved2[3];
+    mfxU16      BufferingPeriodSEI;
+    mfxU16      reserved2;
 } mfxExtCodingOption2;
 
 typedef struct {
@@ -605,6 +611,7 @@ enum {
     MFX_EXTBUFF_VPP_VIDEO_SIGNAL_INFO      = MFX_MAKEFOURCC('V','V','S','I'),
     MFX_EXTBUFF_ENCODER_ROI                = MFX_MAKEFOURCC('E','R','O','I'),
     MFX_EXTBUFF_VPP_DEINTERLACING          = MFX_MAKEFOURCC('V','P','D','I'),
+    MFX_EXTBUFF_AVC_REFLISTS               = MFX_MAKEFOURCC('R','L','T','S'),
     MFX_EXTBUFF_DEC_VIDEO_PROCESSING       = MFX_MAKEFOURCC('D','E','C','V'),
     MFX_EXTBUFF_CODING_OPTION3             = MFX_MAKEFOURCC('C', 'D', 'O', '3')
 };
@@ -1018,6 +1025,19 @@ typedef struct {
     mfxU16  reserved[11];
 } mfxExtVPPDeinterlacing;
 
+typedef struct {
+    mfxExtBuffer    Header;
+    mfxU16          NumRefIdxL0Active;
+    mfxU16          NumRefIdxL1Active;
+    mfxU16          reserved[2];
+
+    struct mfxRefPic{
+        mfxU32      FrameOrder;
+        mfxU16      PicStruct;
+        mfxU16      reserved[5];
+    } RefPicList0[32], RefPicList1[32];
+
+}mfxExtAVCRefLists;
 
 typedef struct {
     mfxExtBuffer    Header;
