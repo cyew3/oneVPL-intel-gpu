@@ -539,6 +539,15 @@ typedef struct {
     mfxU16      reserved2[3];
 } mfxExtCodingOption2;
 
+typedef struct {
+    mfxExtBuffer Header;
+    mfxU16      NumSliceI;
+    mfxU16      NumSliceP;
+    mfxU16      NumSliceB;
+    mfxU16      reserved[249];
+} mfxExtCodingOption3;
+
+
 /* IntraPredBlockSize/InterPredBlockSize */
 enum {
     MFX_BLOCKSIZE_UNKNOWN   = 0,
@@ -597,6 +606,7 @@ enum {
     MFX_EXTBUFF_ENCODER_ROI                = MFX_MAKEFOURCC('E','R','O','I'),
     MFX_EXTBUFF_VPP_DEINTERLACING          = MFX_MAKEFOURCC('V','P','D','I'),
     MFX_EXTBUFF_DEC_VIDEO_PROCESSING       = MFX_MAKEFOURCC('D','E','C','V'),
+    MFX_EXTBUFF_CODING_OPTION3             = MFX_MAKEFOURCC('C', 'D', 'O', '3')
 };
 
 /* VPP Conf: Do not use certain algorithms  */
