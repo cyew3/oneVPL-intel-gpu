@@ -659,7 +659,7 @@ namespace MPEG2EncoderHW
         {
             bool bUnsupported = false;
             bool bWarning = false;
-            bool bInvalid = false;
+            //bool bInvalid = false;
 
             mfxExtCodingOptionSPSPPS* pSPSPPS_out = GetExtCodingOptionsSPSPPS (out->ExtParam, out->NumExtParam);
             mfxExtCodingOptionSPSPPS* pSPSPPS_in  = GetExtCodingOptionsSPSPPS (in->ExtParam,  in->NumExtParam);
