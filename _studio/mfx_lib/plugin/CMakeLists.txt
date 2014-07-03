@@ -176,7 +176,7 @@ set(MFX_LDFLAGS "${MFX_ORIG_LDFLAGS} -Wl,--version-script=${CMAKE_CURRENT_SOURCE
 # HEVC
 
 #foreach( variant sw hw )
-foreach( variant sw )
+foreach( variant sw hw)
   if( __ARCH MATCHES intel64 )
     set( plugin_name mfx_hevcd_${variant}64 )
     set( eval_plugin_name mfx_eval_hevcd_${variant}64 )
@@ -193,7 +193,7 @@ foreach( variant sw )
 
   set( LIBS "" )
   list( APPEND LIBS
-    umc_h265_sw
+    umc_h265_${variant}
     umc_csc_sw
     hevc_pp_dispatcher
     hevc_pp_atom
@@ -207,9 +207,15 @@ foreach( variant sw )
     ippmsdk_l ippj_l ippvc_l ippcc_l ippcv_l ippi_l ipps_l ippcore_l
     pthread
     dl
+    va
     )
   
-  set( defs "-DAS_HEVCD_PLUGIN -DMFX_PLUGIN_PRODUCT_NAME=\"\\\"${HEVC_PRODUCT_NAME}\"\\\" -DMFX_FILE_DESCRIPTION=\"\\\"${description_name}\"\\\" ${hevc_version_defs}" )
+  if(${variant} MATCHES hw)
+    set( hw_defs "-DMFX_VA -DVA_HEVC_DECODER")
+  endif()
+  
+  set( defs "-DAS_HEVCD_PLUGIN -DMFX_PLUGIN_PRODUCT_NAME=\"\\\"${HEVC_PRODUCT_NAME}\"\\\" -DMFX_FILE_DESCRIPTION=\"\\\"${description_name}\"\\\" ${hevc_version_defs} ${hw_defs}" )  
+
   make_library( ${plugin_name} ${variant} shared)
 
   set( defs "-DAS_HEVCD_PLUGIN -DHEVCD_EVALUATION -DMFX_PLUGIN_PRODUCT_NAME=\"\\\"${HEVC_PRODUCT_NAME}\"\\\" -DMFX_FILE_DESCRIPTION=\"\\\"${description_name}\"\\\" ${hevc_version_defs}" )

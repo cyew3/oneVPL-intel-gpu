@@ -64,43 +64,14 @@ UMC::Status H265_DXVA_SegmentDecoder::Init(Ipp32s iNumber)
 
 void H265_DXVA_SegmentDecoder::PackAllHeaders(H265DecoderFrame * pFrame)
 {
-    H265DecoderFrameInfo * sliceInfo = pFrame->m_pSlicesInfo;
-    int sliceCount = sliceInfo->GetSliceCount();
-
-    if (!sliceCount)
-        return;
-
-#ifdef UMC_VA_DXVA
     if (!m_Packer.get())
     {
-        if (m_va->IsIntelCustomGUID()) // intel MVC profile
-            m_Packer.reset(new PackerDXVA2(m_va));
-        else
-            m_Packer.reset(new MSPackerDXVA2(m_va));
+        m_Packer.reset(Packer::CreatePacker(m_va));
+        VM_ASSERT(m_Packer.get());
     }
-#endif
-
-    H265Slice *pSlice = sliceInfo->GetSlice(0);
-    const H265SeqParamSet *pSeqParamSet = pSlice->GetSeqParam();
-    H265DecoderFrame *pCurrentFrame = pSlice->GetCurrentFrame();
 
     m_Packer->BeginFrame();
-    m_Packer->PackPicParams(pCurrentFrame, sliceInfo, m_pTaskSupplier);
-    if (pSeqParamSet->scaling_list_enabled_flag)
-    {
-        m_Packer->PackQmatrix(pSlice);
-    }
-
-    bool isLongFormat = m_va->IsLongSliceControl();
-
-    Ipp32u sliceNum = 0;
-    for (Ipp32s n = 0; n < sliceCount; n++)
-    {
-        m_Packer->PackSliceParams(sliceInfo->GetSlice(n), sliceNum, isLongFormat, n == sliceCount - 1);
-        sliceNum++;
-    }
-
-    m_Packer->ExecuteBuffers();
+    m_Packer->PackAU(pFrame, m_pTaskSupplier);
     m_Packer->EndFrame();
 }
 

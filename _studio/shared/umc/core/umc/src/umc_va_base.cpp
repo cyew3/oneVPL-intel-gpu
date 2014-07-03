@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2006-2013 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2006-2014 Intel Corporation. All Rights Reserved.
 */
 
 #ifdef _DEBUG
@@ -41,6 +41,7 @@ VideoAccelerationProfile VideoType2VAProfile(VideoStreamType video_type)
         case H263_VIDEO:  return VA_MPEG4;
         case MPEG4_VIDEO: return VA_MPEG4;
         case H264_VIDEO:  return VA_H264;
+        case HEVC_VIDEO:  return VA_H265;
         case VC1_VIDEO:   return VA_VC1;
         case WMV_VIDEO:   return VA_VC1;
     }

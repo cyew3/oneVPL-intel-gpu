@@ -1428,9 +1428,12 @@ mfxStatus MFX_Utility::Query(VideoCORE *core, mfxVideoParam *in, mfxVideoParam *
         if (in->AsyncDepth < MFX_MAX_ASYNC_DEPTH_VALUE) // Actually AsyncDepth > 5-7 is for debugging only.
             out->AsyncDepth = in->AsyncDepth;
 
-        if (in->mfx.DecodedOrder)
+        out->mfx.DecodedOrder = in->mfx.DecodedOrder;
+
+        if (in->mfx.DecodedOrder > 1)
         {
             sts = MFX_ERR_UNSUPPORTED;
+            out->mfx.DecodedOrder = 0;
         }
 
         if (in->mfx.SliceGroupsPresent)
@@ -1877,7 +1880,7 @@ mfxStatus MFX_Utility::Query(VideoCORE *core, mfxVideoParam *in, mfxVideoParam *
 
         out->mfx.NumThread = 1;
 
-        out->mfx.DecodedOrder = 0;
+        out->mfx.DecodedOrder = 1;
 
         out->mfx.TimeStampCalc = 1;
         out->mfx.SliceGroupsPresent = 1;

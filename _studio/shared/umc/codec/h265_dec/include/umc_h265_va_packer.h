@@ -22,6 +22,10 @@
 #include "umc_hevc_ddi.h"
 #endif
 
+#if defined(UMC_VA_LINUX) && defined(VA_HEVC_DECODER)
+#include <va/va_dec_hevc.h>
+#endif
+
 namespace UMC_HEVC_DECODER
 {
 
@@ -41,15 +45,17 @@ public:
     virtual void BeginFrame() = 0;
     virtual void EndFrame() = 0;
 
+    virtual void PackAU(const H265DecoderFrame *pCurrentFrame, TaskSupplier_H265 * supplier) = 0;
+
     virtual void PackPicParams(const H265DecoderFrame *pCurrentFrame,
                         H265DecoderFrameInfo * pSliceInfo,
                         TaskSupplier_H265 * supplier) = 0;
 
-    virtual void PackSliceParams(H265Slice *pSlice, Ipp32u &sliceNum, bool isLong, bool isLastSlice) = 0;
+    virtual void PackSliceParams(H265Slice *pSlice, Ipp32u &sliceNum, bool isLastSlice) = 0;
 
     virtual void PackQmatrix(const H265Slice *pSlice) = 0;
 
-    virtual void ExecuteBuffers() = 0;
+    static Packer * CreatePacker(UMC::VideoAccelerator * va);
 
 protected:
     UMC::VideoAccelerator *m_va;
@@ -73,31 +79,16 @@ public:
                         H265DecoderFrameInfo * pSliceInfo,
                         TaskSupplier_H265 * supplier);
 
-    virtual void PackSliceParams(H265Slice *pSlice, Ipp32u &sliceNum, bool isLong, bool isLastSlice);
+    virtual void PackSliceParams(H265Slice *pSlice, Ipp32u &sliceNum, bool isLastSlice);
 
-    void GetPicParamVABuffer(DXVA_Intel_PicParams_HEVC **ppPicParam, Ipp32s headerSize);
+    virtual void PackAU(const H265DecoderFrame *pCurrentFrame, TaskSupplier_H265 * supplier);
 
     void GetSliceVABuffers(
         DXVA_Intel_Slice_HEVC_Long **ppSliceHeader, Ipp32s headerSize,
         void **ppSliceData, Ipp32s dataSize,
         Ipp32s dataAlignment);
 
-    void GetIQMVABuffer(DXVA_Intel_Qmatrix_HEVC **, Ipp32s bffrSize);
-
-    void ExecuteBuffers();
-
 protected:
-    void AddReferenceFrame(DXVA_Intel_PicParams_HEVC * pPicParams_H265, Ipp32s &pos,
-        H265DecoderFrame * pFrame, Ipp32s reference);
-
-    void PackSliceGroups(DXVA_Intel_PicParams_HEVC * pPicParams_H265, H265DecoderFrame * frame);
-
-    void SendPAVPStructure(Ipp32s numSlicesOfPrevField, H265Slice *pSlice);
-    //check correctness of encrypted data
-    void CheckData();
-    //pointer to the beginning of offset for next slice in HW buffer
-    Ipp8u * pBuf;
-
     Ipp32u              m_statusReportFeedbackCounter;
     DXVA_Intel_PicEntry_HEVC  m_refFrameListCache[16];
     int                 m_refFrameListCacheSize;
@@ -114,19 +105,39 @@ public:
                         H265DecoderFrameInfo * pSliceInfo,
                         TaskSupplier_H265 * supplier);
 
-    virtual void PackSliceParams(H265Slice *pSlice, Ipp32u &sliceNum, bool isLong, bool isLastSlice);
+    virtual void PackSliceParams(H265Slice *pSlice, Ipp32u &sliceNum, bool isLastSlice);
 };
 
 #endif // UMC_VA_DXVA
 
 
-#if 0 //def UMC_VA_LINUX
+#if defined(UMC_VA_LINUX) && defined(VA_HEVC_DECODER)
 
 class PackerVA : public Packer
 {
 public:
+    PackerVA(UMC::VideoAccelerator * va);
+
+    virtual UMC::Status GetStatusReport(void * pStatusReport, size_t size);
+
+    virtual void PackQmatrix(const H265Slice *pSlice);
+
+    virtual void PackPicParams(const H265DecoderFrame *pCurrentFrame,
+                        H265DecoderFrameInfo * pSliceInfo,
+                        TaskSupplier_H265 * supplier);
+
+    virtual void PackSliceParams(H265Slice *pSlice, Ipp32u &sliceNum, bool isLastSlice);
+
+    virtual void BeginFrame();
+    virtual void EndFrame();
+
+    virtual void PackAU(const H265DecoderFrame *pCurrentFrame, TaskSupplier_H265 * supplier);
 
 private:
+
+    void CreateSliceDataBuffer(H265DecoderFrameInfo * sliceInfo);
+    void CreateSliceParamBuffer(H265DecoderFrameInfo * sliceInfo);
+
 };
 
 #endif // UMC_VA_LINUX

@@ -911,9 +911,6 @@ mfxStatus VideoDECODEH264::QueryIOSurf(VideoCORE *core, mfxVideoParam *par, mfxF
     if ((par->IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY) && (par->IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY))
         return MFX_ERR_INVALID_VIDEO_PARAM;
 
-    if (par->mfx.DecodedOrder)
-        return MFX_ERR_UNSUPPORTED;
-
     //if (!MFX_Utility::CheckVideoParam(par, type))
       //  return MFX_ERR_INVALID_VIDEO_PARAM;
 
@@ -1230,7 +1227,7 @@ mfxStatus VideoDECODEH264::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1 *
         m_va->GetProtectedVA()->SetBitstream(bs);
     }
 
-    if (m_va->GetVideoProcessingVA())
+    if (m_usePostProcessing)
     {
         mfxHDL surfHDL;
         m_core->GetFrameHDL(surface_work->Data.MemId, &surfHDL, false);
@@ -1309,6 +1306,9 @@ mfxStatus VideoDECODEH264::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1 *
                 return sts;
 
             umcRes = m_pH264VideoDecoder->RunDecoding_1();
+
+            if (m_vInitPar.mfx.DecodedOrder)
+                force = true;
 
             UMC::H264DecoderFrame *pFrame = GetFrameToDisplay(&dst, force);
 

@@ -2314,10 +2314,14 @@ void H264SegmentDecoderMultiThreaded::DecodeMotionVectorsPSlice_CAVLC(void)
                         pGetMBFieldDecodingFlag(m_cur_mb.GlobalMacroblockInfo);
 
                     if (2 == num_ref_idx_l0_active)
-
                         refIdx = m_pBitStream->Get1Bit() ^ 1;
                     else if (2 < num_ref_idx_l0_active)
                         refIdx = m_pBitStream->GetVLCElement(false);
+
+                    if (refIdx >= (Ipp8s)num_ref_idx_l0_active || refIdx < 0)
+                    {
+                        throw h264_exception(UMC_ERR_INVALID_STREAM);
+                    }
                 }
                 else
                 {
@@ -2356,6 +2360,10 @@ void H264SegmentDecoderMultiThreaded::DecodeMotionVectorsPSlice_CAVLC(void)
                         else if (2 < num_ref_idx_l0_active)
                             refIdx[i] = (RefIndexType)m_pBitStream->GetVLCElement(false);
 
+                        if (refIdx[i] >= (Ipp8s)num_ref_idx_l0_active || refIdx[i] < 0)
+                        {
+                            throw h264_exception(UMC_ERR_INVALID_STREAM);
+                        }
                     }
                     else
                     {
@@ -2399,6 +2407,10 @@ void H264SegmentDecoderMultiThreaded::DecodeMotionVectorsPSlice_CAVLC(void)
                         else if (2 < num_ref_idx_l0_active)
                             refIdx[i] = (RefIndexType)m_pBitStream->GetVLCElement(false);
 
+                        if (refIdx[i] >= (Ipp8s)num_ref_idx_l0_active || refIdx[i] < 0)
+                        {
+                            throw h264_exception(UMC_ERR_INVALID_STREAM);
+                        }
                     }
                     else
                     {
@@ -2472,6 +2484,11 @@ void H264SegmentDecoderMultiThreaded::DecodeMotionVectorsPSlice_CAVLC(void)
                                 else
                                 {
                                     refs->refIndexs[i] = (RefIndexType)m_pBitStream->GetVLCElement(false);
+                                }
+
+                                if (refs->refIndexs[i] >= (Ipp8s)num_ref_idx_l0_active || refs->refIndexs[i] < 0)
+                                {
+                                    throw h264_exception(UMC_ERR_INVALID_STREAM);
                                 }
                             }
                         }
@@ -2882,7 +2899,7 @@ void H264SegmentDecoderMultiThreaded::DecodeMotionVectors_CAVLC(bool bIsBSlice)
 
                         if (RefIxL1 >= (Ipp8s)uNumRefIdxL1Active || RefIxL1 < 0)
                         {
-                            // something is wrong
+                            throw h264_exception(UMC_ERR_INVALID_STREAM);
                         }
                     }
                 }

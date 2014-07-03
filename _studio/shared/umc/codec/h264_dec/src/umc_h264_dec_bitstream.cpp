@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2003-2013 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2003-2014 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -169,6 +169,9 @@ Status H264HeadersBitstream::GetSequenceParamSet(H264SeqParamSet *sps)
     GetBits(2);
 
     sps->level_idc = (Ipp8u)GetBits(8);
+
+    if (sps->level_idc == H264VideoDecoderParams::H264_LEVEL_UNKNOWN)
+        sps->level_idc = H264VideoDecoderParams::H264_LEVEL_52;
 
     switch(sps->level_idc)
     {

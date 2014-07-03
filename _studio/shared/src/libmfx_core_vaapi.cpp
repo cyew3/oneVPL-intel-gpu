@@ -546,6 +546,9 @@ VAAPIVideoCORE::CreateVA(
     case MFX_CODEC_AVC:
         profile |= VA_H264;
         break;
+    case MFX_CODEC_HEVC:
+        profile |= VA_H265;
+        break;
     case MFX_CODEC_VP8:
         profile |= VA_VP8;
         break;
@@ -1536,7 +1539,8 @@ mfxStatus VAAPIVideoCORE::IsGuidSupported(const GUID /*guid*/,
     case MFX_CODEC_AVC:
         break;
     case MFX_CODEC_HEVC:
-        return MFX_WRN_PARTIAL_ACCELERATION;
+        if (m_HWType < MFX_HW_HSW)
+            return MFX_WRN_PARTIAL_ACCELERATION;
         break;
     case MFX_CODEC_MPEG2:
         if (par->mfx.FrameInfo.Width  > 2048 || par->mfx.FrameInfo.Height > 2048) //MPEG2 decoder doesn't support resolution bigger than 2K
@@ -1552,25 +1556,17 @@ mfxStatus VAAPIVideoCORE::IsGuidSupported(const GUID /*guid*/,
         return MFX_ERR_UNSUPPORTED;
     }
 
-    if (MFX_HW_IVB == m_HWType || MFX_HW_HSW == m_HWType)
-    {
-
-        if (par->mfx.FrameInfo.Width > 4096 || par->mfx.FrameInfo.Height > 4096)
-        {
-            return MFX_WRN_PARTIAL_ACCELERATION;
-        }
-        else
-        {
-            return MFX_ERR_NONE;
-        }
-    }
-    else // for other platforms decision is based on SNB/ELK assumption
+    if (MFX_HW_LAKE == m_HWType || MFX_HW_SNB == m_HWType)
     {
         if (par->mfx.FrameInfo.Width > 1920 || par->mfx.FrameInfo.Height > 1200)
-        {
             return MFX_WRN_PARTIAL_ACCELERATION;
-        }
     }
+    else
+    {
+        if (par->mfx.FrameInfo.Width > 4096 || par->mfx.FrameInfo.Height > 4096)
+            return MFX_WRN_PARTIAL_ACCELERATION;
+    }
+
     return MFX_ERR_NONE;
 }
 

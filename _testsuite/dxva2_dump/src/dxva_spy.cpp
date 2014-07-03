@@ -146,7 +146,7 @@ UMC::VideoAccelerationProfile GetProfile(REFGUID Guid)
     {
         profile = JPEG_VLD;
     }
-    else if (Guid == DXVA_Intel_ModeHEVC_VLD_MainProfile || Guid == DXVA_ModeHEVC_VLD_Main)
+    else if (Guid == DXVA_Intel_ModeHEVC_VLD_MainProfile || Guid == DXVA_ModeHEVC_VLD_Main || Guid == DXVA_Intel_ModeHEVC_VLD_Main10Profile)
     {
         profile = HEVC_VLD;
     }
@@ -1437,7 +1437,8 @@ static GUID g_guids[] =
     DXVADDI_Intel_Decode_PrivateData_Report,
 
     DXVA_ModeHEVC_VLD_Main,
-    DXVA_Intel_ModeHEVC_VLD_MainProfile
+    DXVA_Intel_ModeHEVC_VLD_MainProfile,
+    DXVA_Intel_ModeHEVC_VLD_Main10Profile
 };
 
 static DXVA2_ConfigPictureDecode configs[]=
@@ -1451,6 +1452,7 @@ static DXVA2_ConfigPictureDecode configs[]=
 
     {DXVA_ModeHEVC_VLD_Main, DXVA_NoEncrypt, DXVA_NoEncrypt, 2, 5000, 5000, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
     {DXVA_Intel_ModeHEVC_VLD_MainProfile, DXVA_NoEncrypt, DXVA_NoEncrypt, 2, 5000, 5000, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {DXVA_Intel_ModeHEVC_VLD_Main10Profile, DXVA_NoEncrypt, DXVA_NoEncrypt, 2, 5000, 5000, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
 };
 
 char pDir[256] = ".\\dxva2_log";

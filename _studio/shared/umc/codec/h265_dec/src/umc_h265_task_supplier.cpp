@@ -1081,13 +1081,6 @@ UMC::Status TaskSupplier_H265::xDecodeSPS(H265Bitstream &bs)
 
     sps.sps_max_dec_pic_buffering[0] = sps.sps_max_dec_pic_buffering[HighestTid] ? sps.sps_max_dec_pic_buffering[HighestTid] : newDPBsize;
 
-    if (ViewItem_H265 *view = GetView())
-    {
-        view->SetDPBSize(&sps, m_level_idc);
-        view->sps_max_dec_pic_buffering = sps.sps_max_dec_pic_buffering[HighestTid] ? sps.sps_max_dec_pic_buffering[HighestTid] : view->dpbSize;
-        view->sps_max_num_reorder_pics = IPP_MIN(sps.sps_max_num_reorder_pics[HighestTid], view->sps_max_dec_pic_buffering);
-    }
-
     const H265SeqParamSet * old_sps = m_Headers.m_SeqParams.GetCurrentHeader();
     bool newResolution = false;
     if (IsNeedSPSInvalidate(old_sps, &sps))
@@ -2091,13 +2084,6 @@ UMC::Status TaskSupplier_H265::AddSlice(H265Slice * pSlice, bool )
     }
 
     ViewItem_H265 &view = *GetView();
-    view.SetDPBSize(const_cast<H265SeqParamSet*>(pSlice->GetSeqParam()), m_level_idc);
-    view.sps_max_dec_pic_buffering = pSlice->GetSeqParam()->sps_max_dec_pic_buffering[pSlice->GetSliceHeader()->nuh_temporal_id] ?
-                                    pSlice->GetSeqParam()->sps_max_dec_pic_buffering[pSlice->GetSliceHeader()->nuh_temporal_id] :
-                                    view.dpbSize;
-
-    view.sps_max_num_reorder_pics = IPP_MIN(pSlice->GetSeqParam()->sps_max_num_reorder_pics[HighestTid], view.sps_max_dec_pic_buffering);
-
     H265DecoderFrame * pFrame = view.pCurFrame;
 
     if (pFrame)
@@ -2377,6 +2363,14 @@ H265DecoderFrame * TaskSupplier_H265::AllocateNewFrame(const H265Slice *pSlice)
     {
         return NULL;
     }
+
+    ViewItem_H265 &view = *GetView();
+    view.SetDPBSize(const_cast<H265SeqParamSet*>(pSlice->GetSeqParam()), m_level_idc);
+    view.sps_max_dec_pic_buffering = pSlice->GetSeqParam()->sps_max_dec_pic_buffering[pSlice->GetSliceHeader()->nuh_temporal_id] ?
+                                    pSlice->GetSeqParam()->sps_max_dec_pic_buffering[pSlice->GetSliceHeader()->nuh_temporal_id] :
+                                    view.dpbSize;
+
+    view.sps_max_num_reorder_pics = IPP_MIN(pSlice->GetSeqParam()->sps_max_num_reorder_pics[HighestTid], view.sps_max_dec_pic_buffering);
 
     DPBUpdate(pSlice);
 

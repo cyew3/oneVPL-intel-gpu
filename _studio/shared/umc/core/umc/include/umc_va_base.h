@@ -68,6 +68,9 @@
 #ifdef UMC_VA_LINUX
 #include <va/va.h>
 #include <va/va_dec_vp8.h>
+#ifdef VA_HEVC_DECODER
+#include <va/va_dec_hevc.h>
+#endif
 #include <va/va_vpp.h>
 
 #ifdef VA_VP9_DECODER // FIXME: TEMPORAL solution!!!

@@ -122,11 +122,10 @@ set( sources "" )
   list( APPEND sources ${srcs}) 
 #endforeach()
 
-#foreach( variant sw hw )
-#  make_library( umc_h265 ${variant} static )
-#endforeach( )
+foreach( variant sw hw )
+  make_library( umc_h265 ${variant} static )
+endforeach( )
 
-make_library( umc_h265 sw static )
 set( defs "" )
 
 # =============================================================================

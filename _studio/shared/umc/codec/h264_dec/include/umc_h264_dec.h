@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2003-2013 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2003-2014 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -55,6 +55,7 @@ public:
 
     enum
     {
+        H264_LEVEL_UNKNOWN = 0,
         H264_LEVEL_1    = 10,
         H264_LEVEL_11   = 11,
         H264_LEVEL_1b   = 11,

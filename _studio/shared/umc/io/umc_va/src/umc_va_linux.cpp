@@ -90,6 +90,7 @@ Ipp32u g_Profiles[] =
 {
     UMC::MPEG2_VLD, UMC::MPEG2_IT,
     UMC::H264_VLD,
+    UMC::H265_VLD,
     UMC::VC1_VLD, UMC::VC1_MC,
     UMC::VP8_VLD,
     UMC::VP9_VLD,
@@ -110,6 +111,11 @@ VAProfile g_Mpeg4Profiles[] =
 VAProfile g_H264Profiles[] =
 {
     VAProfileH264High, VAProfileH264Main, VAProfileH264Baseline
+};
+
+VAProfile g_H265Profiles[] =
+{
+    VAProfileHEVCMain, VAProfileHEVCMain10
 };
 
 VAProfile g_VC1Profiles[] =
@@ -148,6 +154,9 @@ VAProfile get_next_va_profile(Ipp32u umc_codec, Ipp32u profile)
         break;
     case UMC::VA_H264:
         if (profile < UMC_ARRAY_SIZE(g_H264Profiles)) va_profile = g_H264Profiles[profile];
+        break;
+    case UMC::VA_H265:
+        if (profile < UMC_ARRAY_SIZE(g_H265Profiles)) va_profile = g_H265Profiles[profile];
         break;
     case UMC::VA_VC1:
         if (profile < UMC_ARRAY_SIZE(g_VC1Profiles)) va_profile = g_VC1Profiles[profile];

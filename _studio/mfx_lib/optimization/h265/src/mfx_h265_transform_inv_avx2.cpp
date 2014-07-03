@@ -353,18 +353,17 @@ static void h265_DCT4x4Inv_16sT_Kernel(DstCoeffsType *dst, const short *H265_RES
    _mm256_zeroupper();
 
 // GCC 4.7 bug workaround
-#if defined(__INTEL_COMPILER) || defined(_MSC_VER) || __GNUC__ == 4 && __GNUC_MINOR__ >= 8
-   __m256i s01 = _mm256_broadcastsi128_si256(_mm_unpacklo_epi16 (s0, s1) ); // s13 s03 s12 s02 s11 s01 s10 s00
-   __m256i s23 = _mm256_broadcastsi128_si256(_mm_unpacklo_epi16 (s2, s3) ); // s23 s23 s22 s22 s31 s21 s30 s20
-#elif ( __GNUC__ < 4 || (__GNUC__ == 4 && \
-    (__GNUC_MINOR__ < 6 || (__GNUC_MINOR__ == 6 && __GNUC_PATCHLEVEL__ > 0))))
+#if defined(__GNUC__) && ( __GNUC__ < 4 || (__GNUC__ == 4 && (__GNUC_MINOR__ < 6 || (__GNUC_MINOR__ == 6 && __GNUC_PATCHLEVEL__ > 0))))
    __m128i tmp_s0s1 = _mm_unpacklo_epi16 (s0, s1);   
    __m256i s01 = _mm_broadcastsi128_si256( (__m128i const *)&tmp_s0s1 ); // s13 s03 s12 s02 s11 s01 s10 s00
     __m128i tmp_s2s3 = _mm_unpacklo_epi16 (s2, s3);
    __m256i s23 = _mm_broadcastsi128_si256( (__m128i const *)&tmp_s2s3 ); // s23 s23 s22 s22 s31 s21 s30 s20
-#elif(__GNUC__ == 4 && (__GNUC_MINOR__ == 7 && __GNUC_PATCHLEVEL__ > 0))
+#elif (__GNUC__ == 4 && (__GNUC_MINOR__ == 7 && __GNUC_PATCHLEVEL__ > 0))
    __m256i s01 = _mm_broadcastsi128_si256( _mm_unpacklo_epi16 (s0, s1) ); // s13 s03 s12 s02 s11 s01 s10 s00
    __m256i s23 = _mm_broadcastsi128_si256( _mm_unpacklo_epi16 (s2, s3) ); // s23 s23 s22 s22 s31 s21 s30 s20
+#else
+   __m256i s01 = _mm256_broadcastsi128_si256(_mm_unpacklo_epi16 (s0, s1) ); // s13 s03 s12 s02 s11 s01 s10 s00
+   __m256i s23 = _mm256_broadcastsi128_si256(_mm_unpacklo_epi16 (s2, s3) ); // s23 s23 s22 s22 s31 s21 s30 s20
 #endif
 
 
@@ -508,11 +507,7 @@ static void h265_DST4x4Inv_16sT_Kernel(DstCoeffsType *dst, const short *H265_RES
    _mm256_zeroupper();
 
 // GCC 4.7 bug workaround
-#if defined(__INTEL_COMPILER) || defined(_MSC_VER) || __GNUC__ == 4 && __GNUC_MINOR__ >= 8
-   __m256i s01 = _mm256_broadcastsi128_si256( _mm_unpacklo_epi16 (s0, s1) ); // s13 s03 s12 s02 s11 s01 s10 s00
-   __m256i s23 = _mm256_broadcastsi128_si256( _mm_unpacklo_epi16 (s2, s3) ); // s23 s23 s22 s22 s31 s21 s30 s20
-#elif ( __GNUC__ < 4 || (__GNUC__ == 4 && \
-    (__GNUC_MINOR__ < 6 || (__GNUC_MINOR__ == 6 && __GNUC_PATCHLEVEL__ > 0))))
+#if  defined(__GNUC__) && ( __GNUC__ < 4 || (__GNUC__ == 4 && (__GNUC_MINOR__ < 6 || (__GNUC_MINOR__ == 6 && __GNUC_PATCHLEVEL__ > 0))))
    __m128i tmp_s0s1 = _mm_unpacklo_epi16 (s0, s1);   
    __m256i s01 = _mm_broadcastsi128_si256( (__m128i const *)&tmp_s0s1 ); // s13 s03 s12 s02 s11 s01 s10 s00
    __m128i tmp_s2s3 = _mm_unpacklo_epi16 (s2, s3);
@@ -520,6 +515,10 @@ static void h265_DST4x4Inv_16sT_Kernel(DstCoeffsType *dst, const short *H265_RES
 #elif(__GNUC__ == 4 && (__GNUC_MINOR__ == 7 && __GNUC_PATCHLEVEL__ > 0))
    __m256i s01 = _mm_broadcastsi128_si256( _mm_unpacklo_epi16 (s0, s1) ); // s13 s03 s12 s02 s11 s01 s10 s00
    __m256i s23 = _mm_broadcastsi128_si256( _mm_unpacklo_epi16 (s2, s3) ); // s23 s23 s22 s22 s31 s21 s30 s20
+#else
+   __m256i s01 = _mm256_broadcastsi128_si256( _mm_unpacklo_epi16 (s0, s1) ); // s13 s03 s12 s02 s11 s01 s10 s00
+   __m256i s23 = _mm256_broadcastsi128_si256( _mm_unpacklo_epi16 (s2, s3) ); // s23 s23 s22 s22 s31 s21 s30 s20
+
 #endif
 
 // GCC 4.7 bug workaround

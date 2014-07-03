@@ -1108,15 +1108,15 @@ static void t_AverageMode(short *pSrc, unsigned int srcPitch, void *vpAvg, unsig
                 xmm1 = _mm_cvtepu8_epi16(MM_LOAD_EPI64(pAvgC + col));    
                 xmm1 = _mm_slli_epi16(xmm1, 6);
 
-                xmm1 = _mm_adds_epi16(xmm1, xmm7);
-                xmm0 = _mm_adds_epi16(xmm0, xmm1);
+                xmm1 = _mm_adds_epi16(xmm1, xmm0);
+                xmm0 = _mm_adds_epi16(xmm7, xmm1);
                 xmm0 = _mm_srai_epi16(xmm0, 7);
             } else if (avgBytes == 2) {
                 /* load 8 16-bit pixels from from avg buffer */
                 xmm1 = _mm_loadu_si128((__m128i *)(pAvgS + col));
 
-                xmm1 = _mm_adds_epi16(xmm1, xmm7);
-                xmm0 = _mm_adds_epi16(xmm0, xmm1);
+                xmm1 = _mm_adds_epi16(xmm1, xmm0);
+                xmm0 = _mm_adds_epi16(xmm7, xmm1);
                 xmm0 = _mm_srai_epi16(xmm0, 7);
             }
 
@@ -1249,14 +1249,14 @@ static void t_AverageMode_U16_Kernel(short *pSrc, unsigned int srcPitch, unsigne
                 /* mode P: load 8 16-bit pixels from avg buffer, normalize and add */
                 xmm1 = _mm_loadu_si128((__m128i *)(pAvg + col));
                 xmm1 = _mm_slli_epi16(xmm1, shift - 1);
-                xmm1 = _mm_adds_epi16(xmm1, xmm7);
-                xmm0 = _mm_adds_epi16(xmm0, xmm1);
+                xmm1 = _mm_adds_epi16(xmm1, xmm0);
+                xmm0 = _mm_adds_epi16(xmm7, xmm1);
                 xmm0 = _mm_srai_epi16(xmm0, shift);
             } else if (avgMode == 2) {
                 /* mode B: load 8 16-bit pixels from from avg buffer */
                 xmm1 = _mm_loadu_si128((__m128i *)(pAvg + col));
-                xmm1 = _mm_adds_epi16(xmm1, xmm7);
-                xmm0 = _mm_adds_epi16(xmm0, xmm1);
+                xmm1 = _mm_adds_epi16(xmm1, xmm0);
+                xmm0 = _mm_adds_epi16(xmm7, xmm1);
                 xmm0 = _mm_srai_epi16(xmm0, shift);
             }
             xmm0 = _mm_max_epi16(xmm0, xmm4); 
