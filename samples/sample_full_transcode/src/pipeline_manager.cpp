@@ -122,7 +122,7 @@ void PipelineManager::BuildAudioChain(size_t nTrack) {
     aParam = info.Decode;
 
     MFXAudioSession *session = m_sessions->GetAudioSessionForID(info.SID);
-    if (!session)
+    if (!session && !m_bJustCopyAudio)
         return;
     std::auto_ptr<ITransform> dec;
 
