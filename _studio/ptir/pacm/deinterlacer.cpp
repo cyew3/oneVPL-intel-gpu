@@ -106,8 +106,13 @@ DeinterlaceFilter::DeinterlaceFilter(eMFXHWType HWType, UINT width, UINT height,
     UINT threadsWidth = cmut::DivUp(width, RSSAD_PLANE_WIDTH);
     UINT threadsHeight = cmut::DivUp(height, RSSAD_PLANE_HEIGHT);
 
+#if defined(LINUX32) || defined (LINUX64)
+    this->sadFrame = std::auto_ptr<CmSurface2DUPEx>(new CmSurface2DUPEx(this->DeviceEx(), threadsWidth * 8, threadsHeight, CM_SURFACE_FORMAT_X8R8G8B8));
+    this->rsFrame = std::auto_ptr<CmSurface2DUPEx>(new CmSurface2DUPEx(this->DeviceEx(), threadsWidth * RS_UNIT_SIZE, threadsHeight, CM_SURFACE_FORMAT_X8R8G8B8));
+#else
     this->sadFrame = std::auto_ptr<CmSurface2DUPEx>(new CmSurface2DUPEx(this->DeviceEx(), threadsWidth * 8, threadsHeight, CM_SURFACE_FORMAT_A8R8G8B8));
     this->rsFrame = std::auto_ptr<CmSurface2DUPEx>(new CmSurface2DUPEx(this->DeviceEx(), threadsWidth * RS_UNIT_SIZE, threadsHeight, CM_SURFACE_FORMAT_A8R8G8B8));
+#endif
 
 #if 1
     this->kernelSad->SetKernelArg(2, *sadFrame);

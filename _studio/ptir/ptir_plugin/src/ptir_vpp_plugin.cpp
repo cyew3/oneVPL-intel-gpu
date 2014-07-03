@@ -901,7 +901,7 @@ inline mfxStatus MFX_PTIR_Plugin::GetHWTypeAndCheckSupport(mfxIMPL& impl, mfxHDL
 {
     if(MFX_IMPL_HARDWARE == MFX_IMPL_BASETYPE(impl))
     {
-        HWType = GetHWType(1,impl,&mfxDeviceHdl);
+        HWType = GetHWType(1,impl,mfxDeviceHdl);
         switch (HWType)
         {
         //case MFX_HW_BDW:

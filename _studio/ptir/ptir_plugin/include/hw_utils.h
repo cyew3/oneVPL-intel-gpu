@@ -18,9 +18,23 @@ File Name: hw_utils.h
 #include <dxva2api.h>
 #include <d3d11.h>
 #endif
+
+#if (defined(LINUX32) || defined(LINUX64))
+#include "va/va.h"
+#include <va/va_backend.h>
+
+#include <sys/ioctl.h>
+#define I915_PARAM_CHIPSET_ID            4
+#define DRM_I915_GETPARAM   0x06
+#define DRM_IOCTL_BASE          'd'
+#define DRM_COMMAND_BASE                0x40
+#define DRM_IOWR(nr,type)       _IOWR(DRM_IOCTL_BASE,nr,type)
+#define DRM_IOCTL_I915_GETPARAM         DRM_IOWR(DRM_COMMAND_BASE + DRM_I915_GETPARAM, drm_i915_getparam_t)
+#endif
+
 #include "mfxvideo.h"
 #include "mfxvideo++int.h"
 
-eMFXHWType GetHWType(const mfxU32 adapterNum, mfxIMPL impl, mfxHDL* mfxDeviceHdl);
+eMFXHWType GetHWType(const mfxU32 adapterNum, mfxIMPL impl, mfxHDL& mfxDeviceHdl);
 
 #endif  // __MFX_PTIR_HW_UTILS_PLUGIN_INCLUDED__

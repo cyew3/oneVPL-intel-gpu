@@ -139,17 +139,185 @@ eMFXHWType GetHWTypeD3D9(const mfxU32 adapterNum, mfxHDL* mfxDeviceHdl)
 //}
 #endif
 
-eMFXHWType GetHWType(const mfxU32 adapterNum, mfxIMPL impl, mfxHDL* mfxDeviceHdl)
+#if (defined(LINUX32) || defined(LINUX64))
+typedef struct drm_i915_getparam {
+    int param;
+    int *value;
+} drm_i915_getparam_t;
+
+typedef struct {
+    int device_id;
+    eMFXHWType platform;
+} mfx_device_item;
+
+/* list of legal dev ID for Intel's graphics
+ * Copied form i915_drv.c from linux kernel 3.9-rc7
+ * */
+const mfx_device_item listLegalDevIDs[] = {
+    /*IVB*/
+    { 0x0156, MFX_HW_IVB },   /* GT1 mobile */
+    { 0x0166, MFX_HW_IVB },   /* GT2 mobile */
+    { 0x0152, MFX_HW_IVB },   /* GT1 desktop */
+    { 0x0162, MFX_HW_IVB },   /* GT2 desktop */
+    { 0x015a, MFX_HW_IVB },   /* GT1 server */
+    { 0x016a, MFX_HW_IVB },   /* GT2 server */
+    /*HSW*/
+    { 0x0402, MFX_HW_HSW },   /* GT1 desktop */
+    { 0x0412, MFX_HW_HSW },   /* GT2 desktop */
+    { 0x0422, MFX_HW_HSW },   /* GT2 desktop */
+    { 0x041e, MFX_HW_HSW },   /* Core i3-4130 */
+    { 0x040a, MFX_HW_HSW },   /* GT1 server */
+    { 0x041a, MFX_HW_HSW },   /* GT2 server */
+    { 0x042a, MFX_HW_HSW },   /* GT2 server */
+    { 0x0406, MFX_HW_HSW },   /* GT1 mobile */
+    { 0x0416, MFX_HW_HSW },   /* GT2 mobile */
+    { 0x0426, MFX_HW_HSW },   /* GT2 mobile */
+    { 0x0C02, MFX_HW_HSW },   /* SDV GT1 desktop */
+    { 0x0C12, MFX_HW_HSW },   /* SDV GT2 desktop */
+    { 0x0C22, MFX_HW_HSW },   /* SDV GT2 desktop */
+    { 0x0C0A, MFX_HW_HSW },   /* SDV GT1 server */
+    { 0x0C1A, MFX_HW_HSW },   /* SDV GT2 server */
+    { 0x0C2A, MFX_HW_HSW },   /* SDV GT2 server */
+    { 0x0C06, MFX_HW_HSW },   /* SDV GT1 mobile */
+    { 0x0C16, MFX_HW_HSW },   /* SDV GT2 mobile */
+    { 0x0C26, MFX_HW_HSW },   /* SDV GT2 mobile */
+    { 0x0A02, MFX_HW_HSW },   /* ULT GT1 desktop */
+    { 0x0A12, MFX_HW_HSW },   /* ULT GT2 desktop */
+    { 0x0A22, MFX_HW_HSW },   /* ULT GT2 desktop */
+    { 0x0A0A, MFX_HW_HSW },   /* ULT GT1 server */
+    { 0x0A1A, MFX_HW_HSW },   /* ULT GT2 server */
+    { 0x0A2A, MFX_HW_HSW },   /* ULT GT2 server */
+    { 0x0A06, MFX_HW_HSW },   /* ULT GT1 mobile */
+    { 0x0A16, MFX_HW_HSW },   /* ULT GT2 mobile */
+    { 0x0A26, MFX_HW_HSW },   /* ULT GT2 mobile */
+    { 0x0D02, MFX_HW_HSW },   /* CRW GT1 desktop */
+    { 0x0D12, MFX_HW_HSW },   /* CRW GT2 desktop */
+    { 0x0D22, MFX_HW_HSW },   /* CRW GT2 desktop */
+    { 0x0D0A, MFX_HW_HSW },   /* CRW GT1 server */
+    { 0x0D1A, MFX_HW_HSW },   /* CRW GT2 server */
+    { 0x0D2A, MFX_HW_HSW },   /* CRW GT2 server */
+    { 0x0D06, MFX_HW_HSW },   /* CRW GT1 mobile */
+    { 0x0D16, MFX_HW_HSW },   /* CRW GT2 mobile */
+    { 0x0D26, MFX_HW_HSW },   /* CRW GT2 mobile */
+    /* this dev IDs added per HSD 5264859 request  */
+    { 0x040B, MFX_HW_HSW }, /*HASWELL_B_GT1 *//* Reserved */
+    { 0x041B, MFX_HW_HSW }, /*HASWELL_B_GT2*/
+    { 0x042B, MFX_HW_HSW }, /*HASWELL_B_GT3*/
+    { 0x040E, MFX_HW_HSW }, /*HASWELL_E_GT1*//* Reserved */
+    { 0x041E, MFX_HW_HSW }, /*HASWELL_E_GT2*/
+    { 0x042E, MFX_HW_HSW }, /*HASWELL_E_GT3*/
+
+    { 0x0C0B, MFX_HW_HSW }, /*HASWELL_SDV_B_GT1*/ /* Reserved */
+    { 0x0C1B, MFX_HW_HSW }, /*HASWELL_SDV_B_GT2*/
+    { 0x0C2B, MFX_HW_HSW }, /*HASWELL_SDV_B_GT3*/
+    { 0x0C0E, MFX_HW_HSW }, /*HASWELL_SDV_B_GT1*//* Reserved */
+    { 0x0C1E, MFX_HW_HSW }, /*HASWELL_SDV_B_GT2*/
+    { 0x0C2E, MFX_HW_HSW }, /*HASWELL_SDV_B_GT3*/
+
+    { 0x0A0B, MFX_HW_HSW }, /*HASWELL_ULT_B_GT1*/ /* Reserved */
+    { 0x0A1B, MFX_HW_HSW }, /*HASWELL_ULT_B_GT2*/
+    { 0x0A2B, MFX_HW_HSW }, /*HASWELL_ULT_B_GT3*/
+    { 0x0A0E, MFX_HW_HSW }, /*HASWELL_ULT_E_GT1*/ /* Reserved */
+    { 0x0A1E, MFX_HW_HSW }, /*HASWELL_ULT_E_GT2*/
+    { 0x0A2E, MFX_HW_HSW }, /*HASWELL_ULT_E_GT3*/
+
+    { 0x0D0B, MFX_HW_HSW }, /*HASWELL_CRW_B_GT1*/ /* Reserved */
+    { 0x0D1B, MFX_HW_HSW }, /*HASWELL_CRW_B_GT2*/
+    { 0x0D2B, MFX_HW_HSW }, /*HASWELL_CRW_B_GT3*/
+    { 0x0D0E, MFX_HW_HSW }, /*HASWELL_CRW_E_GT1*/ /* Reserved */
+    { 0x0D1E, MFX_HW_HSW }, /*HASWELL_CRW_E_GT2*/
+    { 0x0D2E, MFX_HW_HSW }, /*HASWELL_CRW_E_GT3*/
+
+    /* VLV */
+    { 0x0f30, MFX_HW_VLV },   /* VLV mobile */
+    { 0x0f31, MFX_HW_VLV },   /* VLV mobile */
+    { 0x0f32, MFX_HW_VLV },   /* VLV mobile */
+    { 0x0f33, MFX_HW_VLV },   /* VLV mobile */
+    { 0x0157, MFX_HW_VLV },
+    { 0x0155, MFX_HW_VLV },
+
+    /* BDW */
+    /*GT3: */
+    { 0x162D, MFX_HW_BDW},
+    { 0x162A, MFX_HW_BDW},
+    /*GT2: */
+    { 0x161D, MFX_HW_BDW},
+    { 0x161A, MFX_HW_BDW},
+    /* GT1: */
+    { 0x160D, MFX_HW_BDW},
+    { 0x160A, MFX_HW_BDW},
+    /* BDW-ULT */
+    /* (16x2 - ULT, 16x6 - ULT, 16xB - Iris, 16xE - ULX) */
+    /*GT3: */
+    { 0x162E, MFX_HW_BDW},
+    { 0x162B, MFX_HW_BDW},
+    { 0x1626, MFX_HW_BDW},
+    { 0x1622, MFX_HW_BDW},
+    /* GT2: */
+    { 0x161E, MFX_HW_BDW},
+    { 0x161B, MFX_HW_BDW},
+    { 0x1616, MFX_HW_BDW},
+    { 0x1612, MFX_HW_BDW},
+    /* GT1: */
+    { 0x160E, MFX_HW_BDW},
+    { 0x160B, MFX_HW_BDW},
+    { 0x1606, MFX_HW_BDW},
+    { 0x1602, MFX_HW_BDW}
+};
+
+/* END: IOCTLs definitions */
+
+static
+eMFXHWType getPlatformType (VADisplay pVaDisplay)
+{
+    /* This is value by default */
+    eMFXHWType retPlatformType = MFX_HW_UNKNOWN;
+    int fd = 0, i = 0, listSize = 0;
+    int devID = 0;
+    int ret = 0;
+    drm_i915_getparam_t gp;
+    VADisplayContextP pDisplayContext_test = NULL;
+    VADriverContextP  pDriverContext_test = NULL;
+
+    pDisplayContext_test = (VADisplayContextP) pVaDisplay;
+    pDriverContext_test  = pDisplayContext_test->pDriverContext;
+    fd = *(int*) pDriverContext_test->drm_state;
+
+    /* Now as we know real authenticated fd of VAAPI library,
+     * we can call ioctl() to kernel mode driver,
+     * get device ID and find out platform type
+     * */
+    gp.param = I915_PARAM_CHIPSET_ID;
+    gp.value = &devID;
+
+    ret = ioctl(fd, DRM_IOCTL_I915_GETPARAM, &gp);
+    if (!ret)
+    {
+        listSize = (sizeof(listLegalDevIDs)/sizeof(mfx_device_item));
+        for (i = 0; i < listSize; ++i)
+        {
+            if (listLegalDevIDs[i].device_id == devID)
+            {
+                retPlatformType = listLegalDevIDs[i].platform;
+                break;
+            }
+        }
+    }
+
+    return retPlatformType;
+} // eMFXHWType getPlatformType (VADisplay pVaDisplay)
+#endif
+
+eMFXHWType GetHWType(const mfxU32 adapterNum, mfxIMPL impl, mfxHDL& mfxDeviceHdl)
 {
 #if defined(_WIN32) || defined(_WIN64)
     if(impl & MFX_IMPL_VIA_D3D9)
-        return GetHWTypeD3D9(adapterNum, mfxDeviceHdl);
+        return GetHWTypeD3D9(adapterNum, &mfxDeviceHdl);
     else if(impl & MFX_IMPL_VIA_D3D11)
-        //return GetHWTypeD3D11(adapterNum, mfxDeviceHdl);
-        ;
-    else
+        ;//return GetHWTypeD3D11(adapterNum, &mfxDeviceHdl);
+#elif (defined(LINUX32) || defined(LINUX64))
+    return getPlatformType ( /*(VADisplay)*/ mfxDeviceHdl);
 #endif
-        return MFX_HW_UNKNOWN;
 
     return MFX_HW_UNKNOWN;
 }

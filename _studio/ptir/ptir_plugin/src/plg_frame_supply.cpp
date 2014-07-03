@@ -458,16 +458,20 @@ mfxStatus frameSupplier::CMCreateSurface2D(mfxFrameSurface1*& mfxSurf, CmSurface
     }
     else if((IOPattern & MFX_IOPATTERN_IN_VIDEO_MEMORY) && (IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY))
     {
-#if defined(_WIN32) || defined(_WIN64)
-        cmSts = (*pCMdevice)->CreateSurface2D((IDirect3DSurface9 *) mfxSurf->Data.MemId, cmSurfOut);
-#endif
+        mfxHDL native_surf = 0;
+        mfxSts = mfxCoreIfce->FrameAllocator.GetHDL(mfxCoreIfce->FrameAllocator.pthis, mfxSurf->Data.MemId, &native_surf);
+        if(MFX_ERR_NONE > mfxSts)
+            return mfxSts;
+
+        cmSts = (*pCMdevice)->CreateSurface2D(native_surf, cmSurfOut);
         assert(cmSts == 0);
         if(CM_SUCCESS != cmSts)
             return MFX_ERR_DEVICE_FAILED;
         (*CmToMfxSurfmap)[cmSurfOut] = mfxSurf;
 
-        if(bCopy)
-            ; //useless when associating d3d to CM surface
+        //useless when associating native video surface to CM surface
+        //if(bCopy)
+        //    ;
     }
     else
         return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
