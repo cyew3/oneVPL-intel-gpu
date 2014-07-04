@@ -911,6 +911,12 @@ mfxU32 MfxHwH264Encode::CalcNumSurfBitstream(MfxVideoParam const & video)
     return (IsFieldCodingPossible(video) ? video.AsyncDepth * 2 : video.AsyncDepth);
 }
 
+mfxU16 MfxHwH264Encode::GetMaxNumSlices(MfxVideoParam const & par)
+{
+    mfxExtCodingOption3 * extOpt3 = GetExtBuffer(par);
+    return IPP_MAX(extOpt3->NumSliceI, IPP_MAX(extOpt3->NumSliceP, extOpt3->NumSliceB));
+}
+
 mfxU8 MfxHwH264Encode::GetNumReorderFrames(MfxVideoParam const & video)
 {
     mfxExtCodingOption2 * extOpt2 = GetExtBuffer(video);
@@ -1216,7 +1222,8 @@ bool MfxHwH264Encode::IsVideoParamExtBufferIdSupported(mfxU32 id)
         id == MFX_EXTBUFF_ENCODER_RESET_OPTION      ||
         id == MFX_EXTBUFF_ENCODER_CAPABILITY        ||
         id == MFX_EXTBUFF_ENCODER_WIDI_USAGE        ||
-        id == MFX_EXTBUFF_ENCODER_ROI;
+        id == MFX_EXTBUFF_ENCODER_ROI               ||
+        id == MFX_EXTBUFF_CODING_OPTION3;
 }
 
 mfxStatus MfxHwH264Encode::CheckExtBufferId(mfxVideoParam const & par)
@@ -1356,6 +1363,7 @@ mfxStatus MfxHwH264Encode::CheckVideoParam(
 
     mfxExtCodingOptionSPSPPS * extBits = GetExtBuffer(par);
     mfxExtSpsHeader *          extSps  = GetExtBuffer(par);
+    mfxExtCodingOption3 *      extOpt3 = GetExtBuffer(par);
 
     // first check mandatory parameters
     MFX_CHECK(
@@ -1429,6 +1437,14 @@ mfxStatus MfxHwH264Encode::CheckVideoParam(
         par.mfx.RateControlMethod != MFX_RATECONTROL_LA_ICQ &&
         !IsSvcProfile(par.mfx.CodecProfile))
         MFX_CHECK(par.calcParam.targetKbps > 0, MFX_ERR_INVALID_VIDEO_PARAM);
+    
+    if (extOpt3->NumSliceI || extOpt3->NumSliceP || extOpt3->NumSliceB)
+    {
+        // application should set number of slices for all 3 slice types at once
+        MFX_CHECK(extOpt3->NumSliceI > 0, MFX_ERR_INVALID_VIDEO_PARAM);
+        MFX_CHECK(extOpt3->NumSliceP > 0, MFX_ERR_INVALID_VIDEO_PARAM);
+        MFX_CHECK(extOpt3->NumSliceB > 0, MFX_ERR_INVALID_VIDEO_PARAM);
+    }
 
     SetDefaults(par, hwCaps, setExtAlloc, platform, vaType);
 
@@ -1549,6 +1565,7 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
     mfxExtSVCSeqDesc *         extSvc  = GetExtBuffer(par);
     mfxExtCodingOption2 *      extOpt2 = GetExtBuffer(par);
     mfxExtEncoderROI *         extRoi  = GetExtBuffer(par);
+    mfxExtCodingOption3 *      extOpt3 = GetExtBuffer(par);
 
     // check hw capabilities
     if (par.mfx.FrameInfo.Width  > hwCaps.MaxPicWidth ||
@@ -1866,6 +1883,13 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
             unsupported = true;
         }
     }
+    
+    if (par.mfx.NumSlice !=0 &&
+      (extOpt3->NumSliceI != 0 || extOpt3->NumSliceP != 0 || extOpt3->NumSliceB != 0))
+    {
+        changed = true;
+        par.mfx.NumSlice = 0;
+    }
 
     if (par.mfx.NumSlice         != 0 &&
         par.mfx.FrameInfo.Width  != 0 &&
@@ -1890,6 +1914,84 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
         {
             changed = true;
             par.mfx.NumSlice = (mfxU16)divider.GetNumSlice();
+        }
+    }
+
+    if (extOpt3->NumSliceI       != 0 &&
+        par.mfx.FrameInfo.Width  != 0 &&
+        par.mfx.FrameInfo.Height != 0)
+    {
+        if (extOpt3->NumSliceI > par.mfx.FrameInfo.Width * par.mfx.FrameInfo.Height / 256)
+        {
+            unsupported = true;
+            extOpt3->NumSliceI = 0;
+        }
+
+        bool fieldCoding = (par.mfx.FrameInfo.PicStruct & MFX_PICSTRUCT_PROGRESSIVE) == 0;
+
+        SliceDivider divider = MakeSliceDivider(
+            hwCaps.SliceStructure,
+            extOpt2->NumMbPerSlice,
+            extOpt3->NumSliceI,
+            par.mfx.FrameInfo.Width / 16,
+            par.mfx.FrameInfo.Height / 16 / (fieldCoding ? 2 : 1));
+
+        if (extOpt3->NumSliceI != divider.GetNumSlice())
+        {
+            changed = true;
+            extOpt3->NumSliceI = (mfxU16)divider.GetNumSlice();
+        }
+    }
+
+    if (extOpt3->NumSliceP       != 0 &&
+        par.mfx.FrameInfo.Width  != 0 &&
+        par.mfx.FrameInfo.Height != 0)
+    {
+        if (extOpt3->NumSliceP > par.mfx.FrameInfo.Width * par.mfx.FrameInfo.Height / 256)
+        {
+            unsupported = true;
+            extOpt3->NumSliceP = 0;
+        }
+
+        bool fieldCoding = (par.mfx.FrameInfo.PicStruct & MFX_PICSTRUCT_PROGRESSIVE) == 0;
+
+        SliceDivider divider = MakeSliceDivider(
+            hwCaps.SliceStructure,
+            extOpt2->NumMbPerSlice,
+            extOpt3->NumSliceP,
+            par.mfx.FrameInfo.Width / 16,
+            par.mfx.FrameInfo.Height / 16 / (fieldCoding ? 2 : 1));
+
+        if (extOpt3->NumSliceP != divider.GetNumSlice())
+        {
+            changed = true;
+            extOpt3->NumSliceP = (mfxU16)divider.GetNumSlice();
+        }
+    }
+
+    if (extOpt3->NumSliceB       != 0 &&
+        par.mfx.FrameInfo.Width  != 0 &&
+        par.mfx.FrameInfo.Height != 0)
+    {
+        if (extOpt3->NumSliceB > par.mfx.FrameInfo.Width * par.mfx.FrameInfo.Height / 256)
+        {
+            unsupported = true;
+            extOpt3->NumSliceB = 0;
+        }
+
+        bool fieldCoding = (par.mfx.FrameInfo.PicStruct & MFX_PICSTRUCT_PROGRESSIVE) == 0;
+
+        SliceDivider divider = MakeSliceDivider(
+            hwCaps.SliceStructure,
+            extOpt2->NumMbPerSlice,
+            extOpt3->NumSliceB,
+            par.mfx.FrameInfo.Width / 16,
+            par.mfx.FrameInfo.Height / 16 / (fieldCoding ? 2 : 1));
+
+        if (extOpt3->NumSliceB != divider.GetNumSlice())
+        {
+            changed = true;
+            extOpt3->NumSliceB = (mfxU16)divider.GetNumSlice();
         }
     }
 
@@ -2079,6 +2181,13 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
     //if (!CheckTriStateOption(extOpt2->ExtBRC))                  changed = true;
     if (!CheckTriStateOption(extOpt2->RepeatPPS))               changed = true;
     if (!CheckTriStateOption(extOpt2->FixedFrameRate))          changed = true;
+    if (!CheckTriStateOption(extOpt2->DisableVUI))              changed = true;
+
+    if (extOpt2->BufferingPeriodSEI > MFX_BPSEI_IFRAME)
+    {
+        changed = true;
+        extOpt2->BufferingPeriodSEI = 0;
+    }
 
     if (IsMvcProfile(par.mfx.CodecProfile) && IsOn(extOpt->FieldOutput))
     {
@@ -2206,8 +2315,22 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
         extOpt->VuiNalHrdParameters = MFX_CODINGOPTION_OFF;
     }
 
+    if (IsOn(extOpt->VuiNalHrdParameters) &&
+        IsOn(extOpt2->DisableVUI))
+    {
+        changed = true;
+        extOpt->VuiNalHrdParameters = MFX_CODINGOPTION_OFF;
+    }
+
     if (IsOn(extOpt->VuiVclHrdParameters) &&
         IsOff(extOpt->NalHrdConformance))
+    {
+        changed = true;
+        extOpt->VuiVclHrdParameters = MFX_CODINGOPTION_OFF;
+    }
+
+    if (IsOn(extOpt->VuiVclHrdParameters) &&
+        IsOn(extOpt2->DisableVUI))
     {
         changed = true;
         extOpt->VuiVclHrdParameters = MFX_CODINGOPTION_OFF;
@@ -2768,15 +2891,10 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
         }
     }
 
-    if (extOpt2->IntRefType > 2 || (extOpt2->IntRefType == 1 && hwCaps.RollingIntraRefresh == 0))
+    if (extOpt2->IntRefType > 2 || (extOpt2->IntRefType && hwCaps.RollingIntraRefresh == 0))
     {
         extOpt2->IntRefType = 0;
         unsupported = true;
-    }
-    else if (extOpt2->IntRefType == 2) // 2 - reserved (horizontal refresh)
-    {
-        extOpt2->IntRefType = 0;
-        changed = true;
     }
 
     if (extOpt2->IntRefType && par.mfx.GopRefDist > 1)
@@ -2803,7 +2921,9 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
         changed = true;
     }
 
-    if (extOpt2->IntRefCycleSize != 0 && extOpt2->IntRefCycleSize >= par.mfx.GopPicSize)
+    if (extOpt2->IntRefCycleSize != 0 &&
+        par.mfx.GopPicSize != 0 &&
+        extOpt2->IntRefCycleSize >= par.mfx.GopPicSize)
     {
         // refresh period shouldn't be greater or equal to GOP size
         extOpt2->IntRefType = 0;
@@ -2884,6 +3004,13 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
                 par.mfx.NumRefFrame = nrfMinForTemporal;
             }
         }
+    }
+
+    if (extRoi->NumROI && par.mfx.RateControlMethod != MFX_RATECONTROL_CQP &&
+        hwCaps.ROIBRCPriorityLevelSupport == 0)
+    {
+        changed = true;
+        extRoi->NumROI = 0;
     }
 
     if (extRoi->NumROI)
@@ -3419,6 +3546,20 @@ void MfxHwH264Encode::InheritDefaultValues(
     InheritOption(extOptInit->PicTimingSEI,          extOptReset->PicTimingSEI);
     InheritOption(extOptInit->VuiNalHrdParameters,   extOptReset->VuiNalHrdParameters);
 
+    mfxExtCodingOption2 const * extOpt2Init  = GetExtBuffer(parInit);
+    mfxExtCodingOption2 *       extOpt2Reset = GetExtBuffer(parReset);
+
+    InheritOption(extOpt2Init->DisableVUI,      extOpt2Reset->DisableVUI);
+    InheritOption(extOpt2Init->IntRefType,      extOpt2Reset->IntRefType);
+    InheritOption(extOpt2Init->IntRefCycleSize, extOpt2Reset->IntRefCycleSize);
+
+    mfxExtCodingOption3 const * extOpt3Init  = GetExtBuffer(parInit);
+    mfxExtCodingOption3 *       extOpt3Reset = GetExtBuffer(parReset);
+
+    InheritOption(extOpt3Init->NumSliceI, extOpt3Reset->NumSliceI);
+    InheritOption(extOpt3Init->NumSliceP, extOpt3Reset->NumSliceP);
+    InheritOption(extOpt3Init->NumSliceB, extOpt3Reset->NumSliceB);
+
     parReset.SyncVideoToCalculableParam();
 
     // not inherited:
@@ -3461,6 +3602,7 @@ void MfxHwH264Encode::SetDefaults(
 {
     mfxExtCodingOption *       extOpt  = GetExtBuffer(par);
     mfxExtCodingOption2 *      extOpt2 = GetExtBuffer(par);
+    mfxExtCodingOption3 *      extOpt3 = GetExtBuffer(par);
     mfxExtCodingOptionDDI *    extDdi  = GetExtBuffer(par);
     mfxExtPAVPOption *         extPavp = GetExtBuffer(par);
     mfxExtVideoSignalInfo *    extVsi  = GetExtBuffer(par);
@@ -3682,7 +3824,8 @@ void MfxHwH264Encode::SetDefaults(
     if (extOpt->VuiNalHrdParameters == MFX_CODINGOPTION_UNKNOWN)
         extOpt->VuiNalHrdParameters =
             par.mfx.RateControlMethod == MFX_RATECONTROL_CQP ||
-            par.mfx.RateControlMethod == MFX_RATECONTROL_AVBR
+            par.mfx.RateControlMethod == MFX_RATECONTROL_AVBR ||
+            IsOn(extOpt2->DisableVUI)
                 ? mfxU16(MFX_CODINGOPTION_OFF)
                 : mfxU16(MFX_CODINGOPTION_ON);
 
@@ -3812,6 +3955,9 @@ void MfxHwH264Encode::SetDefaults(
         par.mfx.CodecLevel = MFX_LEVEL_AVC_1;
 
     CheckVideoParamQueryLike(par, hwCaps, platform, vaType);
+
+    if (extOpt3->NumSliceI == 0 && extOpt3->NumSliceP == 0 && extOpt3->NumSliceB == 0)
+        extOpt3->NumSliceI = extOpt3->NumSliceP = extOpt3->NumSliceB = par.mfx.NumSlice;
 
     if (extOpt2->MBBRC == MFX_CODINGOPTION_UNKNOWN)
     {
@@ -4098,101 +4244,106 @@ void MfxHwH264Encode::SetDefaults(
             extSps->frameCropLeftOffset || extSps->frameCropRightOffset ||
             extSps->frameCropTopOffset  || extSps->frameCropBottomOffset;
 
-        AspectRatioConverter arConv(fi.AspectRatioW, fi.AspectRatioH);
-        extSps->vui.flags.aspectRatioInfoPresent = (fi.AspectRatioH && fi.AspectRatioW);
-        extSps->vui.aspectRatioIdc               = arConv.GetSarIdc();
-        extSps->vui.sarWidth                     = arConv.GetSarWidth();
-        extSps->vui.sarHeight                    = arConv.GetSarHeight();
+        extSps->vuiParametersPresentFlag = !IsOn(extOpt2->DisableVUI);
 
-        extSps->vui.flags.overscanInfoPresent = 0;
-        extSps->vui.flags.overscanAppropriate = 0;
-
-        extSps->vui.videoFormat                    = mfxU8(extVsi->VideoFormat);
-        extSps->vui.flags.videoFullRange           = extVsi->VideoFullRange;
-        extSps->vui.flags.colourDescriptionPresent = extVsi->ColourDescriptionPresent;
-        extSps->vui.colourPrimaries                = mfxU8(extVsi->ColourPrimaries);
-        extSps->vui.transferCharacteristics        = mfxU8(extVsi->TransferCharacteristics);
-        extSps->vui.matrixCoefficients             = mfxU8(extVsi->MatrixCoefficients);
-        extSps->vui.flags.videoSignalTypePresent   =
-            extSps->vui.videoFormat                    != 5 ||
-            extSps->vui.flags.videoFullRange           != 0 ||
-            extSps->vui.flags.colourDescriptionPresent != 0;
-
-        extSps->vui.flags.chromaLocInfoPresent     = 0;
-        extSps->vui.chromaSampleLocTypeTopField    = 0;
-        extSps->vui.chromaSampleLocTypeBottomField = 0;
-
-        extSps->vui.flags.timingInfoPresent = 1;
-        extSps->vui.numUnitsInTick          = fi.FrameRateExtD;
-        extSps->vui.timeScale               = fi.FrameRateExtN * 2;
-        extSps->vui.flags.fixedFrameRate    = !IsOff(extOpt2->FixedFrameRate);
-
-        extSps->vui.flags.nalHrdParametersPresent = IsOn(extOpt->VuiNalHrdParameters);
-        extSps->vui.flags.vclHrdParametersPresent = IsOn(extOpt->VuiVclHrdParameters);
-
-        extSps->vui.nalHrdParameters.cpbCntMinus1 = 0;
-        extSps->vui.nalHrdParameters.bitRateScale = 0;
-        extSps->vui.nalHrdParameters.cpbSizeScale = 2;
-
-        //FIXME: extSps isn't syncronized with m_video after next assignment for ViewOutput mode. Need to Init ExtSps HRD for MVC keeping them syncronized
-        if (IsMvcProfile(par.mfx.CodecProfile))
+        if (extSps->vuiParametersPresentFlag)
         {
-            extSps->vui.nalHrdParameters.bitRateValueMinus1[0] = GetMaxBitrateValue(par.calcParam.mvcPerViewPar.maxKbps) - 1;
-            extSps->vui.nalHrdParameters.cpbSizeValueMinus1[0] = GetCpbSizeValue(par.calcParam.mvcPerViewPar.bufferSizeInKB, 2) - 1;
+            AspectRatioConverter arConv(fi.AspectRatioW, fi.AspectRatioH);
+            extSps->vui.flags.aspectRatioInfoPresent = (fi.AspectRatioH && fi.AspectRatioW);
+            extSps->vui.aspectRatioIdc               = arConv.GetSarIdc();
+            extSps->vui.sarWidth                     = arConv.GetSarWidth();
+            extSps->vui.sarHeight                    = arConv.GetSarHeight();
+
+            extSps->vui.flags.overscanInfoPresent = 0;
+            extSps->vui.flags.overscanAppropriate = 0;
+
+            extSps->vui.videoFormat                    = mfxU8(extVsi->VideoFormat);
+            extSps->vui.flags.videoFullRange           = extVsi->VideoFullRange;
+            extSps->vui.flags.colourDescriptionPresent = extVsi->ColourDescriptionPresent;
+            extSps->vui.colourPrimaries                = mfxU8(extVsi->ColourPrimaries);
+            extSps->vui.transferCharacteristics        = mfxU8(extVsi->TransferCharacteristics);
+            extSps->vui.matrixCoefficients             = mfxU8(extVsi->MatrixCoefficients);
+            extSps->vui.flags.videoSignalTypePresent   =
+                extSps->vui.videoFormat                    != 5 ||
+                extSps->vui.flags.videoFullRange           != 0 ||
+                extSps->vui.flags.colourDescriptionPresent != 0;
+
+            extSps->vui.flags.chromaLocInfoPresent     = 0;
+            extSps->vui.chromaSampleLocTypeTopField    = 0;
+            extSps->vui.chromaSampleLocTypeBottomField = 0;
+
+            extSps->vui.flags.timingInfoPresent = 1;
+            extSps->vui.numUnitsInTick          = fi.FrameRateExtD;
+            extSps->vui.timeScale               = fi.FrameRateExtN * 2;
+            extSps->vui.flags.fixedFrameRate    = !IsOff(extOpt2->FixedFrameRate);
+
+            extSps->vui.flags.nalHrdParametersPresent = IsOn(extOpt->VuiNalHrdParameters);
+            extSps->vui.flags.vclHrdParametersPresent = IsOn(extOpt->VuiVclHrdParameters);
+
+            extSps->vui.nalHrdParameters.cpbCntMinus1 = 0;
+            extSps->vui.nalHrdParameters.bitRateScale = 0;
+            extSps->vui.nalHrdParameters.cpbSizeScale = 2;
+
+            //FIXME: extSps isn't syncronized with m_video after next assignment for ViewOutput mode. Need to Init ExtSps HRD for MVC keeping them syncronized
+            if (IsMvcProfile(par.mfx.CodecProfile))
+            {
+                extSps->vui.nalHrdParameters.bitRateValueMinus1[0] = GetMaxBitrateValue(par.calcParam.mvcPerViewPar.maxKbps) - 1;
+                extSps->vui.nalHrdParameters.cpbSizeValueMinus1[0] = GetCpbSizeValue(par.calcParam.mvcPerViewPar.bufferSizeInKB, 2) - 1;
+            }
+            else
+            {
+                extSps->vui.nalHrdParameters.bitRateValueMinus1[0] = GetMaxBitrateValue(par.calcParam.maxKbps) - 1;
+                extSps->vui.nalHrdParameters.cpbSizeValueMinus1[0] = GetCpbSizeValue(par.calcParam.bufferSizeInKB, 2) - 1;
+            }
+
+            extSps->vui.nalHrdParameters.cbrFlag[0]                         = (par.mfx.RateControlMethod == MFX_RATECONTROL_CBR);
+            extSps->vui.nalHrdParameters.initialCpbRemovalDelayLengthMinus1 = 23;
+            extSps->vui.nalHrdParameters.cpbRemovalDelayLengthMinus1        = 23;
+            extSps->vui.nalHrdParameters.dpbOutputDelayLengthMinus1         = 23;
+            extSps->vui.nalHrdParameters.timeOffsetLength                   = 24;
+
+            extSps->vui.vclHrdParameters.cpbCntMinus1                       = 0; 
+            extSps->vui.vclHrdParameters.bitRateScale                       = 0;
+            extSps->vui.vclHrdParameters.cpbSizeScale                       = 2;
+            if (IsMvcProfile(par.mfx.CodecProfile))
+            {
+                extSps->vui.vclHrdParameters.bitRateValueMinus1[0] = GetMaxBitrateValue(par.calcParam.mvcPerViewPar.maxKbps) - 1;
+                extSps->vui.vclHrdParameters.cpbSizeValueMinus1[0] = GetCpbSizeValue(par.calcParam.mvcPerViewPar.bufferSizeInKB, 2) - 1;
+            }
+            else
+            {
+                extSps->vui.vclHrdParameters.bitRateValueMinus1[0] = GetMaxBitrateValue(par.calcParam.maxKbps) - 1;
+                extSps->vui.vclHrdParameters.cpbSizeValueMinus1[0] = GetCpbSizeValue(par.calcParam.bufferSizeInKB, 2) - 1;
+            }
+            extSps->vui.vclHrdParameters.cbrFlag[0]                         = (par.mfx.RateControlMethod == MFX_RATECONTROL_CBR);
+            extSps->vui.vclHrdParameters.initialCpbRemovalDelayLengthMinus1 = 23;
+            extSps->vui.vclHrdParameters.cpbRemovalDelayLengthMinus1        = 23;
+            extSps->vui.vclHrdParameters.dpbOutputDelayLengthMinus1         = 23;
+            extSps->vui.vclHrdParameters.timeOffsetLength                   = 24;
+
+            extSps->vui.flags.lowDelayHrd                                   = 0;
+            extSps->vui.flags.picStructPresent                              = IsOn(extOpt->PicTimingSEI);
+
+            extSps->vui.flags.bitstreamRestriction           = 1;
+            extSps->vui.flags.motionVectorsOverPicBoundaries = 1;
+            extSps->vui.maxBytesPerPicDenom                  = 2;
+            extSps->vui.maxBitsPerMbDenom                    = 1;
+            extSps->vui.log2MaxMvLengthHorizontal            = mfxU8(CeilLog2(4 * MAX_H_MV - 1));
+            extSps->vui.log2MaxMvLengthVertical              = mfxU8(CeilLog2(4 * GetMaxVmv(par.mfx.CodecLevel) - 1));
+            extSps->vui.numReorderFrames                     = GetNumReorderFrames(par);
+            extSps->vui.maxDecFrameBuffering                 = mfxU8(extOpt->MaxDecFrameBuffering);
+
+            extSps->vuiParametersPresentFlag =
+                extSps->vui.flags.aspectRatioInfoPresent  ||
+                extSps->vui.flags.overscanInfoPresent     ||
+                extSps->vui.flags.videoSignalTypePresent  ||
+                extSps->vui.flags.chromaLocInfoPresent    ||
+                extSps->vui.flags.timingInfoPresent       ||
+                extSps->vui.flags.nalHrdParametersPresent ||
+                extSps->vui.flags.vclHrdParametersPresent ||
+                extSps->vui.flags.picStructPresent        ||
+                extSps->vui.flags.bitstreamRestriction;
         }
-        else
-        {
-            extSps->vui.nalHrdParameters.bitRateValueMinus1[0] = GetMaxBitrateValue(par.calcParam.maxKbps) - 1;
-            extSps->vui.nalHrdParameters.cpbSizeValueMinus1[0] = GetCpbSizeValue(par.calcParam.bufferSizeInKB, 2) - 1;
-        }
-
-        extSps->vui.nalHrdParameters.cbrFlag[0]                         = (par.mfx.RateControlMethod == MFX_RATECONTROL_CBR);
-        extSps->vui.nalHrdParameters.initialCpbRemovalDelayLengthMinus1 = 23;
-        extSps->vui.nalHrdParameters.cpbRemovalDelayLengthMinus1        = 23;
-        extSps->vui.nalHrdParameters.dpbOutputDelayLengthMinus1         = 23;
-        extSps->vui.nalHrdParameters.timeOffsetLength                   = 24;
-
-        extSps->vui.vclHrdParameters.cpbCntMinus1                       = 0; 
-        extSps->vui.vclHrdParameters.bitRateScale                       = 0;
-        extSps->vui.vclHrdParameters.cpbSizeScale                       = 2;
-        if (IsMvcProfile(par.mfx.CodecProfile))
-        {
-            extSps->vui.vclHrdParameters.bitRateValueMinus1[0] = GetMaxBitrateValue(par.calcParam.mvcPerViewPar.maxKbps) - 1;
-            extSps->vui.vclHrdParameters.cpbSizeValueMinus1[0] = GetCpbSizeValue(par.calcParam.mvcPerViewPar.bufferSizeInKB, 2) - 1;
-        }
-        else
-        {
-            extSps->vui.vclHrdParameters.bitRateValueMinus1[0] = GetMaxBitrateValue(par.calcParam.maxKbps) - 1;
-            extSps->vui.vclHrdParameters.cpbSizeValueMinus1[0] = GetCpbSizeValue(par.calcParam.bufferSizeInKB, 2) - 1;
-        }
-        extSps->vui.vclHrdParameters.cbrFlag[0]                         = (par.mfx.RateControlMethod == MFX_RATECONTROL_CBR);
-        extSps->vui.vclHrdParameters.initialCpbRemovalDelayLengthMinus1 = 23;
-        extSps->vui.vclHrdParameters.cpbRemovalDelayLengthMinus1        = 23;
-        extSps->vui.vclHrdParameters.dpbOutputDelayLengthMinus1         = 23;
-        extSps->vui.vclHrdParameters.timeOffsetLength                   = 24;
-
-        extSps->vui.flags.lowDelayHrd                                   = 0;
-        extSps->vui.flags.picStructPresent                              = IsOn(extOpt->PicTimingSEI);
-
-        extSps->vui.flags.bitstreamRestriction           = 1;
-        extSps->vui.flags.motionVectorsOverPicBoundaries = 1;
-        extSps->vui.maxBytesPerPicDenom                  = 2;
-        extSps->vui.maxBitsPerMbDenom                    = 1;
-        extSps->vui.log2MaxMvLengthHorizontal            = mfxU8(CeilLog2(4 * MAX_H_MV - 1));
-        extSps->vui.log2MaxMvLengthVertical              = mfxU8(CeilLog2(4 * GetMaxVmv(par.mfx.CodecLevel) - 1));
-        extSps->vui.numReorderFrames                     = GetNumReorderFrames(par);
-        extSps->vui.maxDecFrameBuffering                 = mfxU8(extOpt->MaxDecFrameBuffering);
-
-        extSps->vuiParametersPresentFlag =
-            extSps->vui.flags.aspectRatioInfoPresent  ||
-            extSps->vui.flags.overscanInfoPresent     ||
-            extSps->vui.flags.videoSignalTypePresent  ||
-            extSps->vui.flags.chromaLocInfoPresent    ||
-            extSps->vui.flags.timingInfoPresent       ||
-            extSps->vui.flags.nalHrdParametersPresent ||
-            extSps->vui.flags.vclHrdParametersPresent ||
-            extSps->vui.flags.picStructPresent        ||
-            extSps->vui.flags.bitstreamRestriction;
     }
 
     if (extBits->PPSBufSize == 0)
@@ -5135,6 +5286,7 @@ void MfxVideoParam::Construct(mfxVideoParam const & par)
     InitExtBufHeader(m_extOpt2);
     InitExtBufHeader(m_extEncResetOpt);
     InitExtBufHeader(m_extEncRoi);
+    InitExtBufHeader(m_extOpt3);
 
     if (mfxExtCodingOption * opts = GetExtBuffer(par))
         m_extOpt = *opts;
@@ -5187,6 +5339,9 @@ void MfxVideoParam::Construct(mfxVideoParam const & par)
     if (mfxExtEncoderROI * opts = GetExtBuffer(par))
         m_extEncRoi = *opts;
 
+    if (mfxExtCodingOption3 * opts = GetExtBuffer(par))
+        m_extOpt3 = *opts;
+
     m_extParam[0]  = &m_extOpt.Header;
     m_extParam[1]  = &m_extOptSpsPps.Header;
     m_extParam[2]  = &m_extOptPavp.Header;
@@ -5204,10 +5359,11 @@ void MfxVideoParam::Construct(mfxVideoParam const & par)
     m_extParam[14] = &m_extOpt2.Header;
     m_extParam[15] = &m_extEncResetOpt.Header;
     m_extParam[16] = &m_extEncRoi.Header;
+    m_extParam[17] = &m_extOpt3.Header;
 
     ExtParam = m_extParam;
     NumExtParam = mfxU16(sizeof m_extParam / sizeof m_extParam[0]);
-    assert(NumExtParam == 17);
+    assert(NumExtParam == 18);
 }
 
 void MfxVideoParam::ConstructMvcSeqDesc(
@@ -6472,12 +6628,14 @@ void HeaderPacker::Init(
     mfxU32 numSpsHeaders = IPP_MAX(numDep + additionalSpsForFirstSpatialLayer, numViews);
     mfxU32 numPpsHeaders = IPP_MAX(numDep + additionalPpsForLastSpatialLayer,  numViews);
 
+    mfxU32 maxNumSlices = GetMaxNumSlices(par);
+
     m_sps.resize(numSpsHeaders);
     m_pps.resize(numPpsHeaders);
     m_subset.resize(numSpsHeaders / numViews - 1);
     m_packedSps.resize(numSpsHeaders);
     m_packedPps.resize(numPpsHeaders);
-    m_packedSlices.resize(par.mfx.NumSlice);
+    m_packedSlices.resize(maxNumSlices);
     m_headerBuffer.resize(SPSPPS_BUFFER_SIZE);
     m_sliceBuffer.resize(SLICE_BUFFER_SIZE);
 
@@ -6666,6 +6824,10 @@ std::vector<ENCODE_PACKEDHEADER_DATA> const & HeaderPacker::PackSlices(
     DdiTask const & task,
     mfxU32          fieldId)
 {
+    if (task.m_numSlice[fieldId])
+    {
+        m_packedSlices.resize(task.m_numSlice[fieldId]);
+    }
     Zero(m_packedSlices);
 
     mfxU8 * sliceBufferBegin = Begin(m_sliceBuffer);
@@ -6687,6 +6849,9 @@ std::vector<ENCODE_PACKEDHEADER_DATA> const & HeaderPacker::PackSlices(
 
         sliceBufferBegin += m_packedSlices[i].BufferSize;
     }
+
+    if (task.m_AUStartsFromSlice[fieldId])
+        m_packedSlices[0].SkipEmulationByteCount = 4;
 
     return m_packedSlices;
 }
@@ -6726,8 +6891,11 @@ mfxU32 HeaderPacker::WriteSlice(
     mfxU32 sliceHeaderRestrictionFlag = 0;
     mfxU32 sliceSkipFlag = 0;
 
-    mfxU8 startcode[3] = { 0, 0, 1 };
-    obs.PutRawBytes(startcode, startcode + sizeof startcode);
+    mfxU8 startcode[4] = { 0, 0, 0, 1};
+    mfxU8 * pStartCode = startcode;
+    if (task.m_AUStartsFromSlice[fieldId] == false || sliceId > 0)
+        pStartCode ++;
+    obs.PutRawBytes(pStartCode, startcode + sizeof startcode);
     obs.PutBit(0);
     obs.PutBits(nalRefIdc, 2);
     obs.PutBits(nalUnitType, 5);

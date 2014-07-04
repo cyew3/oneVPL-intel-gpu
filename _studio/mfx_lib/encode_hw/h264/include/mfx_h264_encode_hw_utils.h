@@ -838,6 +838,7 @@ namespace MfxHwH264Encode
             , m_insertAud(0, 0)
             , m_insertSps(0, 0)
             , m_insertPps(0, 0)
+            , m_AUStartsFromSlice(0, 0)
             , m_nalRefIdc(0, 0)
             , m_statusReportNumber(0, 0)
 
@@ -846,6 +847,7 @@ namespace MfxHwH264Encode
             , m_addRepackSize(0, 0)
             , m_maxFrameSize(0)
             , m_numMbPerSlice(0)
+            , m_numSlice(0, 0)
             , m_numRoi(0)
             , m_did(0)
             , m_qid(0)
@@ -953,6 +955,7 @@ namespace MfxHwH264Encode
         PairU8  m_insertAud;
         PairU8  m_insertSps;
         PairU8  m_insertPps;
+        PairU8  m_AUStartsFromSlice;
         PairU8  m_nalRefIdc;
         PairU32 m_statusReportNumber;
         mfxU32  m_pid;                  // priority_id
@@ -962,7 +965,8 @@ namespace MfxHwH264Encode
 // MVC BD }
         mfxU32  m_maxFrameSize;
 
-        mfxU16 m_numMbPerSlice;
+        mfxU16  m_numMbPerSlice;
+        PairU16 m_numSlice;
 
         ArrayRoi m_roi;
         mfxU16   m_numRoi;
@@ -1800,7 +1804,7 @@ namespace MfxHwH264Encode
         mfxU32      m_frameOrderStartLyncStructure; // starting point of Lync temporal scalability structure
 
         // parameters for Intra refresh
-        mfxU32      m_frameOrderIFrameInDisplayOrder;    // frame order of last I frame (in display order)
+        mfxI64      m_frameOrderStartIntraRefresh; // starting point of Intra refresh cycles (could be negative)
         mfxU16      m_intraStripeWidthInMBs; // width of Intra MB stripe (column or row depending on refresh type)
 
         mfxU32      m_enabledSwBrc;
@@ -2808,8 +2812,16 @@ namespace MfxHwH264Encode
     IntraRefreshState GetIntraRefreshState(
         MfxVideoParam const & video,
         mfxU32                frameOrderInGop,
-        mfxEncodeCtrl const & ctrl,
+        mfxEncodeCtrl const * ctrl,
         mfxU16                intraStripeWidthInMBs);
+
+    mfxStatus UpdateIntraRefreshWithoutIDR(
+        MfxVideoParam const & oldPar,
+        MfxVideoParam const & newPar,
+        mfxU32                frameOrder,
+        mfxI64                oldStartFrame,
+        mfxI64 &              updatedStartFrame,
+        mfxU16 &              updatedStripeWidthInMBs);
 
     BiFrameLocation GetBiFrameLocation(
         MfxVideoParam const & video,

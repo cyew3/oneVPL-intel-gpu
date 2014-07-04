@@ -223,6 +223,7 @@ void MfxHwH264Encode::FillVaringPartOfPpsBuffer(
     mfxU32                               fieldId,
     ENCODE_SET_PICTURE_PARAMETERS_H264 & pps)
 {
+    pps.NumSlice                                = mfxU8(task.m_numSlice[fieldId]);
     pps.CurrOriginalPic.Index7Bits              = mfxU8(task.m_idxRecon);
     pps.CurrOriginalPic.AssociatedFlag          = mfxU8(fieldId);
     pps.CurrReconstructedPic.Index7Bits         = mfxU8(task.m_idxRecon);
@@ -981,7 +982,9 @@ mfxStatus D3D9Encoder::CreateAccelerationService(MfxVideoParam const & par)
     hr = m_auxDevice->Execute(ENCODE_ENC_CTRL_GET_ID, (void *)0, m_capsGet);
     MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
 
-    m_slice.resize(par.mfx.NumSlice);
+    mfxU16 maxNumSlice = GetMaxNumSlices(par);
+
+    m_slice.resize(maxNumSlice);
 
     mfxU32 const MAX_NUM_PACKED_SPS = 9;
     mfxU32 const MAX_NUM_PACKED_PPS = 9;
@@ -1023,7 +1026,11 @@ mfxStatus D3D9Encoder::Reset(
 
     m_sps.bResetBRC = !Equal(m_sps, oldSps) || !Equal(m_vui, oldVui);
 
-    m_slice.resize(par.mfx.NumSlice);
+    mfxU16 maxNumSlices = GetMaxNumSlices(par);
+    m_slice.resize(maxNumSlices);
+
+    if (extCO2)
+        m_skipMode = extCO2->SkipFrame;
 
     m_headerPacker.Init(par, m_caps);
 

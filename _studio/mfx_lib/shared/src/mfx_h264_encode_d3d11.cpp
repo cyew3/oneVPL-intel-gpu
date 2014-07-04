@@ -128,8 +128,15 @@ mfxStatus D3D11Encoder::CreateAccelerationService(MfxVideoParam const & par)
 
         MFX_CHECK_STS(sts);
     }
-    m_slice.resize(par.mfx.NumSlice);
-    m_compBufDesc.resize(10 + par.mfx.NumSlice);
+
+    mfxU16 maxNumSlice = GetMaxNumSlices(par);
+
+    m_slice.resize(maxNumSlice);
+
+    mfxU32 const MAX_NUM_PACKED_SPS = 9;
+    mfxU32 const MAX_NUM_PACKED_PPS = 9;
+    m_compBufDesc.resize(11 + MAX_NUM_PACKED_SPS + MAX_NUM_PACKED_PPS + maxNumSlice);
+
 
     Zero(m_sps);
     Zero(m_vui);
@@ -166,7 +173,8 @@ mfxStatus D3D11Encoder::Reset(
         m_sps.TargetBitRate != oldTargetBitrate ||
         m_sps.MaxBitRate    != oldMaxBitrate;
 
-    m_slice.resize(par.mfx.NumSlice);
+    mfxU16 maxNumSlices = GetMaxNumSlices(par);
+    m_slice.resize(maxNumSlices);
 
     m_headerPacker.Init(par, m_caps);
 

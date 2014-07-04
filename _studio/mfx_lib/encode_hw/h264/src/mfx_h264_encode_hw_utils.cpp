@@ -1725,7 +1725,12 @@ mfxStatus TaskManager::AssignTask(
     toEncode->m_insertAud[!ffid] = IsOn(extOpt->AUDelimiter);
 
     mfxExtCodingOption2 const * extOpt2 = GetExtBuffer(m_video);
+    mfxExtCodingOption3 const * extOpt3 = GetExtBuffer(m_video);
     toEncode->m_numMbPerSlice = extOpt2->NumMbPerSlice;
+    toEncode->m_numSlice[ffid] = (toEncode->m_type[ffid] & MFX_FRAMETYPE_I) ? extOpt3->NumSliceI :
+        (toEncode->m_type[ffid] & MFX_FRAMETYPE_P) ? extOpt3->NumSliceP : extOpt3->NumSliceB;
+    toEncode->m_numSlice[!ffid] = (toEncode->m_type[!ffid] & MFX_FRAMETYPE_I) ? extOpt3->NumSliceI :
+        (toEncode->m_type[!ffid] & MFX_FRAMETYPE_P) ? extOpt3->NumSliceP : extOpt3->NumSliceB;
 
     if (m_video.calcParam.lyncMode)
     {
@@ -4954,20 +4959,23 @@ void MfxHwH264Encode::PrepareSeiMessageBuffer(
     mfxU32                fieldId,
     PreAllocatedVector &  sei)
 {
-    mfxExtCodingOption const *     extOpt = GetExtBuffer(video);
-    mfxExtSpsHeader const *        extSps = GetExtBuffer(video);
+    mfxExtCodingOption const *     extOpt =  GetExtBuffer(video);
+    mfxExtSpsHeader const *        extSps =  GetExtBuffer(video);
+    mfxExtCodingOption2 const *    extOpt2 = GetExtBuffer(video);
     mfxExtPictureTimingSEI const * extPt  = SelectPicTimingSei(video, task);
 
     mfxU32 fillerSize         = task.m_fillerSize[fieldId];
     mfxU32 fieldPicFlag       = (task.GetPicStructForEncode() != MFX_PICSTRUCT_PROGRESSIVE);
     mfxU32 secondFieldPicFlag = (task.GetFirstField() != fieldId);
     mfxU32 idrPicFlag         = (task.m_type[fieldId] & MFX_FRAMETYPE_IDR);
+    mfxU32 isIPicture = (task.m_type[fieldId] & MFX_FRAMETYPE_I);
     mfxU32 recoveryPoint      = IsRecoveryPointSeiMessagePresent(
         task.m_ctrl.Payload,
         task.m_ctrl.NumPayload,
         GetPayloadLayout(fieldPicFlag, secondFieldPicFlag));
 
-    mfxU32 needCpbRemovalDelay = idrPicFlag || recoveryPoint;
+    mfxU32 needCpbRemovalDelay = idrPicFlag || recoveryPoint ||
+        isIPicture && extOpt2->BufferingPeriodSEI == MFX_BPSEI_IFRAME;
 
     mfxU32 needMarkingRepetitionSei =
         IsOn(extOpt->RefPicMarkRep) && task.m_decRefPicMrkRep[fieldId].presentFlag;
@@ -4977,7 +4985,8 @@ void MfxHwH264Encode::PrepareSeiMessageBuffer(
     mfxU32 needBufferingPeriod =
         IsOn(extOpt->VuiNalHrdParameters) && needCpbRemovalDelay ||
         IsOn(extOpt->VuiVclHrdParameters) && needCpbRemovalDelay ||
-        IsOn(extOpt->PicTimingSEI)        && idrPicFlag          || // to activate sps
+        IsOn(extOpt->PicTimingSEI) &&
+        (idrPicFlag || (isIPicture && extOpt2->BufferingPeriodSEI == MFX_BPSEI_IFRAME)) || // to activate sps
         needRecoveryPointSei;                                       // AU with Recovery point SEI should contain BP SEI
 
     mfxU32 needPicTimingSei =

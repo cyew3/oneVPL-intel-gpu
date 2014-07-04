@@ -103,6 +103,19 @@ mfxStatus SetHRD(
     return MFX_ERR_NONE;
 } // void SetHRD(...)
 
+void FillBrcStructures(
+    MfxVideoParam const & par,
+    VAEncMiscParameterRateControl & vaBrcPar,
+    VAEncMiscParameterFrameRate   & vaFrameRate)
+{
+    Zero(vaBrcPar);
+    Zero(vaFrameRate);
+    vaBrcPar.bits_per_second = par.calcParam.maxKbps * 1000;
+    if(par.calcParam.maxKbps)
+        vaBrcPar.target_percentage = (unsigned int)(100.0 * (mfxF64)par.calcParam.targetKbps / (mfxF64)par.calcParam.maxKbps);
+    vaFrameRate.framerate = (unsigned int)(100.0 * (mfxF64)par.mfx.FrameInfo.FrameRateExtN / (mfxF64)par.mfx.FrameInfo.FrameRateExtD);
+}
+
 mfxStatus SetRateControl(
     MfxVideoParam const & par,
     mfxU32       mbbrc,
@@ -110,7 +123,8 @@ mfxStatus SetRateControl(
     mfxU8        maxQP,
     VADisplay    m_vaDisplay,
     VAContextID  m_vaContextEncode,
-    VABufferID & rateParamBuf_id)
+    VABufferID & rateParamBuf_id,
+    bool         isBrcResetRequired = false)
 {
     VAStatus vaSts;
     VAEncMiscParameterBuffer *misc_param;
@@ -154,6 +168,8 @@ mfxStatus SetRateControl(
  * Control VA_RC_MB 0: default, 1: enable, 2: disable, other: reserved
  */
     rate_param->rc_flags.bits.mb_rate_control = mbbrc & 0xf;
+    rate_param->rc_flags.bits.reset = isBrcResetRequired;
+
     vaUnmapBuffer(m_vaDisplay, rateParamBuf_id);
 
     return MFX_ERR_NONE;
@@ -516,6 +532,8 @@ void UpdateSlice(
     std::vector<ExtVASurface> const & reconQueue)
 {
     mfxU32 numPics  = task.GetPicStructForEncode() == MFX_PICSTRUCT_PROGRESSIVE ? 1 : 2;
+    if (task.m_numSlice[fieldId])
+        slice.resize(task.m_numSlice[fieldId]);
     mfxU32 numSlice = slice.size();
     mfxU32 idx = 0, ref = 0;
 
@@ -836,7 +854,6 @@ mfxStatus VAAPIEncoder::CreateAuxilliaryDevice(
     memset(&m_caps, 0, sizeof(m_caps));
 
     m_caps.BRCReset = 1; // no bitrate resolution control
-    m_caps.VCMBitrateControl = 0; //Video conference mode
     m_caps.HeaderInsertion = 0; // we will privide headers (SPS, PPS) in binary format to the driver
 
     //VAConfigAttrib attrs[5];
@@ -860,7 +877,8 @@ mfxStatus VAAPIEncoder::CreateAuxilliaryDevice(
                           VAEntrypointEncSlice,
                           Begin(attrs), attrs.size());
     MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
-       
+
+    m_caps.VCMBitrateControl = attrs[1].value & VA_RC_VCM ? 1 : 0; //Video conference mode
     m_caps.TrelisQuantization  = (attrs[2].value & (~VA_ATTRIB_NOT_SUPPORTED));
     m_caps.vaTrellisQuantization = attrs[2].value;
     m_caps.RollingIntraRefresh = (attrs[3].value & (~VA_ATTRIB_NOT_SUPPORTED)) ? 1 : 0 ;
@@ -1041,11 +1059,13 @@ mfxStatus VAAPIEncoder::CreateAccelerationService(MfxVideoParam const & par)
         &m_vaContextEncode);
     MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
 
-    m_slice.resize(par.mfx.NumSlice);
-    m_sliceBufferId.resize(par.mfx.NumSlice);
-    m_packeSliceHeaderBufferId.resize(par.mfx.NumSlice);
-    m_packedSliceBufferId.resize(par.mfx.NumSlice);
-    for(int i = 0; i < par.mfx.NumSlice; i++)
+    mfxU16 maxNumSlices = GetMaxNumSlices(par);
+
+    m_slice.resize(maxNumSlices);
+    m_sliceBufferId.resize(maxNumSlices);
+    m_packeSliceHeaderBufferId.resize(maxNumSlices);
+    m_packedSliceBufferId.resize(maxNumSlices);
+    for(int i = 0; i < maxNumSlices; i++)
     {
         m_sliceBufferId[i] = m_packeSliceHeaderBufferId[i] = m_packedSliceBufferId[i] = VA_INVALID_ID;
     }
@@ -1056,6 +1076,7 @@ mfxStatus VAAPIEncoder::CreateAccelerationService(MfxVideoParam const & par)
     //------------------------------------------------------------------
 
     FillSps(par, m_sps);
+    FillBrcStructures(par, m_vaBrcPar, m_vaFrameRate);
 
     MFX_CHECK_WITH_ASSERT(MFX_ERR_NONE == SetHRD(par, m_vaDisplay, m_vaContextEncode, m_hrdBufferId), MFX_ERR_DEVICE_FAILED);
     MFX_CHECK_WITH_ASSERT(MFX_ERR_NONE == SetRateControl(par, m_mbbrc, 0, 0, m_vaDisplay, m_vaContextEncode, m_rateParamBufferId), MFX_ERR_DEVICE_FAILED);
@@ -1086,8 +1107,13 @@ mfxStatus VAAPIEncoder::Reset(MfxVideoParam const & par)
     m_skipMode = extOpt2->SkipFrame;
 
     FillSps(par, m_sps);
+    VAEncMiscParameterRateControl oldBrcPar = m_vaBrcPar;
+    VAEncMiscParameterFrameRate oldFrameRate = m_vaFrameRate;
+    FillBrcStructures(par, m_vaBrcPar, m_vaFrameRate);
+    bool isBrcResetRequired = !Equal(m_vaBrcPar, oldBrcPar) || !Equal(m_vaFrameRate, oldFrameRate);
+
     MFX_CHECK_WITH_ASSERT(MFX_ERR_NONE == SetHRD(par, m_vaDisplay, m_vaContextEncode, m_hrdBufferId), MFX_ERR_DEVICE_FAILED);
-    MFX_CHECK_WITH_ASSERT(MFX_ERR_NONE == SetRateControl(par, m_mbbrc, 0, 0, m_vaDisplay, m_vaContextEncode, m_rateParamBufferId), MFX_ERR_DEVICE_FAILED);
+    MFX_CHECK_WITH_ASSERT(MFX_ERR_NONE == SetRateControl(par, m_mbbrc, 0, 0, m_vaDisplay, m_vaContextEncode, m_rateParamBufferId, isBrcResetRequired), MFX_ERR_DEVICE_FAILED);
     MFX_CHECK_WITH_ASSERT(MFX_ERR_NONE == SetFrameRate(par, m_vaDisplay, m_vaContextEncode, m_frameRateId), MFX_ERR_DEVICE_FAILED);
     MFX_CHECK_WITH_ASSERT(MFX_ERR_NONE == SetPrivateParams(par, m_vaDisplay, m_vaContextEncode, m_privateParamsId), MFX_ERR_DEVICE_FAILED);
     FillConstPartOfPps(par, m_pps);

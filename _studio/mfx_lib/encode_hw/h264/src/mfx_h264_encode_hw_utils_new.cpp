@@ -828,7 +828,8 @@ namespace
                     list1.Resize(IPP_MIN(list1.Size(), 1));
                 }
             }
-            else if (extOpt2->BRefType == MFX_B_REF_PYRAMID && (task.m_type[0] & MFX_FRAMETYPE_P))
+            else if (extOpt2->BRefType == MFX_B_REF_PYRAMID && (task.m_type[0] & MFX_FRAMETYPE_P) &&
+                (task.GetPicStructForEncode() & MFX_PICSTRUCT_PROGRESSIVE))
             {
                 std::sort(list0.Begin(), list0.End(), RefPocIsGreater(dpb));
             }
@@ -1450,7 +1451,7 @@ PairU8 MfxHwH264Encode::GetFrameType(
 IntraRefreshState MfxHwH264Encode::GetIntraRefreshState(
     MfxVideoParam const & video,
     mfxU32                frameOrderInGopDispOrder,
-    mfxEncodeCtrl const & ctrl,
+    mfxEncodeCtrl const * ctrl,
     mfxU16                intraStripeWidthInMBs)
 {
     IntraRefreshState state;
@@ -1470,11 +1471,43 @@ IntraRefreshState MfxHwH264Encode::GetIntraRefreshState(
     state.IntraLocation = (mfxU16)idxInActualRefreshPeriod * intraStripeWidthInMBs;
     // set QP for Intra macroblocks within refreshing line
     state.IntRefQPDelta = extOpt2Init->IntRefQPDelta;
-    mfxExtCodingOption2 * extOpt2Runtime = GetExtBuffer(ctrl);
-    if (extOpt2Runtime && extOpt2Runtime->IntRefQPDelta <= 51 && extOpt2Runtime->IntRefQPDelta >= -51)
-        state.IntRefQPDelta = extOpt2Runtime->IntRefQPDelta;
+    if (ctrl)
+    {
+        mfxExtCodingOption2 * extOpt2Runtime = GetExtBuffer(*ctrl);
+        if (extOpt2Runtime && extOpt2Runtime->IntRefQPDelta <= 51 && extOpt2Runtime->IntRefQPDelta >= -51)
+            state.IntRefQPDelta = extOpt2Runtime->IntRefQPDelta;
+    }
 
     return state;
+}
+
+mfxStatus MfxHwH264Encode::UpdateIntraRefreshWithoutIDR(
+    MfxVideoParam const & oldPar,
+    MfxVideoParam const & newPar,
+    mfxU32                frameOrder,
+    mfxI64                oldStartFrame,
+    mfxI64 &              updatedStartFrame,
+    mfxU16 &              updatedStripeWidthInMBs)
+{
+    MFX_CHECK_WITH_ASSERT((oldPar.mfx.FrameInfo.Width == newPar.mfx.FrameInfo.Width) && (oldPar.mfx.FrameInfo.Height == newPar.mfx.FrameInfo.Height), MFX_ERR_UNDEFINED_BEHAVIOR);
+    mfxExtCodingOption2 * extOpt2Old = GetExtBuffer(oldPar);
+    mfxExtCodingOption2 * extOpt2New = GetExtBuffer(newPar);
+
+    mfxU16 refreshDimension = extOpt2New->IntRefType == HORIZ_REFRESH ? newPar.mfx.FrameInfo.Height >> 4 : newPar.mfx.FrameInfo.Width >> 4;
+    mfxU16 oldStripeWidthInMBs = (refreshDimension + extOpt2Old->IntRefCycleSize - 1) / extOpt2Old->IntRefCycleSize;
+    updatedStripeWidthInMBs = (refreshDimension + extOpt2New->IntRefCycleSize - 1) / extOpt2New->IntRefCycleSize;
+    mfxU16 updatedNumFramesWithoutRefresh = extOpt2New->IntRefCycleSize - (refreshDimension + updatedStripeWidthInMBs - 1) / updatedStripeWidthInMBs;
+
+    IntraRefreshState oldIRState = MfxHwH264Encode::GetIntraRefreshState(
+        oldPar,
+        mfxU32(frameOrder - oldStartFrame),
+        0,
+        oldStripeWidthInMBs);
+
+    mfxU16 newIRProgressInFrames = oldIRState.IntraLocation / updatedStripeWidthInMBs + updatedNumFramesWithoutRefresh + 1;
+    updatedStartFrame = frameOrder - newIRProgressInFrames;
+
+    return MFX_ERR_NONE;
 }
 
 
@@ -1594,6 +1627,7 @@ void MfxHwH264Encode::ConfigureTask(
     mfxExtPAVPOption const &        extPavp        = GetExtBufferRef(video);
     mfxExtEncoderROI const &        extRoi         = GetExtBufferRef(video);
     mfxExtEncoderROI const *        extRoiRuntime  = GetExtBuffer(task.m_ctrl);
+    mfxExtCodingOption3 const *     extOpt3        = GetExtBuffer(video);
 
     mfxU32 const FRAME_NUM_MAX = 1 << (extSps.log2MaxFrameNumMinus4 + 4);
 
@@ -1699,6 +1733,10 @@ void MfxHwH264Encode::ConfigureTask(
 
     task.m_maxFrameSize = extOpt2Runtime ? extOpt2Runtime->MaxFrameSize : extOpt2.MaxFrameSize;
     task.m_numMbPerSlice = extOpt2.NumMbPerSlice;
+    task.m_numSlice[ffid] = (task.m_type[ffid] & MFX_FRAMETYPE_I) ? extOpt3->NumSliceI :
+        (task.m_type[ffid] & MFX_FRAMETYPE_P) ? extOpt3->NumSliceP : extOpt3->NumSliceB;
+    task.m_numSlice[!ffid] = (task.m_type[!ffid] & MFX_FRAMETYPE_I) ? extOpt3->NumSliceI :
+        (task.m_type[!ffid] & MFX_FRAMETYPE_P) ? extOpt3->NumSliceP : extOpt3->NumSliceB;
 
     if (video.calcParam.lyncMode)
     {

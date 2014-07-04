@@ -968,7 +968,7 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
     {
         mfxU16 refreshDimension = extOpt2->IntRefType == HORIZ_REFRESH ? m_video.mfx.FrameInfo.Height >> 4 : m_video.mfx.FrameInfo.Width >> 4;
         m_intraStripeWidthInMBs = (refreshDimension + extOpt2->IntRefCycleSize - 1) / extOpt2->IntRefCycleSize;
-        m_frameOrderIFrameInDisplayOrder = 0;
+        m_frameOrderStartIntraRefresh = 0;
     }
     Zero(m_stat);
 
@@ -1048,11 +1048,18 @@ mfxStatus ImplementationAvc::ProcessAndCheckNewParameters(
 
     mfxExtSpsHeader const * extSpsNew = GetExtBuffer(newPar);
     mfxExtSpsHeader const * extSpsOld = GetExtBuffer(m_video);
+    mfxExtCodingOption2 const * extOpt2New = GetExtBuffer(newPar);
+    mfxExtCodingOption2 const * extOpt2Old = GetExtBuffer(m_video);
 
     // check if IDR required after change of encoding parameters
-    isIdrRequired = !Equal(*extSpsNew, *extSpsOld)
+    bool isSpsChanged = extSpsNew->vuiParametersPresentFlag == 0 ?
+        memcmp(extSpsNew, extSpsOld, sizeof(mfxExtSpsHeader) - sizeof(VuiParameters)) != 0 :
+    !Equal(*extSpsNew, *extSpsOld);
+
+    isIdrRequired = isSpsChanged
         || tempLayerIdx != 0 && changeLyncLayers
-        || newPar.mfx.GopPicSize != m_video.mfx.GopPicSize;
+        || newPar.mfx.GopPicSize != m_video.mfx.GopPicSize
+        || extOpt2New->IntRefType != extOpt2Old->IntRefType;
 
     if (isIdrRequired && IsOff(extResetOpt->StartNewSequence))
         return MFX_ERR_INVALID_VIDEO_PARAM; // Reset can't change parameters w/o IDR. Report an error
@@ -1124,6 +1131,8 @@ mfxStatus ImplementationAvc::Reset(mfxVideoParam *par)
     m_stagesToGo     = AsyncRoutineEmulator::STG_BIT_CALL_EMULATOR;
 
     mfxExtEncoderResetOption const * extResetOpt = GetExtBuffer(newPar);
+    mfxExtCodingOption2 * extOpt2Old = GetExtBuffer(m_video);
+    mfxExtCodingOption2 * extOpt2New = GetExtBuffer(newPar);
 
     // perform reset of encoder and start new sequence with IDR in following cases:
     // 1) change of encoding parameters require insertion of IDR
@@ -1163,18 +1172,27 @@ mfxStatus ImplementationAvc::Reset(mfxVideoParam *par)
         m_recNonRef[0] = m_recNonRef[1] = 0xffffffff;
 
         // reset of Intra refresh
-        mfxExtCodingOption2 * extOpt2New = GetExtBuffer(newPar);
         if (extOpt2New->IntRefType)
         {
             mfxU16 refreshDimension = extOpt2New->IntRefType == HORIZ_REFRESH ? m_video.mfx.FrameInfo.Height >> 4 : m_video.mfx.FrameInfo.Width >> 4;
             m_intraStripeWidthInMBs = (refreshDimension + extOpt2New->IntRefCycleSize - 1) / extOpt2New->IntRefCycleSize;
-            m_frameOrderIFrameInDisplayOrder = 0;
+            m_frameOrderStartIntraRefresh = 0;
         }
     } else if (m_video.calcParam.lyncMode && newPar.calcParam.lyncMode &&
         m_video.calcParam.numTemporalLayer != newPar.calcParam.numTemporalLayer)
     {
         // reset starting point of Lync temporal scalability calculation if number of temporal layers was changed w/o IDR
         m_frameOrderStartLyncStructure = m_frameOrder;
+    } else if (extOpt2Old->IntRefType && extOpt2New->IntRefType && (extOpt2Old->IntRefType == extOpt2New->IntRefType))
+    {
+        mfxStatus sts = UpdateIntraRefreshWithoutIDR(
+            m_video,
+            newPar,
+            m_frameOrder,
+            m_frameOrderStartIntraRefresh,
+            m_frameOrderStartIntraRefresh,
+            m_intraStripeWidthInMBs);
+        MFX_CHECK_STS(sts);
     }
 
     m_video = newPar;
@@ -1831,13 +1849,13 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
 
             if (newTask.GetFrameType() & MFX_FRAMETYPE_I)
             {
-                m_frameOrderIFrameInDisplayOrder = newTask.m_frameOrder;
+                m_frameOrderStartIntraRefresh = newTask.m_frameOrder;
             }
 
             newTask.m_IRState = GetIntraRefreshState(
                 m_video,
-                newTask.m_frameOrder - m_frameOrderIFrameInDisplayOrder,
-                newTask.m_ctrl,
+                mfxU32(newTask.m_frameOrder - m_frameOrderStartIntraRefresh),
+                &(newTask.m_ctrl),
                 m_intraStripeWidthInMBs);
 
             m_frameOrder++;
@@ -2050,7 +2068,8 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
 
         Hrd hrd = m_hrd; // tmp copy
 
-        if ((task->GetFrameType() & MFX_FRAMETYPE_IDR) &&
+        if (((task->GetFrameType() & MFX_FRAMETYPE_IDR) ||
+            ((task->GetFrameType() & MFX_FRAMETYPE_I) && (extOpt2->BufferingPeriodSEI == MFX_BPSEI_IFRAME))) &&
             (IsOn(extOpt->VuiNalHrdParameters) || IsOn(extOpt->VuiVclHrdParameters)))
         {
             if (!m_encoding.empty())
@@ -2171,6 +2190,14 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
                     m_video, m_hrd, m_encoding, task->m_fieldPicFlag, f);
 
             PrepareSeiMessageBuffer(m_video, *task, task->m_fid[f], m_sei);
+
+            if (task->m_insertAud[f] == 0 &&
+                task->m_insertSps[f] == 0 &&
+                task->m_insertPps[f] == 0 &&
+                m_sei.Size() == 0)
+                task->m_AUStartsFromSlice[f] = 1;
+            else
+                task->m_AUStartsFromSlice[f] = 0;
 
             mfxStatus sts = m_ddi->Execute(task->m_handleRaw.first, *task, task->m_fid[f], m_sei);
             if (sts != MFX_ERR_NONE)

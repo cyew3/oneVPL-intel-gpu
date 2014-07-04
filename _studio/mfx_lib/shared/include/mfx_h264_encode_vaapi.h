@@ -195,9 +195,12 @@ namespace MfxHwH264Encode
         // SkipFlag
         enum { NO_SKIP, NORMAL_MODE, PAVP_MODE};
 
-        mfxU8 m_numSkipFrames;
+        mfxU8  m_numSkipFrames;
         mfxU32 m_sizeSkipFrames;
         mfxU32 m_skipMode;
+
+        VAEncMiscParameterRateControl m_vaBrcPar;
+        VAEncMiscParameterFrameRate   m_vaFrameRate;
 
     };
 

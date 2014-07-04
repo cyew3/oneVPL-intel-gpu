@@ -194,6 +194,7 @@ namespace MfxHwH264Encode
 #if defined (ADVANCED_REF)
     BIND_EXTBUF_TYPE_TO_ID (mfxExtAVCRefLists,          MFX_EXTBUFF_AVC_REFLISTS             );
 #endif
+    BIND_EXTBUF_TYPE_TO_ID (mfxExtCodingOption3,        MFX_EXTBUFF_CODING_OPTION3           );
 #undef BIND_EXTBUF_TYPE_TO_ID
 
     template <class T> inline void InitExtBufHeader(T & extBuf)
@@ -510,11 +511,12 @@ namespace MfxHwH264Encode
         void ConstructMvcSeqDesc(mfxExtMVCSeqDesc const & desc);
 
     private:
-        mfxExtBuffer *              m_extParam[17];
+        mfxExtBuffer *              m_extParam[18];
 
         // external, documented
         mfxExtCodingOption          m_extOpt;
         mfxExtCodingOption2         m_extOpt2;
+        mfxExtCodingOption3         m_extOpt3;
         mfxExtCodingOptionSPSPPS    m_extOptSpsPps;
         mfxExtPAVPOption            m_extOptPavp;
         mfxExtVideoSignalInfo       m_extVideoSignal;
@@ -570,6 +572,8 @@ namespace MfxHwH264Encode
             mfxU16 heightLa;
         } calcParam;
     };
+
+    mfxU16 GetMaxNumSlices(MfxVideoParam const & par);
 
     mfxU16 GetNumSurfInput(MfxVideoParam const & video);
 

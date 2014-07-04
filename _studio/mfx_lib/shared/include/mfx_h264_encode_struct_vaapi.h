@@ -524,7 +524,14 @@ typedef struct tagENCODE_CAPS
     UCHAR   MBBRCSupport;
 
     UCHAR   TrelisQuantization;
-    UCHAR   MaxNumOfROI; // [0..16]
+    union {
+        struct {
+            UCHAR MaxNumOfROI                : 5; // [0..16]
+            UCHAR                            : 2;
+            UCHAR ROIBRCPriorityLevelSupport : 1;
+        };
+        UCHAR ROICaps;
+    };
 
     union {
         struct {
