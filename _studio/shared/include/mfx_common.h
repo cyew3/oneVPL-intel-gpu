@@ -271,7 +271,7 @@
     #define MFX_ENABLE_VP8_VIDEO_DECODE
 #endif
 #if defined(AS_VP8E_PLUGIN)
-    #define MFX_ENABLE_VP8_VIDEO_ENCODE
+    #define MFX_ENABLE_VP8_VIDEO_ENCODE_HW
 #endif
 
 #if defined (MFX_RT)
