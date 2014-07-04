@@ -111,6 +111,102 @@ mfxStatus GetIntelDataPrivateReportD3D9(const GUID guid, DXVA2_ConfigPictureDeco
         CoTaskMemFree(pConfig);
     }
 
+    pDirectXVideoService->Release();
+    pDirectXVideoService = 0;
+
+    return MFX_WRN_PARTIAL_ACCELERATION;
+}
+
+mfxStatus GetIntelDataPrivateReportD3D11(const GUID guid, mfxVideoParam *par, D3D11_VIDEO_DECODER_CONFIG & config, mfxHDL* mfxDeviceHdl)
+{
+
+    //HRESULT hRes = S_OK;
+
+    //static D3D_FEATURE_LEVEL FeatureLevels[] = { D3D_FEATURE_LEVEL_11_1, D3D_FEATURE_LEVEL_11_0, D3D_FEATURE_LEVEL_10_1, D3D_FEATURE_LEVEL_10_0 };
+    //D3D_FEATURE_LEVEL pFeatureLevelsOut;
+
+    //hRes = D3D11CreateDevice(NULL,
+    //    D3D_DRIVER_TYPE_HARDWARE,
+    //    NULL,
+    //    0,
+    //    FeatureLevels,
+    //    sizeof(FeatureLevels) / sizeof(D3D_FEATURE_LEVEL),
+    //    D3D11_SDK_VERSION,
+    //    pD3D11Device,
+    //    &pFeatureLevelsOut,
+    //    pD3D11DeviceContext);
+
+    //if (FAILED(hRes))
+    //{
+    //    return MFX_ERR_DEVICE_FAILED;
+    //}
+
+    ID3D11Device* pD11Device = (ID3D11Device*) *mfxDeviceHdl;
+    //CComPtr<ID3D11Device> pD11Device = (ID3D11Device*) mfxDeviceHdl;
+    CComQIPtr<ID3D11VideoDevice> pD11VideoDevice = pD11Device;
+    //ID3D11VideoDevice* pD11VideoDevice = (ID3D11VideoDevice*) *mfxDeviceHdl;
+
+    D3D11_VIDEO_DECODER_DESC video_desc = {0};
+    D3D11_VIDEO_DECODER_CONFIG video_config = {0};
+    video_desc.Guid = DXVADDI_Intel_Decode_PrivateData_Report;
+    video_desc.SampleWidth = par ? par->mfx.FrameInfo.Width : 640;
+    video_desc.SampleHeight = par ? par->mfx.FrameInfo.Height : 480;
+    video_desc.OutputFormat = DXGI_FORMAT_NV12;
+
+    if (!video_desc.SampleWidth)
+    {
+        video_desc.SampleWidth = 640;
+    }
+
+    if (!video_desc.SampleHeight)
+    {
+        video_desc.SampleHeight = 480;
+    }
+
+    mfxU32 cDecoderProfiles = pD11VideoDevice->GetVideoDecoderProfileCount();
+    bool isRequestedGuidPresent = false;
+    bool isIntelGuidPresent = false;
+
+    for (mfxU32 i = 0; i < cDecoderProfiles; i++)
+    {
+        GUID decoderGuid;
+        HRESULT hr = pD11VideoDevice->GetVideoDecoderProfile(i, &decoderGuid);
+        if (FAILED(hr))
+        {
+            continue;
+        }
+
+        if (guid == decoderGuid)
+            isRequestedGuidPresent = true;
+
+        if (DXVADDI_Intel_Decode_PrivateData_Report == decoderGuid)
+            isIntelGuidPresent = true;
+    }
+
+    if (!isRequestedGuidPresent)
+        return MFX_ERR_NOT_FOUND;
+
+    if (!isIntelGuidPresent) // if no required GUID - no acceleration at all
+        return MFX_WRN_PARTIAL_ACCELERATION;
+
+    mfxU32  count = 0;
+    HRESULT hr = pD11VideoDevice->GetVideoDecoderConfigCount(&video_desc, &count);
+    if (FAILED(hr))
+        return MFX_WRN_PARTIAL_ACCELERATION;
+
+    for (mfxU32 i = 0; i < count; i++)
+    {
+        hr = pD11VideoDevice->GetVideoDecoderConfig(&video_desc, i, &video_config);
+        if (FAILED(hr))
+            return MFX_WRN_PARTIAL_ACCELERATION;
+
+        if (video_config.guidConfigBitstreamEncryption == guid)
+        {
+            memcpy_s(&config, sizeof(config), &video_config, sizeof(D3D11_VIDEO_DECODER_CONFIG));
+            return MFX_ERR_NONE;
+        }
+    }
+
     return MFX_WRN_PARTIAL_ACCELERATION;
 }
 
@@ -126,17 +222,17 @@ eMFXHWType GetHWTypeD3D9(const mfxU32 adapterNum, mfxHDL* mfxDeviceHdl)
     return MFX::GetHardwareType(adapterNum, platformFromDriver);
 }
 
-//mfxStatus GetHWTypeD3D11(const mfxU32 adapterNum, mfxHDL* mfxDeviceHdl)
-//{
-//    mfxU32 platformFromDriver = 0;
-//
-//    D3D11_VIDEO_DECODER_CONFIG config;
-//    mfxStatus sts = GetIntelDataPrivateReport(sDXVA2_ModeH264_VLD_NoFGT, 0, config);
-//    if (sts == MFX_ERR_NONE)
-//        platformFromDriver = config.ConfigBitstreamRaw;
-//
-//    return MFX_ERR_NONE;
-//}
+eMFXHWType GetHWTypeD3D11(const mfxU32 adapterNum, mfxHDL* mfxDeviceHdl)
+{
+    mfxU32 platformFromDriver = 0;
+
+    D3D11_VIDEO_DECODER_CONFIG config;
+    mfxStatus sts = GetIntelDataPrivateReportD3D11(sDXVA2_ModeH264_VLD_NoFGT, 0, config, mfxDeviceHdl);
+    if (sts == MFX_ERR_NONE)
+        platformFromDriver = config.ConfigBitstreamRaw;
+
+    return MFX::GetHardwareType(adapterNum, platformFromDriver);
+}
 #endif
 
 #if (defined(LINUX32) || defined(LINUX64))
@@ -311,10 +407,10 @@ eMFXHWType getPlatformType (VADisplay pVaDisplay)
 eMFXHWType GetHWType(const mfxU32 adapterNum, mfxIMPL impl, mfxHDL& mfxDeviceHdl)
 {
 #if defined(_WIN32) || defined(_WIN64)
-    if(impl & MFX_IMPL_VIA_D3D9)
+    if(MFX_IMPL_VIA_D3D9 == (impl & 0xF00))
         return GetHWTypeD3D9(adapterNum, &mfxDeviceHdl);
-    else if(impl & MFX_IMPL_VIA_D3D11)
-        ;//return GetHWTypeD3D11(adapterNum, &mfxDeviceHdl);
+    else if(MFX_IMPL_VIA_D3D11 == (impl & 0xF00))
+        return GetHWTypeD3D11(adapterNum, &mfxDeviceHdl);
 #elif (defined(LINUX32) || defined(LINUX64))
     return getPlatformType ( /*(VADisplay)*/ mfxDeviceHdl);
 #endif

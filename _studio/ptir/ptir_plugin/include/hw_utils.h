@@ -17,6 +17,7 @@ File Name: hw_utils.h
 #include <d3d9.h>
 #include <dxva2api.h>
 #include <d3d11.h>
+#include <atlbase.h>
 #endif
 
 #if (defined(LINUX32) || defined(LINUX64))

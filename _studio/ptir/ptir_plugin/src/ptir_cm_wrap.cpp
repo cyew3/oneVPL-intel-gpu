@@ -136,23 +136,25 @@ mfxStatus PTIR_ProcessorCM::Init(mfxVideoParam *par)
     //PTIR's frames init
     try //try is useless here since frames allocated by malloc, but probably in future it could be changed to new
     {
-        mfxHandleType mfxDeviceType;
-        mfxHDL mfxDeviceHdl;
+        mfxHandleType mfxDeviceType = MFX_HANDLE_DIRECT3D_DEVICE_MANAGER9;
+        mfxHDL mfxDeviceHdl = 0;
         mfxCoreParam mfxCorePar;
         mfxStatus mfxSts = MFX_ERR_NONE;
-        m_pmfxCore->GetCoreParam(m_pmfxCore->pthis, &mfxCorePar);
-        if(mfxSts) return mfxSts;
-        if(mfxCorePar.Impl & MFX_IMPL_VIA_D3D9)
+        mfxSts = m_pmfxCore->GetCoreParam(m_pmfxCore->pthis, &mfxCorePar);
+        if(MFX_ERR_NONE > mfxSts) 
+            return mfxSts;
+        if(MFX_IMPL_VIA_D3D9 == (mfxCorePar.Impl & 0xF00))
             mfxDeviceType = MFX_HANDLE_DIRECT3D_DEVICE_MANAGER9;
-        else if(mfxCorePar.Impl & MFX_IMPL_VIA_D3D11)
+        else if(MFX_IMPL_VIA_D3D11 == (mfxCorePar.Impl & 0xF00))
             mfxDeviceType = MFX_HANDLE_D3D11_DEVICE;
-        else if(mfxCorePar.Impl & MFX_IMPL_VIA_VAAPI)
+        else if(MFX_IMPL_VIA_VAAPI == (mfxCorePar.Impl & 0xF00))
             mfxDeviceType = MFX_HANDLE_VA_DISPLAY;
         else
-            return MFX_ERR_INVALID_VIDEO_PARAM;
+            return MFX_ERR_DEVICE_FAILED;
         mfxSts = m_pmfxCore->GetHandle(m_pmfxCore->pthis, mfxDeviceType, &mfxDeviceHdl);
-        if(mfxSts) return mfxSts;
-        if(!HWType) return MFX_ERR_UNKNOWN;
+        if(MFX_ERR_NONE > mfxSts) 
+            return mfxSts;
+        if(!HWType) return MFX_ERR_DEVICE_FAILED;
 
         //const char * pIsaFileNames[] = { "Deinterlace_genx.isa" };
         deinterlaceFilter = new DeinterlaceFilter(HWType, uiInWidth, uiInHeight, mfxDeviceType, mfxDeviceHdl);
@@ -271,7 +273,9 @@ mfxStatus PTIR_ProcessorCM::Process(mfxFrameSurface1 *surface_in, mfxFrameSurfac
             }
             if(!pInCmSurface2D)
             {
-                frmSupply->CMCreateSurface2D(surface_in,pInCmSurface2D,true);
+                mfxSts = frmSupply->CMCreateSurface2D(surface_in,pInCmSurface2D,true);
+                if(MFX_ERR_NONE != mfxSts)
+                    return mfxSts;
                 //result = pCMdevice->CreateSurface2D((IDirect3DSurface9 *) surface_in->Data.MemId, pInCmSurface2D);
                 //assert(result == 0);
                 //CmToMfxSurfmap[pInCmSurface2D] = surface_in;
@@ -287,7 +291,9 @@ mfxStatus PTIR_ProcessorCM::Process(mfxFrameSurface1 *surface_in, mfxFrameSurfac
             }
             if(!pOutCmSurface2D)
             {
-                frmSupply->CMCreateSurface2D(*surface_out,pOutCmSurface2D,true);
+                mfxSts = frmSupply->CMCreateSurface2D(*surface_out,pOutCmSurface2D,true);
+                if(MFX_ERR_NONE != mfxSts)
+                    return mfxSts;
                 //result = pCMdevice->CreateSurface2D((IDirect3DSurface9 *) (*surface_out)->Data.MemId, pOutCmSurface2D);
                 //assert(result == 0);
                 //CmToMfxSurfmap[pOutCmSurface2D] = (*surface_out);

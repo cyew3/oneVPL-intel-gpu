@@ -14,7 +14,7 @@ File Name: plg_frame_supply.cpp
 
 frameSupplier::frameSupplier(std::vector<mfxFrameSurface1*>* _inSurfs, std::vector<mfxFrameSurface1*>* _workSurfs, 
     std::vector<mfxFrameSurface1*>* _outSurfs, std::map<CmSurface2D*,mfxFrameSurface1*>* _CmToMfxSurfmap,
-    CmDeviceEx* _pCMdevice, mfxCoreInterface* _mfxCore, mfxU16 _IOPattern)
+    CmDeviceEx* _pCMdevice, mfxCoreInterface* _mfxCore, mfxU16 _IOPattern, bool _isD3D11)
 {
     inSurfs        = _inSurfs;
     workSurfs      = _workSurfs;
@@ -23,6 +23,7 @@ frameSupplier::frameSupplier(std::vector<mfxFrameSurface1*>* _inSurfs, std::vect
     pCMdevice      = _pCMdevice;
     mfxCoreIfce    = _mfxCore;
     IOPattern      = _IOPattern;
+    isD3D11        = _isD3D11;
 }
 mfxStatus frameSupplier::SetDevice(CmDeviceEx* _pCMdevice)
 {
@@ -463,7 +464,11 @@ mfxStatus frameSupplier::CMCreateSurface2D(mfxFrameSurface1*& mfxSurf, CmSurface
         if(MFX_ERR_NONE > mfxSts)
             return mfxSts;
 
-        cmSts = (*pCMdevice)->CreateSurface2D(native_surf, cmSurfOut);
+        if(!isD3D11)
+            cmSts = (*pCMdevice)->CreateSurface2D(native_surf, cmSurfOut);
+        else
+            cmSts = (*pCMdevice)->CreateSurface2D( ((mfxHDLPair*) &native_surf)->first, cmSurfOut);
+
         assert(cmSts == 0);
         if(CM_SUCCESS != cmSts)
             return MFX_ERR_DEVICE_FAILED;

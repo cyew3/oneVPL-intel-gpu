@@ -547,7 +547,7 @@ mfxStatus MFX_PTIR_Plugin::QueryIOSurf(mfxVideoParam *par, mfxFrameAllocRequest 
     mfxStatus mfxSts = MFX_ERR_NONE;
     //Check partial acceleration
     mfxHandleType mfxDeviceType = MFX_HANDLE_DIRECT3D_DEVICE_MANAGER9;
-    mfxHDL mfxDeviceHdl;
+    mfxHDL mfxDeviceHdl = 0;
     mfxCoreParam mfxCorePar;
     mfxSts = m_pmfxCore->GetCoreParam(m_pmfxCore->pthis, &mfxCorePar);
     if(MFX_ERR_NONE > mfxSts)
@@ -671,9 +671,12 @@ mfxStatus MFX_PTIR_Plugin::Init(mfxVideoParam *par)
     if(MFX_ERR_NONE > mfxSts)
         return mfxSts;
 
+    bool isD3D11 = false;
+    if(MFX_IMPL_VIA_D3D11 == ((mfxCorePar.Impl) & 0xF00))
+        isD3D11 = true;
     try
     {
-        frmSupply = new frameSupplier(&inSurfs, &workSurfs, &outSurfs, 0, 0, m_pmfxCore, par->IOPattern);
+        frmSupply = new frameSupplier(&inSurfs, &workSurfs, &outSurfs, 0, 0, m_pmfxCore, par->IOPattern, isD3D11);
     }
     catch(std::bad_alloc&)
     {
@@ -883,11 +886,11 @@ inline mfxStatus MFX_PTIR_Plugin::GetHandle(mfxHDL& mfxDeviceHdl, mfxHandleType&
     mfxCoreParam mfxCorePar;
     mfxSts = m_pmfxCore->GetCoreParam(m_pmfxCore->pthis, &mfxCorePar);
     if(mfxSts) return mfxSts;
-    if(mfxCorePar.Impl & MFX_IMPL_VIA_D3D9)
+    if(MFX_IMPL_VIA_D3D9 == (mfxCorePar.Impl & 0xF00))
         mfxDeviceType = MFX_HANDLE_DIRECT3D_DEVICE_MANAGER9;
-    else if(mfxCorePar.Impl & MFX_IMPL_VIA_D3D11)
+    else if(MFX_IMPL_VIA_D3D11 == (mfxCorePar.Impl & 0xF00))
         mfxDeviceType = MFX_HANDLE_D3D11_DEVICE;
-    else if(mfxCorePar.Impl & MFX_IMPL_VIA_VAAPI)
+    else if(MFX_IMPL_VIA_VAAPI == (mfxCorePar.Impl & 0xF00))
         mfxDeviceType = MFX_HANDLE_VA_DISPLAY;
     mfxSts = m_pmfxCore->GetHandle(m_pmfxCore->pthis, mfxDeviceType, &mfxDeviceHdl);
     if(MFX_ERR_NONE != mfxSts &&

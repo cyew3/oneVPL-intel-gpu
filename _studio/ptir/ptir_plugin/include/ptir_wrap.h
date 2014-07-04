@@ -38,7 +38,7 @@ class frameSupplier
 public:
     frameSupplier(std::vector<mfxFrameSurface1*>* _inSurfs, std::vector<mfxFrameSurface1*>* _workSurfs, 
                   std::vector<mfxFrameSurface1*>* _outSurfs, std::map<CmSurface2D*,mfxFrameSurface1*>* _CmToMfxSurfmap,
-                  CmDeviceEx* _pCMdevice, mfxCoreInterface* _mfxCore, mfxU16 _IOPattern);
+                  CmDeviceEx* _pCMdevice, mfxCoreInterface* _mfxCore, mfxU16 _IOPattern, bool _isD3D11);
     virtual ~frameSupplier()
     {
         FreeFrames();
@@ -66,6 +66,7 @@ protected:
     std::vector<mfxFrameSurface1*> *outSurfs;
     std::map<CmSurface2D*,mfxFrameSurface1*> *CmToMfxSurfmap;
     mfxU16  IOPattern;
+    bool   isD3D11;
 };
 
 class PTIR_Processor
