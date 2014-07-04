@@ -194,6 +194,7 @@ namespace MFX_VP8ENC
         VideoCORE *            core,
         mfxFrameAllocRequest & req)
     {
+        VP8_LOG("\n(sefremov) MfxFrameAllocResponse::Alloc +");
         req.NumFrameSuggested = req.NumFrameMin; // no need in 2 different NumFrames
         //printf("MfxFrameAllocResponse::Alloc - start (num: %d, type: %d, w %d, h %d, forCC %d)\n",req.NumFrameSuggested, req.Type,req.Info.Width, req.Info.Height, req.Info.FourCC);
 
@@ -218,8 +219,9 @@ namespace MFX_VP8ENC
         }
         else
         {
+            VP8_LOG("\n(sefremov) MfxFrameAllocResponse::Alloc VA 1");
             //printf("MfxFrameAllocResponse::Alloc: core->AllocFrames:\n");
-            mfxStatus sts = core->AllocFrames(&req, this);
+            mfxStatus sts = core->AllocFrames(&req, this, false);
             //printf("MfxFrameAllocResponse::Alloc: core->AllocFrames, sts %d\n", sts);
             MFX_CHECK_STS(sts);
         }
@@ -234,6 +236,7 @@ namespace MFX_VP8ENC
         NumFrameActual = req.NumFrameMin; // no need in redundant frames
         m_info = req.Info;
 
+        VP8_LOG("\n(sefremov) MfxFrameAllocResponse::Alloc -");
         return MFX_ERR_NONE;
 
     } 
@@ -374,6 +377,7 @@ namespace MFX_VP8ENC
 
     mfxStatus InternalFrames::Init(VideoCORE *pCore, mfxFrameAllocRequest *pAllocReq, bool bHW)
     {
+        VP8_LOG("\n(sefremov) InternalFrames::Init +");
         mfxStatus sts = MFX_ERR_NONE;
         MFX_CHECK_NULL_PTR2 (pCore, pAllocReq);
         mfxU32 nFrames = pAllocReq->NumFrameMin;
@@ -383,8 +387,10 @@ namespace MFX_VP8ENC
 
         //printf("internal frames init %d (request)\n", req.NumFrameSuggested);
 
+        VP8_LOG("\n(sefremov) InternalFrames::Init 1");
         sts = m_response.Alloc(pCore,*pAllocReq);
         MFX_CHECK_STS(sts);
+        VP8_LOG("\n(sefremov) InternalFrames::Init 2");
 
         //printf("internal frames init %d (%d) [%d](response)\n", m_response.NumFrameActual,Num(),nFrames);
 
@@ -405,6 +411,7 @@ namespace MFX_VP8ENC
             m_surfaces[i].Info = pAllocReq->Info;
             m_frames[i].pSurface = &m_surfaces[i];
         }
+        VP8_LOG("\n(sefremov) InternalFrames::Init -");
         return sts;
     } 
     sFrameEx * InternalFrames::GetFreeFrame()

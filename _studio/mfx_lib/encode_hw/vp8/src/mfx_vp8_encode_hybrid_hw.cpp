@@ -184,6 +184,8 @@ namespace MFX_VP8ENC
 
         mfxStatus sts  = MFX_ERR_NONE;
         mfxStatus sts1 = MFX_ERR_NONE; // to save warnings ater parameters checking
+        
+        VP8_LOG("\n(sefremov) HybridPakDDIImpl::Init +");
 
 #if defined (VP8_HYBRID_DUMP_WRITE)
         m_bse_dump = fopen("dump_file","wb");
@@ -208,25 +210,31 @@ namespace MFX_VP8ENC
 
             MFX_CHECK(CheckFrameSize(par->mfx.FrameInfo.Width, par->mfx.FrameInfo.Height),MFX_ERR_INVALID_VIDEO_PARAM);
 
+            VP8_LOG("\n(sefremov) HybridPakDDIImpl::Init 1");
             sts1 = MFX_VP8ENC::CheckParametersAndSetDefault(par,&m_video, pExtOpt, pVP8Par, pExtOpaque, m_core->IsExternalFrameAllocator(),false);
             MFX_CHECK(sts1 >=0, sts1);
         }
+        VP8_LOG("\n(sefremov) HybridPakDDIImpl::Init 2");
         m_ddi.reset(CreatePlatformVp8Encoder( m_core));
         MFX_CHECK(m_ddi.get() != 0, MFX_WRN_PARTIAL_ACCELERATION);
 
+        VP8_LOG("\n(sefremov) HybridPakDDIImpl::Init 3");
         sts = m_ddi->CreateAuxilliaryDevice(m_core,DXVA2_Intel_Encode_VP8, 
             m_video.mfx.FrameInfo.Width, m_video.mfx.FrameInfo.Height);
         MFX_CHECK(sts == MFX_ERR_NONE, MFX_WRN_PARTIAL_ACCELERATION);
 
+        VP8_LOG("\n(sefremov) HybridPakDDIImpl::Init 4");
         ENCODE_CAPS_VP8 caps = {0};
         sts = m_ddi->QueryEncodeCaps(caps);
         if (sts != MFX_ERR_NONE)
             return MFX_WRN_PARTIAL_ACCELERATION;
 
+        VP8_LOG("\n(sefremov) HybridPakDDIImpl::Init 5");
         sts = CheckVideoParam(m_video, caps);
         MFX_CHECK(sts>=0,sts);
 
 #if !defined (VP8_HYBRID_DUMP_READ)
+        VP8_LOG("\n(sefremov) HybridPakDDIImpl::Init 6");
         sts = m_ddi->CreateAccelerationService(m_video);
         MFX_CHECK_STS(sts);
 #endif
@@ -237,14 +245,17 @@ namespace MFX_VP8ENC
 
         // on Linux we should allocate recon surfaces first, and then create encoding context and use it for allocation of other buffers
         // initialize task manager, including allocation of recon surfaces chain
+        VP8_LOG("\n(sefremov) HybridPakDDIImpl::Init 7");
         sts = m_taskManager.Init(m_core,&m_video,m_ddi->GetReconSurfFourCC());
         MFX_CHECK_STS(sts);
 
 #if !defined (VP8_HYBRID_DUMP_READ)
+        VP8_LOG("\n(sefremov) HybridPakDDIImpl::Init 8");
         // encoding device/context is created inside this Register() call
         sts = m_ddi->Register(m_taskManager.GetRecFramesForReg(), D3DDDIFMT_NV12);
         MFX_CHECK_STS(sts);
 
+        VP8_LOG("\n(sefremov) HybridPakDDIImpl::Init 9");
         sts = m_ddi->QueryCompBufferInfo(D3DDDIFMT_INTELENCODE_MBDATA, reqMB, m_video.mfx.FrameInfo.Width, m_video.mfx.FrameInfo.Height);
         MFX_CHECK_STS(sts);
         sts = m_ddi->QueryCompBufferInfo(D3DDDIFMT_INTELENCODE_DISTORTIONDATA, reqDist, m_video.mfx.FrameInfo.Width, m_video.mfx.FrameInfo.Height);
@@ -261,6 +272,7 @@ namespace MFX_VP8ENC
         fread(&reqMB.Info, 1, sizeof(reqMB.Info), m_bse_dump);
 #endif
 
+        VP8_LOG("\n(sefremov) HybridPakDDIImpl::Init 10");
         sts = m_taskManager.AllocInternalResources(m_core,reqMB,reqDist,reqSegMap);
         MFX_CHECK_STS(sts);
 
@@ -270,6 +282,7 @@ namespace MFX_VP8ENC
 #endif
 
 #if !defined (VP8_HYBRID_DUMP_READ)
+        VP8_LOG("\n(sefremov) HybridPakDDIImpl::Init 11");
         sts = m_ddi->Register(m_taskManager.GetMBFramesForReg(), D3DDDIFMT_INTELENCODE_MBDATA);
         MFX_CHECK_STS(sts);
         if (reqDist.NumFrameMin)
@@ -284,6 +297,7 @@ namespace MFX_VP8ENC
         }
 #endif // !VP8_HYBRID_DUMP_READ
 
+        VP8_LOG("\n(sefremov) HybridPakDDIImpl::Init 12");
         sts = m_BSE.Init(m_video);
         MFX_CHECK_STS(sts);
 
@@ -297,6 +311,7 @@ namespace MFX_VP8ENC
         //cpuFreq = cpuFreq / 1000000;
 #endif // VP8_HYBRID_TIMING
 
+        VP8_LOG("\n(sefremov) HybridPakDDIImpl::Init -\n");
         return sts1;
     }
 
@@ -349,12 +364,16 @@ namespace MFX_VP8ENC
         Task* pTask = 0;
         mfxStatus sts  = MFX_ERR_NONE;
 
+        VP8_LOG("\n(sefremov): HybridPakDDIImpl::EncodeFrameCheck +");
+
         mfxStatus checkSts = CheckEncodeFrameParam(
             m_video,
             ctrl,
             surface,
             bs,
             m_core->IsExternalFrameAllocator());
+        
+        VP8_LOG("\n(sefremov): HybridPakDDIImpl::EncodeFrameCheck 1");
 
         MFX_CHECK(checkSts >= MFX_ERR_NONE, checkSts);
 
@@ -378,6 +397,7 @@ namespace MFX_VP8ENC
 
         numEntryPoints = 2;
 
+        VP8_LOG("\n(sefremov): HybridPakDDIImpl::EncodeFrameCheck -");
         return checkSts;
     }
 
@@ -410,8 +430,9 @@ namespace MFX_VP8ENC
     }
 
     mfxStatus HybridPakDDIImpl::SubmitFrame(Task *pTaskInput)
-    { 
+    {
         TaskHybridDDI       *pTask = (TaskHybridDDI*)pTaskInput;
+        VP8_LOG_1("\n(sefremov) Frame %d: HybridPakDDIImpl::SubmitFrame +", pTask->m_frameOrder);
         mfxStatus           sts = MFX_ERR_NONE;
         sFrameParams        frameParams={0};
         mfxFrameSurface1    *pSurface=0;
@@ -439,13 +460,15 @@ namespace MFX_VP8ENC
             UMC::AutomaticUMCMutex guard(m_taskMutex);
             sts = SetFramesParams(&m_video,pTask->m_frameOrder, &frameParams);
             MFX_CHECK_STS(sts);
+            VP8_LOG_1("\n(sefremov) Frame %d: HybridPakDDIImpl::SubmitFrame 1", pTask->m_frameOrder);
             sts = m_taskManager.SubmitTask(pTask,&frameParams);
             MFX_CHECK_STS(sts);
         }
 
+        VP8_LOG_1("\n(sefremov) Frame %d: HybridPakDDIImpl::SubmitFrame 2", pTask->m_frameOrder);
         sts = pTask->GetInputSurface(pSurface, bExternalSurface);
         MFX_CHECK_STS(sts);
-
+        
         sts = bExternalSurface ?
             m_core->GetExternalFrameHDL(pSurface->Data.MemId, pSurfaceHdl):
             m_core->GetFrameHDL(pSurface->Data.MemId, pSurfaceHdl);
@@ -464,17 +487,20 @@ namespace MFX_VP8ENC
         }
         else if (MFX_HW_VAAPI == m_core->GetVAType())
         {
+            VP8_LOG_1("\n(sefremov) Frame %d: HybridPakDDIImpl::SubmitFrame 3 VA", pTask->m_frameOrder);
             MFX_CHECK(surfaceHDL != 0, MFX_ERR_UNDEFINED_BEHAVIOR);
             sts = m_ddi->Execute(*pTask,  surfaceHDL);
         }
         MFX_CHECK_STS(sts);
 #endif
+        VP8_LOG_1("\n(sefremov) Frame %d: HybridPakDDIImpl::SubmitFrame -", pTask->m_frameOrder);
         return sts;
     }
 
     mfxStatus HybridPakDDIImpl::QueryFrame(Task *pTaskInput)
     { 
         TaskHybridDDI       *pTask = (TaskHybridDDI*)pTaskInput;
+        VP8_LOG_1("\n(sefremov) Frame %d: HybridPakDDIImpl::QueryFrame +", pTask->m_frameOrder);        
         mfxStatus           sts = MFX_ERR_NONE;
 
 #if defined (VP8_HYBRID_TIMING)
@@ -482,6 +508,7 @@ namespace MFX_VP8ENC
 #endif // VP8_HYBRID_TIMING
 
         MBDATA_LAYOUT layout={0};
+        VP8_LOG_1("\n(sefremov) Frame %d: HybridPakDDIImpl::QueryFrame 1", pTask->m_frameOrder);
 #if !defined (VP8_HYBRID_DUMP_READ)
         while ((sts = m_ddi->QueryStatus(*pTask) )== MFX_WRN_DEVICE_BUSY)
         {
@@ -492,6 +519,7 @@ namespace MFX_VP8ENC
         TOCK(m_ddi->hwAsync[frmTimingIdx])
 #endif // VP8_HYBRID_TIMING
 
+        VP8_LOG_1("\n(sefremov) Frame %d: HybridPakDDIImpl::QueryFrame 2", pTask->m_frameOrder);
         MFX_CHECK_STS(m_ddi->QueryMBLayout(layout));
 #endif
 
@@ -510,6 +538,7 @@ namespace MFX_VP8ENC
         fread(&m_bse_dump_size, sizeof(m_bse_dump_size), 1, m_bse_dump);
 #endif
 
+        VP8_LOG_1("\n(sefremov) Frame %d: HybridPakDDIImpl::QueryFrame 3", pTask->m_frameOrder);
         sts = m_BSE.SetNextFrame(0, 0, pTask->m_sFrameParams,pTask->m_frameOrder);
         MFX_CHECK_STS(sts);
 
@@ -517,6 +546,7 @@ namespace MFX_VP8ENC
         bool bInsertIVF = (extOptVP8->WriteIVFHeaders != MFX_CODINGOPTION_OFF);
         bool bInsertSH  = bInsertIVF && pTask->m_frameOrder==0;
 
+        VP8_LOG_1("\n(sefremov) Frame %d: HybridPakDDIImpl::QueryFrame 4", pTask->m_frameOrder);
         m_BSE.RunBSP(bInsertIVF, bInsertSH, pTask->m_pBitsteam, (TaskHybridDDI *)pTask, layout, m_core
 #if defined (VP8_HYBRID_DUMP_READ) || defined (VP8_HYBRID_DUMP_WRITE)
             , m_bse_dump
@@ -531,6 +561,7 @@ namespace MFX_VP8ENC
         fprintf(m_bs_info, "%u,%lu\n", pTask->m_sFrameParams.bIntra, pTask->m_pBitsteam->DataLength);
 #endif
 
+        VP8_LOG_1("\n(sefremov) Frame %d: HybridPakDDIImpl::QueryFrame 5", pTask->m_frameOrder);
         sts = pTask->CompleteTask();
 
 #if defined (VP8_HYBRID_TIMING)
@@ -588,6 +619,7 @@ namespace MFX_VP8ENC
 #endif // VP8_HYBRID_TIMING
 
         MFX_CHECK_STS(sts);
+        VP8_LOG_1("\n(sefremov) Frame %d: HybridPakDDIImpl::QueryFrame 6", pTask->m_frameOrder);
 
         {
             VP8HybridCosts updatedCosts = m_BSE.GetUpdatedCosts();
@@ -596,6 +628,7 @@ namespace MFX_VP8ENC
             pTask->FreeTask();
         }
 
+        VP8_LOG_1("\n(sefremov) Frame %d: HybridPakDDIImpl::QueryFrame -", pTask->m_frameOrder);
         return sts;
     }
 }

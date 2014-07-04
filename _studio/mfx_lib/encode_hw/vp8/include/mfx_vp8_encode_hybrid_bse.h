@@ -1208,7 +1208,10 @@ namespace MFX_VP8ENC
             ctrl.qIndex = MBDataMemory[QP_BYTE_OFFSET];
             ctrl.LoopFilterLevel = MBDataMemory[LFLEVEL_BYTE_OFFSET];
         }
-    }    
+        VP8_LOG_1("\n(sefremov) ReadBRCStatusReport layout.MB_CODE_offset = %d", layout.MB_CODE_offset);
+        VP8_LOG_1("\n(sefremov) ReadBRCStatusReport ctrl.qIndex = %d", ctrl.qIndex);
+        VP8_LOG_1("\n(sefremov) ReadBRCStatusReport ctrl.LoopFilterLevel = %d", ctrl.LoopFilterLevel);
+    }
 
     struct MbUVPred {
         U8 ULeftPred[8];

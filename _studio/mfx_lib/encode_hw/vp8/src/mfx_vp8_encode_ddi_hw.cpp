@@ -1465,6 +1465,8 @@ mfxStatus D3D11Encoder::Destroy()
     {
         frmUpdate.prev_frame_size = (UINT)task.m_prevFrameSize;
         frmUpdate.two_prev_frame_flag = task.m_brcUpdateDelay == 2 ? 1 : 0;
+        VP8_LOG_1("\n(sefremov) FillFrameUpdateBuffer frmUpdate.prev_frame_size = %d", frmUpdate.prev_frame_size);
+        VP8_LOG_1("\n(sefremov) FillFrameUpdateBuffer frmUpdate.two_prev_frame_flag = %d", frmUpdate.two_prev_frame_flag);        
         for (mfxU8 i = 0; i < 4; i++)
         {
             frmUpdate.intra_mode_cost[i] = task.m_costs.IntraModeCost[i];
@@ -1475,7 +1477,7 @@ mfxStatus D3D11Encoder::Destroy()
         frmUpdate.intra_non_dc_penalty_4x4 = task.m_costs.IntraNonDCPenalty4x4;
 
         return MFX_ERR_NONE;
-    }    
+    }
     
 mfxU8 ConvertRateControlMFX2VAAPI(mfxU8 rateControl)
 {
@@ -1489,7 +1491,7 @@ mfxU8 ConvertRateControlMFX2VAAPI(mfxU8 rateControl)
     }
 
 } // mfxU8 ConvertRateControlMFX2VAAPI(mfxU8 rateControl)
-    
+
 mfxStatus SetFrameRate(
     mfxVideoParam const & par,
     VADisplay    m_vaDisplay,
@@ -1525,6 +1527,82 @@ mfxStatus SetFrameRate(
     frameRate_param->framerate = (unsigned int)(100.0 * (mfxF64)par.mfx.FrameInfo.FrameRateExtN / (mfxF64)par.mfx.FrameInfo.FrameRateExtD);
 
     vaUnmapBuffer(m_vaDisplay, frameRateBufId);
+
+    return MFX_ERR_NONE;
+}
+
+mfxStatus SendMiscBufferFrameUpdate(
+    VADisplay    m_vaDisplay,
+    VAContextID  m_vaContextEncode,
+    VAEncMiscParameterVP8HybridFrameUpdate & frameUpdateBuf,
+    VABufferID & frameUpdateBufId)
+{
+    VAStatus vaSts;
+    VAEncMiscParameterBuffer *misc_param;
+    VAEncMiscParameterVP8HybridFrameUpdate *frameUpdate_param;
+
+    if ( frameUpdateBufId != VA_INVALID_ID)
+    {
+        vaDestroyBuffer(m_vaDisplay, frameUpdateBufId);
+    }
+
+    vaSts = vaCreateBuffer(m_vaDisplay,
+                   m_vaContextEncode,
+                   VAEncMiscParameterBufferType,
+                   sizeof(VAEncMiscParameterBuffer) + sizeof(VAEncMiscParameterVP8HybridFrameUpdate),
+                   1,
+                   NULL,
+                   &frameUpdateBufId);
+    MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+
+    vaSts = vaMapBuffer(m_vaDisplay,
+                 frameUpdateBufId,
+                (void **)&misc_param);
+    MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+
+    misc_param->type = (VAEncMiscParameterType)VAEncMiscParameterTypeVP8HybridFrameUpdate;
+    frameUpdate_param = (VAEncMiscParameterVP8HybridFrameUpdate *)misc_param->data;
+    *frameUpdate_param = frameUpdateBuf;
+
+    vaUnmapBuffer(m_vaDisplay, frameUpdateBufId);
+
+    return MFX_ERR_NONE;
+}
+
+mfxStatus SendMiscBufferSegMapPar(
+    VADisplay    m_vaDisplay,
+    VAContextID  m_vaContextEncode,
+    VAEncMiscParameterVP8SegmentMapParams & segMapParBuf,
+    VABufferID & segMapParBufId)
+{
+    VAStatus vaSts;
+    VAEncMiscParameterBuffer *misc_param;
+    VAEncMiscParameterVP8SegmentMapParams *frameUpdate_param;
+
+    if ( segMapParBufId != VA_INVALID_ID)
+    {
+        vaDestroyBuffer(m_vaDisplay, segMapParBufId);
+    }
+
+    vaSts = vaCreateBuffer(m_vaDisplay,
+                   m_vaContextEncode,
+                   VAEncMiscParameterBufferType,
+                   sizeof(VAEncMiscParameterBuffer) + sizeof(VAEncMiscParameterVP8SegmentMapParams),
+                   1,
+                   NULL,
+                   &segMapParBufId);
+    MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+
+    vaSts = vaMapBuffer(m_vaDisplay,
+                 segMapParBufId,
+                (void **)&misc_param);
+    MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+
+    misc_param->type = (VAEncMiscParameterType)VAEncMiscParameterTypeVP8SegmentMapParams;
+    frameUpdate_param = (VAEncMiscParameterVP8SegmentMapParams *)misc_param->data;
+    *frameUpdate_param = segMapParBuf;
+
+    vaUnmapBuffer(m_vaDisplay, segMapParBufId);
 
     return MFX_ERR_NONE;
 }
@@ -1585,6 +1663,7 @@ mfxStatus VAAPIEncoder::CreateAuxilliaryDevice(
 
 mfxStatus VAAPIEncoder::CreateAccelerationService(mfxVideoParam const & par)
 {
+    VP8_LOG("\n(sefremov) VAAPIEncoder::CreateAccelerationService +");
     if(0 == m_reconQueue.size())
     {
     /* We need to pass reconstructed surfaces when call vaCreateContext().
@@ -1603,6 +1682,7 @@ mfxStatus VAAPIEncoder::CreateAccelerationService(mfxVideoParam const & par)
 
     std::vector<VAEntrypoint> pEntrypoints(numEntrypoints);
 
+    VP8_LOG("\n(sefremov) VAAPIEncoder::CreateAccelerationService 1");
     vaSts = vaQueryConfigEntrypoints(
                 m_vaDisplay,
                 VAProfileVP8Version0_3,
@@ -1610,6 +1690,7 @@ mfxStatus VAAPIEncoder::CreateAccelerationService(mfxVideoParam const & par)
                 &numEntrypoints);
     MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
 
+    VP8_LOG("\n(sefremov) VAAPIEncoder::CreateAccelerationService 2");
     bool bEncodeEnable = false;
     for( entrypointsIndx = 0; entrypointsIndx < numEntrypoints; entrypointsIndx++ )
     {
@@ -1624,6 +1705,7 @@ mfxStatus VAAPIEncoder::CreateAccelerationService(mfxVideoParam const & par)
     {
         return MFX_ERR_DEVICE_FAILED;
     }
+    VP8_LOG("\n(sefremov) VAAPIEncoder::CreateAccelerationService 3");
 
     // Configuration
     VAConfigAttrib attrib[2];
@@ -1635,6 +1717,7 @@ mfxStatus VAAPIEncoder::CreateAccelerationService(mfxVideoParam const & par)
                           (VAEntrypoint)VAEntrypointHybridEncSlice,
                           &attrib[0], 2);
     MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+    VP8_LOG("\n(sefremov) VAAPIEncoder::CreateAccelerationService 4");
 
     if ((attrib[0].value & VA_RT_FORMAT_YUV420) == 0)
         return MFX_ERR_DEVICE_FAILED;
@@ -1647,6 +1730,7 @@ mfxStatus VAAPIEncoder::CreateAccelerationService(mfxVideoParam const & par)
     attrib[0].value = VA_RT_FORMAT_YUV420;
     attrib[1].value = vaRCType;
 
+    VP8_LOG("\n(sefremov) VAAPIEncoder::CreateAccelerationService 5");
     vaSts = vaCreateConfig(
         m_vaDisplay,
         VAProfileVP8Version0_3,
@@ -1656,6 +1740,7 @@ mfxStatus VAAPIEncoder::CreateAccelerationService(mfxVideoParam const & par)
         &m_vaConfig);
     MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
 
+    VP8_LOG("\n(sefremov) VAAPIEncoder::CreateAccelerationService 6");
     std::vector<VASurfaceID> reconSurf;
     for(int i = 0; i < m_reconQueue.size(); i++)
         reconSurf.push_back(m_reconQueue[i].surface);
@@ -1671,6 +1756,7 @@ mfxStatus VAAPIEncoder::CreateAccelerationService(mfxVideoParam const & par)
         reconSurf.size(),
         &m_vaContextEncode);
     MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED); 
+    VP8_LOG("\n(sefremov) VAAPIEncoder::CreateAccelerationService 7");
 
     Zero(m_sps);
     Zero(m_pps);
@@ -1678,18 +1764,23 @@ mfxStatus VAAPIEncoder::CreateAccelerationService(mfxVideoParam const & par)
     //------------------------------------------------------------------
 
     FillSpsBuffer(par, m_sps);
-    // pass frame rate in the same manner as for AVC (number of frames per 100 sec)
-    m_frameRate.framerate = (unsigned int)(100.0 * (mfxF64)par.mfx.FrameInfo.FrameRateExtN / (mfxF64)par.mfx.FrameInfo.FrameRateExtD);
+    SetFrameRate(par, m_vaDisplay, m_vaContextEncode, m_frameRateBufferId);
 
-    hybridQueryBufferAttributes pfnVaQueryBufferAttr = NULL;
-    pfnVaQueryBufferAttr = (hybridQueryBufferAttributes)vaGetLibFunc(m_vaDisplay, FUNC_QUERY_BUFFER_ATTRIBUTES);
+    //hybridQueryBufferAttributes pfnVaQueryBufferAttr = NULL;
+    //pfnVaQueryBufferAttr = (hybridQueryBufferAttributes)vaGetLibFunc(m_vaDisplay, FUNC_QUERY_BUFFER_ATTRIBUTES);
+
+    //media_QueryBufferAttributes pfnVaQueryBufferAttr = NULL;
+    //pfnVaQueryBufferAttr = (media_QueryBufferAttributes)vaGetLibFunc(m_vaDisplay, FUNC_QUERY_BUFFER_ATTRIBUTES);
+
+    vpgQueryBufferAttributes pfnVaQueryBufferAttr = NULL;
+    pfnVaQueryBufferAttr = (vpgQueryBufferAttributes)vaGetLibFunc(m_vaDisplay, FUNC_QUERY_BUFFER_ATTRIBUTES);    
 
     if (pfnVaQueryBufferAttr)
     {
         //VAEncMbDataLayout VaMbLayout;
         memset(&m_layout, 0, sizeof(m_layout));
         mfxU32 bufferSize = sizeof(VAEncMbDataLayout);
-        
+        VP8_LOG("\n(sefremov) VAAPIEncoder::CreateAccelerationService 8");
         vaSts = pfnVaQueryBufferAttr(
           m_vaDisplay,
           m_vaContextEncode,
@@ -1702,6 +1793,10 @@ mfxStatus VAAPIEncoder::CreateAccelerationService(mfxVideoParam const & par)
     else
       return MFX_ERR_DEVICE_FAILED;
 
+    VP8_LOG_1("\n(sefremov) m_layout.MB_CODE_offset = %d", m_layout.MB_CODE_offset);
+    VP8_LOG_1("\n(sefremov) m_layout.MB_CODE_stride = %d", m_layout.MB_CODE_stride);
+
+    VP8_LOG("\n(sefremov) VAAPIEncoder::CreateAccelerationService -");
     return MFX_ERR_NONE;
 
 } // mfxStatus VAAPIEncoder::CreateAccelerationService(MfxVideoParam const & par)
@@ -1712,6 +1807,7 @@ mfxStatus VAAPIEncoder::Reset(mfxVideoParam const & par)
     m_video = par;
 
     FillSpsBuffer(par, m_sps);
+    SetFrameRate(par, m_vaDisplay, m_vaContextEncode, m_frameRateBufferId);
 
     return MFX_ERR_NONE;
 
@@ -1787,6 +1883,7 @@ mfxStatus VAAPIEncoder::QueryMBLayout(MBDATA_LAYOUT & layout)
 
 mfxStatus VAAPIEncoder::Register(mfxFrameAllocResponse& response, D3DDDIFORMAT type)
 {
+    VP8_LOG("\n(sefremov) VAAPIEncoder::Register +");
     std::vector<ExtVASurface> * pQueue;
     mfxStatus sts;
 
@@ -1805,6 +1902,7 @@ mfxStatus VAAPIEncoder::Register(mfxFrameAllocResponse& response, D3DDDIFORMAT t
     }
 
     {
+        VP8_LOG("\n(sefremov) VAAPIEncoder::Register 1");
         // we should register allocated HW bitstreams and recon surfaces
         MFX_CHECK( response.mids, MFX_ERR_NULL_PTR );
 
@@ -1813,7 +1911,7 @@ mfxStatus VAAPIEncoder::Register(mfxFrameAllocResponse& response, D3DDDIFORMAT t
 
         for (mfxU32 i = 0; i < response.NumFrameActual; i++)
         {
-
+            VP8_LOG("\n(sefremov) VAAPIEncoder::Register 2");
             sts = m_core->GetFrameHDL(response.mids[i], (mfxHDL *)&pSurface);
             MFX_CHECK_STS(sts);
             
@@ -1827,10 +1925,12 @@ mfxStatus VAAPIEncoder::Register(mfxFrameAllocResponse& response, D3DDDIFORMAT t
         D3DDDIFMT_INTELENCODE_MBDATA != type &&
         D3DDDIFMT_INTELENCODE_SEGMENTMAP != type)
     {
+        VP8_LOG("\n(sefremov) VAAPIEncoder::Register 3");
         sts = CreateAccelerationService(m_video);
         MFX_CHECK_STS(sts);
     }
 
+    VP8_LOG("\n(sefremov) VAAPIEncoder::Register -");
     return MFX_ERR_NONE;
 
 } // mfxStatus VAAPIEncoder::Register(mfxFrameAllocResponse& response, D3DDDIFORMAT type)
@@ -1856,10 +1956,11 @@ bool operator!=(const ENCODE_ENC_CTRL_CAPS& l, const ENCODE_ENC_CTRL_CAPS& r)
     return !(l == r);
 }
 
-mfxStatus VAAPIEncoder::Execute(    
+mfxStatus VAAPIEncoder::Execute(
     TaskHybridDDI const & task,
     mfxHDL          surface)
 {
+    VP8_LOG_1("\n(sefremov) Frame %d: HybridPakDDIImpl::Execute +", task.m_frameOrder);
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_SCHED, "Enc Execute");
 
     VAStatus vaSts;
@@ -1873,6 +1974,7 @@ mfxStatus VAAPIEncoder::Execute(
     configBuffers.resize(MAX_CONFIG_BUFFERS_COUNT);
     mfxU16 buffersCount = 0;
 
+    VP8_LOG_1("\n(sefremov) Frame %d: HybridPakDDIImpl::Execute 1", task.m_frameOrder);
     // update params
     FillPpsBuffer(task, m_video, m_pps, m_reconQueue);
     FillQuantBuffer(task, m_video, m_quant);
@@ -1895,6 +1997,7 @@ mfxStatus VAAPIEncoder::Execute(
 
     // [SE] should we recieve MB data through coded_buf?
     m_pps.coded_buf = codedBuffer;
+    VP8_LOG_1("\n(sefremov) Frame %d: HybridPakDDIImpl::Execute 2", task.m_frameOrder);
 
     //------------------------------------------------------------------
     // buffer creation & configuration
@@ -1902,6 +2005,7 @@ mfxStatus VAAPIEncoder::Execute(
     {
         // 1. sequence level
         {
+            VP8_LOG_1("\n(sefremov) Frame %d: HybridPakDDIImpl::Execute send sps", task.m_frameOrder);
             MFX_DESTROY_VABUFFER(m_spsBufferId, m_vaDisplay);
             vaSts = vaCreateBuffer(m_vaDisplay,
                                    m_vaContextEncode,
@@ -1917,6 +2021,7 @@ mfxStatus VAAPIEncoder::Execute(
 
         // 2. Picture level
         {
+            VP8_LOG_1("\n(sefremov) Frame %d: HybridPakDDIImpl::Execute send pps", task.m_frameOrder);
             MFX_DESTROY_VABUFFER(m_ppsBufferId, m_vaDisplay);
             vaSts = vaCreateBuffer(m_vaDisplay,
                                    m_vaContextEncode,
@@ -1929,9 +2034,10 @@ mfxStatus VAAPIEncoder::Execute(
 
             configBuffers[buffersCount++] = m_ppsBufferId;
         }
-        
+
         // 3. Quantization matrix
         {
+            VP8_LOG_1("\n(sefremov) Frame %d: HybridPakDDIImpl::Execute send quant matrix", task.m_frameOrder);
             MFX_DESTROY_VABUFFER(m_qMatrixBufferId, m_vaDisplay);
             vaSts = vaCreateBuffer(m_vaDisplay,
                                    m_vaContextEncode,
@@ -1948,57 +2054,39 @@ mfxStatus VAAPIEncoder::Execute(
         // 4. Segmentation map
         if (task.ddi_frames.m_pSegMap_hw != 0)
         {
+            VP8_LOG_1("\n(sefremov) Frame %d: HybridPakDDIImpl::Execute set seg map", task.m_frameOrder);
             // segmentation map buffer is already allocated and filled. Need just to attach it
             configBuffers[buffersCount++] = m_segMapQueue[idxInPool].surface;
         }
-        if (task.m_frameOrder)
-        // 5. Per-segment parameters (temporal "hacky" solution)
-        {
-            MFX_DESTROY_VABUFFER(m_segMapParBufferId, m_vaDisplay);
-            vaSts = vaCreateBuffer(m_vaDisplay,
-                                   m_vaContextEncode,
-                                   (VABufferType)VAEncMiscParameterTypeVP8SegmentMapParams,
-                                   sizeof(m_segMapPar),
-                                   1,
-                                   &m_segMapPar,
-                                   &m_segMapParBufferId);
-            MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
 
+        /*
+        // 5. Per-segment parameters
+        if (task.m_frameOrder)
+        {
+            VP8_LOG_1("\n(sefremov) Frame %d: HybridPakDDIImpl::Execute send per-seg param", task.m_frameOrder);
+            vaSts = SendMiscBufferSegMapPar(m_vaDisplay,
+                                            m_vaContextEncode,
+                                            m_segMapPar,
+                                            m_segMapParBufferId);
+            MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
             configBuffers[buffersCount++] = m_segMapParBufferId;
         }
 
-        // 6. Frame update (temporal "hacky" solution)
+        // 6. Frame update
         if (task.m_frameOrder)
         {
-            MFX_DESTROY_VABUFFER(m_frmUpdateBufferId, m_vaDisplay);
-            vaSts = vaCreateBuffer(m_vaDisplay,
-                                   m_vaContextEncode,
-                                   (VABufferType)VAEncHackTypeVP8HybridFrameUpdate,
-                                   sizeof(m_frmUpdate),
-                                   1,
-                                   &m_frmUpdate,
-                                   &m_frmUpdateBufferId);
+            VP8_LOG_1("\n(sefremov) Frame %d: HybridPakDDIImpl::Execute send frame update buff", task.m_frameOrder);
+            vaSts = SendMiscBufferFrameUpdate(m_vaDisplay,
+                                              m_vaContextEncode,
+                                              m_frmUpdate,
+                                              m_frmUpdateBufferId);
             MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
-
             configBuffers[buffersCount++] = m_frmUpdateBufferId;
         }
-
-        // 7. Frame rate (temporal "hacky" solution)
-        if (m_video.mfx.RateControlMethod != MFX_RATECONTROL_CQP)
-        {
-            MFX_DESTROY_VABUFFER(m_frameRateBufferId, m_vaDisplay);
-            vaSts = vaCreateBuffer(m_vaDisplay,
-                                m_vaContextEncode,
-                                (VABufferType)VAEncHackTypeVP8HybridFrameRate,
-                                sizeof(m_frameRate),
-                                1,
-                                &m_frameRate,
-                                &m_frameRateBufferId);
-            MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
-
-            configBuffers[buffersCount++] = m_frameRateBufferId;
-        }
+        */
     }
+
+    VP8_LOG_1("\n(sefremov) Frame %d: HybridPakDDIImpl::Execute 3", task.m_frameOrder);    
 
     assert(buffersCount <= configBuffers.size());
 #if defined (VP8_HYBRID_TIMING)
@@ -2008,6 +2096,7 @@ mfxStatus VAAPIEncoder::Execute(
     //------------------------------------------------------------------
     // Rendering
     //------------------------------------------------------------------
+    VP8_LOG_1("\n(sefremov) Frame %d: HybridPakDDIImpl::Execute vaBeginPicture", task.m_frameOrder);
     {
         MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_SCHED, "Enc vaBeginPicture");
         vaSts = vaBeginPicture(
@@ -2016,6 +2105,7 @@ mfxStatus VAAPIEncoder::Execute(
             *inputSurface);
         MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
     }
+    VP8_LOG_1("\n(sefremov) Frame %d: HybridPakDDIImpl::Execute vaRenderPicture", task.m_frameOrder);
     {
         MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_SCHED, "Enc vaRenderPicture");
         vaSts = vaRenderPicture(
@@ -2025,6 +2115,7 @@ mfxStatus VAAPIEncoder::Execute(
             buffersCount);
         MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
     }
+    VP8_LOG_1("\n(sefremov) Frame %d: HybridPakDDIImpl::Execute vaEndPicture", task.m_frameOrder);
     {
         MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_SCHED, "Enc vaEndPicture");
         vaSts = vaEndPicture(m_vaDisplay, m_vaContextEncode);
@@ -2039,6 +2130,7 @@ mfxStatus VAAPIEncoder::Execute(
     //------------------------------------------------------------------
     // PostStage
     //------------------------------------------------------------------
+    VP8_LOG_1("\n(sefremov) Frame %d: HybridPakDDIImpl::Execute 4", task.m_frameOrder);
     // put to cache
     {
         UMC::AutomaticUMCMutex guard(m_guard);
@@ -2049,6 +2141,7 @@ mfxStatus VAAPIEncoder::Execute(
         m_feedbackCache.push_back( currentFeedback );
     }
 
+    VP8_LOG_1("\n(sefremov) Frame %d: HybridPakDDIImpl::Execute -", task.m_frameOrder);
     return MFX_ERR_NONE;
 
 } // mfxStatus VAAPIEncoder::Execute(ExecuteBuffers& data, mfxU32 fieldId)

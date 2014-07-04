@@ -23,6 +23,15 @@
 #endif
 //#define VP8_HYBRID_TIMING
 //#define VP8_HYBRID_FALL_TO_SW
+#define VP8_LOGGING
+
+#ifdef VP8_LOGGING
+#define VP8_LOG(S)     printf(S); fflush(0);
+#define VP8_LOG_1(S,n) printf(S,n); fflush(0);
+#else
+#define VP8_LOG(S)
+#define VP8_LOG_1(S,n)
+#endif
 
 #include "umc_mutex.h"
 
@@ -630,6 +639,7 @@ namespace MFX_VP8ENC
 
           mfxStatus Init(VideoCORE* pCore, mfxVideoParam *par, bool bHWImpl, mfxU32 reconFourCC)
           {
+              VP8_LOG("\n(sefremov) TaskManager::Init +");
               mfxStatus sts = MFX_ERR_NONE;
 
               MFX_CHECK(!m_pCore, MFX_ERR_UNDEFINED_BEHAVIOR);
@@ -655,9 +665,10 @@ namespace MFX_VP8ENC
               request.NumFrameMin = request.NumFrameSuggested = (mfxU16)CalcNumSurfRecon(m_video);
               request.Info.FourCC = reconFourCC;
 
+              VP8_LOG("\n(sefremov) TaskManager::Init 1");
               sts = m_ReconFrames.Init(m_pCore, &request, m_bHWFrames);
               MFX_CHECK_STS(sts);
-              //printf("m_ReconFrames.Init: %d\n", m_ReconFrames.Num());
+              VP8_LOG("\n(sefremov) TaskManager::Init 2");
 
               {
                   mfxU32 numTasks = CalcNumTasks(m_video);
@@ -669,7 +680,7 @@ namespace MFX_VP8ENC
                       MFX_CHECK_STS(sts);
                   }
               }
-              //printf("m_ReconFrames.Init - 2: %d\n", m_ReconFrames.Num());
+              VP8_LOG("\n(sefremov) TaskManager::Init -");
               return sts;          
           }
           mfxStatus Reset(mfxVideoParam *par)

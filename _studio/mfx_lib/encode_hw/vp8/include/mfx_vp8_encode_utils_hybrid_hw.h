@@ -159,10 +159,12 @@ namespace MFX_VP8ENC
         inline
         mfxStatus Init( VideoCORE* pCore, mfxVideoParam *par, mfxU32 reconFourCC)
         {
+            VP8_LOG("\n(sefremov) TaskManagerHybridPakDDI::Init +");
             MFX_CHECK_STS(BaseClass::Init(pCore,par,true,reconFourCC));
             m_maxBrcUpdateDelay = par->AsyncDepth > 2 ? 2: par->AsyncDepth; // driver supports maximum 2-frames BRC update delay
             Zero(m_latestNonKeyFrame);
             Zero(m_latestKeyFrame);
+            VP8_LOG("\n(sefremov) TaskManagerHybridPakDDI::Init -");
             return MFX_ERR_NONE;
         }
 
@@ -172,6 +174,7 @@ namespace MFX_VP8ENC
                         mfxFrameAllocRequest reqDist,
                         mfxFrameAllocRequest reqSegMap)
         {
+            VP8_LOG("\n(sefremov) TaskManagerHybridPakDDI::AllocInternalResources +");
             if (reqMBData.NumFrameMin < m_ReconFrames.Num())
                 reqMBData.NumFrameMin = (mfxU16)m_ReconFrames.Num();
             MFX_CHECK_STS(m_MBDataDDI_hw.Init(pCore, &reqMBData,true));
@@ -190,7 +193,8 @@ namespace MFX_VP8ENC
                 m_bUseSegMap = true;
                 MFX_CHECK_STS(m_SegMapDDI_hw.Init(pCore, &reqSegMap,true));
             }
-
+            
+            VP8_LOG("\n(sefremov) TaskManagerHybridPakDDI::AllocInternalResources -");
             return MFX_ERR_NONE;
         }
 

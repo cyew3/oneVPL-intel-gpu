@@ -115,11 +115,13 @@ typedef struct _VAEncMbDataLayout
 // this buffer representing VAEncMbDataLayout for function vpgQueryBufferAttributes()
 #define VAEncMbDataBufferType               -4
 
-#define FUNC_QUERY_BUFFER_ATTRIBUTES "hybridQueryBufferAttributes"
+//#define FUNC_QUERY_BUFFER_ATTRIBUTES "hybridQueryBufferAttributes"
+//#define FUNC_QUERY_BUFFER_ATTRIBUTES "media_QueryBufferAttributes"
+#define FUNC_QUERY_BUFFER_ATTRIBUTES "vpgQueryBufferAttributes"
 
 // VAAPI private extension for quering buffer attributes for different buffer types
 // at the moment supports only VAEncMbDataBufferType 
-typedef VAStatus (*hybridQueryBufferAttributes)(
+typedef VAStatus (*vpgQueryBufferAttributes)(
      VADisplay      dpy, 
      VAContextID    context, 
      VABufferType   bufferType,
@@ -165,8 +167,5 @@ typedef struct _VAEncMiscParameterVP8SegmentMapParams
     // VAEncMacroblockMapBufferType.
     char yac_quantization_index_delta[4];
 } VAEncMiscParameterVP8SegmentMapParams;
-
-#define VAEncHackTypeVP8HybridFrameUpdate -7
-#define VAEncHackTypeVP8HybridFrameRate   -8
 
 #endif // __VAAPI_EXT_INTERFACE_H__
