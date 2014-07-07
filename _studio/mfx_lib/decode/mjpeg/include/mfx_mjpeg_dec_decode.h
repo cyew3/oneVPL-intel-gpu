@@ -27,7 +27,7 @@
 #include "mfx_task.h"
 #include "mfxpcp.h"
 
-#if defined (MFX_VA_WIN)
+#if defined (MFX_VA)
 #include "mfx_vpp_jpeg_d3d9.h"
 #endif
 
@@ -38,7 +38,7 @@ namespace UMC
     class JpegFrameConstructor;
 };
 
-#if defined (MFX_VA_WIN)
+#if defined (MFX_VA)
 typedef UMC::MJPEGVideoDecoderMFX_HW    MFX_JPEG_Decoder;
 #else
 typedef UMC::MJPEGVideoDecoderMFX       MFX_JPEG_Decoder;
@@ -88,7 +88,7 @@ protected:
 
     std::auto_ptr<mfx_UMC_FrameAllocator>    m_FrameAllocator;
 
-#if defined (MFX_VA_WIN)
+#if defined (MFX_VA)
     // Decoder's array
     std::auto_ptr<UMC::MJPEGVideoDecoderMFX_HW> m_pMJPEGVideoDecoder;
     // Output frame
@@ -132,7 +132,7 @@ protected:
 
     UMC::Mutex m_mGuard;
 
-#if defined (MFX_VA_WIN)
+#if defined (MFX_VA)
     VideoVppJpegD3D9 *m_pCc;
 #endif
 
@@ -153,7 +153,7 @@ protected:
     mfxStatus MJPEGCompleteProc(void *pState, void *pParam, mfxStatus taskRes);
 
     // Thread decoding working function
-#if defined (MFX_VA_WIN)
+#if defined (MFX_VA)
     mfxStatus RunThreadHW(void * params, mfxU32 threadNumber);
 #endif
     mfxStatus RunThread(CJpegTask &task, mfxU32 threadNumber, mfxU32 callNumber);

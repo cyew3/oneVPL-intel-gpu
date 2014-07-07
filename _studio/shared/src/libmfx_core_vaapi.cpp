@@ -552,6 +552,9 @@ VAAPIVideoCORE::CreateVA(
     case MFX_CODEC_VP9:
         profile |= VA_VP9;
         break;
+    case MFX_CODEC_JPEG:
+        profile |= VA_JPEG;
+        break;
     default:
         return MFX_ERR_UNSUPPORTED;
     }
@@ -1540,7 +1543,7 @@ mfxStatus VAAPIVideoCORE::IsGuidSupported(const GUID /*guid*/,
             return MFX_WRN_PARTIAL_ACCELERATION;
         break;
     case MFX_CODEC_JPEG:
-        return MFX_WRN_PARTIAL_ACCELERATION;
+        break;
     case MFX_CODEC_VP8:
         return MFX_WRN_PARTIAL_ACCELERATION;
     case MFX_CODEC_VP9:

@@ -1130,7 +1130,7 @@ mfxStatus   mfx_UMC_FrameAllocator_D3D::PrepareToOutput(mfxFrameSurface1 *surfac
     }
 }
 
-#if defined (MFX_ENABLE_MJPEG_VIDEO_DECODE) && defined (MFX_VA_WIN)
+#if defined (MFX_ENABLE_MJPEG_VIDEO_DECODE) && defined (MFX_VA)
 mfxStatus DoHwJpegCc(VideoVppJpegD3D9 **pCc, 
                      VideoCORE* mfxCore, 
                      mfxFrameSurface1 *pDst, 
@@ -1177,6 +1177,7 @@ mfxStatus DoHwJpegCcFw(VideoVppJpegD3D9 **pCc,
 
     return sts;
 }
+#if defined (MFX_VA_WIN)
 
 UMC::Status mfx_UMC_FrameAllocator_D3D_Converter::InitMfx(UMC::FrameAllocatorParams *,
                                                           VideoCORE* mfxCore,
@@ -1439,7 +1440,7 @@ void mfx_UMC_FrameAllocator_D3D_Converter::SetJPEGInfo(mfx_UMC_FrameAllocator_D3
 {
     m_jpegInfo = *jpegInfo;
 }
-
+#endif
 #endif // #if defined (MFX_ENABLE_MJPEG_VIDEO_DECODE) && defined (MFX_VA_WIN)
 #endif // #if defined (MFX_VA)
 

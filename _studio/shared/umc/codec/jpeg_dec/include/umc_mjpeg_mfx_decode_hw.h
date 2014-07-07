@@ -27,7 +27,11 @@
 
 #ifdef UMC_VA_DXVA
 #include "umc_va_dxva2.h"
+#endif // #ifdef UMC_VA_DXVA
 
+#if defined(UMC_VA_LINUX)
+ #include <va/va_dec_jpeg.h>
+#endif
 #include <set>
 #include <algorithm>
 
@@ -37,7 +41,21 @@ class CJPEGDecoder;
 
 namespace UMC
 {
-struct tagJPEG_DECODE_IMAGE_LAYOUT;
+#if defined(UMC_VA_LINUX)
+typedef struct tagJPEG_DECODE_SCAN_PARAMETER
+{
+    Ipp16u        NumComponents;
+    Ipp8u         ComponentSelector[4];
+    Ipp8u         DcHuffTblSelector[4];
+    Ipp8u         AcHuffTblSelector[4];
+    Ipp16u        RestartInterval;
+    Ipp32u        MCUCount;
+    Ipp16u        ScanHoriPosition;
+    Ipp16u        ScanVertPosition;
+    Ipp32u        DataOffset;
+    Ipp32u        DataLength;
+} JPEG_DECODE_SCAN_PARAMETER;
+#endif
 
 class MJPEGVideoDecoderMFX_HW : public MJPEGVideoDecoderMFX
 {
@@ -82,7 +100,9 @@ protected:
 
     virtual Status _DecodeField(MediaDataEx* in);
 
+#if defined(UMC_VA)
     Status PackHeaders(MediaData* src, JPEG_DECODE_SCAN_PARAMETER* obtainedScanParams, Ipp8u* buffersForUpdate);
+#endif
 
     Status GetFrameHW(MediaDataEx* in);
     Status DefaultInitializationHuffmantables();
@@ -101,7 +121,6 @@ protected:
 
 } // end namespace UMC
 
-#endif // #ifdef UMC_VA_DXVA
 
 #endif // UMC_ENABLE_MJPEG_VIDEO_DECODER
 #endif //__UMC_MJPEG_VIDEO_DECODER_MFX_DECODE_HW_H

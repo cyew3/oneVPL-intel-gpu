@@ -92,7 +92,8 @@ Ipp32u g_Profiles[] =
     UMC::H264_VLD,
     UMC::VC1_VLD, UMC::VC1_MC,
     UMC::VP8_VLD,
-    UMC::VP9_VLD
+    UMC::VP9_VLD,
+    UMC::JPEG_VLD
 };
 
 // va profile priorities for different codecs
@@ -128,6 +129,11 @@ VAProfile g_VP9Profiles[] =
 #endif
 };
 
+VAProfile g_JPEGProfiles[] = 
+{
+	VAProfileJPEGBaseline
+};
+
 VAProfile get_next_va_profile(Ipp32u umc_codec, Ipp32u profile)
 {
     VAProfile va_profile = (VAProfile)-1;
@@ -152,6 +158,9 @@ VAProfile get_next_va_profile(Ipp32u umc_codec, Ipp32u profile)
     case UMC::VA_VP9:
         if (profile < UMC_ARRAY_SIZE(g_VP9Profiles)) va_profile = g_VP9Profiles[profile];
         break;
+    case UMC::VA_JPEG:
+        if (profile < UMC_ARRAY_SIZE(g_JPEGProfiles)) va_profile = g_JPEGProfiles[profile];
+        break;
     default:
         va_profile = (VAProfile)-1;
         break;
@@ -169,6 +178,7 @@ CodeStringTable g_BuffersNames[] =
 {
     { VAPictureParameterBufferType,    VM_STRING("VAPictureParameterBufferType") },
     { VAIQMatrixBufferType,            VM_STRING("VAIQMatrixBufferType") },
+    { VAHuffmanTableBufferType,        VM_STRING("VAHuffmanTableBufferType")},
     { VABitPlaneBufferType,            VM_STRING("VABitPlaneBufferType") },
     { VASliceGroupMapBufferType,       VM_STRING("VASliceGroupMapBufferType") },
     { VASliceParameterBufferType,      VM_STRING("VASliceParameterBufferType") },
@@ -692,6 +702,10 @@ VACompBuffer* LinuxVideoAccelerator::GetCompBufferHW(Ipp32s type, Ipp32s size, I
                 va_size         = sizeof(VASliceParameterBufferVP8);
                 va_num_elements = size/sizeof(VASliceParameterBufferVP8);
                 break;
+            case UMC::VA_JPEG:
+                va_size         = sizeof(VASliceParameterBufferJPEGBaseline);
+                va_num_elements = size/sizeof(VASliceParameterBufferJPEGBaseline);
+                break;
 #ifdef VA_VP9_DECODER
             case UMC::VA_VP9:
                 va_size         = sizeof(VASliceParameterBufferVP9);
@@ -824,6 +838,15 @@ Status LinuxVideoAccelerator::EndFrame(void*)
 #endif
     if (UMC_OK == umcRes)
     {
+        {
+            MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_SCHED, "vaEndPicture");
+            va_sts = vaEndPicture(m_dpy, m_context);
+        }
+        if (VA_STATUS_SUCCESS != va_sts) va_res = va_sts;
+        m_FrameState = lvaBeforeBegin;
+    }
+    if (UMC_OK == umcRes)
+    {
         for (i = 0; i < m_uiCompBuffersUsed; ++i)
         {
             pCompBuf = m_pCompBuffers[i];
@@ -843,15 +866,9 @@ Status LinuxVideoAccelerator::EndFrame(void*)
         }
         m_uiCompBuffersUsed = 0;
     }
-    if (UMC_OK == umcRes)
-    {
-        {
-            MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_SCHED, "vaEndPicture");
-            va_sts = vaEndPicture(m_dpy, m_context);
-        }
-        if (VA_STATUS_SUCCESS == va_sts) va_res = va_sts;
-        m_FrameState = lvaBeforeBegin;
-    }
+
+    if (VA_STATUS_SUCCESS != va_sts) va_res = va_sts;
+
     vm_mutex_unlock(&m_SyncMutex);
     if (UMC_OK == umcRes) umcRes = va_to_umc_res(va_res);
     return umcRes;

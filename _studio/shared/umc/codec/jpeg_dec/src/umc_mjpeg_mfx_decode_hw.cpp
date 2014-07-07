@@ -19,9 +19,9 @@
 #include "membuffin.h"
 
 #include "umc_va_base.h"
-
 #ifdef UMC_VA_DXVA
 #include "umc_va_dxva2.h"
+#endif
 
 namespace UMC
 {
@@ -156,6 +156,7 @@ Status MJPEGVideoDecoderMFX_HW::CloseFrame(UMC::FrameData** in, const mfxU32 fie
 
 mfxStatus MJPEGVideoDecoderMFX_HW::CheckStatusReportNumber(Ipp32u statusReportFeedbackNumber, mfxU16* corrupted)
 {
+#ifdef UMC_VA_DXVA
     UMC::Status sts = UMC_OK;
 
     mfxU32 numStructures = 32;
@@ -221,7 +222,7 @@ mfxStatus MJPEGVideoDecoderMFX_HW::CheckStatusReportNumber(Ipp32u statusReportFe
 
         m_cachedReadyTaskIndex.erase(iteratorReady);
     }
-
+#endif
     return MFX_TASK_DONE;
 }
 
@@ -344,12 +345,13 @@ Status MJPEGVideoDecoderMFX_HW::DefaultInitializationHuffmantables()
 
 Status MJPEGVideoDecoderMFX_HW::GetFrameHW(MediaDataEx* in)
 {
+#ifdef UMC_VA
     JERRCODE jerr;
     Ipp8u    buffersForUpdate = 0; // Bits: 0 - picParams, 1 - quantTable, 2 - huffmanTables, 3 - bistreamData, 4 - scanParams
     bool     foundSOS = false;
     Ipp32u   marker;
     JPEG_DECODE_SCAN_PARAMETER scanParams;
-
+    Status sts;
     const size_t  srcSize = in->GetDataSize();
     const MediaDataEx::_MediaDataEx *pAuxData = in->GetExData();
 
@@ -362,7 +364,7 @@ Status MJPEGVideoDecoderMFX_HW::GetFrameHW(MediaDataEx* in)
 
     m_statusReportFeedbackCounter++;
 
-    Status sts = m_va->BeginFrame(m_frameData.GetFrameMID());
+    sts = m_va->BeginFrame(m_frameData.GetFrameMID());
     if (sts != UMC_OK)
         return sts;
 
@@ -424,19 +426,19 @@ Status MJPEGVideoDecoderMFX_HW::GetFrameHW(MediaDataEx* in)
 
             buffersForUpdate |= 1 << 4;
 
-            scanParams.NumComponents        = (USHORT)m_dec[0]->m_curr_scan->ncomps;
-            scanParams.RestartInterval      = (USHORT)m_dec[0]->m_curr_scan->jpeg_restart_interval;
-            scanParams.MCUCount             = (UINT)(m_dec[0]->m_curr_scan->numxMCU * m_dec[0]->m_curr_scan->numyMCU);
+            scanParams.NumComponents        = (Ipp16u)m_dec[0]->m_curr_scan->ncomps;
+            scanParams.RestartInterval      = (Ipp16u)m_dec[0]->m_curr_scan->jpeg_restart_interval;
+            scanParams.MCUCount             = (Ipp32u)(m_dec[0]->m_curr_scan->numxMCU * m_dec[0]->m_curr_scan->numyMCU);
             scanParams.ScanHoriPosition     = 0;
             scanParams.ScanVertPosition     = 0;
-            scanParams.DataOffset           = (UINT)(pAuxData->offsets[i] + m_dec[0]->GetSOSLen() + 2); // 2 is marker length
-            scanParams.DataLength           = (UINT)(chunkSize - m_dec[0]->GetSOSLen() - 2);
+            scanParams.DataOffset           = (Ipp32u)(pAuxData->offsets[i] + m_dec[0]->GetSOSLen() + 2); // 2 is marker length
+            scanParams.DataLength           = (Ipp32u)(chunkSize - m_dec[0]->GetSOSLen() - 2);
 
             for(int j = 0; j < m_dec[0]->m_curr_scan->ncomps; j += 1)
             {
-                scanParams.ComponentSelector[j] = (UCHAR)m_dec[0]->m_ccomp[m_dec[0]->m_curr_comp_no + 1 - m_dec[0]->m_curr_scan->ncomps + j].m_id;
-                scanParams.DcHuffTblSelector[j] = (UCHAR)m_dec[0]->m_ccomp[m_dec[0]->m_curr_comp_no + 1 - m_dec[0]->m_curr_scan->ncomps + j].m_dc_selector;
-                scanParams.AcHuffTblSelector[j] = (UCHAR)m_dec[0]->m_ccomp[m_dec[0]->m_curr_comp_no + 1 - m_dec[0]->m_curr_scan->ncomps + j].m_ac_selector;
+                scanParams.ComponentSelector[j] = (Ipp8u)m_dec[0]->m_ccomp[m_dec[0]->m_curr_comp_no + 1 - m_dec[0]->m_curr_scan->ncomps + j].m_id;
+                scanParams.DcHuffTblSelector[j] = (Ipp8u)m_dec[0]->m_ccomp[m_dec[0]->m_curr_comp_no + 1 - m_dec[0]->m_curr_scan->ncomps + j].m_dc_selector;
+                scanParams.AcHuffTblSelector[j] = (Ipp8u)m_dec[0]->m_ccomp[m_dec[0]->m_curr_comp_no + 1 - m_dec[0]->m_curr_scan->ncomps + j].m_ac_selector;
             }
 
             sts = PackHeaders(in, &scanParams, &buffersForUpdate);
@@ -516,6 +518,7 @@ Status MJPEGVideoDecoderMFX_HW::GetFrameHW(MediaDataEx* in)
     }
 
     /////////////////////////////////////////////////////////////////////////////////////////
+#if defined (UMC_VA_DXVA)
     JPEG_DECODE_IMAGE_LAYOUT imageLayout;
     sts = m_va->EndFrame(&imageLayout);
     if (sts != UMC_OK)
@@ -524,15 +527,22 @@ Status MJPEGVideoDecoderMFX_HW::GetFrameHW(MediaDataEx* in)
     m_convertInfo.colorFormat = GetChromaType();
     m_convertInfo.UOffset = imageLayout.ComponentDataOffset[1];
     m_convertInfo.VOffset = imageLayout.ComponentDataOffset[2];
+#else
+	sts = m_va->Execute();
+    if (sts != UMC_OK)
+        return sts;
+    sts = m_va->EndFrame(NULL);
+#endif
+#endif
     return UMC_OK;
 }
 
+#ifdef UMC_VA
 Status MJPEGVideoDecoderMFX_HW::PackHeaders(MediaData* src, JPEG_DECODE_SCAN_PARAMETER* obtainedScanParams, Ipp8u* buffersForUpdate)
 {
     UMCVACompBuffer* compBuf = 0;
     Ipp32u bitstreamTile = 0;
     bool shiftDataOffset = false;
-
     Status sts = UMC_OK;
 
     /////////////////////////////////////////////////////////////////////////////////////////
@@ -540,6 +550,7 @@ Status MJPEGVideoDecoderMFX_HW::PackHeaders(MediaData* src, JPEG_DECODE_SCAN_PAR
     {
         *buffersForUpdate -= 1;
 
+#if defined (UMC_VA_DXVA)
         JPEG_DECODE_PICTURE_PARAMETERS *picParams = (JPEG_DECODE_PICTURE_PARAMETERS*)m_va->GetCompBuffer(D3DDDIFMT_INTEL_JPEGDECODE_PPSDATA, &compBuf);
         if(!picParams)
             return UMC_ERR_DEVICE_FAILED;
@@ -581,13 +592,49 @@ Status MJPEGVideoDecoderMFX_HW::PackHeaders(MediaData* src, JPEG_DECODE_SCAN_PAR
         sts = m_va->Execute();
         if (sts != UMC_OK)
             return sts;
+#else 
+		UMCVACompBuffer* compBufPic;
+        VAPictureParameterBufferJPEGBaseline *picParams;
+        picParams = (VAPictureParameterBufferJPEGBaseline*)m_va->GetCompBuffer(VAPictureParameterBufferType, 
+                                                                            &compBufPic, 
+                                                                            sizeof(VAPictureParameterBufferJPEGBaseline));
+        if(!picParams)
+            return UMC_ERR_DEVICE_FAILED;
+		picParams->picture_width  = (Ipp16u)m_dec[0]->m_jpeg_width;
+        picParams->picture_height = (Ipp16u)m_dec[0]->m_jpeg_height;
+        picParams->num_components = (Ipp8u) m_dec[0]->m_jpeg_ncomp;
+        picParams->color_space    = 0;
+        switch(m_rotation)
+        {
+        case 0:
+            picParams->rotation = VA_ROTATION_NONE;
+            break;
+        case 90:
+            picParams->rotation = VA_ROTATION_90;
+            break;
+        case 180:
+            picParams->rotation = VA_ROTATION_180;
+            break;
+        case 270:
+            picParams->rotation = VA_ROTATION_270;
+            break;
+        }
+        for (Ipp32s i = 0; i < m_dec[0]->m_jpeg_ncomp; i++)
+        {
+            picParams->components[i].component_id             = (Ipp8u)m_dec[0]->m_ccomp[i].m_id;
+            picParams->components[i].quantiser_table_selector = (Ipp8u)m_dec[0]->m_ccomp[i].m_q_selector;
+            picParams->components[i].h_sampling_factor        = m_dec[0]->m_ccomp[i].m_hsampling;
+            picParams->components[i].v_sampling_factor        = m_dec[0]->m_ccomp[i].m_vsampling;
+        }
+        compBufPic->SetDataSize(sizeof(VAPictureParameterBufferJPEGBaseline));
+#endif
     }
 
     /////////////////////////////////////////////////////////////////////////////////////////
     if((*buffersForUpdate & (1 << 1)) != 0)
     {
         *buffersForUpdate -= 1 << 1;
-
+#if defined(UMC_VA_DXVA)
         for (Ipp32s i = 0; i < MAX_QUANT_TABLES; i++)
         {
             if (!m_dec[0]->m_qntbl[i].m_initialized)
@@ -619,6 +666,24 @@ Status MJPEGVideoDecoderMFX_HW::PackHeaders(MediaData* src, JPEG_DECODE_SCAN_PAR
             if (sts != UMC_OK)
                 return sts;
         }
+#else 
+        UMCVACompBuffer* compBufQM;
+        VAIQMatrixBufferJPEGBaseline *qmatrixParams;
+        qmatrixParams = (VAIQMatrixBufferJPEGBaseline*)m_va->GetCompBuffer(VAIQMatrixBufferType, 
+                                                                       &compBufQM, 
+                                                                       sizeof(VAIQMatrixBufferJPEGBaseline));
+        for (Ipp32s i = 0; i < MAX_QUANT_TABLES; i++)
+        {
+            if (!m_dec[0]->m_qntbl[i].m_initialized)
+                continue;
+            qmatrixParams->load_quantiser_table[i] = 1;
+            for (Ipp32s j = 0; j < 64; j++)
+            {
+                qmatrixParams->quantiser_table[i][j] = m_dec[0]->m_qntbl[i].m_raw8u[j];
+            }
+        }
+        compBufQM->SetDataSize(sizeof(VAIQMatrixBufferJPEGBaseline));
+#endif    
     }
 
     /////////////////////////////////////////////////////////////////////////////////////////
@@ -628,7 +693,7 @@ Status MJPEGVideoDecoderMFX_HW::PackHeaders(MediaData* src, JPEG_DECODE_SCAN_PAR
 
         if (DefaultInitializationHuffmantables() != UMC_OK)
             return UMC_ERR_FAILED;
-
+#if defined(UMC_VA_DXVA)
         for (Ipp32s i = 0; i < MAX_HUFF_TABLES; i++)
         {
             if(m_dec[0]->m_dctbl[i].IsValid())
@@ -667,6 +732,37 @@ Status MJPEGVideoDecoderMFX_HW::PackHeaders(MediaData* src, JPEG_DECODE_SCAN_PAR
                     return sts;
             }
         }
+#else 
+        UMCVACompBuffer* compBufHm;
+        VAHuffmanTableBufferJPEGBaseline *huffmanParams;
+        huffmanParams = (VAHuffmanTableBufferJPEGBaseline*)m_va->GetCompBuffer(VAHuffmanTableBufferType, 
+                                                                       &compBufHm, 
+                                                                       sizeof(VAHuffmanTableBufferJPEGBaseline));
+        if(!huffmanParams)
+            return UMC_ERR_DEVICE_FAILED;
+        for (Ipp32s i = 0; i < 2; i++)
+        {
+            if(m_dec[0]->m_dctbl[i].IsValid())
+            {
+                huffmanParams->load_huffman_table[i] = 1;
+                const Ipp8u *bits = m_dec[0]->m_dctbl[i].GetBits();
+                memcpy(huffmanParams->huffman_table[i].num_dc_codes,bits,16);
+                bits = m_dec[0]->m_dctbl[i].GetValues();                                
+                memcpy(huffmanParams->huffman_table[i].dc_values, bits, 12);
+            }
+            if(m_dec[0]->m_actbl[i].IsValid())
+            {
+                huffmanParams->load_huffman_table[i] = 1;
+                const Ipp8u *bits = m_dec[0]->m_actbl[i].GetBits();
+                memcpy(huffmanParams->huffman_table[i].num_ac_codes,bits,16);
+                bits = m_dec[0]->m_actbl[i].GetValues();
+                memcpy(huffmanParams->huffman_table[i].ac_values, bits, 162);
+            }
+            huffmanParams->huffman_table[i].pad[0] = 0;
+            huffmanParams->huffman_table[i].pad[1] = 0;
+        }
+        compBufHm->SetDataSize(sizeof(VAHuffmanTableBufferJPEGBaseline));
+#endif
     }
 
     /////////////////////////////////////////////////////////////////////////////////////////
@@ -674,6 +770,49 @@ Status MJPEGVideoDecoderMFX_HW::PackHeaders(MediaData* src, JPEG_DECODE_SCAN_PAR
     {
         *buffersForUpdate -= 1 << 3;
 
+#if defined (UMC_VA_DXVA)
+        JPEG_DECODE_SCAN_PARAMETER *scanParams = (JPEG_DECODE_SCAN_PARAMETER*)m_va->GetCompBuffer(D3DDDIFMT_INTEL_JPEGDECODE_SCANDATA, &compBuf);
+        if(!scanParams)
+            return UMC_ERR_DEVICE_FAILED;
+        memcpy_s(scanParams, sizeof(JPEG_DECODE_SCAN_PARAMETER), obtainedScanParams, sizeof(JPEG_DECODE_SCAN_PARAMETER));
+        if(shiftDataOffset)
+        {
+            scanParams->DataOffset = 0;
+        }
+        compBuf->SetDataSize(sizeof(JPEG_DECODE_SCAN_PARAMETER));
+        sts = m_va->Execute();
+        if (sts != UMC_OK)
+            return sts;
+#else
+        UMCVACompBuffer* compBufSlice;
+        VASliceParameterBufferJPEGBaseline *sliceParams;
+        sliceParams = (VASliceParameterBufferJPEGBaseline*)m_va->GetCompBuffer(VASliceParameterBufferType,
+                                                                                 &compBufSlice,
+                                                                                 sizeof(VASliceParameterBufferJPEGBaseline));
+        if ( !sliceParams )
+            return MFX_ERR_DEVICE_FAILED;
+        sliceParams->slice_data_size           = obtainedScanParams->DataLength;
+        sliceParams->slice_data_offset         = 0;//obtainedScanParams->DataOffset;
+        sliceParams->slice_data_flag           = VA_SLICE_DATA_FLAG_ALL;
+        sliceParams->num_components            = obtainedScanParams->NumComponents;
+        sliceParams->restart_interval          = obtainedScanParams->RestartInterval;
+        sliceParams->num_mcus                  = obtainedScanParams->MCUCount;
+        sliceParams->slice_horizontal_position = obtainedScanParams->ScanHoriPosition;
+        sliceParams->slice_vertical_position   = obtainedScanParams->ScanVertPosition;
+        for (Ipp32s i = 0; i < m_dec[0]->m_jpeg_ncomp; i++)
+        {
+            sliceParams->components[i].component_selector = obtainedScanParams->ComponentSelector[i];
+            sliceParams->components[i].dc_table_selector  = obtainedScanParams->DcHuffTblSelector[i];
+            sliceParams->components[i].ac_table_selector  = obtainedScanParams->AcHuffTblSelector[i];
+        }
+        compBufSlice->SetDataSize(sizeof(VASliceParameterBufferJPEGBaseline));
+#endif
+    }
+    
+    if((*buffersForUpdate & (1 << 4)) != 0)
+    {
+        *buffersForUpdate -= 1 << 4;
+#if defined (UMC_VA_DXVA)
         Ipp8u *bistreamData = (Ipp8u*)m_va->GetCompBuffer(D3DDDIFMT_BITSTREAMDATA, &compBuf);
         if(!bistreamData)
             return UMC_ERR_DEVICE_FAILED;
@@ -728,32 +867,30 @@ Status MJPEGVideoDecoderMFX_HW::PackHeaders(MediaData* src, JPEG_DECODE_SCAN_PAR
         sts = m_va->Execute();
         if (sts != UMC_OK)
             return sts;
-    }
+#else
+        UMCVACompBuffer* compBufBs;
+        Ipp8u *ptr   = (Ipp8u *)src->GetDataPointer();
+        Ipp8u *bistreamData = (Ipp8u *)m_va->GetCompBuffer(VASliceDataBufferType, &compBufBs, obtainedScanParams->DataLength);
 
-    /////////////////////////////////////////////////////////////////////////////////////////
-    if((*buffersForUpdate & (1 << 4)) != 0)
-    {
-        *buffersForUpdate -= 1 << 4;
-
-        JPEG_DECODE_SCAN_PARAMETER *scanParams = (JPEG_DECODE_SCAN_PARAMETER*)m_va->GetCompBuffer(D3DDDIFMT_INTEL_JPEGDECODE_SCANDATA, &compBuf);
-        if(!scanParams)
+        if(!bistreamData)
             return UMC_ERR_DEVICE_FAILED;
 
-        memcpy_s(scanParams, sizeof(JPEG_DECODE_SCAN_PARAMETER), obtainedScanParams, sizeof(JPEG_DECODE_SCAN_PARAMETER));
-        if(shiftDataOffset)
+        if(m_dec[0]->m_num_scans == 1)
         {
-            scanParams->DataOffset = 0;
+        	memcpy(bistreamData, ptr + obtainedScanParams->DataOffset, obtainedScanParams->DataLength);
+        	shiftDataOffset = true;
         }
-        compBuf->SetDataSize(sizeof(JPEG_DECODE_SCAN_PARAMETER));
-
-        sts = m_va->Execute();
-        if (sts != UMC_OK)
-            return sts;
+        else
+        {
+        	memcpy(bistreamData, ptr + obtainedScanParams->DataOffset, obtainedScanParams->DataLength);
+        }
+#endif
     }
 
     /////////////////////////////////////////////////////////////////////////////////////////
     while(bitstreamTile != 0)
     {
+#if defined (UMC_VA_DXVA)
         Ipp8u *bistreamData = (Ipp8u*)m_va->GetCompBuffer(D3DDDIFMT_BITSTREAMDATA, &compBuf);
         if(!bistreamData)
             return UMC_ERR_DEVICE_FAILED;
@@ -770,14 +907,21 @@ Status MJPEGVideoDecoderMFX_HW::PackHeaders(MediaData* src, JPEG_DECODE_SCAN_PAR
             compBuf->SetDataSize(compBuf->GetBufferSize());
             bitstreamTile = bitstreamTile - compBuf->GetBufferSize();
         }
-
+        
         sts = m_va->Execute();
         if (sts != UMC_OK)
             return sts;
+#else
+        UMCVACompBuffer* compBufBs;
+        Ipp8u *bistreamData = (Ipp8u *)m_va->GetCompBuffer(VASliceDataBufferType, &compBufBs, bitstreamTile);
+        ippsCopy_8u((Ipp8u*)src->GetDataPointer() + obtainedScanParams->DataOffset + obtainedScanParams->DataLength - bitstreamTile, bistreamData, bitstreamTile);
+        bitstreamTile = 0;
+#endif
     }
 
     return UMC_OK;
 }
+#endif
 
 Ipp16u MJPEGVideoDecoderMFX_HW::GetNumScans(MediaDataEx* in)
 {
@@ -862,6 +1006,6 @@ ConvertInfo * MJPEGVideoDecoderMFX_HW::GetConvertInfo()
 
 } // end namespace UMC
 
-#endif // #ifdef UMC_VA_DXVA
+
 
 #endif // UMC_ENABLE_MJPEG_VIDEO_DECODER
