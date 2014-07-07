@@ -46,6 +46,8 @@ namespace MfxHwH264Encode
 
     } ExtVASurface;
 
+    typedef VAEncMiscParameterBufferROI::VAEncROI VAEncROI;
+
     class VAAPIEncoder : public DriverEncoder
     {
     public:
@@ -153,6 +155,7 @@ namespace MfxHwH264Encode
         VABufferID m_rirId;           // VAEncMiscParameterRIR
         VABufferID m_privateParamsId; // VAEncMiscParameterPrivate
         VABufferID m_miscParameterSkipBufferId; // VAEncMiscParameterSkipFrame
+        VABufferID m_roiBufferId;
         VABufferID m_ppsBufferId;
         std::vector<VABufferID> m_sliceBufferId;
 
@@ -187,7 +190,9 @@ namespace MfxHwH264Encode
         mfxU32            m_curTrellisQuantization;   // mapping in accordance with libva
         mfxU32            m_newTrellisQuantization;   // will be sent through config.
 
-        static const mfxU32 MAX_CONFIG_BUFFERS_COUNT = 17;
+        std::vector<VAEncROI> m_arrayVAEncROI;
+
+        static const mfxU32 MAX_CONFIG_BUFFERS_COUNT = 25;
 
         UMC::Mutex m_guard;
         HeaderPacker m_headerPacker;

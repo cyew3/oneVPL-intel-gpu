@@ -66,8 +66,8 @@ VAProfile ConvertProfileTypeMFX2VAAPI(mfxU32 type)
 
 mfxStatus SetHRD(
     MfxVideoParam const & par,
-    VADisplay    m_vaDisplay,
-    VAContextID  m_vaContextEncode,
+    VADisplay    vaDisplay,
+    VAContextID  vaContextEncode,
     VABufferID & hrdBuf_id)
 {
     VAStatus vaSts;
@@ -76,10 +76,10 @@ mfxStatus SetHRD(
 
     if ( hrdBuf_id != VA_INVALID_ID)
     {
-        vaDestroyBuffer(m_vaDisplay, hrdBuf_id);
+        vaDestroyBuffer(vaDisplay, hrdBuf_id);
     }
-    vaSts = vaCreateBuffer(m_vaDisplay,
-                   m_vaContextEncode,
+    vaSts = vaCreateBuffer(vaDisplay,
+                   vaContextEncode,
                    VAEncMiscParameterBufferType,
                    sizeof(VAEncMiscParameterBuffer) + sizeof(VAEncMiscParameterHRD),
                    1,
@@ -87,7 +87,7 @@ mfxStatus SetHRD(
                    &hrdBuf_id);
     MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
 
-    vaSts = vaMapBuffer(m_vaDisplay,
+    vaSts = vaMapBuffer(vaDisplay,
                  hrdBuf_id,
                 (void **)&misc_param);
     MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
@@ -98,7 +98,7 @@ mfxStatus SetHRD(
     hrd_param->initial_buffer_fullness = par.calcParam.initialDelayInKB * 8000;
     hrd_param->buffer_size = par.calcParam.bufferSizeInKB * 8000;
 
-    vaUnmapBuffer(m_vaDisplay, hrdBuf_id);
+    vaUnmapBuffer(vaDisplay, hrdBuf_id);
 
     return MFX_ERR_NONE;
 } // void SetHRD(...)
@@ -121,8 +121,8 @@ mfxStatus SetRateControl(
     mfxU32       mbbrc,
     mfxU8        minQP,
     mfxU8        maxQP,
-    VADisplay    m_vaDisplay,
-    VAContextID  m_vaContextEncode,
+    VADisplay    vaDisplay,
+    VAContextID  vaContextEncode,
     VABufferID & rateParamBuf_id,
     bool         isBrcResetRequired = false)
 {
@@ -132,11 +132,11 @@ mfxStatus SetRateControl(
 
     if ( rateParamBuf_id != VA_INVALID_ID)
     {
-        vaDestroyBuffer(m_vaDisplay, rateParamBuf_id);
+        vaDestroyBuffer(vaDisplay, rateParamBuf_id);
     }
 
-    vaSts = vaCreateBuffer(m_vaDisplay,
-                   m_vaContextEncode,
+    vaSts = vaCreateBuffer(vaDisplay,
+                   vaContextEncode,
                    VAEncMiscParameterBufferType,
                    sizeof(VAEncMiscParameterBuffer) + sizeof(VAEncMiscParameterRateControl),
                    1,
@@ -144,7 +144,7 @@ mfxStatus SetRateControl(
                    &rateParamBuf_id);
     MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
 
-    vaSts = vaMapBuffer(m_vaDisplay,
+    vaSts = vaMapBuffer(vaDisplay,
                  rateParamBuf_id,
                 (void **)&misc_param);
     MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
@@ -170,15 +170,15 @@ mfxStatus SetRateControl(
     rate_param->rc_flags.bits.mb_rate_control = mbbrc & 0xf;
     rate_param->rc_flags.bits.reset = isBrcResetRequired;
 
-    vaUnmapBuffer(m_vaDisplay, rateParamBuf_id);
+    vaUnmapBuffer(vaDisplay, rateParamBuf_id);
 
     return MFX_ERR_NONE;
 }
 
 mfxStatus SetFrameRate(
     MfxVideoParam const & par,
-    VADisplay    m_vaDisplay,
-    VAContextID  m_vaContextEncode,
+    VADisplay    vaDisplay,
+    VAContextID  vaContextEncode,
     VABufferID & frameRateBuf_id)
 {
     VAStatus vaSts;
@@ -187,11 +187,11 @@ mfxStatus SetFrameRate(
 
     if ( frameRateBuf_id != VA_INVALID_ID)
     {
-        vaDestroyBuffer(m_vaDisplay, frameRateBuf_id);
+        vaDestroyBuffer(vaDisplay, frameRateBuf_id);
     }
 
-    vaSts = vaCreateBuffer(m_vaDisplay,
-                   m_vaContextEncode,
+    vaSts = vaCreateBuffer(vaDisplay,
+                   vaContextEncode,
                    VAEncMiscParameterBufferType,
                    sizeof(VAEncMiscParameterBuffer) + sizeof(VAEncMiscParameterFrameRate),
                    1,
@@ -199,7 +199,7 @@ mfxStatus SetFrameRate(
                    &frameRateBuf_id);
     MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
 
-    vaSts = vaMapBuffer(m_vaDisplay,
+    vaSts = vaMapBuffer(vaDisplay,
                  frameRateBuf_id,
                 (void **)&misc_param);
     MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
@@ -209,15 +209,15 @@ mfxStatus SetFrameRate(
 
     frameRate_param->framerate = (unsigned int)(100.0 * (mfxF64)par.mfx.FrameInfo.FrameRateExtN / (mfxF64)par.mfx.FrameInfo.FrameRateExtD);
 
-    vaUnmapBuffer(m_vaDisplay, frameRateBuf_id);
+    vaUnmapBuffer(vaDisplay, frameRateBuf_id);
 
     return MFX_ERR_NONE;
 }
 
 static mfxStatus SetMaxFrameSize(
     const UINT   userMaxFrameSize,
-    VADisplay    m_vaDisplay,
-    VAContextID  m_vaContextEncode,
+    VADisplay    vaDisplay,
+    VAContextID  vaContextEncode,
     VABufferID & frameSizeBuf_id)
 {
     VAEncMiscParameterBuffer             *misc_param;
@@ -225,11 +225,11 @@ static mfxStatus SetMaxFrameSize(
 
     if ( frameSizeBuf_id != VA_INVALID_ID)
     {
-        vaDestroyBuffer(m_vaDisplay, frameSizeBuf_id);
+        vaDestroyBuffer(vaDisplay, frameSizeBuf_id);
     }
 
-    VAStatus vaSts = vaCreateBuffer(m_vaDisplay,
-                   m_vaContextEncode,
+    VAStatus vaSts = vaCreateBuffer(vaDisplay,
+                   vaContextEncode,
                    VAEncMiscParameterBufferType,
                    sizeof(VAEncMiscParameterBuffer) + sizeof(VAEncMiscParameterBufferMaxFrameSize),
                    1,
@@ -237,7 +237,7 @@ static mfxStatus SetMaxFrameSize(
                    &frameSizeBuf_id);
     MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
 
-    vaSts = vaMapBuffer(m_vaDisplay, frameSizeBuf_id, (void **)&misc_param);
+    vaSts = vaMapBuffer(vaDisplay, frameSizeBuf_id, (void **)&misc_param);
     MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
 
     misc_param->type = VAEncMiscParameterTypeMaxFrameSize;
@@ -245,15 +245,15 @@ static mfxStatus SetMaxFrameSize(
 
     p_maxFrameSize->max_frame_size = userMaxFrameSize*8;    // in bits for libva
 
-    vaUnmapBuffer(m_vaDisplay, frameSizeBuf_id);
+    vaUnmapBuffer(vaDisplay, frameSizeBuf_id);
 
     return MFX_ERR_NONE;
 }
 
 static mfxStatus SetTrellisQuantization(
     mfxU32       trellis,
-    VADisplay    m_vaDisplay,
-    VAContextID  m_vaContextEncode,
+    VADisplay    vaDisplay,
+    VAContextID  vaContextEncode,
     VABufferID & trellisBuf_id)
 {
     VAStatus vaSts;
@@ -262,11 +262,11 @@ static mfxStatus SetTrellisQuantization(
 
     if ( trellisBuf_id != VA_INVALID_ID)
     {
-        vaDestroyBuffer(m_vaDisplay, trellisBuf_id);
+        vaDestroyBuffer(vaDisplay, trellisBuf_id);
     }
 
-    vaSts = vaCreateBuffer(m_vaDisplay,
-                   m_vaContextEncode,
+    vaSts = vaCreateBuffer(vaDisplay,
+                   vaContextEncode,
                    VAEncMiscParameterBufferType,
                    sizeof(VAEncMiscParameterBuffer) + sizeof(VAEncMiscParameterQuantization),
                    1,
@@ -274,7 +274,7 @@ static mfxStatus SetTrellisQuantization(
                    &trellisBuf_id);
     MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
 
-    vaSts = vaMapBuffer(m_vaDisplay, trellisBuf_id, (void **)&misc_param);
+    vaSts = vaMapBuffer(vaDisplay, trellisBuf_id, (void **)&misc_param);
     MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
 
     misc_param->type = VAEncMiscParameterTypeQuantization;
@@ -282,15 +282,15 @@ static mfxStatus SetTrellisQuantization(
 
     trellis_param->quantization_flags.value = trellis;
 
-    vaUnmapBuffer(m_vaDisplay, trellisBuf_id);
+    vaUnmapBuffer(vaDisplay, trellisBuf_id);
 
     return MFX_ERR_NONE;
 } // void SetTrellisQuantization(...)
 
 static mfxStatus SetRollingIntraRefresh(
     IntraRefreshState const & rirState,
-    VADisplay    m_vaDisplay,
-    VAContextID  m_vaContextEncode,
+    VADisplay    vaDisplay,
+    VAContextID  vaContextEncode,
     VABufferID & rirBuf_id)
 {
     VAStatus vaSts;
@@ -299,11 +299,11 @@ static mfxStatus SetRollingIntraRefresh(
 
     if ( rirBuf_id != VA_INVALID_ID)
     {
-        vaDestroyBuffer(m_vaDisplay, rirBuf_id);
+        vaDestroyBuffer(vaDisplay, rirBuf_id);
     }
 
-    vaSts = vaCreateBuffer(m_vaDisplay,
-                   m_vaContextEncode,
+    vaSts = vaCreateBuffer(vaDisplay,
+                   vaContextEncode,
                    VAEncMiscParameterBufferType,
                    sizeof(VAEncMiscParameterBuffer) + sizeof(VAEncMiscParameterRIR),
                    1,
@@ -311,7 +311,7 @@ static mfxStatus SetRollingIntraRefresh(
                    &rirBuf_id);
     MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
 
-    vaSts = vaMapBuffer(m_vaDisplay, rirBuf_id, (void **)&misc_param);
+    vaSts = vaMapBuffer(vaDisplay, rirBuf_id, (void **)&misc_param);
     MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
 
     misc_param->type = VAEncMiscParameterTypeRIR;
@@ -322,15 +322,15 @@ static mfxStatus SetRollingIntraRefresh(
     rir_param->intra_insert_size           = rirState.IntraSize;
     rir_param->qp_delta_for_inserted_intra = mfxU8(rirState.IntRefQPDelta);
 
-    vaUnmapBuffer(m_vaDisplay, rirBuf_id);
+    vaUnmapBuffer(vaDisplay, rirBuf_id);
 
     return MFX_ERR_NONE;
 } // void SetRollingIntraRefresh(...)
 
 mfxStatus SetPrivateParams(
     MfxVideoParam const & par,
-    VADisplay    m_vaDisplay,
-    VAContextID  m_vaContextEncode,
+    VADisplay    vaDisplay,
+    VAContextID  vaContextEncode,
     VABufferID & privateParams_id)
 {
     if (!IsSupported__VAEncMiscParameterPrivate()) return MFX_ERR_UNSUPPORTED;
@@ -341,11 +341,11 @@ mfxStatus SetPrivateParams(
 
     if ( privateParams_id != VA_INVALID_ID)
     {
-        vaDestroyBuffer(m_vaDisplay, privateParams_id);
+        vaDestroyBuffer(vaDisplay, privateParams_id);
     }
 
-    vaSts = vaCreateBuffer(m_vaDisplay,
-                   m_vaContextEncode,
+    vaSts = vaCreateBuffer(vaDisplay,
+                   vaContextEncode,
                    VAEncMiscParameterBufferType,
                    sizeof(VAEncMiscParameterBuffer) + sizeof(VAEncMiscParameterPrivate),
                    1,
@@ -353,7 +353,7 @@ mfxStatus SetPrivateParams(
                    &privateParams_id);
     MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
 
-    vaSts = vaMapBuffer(m_vaDisplay,
+    vaSts = vaMapBuffer(vaDisplay,
                  privateParams_id,
                 (void **)&misc_param);
     MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
@@ -363,14 +363,14 @@ mfxStatus SetPrivateParams(
 
     private_param->target_usage = (unsigned int)(par.mfx.TargetUsage);
 
-    vaUnmapBuffer(m_vaDisplay, privateParams_id);
+    vaUnmapBuffer(vaDisplay, privateParams_id);
 
     return MFX_ERR_NONE;
 } // void SetPrivateParams(...)
 
 mfxStatus SetSkipFrame(
-    VADisplay    m_vaDisplay,
-    VAContextID  m_vaContextEncode,
+    VADisplay    vaDisplay,
+    VAContextID  vaContextEncode,
     VABufferID & skipParam_id,
     mfxU8 skipFlag,
     mfxU8 numSkipFrames,
@@ -383,11 +383,11 @@ mfxStatus SetSkipFrame(
 
     if (skipParam_id != VA_INVALID_ID)
     {
-        vaDestroyBuffer(m_vaDisplay, skipParam_id);
+        vaDestroyBuffer(vaDisplay, skipParam_id);
     }
 
-    vaSts = vaCreateBuffer(m_vaDisplay,
-        m_vaContextEncode,
+    vaSts = vaCreateBuffer(vaDisplay,
+        vaContextEncode,
         VAEncMiscParameterBufferType,
         sizeof(VAEncMiscParameterBuffer) + sizeof(VAEncMiscParameterSkipFrame),
         1,
@@ -395,7 +395,7 @@ mfxStatus SetSkipFrame(
         &skipParam_id);
     MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
 
-    vaSts = vaMapBuffer(m_vaDisplay,
+    vaSts = vaMapBuffer(vaDisplay,
         skipParam_id,
         (void **)&misc_param);
     MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
@@ -407,12 +407,73 @@ mfxStatus SetSkipFrame(
     skipParam->num_skip_frames = numSkipFrames;
     skipParam->size_skip_frames = sizeSkipFrames;
 
-    vaUnmapBuffer(m_vaDisplay, skipParam_id);
+    vaUnmapBuffer(vaDisplay, skipParam_id);
 
     return MFX_ERR_NONE;
 #else
     return MFX_ERR_UNSUPPORTED;
 #endif
+}
+
+static mfxStatus SetROI(
+    DdiTask const & task,
+    std::vector<VAEncROI> & arrayVAEncROI,
+    VADisplay    vaDisplay,
+    VAContextID  vaContextEncode,
+    VABufferID & roiParam_id)
+{
+    VAStatus vaSts;
+    VAEncMiscParameterBuffer *misc_param;
+    VAEncMiscParameterBufferROI *roi_Param;
+
+    if (roiParam_id != VA_INVALID_ID)
+    {
+        vaDestroyBuffer(vaDisplay, roiParam_id);
+    }
+
+    vaSts = vaCreateBuffer(vaDisplay,
+        vaContextEncode,
+        VAEncMiscParameterBufferType,
+        sizeof(VAEncMiscParameterBuffer) + sizeof(VAEncMiscParameterBufferROI),
+        1,
+        NULL,
+        &roiParam_id);
+    MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+
+    vaSts = vaMapBuffer(vaDisplay,
+        roiParam_id,
+        (void **)&misc_param);
+    MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+
+    misc_param->type = (VAEncMiscParameterType)VAEncMiscParameterTypeROI;
+    roi_Param = (VAEncMiscParameterBufferROI *)misc_param->data;
+    memset(roi_Param, 0, sizeof(VAEncMiscParameterBufferROI));
+
+    if (task.m_numRoi)
+    {
+        roi_Param->num_roi = task.m_numRoi;
+
+        if (arrayVAEncROI.size() < task.m_numRoi)
+        {
+            arrayVAEncROI.resize(task.m_numRoi);
+        }
+        roi_Param->ROI = Begin(arrayVAEncROI);
+        memset(roi_Param->ROI, 0, task.m_numRoi*sizeof(VAEncROI));
+
+        for (mfxU32 i = 0; i < task.m_numRoi; i ++)
+        {
+            roi_Param->ROI[i].roi_rectangle.x = task.m_roi[i].Left;
+            roi_Param->ROI[i].roi_rectangle.y = task.m_roi[i].Top;
+            roi_Param->ROI[i].roi_rectangle.width = task.m_roi[i].Right - task.m_roi[i].Left;
+            roi_Param->ROI[i].roi_rectangle.height = task.m_roi[i].Top - task.m_roi[i].Bottom;
+            roi_Param->ROI[i].roi_value = task.m_roi[i].Priority;
+        }
+        roi_Param->max_delta_qp = 51;
+        roi_Param->min_delta_qp = -51;
+    }
+    vaUnmapBuffer(vaDisplay, roiParam_id);
+
+    return MFX_ERR_NONE;
 }
 
 void FillConstPartOfPps(
@@ -728,6 +789,7 @@ VAAPIEncoder::VAAPIEncoder()
 , m_rirId(VA_INVALID_ID)
 , m_privateParamsId(VA_INVALID_ID)
 , m_miscParameterSkipBufferId(VA_INVALID_ID)
+, m_roiBufferId(VA_INVALID_ID)
 , m_ppsBufferId(VA_INVALID_ID)
 , m_packedAudHeaderBufferId(VA_INVALID_ID)
 , m_packedAudBufferId(VA_INVALID_ID)
@@ -1644,6 +1706,13 @@ mfxStatus VAAPIEncoder::Execute(
     }
 #endif
 
+    if (task.m_numRoi)
+    {
+        MFX_CHECK_WITH_ASSERT(MFX_ERR_NONE == SetROI(task, m_arrayVAEncROI, m_vaDisplay, m_vaContextEncode, m_roiBufferId),
+                              MFX_ERR_DEVICE_FAILED);
+        configBuffers[buffersCount++] = m_roiBufferId;
+    }
+
     if (VA_INVALID_ID != m_privateParamsId) configBuffers[buffersCount++] = m_privateParamsId;
 
     assert(buffersCount <= configBuffers.size());
@@ -1948,6 +2017,7 @@ mfxStatus VAAPIEncoder::Destroy()
     MFX_DESTROY_VABUFFER(m_rirId, m_vaDisplay);
     MFX_DESTROY_VABUFFER(m_privateParamsId, m_vaDisplay);
     MFX_DESTROY_VABUFFER(m_miscParameterSkipBufferId, m_vaDisplay);
+    MFX_DESTROY_VABUFFER(m_roiBufferId, m_vaDisplay);
     MFX_DESTROY_VABUFFER(m_ppsBufferId, m_vaDisplay);
     for( mfxU32 i = 0; i < m_slice.size(); i++ )
     {
