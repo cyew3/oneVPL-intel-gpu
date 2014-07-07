@@ -1766,14 +1766,14 @@ mfxStatus VAAPIEncoder::CreateAccelerationService(mfxVideoParam const & par)
     FillSpsBuffer(par, m_sps);
     SetFrameRate(par, m_vaDisplay, m_vaContextEncode, m_frameRateBufferId);
 
-    //hybridQueryBufferAttributes pfnVaQueryBufferAttr = NULL;
-    //pfnVaQueryBufferAttr = (hybridQueryBufferAttributes)vaGetLibFunc(m_vaDisplay, FUNC_QUERY_BUFFER_ATTRIBUTES);
+    hybridQueryBufferAttributes pfnVaQueryBufferAttr = NULL;
+    pfnVaQueryBufferAttr = (hybridQueryBufferAttributes)vaGetLibFunc(m_vaDisplay, FUNC_QUERY_BUFFER_ATTRIBUTES);
 
     //media_QueryBufferAttributes pfnVaQueryBufferAttr = NULL;
     //pfnVaQueryBufferAttr = (media_QueryBufferAttributes)vaGetLibFunc(m_vaDisplay, FUNC_QUERY_BUFFER_ATTRIBUTES);
 
-    vpgQueryBufferAttributes pfnVaQueryBufferAttr = NULL;
-    pfnVaQueryBufferAttr = (vpgQueryBufferAttributes)vaGetLibFunc(m_vaDisplay, FUNC_QUERY_BUFFER_ATTRIBUTES);    
+    //vpgQueryBufferAttributes pfnVaQueryBufferAttr = NULL;
+    //pfnVaQueryBufferAttr = (vpgQueryBufferAttributes)vaGetLibFunc(m_vaDisplay, FUNC_QUERY_BUFFER_ATTRIBUTES);    
 
     if (pfnVaQueryBufferAttr)
     {
