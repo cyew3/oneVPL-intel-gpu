@@ -1,6 +1,6 @@
 #include "dump.h"
 
-std::string dump(const std::string structName, const mfxENCInput &encIn)
+std::string DumpContext::dump(const std::string structName, const mfxENCInput &encIn)
 {
     std::string str;
     str += structName + ".reserved[]=" + DUMP_RESERVED_ARRAY(encIn.reserved) + "\n";
@@ -13,7 +13,7 @@ std::string dump(const std::string structName, const mfxENCInput &encIn)
     return str;
 }
 
-std::string dump(const std::string structName, const mfxENCOutput &encOut)
+std::string DumpContext::dump(const std::string structName, const mfxENCOutput &encOut)
 {
     std::string str;
     str += structName + ".reserved[]=" + DUMP_RESERVED_ARRAY(encOut.reserved) + "\n";

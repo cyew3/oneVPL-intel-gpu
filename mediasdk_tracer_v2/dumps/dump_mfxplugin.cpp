@@ -1,6 +1,6 @@
 #include "dump.h"
 
-std::string dump(const std::string structName, const mfxPlugin &plugin)
+std::string DumpContext::dump(const std::string structName, const mfxPlugin &plugin)
 {
     std::string str;
     str += structName + ".pthis=" + ToString(plugin.pthis) + "\n";

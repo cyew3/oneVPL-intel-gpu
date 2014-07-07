@@ -56,26 +56,28 @@ void __attribute__ ((constructor)) dll_init(void)
 mfxStatus MFXInit(mfxIMPL impl, mfxVersion *ver, mfxSession *session)
 {
     try{
+        DumpContext context;
+        context.context = DUMPCONTEXT_MFX;
         Log::WriteLog(std::string("function: MFXInit(mfxIMPL impl=" + ToString(impl) + ", mfxVersion *ver=" + ToString(ver) + ", mfxSession *session=" + ToString(session) + ") +"));
         if (!session) {
-            Log::WriteLog(dump("ver", ver));
-            Log::WriteLog(dump("session", *session));
-            Log::WriteLog(dump_mfxStatus("status", MFX_ERR_NULL_PTR));
+            Log::WriteLog(context.dump("ver", ver));
+            Log::WriteLog(context.dump("session", *session));
+            Log::WriteLog(context.dump_mfxStatus("status", MFX_ERR_NULL_PTR));
             return MFX_ERR_NULL_PTR;
         }
 
         mfxLoader* loader = (mfxLoader*)calloc(1, sizeof(mfxLoader));
         if (!loader) {
-            Log::WriteLog(dump("ver", ver));
-            Log::WriteLog(dump("session", *session));
-            Log::WriteLog(dump_mfxStatus("status", MFX_ERR_MEMORY_ALLOC));
+            Log::WriteLog(context.dump("ver", ver));
+            Log::WriteLog(context.dump("session", *session));
+            Log::WriteLog(context.dump_mfxStatus("status", MFX_ERR_MEMORY_ALLOC));
             return MFX_ERR_MEMORY_ALLOC;
         }
         loader->dlhandle = dlopen(g_mfxlib, RTLD_NOW);
         if (!loader->dlhandle){
-            Log::WriteLog(dump("ver", ver));
-            Log::WriteLog(dump("session", *session));
-            Log::WriteLog(dump_mfxStatus("status", MFX_ERR_NOT_FOUND));
+            Log::WriteLog(context.dump("ver", ver));
+            Log::WriteLog(context.dump("session", *session));
+            Log::WriteLog(context.dump_mfxStatus("status", MFX_ERR_NOT_FOUND));
             return MFX_ERR_NOT_FOUND;
         }
         /* Loading functions table */
@@ -91,15 +93,15 @@ mfxStatus MFXInit(mfxIMPL impl, mfxVersion *ver, mfxSession *session)
         if (i < eFunctionsNum) {
             dlclose(loader->dlhandle);
             free(loader);
-            Log::WriteLog(dump("ver", ver));
-            Log::WriteLog(dump("session", *session));
-            Log::WriteLog(dump_mfxStatus("status", MFX_ERR_NOT_FOUND));
+            Log::WriteLog(context.dump("ver", ver));
+            Log::WriteLog(context.dump("session", *session));
+            Log::WriteLog(context.dump_mfxStatus("status", MFX_ERR_NOT_FOUND));
             return MFX_ERR_NOT_FOUND;
         }
 
-        Log::WriteLog(dump("impl", impl));
-        Log::WriteLog(dump("ver", ver));
-        Log::WriteLog(dump("session", loader->session));
+        Log::WriteLog(context.dump("impl", impl));
+        Log::WriteLog(context.dump("ver", ver));
+        Log::WriteLog(context.dump("session", loader->session));
         /* Initializing loaded library */
         Timer t;
         mfxStatus mfx_res = (*(MFXInitPointer)loader->table[eMFXInit])(impl, ver, &(loader->session));
@@ -108,16 +110,16 @@ mfxStatus MFXInit(mfxIMPL impl, mfxVersion *ver, mfxSession *session)
         if (MFX_ERR_NONE != mfx_res) {
             dlclose(loader->dlhandle);
             free(loader);
-            Log::WriteLog(dump("ver", ver));
-            Log::WriteLog(dump("session", *session));
-            Log::WriteLog(dump_mfxStatus("status", mfx_res));
+            Log::WriteLog(context.dump("ver", ver));
+            Log::WriteLog(context.dump("session", *session));
+            Log::WriteLog(context.dump_mfxStatus("status", mfx_res));
             return mfx_res;
         }
         *session = (mfxSession)loader;
-        Log::WriteLog(dump("impl", impl));
-        Log::WriteLog(dump("ver", ver));
-        Log::WriteLog(dump("session", loader->session));
-        Log::WriteLog(std::string("function: MFXInit(" + elapsed + ", " + dump_mfxStatus("status", mfx_res) + ") - \n\n"));
+        Log::WriteLog(context.dump("impl", impl));
+        Log::WriteLog(context.dump("ver", ver));
+        Log::WriteLog(context.dump("session", loader->session));
+        Log::WriteLog(std::string("function: MFXInit(" + elapsed + ", " + context.dump_mfxStatus("status", mfx_res) + ") - \n\n"));
         return MFX_ERR_NONE;
     }
     catch (std::exception& e){
@@ -129,23 +131,25 @@ mfxStatus MFXInit(mfxIMPL impl, mfxVersion *ver, mfxSession *session)
 mfxStatus MFXClose(mfxSession session)
 {
     try{
+        DumpContext context;
+        context.context = DUMPCONTEXT_MFX;
         Log::WriteLog("function: MFXClose(mfxSession session=" + ToString(session) + ") +");
         mfxLoader* loader = (mfxLoader*)session;
 
         if (!loader){
-            Log::WriteLog(dump("session", session));
-            Log::WriteLog(dump_mfxStatus("status", MFX_ERR_INVALID_HANDLE));
+            Log::WriteLog(context.dump("session", session));
+            Log::WriteLog(context.dump_mfxStatus("status", MFX_ERR_INVALID_HANDLE));
             return MFX_ERR_INVALID_HANDLE;
         }
-        Log::WriteLog(dump("session", session));
+        Log::WriteLog(context.dump("session", session));
         Timer t;
         mfxStatus mfx_res = (*(MFXClosePointer)loader->table[eMFXClose])(loader->session);
         std::string elapsed = TimeToString(t.GetTime());
         Log::WriteLog(">> MFXClose called");
         dlclose(loader->dlhandle);
         free(loader);
-        Log::WriteLog(dump("session", session));
-        Log::WriteLog("function: MFXClose(" + elapsed + ", " + dump_mfxStatus("status", mfx_res) + ") - \n\n");
+        Log::WriteLog(context.dump("session", session));
+        Log::WriteLog("function: MFXClose(" + elapsed + ", " + context.dump_mfxStatus("status", mfx_res) + ") - \n\n");
         return mfx_res;
     }
     catch (std::exception& e){

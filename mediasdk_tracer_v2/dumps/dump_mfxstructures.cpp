@@ -1,7 +1,7 @@
 #include "dump.h"
 #include "../loggers/log.h"
 
-std::string dump(const std::string structName, const mfxDecodeStat &decodeStat)
+std::string DumpContext::dump(const std::string structName, const mfxDecodeStat &decodeStat)
 {
     std::string str;
     str += structName + ".reserved[]=" + DUMP_RESERVED_ARRAY(decodeStat.reserved) + "\n";
@@ -12,7 +12,7 @@ std::string dump(const std::string structName, const mfxDecodeStat &decodeStat)
     return str;
 }
 
-std::string dump(const std::string structName, const mfxEncodeCtrl &EncodeCtrl)
+std::string DumpContext::dump(const std::string structName, const mfxEncodeCtrl &EncodeCtrl)
 {
     std::string str;
     str += dump(structName + ".Header=", EncodeCtrl.Header) + "\n";
@@ -27,7 +27,7 @@ std::string dump(const std::string structName, const mfxEncodeCtrl &EncodeCtrl)
     return str;
 }
 
-std::string dump(const std::string structName, const mfxEncodeStat &encodeStat)
+std::string DumpContext::dump(const std::string structName, const mfxEncodeStat &encodeStat)
 {
     std::string str;
     str += structName + ".NumBit=" + ToString(encodeStat.NumBit) + "\n";
@@ -37,7 +37,7 @@ std::string dump(const std::string structName, const mfxEncodeStat &encodeStat)
     return str;
 }
 
-std::string dump(const std::string structName, const mfxExtCodingOption &_struct)
+std::string DumpContext::dump(const std::string structName, const mfxExtCodingOption &_struct)
 {
     std::string str;
     str += dump(structName + ".Header", _struct.Header) + "\n";
@@ -74,7 +74,7 @@ std::string dump(const std::string structName, const mfxExtCodingOption &_struct
     return str;
 }
 
-std::string dump(const std::string structName, const mfxExtCodingOption2 &_struct)
+std::string DumpContext::dump(const std::string structName, const mfxExtCodingOption2 &_struct)
 {
     std::string str;
     str += dump(structName + ".Header", _struct.Header) + "\n";
@@ -111,7 +111,7 @@ std::string dump(const std::string structName, const mfxExtCodingOption2 &_struc
     return str;
 }
 
-std::string dump(const std::string structName, const mfxExtCodingOption3 &_struct)
+std::string DumpContext::dump(const std::string structName, const mfxExtCodingOption3 &_struct)
 {
     std::string str;
     str += dump(structName + ".Header", _struct.Header) + "\n";
@@ -122,7 +122,7 @@ std::string dump(const std::string structName, const mfxExtCodingOption3 &_struc
     return str;
 }
 
-std::string dump(const std::string structName, const mfxExtEncoderResetOption &_struct)
+std::string DumpContext::dump(const std::string structName, const mfxExtEncoderResetOption &_struct)
 {
     std::string str;
     str += dump(structName + ".Header", _struct.Header) + "\n";
@@ -131,7 +131,7 @@ std::string dump(const std::string structName, const mfxExtEncoderResetOption &_
     return str;
 }
 
-std::string dump(const std::string structName, const mfxExtVPPDoNotUse &_struct)
+std::string DumpContext::dump(const std::string structName, const mfxExtVPPDoNotUse &_struct)
 {
     std::string str;
     str += dump(structName + ".Header", _struct.Header) + "\n";
@@ -141,7 +141,7 @@ std::string dump(const std::string structName, const mfxExtVPPDoNotUse &_struct)
     return str;
 }
 
-std::string dump(const std::string structName, const mfxExtVppAuxData &extVppAuxData)
+std::string DumpContext::dump(const std::string structName, const mfxExtVppAuxData &extVppAuxData)
 {
     std::string str;
     str += dump(structName + ".Header", extVppAuxData.Header) + "\n";
@@ -154,7 +154,7 @@ std::string dump(const std::string structName, const mfxExtVppAuxData &extVppAux
     return str;
 }
 
-std::string dump(const std::string structName, const mfxFrameAllocRequest &frameAllocRequest)
+std::string DumpContext::dump(const std::string structName, const mfxFrameAllocRequest &frameAllocRequest)
 {
     std::string str;
     str += structName + ".reserved[]=" + DUMP_RESERVED_ARRAY(frameAllocRequest.reserved) + "\n";
@@ -166,7 +166,7 @@ std::string dump(const std::string structName, const mfxFrameAllocRequest &frame
     return str;
 }
 
-std::string dump(const std::string structName, const mfxFrameData &frameData)
+std::string DumpContext::dump(const std::string structName, const mfxFrameData &frameData)
 {
     std::string str;
     str += structName + ".reserved[]=" + DUMP_RESERVED_ARRAY(frameData.reserved) + "\n";
@@ -198,7 +198,7 @@ std::string dump(const std::string structName, const mfxFrameData &frameData)
     return str;
 }
 
-std::string dump(const std::string structName, const mfxFrameId &frame)
+std::string DumpContext::dump(const std::string structName, const mfxFrameId &frame)
 {
     std::string str;
     str += structName + ".TemporalId=" + ToString(frame.TemporalId) + "\n";
@@ -209,7 +209,7 @@ std::string dump(const std::string structName, const mfxFrameId &frame)
     return str;
 }
 
-std::string dump(const std::string structName, const mfxFrameInfo &info)
+std::string DumpContext::dump(const std::string structName, const mfxFrameInfo &info)
 {
     std::string str;
     str += structName + ".reserved[]=" + DUMP_RESERVED_ARRAY(info.reserved) + "\n";
@@ -232,7 +232,7 @@ std::string dump(const std::string structName, const mfxFrameInfo &info)
     return str;
 }
 
-std::string dump(const std::string structName, const mfxFrameSurface1 &frameSurface1)
+std::string DumpContext::dump(const std::string structName, const mfxFrameSurface1 &frameSurface1)
 {
     std::string str;
     str += dump(structName + ".Data", frameSurface1.Data) + "\n";
@@ -241,12 +241,12 @@ std::string dump(const std::string structName, const mfxFrameSurface1 &frameSurf
     return str;
 }
 
-std::string dump(const std::string structName, const mfxHandleType &handleType)
+std::string DumpContext::dump(const std::string structName, const mfxHandleType &handleType)
 {
     return std::string("mfxHandleType " + structName + "=" + ToString(handleType));
 }
 
-std::string dump(const std::string structName, const mfxInfoMFX &mfx)
+std::string DumpContext::dump(const std::string structName, const mfxInfoMFX &mfx)
 {
     std::string str;
     str += structName + ".reserved[]=" + DUMP_RESERVED_ARRAY(mfx.reserved) + "\n";
@@ -293,7 +293,7 @@ std::string dump(const std::string structName, const mfxInfoMFX &mfx)
     return str;
 }
 
-std::string dump(const std::string structName, const mfxInfoVPP &vpp)
+std::string DumpContext::dump(const std::string structName, const mfxInfoVPP &vpp)
 {
     std::string str;
     str += structName + ".reserved[]=" + DUMP_RESERVED_ARRAY(vpp.reserved) + "\n";
@@ -302,7 +302,7 @@ std::string dump(const std::string structName, const mfxInfoVPP &vpp)
     return str;
 }
 
-std::string dump(const std::string structName, const mfxPayload &payload)
+std::string DumpContext::dump(const std::string structName, const mfxPayload &payload)
 {
     std::string str;
     str += structName + ".reserved[]=" + DUMP_RESERVED_ARRAY(payload.reserved) + "\n";
@@ -313,18 +313,24 @@ std::string dump(const std::string structName, const mfxPayload &payload)
     return str;
 }
 
-std::string dump(const std::string structName, const mfxSkipMode &skipMode)
+std::string DumpContext::dump(const std::string structName, const mfxSkipMode &skipMode)
 {
     return std::string("mfxSkipMode " + structName + "=" + ToString(skipMode));
 }
 
-std::string dump(const std::string structName, const mfxVideoParam& videoParam)
+std::string DumpContext::dump(const std::string structName, const mfxVideoParam& videoParam)
 {
     std::string str;
     str += structName + ".reserved[]=" + DUMP_RESERVED_ARRAY(videoParam.reserved) + "\n";
     str += structName + ".AsyncDepth=" + ToString(videoParam.AsyncDepth) + "\n";
-    str += dump(structName + ".mfx", videoParam.mfx) + "\n";
-    str += dump(structName + ".vpp", videoParam.vpp) + "\n";
+    if(context == DUMPCONTEXT_MFX)
+        str += dump(structName + ".mfx", videoParam.mfx) + "\n";
+    else if(context == DUMPCONTEXT_VPP)
+        str += dump(structName + ".vpp", videoParam.vpp) + "\n";
+    else if(context == DUMPCONTEXT_ALL){
+        str += dump(structName + ".mfx", videoParam.mfx) + "\n";
+        str += dump(structName + ".vpp", videoParam.vpp) + "\n";
+    }
     str += structName + ".Protected=" + ToString(videoParam.Protected) + "\n";
     str += structName + ".IOPattern=" + ToString(videoParam.IOPattern) + "\n";
     str += dump_mfxExtParams(structName, videoParam) + "\n";
@@ -332,7 +338,7 @@ std::string dump(const std::string structName, const mfxVideoParam& videoParam)
     return str;
 }
 
-std::string dump(const std::string structName, const mfxVPPStat &vppStat)
+std::string DumpContext::dump(const std::string structName, const mfxVPPStat &vppStat)
 {
     std::string str;
     str += structName + ".reserved[]=" + DUMP_RESERVED_ARRAY(vppStat.reserved) + "\n";

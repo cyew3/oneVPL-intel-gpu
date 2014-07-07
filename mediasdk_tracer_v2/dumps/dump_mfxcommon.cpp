@@ -1,7 +1,7 @@
 #include "dump.h"
 #include "../loggers/log.h"
 
-std::string dump(const std::string structName, const mfxBitstream &bitstream)
+std::string DumpContext::dump(const std::string structName, const mfxBitstream &bitstream)
 {
     std::string str;
     str += structName + ".EncryptedData=" + ToString(bitstream.EncryptedData) + "\n";
@@ -22,7 +22,7 @@ std::string dump(const std::string structName, const mfxBitstream &bitstream)
     return str;
 }
 
-std::string dump(const std::string structName, const mfxExtBuffer &extBuffer)
+std::string DumpContext::dump(const std::string structName, const mfxExtBuffer &extBuffer)
 {
     std::string str;
     const char* bufid_str = get_bufferid_str(extBuffer.BufferId);
@@ -34,22 +34,22 @@ std::string dump(const std::string structName, const mfxExtBuffer &extBuffer)
     return str;
 }
 
-std::string dump(const std::string structName, const mfxIMPL &impl)
+std::string DumpContext::dump(const std::string structName, const mfxIMPL &impl)
 {
     return std::string("mfxIMPL " + structName + "=" + ToString(impl));
 }
 
-std::string dump(const std::string structName, const mfxPriority &priority)
+std::string DumpContext::dump(const std::string structName, const mfxPriority &priority)
 {
     return std::string("mfxPriority " + structName + "=" + ToString(priority));
 }
 
-std::string dump(const std::string structName, const mfxSyncPoint &syncPoint)
+std::string DumpContext::dump(const std::string structName, const mfxSyncPoint &syncPoint)
 {
     return std::string("mfxSyncPoint* " + structName + "=" + ToString(syncPoint));
 }
 
-std::string dump(const std::string structName, const mfxVersion &version)
+std::string DumpContext::dump(const std::string structName, const mfxVersion &version)
 {
     std::string str;
     str += structName + ".Major=" + ToString(version.Major) + "\n";

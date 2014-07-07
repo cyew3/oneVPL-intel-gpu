@@ -1,6 +1,6 @@
 #include "dump.h"
 
-std::string dump(const std::string structName, const mfxSession &session)
+std::string DumpContext::dump(const std::string structName, const mfxSession &session)
 {
     return std::string("mfxSession " + structName + "=" + ToString(session));
 }

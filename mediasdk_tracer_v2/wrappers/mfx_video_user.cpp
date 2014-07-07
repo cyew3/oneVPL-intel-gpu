@@ -8,6 +8,8 @@
 mfxStatus MFXVideoUSER_Register(mfxSession session, mfxU32 type, const mfxPlugin *par)
 {
     try {
+        DumpContext context;
+        context.context = DUMPCONTEXT_MFX;
         Log::WriteLog("function: MFXVideoUSER_Register(mfxSession session=" + ToString(session) + ", mfxU32 type=" + ToString(type) + ", mfxPlugin *par=" + ToString(par) + ") +");
         mfxLoader *loader = (mfxLoader*) session;
 
@@ -17,9 +19,9 @@ mfxStatus MFXVideoUSER_Register(mfxSession session, mfxU32 type, const mfxPlugin
         if (!proc) return MFX_ERR_INVALID_HANDLE;
 
         session = loader->session;
-        Log::WriteLog(dump("session", session));
-        Log::WriteLog(dump_mfxU32("type", type));
-        if (par) Log::WriteLog(dump("par", par));
+        Log::WriteLog(context.dump("session", session));
+        Log::WriteLog(context.dump_mfxU32("type", type));
+        if (par) Log::WriteLog(context.dump("par", *par));
 
         Timer t;
         mfxStatus status = (*(fMFXVideoUSER_Register) proc)(session, type, par);
@@ -27,11 +29,11 @@ mfxStatus MFXVideoUSER_Register(mfxSession session, mfxU32 type, const mfxPlugin
 
         Log::WriteLog(">> MFXVideoUSER_Register called");
 
-        Log::WriteLog(dump("session", session));
-        Log::WriteLog(dump_mfxU32("type", type));
-        if (par) Log::WriteLog(dump("par", par));
+        Log::WriteLog(context.dump("session", session));
+        Log::WriteLog(context.dump_mfxU32("type", type));
+        if (par) Log::WriteLog(context.dump("par", *par));
 
-        Log::WriteLog("function: MFXVideoUSER_Register(" + elapsed + ", " + dump_mfxStatus("status", status) + ") - \n\n");
+        Log::WriteLog("function: MFXVideoUSER_Register(" + elapsed + ", " + context.dump_mfxStatus("status", status) + ") - \n\n");
         return status;
     }
     catch (std::exception& e) {
@@ -43,6 +45,8 @@ mfxStatus MFXVideoUSER_Register(mfxSession session, mfxU32 type, const mfxPlugin
 mfxStatus MFXVideoUSER_Unregister(mfxSession session, mfxU32 type)
 {
     try {
+        DumpContext context;
+        context.context = DUMPCONTEXT_MFX;
         Log::WriteLog("function: MFXVideoUSER_Unregister(mfxSession session=" + ToString(session) + ", mfxU32 type=" + ToString(type) + ", mfxPlugin *par=" + ") +");
         mfxLoader *loader = (mfxLoader*) session;
 
@@ -52,8 +56,8 @@ mfxStatus MFXVideoUSER_Unregister(mfxSession session, mfxU32 type)
         if (!proc) return MFX_ERR_INVALID_HANDLE;
 
         session = loader->session;
-        Log::WriteLog(dump("session", session));
-        Log::WriteLog(dump_mfxU32("type", type));
+        Log::WriteLog(context.dump("session", session));
+        Log::WriteLog(context.dump_mfxU32("type", type));
 
         Timer t;
         mfxStatus status = (*(fMFXVideoUSER_Unregister) proc) (session, type);
@@ -61,10 +65,10 @@ mfxStatus MFXVideoUSER_Unregister(mfxSession session, mfxU32 type)
 
         Log::WriteLog(">> MFXVideoUSER_Unregister called");
 
-        Log::WriteLog(dump("session", session));
-        Log::WriteLog(dump_mfxU32("type", type));
+        Log::WriteLog(context.dump("session", session));
+        Log::WriteLog(context.dump_mfxU32("type", type));
 
-        Log::WriteLog("function: MFXVideoUSER_Unregister(" + elapsed + ", " + dump_mfxStatus("status", status) + ") - \n\n");
+        Log::WriteLog("function: MFXVideoUSER_Unregister(" + elapsed + ", " + context.dump_mfxStatus("status", status) + ") - \n\n");
         return status;
     }
     catch (std::exception& e) {
@@ -76,6 +80,8 @@ mfxStatus MFXVideoUSER_Unregister(mfxSession session, mfxU32 type)
 mfxStatus MFXVideoUSER_ProcessFrameAsync(mfxSession session, const mfxHDL *in, mfxU32 in_num, const mfxHDL *out, mfxU32 out_num, mfxSyncPoint *syncp)
 {
     try {
+        DumpContext context;
+        context.context = DUMPCONTEXT_MFX;
         Log::WriteLog("function: MFXVideoUSER_ProcessFrameAsync(mfxSession session=, const mfxHDL *in, mfxU32 in_num, const mfxHDL *out, mfxU32 out_num, mfxSyncPoint *syncp) +");
         mfxLoader *loader = (mfxLoader*) session;
 
@@ -85,12 +91,12 @@ mfxStatus MFXVideoUSER_ProcessFrameAsync(mfxSession session, const mfxHDL *in, m
         if (!proc) return MFX_ERR_INVALID_HANDLE;
 
         session = loader->session;
-        Log::WriteLog(dump("session", session));
-        Log::WriteLog(dump_mfxHDL("in", in));
-        Log::WriteLog(dump_mfxU32("in_num", in_num));
-        Log::WriteLog(dump_mfxHDL("out", out));
-        Log::WriteLog(dump_mfxU32("out_num", out_num));
-        Log::WriteLog(dump("syncp", syncp));
+        Log::WriteLog(context.dump("session", session));
+        Log::WriteLog(context.dump_mfxHDL("in", in));
+        Log::WriteLog(context.dump_mfxU32("in_num", in_num));
+        Log::WriteLog(context.dump_mfxHDL("out", out));
+        Log::WriteLog(context.dump_mfxU32("out_num", out_num));
+        Log::WriteLog(context.dump("syncp", syncp));
 
         Timer t;
         mfxStatus status = (*(fMFXVideoUSER_ProcessFrameAsync) proc) (session, in, in_num, out, out_num, syncp);
@@ -98,14 +104,14 @@ mfxStatus MFXVideoUSER_ProcessFrameAsync(mfxSession session, const mfxHDL *in, m
 
         Log::WriteLog(">> MFXVideoUSER_ProcessFrameAsync called");
 
-        Log::WriteLog(dump("session", session));
-        Log::WriteLog(dump_mfxHDL("in", in));
-        Log::WriteLog(dump_mfxU32("in_num", in_num));
-        Log::WriteLog(dump_mfxHDL("out", out));
-        Log::WriteLog(dump_mfxU32("out_num", out_num));
-        Log::WriteLog(dump("syncp", syncp));
+        Log::WriteLog(context.dump("session", session));
+        Log::WriteLog(context.dump_mfxHDL("in", in));
+        Log::WriteLog(context.dump_mfxU32("in_num", in_num));
+        Log::WriteLog(context.dump_mfxHDL("out", out));
+        Log::WriteLog(context.dump_mfxU32("out_num", out_num));
+        Log::WriteLog(context.dump("syncp", *syncp));
 
-        Log::WriteLog("function: MFXVideoUSER_ProcessFrameAsync(" + elapsed + ", " + dump_mfxStatus("status", status) + ") - \n\n");
+        Log::WriteLog("function: MFXVideoUSER_ProcessFrameAsync(" + elapsed + ", " + context.dump_mfxStatus("status", status) + ") - \n\n");
         return status;
     }
     catch (std::exception& e) {

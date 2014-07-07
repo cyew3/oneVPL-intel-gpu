@@ -1,7 +1,7 @@
 #include "dump.h"
 #include "../loggers/log.h"
 
-std::string dump(const std::string structName, const mfxFrameAllocator &allocator)
+std::string DumpContext::dump(const std::string structName, const mfxFrameAllocator &allocator)
 {
     std::string str;
     str += dump_mfxHDL(structName + ".pthis=", &allocator.pthis) + "\n";
@@ -9,7 +9,7 @@ std::string dump(const std::string structName, const mfxFrameAllocator &allocato
     return str;
 }
 
-std::string dump(const std::string structName, const mfxBufferAllocator &allocator)
+std::string DumpContext::dump(const std::string structName, const mfxBufferAllocator &allocator)
 {
     std::string str;
     str += dump_mfxHDL(structName + ".pthis", &allocator.pthis) + "\n";

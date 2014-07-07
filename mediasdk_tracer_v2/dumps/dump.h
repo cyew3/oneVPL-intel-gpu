@@ -34,96 +34,154 @@ std::string StringToHexString(std::string data);
 
 #define ToHexFormatString( x ) StringToHexString(dynamic_cast< std::ostringstream & >( ( std::ostringstream() << std::dec << x ) ).str() )
 
-const char* get_bufferid_str(mfxU32 bufferid);
-
-template<typename T>
-std::string dump_reserved_array(T* data, size_t size)
-{
-    std::stringstream result;
-
-    result << "{ ";
-    for (size_t i = 0; i < size; ++i) {
-        result << data[i];
-        if (i < (size-1)) result << ", ";
-    }
-    result << " }";
-    return result.str();
-}
-
-template<typename T>
-std::string dump_mfxExtParams(const std::string structName, const T& _struct);
-
-template<typename T>
-inline const char* get_type(){ return typeid(T).name(); }
-
 #define DEFINE_GET_TYPE(type) \
-template<> \
-inline const char* get_type<type>(){ return #type; }
-
-template<typename T>
-std::string dump(const std::string structName, const T *_struct)
-{
-    std::string str = get_type<T>();
-    str += "* " + structName + "=" + ToString(_struct) + "\n";
-    if (_struct) str += dump("  " + structName, *_struct);
-    return str;
-}
+    template<> \
+    inline const char* get_type<type>(){ return #type; }
 
 #define DEFINE_DUMP_FUNCTION(type) \
-  std::string dump(const std::string structName, const type &_var);
+    DEFINE_GET_TYPE(type) \
+    std::string dump(const std::string structName, const type &_var);
 
-#define DEFINE_DUMP_FOR_TYPE(type) \
-  DEFINE_GET_TYPE(type) \
-  DEFINE_DUMP_FUNCTION(type)
+enum eDumpContect {
+    DUMPCONTEXT_MFX,
+    DUMPCONTEXT_VPP,
+    DUMPCONTEXT_ALL,
+};
 
-//mfxdefs
-std::string dump_mfxU32(const std::string structName, mfxU32 u32);
-std::string dump_mfxU64(const std::string structName, mfxU64 u64);
-std::string dump_mfxHDL(const std::string structName, const mfxHDL *hdl);
-std::string dump_mfxStatus(const std::string structName, mfxStatus status);
+enum eDumpFormat {
+    DUMP_DEC,
+    DUMP_HEX
+};
 
-//mfxcommon
-DEFINE_DUMP_FOR_TYPE(mfxBitstream);
-DEFINE_DUMP_FOR_TYPE(mfxExtBuffer);
-DEFINE_DUMP_FOR_TYPE(mfxIMPL);
-DEFINE_DUMP_FOR_TYPE(mfxPriority);
-DEFINE_DUMP_FOR_TYPE(mfxVersion);
-DEFINE_DUMP_FOR_TYPE(mfxSyncPoint);
+class DumpContext
+{
+public:
+    eDumpContect context;
 
-//mfxenc
-DEFINE_DUMP_FOR_TYPE(mfxENCInput);
-DEFINE_DUMP_FOR_TYPE(mfxENCOutput);
+    DumpContext(void) {
+        context = DUMPCONTEXT_ALL;
+    };
+    ~DumpContext(void) {};
 
-//mfxplugin
-DEFINE_DUMP_FOR_TYPE(mfxPlugin);
+    template<typename T>
+    inline std::string toString( T x, eDumpFormat format = DUMP_DEC){
+        return dynamic_cast< std::ostringstream & >(( std::ostringstream() << ((format == DUMP_DEC) ? std::dec : std::hex) << x )).str();
+    }
 
-//mfxstructures
-DEFINE_DUMP_FOR_TYPE(mfxDecodeStat);
-DEFINE_DUMP_FOR_TYPE(mfxEncodeCtrl);
-DEFINE_DUMP_FOR_TYPE(mfxEncodeStat);
-DEFINE_DUMP_FOR_TYPE(mfxExtCodingOption);
-DEFINE_DUMP_FOR_TYPE(mfxExtCodingOption2);
-DEFINE_DUMP_FOR_TYPE(mfxExtCodingOption3);
-DEFINE_DUMP_FOR_TYPE(mfxExtEncoderResetOption);
-DEFINE_DUMP_FOR_TYPE(mfxExtVppAuxData);
-DEFINE_DUMP_FOR_TYPE(mfxFrameAllocRequest);
-DEFINE_DUMP_FOR_TYPE(mfxFrameData);
-DEFINE_DUMP_FOR_TYPE(mfxFrameId);
-DEFINE_DUMP_FOR_TYPE(mfxFrameInfo);
-DEFINE_DUMP_FOR_TYPE(mfxFrameSurface1);
-DEFINE_DUMP_FOR_TYPE(mfxHandleType);
-DEFINE_DUMP_FOR_TYPE(mfxInfoMFX);
-DEFINE_DUMP_FOR_TYPE(mfxInfoVPP);
-DEFINE_DUMP_FOR_TYPE(mfxPayload);
-DEFINE_DUMP_FOR_TYPE(mfxSkipMode);
-DEFINE_DUMP_FOR_TYPE(mfxVideoParam);
-DEFINE_DUMP_FOR_TYPE(mfxVPPStat);
+    const char* get_bufferid_str(mfxU32 bufferid);
 
-//mfxsession
-DEFINE_DUMP_FOR_TYPE(mfxSession);
+    template<typename T>
+    std::string dump_reserved_array(T* data, size_t size)
+    {
+        std::stringstream result;
 
-//mfxvideo
-DEFINE_DUMP_FOR_TYPE(mfxBufferAllocator);
-DEFINE_DUMP_FOR_TYPE(mfxFrameAllocator);
+        result << "{ ";
+        for (size_t i = 0; i < size; ++i) {
+            result << data[i];
+            if (i < (size-1)) result << ", ";
+        }
+        result << " }";
+        return result.str();
+    }
 
+    template<typename T>
+    inline const char* get_type(){ return typeid(T).name(); }
+
+    template<typename T>
+    std::string dump(const std::string structName, const T *_struct)
+    {
+        std::string str = get_type<T>();
+        str += "* " + structName + "=" + ToString(_struct) + "\n";
+        if (_struct) str += dump("  " + structName, *_struct);
+        return str;
+    }
+
+    template<typename T>
+    inline std::string dump_mfxExtParams(const std::string structName, const T& _struct)
+    {
+        std::string str;
+        std::string name;
+
+        str += structName + ".NumExtParam=" + ToString(_struct.NumExtParam) + "\n";
+        str += structName + ".ExtParam=" + ToString(_struct.ExtParam) + "\n";
+        for (mfxU16 i = 0; i < _struct.NumExtParam; ++i)
+        {
+            name = structName + ".ExtParam[" + ToString(i) + "]";
+            str += name + "=" + ToString(_struct.ExtParam[i]) + "\n";
+            if (_struct.ExtParam[i]) {
+                switch (_struct.ExtParam[i]->BufferId)
+                {
+                  case MFX_EXTBUFF_CODING_OPTION:
+                    str += dump(name, *((mfxExtCodingOption*)_struct.ExtParam[i])) + "\n";
+                    break;
+                  case MFX_EXTBUFF_CODING_OPTION2:
+                    str += dump(name, *((mfxExtCodingOption2*)_struct.ExtParam[i])) + "\n";
+                    break;
+                  case MFX_EXTBUFF_CODING_OPTION3:
+                    str += dump(name, *((mfxExtCodingOption3*)_struct.ExtParam[i])) + "\n";
+                    break;
+                  case MFX_EXTBUFF_ENCODER_RESET_OPTION:
+                    str += dump(name, *((mfxExtEncoderResetOption*)_struct.ExtParam[i])) + "\n";
+                    break;
+                  default:
+                    str += dump(name, *(_struct.ExtParam[i])) + "\n";
+                    break;
+                };
+            }
+        }
+        return str;
+    }
+
+    //mfxdefs
+    std::string dump_mfxU32(const std::string structName, mfxU32 u32);
+    std::string dump_mfxU64(const std::string structName, mfxU64 u64);
+    std::string dump_mfxHDL(const std::string structName, const mfxHDL *hdl);
+    std::string dump_mfxStatus(const std::string structName, mfxStatus status);
+
+    //mfxcommon
+    DEFINE_DUMP_FUNCTION(mfxBitstream);
+    DEFINE_DUMP_FUNCTION(mfxExtBuffer);
+    DEFINE_DUMP_FUNCTION(mfxIMPL);
+    DEFINE_DUMP_FUNCTION(mfxPriority);
+    DEFINE_DUMP_FUNCTION(mfxVersion);
+    DEFINE_DUMP_FUNCTION(mfxSyncPoint);
+
+    //mfxenc
+    DEFINE_DUMP_FUNCTION(mfxENCInput);
+    DEFINE_DUMP_FUNCTION(mfxENCOutput);
+
+    //mfxplugin
+    DEFINE_DUMP_FUNCTION(mfxPlugin);
+
+    //mfxstructures
+    DEFINE_DUMP_FUNCTION(mfxDecodeStat);
+    DEFINE_DUMP_FUNCTION(mfxEncodeCtrl);
+    DEFINE_DUMP_FUNCTION(mfxEncodeStat);
+    DEFINE_DUMP_FUNCTION(mfxExtCodingOption);
+    DEFINE_DUMP_FUNCTION(mfxExtCodingOption2);
+    DEFINE_DUMP_FUNCTION(mfxExtCodingOption3);
+    DEFINE_DUMP_FUNCTION(mfxExtEncoderResetOption);
+    DEFINE_DUMP_FUNCTION(mfxExtVppAuxData);
+    DEFINE_DUMP_FUNCTION(mfxFrameAllocRequest);
+    DEFINE_DUMP_FUNCTION(mfxFrameData);
+    DEFINE_DUMP_FUNCTION(mfxFrameId);
+    DEFINE_DUMP_FUNCTION(mfxFrameInfo);
+    DEFINE_DUMP_FUNCTION(mfxFrameSurface1);
+    DEFINE_DUMP_FUNCTION(mfxHandleType);
+    DEFINE_DUMP_FUNCTION(mfxInfoMFX);
+    DEFINE_DUMP_FUNCTION(mfxInfoVPP);
+    DEFINE_DUMP_FUNCTION(mfxPayload);
+    DEFINE_DUMP_FUNCTION(mfxSkipMode);
+    DEFINE_DUMP_FUNCTION(mfxVideoParam);
+    DEFINE_DUMP_FUNCTION(mfxVPPStat);
+    DEFINE_DUMP_FUNCTION(mfxExtVPPDoNotUse);
+
+    //mfxsession
+    DEFINE_DUMP_FUNCTION(mfxSession);
+
+    //mfxvideo
+    DEFINE_DUMP_FUNCTION(mfxBufferAllocator);
+    DEFINE_DUMP_FUNCTION(mfxFrameAllocator);
+};
 #endif //DUMP_H_
+
