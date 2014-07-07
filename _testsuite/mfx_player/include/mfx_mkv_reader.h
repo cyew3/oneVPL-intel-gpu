@@ -15,6 +15,7 @@
 #include "app_defs.h"
 #include "mfx_ibitstream_reader.h"
 
+#define MFX_CODEC_VP8  MFX_MAKEFOURCC('V','P','8',' ')
 /* Supported MKV tags */
 enum TagId {
     TAG_UNKNOWN = 0x00000000,
@@ -47,6 +48,7 @@ enum TagId {
     TAG_FlagLacing,
     TAG_MinCache,
     TAG_CodecID,
+    TAG_CodecName,
     TAG_DefaultDuration,
     TAG_Language,
     TAG_Video,
@@ -72,7 +74,10 @@ enum TagId {
     TAG_BlockDuration,
     TAG_ContentEncodings,
     TAG_Name,
-    TAG_Chapters
+    TAG_Chapters,
+    TAG_Cues,
+    TAG_Position,
+    TAG_EOF
 };
 
 /* MKV data has variable lenght data. Supporting enum */

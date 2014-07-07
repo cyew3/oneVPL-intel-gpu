@@ -48,6 +48,8 @@ static CodeStringTable StringsOfFourcc[] =
     { MFX_FOURCC_P010,               VM_STRING("P010") },
     { MFX_FOURCC_A2RGB10,            VM_STRING("A2RGB10") },
     { MFX_CODEC_VP8,                 VM_STRING("VP8")  },
+    { MFX_FOURCC_R16,                VM_STRING("R16")  },
+    { MFX_FOURCC_ARGB16,             VM_STRING("ARGB16")  },
 };
 
 #define DEFINE_ERR_CODE(code)\
@@ -730,7 +732,7 @@ mfxF64 ConvertMFXTime2mfxF64(mfxU64 nTime)
 
 mfxStatus GetMFXFrameInfoFromFOURCCPatternIdx(int idx_in_pattern, mfxFrameInfo &info)
 {
-    static const char valid_pattern [] = "nv12( |:mono)|yv12( |:mono)|rgb24|rgb32|yuy2(:h|:v|:mono)|ayuv|p010|a2rgb10";
+    static const char valid_pattern [] = "nv12( |:mono)|yv12( |:mono)|rgb24|rgb32|yuy2(:h|:v|:mono)|ayuv|p010|a2rgb10|r16|argb16";
 
     //if external pattern changed parsing need to be updated
     MFX_CHECK(!std::string(MFX_FOURCC_PATTERN()).compare(valid_pattern));
@@ -810,6 +812,17 @@ mfxStatus GetMFXFrameInfoFromFOURCCPatternIdx(int idx_in_pattern, mfxFrameInfo &
             info.ChromaFormat = MFX_CHROMAFORMAT_YUV444;
             break;
         }
+        case 13:
+        {
+            info.FourCC = MFX_FOURCC_R16;
+            info.ChromaFormat = MFX_CHROMAFORMAT_YUV444;
+            break;
+        }
+        case 14:
+        {
+            info.FourCC = MFX_FOURCC_ARGB16;
+            info.ChromaFormat = MFX_CHROMAFORMAT_YUV444;
+        }
         default:
             return MFX_ERR_UNSUPPORTED;
     }
@@ -839,6 +852,9 @@ mfxU32 GetMinPlaneSize(mfxFrameInfo & info)
             break;
         case MFX_FOURCC_RGB4:
             bpp_m2 = 8;
+            break;
+        case MFX_FOURCC_R16:
+            bpp_m2 = 2;
             break;
         case MFX_FOURCC_YUY2:
             bpp_m2 = 4;

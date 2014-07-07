@@ -162,6 +162,41 @@ protected:
     
 };
 
+template <>
+class BSConvert<MFX_FOURCC_R16, MFX_FOURCC_R16>
+    : public BSConvertBase<MFX_FOURCC_R16, MFX_FOURCC_R16>
+{
+    IMPLEMENT_CLONE(BSConvert<MFX_FOURCC_R16 MFX_PP_COMMA() MFX_FOURCC_R16>);
+public:
+    virtual mfxStatus Transform(mfxBitstream * bs, mfxFrameSurface1 *surface)
+    {
+        mfxFrameData &data      = surface->Data;
+        mfxFrameInfo &info      = surface->Info;
+#if defined(LINUX32) || defined (LINUX64)  
+        memset(data.Y, 0, info.Width * info.Height * 2);
+        memset(data.UV, 0, info.Width * info.Height );
+#endif
+        mfxU32 w, h, i, pitch;
+        mfxU16 *ptr = data.Y16;
+        if (info.CropH > 0 && info.CropW > 0)
+        {
+            w = info.CropW;
+            h = info.CropH;
+        }
+        else
+        {
+            w = info.Width;
+            h = info.Height;
+        }
+        pitch = data.Pitch;
+        for (i = 0; i < h; i++)
+        {
+            MFX_CHECK_WITH_ERR(w * 2 == BSUtil::MoveNBytes((mfxU8 *)ptr + i * pitch, bs, w * 2), MFX_ERR_MORE_DATA);
+        }
+        return MFX_ERR_NONE;
+    }
+protected:
+};
 #define CLIP(x) ((x < 0) ? 0 : ((x > 1023) ? 1023 : x))
 template <>
 class BSConvert<MFX_FOURCC_P010, MFX_FOURCC_P010>

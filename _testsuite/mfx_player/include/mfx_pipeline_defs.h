@@ -55,6 +55,7 @@ File Name: .h
 //#include "app_defs.h"
 //#include "automatic_pointer.h"
 #include "mfxvideo.h"
+#include "mfxcamera.h"
 #include "vm_strings.h"
 #include "vm_time.h"
 #include "vm_file.h"
@@ -68,7 +69,8 @@ File Name: .h
 //////////////////////////////////////////////////////////////////////////
 typedef enum {
     MFX_CONTAINER_RAW,
-    MFX_CONTAINER_MKV
+    MFX_CONTAINER_MKV=100,
+    MFX_CONTAINER_CRMF
 } mfxContainer;
 
 
@@ -151,6 +153,20 @@ typedef enum {
 #define PipelineTrace(str)      PipelineTraceEx str
 #define PipelineTraceForce(str) PipelineTraceForceEx str
 #define LAST_ERR_OR_UNK()       (PE_NO_ERROR == PipelineGetLastErr() ? PE_UNKNOWN_ERROR : PipelineGetLastErr())
+static mfxU16 gamma_point[64] =
+{
+    0,  94, 104, 114, 124, 134, 144, 154, 159, 164, 169, 174, 179, 184, 194, 199,
+    204, 209, 214, 219, 224, 230, 236, 246, 256, 266, 276, 286, 296, 306, 316, 326,
+    336, 346, 356, 366, 376, 386, 396, 406, 416, 426, 436, 446, 456, 466, 476, 486,
+    496, 516, 526, 536, 546, 556, 566, 576, 586, 596, 606, 616, 626, 636, 646, 1023
+};
+static mfxU16 gamma_correct[64] =
+{
+    4,   4,  20,  37,  56,  75,  96, 117, 128, 140, 150, 161, 171, 180, 198, 207,
+    216, 224, 232, 240, 249, 258, 268, 283, 298, 310, 329, 344, 359, 374, 389, 404,
+    420, 435, 451, 466, 482, 498, 515, 531, 548, 565, 582, 599, 617, 635, 653, 671,
+    690, 729, 749, 769, 790, 811, 832, 854, 876, 899, 922, 945, 969, 994, 1019,1019
+};
 
 
 #ifdef UNICODE

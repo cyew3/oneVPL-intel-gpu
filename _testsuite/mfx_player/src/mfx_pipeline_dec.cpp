@@ -46,6 +46,7 @@ File Name: .h
 #include "mfx_perfcounter_time.h"
 #include "mfx_bitrate_limited_reader.h"
 #include "mfx_mkv_reader.h"
+#include "mfx_bayer_reader.h"
 #include "mfx_burst_render.h"
 #include "mfx_fps_limit_render.h"
 #include "mfx_pts_based_activator.h"
@@ -131,6 +132,7 @@ MFXDecPipeline::MFXDecPipeline(IMFXPipelineFactory *pFactory)
     , m_bErrIncompatValid(true)
     , m_externalsync()
     , m_pFactory(pFactory)
+    , m_extDecVideoProcessing(new mfxExtDecVideoProcessing())
 {
 
     m_bStat                 = true;
@@ -296,8 +298,14 @@ mfxStatus MFXDecPipeline::BuildMFXPart()
     {
         m_components[eVPP].m_params.vpp.In  = m_components[eDEC].m_params.mfx.FrameInfo;
         m_components[eVPP].m_params.vpp.Out = m_components[eREN].m_params.mfx.FrameInfo;
+        if ( m_components[eVPP].m_params.vpp.In.FourCC == MFX_FOURCC_R16 )
+        {
+            m_components[eVPP].m_params.vpp.In.BitDepthLuma  = 10;
+            m_components[eVPP].m_params.vpp.In.ChromaFormat  = MFX_CHROMAFORMAT_MONOCHROME;
+            m_components[eVPP].m_params.vpp.Out.FourCC       = m_components[eREN].m_params.mfx.FrameInfo.FourCC;
+            m_components[eVPP].m_params.vpp.Out.ChromaFormat = MFX_CHROMAFORMAT_YUV444;
     }
-
+    }
     //overwriting vpp output picstruct if -vpp:picstruct  happened
     if (m_components[eVPP].m_bOverPS)
     {
@@ -466,8 +474,12 @@ mfxStatus MFXDecPipeline::BuildPipeline()
     }
 
     m_components[eDEC].m_params.mfx.CodecId = m_inParams.InputCodecType;
-    if ( MFX_FOURCC_P010 == m_inParams.FrameInfo.FourCC) {
+    if ( MFX_FOURCC_P010 == m_inParams.FrameInfo.FourCC || 
+         MFX_FOURCC_R16 == m_inParams.FrameInfo.FourCC) {
         m_components[eDEC].m_params.mfx.FrameInfo.FourCC = m_inParams.FrameInfo.FourCC;
+    }
+    if ( MFX_FOURCC_R16 == m_inParams.FrameInfo.FourCC ) {
+        m_components[eDEC].m_params.mfx.FrameInfo.BitDepthLuma = 10;
     }
     if (MFX_ERR_NONE == res && m_inParams.InputCodecType != MFX_CODEC_CAPTURE)
     {
@@ -547,6 +559,27 @@ mfxStatus MFXDecPipeline::ReleasePipeline()
 
             decodefps = frameCount / overallTime;
 
+            if ( m_inParams.bExtendedFpsStat )
+            {
+                int dist = m_inParams.fps_frame_window ? m_inParams.fps_frame_window : 30 ;            
+                Ipp64f max_time = 0;
+                for(int i = 0; i < m_time_stampts.size(); i++)
+                {
+                    if ( i + 1 >= dist )
+                    {
+                        if ( i + 1 == dist )
+                        {     
+                            max_time = m_time_stampts[i] > max_time ? m_time_stampts[i] : max_time;
+                        }
+                        else 
+                        {
+                            max_time = (m_time_stampts[i] - m_time_stampts[i+1-dist]) > max_time ? (m_time_stampts[i] - m_time_stampts[i+1-dist]) : max_time;
+                        }
+                    }
+                    PrintInfoForce(VM_STRING(" timestamp"), VM_STRING("%llf\n"), m_time_stampts[i]);
+                }
+                PrintInfoForce(VM_STRING("Min fps per window"), VM_STRING("%.3f fps per %d frames"), dist/max_time, dist);
+            }
             PrintInfoForce(VM_STRING("Total fps"), VM_STRING("%.3f fps"), decodefps);
             PrintInfo(VM_STRING("Decode : async queue"), VM_STRING("max: %d, avr: %.2lf"), m_components[eDEC].m_uiMaxAsyncReached, m_components[eDEC].m_fAverageAsync);
 
@@ -912,6 +945,7 @@ mfxStatus MFXDecPipeline::CreateVPP()
     ENABLE_VPP(m_inParams.nDenoiseFactorPlus1);
     ENABLE_VPP(m_inParams.nDetailFactorPlus1);
     ENABLE_VPP(m_inParams.bUseProcAmp);
+    ENABLE_VPP(m_inParams.bUseCameraPipe);
     ENABLE_VPP(m_inParams.bSceneAnalyzer);
     ENABLE_VPP(m_inParams.bPAFFDetect);
     ENABLE_VPP(0.0 != m_components[eVPP].m_fFrameRate);
@@ -971,6 +1005,8 @@ mfxStatus MFXDecPipeline::CreateVPP()
 
 
     //turnoff default filter if they are not present in cmd line
+    if ( ! m_inParams.bUseCameraPipe ) 
+    {
     m_components[eVPP].m_extParams.push_back(new mfxExtVPPDoNotUse());
     MFXExtBufferPtr<mfxExtVPPDoNotUse> pExtDoNotUse(m_components[eVPP].m_extParams);
 
@@ -984,6 +1020,9 @@ mfxStatus MFXDecPipeline::CreateVPP()
         pDenoise->DenoiseFactor = m_inParams.nDenoiseFactorPlus1 - 1;
     }
 
+        if (!m_inParams.bSceneAnalyzer)
+            pExtDoNotUse->AlgList.push_back(MFX_EXTBUFF_VPP_SCENE_ANALYSIS);
+    }
     // turn on detail/edge enhancement
     if (m_inParams.nDetailFactorPlus1)
     {
@@ -1004,8 +1043,27 @@ mfxStatus MFXDecPipeline::CreateVPP()
     }
 
     // turn off scene analysis (on by default)
-    if (!m_inParams.bSceneAnalyzer)
-        pExtDoNotUse->AlgList.push_back(MFX_EXTBUFF_VPP_SCENE_ANALYSIS);
+    if (m_inParams.bUseCameraPipe)
+    {
+        m_components[eVPP].m_extParams.push_back(new mfxExtCamPipeControl());
+        MFXExtBufferPtr<mfxExtCamPipeControl> pCameraPipe(m_components[eVPP].m_extParams);
+        pCameraPipe->RawFormat = (mfxU16)m_inParams.m_container;
+    }
+    if (m_inParams.bUseCameraPipePadding)
+    {
+        m_components[eVPP].m_extParams.push_back(new mfxExtCamPadding());
+        MFXExtBufferPtr<mfxExtCamPadding> pCameraPipePadding(m_components[eVPP].m_extParams);
+        pCameraPipePadding->Top = pCameraPipePadding->Bottom = pCameraPipePadding->Left = pCameraPipePadding->Right = 8;;
+    }
+    if (m_inParams.bUseCameraPipeGammaCorrection)
+    {
+        m_components[eVPP].m_extParams.push_back(new mfxExtCamGammaCorrection());
+        MFXExtBufferPtr<mfxExtCamGammaCorrection> pCameraPipeGammaCorrection(m_components[eVPP].m_extParams);
+        pCameraPipeGammaCorrection->Mode       = MFX_CAM_GAMMA_LUT;
+        pCameraPipeGammaCorrection->NumPoints  = 64;
+        memcpy(pCameraPipeGammaCorrection->GammaPoint    , gamma_point  , pCameraPipeGammaCorrection->NumPoints*sizeof(mfxU16));
+        memcpy(pCameraPipeGammaCorrection->GammaCorrected, gamma_correct, pCameraPipeGammaCorrection->NumPoints*sizeof(mfxU16));
+    }
 
     if (m_components[eVPP].m_params.vpp.Out.CropW != 0)
     {
@@ -1318,6 +1376,18 @@ mfxStatus MFXDecPipeline::DecodeHeader()
         m_components[eDEC].m_params.mfx.FrameInfo.FourCC = dec_info.FourCC;
         m_components[eDEC].m_params.mfx.FrameInfo.ChromaFormat = dec_info.ChromaFormat;
     }
+    if (!m_extDecVideoProcessing.IsZero())
+    {
+        m_extDecVideoProcessing->Out.PicStruct    = m_components[eDEC].m_params.mfx.FrameInfo.PicStruct;
+        m_extDecVideoProcessing->Out.ChromaFormat = m_components[eDEC].m_params.mfx.FrameInfo.ChromaFormat;
+        m_extDecVideoProcessing->Out.FourCC       = m_components[eDEC].m_params.mfx.FrameInfo.FourCC;
+        m_inParams.FrameInfo.Width  = m_extDecVideoProcessing->Out.CropW;
+        m_inParams.FrameInfo.Height = m_extDecVideoProcessing->Out.CropH;
+        m_inParams.FrameInfo.CropW  = m_extDecVideoProcessing->Out.CropW;
+        m_inParams.FrameInfo.CropH  = m_extDecVideoProcessing->Out.CropH;
+        m_components[eDEC].m_extParams.push_back(m_extDecVideoProcessing);
+        m_components[eDEC].AssignExtBuffers();
+    }
     return MFX_ERR_NONE;
 }
 
@@ -1337,6 +1407,15 @@ mfxStatus MFXDecPipeline::CreateSplitter()
     }
     else if (MFX_CONTAINER_MKV == m_inParams.m_container){
          pSpl.reset(new MKVReader());
+    }
+    else if (MFX_FOURCC_R16  == m_inParams.FrameInfo.FourCC){
+         sStreamInfo *pSinfo = NULL;
+         pSinfo = & sInfo;
+         sInfo.videoType = m_inParams.m_container;
+         sInfo.nWidth = 0;
+         sInfo.nHeight = 0;
+         sInfo.isDefaultFC = false;
+         pSpl.reset(new BayerVideoReader(pSinfo));
     }
     else if (!m_inParams.bYuvReaderMode && 0 == m_inParams.InputCodecType)
     {
@@ -1428,7 +1507,7 @@ mfxStatus MFXDecPipeline::CreateSplitter()
     //getfilesize
     Ipp64u file_size = 0;
     // don't request filesize if it's a directory wildcard
-    if (!vm_string_strchr(m_inParams.strSrcFile, '*'))
+    if (!vm_string_strchr(m_inParams.strSrcFile, '*') && MFX_CONTAINER_CRMF != m_inParams.m_container &&  MFX_FOURCC_R16 != m_inParams.FrameInfo.FourCC)
         MFX_CHECK_WITH_ERR( 0 != vm_file_getinfo(m_inParams.strSrcFile, &file_size, NULL), MFX_ERR_UNKNOWN);
     PrintInfo(VM_STRING("FileName"), VM_STRING("%s"), m_inParams.strSrcFile);
     PrintInfo(VM_STRING("FileSize"), VM_STRING("%.2f M"), (double)file_size / (1024. * 1024.));
@@ -1443,6 +1522,10 @@ mfxStatus MFXDecPipeline::CreateSplitter()
     }else if (m_inParams.InputCodecType != 0)
     {
         PrintInfo(VM_STRING("Container"), VM_STRING("RAW"));
+        PrintInfo(VM_STRING("Video"), VM_STRING("%s"), GetMFXFourccString(m_inParams.InputCodecType).c_str());
+    }else if (m_inParams.m_container == MFX_CONTAINER_CRMF)
+    {
+        PrintInfo(VM_STRING("Container"), VM_STRING("CLRF"));
         PrintInfo(VM_STRING("Video"), VM_STRING("%s"), GetMFXFourccString(m_inParams.InputCodecType).c_str());
     }
 
@@ -1498,6 +1581,16 @@ mfxStatus MFXDecPipeline::CreateRender()
         return MFX_ERR_NONE;
     }
 
+    if (m_inParams.outFrameInfo.FourCC == MFX_FOURCC_UNKNOWN)
+    {
+        m_inParams.outFrameInfo.FourCC = MFX_FOURCC_YV12;
+        if (m_components[eDEC].m_params.mfx.FrameInfo.FourCC == MFX_FOURCC_P010)
+        {
+            m_inParams.outFrameInfo.FourCC = MFX_FOURCC_YUV420_16;
+            m_inParams.outFrameInfo.BitDepthLuma = 10;
+            m_inParams.outFrameInfo.BitDepthChroma = 10;
+        }
+    }
     //crc calculation only possible in filewriter render
     if (m_inParams.bCalcCRC )
     {
@@ -1511,6 +1604,9 @@ mfxStatus MFXDecPipeline::CreateRender()
 
     if ( MFX_FOURCC_P010 == m_components[eDEC].m_params.mfx.FrameInfo.FourCC ){
         m_components[eREN].m_params.mfx.FrameInfo.FourCC = m_components[eDEC].m_params.mfx.FrameInfo.FourCC;
+        m_components[eREN].m_params.mfx.FrameInfo.BitDepthLuma = m_components[eDEC].m_params.mfx.FrameInfo.BitDepthLuma;
+        m_components[eREN].m_params.mfx.FrameInfo.BitDepthChroma = m_components[eDEC].m_params.mfx.FrameInfo.BitDepthChroma;
+        m_components[eREN].m_params.mfx.FrameInfo.Shift = m_components[eDEC].m_params.mfx.FrameInfo.Shift;
     }
 
     if (   MFX_FOURCC_P010    == m_inParams.outFrameInfo.FourCC
@@ -1693,11 +1789,13 @@ mfxStatus MFXDecPipeline::CreateRender()
     case MFX_NO_RENDER :
         {
             m_components[eREN].m_nMaxAsync = 1;
+            m_components[eREN].m_params.mfx.FrameInfo.FourCC = m_components[eDEC].m_params.mfx.FrameInfo.FourCC;
             MFX_CHECK_WITH_ERR(m_pRender = new MFXNullRender(m_components[eREN].m_pSession, &sts), MFX_ERR_MEMORY_ALLOC);
             break;
         }
     case MFX_NULL_RENDER :
         {
+            m_components[eREN].m_params.mfx.FrameInfo.FourCC = m_components[eDEC].m_params.mfx.FrameInfo.FourCC;
             m_components[eREN].m_nMaxAsync = 1;
             MFX_CHECK_WITH_ERR(m_pRender = new MFXLockUnlockRender(m_components[eREN].m_pSession, &sts), MFX_ERR_MEMORY_ALLOC);
         }
@@ -1829,6 +1927,15 @@ mfxStatus MFXDecPipeline::InitRenderParams()
         refInfoOut.ChromaFormat = refInfoIn.ChromaFormat;
     }
 
+    if (!m_extDecVideoProcessing.IsZero())
+    {
+        refInfoOut.Width    = m_extDecVideoProcessing->Out.Width;
+        refInfoOut.Height   = m_extDecVideoProcessing->Out.Height;
+        refInfoOut.CropX    = m_extDecVideoProcessing->Out.CropX;
+        refInfoOut.CropY    = m_extDecVideoProcessing->Out.CropY;
+        refInfoOut.CropW    = m_extDecVideoProcessing->Out.CropW;
+        refInfoOut.CropH    = m_extDecVideoProcessing->Out.CropH;
+    }
     m_components[eREN].m_extParams.merge
         ( m_components[eDEC].m_extParams.begin()
         , m_components[eDEC].m_extParams.end());
@@ -1900,6 +2007,7 @@ mfxStatus MFXDecPipeline::CreateYUVSource()
             , NULL)));
     }
     else if (m_inParams.bYuvReaderMode ||
+             m_inParams.m_container == MFX_CONTAINER_CRMF ||
         MFX_FOURCC_NV12 == m_inParams.InputCodecType ||
         MFX_FOURCC_YV12 == m_inParams.InputCodecType)
     {
@@ -2419,6 +2527,11 @@ mfxStatus MFXDecPipeline::Play()
         , &notUsedVar
         , (LPFILETIME)&m_KernelTime
         , (LPFILETIME)&m_UserTime );
+  #define PIPELINE_START   10
+  #define PIPELINE_STOP    11
+    DWORD  GLBENCH_MESSAGE;
+    GLBENCH_MESSAGE = RegisterWindowMessage(_T("GLBenchMessage"));
+    if (GLBENCH_MESSAGE) SendNotifyMessage(HWND_BROADCAST, GLBENCH_MESSAGE, 0, PIPELINE_START);
 #else
     struct rusage usage;
     getrusage(RUSAGE_SELF,&usage);
@@ -2487,7 +2600,7 @@ mfxStatus MFXDecPipeline::Play()
             MFX_CHECK_STS(m_bitstreamBuf.UnLockOutput(&inputBs));
 
             //extraordinary exit
-            if (sts == MFX_ERR_INCOMPATIBLE_VIDEO_PARAM)
+            if (sts == MFX_ERR_INCOMPATIBLE_VIDEO_PARAM && m_extDecVideoProcessing.IsZero())
             {
                 exit_sts = sts;
                 bEOS     = true;
@@ -2562,6 +2675,9 @@ mfxStatus MFXDecPipeline::Play()
 
     if (MFX_ERR_NONE == exit_sts)
         notifyPlay.Complete();
+#if defined(_WIN32) || defined(_WIN64)
+    if (GLBENCH_MESSAGE) SendNotifyMessage(HWND_BROADCAST, GLBENCH_MESSAGE, 0, PIPELINE_STOP);
+#endif
 
     return exit_sts;
 }
@@ -2718,6 +2834,8 @@ mfxStatus MFXDecPipeline::CheckExitingCondition()
 
 mfxStatus  MFXDecPipeline::RunVPP(mfxFrameSurface1 *pSurface)
 {
+    if ( m_inParams.bExtendedFpsStat )
+        m_time_stampts.push_back(m_statTimer.CurrentTiming());
     if (NULL != pSurface)
     {
         if (m_components[eDEC].m_bPrintTimeStamps)
@@ -2870,6 +2988,21 @@ mfxStatus  MFXDecPipeline::RunVPP(mfxFrameSurface1 *pSurface)
 
 mfxStatus MFXDecPipeline::RunRender(mfxFrameSurface1* pSurface, mfxEncodeCtrl *pControl)
 {
+#if defined(_WIN32) || defined(_WIN64)
+    vm_char title[1024];
+    if ( m_inParams.bUpdateWindowTitle ) 
+    {
+        if ( m_inParams.nFrames )
+        {
+            vm_string_sprintf(title, VM_STRING("Frames processed: %d of %d"), m_nDecFrames, m_inParams.nFrames);
+        }
+        else 
+        {
+            vm_string_sprintf(title, VM_STRING("Frames processed: %d"), m_nDecFrames);
+        }
+        SetConsoleTitle(title);
+    }
+#endif
     if (NULL != pSurface)
     {
         m_components[eVPP].m_uiMaxAsyncReached = (std::max)(m_components[eVPP].m_uiMaxAsyncReached, (mfxU32)m_components[eVPP].m_SyncPoints.size());
@@ -3659,6 +3792,14 @@ mfxStatus MFXDecPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI32 argc, 
                 argv++;
             }
         }
+        else if (m_OptProc.Check(argv[0], VM_STRING("-fps_frame_window"), VM_STRING("Number of frames in window for per-window fps calculation. Default is 30."), OPT_INT_32))
+        {
+            if (1 + argv < argvEnd)
+            {
+                m_inParams.fps_frame_window = vm_string_atoi(argv[1]);
+                argv++;
+            }
+        }
         else if (m_OptProc.Check(argv[0], VM_STRING("-timeout"), VM_STRING("repeat mode with timeout (TIME is in minutes!)"), OPT_INT_32))
         {
             m_inParams.nRepeat = 0x7fffffff;
@@ -3835,6 +3976,8 @@ mfxStatus MFXDecPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI32 argc, 
                 , new randActivationInitializer(fMaxWarminUp, 0.0, nMaxSkip, m_pRandom)));
         }
         else HANDLE_BOOL_OPTION(m_inParams.bUseVPP_ifdi, VM_STRING("-deinterlace"), VM_STRING("insert vpp into pipeline only if deinterlacing required"));
+        else HANDLE_BOOL_OPTION(m_inParams.bUpdateWindowTitle, VM_STRING("-update_window_title"), VM_STRING("Update window title with progress information"));
+        else HANDLE_BOOL_OPTION(m_inParams.bExtendedFpsStat,   VM_STRING("-extended_fps_stat"), VM_STRING("Print extended fps information at the end"));
         else HANDLE_INT_OPTION(m_components[eVPP].m_params.vpp.Out.CropW, VM_STRING("-resize_w"), VM_STRING("video width at VPP output"))
         else HANDLE_INT_OPTION(m_components[eVPP].m_params.vpp.Out.CropH, VM_STRING("-resize_h"), VM_STRING("video height at VPP output"))
         else HANDLE_64F_OPTION(m_components[eVPP].m_zoomx, VM_STRING("-zoom_w"), VM_STRING("scale video width"))
@@ -3975,6 +4118,9 @@ mfxStatus MFXDecPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI32 argc, 
         else HANDLE_64F_OPTION_AND_FLAG(m_inParams.m_ProcAmp.Contrast, VM_STRING("-contrast"), VM_STRING("enable ProcAmp filter with specified contrast (from 0.0f to 10.0f by 0.01f, default = 1.0f)"),m_inParams.bUseProcAmp)
             else HANDLE_64F_OPTION_AND_FLAG(m_inParams.m_ProcAmp.Hue, VM_STRING("-hue"), VM_STRING("enable ProcAmp filter with specified hue (from -180.0f to 180.0f by 0.1f, default = 0.0f)"),m_inParams.bUseProcAmp)
             else HANDLE_64F_OPTION_AND_FLAG(m_inParams.m_ProcAmp.Saturation, VM_STRING("-saturation"), VM_STRING("enable ProcAmp filter with specified saturation (from 0.0f to 10.0f by 0.01f, default = 1.0f)"),m_inParams.bUseProcAmp)
+            else HANDLE_BOOL_OPTION(m_inParams.bUseCameraPipe,                 VM_STRING("-camera"), VM_STRING("use camera pipe"));
+            else HANDLE_BOOL_OPTION(m_inParams.bUseCameraPipePadding,          VM_STRING("-camera_padding"), VM_STRING("provide camera pipe padding exttended buffer"));
+            else HANDLE_BOOL_OPTION(m_inParams.bUseCameraPipeGammaCorrection,  VM_STRING("-camera_gamma_correction"), VM_STRING("Perform gamma correction in camera pipe"));
             else HANDLE_INT_OPTION(m_inParams.m_WallW,VM_STRING("-wall_w"), VM_STRING("width of video wall (several windows without overlapping"))
             else HANDLE_INT_OPTION(m_inParams.m_WallH,VM_STRING("-wall_h"), VM_STRING("height of video wall (several windows without overlapping"))
             else HANDLE_INT_OPTION(m_inParams.m_WallN,VM_STRING("-wall_n"), VM_STRING("number of current window in video wall (several windows without overlapping"))
@@ -4027,6 +4173,49 @@ mfxStatus MFXDecPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI32 argc, 
                 vm_string_strcpy_s(m_inParams.strSrcFile, MFX_ARRAY_SIZE(m_inParams.strSrcFile), argv[0]);
                 m_inParams.m_container = MFX_CONTAINER_MKV;
             }
+            else if (0!=(nPattern = m_OptProc.Check(argv[0], VM_STRING("-i:webm"), VM_STRING("input stream is WebM container pipeline works with demuxing"), OPT_UNDEFINED)))
+            {
+                MFX_CHECK(1 + argv != argvEnd);
+                argv++;
+                vm_string_strcpy_s(m_inParams.strSrcFile, MFX_ARRAY_SIZE(m_inParams.strSrcFile), argv[0]);
+                m_inParams.m_container = MFX_CONTAINER_MKV;
+            }
+            else if (0!=(nPattern = m_OptProc.Check(argv[0], VM_STRING("-i:bg16"), VM_STRING("input stream is in Bayer BGGR format. For camera pipe."), OPT_UNDEFINED)))
+            {
+                MFX_CHECK(1 + argv != argvEnd);
+                argv++;
+                vm_string_strcpy_s(m_inParams.strSrcFile, MFX_ARRAY_SIZE(m_inParams.strSrcFile), argv[0]);
+                m_inParams.m_container      = (mfxContainer)MFX_CAM_BAYER_BGGR;
+                m_inParams.FrameInfo.FourCC = MFX_FOURCC_R16;
+                m_inParams.bYuvReaderMode = true;
+            }
+            else if (0!=(nPattern = m_OptProc.Check(argv[0], VM_STRING("-i:gr16"), VM_STRING("input stream is in Bayer BGGR format. For camera pipe."), OPT_UNDEFINED)))
+            {
+                MFX_CHECK(1 + argv != argvEnd);
+                argv++;
+                vm_string_strcpy_s(m_inParams.strSrcFile, MFX_ARRAY_SIZE(m_inParams.strSrcFile), argv[0]);
+                m_inParams.m_container      = (mfxContainer)MFX_CAM_BAYER_GRBG;
+                m_inParams.FrameInfo.FourCC = MFX_FOURCC_R16;
+                m_inParams.bYuvReaderMode = true;
+            }
+            else if (0!=(nPattern = m_OptProc.Check(argv[0], VM_STRING("-i:gb16"), VM_STRING("input stream is in Bayer BGGR format. For camera pipe."), OPT_UNDEFINED)))
+            {
+                MFX_CHECK(1 + argv != argvEnd);
+                argv++;
+                vm_string_strcpy_s(m_inParams.strSrcFile, MFX_ARRAY_SIZE(m_inParams.strSrcFile), argv[0]);
+                m_inParams.m_container      = (mfxContainer)MFX_CAM_BAYER_GBRG;
+                m_inParams.FrameInfo.FourCC = MFX_FOURCC_R16;
+                m_inParams.bYuvReaderMode = true;
+            }
+            else if (0!=(nPattern = m_OptProc.Check(argv[0], VM_STRING("-i:rg16"), VM_STRING("input stream is in Bayer BGGR format. For camera pipe."), OPT_UNDEFINED)))
+            {
+                MFX_CHECK(1 + argv != argvEnd);
+                argv++;
+                vm_string_strcpy_s(m_inParams.strSrcFile, MFX_ARRAY_SIZE(m_inParams.strSrcFile), argv[0]);
+                m_inParams.m_container      = (mfxContainer)MFX_CAM_BAYER_RGGB;
+                m_inParams.FrameInfo.FourCC = MFX_FOURCC_R16;
+                m_inParams.bYuvReaderMode = true;
+            }
             else HANDLE_INT_OPTION(m_inParams.targetViewsTemporalId, VM_STRING("-dec:temporalid"), VM_STRING("in case of MVC->AVC and MVC->MVC transcoding,  specifies coresponding field in mfxExtMVCTargetViews structure"))
             else HANDLE_INT_OPTION(m_inParams.nTestId, VM_STRING("-testid"), VM_STRING("testid value used in SendNotifyMessages(WNDBROADCAST,,testid)"))
             else HANDLE_SPECIAL_OPTION(m_inParams.svc_layer, VM_STRING("-svc_layer"), VM_STRING("specify target svc_layer to decode"), OPT_SPECIAL, VM_STRING("temporalId dependencyId qualityId"))
@@ -4061,6 +4250,44 @@ mfxStatus MFXDecPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI32 argc, 
                 }
 
                 m_inParams.bMediaSDKSplitter = true;
+            }
+            else if (m_OptProc.Check(argv[0], VM_STRING("-sfc_in"), VM_STRING("In params for SFC")))
+            {
+                MFX_CHECK(4 + argv < argvEnd);
+                argv ++;
+                MFX_PARSE_INT(m_extDecVideoProcessing->In.CropX, argv[0]);
+                argv ++;
+                MFX_PARSE_INT(m_extDecVideoProcessing->In.CropY, argv[0]);
+                argv ++;
+                MFX_PARSE_INT(m_extDecVideoProcessing->In.CropW, argv[0]);
+                argv ++;
+                MFX_PARSE_INT(m_extDecVideoProcessing->In.CropH, argv[0]);
+            }
+            else if (m_OptProc.Check(argv[0], VM_STRING("-sfc_out"), VM_STRING("Out params for SFC")))
+            {
+                MFX_CHECK(6 + argv < argvEnd);
+                argv ++;
+                MFX_PARSE_INT(m_extDecVideoProcessing->Out.Width, argv[0]);
+                argv ++;
+                MFX_PARSE_INT(m_extDecVideoProcessing->Out.Height, argv[0]);
+                argv ++;
+                MFX_PARSE_INT(m_extDecVideoProcessing->Out.CropX, argv[0]);
+                argv ++;
+                MFX_PARSE_INT(m_extDecVideoProcessing->Out.CropY, argv[0]);
+                argv ++;
+                MFX_PARSE_INT(m_extDecVideoProcessing->Out.CropW, argv[0]);
+                argv ++;
+                MFX_PARSE_INT(m_extDecVideoProcessing->Out.CropH, argv[0]);
+            }
+            else if (m_OptProc.Check(argv[0], VM_STRING("-sfc_background"), VM_STRING("background params for SFC")))
+            {
+                MFX_CHECK(3 + argv < argvEnd);
+                argv ++;
+                MFX_PARSE_INT(m_extDecVideoProcessing->R, argv[0]);
+                argv ++;
+                MFX_PARSE_INT(m_extDecVideoProcessing->G, argv[0]);
+                argv ++;
+                MFX_PARSE_INT(m_extDecVideoProcessing->B, argv[0]);
             }
             else HANDLE_BOOL_OPTION(m_inParams.bDisableIpFieldPair, VM_STRING("-disable_ip_field_pair"), VM_STRING("disable i/p field pair"));
             else HANDLE_INT_OPTION(m_inParams.nImageStab, VM_STRING("-stabilize"), VM_STRING("use particular image stabilization mode 1-upscale, 2-boxing"))

@@ -77,6 +77,7 @@ protected:
     // parameter extension buffers
     MFXExtBufferPtr<mfxExtCodingOption>  m_extCodingOptions;
     MFXExtBufferPtr<mfxExtCodingOption2> m_extCodingOptions2;
+    MFXExtBufferPtr<mfxExtCodingOption3> m_extCodingOptions3;
     MFXExtBufferPtr<mfxExtCodingOptionDDI> m_extCodingOptionsDDI;
     MFXExtBufferPtr<mfxExtCodingOptionQuantMatrix> m_extCodingOptionsQuantMatrix;
     MFXExtBufferPtr<mfxExtDumpFiles>   m_extDumpFiles;
@@ -141,6 +142,8 @@ protected:
     //////////////////////////////////////////////////////////////////////////
     mfxI32                          m_BitRate;
     mfxI32                          m_MaxBitrate;
+    mfxI32                          m_WinBRCMaxAvgBps;
+    mfxU16                          m_WinBRCSize;
     mfxU16                          m_QPI;    // constant quantizer for I frames
     mfxU16                          m_QPP;    // constant quantizer for P frames
     mfxU16                          m_QPB;    // constant quantizer for B frames

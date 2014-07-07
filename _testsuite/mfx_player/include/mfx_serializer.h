@@ -476,6 +476,22 @@ protected:
 };
 
 template<>
+class MFXStructureRef <mfxExtCodingOption3>
+    : public MFXStructureBase<mfxExtCodingOption3>
+{
+public:
+    MFXStructureRef(mfxExtBuffer & refStruct, int flags = 0)
+        : MFXStructureBase<mfxExtCodingOption3>((mfxExtCodingOption3 &)refStruct, flags)
+    {
+        }
+    MFXStructureRef(mfxExtCodingOption3 & refStruct, int flags = 0)
+        :MFXStructureBase<mfxExtCodingOption3>(refStruct, flags)
+    {
+        }
+protected:
+    virtual void ConstructValues() const;
+};
+template<>
 class MFXStructureRef <mfxExtCodingOptionDDI>
     : public MFXStructureBase<mfxExtCodingOptionDDI>
 {

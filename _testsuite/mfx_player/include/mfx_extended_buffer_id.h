@@ -11,7 +11,7 @@ File Name: mfx_extended_buffer_id.h
 *******************************************************************************/
 
 #pragma once
-
+#include "mfxcamera.h"
 #ifndef INCLUDED_FROM_MFX_EXTENDED_BUFFER_H
     #error "mfx_extended_buffer_id.h should be included only by mfx_extenedd_buffer.h"
 #endif
@@ -76,9 +76,13 @@ DECL_BUFFER_TYPE(mfxExtVppAuxData, MFX_EXTBUFF_VPP_AUXDATA);
 DECL_BUFFER_TYPE(mfxExtVPPDenoise, MFX_EXTBUFF_VPP_DENOISE);
 DECL_BUFFER_TYPE(mfxExtVPPDetail, MFX_EXTBUFF_VPP_DETAIL);
 DECL_BUFFER_TYPE(mfxExtVPPProcAmp, MFX_EXTBUFF_VPP_PROCAMP);
+DECL_BUFFER_TYPE(mfxExtCamPipeControl,     MFX_EXTBUF_CAM_PIPECONTROL     );
+DECL_BUFFER_TYPE(mfxExtCamPadding,         MFX_EXTBUF_CAM_PADDING         );
+DECL_BUFFER_TYPE(mfxExtCamGammaCorrection, MFX_EXTBUF_CAM_GAMMA_CORRECTION);
 DECL_BUFFER_TYPE(mfxExtMVCSeqDesc, MFX_EXTBUFF_MVC_SEQ_DESC);
 DECL_BUFFER_TYPE(mfxExtCodingOption, MFX_EXTBUFF_CODING_OPTION);
 DECL_BUFFER_TYPE(mfxExtCodingOption2, MFX_EXTBUFF_CODING_OPTION2);
+DECL_BUFFER_TYPE(mfxExtCodingOption3,           MFX_EXTBUFF_CODING_OPTION3      );
 DECL_BUFFER_TYPE(mfxExtCodingOptionDDI, MFX_EXTBUFF_DDI);
 DECL_BUFFER_TYPE(mfxExtCodingOptionQuantMatrix, MFX_EXTBUFF_QM);
 DECL_BUFFER_TYPE(mfxExtCodingOptionHEVC, MFX_EXTBUFF_HEVCENC);
@@ -102,6 +106,7 @@ DECL_BUFFER_TYPE(mfxExtSVCSeqDesc, MFX_EXTBUFF_SVC_SEQ_DESC);
 DECL_BUFFER_TYPE(mfxExtSvcTargetLayer, MFX_EXTBUFF_SVC_TARGET_LAYER);
 
 DECL_BUFFER_TYPE(mfxExtPAVPOption, MFX_EXTBUFF_PAVP_OPTION);
+DECL_BUFFER_TYPE(mfxExtDecVideoProcessing, MFX_EXTBUFF_DEC_VIDEO_PROCESSING);
     
 //init helper
 template <class T>

@@ -226,7 +226,7 @@ protected:
     bool                 m_bDelaySetOutputPerfFile;
 };
 
-mfxStatus       ConvertSurface(mfxFrameSurface1* pSurfaceIn, mfxFrameSurface1* pSurfaceOut);
+mfxFrameSurface1* ConvertSurface(mfxFrameSurface1* pSurfaceIn, mfxFrameSurface1* pSurfaceOut);
 mfxStatus       AllocSurface(mfxFrameInfo *pTargetInfo, mfxFrameSurface1* pSurfaceOut);
 
 #endif //__MFX_RENDERS_H

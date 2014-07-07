@@ -159,8 +159,9 @@ mfxStatus MFXOutlineRender::RenderFrame(mfxFrameSurface1 * surface, mfxEncodeCtr
 
     if (surface->Info.FourCC != m_yv12Surface.Info.FourCC)
     {
-        MFX_CHECK_STS(ConvertSurface(surface, &m_yv12Surface));
-        convertedSurface = &m_yv12Surface;
+        convertedSurface = ConvertSurface(surface, &m_yv12Surface);
+        if (!convertedSurface)
+            return MFX_ERR_UNKNOWN;
     }
 
     MFX_CHECK_STS(MFXFileWriteRender::RenderFrame(convertedSurface));

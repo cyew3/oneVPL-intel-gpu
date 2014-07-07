@@ -117,6 +117,7 @@ static struct MKV_Element_t elements[] = {
    {2, TAG_MaxBlockAdditionID,{0x55,0xee},           "TAG_MaxBlockAdditionID", true, true, DATATYPE_INT},
    {3, TAG_TrackTimecodeScale,{0x23,0x31,0x4f},      "TAG_TrackTimecodeScale", true, true, DATATYPE_INT},
    {1, TAG_CodecID,           {0x86},                "TAG_CodecID", true, true, DATATYPE_BYTE},
+   {3, TAG_CodecName,         {0x25,0x86,0x88},      "TAG_CodecName", true, true, DATATYPE_BYTE},
    {3, TAG_DefaultDuration,   {0x23,0xe3,0x83},      "TAG_DefaultDuration", true, true, DATATYPE_BYTE},
    {3, TAG_Language,          {0x22,0xb5,0x9c},      "TAG_Language", true, true, DATATYPE_BYTE},
    {1, TAG_Video,             {0xe0},                "TAG_Video", true, false, DATATYPE_BYTE},
@@ -136,6 +137,8 @@ static struct MKV_Element_t elements[] = {
    {1, TAG_ReferenceBlock,    {0xfb},                "TAG_ReferenceBlock"      , true, false, DATATYPE_BYTE},
    {1, TAG_BlockDuration,     {0x9b},                "TAG_BlockDuration"      , true, true, DATATYPE_BYTE},
    {2, TAG_Name,              {0x53,0x6e},           "TAG_Name"         , true, true, DATATYPE_BYTE},
+   {4, TAG_Cues,              {0x1C,0x53,0xbb,0x6b}, "TAG_Cues"         , true, true, DATATYPE_BYTE},
+   {1, TAG_Position,          {0xA7},                "TAG_Position"     , true, false, DATATYPE_BYTE},
    {0, TAG_UNKNOWN,           {0x00},                "TAG_UNKNOWN"      , false, false, DATATYPE_BYTE},
 };
 
@@ -407,7 +410,7 @@ TagId MKVReader::GetTag(){
     for(;;){
         read = vm_file_fread(&buffer[size], 1, 1, m_fSource);
         if ( 1 != read ){
-            break;
+            return TAG_EOF;
         }
 
         int matched_tags =  TagsMatched(buffer, size+1);
@@ -458,6 +461,11 @@ mfxStatus MKVReader::ReadMetaSeek(void)
     
     // TAG_EBMLVoid
     tag = GetTag();
+    if ( TAG_Info == tag )
+    {
+        // This is for WebM where Info section goes right after MetaSeek
+        return 0 == vm_file_fseek(m_fSource, -4, VM_FILE_SEEK_CUR) ? MFX_ERR_NONE : MFX_ERR_UNKNOWN ;
+    }
     CHECK_TAG(tag, TAG_EBMLVoid);
     size = GetSize();
 
@@ -522,6 +530,10 @@ mfxStatus MKVReader::ReadTrack(void){
                     m_codec = codec = MFX_CODEC_AVC;
                 } else  if ( strncmp(value_str, "V_MPEGH/ISO/HEVC", size) == 0 ){
                     m_codec = codec = MFX_CODEC_HEVC;
+                } else  if ( strncmp(value_str, "V_VP8", size) == 0 ){
+                    m_codec = codec = MFX_CODEC_VP8;
+                } else  if ( strncmp(value_str, "V_VP9", size) == 0 ){
+                    m_codec = codec = MFX_CODEC_VP9;
                 } else {
                     // Unknown codec
                     codec = 1;
@@ -568,7 +580,7 @@ mfxStatus MKVReader::ReadTrack(void){
     // Jump to the end of tracks part
     vm_file_fseek(m_fSource, track_size, VM_FILE_SEEK_SET);
     tag = GetTag();
-    if ( TAG_EBMLVoid == tag ) {
+    if ( TAG_EBMLVoid == tag || TAG_Cues == tag) {
         size = GetSize();
     } else if ( TAG_Cluster == tag ){
         size = -4;
@@ -594,17 +606,23 @@ mfxStatus MKVReader::ReadSimpleBlock(mfxBitstream2 &bs){
     for(;;) {
         tag = GetTag();    
         if ( tag == TAG_ReferenceBlock || 
+             tag == TAG_Position || 
              tag == TAG_BlockDuration){
             // Skip tags w/o actual data
             size = GetSize();
             vm_file_fseek(m_fSource, size, VM_FILE_SEEK_CUR);
             continue;
-        } else if ( tag == TAG_Cluster ){
+        } 
+        else if ( tag == TAG_Cluster ){
             // New cluster found
             vm_file_fseek(m_fSource, -4, VM_FILE_SEEK_CUR);
             return MFX_ERR_NONE;
-        } else if ( tag == TAG_UNKNOWN ) {
+        }
+        else if ( tag == TAG_UNKNOWN ) {
             return MFX_ERR_ABORTED;
+        }
+        else if ( TAG_EOF == tag ) {
+            return MFX_ERR_MORE_DATA;
         }
 
         block_size = GetSize();
@@ -636,7 +654,7 @@ SEEK:
             mfxU32 internal = 0;
             mfxU32 jump;
 
-            for(;;){
+            for(;(m_codec != MFX_CODEC_VP8) && (m_codec != MFX_CODEC_VP9);){
                 // Decode data
                 // First 4 bytes contain size of sub-block. Extract it. 
                 if (data[internal] & 0x80){
@@ -670,6 +688,10 @@ SEEK:
             memcpy(bs.Data + bs.DataLength, data, block_size);
             bs.DataLength += block_size;
             delete data;
+            if ( (MFX_CODEC_VP8 == m_codec) || (MFX_CODEC_VP9 == m_codec) )
+            {
+                return MFX_ERR_NONE;
+            }
         } else {
             // It was block not connected to video stream. Skip it. 
             block_size -= 1;
@@ -692,6 +714,15 @@ mfxStatus MKVReader::ReadCluster(mfxBitstream2 &bs)
             mfxU32 size = GetSize();
             vm_file_fseek(m_fSource, size, VM_FILE_SEEK_CUR);
             continue;
+        }
+        if (TAG_EOF == tag)
+        {
+            return MFX_ERR_MORE_DATA;
+        }
+        if ( TAG_SimpleBlock == tag )
+        {
+            vm_file_fseek(m_fSource, -1, VM_FILE_SEEK_CUR);
+            return ReadSimpleBlock(bs);
         }
 
         CHECK_TAG(tag, TAG_Cluster);

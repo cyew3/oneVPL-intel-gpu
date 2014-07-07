@@ -40,6 +40,7 @@ File Name: .h
 #include "mfx_ibitstream_reader.h"
 #include "mfx_shared_ptr.h"
 #include "mfx_thread.h"
+#include "shared_utils.h"
 
 #ifdef PAVP_BUILD
 typedef enum CPImpl
@@ -53,6 +54,9 @@ typedef enum CPImpl
 //parameters that are set directly from cmd line
 struct sCommandlineParams
 {
+  mfxU32         fps_frame_window;   // Specifies how many frames should be used for per-window fps calculation
+  bool           bExtendedFpsStat;   // Show extended FPS related info
+  bool           bUpdateWindowTitle; // Show progress in window title
   mfxU32         InputCodecType;
   mfxFrameInfo   FrameInfo; //decode input frame info
   mfxFrameInfo   outFrameInfo; //file writerRender output frameInfo
@@ -153,6 +157,12 @@ struct sCommandlineParams
   bool           bSceneAnalyzer;
   mfxU16         nDenoiseFactorPlus1;
   mfxU16         nDetailFactorPlus1;
+  bool bUseCameraPipe;
+  mfxExtCamPipeControl m_CameraPipeControl;
+  bool bUseCameraPipePadding;
+  mfxExtCamPadding     m_CameraPipePadding;
+  bool bUseCameraPipeGammaCorrection;
+  mfxExtCamGammaCorrection m_CameraPipeGammaCorrection;
 
   bool bUseProcAmp;
   mfxExtVPPProcAmp m_ProcAmp;
@@ -216,7 +226,10 @@ struct sCommandlineParams
       //default set not to monochrome
       FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
 
-      outFrameInfo.FourCC = MFX_FOURCC_YV12;
+      outFrameInfo.FourCC = MFX_FOURCC_UNKNOWN;
+      outFrameInfo.BitDepthLuma = 8;
+      outFrameInfo.BitDepthChroma = 8;
+      outFrameInfo.Shift = 0;
       outFrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
 
       nPicStruct        =  PIPELINE_PICSTRUCT_NOT_SPECIFIED;
@@ -322,6 +335,7 @@ protected:
     mfxF64                   m_fLastTime;    //pipeline current time
     mfxF64                   m_fFirstTime;   //time of the first frame
     Timer                    m_statTimer;
+    std::vector<Ipp64f>      m_time_stampts;
     CmdOptionProcessor       m_OptProc;
 
     //components creation
@@ -407,6 +421,7 @@ protected:
 
     //multivieencoding support
     MFXExtBufferVector m_InputExtBuffers;
+    MFXExtBufferPtr<mfxExtDecVideoProcessing>  m_extDecVideoProcessing;
     //map for dec view order to enc view id map
     std::vector<std::pair<mfxU16, mfxU16> > m_viewOrderMap;
 

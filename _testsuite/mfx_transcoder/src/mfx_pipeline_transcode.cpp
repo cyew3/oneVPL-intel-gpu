@@ -69,6 +69,7 @@ File Name: .h
 
 #define HANDLE_EXT_OPTION(member, OPT_TYPE, description)      HANDLE_OPTION_FOR_EXT_BUFFER(m_extCodingOptions, member, OPT_TYPE, description)
 #define HANDLE_EXT_OPTION2(member, OPT_TYPE, description)     HANDLE_OPTION_FOR_EXT_BUFFER(m_extCodingOptions2, member, OPT_TYPE, description)
+#define HANDLE_EXT_OPTION3(member, OPT_TYPE, description)     HANDLE_OPTION_FOR_EXT_BUFFER(m_extCodingOptions3, member, OPT_TYPE, description)
 #define HANDLE_DDI_OPTION(member, OPT_TYPE, description)\
     {VM_STRING("-")VM_STRING(#member), OPT_TYPE, {&m_extCodingOptionsDDI->member}, VM_STRING("[INTERNAL DDI]: ")VM_STRING(description), NULL}
 #define HANDLE_VSIG_OPTION(member, OPT_TYPE, description)     HANDLE_OPTION_FOR_EXT_BUFFER(m_extVideoSignalInfo, member, OPT_TYPE, description)
@@ -143,6 +144,8 @@ MFXTranscodingPipeline::MFXTranscodingPipeline(IMFXPipelineFactory *pFactory)
         //CRF support
         HANDLE_GLOBAL_OPTION("", m_,ICQQuality,   OPT_UINT_16,    "", &m_applyBitrateParams),
 
+        HANDLE_GLOBAL_OPTION("", m_,WinBRCSize,          OPT_UINT_16,    "In LA_MAX_AVG specifies size for sliding window (in frames)", &m_applyBitrateParams),
+        HANDLE_GLOBAL_OPTION("", m_,WinBRCMaxAvgBps,     OPT_UINT_32,    "In LA_MAX_AVG specifies MaxBitrate for sliding window (bits per second)", &m_applyBitrateParams),
         //AVBR support
         HANDLE_GLOBAL_OPTION("", m_,Accuracy,     OPT_UINT_16,    "In AVBR mode specifies targetbitrate accuracy range", &m_applyBitrateParams),
         HANDLE_GLOBAL_OPTION("", m_,Convergence,  OPT_UINT_16,    "Convergence period for AVBR algorithm ", &m_applyBitrateParams),
@@ -161,7 +164,7 @@ MFXTranscodingPipeline::MFXTranscodingPipeline(IMFXPipelineFactory *pFactory)
         HANDLE_MFX_INFO("-r|",  GopRefDist,                       "Distance between I- or P- key frames (1 means no B-frames)"),
         HANDLE_MFX_INFO("",     GopOptFlag,                       "1=GOP_CLOSED, 2=GOP_STRICT"),
         HANDLE_MFX_INFO("",     IdrInterval,                      "IDR frame interval (0 means every I-frame is an IDR frame"),
-        HANDLE_MFX_INFO("",     RateControlMethod,                "1=CBR, 2=VBR, 3=ConstantQP, 4=AVBR, 8=Lookahead"),
+        HANDLE_MFX_INFO("",     RateControlMethod,                "1=CBR, 2=VBR, 3=ConstantQP, 4=AVBR, 8=Lookahead, 13==Lookahead with HRD support "),
         HANDLE_MFX_INFO("",     TargetKbps,                       "Target bitrate in kbits per seconds"),
         HANDLE_MFX_INFO("",     MaxKbps,                          "Maximum bitrate in the case of VBR"),
         HANDLE_MFX_INFO("-id|", InitialDelayInKB,                 "For bitrate control"),
@@ -279,6 +282,7 @@ MFXTranscodingPipeline::MFXTranscodingPipeline(IMFXPipelineFactory *pFactory)
         HANDLE_EXT_OPTION2(RepeatPPS,              OPT_TRI_STATE,  ""),
         HANDLE_EXT_OPTION2(BRefType,               OPT_UINT_16,    "control usage of B frames as reference in AVC encoder: 0 - undef, 1 - B ref off, 2 - B ref pyramid"),
         HANDLE_EXT_OPTION2(NumMbPerSlice,          OPT_UINT_16,    "number of MBs per slice"),
+        HANDLE_EXT_OPTION2(SkipFrame,              OPT_UINT_16,    "0=no_skip, 1=insert_dummy, 2=insert_nothing"),
         HANDLE_EXT_OPTION2(MinQPI,                 OPT_UINT_8,     "min QP for I-frames, 0 = default"),
         HANDLE_EXT_OPTION2(MaxQPI,                 OPT_UINT_8,     "max QP for I-frames, 0 = default"),
         HANDLE_EXT_OPTION2(MinQPP,                 OPT_UINT_8,     "min QP for P-frames, 0 = default"),
@@ -286,6 +290,10 @@ MFXTranscodingPipeline::MFXTranscodingPipeline(IMFXPipelineFactory *pFactory)
         HANDLE_EXT_OPTION2(MinQPB,                 OPT_UINT_8,     "min QP for B-frames, 0 = default"),
         HANDLE_EXT_OPTION2(MaxQPB,                 OPT_UINT_8,     "max QP for B-frames, 0 = default"),
         HANDLE_EXT_OPTION2(DisableVUI,             OPT_UINT_16,    ""),
+        HANDLE_EXT_OPTION2(BufferingPeriodSEI,     OPT_UINT_16,    ""),
+        HANDLE_EXT_OPTION3(NumSliceI,              OPT_UINT_16,    ""),
+        HANDLE_EXT_OPTION3(NumSliceP,              OPT_UINT_16,    ""),
+        HANDLE_EXT_OPTION3(NumSliceB,              OPT_INT_16,     ""),
 
         // mfxExtCodingOptionDDI
         HANDLE_DDI_OPTION(IntraPredCostType,       OPT_UINT_16,    "1=SAD, 2=SSD, 4=SATD_HADAMARD, 8=SATD_HARR"),
@@ -371,6 +379,8 @@ MFXTranscodingPipeline::MFXTranscodingPipeline(IMFXPipelineFactory *pFactory)
     m_Interleaved = 0;
     m_Quality = 0;
     m_RestartInterval = 0;
+    m_WinBRCMaxAvgBps = 0;
+    m_WinBRCSize = 0;
 
     m_RenderType = MFX_ENC_RENDER;
 }
@@ -521,6 +531,7 @@ mfxStatus MFXTranscodingPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI3
             {
                 m_components[eREN].m_SkippedFrames.push_back(atoi(item.c_str()));
             }
+            if(!m_extCodingOptions2->SkipFrame)
             m_extCodingOptions2->SkipFrame = 1;
         }
         else if (m_OptProc.Check(argv[0], VM_STRING("-cabac"), VM_STRING("Turn on CABAC mode")))
@@ -1365,6 +1376,8 @@ mfxStatus MFXTranscodingPipeline::CheckParams()
 
     if (!m_extCodingOptions2.IsZero())
         m_components[eREN].m_extParams.push_back(m_extCodingOptions2);
+    if (!m_extCodingOptions3.IsZero())
+        m_components[eREN].m_extParams.push_back(m_extCodingOptions3);
 
     if (!m_extCodingOptionsDDI.IsZero())
         m_components[eREN].m_extParams.push_back(m_extCodingOptionsDDI);

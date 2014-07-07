@@ -291,6 +291,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="src\mfx_base_allocator.cpp" />
+    <ClCompile Include="src\mfx_bayer_reader.cpp" />
     <ClCompile Include="src\mfx_bitstream_buffer.cpp" />
     <ClCompile Include="src\mfx_bitstream_reader_encryptor.cpp" />
     <ClCompile Include="src\mfx_component_params.cpp" />

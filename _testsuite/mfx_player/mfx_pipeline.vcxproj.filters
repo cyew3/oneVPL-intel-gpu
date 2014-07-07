@@ -206,6 +206,9 @@
     <ClCompile Include="src\mfx_mkv_reader.cpp">
       <Filter>readers</Filter>
     </ClCompile>
+    <ClCompile Include="src\mfx_bayer_reader.cpp">
+      <Filter>readers</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\mfx_adapters.h">
@@ -693,6 +696,9 @@
     </ClInclude>
     <ClInclude Include="include\mfx_mkv_reader.h">
       <Filter>readers</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mfx_pcp.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

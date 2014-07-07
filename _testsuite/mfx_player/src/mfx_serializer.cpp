@@ -168,6 +168,7 @@ void MFXStructureRef <mfxExtCodingOption2>::ConstructValues () const
     SERIALIZE_INT(RepeatPPS);
     SERIALIZE_INT(BRefType);
     SERIALIZE_INT(NumMbPerSlice);
+    SERIALIZE_INT(SkipFrame);
     SERIALIZE_INT(MinQPI);
     SERIALIZE_INT(MaxQPI);
     SERIALIZE_INT(MinQPP);
@@ -175,6 +176,13 @@ void MFXStructureRef <mfxExtCodingOption2>::ConstructValues () const
     SERIALIZE_INT(MinQPB);
     SERIALIZE_INT(MaxQPB);
     SERIALIZE_INT(DisableVUI);
+    SERIALIZE_INT(BufferingPeriodSEI);
+}
+void MFXStructureRef <mfxExtCodingOption3>::ConstructValues() const
+{
+    SERIALIZE_INT(NumSliceI);
+    SERIALIZE_INT(NumSliceP);
+    SERIALIZE_INT(NumSliceB);
 }
 
 void MFXStructureRef <mfxExtCodingOptionDDI>::ConstructValues () const
@@ -257,7 +265,6 @@ void MFXStructureRef <mfxExtCodingOptionHEVC>::ConstructValues() const
     SERIALIZE_INT(IntraAngModes);
     SERIALIZE_INT(EnableCm);
     SERIALIZE_INT(BPyramid);
-    SERIALIZE_INT(FastPUDecision);
     SERIALIZE_INT(HadamardMe);
     SERIALIZE_INT(TMVP);
     SERIALIZE_INT(Deblocking);
@@ -413,6 +420,10 @@ void MFXStructureRef <mfxInfoMFX>::ConstructValues () const
             SERIALIZE_INT(BufferSizeInKB);
             SERIALIZE_INT(TargetKbps);
             SERIALIZE_INT(Convergence);
+        }
+        else if (MFX_RATECONTROL_LA == m_pStruct->RateControlMethod)
+        {
+            SERIALIZE_INT(TargetKbps);
         }
         else if (MFX_RATECONTROL_ICQ == m_pStruct->RateControlMethod || MFX_RATECONTROL_LA_ICQ == m_pStruct->RateControlMethod)
         {
@@ -726,6 +737,10 @@ void MFXStructureRef <mfxExtBuffer>:: ConstructValues () const {
         }
         case MFX_EXTBUFF_CODING_OPTION2 :{
             SerializeStruct(VM_STRING("ExtCO2."), *(mfxExtCodingOption2*)m_pStruct);
+            break;
+        }
+        case MFX_EXTBUFF_CODING_OPTION3:{
+            SerializeStruct(VM_STRING("ExtCO3."), *(mfxExtCodingOption3*)m_pStruct);
             break;
         }
         case MFX_EXTBUFF_DDI : {

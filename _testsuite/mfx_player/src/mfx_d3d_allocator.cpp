@@ -19,6 +19,7 @@ Copyright(c) 2008-2012 Intel Corporation. All Rights Reserved.
 
 #define D3DFMT_NV12 (D3DFORMAT)MAKEFOURCC('N','V','1','2')
 #define D3DFMT_YV12 (D3DFORMAT)MAKEFOURCC('Y','V','1','2')
+#define D3DFMT_P010 (D3DFORMAT)MAKEFOURCC('P','0','1','0')
 
 D3DFORMAT ConvertMfxFourccToD3dFormat(mfxU32 fourcc)
 {
@@ -37,8 +38,13 @@ D3DFORMAT ConvertMfxFourccToD3dFormat(mfxU32 fourcc)
     case MFX_FOURCC_P8:
         return D3DFMT_P8;
     case MFX_FOURCC_P010:
+        return D3DFMT_P010;
     case MFX_FOURCC_A2RGB10:
         return D3DFMT_A2R10G10B10;
+    case MFX_FOURCC_R16:
+        return D3DFMT_R16F;
+    case MFX_FOURCC_ARGB16:
+        return D3DFMT_A16B16G16R16; 
     default:
         return D3DFMT_UNKNOWN;
     }
@@ -150,7 +156,10 @@ mfxStatus D3DFrameAllocator::LockFrame(mfxMemId mid, mfxFrameData *ptr)
         desc.Format != D3DFMT_R8G8B8 &&
         desc.Format != D3DFMT_A8R8G8B8 &&
         desc.Format != D3DFMT_P8 &&
-        desc.Format != D3DFMT_A2R10G10B10)
+        desc.Format != D3DFMT_P010 &&
+        desc.Format != D3DFMT_A2R10G10B10 &&
+        desc.Format != D3DFMT_R16F && 
+        desc.Format != D3DFMT_A16B16G16R16)
         return MFX_ERR_LOCK_MEMORY;
 
     D3DLOCKED_RECT locked;
@@ -168,6 +177,13 @@ mfxStatus D3DFrameAllocator::LockFrame(mfxMemId mid, mfxFrameData *ptr)
         ptr->U = (mfxU8 *)locked.pBits + desc.Height * locked.Pitch;
         ptr->V = ptr->U + 1;
         break;
+    case D3DFMT_P010:
+        ptr->PitchHigh = (mfxU16)(locked.Pitch / (1 << 16));
+        ptr->PitchLow  = (mfxU16)(locked.Pitch % (1 << 16));
+        ptr->Y = (mfxU8 *)locked.pBits;
+        ptr->U = (mfxU8 *)locked.pBits + desc.Height * locked.Pitch;
+        ptr->V = ptr->U + 1;
+        break;
     case D3DFMT_A2R10G10B10:
         ptr->PitchHigh = (mfxU16)(locked.Pitch / (1 << 16));
         ptr->PitchLow  = (mfxU16)(locked.Pitch % (1 << 16));
@@ -175,6 +191,15 @@ mfxStatus D3DFrameAllocator::LockFrame(mfxMemId mid, mfxFrameData *ptr)
         ptr->G = ptr->B + 1;
         ptr->R = ptr->B + 2;
         ptr->A = ptr->B + 3;
+        break;
+    case D3DFMT_A16B16G16R16:
+        ptr->PitchHigh = (mfxU16)(locked.Pitch / (1 << 16));
+        ptr->PitchLow  = (mfxU16)(locked.Pitch % (1 << 16));
+        ptr->B = (mfxU8 *)locked.pBits;
+        ptr->Y16 = (mfxU16 *)locked.pBits;
+        ptr->G = ptr->B + 2;
+        ptr->R = ptr->B + 4;
+        ptr->A = ptr->B + 6;
         break;
     case D3DFMT_YV12:
         ptr->PitchHigh = (mfxU16)(locked.Pitch / (1 << 16));
@@ -211,6 +236,12 @@ mfxStatus D3DFrameAllocator::LockFrame(mfxMemId mid, mfxFrameData *ptr)
         ptr->Y = (mfxU8 *)locked.pBits;
         ptr->U = 0;
         ptr->V = 0;
+        break;
+    case D3DFMT_R16F:
+        ptr->Pitch = (mfxU16)locked.Pitch;
+        ptr->Y16 = (mfxU16 *)locked.pBits;
+        ptr->U16 = 0;
+        ptr->V16 = 0;
         break;
     }
 

@@ -13,6 +13,7 @@
 #pragma once
 
 #include "mfxstructures.h"
+#include "mfxvp9.h"
 #include "mfx_bitstream2.h"
 #include "vm_strings.h"
 #include "mfx_iproxy.h"
@@ -26,6 +27,10 @@ struct sStreamInfo
     mfxU16 nHeight;
     bool   isDefaultFC;
     mfxU32 corrupted;
+    mfxU16 CropW;
+    mfxU16 CropH;
+    mfxU16 CropX;
+    mfxU16 CropY;
 };
 
 //file reader abstraction
