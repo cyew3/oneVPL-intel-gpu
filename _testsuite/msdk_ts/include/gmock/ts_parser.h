@@ -54,6 +54,7 @@ public:
 };
 
 typedef tsParser<BS_VP8_parser> tsParserVP8;
+typedef tsParser<BS_MPEG2_parser> tsParserMPEG2;
 typedef tsParser<BS_HEVC_parser> tsParserHEVC;
 typedef tsParser<BS_H264_parser> tsParserH264NALU;
 
