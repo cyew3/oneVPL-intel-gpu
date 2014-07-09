@@ -238,5 +238,8 @@
     <ClCompile Include="src\gmock\test_suites\avce_max_slice_size.cpp">
       <Filter>Source Files\test_suites\avce</Filter>
     </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\avce_thomson_ref_lists.cpp">
+      <Filter>Source Files\test_suites\avce</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

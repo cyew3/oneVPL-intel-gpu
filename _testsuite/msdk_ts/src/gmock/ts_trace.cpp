@@ -31,6 +31,17 @@
     }
 #define FIELD_T(type, _name) FIELD_T_N(type, _name, #_name)
 #define FIELD_S(type, _name) FIELD_T(type, _name)
+#define FIELD_A(_num, _name)                                    \
+        FIELD_T(mfxU16, _num )                                  \
+        if(p._num )                                             \
+        {                                                       \
+            *this << m_off << #_name " = " << (void*)p._name << " &(\n"; \
+            inc_offset();                                       \
+            for(mfxU32 i = 0; i < p._num; i ++)                 \
+                { *this << m_off << p._name[i] << ", "; }       \
+            dec_offset(); *this << "\n" << m_off << ")\n";      \
+        }                                                       \
+        else { *this << m_off << #_name << " = " << (void*)p._name << "\n"; }
 
 #include "ts_struct_decl.h"
 
@@ -342,5 +353,30 @@ tsTrace& tsTrace::operator<<(const mfxExtCamVignetteCorrection& p)
         }
     )
 
+    return *this;
+}
+
+tsTrace& tsTrace::operator<<(const mfxEncodeCtrl& p)
+{
+    STRUCT_BODY(mfxEncodeCtrl,
+        FIELD_S(mfxExtBuffer  , Header     )
+        FIELD_T(mfxU16        , SkipFrame  )
+        FIELD_T(mfxU16        , QP         )
+        FIELD_T(mfxU16        , FrameType  )
+
+        FIELD_A(NumExtParam, ExtParam)
+        FIELD_A(NumPayload,  Payload)
+    )
+
+    return *this;
+}
+
+tsTrace& tsTrace::operator<<(const mfxExtAVCRefLists& p)
+{
+    STRUCT_BODY(mfxExtAVCRefLists,
+        FIELD_S(mfxExtBuffer, Header          )
+        FIELD_A(NumRefIdxL0Active, RefPicList0)
+        FIELD_A(NumRefIdxL1Active, RefPicList1)
+    )
     return *this;
 }

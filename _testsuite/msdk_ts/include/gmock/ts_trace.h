@@ -18,6 +18,7 @@ TYPEDEF_MEMBER(mfxExtAVCEncodedFrameInfo, UsedRefListL0[0],    mfxExtAVCEncodedF
 TYPEDEF_MEMBER(mfxExtVPPVideoSignalInfo,  In,                  mfxExtVPPVideoSignalInfo_InOut)
 TYPEDEF_MEMBER(mfxExtEncoderROI,          ROI[0],              mfxExtEncoderROI_Entry)
 typedef union { mfxU32 n; char c[4]; } mfx4CC;
+typedef mfxExtAVCRefLists::mfxRefPic mfxExtAVCRefLists_mfxRefPic;
 
 class tsAutoTrace : public std::ostream
 {
@@ -80,6 +81,8 @@ public:
     
     tsTrace& operator << (const mfxExtBuffer& p);
     tsTrace& operator << (const mfxVideoParam& p);
+    tsTrace& operator << (const mfxEncodeCtrl& p);
+    tsTrace& operator << (const mfxExtAVCRefLists& p);
     tsTrace& operator << (const mfxExtEncoderROI& p);
     tsTrace& operator << (const mfxExtCamGammaCorrection& p);
     tsTrace& operator << (const mfxExtCamVignetteCorrection& p);

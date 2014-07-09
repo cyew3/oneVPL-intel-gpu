@@ -547,3 +547,16 @@ STRUCT(mfxExtCamPipeControl,
     FIELD_S(mfxExtBuffer, Header)
     FIELD_T(mfxU16, RawFormat   )
 )
+
+STRUCT(mfxExtAVCRefLists_mfxRefPic,
+    FIELD_T(mfxU32, FrameOrder)
+    FIELD_T(mfxU16, PicStruct )
+)
+
+STRUCT(mfxExtAVCRefLists,
+    FIELD_S(mfxExtBuffer, Header           )  
+    FIELD_T(mfxU16      , NumRefIdxL0Active)
+    FIELD_T(mfxU16      , NumRefIdxL1Active)
+    FIELD_S(mfxExtAVCRefLists_mfxRefPic, RefPicList0)
+    FIELD_S(mfxExtAVCRefLists_mfxRefPic, RefPicList1)
+)
