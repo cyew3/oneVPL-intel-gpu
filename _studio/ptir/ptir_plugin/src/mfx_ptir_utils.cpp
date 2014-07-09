@@ -18,6 +18,16 @@ mfxStatus ColorSpaceConversionWCopy(mfxFrameSurface1* surface_in, mfxFrameSurfac
     IppStatus status;
     mfxU32 srcFormat = surface_in->Info.FourCC;
 
+    mfxU16  inW = 0;
+    mfxU16  inH = 0;
+    mfxU16 outW = 0;
+    mfxU16 outH = 0;
+
+    inW = surface_in->Info.CropX + surface_in->Info.CropW;
+    inH = surface_in->Info.CropY + surface_in->Info.CropH;
+
+    outW = surface_out->Info.CropX + surface_in->Info.CropW;
+    outH = surface_out->Info.CropY + surface_in->Info.CropH;
 
     switch (srcFormat) {
     case MFX_FOURCC_NV12:
@@ -26,9 +36,8 @@ mfxStatus ColorSpaceConversionWCopy(mfxFrameSurface1* surface_in, mfxFrameSurfac
             {
                 const Ipp8u *pSrcY = (Ipp8u*)surface_in->Data.Y;
                 const Ipp8u *pSrcUV = (Ipp8u*)surface_in->Data.UV;
-                Ipp32u pSrcYStep = surface_in->Info.CropW;
-                //Ipp32u pSrcUVStep = surface_in->Info.CropW / 2;
-                Ipp32u pSrcUVStep = surface_in->Info.CropW;
+                Ipp32u pSrcYStep = surface_in->Data.Pitch;
+                Ipp32u pSrcUVStep = surface_in->Data.Pitch;
 
                 Ipp8u *(pDst[3]) = {(Ipp8u*)surface_out->Data.Y,
                       (Ipp8u*)surface_out->Data.U,
@@ -38,7 +47,7 @@ mfxStatus ColorSpaceConversionWCopy(mfxFrameSurface1* surface_in, mfxFrameSurfac
                                     surface_out->Data.Pitch/2,
                                     surface_out->Data.Pitch/2};
 
-                IppiSize roiSize = {surface_in->Info.CropW, surface_in->Info.CropH};
+                IppiSize roiSize = {inW, inH};
 
                 if(surface_in->Info.Width != surface_out->Info.Width   ||
                    surface_in->Info.Height != surface_out->Info.Height)
@@ -59,16 +68,16 @@ mfxStatus ColorSpaceConversionWCopy(mfxFrameSurface1* surface_in, mfxFrameSurfac
                                           (Ipp8u*)surface_in->Data.U,
                                           (Ipp8u*)surface_in->Data.V};
 
-                int pSrcStep[3] = {surface_in->Info.CropW,
-                                   surface_in->Info.CropW / 2,
-                                   surface_in->Info.CropW / 2};
+                int pSrcStep[3] = {surface_in->Data.Pitch,
+                                   surface_in->Data.Pitch / 2,
+                                   surface_in->Data.Pitch / 2};
 
                 Ipp8u *pDstY = (Ipp8u*)surface_out->Data.Y;
                 Ipp8u *pDstUV = (Ipp8u*)surface_out->Data.UV;
-                Ipp32u pDstYStep = surface_out->Info.CropW;
-                Ipp32u pDstUVStep = surface_out->Info.CropW;
+                Ipp32u pDstYStep = surface_out->Data.Pitch;
+                Ipp32u pDstUVStep = surface_out->Data.Pitch;
 
-                IppiSize roiSize = {surface_in->Info.CropW, surface_in->Info.CropH};
+                IppiSize roiSize = {inW, inH};
 
                 if(surface_in->Info.Width > surface_out->Info.Width   ||
                    surface_in->Info.Height > surface_out->Info.Height)
@@ -93,12 +102,17 @@ mfxStatus ColorSpaceConversionWCopy(mfxFrameSurface1* surface_in, mfxFrameSurfac
 
 mfxStatus Ptir420toMfxNv12(mfxU8* buffer, mfxFrameSurface1* surface_out)
 {
+    mfxU16 outW = 0;
+    mfxU16 outH = 0;
+
+    outW = surface_out->Info.CropX + surface_out->Info.CropW;
+    outH = surface_out->Info.CropY + surface_out->Info.CropH;
     mfxFrameSurface1 work420_surface;
     memset(&work420_surface, 0, sizeof(mfxFrameSurface1));
     memcpy(&(work420_surface.Info), &(surface_out->Info), sizeof(mfxFrameInfo));
     work420_surface.Info.FourCC = MFX_FOURCC_I420;
-    mfxU16& w = work420_surface.Info.CropW;
-    mfxU16& h = work420_surface.Info.CropH;
+    mfxU16& w = outW;
+    mfxU16& h = outH;
     work420_surface.Data.Y = buffer;
     work420_surface.Data.U = work420_surface.Data.Y+w*h;
     work420_surface.Data.V = work420_surface.Data.U+w*h/4;
@@ -109,12 +123,17 @@ mfxStatus Ptir420toMfxNv12(mfxU8* buffer, mfxFrameSurface1* surface_out)
 
 mfxStatus MfxNv12toPtir420(mfxFrameSurface1* surface_in, mfxU8* buffer)
 {
+    mfxU16  inW = 0;
+    mfxU16  inH = 0;
+
+    inW = surface_in->Info.CropX + surface_in->Info.CropW;
+    inH = surface_in->Info.CropY + surface_in->Info.CropH;
     mfxFrameSurface1 work420_surface;
     memset(&work420_surface, 0, sizeof(mfxFrameSurface1));
     memcpy(&(work420_surface.Info), &(surface_in->Info), sizeof(mfxFrameInfo));
     work420_surface.Info.FourCC = MFX_FOURCC_I420;
-    mfxU16& w = work420_surface.Info.CropW;
-    mfxU16& h = work420_surface.Info.CropH;
+    mfxU16& w = inW;
+    mfxU16& h = inH;
     work420_surface.Data.Y = buffer;
     work420_surface.Data.U = work420_surface.Data.Y+w*h;
     work420_surface.Data.V = work420_surface.Data.U+w*h/4;

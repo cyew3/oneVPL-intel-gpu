@@ -121,7 +121,8 @@ protected:
 
     mfxSession          m_session;
     mfxPluginParam      m_PluginParam;
-    mfxVideoParam       m_mfxpar;
+    mfxVideoParam       m_mfxInitPar;
+    mfxVideoParam       m_mfxCurrentPar;
     bool                m_createdByDispatcher;
     std::auto_ptr<MFXPluginAdapter<MFXVPPPlugin> > m_adapter;
     PTIR_Processor*  ptir;
@@ -138,10 +139,11 @@ protected:
     std::vector<mfxFrameSurface1*> workSurfs;
     std::vector<mfxFrameSurface1*> outSurfs;
 
+    mfxStatus QueryReset(const mfxVideoParam& old_vp, const mfxVideoParam& new_vp);
 
     inline mfxStatus GetHandle(mfxHDL& mfxDeviceHdl, mfxHandleType& mfxDeviceType);
     inline mfxStatus GetHWTypeAndCheckSupport(mfxIMPL& impl, mfxHDL& mfxDeviceHdl, eMFXHWType& HWType, bool& HWSupported, bool& par_accel);
-    inline mfxStatus CheckInFrameSurface1(mfxFrameSurface1*& mfxSurf);
+    inline mfxStatus CheckInFrameSurface1(mfxFrameSurface1*& mfxSurf, mfxFrameSurface1*& mfxSurfOut);
     inline mfxStatus CheckOutFrameSurface1(mfxFrameSurface1*& mfxSurf);
     inline mfxStatus CheckFrameSurface1(mfxFrameSurface1*& mfxSurf);
 

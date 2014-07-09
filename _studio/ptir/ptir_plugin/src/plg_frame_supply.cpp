@@ -14,7 +14,8 @@ File Name: plg_frame_supply.cpp
 
 frameSupplier::frameSupplier(std::vector<mfxFrameSurface1*>* _inSurfs, std::vector<mfxFrameSurface1*>* _workSurfs, 
     std::vector<mfxFrameSurface1*>* _outSurfs, std::map<CmSurface2D*,mfxFrameSurface1*>* _CmToMfxSurfmap,
-    CmDeviceEx* _pCMdevice, mfxCoreInterface* _mfxCore, mfxU16 _IOPattern, bool _isD3D11)
+    CmDeviceEx* _pCMdevice, mfxCoreInterface* _mfxCore, mfxU16 _IOPattern, bool _isD3D11, UMC::Mutex& _guard)
+    : m_guard(_guard)
 {
     inSurfs        = _inSurfs;
     workSurfs      = _workSurfs;
@@ -175,6 +176,7 @@ mfxStatus frameSupplier::AddOutputSurf(mfxFrameSurface1* outSurf)
 }
 mfxStatus frameSupplier::FreeFrames()
 {
+    UMC::AutomaticUMCMutex guard(m_guard);
     mfxStatus mfxSts = MFX_ERR_NONE;
     mfxU32 iii = 0;
     mfxU32 refs = 0;

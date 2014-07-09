@@ -16,6 +16,7 @@ File Name: ptir_vpp_plugin.h
 #include "mfxvideo.h"
 #include "mfxplugin.h"
 #include "ptir_vpp_utils.h"
+#include <umc_mutex.h>
 extern "C" {
 #include "../pa/api.h"
 #if defined(LINUX32) || defined (LINUX64)
@@ -38,7 +39,7 @@ class frameSupplier
 public:
     frameSupplier(std::vector<mfxFrameSurface1*>* _inSurfs, std::vector<mfxFrameSurface1*>* _workSurfs, 
                   std::vector<mfxFrameSurface1*>* _outSurfs, std::map<CmSurface2D*,mfxFrameSurface1*>* _CmToMfxSurfmap,
-                  CmDeviceEx* _pCMdevice, mfxCoreInterface* _mfxCore, mfxU16 _IOPattern, bool _isD3D11);
+                  CmDeviceEx* _pCMdevice, mfxCoreInterface* _mfxCore, mfxU16 _IOPattern, bool _isD3D11, UMC::Mutex& _guard);
     virtual ~frameSupplier()
     {
         FreeFrames();
@@ -66,7 +67,8 @@ protected:
     std::vector<mfxFrameSurface1*> *outSurfs;
     std::map<CmSurface2D*,mfxFrameSurface1*> *CmToMfxSurfmap;
     mfxU16  IOPattern;
-    bool   isD3D11;
+    bool    isD3D11;
+    UMC::Mutex& m_guard;
 };
 
 class PTIR_Processor

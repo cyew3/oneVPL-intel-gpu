@@ -71,10 +71,10 @@ PTIR_ProcessorCM::~PTIR_ProcessorCM()
 
 mfxStatus PTIR_ProcessorCM::Init(mfxVideoParam *par)
 {
-    //uiInWidth  = uiWidth  = par->vpp.In.Width;
-    //uiInHeight = uiHeight = par->vpp.In.Height;
-    uiInWidth  = uiWidth  = par->vpp.In.CropW;
-    uiInHeight = uiHeight = par->vpp.In.CropH;
+    //maximize b2b with reference app
+    uiInWidth  = uiWidth  = par->vpp.In.CropX + par->vpp.In.CropW;
+    uiInHeight = uiHeight = par->vpp.In.CropY + par->vpp.In.CropH;
+
     if(par->vpp.In.FrameRateExtN && par->vpp.In.FrameRateExtD)
         dFrameRate = (double) par->vpp.In.FrameRateExtN / par->vpp.In.FrameRateExtD;
     else

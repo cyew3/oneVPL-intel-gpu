@@ -491,8 +491,8 @@ void DeinterlaceFilter::CalculateSADRs(Frame *pfrmCur, Frame *pfrmPrv)
     CMUT_ASSERT_EQUAL(this->height, pfrmCur->plaY.uiHeight, "Frame height doesn't matach filter's processing configuration");
     CMUT_ASSERT_EQUAL(this->width, pfrmPrv->plaY.uiWidth, "Frame width doesn't matach filter's processing configuration");
     CMUT_ASSERT_EQUAL(this->height, pfrmPrv->plaY.uiHeight, "Frame height doesn't matach filter's processing configuration");
-    CMUT_ASSERT_EQUAL(0, pfrmCur->plaY.uiHeight % RSSAD_PLANE_HEIGHT, "Frame height doesn't matach filter's processing configuration");
-    CMUT_ASSERT_EQUAL(0, pfrmCur->plaY.uiWidth % RSSAD_PLANE_WIDTH, "Frame width doesn't matach filter's processing configuration");
+    //CMUT_ASSERT_EQUAL(0, pfrmCur->plaY.uiHeight % RSSAD_PLANE_HEIGHT, "Frame height doesn't matach filter's processing configuration");
+    //CMUT_ASSERT_EQUAL(0, pfrmCur->plaY.uiWidth % RSSAD_PLANE_WIDTH, "Frame width doesn't matach filter's processing configuration");
 
 
 #ifdef  CPUPATH
