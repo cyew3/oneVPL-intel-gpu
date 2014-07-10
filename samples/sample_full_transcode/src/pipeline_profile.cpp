@@ -58,6 +58,9 @@ void PipelineProfile::ParsePlugins() {
     if (m_parser.IsPresent(OPTION_VENCPLG)) {
         m_enc_plugins = m_parser[OPTION_VENCPLG].as<std::vector<msdk_string> >();
     }
+    if (m_parser.IsPresent(OPTION_VPPPLG_GUID)) {
+        m_vpp_plugin = m_parser[OPTION_VPPPLG_GUID].as<msdk_string>();
+    }
 }
 
 void PipelineProfile::ParseSessionInfo() {

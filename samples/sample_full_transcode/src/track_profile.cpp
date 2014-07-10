@@ -67,6 +67,7 @@ TrackProfile<mfxVideoParam>::TrackProfile (const MFXStreamParams &splInfo, CmdLi
 
     ParseEncodeParams();
     ParseDecodeParams();
+    ParseVPPParams();
 }
 
 void TrackProfile<mfxVideoParam>::OnUnsupportedCodec( const msdk_string & str)
@@ -118,6 +119,21 @@ void TrackProfile<mfxVideoParam>::ParseDecodeParams()
         m_trackInfo.Decode.IOPattern = MFX_IOPATTERN_OUT_VIDEO_MEMORY;
     }
     m_trackInfo.Decode.mfx.CodecId = vInfo.VideoParam.CodecId;
+}
+
+void TrackProfile<mfxVideoParam>::ParseVPPParams()
+{
+    mfxTrackInfo & vInfo = *((mfxStreamParams&)m_splInfo).TrackInfo[m_track];
+    m_trackInfo.VPP.vpp.Out.Width = m_trackInfo.VPP.vpp.Out.CropW = vInfo.VideoParam.FrameInfo.Width;
+    m_trackInfo.VPP.vpp.Out.Height = m_trackInfo.VPP.vpp.Out.CropH = vInfo.VideoParam.FrameInfo.Height;
+    if (m_parser->IsPresent(OPTION_W)) {
+        mfxU16 width = (*m_parser)[OPTION_W].as<mfxU16>();
+        m_trackInfo.VPP.vpp.Out.Width = m_trackInfo.VPP.vpp.Out.CropW = width;
+    }
+    if (m_parser->IsPresent(OPTION_H)) {
+        mfxU16 height = (*m_parser)[OPTION_H].as<mfxU16>();
+        m_trackInfo.VPP.vpp.Out.Height = m_trackInfo.VPP.vpp.Out.CropH = height;
+    }
 }
 
 TrackProfile <mfxAudioParam>::TrackProfile( const MFXStreamParams &splInfo

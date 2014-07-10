@@ -26,6 +26,8 @@ public:
     virtual bool isDecoderPluginExist () const  = 0;
     virtual bool isEncoderPluginExist () const  = 0;
     virtual bool isGenericPluginExist () const  = 0;
+    virtual bool isVPPPluginExist () const  = 0;
+    virtual msdk_string getVPPPlugin() const = 0;
     virtual bool isVppExist () const  = 0;
     virtual bool isEncoderExist ()const  = 0;
     virtual bool isMultiplexerExist () const  = 0;
@@ -45,6 +47,7 @@ class PipelineProfile : public IPipelineProfile, private no_copy {
     std::vector<msdk_string> m_generic_plugins;
     std::vector<msdk_string> m_dec_plugins;
     std::vector<msdk_string> m_enc_plugins;
+    msdk_string m_vpp_plugin;
 
     MFXStreamParamsExt m_muxerInfo;
 public:
@@ -74,8 +77,14 @@ public:
     virtual bool isGenericPluginExist () const {
         return !m_generic_plugins.empty();
     }
+    virtual bool isVPPPluginExist () const {
+        return (m_vpp_plugin.length() > 0);
+    }
+    virtual msdk_string getVPPPlugin() const {
+        return m_vpp_plugin;
+    }
     virtual bool isVppExist () const {
-        return m_parser.IsPresent(OPTION_W) || m_parser.IsPresent(OPTION_H) ;
+        return isVPPPluginExist() || m_parser.IsPresent(OPTION_W) || m_parser.IsPresent(OPTION_H) ;
     }
     virtual bool isEncoderExist ()const {
         if (!isDecoderExist()) {

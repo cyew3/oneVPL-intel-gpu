@@ -14,16 +14,39 @@ Copyright(c) 2014 Intel Corporation. All Rights Reserved.
 #include "pipeline_factory.h"
 #include "mfxstructures.h"
 
-Transform <MFXVideoVPP>::Transform( PipelineFactory& factory, MFXVideoSessionExt & session, int TimeToWait ) :
-    m_session(session)
-    ,m_factory(factory)
-    ,m_dTimeToWait(TimeToWait)
-    ,m_pVPP(m_factory.CreateVideoVPP(m_session))
-    ,m_pInputSurface(0)
-    ,m_pSamplesSurfPool(factory.CreateSamplePool(TimeToWait)) {
-        m_bInited = false;
-        m_nFramesForNextTransform = 0;
+Transform <MFXVideoVPP>::Transform( PipelineFactory& factory, MFXVideoSessionExt & session, int TimeToWait, const mfxPluginUID & uid) :
+         m_session(session)
+        ,m_factory(factory)
+        ,m_dTimeToWait(TimeToWait)
+        ,m_pVPP(m_factory.CreateVideoVPP(m_session))
+        ,m_pInputSurface(0)
+        ,m_pSamplesSurfPool(factory.CreateSamplePool(TimeToWait))
+        ,m_bEOS(false)
+        ,m_nTrackId(0)
+{
+    m_bInited = false;
+    m_nFramesForNextTransform = 0;
+    MSDK_MEMCPY(&m_uid, &uid, sizeof(mfxPluginUID));
+    if (!AreGuidsEqual(m_uid, MSDK_PLUGINGUID_NULL))
+    {
+        mfxStatus sts = MFXVideoUSER_Load(m_session, &uid, 1);
+        if (MFX_ERR_NONE != sts)
+        {
+            MSDK_TRACE_INFO(MSDK_STRING("MFXVideoUSER_Load(session=0x") << m_session << MSDK_STRING("), sts=") << sts);
+        }
+    }
+}
 
+Transform <MFXVideoVPP>::~Transform()
+{
+    if (!AreGuidsEqual(m_uid, MSDK_PLUGINGUID_NULL) && m_session)
+    {
+        mfxStatus sts = MFXVideoUSER_UnLoad(m_session, &m_uid);
+        if (sts != MFX_ERR_NONE)
+        {
+            MSDK_TRACE_INFO(MSDK_STRING("MFXVideoUSER_UnLoad(session=0x") << m_session << MSDK_STRING("), sts=") << sts);
+        }
+    }
 }
 
 void Transform <MFXVideoVPP>::Configure(MFXAVParams& param, ITransform * nextTransform) {
@@ -68,14 +91,26 @@ bool Transform <MFXVideoVPP>::GetSample( SamplePtr& sample) {
 }
 
 void Transform <MFXVideoVPP>::PutSample(SamplePtr& sample) {
-    InitVPP();
-    m_pInputSurface = &sample->GetSurface();
+    m_bEOS |= sample->HasMetaData(META_EOS);
+    InitVPP(sample);
+    m_pInputSurface = m_bEOS? 0: &sample->GetSurface();
     sample.reset();
 }
 
-void Transform <MFXVideoVPP>::InitVPP() {
+void Transform <MFXVideoVPP>::InitVPP(SamplePtr& sample) {
     if (m_bInited)
         return;
+
+    m_nTrackId = sample->GetTrackID();
+
+    mfxU16 oldWidth = 0, oldHeight = 0;
+    oldWidth = m_initVideoParam.vpp.Out.Width;
+    oldHeight = m_initVideoParam.vpp.Out.Height;
+    m_initVideoParam.vpp.In = m_initVideoParam.vpp.Out = sample->GetSurface().Info;
+
+    m_initVideoParam.vpp.Out.Width = m_initVideoParam.vpp.Out.CropW = oldWidth;
+    m_initVideoParam.vpp.Out.Height = m_initVideoParam.vpp.Out.CropH = oldHeight;
+    m_initVideoParam.IOPattern = (mfxU16)MFX_IOPATTERN_IN_SYSTEM_MEMORY | (mfxU16)MFX_IOPATTERN_OUT_SYSTEM_MEMORY;
 
     mfxStatus sts = m_pVPP->Init(&m_initVideoParam);
     if (sts < 0) {
@@ -108,21 +143,40 @@ void Transform <MFXVideoVPP>::AllocFrames() {
         MSDK_TRACE_ERROR(MSDK_STRING("MFXVideoVPP::Alloc, sts=") << sts);
         throw VPPAllocError();
     }
+
     mfxFrameSurface1 surf;
     memset((void*)&surf, 0, sizeof(mfxFrameSurface1));
 
-    m_SurfArray.resize(allocResp.NumFrameActual, surf);
+    surf.Info = m_initVideoParam.vpp.Out;
+    surf.Info.FourCC = MFX_FOURCC_NV12;
 
     for (int i = 0; i < allocResp.NumFrameActual; i++) {
-        m_SurfArray[i].Data.MemId = allocResp.mids[i];
-    /*    SamplePtr sample(new DataSample(m_SurfArray[i]));
-        m_pSamplesSurfPool->RegisterSample(sample);*/
+        surf.Data.MemId = allocResp.mids[i];
+        SamplePtr sampleToBuf(new SampleSurfaceWithData(surf, m_nTrackId));
+        m_pSamplesSurfPool->RegisterSample(sampleToBuf);
     }
 }
 
 void Transform <MFXVideoVPP>::GetNumSurfaces(MFXAVParams& param, IAllocRequest& request)
 {
-    mfxStatus sts = m_pVPP->QueryIOSurf(&param.GetVideoParam(), &request.Video());
+    mfxVideoParam *srcParams = &param.GetVideoParam();
+
+    mfxVideoParam tmpVPPParams;
+    memset(&tmpVPPParams, 0, sizeof(mfxVideoParam));
+    memcpy(&tmpVPPParams.vpp.In, &srcParams->mfx.FrameInfo, sizeof(mfxFrameInfo));
+    memcpy(&tmpVPPParams.vpp.Out, &srcParams->mfx.FrameInfo, sizeof(mfxFrameInfo));
+
+    if (tmpVPPParams.vpp.In.FrameRateExtN == 0 || tmpVPPParams.vpp.In.FrameRateExtD == 0)
+    {
+        tmpVPPParams.vpp.In.FrameRateExtN = tmpVPPParams.vpp.Out.FrameRateExtN = 30;
+        tmpVPPParams.vpp.In.FrameRateExtD = tmpVPPParams.vpp.Out.FrameRateExtD = 1;
+    }
+    tmpVPPParams.vpp.Out.Width = tmpVPPParams.vpp.Out.CropW = m_initVideoParam.vpp.Out.Width;
+    tmpVPPParams.vpp.Out.Height = tmpVPPParams.vpp.Out.CropH = m_initVideoParam.vpp.Out.Height;
+    tmpVPPParams.vpp.Out.FourCC = MFX_FOURCC_NV12;
+    tmpVPPParams.IOPattern = (mfxU16)MFX_IOPATTERN_IN_SYSTEM_MEMORY | (mfxU16)MFX_IOPATTERN_OUT_SYSTEM_MEMORY;
+
+    mfxStatus sts = m_pVPP->QueryIOSurf(&tmpVPPParams, &request.Video());
     if (sts < 0) {
         MSDK_TRACE_ERROR(MSDK_STRING("MFXVideoVPP::QueryIOSurf, sts=") << sts);
         throw VPPQueryIOSurfError();

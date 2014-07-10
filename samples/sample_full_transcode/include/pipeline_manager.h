@@ -10,6 +10,7 @@
 #include <sample_utils.h>
 #include <list>
 #include "pipeline_factory.h"
+#include "plugin_utils.h"
 
 class PipelineManager  : private no_copy
 {

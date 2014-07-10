@@ -118,7 +118,8 @@
       <TargetMachine>MachineX86</TargetMachine>
     </Link>
     <Lib>
-      <AdditionalDependencies>d3d9.lib;d3d11.lib;dxgi.lib;dxva2.lib;</AdditionalDependencies>
+      <AdditionalDependencies>libmfx_d.lib;d3d9.lib;d3d11.lib;dxgi.lib;dxva2.lib;</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(INTELMEDIASDKROOT)\lib\$(Platform)</AdditionalLibraryDirectories>
     </Lib>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -145,7 +146,8 @@
       <TargetMachine>MachineX64</TargetMachine>
     </Link>
     <Lib>
-      <AdditionalDependencies>d3d9.lib;d3d11.lib;dxgi.lib;dxva2.lib;</AdditionalDependencies>
+      <AdditionalDependencies>libmfx_d.lib;d3d9.lib;d3d11.lib;dxgi.lib;dxva2.lib;</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(INTELMEDIASDKROOT)\lib\$(Platform)</AdditionalLibraryDirectories>
     </Lib>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -170,7 +172,8 @@
       <TargetMachine>MachineX86</TargetMachine>
     </Link>
     <Lib>
-      <AdditionalDependencies>d3d9.lib;d3d11.lib;dxgi.lib;dxva2.lib;</AdditionalDependencies>
+      <AdditionalDependencies>libmfx.lib;d3d9.lib;d3d11.lib;dxgi.lib;dxva2.lib;</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(INTELMEDIASDKROOT)\lib\$(Platform)</AdditionalLibraryDirectories>
     </Lib>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -198,7 +201,8 @@
       <TargetMachine>MachineX64</TargetMachine>
     </Link>
     <Lib>
-      <AdditionalDependencies>d3d9.lib;d3d11.lib;dxgi.lib;dxva2.lib;</AdditionalDependencies>
+      <AdditionalDependencies>libmfx.lib;d3d9.lib;d3d11.lib;dxgi.lib;dxva2.lib;</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(INTELMEDIASDKROOT)\lib\$(Platform)</AdditionalLibraryDirectories>
     </Lib>
   </ItemDefinitionGroup>
   <ItemGroup>

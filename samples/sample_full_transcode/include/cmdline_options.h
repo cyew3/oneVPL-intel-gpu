@@ -25,6 +25,7 @@
 #define OPTION_VDECPLG MSDK_CHAR("-vdecplugin")
 #define OPTION_PLG MSDK_CHAR("-plugin")
 #define OPTION_VENCPLG MSDK_CHAR("-vencplugin")
+#define OPTION_VPPPLG_GUID MSDK_CHAR("-vpp_plugin_guid")
 
 //place holder instead of codec type
 #define ARG_COPY MSDK_CHAR("copy")

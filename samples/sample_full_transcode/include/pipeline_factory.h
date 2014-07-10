@@ -53,7 +53,7 @@ public:
     virtual ITransform*              CreateVideoEncoderTransform(MFXVideoSessionExt&, int timeout);
 
     virtual MFXVideoVPP*             CreateVideoVPP(MFXVideoSessionExt&);
-    virtual ITransform*              CreateVideoVPPTransform(MFXVideoSessionExt&, int timeout);
+    virtual ITransform*              CreateVideoVPPTransform(MFXVideoSessionExt&, int timeout, const mfxPluginUID & uid);
 
     //TODO: deprecate this
     virtual MFXAudioDECODE*          CreateAudioDecoder(MFXAudioSession&);

@@ -11,13 +11,15 @@
 #include "itransform.h"
 #include <queue>
 #include "base_allocator.h"
+#include "plugin_utils.h"
 
 class PipelineFactory;
 
 template <>
 class Transform<MFXVideoVPP> : public ITransform, private no_copy {
 public:
-    Transform(PipelineFactory& , MFXVideoSessionExt &, int );
+    Transform(PipelineFactory& , MFXVideoSessionExt &, int, const mfxPluginUID &);
+    ~Transform();
     virtual void Configure(MFXAVParams& , ITransform *pNext);
     virtual void PutSample(SamplePtr&);
     virtual bool GetSample(SamplePtr&);
@@ -30,14 +32,17 @@ private:
     std::auto_ptr<MFXVideoVPP> m_pVPP;
     mfxFrameSurface1* m_pInputSurface;
     std::auto_ptr<SamplePool>  m_pSamplesSurfPool;
+    int m_nTrackId;
+    bool m_bEOS;
 
     std::queue<ISample*> m_ExtBitstreamQueue;
 
     std::vector<mfxFrameSurface1> m_SurfArray;
     mfxVideoParam m_initVideoParam;
-    void InitVPP();
+    void InitVPP(SamplePtr& sample);
     void AllocFrames();
 protected:
     bool   m_bInited;
     mfxU16 m_nFramesForNextTransform;
+    mfxPluginUID m_uid;
 };
