@@ -2881,6 +2881,11 @@ mfxStatus  MFXDecPipeline::RunVPP(mfxFrameSurface1 *pSurface)
             MPA_TRACE("Sleep(nDelayOnMSDKCalls)");
             vm_time_sleep(m_inParams.encodeExtraParams.nDelayOnMSDKCalls);
         }
+        if ( vppOut.pSurface )
+        {
+            /* Zero picstruct of the output surface. Having something non-zero may lead to incorrect behavior */
+            vppOut.pSurface->Info.PicStruct = 0;
+        }
 
         sts = m_pVPP->RunFrameVPPAsync(pSurface, vppOut.pSurface, (mfxExtVppAuxData*)vppOut.pCtrl->ExtParam[0], &syncp);
 
