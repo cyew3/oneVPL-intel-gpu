@@ -36,34 +36,38 @@ public:
         mfxU32 StatusReportFeedbackNumber;
     };
 
-    static std::auto_ptr<MFXScreenCapture_Plugin> g_singlePlg;
-    static std::auto_ptr<MFXPluginAdapter<MFXDecoderPlugin> > g_adapter;
-
     static MFXDecoderPlugin* Create() {
         return new MFXScreenCapture_Plugin(false);
     }
 
     static mfxStatus CreateByDispatcher(mfxPluginUID guid, mfxPlugin* mfxPlg) {
-
-        if (g_singlePlg.get()) {
-            return MFX_ERR_NOT_FOUND;
-        }
-        //check that guid match
-        g_singlePlg.reset(new MFXScreenCapture_Plugin(true));
-
         if (memcmp(& guid , &MFX_PLUGINID_CAPTURE_HW, sizeof(mfxPluginUID))) {
             return MFX_ERR_NOT_FOUND;
         }
+        MFXScreenCapture_Plugin* tmp_pplg = 0;
+        try
+        {
+            tmp_pplg = new MFXScreenCapture_Plugin(false);
+        }
+        catch(std::bad_alloc&)
+        {
+            return MFX_ERR_MEMORY_ALLOC;;
+        }
 
-        g_adapter.reset(new MFXPluginAdapter<MFXDecoderPlugin> (g_singlePlg.get()));
-        *mfxPlg = g_adapter->operator mfxPlugin();
+        try
+        {
+            tmp_pplg->m_adapter.reset(new MFXPluginAdapter<MFXDecoderPlugin> (tmp_pplg));
+        }
+        catch(std::bad_alloc&)
+        {
+            delete tmp_pplg;
+            return MFX_ERR_MEMORY_ALLOC;
+        }
+        *mfxPlg = (mfxPlugin)*tmp_pplg->m_adapter;
+        tmp_pplg->m_createdByDispatcher = true;
 
         return MFX_ERR_NONE;
     }
-
-
-    explicit MFXScreenCapture_Plugin(bool CreateByDispatcher);
-    virtual ~MFXScreenCapture_Plugin();
 
     virtual mfxStatus PluginInit(mfxCoreInterface *core);
     virtual mfxStatus PluginClose();
@@ -126,6 +130,10 @@ public:
         return MFX_ERR_UNSUPPORTED;
     }
 protected:
+    explicit MFXScreenCapture_Plugin(bool CreateByDispatcher);
+    virtual ~MFXScreenCapture_Plugin();
+    std::auto_ptr<MFXPluginAdapter<MFXDecoderPlugin> > m_adapter;
+
     mfxStatus DecodeFrameSubmit(mfxBitstream *bs, mfxFrameSurface1 *surface_work, mfxFrameSurface1 **surface_out);
     mfxStatus CreateVideoAccelerator();
     mfxStatus CheckFrameInfo(mfxFrameInfo *info);

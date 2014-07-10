@@ -13,7 +13,6 @@ File Name: mfx_screen_capture_plugin.cpp
 #include <windows.h>
 #include <initguid.h>
 #include "mfx_screen_capture_plugin.h"
-#include "mfx_plugin_module.h"
 #include "mfx_utils.h"
 #include "mfxstructures.h"
 
@@ -62,31 +61,14 @@ enum
     DESKTOP_QUERY_STATUS_ID = 0x105
 };
 
-
-PluginModuleTemplate g_PluginModule = {
-    &MFXScreenCapture_Plugin::Create,
-    NULL,
-    NULL,
-    NULL,
-    &MFXScreenCapture_Plugin::CreateByDispatcher
-};
-
-MSDK_PLUGIN_API(MFXVPPPlugin*) mfxCreateVPPPlugin() {
-    if (!g_PluginModule.CreateVPPPlugin) {
-        return 0;
-    }
-    return g_PluginModule.CreateVPPPlugin();
+MSDK_PLUGIN_API(MFXDecoderPlugin*) mfxCreateDecoderPlugin() {
+    return MFXScreenCapture_Plugin::Create();
 }
 
-MSDK_PLUGIN_API(MFXPlugin*) CreatePlugin(mfxPluginUID uid, mfxPlugin* plugin) {
-    if (!g_PluginModule.CreatePlugin) {
-        return 0;
-    }
-    return (MFXPlugin*) g_PluginModule.CreatePlugin(uid, plugin);
+MSDK_PLUGIN_API(mfxStatus) CreatePlugin(mfxPluginUID uid, mfxPlugin* plugin) {
+    return MFXScreenCapture_Plugin::CreateByDispatcher(uid, plugin);
 }
 
-std::auto_ptr<MFXScreenCapture_Plugin> MFXScreenCapture_Plugin::g_singlePlg;
-std::auto_ptr<MFXPluginAdapter<MFXDecoderPlugin> > MFXScreenCapture_Plugin::g_adapter;
 
 MFXScreenCapture_Plugin::MFXScreenCapture_Plugin(bool CreateByDispatcher)
 {
@@ -133,8 +115,7 @@ mfxStatus MFXScreenCapture_Plugin::PluginClose()
     mfxStatus mfxRes = MFX_ERR_NONE;
 
     if (m_createdByDispatcher) {
-        g_singlePlg.reset(0);
-        g_adapter.reset(0);
+        delete this;
     }
     return mfxRes;
 }
