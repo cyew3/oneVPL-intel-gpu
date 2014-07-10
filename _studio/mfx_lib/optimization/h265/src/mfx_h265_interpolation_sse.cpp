@@ -949,6 +949,7 @@ void MAKE_NAME(h265_InterpLuma_s16_d16_V)(INTERP_S16_D16_PARAMETERS_LIST)
     
     case  1:                    t_InterpLuma_s16_d16_V< 1,    0>(pSrc, srcPitch, pDst, dstPitch, tab_index, width, height);  break;
     case  2:                    t_InterpLuma_s16_d16_V< 2,    0>(pSrc, srcPitch, pDst, dstPitch, tab_index, width, height);  break;
+    case  0:                    t_InterpLuma_s16_d16_V< 0,    0>(pSrc, srcPitch, pDst, dstPitch, tab_index, width, height);  break;
     }
 }
 
@@ -1059,6 +1060,7 @@ void MAKE_NAME(h265_InterpChroma_s16_d16_V)(INTERP_S16_D16_PARAMETERS_LIST)
     
         case  1:                    t_InterpChroma_s16_d16_V<4,  1,    0>(pSrc, srcPitch, pDst, dstPitch, tab_index, width, height);  break;
         case  2:                    t_InterpChroma_s16_d16_V<4,  2,    0>(pSrc, srcPitch, pDst, dstPitch, tab_index, width, height);  break;
+        case  0:                    t_InterpChroma_s16_d16_V<4,  0,    0>(pSrc, srcPitch, pDst, dstPitch, tab_index, width, height);  break;
         }
         pSrc += width;
         pDst += width;
@@ -1077,6 +1079,7 @@ void MAKE_NAME(h265_InterpChroma_s16_d16_V)(INTERP_S16_D16_PARAMETERS_LIST)
     
         case  1:                    t_InterpChroma_s16_d16_V<2,  1,    0>(pSrc, srcPitch, pDst, dstPitch, tab_index, 2, height);  break;
         case  2:                    t_InterpChroma_s16_d16_V<2,  2,    0>(pSrc, srcPitch, pDst, dstPitch, tab_index, 2, height);  break;
+        case  0:                    t_InterpChroma_s16_d16_V<2,  0,    0>(pSrc, srcPitch, pDst, dstPitch, tab_index, 2, height);  break;
         }
     }
 }
@@ -1287,12 +1290,12 @@ static void t_AverageMode_U16_Kernel(short *pSrc, unsigned int srcPitch, unsigne
 template <int widthMul, int avgMode>
 static void t_AverageMode_U16(short *pSrc, unsigned int srcPitch, unsigned short *pAvg, unsigned int avgPitch, unsigned short *pDst, unsigned int dstPitch, int width, int height, int bitDepth)
 {
-    VM_ASSERT(bitDepth == 9 || bitDepth == 10);
-
     if (bitDepth == 9)
         t_AverageMode_U16_Kernel<widthMul, avgMode,  9>(pSrc, srcPitch, pAvg, avgPitch, pDst, dstPitch, width, height);
     else if (bitDepth == 10)
         t_AverageMode_U16_Kernel<widthMul, avgMode, 10>(pSrc, srcPitch, pAvg, avgPitch, pDst, dstPitch, width, height);
+    else if (bitDepth == 8)
+        t_AverageMode_U16_Kernel<widthMul, avgMode, 8>(pSrc, srcPitch, pAvg, avgPitch, pDst, dstPitch, width, height);
 }
 
 /* mode: AVERAGE_NO, just clip/pack 16-bit output to [0, 2^bitDepth) */

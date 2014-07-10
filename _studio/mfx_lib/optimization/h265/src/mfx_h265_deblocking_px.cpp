@@ -410,6 +410,8 @@ namespace MFX_HEVC_PP
             return h265_FilterEdgeLuma_Kernel< 9, Ipp16u>(edge, srcDst, srcDstStride, dir);
         else if (bit_depth == 10)
             return h265_FilterEdgeLuma_Kernel<10, Ipp16u>(edge, srcDst, srcDstStride, dir);
+        else if (bit_depth == 8)
+            return h265_FilterEdgeLuma_Kernel<8, Ipp16u>(edge, srcDst, srcDstStride, dir);
         else
             return -1;    /* unsupported */
     }
@@ -426,6 +428,8 @@ namespace MFX_HEVC_PP
             h265_FilterEdgeChroma_Interleaved_Kernel< 9, Ipp16u>(edge, srcDst, srcDstStride, dir, chromaQpCb, chromaQpCr);
         else if (bit_depth == 10)
             h265_FilterEdgeChroma_Interleaved_Kernel<10, Ipp16u>(edge, srcDst, srcDstStride, dir, chromaQpCb, chromaQpCr);
+        else if (bit_depth == 8)
+            h265_FilterEdgeChroma_Interleaved_Kernel<8, Ipp16u>(edge, srcDst, srcDstStride, dir, chromaQpCb, chromaQpCr);
     }
 
     void MAKE_NAME(h265_FilterEdgeChroma_Plane_8u_I)(H265EdgeData *edge, Ipp8u *srcDst, Ipp32s srcDstStride, Ipp32s dir, Ipp32s chromaQp)
@@ -439,6 +443,8 @@ namespace MFX_HEVC_PP
             h265_FilterEdgeChroma_Plane_Kernel< 9, Ipp16u>(edge, srcDst, srcDstStride, dir, chromaQp);
         else if (bit_depth == 10)
             h265_FilterEdgeChroma_Plane_Kernel<10, Ipp16u>(edge, srcDst, srcDstStride, dir, chromaQp);
+        else if (bit_depth == 8)
+            h265_FilterEdgeChroma_Plane_Kernel<8, Ipp16u>(edge, srcDst, srcDstStride, dir, chromaQp);
     }
 
 }; // namespace MFX_HEVC_PP

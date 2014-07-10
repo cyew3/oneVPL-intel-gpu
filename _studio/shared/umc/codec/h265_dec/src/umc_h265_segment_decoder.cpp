@@ -996,56 +996,13 @@ void H265SegmentDecoder::DecodeIPCMInfoCABAC(Ipp32u AbsPartIdx, Ipp32u Depth)
     m_cu->setTrIdx(0, AbsPartIdx, Depth);
 
     // LUMA
-    Ipp32u Width = m_cu->GetWidth(AbsPartIdx);
-    PlanePtrY PCMSampleY = (PlanePtrY)m_context->m_coeffsWrite;
-    m_context->m_coeffsWrite += Width*Width;
+    Ipp32u size = m_cu->GetWidth(AbsPartIdx);
 
-    Ipp32u SampleBits = m_pSeqParamSet->pcm_sample_bit_depth_luma;
+    m_reconstructor->DecodePCMBlock(m_pBitStream, &m_context->m_coeffsWrite, size, m_pSeqParamSet->pcm_sample_bit_depth_luma);
 
-    for (Ipp32u Y = 0; Y < Width; Y++)
-    {
-        for (Ipp32u X = 0; X < Width; X++)
-        {
-            Ipp32u Sample = 0;
-            Sample = m_pBitStream->GetBits(SampleBits);
-            PCMSampleY[X] = (PlaneY)Sample;
-        }
-        PCMSampleY += Width;
-    }
-
-    // CHROMA U
-    Width >>= 1;
-
-    PlanePtrUV PCMSampleUV = (PlanePtrUV)m_context->m_coeffsWrite;
-    m_context->m_coeffsWrite += Width*Width;
-
-    SampleBits = m_pSeqParamSet->pcm_sample_bit_depth_chroma;
-
-    for (Ipp32u Y = 0; Y < Width; Y++)
-    {
-        for (Ipp32u X = 0; X < Width; X++)
-        {
-            Ipp32u Sample = 0;
-            Sample = m_pBitStream->GetBits(SampleBits);
-            PCMSampleUV[X] = (PlaneUV)Sample;
-        }
-        PCMSampleUV += Width;
-    }
-
-    // CHROMA V
-    PCMSampleUV = (PlanePtrUV)m_context->m_coeffsWrite;
-    m_context->m_coeffsWrite += Width*Width;
-
-    for (Ipp32u Y = 0; Y < Width; Y++)
-    {
-        for (Ipp32u X = 0; X < Width; X++)
-        {
-            Ipp32u Sample = 0;
-            Sample = m_pBitStream->GetBits(SampleBits);
-            PCMSampleUV[X] = (PlaneUV)Sample;
-        }
-        PCMSampleUV += Width;
-    }
+    size >>= 1;
+    m_reconstructor->DecodePCMBlock(m_pBitStream, &m_context->m_coeffsWrite, size, m_pSeqParamSet->pcm_sample_bit_depth_chroma);
+    m_reconstructor->DecodePCMBlock(m_pBitStream, &m_context->m_coeffsWrite, size, m_pSeqParamSet->pcm_sample_bit_depth_chroma);
 
     m_pBitStream->ResetBac_CABAC();
 }
@@ -2273,48 +2230,12 @@ void H265SegmentDecoder::ReconInter(Ipp32u AbsPartIdx, Ipp32u Depth)
 // Place IPCM decoded samples to reconstruct frame
 void H265SegmentDecoder::ReconPCM(Ipp32u AbsPartIdx, Ipp32u Depth)
 {
-    // Luma
-    Ipp32u Size  = (m_pSeqParamSet->MaxCUSize >> Depth);
-
-    PlanePtrY pPcmY = (PlanePtrY)m_context->m_coeffsRead;
-    m_context->m_coeffsRead += Size*Size;
-
-    PlanePtrY pPicReco = m_pCurrentFrame->GetLumaAddr(m_cu->CUAddr, AbsPartIdx);
-    Ipp32u PitchLuma = m_pCurrentFrame->pitch_luma();
-    Ipp32u PcmLeftShiftBit = m_pSeqParamSet->bit_depth_luma - m_pSeqParamSet->pcm_sample_bit_depth_luma;
-
-    for (Ipp32u Y = 0; Y < Size; Y++)
-    {
-        for (Ipp32u X = 0; X < Size; X++)
-        {
-            pPicReco[X] = pPcmY[X] << PcmLeftShiftBit;
-        }
-        pPcmY += Size;
-        pPicReco += PitchLuma;
-    }
-
-    // Cb and Cr
-    Size >>= 1;
-    PlanePtrUV pPcmCb = (PlanePtrUV)m_context->m_coeffsRead;
-    m_context->m_coeffsRead += Size*Size;
-    PlanePtrUV pPcmCr = (PlanePtrUV)m_context->m_coeffsRead;
-    m_context->m_coeffsRead += Size*Size;
-
-    pPicReco = m_pCurrentFrame->GetCbCrAddr(m_cu->CUAddr, AbsPartIdx);
-    Ipp32u PitchChroma = m_pCurrentFrame->pitch_chroma();
-    PcmLeftShiftBit = m_pSeqParamSet->bit_depth_chroma - m_pSeqParamSet->pcm_sample_bit_depth_chroma;
-
-    for (Ipp32u Y = 0; Y < Size; Y++)
-    {
-        for (Ipp32u X = 0; X < Size; X++)
-        {
-            pPicReco[X * 2] = pPcmCb[X] << PcmLeftShiftBit;
-            pPicReco[X * 2 + 1] = pPcmCr[X] << PcmLeftShiftBit;
-        }
-        pPcmCb += Size;
-        pPcmCr += Size;
-        pPicReco += PitchChroma;
-    }
+    Ipp32u size = m_pSeqParamSet->MaxCUSize >> Depth; 
+    m_reconstructor->ReconstructPCMBlock(m_pCurrentFrame->GetLumaAddr(m_cu->CUAddr, AbsPartIdx), m_pCurrentFrame->pitch_luma(),
+        m_pSeqParamSet->bit_depth_luma - m_pSeqParamSet->pcm_sample_bit_depth_luma, // luma bit shift
+        m_pCurrentFrame->GetCbCrAddr(m_cu->CUAddr, AbsPartIdx), m_pCurrentFrame->pitch_chroma(),
+        m_pSeqParamSet->bit_depth_chroma - m_pSeqParamSet->pcm_sample_bit_depth_chroma, // chroma bit shift
+        &m_context->m_coeffsRead, size);
 }
 
 // Fill up inter information in local decoding context and colocated lookup table

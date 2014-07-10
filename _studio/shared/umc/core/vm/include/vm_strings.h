@@ -148,7 +148,7 @@ typedef TCHAR vm_char;
 #define vm_string_strtol    _tcstol
 #define vm_string_strstr    _tcsstr
 #define vm_string_sscanf    _stscanf
-#define vm_string_vsscanf(str, format, args) sscanf(str, format, *(void**)args)
+#define vm_string_vsscanf(str, format, args) _stscanf(str, format, *(void**)args)
 #define vm_string_strchr    _tcschr
 #define vm_string_strtok    _tcstok
 

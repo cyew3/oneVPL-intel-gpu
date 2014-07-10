@@ -108,6 +108,7 @@ protected:
     PlaneType       *m_chromaTableBo;
 
     PlaneType *m_ClipTable;
+    PlaneType *m_ClipTableChroma;
     PlaneType *m_ClipTableBase;
 
     PlaneType *m_TmpU[2];

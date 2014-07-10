@@ -366,29 +366,29 @@ namespace MFX_HEVC_PP
     Ipp32s H265_FASTCALL h265_QuantFwd_SBH_16s_avx2(const Ipp16s* pSrc, Ipp16s* pDst, Ipp32s*  pDelta, int len, int scale, int offset, int shift);
 #endif
     // [transform.inv]
-    void h265_DST4x4Inv_16sT_px  (void *destPtr, const short *H265_RESTRICT coeff, int destStride, bool inplace, Ipp32u bitDepth);
-    void h265_DCT4x4Inv_16sT_px  (void *destPtr, const short *H265_RESTRICT coeff, int destStride, bool inplace, Ipp32u bitDepth);
-    void h265_DCT8x8Inv_16sT_px  (void *destPtr, const short *H265_RESTRICT coeff, int destStride, bool inplace, Ipp32u bitDepth);
-    void h265_DCT16x16Inv_16sT_px(void *destPtr, const short *H265_RESTRICT coeff, int destStride, bool inplace, Ipp32u bitDepth);
-    void h265_DCT32x32Inv_16sT_px(void *destPtr, const short *H265_RESTRICT coeff, int destStride, bool inplace, Ipp32u bitDepth);
+    void h265_DST4x4Inv_16sT_px  (void *destPtr, const short *H265_RESTRICT coeff, int destStride, int inplace, Ipp32u bitDepth);
+    void h265_DCT4x4Inv_16sT_px  (void *destPtr, const short *H265_RESTRICT coeff, int destStride, int inplace, Ipp32u bitDepth);
+    void h265_DCT8x8Inv_16sT_px  (void *destPtr, const short *H265_RESTRICT coeff, int destStride, int inplace, Ipp32u bitDepth);
+    void h265_DCT16x16Inv_16sT_px(void *destPtr, const short *H265_RESTRICT coeff, int destStride, int inplace, Ipp32u bitDepth);
+    void h265_DCT32x32Inv_16sT_px(void *destPtr, const short *H265_RESTRICT coeff, int destStride, int inplace, Ipp32u bitDepth);
 
-    void h265_DST4x4Inv_16sT_sse  (void *destPtr, const short *H265_RESTRICT coeff, int destStride, bool inplace, Ipp32u bitDepth);
-    void h265_DCT4x4Inv_16sT_sse  (void *destPtr, const short *H265_RESTRICT coeff, int destStride, bool inplace, Ipp32u bitDepth);
-    void h265_DCT8x8Inv_16sT_sse  (void *destPtr, const short *H265_RESTRICT coeff, int destStride, bool inplace, Ipp32u bitDepth);
-    void h265_DCT16x16Inv_16sT_sse(void *destPtr, const short *H265_RESTRICT coeff, int destStride, bool inplace, Ipp32u bitDepth);
-    void h265_DCT32x32Inv_16sT_sse(void *destPtr, const short *H265_RESTRICT coeff, int destStride, bool inplace, Ipp32u bitDepth);
+    void h265_DST4x4Inv_16sT_sse  (void *destPtr, const short *H265_RESTRICT coeff, int destStride, int inplace, Ipp32u bitDepth);
+    void h265_DCT4x4Inv_16sT_sse  (void *destPtr, const short *H265_RESTRICT coeff, int destStride, int inplace, Ipp32u bitDepth);
+    void h265_DCT8x8Inv_16sT_sse  (void *destPtr, const short *H265_RESTRICT coeff, int destStride, int inplace, Ipp32u bitDepth);
+    void h265_DCT16x16Inv_16sT_sse(void *destPtr, const short *H265_RESTRICT coeff, int destStride, int inplace, Ipp32u bitDepth);
+    void h265_DCT32x32Inv_16sT_sse(void *destPtr, const short *H265_RESTRICT coeff, int destStride, int inplace, Ipp32u bitDepth);
 
-    void h265_DST4x4Inv_16sT_ssse3  (void *destPtr, const short *H265_RESTRICT coeff, int destStride, bool inplace, Ipp32u bitDepth);
-    void h265_DCT4x4Inv_16sT_ssse3  (void *destPtr, const short *H265_RESTRICT coeff, int destStride, bool inplace, Ipp32u bitDepth);
-    void h265_DCT8x8Inv_16sT_ssse3  (void *destPtr, const short *H265_RESTRICT coeff, int destStride, bool inplace, Ipp32u bitDepth);
-    void h265_DCT16x16Inv_16sT_ssse3(void *destPtr, const short *H265_RESTRICT coeff, int destStride, bool inplace, Ipp32u bitDepth);
-    void h265_DCT32x32Inv_16sT_ssse3(void *destPtr, const short *H265_RESTRICT coeff, int destStride, bool inplace, Ipp32u bitDepth);
+    void h265_DST4x4Inv_16sT_ssse3  (void *destPtr, const short *H265_RESTRICT coeff, int destStride, int inplace, Ipp32u bitDepth);
+    void h265_DCT4x4Inv_16sT_ssse3  (void *destPtr, const short *H265_RESTRICT coeff, int destStride, int inplace, Ipp32u bitDepth);
+    void h265_DCT8x8Inv_16sT_ssse3  (void *destPtr, const short *H265_RESTRICT coeff, int destStride, int inplace, Ipp32u bitDepth);
+    void h265_DCT16x16Inv_16sT_ssse3(void *destPtr, const short *H265_RESTRICT coeff, int destStride, int inplace, Ipp32u bitDepth);
+    void h265_DCT32x32Inv_16sT_ssse3(void *destPtr, const short *H265_RESTRICT coeff, int destStride, int inplace, Ipp32u bitDepth);
 
-    void h265_DST4x4Inv_16sT_avx2  (void *destPtr, const short *H265_RESTRICT coeff, int destStride, bool inplace, Ipp32u bitDepth);
-    void h265_DCT4x4Inv_16sT_avx2  (void *destPtr, const short *H265_RESTRICT coeff, int destStride, bool inplace, Ipp32u bitDepth);
-    void h265_DCT8x8Inv_16sT_avx2  (void *destPtr, const short *H265_RESTRICT coeff, int destStride, bool inplace, Ipp32u bitDepth);
-    void h265_DCT16x16Inv_16sT_avx2(void *destPtr, const short *H265_RESTRICT coeff, int destStride, bool inplace, Ipp32u bitDepth);
-    void h265_DCT32x32Inv_16sT_avx2(void *destPtr, const short *H265_RESTRICT coeff, int destStride, bool inplace, Ipp32u bitDepth);
+    void h265_DST4x4Inv_16sT_avx2  (void *destPtr, const short *H265_RESTRICT coeff, int destStride, int inplace, Ipp32u bitDepth);
+    void h265_DCT4x4Inv_16sT_avx2  (void *destPtr, const short *H265_RESTRICT coeff, int destStride, int inplace, Ipp32u bitDepth);
+    void h265_DCT8x8Inv_16sT_avx2  (void *destPtr, const short *H265_RESTRICT coeff, int destStride, int inplace, Ipp32u bitDepth);
+    void h265_DCT16x16Inv_16sT_avx2(void *destPtr, const short *H265_RESTRICT coeff, int destStride, int inplace, Ipp32u bitDepth);
+    void h265_DCT32x32Inv_16sT_avx2(void *destPtr, const short *H265_RESTRICT coeff, int destStride, int inplace, Ipp32u bitDepth);
 
     // [deblocking]
     Ipp32s h265_FilterEdgeLuma_8u_I_px(H265EdgeData *edge, Ipp8u *srcDst, Ipp32s srcDstStride, Ipp32s dir);
@@ -660,15 +660,15 @@ namespace MFX_HEVC_PP
     void h265_CopyWeightedBidi_S16U8_ssse3(Ipp16s* pSrc0, Ipp16s* pSrcUV0, Ipp16s* pSrc1, Ipp16s* pSrcUV1, Ipp8u* pDst, Ipp8u* pDstUV, Ipp32u SrcStride0Y, Ipp32u SrcStride1Y, Ipp32u DstStrideY, Ipp32u SrcStride0C, Ipp32u SrcStride1C, Ipp32u DstStrideC, Ipp32u Width, Ipp32u Height, Ipp32s *w0, Ipp32s *w1, Ipp32s *logWD, Ipp32s *round);
     void h265_CopyWeightedBidi_S16U8_avx2(Ipp16s* pSrc0, Ipp16s* pSrcUV0, Ipp16s* pSrc1, Ipp16s* pSrcUV1, Ipp8u* pDst, Ipp8u* pDstUV, Ipp32u SrcStride0Y, Ipp32u SrcStride1Y, Ipp32u DstStrideY, Ipp32u SrcStride0C, Ipp32u SrcStride1C, Ipp32u DstStrideC, Ipp32u Width, Ipp32u Height, Ipp32s *w0, Ipp32s *w1, Ipp32s *logWD, Ipp32s *round);
 
-    void h265_CopyWeighted_S16U16_px(Ipp16s* pSrc, Ipp16s* pSrcUV, Ipp16u* pDst, Ipp16u* pDstUV, Ipp32u SrcStrideY, Ipp32u DstStrideY, Ipp32u SrcStrideC, Ipp32u DstStrideC, Ipp32u Width, Ipp32u Height, Ipp32s *w, Ipp32s *o, Ipp32s *logWD, Ipp32s *round, Ipp32u bit_depth);
-    void h265_CopyWeighted_S16U16_sse(Ipp16s* pSrc, Ipp16s* pSrcUV, Ipp16u* pDst, Ipp16u* pDstUV, Ipp32u SrcStrideY, Ipp32u DstStrideY, Ipp32u SrcStrideC, Ipp32u DstStrideC, Ipp32u Width, Ipp32u Height, Ipp32s *w, Ipp32s *o, Ipp32s *logWD, Ipp32s *round, Ipp32u bit_depth);
-    void h265_CopyWeighted_S16U16_ssse3(Ipp16s* pSrc, Ipp16s* pSrcUV, Ipp16u* pDst, Ipp16u* pDstUV, Ipp32u SrcStrideY, Ipp32u DstStrideY, Ipp32u SrcStrideC, Ipp32u DstStrideC, Ipp32u Width, Ipp32u Height, Ipp32s *w, Ipp32s *o, Ipp32s *logWD, Ipp32s *round, Ipp32u bit_depth);
-    void h265_CopyWeighted_S16U16_avx2(Ipp16s* pSrc, Ipp16s* pSrcUV, Ipp16u* pDst, Ipp16u* pDstUV, Ipp32u SrcStrideY, Ipp32u DstStrideY, Ipp32u SrcStrideC, Ipp32u DstStrideC, Ipp32u Width, Ipp32u Height, Ipp32s *w, Ipp32s *o, Ipp32s *logWD, Ipp32s *round, Ipp32u bit_depth);
+    void h265_CopyWeighted_S16U16_px(Ipp16s* pSrc, Ipp16s* pSrcUV, Ipp16u* pDst, Ipp16u* pDstUV, Ipp32u SrcStrideY, Ipp32u DstStrideY, Ipp32u SrcStrideC, Ipp32u DstStrideC, Ipp32u Width, Ipp32u Height, Ipp32s *w, Ipp32s *o, Ipp32s *logWD, Ipp32s *round, Ipp32u bit_depth, Ipp32u bit_depth_chroma);
+    void h265_CopyWeighted_S16U16_sse(Ipp16s* pSrc, Ipp16s* pSrcUV, Ipp16u* pDst, Ipp16u* pDstUV, Ipp32u SrcStrideY, Ipp32u DstStrideY, Ipp32u SrcStrideC, Ipp32u DstStrideC, Ipp32u Width, Ipp32u Height, Ipp32s *w, Ipp32s *o, Ipp32s *logWD, Ipp32s *round, Ipp32u bit_depth, Ipp32u bit_depth_chroma);
+    void h265_CopyWeighted_S16U16_ssse3(Ipp16s* pSrc, Ipp16s* pSrcUV, Ipp16u* pDst, Ipp16u* pDstUV, Ipp32u SrcStrideY, Ipp32u DstStrideY, Ipp32u SrcStrideC, Ipp32u DstStrideC, Ipp32u Width, Ipp32u Height, Ipp32s *w, Ipp32s *o, Ipp32s *logWD, Ipp32s *round, Ipp32u bit_depth, Ipp32u bit_depth_chroma);
+    void h265_CopyWeighted_S16U16_avx2(Ipp16s* pSrc, Ipp16s* pSrcUV, Ipp16u* pDst, Ipp16u* pDstUV, Ipp32u SrcStrideY, Ipp32u DstStrideY, Ipp32u SrcStrideC, Ipp32u DstStrideC, Ipp32u Width, Ipp32u Height, Ipp32s *w, Ipp32s *o, Ipp32s *logWD, Ipp32s *round, Ipp32u bit_depth, Ipp32u bit_depth_chroma);
 
-    void h265_CopyWeightedBidi_S16U16_px(Ipp16s* pSrc0, Ipp16s* pSrcUV0, Ipp16s* pSrc1, Ipp16s* pSrcUV1, Ipp16u* pDst, Ipp16u* pDstUV, Ipp32u SrcStride0Y, Ipp32u SrcStride1Y, Ipp32u DstStrideY, Ipp32u SrcStride0C, Ipp32u SrcStride1C, Ipp32u DstStrideC, Ipp32u Width, Ipp32u Height, Ipp32s *w0, Ipp32s *w1, Ipp32s *logWD, Ipp32s *round, Ipp32u bit_depth);
-    void h265_CopyWeightedBidi_S16U16_sse(Ipp16s* pSrc0, Ipp16s* pSrcUV0, Ipp16s* pSrc1, Ipp16s* pSrcUV1, Ipp16u* pDst, Ipp16u* pDstUV, Ipp32u SrcStride0Y, Ipp32u SrcStride1Y, Ipp32u DstStrideY, Ipp32u SrcStride0C, Ipp32u SrcStride1C, Ipp32u DstStrideC, Ipp32u Width, Ipp32u Height, Ipp32s *w0, Ipp32s *w1, Ipp32s *logWD, Ipp32s *round, Ipp32u bit_depth);
-    void h265_CopyWeightedBidi_S16U16_ssse3(Ipp16s* pSrc0, Ipp16s* pSrcUV0, Ipp16s* pSrc1, Ipp16s* pSrcUV1, Ipp16u* pDst, Ipp16u* pDstUV, Ipp32u SrcStride0Y, Ipp32u SrcStride1Y, Ipp32u DstStrideY, Ipp32u SrcStride0C, Ipp32u SrcStride1C, Ipp32u DstStrideC, Ipp32u Width, Ipp32u Height, Ipp32s *w0, Ipp32s *w1, Ipp32s *logWD, Ipp32s *round, Ipp32u bit_depth);
-    void h265_CopyWeightedBidi_S16U16_avx2(Ipp16s* pSrc0, Ipp16s* pSrcUV0, Ipp16s* pSrc1, Ipp16s* pSrcUV1, Ipp16u* pDst, Ipp16u* pDstUV, Ipp32u SrcStride0Y, Ipp32u SrcStride1Y, Ipp32u DstStrideY, Ipp32u SrcStride0C, Ipp32u SrcStride1C, Ipp32u DstStrideC, Ipp32u Width, Ipp32u Height, Ipp32s *w0, Ipp32s *w1, Ipp32s *logWD, Ipp32s *round, Ipp32u bit_depth);
+    void h265_CopyWeightedBidi_S16U16_px(Ipp16s* pSrc0, Ipp16s* pSrcUV0, Ipp16s* pSrc1, Ipp16s* pSrcUV1, Ipp16u* pDst, Ipp16u* pDstUV, Ipp32u SrcStride0Y, Ipp32u SrcStride1Y, Ipp32u DstStrideY, Ipp32u SrcStride0C, Ipp32u SrcStride1C, Ipp32u DstStrideC, Ipp32u Width, Ipp32u Height, Ipp32s *w0, Ipp32s *w1, Ipp32s *logWD, Ipp32s *round, Ipp32u bit_depth, Ipp32u bit_depth_chroma);
+    void h265_CopyWeightedBidi_S16U16_sse(Ipp16s* pSrc0, Ipp16s* pSrcUV0, Ipp16s* pSrc1, Ipp16s* pSrcUV1, Ipp16u* pDst, Ipp16u* pDstUV, Ipp32u SrcStride0Y, Ipp32u SrcStride1Y, Ipp32u DstStrideY, Ipp32u SrcStride0C, Ipp32u SrcStride1C, Ipp32u DstStrideC, Ipp32u Width, Ipp32u Height, Ipp32s *w0, Ipp32s *w1, Ipp32s *logWD, Ipp32s *round, Ipp32u bit_depth, Ipp32u bit_depth_chroma);
+    void h265_CopyWeightedBidi_S16U16_ssse3(Ipp16s* pSrc0, Ipp16s* pSrcUV0, Ipp16s* pSrc1, Ipp16s* pSrcUV1, Ipp16u* pDst, Ipp16u* pDstUV, Ipp32u SrcStride0Y, Ipp32u SrcStride1Y, Ipp32u DstStrideY, Ipp32u SrcStride0C, Ipp32u SrcStride1C, Ipp32u DstStrideC, Ipp32u Width, Ipp32u Height, Ipp32s *w0, Ipp32s *w1, Ipp32s *logWD, Ipp32s *round, Ipp32u bit_depth, Ipp32u bit_depth_chroma);
+    void h265_CopyWeightedBidi_S16U16_avx2(Ipp16s* pSrc0, Ipp16s* pSrcUV0, Ipp16s* pSrc1, Ipp16s* pSrcUV1, Ipp16u* pDst, Ipp16u* pDstUV, Ipp32u SrcStride0Y, Ipp32u SrcStride1Y, Ipp32u DstStrideY, Ipp32u SrcStride0C, Ipp32u SrcStride1C, Ipp32u DstStrideC, Ipp32u Width, Ipp32u Height, Ipp32s *w0, Ipp32s *w1, Ipp32s *logWD, Ipp32s *round, Ipp32u bit_depth, Ipp32u bit_depth_chroma);
 
 }; // namespace MFX_HEVC_PP
 

@@ -99,7 +99,7 @@ static Ipp32s h265_FilterEdgeLuma_Kernel(H265EdgeData *edge, PixType *srcDst, Ip
 
     if (dir == VERT_FILT) {
         /* vertical edge: load rows 0 and 3 (8 pixels) to determine whether to apply filtering */
-        if (bitDepth == 8) {
+        if (sizeof(PixType) == 1) {
             xmm1 = _mm_loadl_epi64((__m128i *)(srcDst + 0*srcDstStride - 4));
             xmm3 = _mm_loadl_epi64((__m128i *)(srcDst + 3*srcDstStride - 4));
             xmm4 = xmm1;
@@ -165,7 +165,7 @@ static Ipp32s h265_FilterEdgeLuma_Kernel(H265EdgeData *edge, PixType *srcDst, Ip
         if (d >= beta)
             return strongFiltering;
 
-        if (bitDepth == 8) {
+        if (sizeof(PixType) == 1) {
             /* load rows 1 and 2 (8 pixels), xmm1, xmm3 still have original 8-bit rows 0,3 */
             xmm0 = _mm_loadl_epi64((__m128i *)(srcDst + 1*srcDstStride - 4));
             xmm2 = _mm_loadl_epi64((__m128i *)(srcDst + 2*srcDstStride - 4));
@@ -218,7 +218,7 @@ static Ipp32s h265_FilterEdgeLuma_Kernel(H265EdgeData *edge, PixType *srcDst, Ip
         /* input: xmm1 = row0, xmm0 = row1, xmm2 = row2 xmm3 = row3 
          * shuffle data into form for common kernel
          */
-        if (bitDepth == 8) {
+        if (sizeof(PixType) == 1) {
             xmm1 = _mm_unpacklo_epi8(xmm1, xmm0);   /* interleave row 0,1 */
             xmm2 = _mm_unpacklo_epi8(xmm2, xmm3);   /* interleave row 2,3 */
             xmm4 = xmm1;
@@ -269,7 +269,7 @@ static Ipp32s h265_FilterEdgeLuma_Kernel(H265EdgeData *edge, PixType *srcDst, Ip
         }
     } else {
         /* horizontal edge: load 6 rows of 4 pixels, expand to 16 bits (if 8-bit), shuffle into 3 xmm registers */
-        if (bitDepth == 8) {
+        if (sizeof(PixType) == 1) {
             xmm2 = _mm_cvtsi32_si128(*(int *)(srcDst - 3*srcDstStride));
             xmm1 = _mm_cvtsi32_si128(*(int *)(srcDst - 2*srcDstStride));
             xmm0 = _mm_cvtsi32_si128(*(int *)(srcDst - 1*srcDstStride));
@@ -330,7 +330,7 @@ static Ipp32s h265_FilterEdgeLuma_Kernel(H265EdgeData *edge, PixType *srcDst, Ip
             return strongFiltering;
 
         /* load/shuffle first and last row (p3/q3) */
-        if (bitDepth == 8) {
+        if (sizeof(PixType) == 1) {
             xmm3 = _mm_cvtsi32_si128(*(int *)(srcDst - 4*srcDstStride));
             xmm3 = _mm_insert_epi32(xmm3, *(int *)(srcDst + 3*srcDstStride), 1);
             xmm3 = _mm_cvtepu8_epi16(xmm3);         /* 0 0 0 0 7 7 7 7 */
@@ -432,7 +432,7 @@ static Ipp32s h265_FilterEdgeLuma_Kernel(H265EdgeData *edge, PixType *srcDst, Ip
         xmm2 = _mm_min_epi16(xmm2, xmm6);
 
         if (dir == VERT_FILT) {
-            if (bitDepth == 8) {
+            if (sizeof(PixType) == 1) {
                 /* clip to 8-bit, shuffle back into row order */
                 xmm0 = _mm_packus_epi16(xmm0, xmm2);    /* p0 q0 (4 rows) p2 q2 (4 rows) */
                 xmm1 = _mm_packus_epi16(xmm1, xmm3);    /* p1 q1 (4 rows) p3 q3 (4 rows) */
@@ -533,7 +533,7 @@ static Ipp32s h265_FilterEdgeLuma_Kernel(H265EdgeData *edge, PixType *srcDst, Ip
                 }
             }
         } else {
-            if (bitDepth == 8) {
+            if (sizeof(PixType) == 1) {
                 /* clip to 8-bit, minimal shuffling needed for horizontal edges */
                 xmm0 = _mm_packus_epi16(xmm0, xmm0);    /* row -1, row 0 */
                 xmm1 = _mm_packus_epi16(xmm1, xmm1);    /* row -2, row 1 */
@@ -654,7 +654,7 @@ static Ipp32s h265_FilterEdgeLuma_Kernel(H265EdgeData *edge, PixType *srcDst, Ip
         xmm2 = _mm_min_epi16(xmm2, xmm6);
         xmm1 = _mm_add_epi16(xmm1, xmm2);       /* p1 += tmp | q1 += tmp */
 
-        if (bitDepth == 8) {
+        if (sizeof(PixType) == 1) {
             /* clip p1,p0,q0,q1 to [0,255] */
             xmm0 = _mm_packus_epi16(xmm0, xmm0);    /* p0 (row 0-3) | q0 (row 0-3) */
             xmm1 = _mm_packus_epi16(xmm1, xmm1);    /* p1 (row 0-3) | q1 (row 0-3) */
@@ -838,7 +838,7 @@ static void h265_FilterEdgeChroma_Interleaved_Kernel(H265EdgeData *edge, PixType
     xmm6 = _mm_set1_epi32( ((-tcCr) << 16) | ((-tcCb) & 0x0000ffff) );
 
     if (dir == VERT_FILT) {
-        if (bitDepth == 8) {
+        if (sizeof(PixType) == 1) {
             xmm0 = _mm_loadl_epi64((__m128i*)(srcDst + 0*srcDstStride - 4));    /* p1Cb_0 p1Cr_0 p0Cb_0 p0Cr_0 q0Cb_0 q0Cr_0 q1Cb_0 q1Cr_0 --- */
             xmm2 = _mm_loadl_epi64((__m128i*)(srcDst + 1*srcDstStride - 4));    /* p1Cb_1 p1Cr_1 p0Cb_1 p0Cr_1 q0Cb_1 q0Cr_1 q1Cb_1 q1Cr_1 --- */
             xmm7 = _mm_loadl_epi64((__m128i*)(srcDst + 2*srcDstStride - 4));    /* p1Cb_2 p1Cr_2 p0Cb_2 p0Cr_2 q0Cb_2 q0Cr_2 q1Cb_2 q1Cr_2 --- */
@@ -899,7 +899,7 @@ static void h265_FilterEdgeChroma_Interleaved_Kernel(H265EdgeData *edge, PixType
         if (edge->deblockQ)
             xmm2 = _mm_sub_epi16(xmm2, xmm7);     /* q0Cb/Cr - deltaCbCr */
 
-        if (bitDepth == 8) {
+        if (sizeof(PixType) == 1) {
             /* clip to 8-bit */
             xmm1 = _mm_packus_epi16(xmm1, xmm1);
             xmm2 = _mm_packus_epi16(xmm2, xmm2);
@@ -932,7 +932,7 @@ static void h265_FilterEdgeChroma_Interleaved_Kernel(H265EdgeData *edge, PixType
             _mm_storel_epi64((__m128i *)(srcDst - 2 + 3*srcDstStride), xmm4);
         }
     } else {
-        if (bitDepth == 8) {
+        if (sizeof(PixType) == 1) {
             xmm0 = _mm_cvtepu8_epi16(MM_LOAD_EPI64(srcDst - 2*srcDstStride));   /* p1Cb/Cr, col 0-3 */
             xmm1 = _mm_cvtepu8_epi16(MM_LOAD_EPI64(srcDst - 1*srcDstStride));   /* p0Cb/Cr, col 0-3 */
             xmm2 = _mm_cvtepu8_epi16(MM_LOAD_EPI64(srcDst + 0*srcDstStride));   /* q0Cb/Cr, col 0-3 */
@@ -959,7 +959,7 @@ static void h265_FilterEdgeChroma_Interleaved_Kernel(H265EdgeData *edge, PixType
         xmm2 = _mm_sub_epi16(xmm2, xmm7);         /* q0Cb/Cr - deltaCbCr */
 
         /* write 8 interleaved pixels in rows [-1, 0] */
-        if (bitDepth == 8) {
+        if (sizeof(PixType) == 1) {
             /* clip to 8-bit */
             xmm1 = _mm_packus_epi16(xmm1, xmm1);
             xmm2 = _mm_packus_epi16(xmm2, xmm2);
@@ -1015,7 +1015,7 @@ static void h265_FilterEdgeChroma_Plane_Kernel(H265EdgeData *edge, PixType *srcD
     xmm6 = _mm_set1_epi16((short)(-tc));
 
     if (dir == VERT_FILT) {
-        if (bitDepth == 8) {
+        if (sizeof(PixType) == 1) {
             /* load 4x4 8-bit pixels into one register, do single byte shuffle to transpose rows/columns */
             xmm0 = _mm_cvtsi32_si128(*(int *)(srcDst + 0*srcDstStride - 2));           /* row0: p1 p0 q0 q1 */
             xmm0 = _mm_insert_epi32(xmm0, *(int *)(srcDst + 1*srcDstStride - 2), 1);   /* row1: p1 p0 q0 q1 */
@@ -1065,7 +1065,7 @@ static void h265_FilterEdgeChroma_Plane_Kernel(H265EdgeData *edge, PixType *srcD
         if (edge->deblockQ)
             xmm2 = _mm_sub_epi16(xmm2, xmm7);     /* q0 - delta */
 
-        if (bitDepth == 8) {
+        if (sizeof(PixType) == 1) {
             /* clip to 8-bit */
             xmm1 = _mm_packus_epi16(xmm1, xmm1);      /* 8-bit: p0 (rows 0-3) */
             xmm2 = _mm_packus_epi16(xmm2, xmm2);      /* 8-bit: q0 (rows 0-3) */
@@ -1099,7 +1099,7 @@ static void h265_FilterEdgeChroma_Plane_Kernel(H265EdgeData *edge, PixType *srcD
             *(int *)(srcDst - 1 + 3*srcDstStride) = _mm_cvtsi128_si32(xmm4);
         }
     } else {
-        if (bitDepth == 8) {
+        if (sizeof(PixType) == 1) {
             xmm0 = _mm_cvtsi32_si128(*(int *)(srcDst - 2*srcDstStride));   /* p1, col 0-3 */
             xmm1 = _mm_cvtsi32_si128(*(int *)(srcDst - 1*srcDstStride));   /* p0, col 0-3 */
             xmm2 = _mm_cvtsi32_si128(*(int *)(srcDst + 0*srcDstStride));   /* q0, col 0-3 */
@@ -1131,7 +1131,7 @@ static void h265_FilterEdgeChroma_Plane_Kernel(H265EdgeData *edge, PixType *srcD
         xmm1 = _mm_add_epi16(xmm1, xmm7);         /* p0 + delta */
         xmm2 = _mm_sub_epi16(xmm2, xmm7);         /* q0 - delta */
 
-        if (bitDepth == 8) {
+        if (sizeof(PixType) == 1) {
             /* clip to 8-bit */
             xmm1 = _mm_packus_epi16(xmm1, xmm1);
             xmm2 = _mm_packus_epi16(xmm2, xmm2);
@@ -1167,6 +1167,8 @@ Ipp32s MAKE_NAME(h265_FilterEdgeLuma_16u_I)(H265EdgeData *edge, Ipp16u *srcDst, 
         return h265_FilterEdgeLuma_Kernel< 9, Ipp16u>(edge, srcDst, srcDstStride, dir);
     else if (bit_depth == 10)
         return h265_FilterEdgeLuma_Kernel<10, Ipp16u>(edge, srcDst, srcDstStride, dir);
+    else if (bit_depth == 8)
+        return h265_FilterEdgeLuma_Kernel<8, Ipp16u>(edge, srcDst, srcDstStride, dir);
     else
         return -1;   /* unsupported */
 }
@@ -1183,6 +1185,8 @@ void MAKE_NAME(h265_FilterEdgeChroma_Interleaved_16u_I)(H265EdgeData *edge, Ipp1
         h265_FilterEdgeChroma_Interleaved_Kernel< 9, Ipp16u>(edge, srcDst, srcDstStride, dir, chromaQpCb, chromaQpCr);
     else if (bit_depth == 10)
         h265_FilterEdgeChroma_Interleaved_Kernel<10, Ipp16u>(edge, srcDst, srcDstStride, dir, chromaQpCb, chromaQpCr);
+    else if (bit_depth == 8)
+        h265_FilterEdgeChroma_Interleaved_Kernel<8, Ipp16u>(edge, srcDst, srcDstStride, dir, chromaQpCb, chromaQpCr);
 }
 
 void MAKE_NAME(h265_FilterEdgeChroma_Plane_8u_I)(H265EdgeData *edge, Ipp8u *srcDst, Ipp32s srcDstStride, Ipp32s dir, Ipp32s chromaQp)
@@ -1196,6 +1200,8 @@ void MAKE_NAME(h265_FilterEdgeChroma_Plane_16u_I)(H265EdgeData *edge, Ipp16u *sr
         h265_FilterEdgeChroma_Plane_Kernel< 9, Ipp16u>(edge, srcDst, srcDstStride, dir, chromaQp);
     else if (bit_depth == 10)
         h265_FilterEdgeChroma_Plane_Kernel<10, Ipp16u>(edge, srcDst, srcDstStride, dir, chromaQp);
+    else if (bit_depth == 8)
+        h265_FilterEdgeChroma_Plane_Kernel<8, Ipp16u>(edge, srcDst, srcDstStride, dir, chromaQp);
 }
 
 }; // namespace MFX_HEVC_PP

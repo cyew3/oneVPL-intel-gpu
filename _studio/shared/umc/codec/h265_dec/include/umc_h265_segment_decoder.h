@@ -102,6 +102,10 @@ public:
         Ipp32s offsetX, Ipp32s offsetY, Ipp32s offsetXL, Ipp32s offsetYL,
         Ipp32s cuSize, IppiSize frameSize) = 0;
 
+    virtual void DecodePCMBlock(H265Bitstream *bitStream, CoeffsPtr *pcm, Ipp32u size, Ipp32u sampleBits) = 0;
+
+    virtual void ReconstructPCMBlock(PlanePtrY luma, Ipp32s pitchLuma, Ipp32u PcmLeftShiftBitLuma, PlanePtrY chroma, Ipp32s pitchChroma, Ipp32u PcmLeftShiftBitChroma, CoeffsPtr *pcm, Ipp32u size) = 0;
+
 protected:
 };
 

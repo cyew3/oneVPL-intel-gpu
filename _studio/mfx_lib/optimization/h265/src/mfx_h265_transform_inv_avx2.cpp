@@ -461,11 +461,16 @@ static void h265_DCT4x4Inv_16sT_Kernel(DstCoeffsType *dst, const short *H265_RES
 #pragma GCC pop_options
 #endif
 
-void MAKE_NAME(h265_DCT4x4Inv_16sT)(void *destPtr, const short *H265_RESTRICT coeff, int destStride, bool inplace, Ipp32u bitDepth)
+void MAKE_NAME(h265_DCT4x4Inv_16sT)(void *destPtr, const short *H265_RESTRICT coeff, int destStride, int inplace, Ipp32u bitDepth)
 {
     if (inplace) {
         switch (bitDepth) {
-        case  8: h265_DCT4x4Inv_16sT_Kernel< 8, Ipp8u,  true >((Ipp8u *) destPtr, coeff, destStride); break;
+        case  8:
+            if (inplace == 2)
+                h265_DCT4x4Inv_16sT_Kernel< 8, Ipp16u,  true >((Ipp16u *) destPtr, coeff, destStride);
+            else
+                h265_DCT4x4Inv_16sT_Kernel< 8, Ipp8u,  true >((Ipp8u *) destPtr, coeff, destStride);
+            break;
         case  9: h265_DCT4x4Inv_16sT_Kernel< 9, Ipp16u, true >((Ipp16u *)destPtr, coeff, destStride); break;
         case 10: h265_DCT4x4Inv_16sT_Kernel<10, Ipp16u, true >((Ipp16u *)destPtr, coeff, destStride); break;
         }
@@ -614,11 +619,16 @@ static void h265_DST4x4Inv_16sT_Kernel(DstCoeffsType *dst, const short *H265_RES
     }
 }
 
-void MAKE_NAME(h265_DST4x4Inv_16sT)(void *destPtr, const short *H265_RESTRICT coeff, int destStride, bool inplace, Ipp32u bitDepth)
+void MAKE_NAME(h265_DST4x4Inv_16sT)(void *destPtr, const short *H265_RESTRICT coeff, int destStride, int inplace, Ipp32u bitDepth)
 {
     if (inplace) {
         switch (bitDepth) {
-        case  8: h265_DST4x4Inv_16sT_Kernel< 8, Ipp8u,  true >((Ipp8u *) destPtr, coeff, destStride); break;
+        case  8:
+            if (inplace == 2)
+                h265_DST4x4Inv_16sT_Kernel< 8, Ipp16u,  true >((Ipp16u *) destPtr, coeff, destStride);
+            else
+                h265_DST4x4Inv_16sT_Kernel< 8, Ipp8u,  true >((Ipp8u *) destPtr, coeff, destStride);
+            break;
         case  9: h265_DST4x4Inv_16sT_Kernel< 9, Ipp16u, true >((Ipp16u *)destPtr, coeff, destStride); break;
         case 10: h265_DST4x4Inv_16sT_Kernel<10, Ipp16u, true >((Ipp16u *)destPtr, coeff, destStride); break;
         }
@@ -798,11 +808,16 @@ static void h265_DCT8x8Inv_16sT_Kernel(DstCoeffsType *dst, const short *H265_RES
    }
 }
 
-void MAKE_NAME(h265_DCT8x8Inv_16sT)(void *destPtr, const short *H265_RESTRICT coeff, int destStride, bool inplace, Ipp32u bitDepth)
+void MAKE_NAME(h265_DCT8x8Inv_16sT)(void *destPtr, const short *H265_RESTRICT coeff, int destStride, int inplace, Ipp32u bitDepth)
 {
     if (inplace) {
         switch (bitDepth) {
-        case  8: h265_DCT8x8Inv_16sT_Kernel< 8, Ipp8u,  true >((Ipp8u *) destPtr, coeff, destStride); break;
+        case  8:
+            if (inplace == 2)
+                h265_DCT8x8Inv_16sT_Kernel< 8, Ipp16u,  true >((Ipp16u *) destPtr, coeff, destStride);
+            else
+                h265_DCT8x8Inv_16sT_Kernel< 8, Ipp8u,  true >((Ipp8u *) destPtr, coeff, destStride);
+            break;
         case  9: h265_DCT8x8Inv_16sT_Kernel< 9, Ipp16u, true >((Ipp16u *)destPtr, coeff, destStride); break;
         case 10: h265_DCT8x8Inv_16sT_Kernel<10, Ipp16u, true >((Ipp16u *)destPtr, coeff, destStride); break;
         }
@@ -1064,11 +1079,16 @@ static void h265_DCT16x16Inv_16sT_Kernel(DstCoeffsType *dst, const short *H265_R
    DCTInverse16x16_h_2nd_avx2<bitDepth, DstCoeffsType, inplace>(dst, tmp, destStride);
 }
 
-void MAKE_NAME(h265_DCT16x16Inv_16sT)(void *destPtr, const short *H265_RESTRICT coeff, int destStride, bool inplace, Ipp32u bitDepth)
+void MAKE_NAME(h265_DCT16x16Inv_16sT)(void *destPtr, const short *H265_RESTRICT coeff, int destStride, int inplace, Ipp32u bitDepth)
 {
     if (inplace) {
         switch (bitDepth) {
-        case  8: h265_DCT16x16Inv_16sT_Kernel< 8, Ipp8u,  true >((Ipp8u *) destPtr, coeff, destStride); break;
+        case  8:
+            if (inplace == 2)
+                h265_DCT16x16Inv_16sT_Kernel< 8, Ipp16u,  true >((Ipp16u *) destPtr, coeff, destStride);
+            else
+                h265_DCT16x16Inv_16sT_Kernel< 8, Ipp8u,  true >((Ipp8u *) destPtr, coeff, destStride);
+            break;
         case  9: h265_DCT16x16Inv_16sT_Kernel< 9, Ipp16u, true >((Ipp16u *)destPtr, coeff, destStride); break;
         case 10: h265_DCT16x16Inv_16sT_Kernel<10, Ipp16u, true >((Ipp16u *)destPtr, coeff, destStride); break;
         }

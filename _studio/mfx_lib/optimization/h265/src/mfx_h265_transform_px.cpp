@@ -761,7 +761,7 @@ void PartialButterflyInverse32x32(Ipp32s shift, H265CoeffsPtrCommon src, DstCoef
     #define SHIFT_INV_1ST          7 // Shift after first inverse transform stage
     #define SHIFT_INV_2ND         12 // Shift after second inverse transform stage
 
-    void MAKE_NAME(h265_DST4x4Inv_16sT)(void *destPtr, const short *H265_RESTRICT coeff, int destStride, bool inplace, Ipp32u bitDepth)
+    void MAKE_NAME(h265_DST4x4Inv_16sT)(void *destPtr, const short *H265_RESTRICT coeff, int destStride, int inplace, Ipp32u bitDepth)
     {
         Ipp16s tmp[4*4];
         const Ipp32s shift_1st = SHIFT_INV_1ST;
@@ -770,7 +770,10 @@ void PartialButterflyInverse32x32(Ipp32s shift, H265CoeffsPtrCommon src, DstCoef
         FastInverseDst<Ipp16s, false>(shift_1st, (Ipp16s*)coeff, tmp, 4, bitDepth); // Inverse DST by FAST Algorithm, coeff input, tmp output
         if (inplace && bitDepth == 8)
         {
-            FastInverseDst<Ipp8u, true>(shift_2nd, tmp, (Ipp8u*)destPtr, destStride, bitDepth); // Inverse DST by FAST Algorithm, tmp input, coeff output
+            if (inplace == 2)
+                FastInverseDst<Ipp16u, true>(shift_2nd, tmp, (Ipp16u*)destPtr, destStride, bitDepth); // Inverse DST by FAST Algorithm, tmp input, coeff output
+            else
+                FastInverseDst<Ipp8u, true>(shift_2nd, tmp, (Ipp8u*)destPtr, destStride, bitDepth); // Inverse DST by FAST Algorithm, tmp input, coeff output
         }
         else if (inplace && bitDepth > 8)
         {
@@ -783,7 +786,7 @@ void PartialButterflyInverse32x32(Ipp32s shift, H265CoeffsPtrCommon src, DstCoef
     }
 
 
-    void MAKE_NAME(h265_DCT4x4Inv_16sT)(void *destPtr, const short *H265_RESTRICT coeff, int destStride, bool inplace, Ipp32u bitDepth)
+    void MAKE_NAME(h265_DCT4x4Inv_16sT)(void *destPtr, const short *H265_RESTRICT coeff, int destStride, int inplace, Ipp32u bitDepth)
     {
         Ipp16s tmp[4*4];
         const Ipp32s shift_1st = SHIFT_INV_1ST;
@@ -792,7 +795,10 @@ void PartialButterflyInverse32x32(Ipp32s shift, H265CoeffsPtrCommon src, DstCoef
         PartialButterflyInverse4x4<Ipp16s, false>(shift_1st, (Ipp16s*)coeff, tmp, 4, bitDepth);
         if (inplace && bitDepth == 8)
         {
-            PartialButterflyInverse4x4<Ipp8u, true>(shift_2nd, tmp, (Ipp8u*)destPtr, destStride, bitDepth);
+            if (inplace == 2)
+                PartialButterflyInverse4x4<Ipp16u, true>(shift_2nd, tmp, (Ipp16u*)destPtr, destStride, bitDepth);
+            else
+                PartialButterflyInverse4x4<Ipp8u, true>(shift_2nd, tmp, (Ipp8u*)destPtr, destStride, bitDepth);
         }
         else if (inplace && bitDepth > 8)
         {
@@ -805,7 +811,7 @@ void PartialButterflyInverse32x32(Ipp32s shift, H265CoeffsPtrCommon src, DstCoef
     }
 
 
-    void MAKE_NAME(h265_DCT8x8Inv_16sT)(void *destPtr, const short *H265_RESTRICT coeff, int destStride, bool inplace, Ipp32u bitDepth)
+    void MAKE_NAME(h265_DCT8x8Inv_16sT)(void *destPtr, const short *H265_RESTRICT coeff, int destStride, int inplace, Ipp32u bitDepth)
     {
         Ipp16s tmp[8*8];
         const Ipp32s shift_1st = SHIFT_INV_1ST;
@@ -814,7 +820,10 @@ void PartialButterflyInverse32x32(Ipp32s shift, H265CoeffsPtrCommon src, DstCoef
         PartialButterflyInverse8x8<Ipp16s, false>(shift_1st, (Ipp16s*)coeff, tmp, 8, bitDepth);
         if (inplace && bitDepth == 8)
         {
-            PartialButterflyInverse8x8<Ipp8u, true>(shift_2nd, tmp, (Ipp8u*)destPtr, destStride, bitDepth);
+            if (inplace == 2)
+                PartialButterflyInverse8x8<Ipp16u, true>(shift_2nd, tmp, (Ipp16u*)destPtr, destStride, bitDepth);
+            else
+                PartialButterflyInverse8x8<Ipp8u, true>(shift_2nd, tmp, (Ipp8u*)destPtr, destStride, bitDepth);
         }
         else if (inplace && bitDepth > 8)
         {
@@ -827,7 +836,7 @@ void PartialButterflyInverse32x32(Ipp32s shift, H265CoeffsPtrCommon src, DstCoef
     }
 
 
-    void MAKE_NAME(h265_DCT16x16Inv_16sT)(void *destPtr, const short *H265_RESTRICT coeff, int destStride, bool inplace, Ipp32u bitDepth)
+    void MAKE_NAME(h265_DCT16x16Inv_16sT)(void *destPtr, const short *H265_RESTRICT coeff, int destStride, int inplace, Ipp32u bitDepth)
     {
         Ipp16s tmp[16*16];
         const Ipp32s shift_1st = SHIFT_INV_1ST;
@@ -836,7 +845,10 @@ void PartialButterflyInverse32x32(Ipp32s shift, H265CoeffsPtrCommon src, DstCoef
         PartialButterflyInverse16x16<Ipp16s, false>(shift_1st, (Ipp16s*)coeff, tmp, 16, bitDepth);
         if (inplace && bitDepth == 8)
         {
-            PartialButterflyInverse16x16<Ipp8u, true>(shift_2nd, tmp, (Ipp8u*)destPtr, destStride, bitDepth);
+            if (inplace == 2)
+                PartialButterflyInverse16x16<Ipp16u, true>(shift_2nd, tmp, (Ipp16u*)destPtr, destStride, bitDepth);
+            else
+                PartialButterflyInverse16x16<Ipp8u, true>(shift_2nd, tmp, (Ipp8u*)destPtr, destStride, bitDepth);
         }
         else if (inplace && bitDepth > 8)
         {
@@ -848,7 +860,7 @@ void PartialButterflyInverse32x32(Ipp32s shift, H265CoeffsPtrCommon src, DstCoef
         }
     }
 
-    void MAKE_NAME(h265_DCT32x32Inv_16sT)(void *destPtr, const short *H265_RESTRICT coeff, int destStride, bool inplace, Ipp32u bitDepth)
+    void MAKE_NAME(h265_DCT32x32Inv_16sT)(void *destPtr, const short *H265_RESTRICT coeff, int destStride, int inplace, Ipp32u bitDepth)
     {
         Ipp16s tmp[32*32];
         const Ipp32s shift_1st = SHIFT_INV_1ST;
@@ -857,7 +869,10 @@ void PartialButterflyInverse32x32(Ipp32s shift, H265CoeffsPtrCommon src, DstCoef
         PartialButterflyInverse32x32<Ipp16s, false>(shift_1st, (Ipp16s*)coeff, tmp, 32, bitDepth);
         if (inplace && bitDepth == 8)
         {
-            PartialButterflyInverse32x32<Ipp8u, true>(shift_2nd, tmp, (Ipp8u*)destPtr, destStride, bitDepth);
+            if (inplace == 2)
+                PartialButterflyInverse32x32<Ipp16u, true>(shift_2nd, tmp, (Ipp16u*)destPtr, destStride, bitDepth);
+            else
+                PartialButterflyInverse32x32<Ipp8u, true>(shift_2nd, tmp, (Ipp8u*)destPtr, destStride, bitDepth);
         }
         else if (inplace && bitDepth > 8)
         {

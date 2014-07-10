@@ -292,7 +292,7 @@ mfxStatus MFXFileWriteRender::Init(mfxVideoParam *pInit, const vm_char *pFilenam
     {
         if (m_nFourCC == 0 || m_nFourCC == MFX_FOURCC_YV12 || m_nFourCC == MFX_FOURCC_YUV420_16)
         {
-            m_VideoParams.mfx.FrameInfo.FourCC = m_VideoParams.mfx.FrameInfo.BitDepthLuma > 8 ? MFX_FOURCC_YUV420_16 : MFX_FOURCC_YV12;
+            m_VideoParams.mfx.FrameInfo.FourCC = (m_VideoParams.mfx.FrameInfo.BitDepthLuma > 8 || m_VideoParams.mfx.FrameInfo.BitDepthChroma > 8) ? MFX_FOURCC_YUV420_16 : MFX_FOURCC_YV12;
             MFX_CHECK_STS(AllocSurface(&m_VideoParams.mfx.FrameInfo, &m_yv12Surface));
             m_VideoParams.mfx.FrameInfo.FourCC = nOldCC;
         }
@@ -1000,6 +1000,10 @@ mfxStatus MFXMetricComparatorRender::RenderFrame(mfxFrameSurface1 *surface, mfxE
         case MFX_FOURCC_YUY2 :
             nFrameSize = (mfxU64)(surface->Info.CropW * surface->Info.CropH) * 2 ;
             break;
+        case MFX_FOURCC_P010 :
+            nFrameSize = (mfxU64)(surface->Info.CropW * surface->Info.CropH) * 3;
+            break;
+
         default:
             vm_char ar[] = {*(0 + (char*)&surface->Info.FourCC),
                           *(1 + (char*)&surface->Info.FourCC),
@@ -1175,6 +1179,8 @@ mfxFrameSurface1* ConvertSurface(mfxFrameSurface1* pSurfaceIn, mfxFrameSurface1*
         pitchIn >>= 1;
         pitchOut >>= 1;
     }
+
+    // fill absent field
     if ((pSurfaceIn->Data.Corrupted & MFX_CORRUPTION_ABSENT_TOP_FIELD) || (pSurfaceIn->Data.Corrupted & MFX_CORRUPTION_ABSENT_BOTTOM_FIELD))
     {
         IppiSize srcSize = 
@@ -1184,6 +1190,7 @@ mfxFrameSurface1* ConvertSurface(mfxFrameSurface1* pSurfaceIn, mfxFrameSurface1*
         };
 
         mfxU32 isBottom = (pSurfaceIn->Data.Corrupted & MFX_CORRUPTION_ABSENT_BOTTOM_FIELD) ? 1 : 0;
+
         if (pSurfaceIn->Info.FourCC == MFX_FOURCC_P010)
         {
             mfxU16 defaultValue = 1 << (pSurfaceIn->Info.BitDepthLuma - 1);
@@ -1194,24 +1201,25 @@ mfxFrameSurface1* ConvertSurface(mfxFrameSurface1* pSurfaceIn, mfxFrameSurface1*
         }
         else
         {
-        ippiSet_8u_C1R(128, pSurfaceIn->Data.Y + isBottom*pitchIn, (pitchIn << 1), srcSize);
+            ippiSet_8u_C1R(128, pSurfaceIn->Data.Y + isBottom*pitchIn, (pitchIn << 1), srcSize);
 
-        if (pSurfaceIn->Info.FourCC == MFX_FOURCC_NV12)
-        {
-            srcSize.height >>= 1;
-            ippiSet_8u_C1R(128, pSurfaceIn->Data.U + isBottom*pitchIn, (pitchIn << 1), srcSize);
-        }
-        else
-        {
-            srcSize.width >>= 1;
-            srcSize.height >>= 1;
+            if (pSurfaceIn->Info.FourCC == MFX_FOURCC_NV12)
+            {
+                srcSize.height >>= 1;
+                ippiSet_8u_C1R(128, pSurfaceIn->Data.U + isBottom*pitchIn, (pitchIn << 1), srcSize);
+            }
+            else
+            {
+                srcSize.width >>= 1;
+                srcSize.height >>= 1;
 
-            ippiSet_8u_C1R(128, pSurfaceIn->Data.U + isBottom*(pitchIn >> 1), pitchIn, srcSize);
-            ippiSet_8u_C1R(128, pSurfaceIn->Data.V + isBottom*(pitchIn >> 1), pitchIn, srcSize);
+                ippiSet_8u_C1R(128, pSurfaceIn->Data.U + isBottom*(pitchIn >> 1), pitchIn, srcSize);
+                ippiSet_8u_C1R(128, pSurfaceIn->Data.V + isBottom*(pitchIn >> 1), pitchIn, srcSize);
+            }
         }
     }
-    }
 
+    // fill chroma values for monochrome surface
     if (pSurfaceIn->Info.ChromaFormat == MFX_CHROMAFORMAT_YUV400)
     {
         IppiSize srcSize = {pSurfaceIn->Info.Width, pSurfaceIn->Info.Height};
@@ -1224,20 +1232,21 @@ mfxFrameSurface1* ConvertSurface(mfxFrameSurface1* pSurfaceIn, mfxFrameSurface1*
         }
         else
         {
-        if (pSurfaceIn->Info.FourCC == MFX_FOURCC_NV12)
-        {
-            ippiSet_8u_C1R(128, pSurfaceIn->Data.UV, pitchIn, srcSize);
-        }
-        else
-        {
-            srcSize.width >>= 1;
+            if (pSurfaceIn->Info.FourCC == MFX_FOURCC_NV12)
+            {
+                ippiSet_8u_C1R(128, pSurfaceIn->Data.UV, pitchIn, srcSize);
+            }
+            else
+            {
+                srcSize.width >>= 1;
 
-            ippiSet_8u_C1R(128, pSurfaceIn->Data.U, pitchIn, srcSize);
-            ippiSet_8u_C1R(128, pSurfaceIn->Data.V, pitchIn, srcSize);
+                ippiSet_8u_C1R(128, pSurfaceIn->Data.U, pitchIn, srcSize);
+                ippiSet_8u_C1R(128, pSurfaceIn->Data.V, pitchIn, srcSize);
             }
         }
     }
 
+    // color conversion
     if (pSurfaceIn->Info.FourCC != MFX_FOURCC_NV12 && pSurfaceIn->Info.FourCC != MFX_FOURCC_P010)
     {
         return pSurfaceIn;
@@ -1286,9 +1295,12 @@ mfxFrameSurface1* ConvertSurface(mfxFrameSurface1* pSurfaceIn, mfxFrameSurface1*
     {
         mfxU16 * ptrIn = (mfxU16 *)pSurfaceIn->Data.Y;
         mfxU16 * ptrOut = (mfxU16 *)pSurfaceOut->Data.Y;
+
         mfxU32 pitchIn = pSurfaceIn->Data.Pitch >> 1;
         mfxU32 pitchOut = pSurfaceOut->Data.Pitch >> 1;
+
         mfxU32 shift = pSurfaceIn->Info.Shift;
+
         for (mfxU16 i = 0; i < pSurfaceIn->Info.Height; i++)
         {
             if (shift)
@@ -1303,9 +1315,11 @@ mfxFrameSurface1* ConvertSurface(mfxFrameSurface1* pSurfaceIn, mfxFrameSurface1*
             ptrOut += pitchOut;
             ptrIn += pitchIn;
         }
+
         ptrIn = (mfxU16 *)pSurfaceIn->Data.UV;
         mfxU16 * ptrOutU = (mfxU16 *)pSurfaceOut->Data.U;
         mfxU16 * ptrOutV = (mfxU16 *)pSurfaceOut->Data.V;
+
         for (mfxU16 i = 0; i < pSurfaceIn->Info.Height / 2; i++)
         {
             if (shift)
@@ -1324,12 +1338,15 @@ mfxFrameSurface1* ConvertSurface(mfxFrameSurface1* pSurfaceIn, mfxFrameSurface1*
                     ptrOutV[j] = ptrIn[2*j + 1];
                 }
             }
+
             ptrOutU += pitchOut >> 1;
             ptrOutV += pitchOut >> 1;
             ptrIn += pitchIn;
         }
+
         return pSurfaceOut;
     }
+
     if (pSurfaceIn->Info.FourCC == MFX_FOURCC_NV12)
     {
         const Ipp8u *(pSrc[2]) = 
@@ -1410,31 +1427,32 @@ mfxStatus       AllocSurface(mfxFrameInfo *pTargetInfo, mfxFrameSurface1* pSurfa
 
     if (pSurfaceOut->Info.FourCC != MFX_FOURCC_P010 && pSurfaceOut->Info.FourCC != MFX_FOURCC_YUV420_16)
     {
-    mfxU8 * pBuffer = new mfxU8[pSurfaceOut->Info.Height * pSurfaceOut->Data.PitchLow * 3 / 2];
-    MFX_CHECK_WITH_ERR(NULL != pBuffer, MFX_ERR_MEMORY_ALLOC);
+        mfxU8 * pBuffer = new mfxU8[pSurfaceOut->Info.Height * pSurfaceOut->Data.PitchLow * 3 / 2];
+        MFX_CHECK_WITH_ERR(NULL != pBuffer, MFX_ERR_MEMORY_ALLOC);
 
-    pSurfaceOut->Data.Y = pBuffer;
+        pSurfaceOut->Data.Y = pBuffer;
 
-    switch (pSurfaceOut->Info.FourCC)
-    {
-        case MFX_FOURCC_NV12: 
+        switch (pSurfaceOut->Info.FourCC)
         {
-            pSurfaceOut->Data.U = pBuffer + pSurfaceOut->Data.PitchLow * pSurfaceOut->Info.Height;
-            pSurfaceOut->Data.V = pSurfaceOut->Data.U + 1;
-            break;
+            case MFX_FOURCC_NV12: 
+            {
+                pSurfaceOut->Data.U = pBuffer + pSurfaceOut->Data.PitchLow * pSurfaceOut->Info.Height;
+                pSurfaceOut->Data.V = pSurfaceOut->Data.U + 1;
+                break;
+            }
+            case MFX_FOURCC_YV12: 
+            {
+                pSurfaceOut->Data.U = pBuffer + pSurfaceOut->Data.PitchLow * pSurfaceOut->Info.Height;
+                pSurfaceOut->Data.V = pSurfaceOut->Data.U + ((pSurfaceOut->Data.PitchLow * pSurfaceOut->Info.Height) >> 2);
+                break;
+            }
         }
-        case MFX_FOURCC_YV12: 
-        {
-            pSurfaceOut->Data.U = pBuffer + pSurfaceOut->Data.PitchLow * pSurfaceOut->Info.Height;
-            pSurfaceOut->Data.V = pSurfaceOut->Data.U + ((pSurfaceOut->Data.PitchLow * pSurfaceOut->Info.Height) >> 2);
-            break;
-        }
-    }
     }
     else
     {
         mfxU16 * pBuffer = new mfxU16[pSurfaceOut->Info.Height * pSurfaceOut->Data.PitchLow * 3 / 2];
         pSurfaceOut->Data.Y16 = pBuffer;
+
         switch (pSurfaceOut->Info.FourCC)
         {
             case MFX_FOURCC_P010:
@@ -1448,5 +1466,6 @@ mfxStatus       AllocSurface(mfxFrameInfo *pTargetInfo, mfxFrameSurface1* pSurfa
         }
         pSurfaceOut->Data.PitchLow <<= 1;
     }
+    
     return MFX_ERR_NONE;
 }

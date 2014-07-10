@@ -36,7 +36,7 @@ namespace MFX_HEVC_PP
 {
 
 template <int bitDepth, typename DstCoeffsType>
-static void h265_CopyWeighted_Kernel(Ipp16s* pSrc, Ipp16s* pSrcUV, DstCoeffsType* pDst, DstCoeffsType* pDstUV, Ipp32u SrcStrideY, Ipp32u DstStrideY, Ipp32u SrcStrideC, Ipp32u DstStrideC, Ipp32u Width, Ipp32u Height, Ipp32s *w, Ipp32s *o, Ipp32s *logWD, Ipp32s *round)
+static void h265_CopyWeighted_Kernel(Ipp16s* pSrc, Ipp16s* pSrcUV, DstCoeffsType* pDst, DstCoeffsType* pDstUV, Ipp32u SrcStrideY, Ipp32u DstStrideY, Ipp32u SrcStrideC, Ipp32u DstStrideC, Ipp32u Width, Ipp32u Height, Ipp32s *w, Ipp32s *o, Ipp32s *logWD, Ipp32s *round, Ipp32u bit_depth_chroma)
 {
     Ipp32s x, y, xt;
     __m128i xmm_shift;
@@ -67,7 +67,7 @@ static void h265_CopyWeighted_Kernel(Ipp16s* pSrc, Ipp16s* pSrcUV, DstCoeffsType
             ymm0 = _mm256_sra_epi32(ymm0, xmm_shift);              /* >> logWD[0] */
             ymm0 = _mm256_add_epi32(ymm0, ymm3);                   /* + o[0] */
 
-            if (bitDepth == 8) {
+            if (sizeof(DstCoeffsType) == 1) {
                 /* clip to 8 bits, store 4 pixels */
                 ymm0 = _mm256_packs_epi32(ymm0, ymm0);
                 ymm0 = _mm256_packus_epi16(ymm0, ymm0);
@@ -110,6 +110,8 @@ static void h265_CopyWeighted_Kernel(Ipp16s* pSrc, Ipp16s* pSrcUV, DstCoeffsType
     xmm_shift = _mm_unpacklo_epi64(_mm_cvtsi32_si128(logWD[1]), _mm_cvtsi32_si128(logWD[2]));
     ymm7 = _mm256_set1_epi16(1);
 
+    ymm_max = _mm256_set1_epi16((1 << bit_depth_chroma) - 1);
+
     xt = Width & (~0x07);
     for (y = 0; y < (Ipp32s)Height / 2; y += 2) {
         for (x = 0; x < xt; x += 8) {
@@ -137,7 +139,7 @@ static void h265_CopyWeighted_Kernel(Ipp16s* pSrc, Ipp16s* pSrcUV, DstCoeffsType
             ymm1 = _mm256_add_epi32(ymm1, ymm6);
             xmm_shift = _mm_alignr_epi8(xmm_shift, xmm_shift, 8);
 
-            if (bitDepth == 8) {
+            if (sizeof(DstCoeffsType) == 1) {
                 /* clip to 8 bits, interleave U/V, store 8 pixels */
                 ymm0 = _mm256_packs_epi32(ymm0, ymm0);
                 ymm1 = _mm256_packs_epi32(ymm1, ymm1);
@@ -167,8 +169,8 @@ static void h265_CopyWeighted_Kernel(Ipp16s* pSrc, Ipp16s* pSrcUV, DstCoeffsType
         pDstUV -= (Height / 2)*DstStrideC;
         for (y = 0; y < (Ipp32s)Height / 2; y++) {
             for (x = xt; x < (Ipp32s)Width; x += 2) {
-                pDstUV[x + 0] = (DstCoeffsType)Clip3(0, (1 << bitDepth) - 1, ((w[1] * pSrcUV[x + 0] + round[1]) >> logWD[1]) + o[1]);
-                pDstUV[x + 1] = (DstCoeffsType)Clip3(0, (1 << bitDepth) - 1, ((w[2] * pSrcUV[x + 1] + round[2]) >> logWD[2]) + o[2]);
+                pDstUV[x + 0] = (DstCoeffsType)Clip3(0, (1 << bit_depth_chroma) - 1, ((w[1] * pSrcUV[x + 0] + round[1]) >> logWD[1]) + o[1]);
+                pDstUV[x + 1] = (DstCoeffsType)Clip3(0, (1 << bit_depth_chroma) - 1, ((w[2] * pSrcUV[x + 1] + round[2]) >> logWD[2]) + o[2]);
             }
             pSrcUV += SrcStrideC;
             pDstUV += DstStrideC;
@@ -178,19 +180,21 @@ static void h265_CopyWeighted_Kernel(Ipp16s* pSrc, Ipp16s* pSrcUV, DstCoeffsType
 
 void MAKE_NAME(h265_CopyWeighted_S16U8)(Ipp16s* pSrc, Ipp16s* pSrcUV, Ipp8u* pDst, Ipp8u* pDstUV, Ipp32u SrcStrideY, Ipp32u DstStrideY, Ipp32u SrcStrideC, Ipp32u DstStrideC, Ipp32u Width, Ipp32u Height, Ipp32s *w, Ipp32s *o, Ipp32s *logWD, Ipp32s *round)
 {
-    h265_CopyWeighted_Kernel<8, Ipp8u>(pSrc, pSrcUV, pDst, pDstUV, SrcStrideY, DstStrideY, SrcStrideC, DstStrideC, Width, Height, w, o, logWD, round);
+    h265_CopyWeighted_Kernel<8, Ipp8u>(pSrc, pSrcUV, pDst, pDstUV, SrcStrideY, DstStrideY, SrcStrideC, DstStrideC, Width, Height, w, o, logWD, round, 8);
 }
     
-void MAKE_NAME(h265_CopyWeighted_S16U16)(Ipp16s* pSrc, Ipp16s* pSrcUV, Ipp16u* pDst, Ipp16u* pDstUV, Ipp32u SrcStrideY, Ipp32u DstStrideY, Ipp32u SrcStrideC, Ipp32u DstStrideC, Ipp32u Width, Ipp32u Height, Ipp32s *w, Ipp32s *o, Ipp32s *logWD, Ipp32s *round, Ipp32u bit_depth)
+void MAKE_NAME(h265_CopyWeighted_S16U16)(Ipp16s* pSrc, Ipp16s* pSrcUV, Ipp16u* pDst, Ipp16u* pDstUV, Ipp32u SrcStrideY, Ipp32u DstStrideY, Ipp32u SrcStrideC, Ipp32u DstStrideC, Ipp32u Width, Ipp32u Height, Ipp32s *w, Ipp32s *o, Ipp32s *logWD, Ipp32s *round, Ipp32u bit_depth, Ipp32u bit_depth_chroma)
 {
     if (bit_depth == 9)
-        h265_CopyWeighted_Kernel< 9, Ipp16u>(pSrc, pSrcUV, pDst, pDstUV, SrcStrideY, DstStrideY, SrcStrideC, DstStrideC, Width, Height, w, o, logWD, round);
+        h265_CopyWeighted_Kernel<9, Ipp16u>(pSrc, pSrcUV, pDst, pDstUV, SrcStrideY, DstStrideY, SrcStrideC, DstStrideC, Width, Height, w, o, logWD, round, bit_depth_chroma);
     else if (bit_depth == 10)
-        h265_CopyWeighted_Kernel<10, Ipp16u>(pSrc, pSrcUV, pDst, pDstUV, SrcStrideY, DstStrideY, SrcStrideC, DstStrideC, Width, Height, w, o, logWD, round);
+        h265_CopyWeighted_Kernel<10, Ipp16u>(pSrc, pSrcUV, pDst, pDstUV, SrcStrideY, DstStrideY, SrcStrideC, DstStrideC, Width, Height, w, o, logWD, round, bit_depth_chroma);
+    else if (bit_depth == 8)
+        h265_CopyWeighted_Kernel<8, Ipp16u>(pSrc, pSrcUV, pDst, pDstUV, SrcStrideY, DstStrideY, SrcStrideC, DstStrideC, Width, Height, w, o, logWD, round, bit_depth_chroma);
 }
 
 template <int bitDepth, typename DstCoeffsType>
-static void h265_CopyWeightedBidi_Kernel(Ipp16s* pSrc0, Ipp16s* pSrcUV0, Ipp16s* pSrc1, Ipp16s* pSrcUV1, DstCoeffsType* pDst, DstCoeffsType* pDstUV, Ipp32u SrcStride0Y, Ipp32u SrcStride1Y, Ipp32u DstStrideY, Ipp32u SrcStride0C, Ipp32u SrcStride1C, Ipp32u DstStrideC, Ipp32u Width, Ipp32u Height, Ipp32s *w0, Ipp32s *w1, Ipp32s *logWD, Ipp32s *round)
+static void h265_CopyWeightedBidi_Kernel(Ipp16s* pSrc0, Ipp16s* pSrcUV0, Ipp16s* pSrc1, Ipp16s* pSrcUV1, DstCoeffsType* pDst, DstCoeffsType* pDstUV, Ipp32u SrcStride0Y, Ipp32u SrcStride1Y, Ipp32u DstStrideY, Ipp32u SrcStride0C, Ipp32u SrcStride1C, Ipp32u DstStrideC, Ipp32u Width, Ipp32u Height, Ipp32s *w0, Ipp32s *w1, Ipp32s *logWD, Ipp32s *round, Ipp32u bit_depth_chroma)
 {
     Ipp32s x, y, xt;
     __m128i xmm_shift;
@@ -225,7 +229,7 @@ static void h265_CopyWeightedBidi_Kernel(Ipp16s* pSrc0, Ipp16s* pSrcUV0, Ipp16s*
             ymm0 = _mm256_add_epi32(ymm0, ymm3);                   /* + round[0] */
             ymm0 = _mm256_sra_epi32(ymm0, xmm_shift);              /* >> logWD[0] */
 
-            if (bitDepth == 8) {
+            if (sizeof(DstCoeffsType) == 1) {
                 /* clip to 8 bits, store 4 pixels */
                 ymm0 = _mm256_packs_epi32(ymm0, ymm0);
                 ymm0 = _mm256_packus_epi16(ymm0, ymm0);
@@ -268,6 +272,7 @@ static void h265_CopyWeightedBidi_Kernel(Ipp16s* pSrc0, Ipp16s* pSrcUV0, Ipp16s*
     ymm6 = _mm256_set1_epi32(round[2]);
 
     xmm_shift = _mm_unpacklo_epi64(_mm_cvtsi32_si128(logWD[1]), _mm_cvtsi32_si128(logWD[2]));
+    ymm_max = _mm256_set1_epi16((1 << bit_depth_chroma) - 1);
 
     xt = Width & (~0x07);
     for (y = 0; y < (Ipp32s)Height / 2; y += 2) {
@@ -305,7 +310,7 @@ static void h265_CopyWeightedBidi_Kernel(Ipp16s* pSrc0, Ipp16s* pSrcUV0, Ipp16s*
             ymm7 = _mm256_sra_epi32(ymm7, xmm_shift);
             xmm_shift = _mm_alignr_epi8(xmm_shift, xmm_shift, 8);
 
-            if (bitDepth == 8) {
+            if (sizeof(DstCoeffsType) == 1) {
                 /* clip to 8 bits, interleave U/V, store 8 pixels */
                 ymm0 = _mm256_packs_epi32(ymm0, ymm0);
                 ymm7 = _mm256_packs_epi32(ymm7, ymm7);
@@ -337,8 +342,8 @@ static void h265_CopyWeightedBidi_Kernel(Ipp16s* pSrc0, Ipp16s* pSrcUV0, Ipp16s*
         pDstUV  -= (Height/2)*DstStrideC;
         for (y = 0; y < (Ipp32s)Height / 2; y++) {
             for (x = xt; x < (Ipp32s)Width; x += 2) {
-                pDstUV[x + 0] = (DstCoeffsType)Clip3(0, (1 << bitDepth) - 1, (w0[1] * pSrcUV0[x + 0] + w1[1] * pSrcUV1[x + 0] + round[1]) >> logWD[1]);
-                pDstUV[x + 1] = (DstCoeffsType)Clip3(0, (1 << bitDepth) - 1, (w0[2] * pSrcUV0[x + 1] + w1[2] * pSrcUV1[x + 1] + round[2]) >> logWD[2]);
+                pDstUV[x + 0] = (DstCoeffsType)Clip3(0, (1 << bit_depth_chroma) - 1, (w0[1] * pSrcUV0[x + 0] + w1[1] * pSrcUV1[x + 0] + round[1]) >> logWD[1]);
+                pDstUV[x + 1] = (DstCoeffsType)Clip3(0, (1 << bit_depth_chroma) - 1, (w0[2] * pSrcUV0[x + 1] + w1[2] * pSrcUV1[x + 1] + round[2]) >> logWD[2]);
             }
             pSrcUV0 += SrcStride0C;
             pSrcUV1 += SrcStride1C;
@@ -349,15 +354,18 @@ static void h265_CopyWeightedBidi_Kernel(Ipp16s* pSrc0, Ipp16s* pSrcUV0, Ipp16s*
 
 void MAKE_NAME(h265_CopyWeightedBidi_S16U8)(Ipp16s* pSrc0, Ipp16s* pSrcUV0, Ipp16s* pSrc1, Ipp16s* pSrcUV1, Ipp8u* pDst, Ipp8u* pDstUV, Ipp32u SrcStride0Y, Ipp32u SrcStride1Y, Ipp32u DstStrideY, Ipp32u SrcStride0C, Ipp32u SrcStride1C, Ipp32u DstStrideC, Ipp32u Width, Ipp32u Height, Ipp32s *w0, Ipp32s *w1, Ipp32s *logWD, Ipp32s *round)
 {
-    h265_CopyWeightedBidi_Kernel< 8, Ipp8u>(pSrc0, pSrcUV0, pSrc1, pSrcUV1, pDst, pDstUV, SrcStride0Y, SrcStride1Y, DstStrideY, SrcStride0C, SrcStride1C, DstStrideC, Width, Height, w0, w1, logWD, round);
+    h265_CopyWeightedBidi_Kernel<8, Ipp8u>(pSrc0, pSrcUV0, pSrc1, pSrcUV1, pDst, pDstUV, SrcStride0Y, SrcStride1Y, DstStrideY, SrcStride0C, SrcStride1C, DstStrideC, Width, Height, w0, w1, logWD, round, 8);
 }
 
-void MAKE_NAME(h265_CopyWeightedBidi_S16U16)(Ipp16s* pSrc0, Ipp16s* pSrcUV0, Ipp16s* pSrc1, Ipp16s* pSrcUV1, Ipp16u* pDst, Ipp16u* pDstUV, Ipp32u SrcStride0Y, Ipp32u SrcStride1Y, Ipp32u DstStrideY, Ipp32u SrcStride0C, Ipp32u SrcStride1C, Ipp32u DstStrideC, Ipp32u Width, Ipp32u Height, Ipp32s *w0, Ipp32s *w1, Ipp32s *logWD, Ipp32s *round, Ipp32u bit_depth)
+void MAKE_NAME(h265_CopyWeightedBidi_S16U16)(Ipp16s* pSrc0, Ipp16s* pSrcUV0, Ipp16s* pSrc1, Ipp16s* pSrcUV1, Ipp16u* pDst, Ipp16u* pDstUV, Ipp32u SrcStride0Y, Ipp32u SrcStride1Y, Ipp32u DstStrideY, Ipp32u SrcStride0C, Ipp32u SrcStride1C, Ipp32u DstStrideC, Ipp32u Width, Ipp32u Height, Ipp32s *w0, Ipp32s *w1, Ipp32s *logWD, Ipp32s *round, Ipp32u bit_depth, Ipp32u bit_depth_chroma)
 {
     if (bit_depth == 9)
-        h265_CopyWeightedBidi_Kernel< 9, Ipp16u>(pSrc0, pSrcUV0, pSrc1, pSrcUV1, pDst, pDstUV, SrcStride0Y, SrcStride1Y, DstStrideY, SrcStride0C, SrcStride1C, DstStrideC, Width, Height, w0, w1, logWD, round);
+        h265_CopyWeightedBidi_Kernel< 9, Ipp16u>(pSrc0, pSrcUV0, pSrc1, pSrcUV1, pDst, pDstUV, SrcStride0Y, SrcStride1Y, DstStrideY, SrcStride0C, SrcStride1C, DstStrideC, Width, Height, w0, w1, logWD, round, bit_depth_chroma);
     else if (bit_depth == 10)
-        h265_CopyWeightedBidi_Kernel<10, Ipp16u>(pSrc0, pSrcUV0, pSrc1, pSrcUV1, pDst, pDstUV, SrcStride0Y, SrcStride1Y, DstStrideY, SrcStride0C, SrcStride1C, DstStrideC, Width, Height, w0, w1, logWD, round);
+        h265_CopyWeightedBidi_Kernel<10, Ipp16u>(pSrc0, pSrcUV0, pSrc1, pSrcUV1, pDst, pDstUV, SrcStride0Y, SrcStride1Y, DstStrideY, SrcStride0C, SrcStride1C, DstStrideC, Width, Height, w0, w1, logWD, round, bit_depth_chroma);
+    else if (bit_depth == 8)
+        h265_CopyWeightedBidi_Kernel<8, Ipp16u>(pSrc0, pSrcUV0, pSrc1, pSrcUV1, pDst, pDstUV, SrcStride0Y, SrcStride1Y, DstStrideY, SrcStride0C, SrcStride1C, DstStrideC, Width, Height, w0, w1, logWD, round, bit_depth_chroma);
+
 }
 
 } // end namespace MFX_HEVC_PP

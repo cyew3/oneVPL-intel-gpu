@@ -138,10 +138,19 @@ void H265SampleAdaptiveOffsetTemplate<PlaneType>::init(const H265SeqParamSet* sp
 
     Ipp32u iCRangeExt = uiMaxY>>1;
 
-    m_ClipTableBase = h265_new_array_throw<PlaneType>(uiMaxY+2*iCRangeExt);
+    Ipp32s doubleClipTable = sps->bit_depth_luma != sps->bit_depth_chroma ? 1 : 0;
+
+    Ipp32s clipTableSize = uiMaxY+2*iCRangeExt;
+
+    if (doubleClipTable)
+    {
+        Ipp32u uiMaxUV  = (1 << sps->bit_depth_chroma) - 1;
+        Ipp32u iCRangeExtUV = uiMaxUV>>1;
+        clipTableSize += uiMaxUV+2*iCRangeExtUV;
+    }
+
+    m_ClipTableBase = h265_new_array_throw<PlaneType>(clipTableSize);
     m_OffsetBo      = h265_new_array_throw<PlaneType>(uiMaxY+2*iCRangeExt);
-    m_OffsetBoChroma   = h265_new_array_throw<PlaneType>(uiMaxY+2*iCRangeExt);
-    m_OffsetBo2Chroma  = h265_new_array_throw<PlaneType>(uiMaxY+2*iCRangeExt);
 
     // Initialize lookup table to clip sample values beyond bit depth allowed range
     for (Ipp32u i = 0; i < (uiMinY + iCRangeExt);i++)
@@ -160,6 +169,36 @@ void H265SampleAdaptiveOffsetTemplate<PlaneType>::init(const H265SeqParamSet* sp
     }
 
     m_ClipTable = &(m_ClipTableBase[iCRangeExt]);
+    m_ClipTableChroma = &(m_ClipTableBase[iCRangeExt]);
+
+    Ipp32u uiMaxUV  = (1 << sps->bit_depth_chroma) - 1;
+    Ipp32u iCRangeExtUV = uiMaxUV>>1;
+
+    if (doubleClipTable)
+    {
+        PlaneType * clipBase = m_ClipTableBase + uiMaxY+2*iCRangeExt;
+
+        // Initialize lookup table to clip sample values beyond bit depth allowed range
+        for (Ipp32u i = 0; i < (uiMinY + iCRangeExtUV);i++)
+        {
+            clipBase[i] = (PlaneType)uiMinY;
+        }
+
+        for (Ipp32u i = uiMinY + iCRangeExtUV; i < (uiMaxUV + iCRangeExtUV); i++)
+        {
+            clipBase[i] = (PlaneType)(i - iCRangeExtUV);
+        }
+
+        for (Ipp32u i = uiMaxUV + iCRangeExtUV; i < (uiMaxUV + 2 * iCRangeExtUV); i++)
+        {
+            clipBase[i] = (PlaneType)uiMaxUV;
+        }
+
+        m_ClipTableChroma = &(clipBase[iCRangeExtUV]);
+    }
+
+    m_OffsetBoChroma   = h265_new_array_throw<PlaneType>(uiMaxUV+2*iCRangeExtUV);
+    m_OffsetBo2Chroma  = h265_new_array_throw<PlaneType>(uiMaxUV+2*iCRangeExtUV);
 
     m_TmpU[0] = h265_new_array_throw<PlaneType>(2*m_PicWidth);
     m_TmpU[1] = h265_new_array_throw<PlaneType>(2*m_PicWidth);
@@ -246,8 +285,8 @@ void H265SampleAdaptiveOffsetTemplate<PlaneType>::processSaoCuOrgChroma(Ipp32s a
                     signLeftCb = -signRightCb;
                     signLeftCr = -signRightCr;
 
-                    pRec[x] = m_ClipTable[pRec[x] + pOffsetEoCb[edgeTypeCb]];
-                    pRec[x + 1] = m_ClipTable[pRec[x + 1] + pOffsetEoCr[edgeTypeCr]];
+                    pRec[x] = m_ClipTableChroma[pRec[x] + pOffsetEoCb[edgeTypeCb]];
+                    pRec[x + 1] = m_ClipTableChroma[pRec[x + 1] + pOffsetEoCr[edgeTypeCr]];
                 }
 
                 pRec += stride;
@@ -280,8 +319,8 @@ void H265SampleAdaptiveOffsetTemplate<PlaneType>::processSaoCuOrgChroma(Ipp32s a
                     tmpUpBuff1[x] = -signDownCb;
                     tmpUpBuff1[x + 1] = -signDownCr;
 
-                    pRec[x] = m_ClipTable[pRec[x] + pOffsetEoCb[edgeTypeCb]];
-                    pRec[x + 1] = m_ClipTable[pRec[x + 1] + pOffsetEoCr[edgeTypeCr]];
+                    pRec[x] = m_ClipTableChroma[pRec[x] + pOffsetEoCb[edgeTypeCb]];
+                    pRec[x + 1] = m_ClipTableChroma[pRec[x + 1] + pOffsetEoCr[edgeTypeCr]];
                 }
                 pRec += stride;
             }
@@ -322,8 +361,8 @@ void H265SampleAdaptiveOffsetTemplate<PlaneType>::processSaoCuOrgChroma(Ipp32s a
                     edgeTypeCr = signDownCr + pUpBuff[x + 1] + 2;
                     pUpBufft[x + 2] = -signDownCb;
                     pUpBufft[x + 3] = -signDownCr;
-                    pRec[x] = m_ClipTable[pRec[x] + pOffsetEoCb[edgeTypeCb]];
-                    pRec[x + 1] = m_ClipTable[pRec[x + 1] + pOffsetEoCr[edgeTypeCr]];
+                    pRec[x] = m_ClipTableChroma[pRec[x] + pOffsetEoCb[edgeTypeCb]];
+                    pRec[x + 1] = m_ClipTableChroma[pRec[x + 1] + pOffsetEoCr[edgeTypeCr]];
                 }
 
                 swapPtr  = pUpBuff;
@@ -361,8 +400,8 @@ void H265SampleAdaptiveOffsetTemplate<PlaneType>::processSaoCuOrgChroma(Ipp32s a
                 edgeTypeCr =  signDownCr + tmpUpBuff1[x + 3] + 2;
                 tmpUpBuff1[x] = -signDownCb;
                 tmpUpBuff1[x + 1] = -signDownCr;
-                pRec[x] = m_ClipTable[pRec[x] + pOffsetEoCb[edgeTypeCb]];
-                pRec[x + 1] = m_ClipTable[pRec[x + 1] + pOffsetEoCr[edgeTypeCr]];
+                pRec[x] = m_ClipTableChroma[pRec[x] + pOffsetEoCb[edgeTypeCb]];
+                pRec[x + 1] = m_ClipTableChroma[pRec[x + 1] + pOffsetEoCr[edgeTypeCr]];
 
                 for (x = startX + 2; x < endX; x += 2)
                 {
@@ -372,8 +411,8 @@ void H265SampleAdaptiveOffsetTemplate<PlaneType>::processSaoCuOrgChroma(Ipp32s a
                     edgeTypeCr =  signDownCr + tmpUpBuff1[x + 3] + 2;
                     tmpUpBuff1[x] = -signDownCb;
                     tmpUpBuff1[x + 1] = -signDownCr;
-                    pRec[x] = m_ClipTable[pRec[x] + pOffsetEoCb[edgeTypeCb]];
-                    pRec[x + 1] = m_ClipTable[pRec[x + 1] + pOffsetEoCr[edgeTypeCr]];
+                    pRec[x] = m_ClipTableChroma[pRec[x] + pOffsetEoCb[edgeTypeCb]];
+                    pRec[x + 1] = m_ClipTableChroma[pRec[x + 1] + pOffsetEoCr[edgeTypeCr]];
                 }
 
                 tmpUpBuff1[endX] = getSign(pRec[endX - 2 + stride] - pRec[endX]);
@@ -431,7 +470,7 @@ void H265SampleAdaptiveOffsetTemplate<PlaneType>::processSaoCuChroma(Ipp32s addr
     Ipp32s x, y;
     PlaneType* startPtr;
     PlaneType* tmpU;
-    PlaneType* pClipTbl = m_ClipTable;
+    PlaneType* pClipTbl = m_ClipTableChroma;
     Ipp32s *pOffsetEoCb = m_OffsetEoChroma;
     Ipp32s *pOffsetEoCr = m_OffsetEo2Chroma;
     PlaneType* pOffsetBoCb = m_OffsetBoChroma;
@@ -1043,8 +1082,8 @@ void H265SampleAdaptiveOffsetTemplate<PlaneType>::SetOffsetsChroma(SAOLCUParam &
         PlaneType*ppLumaTable = m_chromaTableBo;
         for (Ipp32s i = 0; i < (1 << m_sps->bit_depth_chroma); i++)
         {
-            m_OffsetBoChroma[i] = (PlaneType)m_ClipTable[i + offsetCb[ppLumaTable[i]]];
-            m_OffsetBo2Chroma[i] = (PlaneType)m_ClipTable[i + offsetCr[ppLumaTable[i]]];
+            m_OffsetBoChroma[i] = (PlaneType)m_ClipTableChroma[i + offsetCb[ppLumaTable[i]]];
+            m_OffsetBo2Chroma[i] = (PlaneType)m_ClipTableChroma[i + offsetCr[ppLumaTable[i]]];
         }
     }
     else

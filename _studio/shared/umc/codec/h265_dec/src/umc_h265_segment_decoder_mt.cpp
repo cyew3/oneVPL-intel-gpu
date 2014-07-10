@@ -917,9 +917,71 @@ public:
     virtual void CopyPartOfFrameFromRef(PlanePtrY pRefPlane, PlanePtrY pCurrentPlane, Ipp32s pitch,
         Ipp32s offsetX, Ipp32s offsetY, Ipp32s offsetXL, Ipp32s offsetYL,
         Ipp32s cuSize, IppiSize frameSize);
+
+    virtual void ReconstructPCMBlock(PlanePtrY luma, Ipp32s pitchLuma, Ipp32u PcmLeftShiftBitLuma, PlanePtrY chroma, Ipp32s pitchChroma, Ipp32u PcmLeftShiftBitChroma, CoeffsPtr *pcm, Ipp32u size);
+
+    virtual void DecodePCMBlock(H265Bitstream *bitStream, CoeffsPtr *pcm, Ipp32u size, Ipp32u sampleBits);
 };
 
 #pragma warning(disable: 4127)
+
+template<bool bitDepth, typename H265PlaneType>
+void ReconstructorT<bitDepth, H265PlaneType>::ReconstructPCMBlock(PlanePtrY luma, Ipp32s pitchLuma, Ipp32u PcmLeftShiftBitLuma, 
+                                                                  PlanePtrY chroma, Ipp32s pitchChroma, Ipp32u PcmLeftShiftBitChroma, CoeffsPtr *pcm, Ipp32u size)
+{
+    H265PlaneType * plane = (H265PlaneType *)luma;
+    H265PlaneType * coeffs = (H265PlaneType *)*pcm;
+    *pcm += size*size*sizeof(H265PlaneType);
+
+    for (Ipp32u Y = 0; Y < size; Y++)
+    {
+        for (Ipp32u X = 0; X < size; X++)
+        {
+            plane[X] = coeffs[X] << PcmLeftShiftBitLuma;
+        }
+
+        coeffs += size;
+        plane += pitchLuma;
+    }
+
+    size >>= 1;
+    H265PlaneType * coeffsU = (H265PlaneType *)*pcm;
+    *pcm += size*size*sizeof(H265PlaneType);
+    H265PlaneType * coeffsV = (H265PlaneType *)*pcm;
+    *pcm += size*size*sizeof(H265PlaneType);
+
+    plane = (H265PlaneType *)chroma;
+
+    for (Ipp32u Y = 0; Y < size; Y++)
+    {
+        for (Ipp32u X = 0; X < size; X++)
+        {
+            plane[X * 2] = coeffsU[X] << PcmLeftShiftBitChroma;
+            plane[X * 2 + 1] = coeffsV[X] << PcmLeftShiftBitChroma;
+        }
+
+        coeffsU += size;
+        coeffsV += size;
+        plane += pitchChroma;
+    }
+}
+
+template<bool bitDepth, typename H265PlaneType>
+void ReconstructorT<bitDepth, H265PlaneType>::DecodePCMBlock(H265Bitstream *bitStream, CoeffsPtr *pcm, Ipp32u size, Ipp32u sampleBits)
+{
+    H265PlaneType *pcmSamples = (H265PlaneType*)*pcm;
+    *pcm += size*size*sizeof(H265PlaneType);
+
+    for (Ipp32u Y = 0; Y < size; Y++)
+    {
+        for (Ipp32u X = 0; X < size; X++)
+        {
+            H265PlaneType sample = (H265PlaneType)bitStream->GetBits(sampleBits);
+            pcmSamples[X] = sample;
+        }
+        pcmSamples += size;
+    }
+}
 
 // Strong intra smoothing luma filter
 template<bool bitDepth, typename H265PlaneType>

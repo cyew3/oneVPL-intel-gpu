@@ -40,7 +40,10 @@ H265TrQuant::~H265TrQuant()
 template <Ipp32s bitDepth, typename DstCoeffsType>
 void InverseTransform(CoeffsPtr coeff, DstCoeffsType* dst, size_t dstPitch, Ipp32s Size, Ipp32u Mode, Ipp32u bit_depth)
 {
-    bool inplace = sizeof(DstCoeffsType) == 1;
+    Ipp32s inplace = (sizeof(DstCoeffsType) == 1) ? 1 : 0;
+    if (inplace)
+        inplace = bitDepth > 8 ? 2 : 1;
+
     if (Size == 4)
     {
         if (Mode != REG_DCT)
@@ -98,7 +101,7 @@ void H265TrQuant::InvTransformNxN(bool transQuantBypass, EnumTextType TxtType, I
     Ipp32s bitDepth = TxtType == TEXT_LUMA ? m_context->m_sps->bit_depth_luma : m_context->m_sps->bit_depth_chroma;
 
     bool inplace = sizeof(DstCoeffsType) == 1;
-    if (bitDepth == 8)
+    if (m_context->m_sps->bit_depth_luma == 8 && m_context->m_sps->bit_depth_chroma == 8)
     {
         if(transQuantBypass)
         {

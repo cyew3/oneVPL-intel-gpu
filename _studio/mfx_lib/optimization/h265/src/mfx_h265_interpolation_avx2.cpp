@@ -1607,6 +1607,7 @@ void MAKE_NAME(h265_InterpLuma_s16_d16_V)(INTERP_S16_D16_PARAMETERS_LIST)
     
         case  1:                    t_InterpLuma_s16_d16_V_AVX2< 1,    0>(pSrc, srcPitch, pDst, dstPitch, tab_index, width, height);  break;
         case  2:                    t_InterpLuma_s16_d16_V_AVX2< 2,    0>(pSrc, srcPitch, pDst, dstPitch, tab_index, width, height);  break;
+        case  0:                    t_InterpLuma_s16_d16_V_AVX2< 0,    0>(pSrc, srcPitch, pDst, dstPitch, tab_index, width, height);  break;
         }
 
         return;
@@ -1624,6 +1625,7 @@ void MAKE_NAME(h265_InterpLuma_s16_d16_V)(INTERP_S16_D16_PARAMETERS_LIST)
     
     case  1:                    t_InterpLuma_s16_d16_V< 1,    0>(pSrc, srcPitch, pDst, dstPitch, tab_index, width, height);  break;
     case  2:                    t_InterpLuma_s16_d16_V< 2,    0>(pSrc, srcPitch, pDst, dstPitch, tab_index, width, height);  break;
+    case  0:                    t_InterpLuma_s16_d16_V< 0,    0>(pSrc, srcPitch, pDst, dstPitch, tab_index, width, height);  break;
     }
 }
 
@@ -1819,6 +1821,7 @@ void MAKE_NAME(h265_InterpChroma_s16_d16_V)(INTERP_S16_D16_PARAMETERS_LIST)
     
         case  1:                    t_InterpChroma_s16_d16_V_AVX2< 1,    0>(pSrc, srcPitch, pDst, dstPitch, tab_index, width, height);  break;
         case  2:                    t_InterpChroma_s16_d16_V_AVX2< 2,    0>(pSrc, srcPitch, pDst, dstPitch, tab_index, width, height);  break;
+        case  0:                    t_InterpChroma_s16_d16_V_AVX2< 0,    0>(pSrc, srcPitch, pDst, dstPitch, tab_index, width, height);  break;
         }
         return;
     }
@@ -1839,6 +1842,7 @@ void MAKE_NAME(h265_InterpChroma_s16_d16_V)(INTERP_S16_D16_PARAMETERS_LIST)
     
         case  1:                    t_InterpChroma_s16_d16_V<4,  1,    0>(pSrc, srcPitch, pDst, dstPitch, tab_index, width, height);  break;
         case  2:                    t_InterpChroma_s16_d16_V<4,  2,    0>(pSrc, srcPitch, pDst, dstPitch, tab_index, width, height);  break;
+        case  0:                    t_InterpChroma_s16_d16_V<4,  0,    0>(pSrc, srcPitch, pDst, dstPitch, tab_index, width, height);  break;
         }
         pSrc += width;
         pDst += width;
@@ -1857,6 +1861,7 @@ void MAKE_NAME(h265_InterpChroma_s16_d16_V)(INTERP_S16_D16_PARAMETERS_LIST)
     
         case  1:                    t_InterpChroma_s16_d16_V<2,  1,    0>(pSrc, srcPitch, pDst, dstPitch, tab_index, 2, height);  break;
         case  2:                    t_InterpChroma_s16_d16_V<2,  2,    0>(pSrc, srcPitch, pDst, dstPitch, tab_index, 2, height);  break;
+        case  0:                    t_InterpChroma_s16_d16_V<2,  0,    0>(pSrc, srcPitch, pDst, dstPitch, tab_index, 2, height);  break;
         }
     }
 }

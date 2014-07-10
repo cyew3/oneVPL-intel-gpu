@@ -712,11 +712,16 @@ static void h265_DCT32x32Inv_16sT_Kernel(DstCoeffsType *dst, const short *H265_R
 
     } // 
 
-void MAKE_NAME(h265_DCT32x32Inv_16sT)(void *destPtr, const short *H265_RESTRICT coeff, int destStride, bool inplace, Ipp32u bitDepth)
+void MAKE_NAME(h265_DCT32x32Inv_16sT)(void *destPtr, const short *H265_RESTRICT coeff, int destStride, int inplace, Ipp32u bitDepth)
 {
     if (inplace) {
         switch (bitDepth) {
-        case  8: h265_DCT32x32Inv_16sT_Kernel< 8, Ipp8u,  true >((Ipp8u *) destPtr, coeff, destStride); break;
+        case  8:
+            if (inplace == 2)
+                h265_DCT32x32Inv_16sT_Kernel< 8, Ipp16u,  true >((Ipp16u *) destPtr, coeff, destStride);
+            else
+                h265_DCT32x32Inv_16sT_Kernel< 8, Ipp8u,  true >((Ipp8u *) destPtr, coeff, destStride);
+            break;
         case  9: h265_DCT32x32Inv_16sT_Kernel< 9, Ipp16u, true >((Ipp16u *)destPtr, coeff, destStride); break;
         case 10: h265_DCT32x32Inv_16sT_Kernel<10, Ipp16u, true >((Ipp16u *)destPtr, coeff, destStride); break;
         }

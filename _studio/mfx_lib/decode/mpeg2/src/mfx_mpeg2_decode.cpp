@@ -2465,14 +2465,18 @@ mfxStatus VideoDECODEMPEG2::DecodeFrameCheck(mfxBitstream *bs,
 
     if (NULL != bs)
     {
-
         sts = CheckBitstream(bs);
         MFX_CHECK_STS(sts);
+
+        if (!bs->DataLength)
+        {
+            return MFX_ERR_MORE_DATA;
+        }
+
         if (true == m_new_bs)
         {
             m_time[m_frame_free] = GetUmcTimeStamp(bs->TimeStamp);
-            m_time[m_frame_free] = (m_time[m_frame_free]==last_good_timestamp)?-1.0:m_time[m_frame_free];
-            last_good_timestamp = m_time[m_frame_free] == -1.0?last_good_timestamp:m_time[m_frame_free];
+            m_time[m_frame_free] = (m_time[m_frame_free]==last_good_timestamp)?-1.0:m_time[m_frame_free];    
         }
 
         sts = ConstructFrame(bs, &m_frame[m_frame_free], surface_work);
@@ -2486,6 +2490,7 @@ mfxStatus VideoDECODEMPEG2::DecodeFrameCheck(mfxBitstream *bs,
             return sts;
         }
 
+        last_good_timestamp = m_time[m_frame_free] == -1.0?last_good_timestamp:m_time[m_frame_free];
         m_frame_in_use[m_frame_free] = true;
         m_new_bs = true;
     }

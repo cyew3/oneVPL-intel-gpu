@@ -115,7 +115,9 @@ VAProfile g_H264Profiles[] =
 
 VAProfile g_H265Profiles[] =
 {
+#ifdef VA_HEVC_DECODER
     VAProfileHEVCMain, VAProfileHEVCMain10
+#endif
 };
 
 VAProfile g_VC1Profiles[] =
