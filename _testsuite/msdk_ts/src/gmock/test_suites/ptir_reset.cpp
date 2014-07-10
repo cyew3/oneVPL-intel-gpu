@@ -112,8 +112,14 @@ const TestSuite::tc_struct TestSuite::test_case[] =
     {/* 8*/ MFX_ERR_NULL_PTR,                 0, {RESET|NULLPTR}},
     {/* 9*/ MFX_ERR_INVALID_VIDEO_PARAM,      0, {RESET|MFXVPAR, &tsStruct::mfxVideoParam.vpp.In.ChromaFormat, {MFX_CHROMAFORMAT_MONOCHROME}}},
     
-    {/*10*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, 0, {WARNING|RESET|MFXVPAR, &tsStruct::mfxVideoParam.vpp.In.Width,  {720 + 32}}},
-    {/*11*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, 0, {WARNING|RESET|MFXVPAR, &tsStruct::mfxVideoParam.vpp.In.Height, {480 + 32}}},
+    {/*10*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, 0, 
+       {{WARNING|RESET|MFXVPAR, &tsStruct::mfxVideoParam.vpp.In.Width,  {720 + 32}},
+        {WARNING|RESET|MFXVPAR, &tsStruct::mfxVideoParam.vpp.Out.Width, {720 + 32}}}
+    },
+    {/*11*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, 0, 
+       {{WARNING|RESET|MFXVPAR, &tsStruct::mfxVideoParam.vpp.In.Height,  {480 + 32}},
+        {WARNING|RESET|MFXVPAR, &tsStruct::mfxVideoParam.vpp.Out.Height, {480 + 32}}}
+    },
     {/*12*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, 0, {WARNING|RESET|MFXVPAR, &tsStruct::mfxVideoParam.AsyncDepth,    {10}}},
     {/*13*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, 0, {WARNING|RESET|MFXVPAR, &tsStruct::mfxVideoParam.AsyncDepth,    {1}}},
     {/*14*/ MFX_ERR_INVALID_VIDEO_PARAM,      0, {WARNING|RESET|MFXVPAR, &tsStruct::mfxVideoParam.Protected,     {1}}},
@@ -196,6 +202,7 @@ int TestSuite::RunTest(unsigned int id)
     m_session = tsSession::m_session;
     tsSession::Load(m_session, ptir, 1);
 
+    m_par.vpp.In.PicStruct = MFX_PICSTRUCT_FIELD_TFF;
     apply_par(tc, INIT);
     Init();
 
@@ -218,7 +225,7 @@ int TestSuite::RunTest(unsigned int id)
     for(mfxU32 i = 0; i < max_num_ctrl; i ++)
         if(tc.ctrl[i].type & MFXVPAR) { param_check_req = true; break;}
 
-    if(m_initialized)
+    if(m_initialized && (tc.sts >= MFX_ERR_NONE))
     {
         if(param_check_req)
         {

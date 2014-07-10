@@ -66,9 +66,8 @@ int TestSuite::RunTest(unsigned int id)
             continue;
         else if (g_tsStatus.get() == MFX_ERR_NONE)
         {
-            int syncPoint = 0xDEADBEAF;
-            if (0 == m_pSyncPoint)
-                EXPECT_EQ(0, syncPoint);
+            mfxSyncPoint* null_ptr = 0;
+            EXPECT_NE(null_ptr, m_pSyncPoint);
             break;
         }
         else
@@ -78,11 +77,19 @@ int TestSuite::RunTest(unsigned int id)
         }
     }
 
+    //free surfaces locked by test
+    for(std::map<mfxSyncPoint,mfxFrameSurface1*>::iterator it = m_surf_out.begin(); it != m_surf_out.end(); ++it) //iterate through output surfaces map
+    {
+        (*it).second->Data.Locked --; //access surface and decrease locked counter
+    }
     ///////////////////////////////////////////////////////////////////////////
     g_tsStatus.expect(tc.sts);
 
     if (tc.mode == MFXCLOSE)
+    {
         MFXClose();
+        m_initialized = false; //calling VPP close in test destructor on closed session causes seg.fault
+    }
     else
         Close();
 

@@ -267,9 +267,12 @@ int TestSuite::RunTest(unsigned int id)
         }
     }
 
-    m_spool_in.UseDefaultAllocator(!!(m_par.IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY));
-    SetFrameAllocator(m_session, m_spool_in.GetAllocator());
-    m_spool_out.SetAllocator(m_spool_in.GetAllocator(), true);
+    if (tc.mode != NULL_SESSION)
+    {
+        m_spool_in.UseDefaultAllocator(!!(m_par.IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY));
+        SetFrameAllocator(m_session, m_spool_in.GetAllocator());
+        m_spool_out.SetAllocator(m_spool_in.GetAllocator(), true);
+    }
 
     if (tc.mode == ALLOC_OPAQUE || tc.mode == ALLOC_OPAQUE_LESS || tc.mode == ALLOC_OPAQUE_MORE)
     {
