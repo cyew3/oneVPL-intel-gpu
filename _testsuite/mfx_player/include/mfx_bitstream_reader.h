@@ -5,7 +5,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2011 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2014 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -16,14 +16,12 @@
 #include "umc_corruption_reader.h"
 #include "umc_file_reader.h"
 
-#define MFX_TIME_STAMP_INVALID   (mfxU64)-1; 
+#define MFX_TIME_STAMP_INVALID   (mfxU64)-1;
 class BitstreamReader
     : public IBitstreamReader
 {
 public:
-    BitstreamReader(sStreamInfo * pParams = NULL): 
-         m_FileReaderParams(),
-         m_CorruptionParams()
+    BitstreamReader(sStreamInfo * pParams = NULL)
     {
        // m_fSource  = NULL;
         m_bInited  = false;
@@ -37,8 +35,7 @@ public:
             m_sInfo = *pParams;
             m_CorruptLevel = (UMC::CorruptionLevel)pParams->corrupted;
         }
-        m_CorruptionReader = new UMC::CorruptionReader();
-        m_FileReader       = new UMC::FileReader();
+        m_CorruptionReader.reset(new UMC::CorruptionReader());
     }
 
     virtual ~BitstreamReader()
@@ -47,23 +44,29 @@ public:
 
     virtual void      Close()
     {
-        m_CorruptionReader->Close();
     }
+
     virtual mfxStatus Init(const vm_char *strFileName)
     {
         mfxStatus sts;
-        vm_string_strcpy_s(m_FileReaderParams.m_file_name, ((sizeof(m_FileReaderParams.m_file_name)/sizeof(vm_char))-1), strFileName);
-        m_FileReaderParams.m_portion_size = 0;
-        m_CorruptionParams.CorruptMode   = m_CorruptLevel;
-        m_CorruptionParams.pActual       = (UMC::DataReader *)m_FileReader;
-        m_CorruptionParams.pActualParams = &m_FileReaderParams;
-        sts = (mfxStatus)m_CorruptionReader->Init(&m_CorruptionParams);
+        UMC::FileReader *pFileReader = new  UMC::FileReader();
+
+        UMC::CorruptionReaderParams  *pCorruptionParams = new UMC::CorruptionReaderParams();
+        UMC::FileReaderParams        *pFileReaderParams = new UMC::FileReaderParams();
+        vm_string_strcpy_s(pFileReaderParams->m_file_name, ((sizeof(pFileReaderParams->m_file_name)/sizeof(vm_char))-1), strFileName);
+        pFileReaderParams->m_portion_size = 0;
+        pCorruptionParams->CorruptMode    = m_CorruptLevel;
+        pCorruptionParams->pActual        = (UMC::DataReader *)pFileReader;
+        pCorruptionParams->pActualParams  = pFileReaderParams;
+        
+        sts = (mfxStatus)m_CorruptionReader->Init(pCorruptionParams);
         if ( MFX_ERR_NONE != sts )
         {
              return MFX_ERR_UNDEFINED_BEHAVIOR;
         }
         return sts;
     }
+
     virtual mfxStatus ReadNextFrame(mfxBitstream2 &bs)
     {
         mfxStatus sts;
@@ -82,6 +85,7 @@ public:
         bs.DataLength += nBytesRead;
         return MFX_ERR_NONE;
     }
+
     virtual mfxStatus GetStreamInfo(sStreamInfo * pParams)
     {
         if (m_bInfoSet)
@@ -95,6 +99,7 @@ public:
         return MFX_ERR_UNSUPPORTED;
     }
     virtual mfxStatus SeekTime(mfxF64 fSeekTo)
+
     {
         if (fSeekTo == 0.0)
         {
@@ -103,11 +108,13 @@ public:
         fSeekTo = fSeekTo;
         return MFX_ERR_UNSUPPORTED;
     }
+
     virtual mfxStatus SeekPercent(mfxF64 fSeekTo)
     {
         fSeekTo = fSeekTo;
         return MFX_ERR_UNSUPPORTED;
     }
+
     virtual mfxStatus SeekFrameOffset(mfxU32 nFrameOffset, mfxFrameInfo &in_info)
     {
         mfxI64 nFileOffset;
@@ -124,26 +131,25 @@ public:
         {
             info = in_info;
         }
-        
+
         nFileOffset = (mfxI64)GetMinPlaneSize(info) * nFrameOffset;
         PipelineTrace((VM_STRING("INFO: reposition to frame=%d, using file offset=%I64d\n"), nFrameOffset, nFileOffset));
 
         return (mfxStatus)m_CorruptionReader->SetPosition((Ipp64f)nFileOffset);
     }
-    virtual bool isFrameModeEnabled() {
+
+    virtual bool isFrameModeEnabled() 
+    {
         return false;
     }
 
 
 protected:
-    //vm_file*         m_fSource;
     bool             m_bInited;
     sStreamInfo      m_sInfo;
     bool             m_bInfoSet;
     bool             m_bCorrupted;
-    UMC::CorruptionReader        *m_CorruptionReader;
-    UMC::CorruptionReaderParams  m_CorruptionParams;
-    UMC::CorruptionLevel         m_CorruptLevel;
-    UMC::FileReader              *m_FileReader;
-    UMC::FileReaderParams        m_FileReaderParams;
+    std::auto_ptr<UMC::CorruptionReader>  m_CorruptionReader;
+    UMC::CorruptionLevel                  m_CorruptLevel;
+
 };
