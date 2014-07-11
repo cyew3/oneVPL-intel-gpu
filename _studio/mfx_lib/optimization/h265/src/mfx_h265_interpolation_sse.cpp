@@ -851,8 +851,11 @@ static void t_InterpLuma_s16_d16_V(const short* pSrc, unsigned int srcPitch, sho
             xmm0 = _mm_add_epi32(xmm0, xmm6);
 
             /* add offset, shift off fraction bits, clip from 32 to 16 bits */
-            xmm0 = _mm_add_epi32(xmm0, _mm_set1_epi32(offset));
-            xmm0 = _mm_srai_epi32(xmm0, shift);
+            if (shift > 0)
+            {
+                xmm0 = _mm_add_epi32(xmm0, _mm_set1_epi32(offset));
+                xmm0 = _mm_srai_epi32(xmm0, shift);
+            }
             xmm0 = _mm_packs_epi32(xmm0, xmm0);
 
             /* always store 4 16-bit values */
@@ -903,8 +906,11 @@ static void t_InterpLuma_s16_d16_V(const short* pSrc, unsigned int srcPitch, sho
             xmm0 = _mm_add_epi32(xmm0, xmm6);
 
             /* add offset, shift off fraction bits, clip from 32 to 16 bits */
-            xmm0 = _mm_add_epi32(xmm0, _mm_set1_epi32(offset));
-            xmm0 = _mm_srai_epi32(xmm0, shift);
+            if (shift > 0)
+            {
+                xmm0 = _mm_add_epi32(xmm0, _mm_set1_epi32(offset));
+                xmm0 = _mm_srai_epi32(xmm0, shift);
+            }
             xmm0 = _mm_packs_epi32(xmm0, xmm0);
 
             /* always store 4 16-bit values */
@@ -940,13 +946,16 @@ void MAKE_NAME(h265_InterpLuma_s16_d16_V)(INTERP_S16_D16_PARAMETERS_LIST)
     switch (shift) {
     case 6:
         if (offset == 0)        t_InterpLuma_s16_d16_V< 6,    0>(pSrc, srcPitch, pDst, dstPitch, tab_index, width, height);
-        else if (offset == 32)  t_InterpLuma_s16_d16_V< 6,   32>(pSrc, srcPitch, pDst, dstPitch, tab_index, width, height);
+        else   t_InterpLuma_s16_d16_V< 6,   32>(pSrc, srcPitch, pDst, dstPitch, tab_index, width, height);
         break;
     
+    case 12:                    t_InterpLuma_s16_d16_V<12, 2048>(pSrc, srcPitch, pDst, dstPitch, tab_index, width, height);  break;  
+    }
+
+    switch (shift)
+    {
     case 10:                    t_InterpLuma_s16_d16_V<10,  512>(pSrc, srcPitch, pDst, dstPitch, tab_index, width, height);  break;
     case 11:                    t_InterpLuma_s16_d16_V<11, 1024>(pSrc, srcPitch, pDst, dstPitch, tab_index, width, height);  break;
-    case 12:                    t_InterpLuma_s16_d16_V<12, 2048>(pSrc, srcPitch, pDst, dstPitch, tab_index, width, height);  break;
-    
     case  1:                    t_InterpLuma_s16_d16_V< 1,    0>(pSrc, srcPitch, pDst, dstPitch, tab_index, width, height);  break;
     case  2:                    t_InterpLuma_s16_d16_V< 2,    0>(pSrc, srcPitch, pDst, dstPitch, tab_index, width, height);  break;
     case  0:                    t_InterpLuma_s16_d16_V< 0,    0>(pSrc, srcPitch, pDst, dstPitch, tab_index, width, height);  break;
