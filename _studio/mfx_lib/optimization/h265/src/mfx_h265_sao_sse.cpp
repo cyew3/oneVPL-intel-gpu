@@ -557,7 +557,11 @@ namespace MFX_HEVC_PP
         __m128i xmm_min, xmm_max;
 
         /* bitDepth not passed in explicitly so determine from clip table */
-        if (pClipTable[(1 << 9) - 1] == pClipTable[(1 << 9)]) {
+        if (pClipTable[(1 << 8) - 1] == pClipTable[(1 << 8)]) {
+            /* 8 bits - clip to [0, 2^8) */
+            xmm_min = _mm_setzero_si128();
+            xmm_max = _mm_set1_epi16((1 << 8) - 1);
+        } else if (pClipTable[(1 << 9) - 1] == pClipTable[(1 << 9)]) {
             /* 9 bits - clip to [0, 2^9) */
             xmm_min = _mm_setzero_si128();
             xmm_max = _mm_set1_epi16((1 << 9) - 1);
