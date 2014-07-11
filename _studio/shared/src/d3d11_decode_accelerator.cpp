@@ -61,6 +61,11 @@ mfxStatus MFXD3D11Accelerator::CreateVideoAccelerator(mfxU32 hwProfile, const mf
 
     D3D11_VIDEO_DECODER_CONFIG video_config = {0}; // !!!!!!!!
 
+    if (IS_PROTECTION_ANY(param->Protected))
+    {
+        m_protectedVA = new UMC::ProtectedVA(param->Protected);
+    }
+
     sts = GetSuitVideoDecoderConfig(param, &video_desc, &video_config);
     MFX_CHECK_STS(sts);
 
@@ -77,11 +82,6 @@ mfxStatus MFXD3D11Accelerator::CreateVideoAccelerator(mfxU32 hwProfile, const mf
         m_bH264ShortSlice = 1 == video_config.ConfigBitstreamRaw;
     else
         m_bH264ShortSlice = (2 == video_config.ConfigBitstreamRaw || 4 == video_config.ConfigBitstreamRaw || 6 == video_config.ConfigBitstreamRaw);
-
-    if (IS_PROTECTION_ANY(param->Protected))
-    {
-        m_protectedVA = new UMC::ProtectedVA(param->Protected);
-    }
 
     return MFX_ERR_NONE;
 

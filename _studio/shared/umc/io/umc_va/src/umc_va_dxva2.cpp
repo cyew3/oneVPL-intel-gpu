@@ -667,6 +667,11 @@ Status DXVA2Accelerator::Init(VideoAcceleratorParams *pParams)
 {
     HRESULT hr = S_OK;
 
+    if (IS_PROTECTION_ANY(pParams->m_protectedVA))
+    {
+        m_protectedVA = new UMC::ProtectedVA((mfxU16)pParams->m_protectedVA);
+    }
+
     if (!m_bInitilized)
     {
         UMC_CALL(FindConfiguration(pParams->m_pVideoStreamInfo));
@@ -749,11 +754,6 @@ Status DXVA2Accelerator::Init(VideoAcceleratorParams *pParams)
     if (FAILED(hr))
     {
         UMC_RETURN(UMC_ERR_INIT);
-    }
-
-    if (IS_PROTECTION_ANY(pParams->m_protectedVA))
-    {
-        m_protectedVA = new UMC::ProtectedVA((mfxU16)pParams->m_protectedVA);
     }
 
     m_isUseStatuReport = m_HWPlatform != VA_HW_LAKE;
