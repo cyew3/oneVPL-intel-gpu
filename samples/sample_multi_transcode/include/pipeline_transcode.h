@@ -13,6 +13,8 @@
 #ifndef __SAMPLE_PIPELINE_TRANSCODE_H__
 #define __SAMPLE_PIPELINE_TRANSCODE_H__
 
+#include <stddef.h>
+
 #include "mfxplugin.h"
 #include "mfxplugin++.h"
 
