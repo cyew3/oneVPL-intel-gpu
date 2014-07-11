@@ -40,8 +40,14 @@ extern "C"
 
 
 //1 PreENC input
-typedef struct { /* VAStatsStatisticsParameter16x16 */
-    mfxExtBuffer    Header;  /* MFX_EXTBUFF_FEI_xxx */
+enum {
+    MFX_PICTYPE_FRAME =0x01,
+    MFX_PICTYPE_TOPFIELD    =0x02,
+    MFX_PICTYPE_BOTTOMFIELD =0x04
+};
+
+typedef struct {
+    mfxExtBuffer    Header;
 
     mfxU16    Qp;
     mfxU16    LenSP;
@@ -51,21 +57,19 @@ typedef struct { /* VAStatsStatisticsParameter16x16 */
     mfxU16    InterSAD;
     mfxU16    IntraSAD;
     mfxU16    AdaptiveSearch;
-    mfxU16    MVPredictor; /*0 -disable, 1 - past, 2 future, 3 both */
+    mfxU16    MVPredictor;
     mfxU16    MBQp;
     mfxU16    FTEnable;
     mfxU16    RefWidth;
     mfxU16    RefHeight;
     mfxU16    SearchWindow;
-
-    mfxU16    BkwMVPresent;
-    mfxU16    FrwMVPresent;
-
-    mfxU16    DisableMVOutput;    
-    mfxU16    DisableStatisticsOutput;   
+    mfxU16    DisableMVOutput;
+    mfxU16    DisableStatisticsOutput;
+    mfxU16    PictureType;
+    mfxU16    reserved[43];
 } mfxExtFeiPreEncCtrl;
 
-typedef struct { /* VAMotionVector */
+typedef struct {
     mfxExtBuffer    Header;
     mfxU32  reserved[13];
     mfxU32  NumMBAlloc; /* size of allocated memory in number of macroblocks */
@@ -80,8 +84,8 @@ typedef struct {
     mfxU32  reserved[13];
     mfxU32  NumQPAlloc; /* size of allocated memory in number of QPs value*/
 
-    mfxU16    *QP;
-} mfxExtFeiPreEncQPs;
+    mfxU8    *QP;
+} mfxExtFeiEncQP;
 
 //1 PreENC output
 /* Layout is exactly the same as mfxExtFeiEncMVs, this buffer may be removed in future */
@@ -90,7 +94,7 @@ typedef struct {
     mfxU32  reserved[13];
     mfxU32  NumMBAlloc;
 
-    struct  {
+    struct  mfxMB{
         mfxI16Pair MV[16][2];
     } *MB;
 } mfxExtFeiPreEncMV;
@@ -99,8 +103,8 @@ typedef struct {
     mfxExtBuffer    Header;
     mfxU32 reserved0[13];
     mfxU32  NumMBAlloc;
-    
-    struct  {
+
+    struct  mfxMB{
         struct  {
             mfxU16  BestDistortion;
             mfxU16  Mode ;
@@ -145,17 +149,17 @@ typedef struct {
     mfxU16    SearchWindow;
 } mfxExtFeiEncFrameCtrl;
 
-typedef struct { /* VAEncMVPredictorH264 */
+typedef struct {
     mfxExtBuffer    Header;
     mfxU32  reserved[13];
     mfxU32  NumMBAlloc; /* size of allocated memory in number of macroblocks */
 
     struct  mfxMB{
         struct {
-            mfxU8   L0: 4;
-            mfxU8   L1: 4;
+            mfxU8   RefL0: 4;
+            mfxU8   RefL1: 4;
         } RefIdx[4]; /* index is predictor number */
-        mfxU32      Reserved;
+        mfxU32      reserved;
         mfxI16Pair MV[4][2]; /* first index is predictor number, second is 0 for L0 and 1 for L1 */
     } *MB;
 } mfxExtFeiEncMVPredictors;
@@ -166,13 +170,16 @@ typedef struct {
     mfxU32  NumMBAlloc;
 
     struct  mfxMB{
-        mfxU16    QpY;
-        mfxU16    QpCb;
-        mfxU16    QpCr;
-        mfxU16    ForceToSkip;
-        mfxU16    ForceToIntra;
-        mfxU16    MaxSizeInWord;
-        mfxU16    TargetSizeInWord;
+        mfxU32    ForceToIntra     : 1;
+        mfxU32    ForceToSkip      : 1;
+        mfxU32    reserved1        : 30;
+
+        mfxU32    reserved2;
+        mfxU32    reserved3;
+
+        mfxU32    reserved4        : 16;
+        mfxU32    TargetSizeInWord : 8;
+        mfxU32    MaxSizeInWord    : 8;
     } *MB;
 } mfxExtFeiEncMBCtrl;
 
@@ -199,7 +206,7 @@ typedef struct {
     struct  mfxMB{
         mfxI16Pair MV[16][2]; /* first index is block (4x4 pixels) number, second is 0 for L0 and 1 for L1 */
     } *MB;
-} mfxExtFeiEncMVs;
+} mfxExtFeiEncMV;
 
 typedef struct {
     mfxExtBuffer    Header;
@@ -287,6 +294,89 @@ typedef struct {
 } mfxExtFeiPakMBCtrl;
 
 
+//1 SPS, PPS, slice header
+typedef struct {
+    mfxExtBuffer    Header;
+
+    mfxU16    Pack;
+
+    mfxU16    SPSId;
+    mfxU16    Profile;
+    mfxU16    Level;
+
+    mfxU16    NumRefFrame;
+    mfxU16    WidthInMBs;
+    mfxU16    HeightInMBs;
+
+    mfxU16    ChromaFormatIdc;
+    mfxU16    FrameMBsOnlyFlag;
+    mfxU16    MBAdaptiveFrameFieldFlag;
+    mfxU16    Direct8x8InferenceFlag;
+    mfxU16    Log2MaxFrameNum;
+    mfxU16    PicOrderCntType;
+    mfxU16    Log2MaxPicOrderCntLsb;
+    mfxU16    DeltaPicOrderAlwaysZeroFlag;
+
+//    mfxU32  reserved[];
+} mfxExtFeiSPS;
+
+typedef struct {
+    mfxExtBuffer    Header;
+
+    mfxU16    Pack;
+
+    mfxU16    SPSId;
+    mfxU16    PPSId;
+
+    mfxU16    FrameNum; 
+
+    mfxU16    PicInitQP;
+    mfxU16    NumRefIdxL0Active;
+    mfxU16    NumRefIdxL1Active;
+
+    mfxU16    ChromaQPIndexOffset;
+    mfxU16    SecondChromaQPIndexOffset;
+
+    mfxU16    IDRPicFlag;
+    mfxU16    ReferencePicFlag;
+    mfxU16    EntropyCodingModeFlag;
+    mfxU16    ConstrainedIntraPredFlag;
+    mfxU16    Transform8x8ModeFlag;
+
+//    mfxU32  reserved[];
+} mfxExtFeiPPS;
+
+typedef struct {
+    mfxExtBuffer    Header;
+//    mfxU32  reserved[];
+    mfxU16    NumSliceAlloc;
+    mfxU16    NumSlice;
+    mfxU16    Pack;
+
+    struct mfxSlice{
+        mfxU16    MBAaddress;
+        mfxU16    NumMBs;
+        mfxU16    SliceType;
+        mfxU16    PPSId;
+        mfxU16    IdrPicId;
+
+        mfxU16    CabacInitIdc;
+
+        mfxU16    SliceQPDelta;
+        mfxU16    DisableDeblockingFilterIdc;
+        mfxU16    SliceAlphaC0OffsetDiv2;
+        mfxU16    SliceBetaOffsetDiv2;
+        //mfxU32  reserved[];
+
+        struct {
+            mfxU16   PictureType; 
+            mfxU16   Index;
+        } RefL0[32], RefL1[32]; /* index in  mfxPAKInput::L0Surface array */
+
+    } *Slice;
+}mfxExtFeiSliceHeader;
+
+
 
 
 //1 functions
@@ -309,12 +399,15 @@ enum {
     MFX_EXTBUFF_FEI_ENC_MB         = MFX_MAKEFOURCC('F','E','M','B'),
     MFX_EXTBUFF_FEI_ENC_MV         = MFX_MAKEFOURCC('F','E','M','V'),
     MFX_EXTBUFF_FEI_ENC_MB_STAT    = MFX_MAKEFOURCC('F','E','S','T'),
-    MFX_EXTBUFF_FEI_PAK_CTRL       = MFX_MAKEFOURCC('F','K','C','T')
+    MFX_EXTBUFF_FEI_PAK_CTRL       = MFX_MAKEFOURCC('F','K','C','T'),
+    MFX_EXTBUFF_FEI_SPS            = MFX_MAKEFOURCC('F','S','P','S'),
+    MFX_EXTBUFF_FEI_PPS            = MFX_MAKEFOURCC('F','P','P','S'),
+    MFX_EXTBUFF_FEI_SLICE          = MFX_MAKEFOURCC('F','S','L','C')
 };
 
 /* shoud be attached to mfxVideoParam during initialization to indicate FEI function */
 typedef struct {
-    mfxExtBuffer    Header; /* MFX_EXTBUFF_FEI_PARAM */
+    mfxExtBuffer    Header; 
     mfxFeiFunction  Func;
     mfxU32 reserved[29];
 } mfxExtFeiParam;
@@ -327,28 +420,30 @@ typedef struct {
     mfxFrameSurface1 *InSurface;
 
     mfxU16  NumFrameL0;
-    mfxFrameSurface1 *L0Surface;
+    mfxFrameSurface1 **L0Surface;
     mfxU16  NumFrameL1;
-    mfxFrameSurface1 *L1Surface;
+    mfxFrameSurface1 **L1Surface;
 
     mfxU16  NumExtParam;
     mfxExtBuffer    **ExtParam;
 } mfxPAKInput;
 
 typedef struct {
-    mfxBitstream *Bs;
+    mfxBitstream *Bs; 
+
+    mfxFrameSurface1 *OutSurface;
 
     mfxU16  NumExtParam;
     mfxExtBuffer    **ExtParam;
 } mfxPAKOutput;
 
-//mfxStatus MFX_CDECL MFXVideoPAK_Query(mfxSession session, mfxVideoParam *in, mfxVideoParam *out);
-//mfxStatus MFX_CDECL MFXVideoPAK_QueryIOSurf(mfxSession session, mfxVideoParam *par, mfxFrameAllocRequest *request);
+typedef struct _mfxSession *mfxSession;
+mfxStatus MFX_CDECL MFXVideoPAK_Query(mfxSession session, mfxVideoParam *in, mfxVideoParam *out);
+mfxStatus MFX_CDECL MFXVideoPAK_QueryIOSurf(mfxSession session, mfxVideoParam *par, mfxFrameAllocRequest *request);
 mfxStatus MFX_CDECL MFXVideoPAK_Init(mfxSession session, mfxVideoParam *par);
 mfxStatus MFX_CDECL MFXVideoPAK_Reset(mfxSession session, mfxVideoParam *par);
 mfxStatus MFX_CDECL MFXVideoPAK_Close(mfxSession session);
 
-//mfxStatus MFX_CDECL MFXVideoPAK_GetVideoParam(mfxSession session, mfxVideoParam *par);
 mfxStatus MFX_CDECL MFXVideoPAK_ProcessFrameAsync(mfxSession session, mfxPAKInput *in, mfxPAKOutput *out,  mfxSyncPoint *syncp);
 
 

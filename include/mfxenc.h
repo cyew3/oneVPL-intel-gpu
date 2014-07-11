@@ -38,19 +38,20 @@ extern "C"
 #endif /* __cplusplus */
 
 typedef struct _mfxENCInput mfxENCInput;
-struct _mfxENCInput{  //it is not an ext buffer
+struct _mfxENCInput{
     mfxU32  reserved[32];
 
     mfxFrameSurface1 *InSurface;
 
     mfxU16  NumFrameL0;
-    mfxFrameSurface1 *L0Surface;
+    mfxFrameSurface1 **L0Surface;
     mfxU16  NumFrameL1;
-    mfxFrameSurface1 *L1Surface;
+    mfxFrameSurface1 **L1Surface;
 
     mfxU16  NumExtParam;
     mfxExtBuffer    **ExtParam;
 } ;
+
 typedef struct _mfxENCOutput mfxENCOutput;
 struct _mfxENCOutput{
     mfxU32  reserved[32];
@@ -66,7 +67,6 @@ mfxStatus MFX_CDECL MFXVideoENC_Init(mfxSession session, mfxVideoParam *par);
 mfxStatus MFX_CDECL MFXVideoENC_Reset(mfxSession session, mfxVideoParam *par);
 mfxStatus MFX_CDECL MFXVideoENC_Close(mfxSession session);
 
-//mfxStatus MFX_CDECL MFXVideoENC_GetVideoParam(mfxSession session, mfxVideoParam *par);
 mfxStatus MFX_CDECL MFXVideoENC_ProcessFrameAsync(mfxSession session, mfxENCInput *in, mfxENCOutput *out, mfxSyncPoint *syncp);
 
 
