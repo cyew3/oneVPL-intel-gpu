@@ -28,13 +28,14 @@ void PrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("Supported codecs, <msdk-codecid>:\n"));
     msdk_printf(MSDK_STRING("   <codecid>=h264|mpeg2|vc1|mvc|jpeg - built-in Media SDK codecs\n"));
     msdk_printf(MSDK_STRING("   <codecid>=h265                    - in-box Media SDK plugins (may require separate downloading and installation)\n"));
+    msdk_printf(MSDK_STRING("   If codecid is jpeg, -q option is mandatory.)\n"));
     msdk_printf(MSDK_STRING("Options: \n"));
     msdk_printf(MSDK_STRING("   [-nv12] - input is in NV12 color format, if not specified YUV420 is expected\n"));
     msdk_printf(MSDK_STRING("   [-tff|bff] - input stream is interlaced, top|bottom fielf first, if not specified progressive is expected\n"));
     msdk_printf(MSDK_STRING("   [-f frameRate] - video frame rate (frames per second)\n"));
     msdk_printf(MSDK_STRING("   [-b bitRate] - encoded bit rate (Kbits per second), valid for H.264, H.265, MPEG2 and MVC encoders \n"));
     msdk_printf(MSDK_STRING("   [-u speed|quality|balanced] - target usage, valid for H.264, H.265, MPEG2 and MVC encoders\n"));
-    msdk_printf(MSDK_STRING("   [-q quality] - quality parameter for JPEG encoder. In range [1,100]. 100 is the best quality. \n"));
+    msdk_printf(MSDK_STRING("   [-q quality] - mandatory quality parameter for JPEG encoder. In range [1,100]. 100 is the best quality. \n"));
     msdk_printf(MSDK_STRING("   [-la] - use the look ahead bitrate control algorithm (LA BRC) (by default constant bitrate control method is used)\n"));
     msdk_printf(MSDK_STRING("           for H.264, H.265 encoder. Supported only with -hw option on 4th Generation Intel Core processors. \n"));
     msdk_printf(MSDK_STRING("   [-lad depth] - depth parameter for the LA BRC, the number of frames to be analyzed before encoding. In range [10,100].\n"));
