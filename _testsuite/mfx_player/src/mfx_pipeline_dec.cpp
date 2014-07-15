@@ -2927,8 +2927,8 @@ mfxStatus  MFXDecPipeline::RunVPP(mfxFrameSurface1 *pSurface)
         }
         else
         {
-            // Usaul VPP processing
-            MFX_CHECK_STS_TRACE_EXPR(sts, m_pVPP->RunFrameVPPAsync(pSurface, vppOut.pSurface, (mfxExtVppAuxData*)vppOut.pCtrl->ExtParam[0], &syncp));
+            // Usual VPP processing
+            sts = m_pVPP->RunFrameVPPAsync(pSurface, vppOut.pSurface, (mfxExtVppAuxData*)vppOut.pCtrl->ExtParam[0], &syncp);
         }
 
         if (sts == MFX_WRN_DEVICE_BUSY)
