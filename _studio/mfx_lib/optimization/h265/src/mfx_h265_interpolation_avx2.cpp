@@ -2155,12 +2155,15 @@ static void t_AverageMode_U16_Kernel(short *pSrc, unsigned int srcPitch, unsigne
 template <int widthMul, int avgMode>
 static void t_AverageMode_U16(short *pSrc, unsigned int srcPitch, unsigned short *pAvg, unsigned int avgPitch, unsigned short *pDst, unsigned int dstPitch, int width, int height, int bitDepth)
 {
-    VM_ASSERT(bitDepth == 9 || bitDepth == 10);
-
     if (bitDepth == 9)
         t_AverageMode_U16_Kernel<widthMul, avgMode,  9>(pSrc, srcPitch, pAvg, avgPitch, pDst, dstPitch, width, height);
     else if (bitDepth == 10)
         t_AverageMode_U16_Kernel<widthMul, avgMode, 10>(pSrc, srcPitch, pAvg, avgPitch, pDst, dstPitch, width, height);
+    else if (bitDepth == 8)
+        t_AverageMode_U16_Kernel<widthMul, avgMode, 8>(pSrc, srcPitch, pAvg, avgPitch, pDst, dstPitch, width, height);
+    else
+        VM_ASSERT(false);
+
 }
 
 /* mode: AVERAGE_NO, just clip/pack 16-bit output to [0, 2^bitDepth) */

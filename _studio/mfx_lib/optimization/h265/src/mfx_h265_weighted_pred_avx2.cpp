@@ -77,7 +77,7 @@ static void h265_CopyWeighted_Kernel(Ipp16s* pSrc, Ipp16s* pSrcUV, DstCoeffsType
             } else {
                 /* clip to range [0, 2^bitDepth), store 4 16-bit pixels */
                 ymm0 = _mm256_packus_epi32(ymm0, ymm0);
-                ymm0 = _mm256_min_epi16(ymm0, ymm_max);
+                ymm0 = _mm256_min_epu16(ymm0, ymm_max);
                 ymm7 = _mm256_permute2x128_si256(ymm0, ymm0, 0x01);
                 _mm_storel_epi64((__m128i *)(pDst + 0*DstStrideY + x), mm128(ymm0));
                 _mm_storel_epi64((__m128i *)(pDst + 1*DstStrideY + x), mm128(ymm7));
@@ -153,7 +153,7 @@ static void h265_CopyWeighted_Kernel(Ipp16s* pSrc, Ipp16s* pSrcUV, DstCoeffsType
                 ymm0 = _mm256_packus_epi32(ymm0, ymm0);
                 ymm1 = _mm256_packus_epi32(ymm1, ymm1);
                 ymm0 = _mm256_unpacklo_epi16(ymm0, ymm1);
-                ymm0 = _mm256_min_epi16(ymm0, ymm_max);
+                ymm0 = _mm256_min_epu16(ymm0, ymm_max);
                 ymm1 = _mm256_permute2x128_si256(ymm0, ymm0, 0x01);
                 _mm_storeu_si128((__m128i *)(pDstUV + 0*DstStrideC + x), mm128(ymm0));
                 _mm_storeu_si128((__m128i *)(pDstUV + 1*DstStrideC + x), mm128(ymm1));
@@ -239,7 +239,7 @@ static void h265_CopyWeightedBidi_Kernel(Ipp16s* pSrc0, Ipp16s* pSrcUV0, Ipp16s*
             } else {
                 /* clip to range [0, 2^bitDepth), store 4 16-bit pixels */
                 ymm0 = _mm256_packus_epi32(ymm0, ymm0);
-                ymm0 = _mm256_min_epi16(ymm0, ymm_max);
+                ymm0 = _mm256_min_epu16(ymm0, ymm_max);
                 ymm7 = _mm256_permute2x128_si256(ymm0, ymm0, 0x01);
                 _mm_storel_epi64((__m128i *)(pDst + 0*DstStrideY + x), mm128(ymm0));
                 _mm_storel_epi64((__m128i *)(pDst + 1*DstStrideY + x), mm128(ymm7));
@@ -324,7 +324,7 @@ static void h265_CopyWeightedBidi_Kernel(Ipp16s* pSrc0, Ipp16s* pSrcUV0, Ipp16s*
                 ymm0 = _mm256_packus_epi32(ymm0, ymm0);
                 ymm7 = _mm256_packus_epi32(ymm7, ymm7);
                 ymm0 = _mm256_unpacklo_epi16(ymm0, ymm7);
-                ymm0 = _mm256_min_epi16(ymm0, ymm_max);
+                ymm0 = _mm256_min_epu16(ymm0, ymm_max);
                 ymm7 = _mm256_permute2x128_si256(ymm0, ymm0, 0x01);
                 _mm_storeu_si128((__m128i *)(pDstUV + 0*DstStrideC + x), mm128(ymm0));
                 _mm_storeu_si128((__m128i *)(pDstUV + 1*DstStrideC + x), mm128(ymm7));
