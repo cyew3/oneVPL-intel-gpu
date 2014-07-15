@@ -133,6 +133,7 @@ MFXDecPipeline::MFXDecPipeline(IMFXPipelineFactory *pFactory)
     , m_externalsync()
     , m_pFactory(pFactory)
     , m_extDecVideoProcessing(new mfxExtDecVideoProcessing())
+    , m_bVPPUpdateInput(false)
 {
 
     m_bStat                 = true;
@@ -951,6 +952,7 @@ mfxStatus MFXDecPipeline::CreateVPP()
     ENABLE_VPP(0.0 != m_components[eVPP].m_fFrameRate);
     ENABLE_VPP(m_inParams.bUseVPP_ifdi);
     ENABLE_VPP(m_inParams.nImageStab);
+    ENABLE_VPP(m_inParams.bExtVppApi);
 
 
     if (m_inParams.bUseVPP)
@@ -1005,24 +1007,26 @@ mfxStatus MFXDecPipeline::CreateVPP()
 
 
     //turnoff default filter if they are not present in cmd line
-    if ( ! m_inParams.bUseCameraPipe ) 
+    if ( ! m_inParams.bUseCameraPipe && ! m_inParams.bExtVppApi )
     {
-    m_components[eVPP].m_extParams.push_back(new mfxExtVPPDoNotUse());
-    MFXExtBufferPtr<mfxExtVPPDoNotUse> pExtDoNotUse(m_components[eVPP].m_extParams);
+        // Having DONOTUSE stuff in case of camera/PTIR vpp plug-ins causes fail at VPP Init
+        m_components[eVPP].m_extParams.push_back(new mfxExtVPPDoNotUse());
+        MFXExtBufferPtr<mfxExtVPPDoNotUse> pExtDoNotUse(m_components[eVPP].m_extParams);
 
-    // turn off denoising (on by default)
-    if (!m_inParams.nDenoiseFactorPlus1)
-        pExtDoNotUse->AlgList.push_back(MFX_EXTBUFF_VPP_DENOISE);
-    else
-    {
-        m_components[eVPP].m_extParams.push_back(new mfxExtVPPDenoise());
-        MFXExtBufferPtr<mfxExtVPPDenoise> pDenoise(m_components[eVPP].m_extParams);
-        pDenoise->DenoiseFactor = m_inParams.nDenoiseFactorPlus1 - 1;
-    }
+        // turn off denoising (on by default)
+        if (!m_inParams.nDenoiseFactorPlus1)
+            pExtDoNotUse->AlgList.push_back(MFX_EXTBUFF_VPP_DENOISE);
+        else
+        {
+            m_components[eVPP].m_extParams.push_back(new mfxExtVPPDenoise());
+            MFXExtBufferPtr<mfxExtVPPDenoise> pDenoise(m_components[eVPP].m_extParams);
+            pDenoise->DenoiseFactor = m_inParams.nDenoiseFactorPlus1 - 1;
+        }
 
         if (!m_inParams.bSceneAnalyzer)
             pExtDoNotUse->AlgList.push_back(MFX_EXTBUFF_VPP_SCENE_ANALYSIS);
-    }
+   }
+
     // turn on detail/edge enhancement
     if (m_inParams.nDetailFactorPlus1)
     {
@@ -2870,24 +2874,62 @@ mfxStatus  MFXDecPipeline::RunVPP(mfxFrameSurface1 *pSurface)
     for (;NULL != m_pVPP;)
     {
         SrfEncCtl     vppOut           = NULL;
+        SrfEncCtl     vppWork          = NULL;
         mfxSyncPoint  syncp            = NULL;
         mfxStatus     sts              = MFX_ERR_MORE_SURFACE;
         bool          bOneMoreRunFrame = false;
 
-        MFX_CHECK_STS(m_components[eVPP].FindFreeSurface(NULL != pSurface? pSurface->Info.FrameId.DependencyId : 0,  &vppOut, m_pRender));
+        if( m_inParams.bExtVppApi )
+        {
+            // RunFrameVPPAsyncEx needs work surfaces
+            MFX_CHECK_STS(m_components[eVPP].FindFreeSurface(NULL != pSurface? pSurface->Info.FrameId.DependencyId : 0,  &vppWork, m_pRender));
+        }
+        else
+        {
+            MFX_CHECK_STS(m_components[eVPP].FindFreeSurface(NULL != pSurface? pSurface->Info.FrameId.DependencyId : 0,  &vppOut, m_pRender));
+            if ( vppOut.pSurface )
+            {
+                /* Zero picstruct of the output surface. Having something non-zero may lead to incorrect behavior */
+                vppOut.pSurface->Info.PicStruct = 0;
+            }
+        }
 
         if (m_inParams.encodeExtraParams.nDelayOnMSDKCalls != 0) // && sts >= MFX_ERR_NONE)
         {
             MPA_TRACE("Sleep(nDelayOnMSDKCalls)");
             vm_time_sleep(m_inParams.encodeExtraParams.nDelayOnMSDKCalls);
         }
-        if ( vppOut.pSurface )
-        {
-            /* Zero picstruct of the output surface. Having something non-zero may lead to incorrect behavior */
-            vppOut.pSurface->Info.PicStruct = 0;
-        }
 
-        sts = m_pVPP->RunFrameVPPAsync(pSurface, vppOut.pSurface, (mfxExtVppAuxData*)vppOut.pCtrl->ExtParam[0], &syncp);
+        if ( m_inParams.bExtVppApi )
+        {
+            //RunFrameVPPAsyncEx decoder-like processing
+            sts = m_pVPP->RunFrameVPPAsyncEx(pSurface, vppWork.pSurface, &vppOut.pSurface, NULL, &syncp);
+            if (MFX_ERR_MORE_DATA == sts)
+            {
+                if ( ! m_bVPPUpdateInput )
+                {
+                    // If input surface was not provided yet, do it at next iteration.
+                    m_bVPPUpdateInput = true;
+                    continue;
+                }
+
+                // Go back to decoder in order to get next frame
+                return MFX_ERR_NONE;
+            }
+
+            m_bVPPUpdateInput = false;
+
+            if ( MFX_ERR_NONE == sts )
+            {
+                // In case of ERR_NONE need to drain cached frames w/o providing new input.
+                bOneMoreRunFrame = true;
+            }
+        }
+        else
+        {
+            // Usaul VPP processing
+            MFX_CHECK_STS_TRACE_EXPR(sts, m_pVPP->RunFrameVPPAsync(pSurface, vppOut.pSurface, (mfxExtVppAuxData*)vppOut.pCtrl->ExtParam[0], &syncp));
+        }
 
         if (sts == MFX_WRN_DEVICE_BUSY)
         {
@@ -2974,7 +3016,8 @@ mfxStatus  MFXDecPipeline::RunVPP(mfxFrameSurface1 *pSurface)
                     break;
                 }
             }
-        }else
+        }
+        else
         {
             MFX_CHECK_STS(RunRender(vppOut.pSurface, vppOut.pCtrl));
         }
@@ -3983,6 +4026,7 @@ mfxStatus MFXDecPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI32 argc, 
         else HANDLE_BOOL_OPTION(m_inParams.bUseVPP_ifdi, VM_STRING("-deinterlace"), VM_STRING("insert vpp into pipeline only if deinterlacing required"));
         else HANDLE_BOOL_OPTION(m_inParams.bUpdateWindowTitle, VM_STRING("-update_window_title"), VM_STRING("Update window title with progress information"));
         else HANDLE_BOOL_OPTION(m_inParams.bExtendedFpsStat,   VM_STRING("-extended_fps_stat"), VM_STRING("Print extended fps information at the end"));
+        else HANDLE_BOOL_OPTION(m_inParams.bExtVppApi,         VM_STRING("-ext_vpp_api"), VM_STRING("Use RunFrameVPPAsyncEx for VPP operations"));
         else HANDLE_INT_OPTION(m_components[eVPP].m_params.vpp.Out.CropW, VM_STRING("-resize_w"), VM_STRING("video width at VPP output"))
         else HANDLE_INT_OPTION(m_components[eVPP].m_params.vpp.Out.CropH, VM_STRING("-resize_h"), VM_STRING("video height at VPP output"))
         else HANDLE_64F_OPTION(m_components[eVPP].m_zoomx, VM_STRING("-zoom_w"), VM_STRING("scale video width"))

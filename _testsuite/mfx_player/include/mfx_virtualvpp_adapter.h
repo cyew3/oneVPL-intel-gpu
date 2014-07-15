@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2010-2011 Intel Corporation. All Rights Reserved.
+Copyright(c) 2010-2014 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -91,6 +91,10 @@ public:
     virtual mfxStatus RunFrameVPPAsync(mfxFrameSurface1 *in, mfxFrameSurface1 *out, mfxExtVppAuxData *aux, mfxSyncPoint *syncp)
     {
         return m_pVirual->RunFrameVPPAsync(in, out, aux, syncp);
+    }
+    virtual mfxStatus RunFrameVPPAsync(mfxFrameSurface1 *in, mfxFrameSurface1 *work, mfxFrameSurface1 **out, mfxExtVppAuxData *aux, mfxSyncPoint *syncp)
+    {
+        return m_pVirual->RunFrameVPPAsyncEx(in, work, out, aux, syncp);
     }
     virtual mfxStatus SyncOperation(mfxSyncPoint syncp, mfxU32 wait)
     {

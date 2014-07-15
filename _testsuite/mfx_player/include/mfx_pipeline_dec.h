@@ -57,6 +57,9 @@ struct sCommandlineParams
   mfxU32         fps_frame_window;   // Specifies how many frames should be used for per-window fps calculation
   bool           bExtendedFpsStat;   // Show extended FPS related info
   bool           bUpdateWindowTitle; // Show progress in window title
+
+  bool           bExtVppApi;   // Being set to true forces using RunFrameVPPAsyncEx
+
   mfxU32         InputCodecType;
   mfxFrameInfo   FrameInfo; //decode input frame info
   mfxFrameInfo   outFrameInfo; //file writerRender output frameInfo
@@ -327,6 +330,8 @@ protected:
 #ifdef D3D_SURFACES_SUPPORT
     std::auto_ptr<IUnknown> m_dxvaSpy;
 #endif
+
+    bool                     m_bVPPUpdateInput;
 
     //execution time counters
     mfxU32                   m_nDecFrames;

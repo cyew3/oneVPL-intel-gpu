@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2011 Intel Corporation. All Rights Reserved.
+Copyright(c) 2011-2014 Intel Corporation. All Rights Reserved.
 
 File Name: .h
 
@@ -80,10 +80,15 @@ class ExecuteType<IMFXVideoVPP>
 public:
     mfxFrameSurface1 *m_in;
     mfxFrameSurface1 *m_out;
+    mfxFrameSurface1 *m_work;
     mfxExtVppAuxData *m_aux;
     mfxSyncPoint     *m_syncp;
     ExecuteType(mfxFrameSurface1 *in, mfxFrameSurface1 *out, mfxExtVppAuxData *aux, mfxSyncPoint *syncp)
         : m_in(in), m_out(out), m_aux(aux), m_syncp(syncp)
+    {
+    }
+    ExecuteType(mfxFrameSurface1 *in,  mfxFrameSurface1 *work, mfxFrameSurface1 **out, mfxExtVppAuxData *aux, mfxSyncPoint *syncp)
+        : m_in(in), m_out(*out), m_work(work), m_aux(aux), m_syncp(syncp)
     {
     }
 };
@@ -99,6 +104,10 @@ public:
     virtual mfxStatus RunFrameVPPAsync(mfxFrameSurface1 *in, mfxFrameSurface1 *out, mfxExtVppAuxData *aux, mfxSyncPoint *syncp)
     {
         return Execute (ExecuteType<IMFXVideoVPP>(in, out, aux, syncp));
+    }
+    virtual mfxStatus RunFrameVPPAsyncEx(mfxFrameSurface1 *in, mfxFrameSurface1 *work, mfxFrameSurface1 **out, mfxExtVppAuxData *aux, mfxSyncPoint *syncp)
+    {
+        return Execute (ExecuteType<IMFXVideoVPP>(in, work, out, aux, syncp));
     }
     virtual mfxStatus Execute(const ExecuteType<IMFXVideoVPP>& args)
     {
