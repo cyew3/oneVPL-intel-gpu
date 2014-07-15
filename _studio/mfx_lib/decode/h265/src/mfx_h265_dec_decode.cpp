@@ -1362,6 +1362,16 @@ bool VideoDECODEH265::IsSameVideoParam(mfxVideoParam * newPar, mfxVideoParam * o
             return false;
     }
 
+    if (newPar->mfx.FrameInfo.FourCC != oldPar->mfx.FrameInfo.FourCC)
+    {
+        return false;
+    }
+
+    if ((newPar->mfx.FrameInfo.BitDepthLuma > 8 || newPar->mfx.FrameInfo.BitDepthChroma > 8) != (oldPar->mfx.FrameInfo.BitDepthLuma > 8 || oldPar->mfx.FrameInfo.BitDepthChroma > 8))
+    {
+        return false;
+    }
+
     if (newPar->mfx.FrameInfo.ChromaFormat != oldPar->mfx.FrameInfo.ChromaFormat)
     {
         return false;

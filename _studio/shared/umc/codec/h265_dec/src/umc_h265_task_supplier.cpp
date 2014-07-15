@@ -185,6 +185,9 @@ bool IsNeedSPSInvalidate(const H265SeqParamSet *old_sps, const H265SeqParamSet *
     if (old_sps->pic_height_in_luma_samples != new_sps->pic_height_in_luma_samples)
         return true;
 
+    if ((old_sps->bit_depth_luma > 8 || old_sps->bit_depth_chroma > 8) != (new_sps->bit_depth_luma > 8 || new_sps->bit_depth_chroma > 8))
+        return true;
+
     //if (old_sps->max_dec_frame_buffering < new_sps->max_dec_frame_buffering)
       //  return true;
 
