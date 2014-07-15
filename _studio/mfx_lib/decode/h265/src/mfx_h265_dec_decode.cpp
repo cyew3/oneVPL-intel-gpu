@@ -861,7 +861,7 @@ mfxStatus VideoDECODEH265::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1 *
 
     if (m_isOpaq)
     {
-        sts = CheckFrameInfoCodecs(&surface_work->Info, MFX_CODEC_AVC);
+        sts = CheckFrameInfoCodecs(&surface_work->Info, MFX_CODEC_HEVC);
         if (sts != MFX_ERR_NONE)
             return MFX_ERR_UNSUPPORTED;
 
