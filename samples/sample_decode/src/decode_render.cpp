@@ -15,6 +15,7 @@ Copyright(c) 2005-2014 Intel Corporation. All Rights Reserved.
 #include <windowsx.h>
 #include <dwmapi.h>
 #include <mmsystem.h>
+#include <VersionHelpers.h>
 
 #include "sample_defs.h"
 #include "decode_render.h"
@@ -83,11 +84,8 @@ CDecodeD3DRender::~CDecodeD3DRender()
 mfxStatus CDecodeD3DRender::Init(sWindowParams pWParams)
 {
     mfxStatus sts = MFX_ERR_NONE;
-    OSVERSIONINFO version;
-    ZeroMemory(&version, sizeof(version));
-    version.dwOSVersionInfoSize = sizeof(version);
-    GetVersionEx(&version);
-    if ((version.dwMajorVersion >= 6) && (version.dwMinorVersion >= 3))
+
+    if (IsWindows8Point1OrGreater())
     {
         m_bIsDwmQueueSupported = false;
     }
