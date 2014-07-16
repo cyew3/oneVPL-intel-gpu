@@ -14,6 +14,22 @@ public:
     int RunTest(unsigned int id);
     static const unsigned int n_cases;
 
+    mfxStatus Init(mfxSession session, mfxVideoParam *par)
+    {
+        if(session && par)
+        {
+            if((MFX_FOURCC_A2RGB10 == par->vpp.In.FourCC) ||
+               (MFX_FOURCC_ARGB16  == par->vpp.In.FourCC) ||
+               (MFX_FOURCC_R16     == par->vpp.In.FourCC))
+               par->vpp.In.BitDepthLuma = 10;
+            if((MFX_FOURCC_A2RGB10 == par->vpp.Out.FourCC) ||
+               (MFX_FOURCC_ARGB16  == par->vpp.Out.FourCC) ||
+               (MFX_FOURCC_R16     == par->vpp.Out.FourCC))
+               par->vpp.Out.BitDepthLuma = 10;
+        }
+        return tsVideoVPP::Init(session, par);
+    }
+
 private:
     static const mfxU32 max_num_ctrl     = 6;
     static const mfxU32 max_num_ctrl_par = 4;
@@ -129,73 +145,78 @@ const TestSuite::tc_struct TestSuite::test_case[] =
     {/*14*/ MFX_ERR_NOT_INITIALIZED,          0, {FAILED|INIT|MFXVPAR, &tsStruct::mfxVideoParam.Protected, {2}}},
 
     {/*15*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, {INIT|EXT_BUF, 0, {EXT_BUF_PAR(mfxExtCamGammaCorrection      )}}},
-    {/*16*/ MFX_ERR_NONE, 0, {INIT|EXT_BUF, 0, {EXT_BUF_PAR(mfxExtCamWhiteBalance         )}}},
-    {/*17*/ MFX_ERR_NONE, 0, {INIT|EXT_BUF, 0, {EXT_BUF_PAR(mfxExtCamHotPixelRemoval      )}}},
-    {/*18*/ MFX_ERR_NONE, 0, {INIT|EXT_BUF, 0, {EXT_BUF_PAR(mfxExtCamBlackLevelCorrection )}}},
-    {/*19*/ MFX_ERR_NONE, 0, {INIT|EXT_BUF, 0, {EXT_BUF_PAR(mfxExtCamVignetteCorrection   )}}},
-    {/*20*/ MFX_ERR_NONE, 0, {INIT|EXT_BUF, 0, {EXT_BUF_PAR(mfxExtCamBayerDenoise         )}}},
-    {/*21*/ MFX_ERR_NONE, 0, {INIT|EXT_BUF, 0, {EXT_BUF_PAR(mfxExtCamColorCorrection3x3   )}}},
-    {/*22*/ MFX_ERR_NONE, 0, {INIT|EXT_BUF, 0, {EXT_BUF_PAR(mfxExtCamPadding              )}}},
+    {/*16*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, {INIT|EXT_BUF, 0, {EXT_BUF_PAR(mfxExtCamWhiteBalance         )}}},
+    {/*17*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, {INIT|EXT_BUF, 0, {EXT_BUF_PAR(mfxExtCamHotPixelRemoval      )}}},
+    {/*18*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, {INIT|EXT_BUF, 0, {EXT_BUF_PAR(mfxExtCamBlackLevelCorrection )}}},
+//    {/*19*/ MFX_ERR_NONE, 0, {INIT|EXT_BUF, 0, {EXT_BUF_PAR(mfxExtCamVignetteCorrection   )}}},
+//    {/*20*/ MFX_ERR_NONE, 0, {INIT|EXT_BUF, 0, {EXT_BUF_PAR(mfxExtCamBayerDenoise         )}}},
+    {/*21*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, {INIT|EXT_BUF, 0, {EXT_BUF_PAR(mfxExtCamColorCorrection3x3   )}}},
+    {/*22*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, {INIT|EXT_BUF, 0, {EXT_BUF_PAR(mfxExtCamPadding              )}}},
 
-    {/*23*/ MFX_ERR_NONE, 0, 
+    {/*23*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, 
         {  {INIT|EXT_BUF, 0, {EXT_BUF_PAR(mfxExtCamGammaCorrection   )}},
            {INIT|EXT_BUF, 0, {EXT_BUF_PAR(mfxExtCamWhiteBalance      )}},
            {INIT|EXT_BUF, 0, {EXT_BUF_PAR(mfxExtCamHotPixelRemoval   )}}  }
     },
-    {/*24*/ MFX_ERR_NONE, 0, 
+    {/*24*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, 
         {  {INIT|EXT_BUF, 0, {EXT_BUF_PAR(mfxExtCamBlackLevelCorrection )}},
-           {INIT|EXT_BUF, 0, {EXT_BUF_PAR(mfxExtCamVignetteCorrection   )}},
-           {INIT|EXT_BUF, 0, {EXT_BUF_PAR(mfxExtCamBayerDenoise         )}}  }
+//           {INIT|EXT_BUF, 0, {EXT_BUF_PAR(mfxExtCamVignetteCorrection   )}},
+//           {INIT|EXT_BUF, 0, {EXT_BUF_PAR(mfxExtCamBayerDenoise         )}}  
+    }
     },
-    {/*25*/ MFX_ERR_NONE, 0, 
+    {/*25*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, 
         {  {INIT|EXT_BUF, 0, {EXT_BUF_PAR(mfxExtCamGammaCorrection      )}},
            {INIT|EXT_BUF, 0, {EXT_BUF_PAR(mfxExtCamColorCorrection3x3   )}},
            {INIT|EXT_BUF, 0, {EXT_BUF_PAR(mfxExtCamBlackLevelCorrection )}}  }
     },
-    {/*26*/ MFX_ERR_NONE, 0, 
+    {/*26*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, 
         {  {INIT|EXT_BUF, 0, {EXT_BUF_PAR(mfxExtCamGammaCorrection      )}},
            {INIT|EXT_BUF, 0, {EXT_BUF_PAR(mfxExtCamWhiteBalance         )}},
            {INIT|EXT_BUF, 0, {EXT_BUF_PAR(mfxExtCamHotPixelRemoval      )}},
            {INIT|EXT_BUF, 0, {EXT_BUF_PAR(mfxExtCamBlackLevelCorrection )}},
-           {INIT|EXT_BUF, 0, {EXT_BUF_PAR(mfxExtCamVignetteCorrection   )}},
-           {INIT|EXT_BUF, 0, {EXT_BUF_PAR(mfxExtCamBayerDenoise         )}}  }
+//           {INIT|EXT_BUF, 0, {EXT_BUF_PAR(mfxExtCamVignetteCorrection   )}},
+//           {INIT|EXT_BUF, 0, {EXT_BUF_PAR(mfxExtCamBayerDenoise         )}}  
+    }
     },
-    {/*27*/ MFX_ERR_NONE, 0, 
+    {/*27*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, 
         {  {GETVP|EXT_BUF, 0, {EXT_BUF_PAR(mfxExtCamGammaCorrection   )}},
            {GETVP|EXT_BUF, 0, {EXT_BUF_PAR(mfxExtCamWhiteBalance      )}},
            {GETVP|EXT_BUF, 0, {EXT_BUF_PAR(mfxExtCamHotPixelRemoval   )}}  }
     },
-    {/*28*/ MFX_ERR_NONE, 0, 
+    {/*28*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, 
         {  {GETVP|EXT_BUF, 0, {EXT_BUF_PAR(mfxExtCamBlackLevelCorrection )}},
-           {GETVP|EXT_BUF, 0, {EXT_BUF_PAR(mfxExtCamVignetteCorrection   )}},
-           {GETVP|EXT_BUF, 0, {EXT_BUF_PAR(mfxExtCamBayerDenoise         )}}  }
+//           {GETVP|EXT_BUF, 0, {EXT_BUF_PAR(mfxExtCamVignetteCorrection   )}},
+//           {GETVP|EXT_BUF, 0, {EXT_BUF_PAR(mfxExtCamBayerDenoise         )}}  
+    }
     },
-    {/*29*/ MFX_ERR_NONE, 0, 
+    {/*29*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, 
         {  {GETVP|EXT_BUF, 0, {EXT_BUF_PAR(mfxExtCamGammaCorrection      )}},
            {GETVP|EXT_BUF, 0, {EXT_BUF_PAR(mfxExtCamColorCorrection3x3   )}},
            {GETVP|EXT_BUF, 0, {EXT_BUF_PAR(mfxExtCamBlackLevelCorrection )}}  }
     },
-    {/*30*/ MFX_ERR_NONE, 0, 
+    {/*30*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, 
         {  {GETVP|EXT_BUF, 0, {EXT_BUF_PAR(mfxExtCamGammaCorrection      )}},
            {GETVP|EXT_BUF, 0, {EXT_BUF_PAR(mfxExtCamWhiteBalance         )}},
            {GETVP|EXT_BUF, 0, {EXT_BUF_PAR(mfxExtCamHotPixelRemoval      )}},
            {GETVP|EXT_BUF, 0, {EXT_BUF_PAR(mfxExtCamBlackLevelCorrection )}},
-           {GETVP|EXT_BUF, 0, {EXT_BUF_PAR(mfxExtCamVignetteCorrection   )}},
-           {GETVP|EXT_BUF, 0, {EXT_BUF_PAR(mfxExtCamBayerDenoise         )}}  }
+//           {GETVP|EXT_BUF, 0, {EXT_BUF_PAR(mfxExtCamVignetteCorrection   )}},
+//           {GETVP|EXT_BUF, 0, {EXT_BUF_PAR(mfxExtCamBayerDenoise         )}} 
+    }
     },
-    {/*31*/ MFX_ERR_NONE, 0, 
+    {/*31*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, 
         {  {INIT|EXT_BUF, 0, {EXT_BUF_PAR(mfxExtCamGammaCorrection       )}},
            {INIT|EXT_BUF, 0, {EXT_BUF_PAR(mfxExtCamWhiteBalance          )}},
            {INIT|EXT_BUF, 0, {EXT_BUF_PAR(mfxExtCamHotPixelRemoval       )}},
            {GETVP|EXT_BUF, 0, {EXT_BUF_PAR(mfxExtCamBlackLevelCorrection )}},
-           {GETVP|EXT_BUF, 0, {EXT_BUF_PAR(mfxExtCamVignetteCorrection   )}},
-           {GETVP|EXT_BUF, 0, {EXT_BUF_PAR(mfxExtCamBayerDenoise         )}}  }
+//           {GETVP|EXT_BUF, 0, {EXT_BUF_PAR(mfxExtCamVignetteCorrection   )}},
+//           {GETVP|EXT_BUF, 0, {EXT_BUF_PAR(mfxExtCamBayerDenoise         )}}  
+    }
     },
-    {/*32*/ MFX_ERR_NONE, 0, 
+    {/*32*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, 
         {  {INIT|MFXVPAR,  &tsStruct::mfxVideoParam.vpp.In.Width,   {4096}},
            {INIT|MFXVPAR,  &tsStruct::mfxVideoParam.vpp.In.Height,  {4096}}  }
     },
-    {/*33*/ MFX_ERR_NONE, 0, 
+    {/*33*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, 
         {  {INIT|MFXVPAR,  &tsStruct::mfxVideoParam.vpp.In.Width,   {4096}},
            {INIT|MFXVPAR,  &tsStruct::mfxVideoParam.vpp.In.Height,  {4096}},
            {INIT|EXT_BUF, 0, {EXT_BUF_PAR(mfxExtCamHotPixelRemoval       )}},

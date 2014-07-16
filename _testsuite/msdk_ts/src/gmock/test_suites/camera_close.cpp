@@ -12,6 +12,22 @@ public:
     int RunTest(unsigned int id);
     static const unsigned int n_cases;
 
+    mfxStatus Init(mfxSession session, mfxVideoParam *par)
+    {
+        if(session && par)
+        {
+            if((MFX_FOURCC_A2RGB10 == par->vpp.In.FourCC) ||
+               (MFX_FOURCC_ARGB16  == par->vpp.In.FourCC) ||
+               (MFX_FOURCC_R16     == par->vpp.In.FourCC))
+               par->vpp.In.BitDepthLuma = 10;
+            if((MFX_FOURCC_A2RGB10 == par->vpp.Out.FourCC) ||
+               (MFX_FOURCC_ARGB16  == par->vpp.Out.FourCC) ||
+               (MFX_FOURCC_R16     == par->vpp.Out.FourCC))
+               par->vpp.Out.BitDepthLuma = 10;
+        }
+        return tsVideoVPP::Init(session, par);
+    }
+
 private:
     static const mfxU32 n_par = 6;
 

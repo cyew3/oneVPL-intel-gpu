@@ -67,6 +67,62 @@ public:
     int RunTest(unsigned int id);
     static const unsigned int n_cases;
 
+    mfxStatus Init()
+    {
+        return Init(m_session, m_pPar);
+    }
+    mfxStatus Init(mfxSession session, mfxVideoParam *par)
+    {
+        if(session && par)
+        {
+            if((MFX_FOURCC_A2RGB10 == par->vpp.In.FourCC) ||
+               (MFX_FOURCC_ARGB16  == par->vpp.In.FourCC) ||
+               (MFX_FOURCC_R16     == par->vpp.In.FourCC))
+               par->vpp.In.BitDepthLuma = 10;
+            if((MFX_FOURCC_A2RGB10 == par->vpp.Out.FourCC) ||
+               (MFX_FOURCC_ARGB16  == par->vpp.Out.FourCC) ||
+               (MFX_FOURCC_R16     == par->vpp.Out.FourCC))
+               par->vpp.Out.BitDepthLuma = 10;
+        }
+        return tsVideoVPP::Init(session, par);
+    }
+
+    mfxStatus Reset(mfxSession session, mfxVideoParam *par)
+    {
+        if(session && par)
+        {
+            if((MFX_FOURCC_A2RGB10 == par->vpp.In.FourCC) ||
+               (MFX_FOURCC_ARGB16  == par->vpp.In.FourCC) ||
+               (MFX_FOURCC_R16     == par->vpp.In.FourCC))
+               par->vpp.In.BitDepthLuma = 10;
+            if((MFX_FOURCC_A2RGB10 == par->vpp.Out.FourCC) ||
+               (MFX_FOURCC_ARGB16  == par->vpp.Out.FourCC) ||
+               (MFX_FOURCC_R16     == par->vpp.Out.FourCC))
+               par->vpp.Out.BitDepthLuma = 10;
+        }
+        return tsVideoVPP::Reset(session, par);
+    }
+    mfxStatus Reset()
+    {
+        return Reset(m_session, m_pPar);
+    }
+
+    mfxStatus Query(mfxSession session, mfxVideoParam *in, mfxVideoParam *out)
+    {
+        if(session && in)
+        {
+            if((MFX_FOURCC_A2RGB10 == in->vpp.In.FourCC) ||
+               (MFX_FOURCC_ARGB16  == in->vpp.In.FourCC) ||
+               (MFX_FOURCC_R16     == in->vpp.In.FourCC))
+               in->vpp.In.BitDepthLuma = 10;
+            if((MFX_FOURCC_A2RGB10 == in->vpp.Out.FourCC) ||
+               (MFX_FOURCC_ARGB16  == in->vpp.Out.FourCC) ||
+               (MFX_FOURCC_R16     == in->vpp.Out.FourCC))
+               in->vpp.Out.BitDepthLuma = 10;
+        }
+        return tsVideoVPP::Query(session, in, out);
+    }
+
 private:
     static const char path[];
     static const mfxU32 max_num_ctrl     = 10;
@@ -131,13 +187,13 @@ private:
     enum STREAM_ID
     {
           TRASH                      = 8
-        , S_004_03_A01               = 1
-        , S_4K1K_RAW__SR_B__5000p    = 2
-        , S_4KDCI_HRAW__SR_H__5000p  = 3
-        , S_4KDCI_HRAW__SR_O__5000p  = 4
-        , S_4KDCI_HRAW__SR_O__5994p  = 5
-        , S_4KDCI_RAW__SR_V__5994p   = 6
-        , S_QFHD_HRAW__SR_B__5000p   = 7
+        , S_004_03_A01               = 0
+        , S_4K1K_RAW__SR_B__5000p    = 1
+        , S_4KDCI_HRAW__SR_H__5000p  = 2
+        , S_4KDCI_HRAW__SR_O__5000p  = 3
+        , S_4KDCI_HRAW__SR_O__5994p  = 4
+        , S_4KDCI_RAW__SR_V__5994p   = 5
+        , S_QFHD_HRAW__SR_B__5000p   = 6
     };
 
     void apply_par(const tc_struct& p, mfxU32 stage)

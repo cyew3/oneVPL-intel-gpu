@@ -159,6 +159,18 @@ int test(unsigned int id)
         (*tc.set_par)(par);
     }
 
+    if(par.session && par.pPar)
+    {
+        if((MFX_FOURCC_A2RGB10  == par.pPar->vpp.In.FourCC) ||
+            (MFX_FOURCC_ARGB16  == par.pPar->vpp.In.FourCC) ||
+            (MFX_FOURCC_R16     == par.pPar->vpp.In.FourCC))
+            par.pPar->vpp.In.BitDepthLuma = 10;
+        if((MFX_FOURCC_A2RGB10  == par.pPar->vpp.Out.FourCC) ||
+            (MFX_FOURCC_ARGB16  == par.pPar->vpp.Out.FourCC) ||
+            (MFX_FOURCC_R16     == par.pPar->vpp.Out.FourCC))
+            par.pPar->vpp.Out.BitDepthLuma = 10;
+    }
+
     g_tsStatus.expect(tc.sts);
     mfxStatus sts = vpp.QueryIOSurf(par.session, par.pPar, par.pRequest);
 

@@ -26,6 +26,38 @@ public:
     int RunTest(unsigned int id);
     static const unsigned int n_cases;
 
+    mfxStatus Init(mfxSession session, mfxVideoParam *par)
+    {
+        if(session && par)
+        {
+            if((MFX_FOURCC_A2RGB10 == par->vpp.In.FourCC) ||
+               (MFX_FOURCC_ARGB16  == par->vpp.In.FourCC) ||
+               (MFX_FOURCC_R16     == par->vpp.In.FourCC))
+               par->vpp.In.BitDepthLuma = 10;
+            if((MFX_FOURCC_A2RGB10 == par->vpp.Out.FourCC) ||
+               (MFX_FOURCC_ARGB16  == par->vpp.Out.FourCC) ||
+               (MFX_FOURCC_R16     == par->vpp.Out.FourCC))
+               par->vpp.Out.BitDepthLuma = 10;
+        }
+        return tsVideoVPP::Init(session, par);
+    }
+
+    mfxStatus Query(mfxSession session, mfxVideoParam *in, mfxVideoParam *out)
+    {
+        if(session && in)
+        {
+            if((MFX_FOURCC_A2RGB10 == in->vpp.In.FourCC) ||
+               (MFX_FOURCC_ARGB16  == in->vpp.In.FourCC) ||
+               (MFX_FOURCC_R16     == in->vpp.In.FourCC))
+               in->vpp.In.BitDepthLuma = 10;
+            if((MFX_FOURCC_A2RGB10 == in->vpp.Out.FourCC) ||
+               (MFX_FOURCC_ARGB16  == in->vpp.Out.FourCC) ||
+               (MFX_FOURCC_R16     == in->vpp.Out.FourCC))
+               in->vpp.Out.BitDepthLuma = 10;
+        }
+        return tsVideoVPP::Query(session, in, out);
+    }
+
 private:
     static const mfxU32 n_par = 10;
 
@@ -95,8 +127,8 @@ const TestSuite::tc_struct TestSuite::test_case[] =
     {/*24*/  MFX_ERR_UNSUPPORTED,        SAME_IO, {}, {ext_buf, EXT_BUF_PAR(mfxExtCamWhiteBalance         )}},
     {/*25*/  MFX_ERR_UNSUPPORTED,        SAME_IO, {}, {ext_buf, EXT_BUF_PAR(mfxExtCamHotPixelRemoval      )}},
     {/*26*/  MFX_ERR_UNSUPPORTED,        SAME_IO, {}, {ext_buf, EXT_BUF_PAR(mfxExtCamBlackLevelCorrection )}},
-    {/*27*/  MFX_ERR_UNSUPPORTED,        SAME_IO, {}, {ext_buf, EXT_BUF_PAR(mfxExtCamVignetteCorrection   )}},
-    {/*28*/  MFX_ERR_UNSUPPORTED,        SAME_IO, {}, {ext_buf, EXT_BUF_PAR(mfxExtCamBayerDenoise         )}},
+//    {/*27*/  MFX_ERR_UNSUPPORTED,        SAME_IO, {}, {ext_buf, EXT_BUF_PAR(mfxExtCamVignetteCorrection   )}},
+//    {/*28*/  MFX_ERR_UNSUPPORTED,        SAME_IO, {}, {ext_buf, EXT_BUF_PAR(mfxExtCamBayerDenoise         )}},
     {/*29*/  MFX_ERR_UNSUPPORTED,        SAME_IO, {}, {ext_buf, EXT_BUF_PAR(mfxExtCamColorCorrection3x3   )}},
     {/*30*/  MFX_ERR_NONE,        SAME_IO, {}, {ext_buf, EXT_BUF_PAR(mfxExtCamPadding              )}},
     {/*31*/  MFX_ERR_UNDEFINED_BEHAVIOR, SAME_IO, {}, {ext_buf, EXT_BUF_PAR(mfxExtCamPipeControl          )}},
@@ -104,8 +136,8 @@ const TestSuite::tc_struct TestSuite::test_case[] =
     {/*33*/  MFX_WRN_FILTER_SKIPPED,        INPLACE, {}, {ext_buf, EXT_BUF_PAR(mfxExtCamWhiteBalance         )}},
     {/*34*/  MFX_WRN_FILTER_SKIPPED,        INPLACE, {}, {ext_buf, EXT_BUF_PAR(mfxExtCamHotPixelRemoval      )}},
     {/*35*/  MFX_WRN_FILTER_SKIPPED,        INPLACE, {}, {ext_buf, EXT_BUF_PAR(mfxExtCamBlackLevelCorrection )}},
-    {/*36*/  MFX_WRN_FILTER_SKIPPED,        INPLACE, {}, {ext_buf, EXT_BUF_PAR(mfxExtCamVignetteCorrection   )}},
-    {/*37*/  MFX_WRN_FILTER_SKIPPED,        INPLACE, {}, {ext_buf, EXT_BUF_PAR(mfxExtCamBayerDenoise         )}},
+//    {/*36*/  MFX_WRN_FILTER_SKIPPED,        INPLACE, {}, {ext_buf, EXT_BUF_PAR(mfxExtCamVignetteCorrection   )}},
+//    {/*37*/  MFX_WRN_FILTER_SKIPPED,        INPLACE, {}, {ext_buf, EXT_BUF_PAR(mfxExtCamBayerDenoise         )}},
     {/*38*/  MFX_WRN_FILTER_SKIPPED,        INPLACE, {}, {ext_buf, EXT_BUF_PAR(mfxExtCamColorCorrection3x3   )}},
     {/*39*/  MFX_ERR_NONE,        INPLACE, {}, {ext_buf, EXT_BUF_PAR(mfxExtCamPadding              )}},
     {/*40*/  MFX_ERR_UNDEFINED_BEHAVIOR,  INPLACE, {}, {ext_buf, EXT_BUF_PAR(mfxExtCamPipeControl          )}},
@@ -113,17 +145,17 @@ const TestSuite::tc_struct TestSuite::test_case[] =
     {/*42*/  MFX_ERR_UNDEFINED_BEHAVIOR,  DIFFERENT_IO, {}, {ext_buf, EXT_BUF_PAR(mfxExtCamWhiteBalance         )}},
     {/*43*/  MFX_ERR_UNDEFINED_BEHAVIOR,  DIFFERENT_IO, {}, {ext_buf, EXT_BUF_PAR(mfxExtCamHotPixelRemoval      )}},
     {/*44*/  MFX_ERR_UNDEFINED_BEHAVIOR,  DIFFERENT_IO, {}, {ext_buf, EXT_BUF_PAR(mfxExtCamBlackLevelCorrection )}},
-    {/*45*/  MFX_ERR_UNDEFINED_BEHAVIOR,  DIFFERENT_IO, {}, {ext_buf, EXT_BUF_PAR(mfxExtCamVignetteCorrection   )}},
-    {/*46*/  MFX_ERR_UNDEFINED_BEHAVIOR,  DIFFERENT_IO, {}, {ext_buf, EXT_BUF_PAR(mfxExtCamBayerDenoise         )}},
+//    {/*45*/  MFX_ERR_UNDEFINED_BEHAVIOR,  DIFFERENT_IO, {}, {ext_buf, EXT_BUF_PAR(mfxExtCamVignetteCorrection   )}},
+//    {/*46*/  MFX_ERR_UNDEFINED_BEHAVIOR,  DIFFERENT_IO, {}, {ext_buf, EXT_BUF_PAR(mfxExtCamBayerDenoise         )}},
     {/*47*/  MFX_ERR_UNDEFINED_BEHAVIOR,  DIFFERENT_IO, {}, {ext_buf, EXT_BUF_PAR(mfxExtCamColorCorrection3x3   )}},
     {/*48*/  MFX_ERR_UNDEFINED_BEHAVIOR,  DIFFERENT_IO, {}, {ext_buf, EXT_BUF_PAR(mfxExtCamPadding              )}},
     {/*49*/  MFX_ERR_UNDEFINED_BEHAVIOR,  DIFFERENT_IO, {}, {ext_buf, EXT_BUF_PAR(mfxExtCamPipeControl          )}},
     {/*50*/  MFX_ERR_UNDEFINED_BEHAVIOR,  DIFFERENT_IO, {}, {{ext_buf, EXT_BUF_PAR(mfxExtCamGammaCorrection      )},{ext_buf, EXT_BUF_PAR(mfxExtCamWhiteBalance         )} }},
     {/*51*/  MFX_ERR_UNDEFINED_BEHAVIOR,  DIFFERENT_IO, {}, {{ext_buf, EXT_BUF_PAR(mfxExtCamWhiteBalance         )},{ext_buf, EXT_BUF_PAR(mfxExtCamHotPixelRemoval      )} }},
     {/*52*/  MFX_ERR_UNDEFINED_BEHAVIOR,  DIFFERENT_IO, {}, {{ext_buf, EXT_BUF_PAR(mfxExtCamHotPixelRemoval      )},{ext_buf, EXT_BUF_PAR(mfxExtCamBlackLevelCorrection )} }},
-    {/*53*/  MFX_ERR_UNDEFINED_BEHAVIOR,  DIFFERENT_IO, {}, {{ext_buf, EXT_BUF_PAR(mfxExtCamBlackLevelCorrection )},{ext_buf, EXT_BUF_PAR(mfxExtCamVignetteCorrection   )} }},
-    {/*54*/  MFX_ERR_UNDEFINED_BEHAVIOR,  DIFFERENT_IO, {}, {{ext_buf, EXT_BUF_PAR(mfxExtCamVignetteCorrection   )},{ext_buf, EXT_BUF_PAR(mfxExtCamBayerDenoise         )} }},
-    {/*55*/  MFX_ERR_UNDEFINED_BEHAVIOR,  DIFFERENT_IO, {}, {{ext_buf, EXT_BUF_PAR(mfxExtCamBayerDenoise         )},{ext_buf, EXT_BUF_PAR(mfxExtCamColorCorrection3x3   )} }},
+ //   {/*53*/  MFX_ERR_UNDEFINED_BEHAVIOR,  DIFFERENT_IO, {}, {{ext_buf, EXT_BUF_PAR(mfxExtCamBlackLevelCorrection )},{ext_buf, EXT_BUF_PAR(mfxExtCamVignetteCorrection   )} }},
+//    {/*54*/  MFX_ERR_UNDEFINED_BEHAVIOR,  DIFFERENT_IO, {}, {{ext_buf, EXT_BUF_PAR(mfxExtCamVignetteCorrection   )},{ext_buf, EXT_BUF_PAR(mfxExtCamBayerDenoise         )} }},
+//    {/*55*/  MFX_ERR_UNDEFINED_BEHAVIOR,  DIFFERENT_IO, {}, {{ext_buf, EXT_BUF_PAR(mfxExtCamBayerDenoise         )},{ext_buf, EXT_BUF_PAR(mfxExtCamColorCorrection3x3   )} }},
     {/*56*/  MFX_ERR_UNDEFINED_BEHAVIOR,  DIFFERENT_IO, {}, {{ext_buf, EXT_BUF_PAR(mfxExtCamColorCorrection3x3   )},{ext_buf, EXT_BUF_PAR(mfxExtCamPadding              )} }},
     {/*57*/  MFX_ERR_UNDEFINED_BEHAVIOR,  DIFFERENT_IO, {}, {{ext_buf, EXT_BUF_PAR(mfxExtCamPadding              )},{ext_buf, EXT_BUF_PAR(mfxExtCamPipeControl          )} }},
     {/*58*/  MFX_ERR_UNDEFINED_BEHAVIOR,  DIFFERENT_IO, {}, {{ext_buf, EXT_BUF_PAR(mfxExtCamPipeControl          )},{ext_buf, EXT_BUF_PAR(mfxExtCamGammaCorrection      )} }},

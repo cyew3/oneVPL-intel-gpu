@@ -25,6 +25,23 @@ public:
     int RunTest(unsigned int id);
     static const unsigned int n_cases;
 
+    mfxStatus Init(mfxSession session, mfxVideoParam *par)
+    {
+        if(session && par)
+        {
+            if((MFX_FOURCC_A2RGB10 == par->vpp.In.FourCC) ||
+               (MFX_FOURCC_ARGB16  == par->vpp.In.FourCC) ||
+               (MFX_FOURCC_R16     == par->vpp.In.FourCC))
+               par->vpp.In.BitDepthLuma = 10;
+            if((MFX_FOURCC_A2RGB10 == par->vpp.Out.FourCC) ||
+               (MFX_FOURCC_ARGB16  == par->vpp.Out.FourCC) ||
+               (MFX_FOURCC_R16     == par->vpp.Out.FourCC))
+               par->vpp.Out.BitDepthLuma = 10;
+        }
+        mfxVideoParam tmp_par = *par;
+        return tsVideoVPP::Init(session, par);
+    }
+
 private:
     static const mfxU32 n_par = 8;
 
@@ -196,8 +213,8 @@ const TestSuite::tc_struct TestSuite::test_case[] =
     {/*58*/  MFX_ERR_NONE,                0, 1, SET_ALLOCATOR|ALLOC_MIN, {}, {ext_buf, EXT_BUF_PAR(mfxExtCamWhiteBalance         )}},
     {/*59*/  MFX_ERR_NONE,                0, 1, SET_ALLOCATOR|ALLOC_MIN, {}, {ext_buf, EXT_BUF_PAR(mfxExtCamHotPixelRemoval      )}},
     {/*60*/  MFX_ERR_NONE,                0, 1, SET_ALLOCATOR|ALLOC_MIN, {}, {ext_buf, EXT_BUF_PAR(mfxExtCamBlackLevelCorrection )}},
-    {/*61*/  MFX_ERR_NONE,                0, 1, SET_ALLOCATOR|ALLOC_MIN, {}, {ext_buf, EXT_BUF_PAR(mfxExtCamVignetteCorrection   )}},
-    {/*62*/  MFX_ERR_NONE,                0, 1, SET_ALLOCATOR|ALLOC_MIN, {}, {ext_buf, EXT_BUF_PAR(mfxExtCamBayerDenoise         )}},
+//    {/*61*/  MFX_ERR_NONE,                0, 1, SET_ALLOCATOR|ALLOC_MIN, {}, {ext_buf, EXT_BUF_PAR(mfxExtCamVignetteCorrection   )}},
+//    {/*62*/  MFX_ERR_NONE,                0, 1, SET_ALLOCATOR|ALLOC_MIN, {}, {ext_buf, EXT_BUF_PAR(mfxExtCamBayerDenoise         )}},
     {/*63*/  MFX_ERR_NONE,                0, 1, SET_ALLOCATOR|ALLOC_MIN, {}, {ext_buf, EXT_BUF_PAR(mfxExtCamColorCorrection3x3   )}},
     {/*64*/  MFX_ERR_NONE,                0, 1, SET_ALLOCATOR|ALLOC_MIN, {}, {ext_buf, EXT_BUF_PAR(mfxExtCamPadding              )}},
     {/*65*/  MFX_ERR_UNDEFINED_BEHAVIOR,  0, 1, SET_ALLOCATOR|ALLOC_MIN, {}, {ext_buf, EXT_BUF_PAR(mfxExtCamPipeControl          )}},
