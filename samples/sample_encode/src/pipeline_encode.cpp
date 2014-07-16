@@ -394,9 +394,10 @@ mfxStatus CEncodingPipeline::InitMfxEncParams(sInputParams *pInParams)
     }
 
     // configure the depth of the look ahead BRC if specified in command line
-    if (pInParams->nLADepth)
+    if (pInParams->nLADepth || pInParams->nMaxSliceSize)
     {
         m_CodingOption2.LookAheadDepth = pInParams->nLADepth;
+        m_CodingOption2.MaxSliceSize   = pInParams->nMaxSliceSize;
         m_EncExtParams.push_back((mfxExtBuffer *)&m_CodingOption2);
     }
 

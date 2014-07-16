@@ -83,6 +83,7 @@ struct sInputParams
 
     mfxU16 nRateControlMethod;
     mfxU16 nLADepth; // depth of the look ahead bitrate control  algorithm
+    mfxU16 nMaxSliceSize; //maximum size of slice
     mfxU16 nQPI;
     mfxU16 nQPP;
     mfxU16 nQPB;

@@ -51,6 +51,7 @@ void PrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("   [-qpb]                   - constant quantizer for B frames (if bitrace control method is CQP). In range [1,51]. 0 by default, i.e.no limitations on QP.\n"));
     msdk_printf(MSDK_STRING("   [-num_slice]             - number of slices in each video frame. 0 by default.\n"));
     msdk_printf(MSDK_STRING("                              If num_slice equals zero, the encoder may choose any slice partitioning allowed by the codec standard.\n"));
+    msdk_printf(MSDK_STRING("   [-mss]                   - maximum slice size in bytes. Supported only with -hw and h264 codec. This option is not compatible with -num_slice option.\n"));
     msdk_printf(MSDK_STRING("Example: %s h265 -i InputYUVFile -o OutputEncodedFile -w width -h height -hw -p 2fca99749fdb49aeb121a5b63ef568f7\n"), strAppName);
 #if D3D_SURFACES_SUPPORT
     msdk_printf(MSDK_STRING("   [-d3d] - work with d3d surfaces\n"));
@@ -170,6 +171,11 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
             i++;
             pParams->nRateControlMethod = MFX_RATECONTROL_LA;
             msdk_opt_read(strInput[i], pParams->nLADepth);
+        }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-mss")))
+        {
+            i++;
+            msdk_opt_read(strInput[i], pParams->nMaxSliceSize);
         }
 #if D3D_SURFACES_SUPPORT
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-d3d")))
@@ -434,9 +440,27 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         return MFX_ERR_UNSUPPORTED;
     }
 
+    if ((pParams->nMaxSliceSize) && (!pParams->bUseHWLib))
+    {
+        PrintHelp(strInput[0], MSDK_STRING("MaxSliceSize option is supported only with -hw option!"));
+        return MFX_ERR_UNSUPPORTED;
+    }
+
+    if ((pParams->nMaxSliceSize) && (pParams->nNumSlice))
+    {
+        PrintHelp(strInput[0], MSDK_STRING("-mss and -num_slice options are not compatible!"));
+        return MFX_ERR_UNSUPPORTED;
+    }
+
     if ((pParams->nRateControlMethod == MFX_RATECONTROL_LA) && (pParams->CodecId != MFX_CODEC_AVC))
     {
         PrintHelp(strInput[0], MSDK_STRING("Look ahead BRC is supported only with H.264 encoder!"));
+        return MFX_ERR_UNSUPPORTED;
+    }
+
+    if ((pParams->nMaxSliceSize) && (pParams->CodecId != MFX_CODEC_AVC))
+    {
+        PrintHelp(strInput[0], MSDK_STRING("MaxSliceSize option is supported only with H.264 encoder!"));
         return MFX_ERR_UNSUPPORTED;
     }
 
