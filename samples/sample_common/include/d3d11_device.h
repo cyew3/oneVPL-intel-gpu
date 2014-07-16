@@ -38,6 +38,7 @@ public:
     virtual void      UpdateTitle(double /*fps*/) { }
     virtual void      Close();
             void      DefineFormat(bool isA2rgb10) { m_bIsA2rgb10 = (isA2rgb10) ? TRUE : FALSE; }
+            void      SetMaxFps(mfxU32 maxFps) { m_nMaxFps = maxFps; }
 protected:
     virtual mfxStatus FillSCD(mfxHDL hWindow, DXGI_SWAP_CHAIN_DESC& scd);
     virtual mfxStatus FillSCD1(DXGI_SWAP_CHAIN_DESC1& scd);
@@ -67,6 +68,7 @@ private:
     CComPtr<IDXGIDisplayControl>            m_pDisplayControl;
     CComPtr<IDXGIOutput>                    m_pDXGIOutput;
     mfxU16                                  m_nViews;
+    mfxU32                                  m_nMaxFps;
     BOOL                                    m_bDefaultStereoEnabled;
     UINT                                    m_nSyncInterval;
     BOOL                                    m_bIsA2rgb10;

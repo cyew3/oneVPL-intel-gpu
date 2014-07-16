@@ -20,6 +20,7 @@ Copyright(c) 2011-2014 Intel Corporation. All Rights Reserved.
 
 CD3D11Device::CD3D11Device():
     m_nViews(0),
+    m_nMaxFps(0),
     m_bDefaultStereoEnabled(FALSE),
     m_nSyncInterval(0),
     m_bIsA2rgb10(FALSE),
@@ -151,6 +152,31 @@ mfxStatus CD3D11Device::Init(
             return MFX_ERR_DEVICE_FAILED;
     }
 
+    m_nSyncInterval = 0;
+
+    if (m_nMaxFps)
+    {
+        // setting limit on frame rate
+        mfxU32 numerator = 60;
+
+        if (m_nMaxFps <= numerator/4)
+        {
+            m_nSyncInterval = 4;
+        }
+        else if (m_nMaxFps <= numerator/3)
+        {
+            m_nSyncInterval = 3;
+        }
+        else if (m_nMaxFps <= numerator/2)
+        {
+            m_nSyncInterval = 2;
+        }
+        else if (m_nMaxFps <= numerator)
+        {
+            m_nSyncInterval = 1;
+        }
+    }
+
     return sts;
 }
 
@@ -160,25 +186,6 @@ mfxStatus CD3D11Device::CreateVideoProcessor(mfxFrameSurface1 * pSrf)
 
     if (m_VideoProcessorEnum.p || NULL == pSrf)
         return MFX_ERR_NONE;
-
-    int numerator = 60;
-    int nMaxFPS = pSrf->Info.FrameRateExtN / pSrf->Info.FrameRateExtD;
-    if (nMaxFPS <= numerator/4)
-    {
-        m_nSyncInterval = 4;
-    }
-    else if (nMaxFPS <= numerator/3)
-    {
-        m_nSyncInterval = 3;
-    }
-    else if (nMaxFPS <= numerator/2)
-    {
-        m_nSyncInterval = 2;
-    }
-    else if (nMaxFPS <= numerator)
-    {
-        m_nSyncInterval = 1;
-    }
 
     //create video processor
     D3D11_VIDEO_PROCESSOR_CONTENT_DESC ContentDesc;

@@ -57,6 +57,7 @@ CDecodingPipeline::CDecodingPipeline()
     m_error = MFX_ERR_NONE;
     m_bIsVideoWall = false;
     m_nTimeout = 0;
+    m_nMaxFps = 0;
     m_bIsCompleteFrame = false;
     m_bPrintLatency = false;
     m_vLatency.reserve(1000); // reserve some space to reduce dynamic reallocation impact on pipeline execution
@@ -234,6 +235,8 @@ mfxStatus CDecodingPipeline::Init(sInputParams *pParams)
     }
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
+    // necessary for a device to set the frame rate limit
+    m_nMaxFps = pParams->nWallFPS;
     // create device and allocator
     sts = CreateAllocator();
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
@@ -526,6 +529,9 @@ mfxStatus CDecodingPipeline::CreateHWDevice()
 #if MFX_D3D11_SUPPORT
     if (D3D11_MEMORY == m_memType)
         m_hwdev = new CD3D11Device();
+        if (m_hwdev) {
+            reinterpret_cast<CD3D11Device*>(m_hwdev)->SetMaxFps(m_nMaxFps);
+        }
     else
 #endif // #if MFX_D3D11_SUPPORT
         m_hwdev = new CD3D9Device();

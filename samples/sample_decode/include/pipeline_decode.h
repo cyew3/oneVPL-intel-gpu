@@ -201,7 +201,8 @@ protected: // variables
     bool                    m_bPrintLatency;
     bool                    m_bStopDeliverLoop;
 
-    mfxU32 m_nTimeout;  //enables timeout for video playback, measured in seconds
+    mfxU32                  m_nTimeout; // enables timeout for video playback, measured in seconds
+    mfxU32                  m_nMaxFps; // limit of fps, if specified for video wall, otherwise equal 0.
 
     std::vector<msdk_tick>  m_vLatency;
 
