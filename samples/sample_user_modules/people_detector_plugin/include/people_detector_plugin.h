@@ -35,7 +35,6 @@ public:
     virtual mfxStatus PluginInit(mfxCoreInterface *core);
     virtual mfxStatus PluginClose();
     virtual mfxStatus GetPluginParam(mfxPluginParam *par);
-    virtual mfxStatus Submit(const mfxHDL *in, mfxU32 in_num, const mfxHDL *out, mfxU32 out_num, mfxThreadTask *task); //?
     virtual mfxStatus Execute(mfxThreadTask task, mfxU32 uid_p, mfxU32 uid_a);
     virtual mfxStatus FreeResources(mfxThreadTask task, mfxStatus sts);
 

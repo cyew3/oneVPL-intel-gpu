@@ -111,7 +111,9 @@ void Transform <MFXVideoVPP>::InitVPP(SamplePtr& sample) {
     mfxU16 oldWidth = 0, oldHeight = 0;
     oldWidth = m_initVideoParam.vpp.Out.Width;
     oldHeight = m_initVideoParam.vpp.Out.Height;
-    m_initVideoParam.vpp.In = m_initVideoParam.vpp.Out = sample->GetSurface().Info;
+
+    MSDK_MEMCPY_VAR(m_initVideoParam.vpp.In, &sample->GetSurface().Info, sizeof(mfxFrameInfo));
+    MSDK_MEMCPY_VAR(m_initVideoParam.vpp.Out, &m_initVideoParam.vpp.In, sizeof(mfxFrameInfo));
 
     m_initVideoParam.vpp.Out.Width = m_initVideoParam.vpp.Out.CropW = oldWidth;
     m_initVideoParam.vpp.Out.Height = m_initVideoParam.vpp.Out.CropH = oldHeight;
@@ -180,17 +182,17 @@ void Transform <MFXVideoVPP>::GetNumSurfaces(MFXAVParams& param, IAllocRequest& 
     mfxVideoParam *srcParams = &param.GetVideoParam();
 
     mfxVideoParam tmpVPPParams;
-    memset(&tmpVPPParams, 0, sizeof(mfxVideoParam));
-    memcpy(&tmpVPPParams.vpp.In, &srcParams->mfx.FrameInfo, sizeof(mfxFrameInfo));
-    memcpy(&tmpVPPParams.vpp.Out, &srcParams->mfx.FrameInfo, sizeof(mfxFrameInfo));
+    MSDK_ZERO_MEMORY(tmpVPPParams);
+    MSDK_MEMCPY_VAR(tmpVPPParams.vpp.In, &srcParams->mfx.FrameInfo, sizeof(mfxFrameInfo));
+    MSDK_MEMCPY_VAR(tmpVPPParams.vpp.Out, &srcParams->mfx.FrameInfo, sizeof(mfxFrameInfo));
 
     if (tmpVPPParams.vpp.In.FrameRateExtN == 0 || tmpVPPParams.vpp.In.FrameRateExtD == 0)
     {
         tmpVPPParams.vpp.In.FrameRateExtN = tmpVPPParams.vpp.Out.FrameRateExtN = 30;
         tmpVPPParams.vpp.In.FrameRateExtD = tmpVPPParams.vpp.Out.FrameRateExtD = 1;
     }
-    tmpVPPParams.vpp.Out.Width = tmpVPPParams.vpp.Out.CropW = m_initVideoParam.vpp.Out.Width;
-    tmpVPPParams.vpp.Out.Height = tmpVPPParams.vpp.Out.CropH = m_initVideoParam.vpp.Out.Height;
+    tmpVPPParams.vpp.Out.Width = m_initVideoParam.vpp.Out.Width;
+    tmpVPPParams.vpp.Out.Height = m_initVideoParam.vpp.Out.Height;
     tmpVPPParams.vpp.Out.FourCC = MFX_FOURCC_NV12;
     tmpVPPParams.IOPattern = (mfxU16)MFX_IOPATTERN_IN_SYSTEM_MEMORY | (mfxU16)MFX_IOPATTERN_OUT_SYSTEM_MEMORY;
 

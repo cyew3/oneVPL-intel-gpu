@@ -41,11 +41,7 @@ protected:
 
     mfxFrameSurface1       *m_pIn;
     mfxFrameSurface1       *m_pOut;
-    vaROIArray              m_ROIArray;
     mfxFrameAllocator      *m_pAlloc;
-
-    std::vector<mfxU8> m_YIn, m_UVIn;
-    std::vector<mfxU8> m_YOut, m_UVOut;
 };
 
 class PeopleDetectorProcessor : public Processor
@@ -58,16 +54,16 @@ public:
 
 private:
     void AnalyzeFrame(cv::Mat &frame);
-    bool NV12Surface2RGBMat(mfxFrameSurface1* surface, cv::Mat &mat);
-    bool RGBMat2NV12Surface(cv::Mat &mat, mfxFrameSurface1* surface);
-    double ComputeDistance(float* src, float* ref, int length);
-    int ExtractFeature(cv::Mat, float* v);
-    int VA_Sample(cv::Mat &img, std::vector<cv::Rect> &rect, std::vector<float*> &f);
-    std::vector<int> DoMatch(std::vector<float*> &f, int, float* ref, int, float);
-    void filter_rects(const std::vector<cv::Rect>& candidates, std::vector<cv::Rect>& objects);
+    mfxStatus NV12Surface2RGBMat(mfxFrameSurface1* surface, cv::Mat &mat);
+    mfxStatus RGBMat2NV12Surface(cv::Mat &mat, mfxFrameSurface1* surface);
+    mfxStatus CopyNV12Surface(mfxFrameSurface1* pSrcSurface, mfxFrameSurface1* pDstSurface);
+    double ComputeDistance(std::vector<float>& src, float* ref, int length);
+    int ExtractFeature(cv::Mat, std::vector<float> &feature);
+    int VA_Sample(cv::Mat &img, std::vector<cv::Rect> &rect, std::vector<std::vector<float>> &f);
+    std::vector<int> DoMatch(std::vector<std::vector<float>> &f, int, float* ref, int, float);
+    void FilterRects(const std::vector<cv::Rect>& candidates, std::vector<cv::Rect>& objects);
 
     vaExtVPPDetectPeople m_Param;
-    mfxU64               m_currentTimeStamp;
-    mfxU32               m_currentFrameOrder;
+    vaROIArray           m_ROIArray;
 };
 #endif // __FRAME_PROCESSOR_H

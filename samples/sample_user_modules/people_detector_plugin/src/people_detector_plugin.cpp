@@ -19,19 +19,16 @@ PeopleDetectionPlugin::PeopleDetectionPlugin() :
     m_bInited(false),
     m_pTasks(NULL),
     m_bIsInOpaque(false),
-    m_bIsOutOpaque(false)
+    m_bIsOutOpaque(false),
+    m_session(0),
+    m_MaxNumTasks(0)
 {
-    m_MaxNumTasks = 0;
+    MSDK_ZERO_MEMORY(m_VideoParam);
+    MSDK_ZERO_MEMORY(m_PluginParam);
+    MSDK_ZERO_MEMORY(m_Param);
 
-    memset(&m_VideoParam, 0, sizeof(m_VideoParam));
-    memset(&m_Param, 0, sizeof(m_Param));
     m_Param.Treshold = 200.0f;
     m_Param.RenderFlag = MFX_RENDER_ALWAYS;
-
-    memset(&m_PluginParam, 0, sizeof(m_PluginParam));
-
-    m_session = 0;
-    //m_pmfxCore = 0;
 
     m_PluginParam.ThreadPolicy = MFX_THREADPOLICY_SERIAL;
     m_PluginParam.MaxThreadNum = 1;
@@ -45,7 +42,6 @@ PeopleDetectionPlugin::PeopleDetectionPlugin() :
 PeopleDetectionPlugin::~PeopleDetectionPlugin()
 {
     PluginClose();
-    Close();
 }
 
 mfxStatus PeopleDetectionPlugin::PluginInit(mfxCoreInterface *core)
@@ -57,6 +53,7 @@ mfxStatus PeopleDetectionPlugin::PluginInit(mfxCoreInterface *core)
 
 mfxStatus PeopleDetectionPlugin::PluginClose()
 {
+    Close();
     return MFX_ERR_NONE;
 }
 
@@ -65,64 +62,6 @@ mfxStatus PeopleDetectionPlugin::GetPluginParam(mfxPluginParam *par)
     MSDK_CHECK_POINTER(par, MFX_ERR_NULL_PTR);
 
     *par = m_PluginParam;
-
-    return MFX_ERR_NONE;
-}
-
-mfxStatus PeopleDetectionPlugin::Submit(const mfxHDL *in, mfxU32 in_num, const mfxHDL *out, mfxU32 out_num, mfxThreadTask *task)
-{
-    MSDK_CHECK_POINTER(in, MFX_ERR_NULL_PTR);
-    MSDK_CHECK_POINTER(out, MFX_ERR_NULL_PTR);
-    //MSDK_CHECK_POINTER(*in, MFX_ERR_NULL_PTR);
-    //MSDK_CHECK_POINTER(*out, MFX_ERR_NULL_PTR);
-    MSDK_CHECK_POINTER(task, MFX_ERR_NULL_PTR);
-    //MSDK_CHECK_NOT_EQUAL(in_num, 1, MFX_ERR_UNSUPPORTED);
-    //MSDK_CHECK_NOT_EQUAL(out_num, 1, MFX_ERR_UNSUPPORTED);
-    MSDK_CHECK_ERROR(m_bInited, false, MFX_ERR_NOT_INITIALIZED);
-
-    mfxFrameSurface1 *surface_in = (mfxFrameSurface1 *)in;
-    mfxFrameSurface1 *surface_out = (mfxFrameSurface1 *)out;
-    mfxFrameSurface1 *real_surface_in = surface_in;
-    mfxFrameSurface1 *real_surface_out = surface_out;
-
-    mfxStatus sts = MFX_ERR_NONE;
-
-    if (m_bIsInOpaque)
-    {
-        sts = m_mfxCore.GetRealSurface(surface_in, &real_surface_in);
-        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, MFX_ERR_MEMORY_ALLOC);
-    }
-
-    if (m_bIsOutOpaque)
-    {
-        sts = m_mfxCore.GetRealSurface(surface_out, &real_surface_out);
-        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, MFX_ERR_MEMORY_ALLOC);
-    }
-
-    sts = CheckInOutFrameInfo(&real_surface_in->Info, &real_surface_out->Info);
-    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
-
-    mfxU32 ind = FindFreeTaskIdx();
-
-    if (ind >= m_MaxNumTasks)
-    {
-        return MFX_WRN_DEVICE_BUSY;
-    }
-
-    m_mfxCore.IncreaseReference(&(real_surface_in->Data));
-    m_mfxCore.IncreaseReference(&(real_surface_out->Data));
-
-    m_pTasks[ind].In = real_surface_in;
-    m_pTasks[ind].Out = real_surface_out;
-    m_pTasks[ind].bBusy = true;
-
-    m_pTasks[ind].pProcessor = new PeopleDetectorProcessor(&m_Param);
-    MSDK_CHECK_POINTER(m_pTasks[ind].pProcessor, MFX_ERR_MEMORY_ALLOC);
-
-    m_pTasks[ind].pProcessor->SetAllocator(&m_mfxCore.FrameAllocator());
-    m_pTasks[ind].pProcessor->Init(real_surface_in, real_surface_out);
-
-    *task = (mfxThreadTask)&m_pTasks[ind];
 
     return MFX_ERR_NONE;
 }
@@ -166,6 +105,10 @@ mfxStatus PeopleDetectionPlugin::Init(mfxVideoParam *mfxParam)
 
 //only NV12 color format is supported now
     if (MFX_FOURCC_NV12 != pParam->In.FourCC || MFX_FOURCC_NV12 != pParam->Out.FourCC)
+    {
+        return MFX_ERR_UNSUPPORTED;
+    }
+    if (!(mfxParam->IOPattern & MFX_IOPATTERN_IN_SYSTEM_MEMORY))
     {
         return MFX_ERR_UNSUPPORTED;
     }
@@ -218,14 +161,7 @@ mfxStatus PeopleDetectionPlugin::Init(mfxVideoParam *mfxParam)
 
     m_pTasks = new PeopleDetectorTask [m_MaxNumTasks];
     MSDK_CHECK_POINTER(m_pTasks, MFX_ERR_MEMORY_ALLOC);
-    memset(m_pTasks, 0, sizeof(PeopleDetectorTask) * m_MaxNumTasks);
-
-    m_VideoParam.vpp.In.CropW = mfxParam->vpp.In.Width;
-    m_VideoParam.vpp.In.CropH = mfxParam->vpp.In.Height;
-
-    m_VideoParam.vpp.Out.CropW = mfxParam->vpp.Out.Width;
-    m_VideoParam.vpp.Out.CropH = mfxParam->vpp.Out.Height;
-    m_VideoParam.vpp.Out.FourCC = mfxParam->vpp.Out.FourCC;
+    MSDK_ZERO_MEMORY(*m_pTasks);
 
     m_bInited = true;
 
@@ -236,8 +172,6 @@ mfxStatus PeopleDetectionPlugin::Close()
 {
     if (!m_bInited)
         return MFX_ERR_NONE;
-
-    memset(&m_Param, 0, sizeof(vaExtVPPDetectPeople));
 
     MSDK_SAFE_DELETE_ARRAY(m_pTasks);
 
@@ -269,6 +203,8 @@ mfxStatus PeopleDetectionPlugin::Close()
         MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, MFX_ERR_MEMORY_ALLOC);
     }
 
+    MSDK_ZERO_MEMORY(m_Param);
+
     m_bInited = false;
 
     return MFX_ERR_NONE;
@@ -278,47 +214,120 @@ mfxStatus PeopleDetectionPlugin::Query(mfxVideoParam *in, mfxVideoParam *out)
 {
     mfxStatus mfxSts = MFX_ERR_NONE;
 
-    MSDK_CHECK_POINTER(in, MFX_ERR_NULL_PTR);
     MSDK_CHECK_POINTER(out, MFX_ERR_NULL_PTR);
 
-    out->vpp = in->vpp;
-
-    out->AsyncDepth = in->AsyncDepth;
-
-    out->IOPattern = in->IOPattern;
-
-    mfxU32 temp = out->IOPattern & MFX_IOPATTERN_IN_SYSTEM_MEMORY;
-
-    if (temp==0 || temp==MFX_IOPATTERN_IN_SYSTEM_MEMORY)
+    if(NULL == in)
     {
+        MSDK_ZERO_MEMORY(out->mfx);
+        MSDK_ZERO_MEMORY(out->vpp);
+
+        out->vpp.In.FourCC = out->vpp.Out.FourCC = MFX_FOURCC_NV12;
+        out->vpp.In.Height = out->vpp.Out.Height = 1;
+        out->vpp.In.Width = out->vpp.Out.Width = 1;
+        out->vpp.In.PicStruct = out->vpp.Out.PicStruct = 1;
+        out->vpp.In.FrameRateExtN = out->vpp.Out.FrameRateExtN = 30;
+        out->vpp.In.FrameRateExtD = out->vpp.Out.FrameRateExtD = 1;
+        out->IOPattern = 1;
+        out->AsyncDepth = 1;
+    }
+    else
+    {
+        if (in->vpp.In.FourCC != MFX_FOURCC_NV12)
+        {
+            in->vpp.In.FourCC = 0;
+            mfxSts = MFX_ERR_UNSUPPORTED;
+        }
+        if (in->vpp.Out.FourCC != MFX_FOURCC_NV12)
+        {
+            in->vpp.Out.FourCC = 0;
+            mfxSts = MFX_ERR_UNSUPPORTED;
+        }
+        if (!(in->IOPattern & MFX_IOPATTERN_IN_SYSTEM_MEMORY))
+        {
+            in->IOPattern = 0;
+            mfxSts = MFX_ERR_UNSUPPORTED;
+        }
+        out->vpp = in->vpp;
+        out->AsyncDepth = in->AsyncDepth;
         out->IOPattern = MFX_IOPATTERN_IN_SYSTEM_MEMORY;
     }
 
-    return MFX_ERR_NONE;
+    return mfxSts;
 }
 
 mfxStatus PeopleDetectionPlugin::QueryIOSurf(mfxVideoParam *par, mfxFrameAllocRequest *in, mfxFrameAllocRequest *out)
 {
+    mfxStatus mfxRes = MFX_ERR_NONE;
+
     MSDK_CHECK_POINTER(par, MFX_ERR_NULL_PTR);
     MSDK_CHECK_POINTER(in, MFX_ERR_NULL_PTR);
     MSDK_CHECK_POINTER(out, MFX_ERR_NULL_PTR);
 
+    mfxRes = CheckInOutFrameInfo(&(par->vpp.In), &(par->vpp.Out));
+
     in->Info = par->vpp.In;
     in->NumFrameMin = 1;
     in->NumFrameSuggested = in->NumFrameMin + par->AsyncDepth;
-    in->Type = MFX_MEMTYPE_FROM_VPPIN|MFX_MEMTYPE_SYSTEM_MEMORY;
 
     out->Info = par->vpp.Out;
     out->NumFrameMin = 1;
     out->NumFrameSuggested = out->NumFrameMin + par->AsyncDepth;
-    out->Type = MFX_MEMTYPE_FROM_VPPOUT|MFX_MEMTYPE_SYSTEM_MEMORY;
 
-    return MFX_ERR_NONE;
+    return mfxRes;
 }
 
 mfxStatus PeopleDetectionPlugin::VPPFrameSubmit(mfxFrameSurface1 *in, mfxFrameSurface1 *out, mfxExtVppAuxData *aux, mfxThreadTask *task)
 {
-    return Submit((mfxHDL*) in, 1, (mfxHDL*) out, 1, task);
+    MSDK_CHECK_POINTER(in, MFX_ERR_NULL_PTR);
+    MSDK_CHECK_POINTER(out, MFX_ERR_NULL_PTR);
+    MSDK_CHECK_POINTER(task, MFX_ERR_NULL_PTR);
+    MSDK_CHECK_ERROR(m_bInited, false, MFX_ERR_NOT_INITIALIZED);
+
+    mfxFrameSurface1 *surface_in = (mfxFrameSurface1 *)in;
+    mfxFrameSurface1 *surface_out = (mfxFrameSurface1 *)out;
+    mfxFrameSurface1 *real_surface_in = surface_in;
+    mfxFrameSurface1 *real_surface_out = surface_out;
+
+    mfxStatus sts = MFX_ERR_NONE;
+
+    if (m_bIsInOpaque)
+    {
+        sts = m_mfxCore.GetRealSurface(surface_in, &real_surface_in);
+        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, MFX_ERR_MEMORY_ALLOC);
+    }
+
+    if (m_bIsOutOpaque)
+    {
+        sts = m_mfxCore.GetRealSurface(surface_out, &real_surface_out);
+        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, MFX_ERR_MEMORY_ALLOC);
+    }
+
+    sts = CheckInOutFrameInfo(&real_surface_in->Info, &real_surface_out->Info);
+    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+
+    mfxU32 ind = FindFreeTaskIdx();
+
+    if (ind >= m_MaxNumTasks)
+    {
+        return MFX_WRN_DEVICE_BUSY;
+    }
+
+    m_mfxCore.IncreaseReference(&(real_surface_in->Data));
+    m_mfxCore.IncreaseReference(&(real_surface_out->Data));
+
+    m_pTasks[ind].In = real_surface_in;
+    m_pTasks[ind].Out = real_surface_out;
+    m_pTasks[ind].bBusy = true;
+
+    m_pTasks[ind].pProcessor = new PeopleDetectorProcessor(&m_Param);
+    MSDK_CHECK_POINTER(m_pTasks[ind].pProcessor, MFX_ERR_MEMORY_ALLOC);
+
+    m_pTasks[ind].pProcessor->SetAllocator(&m_mfxCore.FrameAllocator());
+    m_pTasks[ind].pProcessor->Init(real_surface_in, real_surface_out);
+
+    *task = (mfxThreadTask)&m_pTasks[ind];
+
+    return MFX_ERR_NONE;
 }
 
 mfxU32 PeopleDetectionPlugin::FindFreeTaskIdx()
@@ -340,10 +349,13 @@ mfxStatus PeopleDetectionPlugin::CheckInOutFrameInfo(mfxFrameInfo *pIn, mfxFrame
     MSDK_CHECK_POINTER(pIn, MFX_ERR_NULL_PTR);
     MSDK_CHECK_POINTER(pOut, MFX_ERR_NULL_PTR);
 
-    if (pIn->CropW != m_VideoParam.vpp.In.CropW || pIn->CropH != m_VideoParam.vpp.In.CropH ||
-        pIn->FourCC != m_VideoParam.vpp.In.FourCC ||
-        pOut->CropW != m_VideoParam.vpp.Out.CropW || pOut->CropH != m_VideoParam.vpp.Out.CropH ||
-        pOut->FourCC != m_VideoParam.vpp.Out.FourCC)
+    if (pIn->FourCC != MFX_FOURCC_NV12 ||
+        pOut->FourCC != MFX_FOURCC_NV12)
+    {
+        return MFX_ERR_INVALID_VIDEO_PARAM;
+    }
+    if( 0 == pIn->Width || 0 == pIn->Height ||
+        0 == pOut->Width || 0 == pOut->Height)
     {
         return MFX_ERR_INVALID_VIDEO_PARAM;
     }
