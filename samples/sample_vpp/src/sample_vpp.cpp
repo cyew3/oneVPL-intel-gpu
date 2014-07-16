@@ -199,8 +199,8 @@ int main(int argc, char *argv[])
             //Composition need the whole frame reading
             inFrameInfo[i].CropX = 0;
             inFrameInfo[i].CropY = 0;
-            inFrameInfo[i].CropW = inFrameInfo[i].Width;
-            inFrameInfo[i].CropH = inFrameInfo[i].Height;
+            //inFrameInfo[i].CropW = inFrameInfo[i].Width;
+            //inFrameInfo[i].CropH = inFrameInfo[i].Height;
 
         }
         else if (inFrameInfo[i].FourCC == MFX_FOURCC_RGB4)

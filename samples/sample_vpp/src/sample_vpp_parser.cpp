@@ -348,8 +348,24 @@ mfxStatus ParseCompositionParfile(const msdk_char* parFileName, sInputParams* pP
             pParams->compositionParam.streamInfo[nStreamInd].streamName[len_size-1]=0;
         }
     }
-    pParams->outFrameInfo.nWidth = pParams->inFrameInfo[0].nWidth;
-    pParams->outFrameInfo.nHeight = pParams->inFrameInfo[0].nHeight;
+    if (pParams->inFrameInfo[0].nWidth > pParams->inFrameInfo[0].CropW)
+    {
+        /* This case means alignment for Width was done */
+        pParams->outFrameInfo.nWidth = pParams->inFrameInfo[0].CropW;
+    }
+    else
+    {
+        pParams->outFrameInfo.nWidth = pParams->inFrameInfo[0].nWidth;
+    }
+    if (pParams->inFrameInfo[0].nHeight > pParams->inFrameInfo[0].CropH)
+    {
+        /* This case means alignment for Height was done */
+        pParams->outFrameInfo.nHeight = pParams->inFrameInfo[0].CropH;
+    }
+    else
+    {
+        pParams->outFrameInfo.nHeight = pParams->inFrameInfo[0].nHeight;
+    }
     pParams->numStreams = nStreamInd + 1;
 
     return sts;
