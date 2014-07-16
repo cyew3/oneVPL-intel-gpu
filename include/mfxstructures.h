@@ -151,8 +151,13 @@ enum {
 
 /* Frame Data Info */
 typedef struct {
-    mfxU32      reserved[7];
-    mfxU16      reserved1;
+    union {
+        mfxExtBuffer **ExtParam;
+        mfxU64       reserved2;
+    };
+    mfxU16  NumExtParam;
+
+    mfxU16      reserved[10];
     mfxU16      PitchHigh;
 
     mfxU64      TimeStamp;
