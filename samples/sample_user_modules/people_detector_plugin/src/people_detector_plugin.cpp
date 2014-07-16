@@ -174,7 +174,7 @@ mfxStatus PeopleDetectionPlugin::Init(mfxVideoParam *mfxParam)
     {
         if (mfxParam->ExtParam[bufferIndex]->BufferId == (mfxU32)MFX_EXTBUFF_VPP_PEOPLE_DETECTOR)
         {
-            msdkExtVPPDetectPeople* tmpPar = (msdkExtVPPDetectPeople*) mfxParam->ExtParam[bufferIndex];
+            vaExtVPPDetectPeople* tmpPar = (vaExtVPPDetectPeople*) mfxParam->ExtParam[bufferIndex];
             m_Param.Treshold = tmpPar->Treshold;
             if (m_Param.Treshold < 0)
             {
@@ -237,7 +237,7 @@ mfxStatus PeopleDetectionPlugin::Close()
     if (!m_bInited)
         return MFX_ERR_NONE;
 
-    memset(&m_Param, 0, sizeof(msdkExtVPPDetectPeople));
+    memset(&m_Param, 0, sizeof(vaExtVPPDetectPeople));
 
     MSDK_SAFE_DELETE_ARRAY(m_pTasks);
 

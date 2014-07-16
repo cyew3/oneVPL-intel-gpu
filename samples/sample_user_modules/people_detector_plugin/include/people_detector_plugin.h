@@ -96,11 +96,11 @@ protected:
 private:
     bool m_bInited;
 
-    MFXCoreInterface       m_mfxCore;
+    MFXCoreInterface     m_mfxCore;
 
-    mfxVideoParam          m_VideoParam;
-    mfxPluginParam         m_PluginParam;
-    msdkExtVPPDetectPeople m_Param;
+    mfxVideoParam        m_VideoParam;
+    mfxPluginParam       m_PluginParam;
+    vaExtVPPDetectPeople m_Param;
 
     PeopleDetectorTask  *m_pTasks;
     mfxU32               m_MaxNumTasks;

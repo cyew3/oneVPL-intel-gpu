@@ -71,9 +71,9 @@ mfxStatus Processor::UnlockFrame(mfxFrameSurface1 *frame)
 //=== PeopleDetectorProcessor class ===//
 //=====================================//
 
-PeopleDetectorProcessor::PeopleDetectorProcessor(msdkExtVPPDetectPeople *pParam) : Processor()
+PeopleDetectorProcessor::PeopleDetectorProcessor(vaExtVPPDetectPeople *pParam) : Processor()
 {
-    memcpy(&m_Param, pParam, sizeof(msdkExtVPPDetectPeople));
+    memcpy(&m_Param, pParam, sizeof(vaExtVPPDetectPeople));
     m_currentTimeStamp = 0;
     m_currentFrameOrder = 0;
 }

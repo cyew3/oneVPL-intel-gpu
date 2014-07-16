@@ -49,7 +49,7 @@ protected:
 class PeopleDetectorProcessor : public Processor
 {
 public:
-    PeopleDetectorProcessor(msdkExtVPPDetectPeople *pParam);
+    PeopleDetectorProcessor(vaExtVPPDetectPeople *pParam);
     virtual ~PeopleDetectorProcessor();
 
     virtual mfxStatus Process();
@@ -64,8 +64,8 @@ private:
     std::vector<int> DoMatch(std::vector<float*> &f, int, float* ref, int, float);
     void filter_rects(const std::vector<cv::Rect>& candidates, std::vector<cv::Rect>& objects);
 
-    msdkExtVPPDetectPeople m_Param;
-    mfxU64                 m_currentTimeStamp;
-    mfxU32                 m_currentFrameOrder;
+    vaExtVPPDetectPeople m_Param;
+    mfxU64               m_currentTimeStamp;
+    mfxU32               m_currentFrameOrder;
 };
 #endif // __FRAME_PROCESSOR_H

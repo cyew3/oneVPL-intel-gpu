@@ -27,6 +27,6 @@ typedef struct {
     mfxExtBuffer Header;
     mfxF32       Treshold;
     mfxU8        RenderFlag;
-} msdkExtVPPDetectPeople;
+} vaExtVPPDetectPeople;
 
 #endif // __MFX_PLUGIN_DETECT_PEOPLE_API_H__
