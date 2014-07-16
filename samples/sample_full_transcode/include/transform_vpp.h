@@ -12,6 +12,7 @@
 #include <queue>
 #include "base_allocator.h"
 #include "plugin_utils.h"
+#include "detect_people_plugin_api.h"
 
 class PipelineFactory;
 
@@ -45,4 +46,5 @@ protected:
     bool   m_bInited;
     mfxU16 m_nFramesForNextTransform;
     mfxPluginUID m_uid;
+    bool   m_bUsePlugin;
 };

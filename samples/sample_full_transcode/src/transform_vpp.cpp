@@ -23,6 +23,7 @@ Transform <MFXVideoVPP>::Transform( PipelineFactory& factory, MFXVideoSessionExt
         ,m_pSamplesSurfPool(factory.CreateSamplePool(TimeToWait))
         ,m_bEOS(false)
         ,m_nTrackId(0)
+        ,m_bUsePlugin(false)
 {
     m_bInited = false;
     m_nFramesForNextTransform = 0;
@@ -34,12 +35,16 @@ Transform <MFXVideoVPP>::Transform( PipelineFactory& factory, MFXVideoSessionExt
         {
             MSDK_TRACE_INFO(MSDK_STRING("MFXVideoUSER_Load(session=0x") << m_session << MSDK_STRING("), sts=") << sts);
         }
+        else
+        {
+            m_bUsePlugin = true;
+        }
     }
 }
 
 Transform <MFXVideoVPP>::~Transform()
 {
-    if (!AreGuidsEqual(m_uid, MSDK_PLUGINGUID_NULL) && m_session)
+    if (m_bUsePlugin && m_session)
     {
         mfxStatus sts = MFXVideoUSER_UnLoad(m_session, &m_uid);
         if (sts != MFX_ERR_NONE)
@@ -150,8 +155,21 @@ void Transform <MFXVideoVPP>::AllocFrames() {
     surf.Info = m_initVideoParam.vpp.Out;
     surf.Info.FourCC = MFX_FOURCC_NV12;
 
-    for (int i = 0; i < allocResp.NumFrameActual; i++) {
+    for (int i = 0; i < allocResp.NumFrameActual; i++)
+    {
         surf.Data.MemId = allocResp.mids[i];
+        surf.Data.ExtParam = NULL;
+        if (m_bUsePlugin && AreGuidsEqual(m_uid, g_PeopleDetection_PluginGuid))
+        {
+            vaROIArray *roiArray = new vaROIArray;
+            roiArray->Header.BufferId = VA_EXTBUFF_VPP_ROI_ARRAY;
+            roiArray->Header.BufferSz = sizeof(vaROIArray);
+            roiArray->NumROI = 0;
+            memset(&roiArray->ROI, 0, sizeof(vaROI)*MAX_ROI_NUM);
+            surf.Data.ExtParam = new (mfxExtBuffer*);
+            surf.Data.ExtParam[0] = (mfxExtBuffer*) roiArray;
+            surf.Data.NumExtParam = 1;
+        }
         SamplePtr sampleToBuf(new SampleSurfaceWithData(surf, m_nTrackId));
         m_pSamplesSurfPool->RegisterSample(sampleToBuf);
     }

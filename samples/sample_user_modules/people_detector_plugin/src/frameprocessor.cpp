@@ -91,6 +91,7 @@ mfxStatus PeopleDetectorProcessor::Process()
         UnlockFrame(m_pIn);
         return sts;
     }
+    memset(&m_ROIArray, 0, sizeof(vaROIArray));
 
     cv::Mat* pFrame = new cv::Mat(m_pIn->Info.Height, m_pIn->Info.Width, CV_8UC3, cv::Scalar(255,255,255));
 
@@ -104,6 +105,21 @@ mfxStatus PeopleDetectorProcessor::Process()
 
     m_pOut->Data.TimeStamp = m_pIn->Data.TimeStamp;
     m_pOut->Data.FrameOrder = m_pIn->Data.FrameOrder;
+    if (m_ROIArray.NumROI > 0 && m_pOut->Data.ExtParam != NULL)
+    {
+        for (int i = 0; i < m_pOut->Data.NumExtParam; i++)
+        {
+            if (m_pOut->Data.ExtParam[i] != NULL)
+            {
+                if (m_pOut->Data.ExtParam[i]->BufferId == VA_EXTBUFF_VPP_ROI_ARRAY && m_pOut->Data.ExtParam[i]->BufferSz == sizeof(vaROIArray))
+                {
+                    vaROIArray *roiArray = (vaROIArray*) m_pOut->Data.ExtParam[i];
+                    roiArray->NumROI = m_ROIArray.NumROI;
+                    memcpy(roiArray->ROI, m_ROIArray.ROI, sizeof(vaROI)*MAX_ROI_NUM);
+                }
+            }
+        }
+    }
 
     sts = UnlockFrame(m_pIn);
     MSDK_CHECK_RESULT(MFX_ERR_NONE, sts, MFX_ERR_NONE);
@@ -237,6 +253,14 @@ void PeopleDetectorProcessor::AnalyzeFrame(cv::Mat &frame)
         for(int kk=0; (kk < obj_matched.size()); kk++)
         {
             cv::Rect r_out = rect_out[obj_matched[kk]];
+            if (m_ROIArray.NumROI < MAX_ROI_NUM)
+            {
+                m_ROIArray.ROI[m_ROIArray.NumROI].Top = r_out.y;
+                m_ROIArray.ROI[m_ROIArray.NumROI].Left = r_out.x;
+                m_ROIArray.ROI[m_ROIArray.NumROI].Right = r_out.x + r_out.width;
+                m_ROIArray.ROI[m_ROIArray.NumROI].Bottom = r_out.y + r_out.height;
+                m_ROIArray.NumROI++;
+            }
             cv::rectangle( frame, r_out.tl(), r_out.br(), cv::Scalar(0,255,0), 1 );
         }
     }

@@ -13,9 +13,30 @@ Copyright(c) 2014 Intel Corporation. All Rights Reserved.
 
 #include "mfxdefs.h"
 
+static const mfxPluginUID g_PeopleDetection_PluginGuid = {0x19,0x40,0xbc,0xe0,0xee,0x64,0x4d,0x09,0x8e,0xd6,0x2f,0x91,0xae,0x4b,0x6b,0x61};
+
 enum {
-    MFX_EXTBUFF_VPP_PEOPLE_DETECTOR = MFX_MAKEFOURCC('P','P','L','D')
+    VA_EXTBUFF_VPP_PEOPLE_DETECTOR = MFX_MAKEFOURCC('P','P','L','D')
 };
+
+enum {
+    VA_EXTBUFF_VPP_ROI_ARRAY = MFX_MAKEFOURCC('R','O','I','A')
+};
+
+#define MAX_ROI_NUM 256
+
+typedef struct {
+    mfxU32  Left;
+    mfxU32  Top;
+    mfxU32  Right;
+    mfxU32  Bottom;
+} vaROI;
+
+typedef struct {
+    mfxExtBuffer Header;
+    mfxU16       NumROI;
+    vaROI        ROI[MAX_ROI_NUM];
+} vaROIArray;
 
 enum {
     MFX_RENDER_ALWAYS     = 0,

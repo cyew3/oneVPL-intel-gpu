@@ -172,7 +172,7 @@ mfxStatus PeopleDetectionPlugin::Init(mfxVideoParam *mfxParam)
 
     for(int bufferIndex = 0; bufferIndex < mfxParam->NumExtParam; bufferIndex++ )
     {
-        if (mfxParam->ExtParam[bufferIndex]->BufferId == (mfxU32)MFX_EXTBUFF_VPP_PEOPLE_DETECTOR)
+        if (mfxParam->ExtParam[bufferIndex]->BufferId == (mfxU32)VA_EXTBUFF_VPP_PEOPLE_DETECTOR)
         {
             vaExtVPPDetectPeople* tmpPar = (vaExtVPPDetectPeople*) mfxParam->ExtParam[bufferIndex];
             m_Param.Treshold = tmpPar->Treshold;

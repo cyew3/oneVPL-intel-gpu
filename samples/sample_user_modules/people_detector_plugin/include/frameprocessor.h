@@ -16,6 +16,7 @@ Copyright(c) 2014 Intel Corporation. All Rights Reserved.
 #include <stdio.h>
 
 #include "sample_defs.h"
+#include "plugin_utils.h"
 #include "mfxstructures.h"
 #include "detect_people_plugin_api.h"
 
@@ -38,9 +39,10 @@ protected:
     mfxStatus LockFrame(mfxFrameSurface1 *frame);
     mfxStatus UnlockFrame(mfxFrameSurface1 *frame);
 
-    mfxFrameSurface1  *m_pIn;
-    mfxFrameSurface1  *m_pOut;
-    mfxFrameAllocator *m_pAlloc;
+    mfxFrameSurface1       *m_pIn;
+    mfxFrameSurface1       *m_pOut;
+    vaROIArray              m_ROIArray;
+    mfxFrameAllocator      *m_pAlloc;
 
     std::vector<mfxU8> m_YIn, m_UVIn;
     std::vector<mfxU8> m_YOut, m_UVOut;
