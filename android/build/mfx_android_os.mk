@@ -28,14 +28,10 @@ ifeq ($(MFX_ANDROID_VERSION), MFX_MCG_KK)
 endif
 
 ifeq ($(MFX_OMX_PAVP),true)
-  ifeq ($(MFX_ANDROID_VERSION), MFX_MCG_JB)
+  ifneq ($(filter $(MFX_ANDROID_VERSION), MFX_MCG_JB MFX_MCG_KK),)
     # libpavp.h
     MFX_C_INCLUDES_OMX += \
-      $(TOP)/vendor/intel/hardware/PRIVATE/ufo/inc/libpavp
-  endif
-  ifeq ($(MFX_ANDROID_VERSION), MFX_MCG_KK)
-    # libpavp.h
-    MFX_C_INCLUDES_OMX += \
-      $(TOP)/vendor/intel/hardware/PRIVATE/ufo/inc/libpavp
+      $(TOP)/vendor/intel/hardware/PRIVATE/ufo/inc/libpavp \
+      $(TOP)/vendor/intel/ufo/gen7/$(TARGET_ARCH)
   endif
 endif

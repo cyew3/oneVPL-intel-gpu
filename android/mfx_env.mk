@@ -24,5 +24,5 @@ endif
 
 # Build OMX plugins with PAVP support
 ifeq ($(MFX_OMX_PAVP),)
-    MFX_OMX_PAVP:=false
+  MFX_OMX_PAVP:=true
 endif
