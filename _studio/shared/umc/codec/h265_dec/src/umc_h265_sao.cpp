@@ -55,6 +55,8 @@ H265SampleAdaptiveOffsetTemplate<PlaneType>::H265SampleAdaptiveOffsetTemplate()
     m_OffsetBo2Chroma = 0;
     m_lumaTableBo = 0;
     m_chromaTableBo = 0;
+    m_bitdepth_luma = 0;
+    m_bitdepth_chroma = 0;
 
     m_TmpU[0] = 0;
     m_TmpU[1] = 0;
@@ -93,7 +95,8 @@ void H265SampleAdaptiveOffsetTemplate<PlaneType>::destroy()
 template<typename PlaneType>
 bool H265SampleAdaptiveOffsetTemplate<PlaneType>::isNeedReInit(const H265SeqParamSet* sps)
 {
-    if (m_isInitialized && m_PicWidth  == sps->pic_width_in_luma_samples && m_PicHeight == sps->pic_height_in_luma_samples)
+    if (m_isInitialized && m_PicWidth  == sps->pic_width_in_luma_samples && m_PicHeight == sps->pic_height_in_luma_samples &&
+        m_bitdepth_luma == sps->bit_depth_luma && m_bitdepth_chroma == sps->bit_depth_chroma)
         return false;
 
     return true;
@@ -113,6 +116,9 @@ void H265SampleAdaptiveOffsetTemplate<PlaneType>::init(const H265SeqParamSet* sp
     m_PicHeight = sps->pic_height_in_luma_samples;
 
     m_MaxCUSize  = sps->MaxCUSize;
+
+    m_bitdepth_luma = sps->bit_depth_luma;
+    m_bitdepth_chroma = sps->bit_depth_chroma;
 
     Ipp32u uiPixelRangeY = 1 << sps->bit_depth_luma;
     Ipp32u uiBoRangeShiftY = sps->bit_depth_luma - SAO_BO_BITS;

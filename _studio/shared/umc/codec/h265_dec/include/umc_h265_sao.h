@@ -118,6 +118,8 @@ protected:
 
     Ipp32u              m_PicWidth;
     Ipp32u              m_PicHeight;
+    Ipp32u              m_bitdepth_luma;
+    Ipp32u              m_bitdepth_chroma;
     Ipp32u              m_MaxCUSize;
     Ipp32u              m_SaoBitIncreaseY, m_SaoBitIncreaseC;
     bool                m_UseNIF;
