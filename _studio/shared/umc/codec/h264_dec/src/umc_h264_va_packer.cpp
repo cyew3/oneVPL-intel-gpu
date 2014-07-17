@@ -2665,9 +2665,11 @@ void PackerVA_PAVP::PackPavpParams(void)
     pEncryptParam->pavpHasBeenEnabled = 1;
 
     mfxBitstream *bs = m_va->GetProtectedVA()->GetBitstream();
-    mfxEncryptedData *encryptedData = bs->EncryptedData;
-
-    memcpy(pEncryptParam->pavpAesCounter, &(encryptedData->CipherCounter), 16);
+    if (bs->EncryptedData)
+    {
+        mfxEncryptedData *encryptedData = bs->EncryptedData;
+        memcpy(pEncryptParam->pavpAesCounter, &(encryptedData->CipherCounter), 16);
+    }
 }
 
 #endif // UMC_VA_LINUX

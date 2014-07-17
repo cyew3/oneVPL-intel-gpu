@@ -509,8 +509,8 @@ Status MFXTaskSupplier::DecodeHeaders(MediaDataEx *nalUnit)
 
         if (currSPS)
         {
-            if (m_firstVideoParams.mfx.FrameInfo.Width < (currSPS->frame_width_in_mbs * 16) ||
-                m_firstVideoParams.mfx.FrameInfo.Height < (currSPS->frame_height_in_mbs * 16) ||
+            if (m_firstVideoParams.mfx.FrameInfo.Width != (currSPS->frame_width_in_mbs * 16) ||
+                m_firstVideoParams.mfx.FrameInfo.Height != (currSPS->frame_height_in_mbs * 16) ||
                 (currSPS->level_idc && m_firstVideoParams.mfx.CodecLevel && m_firstVideoParams.mfx.CodecLevel < currSPS->level_idc))
             {
                 return UMC_NTF_NEW_RESOLUTION;

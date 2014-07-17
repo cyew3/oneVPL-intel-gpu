@@ -52,7 +52,7 @@ public:
 
 protected:
     mfxU16 m_protected;
-    mfxBitstream *m_bs;
+    mfxBitstream m_bs;
 
     Ipp32s m_counterMode;
     Ipp32s m_encryptionType;

@@ -34,12 +34,12 @@ static mfxExtBuffer* GetExtBuffer(mfxExtBuffer** extBuf, mfxU32 numExtBuf, mfxU3
 /////////////////////////////////////////////////
 ProtectedVA::ProtectedVA(mfxU16 p)
     : m_protected(p)
-    , m_bs(0)
     , m_counterMode(0)
     , m_encryptionType(0)
     , m_encryptBegin(0)
     , m_encryptCount(0)
 {
+    memset(&m_bs, 0, sizeof(mfxBitstream));
 }
 
 mfxU16 ProtectedVA::GetProtected() const
@@ -86,15 +86,15 @@ Ipp32s ProtectedVA::GetCounterMode() const
 
 void ProtectedVA::SetBitstream(mfxBitstream *bs)
 {
-    if (m_encryptBegin && m_bs == bs)
+    if (!bs || !bs->EncryptedData)
         return;
 
-    m_bs = bs;
+    if (m_encryptBegin && !memcmp(&m_bs, bs, sizeof(mfxBitstream)))
+        return;
+
+    memcpy(&m_bs, bs, sizeof(mfxBitstream));
     m_encryptCount = 0;
     m_encryptBegin = 0;
-
-    if (!m_bs || !m_bs->EncryptedData)
-        return;
 
     mfxEncryptedData * temp = bs->EncryptedData;
     while (temp)
@@ -106,7 +106,7 @@ void ProtectedVA::SetBitstream(mfxBitstream *bs)
 
 mfxBitstream * ProtectedVA::GetBitstream()
 {
-    return m_bs;
+    return &m_bs;
 }
 
 mfxU32 ProtectedVA::GetBSCurrentEncrypt() const
