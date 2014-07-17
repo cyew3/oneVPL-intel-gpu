@@ -65,6 +65,8 @@ STRUCT(mfxFrameInfo,
 )
 
 STRUCT(mfxFrameData,
+    FIELD_T(mfxExtBuffer**, ExtParam    )
+    FIELD_T(mfxU16        , NumExtParam )
     FIELD_T(mfxU16  , PitchHigh  )
     FIELD_T(mfxU64  , TimeStamp  )
     FIELD_T(mfxU32  , FrameOrder )

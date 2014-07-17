@@ -290,6 +290,22 @@ tsTrace& tsTrace::operator<<(const mfxPluginUID& p)
 tsTrace& tsTrace::operator<<(const mfxFrameData& p)
 {
     STRUCT_BODY(mfxFrameData,
+        FIELD_T(mfxU16        , NumExtParam )
+        if(p.NumExtParam && p.ExtParam)
+        {
+            *this << m_off << "ExtParam = " << p.ExtParam << "&(\n";
+            inc_offset();
+            for(mfxU32 i = 0; i < p.NumExtParam; i ++) 
+            {
+                *this << m_off << p.ExtParam[i] << ", ";
+            }
+            dec_offset();
+            *this << "\n" << m_off << ")\n";
+        }
+        else 
+        {
+            FIELD_T(mfxExtBuffer**, ExtParam)
+        }
         FIELD_T(mfxU16  , PitchHigh  )
         FIELD_T(mfxU64  , TimeStamp  )
         FIELD_T(mfxU32  , FrameOrder )

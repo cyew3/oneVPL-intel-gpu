@@ -275,8 +275,25 @@ DEF_STRUCT_TRACE(mfxFrameSurface1){
 };
 std::ostream &operator << (std::ostream &os, mfxFrameData &p){
     os  << "{\n"
+#if ( (MFX_VERSION_MAJOR >= 1) && (MFX_VERSION_MINOR > 9))
+        << PUT_PAR(ExtParam)
+        << PUT_PAR(NumExtParam);
+        if(p.NumExtParam && p.ExtParam){
+            INC_PADDING();
+            os << print_param.padding << "{\n";
+            INC_PADDING();
+            for(mfxU32 i = 0; i < p.NumExtParam; i++)
+                os << print_param.padding << p.ExtParam[i] << '\n';
+            DEC_PADDING();
+            os << print_param.padding << "}\n";
+            DEC_PADDING();
+        }
+    os  << print_param.padding << "}"
+        << PUT_ARR(reserved, 10)
+#else
         << PUT_ARR(reserved, 7)
         << PUT_PAR(reserved1)
+#endif
         << PUT_PAR(PitchHigh)
         << PUT_PAR(TimeStamp)
         << PUT_PAR(FrameOrder)
