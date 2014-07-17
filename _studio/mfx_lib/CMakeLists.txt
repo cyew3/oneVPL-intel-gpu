@@ -84,6 +84,7 @@ endforeach( )
 
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/decode/h265/include )
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/encode/h265/include )
+include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/fei/h264_preenc )
 include_directories( ${CMAKE_HOME_DIRECTORY}/mdp_msdk-contrib/vp8_libvpx )
 
 # =============================================================================
@@ -97,6 +98,19 @@ endforeach()
 
 set( defs "-DMFX_VA -DAS_H264LA_PLUGIN" )
 make_library( h264_la none static )
+
+set( defs "" )
+
+# =============================================================================
+set( sources "" )
+set( sources.plus "" )
+foreach( dir ${CMAKE_CURRENT_SOURCE_DIR}/fei/h264_preenc )
+  file( GLOB_RECURSE srcs "${dir}/*.c" "${dir}/*.cpp" )
+  list( APPEND sources ${srcs})
+endforeach()
+
+set( defs "-DMFX_VA" )
+make_library( h264_preenc none static )
 
 set( defs "" )
 
@@ -245,6 +259,7 @@ foreach( variant sw hw )
     umc_csc_sw
     umc_h264_enc_sw
     h264_la
+    h264_preenc
     vpx
     ${ITT_LIBS}
     ippmsdk_l ippj_l ippvc_l ippcc_l ippcv_l ippi_l ipps_l ippcore_l

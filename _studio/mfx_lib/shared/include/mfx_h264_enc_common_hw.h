@@ -24,6 +24,7 @@
 #include "vm_file.h"
 #include "mfx_ext_buffers.h"
 #include "mfxwidi.h"
+#include "mfxfei.h"
 
 #if defined(MFX_VA_WIN)
 #include "encoding_ddi.h"
@@ -191,6 +192,7 @@ namespace MfxHwH264Encode
     BIND_EXTBUF_TYPE_TO_ID (mfxExtAVCEncoderWiDiUsage,  MFX_EXTBUFF_ENCODER_WIDI_USAGE       );
     BIND_EXTBUF_TYPE_TO_ID (mfxExtEncoderROI,           MFX_EXTBUFF_ENCODER_ROI              );
     BIND_EXTBUF_TYPE_TO_ID (mfxExtLAFrameStatistics,    MFX_EXTBUFF_LOOKAHEAD_STAT           );
+    BIND_EXTBUF_TYPE_TO_ID (mfxExtFeiParam,           MFX_EXTBUFF_FEI_PARAM              );
 #if defined (ADVANCED_REF)
     BIND_EXTBUF_TYPE_TO_ID (mfxExtAVCRefLists,          MFX_EXTBUFF_AVC_REFLISTS             );
 #endif
@@ -528,6 +530,7 @@ namespace MfxHwH264Encode
         mfxExtSVCRateControl        m_extSvcRateCtrl;
         mfxExtEncoderResetOption    m_extEncResetOpt;
         mfxExtEncoderROI            m_extEncRoi;
+        mfxExtFeiParam              m_extFeiParam;
 
         // internal, not documented
         mfxExtCodingOptionDDI       m_extOptDdi;
@@ -1312,6 +1315,7 @@ namespace MfxHwH264Encode
 
         bool isMVC() const { return m_isMVC; };
 
+        void ResizeSlices(mfxU32 num);
 
     private:
 

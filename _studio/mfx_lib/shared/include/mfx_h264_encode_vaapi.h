@@ -21,6 +21,11 @@
 #include <va/va_enc.h>
 #include <va/va_enc_h264.h>
 
+#if defined(MFX_ENABLE_H264_VIDEO_FEI_PREENC)
+//#include <va/vendor/va_intel_fei.h>
+//#include <va/vendor/va_intel_statistics.h>
+#endif
+
 #include "mfx_h264_encode_interface.h"
 #include "mfx_h264_encode_hw_utils.h"
 
@@ -43,7 +48,9 @@ namespace MfxHwH264Encode
         mfxU32 number;
         mfxU32 idxBs;
         mfxU32 size; // valid only if Surface ID == VA_INVALID_SURFACE (skipped frames)
-
+        VASurfaceID mv;
+        VASurfaceID mbstat;
+        VASurfaceID mbcode;
     } ExtVASurface;
 
     typedef VAEncMiscParameterBufferROI::VAEncROI VAEncROI;
@@ -126,7 +133,7 @@ namespace MfxHwH264Encode
             GUID        guid,
             bool        isTemporal);
 
-    private:
+    protected:
         VAAPIEncoder(const VAAPIEncoder&); // no implementation
         VAAPIEncoder& operator=(const VAAPIEncoder&); // no implementation
 
@@ -192,7 +199,7 @@ namespace MfxHwH264Encode
 
         std::vector<VAEncROI> m_arrayVAEncROI;
 
-        static const mfxU32 MAX_CONFIG_BUFFERS_COUNT = 25;
+        static const mfxU32 MAX_CONFIG_BUFFERS_COUNT = 25 + 5; //added FEI buffers
 
         UMC::Mutex m_guard;
         HeaderPacker m_headerPacker;
@@ -203,11 +210,43 @@ namespace MfxHwH264Encode
         mfxU8  m_numSkipFrames;
         mfxU32 m_sizeSkipFrames;
         mfxU32 m_skipMode;
+        bool m_isENCPAK;
 
         VAEncMiscParameterRateControl m_vaBrcPar;
         VAEncMiscParameterFrameRate   m_vaFrameRate;
-
     };
+
+    //extend encoder to FEI interface
+#if defined(MFX_ENABLE_H264_VIDEO_FEI_PREENC)    
+    class VAAPIFEIPREENCEncoder : public VAAPIEncoder
+    {
+    public:
+        VAAPIFEIPREENCEncoder();
+
+        virtual
+        ~VAAPIFEIPREENCEncoder();
+
+        virtual mfxStatus CreateAccelerationService(MfxVideoParam const & par);
+        virtual mfxStatus Register(mfxFrameAllocResponse& response, D3DDDIFORMAT type);
+        virtual mfxStatus Execute(mfxHDL surface, DdiTask const & task,
+                mfxU32 fieldId, PreAllocatedVector const & sei);
+        virtual mfxStatus QueryStatus(DdiTask & task, mfxU32 fieldId);
+
+    protected:
+        //helper functions
+        mfxStatus CreatePREENCAccelerationService(MfxVideoParam const & par);
+        mfxStatus CreateENCPAKAccelerationService(MfxVideoParam const & par);
+
+        mfxI32 m_codingFunction;
+
+        VABufferID m_statParamsId;
+        VABufferID m_statMVId;
+        VABufferID m_statOutId;
+
+        std::vector<ExtVASurface> m_statFeedbackCache;
+        std::vector<ExtVASurface> m_inputQueue;
+    };
+#endif
 
 }; // namespace
 

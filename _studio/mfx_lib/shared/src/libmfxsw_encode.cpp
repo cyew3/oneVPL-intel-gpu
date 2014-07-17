@@ -30,6 +30,9 @@ File Name: libmfxsw_encode.cpp
 #if defined (MFX_ENABLE_MVC_VIDEO_ENCODE)
 #include "mfx_mvc_encode.h"
 #endif
+#if defined(MFX_ENABLE_H264_FEI_ENCPAK)
+#include "mfxfei.h"
+#endif
 #endif
 
 #if defined (MFX_ENABLE_VC1_VIDEO_ENCODE)

@@ -4343,7 +4343,9 @@ mfxStatus MfxHwH264Encode::CheckEncodeFrameParam(
         MFX_CHECK_STS(sts);
     }
 
-    if (video.mfx.EncodedOrder == 1 && video.mfx.RateControlMethod != MFX_RATECONTROL_LA_EXT)
+    if (video.mfx.EncodedOrder == 1 && 
+        video.mfx.RateControlMethod != MFX_RATECONTROL_LA_EXT ||
+        video.mfx.RateControlMethod != MFX_RATECONTROL_VME)
     {
         MFX_CHECK(surface != 0, MFX_ERR_MORE_DATA);
         MFX_CHECK_NULL_PTR1(ctrl);
@@ -5700,6 +5702,7 @@ BrcIface * MfxHwH264Encode::CreateBrc(MfxVideoParam const & video)
     case MFX_RATECONTROL_LA: return new LookAheadBrc2;
     case MFX_RATECONTROL_LA_ICQ: return new LookAheadCrfBrc;
     case MFX_RATECONTROL_LA_EXT: return new VMEBrc;
+    case MFX_RATECONTROL_VME: return new VMEBrc;
     default: return new UmcBrc;
     }
 }

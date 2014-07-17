@@ -32,6 +32,9 @@
 #include "mfx_h264_enc_common.h"
 #include "umc_h264_brc.h"
 #include "umc_h264_core_enc.h"
+#ifdef MFX_ENABLE_H264_VIDEO_FEI_ENCPAK
+#include "mfxfei.h"
+#endif
 
 
 using namespace MfxHwH264Encode;
@@ -1200,7 +1203,10 @@ bool MfxHwH264Encode::IsRunTimeExtBufferIdSupported(mfxU32 id)
         id == MFX_EXTBUFF_ENCODED_FRAME_INFO ||
         id == MFX_EXTBUFF_PICTURE_TIMING_SEI ||
         id == MFX_EXTBUFF_CODING_OPTION2     ||
-        id == MFX_EXTBUFF_ENCODER_ROI;
+        id == MFX_EXTBUFF_ENCODER_ROI ||
+        id == MFX_EXTBUFF_FEI_ENC_CTRL ||
+        id == MFX_EXTBUFF_FEI_ENC_MB ||
+        id == MFX_EXTBUFF_FEI_ENC_MV_PRED;
 }
 
 bool MfxHwH264Encode::IsVideoParamExtBufferIdSupported(mfxU32 id)
@@ -1224,6 +1230,7 @@ bool MfxHwH264Encode::IsVideoParamExtBufferIdSupported(mfxU32 id)
         id == MFX_EXTBUFF_ENCODER_WIDI_USAGE        ||
         id == MFX_EXTBUFF_ENCODER_ROI               ||
         id == MFX_EXTBUFF_CODING_OPTION3;
+        id == MFX_EXTBUFF_FEI_PARAM;
 }
 
 mfxStatus MfxHwH264Encode::CheckExtBufferId(mfxVideoParam const & par)
@@ -1708,7 +1715,8 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
         par.mfx.RateControlMethod != MFX_RATECONTROL_ICQ &&
         par.mfx.RateControlMethod != MFX_RATECONTROL_LA &&
         par.mfx.RateControlMethod != MFX_RATECONTROL_LA_ICQ &&
-        par.mfx.RateControlMethod != MFX_RATECONTROL_LA_EXT)
+        par.mfx.RateControlMethod != MFX_RATECONTROL_LA_EXT &&
+        par.mfx.RateControlMethod != MFX_RATECONTROL_VME )
     {
         changed = true;
         par.mfx.RateControlMethod = MFX_RATECONTROL_CBR;
@@ -3035,12 +3043,15 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
             changed = true;
     }
 
-    if (!CheckRangeDflt(extOpt2->SkipFrame, 0, 2, 0)) changed = true;
-
-    if (extOpt2->SkipFrame && par.mfx.GopRefDist > 1)
+    if (extOpt2->SkipFrame)
     {
-        extOpt2->SkipFrame = 0;
-        changed = true;
+        if (   extOpt2->SkipFrame > 1
+            || hwCaps.SkipFrame == 0
+            || par.mfx.GopRefDist > 1)
+        {
+            extOpt2->SkipFrame = 0;
+            changed = true;
+        }
     }
 
     if (   extOpt2->MinQPI || extOpt2->MaxQPI
@@ -3865,7 +3876,9 @@ void MfxHwH264Encode::SetDefaults(
 
     if (extOpt2->LookAheadDepth == 0)
     {
-        if (par.mfx.RateControlMethod == MFX_RATECONTROL_LA || par.mfx.RateControlMethod == MFX_RATECONTROL_LA_EXT)
+        if (par.mfx.RateControlMethod == MFX_RATECONTROL_LA ||
+            par.mfx.RateControlMethod == MFX_RATECONTROL_LA_EXT || 
+            par.mfx.RateControlMethod == MFX_RATECONTROL_VME)
             extOpt2->LookAheadDepth = IPP_MAX(40, 2 * par.mfx.GopRefDist);
         else if (par.mfx.RateControlMethod == MFX_RATECONTROL_LA_ICQ)
             extOpt2->LookAheadDepth = IPP_MAX(10, 2 * par.mfx.GopRefDist);
@@ -4029,7 +4042,8 @@ void MfxHwH264Encode::SetDefaults(
     {
         if (par.mfx.RateControlMethod == MFX_RATECONTROL_LA || 
             par.mfx.RateControlMethod == MFX_RATECONTROL_LA_EXT || 
-            par.mfx.RateControlMethod == MFX_RATECONTROL_LA_ICQ)
+            par.mfx.RateControlMethod == MFX_RATECONTROL_LA_ICQ ||
+            par.mfx.RateControlMethod == MFX_RATECONTROL_VME)
         {
             par.calcParam.bufferSizeInKB = (par.mfx.FrameInfo.Width * par.mfx.FrameInfo.Height * 3 / 2 / 1000);
         }
@@ -4187,6 +4201,8 @@ void MfxHwH264Encode::SetDefaults(
         case MFX_RATECONTROL_LA_ICQ:
             break;
         case MFX_RATECONTROL_LA_EXT:
+            break;
+        case MFX_RATECONTROL_VME:
             break;
         default:
             assert(0);
@@ -5287,6 +5303,7 @@ void MfxVideoParam::Construct(mfxVideoParam const & par)
     InitExtBufHeader(m_extEncResetOpt);
     InitExtBufHeader(m_extEncRoi);
     InitExtBufHeader(m_extOpt3);
+    InitExtBufHeader(m_extFeiParam);
 
     if (mfxExtCodingOption * opts = GetExtBuffer(par))
         m_extOpt = *opts;
@@ -5360,10 +5377,13 @@ void MfxVideoParam::Construct(mfxVideoParam const & par)
     m_extParam[15] = &m_extEncResetOpt.Header;
     m_extParam[16] = &m_extEncRoi.Header;
     m_extParam[17] = &m_extOpt3.Header;
+    m_extParam[18] = &m_extFeiParam.Header;
+    //add additional params if any
+    //NumExtParam = 19;
 
     ExtParam = m_extParam;
     NumExtParam = mfxU16(sizeof m_extParam / sizeof m_extParam[0]);
-    assert(NumExtParam == 18);
+    assert(NumExtParam == 19);
 }
 
 void MfxVideoParam::ConstructMvcSeqDesc(
@@ -6725,7 +6745,11 @@ void HeaderPacker::Init(
     m_hwCaps = hwCaps;
 }
 
-
+void HeaderPacker::ResizeSlices(mfxU32 num)
+{
+    m_packedSlices.resize(num);
+    Zero(m_packedSlices);
+}
 
 ENCODE_PACKEDHEADER_DATA const & HeaderPacker::PackAud(
     DdiTask const & task,

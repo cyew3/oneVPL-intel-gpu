@@ -31,6 +31,10 @@ File Name: libmfxsw_enc.cpp
 #include "mfx_h264_la.h"
 #endif
 
+#if defined(MFX_ENABLE_H264_VIDEO_ENCODE_HW) && defined(MFX_ENABLE_H264_VIDEO_FEI_PREENC)
+#include "mfx_h264_preenc.h"
+#endif
+
 #else //MFX_VA
 
 #ifdef MFX_ENABLE_VC1_VIDEO_ENC
@@ -57,7 +61,7 @@ VideoENC *CreateENCSpecificClass(mfxVideoParam *par, VideoCORE *pCore)
 
     switch (codecId)
     {
-#if defined (MFX_ENABLE_H264_VIDEO_ENC) && !defined (MFX_VA) || (defined (MFX_ENABLE_H264_VIDEO_ENC_HW) || defined(MFX_ENABLE_LA_H264_VIDEO_HW))&& defined (MFX_VA)
+#if defined (MFX_ENABLE_H264_VIDEO_ENC) && !defined (MFX_VA) || (defined (MFX_ENABLE_H264_VIDEO_ENC_HW) || defined(MFX_ENABLE_LA_H264_VIDEO_HW) || defined(MFX_ENABLE_H264_VIDEO_FEI_PREENC))&& defined (MFX_VA)
     case MFX_CODEC_AVC:
 #ifdef MFX_VA
 #if defined (MFX_ENABLE_H264_VIDEO_ENC_HW)
@@ -66,6 +70,10 @@ VideoENC *CreateENCSpecificClass(mfxVideoParam *par, VideoCORE *pCore)
 #if defined(MFX_ENABLE_LA_H264_VIDEO_HW)
         if (bEnc_LA(par))
             pENC = (VideoENC*) new VideoENC_LA(pCore, &mfxRes);
+#endif
+#if defined(MFX_ENABLE_H264_VIDEO_FEI_PREENC)
+        if (bEnc_PREENC(par))
+            pENC = (VideoENC*) new VideoENC_PREENC(pCore, &mfxRes);
 #endif
 #else //MFX_VA
         pENC = new MFXVideoEncH264(pCore, &mfxRes);
