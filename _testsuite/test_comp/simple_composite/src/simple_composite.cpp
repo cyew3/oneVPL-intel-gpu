@@ -462,7 +462,8 @@ int main(int argc, char *argv[])
     // height must be a multiple of 16 in case of frame picture and a multiple of 32 in case of field picture
     if (pa.dW != 0)
     {
-        VPPParams.vpp.Out.Width = pa.dW;
+        VPPParams.vpp.Out.CropW = pa.dW;
+        VPPParams.vpp.Out.Width = MSDK_ALIGN16(pa.dW);
     }
     else
     {
@@ -472,7 +473,8 @@ int main(int argc, char *argv[])
     }
     if (pa.dH != 0)
     {
-        VPPParams.vpp.Out.Height = pa.dH;
+        VPPParams.vpp.Out.CropH = pa.dH;
+        VPPParams.vpp.Out.Height = MSDK_ALIGN16(pa.dH);
     }
     else
     {
