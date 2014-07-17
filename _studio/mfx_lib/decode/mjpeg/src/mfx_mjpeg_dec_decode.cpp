@@ -221,7 +221,7 @@ mfxStatus VideoDECODEMJPEG::Init(mfxVideoParam *par)
     if (mfxSts < MFX_ERR_NONE)
         return mfxSts;
 
-#if defined (MFX_VA_WIN)
+#if defined (MFX_VA)
     if (m_platform != MFX_PLATFORM_SOFTWARE)
     {
         MFX_JPEG_Utility::AdjustFrameAllocRequest(&request_internal, 
@@ -260,7 +260,7 @@ mfxStatus VideoDECODEMJPEG::Init(mfxVideoParam *par)
             m_FrameAllocator.reset(new mfx_UMC_FrameAllocator_D3D);
         }
 #else
-        m_FrameAllocator.reset(new mfx_UMC_FrameAllocator);
+        m_FrameAllocator.reset(new mfx_UMC_FrameAllocator_D3D);
 #endif
 
 #else // Not VA
@@ -2571,6 +2571,11 @@ bool MFX_JPEG_Utility::CheckVideoParam(mfxVideoParam *in, eMFXHWType )
         (fourCC != DXGI_FORMAT_AYUV || chromaFormat != MFX_CHROMAFORMAT_YUV444) &&
         (fourCC != MFX_FOURCC_YUY2 || chromaFormat != MFX_CHROMAFORMAT_YUV422H))
         return false;
+#elif defined (MFX_VA_LINUX)
+    // NV12 is supported only for Linux MJPEG HW decode
+    if ((fourCC != MFX_FOURCC_NV12 || chromaFormat != MFX_CHROMAFORMAT_MONOCHROME) &&
+        (fourCC != MFX_FOURCC_NV12 || chromaFormat != MFX_CHROMAFORMAT_YUV420))
+       return false;
 #else
     if ((fourCC != MFX_FOURCC_NV12 || chromaFormat != MFX_CHROMAFORMAT_MONOCHROME) &&
         (fourCC != MFX_FOURCC_NV12 || chromaFormat != MFX_CHROMAFORMAT_YUV420) &&
