@@ -13,7 +13,7 @@
 #include "cmdline_options.h"
 
 #include "fileio.h"
-
+#include "stdio.h"
 struct PipelineFactoryTest  : public ::testing::Test {
     PipelineFactory factory;
 
@@ -67,7 +67,7 @@ TEST_F(PipelineFactoryTest, muxer_create) {
 
 TEST_F(PipelineFactoryTest, fileio_create) {
     VerifyCreation(factory.CreateFileIO(MSDK_STRING("FileIO.tmp"),  MSDK_STRING("wb")));
-    _tremove(MSDK_STRING("FileIO.tmp"));
+    remove(MSDK_STRING("FileIO.tmp"));
 }
 
 TEST_F(PipelineFactoryTest, session_storage) {
@@ -89,6 +89,6 @@ TEST_F(PipelineFactoryTest, cmdlineparser_create) {
     EXPECT_STREQ("mp3", utest_cvt_msdk2string(parser->at(OPTION_ACODEC).as<msdk_string>()).c_str());
     EXPECT_EQ(true, parser->at(OPTION_SW).Exist());
 
-    //EXPECT_EQ(true, (*parser)[OPTION_D3D11].Exist());
+    EXPECT_EQ(true, (*parser)[OPTION_D3D11].Exist());
 }
 #endif

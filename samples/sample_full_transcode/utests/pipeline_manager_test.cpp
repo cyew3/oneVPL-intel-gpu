@@ -137,7 +137,7 @@ public:
         TransformConfigDesc desc;
     public:
         RegisterTransformCallback ()
-            : desc(0, MFXAVParams(mfxAudioParam()) ) {
+            : desc(0, MFXAVParams(*new mfxAudioParam()) ) {
         }
         ITransform * GetTransform() {
             return next.get();
@@ -206,7 +206,7 @@ public:
     }
     void InitMFXImpl(int bSw, int bAudioSW, int bD3d11) {
         if (bSw >=0 )
-            EXPECT_CALL(mock_parser, IsPresent(msdk_string(OPTION_SW))).WillOnce(Return(1==bSw));
+            EXPECT_CALL(mock_parser, IsPresent(msdk_string(OPTION_HW))).WillOnce(Return(1==bSw));
         if (bAudioSW >=0 )
             EXPECT_CALL(mock_parser, IsPresent(msdk_string(OPTION_ASW))).WillOnce(Return(1==bAudioSW));
         if (bD3d11 >= 0)

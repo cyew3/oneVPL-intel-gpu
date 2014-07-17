@@ -23,7 +23,7 @@ struct FileIOWrapperTest  : public ::testing::Test {
     }
 
     ~FileIOWrapperTest(){
-        _tremove(tmpFile.c_str());
+        remove(tmpFile.c_str());
         delete[] bitstream.Data;
     }
 };
@@ -40,7 +40,7 @@ TEST_F(FileIOWrapperTest, putSample) {
         fio_wrapper->PutSample(sample);
     }
 
-    f = _tfopen(tmpFile.c_str(), MSDK_STRING("rb"));
+    f = fopen(tmpFile.c_str(), MSDK_STRING("rb"));
     EXPECT_EQ(128, fread(bitstream.Data, sizeof(mfxU8), 128, f));
     fclose(f);
 }

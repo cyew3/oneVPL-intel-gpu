@@ -6,7 +6,7 @@
 //        Copyright (c) 2013 Intel Corporation. All Rights Reserved.
 //
 #pragma once
-
+#include <memory>
 
 template <class T>
 inline std::auto_ptr<T> & instant_auto_ptr(T *obj) {

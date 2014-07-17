@@ -9,7 +9,7 @@
 #pragma once
 
 #include "isample.h"
-#include "gmock\gmock.h"
+#include "gmock/gmock.h"
 
 class MockSample : public ISample
 {

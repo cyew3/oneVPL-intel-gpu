@@ -1,4 +1,4 @@
-kWillRepeatedly
+//kWillRepeatedly
 //* ////////////////////////////////////////////////////////////////////////////// */
 //*
 //
@@ -43,7 +43,7 @@ struct PipelineProfileTest : public ::testing::Test {
 
     void InitMFXImpl(int bSw, int bAudioSW, int bD3d11) {
         if (bSw >=0 )
-            EXPECT_CALL(mock_parser, IsPresent(msdk_string(OPTION_SW))).WillOnce(Return(1==bSw));
+            EXPECT_CALL(mock_parser, IsPresent(msdk_string(OPTION_HW))).WillRepeatedly(Return(1==bSw));
         if (bAudioSW >=0 ) {
             EXPECT_CALL(mock_parser, IsPresent(msdk_string(OPTION_ASW))).WillOnce(Return(1==bAudioSW));
         }

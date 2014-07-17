@@ -44,3 +44,14 @@
 #include "mock_hwdevice.h"
 
 using namespace ::testing;
+
+#if defined(_WIN32) || defined(_WIN64)
+#define remove _tremove
+#define fopen _tfopen
+#endif // #if defined(_WIN32) || defined(_WIN64)
+
+#ifndef _WIN32 || _WIN64
+#include <inttypes.h>
+#else
+#define int64_t __int64
+#endif // #ifndef _WIN32 || _WIN64

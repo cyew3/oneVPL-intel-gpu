@@ -9,7 +9,7 @@
 #pragma once
 
 #include "samples_pool.h"
-#include "gmock\gmock.h"
+#include "gmock/gmock.h"
 
 #include "mfxaudio++.h"
 #include "video_session.h"
@@ -17,6 +17,8 @@
 class MockMFXVideoSession : public MFXVideoSessionExt
 {
 public:
+    MockMFXVideoSession(PipelineFactory& factory) :
+        MFXVideoSessionExt(factory){}
     MOCK_METHOD1(GetFrameAllocator, mfxStatus (mfxFrameAllocator *&refAllocator));
     MOCK_METHOD2(Init, mfxStatus (mfxIMPL, mfxVersion*));
     MOCK_METHOD0(Close, mfxStatus ());
@@ -32,6 +34,9 @@ public:
     MOCK_METHOD2(SetHandle, mfxStatus (mfxHandleType, mfxHDL));
     MOCK_METHOD2(GetHandle, mfxStatus (mfxHandleType, mfxHDL*));
     MOCK_METHOD2(SyncOperation, mfxStatus (mfxSyncPoint, mfxU32));
+
+    MOCK_METHOD0(GetDevice, std::auto_ptr<CHWDevice>& ());
+    MOCK_METHOD0(GetAllocator, std::auto_ptr<BaseFrameAllocator>& ());
 };
 
 class MockMFXAudioSession : public MFXAudioSession

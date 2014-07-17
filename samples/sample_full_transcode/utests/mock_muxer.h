@@ -9,7 +9,7 @@
 #pragma once
 
 #include "mfxsplmux++.h"
-#include "gmock\gmock.h"
+#include "gmock/gmock.h"
 
 class MockMFXMuxer : public MFXMuxer {
 public:

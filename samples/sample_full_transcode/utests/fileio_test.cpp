@@ -22,8 +22,9 @@ struct FileIOTest  : public ::testing::Test {
     }
 
     void CreateNewTmpFile(mfxU32 size){
-        _tremove(tmpFile.c_str());
-        f = _tfopen(tmpFile.c_str(), MSDK_STRING("wb"));
+        remove(tmpFile.c_str());
+
+        f = fopen(tmpFile.c_str(), MSDK_STRING("wb"));
         std::auto_ptr<mfxU8> buf(new mfxU8[size]);
         fwrite(buf.get(), sizeof(mfxU8), size, f);
         fclose(f);
@@ -31,7 +32,7 @@ struct FileIOTest  : public ::testing::Test {
 
     ~FileIOTest(){
         fclose(f);
-        _tremove(tmpFile.c_str());
+        remove(tmpFile.c_str());
         delete[] bitstream.Data;
     }
 };
@@ -96,7 +97,7 @@ TEST_F(FileIOTest, test_file_write) {
     fio->Write(&bitstream);
     fio.reset();
 
-    f = _tfopen(tmpFile.c_str(), MSDK_STRING("rb"));
+    f = fopen(tmpFile.c_str(), MSDK_STRING("rb"));
     EXPECT_EQ(100, fread(bitstream.Data, sizeof(mfxU8), 100, f));
     fclose(f);
 }
@@ -108,7 +109,7 @@ TEST_F(FileIOTest, test_file_write_incorrect_length) {
     bitstream.DataOffset = 100;
     fio->Write(&bitstream);
     fio.reset();
-    f = _tfopen(tmpFile.c_str(), MSDK_STRING("rb"));
+    f = fopen(tmpFile.c_str(), MSDK_STRING("rb"));
     EXPECT_EQ(128, fread(bitstream.Data, sizeof(mfxU8), 130, f));
     fclose(f);
 }

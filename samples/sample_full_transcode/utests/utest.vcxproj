@@ -169,13 +169,13 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>include;include\vm;..\..\sample_spl_mux\api;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>include;include\vm;..\..\sample_spl_mux\api;C:\Users\imironov\Documents\Projects\mediasdk\git\mdp_msdk-contrib\gmock\gtest\include;C:\Users\imironov\Documents\Projects\mediasdk\git\mdp_msdk-contrib\gmock\include;$(INTELMEDIASDKROOT)\include;C:\Users\imironov\Documents\Projects\mediasdk\git\mdp_msdk-samples\samples\sample_full_transcode\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_WIN32;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <ExceptionHandling>Async</ExceptionHandling>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
-      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeader>Create</PrecompiledHeader>
       <WarningLevel>Level4</WarningLevel>
       <TreatWarningAsError>false</TreatWarningAsError>
       <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
@@ -189,8 +189,8 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>..\..\..\thirdparty\ffmpeg\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>sample_full_transcode_lib.lib;gmock.lib;gmock_main.lib;sample_common.lib;libmfx_d.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>..\..\..\thirdparty\ffmpeg\lib;C:\Users\imironov\Documents\Projects\mediasdk\git\mdp_msdk-samples\samples\_build\Win32\Debug\lib;C:\Users\imironov\Documents\Projects\mediasdk\git\mdp_msdk-contrib\gmock\msvc\2010\Debug;C:\Users\imironov\Documents\Projects\mediasdk\git\build\win_Win32\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <IgnoreSpecificDefaultLibraries>msvcrtd.lib</IgnoreSpecificDefaultLibraries>
       <AdditionalOptions>/Profile %(AdditionalOptions)</AdditionalOptions>
     </Link>

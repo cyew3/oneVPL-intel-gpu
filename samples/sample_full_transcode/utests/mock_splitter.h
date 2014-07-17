@@ -9,7 +9,7 @@
 #pragma once
 
 #include "mfxsplmux++.h"
-#include "gmock\gmock.h"
+#include "gmock/gmock.h"
 #include "splitter_wrapper.h"
 
 class MockMFXSplitter : public MFXSplitter {

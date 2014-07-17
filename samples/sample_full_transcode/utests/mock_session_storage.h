@@ -9,7 +9,7 @@
 #pragma once
 
 #include "session_storage.h"
-#include "gmock\gmock-generated-function-mockers.h"
+#include "gmock/gmock-generated-function-mockers.h"
 
 class MockSessionStorage : public SessionStorage {
 public:

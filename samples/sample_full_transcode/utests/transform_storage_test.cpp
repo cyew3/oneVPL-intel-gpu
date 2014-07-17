@@ -53,7 +53,7 @@ TEST_F(TransformStorageTest, empty_if_not_added) {
 
 TEST_F(TransformStorageTest, not_empty_if_added) {
 
-    storage.RegisterTransform(TransformConfigDesc(0, mfxVideoParam()),instant_auto_ptr2<ITransform>( new MockTransform()) );
+    storage.RegisterTransform(TransformConfigDesc(0, *new mfxVideoParam()),instant_auto_ptr2<ITransform>( new MockTransform()) );
 
     EXPECT_EQ(false, storage.empty(0));
     EXPECT_EQ(true, storage.empty(1));
@@ -61,9 +61,9 @@ TEST_F(TransformStorageTest, not_empty_if_added) {
 
 TEST_F(TransformStorageTest, 2_tracks) {
 
-    storage.RegisterTransform(TransformConfigDesc(0, mfxVideoParam()),instant_auto_ptr<ITransform>(&mk_trans1));
-    storage.RegisterTransform(TransformConfigDesc(0, mfxVideoParam()),instant_auto_ptr<ITransform>( &mk_trans2));
-    storage.RegisterTransform(TransformConfigDesc(1, mfxVideoParam()),instant_auto_ptr<ITransform>( &mk_trans3));
+    storage.RegisterTransform(TransformConfigDesc(0, *new mfxVideoParam()),instant_auto_ptr<ITransform>(&mk_trans1));
+    storage.RegisterTransform(TransformConfigDesc(0, *new mfxVideoParam()),instant_auto_ptr<ITransform>( &mk_trans2));
+    storage.RegisterTransform(TransformConfigDesc(1, *new mfxVideoParam()),instant_auto_ptr<ITransform>( &mk_trans3));
 
     TransformStorage::iterator i = storage.begin(0);
     i++;

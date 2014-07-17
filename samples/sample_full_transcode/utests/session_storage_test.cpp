@@ -23,8 +23,8 @@ struct SessionStorageTest  : public ::testing::Test {
     mfxVersion verv;
     mfxVersion vera;
     SessionStorageTest()
-        : vSession ( new MockMFXVideoSession())
-        , vSession2 ( new MockMFXVideoSession())
+        : vSession ( new MockMFXVideoSession(factory))
+        , vSession2 ( new MockMFXVideoSession(factory))
         , aSession ( new MockMFXAudioSession()) {
         verv.Major = 1;
         verv.Minor = 4;

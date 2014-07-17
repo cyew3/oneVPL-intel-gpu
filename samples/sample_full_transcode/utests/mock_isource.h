@@ -11,7 +11,7 @@
 #include "splitter_wrapper.h"
 #include "fileio.h"
 #include "mock_splitter.h"
-#include "gmock\gmock.h"
+#include "gmock/gmock.h"
 #include "test_utils.h"
 
 

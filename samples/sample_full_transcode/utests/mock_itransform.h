@@ -12,9 +12,9 @@
 
 class MockTransform  : public ITransform {
 public:
-    MOCK_METHOD2(Configure, void(MFXAVParams, ITransform*));
+    MOCK_METHOD2(Configure, void(MFXAVParams&, ITransform*));
     MOCK_METHOD1(PutSample, void(SamplePtr&));
     MOCK_METHOD1(GetSample, bool(SamplePtr&));
-    MOCK_METHOD2(GetNumSurfaces, void(const mfxVideoParam &, mfxFrameAllocRequest &));
+    MOCK_METHOD2(GetNumSurfaces, void(MFXAVParams &, IAllocRequest &));
 };
 

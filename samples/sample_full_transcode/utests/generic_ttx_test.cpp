@@ -23,9 +23,9 @@ namespace {
 };
 
 
-TEST(GenericTTX, __int64) {
+TEST(GenericTTX, int64_t) {
 
-    VerifyConvert<__int64>("int64");
+    VerifyConvert<int64_t>("int64");
 }
 TEST(GenericTTX, int) {
     VerifyConvert<int>("int");
@@ -38,7 +38,7 @@ TEST(GenericTTX, char) {
 }
 
 TEST(GenericTTX, unsigned_int64) {
-    VerifyConvert<unsigned __int64>("unsigned int64");
+    VerifyConvert<unsigned int64_t>("unsigned int64");
 }
 TEST(GenericTTX, unsigned_int) {
     VerifyConvert<unsigned int>("unsigned int");

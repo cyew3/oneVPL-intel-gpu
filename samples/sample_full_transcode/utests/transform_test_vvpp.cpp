@@ -11,6 +11,7 @@
 #include "itransform.h"
 
 using namespace ::testing;
+#if defined(_WIN32) || defined(_WIN64)
 
 class TransformVVppInited : public Transform<MFXVideoVPP> {
 public:
@@ -39,7 +40,9 @@ struct TransformTestVVPP  : public ::testing::Test {
 public:
 
     TransformTestVVPP() :
-        impl(MFX_IMPL_HARDWARE_ANY) {
+        impl(MFX_IMPL_HARDWARE_ANY)
+        , vSession(factory)
+        , vSession2(factory2){
         vpp.reset(new MockMFXVideoVPP());
 
         allocator.reset(new MockMFXFrameAllocator());
@@ -54,8 +57,8 @@ public:
         vParam.AsyncDepth = 2;
         vParam.mfx.BufferSizeInKB = 1000;
 
-        EXPECT_CALL(nextTransform, GetNumSurfaces(_, _)).WillOnce(DoAll(SetArgReferee<1>(allocRequest), Return()));
-        transform_vv->Configure(vParam, &nextTransform);
+        //EXPECT_CALL(nextTransform, GetNumSurfaces(_, _)).WillOnce(DoAll(SetArgReferee<1>(allocRequest), Return()));
+        transform_vv->Configure(MFXAVParams(vParam), &nextTransform);
 
         allocRequest.NumFrameMin = 2;
         allocRequest.NumFrameSuggested = 2;
@@ -221,3 +224,5 @@ TEST_F(TransformTestVVPP, GetNumSurfacesWarning) {
     vpp.release();
 }
 #endif
+
+#endif // #if defined(_WIN32) || defined(_WIN64)

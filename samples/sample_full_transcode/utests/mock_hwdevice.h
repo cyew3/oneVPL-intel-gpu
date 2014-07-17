@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include "gmock\gmock.h"
+#include "gmock/gmock.h"
 #include "hw_device.h"
 
 class MockCHWDevice : public CHWDevice
@@ -20,5 +20,6 @@ public:
     MOCK_METHOD0(Reset, mfxStatus ());
     MOCK_METHOD2(RenderFrame, mfxStatus (mfxFrameSurface1 * pSurface, mfxFrameAllocator * pmfxAlloc));
     MOCK_METHOD0(Close, void ());
+    MOCK_METHOD1(UpdateTitle, void (double fps));
 };
 

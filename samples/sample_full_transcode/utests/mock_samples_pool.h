@@ -9,7 +9,7 @@
 #pragma once
 
 #include "samples_pool.h"
-#include "gmock\gmock.h"
+#include "gmock/gmock.h"
 
 class MockSamplePool : public SamplePool, private no_copy {
 public:
