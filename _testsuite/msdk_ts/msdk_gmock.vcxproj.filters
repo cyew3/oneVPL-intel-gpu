@@ -244,5 +244,8 @@
     <ClCompile Include="src\gmock\test_suites\mpeg2d_thomson_timestamp.cpp">
       <Filter>Source Files\test_suites</Filter>
     </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\avcd_decorder.cpp">
+      <Filter>Source Files\test_suites</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>
