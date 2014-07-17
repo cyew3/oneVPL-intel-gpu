@@ -812,6 +812,7 @@ mfxStatus CDecodingPipeline::ResetDecoder(sInputParams *pParams)
     DeleteFrames();
     m_pCurrentFreeSurface = NULL;
     m_pCurrentFreeOutputSurface = NULL;
+    m_pCurrentFreeVppSurface = NULL;
 
     // initialize parameters with values from parsed header
     sts = InitMfxParams(pParams);
@@ -825,6 +826,14 @@ mfxStatus CDecodingPipeline::ResetDecoder(sInputParams *pParams)
     sts = m_pmfxDEC->Init(&m_mfxVideoParams);
     if (MFX_WRN_PARTIAL_ACCELERATION == sts)
     {
+        msdk_printf(MSDK_STRING("WARNING: partial acceleration\n"));
+        MSDK_IGNORE_MFX_STS(sts, MFX_WRN_PARTIAL_ACCELERATION);
+    }
+    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+
+    // init VPP
+    sts = m_pmfxVPP->Init(&m_mfxVppVideoParams);
+    if (MFX_WRN_PARTIAL_ACCELERATION == sts) {
         msdk_printf(MSDK_STRING("WARNING: partial acceleration\n"));
         MSDK_IGNORE_MFX_STS(sts, MFX_WRN_PARTIAL_ACCELERATION);
     }
