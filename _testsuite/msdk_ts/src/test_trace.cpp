@@ -292,6 +292,10 @@ std::ostream &operator << (std::ostream &os, mfxFrameData &p){
         << PUT_ARR(reserved, 10)
 #else
         << PUT_ARR(reserved, 7)
+#if ( (MFX_VERSION_MAJOR >= 1) && (MFX_VERSION_MINOR > 9))
+        << PUT_PAR(ExtParam)
+        << PUT_PAR(NumExtParam)
+#else
         << PUT_PAR(reserved1)
 #endif
         << PUT_PAR(PitchHigh)
