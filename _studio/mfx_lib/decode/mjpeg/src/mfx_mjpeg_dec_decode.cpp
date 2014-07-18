@@ -1763,6 +1763,12 @@ bool MFX_JPEG_Utility::IsNeedPartialAcceleration(VideoCORE * core, mfxVideoParam
     //if (par->mfx.FrameInfo.Width > 4096 || par->mfx.FrameInfo.Height > 4096)
     //    return true;
 
+#if defined (MFX_VA_LINUX)
+    // NV12 is supported on Linux HW at the moment
+    if (par->mfx.FrameInfo.FourCC != MFX_FOURCC_NV12 )
+        return true;
+#endif
+
     if (par->mfx.JPEGColorFormat == MFX_JPEG_COLORFORMAT_RGB &&
         par->mfx.JPEGChromaFormat != MFX_CHROMAFORMAT_YUV444)
         return true;
@@ -2572,10 +2578,11 @@ bool MFX_JPEG_Utility::CheckVideoParam(mfxVideoParam *in, eMFXHWType )
         (fourCC != MFX_FOURCC_YUY2 || chromaFormat != MFX_CHROMAFORMAT_YUV422H))
         return false;
 #elif defined (MFX_VA_LINUX)
-    // NV12 is supported only for Linux MJPEG HW decode
     if ((fourCC != MFX_FOURCC_NV12 || chromaFormat != MFX_CHROMAFORMAT_MONOCHROME) &&
-        (fourCC != MFX_FOURCC_NV12 || chromaFormat != MFX_CHROMAFORMAT_YUV420))
-       return false;
+        (fourCC != MFX_FOURCC_NV12 || chromaFormat != MFX_CHROMAFORMAT_YUV420) &&
+        (fourCC != MFX_FOURCC_RGB4 || chromaFormat != MFX_CHROMAFORMAT_YUV444) &&
+        (fourCC != MFX_FOURCC_YUY2 || chromaFormat != MFX_CHROMAFORMAT_YUV422H))
+           return false;
 #else
     if ((fourCC != MFX_FOURCC_NV12 || chromaFormat != MFX_CHROMAFORMAT_MONOCHROME) &&
         (fourCC != MFX_FOURCC_NV12 || chromaFormat != MFX_CHROMAFORMAT_YUV420) &&
