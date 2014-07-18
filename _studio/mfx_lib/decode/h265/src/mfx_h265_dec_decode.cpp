@@ -16,6 +16,7 @@
 #include "mfx_common_decode_int.h"
 #include "umc_h265_mfx_supplier.h"
 #include "umc_h265_frame_list.h"
+#include "vm_sys_info.h"
 
 #ifdef MFX_VA
 #include "umc_h265_va_supplier.h"
@@ -27,8 +28,18 @@ static inline mfxU32 CalculateAsyncDepth(VideoCORE *core, mfxVideoParam *par)
     mfxU32 asyncDepth = par->AsyncDepth;
     if (core && !asyncDepth)
         asyncDepth = core->GetAutoAsyncDepth();
+
     asyncDepth = IPP_MIN(16, asyncDepth);
     return asyncDepth;
+}
+
+static inline mfxU32 CalculateNumThread(mfxVideoParam *par)
+{
+    mfxU32 numThread = vm_sys_info_get_cpu_num();
+    if (!par->AsyncDepth)
+        return numThread;
+
+    return IPP_MIN(par->AsyncDepth, numThread);
 }
 
 static inline void mfx_memcpy(void * dst, size_t dstLen, void * src, size_t len)
@@ -123,10 +134,7 @@ mfxStatus VideoDECODEH265::Init(mfxVideoParam *par)
     m_vPar.CreateExtendedBuffer(MFX_EXTBUFF_CODING_OPTION_SPSPPS);
 
     mfxU32 asyncDepth = CalculateAsyncDepth(m_core, par);
-    m_vPar.mfx.NumThread = (mfxU16)asyncDepth;
-
-    if (MFX_PLATFORM_SOFTWARE != m_platform)
-        m_vPar.mfx.NumThread = 1;
+    m_vPar.mfx.NumThread = (mfxU16)((MFX_PLATFORM_SOFTWARE != m_platform) ? 1 : CalculateNumThread(par));
 
     if (MFX_PLATFORM_SOFTWARE == m_platform)
     {
@@ -351,10 +359,7 @@ mfxStatus VideoDECODEH265::Reset(mfxVideoParam *par)
     m_vPar.CreateExtendedBuffer(MFX_EXTBUFF_VIDEO_SIGNAL_INFO);
     m_vPar.CreateExtendedBuffer(MFX_EXTBUFF_CODING_OPTION_SPSPPS);
 
-    m_vPar.mfx.NumThread = (mfxU16)CalculateAsyncDepth(m_core, &m_vPar);
-
-    if (MFX_PLATFORM_SOFTWARE != m_platform)
-        m_vPar.mfx.NumThread = 1;
+    m_vPar.mfx.NumThread = (mfxU16)((MFX_PLATFORM_SOFTWARE != m_platform) ? 1 : CalculateNumThread(par));
 
     if (IS_PROTECTION_ANY(m_vFirstPar.Protected))
     {

@@ -539,8 +539,6 @@ public:
 
     SEI_Storer * GetSEIStorer() const { return m_sei_messages;}
 
-    bool IsShouldSuspendDisplay();
-
     Headers * GetHeaders() { return &m_Headers;}
 
     inline

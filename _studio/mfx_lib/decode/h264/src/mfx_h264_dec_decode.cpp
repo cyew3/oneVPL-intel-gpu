@@ -21,7 +21,7 @@
 
 // debug
 #include "umc_h264_frame_list.h"
-
+#include "vm_sys_info.h"
 #include "mfx_enc_common.h"
 
 #if defined(MFX_VA)
@@ -40,8 +40,18 @@ static inline mfxU32 CalculateAsyncDepth(VideoCORE *core, mfxVideoParam *par)
     mfxU32 asyncDepth = par->AsyncDepth;
     if (core && !asyncDepth)
         asyncDepth = core->GetAutoAsyncDepth();
+
     asyncDepth = IPP_MIN(16, asyncDepth);
     return asyncDepth;
+}
+
+static inline mfxU32 CalculateNumThread(mfxVideoParam *par)
+{
+    mfxU32 numThread = vm_sys_info_get_cpu_num();
+    if (!par->AsyncDepth)
+        return numThread;
+
+    return IPP_MIN(par->AsyncDepth, numThread);
 }
 
 static inline void mfx_memcpy(void * dst, size_t dstLen, void * src, size_t len)
@@ -259,9 +269,7 @@ mfxStatus VideoDECODEH264::Init(mfxVideoParam *par)
     m_vPar.CreateExtendedBuffer(MFX_EXTBUFF_CODING_OPTION_SPSPPS);
 
     mfxU32 asyncDepth = CalculateAsyncDepth(m_core, par);
-    m_vPar.mfx.NumThread = (mfxU16)asyncDepth;
-    if (MFX_PLATFORM_SOFTWARE != m_platform || IsSVCProfile(par->mfx.CodecProfile))
-        m_vPar.mfx.NumThread = 1;
+    m_vPar.mfx.NumThread = (mfxU16)((MFX_PLATFORM_SOFTWARE != m_platform) ? 1 : CalculateNumThread(par));
 
     if (MFX_PLATFORM_SOFTWARE == m_platform)
     {
@@ -585,9 +593,7 @@ mfxStatus VideoDECODEH264::Reset(mfxVideoParam *par)
     m_vPar.CreateExtendedBuffer(MFX_EXTBUFF_VIDEO_SIGNAL_INFO);
     m_vPar.CreateExtendedBuffer(MFX_EXTBUFF_CODING_OPTION_SPSPPS);
 
-    m_vPar.mfx.NumThread = (mfxU16)CalculateAsyncDepth(m_core, par);
-    if (MFX_PLATFORM_SOFTWARE != m_platform)
-        m_vPar.mfx.NumThread = 1;
+    m_vPar.mfx.NumThread = (mfxU16)((MFX_PLATFORM_SOFTWARE != m_platform) ? 1 : CalculateNumThread(par));
 
     if (IS_PROTECTION_ANY(m_vFirstPar.Protected))
     {
@@ -1679,9 +1685,6 @@ mfxStatus VideoDECODEH264::GetPayload( mfxU64 *ts, mfxPayload *payload )
 
 UMC::H264DecoderFrame * VideoDECODEH264::GetFrameToDisplay(UMC::VideoData * dst, bool force)
 {
-    if (!m_pH264VideoDecoder->IsShouldSuspendDisplay() && !force && m_platform == MFX_PLATFORM_SOFTWARE)
-        return 0;
-
     UMC::H264DecoderFrame * pFrame = 0;
     do
     {

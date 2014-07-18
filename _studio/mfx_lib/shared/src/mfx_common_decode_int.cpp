@@ -169,13 +169,7 @@ void ConvertMFXParamsToUMC(mfxVideoParam *par, UMC::VideoDecoderParams *umcVideo
     }
 }
 
-bool IsNeedChangeVideoParam(mfxVideoParam *par)
+bool IsNeedChangeVideoParam(mfxVideoParam *)
 {
-    if (par->AsyncDepth > MFX_MAX_ASYNC_DEPTH_VALUE)
-    {
-        par->AsyncDepth = MFX_MAX_ASYNC_DEPTH_VALUE;
-        return true;
-    }
-
     return false;
 }

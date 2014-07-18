@@ -6171,24 +6171,6 @@ Status TaskSupplier::GetUserData(MediaData * pUD)
     return UMC_ERR_NOT_ENOUGH_DATA;
 }
 
-bool TaskSupplier::IsShouldSuspendDisplay()
-{
-    AutomaticUMCMutex guard(m_mGuard);
-
-    if (m_iThreadNum <= 1)
-        return true;
-
-    for (Ipp32s i = 0; i < GetViewCount(); i++)
-    {
-        ViewItem &view = GetViewByNumber(i);
-
-        if (view.GetDPBList(0)->GetDisposable() || view.GetDPBList(0)->countAllFrames() < view.dpbSize + m_DPBSizeEx)
-            return false;
-    }
-
-    return true;
-}
-
 void TaskSupplier::ApplyPayloadsToFrame(H264DecoderFrame * frame, H264Slice *slice, SeiPayloadArray * payloads)
 {
     if (!payloads || !frame)
