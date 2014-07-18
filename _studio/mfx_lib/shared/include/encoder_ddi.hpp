@@ -1607,7 +1607,7 @@ typedef struct tagENCODE_SET_SEQUENCE_PARAMETERS_VP8
    
     UCHAR TargetUsage; 
     UCHAR RateControlMethod; 
-    UINT  TargetBitRate; 
+    UINT  TargetBitRate[256]; 
     UINT  MaxBitRate; 
     UINT  MinBitRate; 
     ULONG InitVBVBufferFullnessInBit; 
@@ -1619,8 +1619,9 @@ typedef struct tagENCODE_SET_SEQUENCE_PARAMETERS_VP8
         { 
             BOOL bResetBRC               : 1; 
             BOOL bNoFrameHeaderInsertion : 1; 
-            BOOL bUseRawReconRef         : 1; 
-            BOOL bReserved               : 29; 
+            BOOL bUseRawReconRef         : 1;
+            BOOL MBBRC                   : 4;
+            BOOL bReserved               : 25; 
         }; 
         BOOL sFlags; 
     }; 
@@ -1684,8 +1685,7 @@ typedef struct tagENCODE_SET_PICTURE_PARAMETERS_VP8
     UINT    StatusReportFeedbackNumber;
     UCHAR   ClampQindexHigh;
     UCHAR   ClampQindexLow;
-
-     
+    UCHAR   temporal_id;
 } ENCODE_SET_PICTURE_PARAMETERS_VP8;
 
 

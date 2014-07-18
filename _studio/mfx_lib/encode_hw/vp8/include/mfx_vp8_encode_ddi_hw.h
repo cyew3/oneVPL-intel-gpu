@@ -786,13 +786,15 @@ do {                                               \
         VABufferID m_frmUpdateBufferId;
         VABufferID m_segMapParBufferId;
         VABufferID m_frameRateBufferId;
+        VABufferID m_rateCtrlBufferId;
+        VABufferID m_hrdBufferId;
       
         std::vector<ExtVASurface> m_feedbackCache;
         std::vector<ExtVASurface> m_mbDataQueue;
         std::vector<ExtVASurface> m_reconQueue;
         std::vector<ExtVASurface> m_segMapQueue;
         
-        static const mfxU32 MAX_CONFIG_BUFFERS_COUNT = 7; // sps, pps, quant, seg_map, per segment par, frame update data, frame rate
+        static const mfxU32 MAX_CONFIG_BUFFERS_COUNT = 9; // sps, pps, quant, seg_map, per segment par, frame update data, frame rate, rate ctrl, hrd
 
         mfxU32 m_width;
         mfxU32 m_height;

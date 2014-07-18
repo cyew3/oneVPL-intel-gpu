@@ -159,7 +159,7 @@ mfxStatus CachedFeedback::Remove(mfxU32 feedbackNumber)
         sps.TargetUsage = mfxU8(par.mfx.TargetUsage);
 
         sps.RateControlMethod  = mfxU8(par.mfx.RateControlMethod);
-        sps.TargetBitRate      = mfxU16(par.mfx.TargetKbps);
+        sps.TargetBitRate[0]      = mfxU16(par.mfx.TargetKbps);
         sps.MaxBitRate         = mfxU16(par.mfx.MaxKbps);
         sps.MinBitRate         = mfxU16(par.mfx.TargetKbps);
 
@@ -1492,6 +1492,87 @@ mfxU8 ConvertRateControlMFX2VAAPI(mfxU8 rateControl)
 
 } // mfxU8 ConvertRateControlMFX2VAAPI(mfxU8 rateControl)
 
+mfxStatus SetRateControl(
+    mfxVideoParam const & par,
+    VADisplay    m_vaDisplay,
+    VAContextID  m_vaContextEncode,
+    VABufferID & rateParamBuf_id)
+{
+    VAStatus vaSts;
+    VAEncMiscParameterBuffer *misc_param;
+    VAEncMiscParameterRateControl *rate_param;
+
+    if ( rateParamBuf_id != VA_INVALID_ID)
+    {
+        vaDestroyBuffer(m_vaDisplay, rateParamBuf_id);
+    }
+
+    vaSts = vaCreateBuffer(m_vaDisplay,
+                   m_vaContextEncode,
+                   VAEncMiscParameterBufferType,
+                   sizeof(VAEncMiscParameterBuffer) + sizeof(VAEncMiscParameterRateControl),
+                   1,
+                   NULL,
+                   &rateParamBuf_id);
+    MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+
+    vaSts = vaMapBuffer(m_vaDisplay,
+                 rateParamBuf_id,
+                (void **)&misc_param);
+    MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+
+    misc_param->type = VAEncMiscParameterTypeRateControl;
+    rate_param = (VAEncMiscParameterRateControl *)misc_param->data;
+
+    rate_param->bits_per_second = par.mfx.MaxKbps * 1000;
+
+    if(par.mfx.MaxKbps)
+        rate_param->target_percentage = (unsigned int)(100.0 * (mfxF64)par.mfx.TargetKbps / (mfxF64)par.mfx.MaxKbps);
+
+    vaUnmapBuffer(m_vaDisplay, rateParamBuf_id);
+
+    return MFX_ERR_NONE;
+}
+
+mfxStatus SetHRD(
+    mfxVideoParam const & par,
+    VADisplay    m_vaDisplay,
+    VAContextID  m_vaContextEncode,
+    VABufferID & hrdBuf_id)
+{
+    VAStatus vaSts;
+    VAEncMiscParameterBuffer *misc_param;
+    VAEncMiscParameterHRD *hrd_param;
+
+    if ( hrdBuf_id != VA_INVALID_ID)
+    {
+        vaDestroyBuffer(m_vaDisplay, hrdBuf_id);
+    }
+    vaSts = vaCreateBuffer(m_vaDisplay,
+                   m_vaContextEncode,
+                   VAEncMiscParameterBufferType,
+                   sizeof(VAEncMiscParameterBuffer) + sizeof(VAEncMiscParameterHRD),
+                   1,
+                   NULL,
+                   &hrdBuf_id);
+    MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+
+    vaSts = vaMapBuffer(m_vaDisplay,
+                 hrdBuf_id,
+                (void **)&misc_param);
+    MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+
+    misc_param->type = VAEncMiscParameterTypeHRD;
+    hrd_param = (VAEncMiscParameterHRD *)misc_param->data;
+
+    hrd_param->initial_buffer_fullness = par.mfx.InitialDelayInKB * 8000;
+    hrd_param->buffer_size = par.mfx.BufferSizeInKB * 8000;
+
+    vaUnmapBuffer(m_vaDisplay, hrdBuf_id);
+
+    return MFX_ERR_NONE;
+}
+
 mfxStatus SetFrameRate(
     mfxVideoParam const & par,
     VADisplay    m_vaDisplay,
@@ -1618,6 +1699,8 @@ VAAPIEncoder::VAAPIEncoder()
 , m_frmUpdateBufferId(VA_INVALID_ID)
 , m_segMapParBufferId(VA_INVALID_ID)
 , m_frameRateBufferId(VA_INVALID_ID)
+, m_rateCtrlBufferId(VA_INVALID_ID)
+, m_hrdBufferId(VA_INVALID_ID)
 {
 } // VAAPIEncoder::VAAPIEncoder(VideoCORE* core)
 
@@ -1756,7 +1839,7 @@ mfxStatus VAAPIEncoder::CreateAccelerationService(mfxVideoParam const & par)
         reconSurf.size(),
         &m_vaContextEncode);
     MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED); 
-    VP8_LOG("\n(sefremov) VAAPIEncoder::CreateAccelerationService 7");
+    VP8_LOG("\n(sefremov) VAAPIEncoder::Set BRC, HRD, frame rate parameters");
 
     Zero(m_sps);
     Zero(m_pps);
@@ -1764,7 +1847,11 @@ mfxStatus VAAPIEncoder::CreateAccelerationService(mfxVideoParam const & par)
     //------------------------------------------------------------------
 
     FillSpsBuffer(par, m_sps);
-    SetFrameRate(par, m_vaDisplay, m_vaContextEncode, m_frameRateBufferId);
+    SetHRD(par, m_vaDisplay, m_vaContextEncode, m_hrdBufferId);
+    SetRateControl(par, m_vaDisplay, m_vaContextEncode, m_frameRateBufferId);
+    SetFrameRate(par, m_vaDisplay, m_vaContextEncode, m_rateCtrlBufferId);
+    
+    VP8_LOG("\n(sefremov) VAAPIEncoder::CreateAccelerationService 7");
 
     hybridQueryBufferAttributes pfnVaQueryBufferAttr = NULL;
     pfnVaQueryBufferAttr = (hybridQueryBufferAttributes)vaGetLibFunc(m_vaDisplay, FUNC_QUERY_BUFFER_ATTRIBUTES);
@@ -1807,6 +1894,8 @@ mfxStatus VAAPIEncoder::Reset(mfxVideoParam const & par)
     m_video = par;
 
     FillSpsBuffer(par, m_sps);
+    SetHRD(par, m_vaDisplay, m_vaContextEncode, m_hrdBufferId);
+    SetFrameRate(par, m_vaDisplay, m_vaContextEncode, m_rateCtrlBufferId);
     SetFrameRate(par, m_vaDisplay, m_vaContextEncode, m_frameRateBufferId);
 
     return MFX_ERR_NONE;
@@ -2059,7 +2148,6 @@ mfxStatus VAAPIEncoder::Execute(
             configBuffers[buffersCount++] = m_segMapQueue[idxInPool].surface;
         }
 
-        /*
         // 5. Per-segment parameters
         if (task.m_frameOrder)
         {
@@ -2083,7 +2171,13 @@ mfxStatus VAAPIEncoder::Execute(
             MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
             configBuffers[buffersCount++] = m_frmUpdateBufferId;
         }
-        */
+
+        // 7. hrd parameters
+        configBuffers[buffersCount++] = m_hrdBufferId;
+        // 8. RC parameters
+        configBuffers[buffersCount++] = m_rateCtrlBufferId;
+        // 9. frame rate
+        configBuffers[buffersCount++] = m_frameRateBufferId;
     }
 
     VP8_LOG_1("\n(sefremov) Frame %d: HybridPakDDIImpl::Execute 3", task.m_frameOrder);    
@@ -2259,6 +2353,8 @@ mfxStatus VAAPIEncoder::Destroy()
     MFX_DESTROY_VABUFFER(m_segMapParBufferId, m_vaDisplay);
     MFX_DESTROY_VABUFFER(m_frmUpdateBufferId, m_vaDisplay);
     MFX_DESTROY_VABUFFER(m_frameRateBufferId, m_vaDisplay);
+    MFX_DESTROY_VABUFFER(m_rateCtrlBufferId, m_vaDisplay);
+    MFX_DESTROY_VABUFFER(m_hrdBufferId, m_vaDisplay);
 
     return MFX_ERR_NONE;
 
