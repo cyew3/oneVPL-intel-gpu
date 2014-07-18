@@ -8,6 +8,7 @@ include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/include )
 
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../decode/h265/include )
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../encode/h265/include )
+include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../fei/h264_preenc )
 
 
 list( APPEND umc_dirs

@@ -22,12 +22,12 @@
 #include "mfx_h264_encode_hw_utils.h"
 
 
-#if defined(MFX_ENABLE_H264_VIDEO_FEI_ENCPAK) || defined(MFX_ENABLE_H264_VIDEO_FEI_PREENC)
+//#if defined(MFX_ENABLE_H264_VIDEO_FEI_ENCPAK) || defined(MFX_ENABLE_H264_VIDEO_FEI_PREENC)
 #include "mfxfei.h"
 #include <va/va_private_fei.h>
 #include <va/va_enc_h264.h>
 //#include <va/vendor/va_intel_fei.h>
-#endif
+//#endif
 
 #if defined(MFX_ENABLE_H264_VIDEO_FEI_PREENC)
 //#include <va/vendor/va_intel_statistics.h>
