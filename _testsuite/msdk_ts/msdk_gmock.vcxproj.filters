@@ -27,6 +27,9 @@
     <Filter Include="Source Files\test_suites\camera">
       <UniqueIdentifier>{14bf7058-45b2-471f-b0f7-fb1d61752ac1}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\test_suites\FEI">
+      <UniqueIdentifier>{daa0ed0f-66be-4a35-a33b-623791b5fadd}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\test_sample_allocator.h">
@@ -81,6 +84,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\gmock\ts_platforms.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\gmock\ts_fei.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -246,6 +252,18 @@
     </ClCompile>
     <ClCompile Include="src\gmock\test_suites\avcd_decorder.cpp">
       <Filter>Source Files\test_suites</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gmock\ts_fei.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\fei_encode_close.cpp">
+      <Filter>Source Files\test_suites\FEI</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\fei_encode_init.cpp">
+      <Filter>Source Files\test_suites\FEI</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\preenc_init.cpp">
+      <Filter>Source Files\test_suites\FEI</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

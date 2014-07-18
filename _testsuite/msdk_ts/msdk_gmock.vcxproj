@@ -186,6 +186,7 @@
     <ClInclude Include="include\gmock\ts_encoder.h" />
     <ClInclude Include="include\gmock\ts_ext_buffers.h" />
     <ClInclude Include="include\gmock\ts_ext_buffers_decl.h" />
+    <ClInclude Include="include\gmock\ts_fei.h" />
     <ClInclude Include="include\gmock\ts_parser.h" />
     <ClInclude Include="include\gmock\ts_platforms.h" />
     <ClInclude Include="include\gmock\ts_plugin.h" />
@@ -211,8 +212,11 @@
     <ClCompile Include="src\gmock\test_suites\camera_run_frame_async.cpp" />
     <ClCompile Include="src\gmock\test_suites\camera_unsupport.cpp" />
     <ClCompile Include="src\gmock\test_suites\camera_close.cpp" />
+    <ClCompile Include="src\gmock\test_suites\fei_encode_close.cpp" />
     <ClCompile Include="src\gmock\test_suites\hevce_spspps_get.cpp" />
     <ClCompile Include="src\gmock\test_suites\mpeg2d_thomson_timestamp.cpp" />
+    <ClCompile Include="src\gmock\test_suites\preenc_init.cpp" />
+    <ClCompile Include="src\gmock\test_suites\fei_encode_init.cpp" />
     <ClCompile Include="src\gmock\test_suites\ptir_close.cpp" />
     <ClCompile Include="src\gmock\test_suites\ptir_get_video_param.cpp" />
     <ClCompile Include="src\gmock\test_suites\ptir_reset.cpp" />
@@ -245,6 +249,7 @@
     <ClCompile Include="src\gmock\ts_common.cpp" />
     <ClCompile Include="src\gmock\ts_decoder.cpp" />
     <ClCompile Include="src\gmock\ts_encoder.cpp" />
+    <ClCompile Include="src\gmock\ts_fei.cpp" />
     <ClCompile Include="src\gmock\ts_plugin.cpp" />
     <ClCompile Include="src\gmock\ts_session.cpp" />
     <ClCompile Include="src\gmock\ts_streams.cpp" />

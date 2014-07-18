@@ -41,6 +41,47 @@ tsVideoEncoder::tsVideoEncoder(mfxU32 CodecId, bool useDefaults)
     m_loaded = !m_uid;
 }
 
+tsVideoEncoder::tsVideoEncoder(mfxFeiFunction func, mfxU32 CodecId, bool useDefaults)
+: m_default(useDefaults)
+, m_initialized(false)
+, m_par()
+, m_bitstream()
+, m_request()
+, m_pPar(&m_par)
+, m_pParOut(&m_par)
+, m_pBitstream(&m_bitstream)
+, m_pRequest(&m_request)
+, m_pSyncPoint(&m_syncpoint)
+, m_pSurf(0)
+, m_pCtrl(&m_ctrl)
+, m_filler(0)
+, m_bs_processor(0)
+, m_frames_buffered(0)
+, m_uid(0)
+, m_loaded(false)
+{
+    m_par.mfx.CodecId = CodecId;
+    if(m_default)
+    {
+        m_par.IOPattern = MFX_IOPATTERN_IN_VIDEO_MEMORY;
+        m_par.mfx.RateControlMethod = MFX_RATECONTROL_CQP;
+        m_par.mfx.QPI = m_par.mfx.QPP = m_par.mfx.QPB = 26;
+        m_par.mfx.FrameInfo.PicStruct = MFX_PICSTRUCT_PROGRESSIVE;
+
+        m_par.mfx.FrameInfo.FourCC       = MFX_FOURCC_NV12;
+        m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
+        m_par.mfx.FrameInfo.Width  = m_par.mfx.FrameInfo.CropW = 720;
+        m_par.mfx.FrameInfo.Height = m_par.mfx.FrameInfo.CropH = 480;
+        m_par.mfx.FrameInfo.FrameRateExtN = 30;
+        m_par.mfx.FrameInfo.FrameRateExtD = 1;
+    }
+
+    //mfxExtFeiParam& extbuffer = m_par;
+    //extbuffer.Func = func;
+
+    m_loaded = true;
+}
+
 tsVideoEncoder::~tsVideoEncoder() 
 {
     if(m_initialized)

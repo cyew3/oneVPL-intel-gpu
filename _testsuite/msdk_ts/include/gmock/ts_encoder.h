@@ -27,6 +27,7 @@ public:
     mfxPluginUID*               m_uid;
 
     tsVideoEncoder(mfxU32 CodecId = 0, bool useDefaults = true);
+    tsVideoEncoder(mfxFeiFunction func, mfxU32 CodecId = 0, bool useDefaults = true);
     ~tsVideoEncoder();
     
     mfxStatus Init();

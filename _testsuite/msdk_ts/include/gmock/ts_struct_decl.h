@@ -484,6 +484,11 @@ STRUCT(mfxPluginUID,
     FIELD_T(mfxU8, Data)
 )
 
+STRUCT(mfxExtFeiParam,
+    FIELD_S(mfxExtBuffer, Header)
+    FIELD_T(mfxFeiFunction, Func)
+)
+
 STRUCT(mfxExtCamGammaCorrection,
     FIELD_S(mfxExtBuffer, Header         )
     FIELD_T(mfxU16,       Mode           )
@@ -556,7 +561,7 @@ STRUCT(mfxExtAVCRefLists_mfxRefPic,
 )
 
 STRUCT(mfxExtAVCRefLists,
-    FIELD_S(mfxExtBuffer, Header           )  
+    FIELD_S(mfxExtBuffer, Header           )
     FIELD_T(mfxU16      , NumRefIdxL0Active)
     FIELD_T(mfxU16      , NumRefIdxL1Active)
     FIELD_S(mfxExtAVCRefLists_mfxRefPic, RefPicList0)
