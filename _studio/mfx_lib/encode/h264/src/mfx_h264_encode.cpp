@@ -8632,6 +8632,7 @@ Status MFXVideoENCODEH264::H264CoreEncoder_CompressFrame(
     Ipp32s bitsPerFrame = 0;
     Ipp32s brcRecode = 0; // nonzero if brc decided to recode picture
     bool recodePicture = false;
+    bool recodePCM = false;
     Ipp32s payloadBits = 0;
     Ipp32s brc_data_size;
     H264EncoderFrame_8u16s tempRefFrame;
@@ -8640,6 +8641,7 @@ Status MFXVideoENCODEH264::H264CoreEncoder_CompressFrame(
     Ipp8u  nal_header_ext[3] = {0,};
     sNALUnitHeaderSVCExtension svc_header = {0, };
     Ipp32s min_qp = 0;// min slice QP before buffer overflow
+    Ipp32s small_frame_qp = 0;
 
     H264ENC_UNREFERENCED_PARAMETER(ePictureType);
 
@@ -8716,7 +8718,7 @@ Status MFXVideoENCODEH264::H264CoreEncoder_CompressFrame(
     for (core_enc->m_field_index=0;core_enc->m_field_index<=(Ipp8u)(core_enc->m_pCurrentFrame->m_PictureStructureForDec<FRM_STRUCTURE);core_enc->m_field_index++) {
 
 #ifdef H264_RECODE_PCM
-        if(core_enc->useMBT && !recodePicture)
+        if(core_enc->useMBT && !recodePCM)
         {
             core_enc->m_nPCM = 0;
             memset(core_enc->m_mbPCM, 0, core_enc->m_HeightInMBs * core_enc->m_WidthInMBs * 2 * sizeof(Ipp32s));
@@ -9345,6 +9347,7 @@ re_encode_slice:
             }
             core_enc->m_field_index--;
             recodePicture = true;
+            recodePCM = true;
             core_enc->m_HeightInMBs <<= (Ipp8u)(core_enc->m_pCurrentFrame->m_PictureStructureForDec < FRM_STRUCTURE); //Do we need it here?
             goto brc_recode;
         }
@@ -9383,6 +9386,7 @@ re_encode_slice:
         if (core_enc->brc) {
             FrameType picType = (core_enc->m_PicType == INTRAPIC ? I_PICTURE : (core_enc->m_PicType == PREDPIC ? P_PICTURE : B_PICTURE));
             BRCStatus hrdSts;
+            Ipp32s curr_qp = core_enc->brc->GetQP(picType);
             bitsPerFrame = (Ipp32s)((dst->GetDataSize() - brc_data_size) << 3);
             hrdSts = core_enc->brc->PostPackFrame(picType, bitsPerFrame, payloadBits, brcRecode, core_enc->m_pCurrentFrame->m_PicOrderCnt[core_enc->m_field_index]);
             if (m_ConstQP)
@@ -9400,22 +9404,37 @@ re_encode_slice:
                 if(hrdSts == BRC_OK)
                 {
                     hrdSts = BRC_ERR_BIG_FRAME;
-                }
-                else
-                {
-                    memset(core_enc->m_mbPCM, 0, core_enc->m_HeightInMBs * core_enc->m_WidthInMBs * 2 * sizeof(Ipp32s));
+                    recodePCM = true;
                 }
             }
 #endif //H264_RECODE_PCM
 
             if (BRC_OK != hrdSts && (core_enc->m_Analyse & ANALYSE_RECODE_FRAME)) {
                 Ipp32s qp = core_enc->brc->GetQP(picType);
+                bool norecode = false;
+
+                if (!(hrdSts & BRC_NOT_ENOUGH_BUFFER))
+                {
+                    // to avoid infinite loop: --QP -> BIG_FRAME -> ++QP -> SMALL_FRAME etc.
+                    if (hrdSts & BRC_ERR_SMALL_FRAME)
+                    {
+                        norecode = (small_frame_qp == curr_qp);
+                        small_frame_qp = small_frame_qp ? IPP_MIN(small_frame_qp, curr_qp) : curr_qp;
+                    } 
+                    else if (small_frame_qp && small_frame_qp < qp && (hrdSts & BRC_ERR_BIG_FRAME))
+                    {
+                        qp = small_frame_qp - (small_frame_qp - curr_qp) / 2;
+                        core_enc->brc->SetQP(qp, picType);
+                    }
+                }
+
                 if ((hrdSts & BRC_ERR_SMALL_FRAME) && qp < min_qp) { // min_qp set in recode_check or = 0
                     // to avoid infinite loop: brc_recode(--QP) -> overflow -> recode_check(++QP) etc.
                     hrdSts |= BRC_NOT_ENOUGH_BUFFER; 
                 }
                 min_qp = 0;
-                if (!(hrdSts & BRC_NOT_ENOUGH_BUFFER)) {
+
+                if (!(hrdSts & BRC_NOT_ENOUGH_BUFFER) && !norecode) {
                     dst->SetDataSize(brc_data_size);
                     brcRecode = UMC::BRC_RECODE_QP;
                     core_enc->recodeFlag = UMC::BRC_RECODE_QP;
@@ -9665,6 +9684,7 @@ recode_check:
             }
             core_enc->m_field_index--;
             recodePicture = true;
+            recodePCM     = false;
             core_enc->m_HeightInMBs <<= (Ipp8u)(core_enc->m_pCurrentFrame->m_PictureStructureForDec < FRM_STRUCTURE); //Do we need it here?
             dst->SetDataSize(brc_data_size);
         }
