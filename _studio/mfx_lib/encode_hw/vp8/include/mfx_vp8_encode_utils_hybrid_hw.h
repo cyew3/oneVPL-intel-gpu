@@ -347,7 +347,7 @@ namespace MFX_VP8ENC
             pHybridTask->m_prevFrameSize = newestFrame.m_encodedFrameSize;
             pHybridTask->m_brcUpdateDelay = mfxU8(pOutTask->m_frameOrder - newestFrame.m_frameOrder);
 
-            while (m_cachedFrameInfoFromPak.size())
+            while (m_cachedFrameInfoFromPak.size() > 1)
             {
                 // store costs from last key and last non-key frames
                 if (m_cachedFrameInfoFromPak.front().m_frameType == 0)
