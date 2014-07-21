@@ -23,7 +23,7 @@ public:
 
 TEST_F(DataSinkTest, write_returned0_result_in_exception) {
     DataSink sink(instant_auto_ptr2<MFXDataIO>(&mockDataIo));
-    EXPECT_CALL(mockSample, HasMetaData(META_EOS)).WillOnce(Return(false));
+    //EXPECT_CALL(mockSample, HasMetaData(META_EOS)).WillOnce(Return(false));
     EXPECT_CALL(mockSample, GetBitstream()).WillOnce(ReturnRef(bs));
     EXPECT_CALL(mockDataIo, Write(&bs)).WillOnce(Return(0));
 

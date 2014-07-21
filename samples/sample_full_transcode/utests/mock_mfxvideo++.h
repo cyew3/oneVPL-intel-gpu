@@ -19,7 +19,7 @@ class MockMFXVideoSession : public MFXVideoSessionExt
 public:
     MockMFXVideoSession(PipelineFactory& factory) :
         MFXVideoSessionExt(factory){}
-    MOCK_METHOD1(GetFrameAllocator, mfxStatus (mfxFrameAllocator *&refAllocator));
+    //MOCK_METHOD1(GetFrameAllocator, mfxStatus (mfxFrameAllocator *&refAllocator));
     MOCK_METHOD2(Init, mfxStatus (mfxIMPL, mfxVersion*));
     MOCK_METHOD0(Close, mfxStatus ());
     MOCK_METHOD1(QueryIMPL, mfxStatus (mfxIMPL*));

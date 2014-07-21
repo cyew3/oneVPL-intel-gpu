@@ -85,7 +85,7 @@ TEST_F(FileIOTest, test_file_seek_overboard) {
     fio.reset(new FileIO(tmpFile.c_str(), MSDK_STRING("rb")));
 
     //TODO: MFX API not defined seek api well
-    EXPECT_EQ(0, fio->Seek(129, MFX_SEEK_ORIGIN_CURRENT));
+    EXPECT_EQ(129, fio->Seek(129, MFX_SEEK_ORIGIN_CURRENT));
     fio.reset();
 }
 

@@ -90,12 +90,12 @@ public:
     }
 
     void GetFrameAllocator(int e) {
-        if (e < 0) {
+        /*if (e < 0) {
             EXPECT_CALL(vSession, GetFrameAllocator(_)).WillOnce(DoAll(SetArgReferee<0>(allocator.get()), Return(MFX_ERR_INCOMPATIBLE_VIDEO_PARAM)));
         } else if (e > 0) {
             EXPECT_CALL(vSession, GetFrameAllocator(_)).WillOnce(DoAll(SetArgReferee<0>(allocator.get()), Return(MFX_WRN_PARTIAL_ACCELERATION)));
-        } else {
-            EXPECT_CALL(vSession, GetFrameAllocator(_)).WillOnce(DoAll(SetArgReferee<0>(allocator.get()), Return(MFX_ERR_NONE)));
+        } else*/ {
+            EXPECT_CALL(vSession, GetAllocator()).WillOnce(ReturnRef((std::auto_ptr<BaseFrameAllocator>&)allocator));
         }
     }
 

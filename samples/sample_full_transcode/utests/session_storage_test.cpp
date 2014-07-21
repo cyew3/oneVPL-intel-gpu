@@ -96,7 +96,8 @@ TEST_F(SessionStorageTest, audio_factory_init_error) {
     EXPECT_CALL(*aSession.get(), Init(_, _)).WillOnce(Return(MFX_ERR_UNSUPPORTED));
     EXPECT_CALL(factory, CreateAudioSession()).WillOnce(Return(aSession.get()));
 
-    EXPECT_THROW(storage->GetAudioSessionForID(5), MFXAudioSessionInitError);
+    //EXPECT_THROW(storage->GetAudioSessionForID(5), MFXAudioSessionInitError);
+    EXPECT_EQ(0, storage->GetAudioSessionForID(5));
     aSession.release();
 };
 

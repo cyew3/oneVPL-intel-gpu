@@ -67,7 +67,7 @@ public:
         EXPECT_CALL(sampleToReturn, GetBitstream()).WillRepeatedly(ReturnRef(bitstream));
 
         LetQueryReturns(MFX_ERR_NONE, 1);
-        LetQueryIOSurfReturns(MFX_ERR_NONE, 1);
+        LetQueryIOSurfReturns(MFX_ERR_NONE, 1, 1);
         EXPECT_CALL(sample, HasMetaData(META_EOS)).WillRepeatedly(Return(false));
 
         EXPECT_NO_THROW(transform_ve->PutSample(instant_auto_ptr((ISample*)&sample)));
@@ -96,8 +96,10 @@ public:
         EXPECT_CALL(encode, Query(_, _)).Times(nTimes).WillRepeatedly(Return(sts));
     }
 
-    void LetQueryIOSurfReturns(mfxStatus sts, int nTimes) {
-        EXPECT_CALL(encode, QueryIOSurf(_, _)).Times(nTimes).WillRepeatedly(Return(sts));
+    void LetQueryIOSurfReturns(mfxStatus sts,int asyncDEpth, int nTimes) {
+        mfxFrameAllocRequest request = {};
+        request.NumFrameMin = request.NumFrameSuggested = asyncDEpth;
+        EXPECT_CALL(encode, QueryIOSurf(_, _)).Times(nTimes).WillRepeatedly(DoAll(SetArgumentPointee<1>(request), Return(sts)));
     }
 
     void InitAll() {
@@ -115,7 +117,7 @@ public:
 TEST_F(TransformTestVEnc, PutSample_Device_Busy) {
     InitAll();
     LetQueryReturns(MFX_ERR_NONE, 1);
-    LetQueryIOSurfReturns(MFX_ERR_NONE, 1);
+    LetQueryIOSurfReturns(MFX_ERR_NONE, 1, 1);
     EXPECT_CALL(sample, HasMetaData(META_EOS)).WillRepeatedly(Return(false));
     EXPECT_CALL(encode, EncodeFrameAsync(_, _, _, _)).Times(2).WillRepeatedly(DoAll(SetArgPointee<3>((mfxSyncPoint)0),Return(MFX_WRN_DEVICE_BUSY)));
 
@@ -149,13 +151,13 @@ TEST_F(TransformTestVEnc, PutSample_EncodeGetVideoParamError) {
     EXPECT_CALL(pool, RegisterSample(_)).WillRepeatedly(Return());
 
     LetQueryReturns(MFX_ERR_NONE, 1);
-    LetQueryIOSurfReturns(MFX_ERR_NONE, 1);
+    LetQueryIOSurfReturns(MFX_ERR_NONE, 1, 1);
     EXPECT_CALL(sample, HasMetaData(META_EOS)).WillRepeatedly(Return(false));
     EXPECT_THROW(transform_ve->PutSample(instant_auto_ptr((ISample*)&sample)), EncodeGetVideoParamError);
 
     delete &sampleToReturn;
 }
-/*
+
 TEST_F(TransformTestVEnc, MakeSPSPPS_attaches_extBuffer) {
     Sequence s1;
     EXPECT_CALL(encode, Init(_)).WillOnce(DoAll(SetArgumentPointee<0>(vParam) ,Return(MFX_ERR_NONE)));
@@ -176,7 +178,7 @@ TEST_F(TransformTestVEnc, MakeSPSPPS_attaches_extBuffer) {
     EXPECT_CALL(sampleToReturn, GetBitstream()).WillRepeatedly(ReturnRef(bitstream));
 
     LetQueryReturns(MFX_ERR_NONE, 1);
-    LetQueryIOSurfReturns(MFX_ERR_NONE, 1);
+    LetQueryIOSurfReturns(MFX_ERR_NONE, 1, 1);
     EXPECT_CALL(sample, HasMetaData(META_EOS)).WillRepeatedly(Return(true));
 
     transform_ve->PutSample(instant_auto_ptr((ISample*)&sample));
@@ -184,7 +186,7 @@ TEST_F(TransformTestVEnc, MakeSPSPPS_attaches_extBuffer) {
     transform_ve->GetSample(out_sample);
 
     EXPECT_EQ(true, bWasSPSBuffer);
-}*/
+}
 
 TEST_F(TransformTestVEnc, PutSample_EOS) {
     EXPECT_CALL(encode, Init(_)).WillOnce(DoAll(SetArgumentPointee<0>(vParam) ,Return(MFX_ERR_NONE)));
@@ -195,7 +197,7 @@ TEST_F(TransformTestVEnc, PutSample_EOS) {
     EXPECT_CALL(sample, GetMetaData(META_VIDEOPARAM, _)).WillRepeatedly(Return(false));
 
     LetQueryReturns(MFX_ERR_NONE, 1);
-    LetQueryIOSurfReturns(MFX_ERR_NONE, 1);
+    LetQueryIOSurfReturns(MFX_ERR_NONE, 1, 1);
     EXPECT_CALL(sample, HasMetaData(META_EOS)).WillRepeatedly(Return(true));
 
     EXPECT_CALL(pool, RegisterSample(_)).WillRepeatedly(Return());
@@ -242,7 +244,7 @@ TEST_F(TransformTestVEnc, MakeSPSPPS_verify_sps_pps_joining) {
 
 
     LetQueryReturns(MFX_ERR_NONE, 1);
-    LetQueryIOSurfReturns(MFX_ERR_NONE, 1);
+    LetQueryIOSurfReturns(MFX_ERR_NONE, 1, 1);
 
     transform_ve->PutSample(instant_auto_ptr((ISample*)&sample));
     instant_auto_ptr((ISample*)0);
@@ -256,7 +258,7 @@ TEST_F(TransformTestVEnc, MakeSPSPPS_verify_sps_pps_joining) {
     EXPECT_EQ(4, mData[3]);
     EXPECT_EQ(4, mData.size());
 }
-/*
+
 TEST_F(TransformTestVEnc, MakeSPSPPS_GetVideoParamReturns_More_Buffer) {
     Sequence ss1;
     Sequence ss2;
@@ -274,7 +276,7 @@ TEST_F(TransformTestVEnc, MakeSPSPPS_GetVideoParamReturns_More_Buffer) {
     EXPECT_CALL(*this, OnSpsPPsBufferSize(_, _, _, _)).InSequence(ss3).WillOnce(DoAll(SaveArg<0>(&sps2), SaveArg<2>(&pps2)));
 
     LetQueryReturns(MFX_ERR_NONE, 1);
-    LetQueryIOSurfReturns(MFX_ERR_NONE, 1);
+    LetQueryIOSurfReturns(MFX_ERR_NONE, 1, 1);
 
     EXPECT_CALL(pool, RegisterSample(_)).WillRepeatedly(Return());
     EXPECT_CALL(pool, FindFreeSample()).WillRepeatedly(ReturnRef(sample));
@@ -294,7 +296,7 @@ TEST_F(TransformTestVEnc, MakeSPSPPS_GetVideoParamReturns_More_Buffer) {
 
     EXPECT_EQ(sps2 > sps1 && pps2 > pps1, bWasSPSBuffer);
 }
-*/
+
 
 TEST_F(TransformTestVEnc, PutSample_NoThrow) {
     PutSampleNoThrow();
@@ -306,8 +308,8 @@ TEST_F(TransformTestVEnc, GetSample_SyncOperationWrnInExecution) {
 
     EXPECT_CALL(vSession, SyncOperation(_, _)).WillOnce(Return(MFX_WRN_IN_EXECUTION));
     SamplePtr outSample;
-    EXPECT_FALSE(transform_ve->GetSample(outSample));
-
+    //EXPECT_FALSE(transform_ve->GetSample(outSample));
+    EXPECT_ANY_THROW(transform_ve->GetSample(outSample));
     delete &sampleToReturn;
 }
 
@@ -341,7 +343,7 @@ TEST_F(TransformTestVEnc, PutSample_ErrMoreBitstream) {
     EXPECT_CALL(vSession, SyncOperation(_, _)).Times(2).WillRepeatedly(Return(MFX_ERR_NONE));
 
     LetQueryReturns(MFX_ERR_NONE, 1);
-    LetQueryIOSurfReturns(MFX_ERR_NONE, 1);
+    LetQueryIOSurfReturns(MFX_ERR_NONE, 1, 1);
 
     EXPECT_CALL(sample, HasMetaData(META_EOS)).WillRepeatedly(Return(false));
     EXPECT_CALL(sample, GetTrackID()).WillRepeatedly(Return(0));

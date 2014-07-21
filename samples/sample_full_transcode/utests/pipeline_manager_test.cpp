@@ -236,8 +236,8 @@ public:
     void InitDecoders(int audio,int atrack=0/*int bSw, int bAudioSW, int bD3d11*/) {
         if (audio) {
             EXPECT_CALL(mock_storage, GetAudioSessionForID(trackInfo0.SID)).WillRepeatedly(Return((MFXAudioSession*)NULL));
-            EXPECT_CALL(fac, CreateAudioDecoderTransform(_, _)).WillOnce(Return(&mock_atransform));
-            EXPECT_CALL(mock_transform_storage, RegisterTransform(_,_)).InSequence(saudio).WillOnce(Invoke(&adec, &RegisterTransformCallback::RegisterTransform));
+            //EXPECT_CALL(fac, CreateAudioDecoderTransform(_, _)).WillOnce(Return(&mock_atransform));
+            EXPECT_CALL(mock_transform_storage, RegisterTransform(_,_)).InSequence(saudio).WillRepeatedly(Invoke(&adec, &RegisterTransformCallback::RegisterTransform));
             EXPECT_CALL(mock_profile, isAudioDecoderExist(atrack)).WillRepeatedly(Return(true));
 
         } else {
@@ -251,8 +251,8 @@ public:
     void InitEncoders(int audio, int atrack=0/*int bSw, int bAudioSW, int bD3d11*/) {
         if (audio) {
             EXPECT_CALL(mock_profile, isAudioEncoderExist(atrack)).WillRepeatedly(Return(true));
-            EXPECT_CALL(fac, CreateAudioEncoderTransform(_,_)).WillOnce(Return(&mock_aenctransform));
-            EXPECT_CALL(mock_transform_storage, RegisterTransform(_,_)).InSequence(saudio).WillOnce(Invoke(&aenc, &RegisterTransformCallback::RegisterTransform));;
+            //EXPECT_CALL(fac, CreateAudioEncoderTransform(_,_)).WillOnce(Return(&mock_aenctransform));
+            EXPECT_CALL(mock_transform_storage, RegisterTransform(_,_)).InSequence(saudio).WillRepeatedly(Invoke(&aenc, &RegisterTransformCallback::RegisterTransform));;
 
         } else {
             EXPECT_CALL(mock_profile, isEncoderExist()).WillRepeatedly(Return(true));
@@ -324,7 +324,8 @@ TEST_F (PipelineManager_BuildTest, decode_only_profile_reports_1_audio_no_video)
     EXPECT_CALL(mock_profile, isAudioEncoderExist(0)).WillRepeatedly(Return(false));
     EXPECT_CALL(mock_profile, isAudioDecoderExist(1)).WillRepeatedly(Return(false));
     EXPECT_CALL(mock_profile, isMultiplexerExist()).WillRepeatedly(Return(false));
-
+    EXPECT_CALL(mock_parser, IsPresent(msdk_string(OPTION_LOOP))).WillRepeatedly(Return(false));
+    EXPECT_CALL(mock_parser, IsPresent(msdk_string(OPTION_ACODEC_COPY))).WillRepeatedly(Return(false));
     InitOutput();
 
     AudioTrackInfoExt aTrackInfo;
@@ -344,7 +345,8 @@ TEST_F (PipelineManager_BuildTest, decode_encode_video_only) {
     EXPECT_CALL(mock_profile, isMultiplexerExist()).WillRepeatedly(Return(false));
     EXPECT_CALL(mock_profile, isVppExist()).WillRepeatedly(Return(false));
     EXPECT_CALL(mock_profile, isGenericPluginExist()).WillRepeatedly(Return(false));
-
+    EXPECT_CALL(mock_parser, IsPresent(msdk_string(OPTION_LOOP))).WillRepeatedly(Return(false));
+    EXPECT_CALL(mock_parser, IsPresent(msdk_string(OPTION_ACODEC_COPY))).WillRepeatedly(Return(false));
     InitOutput();
 
     VideoTrackInfoExt vTrackInfo;

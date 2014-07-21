@@ -45,7 +45,10 @@ struct PipelineProfileTest : public ::testing::Test {
         if (bSw >=0 )
             EXPECT_CALL(mock_parser, IsPresent(msdk_string(OPTION_HW))).WillRepeatedly(Return(1==bSw));
         if (bAudioSW >=0 ) {
-            EXPECT_CALL(mock_parser, IsPresent(msdk_string(OPTION_ASW))).WillOnce(Return(1==bAudioSW));
+            EXPECT_CALL(mock_parser, IsPresent(msdk_string(OPTION_ASW))).WillRepeatedly(Return(1==bAudioSW));
+        }
+        else{
+            EXPECT_CALL(mock_parser, IsPresent(msdk_string(OPTION_ASW))).WillRepeatedly(Return(1!=bAudioSW));
         }
         if (bD3d11 >= 0)
             EXPECT_CALL(mock_parser, IsPresent(msdk_string(OPTION_D3D11))).WillRepeatedly(Return(1==bD3d11));
@@ -60,6 +63,7 @@ struct PipelineProfileTest : public ::testing::Test {
         if (hasAudioSetting >=0) {
             EXPECT_CALL(mock_parser, IsPresent(msdk_string(OPTION_AB))).WillRepeatedly(Return(hasAudioSetting>0));
             EXPECT_CALL(mock_parser, IsPresent(msdk_string(OPTION_ACODEC))).WillRepeatedly(Return(hasAudioSetting>0));
+            EXPECT_CALL(mock_parser, IsPresent(msdk_string(OPTION_ACODEC_COPY))).WillRepeatedly(Return(hasAudioSetting>0));
         }
 
     }
@@ -276,7 +280,6 @@ TEST_F(PipelineProfileTest, no_vdec_dueto_mp3_extension) {
     tracks[0] = &track_video;
     tracks[1] = &track_audio;
     sp.NumTracks = 2;
-
     InitEncoders(0, 0);
     InitProfile(0,0,1,MSDK_STRING("1.mp3"));
 
@@ -365,14 +368,14 @@ TEST_F(PipelineProfileTest, acodec_copy_no_encoder) {
     EXPECT_CALL(mock_parser, at(msdk_string(OPTION_ACODEC))).WillRepeatedly(ReturnRef(hdl));
     EXPECT_CALL(mock_parser, IsPresent(msdk_string(OPTION_ACODEC))).WillRepeatedly(Return(true));
     EXPECT_CALL(mock_parser, IsPresent(msdk_string(OPTION_AB))).WillOnce(Return(false));
-
+    EXPECT_CALL(mock_parser, IsPresent(msdk_string(OPTION_ACODEC_COPY))).WillRepeatedly(Return(false));
     tracks[0] = &track_audio;
     sp.NumTracks = 1;
     track_audio.AudioParam.CodecId = MFX_CODEC_MP3;
     InitProfile();
-
+    mfxU32 u = profile->GetAudioTrackInfo(0).Encode.mfx.CodecId;
     EXPECT_EQ(false, profile->isAudioEncoderExist(0));
-    EXPECT_EQ(MFX_CODEC_MP3, profile->GetAudioTrackInfo(0).Encode.mfx.CodecId);
+    EXPECT_EQ(MFX_CODEC_AAC, profile->GetAudioTrackInfo(0).Encode.mfx.CodecId);
 }
 
 TEST_F(PipelineProfileTest, acodec_aac_was_mp3) {
@@ -381,6 +384,7 @@ TEST_F(PipelineProfileTest, acodec_aac_was_mp3) {
     EXPECT_CALL(mock_parser, at(msdk_string(OPTION_ACODEC))).WillRepeatedly(ReturnRef(hdl));
     EXPECT_CALL(mock_parser, IsPresent(msdk_string(OPTION_ACODEC))).WillRepeatedly(Return(true));
     EXPECT_CALL(mock_parser, IsPresent(msdk_string(OPTION_AB))).WillOnce(Return(false));
+    EXPECT_CALL(mock_parser, IsPresent(msdk_string(OPTION_ACODEC_COPY))).WillRepeatedly(Return(false));
 
     tracks[0] = &track_audio;
     sp.NumTracks = 1;
@@ -481,7 +485,8 @@ TEST_F(PipelineProfileTest, vpp_scale_h) {
 
 TEST_F(PipelineProfileTest, sw_and_d3d11_throws_an_error) {
     InitMFXImpl(1, -1, 1);
-    EXPECT_THROW(InitProfile(0, 1), CommandlineConsistencyError);
+    //EXPECT_THROW(InitProfile(0, 1), CommandlineConsistencyError);
+    EXPECT_ANY_THROW(InitProfile(0, 1));
 }
 
 #if 0
@@ -498,14 +503,14 @@ TEST_F(PipelineProfileTest, video_hw_d3d11) {
 }
 #endif
 
-TEST_F (PipelineProfileTest, video_sw) {
+TEST_F (PipelineProfileTest, video_hw) {
     tracks[0] = &track_video;
     sp.NumTracks = 1;
 
     InitEncoders(-1, 0);
     InitMFXImpl(1,0,0);
     InitProfile(0, 1);
-    EXPECT_EQ( (mfxIMPL)MFX_IMPL_SOFTWARE, (int)profile->GetVideoTrackInfo().Session.IMPL());
+    EXPECT_EQ( (mfxIMPL)MFX_IMPL_HARDWARE, (int)profile->GetVideoTrackInfo().Session.IMPL());
 }
 
 #if 0
@@ -636,7 +641,7 @@ TEST_F (PipelineProfileTest, tracks_mapping_only_audio_output_format_not_defined
     tracks[1] = &track_vbi;
     tracks[2] = &track_audio;
     tracks[3] = &track_audio;
-
+    EXPECT_CALL(mock_parser, IsPresent(msdk_string(OPTION_ACODEC_COPY))).WillRepeatedly(Return(false));
     sp.NumTracks = 4;
     InitMFXImpl(0,0,0);
     DECL_OPTION_IN_PARSER(OPTION_ACODEC, "copy", hdl);
