@@ -513,7 +513,7 @@ namespace MfxHwH264Encode
         void ConstructMvcSeqDesc(mfxExtMVCSeqDesc const & desc);
 
     private:
-        mfxExtBuffer *              m_extParam[18];
+        mfxExtBuffer *              m_extParam[19];
 
         // external, documented
         mfxExtCodingOption          m_extOpt;
