@@ -31,3 +31,10 @@ LIBMFXAUDIO_1.8 {
   local:
     *;
 };
+
+LIBMFXAUDIO_1.9 {
+  global:
+    MFXAudioUSER_Register;
+    MFXAudioUSER_Unregister;
+    MFXAudioUSER_ProcessFrameAsync;
+};

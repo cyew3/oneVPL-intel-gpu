@@ -29,7 +29,43 @@ File Name: libmfxsw_decode.cpp
 #include "mfx_mp3_dec_decode.h"
 #endif
 
+mfxStatus MFXAudioUSER_Register(mfxSession session, mfxU32 type,
+                                const mfxPlugin *par)
+{
+    mfxStatus mfxRes = MFX_ERR_UNSUPPORTED;
+    MFX_CHECK(session, MFX_ERR_INVALID_HANDLE);
 
+    session;
+    type;
+    par;
+
+    return mfxRes;
+}
+
+mfxStatus MFXAudioUSER_Unregister(mfxSession session, mfxU32 type)
+{
+    mfxStatus mfxRes = MFX_ERR_UNSUPPORTED;
+    MFX_CHECK(session, MFX_ERR_INVALID_HANDLE);
+
+    session;
+    type;
+
+    return mfxRes;
+}
+
+mfxStatus MFXAudioUSER_ProcessFrameAsync(mfxSession session,
+                                         const mfxHDL *in, mfxU32 in_num,
+                                         const mfxHDL *out, mfxU32 out_num,
+                                         mfxSyncPoint *syncp)
+{
+    mfxStatus mfxRes = MFX_ERR_UNSUPPORTED;
+    MFX_CHECK(session, MFX_ERR_INVALID_HANDLE);
+
+    session;
+    in; out; in_num; out_num; syncp;
+
+    return mfxRes;
+}
 
 AudioDECODE *CreateAudioDECODESpecificClass(mfxU32 CodecId, AudioCORE *core, mfxSession session)
 {

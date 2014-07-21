@@ -19,6 +19,10 @@ EXPORTS
     MFXAudioENCODE_GetAudioParam
     MFXAudioENCODE_EncodeFrameAsync
 
+    MFXAudioUSER_Register
+    MFXAudioUSER_Unregister
+    MFXAudioUSER_ProcessFrameAsync
+
 	MFXAudioDECODE_Query
     MFXAudioDECODE_DecodeHeader
     MFXAudioDECODE_Init
