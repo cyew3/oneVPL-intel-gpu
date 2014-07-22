@@ -1196,41 +1196,47 @@ bool MfxHwH264Encode::IsRunTimeOnlyExtBuffer(mfxU32 id)
 bool MfxHwH264Encode::IsRunTimeExtBufferIdSupported(mfxU32 id)
 {
     return
-        id == MFX_EXTBUFF_AVC_REFLIST_CTRL   ||
+          (id == MFX_EXTBUFF_AVC_REFLIST_CTRL
 #if defined (ADVANCED_REF)
-        id == MFX_EXTBUFF_AVC_REFLISTS       ||
+        || id == MFX_EXTBUFF_AVC_REFLISTS
 #endif
-        id == MFX_EXTBUFF_ENCODED_FRAME_INFO ||
-        id == MFX_EXTBUFF_PICTURE_TIMING_SEI ||
-        id == MFX_EXTBUFF_CODING_OPTION2     ||
-        id == MFX_EXTBUFF_ENCODER_ROI ||
-        id == MFX_EXTBUFF_FEI_ENC_CTRL ||
-        id == MFX_EXTBUFF_FEI_ENC_MB ||
-        id == MFX_EXTBUFF_FEI_ENC_MV_PRED;
+        || id == MFX_EXTBUFF_ENCODED_FRAME_INFO
+        || id == MFX_EXTBUFF_PICTURE_TIMING_SEI
+        || id == MFX_EXTBUFF_CODING_OPTION2
+        || id == MFX_EXTBUFF_ENCODER_ROI
+#if defined (MFX_ENABLE_H264_VIDEO_FEI_ENCPAK)
+        || id == MFX_EXTBUFF_FEI_ENC_CTRL
+        || id == MFX_EXTBUFF_FEI_ENC_MB
+        || id == MFX_EXTBUFF_FEI_ENC_MV_PRED
+#endif        
+        );
 }
 
 bool MfxHwH264Encode::IsVideoParamExtBufferIdSupported(mfxU32 id)
 {
     return
-        id == MFX_EXTBUFF_CODING_OPTION             ||
-        id == MFX_EXTBUFF_CODING_OPTION_SPSPPS      ||
-        id == MFX_EXTBUFF_DDI                       ||
-        id == MFX_EXTBUFF_DUMP                      ||
-        id == MFX_EXTBUFF_PAVP_OPTION               ||
-        id == MFX_EXTBUFF_MVC_SEQ_DESC              ||
-        id == MFX_EXTBUFF_VIDEO_SIGNAL_INFO         ||
-        id == MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION ||
-        id == MFX_EXTBUFF_PICTURE_TIMING_SEI        ||
-        id == MFX_EXTBUFF_AVC_TEMPORAL_LAYERS       ||
-        id == MFX_EXTBUFF_CODING_OPTION2            ||
-        id == MFX_EXTBUFF_SVC_SEQ_DESC              ||
-        id == MFX_EXTBUFF_SVC_RATE_CONTROL          ||
-        id == MFX_EXTBUFF_ENCODER_RESET_OPTION      ||
-        id == MFX_EXTBUFF_ENCODER_CAPABILITY        ||
-        id == MFX_EXTBUFF_ENCODER_WIDI_USAGE        ||
-        id == MFX_EXTBUFF_ENCODER_ROI               ||
-        id == MFX_EXTBUFF_CODING_OPTION3;
-        id == MFX_EXTBUFF_FEI_PARAM;
+           (id == MFX_EXTBUFF_CODING_OPTION
+        || id == MFX_EXTBUFF_CODING_OPTION_SPSPPS
+        || id == MFX_EXTBUFF_DDI
+        || id == MFX_EXTBUFF_DUMP
+        || id == MFX_EXTBUFF_PAVP_OPTION
+        || id == MFX_EXTBUFF_MVC_SEQ_DESC
+        || id == MFX_EXTBUFF_VIDEO_SIGNAL_INFO
+        || id == MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION
+        || id == MFX_EXTBUFF_PICTURE_TIMING_SEI
+        || id == MFX_EXTBUFF_AVC_TEMPORAL_LAYERS
+        || id == MFX_EXTBUFF_CODING_OPTION2
+        || id == MFX_EXTBUFF_SVC_SEQ_DESC
+        || id == MFX_EXTBUFF_SVC_RATE_CONTROL
+        || id == MFX_EXTBUFF_ENCODER_RESET_OPTION
+        || id == MFX_EXTBUFF_ENCODER_CAPABILITY
+        || id == MFX_EXTBUFF_ENCODER_WIDI_USAGE
+        || id == MFX_EXTBUFF_ENCODER_ROI
+        || id == MFX_EXTBUFF_CODING_OPTION3
+#if defined (MFX_ENABLE_H264_VIDEO_FEI_ENCPAK)
+        || id == MFX_EXTBUFF_FEI_PARAM
+#endif
+        );
 }
 
 mfxStatus MfxHwH264Encode::CheckExtBufferId(mfxVideoParam const & par)
@@ -5377,13 +5383,18 @@ void MfxVideoParam::Construct(mfxVideoParam const & par)
     m_extParam[15] = &m_extEncResetOpt.Header;
     m_extParam[16] = &m_extEncRoi.Header;
     m_extParam[17] = &m_extOpt3.Header;
+#if defined(MFX_ENABLE_H264_VIDEO_FEI_ENCPAK)
     m_extParam[18] = &m_extFeiParam.Header;
     //add additional params if any
     //NumExtParam = 19;
-
+#endif
     ExtParam = m_extParam;
     NumExtParam = mfxU16(sizeof m_extParam / sizeof m_extParam[0]);
+#if defined(MFX_ENABLE_H264_VIDEO_FEI_ENCPAK)
     assert(NumExtParam == 19);
+#else
+    assert(NumExtParam == 18);
+#endif
 }
 
 void MfxVideoParam::ConstructMvcSeqDesc(

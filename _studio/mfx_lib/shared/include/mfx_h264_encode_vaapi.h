@@ -48,9 +48,11 @@ namespace MfxHwH264Encode
         mfxU32 number;
         mfxU32 idxBs;
         mfxU32 size; // valid only if Surface ID == VA_INVALID_SURFACE (skipped frames)
+#if defined(MFX_ENABLE_H264_VIDEO_FEI_PREENC) || defined(MFX_ENABLE_H264_VIDEO_FEI_ENCPAK)
         VASurfaceID mv;
         VASurfaceID mbstat;
         VASurfaceID mbcode;
+#endif
     } ExtVASurface;
 
     typedef VAEncMiscParameterBufferROI::VAEncROI VAEncROI;
