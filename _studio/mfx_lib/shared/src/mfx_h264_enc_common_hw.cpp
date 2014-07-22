@@ -1668,11 +1668,6 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
         }
     }
 
-    if (par.AsyncDepth > 6)
-    {
-        changed = true;
-        par.AsyncDepth = 6;
-    }
     //disable SW brc
     /*if (IsOn(extOpt2->ExtBRC) && par.mfx.RateControlMethod == MFX_RATECONTROL_LA && IsLookAheadSupported(par, platform))
     {
