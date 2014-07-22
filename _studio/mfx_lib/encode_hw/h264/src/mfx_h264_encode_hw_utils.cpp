@@ -4343,8 +4343,8 @@ mfxStatus MfxHwH264Encode::CheckEncodeFrameParam(
         MFX_CHECK_STS(sts);
     }
 
-    if (video.mfx.EncodedOrder == 1 && 
-        video.mfx.RateControlMethod != MFX_RATECONTROL_LA_EXT ||
+    if (video.mfx.EncodedOrder == 1 &&
+        video.mfx.RateControlMethod != MFX_RATECONTROL_LA_EXT &&
         video.mfx.RateControlMethod != MFX_RATECONTROL_VME)
     {
         MFX_CHECK(surface != 0, MFX_ERR_MORE_DATA);
