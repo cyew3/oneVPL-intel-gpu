@@ -40,7 +40,8 @@ void PrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("  3. Dump model: decoding with YUV dumping (-o option)\n"));
     msdk_printf(MSDK_STRING("\n"));
     msdk_printf(MSDK_STRING("Options:\n"));
-    msdk_printf(MSDK_STRING("   [-hw]                   - use platform specific SDK implementation, if not specified software implementation is used\n"));
+    msdk_printf(MSDK_STRING("   [-hw]                   - use platform specific SDK implementation (default)\n"));
+    msdk_printf(MSDK_STRING("   [-sw]                   - use software implementation, if not specified platform specific SDK implementation is used\n"));
     msdk_printf(MSDK_STRING("   [-p guid|path_to_plugin]  - 32-character hexadecimal guid string or path to decoder plugin\n"));
     msdk_printf(MSDK_STRING("                               (optional for Media SDK in-box plugins, required for user-decoder ones)\n"));
 #if D3D_SURFACES_SUPPORT
@@ -70,6 +71,9 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
 
     MSDK_CHECK_POINTER(pParams, MFX_ERR_NULL_PTR);
 
+    // default implementation
+    pParams->bUseHWLib = true;
+
     for (mfxU8 i = 1; i < nArgNum; i++)
     {
         if (MSDK_CHAR('-') != strInput[i][0])
@@ -90,9 +94,9 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
             continue;
         }
 
-        if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-hw")))
+        if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-sw")))
         {
-            pParams->bUseHWLib = true;
+            pParams->bUseHWLib = false;
         }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-i420")))
         {

@@ -41,7 +41,8 @@ void PrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("   [-lad depth] - depth parameter for the LA BRC, the number of frames to be analyzed before encoding. In range [10,100].\n"));
     msdk_printf(MSDK_STRING("   [-dstw width] - destination picture width, invokes VPP resizing\n"));
     msdk_printf(MSDK_STRING("   [-dsth height] - destination picture height, invokes VPP resizing\n"));
-    msdk_printf(MSDK_STRING("   [-hw] - use platform specific SDK implementation, if not specified software implementation is used\n"));
+    msdk_printf(MSDK_STRING("   [-hw] - use platform specific SDK implementation (default)\n"));
+    msdk_printf(MSDK_STRING("   [-sw] - use software implementation, if not specified platform specific SDK implementation is used\n"));
     msdk_printf(MSDK_STRING("   [-p guid|path_to_plugin] - 32-character hexadecimal guid string or path to encoder plugin\n"));
     msdk_printf(MSDK_STRING("                              (optional for Media SDK in-box plugins, required for user-encoder ones)\n"));
     msdk_printf(MSDK_STRING("   [-async]                 - depth of asynchronous pipeline. default value is 4. must be between 1 and 20.\n"));
@@ -91,6 +92,9 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
 
     msdk_opt_read(MSDK_CPU_ROTATE_PLUGIN, pParams->strPluginDLLPath);
 
+    // default implementation
+    pParams->bUseHWLib = true;
+
     // parse command line parameters
     for (mfxU8 i = 1; i < nArgNum; i++)
     {
@@ -128,9 +132,9 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
             i++;
             msdk_opt_read(strInput[i], pParams->nDstHeight);
         }
-        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-hw")))
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-sw")))
         {
-            pParams->bUseHWLib = true;
+            pParams->bUseHWLib = false;
         }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-nv12")))
         {

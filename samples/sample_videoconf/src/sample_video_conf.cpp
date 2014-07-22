@@ -37,7 +37,8 @@ void PrintHelp( const std::basic_string<msdk_char> & strAppName
     msdk_printf(MSDK_STRING("   [-h1, -h2 ... height] - height to be used for encoding n-th file\n"));
     msdk_printf(MSDK_STRING("   [-f, -f1, -f2 ... frameRate] - video frame rate (frames per second) for n-th file\n"));
     msdk_printf(MSDK_STRING("   [-b bitRate] - encoded bit rate (Kbits per second)\n"));
-    msdk_printf(MSDK_STRING("   [-hw] - use platform specific SDK implementation, if not specified software implementation is used\n"));
+    msdk_printf(MSDK_STRING("   [-hw] - use platform specific SDK implementation (default)\n"));
+    msdk_printf(MSDK_STRING("   [-sw] - use software implementation, if not specified platform specific SDK implementation is used\n"));
 #if D3D_SURFACES_SUPPORT
     msdk_printf(MSDK_STRING("   [-d3d] - work with d3d surfaces\n"));
 #endif
@@ -93,14 +94,17 @@ void ParseInputString(msdk_char** strInput, int nArgNum, VideoConfParams& params
         throw std::basic_string<msdk_char>(MSDK_STRING(""));
     }
 
+    // default implementation
+    params.bUseHWLib = true;
+
     // parse command line parameters
     for (mfxU8 i = 0; i < nArgNum; i++)
     {
         msdk_char* arg = strInput[i];
         mfxI32 idx = get_index(strInput[i], 2);
-        if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-hw")))
+        if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-sw")))
         {
-            params.bUseHWLib = true;
+            params.bUseHWLib = false;
         }
 #if D3D_SURFACES_SUPPORT
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-d3d")))

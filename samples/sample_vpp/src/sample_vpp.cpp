@@ -40,7 +40,7 @@ void vppDefaultInitParams( sInputParams* pParams )
 
   pParams->requestedFramesCount = MFX_MAX_32U;
 
-  pParams->impLib = MFX_IMPL_SOFTWARE;
+  pParams->impLib = MFX_IMPL_HARDWARE;
 
   return;
 

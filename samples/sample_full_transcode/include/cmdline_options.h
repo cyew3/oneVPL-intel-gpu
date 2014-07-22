@@ -9,6 +9,7 @@
 #define OPTION_I MSDK_CHAR("-i")
 #define OPTION_O MSDK_CHAR("-o")
 #define OPTION_HW MSDK_CHAR("-hw")
+#define OPTION_SW MSDK_CHAR("-sw")
 #define OPTION_ASW MSDK_CHAR("-asw")
 #define OPTION_VB MSDK_CHAR("-v:b")
 #define OPTION_AB MSDK_CHAR("-a:b")

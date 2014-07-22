@@ -68,9 +68,13 @@ void PipelineProfile::ParseSessionInfo() {
     APIChangeFeatures featuresa = {};
     APIChangeFeatures featuresv = {};
 
-    if (m_parser.IsPresent(OPTION_HW)) {
-        m_vSesInfo.IMPL() = MFX_IMPL_HARDWARE;
+    // default implementation
+    m_vSesInfo.IMPL() = MFX_IMPL_HARDWARE;
+
+    if (m_parser.IsPresent(OPTION_SW)) {
+        m_vSesInfo.IMPL() = MFX_IMPL_SOFTWARE;
     }
+
     if (m_parser.IsPresent(OPTION_D3D11)) {
         if (m_vSesInfo.IMPL() == MFX_IMPL_SOFTWARE) {
             MSDK_TRACE_ERROR(MSDK_STRING("Option -d3d11 can be used only with -hw option"));

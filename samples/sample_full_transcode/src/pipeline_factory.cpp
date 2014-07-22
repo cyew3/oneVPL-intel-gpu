@@ -175,7 +175,7 @@ CmdLineParser* PipelineFactory::CreateCmdLineParser()
 
     msdk_stringstream UsageExamples;
     UsageExamples << MSDK_STRING("\nExample:\n") << OPTION_I << MSDK_STRING(" in.m2ts ") << OPTION_O << MSDK_STRING(" out.mp4 ")<< OPTION_VB << MSDK_STRING(" 1000 ") <<
-        OPTION_AB << MSDK_STRING(" 16") << std::endl
+        OPTION_AB << OPTION_SW << MSDK_STRING(" 16") << std::endl
         << OPTION_I << MSDK_STRING(" in.mp4 ") << OPTION_O << MSDK_STRING(" out.m2ts ") << OPTION_VB << MSDK_STRING(" 2000 ") << OPTION_AB << MSDK_STRING(" 52 ") <<
         OPTION_D3D11 << MSDK_STRING(" ") << OPTION_HW << std::endl
         << OPTION_I << MSDK_STRING(" in.mp4 ")<< OPTION_O << MSDK_STRING(" out.abc ") << OPTION_VB << MSDK_STRING(" 2000 ") << OPTION_AB << MSDK_STRING(" 52 ") <<
