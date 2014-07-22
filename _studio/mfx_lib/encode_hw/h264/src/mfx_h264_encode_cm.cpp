@@ -966,8 +966,10 @@ bool CmContext::QueryVme(
                 if (mb.MbType5Bits != MBTYPE_BP_L0_16x16 &&
                     mb.MbType5Bits != MBTYPE_B_L1_16x16  &&
                     mb.MbType5Bits != MBTYPE_B_Bi_16x16)
+                { 
+                // fprintf(stdout,"MbType5Bits: %x\n", mb.MbType5Bits );fflush(stdout);
                     assert(0);
-
+                }
                 mfxU32 modeCostLambda = Map44LutValueBack(costs.ModeCost[LUTMODE_INTER_16x16]);
                 mfxU32 mvCostLambda   = (task.m_type[0] & MFX_FRAMETYPE_P)
                     ? GetVmeMvCostP(m_lutMvP, mb) : GetVmeMvCostB(m_lutMvB, mb);

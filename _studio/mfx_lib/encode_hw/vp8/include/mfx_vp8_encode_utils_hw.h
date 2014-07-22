@@ -23,7 +23,9 @@
 #endif
 //#define VP8_HYBRID_TIMING
 //#define VP8_HYBRID_FALL_TO_SW
-#define VP8_LOGGING
+#if !defined(NDEBUG)
+# define VP8_LOGGING
+#endif
 
 #ifdef VP8_LOGGING
 #define VP8_LOG(S)     printf(S); fflush(0);
