@@ -92,7 +92,7 @@ public:
     {
         return m_pVirual->RunFrameVPPAsync(in, out, aux, syncp);
     }
-    virtual mfxStatus RunFrameVPPAsync(mfxFrameSurface1 *in, mfxFrameSurface1 *work, mfxFrameSurface1 **out, mfxExtVppAuxData *aux, mfxSyncPoint *syncp)
+    virtual mfxStatus RunFrameVPPAsyncEx(mfxFrameSurface1 *in, mfxFrameSurface1 *work, mfxFrameSurface1 **out, mfxExtVppAuxData *aux, mfxSyncPoint *syncp)
     {
         return m_pVirual->RunFrameVPPAsyncEx(in, work, out, aux, syncp);
     }
