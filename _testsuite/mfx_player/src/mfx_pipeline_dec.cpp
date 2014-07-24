@@ -2889,8 +2889,9 @@ mfxStatus  MFXDecPipeline::RunVPP(mfxFrameSurface1 *pSurface)
             MFX_CHECK_STS(m_components[eVPP].FindFreeSurface(NULL != pSurface? pSurface->Info.FrameId.DependencyId : 0,  &vppOut, m_pRender));
             if ( vppOut.pSurface )
             {
-                /* Zero picstruct of the output surface. Having something non-zero may lead to incorrect behavior */
-                vppOut.pSurface->Info.PicStruct = 0;
+                /* picstruct of the output frame could be incorrect since frames are taken from a single pool. To eliminate
+                 * mess, drop picstruct to the original that was used at allocation stage */
+                vppOut.pSurface->Info.PicStruct = m_components[eREN].m_params.mfx.FrameInfo.PicStruct;
             }
         }
 
