@@ -265,7 +265,7 @@ typedef struct {
             //dword 9
             mfxU32   MbIntraStruct : 8;
             mfxU32   Reserved60    : 24;
-        };
+        } IntraMB;
         struct {// Inter MBs
             //dword 7
             mfxU8    SubMbShapes;
@@ -274,7 +274,7 @@ typedef struct {
 
             //dword 8, 9
             mfxU8    RefIdx[2][4]; /* first index is 0 for L0 and 1 for L1 */
-        };
+        } InterMB;
     };
 
     //dword 10
@@ -429,11 +429,11 @@ typedef struct {
 } mfxPAKInput;
 
 typedef struct {
-    mfxBitstream *Bs; 
+    mfxBitstream     *Bs; 
 
     mfxFrameSurface1 *OutSurface;
 
-    mfxU16  NumExtParam;
+    mfxU16            NumExtParam;
     mfxExtBuffer    **ExtParam;
 } mfxPAKOutput;
 
