@@ -2405,7 +2405,7 @@ mfxStatus VideoDECODEMPEG2::CheckFrameData(const mfxFrameSurface1 *pSurface)
     if (pSurface->Info.Width >  m_InitW ||
         pSurface->Info.Height > m_InitH)
     {
-        return MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
+        //return MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
     }
 
     return MFX_ERR_NONE;
