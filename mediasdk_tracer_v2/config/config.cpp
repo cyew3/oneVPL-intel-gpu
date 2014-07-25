@@ -49,7 +49,28 @@ void Config::Init()
             getline(_file, inistr);
 
             //delete tabs and spaces
-            inistr.erase(std::remove_if(inistr.begin(), inistr.end(), &::isspace), inistr.end());
+            unsigned int firstQuote = inistr.find("\"");
+            unsigned int secondQuote = inistr.find_last_of("\"");
+            std::string firstPart="";
+            std::string secondPart="";
+            std::string quotePart="";
+            if ((firstQuote != std::string::npos) && firstQuote < secondQuote)
+            {
+               firstPart = inistr.substr(0,firstQuote);
+               if (secondQuote != std::string::npos)
+               {
+                  secondPart = inistr.substr(secondQuote+1);
+                  quotePart = inistr.substr(firstQuote+1, secondQuote-firstQuote-1);
+               }
+
+               firstPart.erase(std::remove_if(firstPart.begin(), firstPart.end(), &::isspace),firstPart.end());
+               secondPart.erase(std::remove_if(secondPart.begin(), secondPart.end(), &::isspace),secondPart.end());
+               inistr = firstPart + quotePart + secondPart;
+            }
+            else
+            {
+                inistr.erase(std::remove_if(inistr.begin(), inistr.end(), &::isspace),inistr.end());
+            }
 
             //delete comments
             std::basic_string <char>::size_type n1 = inistr.find("#");
