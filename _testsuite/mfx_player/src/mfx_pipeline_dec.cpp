@@ -2838,6 +2838,8 @@ mfxStatus MFXDecPipeline::CheckExitingCondition()
 
 mfxStatus  MFXDecPipeline::RunVPP(mfxFrameSurface1 *pSurface)
 {
+    bool bInSupplied = false;
+
     if ( m_inParams.bExtendedFpsStat )
         m_time_stampts.push_back(m_statTimer.CurrentTiming());
     if (NULL != pSurface)
@@ -2907,10 +2909,11 @@ mfxStatus  MFXDecPipeline::RunVPP(mfxFrameSurface1 *pSurface)
             sts = m_pVPP->RunFrameVPPAsyncEx(pSurface, vppWork.pSurface, &vppOut.pSurface, NULL, &syncp);
             if (MFX_ERR_MORE_DATA == sts)
             {
-                if ( ! m_bVPPUpdateInput )
+                if ( ! m_bVPPUpdateInput && ! bInSupplied )
                 {
                     // If input surface was not provided yet, do it at next iteration.
                     m_bVPPUpdateInput = true;
+                    bInSupplied       = true;
                     continue;
                 }
 
@@ -2920,9 +2923,10 @@ mfxStatus  MFXDecPipeline::RunVPP(mfxFrameSurface1 *pSurface)
 
             m_bVPPUpdateInput = false;
 
-            if ( MFX_ERR_NONE == sts )
+            if ( MFX_ERR_NONE == sts)
             {
                 // In case of ERR_NONE need to drain cached frames w/o providing new input.
+                bInSupplied      = true;
                 bOneMoreRunFrame = true;
             }
         }
