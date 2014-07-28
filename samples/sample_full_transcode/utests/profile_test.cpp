@@ -70,6 +70,7 @@ struct PipelineProfileTest : public ::testing::Test {
     void InitProfile(bool bParsePlugins = false
                     , bool bParseMFXImpl = false
                     , int optionOPresent = 1
+                    , bool bParseVppOptions = true
                     , msdk_string filename = MSDK_STRING("file111111.mp4")
                     , int optionOIsPresentCalled = 1) {
 
@@ -77,6 +78,7 @@ struct PipelineProfileTest : public ::testing::Test {
             EXPECT_CALL(mock_parser, IsPresent(msdk_string(OPTION_PLG))).WillOnce(Return(false));
             EXPECT_CALL(mock_parser, IsPresent(msdk_string(OPTION_VDECPLG))).WillOnce(Return(false));
             EXPECT_CALL(mock_parser, IsPresent(msdk_string(OPTION_VENCPLG))).WillOnce(Return(false));
+            EXPECT_CALL(mock_parser, IsPresent(msdk_string(OPTION_VPPPLG_GUID))).WillOnce(Return(false));
         }
         if (!bParseMFXImpl) {
             InitMFXImpl(0,0,0);
@@ -93,6 +95,10 @@ struct PipelineProfileTest : public ::testing::Test {
                 EXPECT_CALL(hdlo, GetValue(0)).WillRepeatedly(Return(filename.c_str()));
             }
         }
+        if (bParseVppOptions) {
+            EXPECT_CALL(mock_parser, IsPresent(msdk_string(OPTION_W))).WillOnce(Return(false));
+            EXPECT_CALL(mock_parser, IsPresent(msdk_string(OPTION_H))).WillOnce(Return(false));
+        }
 
         OutputFormat f;
         OutputCodec c;
@@ -101,7 +107,7 @@ struct PipelineProfileTest : public ::testing::Test {
 };
 
 TEST_F(PipelineProfileTest, no_output_option_specified) {
-    EXPECT_THROW(InitProfile(0,1, false), PipelineProfileNoOuputError);
+    EXPECT_THROW(InitProfile(0,1, false, false), PipelineProfileNoOuputError);
 }
 
 TEST_F(PipelineProfileTest, transcode_only_video_if_no_videos_in_input) {
@@ -112,7 +118,7 @@ TEST_F(PipelineProfileTest, transcode_only_video_if_no_videos_in_input) {
     tracks[0] = &track_audio;
     sp.NumTracks = 1;
 
-    EXPECT_THROW(InitProfile(0, 0,  true, MSDK_STRING("a.h264")), PipelineProfileOnlyVideoTranscodeError);
+    EXPECT_THROW(InitProfile(0, 0,  true, false, MSDK_STRING("a.h264")), PipelineProfileOnlyVideoTranscodeError);
 }
 
 TEST_F(PipelineProfileTest, transcode_only_audio_if_no_audios_in_input) {
@@ -123,7 +129,7 @@ TEST_F(PipelineProfileTest, transcode_only_audio_if_no_audios_in_input) {
     tracks[0] = &track_video;
     sp.NumTracks = 1;
 
-    EXPECT_THROW(InitProfile(0, 0,  true, MSDK_STRING("a.mp3")), PipelineProfileOnlyAudioTranscodeError);
+    EXPECT_THROW(InitProfile(0, 0,  true, false, MSDK_STRING("a.mp3")), PipelineProfileOnlyAudioTranscodeError);
 }
 
 TEST_F(PipelineProfileTest, vcodec_copy_no_encoder) {
@@ -165,7 +171,7 @@ TEST_F(PipelineProfileTest, vcodec_invalid_codec) {
 
     tracks[0] = &track_video;
     sp.NumTracks = 1;
-    EXPECT_THROW(InitProfile(false,false), UnsupportedVideoCodecError);
+    EXPECT_THROW(InitProfile(false,false,1,false), UnsupportedVideoCodecError);
 }
 
 TEST_F(PipelineProfileTest, vcodec_h264_and_no_extension) {
@@ -177,7 +183,7 @@ TEST_F(PipelineProfileTest, vcodec_h264_and_no_extension) {
     tracks[0] = &track_video;
     sp.NumTracks = 1;
     //
-    EXPECT_NO_THROW(InitProfile(0,0,1,MSDK_CHAR("12345")));
+    EXPECT_NO_THROW(InitProfile(0,0,1,true,MSDK_CHAR("12345")));
     EXPECT_EQ(true, profile->isDecoderExist());
 }
 
@@ -187,7 +193,7 @@ TEST_F(PipelineProfileTest, vcodec_not_found_and_no_extension) {
     tracks[0] = &track_video;
     sp.NumTracks = 1;
     //
-    EXPECT_THROW(InitProfile(0,0,1,MSDK_CHAR("12345")), NothingToTranscode);
+    EXPECT_THROW(InitProfile(0,0,1,false,MSDK_CHAR("12345")), NothingToTranscode);
 }
 
 TEST_F(PipelineProfileTest, vcodec_not_found_mp3_extension) {
@@ -195,7 +201,7 @@ TEST_F(PipelineProfileTest, vcodec_not_found_mp3_extension) {
 
     tracks[0] = &track_video;
     sp.NumTracks = 1;
-    EXPECT_THROW(InitProfile(0,0,1,MSDK_CHAR("12345.mp3")), PipelineProfileOnlyAudioTranscodeError);
+    EXPECT_THROW(InitProfile(0,0,1,false,MSDK_CHAR("12345.mp3")), PipelineProfileOnlyAudioTranscodeError);
 }
 
 TEST_F(PipelineProfileTest, no_plugins) {
@@ -207,6 +213,7 @@ TEST_F(PipelineProfileTest, no_plugins) {
     EXPECT_EQ(false, profile->isDecoderPluginExist());
     EXPECT_EQ(false, profile->isEncoderPluginExist());
     EXPECT_EQ(false, profile->isGenericPluginExist());
+    EXPECT_EQ(false, profile->isVPPPluginExist());
 }
 
 TEST_F(PipelineProfileTest, dec_plugin) {
@@ -271,7 +278,7 @@ TEST_F(PipelineProfileTest, no_adec_dueto_h264_extension) {
     sp.NumTracks = 2;
 
     InitEncoders(0, 0);
-    InitProfile(0,0,1,MSDK_STRING("1.h264"));
+    InitProfile(0,0,1,true,MSDK_STRING("1.h264"));
 
     EXPECT_EQ(false, profile->isAudioDecoderExist(0));
 }
@@ -281,7 +288,7 @@ TEST_F(PipelineProfileTest, no_vdec_dueto_mp3_extension) {
     tracks[1] = &track_audio;
     sp.NumTracks = 2;
     InitEncoders(0, 0);
-    InitProfile(0,0,1,MSDK_STRING("1.mp3"));
+    InitProfile(0,0,1,true,MSDK_STRING("1.mp3"));
 
     EXPECT_EQ(false, profile->isDecoderExist());
 }
@@ -350,7 +357,7 @@ TEST_F(PipelineProfileTest, acodec_not_found_and_no_extension) {
     tracks[0] = &track_audio;
     sp.NumTracks = 1;
     track_audio.AudioParam.CodecId = MFX_CODEC_MP3;
-    EXPECT_THROW(InitProfile(0,0,1,MSDK_CHAR("12345")), NothingToTranscode);
+    EXPECT_THROW(InitProfile(0,0,1,true,MSDK_CHAR("12345")), NothingToTranscode);
 }
 
 TEST_F(PipelineProfileTest, vcodec_not_found_h264_extension) {
@@ -359,7 +366,7 @@ TEST_F(PipelineProfileTest, vcodec_not_found_h264_extension) {
     tracks[0] = &track_audio;
     sp.NumTracks = 1;
     track_audio.AudioParam.CodecId = MFX_CODEC_MP3;
-    EXPECT_THROW(InitProfile(0,0,1,MSDK_CHAR("12345.h264")), PipelineProfileOnlyVideoTranscodeError);
+    EXPECT_THROW(InitProfile(0,0,1,true,MSDK_CHAR("12345.h264")), PipelineProfileOnlyVideoTranscodeError);
 }
 
 TEST_F(PipelineProfileTest, acodec_copy_no_encoder) {
@@ -426,7 +433,7 @@ TEST_F(PipelineProfileTest, no_mux_dueto_extension) {
     tracks[0] = &track_video;
     sp.NumTracks = 1;
     InitEncoders(-1, 0);
-    InitProfile(0,0,true,MSDK_CHAR("filename.h264"));
+    InitProfile(0,0,true,true,MSDK_CHAR("filename.h264"));
 
     EXPECT_EQ(false, profile->isMultiplexerExist());
 }
@@ -440,7 +447,7 @@ TEST_F(PipelineProfileTest, mp4_mux_selected) {
     tracks[0] = &track_video;
     sp.NumTracks = 1;
     InitEncoders(-1, 0);
-    InitProfile(0,0,true,MSDK_CHAR("filename.mp4"));
+    InitProfile(0,0,true,true,MSDK_CHAR("filename.mp4"));
 
     EXPECT_EQ(true, profile->isMultiplexerExist());
 }
@@ -601,7 +608,7 @@ TEST_F (PipelineProfileTest, tracks_mapping_only_video_output) {
     sp.NumTracks = 4;
     InitMFXImpl(0,0,0);
     InitEncoders(0, 0);
-    EXPECT_NO_THROW(InitProfile(0, 1, 1, MSDK_STRING("1.h264")));
+    EXPECT_NO_THROW(InitProfile(0, 1, 1, true, MSDK_STRING("1.h264")));
     MFXStreamParamsExt extparam = profile->GetMuxerInfo();
     EXPECT_EQ(0, extparam.TrackMapping()[3]);
 }
@@ -614,7 +621,7 @@ TEST_F (PipelineProfileTest, tracks_mapping_only_audio_output) {
     sp.NumTracks = 4;
     InitMFXImpl(0,0,0);
     InitEncoders(0, 0);
-    EXPECT_NO_THROW(InitProfile(0, 1, 1, MSDK_STRING("1.aac")));
+    EXPECT_NO_THROW(InitProfile(0, 1, 1, true, MSDK_STRING("1.aac")));
     MFXStreamParamsExt extparam = profile->GetMuxerInfo();
     EXPECT_EQ(0, extparam.TrackMapping()[2]);
 }
@@ -631,7 +638,7 @@ TEST_F (PipelineProfileTest, tracks_mapping_only_video_output_format_not_defined
     DECL_OPTION_IN_PARSER(OPTION_VCODEC, "copy", hdl);
     DECL_NO_OPTION_IN_PARSER(OPTION_VB);
 
-    EXPECT_NO_THROW(InitProfile(0, 1, 1, MSDK_STRING("whataformat")));
+    EXPECT_NO_THROW(InitProfile(0, 1, 1, true, MSDK_STRING("whataformat")));
     MFXStreamParamsExt extparam = profile->GetMuxerInfo();
     EXPECT_EQ(0, extparam.TrackMapping()[3]);
 }
@@ -647,7 +654,7 @@ TEST_F (PipelineProfileTest, tracks_mapping_only_audio_output_format_not_defined
     DECL_OPTION_IN_PARSER(OPTION_ACODEC, "copy", hdl);
     DECL_NO_OPTION_IN_PARSER(OPTION_AB);
 
-    EXPECT_NO_THROW(InitProfile(0, 1, 1, MSDK_STRING("whataformat")));
+    EXPECT_NO_THROW(InitProfile(0, 1, 1, true, MSDK_STRING("whataformat")));
     MFXStreamParamsExt extparam = profile->GetMuxerInfo();
     EXPECT_EQ(0, extparam.TrackMapping()[2]);
 }

@@ -262,7 +262,7 @@ public:
     }
     void InitVpp() {
         EXPECT_CALL(mock_profile, isVppExist()).WillRepeatedly(Return(true));
-        EXPECT_CALL(fac, CreateVideoVPPTransform(_,_)).WillOnce(Return(&mock_vpptransform));
+        EXPECT_CALL(fac, CreateVideoVPPTransform(_,_,_)).WillOnce(Return(&mock_vpptransform));
         EXPECT_CALL(mock_transform_storage, RegisterTransform(_,_)).InSequence(svideo).WillOnce(Invoke(&vpp, &RegisterTransformCallback::RegisterTransform));
     }
 
@@ -302,6 +302,8 @@ TEST_F (PipelineManager_BuildTest, decode_only_profile_reports_1_video_no_audio)
     EXPECT_CALL(mock_profile, isGenericPluginExist()).WillRepeatedly(Return(false));
     EXPECT_CALL(mock_profile, isEncoderExist()).WillRepeatedly(Return(false));
     EXPECT_CALL(mock_profile, isMultiplexerExist()).WillRepeatedly(Return(false));
+    EXPECT_CALL(mock_parser, IsPresent(msdk_string(OPTION_LOOP))).WillRepeatedly(Return(false));
+    EXPECT_CALL(mock_parser, IsPresent(msdk_string(OPTION_ACODEC_COPY))).WillRepeatedly(Return(false));
 
     InitOutput();
 
@@ -366,6 +368,9 @@ TEST_F (PipelineManager_BuildTest, decode_vpp_encode_video_only) {
     EXPECT_CALL(fac, CreatePipelineProfile(_, _)).WillOnce(Return((IPipelineProfile*)&mock_profile));
     EXPECT_CALL(mock_profile, isMultiplexerExist()).WillRepeatedly(Return(false));
     EXPECT_CALL(mock_profile, isGenericPluginExist()).WillRepeatedly(Return(false));
+    EXPECT_CALL(mock_profile, isVPPPluginExist()).WillRepeatedly(Return(false));
+    EXPECT_CALL(mock_parser, IsPresent(msdk_string(OPTION_LOOP))).WillRepeatedly(Return(false));
+    EXPECT_CALL(mock_parser, IsPresent(msdk_string(OPTION_ACODEC_COPY))).WillRepeatedly(Return(false));
 
     InitOutput();
 
@@ -387,6 +392,9 @@ TEST_F (PipelineManager_BuildTest, decode_encode_1_audio_no_video) {
 
     //only adecoder
     EXPECT_CALL(mock_profile, isMultiplexerExist()).WillRepeatedly(Return(false));
+
+    EXPECT_CALL(mock_parser, IsPresent(msdk_string(OPTION_LOOP))).WillRepeatedly(Return(false));
+    EXPECT_CALL(mock_parser, IsPresent(msdk_string(OPTION_ACODEC_COPY))).WillRepeatedly(Return(false));
 
     InitOutput();
 

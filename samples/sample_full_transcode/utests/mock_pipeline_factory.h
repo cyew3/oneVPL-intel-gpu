@@ -29,7 +29,7 @@ public:
     MOCK_METHOD2(CreateVideoEncoderTransform, ITransform* (MFXVideoSessionExt&, int));
 
     MOCK_METHOD1(CreateVideoVPP, MFXVideoVPP* (MFXVideoSessionExt&));
-    MOCK_METHOD2(CreateVideoVPPTransform, ITransform *(MFXVideoSessionExt& , int ));
+    MOCK_METHOD3(CreateVideoVPPTransform, ITransform *(MFXVideoSessionExt& , int, const mfxPluginUID& ));
 
     MOCK_METHOD0(CreateAudioSession, MFXAudioSession* ());
     MOCK_METHOD1(CreateAudioDecoder, MFXAudioDECODE* (MFXAudioSession&));

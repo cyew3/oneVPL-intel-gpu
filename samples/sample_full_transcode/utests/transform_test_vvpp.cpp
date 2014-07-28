@@ -15,8 +15,8 @@ using namespace ::testing;
 
 class TransformVVppInited : public Transform<MFXVideoVPP> {
 public:
-    TransformVVppInited(PipelineFactory& factory, MFXVideoSessionExt & session, int TimeToWait) :
-        Transform<MFXVideoVPP>(factory, session, TimeToWait)
+    TransformVVppInited(PipelineFactory& factory, MFXVideoSessionExt & session, int TimeToWait, const mfxPluginUID & uid) :
+        Transform<MFXVideoVPP>(factory, session, TimeToWait, uid)
     {
         m_bInited = 1;
     }
@@ -47,7 +47,7 @@ public:
 
         allocator.reset(new MockMFXFrameAllocator());
         EXPECT_CALL(factory, CreateVideoVPP(_)).WillOnce(Return(vpp.get()));
-        transform_vv.reset(new Transform<MFXVideoVPP>(factory, vSession, 10));
+        transform_vv.reset(new Transform<MFXVideoVPP>(factory, vSession, 10, MSDK_PLUGINGUID_NULL));
 
         sample1.reset(new MockSample());
         sample2.reset(new MockSample());

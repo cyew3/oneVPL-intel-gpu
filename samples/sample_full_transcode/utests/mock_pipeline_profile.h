@@ -25,5 +25,7 @@ public:
     MOCK_CONST_METHOD0(isDecoderPluginExist, bool());
     MOCK_CONST_METHOD0(isEncoderPluginExist, bool ());
     MOCK_CONST_METHOD0(isGenericPluginExist, bool ());
+    MOCK_CONST_METHOD0(isVPPPluginExist, bool ());
+    MOCK_CONST_METHOD0(getVPPPlugin, msdk_string());
 
 };
