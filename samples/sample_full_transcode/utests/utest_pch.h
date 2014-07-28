@@ -51,7 +51,10 @@ using namespace ::testing;
 #endif // #if defined(_WIN32) || defined(_WIN64)
 
 #ifndef _WIN32 || _WIN64
-#include <inttypes.h>
+//#include <inttypes.h>
+//#define int64_t long long
+typedef long long __int64;
 #else
-#define int64_t __int64
+//#define int64_t __int64
+
 #endif // #ifndef _WIN32 || _WIN64

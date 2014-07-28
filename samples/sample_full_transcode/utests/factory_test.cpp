@@ -53,8 +53,10 @@ TEST_F(PipelineFactoryTest, audio_encoder) {
 
 TEST_F(PipelineFactoryTest, allocator_create) {
     VerifyCreation(factory.CreateFrameAllocator(ALLOC_IMPL_SYSTEM_MEMORY));
+#if defined(_WIN32) || defined(_WIN64)
     VerifyCreation(factory.CreateFrameAllocator(ALLOC_IMPL_D3D9_MEMORY));
     VerifyCreation(factory.CreateFrameAllocator(ALLOC_IMPL_D3D11_MEMORY));
+#endif
 }
 
 TEST_F(PipelineFactoryTest, splitter_create) {

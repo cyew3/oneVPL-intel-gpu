@@ -106,6 +106,7 @@
       <PrecompiledHeader />
       <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+      <AdditionalIncludeDirectories>..\..\..\mdp_msdk-api\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <AdditionalDependencies>libmfx_d.lib;dxva2.lib;d3d9.lib;dwmapi.lib;comsuppw.lib;d3d11.lib;dxgi.lib;%(AdditionalDependencies)</AdditionalDependencies>
@@ -118,7 +119,7 @@
       <TargetMachine>MachineX86</TargetMachine>
     </Link>
     <Lib>
-      <AdditionalDependencies>libmfx_d.lib;d3d9.lib;d3d11.lib;dxgi.lib;dxva2.lib;</AdditionalDependencies>
+      <AdditionalDependencies>d3d9.lib;d3d11.lib;dxgi.lib;dxva2.lib</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(INTELMEDIASDKROOT)\lib\$(Platform)</AdditionalLibraryDirectories>
     </Lib>
   </ItemDefinitionGroup>

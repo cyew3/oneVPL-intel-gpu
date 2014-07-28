@@ -38,7 +38,7 @@ TEST(GenericTTX, char) {
 }
 
 TEST(GenericTTX, unsigned_int64) {
-    VerifyConvert<unsigned int64_t>("unsigned int64");
+    VerifyConvert<unsigned long long>("unsigned int64");
 }
 TEST(GenericTTX, unsigned_int) {
     VerifyConvert<unsigned int>("unsigned int");

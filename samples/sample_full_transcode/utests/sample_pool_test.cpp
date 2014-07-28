@@ -43,7 +43,7 @@ public:
             Sequence s1, s2;
             EXPECT_CALL(*pBusySample, GetSurface()).InSequence(s1).WillOnce(ReturnRef(surfBusy));
             EXPECT_CALL(*pBusySample, GetSampleType()).InSequence(s2).WillOnce(Return(SAMPLE_SURFACE));
-            EXPECT_CALL(*pBusySample, GetSurface()).InSequence(s1).WillOnce(ReturnRef(surfBusy));
+            EXPECT_CALL(*pBusySample, GetSurface()).InSequence(s1).WillRepeatedly(ReturnRef(surfBusy));
             EXPECT_CALL(*pBusySample, GetSampleType()).InSequence(s2).WillOnce(Return(SAMPLE_SURFACE));
         }
         pool.RegisterSample(instant_auto_ptr((ISample*)pBusySample.release()));

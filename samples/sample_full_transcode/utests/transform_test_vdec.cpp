@@ -6,16 +6,14 @@
 //        Copyright (c) 2013 Intel Corporation. All Rights Reserved.
 //
 #include "utest_pch.h"
-
 #include "itransform.h"
-#if defined(_WIN32) || defined(_WIN64)
 
 struct TransformTest  : public ::testing::Test {
     std::auto_ptr<ITransform> transform_vd;
     SamplePtr sample_in;
     SamplePtr sample_out;
     std::auto_ptr<MockMFXVideoDECODE> decode;
-    std::auto_ptr<MockD3D11FrameAllocator> allocator;
+    std::auto_ptr<MockSysMemFrameAllocator> allocator;
     std::auto_ptr<BaseFrameAllocator> allocatorBase;
     mfxIMPL impl;
     MockPipelineFactory factory;
@@ -40,18 +38,18 @@ public:
 
             sample_in.reset(new MockSample());
             sample_out.reset(new MockSample());
-            allocator.reset(new MockD3D11FrameAllocator());
+            allocator.reset(new MockSysMemFrameAllocator());
+
             allocatorBase.reset(allocator.get());
             response.NumFrameActual = 5;
             response.mids = new mfxMemId[5];
-
 
             transform_vd.reset(new Transform<MFXVideoDECODE>(factory, vSession, 10));
 
             mfxVideoParam vParam = {0};
             request.NumFrameMin = 2;
             request.NumFrameSuggested = 2;
-            transform_vd->Configure(MFXAVParams(vParam), &nextTransform);
+            transform_vd->Configure(*new MFXAVParams(vParam), &nextTransform);
     }
     ~TransformTest() {
         MSDK_SAFE_DELETE(response.mids);
@@ -215,6 +213,8 @@ TEST_F(TransformTest, VDec_Init_DecodeHeader_failed) {
 
 TEST_F(TransformTest, VDec_Init_QueryIOSurf_failed) {
     DecodeHeader(0);
+    GetFrameAllocator(0);
+
     DecodeQueryIOSurf(-1);
     EXPECT_CALL(*(MockSample*)sample_in.get(), GetBitstream()).WillOnce(ReturnRef(bitstream));
     EXPECT_THROW(transform_vd->PutSample(sample_in), DecodeQueryIOSurfaceError);
@@ -322,5 +322,3 @@ TEST_F(TransformTest, DISABLED_VDec_putSample_DecodeFrameAsync_More_Data) {
     EXPECT_EQ(false, transform_vd->GetSample(sample_in));
     ReleaseAll();
 }
-
-#endif // #if defined(_WIN32) || defined(_WIN64)

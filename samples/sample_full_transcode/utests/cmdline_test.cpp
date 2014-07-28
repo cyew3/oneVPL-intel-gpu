@@ -144,10 +144,10 @@ TEST_F (CmdLineParserTest, option_is_present) {
     EXPECT_EQ(true, parser3.IsPresent(MSDK_CHAR("-opt2")));
 
     //registered option not parsed
-    EXPECT_EQ(false, parser3.IsPresent(MSDK_CHAR("-opt1")));
+    EXPECT_EQ(true, !parser3.IsPresent(MSDK_CHAR("-opt1")));
 
     //lets not registered option result to false as well
-    EXPECT_EQ(false, parser3.IsPresent(MSDK_CHAR("-opt45")));
+    EXPECT_EQ(true, !parser3.IsPresent(MSDK_CHAR("-opt45")));
 }
 
 
