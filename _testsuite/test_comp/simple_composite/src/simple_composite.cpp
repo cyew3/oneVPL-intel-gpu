@@ -770,13 +770,13 @@ int main(int argc, char *argv[])
 #endif
 
     // Create Media SDK VPP component
-    MFXVideoVPP mfxVPP(mfxSession);
-    composition.SetVPP(&mfxVPP);
+    MFXVideoVPP* mfxVPP = new MFXVideoVPP(mfxSession);
+    composition.SetVPP(mfxVPP);
 
     composition.Init(pa.par);
 
     // Initialize Media SDK VPP
-    sts = mfxVPP.Init(composition.GetVPPParams());
+    sts = mfxVPP->Init(composition.GetVPPParams());
     MSDK_IGNORE_MFX_STS(sts, MFX_WRN_PARTIAL_ACCELERATION);
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
@@ -833,7 +833,7 @@ int main(int argc, char *argv[])
             return MFX_ERR_MEMORY_ALLOC;
 
         // Process a frame asychronously (returns immediately)
-        sts = mfxVPP.RunFrameVPPAsync(pVPPSurfacesIn[nSurfIdxIn], pVPPSurfacesOut[nSurfIdxOut], NULL, &syncp);
+        sts = mfxVPP->RunFrameVPPAsync(pVPPSurfacesIn[nSurfIdxIn], pVPPSurfacesOut[nSurfIdxOut], NULL, &syncp);
         if (MFX_ERR_MORE_DATA == sts)
             continue;
 
@@ -878,7 +878,7 @@ int main(int argc, char *argv[])
             return MFX_ERR_MEMORY_ALLOC;
 
         // Process a frame asychronously (returns immediately)
-        sts = mfxVPP.RunFrameVPPAsync(NULL, pVPPSurfacesOut[nSurfIdxOut], NULL, &syncp);
+        sts = mfxVPP->RunFrameVPPAsync(NULL, pVPPSurfacesOut[nSurfIdxOut], NULL, &syncp);
         MSDK_IGNORE_MFX_STS(sts, MFX_ERR_MORE_SURFACE);
         MSDK_BREAK_ON_ERROR(sts);
 
@@ -910,7 +910,7 @@ int main(int argc, char *argv[])
     if ( pa.need_reset )
     {
         composition.Reset(pa.reset_par);
-        sts = mfxVPP.Reset(composition.GetVPPParams());
+        sts = mfxVPP->Reset(composition.GetVPPParams());
         MSDK_IGNORE_MFX_STS(sts, MFX_WRN_PARTIAL_ACCELERATION);
         MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
@@ -951,7 +951,7 @@ int main(int argc, char *argv[])
                 return MFX_ERR_MEMORY_ALLOC;
 
             // Process a frame asychronously (returns immediately)
-            sts = mfxVPP.RunFrameVPPAsync(pVPPSurfacesIn[nSurfIdxIn], pVPPSurfacesOut[nSurfIdxOut], NULL, &syncp);
+            sts = mfxVPP->RunFrameVPPAsync(pVPPSurfacesIn[nSurfIdxIn], pVPPSurfacesOut[nSurfIdxOut], NULL, &syncp);
             if (MFX_ERR_MORE_DATA == sts)
                 continue;
 
@@ -994,7 +994,7 @@ int main(int argc, char *argv[])
                 return MFX_ERR_MEMORY_ALLOC;
 
             // Process a frame asychronously (returns immediately)
-            sts = mfxVPP.RunFrameVPPAsync(NULL, pVPPSurfacesOut[nSurfIdxOut], NULL, &syncp);
+            sts = mfxVPP->RunFrameVPPAsync(NULL, pVPPSurfacesOut[nSurfIdxOut], NULL, &syncp);
             MSDK_IGNORE_MFX_STS(sts, MFX_ERR_MORE_SURFACE);
             MSDK_BREAK_ON_ERROR(sts);
 
@@ -1025,7 +1025,7 @@ int main(int argc, char *argv[])
     //  - It is recommended to close Media SDK components first, before releasing allocated surfaces, since
     //    some surfaces may still be locked by internal Media SDK resources.
 
-    mfxVPP.Close();
+    delete mfxVPP;
     // If CM enabled application have to close Media SDK session before vaTerminate() call
     // Else you will have crash at CM's destructor
     mfxSession.Close();
