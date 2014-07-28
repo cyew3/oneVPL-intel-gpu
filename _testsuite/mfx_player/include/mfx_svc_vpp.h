@@ -65,7 +65,7 @@ public:
         return sts;
     }
 
-    mfxStatus RunFrameVPPAsyncEx(mfxFrameSurface1 *in, mfxFrameSurface1 *work, mfxFrameSurface1 **out, mfxExtVppAuxData *aux, mfxSyncPoint *syncp)
+    mfxStatus RunFrameVPPAsyncEx(mfxFrameSurface1 * /* in */, mfxFrameSurface1 * /* work */, mfxFrameSurface1 ** /* out */, mfxExtVppAuxData * /* aux */, mfxSyncPoint * /* syncp */)
     {
         return MFX_ERR_UNSUPPORTED;
     }

@@ -142,13 +142,10 @@ public:
     #if defined(_WIN32) || defined(_WIN64)
             case DXGI_FORMAT_AYUV :
             {
-                m_Current.m_comp = VM_STRING('R');
-                m_Current.m_pixX = 0;
                 mfxU8* plane = pData->B + pInfo->CropX * 4;
 
                 for (i = 0; i <pInfo->CropH; i++)
                 {
-                    m_Current.m_pixY = i;
                     MFX_CHECK_STS(PutData(plane, pInfo->CropW * 4));
                     plane += pitch;
                 }
