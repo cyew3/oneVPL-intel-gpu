@@ -3672,8 +3672,6 @@ void MfxHwH264Encode::SetDefaults(
             par.mfx.GopRefDist = 1;
         if (par.mfx.FrameInfo.PicStruct == 0)
             par.mfx.FrameInfo.PicStruct = MFX_PICSTRUCT_PROGRESSIVE;
-        if (par.mfx.NumRefFrame == 0)
-            par.mfx.NumRefFrame = 2;
     }
 #endif
 
@@ -3995,6 +3993,11 @@ void MfxHwH264Encode::SetDefaults(
             par.mfx.NumRefFrame = IPP_MIN(IPP_MIN(IPP_MAX(nrfDefault, nrfMinForInterlace), nrfMaxByLevel), nrfMaxByCaps);
         else
             par.mfx.NumRefFrame = IPP_MIN(IPP_MIN(nrfDefault, nrfMaxByLevel), nrfMaxByCaps);
+
+#if defined(LOWPOWERENCODE_AVC)
+        if (IsOn(par.mfx.LowPower))
+            par.mfx.NumRefFrame = IPP_MIN(2, par.mfx.NumRefFrame);
+#endif
     }
 
     if (extOpt->IntraPredBlockSize == MFX_BLOCKSIZE_UNKNOWN)
