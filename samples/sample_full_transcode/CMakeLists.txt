@@ -2,6 +2,7 @@ include_directories (
   ${CMAKE_SOURCE_DIR}/sample_common/include
   ${CMAKE_SOURCE_DIR}/sample_full_transcode/include
   ${CMAKE_SOURCE_DIR}/sample_spl_mux/api
+  ${CMAKE_SOURCE_DIR}/sample_user_modules/plugin_api
 )
 
 list(APPEND sources
