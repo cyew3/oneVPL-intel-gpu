@@ -122,7 +122,7 @@ std::ostream &operator << (std::ostream &os, mfxInfoVPP &p){
 std::ostream &operator << (std::ostream &os, mfxInfoMFX &p){
     os  << "{\n"
         << PUT_ARR(reserved, 7)
-        << PUT_PAR(reserved4)
+        << PUT_PAR(LowPower)
         << PUT_PAR(BRCParamMultiplier)
         << PUT_STRUCT(FrameInfo)
         << PUT_4CC(CodecId)

@@ -322,6 +322,9 @@ mfxStatus ImplementationAvc::Query(
         out->Protected             = 1;
         out->AsyncDepth            = 1;
         out->mfx.CodecId           = 1;
+#if defined(LOWPOWERENCODE_AVC)
+        out->mfx.LowPower          = 1;
+#endif
         out->mfx.CodecLevel        = 1;
         out->mfx.CodecProfile      = 1;
         out->mfx.NumThread         = 0;
@@ -704,6 +707,9 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
 
     sts = m_ddi->CreateAuxilliaryDevice(
         m_core,
+#if defined(LOWPOWERENCODE_AVC)
+        IsOn(m_video.mfx.LowPower) ? DXVA2_INTEL_LOWPOWERENCODE_AVC :
+#endif
         DXVA2_Intel_Encode_AVC,
         GetFrameWidth(m_video),
         GetFrameHeight(m_video));
@@ -1092,6 +1098,12 @@ mfxStatus ImplementationAvc::ProcessAndCheckNewParameters(
     MFX_CHECK(
         IsOn(extOptOld->FieldOutput) || extOptOld->FieldOutput == extOptNew->FieldOutput,
         MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
+
+#if defined(LOWPOWERENCODE_AVC)
+    MFX_CHECK(
+        IsOn(m_video.mfx.LowPower) == IsOn(newPar.mfx.LowPower),
+        MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
+#endif
 
     return checkStatus;
 } // ProcessAndCheckNewParameters

@@ -1592,6 +1592,47 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
         hwCaps.MaxNum_TemporalLayer < par.calcParam.numTemporalLayer)
         return Error(MFX_WRN_PARTIAL_ACCELERATION);
 
+#if defined(LOWPOWERENCODE_AVC)
+    if (!CheckTriStateOption(par.mfx.LowPower)) changed = true;
+
+    if (IsOn(par.mfx.LowPower))
+    {
+        if (par.mfx.GopRefDist > 1)
+        {
+            changed = true;
+            par.mfx.GopRefDist = 1;
+        }
+
+        if (par.mfx.FrameInfo.PicStruct != MFX_PICSTRUCT_PROGRESSIVE)
+        {
+            changed = true;
+            par.mfx.FrameInfo.PicStruct = MFX_PICSTRUCT_PROGRESSIVE;
+        }
+
+        if (par.mfx.NumRefFrame > 2)
+        {
+            changed = true;
+            par.mfx.NumRefFrame = 2;
+        }
+        
+        if (par.mfx.RateControlMethod != 0 &&
+            par.mfx.RateControlMethod != MFX_RATECONTROL_CBR &&
+            par.mfx.RateControlMethod != MFX_RATECONTROL_VBR &&
+            par.mfx.RateControlMethod != MFX_RATECONTROL_CQP)
+        {
+            changed = true;
+            par.mfx.RateControlMethod = MFX_RATECONTROL_CBR;
+        }
+
+        if (par.mfx.RateControlMethod == MFX_RATECONTROL_CQP)
+        {
+            if (!CheckRange(par.mfx.QPI, 10, 51)) changed = true;
+            if (!CheckRange(par.mfx.QPP, 10, 51)) changed = true;
+            if (!CheckRange(par.mfx.QPB, 10, 51)) changed = true;
+        }
+    }
+#endif
+
     if (par.mfx.GopRefDist > 1 && hwCaps.SliceIPOnly)
     {
         changed = true;
@@ -3624,6 +3665,18 @@ void MfxHwH264Encode::SetDefaults(
     mfxExtSVCSeqDesc *         extSvc  = GetExtBuffer(par);
     mfxExtSVCRateControl *     extRc   = GetExtBuffer(par);
     
+#if defined(LOWPOWERENCODE_AVC)
+    if (IsOn(par.mfx.LowPower))
+    {
+        if (par.mfx.GopRefDist == 0)
+            par.mfx.GopRefDist = 1;
+        if (par.mfx.FrameInfo.PicStruct == 0)
+            par.mfx.FrameInfo.PicStruct = MFX_PICSTRUCT_PROGRESSIVE;
+        if (par.mfx.NumRefFrame == 0)
+            par.mfx.NumRefFrame = 2;
+    }
+#endif
+
     if (extOpt2->MaxSliceSize)
     {
         if (par.mfx.GopRefDist == 0)

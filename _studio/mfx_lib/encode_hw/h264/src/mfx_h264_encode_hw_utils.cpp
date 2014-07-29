@@ -195,6 +195,10 @@ namespace MfxHwH264Encode
         {
             if (ctrl.QP > 0)
             {
+#if defined(LOWPOWERENCODE_AVC)
+                if (IsOn(par.mfx.LowPower) && ctrl.QP < 10)
+                    return 10;
+#endif
                 // get per frame qp
                 return mfxU8(IPP_MIN(ctrl.QP, 51));
             }
