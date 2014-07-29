@@ -214,7 +214,7 @@ enum {
 typedef struct {
     mfxU32  reserved[7];
 
-    mfxU16  reserved4;
+    mfxU16  LowPower;
     mfxU16  BRCParamMultiplier;
 
     mfxFrameInfo    FrameInfo;
