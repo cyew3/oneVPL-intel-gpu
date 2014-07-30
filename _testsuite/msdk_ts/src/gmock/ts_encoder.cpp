@@ -124,10 +124,16 @@ mfxStatus tsVideoEncoder::Init()
 
 mfxStatus tsVideoEncoder::Init(mfxSession session, mfxVideoParam *par)
 {
+    mfxVideoParam orig_par;
+    memcpy(&orig_par, m_pPar, sizeof(mfxVideoParam));
+
     TRACE_FUNC2(MFXVideoENCODE_Init, session, par);
     g_tsStatus.check( MFXVideoENCODE_Init(session, par) );
 
     m_initialized = (g_tsStatus.get() >= 0);
+
+    EXPECT_EQ(0, memcmp(&orig_par, m_pPar, sizeof(mfxVideoParam)))
+        << "ERROR: Input parameters must not be changed in Init()";
 
     return g_tsStatus.get();
 }
