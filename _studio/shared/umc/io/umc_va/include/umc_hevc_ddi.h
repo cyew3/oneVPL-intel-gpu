@@ -10,7 +10,7 @@
 #ifndef __UMC_HEVC_DDI_H
 #define __UMC_HEVC_DDI_H
 
-#define version_0_89
+//#define version_0_89
 
 #pragma warning(disable: 4201)
 

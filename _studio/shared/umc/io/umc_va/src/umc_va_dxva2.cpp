@@ -415,7 +415,9 @@ static const GuidProfile guidProfiles[] =
 
     { VA_H265 | VA_VLD, DXVA_ModeHEVC_VLD_Main }, // MS
     { VA_H265 | VA_VLD, DXVA_Intel_ModeHEVC_VLD_MainProfile },
-    { VA_H265 | VA_VLD | VA_PROFILE_10, DXVA_Intel_ModeHEVC_VLD_Main10Profile },
+
+    { VA_H265 | VA_VLD | VA_PROFILE_10, DXVA_ModeHEVC_VLD_Main10  }, // MS
+    { VA_H265 | VA_VLD | VA_PROFILE_10, DXVA_Intel_ModeHEVC_VLD_Main10Profile }
     
 };
 
