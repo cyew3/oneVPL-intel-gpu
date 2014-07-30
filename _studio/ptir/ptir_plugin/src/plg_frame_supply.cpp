@@ -318,9 +318,9 @@ mfxStatus frameSupplier::CMCopySysToGpu(mfxFrameSurface1*& mfxSurf, CmSurface2D*
             return MFX_ERR_LOCK_MEMORY;
     }
 
-    mfxU32 verticalPitch = (mfxI64)(mfxSurf->Data.UV - mfxSurf->Data.Y);
+    mfxI64 verticalPitch = (mfxI64)(mfxSurf->Data.UV - mfxSurf->Data.Y);
     verticalPitch = (verticalPitch % mfxSurf->Data.Pitch)? 0 : verticalPitch / mfxSurf->Data.Pitch;
-    mfxU32& srcUVOffset = verticalPitch;
+    mfxI64& srcUVOffset = verticalPitch;
     mfxU32 srcPitch = mfxSurf->Data.Pitch;
 
     //if(mfxSurf->Info.Width != mfxSurf->Info.CropW)
@@ -328,7 +328,7 @@ mfxStatus frameSupplier::CMCopySysToGpu(mfxFrameSurface1*& mfxSurf, CmSurface2D*
 
     CmEvent* e = NULL;
     if(srcUVOffset != 0){
-        cmSts = m_pCmQueue->EnqueueCopyCPUToGPUFullStride(cmSurfOut, mfxSurf->Data.Y, srcPitch, srcUVOffset, 0, e);
+        cmSts = m_pCmQueue->EnqueueCopyCPUToGPUFullStride(cmSurfOut, mfxSurf->Data.Y, srcPitch, (mfxU32) srcUVOffset, 0, e);
     }
     else{
         cmSts = m_pCmQueue->EnqueueCopyCPUToGPUStride(cmSurfOut, mfxSurf->Data.Y, srcPitch, e);
@@ -383,9 +383,9 @@ mfxStatus frameSupplier::CMCopyGpuToSys(CmSurface2D*& cmSurfIn, mfxFrameSurface1
             return MFX_ERR_LOCK_MEMORY;
     }
 
-    mfxU32 verticalPitch = (mfxI64)(mfxSurf->Data.UV - mfxSurf->Data.Y);
+    mfxI64 verticalPitch = (mfxI64)(mfxSurf->Data.UV - mfxSurf->Data.Y);
     verticalPitch = (verticalPitch % mfxSurf->Data.Pitch)? 0 : verticalPitch / mfxSurf->Data.Pitch;
-    mfxU32& dstUVOffset = verticalPitch;
+    mfxI64& dstUVOffset = verticalPitch;
     mfxU32 dstPitch = mfxSurf->Data.Pitch;
 
     //if(mfxSurf->Info.Width != mfxSurf->Info.CropW)
@@ -393,7 +393,7 @@ mfxStatus frameSupplier::CMCopyGpuToSys(CmSurface2D*& cmSurfIn, mfxFrameSurface1
 
     CmEvent* e = NULL;
     if(dstUVOffset != 0){
-        cmSts = m_pCmQueue->EnqueueCopyGPUToCPUFullStride(cmSurfIn, mfxSurf->Data.Y, dstPitch, dstUVOffset, 0, e);
+        cmSts = m_pCmQueue->EnqueueCopyGPUToCPUFullStride(cmSurfIn, mfxSurf->Data.Y, dstPitch, (mfxU32) dstUVOffset, 0, e);
     }
     else{
         cmSts = m_pCmQueue->EnqueueCopyGPUToCPUStride(cmSurfIn, mfxSurf->Data.Y, dstPitch, e);
@@ -422,7 +422,7 @@ mfxStatus frameSupplier::CMCopyGpuToSys(CmSurface2D*& cmSurfIn, mfxFrameSurface1
     return mfxSts;
 }
 
-mfxU32 frameSupplier::countFreeWorkSurfs()
+size_t frameSupplier::countFreeWorkSurfs()
 {
     return (*workSurfs).size();
 }
@@ -438,7 +438,6 @@ mfxStatus frameSupplier::CMCreateSurface2D(mfxFrameSurface1*& mfxSurf, CmSurface
         return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
 
     mfxI32 cmSts = CM_SUCCESS;
-    CM_STATUS sts;
     mfxStatus mfxSts = MFX_ERR_NONE;
 
     if(!mfxSurf->Data.MemId && !(mfxSurf->Data.Y && mfxSurf->Data.UV))

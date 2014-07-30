@@ -55,7 +55,7 @@ public:
     virtual mfxStatus CMCopyGPUToGpu(CmSurface2D* cmSurfOut, CmSurface2D* cmSurfIn);
     virtual mfxStatus CMCopySysToGpu(mfxFrameSurface1*& mfxSurf, CmSurface2D*& cmSurfOut);
     virtual mfxStatus CMCopyGpuToSys(CmSurface2D*& cmSurfOut, mfxFrameSurface1*& mfxSurf);
-    virtual mfxU32 countFreeWorkSurfs();
+    virtual size_t countFreeWorkSurfs();
     virtual mfxStatus CMCreateSurface2D(mfxFrameSurface1*& mfxSurf, CmSurface2D*& cmSurfOut, bool bCopy);
 
 protected:

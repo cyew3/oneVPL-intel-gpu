@@ -265,5 +265,8 @@
     <ClCompile Include="src\gmock\test_suites\preenc_init.cpp">
       <Filter>Source Files\test_suites\FEI</Filter>
     </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\ptir_time_stamps.cpp">
+      <Filter>Source Files\test_suites\ptir</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

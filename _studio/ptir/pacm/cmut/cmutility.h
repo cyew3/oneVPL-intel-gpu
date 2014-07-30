@@ -50,17 +50,6 @@ namespace cmut
   }
 };
 
-inline std::string IsaFileName(const std::string & cppFileName, const char * pFinder)
-{
-#ifndef __LINUX__
-  int slash_pos = cppFileName.rfind("\\") + 1;
-#else
-  int slash_pos = cppFileName.rfind("/") + 1;
-#endif
-
-  return cppFileName.substr (slash_pos, cppFileName.find (pFinder) - slash_pos).append ("_genx.isa");
-}
-
 #define BEGIN_TEST_CORE \
   try {
 

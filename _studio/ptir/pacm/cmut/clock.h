@@ -25,12 +25,12 @@ public:
 
   bool Begin()
   {
-    return QueryPerformanceCounter(&begin);
+    return !!QueryPerformanceCounter(&begin);
   }
 
   bool End()
   {
-    if (!QueryPerformanceCounter(&end)) {
+    if (!(!!QueryPerformanceCounter(&end))) {
       return false;
     }
 

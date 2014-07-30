@@ -147,15 +147,6 @@ public:
     return 0;
   }
 
-  int KernelCount(const string & kernelName) const
-  {
-    auto iter = eventsMap.find(kernelName);
-    if (iter != eventsMap.end())
-    return iter->second.size();
-  else
-    return 0;
-  }
-
   double KernelDuration() const
   {
     UINT64 enqueueKernelDuration = 0;

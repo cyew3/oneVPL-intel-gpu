@@ -280,7 +280,7 @@ protected:
     case CM_SURFACE_FORMAT_R8_UINT:
       return 1 * height;
     case CM_SURFACE_FORMAT_NV12:
-      return 1.5 * height;
+      return 3 * height / 2;
     }
     throw CMUT_EXCEPTION("Unkown Format Code");
   }
