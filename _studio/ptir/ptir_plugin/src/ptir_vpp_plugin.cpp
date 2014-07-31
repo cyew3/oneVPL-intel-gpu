@@ -376,7 +376,7 @@ mfxStatus MFX_PTIR_Plugin::Query(mfxVideoParam *in, mfxVideoParam *out)
     if(!in && !out)
         return MFX_ERR_NULL_PTR;
 
-    mfxVideoParam tmp_param = {0,};
+    mfxVideoParam tmp_param = {};
     if(!out)
         out = &tmp_param;
 
@@ -959,7 +959,7 @@ mfxStatus MFX_PTIR_Plugin::Reset(mfxVideoParam *par)
 
     mfxStatus mfxSts = MFX_ERR_NONE;
     mfxStatus mfxWrn = MFX_ERR_NONE;
-    mfxVideoParam tmpPar = {0};
+    mfxVideoParam tmpPar = {};
     mfxSts = Query(par, &tmpPar);
     if((MFX_WRN_PARTIAL_ACCELERATION == mfxSts) && par_accel)
         mfxSts = MFX_ERR_NONE;

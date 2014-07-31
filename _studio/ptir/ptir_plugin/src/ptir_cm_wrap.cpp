@@ -65,6 +65,7 @@ PTIR_ProcessorCM::~PTIR_ProcessorCM()
     if(deinterlaceFilter)
     {
         delete deinterlaceFilter;
+        deinterlaceFilter = 0;
         pdeinterlaceFilter = 0;
     }
 }
@@ -355,7 +356,7 @@ mfxStatus PTIR_ProcessorCM::Process(mfxFrameSurface1 *surface_in, mfxFrameSurfac
 
         CmSurface2D *pOutCmSurface2D = 0;
 
-        if(((*surface_out)->Data.MemId) && (work_par.IOPattern & MFX_IOPATTERN_IN_VIDEO_MEMORY || work_par.IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY))
+        if((surface_out && (*surface_out)->Data.MemId) && (work_par.IOPattern & MFX_IOPATTERN_IN_VIDEO_MEMORY || work_par.IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY))
         {
             //MemId should be a video memory surface
             CmDeviceEx& pCMdevice = this->deinterlaceFilter->DeviceEx();
@@ -367,7 +368,7 @@ mfxStatus PTIR_ProcessorCM::Process(mfxFrameSurface1 *surface_in, mfxFrameSurfac
             CmToMfxSurfmap[pOutCmSurface2D] = (*surface_out);
             isUnlockReq = false;
         }
-        if(((*surface_out)->Data.MemId) && (work_par.IOPattern & MFX_IOPATTERN_IN_SYSTEM_MEMORY || work_par.IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY))
+        if((surface_out && (*surface_out)->Data.MemId) && (work_par.IOPattern & MFX_IOPATTERN_IN_SYSTEM_MEMORY || work_par.IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY))
         {
             //MemId should be a video memory surface
             mfx_core->FrameAllocator.Lock(mfx_core->FrameAllocator.pthis, (*surface_out)->Data.MemId, &((*surface_out)->Data));
@@ -384,7 +385,8 @@ mfxStatus PTIR_ProcessorCM::Process(mfxFrameSurface1 *surface_in, mfxFrameSurfac
             isUnlockReq = false;
         }
 
-        *surface_out = 0;
+        if(surface_out)
+            *surface_out = 0;
         return mfxSts;
     }
 

@@ -119,7 +119,8 @@ mfxStatus GetIntelDataPrivateReportD3D9(const GUID guid, DXVA2_ConfigPictureDeco
 
 mfxStatus GetIntelDataPrivateReportD3D11(const GUID guid, mfxVideoParam *par, D3D11_VIDEO_DECODER_CONFIG & config, mfxHDL* mfxDeviceHdl)
 {
-
+    if(!mfxDeviceHdl || !*mfxDeviceHdl)
+        return MFX_WRN_PARTIAL_ACCELERATION;
     //HRESULT hRes = S_OK;
 
     //static D3D_FEATURE_LEVEL FeatureLevels[] = { D3D_FEATURE_LEVEL_11_1, D3D_FEATURE_LEVEL_11_0, D3D_FEATURE_LEVEL_10_1, D3D_FEATURE_LEVEL_10_0 };
@@ -162,7 +163,8 @@ mfxStatus GetIntelDataPrivateReportD3D11(const GUID guid, mfxVideoParam *par, D3
     {
         video_desc.SampleHeight = 480;
     }
-
+    if(!pD11VideoDevice)
+        return MFX_WRN_PARTIAL_ACCELERATION;
     mfxU32 cDecoderProfiles = pD11VideoDevice->GetVideoDecoderProfileCount();
     bool isRequestedGuidPresent = false;
     bool isIntelGuidPresent = false;
