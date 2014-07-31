@@ -539,6 +539,10 @@ mfxStatus CmdProcessor::ParseParamsForOneSession(mfxU32 argc, msdk_char *argv[])
         {
             InputParams.libType = MFX_IMPL_SOFTWARE;
         }
+        else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-hw")))
+        {
+            InputParams.libType = MFX_IMPL_HARDWARE_ANY;
+        }
         else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-hw_d3d11")))
         {
             InputParams.libType = MFX_IMPL_HARDWARE_ANY | MFX_IMPL_VIA_D3D11;

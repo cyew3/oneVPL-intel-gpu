@@ -98,6 +98,10 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         {
             pParams->bUseHWLib = false;
         }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-hw")))
+        {
+            pParams->bUseHWLib = true;
+        }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-i420")))
         {
             pParams->fourcc = MFX_FOURCC_NV12;

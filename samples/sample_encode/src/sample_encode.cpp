@@ -16,7 +16,7 @@ Copyright(c) 2005-2014 Intel Corporation. All Rights Reserved.
 
 void PrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage)
 {
-    msdk_printf(MSDK_STRING("Intel(R) Media SDK Decoding Sample Version %s\n\n"), MSDK_SAMPLE_VERSION);
+    msdk_printf(MSDK_STRING("Intel(R) Media SDK Encoding Sample Version %s\n\n"), MSDK_SAMPLE_VERSION);
 
     if (strErrorMessage)
     {
@@ -135,6 +135,10 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-sw")))
         {
             pParams->bUseHWLib = false;
+        }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-hw")))
+        {
+            pParams->bUseHWLib = true;
         }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-nv12")))
         {

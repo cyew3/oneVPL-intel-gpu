@@ -106,6 +106,10 @@ void ParseInputString(msdk_char** strInput, int nArgNum, VideoConfParams& params
         {
             params.bUseHWLib = false;
         }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-hw")))
+        {
+            params.bUseHWLib = true;
+        }
 #if D3D_SURFACES_SUPPORT
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-d3d")))
         {
