@@ -85,7 +85,14 @@ public:
     mfxStatus lock_frame_nocheck    (mfxMemId mid, mfxFrameData *ptr);
     mfxStatus unlock_frame_nocheck  (mfxMemId mid, mfxFrameData *ptr);
 
-    bool get_hdl(mfxHandleType& type, mfxHDL& hdl) { if(!this->hdl) return false; type = hdl_t; hdl = this->hdl; return true; };
+    bool get_hdl(mfxHandleType& type, mfxHDL& hdl)
+    {
+        if(!this->hdl)
+            return false;
+        type = hdl_t;
+        hdl = this->hdl;
+        return true;
+    };
     unsigned int cnt_surf() { return surf_cnt; };
     const std::list<ExternalFrame>& GetExternalFrames() { return external_frames; };
 

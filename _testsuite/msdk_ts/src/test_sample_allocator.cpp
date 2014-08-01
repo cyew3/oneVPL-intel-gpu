@@ -52,8 +52,8 @@ frame_allocator::frame_allocator(AllocatorType _allocator_type, AllocMode _alloc
     case HARDWARE:
 #if defined(LIBVA_SUPPORT)
         PREPARE_ALLOCATOR(
-            vaapiFrameAllocator, 
-            CVAAPIDevice, 
+            vaapiFrameAllocator,
+            CVAAPIDevice,
             vaapiAllocatorParams,
             MFX_HANDLE_VA_DISPLAY,
             m_dpy = (reinterpret_cast<VADisplay>(hdl))
@@ -61,8 +61,8 @@ frame_allocator::frame_allocator(AllocatorType _allocator_type, AllocMode _alloc
 
 #elif defined(_WIN32) || defined(_WIN64)
         PREPARE_ALLOCATOR(
-            D3DFrameAllocator, 
-            CD3D9Device, 
+            D3DFrameAllocator,
+            CD3D9Device,
             D3DAllocatorParams,
             MFX_HANDLE_D3D9_DEVICE_MANAGER,
             pManager = reinterpret_cast<IDirect3DDeviceManager9*>(hdl)
@@ -70,22 +70,22 @@ frame_allocator::frame_allocator(AllocatorType _allocator_type, AllocMode _alloc
         break;
     case HARDWARE_DX11:
         PREPARE_ALLOCATOR(
-            D3D11FrameAllocator, 
-            CD3D11Device, 
+            D3D11FrameAllocator,
+            CD3D11Device,
             D3D11AllocatorParams,
             MFX_HANDLE_D3D11_DEVICE,
             pDevice = reinterpret_cast<ID3D11Device*>(hdl)
         );
 #endif //LIBVA_SUPPORT
         break;
-    case FAKE: 
+    case FAKE:
     default:
         return;
     }
     if (p_allocator)
         if (!p_allocator->Init(p_allocator_par))
             is_valid = true;
-    
+
     zero_mids.resize(ZERO_MIDS_INITIAL_SIZE, 0);
 }
 
@@ -153,7 +153,7 @@ mfxStatus frame_allocator::AllocFrame(mfxHDL pthis, mfxFrameAllocRequest *reques
 
     if (!instance || !request || !response)
         return MFX_ERR_NULL_PTR;
-    
+
     return instance->alloc_frame_nocheck(request, response);
 }
 
@@ -168,7 +168,7 @@ mfxStatus frame_allocator::alloc_frame_nocheck(mfxFrameAllocRequest *request, mf
 
     if (!p_allocator)
         return MFX_ERR_NOT_INITIALIZED;
-    
+
     switch (alloc_mode)
     {
     case ALLOC_MIN_MINUS_1:
@@ -271,7 +271,7 @@ mfxStatus frame_allocator::lock_frame_nocheck(mfxMemId mid, mfxFrameData *ptr)
 {
     if (allocator_type == FAKE)
         return MFX_ERR_UNSUPPORTED;
-    
+
     if (!p_allocator)
         return MFX_ERR_NOT_INITIALIZED;
 
@@ -298,7 +298,7 @@ mfxStatus frame_allocator::unlock_frame_nocheck(mfxMemId mid, mfxFrameData *ptr)
 {
     if (allocator_type == FAKE)
         return MFX_ERR_UNSUPPORTED;
-    
+
     if (!p_allocator)
         return MFX_ERR_NOT_INITIALIZED;
 
@@ -323,7 +323,7 @@ mfxStatus frame_allocator::GetHDL(mfxHDL pthis, mfxMemId mid, mfxHDL *hdl)
 mfxStatus frame_allocator::Free(mfxHDL pthis, mfxFrameAllocResponse *response)
 {
     frame_allocator *instance = static_cast<frame_allocator*>(pthis);
-    
+
     if (FAKE == instance->allocator_type)
         return MFX_ERR_UNSUPPORTED;
 
@@ -352,7 +352,7 @@ buffer_allocator::~buffer_allocator()
 mfxStatus buffer_allocator::_Alloc  (mfxHDL pthis, mfxU32 nbytes, mfxU16 type, mfxMemId *mid)
 {
     buffer_allocator *instance = static_cast<buffer_allocator*>(pthis);
-    
+
     if (!instance->p_allocator)
         return MFX_ERR_NOT_INITIALIZED;
 
@@ -370,7 +370,7 @@ mfxStatus buffer_allocator::_Alloc  (mfxHDL pthis, mfxU32 nbytes, mfxU16 type, m
 mfxStatus buffer_allocator::_Lock   (mfxHDL pthis, mfxMemId mid, mfxU8 **ptr)
 {
     buffer_allocator *instance = static_cast<buffer_allocator*>(pthis);
-    
+
     if (!instance->p_allocator)
         return MFX_ERR_NOT_INITIALIZED;
 
@@ -380,7 +380,7 @@ mfxStatus buffer_allocator::_Lock   (mfxHDL pthis, mfxMemId mid, mfxU8 **ptr)
 mfxStatus buffer_allocator::_Unlock (mfxHDL pthis, mfxMemId mid)
 {
     buffer_allocator *instance = static_cast<buffer_allocator*>(pthis);
-    
+
     if (!instance->p_allocator)
         return MFX_ERR_NOT_INITIALIZED;
 
@@ -390,7 +390,7 @@ mfxStatus buffer_allocator::_Unlock (mfxHDL pthis, mfxMemId mid)
 mfxStatus buffer_allocator::_Free   (mfxHDL pthis, mfxMemId mid)
 {
     buffer_allocator *instance = static_cast<buffer_allocator*>(pthis);
-    
+
     if (!instance->p_allocator)
         return MFX_ERR_NOT_INITIALIZED;
 
