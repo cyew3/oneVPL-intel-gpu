@@ -415,7 +415,7 @@ mfxStatus DISPATCHER_EXPOSED_PREFIX(MFXInit)(mfxIMPL impl, mfxVersion *pVer, mfx
     delete pHandle;
 
     if (allocatedHandle.size() == 0)
-        return MFX_ERR_NOT_FOUND;
+        return MFX_ERR_UNSUPPORTED;
 
     // select dll with version with lowest version number still greater or equal to requested
     qsort(&(*allocatedHandle.begin()), allocatedHandle.size(), sizeof(MFX_DISP_HANDLE*), &HandleSort);
