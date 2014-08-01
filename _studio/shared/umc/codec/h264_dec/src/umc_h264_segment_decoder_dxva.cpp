@@ -142,6 +142,7 @@ void TaskBrokerSingleThreadDXVA::Reset()
 {
     m_lastCounter = 0;
     TaskBrokerSingleThread::Reset();
+    m_reports.clear();
 }
 
 void TaskBrokerSingleThreadDXVA::Start()

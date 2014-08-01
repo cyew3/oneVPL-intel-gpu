@@ -1570,6 +1570,9 @@ UMC::Status TaskSupplier_H265::AddSource(UMC::MediaData * pSource, UMC::MediaDat
 
     CompleteDecodedFrames(0);
 
+    if (GetFrameToDisplayInternal(false))
+        return UMC::UMC_OK;
+
     umcRes = AddOneFrame(pSource, dst); // construct frame
 
     if (UMC::UMC_ERR_NOT_ENOUGH_BUFFER == umcRes)
@@ -2379,7 +2382,8 @@ H265DecoderFrame * TaskSupplier_H265::AllocateNewFrame(const H265Slice *pSlice)
 
     CheckCRAOrBLA(pSlice);
 
-    if (pSlice->GetSliceHeader()->nal_unit_type == NAL_UT_CODED_SLICE_CRA && NoRaslOutputFlag)
+    if ((pSlice->GetSliceHeader()->nal_unit_type == NAL_UT_CODED_SLICE_CRA && NoRaslOutputFlag) ||
+        pSlice->GetSliceHeader()->no_output_of_prior_pics_flag)
     {
         for (H265DecoderFrame *pCurr = GetView()->pDPB->head(); pCurr; pCurr = pCurr->future())
         {

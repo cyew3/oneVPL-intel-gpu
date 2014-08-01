@@ -119,6 +119,7 @@ void TaskBrokerSingleThreadDXVA::Reset()
 {
     m_lastCounter = 0;
     TaskBroker_H265::Reset();
+    m_reports.clear();
 }
 
 void TaskBrokerSingleThreadDXVA::Start()

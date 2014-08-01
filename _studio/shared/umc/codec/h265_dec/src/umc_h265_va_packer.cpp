@@ -509,7 +509,7 @@ void PackerDXVA2::PackSliceParams(H265Slice *pSlice, Ipp32u &, bool isLastSlice)
 
         pSlice->m_BitStream.GetOrg((Ipp32u**)&rawDataPtr, &rawDataSize);
 
-        GetSliceVABuffers(&pDXVASlice, headerSize, &pSliceData, rawDataSize + sizeof(start_code_prefix), 64);
+        GetSliceVABuffers(&pDXVASlice, headerSize, &pSliceData, rawDataSize + sizeof(start_code_prefix),  isLastSlice ? 128 : 0);
 
         const H265PicParamSet *pPicParamSet = pSlice->GetPicParam();
         const H265DecoderFrame *pCurrentFrame = pSlice->GetCurrentFrame();
@@ -640,7 +640,7 @@ void PackerDXVA2::PackSliceParams(H265Slice *pSlice, Ipp32u &, bool isLastSlice)
         H265Bitstream *pBitstream = pSlice->GetBitStream();
 
         pBitstream->GetOrg((Ipp32u**)&rawDataPtr, &rawDataSize);
-        GetSliceVABuffers(&pDXVASlice, headerSize, &pSliceData, rawDataSize + 3, 64);
+        GetSliceVABuffers(&pDXVASlice, headerSize, &pSliceData, rawDataSize + 3, isLastSlice ? 128 : 0);
     }
 
     // copy slice data to slice data buffer
@@ -976,7 +976,7 @@ void MSPackerDXVA2::PackPicParams(const H265DecoderFrame *pCurrentFrame,
     pPicParam->StatusReportFeedbackNumber = m_statusReportFeedbackCounter;
 }
 
-void MSPackerDXVA2::PackSliceParams(H265Slice *pSlice, Ipp32u &sliceNum, bool )
+void MSPackerDXVA2::PackSliceParams(H265Slice *pSlice, Ipp32u &sliceNum, bool isLastSlice)
 {
     static Ipp8u start_code_prefix[] = {0, 0, 1};
 
@@ -1006,7 +1006,8 @@ void MSPackerDXVA2::PackSliceParams(H265Slice *pSlice, Ipp32u &sliceNum, bool )
     MFX_INTERNAL_CPY(dataBffr + sizeof(start_code_prefix), rawDataPtr, rawDataSize);
 
     Ipp32s alignedSize = dataVABffr->GetDataSize() + storedSize;
-    alignedSize = align_value<Ipp32s>(alignedSize, 128);
+    if (isLastSlice)
+        alignedSize = align_value<Ipp32s>(alignedSize, 128);
 
     memset(dataBffr + storedSize, 0, alignedSize - storedSize);
     dataVABffr->SetDataSize(alignedSize);
