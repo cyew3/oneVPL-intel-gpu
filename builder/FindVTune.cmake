@@ -30,9 +30,10 @@ if(__ITT)
       endif( )
     else()
       set( VTUNE_FOUND TRUE )
-      message( STATUS "ITT was found here $ENV{MFX_HOME}/thirdparty/itt" )
-      include_directories($ENV{MFX_HOME}/thirdparty/itt/include)
-      link_directories( $ENV{MFX_HOME}/thirdparty/itt/lib${arch} )
+      message( STATUS "ITT was found here $ENV{MFX_HOME}/mdp_msdk-contrib/itt" )
+
+      include_directories($ENV{MFX_HOME}/mdp_msdk-contrib/itt/include)
+      link_directories( $ENV{MFX_HOME}/mdp_msdk-contrib/itt/lib${arch} )
     endif()
 
     append("-DMFX_TRACE_ENABLE_ITT" CMAKE_C_FLAGS)
