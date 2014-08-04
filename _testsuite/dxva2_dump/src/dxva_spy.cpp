@@ -146,7 +146,7 @@ UMC::VideoAccelerationProfile GetProfile(REFGUID Guid)
     {
         profile = JPEG_VLD;
     }
-    else if (Guid == DXVA_Intel_ModeHEVC_VLD_MainProfile || Guid == DXVA_ModeHEVC_VLD_Main || Guid == DXVA_Intel_ModeHEVC_VLD_Main10Profile)
+    else if (Guid == DXVA_Intel_ModeHEVC_VLD_MainProfile || Guid == DXVA_ModeHEVC_VLD_Main || Guid == DXVA_Intel_ModeHEVC_VLD_Main10Profile || Guid == DXVA_ModeHEVC_VLD_Main10)
     {
         profile = HEVC_VLD;
     }
@@ -737,7 +737,7 @@ public:
             return;
         }
 
-        bool isMS = (m_guid == DXVA_ModeHEVC_VLD_Main);
+        bool isMS = (m_guid == DXVA_ModeHEVC_VLD_Main || m_guid == DXVA_ModeHEVC_VLD_Main10);
         f = fopen(fname, "wt");
 
         switch (BufferType)
@@ -1437,6 +1437,7 @@ static GUID g_guids[] =
     DXVADDI_Intel_Decode_PrivateData_Report,
 
     DXVA_ModeHEVC_VLD_Main,
+    DXVA_ModeHEVC_VLD_Main10,
     DXVA_Intel_ModeHEVC_VLD_MainProfile,
     DXVA_Intel_ModeHEVC_VLD_Main10Profile
 };
@@ -1451,6 +1452,7 @@ static DXVA2_ConfigPictureDecode configs[]=
     {sDXVA_ModeH264_VLD_SVC_Scalable_Constrained_Baseline, DXVA_NoEncrypt, DXVA_NoEncrypt, 2, 5000, 5000, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
 
     {DXVA_ModeHEVC_VLD_Main, DXVA_NoEncrypt, DXVA_NoEncrypt, 2, 5000, 5000, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {DXVA_ModeHEVC_VLD_Main10, DXVA_NoEncrypt, DXVA_NoEncrypt, 2, 5000, 5000, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
     {DXVA_Intel_ModeHEVC_VLD_MainProfile, DXVA_NoEncrypt, DXVA_NoEncrypt, 2, 5000, 5000, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
     {DXVA_Intel_ModeHEVC_VLD_Main10Profile, DXVA_NoEncrypt, DXVA_NoEncrypt, 2, 5000, 5000, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
 };

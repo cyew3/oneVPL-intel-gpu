@@ -1236,7 +1236,7 @@ mfxStatus VideoDECODEH264::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1 *
     if (m_usePostProcessing)
     {
         mfxHDL surfHDL;
-        m_core->GetFrameHDL(surface_work->Data.MemId, &surfHDL, false);
+        m_core->GetExternalFrameHDL(surface_work->Data.MemId, &surfHDL, false);
         m_va->GetVideoProcessingVA()->SetOutputSurface(surfHDL);
     }
 #endif
@@ -1464,6 +1464,17 @@ void VideoDECODEH264::FillOutputSurface(mfxFrameSurface1 **surf_out, mfxFrameSur
     surface_out->Info.CropW = (mfxU16)(pFrame->lumaSize().width - pFrame->m_crop_right - pFrame->m_crop_left);
     surface_out->Info.CropX = (mfxU16)(pFrame->m_crop_left);
     surface_out->Info.CropY = (mfxU16)(pFrame->m_crop_top);
+
+    if (m_usePostProcessing)
+    {
+        mfxExtDecVideoProcessing * videoProcessing = (mfxExtDecVideoProcessing *)GetExtBuffer(m_vFirstPar.ExtParam, m_vFirstPar.NumExtParam, MFX_EXTBUFF_DEC_VIDEO_PROCESSING);
+        VM_ASSERT(videoProcessing);
+
+        surface_out->Info.CropH = videoProcessing->Out.CropH;
+        surface_out->Info.CropW = videoProcessing->Out.CropW;
+        surface_out->Info.CropX = videoProcessing->Out.CropX;
+        surface_out->Info.CropY = videoProcessing->Out.CropY;
+    }
 
     bool isShouldUpdate = !(m_vFirstPar.mfx.FrameInfo.AspectRatioH || m_vFirstPar.mfx.FrameInfo.AspectRatioW);
 

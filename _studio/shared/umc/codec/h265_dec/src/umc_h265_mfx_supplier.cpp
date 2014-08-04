@@ -437,7 +437,8 @@ eMFXPlatform MFX_Utility::GetPlatform_H265(VideoCORE * core, mfxVideoParam * par
     {
         if (par->mfx.FrameInfo.FourCC == MFX_FOURCC_P010)
         {
-            if (MFX_ERR_NONE != core->IsGuidSupported(DXVA_Intel_ModeHEVC_VLD_Main10Profile, par))
+            if (MFX_ERR_NONE != core->IsGuidSupported(DXVA_Intel_ModeHEVC_VLD_Main10Profile, par) &&
+                MFX_ERR_NONE != core->IsGuidSupported(DXVA_ModeHEVC_VLD_Main10, par))
             {
                 return MFX_PLATFORM_SOFTWARE;
             }
