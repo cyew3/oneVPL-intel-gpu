@@ -2246,7 +2246,8 @@ void TaskSupplier_H265::CompleteFrame(H265DecoderFrame * pFrame)
 
     // skipping algorithm
     {
-        if (IsShouldSkipFrame(pFrame) || IsSkipForCRAorBLA(slicesInfo->GetAnySlice()))
+        const H265Slice *slice = slicesInfo->GetAnySlice();
+        if (IsShouldSkipFrame(pFrame) || IsSkipForCRAorBLA(slice))
         {
             slicesInfo->SetStatus(H265DecoderFrameInfo::STATUS_COMPLETED);
 
@@ -2263,6 +2264,12 @@ void TaskSupplier_H265::CompleteFrame(H265DecoderFrame * pFrame)
                 pFrame->GetAU()->SkipDeblocking();
                 pFrame->GetAU()->SkipSAO();
             }
+        }
+
+        if (!slice->GetSliceHeader()->pic_output_flag)
+        {
+            pFrame->setWasDisplayed();
+            pFrame->setWasOutputted();
         }
     }
 
