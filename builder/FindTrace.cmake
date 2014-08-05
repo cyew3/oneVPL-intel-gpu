@@ -4,7 +4,7 @@ endif()
 
 if(__TRACE MATCHES itt OR __TRACE MATCHES all)
   set(__ITT TRUE)
-  include (builder/FindVTune.cmake)
+  include (${CMAKE_CURRENT_LIST_DIR}/FindVTune.cmake)
 endif()
 
 if(__TRACE MATCHES all)
