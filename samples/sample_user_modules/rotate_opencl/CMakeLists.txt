@@ -20,5 +20,10 @@ if ( DEFINED OPENCL_FOUND )
     list( APPEND LIBS "libva.so" )
     list( APPEND LIBS sample_common ${OPENCL_LIBS} )
 
+    # copy .cl file into build directory
+    execute_process( COMMAND ${CMAKE_COMMAND} -E copy
+    "${CMAKE_SOURCE_DIR}/sample_user_modules/rotate_opencl/src/ocl_rotate.cl"
+    "${CMAKE_BIN_DIR}/${CMAKE_BUILD_TYPE}/ocl_rotate.cl" )
+
     make_library( sample_plugin_opencl none shared )
 endif ( )

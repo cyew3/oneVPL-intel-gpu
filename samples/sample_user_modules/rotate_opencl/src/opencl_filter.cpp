@@ -287,54 +287,43 @@ cl_int OpenCLFilterBase::ProcessSurface(int width, int height, mfxMemId pSurfIn,
     return error;
 }
 
+
+
+std::string getPathToExe()
+{
+    const size_t module_length = 1024;
+    char module_name[module_length];
+
 #if defined(_WIN32) || defined(_WIN64)
+    GetModuleFileNameA(0, module_name, module_length);
+#else
+    char id[module_length];
+    sprintf(id, "/proc/%d/exe", getpid());
+    readlink(id, module_name, module_length-1);
+#endif
+
+    std::string exePath(module_name);
+    return exePath.substr(0, exePath.find_last_of("\\/") + 1);
+}
 
 std::string readFile(const char *filename)
 {
+    std::cout << "Info: try to open file (" << filename << ") in the current directory"<<endl;
     std::ifstream input(filename, std::ios::in | std::ios::binary);
+
     if(!input.good())
     {
         // look in folder with executable
         input.clear();
-        const size_t module_length = 1024;
-        char module_name[module_length];
-        GetModuleFileNameA(0, module_name, module_length);
-        char *p = strrchr(module_name, '\\');
-        if (p)
-        {
-            strncpy_s(p + 1, module_length - (p + 1 - module_name), filename, _TRUNCATE);
-            input.open(module_name, std::ios::binary);
-        }
+
+        std::string module_name = getPathToExe() + std::string(filename);
+
+        std::cout << "Info: try to open file: " << module_name << endl;
+        input.open(module_name.c_str(), std::ios::binary);
     }
 
     if (!input)
-        return std::string("Error_opening_file_\"") + std::string(filename) + std::string("\"");
-
-    input.seekg(0, std::ios::end);
-    std::vector<char> program_source(static_cast<int>(input.tellg().seekpos()));
-    input.seekg(0);
-
-    input.read(&program_source[0], program_source.size());
-
-    return std::string(program_source.begin(), program_source.end());
-}
-
-#else
-
-std::string readFile(const char *filename)
-{
-    char* mfx_home = getenv("MFX_HOME");
-
-    // TODO need to process exception
-    if (!mfx_home) throw std::logic_error("MFX_HOME environment variable was not set!");
-
-    std::string path =
-        std::string(mfx_home) +
-        std::string("/") +
-        std::string("samples/sample_user_modules/rotate_opencl/src/") +
-        std::string(filename);
-
-    std::ifstream input(path.c_str(), std::ios::in | std::ios::binary);
+        throw std::logic_error((std::string("Error_opening_file_\"") + std::string(filename) + std::string("\"")).c_str());
 
     input.seekg(0, std::ios::end);
     std::vector<char> program_source(static_cast<int>(input.tellg()));
@@ -344,5 +333,3 @@ std::string readFile(const char *filename)
 
     return std::string(program_source.begin(), program_source.end());
 }
-
-#endif // #if defined(_WIN32) || defined(_WIN64)

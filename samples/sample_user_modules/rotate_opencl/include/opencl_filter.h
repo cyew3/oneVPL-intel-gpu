@@ -115,3 +115,4 @@ protected: // variables
 };
 
 std::string readFile(const char *filename);
+std::string getPathToExe();

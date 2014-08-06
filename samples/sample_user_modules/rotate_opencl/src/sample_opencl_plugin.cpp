@@ -185,10 +185,12 @@ mfxStatus Rotate::Submit(const mfxHDL *in, mfxU32 in_num, const mfxHDL *out, mfx
     switch (m_Param.Angle)
     {
     case 180:
-        if (m_bOpenCLSurfaceSharing) {
+        if (m_bOpenCLSurfaceSharing)
+        {
             m_pTasks[ind].pProcessor = new OpenCLFilterRotator180(&m_OpenCLFilter);
         }
-        else {
+        else
+        {
             m_pTasks[ind].pProcessor = new OpenCLRotator180(m_pOpenCLRotator180Context.get());
         }
         MSDK_CHECK_POINTER(m_pTasks[ind].pProcessor, MFX_ERR_MEMORY_ALLOC);
@@ -325,8 +327,16 @@ mfxStatus Rotate::Init(mfxVideoParam *mfxParam)
         // init OpenCLFilter
         cl_int error = CL_SUCCESS;
 
-        error = m_OpenCLFilter.AddKernel(readFile("ocl_rotate.cl").c_str(), "rotate_Y", "rotate_UV", MFX_FOURCC_NV12);
-        if (error) return MFX_ERR_DEVICE_FAILED;
+        try
+        {
+            error = m_OpenCLFilter.AddKernel(readFile("ocl_rotate.cl").c_str(), "rotate_Y", "rotate_UV", MFX_FOURCC_NV12);
+            if (error) return MFX_ERR_DEVICE_FAILED;
+        }
+        catch(const std::exception& err)
+        {
+            std::cout << "Error: The AddKernel or readFile method throws an exception: " << err.what() << std::endl;
+            return MFX_ERR_DEVICE_FAILED;
+        }
 
         error = m_OpenCLFilter.OCLInit(m_device);
         if (error)
@@ -340,23 +350,27 @@ mfxStatus Rotate::Init(mfxVideoParam *mfxParam)
             error = m_OpenCLFilter.SelectKernel(0);
             if (error) return MFX_ERR_DEVICE_FAILED;
         }
-
     }
 
     if (!m_bOpenCLSurfaceSharing)
     {
-        try {
+        try
+        {
             m_pOpenCLRotator180Context.reset(new OpenCLRotator180Context(readFile("ocl_rotate.cl").c_str()));
         }
-        catch (const std::exception &err) {
-            std::cout << err.what() << std::endl;
+        catch (const std::exception &err)
+        {
+            std::cout << "Error: The readFile method throws an exception: " << err.what() << std::endl;
             return MFX_ERR_DEVICE_FAILED;
         }
     }
 
-    if (m_bOpenCLSurfaceSharing) {
+    if (m_bOpenCLSurfaceSharing)
+    {
         msdk_printf(MSDK_STRING("info: using GPU OpenCL device with media sharing extension\n"));
-    } else {
+    }
+    else
+    {
         msdk_printf(MSDK_STRING("info: using CPU OpenCL device without media sharing extension\n"));
     }
 
