@@ -915,9 +915,65 @@ mfxStatus MFX_PTIR_Plugin::Init(mfxVideoParam *par)
         return MFX_ERR_UNKNOWN;
     }
 
-    mfxSts = ptir->Init(par);
-    if(mfxSts)
-        return mfxSts;
+
+    try
+    {
+        mfxSts = ptir->Init(par);
+    }
+    catch(std::bad_alloc&)
+    {
+        mfxSts = MFX_ERR_MEMORY_ALLOC;
+    }
+    catch(...)
+    {
+        mfxSts = MFX_ERR_UNKNOWN;
+    }
+
+    if(MFX_ERR_NONE > mfxSts && MFX_IMPL_HARDWARE == MFX_IMPL_BASETYPE(mfxCorePar.Impl) && HWSupported)
+    {
+        //failed to initialize CM ptir, try to fallback to SW
+        delete ptir;
+
+        par_accel = true;
+        try
+        {
+            ptir = new PTIR_ProcessorCPU(m_pmfxCore, frmSupply);
+        }
+        catch(std::bad_alloc&)
+        {
+            delete frmSupply;
+            frmSupply = 0;
+            mfxSts = MFX_ERR_MEMORY_ALLOC;
+        }
+        catch(...)
+        {
+            delete frmSupply;
+            frmSupply = 0;
+            return MFX_ERR_UNKNOWN;
+        }
+
+        try
+        {
+            mfxSts = ptir->Init(par);
+        }
+        catch(std::bad_alloc&)
+        {
+            delete ptir;
+            ptir = 0;
+            delete frmSupply;
+            frmSupply = 0;
+            mfxSts = MFX_ERR_MEMORY_ALLOC;
+        }
+        catch(...)
+        {
+            delete ptir;
+            ptir = 0;
+            delete frmSupply;
+            frmSupply = 0;
+            mfxSts = MFX_ERR_UNKNOWN;
+        }
+
+    }
 
     // Some kind of correct work with system memory provided
     //  In case of poorly system memory provided (e.g. different memory blocks for Y and UV), without memory aligning, etc

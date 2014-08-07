@@ -53,7 +53,8 @@ PTIR_ProcessorCM::PTIR_ProcessorCM(mfxCoreInterface* mfxCore, frameSupplier* _fr
     m_pmfxCore = mfxCore;
     frmSupply = _frmSupply;
     HWType = _HWType;
-    bool isHW = true;
+    isHW = true;
+    bInited = false;
 }
 
 PTIR_ProcessorCM::~PTIR_ProcessorCM()
@@ -163,7 +164,13 @@ mfxStatus PTIR_ProcessorCM::Init(mfxVideoParam *par)
     }
     catch(std::bad_alloc&)
     {
+        bInited = false;
         return MFX_ERR_MEMORY_ALLOC;
+    }
+    catch(...)
+    {
+        bInited = false;
+        return MFX_ERR_UNKNOWN;
     }
     try
     {
