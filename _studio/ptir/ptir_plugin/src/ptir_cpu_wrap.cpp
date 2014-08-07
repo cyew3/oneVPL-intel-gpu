@@ -121,6 +121,7 @@ mfxStatus PTIR_ProcessorCPU::Init(mfxVideoParam *par)
                 Close();
                 return MFX_ERR_MEMORY_ALLOC;
             }
+            frmIO[i].frmProperties.timestamp = -1;
         }
         Frame_Create(&frmIO[LASTFRAME], uiWidth, uiHeight, uiWidth / 2, uiHeight / 2, 0);
         if(!frmIO[LASTFRAME].ucMem)
@@ -128,6 +129,7 @@ mfxStatus PTIR_ProcessorCPU::Init(mfxVideoParam *par)
             Close();
             return MFX_ERR_MEMORY_ALLOC;
         }
+        frmIO[i].frmProperties.timestamp = -1;
     }
     catch(std::bad_alloc&)
     {
@@ -189,6 +191,7 @@ mfxStatus PTIR_ProcessorCPU::Process(mfxFrameSurface1 *surface_in, mfxFrameSurfa
         mfxCCSts = MfxNv12toPtir420(surface_in, frmBuffer[uiSupBuf]->ucMem);
         assert(!mfxCCSts);
         frmBuffer[uiSupBuf]->frmProperties.fr = dFrameRate;
+        frmBuffer[uiSupBuf]->frmProperties.timestamp = (long double) surface_in->Data.TimeStamp;
         if(isUnlockReq)
         {
             mfx_core->FrameAllocator.Unlock(mfx_core->FrameAllocator.pthis, surface_in->Data.MemId, &(surface_in->Data));
@@ -293,7 +296,7 @@ mfxStatus PTIR_ProcessorCPU::PTIR_ProcessFrame(mfxFrameSurface1 *surf_in, mfxFra
 
         dBaseTime = (1 / dFrameRate) * 1000;
         dDeIntTime = dBaseTime / 2;
-        frmBuffer[0]->frmProperties.timestamp = dTimeStamp;
+        //frmBuffer[0]->frmProperties.timestamp = dTimeStamp;
         if (uiisInterlaced == 2)
             dBaseTimeSw = (dBaseTime * 5 / 4);
         else
@@ -359,14 +362,14 @@ mfxStatus PTIR_ProcessorCPU::PTIR_ProcessFrame(mfxFrameSurface1 *surf_in, mfxFra
                                 memcpy(frmIn->plaY.ucStats.ucRs,frmBuffer[i]->plaY.ucStats.ucRs,sizeof(double) * 10);
 
                                 //Timestamp
-                                frmBuffer[i + 1]->frmProperties.timestamp = frmBuffer[i]->frmProperties.timestamp + dOutBaseTime;
-                                frmIn->frmProperties.timestamp = frmBuffer[i]->frmProperties.timestamp;
+                                //frmBuffer[i + 1]->frmProperties.timestamp = frmBuffer[i]->frmProperties.timestamp + dOutBaseTime;
+                                //frmIn->frmProperties.timestamp = frmBuffer[i]->frmProperties.timestamp;
 
                                 FrameQueue_Add(&fqIn, frmIn);
                             }
                             else
                             {
-                                frmBuffer[i + 1]->frmProperties.timestamp = frmBuffer[i]->frmProperties.timestamp;
+                                //frmBuffer[i + 1]->frmProperties.timestamp = frmBuffer[i]->frmProperties.timestamp;
                                 frmBuffer[i]->frmProperties.drop = false;
                             }
                         }
@@ -402,14 +405,14 @@ mfxStatus PTIR_ProcessorCPU::PTIR_ProcessFrame(mfxFrameSurface1 *surf_in, mfxFra
                                         memcpy(frmIn->plaY.ucStats.ucRs, frmBuffer[0]->plaY.ucStats.ucRs, sizeof(double)* 10);
 
                                         //Timestamp
-                                        frmBuffer[1]->frmProperties.timestamp = frmBuffer[0]->frmProperties.timestamp + dBaseTimeSw;
-                                        frmIn->frmProperties.timestamp = frmBuffer[0]->frmProperties.timestamp;
+                                        //frmBuffer[1]->frmProperties.timestamp = frmBuffer[0]->frmProperties.timestamp + dBaseTimeSw;
+                                        //frmIn->frmProperties.timestamp = frmBuffer[0]->frmProperties.timestamp;
 
                                         FrameQueue_Add(&fqIn, frmIn);
                                     }
                                     else
                                     {
-                                        frmBuffer[1]->frmProperties.timestamp = frmBuffer[0]->frmProperties.timestamp;// +dBaseTimeSw;
+                                        //frmBuffer[1]->frmProperties.timestamp = frmBuffer[0]->frmProperties.timestamp;// +dBaseTimeSw;
                                         uiBufferCount = 0;
                                     }
                                     Rotate_Buffer(frmBuffer);
@@ -426,9 +429,9 @@ mfxStatus PTIR_ProcessorCPU::PTIR_ProcessFrame(mfxFrameSurface1 *surf_in, mfxFra
 
                                     //Timestamp
                                     frmBuffer[BUFMINSIZE]->frmProperties.tindex = frmBuffer[0]->frmProperties.tindex;
-                                    frmBuffer[BUFMINSIZE]->frmProperties.timestamp = frmBuffer[0]->frmProperties.timestamp + dDeIntTime;
-                                    frmBuffer[1]->frmProperties.timestamp = frmBuffer[BUFMINSIZE]->frmProperties.timestamp + dDeIntTime;
-                                    frmIn->frmProperties.timestamp = frmBuffer[0]->frmProperties.timestamp;
+                                    //frmBuffer[BUFMINSIZE]->frmProperties.timestamp = frmBuffer[0]->frmProperties.timestamp + dDeIntTime;
+                                    //frmBuffer[1]->frmProperties.timestamp = frmBuffer[BUFMINSIZE]->frmProperties.timestamp + dDeIntTime;
+                                    //frmIn->frmProperties.timestamp = frmBuffer[0]->frmProperties.timestamp;
 
                                     FrameQueue_Add(&fqIn, frmIn);
                                     if (bFullFrameRate && uiisInterlaced == 1)
@@ -437,7 +440,7 @@ mfxStatus PTIR_ProcessorCPU::PTIR_ProcessFrame(mfxFrameSurface1 *surf_in, mfxFra
                                         memcpy(frmIn->plaY.ucStats.ucRs, frmBuffer[BUFMINSIZE]->plaY.ucStats.ucRs, sizeof(double)* 10);
 
                                         //Timestamp
-                                        frmIn->frmProperties.timestamp = frmBuffer[BUFMINSIZE]->frmProperties.timestamp;
+                                        //frmIn->frmProperties.timestamp = frmBuffer[BUFMINSIZE]->frmProperties.timestamp;
 
                                         FrameQueue_Add(&fqIn, frmIn);
                                     }
@@ -491,6 +494,7 @@ mfxStatus PTIR_ProcessorCPU::PTIR_ProcessFrame(mfxFrameSurface1 *surf_in, mfxFra
                     if(!surf_out){
                         surf_out = frmSupply->GetWorkSurfaceMfx();
                     }
+                    surf_out->Data.TimeStamp = (mfxU64) frmIO[LASTFRAME].frmProperties.timestamp;
                     frmSupply->AddCPUPtirOutSurf(frmIO[LASTFRAME].ucMem, surf_out);
                     Frame_Release(frmIn);
                     free(frmIn);
@@ -523,6 +527,7 @@ mfxStatus PTIR_ProcessorCPU::PTIR_ProcessFrame(mfxFrameSurface1 *surf_in, mfxFra
                     if(!surf_out){
                         surf_out = frmSupply->GetWorkSurfaceMfx();
                     }
+                    surf_out->Data.TimeStamp = (mfxU64) frmIO[LASTFRAME].frmProperties.timestamp;
                     frmSupply->AddCPUPtirOutSurf(frmIO[LASTFRAME].ucMem, surf_out);
                     //memcpy(surf_out->Data.Y, frmIO[LASTFRAME].ucMem, frmIO[LASTFRAME].uiSize);
                     Frame_Release(frmIn);
@@ -559,9 +564,9 @@ mfxStatus PTIR_ProcessorCPU::PTIR_ProcessFrame(mfxFrameSurface1 *surf_in, mfxFra
 
                         //Timestamp
                         frmBuffer[BUFMINSIZE]->frmProperties.tindex = frmBuffer[i]->frmProperties.tindex;
-                        frmBuffer[BUFMINSIZE]->frmProperties.timestamp = frmBuffer[i]->frmProperties.timestamp + dDeIntTime;
-                        frmBuffer[i + 1]->frmProperties.timestamp = frmBuffer[BUFMINSIZE]->frmProperties.timestamp + dDeIntTime;
-                        frmIn->frmProperties.timestamp = frmBuffer[i]->frmProperties.timestamp;
+                        //frmBuffer[BUFMINSIZE]->frmProperties.timestamp = frmBuffer[i]->frmProperties.timestamp + dDeIntTime;
+                        //frmBuffer[i + 1]->frmProperties.timestamp = frmBuffer[BUFMINSIZE]->frmProperties.timestamp + dDeIntTime;
+                        //frmIn->frmProperties.timestamp = frmBuffer[i]->frmProperties.timestamp;
 
                         FrameQueue_Add(&fqIn, frmIn);
                         if (bFullFrameRate)
@@ -570,7 +575,7 @@ mfxStatus PTIR_ProcessorCPU::PTIR_ProcessFrame(mfxFrameSurface1 *surf_in, mfxFra
                             memcpy(frmIn->plaY.ucStats.ucRs, frmBuffer[BUFMINSIZE]->plaY.ucStats.ucRs, sizeof(double)* 10);
 
                             //Timestamp
-                            frmIn->frmProperties.timestamp = frmBuffer[BUFMINSIZE]->frmProperties.timestamp;
+                            //frmIn->frmProperties.timestamp = frmBuffer[BUFMINSIZE]->frmProperties.timestamp;
 
                             FrameQueue_Add(&fqIn, frmIn);
                         }
@@ -585,8 +590,8 @@ mfxStatus PTIR_ProcessorCPU::PTIR_ProcessFrame(mfxFrameSurface1 *surf_in, mfxFra
                             memcpy(frmIn->plaY.ucStats.ucRs, frmBuffer[i]->plaY.ucStats.ucRs, sizeof(double)* 10);
 
                             //timestamp
-                            frmBuffer[i + 1]->frmProperties.timestamp = frmBuffer[i]->frmProperties.timestamp + (dBaseTime * 5 / 4);
-                            frmIn->frmProperties.timestamp = frmBuffer[i]->frmProperties.timestamp;
+                            //frmBuffer[i + 1]->frmProperties.timestamp = frmBuffer[i]->frmProperties.timestamp + (dBaseTime * 5 / 4);
+                            //frmIn->frmProperties.timestamp = frmBuffer[i]->frmProperties.timestamp;
 
                             FrameQueue_Add(&fqIn, frmIn);
                         }
@@ -616,6 +621,7 @@ mfxStatus PTIR_ProcessorCPU::PTIR_ProcessFrame(mfxFrameSurface1 *surf_in, mfxFra
                     if(!surf_out){
                         surf_out = frmSupply->GetWorkSurfaceMfx();
                     }
+                    surf_out->Data.TimeStamp = (mfxU64) frmIO[LASTFRAME].frmProperties.timestamp;
                     frmSupply->AddCPUPtirOutSurf(frmIO[LASTFRAME].ucMem, surf_out);
                     Frame_Release(frmIn);
                     free(frmIn);

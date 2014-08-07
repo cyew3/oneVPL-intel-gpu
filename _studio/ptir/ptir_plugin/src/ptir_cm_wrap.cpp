@@ -686,15 +686,23 @@ mfxStatus PTIR_ProcessorCM::PTIR_ProcessFrame(CmSurface2D *surf_in, CmSurface2D 
                 if (frmIn)
                 {
                     mfxFrameSurface1* output = 0;
-                    //mfxFrameSurface1* input = 0;
+                    mfxFrameSurface1* input = 0;
                     std::map<CmSurface2D*,mfxFrameSurface1*>::iterator it;
                     it = CmToMfxSurfmap.find(static_cast<CmSurface2DEx*>(frmIn->outSurf)->pCmSurface2D);
                     if(it != CmToMfxSurfmap.end())
                     {
                         output = CmToMfxSurfmap[static_cast<CmSurface2DEx*>(frmIn->outSurf)->pCmSurface2D];
-                        //CmToMfxSurfmap.erase(it);
+                    }
+                    it = CmToMfxSurfmap.find(static_cast<CmSurface2DEx*>(frmIn->inSurf)->pCmSurface2D);
+                    if(it != CmToMfxSurfmap.end())
+                    {
+                        input = CmToMfxSurfmap[static_cast<CmSurface2DEx*>(frmIn->inSurf)->pCmSurface2D];
                     }
                     assert(0 != output);
+                    if(input)
+                        output->Data.TimeStamp = input->Data.TimeStamp;
+                    else
+                        output->Data.TimeStamp = -1;
                     if(frmIn->outState == Frame::OUT_UNCHANGED)
                     {
                         assert(0 != static_cast<CmSurface2DEx*>(frmIn->inSurf)->pCmSurface2D);
@@ -708,7 +716,6 @@ mfxStatus PTIR_ProcessorCM::PTIR_ProcessFrame(CmSurface2D *surf_in, CmSurface2D 
 
                     Frame_ReleaseCM(frmIn);
                     free(frmIn);
-                    output->Data.TimeStamp = uiFrameOut;
                     frmSupply->AddOutputSurf(output);
 
                     uiFrameOut++;
@@ -739,6 +746,10 @@ mfxStatus PTIR_ProcessorCM::PTIR_ProcessFrame(CmSurface2D *surf_in, CmSurface2D 
 
                     assert(0 != output);
                     assert(0 != input);
+                    if(input)
+                        output->Data.TimeStamp = input->Data.TimeStamp;
+                    else
+                        output->Data.TimeStamp = -1;
                     if(frmIn->outState == Frame::OUT_UNCHANGED)
                     {
                         assert(0 != static_cast<CmSurface2DEx*>(frmIn->inSurf)->pCmSurface2D);
@@ -751,7 +762,6 @@ mfxStatus PTIR_ProcessorCM::PTIR_ProcessFrame(CmSurface2D *surf_in, CmSurface2D 
 
                     Frame_ReleaseCM(frmIn);
                     free(frmIn);
-                    output->Data.TimeStamp = uiFrameOut;
                     frmSupply->AddOutputSurf(output);
 
                     uiFrameOut++;
@@ -858,6 +868,10 @@ mfxStatus PTIR_ProcessorCM::PTIR_ProcessFrame(CmSurface2D *surf_in, CmSurface2D 
 
                 assert(0 != output);
                 assert(0 != input);
+                if(input)
+                    output->Data.TimeStamp = input->Data.TimeStamp;
+                else
+                    output->Data.TimeStamp = -1;
                 if(frmIn->outState == Frame::OUT_UNCHANGED)
                 {
                     assert(0 != static_cast<CmSurface2DEx*>(frmIn->inSurf)->pCmSurface2D);
@@ -869,7 +883,6 @@ mfxStatus PTIR_ProcessorCM::PTIR_ProcessFrame(CmSurface2D *surf_in, CmSurface2D 
 
                 Frame_ReleaseCM(frmIn);
                 free(frmIn);
-                output->Data.TimeStamp = uiFrameOut;
                 frmSupply->AddOutputSurf(output);
 
                 uiFrameOut++;
