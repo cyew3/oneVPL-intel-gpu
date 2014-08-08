@@ -321,6 +321,7 @@ mfxStatus VideoDECODEH264::Init(mfxVideoParam *par)
         useInternal = (m_platform == MFX_PLATFORM_SOFTWARE) ? (pOpaqAlloc->Out.Type & MFX_MEMTYPE_DXVA2_DECODER_TARGET) : (pOpaqAlloc->Out.Type & MFX_MEMTYPE_SYSTEM_MEMORY);
     }
 
+    mfxU16 request_type = request.Type;
     request.Type |= useInternal ? MFX_MEMTYPE_INTERNAL_FRAME : MFX_MEMTYPE_EXTERNAL_FRAME;
     request_internal = request;
 
@@ -364,6 +365,28 @@ mfxStatus VideoDECODEH264::Init(mfxVideoParam *par)
         mfxSts = m_core->AllocFrames(&request_internal, &m_response, true);
         if (mfxSts < MFX_ERR_NONE)
             return mfxSts;
+
+        if (m_usePostProcessing)
+        {
+            // need to substitute output format
+            // number of surfaces is same
+            request.Info.FourCC = videoProcessing->Out.FourCC;
+
+            request.Info.ChromaFormat = videoProcessing->Out.ChromaFormat;
+            request.Info.PicStruct = videoProcessing->Out.PicStruct;
+            request.Info.Width = videoProcessing->Out.Width;
+            request.Info.Height = videoProcessing->Out.Height;
+            request.Info.CropX = videoProcessing->Out.CropX;
+            request.Info.CropY = videoProcessing->Out.CropY;
+            request.Info.CropW = videoProcessing->Out.CropW;
+            request.Info.CropH = videoProcessing->Out.CropH;
+            request.Type = request_type;
+            request.Type |= MFX_MEMTYPE_EXTERNAL_FRAME;
+
+            mfxSts = m_core->AllocFrames(&request_internal, &m_response, true);
+            if (mfxSts < MFX_ERR_NONE)
+                return mfxSts;
+        }
     }
     else
     {
@@ -420,7 +443,6 @@ mfxStatus VideoDECODEH264::Init(mfxVideoParam *par)
             if (m_va->GetVideoProcessingVA()->Init(par, videoProcessing) != UMC::UMC_OK)
                 return MFX_ERR_INVALID_VIDEO_PARAM;
         }
-        
 #endif
     }
 #endif
@@ -951,6 +973,23 @@ mfxStatus VideoDECODEH264::QueryIOSurf(VideoCORE *core, mfxVideoParam *par, mfxF
         request->Type |= MFX_MEMTYPE_EXTERNAL_FRAME;
     }
 
+    mfxExtDecVideoProcessing * videoProcessing = (mfxExtDecVideoProcessing *)GetExtBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_DEC_VIDEO_PROCESSING);
+    if (videoProcessing)
+    {
+        // need to substitute output format
+        // number of surfaces is same
+        request->Info.FourCC = videoProcessing->Out.FourCC;
+
+        request->Info.ChromaFormat = videoProcessing->Out.ChromaFormat;
+        request->Info.PicStruct = videoProcessing->Out.PicStruct;
+        request->Info.Width = videoProcessing->Out.Width;
+        request->Info.Height = videoProcessing->Out.Height;
+        request->Info.CropX = videoProcessing->Out.CropX;
+        request->Info.CropY = videoProcessing->Out.CropY;
+        request->Info.CropW = videoProcessing->Out.CropW;
+        request->Info.CropH = videoProcessing->Out.CropH;
+    }
+
     if (platform != core->GetPlatformType())
     {
         VM_ASSERT(platform == MFX_PLATFORM_SOFTWARE);
@@ -999,23 +1038,6 @@ mfxStatus VideoDECODEH264::QueryIOSurfInternal(eMFXPlatform platform, eMFXHWType
     else
     {
         request->Type = MFX_MEMTYPE_DXVA2_DECODER_TARGET | MFX_MEMTYPE_FROM_DECODE;
-    }
-
-    mfxExtDecVideoProcessing * videoProcessing = (mfxExtDecVideoProcessing *)GetExtBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_DEC_VIDEO_PROCESSING);
-    if (videoProcessing)
-    {
-        // need to substitute output format
-        // number of surfaces is same
-        request->Info.FourCC = videoProcessing->Out.FourCC;
-
-        request->Info.ChromaFormat = videoProcessing->Out.ChromaFormat;
-        request->Info.PicStruct = videoProcessing->Out.PicStruct;
-        request->Info.Width = videoProcessing->Out.Width;
-        request->Info.Height = videoProcessing->Out.Height;
-        request->Info.CropX = videoProcessing->Out.CropX;
-        request->Info.CropY = videoProcessing->Out.CropY;
-        request->Info.CropW = videoProcessing->Out.CropW;
-        request->Info.CropH = videoProcessing->Out.CropH;
     }
 
     return MFX_ERR_NONE;
