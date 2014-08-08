@@ -846,9 +846,15 @@ mfxStatus MFX_PTIR_Plugin::Init(mfxVideoParam *par)
         return MFX_ERR_UNDEFINED_BEHAVIOR;
 
     mfxStatus mfxSts;
+    bool warn = false;
 
     memset(&m_mfxInitPar, 0, sizeof(mfxVideoParam));
     mfxSts = Query(par, &m_mfxInitPar);
+    if( MFX_WRN_INCOMPATIBLE_VIDEO_PARAM == mfxSts)
+    {
+        warn = true;
+        mfxSts = MFX_ERR_NONE;
+    }
     if( !(MFX_ERR_NONE == mfxSts || MFX_WRN_PARTIAL_ACCELERATION == mfxSts) )
         return MFX_ERR_INVALID_VIDEO_PARAM;
     if(!m_mfxInitPar.AsyncDepth)
@@ -1003,6 +1009,8 @@ mfxStatus MFX_PTIR_Plugin::Init(mfxVideoParam *par)
 
     if(par_accel)
         return MFX_WRN_PARTIAL_ACCELERATION;
+    else if(warn)
+        return MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
     else
         return MFX_ERR_NONE;
 }
