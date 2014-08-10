@@ -492,10 +492,18 @@ mfxStatus ScreenRender::RenderFrame(mfxFrameSurface1 *pSurface, mfxEncodeCtrl * 
         m_LastFrameCount = m_FrameCount;
     }
 
+    bool stopProcessing = FALSE;
     while (msg.message != WM_QUIT)
     {
         if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
         {
+            if ( ( msg.message == WM_KEYDOWN &&  msg.wParam == VK_SPACE ) ||
+                 ( msg.message == WM_LBUTTONDOWN  ) )
+            {
+                stopProcessing = stopProcessing ? FALSE : TRUE;
+                continue;
+            }
+
             if (PreTranslateMessage(msg))
             {
                 continue;
@@ -507,7 +515,8 @@ mfxStatus ScreenRender::RenderFrame(mfxFrameSurface1 *pSurface, mfxEncodeCtrl * 
             continue;
         }
 
-        break;
+        if ( ! stopProcessing )
+            break;
     }
 
 
