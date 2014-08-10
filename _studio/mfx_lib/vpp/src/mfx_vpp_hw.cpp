@@ -1397,6 +1397,7 @@ mfxStatus  VideoVPPHW::Init(
 {
     mfxStatus sts = MFX_ERR_NONE;
     bool bIsFilterSkipped = false;
+    eMFXHWType  hwType;
 
     //-----------------------------------------------------
     // [1] high level check
@@ -1406,8 +1407,10 @@ mfxStatus  VideoVPPHW::Init(
     sts = CheckIOMode(par, m_ioMode);
     MFX_CHECK_STS(sts);
 
-    /* Any operations with P010 are SW-only so far */
-    if (MFX_FOURCC_P010 == par->vpp.In.FourCC || MFX_FOURCC_P010 == par->vpp.Out.FourCC)
+    hwType = m_pCore->GetHWType();
+    /* Any operations with P010 are SW-only so far,
+       except p010->nv12 conversion that is supported on BDW */
+    if ((MFX_FOURCC_P010 == par->vpp.In.FourCC && MFX_HW_BDW != hwType) || MFX_FOURCC_P010 == par->vpp.Out.FourCC)
     {
         return MFX_WRN_PARTIAL_ACCELERATION;
     }
@@ -1577,14 +1580,17 @@ mfxStatus VideoVPPHW::QueryIOSurf(
     mfxFrameAllocRequest* request)
 {
     mfxStatus sts = MFX_ERR_NONE;
+    eMFXHWType  hwType;
 
     MFX_CHECK_NULL_PTR1(par);
 
     sts = CheckIOMode(par, ioMode);
     MFX_CHECK_STS(sts);
 
-    /* Any operations with P010 are SW-only so far */
-    if (MFX_FOURCC_P010 == par->vpp.In.FourCC || MFX_FOURCC_P010 == par->vpp.Out.FourCC)
+    hwType = core->GetHWType();
+    /* Any operations with P010 are SW-only so far,
+       except p010->nv12 conversion that is supported on BDW */
+    if ((MFX_FOURCC_P010 == par->vpp.In.FourCC && MFX_HW_BDW != hwType) || MFX_FOURCC_P010 == par->vpp.Out.FourCC)
     {
         return MFX_WRN_PARTIAL_ACCELERATION;
     }
