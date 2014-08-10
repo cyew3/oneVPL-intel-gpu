@@ -55,7 +55,7 @@ namespace MfxVP9Decode
         KEY_FRAME = 0,
         INTER_FRAME = 1
     } VP9_FRAME_TYPE;
-    
+
     typedef enum
     {
         UNKNOWN    = 0,
@@ -119,7 +119,7 @@ namespace MfxVP9Decode
 
     static const mfxU8 MAX_REF_LF_DELTAS = 4;
     static const mfxU8 MAX_MODE_LF_DELTAS = 2;
-    
+
     typedef struct
     {
         mfxI32 filterLevel;
@@ -178,7 +178,7 @@ namespace MfxVP9Decode
         UMC::FrameMemID currFrame;
 
         mfxI32 activeRefIdx[REFS_PER_FRAME];
-        UMC::FrameMemID ref_frame_map[NUM_REF_FRAMES]; /* maps fb_idx to reference slot */ 
+        UMC::FrameMemID ref_frame_map[NUM_REF_FRAMES]; /* maps fb_idx to reference slot */
 
         VP9_FRAME_TYPE frameType;
 

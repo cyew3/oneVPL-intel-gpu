@@ -72,12 +72,12 @@ VideoDECODEVP9::VideoDECODEVP9(VideoCORE *p_core, mfxStatus *p_sts)
     ,m_is_initialized(false)
     ,m_is_image_available(false)
     ,m_is_opaque_memory(false)
-    ,m_platform(MFX_PLATFORM_SOFTWARE)
-    ,m_p_video_accelerator(0)
     ,m_curr_decode_index(0)
     ,m_curr_display_index(0)
     ,m_num_output_frames(0)
     ,m_in_framerate(0)
+    ,m_platform(MFX_PLATFORM_SOFTWARE)
+    ,m_p_video_accelerator(0)
 {
     memset(&m_bs.Data, 0, sizeof(m_bs.Data));
 
@@ -848,13 +848,12 @@ mfxStatus VideoDECODEVP9::GetDecodeStat(mfxDecodeStat *p_stat)
 
 static mfxStatus VP9CompleteProc(void *, void *p_param, mfxStatus )
 {
-    delete p_param;
+    delete (THREAD_TASK_INFO_VP9 *)p_param;
     return MFX_ERR_NONE;
 }
 
-mfxStatus VideoDECODEVP9::RunThread(void *p_params, mfxU32 thread_number)
+mfxStatus VideoDECODEVP9::RunThread(void * /* p_params */, mfxU32 /* thread_number */)
 {
-    p_params; thread_number;
 
     return MFX_TASK_DONE;
 
@@ -864,7 +863,6 @@ static mfxStatus __CDECL VP9DECODERoutine(void *p_state, void *p_param, mfxU32 /
 {
     THREAD_TASK_INFO_VP9 *p_thread_info = (THREAD_TASK_INFO_VP9 *) p_param;
 
-    p_state;
 
     vpx_codec_ctx_t *p_decoder = (vpx_codec_ctx_t *)p_state;
 
@@ -972,7 +970,7 @@ mfxStatus VideoDECODEVP9::DecodeFrameCheck(mfxBitstream *p_bs, mfxFrameSurface1 
     mfxU8 *pTemp = p_bs->Data + p_bs->DataOffset;
 
     VP9BaseFrameInfo frameInfo;
-    memset(&frameInfo, 0, sizeof(frameInfo));    
+    memset(&frameInfo, 0, sizeof(frameInfo));
     sts = ReadFrameInfo(pTemp, p_bs->DataLength, &frameInfo);
     //MFX_CHECK_STS(sts);
 
@@ -1018,8 +1016,10 @@ mfxStatus VideoDECODEVP9::DecodeFrameCheck(mfxBitstream *p_bs, mfxFrameSurface1 
         m_p_frame_allocator->IncreaseReference(memId);
 
         UMC::Status umcSts = video_data->Init(p_surface_work->Info.Width, p_surface_work->Info.Height, UMC::YUV420);
-        umcSts;
-
+        if ( UMC::UMC_OK != umcSts )
+        {
+            // catch error
+        }
         const UMC::FrameData::PlaneMemoryInfo *p_info;
 
         p_info = p_frame_data->GetPlaneMemoryInfo(0);
@@ -1078,9 +1078,8 @@ mfxStatus VideoDECODEVP9::DecodeFrameCheck(mfxBitstream *p_bs, mfxFrameSurface1 
 
 } // mfxStatus VideoDECODEVP9::DecodeFrameCheck(mfxBitstream *p_bs, mfxFrameSurface1 *p_surface_work, mfxFrameSurface1 **pp_surface_out, MFX_ENTRY_POINT *p_entry_point)
 
-mfxStatus VideoDECODEVP9::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1 *surface_work, mfxFrameSurface1 **surface_out)
+mfxStatus VideoDECODEVP9::DecodeFrameCheck(mfxBitstream * /* bs */, mfxFrameSurface1 * /* surface_work */, mfxFrameSurface1 ** /* surface_out */)
 {
-    bs; surface_work; surface_out;
 
     return MFX_ERR_NONE;
 
@@ -1140,9 +1139,8 @@ mfxStatus VideoDECODEVP9::GetPayload(mfxU64 *p_ts, mfxPayload *p_payload)
 
 } // mfxStatus VideoDECODEVP9::GetPayload(mfxSession , mfxU64 *p_ts, mfxPayload *p_payload)
 
-mfxStatus VideoDECODEVP9::SetSkipMode(mfxSkipMode mode)
+mfxStatus VideoDECODEVP9::SetSkipMode(mfxSkipMode /* mode */)
 {
-    mode;
 
     if (false == m_is_initialized)
     {
@@ -1455,11 +1453,8 @@ bool MFX_VP9_Utility::CheckVideoParam(mfxVideoParam *p_in, eMFXHWType )
 
 } // bool MFX_VP9_Utility::CheckVideoParam(mfxVideoParam *p_in, eMFXHWType)
 
-mfxStatus VideoDECODEVP9::DecodeFrame(mfxBitstream *p_bs, mfxFrameSurface1 *p_surface_work, mfxFrameSurface1 *p_surface_out)
+mfxStatus VideoDECODEVP9::DecodeFrame(mfxBitstream * /* p_bs */, mfxFrameSurface1 * /* p_surface_work */, mfxFrameSurface1 * /* p_surface_out */)
 {
-    p_bs = p_bs;
-    p_surface_work = p_surface_work;
-    p_surface_out = p_surface_out;
 
     return MFX_ERR_NONE;
 

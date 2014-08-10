@@ -50,8 +50,7 @@ public:
 
 protected:
     void CalculateTimeSteps(mfxFrameSurface1 *);
-    mfxStatus PreDecodeFrame(mfxBitstream *, mfxFrameSurface1 *);
-    mfxStatus QueryIOSurfInternal(eMFXPlatform, mfxVideoParam *, mfxFrameAllocRequest *);
+    static mfxStatus QueryIOSurfInternal(eMFXPlatform, mfxVideoParam *, mfxFrameAllocRequest *);
 
     mfxStatus UpdateRefFrames(const mfxU8 refreshFrameFlags, VP9FrameInfo & info);
 
@@ -64,6 +63,7 @@ protected:
 
 private:
     bool                    m_is_initialized;
+    bool                    m_is_software_buffer;
     VideoCORE*              m_core;
     eMFXPlatform            m_platform;
 
@@ -77,14 +77,23 @@ private:
 
     vm_mutex                m_mutex;
 
+    mfxU32                  m_index;
     std::auto_ptr<mfx_UMC_FrameAllocator> m_FrameAllocator;
 
-    bool m_is_software_buffer;
 
     mfxFrameAllocResponse   m_response;
     mfxDecodeStat           m_stat;
 
-    //////////////////////////////////////////
+    friend mfxStatus MFX_CDECL VP9DECODERoutine(void *p_state, void *pp_param, mfxU32 thread_number, mfxU32);
+    friend mfxStatus VP9CompleteProc(void *p_state, void *pp_param, mfxStatus);
+
+    struct VP9DECODERoutineData
+    {
+        VideoDECODEVP9_HW* decoder;
+        mfxFrameSurface1* surface_work;
+        FrameMemID currFrameId;
+        mfxU32     index;
+    };
 
     UMC::VideoAccelerator * m_va;
 
