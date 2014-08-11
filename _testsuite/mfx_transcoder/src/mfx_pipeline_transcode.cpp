@@ -156,6 +156,7 @@ MFXTranscodingPipeline::MFXTranscodingPipeline(IMFXPipelineFactory *pFactory)
         HANDLE_GLOBAL_OPTION("", m_,RestartInterval, OPT_UINT_16, "Jpeg specific parameter", &m_applyJpegParams),
 
         //direct access to mfx_videoparams
+        HANDLE_GLOBAL_OPTION("", pMFXParams->mfx., LowPower, OPT_TRI_STATE, "on/off low power mode (VDEnc)", NULL),
         HANDLE_MFX_INFO("",     BRCParamMultiplier,               "target bitrate = TargetKbps * BRCParamMultiplier"),
         HANDLE_MFX_INFO("",     CodecProfile,                     "Codec profile"),
         HANDLE_MFX_INFO("",     CodecLevel,                       "Codec level"),

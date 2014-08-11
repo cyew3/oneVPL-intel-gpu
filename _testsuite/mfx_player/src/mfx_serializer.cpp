@@ -367,6 +367,7 @@ void MFXStructureRef<mfxInfoVPP>::ConstructValues () const
 
 void MFXStructureRef <mfxInfoMFX>::ConstructValues () const
 {
+    SERIALIZE_INT(LowPower);
     SERIALIZE_INT(BRCParamMultiplier);
 
     MFXStructureRef<mfxFrameInfo> frameinfo(m_pStruct->FrameInfo, m_flags);
