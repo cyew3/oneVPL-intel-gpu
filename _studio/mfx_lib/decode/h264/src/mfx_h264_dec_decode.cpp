@@ -414,6 +414,11 @@ mfxStatus VideoDECODEH264::Init(mfxVideoParam *par)
     if (umcSts != UMC::UMC_OK)
         return MFX_ERR_MEMORY_ALLOC;
 
+    if (m_usePostProcessing)
+    {
+        m_FrameAllocator->SetDoNotNeedToCopyFlag(true);
+    }
+
     umcSts = m_MemoryAllocator.InitMem(0, m_core);
     if (umcSts != UMC::UMC_OK)
         return MFX_ERR_MEMORY_ALLOC;

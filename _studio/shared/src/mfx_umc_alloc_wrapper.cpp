@@ -128,8 +128,9 @@ mfx_UMC_FrameAllocator::mfx_UMC_FrameAllocator()
     : m_pCore(0),
       m_curIndex(-1),
       m_externalFramesResponse(0),
-      m_isSWDecode(false)
-
+      m_isSWDecode(false),
+      m_doNotNeedToCopy(false),
+      m_IsUseExternalFrames(true)
 {
 }
 
@@ -786,6 +787,11 @@ mfxFrameSurface1 * mfx_UMC_FrameAllocator::GetInternalSurface(UMC::FrameMemID in
     return 0;
 }
 
+void mfx_UMC_FrameAllocator::SetDoNotNeedToCopyFlag(bool doNotNeedToCopy)
+{
+    m_doNotNeedToCopy = doNotNeedToCopy;
+}
+
 mfxFrameSurface1 * mfx_UMC_FrameAllocator::GetSurface(UMC::FrameMemID index, mfxFrameSurface1 *surface, const mfxVideoParam * videoPar)
 {
     UMC::AutomaticUMCMutex guard(m_guard);
@@ -1113,18 +1119,21 @@ mfxStatus   mfx_UMC_FrameAllocator_D3D::PrepareToOutput(mfxFrameSurface1 *surfac
     }
     else
     {
-        UMC::VideoDataInfo VInfo;
+        if (!m_doNotNeedToCopy)
+        {
+            UMC::VideoDataInfo VInfo;
 
-        mfxMemId idx = m_frameData[index].first.Data.MemId;
+            mfxMemId idx = m_frameData[index].first.Data.MemId;
 
-        m_surface.Data.Y = 0;
-        m_surface.Data.MemId = idx;
-        sts = m_pCore->DoFastCopyWrapper(surface_work,
-                                         MFX_MEMTYPE_EXTERNAL_FRAME | MFX_MEMTYPE_SYSTEM_MEMORY,
-                                         &m_surface,
-                                         MFX_MEMTYPE_INTERNAL_FRAME | MFX_MEMTYPE_DXVA2_DECODER_TARGET
-                                         );
-        MFX_CHECK_STS(sts);
+            m_surface.Data.Y = 0;
+            m_surface.Data.MemId = idx;
+            sts = m_pCore->DoFastCopyWrapper(surface_work,
+                                             MFX_MEMTYPE_EXTERNAL_FRAME | MFX_MEMTYPE_SYSTEM_MEMORY,
+                                             &m_surface,
+                                             MFX_MEMTYPE_INTERNAL_FRAME | MFX_MEMTYPE_DXVA2_DECODER_TARGET
+                                             );
+            MFX_CHECK_STS(sts);
+        }
 
         if (!m_IsUseExternalFrames)
         {

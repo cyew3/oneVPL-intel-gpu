@@ -112,6 +112,8 @@ public:
     mfxI32 FindSurface(mfxFrameSurface1 *surf, bool isOpaq);
     mfxI32 FindFreeSurface();
 
+    void SetDoNotNeedToCopyFlag(bool doNotNeedToCopy);
+
     void SetExternalFramesResponse(mfxFrameAllocResponse *response);
     mfxFrameSurface1 * GetInternalSurface(UMC::FrameMemID index);
 
@@ -156,6 +158,7 @@ protected:
     mfxI32        m_curIndex;
 
     bool m_IsUseExternalFrames;
+    bool m_doNotNeedToCopy;
 
     mfxFrameSurface1 m_surface;  // for copying
 
