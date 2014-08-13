@@ -29,7 +29,6 @@ static inline mfxU32 CalculateAsyncDepth(VideoCORE *core, mfxVideoParam *par)
     if (core && !asyncDepth)
         asyncDepth = core->GetAutoAsyncDepth();
 
-    asyncDepth = IPP_MIN(16, asyncDepth);
     return asyncDepth;
 }
 
