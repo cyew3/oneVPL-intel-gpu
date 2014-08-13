@@ -2191,13 +2191,6 @@ mfxStatus MFXVideoDECODEVC1::ConvertMfxPlaneToMediaData(mfxFrameSurface1 *surfac
 
 mfxStatus MFXVideoDECODEVC1::QueryIOSurf(VideoCORE *core, mfxVideoParam *par, mfxFrameAllocRequest *request)
 {
-    bool IsParameterChanged = false;
-    if (par->AsyncDepth > MFX_MAX_ASYNC_DEPTH_VALUE)
-    {
-        par->AsyncDepth = MFX_MAX_ASYNC_DEPTH_VALUE;
-        IsParameterChanged = true;
-    }
-
     mfxStatus sts = SetAllocRequestExternal(core, par, request); 
     MFX_CHECK_STS(sts);
 
@@ -2218,10 +2211,6 @@ mfxStatus MFXVideoDECODEVC1::QueryIOSurf(VideoCORE *core, mfxVideoParam *par, mf
         sts = MFX_WRN_PARTIAL_ACCELERATION;
     }
     
-    if (IsParameterChanged && MFX_ERR_NONE == sts)
-        sts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
-
-
     return sts; 
 }
 mfxStatus MFXVideoDECODEVC1::SetAllocRequestInternal(VideoCORE *core, mfxVideoParam *par, mfxFrameAllocRequest *request)

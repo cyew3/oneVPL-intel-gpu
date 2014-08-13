@@ -1483,8 +1483,6 @@ mfxStatus VideoDECODEMPEG2::Query(VideoCORE *core, mfxVideoParam *in, mfxVideoPa
             return MFX_ERR_UNSUPPORTED;
         }
 
-        out->AsyncDepth = 3;
-
         if(in->mfx.FrameInfo.FourCC != MFX_FOURCC_NV12)
             return MFX_ERR_UNSUPPORTED;
 
