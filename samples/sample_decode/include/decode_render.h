@@ -84,7 +84,6 @@ protected:
     static BOOL CALLBACK MonitorEnumProc(HMONITOR ,HDC ,LPRECT lprcMonitor,LPARAM dwData);
     static bool m_bIsMonitorFound;
 
-    bool                 m_bIsDwmQueueSupported;
     bool                 m_bDwmEnabled;
     int                  m_nMonitorCurrent;
     ::RECT               m_RectWindow;

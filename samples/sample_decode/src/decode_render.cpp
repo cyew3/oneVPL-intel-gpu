@@ -16,10 +16,6 @@ Copyright(c) 2005-2014 Intel Corporation. All Rights Reserved.
 #include <dwmapi.h>
 #include <mmsystem.h>
 
-#ifdef NTDDI_WINBLUE
-#include <VersionHelpers.h>
-#endif
-
 #include "sample_defs.h"
 #include "decode_render.h"
 #pragma warning(disable : 4100)
@@ -48,7 +44,6 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 CDecodeD3DRender::CDecodeD3DRender()
 {
     m_bDwmEnabled = false;
-    m_bIsDwmQueueSupported = true;
     m_nMonitorCurrent = 0;
 
     m_hwdev = NULL;
@@ -87,19 +82,6 @@ CDecodeD3DRender::~CDecodeD3DRender()
 mfxStatus CDecodeD3DRender::Init(sWindowParams pWParams)
 {
     mfxStatus sts = MFX_ERR_NONE;
-
-#ifdef NTDDI_WINBLUE
-    if (IsWindows8Point1OrGreater())
-#else
-    OSVERSIONINFO version;
-    ZeroMemory(&version, sizeof(version));
-    version.dwOSVersionInfoSize = sizeof(version);
-    GetVersionEx(&version);
-    if ((version.dwMajorVersion >= 6) && (version.dwMinorVersion >= 3))
-#endif
-    {
-        m_bIsDwmQueueSupported = false;
-    }
 
     // window part
     m_sWindowParams = pWParams;
@@ -183,10 +165,9 @@ mfxStatus CDecodeD3DRender::RenderFrame(mfxFrameSurface1 *pSurface, mfxFrameAllo
     pSurface->Info.FrameRateExtN = m_sWindowParams.nMaxFPS;
     pSurface->Info.FrameRateExtD = 1;
 
-    if (m_bIsDwmQueueSupported)
-    {
-        EnableDwmQueuing();
-    }
+#if NTDDI_VERSION < NTDDI_WINBLUE)
+    EnableDwmQueuing();
+#endif
 
     mfxStatus sts = m_hwdev->RenderFrame(pSurface, pmfxAlloc);
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
