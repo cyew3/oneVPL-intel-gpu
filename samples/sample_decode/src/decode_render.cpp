@@ -15,7 +15,10 @@ Copyright(c) 2005-2014 Intel Corporation. All Rights Reserved.
 #include <windowsx.h>
 #include <dwmapi.h>
 #include <mmsystem.h>
+
+#ifdef NTDDI_WINBLUE
 #include <VersionHelpers.h>
+#endif
 
 #include "sample_defs.h"
 #include "decode_render.h"
@@ -85,7 +88,15 @@ mfxStatus CDecodeD3DRender::Init(sWindowParams pWParams)
 {
     mfxStatus sts = MFX_ERR_NONE;
 
+#ifdef NTDDI_WINBLUE
     if (IsWindows8Point1OrGreater())
+#else
+    OSVERSIONINFO version;
+    ZeroMemory(&version, sizeof(version));
+    version.dwOSVersionInfoSize = sizeof(version);
+    GetVersionEx(&version);
+    if ((version.dwMajorVersion >= 6) && (version.dwMinorVersion >= 3))
+#endif
     {
         m_bIsDwmQueueSupported = false;
     }
