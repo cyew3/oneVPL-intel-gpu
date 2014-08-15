@@ -278,7 +278,7 @@ Ipp32u vm_sys_info_get_mem_size(void)
 
 } /* Ipp32u vm_sys_info_get_mem_size(void) */
 
-#if !defined(_WIN32_WCE)
+#if !defined(_WIN32_WCE) && !defined(WIN_TRESHOLD_MOBILE)
 
 #pragma comment(lib, "Setupapi.lib")
 #include <setupapi.h>
@@ -559,7 +559,30 @@ Ipp32u vm_sys_info_get_cpu_speed(void)
 
 } /* Ipp32u vm_sys_info_get_cpu_speed(void) */
 
-#endif /* defined(_WIN32_WCE) */
+#elif defined(WIN_TRESHOLD_MOBILE)
+void vm_sys_info_get_vga_card(vm_char *vga_card)
+{
+    vga_card;
+    return;
+} /* void vm_sys_info_get_vga_card(vm_char *vga_card) */
+
+void vm_sys_info_get_cpu_name(vm_char *cpu_name)
+{
+    cpu_name;
+    return;
+} /* void vm_sys_info_get_cpu_name(vm_char *cpu_name) */
+
+Ipp32u vm_sys_info_get_cpu_speed(void)
+{
+    return 0;
+} /* Ipp32u vm_sys_info_get_cpu_speed(void) */
+
+void vm_sys_info_get_computer_name(vm_char *computer_name)
+{
+    computer_name;
+    return;
+} /* void vm_sys_info_get_computer_name(vm_char* computer_name) */
+#endif /* defined(WIN_TRESHOLD_MOBILE) */
 
 #ifdef UMC_VERSION_INFO
 /* Functions to obtain UMC version information */
