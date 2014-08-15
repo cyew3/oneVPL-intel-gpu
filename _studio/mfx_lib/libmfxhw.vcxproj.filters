@@ -92,9 +92,6 @@
     <ClCompile Include="..\shared\src\mfx_dxva2_device.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\shared\src\mfx_search_dll.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="shared\src\mfx_session.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -197,9 +194,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="shared\include\mfx_frames.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\shared\include\mfx_search_dll.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="shared\include\mfx_session.h">
