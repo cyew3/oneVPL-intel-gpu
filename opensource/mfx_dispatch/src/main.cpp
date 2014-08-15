@@ -225,6 +225,7 @@ mfxStatus DISPATCHER_EXPOSED_PREFIX(MFXInit)(mfxIMPL impl, mfxVersion *pVer, mfx
     // Load HW library or RT from system location
     curImplIdx = implTypesRange[implMethod].minIndex;
     maxImplIdx = implTypesRange[implMethod].maxIndex;
+    mfxU32 hwImplIdx = 0;
     do
     {
         int currentStorage = MFX::MFX_STORAGE_ID_FIRST;
@@ -264,7 +265,8 @@ mfxStatus DISPATCHER_EXPOSED_PREFIX(MFXInit)(mfxIMPL impl, mfxVersion *pVer, mfx
                         break;
                     }
                     DISPATCHER_LOG_INFO((("loading library %S\n"), MSDK2WIDE(dllName)));
-
+                    if (MFX_LIB_HARDWARE == implTypes[curImplIdx].implType)
+                        hwImplIdx = curImplIdx;
                     // try to load the selected DLL
                     curImpl = implTypes[curImplIdx].impl;
                     mfxRes = pHandle->LoadSelectedDLL(dllName, implType, curImpl, implInterface);
@@ -361,6 +363,11 @@ mfxStatus DISPATCHER_EXPOSED_PREFIX(MFXInit)(mfxIMPL impl, mfxVersion *pVer, mfx
     curImplIdx = implTypesRange[implMethod].minIndex;
     do
     {
+        mfxU32 backupIdx = curImplIdx;
+        if (MFX_LIB_HARDWARE == implTypes[curImplIdx].implType)
+        {
+            curImplIdx = hwImplIdx;
+        }
         implInterface = implInterfaceOrig;
             
         if (impl & MFX_IMPL_AUDIO)
@@ -410,6 +417,7 @@ mfxStatus DISPATCHER_EXPOSED_PREFIX(MFXInit)(mfxIMPL impl, mfxVersion *pVer, mfx
                     pHandle = new MFX_DISP_HANDLE(requiredVersion);
                 }
         }
+        curImplIdx = backupIdx;
     }
     while ((MFX_ERR_NONE > mfxRes) && (++curImplIdx <= maxImplIdx));
     delete pHandle;
