@@ -24,19 +24,14 @@
 
 #include "mfx_umc_alloc_wrapper.h"
 
-#include "umc_video_decoder.h"
-#include "umc_media_buffer.h"
-#include "umc_frame_data.h"
-#include "umc_frame_allocator.h"
-
 #include "umc_mutex.h"
 #include <queue>
 #include <list>
 
 #include "mfx_task.h"
+#include "mfxpcp.h"
 
 using namespace MfxVP9Decode;
-using namespace UMC;
 
 typedef struct
 {
@@ -120,12 +115,11 @@ class VideoDECODEVP9: public VideoDECODE
         mfx_UMC_MemAllocator m_memoryAllocator;
 
         std::auto_ptr<mfx_UMC_FrameAllocator> m_p_frame_allocator;
-        std::auto_ptr<mfx_UMC_FrameAllocator_NV12> m_p_frame_allocator_nv12;
 
         mfxVideoParamWrapper m_on_init_video_params;
         mfxVideoParamWrapper m_video_params;
 
-        VideoCORE *m_p_core;
+        VideoCORE *m_core;
 
         bool m_is_initialized;
         bool m_is_image_available;
@@ -155,7 +149,7 @@ class VideoDECODEVP9: public VideoDECODE
 
         UMC::VideoAccelerator *m_p_video_accelerator;
 
-        mfxHDL m_vpx_codec; // vpx_codec_ctx_t
+        mfxHDL m_vpx_codec;
 
         mfxU32 m_init_w;
         mfxU32 m_init_h;

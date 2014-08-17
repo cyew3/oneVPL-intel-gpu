@@ -319,6 +319,14 @@ namespace MfxVP9Decode
 
     void SetupPastIndependence(VP9FrameInfo & info);
 
+    void ParseSuperFrameIndex(const mfxU8 *data, size_t data_sz,
+                              mfxU32 sizes[8], mfxU32 *count);
+
+    inline mfxU8 ReadMarker(const mfxU8 *data)
+    {
+        return *data;
+    }
+
 }; // namespace MfxVP9Decode
 
 #endif // _MFX_VP9_DECODE_UTILS_H_

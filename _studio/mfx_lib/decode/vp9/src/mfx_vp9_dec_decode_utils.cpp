@@ -12,10 +12,14 @@
 
 #if defined(MFX_ENABLE_VP9_VIDEO_DECODE) || defined(MFX_ENABLE_VP9_VIDEO_DECODE_HW)
 
+#include <stdexcept>
+#include <string>
+
 #include "mfx_vp9_dec_decode_utils.h"
 
 namespace MfxVP9Decode
 {
+
     void GetTileNBits(const mfxI32 miCols, mfxI32 & minLog2TileCols, mfxI32 & maxLog2TileCols)
     {
         const mfxI32 sbCols = ALIGN_POWER_OF_TWO(miCols, MI_BLOCK_SIZE_LOG2) >> MI_BLOCK_SIZE_LOG2;
@@ -284,7 +288,7 @@ namespace MfxVP9Decode
 
         ClearAllSegFeatures(info.segmentation);
         info.segmentation.absDelta = SEGMENT_DELTADATA;
-        
+
         // set_default_lf_deltas()
         info.lf.modeRefDeltaEnabled = 1;
         info.lf.modeRefDeltaUpdate = 1;
@@ -315,70 +319,104 @@ namespace MfxVP9Decode
         info.frameContextIdx = 0;
     }
 
-InputBitstream::InputBitstream(
-    mfxU8 const * buf,
-    mfxU8 const * bufEnd)
-: m_buf(buf)
-, m_ptr(buf)
-, m_bufEnd(bufEnd)
-, m_bitOff(0)
-{
-}
-
-mfxU32 InputBitstream::NumBitsRead() const
-{
-    return mfxU32(8 * (m_ptr - m_buf) + m_bitOff);
-}
-
-mfxU32 InputBitstream::NumBitsLeft() const
-{
-    return mfxU32(8 * (m_bufEnd - m_ptr) - m_bitOff);
-}
-
-mfxU32 InputBitstream::GetBit()
-{
-    if (m_ptr >= m_bufEnd)
-        throw std::out_of_range("");
-
-    mfxU32 bit = (*m_ptr >> (7 - m_bitOff)) & 1;
-
-    if (++m_bitOff == 8)
+    void ParseSuperFrameIndex(const mfxU8 *data, size_t data_sz,
+                              mfxU32 sizes[8], mfxU32 *count)
     {
-        ++m_ptr;
-        m_bitOff = 0;
+        assert(data_sz);
+        mfxU8 marker = ReadMarker(data + data_sz - 1);
+        *count = 0;
+
+        if ((marker & 0xe0) == 0xc0)
+        {
+            const mfxU32 frames = (marker & 0x7) + 1;
+            const mfxU32 mag = ((marker >> 3) & 0x3) + 1;
+            const size_t index_sz = 2 + mag * frames;
+
+            mfxU8 marker2 = ReadMarker(data + data_sz - index_sz);
+
+            if (data_sz >= index_sz && marker2 == marker)
+            {
+                // found a valid superframe index
+                const mfxU8 *x = &data[data_sz - index_sz + 1];
+
+                for (mfxU32 i = 0; i < frames; i++)
+                {
+                    mfxU32 this_sz = 0;
+
+                    for (mfxU32 j = 0; j < mag; j++)
+                    this_sz |= (*x++) << (j * 8);
+                    sizes[i] = this_sz;
+                }
+
+                *count = frames;
+            }
+        }
     }
 
-    return bit;
-}
-
-mfxU32 InputBitstream::GetBits(mfxU32 nbits)
-{
-    mfxU32 bits = 0;
-    for (; nbits > 0; --nbits)
+    InputBitstream::InputBitstream(
+        mfxU8 const * buf,
+        mfxU8 const * bufEnd)
+    : m_buf(buf)
+    , m_ptr(buf)
+    , m_bufEnd(bufEnd)
+    , m_bitOff(0)
     {
-        bits <<= 1;
-        bits |= GetBit();
     }
 
-    return bits;
-}
+    mfxU32 InputBitstream::NumBitsRead() const
+    {
+        return mfxU32(8 * (m_ptr - m_buf) + m_bitOff);
+    }
 
-mfxU32 InputBitstream::GetUe()
-{
-    mfxU32 zeroes = 0;
-    while (GetBit() == 0)
-        ++zeroes;
+    mfxU32 InputBitstream::NumBitsLeft() const
+    {
+        return mfxU32(8 * (m_bufEnd - m_ptr) - m_bitOff);
+    }
 
-    return zeroes == 0 ? 0 : ((1 << zeroes) | GetBits(zeroes)) - 1;
-}
+    mfxU32 InputBitstream::GetBit()
+    {
+        if (m_ptr >= m_bufEnd)
+            throw std::logic_error("End of bitstream");
 
-mfxI32 InputBitstream::GetSe()
-{
-    mfxU32 val = GetUe();
-    mfxU32 sign = (val & 1);
-    val = (val + 1) >> 1;
-    return sign ? val : -mfxI32(val);
-}
+        mfxU32 bit = (*m_ptr >> (7 - m_bitOff)) & 1;
+
+        if (++m_bitOff == 8)
+        {
+            ++m_ptr;
+            m_bitOff = 0;
+        }
+
+        return bit;
+    }
+
+    mfxU32 InputBitstream::GetBits(mfxU32 nbits)
+    {
+        mfxU32 bits = 0;
+        for (; nbits > 0; --nbits)
+        {
+            bits <<= 1;
+            bits |= GetBit();
+        }
+
+        return bits;
+    }
+
+    mfxU32 InputBitstream::GetUe()
+    {
+        mfxU32 zeroes = 0;
+        while (GetBit() == 0)
+            ++zeroes;
+
+        return zeroes == 0 ? 0 : ((1 << zeroes) | GetBits(zeroes)) - 1;
+    }
+
+    mfxI32 InputBitstream::GetSe()
+    {
+        mfxU32 val = GetUe();
+        mfxU32 sign = (val & 1);
+        val = (val + 1) >> 1;
+        return sign ? val : -mfxI32(val);
+    }
 
 }; // namespace MfxVP9Decode
 
