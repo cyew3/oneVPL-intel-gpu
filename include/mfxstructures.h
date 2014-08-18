@@ -433,10 +433,10 @@ enum {
 
 /* RateControlMethod */
 enum {
-    MFX_RATECONTROL_CBR     =1,
-    MFX_RATECONTROL_VBR     =2,
-    MFX_RATECONTROL_CQP     =3,
-    MFX_RATECONTROL_AVBR    =4,
+    MFX_RATECONTROL_CBR       =1,
+    MFX_RATECONTROL_VBR       =2,
+    MFX_RATECONTROL_CQP       =3,
+    MFX_RATECONTROL_AVBR      =4,
     MFX_RATECONTROL_RESERVED1 =5,
     MFX_RATECONTROL_RESERVED2 =6,
     MFX_RATECONTROL_RESERVED3 =100,
@@ -445,8 +445,9 @@ enum {
     MFX_RATECONTROL_ICQ       =9,
     MFX_RATECONTROL_VCM       =10,
     MFX_RATECONTROL_LA_ICQ    =11,
-    MFX_RATECONTROL_LA_EXT    = 12,
-    MFX_RATECONTROL_VME       = 13
+    MFX_RATECONTROL_LA_EXT    =12,
+    MFX_RATECONTROL_VME       =13,
+    MFX_RATECONTROL_QVBR      =14
 };
 
 /* Trellis control*/
@@ -556,7 +557,9 @@ typedef struct {
     mfxU16      NumSliceI;
     mfxU16      NumSliceP;
     mfxU16      NumSliceB;
-    mfxU16      reserved[249];
+    mfxU16      reserved2[2];
+    mfxU16      QVBRQuality;
+    mfxU16      reserved[246];
 } mfxExtCodingOption3;
 
 
