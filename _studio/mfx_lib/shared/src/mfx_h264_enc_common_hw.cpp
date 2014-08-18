@@ -1758,7 +1758,8 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
         par.mfx.RateControlMethod != MFX_RATECONTROL_LA &&
         par.mfx.RateControlMethod != MFX_RATECONTROL_LA_ICQ &&
         par.mfx.RateControlMethod != MFX_RATECONTROL_LA_EXT &&
-        par.mfx.RateControlMethod != MFX_RATECONTROL_VME )
+        par.mfx.RateControlMethod != MFX_RATECONTROL_VME  &&
+        par.mfx.RateControlMethod != MFX_RATECONTROL_QVBR)
     {
         changed = true;
         par.mfx.RateControlMethod = MFX_RATECONTROL_CBR;
@@ -2352,7 +2353,8 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
     if (IsOn(extOpt->VuiNalHrdParameters) &&
         par.mfx.RateControlMethod != 0 &&
         par.mfx.RateControlMethod != MFX_RATECONTROL_CBR &&
-        par.mfx.RateControlMethod != MFX_RATECONTROL_VBR)
+        par.mfx.RateControlMethod != MFX_RATECONTROL_VBR &&
+        par.mfx.RateControlMethod != MFX_RATECONTROL_QVBR)
     {
         changed = true;
         extOpt->VuiNalHrdParameters = MFX_CODINGOPTION_OFF;
@@ -2388,7 +2390,8 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
 
     if (IsOn(extOpt->VuiVclHrdParameters) &&
         par.mfx.RateControlMethod != 0 &&
-        par.mfx.RateControlMethod != MFX_RATECONTROL_VBR)
+        par.mfx.RateControlMethod != MFX_RATECONTROL_VBR &&
+        par.mfx.RateControlMethod != MFX_RATECONTROL_QVBR)
     {
         changed = true;
         extOpt->VuiVclHrdParameters = MFX_CODINGOPTION_OFF;
@@ -2515,7 +2518,8 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
         }
         else if (
             par.mfx.RateControlMethod == MFX_RATECONTROL_VBR ||
-            par.mfx.RateControlMethod == MFX_RATECONTROL_WIDI_VBR)
+            par.mfx.RateControlMethod == MFX_RATECONTROL_WIDI_VBR ||
+            par.mfx.RateControlMethod == MFX_RATECONTROL_QVBR)
         {
             if (par.calcParam.maxKbps < par.calcParam.targetKbps)
             {
@@ -2734,6 +2738,13 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
         unsupported = true;
     }
 
+    if (par.mfx.RateControlMethod == MFX_RATECONTROL_QVBR &&
+        hwCaps.QVBRBRCSupport == 0)
+    {
+        par.mfx.RateControlMethod = 0;
+        unsupported = true;
+    }
+
     if (par.mfx.RateControlMethod == MFX_RATECONTROL_ICQ &&
         extOpt2->MBBRC == MFX_CODINGOPTION_OFF)
     {
@@ -2747,6 +2758,11 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
         par.mfx.RateControlMethod == MFX_RATECONTROL_LA_ICQ)
     {
         if (!CheckRange(par.mfx.ICQQuality, 0, 51)) changed = true;
+    }
+
+    if (par.mfx.RateControlMethod == MFX_RATECONTROL_QVBR)
+    {
+        if (!CheckRange(extOpt3->QVBRQuality, 0, 51)) changed = true;
     }
 
     if (par.mfx.RateControlMethod == MFX_RATECONTROL_AVBR)
@@ -3613,6 +3629,14 @@ void MfxHwH264Encode::InheritDefaultValues(
     InheritOption(extOpt3Init->NumSliceP, extOpt3Reset->NumSliceP);
     InheritOption(extOpt3Init->NumSliceB, extOpt3Reset->NumSliceB);
 
+    if (parInit.mfx.RateControlMethod == MFX_RATECONTROL_QVBR && parReset.mfx.RateControlMethod == MFX_RATECONTROL_QVBR)
+    {
+        InheritOption(parInit.mfx.InitialDelayInKB, parReset.mfx.InitialDelayInKB);
+        InheritOption(parInit.mfx.TargetKbps,       parReset.mfx.TargetKbps);
+        InheritOption(parInit.mfx.MaxKbps,          parReset.mfx.MaxKbps);
+        InheritOption(extOpt3Init->QVBRQuality,     extOpt3Reset->QVBRQuality);
+    }
+
     parReset.SyncVideoToCalculableParam();
 
     // not inherited:
@@ -3744,6 +3768,12 @@ void MfxHwH264Encode::SetDefaults(
     {
         if (par.mfx.ICQQuality == 0)
             par.mfx.ICQQuality = 26;
+    }
+
+    if (par.mfx.RateControlMethod == MFX_RATECONTROL_QVBR)
+    {
+        if (extOpt3->QVBRQuality == 0)
+            extOpt3->QVBRQuality = 26;
     }
 
     if (par.mfx.GopRefDist == 0)
@@ -4239,6 +4269,7 @@ void MfxHwH264Encode::SetDefaults(
         case MFX_RATECONTROL_VBR:
         case MFX_RATECONTROL_LA:
         case MFX_RATECONTROL_VCM:
+        case MFX_RATECONTROL_QVBR:
             extRc->Layer[0].CbrVbr.TargetKbps       = par.mfx.TargetKbps;
             extRc->Layer[0].CbrVbr.InitialDelayInKB = par.mfx.InitialDelayInKB;
             extRc->Layer[0].CbrVbr.BufferSizeInKB   = par.mfx.BufferSizeInKB;
@@ -5321,7 +5352,8 @@ void MfxVideoParam::SyncCalculableToVideoParam()
 
     if (mfx.RateControlMethod == MFX_RATECONTROL_CBR ||
         mfx.RateControlMethod == MFX_RATECONTROL_VBR ||
-        mfx.RateControlMethod == MFX_RATECONTROL_AVBR)
+        mfx.RateControlMethod == MFX_RATECONTROL_AVBR||
+        mfx.RateControlMethod == MFX_RATECONTROL_QVBR)
     {
         mfx.TargetKbps = mfxU16((calcParam.targetKbps + mfx.BRCParamMultiplier - 1) / mfx.BRCParamMultiplier);
 

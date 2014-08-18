@@ -40,6 +40,7 @@ void MfxHwH264Encode::FillSpsBuffer(
 {
     mfxExtSpsHeader const *       extSps  = GetExtBuffer(par);
     mfxExtCodingOption2 const *   extOpt2 = GetExtBuffer(par);
+    mfxExtCodingOption3 const &   extOpt3 = GetExtBufferRef(par);
     mfxExtCodingOptionDDI const * extDdi  = GetExtBuffer(par);
 
     Zero(sps);
@@ -55,6 +56,8 @@ void MfxHwH264Encode::FillSpsBuffer(
     sps.RateControlMethod                       = mfxU8(par.mfx.RateControlMethod);
     if (par.mfx.RateControlMethod == MFX_RATECONTROL_ICQ)
         sps.ICQQualityFactor = par.mfx.ICQQuality;
+    else if (par.mfx.RateControlMethod == MFX_RATECONTROL_QVBR)
+        sps.ICQQualityFactor = extOpt3.QVBRQuality;
     sps.TargetBitRate                           = mfxU32(par.calcParam.targetKbps);
     sps.MaxBitRate                              = mfxU32(par.calcParam.maxKbps);
     sps.MinBitRate                              = mfxU32(par.calcParam.targetKbps);

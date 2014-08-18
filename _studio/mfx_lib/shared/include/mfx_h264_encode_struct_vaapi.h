@@ -535,8 +535,13 @@ typedef struct tagENCODE_CAPS
 
     union {
         struct {
-            UINT  SkipFrame : 1;
-            UINT            : 31;// For future expansion
+            UINT    SkipFrame               : 1;
+            UINT    MbQpDataSupport         : 1;
+            UINT    SliceLevelWeightedPred  : 1;
+            UINT    LumaWeightedPred        : 1;
+            UINT    ChromaWeightedPred      : 1;
+            UINT    QVBRBRCSupport          : 1;
+            UINT                            : 26;
         };
         UINT      CodingLimits2;
     };
