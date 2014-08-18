@@ -24,8 +24,6 @@ Copyright(c) 2013-2014 Intel Corporation. All Rights Reserved.
 PluginModuleTemplate g_PluginModule = {
     NULL,
     NULL,
-    NULL,
-    NULL,
     Rotate::CreatePlugin
 };
 
