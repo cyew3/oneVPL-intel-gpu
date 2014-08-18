@@ -165,7 +165,7 @@ mfxStatus CDecodeD3DRender::RenderFrame(mfxFrameSurface1 *pSurface, mfxFrameAllo
     pSurface->Info.FrameRateExtN = m_sWindowParams.nMaxFPS;
     pSurface->Info.FrameRateExtD = 1;
 
-#if NTDDI_VERSION < NTDDI_WINBLUE)
+#if (NTDDI_VERSION < NTDDI_WINBLUE)
     EnableDwmQueuing();
 #endif
 
