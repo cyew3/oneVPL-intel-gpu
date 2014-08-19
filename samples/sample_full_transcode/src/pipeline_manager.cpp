@@ -163,21 +163,7 @@ void PipelineManager::BuildVideoChain()
     }
 
     if (m_profile->isVppExist()) {
-        mfxPluginUID pGuid = MSDK_PLUGINGUID_NULL;
-        if (m_profile->isVPPPluginExist())
-        {
-            msdk_string vppPlugin = m_profile->getVPPPlugin();
-            if (vppPlugin.length() > 0)
-            {
-                if (MFX_ERR_NONE != ConvertStringToGuid(vppPlugin, pGuid))
-                {
-                    pGuid = MSDK_PLUGINGUID_NULL;
-                }
-            }
-        }
-
-        std::auto_ptr<ITransform> vpp(m_factory.CreateVideoVPPTransform(session, 60000, pGuid));
-        vParam = info.VPP;
+        std::auto_ptr<ITransform> vpp(m_factory.CreateVideoVPPTransform(session, 60000));
         m_transforms->RegisterTransform(TransformConfigDesc(info.SID, vParam), vpp);
     }
 

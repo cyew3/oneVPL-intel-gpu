@@ -90,27 +90,6 @@ public:
     }
 
     virtual ~SamplePool() {
-        for (std::vector<DataSampleWithRef* > ::iterator i = m_pool.begin(); i != m_pool.end(); i++)
-        {
-            ISample &smpl = const_cast<ISample&>(*(*i)->Get());
-
-            if (smpl.GetSampleType() == SAMPLE_SURFACE)
-            {
-                if (smpl.GetSurface().Data.NumExtParam > 0 && smpl.GetSurface().Data.ExtParam != NULL)
-                {
-                    for (int i = 0; i < smpl.GetSurface().Data.NumExtParam; i++)
-                    {
-                        if (smpl.GetSurface().Data.ExtParam[i] != NULL)
-                        {
-                            delete smpl.GetSurface().Data.ExtParam[i];
-                            smpl.GetSurface().Data.ExtParam[i] = NULL;
-                        }
-                    }
-                    delete smpl.GetSurface().Data.ExtParam;
-                    smpl.GetSurface().Data.ExtParam = NULL;
-                }
-            }
-        }
         std::transform(m_pool.begin(), m_pool.end(), m_pool.begin(), DeletePtr());
     }
     //returns locked sample

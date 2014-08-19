@@ -5,7 +5,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2013-2014 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2013 Intel Corporation. All Rights Reserved.
 //
 //
 //*/
@@ -53,7 +53,7 @@ public:
     virtual ITransform*              CreateVideoEncoderTransform(MFXVideoSessionExt&, int timeout);
 
     virtual MFXVideoVPP*             CreateVideoVPP(MFXVideoSessionExt&);
-    virtual ITransform*              CreateVideoVPPTransform(MFXVideoSessionExt&, int timeout, const mfxPluginUID & uid);
+    virtual ITransform*              CreateVideoVPPTransform(MFXVideoSessionExt&, int timeout);
 
     //TODO: deprecate this
     virtual MFXAudioDECODE*          CreateAudioDecoder(MFXAudioSession&);

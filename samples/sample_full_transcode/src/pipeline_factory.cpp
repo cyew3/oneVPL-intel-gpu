@@ -60,8 +60,8 @@ MFXVideoVPP* PipelineFactory::CreateVideoVPP(MFXVideoSessionExt& session)
     return new MFXVideoVPP(session);
 }
 
-ITransform*  PipelineFactory::CreateVideoVPPTransform(MFXVideoSessionExt& session, int timeout, const mfxPluginUID & uid) {
-    return new Transform<MFXVideoVPP>(*this, session, timeout, uid);
+ITransform*  PipelineFactory::CreateVideoVPPTransform(MFXVideoSessionExt& session, int timeout) {
+    return new Transform<MFXVideoVPP>(*this, session, timeout);
 }
 
 MFXAudioSession* PipelineFactory::CreateAudioSession(){
@@ -194,8 +194,8 @@ CmdLineParser* PipelineFactory::CreateCmdLineParser()
     return ::CreateCmdLineParser(Options()
         (ArgHandler<msdk_string>(OPTION_I, MSDK_CHAR("Input file")))
         (ArgHandler<msdk_string>(OPTION_O, MSDK_CHAR("Output file")))
-        (ArgHandler<int>(OPTION_W, MSDK_CHAR("scale input with new frame width")))
-        (ArgHandler<int>(OPTION_H, MSDK_CHAR("scale input with new frame height")))
+        //(ArgHandler<int>(OPTION_W, MSDK_CHAR("scale input with new frame width")))
+        //(ArgHandler<int>(OPTION_H, MSDK_CHAR("scale input with new frame height")))
         (ArgHandler<int>(OPTION_ADEPTH, MSDK_CHAR("Async depth")))
 #if defined(MFX_D3D11_SUPPORT)
         (ArgHandler<bool>(OPTION_D3D11, MSDK_CHAR("D3D11 Memory")))
@@ -209,7 +209,6 @@ CmdLineParser* PipelineFactory::CreateCmdLineParser()
         //(ArgHandler<msdk_string>(OPTION_PLG, MSDK_CHAR("Generic MediaSDK plugin")))
         //(ArgHandler<msdk_string>(OPTION_VDECPLG, MSDK_CHAR("MediaSDK decoder plugin")))
         //(ArgHandler<msdk_string>(OPTION_VENCPLG, MSDK_CHAR("MediaSDK encoder plugin")))
-        (ArgHandler<msdk_string>(OPTION_VPPPLG_GUID, MSDK_CHAR("MediaSDK VPP plugin GUID")))
         (ArgHandler<kbps_t>(OPTION_VB, MSDK_CHAR("Video bitrate")))
         (ArgHandler<kbps_t>(OPTION_AB, MSDK_CHAR("Audio bitrate")))
         (ArgHandler<msdk_string>(OPTION_FORMAT, MSDK_CHAR("Output container: mp4, m2ts")))

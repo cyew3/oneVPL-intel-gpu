@@ -21,26 +21,23 @@ template <class T>
 struct TrackInfoExt {
     mfxU32 SID;//stream id
     T Decode;
-    T VPP;
     T Encode;
     MFXSessionInfo Session;
 
     TrackInfoExt(mfxU32 sid = 0,
         T decodeParams = T(),
-        T vppParams = T(),
         T encodeParams = T(),
         MFXSessionInfo sessionInfo = MFXSessionInfo())
         : SID(sid)
         , Decode(decodeParams)
-        , VPP(vppParams)
         , Encode(encodeParams)
         , Session(sessionInfo) {
     }
 };
 
 template <class T>
-inline TrackInfoExt<T> CreateTrackInfo(mfxU32 sid, T decodeParams, T vppParams, T encodeParams, MFXSessionInfo sessionInfo) {
-    TrackInfoExt<T> info(sid, decodeParams, vppParams, encodeParams, sessionInfo);
+inline TrackInfoExt<T> CreateTrackInfo(mfxU32 sid, T decodeParams, T encodeParams, MFXSessionInfo sessionInfo) {
+    TrackInfoExt<T> info(sid, decodeParams, encodeParams, sessionInfo);
     return info;
 }
 
@@ -95,7 +92,7 @@ namespace detail {
     public:
         TrackProfileBaseTmpl (const MFXStreamParams &splInfo, CmdLineParser & parser, MFXSessionInfo sesInfo, size_t nTrack)
             : TrackProfileBase (splInfo, parser, sesInfo, nTrack)
-            , m_trackInfo((mfxU32)nTrack, T(), T(), T(), sesInfo) {
+            , m_trackInfo((mfxU32)nTrack, T(), T(), sesInfo) {
         }
         virtual TrackInfoExt<T> GetTrackInfo() const {
             return m_trackInfo;
@@ -126,9 +123,8 @@ public:
     TrackProfile (const MFXStreamParams &splInfo, CmdLineParser & parser, OutputFormat & extensions, OutputCodec &codecs, MFXSessionInfo sesInfo, size_t nTrack);
 
 protected:
-    virtual void ParseDecodeParams();
-    virtual void ParseVPPParams();
     virtual void ParseEncodeParams();
+    virtual void ParseDecodeParams();
     virtual void OnNoExtension();
     virtual void OnUnsupportedExtension(const msdk_string &extension);
     virtual void OnUnsupportedCodec(const msdk_string &);

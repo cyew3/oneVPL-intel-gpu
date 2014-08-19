@@ -28,7 +28,7 @@ public:
 
 template <class T>
 class MFXAVAllocRequest : public IAllocRequest {
-    mfxFrameAllocRequest m_videoRequest[2];
+    mfxFrameAllocRequest m_videoRequest;
     mfxAudioAllocRequest m_audioRequest;
     enum {
         PARAM_AUDIO,
@@ -39,7 +39,7 @@ public:
     virtual mfxFrameAllocRequest& Video() {
         if (m_type != PARAM_VIDEO)
             throw IncompatibleParamTypeError();
-        return m_videoRequest[0];
+        return m_videoRequest;
     }
     virtual mfxAudioAllocRequest& Audio() {
         if (m_type != PARAM_AUDIO)
