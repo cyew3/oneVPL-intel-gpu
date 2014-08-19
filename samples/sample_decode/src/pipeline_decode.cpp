@@ -1224,7 +1224,7 @@ mfxStatus CDecodingPipeline::RunDecoding()
 
     PrintPerFrameStat(true);
 
-    if (m_bPrintLatency) {
+    if (m_bPrintLatency && m_vLatency.size() > 0) {
         unsigned int frame_idx = 0;
         msdk_tick sum = 0;
         for (std::vector<msdk_tick>::iterator it = m_vLatency.begin(); it != m_vLatency.end(); ++it)
