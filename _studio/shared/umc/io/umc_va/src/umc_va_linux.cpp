@@ -132,9 +132,7 @@ VAProfile g_VP8Profiles[] =
 
 VAProfile g_VP9Profiles[] =
 {
-#ifdef VA_VP9_DECODER  // FIXME: TEMPORAL solution!!!
     VAProfileVP9Version0
-#endif
 };
 
 VAProfile g_JPEGProfiles[] = 
@@ -717,12 +715,10 @@ VACompBuffer* LinuxVideoAccelerator::GetCompBufferHW(Ipp32s type, Ipp32s size, I
                 va_size         = sizeof(VASliceParameterBufferJPEGBaseline);
                 va_num_elements = size/sizeof(VASliceParameterBufferJPEGBaseline);
                 break;
-#ifdef VA_VP9_DECODER
             case UMC::VA_VP9:
                 va_size         = sizeof(VASliceParameterBufferVP9);
                 va_num_elements = size/sizeof(VASliceParameterBufferVP9);
                 break;
-#endif
             default:
                 va_size         = 0;
                 va_num_elements = 0;
