@@ -20,9 +20,7 @@ Copyright(c) 2011-2014 Intel Corporation. All Rights Reserved.
 
 CD3D11Device::CD3D11Device():
     m_nViews(0),
-    m_nMaxFps(0),
     m_bDefaultStereoEnabled(FALSE),
-    m_nSyncInterval(0),
     m_bIsA2rgb10(FALSE),
     m_HandleWindow(NULL)
 {
@@ -74,7 +72,6 @@ mfxStatus CD3D11Device::Init(
     if (2 < nViews)
         return MFX_ERR_UNSUPPORTED;
     m_bDefaultStereoEnabled = FALSE;
-    m_nSyncInterval = 0;
 
     static D3D_FEATURE_LEVEL FeatureLevels[] = {
         D3D_FEATURE_LEVEL_11_1,
@@ -150,31 +147,6 @@ mfxStatus CD3D11Device::Init(
             reinterpret_cast<IDXGISwapChain1**>(&m_pSwapChain));
         if (FAILED(hres))
             return MFX_ERR_DEVICE_FAILED;
-    }
-
-    m_nSyncInterval = 0;
-
-    if (m_nMaxFps)
-    {
-        // setting limit on frame rate
-        mfxU32 numerator = 60;
-
-        if (m_nMaxFps <= numerator/4)
-        {
-            m_nSyncInterval = 4;
-        }
-        else if (m_nMaxFps <= numerator/3)
-        {
-            m_nSyncInterval = 3;
-        }
-        else if (m_nMaxFps <= numerator/2)
-        {
-            m_nSyncInterval = 2;
-        }
-        else if (m_nMaxFps <= numerator)
-        {
-            m_nSyncInterval = 1;
-        }
     }
 
     return sts;
@@ -383,7 +355,7 @@ mfxStatus CD3D11Device::RenderFrame(mfxFrameSurface1 * pSrf, mfxFrameAllocator *
     if (1 == m_nViews || 1 == pSrf->Info.FrameId.ViewId)
     {
         DXGI_PRESENT_PARAMETERS parameters = {0};
-        hres = m_pSwapChain->Present1(m_nSyncInterval, 0, &parameters);
+        hres = m_pSwapChain->Present1(0, 0, &parameters);
         if (FAILED(hres))
             return MFX_ERR_DEVICE_FAILED;
     }

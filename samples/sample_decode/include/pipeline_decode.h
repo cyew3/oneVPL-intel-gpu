@@ -59,12 +59,12 @@ struct sInputParams
     bool    bIsMVC; // true if Multi-View Codec is in use
     bool    bLowLat; // low latency mode
     bool    bCalLat; // latency calculation
+    mfxU32  nMaxFPS; //rendering limited by certain fps
     mfxU32  nWallCell;
-    mfxU32  nWallW;//number of windows located in each row
-    mfxU32  nWallH;//number of windows located in each column
-    mfxU32  nWallMonitor;//monitor id, 0,1,.. etc
-    mfxU32  nWallFPS;//rendering limited by certain fps
-    bool    bWallNoTitle;//whether to show title for each window with fps value
+    mfxU32  nWallW; //number of windows located in each row
+    mfxU32  nWallH; //number of windows located in each column
+    mfxU32  nWallMonitor; //monitor id, 0,1,.. etc
+    bool    bWallNoTitle; //whether to show title for each window with fps value
     mfxU32  nWallTimeout; //timeout for -wall option
     mfxU32  numViews; // number of views for Multi-View Codec
     mfxU32  nRotation; // rotation for Motion JPEG Codec
@@ -192,17 +192,17 @@ protected: // variables
     MSDKSemaphore*          m_pDeliverOutputSemaphore; // to access to DeliverOutput method
     MSDKEvent*              m_pDeliveredEvent; // to signal when output surfaces will be processed
     mfxStatus               m_error; // error returned by DeliverOutput method
+    bool                    m_bStopDeliverLoop;
 
+    eWorkMode               m_eWorkMode; // work mode for the pipeline
     bool                    m_bIsMVC; // enables MVC mode (need to support several files as an output)
     bool                    m_bIsExtBuffers; // indicates if external buffers were allocated
-    eWorkMode               m_eWorkMode; // work mode for the pipeline
     bool                    m_bIsVideoWall; // indicates special mode: decoding will be done in a loop
     bool                    m_bIsCompleteFrame;
     bool                    m_bPrintLatency;
-    bool                    m_bStopDeliverLoop;
 
     mfxU32                  m_nTimeout; // enables timeout for video playback, measured in seconds
-    mfxU32                  m_nMaxFps; // limit of fps, if specified for video wall, otherwise equal 0.
+    mfxU32                  m_nMaxFps; // limit of fps, if isn't specified equal 0.
 
     std::vector<msdk_tick>  m_vLatency;
 
@@ -210,7 +210,6 @@ protected: // variables
 #if D3D_SURFACES_SUPPORT
     IGFXS3DControl          *m_pS3DControl;
 
-    IDirect3DSurface9*       m_pRenderSurface;
     CDecodeD3DRender         m_d3dRender;
 #endif
 

@@ -39,7 +39,6 @@ struct sWindowParams
     int ny;
     int ncell;
     int nAdapter;
-    int nMaxFPS;
     int nWidth;
     int nHeight;
     HWND hWndParent;

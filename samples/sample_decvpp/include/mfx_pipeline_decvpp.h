@@ -59,6 +59,7 @@ struct sInputParams
     mfxU32  nRotation; // rotation for Motion JPEG Codec
     mfxU32  fourcc; // color format of VPP output
     mfxU16  nAsyncDepth; // asyncronous queue
+    mfxU32  nMaxFPS; //rendering limited by certain fps
 
     msdk_char     strSrcFile[MSDK_MAX_FILENAME_LEN];
     msdk_char     strDstFile[MSDK_MAX_FILENAME_LEN];
@@ -112,8 +113,6 @@ public:
     virtual void Close();
     virtual mfxStatus ResetDecoder(sInputParams *pParams);
     virtual mfxStatus ResetDevice();
-
-    void SetExtBuffersFlag()       { m_bIsExtBuffers = true; }
     virtual void PrintInfo();
 
 protected: // functions
@@ -121,13 +120,6 @@ protected: // functions
     virtual mfxStatus InitMfxParams(sInputParams *pParams);
     virtual mfxStatus InitVppParams();
     virtual mfxStatus AllocAndInitVppDoNotUse();
-
-    // function for allocating a specific external buffer
-    template <typename Buffer>
-    mfxStatus AllocateExtBuffer();
-    virtual void DeleteExtBuffers();
-
-    virtual void AttachExtParam();
 
     virtual mfxStatus CreateAllocator();
     virtual mfxStatus CreateHWDevice();
@@ -163,14 +155,11 @@ protected: // variables
     std::auto_ptr<MFXVideoUSER>  m_pUserModule;
     std::auto_ptr<MFXPlugin> m_pPlugin;
 
-    std::vector<mfxExtBuffer *> m_ExtBuffers;
-
     GeneralAllocator*       m_pGeneralAllocator;
     mfxAllocatorParams*     m_pmfxAllocatorParams;
     MemType                 m_memType;      // memory type of surfaces to use
     bool                    m_bExternalAlloc; // use memory allocator as external for Media SDK
     bool                    m_bSysmemBetween; // use system memory between Decoder and VPP, if false - video memory
-
     mfxFrameAllocResponse   m_mfxResponse;      // memory allocation response for decoder
     mfxFrameAllocResponse   m_mfxVppResponse;   // memory allocation response for vpp
 
@@ -182,23 +171,20 @@ protected: // variables
     MSDKSemaphore*          m_pDeliverOutputSemaphore; // to access to DeliverOutput method
     MSDKEvent*              m_pDeliveredEvent; // to signal when output surfaces will be processed
     mfxStatus               m_error; // error returned by DeliverOutput method
+    bool                    m_bStopDeliverLoop;
 
-    bool                    m_bIsExtBuffers; // indicates if external buffers were allocated
     eWorkMode               m_eWorkMode; // work mode for the pipeline
     bool                    m_bIsCompleteFrame;
-    bool                    m_bStopDeliverLoop;
     mfxU32                  m_fourcc; // color format of vpp out, i420 by default
+    mfxU32                  m_nMaxFps; // limit of fps, if isn't specified equal 0.
 
     mfxExtVPPDoNotUse       m_VppDoNotUse;      // for disabling VPP algorithms
     mfxExtBuffer*           m_VppExtParams[2];
-
-    mfxU32 m_nTimeout;  //enables timeout for video playback, measured in seconds
 
     CHWDevice               *m_hwdev;
 #if D3D_SURFACES_SUPPORT
     IGFXS3DControl          *m_pS3DControl;
 
-    IDirect3DSurface9*       m_pRenderSurface;
     CDecodeD3DRender         m_d3dRender;
 #endif
 

@@ -34,11 +34,7 @@ struct sWindowParams
     LPCTSTR lpClassName;
     LPCTSTR lpWindowName;
     DWORD dwStyle;
-    int nx;
-    int ny;
-    int ncell;
     int nAdapter;
-    int nMaxFPS;
     int nWidth;
     int nHeight;
     HWND hWndParent;
@@ -79,11 +75,8 @@ protected:
     RECT                m_rect;
     DWORD               m_style;
 
-    bool EnableDwmQueuing();
     static BOOL CALLBACK MonitorEnumProc(HMONITOR ,HDC ,LPRECT lprcMonitor,LPARAM dwData);
 
-    bool                 m_bIsDwmQueueSupported;
-    bool                 m_bDwmEnabled;
     int                  m_nMonitorCurrent;
     ::RECT               m_RectWindow;
 };

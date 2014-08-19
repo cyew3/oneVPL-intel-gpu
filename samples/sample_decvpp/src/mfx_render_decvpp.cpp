@@ -41,8 +41,6 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 
 CDecodeD3DRender::CDecodeD3DRender()
 {
-    m_bDwmEnabled = false;
-    m_bIsDwmQueueSupported = true;
     m_nMonitorCurrent = 0;
 
     m_hwdev = NULL;
@@ -81,14 +79,6 @@ CDecodeD3DRender::~CDecodeD3DRender()
 mfxStatus CDecodeD3DRender::Init(sWindowParams pWParams)
 {
     mfxStatus sts = MFX_ERR_NONE;
-    OSVERSIONINFO version;
-    ZeroMemory(&version, sizeof(version));
-    version.dwOSVersionInfoSize = sizeof(version);
-    GetVersionEx(&version);
-    if ((version.dwMajorVersion >= 6) && (version.dwMinorVersion >= 3))
-    {
-        m_bIsDwmQueueSupported = false;
-    }
 
     // window part
     m_sWindowParams = pWParams;
@@ -111,7 +101,6 @@ mfxStatus CDecodeD3DRender::Init(sWindowParams pWParams)
     displayRegion.bottom = pWParams.nHeight;
     displayRegion.left = m_RectWindow.left;
     displayRegion.top= m_RectWindow.top;
-    m_sWindowParams.nMaxFPS = 10000;//hypotetical maximum
 
     //no title window style if required
     DWORD dwStyle = NULL == m_sWindowParams.lpWindowName ?  WS_POPUP|WS_BORDER|WS_MAXIMIZE : WS_OVERLAPPEDWINDOW;
@@ -154,14 +143,6 @@ mfxStatus CDecodeD3DRender::RenderFrame(mfxFrameSurface1 *pSurface, mfxFrameAllo
     GetClientRect(m_Hwnd, &rect);
     if (IsRectEmpty(&rect))
         return MFX_ERR_UNKNOWN;
-
-    pSurface->Info.FrameRateExtN = m_sWindowParams.nMaxFPS;
-    pSurface->Info.FrameRateExtD = 1;
-
-    if (m_bIsDwmQueueSupported)
-    {
-        EnableDwmQueuing();
-    }
 
     mfxStatus sts = m_hwdev->RenderFrame(pSurface, pmfxAlloc);
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
@@ -282,71 +263,4 @@ VOID CDecodeD3DRender::ChangeWindowSize(bool bFullScreen)
     }
 }
 
-bool CDecodeD3DRender::EnableDwmQueuing()
-{
-    HRESULT hr;
-
-    // DWM queuing is enabled already.
-    if (m_bDwmEnabled)
-    {
-        return true;
-    }
-
-    // Check to see if DWM is currently enabled.
-    BOOL bDWM = FALSE;
-
-    hr = DwmIsCompositionEnabled(&bDWM);
-
-    if (FAILED(hr))
-    {
-        _tprintf(_T("DwmIsCompositionEnabled failed with error 0x%x.\n"), hr);
-        return false;
-    }
-
-    // DWM queuing is disabled when DWM is disabled.
-    if (!bDWM)
-    {
-        m_bDwmEnabled = false;
-        return false;
-    }
-
-    // Retrieve DWM refresh count of the last vsync.
-    DWM_TIMING_INFO dwmti = {0};
-
-    dwmti.cbSize = sizeof(dwmti);
-
-    hr = DwmGetCompositionTimingInfo(NULL, &dwmti);
-
-    if (FAILED(hr))
-    {
-        _tprintf(_T("DwmGetCompositionTimingInfo failed with error 0x%x.\n"), hr);
-        return false;
-    }
-
-    // Enable DWM queuing from the next refresh.
-    DWM_PRESENT_PARAMETERS dwmpp = {0};
-
-    dwmpp.cbSize                    = sizeof(dwmpp);
-    dwmpp.fQueue                    = TRUE;
-    dwmpp.cRefreshStart             = dwmti.cRefresh + 1;
-    dwmpp.cBuffer                   = 8; //maximum depth of DWM queue
-    dwmpp.fUseSourceRate            = TRUE;
-    dwmpp.cRefreshesPerFrame        = 1;
-    dwmpp.eSampling                 = DWM_SOURCE_FRAME_SAMPLING_POINT;
-    dwmpp.rateSource.uiDenominator  = 1;
-    dwmpp.rateSource.uiNumerator    = m_sWindowParams.nMaxFPS;
-
-    hr = DwmSetPresentParameters(m_Hwnd, &dwmpp);
-
-    if (FAILED(hr))
-    {
-        _tprintf(_T("DwmSetPresentParameters failed with error 0x%x.\n"), hr);
-        return false;
-    }
-
-    // DWM queuing is enabled.
-    m_bDwmEnabled = true;
-
-    return true;
-}
 #endif // #if defined(_WIN32) || defined(_WIN64)

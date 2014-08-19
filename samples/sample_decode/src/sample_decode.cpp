@@ -43,16 +43,16 @@ void PrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("   [-sw]                     - use software implementation, if not specified platform specific SDK implementation is used\n"));
     msdk_printf(MSDK_STRING("   [-p guid|path_to_plugin]  - 32-character hexadecimal guid string or path to decoder plugin\n"));
     msdk_printf(MSDK_STRING("                               (optional for Media SDK in-box plugins, required for user-decoder ones)\n"));
+    msdk_printf(MSDK_STRING("   [-f]                      - rendering framerate\n"));
 #if D3D_SURFACES_SUPPORT
     msdk_printf(MSDK_STRING("   [-d3d]                    - work with d3d9 surfaces\n"));
     msdk_printf(MSDK_STRING("   [-d3d11]                  - work with d3d11 surfaces\n"));
     msdk_printf(MSDK_STRING("   [-r]                      - render decoded data in a separate window \n"));
-    msdk_printf(MSDK_STRING("   [-wall w h n m f t tmo]   - same as -r, and positioned rendering window in a particular cell on specific monitor \n"));
+    msdk_printf(MSDK_STRING("   [-wall w h n m t tmo]     - same as -r, and positioned rendering window in a particular cell on specific monitor \n"));
     msdk_printf(MSDK_STRING("       w                     - number of columns of video windows on selected monitor\n"));
     msdk_printf(MSDK_STRING("       h                     - number of rows of video windows on selected monitor\n"));
     msdk_printf(MSDK_STRING("       n(0,.,w*h-1)          - order of video window in table that will be rendered\n"));
     msdk_printf(MSDK_STRING("       m(0,1..)              - monitor id \n"));
-    msdk_printf(MSDK_STRING("       f                     - rendering framerate\n"));
     msdk_printf(MSDK_STRING("       t(0/1)                - enable/disable window's title\n"));
     msdk_printf(MSDK_STRING("       tmo                   - timeout for -wall option\n"));
 #endif
@@ -119,7 +119,6 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         {
             pParams->bUseHWLib = true;
         }
-
 #if D3D_SURFACES_SUPPORT
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-d3d")))
         {
@@ -138,7 +137,7 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-wall")))
         {
-            if(i + 7 >= nArgNum)
+            if(i + 6 >= nArgNum)
             {
                 PrintHelp(strInput[0], MSDK_STRING("Not enough parameters for -wall key"));
                 return MFX_ERR_UNSUPPORTED;
@@ -153,7 +152,6 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
             msdk_opt_read(strInput[++i], pParams->nWallH);
             msdk_opt_read(strInput[++i], pParams->nWallCell);
             msdk_opt_read(strInput[++i], pParams->nWallMonitor);
-            msdk_opt_read(strInput[++i], pParams->nWallFPS);
 
             mfxU32 nTitle;
             msdk_opt_read(strInput[++i], nTitle);
@@ -245,6 +243,19 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
             if ((pParams->nAsyncDepth < 1) || (pParams->nAsyncDepth > 20))
             {
                 PrintHelp(strInput[0], MSDK_STRING("Async depth must be between 1 and 20"));
+                return MFX_ERR_UNSUPPORTED;
+            }
+        }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-f")))
+        {
+            if(i + 1 >= nArgNum)
+            {
+                PrintHelp(strInput[0], MSDK_STRING("Not enough parameters for -f key"));
+                return MFX_ERR_UNSUPPORTED;
+            }
+            if (MFX_ERR_NONE != msdk_opt_read(strInput[++i], pParams->nMaxFPS))
+            {
+                PrintHelp(strInput[0], MSDK_STRING("rendering frame rate is invalid"));
                 return MFX_ERR_UNSUPPORTED;
             }
         }

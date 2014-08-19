@@ -70,8 +70,6 @@ private:
     IDirectXVideoProcessor*         m_pDXVAVP_Left;
     // right channel processor
     IDirectXVideoProcessor*         m_pDXVAVP_Right;
-    // the surface which is passed to render
-    IDirect3DSurface9*              m_pRenderSurface;
 
     // target rectangle
     RECT                            m_targetRect;

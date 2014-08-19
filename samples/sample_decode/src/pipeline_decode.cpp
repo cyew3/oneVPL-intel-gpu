@@ -38,38 +38,43 @@ Copyright(c) 2005-2014 Intel Corporation. All Rights Reserved.
 
 CDecodingPipeline::CDecodingPipeline()
 {
+    MSDK_ZERO_MEMORY(m_mfxBS);
+
     m_pmfxDEC = NULL;
+    MSDK_ZERO_MEMORY(m_mfxVideoParams);
+
     m_pMFXAllocator = NULL;
     m_pmfxAllocatorParams = NULL;
     m_memType = SYSTEM_MEMORY;
+    m_bExternalAlloc = false;
+    MSDK_ZERO_MEMORY(m_mfxResponse);
 
     m_pCurrentFreeSurface = NULL;
     m_pCurrentFreeOutputSurface = NULL;
     m_pCurrentOutputSurface = NULL;
 
-    m_bExternalAlloc = false;
-    m_bIsMVC = false;
-    m_bIsExtBuffers = false;
-    m_bStopDeliverLoop = false;
-    m_eWorkMode = MODE_PERFORMANCE;
     m_pDeliverOutputSemaphore = NULL;
     m_pDeliveredEvent = NULL;
     m_error = MFX_ERR_NONE;
+    m_bStopDeliverLoop = false;
+
+    m_eWorkMode = MODE_PERFORMANCE;
+    m_bIsMVC = false;
+    m_bIsExtBuffers = false;
     m_bIsVideoWall = false;
-    m_nTimeout = 0;
-    m_nMaxFps = 0;
     m_bIsCompleteFrame = false;
     m_bPrintLatency = false;
+
+    m_nTimeout = 0;
+    m_nMaxFps = 0;
+
     m_vLatency.reserve(1000); // reserve some space to reduce dynamic reallocation impact on pipeline execution
-#if D3D_SURFACES_SUPPORT
-    m_pS3DControl = NULL;
-#endif
 
     m_hwdev = NULL;
 
-    MSDK_ZERO_MEMORY(m_mfxVideoParams);
-    MSDK_ZERO_MEMORY(m_mfxResponse);
-    MSDK_ZERO_MEMORY(m_mfxBS);
+#if D3D_SURFACES_SUPPORT
+    m_pS3DControl = NULL;
+#endif
 }
 
 CDecodingPipeline::~CDecodingPipeline()
@@ -124,6 +129,7 @@ mfxStatus CDecodingPipeline::Init(sInputParams *pParams)
     }
 
     m_memType = pParams->memType;
+    m_nMaxFps = pParams->nMaxFPS;
 
     sts = m_FileReader->Init(pParams->strSrcFile);
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
@@ -235,8 +241,6 @@ mfxStatus CDecodingPipeline::Init(sInputParams *pParams)
     }
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
-    // necessary for a device to set the frame rate limit
-    m_nMaxFps = pParams->nWallFPS;
     // create device and allocator
     sts = CreateAllocator();
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
@@ -281,10 +285,7 @@ void CDecodingPipeline::Close()
         DeallocateExtMVCBuffers();
         DeleteExtBuffers();
     }
-#if D3D_SURFACES_SUPPORT
-    if (m_pRenderSurface != NULL)
-        m_pRenderSurface = NULL;
-#endif
+
     m_pPlugin.reset();
     m_mfxSession.Close();
     m_FileWriter.Close();
@@ -355,7 +356,6 @@ mfxStatus CDecodingPipeline::CreateRenderingWindow(sInputParams *pParams, bool t
     windowParams.nHeight      = m_mfxVideoParams.mfx.FrameInfo.Height;
     windowParams.ncell        = pParams->nWallCell;
     windowParams.nAdapter     = pParams->nWallMonitor;
-    windowParams.nMaxFPS      = pParams->nWallFPS;
 
     windowParams.lpClassName  = MSDK_STRING("Render Window Class");
     windowParams.dwStyle      = WS_OVERLAPPEDWINDOW;
@@ -529,9 +529,6 @@ mfxStatus CDecodingPipeline::CreateHWDevice()
 #if MFX_D3D11_SUPPORT
     if (D3D11_MEMORY == m_memType)
         m_hwdev = new CD3D11Device();
-        if (m_hwdev) {
-            reinterpret_cast<CD3D11Device*>(m_hwdev)->SetMaxFps(m_nMaxFps);
-        }
     else
 #endif // #if MFX_D3D11_SUPPORT
         m_hwdev = new CD3D9Device();
@@ -1026,6 +1023,16 @@ mfxStatus CDecodingPipeline::SyncOutputSurface(mfxU32 wait)
             }
             ReturnSurfaceToBuffers(m_pCurrentOutputSurface);
         } else if (m_eWorkMode == MODE_RENDERING) {
+            if(m_nMaxFps)
+            {
+                //calculation of a time to sleep in order not to exceed a given fps
+                mfxF64 currentTime = (m_output_count) ? CTimer::ConvertToSeconds(m_tick_overall) : 0.0;
+                int time_to_sleep = (int)(1000 * ((double)m_output_count / m_nMaxFps - currentTime));
+                if (time_to_sleep > 0)
+                {
+                    MSDK_SLEEP(time_to_sleep);
+                }
+            }
             m_DeliveredSurfacesPool.AddSurface(m_pCurrentOutputSurface);
             m_pDeliveredEvent->Reset();
             m_pDeliverOutputSemaphore->Post();

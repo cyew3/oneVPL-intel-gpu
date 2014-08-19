@@ -39,8 +39,6 @@ CD3D9Device::CD3D9Device()
     m_pDXVAVPS = NULL;
     m_pDXVAVP_Left = NULL;
     m_pDXVAVP_Right = NULL;
-    m_pRenderSurface = NULL;
-
 
     MSDK_ZERO_MEMORY(m_targetRect);
 
@@ -271,7 +269,6 @@ mfxStatus CD3D9Device::Reset()
 
 void CD3D9Device::Close()
 {
-    MSDK_SAFE_RELEASE(m_pRenderSurface);
     MSDK_SAFE_RELEASE(m_pDXVAVP_Left);
     MSDK_SAFE_RELEASE(m_pDXVAVP_Right);
     MSDK_SAFE_RELEASE(m_pDXVAVPS);
@@ -331,7 +328,7 @@ mfxStatus CD3D9Device::RenderFrame(mfxFrameSurface1 * pSurface, mfxFrameAllocato
     MSDK_CHECK_POINTER(pmfxAlloc, MFX_ERR_NULL_PTR);
 
     // don't try to render second view if output rect changed since first view
-    if ((2 == m_nViews && (0 != pSurface->Info.FrameId.ViewId) && NULL == m_pRenderSurface))
+    if (2 == m_nViews && (0 != pSurface->Info.FrameId.ViewId))
         return MFX_ERR_NONE;
 
     hr = m_pD3DD9->TestCooperativeLevel();
@@ -383,7 +380,6 @@ mfxStatus CD3D9Device::CreateVideoProcessors()
 
    MSDK_SAFE_RELEASE(m_pDXVAVP_Left);
    MSDK_SAFE_RELEASE(m_pDXVAVP_Right);
-   MSDK_SAFE_RELEASE(m_pRenderSurface);
 
    HRESULT hr ;
 
