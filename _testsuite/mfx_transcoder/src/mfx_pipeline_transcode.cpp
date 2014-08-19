@@ -58,6 +58,10 @@ File Name: .h
 #define HANDLE_GLOBAL_OPTION(short_option, pref, member, OPT_TYPE, description, handler)\
 {VM_STRING(short_option)VM_STRING("-")VM_STRING(#member), OPT_TYPE, {&pref##member}, VM_STRING(description), handler}
 
+#define HANDLE_GLOBAL_OPTION2(short_option, pref, member, OPT_TYPE, description, handler)\
+{VM_STRING(short_option)VM_STRING("-")VM_STRING(#member), OPT_TYPE, {&pref member}, VM_STRING(description), handler}
+
+
 #define HANDLE_MFX_INFO(short_option, member, description)\
 {VM_STRING(short_option)VM_STRING("-")VM_STRING(#member), OPT_UINT_16, {&pMFXParams->mfx.member}, VM_STRING(description), NULL}
 
@@ -156,7 +160,7 @@ MFXTranscodingPipeline::MFXTranscodingPipeline(IMFXPipelineFactory *pFactory)
         HANDLE_GLOBAL_OPTION("", m_,RestartInterval, OPT_UINT_16, "Jpeg specific parameter", &m_applyJpegParams),
 
         //direct access to mfx_videoparams
-        HANDLE_GLOBAL_OPTION("", pMFXParams->mfx., LowPower, OPT_TRI_STATE, "on/off low power mode (VDEnc)", NULL),
+        HANDLE_GLOBAL_OPTION2("", pMFXParams->mfx., LowPower, OPT_TRI_STATE, "on/off low power mode (VDEnc)", NULL),
         HANDLE_MFX_INFO("",     BRCParamMultiplier,               "target bitrate = TargetKbps * BRCParamMultiplier"),
         HANDLE_MFX_INFO("",     CodecProfile,                     "Codec profile"),
         HANDLE_MFX_INFO("",     CodecLevel,                       "Codec level"),
