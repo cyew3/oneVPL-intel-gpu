@@ -253,6 +253,9 @@
     <ClCompile Include="src\gmock\test_suites\avcd_decorder.cpp">
       <Filter>Source Files\test_suites</Filter>
     </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\avce_constraint_vbr.cpp">
+      <Filter>Source Files\test_suites\avce</Filter>
+    </ClCompile>
     <ClCompile Include="src\gmock\test_suites\ptir_time_stamps.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>

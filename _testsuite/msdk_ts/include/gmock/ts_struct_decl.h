@@ -567,3 +567,13 @@ STRUCT(mfxExtAVCRefLists,
     FIELD_S(mfxExtAVCRefLists_mfxRefPic, RefPicList0)
     FIELD_S(mfxExtAVCRefLists_mfxRefPic, RefPicList1)
 )
+
+STRUCT(mfxExtCodingOption3,
+    FIELD_S(mfxExtBuffer, Header       )
+    FIELD_T(mfxU16      , NumSliceI    )
+    FIELD_T(mfxU16      , NumSliceP    )
+    FIELD_T(mfxU16      , NumSliceB    )
+    FIELD_T(mfxU16      , WinBRCMaxAvgKbps)
+    FIELD_T(mfxU16      , WinBRCSize)
+    FIELD_T(mfxU16*     , reserved)
+)
