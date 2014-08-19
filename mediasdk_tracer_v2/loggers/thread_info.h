@@ -20,6 +20,16 @@ public:
         #endif
         return -1;
     };
+
+    static long GetProcessId()
+    {
+        #if defined(_WIN32) || defined(_WIN64)
+            return (long)GetCurrentProcessId();
+        #else
+            return (long)getpid();
+        #endif
+        return -1;
+    }
 };
 
 #endif //THREAD_INFO_H_

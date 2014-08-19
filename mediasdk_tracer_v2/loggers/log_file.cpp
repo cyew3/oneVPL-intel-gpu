@@ -1,13 +1,15 @@
 #include "log_file.h"
 #include "../config/config.h"
+#include "../dumps/dump.h"
 
 LogFile::LogFile()
 {
+    std::string strproc_id = ToString(ThreadInfo::GetProcessId());
     std::string file_log = Config::GetParam("core", "log");
     if(!file_log.empty())
-        _file_path = std::string(file_log);
+        _file_path = strproc_id + std::string("_") + std::string(file_log);
     else
-        _file_path = std::string("mfxtracer.log");
+        _file_path = strproc_id + std::string("_") + std::string("mfxtracer.log");
 }
 
 LogFile::~LogFile()
