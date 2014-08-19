@@ -69,7 +69,7 @@ bool VideoDECODEVP9_HW::CheckHardwareSupport(VideoCORE *p_core, mfxVideoParam *p
 mfxStatus VideoDECODEVP9_HW::Init(mfxVideoParam *par)
 {
     mfxStatus sts   = MFX_ERR_NONE;
-    Status umcSts   = UMC_OK;
+    UMC::Status umcSts   = UMC::UMC_OK;
     eMFXHWType type = m_core->GetHWType();
 
     m_platform = MFX_VP9_Utility::GetPlatform(m_core, par);
@@ -137,7 +137,7 @@ mfxStatus VideoDECODEVP9_HW::Init(mfxVideoParam *par)
     }
 
     umcSts = m_FrameAllocator->InitMfx(0, m_core, par, &request, &m_response, isUseExternalFrames, false);
-    if (UMC_OK != umcSts)
+    if (UMC::UMC_OK != umcSts)
     {
         return MFX_ERR_MEMORY_ALLOC;
     }
@@ -396,7 +396,7 @@ mfxStatus MFX_CDECL VP9DECODERoutine(void *p_state, void * /* pp_param */, mfxU3
     VideoDECODEVP9_HW& decoder = *data.decoder;
 
     #ifdef MFX_VA_LINUX
-    if(UMC_OK != decoder.m_va->SyncTask(data.currFrameId))
+    if(UMC::UMC_OK != decoder.m_va->SyncTask(data.currFrameId))
         return MFX_ERR_DEVICE_FAILED;
     #else
 
@@ -480,12 +480,12 @@ mfxStatus VideoDECODEVP9_HW::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1
     sts = m_FrameAllocator->SetCurrentMFXSurface(surface_work, false);
     MFX_CHECK_STS(sts);
 
-    FrameMemID    currMid = 0;
-    VideoDataInfo videoInfo;
-    if (UMC_OK != videoInfo.Init(m_init_w, m_init_h, NV12, 8))
+    UMC::FrameMemID currMid = 0;
+    UMC::VideoDataInfo videoInfo;
+    if (UMC::UMC_OK != videoInfo.Init(m_init_w, m_init_h, UMC::NV12, 8))
         return MFX_ERR_MEMORY_ALLOC;
 
-    if (UMC_OK != m_FrameAllocator->Alloc(&currMid, &videoInfo, 0))
+    if (UMC::UMC_OK != m_FrameAllocator->Alloc(&currMid, &videoInfo, 0))
     {
         return MFX_ERR_MEMORY_ALLOC;
     }
@@ -494,7 +494,7 @@ mfxStatus VideoDECODEVP9_HW::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1
     sts = DecodeFrameHeader(bs, m_frameInfo);
     MFX_CHECK_STS(sts);
 
-    if (UMC_OK != m_FrameAllocator->IncreaseReference(m_frameInfo.currFrame))
+    if (UMC::UMC_OK != m_FrameAllocator->IncreaseReference(m_frameInfo.currFrame))
     {
         return MFX_ERR_UNKNOWN;
     }
@@ -505,13 +505,13 @@ mfxStatus VideoDECODEVP9_HW::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1
     bs->DataOffset += bs->DataLength;
     bs->DataLength = 0;
 
-    if (UMC_OK != m_va->BeginFrame(m_frameInfo.currFrame))
+    if (UMC::UMC_OK != m_va->BeginFrame(m_frameInfo.currFrame))
         return MFX_ERR_DEVICE_FAILED;
 
-    if (UMC_OK != m_va->Execute())
+    if (UMC::UMC_OK != m_va->Execute())
         return MFX_ERR_DEVICE_FAILED;
 
-    if (UMC_OK != m_va->EndFrame())
+    if (UMC::UMC_OK != m_va->EndFrame())
         return MFX_ERR_DEVICE_FAILED;
     UpdateRefFrames(m_frameInfo.refreshFrameFlags, m_frameInfo); // move to async part
 
@@ -1212,7 +1212,7 @@ mfxStatus VideoDECODEVP9_HW::PackHeaders(mfxBitstream *bs, VP9FrameInfo const & 
         return MFX_ERR_NULL_PTR;
 
     //picParam
-    UMCVACompBuffer* pCompBuf = NULL;
+    UMC::UMCVACompBuffer* pCompBuf = NULL;
     VADecPictureParameterBufferVP9 *picParam =
         (VADecPictureParameterBufferVP9*)m_va->GetCompBuffer(VAPictureParameterBufferType, &pCompBuf, sizeof(VADecPictureParameterBufferVP9));
 
@@ -1343,7 +1343,7 @@ mfxStatus VideoDECODEVP9_HW::PackHeaders(mfxBitstream *bs, VP9FrameInfo const & 
     if ((NULL == bs) || (NULL == bs->Data))
         return MFX_ERR_NULL_PTR;
 
-    UMCVACompBuffer* compBufPic = NULL;
+    UMC::UMCVACompBuffer* compBufPic = NULL;
     DXVA_Intel_PicParams_VP9 *picParam = (DXVA_Intel_PicParams_VP9*)m_va->GetCompBuffer(D3D9_VIDEO_DECODER_BUFFER_PICTURE_PARAMETERS_VP9, &compBufPic);
     if ((NULL == picParam) || (NULL == compBufPic) || (compBufPic->GetBufferSize() < sizeof(DXVA_Intel_PicParams_VP9)))
         return MFX_ERR_MEMORY_ALLOC;
@@ -1417,7 +1417,7 @@ mfxStatus VideoDECODEVP9_HW::PackHeaders(mfxBitstream *bs, VP9FrameInfo const & 
     picParam->BSBytesInBuffer = info.frameDataSize;
     picParam->StatusReportFeedbackNumber = m_frameOrder + 1;
 
-    UMCVACompBuffer* compBufSeg = NULL;
+    UMC::UMCVACompBuffer* compBufSeg = NULL;
     DXVA_Intel_Segment_VP9 *segParam = (DXVA_Intel_Segment_VP9*)m_va->GetCompBuffer(D3D9_VIDEO_DECODER_BUFFER_INVERSE_QUANTIZATION_MATRIX_VP9, &compBufSeg);
     if ((NULL == segParam) || (NULL == compBufSeg) || (compBufSeg->GetBufferSize() < sizeof(DXVA_Intel_Segment_VP9)))
         return MFX_ERR_MEMORY_ALLOC;
@@ -1452,7 +1452,7 @@ mfxStatus VideoDECODEVP9_HW::PackHeaders(mfxBitstream *bs, VP9FrameInfo const & 
         //    break;
     }
 
-    UMCVACompBuffer* compBufBs = NULL;
+    UMC::UMCVACompBuffer* compBufBs = NULL;
     mfxU8 *bistreamData = (mfxU8 *)m_va->GetCompBuffer(D3D9_VIDEO_DECODER_BUFFER_BITSTREAM_DATA_VP9, &compBufBs);
     if ((NULL == bistreamData) || (NULL == compBufBs) || (compBufBs->GetBufferSize() < (mfxI32)bs->DataLength))
         return MFX_ERR_MEMORY_ALLOC;
@@ -1460,7 +1460,7 @@ mfxStatus VideoDECODEVP9_HW::PackHeaders(mfxBitstream *bs, VP9FrameInfo const & 
     memcpy(bistreamData, bs->Data + bs->DataOffset, bs->DataLength);
     compBufBs->SetDataSize(bs->DataLength);
 
-    UMCVACompBuffer* compTmpBuff = NULL;
+    UMC::UMCVACompBuffer* compTmpBuff = NULL;
     void *tmpBuffer = (void*)m_va->GetCompBuffer(D3D9_VIDEO_DECODER_BUFFER_COEFFICIENT_PROBABILITIES, &compTmpBuff);
     if ((NULL == tmpBuffer) || (NULL == compTmpBuff))
         return MFX_ERR_MEMORY_ALLOC;

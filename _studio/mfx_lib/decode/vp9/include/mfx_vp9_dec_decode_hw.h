@@ -91,7 +91,7 @@ private:
     {
         VideoDECODEVP9_HW* decoder;
         mfxFrameSurface1* surface_work;
-        FrameMemID currFrameId;
+        UMC::FrameMemID currFrameId;
         mfxU32     index;
     };
 
