@@ -7,6 +7,7 @@ tsSession::tsSession(mfxIMPL impl, mfxVersion version)
     , m_pSession(&m_session)
     , m_pVersion(&m_version)
     , m_pFrameAllocator(0)
+    , m_pVAHandle(0)
     , m_initialized(false)
     , m_sw_fallback(false)
 {
@@ -18,6 +19,12 @@ tsSession::~tsSession()
     {
         MFXClose();
     }
+#if (defined(LINUX32) || defined(LINUX64))
+    if (m_pVAHandle)
+    {
+        delete m_pVAHandle;
+    }
+#endif
 }
 
 mfxStatus tsSession::MFXInit()
@@ -33,6 +40,26 @@ mfxStatus tsSession::MFXInit(mfxIMPL impl, mfxVersion *ver, mfxSession *session)
     TS_TRACE(session);
 
     m_initialized = (g_tsStatus.get() >= 0);
+
+#if (defined(LINUX32) || defined(LINUX64))
+    // SetHandle on Linux is always required
+    if (m_initialized)
+    {
+        mfxHDL hdl;
+        mfxHandleType type;
+        if (!m_pVAHandle)
+        {
+            m_pVAHandle = new frame_allocator(
+                    frame_allocator::HARDWARE,
+                    frame_allocator::ALLOC_MAX,
+                    frame_allocator::ENABLE_ALL,
+                    frame_allocator::ALLOC_EMPTY);
+        }
+        m_pVAHandle->get_hdl(type, hdl);
+        SetHandle(m_session, type, hdl);
+    }
+#endif
+
     return g_tsStatus.get();
 }
  

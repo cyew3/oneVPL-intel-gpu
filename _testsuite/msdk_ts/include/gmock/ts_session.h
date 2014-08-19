@@ -15,6 +15,7 @@ public:
     mfxSession*         m_pSession;
     mfxVersion*         m_pVersion;
     frame_allocator*    m_pFrameAllocator;
+    frame_allocator*    m_pVAHandle;
 
     tsSession(mfxIMPL impl = g_tsImpl, mfxVersion version = g_tsVersion);
     ~tsSession();
