@@ -299,19 +299,26 @@ void PrintInfo(sInputParams* pParams, mfxVideoParam* pMfxParams, MFXVideoSession
 
 mfxStatus ParseGUID(vm_char strPlgGuid[MAX_FILELEN], mfxU8 DataGUID[16])
 {
-#if defined(_WIN32) || defined(_WIN64)
     const vm_char *uid = strPlgGuid;
     mfxU32 i   = 0;
     mfxU32 hex = 0;
     for(i = 0; i != 16; i++) 
     {
         hex = 0;
+#if defined(_WIN32) || defined(_WIN64)
         if (1 != _stscanf_s(uid + 2*i, L"%2x", &hex))
+#else
+        if (1 != sscanf(uid + 2*i, "%2x", &hex))
+#endif
         {
             vm_string_printf(VM_STRING("Failed to parse plugin uid: %s"), uid);
             return MFX_ERR_UNKNOWN;
         }
+#if defined(_WIN32) || defined(_WIN64)
         if (hex == 0 && (uid + 2*i != _tcsstr(uid + 2*i, L"00")))
+#else
+        if (hex == 0 && (uid + 2*i != strstr(uid + 2*i, "00")))
+#endif
         {
             vm_string_printf(VM_STRING("Failed to parse plugin uid: %s"), uid);
             return MFX_ERR_UNKNOWN;
@@ -320,9 +327,7 @@ mfxStatus ParseGUID(vm_char strPlgGuid[MAX_FILELEN], mfxU8 DataGUID[16])
     }
 
     return MFX_ERR_NONE;
-#endif
 }
-
 mfxStatus InitParamsVPP(mfxVideoParam* pParams, sInputParams* pInParams)
 {
     CHECK_POINTER(pParams,    MFX_ERR_NULL_PTR);
