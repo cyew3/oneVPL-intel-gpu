@@ -183,6 +183,8 @@ public:
     virtual mfxStatus Process(mfxFrameSurface1 *surf_in, mfxFrameSurface1 **surf_work, mfxCoreInterface *core, mfxFrameSurface1 **surf_out = 0, bool beof = false);
 
 protected:
+    PTIR_ProcessorCPU(const PTIR_ProcessorCPU& ); // Disallow copy constructor
+    PTIR_ProcessorCPU& operator=(const PTIR_ProcessorCPU&); // Disallow assignment operator
 
 };
 
@@ -198,6 +200,8 @@ public:
     virtual mfxStatus Process(mfxFrameSurface1 *surf_in, mfxFrameSurface1 **surf_work, mfxCoreInterface *core, mfxFrameSurface1 **surf_out = 0, bool beof = false);
 
 protected:
+    PTIR_ProcessorCM(const PTIR_ProcessorCM& ); // Disallow copy constructor
+    PTIR_ProcessorCM& operator=(const PTIR_ProcessorCM&); // Disallow assignment operator
     template <typename D3DAbstract>
     CmDevice* GetCmDevice(D3DAbstract *pD3D)
     {

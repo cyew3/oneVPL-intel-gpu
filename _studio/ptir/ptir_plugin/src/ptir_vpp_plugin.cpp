@@ -26,6 +26,13 @@ File Name: ptir_vpp_plugin.cpp
 #include "libmfx_core_d3d11.h"
 #endif
 
+#ifndef ALIGN16
+#define ALIGN16(SZ) (((SZ + 15) >> 4) << 4)
+#endif
+#ifndef ALIGN32
+#define ALIGN32(X) (((mfxU32)((X)+31)) & (~ (mfxU32)31))
+#endif
+
 PluginModuleTemplate g_PluginModule = {
     NULL,
     NULL,
@@ -486,10 +493,15 @@ mfxStatus MFX_PTIR_Plugin::Query(mfxVideoParam *in, mfxVideoParam *out)
 
         if(const_in.vpp.In.Width  % 16 != 0)
         {
-            out->vpp.Out.Width = 0;
+            out->vpp.In.Width = 0;
             error = true;
         }
-        if(const_in.vpp.In.Height % 16 != 0)
+        if(const_in.vpp.In.Height % 32 != 0)
+        {
+            out->vpp.In.Height = 0;
+            error = true;
+        }
+        if(const_in.vpp.Out.Height % 16 != 0)
         {
             out->vpp.Out.Height = 0;
             error = true;

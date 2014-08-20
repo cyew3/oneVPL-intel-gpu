@@ -297,6 +297,32 @@ void PrintInfo(sInputParams* pParams, mfxVideoParam* pMfxParams, MFXVideoSession
 
 /* ******************************************************************* */
 
+mfxStatus ParseGUID(vm_char strPlgGuid[MAX_FILELEN], mfxU8 DataGUID[16])
+{
+#if defined(_WIN32) || defined(_WIN64)
+    const vm_char *uid = strPlgGuid;
+    mfxU32 i   = 0;
+    mfxU32 hex = 0;
+    for(i = 0; i != 16; i++) 
+    {
+        hex = 0;
+        if (1 != _stscanf_s(uid + 2*i, L"%2x", &hex))
+        {
+            vm_string_printf(VM_STRING("Failed to parse plugin uid: %s"), uid);
+            return MFX_ERR_UNKNOWN;
+        }
+        if (hex == 0 && (uid + 2*i != _tcsstr(uid + 2*i, L"00")))
+        {
+            vm_string_printf(VM_STRING("Failed to parse plugin uid: %s"), uid);
+            return MFX_ERR_UNKNOWN;
+        }
+        DataGUID[i] = (mfxU8)hex;
+    }
+
+    return MFX_ERR_NONE;
+#endif
+}
+
 mfxStatus InitParamsVPP(mfxVideoParam* pParams, sInputParams* pInParams)
 {
     CHECK_POINTER(pParams,    MFX_ERR_NULL_PTR);
@@ -350,6 +376,16 @@ mfxStatus InitParamsVPP(mfxVideoParam* pParams, sInputParams* pInParams)
     pParams->vpp.Out.Width = ALIGN16(pInParams->frameInfo[VPP_OUT].nWidth); 
     pParams->vpp.Out.Height= (MFX_PICSTRUCT_PROGRESSIVE == pInParams->frameInfo[VPP_OUT].PicStruct)?
         ALIGN16(pInParams->frameInfo[VPP_OUT].nHeight) : ALIGN32(pInParams->frameInfo[VPP_OUT].nHeight);
+    if(pInParams->need_plugin)
+    {
+        mfxPluginUID mfxGuid;
+        ParseGUID(pInParams->strPlgGuid, mfxGuid.Data);
+        if(!memcmp(&mfxGuid,&MFX_PLUGINID_ITELECINE_HW,sizeof(mfxPluginUID)))
+        {
+            //CM PTIR require equal input and output frame sizes
+            pParams->vpp.Out.Height = pParams->vpp.In.Height;
+        }
+    }
 
     pParams->vpp.Out.PicStruct = pInParams->frameInfo[VPP_OUT].PicStruct;
 
@@ -401,27 +437,8 @@ mfxStatus CreateFrameProcessor(sFrameProcessor* pProcessor, mfxVideoParam* pPara
     // Plug-in
     if ( pInParams->need_plugin ) 
     {
-#if defined(_WIN32) || defined(_WIN64)
         pProcessor->plugin = true;
-        const vm_char *uid = pInParams->strPlgGuid;
-        mfxU32 i   = 0;
-        mfxU32 hex = 0;
-        for(i = 0; i != 16; i++) 
-        {
-            hex = 0;
-            if (1 != _stscanf_s(uid + 2*i, L"%2x", &hex))
-            {
-                vm_string_printf(VM_STRING("Failed to parse plugin uid: %s"), uid);
-                return MFX_ERR_UNKNOWN;
-            }
-            if (hex == 0 && (uid + 2*i != _tcsstr(uid + 2*i, L"00")))
-            {
-                vm_string_printf(VM_STRING("Failed to parse plugin uid: %s"), uid);
-                return MFX_ERR_UNKNOWN;
-            }
-            pProcessor->mfxGuid.Data[i] = (mfxU8)hex;
-        }
-#endif
+        ParseGUID(pInParams->strPlgGuid, pProcessor->mfxGuid.Data);
     }
 
     if ( pProcessor->plugin )

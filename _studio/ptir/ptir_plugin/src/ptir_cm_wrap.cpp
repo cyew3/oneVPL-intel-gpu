@@ -77,6 +77,10 @@ mfxStatus PTIR_ProcessorCM::Init(mfxVideoParam *par)
     uiInWidth  = uiWidth  = par->vpp.In.CropX + par->vpp.In.CropW;
     uiInHeight = uiHeight = par->vpp.In.CropY + par->vpp.In.CropH;
 
+    if((par->vpp.In.Width  != par->vpp.Out.Width) ||
+       (par->vpp.In.Height != par->vpp.Out.Height))
+       return MFX_ERR_INVALID_VIDEO_PARAM;
+
     if(par->vpp.In.FrameRateExtN && par->vpp.In.FrameRateExtD)
         dFrameRate = (double) par->vpp.In.FrameRateExtN / par->vpp.In.FrameRateExtD;
     else
