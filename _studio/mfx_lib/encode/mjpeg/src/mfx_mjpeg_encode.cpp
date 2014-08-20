@@ -1081,10 +1081,7 @@ mfxStatus MFXVideoENCODEMJPEG::QueryIOSurf(mfxVideoParam *par, mfxFrameAllocRequ
         return MFX_ERR_INVALID_VIDEO_PARAM;
     }
 
-    mfxU16 nFrames = 1; // no reordering at all
-
-    request->NumFrameMin       = nFrames;
-    request->NumFrameSuggested = IPP_MAX(nFrames,par->AsyncDepth);
+    request->NumFrameSuggested = request->NumFrameMin = par->AsyncDepth ? par->AsyncDepth : 1;
     request->Info              = par->mfx.FrameInfo;
 
     if (par->IOPattern & MFX_IOPATTERN_IN_VIDEO_MEMORY)
