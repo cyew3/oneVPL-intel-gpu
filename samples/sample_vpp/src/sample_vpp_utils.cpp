@@ -90,7 +90,7 @@ void PrintInfo(sInputParams* pParams, mfxVideoParam* pMfxParams, MFXVideoSession
   MSDK_CHECK_POINTER_NO_RET(pParams);
   MSDK_CHECK_POINTER_NO_RET(pMfxParams);
 
-  msdk_printf(MSDK_STRING("Intel(R) Media SDK VPP Sample Version %s\n\n"), MSDK_SAMPLE_VERSION);
+  msdk_printf(MSDK_STRING("VPP Sample Version %s\n\n"), MSDK_SAMPLE_VERSION);
 
   Info = pMfxParams->vpp.In;
   msdk_printf(MSDK_STRING("Input format\t%s\n"), FourCC2Str( Info.FourCC ));

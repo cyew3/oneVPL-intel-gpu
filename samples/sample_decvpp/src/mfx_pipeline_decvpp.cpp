@@ -1191,7 +1191,7 @@ mfxStatus CDecodingPipeline::RunDecoding()
 
 void CDecodingPipeline::PrintInfo()
 {
-    msdk_printf(MSDK_STRING("Intel(R) Media SDK Decoding Sample Version %s\n\n"), MSDK_SAMPLE_VERSION);
+    msdk_printf(MSDK_STRING("DecVPP Sample Version %s\n\n"), MSDK_SAMPLE_VERSION);
     msdk_printf(MSDK_STRING("\nInput video\t%s\n"), CodecIdToStr(m_mfxVideoParams.mfx.CodecId).c_str());
     msdk_printf(MSDK_STRING("Output format\t%s\n"), MSDK_STRING("YUV420"));
 

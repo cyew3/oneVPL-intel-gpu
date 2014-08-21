@@ -168,7 +168,7 @@ ISink* PipelineFactory::CreateFileIOWrapper(const msdk_string& path, const msdk_
 CmdLineParser* PipelineFactory::CreateCmdLineParser()
 {
     msdk_stringstream HelpHead ;
-    HelpHead <<MSDK_STRING("Intel(R) MediaSDK Full Transcoding Sample Version ") << MSDK_SAMPLE_VERSION << std::endl << std::endl <<
+    HelpHead <<MSDK_STRING("Full Transcoding Sample Version ") << MSDK_SAMPLE_VERSION << std::endl << std::endl <<
                MSDK_STRING("Command line parameters:\n") <<
                MSDK_STRING("Usage: sample_full_transcode.exe ") << OPTION_I <<MSDK_STRING(" InputFile ")<< OPTION_O << MSDK_STRING(" OutputFile [options]\n")<<
                MSDK_STRING("Where [options] can be:\n");

@@ -10,6 +10,6 @@
 
 #include "..\..\sample_common\include\current_date.h"
 
-#define FILTER_NAME_STRING "Intel Media SDK Splitters\Muxers Library Sample"
+#define FILTER_NAME_STRING "Splitters\Muxers Library Sample"
 #define DLL_NAME           "sample_spl_mux.dll"
 #define FILTER_NAME        _T(FILTER_NAME_STRING)

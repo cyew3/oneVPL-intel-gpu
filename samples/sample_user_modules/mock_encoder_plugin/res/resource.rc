@@ -5,7 +5,7 @@
 
 #include "..\..\..\sample_common\include\current_date.h"
 
-#define FILTER_NAME_STRING "Intel MockEncoder Plugin Sample"
+#define FILTER_NAME_STRING "MockEncoder Plugin Sample"
 #define DLL_NAME           "mock_encoder_plugin.dll"
 #define FILTER_NAME        _T(FILTER_NAME_STRING)
 

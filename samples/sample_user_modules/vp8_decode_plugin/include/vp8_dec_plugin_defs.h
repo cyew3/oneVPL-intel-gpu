@@ -10,6 +10,6 @@
 
 #include "..\..\..\sample_common\include\current_date.h"
 
-#define FILTER_NAME_STRING "Intel Media VP8 Decoder Plugin Sample"
+#define FILTER_NAME_STRING "VP8 Decoder Plugin Sample"
 #define DLL_NAME           "vp8_decoder_plugin.dll"
 #define FILTER_NAME        _T(FILTER_NAME_STRING)

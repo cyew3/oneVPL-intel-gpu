@@ -419,7 +419,7 @@ int main(int argc, char *argv[])
 
     try
     {
-        msdk_printf(MSDK_STRING("Intel(R) Media SDK Video Conference Sample Version %s\n\n"), MSDK_SAMPLE_VERSION);
+        msdk_printf(MSDK_STRING("Video Conference Sample Version %s\n\n"), MSDK_SAMPLE_VERSION);
 
         init_params.pActionProc.reset(new ActionProcessor);
 

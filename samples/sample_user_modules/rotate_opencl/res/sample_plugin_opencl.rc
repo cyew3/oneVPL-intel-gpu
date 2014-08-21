@@ -70,7 +70,7 @@ BEGIN
         BLOCK "040904b0"
         BEGIN
             VALUE "CompanyName", "Intel Corporation"
-            VALUE "FileDescription", "Intel® Media SDK OpenCL* Plug-in Sample"
+            VALUE "FileDescription", "OpenCL* Plug-in Sample"
             VALUE "FileVersion", "1, 0, 0, 0"
             VALUE "InternalName", "sample_plugin_opencl.dll"
             VALUE "LegalCopyright", "Copyright© 2010-2011 Intel Corporation"

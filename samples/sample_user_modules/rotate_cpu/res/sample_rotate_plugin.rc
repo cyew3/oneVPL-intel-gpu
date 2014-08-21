@@ -70,12 +70,12 @@ BEGIN
         BLOCK "040904b0"
         BEGIN
             VALUE "CompanyName", "Intel Corportation"
-            VALUE "FileDescription", "Intel® Media SDK Rotation Plug-in Sample"
+            VALUE "FileDescription", "Rotation Plug-in Sample"
             VALUE "FileVersion", "1, 0, 0, 0"
             VALUE "InternalName", "sample_rotate_plugin.dll"
-            VALUE "LegalCopyright", "Copyright© 2010-2011 Intel Corporation"
+            VALUE "LegalCopyright", "Copyright© 2010-2012 Intel Corporation"
             VALUE "OriginalFilename", "sample_rotate_plugin.dll"
-            VALUE "ProductName", "Intel® Media SDK "
+            VALUE "ProductName", "Intel® Media SDK"
             VALUE "ProductVersion", "1, 0, 0, 0"
         END
     END

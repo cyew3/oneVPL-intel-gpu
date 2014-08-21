@@ -60,7 +60,7 @@ mfxF64 TranscodingSample::GetTime(msdk_tick start)
 
 void TranscodingSample::PrintHelp(const msdk_char *strAppName, const msdk_char *strErrorMessage, ...)
 {
-    msdk_printf(MSDK_STRING("Intel(R) Media SDK Multi Transcoding Sample Version %s\n\n"), MSDK_SAMPLE_VERSION);
+    msdk_printf(MSDK_STRING("Multi Transcoding Sample Version %s\n\n"), MSDK_SAMPLE_VERSION);
 
     if (strErrorMessage)
     {
@@ -312,7 +312,7 @@ mfxStatus CmdProcessor::ParseCmdLine(int argc, msdk_char *argv[])
         ++argv;
     }
 
-    msdk_printf(MSDK_STRING("Intel(R) Media SDK Multi Transcoding Sample Version %s\n\n"), MSDK_SAMPLE_VERSION);
+    msdk_printf(MSDK_STRING("Multi Transcoding Sample Version %s\n\n"), MSDK_SAMPLE_VERSION);
 
     //Read pipeline from par file
     if (m_parName && !argv[0])
