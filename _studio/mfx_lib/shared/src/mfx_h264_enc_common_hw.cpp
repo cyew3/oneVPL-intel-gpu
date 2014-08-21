@@ -5448,6 +5448,9 @@ void MfxVideoParam::Construct(mfxVideoParam const & par)
     if (mfxExtCodingOption3 * opts = GetExtBuffer(par))
         m_extOpt3 = *opts;
 
+    if (mfxExtFeiParam * opts = GetExtBuffer(par))
+        m_extFeiParam = *opts;
+
     m_extParam[0]  = &m_extOpt.Header;
     m_extParam[1]  = &m_extOptSpsPps.Header;
     m_extParam[2]  = &m_extOptPavp.Header;

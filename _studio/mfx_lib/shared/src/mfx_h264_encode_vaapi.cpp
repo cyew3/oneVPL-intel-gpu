@@ -1367,6 +1367,7 @@ bool operator!=(const ENCODE_ENC_CTRL_CAPS& l, const ENCODE_ENC_CTRL_CAPS& r)
 {
     return !(l == r);
 }
+//static int debug_frame_bum = 0;
 
 mfxStatus VAAPIEncoder::Execute(
     mfxHDL          surface,
@@ -1417,6 +1418,8 @@ mfxStatus VAAPIEncoder::Execute(
 
         configBuffers.resize(MAX_CONFIG_BUFFERS_COUNT + m_slice.size()*2);
     }
+    /* for debug only */
+    //fprintf(stderr, "----> Encoding frame = %u, type = %u\n", debug_frame_bum++, ConvertMfxFrameType2SliceType( task.m_type[fieldId]) -5 );
 
     //------------------------------------------------------------------
     // find bitstream
@@ -1459,6 +1462,13 @@ mfxStatus VAAPIEncoder::Execute(
     VABufferID vaFeiMBStatId = VA_INVALID_ID;
     VABufferID vaFeiMVOutId = VA_INVALID_ID;
     VABufferID vaFeiMCODEOutId = VA_INVALID_ID;
+
+    VABufferID* outBuffers = new VABufferID[3];
+    int numOutBufs = 0;
+    outBuffers[0] = VA_INVALID_ID;
+    outBuffers[1] = VA_INVALID_ID;
+    outBuffers[2] = VA_INVALID_ID;
+
     if (m_isENCPAK) 
     {
         int numMB = m_sps.picture_height_in_mbs * m_sps.picture_width_in_mbs;
@@ -1543,8 +1553,8 @@ mfxStatus VAAPIEncoder::Execute(
                     NULL, //should be mapped later
                     &vaFeiMBStatId);
             MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
-            //outBuffers[numOutBufs++] = statMVid;
-            //mdprintf(stderr, "MV bufId=%d\n", vaFeiMBStatId);
+            outBuffers[numOutBufs++] = vaFeiMBStatId;
+            //mdprintf(stderr, "MB Stat bufId=%d\n", vaFeiMBStatId);
             configBuffers[buffersCount++] = vaFeiMBStatId;
         }                
 
@@ -1559,8 +1569,8 @@ mfxStatus VAAPIEncoder::Execute(
                     NULL, //should be mapped later
                     &vaFeiMVOutId);
             MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
-            //outBuffers[numOutBufs++] = statMVid;
-            //mdprintf(stderr, "MV bufId=%d\n", vaFeiMBStatId);
+            outBuffers[numOutBufs++] = vaFeiMVOutId;
+            //mdprintf(stderr, "MV Out bufId=%d\n", vaFeiMVOutId);
             configBuffers[buffersCount++] = vaFeiMVOutId;
         }                
         
@@ -1575,8 +1585,8 @@ mfxStatus VAAPIEncoder::Execute(
                     NULL, //should be mapped later
                     &vaFeiMCODEOutId);
             MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
-            //outBuffers[numOutBufs++] = statMVid;
-            //mdprintf(stderr, "MV bufId=%d\n", vaFeiMBStatId);
+            outBuffers[numOutBufs++] = vaFeiMCODEOutId;
+            //mdprintf(stderr, "MCODE Out bufId=%d\n", vaFeiMCODEOutId);
             configBuffers[buffersCount++] = vaFeiMCODEOutId;
         }                
 

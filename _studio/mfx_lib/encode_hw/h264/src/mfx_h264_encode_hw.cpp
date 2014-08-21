@@ -655,6 +655,7 @@ ImplementationAvc::ImplementationAvc(VideoCORE * core)
 , m_enabledSwBrc(false)
 , m_maxBsSize(0)
 , m_NumSlices(0)
+, m_isENCPAK(false)
 {
 /*
     FEncLog = fopen("EncLog.txt", "wb");
@@ -689,6 +690,13 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
 {
     mfxStatus sts = CheckExtBufferId(*par);
     MFX_CHECK_STS(sts);
+
+    mfxExtFeiParam* feiParam = (mfxExtFeiParam*)GetExtBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_FEI_PARAM);
+    m_isENCPAK = feiParam && (feiParam->Func == MFX_FEI_FUNCTION_ENCPAK);
+    if(m_isENCPAK){
+        //force rc to cqp only
+        par->mfx.RateControlMethod = MFX_RATECONTROL_CQP;
+    }
 
     m_video = *par;
     sts = ReadSpsPpsHeaders(m_video);
@@ -1999,7 +2007,27 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
         }
 
         ConfigureTask(*task, m_lastTask, m_video);
-       
+
+        m_lastTask = *task;
+        if(m_isENCPAK){ //temp find better way
+            mfxExtFeiEncMBStat* mbstat = NULL;
+            mfxExtFeiEncMV* mvout = NULL;
+            mfxExtFeiPakMBCtrl* mbcode = NULL;
+            for (int i = 0; i < bs->NumExtParam; i++) {
+                if (bs->ExtParam[i]->BufferId == MFX_EXTBUFF_FEI_ENC_MB_STAT) {
+                    mbstat = (mfxExtFeiEncMBStat*) bs->ExtParam[i];
+                }
+                if (bs->ExtParam[i]->BufferId == MFX_EXTBUFF_FEI_ENC_MV) {
+                    mvout = (mfxExtFeiEncMV*) bs->ExtParam[i];
+                }
+                if (bs->ExtParam[i]->BufferId == MFX_EXTBUFF_FEI_PAK_CTRL) {
+                    mbcode = (mfxExtFeiPakMBCtrl*) bs->ExtParam[i];
+                }
+            }
+            task->m_feiDistortion = (mfxExtBuffer*)mbstat;
+            task->m_feiMVOut = (mfxExtBuffer*)mvout;
+            task->m_feiMBCODEOut = (mfxExtBuffer*)mbcode;
+        }
 
         if (m_video.mfx.RateControlMethod == MFX_RATECONTROL_LA || m_video.mfx.RateControlMethod == MFX_RATECONTROL_LA_ICQ)
         {
