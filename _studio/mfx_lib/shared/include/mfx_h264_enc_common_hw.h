@@ -513,12 +513,12 @@ namespace MfxHwH264Encode
         void ConstructMvcSeqDesc(mfxExtMVCSeqDesc const & desc);
 
     private:
+
 #if defined(MFX_ENABLE_H264_VIDEO_FEI_ENCPAK)
         mfxExtBuffer *              m_extParam[19];
 #else
         mfxExtBuffer *              m_extParam[18];
 #endif
-
         // external, documented
         mfxExtCodingOption          m_extOpt;
         mfxExtCodingOption2         m_extOpt2;
@@ -1286,18 +1286,8 @@ namespace MfxHwH264Encode
         std::vector<ENCODE_PACKEDHEADER_DATA> const & PackSlices(
             DdiTask const & task,
             mfxU32          fieldId);
-
-        std::vector<ENCODE_PACKEDHEADER_DATA> const & PackSlices(
-            DdiTask const                               & task,
-            mfxU32                                      fieldId,
-            std::vector<ENCODE_SET_SLICE_HEADER_H264>   slices );
         
-#if defined(MFX_VA_LINUX)        
-        std::vector<ENCODE_PACKEDHEADER_DATA> const & PackSlices(
-                DdiTask const & task,
-                mfxU32 fieldId,
-                std::vector<VAEncSliceParameterBufferH264> slices);        
-#endif        
+   
 
         ENCODE_PACKEDHEADER_DATA const & PackSkippedSlice(
             DdiTask const & task,

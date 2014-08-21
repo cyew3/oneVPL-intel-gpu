@@ -1371,7 +1371,7 @@ mfxStatus D3D9Encoder::Execute(
         } 
         else
         {
-            std::vector<ENCODE_PACKEDHEADER_DATA> const & packedSlices = m_headerPacker.PackSlices(task, fieldId,m_slice);
+            std::vector<ENCODE_PACKEDHEADER_DATA> const & packedSlices = m_headerPacker.PackSlices(task, fieldId);
             for (size_t i = 0; i < packedSlices.size(); i++)
             {
                 m_compBufDesc[bufCnt].CompressedBufferType = D3DDDIFMT_INTELENCODE_PACKEDSLICEDATA;

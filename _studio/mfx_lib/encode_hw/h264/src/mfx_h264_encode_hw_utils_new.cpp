@@ -2065,6 +2065,7 @@ void AsyncRoutineEmulator::Init(MfxVideoParam const & video)
         break;
     case MFX_RATECONTROL_LA:
     case MFX_RATECONTROL_LA_ICQ:
+    case MFX_RATECONTROL_LA_HRD:
         m_stageGreediness[STG_ACCEPT_FRAME] = 1;
 #if USE_AGOP
         m_stageGreediness[STG_START_AGOP]         = 1; 

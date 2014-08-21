@@ -33,6 +33,8 @@
 #define _MFX_H264_ENCODE_HW_UTILS_H_
 
 #define CLIPVAL(MINVAL, MAXVAL, VAL) (IPP_MAX(MINVAL, IPP_MIN(MAXVAL, VAL)))
+#define bRateControlLA(RCMethod) ((RCMethod == MFX_RATECONTROL_LA)||(RCMethod == MFX_RATECONTROL_LA_ICQ)||(RCMethod == MFX_RATECONTROL_LA_EXT)||(RCMethod == MFX_RATECONTROL_LA_HRD))
+#define bIntRateControlLA(RCMethod) ((RCMethod == MFX_RATECONTROL_LA)||(RCMethod == MFX_RATECONTROL_LA_ICQ)||(RCMethod == MFX_RATECONTROL_LA_HRD))
 
 #if USE_AGOP
 #define MAX_B_FRAMES 10
@@ -1208,7 +1210,7 @@ namespace MfxHwH264Encode
         virtual mfxU8 GetQp(mfxU32 frameType, mfxU32 picStruct) = 0;
         virtual mfxF32 GetFractionalQp(mfxU32 frameType, mfxU32 picStruct) = 0;
         virtual void SetQp(mfxU32 qp, mfxU32 frameType) = 0;
-        virtual mfxU32 Report(mfxU32 frameType, mfxU32 dataLength, mfxU32 userDataLength, mfxU32 repack, mfxU32 picOrder) = 0;
+        virtual mfxU32 Report(mfxU32 frameType, mfxU32 dataLength, mfxU32 userDataLength, mfxU32 repack, mfxU32 picOrder, mfxU32 maxFrameSize, mfxU32 qp) = 0;
         virtual mfxU32 GetMinFrameSize() = 0;
 
         virtual mfxStatus SetFrameVMEData(const mfxExtLAFrameStatistics*, mfxU32 , mfxU32 ) {return MFX_ERR_NONE;} 
@@ -1254,9 +1256,9 @@ namespace MfxHwH264Encode
         {
             m_impl->SetQp(frameType, qp);
         }
-        mfxU32 Report(mfxU32 frameType, mfxU32 dataLength, mfxU32 userDataLength, mfxU32 repack, mfxU32 picOrder)
+        mfxU32 Report(mfxU32 frameType, mfxU32 dataLength, mfxU32 userDataLength, mfxU32 repack, mfxU32 picOrder, mfxU32 maxFrameSize, mfxU32 qp)
         {
-            return m_impl->Report(frameType, dataLength, userDataLength, repack, picOrder);
+            return m_impl->Report(frameType, dataLength, userDataLength, repack, picOrder, maxFrameSize, qp);
         }
         mfxU32 GetMinFrameSize()
         {
@@ -1287,13 +1289,99 @@ namespace MfxHwH264Encode
 
         void PreEnc(mfxU32 frameType, std::vector<VmeData *> const & vmeData, mfxU32 encOrder);
 
-        mfxU32 Report(mfxU32 frameType, mfxU32 dataLength, mfxU32 userDataLength, mfxU32 repack, mfxU32 picOrder);
+        mfxU32 Report(mfxU32 frameType, mfxU32 dataLength, mfxU32 userDataLength, mfxU32 repack, mfxU32 picOrder, mfxU32 maxFrameSize, mfxU32 qp);
 
         mfxU32 GetMinFrameSize();
 
     private:
         UMC::H264BRC m_impl;
         mfxU32 m_lookAhead;
+    };
+
+    class AVGBitrate
+    {
+    public:
+        AVGBitrate(mfxU32 windowSize, mfxU32 maxBitLimitPerFrame):
+            m_maxBitLimit(maxBitLimitPerFrame*windowSize),
+            m_currPosInWindow(0),
+            m_MaxBitReal(0),
+            m_MaxBitReal_temp(0),
+            m_lastFrameOrder(0),
+            m_NumberOfErrors(0)
+        {
+
+            m_slidingWindow.resize(windowSize);
+            Zero(m_slidingWindow);        
+        }
+        virtual ~AVGBitrate() 
+        {
+            //printf("------------ AVG Bitrate: %d ( %d), NumberOfErrors %d\n", m_MaxBitReal, m_MaxBitReal_temp, m_NumberOfErrors);        
+        }
+        void UpdateSlidingWindow(mfxU32  sizeInBits, mfxU32  FrameOrder)
+        {
+            if (FrameOrder != m_lastFrameOrder)
+            {
+                m_lastFrameOrder = FrameOrder;
+                m_currPosInWindow = (m_currPosInWindow + 1) % m_slidingWindow.size();            
+            }
+            m_slidingWindow[m_currPosInWindow] = sizeInBits;
+        }
+        mfxI32 GetBudget(mfxU32 numFrames)
+        {
+            //printf("GetBudget: num %d sum %d (in %d frames), buget in bits %d\n",numFrames, GetLastFrameBits(m_slidingWindow.size() - numFrames), m_slidingWindow.size() - numFrames, m_maxBitLimit - GetLastFrameBits(m_slidingWindow.size() - numFrames));
+            return ((mfxI32)m_maxBitLimit - (mfxI32)GetLastFrameBits((mfxU32)m_slidingWindow.size() - numFrames));        
+        }
+        bool CheckBitrate()
+        {
+            mfxU32 numBits = GetLastFrameBits((mfxU32)m_slidingWindow.size());
+            //printf("AvgBitrate, num bits in window %d\n", numBits);
+            if ( numBits < m_maxBitLimit)
+            {
+                m_MaxBitReal = m_MaxBitReal <  numBits ? numBits : m_MaxBitReal;
+                return true;
+            }
+            else
+            {
+                 m_MaxBitReal_temp = m_MaxBitReal_temp <  numBits ? numBits : m_MaxBitReal_temp;
+                 return false;
+            }
+        }
+        mfxU32 GetWindowSize()
+        {
+            return (mfxU32)m_slidingWindow.size();
+        }
+        void StoreError()
+        {
+            mfxU32 numBits = GetLastFrameBits((mfxU32)m_slidingWindow.size());
+            //printf ("!!!!!!!!!!!!!!!!!!!!!       AVG Bitrate Error, size %d  !!!\n", numBits);
+            m_MaxBitReal = m_MaxBitReal <  numBits ? numBits : m_MaxBitReal;
+            m_NumberOfErrors ++;        
+        }
+
+
+
+    protected:        
+        
+        mfxU32                      m_maxBitLimit;
+        mfxU32                      m_currPosInWindow;
+        mfxU32                      m_MaxBitReal;
+        mfxU32                      m_MaxBitReal_temp;
+        mfxU32                      m_lastFrameOrder;
+        mfxU32                      m_NumberOfErrors;
+        std::vector<mfxU32>         m_slidingWindow;
+        
+
+        mfxU32 GetLastFrameBits(mfxU32 numFrames)
+        {
+            mfxU32 size = 0;
+            numFrames = numFrames < m_slidingWindow.size() ? numFrames : (mfxU32)m_slidingWindow.size() ;
+            for(mfxU32 i = 0; i < numFrames; i ++)
+            {
+                size += m_slidingWindow[(m_currPosInWindow + m_slidingWindow.size() - i) % m_slidingWindow.size() ];
+                //printf("GetLastFrames: %d) %d sum %d\n",i,m_slidingWindow[(m_currPosInWindow + m_slidingWindow.size() - i) % m_slidingWindow.size() ], size);
+            }
+            return size;
+        }
     };
 
     class LookAheadBrc2 : public BrcIface
@@ -1303,19 +1391,19 @@ namespace MfxHwH264Encode
 
         void Init(MfxVideoParam const & video);
 
-        void Close() {}
+        void Close();
 
         mfxU8 GetQp(mfxU32 frameType, mfxU32 picStruct);
 
         mfxF32 GetFractionalQp(mfxU32 /*frameType*/, mfxU32 /*picStruct*/) { assert(0); return 26.0f; }
 
-        void SetQp(mfxU32 /*qp*/, mfxU32 /*frameType*/) { assert(0); }
 
         void PreEnc(mfxU32 frameType, std::vector<VmeData *> const & vmeData, mfxU32 encOrder);
 
-        mfxU32 Report(mfxU32 frameType, mfxU32 dataLength, mfxU32 userDataLength, mfxU32 repack, mfxU32 picOrder);
+        mfxU32 Report(mfxU32 frameType, mfxU32 dataLength, mfxU32 userDataLength, mfxU32 repack, mfxU32 picOrder, mfxU32 maxFrameSize, mfxU32 qp);
 
         mfxU32 GetMinFrameSize() { return 0; }
+        void  SetQp(mfxU32 qp, mfxU32 frameType);
 
 
     public:
@@ -1347,6 +1435,14 @@ namespace MfxHwH264Encode
         mfxI32  m_curQp;
         mfxU16  m_qpUpdateRange;
         mfxF32  m_coef;
+        mfxF64  m_fr;
+        mfxU16  m_AsyncDepth;
+        mfxU16  m_first;
+
+        
+
+        bool        m_bControlMaxFrame;
+        AVGBitrate* m_AvgBitrate;
 
         std::vector<LaFrameData>    m_laData;
         Regression<20>              m_rateCoeffHistory[52];
@@ -1369,7 +1465,7 @@ namespace MfxHwH264Encode
 
         void PreEnc(mfxU32 frameType, std::vector<VmeData *> const & vmeData, mfxU32 encOrder);
 
-        mfxU32 Report(mfxU32 frameType, mfxU32 dataLength, mfxU32 userDataLength, mfxU32 repack, mfxU32 picOrder);
+        mfxU32 Report(mfxU32 frameType, mfxU32 dataLength, mfxU32 userDataLength, mfxU32 repack, mfxU32 picOrder, mfxU32 maxFrameSize, mfxU32 qp);
 
         mfxU32 GetMinFrameSize() { return 0; }
 
@@ -1426,7 +1522,7 @@ namespace MfxHwH264Encode
 
         void PreEnc(mfxU32 frameType, std::vector<VmeData *> const & vmeData, mfxU32 encOrder);
 
-        mfxU32 Report(mfxU32 frameType, mfxU32 dataLength, mfxU32 userDataLength, mfxU32 repack, mfxU32 picOrder);
+        mfxU32 Report(mfxU32 frameType, mfxU32 dataLength, mfxU32 userDataLength, mfxU32 repack, mfxU32 picOrder, mfxU32 maxFrameSize, mfxU32 qp);
 
         mfxU32 GetMinFrameSize() { return 0; }
 
@@ -1455,6 +1551,7 @@ namespace MfxHwH264Encode
         mfxU32 GetInitCpbRemovalDelay() const;
 
         mfxU32 GetInitCpbRemovalDelayOffset() const;
+        mfxU32 GetMaxFrameSize(mfxU32 bufferingPeriod) const;
 
     private:
         mfxU32 m_bitrate;

@@ -110,6 +110,7 @@ MFXTranscodingPipeline::MFXTranscodingPipeline(IMFXPipelineFactory *pFactory)
 , m_applyJpegParams(&MFXTranscodingPipeline::ApplyJpegParams, this)
 , m_extCodingOptions(new mfxExtCodingOption())
 , m_extCodingOptions2(new mfxExtCodingOption2())
+, m_extCodingOptions3(new mfxExtCodingOption3())
 , m_extCodingOptionsDDI(new mfxExtCodingOptionDDI())
 , m_extCodingOptionsQuantMatrix(new mfxExtCodingOptionQuantMatrix())
 , m_extDumpFiles(new mfxExtDumpFiles())
@@ -1332,7 +1333,8 @@ mfxStatus MFXTranscodingPipeline::ApplyBitrateParams()
 
     //however VBR mode set only if maxbitrate is higher or rate control specified directly
     if (pMFXParams->mfx.MaxKbps > pMFXParams->mfx.TargetKbps &&
-        pMFXParams->mfx.RateControlMethod != MFX_RATECONTROL_VCM)
+        pMFXParams->mfx.RateControlMethod != MFX_RATECONTROL_VCM &&
+        pMFXParams->mfx.RateControlMethod != MFX_RATECONTROL_LA_HRD)
     {
         pMFXParams->mfx.RateControlMethod = MFX_RATECONTROL_VBR;
     }
@@ -1350,6 +1352,11 @@ mfxStatus MFXTranscodingPipeline::ApplyBitrateParams()
         pMFXParams->mfx.RateControlMethod = MFX_RATECONTROL_AVBR;
         pMFXParams->mfx.Accuracy = m_Accuracy;
         pMFXParams->mfx.Convergence = m_Convergence;
+    }
+    if ((m_WinBRCMaxAvgBps || m_WinBRCSize) && (pMFXParams->mfx.RateControlMethod == MFX_RATECONTROL_LA || pMFXParams->mfx.RateControlMethod == MFX_RATECONTROL_LA_HRD))
+    {
+        m_extCodingOptions3->WinBRCSize  = m_WinBRCSize;
+        m_extCodingOptions3->WinBRCMaxAvgKbps = (mfxU16)IPP_MIN(65535, m_WinBRCMaxAvgBps/1000);    
     }
 
     if (m_ICQQuality || pMFXParams->mfx.RateControlMethod == MFX_RATECONTROL_ICQ || pMFXParams->mfx.RateControlMethod == MFX_RATECONTROL_LA_ICQ)
