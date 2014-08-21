@@ -20,7 +20,7 @@ Mapping of mfxTraceStaticHandle:
     sd7 - mfxTraceTick - for standard deviation calculation
 
 Mapping of mfxTraceTaskHandle:
-    sd5 - mfxTraceTick - task start tick
+    sd1 - mfxTraceTick - task start tick
 
 *********************************************************************************/
 

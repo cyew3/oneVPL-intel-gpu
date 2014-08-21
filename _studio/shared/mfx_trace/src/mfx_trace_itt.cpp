@@ -10,6 +10,12 @@ Copyright(c) 2012-2013 Intel Corporation. All Rights Reserved.
 
 File: mfx_trace_itt.cpp
 
+Mapping of mfxTraceStaticHandle:
+    itt1 - void* - string handle for the task
+
+Mapping of mfxTraceTaskHandle:
+    itt1 - UINT32 - task is traced
+
 *********************************************************************************/
 
 #include "mfx_trace.h"
@@ -91,18 +97,33 @@ mfxTraceU32 MFXTraceITT_vDebugMessage(mfxTraceStaticHandle* //static_handle
 
 /*------------------------------------------------------------------------------*/
 
-mfxTraceU32 MFXTraceITT_BeginTask(mfxTraceStaticHandle * //static_handle
+mfxTraceU32 MFXTraceITT_BeginTask(mfxTraceStaticHandle *static_handle
                                 ,const char * //file_name
                                 ,mfxTraceU32 //line_num
-                                ,const char *//function_name
+                                ,const char * //function_name
                                 ,mfxTraceChar* //category
-                                ,mfxTraceLevel //level
+                                ,mfxTraceLevel level
                                 ,const char * task_name
-                                ,mfxTraceTaskHandle* //handle
+                                ,mfxTraceTaskHandle *handle
                                 ,const void * /*task_params*/)
 {
-    __itt_string_handle *pSH = __itt_string_handle_create(task_name);
-    __itt_task_begin(GetDomain(), __itt_null, __itt_null, pSH);
+    if (!static_handle || !handle) return 1;
+
+    if (MFX_TRACE_LEVEL_API == level ||
+        MFX_TRACE_LEVEL_INTERNAL_VTUNE == level)
+    {
+        // cache string handle across task instances
+        if (NULL == static_handle->itt1.ptr)
+        {
+            static_handle->itt1.ptr = __itt_string_handle_create(task_name);
+        }
+
+        // task is traced
+        handle->itt1.uint32 = 1;
+
+        __itt_task_begin(GetDomain(), __itt_null, __itt_null,
+            (__itt_string_handle*)static_handle->itt1.ptr);
+    }
 
     return 0;
 }
@@ -110,10 +131,13 @@ mfxTraceU32 MFXTraceITT_BeginTask(mfxTraceStaticHandle * //static_handle
 /*------------------------------------------------------------------------------*/
 
 mfxTraceU32 MFXTraceITT_EndTask(mfxTraceStaticHandle * //static_handle
-                                ,mfxTraceTaskHandle * //handle
+                                ,mfxTraceTaskHandle *handle
                                 )
 {
-    __itt_task_end(GetDomain());
+    if (!handle) return 1;
+
+    if (1 == handle->itt1.uint32) __itt_task_end(GetDomain());
+
     return 0;
 }
 

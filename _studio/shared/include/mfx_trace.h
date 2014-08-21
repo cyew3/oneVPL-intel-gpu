@@ -111,6 +111,8 @@ typedef enum
 #define MFX_TRACE_LEVEL_DXVA        MFX_TRACE_LEVEL_5
 #define MFX_TRACE_LEVEL_PARAMS      MFX_TRACE_LEVEL_8
 #define MFX_TRACE_LEVEL_PRIVATE     MFX_TRACE_LEVEL_16
+#define MFX_TRACE_LEVEL_INTERNAL_VTUNE    MFX_TRACE_LEVEL_6
+
 
 // defines default trace category
 #define MFX_TRACE_CATEGORY_DEFAULT  NULL
@@ -155,6 +157,8 @@ typedef struct
     mfxTraceHandle sd5;
     mfxTraceHandle sd6;
     mfxTraceHandle sd7;
+    // reserved for itt
+    mfxTraceHandle itt1;
 } mfxTraceStaticHandle;
 
 typedef struct
@@ -171,6 +175,8 @@ typedef struct
     // reserved for ETW:
     mfxTraceHandle etw1;
     mfxTraceHandle etw2;
+    // reserved for itt
+    mfxTraceHandle itt1;
 } mfxTraceTaskHandle;
 
 /*------------------------------------------------------------------------------*/
@@ -393,10 +399,10 @@ private:
     _MFX_AUTO_LTRACE_(MFX_TRACE_LEVEL, _task_name, false)
 
 #define MFX_AUTO_TRACE_FUNC() \
-    _MFX_AUTO_LTRACE_(MFX_TRACE_LEVEL, NULL, false)
+    _MFX_AUTO_LTRACE_(MFX_TRACE_LEVEL, __FUNCTION__, false)
 
 #define MFX_AUTO_LTRACE_FUNC(_level) \
-    _MFX_AUTO_LTRACE_(_level, NULL, false)
+    _MFX_AUTO_LTRACE_(_level, __FUNCTION__, false)
 
 #define MFX_AUTO_LTRACE_WITHID(_level, _task_name)     \
     _MFX_AUTO_LTRACE_(_level, _task_name, true)

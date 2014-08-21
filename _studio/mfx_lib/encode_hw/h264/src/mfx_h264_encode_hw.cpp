@@ -1784,7 +1784,7 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
     mfxExtCodingOptionDDI const * extDdi = GetExtBuffer(m_video);
     mfxExtCodingOption2    const * extOpt2 = GetExtBuffer(m_video);
 
-    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "Avc::Async");
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL_VTUNE, "Avc::Async");
 
 
 #if USE_AGOP
@@ -1960,7 +1960,7 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
 
     if (m_stagesToGo & AsyncRoutineEmulator::STG_BIT_START_LA)
     {
-        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "Avc::START_LA");
+        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL_VTUNE, "Avc::START_LA");
         bool gopStrict = !!(m_video.mfx.GopOptFlag & MFX_GOP_STRICT);
 
         DdiTaskIter task = (m_video.mfx.EncodedOrder)
@@ -2074,7 +2074,7 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
 
     if (m_stagesToGo & AsyncRoutineEmulator::STG_BIT_WAIT_LA)
     {
-        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "Avc::WAIT_LA");
+        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL_VTUNE, "Avc::WAIT_LA");
         if (bIntRateControlLA(m_video.mfx.RateControlMethod))
             if (!QueryLookahead(m_lookaheadStarted.front()))
                 return MFX_TASK_BUSY;
@@ -2101,7 +2101,7 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
 
         //char task_name [40];
         //sprintf(task_name,"Avc::START_ENCODE (%d) - %x", task->m_encOrder, task->m_yuv);
-        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "Avc::START_ENCODE");
+        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL_VTUNE, "Avc::START_ENCODE");
 
         Hrd hrd = m_hrd; // tmp copy
 
