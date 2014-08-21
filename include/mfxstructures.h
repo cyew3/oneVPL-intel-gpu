@@ -446,8 +446,9 @@ enum {
     MFX_RATECONTROL_VCM       =10,
     MFX_RATECONTROL_LA_ICQ    =11,
     MFX_RATECONTROL_LA_EXT    =12,
-    MFX_RATECONTROL_VME       =13,
-    MFX_RATECONTROL_QVBR      =14
+    MFX_RATECONTROL_LA_HRD     = 13,
+    MFX_RATECONTROL_VME       =14,
+    MFX_RATECONTROL_QVBR      =15
 };
 
 /* Trellis control*/
@@ -557,7 +558,8 @@ typedef struct {
     mfxU16      NumSliceI;
     mfxU16      NumSliceP;
     mfxU16      NumSliceB;
-    mfxU16      reserved2[2];
+    mfxU16      WinBRCMaxAvgKbps;
+    mfxU16      WinBRCSize;
     mfxU16      QVBRQuality;
     mfxU16      reserved[246];
 } mfxExtCodingOption3;
