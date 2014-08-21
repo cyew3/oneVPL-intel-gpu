@@ -163,6 +163,57 @@ protected:
 };
 
 template <>
+class BSConvert<MFX_FOURCC_NV16, MFX_FOURCC_NV16>
+    : public BSConvertBase<MFX_FOURCC_NV16, MFX_FOURCC_NV16>
+{
+    IMPLEMENT_CLONE(BSConvert<MFX_FOURCC_NV16 MFX_PP_COMMA() MFX_FOURCC_NV16>);
+
+public:
+    virtual mfxStatus Transform(mfxBitstream * bs, mfxFrameSurface1 *surface)
+    {
+        mfxFrameData &data = surface->Data;
+        mfxFrameInfo &info = surface->Info;
+
+#if defined(LINUX32) || defined (LINUX64)
+        // on Windows surfaces comes zero-initialized, on Linux have to clear non-aligned stream boundaries
+        memset(data.Y, 0, info.Width * info.Height);
+        memset(data.UV, 0, info.Width * info.Height / 2);
+#endif
+
+        MFX_CHECK_STS(BSConverterUtil::TransFormY(bs, surface));
+
+        mfxU32 planeSize;
+        mfxU32 w, h, pitch;
+        mfxU8  *ptr;
+
+        w = info.CropW;
+        h = info.CropH;
+        pitch = data.PitchLow + ((mfxU32)data.PitchHigh << 16);
+        ptr = data.UV + info.CropX + info.CropY * pitch;
+
+        // load UV
+        if (pitch == w)
+        {
+            //we can read whole plane directly to surface
+            planeSize  = w * h;
+            MFX_CHECK_WITH_ERR(planeSize == BSUtil::MoveNBytes(ptr, bs, planeSize), MFX_ERR_MORE_DATA);
+        }
+        else
+        {
+            for (mfxU32 i = 0; i < h; i++)
+            {
+                MFX_CHECK_WITH_ERR(w == BSUtil::MoveNBytes(ptr + i * pitch, bs, w), MFX_ERR_MORE_DATA);
+            }
+        }
+
+        return MFX_ERR_NONE;
+    }
+
+protected:
+
+};
+
+template <>
 class BSConvert<MFX_FOURCC_R16, MFX_FOURCC_R16>
     : public BSConvertBase<MFX_FOURCC_R16, MFX_FOURCC_R16>
 {
@@ -203,6 +254,72 @@ class BSConvert<MFX_FOURCC_P010, MFX_FOURCC_P010>
     : public BSConvertBase<MFX_FOURCC_P010, MFX_FOURCC_P010>
 {
     IMPLEMENT_CLONE(BSConvert<MFX_FOURCC_P010 MFX_PP_COMMA() MFX_FOURCC_P010>);
+
+public:
+    virtual mfxStatus Transform(mfxBitstream * bs, mfxFrameSurface1 *surface)
+    {
+        mfxFrameData &data = surface->Data;
+        mfxFrameInfo &info = surface->Info;
+
+#if defined(LINUX32) || defined (LINUX64)
+        // on Windows surfaces comes zero-initialized, on Linux have to clear non-aligned stream boundaries
+        memset(data.Y, 0, info.Width * info.Height * 2);
+        memset(data.UV, 0, info.Width * info.Height );
+#endif
+
+        mfxU32 planeSize;
+        mfxU32 w, h, pitch;
+        mfxU8  *ptr;
+
+        w = info.CropW * 2;
+        h = info.CropH;
+        pitch = data.PitchLow + ((mfxU32)data.PitchHigh << 16);
+
+        // load Y
+        ptr = data.Y + info.CropX + (info.CropY >> 1) * pitch;
+        if (pitch == w)
+        {
+            //we can read whole plane directly to surface
+            planeSize  = w * h;
+            MFX_CHECK_WITH_ERR(planeSize == BSUtil::MoveNBytes(ptr, bs, planeSize), MFX_ERR_MORE_DATA);
+        }
+        else
+        {
+            for (mfxU32 i = 0; i < h; i++)
+            {
+                MFX_CHECK_WITH_ERR(w == BSUtil::MoveNBytes(ptr + i * pitch, bs, w), MFX_ERR_MORE_DATA);
+            }
+        }
+
+        // load UV
+        h = info.CropH >> 1;
+        ptr = data.UV + info.CropX + (info.CropY >> 1) * pitch;
+        if (pitch == w)
+        {
+            //we can read whole plane directly to surface
+            planeSize  = w * h;
+            MFX_CHECK_WITH_ERR(planeSize == BSUtil::MoveNBytes(ptr, bs, planeSize), MFX_ERR_MORE_DATA);
+        }
+        else
+        {
+            for (mfxU32 i = 0; i < h; i++) 
+            {
+                MFX_CHECK_WITH_ERR(w == BSUtil::MoveNBytes(ptr + i * pitch, bs, w ), MFX_ERR_MORE_DATA);
+            }
+        }
+
+        return MFX_ERR_NONE;
+    }
+
+protected:
+
+};
+
+template <>
+class BSConvert<MFX_FOURCC_P210, MFX_FOURCC_P210>
+    : public BSConvertBase<MFX_FOURCC_P210, MFX_FOURCC_P210>
+{
+    IMPLEMENT_CLONE(BSConvert<MFX_FOURCC_P210 MFX_PP_COMMA() MFX_FOURCC_P210>);
     
 public:
     virtual mfxStatus Transform(mfxBitstream * bs, mfxFrameSurface1 *surface)
@@ -241,7 +358,7 @@ public:
         }
 
         // load UV
-        h = info.CropH >> 1;
+        h = info.CropH;
         ptr = data.UV + info.CropX + (info.CropY >> 1) * pitch;
         if (pitch == w)
         {

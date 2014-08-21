@@ -469,6 +469,23 @@ mfxStatus MFXFileWriteRender::WriteSurface(mfxFrameSurface1 * pConvertedSurface)
             }
             break;
         }
+        case MFX_FOURCC_P210:
+        {
+            m_Current.m_comp = VM_STRING('Y');
+            m_Current.m_pixX = 0;
+            for (i = 0; i < pInfo->CropH; i++)
+            {
+                m_Current.m_pixY = i;
+                WRITE(pData->Y + (pInfo->CropY * pitch + pInfo->CropX)+ i * pitch, pInfo->CropW * 2);
+            }
+            m_Current.m_comp = VM_STRING('U');
+            for (i = 0; i < pInfo->CropH; i++)
+            {
+                m_Current.m_pixY = i;
+                WRITE(pData->UV + (pInfo->CropY * pitch / 2 + pInfo->CropX) + i * pitch, pInfo->CropW * 2);
+            }
+            break;
+        }
         case MFX_FOURCC_ARGB16:
         {
             mfxU8 *plane = pData->B + pInfo->CropX * 4 + pInfo->CropY * pitch;
@@ -535,6 +552,23 @@ mfxStatus MFXFileWriteRender::WriteSurface(mfxFrameSurface1 * pConvertedSurface)
                 m_Current.m_pixY = i;
                 MFX_CHECK_STS(PutData(plane, pInfo->CropW * 2));
                 plane += pitch;
+            }
+            break;
+        }
+        case MFX_FOURCC_NV16:
+        {
+            m_Current.m_comp = VM_STRING('Y');
+            m_Current.m_pixX = 0;
+            for (i = 0; i < pInfo->CropH; i++)
+            {
+                m_Current.m_pixY = i;
+                WRITE(pData->Y + (pInfo->CropY * pitch + pInfo->CropX)+ i * pitch, pInfo->CropW);
+            }
+            m_Current.m_comp = VM_STRING('U');
+            for (i = 0; i < pInfo->CropH; i++)
+            {
+                m_Current.m_pixY = i;
+                WRITE(pData->UV + (pInfo->CropY * pitch / 2 + pInfo->CropX) + i * pitch, pInfo->CropW);
             }
             break;
         }
