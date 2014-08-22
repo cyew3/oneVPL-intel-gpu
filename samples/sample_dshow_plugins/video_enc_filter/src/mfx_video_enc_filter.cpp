@@ -77,7 +77,7 @@ HRESULT CEncVideoFilter::DeliverBitstream(mfxBitstream* pBS)
     if (m_pAdapter)
     {
         hr = m_pAdapter->Adapt(*pBS);
-        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, E_UNEXPECTED);
+        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, (int)E_UNEXPECTED);
 
         pOutSample->SetSyncPoint(m_pAdapter->IsKeyFrame(*pBS));
         CHECK_RESULT_P_RET(hr, S_OK);
@@ -131,20 +131,20 @@ HRESULT CEncVideoFilter::CompleteConnect(PIN_DIRECTION direction, IPin *pReceive
         MFXFrameAllocator *pMfxAlloc = NULL;
 
         hr = m_pInput->GetAllocator(&alloc.p);
-        MSDK_CHECK_RESULT(hr, S_OK, E_FAIL);
+        MSDK_CHECK_RESULT(hr, S_OK, (int)E_FAIL);
 
         CComQIPtr<IMFXAllocator> mfxalloc(alloc);
         if (NULL != mfxalloc)
         {
             hr = mfxalloc->GetMfxFrameAllocator(&pMfxAlloc);
-            MSDK_CHECK_RESULT(hr, S_OK, E_FAIL);
+            MSDK_CHECK_RESULT(hr, S_OK, (int)E_FAIL);
 
-            MSDK_CHECK_RESULT(m_pEncoder->SetExtFrameAllocator(pMfxAlloc), MFX_ERR_NONE, E_FAIL);
+            MSDK_CHECK_RESULT(m_pEncoder->SetExtFrameAllocator(pMfxAlloc), MFX_ERR_NONE, (int)E_FAIL);
         }
     }
 
     hr = CTransformFilter::CompleteConnect(direction, pReceivePin);
-    MSDK_CHECK_RESULT(hr, S_OK, E_FAIL);
+    MSDK_CHECK_RESULT(hr, S_OK, (int)E_FAIL);
 
     // reconnect the output pin if it is connected during input pin connection final stage
     if (PINDIR_INPUT == direction && m_pOutput && m_pOutput->IsConnected())
@@ -178,7 +178,7 @@ HRESULT CEncVideoFilter::Receive(IMediaSample* pSample)
     MSDK_CHECK_POINTER(pSample, S_OK);
 
     // check if the process has stopped
-    MSDK_CHECK_ERROR(m_bStop, TRUE, E_FAIL);
+    MSDK_CHECK_ERROR(m_bStop, TRUE, (int)E_FAIL);
 
     mfxIMPL impl;
     m_pEncoder->QueryIMPL(&impl);
@@ -236,10 +236,10 @@ HRESULT CEncVideoFilter::Receive(IMediaSample* pSample)
         if (MFX_ERR_NONE != sts && pSink)
             pSink->Notify(EC_ERRORABORT, 0, 0);
 
-        MSDK_CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, E_FAIL, MSDK_SAFE_DELETE(pmfxSurface));
+        MSDK_CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, (int)E_FAIL, MSDK_SAFE_DELETE(pmfxSurface));
 
         hr = pSample->GetPointer(&pBuffer);
-        MSDK_CHECK_RESULT_SAFE(hr, S_OK, E_FAIL, MSDK_SAFE_DELETE(pmfxSurface));
+        MSDK_CHECK_RESULT_SAFE(hr, S_OK, (int)E_FAIL, MSDK_SAFE_DELETE(pmfxSurface));
 
         // find out the frame height at connection
         // to correctly handle the case when we are connected with H and cropH != H
@@ -374,7 +374,7 @@ HRESULT CEncVideoFilter::StartStreaming(void)
     m_FramesReceived = 0;
 
     sts = m_pEncoder->Init(&m_mfxParamsVideo, &m_mfxParamsVPP, this);
-    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, E_FAIL);
+    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, (int)E_FAIL);
 
     WriteMfxImplToRegistry();
 
@@ -500,7 +500,7 @@ HRESULT CEncVideoFilter::CheckInputType(const CMediaType* mtIn)
 
     MSDK_CHECK_POINTER(mtIn, E_POINTER);
 
-    MSDK_CHECK_NOT_EQUAL(*mtIn->Type(), MEDIATYPE_Video, VFW_E_INVALIDMEDIATYPE);
+    MSDK_CHECK_NOT_EQUAL(*mtIn->Type(), MEDIATYPE_Video, (int)VFW_E_INVALIDMEDIATYPE);
 
     guidFormat = *mtIn->FormatType();
 
@@ -568,7 +568,7 @@ HRESULT CEncVideoFilter::CheckInputType(const CMediaType* mtIn)
     sts = DARtoPAR(pvi.dwPictAspectRatioX, pvi.dwPictAspectRatioY,
         m_mfxParamsVideo.mfx.FrameInfo.CropW, m_mfxParamsVideo.mfx.FrameInfo.CropH,
         &m_mfxParamsVideo.mfx.FrameInfo.AspectRatioW, &m_mfxParamsVideo.mfx.FrameInfo.AspectRatioH);
-    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, E_FAIL);
+    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, (int)E_FAIL);
 
     MSDK_CHECK_POINTER(m_pTimeManager, E_OUTOFMEMORY);
 
@@ -618,7 +618,7 @@ HRESULT CEncVideoFilter::CheckInputType(const CMediaType* mtIn)
     sts = DARtoPAR(pvi.dwPictAspectRatioX, pvi.dwPictAspectRatioY,
         m_mfxParamsVideo.mfx.FrameInfo.CropW, m_mfxParamsVideo.mfx.FrameInfo.CropH,
         &m_mfxParamsVideo.mfx.FrameInfo.AspectRatioW, &m_mfxParamsVideo.mfx.FrameInfo.AspectRatioH);
-    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, E_FAIL);
+    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, (int)E_FAIL);
 
     // this enables deinterlacing if necessary
     m_mfxParamsVideo.mfx.FrameInfo.PicStruct = MFX_PICSTRUCT_PROGRESSIVE;
@@ -643,7 +643,7 @@ HRESULT CEncVideoFilter::GetMediaType(int iPosition, CMediaType* pMediaType)
 
     MSDK_CHECK_POINTER(pMediaType, E_POINTER);
     MSDK_CHECK_POINTER(m_pInput,   E_POINTER);
-    MSDK_CHECK_ERROR(m_pInput->IsConnected(), FALSE, E_UNEXPECTED);
+    MSDK_CHECK_ERROR(m_pInput->IsConnected(), FALSE, (int)E_UNEXPECTED);
 
     if (iPosition < 0)
     {
