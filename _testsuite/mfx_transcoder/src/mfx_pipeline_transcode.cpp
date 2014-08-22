@@ -1334,7 +1334,8 @@ mfxStatus MFXTranscodingPipeline::ApplyBitrateParams()
     //however VBR mode set only if maxbitrate is higher or rate control specified directly
     if (pMFXParams->mfx.MaxKbps > pMFXParams->mfx.TargetKbps &&
         pMFXParams->mfx.RateControlMethod != MFX_RATECONTROL_VCM &&
-        pMFXParams->mfx.RateControlMethod != MFX_RATECONTROL_LA_HRD)
+        pMFXParams->mfx.RateControlMethod != MFX_RATECONTROL_LA_HRD &&
+        pMFXParams->mfx.RateControlMethod != MFX_RATECONTROL_QVBR)
     {
         pMFXParams->mfx.RateControlMethod = MFX_RATECONTROL_VBR;
     }
