@@ -304,7 +304,10 @@ mfxStatus D3DFrameAllocator::AllocImpl(mfxFrameAllocRequest *request, mfxFrameAl
             dxMidPtrs[i] = &dxMids[i];
         }
     } else {
-        std::auto_ptr<IDirect3DSurface9*> dxSrf(new IDirect3DSurface9*[request->NumFrameSuggested]);
+        safe_array<IDirect3DSurface9*> dxSrf(new IDirect3DSurface9*[request->NumFrameSuggested]);
+        if (!dxSrf.get())
+            return MFX_ERR_MEMORY_ALLOC;
+
         hr = videoService->CreateSurface(request->Info.Width, request->Info.Height, request->NumFrameSuggested - 1,  format,
                                             D3DPOOL_DEFAULT, m_surfaceUsage, target, dxSrf.get(), NULL);
 
