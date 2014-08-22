@@ -5,11 +5,11 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following 
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("Intel® Media SDK Tracer")]
+[assembly: AssemblyTitle("SDK Tracer")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Intel Corporation")]
-[assembly: AssemblyProduct("Intel® Media SDK")]
+[assembly: AssemblyProduct("SDK Tracer")]
 [assembly: AssemblyCopyright("Copyright© 2011-2012 Intel Corporation")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]

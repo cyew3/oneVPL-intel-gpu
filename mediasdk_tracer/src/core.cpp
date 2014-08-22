@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2009-2013 Intel Corporation. All Rights Reserved.
+Copyright(c) 2009-2014 Intel Corporation. All Rights Reserved.
 
 File Name: core.cpp
 
@@ -179,6 +179,20 @@ mfxStatus MFXVideoCORE_SyncOperation(mfxSession session, mfxSyncPoint syncp, mfx
             case VPP:
                 RECORD_POINTERS(dump_format_wprefix(fd, level, 1,TEXT("vpp.SyncOperation.syncp=0x"),TEXT("%p"), sp->sync_point));
                 dump_mfxFrameSurface1(fd, level, TEXT("vpp.SyncOperation.out"),sp->output.out);
+                dump_format_wprefix(fd, level, 1,TEXT("vpp.SyncOperation.wait="),TEXT("%u"),wait);
+                if (wait == INFINITE)
+                {
+                    dump_format_wprefix(fd, level, 1,TEXT("vpp.SyncOperation.wait=INFINITE"),TEXT(""));
+                }else
+                {
+                    dump_format_wprefix(fd, level, 1,TEXT("vpp.SyncOperation.wait="),TEXT("%u"),wait);
+                }
+                dump_mfxStatus(fd, level, TEXT("vpp.SyncOperation"),sp->sts);
+
+                break;
+            case VPPEX:
+                RECORD_POINTERS(dump_format_wprefix(fd, level, 1,TEXT("vpp.SyncOperation.syncp=0x"),TEXT("%p"), sp->sync_point));
+                dump_mfxFrameSurface1(fd, level, TEXT("*(vpp.SyncOperation.ppOut)"),*(sp->output.ppOut));
                 dump_format_wprefix(fd, level, 1,TEXT("vpp.SyncOperation.wait="),TEXT("%u"),wait);
                 if (wait == INFINITE)
                 {

@@ -190,6 +190,7 @@
     <ClCompile Include="src\core.cpp" />
     <ClCompile Include="src\decode.cpp" />
     <ClCompile Include="src\dump.cpp" />
+    <ClCompile Include="src\enc.cpp" />
     <ClCompile Include="src\encode.cpp" />
     <ClCompile Include="src\etl_processor.cpp" />
     <ClCompile Include="src\etw_event.cpp" />

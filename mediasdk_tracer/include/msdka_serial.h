@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2009-2013 Intel Corporation. All Rights Reserved.
+Copyright(c) 2009-2014 Intel Corporation. All Rights Reserved.
 
 File Name: msdka_serial.h
 
@@ -55,7 +55,8 @@ void dump_mfxIMPL(FILE *fd, int level, TCHAR *prefix, mfxIMPL impl);
 void dump_mfxPriority(FILE *fd, int level, TCHAR *prefix, mfxPriority priority);
 //prefix constants stored separately
 void dump_format_wprefix(FILE *fd, int level, int nprefix, TCHAR *format,...);
-
+void dump_mfxENCInput(FILE *fd, int level, TCHAR *prefix, mfxENCInput *in);
+void dump_mfxENCOutput(FILE *fd, int level, TCHAR *prefix, mfxENCOutput *out);
 
 //////////////////////////////////////////////////////////////////////////
 ///desialization

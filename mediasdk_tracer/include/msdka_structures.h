@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2009-2013 Intel Corporation. All Rights Reserved.
+Copyright(c) 2009-2014 Intel Corporation. All Rights Reserved.
 
 File Name: msdka_structures.h
 
@@ -18,13 +18,17 @@ File Name: msdka_structures.h
 #include <tchar.h>
 #include "mfxvideo.h"
 #include "mfxplugin.h"
+#include "mfxenc.h"
+#include "mfxla.h"
 #include <vector>
 
 
 enum   Component {
     DECODE  = 0x1,
     ENCODE  = 0x2,
+    ENC     = 0x3,
     VPP     = 0x4,
+    VPPEX   = 0x5,
 };
 
 enum   Direction{
@@ -70,7 +74,7 @@ struct AnalyzerSession {
             , last_async_tick()
         {
         }
-    } encode, decode, vpp;
+    } encode, enc, decode, vpp;
 
     AnalyzerSession()
         : session()
@@ -106,7 +110,7 @@ struct AnalyzerFrameAllocator : mfxFrameAllocator {
         mfxU16 GetNumLockedSurfaces();
         mfxU16 GetCachedNumLockedSurfaces();
         void RegisterSurface(mfxFrameSurface1*);
-    }decode, encode;
+    }decode, encode, enc;
 
     static mfxStatus AllocFunc(mfxHDL pthis, mfxFrameAllocRequest *request, mfxFrameAllocResponse *response); 
     static mfxStatus LockFunc(mfxHDL pthis, mfxMemId mid, mfxFrameData *ptr);
@@ -130,6 +134,11 @@ struct AnalyzerSyncPoint {
         struct {
             mfxFrameSurface1 *out;
             mfxExtVppAuxData *aux;
+        };
+        struct {
+            mfxFrameSurface1 *work;
+            //MFXVideoVPP_RunFrameVPPAsyncEx output
+            mfxFrameSurface1 **ppOut;
         };
     } output;
 

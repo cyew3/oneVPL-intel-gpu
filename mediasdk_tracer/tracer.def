@@ -40,6 +40,7 @@ EXPORTS
     MFXVideoVPP_GetVideoParam
     MFXVideoVPP_GetVPPStat
     MFXVideoVPP_RunFrameVPPAsync
+    MFXVideoVPP_RunFrameVPPAsyncEx
 
     MFXJoinSession
     MFXDisjoinSession
@@ -50,3 +51,10 @@ EXPORTS
     MFXVideoUSER_Register
     MFXVideoUSER_Unregister
     MFXVideoUSER_ProcessFrameAsync
+
+    MFXVideoENC_Query
+    MFXVideoENC_QueryIOSurf
+    MFXVideoENC_Init
+    MFXVideoENC_Reset
+    MFXVideoENC_Close
+    MFXVideoENC_ProcessFrameAsync

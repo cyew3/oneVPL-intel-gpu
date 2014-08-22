@@ -99,6 +99,7 @@ StringCodeItem tbl_rate_ctrl[] = {
     CODE_STRING(MFX_RATECONTROL_, ICQ),
     CODE_STRING(MFX_RATECONTROL_, VCM),
     CODE_STRING(MFX_RATECONTROL_, LA_ICQ),
+    CODE_STRING(MFX_RATECONTROL_, LA_EXT),
 };
 
 StringCodeItem tbl_frc_algm[] = {
@@ -411,6 +412,8 @@ void dump_ExtBuffers(FILE *fd, int level, TCHAR *prefix, TCHAR* prefix2, int cod
                 case MFX_EXTBUFF_ENCODER_RESET_OPTION: _tcscat_s(buf, sizeof(buf)/ sizeof(buf[0]), TEXT("mfxExtEncoderResetOption")); break;
                 case MFX_EXTBUFF_ENCODED_FRAME_INFO: _tcscat_s(buf, sizeof(buf)/ sizeof(buf[0]), TEXT("mfxExtAVCEncodedFrameInfo")); break;
                 case MFX_EXTBUFF_ENCODER_ROI: _tcscat_s(buf, sizeof(buf)/ sizeof(buf[0]), TEXT("mfxExtEncoderROI")); break;
+                case MFX_EXTBUFF_LOOKAHEAD_CTRL: _tcscat_s(buf, sizeof(buf)/ sizeof(buf[0]), TEXT("mfxExtLAControl")); break;
+                case MFX_EXTBUFF_LOOKAHEAD_STAT: _tcscat_s(buf, sizeof(buf)/ sizeof(buf[0]), TEXT("mfxExtLAFrameStatistics")); break;
                 default: 
                     _tcscatformat_s(buf,TEXT("0x%x"),eb->BufferId); break;
             }
@@ -704,6 +707,7 @@ void dump_ExtBuffers(FILE *fd, int level, TCHAR *prefix, TCHAR* prefix2, int cod
                 dump_format_wprefix(fd,level, 3,prefix,prefix2,TEXT(".mfxExtCodingOption2.FixedFrameRate="),TEXT("%d"), co2->FixedFrameRate);
                 dump_format_wprefix(fd,level, 3,prefix,prefix2,TEXT(".mfxExtCodingOption2.DisableDeblockingIdc="),TEXT("%d"), co2->DisableDeblockingIdc);
                 dump_format_wprefix(fd,level, 3,prefix,prefix2,TEXT(".mfxExtCodingOption2.DisableVUI="),TEXT("%d"), co2->DisableVUI);
+                dump_format_wprefix(fd,level, 3,prefix,prefix2,TEXT(".mfxExtCodingOption2.BufferingPeriodSEI="),TEXT("%d"), co2->BufferingPeriodSEI);
                 break;
             }
 
@@ -777,6 +781,60 @@ void dump_ExtBuffers(FILE *fd, int level, TCHAR *prefix, TCHAR* prefix2, int cod
                 break;
             }
 
+            case MFX_EXTBUFF_LOOKAHEAD_CTRL:
+            {
+                mfxExtLAControl *lac=(mfxExtLAControl *)eb;
+                dump_format_wprefix(fd,level, 3,prefix,prefix2,TEXT(".mfxExtLAControl.LookAheadDepth="),TEXT("%d"), lac->LookAheadDepth);
+                dump_format_wprefix(fd,level, 3,prefix,prefix2,TEXT(".mfxExtLAControl.DependencyDepth="),TEXT("%d"), lac->DependencyDepth);
+                dump_format_wprefix(fd,level, 3,prefix,prefix2,TEXT(".mfxExtLAControl.DownScaleFactor="),TEXT("%d"), lac->DownScaleFactor);
+                dump_format_wprefix(fd,level, 3,prefix,prefix2,TEXT(".mfxExtLAControl.NumOutStream="),TEXT("%d"), lac->NumOutStream);
+                for (int j = 0; j < sizeof(lac->OutStream) / sizeof(lac->OutStream[0]); j++)
+                {
+                    if (lac->OutStream[j].Width != 0 && lac->OutStream[j].Height != 0)
+                    {
+                        dump_format_wprefix(fd,level, 3, prefix, prefix2, TEXT(".mfxExtLAControl.OutStream"),TEXT("[%d].Width=%d"), j, lac->OutStream[j].Width);
+                        dump_format_wprefix(fd,level, 3, prefix, prefix2, TEXT(".mfxExtLAControl.OutStream"),TEXT("[%d].Height=%d"), j, lac->OutStream[j].Height);
+                    }
+                }
+                break;
+            }
+
+            case MFX_EXTBUFF_LOOKAHEAD_STAT:
+            {
+                mfxExtLAFrameStatistics *lafs=(mfxExtLAFrameStatistics *)eb;
+
+                dump_format_wprefix(fd,level, 3,prefix,prefix2,TEXT(".mfxExtLAFrameStatistics.NumAlloc="),TEXT("%d"), lafs->NumAlloc);
+                dump_format_wprefix(fd,level, 3,prefix,prefix2,TEXT(".mfxExtLAFrameStatistics.NumStream="),TEXT("%d"), lafs->NumStream);
+                dump_format_wprefix(fd,level, 3,prefix,prefix2,TEXT(".mfxExtLAFrameStatistics.NumFrame="),TEXT("%d"), lafs->NumFrame);
+                if (lafs->FrameStat != NULL)
+                {
+                    dump_format_wprefix(fd,level, 3,prefix,prefix2,TEXT(".mfxExtLAFrameStatistics.FrameStat.Width="),TEXT("%d"), lafs->FrameStat->Width);
+                    dump_format_wprefix(fd,level, 3,prefix,prefix2,TEXT(".mfxExtLAFrameStatistics.FrameStat.Height="),TEXT("%d"), lafs->FrameStat->Height);
+                    dump_format_wprefix(fd,level, 3,prefix,prefix2,TEXT(".mfxExtLAFrameStatistics.FrameStat.FrameType="),TEXT("%d"), lafs->FrameStat->FrameType);
+                    dump_format_wprefix(fd,level, 3,prefix,prefix2,TEXT(".mfxExtLAFrameStatistics.FrameStat.FrameDisplayOrder="),TEXT("%d"), lafs->FrameStat->FrameDisplayOrder);
+                    dump_format_wprefix(fd,level, 3,prefix,prefix2,TEXT(".mfxExtLAFrameStatistics.FrameStat.FrameEncodeOrder="),TEXT("%d"), lafs->FrameStat->FrameEncodeOrder);
+                    dump_format_wprefix(fd,level, 3,prefix,prefix2,TEXT(".mfxExtLAFrameStatistics.FrameStat.IntraCost="),TEXT("%d"), lafs->FrameStat->IntraCost);
+                    dump_format_wprefix(fd,level, 3,prefix,prefix2,TEXT(".mfxExtLAFrameStatistics.FrameStat.InterCost="),TEXT("%d"), lafs->FrameStat->InterCost);
+                    dump_format_wprefix(fd,level, 3,prefix,prefix2,TEXT(".mfxExtLAFrameStatistics.FrameStat.DependencyCost="),TEXT("%d"), lafs->FrameStat->DependencyCost);
+                    std::basic_stringstream<TCHAR> stream;
+                    for (int j = 0; j < sizeof(lafs->FrameStat->EstimatedRate) / sizeof(lafs->FrameStat->EstimatedRate[0]); j++)
+                    {
+                        stream<<lafs->FrameStat->EstimatedRate[j];
+                        if (j + 1 != sizeof(lafs->FrameStat->EstimatedRate) / sizeof(lafs->FrameStat->EstimatedRate[0]))
+                        {
+                            stream<<TEXT(", ");
+                        }
+                    }
+                    dump_format_wprefix(fd,level, 3,prefix,prefix2,TEXT(".mfxExtLAFrameStatistics.FrameStat.EstimatedRate=.mfxExtLAFrameStatistics.FrameStat.EstimatedRate="),TEXT("{%s}"),  stream.str().c_str());
+                    //mfxFrameSurface1 *OutSurface;
+                }
+                else
+                {
+                    dump_format_wprefix(fd,level, 3,prefix,prefix2,TEXT(".mfxExtLAFrameStatistics.FrameStat=NULL"));
+                }
+                break;
+            }
+
             default:
                 dump_format_wprefix(fd,level, 3,prefix,prefix2,TEXT(".BufferId="),TEXT("%d"),  eb->BufferId);
                 dump_format_wprefix(fd,level, 3,prefix,prefix2,TEXT(".BufferSz="),TEXT("%d"),  eb->BufferSz);
@@ -788,7 +846,6 @@ void dump_ExtBuffers(FILE *fd, int level, TCHAR *prefix, TCHAR* prefix2, int cod
     {
         dump_format_wprefix(fd,level, 2,prefix,prefix2,TEXT("=0x%p (ERROR: Exception during extended Buffer access)"), bfs);
     }
-
 }
 
 void dump_mfxVideoParam(FILE *fd, int level, TCHAR *prefix, Component c, mfxVideoParam *vp, bool bDumpExtBuffer) {
@@ -1178,6 +1235,37 @@ void dump_format_wprefix(FILE *fd, int level, int nPrefix, TCHAR *format,...)
     else if (NULL != fd)
     {
         _ftprintf(fd, _T("%s\n"), str);
+    }
+}
+
+void dump_mfxENCInput(FILE *fd, int level, TCHAR *prefix, mfxENCInput *in)
+{
+    if (in) {
+        //mfxFrameSurface1 *InSurface;
+        dump_format_wprefix(fd,level, 2,prefix,TEXT(".NumFrameL0="),TEXT("%d"),in->NumFrameL0);
+        //mfxFrameSurface1 **L0Surface;
+        dump_format_wprefix(fd,level, 2,prefix,TEXT(".NumFrameL1="),TEXT("%d"),in->NumFrameL1);
+        //mfxFrameSurface1 **L1Surface;
+        dump_format_wprefix(fd,level, 2,prefix,TEXT(".NumExtParam="),TEXT("%d"),in->NumExtParam);
+        if (in->NumExtParam > 0)
+        {
+            dump_ExtBuffers(fd,level, prefix, TEXT(".ExtParam"), 0, in->ExtParam, in->NumExtParam);
+        }
+    } else {
+        dump_format_wprefix(fd,level, 2,prefix,TEXT("=NULL"),TEXT(""));
+    }
+}
+
+void dump_mfxENCOutput(FILE *fd, int level, TCHAR *prefix, mfxENCOutput *out)
+{
+    if (out) {
+        dump_format_wprefix(fd,level, 2,prefix,TEXT(".NumExtParam="),TEXT("%d"),out->NumExtParam);
+        if (out->NumExtParam > 0)
+        {
+            dump_ExtBuffers(fd,level, prefix, TEXT(".ExtParam"), 0, out->ExtParam, out->NumExtParam);
+        }
+    } else {
+        dump_format_wprefix(fd,level, 2,prefix,TEXT("=NULL"),TEXT(""));
     }
 }
 

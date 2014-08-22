@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2009-2013 Intel Corporation. All Rights Reserved.
+Copyright(c) 2009-2014 Intel Corporation. All Rights Reserved.
 
 File Name: main.cpp
 
@@ -310,8 +310,11 @@ mfxStatus MFXQueryIMPL(mfxSession session, mfxIMPL *impl) {
 }
 
 mfxStatus MFXQueryVersion(mfxSession session, mfxVersion *version) {
-
-    mfxStatus sts = MFX_CALL(MFXQueryVersion,(((AnalyzerSession *)session)->session, version));
+    mfxStatus sts = MFX_ERR_NONE;
+    if (_tcslen(gc.sdk_dll) != 0)
+        sts = MFX_CALL(MFXQueryVersion,(((AnalyzerSession *)session)->session, version));
+    else
+        sts = MFX_CALL(MFXQueryVersion,(session, version));
 
     RECORD_CONFIGURATION({
         dump_mfxVersion(fd, level, TEXT("MFXQueryVersion"), version);

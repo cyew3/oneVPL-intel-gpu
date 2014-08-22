@@ -152,7 +152,7 @@
             this.MaximizeBox = false;
             this.Name = "SdkAnalyzerForm";
             this.ShowIcon = false;
-            this.Text = "Intel Media SDK Tracer";
+            this.Text = "SDK Tracer";
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.Form4_FormClosing);
             this.ResumeLayout(false);
             this.PerformLayout();

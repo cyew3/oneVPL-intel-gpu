@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2009-2012 Intel Corporation. All Rights Reserved.
+Copyright(c) 2009-2014 Intel Corporation. All Rights Reserved.
 
 File Name: vpp.cpp
 
@@ -246,6 +246,38 @@ mfxStatus MFXVideoVPP_RunFrameVPPAsync(mfxSession session, mfxFrameSurface1 *in,
             as->vpp.async_exec_rate+=(ts1.QuadPart-as->vpp.last_async_tick);
         as->vpp.last_async_tick=ts1.QuadPart;
     }
+
+    if (!sp->sync_point) {
+        delete sp;
+        *syncp=0;
+    }
+
+    if (gc.vpp.sync && *syncp && sts==MFX_ERR_NONE) /*status shouldn't be changed sts=*/MFXVideoCORE_SyncOperation(session,*syncp,gc.vpp.sync);
+
+    return sts;
+}
+
+mfxStatus MFXVideoVPP_RunFrameVPPAsyncEx(mfxSession session, mfxFrameSurface1 *in, mfxFrameSurface1 *surface_work, mfxFrameSurface1 **surface_out, mfxSyncPoint *syncp) {
+    if (gc.debug_view) OutputDebugString(TEXT("SDK: MFXVideoVPP_RunFrameVPPAsyncEx"));
+
+    StatusOverride so;
+    AnalyzerSession *as=(AnalyzerSession *)session;
+    if (!as) return MFX_ERR_NULL_PTR;
+
+    AnalyzerSyncPoint *sp=new AnalyzerSyncPoint(VPPEX);
+    if (!sp) return MFX_ERR_MEMORY_ALLOC;
+    *syncp=(mfxSyncPoint)sp;
+    sp->output.ppOut=surface_out;
+    sp->output.work=surface_work;
+    sp->input.frame=in;
+
+    mfxStatus sts=so.Override(MFX_CALL(MFXVideoVPP_RunFrameVPPAsyncEx,(as->session, in, surface_work, surface_out, &sp->sync_point)));
+
+    RECORD_CONFIGURATION_PER_FRAME({
+        dump_mfxFrameSurface1(fd, level, TEXT("vpp.MFXVideoVPP_RunFrameVPPAsyncEx.in"),in);
+        dump_mfxFrameSurface1(fd, level, TEXT("vpp.MFXVideoVPP_RunFrameVPPAsyncEx.surface_out"),*surface_out);
+        dump_mfxStatus(fd, level, TEXT("vpp.MFXVideoVPP_RunFrameVPPAsyncEx"),sts);
+    });
 
     if (!sp->sync_point) {
         delete sp;
