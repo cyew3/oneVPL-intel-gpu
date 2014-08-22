@@ -233,6 +233,10 @@ mfxStatus D3DFrameAllocator::AllocImpl(mfxFrameAllocRequest *request, mfxFrameAl
 {
     HRESULT hr;
 
+    MSDK_CHECK_POINTER(request, MFX_ERR_NULL_PTR);
+    if (request->NumFrameSuggested == 0)
+        return MFX_ERR_UNKNOWN;
+
     D3DFORMAT format = ConvertMfxFourccToD3dFormat(request->Info.FourCC);
 
     if (format == D3DFMT_UNKNOWN)
