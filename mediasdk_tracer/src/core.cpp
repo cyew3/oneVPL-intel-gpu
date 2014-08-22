@@ -96,7 +96,7 @@ mfxStatus MFXVideoCORE_SyncOperation(mfxSession session, mfxSyncPoint syncp, mfx
                     sp->sts = MFX_ERR_NOT_ENOUGH_BUFFER;
                 } else {
                     //work in non buffered mode -> input frame always present
-                    memcpy(sp->output.bitstream->Data, ref_bs.Data, ref_bs.DataLength);
+                    memcpy_s(sp->output.bitstream->Data, sp->output.bitstream->DataLength, ref_bs.Data, ref_bs.DataLength);
                     sp->output.bitstream->DataLength = ref_bs.DataLength;
                     sp->output.bitstream->TimeStamp = sp->input.frame->Data.TimeStamp;
                     sp->sts = MFX_ERR_NONE;
@@ -253,7 +253,7 @@ mfxStatus MFXVideoCORE_SyncOperation(mfxSession session, mfxSyncPoint syncp, mfx
                 sp->output.bitstream->DataLength)
             {
                 as->encode.bsData.insert(as->encode.bsData.begin(), sp->output.bitstream->Data, sp->output.bitstream->Data + sp->output.bitstream->DataLength);
-                memcpy(&as->encode.first_frame, sp->output.bitstream, sizeof (mfxBitstream));
+                memcpy_s(&as->encode.first_frame, sizeof (mfxBitstream), sp->output.bitstream, sizeof (mfxBitstream));
                 as->encode.first_frame.Data = &as->encode.bsData.front();
             }
             break;

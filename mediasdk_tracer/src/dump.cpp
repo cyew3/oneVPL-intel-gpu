@@ -940,7 +940,7 @@ void dump_mfxFrameSurface1Raw(FILE *fd, mfxFrameSurface1 *pSurface, mfxFrameAllo
         bLocked = true;
     }else
     {
-        memcpy(&frame,&pSurface->Data, sizeof(mfxFrameData));
+        memcpy_s(&frame, sizeof(mfxFrameData), &pSurface->Data, sizeof(mfxFrameData));
     }
 
     // Need to write raw surfaces so that ROI can be effectively checked.
