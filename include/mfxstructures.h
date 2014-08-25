@@ -446,9 +446,9 @@ enum {
     MFX_RATECONTROL_VCM       =10,
     MFX_RATECONTROL_LA_ICQ    =11,
     MFX_RATECONTROL_LA_EXT    =12,
-    MFX_RATECONTROL_LA_HRD     = 13,
-    MFX_RATECONTROL_VME       =14,
-    MFX_RATECONTROL_QVBR      =15
+    MFX_RATECONTROL_LA_HRD    =13,
+    MFX_RATECONTROL_QVBR      =14,
+    MFX_RATECONTROL_VME       =15
 };
 
 /* Trellis control*/
@@ -550,7 +550,8 @@ typedef struct {
     mfxU16      DisableDeblockingIdc;
     mfxU16      DisableVUI;
     mfxU16      BufferingPeriodSEI;
-    mfxU16      reserved2[2];
+    mfxU16      EnableMAD;              /* tri-state option */
+    mfxU16      reserved2;
 } mfxExtCodingOption2;
 
 typedef struct {
@@ -624,7 +625,8 @@ enum {
     MFX_EXTBUFF_VPP_DEINTERLACING          = MFX_MAKEFOURCC('V','P','D','I'),
     MFX_EXTBUFF_AVC_REFLISTS               = MFX_MAKEFOURCC('R','L','T','S'),
     MFX_EXTBUFF_DEC_VIDEO_PROCESSING       = MFX_MAKEFOURCC('D','E','C','V'),
-    MFX_EXTBUFF_CODING_OPTION3             = MFX_MAKEFOURCC('C', 'D', 'O', '3')
+    MFX_EXTBUFF_VPP_FIELD_PROCESSING       = MFX_MAKEFOURCC('F','P','R','O'),
+    MFX_EXTBUFF_CODING_OPTION3             = MFX_MAKEFOURCC('C','D','O','3')
 };
 
 /* VPP Conf: Do not use certain algorithms  */
@@ -1049,6 +1051,28 @@ typedef struct {
     } RefPicList0[32], RefPicList1[32];
 
 }mfxExtAVCRefLists;
+
+enum {
+    MFX_VPP_COPY_FRAME      =0x01,
+    MFX_VPP_COPY_FIELD      =0x02,
+    MFX_VPP_SWAP_FIELDS     =0x03
+};
+
+enum {
+    MFX_PICTYPE_UNKNOWN     =0x00,
+    MFX_PICTYPE_FRAME       =0x01,
+    MFX_PICTYPE_TOPFIELD    =0x02,
+    MFX_PICTYPE_BOTTOMFIELD =0x04
+};
+
+typedef struct {
+    mfxExtBuffer    Header;
+
+    mfxU16          Mode;
+    mfxU16          InField;
+    mfxU16          OutField;
+    mfxU16          reserved[25];
+} mfxExtVPPFieldProcessing;
 
 typedef struct {
     mfxExtBuffer    Header;
