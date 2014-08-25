@@ -527,6 +527,42 @@ mfxStatus MFX_PTIR_Plugin::Query(mfxVideoParam *in, mfxVideoParam *out)
             out->vpp.Out.ChromaFormat = 0;
             error = true;
         }
+
+        //Bit depth is not supported
+        {
+            if(!(const_in.vpp.In.BitDepthChroma == 0 || const_in.vpp.In.BitDepthChroma == 8))
+            {
+                out->vpp.In.BitDepthChroma = 0;
+                error = true;
+            }
+            if(!(const_in.vpp.In.BitDepthLuma   == 0 || const_in.vpp.In.BitDepthLuma == 8))
+            {
+                out->vpp.In.BitDepthLuma = 0;
+                error = true;
+            }
+            if(const_in.vpp.In.Shift != 0)
+            {
+                out->vpp.In.Shift = 0;
+                error = true;
+            }
+
+            if(!(const_in.vpp.Out.BitDepthChroma == 0 || const_in.vpp.Out.BitDepthChroma == 8))
+            {
+                out->vpp.Out.BitDepthChroma = 0;
+                error = true;
+            }
+            if(!(const_in.vpp.Out.BitDepthLuma   == 0 || const_in.vpp.Out.BitDepthLuma == 8))
+            {
+                out->vpp.Out.BitDepthLuma = 0;
+                error = true;
+            }
+            if(const_in.vpp.Out.Shift != 0)
+            {
+                out->vpp.Out.Shift = 0;
+                error = true;
+            }
+        }
+
     
         //find suitable mode
         if(MFX_PICSTRUCT_UNKNOWN == const_in.vpp.In.PicStruct &&
