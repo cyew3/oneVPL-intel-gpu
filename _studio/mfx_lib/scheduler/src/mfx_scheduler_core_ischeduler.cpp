@@ -125,6 +125,12 @@ mfxStatus mfxSchedulerCore::Initialize(const MFX_SCHEDULER_PARAM *pParam)
     //we have to create threads more than cores to support Intel plug-ins threading 
     //m_param.numberOfThreads = numThreads + 1;
 
+#if defined(SYNCHRONIZATION_BY_VA_SYNC_SURFACE)
+    // thread #0 submits tasks to the driver
+    // thread(s) #1, #2, ... make synchronization by vaSyncSurface
+    m_param.numberOfThreads = UMC::get_max(m_param.numberOfThreads, 2);
+#endif
+
     try
     {
         // allocate 'free task' event

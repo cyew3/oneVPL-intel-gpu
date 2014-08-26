@@ -23,8 +23,6 @@
 #include <string>
 #include <stdexcept> /* for std exceptions on Linux/Android */
 
-//#define SYNCHRONIZATION_BY_VA_SYNC_SURFACE
-
 #if defined(_WIN32) || defined(_WIN64)
     #include <windows.h>
 #else
@@ -69,6 +67,9 @@
     #endif // #if defined(LINUX32) || defined(LINUX64)
 #endif // MFX_VA
 
+#if defined (MFX_VA_LINUX)
+    //#define SYNCHRONIZATION_BY_VA_SYNC_SURFACE
+#endif
 
 #if defined(AS_HEVCD_PLUGIN) || defined(AS_HEVCE_PLUGIN)
     #if defined(HEVCE_EVALUATION)
