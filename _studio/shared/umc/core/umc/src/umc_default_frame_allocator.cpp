@@ -51,10 +51,10 @@ private:
 };
 
 FrameInformation::FrameInformation()
-    : m_type(0)
+    : m_locks(0)
+    , m_referenceCounter(0)    
     , m_ptr(0)
-    , m_referenceCounter(0)
-    , m_locks(0)
+    , m_type(0)
 {
 }
 

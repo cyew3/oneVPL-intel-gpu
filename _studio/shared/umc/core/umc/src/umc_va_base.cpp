@@ -44,6 +44,7 @@ VideoAccelerationProfile VideoType2VAProfile(VideoStreamType video_type)
         case HEVC_VIDEO:  return VA_H265;
         case VC1_VIDEO:   return VA_VC1;
         case WMV_VIDEO:   return VA_VC1;
+        default:          return UNKNOWN;
     }
     return UNKNOWN;
 }

@@ -295,17 +295,17 @@ Status FrameTime::SetTime(Ipp64f start, Ipp64f end)
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 FrameData::FrameData()
-    : m_FrameAlloc(0)
+    : m_locked(false)
     , m_FrameMID(FRAME_MID_INVALID)
-    , m_locked(false)
+    , m_FrameAlloc(0)
 {
 }
 
 FrameData::FrameData(const FrameData & fd)
-    : m_FrameAlloc(fd.m_FrameAlloc)
-    , m_FrameMID(fd.m_FrameMID)
+    : m_locked(false)
     , m_Info(fd.m_Info)
-    , m_locked(false)
+    , m_FrameMID(fd.m_FrameMID)
+    , m_FrameAlloc(fd.m_FrameAlloc)
 {
     MFX_INTERNAL_CPY(m_PlaneInfo, fd.m_PlaneInfo, sizeof(m_PlaneInfo));
     if (m_FrameAlloc)

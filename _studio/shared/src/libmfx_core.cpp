@@ -135,7 +135,7 @@ mfxStatus CommonCORE::AllocFrames(mfxFrameAllocRequest *request,
 
     for (mfxU32 i = 0; i < response->NumFrameActual; i++)
     {
-        mfxFrameSurface1 surf = {0};
+        mfxFrameSurface1 surf = {};
         surf.Info = request->Info;
         //sts = LockFrame(response->mids[i], &surf.Data);
         //MFX_CHECK_STS(sts);
@@ -644,6 +644,9 @@ mfxStatus CommonCORE::RegisterMids(mfxFrameAllocResponse *response, mfxU16 memTy
 }
 
 CommonCORE::CommonCORE(const mfxU32 numThreadsAvailable, const mfxSession session) :
+    m_ExtOptions(0),
+    m_numThreadsAvailable(numThreadsAvailable),
+    m_session(session),
     m_NumAllocators(0),
     m_hdl(NULL),
     m_DXVA2DecodeHandle(NULL),
@@ -652,11 +655,8 @@ CommonCORE::CommonCORE(const mfxU32 numThreadsAvailable, const mfxSession sessio
     m_D3DVPPHandle(NULL),
     m_bSetExtBufAlloc(false),
     m_bSetExtFrameAlloc(false),
-    m_ExtOptions(0),
-    m_bUseExtManager(false),
     m_bFastCopy(0),
-    m_numThreadsAvailable(numThreadsAvailable),
-    m_session(session),
+    m_bUseExtManager(false),
     m_bIsOpaqMode(false),
     m_CoreId(0)
 {

@@ -109,7 +109,7 @@ mfxStatus mfxSchedulerCore::StopWakeUpThread(void)
 Ipp32u mfxSchedulerCore::scheduler_thread_proc(void *pParam)
 {
     MFX_SCHEDULER_THREAD_CONTEXT *pContext = (MFX_SCHEDULER_THREAD_CONTEXT *) pParam;
-    mfxTaskHandle previousTaskHandle = {0, 0};
+    mfxTaskHandle previousTaskHandle = {};
     const Ipp32u threadNum = pContext->threadNum;
 
     {
@@ -121,7 +121,7 @@ Ipp32u mfxSchedulerCore::scheduler_thread_proc(void *pParam)
     // main working cycle for threads
     while (false == pContext->pSchedulerCore->m_bQuit)
     {
-        MFX_CALL_INFO call = {0};
+        MFX_CALL_INFO call = {};
         mfxStatus mfxRes;
 
         mfxRes = pContext->pSchedulerCore->GetTask(call, previousTaskHandle, threadNum);
@@ -132,7 +132,7 @@ Ipp32u mfxSchedulerCore::scheduler_thread_proc(void *pParam)
             // perform asynchronous operation
             try
             {
-                char *pRoutineName = call.pTask->entryPoint.pRoutineName;
+                const char *pRoutineName = call.pTask->entryPoint.pRoutineName;
                 if (!pRoutineName) pRoutineName = "MFX Async Task";
                 MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_SCHED, pRoutineName);
                 MFX_LTRACE_1(MFX_TRACE_LEVEL_SCHED, "^Child^of", "%d", call.pTask->nParentId);

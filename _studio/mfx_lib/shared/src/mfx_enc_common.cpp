@@ -514,6 +514,7 @@ void ConvertFrameRateMPEG2(mfxU32 FrameRateExtD, mfxU32 FrameRateExtN, mfxI32 &f
 
 namespace
 {
+#if defined(MFX_VA_WIN)
     void ConvertFrameRateMPEG2_test()
     {
 
@@ -652,6 +653,7 @@ namespace
         printf("Total tests: %d\n", total); 
 
     }
+#endif
 }
 
 mfxStatus CheckFrameRateMPEG2(mfxU32 &FrameRateExtD, mfxU32 &FrameRateExtN)

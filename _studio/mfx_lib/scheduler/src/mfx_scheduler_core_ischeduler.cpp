@@ -415,7 +415,7 @@ mfxStatus mfxSchedulerCore::Synchronize(mfxTaskHandle handle, mfxU32 timeToWait)
 
 mfxStatus mfxSchedulerCore::WaitForDependencyResolved(const void *pDependency)
 {
-    mfxTaskHandle waitHandle = {0, 0};
+    mfxTaskHandle waitHandle = {};
     bool bFind = false;
 
     // check error(s)

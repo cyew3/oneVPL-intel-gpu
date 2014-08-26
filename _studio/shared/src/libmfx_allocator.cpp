@@ -402,8 +402,9 @@ mfxWideBufferAllocator::~mfxWideBufferAllocator()
 {
     memset((void*)&bufferAllocator, 0, sizeof(mfxBufferAllocator));
 }
-mfxBaseWideFrameAllocator::mfxBaseWideFrameAllocator(mfxU16 type):type(type),
-                                                                  NumFrames(0)
+mfxBaseWideFrameAllocator::mfxBaseWideFrameAllocator(mfxU16 type)
+    : NumFrames(0)
+    , type(type)
 {
     memset((void*)&frameAllocator, 0, sizeof(frameAllocator));
 

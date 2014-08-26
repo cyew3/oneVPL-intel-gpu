@@ -125,12 +125,12 @@ void mfx_UMC_FrameAllocator::FrameInformation::Reset()
 }
 
 mfx_UMC_FrameAllocator::mfx_UMC_FrameAllocator()
-    : m_pCore(0),
-      m_curIndex(-1),
-      m_externalFramesResponse(0),
-      m_isSWDecode(false),
+    : m_curIndex(-1),
+      m_IsUseExternalFrames(true),
       m_doNotNeedToCopy(false),
-      m_IsUseExternalFrames(true)
+      m_pCore(0),
+      m_externalFramesResponse(0),
+      m_isSWDecode(false)
 {
 }
 
