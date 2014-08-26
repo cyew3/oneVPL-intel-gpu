@@ -41,7 +41,6 @@ static inline mfxU32 CalculateAsyncDepth(VideoCORE *core, mfxVideoParam *par)
     if (core && !asyncDepth)
         asyncDepth = core->GetAutoAsyncDepth();
 
-    //asyncDepth = IPP_MIN(16, asyncDepth);
     return asyncDepth;
 }
 
@@ -1021,7 +1020,7 @@ mfxStatus VideoDECODEH264::QueryIOSurfInternal(eMFXPlatform platform, eMFXHWType
         level_idc = mfxU8 (IPP_MAX(level_idc, points->OP->LevelIdc));
     }
 
-    mfxU32 asyncDepth = CalculateAsyncDepth(core, par);
+    mfxU32 asyncDepth = CalculateNumThread(par);
     bool useDelayedDisplay = (ENABLE_DELAYED_DISPLAY_MODE != 0) && IsNeedToUseHWBuffering(type) && (asyncDepth != 1);
 
     mfxI32 dpbSize = UMC::CalculateDPBSize(level_idc, par->mfx.FrameInfo.Width, par->mfx.FrameInfo.Height, 0);
