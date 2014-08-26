@@ -85,8 +85,6 @@ DEF_STRUCT_TRACE(mfxVideoParam){
         else if(io_out) set_pflag(PRINT_OPT_DEC);
     }
     os  << "{\n"
-        << PUT_ARR(reserved, 3)
-        << PUT_PAR(reserved3)
         << PUT_PAR(AsyncDepth);
     if(!pflag(PRINT_OPT_VPP)) {
         os  << PUT_STRUCT(mfx);
@@ -107,13 +105,11 @@ DEF_STRUCT_TRACE(mfxVideoParam){
         os << print_param.padding << "}\n";
         DEC_PADDING();
     }
-    os  << PUT_PAR(reserved2)
-        << print_param.padding << "}";
+    os  << print_param.padding << "}";
     return os;
 };
 std::ostream &operator << (std::ostream &os, mfxInfoVPP &p){
     os  << "{\n"
-        << PUT_ARR(reserved, 8)
         << PUT_STRUCT(In)
         << PUT_STRUCT(Out)
         << print_param.padding << "}";
@@ -121,7 +117,6 @@ std::ostream &operator << (std::ostream &os, mfxInfoVPP &p){
 }
 std::ostream &operator << (std::ostream &os, mfxInfoMFX &p){
     os  << "{\n"
-        << PUT_ARR(reserved, 7)
         << PUT_PAR(LowPower)
         << PUT_PAR(BRCParamMultiplier)
         << PUT_STRUCT(FrameInfo)
@@ -169,23 +164,19 @@ std::ostream &operator << (std::ostream &os, mfxInfoMFX &p){
         os  << PUT_PAR(DecodedOrder)
             << PUT_PAR(ExtendedPicStruct)
             << PUT_PAR(TimeStampCalc)
-            << PUT_PAR(SliceGroupsPresent)
-            << PUT_ARR(reserved2, 9);
+            << PUT_PAR(SliceGroupsPresent);
     }else if(pflag(PRINT_OPT_DEC)){
         os  << PUT_PAR(JPEGChromaFormat)
-            << PUT_PAR(Rotation)
-            << PUT_ARR(reserved3, 11);
+            << PUT_PAR(Rotation);
     } else {
         os  << PUT_PAR(Interleaved)
-            << PUT_PAR(Quality)
-            << PUT_ARR(reserved5, 10);
+            << PUT_PAR(Quality);
     }
     os  << print_param.padding << "}";
     return os;
 };
 std::ostream &operator << (std::ostream &os, mfxFrameInfo &p){
     os  << "{\n"
-        << PUT_ARR(reserved, 6)
         << PUT_STRUCT(FrameId)
         << PUT_4CC(FourCC)
         << PUT_PAR(Width)
@@ -196,12 +187,10 @@ std::ostream &operator << (std::ostream &os, mfxFrameInfo &p){
         << PUT_PAR(CropH)
         << PUT_PAR(FrameRateExtN)
         << PUT_PAR(FrameRateExtD)
-        << PUT_PAR(reserved3)
         << PUT_PAR(AspectRatioW)
         << PUT_PAR(AspectRatioH)
         << PUT_PAR(PicStruct)
         << PUT_PAR(ChromaFormat)
-        << PUT_PAR(reserved2)
         << print_param.padding << "}";
     return os;
 };
@@ -225,12 +214,10 @@ DEF_STRUCT_TRACE(mfxVersion){
 };
 DEF_STRUCT_TRACE(mfxFrameAllocRequest){
     os  << "{\n"
-        << PUT_ARR(reserved, 4)
         << PUT_STRUCT(Info)
         << PUT_PAR(Type)
         << PUT_PAR(NumFrameMin)
         << PUT_PAR(NumFrameSuggested)
-        << PUT_PAR(reserved2)
         << print_param.padding << '}';
     return os;
 };
@@ -251,8 +238,7 @@ DEF_STRUCT_TRACE(mfxBitstream){
         DEC_PADDING();
     }
 
-    os  << PUT_ARR(reserved, 6)
-        << PUT_PAR(DecodeTimeStamp)
+    os  << PUT_PAR(DecodeTimeStamp)
         << PUT_PAR(TimeStamp)
         << PUT_PAR(Data)
         << PUT_PAR(DataOffset)
@@ -261,13 +247,11 @@ DEF_STRUCT_TRACE(mfxBitstream){
         << PUT_PAR(PicStruct)
         << PUT_PAR(FrameType)
         << PUT_PAR(DataFlag)
-        << PUT_PAR(reserved2)
         << print_param.padding << '}';
     return os;
 };
 DEF_STRUCT_TRACE(mfxFrameSurface1){
     os  << "{\n"
-        << PUT_ARR(reserved, 4)
         << PUT_STRUCT(Info)
         << PUT_STRUCT(Data)
         << print_param.padding << '}';
@@ -289,10 +273,6 @@ std::ostream &operator << (std::ostream &os, mfxFrameData &p){
             DEC_PADDING();
         }
     os  << print_param.padding << "}"
-        << PUT_ARR(reserved, 10)
-#else
-        << PUT_ARR(reserved, 7)
-        << PUT_PAR(reserved1)
 #endif
         << PUT_PAR(PitchHigh)
         << PUT_PAR(TimeStamp)
@@ -364,8 +344,7 @@ DEF_STRUCT_TRACE(mfxExtSVCSeqDesc){
         << PUT_4CC(Header.BufferId)
         << PUT_PAR(Header.BufferSz)
         << PUT_ARR(TemporalScale, 8)
-        << PUT_PAR(RefBaseDist)
-        << PUT_ARR(reserved1, 3);
+        << PUT_PAR(RefBaseDist);
     if(memcmp(p.DependencyLayer, &zero, sizeof(p.DependencyLayer))){
         for(mfxU16 i = 0; i < 8; i++){
             if(!memcmp(&p.DependencyLayer[i], &zero, sizeof(p.DependencyLayer[0]))){
@@ -393,7 +372,6 @@ DEF_STRUCT_TRACE(mfxExtSVCSeqDesc){
                 << PUT_PARP(p.DependencyLayer[i], DisableDeblockingFilter)
                 << PUT_ARRP(p.DependencyLayer[i], ScaledRefLayerOffsets, 4)
                 << PUT_PARP(p.DependencyLayer[i], ScanIdxPresent)
-                << PUT_ARRP(p.DependencyLayer[i], reserved2, 8)
                 << PUT_PARP(p.DependencyLayer[i], TemporalNum)
                 << PUT_ARRP(p.DependencyLayer[i], TemporalId, 8)
                 << PUT_PARP(p.DependencyLayer[i], QualityNum);
@@ -412,7 +390,6 @@ DEF_STRUCT_TRACE(mfxExtSVCSeqDesc){
                 INC_PADDING();
                 os  << PUT_PARP(p.DependencyLayer[i].QualityLayer[j], ScanIdxStart)
                     << PUT_PARP(p.DependencyLayer[i].QualityLayer[j], ScanIdxEnd)
-                    << PUT_ARRP(p.DependencyLayer[i].QualityLayer[j], reserved3, 5)
                     << print_param.padding << "}\n";
                 DEC_PADDING();
             }
@@ -431,7 +408,6 @@ DEF_STRUCT_TRACE(mfxExtSVCRateControl){
         << PUT_4CC(Header.BufferId)
         << PUT_PAR(Header.BufferSz)
         << PUT_PAR(RateControlMethod)
-        << PUT_ARR(reserved1, 10)
         << PUT_PAR(NumLayers);
     if(memcmp(p.Layer, &zero, sizeof(p.Layer))){
         for(mfxU32 i = 0; i < 1024; i++){
@@ -447,8 +423,7 @@ DEF_STRUCT_TRACE(mfxExtSVCRateControl){
             INC_PADDING();
             os  << PUT_PARP(p.Layer[i], TemporalId)
                 << PUT_PARP(p.Layer[i], DependencyId)
-                << PUT_PARP(p.Layer[i], QualityId)
-                << PUT_ARRP(p.Layer[i], reserved2, 5);
+                << PUT_PARP(p.Layer[i], QualityId);
             if(p.RateControlMethod == MFX_RATECONTROL_CQP){
                 os  << PUT_PARP(p.Layer[i], Cqp.QPI)
                     << PUT_PARP(p.Layer[i], Cqp.QPP)
@@ -461,8 +436,7 @@ DEF_STRUCT_TRACE(mfxExtSVCRateControl){
                 os  << PUT_PARP(p.Layer[i], CbrVbr.TargetKbps)
                     << PUT_PARP(p.Layer[i], CbrVbr.InitialDelayInKB)
                     << PUT_PARP(p.Layer[i], CbrVbr.BufferSizeInKB)
-                    << PUT_PARP(p.Layer[i], CbrVbr.MaxKbps)
-                    << PUT_ARRP(p.Layer[i], CbrVbr.reserved3, 4);
+                    << PUT_PARP(p.Layer[i], CbrVbr.MaxKbps);
             }
             os  << print_param.padding << "}\n";
             DEC_PADDING();
@@ -497,9 +471,6 @@ DEF_STRUCT_TRACE(mfxExtCodingOption2){
         << PUT_PAR(AdaptiveB)
         << PUT_PAR(LookAheadDS)
         << PUT_PAR(NumMbPerSlice)
-        << PUT_ARR(reserved2, 10)
-#else 
-        << PUT_ARR(reserved2, 18)
 #endif //#if ((MFX_VERSION_MAJOR >= 1) && (MFX_VERSION_MINOR >= 7))
         << print_param.padding << '}';
     return os;
@@ -576,9 +547,7 @@ DEF_STRUCT_TRACE(mfxExtVPPFrameRateConversion){
     os  << "{\n"
         << PUT_4CC(Header.BufferId)
         << PUT_PAR(Header.BufferSz)
-        << PUT_PAR(Algorithm)
-        << PUT_PAR(reserved)
-        << PUT_ARR(reserved2, 15);
+        << PUT_PAR(Algorithm);
     os  << print_param.padding << '}';
     return os;
 };
@@ -587,8 +556,7 @@ DEF_STRUCT_TRACE(mfxExtVPPImageStab){
     os  << "{\n"
         << PUT_4CC(Header.BufferId)
         << PUT_PAR(Header.BufferSz)
-        << PUT_PAR(Mode)
-        << PUT_ARR(reserved, 11);
+        << PUT_PAR(Mode);
     os  << print_param.padding << '}';
     return os;
 };
@@ -646,7 +614,6 @@ DEF_STRUCT_TRACE(mfxExtMVCSeqDesc){
     }
 
     os  << PUT_PAR(NumRefsTotal)
-        << PUT_ARR(Reserved, 16)
         << print_param.padding << '}';
     return os;
 };
@@ -658,7 +625,6 @@ DEF_STRUCT_TRACE(mfxExtCodingOption){
     os  << "{\n"
         << PUT_4CC(Header.BufferId)
         << PUT_PAR(Header.BufferSz)
-        << PUT_PAR(reserved1)
         << PUT_PAR(RateDistortionOpt)
         << PUT_PAR(MECostType)
         << PUT_PAR(MESearchType)
@@ -666,7 +632,6 @@ DEF_STRUCT_TRACE(mfxExtCodingOption){
         << PUT_PAR(EndOfSequence)
         << PUT_PAR(FramePicture)
         << PUT_PAR(CAVLC)
-        << PUT_ARR(reserved2, 2)
         << PUT_PAR(RecoveryPointSEI)
         << PUT_PAR(ViewOutput)
         << PUT_PAR(NalHrdConformance)
@@ -692,13 +657,10 @@ DEF_STRUCT_TRACE(mfxExtOpaqueSurfaceAlloc){
     os  << "{\n"
         << PUT_4CC(Header.BufferId)
         << PUT_PAR(Header.BufferSz)
-        << PUT_ARR(reserved1, 2)
         << PUT_PAR(In.Surfaces)
-        << PUT_ARR(In.reserved2, 5)
         << PUT_PAR(In.Type)
         << PUT_PAR(In.NumSurface)
         << PUT_PAR(Out.Surfaces)
-        << PUT_ARR(Out.reserved2, 5)
         << PUT_PAR(Out.Type)
         << PUT_PAR(Out.NumSurface);
     os  << print_param.padding << '}';
@@ -723,7 +685,6 @@ std::ostream &operator << (std::ostream &os, rawdata p){
 
 DEF_STRUCT_TRACE(mfxPayload){
     os  << "{\n"
-        << PUT_ARR(reserved, 4)
         << PUT_DATA(Data, p.BufSize)
         << PUT_PAR(NumBit)
         << PUT_PAR(Type)
@@ -736,11 +697,9 @@ DEF_STRUCT_TRACE(mfxEncodeCtrl){
     os  << "{\n"
         << PUT_4CC(Header.BufferId)
         << PUT_PAR(Header.BufferSz)
-        << PUT_ARR(reserved, 5)
         << PUT_PAR(SkipFrame)
         << PUT_PAR(QP)
         << PUT_PAR(FrameType)
-        << PUT_PAR(reserved2)
         << PUT_PAR(NumExtParam)
         << PUT_PAR(ExtParam);
 
@@ -787,7 +746,6 @@ DEF_STRUCT_TRACE(mfxExtPAVPOption){
         << PUT_PAR(CounterIncrement)
         << PUT_PAR(EncryptionType)
         << PUT_PAR(CounterType)
-        << PUT_ARR(reserved, 8)
         << print_param.padding << '}';
     return os;
 };
@@ -795,13 +753,11 @@ DEF_STRUCT_TRACE(mfxExtPAVPOption){
 DEF_STRUCT_TRACE(mfxEncryptedData){
     os  << "{\n"
         << PUT_PAR(Next)
-        << PUT_PAR(reserved1)
         << PUT_PAR(Data)
         << PUT_PAR(DataOffset)
         << PUT_PAR(DataLength)
         << PUT_PAR(MaxLength)
         << PUT_STRUCT(CipherCounter)
-        << PUT_ARR(reserved2, 8)
         << print_param.padding << '}';
     return os;
 };
@@ -809,7 +765,6 @@ DEF_STRUCT_TRACE(mfxEncryptedData){
 #ifdef __MFXPLUGIN_H__
 DEF_STRUCT_TRACE(mfxPluginParam){
     os  << "{\n"
-        << PUT_ARR(reserved, 8)
         << PUT_STRUCT(PluginUID)
         << PUT_PAR(Type)
         << PUT_PAR(CodecId)
@@ -821,7 +776,6 @@ DEF_STRUCT_TRACE(mfxPluginParam){
 
 DEF_STRUCT_TRACE(mfxCoreParam){
     os  << "{\n"
-        << PUT_ARR(reserved, 13)
         << PUT_PAR(Impl)
         << PUT_PAR(Version)
         << PUT_PAR(NumWorkingThread)
@@ -864,7 +818,6 @@ DEF_STRUCT_TRACE(mfxAudioInfoMFX){
 
 DEF_STRUCT_TRACE(mfxAudioParam){
     os  << "{\n"
-        << PUT_ARR(reserved, 5)
         << PUT_PAR(AsyncDepth);
 
     if(!pflag(PRINT_OPT_VPP)) {
@@ -895,7 +848,6 @@ DEF_STRUCT_TRACE(mfxAudioAllocRequest){
     os  << "{\n"
         << PUT_PAR(SuggestedInputSize)
         << PUT_PAR(SuggestedOutputSize)
-        << PUT_ARR(reserved, 6)
         << print_param.padding << '}';
     return os;
 };
@@ -907,7 +859,6 @@ DEF_STRUCT_TRACE(mfxExtEncoderCapability){
         << PUT_4CC(Header.BufferId)
         << PUT_PAR(Header.BufferSz)
         << PUT_PAR(MBPerSec)
-        << PUT_ARR(reserved, 58)
         << print_param.padding << '}';
     return os;
 }
@@ -917,7 +868,6 @@ DEF_STRUCT_TRACE(mfxExtEncoderResetOption){
         << PUT_4CC(Header.BufferId)
         << PUT_PAR(Header.BufferSz)
         << PUT_PAR(StartNewSequence)
-        << PUT_ARR(reserved, 11)
         << print_param.padding << '}';
     return os;
 }
@@ -930,7 +880,6 @@ DEF_STRUCT_TRACE(mfxExtEncoderResetOption){
             << PUT_PARP(prefix.name[i], FrameOrder)              \
             << PUT_PARP(prefix.name[i], PicStruct)               \
             << PUT_PARP(prefix.name[i], LongTermIdx)             \
-            << PUT_ARRP(prefix.name[i], reserved, 4)             \
             << print_param.padding << "}\n";                     \
     }                                                            \
     DEC_PADDING();DEC_PADDING();                                 \
@@ -946,7 +895,6 @@ DEF_STRUCT_TRACE(mfxExtAVCEncodedFrameInfo){
         << PUT_PAR(MAD)
         << PUT_PAR(BRCPanicMode)
         << PUT_PAR(QP)
-        << PUT_ARR(reserved, 4)
         << PUT_LXP_INFO(p, UsedRefListL0)
         << PUT_LXP_INFO(p, UsedRefListL1)
         << print_param.padding << '}';
@@ -965,7 +913,6 @@ DEF_STRUCT_TRACE(mfxExtAVCEncodedFrameInfo){
             << PUT_PARP(prefix.name[i], PicStruct)       \
             << PUT_PARP(prefix.name[i], ViewId)          \
             << PUT_PARP(prefix.name[i], LongTermIdx)     \
-            << PUT_ARRP(prefix.name[i], reserved, 3)     \
             << print_param.padding << "}\n";             \
     }                                                    \
     DEC_PADDING();DEC_PADDING();                         \
@@ -981,7 +928,6 @@ DEF_STRUCT_TRACE(mfxExtAVCRefListCtrl){
         << PUT_LXP_CTRL(p, RejectedRefList)
         << PUT_LXP_CTRL(p, LongTermRefList)
         << PUT_PAR(ApplyLongTermIdx)
-        << PUT_ARR(reserved, 15)
         << print_param.padding << '}';
     return os;
 }
@@ -989,15 +935,12 @@ DEF_STRUCT_TRACE(mfxExtAVCRefListCtrl){
 DEF_STRUCT_TRACE(mfxExtAvcTemporalLayers){
     os  << "{\n"
         << PUT_4CC(Header.BufferId)
-        << PUT_PAR(Header.BufferSz)
-        << PUT_ARR(reserved1, 4)
-        << PUT_PAR(reserved2);
+        << PUT_PAR(Header.BufferSz);
 
     for(mfxU32 i = 0; i < 8; i++){
         os  << print_param.padding << "  Layer[" << i << "] = {\n";
         INC_PADDING();
         os  << PUT_PARP(p.Layer[i], Scale)
-            << PUT_ARRP(p.Layer[i], reserved, 3)
             << print_param.padding << "}\n";
         DEC_PADDING();
     }
@@ -1039,7 +982,6 @@ DEF_STRUCT_TRACE(mfxVPPCompInputStream){
         << PUT_PAR(DstY)
         << PUT_PAR(DstW)
         << PUT_PAR(DstH)
-        << PUT_ARR(reserved2, 24)
         << print_param.padding << '}';
     return os;
 }
@@ -1051,7 +993,6 @@ DEF_STRUCT_TRACE(mfxExtVPPComposite){
         << PUT_PAR(Y)
         << PUT_PAR(U)
         << PUT_PAR(V)
-        << PUT_ARR(reserved1, 24)
         << PUT_PAR(NumInputStream);
     for(mfxU32 i = 0; i < p.NumInputStream; i++)
         os << PUT_PAR(InputStream[i]);
@@ -1064,7 +1005,6 @@ DEF_STRUCT_TRACE(mfxExtVPPDeinterlacing){
         << PUT_4CC(Header.BufferId)
         << PUT_PAR(Header.BufferSz)
         << PUT_PAR(Mode)
-        << PUT_ARR(reserved, 11)
         << print_param.padding << '}';
     return os;
 }
@@ -1073,13 +1013,10 @@ DEF_STRUCT_TRACE(mfxExtVPPVideoSignalInfo){
     os  << "{\n"
         << PUT_4CC(Header.BufferId)
         << PUT_PAR(Header.BufferSz)
-        << PUT_ARR(reserved1, 4)
         << PUT_PAR(In.TransferMatrix)
         << PUT_PAR(In.NominalRange)
-        << PUT_ARR(In.reserved2, 6)
         << PUT_PAR(Out.TransferMatrix)
         << PUT_PAR(Out.NominalRange)
-        << PUT_ARR(Out.reserved2, 6)
         << print_param.padding << '}';
     return os;
 }
@@ -1088,8 +1025,7 @@ DEF_STRUCT_TRACE(mfxExtEncoderROI){
     os  << "{\n"
         << PUT_4CC(Header.BufferId)
         << PUT_PAR(Header.BufferSz)
-        << PUT_PAR(NumROI)
-        << PUT_ARR(reserved1, 11);
+        << PUT_PAR(NumROI);
 
     for(mfxU32 i = 0; i < p.NumROI; i++){
         os  << print_param.padding << "  ROI[" << i << "] = {\n";
@@ -1099,7 +1035,6 @@ DEF_STRUCT_TRACE(mfxExtEncoderROI){
             << PUT_PAR(ROI[i].Right)
             << PUT_PAR(ROI[i].Bottom)
             << PUT_PAR(ROI[i].Priority)
-            << PUT_ARR(ROI[i].reserved2, 7)
             << print_param.padding << "}\n";
         DEC_PADDING();
     }
