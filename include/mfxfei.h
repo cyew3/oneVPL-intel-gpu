@@ -37,15 +37,6 @@ extern "C"
 {
 #endif /* __cplusplus */
 
-
-
-//1 PreENC input
-enum {
-    MFX_PICTYPE_FRAME =0x01,
-    MFX_PICTYPE_TOPFIELD    =0x02,
-    MFX_PICTYPE_BOTTOMFIELD =0x04
-};
-
 typedef struct {
     mfxExtBuffer    Header;
 
