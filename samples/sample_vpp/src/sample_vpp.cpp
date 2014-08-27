@@ -42,6 +42,10 @@ void vppDefaultInitParams( sInputParams* pParams )
 
   pParams->impLib = MFX_IMPL_HARDWARE;
 
+  // Use RunFrameVPPAsyncEx
+  pParams->use_extapi  = false;
+  pParams->need_plugin = false;
+
   return;
 
 } // void vppDefaultInitParams( sInputParams* pParams )
@@ -104,6 +108,7 @@ int main(int argc, char *argv[])
 
   mfxFrameSurface1*   pInSurf[MAX_INPUT_STREAMS];
   mfxFrameSurface1*   pOutSurf;
+  mfxFrameSurface1*   pWorkSurf;
 
   mfxSyncPoint        syncPoint;
 
@@ -176,7 +181,7 @@ int main(int argc, char *argv[])
   sts = ConfigVideoEnhancementFilters(&Params, &Resources);
   MSDK_CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, 1, WipeResources(&Resources));
 
-  sts = InitResources(&Resources, &mfxParamsVideo, Params.impLib);
+  sts = InitResources(&Resources, &mfxParamsVideo, &Params);
   MSDK_CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, 1, WipeResources(&Resources));
 
   // print parameters to console
@@ -222,15 +227,17 @@ int main(int argc, char *argv[])
   }
   msdk_printf(MSDK_STRING("VPP started\n"));
 
-  bool isMultipleOut = false;
-  while (MFX_ERR_NONE <= sts || MFX_ERR_MORE_DATA == sts || isMultipleOut )
+  bool bDoNotUpdateIn = false;
+  if(Params.use_extapi)
+      bDoNotUpdateIn = true;
+  while (MFX_ERR_NONE <= sts || MFX_ERR_MORE_DATA == sts || bDoNotUpdateIn )
   {
     if (nInStreamInd >= MAX_INPUT_STREAMS)
     {
         sts = MFX_ERR_UNKNOWN;  // should never happen, added mainly for KW
         break;
     }
-    if( !isMultipleOut )
+    if( !bDoNotUpdateIn )
     {
         if (nInStreamInd == argbSurfaceIndex)
         {
@@ -273,16 +280,34 @@ int main(int argc, char *argv[])
         }
     }
 
-    sts = GetFreeSurface(Allocator.pSurfaces[VPP_OUT],
-                         Allocator.response[VPP_OUT].NumFrameActual,
-                         &pOutSurf);
+    if ( !Params.use_extapi )
+    {
+        sts = GetFreeSurface(Allocator.pSurfaces[VPP_OUT],
+                             Allocator.response[VPP_OUT].NumFrameActual,
+                             &pOutSurf);
+    }
+    else
+    {
+        sts = GetFreeSurface(Allocator.pSurfaces[VPP_OUT],
+                             Allocator.response[VPP_OUT].NumFrameActual,
+                             &pWorkSurf);
+    }
     MSDK_BREAK_ON_ERROR(sts);
 
     // VPP processing
-    isMultipleOut = false;
-    sts = FrameProcessor.pmfxVPP->RunFrameVPPAsync( pInSurf[nInStreamInd], pOutSurf,
-                                                    (VPP_FILTER_DISABLED != Params.vaParam.mode)? &extVPPAuxData : NULL,
-                                                     &syncPoint );
+    bDoNotUpdateIn = false;
+    if ( !Params.use_extapi )
+    {
+        sts = FrameProcessor.pmfxVPP->RunFrameVPPAsync( pInSurf[nInStreamInd], pOutSurf,
+                                                        (VPP_FILTER_DISABLED != Params.vaParam.mode)? &extVPPAuxData : NULL,
+                                                         &syncPoint );
+    }
+    else
+    {
+        sts = FrameProcessor.pmfxVPP->RunFrameVPPAsyncEx( pInSurf[nInStreamInd], pWorkSurf, &pOutSurf, &syncPoint );
+        if(MFX_ERR_MORE_DATA != sts)
+            bDoNotUpdateIn = true;
+    }
 
     nInStreamInd++;
     if (nInStreamInd == Resources.numSrcFiles)
@@ -297,7 +322,12 @@ int main(int argc, char *argv[])
     //because VPP produce multiple out. example: Frame Rate Conversion 30->60
     if (MFX_ERR_MORE_SURFACE == sts)
     {
-        isMultipleOut = true;
+        if ( Params.use_extapi )
+        {
+            // RunFrameAsyncEx is used
+            continue;
+        }
+        bDoNotUpdateIn = true;
         sts = MFX_ERR_NONE;
     }
 
@@ -347,14 +377,36 @@ int main(int argc, char *argv[])
   // loop to get buffered frames from VPP
   while (MFX_ERR_NONE <= sts)
   {
-    sts = GetFreeSurface(Allocator.pSurfaces[VPP_OUT],
-                         Allocator.response[VPP_OUT].NumFrameActual,
-                         &pOutSurf);
+    if ( !Params.use_extapi )
+    {
+        sts = GetFreeSurface(Allocator.pSurfaces[VPP_OUT],
+                             Allocator.response[VPP_OUT].NumFrameActual,
+                             &pOutSurf);
+    }
+    else
+    {
+        sts = GetFreeSurface(Allocator.pSurfaces[VPP_OUT],
+                             Allocator.response[VPP_OUT].NumFrameActual,
+                             &pWorkSurf);
+    }
     MSDK_BREAK_ON_ERROR(sts);
 
-    sts = FrameProcessor.pmfxVPP->RunFrameVPPAsync( NULL, pOutSurf,
-                                                    (VPP_FILTER_DISABLED != Params.vaParam.mode)? &extVPPAuxData : NULL,
-                                                    &syncPoint );
+    if ( !Params.use_extapi )
+    {
+        sts = FrameProcessor.pmfxVPP->RunFrameVPPAsync( NULL, pOutSurf,
+                                                        (VPP_FILTER_DISABLED != Params.vaParam.mode)? &extVPPAuxData : NULL,
+                                                        &syncPoint );
+    }
+    else
+    {
+        sts = FrameProcessor.pmfxVPP->RunFrameVPPAsyncEx( NULL, pWorkSurf, &pOutSurf, &syncPoint );
+        if (MFX_ERR_MORE_SURFACE == sts)
+        {
+            sts = MFX_ERR_NONE;
+            continue;
+        }
+    }
+
     MSDK_IGNORE_MFX_STS(sts, MFX_ERR_MORE_SURFACE);
     MSDK_BREAK_ON_ERROR(sts);
 

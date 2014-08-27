@@ -162,6 +162,7 @@
     <ClInclude Include="include\mfx_samples_config.h" />
     <ClInclude Include="include\plugin_utils.h" />
     <ClInclude Include="include\sample_defs.h" />
+    <ClInclude Include="include\sample_params.h" />
     <ClInclude Include="include\sample_types.h" />
     <ClInclude Include="include\sample_utils.h" />
     <ClInclude Include="include\shared_ptr.h" />

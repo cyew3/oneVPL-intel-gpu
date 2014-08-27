@@ -347,6 +347,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\include\sample_params.h"
+				>
+			</File>
+			<File
 				RelativePath=".\include\sample_types.h"
 				>
 			</File>

@@ -33,6 +33,8 @@ void vppPrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("Options: \n"));
     msdk_printf(MSDK_STRING("   [-lib  type]     - type of used library. sw, hw (def: auto)\n\n"));
 
+    msdk_printf(MSDK_STRING("   [-extapi]        - use RunFrameVPPAsyncEx instead of RunFrameVPPAsync. Need for PTIR.\n\n"));
+    msdk_printf(MSDK_STRING("   [-p guid]        - use VPP plug-in with specified 32-character hexadecimal guid string\n"));
     msdk_printf(MSDK_STRING("   [-sw  width]     - width  of src video (def: 352)\n"));
     msdk_printf(MSDK_STRING("   [-sh  height]    - height of src video (def: 288)\n"));
     msdk_printf(MSDK_STRING("   [-scrX  x]       - cropX  of src video (def: 0)\n"));
@@ -481,6 +483,23 @@ mfxStatus vppParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams
             {
                 i++;
                 msdk_opt_read(strInput[i], pParams->outFrameInfo.dFrameRate);
+            }
+            else if( 0 == msdk_strcmp(strInput[i], MSDK_STRING("-extapi")) )
+            {
+                pParams->use_extapi = true;
+            }
+            else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-p")))
+            {
+                if (++i < nArgNum) {
+                    if (MFX_ERR_NONE == ConvertStringToGuid(strInput[i], pParams->pluginParams.pluginGuid)) {
+                        pParams->pluginParams.type = MFX_PLUGINLOAD_TYPE_GUID;
+                    }
+                    else {
+                        vppPrintHelp(strInput[0], MSDK_STRING("Invalid plugin GUID"));
+                        return MFX_ERR_UNSUPPORTED;
+                    }
+                    pParams->need_plugin = true;
+                }
             }
             //-----------------------------------------------------------------------------------
             //                   Video Enhancement Algorithms

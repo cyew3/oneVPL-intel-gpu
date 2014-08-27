@@ -14,6 +14,7 @@ Copyright(c) 2008-2014 Intel Corporation. All Rights Reserved.
 
 #include "sample_vpp_utils.h"
 #include "sysmem_allocator.h"
+#include "mfxplugin.h"
 
 #ifdef D3D_SURFACES_SUPPORT
 #include "d3d_allocator.h"
@@ -173,6 +174,18 @@ mfxStatus InitParamsVPP(mfxVideoParam* pParams, sInputParams* pInParams)
     if (pInParams->inFrameInfo[i].nHeight > maxHeight)
       maxHeight = pInParams->inFrameInfo[i].nHeight;
   }
+
+  //PTIR plugin requires equal input and output frame sizes for max performance
+  //As specified above,
+  //input frame is field picture and is aligned to 16, output frame is aligned to 32
+  if(pInParams->need_plugin)
+  {
+    if (AreGuidsEqual(pInParams->pluginParams.pluginGuid, MFX_PLUGINID_ITELECINE_HW))
+    {
+      pInParams->outFrameInfo.nHeight = pInParams->inFrameInfo[0].nHeight;
+    }
+  }
+
   pParams->vpp.In.Width = maxWidth;
   pParams->vpp.In.Height= maxHeight;
 
@@ -222,13 +235,16 @@ mfxStatus InitParamsVPP(mfxVideoParam* pParams, sInputParams* pInParams)
 
 /* ******************************************************************* */
 
-mfxStatus CreateFrameProcessor(sFrameProcessor* pProcessor, mfxVideoParam* pParams, mfxIMPL impl)
+mfxStatus CreateFrameProcessor(sFrameProcessor* pProcessor, mfxVideoParam* pParams, sInputParams* pInParams)
 {
   mfxStatus  sts = MFX_ERR_NONE;
+
   mfxVersion version = {{3, 1}}; // as this version of sample demonstrates the new DOUSE structure used to turn on VPP filters
 
   MSDK_CHECK_POINTER(pProcessor, MFX_ERR_NULL_PTR);
   MSDK_CHECK_POINTER(pParams,    MFX_ERR_NULL_PTR);
+  MSDK_CHECK_POINTER(pInParams,  MFX_ERR_NULL_PTR);
+  mfxIMPL    impl = pInParams->impLib;
 
   WipeFrameProcessor(pProcessor);
 
@@ -243,12 +259,21 @@ mfxStatus CreateFrameProcessor(sFrameProcessor* pProcessor, mfxVideoParam* pPara
 
   MSDK_CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, sts, WipeFrameProcessor(pProcessor));
 
+  // Plug-in
+  if (pInParams->need_plugin)
+  {
+      sts = MFXVideoUSER_Load(pProcessor->mfxSession, &(pInParams->pluginParams.pluginGuid), 1);
+      MSDK_CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, sts, WipeFrameProcessor(pProcessor));
+      pProcessor->plugin = true;
+      pProcessor->mfxGuid = pInParams->pluginParams.pluginGuid;
+  }
+
   // VPP
   pProcessor->pmfxVPP = new MFXVideoVPP(pProcessor->mfxSession);
 
   return MFX_ERR_NONE;
 
-} // mfxStatus CreateFrameProcessor(sFrameProcessor* pProcessor, mfxVideoParam* pParams)
+} // mfxStatus CreateFrameProcessor(sFrameProcessor* pProcessor, mfxVideoParam* pParams, sInputParams* pInParams)
 
 /* ******************************************************************* */
 
@@ -523,14 +548,15 @@ mfxStatus InitMemoryAllocator(sFrameProcessor* pProcessor, sMemoryAllocator* pAl
 
 /* ******************************************************************* */
 
-mfxStatus InitResources(sAppResources* pResources, mfxVideoParam* pParams, mfxIMPL impl)
+mfxStatus InitResources(sAppResources* pResources, mfxVideoParam* pParams, sInputParams* pInParams)
 {
   mfxStatus sts = MFX_ERR_NONE;
 
   MSDK_CHECK_POINTER(pResources, MFX_ERR_NULL_PTR);
   MSDK_CHECK_POINTER(pParams,    MFX_ERR_NULL_PTR);
+  MSDK_CHECK_POINTER(pInParams, MFX_ERR_NULL_PTR);
 
-  sts = CreateFrameProcessor(pResources->pProcessor, pParams, impl);
+  sts = CreateFrameProcessor(pResources->pProcessor, pParams, pInParams);
   MSDK_CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, sts, WipeResources(pResources));
 
   sts = InitMemoryAllocator(pResources->pProcessor, pResources->pAllocator, pParams);
@@ -541,7 +567,7 @@ mfxStatus InitResources(sAppResources* pResources, mfxVideoParam* pParams, mfxIM
 
   return sts;
 
-} // mfxStatus InitResources(sAppResources* pResources, mfxVideoParam* pParams)
+} // mfxStatus InitResources(sAppResources* pResources, sInputParams* pInParams)
 
 /* ******************************************************************* */
 
@@ -553,6 +579,11 @@ void WipeFrameProcessor(sFrameProcessor* pProcessor)
 
   if (pProcessor->mfxSession.operator mfxSession())
   {
+      if (pProcessor->plugin)
+      {
+          MFXVideoUSER_UnLoad(pProcessor->mfxSession, &(pProcessor->mfxGuid));
+      }
+
       pProcessor->mfxSession.Close();
   }
 

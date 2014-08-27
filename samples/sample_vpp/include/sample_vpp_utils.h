@@ -5,7 +5,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2008 - 2013 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2008 - 2014 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -40,6 +40,7 @@
 #include "mfxvideo.h"
 #include "mfxvideo++.h"
 #include "sample_utils.h"
+#include "sample_params.h"
 #include "base_allocator.h"
 
 #include "sample_vpp_config.h"
@@ -47,6 +48,7 @@
 
 #define VPP_IN       (0)
 #define VPP_OUT      (1)
+#define VPP_WORK     (2)
 #define VPP_IN_RGB   2
 
 #define MFX_MAX_32U   ( 0xFFFFFFFF )
@@ -97,17 +99,23 @@ struct sInputParams
   /* ********************** */
   msdk_char  strSrcFile[MSDK_MAX_FILENAME_LEN];
   msdk_char  strDstFile[MSDK_MAX_FILENAME_LEN];
+  sPluginParams pluginParams;
 
   // required implementation of MediaSDK library
   mfxIMPL  impLib;
+
+  /* Use extended API (RunFrameVPPAsyncEx) */
+  bool  use_extapi;
+  bool  need_plugin;
 };
 
 struct sFrameProcessor
 {
   MFXVideoSession     mfxSession;
   MFXVideoVPP*        pmfxVPP;
-
-  sFrameProcessor( void ){ pmfxVPP = NULL; return;};
+  mfxPluginUID        mfxGuid;
+  bool                plugin;
+  sFrameProcessor(void){ pmfxVPP = NULL; plugin = false; return; };
 };
 
 struct sMemoryAllocator
@@ -192,7 +200,7 @@ void PrintInfo(sInputParams* pParams, mfxVideoParam* pMfxParams, MFXVideoSession
 
 mfxStatus InitParamsVPP(mfxVideoParam* pMFXParams, sInputParams* pInParams);
 
-mfxStatus InitResources(sAppResources* pResources, mfxVideoParam* pParams, mfxIMPL impl);
+mfxStatus InitResources(sAppResources* pResources, mfxVideoParam* pParams, sInputParams* pInParams);
 
 void WipeResources(sAppResources* pResources);
 
