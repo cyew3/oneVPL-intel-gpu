@@ -76,8 +76,8 @@ tsVideoEncoder::tsVideoEncoder(mfxFeiFunction func, mfxU32 CodecId, bool useDefa
         m_par.mfx.FrameInfo.FrameRateExtD = 1;
     }
 
-    //mfxExtFeiParam& extbuffer = m_par;
-    //extbuffer.Func = func;
+    mfxExtFeiParam& extbuffer = m_par;
+    extbuffer.Func = func;
 
     m_loaded = true;
 }
