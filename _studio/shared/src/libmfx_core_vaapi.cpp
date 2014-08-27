@@ -550,7 +550,7 @@ VAAPIVideoCORE::CreateVA(
         return MFX_ERR_UNSUPPORTED;
     }
 
-    VASurfaceID RenderTargets[128]; // 32 should be enough
+    VASurfaceID* RenderTargets[128]; // 32 should be enough
 
     for (mfxU32 i = 0; i < response->NumFrameActual; i++)
     {
@@ -562,7 +562,7 @@ VAAPIVideoCORE::CreateVA(
         else
             return MFX_ERR_UNDEFINED_BEHAVIOR;
 
-        RenderTargets[i] = *pSurface;
+        RenderTargets[i] = pSurface;
     }
 
     m_pVA.reset(new LinuxVideoAccelerator); //aya must be fixed late???
@@ -647,7 +647,7 @@ VAAPIVideoCORE::CreateVideoAccelerator(
     mfxVideoParam* param,
     int profile,
     int NumOfRenderTarget,
-    VASurfaceID* RenderTargets)
+    VASurfaceID** RenderTargets)
 {
     mfxStatus sts = MFX_ERR_NONE;
 

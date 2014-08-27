@@ -121,7 +121,7 @@ protected:
 protected:
     VADisplay     m_dpy;
     VAConfigID    m_config_id;
-    VASurfaceID*  m_surfaces;
+    VASurfaceID** m_pSurfaces;
     VAContextID   m_context;
     Ipp32s        m_iIndex;
     lvaFrameState m_FrameState;
@@ -131,9 +131,6 @@ protected:
     Ipp32u   m_uiCompBuffersUsed;
     vm_mutex m_SyncMutex;
     VACompBuffer** m_pCompBuffers;
-
-    // introduced for MediaSDK
-    bool    m_bIsExtSurfaces;
 
     GUID m_guidDecoder;
 };

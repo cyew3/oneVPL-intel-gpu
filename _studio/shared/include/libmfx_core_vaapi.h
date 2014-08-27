@@ -100,7 +100,7 @@ protected:
     virtual void           Close();
     virtual mfxStatus      DefaultAllocFrames(mfxFrameAllocRequest *request, mfxFrameAllocResponse *response);
 
-    mfxStatus              CreateVideoAccelerator(mfxVideoParam * param, int profile, int NumOfRenderTarget, _mfxPlatformVideoSurface *RenderTargets);
+    mfxStatus              CreateVideoAccelerator(mfxVideoParam * param, int profile, int NumOfRenderTarget, _mfxPlatformVideoSurface **RenderTargets);
     mfxStatus              ProcessRenderTargets(mfxFrameAllocRequest *request, mfxFrameAllocResponse *response, mfxBaseWideFrameAllocator* pAlloc);
     mfxStatus              TraceFrames(mfxFrameAllocRequest *request, mfxFrameAllocResponse *response, mfxStatus sts);
     mfxStatus              OnDeblockingInWinRegistry(mfxU32 codecId);
