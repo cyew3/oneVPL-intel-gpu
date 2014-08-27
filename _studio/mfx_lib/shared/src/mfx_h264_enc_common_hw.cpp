@@ -5513,8 +5513,11 @@ void MfxVideoParam::Construct(mfxVideoParam const & par)
 
     ExtParam = m_extParam;
     NumExtParam = mfxU16(sizeof m_extParam / sizeof m_extParam[0]);
+#if defined(MFX_ENABLE_H264_VIDEO_FEI_ENCPAK)
+    assert(NumExtParam == 19);
+#else
     assert(NumExtParam == 18);
-
+#endif
 }
 
 void MfxVideoParam::ConstructMvcSeqDesc(
