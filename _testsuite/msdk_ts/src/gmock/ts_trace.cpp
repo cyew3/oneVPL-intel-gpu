@@ -182,9 +182,7 @@ tsTrace& tsTrace::operator<<(const mfxInfoMFX& p)
                     
                 if(!p.RateControlMethod || p.RateControlMethod == MFX_RATECONTROL_ICQ)
                 {
-                    FIELD_T(mfxU16, Accuracy         )
-                    FIELD_T(mfxU16, TargetKbps       )
-                    FIELD_T(mfxU16, Convergence      )
+                    FIELD_T(mfxU16, ICQQuality      )
                     f++;
                 }
                 if(!p.RateControlMethod || !f)
@@ -192,7 +190,6 @@ tsTrace& tsTrace::operator<<(const mfxInfoMFX& p)
                     FIELD_T(mfxU16, InitialDelayInKB )
                     FIELD_T(mfxU16, TargetKbps       )
                     FIELD_T(mfxU16, MaxKbps          )
-                    FIELD_T(mfxU16, ICQQuality       )
                 }
 
                 FIELD_T(mfxU16, NumSlice         )
