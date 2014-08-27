@@ -9,5 +9,5 @@
 
 #ifndef __deinterlace_genx_hsw__
 #define __deinterlace_genx_hsw__
-extern const unsigned char deinterlace_genx_hsw[856894];
+extern const unsigned char deinterlace_genx_hsw[1277644];
 #endif

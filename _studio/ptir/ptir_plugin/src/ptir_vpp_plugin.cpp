@@ -909,8 +909,10 @@ mfxStatus MFX_PTIR_Plugin::Init(mfxVideoParam *par)
         m_mfxInitPar.AsyncDepth = 1;
 
     mfxHandleType mfxDeviceType = MFX_HANDLE_DIRECT3D_DEVICE_MANAGER9;
-    mfxHDL mfxDeviceHdl;
+    mfxHDL mfxDeviceHdl = 0;
 
+    bool HWSupported = false;
+    eMFXHWType HWType = MFX_HW_UNKNOWN;
     mfxCoreParam mfxCorePar;
     mfxSts = m_pmfxCore->GetCoreParam(m_pmfxCore->pthis, &mfxCorePar);
     if(MFX_ERR_NONE > mfxSts)
@@ -918,10 +920,10 @@ mfxStatus MFX_PTIR_Plugin::Init(mfxVideoParam *par)
     mfxSts = GetHandle(mfxDeviceHdl, mfxDeviceType);
     if(MFX_ERR_NONE != mfxSts &&
        MFX_IMPL_SOFTWARE != MFX_IMPL_BASETYPE(mfxCorePar.Impl))
-        return mfxSts;
-
-    bool HWSupported = false;
-    eMFXHWType HWType = MFX_HW_UNKNOWN;
+    {
+        HWSupported = false;
+        par_accel = true;
+    }
 
     mfxSts = GetHWTypeAndCheckSupport(mfxCorePar.Impl, mfxDeviceHdl, HWType, HWSupported, par_accel);
     if(MFX_ERR_NONE > mfxSts)
@@ -1271,7 +1273,7 @@ inline mfxStatus MFX_PTIR_Plugin::GetHandle(mfxHDL& mfxDeviceHdl, mfxHandleType&
 
 inline mfxStatus MFX_PTIR_Plugin::GetHWTypeAndCheckSupport(mfxIMPL& impl, mfxHDL& mfxDeviceHdl, eMFXHWType& HWType, bool& HWSupported, bool& par_accel)
 {
-    if(MFX_IMPL_HARDWARE == MFX_IMPL_BASETYPE(impl))
+    if((MFX_IMPL_HARDWARE == MFX_IMPL_BASETYPE(impl)) && mfxDeviceHdl)
     {
         HWType = GetHWType(1,impl,mfxDeviceHdl);
         switch (HWType)

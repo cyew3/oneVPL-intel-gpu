@@ -460,13 +460,13 @@ mfxStatus frameSupplier::CMCreateSurface2D(mfxFrameSurface1*& mfxSurf, CmSurface
     }
     else if((IOPattern & MFX_IOPATTERN_IN_VIDEO_MEMORY) && (IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY))
     {
-        mfxHDL native_surf = 0;
-        mfxSts = mfxCoreIfce->FrameAllocator.GetHDL(mfxCoreIfce->FrameAllocator.pthis, mfxSurf->Data.MemId, &native_surf);
+        mfxHDLPair native_surf = {};
+        mfxSts = mfxCoreIfce->FrameAllocator.GetHDL(mfxCoreIfce->FrameAllocator.pthis, mfxSurf->Data.MemId, (mfxHDL*)&native_surf);
         if(MFX_ERR_NONE > mfxSts)
             return mfxSts;
 
         if(!isD3D11)
-            cmSts = (*pCMdevice)->CreateSurface2D(native_surf, cmSurfOut);
+            cmSts = (*pCMdevice)->CreateSurface2D((mfxHDL*)&native_surf, cmSurfOut);
         else
             cmSts = (*pCMdevice)->CreateSurface2D( ((mfxHDLPair*) &native_surf)->first, cmSurfOut);
 

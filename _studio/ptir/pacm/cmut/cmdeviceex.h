@@ -56,7 +56,7 @@ public:
     CM_FAIL_IF(result != CM_SUCCESS || pDevice == NULL, result);
 
     CmProgram * pProgram = NULL;
-    result = pDevice->LoadProgram((void*)programm, size, pProgram);  
+    result = ::ReadProgram(pDevice, pProgram, programm, size);  
     CM_FAIL_IF(result != CM_SUCCESS || pProgram == NULL, result);
 
     this->programs.push_back(pProgram);
