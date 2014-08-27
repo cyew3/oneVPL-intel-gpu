@@ -39,6 +39,8 @@ public:
     virtual void Close() ;
 protected:
     virtual void AdjustD3DPP(D3DPRESENT_PARAMETERS *) {};
+    virtual bool IsOverlay() { return false; };
+    virtual bool IsFullscreen() { return m_bModeFullscreen; };
 private:
     HMODULE                     m_pLibD3D9;
     HMODULE                     m_pLibDXVA2;
@@ -46,6 +48,7 @@ private:
     IDirect3DDevice9Ex*         m_pD3DD9Ex;
     IDirect3DDeviceManager9*    m_pDeviceManager;
     D3DPRESENT_PARAMETERS       m_D3DPP;
+    bool                        m_bModeFullscreen;
 
     HRESULT myDirect3DCreate9Ex(UINT SDKVersion, IDirect3D9Ex**d);
     HRESULT myDXVA2CreateDirect3DDeviceManager9(UINT* pResetToken,
@@ -84,6 +87,11 @@ protected:
             ASSIGN_IF_NOT_ZERO(pD3DPP->FullScreen_RefreshRateInHz, m_D3DPP_over.FullScreen_RefreshRateInHz);
             ASSIGN_IF_NOT_ZERO(pD3DPP->PresentationInterval,       m_D3DPP_over.PresentationInterval);
         };
+
+        bool IsOverlay()
+        {
+            return (D3DSWAPEFFECT_OVERLAY == m_D3DPP_over.SwapEffect ? true : false );
+        }
 private:
     D3DPRESENT_PARAMETERS m_D3DPP_over;
 };

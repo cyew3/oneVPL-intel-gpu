@@ -21,6 +21,7 @@ MFXD3D9Device::MFXD3D9Device()
     , m_pD3D9Ex()
     , m_pD3DD9Ex()
     , m_pDeviceManager()
+    , m_bModeFullscreen(false)
 {
 }
 
@@ -81,6 +82,7 @@ mfxStatus MFXD3D9Device::Init(mfxU32 nAdapter,
         fsc.RefreshRate                    = 60;
 
         fullscreen = &fsc;
+        m_bModeFullscreen = true;
     }
 
     m_D3DPP.BackBufferFormat           = (D3DFORMAT)VIDEO_RENDER_TARGET_FORMAT;
@@ -384,7 +386,7 @@ mfxStatus MFXD3D9Device::RenderFrame(mfxFrameSurface1 * pSurface, mfxFrameAlloca
     {
         dest.top = 0;
         dest.bottom = dsc.Height;
-        int width = dsc.Height * dSrcAspect;
+        int width = (int) ( dsc.Height * dSrcAspect);
         dest.left = (dsc.Width - width) / 2;
         dest.right = dest.left + width;
     }
@@ -404,9 +406,16 @@ mfxStatus MFXD3D9Device::RenderFrame(mfxFrameSurface1 * pSurface, mfxFrameAlloca
     {
         MPA_TRACE("D3DRender::Present");
 
-
-        hr = m_pD3DD9Ex->Present(NULL, NULL, NULL, NULL);
-
+        if ( IsOverlay() )
+        {
+            // Overlay mode requires specifying source/dest rects.
+            // Otherwise it fails with invalid args error.
+            hr = m_pD3DD9Ex->Present(&source, &dest, NULL, NULL);
+        }
+        else
+        {
+            hr = m_pD3DD9Ex->Present(NULL, NULL, NULL, NULL);
+        }
         if (FAILED(hr))
         {
             MFX_TRACE_ERR(VM_STRING("Present failed with error 0x") << std::hex<<hr);
