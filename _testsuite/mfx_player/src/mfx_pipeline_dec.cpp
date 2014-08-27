@@ -481,6 +481,12 @@ mfxStatus MFXDecPipeline::BuildPipeline()
          MFX_FOURCC_R16  == m_inParams.FrameInfo.FourCC) {
         m_components[eDEC].m_params.mfx.FrameInfo.FourCC = m_inParams.FrameInfo.FourCC;
     }
+
+    if ( MFX_FOURCC_P210 == m_inParams.FrameInfo.FourCC ||
+        MFX_FOURCC_NV16 == m_inParams.FrameInfo.FourCC) {
+        m_components[eDEC].m_params.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV422;
+    }
+
     if ( MFX_FOURCC_R16 == m_inParams.FrameInfo.FourCC ) {
         m_components[eDEC].m_params.mfx.FrameInfo.BitDepthLuma = 10;
     }
