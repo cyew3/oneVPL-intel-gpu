@@ -91,6 +91,7 @@ public:
     tsTrace& operator << (const mfxPluginUID& p);
     tsTrace& operator << (const mfxFrameData& p);
     tsTrace& operator << (mfxStatus& p);
+    tsTrace& operator<<(const mfxExtFeiEncMV& p);
 
     template<typename T> tsTrace& operator << (T& p) { (tsAutoTrace&)*this << p; return *this; }
     template<typename T> tsTrace& operator << (T* p) { (tsAutoTrace&)*this << p; return *this; }

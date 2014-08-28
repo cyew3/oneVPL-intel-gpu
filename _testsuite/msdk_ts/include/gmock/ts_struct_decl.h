@@ -489,6 +489,57 @@ STRUCT(mfxExtFeiParam,
     FIELD_T(mfxFeiFunction, Func)
 )
 
+STRUCT(mfxExtFeiEncFrameCtrl,
+    FIELD_S(mfxExtBuffer, Header)
+    FIELD_T(mfxU16,       MaxLenSP)
+    FIELD_T(mfxU16,       LenSP)
+    FIELD_T(mfxU16,       SubMBPartMask)
+    FIELD_T(mfxU16,       IntraPartMask)
+    FIELD_T(mfxU16,       MultiPredL0)
+    FIELD_T(mfxU16,       MultiPredL1)
+    FIELD_T(mfxU16,       SubPelMode)
+    FIELD_T(mfxU16,       InterSAD)
+    FIELD_T(mfxU16,       IntraSAD)
+    FIELD_T(mfxU16,       DistortionType)
+    FIELD_T(mfxU16,       RepartitionCheckEnable)
+    FIELD_T(mfxU16,       AdaptiveSearch)
+    FIELD_T(mfxU16,       MVPredictor)
+    FIELD_T(mfxU16,       NumMVPredictors)
+    FIELD_T(mfxU16,       PerMBQp)
+    FIELD_T(mfxU16,       PerMBInput)
+    FIELD_T(mfxU16,       MBSizeCtrl)
+    FIELD_T(mfxU16,       RefWidth)
+    FIELD_T(mfxU16,       RefHeight)
+    FIELD_T(mfxU16,       SearchWindow)
+)
+
+STRUCT(mfxExtFeiEncMVPredictors,
+    FIELD_S(mfxExtBuffer, Header)
+    FIELD_T(mfxU32, NumMBAlloc)
+)
+
+STRUCT(mfxExtFeiEncMV,
+    FIELD_S(mfxExtBuffer, Header)
+    FIELD_T(mfxU32, NumMBAlloc)
+    FIELD_S(mfxI16Pair, MB)
+)
+
+STRUCT(mfxExtFeiEncMBCtrl,
+    FIELD_S(mfxExtBuffer,    Header)
+    FIELD_T(mfxU32,  NumMBAlloc)
+    //FIELD_S(mfxMB, MB)
+)
+STRUCT(mfxExtFeiEncMBStat,
+    FIELD_S(mfxExtBuffer,    Header)
+    FIELD_T(mfxU32,  NumMBAlloc)
+)
+
+STRUCT(mfxExtFeiPakMBCtrl,
+    FIELD_S(mfxExtBuffer,    Header)
+    FIELD_T(mfxU32,  NumMBAlloc)
+    FIELD_T(mfxFeiPakMBCtrl*, MB)
+)
+
 STRUCT(mfxExtCamGammaCorrection,
     FIELD_S(mfxExtBuffer, Header         )
     FIELD_T(mfxU16,       Mode           )
