@@ -1674,6 +1674,11 @@ void MfxHwH264Encode::ConfigureTask(
     {
         task.m_ctrl.SkipFrame = (extOpt2.SkipFrame) ? (1 + (IsProtectionPavp(video.Protected) || IsProtectionHdcp(video.Protected)) ) : 0;
 
+        if (video.mfx.GopRefDist > 1 && ((task.m_type.top & MFX_FRAMETYPE_REF) || (task.m_type.bot & MFX_FRAMETYPE_REF)))
+        {
+            task.m_ctrl.SkipFrame = 0;
+        }
+
         if (task.SkipFlag() != 0)
         {
             task.m_type.top &= ~MFX_FRAMETYPE_REF;

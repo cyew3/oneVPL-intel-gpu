@@ -1188,6 +1188,10 @@ mfxStatus D3D9Encoder::Execute(
     encodeExecuteParams.PavpEncryptionMode.eEncryptionType = PAVP_ENCRYPTION_NONE;
     UINT & bufCnt = encodeExecuteParams.NumCompBuffers;
     UCHAR  SkipFlag = task.SkipFlag();
+    mfxExtCodingOption2* ctrlOpt2 = GetExtBuffer(task.m_ctrl, MFX_EXTBUFF_CODING_OPTION2);
+
+    if (ctrlOpt2 && ctrlOpt2->SkipFrame <= MFX_SKIPFRAME_INSERT_NOTHING)
+        m_skipMode = ctrlOpt2->SkipFrame;
 
     // mvc hack
     // base view has separate sps/pps

@@ -3101,21 +3101,15 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
             changed = true;
     }
 
-    if (extOpt2->SkipFrame)
-    {
-        if (   extOpt2->SkipFrame > 1
-            || hwCaps.SkipFrame == 0
-            || par.mfx.GopRefDist > 1)
-        {
-            extOpt2->SkipFrame = 0;
-            changed = true;
-        }
-    }
-    if (extOpt2->SkipFrame && par.mfx.GopRefDist > 1)
+    
+    if (!CheckRangeDflt(extOpt2->SkipFrame, 0, 2, 0)) changed = true;
+
+    if ( extOpt2->SkipFrame && hwCaps.SkipFrame == 0 && par.mfx.RateControlMethod != MFX_RATECONTROL_CQP)
     {
         extOpt2->SkipFrame = 0;
         changed = true;
     }
+
      if (extOpt3->WinBRCMaxAvgKbps || extOpt3->WinBRCSize)
      {
          if (par.mfx.RateControlMethod != MFX_RATECONTROL_LA  && par.mfx.RateControlMethod != MFX_RATECONTROL_LA_HRD)
@@ -7452,7 +7446,6 @@ mfxU32 HeaderPacker::WriteSlice(
 }
 
 
-
 const mfxU8 M_N[2][3][3][2] = { // [isB][ctxIdx][cabac_init_idc][m, n]
     {// m and n values for 3 CABAC contexts 11-13 (mb_skip_flag for P frames)
         {{23, 33}, {22, 25}, {29, 16}},
@@ -7466,22 +7459,78 @@ const mfxU8 M_N[2][3][3][2] = { // [isB][ctxIdx][cabac_init_idc][m, n]
     },
 };
 
+const mfxI8 M_N_mbt_b[9][3][2] = { // [ctxIdx][cabac_init_idc][m, n]
+    // m and n values for CABAC contexts 27-35 (mb_type for B frames)
+    {{ 26,  67}, { 57,   2}, { 54,   0}},
+    {{ 16,  90}, { 41,  36}, { 37,  42}},
+    {{  9, 104}, { 26,  69}, { 12,  97}},
+    {{-46, 127}, {-45, 127}, {-32, 127}},
+    {{-20, 104}, {-15, 101}, {-22, 117}},
+    {{  1,  67}, { -4,  76}, { -2,  74}},
+    {{-13,  78}, { -6,  71}, { -4,  85}},
+    {{-11,  65}, {-13,  79}, {-24, 102}},
+    {{  1,  62}, {  5,  52}, {  5,  57}}
+};
+
+
+const mfxI8 M_N_mvd_b[14][3][2] = { // [ctxIdx][cabac_init_idc][m, n]
+    // m and n values for CABAC contexts 40-53 (mvd_lx for B frames)
+    {{ -3,  69}, { -2,  69}, {-11,  89}},
+    {{ -6,  81}, { -5,  82}, {-15, 103}},
+    {{-11,  96}, {-10,  96}, {-21, 116}},
+    {{  6,  55}, {  2,  59}, { 19,  57}},
+    {{  7,  67}, {  2,  75}, { 20,  58}},
+    {{ -5,  86}, { -3,  87}, {  4,  84}},
+    {{  2,  88}, { -3, 100}, {  6,  96}},
+    {{  0,  58}, {  1,  56}, {  1,  63}},
+    {{ -3,  76}, { -3,  74}, { -5,  85}},
+    {{-10,  94}, { -6,  85}, {-13, 106}},
+    {{  5,  54}, {  0,  59}, {  5,  63}},
+    {{  4,  69}, { -3,  81}, {  6,  75}},
+    {{ -3,  81}, { -7,  86}, { -3,  90}},
+    {{  0,  88}, { -5,  95}, { -1, 101}}
+};
+
+const mfxI8 M_N_ref_b[6][3][2] = { // [ctxIdx][cabac_init_idc][m, n]
+    // m and n values for CABAC contexts 54-59 (ref_idx_lx for B frames)
+    {{ -7,  67}, { -1,  66}, {  3,  55}},
+    {{ -5,  74}, { -1,  77}, { -4,  79}},
+    {{ -4,  74}, {  1,  70}, { -2,  75}},
+    {{ -5,  80}, { -2,  86}, {-12,  97}},
+    {{ -7,  72}, { -5,  72}, { -7,  50}},
+    {{  1,  58}, {  0,  61}, {  1,  60}},
+};
+
+const mfxI8 M_N_cbp_b[12][3][2] = { // [ctxIdx][cabac_init_idc][m, n]
+    // m and n values for CABAC contexts 73-84 (coded_block_pattern for B frames)
+    {{-27, 126}, {-39, 127}, {-36, 127}},
+    {{-28,  98}, {-18,  91}, {-17,  91}},
+    {{-25, 101}, {-17,  96}, {-14,  95}},
+    {{-23,  67}, {-26,  81}, {-25,  84}},
+    {{-28,  82}, {-35,  98}, {-25,  86}},
+    {{-20,  94}, {-24, 102}, {-12,  89}},
+    {{-16,  83}, {-23,  97}, {-17,  91}},
+    {{-22, 110}, {-27, 119}, {-31, 127}},
+    {{-21,  91}, {-24,  99}, {-14,  76}},
+    {{-18, 102}, {-21, 110}, {-18, 103}},
+    {{-13,  93}, {-18, 102}, {-13,  90}},
+    {{-29, 127}, {-36, 127}, {-37, 127}}
+};
 
 #define Clip3(min, max, val) val > max ? max : val < min ? min : val
 
-inline void InitCabacContexts(mfxU32 cabacInitIdc, mfxU32 sliceQP, mfxU8 (&cabacContexts)[3], bool isB)
+inline void InitCabacContext(mfxI16 m, mfxI16 n, mfxU16 sliceQP, mfxU8& ctx)
 {
-    for (mfxU32 i = 0; i < 3; i++)
-    {
-        mfxU8 m = M_N[isB][i][cabacInitIdc][0];
-        mfxU8 n = M_N[isB][i][cabacInitIdc][1];
-        mfxU8 preCtxState = (mfxU8)(Clip3( 1, 126, ( ( m * sliceQP ) >> 4 ) + n));
-        if (preCtxState <= 63)
-            cabacContexts[i] = 63 - preCtxState; // MPS = 0
-        else
-            cabacContexts[i] = (preCtxState - 64) | (1 << 6); // MPS = 1
-    }
+    mfxI16 preCtxState = Clip3( 1, 126, ( ( m * sliceQP ) >> 4 ) + n);
+    if (preCtxState <= 63)
+        ctx = mfxU8(63 - preCtxState); // MPS = 0
+    else
+        ctx = mfxU8((preCtxState - 64) | (1 << 6)); // MPS = 1
 }
+
+#define INIT_CABAC_CONTEXTS(idc, QP, MN, ctx) \
+    for (mfxU32 i = 0; i < sizeof(ctx); i++) \
+        InitCabacContext(MN[i][idc][0], MN[i][idc][1], mfxU16(QP), ctx[i]);
 
 
 ENCODE_PACKEDHEADER_DATA const & HeaderPacker::PackSkippedSlice(
@@ -7518,23 +7567,107 @@ ENCODE_PACKEDHEADER_DATA const & HeaderPacker::PackSkippedSlice(
         mfxU8 cabacContexts[3]; // 3 CABAC contexts for mb_skip_flag
         mfxU32 sliceQP = task.m_cqpValue[fieldId];
     
-        InitCabacContexts(m_cabacInitIdc, sliceQP, cabacContexts, !!(task.m_type[fieldId] & MFX_FRAMETYPE_B));
+        INIT_CABAC_CONTEXTS(m_cabacInitIdc, sliceQP, M_N[!!(task.m_type[fieldId] & MFX_FRAMETYPE_B)], cabacContexts);
     
         mfxU8 ctx276 = 63; // ctx for end_of_slice_flag: MPS = 0, pStateIdx = 63 (non-adapting prob state)
-    
-        for (mfxU32 uMB = 0; uMB < (picSizeInMB-1); uMB ++)
+
+        if ((task.m_type[fieldId] & MFX_FRAMETYPE_B) && (task.m_type[fieldId] & MFX_FRAMETYPE_REF))
         {
-            packer.EncodeBin(&cabacContexts[0], 1); // encode mb_skip_flag = 1 for every MB.
-            packer.EncodeBin(&ctx276, 0); // encode end_of_slice_flag = 0 for every MB
+            mfxU8 ctxMBT[9];
+            mfxU8 ctxREF[6];
+            mfxU8 ctxMVD[14];
+            mfxU8 ctxCBP[12];
+
+            INIT_CABAC_CONTEXTS(m_cabacInitIdc, sliceQP, M_N_mbt_b, ctxMBT);
+            INIT_CABAC_CONTEXTS(m_cabacInitIdc, sliceQP, M_N_ref_b, ctxREF);
+            INIT_CABAC_CONTEXTS(m_cabacInitIdc, sliceQP, M_N_mvd_b, ctxMVD);
+            INIT_CABAC_CONTEXTS(m_cabacInitIdc, sliceQP, M_N_cbp_b, ctxCBP);
+
+            for (mfxU32 uMB = 0; uMB < (picSizeInMB-1); uMB ++)
+            {
+                bool mbA = !!(uMB % picWidthInMB); //is left MB available
+                bool mbB = (uMB >= picWidthInMB);   //is above MB available
+            
+                packer.EncodeBin(&cabacContexts[mbA + mbB], 0); // encode mb_skip_flag = 0
+
+                // mb_type = 1 (B_L0_16x16) 1 0 0
+                packer.EncodeBin(&ctxMBT[mbA + mbB], 1);
+                packer.EncodeBin(&ctxMBT[3], 0);
+                packer.EncodeBin(&ctxMBT[5], 0);
+
+                if (task.m_list0[fieldId].Size() > 1)
+                    packer.EncodeBin(&ctxREF[0], 0); // ref_idx_l0 = 0
+
+                packer.EncodeBin(&ctxMVD[0], 0); // mvd_l0[][][0] = 0
+                packer.EncodeBin(&ctxMVD[7], 0); // mvd_l0[][][1] = 0
+
+                // coded_block_pattern = 0 (0 0 0 0, 0)
+                packer.EncodeBin(&ctxCBP[mbA + 2 * mbB], 0);
+                packer.EncodeBin(&ctxCBP[  1 + 2 * mbB], 0);
+                packer.EncodeBin(&ctxCBP[mbA + 2 * 1  ], 0);
+                packer.EncodeBin(&ctxCBP[  1 + 2 * 1  ], 0);
+                packer.EncodeBin(&ctxCBP[4], 0);
+            
+                packer.EncodeBin(&ctx276, 0); // end_of_slice_flag = 0
+            }
+
+            packer.EncodeBin(&cabacContexts[2], 0); // encode mb_skip_flag = 0
+
+            // mb_type = 1 (B_L0_16x16) 1 0 0
+            packer.EncodeBin(&ctxMBT[2], 1);
+            packer.EncodeBin(&ctxMBT[3], 0);
+            packer.EncodeBin(&ctxMBT[5], 0);
+
+            if (task.m_list0[fieldId].Size() > 1)
+                packer.EncodeBin(&ctxREF[0], 0); // ref_idx_l0 = 0
+
+            packer.EncodeBin(&ctxMVD[0], 0); // mvd_l0[][][0] = 0
+            packer.EncodeBin(&ctxMVD[7], 0); // mvd_l0[][][1] = 0
+
+            // coded_block_pattern = 0 (0 0 0 0, 0)
+            packer.EncodeBin(&ctxCBP[3], 0);
+            packer.EncodeBin(&ctxCBP[3], 0);
+            packer.EncodeBin(&ctxCBP[3], 0);
+            packer.EncodeBin(&ctxCBP[3], 0);
+            packer.EncodeBin(&ctxCBP[4], 0);
+
         }
+        else
+        {
+            for (mfxU32 uMB = 0; uMB < (picSizeInMB-1); uMB ++)
+            {
+                packer.EncodeBin(&cabacContexts[0], 1); // encode mb_skip_flag = 1 for every MB.
+                packer.EncodeBin(&ctx276, 0); // encode end_of_slice_flag = 0 for every MB
+            }
     
-        packer.EncodeBin(&cabacContexts[0], 1); // encode mb_skip_flag = 1 for every MB.
+            packer.EncodeBin(&cabacContexts[0], 1); // encode mb_skip_flag = 1 for every MB.
+        }
     
         packer.TerminateEncode();
     }
     else
     {
-        packer.PutUe(picSizeInMB); // write mb_skip_run = picSizeInMBs
+        if ((task.m_type[fieldId] & MFX_FRAMETYPE_B) && (task.m_type[fieldId] & MFX_FRAMETYPE_REF))
+        {
+            for (mfxU32 uMB = 0; uMB < picSizeInMB; uMB ++)
+            {
+                packer.PutUe(0); // mb_skip_run = 0
+                packer.PutUe(1); // mb_type = 1 (B_L0_16x16)
+                
+                if (task.m_list0[fieldId].Size() > 1)
+                    packer.PutBit(1);// ref_idx_l0 = 0
+                
+                packer.PutSe(0); // mvd_l0[][][0] = 0
+                packer.PutSe(0); // mvd_l0[][][1] = 0
+
+                packer.PutUe(0); // coded_block_pattern = 0
+            }
+        }
+        else
+        {
+            packer.PutUe(picSizeInMB); // write mb_skip_run = picSizeInMBs
+        }
+
         packer.PutTrailingBits();
     
         VM_ASSERT(packer.GetNumBits() % 8 == 0);

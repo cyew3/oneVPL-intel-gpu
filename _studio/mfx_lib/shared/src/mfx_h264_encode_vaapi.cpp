@@ -1387,6 +1387,10 @@ mfxStatus VAAPIEncoder::Execute(
     mfxU32      packedDataSize = 0;
     VAStatus    vaSts;
     mfxU8 skipFlag = task.SkipFlag();
+    mfxExtCodingOption2* ctrlOpt2 = GetExtBuffer(task.m_ctrl, MFX_EXTBUFF_CODING_OPTION2);
+
+    if (ctrlOpt2 && ctrlOpt2->SkipFrame <= MFX_SKIPFRAME_INSERT_NOTHING)
+        m_skipMode = ctrlOpt2->SkipFrame;
 
     configBuffers.resize(MAX_CONFIG_BUFFERS_COUNT + m_slice.size()*2);
 
@@ -2107,7 +2111,7 @@ mfxStatus VAAPIEncoder::Execute(
         codedBufferSegment->size = storedSize;
 
         m_numSkipFrames ++;
-        m_sizeSkipFrames += (m_skipMode != MFX_SKIPFRAME_INSERT_NOTHING) ? packedDataSize : 0;
+        m_sizeSkipFrames += (m_skipMode != MFX_SKIPFRAME_INSERT_NOTHING) ? storedSize : 0;
 
         {
             MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_SCHED, "Enc vaUnmapBuffer");
