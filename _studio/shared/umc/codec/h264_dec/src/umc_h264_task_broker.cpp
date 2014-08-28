@@ -1898,7 +1898,7 @@ bool TaskBrokerTwoThread::WrapReconstructTask(H264DecoderFrameInfo * info, H264T
                                     pSlice->m_iMaxMB) - pSlice->m_iCurMBToRec;
 
         pTask->m_iTaskID = TASK_REC;
-        Ipp8u* pointer;
+        Ipp8u* pointer = NULL;
         size_t size;
         pSlice->GetCoeffsBuffers()->LockOutputBuffer(pointer, size);
         pTask->m_pBuffer = ((UMC::CoeffsPtrCommon) pointer);

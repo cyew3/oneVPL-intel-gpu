@@ -165,7 +165,7 @@ mfxStatus MFXVideoVPPImgStab::Reset(mfxVideoParam *par)
     MFX_CHECK_NULL_PTR1( par );
     VPP_CHECK_NOT_INITIALIZED;
 
-    mfxExtBuffer* pHint;
+    mfxExtBuffer* pHint = NULL;
 
     GetFilterParam(par, MFX_EXTBUFF_VPP_IMAGE_STABILIZATION, &pHint);
 

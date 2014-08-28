@@ -108,12 +108,15 @@ vm_status vm_event_pulse(vm_event *event)
     if (NULL == event)
         return VM_NULL_PTR;
 
+#if !defined(WIN_TRESHOLD_MOBILE)
     if (NULL == event->handle)
         return VM_NOT_INITIALIZED;
     else if (PulseEvent(event->handle))
         return VM_OK;
     else
-        return VM_OPERATION_FAILED;
+#endif
+
+	return VM_OPERATION_FAILED;
 
 } /* vm_status vm_event_pulse(vm_event *event) */
 

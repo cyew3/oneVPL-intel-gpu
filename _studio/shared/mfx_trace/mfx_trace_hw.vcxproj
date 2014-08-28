@@ -133,7 +133,7 @@
     <ClCompile Include="src\mfx_trace_textlog.cpp" />
     <ClCompile Include="src\mfx_trace_utils.cpp" />
     <ClCompile Include="src\mfx_trace_utils_linux.cpp" />
-    <ClCompile Include="src\mfx_trace_utils_windows.cpp" />	
+    <ClCompile Include="src\mfx_trace_utils_windows.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\mfx_evntprov.h" />
@@ -144,7 +144,7 @@
     <ClInclude Include="include\mfx_trace_textlog.h" />
     <ClInclude Include="include\mfx_trace_utils.h" />
     <ClInclude Include="include\sys\mfx_trace_utils_linux.h" />
-    <ClInclude Include="include\sys\mfx_trace_utils_windows.h" />	
+    <ClInclude Include="include\sys\mfx_trace_utils_windows.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

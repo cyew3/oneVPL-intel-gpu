@@ -99,7 +99,7 @@ void DXDevice::LoadDLLModule(const wchar_t *pModuleName)
     prevErrorMode = SetErrorMode(SEM_FAILCRITICALERRORS);
 
     // load d3d9 library
-    m_hModule = LoadLibraryW(pModuleName);
+    m_hModule = LoadLibraryExW(pModuleName, NULL, 0);
 
     // set the previous error mode
     SetErrorMode(prevErrorMode);

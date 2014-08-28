@@ -184,7 +184,7 @@ mfxStatus MFXVideoVPPDetailEnhancement::Reset(mfxVideoParam *par)
 
     VPP_RESET;
 
-    mfxExtBuffer* pHint;
+    mfxExtBuffer* pHint = NULL;
 
     GetFilterParam(par, MFX_EXTBUFF_VPP_DETAIL, &pHint);
 

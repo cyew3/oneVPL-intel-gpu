@@ -43,7 +43,11 @@ vm_status vm_semaphore_init(vm_semaphore *sem, Ipp32s count)
     if (NULL == sem)
         return VM_NULL_PTR;
 
+#if (_WIN32_WINNT >= 0x0600)
+    sem->handle = CreateSemaphoreEx(NULL, count, LONG_MAX, 0, 0, 0);
+#else
     sem->handle = CreateSemaphore(NULL, count, LONG_MAX, 0);
+#endif
     return (0 != sem->handle) ? VM_OK : VM_OPERATION_FAILED;
 
 } /* vm_status vm_semaphore_init(vm_semaphore *sem, Ipp32s count) */
@@ -55,7 +59,11 @@ vm_status vm_semaphore_init_max(vm_semaphore *sem, Ipp32s count, Ipp32s max_coun
     if (NULL == sem)
         return VM_NULL_PTR;
 
+#if (_WIN32_WINNT >= 0x0600)
+    sem->handle = CreateSemaphoreEx(NULL, count, max_count, 0, 0, 0);
+#else
     sem->handle = CreateSemaphore(NULL, count, max_count, 0);
+#endif
     return (0 != sem->handle) ? VM_OK : VM_OPERATION_FAILED;
 
 } /* vm_status vm_semaphore_init_max(vm_semaphore *sem, Ipp32s count, Ipp32s max_count) */

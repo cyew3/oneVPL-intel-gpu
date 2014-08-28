@@ -254,7 +254,12 @@ void vm_set_current_thread_priority(vm_thread_priority priority)
 
 void vm_set_thread_affinity_mask(vm_thread *thread, unsigned int mask)
 {
+#if !defined(WIN_TRESHOLD_MOBILE)
     SetThreadAffinityMask(thread->handle, mask);
+#else
+    mask = 0;
+    thread = NULL;
+#endif
 }
 
 #endif /* defined(_WIN32) || defined(_WIN64) || defined(_WIN32_WCE) */

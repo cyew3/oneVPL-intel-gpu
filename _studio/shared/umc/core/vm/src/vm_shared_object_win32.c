@@ -20,7 +20,7 @@ vm_so_handle vm_so_load(const vm_char *so_file_name)
     if (NULL == so_file_name)
         return NULL;
 
-    return ((vm_so_handle) LoadLibrary(so_file_name));
+    return ((vm_so_handle) LoadLibraryExW(so_file_name, NULL, 0));
 
 } /* vm_so_handle vm_so_load(vm_char *so_file_name) */
 

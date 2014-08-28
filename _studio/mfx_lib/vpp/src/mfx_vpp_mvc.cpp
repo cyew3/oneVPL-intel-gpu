@@ -32,7 +32,7 @@ mfxStatus ImplementationMvc::QueryIOSurf(VideoCORE* core, mfxVideoParam *par, mf
     // in case of multiview we should correct result
     if( MFX_ERR_NONE == sts || MFX_WRN_PARTIAL_ACCELERATION == sts )
     {
-        mfxExtBuffer* pHint;
+        mfxExtBuffer* pHint = NULL;
         GetFilterParam(par, MFX_EXTBUFF_MVC_SEQ_DESC, &pHint);
 
         if( pHint )

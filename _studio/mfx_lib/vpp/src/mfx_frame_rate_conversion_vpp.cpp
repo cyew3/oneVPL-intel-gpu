@@ -150,7 +150,7 @@ mfxStatus MFXVideoVPPFrameRateConversion::Reset(mfxVideoParam *par)
     m_errPrtctState.In = par->vpp.In;
     m_errPrtctState.Out= par->vpp.Out;
 
-    mfxExtBuffer* pHint;
+    mfxExtBuffer* pHint = NULL;
 
     GetFilterParam(par, MFX_EXTBUFF_VPP_FRAME_RATE_CONVERSION, &pHint);
 

@@ -269,12 +269,12 @@ Ipp32u vm_sys_info_get_cpu_num(void)
 
 Ipp32u vm_sys_info_get_mem_size(void)
 {
-    MEMORYSTATUS m_memstat;
+    MEMORYSTATUSEX m_memstat;
 
     ZeroMemory(&m_memstat, sizeof(MEMORYSTATUS));
-    GlobalMemoryStatus(&m_memstat);
+    GlobalMemoryStatusEx(&m_memstat);
 
-    return (Ipp32u)((Ipp64f)m_memstat.dwTotalPhys / (1024 * 1024) + 0.5);
+    return (Ipp32u)((Ipp64f)m_memstat.ullTotalPhys / (1024 * 1024) + 0.5);
 
 } /* Ipp32u vm_sys_info_get_mem_size(void) */
 

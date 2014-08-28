@@ -1721,8 +1721,8 @@ Global
 		{D719372D-BA13-4730-AFF6-1994B26EFF6C}.Release_Intel|x64.Build.0 = Release_Intel|x64
 		{D719372D-BA13-4730-AFF6-1994B26EFF6C}.Release_TresholdMobile|Any CPU.ActiveCfg = Release_Intel|Win32
 		{D719372D-BA13-4730-AFF6-1994B26EFF6C}.Release_TresholdMobile|ARM.ActiveCfg = Release_Intel|Win32
-		{D719372D-BA13-4730-AFF6-1994B26EFF6C}.Release_TresholdMobile|Mixed Platforms.ActiveCfg = Release_Intel|Win32
-		{D719372D-BA13-4730-AFF6-1994B26EFF6C}.Release_TresholdMobile|Mixed Platforms.Build.0 = Release_Intel|Win32
+		{D719372D-BA13-4730-AFF6-1994B26EFF6C}.Release_TresholdMobile|Mixed Platforms.ActiveCfg = Release_TresholdMobile|Win32
+		{D719372D-BA13-4730-AFF6-1994B26EFF6C}.Release_TresholdMobile|Mixed Platforms.Build.0 = Release_TresholdMobile|Win32
 		{D719372D-BA13-4730-AFF6-1994B26EFF6C}.Release_TresholdMobile|Win32.ActiveCfg = Release_TresholdMobile|Win32
 		{D719372D-BA13-4730-AFF6-1994B26EFF6C}.Release_TresholdMobile|Win32.Build.0 = Release_TresholdMobile|Win32
 		{D719372D-BA13-4730-AFF6-1994B26EFF6C}.Release_TresholdMobile|x64.ActiveCfg = Release_TresholdMobile|x64

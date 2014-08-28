@@ -607,7 +607,7 @@ myDXVA2CreateDirect3DDeviceManager9(
         pDXVA2LIBNAME = CUSTOM_DXVA2_DLL;
     }
 
-    HMODULE m_pLibDXVA2 = LoadLibrary(pDXVA2LIBNAME);
+    HMODULE m_pLibDXVA2 = LoadLibraryExW(pDXVA2LIBNAME);
     if (NULL == m_pLibDXVA2) 
     { 
         return NULL;
