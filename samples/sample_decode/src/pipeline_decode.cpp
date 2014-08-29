@@ -753,6 +753,9 @@ void CDecodingPipeline::DeleteFrames()
 {
     FreeBuffers();
 
+    m_pCurrentFreeSurface = NULL;
+    MSDK_SAFE_FREE(m_pCurrentFreeOutputSurface);
+
     // delete frames
     if (m_pMFXAllocator)
     {
@@ -864,8 +867,6 @@ mfxStatus CDecodingPipeline::ResetDecoder(sInputParams *pParams)
 
     // free allocated frames
     DeleteFrames();
-    m_pCurrentFreeSurface = NULL;
-    m_pCurrentFreeOutputSurface = NULL;
 
     // initialize parameters with values from parsed header
     sts = InitMfxParams(pParams);
