@@ -41,7 +41,7 @@ set /a nCells=%VerticalCells% * %HorizontalCells% - 1
 set /a nVideoFiles1=0
 for /l %%a in (0,1,%nCells%) do (
   if defined Video_dir call :get_VideoFile !nVideoFiles1!
-  start /b "" "%~dp0sample_decode.exe" %MediaType% -i "!VideoFile!" %MediaSDKImplementation% -d3d -wall %HorizontalCells% %VerticalCells% %%a %nMonitor% %FrameRate% %bTitle% %Timeout%
+  start /b "" "%~dp0sample_decode.exe" %MediaType% -i "!VideoFile!" %MediaSDKImplementation% -d3d -f %FrameRate% -wall %HorizontalCells% %VerticalCells% %%a %nMonitor% %bTitle% %Timeout%
   set /a nVideoFiles1+=1
   if !nVideoFiles1! GEQ %nVideoFiles% set /a nVideoFiles1=0
 )
