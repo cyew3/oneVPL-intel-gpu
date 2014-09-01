@@ -27,14 +27,16 @@ static inline mfxU32 CalculateAsyncDepth(VideoCORE *core, mfxVideoParam *par)
 {
     mfxU32 asyncDepth = par->AsyncDepth;
     if (core && !asyncDepth)
+    {
         asyncDepth = core->GetAutoAsyncDepth();
+    }
 
     return asyncDepth;
 }
 
-static inline mfxU32 CalculateNumThread(mfxVideoParam *par)
+static inline mfxU32 CalculateNumThread(mfxVideoParam *par, eMFXPlatform platform)
 {
-    mfxU32 numThread = vm_sys_info_get_cpu_num();
+    mfxU32 numThread = (MFX_PLATFORM_SOFTWARE != platform) ? 1 : vm_sys_info_get_cpu_num();
     if (!par->AsyncDepth)
         return numThread;
 
@@ -133,7 +135,7 @@ mfxStatus VideoDECODEH265::Init(mfxVideoParam *par)
     m_vPar.CreateExtendedBuffer(MFX_EXTBUFF_CODING_OPTION_SPSPPS);
 
     mfxU32 asyncDepth = CalculateAsyncDepth(m_core, par);
-    m_vPar.mfx.NumThread = (mfxU16)((MFX_PLATFORM_SOFTWARE != m_platform) ? 1 : CalculateNumThread(par));
+    m_vPar.mfx.NumThread = (mfxU16)CalculateNumThread(par, m_platform);
 
     if (MFX_PLATFORM_SOFTWARE == m_platform)
     {
@@ -155,6 +157,15 @@ mfxStatus VideoDECODEH265::Init(mfxVideoParam *par)
     Ipp32s useInternal = (MFX_PLATFORM_SOFTWARE == m_platform) ?
         (m_vPar.IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY) : (m_vPar.IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY);
 
+    if (m_vPar.IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY)
+    {
+        mfxExtOpaqueSurfaceAlloc *pOpaqAlloc = (mfxExtOpaqueSurfaceAlloc *)GetExtendedBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION);
+        if (!pOpaqAlloc)
+            return MFX_ERR_INVALID_VIDEO_PARAM;
+
+        useInternal = (m_platform == MFX_PLATFORM_SOFTWARE) ? !(pOpaqAlloc->Out.Type & MFX_MEMTYPE_SYSTEM_MEMORY) : (pOpaqAlloc->Out.Type & MFX_MEMTYPE_SYSTEM_MEMORY);
+    }
+
     // allocate memory
     mfxFrameAllocRequest request;
     mfxFrameAllocRequest request_internal;
@@ -163,18 +174,9 @@ mfxStatus VideoDECODEH265::Init(mfxVideoParam *par)
     memset(&m_response_alien, 0, sizeof(m_response_alien));
     m_isOpaq = false;
 
-    mfxStatus mfxSts = QueryIOSurfInternal(m_platform, type, &m_vPar, &request, m_core);
+    mfxStatus mfxSts = QueryIOSurfInternal(m_platform, type, &m_vPar, &request, m_core, useInternal != 0);
     if (mfxSts != MFX_ERR_NONE)
         return mfxSts;
-
-    if (m_vPar.IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY)
-    {
-        mfxExtOpaqueSurfaceAlloc *pOpaqAlloc = (mfxExtOpaqueSurfaceAlloc *)GetExtendedBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION);
-        if (!pOpaqAlloc)
-            return MFX_ERR_INVALID_VIDEO_PARAM;
-
-        useInternal = (m_platform == MFX_PLATFORM_SOFTWARE) ? (pOpaqAlloc->Out.Type & MFX_MEMTYPE_DXVA2_DECODER_TARGET) : (pOpaqAlloc->Out.Type & MFX_MEMTYPE_SYSTEM_MEMORY);
-    }
 
     if (useInternal)
         request.Type |= MFX_MEMTYPE_INTERNAL_FRAME;
@@ -358,7 +360,7 @@ mfxStatus VideoDECODEH265::Reset(mfxVideoParam *par)
     m_vPar.CreateExtendedBuffer(MFX_EXTBUFF_VIDEO_SIGNAL_INFO);
     m_vPar.CreateExtendedBuffer(MFX_EXTBUFF_CODING_OPTION_SPSPPS);
 
-    m_vPar.mfx.NumThread = (mfxU16)((MFX_PLATFORM_SOFTWARE != m_platform) ? 1 : CalculateNumThread(par));
+    m_vPar.mfx.NumThread = (mfxU16)CalculateNumThread(par, m_platform);
 
     if (IS_PROTECTION_ANY(m_vFirstPar.Protected))
     {
@@ -647,15 +649,12 @@ mfxStatus VideoDECODEH265::QueryIOSurf(VideoCORE *core, mfxVideoParam *par, mfxF
     if (par->mfx.DecodedOrder)
         return MFX_ERR_UNSUPPORTED;
 
-    //if (!MFX_Utility::CheckVideoParam_H265(par, type))
-      //  return MFX_ERR_INVALID_VIDEO_PARAM;
-
-    mfxStatus sts = QueryIOSurfInternal(platform, type, &params, request, core);
-    if (sts != MFX_ERR_NONE)
-        return sts;
-
     Ipp32s isInternalManaging = (MFX_PLATFORM_SOFTWARE == platform) ?
         (params.IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY) : (params.IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY);
+
+    mfxStatus sts = QueryIOSurfInternal(platform, type, &params, request, core, isInternalManaging != 0);
+    if (sts != MFX_ERR_NONE)
+        return sts;
 
     if (isInternalManaging)
     {
@@ -695,11 +694,11 @@ mfxStatus VideoDECODEH265::QueryIOSurf(VideoCORE *core, mfxVideoParam *par, mfxF
 }
 
 // Actually calculate needed frames number
-mfxStatus VideoDECODEH265::QueryIOSurfInternal(eMFXPlatform platform, eMFXHWType type, mfxVideoParam *par, mfxFrameAllocRequest *request, VideoCORE *core)
+mfxStatus VideoDECODEH265::QueryIOSurfInternal(eMFXPlatform platform, eMFXHWType type, mfxVideoParam *par, mfxFrameAllocRequest *request, VideoCORE *core, bool useinternal)
 {
     request->Info = par->mfx.FrameInfo;
 
-    mfxU32 asyncDepth = CalculateNumThread(par);
+    mfxU32 asyncDepth = useinternal ? CalculateNumThread(par, platform) : CalculateAsyncDepth(core, par);
     bool useDelayedDisplay = (ENABLE_DELAYED_DISPLAY_MODE != 0) && IsNeedToUseHWBuffering(type) && (asyncDepth != 1);
 
     mfxI32 dpbSize = CalculateDPBSize(par->mfx.CodecLevel, par->mfx.FrameInfo.Width, par->mfx.FrameInfo.Height);
@@ -1337,11 +1336,11 @@ bool VideoDECODEH265::IsSameVideoParam(mfxVideoParam * newPar, mfxVideoParam * o
     mfxFrameAllocRequest requestNew;
     memset(&requestNew, 0, sizeof(requestNew));
 
-    mfxStatus mfxSts = QueryIOSurfInternal(m_platform, type, oldPar, &requestOld, m_core);
+    mfxStatus mfxSts = QueryIOSurfInternal(m_platform, type, oldPar, &requestOld, m_core, true);
     if (mfxSts != MFX_ERR_NONE)
         return false;
 
-    mfxSts = QueryIOSurfInternal(m_platform, type, newPar, &requestNew, m_core);
+    mfxSts = QueryIOSurfInternal(m_platform, type, newPar, &requestNew, m_core, true);
     if (mfxSts != MFX_ERR_NONE)
         return false;
 

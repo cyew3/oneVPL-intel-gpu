@@ -39,6 +39,8 @@ Status VATaskSupplier::Init(BaseCodecParams *pInit)
     SetVideoHardwareAccelerator(static_cast<UMC::VideoDecoderParams*>(pInit)->pVideoAccelerator);
     m_pMemoryAllocator = pInit->lpMemoryAllocator;
 
+    pInit->numThreads = 1;
+
     Status umsRes = TaskSupplier::Init(pInit);
     if (umsRes != UMC_OK)
         return umsRes;

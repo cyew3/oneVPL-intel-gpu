@@ -39,6 +39,8 @@ UMC::Status VATaskSupplier::Init(UMC::BaseCodecParams *pInit)
     SetVideoHardwareAccelerator(static_cast<UMC::VideoDecoderParams*>(pInit)->pVideoAccelerator);
     m_pMemoryAllocator = pInit->lpMemoryAllocator;
 
+    pInit->numThreads = 1;
+    
     UMC::Status umsRes = TaskSupplier_H265::Init(pInit);
     if (umsRes != UMC::UMC_OK)
         return umsRes;
