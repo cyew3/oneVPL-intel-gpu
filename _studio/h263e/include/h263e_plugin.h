@@ -39,14 +39,25 @@ File Name: h263e_plugin.h
 #include "mfx_utils.h"
 #include <umc_mutex.h>
 
-#include "mfx_h263e_plugin_utils.h"
 #include "umc_h263_video_encoder.h"
 
-static const mfxPluginUID  MFX_PLUGINID_H263E_HW = {{0x49, 0xC9, 0x70, 0xC3, 0xF9, 0x2B, 0x4D, 0x44, 0x8D, 0x2C, 0x3C, 0x21, 0xE2, 0x09, 0xF6, 0x39}};
+namespace MFX_H263ENC
+{
+  static const mfxPluginUID MFX_PLUGINID_H263E_HW =
+      {{0x49, 0xC9, 0x70, 0xC3, 0xF9, 0x2B, 0x4D, 0x44, 0x8D, 0x2C, 0x3C, 0x21, 0xE2, 0x09, 0xF6, 0x39}};
 
-enum {
+  enum {
     MFX_CODEC_H263 = MFX_MAKEFOURCC('H','2','6','3'),
-};
+  };
+
+  enum
+  {
+    MFX_MEMTYPE_D3D_INT = MFX_MEMTYPE_FROM_ENCODE | MFX_MEMTYPE_DXVA2_DECODER_TARGET | MFX_MEMTYPE_INTERNAL_FRAME,
+    MFX_MEMTYPE_D3D_EXT = MFX_MEMTYPE_FROM_ENCODE | MFX_MEMTYPE_DXVA2_DECODER_TARGET | MFX_MEMTYPE_EXTERNAL_FRAME,
+    MFX_MEMTYPE_SYS_EXT = MFX_MEMTYPE_FROM_ENCODE | MFX_MEMTYPE_SYSTEM_MEMORY        | MFX_MEMTYPE_EXTERNAL_FRAME,
+    MFX_MEMTYPE_SYS_INT = MFX_MEMTYPE_FROM_ENCODE | MFX_MEMTYPE_SYSTEM_MEMORY        | MFX_MEMTYPE_INTERNAL_FRAME
+  };
+} // namespace MFX_H263ENC
 
 class MFX_H263E_Plugin : public MFXEncoderPlugin
 {
@@ -115,14 +126,12 @@ protected:
     virtual ~MFX_H263E_Plugin(){};
 
     mfxVideoParam m_video;
-
-    MFX_H263ENC::TaskManager m_TaskManager;
+    mfxU32 m_frame_order;
 
     UMC::H263VideoEncoder  m_umc_encoder;
     UMC::H263EncoderParams m_umc_params;
 
-    UMC::Mutex m_taskMutex;
-
+    void* inframe;
     mfxCoreInterface* m_pmfxCore;
 
     mfxSession m_session;
@@ -137,5 +146,3 @@ protected:
 #else
 #define MSDK_PLUGIN_API(ret_type) extern "C"  ret_type
 #endif
-
-#endif // #ifndef __H263E_PLUGIN_H__
