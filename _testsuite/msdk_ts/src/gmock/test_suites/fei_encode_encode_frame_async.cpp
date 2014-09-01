@@ -18,8 +18,15 @@ private:
 
     enum
     {
-        NULL_SESSION = 1,
-        NULL_PARAMS,
+        IN_FRM_CTRL = 1,
+        IN_MV_PRED  = 1 << 1,
+        IN_MB_CTRL  = 1 << 2,
+        IN_ALL      = 7,
+
+        OUT_MV      = 8,
+        OUT_MB_STAT = 8 << 1,
+        OUT_MB_CTRL = 8 << 2,
+        OUT_ALL     = 63
     };
 
     struct tc_struct
@@ -39,7 +46,7 @@ private:
 
 const TestSuite::tc_struct TestSuite::test_case[] = 
 {
-    {/*00*/ MFX_ERR_NONE, 0, {&tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_SYSTEM_MEMORY}}
+    {/*00*/ MFX_ERR_NONE, IN_FRM_CTRL, {&tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_SYSTEM_MEMORY}},
 };
 
 const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case)/sizeof(TestSuite::tc_struct);
@@ -82,33 +89,66 @@ int TestSuite::RunTest(unsigned int id)
     AllocBitstream((m_par.mfx.FrameInfo.Width*m_par.mfx.FrameInfo.Height) * 1024 * 1024 * n);
 
     // Attach input structures
-    mfxExtFeiEncFrameCtrl& in_efc = m_ctrl;
-    mfxExtFeiEncMVPredictors& in_mvp = m_ctrl;
-    in_mvp.MB = new mfxExtFeiEncMVPredictors::mfxMB[num_mb];
-    mfxExtFeiEncMBCtrl& in_mbc = m_ctrl;
-    in_mbc.MB = new mfxExtFeiEncMBCtrl::mfxMB[num_mb];
+    std::vector<mfxExtBuffer*> in_buffs;
+
+    mfxExtFeiEncFrameCtrl in_efc = {};
+    if (tc.mode & IN_FRM_CTRL)
+    {
+        in_efc.Header.BufferId = MFX_EXTBUFF_FEI_ENC_CTRL;
+        in_efc.Header.BufferSz = sizeof(mfxExtFeiEncFrameCtrl);
+        in_buffs.push_back((mfxExtBuffer*)&in_efc);
+    }
+
+    mfxExtFeiEncMVPredictors in_mvp = {};
+    if (tc.mode & IN_MV_PRED)
+    {
+        in_mvp.Header.BufferId = MFX_EXTBUFF_FEI_ENC_MV_PRED;
+        in_mvp.Header.BufferSz = sizeof(mfxExtFeiEncMVPredictors);
+        in_mvp.MB = new mfxExtFeiEncMVPredictors::mfxMB[num_mb];
+        in_buffs.push_back((mfxExtBuffer*)&in_mvp);
+    }
+
+    mfxExtFeiEncMBCtrl in_mbc = {};
+    if (tc.mode & IN_MB_CTRL)
+    {
+        in_mbc.Header.BufferId = MFX_EXTBUFF_FEI_ENC_MB;
+        in_mbc.Header.BufferSz = sizeof(mfxExtFeiEncMBCtrl);
+        in_mbc.MB = new mfxExtFeiEncMBCtrl::mfxMB[num_mb];
+        in_buffs.push_back((mfxExtBuffer*)&in_mbc);
+    }
+    if (!in_buffs.empty())
+    {
+        m_ctrl.ExtParam = &in_buffs[0];
+        m_ctrl.NumExtParam = in_buffs.size();
+    }
 
     // Create and attach output structures
     std::vector<mfxExtBuffer*> out_buffs;
 
-    mfxExtFeiEncMV out_mv = {0};
-    out_mv.Header.BufferId = MFX_EXTBUFF_FEI_ENC_MV;
-    out_mv.Header.BufferSz = sizeof(mfxExtFeiEncMV);
-    out_mv.MB = new mfxExtFeiEncMV::mfxMB[num_mb];
-
-    mfxExtFeiEncMBStat out_mbstat = {0};
-    out_mbstat.Header.BufferId = MFX_EXTBUFF_FEI_ENC_MB_STAT;
-    out_mbstat.Header.BufferSz = sizeof(mfxExtFeiEncMBStat);
-    out_mbstat.MB = new mfxExtFeiEncMBStat::mfxMB[num_mb];
-
-    mfxExtFeiPakMBCtrl out_pakmb = {0};
-    out_pakmb.Header.BufferId = MFX_EXTBUFF_FEI_PAK_CTRL;
-    out_pakmb.Header.BufferSz = sizeof(mfxExtFeiPakMBCtrl);
-    out_pakmb.MB = new mfxFeiPakMBCtrl[num_mb];
-
-    out_buffs.push_back((mfxExtBuffer*)&out_mv);
-    out_buffs.push_back((mfxExtBuffer*)&out_mbstat);
-    out_buffs.push_back((mfxExtBuffer*)&out_pakmb);
+    mfxExtFeiEncMV out_mv = {};
+    if (tc.mode & OUT_MV)
+    {
+        out_mv.Header.BufferId = MFX_EXTBUFF_FEI_ENC_MV;
+        out_mv.Header.BufferSz = sizeof(mfxExtFeiEncMV);
+        out_mv.MB = new mfxExtFeiEncMV::mfxMB[num_mb];
+        out_buffs.push_back((mfxExtBuffer*)&out_mv);
+    }
+    if (tc.mode & OUT_MB_STAT)
+    {
+        mfxExtFeiEncMBStat out_mbstat = {};
+        out_mbstat.Header.BufferId = MFX_EXTBUFF_FEI_ENC_MB_STAT;
+        out_mbstat.Header.BufferSz = sizeof(mfxExtFeiEncMBStat);
+        out_mbstat.MB = new mfxExtFeiEncMBStat::mfxMB[num_mb];
+        out_buffs.push_back((mfxExtBuffer*)&out_mbstat);
+    }
+    if (tc.mode & OUT_MB_CTRL)
+    {
+        mfxExtFeiPakMBCtrl out_pakmb = {};
+        out_pakmb.Header.BufferId = MFX_EXTBUFF_FEI_PAK_CTRL;
+        out_pakmb.Header.BufferSz = sizeof(mfxExtFeiPakMBCtrl);
+        out_pakmb.MB = new mfxFeiPakMBCtrl[num_mb];
+        out_buffs.push_back((mfxExtBuffer*)&out_pakmb);
+    }
 
     if (!out_buffs.empty())
     {
