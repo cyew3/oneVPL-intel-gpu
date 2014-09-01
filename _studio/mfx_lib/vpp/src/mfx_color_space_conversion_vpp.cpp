@@ -36,8 +36,11 @@ IppStatus cc_P010_to_NV12( mfxFrameData* inData,  mfxFrameInfo* inInfo,
                            mfxFrameData* outData, mfxFrameInfo* outInfo,
                            mfxFrameData* yv12Data);
 
-IppStatus cc_P010_to_A2RGB10( mfxFrameData* inData,  mfxFrameInfo* inInfo,
-                              mfxFrameData* outData, mfxFrameInfo* outInfo);
+IppStatus cc_P010_to_A2RGB10_avx2( mfxFrameData* inData,  mfxFrameInfo* inInfo,
+                                   mfxFrameData* outData, mfxFrameInfo* outInfo);
+
+IppStatus cc_P010_to_A2RGB10_not_optimal( mfxFrameData* inData,  mfxFrameInfo* inInfo,
+                                          mfxFrameData* outData, mfxFrameInfo* outInfo);
 
 IppStatus cc_P010_to_P010( mfxFrameData* inData,  mfxFrameInfo* inInfo,
                            mfxFrameData* outData, mfxFrameInfo* outInfo);
@@ -216,7 +219,13 @@ mfxStatus MFXVideoVPPColorSpaceConversion::RunFrameVPP(mfxFrameSurface1 *in,
         ippSts = cc_P010_to_P010(inData, inInfo, outData, outInfo);
       break;
     case MFX_FOURCC_A2RGB10:
-        ippSts = cc_P010_to_A2RGB10(inData, inInfo, outData, outInfo);
+#if defined(_WIN32) || defined(_WIN64)
+        // There is a special avx2 version working on HSW+ on Windows
+        if ( m_bAVX2 )
+            ippSts = cc_P010_to_A2RGB10_avx2(inData, inInfo, outData, outInfo);
+        else
+#endif
+            ippSts = cc_P010_to_A2RGB10_not_optimal(inData, inInfo, outData, outInfo);
       break;
     default:
       return MFX_ERR_INVALID_VIDEO_PARAM;
@@ -345,6 +354,20 @@ mfxStatus MFXVideoVPPColorSpaceConversion::Init(mfxFrameInfo* In, mfxFrameInfo* 
     mfxSts = MFX_ERR_NONE;
     return mfxSts;
   }
+
+  m_bAVX2 = false;
+
+#if defined(_WIN32) || defined(_WIN64)
+  // [1] GetPlatformType()
+  Ipp32u cpuIdInfoRegs[4];
+  Ipp64u featuresMask;
+  IppStatus sts = ippGetCpuFeatures( &featuresMask, cpuIdInfoRegs);
+  if(ippStsNoErr == sts && featuresMask & (Ipp64u)(ippCPUID_AVX2) ) // means AVX2 + BMI_I + BMI_II to prevent issues with BMI
+  {
+    m_bAVX2 = true;
+  }
+
+#endif
 
   /* conversion */
   switch ( srcFourCC )
@@ -631,7 +654,7 @@ IppStatus cc_P010_to_NV12( mfxFrameData* inData,  mfxFrameInfo* inInfo,
 
 } // IppStatus cc_P010_to_NV12( mfxFrameData* inData,  mfxFrameInfo* inInfo,...)
 
-IppStatus cc_P010_to_A2RGB10( mfxFrameData* inData,  mfxFrameInfo* inInfo,
+IppStatus cc_P010_to_A2RGB10_not_optimal( mfxFrameData* inData,  mfxFrameInfo* inInfo,
                               mfxFrameData* outData, mfxFrameInfo* outInfo)
 {
   IppStatus sts = ippStsNoErr;
@@ -676,7 +699,7 @@ IppStatus cc_P010_to_A2RGB10( mfxFrameData* inData,  mfxFrameInfo* inInfo,
                 u = ptr_uv[uv_offset + (i/2)*2];
                 v = ptr_uv[uv_offset + (i/2)*2 + 1];
 
-                Y = (int)y * 0x000129fa;
+                Y = (int)(y - 64) * 0x000129fa;
                 Cb = u - 512;
                 Cr = v - 512;
                 r = CHOP10((((Y + 0x00019891 * Cr + 0x00008000 )>>16)));
@@ -693,6 +716,123 @@ IppStatus cc_P010_to_A2RGB10( mfxFrameData* inData,  mfxFrameInfo* inInfo,
   }
 
   return sts;
+
+} // IppStatus cc_P010_to_A2RGB10( mfxFrameData* inData,  mfxFrameInfo* inInfo,...)
+
+#if defined(_WIN32) || defined(_WIN64)
+  #define ALIGN_DECL(X) __declspec(align(X))
+#else
+  #define ALIGN_DECL(X) __attribute__ ((aligned(X)))
+#endif
+#include <immintrin.h>
+
+ALIGN_DECL(32) static const signed int yTab[8]  = { 0x000129fa, 0x000129fa, 0x000129fa, 0x000129fa, 0x000129fa, 0x000129fa, 0x000129fa, 0x000129fa };
+ALIGN_DECL(32) static const signed int rTab[8]  = { 0x00019891, 0x00019891, 0x00019891, 0x00019891, 0x00019891, 0x00019891, 0x00019891, 0x00019891 };
+ALIGN_DECL(32) static const signed int bTab[8]  = { 0x00020458, 0x00020458, 0x00020458, 0x00020458, 0x00020458, 0x00020458, 0x00020458, 0x00020458 };
+ALIGN_DECL(32) static const signed int grTab[8] = { 0x0000d01f, 0x0000d01f, 0x0000d01f, 0x0000d01f, 0x0000d01f, 0x0000d01f, 0x0000d01f, 0x0000d01f };
+ALIGN_DECL(32) static const signed int gbTab[8] = { 0x00006459, 0x00006459, 0x00006459, 0x00006459, 0x00006459, 0x00006459, 0x00006459, 0x00006459 };
+
+/* assume width = multiple of 8 */
+IppStatus cc_P010_to_A2RGB10_avx2( mfxFrameData* inData,  mfxFrameInfo* inInfo, mfxFrameData* outData, mfxFrameInfo* outInfo)
+{
+    __m128i xmm0, xmm1;
+    __m256i ymm0, ymm1, ymm2, ymm3, ymm4, ymm5;
+    __m256i ymmMin, ymmMax, ymmRnd, ymmOff, y1mmOff;
+
+    mfxU32 inPitch, outPitch;
+    mfxU16 *ptr_y, *ptr_uv;
+    mfxU32 *out, *out_ptr;
+    mfxI32 i, j, width, height;
+
+    VM_ASSERT( (inInfo->Width & 0x07) == 0 );
+    outInfo;
+
+    if ((MFX_PICSTRUCT_PROGRESSIVE & inInfo->PicStruct) == 0)
+        return ippStsErr;  /* interlaced not supported */
+
+    _mm256_zeroupper();
+
+    width  = inInfo->Width;
+    height = inInfo->Height;
+
+    inPitch  = (inData->Pitch >> 1);      /* 16-bit input */
+    outPitch = (outData->Pitch >> 2);     /* 32-bit output */
+
+    ptr_y  = (mfxU16*)inData->Y;
+    ptr_uv = (mfxU16*)inData->UV;
+    out    = (mfxU32*)IPP_MIN( IPP_MIN(outData->R, outData->G), outData->B );
+
+    ymmMin  = _mm256_set1_epi32(0);
+    ymmMax  = _mm256_set1_epi32(1023);
+    ymmRnd  = _mm256_set1_epi32(1 << 15);
+    ymmOff  = _mm256_set1_epi32(512);
+    y1mmOff = _mm256_set1_epi32(64);
+
+    for (j = 0; j < height; j++) {
+        out_ptr = out;
+        for (i = 0; i < width; i += 8) {
+            /* inner loop should fit entirely in registers in x64 build */
+            xmm0 = _mm_loadu_si128((__m128i *)(ptr_y + i));     // [Y0 Y1 Y2 Y3...] (16-bit)
+            xmm1 = _mm_loadu_si128((__m128i *)(ptr_uv + i));    // [U0 V0 U1 V1...] (16-bit)
+
+            ymm0 = _mm256_cvtepu16_epi32(xmm0);                 // [Y0 Y1 Y2 Y3...] (32-bit)
+            ymm0 = _mm256_sub_epi32(ymm0, y1mmOff);             // -64
+            ymm0 = _mm256_shuffle_epi32(ymm0, 0xF5);            // Y = [Y0 Y1 Y2 Y3...] - 64
+            ymm0 = _mm256_shuffle_epi32(ymm0, 0xA0);
+            ymm0 = _mm256_mullo_epi32(ymm0, *(__m256i *)yTab);  // Y = [Y0 Y1 Y2 Y3...] * 0x000129fa
+            ymm0 = _mm256_add_epi32(ymm0, ymmRnd);              // include round factor
+
+            ymm1 = _mm256_cvtepu16_epi32(xmm1);                 // [U0 V0 U1 V1...] (32-bit)
+            ymm1 = _mm256_sub_epi32(ymm1, ymmOff);              // -512
+            ymm2 = _mm256_shuffle_epi32(ymm1, 0xF5);            // Cr = [V0 V0 V1 V1...] - 512
+            ymm1 = _mm256_shuffle_epi32(ymm1, 0xA0);            // Cb = [U0 U0 U1 U1...] - 512
+
+            /* R = Y + 0x00019891*Cr + rnd */
+            ymm3 = _mm256_mullo_epi32(ymm2, *(__m256i *)rTab);
+            ymm3 = _mm256_add_epi32(ymm3, ymm0);
+
+            /* G = Y - 0x00006459*Cb - 0x0000d01f*Cr + rnd */
+            ymm4 = _mm256_mullo_epi32(ymm1, *(__m256i *)gbTab);
+            ymm5 = _mm256_mullo_epi32(ymm2, *(__m256i *)grTab);
+            ymm4 = _mm256_sub_epi32(ymm0, ymm4);
+            ymm4 = _mm256_sub_epi32(ymm4, ymm5);
+
+            /* B = Y + 0x00020458*Cb + rnd */
+            ymm5 = _mm256_mullo_epi32(ymm1, *(__m256i *)bTab);
+            ymm5 = _mm256_add_epi32(ymm5, ymm0);
+
+            /* scale back to 16-bit, clip to [0, 2^10 - 1] */
+            ymm3 = _mm256_srai_epi32(ymm3, 16);
+            ymm4 = _mm256_srai_epi32(ymm4, 16);
+            ymm5 = _mm256_srai_epi32(ymm5, 16);
+
+            ymm3 = _mm256_max_epi32(ymm3, ymmMin);
+            ymm4 = _mm256_max_epi32(ymm4, ymmMin);
+            ymm5 = _mm256_max_epi32(ymm5, ymmMin);
+
+            ymm3 = _mm256_min_epi32(ymm3, ymmMax);
+            ymm4 = _mm256_min_epi32(ymm4, ymmMax);
+            ymm5 = _mm256_min_epi32(ymm5, ymmMax);
+
+            /* 32-bit output = (R << 20) | (G << 10) | (B << 0) */
+            ymm3 = _mm256_slli_epi32(ymm3, 20);
+            ymm4 = _mm256_slli_epi32(ymm4, 10);
+            ymm5 = _mm256_or_si256(ymm5, ymm3);
+            ymm5 = _mm256_or_si256(ymm5, ymm4);
+
+            /* store 8 32-bit RGB values */
+            _mm256_storeu_si256((__m256i *)(out_ptr), ymm5);
+            out_ptr += 8;
+        }
+
+        /* update pointers (UV plane subsampled by 2) */
+        out   += outPitch;
+        ptr_y += inPitch;
+        if (j & 0x01)
+            ptr_uv += inPitch;
+    }
+
+    return ippStsNoErr;
 
 } // IppStatus cc_P010_to_A2RGB10( mfxFrameData* inData,  mfxFrameInfo* inInfo,...)
 
