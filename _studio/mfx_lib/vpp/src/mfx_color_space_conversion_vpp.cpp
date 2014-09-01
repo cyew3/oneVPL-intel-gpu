@@ -36,9 +36,10 @@ IppStatus cc_P010_to_NV12( mfxFrameData* inData,  mfxFrameInfo* inInfo,
                            mfxFrameData* outData, mfxFrameInfo* outInfo,
                            mfxFrameData* yv12Data);
 
+#if defined(_WIN32) || defined(_WIN64)
 IppStatus cc_P010_to_A2RGB10_avx2( mfxFrameData* inData,  mfxFrameInfo* inInfo,
                                    mfxFrameData* outData, mfxFrameInfo* outInfo);
-
+#endif
 IppStatus cc_P010_to_A2RGB10_not_optimal( mfxFrameData* inData,  mfxFrameInfo* inInfo,
                                           mfxFrameData* outData, mfxFrameInfo* outInfo);
 
@@ -719,6 +720,9 @@ IppStatus cc_P010_to_A2RGB10_not_optimal( mfxFrameData* inData,  mfxFrameInfo* i
 
 } // IppStatus cc_P010_to_A2RGB10( mfxFrameData* inData,  mfxFrameInfo* inInfo,...)
 
+
+#if defined(_WIN32) || defined(_WIN64)
+
 #if defined(_WIN32) || defined(_WIN64)
   #define ALIGN_DECL(X) __declspec(align(X))
 #else
@@ -835,6 +839,8 @@ IppStatus cc_P010_to_A2RGB10_avx2( mfxFrameData* inData,  mfxFrameInfo* inInfo, 
     return ippStsNoErr;
 
 } // IppStatus cc_P010_to_A2RGB10( mfxFrameData* inData,  mfxFrameInfo* inInfo,...)
+
+#endif
 
 IppStatus cc_P010_to_P010( mfxFrameData* inData,  mfxFrameInfo* inInfo,
                            mfxFrameData* outData, mfxFrameInfo* outInfo)
