@@ -1,0 +1,1118 @@
+/* ****************************************************************************** *\
+
+INTEL CORPORATION PROPRIETARY INFORMATION
+This software is supplied under the terms of a license agreement or nondisclosure
+agreement with Intel Corporation and may not be copied or disclosed except in
+accordance with the terms of that agreement
+Copyright(c) 2014 Intel Corporation. All Rights Reserved.
+
+File Name: mfx_camera_plugin_cpu.cpp
+
+\* ****************************************************************************** */
+
+#include "mfx_camera_plugin.h"
+#include "mfx_session.h"
+#include "mfx_task.h"
+
+/* from camerapipe_genx_skl.cpp */
+#define BGGR 0
+#define RGGB 1
+#define GBRG 2
+#define GRBG 3
+
+int CPU_Padding_16bpp(unsigned short* bayer_original, //input  of Padding module, bayer image of 16bpp format
+                      short* bayer_input,              //output of Padding module, Paddded bayer image of 16bpp format
+                      int width,                      //input framewidth
+                      int height,                       //input frameheight
+                      int bitDepth, int BayerType)
+{
+
+    int new_width = (width / 8 + 2) * 8;
+    int new_height = (height / 8 + 2) * 8;
+    //int byte_shift_amount = (BayerType == GRBG || BayerType == GBRG)? 1 : 0;
+
+    for (int y = 0; y < height; y++) {
+        for (int x = 0; x < width; x++) {
+            int ori_index = y * width + x;
+            int new_index = (y + 8) * new_width + (x + 8);
+
+            bayer_input[new_index] = bayer_original[ori_index] >> (16 - bitDepth);
+        }
+    }
+
+    // Pad left.
+    for (int y = 8; y < height + 8; y++) {
+        for (int x = 1; x < 8; x++) {
+            bayer_input[new_width * y + x] = bayer_input[new_width * y + (16 - x)];
+        }
+        bayer_input[new_width * y + 0] = bayer_input[new_width * y + 1];
+    }
+
+    // Pad right.
+    for (int y = 8; y < height + 8; y++) {
+        for (int x = width + 8; x < new_width - 1; x++) {
+            bayer_input[new_width * y + x] = bayer_input[new_width * y + (((width + 8) - (x - (width + 8))) - 2)];
+        }
+        bayer_input[new_width * y + new_width - 1] = bayer_input[new_width * y + new_width - 2];
+    }
+
+    // Pad top.
+    for (int y = 1; y < 8; y++) {
+        for (int x = 0; x < new_width; x++) {
+            bayer_input[new_width * y + x] = bayer_input[new_width * (16 - y) + x];
+        }
+    }
+    for (int x = 0; x < new_width; x++) {
+        bayer_input[x] = bayer_input[new_width + x];
+    }
+
+    // Pad bottom.
+    for (int y = height + 8; y < new_height - 1; y++) {
+        for (int x = 0; x < new_width; x++) {
+            bayer_input[new_width * y + x] = bayer_input[new_width * (((height + 8) - (y - (height + 8))) - 2) + x];
+        }
+    }
+    for (int x = 0; x < new_width; x++) {
+        bayer_input[new_width * (new_height - 1) + x] = bayer_input[new_width * (new_height - 2) + x];
+    }
+
+    return 0;
+
+}
+
+/* TODO - add correct offset for BayerType, see Cm code (need test content) */
+int CPU_GoodPixelCheck(short *pSrcBayer16bpp, int m_Width, int m_Height,
+                       unsigned char *pDstFlag8bpp, int Diff_Prec, int BayerType=0)
+{
+    int index;
+    int index01;
+    int index02;
+    //int Diff_Prec = 0;
+    //int hpos_shift_amount = (BayerType == GRBG || BayerType == GBRG)? 2 : 0;
+
+    //int dum;
+
+    for(int y=0;y<m_Height;y++)
+    for(int x=0;x<m_Width;x++)
+    {
+        int Good_Pixel = 0;
+        int Bad_Pixel = 0;
+
+        int Diff;
+
+        /*if(x == 14 && y == 8)
+        {
+            dum = 1;
+            for(int dely = 0; dely < 7; dely++)
+            {
+                for(int delx = 0; delx < 7; delx++)
+                {
+                    printf("%4d ", pSrcBayer16bpp[(y+dely-3)*m_Width+(x+delx-3)]);
+                }
+                printf("\n");
+            }
+        }*/
+        index = y*m_Width + x;
+
+        for(int i=-1;i<2;i++)
+        for(int j=-1;j<2;j++)
+        {
+            int x1 = CLIP_VPOS_FLDRPT(x+j,m_Width);
+            int y1 = CLIP_VPOS_FLDRPT(y+i,m_Height);
+
+            index01 = y1*m_Width + x1;
+
+            int Odd = 0;
+
+            for(int ii=-2;ii<3;ii+=2)
+            for(int jj=-2;jj<3;jj+=2)
+            {
+                if(Odd%2 == 1)
+                {
+                    int x2 = CLIP_VPOS_FLDRPT(x1+jj,m_Width);
+                    int y2 = CLIP_VPOS_FLDRPT(y1+ii,m_Height);
+
+                    index02 = y2*m_Width + x2;
+
+                    if     (x1%2 == 1 && y1%2 == 1)
+                    {
+                        if((pSrcBayer16bpp[index01]>>Diff_Prec) > m_Good_Intensity_TH
+                        && (pSrcBayer16bpp[index02]>>Diff_Prec) > m_Good_Intensity_TH)
+                                Diff = abs((pSrcBayer16bpp[index01]>>Diff_Prec) - (pSrcBayer16bpp[index02]>>Diff_Prec));
+                        else
+                                Diff = m_Good_Pixel_Th;
+                    }
+                    else if(x1%2 ==0 && y1%2 == 0)
+                    {
+                        if((pSrcBayer16bpp[index01]>>Diff_Prec) > m_Good_Intensity_TH &&
+                           (pSrcBayer16bpp[index02]>>Diff_Prec) > m_Good_Intensity_TH)
+                                Diff = abs((pSrcBayer16bpp[index01]>>Diff_Prec) - (pSrcBayer16bpp[index02]>>Diff_Prec));
+                        else
+                                Diff = m_Good_Pixel_Th;
+                    }
+                    else
+                    {
+                        if((pSrcBayer16bpp[index01]>>Diff_Prec) > m_Good_Intensity_TH &&
+                           (pSrcBayer16bpp[index02]>>Diff_Prec) > m_Good_Intensity_TH)
+                                Diff = abs((pSrcBayer16bpp[index01]>>Diff_Prec) - (pSrcBayer16bpp[index02]>>Diff_Prec));
+                        else
+                                Diff = m_Good_Pixel_Th;
+                    }
+                    if(Diff > m_Good_Pixel_Th)
+                        Good_Pixel++;
+                    if(Diff > m_Good_Pixel_Th*8)
+                        Bad_Pixel++;
+                }
+                Odd++;
+            }
+
+        }
+        //if(Good_Pixel == 81)
+        if(Good_Pixel > m_Num_Good_Pix_TH)
+        {
+            pDstFlag8bpp[index] = 2;//AVG_True;                    
+        }
+        else if(Bad_Pixel > m_Num_Big_Pix_TH)
+                
+        {
+            pDstFlag8bpp[index] = 2;//AVG_True;
+        }
+        else
+        {
+            pDstFlag8bpp[index] = 1;//AVG_False;
+        }
+    }
+
+    return 0;
+}
+
+int CPU_RestoreG(short *m_Pin,         //Pointer to Bayer data
+                 int m_Width, int m_Height,
+                 short *m_Pout_H__m_G,
+                 short *m_Pout_V__m_G,
+                 short *m_Pout_G__m_G,
+                 int Max_Intensity)
+{
+    int Gamma_n, Gamma_s;
+    int Gamma_w, Gamma_e;
+
+    for(int y=2;y<m_Height-2;y++)  //y=7;y<m_Height-7;y++   Input size already include mirrored pixels
+    for(int x=2;x<m_Width-2;x++)   //x=7;x<m_Width-7;x++
+    {
+
+        int G12 = m_Pin[(y-2)*m_Width+(x-1)];
+        int G14 = m_Pin[(y-2)*m_Width+(x+1)];
+        int G21 = m_Pin[(y-1)*m_Width+(x-2)];
+        int G25 = m_Pin[(y-1)*m_Width+(x+2)];
+        int G41 = m_Pin[(y+1)*m_Width+(x-2)];
+        int G45 = m_Pin[(y+1)*m_Width+(x+2)];
+        int G52 = m_Pin[(y+2)*m_Width+(x-1)];
+        int G54 = m_Pin[(y+2)*m_Width+(x+1)];
+
+        int G32 = m_Pin[ y   *m_Width+(x-1)];
+        int G34 = m_Pin[ y   *m_Width+(x+1)];
+        int G23 = m_Pin[(y-1)*m_Width+ x   ];
+        int G43 = m_Pin[(y+1)*m_Width+ x   ];
+
+        int dum;
+        if(y == 8 && x == 8)
+            dum = 1;
+
+        int Avg_G = ((G12+G14+G21+G23+G25+G32+G34+G41+G43+G45+G52+G54+G32+G34+G23+G43)>>4);
+
+        if(y%2 == 1 && x%2 == 1) //-7 to +7
+        {
+            int B15 = m_Pin[(y-2)*m_Width+(x+2)];
+            int B51 = m_Pin[(y+2)*m_Width+(x-2)];
+            int B55 = m_Pin[(y+2)*m_Width+(x+2)];
+
+            int B13 = m_Pin[(y-2)*m_Width+ x   ];
+            int B31 = m_Pin[ y   *m_Width+(x-2)];
+            int B33 = m_Pin[ y   *m_Width+ x   ];
+            int B35 = m_Pin[ y   *m_Width+(x+2)];
+            int B53 = m_Pin[(y+2)*m_Width+ x   ];
+
+            int Avg_B = ((B13+B15+B31+B33+B35+B51+B53+B55)>>3);//B11+
+
+            //Along Vertical
+            Gamma_n = abs(B13-B33);
+            Gamma_s = abs(B33-B53);
+
+            Gamma_w = abs(B31-B33);
+            Gamma_e = abs(B33-B35);
+
+            //Horizontal output
+            if(Gamma_w < Gamma_e)
+                m_Pout_H__m_G[y*m_Width+x] = (short)((5*G32+3*G34-B31+2*B33-B35)>>3);
+            else
+                m_Pout_H__m_G[y*m_Width+x] = (short)((5*G34+3*G32-B31+2*B33-B35)>>3);
+
+            //Vertical output
+            if(Gamma_n < Gamma_s)
+                m_Pout_V__m_G[y*m_Width+x] = (short)((5*G23+3*G43-B13+2*B33-B53)>>3);
+            else
+                m_Pout_V__m_G[y*m_Width+x] = (short)((5*G43+3*G23-B13+2*B33-B53)>>3);
+
+            m_Pout_G__m_G[y*m_Width+x] = (short)(B33 + Avg_G - Avg_B);
+        }
+        else if(y%2 == 0 && x%2 == 0)
+        {
+            int R15 = m_Pin[(y-2)*m_Width+(x+2)];
+            int R51 = m_Pin[(y+2)*m_Width+(x-2)];
+            int R55 = m_Pin[(y+2)*m_Width+(x+2)];
+
+            int R13 = m_Pin[(y-2)*m_Width+ x   ];
+            int R31 = m_Pin[ y   *m_Width+(x-2)];
+            int R33 = m_Pin[ y   *m_Width+ x   ];
+            int R35 = m_Pin[ y   *m_Width+(x+2)];
+            int R53 = m_Pin[(y+2)*m_Width+ x   ];
+
+            int Avg_R = ((R13+R15+R31+R33+R35+R51+R53+R55)>>3);//R11+
+
+
+            Gamma_n = abs(R13-R33);
+            Gamma_s = abs(R33-R53);
+
+            Gamma_w = abs(R31-R33);
+            Gamma_e = abs(R33-R35);
+
+            //For Horizontal
+            if(Gamma_w < Gamma_e)
+                m_Pout_H__m_G[y*m_Width+x] = (short)((5*G32+3*G34-R31+2*R33-R35)>>3);
+            else
+                m_Pout_H__m_G[y*m_Width+x] = (short)((5*G34+3*G32-R31+2*R33-R35)>>3);
+
+            //For Vertical
+            if(Gamma_n < Gamma_s)
+                m_Pout_V__m_G[y*m_Width+x] = (short)((5*G23+3*G43-R13+2*R33-R53)>>3);
+            else
+                m_Pout_V__m_G[y*m_Width+x] = (short)((5*G43+3*G23-R13+2*R33-R53)>>3);
+
+            m_Pout_G__m_G[y*m_Width+x] = (short)(R33 + Avg_G - Avg_R);
+        }
+        else
+        {
+            m_Pout_H__m_G[y*m_Width+x] = m_Pin[y*m_Width+x];
+            m_Pout_V__m_G[y*m_Width+x] = m_Pin[y*m_Width+x];
+            m_Pout_G__m_G[y*m_Width+x] = m_Pin[y*m_Width+x];
+        }
+        m_Pout_H__m_G[y*m_Width+x] = (short)CLIP_VAL(m_Pout_H__m_G[y*m_Width+x], 0, Max_Intensity);
+        m_Pout_V__m_G[y*m_Width+x] = (short)CLIP_VAL(m_Pout_V__m_G[y*m_Width+x], 0, Max_Intensity);
+        m_Pout_G__m_G[y*m_Width+x] = (short)CLIP_VAL(m_Pout_G__m_G[y*m_Width+x], 0, Max_Intensity);
+    }
+
+    return 0;
+}
+
+int CPU_RestoreBandR(short *m_Pin,         //Pointer to Bayer data
+                     int m_Width, int m_Height,
+                     short *m_Pout_H__m_G, short *m_Pout_V__m_G, short *m_Pout_G__m_G,  //Input,  G_H, G_V, G_A component
+                     short *m_Pout_H__m_B, short *m_Pout_V__m_B, short *m_Pout_G__m_B,  //Output, B_H, B_V, B_A    component
+                     short *m_Pout_H__m_R, short *m_Pout_V__m_R, short *m_Pout_G__m_R,  //Output, R_H, R_V, R_A component
+                     int Max_Intensity)
+{
+    int dum;
+
+    //For B
+    for(int y=2;y<m_Height-2;y++)
+    for(int x=2;x<m_Width-2;x++)
+    {
+        if(y%2==1 && x%2 == 0)
+        {
+            int B22= m_Pin[y*m_Width+(x-1)];
+            int B24= m_Pin[y*m_Width+(x+1)];
+
+            int G22_H= m_Pout_H__m_G[y*m_Width+(x-1)];
+            int G23_H= m_Pout_H__m_G[y*m_Width+ x   ];
+            int G24_H= m_Pout_H__m_G[y*m_Width+(x+1)];
+
+            int G22_V= m_Pout_V__m_G[y*m_Width+(x-1)];
+            int G23_V= m_Pout_V__m_G[y*m_Width+ x   ];
+            int G24_V= m_Pout_V__m_G[y*m_Width+(x+1)];
+
+            m_Pout_V__m_B[y*m_Width+x] = (short)((B22+B24-G22_V+2*G23_V-G24_V)/2);  // B32_V
+            m_Pout_H__m_B[y*m_Width+x] = (short)((B22+B24-G22_H+2*G23_H-G24_H)/2);  // B32_H
+
+            int G22_G= m_Pout_G__m_G[y*m_Width+(x-1)];
+            int G23_G= m_Pout_G__m_G[y*m_Width+ x   ];
+            int G24_G= m_Pout_G__m_G[y*m_Width+(x+1)];
+
+            m_Pout_G__m_B[y*m_Width+x] = (short)((B22+B24-G22_G+2*G23_G-G24_G)/2);  // B32_A
+        }
+        else if(y%2 ==0 && x%2==1)
+        {
+            int B22= m_Pin[(y-1)*m_Width+x];
+            int B42= m_Pin[(y+1)*m_Width+x];
+
+            int G22_H = m_Pout_H__m_G[(y-1)*m_Width+x];
+            int G32_H = m_Pout_H__m_G[ y   *m_Width+x];
+            int G42_H = m_Pout_H__m_G[(y+1)*m_Width+x];
+
+            int G22_V = m_Pout_V__m_G[(y-1)*m_Width+x];
+            int G32_V = m_Pout_V__m_G[ y   *m_Width+x];
+            int G42_V = m_Pout_V__m_G[(y+1)*m_Width+x];
+
+            m_Pout_H__m_B[y*m_Width+x] = (short)((B22+B42-G22_H+2*G32_H-G42_H)/2);  // B23_H
+            m_Pout_V__m_B[y*m_Width+x] = (short)((B22+B42-G22_V+2*G32_V-G42_V)/2);  // B23_V
+
+
+            int G22_G = m_Pout_G__m_G[(y-1)*m_Width+x];
+            int G32_G = m_Pout_G__m_G[ y   *m_Width+x];
+            int G42_G = m_Pout_G__m_G[(y+1)*m_Width+x];
+
+            m_Pout_G__m_B[y*m_Width+x] = (short)((B22+B42-G22_G+2*G32_G-G42_G)/2);  // B23_A
+
+        }
+        else if(y%2 == 1 && x%2 == 1)
+        {
+            m_Pout_H__m_B[y*m_Width+x] = m_Pin[y*m_Width+x];               // B22_H
+            m_Pout_V__m_B[y*m_Width+x] = m_Pin[y*m_Width+x];               // B22_V
+            m_Pout_G__m_B[y*m_Width+x] = m_Pin[y*m_Width+x];               // B22_A
+        }
+        m_Pout_H__m_B[y*m_Width+x] = (short)CLIP_VAL(m_Pout_H__m_B[y*m_Width+x], 0, Max_Intensity);
+        m_Pout_V__m_B[y*m_Width+x] = (short)CLIP_VAL(m_Pout_V__m_B[y*m_Width+x], 0, Max_Intensity);
+        m_Pout_G__m_B[y*m_Width+x] = (short)CLIP_VAL(m_Pout_G__m_B[y*m_Width+x], 0, Max_Intensity);
+    }
+    for(int y=2;y<m_Height-2;y++)
+    for(int x=2;x<m_Width-2;x++)
+    {
+        if(y%2 ==0 && x%2 == 0)
+        {
+            int B32_H = m_Pout_H__m_B[ y   *m_Width+(x-1)];
+            int B34_H = m_Pout_H__m_B[ y   *m_Width+(x+1)];
+
+            int G32_H = m_Pout_H__m_G[ y   *m_Width+(x-1)];
+            int G33_H = m_Pout_H__m_G[ y   *m_Width+ x   ];
+            int G34_H = m_Pout_H__m_G[ y   *m_Width+(x+1)];
+
+            int B23_V = m_Pout_V__m_B[(y-1)*m_Width+ x   ];
+            int B43_V = m_Pout_V__m_B[(y+1)*m_Width+ x   ];
+
+            int G23_V = m_Pout_V__m_G[(y-1)*m_Width+ x   ];
+            int G33_V = m_Pout_V__m_G[ y   *m_Width+ x   ];
+            int G43_V = m_Pout_V__m_G[(y+1)*m_Width+ x   ];
+
+            //For Horizontal
+            m_Pout_H__m_B[y*m_Width+x] = (short)((B32_H + B34_H - G32_H + 2* G33_H - G34_H)/2);   // B33_H
+            //FOr vertical
+            m_Pout_V__m_B[y*m_Width+x] = (short)((B23_V + B43_V - G23_V + 2* G33_V - G43_V)/2);   // B33_V
+
+            int B32_G = m_Pout_G__m_B[ y   *m_Width+(x-1)];
+            int B34_G = m_Pout_G__m_B[ y   *m_Width+(x+1)];
+
+            int G32_G = m_Pout_G__m_G[ y   *m_Width+(x-1)];
+            int G33_G = m_Pout_G__m_G[ y   *m_Width+ x   ];
+            int G34_G = m_Pout_G__m_G[ y   *m_Width+(x+1)];
+
+            int B23_G = m_Pout_G__m_B[(y-1)*m_Width+ x   ];
+            int B43_G = m_Pout_G__m_B[(y+1)*m_Width+ x   ];
+
+            int G23_G = m_Pout_G__m_G[(y-1)*m_Width+ x   ];
+            int G43_G = m_Pout_G__m_G[(y+1)*m_Width+ x   ];
+
+            m_Pout_G__m_B[y*m_Width+x] = (short)((B32_G + B34_G + B23_G + B43_G - G32_G + 2* G33_G - G34_G -G23_G + 2* G33_G - G43_G)/4); // B33_A
+        }
+        m_Pout_H__m_B[y*m_Width+x] = (short)CLIP_VAL(m_Pout_H__m_B[y*m_Width+x], 0, Max_Intensity);
+        m_Pout_V__m_B[y*m_Width+x] = (short)CLIP_VAL(m_Pout_V__m_B[y*m_Width+x], 0, Max_Intensity);
+        m_Pout_G__m_B[y*m_Width+x] = (short)CLIP_VAL(m_Pout_G__m_B[y*m_Width+x], 0, Max_Intensity);
+    }
+
+    //For R
+    for(int y=2;y<m_Height-2;y++)
+    for(int x=2;x<m_Width-2;x++)
+    {
+        if(y%2==0 && x%2 == 1)
+        {
+            int R22= m_Pin[y*m_Width+(x-1)];
+            int R24= m_Pin[y*m_Width+(x+1)];
+
+            int G22_H = m_Pout_H__m_G[y*m_Width+(x-1)];
+            int G23_H = m_Pout_H__m_G[y*m_Width+ x   ];
+            int G24_H = m_Pout_H__m_G[y*m_Width+(x+1)];
+
+            int G22_V = m_Pout_V__m_G[y*m_Width+(x-1)];
+            int G23_V = m_Pout_V__m_G[y*m_Width+ x   ];
+            int G24_V = m_Pout_V__m_G[y*m_Width+(x+1)];
+
+            m_Pout_V__m_R[y*m_Width+x] = (short)((R22+R24-G22_V+2*G23_V-G24_V)/2);
+            m_Pout_H__m_R[y*m_Width+x] = (short)((R22+R24-G22_H+2*G23_H-G24_H)/2);
+
+
+            int G22_G = m_Pout_G__m_G[y*m_Width+(x-1)];
+            int G23_G = m_Pout_G__m_G[y*m_Width+ x   ];
+            int G24_G = m_Pout_G__m_G[y*m_Width+(x+1)];
+
+            m_Pout_G__m_R[y*m_Width+x] = (short)((R22+R24-G22_G+2*G23_G-G24_G)/2);
+        }
+        else if(y%2 ==1 && x%2==0)
+        {
+            int R22= m_Pin[(y-1)*m_Width+x];
+            int R42= m_Pin[(y+1)*m_Width+x];
+
+            int G22_H = m_Pout_H__m_G[(y-1)*m_Width+x];
+            int G32_H = m_Pout_H__m_G[ y   *m_Width+x];
+            int G42_H = m_Pout_H__m_G[(y+1)*m_Width+x];
+
+            int G22_V = m_Pout_V__m_G[(y-1)*m_Width+x];
+            int G32_V = m_Pout_V__m_G[ y   *m_Width+x];
+            int G42_V = m_Pout_V__m_G[(y+1)*m_Width+x];
+
+            m_Pout_H__m_R[y*m_Width+x] = (short)((R22+R42-G22_H+2*G32_H-G42_H)/2);
+            m_Pout_V__m_R[y*m_Width+x] = (short)((R22+R42-G22_V+2*G32_V-G42_V)/2);
+
+            int G22_G = m_Pout_G__m_G[(y-1)*m_Width+x];
+            int G32_G = m_Pout_G__m_G[ y   *m_Width+x];
+            int G42_G = m_Pout_G__m_G[(y+1)*m_Width+x];
+
+            m_Pout_G__m_R[y*m_Width+x] = (short)((R22+R42-G22_G+2*G32_G-G42_G)/2);
+        }
+        else if(y%2 ==0 && x%2 ==0 )
+        {
+            m_Pout_H__m_R[y*m_Width+x] = m_Pin[y*m_Width+x];
+            m_Pout_V__m_R[y*m_Width+x] = m_Pin[y*m_Width+x];
+            m_Pout_G__m_R[y*m_Width+x] = m_Pin[y*m_Width+x];
+        }
+        m_Pout_H__m_R[y*m_Width+x] = (short)CLIP_VAL(m_Pout_H__m_R[y*m_Width+x], 0, Max_Intensity);
+        m_Pout_V__m_R[y*m_Width+x] = (short)CLIP_VAL(m_Pout_V__m_R[y*m_Width+x], 0, Max_Intensity);
+        m_Pout_G__m_R[y*m_Width+x] = (short)CLIP_VAL(m_Pout_G__m_R[y*m_Width+x], 0, Max_Intensity);
+    }
+
+    for(int y=2;y<m_Height-2;y++)
+    for(int x=2;x<m_Width-2;x++)
+    {
+        if(y%2 ==1 && x%2 ==1)
+        {
+            int R32_H = m_Pout_H__m_R[ y   *m_Width+(x-1)];
+            int R34_H = m_Pout_H__m_R[ y   *m_Width+(x+1)];
+
+            int G32_H = m_Pout_H__m_G[ y   *m_Width+(x-1)];
+            int G33_H = m_Pout_H__m_G[ y   *m_Width+ x   ];
+            int G34_H = m_Pout_H__m_G[ y   *m_Width+(x+1)];
+
+            int R23_V = m_Pout_V__m_R[(y-1)*m_Width+ x   ];
+            int R43_V = m_Pout_V__m_R[(y+1)*m_Width+ x   ];
+
+            int G23_V = m_Pout_V__m_G[(y-1)*m_Width+ x   ];
+            int G33_V = m_Pout_V__m_G[ y   *m_Width+ x   ];
+            int G43_V = m_Pout_V__m_G[(y+1)*m_Width+ x   ];
+
+            if(y == 9 && x == 61)
+                dum = 1;
+
+            //For Horizontal
+            m_Pout_H__m_R[y*m_Width+x] = (short)((R32_H + R34_H - G32_H + 2* G33_H - G34_H)/2);
+            //For Vertical
+            m_Pout_V__m_R[y*m_Width+x] = (short)((R23_V + R43_V - G23_V + 2* G33_V - G43_V)/2);
+
+            int R32_G = m_Pout_G__m_R[ y   *m_Width+(x-1)];
+            int R34_G = m_Pout_G__m_R[ y   *m_Width+(x+1)];
+
+            int G32_G = m_Pout_G__m_G[ y   *m_Width+(x-1)];
+            int G33_G = m_Pout_G__m_G[ y   *m_Width+ x   ];
+            int G34_G = m_Pout_G__m_G[ y   *m_Width+(x+1)];
+
+            int R23_G = m_Pout_G__m_R[(y-1)*m_Width+ x   ];
+            int R43_G = m_Pout_G__m_R[(y+1)*m_Width+ x   ];
+
+            int G23_G = m_Pout_G__m_G[(y-1)*m_Width+ x   ];
+
+            int G43_G = m_Pout_G__m_G[(y+1)*m_Width+ x   ];
+
+            m_Pout_G__m_R[y*m_Width+x] = (short)((R32_G + R34_G + R23_G + R43_G - G32_G + 2* G33_G - G34_G - G23_G + 2* G33_G - G43_G)/4);
+        }
+        m_Pout_H__m_R[y*m_Width+x] = (short)CLIP_VAL(m_Pout_H__m_R[y*m_Width+x], 0, Max_Intensity);
+        m_Pout_V__m_R[y*m_Width+x] = (short)CLIP_VAL(m_Pout_V__m_R[y*m_Width+x], 0, Max_Intensity);
+        m_Pout_G__m_R[y*m_Width+x] = (short)CLIP_VAL(m_Pout_G__m_R[y*m_Width+x], 0, Max_Intensity);
+    }
+
+    return 0;
+}
+
+
+int CPU_SAD (short *m_Pout_H__m_G, short *m_Pout_V__m_G, //Input, G_H, G_V component
+             short *m_Pout_H__m_B, short *m_Pout_V__m_B, //Input, B_H, B_V component
+             short *m_Pout_H__m_R, short *m_Pout_V__m_R,
+             int m_Width, int m_Height,
+             unsigned char *pHVFlag8bpp)
+             //short *m_Pout_G_o, short *m_Pout_B_o, short *m_Pout_R_o)
+             //int* Debug_A, int* Debug_B)                 //Output, HV flag
+{
+    int DRG_H_H[9];
+    int DGB_H_H[9];
+    int DBR_H_H[9];
+
+    int DRG_H_V[9];
+    int DGB_H_V[9];
+    int DBR_H_V[9];
+
+    int DRG_V_H[9];
+    int DGB_V_H[9];
+    int DBR_V_H[9];
+
+    int DRG_V_V[9];
+    int DGB_V_V[9];
+    int DBR_V_V[9];
+
+    int HDSUM_H[8] = {0,0,0,0,0,0,0,0};
+    int VDSUM_H[8] = {0,0,0,0,0,0,0,0};
+    int HDSUM_V[8] = {0,0,0,0,0,0,0,0};
+    int VDSUM_V[8] = {0,0,0,0,0,0,0,0};
+
+    for(int y=8; y < m_Height-8; y++)
+    for(int x=8; x < m_Width-8; x++)
+    {
+        int dum = 0;
+        if(x == (0+8) && y == (0+8))
+            dum = 1;
+        //if(x == (2902+8) && y == (759+8))
+
+        int index = 0;
+
+        for(int x_i = (x-4); x_i <= (x+4); x_i++)
+        {
+            DRG_H_H[index] = (m_Pout_H__m_R[y*m_Width+x_i]) - (m_Pout_H__m_G[y*m_Width+x_i]); //R_G
+            DGB_H_H[index] = (m_Pout_H__m_G[y*m_Width+x_i]) - (m_Pout_H__m_B[y*m_Width+x_i]); //G_B
+            DBR_H_H[index] = (m_Pout_H__m_B[y*m_Width+x_i]) - (m_Pout_H__m_R[y*m_Width+x_i]); //B_R
+            index++;
+        }
+
+        index = 0;
+        for(int y_i = (y-4); y_i <= (y+4); y_i++)
+        {
+            DRG_H_V[index] = (m_Pout_H__m_R[y_i*m_Width+x]) - (m_Pout_H__m_G[y_i*m_Width+x]); //R_G
+            DGB_H_V[index] = (m_Pout_H__m_G[y_i*m_Width+x]) - (m_Pout_H__m_B[y_i*m_Width+x]); //G_B
+            DBR_H_V[index] = (m_Pout_H__m_B[y_i*m_Width+x]) - (m_Pout_H__m_R[y_i*m_Width+x]); //B_R
+            index++;
+        }
+
+        index = 0;
+        for(int x_i = (x-4); x_i <= (x+4); x_i++)
+        {
+            DRG_V_H[index] = (m_Pout_V__m_R[y*m_Width+x_i]) - (m_Pout_V__m_G[y*m_Width+x_i]); //R_G
+            DGB_V_H[index] = (m_Pout_V__m_G[y*m_Width+x_i]) - (m_Pout_V__m_B[y*m_Width+x_i]); //G_B
+            DBR_V_H[index] = (m_Pout_V__m_B[y*m_Width+x_i]) - (m_Pout_V__m_R[y*m_Width+x_i]); //B_R
+            index++;
+        }
+
+        index = 0;
+        for(int y_i = (y-4); y_i <= (y+4); y_i++)
+        {
+            DRG_V_V[index] = (m_Pout_V__m_R[y_i*m_Width+x]) - (m_Pout_V__m_G[y_i*m_Width+x]); //R_G
+            DGB_V_V[index] = (m_Pout_V__m_G[y_i*m_Width+x]) - (m_Pout_V__m_B[y_i*m_Width+x]); //G_B
+            DBR_V_V[index] = (m_Pout_V__m_B[y_i*m_Width+x]) - (m_Pout_V__m_R[y_i*m_Width+x]); //B_R
+            index++;
+        }
+        unsigned short HDSUM;
+        HDSUM = (unsigned short)(abs(DRG_H_H[5] - DRG_H_H[4]) + abs(DGB_H_H[5] - DGB_H_H[4]) + abs(DBR_H_H[5] - DBR_H_H[4]));
+
+        int index_plus;
+        for(index = 0; index <= 7; index++)
+        {
+            index_plus = index + 1;
+            HDSUM_H[index] = (abs(DRG_H_H[index_plus] - DRG_H_H[index]) + abs(DGB_H_H[index_plus] - DGB_H_H[index]) + abs(DBR_H_H[index_plus] - DBR_H_H[index]));
+            VDSUM_H[index] = (abs(DRG_H_V[index_plus] - DRG_H_V[index]) + abs(DGB_H_V[index_plus] - DGB_H_V[index]) + abs(DBR_H_V[index_plus] - DBR_H_V[index]));
+            HDSUM_V[index] = (abs(DRG_V_H[index_plus] - DRG_V_H[index]) + abs(DGB_V_H[index_plus] - DGB_V_H[index]) + abs(DBR_V_H[index_plus] - DBR_V_H[index]));
+            VDSUM_V[index] = (abs(DRG_V_V[index_plus] - DRG_V_V[index]) + abs(DGB_V_V[index_plus] - DGB_V_V[index]) + abs(DBR_V_V[index_plus] - DBR_V_V[index]));
+        }
+
+        int HLSAD = 0; int HUSAD = 0; int VLSAD = 0; int VUSAD = 0;
+        for(index = 0; index <= 3; index ++)
+        {
+            HLSAD += HDSUM_H[index];
+            VLSAD += HDSUM_V[index];
+            HUSAD += VDSUM_H[index];
+            VUSAD += VDSUM_V[index];
+        }
+
+        int HRSAD = 0; int HDSAD = 0; int VRSAD = 0; int VDSAD = 0;
+        for(index = 4; index <= 7; index ++)
+        {
+            HRSAD += HDSUM_H[index];
+            VRSAD += HDSUM_V[index];
+            HDSAD += VDSUM_H[index];
+            VDSAD += VDSUM_V[index];
+        }
+        int shift_mincost = 1;//Shift_mincost is a state variable (default: 1).
+
+        int Min_cost_H1 = (HLSAD < HRSAD)? HLSAD : HRSAD ;
+        int Min_cost_H2 = (HUSAD < HDSAD)? HUSAD : HDSAD ;
+        int Min_cost_H  = Min_cost_H1 + (Min_cost_H2>>shift_mincost);
+
+        int Min_cost_V1 = (VUSAD < VDSAD)? VUSAD : VDSAD ;
+        int Min_cost_V2 = (VLSAD < VRSAD)? VLSAD : VRSAD ;
+        int Min_cost_V  = Min_cost_V1 + (Min_cost_V2>>shift_mincost);
+#if 1
+        if(Min_cost_H < Min_cost_V)
+        {
+            pHVFlag8bpp[y*m_Width+x] = 1;
+            //m_Pout_R_o[(y-8)*(m_Width-16)+(x-8)] = m_Pout_H__m_R[y*m_Width+x];
+            //m_Pout_G_o[(y-8)*(m_Width-16)+(x-8)] = m_Pout_H__m_G[y*m_Width+x];
+            //m_Pout_B_o[(y-8)*(m_Width-16)+(x-8)] = m_Pout_H__m_B[y*m_Width+x];
+            //Debug_A   [(y-8)*(m_Width-16)+(x-8)] = Min_cost_V;
+            //Debug_B   [(y-8)*(m_Width-16)+(x-8)] = Min_cost_V;
+        }
+        else
+        {
+            pHVFlag8bpp[y*m_Width+x] = 0;
+            //m_Pout_R_o[(y-8)*(m_Width-16)+(x-8)] = m_Pout_V__m_R[y*m_Width+x];    //HDSUM_H[4];//DRG_H_H[4];//m_Pout_H__m_R[y*m_Width+x];
+            //m_Pout_G_o[(y-8)*(m_Width-16)+(x-8)] = m_Pout_V__m_G[y*m_Width+x];    //DGB_H_H[4];//m_Pout_H__m_R[y*m_Width+x];
+            //m_Pout_B_o[(y-8)*(m_Width-16)+(x-8)] = m_Pout_V__m_B[y*m_Width+x];  //(short)Min_cost_V;//DBR_H_H[4];//m_Pout_H__m_G[y*m_Width+x];
+            //Debug_A   [(y-8)*(m_Width-16)+(x-8)] = Min_cost_V;
+            //Debug_B   [(y-8)*(m_Width-16)+(x-8)] = Min_cost_V;
+        }
+#else
+        pHVFlag8bpp[y*m_Width+x] = 0;
+        m_Pout_R_o[(y-8)*(m_Width-16)+(x-8)] = m_Pout_H__m_R[y*m_Width+x];
+        m_Pout_G_o[(y-8)*(m_Width-16)+(x-8)] = m_Pout_H__m_G[y*m_Width+x];
+        m_Pout_B_o[(y-8)*(m_Width-16)+(x-8)] = m_Pout_H__m_B[y*m_Width+x];
+        Debug_A   [(y-8)*(m_Width-16)+(x-8)] = Min_cost_V;
+        Debug_B   [(y-8)*(m_Width-16)+(x-8)] = Min_cost_V2;
+#endif
+    }
+
+    return 0;
+}
+
+int CPU_Decide_Average(short *R_A8,       // Restored average version of R component
+                       short *G_A8,          // Restored average version of G component
+                       short *B_A8,       // Restored average version of B component
+                       int m_Width, int m_Height,
+                       unsigned char *A,
+                       unsigned char *updated_A)           // Flag to indicate using average version or not
+{
+    //int index;
+    //int index01;
+    //int index02;
+    int w = m_Width;
+
+    int yp1, yp2, yp3, ym1, ym2;
+
+    int dum;
+    for(int y=0;y<m_Height;y++)
+    for(int x=0;x<m_Width;x++)
+    {
+        updated_A[y*w+x] = A[y*w+x];
+    }
+#if 1
+    for(int y=0;y<m_Height;y++)
+    for(int x=0;x<m_Width;x++)
+    {
+
+        if(x == 967 && y == 10)
+            dum = 1;
+
+        yp1 = CLIP_VPOS_FLDRPT(y+1,m_Height);
+        yp2 = CLIP_VPOS_FLDRPT(y+2,m_Height);
+        yp3 = CLIP_VPOS_FLDRPT(y+3,m_Height);
+        ym1 = CLIP_VPOS_FLDRPT(y-1,m_Height);
+        ym2 = CLIP_VPOS_FLDRPT(y-2,m_Height);
+
+        //updated_A[y*w+(x  )] = AVG_True; //A[y*w+x];
+
+        //Horizonal check (8-bit differences), maskH0
+        if (x % 4 == 0) // x modulo 4 = 0
+        {
+            if((eval(G_A8, x-1, y, w) - eval(G_A8, x  , y, w)) * (eval(G_A8, x  , y, w) - eval(G_A8, x+1, y, w)) < 0 &&
+               (eval(G_A8, x  , y, w) - eval(G_A8, x+1, y, w)) * (eval(G_A8, x+1, y, w) - eval(G_A8, x+2, y, w)) < 0 &&
+               (eval(G_A8, x+1, y, w) - eval(G_A8, x+2, y, w)) * (eval(G_A8, x+2, y, w) - eval(G_A8, x+3, y, w)) < 0 &&
+            abs(eval(G_A8, x-1, y, w) - eval(G_A8, x  , y, w)) > Grn_imbalance_th                                    &&
+            abs(eval(G_A8, x  , y, w) - eval(G_A8, x+1, y, w)) > Grn_imbalance_th                                    &&
+            abs(eval(G_A8, x+1, y, w) - eval(G_A8, x+2, y, w)) > Grn_imbalance_th                                    &&
+            abs(eval(G_A8, x+2, y, w) - eval(G_A8, x+3, y, w)) > Grn_imbalance_th )
+            {
+               updated_A[y*w+(x  )] = AVG_False;
+               updated_A[y*w+(x+1)] = AVG_False;
+            }
+        }
+
+        else if (x % 4 == 2) // x modulo 4 = 2
+        {
+           if ((eval(G_A8, x-2, y, w) - eval(G_A8, x-1, y, w)) * (eval(G_A8, x-1, y, w) - eval(G_A8, x  , y, w)) < 0 &&
+               (eval(G_A8, x-1, y, w) - eval(G_A8, x  , y, w)) * (eval(G_A8, x  , y, w) - eval(G_A8, x+1, y, w)) < 0 &&
+               (eval(G_A8, x  , y, w) - eval(G_A8, x+1, y, w)) * (eval(G_A8, x+1, y, w) - eval(G_A8, x+2, y, w)) < 0 &&
+            abs(eval(G_A8, x-2, y, w) - eval(G_A8, x-1, y, w)) > Grn_imbalance_th                                     &&
+            abs(eval(G_A8, x-1, y, w) - eval(G_A8, x  , y, w)) > Grn_imbalance_th                                     &&
+            abs(eval(G_A8, x  , y, w) - eval(G_A8, x+1, y, w)) > Grn_imbalance_th                                     &&
+            abs(eval(G_A8, x+1, y, w) - eval(G_A8, x+2, y, w)) > Grn_imbalance_th )
+           {
+               updated_A[y*w+(x  )] = AVG_False;
+               updated_A[y*w+(x+1)] = AVG_False;
+           }
+        }
+
+
+        //Vertical check (8-bit differences), maskV0
+        if (y % 4 == 0) // y modulo 4 = 0
+        {
+           if ((eval(G_A8, x, ym1, w) - eval(G_A8, x, y  , w)) * (eval(G_A8, x, y  , w) - eval(G_A8, x, yp1, w)) < 0 &&
+               (eval(G_A8, x, y  , w) - eval(G_A8, x, yp1, w)) * (eval(G_A8, x, yp1, w) - eval(G_A8, x, yp2, w)) < 0 &&
+               (eval(G_A8, x, yp1, w) - eval(G_A8, x, yp2, w)) * (eval(G_A8, x, yp2, w) - eval(G_A8, x, yp3, w)) < 0 &&
+            abs(eval(G_A8, x, ym1, w) - eval(G_A8, x, y  , w)) > Grn_imbalance_th                  &&
+            abs(eval(G_A8, x, y  , w) - eval(G_A8, x, yp1, w)) > Grn_imbalance_th                  &&
+            abs(eval(G_A8, x, yp1, w) - eval(G_A8, x, yp2, w)) > Grn_imbalance_th                  &&
+            abs(eval(G_A8, x, yp2, w) - eval(G_A8, x, yp3, w)) > Grn_imbalance_th )
+           {
+               updated_A[ y   *w+x] = AVG_False;
+               updated_A[(y+1)*w+x] = AVG_False;
+           }
+        }
+
+        else if (y % 4 == 2) // y modulo 4 = 2
+        {
+           if ((eval(G_A8, x, ym2, w) - eval(G_A8, x, ym1, w)) * (eval(G_A8, x, ym1, w) - eval(G_A8, x, y  , w)) < 0 &&
+               (eval(G_A8, x, ym1, w) - eval(G_A8, x, y  , w)) * (eval(G_A8, x, y  , w) - eval(G_A8, x, yp1, w)) < 0 &&
+               (eval(G_A8, x, y  , w) - eval(G_A8, x, yp1, w)) * (eval(G_A8, x, yp1, w) - eval(G_A8, x, yp2, w)) < 0 &&
+            abs(eval(G_A8, x, ym2, w) - eval(G_A8, x, ym1, w)) > Grn_imbalance_th                  &&
+            abs(eval(G_A8, x, ym1, w) - eval(G_A8, x, y  , w)) > Grn_imbalance_th                  &&
+            abs(eval(G_A8, x, y  , w) - eval(G_A8, x, yp1, w)) > Grn_imbalance_th                  &&
+            abs(eval(G_A8, x, yp1, w) - eval(G_A8, x, yp2, w)) > Grn_imbalance_th )
+           {
+               updated_A[ y   *w+x] = AVG_False;
+               updated_A[(y+1)*w+x] = AVG_False;
+           }
+        }
+
+        //The second condition is to check color difference between two colors in a pixel (8-bit diff):
+        //mask0
+
+        if (abs(eval(R_A8, x, y, w) - eval(G_A8, x, y, w)) > Average_Color_TH  ||
+            abs(eval(G_A8, x, y, w) - eval(B_A8, x, y, w)) > Average_Color_TH  ||
+            abs(eval(B_A8, x, y, w) - eval(R_A8, x, y, w)) > Average_Color_TH )
+        {
+            updated_A[y*w+x] = AVG_False;
+        }
+    }
+#endif
+    return 0;
+}
+
+int CPU_Confindence_Check(short* RAVG, short* GAVG, short* BAVG,
+                          short* RHOR, short* GHOR, short* BHOR,
+                          short* RVER, short* GVER, short* BVER,
+                          unsigned char* AVG_Flag, unsigned char* HV_Flag,
+                          int m_Width, int m_Height,                        // (Inwidth+16), (Inheight+16)
+                          short* R_o , short* G_o , short* B_o)
+{
+    int In_index, Out_index;
+    for(int y=0;y<m_Height;y++)
+    for(int x=0;x<m_Width;x++)
+    {
+        //int dum = 0;
+        //if(x == 8 &&y == 8)
+        //    dum = 1;
+
+        if(x < 8 || y < 8 || (x >= (m_Width - 8)) || (y >= (m_Height - 8)))
+            continue;
+
+        In_index  = y*m_Width+x;
+        Out_index = (y-8)*(m_Width-16)+(x-8);
+
+        int dum = 0;
+        if(x == 10 && y == 8)
+            dum = 1;
+        if(AVG_Flag[In_index] == AVG_True)
+        {
+            R_o[Out_index] = RAVG[In_index];
+            G_o[Out_index] = GAVG[In_index];
+            B_o[Out_index] = BAVG[In_index];
+        }
+        else
+        {
+            if(HV_Flag[In_index] == 1)
+            {
+                R_o[Out_index] = RHOR[In_index];
+                G_o[Out_index] = GHOR[In_index];
+                B_o[Out_index] = BHOR[In_index];
+            }
+            else
+            {
+                R_o[Out_index] = RVER[In_index];
+                G_o[Out_index] = GVER[In_index];
+                B_o[Out_index] = BVER[In_index];
+            }
+
+            if(AVG_Flag[In_index] == AVG_True)
+            {
+                R_o[Out_index] = RAVG[In_index];//AVG_Flag[In_index];
+                G_o[Out_index] = GAVG[In_index];
+                B_o[Out_index] = BAVG[In_index];
+            }
+        }
+    }
+
+    return 0;
+}
+
+int Demosaic_CPU(CamInfo *dmi, unsigned short *BayerImg, mfxU16 pitch)
+{
+    int Max_Intensity = ((1 << dmi->bitDepth) - 1);
+
+    if(dmi->enable_padd)
+    {
+        dmi->cpu_status = CPU_Padding_16bpp(BayerImg, dmi->cpu_PaddedBayerImg, dmi->InWidth, dmi->InHeight, dmi->bitDepth, dmi->BayerType);
+        if(dmi->cpu_status != 0)
+            return -1;
+    } else {
+        for (int i = 0; i < dmi->FrameHeight; i++)
+            for (int j = 0; j < dmi->FrameWidth; j++)
+                dmi->cpu_PaddedBayerImg[i*dmi->FrameWidth + j] = (short)(BayerImg[i*(pitch>>1) + j] >> (16 - dmi->bitDepth));
+    }
+
+    dmi->cpu_status = CPU_GoodPixelCheck(dmi->cpu_PaddedBayerImg, dmi->FrameWidth, dmi->FrameHeight, dmi->cpu_AVG_flag, (dmi->bitDepth - 8), dmi->BayerType);
+    if(dmi->cpu_status != 0)
+        return -1;
+
+    dmi->cpu_status = CPU_RestoreG(dmi->cpu_PaddedBayerImg, dmi->FrameWidth, dmi->FrameHeight, dmi->cpu_G_h, dmi->cpu_G_v, dmi->cpu_G_a, Max_Intensity);
+    if(dmi->cpu_status != 0)
+        return -1;
+
+    dmi->cpu_status = CPU_RestoreBandR(dmi->cpu_PaddedBayerImg, dmi->FrameWidth, dmi->FrameHeight, dmi->cpu_G_h, dmi->cpu_G_v, dmi->cpu_G_a,
+                                  dmi->cpu_R_h, dmi->cpu_R_v, dmi->cpu_R_a, dmi->cpu_B_h, dmi->cpu_B_v, dmi->cpu_B_a, Max_Intensity);
+    if(dmi->cpu_status != 0)
+        return -1;
+
+    dmi->cpu_status = CPU_SAD(dmi->cpu_G_h, dmi->cpu_G_v, dmi->cpu_B_h, dmi->cpu_B_v, dmi->cpu_R_h, dmi->cpu_R_v, dmi->FrameWidth, dmi->FrameHeight, dmi->cpu_HV_flag);
+    if(dmi->cpu_status != 0)
+        return -1;
+
+    dmi->cpu_status = CPU_Decide_Average(dmi->cpu_R_a, dmi->cpu_G_a, dmi->cpu_B_a, dmi->FrameWidth, dmi->FrameHeight, dmi->cpu_AVG_flag, dmi->cpu_AVG_new_flag);
+    if(dmi->cpu_status != 0)
+        return -1;
+
+    dmi->cpu_status = CPU_Confindence_Check(dmi->cpu_R_a, dmi->cpu_G_a, dmi->cpu_B_a, dmi->cpu_R_h,  dmi->cpu_G_h,  dmi->cpu_B_h, dmi->cpu_R_v,  dmi->cpu_G_v,  dmi->cpu_B_v,
+                                       dmi->cpu_AVG_new_flag, dmi->cpu_HV_flag,
+                                       dmi->FrameWidth, dmi->FrameHeight,
+                                       dmi->cpu_R_o , dmi->cpu_G_o , dmi->cpu_B_o);
+    if(dmi->cpu_status != 0)
+        return -1;
+
+    return 0;
+}
+
+int FwdGammaCorr_CPU(CamInfo *dmi, unsigned short* Correct, unsigned short* Point, int numPoints)
+{
+    unsigned short *R_i, *G_i, *B_i, *R_o, *G_o, *B_o;
+    int framewidth, frameheight, bitDepth;
+
+    int Interpolation_R = 0;
+    int Interpolation_G = 0;
+    int Interpolation_B = 0;
+    int in_R, in_G, in_B;
+
+    R_i = (unsigned short *)dmi->cpu_R_fgc_in;
+    G_i = (unsigned short *)dmi->cpu_G_fgc_in;
+    B_i = (unsigned short *)dmi->cpu_B_fgc_in;
+
+    R_o = (unsigned short *)dmi->cpu_R_fgc_out;
+    G_o = (unsigned short *)dmi->cpu_G_fgc_out;
+    B_o = (unsigned short *)dmi->cpu_B_fgc_out;
+
+    framewidth = dmi->InWidth;
+    frameheight = dmi->InHeight;
+    bitDepth = dmi->bitDepth;
+
+    int outputprec = bitDepth;
+    float max_output_level = float(1<<int(outputprec  ))-1;
+
+    int dum;
+    int ind;
+    for (int y = 0;y < frameheight; y++)
+    {
+        for (int x = 0;x < framewidth; x++)
+        {
+            if(y == 8 && x == 8)
+                dum = 1;
+
+            ind = (y * framewidth + x);
+
+            in_R = R_i[ind];
+            in_G = G_i[ind];
+            in_B = B_i[ind];
+            Interpolation_R  = R_i[ind];
+            Interpolation_G  = G_i[ind];
+            Interpolation_B  = B_i[ind];
+
+            int r_ind = 0;
+            int g_ind = 0;
+            int b_ind = 0;
+            for(int i = 0; i < numPoints; i++)
+            {
+                //if( (OrgValue >= (init_gamma_point[Index] <<PWLShift) ) && (OrgValue < (init_gamma_point[Index+1] << PWLShift)) )
+                //    Interpolation = ( (((OrgValue-(init_gamma_point[Index]<<PWLShift))*init_gamma_slope[Index])>>PWLF_prec) + (init_gamma_bias[Index]<<PWLShift));
+                if( i < (numPoints - 1) )
+                {
+                    if((Point[i] <= in_R) && (in_R < Point[i+1]))
+                    {
+                        Interpolation_R = Correct[i] + (Correct[i+1] - Correct[i]) * (in_R - Point[i]) / (Point[i+1] - Point[i]);
+                        r_ind = i;
+                    }
+                    if((Point[i] <= in_G) && (in_G < Point[i+1]))
+                    {
+                        Interpolation_G = Correct[i] + (Correct[i+1] - Correct[i]) * (in_G - Point[i]) / (Point[i+1] - Point[i]);
+                        g_ind = i;
+                    }
+                    if((Point[i] <= in_B) && (in_B < Point[i+1]))
+                    {
+                        Interpolation_B = Correct[i] + (Correct[i+1] - Correct[i]) * (in_B - Point[i]) / (Point[i+1] - Point[i]);
+                        b_ind = i;
+                    }
+                }
+                else // i == (numPoints - 1)
+                {
+                    float den = max_output_level - Point[i];
+                    if (den <= 0)
+                        den = 1; // mimicking kernel; to be matched with HW along with the kernel
+                    if(Point[numPoints - 1] <= in_R)
+                        Interpolation_R = Correct[i] + (int)( (max_output_level - Correct[i]) * (in_R - Point[i]) / den );
+                    if(Point[numPoints - 1] <= in_G)
+                        Interpolation_G = Correct[i] + (int)( (max_output_level - Correct[i]) * (in_G - Point[i]) / den );
+                    if(Point[numPoints - 1] <= in_B)
+                        Interpolation_B = Correct[i] + (int)( (max_output_level - Correct[i]) * (in_B - Point[i]) / den );
+                }
+            }
+
+            R_o[ind] = (unsigned short)CLIP_VAL(Interpolation_R, 0, ((1<<outputprec) -1));
+            G_o[ind] = (unsigned short)CLIP_VAL(Interpolation_G, 0, ((1<<outputprec) -1));
+            B_o[ind] = (unsigned short)CLIP_VAL(Interpolation_B, 0, ((1<<outputprec) -1));
+        }
+    }
+
+    return 0;
+}
+
+/* TODO - set alpha to 0xFF? (GPU appears to use whatever happens to be in buffer already, 0 or random data) */
+void ConvertARGB8_CPU(CamInfo *dmi, unsigned char *outBuf, int useFGC)
+{
+    int index;
+    short* inputR, *inputG, *inputB;
+
+    if (useFGC) {
+        inputR = dmi->cpu_R_fgc_out;
+        inputG = dmi->cpu_G_fgc_out;
+        inputB = dmi->cpu_B_fgc_out;
+    } else {
+        inputR = dmi->cpu_R_o;
+        inputG = dmi->cpu_G_o;
+        inputB = dmi->cpu_B_o;
+    }
+
+    for(int j = 0; j < dmi->InHeight; j++){
+        for(int i = 0; i < dmi->InWidth * 4; i += 4){
+            index = (i/4) + j*dmi->InWidth;
+            outBuf[i + 0] = (unsigned char)(inputR[index] >> (dmi->bitDepth - 8));  //red   component
+            outBuf[i + 1] = (unsigned char)(inputG[index] >> (dmi->bitDepth - 8));  //green component
+            outBuf[i + 2] = (unsigned char)(inputB[index] >> (dmi->bitDepth - 8));  //blue  component
+            outBuf[i + 3] = 0;                                                      //alpha   component
+        }
+        outBuf += 4*dmi->InWidth;
+    }
+}
+
+void ConvertARGB16_CPU(CamInfo *dmi, unsigned short *outBuf, int useFGC)
+{
+    int index;
+    short* inputR, *inputG, *inputB;
+
+    if (useFGC) {
+        inputR = dmi->cpu_R_fgc_out;
+        inputG = dmi->cpu_G_fgc_out;
+        inputB = dmi->cpu_B_fgc_out;
+    } else {
+        inputR = dmi->cpu_R_o;
+        inputG = dmi->cpu_G_o;
+        inputB = dmi->cpu_B_o;
+    }
+
+    for(int j = 0; j < dmi->InHeight; j++){    
+        for(int i = 0; i < dmi->InWidth * 4; i += 4){
+            index = (i/4) + j*dmi->InWidth;
+            outBuf[i + 0] = inputR[index];  //red   component
+            outBuf[i + 1] = inputG[index];  //green component
+            outBuf[i + 2] = inputB[index];  //blue  component
+            outBuf[i + 3] = 0;              //alpha component
+        }
+        outBuf += 4*dmi->InWidth;
+    }
+}
+
+int InitCamera_CPU(CamInfo *dmi, int InWidth, int InHeight, int BitDepth, bool enable_padd, int BayerType)
+{
+    int FrameWidth  = InWidth + 16;
+    int FrameHeight = InHeight + 16;
+
+    dmi->InWidth     = InWidth;
+    dmi->InHeight    = InHeight;
+    dmi->FrameWidth  = FrameWidth;
+    dmi->FrameHeight = FrameHeight;
+    dmi->bitDepth    = BitDepth;
+    dmi->enable_padd = enable_padd;
+    dmi->BayerType   = BayerType;
+
+    dmi->cpu_PaddedBayerImg = new short[FrameWidth*FrameHeight];
+    dmi->cpu_AVG_flag = new unsigned char[FrameWidth*FrameHeight];
+    dmi->cpu_AVG_new_flag = new unsigned char[FrameWidth*FrameHeight];
+    dmi->cpu_HV_flag = new unsigned char[FrameWidth*FrameHeight];
+
+    dmi->cpu_G_h = new short[FrameWidth*FrameHeight];
+    dmi->cpu_B_h = new short[FrameWidth*FrameHeight];
+    dmi->cpu_R_h = new short[FrameWidth*FrameHeight];
+
+    dmi->cpu_G_v = new short[FrameWidth*FrameHeight];
+    dmi->cpu_B_v = new short[FrameWidth*FrameHeight];
+    dmi->cpu_R_v = new short[FrameWidth*FrameHeight];
+
+    dmi->cpu_G_a = new short[FrameWidth*FrameHeight];
+    dmi->cpu_B_a = new short[FrameWidth*FrameHeight];
+    dmi->cpu_R_a = new short[FrameWidth*FrameHeight];
+
+    dmi->cpu_G_c = new short[FrameWidth*FrameHeight];
+    dmi->cpu_B_c = new short[FrameWidth*FrameHeight];
+    dmi->cpu_R_c = new short[FrameWidth*FrameHeight];
+
+    dmi->cpu_G_o = new short[InWidth*InHeight];
+    dmi->cpu_B_o = new short[InWidth*InHeight];
+    dmi->cpu_R_o = new short[InWidth*InHeight];
+
+    /* output from fwd gamma correction */
+    dmi->cpu_G_fgc_out = new short[InWidth*InHeight];
+    dmi->cpu_B_fgc_out = new short[InWidth*InHeight];
+    dmi->cpu_R_fgc_out = new short[InWidth*InHeight];
+
+    return 0;
+}
+
+/* TODO - call this from correct place */
+void FreeCamera_CPU(CamInfo *dmi)
+{
+    if (!dmi)
+        return;
+
+    delete [] dmi->cpu_PaddedBayerImg;
+    delete [] dmi->cpu_AVG_flag;
+    delete [] dmi->cpu_AVG_new_flag;
+    delete [] dmi->cpu_HV_flag;
+
+    delete [] dmi->cpu_G_h; 
+    delete [] dmi->cpu_B_h; 
+    delete [] dmi->cpu_R_h;
+
+    delete [] dmi->cpu_G_v; 
+    delete [] dmi->cpu_B_v; 
+    delete [] dmi->cpu_R_v;
+
+    delete [] dmi->cpu_G_a; 
+    delete [] dmi->cpu_B_a; 
+    delete [] dmi->cpu_R_a;
+
+    delete [] dmi->cpu_G_c; 
+    delete [] dmi->cpu_B_c; 
+    delete [] dmi->cpu_R_c;
+
+    delete [] dmi->cpu_G_o; 
+    delete [] dmi->cpu_B_o; 
+    delete [] dmi->cpu_R_o;
+
+    delete [] dmi->cpu_G_fgc_out; 
+    delete [] dmi->cpu_B_fgc_out; 
+    delete [] dmi->cpu_R_fgc_out;
+}

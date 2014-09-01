@@ -23,18 +23,17 @@ File Name: mfx_camera_plugin.h
 #include "mfxcamera.h"
 
 #include "mfx_camera_plugin_utils.h"
+#include "mfx_camera_plugin_cpu.h"
 
 using namespace MfxCameraPlugin;
+
+#define MFX_CAMERA_DEFAULT_ASYNCDEPTH 3
 
 #if defined( AS_VPP_PLUGIN )
 class MFXCamera_Plugin : public MFXVPPPlugin
 {
 public:
     static const mfxPluginUID g_Camera_PluginGuid;
-    static std::auto_ptr<MFXCamera_Plugin> g_singlePlg;
-    static std::auto_ptr<MFXPluginAdapter<MFXVPPPlugin> > g_adapter;
-    MFXCamera_Plugin(bool CreateByDispatcher);
-    virtual ~MFXCamera_Plugin();
 
     virtual mfxStatus PluginInit(mfxCoreInterface *core);
     virtual mfxStatus PluginClose();
@@ -47,14 +46,8 @@ public:
     {
         return MFX_ERR_UNDEFINED_BEHAVIOR;
     }
-    virtual mfxStatus Execute(mfxThreadTask task, mfxU32 , mfxU32 )
-    {
-        return MFXVideoCORE_SyncOperation(m_session, (mfxSyncPoint) task, MFX_INFINITE);
-    }
-    virtual mfxStatus FreeResources(mfxThreadTask , mfxStatus )
-    {
-        return MFX_ERR_NONE;
-    }
+    virtual mfxStatus Execute(mfxThreadTask task, mfxU32 uid_p, mfxU32 uid_a);
+    virtual mfxStatus FreeResources(mfxThreadTask task, mfxStatus );
     //virtual mfxStatus Query(mfxVideoParam *in, mfxVideoParam *out)
     virtual mfxStatus Query(mfxVideoParam *, mfxVideoParam *);
     virtual mfxStatus QueryIOSurf(mfxVideoParam *par, mfxFrameAllocRequest *in, mfxFrameAllocRequest *out);
@@ -76,18 +69,34 @@ public:
     }
     static mfxStatus CreateByDispatcher(mfxPluginUID guid, mfxPlugin* mfxPlg) {
 
-        if (g_singlePlg.get()) {
-            return MFX_ERR_NOT_FOUND;
-        }
-        //check that guid match
-        g_singlePlg.reset(new MFXCamera_Plugin(true));
-
         if (memcmp(& guid , &g_Camera_PluginGuid, sizeof(mfxPluginUID))) {
             return MFX_ERR_NOT_FOUND;
         }
+        MFXCamera_Plugin* tmp_pplg = 0;
+        try
+        {
+            tmp_pplg = new MFXCamera_Plugin(false);
+        }
+        catch(std::bad_alloc&)
+        {
+            return MFX_ERR_MEMORY_ALLOC;;
+        }
+        catch(MFX_CORE_CATCH_TYPE)
+        {
+            return MFX_ERR_UNKNOWN;
+        }
 
-        g_adapter.reset(new MFXPluginAdapter<MFXVPPPlugin> (g_singlePlg.get()));
-        *mfxPlg = g_adapter->operator mfxPlugin();
+        try
+        {
+            tmp_pplg->m_adapter.reset(new MFXPluginAdapter<MFXVPPPlugin> (tmp_pplg));
+        }
+        catch(std::bad_alloc&)
+        {
+            delete tmp_pplg;
+            return MFX_ERR_MEMORY_ALLOC;
+        }
+        *mfxPlg = (mfxPlugin)*tmp_pplg->m_adapter;
+        tmp_pplg->m_createdByDispatcher = true;
 
         return MFX_ERR_NONE;
     }
@@ -101,6 +110,9 @@ public:
     }
 
 protected:
+    MFXCamera_Plugin(bool CreateByDispatcher);
+    virtual ~MFXCamera_Plugin();
+    std::auto_ptr<MFXPluginAdapter<MFXVPPPlugin> > m_adapter;
 
     struct AsyncParams
     {
@@ -110,21 +122,19 @@ protected:
         mfxMemId inSurf2D;
         mfxMemId inSurf2DUP;
 
-        mfxMemId outBufUP;
-        mfxMemId outBuf;
-
         mfxMemId outSurf2D;
-
-        void     *pMemIn;
-        void     *pMemOut;
+        mfxMemId outSurf2DUP;
 
         void      *pEvent;
-
-        //mfxExtVppAuxData *aux;
-        //mfxU64  inputTimeStamp;
     };
 
     UMC::Mutex m_guard;
+    UMC::Mutex m_guard1;
+
+#ifdef WRITE_CAMERA_LOG
+    UMC::Mutex m_log_guard;
+#endif
+
     mfxCoreInterface*   m_pmfxCore;
 
     mfxSession          m_session;
@@ -133,7 +143,6 @@ protected:
 
     mfxStatus           AllocateInternalSurfaces();
     mfxStatus           ReallocateInternalSurfaces(mfxVideoParam &newParam, CameraFrameSizeExtra &frameSizeExtra);
-    //mfxStatus           SetExternalSurfaces(mfxFrameSurface1 *surfIn, mfxFrameSurface1 *surfOut);
     mfxStatus           SetExternalSurfaces(AsyncParams *pParam);
 
     mfxStatus           CameraAsyncRoutine(AsyncParams *pParam);
@@ -144,14 +153,19 @@ protected:
 
     mfxStatus           ProcessExtendedBuffers(mfxVideoParam *par);
 
-    mfxStatus           SetTasks(); //mfxFrameSurface1 *surfIn, mfxFrameSurface1 *surfOut);
-    //mfxStatus           EnqueueTasks();
-
     mfxStatus           CreateEnqueueTasks(AsyncParams *pParam);
+
+    mfxStatus           WaitForActiveThreads();
 
     mfxVideoParam       m_mfxVideoParam;
     CmDevicePtr         m_cmDevice;
     VideoCORE*          m_core;
+    eMFXHWType          m_platform;
+
+    bool                m_isInitialized;
+    bool                m_useSW;
+
+    mfxU16              m_activeThreadCount;
 
     std::auto_ptr<CmContext>    m_cmCtx;
 
@@ -163,25 +177,13 @@ protected:
     mfxU32              m_InputBitDepth;
 
     CmSurface2D         *m_cmSurfIn; // CmSurface2DUP or CmSurface2D
-    CmSurface2DUP       *m_cmSurfUPIn; // CmSurface2DUP or CmSurface2D
     void                *m_memIn;
-    void                *m_memOut;
-    void                *m_memOutAllocPtr;
-
-
-    CmBuffer            *m_cmBufferOut;
-    CmBufferUP          *m_cmBufferUPOut; // ???
 
     CmSurface2D         *m_paddedSurf;
-
     CmSurface2D         *m_gammaCorrectSurf;
     CmSurface2D         *m_gammaPointSurf;
     CmSurface2D         *m_gammaOutSurf;
-
-#ifdef CAM_PIPE_VERTICAL_SLICE_ENABLE
     CmSurface2D         *m_avgFlagSurf;
-#endif
-
 
 private:
 
@@ -190,7 +192,7 @@ private:
     MfxFrameAllocResponse   m_raw16aligned;
     MfxFrameAllocResponse   m_aux8;
 
-    MfxFrameAllocResponse   m_rawIn;
+    CamInfo m_cmi;
 };
 #endif //#if defined( AS_VPP_PLUGIN )
 
@@ -200,4 +202,4 @@ private:
 #define MSDK_PLUGIN_API(ret_type) extern "C"  ret_type  __cdecl
 #endif
 
-#endif  // __MFX_HEVC_VPP_PLUGIN_INCLUDED__
+#endif  // __MFX_CAMERA_PLUGIN_INCLUDED__

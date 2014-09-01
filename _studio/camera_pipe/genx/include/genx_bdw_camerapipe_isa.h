@@ -7,7 +7,7 @@
 //
 */
 
-#ifndef __genx_hsw_camerapipe__
-#define __genx_hsw_camerapipe__
-extern const unsigned char genx_hsw_camerapipe[485573];
+#ifndef __genx_bdw_camerapipe__
+#define __genx_bdw_camerapipe__
+extern const unsigned char genx_bdw_camerapipe[490237];
 #endif

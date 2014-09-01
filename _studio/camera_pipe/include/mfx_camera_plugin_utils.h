@@ -25,6 +25,23 @@ File Name: mfx_camera_plugin_utils.h
 #if !defined(_MFX_CAMERA_PLUGIN_UTILS_)
 #define _MFX_CAMERA_PLUGIN_UTILS_
 
+//#define CAMERA_DEBUG_PRINTF
+
+//#define WRITE_CAMERA_LOG
+#ifdef WRITE_CAMERA_LOG
+#define CAMERA_LOG(...) \
+{\
+    UMC::AutomaticUMCMutex guard(m_log_guard); \
+    char fname[128] = "";\
+    sprintf(fname, "camera_plugin_%p.log", m_session);\
+    FILE *f = fopen(fname, "at");\
+    fprintf(f, __VA_ARGS__); \
+    fclose(f); \
+}
+#else
+#define CAMERA_LOG(...)
+#endif
+
 #if defined( AS_VPP_PLUGIN )
 
 #define CAMERA_CLIP(a, l, r) if (a < (l)) a = l; else if (a > (r)) a = r
@@ -39,25 +56,6 @@ template<class T> inline void Zero(T & obj)                { memset(&obj, 0, siz
 
 template<class T, size_t N> inline size_t SizeOf(T(&)[N]) { return N; }
 
-
-static const mfxU16 MFX_MEMTYPE_SYS_INT =
-    MFX_MEMTYPE_FROM_VPPIN | MFX_MEMTYPE_SYSTEM_MEMORY | MFX_MEMTYPE_INTERNAL_FRAME;
-
-static const mfxU16 MFX_MEMTYPE_SYS_EXT_IN =
-    MFX_MEMTYPE_FROM_VPPIN | MFX_MEMTYPE_SYSTEM_MEMORY | MFX_MEMTYPE_EXTERNAL_FRAME;
-
-static const mfxU16 MFX_MEMTYPE_SYS_EXT_OUT =
-    MFX_MEMTYPE_FROM_VPPOUT | MFX_MEMTYPE_SYSTEM_MEMORY | MFX_MEMTYPE_EXTERNAL_FRAME;
-
-static const mfxU16 MFX_MEMTYPE_D3D_INT =
-    MFX_MEMTYPE_FROM_VPPIN | MFX_MEMTYPE_DXVA2_PROCESSOR_TARGET | MFX_MEMTYPE_INTERNAL_FRAME;
-
-static const mfxU16 MFX_MEMTYPE_D3D_EXT_IN =
-    MFX_MEMTYPE_FROM_VPPIN | MFX_MEMTYPE_DXVA2_PROCESSOR_TARGET | MFX_MEMTYPE_EXTERNAL_FRAME;
-
-static const mfxU16 MFX_MEMTYPE_D3D_EXT_OUT =
-    MFX_MEMTYPE_FROM_VPPOUT | MFX_MEMTYPE_DXVA2_PROCESSOR_TARGET | MFX_MEMTYPE_EXTERNAL_FRAME;
-
 enum {
     MFX_CAM_QUERY_SET0 = 0,
     MFX_CAM_QUERY_SET1,
@@ -70,11 +68,9 @@ enum {
 enum
 {
     MEM_GPUSHARED   =  0,
-    MEM_FASTGPUCPY,
-    MEM_CPUCPY,
     MEM_GPU
 };
-
+mfxStatus CheckIOPattern(mfxVideoParam *param, mfxVideoParam *out, mfxU32 mode);
 mfxStatus CheckExtBuffers(mfxVideoParam *param, mfxVideoParam *out, mfxU32 mode);
 
 class MfxFrameAllocResponse : public mfxFrameAllocResponse
@@ -93,6 +89,10 @@ public:
         mfxFrameAllocRequest & req);
 
     mfxStatus AllocCmSurfaces(
+        CmDevice *             device,
+        mfxFrameAllocRequest & req);
+
+    mfxStatus ReallocCmSurfaces(
         CmDevice *             device,
         mfxFrameAllocRequest & req);
 
@@ -125,6 +125,10 @@ private:
     std::vector<mfxMemId>              m_mids;
     std::vector<mfxU32>                m_locked;
     std::vector<void *>                m_sysmems;
+
+    mfxU16 m_width;
+    mfxU16 m_height;
+    mfxU32 m_fourCC;
 };
 
 
@@ -173,7 +177,6 @@ typedef struct _mfxCameraCaps
             mfxU32    bColorConversionMatrix            : 1;
             mfxU32    bForwardGammaCorrection           : 1;
             mfxU32    bBayerDenoise                     : 1;
-            mfxU32    bOutToARGB8                       : 1;
             mfxU32    bOutToARGB16                      : 1;
             mfxU32    bNoPadding                        : 1; // must be ON now, zero meaning that padding needs to be done
             mfxU32    Reserved                          : 21;
@@ -204,14 +207,9 @@ typedef struct _CameraPipeWhiteBalanceParams
     mfxF32      GreenBottomCorrection;
 } CameraPipeWhiteBalanceParams;
 
-
 // from CanonLog10ToRec709_10_LUT_Ver.1.1, picked up 64 points
 
-#define MFX_CAM_DEFAULT_NUM_GAMMA_POINTS 64
-#define MFX_CAM_DEFAULT_GAMMA_DEPTH 10
-
-extern mfxU16 default_gamma_point[MFX_CAM_DEFAULT_NUM_GAMMA_POINTS];
-extern mfxU16 default_gamma_correct[MFX_CAM_DEFAULT_NUM_GAMMA_POINTS];
+#define MFX_CAM_GAMMA_NUM_POINTS_SKL 64
 
 //// Gamma parameters
 typedef struct 
@@ -246,38 +244,6 @@ typedef struct
     mfxU16 left;
     mfxU16 right;
 } CameraPipePaddingParams;
-/*
-class MfxFrameAllocResponse : public mfxFrameAllocResponse
-{
-public:
-    MfxFrameAllocResponse();
-
-    ~MfxFrameAllocResponse();
-
-    mfxStatus Alloc(
-        VideoCORE *            core,
-        mfxFrameAllocRequest & req,
-        bool isCopyRequired = true);
-
-    mfxStatus Alloc(
-        VideoCORE *            core,
-        mfxFrameAllocRequest & req,
-        mfxFrameSurface1 **    opaqSurf,
-        mfxU32                 numOpaqSurf);
-
-    mfxStatus Free( void );
-
-private:
-    MfxFrameAllocResponse(MfxFrameAllocResponse const &);
-    MfxFrameAllocResponse & operator =(MfxFrameAllocResponse const &);
-
-    VideoCORE * m_core;
-    mfxU16      m_numFrameActualReturnedByAllocFrames;
-
-    std::vector<mfxFrameAllocResponse> m_responseQueue;
-    std::vector<mfxMemId>              m_mids;
-};
-*/
 
 }
 #endif //#if defined( AS_VPP_PLUGIN )
