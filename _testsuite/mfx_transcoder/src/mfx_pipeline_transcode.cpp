@@ -101,6 +101,9 @@ File Name: .h
     ippsSet_8u(0xFF, (mfxU8*)&m_EncParamsMask + offset, sizeof(field));}\
 }
 
+enum {
+    MFX_CODEC_H263 = MFX_MAKEFOURCC('H','2','6','3'),
+};
 
 //////////////////////////////////////////////////////////////////////////
 
@@ -419,8 +422,8 @@ mfxStatus MFXTranscodingPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI3
     for (; argv < argvEnd; argv++)
     {
         int nPattern = 0;
-        if ((0 != (nPattern = m_OptProc.Check(argv[0], VM_STRING("(-| )(m2|mpeg2|avc|h264|jpeg|vp8|h265)"), VM_STRING("target format")))) ||
-            m_OptProc.Check(argv[0], VM_STRING("-CodecType"), VM_STRING("target format"),OPT_SPECIAL, VM_STRING("m2|mpeg2|avc|h264|jpeg|vp8|h265")))
+        if ((0 != (nPattern = m_OptProc.Check(argv[0], VM_STRING("(-| )(m2|mpeg2|avc|h264|jpeg|vp8|h265|h263)"), VM_STRING("target format")))) ||
+            m_OptProc.Check(argv[0], VM_STRING("-CodecType"), VM_STRING("target format"),OPT_SPECIAL, VM_STRING("m2|mpeg2|avc|h264|jpeg|vp8|h265|h263")))
 
         {
             if (!nPattern)
@@ -430,7 +433,7 @@ mfxStatus MFXTranscodingPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI3
                 argv++;
             }
 
-            switch ((nPattern - 1) % 7)
+            switch ((nPattern - 1) % 8)
             {
                 case 0:
                 case 1:
@@ -463,6 +466,11 @@ mfxStatus MFXTranscodingPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI3
                 case 6:
                 {
                     pMFXParams->mfx.CodecId = MFX_CODEC_HEVC;
+                    break;
+                }
+                case 7:
+                {
+                    pMFXParams->mfx.CodecId = MFX_CODEC_H263;
                     break;
                 }
             }

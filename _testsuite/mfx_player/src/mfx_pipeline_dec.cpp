@@ -113,6 +113,9 @@ using namespace std;
 #define MFX_HANDLE_TIMING_TAL       ((mfxHandleType)1004)
 #endif
 
+enum {
+    MFX_CODEC_H263 = MFX_MAKEFOURCC('H','2','6','3'),
+};
 
 //////////////////////////////////////////////////////////////////////////
 
@@ -3295,10 +3298,10 @@ mfxStatus MFXDecPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI32 argc, 
             m_inParams.m_container = MFX_CONTAINER_RAW;
             vm_string_strcpy_s(m_inParams.strSrcFile, MFX_ARRAY_SIZE(m_inParams.strSrcFile), argv[0]);
         }
-        else if (0!=(nPattern = m_OptProc.Check(argv[0], VM_STRING("-i:(h264|mpeg2|vc1|mvc|jpeg|hevc|hevc10b|vp8|null)"), VM_STRING("input stream is raw(non container), pipeline works without demuxing"), OPT_UNDEFINED)))
+        else if (0!=(nPattern = m_OptProc.Check(argv[0], VM_STRING("-i:(h264|mpeg2|vc1|mvc|jpeg|hevc|hevc10b|vp8|null|h263)"), VM_STRING("input stream is raw(non container), pipeline works without demuxing"), OPT_UNDEFINED)))
         {
             MFX_CHECK(1 + argv != argvEnd);
-            if (nPattern != 9)
+            if (nPattern != 10)
             {
                 argv++;
                 vm_string_strcpy_s(m_inParams.strSrcFile, MFX_ARRAY_SIZE(m_inParams.strSrcFile), argv[0]);
@@ -3331,8 +3334,12 @@ mfxStatus MFXDecPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI32 argc, 
                 break;
             case 8 :
                 m_inParams.InputCodecType = MFX_CODEC_VP8;
+                break;
             case 9:
                 m_inParams.InputCodecType = MFX_CODEC_CAPTURE;
+                break;
+            case 10:
+                m_inParams.InputCodecType = MFX_CODEC_H263;
                 break;
             }
             m_inParams.m_container = MFX_CONTAINER_RAW;
@@ -4145,7 +4152,10 @@ mfxStatus MFXDecPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI32 argc, 
             m_inParams.nYUVLoop = vm_string_atoi(argv[1]);
             argv++;
         }
-        else if (m_OptProc.Check(argv[0], VM_STRING("-in_h264"), VM_STRING("directly specify codec type as h264"), OPT_UNDEFINED))
+        else if (m_OptProc.Check(argv[0], VM_STRING("-in_h263"), VM_STRING("directly specify codec type as h263"), OPT_UNDEFINED))
+        {
+            m_inParams.InputCodecType = MFX_CODEC_H263;
+        } else if (m_OptProc.Check(argv[0], VM_STRING("-in_h264"), VM_STRING("directly specify codec type as h264"), OPT_UNDEFINED))
         {
             m_inParams.InputCodecType = MFX_CODEC_AVC;
             m_inParams.m_container = MFX_CONTAINER_RAW;
