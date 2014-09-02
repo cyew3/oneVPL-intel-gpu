@@ -29,12 +29,19 @@ private:
         OUT_ALL     = 63
     };
 
+    enum
+    {
+        MFXPAR = 1,
+        EXT_FRM_CTRL
+    };
+
     struct tc_struct
     {
         mfxStatus sts;
         mfxU32 mode;
         struct f_pair 
         {
+            mfxU32 ext_type;
             const  tsStruct::Field* f;
             mfxU32 v;
         } set_par[n_par];
@@ -46,10 +53,31 @@ private:
 
 const TestSuite::tc_struct TestSuite::test_case[] = 
 {
-    {/*00*/ MFX_ERR_NONE, IN_FRM_CTRL, {&tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_SYSTEM_MEMORY}},
+    // LenSP/MaxLenSP
+    {/*00*/ MFX_ERR_NONE, IN_FRM_CTRL, {{EXT_FRM_CTRL, &tsStruct::mfxExtFeiEncFrameCtrl.LenSP, 1},
+                                        {EXT_FRM_CTRL, &tsStruct::mfxExtFeiEncFrameCtrl.MaxLenSP, 14}}
+    },
+    {/*01*/ MFX_ERR_NONE, IN_FRM_CTRL, {{EXT_FRM_CTRL, &tsStruct::mfxExtFeiEncFrameCtrl.LenSP, 63},
+                                        {EXT_FRM_CTRL, &tsStruct::mfxExtFeiEncFrameCtrl.MaxLenSP, 63}}
+    },
+    {/*02*/ MFX_ERR_INVALID_VIDEO_PARAM, IN_FRM_CTRL, {{EXT_FRM_CTRL, &tsStruct::mfxExtFeiEncFrameCtrl.LenSP, 64},
+                                        {EXT_FRM_CTRL, &tsStruct::mfxExtFeiEncFrameCtrl.MaxLenSP, 64}}
+    },
+    {/*03*/ MFX_ERR_INVALID_VIDEO_PARAM, IN_FRM_CTRL, {{EXT_FRM_CTRL, &tsStruct::mfxExtFeiEncFrameCtrl.LenSP, 16},
+                                        {EXT_FRM_CTRL, &tsStruct::mfxExtFeiEncFrameCtrl.MaxLenSP, 10}}
+    },
 };
 
 const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case)/sizeof(TestSuite::tc_struct);
+
+#define SETPARS(p, type)\
+for(mfxU32 i = 0; i < n_par; i++) \
+{ \
+    if(tc.set_par[i].f && tc.set_par[i].ext_type == type) \
+    { \
+        tsStruct::set(p, *tc.set_par[i].f, tc.set_par[i].v); \
+    } \
+}
 
 int TestSuite::RunTest(unsigned int id)
 {
@@ -61,13 +89,7 @@ int TestSuite::RunTest(unsigned int id)
     m_pPar->IOPattern = MFX_IOPATTERN_IN_SYSTEM_MEMORY;
     m_pPar->AsyncDepth = 1;
     // set up parameters for case
-    for(mfxU32 i = 0; i < n_par; i++)
-    {
-        if(tc.set_par[i].f)
-        {
-            tsStruct::set(m_pPar, *tc.set_par[i].f, tc.set_par[i].v);
-        }
-    }
+    SETPARS(m_pPar, MFXPAR);
 
     Init(m_session, m_pPar);
 
@@ -97,6 +119,7 @@ int TestSuite::RunTest(unsigned int id)
         in_efc.Header.BufferId = MFX_EXTBUFF_FEI_ENC_CTRL;
         in_efc.Header.BufferSz = sizeof(mfxExtFeiEncFrameCtrl);
         in_buffs.push_back((mfxExtBuffer*)&in_efc);
+        SETPARS(&in_efc, EXT_FRM_CTRL);
     }
 
     mfxExtFeiEncMVPredictors in_mvp = {};
