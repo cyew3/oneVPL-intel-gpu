@@ -1,18 +1,14 @@
-/* ///////////////////////////////////////////////////////////////////////
-//
-//               INTEL CORPORATION PROPRIETARY INFORMATION
-//  This software is supplied under the terms of a license agreement or
-//  nondisclosure agreement with Intel Corporation and may not be copied
-//  or disclosed except in accordance with the terms of that agreement.
-//        Copyright (c) 2005-2014 Intel Corporation. All Rights Reserved.
-//
-//  Description:    Decodes P-Frames
-//
-*/
+/**********************************************************************************
+
+INTEL CORPORATION PROPRIETARY INFORMATION
+This software is supplied under the terms of a license agreement or nondisclosure
+agreement with Intel Corporation and may not be copied or disclosed except in
+accordance with the terms of that agreement
+Copyright(c) 2005-2014 Intel Corporation. All Rights Reserved.
+
+***********************************************************************************/
+
 #include "umc_defs.h"
-
-#if defined (UMC_ENABLE_H263_VIDEO_DECODER)
-
 #include "h263.h"
 #include "h263dec.h"
 
@@ -1316,5 +1312,3 @@ h263_Status h263_DecodeFrame_P_MT(h263_Info* pInfo, h263_Frame *rFrame)
 }
 
 #endif /* _OMP_KARABAS */
-
-#endif // defined (UMC_ENABLE_H263_VIDEO_DECODER)

@@ -1,19 +1,14 @@
-/* ///////////////////////////////////////////////////////////////////////
-//
-//               INTEL CORPORATION PROPRIETARY INFORMATION
-//  This software is supplied under the terms of a license agreement or
-//  nondisclosure agreement with Intel Corporation and may not be copied
-//  or disclosed except in accordance with the terms of that agreement.
-//        Copyright (c) 2005-2014 Intel Corporation. All Rights Reserved.
-//
-//  Description:  H.263 decoder functions
-//
-*/
+/**********************************************************************************
+
+INTEL CORPORATION PROPRIETARY INFORMATION
+This software is supplied under the terms of a license agreement or nondisclosure
+agreement with Intel Corporation and may not be copied or disclosed except in
+accordance with the terms of that agreement
+Copyright(c) 2005-2014 Intel Corporation. All Rights Reserved.
+
+***********************************************************************************/
 
 #include "umc_defs.h"
-
-#if defined (UMC_ENABLE_H263_VIDEO_DECODER)
-
 #include "h263.h"
 #include "h263dec.h"
 
@@ -1643,5 +1638,3 @@ void h263_DeblockingFilterVer_I_MT(h263_Info *pInfo, Ipp32s curRow)
 }
 
 #endif // _OMP_KARABAS
-
-#endif // defined (UMC_ENABLE_H263_VIDEO_DECODER)

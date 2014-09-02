@@ -1,19 +1,14 @@
-/* ///////////////////////////////////////////////////////////////////////
-//
-//               INTEL CORPORATION PROPRIETARY INFORMATION
-//  This software is supplied under the terms of a license agreement or
-//  nondisclosure agreement with Intel Corporation and may not be copied
-//  or disclosed except in accordance with the terms of that agreement.
-//        Copyright (c) 2005-2014 Intel Corporation. All Rights Reserved.
-//
-//  Description:  H.263++ related tables.
-//
-*/
+/**********************************************************************************
+
+INTEL CORPORATION PROPRIETARY INFORMATION
+This software is supplied under the terms of a license agreement or nondisclosure
+agreement with Intel Corporation and may not be copied or disclosed except in
+accordance with the terms of that agreement
+Copyright(c) 2005-2014 Intel Corporation. All Rights Reserved.
+
+***********************************************************************************/
 
 #include "umc_defs.h"
-
-#if defined (UMC_ENABLE_H263_VIDEO_DECODER)
-
 #include "h263.h"
 
 const Ipp8u h263_cCbCrMvRound16[16] = {0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2};
@@ -98,5 +93,3 @@ const Ipp32s h263_pic_width[5] = {128, 176, 352, 704, 1408};
 const Ipp32s h263_pic_height[5] = {96, 144, 288, 576, 1152};
 const Ipp32s h263_mblocks_in_gob[5] = {8, 11, 22, 88, 352};
 const Ipp32s h263_gobs_in_pic[5] = {6, 9, 18, 18, 18};
-
-#endif // defined (UMC_ENABLE_H263_VIDEO_DECODER)

@@ -1,19 +1,14 @@
-/* ///////////////////////////////////////////////////////////////////////
-//
-//               INTEL CORPORATION PROPRIETARY INFORMATION
-//  This software is supplied under the terms of a license agreement or
-//  nondisclosure agreement with Intel Corporation and may not be copied
-//  or disclosed except in accordance with the terms of that agreement.
-//        Copyright (c) 2005-2014 Intel Corporation. All Rights Reserved.
-//
-//  Description:    Decodes H.263++ bitstream.
-//
-*/
+/**********************************************************************************
+
+INTEL CORPORATION PROPRIETARY INFORMATION
+This software is supplied under the terms of a license agreement or nondisclosure
+agreement with Intel Corporation and may not be copied or disclosed except in
+accordance with the terms of that agreement
+Copyright(c) 2005-2014 Intel Corporation. All Rights Reserved.
+
+***********************************************************************************/
 
 #include "umc_defs.h"
-
-#if defined (UMC_ENABLE_H263_VIDEO_DECODER)
-
 #include "h263.h"
 
 /*
@@ -171,5 +166,3 @@ Ipp32s h263_SeekGOBStartCodePtr(h263_Info* pInfo)
   }
   return 0;
 }
-
-#endif // defined (UMC_ENABLE_H263_VIDEO_DECODER)
