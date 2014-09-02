@@ -94,6 +94,58 @@ const TestSuite::tc_struct TestSuite::test_case[] =
     {/*11*/ MFX_ERR_INVALID_VIDEO_PARAM, IN_FRM_CTRL,
             {EXT_FRM_CTRL, &tsStruct::mfxExtFeiEncFrameCtrl.IntraPartMask, 0x03} // disable all
     },
+
+    // MultiPredL0/MultiPredL1
+    {/*12*/ MFX_ERR_NONE, IN_FRM_CTRL, {{EXT_FRM_CTRL, &tsStruct::mfxExtFeiEncFrameCtrl.MultiPredL0, 1},
+                                        {EXT_FRM_CTRL, &tsStruct::mfxExtFeiEncFrameCtrl.MultiPredL1, 1}}
+    },
+
+    // SubPelMode
+    {/*13*/ MFX_ERR_NONE, IN_FRM_CTRL, {EXT_FRM_CTRL, &tsStruct::mfxExtFeiEncFrameCtrl.SubPelMode, 1}},
+    {/*14*/ MFX_ERR_NONE, IN_FRM_CTRL, {EXT_FRM_CTRL, &tsStruct::mfxExtFeiEncFrameCtrl.SubPelMode, 3}},
+
+    // InterSAD/IntraSAD
+    {/*15*/ MFX_ERR_NONE, IN_FRM_CTRL, {{EXT_FRM_CTRL, &tsStruct::mfxExtFeiEncFrameCtrl.InterSAD, 2},
+                                        {EXT_FRM_CTRL, &tsStruct::mfxExtFeiEncFrameCtrl.IntraSAD, 2}}
+    },
+
+    // DistortionType, AdaptiveSearch, RepartitionCheckEnable
+    {/*16*/ MFX_ERR_NONE, IN_FRM_CTRL, {EXT_FRM_CTRL, &tsStruct::mfxExtFeiEncFrameCtrl.DistortionType, 1}},
+    {/*17*/ MFX_ERR_NONE, IN_FRM_CTRL, {EXT_FRM_CTRL, &tsStruct::mfxExtFeiEncFrameCtrl.AdaptiveSearch, 1}},
+    {/*18*/ MFX_ERR_NONE, IN_FRM_CTRL, {EXT_FRM_CTRL, &tsStruct::mfxExtFeiEncFrameCtrl.RepartitionCheckEnable, 1}},
+
+    // RefWidth, RefHeight, SearchWindow
+    {/*19*/ MFX_ERR_NONE, IN_FRM_CTRL,
+           {{EXT_FRM_CTRL, &tsStruct::mfxExtFeiEncFrameCtrl.MultiPredL0, 1},
+            {EXT_FRM_CTRL, &tsStruct::mfxExtFeiEncFrameCtrl.RefWidth, 64},
+            {EXT_FRM_CTRL, &tsStruct::mfxExtFeiEncFrameCtrl.RefHeight, 32}},
+    },
+    {/*20*/ MFX_ERR_NONE, IN_FRM_CTRL,
+           {{EXT_FRM_CTRL, &tsStruct::mfxExtFeiEncFrameCtrl.MultiPredL1, 1},
+            {EXT_FRM_CTRL, &tsStruct::mfxExtFeiEncFrameCtrl.RefWidth, 64},
+            {EXT_FRM_CTRL, &tsStruct::mfxExtFeiEncFrameCtrl.RefHeight, 32}},
+    },
+    {/*21*/ MFX_ERR_NONE, IN_FRM_CTRL,
+           {{EXT_FRM_CTRL, &tsStruct::mfxExtFeiEncFrameCtrl.MultiPredL0, 1},
+            {EXT_FRM_CTRL, &tsStruct::mfxExtFeiEncFrameCtrl.MultiPredL1, 1},
+            {EXT_FRM_CTRL, &tsStruct::mfxExtFeiEncFrameCtrl.RefWidth, 32},
+            {EXT_FRM_CTRL, &tsStruct::mfxExtFeiEncFrameCtrl.RefHeight, 32}},
+    },
+    {/*22*/ MFX_ERR_INVALID_VIDEO_PARAM, IN_FRM_CTRL,
+           {{EXT_FRM_CTRL, &tsStruct::mfxExtFeiEncFrameCtrl.MultiPredL0, 1},
+            {EXT_FRM_CTRL, &tsStruct::mfxExtFeiEncFrameCtrl.MultiPredL1, 1},
+            {EXT_FRM_CTRL, &tsStruct::mfxExtFeiEncFrameCtrl.RefWidth, 36},
+            {EXT_FRM_CTRL, &tsStruct::mfxExtFeiEncFrameCtrl.RefHeight, 36}},
+    },
+    {/*23*/ MFX_ERR_NONE, IN_FRM_CTRL,
+           {EXT_FRM_CTRL, &tsStruct::mfxExtFeiEncFrameCtrl.SearchWindow, 1}
+    },
+    {/*24*/ MFX_ERR_NONE, IN_FRM_CTRL,
+           {EXT_FRM_CTRL, &tsStruct::mfxExtFeiEncFrameCtrl.SearchWindow, 5}
+    },
+    {/*25*/ MFX_ERR_INVALID_VIDEO_PARAM, IN_FRM_CTRL,
+           {EXT_FRM_CTRL, &tsStruct::mfxExtFeiEncFrameCtrl.SearchWindow, 6}
+    },
 };
 
 const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case)/sizeof(TestSuite::tc_struct);
@@ -144,10 +196,13 @@ int TestSuite::RunTest(unsigned int id)
     mfxExtFeiEncFrameCtrl in_efc = {};
     if (tc.mode & IN_FRM_CTRL)
     {
+        in_efc.LenSP = 4;
+        in_efc.MaxLenSP = 8;
+
         in_efc.Header.BufferId = MFX_EXTBUFF_FEI_ENC_CTRL;
         in_efc.Header.BufferSz = sizeof(mfxExtFeiEncFrameCtrl);
-        in_buffs.push_back((mfxExtBuffer*)&in_efc);
         SETPARS(&in_efc, EXT_FRM_CTRL);
+        in_buffs.push_back((mfxExtBuffer*)&in_efc);
     }
 
     mfxExtFeiEncMVPredictors in_mvp = {};
