@@ -66,6 +66,34 @@ const TestSuite::tc_struct TestSuite::test_case[] =
     {/*03*/ MFX_ERR_INVALID_VIDEO_PARAM, IN_FRM_CTRL, {{EXT_FRM_CTRL, &tsStruct::mfxExtFeiEncFrameCtrl.LenSP, 16},
                                         {EXT_FRM_CTRL, &tsStruct::mfxExtFeiEncFrameCtrl.MaxLenSP, 10}}
     },
+
+    // SubMBPartMask
+    {/*04*/ MFX_ERR_NONE, IN_FRM_CTRL,
+            {EXT_FRM_CTRL, &tsStruct::mfxExtFeiEncFrameCtrl.SubMBPartMask, 0x00} // enable all
+    },
+    {/*05*/ MFX_ERR_NONE, IN_FRM_CTRL,
+            {EXT_FRM_CTRL, &tsStruct::mfxExtFeiEncFrameCtrl.SubMBPartMask, 0x01} // disable 16x16
+    },
+    {/*06*/ MFX_ERR_NONE, IN_FRM_CTRL,
+            {EXT_FRM_CTRL, &tsStruct::mfxExtFeiEncFrameCtrl.SubMBPartMask, 0x40} // disable 4x4
+    },
+    {/*07*/ MFX_ERR_INVALID_VIDEO_PARAM, IN_FRM_CTRL,
+            {EXT_FRM_CTRL, &tsStruct::mfxExtFeiEncFrameCtrl.SubMBPartMask, 0x7f} // disable all
+    },
+
+    // IntraPartMask
+    {/*08*/ MFX_ERR_NONE, IN_FRM_CTRL,
+            {EXT_FRM_CTRL, &tsStruct::mfxExtFeiEncFrameCtrl.IntraPartMask, 0x00} // enable all
+    },
+    {/*09*/ MFX_ERR_NONE, IN_FRM_CTRL,
+            {EXT_FRM_CTRL, &tsStruct::mfxExtFeiEncFrameCtrl.IntraPartMask, 0x01} // disable 16x16
+    },
+    {/*10*/ MFX_ERR_NONE, IN_FRM_CTRL,
+            {EXT_FRM_CTRL, &tsStruct::mfxExtFeiEncFrameCtrl.IntraPartMask, 0x04} // disable 4x4
+    },
+    {/*11*/ MFX_ERR_INVALID_VIDEO_PARAM, IN_FRM_CTRL,
+            {EXT_FRM_CTRL, &tsStruct::mfxExtFeiEncFrameCtrl.IntraPartMask, 0x03} // disable all
+    },
 };
 
 const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case)/sizeof(TestSuite::tc_struct);
