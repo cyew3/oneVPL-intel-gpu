@@ -942,25 +942,41 @@ mfxStatus FastCompositingDDI::ConvertExecute2BltParams( mfxExecuteParams *pExecu
         pInputSample->SampleFormat.VideoPrimaries = DXVA2_VideoPrimaries_Unknown;
         pInputSample->SampleFormat.VideoTransferFunction = DXVA2_VideoTransFunc_Unknown;
 
-        if(!pExecuteParams->bFieldWeaving)
+        if ((pExecuteParams->bComposite) && (0 != refIdx))
         {
-            pInputSample->SampleFormat.SampleFormat = MapPictureStructureToDXVAType(pRefSurf->frameInfo.PicStruct);
+            // for sub-streams
+            pInputSample->SampleFormat.SampleFormat = DXVA2_SampleSubStream;
+            pInputSample->Depth = 2;
         }
         else
         {
-            // for top field
-            if(refIdx == 1)
-                pInputSample->SampleFormat.SampleFormat = DXVA2_SampleFieldSingleEven;
-            // for bottom field
+            // primary stream, depth is 0
+            pInputSample->Depth = 0;
+            if(!pExecuteParams->bFieldWeaving)
+            {
+                pInputSample->SampleFormat.SampleFormat = MapPictureStructureToDXVAType(pRefSurf->frameInfo.PicStruct);
+            }
             else
-                pInputSample->SampleFormat.SampleFormat = DXVA_SampleFieldSingleOdd;
+            {
+                if(refIdx == 1) // for top field
+                {
+                    pInputSample->SampleFormat.SampleFormat = DXVA2_SampleFieldSingleEven;
+                }
+                else // for bottom field
+                {
+                    pInputSample->SampleFormat.SampleFormat = DXVA_SampleFieldSingleOdd;
+                }
+            }
+        }
+
+        if (pRefSurf->frameInfo.FourCC == MFX_FOURCC_RGB4)
+        {   
+            // workaround for rgb4 interlace video
+            pInputSample->SampleFormat.SampleFormat = DXVA2_SampleProgressiveFrame;
         }
 
         // no transparence
         pInputSample->Alpha = 1.0F; 
-
-        // primary video layer, depth is 0
-        pInputSample->Depth = 0;
 
         pInputSample->bLumaKey = FALSE;
         pInputSample->iLumaHigh = 0;
@@ -977,13 +993,26 @@ mfxStatus FastCompositingDDI::ConvertExecute2BltParams( mfxExecuteParams *pExecu
         pInputSample->SrcRect.right  += inInfo->CropX;
 
         // destination cropping
-        mfxFrameInfo *outInfo = &(pExecuteParams->targetSurface.frameInfo);
-        pInputSample->DstRect.top = outInfo->CropY;
-        pInputSample->DstRect.left = outInfo->CropX;
-        pInputSample->DstRect.bottom = outInfo->CropH;
-        pInputSample->DstRect.right  = outInfo->CropW;         
-        pInputSample->DstRect.bottom += outInfo->CropY;
-        pInputSample->DstRect.right += outInfo->CropX;
+        if ((pExecuteParams->bComposite) && (0 != refIdx))
+        {
+            // for sub-streams use DstRect info from ext buffer set by app
+            MFX_CHECK(refIdx < (int) pExecuteParams->dstRects.size(), MFX_ERR_UNKNOWN);
+            const DstRect& rec = pExecuteParams->dstRects[refIdx];
+            pInputSample->DstRect.top = rec.DstY;
+            pInputSample->DstRect.left = rec.DstX;
+            pInputSample->DstRect.bottom = rec.DstY + rec.DstH;
+            pInputSample->DstRect.right  = rec.DstX + rec.DstW;
+        }
+        else
+        {
+            mfxFrameInfo *outInfo = &(pExecuteParams->targetSurface.frameInfo);
+            pInputSample->DstRect.top = outInfo->CropY;
+            pInputSample->DstRect.left = outInfo->CropX;
+            pInputSample->DstRect.bottom = outInfo->CropH;
+            pInputSample->DstRect.right  = outInfo->CropW;
+            pInputSample->DstRect.bottom += outInfo->CropY;
+            pInputSample->DstRect.right += outInfo->CropX;
+        }
     }
 
     pBltParams->SampleCount = pExecuteParams->refCount;
