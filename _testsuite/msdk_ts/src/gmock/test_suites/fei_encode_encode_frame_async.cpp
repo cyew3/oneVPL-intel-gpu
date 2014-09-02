@@ -26,7 +26,7 @@ private:
         OUT_MV      = 8,
         OUT_MB_STAT = 8 << 1,
         OUT_MB_CTRL = 8 << 2,
-        OUT_ALL     = 63
+        OUT_ALL     = 56
     };
 
     enum
@@ -54,7 +54,7 @@ private:
 const TestSuite::tc_struct TestSuite::test_case[] = 
 {
     // LenSP/MaxLenSP
-    {/*00*/ MFX_ERR_NONE, IN_FRM_CTRL, {{EXT_FRM_CTRL, &tsStruct::mfxExtFeiEncFrameCtrl.LenSP, 1},
+    {/*00*/ MFX_ERR_NONE, IN_FRM_CTRL|OUT_ALL, {{EXT_FRM_CTRL, &tsStruct::mfxExtFeiEncFrameCtrl.LenSP, 1},
                                         {EXT_FRM_CTRL, &tsStruct::mfxExtFeiEncFrameCtrl.MaxLenSP, 14}}
     },
     {/*01*/ MFX_ERR_NONE, IN_FRM_CTRL, {{EXT_FRM_CTRL, &tsStruct::mfxExtFeiEncFrameCtrl.LenSP, 63},
@@ -146,6 +146,16 @@ const TestSuite::tc_struct TestSuite::test_case[] =
     {/*25*/ MFX_ERR_INVALID_VIDEO_PARAM, IN_FRM_CTRL,
            {EXT_FRM_CTRL, &tsStruct::mfxExtFeiEncFrameCtrl.SearchWindow, 6}
     },
+
+    // Parameters expecting additional ExtBuffers
+    {/*26*/ MFX_ERR_INVALID_VIDEO_PARAM, IN_FRM_CTRL,
+            {EXT_FRM_CTRL, &tsStruct::mfxExtFeiEncFrameCtrl.MVPredictor, 1}},
+    {/*27*/ MFX_ERR_INVALID_VIDEO_PARAM, IN_FRM_CTRL,
+            {EXT_FRM_CTRL, &tsStruct::mfxExtFeiEncFrameCtrl.PerMBQp, 1}},
+    {/*28*/ MFX_ERR_INVALID_VIDEO_PARAM, IN_FRM_CTRL,
+            {EXT_FRM_CTRL, &tsStruct::mfxExtFeiEncFrameCtrl.PerMBInput, 1}},
+    {/*29*/ MFX_ERR_INVALID_VIDEO_PARAM, IN_FRM_CTRL,
+            {EXT_FRM_CTRL, &tsStruct::mfxExtFeiEncFrameCtrl.MBSizeCtrl, 1}}
 };
 
 const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case)/sizeof(TestSuite::tc_struct);
@@ -174,19 +184,11 @@ int TestSuite::RunTest(unsigned int id)
     Init(m_session, m_pPar);
 
     ///////////////////////////////////////////////////////////////////////////
-    g_tsStatus.expect(tc.sts);
-
     AllocSurfaces();
     SetFrameAllocator();
 
-    mfxU32 encoded = 0;
-    mfxU32 submitted = 0;
-    mfxU32 async = TS_MAX(1, m_par.AsyncDepth);
-    mfxSyncPoint sp;
-
     mfxU32 n = 2;
     mfxU32 num_mb = mfxU32(m_par.mfx.FrameInfo.Width / 16) * mfxU32(m_par.mfx.FrameInfo.Height / 16);
-    async = TS_MIN(n, async - 1);
 
     AllocBitstream((m_par.mfx.FrameInfo.Width*m_par.mfx.FrameInfo.Height) * 1024 * 1024 * n);
 
@@ -237,24 +239,34 @@ int TestSuite::RunTest(unsigned int id)
         out_mv.Header.BufferId = MFX_EXTBUFF_FEI_ENC_MV;
         out_mv.Header.BufferSz = sizeof(mfxExtFeiEncMV);
         out_mv.MB = new mfxExtFeiEncMV::mfxMB[num_mb];
+        memset(out_mv.MB, 0, sizeof(mfxExtFeiEncMV::mfxMB));
         out_buffs.push_back((mfxExtBuffer*)&out_mv);
     }
+    mfxExtFeiEncMBStat out_mbstat = {};
     if (tc.mode & OUT_MB_STAT)
     {
-        mfxExtFeiEncMBStat out_mbstat = {};
         out_mbstat.Header.BufferId = MFX_EXTBUFF_FEI_ENC_MB_STAT;
         out_mbstat.Header.BufferSz = sizeof(mfxExtFeiEncMBStat);
-        out_mbstat.MB = new mfxExtFeiEncMBStat::mfxMB[num_mb];
+        out_mbstat.MB = new mfxExtFeiEncMBStat::mfxMB[num_mb * (16*16 + 16 + 16)];
+        memset(out_mbstat.MB, 0, sizeof(mfxExtFeiEncMBStat::mfxMB) * (16*16 + 16 + 16));
         out_buffs.push_back((mfxExtBuffer*)&out_mbstat);
     }
+    mfxExtFeiPakMBCtrl out_pakmb = {};
     if (tc.mode & OUT_MB_CTRL)
     {
-        mfxExtFeiPakMBCtrl out_pakmb = {};
         out_pakmb.Header.BufferId = MFX_EXTBUFF_FEI_PAK_CTRL;
         out_pakmb.Header.BufferSz = sizeof(mfxExtFeiPakMBCtrl);
         out_pakmb.MB = new mfxFeiPakMBCtrl[num_mb];
+        memset(out_pakmb.MB, 0, sizeof(mfxFeiPakMBCtrl));
         out_buffs.push_back((mfxExtBuffer*)&out_pakmb);
     }
+
+    mfxExtFeiEncMV orig_out_mv = {};
+    memcpy(&orig_out_mv, &out_mv, sizeof(mfxExtFeiEncMV));
+    mfxExtFeiEncMBStat orig_out_mbstat = {};
+    memcpy(&orig_out_mbstat, &out_mbstat, sizeof(mfxExtFeiEncMBStat));
+    mfxExtFeiPakMBCtrl orig_out_pakmb = {};
+    memcpy(&orig_out_pakmb, &out_pakmb, sizeof(mfxExtFeiPakMBCtrl));
 
     if (!out_buffs.empty())
     {
@@ -262,7 +274,14 @@ int TestSuite::RunTest(unsigned int id)
         m_bitstream.NumExtParam = out_buffs.size();
     }
 
+    mfxU32 encoded = 0;
+    mfxU32 submitted = 0;
+    mfxU32 async = TS_MAX(1, m_par.AsyncDepth);
+    async = TS_MIN(n, async - 1);
+    mfxSyncPoint sp;
+
     m_pSurf = GetSurface();
+    g_tsStatus.expect(tc.sts);
     while(encoded < n)
     {
         mfxStatus mfxRes = EncodeFrameAsync(m_session, m_pCtrl, m_pSurf, m_pBitstream, m_pSyncPoint);
@@ -296,6 +315,22 @@ int TestSuite::RunTest(unsigned int id)
 
     g_tsLog << encoded << " FRAMES ENCODED\n";
     g_tsStatus.check();
+
+    if (tc.mode & OUT_MV)
+    {
+        EXPECT_NE(0, memcmp(&orig_out_mv, &out_mv, sizeof(mfxExtFeiEncMV)))
+                    << "ERROR: mfxExtFeiEncMV output should be changed";
+    }
+    if (0 && tc.mode & OUT_MB_STAT)
+    {
+        EXPECT_NE(0, memcmp(&orig_out_mbstat, &out_mbstat, sizeof(mfxExtFeiEncMBStat)))
+                    << "ERROR: mfxExtFeiEncMBStat output should be changed";
+    }
+    if (tc.mode & OUT_MB_CTRL)
+    {
+        EXPECT_NE(0, memcmp(&orig_out_pakmb, &out_pakmb, sizeof(mfxExtFeiPakMBCtrl)))
+                    << "ERROR: mfxExtFeiEncMBStat output should be changed";
+    }
 
     TS_END;
     return 0;
