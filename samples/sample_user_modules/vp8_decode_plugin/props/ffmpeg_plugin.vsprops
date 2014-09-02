@@ -8,7 +8,7 @@
 	>
 	<Tool
 		Name="VCCLCompilerTool"
-		AdditionalIncludeDirectories="..\..\sample_common\include;include;..\plugin_api;..\..\..\include;&quot;$(INTELMEDIASDK_FFMPEG_ROOT)\include&quot;;.\thirdparty\ffmpeg\include"
+		AdditionalIncludeDirectories="..\..\sample_common\include;include;..\plugin_api;..\..\..\include;&quot;$(INTELMEDIASDK_FFMPEG_ROOT)\include&quot;;..\..\thirdparty\ffmpeg\include"
 	/>
 	<Tool
 		Name="VCLibrarianTool"
@@ -17,7 +17,7 @@
 	<Tool
 		Name="VCLinkerTool"
 		AdditionalDependencies="avcodec.lib avutil.lib avformat.lib swscale.lib"
-		AdditionalLibraryDirectories="&quot;..\..\..\lib\$(PlatformName)&quot;;&quot;$(INTELMEDIASDK_FFMPEG_ROOT)\lib\$(PlatformName)&quot;;.\thirdparty\ffmpeg\lib\$(PlatformName)"
+		AdditionalLibraryDirectories="&quot;..\..\..\lib\$(PlatformName)&quot;;&quot;$(INTELMEDIASDK_FFMPEG_ROOT)\lib\$(PlatformName)&quot;;..\..\thirdparty\ffmpeg\lib\$(PlatformName)"
 	/>
 	<UserMacro
 		Name="SamplesDirforProject"

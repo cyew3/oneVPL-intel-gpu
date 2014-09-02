@@ -12,11 +12,11 @@
   </PropertyGroup>
   <ItemDefinitionGroup>
     <ClCompile>
-      <AdditionalIncludeDirectories>..\..\sample_common\include;include;..\plugin_api;..\..\..\include;$(INTELMEDIASDK_FFMPEG_ROOT)\include;.\thirdparty\ffmpeg\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\sample_common\include;include;..\plugin_api;..\..\..\include;$(INTELMEDIASDK_FFMPEG_ROOT)\include;..\..\thirdparty\ffmpeg\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <AdditionalDependencies>avcodec.lib;avutil.lib;avformat.lib;swscale.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>..\..\..\lib\$(Platform);$(INTELMEDIASDK_FFMPEG_ROOT)\lib\$(Platform);.\thirdparty\ffmpeg\lib\$(Platform);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>..\..\..\lib\$(Platform);$(INTELMEDIASDK_FFMPEG_ROOT)\lib\$(Platform);..\..\thirdparty\ffmpeg\lib\$(Platform);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <ModuleDefinitionFile>..\plugin_api\mfx_plugin.def</ModuleDefinitionFile>
     </Link>
   </ItemDefinitionGroup>
