@@ -1,23 +1,14 @@
-/* ///////////////////////////////////////////////////////////////////////
-//
-//               INTEL CORPORATION PROPRIETARY INFORMATION
-//  This software is supplied under the terms of a license agreement or
-//  nondisclosure agreement with Intel Corporation and may not be copied
-//  or disclosed except in accordance with the terms of that agreement.
-//        Copyright (c) 2005-2014 Intel Corporation. All Rights Reserved.
-//
-//  Description:    class ippVideoEncoderH263
-//  Contents:
-//                  ~ippVideoEncoderH263
-//                  ippVideoEncoderH263(h263e_Param)
-//                  Close
-//                  Init
-//                  ExpandFrame
-//
-*/
-#include "umc_defs.h"
+/**********************************************************************************
 
-#if defined (UMC_ENABLE_H263_VIDEO_ENCODER)
+INTEL CORPORATION PROPRIETARY INFORMATION
+This software is supplied under the terms of a license agreement or nondisclosure
+agreement with Intel Corporation and may not be copied or disclosed except in
+accordance with the terms of that agreement
+Copyright(c) 2005-2014 Intel Corporation. All Rights Reserved.
+
+***********************************************************************************/
+
+#include "umc_defs.h"
 #include <math.h>
 #include "h263_enc.hpp"
 
@@ -751,4 +742,3 @@ void ippVideoEncoderH263::OBMC_Macroblock(h263e_MacroBlock *pMBinfo, IppMotionVe
   h263e_LimitMV(&mvRight[2], &mvOBMCR, &limitRectL, dx+8, dy+8, 8);
   ippiOBMC8x8HP_MPEG4_8u_C1R(pYr+8+stepYr*8, stepYr, pYc+8+stepYc*8, stepYc, &mvCur[3], &mvOBMCL, &mvOBMCR, &mvOBMCU, &mvCur[3], rt);
 }
-#endif // defined (UMC_ENABLE_H263_VIDEO_ENCODER)

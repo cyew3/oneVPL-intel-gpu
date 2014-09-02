@@ -1,21 +1,14 @@
-/* ///////////////////////////////////////////////////////////////////////
-//
-//               INTEL CORPORATION PROPRIETARY INFORMATION
-//  This software is supplied under the terms of a license agreement or
-//  nondisclosure agreement with Intel Corporation and may not be copied
-//  or disclosed except in accordance with the terms of that agreement.
-//        Copyright (c) 2005-2014 Intel Corporation. All Rights Reserved.
-//
-//  Description:    class ippVideoEncoderH263 (tables)
-//  Contents:
-//                  mVLC_MCBPC_TB7
-//                  mVLC_CBPY_TB8
-//                  mVLC_MVD_TB12
-//
-*/
-#include "umc_defs.h"
+/**********************************************************************************
 
-#if defined (UMC_ENABLE_H263_VIDEO_ENCODER)
+INTEL CORPORATION PROPRIETARY INFORMATION
+This software is supplied under the terms of a license agreement or nondisclosure
+agreement with Intel Corporation and may not be copied or disclosed except in
+accordance with the terms of that agreement
+Copyright(c) 2005-2014 Intel Corporation. All Rights Reserved.
+
+***********************************************************************************/
+
+#include "umc_defs.h"
 #include "h263_enc.hpp"
 
 #pragma warning(disable : 279)      // controlling expression is constant
@@ -65,4 +58,3 @@ const Ipp8u h263e_DCScalerChroma_[32] = {
 };
 
 const Ipp8u h263e_cCbCrMvRound16_[16] = {0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2};
-#endif // defined (UMC_ENABLE_H263_VIDEO_ENCODER)

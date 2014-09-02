@@ -1,18 +1,15 @@
-/* ///////////////////////////////////////////////////////////////////////
-//
-//               INTEL CORPORATION PROPRIETARY INFORMATION
-//  This software is supplied under the terms of a license agreement or
-//  nondisclosure agreement with Intel Corporation and may not be copied
-//  or disclosed except in accordance with the terms of that agreement.
-//        Copyright (c) 2005-2014 Intel Corporation. All Rights Reserved.
-//
-//  Description:    class H263BitStream
-//
-*/
+/**********************************************************************************
+
+INTEL CORPORATION PROPRIETARY INFORMATION
+This software is supplied under the terms of a license agreement or nondisclosure
+agreement with Intel Corporation and may not be copied or disclosed except in
+accordance with the terms of that agreement
+Copyright(c) 2005-2014 Intel Corporation. All Rights Reserved.
+
+***********************************************************************************/
 
 #include "umc_defs.h"
 
-#if defined (UMC_ENABLE_H263_VIDEO_ENCODER)
 #include "h263_enc_bitstream.hpp"
 #include "ippdefs.h"
 
@@ -54,4 +51,3 @@ void H263BitStream::PutBits(Ipp32u val, Ipp32s n)
     mPtr += (mBitOff + n) >> 3;
     mBitOff = (mBitOff + n) & 7;
 }
-#endif //defined (UMC_ENABLE_H263_VIDEO_ENCODER)

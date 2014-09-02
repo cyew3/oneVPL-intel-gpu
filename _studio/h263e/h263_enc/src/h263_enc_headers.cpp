@@ -1,20 +1,14 @@
-/* ///////////////////////////////////////////////////////////////////////
-//
-//               INTEL CORPORATION PROPRIETARY INFORMATION
-//  This software is supplied under the terms of a license agreement or
-//  nondisclosure agreement with Intel Corporation and may not be copied
-//  or disclosed except in accordance with the terms of that agreement.
-//        Copyright (c) 2005-2014 Intel Corporation. All Rights Reserved.
-//
-//  Description:    class ippVideoEncoderH263 (put headers to bitstream)
-//  Contents:
-//                  EncodePicture_Header
-//
-*/
+/**********************************************************************************
+
+INTEL CORPORATION PROPRIETARY INFORMATION
+This software is supplied under the terms of a license agreement or nondisclosure
+agreement with Intel Corporation and may not be copied or disclosed except in
+accordance with the terms of that agreement
+Copyright(c) 2005-2014 Intel Corporation. All Rights Reserved.
+
+***********************************************************************************/
 
 #include "umc_defs.h"
-
-#if defined (UMC_ENABLE_H263_VIDEO_ENCODER)
 #include "h263_enc.hpp"
 
 void ippVideoEncoderH263::EncodeZeroBitsAlign()
@@ -195,4 +189,3 @@ void ippVideoEncoderH263::EncodeGOB_Header(Ipp32s gob_num)
   cBS.PutBits(0, 2); // GFID - not used
   cBS.PutBits(mVideoPicture.pic_quant, 5); // GQUANT
 }
-#endif // defined (UMC_ENABLE_H263_VIDEO_ENCODER)

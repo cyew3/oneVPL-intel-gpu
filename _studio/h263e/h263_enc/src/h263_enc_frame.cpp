@@ -1,28 +1,26 @@
-/* ///////////////////////////////////////////////////////////////////////
-//
-//               INTEL CORPORATION PROPRIETARY INFORMATION
-//  This software is supplied under the terms of a license agreement or
-//  nondisclosure agreement with Intel Corporation and may not be copied
-//  or disclosed except in accordance with the terms of that agreement.
-//        Copyright (c) 2005-2014 Intel Corporation. All Rights Reserved.
-//
-//  Description:    class ippVideoEncoderH263 (encode Pics)
-//  Contents:
-//                  EncodeFrame
-//
-//  References:
-//    Fast ME algorithm
-//        IEEE Transactions on image processing, vol. 9, N. 2, Feb 2000
-//        "A new Diamond Search Algorithm for Fast Block-Matching Motion Estimation"
-//        Shan Zhu and Kai-Kuang Ma
-//    Fast half-pel algorithm
-//        V. Bhaskaran, K. Konstantinides
-//        "Image And Video Compression Standarts"
+/**********************************************************************************
+
+INTEL CORPORATION PROPRIETARY INFORMATION
+This software is supplied under the terms of a license agreement or nondisclosure
+agreement with Intel Corporation and may not be copied or disclosed except in
+accordance with the terms of that agreement
+Copyright(c) 2005-2014 Intel Corporation. All Rights Reserved.
+
+***********************************************************************************/
+
+/*
+References:
+    Fast ME algorithm
+        IEEE Transactions on image processing, vol. 9, N. 2, Feb 2000
+        "A new Diamond Search Algorithm for Fast Block-Matching Motion Estimation"
+        Shan Zhu and Kai-Kuang Ma
+    Fast half-pel algorithm
+        V. Bhaskaran, K. Konstantinides
+        "Image And Video Compression Standarts"
 */
 
 #include "umc_defs.h"
 
-#if defined (UMC_ENABLE_H263_VIDEO_ENCODER)
 #include <stdlib.h>
 #ifdef PRINT_INFO
 #include <math.h>
@@ -2532,5 +2530,3 @@ void ippVideoEncoderH263::EncodeBPic()
   EncodeStuffingBitsAlign();
 }
 #endif
-
-#endif // defined (UMC_ENABLE_H263_VIDEO_ENCODER)
