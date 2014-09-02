@@ -1120,8 +1120,6 @@ mfxStatus MFX_CDECL MFX_Utility::Query_H265(VideoCORE *core, mfxVideoParam *in, 
             VM_ASSERT(GetPlatform_H265(core, out) == MFX_PLATFORM_SOFTWARE);
 #ifdef MFX_VA
             sts = MFX_ERR_UNSUPPORTED;
-#else
-            sts = MFX_WRN_PARTIAL_ACCELERATION;
 #endif
         }
     }

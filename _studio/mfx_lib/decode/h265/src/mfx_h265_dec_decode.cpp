@@ -296,8 +296,6 @@ mfxStatus VideoDECODEH265::Init(mfxVideoParam *par)
         VM_ASSERT(m_platform == MFX_PLATFORM_SOFTWARE);
 #ifdef MFX_VA
             return MFX_ERR_UNSUPPORTED;
-#else
-            return  MFX_WRN_PARTIAL_ACCELERATION;
 #endif
     }
 
@@ -386,8 +384,6 @@ mfxStatus VideoDECODEH265::Reset(mfxVideoParam *par)
         VM_ASSERT(m_platform == MFX_PLATFORM_SOFTWARE);
 #ifdef MFX_VA
             return MFX_ERR_UNSUPPORTED;
-#else
-            return  MFX_WRN_PARTIAL_ACCELERATION;
 #endif
     }
 
@@ -680,8 +676,6 @@ mfxStatus VideoDECODEH265::QueryIOSurf(VideoCORE *core, mfxVideoParam *par, mfxF
         VM_ASSERT(platform == MFX_PLATFORM_SOFTWARE);
 #ifdef MFX_VA
             return MFX_ERR_UNSUPPORTED;
-#else
-            return MFX_WRN_PARTIAL_ACCELERATION;
 #endif
     }
 
