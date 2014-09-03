@@ -2467,9 +2467,6 @@ Status TaskSupplier::Init(BaseCodecParams *pInit)
 
 void TaskSupplier::CreateTaskBroker()
 {
-#ifdef MFX_VA
-
-#else
     switch(m_iThreadNum)
     {
     case 1:
@@ -2489,7 +2486,6 @@ void TaskSupplier::CreateTaskBroker()
     {
         m_pSegmentDecoder[i] = new H264SegmentDecoderMultiThreaded(m_pTaskBroker);
     }
-#endif
 }
 
 Status TaskSupplier::PreInit(BaseCodecParams *pInit)

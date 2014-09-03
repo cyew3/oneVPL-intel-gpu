@@ -159,12 +159,9 @@ protected:
     FrameQueue m_completedQueue;
 
     Mutex m_mGuard;
-    Event m_Completed;
 
     LocalResources m_localResourses;
 };
-
-#ifndef MFX_VA
 
 class TaskBrokerSingleThread : public TaskBroker
 {
@@ -210,7 +207,6 @@ private:
     void CompleteFrame();
 };
 
-#endif
 } // namespace UMC
 
 #endif // __UMC_H264_TASK_BROKER_H

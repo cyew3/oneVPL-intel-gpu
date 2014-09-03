@@ -27,8 +27,6 @@
 
 //#define TIME
 
-//#define LIGHT_SYNC
-
 //static Ipp32s lock_failed = 0;
 //static Ipp32s sleep_count = 0;
 
@@ -302,8 +300,6 @@ TaskBroker::~TaskBroker()
 bool TaskBroker::Init(Ipp32s iConsumerNumber)
 {
     Release();
-
-    m_Completed.Init(0, 0);
 
     // we keep this variable due some optimizations purposes
     m_iConsumerNumber = iConsumerNumber;
@@ -977,9 +973,7 @@ bool TaskBroker::IsFrameCompleted(H264DecoderFrame * pFrame)
 
 bool TaskBroker::GetNextTask(H264Task *pTask)
 {
-#ifndef LIGHT_SYNC
     AutomaticUMCMutex guard(m_mGuard);
-#endif
 
     // check error(s)
     if (/*!m_FirstAU ||*/ m_IsShouldQuit)
@@ -1222,9 +1216,7 @@ bool TaskBroker::GetNextSliceToDeblocking(H264DecoderFrameInfo * info, H264Task 
 
 void TaskBroker::AddPerformedTask(H264Task *pTask)
 {
-#ifndef LIGHT_SYNC
     AutomaticUMCMutex guard(m_mGuard);
-#endif
 
     H264Slice *pSlice = pTask->m_pSlice;
     H264DecoderFrameInfo * info = pTask->m_pSlicesInfo;
@@ -1697,7 +1689,6 @@ bool TaskBroker::IsExistTasks(H264DecoderFrame * frame)
     return Check_Status(slicesInfo->GetStatus());
 }
 
-#ifndef MFX_VA
 static Ipp32s GetDecodingOffset(H264DecoderFrameInfo * curInfo, Ipp32s &readyCount)
 {
     Ipp32s offset = 0;
@@ -1842,11 +1833,6 @@ bool TaskBrokerTwoThread::GetNextTaskInternal(H264Task *pTask)
 bool TaskBrokerTwoThread::WrapDecodingTask(H264DecoderFrameInfo * info, H264Task *pTask, H264Slice *pSlice)
 {
     VM_ASSERT(pSlice);
-#ifdef LIGHT_SYNC
-    Ipp32s locked = TryToGet(&pSlice->m_bDecVacant);
-    if (!locked)
-        return false;
-#endif
 
     if (!pSlice->GetCoeffsBuffers())
         pSlice->m_coeffsBuffers = m_localResourses.AllocateCoeffBuffer(pSlice);
@@ -1887,12 +1873,6 @@ bool TaskBrokerTwoThread::WrapDecodingTask(H264DecoderFrameInfo * info, H264Task
 
         return true;
     }
-#ifdef LIGHT_SYNC
-    else
-    {
-        pSlice->m_bDecVacant = 1;
-    }
-#endif
 
     return false;
 
@@ -1902,12 +1882,6 @@ bool TaskBrokerTwoThread::WrapReconstructTask(H264DecoderFrameInfo * info, H264T
 {
     VM_ASSERT(pSlice);
     // this is guarded function, safe to touch any variable
-
-#ifdef LIGHT_SYNC
-    Ipp32s locked = TryToGet(&pSlice->m_bRecVacant);
-    if (!locked)
-        return false;
-#endif
 
     if (1 == pSlice->m_bRecVacant && pSlice->GetCoeffsBuffers()->IsOutputAvailable())
     {
@@ -1937,12 +1911,6 @@ bool TaskBrokerTwoThread::WrapReconstructTask(H264DecoderFrameInfo * info, H264T
 
         return true;
     }
-#ifdef LIGHT_SYNC
-    else
-    {
-        pSlice->m_bRecVacant = 1;
-    }
-#endif
 
     return false;
 
@@ -1952,12 +1920,6 @@ bool TaskBrokerTwoThread::WrapDecRecTask(H264DecoderFrameInfo * info, H264Task *
 {
     VM_ASSERT(pSlice);
     // this is guarded function, safe to touch any variable
-
-#ifdef LIGHT_SYNC
-    Ipp32s locked = TryToGet(&pSlice->m_bRecVacant);
-    if (!locked)
-        return false;
-#endif
 
     if (1 == pSlice->m_bRecVacant && 1 == pSlice->m_bDecVacant &&
         pSlice->m_iCurMBToDec == pSlice->m_iCurMBToRec)
@@ -1987,13 +1949,6 @@ bool TaskBrokerTwoThread::WrapDecRecTask(H264DecoderFrameInfo * info, H264Task *
 
         return true;
     }
-#ifdef LIGHT_SYNC
-    else
-    {
-        pSlice->m_bDecVacant = 1;
-        pSlice->m_bRecVacant = 1;
-    }
-#endif
 
     return false;
 
@@ -2237,9 +2192,7 @@ bool TaskBrokerTwoThread::GetNextTaskManySlices(H264DecoderFrameInfo * info, H26
 
 void TaskBrokerTwoThread::AddPerformedTask(H264Task *pTask)
 {
-#ifndef LIGHT_SYNC
     AutomaticUMCMutex guard(m_mGuard);
-#endif
 
     TaskBrokerSingleThread::AddPerformedTask(pTask);
 
@@ -2335,7 +2288,6 @@ bool TaskBrokerTwoThread::GetFrameDeblockingTaskThreaded(H264DecoderFrameInfo * 
 #endif
 } // bool TaskBrokerTwoThread::GetFrameDeblockingTaskThreaded(H264Task *pTask)
 
-#endif // ifndef MFX_VA
 
 /****************************************************************************************************/
 // Resources
