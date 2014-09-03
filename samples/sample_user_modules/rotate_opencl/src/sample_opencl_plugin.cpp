@@ -403,12 +403,10 @@ mfxStatus Rotate::QueryIOSurf(mfxVideoParam *par, mfxFrameAllocRequest *in, mfxF
     MSDK_CHECK_POINTER(out, MFX_ERR_NULL_PTR);
 
     in->Info = par->vpp.In;
-    in->NumFrameMin = 1;
-    in->NumFrameSuggested = in->NumFrameMin + par->AsyncDepth;
+    in->NumFrameSuggested = in->NumFrameMin = par->AsyncDepth + 1;
 
     out->Info = par->vpp.Out;
-    out->NumFrameMin = 1;
-    out->NumFrameSuggested = out->NumFrameMin + par->AsyncDepth;
+    out->NumFrameSuggested = out->NumFrameMin = par->AsyncDepth + 1;
 
     return MFX_ERR_NONE;
 }

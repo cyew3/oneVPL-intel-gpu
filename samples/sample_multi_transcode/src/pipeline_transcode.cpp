@@ -100,7 +100,6 @@ CTranscodingPipeline::CTranscodingPipeline():
     m_pBuffer(NULL),
     m_pParentPipeline(NULL),
     m_bIsInit(false),
-    m_FrameNumberPreference(0xFFFFFFFF),
     m_MaxFramesForTranscode(0xFFFFFFFF),
     m_pBSProcessor(NULL)
 {
@@ -1096,6 +1095,8 @@ mfxStatus CTranscodingPipeline::InitDecMfxParams(sInputParams *pInParams)
     mfxStatus sts = MFX_ERR_NONE;
     MSDK_CHECK_POINTER(pInParams, MFX_ERR_NULL_PTR);
 
+    m_mfxDecParams.AsyncDepth = pInParams->nAsyncDepth;
+
     // configure and attach external parameters
     if (m_bUseOpaqueMemory)
         m_DecExtParams.push_back((mfxExtBuffer *)&m_DecOpaqueAlloc);
@@ -1201,7 +1202,6 @@ mfxStatus CTranscodingPipeline::InitDecMfxParams(sInputParams *pInParams)
     {
         // use the value from input stream header
     }
-
     return MFX_ERR_NONE;
 }// mfxStatus CTranscodingPipeline::InitDecMfxParams()
 
@@ -1210,7 +1210,7 @@ mfxStatus CTranscodingPipeline::InitEncMfxParams(sInputParams *pInParams)
     MSDK_CHECK_POINTER(pInParams,  MFX_ERR_NULL_PTR);
     m_mfxEncParams.mfx.CodecId                 = pInParams->EncodeId;
     m_mfxEncParams.mfx.TargetUsage             = pInParams->nTargetUsage; // trade-off between quality and speed
-    m_mfxEncParams.AsyncDepth                   = pInParams->nAsyncDepth;
+    m_mfxEncParams.AsyncDepth                  = pInParams->nAsyncDepth;
 
     if (m_pParentPipeline && m_pParentPipeline->m_pmfxPreENC.get())
     {
@@ -1445,6 +1445,7 @@ mfxStatus CTranscodingPipeline::AddLaStreams(mfxU16 width, mfxU16 height)
  mfxStatus CTranscodingPipeline::InitVppMfxParams(sInputParams *pInParams)
 {
     MSDK_CHECK_POINTER(pInParams,  MFX_ERR_NULL_PTR);
+    m_mfxVppParams.AsyncDepth = pInParams->nAsyncDepth;
 
     mfxU16 InPatternFromParent = (mfxU16)((MFX_IOPATTERN_OUT_VIDEO_MEMORY == m_mfxDecParams.IOPattern) ?
 MFX_IOPATTERN_IN_VIDEO_MEMORY : MFX_IOPATTERN_IN_SYSTEM_MEMORY);
@@ -1562,14 +1563,8 @@ mfxStatus CTranscodingPipeline::AllocFrames(mfxFrameAllocRequest *pRequest, bool
     mfxU16 nSurfNum = 0; // number of surfaces
     mfxU16 i;
 
-    if (m_FrameNumberPreference <= pRequest->NumFrameMin) nSurfNum = pRequest->NumFrameMin;
-    else if (m_FrameNumberPreference >= pRequest->NumFrameSuggested) nSurfNum = pRequest->NumFrameSuggested;
-    else nSurfNum = (mfxU16)m_FrameNumberPreference;
-    msdk_printf(MSDK_STRING("Pipeline surfaces number: min=%d, max=%d, chosen=%d\n"),
-        pRequest->NumFrameMin, pRequest->NumFrameSuggested, nSurfNum),
-
-    pRequest->NumFrameMin = nSurfNum;
-    pRequest->NumFrameSuggested = nSurfNum;
+    nSurfNum = pRequest->NumFrameMin = pRequest->NumFrameSuggested;
+    msdk_printf(MSDK_STRING("Pipeline surfaces number: %d\n"),nSurfNum);
 
     mfxFrameAllocResponse *pResponse = isDecAlloc ? &m_mfxDecResponse : &m_mfxEncResponse;
 
@@ -1603,10 +1598,33 @@ mfxStatus CTranscodingPipeline::AllocFrames(mfxFrameAllocRequest *pRequest, bool
 
 } // mfxStatus CTranscodingPipeline::AllocFrames(Component* pComp, mfxFrameAllocResponse* pMfxResponse, mfxVideoParam* pMfxVideoParam)
 
-static void SumAllocRequest(mfxFrameAllocRequest  &curReq, mfxFrameAllocRequest  &newReq, mfxU16 nAsync=0)
+//return true if correct
+static bool CheckAsyncDepth(mfxFrameAllocRequest &curReq, mfxU16 asyncDepth)
 {
-    curReq.NumFrameMin = curReq.NumFrameMin + newReq.NumFrameMin + nAsync;
-    curReq.NumFrameSuggested = curReq.NumFrameSuggested + newReq.NumFrameSuggested + nAsync;
+    return (curReq.NumFrameSuggested >= asyncDepth);
+}
+
+static mfxStatus CorrectAsyncDepth(mfxFrameAllocRequest &curReq, mfxU16 asyncDepth)
+{
+    mfxStatus sts = MFX_ERR_NONE;
+    if (!CheckAsyncDepth(curReq, asyncDepth))
+    {
+        sts = MFX_ERR_MEMORY_ALLOC;
+    }
+    else
+    {
+        // If surfaces are shared by 2 components, c1 and c2. NumSurf = c1_out + c2_in - AsyncDepth + 1
+        curReq.NumFrameSuggested = curReq.NumFrameSuggested - asyncDepth + 1;
+        curReq.NumFrameMin = curReq.NumFrameSuggested;
+    }
+
+    return sts;
+}
+
+static void SumAllocRequest(mfxFrameAllocRequest  &curReq, mfxFrameAllocRequest  &newReq)
+{
+    curReq.NumFrameSuggested = curReq.NumFrameSuggested + newReq.NumFrameSuggested;
+    curReq.NumFrameMin = curReq.NumFrameSuggested;
     curReq.Type = curReq.Type | newReq.Type;
 
     if ((curReq.Type & MFX_MEMTYPE_SYSTEM_MEMORY) && ((curReq.Type & 0xf0) != MFX_MEMTYPE_SYSTEM_MEMORY))
@@ -1627,8 +1645,8 @@ static void SumAllocRequest(mfxFrameAllocRequest  &curReq, mfxFrameAllocRequest 
 
 static void CheckAllocRequest(mfxFrameAllocRequest  &curReq, mfxFrameAllocRequest  &newReq)
 {
-    curReq.NumFrameMin = curReq.NumFrameMin < newReq.NumFrameMin ? newReq.NumFrameMin : curReq.NumFrameMin;
     curReq.NumFrameSuggested = curReq.NumFrameSuggested <  newReq.NumFrameSuggested ? newReq.NumFrameSuggested : curReq.NumFrameSuggested;
+    curReq.NumFrameMin = curReq.NumFrameSuggested;
     curReq.Type = curReq.Type | newReq.Type;
 
     if ((curReq.Type & MFX_MEMTYPE_SYSTEM_MEMORY) && ((curReq.Type & 0xf0) != MFX_MEMTYPE_SYSTEM_MEMORY))
@@ -1659,26 +1677,31 @@ mfxStatus CTranscodingPipeline::AllocFrames()
     MSDK_ZERO_MEMORY(VPPOut);
 
     sts = CalculateNumberOfReqFrames(DecOut,VPPOut);
+    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
-    if (VPPOut.NumFrameMin)
+    if (VPPOut.NumFrameSuggested)
     {
         if (bAddFrames)
         {
-            SumAllocRequest(VPPOut, m_Request, m_AsyncDepth - 1);
+            SumAllocRequest(VPPOut, m_Request);
             bAddFrames = false;
         }
+        sts = CorrectAsyncDepth(VPPOut, m_AsyncDepth);
+        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
         sts = AllocFrames(&VPPOut, false);
         MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
     }
-    if (DecOut.NumFrameMin)
+    if (DecOut.NumFrameSuggested)
     {
         if (bAddFrames)
         {
-            SumAllocRequest(DecOut, m_Request, m_AsyncDepth - 1);
+            SumAllocRequest(DecOut, m_Request);
             bAddFrames = false;
         }
         if (m_bDecodeEnable)
         {
+            sts = CorrectAsyncDepth(DecOut, m_AsyncDepth);
+            MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
             sts = AllocFrames(&DecOut, true);
             MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
             sts = CorrectPreEncAuxPool((VPPOut.NumFrameSuggested ? VPPOut.NumFrameSuggested : DecOut.NumFrameSuggested) + m_AsyncDepth);
@@ -1715,6 +1738,8 @@ mfxStatus CTranscodingPipeline::CalculateNumberOfReqFrames(mfxFrameAllocRequest 
         sts = m_pmfxDEC.get()->QueryIOSurf(&m_mfxDecParams, &DecRequest);
         MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
+        if (!CheckAsyncDepth(DecRequest, m_mfxDecParams.AsyncDepth))
+                return MFX_ERR_MEMORY_ALLOC;
         SumAllocRequest(*pSumRequest, DecRequest);
     }
     if (m_pmfxVPP.get())
@@ -1723,11 +1748,28 @@ mfxStatus CTranscodingPipeline::CalculateNumberOfReqFrames(mfxFrameAllocRequest 
 
         MSDK_ZERO_MEMORY(VppRequest);
         if (m_bIsPlugin && m_bIsVpp)
+        {
             sts = m_pmfxVPP.get()->QueryIOSurf(&m_mfxPluginParams, &(VppRequest[0]), &m_mfxVppParams);
+            if (!CheckAsyncDepth(VppRequest[0], m_mfxPluginParams.AsyncDepth) ||
+                !CheckAsyncDepth(VppRequest[1], m_mfxPluginParams.AsyncDepth) ||
+                !CheckAsyncDepth(VppRequest[0], m_mfxVppParams.AsyncDepth) ||
+                !CheckAsyncDepth(VppRequest[1], m_mfxVppParams.AsyncDepth))
+                return MFX_ERR_MEMORY_ALLOC;
+        }
         else if (m_bIsPlugin)
+        {
             sts = m_pmfxVPP.get()->QueryIOSurf(&m_mfxPluginParams, &(VppRequest[0]));
+            if (!CheckAsyncDepth(VppRequest[0], m_mfxPluginParams.AsyncDepth) ||
+                !CheckAsyncDepth(VppRequest[1], m_mfxPluginParams.AsyncDepth))
+                return MFX_ERR_MEMORY_ALLOC;
+        }
         else
+        {
             sts = m_pmfxVPP.get()->QueryIOSurf(&m_mfxVppParams, &(VppRequest[0]));
+            if (!CheckAsyncDepth(VppRequest[0], m_mfxVppParams.AsyncDepth) ||
+                !CheckAsyncDepth(VppRequest[1], m_mfxVppParams.AsyncDepth))
+                return MFX_ERR_MEMORY_ALLOC;
+        }
 
         MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
@@ -1742,6 +1784,9 @@ mfxStatus CTranscodingPipeline::CalculateNumberOfReqFrames(mfxFrameAllocRequest 
         MSDK_ZERO_MEMORY(PreEncRequest);
         sts = m_pmfxPreENC.get()->QueryIOSurf(&m_mfxPreEncParams, &PreEncRequest);
         MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+
+        if (!CheckAsyncDepth(PreEncRequest, m_mfxPreEncParams.AsyncDepth))
+            return MFX_ERR_MEMORY_ALLOC;
         SumAllocRequest(*pSumRequest, PreEncRequest);
     }
     if (m_pmfxENC.get())
@@ -1751,6 +1796,9 @@ mfxStatus CTranscodingPipeline::CalculateNumberOfReqFrames(mfxFrameAllocRequest 
         MSDK_ZERO_MEMORY(EncRequest);
         sts = m_pmfxENC.get()->QueryIOSurf(&m_mfxEncParams, &EncRequest);
         MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+
+        if (!CheckAsyncDepth(EncRequest, m_mfxEncParams.AsyncDepth))
+            return MFX_ERR_MEMORY_ALLOC;
         SumAllocRequest(*pSumRequest, EncRequest);
     }
 
@@ -1852,8 +1900,7 @@ mfxStatus CTranscodingPipeline::Init(sInputParams *pParams,
     m_pParentPipeline = pParentPipeline;
 
     m_nTimeout = pParams->nTimeout;
-    m_AsyncDepth= (0 == pParams->nAsyncDepth)? 1: pParams->nAsyncDepth;
-    m_FrameNumberPreference = pParams->FrameNumberPreference;
+    m_AsyncDepth = (0 == pParams->nAsyncDepth)? 1: pParams->nAsyncDepth;
     m_numEncoders = 0;
 
     if (m_bEncodeEnable)

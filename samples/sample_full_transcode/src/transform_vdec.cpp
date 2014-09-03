@@ -141,10 +141,9 @@ void Transform <MFXVideoDECODE>::AllocFrames(SamplePtr& sample) {
     std::auto_ptr<BaseFrameAllocator>& m_pAllocator = m_session.GetAllocator();
     mfxFrameAllocRequest allocReq;
     mfxFrameAllocResponse allocResp;
-    m_decParam.AsyncDepth = m_decParam.AsyncDepth;
 
     mfxStatus sts = m_pDEC->QueryIOSurf(&m_decParam, &allocReq);
-    if (sts < 0) {
+    if ((sts < 0) || (allocReq.NumFrameSuggested < m_decParam.AsyncDepth)) {
         MSDK_TRACE_ERROR(MSDK_STRING("MFXVideoDECODE::QueryIOSurf, sts=") << sts);
         throw DecodeQueryIOSurfaceError();
     }
@@ -154,8 +153,9 @@ void Transform <MFXVideoDECODE>::AllocFrames(SamplePtr& sample) {
     MFXAVAllocRequest<mfxFrameAllocRequest> nextTransformRequest;
     MFXAVParams tmpDecParam(m_decParam);
     m_pNextTransform->GetNumSurfaces(tmpDecParam, nextTransformRequest);
-    allocReq.NumFrameMin = allocReq.NumFrameMin + nextTransformRequest.Video().NumFrameMin;
-    allocReq.NumFrameSuggested = allocReq.NumFrameSuggested + nextTransformRequest.Video().NumFrameSuggested;
+    // If surfaces are shared by 2 components, c1 and c2. NumSurf = c1_out + c2_in - AsyncDepth + 1
+    allocReq.NumFrameSuggested = allocReq.NumFrameSuggested + nextTransformRequest.Video().NumFrameSuggested - m_decParam.AsyncDepth + 1;
+    allocReq.NumFrameMin = allocReq.NumFrameSuggested;
     allocReq.Type |= MFX_MEMTYPE_VIDEO_MEMORY_DECODER_TARGET;
     sts = m_pAllocator->AllocFrames(&allocReq, &allocResp);
     if (sts < 0) {

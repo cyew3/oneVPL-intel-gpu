@@ -60,8 +60,7 @@ public:
         //EXPECT_CALL(nextTransform, GetNumSurfaces(_, _)).WillOnce(DoAll(SetArgReferee<1>(allocRequest), Return()));
         transform_vv->Configure(MFXAVParams(vParam), &nextTransform);
 
-        allocRequest.NumFrameMin = 2;
-        allocRequest.NumFrameSuggested = 2;
+        allocRequest.NumFrameSuggested = allocRequest.NumFrameMin = 2;
 
         response.NumFrameActual = 2;
         response.mids = new mfxMemId[response.NumFrameActual];

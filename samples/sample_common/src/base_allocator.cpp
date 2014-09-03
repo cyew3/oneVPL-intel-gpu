@@ -117,7 +117,7 @@ mfxStatus BaseFrameAllocator::AllocFrames(mfxFrameAllocRequest *request, mfxFram
         if (it != m_ExtResponses.end())
         {
             // check if enough frames were allocated
-            if (request->NumFrameMin > it->NumFrameActual)
+            if (request->NumFrameSuggested > it->NumFrameActual)
                 return MFX_ERR_MEMORY_ALLOC;
 
             it->m_refCount++;

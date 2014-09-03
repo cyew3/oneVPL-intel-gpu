@@ -89,7 +89,6 @@ namespace TranscodingSample
 
         PipelineMode eMode;
 
-        mfxU32 FrameNumberPreference; // how many surfaces user wants
         mfxU32 MaxFrameNumber; // maximum frames fro transcoding
 
         mfxU16 nSlices; // number of slices for encoder initialization
@@ -441,7 +440,6 @@ namespace TranscodingSample
 
         std::auto_ptr<ExtendedBSStore>        m_pBSStore;
 
-        mfxU32                                m_FrameNumberPreference;
         mfxU32                                m_MaxFramesForTranscode;
 
         // pointer to already extended bs processor

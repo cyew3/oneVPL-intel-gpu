@@ -214,11 +214,6 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
                 PrintHelp(strInput[0], MSDK_STRING("async is invalid"));
                 return MFX_ERR_UNSUPPORTED;
             }
-            if ((pParams->nAsyncDepth < 1) || (pParams->nAsyncDepth > 20))
-            {
-                PrintHelp(strInput[0], MSDK_STRING("Async depth must be between 1 and 20"));
-                return MFX_ERR_UNSUPPORTED;
-            }
         }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-cqp")))
         {

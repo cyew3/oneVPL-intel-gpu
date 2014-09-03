@@ -93,8 +93,9 @@ void Transform <MFXVideoVPP>::AllocFrames() {
     GetNumSurfaces(tmpVppParam, allocReq);
 
     //alloc frames with an eye to next transform
-    allocReq.Video().NumFrameMin = allocReq.Video().NumFrameMin + m_nFramesForNextTransform;
-    allocReq.Video().NumFrameSuggested = allocReq.Video().NumFrameSuggested + m_nFramesForNextTransform;
+    // If surfaces are shared by 2 components, c1 and c2. NumSurf = c1_out + c2_in - AsyncDepth + 1
+    allocReq.Video().NumFrameSuggested = allocReq.Video().NumFrameSuggested + m_nFramesForNextTransform - m_initVideoParam.AsyncDepth + 1;
+    allocReq.Video().NumFrameMin = allocReq.Video().NumFrameSuggested;
     mfxFrameAllocator *allocator = 0;
 
     mfxStatus sts = m_session.GetFrameAllocator(allocator);
@@ -123,7 +124,7 @@ void Transform <MFXVideoVPP>::AllocFrames() {
 void Transform <MFXVideoVPP>::GetNumSurfaces(MFXAVParams& param, IAllocRequest& request)
 {
     mfxStatus sts = m_pVPP->QueryIOSurf(&param.GetVideoParam(), &request.Video());
-    if (sts < 0) {
+    if ((sts < 0) || (request.Video().NumFrameSuggested < param.GetVideoParam().AsyncDepth)) {
         MSDK_TRACE_ERROR(MSDK_STRING("MFXVideoVPP::QueryIOSurf, sts=") << sts);
         throw VPPQueryIOSurfError();
     }

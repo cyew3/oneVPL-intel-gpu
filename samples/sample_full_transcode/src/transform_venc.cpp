@@ -261,7 +261,7 @@ void Transform <MFXVideoENCODE>::GetNumSurfaces(MFXAVParams& param, IAllocReques
         ? (mfxU16)MFX_IOPATTERN_IN_SYSTEM_MEMORY
         : (mfxU16)MFX_IOPATTERN_IN_VIDEO_MEMORY;
     mfxStatus sts = m_pENC->QueryIOSurf(&Param, &request.Video());
-    if (sts < 0) {
+    if ((sts < 0) || (request.Video().NumFrameSuggested < Param.AsyncDepth)) {
         MSDK_TRACE_ERROR(MSDK_STRING("MFXVideoENCODE::QueryIOSurf, sts=") << sts);
         throw EncodeQueryIOSurfError();
     }

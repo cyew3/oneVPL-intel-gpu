@@ -105,6 +105,9 @@ void TrackProfile<mfxVideoParam>::ParseEncodeParams()
     if (m_parser->IsPresent(OPTION_HW)) {
         m_trackInfo.Encode.IOPattern = MFX_IOPATTERN_IN_VIDEO_MEMORY;
     }
+    if (m_parser->IsPresent(OPTION_ADEPTH)) {
+        m_trackInfo.Encode.AsyncDepth = (*m_parser)[OPTION_ADEPTH].as<mfxU16>();
+    }
 
     parse_codec_option(vInfoMFX, vInfo.VideoParam, OPTION_VCODEC);
 }
@@ -116,6 +119,9 @@ void TrackProfile<mfxVideoParam>::ParseDecodeParams()
     m_trackInfo.Decode.IOPattern = MFX_IOPATTERN_OUT_SYSTEM_MEMORY;
     if (m_parser->IsPresent(OPTION_HW)) {
         m_trackInfo.Decode.IOPattern = MFX_IOPATTERN_OUT_VIDEO_MEMORY;
+    }
+    if (m_parser->IsPresent(OPTION_ADEPTH)) {
+        m_trackInfo.Decode.AsyncDepth = (*m_parser)[OPTION_ADEPTH].as<mfxU16>();
     }
     m_trackInfo.Decode.mfx.CodecId = vInfo.VideoParam.CodecId;
 }

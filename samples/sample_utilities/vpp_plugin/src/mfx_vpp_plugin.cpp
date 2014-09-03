@@ -131,8 +131,9 @@ mfxStatus MFXVideoVPPPlugin::AllocateFrames(mfxVideoParam *par, mfxVideoParam *p
         MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
         plgAllocRequest0.Type = (mfxU16) ((vpp1Request[1].Type & ~MFX_MEMTYPE_EXTERNAL_FRAME) | MFX_MEMTYPE_INTERNAL_FRAME);
-        plgAllocRequest0.NumFrameMin = plgAllocRequest0.NumFrameMin + vpp1Request[1].NumFrameMin;
+
         plgAllocRequest0.NumFrameSuggested = plgAllocRequest0.NumFrameSuggested + vpp1Request[1].NumFrameSuggested;
+        plgAllocRequest0.NumFrameMin = plgAllocRequest0.NumFrameSuggested;
 
         // check if opaque memory was requested for this pipeline by the application
         bool bIsOpaque = par->IOPattern & MFX_IOPATTERN_IN_OPAQUE_MEMORY ? true : false;
@@ -201,8 +202,8 @@ mfxStatus MFXVideoVPPPlugin::AllocateFrames(mfxVideoParam *par, mfxVideoParam *p
         MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
         plgAllocRequest1.Type = (mfxU16) ((vpp2Request[1].Type & ~MFX_MEMTYPE_EXTERNAL_FRAME) | MFX_MEMTYPE_INTERNAL_FRAME);
-        plgAllocRequest1.NumFrameMin = plgAllocRequest1.NumFrameMin + vpp2Request[0].NumFrameMin;
         plgAllocRequest1.NumFrameSuggested = plgAllocRequest1.NumFrameSuggested + vpp2Request[0].NumFrameSuggested;
+        plgAllocRequest1.NumFrameMin = plgAllocRequest1.NumFrameSuggested;
 
         // check if opaque memory was requested for this pipeline by the application
         bool bIsOpaque = par->IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY ? true : false;
@@ -300,8 +301,8 @@ mfxStatus MFXVideoVPPPlugin::QueryIOSurf(mfxVideoParam *par, mfxFrameAllocReques
         MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
         plgAllocRequest0.Type = (mfxU16) ((vpp1Request[1].Type & ~MFX_MEMTYPE_EXTERNAL_FRAME) | MFX_MEMTYPE_INTERNAL_FRAME);
-        plgAllocRequest0.NumFrameMin = plgAllocRequest0.NumFrameMin + vpp1Request[1].NumFrameMin;
         plgAllocRequest0.NumFrameSuggested = plgAllocRequest0.NumFrameSuggested + vpp1Request[1].NumFrameSuggested;
+        plgAllocRequest0.NumFrameMin = plgAllocRequest0.NumFrameSuggested;
 
         // check if opaque memory was requested for this pipeline by the application
         bool bIsOpaque = par->IOPattern & MFX_IOPATTERN_IN_OPAQUE_MEMORY ? true : false;
@@ -336,8 +337,8 @@ mfxStatus MFXVideoVPPPlugin::QueryIOSurf(mfxVideoParam *par, mfxFrameAllocReques
         MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
         plgAllocRequest1.Type = (mfxU16) ((vpp2Request[1].Type & ~MFX_MEMTYPE_EXTERNAL_FRAME) | MFX_MEMTYPE_INTERNAL_FRAME);
-        plgAllocRequest1.NumFrameMin = plgAllocRequest1.NumFrameMin + vpp2Request[0].NumFrameMin;
         plgAllocRequest1.NumFrameSuggested = plgAllocRequest1.NumFrameSuggested + vpp2Request[0].NumFrameSuggested;
+        plgAllocRequest1.NumFrameMin = plgAllocRequest1.NumFrameSuggested;
 
         // check if opaque memory was requested for this pipeline by the application
         bool bIsOpaque = par->IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY ? true : false;

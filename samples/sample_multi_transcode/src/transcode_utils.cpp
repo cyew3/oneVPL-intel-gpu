@@ -657,25 +657,10 @@ mfxStatus CmdProcessor::ParseParamsForOneSession(mfxU32 argc, msdk_char *argv[])
                 return MFX_ERR_UNSUPPORTED;
             }
         }
-        else if (0 == msdk_strcmp(argv[i], MSDK_STRING("--min-srf")))
-        {
-            InputParams.FrameNumberPreference = 0;
-        }
-        else if (0 == msdk_strcmp(argv[i], MSDK_STRING("--max-srf")))
-        {
-            InputParams.FrameNumberPreference = 0xFFFFFFFF;
-        }
-        else if (0 == msdk_strcmp(argv[i], MSDK_STRING("--srf")))
-        {
-            VAL_CHECK(i+1 == argc, i, argv[i]);
-            i++;
-            InputParams.FrameNumberPreference = msdk_atoi(argv[i]);
-        }
         else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-i::source")))
         {
             if (InputParams.eMode != Native)
                 return MFX_ERR_UNSUPPORTED;
-
 
             InputParams.eMode = Source;
         }
@@ -684,9 +669,7 @@ mfxStatus CmdProcessor::ParseParamsForOneSession(mfxU32 argc, msdk_char *argv[])
              if (InputParams.eMode != Native)
                 return MFX_ERR_UNSUPPORTED;
 
-
             InputParams.eMode = Sink;
-
         }
         else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-n")))
         {

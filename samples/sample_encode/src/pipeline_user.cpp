@@ -50,17 +50,20 @@ mfxStatus CUserPipeline::AllocFrames()
     sts = m_pmfxENC->QueryIOSurf(&m_mfxEncParams, &EncRequest);
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
+    if (EncRequest.NumFrameSuggested < m_mfxEncParams.AsyncDepth)
+        return MFX_ERR_MEMORY_ALLOC;
+
     nEncSurfNum = EncRequest.NumFrameSuggested;
 
     // The number of surfaces for plugin input - so that plugin can work at async depth = m_nAsyncDepth
     nRotateSurfNum = m_mfxEncParams.AsyncDepth;
 
-    // If surfaces are shared by 2 components, c1 and c2. NumSurf = c1_out + c2_in - AsyncDepth
-    nEncSurfNum += nRotateSurfNum - m_mfxEncParams.AsyncDepth;
+    // If surfaces are shared by 2 components, c1 and c2. NumSurf = c1_out + c2_in - AsyncDepth + 1
+    nEncSurfNum += nRotateSurfNum - m_mfxEncParams.AsyncDepth + 1;
 
     // prepare allocation requests
-    EncRequest.NumFrameMin = EncRequest.NumFrameSuggested = nEncSurfNum;
-    RotateRequest.NumFrameMin = RotateRequest.NumFrameSuggested = nRotateSurfNum;
+    EncRequest.NumFrameSuggested = EncRequest.NumFrameMin = nEncSurfNum;
+    RotateRequest.NumFrameSuggested = RotateRequest.NumFrameMin = nRotateSurfNum;
 
     mfxU16 mem_type = MFX_MEMTYPE_EXTERNAL_FRAME;
     mem_type |= (D3D9_MEMORY == m_memType) ? (mfxU16)MFX_MEMTYPE_VIDEO_MEMORY_DECODER_TARGET : (mfxU16)MFX_MEMTYPE_SYSTEM_MEMORY;

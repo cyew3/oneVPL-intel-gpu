@@ -541,6 +541,9 @@ mfxStatus CEncodingPipeline::AllocFrames()
     sts = m_pmfxENC->QueryIOSurf(&m_mfxEncParams, &EncRequest);
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
+    if (EncRequest.NumFrameSuggested < m_mfxEncParams.AsyncDepth)
+        return MFX_ERR_MEMORY_ALLOC;
+
     // The number of surfaces shared by vpp output and encode input.
     nEncSurfNum = EncRequest.NumFrameSuggested;
 
@@ -552,12 +555,12 @@ mfxStatus CEncodingPipeline::AllocFrames()
 
         // The number of surfaces for vpp input - so that vpp can work at async depth = m_nAsyncDepth
         nVppSurfNum = VppRequest[0].NumFrameSuggested;
-        nEncSurfNum += nVppSurfNum - m_mfxEncParams.AsyncDepth;
+        // If surfaces are shared by 2 components, c1 and c2. NumSurf = c1_out + c2_in - AsyncDepth + 1
+        nEncSurfNum += nVppSurfNum - m_mfxEncParams.AsyncDepth + 1;
     }
 
     // prepare allocation requests
-    EncRequest.NumFrameMin = nEncSurfNum;
-    EncRequest.NumFrameSuggested = nEncSurfNum;
+    EncRequest.NumFrameSuggested = EncRequest.NumFrameMin = nEncSurfNum;
     MSDK_MEMCPY_VAR(EncRequest.Info, &(m_mfxEncParams.mfx.FrameInfo), sizeof(mfxFrameInfo));
     if (m_pmfxVPP)
     {
@@ -571,8 +574,7 @@ mfxStatus CEncodingPipeline::AllocFrames()
     // alloc frames for vpp if vpp is enabled
     if (m_pmfxVPP)
     {
-        VppRequest[0].NumFrameMin = nVppSurfNum;
-        VppRequest[0].NumFrameSuggested = nVppSurfNum;
+        VppRequest[0].NumFrameSuggested = VppRequest[0].NumFrameMin = nVppSurfNum;
         MSDK_MEMCPY_VAR(VppRequest[0].Info, &(m_mfxVppParams.mfx.FrameInfo), sizeof(mfxFrameInfo));
 
         sts = m_pMFXAllocator->Alloc(m_pMFXAllocator->pthis, &(VppRequest[0]), &m_VppResponse);

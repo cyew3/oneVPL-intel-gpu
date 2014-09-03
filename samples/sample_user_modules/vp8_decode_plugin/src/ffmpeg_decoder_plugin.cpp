@@ -197,9 +197,9 @@ mfxStatus FFDecPlugin::QueryIOSurf(mfxVideoParam *par, mfxFrameAllocRequest *in,
 {
     MSDK_TRACE_INFO("FFDecPlugin::QueryIOSurf");
 
-    //ffmpeg use its internal surfaces allocation, so we need at least one surface
-    out->NumFrameMin = (std::max)((mfxU16)1, (std::min)(m_VideoParam.AsyncDepth, (mfxU16)6));
-    out->NumFrameSuggested = out->NumFrameMin;
+    out->NumFrameSuggested = out->NumFrameMin = par->AsyncDepth + 1;
+    m_VideoParam.AsyncDepth = par->AsyncDepth;
+
     out->Info = par->mfx.FrameInfo;
 
 

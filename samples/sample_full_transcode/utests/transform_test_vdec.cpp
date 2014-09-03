@@ -47,8 +47,8 @@ public:
             transform_vd.reset(new Transform<MFXVideoDECODE>(factory, vSession, 10));
 
             mfxVideoParam vParam = {0};
-            request.NumFrameMin = 2;
-            request.NumFrameSuggested = 2;
+
+            request.NumFrameSuggested = request.NumFrameMin = 2;
             transform_vd->Configure(*new MFXAVParams(vParam), &nextTransform);
     }
     ~TransformTest() {
@@ -225,8 +225,7 @@ TEST_F(TransformTest, VDec_putSample_Init_Success) {
     DecodeInit(0);
     DecodeHeader(0);
 
-    request.NumFrameSuggested = 3;
-    request.NumFrameMin = 3;
+    request.NumFrameSuggested = request.NumFrameMin = 3;
 
     EXPECT_CALL(*decode.get(), QueryIOSurf(_, _)).WillOnce(DoAll(SetArgPointee<1>(request), Return(MFX_ERR_NONE)));
     EXPECT_CALL(*(MockSample*)sample_in.get(), GetBitstream()).WillOnce(ReturnRef(bitstream));

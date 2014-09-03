@@ -98,7 +98,7 @@ public:
 
     void LetQueryIOSurfReturns(mfxStatus sts,int asyncDEpth, int nTimes) {
         mfxFrameAllocRequest request = {};
-        request.NumFrameMin = request.NumFrameSuggested = asyncDEpth;
+        request.NumFrameSuggested = request.NumFrameMin = asyncDEpth;
         EXPECT_CALL(encode, QueryIOSurf(_, _)).Times(nTimes).WillRepeatedly(DoAll(SetArgumentPointee<1>(request), Return(sts)));
     }
 

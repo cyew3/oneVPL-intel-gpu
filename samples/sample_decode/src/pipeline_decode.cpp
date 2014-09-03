@@ -591,11 +591,13 @@ mfxStatus CDecodingPipeline::AllocFrames()
     }
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
+    if (Request.NumFrameSuggested < m_mfxVideoParams.AsyncDepth)
+        return MFX_ERR_MEMORY_ALLOC;
+
     nSurfNum = MSDK_MAX(Request.NumFrameSuggested, 1);
 
     // prepare allocation request
-    Request.NumFrameMin = nSurfNum;
-    Request.NumFrameSuggested = nSurfNum;
+    Request.NumFrameSuggested = Request.NumFrameMin = nSurfNum;
 
     // alloc frames for decoder
     sts = m_pMFXAllocator->Alloc(m_pMFXAllocator->pthis, &Request, &m_mfxResponse);

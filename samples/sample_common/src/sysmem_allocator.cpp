@@ -237,7 +237,7 @@ mfxStatus SysMemFrameAllocator::AllocImpl(mfxFrameAllocRequest *request, mfxFram
     }
 
     // check the number of allocated frames
-    if (numAllocated < request->NumFrameMin)
+    if (numAllocated < request->NumFrameSuggested)
     {
         return MFX_ERR_MEMORY_ALLOC;
     }

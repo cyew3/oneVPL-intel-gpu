@@ -327,10 +327,15 @@ mfxStatus Launcher::VerifyCrossSessionsOptions()
     bool IsHeterSessionJoin = false;
     bool IsFirstInTopology = true;
 
+    mfxU16 minAsyncDepth = 0;
     for (mfxU32 i = 0; i < m_InputParamsArray.size(); i++)
     {
         if (Source == m_InputParamsArray[i].eMode)
         {
+            if (m_InputParamsArray[i].nAsyncDepth < minAsyncDepth)
+            {
+                minAsyncDepth = m_InputParamsArray[i].nAsyncDepth;
+            }
             // topology definition
             if (!IsSinkPresence)
             {
@@ -366,6 +371,7 @@ mfxStatus Launcher::VerifyCrossSessionsOptions()
         }
         else if (Sink == m_InputParamsArray[i].eMode)
         {
+            minAsyncDepth = m_InputParamsArray[i].nAsyncDepth;
             if (IsSinkPresence)
             {
                 PrintHelp(NULL, MSDK_STRING("Error in par file. Only one source can be used"));
@@ -407,6 +413,15 @@ mfxStatus Launcher::VerifyCrossSessionsOptions()
 #elif defined(LIBVA_SUPPORT)
             m_eDevType = MFX_HANDLE_VA_DISPLAY;
 #endif
+        }
+    }
+
+    // Async depth between inter-sessions should be equal to the minimum async depth of all these sessions.
+    for (mfxU32 i = 0; i < m_InputParamsArray.size(); i++)
+    {
+        if ((m_InputParamsArray[i].eMode == Source) || (m_InputParamsArray[i].eMode == Sink))
+        {
+            m_InputParamsArray[i].nAsyncDepth = minAsyncDepth;
         }
     }
 

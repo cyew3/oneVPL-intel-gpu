@@ -32,7 +32,7 @@ public:
 
     virtual void GetNumSurfaces(MFXAVParams& param, IAllocRequest& request) {
         mfxStatus sts = m_pDEC->QueryIOSurf(&param.GetVideoParam(), &request.Video());
-        if (sts < 0) {
+        if ((sts < 0) || (request.Video().NumFrameSuggested < param.GetVideoParam().AsyncDepth)) {
             MSDK_TRACE_ERROR(MSDK_STRING("m_pDEC->QueryIOSurf, sts=") << sts);
             throw DecodeQueryIOSurfaceError();
         }
