@@ -18,6 +18,8 @@
 
 namespace UMC
 {
+    Ipp32s shiftTable[] = { 0, 1, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4};
+
     IppStatus FilterDeblockingLuma_HorEdge(const IppiFilterDeblock_8u * pDeblockInfo)
     {
         return ippiFilterDeblockingLuma_HorEdge_H264_8u_C1IR(pDeblockInfo->pSrcDstPlane,

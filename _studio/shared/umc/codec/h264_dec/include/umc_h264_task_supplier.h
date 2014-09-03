@@ -119,7 +119,13 @@ public:
     void ChangeVideoDecodingSpeed(Ipp32s& num);
     void Reset();
 
-    H264VideoDecoder::SkipInfo GetSkipInfo() const;
+    struct SkipInfo
+    {
+        bool isDeblockingTurnedOff;
+        Ipp32s numberOfSkippedFrames;
+    };
+
+    SkipInfo GetSkipInfo() const;
 
 private:
 
@@ -496,8 +502,6 @@ public:
 
     Status ProcessNalUnit(MediaDataEx *nalUnit);
 
-    Status GetFrame(MediaData * pSource, MediaData *dst);
-
     void SetMemoryAllocator(MemoryAllocator *pMemoryAllocator)
     {
         m_pMemoryAllocator = pMemoryAllocator;
@@ -529,7 +533,6 @@ public:
         return m_pTaskBroker;
     }
 
-    virtual Status RunDecoding(bool force, H264DecoderFrame ** decoded = 0);
     virtual Status RunDecoding_1();
     virtual H264DecoderFrame * FindSurface(FrameMemID id);
 
@@ -559,6 +562,8 @@ public:
     void SetMBMap(const H264Slice * slice, H264DecoderFrame *frame, LocalResources * localRes);
 
 protected:
+
+    virtual void CreateTaskBroker();
 
     void InitColorConverter(H264DecoderFrame *source, VideoData * videoData, Ipp8u force_field);
 
@@ -610,10 +615,8 @@ protected:
 
     H264_Heap_Objects           m_ObjHeap;
 
-    H264SegmentDecoderMultiThreaded **m_pSegmentDecoder;
+    H264SegmentDecoderBase **m_pSegmentDecoder;
     Ipp32u m_iThreadNum;
-
-    H264ThreadGroup  m_threadGroup;
 
     Ipp64f      m_local_delta_frame_time;
     bool        m_use_external_framerate;

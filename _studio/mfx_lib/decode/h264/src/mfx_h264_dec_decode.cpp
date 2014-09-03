@@ -1596,55 +1596,40 @@ mfxStatus VideoDECODEH264::DecodeFrame(mfxFrameSurface1 *surface_out, UMC::H264D
     {
         index = m_FrameAllocator->FindSurface(surface_out, m_isOpaq);
         pFrame = m_pH264VideoDecoder->FindSurface((UMC::FrameMemID)index);
+        if (!pFrame)
+        {
+            VM_ASSERT(false);
+            return MFX_ERR_NOT_FOUND;
+        }
     }
 
-    if (!pFrame)
-    {
-        VM_ASSERT(false);
-        return MFX_ERR_NOT_FOUND;
-    }
+    Ipp32s error = pFrame->GetError();
 
-    UMC::Status umcRes = m_pH264VideoDecoder->RunDecoding(true, &pFrame); // decode frame
+    surface_out->Data.Corrupted = 0;
+    if (error & UMC::ERROR_FRAME_MINOR)
+        surface_out->Data.Corrupted |= MFX_CORRUPTION_MINOR;
 
-    if (umcRes != UMC::UMC_OK && umcRes != UMC::UMC_ERR_NOT_ENOUGH_DATA)
-    {
-        return ConvertUMCStatusToMfx(umcRes);
-    }
+    if (error & UMC::ERROR_FRAME_MAJOR)
+        surface_out->Data.Corrupted |= MFX_CORRUPTION_MAJOR;
 
-    if (pFrame)
-    {
-        Ipp32s error = pFrame->GetError();
+    if (error & UMC::ERROR_FRAME_REFERENCE_FRAME)
+        surface_out->Data.Corrupted |= MFX_CORRUPTION_REFERENCE_FRAME;
 
-        surface_out->Data.Corrupted = 0;
-        if (error & UMC::ERROR_FRAME_MINOR)
-            surface_out->Data.Corrupted |= MFX_CORRUPTION_MINOR;
+    if (error & UMC::ERROR_FRAME_DPB)
+        surface_out->Data.Corrupted |= MFX_CORRUPTION_REFERENCE_LIST;
 
-        if (error & UMC::ERROR_FRAME_MAJOR)
-            surface_out->Data.Corrupted |= MFX_CORRUPTION_MAJOR;
+    if (error & UMC::ERROR_FRAME_RECOVERY)
+        surface_out->Data.Corrupted |= MFX_CORRUPTION_MAJOR;
 
-        if (error & UMC::ERROR_FRAME_REFERENCE_FRAME)
-            surface_out->Data.Corrupted |= MFX_CORRUPTION_REFERENCE_FRAME;
+    if (error & UMC::ERROR_FRAME_TOP_FIELD_ABSENT)
+        surface_out->Data.Corrupted |= MFX_CORRUPTION_ABSENT_TOP_FIELD;
 
-        if (error & UMC::ERROR_FRAME_DPB)
-            surface_out->Data.Corrupted |= MFX_CORRUPTION_REFERENCE_LIST;
-
-        if (error & UMC::ERROR_FRAME_RECOVERY)
-            surface_out->Data.Corrupted |= MFX_CORRUPTION_MAJOR;
-
-        if (error & UMC::ERROR_FRAME_TOP_FIELD_ABSENT)
-            surface_out->Data.Corrupted |= MFX_CORRUPTION_ABSENT_TOP_FIELD;
-
-        if (error & UMC::ERROR_FRAME_BOTTOM_FIELD_ABSENT)
-            surface_out->Data.Corrupted |= MFX_CORRUPTION_ABSENT_BOTTOM_FIELD;
-    }
+    if (error & UMC::ERROR_FRAME_BOTTOM_FIELD_ABSENT)
+        surface_out->Data.Corrupted |= MFX_CORRUPTION_ABSENT_BOTTOM_FIELD;
 
     mfxStatus sts = m_FrameAllocator->PrepareToOutput(surface_out, index, &m_vPar, m_isOpaq);
 
-    if (pFrame)
-    {
-        pFrame->setWasDisplayed();
-    }
-
+    pFrame->setWasDisplayed();
     return sts;
 }
 

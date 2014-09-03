@@ -33,12 +33,12 @@ H264Thread::~H264Thread()
     Release();
 } // ~H264Thread(void)
 
-H264SegmentDecoderMultiThreaded * H264Thread::GetSegmentDecoder()
+H264SegmentDecoderBase * H264Thread::GetSegmentDecoder()
 {
     return m_segmentDecoder;
 }
 
-Status H264Thread::Init(Ipp32s iNumber, H264SegmentDecoderMultiThreaded * segmentDecoder)
+Status H264Thread::Init(Ipp32s iNumber, H264SegmentDecoderBase * segmentDecoder)
 {
     // release object before initialization
     Release();
@@ -118,7 +118,7 @@ void H264Thread::Release()
 Ipp32u VM_THREAD_CALLCONVENTION H264Thread::DecodingThreadRoutine(void *p)
 {
     H264Thread *pObj = (H264Thread *) p;
-    H264SegmentDecoderMultiThreaded * segmentDecoder = pObj->GetSegmentDecoder();
+    H264SegmentDecoderBase * segmentDecoder = pObj->GetSegmentDecoder();
 
     // check error(s)
     if (NULL == p)

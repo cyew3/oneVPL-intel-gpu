@@ -52,6 +52,8 @@ public:
 
 protected:
 
+    virtual void CreateTaskBroker();
+
     virtual Status AllocateFrameData(H264DecoderFrame * pFrame, IppiSize dimensions, Ipp32s bit_depth, ColorFormat chroma_format_idc);
 
     virtual void InitFrameCounter(H264DecoderFrame * pFrame, const H264Slice *pSlice);
@@ -73,8 +75,6 @@ private:
     }
 
     Ipp32u m_bufferedFrameNumber;
-
-    H264DecoderFrame * m_pLastDecodedFrame;
 };
 
 } // namespace UMC

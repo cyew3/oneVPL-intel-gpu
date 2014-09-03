@@ -26,7 +26,7 @@
 namespace UMC
 {
 H264_DXVA_SegmentDecoderCommon::H264_DXVA_SegmentDecoderCommon(TaskSupplier * pTaskSupplier)
-    : H264SegmentDecoderMultiThreaded(pTaskSupplier->GetTaskBroker())
+    : H264SegmentDecoderBase(pTaskSupplier->GetTaskBroker())
     , m_va(0)
     , m_pTaskSupplier(pTaskSupplier)
 {
@@ -49,7 +49,7 @@ H264_DXVA_SegmentDecoder::~H264_DXVA_SegmentDecoder()
 
 Status H264_DXVA_SegmentDecoder::Init(Ipp32s iNumber)
 {
-    return H264SegmentDecoderMultiThreaded::Init(iNumber);
+    return H264SegmentDecoderBase::Init(iNumber);
 }
 
 void H264_DXVA_SegmentDecoder::Reset()
@@ -90,15 +90,11 @@ Status H264_DXVA_SegmentDecoder::ProcessSegment(void)
 
 
 TaskBrokerSingleThreadDXVA::TaskBrokerSingleThreadDXVA(TaskSupplier * pTaskSupplier)
-    : TaskBrokerSingleThread(pTaskSupplier)
+    : TaskBroker(pTaskSupplier)
     , m_lastCounter(0)
     , m_useDXVAStatusReporting(true)
 {
     m_counterFrequency = vm_time_get_frequency();
-}
-
-void TaskBrokerSingleThreadDXVA::WaitFrameCompletion()
-{
 }
 
 bool TaskBrokerSingleThreadDXVA::PrepareFrame(H264DecoderFrame * pFrame)
@@ -141,7 +137,7 @@ bool TaskBrokerSingleThreadDXVA::PrepareFrame(H264DecoderFrame * pFrame)
 void TaskBrokerSingleThreadDXVA::Reset()
 {
     m_lastCounter = 0;
-    TaskBrokerSingleThread::Reset();
+    TaskBroker::Reset();
     m_reports.clear();
 }
 
@@ -149,7 +145,7 @@ void TaskBrokerSingleThreadDXVA::Start()
 {
     AutomaticUMCMutex guard(m_mGuard);
 
-    TaskBrokerSingleThread::Start();
+    TaskBroker::Start();
     m_completedQueue.clear();
 
     H264_DXVA_SegmentDecoder * dxva_sd = static_cast<H264_DXVA_SegmentDecoder *>(m_pTaskSupplier->m_pSegmentDecoder[0]);

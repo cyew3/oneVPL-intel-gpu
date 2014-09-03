@@ -23,7 +23,7 @@
 namespace UMC
 {
 
-class H264SegmentDecoderMultiThreaded;
+class H264SegmentDecoderBase;
 
 class H264Thread : public Thread
 {
@@ -33,9 +33,9 @@ public:
 
     void Reset();
 
-    Status Init(Ipp32s iNumber, H264SegmentDecoderMultiThreaded * segmentDecoder);
+    Status Init(Ipp32s iNumber, H264SegmentDecoderBase * segmentDecoder);
 
-    H264SegmentDecoderMultiThreaded * GetSegmentDecoder();
+    H264SegmentDecoderBase * GetSegmentDecoder();
 
     void Sleep();
 
@@ -63,7 +63,7 @@ protected:
     volatile bool m_bQuit;                                     // quit flag for additional thread(s)
     Status m_Status;                                           // async return value
 
-    H264SegmentDecoderMultiThreaded * m_segmentDecoder;
+    H264SegmentDecoderBase * m_segmentDecoder;
 
 private:
     // we lock assignment operator to avoid any

@@ -38,6 +38,37 @@ struct DeblockingParametersMBAFF;
 class TaskBroker;
 
 
+class H264SegmentDecoderBase
+{
+public:
+    H264SegmentDecoderBase(TaskBroker * pTaskBroker)
+        : m_pTaskBroker(pTaskBroker)
+        , m_iNumber(0)
+    {
+    }
+
+    virtual ~H264SegmentDecoderBase()
+    {
+    }
+
+    virtual UMC::Status Init(Ipp32s iNumber)
+    {
+        m_iNumber = iNumber;
+        return UMC::UMC_OK;
+    }
+
+    // Decode slice's segment
+    virtual UMC::Status ProcessSegment(void) = 0;
+
+    virtual void RestoreErrorRect(Ipp32s , Ipp32s , H264Slice * )
+    {
+    }
+
+protected:
+    Ipp32s m_iNumber;                                           // (Ipp32s) ordinal number of decoder
+    TaskBroker * m_pTaskBroker;
+};
+
 //
 // Class to incapsulate functions, implementing common decoding functional.
 //
@@ -132,7 +163,7 @@ struct Context
 
 };
 
-STRUCT_DECLSPEC_ALIGN class H264SegmentDecoder : public Context
+STRUCT_DECLSPEC_ALIGN class H264SegmentDecoder : public H264SegmentDecoderBase, public Context
 {
 public:
 
@@ -147,14 +178,11 @@ public:
 
     volatile bool m_bFrameDeblocking;                                    // (bool) frame deblocking flag
 
-    Ipp32s m_iNumber;                                           // (Ipp32s) ordinal number of decoder
     H264Slice *m_pSlice;                                        // (H264Slice *) current slice pointer
     const H264SliceHeader *m_pSliceHeader;                      // (H264SliceHeader *) current slice header
 
     Ipp16u m_BufferForBackwardPrediction[16 * 16 * 3 + DEFAULT_ALIGN_VALUE]; // allocated buffer for backward prediction
     Ipp8u  *m_pPredictionBuffer;                                // pointer to aligned buffer for backward prediction
-
-    TaskBroker * m_pTaskBroker;
 
     // Default constructor
     H264SegmentDecoder(TaskBroker * pTaskBroker);

@@ -1638,9 +1638,9 @@ void Skipping::ChangeVideoDecodingSpeed(Ipp32s & num)
         m_PermanentTurnOffDeblocking = 3;
 }
 
-H264VideoDecoder::SkipInfo Skipping::GetSkipInfo() const
+Skipping::SkipInfo Skipping::GetSkipInfo() const
 {
-    H264VideoDecoder::SkipInfo info;
+    Skipping::SkipInfo info;
     info.isDeblockingTurnedOff = (m_VideoDecodingSpeed == 5) || (m_VideoDecodingSpeed == 7);
     info.numberOfSkippedFrames = m_NumberOfSkippedFrames;
     return info;
@@ -2432,53 +2432,19 @@ Status TaskSupplier::Init(BaseCodecParams *pInit)
         break;
     }
 
-    switch(m_iThreadNum)
-    {
-    case 1:
-        m_pTaskBroker = new TaskBrokerSingleThread(this);
-        break;
-    case 4:
-    case 3:
-    case 2:
-        m_pTaskBroker = new TaskBrokerTwoThread(this);
-        break;
-    default:
-        m_pTaskBroker = new TaskBrokerTwoThread(this);
-        break;
-    };
-
-    m_pTaskBroker->Init(m_iThreadNum, true);
-
     // create slice decoder(s)
-    m_pSegmentDecoder = new H264SegmentDecoderMultiThreaded *[m_iThreadNum];
+    m_pSegmentDecoder = new H264SegmentDecoderBase *[m_iThreadNum];
     if (NULL == m_pSegmentDecoder)
         return UMC_ERR_ALLOC;
-    memset(m_pSegmentDecoder, 0, sizeof(H264SegmentDecoderMultiThreaded *) * m_iThreadNum);
+    memset(m_pSegmentDecoder, 0, sizeof(H264SegmentDecoderBase *) * m_iThreadNum);
 
-    Ipp32u i;
-    for (i = 0; i < m_iThreadNum; i += 1)
-    {
-        m_pSegmentDecoder[i] = new H264SegmentDecoderMultiThreaded(m_pTaskBroker);
-        if (NULL == m_pSegmentDecoder[i])
-            return UMC_ERR_ALLOC;
-    }
+    CreateTaskBroker();
+    m_pTaskBroker->Init(m_iThreadNum);
 
-    for (i = 0; i < m_iThreadNum; i += 1)
+    for (Ipp32u i = 0; i < m_iThreadNum; i += 1)
     {
         if (UMC_OK != m_pSegmentDecoder[i]->Init(i))
             return UMC_ERR_INIT;
-
-        if (!i)
-            continue;
-
-        H264Thread * thread = new H264Thread();
-        if (thread->Init(i, m_pSegmentDecoder[i]) != UMC_OK)
-        {
-            delete thread;
-            return UMC_ERR_INIT;
-        }
-
-        m_threadGroup.AddThread(thread);
     }
 
     m_pPostProcessing = init->pPostProcessing;
@@ -2497,6 +2463,33 @@ Status TaskSupplier::Init(BaseCodecParams *pInit)
     m_isInitialized = true;
 
     return UMC_OK;
+}
+
+void TaskSupplier::CreateTaskBroker()
+{
+#ifdef MFX_VA
+
+#else
+    switch(m_iThreadNum)
+    {
+    case 1:
+        m_pTaskBroker = new TaskBrokerSingleThread(this);
+        break;
+    case 4:
+    case 3:
+    case 2:
+        m_pTaskBroker = new TaskBrokerTwoThread(this);
+        break;
+    default:
+        m_pTaskBroker = new TaskBrokerTwoThread(this);
+        break;
+    };
+
+    for (Ipp32u i = 0; i < m_iThreadNum; i += 1)
+    {
+        m_pSegmentDecoder[i] = new H264SegmentDecoderMultiThreaded(m_pTaskBroker);
+    }
+#endif
 }
 
 Status TaskSupplier::PreInit(BaseCodecParams *pInit)
@@ -2565,8 +2558,6 @@ void TaskSupplier::Close()
     }
 
 // from reset
-
-    m_threadGroup.Release();
 
     {
     ViewList::iterator iter = m_views.begin();
@@ -2637,8 +2628,6 @@ void TaskSupplier::Reset()
     if (m_pTaskBroker)
         m_pTaskBroker->Reset();
 
-    m_threadGroup.Reset();
-
     m_DefaultNotifyChain.Notify();
     m_DefaultNotifyChain.Reset();
 
@@ -2701,15 +2690,13 @@ void TaskSupplier::Reset()
     m_pLastDisplayed = 0;
 
     if (m_pTaskBroker)
-        m_pTaskBroker->Init(m_iThreadNum, true);
+        m_pTaskBroker->Init(m_iThreadNum);
 }
 
 void TaskSupplier::AfterErrorRestore()
 {
     if (m_pTaskBroker)
         m_pTaskBroker->Reset();
-
-    m_threadGroup.Reset();
 
     ViewList::iterator iter = m_views.begin();
     ViewList::iterator iter_end = m_views.end();
@@ -2731,7 +2718,7 @@ void TaskSupplier::AfterErrorRestore()
     m_pLastDisplayed = 0;
 
     if (m_pTaskBroker)
-        m_pTaskBroker->Init(m_iThreadNum, true);
+        m_pTaskBroker->Init(m_iThreadNum);
 }
 
 Status TaskSupplier::GetInfoFromData(BaseCodecParams* params)
@@ -4331,39 +4318,6 @@ Status TaskSupplier::AddSource(MediaData * pSource, MediaData *dst)
     }
 
     return umcRes;
-}
-
-Status TaskSupplier::GetFrame(MediaData * pSource, MediaData *dst)
-{
-    Status umcRes = AddSource(pSource, dst);
-
-    if (umcRes == UMC_WRN_REPOSITION_INPROGRESS)
-        umcRes = UMC_OK;
-
-    if (UMC_OK != umcRes && UMC_ERR_SYNC != umcRes && UMC_ERR_NOT_ENOUGH_BUFFER != umcRes && UMC_ERR_NOT_ENOUGH_DATA != umcRes && umcRes != UMC_WRN_INFO_NOT_READY)
-        return umcRes;
-
-    if (!dst)
-        return umcRes;
-
-    bool force = (umcRes == UMC_WRN_INFO_NOT_READY) || (umcRes == UMC_ERR_NOT_ENOUGH_BUFFER) || !pSource;
-
-    if (umcRes == UMC_ERR_NOT_ENOUGH_BUFFER)
-        return UMC_ERR_NOT_ENOUGH_BUFFER;
-
-    if (!pSource)
-    {
-        do
-        {
-            umcRes = RunDecoding(force);
-        } while (umcRes == UMC_OK);
-
-        return umcRes;
-    }
-    else
-    {
-        return RunDecoding(force);
-    }
 }
 
 Status TaskSupplier::ProcessNalUnit(MediaDataEx *nalUnit)
@@ -5995,28 +5949,6 @@ Status TaskSupplier::RunDecoding_1()
     //DEBUG_PRINT((VM_STRING("Decode POC - %d\n"), pFrame->m_PicOrderCnt[0]));
 
     return UMC_OK;
-}
-
-Status TaskSupplier::RunDecoding(bool force, H264DecoderFrame ** )
-{
-    Status umcRes = UMC_OK;
-
-    CompleteDecodedFrames(0);
-
-    m_pTaskBroker->Start();
-
-    if (!m_pTaskBroker->IsEnoughForStartDecoding(force))
-    {
-        return UMC_ERR_NOT_ENOUGH_DATA;
-    }
-
-    umcRes = m_pSegmentDecoder[0]->ProcessSegment();
-
-    CompleteDecodedFrames(0);
-    if (umcRes == UMC_ERR_NOT_ENOUGH_DATA)
-        return UMC_OK;
-
-    return umcRes;
 }
 
 static ColorFormat color_formats[2][4] =

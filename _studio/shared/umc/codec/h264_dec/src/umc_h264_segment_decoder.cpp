@@ -20,10 +20,10 @@ namespace UMC
 {
 
 H264SegmentDecoder::H264SegmentDecoder(TaskBroker * pTaskBroker)
+        : H264SegmentDecoderBase(pTaskBroker)
 {
     m_pCoefficientsBuffer = NULL;
     m_pCoefficientsBufferExt = 0;
-    m_pTaskBroker = pTaskBroker;
 
     m_pSlice = 0;
 

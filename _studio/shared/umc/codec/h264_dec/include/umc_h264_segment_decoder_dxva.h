@@ -31,7 +31,7 @@ namespace UMC
 class TaskSupplier;
 class H264_DXVA_Driver_SegmentDecoder;
 
-class H264_DXVA_SegmentDecoderCommon : public H264SegmentDecoderMultiThreaded
+class H264_DXVA_SegmentDecoderCommon : public H264SegmentDecoderBase
 {
 public:
     H264_DXVA_SegmentDecoderCommon(TaskSupplier * pTaskSupplier);
@@ -164,12 +164,10 @@ protected:
     BaseClass * m_Base;
 };
 
-class TaskBrokerSingleThreadDXVA : public TaskBrokerSingleThread
+class TaskBrokerSingleThreadDXVA : public TaskBroker
 {
 public:
     TaskBrokerSingleThreadDXVA(TaskSupplier * pTaskSupplier);
-
-    virtual void WaitFrameCompletion();
 
     virtual bool PrepareFrame(H264DecoderFrame * pFrame);
 

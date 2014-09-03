@@ -45,25 +45,12 @@ Status VATaskSupplier::Init(BaseCodecParams *pInit)
     if (umsRes != UMC_OK)
         return umsRes;
 
-    for (Ipp32u i = 0; i < m_iThreadNum; i += 1)
-    {
-        delete m_pSegmentDecoder[i];
-        m_pSegmentDecoder[i] = 0;
-    }
-
     m_iThreadNum = 1;
-    delete m_pTaskBroker;
-    m_pTaskBroker = new TaskBrokerSingleThreadDXVA(this);
-    m_pTaskBroker->Init(m_iThreadNum, true);
 
     DXVASupport<VATaskSupplier>::Init();
 
-    for (Ipp32u i = 0; i < m_iThreadNum; i += 1)
-    {
-        m_pSegmentDecoder[i] = new H264_DXVA_SegmentDecoder(this);
-        if (0 == m_pSegmentDecoder[i])
-            return UMC_ERR_ALLOC;
-    }
+    CreateTaskBroker();
+    m_pTaskBroker->Init(m_iThreadNum);
 
     for (Ipp32u i = 0; i < m_iThreadNum; i += 1)
     {
@@ -82,9 +69,17 @@ Status VATaskSupplier::Init(BaseCodecParams *pInit)
     m_sei_messages = new SEI_Storer();
     m_sei_messages->Init();
 
-    m_pLastDecodedFrame = 0;
-
     return UMC_OK;
+}
+
+void VATaskSupplier::CreateTaskBroker()
+{
+    m_pTaskBroker = new TaskBrokerSingleThreadDXVA(this);
+
+    for (Ipp32u i = 0; i < m_iThreadNum; i += 1)
+    {
+        m_pSegmentDecoder[i] = new H264_DXVA_SegmentDecoder(this);
+    }
 }
 
 void VATaskSupplier::SetBufferedFramesNumber(Ipp32u buffered)
@@ -112,8 +107,6 @@ void VATaskSupplier::Reset()
     if (m_pTaskBroker)
         m_pTaskBroker->Reset();
 
-    m_pLastDecodedFrame = 0;
-
     MFXTaskSupplier::Reset();
 
     DXVASupport<VATaskSupplier>::Reset();
@@ -121,7 +114,6 @@ void VATaskSupplier::Reset()
 
 void VATaskSupplier::AfterErrorRestore()
 {
-    m_pLastDecodedFrame = 0;
     MFXTaskSupplier::AfterErrorRestore();
 }
 
@@ -258,13 +250,6 @@ H264DecoderFrame *VATaskSupplier::GetFreeFrame(const H264Slice * pSlice)
     m_UIDFrameCounter++;
     pFrame->m_UID = m_UIDFrameCounter;
 
-    m_pLastDecodedFrame = pFrame;
-
-    if (m_va && m_va->m_HWPlatform == VA_HW_LAKE)
-    {
-        view.GetDPBList(0)->swapFrames(view.GetDPBList(0)->tail(), m_pLastDecodedFrame);
-    }
-
     return pFrame;
 }
 
@@ -341,9 +326,6 @@ Status VATaskSupplier::CompleteFrame(H264DecoderFrame * pFrame, Ipp32s field)
 
     DecodePicture(pFrame, field);
 
-    if (!field)
-        m_pLastDecodedFrame = pFrame;
-
     bool is_auxiliary_exist = slicesInfo->GetAnySlice()->GetSeqParamEx() &&
         (slicesInfo->GetAnySlice()->GetSeqParamEx()->aux_format_idc != 0);
 
@@ -358,38 +340,6 @@ Status VATaskSupplier::CompleteFrame(H264DecoderFrame * pFrame, Ipp32s field)
     pFrame->MoveToNotifiersChain(m_DefaultNotifyChain);
 
     slicesInfo->SetStatus(H264DecoderFrameInfo::STATUS_FILLED);
-
-    if (m_va && m_va->m_HWPlatform == VA_HW_LAKE)
-    {
-        AutomaticUMCMutex guard(m_mGuard);
-        ViewItem &view = GetView(pFrame->m_viewId);
-
-        Ipp32u position = 0;
-        for (H264DecoderFrame * pFrm = view.GetDPBList(0)->head(); pFrm; pFrm = pFrm->future(), position++)
-        {
-            if (pFrm == pFrame)
-            {
-                break;
-            }
-        }
-
-        if (!field && (view.GetDPBList(0)->countAllFrames() == m_DPBSizeEx + view.dpbSize) &&
-            position >= view.dpbSize)
-        {
-            VM_ASSERT(m_pLastDecodedFrame == pFrame);
-            for (H264DecoderFrame * pFrm = view.GetDPBList(0)->head(); pFrm; pFrm = pFrm->future())
-            {
-                if (isFreeFrame(pFrm))
-                {
-                    view.GetDPBList(0)->swapFrames(pFrm, pFrame);
-                    m_pLastDecodedFrame = 0;
-                    break;
-                }
-            }
-
-            VM_ASSERT(!m_pLastDecodedFrame || (!m_pLastDecodedFrame->isShortTermRef() && !m_pLastDecodedFrame->isLongTermRef()));
-        }
-    }
 
     return UMC_OK;
 }

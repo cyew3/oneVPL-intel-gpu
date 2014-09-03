@@ -12,7 +12,6 @@
 #if defined (UMC_ENABLE_H264_VIDEO_DECODER)
 
 #include "umc_h264_segment_decoder.h"
-#include "umc_h264_bitstream_templates.h"
 #include "umc_h264_bitstream_inlines.h"
 #include "umc_h264_dec_internal_cabac.h"
 

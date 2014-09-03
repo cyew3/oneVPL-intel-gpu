@@ -130,57 +130,6 @@ void PrintAllInfos(H264DecoderFrame * frame)
     printf("all info end\n");
 }*/
 
-static
-Ipp32s GetDecodingOffset(H264DecoderFrameInfo * curInfo, Ipp32s &readyCount)
-{
-    Ipp32s offset = 0;
-
-    H264DecoderFrameInfo * refInfo = curInfo->GetRefAU();
-    VM_ASSERT(refInfo);
-
-    if (curInfo->m_pFrame != refInfo->m_pFrame)
-    {
-        switch(curInfo->m_pFrame->m_PictureStructureForDec)
-        {
-        case FRM_STRUCTURE:
-            if (refInfo->m_pFrame->m_PictureStructureForDec == FLD_STRUCTURE)
-            {
-                readyCount *= 2;
-                offset++;
-            }
-            else
-            {
-            }
-            break;
-        case AFRM_STRUCTURE:
-            if (refInfo->m_pFrame->m_PictureStructureForDec == FLD_STRUCTURE)
-            {
-                readyCount *= 2;
-                offset++;
-            }
-            else
-            {
-            }
-            break;
-        case FLD_STRUCTURE:
-            switch(refInfo->m_pFrame->m_PictureStructureForDec)
-            {
-            case FLD_STRUCTURE:
-                break;
-            case AFRM_STRUCTURE:
-            case FRM_STRUCTURE:
-                readyCount /= 2;
-                offset++;
-                break;
-            }
-            break;
-        }
-    }
-
-    return offset;
-}
-
-
 #ifdef TIME
 
 static
@@ -340,9 +289,7 @@ TaskBroker::TaskBroker(TaskSupplier * pTaskSupplier)
     : m_pTaskSupplier(pTaskSupplier)
     , m_iConsumerNumber(0)
     , m_FirstAU(0)
-    , m_nWaitingThreads(0)
     , m_IsShouldQuit(false)
-    , m_isExistMainThread(true)
 {
     Release();
 }
@@ -352,28 +299,15 @@ TaskBroker::~TaskBroker()
     Release();
 }
 
-bool TaskBroker::Init(Ipp32s iConsumerNumber, bool isExistMainThread)
+bool TaskBroker::Init(Ipp32s iConsumerNumber)
 {
     Release();
 
-    m_eWaiting.clear();
     m_Completed.Init(0, 0);
 
     // we keep this variable due some optimizations purposes
     m_iConsumerNumber = iConsumerNumber;
     m_IsShouldQuit = false;
-    m_isExistMainThread = isExistMainThread;
-
-    m_nWaitingThreads = 0;
-
-    m_eWaiting.resize(m_iConsumerNumber);
-
-    // initilaize event(s)
-    for (Ipp32s i = 0; i < m_iConsumerNumber; i += 1)
-    {
-        if (UMC_OK != m_eWaiting[i].Init(0, 0))
-            return false;
-    }
 
     m_localResourses.Init(m_iConsumerNumber, m_pTaskSupplier->m_pMemoryAllocator);
     return true;
@@ -393,12 +327,6 @@ void TaskBroker::Reset()
     m_decodingQueue.clear();
     m_completedQueue.clear();
 
-    // awake threads
-    for (Ipp32s i = 0; i < m_iConsumerNumber; i += 1)
-    {
-        m_eWaiting[i].Set();
-    }
-
     m_localResourses.Reset();
 }
 
@@ -406,14 +334,7 @@ void TaskBroker::Release()
 {
     Reset();
 
-    AwakeThreads();
-    m_nWaitingThreads = 0;
     m_localResourses.Close();
-}
-
-void TaskBroker::WaitFrameCompletion()
-{
-    m_Completed.Wait(500);
 }
 
 LocalResources * TaskBroker::GetLocalResource()
@@ -434,62 +355,6 @@ void TaskBroker::Lock()
 void TaskBroker::Unlock()
 {
     m_mGuard.Unlock();
-}
-
-void TaskBroker::SleepThread(Ipp32s threadNumber)
-{
-    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "AVCDec_sleep");
-
-#ifdef TIME
-    timer.SleepStart(threadNumber);
-#endif // TIME
-
-    /*printf("\n\nstart sleeping for thrad - %d\n", threadNumber);
-    PrintInfoStatus(m_FirstAU);
-    printf("additional - \n");
-    PrintInfoStatus(m_AdditionalInfo);
-    printf("end\n");*/
-
-    m_nWaitingThreads |= (1 << threadNumber);
-
-    DEBUG_PRINT((VM_STRING("(%d) sleep\n"), threadNumber));
-#ifndef LIGHT_SYNC
-    Unlock();
-#endif
-
-    // sleep_count++;
-
-    m_eWaiting[threadNumber].Wait();
-
-#ifndef LIGHT_SYNC
-    Lock();
-#endif
-
-    m_nWaitingThreads ^= (1 << threadNumber);
-
-#ifdef TIME
-    timer.SleepStop(threadNumber);
-#endif // TIME
-}
-
-void TaskBroker::AwakeThreads()
-{
-    DEBUG_PRINT((VM_STRING("awaken threads\n")));
-    m_pTaskSupplier->m_threadGroup.AwakeThreads();
-
-    if (!m_nWaitingThreads)
-        return;
-
-    Ipp32s iMask = 1;
-    for (Ipp32s i = 0; i < m_iConsumerNumber; i += 1)
-    {
-        if (m_nWaitingThreads & iMask)
-        {
-            m_eWaiting[i].Set();
-        }
-
-        iMask <<= 1;
-    }
 }
 
 bool TaskBroker::PrepareFrame(H264DecoderFrame * pFrame)
@@ -736,12 +601,6 @@ bool TaskBroker::AddFrameToDecoding(H264DecoderFrame * frame)
     return true;
 }
 
-void TaskBroker::AwakeCompleteWaiter()
-{
-    m_Completed.Set();
-}
-
-
 void TaskBroker::RemoveAU(H264DecoderFrameInfo * toRemove)
 {
     H264DecoderFrameInfo * temp = m_FirstAU;
@@ -823,11 +682,6 @@ void TaskBroker::CompleteFrame(H264DecoderFrame * frame)
     }
 
     frame->CompleteDecoding();
-
-    if (m_isExistMainThread && m_iConsumerNumber > 1)
-        m_completedQueue.push_back(frame);
-
-    AwakeCompleteWaiter();
 }
 
 void TaskBroker::SwitchCurrentAU()
@@ -869,9 +723,6 @@ void TaskBroker::SwitchCurrentAU()
     }
 
     InitAUs();
-
-    if (m_FirstAU)
-        AwakeThreads();
 }
 
 void TaskBroker::Start()
@@ -894,7 +745,6 @@ void TaskBroker::Start()
     }
 
     InitAUs();
-    AwakeThreads();
     DEBUG_PRINT((VM_STRING("Start\n")));
 }
 
@@ -1134,7 +984,6 @@ bool TaskBroker::GetNextTask(H264Task *pTask)
     // check error(s)
     if (/*!m_FirstAU ||*/ m_IsShouldQuit)
     {
-        AwakeCompleteWaiter();
         return false;
     }
 
@@ -1848,6 +1697,56 @@ bool TaskBroker::IsExistTasks(H264DecoderFrame * frame)
     return Check_Status(slicesInfo->GetStatus());
 }
 
+#ifndef MFX_VA
+static Ipp32s GetDecodingOffset(H264DecoderFrameInfo * curInfo, Ipp32s &readyCount)
+{
+    Ipp32s offset = 0;
+
+    H264DecoderFrameInfo * refInfo = curInfo->GetRefAU();
+    VM_ASSERT(refInfo);
+
+    if (curInfo->m_pFrame != refInfo->m_pFrame)
+    {
+        switch(curInfo->m_pFrame->m_PictureStructureForDec)
+        {
+        case FRM_STRUCTURE:
+            if (refInfo->m_pFrame->m_PictureStructureForDec == FLD_STRUCTURE)
+            {
+                readyCount *= 2;
+                offset++;
+            }
+            else
+            {
+            }
+            break;
+        case AFRM_STRUCTURE:
+            if (refInfo->m_pFrame->m_PictureStructureForDec == FLD_STRUCTURE)
+            {
+                readyCount *= 2;
+                offset++;
+            }
+            else
+            {
+            }
+            break;
+        case FLD_STRUCTURE:
+            switch(refInfo->m_pFrame->m_PictureStructureForDec)
+            {
+            case FLD_STRUCTURE:
+                break;
+            case AFRM_STRUCTURE:
+            case FRM_STRUCTURE:
+                readyCount /= 2;
+                offset++;
+                break;
+            }
+            break;
+        }
+    }
+
+    return offset;
+}
+
 TaskBrokerSingleThread::TaskBrokerSingleThread(TaskSupplier * pTaskSupplier)
     : TaskBroker(pTaskSupplier)
 {
@@ -1858,30 +1757,14 @@ bool TaskBrokerSingleThread::GetNextTaskInternal(H264Task *pTask)
 {
     while (false == m_IsShouldQuit)
     {
-        if (!m_FirstAU)
-        {
-            AwakeCompleteWaiter();
-            if (m_isExistMainThread)
-                break;
-        }
-        else
+        if (m_FirstAU)
         {
             if (GetNextSlice(m_FirstAU, pTask))
                 return true;
 
             if (m_FirstAU->IsCompleted())
             {
-                bool frameCompleted = IsFrameCompleted(m_FirstAU->m_pFrame);
-
                 SwitchCurrentAU();
-
-                if (frameCompleted)
-                {
-                    if (m_isExistMainThread)
-                    {
-                        return false;
-                    }
-                }
             }
 
             if (GetNextSlice(m_FirstAU, pTask))
@@ -1899,9 +1782,9 @@ TaskBrokerTwoThread::TaskBrokerTwoThread(TaskSupplier * pTaskSupplier)
 {
 }
 
-bool TaskBrokerTwoThread::Init(Ipp32s iConsumerNumber, bool isExistMainThread)
+bool TaskBrokerTwoThread::Init(Ipp32s iConsumerNumber)
 {
-    if (!TaskBroker::Init(iConsumerNumber, isExistMainThread))
+    if (!TaskBroker::Init(iConsumerNumber))
         return false;
 
     return true;
@@ -1938,35 +1821,7 @@ bool TaskBrokerTwoThread::GetNextTaskInternal(H264Task *pTask)
 
     while (false == m_IsShouldQuit)
     {
-        if (m_isExistMainThread)
-        {
-            if (!pTask->m_iThreadNumber && !m_completedQueue.empty())
-            {
-                CompleteFrame(); // here SwitchAU and awake
-                m_completedQueue.clear();
-                return false;
-            }
-        }
-
-        if (!m_FirstAU)
-        {
-            if (m_isExistMainThread)
-            {
-                if (!pTask->m_iThreadNumber)
-                {
-                    SwitchCurrentAU();
-                    m_completedQueue.clear();
-                    return false;
-                }
-
-                AwakeThreads();
-            }
-            else
-            {
-                AwakeCompleteWaiter();
-            }
-        }
-        else
+        if (m_FirstAU)
         {
             for (H264DecoderFrameInfo *pTemp = m_FirstAU; pTemp; pTemp = pTemp->GetNextAU())
             {
@@ -1980,11 +1835,6 @@ bool TaskBrokerTwoThread::GetNextTaskInternal(H264Task *pTask)
         //SleepThread(pTask->m_iThreadNumber);
         break;
     };
-
-    if (!pTask->m_iThreadNumber && m_isExistMainThread) // check for slice groups only. need to review
-    {
-        m_completedQueue.clear();
-    }
 
     return false;
 }
@@ -2399,7 +2249,6 @@ void TaskBrokerTwoThread::AddPerformedTask(H264Task *pTask)
     }
 
     SwitchCurrentAU();
-    AwakeThreads();
 } // void TaskBrokerTwoThread::AddPerformedTask(H264Task *pTask)
 
 bool TaskBrokerTwoThread::GetFrameDeblockingTaskThreaded(H264DecoderFrameInfo * , H264Task *)
@@ -2485,6 +2334,8 @@ bool TaskBrokerTwoThread::GetFrameDeblockingTaskThreaded(H264DecoderFrameInfo * 
     return true;
 #endif
 } // bool TaskBrokerTwoThread::GetFrameDeblockingTaskThreaded(H264Task *pTask)
+
+#endif // ifndef MFX_VA
 
 /****************************************************************************************************/
 // Resources

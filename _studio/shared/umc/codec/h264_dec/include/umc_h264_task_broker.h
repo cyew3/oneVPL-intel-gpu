@@ -97,11 +97,9 @@ class TaskBroker
 public:
     TaskBroker(TaskSupplier * pTaskSupplier);
 
-    virtual bool Init(Ipp32s iConsumerNumber, bool isExistMainThread);
+    virtual bool Init(Ipp32s iConsumerNumber);
     virtual ~TaskBroker();
 
-    virtual void WaitFrameCompletion();
-    void AwakeCompleteWaiter();
     virtual bool AddFrameToDecoding(H264DecoderFrame * pFrame);
 
     virtual bool IsEnoughForStartDecoding(bool force);
@@ -129,8 +127,6 @@ public:
 
 protected:
 
-    void SleepThread(Ipp32s threadNumber);
-
     Ipp32s GetNumberOfTasks(bool details);
     bool IsFrameCompleted(H264DecoderFrame * pFrame);
 
@@ -156,12 +152,7 @@ protected:
 
     H264DecoderFrameInfo * m_FirstAU;
 
-    std::vector<Event> m_eWaiting;                          // waiting threads events
-    volatile Ipp32u m_nWaitingThreads;                      // mask of waiting threads
-
     bool m_IsShouldQuit;
-
-    virtual void AwakeThreads();
 
     typedef std::list<H264DecoderFrame *> FrameQueue;
     FrameQueue m_decodingQueue;
@@ -170,10 +161,10 @@ protected:
     Mutex m_mGuard;
     Event m_Completed;
 
-    bool m_isExistMainThread;
-
     LocalResources m_localResourses;
 };
+
+#ifndef MFX_VA
 
 class TaskBrokerSingleThread : public TaskBroker
 {
@@ -190,7 +181,7 @@ public:
 
     TaskBrokerTwoThread(TaskSupplier * pTaskSupplier);
 
-    virtual bool Init(Ipp32s iConsumerNumber, bool isExistMainThread);
+    virtual bool Init(Ipp32s iConsumerNumber);
 
     virtual bool GetNextTaskManySlices(H264DecoderFrameInfo * info, H264Task *pTask);
 
@@ -219,6 +210,7 @@ private:
     void CompleteFrame();
 };
 
+#endif
 } // namespace UMC
 
 #endif // __UMC_H264_TASK_BROKER_H

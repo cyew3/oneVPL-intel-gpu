@@ -94,8 +94,6 @@ public:
 
     virtual void Reset();
 
-    virtual Status RunDecoding(bool force, H264DecoderFrame ** decoded = 0);
-
     virtual Status CompleteFrame(H264DecoderFrame * pFrame, Ipp32s field);
 
     virtual bool ProcessNonPairedField(H264DecoderFrame * pFrame);

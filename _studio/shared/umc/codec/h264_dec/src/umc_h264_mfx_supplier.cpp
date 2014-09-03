@@ -174,39 +174,16 @@ Status MFXTaskSupplier::Init(BaseCodecParams *pInit)
     AU_Splitter::Init(init);
     DPBOutput::Reset(m_iThreadNum != 1);
 
-    switch(m_iThreadNum)
-    {
-    case 1:
-        m_pTaskBroker = new TaskBrokerSingleThread(this);
-        break;
-    case 4:
-    case 3:
-    case 2:
-        m_pTaskBroker = new TaskBrokerTwoThread(this);
-        break;
-    default:
-        m_pTaskBroker = new TaskBrokerTwoThread(this);
-        break;
-    }
-
-    m_pTaskBroker->Init(m_iThreadNum, false);
-
     // create slice decoder(s)
-    m_pSegmentDecoder = new H264SegmentDecoderMultiThreaded *[m_iThreadNum];
+    m_pSegmentDecoder = new H264SegmentDecoderBase *[m_iThreadNum];
     if (NULL == m_pSegmentDecoder)
         return UMC_ERR_ALLOC;
-    memset(m_pSegmentDecoder, 0, sizeof(H264SegmentDecoderMultiThreaded *) * m_iThreadNum);
+    memset(m_pSegmentDecoder, 0, sizeof(H264SegmentDecoderBase *) * m_iThreadNum);
 
-    Ipp32u i;
-    for (i = 0; i < m_iThreadNum; i += 1)
-    {
-        m_pSegmentDecoder[i] = new H264SegmentDecoderMultiThreaded(m_pTaskBroker);
+    CreateTaskBroker();
+    m_pTaskBroker->Init(m_iThreadNum);
 
-        if (NULL == m_pSegmentDecoder[i])
-            return UMC_ERR_ALLOC;
-    }
-
-    for (i = 0; i < m_iThreadNum; i += 1)
+    for (Ipp32u i = 0; i < m_iThreadNum; i += 1)
     {
         if (UMC_OK != m_pSegmentDecoder[i]->Init(i))
             return UMC_ERR_INIT;
@@ -233,7 +210,7 @@ void MFXTaskSupplier::Reset()
     m_Headers.Reset();
 
     if (m_pTaskBroker)
-        m_pTaskBroker->Init(m_iThreadNum, false);
+        m_pTaskBroker->Init(m_iThreadNum);
 }
 
 H264DecoderFrame * MFXTaskSupplier::GetFreeFrame(const H264Slice *pSlice)
@@ -290,61 +267,6 @@ H264DecoderFrame * MFXTaskSupplier::GetFreeFrame(const H264Slice *pSlice)
     pFrame->m_UID = m_UIDFrameCounter;
 
     return pFrame;
-}
-
-Status MFXTaskSupplier::RunDecoding(bool should_additional_check, H264DecoderFrame ** decoded)
-{
-    H264DecoderFrame * outputFrame = *decoded;
-    ViewItem &view = GetView(outputFrame->m_viewId);
-
-    Status umcRes = UMC_OK;
-
-    if (!outputFrame->IsDecodingStarted())
-        return UMC_ERR_FAILED;
-
-    if (outputFrame->IsDecodingCompleted())
-        return UMC_OK;
-
-    for(;;)
-    {
-        m_pTaskBroker->WaitFrameCompletion();
-
-        if (outputFrame->IsDecodingCompleted())
-        {
-            if (!should_additional_check)
-                break;
-
-            AutomaticUMCMutex guard(m_mGuard);
-
-            Ipp32s count = 0;
-            Ipp32s notDecoded = 0;
-            for (H264DecoderFrame * pTmp = view.GetDPBList(0)->head(); pTmp; pTmp = pTmp->future())
-            {
-                if (!pTmp->m_isShortTermRef[0] &&
-                    !pTmp->m_isShortTermRef[1] &&
-                    !pTmp->m_isLongTermRef[0] &&
-                    !pTmp->m_isLongTermRef[1] &&
-                    ((pTmp->m_wasOutputted != 0) || (pTmp->m_isDisplayable == 0)))
-                {
-                    count++;
-                    break;
-                }
-
-                if (!pTmp->IsDecoded() && !pTmp->IsDecodingCompleted() && pTmp->IsFullFrame())
-                    notDecoded++;
-            }
-
-            if (count || (view.GetDPBList(0)->countAllFrames() < view.dpbSize + m_DPBSizeEx))
-                break;
-
-            if (!notDecoded)
-                break;
-        }
-    }
-
-    VM_ASSERT(outputFrame->IsDecodingCompleted());
-
-    return umcRes;
 }
 
 bool MFXTaskSupplier::CheckDecoding(bool should_additional_check, H264DecoderFrame * outputFrame)

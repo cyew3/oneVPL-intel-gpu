@@ -51,7 +51,7 @@ public:
 
     virtual Status ProcessSlice(Ipp32s iCurMBNumber, Ipp32s &iMBToProcess);
 
-    void RestoreErrorRect(Ipp32s startMb, Ipp32s endMb, H264Slice * pSlice);
+    virtual void RestoreErrorRect(Ipp32s startMb, Ipp32s endMb, H264Slice * pSlice);
 
     // Allocated more coefficients buffers
     void ReallocateCoefficientsBuffer(void);

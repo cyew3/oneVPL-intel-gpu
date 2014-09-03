@@ -371,8 +371,6 @@ class TaskBrokerSingleThreadVDA : public TaskBrokerSingleThread
 public:
     TaskBrokerSingleThreadVDA(TaskSupplier * pTaskSupplier);
 
-    virtual void WaitFrameCompletion();
-
     virtual bool PrepareFrame(H264DecoderFrame * pFrame);
 
     // Get next working task
