@@ -416,11 +416,16 @@ mfxStatus MFXFileWriteRender::WriteSurface(mfxFrameSurface1 * pConvertedSurface)
         {
             m_Current.m_comp = VM_STRING('Y');
             m_Current.m_pixX = 0;
+
             for (i = 0; i < pInfo->CropH; i++)
             {
                 m_Current.m_pixY = i;
                 WRITE(pData->Y + (crop_y * pitch + crop_x) + i*pitch, pInfo->CropW*2);
             }
+
+            crop_x >>= 1;
+            crop_y >>= 1;
+
             m_Current.m_comp = VM_STRING('U');
             for (i = 0; i < ((pInfo->CropH + 1) >> 1); i++)
             {
@@ -1333,7 +1338,7 @@ mfxFrameSurface1* ConvertSurface(mfxFrameSurface1* pSurfaceIn, mfxFrameSurface1*
         mfxU32 pitchIn = pSurfaceIn->Data.Pitch >> 1;
         mfxU32 pitchOut = pSurfaceOut->Data.Pitch >> 1;
 
-        mfxU32 shift = pSurfaceIn->Info.Shift;
+        mfxU32 shift = pSurfaceIn->Info.Shift ? (16 - pSurfaceIn->Info.BitDepthLuma) : 0;
 
         for (mfxU16 i = 0; i < pSurfaceIn->Info.Height; i++)
         {
@@ -1353,6 +1358,8 @@ mfxFrameSurface1* ConvertSurface(mfxFrameSurface1* pSurfaceIn, mfxFrameSurface1*
         ptrIn = (mfxU16 *)pSurfaceIn->Data.UV;
         mfxU16 * ptrOutU = (mfxU16 *)pSurfaceOut->Data.U;
         mfxU16 * ptrOutV = (mfxU16 *)pSurfaceOut->Data.V;
+
+        shift = pSurfaceIn->Info.Shift ? (16 - pSurfaceIn->Info.BitDepthChroma) : 0;
 
         for (mfxU16 i = 0; i < pSurfaceIn->Info.Height / 2; i++)
         {
@@ -1444,7 +1451,6 @@ mfxFrameSurface1* ConvertSurface(mfxFrameSurface1* pSurfaceIn, mfxFrameSurface1*
             {
                 return 0;
             }
-
         }
     }
 

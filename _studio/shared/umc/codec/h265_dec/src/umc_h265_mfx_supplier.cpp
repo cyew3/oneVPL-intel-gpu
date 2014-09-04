@@ -555,7 +555,7 @@ UMC::Status MFX_Utility::FillVideoParam(TaskSupplier_H265 * supplier, mfxVideoPa
         par->mfx.FrameInfo.Width = UMC::align_value<mfxU16>(par->mfx.FrameInfo.Width, 64);
         par->mfx.FrameInfo.Height = UMC::align_value<mfxU16>(par->mfx.FrameInfo.Height, 64);
         if (par->mfx.FrameInfo.FourCC == MFX_FOURCC_P010)
-            par->mfx.FrameInfo.Shift = (16 - par->mfx.FrameInfo.BitDepthLuma);
+            par->mfx.FrameInfo.Shift = 1;
     }
 
     return UMC::UMC_OK;
@@ -987,7 +987,7 @@ mfxStatus MFX_CDECL MFX_Utility::Query_H265(VideoCORE *core, mfxVideoParam *in, 
         out->mfx.FrameInfo.Shift = in->mfx.FrameInfo.Shift;
         if (in->mfx.FrameInfo.FourCC == MFX_FOURCC_P010)
         {
-            if (in->mfx.FrameInfo.Shift > 7 || (out->mfx.FrameInfo.BitDepthLuma && (16 - out->mfx.FrameInfo.BitDepthLuma < in->mfx.FrameInfo.Shift) ))
+            if (in->mfx.FrameInfo.Shift > 1)
             {
                 out->mfx.FrameInfo.Shift = 0;
                 sts = MFX_ERR_UNSUPPORTED;
@@ -1245,7 +1245,7 @@ bool MFX_CDECL MFX_Utility::CheckVideoParam_H265(mfxVideoParam *in, eMFXHWType t
         if (in->mfx.FrameInfo.BitDepthChroma < 8 || in->mfx.FrameInfo.BitDepthChroma > 16)
             return false;
 
-        if (in->mfx.FrameInfo.Shift > 8 || (16 - in->mfx.FrameInfo.BitDepthLuma < in->mfx.FrameInfo.Shift))
+        if (in->mfx.FrameInfo.Shift > 1)
             return false;
     }
     else
