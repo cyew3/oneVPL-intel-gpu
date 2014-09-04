@@ -174,6 +174,9 @@ int TestSuite::RunTest(unsigned int id)
     TS_START;
     const tc_struct& tc = test_case[id];
 
+    tsRawReader stream(g_tsStreamPool.Get("YUV/iceage_720x480_491.yuv"), m_pPar->mfx.FrameInfo);
+    m_filler = &stream;
+
     MFXInit();
 
     m_pPar->IOPattern = MFX_IOPATTERN_IN_SYSTEM_MEMORY;
@@ -185,12 +188,12 @@ int TestSuite::RunTest(unsigned int id)
 
     ///////////////////////////////////////////////////////////////////////////
     AllocSurfaces();
+    AllocBitstream((m_par.mfx.FrameInfo.Width*m_par.mfx.FrameInfo.Height) * 1024 * 1024 * 10);
+
     SetFrameAllocator();
 
     mfxU32 n = 2;
     mfxU32 num_mb = mfxU32(m_par.mfx.FrameInfo.Width / 16) * mfxU32(m_par.mfx.FrameInfo.Height / 16);
-
-    AllocBitstream((m_par.mfx.FrameInfo.Width*m_par.mfx.FrameInfo.Height) * 1024 * 1024 * n);
 
     // Attach input structures
     std::vector<mfxExtBuffer*> in_buffs;
@@ -274,54 +277,15 @@ int TestSuite::RunTest(unsigned int id)
         m_bitstream.NumExtParam = out_buffs.size();
     }
 
-    mfxU32 encoded = 0;
-    mfxU32 submitted = 0;
-    mfxU32 async = TS_MAX(1, m_par.AsyncDepth);
-    async = TS_MIN(n, async - 1);
-    mfxSyncPoint sp;
-
-    m_pSurf = GetSurface();
-    g_tsStatus.expect(tc.sts);
-    while(encoded < n)
-    {
-        mfxStatus mfxRes = EncodeFrameAsync(m_session, m_pCtrl, m_pSurf, m_pBitstream, m_pSyncPoint);
-
-        if(MFX_ERR_MORE_DATA == mfxRes)
-        {
-            if(!m_pSurf)
-            {
-                m_pSurf = GetSurface();
-                if(submitted)
-                {
-                    encoded += submitted;
-                    SyncOperation(sp);
-                }
-                break;
-            }
-            continue;
-        }
-
-        g_tsStatus.check();
-        sp = m_syncpoint;
-
-        if(++submitted >= async)
-        {
-            SyncOperation();
-            encoded += submitted;
-            submitted = 0;
-            async = TS_MIN(async, (n - encoded));
-        }
-    }
-
-    g_tsLog << encoded << " FRAMES ENCODED\n";
-    g_tsStatus.check();
+    EncodeFrames(n);
+    //g_tsStatus.check();
 
     if (tc.mode & OUT_MV)
     {
         EXPECT_NE(0, memcmp(&orig_out_mv, &out_mv, sizeof(mfxExtFeiEncMV)))
                     << "ERROR: mfxExtFeiEncMV output should be changed";
     }
-    if (0 && tc.mode & OUT_MB_STAT)
+    if (tc.mode & OUT_MB_STAT)
     {
         EXPECT_NE(0, memcmp(&orig_out_mbstat, &out_mbstat, sizeof(mfxExtFeiEncMBStat)))
                     << "ERROR: mfxExtFeiEncMBStat output should be changed";
