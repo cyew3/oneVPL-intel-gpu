@@ -1902,7 +1902,7 @@ mfxStatus VAAPIEncoder::Execute(
         }
         else
         {
-            if (m_core->GetHWType() >= MFX_HW_HSW)
+            if ((m_core->GetHWType() >= MFX_HW_HSW) && (m_core->GetHWType() != MFX_HW_VLV))
             {
                 //Slice headers only
                 std::vector<ENCODE_PACKEDHEADER_DATA> const & packedSlices = m_headerPacker.PackSlices(task, fieldId);
