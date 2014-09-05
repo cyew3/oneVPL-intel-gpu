@@ -1,0 +1,76 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="src\h263d_plugin.cpp">
+      <Filter>Source files</Filter>
+    </ClCompile>
+    <ClCompile Include="h263_dec\src\h263decframe.c">
+      <Filter>H263\Source files</Filter>
+    </ClCompile>
+    <ClCompile Include="h263_dec\src\h263decframe_ei.c">
+      <Filter>H263\Source files</Filter>
+    </ClCompile>
+    <ClCompile Include="h263_dec\src\h263decframe_ep.c">
+      <Filter>H263\Source files</Filter>
+    </ClCompile>
+    <ClCompile Include="h263_dec\src\h263decframeb.c">
+      <Filter>H263\Source files</Filter>
+    </ClCompile>
+    <ClCompile Include="h263_dec\src\h263decframei.c">
+      <Filter>H263\Source files</Filter>
+    </ClCompile>
+    <ClCompile Include="h263_dec\src\h263decframep.c">
+      <Filter>H263\Source files</Filter>
+    </ClCompile>
+    <ClCompile Include="h263_dec\src\h263decfuncs.c">
+      <Filter>H263\Source files</Filter>
+    </ClCompile>
+    <ClCompile Include="h263_dec\src\h263parse.c">
+      <Filter>H263\Source files</Filter>
+    </ClCompile>
+    <ClCompile Include="h263_dec\src\h263stream.c">
+      <Filter>H263\Source files</Filter>
+    </ClCompile>
+    <ClCompile Include="h263_dec\src\h263tbl.c">
+      <Filter>H263\Source files</Filter>
+    </ClCompile>
+    <ClCompile Include="h263_dec\src\umc_h263_video_decoder.cpp">
+      <Filter>H263\Source files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="resource.h" />
+    <ClInclude Include="include\h263d_plugin.h">
+      <Filter>Header files</Filter>
+    </ClInclude>
+    <ClInclude Include="h263_dec\include\h263.h">
+      <Filter>H263\Header files</Filter>
+    </ClInclude>
+    <ClInclude Include="h263_dec\include\h263dec.h">
+      <Filter>H263\Header files</Filter>
+    </ClInclude>
+    <ClInclude Include="h263_dec\include\umc_h263_video_decoder.h">
+      <Filter>H263\Header files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="mfx_h263d_plugin.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Source files">
+      <UniqueIdentifier>{8e238e15-41a4-43b5-b766-966cf0cfc182}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header files">
+      <UniqueIdentifier>{ebf9b1c0-7a2e-4e3f-a3fa-bcbe3bae8ab9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="H263">
+      <UniqueIdentifier>{8084e43f-93e7-40ba-8b42-e03a73298a87}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="H263\Header files">
+      <UniqueIdentifier>{1f37fdeb-715f-4081-b6c6-ad031aaa0313}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="H263\Source files">
+      <UniqueIdentifier>{28ea7403-58c9-4c64-ad2d-cf003757b773}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

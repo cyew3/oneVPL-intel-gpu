@@ -1,0 +1,61 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="src\h263e_plugin.cpp">
+      <Filter>Source files</Filter>
+    </ClCompile>
+    <ClCompile Include="h263_enc\src\h263_enc_bitstream.cpp">
+      <Filter>Source files</Filter>
+    </ClCompile>
+    <ClCompile Include="h263_enc\src\h263_enc_frame.cpp">
+      <Filter>Source files</Filter>
+    </ClCompile>
+    <ClCompile Include="h263_enc\src\h263_enc_headers.cpp">
+      <Filter>Source files</Filter>
+    </ClCompile>
+    <ClCompile Include="h263_enc\src\h263_enc_misc.cpp">
+      <Filter>Source files</Filter>
+    </ClCompile>
+    <ClCompile Include="h263_enc\src\h263_enc_tables.cpp">
+      <Filter>Source files</Filter>
+    </ClCompile>
+    <ClCompile Include="h263_enc\src\umc_h263_video_encoder.cpp">
+      <Filter>Source files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="resource.h" />
+    <ClInclude Include="include\h263e_plugin.h">
+      <Filter>Header files</Filter>
+    </ClInclude>
+    <ClInclude Include="h263_enc\include\h263_enc_bitstream.hpp">
+      <Filter>H263\Header files</Filter>
+    </ClInclude>
+    <ClInclude Include="h263_enc\include\h263_enc.hpp">
+      <Filter>H263\Header files</Filter>
+    </ClInclude>
+    <ClInclude Include="h263_enc\include\umc_h263_video_encoder.h">
+      <Filter>H263\Header files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="mfx_h263e_plugin.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Header files">
+      <UniqueIdentifier>{642e310d-fa5e-4a5f-ba91-dfd6da328fa9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source files">
+      <UniqueIdentifier>{887813ee-4578-4f7c-be5b-30056b4b5604}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="H263">
+      <UniqueIdentifier>{f480042f-6255-4100-bfa1-0443a08a24ef}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="H263\Header files">
+      <UniqueIdentifier>{ac98d7e8-4718-42b9-a82d-1ecda187e8ca}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="H263\Source files">
+      <UniqueIdentifier>{f5fb20d6-064a-420a-a2b3-2eac9f93aeef}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
