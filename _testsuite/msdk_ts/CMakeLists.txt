@@ -2,60 +2,61 @@ mfx_include_dirs( )
 # =============================================================================
 # msdk_gmock:
 #
-#include_directories (
-##  /usr/include/c++/4.6/bits
-#  ${CMAKE_HOME_DIRECTORY}/mdp_msdk-samples/samples/sample_common/include/vm
-#  ${CMAKE_HOME_DIRECTORY}/mdp_msdk-samples/samples/sample_common/include
-#  ${CMAKE_HOME_DIRECTORY}/mdp_msdk-val-tools/bs_parser/include
-## ${CMAKE_HOME_DIRECTORY}/igfx_s3dcontrol/include
-#  ${CMAKE_HOME_DIRECTORY}/mdp_msdk-contrib/gmock
-#  ${CMAKE_HOME_DIRECTORY}/mdp_msdk-contrib/gmock/gtest/include
-#  ${CMAKE_HOME_DIRECTORY}/mdp_msdk-contrib/gmock/include
-## ${CMAKE_HOME_DIRECTORY}/include #included by CMake
-#   ${CMAKE_CURRENT_SOURCE_DIR}/include/gmock
-#   ${CMAKE_CURRENT_SOURCE_DIR}/include
-#)
-#
-#list(APPEND sources
-#   ${CMAKE_CURRENT_SOURCE_DIR}/src/test_sample_allocator.cpp
-#   ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/ts_alloc.cpp
-#   ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/ts_bitstream.cpp
-#   ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/ts_common.cpp
-#   ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/ts_decoder.cpp
-#   ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/ts_encoder.cpp
-#   ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/ts_plugin.cpp
-#   ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/ts_session.cpp
-#   ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/ts_streams.cpp
-#   ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/ts_struct.cpp
-#   ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/ts_surface.cpp
-#   ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/ts_trace.cpp
-#   ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/ts_vpp.cpp
-#)
-#
-#file( GLOB_RECURSE srcs "${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/*.cpp" )
-#list( APPEND sources ${srcs})
-#
-#add_definitions( -D_VARIADIC_MAX=10 )
-#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x")
-#
-#foreach( variant sw x11 drm )
-#  check_variant( ${variant} configured )
-#  set( LIBS "" )
-#  set( LIBS_SUFFIX "" )
-#  if ( configured )  
-#    list( APPEND LIBS
-#      dispatch_trace
-#      bs_parser
-#      dl
-##      ippvc_l ippcc_l ippi_l ipps_l ippcore_l
-#      sample_common_${variant}
-#      pthread
-#    )
-#    list( APPEND LIBS_SUFFIX gmock )
-#
-#    make_executable( msdk_gmock ${variant} )
-#  endif()
-#endforeach()
+include_directories (
+#  /usr/include/c++/4.6/bits
+  ${CMAKE_HOME_DIRECTORY}/mdp_msdk-samples/samples/sample_common/include/vm
+  ${CMAKE_HOME_DIRECTORY}/mdp_msdk-samples/samples/sample_common/include
+  ${CMAKE_HOME_DIRECTORY}/mdp_msdk-val-tools/bs_parser/include
+# ${CMAKE_HOME_DIRECTORY}/igfx_s3dcontrol/include
+  ${CMAKE_HOME_DIRECTORY}/mdp_msdk-contrib/gmock
+  ${CMAKE_HOME_DIRECTORY}/mdp_msdk-contrib/gmock/gtest/include
+  ${CMAKE_HOME_DIRECTORY}/mdp_msdk-contrib/gmock/include
+# ${CMAKE_HOME_DIRECTORY}/include #included by CMake
+   ${CMAKE_CURRENT_SOURCE_DIR}/include/gmock
+   ${CMAKE_CURRENT_SOURCE_DIR}/include
+)
+
+list(APPEND sources
+   ${CMAKE_CURRENT_SOURCE_DIR}/src/test_sample_allocator.cpp
+   ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/ts_alloc.cpp
+   ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/ts_bitstream.cpp
+   ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/ts_common.cpp
+   ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/ts_decoder.cpp
+   ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/ts_encoder.cpp
+   ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/ts_plugin.cpp
+   ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/ts_session.cpp
+   ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/ts_streams.cpp
+   ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/ts_struct.cpp
+   ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/ts_surface.cpp
+   ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/ts_trace.cpp
+   ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/ts_vpp.cpp
+   ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/ts_fei.cpp
+)
+
+file( GLOB_RECURSE srcs "${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/*.cpp" )
+list( APPEND sources ${srcs})
+
+add_definitions( -D_VARIADIC_MAX=10 )
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x")
+
+foreach( variant sw x11 drm )
+  check_variant( ${variant} configured )
+  set( LIBS "" )
+  set( LIBS_SUFFIX "" )
+  if ( configured )
+    list( APPEND LIBS
+      dispatch_trace
+      bs_parser
+      dl
+#      ippvc_l ippcc_l ippi_l ipps_l ippcore_l
+      sample_common_${variant}
+      pthread
+    )
+    list( APPEND LIBS_SUFFIX gmock )
+
+    make_executable( msdk_gmock ${variant} )
+  endif()
+endforeach()
 
 # =============================================================================
 # msdk_ts application
@@ -67,7 +68,7 @@ include_directories (
   ${CMAKE_HOME_DIRECTORY}/mdp_msdk-val-tools/bs_parser/include
   ${CMAKE_CURRENT_SOURCE_DIR}/../shared/include
   ${CMAKE_CURRENT_SOURCE_DIR}/../../_studio/shared/umc/codec/demuxer/include
-  ${CMAKE_HOME_DIRECTORY}/mdp_msdk-samples/samples/sample_common/include  
+  ${CMAKE_HOME_DIRECTORY}/mdp_msdk-samples/samples/sample_common/include
 )
 
 list(APPEND sources
@@ -88,7 +89,7 @@ add_definitions( -DUSE_SAMPLE_ALLOCATOR=1 )
 foreach( variant sw x11 drm )
   check_variant( ${variant} configured )
   set( LIBS "" )
-  if ( configured )  
+  if ( configured )
     list( APPEND LIBS
       dispatch_trace
       umc_core_merged
@@ -147,8 +148,8 @@ message ( STATUS "  PERL_EXECUTABLE:        " ${PERL_EXECUTABLE} )
 message ( STATUS "  PERL_INCLUDE_PATH:      " ${PERL_INCLUDE_PATH} )
 message ( STATUS "  PERL_LIBRARY:           " ${PERL_LIBRARY} )
 
-include_directories ( 
-  ${PERL_INCLUDE_PATH} 
+include_directories (
+  ${PERL_INCLUDE_PATH}
 )
 
 add_definitions( -DUSE_SAMPLE_ALLOCATOR=1 )
@@ -170,7 +171,7 @@ list(APPEND sources
 foreach( variant sw x11 drm)
   check_variant( ${variant} configured )
   set( LIBS "" )
-  if ( configured )  
+  if ( configured )
     list( APPEND LIBS
       dispatch_trace
       umc_core_merged
