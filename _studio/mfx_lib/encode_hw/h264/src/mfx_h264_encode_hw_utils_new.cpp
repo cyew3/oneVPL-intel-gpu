@@ -1639,6 +1639,8 @@ void MfxHwH264Encode::ConfigureTask(
     mfxU8  prevRefPicFlag   = !!(prevTask.GetFrameType() & MFX_FRAMETYPE_REF);
     mfxU8  prevIdrPicFlag   = !!(prevTask.m_type[prevsfid] & MFX_FRAMETYPE_IDR);
 
+    mfxU16 SkipMode = extOpt2Runtime ? extOpt2Runtime->SkipFrame : extOpt2.SkipFrame;
+
     task.m_frameOrderIdr = idrPicFlag ? task.m_frameOrder : prevTask.m_frameOrderIdr;
     task.m_frameOrderI   = intraPicFlag ? task.m_frameOrder : prevTask.m_frameOrderI;
     task.m_encOrder      = prevTask.m_encOrder + 1;
@@ -1670,7 +1672,7 @@ void MfxHwH264Encode::ConfigureTask(
 
     DecideOnRefPicFlag(video, task); // for temporal layers
     
-    if (task.m_ctrl.SkipFrame != 0 && extOpt2.SkipFrame != MFX_SKIPFRAME_ANDROID_MODE)
+    if (task.m_ctrl.SkipFrame != 0 && SkipMode != 3)
     {
         task.m_ctrl.SkipFrame = (extOpt2.SkipFrame) ? (1 + (IsProtectionPavp(video.Protected) || IsProtectionHdcp(video.Protected)) ) : 0;
 
