@@ -3102,7 +3102,7 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
     }
 
     
-    if (!CheckRangeDflt(extOpt2->SkipFrame, 0, 2, 0)) changed = true;
+    if (!CheckRangeDflt(extOpt2->SkipFrame, 0, 3, 0)) changed = true;
 
     if ( extOpt2->SkipFrame && hwCaps.SkipFrame == 0 && par.mfx.RateControlMethod != MFX_RATECONTROL_CQP)
     {

@@ -1389,8 +1389,14 @@ mfxStatus VAAPIEncoder::Execute(
     mfxU8 skipFlag = task.SkipFlag();
     mfxExtCodingOption2* ctrlOpt2 = GetExtBuffer(task.m_ctrl, MFX_EXTBUFF_CODING_OPTION2);
 
-    if (ctrlOpt2 && ctrlOpt2->SkipFrame <= MFX_SKIPFRAME_INSERT_NOTHING)
+    if (ctrlOpt2 && ctrlOpt2->SkipFrame <= MFX_SKIPFRAME_ANDROID_MODE)
         m_skipMode = ctrlOpt2->SkipFrame;
+
+    if (m_skipMode == MFX_SKIPFRAME_ANDROID_MODE)
+    {
+        skipFlag = 0; // encode current frame as normal
+        m_numSkipFrames += task.m_ctrl.SkipFrame;
+    }
 
     configBuffers.resize(MAX_CONFIG_BUFFERS_COUNT + m_slice.size()*2);
 

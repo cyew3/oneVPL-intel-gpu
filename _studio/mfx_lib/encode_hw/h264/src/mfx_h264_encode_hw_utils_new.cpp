@@ -1670,7 +1670,7 @@ void MfxHwH264Encode::ConfigureTask(
 
     DecideOnRefPicFlag(video, task); // for temporal layers
     
-    if (task.m_ctrl.SkipFrame != 0)
+    if (task.m_ctrl.SkipFrame != 0 && extOpt2.SkipFrame != MFX_SKIPFRAME_ANDROID_MODE)
     {
         task.m_ctrl.SkipFrame = (extOpt2.SkipFrame) ? (1 + (IsProtectionPavp(video.Protected) || IsProtectionHdcp(video.Protected)) ) : 0;
 
