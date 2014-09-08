@@ -73,6 +73,9 @@ typedef enum {
     MFX_CONTAINER_CRMF
 } mfxContainer;
 
+enum {
+    MFX_CODEC_H263 = MFX_MAKEFOURCC('H','2','6','3'),
+};
 
 //////////////////////////////////////////////////////////////////////////
 #if defined(WIN32) || defined(WIN64)

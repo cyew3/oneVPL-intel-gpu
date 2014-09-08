@@ -357,7 +357,7 @@ mfxStatus UMCSplWrapper::GetStreamInfo(sStreamInfo * pParams)
         case MPEG2_VIDEO: pParams->videoType = MFX_CODEC_MPEG2; break;
 //        case MPEG4_VIDEO: pParams->videoType = MFX_FOURCC_MPEG4; break;
 //        case H261_VIDEO : pParams->videoType = MFX_FOURCC_H261;  break;
-//        case H263_VIDEO : pParams->videoType = MFX_FOURCC_H263;  break;
+        case H263_VIDEO : pParams->videoType = MFX_CODEC_H263;  break;
         case H264_VIDEO : pParams->videoType = MFX_CODEC_AVC;   break;
         case HEVC_VIDEO : pParams->videoType = MFX_CODEC_HEVC;  break;
         case WMV_VIDEO  :

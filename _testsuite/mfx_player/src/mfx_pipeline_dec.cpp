@@ -113,10 +113,6 @@ using namespace std;
 #define MFX_HANDLE_TIMING_TAL       ((mfxHandleType)1004)
 #endif
 
-enum {
-    MFX_CODEC_H263 = MFX_MAKEFOURCC('H','2','6','3'),
-};
-
 //////////////////////////////////////////////////////////////////////////
 
 MFXDecPipeline::MFXDecPipeline(IMFXPipelineFactory *pFactory)

@@ -101,10 +101,6 @@ File Name: .h
     ippsSet_8u(0xFF, (mfxU8*)&m_EncParamsMask + offset, sizeof(field));}\
 }
 
-enum {
-    MFX_CODEC_H263 = MFX_MAKEFOURCC('H','2','6','3'),
-};
-
 //////////////////////////////////////////////////////////////////////////
 
 MFXTranscodingPipeline::MFXTranscodingPipeline(IMFXPipelineFactory *pFactory)
