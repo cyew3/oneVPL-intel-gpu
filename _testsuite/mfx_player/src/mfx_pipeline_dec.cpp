@@ -1385,10 +1385,16 @@ mfxStatus MFXDecPipeline::DecodeHeader()
     }
 
     ////special case when decoder initialized with rgb24/rgb32 fourcc
-    if ( m_components[eDEC].m_params.mfx.FrameInfo.FourCC != MFX_FOURCC_P010 ) {
-        m_components[eDEC].m_params.mfx.FrameInfo.FourCC = dec_info.FourCC;
+    if ( m_components[eDEC].m_params.mfx.FrameInfo.FourCC != MFX_FOURCC_P010 &&
+         m_components[eDEC].m_params.mfx.FrameInfo.FourCC != MFX_FOURCC_NV16 &&
+         m_components[eDEC].m_params.mfx.FrameInfo.FourCC != MFX_FOURCC_P210)
+    {
+        m_components[eDEC].m_params.mfx.FrameInfo.FourCC       = dec_info.FourCC;
         m_components[eDEC].m_params.mfx.FrameInfo.ChromaFormat = dec_info.ChromaFormat;
     }
+
+    // Special case when SFC should be used in decoder
+    // FourCC and picstruct must be the same as in decoded frame 
     if (!m_extDecVideoProcessing.IsZero())
     {
         m_extDecVideoProcessing->Out.PicStruct    = m_components[eDEC].m_params.mfx.FrameInfo.PicStruct;
@@ -1617,10 +1623,10 @@ mfxStatus MFXDecPipeline::CreateRender()
 
     if ( MFX_FOURCC_P010 == m_components[eDEC].m_params.mfx.FrameInfo.FourCC ||
          MFX_FOURCC_P210 == m_components[eDEC].m_params.mfx.FrameInfo.FourCC){
-        m_components[eREN].m_params.mfx.FrameInfo.FourCC = m_components[eDEC].m_params.mfx.FrameInfo.FourCC;
-        m_components[eREN].m_params.mfx.FrameInfo.BitDepthLuma = m_components[eDEC].m_params.mfx.FrameInfo.BitDepthLuma;
+        m_components[eREN].m_params.mfx.FrameInfo.FourCC         = m_components[eDEC].m_params.mfx.FrameInfo.FourCC;
+        m_components[eREN].m_params.mfx.FrameInfo.BitDepthLuma   = m_components[eDEC].m_params.mfx.FrameInfo.BitDepthLuma;
         m_components[eREN].m_params.mfx.FrameInfo.BitDepthChroma = m_components[eDEC].m_params.mfx.FrameInfo.BitDepthChroma;
-        m_components[eREN].m_params.mfx.FrameInfo.Shift = m_components[eDEC].m_params.mfx.FrameInfo.Shift;
+        m_components[eREN].m_params.mfx.FrameInfo.Shift          = m_components[eDEC].m_params.mfx.FrameInfo.Shift;
     }
 
     if (   MFX_FOURCC_P010    == m_inParams.outFrameInfo.FourCC
@@ -4265,6 +4271,7 @@ mfxStatus MFXDecPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI32 argc, 
                 MFX_CHECK(1 + argv != argvEnd);
                 argv++;
                 vm_string_strcpy_s(m_inParams.strSrcFile, MFX_ARRAY_SIZE(m_inParams.strSrcFile), argv[0]);
+                // WebM re-uses MKV reader
                 m_inParams.m_container = MFX_CONTAINER_MKV;
             }
             else if (0!=(nPattern = m_OptProc.Check(argv[0], VM_STRING("-i:bg16"), VM_STRING("input stream is in Bayer BGGR format. For camera pipe."), OPT_UNDEFINED)))
