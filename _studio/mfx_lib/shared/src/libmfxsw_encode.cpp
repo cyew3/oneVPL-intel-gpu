@@ -241,6 +241,9 @@ mfxStatus MFXVideoENCODE_Query(mfxSession session, mfxVideoParam *in, mfxVideoPa
         if (session->m_plgEnc.get())
         {
             mfxRes = session->m_plgEnc->Query(session->m_pCORE.get(), in, out);
+            if (mfxRes >= MFX_ERR_NONE &&
+              mfxRes != MFX_WRN_PARTIAL_ACCELERATION)
+              bIsHWENCSupport = true;
         }
         // unsupported reserved to codecid != requested codecid
         if (MFX_ERR_UNSUPPORTED == mfxRes)
@@ -388,6 +391,9 @@ mfxStatus MFXVideoENCODE_QueryIOSurf(mfxSession session, mfxVideoParam *par, mfx
         if (session->m_plgEnc.get())
         {
             mfxRes = session->m_plgEnc->QueryIOSurf(session->m_pCORE.get(), par, request, 0);
+            if (mfxRes >= MFX_ERR_NONE &&
+              mfxRes != MFX_WRN_PARTIAL_ACCELERATION)
+              bIsHWENCSupport = true;
         }
         // unsupported reserved to codecid != requested codecid
         if (MFX_ERR_UNSUPPORTED == mfxRes)
@@ -533,7 +539,6 @@ mfxStatus MFXVideoENCODE_Init(mfxSession session, mfxVideoParam *par)
         if (!session->m_pENCODE.get())
         {
             // create a new instance
-            session->m_bIsHWENCSupport = true;
             session->m_pENCODE.reset(CreateENCODESpecificClass(par->mfx.CodecId, session->m_pCORE.get(), session, par));
             MFX_CHECK(session->m_pENCODE.get(), MFX_ERR_INVALID_VIDEO_PARAM);
         }
@@ -541,15 +546,17 @@ mfxStatus MFXVideoENCODE_Init(mfxSession session, mfxVideoParam *par)
 
         mfxRes = session->m_pENCODE->Init(par);
 
-#if !defined (MFX_RT)
         if (MFX_WRN_PARTIAL_ACCELERATION == mfxRes)
         {
             session->m_bIsHWENCSupport = false;
+#if !defined (MFX_RT)
             session->m_pENCODE.reset(CreateENCODESpecificClass(par->mfx.CodecId, session->m_pCORE.get(), session, par));
             MFX_CHECK(session->m_pENCODE.get(), MFX_ERR_NULL_PTR);
             mfxRes = session->m_pENCODE->Init(par);
-        }
 #endif
+        }
+        else if (mfxRes >= MFX_ERR_NONE)
+            session->m_bIsHWENCSupport = true;
 
         // SW fallback if EncodeGUID is absence
         if (MFX_PLATFORM_HARDWARE == session->m_currentPlatform &&
