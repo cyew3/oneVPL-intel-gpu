@@ -1886,7 +1886,7 @@ mfxStatus MFXVideoENCODEH265::Query(VideoCORE *core, mfxVideoParam *par_in, mfxV
     if (isCorrected)
         return MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
 
-    return CheckPlatformType(core);
+    return MFX_ERR_NONE;
 }
 
 mfxStatus MFXVideoENCODEH265::QueryIOSurf(VideoCORE *core, mfxVideoParam *par, mfxFrameAllocRequest *request)
@@ -1930,7 +1930,7 @@ mfxStatus MFXVideoENCODEH265::QueryIOSurf(VideoCORE *core, mfxVideoParam *par, m
         request->Type = MFX_MEMTYPE_FROM_ENCODE|MFX_MEMTYPE_EXTERNAL_FRAME|MFX_MEMTYPE_SYSTEM_MEMORY;
     }
 
-    return CheckPlatformType(core);
+    return MFX_ERR_NONE;
 }
 
 mfxStatus MFXVideoENCODEH265::GetEncodeStat(mfxEncodeStat *stat)
