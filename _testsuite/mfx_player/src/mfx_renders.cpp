@@ -417,6 +417,8 @@ mfxStatus MFXFileWriteRender::WriteSurface(mfxFrameSurface1 * pConvertedSurface)
             m_Current.m_comp = VM_STRING('Y');
             m_Current.m_pixX = 0;
 
+            crop_x <<= 1; // because of sample equals two bytes 
+
             for (i = 0; i < pInfo->CropH; i++)
             {
                 m_Current.m_pixY = i;
@@ -461,16 +463,21 @@ mfxStatus MFXFileWriteRender::WriteSurface(mfxFrameSurface1 * pConvertedSurface)
         {
             m_Current.m_comp = VM_STRING('Y');
             m_Current.m_pixX = 0;
+
+            crop_x <<= 1; // sample - two bytes
+
             for (i = 0; i < pInfo->CropH; i++)
             {
                 m_Current.m_pixY = i;
-                WRITE(pData->Y + (pInfo->CropY * pitch + pInfo->CropX)+ i * pitch, pInfo->CropW * 2);
+                WRITE(pData->Y + (pInfo->CropY * pitch + crop_x)+ i * pitch, pInfo->CropW * 2);
             }
             m_Current.m_comp = VM_STRING('U');
+
+            crop_y >>= 1;
             for (i = 0; i < pInfo->CropH / 2; i++)
             {
                 m_Current.m_pixY = i;
-                WRITE(pData->UV + (pInfo->CropY * pitch / 2 + pInfo->CropX) + i * pitch, pInfo->CropW * 2);
+                WRITE(pData->UV + (crop_y*pitch + crop_x) + i * pitch, pInfo->CropW * 2);
             }
             break;
         }
@@ -501,7 +508,7 @@ mfxStatus MFXFileWriteRender::WriteSurface(mfxFrameSurface1 * pConvertedSurface)
             }
             break;
         }
-        case MFX_FOURCC_RGB4 :
+        case MFX_FOURCC_RGB4:
         {
             m_Current.m_comp = VM_STRING('R');
             m_Current.m_pixX = 0;
