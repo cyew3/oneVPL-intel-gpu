@@ -51,7 +51,8 @@ UMC::Status VATaskSupplier::Init(UMC::BaseCodecParams *pInit)
     if (m_va)
     {
         static_cast<TaskBrokerSingleThreadDXVA*>(m_pTaskBroker)->DXVAStatusReportingMode(false);//m_va->m_HWPlatform != UMC::VA_HW_LAKE);
-        m_DPBSizeEx = 1;
+        UMC::VideoDecoderParams *init = DynamicCast<UMC::VideoDecoderParams> (pInit);
+        m_DPBSizeEx = m_iThreadNum + init->info.bitrate; 
     }
 
     m_sei_messages = new SEI_Storer_H265();

@@ -35,20 +35,20 @@
 #include "umc_h264_vda_supplier.h"
 #endif
 
-static inline mfxU32 CalculateAsyncDepth(VideoCORE *core, mfxVideoParam *par)
+static inline mfxU32 CalculateAsyncDepth(eMFXPlatform platform, mfxVideoParam *par)
 {
     mfxU32 asyncDepth = par->AsyncDepth;
-    if (core && !asyncDepth)
+    if (!asyncDepth)
     {
-        asyncDepth = core->GetAutoAsyncDepth();
+        asyncDepth = (platform == MFX_PLATFORM_SOFTWARE) ? vm_sys_info_get_cpu_num() : MFX_AUTO_ASYNC_DEPTH_VALUE;
     }
 
     return asyncDepth;
 }
 
-static inline mfxU32 CalculateNumThread(mfxVideoParam *par, eMFXPlatform platform)
+static inline mfxU32 CalculateNumThread(eMFXPlatform platform, mfxVideoParam *par)
 {
-    mfxU32 numThread = (MFX_PLATFORM_SOFTWARE != platform) ? 1 : vm_sys_info_get_cpu_num();
+    mfxU32 numThread = (MFX_PLATFORM_SOFTWARE == platform) ? vm_sys_info_get_cpu_num() : 1;
     if (!par->AsyncDepth)
         return numThread;
 
@@ -269,8 +269,8 @@ mfxStatus VideoDECODEH264::Init(mfxVideoParam *par)
     m_vPar.CreateExtendedBuffer(MFX_EXTBUFF_VIDEO_SIGNAL_INFO);
     m_vPar.CreateExtendedBuffer(MFX_EXTBUFF_CODING_OPTION_SPSPPS);
 
-    mfxU32 asyncDepth = CalculateAsyncDepth(m_core, par);
-    m_vPar.mfx.NumThread = (mfxU16)CalculateNumThread(par, m_platform);
+    mfxU32 asyncDepth = CalculateAsyncDepth(m_platform, par);
+    m_vPar.mfx.NumThread = (mfxU16)CalculateNumThread(m_platform, par);
 
     if (MFX_PLATFORM_SOFTWARE == m_platform)
     {
@@ -319,7 +319,7 @@ mfxStatus VideoDECODEH264::Init(mfxVideoParam *par)
     memset(&m_response_alien, 0, sizeof(m_response_alien));
     m_isOpaq = false;
 
-    mfxStatus mfxSts = QueryIOSurfInternal(m_platform, type, &m_vPar, &request, m_core, useInternal != 0);
+    mfxStatus mfxSts = QueryIOSurfInternal(m_platform, type, &m_vPar, &request);
     if (mfxSts != MFX_ERR_NONE)
         return mfxSts;
 
@@ -430,7 +430,7 @@ mfxStatus VideoDECODEH264::Init(mfxVideoParam *par)
     UMC::H264VideoDecoderParams umcVideoParams;
     ConvertMFXParamsToUMC(&m_vFirstPar, &umcVideoParams);
     umcVideoParams.numThreads = m_vPar.mfx.NumThread;
-    umcVideoParams.m_bufferedFrames = asyncDepth - umcVideoParams.numThreads;
+    umcVideoParams.m_bufferedFrames = IPP_MAX(asyncDepth - umcVideoParams.numThreads, 0);
 
 #if defined(MFX_VA)
     if (MFX_PLATFORM_SOFTWARE != m_platform)
@@ -622,7 +622,7 @@ mfxStatus VideoDECODEH264::Reset(mfxVideoParam *par)
     m_vPar.CreateExtendedBuffer(MFX_EXTBUFF_VIDEO_SIGNAL_INFO);
     m_vPar.CreateExtendedBuffer(MFX_EXTBUFF_CODING_OPTION_SPSPPS);
 
-    m_vPar.mfx.NumThread = (mfxU16)CalculateNumThread(par, m_platform);
+    m_vPar.mfx.NumThread = (mfxU16)CalculateNumThread(m_platform, par);
 
     if (IS_PROTECTION_ANY(m_vFirstPar.Protected))
     {
@@ -949,7 +949,7 @@ mfxStatus VideoDECODEH264::QueryIOSurf(VideoCORE *core, mfxVideoParam *par, mfxF
     Ipp32s isInternalManaging = (MFX_PLATFORM_SOFTWARE == platform) ?
         (params.IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY) : (params.IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY);
 
-    mfxStatus sts = QueryIOSurfInternal(platform, type, &params, request, core, isInternalManaging != 0);
+    mfxStatus sts = QueryIOSurfInternal(platform, type, &params, request);
     if (sts != MFX_ERR_NONE)
         return sts;
 
@@ -957,7 +957,7 @@ mfxStatus VideoDECODEH264::QueryIOSurf(VideoCORE *core, mfxVideoParam *par, mfxF
 
     if (isInternalManaging || isVideoProcessing)
     {
-        request->NumFrameSuggested = request->NumFrameMin = (mfxU16)CalculateAsyncDepth(core, par);
+        request->NumFrameSuggested = request->NumFrameMin = (mfxU16)CalculateAsyncDepth(platform, par);
 
         if (!isVideoProcessing) // need to swap mem type
         {
@@ -1008,7 +1008,7 @@ mfxStatus VideoDECODEH264::QueryIOSurf(VideoCORE *core, mfxVideoParam *par, mfxF
     return MFX_ERR_NONE;
 }
 
-mfxStatus VideoDECODEH264::QueryIOSurfInternal(eMFXPlatform platform, eMFXHWType type, mfxVideoParam *par, mfxFrameAllocRequest *request, VideoCORE *core, bool useinternal)
+mfxStatus VideoDECODEH264::QueryIOSurfInternal(eMFXPlatform platform, eMFXHWType type, mfxVideoParam *par, mfxFrameAllocRequest *request)
 {
     request->Info = par->mfx.FrameInfo;
 
@@ -1020,7 +1020,7 @@ mfxStatus VideoDECODEH264::QueryIOSurfInternal(eMFXPlatform platform, eMFXHWType
         level_idc = mfxU8 (IPP_MAX(level_idc, points->OP->LevelIdc));
     }
 
-    mfxU32 asyncDepth = useinternal ? CalculateNumThread(par, platform) : CalculateAsyncDepth(core, par);
+    mfxU32 asyncDepth = CalculateAsyncDepth(platform, par);
     bool useDelayedDisplay = (ENABLE_DELAYED_DISPLAY_MODE != 0) && IsNeedToUseHWBuffering(type) && (asyncDepth != 1);
 
     mfxI32 dpbSize = UMC::CalculateDPBSize(level_idc, par->mfx.FrameInfo.Width, par->mfx.FrameInfo.Height, 0);
@@ -1279,7 +1279,15 @@ mfxStatus VideoDECODEH264::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1 *
 
         for (;;)
         {
-            umcRes = m_pH264VideoDecoder->AddSource(bs ? &src : 0, &dst);
+            if (m_FrameAllocator->FindFreeSurface() == -1)
+            {
+                umcRes = UMC::UMC_ERR_NOT_ENOUGH_BUFFER;
+            }
+            else
+            {
+                umcRes = m_pH264VideoDecoder->AddSource(bs ? &src : 0, &dst);
+            }
+
             umcAddSourceRes = umcFrameRes = umcRes;
 
             //if (umcRes == MFX_ERR_DEVICE_LOST)
@@ -1796,7 +1804,7 @@ bool VideoDECODEH264::IsSameVideoParam(mfxVideoParam * newPar, mfxVideoParam * o
         return false;
     }
 
-    if (CalculateAsyncDepth(0, newPar) != CalculateAsyncDepth(0, oldPar))
+    if (CalculateAsyncDepth(m_platform, newPar) != CalculateAsyncDepth(m_platform, oldPar))
     {
         return false;
     }
@@ -1806,11 +1814,11 @@ bool VideoDECODEH264::IsSameVideoParam(mfxVideoParam * newPar, mfxVideoParam * o
     mfxFrameAllocRequest requestNew;
     memset(&requestNew, 0, sizeof(requestNew));
 
-    mfxStatus mfxSts = QueryIOSurfInternal(m_platform, type, oldPar, &requestOld, m_core, true);
+    mfxStatus mfxSts = QueryIOSurfInternal(m_platform, type, oldPar, &requestOld);
     if (mfxSts != MFX_ERR_NONE)
         return false;
 
-    mfxSts = QueryIOSurfInternal(m_platform, type, newPar, &requestNew, m_core, true);
+    mfxSts = QueryIOSurfInternal(m_platform, type, newPar, &requestNew);
     if (mfxSts != MFX_ERR_NONE)
         return false;
 

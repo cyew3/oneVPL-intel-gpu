@@ -71,7 +71,7 @@ public:
     mfxStatus RunThread(void * params, mfxU32 threadNumber);
 
 protected:
-    static mfxStatus QueryIOSurfInternal(eMFXPlatform platform, eMFXHWType type, mfxVideoParam *par, mfxFrameAllocRequest *request, VideoCORE *core, bool useInternal);
+    static mfxStatus QueryIOSurfInternal(eMFXPlatform platform, eMFXHWType type, mfxVideoParam *par, mfxFrameAllocRequest *request);
 
     bool IsSameVideoParam(mfxVideoParam * newPar, mfxVideoParam * oldPar, eMFXHWType type);
 
