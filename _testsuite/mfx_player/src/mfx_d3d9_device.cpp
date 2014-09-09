@@ -29,7 +29,7 @@ mfxStatus MFXD3D9Device::Init(mfxU32 nAdapter,
                               WindowHandle hWindow,
                               bool bIsWindowed,
                               mfxU32 VIDEO_RENDER_TARGET_FORMAT,
-                              int /*BACK_BUFFER_COUNT*/,
+                              int BACK_BUFFER_COUNT,
                               const vm_char *pDXVA2libname,
                               bool )
 {
@@ -86,7 +86,7 @@ mfxStatus MFXD3D9Device::Init(mfxU32 nAdapter,
     }
 
     m_D3DPP.BackBufferFormat           = (D3DFORMAT)VIDEO_RENDER_TARGET_FORMAT;
-    m_D3DPP.BackBufferCount            = 24;//BACK_BUFFER_COUNT;
+    m_D3DPP.BackBufferCount            = BACK_BUFFER_COUNT;
     m_D3DPP.SwapEffect                 = D3DSWAPEFFECT_DISCARD;
     m_D3DPP.hDeviceWindow              = (HWND)hWindow;
     m_D3DPP.Windowed                   = bIsWindowed;

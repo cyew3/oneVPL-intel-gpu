@@ -186,6 +186,7 @@ struct sCommandlineParams
   mfxU16        m_nMonitor;//monitor id on which to create rendering window
 
   bool          bUseOverlay;
+  mfxU16        m_nBackbufferCount; // Number of backbuffers to be used for Directx9-based rendering
 
   // future mark notifications
   mfxU32         nTestId;
@@ -245,6 +246,8 @@ struct sCommandlineParams
       m_ProcAmp.Contrast   = 1.0f;
       m_ProcAmp.Hue        = 0.0f;
       m_ProcAmp.Saturation = 1.0f;
+
+      m_nBackbufferCount = 24;
   }
 };
 

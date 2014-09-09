@@ -1694,7 +1694,7 @@ mfxStatus MFXDecPipeline::CreateRender()
             }
             else
             {
-                iParams.window.windowsStyle = WS_OVERLAPPEDWINDOW;
+                iParams.window.windowsStyle = WS_POPUPWINDOW;
             }
             iParams.window.nMonitor = m_inParams.m_nMonitor;
 
@@ -2270,7 +2270,7 @@ mfxStatus MFXDecPipeline::CreateDeviceManager()
             {
                 return MFX_ERR_UNSUPPORTED;
             }
-            MFX_CHECK_STS(m_pHWDevice->Init(cparams.GetAdapter(), hWindow, !m_inParams.bFullscreen, format, 1, m_inParams.dxva2DllName));
+            MFX_CHECK_STS(m_pHWDevice->Init(cparams.GetAdapter(), hWindow, !m_inParams.bFullscreen, format, m_inParams.m_nBackbufferCount, m_inParams.dxva2DllName));
         }
         MFX_CHECK_STS(m_pHWDevice->GetHandle(MFX_HANDLE_DIRECT3D_DEVICE_MANAGER9, (mfxHDL *)&pMgr));
 
@@ -3489,14 +3489,19 @@ mfxStatus MFXDecPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI32 argc, 
         mfxU16 asyncLevel = 0;
         MFX_PARSE_INT(asyncLevel, argv[1]);
         std::for_each(m_components.begin(), m_components.end(), mem_var_set(&ComponentParams::m_nMaxAsync, asyncLevel));
-        //SET_GLOBAL_PARAM(m_nMaxAsync, (mfxU16)vm_string_atoi(argv[1]));
         argv++;
     }
-    else if (m_OptProc.Check(argv[0], VM_STRING("-backbuffer"), VM_STRING("format for Directx9 backbuffer. Supported formats:\n\t\tD3DFMT_X8R8G8B8 - default\n\t\tD3DFMT_A8R8G8B8\n\t\tD3DFMT_A2R10G10B10"), OPT_FILENAME))
+    else if (m_OptProc.Check(argv[0], VM_STRING("-backbuffer"), VM_STRING("backbuffer format for Directx9. Supported formats:\n\t\tD3DFMT_X8R8G8B8 - default\n\t\tD3DFMT_A8R8G8B8\n\t\tD3DFMT_A2R10G10B10"), OPT_FILENAME))
     {
         MFX_CHECK(1 + argv != argvEnd);
         vm_string_strcpy_s(m_inParams.BackBufferFormat, MFX_ARRAY_SIZE(m_inParams.BackBufferFormat), argv[1]);
-        //SET_GLOBAL_PARAM(m_nMaxAsync, (mfxU16)vm_string_atoi(argv[1]));
+        argv++;
+    }
+    else if (m_OptProc.Check(argv[0], VM_STRING("-backbuffer_num"), VM_STRING("Number of backbuffers to be used for Directx9-based rendering. Default is 24."), OPT_INT_32))
+    {
+        MFX_CHECK(1 + argv != argvEnd);
+
+        MFX_PARSE_INT(m_inParams.m_nBackbufferCount, argv[1]);
         argv++;
     }
     else if (m_OptProc.Check(argv[0], VM_STRING("-NumThread|-t"), VM_STRING("number of threads"), OPT_INT_32))
