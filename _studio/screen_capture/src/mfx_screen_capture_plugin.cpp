@@ -175,8 +175,8 @@ mfxStatus MFXScreenCapture_Plugin::Init(mfxVideoParam *par)
     mfxRes = CreateVideoAccelerator();
     MFX_CHECK_STS(mfxRes);
 
-    //mfxRes = CheckCapabilities();
-    //MFX_CHECK_STS(mfxRes);
+    mfxRes = CheckCapabilities();
+    MFX_CHECK_STS(mfxRes);
 
     return mfxRes;
 
@@ -420,15 +420,17 @@ mfxStatus  MFXScreenCapture_Plugin::CheckCapabilities()
         return MFX_ERR_DEVICE_FAILED;
     }
     
+    count = dec_ext.PrivateOutputDataSize;
+
     desktop_format = new DESKTOP_FORMAT[count];
     param_size.SizeOfParamStruct = count;
     
     dec_ext.Function = DESKTOP_FORMATS_ID;
     dec_ext.pPrivateInputData =  &param_size;
-    dec_ext.PrivateInputDataSize = sizeof(param_size);
+    dec_ext.PrivateInputDataSize = sizeof(DESKTOP_PARAM_STRUCT_SIZE);
 
     dec_ext.pPrivateOutputData = desktop_format;
-    dec_ext.PrivateOutputDataSize = sizeof(desktop_format);
+    dec_ext.PrivateOutputDataSize = sizeof(DESKTOP_FORMAT) * count; //Not sure about multiplying by count
 
     hr = m_pD11VideoContext->DecoderExtension(m_pDecoder, &dec_ext);
     if (FAILED(hr))
