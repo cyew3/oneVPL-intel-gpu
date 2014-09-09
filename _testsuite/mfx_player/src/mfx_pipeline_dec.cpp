@@ -486,8 +486,10 @@ mfxStatus MFXDecPipeline::BuildPipeline()
          m_components[eDEC].m_params.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV422;
     }
 
-    if ( MFX_FOURCC_R16 == m_inParams.FrameInfo.FourCC ) {
-        m_components[eDEC].m_params.mfx.FrameInfo.BitDepthLuma = 10;
+    if ( MFX_FOURCC_R16  == m_inParams.FrameInfo.FourCC ||
+         MFX_FOURCC_P210 == m_inParams.FrameInfo.FourCC )
+    {
+        m_components[eDEC].m_params.mfx.FrameInfo.BitDepthChroma = m_components[eDEC].m_params.mfx.FrameInfo.BitDepthLuma = 10;
     }
     if (MFX_ERR_NONE == res && m_inParams.InputCodecType != MFX_CODEC_CAPTURE)
     {
@@ -1949,6 +1951,15 @@ mfxStatus MFXDecPipeline::InitRenderParams()
         refInfoOut.CropY    = m_extDecVideoProcessing->Out.CropY;
         refInfoOut.CropW    = m_extDecVideoProcessing->Out.CropW;
         refInfoOut.CropH    = m_extDecVideoProcessing->Out.CropH;
+    }
+
+    if (refInfoOut.FourCC == MFX_FOURCC_P010 || refInfoOut.FourCC == MFX_FOURCC_P210)
+    {
+        refInfoOut.BitDepthLuma = refInfoOut.BitDepthChroma = 10;
+    }
+    else if (refInfoOut.FourCC == MFX_FOURCC_NV16)
+    {
+        refInfoOut.BitDepthLuma = refInfoOut.BitDepthChroma = 8;
     }
     m_components[eREN].m_extParams.merge
         ( m_components[eDEC].m_extParams.begin()

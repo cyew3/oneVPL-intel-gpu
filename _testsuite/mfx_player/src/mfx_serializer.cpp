@@ -330,6 +330,8 @@ void MFXStructureRef <mfxFrameInfo>::ConstructValues () const
     SERIALIZE_INT(AspectRatioW);
     SERIALIZE_INT(AspectRatioH);
     SERIALIZE_INT(PicStruct);
+    SERIALIZE_INT(BitDepthLuma);
+    SERIALIZE_INT(BitDepthChroma);
     
     m_values_map[VM_STRING("ChromaFormat")] = GetMFXChromaString(m_pStruct->ChromaFormat);
 }

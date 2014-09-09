@@ -88,7 +88,7 @@ BOOL VideoWindow::Initialize(const InitParams &refInit)
     else if (refInit.directLocation.right != 0)
     {
         RECT rect (refInit.directLocation);
-        //AdjustWindowRect(&rect, refInit.windowsStyle, FALSE);
+        AdjustWindowRect(&rect, refInit.windowsStyle, FALSE);
         w = rect.right - rect.left;
         h = rect.bottom - rect.top;
         x = m_RectWindow.left;

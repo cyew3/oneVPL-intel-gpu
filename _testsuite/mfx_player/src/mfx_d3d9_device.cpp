@@ -29,7 +29,7 @@ mfxStatus MFXD3D9Device::Init(mfxU32 nAdapter,
                               WindowHandle hWindow,
                               bool bIsWindowed,
                               mfxU32 VIDEO_RENDER_TARGET_FORMAT,
-                              int BACK_BUFFER_COUNT,
+                              int /*BACK_BUFFER_COUNT*/,
                               const vm_char *pDXVA2libname,
                               bool )
 {
@@ -86,12 +86,12 @@ mfxStatus MFXD3D9Device::Init(mfxU32 nAdapter,
     }
 
     m_D3DPP.BackBufferFormat           = (D3DFORMAT)VIDEO_RENDER_TARGET_FORMAT;
-    m_D3DPP.BackBufferCount            = BACK_BUFFER_COUNT;
+    m_D3DPP.BackBufferCount            = 24;//BACK_BUFFER_COUNT;
     m_D3DPP.SwapEffect                 = D3DSWAPEFFECT_DISCARD;
     m_D3DPP.hDeviceWindow              = (HWND)hWindow;
     m_D3DPP.Windowed                   = bIsWindowed;
     m_D3DPP.Flags                      = D3DPRESENTFLAG_VIDEO;
-    m_D3DPP.PresentationInterval       = D3DPRESENT_INTERVAL_DEFAULT;
+    m_D3DPP.PresentationInterval       = D3DPRESENT_INTERVAL_DEFAULT | D3DPRESENT_DONOTWAIT;
 
     //
     // Mark the back buffer lockable if software DXVA2 could be used.
@@ -183,10 +183,8 @@ mfxStatus MFXD3D9Device::Reset(WindowHandle hWindow,
         {
             RECT r;
             GetClientRect((HWND)hWindow, &r);
-            int x = GetSystemMetrics(SM_CXSCREEN);
-            int y = GetSystemMetrics(SM_CYSCREEN);
-            m_D3DPP.BackBufferWidth  = min(r.right - r.left, x);
-            m_D3DPP.BackBufferHeight = min(r.bottom - r.top, y);
+            m_D3DPP.BackBufferWidth  = r.right - r.left;
+            m_D3DPP.BackBufferHeight = r.bottom - r.top;
         }
         else
         {
@@ -395,7 +393,8 @@ mfxStatus MFXD3D9Device::RenderFrame(mfxFrameSurface1 * pSurface, mfxFrameAlloca
 
     {
         MPA_TRACE("D3DRender::StretchRect");
-        hr = m_pD3DD9Ex->StretchRect((IDirect3DSurface9*)pSurface->Data.MemId, NULL, pBackBuffer, NULL, D3DTEXF_NONE);
+        hr = m_pD3DD9Ex->StretchRect((IDirect3DSurface9 *)pSurface->Data.MemId, &source, pBackBuffer, &dest, D3DTEXF_NONE);
+        //hr = m_pD3DD9Ex->StretchRect((IDirect3DSurface9*)pSurface->Data.MemId, NULL, pBackBuffer, NULL, D3DTEXF_NONE);
         if (FAILED(hr))
         {
             MFX_TRACE_ERR(VM_STRING("StretchRect failed with error 0x") << std::hex<<hr);
