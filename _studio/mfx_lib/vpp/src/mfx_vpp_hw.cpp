@@ -1415,7 +1415,9 @@ mfxStatus  VideoVPPHW::Init(
         return MFX_WRN_PARTIAL_ACCELERATION;
     }
 
-    if (MFX_FOURCC_NV12 != par->vpp.Out.FourCC && MFX_FOURCC_RGB4 != par->vpp.Out.FourCC)
+    if (MFX_FOURCC_NV12    != par->vpp.Out.FourCC &&
+        MFX_FOURCC_A2RGB10 != par->vpp.Out.FourCC &&
+        MFX_FOURCC_RGB4    != par->vpp.Out.FourCC)
     {
         return MFX_ERR_UNSUPPORTED;
     }
@@ -1595,7 +1597,9 @@ mfxStatus VideoVPPHW::QueryIOSurf(
         return MFX_WRN_PARTIAL_ACCELERATION;
     }
 
-    if (MFX_FOURCC_NV12 != par->vpp.Out.FourCC && MFX_FOURCC_RGB4 != par->vpp.Out.FourCC)
+    if (MFX_FOURCC_NV12    != par->vpp.Out.FourCC &&
+        MFX_FOURCC_A2RGB10 != par->vpp.Out.FourCC &&
+        MFX_FOURCC_RGB4    != par->vpp.Out.FourCC)
     {
         return MFX_ERR_UNSUPPORTED;
     }
