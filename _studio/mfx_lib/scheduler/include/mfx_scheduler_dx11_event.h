@@ -36,8 +36,9 @@ public:
     };
     virtual ~DX11GlobalEvent()
     {
-        if (m_event_handle)
-            CloseHandle(m_event_handle);
+        // handle is managed by UMD - don't need to touch 
+        //if (m_event_handle)
+        //    CloseHandle(m_event_handle);
     };
     HANDLE CreateBatchBufferEvent()
     {

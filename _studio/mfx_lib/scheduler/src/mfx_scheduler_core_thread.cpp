@@ -36,10 +36,11 @@ mfxStatus mfxSchedulerCore::StartWakeUpThread(void)
 #endif
 
 #if defined(_WIN32) || defined(_WIN64)
-    m_hwTaskDone.handle = CreateEventExW(NULL, 
-                                        _T("Global\\IGFXKMDNotifyBatchBuffersComplete"), 
-                                        CREATE_EVENT_MANUAL_RESET, 
-                                        STANDARD_RIGHTS_ALL | EVENT_MODIFY_STATE);
+    if (!m_hwTaskDone.handle)
+        m_hwTaskDone.handle = CreateEventExW(NULL, 
+                                            _T("Global\\IGFXKMDNotifyBatchBuffersComplete"), 
+                                            CREATE_EVENT_MANUAL_RESET, 
+                                            STANDARD_RIGHTS_ALL | EVENT_MODIFY_STATE);
     if (m_hwTaskDone.handle)
     {
         // create 'hardware task done' thread

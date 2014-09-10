@@ -202,6 +202,10 @@ mfxStatus mfxSchedulerCore::Initialize(const MFX_SCHEDULER_PARAM *pParam)
                                         _T("Global\\IGFXKMDNotifyBatchBuffersComplete"), 
                                         CREATE_EVENT_MANUAL_RESET, 
                                         STANDARD_RIGHTS_ALL | EVENT_MODIFY_STATE);
+    if (m_hwTaskDone.handle)
+        m_zero_thread_wait = 15; // 15 ms will be if we have event notification
+    else 
+        m_zero_thread_wait  = 1;
     
     #endif
 #else
@@ -376,8 +380,16 @@ mfxStatus mfxSchedulerCore::Synchronize(mfxTaskHandle handle, mfxU32 timeToWait)
                 break;
             
             if (MFX_TASK_DONE!= call.res)
-                vm_event_timed_wait(&m_hwTaskDone, 1);
-
+            {
+                vm_status vmRes;                    
+                vmRes = vm_event_timed_wait(&m_hwTaskDone, m_zero_thread_wait);
+                if (VM_OK == vmRes|| VM_TIMEOUT == vmRes)
+                {
+                    vmRes = vm_event_reset(&m_hwTaskDone);
+                    IncrementHWEventCounter();
+                }
+                
+            }
         }
     }
 
@@ -746,7 +758,6 @@ mfxStatus mfxSchedulerCore::AddTask(const MFX_TASK &task, mfxSyncPoint *pSyncPoi
 
 #if defined  (MFX_VA)
 #if defined  (MFX_D3D11_ENABLED)
-#if !defined (EXTERNAL_THREADING)
     if (!m_pdx11event && !m_hwTaskDone.handle)
     {
         m_pdx11event = new DX11GlobalEvent(m_param.pCore);
@@ -756,9 +767,11 @@ mfxStatus mfxSchedulerCore::AddTask(const MFX_TASK &task, mfxSyncPoint *pSyncPoi
         if (m_hwTaskDone.handle)
             m_zero_thread_wait = 15;
 
+#if !defined (EXTERNAL_THREADING)
         StartWakeUpThread();
-    }
 #endif
+
+    }
 #endif
 #endif
 
