@@ -10,6 +10,7 @@
 
 #if defined (MFX_ENABLE_H265_VIDEO_ENCODE)
 
+#include <memory>
 #include "mfx_h265_frame.h"
 #include "mfx_h265_enc.h"
 #include "vm_file.h"
@@ -30,13 +31,14 @@ T align_pointer(void *pv, size_t lAlignValue = UMC::DEFAULT_ALIGN_VALUE)
 }
 
 
-mfxStatus H265Frame::Create(H265VideoParam *par)
+void H265Frame::Create(H265VideoParam *par)
 {
     Ipp32s numCtbs = par->PicWidthInCtbs * par->PicHeightInCtbs;
     Ipp32s numCtbs_parts = numCtbs << par->Log2NumPartInCU;
-//    Ipp32s numCtbs_padd = (par->PicWidthInCtbs + 2) * (par->PicHeightInCtbs + 2);
+    //Ipp32s numCtbs_padd = (par->PicWidthInCtbs + 2) * (par->PicHeightInCtbs + 2);
 
-    padding = par->MaxCUSize + 16;
+    //padding = par->MaxCUSize + 16;
+    padding = par->MaxCUSize + 64;
 
     width = par->Width;
     height = par->Height;
@@ -44,14 +46,30 @@ mfxStatus H265Frame::Create(H265VideoParam *par)
     m_bitDepthChroma = par->bitDepthChroma;
     m_bdLumaFlag = par->bitDepthLuma > 8;
     m_bdChromaFlag = par->bitDepthChroma > 8;
-
-    Ipp32s plane_size_luma = (width + padding * 2) * (height + padding * 2);
-    Ipp32s plane_size_chroma = plane_size_luma >> 1;
+    m_chromaFormatIdc = par->chromaFormatIdc;
 
     pitch_luma_bytes = pitch_luma_pix = width + padding * 2;
-    pitch_chroma_bytes = pitch_chroma_pix = pitch_luma_pix;
 
-    pitch_luma = pitch_luma_pix;
+    Ipp32s plane_size_luma = (width + padding * 2) * (height + padding * 2);
+    Ipp32s plane_size_chroma;
+    
+    switch (m_chromaFormatIdc) {
+    case MFX_CHROMAFORMAT_YUV422:
+       plane_size_chroma = plane_size_luma;
+       pitch_chroma_pix = pitch_luma_pix;
+       break;
+    case MFX_CHROMAFORMAT_YUV444:
+       plane_size_chroma = plane_size_luma << 1;
+       pitch_chroma_pix = pitch_luma_pix << 1;
+       break;
+    default:
+    case MFX_CHROMAFORMAT_YUV420:
+       plane_size_chroma = plane_size_luma >> 1;
+       pitch_chroma_pix = pitch_luma_pix;
+       break;
+    }
+
+    pitch_chroma_bytes = pitch_chroma_pix;
 
     if (m_bdLumaFlag) {
         plane_size_luma <<= 1;
@@ -66,16 +84,15 @@ mfxStatus H265Frame::Create(H265VideoParam *par)
     len += (plane_size_luma + plane_size_chroma) + ALIGN_VALUE*3;
 
     mem = H265_Malloc(len);
-    MFX_CHECK_NULL_PTR1(len);
+    if (!mem)
+        throw std::exception();
 
     cu_data = align_pointer<H265CUData *> (mem, ALIGN_VALUE);
     y = align_pointer<Ipp8u *> (cu_data + numCtbs_parts, ALIGN_VALUE);
     uv = align_pointer<Ipp8u *> (y + plane_size_luma, ALIGN_VALUE);;
 
     y += ((pitch_luma_pix + 1) * padding) << m_bdLumaFlag;
-    uv += (((pitch_chroma_pix >> 1) + 1) * padding) << m_bdChromaFlag;
-
-    return MFX_ERR_NONE;
+    uv += ((pitch_chroma_pix * padding >> par->chromaShiftH) + (padding << par->chromaShiftWInv)) << m_bdChromaFlag;
 }
 
 inline static void memset_bd(Ipp8u *dst, Ipp32s val, Ipp32s size_pix, Ipp8u bdFlag) {
@@ -86,23 +103,40 @@ inline static void memset_bd(Ipp8u *dst, Ipp32s val, Ipp32s size_pix, Ipp8u bdFl
     }
 }
 
-mfxStatus H265Frame::CopyFrame(mfxFrameSurface1 *surface)
+IppStatus ippsCopy(const Ipp8u *src, Ipp8u *dst, Ipp32s len)   { return ippsCopy_8u(src, dst, len); }
+IppStatus ippsCopy(const Ipp16u *src, Ipp16u *dst, Ipp32s len) { return ippsCopy_16s((const Ipp16s *)src, (Ipp16s *)dst, len); }
+IppStatus ippsCopy(const Ipp32u *src, Ipp32u *dst, Ipp32s len) { return ippsCopy_32s((const Ipp32s *)src, (Ipp32s *)dst, len); }
+
+template <class PixType> void PadOnePix(PixType *frame, Ipp32s pitch, Ipp32s width, Ipp32s height)
+{
+    PixType *ptr = frame;
+    for (Ipp32s i = 0; i < height; i++, ptr += pitch) {
+        ptr[-1] = ptr[0];
+        ptr[width] = ptr[width - 1];
+    }
+
+    ptr = frame - 1;
+    ippsCopy(ptr, ptr - pitch, width + 2);
+    ptr = frame + height * pitch - 1;
+    ippsCopy(ptr - pitch, ptr, width + 2);
+}
+
+void H265Frame::CopyFrame(const mfxFrameSurface1 *surface)
 {
     IppiSize roi = { width, height };
     mfxU16 InputBitDepthLuma = 8;
     mfxU16 InputBitDepthChroma = 8;
 
-    if (surface->Info.FourCC == MFX_FOURCC_P010) {
+    if (surface->Info.FourCC == MFX_FOURCC_P010 || surface->Info.FourCC == MFX_FOURCC_P210) {
         InputBitDepthLuma = 10;
         InputBitDepthChroma = 10;
     }
 
     switch ((m_bdLumaFlag << 1) | (InputBitDepthLuma > 8)) {
     case 0:
-        ippiCopy_8u_C1R(surface->Data.Y, surface->Data.Pitch, y, pitch_luma, roi);
+        ippiCopy_8u_C1R(surface->Data.Y, surface->Data.Pitch, y, pitch_luma_bytes, roi);
         break;
     case 1:
-//        ippiRShiftC_16u_C1IR(InputBitDepthLuma - 8, (Ipp16u*)surface->Data.Y, surface->Data.Pitch, roi);
         ippiConvert_16u8u_C1R((Ipp16u*)surface->Data.Y, surface->Data.Pitch, y, pitch_luma_bytes, roi);
         break;
     case 2:
@@ -116,14 +150,14 @@ mfxStatus H265Frame::CopyFrame(mfxFrameSurface1 *surface)
         VM_ASSERT(0);
     }
 
-    roi.height >>= 1;
+    roi.width <<= (m_chromaFormatIdc == MFX_CHROMAFORMAT_YUV444);
+    roi.height >>= (m_chromaFormatIdc == MFX_CHROMAFORMAT_YUV420);
 
     switch ((m_bdChromaFlag << 1) | (InputBitDepthChroma > 8)) {
     case 0:
-        ippiCopy_8u_C1R(surface->Data.UV, surface->Data.Pitch, uv, pitch_luma, roi);
+        ippiCopy_8u_C1R(surface->Data.UV, surface->Data.Pitch, uv, pitch_chroma_bytes, roi);
         break;
     case 1:
-//        ippiRShiftC_16u_C1IR(InputBitDepthChroma - 8, (Ipp16u*)surface->Data.UV, surface->Data.Pitch, roi);
         ippiConvert_16u8u_C1R((Ipp16u*)surface->Data.UV, surface->Data.Pitch, uv, pitch_chroma_bytes, roi);
         break;
     case 2:
@@ -137,7 +171,13 @@ mfxStatus H265Frame::CopyFrame(mfxFrameSurface1 *surface)
         VM_ASSERT(0);
     }
 
-    return MFX_ERR_NONE;
+    // so far needed for gradient analysis only
+    (m_bdLumaFlag == 0)
+        ? PadOnePix((Ipp8u *)y, pitch_luma_pix, width, height)
+        : PadOnePix((Ipp16u *)y, pitch_luma_pix, width, height);
+    (m_bdChromaFlag == 0)
+        ? PadOnePix((Ipp16u *)uv, pitch_chroma_pix / 2, width / 2, height / 2)
+        : PadOnePix((Ipp32u *)uv, pitch_chroma_pix / 2, width / 2, height / 2);
 }
 
 static void ExpandPlane(Ipp8u elem_shift, Ipp8u *ptr, Ipp32s pitch_bytes, Ipp32s width, Ipp32s height, Ipp32s padding_w, Ipp32s padding_h) {
@@ -184,35 +224,162 @@ void H265Frame::doPadding()
         ExpandPlane(1, y, pitch_luma_bytes, width, height, padding, padding);
     }
 
+    Ipp32s shift_w = m_chromaFormatIdc != MFX_CHROMAFORMAT_YUV444 ? 1 : 0;
+    Ipp32s shift_h = m_chromaFormatIdc == MFX_CHROMAFORMAT_YUV420 ? 1 : 0;
+        
     if (!m_bdChromaFlag) {
-        ExpandPlane(1, uv, pitch_chroma_bytes, width >> 1, height >> 1, padding >> 1, padding >> 1);
+        ExpandPlane(1, uv, pitch_chroma_bytes, width >> shift_w, height >> shift_h, padding >> shift_w, padding >> shift_h);
     } else {
-        ExpandPlane(2, uv, pitch_chroma_bytes, width >> 1, height >> 1, padding >> 1, padding >> 1);
+        ExpandPlane(2, uv, pitch_chroma_bytes, width >> shift_w, height >> shift_h, padding >> shift_w, padding >> shift_h);
     }
 }
-
-void H265Frame::Dump(const vm_char* fname, H265VideoParam *par, H265FrameList *dpb, Ipp32s frame_num)
+enum LineType
 {
+    TOP,
+    MIDDLE,
+    BOTTOM
+};
+
+static void ExpandPlaneOneLine(Ipp8u elem_shift, Ipp8u *ptr, Ipp32s pitch_bytes, Ipp32s width, Ipp32s height, Ipp32s padding_w, Ipp32s padding_h, Ipp32s cuSize, LineType type, int lineNumber)
+{
+    Ipp8u *src = ptr;
+    Ipp8u *dst = src - pitch_bytes;
+    Ipp8u * p0;
+    const int offset =7;
+
+    if(TOP == type) {
+        src = ptr;
+        dst = src - pitch_bytes;
+        for (Ipp32s y = 0; y < padding_h; y++, dst -= pitch_bytes) {
+            ippsCopy_8u(src, dst, width<<elem_shift);
+        }
+
+        p0 = ptr - padding_h * pitch_bytes;
+        if(0 == elem_shift) {
+            for (Ipp32s y = 0; y < padding_h; y++, p0 += pitch_bytes) {
+                ippsSet_8u(*p0, p0 - padding_w, padding_w);
+            }
+        } else {
+            for (Ipp32s y = 0; y < padding_h; y++, p0 += pitch_bytes) {
+                ippsSet_16s(*(Ipp16s*)p0, (Ipp16s*)p0 - padding_w, padding_w);
+            }
+        }
+
+        p0 = ptr + ((width - 1) << elem_shift) - padding_h * pitch_bytes;
+        if(0 == elem_shift) {
+            for (Ipp32s y = 0; y < padding_h; y++, p0 += pitch_bytes) {
+                ippsSet_8u(*p0, p0 + 1, padding_w);
+            }
+        } else {
+            for (Ipp32s y = 0; y < padding_h; y++, p0 += pitch_bytes) {
+                ippsSet_16s(*(Ipp16s*)p0, (Ipp16s*)p0 + 1, padding_w);
+            }
+        }
+    }
+
+    // common
+    Ipp8u *ptrCtb = ptr + (lineNumber*(cuSize>>elem_shift)-offset) * pitch_bytes;
+
+    p0 = ptrCtb;
+    for (Ipp32s y = 0; y < cuSize; y++, p0 += pitch_bytes) {
+        if(0 == elem_shift) {
+            ippsSet_8u(*p0, p0 - padding_w, padding_w);
+        } else {
+            ippsSet_16s(*(Ipp16s*)p0, (Ipp16s*)p0 - padding_w, padding_w);
+        }
+    }
+
+    p0 = ptrCtb + ((width - 1) << elem_shift);
+    for (Ipp32s y = 0; y < cuSize; y++, p0 += pitch_bytes) {
+        if(0 == elem_shift) {
+            ippsSet_8u(*p0, p0 + 1, padding_w);
+        } else {
+            ippsSet_16s(*(Ipp16s*)p0, (Ipp16s*)p0 + 1, padding_w);
+        }
+    }
+
+
+    if(BOTTOM == type) {
+        src = ptr + (height-1)*pitch_bytes;
+        dst = src + pitch_bytes;
+        for (Ipp32s y = 0; y < padding_h; y++, dst += pitch_bytes) {
+            ippsCopy_8u(src, dst, width<<elem_shift);
+        }
+
+        p0 = ptr + (height-1-offset)*pitch_bytes;
+        for (Ipp32s y = 0; y < padding_h+offset; y++, p0 += pitch_bytes) {
+            if(0 == elem_shift) {
+                ippsSet_8u(*p0, p0 - padding_w, padding_w);
+            } else {
+                ippsSet_16s(*(Ipp16s*)p0, (Ipp16s*)p0 - padding_w, padding_w);
+            }
+        }
+
+        p0 = ptr + ((width - 1) << elem_shift) + (height-1-offset) * pitch_bytes;
+        for (Ipp32s y = 0; y < padding_h+offset; y++, p0 += pitch_bytes) {
+            if(0 == elem_shift) {
+                ippsSet_8u(*p0, p0 + 1, padding_w);
+            } else {
+                ippsSet_16s(*(Ipp16s*)p0, (Ipp16s*)p0 + 1, padding_w);
+            }
+        }
+    }
+    
+}
+
+
+void H265Frame::doPaddingOneLine(int number, int cuSize, bool isLast)
+{
+    //if (!m_bdLumaFlag) {
+    //    //ippiExpandPlane_H264_8u_C1R(y, width, height, pitch_luma_bytes, padding, IPPVC_FRAME);
+    //    ExpandPlane(0, y, pitch_luma_bytes, width, height, padding, padding);
+    //} else {
+    //    ExpandPlane(1, y, pitch_luma_bytes, width, height, padding, padding);
+    //}
+
+    //if (!m_bdChromaFlag) {
+    //    ExpandPlane(1, uv, pitch_chroma_bytes, width >> 1, height >> 1, padding >> 1, padding >> 1);
+    //} else {
+    //    ExpandPlane(2, uv, pitch_chroma_bytes, width >> 1, height >> 1, padding >> 1, padding >> 1);
+    //}
+
+    // Y only
+    LineType type;
+    if (isLast) type = BOTTOM;
+    else if (0 == number) type = TOP;
+    else type = MIDDLE;
+
+    ExpandPlaneOneLine(0, y, pitch_luma_bytes,  width, height, padding, padding, cuSize, type, number);
+    ExpandPlaneOneLine(1, uv, pitch_chroma_bytes, width >> 1, height >> 1, padding >> 1, padding >> 1, cuSize, type, number);
+}
+
+
+void Dump(const vm_char* fname, H265VideoParam *par, H265Frame* frame, TaskList & dpb )
+{
+    Ipp32s frame_num = frame->m_encOrder;
     vm_file *f;
     mfxU8* fbuf = NULL;
     Ipp32s W = par->Width - par->CropLeft - par->CropRight;
     Ipp32s H = par->Height - par->CropTop - par->CropBottom;
     Ipp32s bd_shift_luma = par->bitDepthLuma > 8;
     Ipp32s bd_shift_chroma = par->bitDepthChroma > 8;
-    Ipp32s plane_size = (W*H << bd_shift_luma) + (W*H/2 << bd_shift_chroma);
+    Ipp32s shift_w = frame->m_chromaFormatIdc != MFX_CHROMAFORMAT_YUV444 ? 1 : 0;
+    Ipp32s shift_h = frame->m_chromaFormatIdc == MFX_CHROMAFORMAT_YUV420 ? 1 : 0;
+    Ipp32s shift = 2 - shift_w - shift_h;
+    Ipp32s plane_size = (W*H << bd_shift_luma) + (((W*H/2) << shift) << bd_shift_chroma);
 
     if (!fname || !fname[0])
         return;
 
     Ipp32s numlater = 0; // number of dumped frames with later POC
-    if (m_PicCodType == MFX_FRAMETYPE_B) {
-        H265Frame *pFrm;
-        for (pFrm = dpb->head(); pFrm; pFrm = pFrm->m_pFutureFrame) {
-            if (pFrm->m_wasEncoded && m_PicOrderCnt < pFrm->m_PicOrderCnt)
+    if (frame->m_PicCodType == MFX_FRAMETYPE_B) {
+        for (TaskIter it = dpb.begin(); it != dpb.end(); it++ ) {
+            H265Frame *pFrm = (*it)->m_frameRecon;
+            if (NULL == (*it)->m_frameOrigin && frame->m_poc < pFrm->m_poc)
                 numlater++;
         }
     }
-    if ( numlater ) { // simple reorder for B: read last ref, replacing with B, write ref
+    if (numlater) { // simple reorder for B: read last ref, replacing with B, write ref
         f = vm_file_fopen(fname,VM_STRING("r+b"));
         if (!f) return;
         fbuf = new mfxU8[numlater*plane_size];
@@ -228,10 +395,10 @@ void H265Frame::Dump(const vm_char* fname, H265VideoParam *par, H265FrameList *d
         return;
 
     int i;
-    mfxU8 *p = y + ((par->CropLeft + par->CropTop * pitch_luma_pix) << bd_shift_luma);
+    mfxU8 *p = frame->y + ((par->CropLeft + par->CropTop * frame->pitch_luma_pix) << bd_shift_luma);
     for (i = 0; i < H; i++) {
         vm_file_fwrite(p, 1<<bd_shift_luma, W, f);
-        p += pitch_luma_bytes;
+        p += frame->pitch_luma_bytes;
     }
     // writing nv12 to yuv420
     // maxlinesize = 4096
@@ -240,23 +407,23 @@ void H265Frame::Dump(const vm_char* fname, H265VideoParam *par, H265FrameList *d
             mfxU16 uvbuf[2048];
             mfxU16 *p;
             for (int part = 0; part <= 1; part++) {
-                p = (Ipp16u*)uv + part + par->CropLeft + (par->CropTop>>1) * pitch_chroma_pix;
-                for (i = 0; i < H >> 1; i++) {
-                    for (int j = 0; j < W>>1; j++)
+                p = (Ipp16u*)frame->uv + part + (par->CropLeft >> shift_w << 1) + (par->CropTop>>shift_h) * frame->pitch_chroma_pix;
+                for (i = 0; i < H >> shift_h; i++) {
+                    for (int j = 0; j < W>>shift_w; j++)
                         uvbuf[j] = p[2*j];
-                    vm_file_fwrite(uvbuf, 2, W>>1, f);
-                    p += pitch_chroma_pix;
+                    vm_file_fwrite(uvbuf, 2, W>>shift_w, f);
+                    p += frame->pitch_chroma_pix;
                 }
             }
         } else {
             mfxU8 uvbuf[2048];
             for (int part = 0; part <= 1; part++) {
-                p = uv + part + par->CropLeft + (par->CropTop>>1) * pitch_chroma_pix;
-                for (i = 0; i < H >> 1; i++) {
-                    for (int j = 0; j < W>>1; j++)
+                p = frame->uv + part + (par->CropLeft >> shift_w << 1) + (par->CropTop>>shift_h) * frame->pitch_chroma_pix;
+                for (i = 0; i < H >> shift_h; i++) {
+                    for (int j = 0; j < W>>shift_w; j++)
                         uvbuf[j] = p[2*j];
-                    vm_file_fwrite(uvbuf, 1, W>>1, f);
-                    p += pitch_chroma_pix;
+                    vm_file_fwrite(uvbuf, 1, W>>shift_w, f);
+                    p += frame->pitch_chroma_pix;
                 }
             }
         }
@@ -269,470 +436,133 @@ void H265Frame::Dump(const vm_char* fname, H265VideoParam *par, H265FrameList *d
     vm_file_fclose(f);
 }
 
+
 void H265Frame::Destroy()
 {
     if (mem)
         H265_Free(mem);
+    mem = NULL;
+}
+
+void H265Frame::ResetMemInfo()
+{
+    mem = NULL;
+    cu_data = NULL;
+    y = NULL;
+    uv = NULL;
+
+    width = 0;
+    height = 0;
+    padding = 0;
+    pitch_luma_pix = 0;
+    pitch_luma_bytes = 0;
+    pitch_chroma_pix = 0;
+    pitch_chroma_bytes = 0;
+    m_bitDepthLuma = 0;
+    m_bdLumaFlag = 0;
+    m_bitDepthChroma = 0;
+    m_bdChromaFlag = 0;
+    m_chromaFormatIdc = 0;
+}
+
+void H265Frame::ResetEncInfo()
+{
+    m_timeStamp = 0;
+    m_PicCodType = 0;
+    m_RPSIndex = 0;
+    m_wasLookAheadProcessed = 0;
+    m_pyramidLayer = 0;
+    m_miniGopCount = 0;
+    m_biFramesInMiniGop = 0;
+    m_frameOrder = 0;
+    m_frameOrderOfLastIdr = 0;
+    m_frameOrderOfLastIntra = 0;
+    m_frameOrderOfLastAnchor = 0;
+    m_poc = 0;
+    m_encOrder = 0;
+    m_isShortTermRef = 0;
+    m_isLongTermRef = 0;
+    m_isIdrPic = 0;
+    m_isRef = 0;
+    memset(m_refPicList, 0, sizeof(m_refPicList));
+    memset(m_mapRefIdxL1ToL0, 0, sizeof(m_mapRefIdxL1ToL0));
+    m_allRefFramesAreFromThePast = 0;
+}
+
+void H265Frame::ResetCounters()
+{
+    m_codedRow = 0;
+    m_refCounter = 0;
+}
+
+void H265Frame::CopyEncInfo(const H265Frame *src)
+{
+    m_timeStamp = src->m_timeStamp;
+    m_PicCodType = src->m_PicCodType;
+    m_RPSIndex = src->m_RPSIndex;
+    m_wasLookAheadProcessed = src->m_wasLookAheadProcessed;
+    m_pyramidLayer = src->m_pyramidLayer;
+    m_miniGopCount = src->m_miniGopCount;
+    m_biFramesInMiniGop = src->m_biFramesInMiniGop;
+    m_frameOrder = src->m_frameOrder;
+    m_frameOrderOfLastIdr = src->m_frameOrderOfLastIdr;
+    m_frameOrderOfLastIntra = src->m_frameOrderOfLastIntra;
+    m_frameOrderOfLastAnchor = src->m_frameOrderOfLastAnchor;
+    m_poc = src->m_poc;
+    m_encOrder = src->m_encOrder;
+    m_isShortTermRef = src->m_isShortTermRef;
+    m_isLongTermRef = src->m_isLongTermRef;
+    m_isIdrPic = src->m_isIdrPic;
+    m_isRef = src->m_isRef;
+    small_memcpy(m_refPicList, src->m_refPicList, sizeof(m_refPicList));
+    small_memcpy(m_mapRefIdxL1ToL0, src->m_mapRefIdxL1ToL0, sizeof(m_mapRefIdxL1ToL0));
+    m_allRefFramesAreFromThePast = src->m_allRefFramesAreFromThePast;
 }
 
 
-void H265FrameList::append(H265Frame *pFrame)
+FramePtrIter FindFreeFrame(FramePtrList & queue)
 {
-    // Error check
-    if (!pFrame)
-    {
-        // Sent in a NULL frame
-        return;
-    }
-
-    // Has a list been constructed - is their a head?
-    if (!m_pHead)
-    {
-        // Must be the first frame appended
-        // Set the head to the current
-        m_pHead = pFrame;
-        m_pHead->setPrevious(0);
-        m_pCurrent = m_pHead;
-    }
-
-    if (m_pTail)
-    {
-        // Set the old tail as the previous for the current
-        pFrame->setPrevious(m_pTail);
-
-        // Set the old tail's future to the current
-        m_pTail->setFuture(pFrame);
-    }
-    else
-    {
-        // Must be the first frame appended
-        // Set the tail to the current
-        m_pTail = pFrame;
-    }
-
-    // The current is now the new tail
-    m_pTail = pFrame;
-    m_pTail->setFuture(0);
-
-    //
-}
-
-void H265FrameList::insertAtCurrent(H265Frame *pFrame)
-{
-    if (m_pCurrent)
-    {
-        H265Frame *pFutureFrame = m_pCurrent->future();
-
-        pFrame->setFuture(pFutureFrame);
-
-        if (pFutureFrame)
-        {
-            pFutureFrame->setPrevious(pFrame);
-        }
-        else
-        {
-            // Must be at the tail
-            m_pTail = pFrame;
-        }
-
-        pFrame->setPrevious(m_pCurrent);
-        m_pCurrent->setFuture(pFrame);
-    }
-    else
-    {
-        // Must be the first frame
-        append(pFrame);
-    }
-}
-
-H265FrameList::~H265FrameList()
-{
-    H265Frame *pCurr = m_pHead;
-
-    while (pCurr)
-    {
-        H265Frame *pNext = pCurr->future();
-        pCurr->Destroy();
-        delete pCurr;
-        pCurr = pNext;
-    }
-    m_pHead = m_pTail = 0;
-}
-
-H265Frame* H265FrameList::detachHead()
-{
-    H265Frame *pHead = m_pHead;
-    if (pHead)
-    {
-        m_pHead = m_pHead->future();
-        if (m_pHead)
-            m_pHead->setPrevious(0);
-        else
-        {
-            m_pTail = 0;
-        }
-    }
-    m_pCurrent = m_pHead;
-    return pHead;
+    FramePtrIter end = queue.end();
+    for (FramePtrIter i = queue.begin(); i != end; ++i)
+        if (vm_interlocked_cas32(&(*i)->m_refCounter, 1, 0) == 0)
+            return i;
+    return end;
 }
 
 
-void H265FrameList::RemoveFrame(H265Frame *pFrm)
+FramePtrIter GetFreeFrame(FramePtrList & queue, H265VideoParam *par)
 {
-    H265Frame *pPrev = pFrm->previous();
-    H265Frame *pFut = pFrm->future();
-    if (pFrm==m_pHead) //must be equal to pPrev==NULL
-    {
-        VM_ASSERT(pPrev==NULL);
-        detachHead();
-    }
-    else
-    {
-        if (pFut==NULL)
-        {
-            m_pTail = pPrev;
-            pPrev->setFuture(0);
-        }
-        else
-        {
-            pPrev->setFuture(pFut);
-            pFut->setPrevious(pPrev);
-        }
-    }
-    m_pCurrent = m_pHead;
-}
+    FramePtrIter i = FindFreeFrame(queue);
+    if (i != queue.end())
+        return i;
 
-H265Frame *H265FrameList::findMostDistantShortTermRefs(Ipp32s POC)
-{
-    H265Frame *pFrm = NULL;
-    Ipp32s maxDeltaPOC = 0;//0x7fffffff;
-
-    for (Ipp32s i = 0; i < 2; i++) {
-        H265Frame *pCurr = m_pHead;
-        while (pCurr)
-        {
-            if (pCurr->isShortTermRef() && (i == 0 ? pCurr->m_PGOPIndex : 1))
-            {
-                Ipp32s deltaPOC = pCurr->PicOrderCnt() - POC;
-
-                if (deltaPOC < 0)
-                    deltaPOC = -deltaPOC;
-
-                if (deltaPOC > maxDeltaPOC)
-                {
-                    maxDeltaPOC = deltaPOC;
-                    pFrm = pCurr;
-                }
-            }
-            pCurr = pCurr->future();
-        }
-        if (pFrm) return pFrm;
-    }
-
-    return pFrm;
-}
-
-H265Frame *H265FrameList::findMostDistantLongTermRefs(Ipp32s POC)
-{
-    H265Frame *pCurr = m_pHead;
-    H265Frame *pFrm = NULL;
-    Ipp32s maxDeltaPOC = 0x7fffffff;
-
-    while (pCurr)
-    {
-        if (pCurr->isLongTermRef())
-        {
-            Ipp32s deltaPOC = pCurr->PicOrderCnt() - POC;
-
-            if (deltaPOC < 0)
-                deltaPOC = -deltaPOC;
-
-            if (deltaPOC < maxDeltaPOC)
-            {
-                maxDeltaPOC = deltaPOC;
-                pFrm = pCurr;
-            }
-        }
-        pCurr = pCurr->future();
-    }
-
-    return pFrm;
-}
-
-void H265FrameList::countActiveRefs(Ipp32u &NumShortTermL0,
-                                           Ipp32u &NumLongTermL0,
-                                           Ipp32u &NumShortTermL1,
-                                           Ipp32u &NumLongTermL1,
-                                           Ipp32s curPOC)
-{
-    H265Frame *pCurr = m_pHead;
-    NumShortTermL0 = 0;
-    NumLongTermL0 = 0;
-    NumShortTermL1 = 0;
-    NumLongTermL1 = 0;
-
-    while (pCurr)
-    {
-        if (pCurr->isShortTermRef())
-        {
-            if (pCurr->PicOrderCnt() < curPOC)
-            {
-                NumShortTermL0++;
-            }
-            else
-            {
-                NumShortTermL1++;
-            }
-        }
-        else if (pCurr->isLongTermRef())
-        {
-            if (pCurr->PicOrderCnt() < curPOC)
-            {
-                NumLongTermL0++;
-            }
-            else
-            {
-                NumLongTermL1++;
-            }
-        }
-        pCurr = pCurr->future();
-    }
-
-}    // countActiveRefs
-
-void H265FrameList::countL1Refs(Ipp32u &NumRefs, Ipp32s curPOC)
-{
-    H265Frame *pCurr = m_pHead;
-    NumRefs = 0;
-
-    while (pCurr)
-    {
-        if ((pCurr->isShortTermRef() || pCurr->isLongTermRef()) && pCurr->PicOrderCnt()>curPOC)
-            NumRefs++;
-        pCurr = pCurr->future();
-    }
-
-}    // countL1Refs
-
-void H265FrameList::IncreaseRefPicListResetCount(H265Frame *ExcludeFrame)
-{
-    H265Frame *pCurr = m_pHead;
-
-    while (pCurr)
-    {
-        if (pCurr!=ExcludeFrame)
-        {
-            pCurr->IncreaseRefPicListResetCount();
-        }
-        pCurr = pCurr->future();
-    }
-
-}    // IncreaseRefPicListResetCount
-
-H265Frame *H265FrameList::findFrameByPOC(Ipp32s POC)
-{
-    H265Frame *pCurr = m_pHead;
-
-    while (pCurr)
-    {
-        if (pCurr->PicOrderCnt() == POC)
-        {
-            return pCurr;
-        }
-        pCurr = pCurr->future();
-    }
-    return NULL;
-}
-
-H265Frame *H265FrameList::findNextDisposable(void)
-{
-    H265Frame *pTmp;
-
-    if (!m_pCurrent)
-    {
-        // There are no frames in the list, return
-        return NULL;
-    }
-
-    // Loop through starting with the next frame after the current one
-    for (pTmp = m_pCurrent->future(); pTmp; pTmp = pTmp->future())
-    {
-        if (pTmp->isDisposable())
-        {
-            // We got one
-
-            // Update the current
-            m_pCurrent = pTmp;
-
-            return pTmp;
-        }
-    }
-
-    // We got all the way to the tail without finding a free frame
-    // Start from the head and go until the current
-    for (pTmp = m_pHead; pTmp && pTmp->previous() != m_pCurrent; pTmp = pTmp->future())
-    {
-        if (pTmp->isDisposable())
-        {
-            // We got one
-
-            // Update the current
-            m_pCurrent = pTmp;
-            return pTmp;
-        }
-    }
-
-    // We never found one
-    return NULL;
-}
-
-H265Frame *H265FrameList::findOldestToEncode(H265FrameList *dpb,
-                                             Ipp32u min_L1_refs,
-                                             Ipp8u isBpyramid,
-                                             Ipp8u ByramidNextFrameNum)
-{
-    H265Frame *pCurr = m_pHead;
-    H265Frame *pOldest = NULL;
-    Ipp32s  SmallestPicOrderCnt = 0x7fffffff;    // very large positive
-    Ipp32s  LargestRefPicListResetCount = 0;
-    Ipp8u exclude_cur=false;
-    while (pCurr)
-    {
-        if (!pCurr->wasEncoded())
-        {
-            if (pCurr->m_PicCodType == MFX_FRAMETYPE_B)
-            {
-                Ipp32u active_L1_refs;
-                dpb->countL1Refs(active_L1_refs,pCurr->PicOrderCnt());
-                exclude_cur=active_L1_refs<min_L1_refs;
-
-                if ((min_L1_refs > 0) && (isBpyramid) && (!exclude_cur))
-                {
-                    exclude_cur = (pCurr->m_BpyramidNumFrame != ByramidNextFrameNum);
-                }
-            }
-            if (!exclude_cur)
-            {
-                // corresponding frame
-                if (pCurr->RefPicListResetCount() > LargestRefPicListResetCount )
-                {
-                    pOldest = pCurr;
-                    SmallestPicOrderCnt = pCurr->PicOrderCnt();
-                    LargestRefPicListResetCount = pCurr->RefPicListResetCount();
-                }
-                else if    ((pCurr->PicOrderCnt() < SmallestPicOrderCnt ) && (pCurr->RefPicListResetCount() == LargestRefPicListResetCount ))
-                {
-                    pOldest = pCurr;
-                    SmallestPicOrderCnt = pCurr->PicOrderCnt();
-                }
-            }
-        }
-        pCurr = pCurr->future();
-        exclude_cur=false;
-    }
-
-    if (pOldest && pOldest->m_bIsIDRPic) { // correct POC for leading B w/o L0
-        for (pCurr = m_pHead; pCurr; pCurr = pCurr->future()) {
-            if (!pCurr->wasEncoded() && pCurr->m_PicCodType == MFX_FRAMETYPE_B &&
-                pCurr->m_PicOrderCounterAccumulated < pOldest->m_PicOrderCounterAccumulated) {
-                pCurr->m_PicOrderCnt += pCurr->m_PicOrderCounterAccumulated - pOldest->m_PicOrderCounterAccumulated;
-                pCurr->m_PicOrderCounterAccumulated = pOldest->m_PicOrderCounterAccumulated;
-                pCurr->m_RefPicListResetCount = pOldest->RefPicListResetCount();
-            }
-        }
-    }
-    // may be OK if NULL
-    return pOldest;
-
-}    // findOldestDisplayable
-
-H265Frame *H265FrameList::findOldestToLookAheadProcess(void)
-{
-    H265Frame *pCurr = m_pHead;
-    H265Frame *pOldest = NULL;
-    Ipp32s  smallestPOC = 0x7fffffff;    // very large positive
-    Ipp32s  LargestRefPicListResetCount = 0;
-    Ipp8u exclude_cur=false;
-    while (pCurr)
-    {
-        if (!pCurr->wasLAProcessed())
-        {
-            if( pCurr->PicOrderCnt() < smallestPOC)
-            {
-                pOldest = pCurr;
-                smallestPOC = pCurr->PicOrderCnt();
-            }
-        }
-        pCurr = pCurr->future();
-    }
-
-    // may be OK if NULL
-    return pOldest;
-
-}    // findOldestDisplayable
-
-void H265FrameList::unMarkAll()
-{
-    H265Frame *pCurr = m_pHead;
-
-    while (pCurr)
-    {
-        pCurr->m_isMarked = false;
-        pCurr = pCurr->future();
-    }
-}
-
-void H265FrameList::removeAllUnmarkedRef()
-{
-    H265Frame *pCurr = m_pHead;
-
-    while (pCurr)
-    {
-        if ((pCurr->wasEncoded()) && (!pCurr->m_isMarked))
-        {
-            pCurr->unSetisLongTermRef();
-            pCurr->unSetisShortTermRef();
-        }
-        pCurr = pCurr->future();
-    }
+    std::auto_ptr<H265Frame> newFrame(new H265Frame());
+    newFrame->Create(par);
+    newFrame->AddRef();
+    queue.push_back(newFrame.release());
+    return --queue.end();
 }
 
 
-H265Frame *H265FrameList::InsertFrame(mfxFrameSurface1 *surface,
-                                      H265VideoParam *par
-                                      /*,
-                                      I32            num_slices,
-                                      BlockSize      padded_size,
-                                      I32            NumLCU*/)
+H265Frame* H265Encoder::InsertInputFrame(const mfxFrameSurface1 *surface)
 {
-    H265Frame *pFrm;
-    pFrm = findNextDisposable();
-
-    //if there are no unused frames allocate new frame
-    if (!pFrm){
-        pFrm = new H265Frame(); //Init/allocate from input data
-        if (!pFrm) return NULL;
-        if (pFrm->Create(par) != MFX_ERR_NONE) {
-            delete pFrm;
-            return NULL;
-        }
-        insertAtCurrent(pFrm);
-    }
-    else
-    {
-//        pFrm->SetSurfaceHandle(rFrame->GetSurfaceHandle());
+    // get free task
+    if (m_free.empty()) {
+        Task* task = new Task;
+        m_free.push_back(task);
     }
 
-//    rFrame->GetTime( pFrm->pts_start, pFrm->pts_end );
-    pFrm->TimeStamp = surface->Data.TimeStamp;
+    m_inputQueue_1.splice(m_inputQueue_1.end(), m_free, m_free.begin());
 
-    //Make copy of input data
-    pFrm->CopyFrame(surface);
-    pFrm->unsetWasEncoded();
-    pFrm->unsetWasLAProcessed();
-    return pFrm;
+    FramePtrIter frm = GetFreeFrame(m_freeFrames, &m_videoParam);
+
+    // light configure
+    (*frm)->ResetEncInfo();
+    (*frm)->CopyFrame(surface);
+    m_inputQueue_1.back()->m_frameOrigin = *frm;
+
+    return m_inputQueue_1.back()->m_frameOrigin;
 }
 
-} // namespace
-
+}
 #endif // MFX_ENABLE_H265_VIDEO_ENCODE

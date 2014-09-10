@@ -73,7 +73,8 @@ mfxStatus H265BRC::InitHRD()
         mParams.HRDInitialDelayBytes = mParams.HRDBufferSizeBytes;
     mHRD.bufFullness = mParams.HRDInitialDelayBytes << 3;
 
-    mHRD.underflowQuant = -1;
+    mHRD.underflowQuant = 0;
+    mHRD.overflowQuant = 999;
     mHRD.frameNum = 0;
 
     return MFX_ERR_NONE;
@@ -81,7 +82,7 @@ mfxStatus H265BRC::InitHRD()
 
 mfxI32 H265BRC::GetInitQP()
 {
-  const mfxF64 x0 = 0, y0 = 1.19, x1 = 1.75, y1 = 1.75;
+//  const mfxF64 x0 = 0, y0 = 1.19, x1 = 1.75, y1 = 1.75;
   mfxI32 fs, fsLuma;
 
   fsLuma = mParams.width * mParams.height;
@@ -93,7 +94,11 @@ mfxI32 H265BRC::GetInitQP()
   else if (mParams.chromaFormat == MFX_CHROMAFORMAT_YUV444)
     fs += fsLuma * 2;
   fs = fs * mParams.bitDepthLuma / 8;
-  mfxI32 q = (mfxI32)(1. / 1.2 * pow(10.0, (log10(fs * 2. / 3. * mFramerate / mBitrate) - x0) * (y1 - y0) / (x1 - x0) + y0) + 0.5);
+  //mfxI32 q = (mfxI32)(1. / 1.2 * pow(10.0, (log10(fs * 2. / 3. * mFramerate / mBitrate) - x0) * (y1 - y0) / (x1 - x0) + y0) + 0.5);
+  
+  mfxF64 qstep = pow(1.5 * fs * mFramerate / mBitrate, 0.8);
+  mfxI32 q = Qstep2QP(qstep);
+
   BRC_CLIP(q, 1, mQuantMax);
   return q;
 }
@@ -109,8 +114,12 @@ mfxStatus H265BRC::SetParams(const mfxVideoParam *params, mfxU8 bitDepthLuma)
     if (!mParams.targetBitrate)
         return MFX_ERR_INVALID_VIDEO_PARAM;
 
-    mParams.HRDBufferSizeBytes = params->mfx.BufferSizeInKB * brcParamMultiplier * 1000;
-    mParams.HRDInitialDelayBytes = params->mfx.InitialDelayInKB * brcParamMultiplier * 1000;
+    if (mParams.BRCMode != MFX_RATECONTROL_AVBR) {
+        mParams.HRDBufferSizeBytes = params->mfx.BufferSizeInKB * brcParamMultiplier * 1000;
+        mParams.HRDInitialDelayBytes = params->mfx.InitialDelayInKB * brcParamMultiplier * 1000;
+    } else {
+        mParams.HRDBufferSizeBytes = mParams.HRDInitialDelayBytes = 0;
+    }
 
     mParams.maxBitrate = params->mfx.MaxKbps * brcParamMultiplier * 1000;
 
@@ -139,7 +148,7 @@ mfxStatus H265BRC::Init(const mfxVideoParam *params, mfxU8 bitDepthLuma, mfxI32 
     if (status != MFX_ERR_NONE)
         return status;
 
-    mRecode = enableRecode ? 1 : 0;
+    mRecode = (enableRecode && (mParams.BRCMode != MFX_RATECONTROL_AVBR)) ? 1 : 0;
 
     mFramerate = (mfxF64)mParams.frameRateExtN / mParams.frameRateExtD;
     mBitrate = mParams.targetBitrate;
@@ -170,6 +179,7 @@ mfxStatus H265BRC::Init(const mfxVideoParam *params, mfxU8 bitDepthLuma, mfxI32 
 
     mQuantOffset = 6 * (mParams.bitDepthLuma - 8);
     mQuantMax = 51 + mQuantOffset;
+    mQuantMin = 1;
 
     mBitsDesiredTotal = 0;
     mBitsEncodedTotal = 0;
@@ -177,17 +187,16 @@ mfxStatus H265BRC::Init(const mfxVideoParam *params, mfxU8 bitDepthLuma, mfxI32 
     mQuantUpdated = 1;
 
     mfxI32 q = GetInitQP();
-/* ??? need mQuantMin? here, in Reset, in PostPackFrame
     if (!mRecode) {
         if (q - 6 > 10)
-            mQuantMin = IPP_MAX(10, q - 24);
+            mQuantMin = IPP_MAX(10, q - 10);
         else
             mQuantMin = IPP_MAX(q - 6, 2);
 
         if (q < mQuantMin)
             q = mQuantMin;
     }
-*/
+
     mQuantPrev = mQuantI = mQuantP = mQuantB = mQPprev = q;
 
     mRCbap = 100;
@@ -212,6 +221,9 @@ mfxStatus H265BRC::Init(const mfxVideoParam *params, mfxU8 bitDepthLuma, mfxI32 
     mBitsEncodedPrev = mBitsDesiredFrame;
     mPicType = MFX_FRAMETYPE_I;
 
+    mMaxQp = 999;
+    mMinQp = -1;
+
     return status;
 }
 
@@ -235,8 +247,8 @@ mfxStatus H265BRC::Reset(mfxVideoParam *params, mfxI32 enableRecode)
     mfxStatus status;
 
     mfxU16 brcParamMultiplier = params->mfx.BRCParamMultiplier ? params->mfx.BRCParamMultiplier : 1;
-    mfxI32 bufSize_new = (params->mfx.BufferSizeInKB * brcParamMultiplier * 8000 >> (4 + MFX_H265_CPBSIZE_SCALE)) << (4 + MFX_H265_CPBSIZE_SCALE);
     mfxU16 rcmode_new = params->mfx.RateControlMethod;
+    mfxI32 bufSize_new = rcmode_new == MFX_RATECONTROL_AVBR ? 0 : (params->mfx.BufferSizeInKB * brcParamMultiplier * 8000 >> (4 + MFX_H265_CPBSIZE_SCALE)) << (4 + MFX_H265_CPBSIZE_SCALE);
     bool sizeNotChanged = (mParams.width == params->mfx.FrameInfo.Width &&
                            mParams.height == params->mfx.FrameInfo.Height &&
                            mParams.chromaFormat == params->mfx.FrameInfo.ChromaFormat);
@@ -247,7 +259,7 @@ mfxStatus H265BRC::Reset(mfxVideoParam *params, mfxI32 enableRecode)
     mfxI32 targetBitrate = mBitrate;
 
     if (rcmode_new != rcmode) {
-        if (MFX_RATECONTROL_VBR == rcmode_new && MFX_RATECONTROL_CBR == rcmode)
+        if (MFX_RATECONTROL_CBR != rcmode_new && MFX_RATECONTROL_AVBR != rcmode)
             rcmode = rcmode_new;
         else
             return MFX_ERR_INVALID_VIDEO_PARAM;
@@ -256,7 +268,7 @@ mfxStatus H265BRC::Reset(mfxVideoParam *params, mfxI32 enableRecode)
     mRecode = enableRecode ? 1 : 0;
 
     if (!(mParams.HRDBufferSizeBytes | bufSize_new)) { // no HRD
-        status = SetParams(params, mParams.bitDepthLuma);
+        status = SetParams(params, (mfxU8)mParams.bitDepthLuma);
         if (status != MFX_ERR_NONE)
             return status;
         mBitrate = mParams.targetBitrate;
@@ -358,14 +370,26 @@ mfxStatus H265BRC::Reset(mfxVideoParam *params, mfxI32 enableRecode)
     mSceneChange = 0;
     mBitsEncodedPrev = mBitsDesiredFrame;
 
+    mMaxQp = 999;
+    mMinQp = -1;
+
     return MFX_ERR_NONE;
 }
 
-mfxI32 H265BRC::GetQP(mfxU16 frameType, mfxI32 *chromaQP)
+mfxI32 H265BRC::GetQP(mfxU16 frameType, mfxU16 chromaFormatIdc, mfxI32 *chromaQP)
 {
-    mfxI32 qp = ((frameType == MFX_FRAMETYPE_I) ? mQuantI : (frameType == MFX_FRAMETYPE_B) ? mQuantB : mQuantP) - mQuantOffset;
+    mfxI32 qp;
+
+    if (frameType & MFX_FRAMETYPE_I) 
+        qp =  mQuantI;
+    else if (frameType & MFX_FRAMETYPE_P) 
+        qp = mQuantP;
+    else if (frameType & MFX_FRAMETYPE_REF)
+        qp = mQuantP;
+    else
+        qp = mQuantB;
     if (chromaQP)
-        *chromaQP = h265_QPtoChromaQP[qp];
+        *chromaQP = h265_QPtoChromaQP[chromaFormatIdc-1][qp];
     return qp;
 }
 
@@ -390,7 +414,8 @@ mfxBRCStatus H265BRC::UpdateAndCheckHRD(mfxI32 frameBits, mfxF64 inputBitsPerFra
 
     if (!(recode & (MFX_BRC_EXT_FRAMESKIP - 1))) { // BRC_EXT_FRAMESKIP == 16
         mHRD.prevBufFullness = mHRD.bufFullness;
-        mHRD.underflowQuant = -1;
+        mHRD.underflowQuant = 0;
+        mHRD.overflowQuant = 999;
     } else { // frame is being recoded - restore buffer state
         mHRD.bufFullness = mHRD.prevBufFullness;
     }
@@ -434,8 +459,8 @@ mfxBRCStatus H265BRC::UpdateAndCheckHRD(mfxI32 frameBits, mfxF64 inputBitsPerFra
 //#define BRC_SCENE_CHANGE_RATIO2 5.0
 
 #define I_WEIGHT 1.2
-#define P_WEIGHT 0.5
-#define B_WEIGHT 0.25
+#define P_WEIGHT 0.25
+#define B_WEIGHT 0.2
 
 mfxBRCStatus H265BRC::PostPackFrame(mfxU16 picType, mfxI32 totalFrameBits, mfxI32 overheadBits, mfxI32 repack, mfxI32 poc)
 {
@@ -486,6 +511,9 @@ mfxBRCStatus H265BRC::PostPackFrame(mfxU16 picType, mfxI32 totalFrameBits, mfxI3
 
     qpprev = qp = (picType == MFX_FRAMETYPE_I) ? mQuantI : (picType == MFX_FRAMETYPE_B) ? mQuantB : mQuantP;
 
+    //printf("%d %d %d %d %f \n", poc, totalFrameBits, qp, mHRD.bufSize, mHRD.prevBufFullness);
+
+
     mfxF64 fa_short0 = mRCfa_short;
     mRCfa_short += (bitsEncoded - mRCfa_short) / BRC_RCFAP_SHORT;
 
@@ -496,66 +524,79 @@ mfxBRCStatus H265BRC::PostPackFrame(mfxU16 picType, mfxI32 totalFrameBits, mfxI3
         mfxF64 frameFactor = 1.0;
         mfxF64 targetFrameSize = IPP_MAX((mfxF64)mBitsDesiredFrame, mRCfa);
         if (isField) targetFrameSize *= 0.5;
+        if (picType == MFX_FRAMETYPE_I)
+            frameFactor = 1.5;
+
 
         e2pe = bitsEncoded * sqrt(qstep) / (mBitsEncodedPrev * sqrt(qstep_prev));
 
         // mPicType to be set to P in Init() for the right factor for the 1st frame ???
-        if (picType == MFX_FRAMETYPE_I) {
-            if (mPicType == MFX_FRAMETYPE_P)
-                frameFactor = P_WEIGHT / I_WEIGHT;
-            else if (mPicType == MFX_FRAMETYPE_B)
-                frameFactor = B_WEIGHT / I_WEIGHT;
-        } else if (picType == MFX_FRAMETYPE_P) {
-            if (mPicType == MFX_FRAMETYPE_B)
-                frameFactor = B_WEIGHT / P_WEIGHT;
-        }
+        //if (picType == MFX_FRAMETYPE_I) {
+        //    if (mPicType == MFX_FRAMETYPE_P)
+        //        frameFactor = P_WEIGHT / I_WEIGHT;
+        //    else if (mPicType == MFX_FRAMETYPE_B)
+        //        frameFactor = B_WEIGHT / I_WEIGHT;
+        //} else if (picType == MFX_FRAMETYPE_P) {
+        //    if (mPicType == MFX_FRAMETYPE_B)
+        //        frameFactor = B_WEIGHT / P_WEIGHT;
+        //}
 
         mfxF64 maxFrameSize;
         maxFrameSize = 2.5/9. * buffullness + 5./9. * targetFrameSize;
-        BRC_CLIP(maxFrameSize, targetFrameSize, BRC_SCENE_CHANGE_RATIO2 * targetFrameSize);
+        BRC_CLIP(maxFrameSize, targetFrameSize, BRC_SCENE_CHANGE_RATIO2 * targetFrameSize * frameFactor);
 
-        mfxF64 famax = 1./9. * buffullness + 8./9. * mRCfa  ;
+        mfxF64 famax = 1./9. * buffullness + 8./9. * mRCfa;
 
-        if (bitsEncoded >  maxFrameSize && qp < mQuantMax) {
+        mfxI32 maxqp = mQuantMax;
+        if (mParams.HRDBufferSizeBytes > 0) {
+            maxqp = IPP_MIN(maxqp, mHRD.overflowQuant - 1);
+        }
+
+        if (bitsEncoded >  maxFrameSize && qp < maxqp) {
             mfxF64 targetSizeScaled = maxFrameSize * 0.8;
-            mfxF64 qstepnew = qstep * bitsEncoded / targetSizeScaled;
+            mfxF64 qstepnew = qstep * pow(bitsEncoded / targetSizeScaled, 0.9);
             mfxI32 qpnew = Qstep2QP(qstepnew);
             if (qpnew == qp)
               qpnew++;
-            BRC_CLIP(qpnew, 1, mQuantMax);
-            mRCq = mQuantI = mQuantP = qpnew;
-            if (picType == MFX_FRAMETYPE_B)
-                mQuantB = qpnew;
-            else
-                SetQuantB();
+            BRC_CLIP(qpnew, 1, maxqp);
 
-            mRCfa_short = fa_short0;
+            if (qpnew > qp) {
+                mRCq = mQuantI = mQuantP = qpnew;
+                if (picType == MFX_FRAMETYPE_B)
+                    mQuantB = qpnew;
+                else {
+                    SetQuantB();
+                }
 
-            if (e2pe > BRC_SCENE_CHANGE_RATIO1) { // scene change, resetting BRC statistics
-              mRCfa = mBitsDesiredFrame;
-              mRCqa = 1./qpnew;
-              mRCq = mQuantI = mQuantP = mQuantB = mQuantPrev = qpnew;
-              mSceneChange |= 1;
-              if (picType != MFX_FRAMETYPE_B) {
-                  mSceneChange |= 16;
-                  mSChPoc = poc;
-              }
-              mRCfa_short = mBitsDesiredFrame;
-            }
-            if (mRecode) {
-                mQuantUpdated = 0;
-                mHRD.frameNum--;
-                return MFX_BRC_ERR_BIG_FRAME;
+                mRCfa_short = fa_short0;
+
+                if (e2pe > BRC_SCENE_CHANGE_RATIO1) { // scene change, resetting BRC statistics
+                  mRCfa = mBitsDesiredFrame;
+                  mRCqa = 1./qpnew;
+                  mRCq = mQuantI = mQuantP = mQuantB = mQuantPrev = qpnew;
+                  mSceneChange |= 1;
+                  if (picType != MFX_FRAMETYPE_B) {
+                      mSceneChange |= 16;
+                      mSChPoc = poc;
+                  }
+                  mRCfa_short = mBitsDesiredFrame;
+                }
+                if (mRecode) {
+                    mQuantUpdated = 0;
+                    mHRD.frameNum--;
+                    mMinQp = qp;
+                    return MFX_BRC_ERR_BIG_FRAME;
+                }
             }
         }
 
-        if (mRCfa_short > famax && (!repack) && qp < mQuantMax) {
+        if (mRCfa_short > famax && (!repack) && qp < maxqp) {
 
             mfxF64 qstepnew = qstep * mRCfa_short / (famax * 0.8);
             mfxI32 qpnew = Qstep2QP(qstepnew);
             if (qpnew == qp)
                 qpnew++;
-            BRC_CLIP(qpnew, 1, mQuantMax);
+            BRC_CLIP(qpnew, 1, maxqp);
 
             mRCfa = mBitsDesiredFrame;
             mRCqa = 1./qpnew;
@@ -566,6 +607,7 @@ mfxBRCStatus H265BRC::PostPackFrame(mfxU16 picType, mfxI32 totalFrameBits, mfxI3
             if (mRecode) {
                 mQuantUpdated = 0;
                 mHRD.frameNum--;
+                mMinQp = qpnew;
                 return MFX_BRC_ERR_BIG_FRAME;
             }
         }
@@ -612,12 +654,15 @@ mfxBRCStatus H265BRC::PostPackFrame(mfxU16 picType, mfxI32 totalFrameBits, mfxI3
         //    mMaxBitsPerPic = mMaxBitsPerPicNot0;
 
         if (mParams.HRDBufferSizeBytes > 0) {
-            mHRD.underflowQuant = -1;
+            mHRD.underflowQuant = 0;
+            mHRD.overflowQuant = 999;
             mBF += (mfxI64)mMaxBitrate * (mfxI64)mParams.frameRateExtD >> isField;
             mBF -= ((mfxI64)totalFrameBits >> 3) * mParams.frameRateExtN;
             if ((MFX_RATECONTROL_VBR == mRCMode) && (mBF > (mfxI64)mParams.HRDBufferSizeBytes * mParams.frameRateExtN))
                 mBF = (mfxI64)mParams.HRDBufferSizeBytes * mParams.frameRateExtN;
         }
+        mMinQp = -1;
+        mMaxQp = 999;
     }
 
     return Sts;
@@ -679,7 +724,7 @@ mfxBRCStatus H265BRC::UpdateQuant(mfxI32 bEncoded, mfxI32 totalPicBits)
     BRC_CLIP(bo, -1.0, 1.0);
 
     dq = dq + (1./mQuantMax - dq) * bo;
-    BRC_CLIP(dq, 1./mQuantMax, 1./1.);
+    BRC_CLIP(dq, 1./mQuantMax, 1./mQuantMin);
     quant = (mfxI32) (1. / dq + 0.5);
 
     if (quant >= mRCq + 5)
@@ -740,19 +785,37 @@ mfxBRCStatus H265BRC::UpdateQuantHRD(mfxI32 totalFrameBits, mfxBRCStatus sts, mf
     quant_prev = quant = (mPicType == MFX_FRAMETYPE_I) ? mQuantI : (mPicType == MFX_FRAMETYPE_B) ? mQuantB : mQuantP;
     if (sts & MFX_BRC_ERR_BIG_FRAME)
         mHRD.underflowQuant = quant;
+    else if (sts & MFX_BRC_ERR_SMALL_FRAME)
+        mHRD.overflowQuant = quant;
 
     qstep = QP2Qstep(quant);
-    qstep_new = qstep * (mfxF64)bEncoded / wantedBits;
-
+    qstep_new = qstep * sqrt((mfxF64)bEncoded / wantedBits);
     quant = Qstep2QP(qstep_new);
-    if (quant == quant_prev)
-        quant += (sts == MFX_BRC_ERR_BIG_FRAME ? 1 : -1);
 
-    BRC_CLIP(quant, 1, mQuantMax);
-
-    if (quant < quant_prev) {
-        while (quant <= mHRD.underflowQuant)
-            quant++;
+    if (sts & MFX_BRC_ERR_SMALL_FRAME) // overflow
+    {
+        mfxI32 qpMin = IPP_MAX(mHRD.underflowQuant, mMinQp);
+        if (qpMin > 0) {
+            if (quant < (qpMin + quant_prev + 1) >> 1)
+                quant = (qpMin + quant_prev + 1) >> 1;
+        }
+        if (quant > quant_prev - 1)
+            quant = quant_prev - 1;
+        if (quant < mHRD.underflowQuant + 1)
+            quant = mHRD.underflowQuant + 1;
+        if (quant < mMinQp + 1 && quant_prev > mMinQp + 1)
+            quant = mMinQp + 1;
+    } 
+    else // underflow
+    {
+        if (mHRD.overflowQuant <= mQuantMax) {
+            if (quant > (quant_prev + mHRD.overflowQuant + 1) >> 1)
+                quant = (quant_prev + mHRD.overflowQuant + 1) >> 1;
+        }
+        if (quant < quant_prev + 1)
+            quant = quant_prev + 1;
+        if (quant > mHRD.overflowQuant - 1)
+            quant = mHRD.overflowQuant - 1;
     }
 
     if (quant == quant_prev)

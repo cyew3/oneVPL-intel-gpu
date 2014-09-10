@@ -34,5 +34,14 @@
     <ClInclude Include="include\genx_h265_cmcode_bdw_isa.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="include\utility_genx.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\genx_h265_cmcode.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\genx_h265_cmcode_bdw.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

@@ -40,10 +40,10 @@
 namespace MFX_HEVC_PP
 {
 
-static mfxU8 GetPel(const mfxU8 *frame, mfxI32 x, mfxI32 y, mfxI32 width, mfxI32 height, mfxI32 pitch)
+template <class PixType>
+static PixType GetPel(const PixType *frame, Ipp32s x, Ipp32s y, Ipp32s width, Ipp32s height, Ipp32s pitch)
 {
-    x = CLIPVAL(x, 0, width - 1);
-    y = CLIPVAL(y, 0, height - 1);
+    width; height; // source frame is now padded, no need in checking boundaries
     return frame[y * pitch + x];
 }
 
@@ -87,8 +87,9 @@ static float atan2_fast(float y, float x)
     return atan2;
 }
 
-static void BuildHistogram2(const mfxU8 *frame, mfxI32 blockX, mfxI32 blockY, mfxI32 w, mfxI32 h, mfxI32 p, mfxI32 blockSize,
-                    mfxU16 *histogram)
+template <class PixType, class HistType>
+static void BuildHistogram2(const PixType *frame, Ipp32s blockX, Ipp32s blockY, Ipp32s w, Ipp32s h,
+                            Ipp32s p, mfxI32 blockSize, HistType *histogram)
 {
     for (mfxI32 y = blockY; y < blockY + blockSize; y++) {
         for (mfxI32 x = blockX; x < blockX + blockSize; x++) {
@@ -126,26 +127,61 @@ static void BuildHistogram2(const mfxU8 *frame, mfxI32 blockX, mfxI32 blockY, mf
     }
 }
 
-void MAKE_NAME(h265_AnalyzeGradient_8u)(const mfxU8 *inData, mfxU16 *outData4, mfxU16 *outData8, mfxI32 width, mfxI32 height, mfxI32 pitch)
+template <class PixType, class HistType>
+void MAKE_NAME(h265_AnalyzeGradient)(const PixType *src, Ipp32s pitch, HistType *hist4, HistType *hist8,
+                                     Ipp32s width, Ipp32s height)
 {
-    mfxI32 blockSize;
-
-    blockSize = 4;
-    for (mfxI32 y = 0; y < height / blockSize; y++, outData4 += (width / blockSize) * 40) {
-        for (mfxI32 x = 0; x < width / blockSize; x++) {
-            memset(outData4 + x * 40, 0, sizeof(*outData4) * 40);
-            BuildHistogram2(inData, x * blockSize, y * blockSize, width, height, pitch, blockSize, outData4 + x * 40);
+    Ipp32s blockSize = 4;
+    for (Ipp32s y = 0; y < height / blockSize; y++, hist4 += (width / blockSize) * 40) {
+        for (Ipp32s x = 0; x < width / blockSize; x++) {
+            memset(hist4 + x * 40, 0, sizeof(*hist4) * 40);
+            BuildHistogram2(src, x * blockSize, y * blockSize, width, height, pitch, blockSize, hist4 + x * 40);
         }
     }
 
     blockSize = 8;
-    for (mfxI32 y = 0; y < height / blockSize; y++, outData8 += (width / blockSize) * 40) {
-        for (mfxI32 x = 0; x < width / blockSize; x++) {
-            memset(outData8 + x * 40, 0, sizeof(*outData8) * 40);
-            BuildHistogram2(inData, x * blockSize, y * blockSize, width, height, pitch, blockSize, outData8 + x * 40);
+    for (Ipp32s y = 0; y < height / blockSize; y++, hist8 += (width / blockSize) * 40) {
+        for (Ipp32s x = 0; x < width / blockSize; x++) {
+            memset(hist8 + x * 40, 0, sizeof(*hist8) * 40);
+            BuildHistogram2(src, x * blockSize, y * blockSize, width, height, pitch, blockSize, hist8 + x * 40);
         }
     }
 }
+
+template void MAKE_NAME(h265_AnalyzeGradient)<Ipp8u, Ipp16u> (const Ipp8u  *src, Ipp32s pitch, Ipp16u *hist4, Ipp16u *hist8, Ipp32s width, Ipp32s height);
+template void MAKE_NAME(h265_AnalyzeGradient)<Ipp16u, Ipp32u>(const Ipp16u *src, Ipp32s pitch, Ipp32u *hist4, Ipp32u *hist8, Ipp32s width, Ipp32s height);
+
+#define MAX_CU_SIZE 64
+
+template <class PixType>
+void MAKE_NAME(h265_ComputeRsCs)(const PixType *ySrc, Ipp32s pitchSrc, Ipp32s *lcuRs, Ipp32s *lcuCs, Ipp32s widthCu)
+{
+    Ipp32s bP = MAX_CU_SIZE>>2;
+    for(Ipp32s i=0; i<widthCu; i+=4)
+    {
+        for(Ipp32s j=0; j<widthCu; j+=4)
+        {
+            Ipp32s Rs=0;
+            Ipp32s Cs=0;
+            for(Ipp32s k=0; k<4; k++) 
+            {
+                for(Ipp32s l=0; l<4; l++)
+                {
+                    Ipp32s temp = ySrc[(i+k)*pitchSrc+(j+l)]-ySrc[(i+k)*pitchSrc+(j+l-1)];
+                    Cs += temp*temp;
+
+                    temp = ySrc[(i+k)*pitchSrc+(j+l)]-ySrc[(i+k-1)*pitchSrc+(j+l)];
+                    Rs += temp*temp;
+                }
+            }
+            lcuCs[(i>>2)*bP+(j>>2)] = Cs>>4;
+            lcuRs[(i>>2)*bP+(j>>2)] = Rs>>4;
+        }
+    }
+}
+
+template void MAKE_NAME(h265_ComputeRsCs)<Ipp8u> (const Ipp8u *ySrc, Ipp32s pitchSrc, Ipp32s *lcuRs, Ipp32s *lcuCs, Ipp32s widthCu);
+template void MAKE_NAME(h265_ComputeRsCs)<Ipp16u>(const Ipp16u *ySrc, Ipp32s pitchSrc, Ipp32s *lcuRs, Ipp32s *lcuCs, Ipp32s widthCu);
 
 }; // namespace MFX_HEVC_PP
 

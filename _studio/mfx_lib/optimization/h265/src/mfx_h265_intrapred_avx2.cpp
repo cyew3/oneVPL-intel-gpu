@@ -21,8 +21,680 @@
 #define mm128(s)               _mm256_castsi256_si128(s)     /* cast xmm = low 128 of ymm */
 #define mm256(s)               _mm256_castsi128_si256(s)     /* cast ymm = [xmm | undefined] */
 
+#define _mm_loadh_epi64(A, p)  _mm_castpd_si128(_mm_loadh_pd(_mm_castsi128_pd(A), (double *)(p)))
+
 namespace MFX_HEVC_PP
 {
+
+static const Ipp32s intraPredAngleTable[] = {
+    0,   0,  32,  26,  21,  17, 13,  9,  5,  2,  0, -2, -5, -9, -13, -17, -21,
+    -26, -32, -26, -21, -17, -13, -9, -5, -2,  0,  2,  5,  9, 13,  17,  21,  26, 32
+};
+
+static const Ipp32s invAngleTable[] = {
+    0,    0,  256,  315,  390,  482,  630,  910,
+    1638, 4096,    0, 4096, 1638,  910,  630,  482,
+    390,  315,  256,  315,  390,  482,  630,  910,
+    1638, 4096,    0, 4096, 1638,  910,  630,  482,
+    390,  315,  256
+};
+
+static inline void PredAngle_4x4_8u_AVX2(Ipp8u *pSrc, Ipp8u *pDst, Ipp32s dstPitch, Ipp32s angle)
+{
+    Ipp32s iIdx;
+    Ipp16s iFact;
+    Ipp32s pos = 0;
+    __m128i r0, r1;
+
+    for (int j = 0; j < 4; j++)
+    {
+        pos += angle;
+        iIdx = pos >> 5;
+        iFact = pos & 31;
+
+        // process i = 0..3
+
+        // r0 = (Ipp16s)pSrc[iIdx+1+i];
+        // r1 = (Ipp16s)pSrc[iIdx+2+i];
+        r0 = _mm_cvtepu8_epi16(_mm_loadl_epi64((__m128i *)&pSrc[iIdx+1]));
+        r1 = _mm_srli_si128(r0, 2);
+
+        // r0 += ((r1 - r0) * iFact + 16) >> 5;
+        r1 = _mm_sub_epi16(r1, r0);
+        r1 = _mm_mullo_epi16(r1, _mm_set1_epi16(iFact));
+        r1 = _mm_add_epi16(r1, _mm_set1_epi16(16));
+        r1 = _mm_srai_epi16(r1, 5);
+        r0 = _mm_add_epi16(r0, r1);
+
+        // pDst[j*pitch+i] = (Ipp8u)r0;
+        r0 = _mm_packus_epi16(r0, r0);
+        *(int *)&pDst[j*dstPitch] = _mm_cvtsi128_si32(r0);
+    }
+}
+
+static inline void PredAngle_8x8_8u_AVX2(Ipp8u *pSrc, Ipp8u *pDst, Ipp32s dstPitch, Ipp32s angle)
+{
+    Ipp32s iIdx;
+    Ipp16s iFact;
+    Ipp32s pos = 0;
+    __m128i r0, r1;
+
+    for (int j = 0; j < 8; j++)
+    {
+        pos += angle;
+        iIdx = pos >> 5;
+        iFact = pos & 31;
+
+        // process i = 0..7
+
+        r0 = _mm_cvtepu8_epi16(_mm_loadl_epi64((__m128i *)&pSrc[iIdx+1]));
+        r1 = _mm_cvtepu8_epi16(_mm_loadl_epi64((__m128i *)&pSrc[iIdx+2]));
+
+        r1 = _mm_sub_epi16(r1, r0);
+        r1 = _mm_mullo_epi16(r1, _mm_set1_epi16(iFact));
+        r1 = _mm_add_epi16(r1, _mm_set1_epi16(16));
+        r1 = _mm_srai_epi16(r1, 5);
+        r0 = _mm_add_epi16(r0, r1);
+
+        r0 = _mm_packus_epi16(r0, r0);
+        _mm_storel_epi64((__m128i *)&pDst[j*dstPitch], r0);
+    }
+}
+
+static inline void PredAngle_16x16_8u_AVX2(Ipp8u *pSrc, Ipp8u *pDst, Ipp32s dstPitch, Ipp32s angle)
+{
+    Ipp32s iIdx;
+    Ipp16s iFact;
+    Ipp32s pos = 0;
+    __m256i y0, y1;
+
+    _mm256_zeroupper();
+
+    for (int j = 0; j < 16; j++)
+    {
+        pos += angle;
+        iIdx = pos >> 5;
+        iFact = pos & 31;
+
+        // process i = 0..15
+        y0 = _mm256_cvtepu8_epi16(*(__m128i *)&pSrc[iIdx+1]);
+        y1 = _mm256_cvtepu8_epi16(*(__m128i *)&pSrc[iIdx+2]);
+
+        y1 = _mm256_sub_epi16(y1, y0);
+        y1 = _mm256_mullo_epi16(y1, _mm256_set1_epi16(iFact));
+        y1 = _mm256_add_epi16(y1, _mm256_set1_epi16(16));
+        y1 = _mm256_srai_epi16(y1, 5);
+        y0 = _mm256_add_epi16(y0, y1);
+        y0 = _mm256_packus_epi16(y0, y0);
+        y0 = _mm256_permute4x64_epi64(y0, 0xd8);
+        _mm_storeu_si128((__m128i *)&pDst[j*dstPitch], mm128(y0));
+    }
+}
+
+static inline void PredAngle_32x32_8u_AVX2(Ipp8u *pSrc, Ipp8u *pDst, Ipp32s dstPitch, Ipp32s angle)
+{
+    Ipp32s iIdx;
+    Ipp16s iFact;
+    Ipp32s pos = 0;
+    __m256i y0, y1, y2, y3;
+
+    _mm256_zeroupper();
+
+    for (int j = 0; j < 32; j++)
+    {
+        pos += angle;
+        iIdx = pos >> 5;
+        iFact = pos & 31;
+
+        for (int i = 0; i < 32; i += 16)
+        {
+            y0 = _mm256_cvtepu8_epi16(*(__m128i *)&pSrc[iIdx+1+i]);
+            y1 = _mm256_cvtepu8_epi16(*(__m128i *)&pSrc[iIdx+2+i]);
+
+            y1 = _mm256_sub_epi16(y1, y0);
+            y1 = _mm256_mullo_epi16(y1, _mm256_set1_epi16(iFact));
+            y1 = _mm256_add_epi16(y1, _mm256_set1_epi16(16));
+            y1 = _mm256_srai_epi16(y1, 5);
+            y0 = _mm256_add_epi16(y0, y1);
+            y0 = _mm256_packus_epi16(y0, y0);
+            y0 = _mm256_permute4x64_epi64(y0, 0xd8);
+            _mm_storeu_si128((__m128i *)&pDst[j*dstPitch + i], mm128(y0));
+        }
+    }
+}
+
+
+// Out-of-place transpose
+static inline void Transpose_4x4_8u_AVX2(Ipp8u *pSrc, Ipp32s srcPitch, Ipp8u *pDst, Ipp32s dstPitch)
+{
+    __m128i r0, r1, r2, r3;
+    r0 = _mm_cvtsi32_si128(*(int *)&pSrc[0*srcPitch]);  // 03,02,01,00
+    r1 = _mm_cvtsi32_si128(*(int *)&pSrc[1*srcPitch]);  // 13,12,11,10
+    r2 = _mm_cvtsi32_si128(*(int *)&pSrc[2*srcPitch]);  // 23,22,21,20
+    r3 = _mm_cvtsi32_si128(*(int *)&pSrc[3*srcPitch]);  // 33,32,31,30
+
+    r0 = _mm_unpacklo_epi8(r0, r1);
+    r2 = _mm_unpacklo_epi8(r2, r3);
+    r0 = _mm_unpacklo_epi16(r0, r2);    // 33,23,13,03, 32,22,12,02, 31,21,11,01, 30,20,10,00, 
+
+    *(int *)&pDst[0*dstPitch] = _mm_cvtsi128_si32(r0);
+    *(int *)&pDst[1*dstPitch] = _mm_extract_epi32(r0, 1);
+    *(int *)&pDst[2*dstPitch] = _mm_extract_epi32(r0, 2);
+    *(int *)&pDst[3*dstPitch] = _mm_extract_epi32(r0, 3);
+}
+
+static inline void Transpose_8x8_8u_AVX2(Ipp8u *pSrc, Ipp32s srcPitch, Ipp8u *pDst, Ipp32s dstPitch)
+{
+    __m128i r0, r1, r2, r3, r4, r5, r6, r7;
+    r0 = _mm_loadl_epi64((__m128i*)&pSrc[0*srcPitch]);  // 07,06,05,04,03,02,01,00
+    r1 = _mm_loadl_epi64((__m128i*)&pSrc[1*srcPitch]);  // 17,16,15,14,13,12,11,10
+    r2 = _mm_loadl_epi64((__m128i*)&pSrc[2*srcPitch]);  // 27,26,25,24,23,22,21,20
+    r3 = _mm_loadl_epi64((__m128i*)&pSrc[3*srcPitch]);  // 37,36,35,34,33,32,31,30
+    r4 = _mm_loadl_epi64((__m128i*)&pSrc[4*srcPitch]);  // 47,46,45,44,43,42,41,40
+    r5 = _mm_loadl_epi64((__m128i*)&pSrc[5*srcPitch]);  // 57,56,55,54,53,52,51,50
+    r6 = _mm_loadl_epi64((__m128i*)&pSrc[6*srcPitch]);  // 67,66,65,64,63,62,61,60
+    r7 = _mm_loadl_epi64((__m128i*)&pSrc[7*srcPitch]);  // 77,76,75,74,73,72,71,70
+
+    r0 = _mm_unpacklo_epi8(r0, r1);
+    r2 = _mm_unpacklo_epi8(r2, r3);
+    r4 = _mm_unpacklo_epi8(r4, r5);
+    r6 = _mm_unpacklo_epi8(r6, r7);
+
+    r1 = r0;
+    r0 = _mm_unpacklo_epi16(r0, r2);
+    r1 = _mm_unpackhi_epi16(r1, r2);
+    r5 = r4;
+    r4 = _mm_unpacklo_epi16(r4, r6);
+    r5 = _mm_unpackhi_epi16(r5, r6);
+    r2 = r0;
+    r0 = _mm_unpacklo_epi32(r0, r4);
+    r2 = _mm_unpackhi_epi32(r2, r4);
+    r3 = r1;
+    r1 = _mm_unpacklo_epi32(r1, r5);
+    r3 = _mm_unpackhi_epi32(r3, r5);
+
+    _mm_storel_pi((__m64 *)&pDst[0*dstPitch], _mm_castsi128_ps(r0));    // MOVLPS
+    _mm_storeh_pi((__m64 *)&pDst[1*dstPitch], _mm_castsi128_ps(r0));    // MOVHPS
+    _mm_storel_pi((__m64 *)&pDst[2*dstPitch], _mm_castsi128_ps(r2));
+    _mm_storeh_pi((__m64 *)&pDst[3*dstPitch], _mm_castsi128_ps(r2));
+    _mm_storel_pi((__m64 *)&pDst[4*dstPitch], _mm_castsi128_ps(r1));
+    _mm_storeh_pi((__m64 *)&pDst[5*dstPitch], _mm_castsi128_ps(r1));
+    _mm_storel_pi((__m64 *)&pDst[6*dstPitch], _mm_castsi128_ps(r3));
+    _mm_storeh_pi((__m64 *)&pDst[7*dstPitch], _mm_castsi128_ps(r3));
+}
+
+static inline void Transpose_16x16_8u_AVX2(Ipp8u *pSrc, Ipp32s srcPitch, Ipp8u *pDst, Ipp32s dstPitch)
+{
+    for (int j = 0; j < 16; j += 8)
+    {
+        for (int i = 0; i < 16; i += 8)
+        {
+            Transpose_8x8_8u_AVX2(&pSrc[i*srcPitch+j], srcPitch, &pDst[j*dstPitch+i], dstPitch);
+        }
+    }
+}
+
+static inline void Transpose_32x32_8u_AVX2(Ipp8u *pSrc, Ipp32s srcPitch, Ipp8u *pDst, Ipp32s dstPitch)
+{
+    for (int j = 0; j < 32; j += 8)
+    {
+        for (int i = 0; i < 32; i += 8)
+        {
+            Transpose_8x8_8u_AVX2(&pSrc[i*srcPitch+j], srcPitch, &pDst[j*dstPitch+i], dstPitch);
+        }
+    }
+}
+
+static inline void PredAngle_4x4_16u_AVX2(Ipp16u *pSrc, Ipp16u *pDst, Ipp32s dstPitch, Ipp32s angle)
+{
+    Ipp32s iIdx;
+    Ipp16s iFact;
+    Ipp32s pos = 0;
+    __m128i r0, r1;
+
+    for (int j = 0; j < 4; j++)
+    {
+        pos += angle;
+        iIdx = pos >> 5;
+        iFact = pos & 31;
+
+        // process i = 0..3
+
+        r0 = _mm_loadl_epi64((__m128i *)&pSrc[iIdx+1]);
+        r1 = _mm_loadl_epi64((__m128i *)&pSrc[iIdx+2]);
+
+        r1 = _mm_sub_epi16(r1, r0);
+        r1 = _mm_mullo_epi16(r1, _mm_set1_epi16(iFact));
+        r1 = _mm_add_epi16(r1, _mm_set1_epi16(16));
+        r1 = _mm_srai_epi16(r1, 5);
+        r0 = _mm_add_epi16(r0, r1);
+
+        _mm_storel_epi64((__m128i *)&pDst[j*dstPitch], r0);
+    }
+}
+
+static inline void PredAngle_8x8_16u_AVX2(Ipp16u *pSrc, Ipp16u *pDst, Ipp32s dstPitch, Ipp32s angle)
+{
+    Ipp32s iIdx;
+    Ipp16s iFact;
+    Ipp32s pos = 0;
+    __m128i r0, r1;
+
+    for (int j = 0; j < 8; j++)
+    {
+        pos += angle;
+        iIdx = pos >> 5;
+        iFact = pos & 31;
+
+        // process i = 0..7
+
+        r0 = _mm_loadu_si128((__m128i *)&pSrc[iIdx+1]);
+        r1 = _mm_loadu_si128((__m128i *)&pSrc[iIdx+2]);
+
+        r1 = _mm_sub_epi16(r1, r0);
+        r1 = _mm_mullo_epi16(r1, _mm_set1_epi16(iFact));
+        r1 = _mm_add_epi16(r1, _mm_set1_epi16(16));
+        r1 = _mm_srai_epi16(r1, 5);
+        r0 = _mm_add_epi16(r0, r1);
+
+        _mm_storeu_si128((__m128i *)&pDst[j*dstPitch], r0);
+    }
+}
+
+static inline void PredAngle_16x16_16u_AVX2(Ipp16u *pSrc, Ipp16u *pDst, Ipp32s dstPitch, Ipp32s angle)
+{
+    Ipp32s iIdx;
+    Ipp16s iFact;
+    Ipp32s pos = 0;
+    __m256i y0, y1;
+
+    _mm256_zeroupper();
+
+    for (int j = 0; j < 16; j++)
+    {
+        pos += angle;
+        iIdx = pos >> 5;
+        iFact = pos & 31;
+
+        // process i = 0..15
+        y0 = _mm256_loadu_si256((__m256i *)&pSrc[iIdx+1]);
+        y1 = _mm256_loadu_si256((__m256i *)&pSrc[iIdx+2]);
+
+        y1 = _mm256_sub_epi16(y1, y0);
+        y1 = _mm256_mullo_epi16(y1, _mm256_set1_epi16(iFact));
+        y1 = _mm256_add_epi16(y1, _mm256_set1_epi16(16));
+        y1 = _mm256_srai_epi16(y1, 5);
+        y0 = _mm256_add_epi16(y0, y1);
+
+        _mm256_storeu_si256((__m256i *)&pDst[j*dstPitch], y0);
+    }
+}
+
+static inline void PredAngle_32x32_16u_AVX2(Ipp16u *pSrc, Ipp16u *pDst, Ipp32s dstPitch, Ipp32s angle)
+{
+    Ipp32s iIdx;
+    Ipp16s iFact;
+    Ipp32s pos = 0;
+    __m256i y0, y1;
+
+    _mm256_zeroupper();
+
+    for (int j = 0; j < 32; j++)
+    {
+        pos += angle;
+        iIdx = pos >> 5;
+        iFact = pos & 31;
+
+        for (int i = 0; i < 32; i += 16)
+        {
+            y0 = _mm256_loadu_si256((__m256i *)&pSrc[iIdx+1+i]);
+            y1 = _mm256_loadu_si256((__m256i *)&pSrc[iIdx+2+i]);
+
+            y1 = _mm256_sub_epi16(y1, y0);
+            y1 = _mm256_mullo_epi16(y1, _mm256_set1_epi16(iFact));
+            y1 = _mm256_add_epi16(y1, _mm256_set1_epi16(16));
+            y1 = _mm256_srai_epi16(y1, 5);
+            y0 = _mm256_add_epi16(y0, y1);
+
+            _mm256_storeu_si256((__m256i *)&pDst[j*dstPitch + i], y0);
+        }
+    }
+}
+
+static inline void Transpose_4x4_16u_AVX2(Ipp16u *pSrc, Ipp32s srcPitch, Ipp16u *pDst, Ipp32s dstPitch)
+{
+    __m128i r0, r1, r2, r3;
+
+    r0 = _mm_loadl_epi64((__m128i*)&pSrc[0*srcPitch]);  // 03,02,01,00
+    r1 = _mm_loadl_epi64((__m128i*)&pSrc[1*srcPitch]);  // 13,12,11,10
+    r2 = _mm_loadl_epi64((__m128i*)&pSrc[2*srcPitch]);  // 23,22,21,20
+    r3 = _mm_loadl_epi64((__m128i*)&pSrc[3*srcPitch]);  // 33,32,31,30
+
+    r0 = _mm_unpacklo_epi16(r0, r1);
+    r2 = _mm_unpacklo_epi16(r2, r3);
+    r1 = r0;
+    r0 = _mm_unpacklo_epi32(r0, r2);
+    r1 = _mm_unpackhi_epi32(r1, r2);
+
+    _mm_storel_pi((__m64 *)&pDst[0*dstPitch], _mm_castsi128_ps(r0));    // MOVLPS
+    _mm_storeh_pi((__m64 *)&pDst[1*dstPitch], _mm_castsi128_ps(r0));    // MOVHPS
+    _mm_storel_pi((__m64 *)&pDst[2*dstPitch], _mm_castsi128_ps(r1));
+    _mm_storeh_pi((__m64 *)&pDst[3*dstPitch], _mm_castsi128_ps(r1));
+}
+
+static inline void Transpose_4x8_16u_AVX2(Ipp16u *pSrc, Ipp32s srcPitch, Ipp16u *pDst, Ipp32s dstPitch)
+{
+    __m128i r0, r1, r2, r3, r4, r5, r6, r7;
+    r0 = _mm_loadl_epi64((__m128i*)&pSrc[0*srcPitch]);  // 03,02,01,00
+    r1 = _mm_loadl_epi64((__m128i*)&pSrc[1*srcPitch]);  // 13,12,11,10
+    r2 = _mm_loadl_epi64((__m128i*)&pSrc[2*srcPitch]);  // 23,22,21,20
+    r3 = _mm_loadl_epi64((__m128i*)&pSrc[3*srcPitch]);  // 33,32,31,30
+    r4 = _mm_loadl_epi64((__m128i*)&pSrc[4*srcPitch]);  // 43,42,41,40
+    r5 = _mm_loadl_epi64((__m128i*)&pSrc[5*srcPitch]);  // 53,52,51,50
+    r6 = _mm_loadl_epi64((__m128i*)&pSrc[6*srcPitch]);  // 63,62,61,60
+    r7 = _mm_loadl_epi64((__m128i*)&pSrc[7*srcPitch]);  // 73,72,71,70
+
+    r0 = _mm_unpacklo_epi16(r0, r1);
+    r2 = _mm_unpacklo_epi16(r2, r3);
+    r4 = _mm_unpacklo_epi16(r4, r5);
+    r6 = _mm_unpacklo_epi16(r6, r7);
+
+    r1 = r0;
+    r0 = _mm_unpacklo_epi32(r0, r2);
+    r1 = _mm_unpackhi_epi32(r1, r2);
+    r5 = r4;
+    r4 = _mm_unpacklo_epi32(r4, r6);
+    r5 = _mm_unpackhi_epi32(r5, r6);
+    r2 = r0;
+    r0 = _mm_unpacklo_epi64(r0, r4);
+    r2 = _mm_unpackhi_epi64(r2, r4);
+    r3 = r1;
+    r1 = _mm_unpacklo_epi64(r1, r5);
+    r3 = _mm_unpackhi_epi64(r3, r5);
+
+    _mm_storeu_si128((__m128i *)&pDst[0*dstPitch], r0);
+    _mm_storeu_si128((__m128i *)&pDst[1*dstPitch], r2);
+    _mm_storeu_si128((__m128i *)&pDst[2*dstPitch], r1);
+    _mm_storeu_si128((__m128i *)&pDst[3*dstPitch], r3);
+}
+
+static inline void Transpose_8x8_16u_AVX2(Ipp16u *pSrc, Ipp32s srcPitch, Ipp16u *pDst, Ipp32s dstPitch)
+{
+    for (int j = 0; j < 8; j += 4)
+    {
+        Transpose_4x8_16u_AVX2(&pSrc[j], srcPitch, &pDst[j*dstPitch], dstPitch);
+    }
+}
+
+static inline void Transpose_16x16_16u_AVX2(Ipp16u *pSrc, Ipp32s srcPitch, Ipp16u *pDst, Ipp32s dstPitch)
+{
+    for (int j = 0; j < 16; j += 4)
+    {
+        for (int i = 0; i < 16; i += 8)
+        {
+            Transpose_4x8_16u_AVX2(&pSrc[i*srcPitch+j], srcPitch, &pDst[j*dstPitch+i], dstPitch);
+        }
+    }
+}
+
+static inline void Transpose_32x32_16u_AVX2(Ipp16u *pSrc, Ipp32s srcPitch, Ipp16u *pDst, Ipp32s dstPitch)
+{
+    for (int j = 0; j < 32; j += 4)
+    {
+        for (int i = 0; i < 32; i += 8)
+        {
+            Transpose_4x8_16u_AVX2(&pSrc[i*srcPitch+j], srcPitch, &pDst[j*dstPitch+i], dstPitch);
+        }
+    }
+}
+
+template <typename PixType>
+static inline void h265_PredictIntra_Ang_Kernel (
+    Ipp32s mode,
+    PixType* PredPel,
+    PixType* pels,
+    Ipp32s pitch,
+    Ipp32s width)
+{
+    Ipp32s intraPredAngle = intraPredAngleTable[mode];
+    PixType refMainBuf[4*64+1];
+    PixType *refMain = refMainBuf + 128;
+    PixType *PredPel1, *PredPel2;
+    Ipp32s invAngle = invAngleTable[mode];
+    Ipp32s invAngleSum;
+    Ipp32s i;
+
+    if (mode >= 18)
+    {
+        PredPel1 = PredPel;
+        PredPel2 = PredPel + 2 * width + 1;
+    }
+    else
+    {
+        PredPel1 = PredPel + 2 * width;
+        PredPel2 = PredPel + 1;
+    }
+
+    refMain[0] = PredPel[0];
+
+    if (intraPredAngle < 0)
+    {
+        for (i = 1; i <= width; i++)
+        {
+            refMain[i] = PredPel1[i];
+        }
+
+        invAngleSum = 128;
+        for (i = -1; i > ((width * intraPredAngle) >> 5); i--)
+        {
+            invAngleSum += invAngle;
+            refMain[i] = PredPel2[(invAngleSum >> 8) - 1];
+        }
+    }
+    else
+    {
+        for (i = 1; i <= 2*width; i++)
+        {
+            refMain[i] = PredPel1[i];
+        }
+    }
+
+    if (sizeof(PixType) == 1) {
+        switch (width)
+        {
+        case 4:
+            if (mode >= 18)
+                PredAngle_4x4_8u_AVX2((Ipp8u *)refMain, (Ipp8u *)pels, pitch, intraPredAngle);
+            else
+            {
+                Ipp8u buf[4*4];
+                PredAngle_4x4_8u_AVX2((Ipp8u *)refMain, (Ipp8u *)buf, 4, intraPredAngle);
+                Transpose_4x4_8u_AVX2((Ipp8u *)buf, 4, (Ipp8u *)pels, pitch);
+            }
+            break;
+        case 8:
+            if (mode >= 18)
+                PredAngle_8x8_8u_AVX2((Ipp8u *)refMain, (Ipp8u *)pels, pitch, intraPredAngle);
+            else
+            {
+                Ipp8u buf[8*8];
+                PredAngle_8x8_8u_AVX2((Ipp8u *)refMain, (Ipp8u *)buf, 8, intraPredAngle);
+                Transpose_8x8_8u_AVX2((Ipp8u *)buf, 8, (Ipp8u *)pels, pitch);
+            }
+            break;
+        case 16:
+            if (mode >= 18)
+                PredAngle_16x16_8u_AVX2((Ipp8u *)refMain, (Ipp8u *)pels, pitch, intraPredAngle);
+            else
+            {
+                Ipp8u buf[16*16];
+                PredAngle_16x16_8u_AVX2((Ipp8u *)refMain, (Ipp8u *)buf, 16, intraPredAngle);
+                Transpose_16x16_8u_AVX2((Ipp8u *)buf, 16, (Ipp8u *)pels, pitch);
+            }
+            break;
+        case 32:
+            if (mode >= 18)
+                PredAngle_32x32_8u_AVX2((Ipp8u *)refMain, (Ipp8u *)pels, pitch, intraPredAngle);
+            else
+            {
+                Ipp8u buf[32*32];
+                PredAngle_32x32_8u_AVX2((Ipp8u *)refMain, (Ipp8u *)buf, 32, intraPredAngle);
+                Transpose_32x32_8u_AVX2((Ipp8u *)buf, 32, (Ipp8u *)pels, pitch);
+            }
+            break;
+        }
+    } else {
+        switch (width)
+        {
+        case 4:
+            if (mode >= 18)
+                PredAngle_4x4_16u_AVX2((Ipp16u *)refMain, (Ipp16u *)pels, pitch, intraPredAngle);
+            else
+            {
+                Ipp16u buf[4*4];
+                PredAngle_4x4_16u_AVX2((Ipp16u *)refMain, (Ipp16u *)buf, 4, intraPredAngle);
+                Transpose_4x4_16u_AVX2((Ipp16u *)buf, 4, (Ipp16u *)pels, pitch);
+            }
+            break;
+        case 8:
+            if (mode >= 18)
+                PredAngle_8x8_16u_AVX2((Ipp16u *)refMain, (Ipp16u *)pels, pitch, intraPredAngle);
+            else
+            {
+                Ipp16u buf[8*8];
+                PredAngle_8x8_16u_AVX2((Ipp16u *)refMain, (Ipp16u *)buf, 8, intraPredAngle);
+                Transpose_8x8_16u_AVX2((Ipp16u *)buf, 8, (Ipp16u *)pels, pitch);
+            }
+            break;
+        case 16:
+            if (mode >= 18)
+                PredAngle_16x16_16u_AVX2((Ipp16u *)refMain, (Ipp16u *)pels, pitch, intraPredAngle);
+            else
+            {
+                Ipp16u buf[16*16];
+                PredAngle_16x16_16u_AVX2((Ipp16u *)refMain, (Ipp16u *)buf, 16, intraPredAngle);
+                Transpose_16x16_16u_AVX2((Ipp16u *)buf, 16, (Ipp16u *)pels, pitch);
+            }
+            break;
+        case 32:
+            if (mode >= 18)
+                PredAngle_32x32_16u_AVX2((Ipp16u *)refMain, (Ipp16u *)pels, pitch, intraPredAngle);
+            else
+            {
+                Ipp16u buf[32*32];
+                PredAngle_32x32_16u_AVX2((Ipp16u *)refMain, (Ipp16u *)buf, 32, intraPredAngle);
+                Transpose_32x32_16u_AVX2((Ipp16u *)buf, 32, (Ipp16u *)pels, pitch);
+            }
+            break;
+        }
+    }
+}
+
+void MAKE_NAME(h265_PredictIntra_Ang_8u) (Ipp32s mode, Ipp8u* PredPel, Ipp8u* pels, Ipp32s pitch, Ipp32s width)
+{
+    h265_PredictIntra_Ang_Kernel<Ipp8u>(mode, PredPel, pels, pitch, width);
+}
+
+void MAKE_NAME(h265_PredictIntra_Ang_16u) (Ipp32s mode, Ipp16u* PredPel, Ipp16u* pels, Ipp32s pitch, Ipp32s width)
+{
+    h265_PredictIntra_Ang_Kernel<Ipp16u>(mode, PredPel, pels, pitch, width);
+}
+
+template <typename PixType>
+static inline void h265_PredictIntra_Ang_NoTranspose_Kernel(
+    Ipp32s mode,
+    PixType* PredPel,
+    PixType* pels,
+    Ipp32s pitch,
+    Ipp32s width)
+{
+    Ipp32s intraPredAngle = intraPredAngleTable[mode];
+    PixType refMainBuf[4*64+1];
+    PixType *refMain = refMainBuf + 128;
+    PixType *PredPel1, *PredPel2;
+    Ipp32s invAngle = invAngleTable[mode];
+    Ipp32s invAngleSum;
+    Ipp32s i;
+
+    if (mode >= 18)
+    {
+        PredPel1 = PredPel;
+        PredPel2 = PredPel + 2 * width + 1;
+    }
+    else
+    {
+        PredPel1 = PredPel + 2 * width;
+        PredPel2 = PredPel + 1;
+    }
+
+    refMain[0] = PredPel[0];
+
+    if (intraPredAngle < 0)
+    {
+        for (i = 1; i <= width; i++)
+        {
+            refMain[i] = PredPel1[i];
+        }
+
+        invAngleSum = 128;
+        for (i = -1; i > ((width * intraPredAngle) >> 5); i--)
+        {
+            invAngleSum += invAngle;
+            refMain[i] = PredPel2[(invAngleSum >> 8) - 1];
+        }
+    }
+    else
+    {
+        for (i = 1; i <= 2*width; i++)
+        {
+            refMain[i] = PredPel1[i];
+        }
+    }
+
+    if (sizeof(PixType) == 1) {
+        switch (width)
+        {
+        case 4:
+            PredAngle_4x4_8u_AVX2((Ipp8u *)refMain, (Ipp8u *)pels, pitch, intraPredAngle);
+            break;
+        case 8:
+            PredAngle_8x8_8u_AVX2((Ipp8u *)refMain, (Ipp8u *)pels, pitch, intraPredAngle);
+            break;
+        case 16:
+            PredAngle_16x16_8u_AVX2((Ipp8u *)refMain, (Ipp8u *)pels, pitch, intraPredAngle);
+            break;
+        case 32:
+            PredAngle_32x32_8u_AVX2((Ipp8u *)refMain, (Ipp8u *)pels, pitch, intraPredAngle);
+            break;
+        }
+    } else {
+        switch (width)
+        {
+        case 4:
+            PredAngle_4x4_16u_AVX2((Ipp16u *)refMain, (Ipp16u *)pels, pitch, intraPredAngle);
+            break;
+        case 8:
+            PredAngle_8x8_16u_AVX2((Ipp16u *)refMain, (Ipp16u *)pels, pitch, intraPredAngle);
+            break;
+        case 16:
+            PredAngle_16x16_16u_AVX2((Ipp16u *)refMain, (Ipp16u *)pels, pitch, intraPredAngle);
+            break;
+        case 32:
+            PredAngle_32x32_16u_AVX2((Ipp16u *)refMain, (Ipp16u *)pels, pitch, intraPredAngle);
+            break;
+        }
+    }
+}
+
+void MAKE_NAME(h265_PredictIntra_Ang_NoTranspose_8u) (Ipp32s mode, Ipp8u* PredPel, Ipp8u* pels, Ipp32s pitch, Ipp32s width)
+{
+    h265_PredictIntra_Ang_NoTranspose_Kernel<Ipp8u>(mode, PredPel, pels, pitch, width);
+}
+
+void MAKE_NAME(h265_PredictIntra_Ang_NoTranspose_16u) (Ipp32s mode, Ipp16u* PredPel, Ipp16u* pels, Ipp32s pitch, Ipp32s width)
+{
+    h265_PredictIntra_Ang_NoTranspose_Kernel<Ipp16u>(mode, PredPel, pels, pitch, width);
+}
 
 ALIGN_DECL(32) static const char fppShufTab[3][32] = {
     { 0, -1, 1, -1, 2, -1, 3, -1, 4, -1, 5, -1, 6, -1, 7, -1, 0, -1, 1, -1, 2, -1, 3, -1, 4, -1, 5, -1, 6, -1, 7, -1 },

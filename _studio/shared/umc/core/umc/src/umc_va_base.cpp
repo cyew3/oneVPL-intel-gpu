@@ -46,7 +46,6 @@ VideoAccelerationProfile VideoType2VAProfile(VideoStreamType video_type)
         case WMV_VIDEO:   return VA_VC1;
         default:          return UNKNOWN;
     }
-    return UNKNOWN;
 }
 }
 

@@ -10,7 +10,7 @@
 
 #if defined (MFX_ENABLE_H265_VIDEO_ENCODE)
 
-#if defined (MFX_ENABLE_CM)
+#if defined (MFX_VA)
 
 #pragma once
 
@@ -69,7 +69,7 @@ public:
     
     Ipp8s GetByPoc(Ipp32s poc);
     Ipp32s Add(Ipp32s poc);
-    void Update(H265FrameList *pDpb);
+    void Clean(H265Frame **dpb, Ipp32s dpbSize);
 };
 
 CmDevice * TryCreateCmDevicePtr(VideoCORE * core, mfxU32 * version = 0);
@@ -247,6 +247,6 @@ void SetCurbeData(
 
 #endif // __MFX_H265_ENC_CM_H__
 
-#endif // MFX_ENABLE_CM
+#endif // MFX_VA
 
 #endif // MFX_ENABLE_H265_VIDEO_ENCODE

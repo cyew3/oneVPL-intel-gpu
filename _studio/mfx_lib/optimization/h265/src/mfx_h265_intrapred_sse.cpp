@@ -36,8 +36,6 @@
 #pragma warning (disable:4309)
 #endif
 
-typedef Ipp8u PixType;
-
 namespace MFX_HEVC_PP
 {
 
@@ -274,102 +272,6 @@ namespace MFX_HEVC_PP
         }
     }
 
-    void MAKE_NAME(h265_PredictIntra_Ang_8u) (
-        Ipp32s mode,
-        Ipp8u* PredPel,
-        Ipp8u* pels,
-        Ipp32s pitch,
-        Ipp32s width)
-    {
-        Ipp32s intraPredAngle = intraPredAngleTable[mode];
-        Ipp8u refMainBuf[4*64+1];
-        Ipp8u *refMain = refMainBuf + 128;
-        Ipp8u *PredPel1, *PredPel2;
-        Ipp32s invAngle = invAngleTable[mode];
-        Ipp32s invAngleSum;
-        Ipp32s i;
-
-        if (mode >= 18)
-        {
-            PredPel1 = PredPel;
-            PredPel2 = PredPel + 2 * width + 1;
-        }
-        else
-        {
-            PredPel1 = PredPel + 2 * width;
-            PredPel2 = PredPel + 1;
-        }
-
-        refMain[0] = PredPel[0];
-
-        if (intraPredAngle < 0)
-        {
-            for (i = 1; i <= width; i++)
-            {
-                refMain[i] = PredPel1[i];
-            }
-
-            invAngleSum = 128;
-            for (i = -1; i > ((width * intraPredAngle) >> 5); i--)
-            {
-                invAngleSum += invAngle;
-                refMain[i] = PredPel2[(invAngleSum >> 8) - 1];
-            }
-        }
-        else
-        {
-            for (i = 1; i <= 2*width; i++)
-            {
-                refMain[i] = PredPel1[i];
-            }
-        }
-
-        switch (width)
-        {
-        case 4:
-            if (mode >= 18)
-                PredAngle_4x4_8u_SSE4(refMain, pels, pitch, intraPredAngle);
-            else
-            {
-                Ipp8u buf[4*4];
-                PredAngle_4x4_8u_SSE4(refMain, buf, 4, intraPredAngle);
-                Transpose_4x4_8u_SSE4(buf, 4, pels, pitch);
-            }
-            break;
-        case 8:
-            if (mode >= 18)
-                PredAngle_8x8_8u_SSE4(refMain, pels, pitch, intraPredAngle);
-            else
-            {
-                Ipp8u buf[8*8];
-                PredAngle_8x8_8u_SSE4(refMain, buf, 8, intraPredAngle);
-                Transpose_8x8_8u_SSE4(buf, 8, pels, pitch);
-            }
-            break;
-        case 16:
-            if (mode >= 18)
-                PredAngle_16x16_8u_SSE4(refMain, pels, pitch, intraPredAngle);
-            else
-            {
-                Ipp8u buf[16*16];
-                PredAngle_16x16_8u_SSE4(refMain, buf, 16, intraPredAngle);
-                Transpose_16x16_8u_SSE4(buf, 16, pels, pitch);
-            }
-            break;
-        case 32:
-            if (mode >= 18)
-                PredAngle_32x32_8u_SSE4(refMain, pels, pitch, intraPredAngle);
-            else
-            {
-                Ipp8u buf[32*32];
-                PredAngle_32x32_8u_SSE4(refMain, buf, 32, intraPredAngle);
-                Transpose_32x32_8u_SSE4(buf, 32, pels, pitch);
-            }
-            break;
-        }
-
-    } // void h265_PredictIntra_Ang_8u(...)
-
     static inline void PredAngle_4x4_16u_SSE4(Ipp16u *pSrc, Ipp16u *pDst, Ipp32s dstPitch, Ipp32s angle)
     {
         Ipp32s iIdx;
@@ -586,102 +488,8 @@ namespace MFX_HEVC_PP
         }
     }
 
-    void MAKE_NAME(h265_PredictIntra_Ang_16u) (
-        Ipp32s mode,
-        Ipp16u* PredPel,
-        Ipp16u* pels,
-        Ipp32s pitch,
-        Ipp32s width)
-    {
-        Ipp32s intraPredAngle = intraPredAngleTable[mode];
-        Ipp16u refMainBuf[4*64+1];
-        Ipp16u *refMain = refMainBuf + 128;
-        Ipp16u *PredPel1, *PredPel2;
-        Ipp32s invAngle = invAngleTable[mode];
-        Ipp32s invAngleSum;
-        Ipp32s i;
-
-        if (mode >= 18)
-        {
-            PredPel1 = PredPel;
-            PredPel2 = PredPel + 2 * width + 1;
-        }
-        else
-        {
-            PredPel1 = PredPel + 2 * width;
-            PredPel2 = PredPel + 1;
-        }
-
-        refMain[0] = PredPel[0];
-
-        if (intraPredAngle < 0)
-        {
-            for (i = 1; i <= width; i++)
-            {
-                refMain[i] = PredPel1[i];
-            }
-
-            invAngleSum = 128;
-            for (i = -1; i > ((width * intraPredAngle) >> 5); i--)
-            {
-                invAngleSum += invAngle;
-                refMain[i] = PredPel2[(invAngleSum >> 8) - 1];
-            }
-        }
-        else
-        {
-            for (i = 1; i <= 2*width; i++)
-            {
-                refMain[i] = PredPel1[i];
-            }
-        }
-
-        switch (width)
-        {
-        case 4:
-            if (mode >= 18)
-                PredAngle_4x4_16u_SSE4(refMain, pels, pitch, intraPredAngle);
-            else
-            {
-                Ipp16u buf[4*4];
-                PredAngle_4x4_16u_SSE4(refMain, buf, 4, intraPredAngle);
-                Transpose_4x4_16u_SSE4(buf, 4, pels, pitch);
-            }
-            break;
-        case 8:
-            if (mode >= 18)
-                PredAngle_8x8_16u_SSE4(refMain, pels, pitch, intraPredAngle);
-            else
-            {
-                Ipp16u buf[8*8];
-                PredAngle_8x8_16u_SSE4(refMain, buf, 8, intraPredAngle);
-                Transpose_8x8_16u_SSE4(buf, 8, pels, pitch);
-            }
-            break;
-        case 16:
-            if (mode >= 18)
-                PredAngle_16x16_16u_SSE4(refMain, pels, pitch, intraPredAngle);
-            else
-            {
-                Ipp16u buf[16*16];
-                PredAngle_16x16_16u_SSE4(refMain, buf, 16, intraPredAngle);
-                Transpose_16x16_16u_SSE4(buf, 16, pels, pitch);
-            }
-            break;
-        case 32:
-            if (mode >= 18)
-                PredAngle_32x32_16u_SSE4(refMain, pels, pitch, intraPredAngle);
-            else
-            {
-                Ipp16u buf[32*32];
-                PredAngle_32x32_16u_SSE4(refMain, buf, 32, intraPredAngle);
-                Transpose_32x32_16u_SSE4(buf, 32, pels, pitch);
-            }
-            break;
-        }
-    }
-    
-    void MAKE_NAME(h265_PredictIntra_Ang_NoTranspose_8u) (
+template <typename PixType>
+static inline void h265_PredictIntra_Ang_Kernel (
         Ipp32s mode,
         PixType* PredPel,
         PixType* pels,
@@ -731,24 +539,204 @@ namespace MFX_HEVC_PP
             }
         }
 
-        switch (width)
+        if (sizeof(PixType) == 1) {
+            switch (width)
+            {
+            case 4:
+                if (mode >= 18)
+                    PredAngle_4x4_8u_SSE4((Ipp8u *)refMain, (Ipp8u *)pels, pitch, intraPredAngle);
+                else
+                {
+                    Ipp8u buf[4*4];
+                    PredAngle_4x4_8u_SSE4((Ipp8u *)refMain, (Ipp8u *)buf, 4, intraPredAngle);
+                    Transpose_4x4_8u_SSE4((Ipp8u *)buf, 4, (Ipp8u *)pels, pitch);
+                }
+                break;
+            case 8:
+                if (mode >= 18)
+                    PredAngle_8x8_8u_SSE4((Ipp8u *)refMain, (Ipp8u *)pels, pitch, intraPredAngle);
+                else
+                {
+                    Ipp8u buf[8*8];
+                    PredAngle_8x8_8u_SSE4((Ipp8u *)refMain, (Ipp8u *)buf, 8, intraPredAngle);
+                    Transpose_8x8_8u_SSE4((Ipp8u *)buf, 8, (Ipp8u *)pels, pitch);
+                }
+                break;
+            case 16:
+                if (mode >= 18)
+                    PredAngle_16x16_8u_SSE4((Ipp8u *)refMain, (Ipp8u *)pels, pitch, intraPredAngle);
+                else
+                {
+                    Ipp8u buf[16*16];
+                    PredAngle_16x16_8u_SSE4((Ipp8u *)refMain, (Ipp8u *)buf, 16, intraPredAngle);
+                    Transpose_16x16_8u_SSE4((Ipp8u *)buf, 16, (Ipp8u *)pels, pitch);
+                }
+                break;
+            case 32:
+                if (mode >= 18)
+                    PredAngle_32x32_8u_SSE4((Ipp8u *)refMain, (Ipp8u *)pels, pitch, intraPredAngle);
+                else
+                {
+                    Ipp8u buf[32*32];
+                    PredAngle_32x32_8u_SSE4((Ipp8u *)refMain, (Ipp8u *)buf, 32, intraPredAngle);
+                    Transpose_32x32_8u_SSE4((Ipp8u *)buf, 32, (Ipp8u *)pels, pitch);
+                }
+                break;
+            }
+        } else {
+            switch (width)
+            {
+            case 4:
+                if (mode >= 18)
+                    PredAngle_4x4_16u_SSE4((Ipp16u *)refMain, (Ipp16u *)pels, pitch, intraPredAngle);
+                else
+                {
+                    Ipp16u buf[4*4];
+                    PredAngle_4x4_16u_SSE4((Ipp16u *)refMain, (Ipp16u *)buf, 4, intraPredAngle);
+                    Transpose_4x4_16u_SSE4((Ipp16u *)buf, 4, (Ipp16u *)pels, pitch);
+                }
+                break;
+            case 8:
+                if (mode >= 18)
+                    PredAngle_8x8_16u_SSE4((Ipp16u *)refMain, (Ipp16u *)pels, pitch, intraPredAngle);
+                else
+                {
+                    Ipp16u buf[8*8];
+                    PredAngle_8x8_16u_SSE4((Ipp16u *)refMain, (Ipp16u *)buf, 8, intraPredAngle);
+                    Transpose_8x8_16u_SSE4((Ipp16u *)buf, 8, (Ipp16u *)pels, pitch);
+                }
+                break;
+            case 16:
+                if (mode >= 18)
+                    PredAngle_16x16_16u_SSE4((Ipp16u *)refMain, (Ipp16u *)pels, pitch, intraPredAngle);
+                else
+                {
+                    Ipp16u buf[16*16];
+                    PredAngle_16x16_16u_SSE4((Ipp16u *)refMain, (Ipp16u *)buf, 16, intraPredAngle);
+                    Transpose_16x16_16u_SSE4((Ipp16u *)buf, 16, (Ipp16u *)pels, pitch);
+                }
+                break;
+            case 32:
+                if (mode >= 18)
+                    PredAngle_32x32_16u_SSE4((Ipp16u *)refMain, (Ipp16u *)pels, pitch, intraPredAngle);
+                else
+                {
+                    Ipp16u buf[32*32];
+                    PredAngle_32x32_16u_SSE4((Ipp16u *)refMain, (Ipp16u *)buf, 32, intraPredAngle);
+                    Transpose_32x32_16u_SSE4((Ipp16u *)buf, 32, (Ipp16u *)pels, pitch);
+                }
+                break;
+            }
+        }
+    }
+    
+    void MAKE_NAME(h265_PredictIntra_Ang_8u) (Ipp32s mode, Ipp8u* PredPel, Ipp8u* pels, Ipp32s pitch, Ipp32s width)
+    {
+        h265_PredictIntra_Ang_Kernel<Ipp8u>(mode, PredPel, pels, pitch, width);
+    }
+
+    void MAKE_NAME(h265_PredictIntra_Ang_16u) (Ipp32s mode, Ipp16u* PredPel, Ipp16u* pels, Ipp32s pitch, Ipp32s width)
+    {
+        h265_PredictIntra_Ang_Kernel<Ipp16u>(mode, PredPel, pels, pitch, width);
+    }
+
+template <typename PixType>
+static inline void h265_PredictIntra_Ang_NoTranspose_Kernel(
+        Ipp32s mode,
+        PixType* PredPel,
+        PixType* pels,
+        Ipp32s pitch,
+        Ipp32s width)
+    {
+        Ipp32s intraPredAngle = intraPredAngleTable[mode];
+        PixType refMainBuf[4*64+1];
+        PixType *refMain = refMainBuf + 128;
+        PixType *PredPel1, *PredPel2;
+        Ipp32s invAngle = invAngleTable[mode];
+        Ipp32s invAngleSum;
+        Ipp32s i;
+
+        if (mode >= 18)
         {
-        case 4:
-            PredAngle_4x4_8u_SSE4(refMain, pels, pitch, intraPredAngle);
-            break;
-        case 8:
-            PredAngle_8x8_8u_SSE4(refMain, pels, pitch, intraPredAngle);
-            break;
-        case 16:
-            PredAngle_16x16_8u_SSE4(refMain, pels, pitch, intraPredAngle);
-            break;
-        case 32:
-            PredAngle_32x32_8u_SSE4(refMain, pels, pitch, intraPredAngle);
-            break;
+            PredPel1 = PredPel;
+            PredPel2 = PredPel + 2 * width + 1;
+        }
+        else
+        {
+            PredPel1 = PredPel + 2 * width;
+            PredPel2 = PredPel + 1;
         }
 
+        refMain[0] = PredPel[0];
+
+        if (intraPredAngle < 0)
+        {
+            for (i = 1; i <= width; i++)
+            {
+                refMain[i] = PredPel1[i];
+            }
+
+            invAngleSum = 128;
+            for (i = -1; i > ((width * intraPredAngle) >> 5); i--)
+            {
+                invAngleSum += invAngle;
+                refMain[i] = PredPel2[(invAngleSum >> 8) - 1];
+            }
+        }
+        else
+        {
+            for (i = 1; i <= 2*width; i++)
+            {
+                refMain[i] = PredPel1[i];
+            }
+        }
+
+        if (sizeof(PixType) == 1) {
+            switch (width)
+            {
+            case 4:
+                PredAngle_4x4_8u_SSE4((Ipp8u *)refMain, (Ipp8u *)pels, pitch, intraPredAngle);
+                break;
+            case 8:
+                PredAngle_8x8_8u_SSE4((Ipp8u *)refMain, (Ipp8u *)pels, pitch, intraPredAngle);
+                break;
+            case 16:
+                PredAngle_16x16_8u_SSE4((Ipp8u *)refMain, (Ipp8u *)pels, pitch, intraPredAngle);
+                break;
+            case 32:
+                PredAngle_32x32_8u_SSE4((Ipp8u *)refMain, (Ipp8u *)pels, pitch, intraPredAngle);
+                break;
+            }
+        } else {
+            switch (width)
+            {
+            case 4:
+                PredAngle_4x4_16u_SSE4((Ipp16u *)refMain, (Ipp16u *)pels, pitch, intraPredAngle);
+                break;
+            case 8:
+                PredAngle_8x8_16u_SSE4((Ipp16u *)refMain, (Ipp16u *)pels, pitch, intraPredAngle);
+                break;
+            case 16:
+                PredAngle_16x16_16u_SSE4((Ipp16u *)refMain, (Ipp16u *)pels, pitch, intraPredAngle);
+                break;
+            case 32:
+                PredAngle_32x32_16u_SSE4((Ipp16u *)refMain, (Ipp16u *)pels, pitch, intraPredAngle);
+                break;
+            }
+        }
     } // void h265_PredictIntra_Ang_NoTranspose_8u(...)
 
+    void MAKE_NAME(h265_PredictIntra_Ang_NoTranspose_8u) (Ipp32s mode, Ipp8u* PredPel, Ipp8u* pels, Ipp32s pitch, Ipp32s width)
+    {
+        h265_PredictIntra_Ang_NoTranspose_Kernel<Ipp8u>(mode, PredPel, pels, pitch, width);
+    }
+
+    void MAKE_NAME(h265_PredictIntra_Ang_NoTranspose_16u) (Ipp32s mode, Ipp16u* PredPel, Ipp16u* pels, Ipp32s pitch, Ipp32s width)
+    {
+        h265_PredictIntra_Ang_NoTranspose_Kernel<Ipp16u>(mode, PredPel, pels, pitch, width);
+    }
+
+    typedef Ipp8u PixType;  // TMP - will go away after 8u/16u versions are merged into common kernels w/templates
 
     //
     // Encoder version:

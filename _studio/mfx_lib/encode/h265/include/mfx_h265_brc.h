@@ -22,9 +22,14 @@ namespace H265Enc {
 
 #define BRC_CLIP(val, minval, maxval) val = Saturate(minval, maxval, val)
 
+//#define SetQuantB() \
+//    mQuantB = ((mQuantP + mQuantPrev) * 563 >> 10) + 1; \
+//    BRC_CLIP(mQuantB, 1, mQuantMax)
+
 #define SetQuantB() \
-    mQuantB = ((mQuantP + mQuantPrev) * 563 >> 10) + 1; \
+    mQuantB = ((mQuantP + mQuantPrev + 1) >> 1) + 1; \
     BRC_CLIP(mQuantB, 1, mQuantMax)
+
 
 #define MFX_H265_BITRATE_SCALE 0
 #define  MFX_H265_CPBSIZE_SCALE 3
@@ -63,6 +68,7 @@ typedef struct _mfxBRC_HRDState
     mfxI32 minFrameSize;
     mfxI32 maxFrameSize;
     mfxI32 underflowQuant;
+    mfxI32 overflowQuant;
 } mfxBRC_HRDState;
 
 
@@ -112,7 +118,7 @@ public:
 
     mfxBRCStatus PostPackFrame(mfxU16 picType, mfxI32 bitsEncodedFrame, mfxI32 overheadBits, mfxI32 recode = 0, mfxI32 poc = 0);
 
-    mfxI32 GetQP(mfxU16 frameType, mfxI32* chromaQP = NULL);
+    mfxI32 GetQP(mfxU16 frameType, mfxU16 chromaFormat, mfxI32* chromaQP = NULL);
     mfxStatus SetQP(mfxI32 qp, mfxU16 frameType);
 
     mfxStatus GetInitialCPBRemovalDelay(mfxU32 *initial_cpb_removal_delay, mfxI32 recode = 0);
@@ -133,7 +139,7 @@ protected:
 
     mfxU16  mPicType;
 
-    mfxI32  mQuantI, mQuantP, mQuantB, mQuantMax, mQuantPrev, mQuantOffset, mQPprev;
+    mfxI32  mQuantI, mQuantP, mQuantB, mQuantMax, mQuantMin, mQuantPrev, mQuantOffset, mQPprev;
     mfxI32  mRCfap, mRCqap, mRCbap, mRCq;
     mfxF64  mRCqa, mRCfa, mRCqa0;
     mfxF64  mRCfa_short;
@@ -160,6 +166,10 @@ protected:
     mfxU32 mMaxBitrate;
     mfxI64 mBF, mBFsaved;
     mfxF64 mRCfsize;
+
+    mfxI32 mMinQp;
+    mfxI32 mMaxQp;
+
 //    mfxI32 mScChFrameCnt;
 //    mfxI32 mScChLength;
 };

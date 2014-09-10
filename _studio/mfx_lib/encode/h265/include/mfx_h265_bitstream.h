@@ -59,12 +59,17 @@ public:
         m_base.m_bitOffset += 256;
     }
 
-    inline void EncodeSingleBin_CABAC(CABAC_CONTEXT_H265 *ctx,
-        Ipp32s code)
+    inline void EncodeSingleBin_CABAC(CABAC_CONTEXT_H265 *ctx, Ipp32s code)
     {
         register Ipp8u pStateIdx = *ctx;
         m_base.m_bitOffset += tab_cabacPBits[pStateIdx ^ (code << 6)];
         *ctx = tab_cabacTransTbl[code][pStateIdx];
+    }
+
+    inline void EncodeSingleBin_CABAC(const CABAC_CONTEXT_H265 *ctx, Ipp32s code)
+    {
+        register Ipp8u pStateIdx = *ctx;
+        m_base.m_bitOffset += tab_cabacPBits[pStateIdx ^ (code << 6)];
     }
 
     inline void EncodeBinEP_CABAC(Ipp32u code)
@@ -79,26 +84,50 @@ public:
         m_base.m_bitOffset += len << 8;
     }
 
-    inline void Reset() {
+    void Reset()
+    {
         m_base.m_bitOffset = 0;
     }
-    inline Ipp32u GetNumBits() {
+
+    Ipp32u GetNumBits()
+    {
         return m_base.m_bitOffset >> (8 - BIT_COST_SHIFT);
     }
-    inline void CtxSave(CABAC_CONTEXT_H265 *ptr, Ipp32s offset, Ipp32s num) {
-        small_memcpy(ptr + offset, m_base.context_array + offset, num*sizeof(CABAC_CONTEXT_H265));
+
+    void CtxSave(CABAC_CONTEXT_H265 *ptr, Ipp32s offset, Ipp32s num) const
+    {
+        small_memcpy(ptr + offset, m_base.context_array + offset, num * sizeof(CABAC_CONTEXT_H265));
     }
-    inline void CtxRestore(CABAC_CONTEXT_H265 *ptr, Ipp32s offset, Ipp32s num) {
-        small_memcpy(m_base.context_array + offset, ptr + offset, num*sizeof(CABAC_CONTEXT_H265));
-    }
-    inline void CtxSave(CABAC_CONTEXT_H265 *ptr, Ipp32s ctxCategory) {
+    
+    void CtxSave(CABAC_CONTEXT_H265 *ptr, Ipp32s ctxCategory) const
+    {
         CtxSave(ptr, tab_ctxIdxOffset[ctxCategory], tab_ctxIdxSize[ctxCategory]);
     }
-    inline void CtxRestore(CABAC_CONTEXT_H265 *ptr, Ipp32s ctxCategory) {
+    
+    void CtxSave(CABAC_CONTEXT_H265 *ptr) const
+    {
+        CtxSave(ptr, 0, NUM_CABAC_CONTEXT);
+    }
+    
+    void CtxRestore(const CABAC_CONTEXT_H265 *ptr, Ipp32s offset, Ipp32s num)
+    {
+        small_memcpy(m_base.context_array + offset, ptr + offset, num*sizeof(CABAC_CONTEXT_H265));
+    }
+    
+    void CtxRestore(const CABAC_CONTEXT_H265 *ptr, Ipp32s ctxCategory)
+    {
         CtxRestore(ptr, tab_ctxIdxOffset[ctxCategory], tab_ctxIdxSize[ctxCategory]);
     }
 
-    int isReal() { return 0; }
+    void CtxRestore(const CABAC_CONTEXT_H265 *ptr)
+    {
+        CtxRestore(ptr, 0, NUM_CABAC_CONTEXT);
+    }
+
+    int isReal()
+    {
+        return 0;
+    }
 };
 
 /////

@@ -16,7 +16,7 @@
 #pragma warning(disable: 4505) 
 #include <cm.h>
 #include <genx_vme.h>
-#include "..\include\genx_h265_cmcode_bdw.h"
+#include "../include/genx_h265_cmcode_bdw.h"
 
 #define MBINTRADIST_SIZE    4 // mfxU16 intraDist;mfxU16 reserved;
 #define MBDIST_SIZE     64  // 16*mfxU32
@@ -261,6 +261,135 @@ DownSampleMB(SurfaceIndex SurfIndex,
     write_plane(Surf2XIndex, GENX_SURFACE_Y_PLANE, ox2x, oy2x, outMb2x);
 }
 
+extern "C" _GENX_MAIN_  void
+DownSampleMB2t(SurfaceIndex SurfIndex,  // 2 tiers
+               SurfaceIndex Surf2XIndex,
+               SurfaceIndex Surf4XIndex)
+{   // Luma only
+    uint mbX = get_thread_origin_x();
+    uint mbY = get_thread_origin_y();
+    uint ix = mbX << 5; // src 32x32
+    uint iy = mbY << 5;
+    uint ox2x = mbX << 4; // dst 16x16
+    uint oy2x = mbY << 4;
+    uint ox4x = mbX << 3; // dst 8x8
+    uint oy4x = mbY << 3;
+
+    matrix<uint1,32,32> inMb;
+    matrix<uint1,16,16> outMb2x;
+    matrix<uint1,8,8> outMb4x;
+    matrix<uint2,16,32> sum16x32_16;
+    matrix<uint2,8,16> sum8x16_16;
+
+    read_plane(SurfIndex, GENX_SURFACE_Y_PLANE, ix +  0, iy +  0, inMb.select<16,1,16,1>(0,0));
+    read_plane(SurfIndex, GENX_SURFACE_Y_PLANE, ix + 16, iy +  0, inMb.select<16,1,16,1>(0,16));
+    read_plane(SurfIndex, GENX_SURFACE_Y_PLANE, ix +  0, iy + 16, inMb.select<16,1,16,1>(16,0));
+    read_plane(SurfIndex, GENX_SURFACE_Y_PLANE, ix + 16, iy + 16, inMb.select<16,1,16,1>(16,16));
+
+    sum16x32_16.select<16,1,32,1>(0,0) = inMb.select<16,2,32,1>(0,0) + inMb.select<16,2,32,1>(1,0);
+    sum16x32_16.select<16,1,16,1>(0,0) = sum16x32_16.select<16,1,16,2>(0,0) + sum16x32_16.select<16,1,16,2>(0,1);
+
+    sum16x32_16.select<16,1,16,1>(0,0) += 2;
+    outMb2x = sum16x32_16.select<16,1,16,1>(0,0) >> 2;
+
+    // for 4X
+    sum8x16_16.select<8,1,16,1>(0,0) = outMb2x.select<8,2,16,1>(0,0) + outMb2x.select<8,2,16,1>(1,0);
+    sum8x16_16.select<8,1,8,1>(0,0) = sum8x16_16.select<8,1,8,2>(0,0) + sum8x16_16.select<8,1,8,2>(0,1);
+
+    sum8x16_16.select<8,1,8,1>(0,0) += 2;
+    outMb4x = sum8x16_16.select<8,1,8,1>(0,0) >> 2;
+
+    write_plane(Surf4XIndex, GENX_SURFACE_Y_PLANE, ox4x, oy4x, outMb4x);
+    write_plane(Surf2XIndex, GENX_SURFACE_Y_PLANE, ox2x, oy2x, outMb2x);
+}
+
+
+extern "C" _GENX_MAIN_  void
+DownSampleMB4t(SurfaceIndex SurfIndex,  // 4 tiers
+               SurfaceIndex Surf2XIndex,
+               SurfaceIndex Surf4XIndex,
+               SurfaceIndex Surf8XIndex,
+               SurfaceIndex Surf16XIndex)
+{   // Luma only
+    uint mbX = get_thread_origin_x();
+    uint mbY = get_thread_origin_y();
+    uint ix = mbX << 8; // src 256x256
+    uint iy = mbY << 8;
+    uint ox2x = mbX << 7; // dst 128x128
+    uint oy2x = mbY << 7;
+    uint ox4x = mbX << 6; // dst 64x64
+    uint oy4x = mbY << 6;
+    uint ox8x = mbX << 5; // dst 32x32
+    uint oy8x = mbY << 5;
+    uint ox16x = mbX << 4; // dst 16x16
+    uint oy16x = mbY << 4;
+
+    matrix<uint1,32,32> inMb;
+    matrix<uint1,16,16> outMb2x;
+    matrix<uint1,16,16> outMb4x;
+    matrix<uint1,16,16> outMb8x;
+    matrix<uint1,16,16> outMb16x;
+    matrix<uint2,16,32> sum16x32_16;
+    matrix<uint2,8,16> sum8x16_16;
+
+    // process 256x256
+    for (uint y128_pos = 0; y128_pos < 2; y128_pos ++) {
+        for (uint x128_pos = 0; x128_pos < 2; x128_pos ++) {
+            uint y128 = iy + (y128_pos << 7);
+            uint x128 = ix + (x128_pos << 7);
+            // process 128x128
+            for (uint y64_pos = 0; y64_pos < 2; y64_pos ++) {
+                for (uint x64_pos = 0; x64_pos < 2; x64_pos ++) {
+                    uint y64 = y128 + (y64_pos << 6);
+                    uint x64 = x128 + (x64_pos << 6);
+                    // process 64x64
+                    for (uint y32_pos = 0; y32_pos < 2; y32_pos ++) {
+                        for (uint x32_pos = 0; x32_pos < 2; x32_pos ++) {
+                            uint y32 = y64 + (y32_pos << 5);
+                            uint x32 = x64 + (x32_pos << 5);
+                            read_plane(SurfIndex, GENX_SURFACE_Y_PLANE, x32 +  0, y32 +  0, inMb.select<16,1,16,1>(0,0));
+                            read_plane(SurfIndex, GENX_SURFACE_Y_PLANE, x32 + 16, y32 +  0, inMb.select<16,1,16,1>(0,16));
+                            read_plane(SurfIndex, GENX_SURFACE_Y_PLANE, x32 +  0, y32 + 16, inMb.select<16,1,16,1>(16,0));
+                            read_plane(SurfIndex, GENX_SURFACE_Y_PLANE, x32 + 16, y32 + 16, inMb.select<16,1,16,1>(16,16));
+
+                            sum16x32_16.select<16,1,32,1>(0,0) = inMb.select<16,2,32,1>(0,0) + inMb.select<16,2,32,1>(1,0);
+                            sum16x32_16.select<16,1,16,1>(0,0) = sum16x32_16.select<16,1,16,2>(0,0) + sum16x32_16.select<16,1,16,2>(0,1);
+
+                            sum16x32_16.select<16,1,16,1>(0,0) += 2;
+                            outMb2x = sum16x32_16.select<16,1,16,1>(0,0) >> 2;
+                            write_plane(Surf2XIndex, GENX_SURFACE_Y_PLANE, ox2x + (x128_pos<<6) + (x64_pos<<5) + (x32_pos<<4), oy2x + (y128_pos<<6) + (y64_pos<<5) + (y32_pos<<4), outMb2x);
+
+                            sum8x16_16.select<8,1,16,1>(0,0) = outMb2x.select<8,2,16,1>(0,0) + outMb2x.select<8,2,16,1>(1,0);
+                            sum8x16_16.select<8,1,8,1>(0,0) = sum8x16_16.select<8,1,8,2>(0,0) + sum8x16_16.select<8,1,8,2>(0,1);
+
+                            sum8x16_16.select<8,1,8,1>(0,0) += 2;
+                            outMb4x.select<8,1,8,1>((y32_pos<<3),(x32_pos<<3)) = sum8x16_16.select<8,1,8,1>(0,0) >> 2;
+                        }
+                    }
+
+                    write_plane(Surf4XIndex, GENX_SURFACE_Y_PLANE, ox4x + (x128_pos<<5) + (x64_pos<<4), oy4x + (y128_pos<<5) + (y64_pos<<4), outMb4x);
+
+                    sum8x16_16.select<8,1,16,1>(0,0) = outMb4x.select<8,2,16,1>(0,0) + outMb4x.select<8,2,16,1>(1,0);
+                    sum8x16_16.select<8,1,8,1>(0,0) = sum8x16_16.select<8,1,8,2>(0,0) + sum8x16_16.select<8,1,8,2>(0,1);
+
+                    sum8x16_16.select<8,1,8,1>(0,0) += 2;
+                    outMb8x.select<8,1,8,1>((y64_pos<<3),(x64_pos<<3)) = sum8x16_16.select<8,1,8,1>(0,0) >> 2;
+                }
+            }
+            
+            write_plane(Surf8XIndex, GENX_SURFACE_Y_PLANE, ox8x + (x128_pos<<4), oy8x + (y128_pos<<4), outMb8x);
+
+            sum8x16_16.select<8,1,16,1>(0,0) = outMb8x.select<8,2,16,1>(0,0) + outMb8x.select<8,2,16,1>(1,0);
+            sum8x16_16.select<8,1,8,1>(0,0) = sum8x16_16.select<8,1,8,2>(0,0) + sum8x16_16.select<8,1,8,2>(0,1);
+
+            sum8x16_16.select<8,1,8,1>(0,0) += 2;
+            outMb16x.select<8,1,8,1>((y128_pos<<3),(x128_pos<<3)) = sum8x16_16.select<8,1,8,1>(0,0) >> 2;
+        }
+    }
+
+    write_plane(Surf16XIndex, GENX_SURFACE_Y_PLANE, ox16x, oy16x, outMb16x);
+
+}
 
 _GENX_ inline
 void PrepareFractionalCall(matrix_ref<uchar, 3, 32> uniIn,
@@ -1302,8 +1431,7 @@ void InterpolateQpelFromHalfPelDiag(SurfaceIndex SURF_SRC, SurfaceIndex SURF_REF
 }
 
 extern "C" _GENX_MAIN_ 
-void MeP32(SurfaceIndex SURF_CONTROL, SurfaceIndex SURF_SRC_AND_REF, SurfaceIndex SURF_MV32x32,
-           SurfaceIndex SURF_MV32x16, SurfaceIndex SURF_MV16x32)
+void Ime(SurfaceIndex SURF_CONTROL, SurfaceIndex SURF_SRC_AND_REF, SurfaceIndex SURF_MV_OUT)
 {
     uint mbX = get_thread_origin_x();
     uint mbY = get_thread_origin_y();
@@ -1327,6 +1455,302 @@ void MeP32(SurfaceIndex SURF_CONTROL, SurfaceIndex SURF_SRC_AND_REF, SurfaceInde
     // declare parameters for VME
     matrix<uint4, 16, 2> costs = 0;
     vector<int2, 2> mvPred = 0;
+
+    // load search path
+    SELECT_N_ROWS(imeIn, 0, 2) = SLICE1(control, 0, 64);
+
+    // M0.2
+    VME_SET_UNIInput_SrcX(uniIn, x);
+    VME_SET_UNIInput_SrcY(uniIn, y);
+
+    // M0.3 various prediction parameters
+    VME_SET_DWORD(uniIn, 0, 3, 0x78040000); // BMEDisableFBR=1 InterSAD=0 SubMbPartMask=0x78
+    // M1.1 MaxNumMVs
+    VME_SET_UNIInput_MaxNumMVs(uniIn, 32);
+    // M0.5 Reference Window Width & Height
+    VME_SET_UNIInput_RefW(uniIn, 48);
+    VME_SET_UNIInput_RefH(uniIn, 40);
+
+    // M0.0 Ref0X, Ref0Y
+    vector_ref<int2, 2> sourceXY = uniIn.row(0).format<int2>().select<2,1>(4);
+    vector<uint1, 2> widthHeight;
+    widthHeight[0] = (height >> 4) - 1;
+    widthHeight[1] = (width >> 4);
+    vector_ref<int1, 2> searchWindow = uniIn.row(0).format<int1>().select<2,1>(22);
+    vector_ref<int2, 2> ref0XY = uniIn.row(0).format<int2>().select<2,1>(0);
+    int2 maxMvY = 0x7fff;
+    SetRef(sourceXY, mvPred, searchWindow, widthHeight, maxMvY, /*out*/ref0XY);
+
+    // M1.0-3 Search path parameters & start centers & MaxNumMVs again!!!
+    VME_SET_UNIInput_AdaptiveEn(uniIn);
+    VME_SET_UNIInput_T8x8FlagForInterEn(uniIn);
+    VME_SET_UNIInput_MaxNumMVs(uniIn, 0x3f);
+    VME_SET_UNIInput_MaxNumSU(uniIn, maxNumSu);
+    VME_SET_UNIInput_LenSP(uniIn, lenSp);
+    
+    // M1.2 Start0X, Start0Y
+    vector<int1, 2> start0 = searchWindow;
+    start0 = ((start0 - 16) >> 3) & 0x0f;
+    uniIn.row(1)[10] = start0[0] | (start0[1] << 4);
+
+    uniIn.row(1)[31] = 0x1;
+
+    vector<int2,2>  ref0       = uniIn.row(0).format<int2>().select<2, 1> (0);
+//    vector<uint2,4> costCenter = uniIn.row(1).format<uint2>().select<4, 1> (8);
+    // FWD and BWD cost centers for BDW+
+    // cost centers are zero (no mv pedictors are used now)
+    vector<uint2,16> costCenter = uniIn.row(3).format<uint2>().select<16, 1> (0);
+
+    run_vme_ime(uniIn, imeIn,
+        VME_STREAM_OUT, VME_SEARCH_SINGLE_REF_SINGLE_REC_SINGLE_START,
+        SURF_SRC_AND_REF, ref0, NULL, costCenter, imeOut);
+
+    //DebugUniOutput<9>(imeOut);
+
+    // 32x32
+//    SLICE(fbrOut16x16.format<short>(), 16, 2, 1) = SLICE(fbrOut16x16.format<short>(), 16, 2, 1) << 1;
+    vector<short, 2> imv = imeOut.row(7).format<short>().select<2,1>(10) << 1;  // MVs are ready for 32x32
+//    SLICE(fbrOut16x16.format<short>(), 16, 2, 1) = SLICE(fbrOut16x16.format<short>(), 16, 2, 1) << 1;
+//    write(SURF_MV32x32, mbX * MVDATA_SIZE, mbY, SLICE(fbrOut16x16.format<uint>(), 8, 1, 1));
+    write(SURF_MV_OUT, mbX * MVDATA_SIZE, mbY, SLICE(imv.format<uint>(), 0, 1, 1));
+}
+
+extern "C" _GENX_MAIN_ 
+void ImeWithPred(SurfaceIndex SURF_CONTROL, SurfaceIndex SURF_SRC_AND_REF, SurfaceIndex SURF_MV_PRED, SurfaceIndex SURF_MV_OUT)
+{
+    uint mbX = get_thread_origin_x();
+    uint mbY = get_thread_origin_y();
+    uint x = mbX * 16;
+    uint y = mbY * 16;
+
+    vector<uchar, 64> control;
+    read(SURF_CONTROL, 0, control);
+
+    uint1 maxNumSu = control.format<uint1>()[56];
+    uint1 lenSp = control.format<uint1>()[57];
+    uint2 width = control.format<uint2>()[30];
+    uint2 height = control.format<uint2>()[31];
+
+    // read MB record data
+    matrix<uchar, 4, 32> uniIn = 0;
+    matrix<uchar, 9, 32> imeOut;
+    matrix<uchar, 2, 32> imeIn = 0;
+    matrix<uchar, 4, 32> fbrIn;
+
+    // declare parameters for VME
+    matrix<uint4, 16, 2> costs = 0;
+    vector<int2, 2> mvPred = 0;
+    read(SURF_MV_PRED, (mbX >> 1) * MVDATA_SIZE, mbY >> 1, mvPred);
+
+    // load search path
+    SELECT_N_ROWS(imeIn, 0, 2) = SLICE1(control, 0, 64);
+
+    // M0.2
+    VME_SET_UNIInput_SrcX(uniIn, x);
+    VME_SET_UNIInput_SrcY(uniIn, y);
+
+    // M0.3 various prediction parameters
+    VME_SET_DWORD(uniIn, 0, 3, 0x78040000); // BMEDisableFBR=1 InterSAD=0 SubMbPartMask=0x78
+    // M1.1 MaxNumMVs
+    VME_SET_UNIInput_MaxNumMVs(uniIn, 32);
+    // M0.5 Reference Window Width & Height
+    VME_SET_UNIInput_RefW(uniIn, 48);
+    VME_SET_UNIInput_RefH(uniIn, 40);
+
+    // M0.0 Ref0X, Ref0Y
+    vector_ref<int2, 2> sourceXY = uniIn.row(0).format<int2>().select<2,1>(4);
+    vector<uint1, 2> widthHeight;
+    widthHeight[0] = (height >> 4) - 1;
+    widthHeight[1] = (width >> 4);
+    vector_ref<int1, 2> searchWindow = uniIn.row(0).format<int1>().select<2,1>(22);
+    vector_ref<int2, 2> ref0XY = uniIn.row(0).format<int2>().select<2,1>(0);
+    int2 maxMvY = 0x7fff;
+    SetRef(sourceXY, mvPred, searchWindow, widthHeight, maxMvY, /*out*/ref0XY);
+
+    // M1.0-3 Search path parameters & start centers & MaxNumMVs again!!!
+    VME_SET_UNIInput_AdaptiveEn(uniIn);
+    VME_SET_UNIInput_T8x8FlagForInterEn(uniIn);
+    VME_SET_UNIInput_MaxNumMVs(uniIn, 0x3f);
+    VME_SET_UNIInput_MaxNumSU(uniIn, maxNumSu);
+    VME_SET_UNIInput_LenSP(uniIn, lenSp);
+    
+    // M1.2 Start0X, Start0Y
+    vector<int1, 2> start0 = searchWindow;
+    start0 = ((start0 - 16) >> 3) & 0x0f;
+    uniIn.row(1)[10] = start0[0] | (start0[1] << 4);
+
+    uniIn.row(1)[31] = 0x1;
+
+    vector<int2,2>  ref0       = uniIn.row(0).format<int2>().select<2, 1> (0);
+//    vector<uint2,4> costCenter = uniIn.row(1).format<uint2>().select<4, 1> (8);
+    vector<uint2,16> costCenter = uniIn.row(3).format<uint2>().select<16, 1> (0);
+
+    run_vme_ime(uniIn, imeIn,
+        VME_STREAM_OUT, VME_SEARCH_SINGLE_REF_SINGLE_REC_SINGLE_START,
+        SURF_SRC_AND_REF, ref0, NULL, costCenter, imeOut);
+
+    //DebugUniOutput<9>(imeOut);
+
+    // 32x32
+//    SLICE(fbrOut16x16.format<short>(), 16, 2, 1) = SLICE(fbrOut16x16.format<short>(), 16, 2, 1) << 1;
+    vector<short, 2> imv = imeOut.row(7).format<short>().select<2,1>(10) << 1;  // MVs are ready for 32x32
+//    SLICE(fbrOut16x16.format<short>(), 16, 2, 1) = SLICE(fbrOut16x16.format<short>(), 16, 2, 1) << 1;
+//    write(SURF_MV32x32, mbX * MVDATA_SIZE, mbY, SLICE(fbrOut16x16.format<uint>(), 8, 1, 1));
+    write(SURF_MV_OUT, mbX * MVDATA_SIZE, mbY, SLICE(imv.format<uint>(), 0, 1, 1));
+}
+
+extern "C" _GENX_MAIN_ 
+void MeP32Frac(SurfaceIndex SURF_CONTROL, SurfaceIndex SURF_SRC_AND_REF,
+               SurfaceIndex SURF_MV32x32, SurfaceIndex SURF_MV32x16, SurfaceIndex SURF_MV16x32)
+{   // SURF_MV32x32 should keep MVs from IME for 32x32
+    uint mbX = get_thread_origin_x();
+    uint mbY = get_thread_origin_y();
+    uint x = mbX * 16;
+    uint y = mbY * 16;
+
+    vector<uchar, 64> control;
+    read(SURF_CONTROL, 0, control);
+
+    uint1 maxNumSu = control.format<uint1>()[56];
+    uint1 lenSp = control.format<uint1>()[57];
+    uint2 width = control.format<uint2>()[30];
+    uint2 height = control.format<uint2>()[31];
+
+    // read MB record data
+    matrix<uchar, 4, 32> uniIn = 0;
+    matrix<uchar, 9, 32> imeOut;
+    matrix<uchar, 2, 32> imeIn = 0;
+    matrix<uchar, 4, 32> fbrIn;
+
+    // declare parameters for VME
+    matrix<uint4, 16, 2> costs = 0;
+    vector<int2, 2> mvPred = 0;
+//>    read(SURF_MV32x32, mbX, mbY, mvPred);
+
+    // load search path
+    SELECT_N_ROWS(imeIn, 0, 2) = SLICE1(control, 0, 64);
+
+    // M0.2
+    VME_SET_UNIInput_SrcX(uniIn, x);
+    VME_SET_UNIInput_SrcY(uniIn, y);
+
+    // M0.3 various prediction parameters
+//>    VME_SET_DWORD(uniIn, 0, 3, 0x78040000); // BMEDisableFBR=1 InterSAD=0 SubMbPartMask=0x78
+    VME_SET_DWORD(uniIn, 0, 3, 0x78040000); // BMEDisableFBR=1 InterSAD=0 SubMbPartMask=0x79 - 16x16 is off
+    // M1.1 MaxNumMVs
+    VME_SET_UNIInput_MaxNumMVs(uniIn, 32);
+    // M0.5 Reference Window Width & Height
+    VME_SET_UNIInput_RefW(uniIn, 48);
+    VME_SET_UNIInput_RefH(uniIn, 40);
+
+    // M0.0 Ref0X, Ref0Y
+    vector_ref<int2, 2> sourceXY = uniIn.row(0).format<int2>().select<2,1>(4);
+    vector<uint1, 2> widthHeight;
+    widthHeight[0] = (height >> 4) - 1;
+    widthHeight[1] = (width >> 4);
+    vector_ref<int1, 2> searchWindow = uniIn.row(0).format<int1>().select<2,1>(22);
+    vector_ref<int2, 2> ref0XY = uniIn.row(0).format<int2>().select<2,1>(0);
+    int2 maxMvY = 0x7fff;
+    SetRef(sourceXY, mvPred, searchWindow, widthHeight, maxMvY, /*out*/ref0XY);
+
+    // M1.0-3 Search path parameters & start centers & MaxNumMVs again!!!
+    VME_SET_UNIInput_AdaptiveEn(uniIn);
+    VME_SET_UNIInput_T8x8FlagForInterEn(uniIn);
+    VME_SET_UNIInput_MaxNumMVs(uniIn, 0x3f);
+    VME_SET_UNIInput_MaxNumSU(uniIn, maxNumSu);
+    VME_SET_UNIInput_LenSP(uniIn, lenSp);
+    
+    // M1.2 Start0X, Start0Y
+    vector<int1, 2> start0 = searchWindow;
+    start0 = ((start0 - 16) >> 3) & 0x0f;
+    uniIn.row(1)[10] = start0[0] | (start0[1] << 4);
+
+    uniIn.row(1)[31] = 0x1;
+
+    vector<int2,2>  ref0       = uniIn.row(0).format<int2>().select<2, 1> (0);
+//    vector<uint2,4> costCenter = uniIn.row(1).format<uint2>().select<4, 1> (8);
+    // FWD and BWD cost centers for BDW+
+    // cost centers are zero (no mv pedictors are used now)
+    vector<uint2,16> costCenter = uniIn.row(3).format<uint2>().select<16, 1> (0);
+
+    run_vme_ime(uniIn, imeIn,
+        VME_STREAM_OUT, VME_SEARCH_SINGLE_REF_SINGLE_REC_SINGLE_START,
+        SURF_SRC_AND_REF, ref0, NULL, costCenter, imeOut);
+
+    //DebugUniOutput<9>(imeOut);
+
+    uchar interMbMode, subMbShape, subMbPredMode;
+    VME_GET_UNIOutput_InterMbMode(imeOut, interMbMode);
+    VME_GET_UNIOutput_SubMbShape(imeOut, subMbShape);
+    VME_GET_UNIOutput_SubMbPredMode(imeOut, subMbPredMode);
+    VME_SET_UNIInput_SubPelMode(uniIn, 3);
+    VME_SET_UNIInput_BMEDisableFBR(uniIn);
+    SLICE(fbrIn.format<uint>(), 1, 16, 2) = 0; // zero L1 motion vectors
+
+    matrix<uchar, 7, 32> fbrOut16x16;
+    VME_SET_UNIInput_FBRMbModeInput(uniIn, 0);
+    VME_SET_UNIInput_FBRSubMBShapeInput(uniIn, 0);
+    VME_SET_UNIInput_FBRSubPredModeInput(uniIn, 0);
+    fbrIn.format<uint, 4, 8>().select<4, 1, 4, 2>(0, 0) = imeOut.row(7).format<uint>()[5]; // motion vectors 16x16
+//>    fbrIn.format<uint, 4, 8>().select<4, 1, 4, 2>(0, 0) = mvPred.format<uint>()[0]; // motion vectors 16x16 (real 32x32 from Ime2x)
+    run_vme_fbr(uniIn, fbrIn, SURF_SRC_AND_REF, 0, 0, 0, fbrOut16x16);
+
+    matrix<uchar, 7, 32> fbrOut16x8;
+    VME_SET_UNIInput_FBRMbModeInput(uniIn, 1);
+    VME_SET_UNIInput_FBRSubMBShapeInput(uniIn, 0);
+    VME_SET_UNIInput_FBRSubPredModeInput(uniIn, 0);
+    fbrIn.format<uint, 4, 8>().select<2, 1, 4, 2>(0, 0) = imeOut.row(8).format<uint>()[0]; // motion vectors 16x8_0
+    fbrIn.format<uint, 4, 8>().select<2, 1, 4, 2>(2, 0) = imeOut.row(8).format<uint>()[1]; // motion vectors 16x8_1
+    run_vme_fbr(uniIn, fbrIn, SURF_SRC_AND_REF, 1, 0, 0, fbrOut16x8);
+
+    matrix<uchar, 7, 32> fbrOut8x16;
+    VME_SET_UNIInput_FBRMbModeInput(uniIn, 2);
+    VME_SET_UNIInput_FBRSubMBShapeInput(uniIn, 0);
+    VME_SET_UNIInput_FBRSubPredModeInput(uniIn, 0);
+    fbrIn.format<uint, 4, 8>().select<2, 2, 4, 2>(0, 0) = imeOut.row(8).format<uint>()[2]; // motion vectors 8x16_0
+    fbrIn.format<uint, 4, 8>().select<2, 2, 4, 2>(1, 0) = imeOut.row(8).format<uint>()[3]; // motion vectors 8x16_1
+    run_vme_fbr(uniIn, fbrIn, SURF_SRC_AND_REF, 2, 0, 0, fbrOut8x16);
+
+    // 32x32
+    SLICE(fbrOut16x16.format<short>(), 16, 2, 1) = SLICE(fbrOut16x16.format<short>(), 16, 2, 1) << 1;
+    write(SURF_MV32x32, mbX * MVDATA_SIZE, mbY, SLICE(fbrOut16x16.format<uint>(), 8, 1, 1));
+    // 32x16
+    fbrOut16x8.format<short, 7, 16>().select<2, 2, 2, 1>(1, 0) = fbrOut16x8.format<short, 7, 16>().select<2, 2, 2, 1>(1, 0) << 1;
+    matrix<uint, 2, 1> mv32x16 = SLICE(fbrOut16x8.format<uint>(), 8, 2, 16); 
+    write(SURF_MV32x16,  mbX * MVDATA_SIZE, mbY * 2, mv32x16);
+    // 16x32
+    fbrOut8x16.format<short, 7, 16>().select<2, 1, 2, 1>(1, 0) = fbrOut8x16.format<short, 7, 16>().select<2, 1, 2, 1>(1, 0) << 1;
+    matrix<uint, 1, 2> mv16x32 = SLICE(fbrOut8x16.format<uint>(), 8, 2, 8);
+    write(SURF_MV16x32,  mbX * MVDATA_SIZE * 2, mbY, mv16x32);
+}
+
+extern "C" _GENX_MAIN_ 
+void MeP32(SurfaceIndex SURF_CONTROL, SurfaceIndex SURF_SRC_AND_REF, SurfaceIndex SURF_MV_PRED, // SURF_MV_PRED is DS 4x surf
+           SurfaceIndex SURF_MV32x32, SurfaceIndex SURF_MV32x16, SurfaceIndex SURF_MV16x32) // SURF_MV32x32 is DS 2x surf
+{
+    uint mbX = get_thread_origin_x();
+    uint mbY = get_thread_origin_y();
+    uint x = mbX * 16;
+    uint y = mbY * 16;
+
+    vector<uchar, 64> control;
+    read(SURF_CONTROL, 0, control);
+
+    uint1 maxNumSu = control.format<uint1>()[56];
+    uint1 lenSp = control.format<uint1>()[57];
+    uint2 width = control.format<uint2>()[30];
+    uint2 height = control.format<uint2>()[31];
+
+    // read MB record data
+    matrix<uchar, 4, 32> uniIn = 0;
+    matrix<uchar, 9, 32> imeOut;
+    matrix<uchar, 2, 32> imeIn = 0;
+    matrix<uchar, 4, 32> fbrIn;
+
+    // declare parameters for VME
+    matrix<uint4, 16, 2> costs = 0;
+    vector<int2, 2> mvPred = 0;
+    read(SURF_MV_PRED, (mbX >> 1) * MVDATA_SIZE, mbY >> 1, mvPred);
 
     // load search path
     SELECT_N_ROWS(imeIn, 0, 2) = SLICE1(control, 0, 64);
@@ -1624,8 +2048,8 @@ void RefineMeP16x32(SurfaceIndex SURF_MBDIST_16x32, SurfaceIndex SURF_MV16X32,
 }
 
 extern "C" _GENX_MAIN_
-void RawMeMB_P_Intra(SurfaceIndex SURF_CURBE_DATA, SurfaceIndex SURF_SRC_AND_REF,
-                     SurfaceIndex SURF_SRC, SurfaceIndex SURF_MBDISTINTRA)
+void MeP16_Intra(SurfaceIndex SURF_CURBE_DATA, SurfaceIndex SURF_SRC_AND_REF,
+                 SurfaceIndex SURF_SRC, SurfaceIndex SURF_MBDISTINTRA)
 {
     uint mbX = get_thread_origin_x();
     uint mbY = get_thread_origin_y();
@@ -1650,11 +2074,11 @@ void RawMeMB_P_Intra(SurfaceIndex SURF_CURBE_DATA, SurfaceIndex SURF_SRC_AND_REF
 }
 
 extern "C" _GENX_MAIN_ 
-void RawMeMB_P(SurfaceIndex SURF_CONTROL, SurfaceIndex SURF_SRC_AND_REF, SurfaceIndex SURF_DIST16x16,
-               SurfaceIndex SURF_DIST16x8, SurfaceIndex SURF_DIST8x16, SurfaceIndex SURF_DIST8x8,
-               SurfaceIndex SURF_DIST8x4, SurfaceIndex SURF_DIST4x8, SurfaceIndex SURF_MV16x16,
-               SurfaceIndex SURF_MV16x8, SurfaceIndex SURF_MV8x16, SurfaceIndex SURF_MV8x8,
-               SurfaceIndex SURF_MV8x4, SurfaceIndex SURF_MV4x8)
+void MeP16(SurfaceIndex SURF_CONTROL, SurfaceIndex SURF_SRC_AND_REF, SurfaceIndex SURF_MV_PRED, SurfaceIndex SURF_DIST16x16,
+           SurfaceIndex SURF_DIST16x8, SurfaceIndex SURF_DIST8x16, SurfaceIndex SURF_DIST8x8,
+           SurfaceIndex SURF_DIST8x4, SurfaceIndex SURF_DIST4x8, SurfaceIndex SURF_MV16x16,
+           SurfaceIndex SURF_MV16x8, SurfaceIndex SURF_MV8x16, SurfaceIndex SURF_MV8x8,
+           SurfaceIndex SURF_MV8x4, SurfaceIndex SURF_MV4x8)
 {
     uint mbX = get_thread_origin_x();
     uint mbY = get_thread_origin_y();
@@ -1681,6 +2105,7 @@ void RawMeMB_P(SurfaceIndex SURF_CONTROL, SurfaceIndex SURF_SRC_AND_REF, Surface
     // declare parameters for VME
     matrix<uint4, 16, 2> costs = 0;
     vector<int2, 2> mvPred = 0;
+    read(SURF_MV_PRED, (mbX >> 1) * MVDATA_SIZE, mbY >> 1, mvPred);
 
     // load search path
     SELECT_N_ROWS(imeIn, 0, 2) = SLICE1(control, 0, 64);

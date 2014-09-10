@@ -315,7 +315,7 @@ static void BuildHistogramEdge(const mfxU8 *frame, mfxU16 *hist, mfxI32 blockX, 
  *   but might be necessary to use 32-bit for 8x8 (consider max value of 64*(abs(dx)+abs(y)))
  * for now saturate to 2^16 - 1
  */
-static void Generate8x8(const mfxU8 */*inData*/, mfxU16 *outData4, mfxU16 *outData8, mfxI32 width, mfxI32 height)
+static void Generate8x8(mfxU16 *outData4, mfxU16 *outData8, mfxI32 width, mfxI32 height)
 {
     mfxI32 x, y, i, t, xBlocks4, yBlocks4, xBlocks8, yBlocks8;
     mfxU16 *pDst, *pDst8;
@@ -356,63 +356,26 @@ static void Generate8x8(const mfxU8 */*inData*/, mfxU16 *outData4, mfxU16 *outDa
 }
 
 /* width and height must be multiples of 8 */
-void MAKE_NAME(h265_AnalyzeGradient_8u)(const mfxU8 *inData, mfxU16 *outData4, mfxU16 *outData8, mfxI32 width, mfxI32 height, mfxI32 pitch)
+void MAKE_NAME(h265_AnalyzeGradient_8u)(const Ipp8u *inData, Ipp32s pitch, Ipp16u *outData4, Ipp16u *outData8, Ipp32s width, Ipp32s height)
 {
-    mfxI32 x, y, xBlocks4, yBlocks4;
-    const mfxU8 *pSrc;
-    mfxU16 *pDst;
-
-    xBlocks4 = width  / 4;
-    yBlocks4 = height / 4;
+    Ipp32s xBlocks4 = width  / 4;
+    Ipp32s yBlocks4 = height / 4;
 
     /* fast path - inner blocks */
-    for (y = 1; y < yBlocks4 - 1; y++) {
-        pSrc  = inData + 4*(y*pitch + 1);
-        pDst = outData4 + (y*xBlocks4 + 1) * HIST_MAX;
-        for (x = 1; x < xBlocks4 - 1; x++) {
+    for (Ipp32s y = 0; y < yBlocks4; y++) {
+        const Ipp8u *pSrc = inData + 4 * y * pitch;
+        Ipp16u *pDst = outData4 + y * xBlocks4 * HIST_MAX;
+
+        for (Ipp32s x = 0; x < xBlocks4; x++) {
             memset(pDst, 0, sizeof(mfxU16) * HIST_MAX);
             BuildHistogramInner(pSrc, pDst, pitch);
-            pSrc  += 4;
+            pSrc += 4;
             pDst += HIST_MAX;
         }
     }
 
-    /* top edge */
-    y = 0;
-    pDst = outData4;
-    for (x = 0; x < xBlocks4; x++) {
-        memset(pDst, 0, sizeof(mfxU16) * HIST_MAX);
-        BuildHistogramEdge(inData, pDst, x*4, y*4, width, height, pitch);
-        pDst += HIST_MAX;
-    }
-
-    /* bottom edge */
-    y = yBlocks4 - 1;
-    pDst = outData4 + y*xBlocks4 * HIST_MAX;
-    for (x = 0; x < xBlocks4; x++) {
-        memset(pDst, 0, sizeof(mfxU16) * HIST_MAX);
-        BuildHistogramEdge(inData, pDst, x*4, y*4, width, height, pitch);
-        pDst += HIST_MAX;
-    }
-
-    /* left edge (corners already done) */
-    x = 0;
-    for (y = 1; y < yBlocks4 - 1; y++) {
-        pDst = outData4 + (y*xBlocks4 + x) * HIST_MAX;
-        memset(pDst, 0, sizeof(mfxU16) * HIST_MAX);
-        BuildHistogramEdge(inData, pDst, x*4, y*4, width, height, pitch);
-    }
-
-    /* right edge (corners already done) */
-    x = xBlocks4 - 1;
-    for (y = 1; y < yBlocks4 - 1; y++) {
-        pDst = outData4 + (y*xBlocks4 + x) * HIST_MAX;
-        memset(pDst, 0, sizeof(mfxU16) * HIST_MAX);
-        BuildHistogramEdge(inData, pDst, x*4, y*4, width, height, pitch);
-    }
-
     /* sum 4x4 histograms to generate 8x8 map */
-    Generate8x8(inData, outData4, outData8, width, height);
+    Generate8x8(outData4, outData8, width, height);
 }
 
 }; // namespace MFX_HEVC_PP

@@ -322,10 +322,12 @@ $(TargetPath)</Command>
     <ClCompile Include="src\genx_h265_cmcode_bdw.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug_HSW_Emu|Win32'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="src\genx_h265_cmcode_isa.cpp" />
     <ClCompile Include="src\test_analyze_gradient.cpp" />
     <ClCompile Include="src\test_analyze_gradient2.cpp" />
+    <ClCompile Include="src\test_analyze_gradient3.cpp" />
     <ClCompile Include="src\test_analyze_gradient32x32modes.cpp" />
     <ClCompile Include="src\test_analyze_gradient8x8.cpp" />
     <ClCompile Include="src\test_interpolate_frame.cpp" />

@@ -290,9 +290,8 @@ mfxStatus H265Encoder::PutSPS(H265BsReal *_bs)
         H265Bs_PutBit(bs, sps->pcm_loop_filter_disabled_flag);
     }
     H265Bs_PutVLCCode(bs, sps->num_short_term_ref_pic_sets);
-    for (i = 0; i < sps->num_short_term_ref_pic_sets; i++) {
-        PutShortTermRefPicSet(bs, i);
-    }
+    for (i = 0; i < sps->num_short_term_ref_pic_sets; i++)
+        PutShortTermRefPicSet(bs, sps->m_shortRefPicSet + i, i);
     H265Bs_PutBit(bs, sps->long_term_ref_pics_present_flag);
     if (sps->long_term_ref_pics_present_flag) {
         VM_ASSERT(0);
@@ -332,10 +331,6 @@ mfxStatus H265Encoder::PutSPS(H265BsReal *_bs)
         H265Bs_PutBit(bs, sps->sps_timing_info_present_flag); // use vps*
         H265Bs_PutBit(bs, sps->bitstream_restriction_flag);
     } // EO VUI
-
-    for (i = 0; i < m_videoParam.MaxCUDepth; i++) {
-        H265Bs_PutBit(bs, 1);
-    }
 
     H265Bs_PutBit(bs, sps->sps_extension_flag);
     if (sps->sps_extension_flag) {
@@ -415,43 +410,37 @@ mfxStatus H265Encoder::PutPPS(H265BsReal *_bs)
     return MFX_ERR_NONE;
 }
 
-mfxStatus H265Encoder::PutShortTermRefPicSet(H265BsReal *_bs, Ipp32s idx) {
+mfxStatus H265Encoder::PutShortTermRefPicSet(H265BsReal *_bs, const H265ShortTermRefPicSet *rps, Ipp32s idx)
+{
+    const H265ShortTermRefPicSet *spsRps = m_sps.m_shortRefPicSet;
     Ipp32s i;
     H265BsReal *bs = _bs;
 
     if (idx > 0) {
-        H265Bs_PutBit(bs, m_ShortRefPicSet[idx].inter_ref_pic_set_prediction_flag);
-    } else if (m_ShortRefPicSet[idx].inter_ref_pic_set_prediction_flag != 0) {
+        H265Bs_PutBit(bs, rps->inter_ref_pic_set_prediction_flag);
+    } else if (rps->inter_ref_pic_set_prediction_flag != 0) {
         VM_ASSERT(0);
     }
 
-    if (m_ShortRefPicSet[idx].inter_ref_pic_set_prediction_flag)
-    {
-        Ipp32s RIdx = idx - m_ShortRefPicSet[idx].delta_idx;
-        Ipp32s NumDeltaPocs = m_ShortRefPicSet[RIdx].num_negative_pics + m_ShortRefPicSet[RIdx].num_negative_pics;
+    if (rps->inter_ref_pic_set_prediction_flag) {
+        Ipp32s RIdx = idx - rps->delta_idx;
+        Ipp32s NumDeltaPocs = spsRps[RIdx].num_negative_pics + spsRps[RIdx].num_negative_pics;
 
-        H265Bs_PutVLCCode(bs, m_ShortRefPicSet[idx].delta_idx - 1);
-        H265Bs_PutBit(bs, m_ShortRefPicSet[idx].delta_rps_sign);
-        H265Bs_PutVLCCode(bs, m_ShortRefPicSet[idx].abs_delta_rps - 1);
-
-        for (i = 0; i <= NumDeltaPocs; i++)
-        {
-            H265Bs_PutBit(bs, m_ShortRefPicSet[idx].used_by_curr_pic_flag[i]);
-            if (!m_ShortRefPicSet[idx].used_by_curr_pic_flag[i])
-            {
-                H265Bs_PutBit(bs, m_ShortRefPicSet[idx].use_delta_flag[i]);
-            }
+        H265Bs_PutVLCCode(bs, rps->delta_idx - 1);
+        H265Bs_PutBit(bs, rps->delta_rps_sign);
+        H265Bs_PutVLCCode(bs, rps->abs_delta_rps - 1);
+        for (i = 0; i <= NumDeltaPocs; i++) {
+            H265Bs_PutBit(bs, rps->used_by_curr_pic_flag[i]);
+            if (!rps->used_by_curr_pic_flag[i])
+                H265Bs_PutBit(bs, rps->use_delta_flag[i]);
         }
     }
-    else
-    {
-        H265Bs_PutVLCCode(bs, m_ShortRefPicSet[idx].num_negative_pics);
-        H265Bs_PutVLCCode(bs, m_ShortRefPicSet[idx].num_positive_pics);
-
-        for (i = 0; i < m_ShortRefPicSet[idx].num_negative_pics + m_ShortRefPicSet[idx].num_positive_pics; i++)
-        {
-            H265Bs_PutVLCCode(bs, m_ShortRefPicSet[idx].delta_poc[i] - 1);
-            H265Bs_PutBit(bs, m_ShortRefPicSet[idx].used_by_curr_pic_flag[i]);
+    else {
+        H265Bs_PutVLCCode(bs, rps->num_negative_pics);
+        H265Bs_PutVLCCode(bs, rps->num_positive_pics);
+        for (i = 0; i < rps->num_negative_pics + rps->num_positive_pics; i++) {
+            H265Bs_PutVLCCode(bs, rps->delta_poc[i] - 1);
+            H265Bs_PutBit(bs, rps->used_by_curr_pic_flag[i]);
         }
     }
 
@@ -489,28 +478,28 @@ mfxStatus H265Encoder::PutSliceHeader(H265BsReal *_bs, H265Slice *slice)
         H265Bs_PutVLCCode(bs, sh->slice_type);
         if (pps->output_flag_present_flag )
             H265Bs_PutBit(bs, sh->pic_output_flag);
-//        if (sps->separate_colour_plane_flag == 1)
-//            H265Bs_PutBits(bs, sh->colour_plane_id, 2);
+        //if (sps->separate_colour_plane_flag == 1)
+        //    H265Bs_PutBits(bs, sh->colour_plane_id, 2);
         if( !sh->IdrPicFlag ) {
             H265Bs_PutBits(bs, sh->slice_pic_order_cnt_lsb, sps->log2_max_pic_order_cnt_lsb);
             H265Bs_PutBit(bs, sh->short_term_ref_pic_set_sps_flag);
-            if( !sh->short_term_ref_pic_set_sps_flag ) {
-               PutShortTermRefPicSet(bs, sps->num_short_term_ref_pic_sets);
+            if (!sh->short_term_ref_pic_set_sps_flag) {
+                PutShortTermRefPicSet(bs, &sh->m_shortRefPicSet, sps->num_short_term_ref_pic_sets);
             }
-            else if (sps->num_short_term_ref_pic_sets > 1){
+            else if (sps->num_short_term_ref_pic_sets > 1) {
                 Ipp32s len = H265_CeilLog2(sps->num_short_term_ref_pic_sets);
                 H265Bs_PutBits(bs, sh->short_term_ref_pic_set_idx, len);
             }
             if (sps->long_term_ref_pics_present_flag) {
                 VM_ASSERT(0);
-/*                H265Bs_PutVLCCode(bs, sh->num_long_term_pics);
-                for (i = 0; i < sh->num_long_term_pics; i++) {
-                    H265Bs_PutBits(bs, sh->delta_poc_lsb_lt[i], sps->log2_max_pic_order_cnt_lsb);
-                    H265Bs_PutBit(bs, sh->delta_poc_msb_present_flag[i]);
-                    if (sh->delta_poc_msb_present_flag[i])
-                        H265Bs_PutVLCCode(bs, sh->delta_poc_msb_cycle_lt[i]);
-                    H265Bs_PutBit(bs, sh->used_by_curr_pic_lt_flag[i]);
-                }*/
+                //H265Bs_PutVLCCode(bs, sh->num_long_term_pics);
+                //for (i = 0; i < sh->num_long_term_pics; i++) {
+                //    H265Bs_PutBits(bs, sh->delta_poc_lsb_lt[i], sps->log2_max_pic_order_cnt_lsb);
+                //    H265Bs_PutBit(bs, sh->delta_poc_msb_present_flag[i]);
+                //    if (sh->delta_poc_msb_present_flag[i])
+                //        H265Bs_PutVLCCode(bs, sh->delta_poc_msb_cycle_lt[i]);
+                //    H265Bs_PutBit(bs, sh->used_by_curr_pic_lt_flag[i]);
+                //}
             }
             if (sps->sps_temporal_mvp_enabled_flag)
                 H265Bs_PutBit(bs, sh->slice_temporal_mvp_enabled_flag);
@@ -522,12 +511,12 @@ mfxStatus H265Encoder::PutSliceHeader(H265BsReal *_bs, H265Slice *slice)
         if (sh->slice_type == P_SLICE || sh->slice_type == B_SLICE) {
             H265Bs_PutBit(bs, sh->num_ref_idx_active_override_flag);
             if( sh->num_ref_idx_active_override_flag ) {
-                H265Bs_PutVLCCode(bs, sh->num_ref_idx_l0_active - 1);
+                H265Bs_PutVLCCode(bs, sh->num_ref_idx[0] - 1);
                 if (sh->slice_type == B_SLICE)
-                    H265Bs_PutVLCCode(bs, sh->num_ref_idx_l1_active - 1);
+                    H265Bs_PutVLCCode(bs, sh->num_ref_idx[1] - 1);
             }
             if (pps->lists_modification_present_flag) {
-                //            ref_pic_list_modification( )
+                // ref_pic_list_modification( )
                 VM_ASSERT(0);
             }
             if (sh->slice_type == B_SLICE)
@@ -540,8 +529,8 @@ mfxStatus H265Encoder::PutSliceHeader(H265BsReal *_bs, H265Slice *slice)
                 Ipp32s collocated_from_l0_flag = sh->collocated_from_l0_flag;
                 if (sh->slice_type != B_SLICE)
                     collocated_from_l0_flag = 1; // inferred
-                if (((collocated_from_l0_flag && sh->num_ref_idx_l0_active > 1)  ||
-                    (!collocated_from_l0_flag && sh->num_ref_idx_l1_active > 1)))
+                if (((collocated_from_l0_flag && sh->num_ref_idx[0] > 1) ||
+                    (!collocated_from_l0_flag && sh->num_ref_idx[1] > 1)))
                     H265Bs_PutVLCCode(bs, sh->collocated_ref_idx);
             }
             if ((pps->weighted_pred_flag && sh->slice_type == P_SLICE)  ||
@@ -597,6 +586,97 @@ mfxStatus H265Encoder::PutSliceHeader(H265BsReal *_bs, H265Slice *slice)
 
     bs->PutBit(1);
     bs->ByteAlignWithZeros();
+    return MFX_ERR_NONE;
+}
+
+mfxStatus H265Encoder::WriteBitstream_Internal(mfxBitstream *mfxBS, H265NALUnit& nal, Ipp32s bs_main_id, Ipp32s& overheadBytes)
+{
+    if (m_videoParam.threading_by_rows) {
+        for (Ipp8u curr_slice = 0; curr_slice < m_videoParam.NumSlices; curr_slice++) {
+            H265Slice *pSlice = m_slices + curr_slice;
+            H265EncoderRowInfo *row_info;
+
+            row_info = &pSlice->m_row_info;
+            if (m_pps.entropy_coding_sync_enabled_flag) {
+                for (Ipp32u i = 0; i < pSlice->num_entry_point_offsets; i++) {
+                    Ipp32u offset_add = 0;
+                    Ipp8u *curPtr = m_bs[row_info->bs_id].m_base.m_pbsBase + row_info->offset;
+
+                    for (Ipp32s j = 1; j < row_info->size - 1; j++) {
+                        if (!curPtr[j - 1] && !curPtr[j] && !(curPtr[j + 1] & 0xfc)) {
+                            j++;
+                            offset_add ++;
+                        }
+                    }
+
+                    pSlice->entry_point_offset[i] = row_info->size + offset_add;
+                    row_info = m_row_info + pSlice->row_first + i + 1;
+                }
+                row_info = &pSlice->m_row_info;
+            }
+
+            m_bs[bs_main_id].Reset();
+            PutSliceHeader(&m_bs[bs_main_id], pSlice);
+            overheadBytes += H265Bs_GetBsSize(&m_bs[bs_main_id]);
+            if (m_pps.entropy_coding_sync_enabled_flag) {
+                for (Ipp32u row = pSlice->row_first; row <= pSlice->row_last; row++) {
+                    Ipp32s ithread = row_info->bs_id;
+                    small_memcpy(m_bs[bs_main_id].m_base.m_pbs, m_bs[ithread].m_base.m_pbsBase + row_info->offset, row_info->size);
+                    m_bs[bs_main_id].m_base.m_pbs += row_info->size;
+                    row_info = m_row_info + row + 1;
+                }
+            }
+            else {
+                small_memcpy(m_bs[bs_main_id].m_base.m_pbs, m_bs[row_info->bs_id].m_base.m_pbsBase + row_info->offset, row_info->size);
+                m_bs[bs_main_id].m_base.m_pbs += row_info->size;
+            }
+            nal.nal_unit_type = (Ipp8u)(pSlice->IdrPicFlag ? NAL_UT_CODED_SLICE_IDR :
+                (m_pCurrentFrame->m_poc >= 0 ? NAL_UT_CODED_SLICE_TRAIL_R :
+                (m_pCurrentFrame->m_isRef ? NAL_UT_CODED_SLICE_DLP : NAL_UT_CODED_SLICE_RADL_N)));
+            m_bs[bs_main_id].WriteNAL(mfxBS, 0, &nal);
+        }
+    }
+    else {
+        for (Ipp8u curr_slice = 0; curr_slice < m_videoParam.NumSlices; curr_slice++) {
+            H265Slice *pSlice = m_slices + curr_slice;
+            Ipp32s ctb_row = pSlice->row_first;
+
+            if (m_pps.entropy_coding_sync_enabled_flag) {
+                for (Ipp32u i = 0; i < pSlice->num_entry_point_offsets; i++) {
+                    Ipp32u offset_add = 0;
+                    Ipp8u *curPtr = m_bs[ctb_row].m_base.m_pbsBase;
+                    Ipp32s size = H265Bs_GetBsSize(&m_bs[ctb_row]);
+
+                    for (Ipp32s j = 1; j < size - 1; j++) {
+                        if (!curPtr[j - 1] && !curPtr[j] && !(curPtr[j + 1] & 0xfc)) {
+                            j++;
+                            offset_add ++;
+                        }
+                    }
+
+                    pSlice->entry_point_offset[i] = size + offset_add;
+                    ctb_row ++;
+                }
+            }
+            m_bs[bs_main_id].Reset();
+            PutSliceHeader(&m_bs[bs_main_id], pSlice);
+            overheadBytes += H265Bs_GetBsSize(&m_bs[bs_main_id]);
+            if (m_pps.entropy_coding_sync_enabled_flag) {
+                for (Ipp32u row = pSlice->row_first; row <= pSlice->row_last; row++) {
+                    Ipp32s size = H265Bs_GetBsSize(&m_bs[row]);
+                    small_memcpy(m_bs[bs_main_id].m_base.m_pbs, m_bs[row].m_base.m_pbsBase, size);
+                    m_bs[bs_main_id].m_base.m_pbs += size;
+                }
+            }
+
+            nal.nal_unit_type = (Ipp8u)(pSlice->IdrPicFlag ? NAL_UT_CODED_SLICE_IDR :
+                (m_pCurrentFrame->m_poc >= 0 ? NAL_UT_CODED_SLICE_TRAIL_R :
+                (m_pCurrentFrame->m_isRef ? NAL_UT_CODED_SLICE_DLP : NAL_UT_CODED_SLICE_RADL_N)));
+
+            m_bs[bs_main_id].WriteNAL(mfxBS, 0, &nal);
+        }
+    }
+
     return MFX_ERR_NONE;
 }
 

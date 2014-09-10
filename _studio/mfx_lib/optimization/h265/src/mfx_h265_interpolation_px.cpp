@@ -41,6 +41,13 @@ namespace MFX_HEVC_PP
         {  0, 1,  -5, 17, 58, -10, 4, -1 },
     };
 
+//kolya
+    ALIGN_DECL(16) static const short filtTabLumaScFast[3][4] = {
+        { -4, 52, 20,  -4 },
+        { -8, 40, 40,  -8 },
+        { -4, 20, 52,  -4 },
+    };
+
     ALIGN_DECL(16) static const short filtTabChromaSc[7][4] = {
         {  -2,  58,  10, -2,  },
         {  -4,  54,  16, -2,  },
@@ -77,6 +84,26 @@ namespace MFX_HEVC_PP
         }
     }
 
+//kolya
+    void MAKE_NAME(h265_InterpLumaFast_s8_d16_H)(INTERP_S8_D16_PARAMETERS_LIST)
+    {
+        int i, j, k;
+        short acc;
+        const short* coeffs16x = filtTabLumaScFast[tab_index - 1];
+
+        for (i = 0; i < height; i++) {
+            for (j = 0; j < width; j++) {
+                acc = 0;
+                for (k = 0; k < 4; k++)
+                    acc += pSrc[j+k] * coeffs16x[k];
+                acc += offset;
+                acc >>= shift;
+                pDst[j] = (short)acc;
+            }
+            pSrc += srcPitch;
+            pDst += dstPitch;
+        }
+    }
 
     void MAKE_NAME(h265_InterpChroma_s8_d16_H)(INTERP_S8_D16_PARAMETERS_LIST, int plane)
     {
@@ -123,6 +150,28 @@ namespace MFX_HEVC_PP
         }
     }
 
+    //kolya
+    void MAKE_NAME(h265_InterpLumaFast_s16_d16_H)(INTERP_S16_D16_PARAMETERS_LIST)
+    {
+        int i, j, k;
+        int acc;
+        const short* coeffs16x = filtTabLumaScFast[tab_index - 1];
+
+        for (i = 0; i < height; i++) {
+            for (j = 0; j < width; j++) {
+                acc = 0;
+                for (k = 0; k < 4; k++)
+                    acc += pSrc[j+k] * coeffs16x[k];
+                acc += offset;
+                acc >>= shift;
+                pDst[j] = (short)acc;
+            }
+            pSrc += srcPitch;
+            pDst += dstPitch;
+        }
+    }
+
+
     void MAKE_NAME(h265_InterpChroma_s16_d16_H)(INTERP_S16_D16_PARAMETERS_LIST, int plane)
     {
         int i, j, k, srcOff;
@@ -168,6 +217,27 @@ namespace MFX_HEVC_PP
         }
     }
 
+    //kolya
+    void MAKE_NAME(h265_InterpLumaFast_s8_d16_V)(INTERP_S8_D16_PARAMETERS_LIST)
+    {
+        int i, j, k;
+        short acc;
+        const short* coeffs16x = filtTabLumaScFast[tab_index - 1];
+
+        for (i = 0; i < height; i++) {
+            for (j = 0; j < width; j++) {
+                acc = 0;
+                for (k = 0; k < 4; k++)
+                    acc += pSrc[j + k*srcPitch] * coeffs16x[k];
+                acc += offset;
+                acc >>= shift;
+                pDst[j] = (short)acc;
+            }
+            pSrc += srcPitch;
+            pDst += dstPitch;
+        }
+    }
+
 
     void MAKE_NAME(h265_InterpChroma_s8_d16_V)  (INTERP_S8_D16_PARAMETERS_LIST)
     {
@@ -200,6 +270,27 @@ namespace MFX_HEVC_PP
             for (j = 0; j < width; j++) {
                 acc = 0;
                 for (k = 0; k < 8; k++)
+                    acc += pSrc[j + k*srcPitch] * coeffs16x[k];
+                acc += offset;
+                acc >>= shift;
+                pDst[j] = (short)acc;
+            }
+            pSrc += srcPitch;
+            pDst += dstPitch;
+        }
+    }
+
+    //kolya
+    void MAKE_NAME(h265_InterpLumaFast_s16_d16_V)    (INTERP_S16_D16_PARAMETERS_LIST)
+    {
+        int i, j, k;
+        int acc;
+        const short* coeffs16x = filtTabLumaScFast[tab_index - 1];
+
+        for (i = 0; i < height; i++) {
+            for (j = 0; j < width; j++) {
+                acc = 0;
+                for (k = 0; k < 4; k++)
                     acc += pSrc[j + k*srcPitch] * coeffs16x[k];
                 acc += offset;
                 acc >>= shift;
@@ -330,6 +421,21 @@ namespace MFX_HEVC_PP
             }
         }
     }
+
+    // pack intermediate interpolation pels s16 to u8/u16 [ dst = Saturate( (src + 32) >> 6, 0, (1 << bitDepth) - 1 ) ]
+    template <typename PixType>
+    void MAKE_NAME(h265_InterpLumaPack)(const short *src, int pitchSrc, PixType *dst, int pitchDst, int width, int height, int bitDepth)
+    {
+        int shift = 14 - bitDepth;
+        int offset = 1 << (shift - 1);
+        int maxPel = (1 << bitDepth) - 1;
+
+        for (; height > 0; height--, src += pitchSrc, dst += pitchDst)
+            for (Ipp32s col = 0; col < width; col++)
+                dst[col] = Saturate(0, maxPel, (src[col] + offset) >> shift);
+    }
+    template void MAKE_NAME(h265_InterpLumaPack)<Ipp8u >(const Ipp16s *src, Ipp32s pitchSrc, Ipp8u  *dst, Ipp32s pitchDst, Ipp32s width, Ipp32s height, Ipp32s bitDepth);
+    template void MAKE_NAME(h265_InterpLumaPack)<Ipp16u>(const Ipp16s *src, Ipp32s pitchSrc, Ipp16u *dst, Ipp32s pitchDst, Ipp32s width, Ipp32s height, Ipp32s bitDepth);
 
 } // end namespace MFX_HEVC_PP
 

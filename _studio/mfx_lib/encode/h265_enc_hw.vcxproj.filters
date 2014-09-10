@@ -1,0 +1,131 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="h265\src\mfx_h265_bitstream.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="h265\src\mfx_h265_brc.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="h265\src\mfx_h265_cabac.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="h265\src\mfx_h265_cabac_init.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="h265\src\mfx_h265_cabac_tables.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="h265\src\mfx_h265_ctb.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="h265\src\mfx_h265_deblocking.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="h265\src\mfx_h265_enc.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="h265\src\mfx_h265_frame.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="h265\src\mfx_h265_interpred.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="h265\src\mfx_h265_intrapred.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="h265\src\mfx_h265_quant.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="h265\src\mfx_h265_quant_rdo.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="h265\src\mfx_h265_set.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="h265\src\mfx_h265_tables.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="h265\src\mfx_h265_transform.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="h265\src\mfx_h265_encode.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="h265\src\mfx_h265_sao_filter.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="h265\src\mfx_h265_enc_cm.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="h265\src\mfx_h265_me4paq.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="h265\src\mfx_h265_paq.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="h265\include\mfx_h265_brc.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="h265\include\mfx_h265_cabac.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="h265\include\mfx_h265_cabac_tables.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="h265\include\mfx_h265_ctb.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="h265\include\mfx_h265_defs.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="h265\include\mfx_h265_enc.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="h265\include\mfx_h265_tables.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="h265\include\mfx_h265_frame.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="h265\include\mfx_h265_quant.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="h265\include\mfx_h265_set.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="h265\include\mfx_h265_quant_rdo.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="h265\include\mfx_h265_bitstream.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="h265\include\mfx_h265_encode.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="h265\include\mfx_h265_sao_filter.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="h265\include\mfx_h265_enc_cm.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="h265\include\mfx_h265_enc_cm_defs.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="h265\include\mfx_h265_paq.h">
+      <Filter>include</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="include">
+      <UniqueIdentifier>{766d6587-9fa9-4229-aa57-4cff1828af3f}</UniqueIdentifier>
+      <Extensions>*.h</Extensions>
+    </Filter>
+    <Filter Include="src">
+      <UniqueIdentifier>{78c71654-8342-40d9-8a1f-b5b1785db8f4}</UniqueIdentifier>
+      <Extensions>*.cpp</Extensions>
+    </Filter>
+  </ItemGroup>
+</Project>

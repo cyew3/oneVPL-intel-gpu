@@ -90,12 +90,17 @@ static inline IppStatus _ippsCopy( const Ipp16u* pSrc, Ipp16u* pDst, int len )
     return ippsCopy_16s((Ipp16s*)pSrc, (Ipp16s*)pDst, len);
 }
 
-static inline IppStatus _ippiCopy_C1R(Ipp8u *pSrc, Ipp32s srcStepPix, Ipp8u *pDst, Ipp32s dstStepPix, IppiSize roiSize)
+static inline IppStatus _ippsCopy( const Ipp16s* pSrc, Ipp16s* pDst, int len )
+{
+    return ippsCopy_16s(pSrc, pDst, len);
+}
+
+static inline IppStatus _ippiCopy_C1R(const Ipp8u *pSrc, Ipp32s srcStepPix, Ipp8u *pDst, Ipp32s dstStepPix, IppiSize roiSize)
 {
     return ippiCopy_8u_C1R(pSrc, srcStepPix, pDst, dstStepPix, roiSize);
 }
 
-static inline IppStatus _ippiCopy_C1R(Ipp16u *pSrc, Ipp32s srcStepPix, Ipp16u *pDst, Ipp32s dstStepPix, IppiSize roiSize)
+static inline IppStatus _ippiCopy_C1R(const Ipp16u *pSrc, Ipp32s srcStepPix, Ipp16u *pDst, Ipp32s dstStepPix, IppiSize roiSize)
 {
     return ippiCopy_16u_C1R(pSrc, srcStepPix*2, pDst, dstStepPix*2, roiSize);
 }
@@ -198,10 +203,16 @@ const Ipp32s MAX_NUM_MERGE_CANDS = 5;
 const Ipp32s MAX_NUM_REF_IDX     = 4;
 const Ipp32s OPT_LAMBDA_PYRAMID  = 1;
 
-enum EnumSliceType {
-    B_SLICE     = 0,
-    P_SLICE     = 1,
-    I_SLICE     = 2,
+enum {
+    B_SLICE = 0,
+    P_SLICE = 1,
+    I_SLICE = 2,
+};
+
+#define SliceTypeIndex(type)    ((Ipp8u)(I_SLICE - type) & 0x3)
+
+enum EnumSliceTypeIndex {
+    B_NONREF     = 3
 };
 // texture component type
 enum EnumTextType
@@ -267,7 +278,6 @@ enum CostOpt
     COST_PRED_TR_0,
     COST_REC_TR_0,
     COST_REC_TR_ALL,
-    COST_REC_TR_MAX
 };
 
 enum IntraPredOpt
@@ -314,6 +324,15 @@ enum InterDir {
     INTER_DIR_PRED_L1 = 2,
 };
 
+enum EnumIntraAngMode {
+    INTRA_ANG_MODE_ALL              = 1,
+    INTRA_ANG_MODE_EVEN             = 2,
+    INTRA_ANG_MODE_GRADIENT         = 3,
+    INTRA_ANG_MODE_DC_PLANAR_ONLY   = 99,
+    INTRA_ANG_MODE_DISABLE          = 100,
+
+    INTRA_ANG_MODE_NUMBER           =  5
+};
 enum NalUnitType
 {
   NAL_UT_CODED_SLICE_TRAIL_N = 0,   // 0
@@ -376,6 +395,8 @@ struct RefPicList
     H265Frame *m_refFrames[MAX_NUM_REF_FRAMES + 1];
     Ipp8s m_deltaPoc[MAX_NUM_REF_FRAMES + 1];
     Ipp8u m_isLongTermRef[MAX_NUM_REF_FRAMES + 1];
+    // extra details for frame threading
+    Ipp32s m_refFramesCount; // number of reference frames in m_refFrames[]. must be the MAX (slice[sliceIdx]->num_ref_idx[ listIdx ], ...)
 };
 
 inline Ipp32s H265_CeilLog2(Ipp32s a) {
@@ -383,6 +404,14 @@ inline Ipp32s H265_CeilLog2(Ipp32s a) {
     while(a>(1<<r)) r++;
     return r;
 }
+
+enum {
+    SUBPEL_NO            = 1, // intpel only
+    SUBPEL_BOX_HPEL_ONLY = 2, // no quaterpel step
+    SUBPEL_BOX           = 3, // halfpel & quaterpel
+    SUBPEL_DIA           = 4, // halfpel & quaterpel
+    SUBPEL_DIA_2STEP     = 5, // 2*halfpel & 2*quaterpel
+};
 
 } // namespace
 

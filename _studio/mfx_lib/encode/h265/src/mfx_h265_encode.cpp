@@ -73,12 +73,12 @@ mfxExtBuffer HEVC_HEADER = { MFX_EXTBUFF_HEVCENC, sizeof(mfxExtCodingOptionHEVC)
 #define TU_OPT_SW(opt, t1, t2, t3, t4, t5, t6, t7) \
     static const mfxU16 tab_sw_##opt[] = {t1, t2, t3, t4, t5, t6, t7}
 
-#ifdef MFX_ENABLE_CM
+#ifdef MFX_VA
     #define TU_OPT_GACC(opt, t1, t2, t3, t4, t5, t6, t7) \
         static const mfxU16 tab_gacc_##opt[] = {t1, t2, t3, t4, t5, t6, t7};
-#else MFX_ENABLE_CM
+#else //MFX_VA
     #define TU_OPT_GACC(opt, t1, t2, t3, t4, t5, t6, t7)
-#endif //MFX_ENABLE_CM
+#endif //MFX_VA
 
 #define TU_OPT_ALL(opt, t1, t2, t3, t4, t5, t6, t7) \
     TU_OPT_SW(opt, t1, t2, t3, t4, t5, t6, t7); \
@@ -137,72 +137,114 @@ mfxExtBuffer HEVC_HEADER = { MFX_EXTBUFF_HEVCENC, sizeof(mfxExtCodingOptionHEVC)
     tab_##mode##_FastCbfMode[x],\
     tab_##mode##_PuDecisionSatd[x],\
     tab_##mode##_MinCUDepthAdapt[x],\
+    tab_##mode##_MaxCUDepthAdapt[x],\
     tab_##mode##_NumBiRefineIter[x],\
     tab_##mode##_CUSplitThreshold[x],\
     tab_##mode##_DeltaQpMode[x],\
     tab_##mode##_Enable10bit[x],\
+    tab_##mode##_IntraAngModesP[x],\
+    tab_##mode##_IntraAngModesBRef[x],\
+    tab_##mode##_IntraAngModesBnonRef[x],\
+    tab_##mode##_IntraChromaRDO[x],\
+    tab_##mode##_FastInterp[x],\
+    tab_##mode##_SplitThresholdTabIndex[x],\
+    tab_##mode##_CpuFeature[x],\
+    tab_##mode##_TryIntra[x],\
+    tab_##mode##_FastAMPSkipME[x],\
+    tab_##mode##_FastAMPRD[x],\
+    tab_##mode##_SkipMotionPartition[x],\
+    tab_##mode##_SkipCandRD[x],\
 }
 
+// Extended bit depth
 TU_OPT_SW  (Enable10bit,                  OFF, OFF, OFF, OFF, OFF, OFF, OFF);
 TU_OPT_GACC(Enable10bit,                  OFF, OFF, OFF, OFF, OFF, OFF, OFF);
 
+// Mode decision CU/TU 
 TU_OPT_ALL (QuadtreeTULog2MaxSize,          5,   5,   5,   5,   5,   5,   5);
 TU_OPT_ALL (QuadtreeTULog2MinSize,          2,   2,   2,   2,   2,   2,   2);
-
-TU_OPT_ALL (Log2MaxCUSize,                  6,   6,   5,   5,   5,   5,   5);
-TU_OPT_ALL (MaxCUDepth,                     4,   4,   3,   3,   3,   3,   3);
-TU_OPT_ALL (QuadtreeTUMaxDepthIntra,        4,   3,   2,   2,   3,   1,   1);
-TU_OPT_ALL (QuadtreeTUMaxDepthInter,        4,   3,   2,   2,   3,   1,   1);
-TU_OPT_ALL (AnalyzeChroma,                 ON,  ON,  ON,  ON,  ON,  ON,  ON);
+TU_OPT_SW  (Log2MaxCUSize,                  6,   6,   5,   5,   5,   5,   5);
+TU_OPT_SW  (MaxCUDepth,                     4,   4,   3,   3,   3,   3,   3);
+TU_OPT_SW  (QuadtreeTUMaxDepthIntra,        4,   3,   2,   2,   2,   1,   1);
+TU_OPT_SW  (QuadtreeTUMaxDepthInter,        4,   3,   2,   2,   2,   1,   1);
+TU_OPT_GACC(Log2MaxCUSize,                  5,   5,   5,   5,   5,   5,   5);
+TU_OPT_GACC(MaxCUDepth,                     3,   3,   3,   3,   3,   3,   3);
+TU_OPT_GACC(QuadtreeTUMaxDepthIntra,        3,   3,   2,   1,   1,   1,   1);
+TU_OPT_GACC(QuadtreeTUMaxDepthInter,        3,   3,   2,   1,   1,   1,   1);
 TU_OPT_ALL (TUSplitIntra,                   1,   1,   3,   3,   3,   3,   3);
 TU_OPT_ALL (CUSplit,                        2,   2,   2,   2,   2,   2,   2);
-TU_OPT_ALL (reserved,                       0,   0,   0,   0,   0,   0,   0);
-TU_OPT_ALL (CostChroma,                    ON,  ON,  ON,  ON,  ON, OFF, OFF);
-TU_OPT_ALL (FastSkip,                     OFF, OFF, OFF, OFF, OFF, OFF,  ON);
-TU_OPT_ALL (PartModes,                      3,   2,   2,   1,   1,   1,   1);
-TU_OPT_ALL (FastCbfMode,                  OFF, OFF,  ON,  ON,  ON,  ON,  ON);
 TU_OPT_ALL (PuDecisionSatd,               OFF, OFF, OFF, OFF, OFF, OFF, OFF);
 TU_OPT_ALL (MinCUDepthAdapt,              OFF, OFF, OFF,  ON,  ON,  ON,  ON);
-TU_OPT_ALL (CUSplitThreshold,               0,  64, 128, 192, 192, 192, 256);
+TU_OPT_ALL (MaxCUDepthAdapt,               ON,  ON,  ON,  ON,  ON,  ON, OFF);
+TU_OPT_SW  (CUSplitThreshold,               0,  64, 128, 192, 192, 224, 256);
+TU_OPT_GACC(CUSplitThreshold,               0,  64, 128, 192, 224, 224, 240);
+TU_OPT_SW  (PartModes,                      3,   2,   2,   1,   1,   1,   1);
+TU_OPT_GACC(PartModes,                      1,   1,   1,   1,   1,   1,   1);
+TU_OPT_SW  (FastSkip,                     OFF, OFF, OFF, OFF, OFF,  ON,  ON);
+TU_OPT_GACC(FastSkip,                     OFF, OFF, OFF,  ON,  ON,  ON,  ON);
+TU_OPT_ALL (FastCbfMode,                  OFF, OFF,  ON,  ON,  ON,  ON,  ON);
 
-//Basic quality features
-TU_OPT_ALL (WPP,                          UNK, UNK, UNK, UNK, UNK, UNK, UNK);
-TU_OPT_ALL (SAO,                           ON,  ON,  ON,  ON,  ON,  ON, OFF);
+TU_OPT_SW  (SplitThresholdStrengthCUIntra,  1,   1,   1,   1,   2,   3,   3);
+TU_OPT_SW  (SplitThresholdStrengthTUIntra,  1,   1,   1,   1,   2,   3,   3);
+TU_OPT_SW  (SplitThresholdStrengthCUInter,  1,   1,   1,   1,   2,   3,   3);
+TU_OPT_GACC(SplitThresholdStrengthCUIntra,  1,   1,   1,   2,   3,   3,   3);
+TU_OPT_GACC(SplitThresholdStrengthTUIntra,  1,   1,   1,   2,   3,   3,   3);
+TU_OPT_GACC(SplitThresholdStrengthCUInter,  1,   1,   1,   2,   3,   3,   3);
+TU_OPT_ALL (SplitThresholdTabIndex       ,  1,   1,   1,   2,   2,   2,   2); //Tab1 + strength 3 - fastest combination
+
+//Chroma analysis
+TU_OPT_ALL (AnalyzeChroma,                 ON,  ON,  ON,  ON,  ON,  ON,  ON);
+TU_OPT_SW  (CostChroma,                    ON,  ON,  ON,  ON, OFF, OFF, OFF);
+TU_OPT_GACC(CostChroma,                    ON,  ON,  ON,  ON, OFF, OFF, OFF);
+TU_OPT_ALL (IntraChromaRDO,               OFF, OFF, OFF, OFF, OFF, OFF, OFF);
+TU_OPT_ALL (reserved,                       0,   0,   0,   0,   0,   0,   0);
+
+//Filtering
+TU_OPT_SW  (SAO,                           ON,  ON,  ON,  ON,  ON,  ON, OFF);
+TU_OPT_GACC(SAO,                           ON,  ON,  ON,  ON,  ON, OFF, OFF);
 TU_OPT_ALL (SaoOpt,                         1,   1,   2,   2,   2,   2,   2);
-TU_OPT_ALL (TMVP,                          ON,  ON,  ON,  ON,  ON,  ON,  ON);
 TU_OPT_ALL (Deblocking,                    ON,  ON,  ON,  ON,  ON,  ON,  ON);
-TU_OPT_SW  (IntraAngModes,                  1,   1,   2,   2,   2,   2,   2);
-TU_OPT_GACC(IntraAngModes,                  3,   3,   3,   3,   3,   3,   3);
+
+//Intra prediction optimization
+TU_OPT_SW  (IntraAngModes,                  1,   1,   1,   1,   1,   1,   1); //I slice SW
+TU_OPT_GACC(IntraAngModes,                  1,   1,   1,   1,   1,   1,   1); //I slice Gacc
+TU_OPT_SW  (IntraAngModesP,                 1,   1,   2,   2,   2,   2,   3); //P slice SW
+TU_OPT_GACC(IntraAngModesP,                 2,   2,   2,   2,   2,   2,   3); //P slice Gacc
+TU_OPT_SW  (IntraAngModesBRef,              1,   1,   2,   2,   3,   3, 100); //B Ref slice SW
+TU_OPT_GACC(IntraAngModesBRef,              3,   3,   3,   3,   3,   3, 100); //B Ref slice Gacc
+TU_OPT_SW  (IntraAngModesBnonRef,           1,   1,   2,  99,  99, 100, 100); //B non Ref slice SW
+TU_OPT_GACC(IntraAngModesBnonRef,           3,   3,   3, 100, 100, 100, 100); //B non Ref slice Gacc
+
+//Quantization optimization
+TU_OPT_SW  (SignBitHiding,                 ON,  ON,  ON,  ON,  ON,  ON, OFF);
+TU_OPT_GACC(SignBitHiding,                 ON,  ON,  ON,  ON,  ON,  ON, OFF);
+TU_OPT_SW  (RDOQuant,                      ON,  ON,  ON,  ON, OFF, OFF, OFF);
+TU_OPT_SW  (RDOQuantChroma,                ON,  ON,  ON, OFF, OFF, OFF, OFF);
+TU_OPT_SW  (RDOQuantCGZ,                   ON,  ON,  ON,  ON, OFF, OFF, OFF);
+TU_OPT_GACC(RDOQuant,                      OFF, OFF, OFF, OFF, OFF, OFF, OFF);
+TU_OPT_GACC(RDOQuantChroma,                OFF, OFF, OFF, OFF, OFF, OFF, OFF);
+TU_OPT_GACC(RDOQuantCGZ,                   OFF, OFF, OFF, OFF, OFF, OFF, OFF);
 TU_OPT_ALL (DeltaQpMode,                    0,   0,   0,   0,   0,   0,   0);
 
-//Quant optimization
-TU_OPT_ALL (SignBitHiding,                 ON,  ON,  ON,  ON,  ON,  ON, OFF);
-TU_OPT_ALL (RDOQuant,                      ON,  ON,  ON,  ON, OFF, OFF, OFF);
-TU_OPT_ALL (RDOQuantChroma,                ON,  ON,  ON, OFF, OFF, OFF, OFF);
-TU_OPT_ALL (RDOQuantCGZ,                   ON,  ON,  ON,  ON, OFF, OFF, OFF);
-
-//RDO
-TU_OPT_ALL (SplitThresholdStrengthCUIntra,  1,   1,   1,   1,   2,   3,   3);
-TU_OPT_ALL (SplitThresholdStrengthTUIntra,  1,   1,   1,   1,   2,   3,   3);
-TU_OPT_ALL (SplitThresholdStrengthCUInter,  1,   1,   1,   1,   2,   3,   3);
-TU_OPT_SW  (IntraNumCand0_2,               35,  35,  35,  35,  35,  35,  35);
-TU_OPT_SW  (IntraNumCand0_3,               35,  35,  35,  35,  35,  35,  35);
-TU_OPT_SW  (IntraNumCand0_4,               35,  35,  35,  35,  35,  35,  35);
-TU_OPT_SW  (IntraNumCand0_5,               35,  35,  35,  35,  35,  35,  35);
-TU_OPT_SW  (IntraNumCand0_6,               35,  35,  35,  35,  35,  35,  35);
-TU_OPT_SW  (IntraNumCand1_2,                8,   6,   4,   4,   4,   4,   4);
-TU_OPT_SW  (IntraNumCand1_3,                8,   6,   4,   4,   4,   4,   4);
-TU_OPT_SW  (IntraNumCand1_4,                4,   3,   2,   2,   2,   2,   2);
-TU_OPT_SW  (IntraNumCand1_5,                4,   3,   2,   2,   2,   2,   2);
-TU_OPT_SW  (IntraNumCand1_6,                4,   3,   2,   2,   2,   2,   2);
-TU_OPT_SW  (IntraNumCand2_2,                4,   3,   2,   2,   2,   2,   2);
-TU_OPT_SW  (IntraNumCand2_3,                4,   3,   2,   2,   2,   2,   2);
+//Intra RDO
+TU_OPT_SW  (IntraNumCand0_2,                1,   1,   1,   1,   1,   1,   1);
+TU_OPT_SW  (IntraNumCand0_3,                2,   2,   2,   2,   2,   2,   2);
+TU_OPT_SW  (IntraNumCand0_4,                2,   2,   2,   2,   2,   2,   2);
+TU_OPT_SW  (IntraNumCand0_5,                1,   1,   1,   1,   1,   1,   1);
+TU_OPT_SW  (IntraNumCand0_6,                1,   1,   1,   1,   1,   1,   1);
+TU_OPT_SW  (IntraNumCand1_2,                8,   6,   4,   2,   2,   1,   1);
+TU_OPT_SW  (IntraNumCand1_3,                8,   6,   4,   2,   1,   1,   1);
+TU_OPT_SW  (IntraNumCand1_4,                4,   3,   2,   1,   1,   1,   1);
+TU_OPT_SW  (IntraNumCand1_5,                4,   3,   2,   1,   1,   1,   1);
+TU_OPT_SW  (IntraNumCand1_6,                4,   3,   2,   1,   1,   1,   1);
+TU_OPT_SW  (IntraNumCand2_2,                4,   3,   2,   2,   1,   1,   1);
+TU_OPT_SW  (IntraNumCand2_3,                4,   3,   2,   1,   1,   1,   1);
 TU_OPT_SW  (IntraNumCand2_4,                2,   2,   1,   1,   1,   1,   1);
 TU_OPT_SW  (IntraNumCand2_5,                2,   2,   1,   1,   1,   1,   1);
 TU_OPT_SW  (IntraNumCand2_6,                2,   2,   1,   1,   1,   1,   1);
 TU_OPT_GACC(IntraNumCand0_2,                1,   1,   1,   1,   1,   1,   1);
-TU_OPT_GACC(IntraNumCand0_3,                1,   1,   1,   1,   1,   1,   1);
-TU_OPT_GACC(IntraNumCand0_4,                1,   1,   1,   1,   1,   1,   1);
+TU_OPT_GACC(IntraNumCand0_3,                2,   2,   2,   2,   1,   1,   1);
+TU_OPT_GACC(IntraNumCand0_4,                2,   2,   2,   2,   1,   1,   1);
 TU_OPT_GACC(IntraNumCand0_5,                1,   1,   1,   1,   1,   1,   1);
 TU_OPT_GACC(IntraNumCand0_6,                1,   1,   1,   1,   1,   1,   1);
 TU_OPT_GACC(IntraNumCand1_2,                1,   1,   1,   1,   1,   1,   1);
@@ -216,37 +258,54 @@ TU_OPT_GACC(IntraNumCand2_4,                1,   1,   1,   1,   1,   1,   1);
 TU_OPT_GACC(IntraNumCand2_5,                1,   1,   1,   1,   1,   1,   1);
 TU_OPT_GACC(IntraNumCand2_6,                1,   1,   1,   1,   1,   1,   1);
 
-
-//optimizations
+//GACC
 TU_OPT_SW  (EnableCm,                     OFF, OFF, OFF, OFF, OFF, OFF, OFF);
 TU_OPT_GACC(EnableCm,                      ON,  ON,  ON,  ON,  ON,  ON,  ON);
 TU_OPT_SW  (CmIntraThreshold,               0,   0,   0,   0,   0,   0,   0);
 TU_OPT_GACC(CmIntraThreshold,             576, 576, 576, 576, 576, 576, 576);
+
+//Multithreading & optimizations
+TU_OPT_ALL (WPP,                          UNK, UNK, UNK, UNK, UNK, UNK, UNK);
 TU_OPT_ALL (ForceNumThread,                 0,   0,   0,   0,   0,   0,   0);
+TU_OPT_ALL (CpuFeature,                     0,   0,   0,   0,   0,   0,   0);
 
-//Motion estimation options
-TU_OPT_ALL (HadamardMe,                     2,   2,   2,   2,   2,   2,   1);
+//Inter prediction
+TU_OPT_ALL (TMVP,                          ON,  ON,  ON,  ON,  ON,  ON,  ON);
+TU_OPT_SW  (HadamardMe,                     2,   2,   2,   2,   2,   1,   1);
+TU_OPT_GACC(HadamardMe,                     1,   1,   1,   1,   1,   1,   1);
 TU_OPT_ALL (PatternIntPel,                  1,   1,   1,   1,   1,   1,   1);
-TU_OPT_ALL (PatternSubPel,                  3,   3,   3,   3,   3,   3,   4); //4 -dia subpel search; 3- square
-TU_OPT_ALL (NumBiRefineIter,              999, 999, 999, 999, 999, 999,   1); //999-practically infinite iteration
-
-// reference options
-TU_OPT_ALL (GPB,                           ON,  ON,  ON,  ON,  ON, OFF, OFF);
+TU_OPT_ALL (PatternSubPel,                  3,   3,   3,   3,   4,   4,   4); //4 -dia subpel search; 3- square (see enum SUBPEL_*)
+TU_OPT_ALL (NumBiRefineIter,              999, 999, 999,   3,   2,   1,   1); //999-practically infinite iteration
+TU_OPT_ALL (FastInterp,                   OFF, OFF, OFF, OFF, OFF, OFF, OFF); 
+TU_OPT_SW  (TryIntra,                     2,   2,   2,   2,   2,   2,   1);
+TU_OPT_GACC(TryIntra,                     1,   1,   1,   1,   1,   1,   1);
+TU_OPT_SW  (FastAMPSkipME,                2,   1,   1,   1,   1,   1,   1);
+TU_OPT_GACC(FastAMPSkipME,                1,   1,   1,   1,   1,   1,   1);
+TU_OPT_SW  (FastAMPRD,                    2,   1,   1,   1,   1,   1,   1);
+TU_OPT_GACC(FastAMPRD,                    1,   1,   1,   1,   1,   1,   1);
+TU_OPT_SW  (SkipMotionPartition,          2,   2,   2,   1,   1,   1,   1);
+TU_OPT_GACC(SkipMotionPartition,          1,   1,   1,   1,   1,   1,   1);
+TU_OPT_SW  (SkipCandRD,                  ON,  ON,  ON,  OFF,  OFF, OFF, OFF);
+TU_OPT_GACC(SkipCandRD,                  OFF, OFF, OFF, OFF,  OFF, OFF, OFF);
+//GOP structure, reference options
+TU_OPT_SW  (GPB,                           ON,  ON,  ON,  ON,  ON, OFF, OFF);
+TU_OPT_GACC(GPB,                          OFF, OFF, OFF, OFF, OFF, OFF, OFF);
 TU_OPT_ALL (BPyramid,                      ON,  ON,  ON,  ON,  ON,  ON,  ON);
 
-Ipp8u tab_tuGopRefDist [8] = {8, 8, 8, 4, 4, 4, 4, 4};
-Ipp8u tab_tuNumRefFrame[8] = {2, 4, 3, 2, 2, 2, 2, 2};
+Ipp8u tab_tuGopRefDist [8] = {8, 8, 8, 8, 8, 8, 8, 8};
+Ipp8u tab_tuNumRefFrame_SW[8] = {2, 4, 4, 4, 3, 3, 2, 2};
+Ipp8u tab_tuNumRefFrame_GACC[8] = {4, 4, 4, 4, 4, 4, 4, 4};
 
 
 mfxExtCodingOptionHEVC tab_tu[8] = {
     TAB_TU(sw, 3), TAB_TU(sw, 0), TAB_TU(sw, 1), TAB_TU(sw, 2), TAB_TU(sw, 3), TAB_TU(sw, 4), TAB_TU(sw, 5), TAB_TU(sw, 6)
 };
 
-#ifdef MFX_ENABLE_CM
+#ifdef MFX_VA
 mfxExtCodingOptionHEVC tab_tu_gacc[8] = {
     TAB_TU(gacc, 3), TAB_TU(gacc, 0), TAB_TU(gacc, 1), TAB_TU(gacc, 2), TAB_TU(gacc, 3), TAB_TU(gacc, 4), TAB_TU(gacc, 5), TAB_TU(gacc, 6)
 };
-#endif //MFX_ENABLE_CM
+#endif //MFX_VA
 
 
 static const struct tab_hevcLevel {
@@ -280,6 +339,16 @@ static const struct tab_hevcLevel {
 static const int    NUM_265_LEVELS = sizeof(tab_level) / sizeof(tab_level[0]);
 
 //////////////////////////////////////////////////////////////////////////
+
+static mfxStatus CheckPlatformType(VideoCORE *core)
+{
+#ifndef MFX_VA
+    if (core && core->GetPlatformType() != MFX_PLATFORM_SOFTWARE)
+        return MFX_WRN_PARTIAL_ACCELERATION;
+#endif //!MFX_VA
+
+    return MFX_ERR_NONE;
+}
 
 static Ipp32s Check265Level(Ipp32s inLevelTier, const mfxVideoParam *parMfx)
 {
@@ -438,17 +507,15 @@ mfxStatus MFXVideoENCODEH265::EncodeFrameCheck(mfxEncodeCtrl *ctrl, mfxFrameSurf
     MFX_CHECK(bs->MaxLength >= (bs->DataOffset + bs->DataLength),MFX_ERR_UNDEFINED_BEHAVIOR);
 
     Ipp32s brcMult = IPP_MAX(1, m_mfxVideoParam.mfx.BRCParamMultiplier);
-    if( (Ipp32s)(bs->MaxLength - bs->DataOffset - bs->DataLength) < m_mfxVideoParam.mfx.BufferSizeInKB * brcMult * 1000)
+    if ((Ipp32s)(bs->MaxLength - bs->DataOffset - bs->DataLength) < m_mfxVideoParam.mfx.BufferSizeInKB * brcMult * 1000)
         return MFX_ERR_NOT_ENOUGH_BUFFER;
 
-    if (surface)
-    { // check frame parameters
+    if (surface) { // check frame parameters
         MFX_CHECK(surface->Info.ChromaFormat == m_mfxVideoParam.mfx.FrameInfo.ChromaFormat, MFX_ERR_INVALID_VIDEO_PARAM);
         MFX_CHECK(surface->Info.Width  == m_mfxVideoParam.mfx.FrameInfo.Width, MFX_ERR_INVALID_VIDEO_PARAM);
         MFX_CHECK(surface->Info.Height == m_mfxVideoParam.mfx.FrameInfo.Height, MFX_ERR_INVALID_VIDEO_PARAM);
 
-        if (surface->Data.Y)
-        {
+        if (surface->Data.Y) {
             MFX_CHECK (surface->Data.UV, MFX_ERR_UNDEFINED_BEHAVIOR);
             MFX_CHECK (surface->Data.Pitch < 0x8000 && surface->Data.Pitch!=0, MFX_ERR_UNDEFINED_BEHAVIOR);
         } else {
@@ -461,8 +528,7 @@ mfxStatus MFXVideoENCODEH265::EncodeFrameCheck(mfxEncodeCtrl *ctrl, mfxFrameSurf
     if (m_mfxVideoParam.mfx.EncodedOrder) {
         return MFX_ERR_UNSUPPORTED;
     } else {
-        if (ctrl && (ctrl->FrameType != MFX_FRAMETYPE_UNKNOWN) && ((ctrl->FrameType & 0xff) != (MFX_FRAMETYPE_I | MFX_FRAMETYPE_REF | MFX_FRAMETYPE_IDR)))
-        {
+        if (ctrl && (ctrl->FrameType != MFX_FRAMETYPE_UNKNOWN) && ((ctrl->FrameType & 0xff) != (MFX_FRAMETYPE_I | MFX_FRAMETYPE_REF | MFX_FRAMETYPE_IDR))) {
             return MFX_ERR_INVALID_VIDEO_PARAM;
         }
         m_frameCountSync++;
@@ -674,13 +740,11 @@ mfxStatus MFXVideoENCODEH265::Init(mfxVideoParam* par_in)
     }
 
 
-#ifdef MFX_ENABLE_CM
-    mfxExtCodingOptionHEVC* opts_tu = (m_mfxHEVCOpts.EnableCm == MFX_CODINGOPTION_ON)
-        ? &tab_tu_gacc[m_mfxVideoParam.mfx.TargetUsage]
-        : &tab_tu[m_mfxVideoParam.mfx.TargetUsage];
-#else // MFX_ENABLE_CM
     mfxExtCodingOptionHEVC* opts_tu = &tab_tu[m_mfxVideoParam.mfx.TargetUsage];
-#endif // MFX_ENABLE_CM
+#ifdef MFX_VA
+    if (m_mfxHEVCOpts.EnableCm != MFX_CODINGOPTION_OFF)
+        opts_tu = &tab_tu_gacc[m_mfxVideoParam.mfx.TargetUsage];
+#endif // MFX_VA
 
     // check if size is aligned with CU depth
     int maxCUsize = m_mfxHEVCOpts.Log2MaxCUSize ? m_mfxHEVCOpts.Log2MaxCUSize : opts_tu->Log2MaxCUSize;
@@ -709,7 +773,7 @@ mfxStatus MFXVideoENCODEH265::Init(mfxVideoParam* par_in)
 
     // then fill not provided params with defaults or from targret usage
     if (!opts_hevc) {
-        m_mfxHEVCOpts = tab_tu[m_mfxVideoParam.mfx.TargetUsage];
+        m_mfxHEVCOpts = *opts_tu;
         m_mfxHEVCOpts.QuadtreeTULog2MinSize = (mfxU16)minTUsize;
         m_mfxHEVCOpts.MaxCUDepth = (mfxU16)maxCUdepth;
         m_mfxHEVCOpts.Log2MaxCUSize = (mfxU16)maxCUsize;
@@ -737,6 +801,10 @@ mfxStatus MFXVideoENCODEH265::Init(mfxVideoParam* par_in)
             m_mfxHEVCOpts.AnalyzeChroma = opts_tu->AnalyzeChroma;
         if (m_mfxHEVCOpts.CostChroma == MFX_CODINGOPTION_UNKNOWN)
             m_mfxHEVCOpts.CostChroma = opts_tu->CostChroma;
+        if (m_mfxHEVCOpts.IntraChromaRDO == MFX_CODINGOPTION_UNKNOWN)
+            m_mfxHEVCOpts.IntraChromaRDO = opts_tu->IntraChromaRDO;
+        if (m_mfxHEVCOpts.FastInterp == MFX_CODINGOPTION_UNKNOWN)
+            m_mfxHEVCOpts.FastInterp = opts_tu->FastInterp;
 
         if (m_mfxHEVCOpts.RDOQuant == MFX_CODINGOPTION_UNKNOWN)
             m_mfxHEVCOpts.RDOQuant = opts_tu->RDOQuant;
@@ -764,6 +832,8 @@ mfxStatus MFXVideoENCODEH265::Init(mfxVideoParam* par_in)
             m_mfxHEVCOpts.SplitThresholdStrengthTUIntra = opts_tu->SplitThresholdStrengthTUIntra;
         if (!m_mfxHEVCOpts.SplitThresholdStrengthCUInter)
             m_mfxHEVCOpts.SplitThresholdStrengthCUInter = opts_tu->SplitThresholdStrengthCUInter;
+        if (!m_mfxHEVCOpts.SplitThresholdTabIndex)
+            m_mfxHEVCOpts.SplitThresholdTabIndex = opts_tu->SplitThresholdTabIndex;
 
         if (m_mfxHEVCOpts.IntraNumCand0_2 == 0)
             m_mfxHEVCOpts.IntraNumCand0_2 = opts_tu->IntraNumCand0_2;
@@ -803,7 +873,16 @@ mfxStatus MFXVideoENCODEH265::Init(mfxVideoParam* par_in)
                 *candopt[pos] = val;
             }
         }
-
+        if (m_mfxHEVCOpts.TryIntra == 0)
+            m_mfxHEVCOpts.TryIntra = opts_tu->TryIntra;
+        if (m_mfxHEVCOpts.FastAMPSkipME == 0)
+            m_mfxHEVCOpts.FastAMPSkipME = opts_tu->FastAMPSkipME;
+        if (m_mfxHEVCOpts.FastAMPRD == 0)
+            m_mfxHEVCOpts.FastAMPRD = opts_tu->FastAMPRD;
+        if (m_mfxHEVCOpts.SkipMotionPartition == 0)
+            m_mfxHEVCOpts.SkipMotionPartition = opts_tu->SkipMotionPartition;
+        if (m_mfxHEVCOpts.SkipCandRD == 0)
+            m_mfxHEVCOpts.SkipCandRD = opts_tu->SkipCandRD;
         if (m_mfxHEVCOpts.CmIntraThreshold == 0)
             m_mfxHEVCOpts.CmIntraThreshold = opts_tu->CmIntraThreshold;
         if (m_mfxHEVCOpts.TUSplitIntra == 0)
@@ -812,6 +891,15 @@ mfxStatus MFXVideoENCODEH265::Init(mfxVideoParam* par_in)
             m_mfxHEVCOpts.CUSplit = opts_tu->CUSplit;
         if (m_mfxHEVCOpts.IntraAngModes == 0)
             m_mfxHEVCOpts.IntraAngModes = opts_tu->IntraAngModes;
+        if (INTRA_ANG_MODE_DISABLE == m_mfxHEVCOpts.IntraAngModes) // Disable Intra in I frame is prohibited
+            return MFX_ERR_INVALID_VIDEO_PARAM;
+
+        if (m_mfxHEVCOpts.IntraAngModesP == 0)
+            m_mfxHEVCOpts.IntraAngModesP = opts_tu->IntraAngModesP;
+        if (m_mfxHEVCOpts.IntraAngModesBRef == 0)
+            m_mfxHEVCOpts.IntraAngModesBRef = opts_tu->IntraAngModesBRef;
+        if (m_mfxHEVCOpts.IntraAngModesBnonRef == 0)
+            m_mfxHEVCOpts.IntraAngModesBnonRef = opts_tu->IntraAngModesBnonRef;
         if (m_mfxHEVCOpts.HadamardMe == 0)
             m_mfxHEVCOpts.HadamardMe = opts_tu->HadamardMe;
         if (m_mfxHEVCOpts.TMVP == 0)
@@ -838,6 +926,8 @@ mfxStatus MFXVideoENCODEH265::Init(mfxVideoParam* par_in)
             m_mfxHEVCOpts.PuDecisionSatd = opts_tu->PuDecisionSatd;
         if (m_mfxHEVCOpts.MinCUDepthAdapt == 0)
             m_mfxHEVCOpts.MinCUDepthAdapt = opts_tu->MinCUDepthAdapt;
+        if (m_mfxHEVCOpts.MaxCUDepthAdapt == 0)
+            m_mfxHEVCOpts.MaxCUDepthAdapt = opts_tu->MaxCUDepthAdapt;
         if (m_mfxHEVCOpts.NumBiRefineIter == 0)
             m_mfxHEVCOpts.NumBiRefineIter = opts_tu->NumBiRefineIter;
         if (m_mfxHEVCOpts.CUSplitThreshold == 0)
@@ -865,7 +955,6 @@ mfxStatus MFXVideoENCODEH265::Init(mfxVideoParam* par_in)
     // Crops, AspectRatio - ignore
 
     if (!m_mfxVideoParam.mfx.FrameInfo.PicStruct) m_mfxVideoParam.mfx.FrameInfo.PicStruct = MFX_PICSTRUCT_PROGRESSIVE;
-    m_mfxVideoParam.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
 
     // CodecId - only HEVC;  CodecProfile CodecLevel - in the end
     // NumThread - set inside, >1 only if WPP
@@ -895,17 +984,6 @@ mfxStatus MFXVideoENCODEH265::Init(mfxVideoParam* par_in)
     //if (!m_mfxVideoParam.mfx.IdrInterval) m_mfxVideoParam.mfx.IdrInterval = m_mfxVideoParam.mfx.GopPicSize * 8;
     // GopOptFlag ignore
 
-    if (m_mfxHEVCOpts.BPyramid == MFX_CODINGOPTION_ON) {
-        Ipp32s GopRefDist = m_mfxVideoParam.mfx.GopRefDist;
-
-        while (((GopRefDist & 1) == 0) && GopRefDist > 1)
-            GopRefDist >>= 1;
-
-        if (GopRefDist != 1 || (m_mfxVideoParam.mfx.GopPicSize % m_mfxVideoParam.mfx.GopRefDist)) {
-            m_mfxHEVCOpts.BPyramid = MFX_CODINGOPTION_OFF; // not supported now
-        }
-    }
-
     // to be provided:
     if (!m_mfxVideoParam.mfx.RateControlMethod)
         return MFX_ERR_INVALID_VIDEO_PARAM;
@@ -924,8 +1002,12 @@ mfxStatus MFXVideoENCODEH265::Init(mfxVideoParam* par_in)
     if (!m_mfxVideoParam.mfx.NumRefFrame) {
         if (m_mfxVideoParam.mfx.TargetUsage == MFX_TARGETUSAGE_1 && m_mfxVideoParam.mfx.GopRefDist == 1) {
             m_mfxVideoParam.mfx.NumRefFrame = 4; // Low_Delay
-        } else {
-            m_mfxVideoParam.mfx.NumRefFrame = tab_tuNumRefFrame[m_mfxVideoParam.mfx.TargetUsage];
+        } 
+        else {
+            if(m_mfxHEVCOpts.EnableCm == 1)
+                m_mfxVideoParam.mfx.NumRefFrame = tab_tuNumRefFrame_GACC[m_mfxVideoParam.mfx.TargetUsage];
+            else
+                m_mfxVideoParam.mfx.NumRefFrame = tab_tuNumRefFrame_SW[m_mfxVideoParam.mfx.TargetUsage];
         }
     }
 
@@ -935,7 +1017,19 @@ mfxStatus MFXVideoENCODEH265::Init(mfxVideoParam* par_in)
         m_mfxVideoParam.mfx.NumRefFrame = 1;
     }
 
-    m_mfxVideoParam.mfx.CodecProfile = MFX_PROFILE_HEVC_MAIN;
+    switch (m_mfxVideoParam.mfx.FrameInfo.FourCC) {
+    case MFX_FOURCC_P010:
+        m_mfxVideoParam.mfx.CodecProfile = MFX_PROFILE_HEVC_MAIN10;
+        break;
+//    case MFX_FOURCC_P210:
+//    case MFX_FOURCC_NV16:
+//        m_mfxVideoParam.mfx.CodecProfile = MFX_PROFILE_HEVC_MAIN422_10;
+//        break;
+    case MFX_FOURCC_NV12:
+    default:
+        m_mfxVideoParam.mfx.CodecProfile = MFX_PROFILE_HEVC_MAIN;
+    }
+
     mfxI32 complevel = Check265Level(m_mfxVideoParam.mfx.CodecLevel, &m_mfxVideoParam);
     if (complevel != m_mfxVideoParam.mfx.CodecLevel) {
         if (m_mfxVideoParam.mfx.CodecLevel != MFX_LEVEL_UNKNOWN)
@@ -957,8 +1051,7 @@ mfxStatus MFXVideoENCODEH265::Init(mfxVideoParam* par_in)
     m_frameCountBuffered = 0;
 
     vm_event_set_invalid(&m_taskParams.parallel_region_done);
-    if (VM_OK != vm_event_init(&m_taskParams.parallel_region_done, 0, 0))
-    {
+    if (VM_OK != vm_event_init(&m_taskParams.parallel_region_done, 0, 0)) {
         return MFX_ERR_MEMORY_ALLOC;
     }
     vm_mutex_set_invalid(&m_taskParams.parallel_region_end_lock);
@@ -1101,6 +1194,7 @@ mfxStatus MFXVideoENCODEH265::Reset(mfxVideoParam *par_in)
         if (!optsNew.SplitThresholdStrengthCUIntra) optsNew.SplitThresholdStrengthCUIntra = optsOld.SplitThresholdStrengthCUIntra;
         if (!optsNew.SplitThresholdStrengthTUIntra) optsNew.SplitThresholdStrengthTUIntra = optsOld.SplitThresholdStrengthTUIntra;
         if (!optsNew.SplitThresholdStrengthCUInter) optsNew.SplitThresholdStrengthCUInter = optsOld.SplitThresholdStrengthCUInter;
+        if (!optsNew.SplitThresholdTabIndex       ) optsNew.SplitThresholdTabIndex        = optsOld.SplitThresholdTabIndex       ;
         if (!optsNew.IntraNumCand1_2              ) optsNew.IntraNumCand1_2               = optsOld.IntraNumCand1_2              ;
         if (!optsNew.IntraNumCand1_3              ) optsNew.IntraNumCand1_3               = optsOld.IntraNumCand1_3              ;
         if (!optsNew.IntraNumCand1_4              ) optsNew.IntraNumCand1_4               = optsOld.IntraNumCand1_4              ;
@@ -1116,13 +1210,22 @@ mfxStatus MFXVideoENCODEH265::Reset(mfxVideoParam *par_in)
         if (!optsNew.PartModes                    ) optsNew.PartModes                     = optsOld.PartModes                    ;
         if (!optsNew.BPyramid                     ) optsNew.BPyramid                      = optsOld.BPyramid                     ;
         if (!optsNew.CostChroma                   ) optsNew.CostChroma                    = optsOld.CostChroma                   ;
+        if (!optsNew.IntraChromaRDO               ) optsNew.IntraChromaRDO                = optsOld.IntraChromaRDO               ;
+        if (!optsNew.FastInterp                   ) optsNew.FastInterp                    = optsOld.FastInterp                   ;
         if (!optsNew.FastSkip                     ) optsNew.FastSkip                      = optsOld.FastSkip                     ;
         if (!optsNew.FastCbfMode                  ) optsNew.FastCbfMode                   = optsOld.FastCbfMode                  ;
         if (!optsNew.PuDecisionSatd               ) optsNew.PuDecisionSatd                = optsOld.PuDecisionSatd               ;
         if (!optsNew.MinCUDepthAdapt              ) optsNew.MinCUDepthAdapt               = optsOld.MinCUDepthAdapt              ;
+        if (!optsNew.MaxCUDepthAdapt              ) optsNew.MaxCUDepthAdapt               = optsOld.MaxCUDepthAdapt              ;
         if (!optsNew.CUSplitThreshold             ) optsNew.CUSplitThreshold              = optsOld.CUSplitThreshold             ;
-        if (!optsNew.DeltaQpMode                          ) optsNew.DeltaQpMode                           = optsOld.DeltaQpMode                          ;
+        if (!optsNew.DeltaQpMode                  ) optsNew.DeltaQpMode                   = optsOld.DeltaQpMode                  ;
         if (!optsNew.Enable10bit                  ) optsNew.Enable10bit                   = optsOld.Enable10bit                  ;
+        if (!optsNew.CpuFeature                   ) optsNew.CpuFeature                    = optsOld.CpuFeature                   ;
+        if (!optsNew.TryIntra                     ) optsNew.TryIntra                      = optsOld.TryIntra                     ;
+        if (!optsNew.FastAMPSkipME                ) optsNew.FastAMPSkipME                 = optsOld.FastAMPSkipME                ;
+        if (!optsNew.FastAMPRD                    ) optsNew.FastAMPRD                     = optsOld.FastAMPRD                    ;
+        if (!optsNew.SkipMotionPartition          ) optsNew.SkipMotionPartition           = optsOld.SkipMotionPartition          ;
+        if (!optsNew.SkipCandRD                   ) optsNew.SkipCandRD                    = optsOld.SkipCandRD                   ;
     }
 
     if ((parNew.IOPattern & 0xffc8) || (parNew.IOPattern == 0)) // 0 is possible after Query
@@ -1267,6 +1370,7 @@ mfxStatus MFXVideoENCODEH265::Query(VideoCORE *core, mfxVideoParam *par_in, mfxV
             optsHEVC->SplitThresholdStrengthCUIntra = 1;
             optsHEVC->SplitThresholdStrengthTUIntra = 1;
             optsHEVC->SplitThresholdStrengthCUInter = 1;
+            optsHEVC->SplitThresholdTabIndex        = 1;
             optsHEVC->IntraNumCand1_2 = 1;
             optsHEVC->IntraNumCand1_3 = 1;
             optsHEVC->IntraNumCand1_4 = 1;
@@ -1282,13 +1386,22 @@ mfxStatus MFXVideoENCODEH265::Query(VideoCORE *core, mfxVideoParam *par_in, mfxV
             optsHEVC->PartModes = 1;
             optsHEVC->BPyramid = 1;
             optsHEVC->CostChroma = 1;
+            optsHEVC->IntraChromaRDO = 1;
+            optsHEVC->FastInterp = 1;
             optsHEVC->FastSkip = 1;
             optsHEVC->FastCbfMode = 1;
             optsHEVC->PuDecisionSatd = 1;
             optsHEVC->MinCUDepthAdapt = 1;
+            optsHEVC->MaxCUDepthAdapt = 1;
             optsHEVC->CUSplitThreshold = 1;
             optsHEVC->DeltaQpMode = 1;
             optsHEVC->Enable10bit = 1;
+            optsHEVC->CpuFeature = 1;
+            optsHEVC->TryIntra   = 1;
+            optsHEVC->FastAMPSkipME = 1;
+            optsHEVC->FastAMPRD = 1;
+            optsHEVC->SkipMotionPartition = 1;
+            optsHEVC->SkipCandRD = 1;
         }
 
         mfxExtDumpFiles* optsDump = (mfxExtDumpFiles*)GetExtBuffer( out->ExtParam, out->NumExtParam, MFX_EXTBUFF_DUMP );
@@ -1332,16 +1445,15 @@ mfxStatus MFXVideoENCODEH265::Query(VideoCORE *core, mfxVideoParam *par_in, mfxV
         //    out->mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
         //    isCorrected ++;
         //} else
-        Ipp8u enable10bit = opts_in && opts_in->Enable10bit == MFX_CODINGOPTION_ON;
 
-        if ((in->mfx.FrameInfo.FourCC != MFX_FOURCC_NV12 && (!enable10bit || in->mfx.FrameInfo.FourCC != MFX_FOURCC_P010)) !=
-            (in->mfx.FrameInfo.ChromaFormat != MFX_CHROMAFORMAT_YUV420)) {
+        if (((in->mfx.FrameInfo.FourCC == MFX_FOURCC_NV12 || in->mfx.FrameInfo.FourCC == MFX_FOURCC_P010) && in->mfx.FrameInfo.ChromaFormat == MFX_CHROMAFORMAT_YUV420) ||
+            ((in->mfx.FrameInfo.FourCC == MFX_FOURCC_NV16 || in->mfx.FrameInfo.FourCC == MFX_FOURCC_P210) && in->mfx.FrameInfo.ChromaFormat == MFX_CHROMAFORMAT_YUV422)) {
+            out->mfx.FrameInfo.FourCC = in->mfx.FrameInfo.FourCC;
+            out->mfx.FrameInfo.ChromaFormat = in->mfx.FrameInfo.ChromaFormat;
+        } else {
             out->mfx.FrameInfo.FourCC = 0;
             out->mfx.FrameInfo.ChromaFormat = 0;
             isInvalid ++;
-        } else {
-            out->mfx.FrameInfo.FourCC = in->mfx.FrameInfo.FourCC;
-            out->mfx.FrameInfo.ChromaFormat = in->mfx.FrameInfo.ChromaFormat;
         }
 
         if (in->Protected != 0)
@@ -1464,7 +1576,8 @@ mfxStatus MFXVideoENCODEH265::Query(VideoCORE *core, mfxVideoParam *par_in, mfxV
         out->mfx.BRCParamMultiplier = in->mfx.BRCParamMultiplier;
 
         out->mfx.CodecId = MFX_CODEC_HEVC;
-        if (in->mfx.CodecProfile != MFX_PROFILE_UNKNOWN && in->mfx.CodecProfile != MFX_PROFILE_HEVC_MAIN) {
+        if (in->mfx.CodecProfile != MFX_PROFILE_UNKNOWN && in->mfx.CodecProfile != MFX_PROFILE_HEVC_MAIN &&
+            (in->mfx.CodecProfile != MFX_PROFILE_HEVC_MAIN10)) {
             isCorrected ++;
             out->mfx.CodecProfile = MFX_PROFILE_HEVC_MAIN;
         } else out->mfx.CodecProfile = in->mfx.CodecProfile;
@@ -1528,7 +1641,7 @@ mfxStatus MFXVideoENCODEH265::Query(VideoCORE *core, mfxVideoParam *par_in, mfxV
         out->mfx.EncodedOrder = 0;
 
         if (in->mfx.RateControlMethod != 0 &&
-            in->mfx.RateControlMethod != MFX_RATECONTROL_CBR && in->mfx.RateControlMethod != MFX_RATECONTROL_VBR && in->mfx.RateControlMethod != MFX_RATECONTROL_CQP) {
+            in->mfx.RateControlMethod != MFX_RATECONTROL_CBR && in->mfx.RateControlMethod != MFX_RATECONTROL_VBR && in->mfx.RateControlMethod != MFX_RATECONTROL_AVBR && in->mfx.RateControlMethod != MFX_RATECONTROL_CQP) {
             out->mfx.RateControlMethod = 0;
             isInvalid ++;
         } else out->mfx.RateControlMethod = in->mfx.RateControlMethod;
@@ -1539,9 +1652,9 @@ mfxStatus MFXVideoENCODEH265::Query(VideoCORE *core, mfxVideoParam *par_in, mfxV
         if (out->mfx.RateControlMethod != MFX_RATECONTROL_CQP &&
             out->mfx.RateControlMethod != MFX_RATECONTROL_AVBR) {
             if (out->mfx.FrameInfo.Width && out->mfx.FrameInfo.Height && out->mfx.FrameInfo.FrameRateExtD && rcParams.TargetKbps) {
-                // last denominator 1000 gives about 0.75 Mbps for 1080p x 30
+                // last denominator 2000 gives about 0.75 Mbps for 1080p x 60
                 Ipp32s minBitRate = (Ipp32s)((mfxF64)out->mfx.FrameInfo.Width * out->mfx.FrameInfo.Height * 12 // size of raw image (luma + chroma 420) in bits
-                                             * out->mfx.FrameInfo.FrameRateExtN / out->mfx.FrameInfo.FrameRateExtD / 1000 / 1000);
+                                             * out->mfx.FrameInfo.FrameRateExtN / out->mfx.FrameInfo.FrameRateExtD / 1000 / 2000);
                 if (minBitRate > rcParams.TargetKbps) {
                     rcParams.TargetKbps = minBitRate;
                     isCorrected ++;
@@ -1633,10 +1746,14 @@ mfxStatus MFXVideoENCODEH265::Query(VideoCORE *core, mfxVideoParam *par_in, mfxV
                 isInvalid ++;
             } else opts_out->QuadtreeTUMaxDepthInter = opts_in->QuadtreeTUMaxDepthInter;
 
+            opts_out->TryIntra = opts_in->TryIntra;
             opts_out->CmIntraThreshold = opts_in->CmIntraThreshold;
             opts_out->TUSplitIntra = opts_in->TUSplitIntra;
             opts_out->CUSplit = opts_in->CUSplit;
             opts_out->IntraAngModes = opts_in->IntraAngModes;
+            opts_out->IntraAngModesP = opts_in->IntraAngModesP;
+            opts_out->IntraAngModesBRef = opts_in->IntraAngModesBRef;
+            opts_out->IntraAngModesBnonRef = opts_in->IntraAngModesBnonRef;
             opts_out->HadamardMe = opts_in->HadamardMe;
             opts_out->TMVP = opts_in->TMVP;
             opts_out->EnableCm = opts_in->EnableCm;
@@ -1646,7 +1763,8 @@ mfxStatus MFXVideoENCODEH265::Query(VideoCORE *core, mfxVideoParam *par_in, mfxV
             opts_out->ForceNumThread = opts_in->ForceNumThread;
             opts_out->NumBiRefineIter = opts_in->NumBiRefineIter;
             opts_out->CUSplitThreshold = opts_in->CUSplitThreshold;
-            opts_out->DeltaQpMode              = opts_in->DeltaQpMode;
+            opts_out->DeltaQpMode = opts_in->DeltaQpMode;
+            opts_out->CpuFeature = opts_in->CpuFeature;
 
             CHECK_OPTION(opts_in->AnalyzeChroma, opts_out->AnalyzeChroma, isInvalid);  /* tri-state option */
             CHECK_OPTION(opts_in->SignBitHiding, opts_out->SignBitHiding, isInvalid);  /* tri-state option */
@@ -1659,28 +1777,20 @@ mfxStatus MFXVideoENCODEH265::Query(VideoCORE *core, mfxVideoParam *par_in, mfxV
             CHECK_OPTION(opts_in->RDOQuantChroma, opts_out->RDOQuantChroma, isInvalid);  /* tri-state option */
             CHECK_OPTION(opts_in->RDOQuantCGZ, opts_out->RDOQuantCGZ, isInvalid);  /* tri-state option */
             CHECK_OPTION(opts_in->CostChroma, opts_out->CostChroma, isInvalid);  /* tri-state option */
+            CHECK_OPTION(opts_in->IntraChromaRDO, opts_out->IntraChromaRDO, isInvalid);  /* tri-state option */
+            CHECK_OPTION(opts_in->FastInterp, opts_out->FastInterp, isInvalid);  /* tri-state option */
             CHECK_OPTION(opts_in->FastSkip, opts_out->FastSkip, isInvalid);  /* tri-state option */
             CHECK_OPTION(opts_in->FastCbfMode, opts_out->FastCbfMode, isInvalid);  /* tri-state option */
             CHECK_OPTION(opts_in->PuDecisionSatd, opts_out->PuDecisionSatd, isInvalid);  /* tri-state option */
             CHECK_OPTION(opts_in->MinCUDepthAdapt, opts_out->MinCUDepthAdapt, isInvalid);  /* tri-state option */
+            CHECK_OPTION(opts_in->MaxCUDepthAdapt, opts_out->MaxCUDepthAdapt, isInvalid);  /* tri-state option */
             CHECK_OPTION(opts_in->Enable10bit, opts_out->Enable10bit, isInvalid);  /* tri-state option */
+            CHECK_OPTION(opts_in->SkipCandRD, opts_out->SkipCandRD, isInvalid);  /* tri-state option */
 
             if (opts_in->PartModes > 3) {
                 opts_out->PartModes = 0;
                 isInvalid ++;
             } else opts_out->PartModes = opts_in->PartModes;
-
-            if (opts_out->BPyramid == MFX_CODINGOPTION_ON) {
-                Ipp32s GopRefDist = out->mfx.GopRefDist;
-
-                while (((GopRefDist & 1) == 0) && GopRefDist > 1)
-                    GopRefDist >>= 1;
-
-                if (GopRefDist != 1 || (out->mfx.GopPicSize % out->mfx.GopRefDist)) {
-                    opts_out->BPyramid = MFX_CODINGOPTION_OFF; // not supported now
-                    isCorrected ++;
-                }
-            }
 
             if (opts_out->SAO == MFX_CODINGOPTION_ON && in->mfx.NumSlice > 1) { // switch off SAO for now, because of inter-slice deblocking
                 opts_out->SAO = MFX_CODINGOPTION_OFF;
@@ -1701,40 +1811,41 @@ mfxStatus MFXVideoENCODEH265::Query(VideoCORE *core, mfxVideoParam *par_in, mfxV
                 opts_out->SplitThresholdStrengthCUInter = 0;
                 isInvalid ++;
             } else opts_out->SplitThresholdStrengthCUInter = opts_in->SplitThresholdStrengthCUInter;
+            
+            if (opts_in->SplitThresholdTabIndex > 3) {
+                opts_out->SplitThresholdTabIndex = 0;
+                isInvalid ++;
+            } else opts_out->SplitThresholdTabIndex = opts_in->SplitThresholdTabIndex;
 
 #define CHECK_NUMCAND(field)                            \
             if (opts_in->field > maxnum) {              \
                 opts_out->field = 0;                    \
                 isInvalid ++;                           \
-            } else opts_out->field = opts_in->field;    \
-            if (opts_out->field > 0) maxnum = opts_out->field;
+            } else opts_out->field = opts_in->field
 
             mfxU16 maxnum = 35;
-
-            CHECK_NUMCAND(IntraNumCand0_2)
-            CHECK_NUMCAND(IntraNumCand0_3)
-            CHECK_NUMCAND(IntraNumCand0_4)
-            CHECK_NUMCAND(IntraNumCand0_5)
-            CHECK_NUMCAND(IntraNumCand0_6)
-            CHECK_NUMCAND(IntraNumCand1_2)
-            CHECK_NUMCAND(IntraNumCand1_3)
-            CHECK_NUMCAND(IntraNumCand1_4)
-            CHECK_NUMCAND(IntraNumCand1_5)
-            CHECK_NUMCAND(IntraNumCand1_6)
-            CHECK_NUMCAND(IntraNumCand2_2)
-            CHECK_NUMCAND(IntraNumCand2_3)
-            CHECK_NUMCAND(IntraNumCand2_4)
-            CHECK_NUMCAND(IntraNumCand2_5)
-            CHECK_NUMCAND(IntraNumCand2_6)
+            CHECK_NUMCAND(IntraNumCand0_2);
+            CHECK_NUMCAND(IntraNumCand0_3);
+            CHECK_NUMCAND(IntraNumCand0_4);
+            CHECK_NUMCAND(IntraNumCand0_5);
+            CHECK_NUMCAND(IntraNumCand0_6);
+            CHECK_NUMCAND(IntraNumCand1_2);
+            CHECK_NUMCAND(IntraNumCand1_3);
+            CHECK_NUMCAND(IntraNumCand1_4);
+            CHECK_NUMCAND(IntraNumCand1_5);
+            CHECK_NUMCAND(IntraNumCand1_6);
+            CHECK_NUMCAND(IntraNumCand2_2);
+            CHECK_NUMCAND(IntraNumCand2_3);
+            CHECK_NUMCAND(IntraNumCand2_4);
+            CHECK_NUMCAND(IntraNumCand2_5);
+            CHECK_NUMCAND(IntraNumCand2_6);
 
 #undef CHECK_NUMCAND
 
             // check again Numslice using Log2MaxCUSize
-            if ( out->mfx.NumSlice > 0 && out->mfx.FrameInfo.Height && out->mfx.FrameInfo.Width && opts_out->Log2MaxCUSize)
-            {
+            if ( out->mfx.NumSlice > 0 && out->mfx.FrameInfo.Height && out->mfx.FrameInfo.Width && opts_out->Log2MaxCUSize) {
                 mfxU16 rnd = (1 << opts_out->Log2MaxCUSize) - 1, shft = opts_out->Log2MaxCUSize;
-                if (out->mfx.NumSlice > ((out->mfx.FrameInfo.Height+rnd)>>shft) * ((out->mfx.FrameInfo.Width+rnd)>>shft) )
-                {
+                if (out->mfx.NumSlice > ((out->mfx.FrameInfo.Height+rnd)>>shft) * ((out->mfx.FrameInfo.Width+rnd)>>shft) ) {
                     out->mfx.NumSlice = 0;
                     isInvalid ++;
                 }
@@ -1775,10 +1886,7 @@ mfxStatus MFXVideoENCODEH265::Query(VideoCORE *core, mfxVideoParam *par_in, mfxV
     if (isCorrected)
         return MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
 
-    if (core)
-        return (core->GetPlatformType() == MFX_PLATFORM_SOFTWARE)?MFX_ERR_NONE:MFX_WRN_PARTIAL_ACCELERATION;
-
-    return MFX_ERR_NONE;
+    return CheckPlatformType(core);
 }
 
 mfxStatus MFXVideoENCODEH265::QueryIOSurf(VideoCORE *core, mfxVideoParam *par, mfxFrameAllocRequest *request)
@@ -1797,7 +1905,7 @@ mfxStatus MFXVideoENCODEH265::QueryIOSurf(VideoCORE *core, mfxVideoParam *par, m
 
     mfxU16 nFrames = IPP_MIN(par->mfx.GopRefDist, H265_MAXREFDIST); // 1 for current and GopRefDist - 1 for reordering
 
-    if( nFrames == 0 ){
+    if( nFrames == 0 ) {
         // curr + number of B-frames from target usage
         nFrames = tab_tuGopRefDist[par->mfx.TargetUsage];
     }
@@ -1822,7 +1930,7 @@ mfxStatus MFXVideoENCODEH265::QueryIOSurf(VideoCORE *core, mfxVideoParam *par, m
         request->Type = MFX_MEMTYPE_FROM_ENCODE|MFX_MEMTYPE_EXTERNAL_FRAME|MFX_MEMTYPE_SYSTEM_MEMORY;
     }
 
-    return (core->GetPlatformType() == MFX_PLATFORM_SOFTWARE)?MFX_ERR_NONE:MFX_WRN_PARTIAL_ACCELERATION;
+    return CheckPlatformType(core);
 }
 
 mfxStatus MFXVideoENCODEH265::GetEncodeStat(mfxEncodeStat *stat)
@@ -1866,9 +1974,11 @@ mfxStatus MFXVideoENCODEH265::EncodeFrame(mfxEncodeCtrl *ctrl, mfxEncodeInternal
         initialDataLength = bitstream->DataLength;
     }
 
-    if (surface)
-    {
-        if (surface->Info.FourCC != MFX_FOURCC_NV12 && (!m_mfxHEVCOpts.Enable10bit || surface->Info.FourCC != MFX_FOURCC_P010))
+    if (surface) {
+        if (surface->Info.FourCC != MFX_FOURCC_NV12 && 
+            surface->Info.FourCC != MFX_FOURCC_NV16 && 
+            surface->Info.FourCC != MFX_FOURCC_P010 && 
+            surface->Info.FourCC != MFX_FOURCC_P210)
             return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
 
         bool locked = false;
@@ -1927,20 +2037,20 @@ mfxStatus MFXVideoENCODEH265::EncodeFrame(mfxEncodeCtrl *ctrl, mfxEncodeInternal
     // bs could be NULL if input frame is buffered
     if (bs) {
         if (m_enc->m_pCurrentFrame) {
-            bitstream->TimeStamp = m_enc->m_pCurrentFrame->TimeStamp;
-            mfxU32 frameOrder = m_enc->m_pCurrentFrame->m_PicOrderCnt + m_enc->m_pCurrentFrame->m_PicOrderCounterAccumulated;
+            bitstream->TimeStamp = m_enc->m_pCurrentFrame->m_timeStamp;
+            mfxU32 frameOrder = m_enc->m_pCurrentFrame->m_frameOrder; 
             mfxI32 dpb_output_delay = m_enc->m_vps.vps_max_num_reorder_pics[0] + frameOrder - m_encodedFrames;
             mfxF64 tcDuration90KHz = (mfxF64)m_mfxVideoParam.mfx.FrameInfo.FrameRateExtD / m_mfxVideoParam.mfx.FrameInfo.FrameRateExtN * 90000; // calculate tick duration
             bitstream->DecodeTimeStamp = mfxI64(bitstream->TimeStamp - tcDuration90KHz * dpb_output_delay); // calculate DTS from PTS
 
             // Set FrameType
             bs->FrameType = (mfxU16)m_enc->m_pCurrentFrame->m_PicCodType;
-            if (m_enc->m_pCurrentFrame->m_bIsIDRPic)
+            if (m_enc->m_pCurrentFrame->m_isIdrPic)
                 bs->FrameType |= MFX_FRAMETYPE_IDR;
             if (m_enc->m_pCurrentFrame->m_isShortTermRef || m_enc->m_pCurrentFrame->m_isLongTermRef)
                 bs->FrameType |= MFX_FRAMETYPE_REF;
 
-            m_enc->m_pCurrentFrame->setEncOrderNum(m_encodedFrames);
+            m_enc->m_pCurrentFrame->m_encOrder = m_encodedFrames;
         }
 
         if (bitstream->DataLength != initialDataLength ) {
@@ -1993,8 +2103,7 @@ mfxStatus MFXVideoENCODEH265::EncodeFrameCheck(mfxEncodeCtrl *ctrl, mfxFrameSurf
         return MFX_ERR_UNDEFINED_BEHAVIOR;
 
 
-    if (MFX_ERR_NONE == status || MFX_ERR_MORE_DATA_RUN_TASK == status || MFX_WRN_INCOMPATIBLE_VIDEO_PARAM == status || MFX_ERR_MORE_BITSTREAM == status)
-    {
+    if (MFX_ERR_NONE == status || MFX_ERR_MORE_DATA_RUN_TASK == status || MFX_WRN_INCOMPATIBLE_VIDEO_PARAM == status || MFX_ERR_MORE_BITSTREAM == status) {
         // lock surface. If input surface is opaque core will lock both opaque and associated realSurface
         if (realSurface) {
             m_core->IncreaseReference(&(realSurface->Data));
@@ -2018,34 +2127,26 @@ mfxStatus MFXVideoENCODEH265::TaskRoutine(void *pState, void *pParam, mfxU32 thr
     H265ENC_UNREFERENCED_PARAMETER(callNumber);
 
     if (pState == NULL || pParam == NULL)
-    {
         return MFX_ERR_NULL_PTR;
-    }
 
     MFXVideoENCODEH265 *th = static_cast<MFXVideoENCODEH265 *>(pState);
 
     H265EncodeTaskInputParams *pTaskParams = (H265EncodeTaskInputParams*)pParam;
 
     if (th->m_taskParams.parallel_encoding_finished)
-    {
         return MFX_TASK_DONE;
-    }
 
     mfxI32 single_thread_selected = vm_interlocked_cas32(reinterpret_cast<volatile Ipp32u *>(&th->m_taskParams.single_thread_selected), 1, 0);
-    if (!single_thread_selected)
-    {
+    if (!single_thread_selected) {
         // This task performs all single threaded regions
         mfxStatus status = th->EncodeFrame(pTaskParams->ctrl, NULL, pTaskParams->surface, pTaskParams->bs);
         th->m_taskParams.parallel_encoding_finished = true;
         H265_Free(pParam);
 
         return status;
-    }
-    else
-    {
+    } else {
         vm_mutex_lock(&th->m_taskParams.parallel_region_end_lock);
-        if (th->m_taskParams.parallel_execution_in_progress)
-        {
+        if (th->m_taskParams.parallel_execution_in_progress) {
             // Here we get only when thread that performs single thread work sent event
             // In this case m_taskParams.thread_number is set to 0, this is the number of single thread task
             // All other tasks receive their number > 0
@@ -2056,8 +2157,7 @@ mfxStatus MFXVideoENCODEH265::TaskRoutine(void *pState, void *pParam, mfxU32 thr
             // Some thread finished its work and was called again, but there is no work left for it since
             // if it finished, the only work remaining is being done by other currently working threads. No
             // work is possible so thread goes away waiting for maybe another parallel region
-            if (thread_number > th->m_taskParams.num_threads)
-            {
+            if (thread_number > th->m_taskParams.num_threads) {
                 vm_interlocked_dec32(reinterpret_cast<volatile Ipp32u *>(&th->m_taskParams.thread_number));
                 vm_mutex_unlock(&th->m_taskParams.parallel_region_end_lock);
                 return MFX_TASK_BUSY;
@@ -2080,10 +2180,6 @@ mfxStatus MFXVideoENCODEH265::TaskRoutine(void *pState, void *pParam, mfxU32 thr
                         th->m_enc->EncodeThread<Ipp16u>(thread_number):
                         th->m_enc->EncodeThread<Ipp8u>(thread_number);
                 }
-            } else if (parallel_region_selector == PARALLEL_REGION_DEBLOCKING) {
-                bitDepth ?
-                    th->m_enc->DeblockThread<Ipp16u>(thread_number):
-                    th->m_enc->DeblockThread<Ipp8u>(thread_number);
             }
 
             vm_interlocked_dec32(reinterpret_cast<volatile Ipp32u *>(&th->m_taskParams.parallel_executing_threads));
@@ -2092,16 +2188,10 @@ mfxStatus MFXVideoENCODEH265::TaskRoutine(void *pState, void *pParam, mfxU32 thr
             vm_event_signal(&th->m_taskParams.parallel_region_done);
 
             if (MFX_ERR_NONE == status)
-            {
                 return MFX_TASK_WORKING;
-            }
             else
-            {
                 return status;
-            }
-        }
-        else
-        {
+        } else {
             vm_mutex_unlock(&th->m_taskParams.parallel_region_end_lock);
             return MFX_TASK_BUSY;
         }
@@ -2115,9 +2205,7 @@ mfxStatus MFXVideoENCODEH265::TaskCompleteProc(void *pState, void *pParam, mfxSt
     H265ENC_UNREFERENCED_PARAMETER(pParam);
     H265ENC_UNREFERENCED_PARAMETER(taskRes);
     if (pState == NULL)
-    {
         return MFX_ERR_NULL_PTR;
-    }
 
     MFXVideoENCODEH265 *th = static_cast<MFXVideoENCODEH265 *>(pState);
 
@@ -2152,8 +2240,7 @@ void MFXVideoENCODEH265::ParallelRegionEnd()
     vm_mutex_unlock(&m_taskParams.parallel_region_end_lock);
 
     // Wait for other threads to finish encoding their last macroblock row
-    while(m_taskParams.parallel_executing_threads > 0)
-    {
+    while(m_taskParams.parallel_executing_threads > 0) {
         vm_event_wait(&m_taskParams.parallel_region_done);
     }
 
@@ -2163,6 +2250,7 @@ mfxFrameSurface1* MFXVideoENCODEH265::GetOriginalSurface(mfxFrameSurface1 *surfa
 {
     if (m_isOpaque)
         return m_core->GetNativeSurface(surface);
+    
     return surface;
 }
 

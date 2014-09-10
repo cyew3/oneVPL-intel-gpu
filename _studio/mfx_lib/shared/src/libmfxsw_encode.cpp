@@ -101,9 +101,7 @@ VideoENCODE *CreateENCODESpecificClass(mfxU32 CodecId, VideoCORE *core, mfxSessi
 
     // touch unreferenced parameter
     session = session;
-#if !defined(MFX_VA)
     par = par;
-#endif // !defined(MFX_VA)
 
     // create a codec instance
     switch (CodecId)
@@ -348,6 +346,8 @@ mfxStatus MFXVideoENCODE_Query(mfxSession session, mfxVideoParam *in, mfxVideoPa
 #ifdef MFX_ENABLE_H265_VIDEO_ENCODE
         case MFX_CODEC_HEVC:
             mfxRes = MFXVideoENCODEH265::Query(session->m_pCORE.get(), in, out);
+            if (MFX_WRN_PARTIAL_ACCELERATION != mfxRes)
+                bIsHWENCSupport = true;
             break;
 #endif
 
@@ -495,6 +495,8 @@ mfxStatus MFXVideoENCODE_QueryIOSurf(mfxSession session, mfxVideoParam *par, mfx
 #ifdef MFX_ENABLE_H265_VIDEO_ENCODE
         case MFX_CODEC_HEVC:
             mfxRes = MFXVideoENCODEH265::QueryIOSurf(session->m_pCORE.get(), par, request);
+            if (MFX_WRN_PARTIAL_ACCELERATION != mfxRes)
+                bIsHWENCSupport = true;
             break;
 #endif // MFX_ENABLE_VC1_VIDEO_ENC
 

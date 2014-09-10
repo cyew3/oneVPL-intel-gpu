@@ -51,7 +51,16 @@
     <ClCompile Include="h265\src\mfx_h265_sad_general_avx2.cpp" />
     <ClCompile Include="h265\src\mfx_h265_sad_multiple_avx2.cpp" />
     <ClCompile Include="h265\src\mfx_h265_satd_avx2.cpp" />
-    <ClCompile Include="h265\src\mfx_h265_transform_fwd_32x32_avx2_nablet.cpp" />
+    <ClCompile Include="h265\src\mfx_h265_transform_fwd_32x32_avx2_nablet.cpp">
+      <InlineFunctionExpansion Condition="'$(Configuration)|$(Platform)'=='Release_Intel|x64'">Disabled</InlineFunctionExpansion>
+      <InlineFunctionExpansion Condition="'$(Configuration)|$(Platform)'=='Release_Intel|Win32'">Disabled</InlineFunctionExpansion>
+      <InlineFunctionExpansion Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Disabled</InlineFunctionExpansion>
+      <InlineFunctionExpansion Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Disabled</InlineFunctionExpansion>
+      <InlineFunctionExpansion Condition="'$(Configuration)|$(Platform)'=='Debug_Intel|x64'">Disabled</InlineFunctionExpansion>
+      <InlineFunctionExpansion Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Disabled</InlineFunctionExpansion>
+      <InlineFunctionExpansion Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Disabled</InlineFunctionExpansion>
+      <InlineFunctionExpansion Condition="'$(Configuration)|$(Platform)'=='Debug_Intel|Win32'">Disabled</InlineFunctionExpansion>
+    </ClCompile>
     <ClCompile Include="h265\src\mfx_h265_transform_fwd_avx2.cpp" />
     <ClCompile Include="h265\src\mfx_h265_transform_inv_32x32_avx2.cpp" />
     <ClCompile Include="h265\src\mfx_h265_transform_inv_avx2.cpp" />

@@ -262,9 +262,12 @@ copy $(MEDIASDK_ROOT)\CMRT\compiler\lib\x86\libcm.dll $(OutDir)\bin
     <ClCompile Include="src\genx_h265_cmcode_stub.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="include\genx_h265_cmcode.h" />
+    <ClInclude Include="include\genx_h265_cmcode_bdw.h" />
     <ClInclude Include="include\genx_h265_cmcode_bdw_isa.h" />
     <ClInclude Include="include\genx_h265_cmcode_isa.h" />
     <ClInclude Include="include\genx_h265_cmcode_proto.h" />
+    <ClInclude Include="include\utility_genx.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

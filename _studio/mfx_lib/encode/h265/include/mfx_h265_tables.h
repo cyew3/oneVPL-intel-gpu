@@ -24,9 +24,11 @@ extern const Ipp8u h265_scan_r2z4[256];
 extern const Ipp16u *h265_sig_last_scan[3][5];
 extern const Ipp16u h265_sig_scan_CG32x32[64];
 extern const Ipp16u h265_sig_last_scan_8x8[ 4 ][ 4 ];
-extern const Ipp8u h265_QPtoChromaQP[58];
+extern const Ipp8u h265_QPtoChromaQP[3][58];
 extern const Ipp32s h265_filteredModes[];
 extern const Ipp32s h265_numPu[];
+
+extern const Ipp8u h265_chroma422IntraAngleMappingTable[NUM_INTRA_MODE];
 
 const int PITCH_TU = 16;
 

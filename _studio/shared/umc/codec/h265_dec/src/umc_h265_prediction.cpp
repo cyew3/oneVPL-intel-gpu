@@ -383,25 +383,25 @@ void H265Prediction::PredInterUni(H265CodingUnit* pCU, H265PUInfo &PUi, EnumRefP
     {
         // Only horizontal interpolation is needed
         if (!c_bi) // Write directly into buffer
-            Interpolate<c_plane_type>( MFX_HEVC_PP::INTERP_HOR, in_pSrc, in_SrcPitch, pPicDst, PicDstStride, in_dx, Width, Height, shift, offset, bitDepth);
+            Interpolate<c_plane_type>( MFX_HEVC_PP::INTERP_HOR, in_pSrc, in_SrcPitch, pPicDst, PicDstStride, in_dx, Width, Height, shift, offset, bitDepth, 0);
         else if (eAddAverage == MFX_HEVC_PP::AVERAGE_NO)
-            Interpolate<c_plane_type>( MFX_HEVC_PP::INTERP_HOR, in_pSrc, in_SrcPitch, in_pDst, in_DstPitch, in_dx, Width, Height, shift, offset, bitDepth);
+            Interpolate<c_plane_type>( MFX_HEVC_PP::INTERP_HOR, in_pSrc, in_SrcPitch, in_pDst, in_DstPitch, in_dx, Width, Height, shift, offset, bitDepth, 0);
         else if (eAddAverage == MFX_HEVC_PP::AVERAGE_FROM_BUF)
-            Interpolate<c_plane_type>( MFX_HEVC_PP::INTERP_HOR, in_pSrc, in_SrcPitch, pPicDst, PicDstStride, in_dx, Width, Height, shift, offset, bitDepth, MFX_HEVC_PP::AVERAGE_FROM_BUF, in_pDst, in_DstPitch );
+            Interpolate<c_plane_type>( MFX_HEVC_PP::INTERP_HOR, in_pSrc, in_SrcPitch, pPicDst, PicDstStride, in_dx, Width, Height, shift, offset, bitDepth, 0, MFX_HEVC_PP::AVERAGE_FROM_BUF, in_pDst, in_DstPitch );
         else // eAddAverage == AVERAGE_FROM_PIC
-            Interpolate<c_plane_type>( MFX_HEVC_PP::INTERP_HOR, in_pSrc, in_SrcPitch, pPicDst, PicDstStride, in_dx, Width, Height, shift, offset, bitDepth, MFX_HEVC_PP::AVERAGE_FROM_PIC, in_pSrcPic2, in_SrcPic2Pitch );
+            Interpolate<c_plane_type>( MFX_HEVC_PP::INTERP_HOR, in_pSrc, in_SrcPitch, pPicDst, PicDstStride, in_dx, Width, Height, shift, offset, bitDepth, 0, MFX_HEVC_PP::AVERAGE_FROM_PIC, in_pSrcPic2, in_SrcPic2Pitch );
     }
     else if (in_dx == 0)
     {
         // Only vertical interpolation is needed
         if (!c_bi) // Write directly into buffer
-            Interpolate<c_plane_type>( MFX_HEVC_PP::INTERP_VER, in_pSrc, in_SrcPitch, pPicDst, PicDstStride, in_dy, Width, Height, shift, offset, bitDepth);
+            Interpolate<c_plane_type>( MFX_HEVC_PP::INTERP_VER, in_pSrc, in_SrcPitch, pPicDst, PicDstStride, in_dy, Width, Height, shift, offset, bitDepth, 0);
         else if (eAddAverage == MFX_HEVC_PP::AVERAGE_NO)
-            Interpolate<c_plane_type>( MFX_HEVC_PP::INTERP_VER, in_pSrc, in_SrcPitch, in_pDst, in_DstPitch, in_dy, Width, Height, shift, offset, bitDepth);
+            Interpolate<c_plane_type>( MFX_HEVC_PP::INTERP_VER, in_pSrc, in_SrcPitch, in_pDst, in_DstPitch, in_dy, Width, Height, shift, offset, bitDepth, 0);
         else if (eAddAverage == MFX_HEVC_PP::AVERAGE_FROM_BUF)
-            Interpolate<c_plane_type>( MFX_HEVC_PP::INTERP_VER, in_pSrc, in_SrcPitch, pPicDst, PicDstStride, in_dy, Width, Height, shift, offset, bitDepth, MFX_HEVC_PP::AVERAGE_FROM_BUF, in_pDst, in_DstPitch );
+            Interpolate<c_plane_type>( MFX_HEVC_PP::INTERP_VER, in_pSrc, in_SrcPitch, pPicDst, PicDstStride, in_dy, Width, Height, shift, offset, bitDepth, 0, MFX_HEVC_PP::AVERAGE_FROM_BUF, in_pDst, in_DstPitch );
         else // eAddAverage == AVERAGE_FROM_PIC
-            Interpolate<c_plane_type>( MFX_HEVC_PP::INTERP_VER, in_pSrc, in_SrcPitch, pPicDst, PicDstStride, in_dy, Width, Height, shift, offset, bitDepth, MFX_HEVC_PP::AVERAGE_FROM_PIC, in_pSrcPic2, in_SrcPic2Pitch );
+            Interpolate<c_plane_type>( MFX_HEVC_PP::INTERP_VER, in_pSrc, in_SrcPitch, pPicDst, PicDstStride, in_dy, Width, Height, shift, offset, bitDepth, 0, MFX_HEVC_PP::AVERAGE_FROM_PIC, in_pSrcPic2, in_SrcPic2Pitch );
     }
     else
     {
@@ -411,7 +411,7 @@ void H265Prediction::PredInterUni(H265CodingUnit* pCU, H265PUInfo &PUi, EnumRefP
         // Do horizontal interpolation into a temporal buffer
         Interpolate<c_plane_type>( MFX_HEVC_PP::INTERP_HOR,
                                    in_pSrc - ((tap >> 1) - 1) * in_SrcPitch, in_SrcPitch, tmpBuf, tmpStride,
-                                   in_dx, Width, Height + tap - 1, bitDepth - 8, 0, bitDepth);
+                                   in_dx, Width, Height + tap - 1, bitDepth - 8, 0, bitDepth, 0);
 
         shift = c_bi ? 6 : 20 - bitDepth;
         offset = c_bi ? 0 : 1 << (19 - bitDepth);
@@ -419,19 +419,19 @@ void H265Prediction::PredInterUni(H265CodingUnit* pCU, H265PUInfo &PUi, EnumRefP
         if (!c_bi) // Write directly into buffer
             Interpolate<c_plane_type>( MFX_HEVC_PP::INTERP_VER,
                                        tmpBuf + ((tap >> 1) - 1) * tmpStride, tmpStride, pPicDst, PicDstStride,
-                                       in_dy, Width, Height, shift, offset, bitDepth);
+                                       in_dy, Width, Height, shift, offset, bitDepth, 0);
         else if (eAddAverage == MFX_HEVC_PP::AVERAGE_NO)
             Interpolate<c_plane_type>( MFX_HEVC_PP::INTERP_VER,
                                        tmpBuf + ((tap >> 1) - 1) * tmpStride, tmpStride, in_pDst, in_DstPitch,
-                                       in_dy, Width, Height, shift, offset, bitDepth);
+                                       in_dy, Width, Height, shift, offset, bitDepth, 0);
         else if (eAddAverage == MFX_HEVC_PP::AVERAGE_FROM_BUF)
             Interpolate<c_plane_type>( MFX_HEVC_PP::INTERP_VER,
                                        tmpBuf + ((tap >> 1) - 1) * tmpStride, tmpStride, pPicDst, PicDstStride,
-                                       in_dy, Width, Height, shift, offset, bitDepth, MFX_HEVC_PP::AVERAGE_FROM_BUF, in_pDst, in_DstPitch );
+                                       in_dy, Width, Height, shift, offset, bitDepth, 0, MFX_HEVC_PP::AVERAGE_FROM_BUF, in_pDst, in_DstPitch );
         else // eAddAverage == AVERAGE_FROM_PIC
             Interpolate<c_plane_type>( MFX_HEVC_PP::INTERP_VER,
                                        tmpBuf + ((tap >> 1) - 1) * tmpStride, tmpStride, pPicDst, PicDstStride,
-                                       in_dy, Width, Height, shift, offset, bitDepth, MFX_HEVC_PP::AVERAGE_FROM_PIC, in_pSrcPic2, in_SrcPic2Pitch );
+                                       in_dy, Width, Height, shift, offset, bitDepth, 0, MFX_HEVC_PP::AVERAGE_FROM_PIC, in_pSrcPic2, in_SrcPic2Pitch );
     }
 }
 

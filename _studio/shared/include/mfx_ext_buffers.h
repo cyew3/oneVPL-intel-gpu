@@ -189,7 +189,7 @@ typedef struct {
     mfxU16      CmIntraThreshold;   // threshold = CmIntraThreshold / 256.0
     mfxU16      TUSplitIntra;       // 0-default 1-always 2-never 3-for Intra frames only
     mfxU16      CUSplit;            // 0-default 1-always 2-check Skip cost first
-    mfxU16      IntraAngModes;      // 0-default 1-all; 2-all even + few odd; 3-gradient analysis + few modes
+    mfxU16      IntraAngModes;      // I slice Intra Angular modes: 0-default 1-all; 2-all even + few odd; 3-gradient analysis + few modes, 99 -DC&Planar only
     mfxU16      EnableCm;           // tri-state
     mfxU16      BPyramid;           // tri-state
     mfxU16      FastPUDecision;     // tri-state
@@ -212,11 +212,24 @@ typedef struct {
     mfxU16      FastCbfMode;        // tri-state, stop PU modes after cbf is 0
     mfxU16      PuDecisionSatd;     // tri-state, use SATD for PU decision
     mfxU16      MinCUDepthAdapt;    // tri-state, adaptive min CU depth
+    mfxU16      MaxCUDepthAdapt;    // tri-state, adaptive max CU depth
     mfxU16      NumBiRefineIter;    // 1-check best L0+L1; N-check best L0+L1 then N-1 refinement iterations
     mfxU16      CUSplitThreshold;   // skip CU split check: threshold = CUSplitThreshold / 256.0
     mfxU16      DeltaQpMode;        // DeltaQP modes: 0-disabled; 1-paq; 2-calq; 3-paq+calq
     mfxU16      Enable10bit;        // tri-state
-    mfxU16      reserved[68];       // 256 bytes total
+    mfxU16      IntraAngModesP;     // P slice Intra Angular modes: 0-default 1-all; 2-all even + few odd; 3-gradient analysis + few modes, 99 -DC&Planar only, 100- disable
+    mfxU16      IntraAngModesBRef;  // B Ref slice Intra Angular modes: 0-default 1-all; 2-all even + few odd; 3-gradient analysis + few modes, 99 -DC&Planar only, 100- disable
+    mfxU16      IntraAngModesBnonRef;// B non Ref slice Intra Angular modes: 0-default 1-all; 2-all even + few odd; 3-gradient analysis + few modes, 99 -DC&Planar only, 100- disable
+    mfxU16      IntraChromaRDO;     // tri-state, adjusted intra chroma RDO 
+    mfxU16      FastInterp;         // tri-state, adjusted intra chroma RDO 
+    mfxU16      SplitThresholdTabIndex;// 0,1,2 to select table
+    mfxU16      CpuFeature;         // 0-auto, 1-px, 2-sse4, 3-sse4atom, 4-ssse3, 5-avx2
+    mfxU16      TryIntra;           // Try Intra in Inter: 0-default, 1-Always, 2-Based on Content Analysis
+    mfxU16      FastAMPSkipME;      // 0-default, 1-never, 2-Skip AMP ME of Large Partition when Skip is best
+    mfxU16      FastAMPRD;          // 0-default, 1-never, 2-Adaptive Fast Decision
+    mfxU16      SkipMotionPartition;          // 0-default, 1-never, 2-Adaptive
+    mfxU16      SkipCandRD;         // on-Full RD, off-fast decision
+    mfxU16      reserved[55];       // 256 bytes total
 } mfxExtCodingOptionHEVC;
 
 

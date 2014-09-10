@@ -74,6 +74,18 @@ ALIGN_DECL(32) static const signed char filtTabLuma_S8[3*4][32] = {
 
 };
 
+/* interleaved 4-tap FIR luma interp coefficients, 8-bit, for offsets 1/4, 2/4, 3/4 */
+ALIGN_DECL(32) static const signed char filtTabLumaFast_S8[3*2][32] = {
+    {  -4,  52,  -4,  52,  -4,  52,  -4,  52,  -4,  52,  -4,  52,  -4,  52,  -4,  52,  -4,  52,  -4,  52,  -4,  52,  -4,  52,  -4,  52,  -4,  52,  -4,  52,  -4,  52 }, 
+    {  20,  -4,  20,  -4,  20,  -4,  20,  -4,  20,  -4,  20,  -4,  20,  -4,  20,  -4,  20,  -4,  20,  -4,  20,  -4,  20,  -4,  20,  -4,  20,  -4,  20,  -4,  20,  -4 },
+
+    {  -8,  40,  -8,  40,  -8,  40,  -8,  40,  -8,  40,  -8,  40,  -8,  40,  -8,  40,  -8,  40,  -8,  40,  -8,  40,  -8,  40,  -8,  40,  -8,  40,  -8,  40,  -8,  40 },
+    {  40,  -8,  40,  -8,  40,  -8,  40,  -8,  40,  -8,  40,  -8,  40,  -8,  40,  -8,  40,  -8,  40,  -8,  40,  -8,  40,  -8,  40,  -8,  40,  -8,  40,  -8,  40,  -8 },
+
+    {  -4,  20,  -4,  20,  -4,  20,  -4,  20,  -4,  20,  -4,  20,  -4,  20,  -4,  20,  -4,  20,  -4,  20,  -4,  20,  -4,  20,  -4,  20,  -4,  20,  -4,  20,  -4,  20 },
+    {  52,  -4,  52,  -4,  52,  -4,  52,  -4,  52,  -4,  52,  -4,  52,  -4,  52,  -4,  52,  -4,  52,  -4,  52,  -4,  52,  -4,  52,  -4,  52,  -4,  52,  -4,  52,  -4 }
+};
+
 /* interleaved chroma interp coefficients, 8-bit, for offsets 1/8, 2/8, ... 7/8 */
 ALIGN_DECL(32) static const signed char filtTabChroma_S8[7*2][32] = {
     {  -2,  58,  -2,  58,  -2,  58,  -2,  58,  -2,  58,  -2,  58,  -2,  58,  -2,  58,  -2,  58,  -2,  58,  -2,  58,  -2,  58,  -2,  58,  -2,  58,  -2,  58,  -2,  58 }, 
@@ -115,6 +127,19 @@ ALIGN_DECL(32) static const short filtTabLuma_S16[3*4][16] = {
     {  58,  -10, 58, -10,  58, -10,  58, -10,  58,  -10, 58, -10,  58, -10,  58, -10 },
     {   4,   -1,  4,  -1,   4,  -1,   4,  -1,   4,   -1,  4,  -1,   4,  -1,   4,  -1 },
 
+};
+
+//kolya
+/* interleaved luma fast interp coefficients, 16-bit, for offsets 1/4, 2/4, 3/4 */
+ALIGN_DECL(32) static const short filtTabLumaFast_S16[3*2][16] = {
+    {  -4,  52,  -4,  52,  -4,  52,  -4,  52,  -4,  52,  -4,  52,  -4,  52,  -4,  52 },
+    {  20,  -4,  20,  -4,  20,  -4,  20,  -4,  20,  -4,  20,  -4,  20,  -4,  20,  -4 },
+
+    {  -8,  40,  -8,  40,  -8,  40,  -8,  40,  -8,  40,  -8,  40,  -8,  40,  -8,  40 },
+    {  40,  -8,  40,  -8,  40,  -8,  40,  -8,  40,  -8,  40,  -8,  40,  -8,  40,  -8 },
+
+    {  -4,  20,  -4,  20,  -4,  20,  -4,  20,  -4,  20,  -4,  20,  -4,  20,  -4,  20 },
+    {  52,  -4,  52,  -4,  52,  -4,  52,  -4,  52,  -4,  52,  -4,  52,  -4,  52,  -4 }
 };
 
 /* interleaved chroma interp coefficients, 16-bit, for offsets 1/8, 2/8, ... 7/8 */
@@ -217,6 +242,53 @@ static void t_InterpLuma_s8_d16_H_AVX2(const unsigned char* pSrc, unsigned int s
     } while (--height);
 }
 
+//kolya
+template<int shift>
+static void t_InterpLumaFast_s8_d16_H_AVX2(const unsigned char* pSrc, unsigned int srcPitch, short *pDst, unsigned int dstPitch, int tab_index, int width, int height)
+{
+    int col;
+    const signed char* coeffs;
+    const signed char* shufTab;
+    __m256i ymm0, ymm1, ymm2, ymm3;
+
+    coeffs = filtTabLumaFast_S8[2 * (tab_index-1)];
+    shufTab = (signed char *)shufTabPlane;
+
+    _mm256_zeroupper();
+
+    ymm2 = _mm256_load_si256((__m256i *)(coeffs +  0));
+    ymm3 = _mm256_load_si256((__m256i *)(coeffs + 32));
+
+    /* calculate 16 outputs per inner loop, working horizontally */
+    do {
+        for (col = 0; col < width; col += 16) {
+            /* load 24 8-bit pixels, permute into ymm lanes as [0-7 | 8-15 | 8-15 | 16-23] */
+            ymm1 = _mm256_loadu_si256((__m256i *)(pSrc + col));
+            ymm1 = _mm256_permute4x64_epi64(ymm1, 0x94);
+
+            /* interleave pixels */
+            ymm0 = _mm256_shuffle_epi8(ymm1, *(__m256i *)(shufTab +  0));
+            ymm1 = _mm256_shuffle_epi8(ymm1, *(__m256i *)(shufTab + 32));
+
+            /* packed (8*8 + 8*8) -> 16 */
+            ymm0 = _mm256_maddubs_epi16(ymm0, ymm2);    /* coefs 0,1 */
+            ymm1 = _mm256_maddubs_epi16(ymm1, ymm3);    /* coefs 2,3 */
+
+            /* sum intermediate values, add offset, shift off fraction bits */
+            ymm0 = _mm256_add_epi16(ymm0, ymm1);
+            if (shift > 0) {
+                ymm0 = _mm256_add_epi16(ymm0, _mm256_set1_epi16( (1<<shift)>>1 ));
+                ymm0 = _mm256_srai_epi16(ymm0, shift);
+            }
+
+            /* store 16 16-bit words */
+            _mm256_storeu_si256((__m256i *)(pDst + col), ymm0);
+        }
+        pSrc += srcPitch;
+        pDst += dstPitch;
+    } while (--height); 
+}
+
 template<int widthMul, int shift>
 static void t_InterpLuma_s8_d16_H(const unsigned char* pSrc, unsigned int srcPitch, short *pDst, unsigned int dstPitch, int tab_index, int width, int height)
 {
@@ -269,6 +341,55 @@ static void t_InterpLuma_s8_d16_H(const unsigned char* pSrc, unsigned int srcPit
     } while (--height);
 }
 
+//kolya
+template<int widthMul, int shift>
+static void t_InterpLumaFast_s8_d16_H(const unsigned char* pSrc, unsigned int srcPitch, short *pDst, unsigned int dstPitch, int tab_index, int width, int height)
+{
+    int col;
+    const signed char* coeffs;
+    const signed char* shufTab;
+    __m128i xmm0, xmm1, xmm2, xmm3;
+
+    coeffs = filtTabLumaFast_S8[2 * (tab_index-1)];
+    shufTab = (signed char *)shufTabPlane;
+
+    xmm2 = _mm_load_si128((__m128i *)(coeffs +  0));
+    xmm3 = _mm_load_si128((__m128i *)(coeffs + 32));
+
+    /* calculate 8 outputs per inner loop, working horizontally - use shuffle/interleave instead of pshufb on Atom */
+    do {
+        for (col = 0; col < width; col += widthMul) {
+            /* load 16 8-bit pixels */
+            xmm0 = _mm_loadu_si128((__m128i *)(pSrc + col));
+            xmm1 = xmm0;
+
+            /* interleave pixels */
+            xmm0 = _mm_shuffle_epi8(xmm0, *(__m128i *)(shufTab +  0));
+            xmm1 = _mm_shuffle_epi8(xmm1, *(__m128i *)(shufTab + 32));
+
+            /* packed (8*8 + 8*8) -> 16 */
+            xmm0 = _mm_maddubs_epi16(xmm0, xmm2);    /* coefs 0,1 */
+            xmm1 = _mm_maddubs_epi16(xmm1, xmm3);    /* coefs 2,3 */
+
+            /* sum intermediate values, add offset, shift off fraction bits */
+            xmm0 = _mm_add_epi16(xmm0, xmm1);
+            if (shift > 0) {
+                xmm0 = _mm_add_epi16(xmm0, _mm_set1_epi16( (1<<shift)>>1 ));
+                xmm0 = _mm_srai_epi16(xmm0, shift);
+            }
+
+            /* store 8 16-bit words */
+            if (widthMul == 8) {
+                _mm_storeu_si128((__m128i *)(pDst + col), xmm0);
+            } else if (widthMul == 4) {
+                _mm_storel_epi64((__m128i *)(pDst + col), xmm0);
+            } 
+        }
+        pSrc += srcPitch;
+        pDst += dstPitch;
+    } while (--height);
+}
+
 /* luma, horizontal, 8-bit input, 16-bit output */
 void MAKE_NAME(h265_InterpLuma_s8_d16_H)(INTERP_S8_D16_PARAMETERS_LIST)
 {
@@ -303,6 +424,43 @@ void MAKE_NAME(h265_InterpLuma_s8_d16_H)(INTERP_S8_D16_PARAMETERS_LIST)
             t_InterpLuma_s8_d16_H<4,0>(pSrc, srcPitch, pDst, dstPitch, tab_index, rem, height);
         else if (shift == 6)
             t_InterpLuma_s8_d16_H<4,6>(pSrc, srcPitch, pDst, dstPitch, tab_index, rem, height);
+    }
+}
+
+//kolya
+void MAKE_NAME(h265_InterpLumaFast_s8_d16_H)(INTERP_S8_D16_PARAMETERS_LIST)
+{
+    int rem;
+
+    VM_ASSERT( (shift == 0 && offset == 0) || (shift == 6 && offset == (1 << (shift-1))) );
+    VM_ASSERT( (width & 0x03) == 0 );
+
+    /* fast path - width multiple of 16 */
+    if ((width & 0x0f) == 0) {
+        if (shift == 0)
+            t_InterpLumaFast_s8_d16_H_AVX2<0>(pSrc, srcPitch, pDst, dstPitch, tab_index, width, height);
+        else if (shift == 6)
+            t_InterpLumaFast_s8_d16_H_AVX2<6>(pSrc, srcPitch, pDst, dstPitch, tab_index, width, height);
+        return;
+    }
+
+    rem = (width & 0x07);
+
+    width -= rem;
+    if (width > 0) {
+        if (shift == 0)
+            t_InterpLumaFast_s8_d16_H<8,0>(pSrc, srcPitch, pDst, dstPitch, tab_index, width, height);
+        else if (shift == 6)
+            t_InterpLumaFast_s8_d16_H<8,6>(pSrc, srcPitch, pDst, dstPitch, tab_index, width, height);
+        pSrc += width;
+        pDst += width;
+    }
+
+    if (rem > 0) {
+        if (shift == 0)
+            t_InterpLumaFast_s8_d16_H<4,0>(pSrc, srcPitch, pDst, dstPitch, tab_index, rem, height);
+        else if (shift == 6)
+            t_InterpLumaFast_s8_d16_H<4,6>(pSrc, srcPitch, pDst, dstPitch, tab_index, rem, height);
     }
 }
 
@@ -514,6 +672,49 @@ static void t_InterpLuma_s16_d16_H_AVX2(const short* pSrc, unsigned int srcPitch
     } while (--height);
 }
 
+//kolya
+template<int shift, int offset>
+static void t_InterpLumaFast_s16_d16_H_AVX2(const short* pSrc, unsigned int srcPitch, short *pDst, unsigned int dstPitch, int tab_index, int width, int height)
+{
+    int col;
+    const signed char* coeffs;
+    __m256i ymm0, ymm1;
+
+    _mm256_zeroupper();
+
+    coeffs = (const signed char *)filtTabLumaFast_S16[2 * (tab_index-1)];
+
+    /* calculate 8 outputs per inner loop, working horizontally */
+    do {
+        for (col = 0; col < width; col += 8) {
+            /* load, interleave 8 16-bit pixels */
+            ymm0 = _mm256_permute4x64_epi64(*(__m256i *)(pSrc + col), 0x94);    /* [0-3 | 4-7 | 4-7 | 8-11] */
+            ymm1 = ymm0;
+            ymm0 = _mm256_shuffle_epi8(ymm0, *(__m256i *)(shufTabPlane16[0]));
+            ymm1 = _mm256_shuffle_epi8(ymm1, *(__m256i *)(shufTabPlane16[1]));
+
+            /* packed (16*16 + 16*16) -> 32 */
+            ymm0 = _mm256_madd_epi16(ymm0, *(__m256i *)(coeffs +  0));    /* coefs 0,1 */
+            ymm1 = _mm256_madd_epi16(ymm1, *(__m256i *)(coeffs + 32));    /* coefs 2,3 */
+
+            /* sum intermediate values, add offset, shift off fraction bits */
+            ymm0 = _mm256_add_epi32(ymm0, ymm1);
+            if (shift == 6) {
+                ymm0 = _mm256_add_epi32(ymm0, _mm256_set1_epi32(offset));
+            } 
+            ymm0 = _mm256_srai_epi32(ymm0, shift);
+            ymm0 = _mm256_packs_epi32(ymm0, ymm0);
+
+            /* store 8 16-bit words */
+            ymm0 = _mm256_permute4x64_epi64(ymm0, 0xd8);
+            _mm_storeu_si128((__m128i *)(pDst + col), mm128(ymm0));        
+        }
+        pSrc += srcPitch;
+        pDst += dstPitch;
+    } while (--height);
+}
+
+
 template<int shift, int offset>
 static void t_InterpLuma_s16_d16_H(const short* pSrc, unsigned int srcPitch, short *pDst, unsigned int dstPitch, int tab_index, int width, int height)
 {
@@ -563,6 +764,43 @@ static void t_InterpLuma_s16_d16_H(const short* pSrc, unsigned int srcPitch, sho
     } while (--height);
 }
 
+//kolya
+template<int shift, int offset>
+static void t_InterpLumaFast_s16_d16_H(const short* pSrc, unsigned int srcPitch, short *pDst, unsigned int dstPitch, int tab_index, int width, int height)
+{
+    int col;
+    const signed char* coeffs;
+    __m128i xmm0, xmm1;
+
+    coeffs = (const signed char *)filtTabLumaFast_S16[2 * (tab_index-1)];
+
+    /* calculate 4 outputs per inner loop, working horizontally */
+    do {
+        for (col = 0; col < width; col += 4) {
+            xmm0 = _mm_loadu_si128((__m128i *)(pSrc + col));        /* words 0-7 */
+            xmm1 = xmm0;
+            xmm0 = _mm_shuffle_epi8(xmm0, *(__m128i *)(shufTabPlane16[0]));
+            xmm1 = _mm_shuffle_epi8(xmm1, *(__m128i *)(shufTabPlane16[1]));
+
+            /* packed (16*16 + 16*16) -> 32 */
+            xmm0 = _mm_madd_epi16(xmm0, *(__m128i *)(coeffs +  0));    /* coefs 0,1 */
+            xmm1 = _mm_madd_epi16(xmm1, *(__m128i *)(coeffs + 32));    /* coefs 2,3 */
+
+            /* sum intermediate values, add offset, shift off fraction bits */
+            xmm0 = _mm_add_epi32(xmm0, xmm1);
+            if (shift == 6) {
+                xmm0 = _mm_add_epi32(xmm0, _mm_set1_epi32(offset));
+            } 
+            xmm0 = _mm_srai_epi32(xmm0, shift);
+            xmm0 = _mm_packs_epi32(xmm0, xmm0);
+
+            _mm_storel_epi64((__m128i *)(pDst + col), xmm0);
+        }
+        pSrc += srcPitch;
+        pDst += dstPitch;
+    } while (--height); 
+}
+
 /* luma, horizontal, 16-bit input, 16-bit output */
 void MAKE_NAME(h265_InterpLuma_s16_d16_H)(INTERP_S16_D16_PARAMETERS_LIST)
 {
@@ -587,6 +825,34 @@ void MAKE_NAME(h265_InterpLuma_s16_d16_H)(INTERP_S16_D16_PARAMETERS_LIST)
     case 0:  t_InterpLuma_s16_d16_H<0,  0>(pSrc, srcPitch, pDst, dstPitch, tab_index, width, height);  break;
     case 1:  t_InterpLuma_s16_d16_H<1,  0>(pSrc, srcPitch, pDst, dstPitch, tab_index, width, height);  break;
     case 2:  t_InterpLuma_s16_d16_H<2,  0>(pSrc, srcPitch, pDst, dstPitch, tab_index, width, height);  break;
+    }
+}
+
+//kolya
+/* luma, horizontal, 16-bit input, 16-bit output */
+void MAKE_NAME(h265_InterpLumaFast_s16_d16_H)(INTERP_S16_D16_PARAMETERS_LIST)
+{
+    VM_ASSERT( (shift <= 2 && offset == 0) || (shift == 6 && offset == (1 << (shift-1))) );
+    VM_ASSERT( (width & 0x03) == 0 );
+
+    /* fast path - width multiple of 8 */
+    if ((width & 0x07) == 0) {
+        switch (shift) {
+        case 6:  t_InterpLumaFast_s16_d16_H_AVX2<6, 32>(pSrc, srcPitch, pDst, dstPitch, tab_index, width, height);  break;
+
+        case 0:  t_InterpLumaFast_s16_d16_H_AVX2<0,  0>(pSrc, srcPitch, pDst, dstPitch, tab_index, width, height);  break;
+        case 1:  t_InterpLumaFast_s16_d16_H_AVX2<1,  0>(pSrc, srcPitch, pDst, dstPitch, tab_index, width, height);  break;
+        case 2:  t_InterpLumaFast_s16_d16_H_AVX2<2,  0>(pSrc, srcPitch, pDst, dstPitch, tab_index, width, height);  break;
+        }
+        return;
+    }
+
+    switch (shift) {
+    case 6:  t_InterpLumaFast_s16_d16_H<6, 32>(pSrc, srcPitch, pDst, dstPitch, tab_index, width, height);  break;
+
+    case 0:  t_InterpLumaFast_s16_d16_H<0,  0>(pSrc, srcPitch, pDst, dstPitch, tab_index, width, height);  break;
+    case 1:  t_InterpLumaFast_s16_d16_H<1,  0>(pSrc, srcPitch, pDst, dstPitch, tab_index, width, height);  break;
+    case 2:  t_InterpLumaFast_s16_d16_H<2,  0>(pSrc, srcPitch, pDst, dstPitch, tab_index, width, height);  break;
     }
 }
 
@@ -924,6 +1190,87 @@ static void t_InterpLuma_s8_d16_V_AVX2(const unsigned char* pSrc, unsigned int s
     }
 }
 
+//kolya
+template<int shift>
+static void t_InterpLumaFast_s8_d16_V_AVX2(const unsigned char* pSrc, unsigned int srcPitch, short *pDst, unsigned int dstPitch, int tab_index, int width, int height)
+{ 
+    int row, col;
+    const unsigned char *pSrcRef = pSrc;
+    short *pDstRef = pDst;
+    const signed char* coeffs;
+    __m256i ymm0, ymm1, ymm2, ymm3, ymm4, ymm5, ymm6, ymm7;
+
+    coeffs = filtTabLumaFast_S8[2 * (tab_index-1)];
+
+    _mm256_zeroupper();
+
+    ymm6 = _mm256_load_si256((__m256i*)(coeffs +  0));
+    ymm7 = _mm256_load_si256((__m256i*)(coeffs + 32));
+
+    /* calculate 16 outputs per inner loop, working vertically */
+    for (col = 0; col < width; col += 16) {
+        pSrc = pSrcRef;
+        pDst = pDstRef;
+
+        /* start by loading 16 8-bit pixels from rows 0-2 */
+        ymm0 = _mm256_loadu_si256((__m256i*)(pSrc + 0*srcPitch));
+        ymm0 = _mm256_permute4x64_epi64( ymm0, 0x10);
+
+        ymm4 = _mm256_loadu_si256((__m256i*)(pSrc + 1*srcPitch));
+        ymm4 = _mm256_permute4x64_epi64(ymm4, 0x10);
+
+        ymm1 = _mm256_loadu_si256((__m256i*)(pSrc + 2*srcPitch));
+        ymm1 = _mm256_permute4x64_epi64( ymm1, 0x10);
+
+        ymm0 = _mm256_unpacklo_epi8(ymm0, ymm4);
+        ymm4 = _mm256_unpacklo_epi8(ymm4, ymm1);
+
+        /* enough registers to process two rows at a time (even and odd rows in parallel) */
+        for (row = 0; row < height; row += 2) {
+            ymm5 = _mm256_loadu_si256((__m256i*)(pSrc + 3*srcPitch));
+            ymm5 = _mm256_permute4x64_epi64( ymm5, 0x10);
+
+            ymm2 = _mm256_loadu_si256((__m256i*)(pSrc + 4*srcPitch));
+            ymm2 = _mm256_permute4x64_epi64( ymm2, 0x10);
+            ymm1 = _mm256_unpacklo_epi8(ymm1, ymm5);
+            ymm5 = _mm256_unpacklo_epi8(ymm5, ymm2);
+
+            ymm0 = _mm256_maddubs_epi16(ymm0, ymm6);
+            ymm4 = _mm256_maddubs_epi16(ymm4, ymm6);
+
+            ymm3 = ymm1;
+            ymm3 = _mm256_maddubs_epi16(ymm3, ymm7);
+            ymm0 = _mm256_add_epi16(ymm0, ymm3);
+
+            ymm3 = ymm5;
+            ymm3 = _mm256_maddubs_epi16(ymm3, ymm7);
+            ymm4 = _mm256_add_epi16(ymm4, ymm3);
+
+            /* add offset, shift off fraction bits */
+            if (shift > 0) {
+                ymm0 = _mm256_add_epi16(ymm0, _mm256_set1_epi16( (1<<shift)>>1 ));
+                ymm0 = _mm256_srai_epi16(ymm0, shift);
+                ymm4 = _mm256_add_epi16(ymm4, _mm256_set1_epi16( (1<<shift)>>1 ));
+                ymm4 = _mm256_srai_epi16(ymm4, shift);
+            }
+
+            _mm256_storeu_si256((__m256i*)(pDst + 0*dstPitch), ymm0);
+            _mm256_storeu_si256((__m256i*)(pDst + 1*dstPitch), ymm4);
+
+            /* shift row registers (1->0, 2->1, etc.) */
+            ymm0 = ymm1;
+            ymm4 = ymm5;
+            ymm1 = ymm2;
+
+            pSrc += 2*srcPitch;
+            pDst += 2*dstPitch;
+        }
+        pSrcRef += 16;
+        pDstRef += 16;
+    }
+}
+
+
 template<int widthMul, int shift>
 static void t_InterpLuma_s8_d16_V(const unsigned char* pSrc, unsigned int srcPitch, short *pDst, unsigned int dstPitch, int tab_index, int width, int height)
 {
@@ -1051,6 +1398,80 @@ static void t_InterpLuma_s8_d16_V(const unsigned char* pSrc, unsigned int srcPit
     }
 }
 
+template<int widthMul, int shift>
+static void t_InterpLumaFast_s8_d16_V(const unsigned char* pSrc, unsigned int srcPitch, short *pDst, unsigned int dstPitch, int tab_index, int width, int height)
+{
+    int row, col;
+    const unsigned char *pSrcRef = pSrc;
+    short *pDstRef = pDst;
+    const signed char* coeffs;
+    __m128i xmm0, xmm1, xmm2, xmm3, xmm4, xmm5, xmm6, xmm7;
+
+    coeffs = (const signed char *)filtTabLumaFast_S8[2 * (tab_index-1)];
+
+    xmm6 = _mm_load_si128((__m128i *)(coeffs +  0));
+    xmm7 = _mm_load_si128((__m128i *)(coeffs + 32));
+
+    for (col = 0; col < width; col += widthMul) {
+        pSrc = pSrcRef;
+        pDst = pDstRef;
+
+        /* load 8 8-bit pixels from rows 0-2 */
+        xmm0 = _mm_loadl_epi64((__m128i*)(pSrc + 0*srcPitch));
+        xmm4 = _mm_loadl_epi64((__m128i*)(pSrc + 1*srcPitch));
+        xmm1 = _mm_loadl_epi64((__m128i*)(pSrc + 2*srcPitch));
+
+        xmm0 = _mm_unpacklo_epi8(xmm0, xmm4);    /* interleave 01 */
+        xmm4 = _mm_unpacklo_epi8(xmm4, xmm1);    /* interleave 12 */
+
+        /* enough registers to process two rows at a time (even and odd rows in parallel) */
+        for (row = 0; row < height; row += 2) {
+            xmm5 = _mm_loadl_epi64((__m128i*)(pSrc + 3*srcPitch));
+            xmm2 = _mm_loadl_epi64((__m128i*)(pSrc + 4*srcPitch));
+            xmm1 = _mm_unpacklo_epi8(xmm1, xmm5);    /* interleave 23 */
+            xmm5 = _mm_unpacklo_epi8(xmm5, xmm2);    /* interleave 34 */
+
+            xmm0 = _mm_maddubs_epi16(xmm0, xmm6);
+            xmm4 = _mm_maddubs_epi16(xmm4, xmm6);
+
+            xmm3 = xmm1;
+            xmm3 = _mm_maddubs_epi16(xmm3, xmm7);
+            xmm0 = _mm_add_epi16(xmm0, xmm3);
+
+            xmm3 = xmm5;
+            xmm3 = _mm_maddubs_epi16(xmm3, xmm7);
+            xmm4 = _mm_add_epi16(xmm4, xmm3);
+            
+            /* add offset, shift off fraction bits */
+            if (shift > 0) {
+                xmm0 = _mm_add_epi16(xmm0, _mm_set1_epi16( (1<<shift)>>1 ));
+                xmm4 = _mm_add_epi16(xmm4, _mm_set1_epi16( (1<<shift)>>1 ));
+            }
+            xmm0 = _mm_srai_epi16(xmm0, shift);
+            xmm4 = _mm_srai_epi16(xmm4, shift);
+
+            /* store 2, 4, 6 or 8 16-bit words */
+            if (widthMul == 8) {
+                _mm_storeu_si128((__m128i *)(pDst + 0*dstPitch), xmm0);
+                _mm_storeu_si128((__m128i *)(pDst + 1*dstPitch), xmm4);
+            } else if (widthMul == 4) {
+                _mm_storel_epi64((__m128i *)(pDst + 0*dstPitch), xmm0);
+                _mm_storel_epi64((__m128i *)(pDst + 1*dstPitch), xmm4);
+            } 
+            /* shift interleaved row registers */
+            xmm0 = xmm1;
+            xmm4 = xmm5;
+            xmm1 = xmm2;
+
+            pSrc += 2*srcPitch;
+            pDst += 2*dstPitch;
+        }
+        pSrcRef += widthMul;
+        pDstRef += widthMul;
+    }
+}
+
+
 /* luma, vertical, 8-bit input, 16-bit output */
 void MAKE_NAME(h265_InterpLuma_s8_d16_V)(INTERP_S8_D16_PARAMETERS_LIST)
 {
@@ -1085,6 +1506,43 @@ void MAKE_NAME(h265_InterpLuma_s8_d16_V)(INTERP_S8_D16_PARAMETERS_LIST)
             t_InterpLuma_s8_d16_V<4,0>(pSrc, srcPitch, pDst, dstPitch, tab_index, rem, height);
         else if (shift == 6)
             t_InterpLuma_s8_d16_V<4,6>(pSrc, srcPitch, pDst, dstPitch, tab_index, rem, height);
+    }
+}
+
+//kolya
+void MAKE_NAME(h265_InterpLumaFast_s8_d16_V)(INTERP_S8_D16_PARAMETERS_LIST)
+{
+    int rem;
+
+    VM_ASSERT( (shift == 0 && offset == 0) || (shift == 6 && offset == (1 << (shift-1))) );
+    VM_ASSERT( ((width & 0x03) == 0) && ((height & 0x01) == 0) );
+
+    /* fast path - width multiple of 16 */
+    if ((width & 0x0f) == 0) {
+        if (shift == 0)
+            t_InterpLumaFast_s8_d16_V_AVX2<0>(pSrc, srcPitch, pDst, dstPitch, tab_index, width, height);
+        else if (shift == 6)
+            t_InterpLumaFast_s8_d16_V_AVX2<6>(pSrc, srcPitch, pDst, dstPitch, tab_index, width, height);
+        return;
+    }
+
+    rem = (width & 0x07);
+
+    width -= rem;
+    if (width > 0) {
+        if (shift == 0)
+            t_InterpLumaFast_s8_d16_V<8,0>(pSrc, srcPitch, pDst, dstPitch, tab_index, width, height);
+        else if (shift == 6)
+            t_InterpLumaFast_s8_d16_V<8,6>(pSrc, srcPitch, pDst, dstPitch, tab_index, width, height);
+        pSrc += width;
+        pDst += width;
+    }
+
+    if (rem > 0) {
+        if (shift == 0)
+            t_InterpLumaFast_s8_d16_V<4,0>(pSrc, srcPitch, pDst, dstPitch, tab_index, rem, height);
+        else if (shift == 6)
+            t_InterpLumaFast_s8_d16_V<4,6>(pSrc, srcPitch, pDst, dstPitch, tab_index, rem, height);
     }
 }
 
@@ -1459,6 +1917,93 @@ static void t_InterpLuma_s16_d16_V_AVX2(const short* pSrc, unsigned int srcPitch
     }
 }
 
+//kolya
+//TODO: not tested, 10-bit 
+template<int shift, int offset>
+static void t_InterpLumaFast_s16_d16_V_AVX2(const short* pSrc, unsigned int srcPitch, short *pDst, unsigned int dstPitch, int tab_index, int width, int height)
+{
+    int row, col;
+    const short *pSrcRef = pSrc;
+    short *pDstRef = pDst;
+    const signed char* coeffs;
+    __m256i ymm0, ymm1, ymm2, ymm3, ymm4, ymm5, ymm6, ymm7;
+
+    coeffs = (const signed char *)filtTabLumaFast_S16[2 * (tab_index-1)];
+
+    _mm256_zeroupper();
+
+    ymm6 = _mm256_load_si256((__m256i*)(coeffs +  0));
+    ymm7 = _mm256_load_si256((__m256i*)(coeffs + 32));
+
+    /* calculate 8 outputs per inner loop, working vertically */
+    for (col = 0; col < width; col += 8) {
+        pSrc = pSrcRef;
+        pDst = pDstRef;
+
+        /* load 8 8-bit pixels from rows 0-2 */
+        ymm0 = _mm256_loadu_si256((__m256i*)(pSrc + 0*srcPitch));
+        ymm0 = _mm256_permute4x64_epi64(ymm0, 0x10);
+
+        ymm4 = _mm256_loadu_si256((__m256i*)(pSrc + 1*srcPitch));
+        ymm4 = _mm256_permute4x64_epi64(ymm4, 0x10);
+
+        ymm1 = _mm256_loadu_si256((__m256i*)(pSrc + 2*srcPitch));
+        ymm1 = _mm256_permute4x64_epi64(ymm1, 0x10);
+
+        ymm0 = _mm256_unpacklo_epi16(ymm0, ymm4);
+        ymm4 = _mm256_unpacklo_epi16(ymm4, ymm1);
+
+        /* enough registers to process two rows at a time (even and odd rows in parallel) */
+        for (row = 0; row < height; row += 2) {
+            /* load row 3 */
+            ymm5 = _mm256_loadu_si256((__m256i*)(pSrc + 3*srcPitch));
+            ymm5 = _mm256_permute4x64_epi64(ymm5, 0x10);
+
+            ymm2 = _mm256_loadu_si256((__m256i*)(pSrc + 4*srcPitch));
+            ymm2 = _mm256_permute4x64_epi64(ymm2, 0x10);
+
+            ymm1 = _mm256_unpacklo_epi16(ymm1, ymm5);
+            ymm5 = _mm256_unpacklo_epi16(ymm5, ymm2);
+
+            ymm0 = _mm256_madd_epi16(ymm0, ymm6);
+            ymm4 = _mm256_madd_epi16(ymm4, ymm6);
+
+            ymm3 = ymm1;
+            ymm3 = _mm256_madd_epi16(ymm3, ymm7);
+            ymm0 = _mm256_add_epi32(ymm0, ymm3);
+
+            ymm3 = ymm5;
+            ymm3 = _mm256_madd_epi16(ymm3, ymm7);
+            ymm4 = _mm256_add_epi32(ymm4, ymm3);
+
+            /* add offset, shift off fraction bits */
+            ymm0 = _mm256_add_epi32(ymm0, _mm256_set1_epi32(offset));
+            ymm4 = _mm256_add_epi32(ymm4, _mm256_set1_epi32(offset));
+            ymm0 = _mm256_srai_epi32(ymm0, shift);
+            ymm0 = _mm256_packs_epi32(ymm0, ymm0);
+            ymm4 = _mm256_srai_epi32(ymm4, shift);
+            ymm4 = _mm256_packs_epi32(ymm4, ymm4);
+
+            ymm0 = _mm256_permute4x64_epi64(ymm0, 0x08);
+            ymm4 = _mm256_permute4x64_epi64(ymm4, 0x08);
+
+            _mm_storeu_si128((__m128i*)(pDst + 0*dstPitch), _mm256_castsi256_si128(ymm0));
+            _mm_storeu_si128((__m128i*)(pDst + 1*dstPitch), _mm256_castsi256_si128(ymm4));
+
+            /* shift interleaved row registers */
+            ymm0 = ymm1;
+            ymm4 = ymm5;
+            ymm1 = ymm2;
+
+            pSrc += 2*srcPitch;
+            pDst += 2*dstPitch;
+        }
+        pSrcRef += 8;
+        pDstRef += 8;
+    }
+}
+
+
 template<int shift, int offset>
 static void t_InterpLuma_s16_d16_V(const short* pSrc, unsigned int srcPitch, short *pDst, unsigned int dstPitch, int tab_index, int width, int height)
 {
@@ -1579,6 +2124,77 @@ static void t_InterpLuma_s16_d16_V(const short* pSrc, unsigned int srcPitch, sho
     }
 }
 
+//kolya
+template<int shift, int offset>
+static void t_InterpLumaFast_s16_d16_V(const short* pSrc, unsigned int srcPitch, short *pDst, unsigned int dstPitch, int tab_index, int width, int height)
+{
+    int row, col;
+    const short *pSrcRef = pSrc;
+    short *pDstRef = pDst;
+    const signed char* coeffs;
+    __m128i xmm0, xmm1, xmm2, xmm3, xmm4, xmm5, xmm6, xmm7;
+
+    coeffs = (const signed char *)filtTabLumaFast_S16[2 * (tab_index-1)];
+
+    xmm6 = _mm_load_si128((__m128i *)(coeffs +  0));
+    xmm7 = _mm_load_si128((__m128i *)(coeffs + 32));
+
+    /* always calculates 4 outputs per inner loop, working vertically */
+    for (col = 0; col < width; col += 4) {
+        pSrc = pSrcRef;
+        pDst = pDstRef;
+
+        /* load 8 8-bit pixels from rows 0-2 */
+        xmm0 = _mm_loadl_epi64((__m128i*)(pSrc + 0*srcPitch));
+        xmm4 = _mm_loadl_epi64((__m128i*)(pSrc + 1*srcPitch));
+        xmm1 = _mm_loadl_epi64((__m128i*)(pSrc + 2*srcPitch));
+
+        xmm0 = _mm_unpacklo_epi16(xmm0, xmm4);    /* interleave 01 */
+        xmm4 = _mm_unpacklo_epi16(xmm4, xmm1);    /* interleave 12 */
+
+        /* enough registers to process two rows at a time (even and odd rows in parallel) */
+        for (row = 0; row < height; row += 2) {
+            xmm5 = _mm_loadl_epi64((__m128i*)(pSrc + 3*srcPitch));
+            xmm2 = _mm_loadl_epi64((__m128i*)(pSrc + 4*srcPitch));
+            xmm1 = _mm_unpacklo_epi16(xmm1, xmm5);    /* interleave 23 */
+            xmm5 = _mm_unpacklo_epi16(xmm5, xmm2);    /* interleave 34 */
+
+            xmm0 = _mm_madd_epi16(xmm0, xmm6);
+            xmm4 = _mm_madd_epi16(xmm4, xmm6);
+
+            xmm3 = xmm1;
+            xmm3 = _mm_madd_epi16(xmm3, xmm7);
+            xmm0 = _mm_add_epi32(xmm0, xmm3);
+
+            xmm3 = xmm5;
+            xmm3 = _mm_madd_epi16(xmm3, xmm7);
+            xmm4 = _mm_add_epi32(xmm4, xmm3);
+            
+            /* add offset, shift off fraction bits, clip from 32 to 16 bits */
+            xmm0 = _mm_add_epi32(xmm0, _mm_set1_epi32(offset));
+            xmm4 = _mm_add_epi32(xmm4, _mm_set1_epi32(offset));
+            xmm0 = _mm_srai_epi32(xmm0, shift);
+            xmm0 = _mm_packs_epi32(xmm0, xmm0);
+            xmm4 = _mm_srai_epi32(xmm4, shift);
+            xmm4 = _mm_packs_epi32(xmm4, xmm4);
+
+            /* store 2 or 4 16-bit values */
+            _mm_storel_epi64((__m128i*)(pDst + 0*dstPitch), xmm0);
+            _mm_storel_epi64((__m128i*)(pDst + 1*dstPitch), xmm4);
+
+            /* shift interleaved row registers */
+            xmm0 = xmm1;
+            xmm4 = xmm5;
+            xmm1 = xmm2;
+
+            pSrc += 2*srcPitch;
+            pDst += 2*dstPitch;
+        }
+        pSrcRef += 4;
+        pDstRef += 4;
+    }
+}
+
 /* luma, vertical, 16-bit input, 16-bit output */
 void MAKE_NAME(h265_InterpLuma_s16_d16_V)(INTERP_S16_D16_PARAMETERS_LIST)
 {
@@ -1626,6 +2242,58 @@ void MAKE_NAME(h265_InterpLuma_s16_d16_V)(INTERP_S16_D16_PARAMETERS_LIST)
     case  1:                    t_InterpLuma_s16_d16_V< 1,    0>(pSrc, srcPitch, pDst, dstPitch, tab_index, width, height);  break;
     case  2:                    t_InterpLuma_s16_d16_V< 2,    0>(pSrc, srcPitch, pDst, dstPitch, tab_index, width, height);  break;
     case  0:                    t_InterpLuma_s16_d16_V< 0,    0>(pSrc, srcPitch, pDst, dstPitch, tab_index, width, height);  break;
+    }
+}
+
+//kolya
+//not tested, just added for future 10-bit cases
+/* luma short FIR, vertical, 16-bit input, 16-bit output */
+void MAKE_NAME(h265_InterpLumaFast_s16_d16_V)(INTERP_S16_D16_PARAMETERS_LIST)
+{
+    if (shift == 6) {
+        VM_ASSERT(offset == 0 || offset == 32);
+    } else if (shift >= 10 && shift <= 12) {
+        VM_ASSERT(offset == (1 << (shift-1)));
+    } else if (shift <= 2) {
+        VM_ASSERT(offset == 0);
+    } else {
+        VM_ASSERT(0);    /* error - not supported */
+    }
+    VM_ASSERT( ((width & 0x03) == 0) && ((height & 0x01) == 0) );
+
+    /* fast path - width multiple of 8 */
+    if ((width & 0x07) == 0) {
+        switch (shift) {
+        case 6:
+            if (offset == 0)        t_InterpLumaFast_s16_d16_V_AVX2< 6,    0>(pSrc, srcPitch, pDst, dstPitch, tab_index, width, height);
+            else if (offset == 32)  t_InterpLumaFast_s16_d16_V_AVX2< 6,   32>(pSrc, srcPitch, pDst, dstPitch, tab_index, width, height);
+            break;
+    
+        case 10:                    t_InterpLumaFast_s16_d16_V_AVX2<10,  512>(pSrc, srcPitch, pDst, dstPitch, tab_index, width, height);  break;
+        case 11:                    t_InterpLumaFast_s16_d16_V_AVX2<11, 1024>(pSrc, srcPitch, pDst, dstPitch, tab_index, width, height);  break;
+        case 12:                    t_InterpLumaFast_s16_d16_V_AVX2<12, 2048>(pSrc, srcPitch, pDst, dstPitch, tab_index, width, height);  break;
+    
+        case  1:                    t_InterpLumaFast_s16_d16_V_AVX2< 1,    0>(pSrc, srcPitch, pDst, dstPitch, tab_index, width, height);  break;
+        case  2:                    t_InterpLumaFast_s16_d16_V_AVX2< 2,    0>(pSrc, srcPitch, pDst, dstPitch, tab_index, width, height);  break;
+        case  0:                    t_InterpLumaFast_s16_d16_V_AVX2< 0,    0>(pSrc, srcPitch, pDst, dstPitch, tab_index, width, height);  break;
+        }
+
+        return;
+    }
+
+    switch (shift) {
+    case 6:
+        if (offset == 0)        t_InterpLumaFast_s16_d16_V< 6,    0>(pSrc, srcPitch, pDst, dstPitch, tab_index, width, height);
+        else if (offset == 32)  t_InterpLumaFast_s16_d16_V< 6,   32>(pSrc, srcPitch, pDst, dstPitch, tab_index, width, height);
+        break;
+    
+    case 10:                    t_InterpLumaFast_s16_d16_V<10,  512>(pSrc, srcPitch, pDst, dstPitch, tab_index, width, height);  break;
+    case 11:                    t_InterpLumaFast_s16_d16_V<11, 1024>(pSrc, srcPitch, pDst, dstPitch, tab_index, width, height);  break;
+    case 12:                    t_InterpLumaFast_s16_d16_V<12, 2048>(pSrc, srcPitch, pDst, dstPitch, tab_index, width, height);  break;
+    
+    case  1:                    t_InterpLumaFast_s16_d16_V< 1,    0>(pSrc, srcPitch, pDst, dstPitch, tab_index, width, height);  break;
+    case  2:                    t_InterpLumaFast_s16_d16_V< 2,    0>(pSrc, srcPitch, pDst, dstPitch, tab_index, width, height);  break;
+    case  0:                    t_InterpLumaFast_s16_d16_V< 0,    0>(pSrc, srcPitch, pDst, dstPitch, tab_index, width, height);  break;
     }
 }
 
@@ -2256,6 +2924,56 @@ void MAKE_NAME(h265_AverageModeB_U16)(INTERP_AVG_BUF_PARAMETERS_LIST_U16)
         return;
     }
 }
+
+template <int shift, typename PixType>
+static void h265_InterpLumaPack_kernel(const short *src, int pitchSrc, PixType *dst, int pitchDst, int width, int height, int bitDepth)
+{
+    width = (width + 15) & ~15; // 256-bit registers
+    VM_ASSERT(width <= pitchSrc);
+    VM_ASSERT(width <= pitchDst);
+
+    __m256i line, minPel, maxPel;
+    __m256i offset = _mm256_set1_epi16(1 << (shift - 1));
+
+    if (sizeof(PixType) == 2) {
+        minPel = _mm256_setzero_si256();
+        maxPel = _mm256_set1_epi16((1 << bitDepth) - 1);
+    }
+
+    for (; height > 0; height--, src += pitchSrc, dst += pitchDst) {
+        for (Ipp32s col = 0; col < width; col += 16) {
+            line = _mm256_loadu_si256((__m256i *)(src + col));
+
+            line = _mm256_add_epi16(line, offset);
+            line = _mm256_srai_epi16(line, shift);
+
+            if (sizeof(PixType) == 1) {
+                line = _mm256_packus_epi16(line, line);
+                line = _mm256_permute4x64_epi64(line, 0x08);
+                _mm_storeu_si128((__m128i*)(dst + col), _mm256_castsi256_si128(line));
+            }
+            else {
+                line = _mm256_max_epi16(line, minPel); 
+                line = _mm256_min_epi16(line, maxPel);
+                _mm256_storeu_si256((__m256i*)(dst + col), line);
+            }
+        }
+    }
+}
+
+// pack intermediate interpolation pels s16 to u8/u16 [ dst = Saturate( (src + 32) >> 6, 0, (1 << bitDepth) - 1 ) ]
+template <typename PixType>
+void MAKE_NAME(h265_InterpLumaPack)(const short *src, int pitchSrc, PixType *dst, int pitchDst, int width, int height, int bitDepth)
+{
+    switch (bitDepth) {
+    case  8: return h265_InterpLumaPack_kernel<6>(src, pitchSrc, dst, pitchDst, width, height,  8); // (+32) >> 6
+    case  9: return h265_InterpLumaPack_kernel<5>(src, pitchSrc, dst, pitchDst, width, height,  9); // (+16) >> 5
+    case 10: return h265_InterpLumaPack_kernel<4>(src, pitchSrc, dst, pitchDst, width, height, 10); // ( +8) >> 4
+    default: VM_ASSERT(!"unexpected shift");
+    }
+}
+template void MAKE_NAME(h265_InterpLumaPack)<unsigned char >(const short*, int, unsigned char  *dst, int, int, int, int);
+template void MAKE_NAME(h265_InterpLumaPack)<unsigned short>(const short*, int, unsigned short *dst, int, int, int, int);
 
 } // end namespace MFX_HEVC_PP
 

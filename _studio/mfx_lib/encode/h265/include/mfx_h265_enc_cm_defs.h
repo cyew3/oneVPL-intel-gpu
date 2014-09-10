@@ -10,7 +10,7 @@
 
 #if defined (MFX_ENABLE_H265_VIDEO_ENCODE)
 
-#if defined (MFX_ENABLE_CM)
+#if defined (MFX_VA)
 
 #pragma once
 
@@ -31,16 +31,16 @@ namespace H265Enc {
 const Ipp32s CM_REF_BUF_LEN = MAX_NUM_REF_IDX + 4;
 
 enum {
-    PU32x32, PU32x16, PU16x32, PU16x16, PU16x8, PU8x16, PU8x8, PU8x4, PU4x8, PU_MAX
+    PU256x256, PU128x128, PU64x64, PU32x32, PU32x16, PU16x32, PU16x16, PU16x8, PU8x16, PU8x8, PU8x4, PU4x8, PU_MAX
 };
 
 Ipp32s GetPuSize(Ipp32s puw, Ipp32s puh);
 
-void AllocateCmResources(mfxU32 w, mfxU32 h, mfxU8 nRefs, VideoCORE *core);
+mfxStatus AllocateCmResources(mfxU32 w, mfxU32 h, mfxU8 nRefs, VideoCORE *core);
 
-void RunVmeCurr(H265VideoParam const &param, H265Frame *pFrameCur, H265Slice *pSliceCur, H265FrameList *pDpb);
+void RunVmeCurr(H265VideoParam const &param, H265Frame *pFrameCur, H265Slice *pSliceCur, H265Frame **dpb, Ipp32s dpbSize);
 
-void RunVmeNext(H265VideoParam const &param, H265Frame *pFrameNext, H265Slice *pSliceNext, H265FrameList *pDpb);
+void RunVmeNext(H265VideoParam const &param, H265Frame *pFrameNext, H265Slice *pSliceNext);
 
 void FreeCmResources();
 void PrintTimes();
@@ -669,6 +669,6 @@ const mfxU8 Diamond[56] =
 
 #endif // __MFX_H265_ENC_CM_DEFS_H__
 
-#endif // MFX_ENABLE_CM
+#endif // MFX_VA
 
 #endif // MFX_ENABLE_H265_VIDEO_ENCODE

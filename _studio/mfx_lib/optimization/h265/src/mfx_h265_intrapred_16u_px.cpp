@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2013 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2014 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -65,6 +65,57 @@ namespace MFX_HEVC_PP
         669,   655,   643,   630,   618,   607,   596,   585,
         575,   565,   555,   546,   537,   529,   520,   512
     };
+
+    void h265_FilterPredictPels_16u(
+        Ipp16u* PredPel,
+        Ipp32s width)
+    {
+        PixType *tmpPtr;
+        Ipp16u x0, x1, x2, xSaved;
+        Ipp32s i, j;
+
+        xSaved = (PredPel[1] + 2 * PredPel[0] + PredPel[2*width+1] + 2) >> 2;
+
+        tmpPtr = PredPel+1;
+
+        for (j = 0; j < 2; j++)
+        {
+            x0 = PredPel[0];
+            x1 = tmpPtr[0];
+
+            for (i = 0; i < 2*width-1; i++)
+            {
+                x2 = tmpPtr[1];
+                tmpPtr[0] = (x0 + 2*x1 + x2 + 2) >> 2;
+                x0 = x1; x1 = x2;
+                tmpPtr++;
+            }
+
+            tmpPtr = PredPel+2*width+1;
+        }
+
+        PredPel[0] = xSaved;
+
+    } // void h265_FilterPredictPels_8u(...)
+
+
+    void h265_FilterPredictPels_Bilinear_16u(
+        PixType* pSrcDst,
+        int width,
+        int topLeft,
+        int bottomLeft,
+        int topRight)
+    {
+        for(int y = 0; y <= 62; y++)
+        {
+            pSrcDst[2*width + 1 + y] = (PixType)(((63-y)*topLeft + (y+1)*bottomLeft + 32) >> 6);
+        }
+        for(int x = 0; x <=62; x++)
+        {
+            pSrcDst[1+x] = (PixType)(((63-x)*topLeft + (x+1)*topRight + 32) >> 6);
+        }
+
+    } // void h265_FilterPredictPels_Bilinear_8u(...)
 
     void h265_GetPredPelsLuma_16u(PixType* pSrc, PixType* pPredPel, Ipp32s blkSize, Ipp32s srcPitch, Ipp32u tpIf, Ipp32u lfIf, Ipp32u tlIf, Ipp32u bit_depth)
     {
@@ -549,6 +600,50 @@ namespace MFX_HEVC_PP
         }
 
     } // void h265_PredictIntra_Ang_8u(...)
+
+    void h265_PredictIntra_Planar_16u(
+        PixType* PredPel,
+        PixType* pels,
+        Ipp32s pitch,
+        Ipp32s width)
+    {
+        Ipp32s bottomLeft, topRight;
+        Ipp32s horPred;
+        Ipp32s leftColumn[64], topRow[64], bottomRow[64], rightColumn[64];
+        Ipp32s shift = h265_log2table[width - 4];
+        Ipp32s i, j;
+
+        // Get left and above reference column and row
+        for (i = 0; i < width; i++)
+        {
+            topRow[i] = PredPel[1+i];
+            leftColumn[i] = PredPel[2*width+1+i];
+        }
+
+        // Prepare intermediate variables used in interpolation
+        bottomLeft = PredPel[3*width+1];
+        topRight   = PredPel[1+width];
+
+        for (i = 0; i < width; i++)
+        {
+            bottomRow[i]   = bottomLeft - topRow[i];
+            rightColumn[i] = topRight   - leftColumn[i];
+            topRow[i]      <<= shift;
+            leftColumn[i]  <<= shift;
+        }
+
+        // Generate prediction signal
+        for (j = 0; j < width; j++)
+        {
+            horPred = leftColumn[j] + width;
+            for (i = 0; i < width; i++)
+            {
+                horPred += rightColumn[j];
+                topRow[i] += bottomRow[i];
+                pels[j*pitch+i] = (PixType)((horPred + topRow[i]) >> (shift+1));
+            }
+        }
+    } // void h265_PredictIntra_Planar_8u(...)
 
     void h265_PredictIntra_Planar_ChromaNV12_16u(PixType* PredPel, PixType* pDst, Ipp32s dstStride, Ipp32s blkSize)
     {

@@ -249,67 +249,67 @@ Ipp8u initVal_for_transform_skip_flag[3][2] =
 
 const Ipp32u tab_ctxIdxSize[MAIN_SYNTAX_ELEMENT_NUMBER_HEVC] =
 {
-    10,
-    1,
-    30,
-    30,
-    4,
-    42,
-    24,
-    6,
-    3,
-    2,
-    1,
-    3,
-    3,
-    1,
-    1,
-    4,
-    1,
-    1,
-    1,
-    2,
-    5,
-    2,
-    2,
-    4,
-    2,
-    1,
-    1,
-    1,
+    10,     // QT_CBF_HEVC
+    1,      // QT_ROOT_CBF_HEVC
+    30,     // LAST_X_HEVC
+    30,     // LAST_Y_HEVC
+    4,      // SIG_COEFF_GROUP_FLAG_HEVC
+    42,     // SIG_FLAG_HEVC
+    24,     // ONE_FLAG_HEVC
+    6,      // ABS_FLAG_HEVC
+    3,      // TRANS_SUBDIV_FLAG_HEVC
+    2,      // TRANSFORMSKIP_FLAG_HEVC
+    1,      // CU_TRANSQUANT_BYPASS_FLAG_CTX
+    3,      // SPLIT_CODING_UNIT_FLAG_HEVC
+    3,      // SKIP_FLAG_HEVC
+    1,      // MERGE_FLAG_HEVC
+    1,      // MERGE_IDX_HEVC
+    4,      // PART_SIZE_HEVC
+    1,      // AMP_SPLIT_POSITION_HEVC
+    1,      // PRED_MODE_HEVC
+    1,      // INTRA_LUMA_PRED_MODE_HEVC
+    2,      // INTRA_CHROMA_PRED_MODE_HEVC
+    5,      // INTER_DIR_HEVC
+    2,      // MVD_HEVC
+    2,      // REF_FRAME_IDX_HEVC
+    4,      // DQP_HEVC
+    2,      // MVP_IDX_HEVC
+    1,      // SAO_MERGE_FLAG_HEVC
+    1,      // SAO_TYPE_IDX_HEVC
+    1,      // END_OF_SLICE_FLAG_HEVC
 };
 
 const
 Ipp32u tab_ctxIdxOffset[MAIN_SYNTAX_ELEMENT_NUMBER_HEVC] =
 {
-    0,
-    10,
-    11,
-    41,
-    71,
-    75,
-    117,
-    141,
-    147,
-    150,
-    152,
-    153,
-    156,
-    159,
-    160,
-    161,
-    165,
-    166,
-    167,
-    168,
-    170,
-    175,
-    177,
-    179,
-    183,
-    185,
-    186,
-    187,
+    0,      // QT_CBF_HEVC
+    10,     // QT_ROOT_CBF_HEVC
+    11,     // LAST_X_HEVC
+    41,     // LAST_Y_HEVC
+    71,     // SIG_COEFF_GROUP_FLAG_HEVC
+    75,     // SIG_FLAG_HEVC
+    117,    // ONE_FLAG_HEVC
+    141,    // ABS_FLAG_HEVC
+    147,    // TRANS_SUBDIV_FLAG_HEVC
+    150,    // TRANSFORMSKIP_FLAG_HEVC
+    152,    // CU_TRANSQUANT_BYPASS_FLAG_CTX
+    153,    // SPLIT_CODING_UNIT_FLAG_HEVC
+    156,    // SKIP_FLAG_HEVC
+    159,    // MERGE_FLAG_HEVC
+    160,    // MERGE_IDX_HEVC
+    161,    // PART_SIZE_HEVC
+    165,    // AMP_SPLIT_POSITION_HEVC
+    166,    // PRED_MODE_HEVC
+    167,    // INTRA_LUMA_PRED_MODE_HEVC
+    168,    // INTRA_CHROMA_PRED_MODE_HEVC
+    170,    // INTER_DIR_HEVC
+    175,    // MVD_HEVC
+    177,    // REF_FRAME_IDX_HEVC
+    179,    // DQP_HEVC
+    183,    // MVP_IDX_HEVC
+    185,    // SAO_MERGE_FLAG_HEVC
+    186,    // SAO_TYPE_IDX_HEVC
+    187,    // END_OF_SLICE_FLAG_HEVC
 };
 
 static

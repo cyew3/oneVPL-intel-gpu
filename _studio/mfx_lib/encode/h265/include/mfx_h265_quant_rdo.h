@@ -126,6 +126,7 @@ private:
     Ipp64f      m_lambda;
     CabacBits   m_cabacBits;
     Ipp8u m_bitDepth;
+    EnumTextType m_textType;
 };
 
 } // namespace

@@ -98,30 +98,16 @@ template <typename PixType>
 void H265CU<PixType>::TransformFwd(Ipp32s offset, Ipp32s width, Ipp8u is_luma, Ipp8u is_intra)
 {
     Ipp32s bitDepth = is_luma ? m_par->bitDepthLuma : m_par->bitDepthChroma;
-//    Ipp8u uMBQP = par->QP;
-//    U8 uMBQP = m_MfdVftState.SliceState.SliceQP;
-//    bool transform_bypass = m_MfdVftState.ImageState.qpprime_y_zero_transform_bypass_flag && uMBQP == 0;
 
-/*    if (transform_bypass)
-    {
-        printf("Error!! FTQ Transform Bypass\n");
-        return;
-
-        DoDirectCopyMxN(in_VftIf);
-    }
-    else */
     for (Ipp32s c_idx = 0; c_idx < (is_luma ? 1 : 2); c_idx ++) {
-        CoeffsType *residuals = is_luma ? m_residualsY : (c_idx ? m_residualsV : m_residualsU);
 
+        CoeffsType *residuals = is_luma ? m_residualsY : (c_idx ? m_residualsV : m_residualsU);
         residuals += offset;
 
-        if (is_luma && is_intra && width == 4)
-        {
-            //h265_dst_fwd4x4(residuals, bit_depth);
+        if (is_luma && is_intra && width == 4) {
             MFX_HEVC_PP::NAME(h265_DST4x4Fwd_16s)(residuals, residuals, bitDepth);
         }
-        else
-        {
+        else {
             switch (width) {
             case 4:
                 MFX_HEVC_PP::NAME(h265_DCT4x4Fwd_16s)(residuals, residuals, bitDepth);
@@ -140,8 +126,12 @@ void H265CU<PixType>::TransformFwd(Ipp32s offset, Ipp32s width, Ipp8u is_luma, I
     }
 }
 
-template class H265CU<Ipp8u>;
-template class H265CU<Ipp16u>;
+template void H265CU<Ipp8u>::TransformInv(Ipp32s offset, Ipp32s width, Ipp8u isLuma, Ipp8u isIntra, Ipp8u bitDepth);
+template void H265CU<Ipp8u>::TransformInv2(void *dst, Ipp32s pitch_dst, Ipp32s offset, Ipp32s width, Ipp8u isLuma, Ipp8u isIntra, Ipp8u bitDepth);
+template void H265CU<Ipp8u>::TransformFwd(Ipp32s offset, Ipp32s width, Ipp8u isLuma, Ipp8u isIntra);
+template void H265CU<Ipp16u>::TransformInv(Ipp32s offset, Ipp32s width, Ipp8u isLuma, Ipp8u isIntra, Ipp8u bitDepth);
+template void H265CU<Ipp16u>::TransformInv2(void *dst, Ipp32s pitch_dst, Ipp32s offset, Ipp32s width, Ipp8u isLuma, Ipp8u isIntra, Ipp8u bitDepth);
+template void H265CU<Ipp16u>::TransformFwd(Ipp32s offset, Ipp32s width, Ipp8u isLuma, Ipp8u isIntra);
 
 } // namespace
 

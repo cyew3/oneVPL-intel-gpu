@@ -10,11 +10,7 @@
 
 #if defined (MFX_ENABLE_H265_VIDEO_ENCODE) && defined(MFX_ENABLE_H265_PAQ)
 
-//#if defined(_MSC_VER)
-//#include <intrin.h>
-//#endif
 #include <math.h>
-
 #include "vm_debug.h"
 #include "mfx_h265_paq.h"
 #include "mfx_h265_optimization.h"
@@ -22,6 +18,59 @@
 #define NGV_ALIGN(X, ...) ALIGN_DECL(X) __VA_ARGS__
 
 namespace H265Enc {
+
+    /* primitivies of ME FOR PAQ */
+    void ME_SUM_cross_8x8_C(Ipp8u *sLI, Ipp8u *sLA, Ipp8u *sLB, Ipp8u *sLC, Ipp8u *rslt);
+    void ME_SUM_cross_8x8_SSE(Ipp8u *sLI, Ipp8u *sLA, Ipp8u *sLB, Ipp8u *sLC, Ipp8u *rslt);
+    void ME_SUM_cross_8x8_Intrin_SSE2(Ipp8u *sLI, Ipp8u *sLA, Ipp8u *sLB, Ipp8u *sLC, Ipp8u *rslt);
+
+    void ME_SUM_Line_8x8_C(Ipp8u *sLx, Ipp8u *sLy, Ipp8u *sLx2, Ipp8u *sLy2, Ipp8u *rslt);
+    void ME_SUM_Line_8x8_SSE(Ipp8u *sLx, Ipp8u *sLy, Ipp8u *sLx2, Ipp8u *sLy2, Ipp8u *rslt);
+    void ME_SUM_Line_8x8_Intrin_SSE2(Ipp8u *sLx, Ipp8u *sLy, Ipp8u *sLx2, Ipp8u *sLy2, Ipp8u *rslt);
+
+    void ME_SUM_cross_C(Ipp8u *sLI, Ipp8u *sLA, Ipp8u *sLB, Ipp8u *sLC, Ipp8u *rslt);
+    void ME_SUM_cross_SSE(Ipp8u *sLI, Ipp8u *sLA, Ipp8u *sLB, Ipp8u *sLC, Ipp8u *rslt);
+    void ME_SUM_cross_Intrin_SSE2(Ipp8u *sLI, Ipp8u *sLA, Ipp8u *sLB, Ipp8u *sLC, Ipp8u *rslt);
+
+    void ME_SUM_Line_C(Ipp8u *sLx, Ipp8u *sLy, Ipp8u *sLx2, Ipp8u *sLy2, Ipp8u *rslt);
+    void ME_SUM_Line_SSE(Ipp8u *sLx, Ipp8u *sLy, Ipp8u *sLx2, Ipp8u *sLy2, Ipp8u *rslt);
+    void ME_SUM_Line_Intrin_SSE2(Ipp8u *sLx, Ipp8u *sLy, Ipp8u *sLx2, Ipp8u *sLy2, Ipp8u *rslt);
+
+    void    calcLimits(Ipp32u xLoc, Ipp32u yLoc, Ipp32s *limitXleft, Ipp32s *limitXright, Ipp32s *limitYup,
+        Ipp32s *limitYdown, Ipp8u *objFrame, Ipp8u *refFrame, ImDetails inData, Ipp32u fPos);
+    void    calcLimits2(Ipp32u xLoc, Ipp32u yLoc, Ipp32s *limitXleft, Ipp32s *limitXright, Ipp32s *limitYup,
+        Ipp32s *limitYdown, Ipp8u *objFrame, Ipp8u *refFrame, ImDetails inData, MVector *MV, Ipp32u fPos);
+    void    calcLimits3(Ipp32u xLoc, Ipp32u yLoc, ImDetails inData, Ipp32s *limitXleft, Ipp32s *limitXright, Ipp32s *limitYup, Ipp32s *limitYdown,
+        Ipp8u *objFrame, Ipp8u *refFrame, MVector *MV, Ipp32u fPos);
+
+    void    correctMVectorOpt(MVector *MV, Ipp32s xpos, Ipp32s ypos, ImDetails inData);
+
+    void    halfpixel(MVector *MV, Ipp32u *bestSAD, Ipp8u* curY, Ipp8u* refY, Ipp32u blockSize, Ipp32u fPos, Ipp32u wBlocks, Ipp32u xLoc,
+        Ipp32u yLoc, Ipp32u offset, VidRead *videoIn, Ipp8u **pRslt, Ipp32u *Rstride, Ipp32u exWidth,
+        NGV_Bool q, MVector *stepq, Ipp32u accuracy, Ipp64f *Rs, Ipp64f *Cs);
+    void    quarterpixel(VidRead *videoIn, Ipp32u blockSize, MVector *MV, MVector tMV, Ipp32u offset, Ipp8u* fCur, Ipp8u* fRef,
+        Ipp32u *bestSAD, Ipp8u **pRslt, Ipp32u *Rstride, Ipp32u exWidth);
+
+    void    corner(Ipp8u*    dd, Ipp8u* ss, Ipp32u exWidth, Ipp32u blockSize);
+    void    top(Ipp8u* dd, Ipp8u* ss1, Ipp32u exWidth, Ipp32u blockSize, Ipp32u filter);
+    void    left(Ipp8u* dd, Ipp8u* ss1, Ipp32u exWidth, Ipp32u blockSize, Ipp32u filter);
+
+    NGV_Bool    searchMV(MVector MV, Ipp8u* curY, Ipp8u* refY, Ipp32u blockSize, Ipp32u fPos, Ipp32u xLoc, Ipp32u yLoc, Ipp32u *bestSAD,
+        Ipp32u *distance, Ipp32u exWidth, Ipp32u *preSAD);
+    NGV_Bool    searchMV2(MVector MV, Ipp8u* curY, Ipp8u* refY, ImDetails inData, Ipp32u fPos,
+        Ipp32u xLoc, Ipp32u yLoc, Ipp32u *bestSAD, Ipp32u *distance, Ipp32u *preSAD);
+    Ipp32u  searchMV3(MVector Nmv, Ipp8u* curY, Ipp8u* refY, Ipp32u exWidth1, Ipp32u exWidth2);
+
+    Ipp64f  Dist(MVector vector);
+
+    NGV_Bool ShotDetect(TSCstat *preAnalysis, Ipp32s position);
+
+    Ipp32u SAD_8x8_Block_SSE(Ipp8u* src, Ipp8u* ref, Ipp32u sPitch, Ipp32u rPitch);
+    Ipp32u SAD_8x8_Block_Intrin_SSE2(Ipp8u* src, Ipp8u* ref, Ipp32u sPitch, Ipp32u rPitch);
+
+    typedef int DIR;
+    enum                        {forward, backward, average};
+
 
     //#define TEST_ASM
 #ifdef TEST_ASM
@@ -184,7 +233,16 @@ namespace H265Enc {
         Ipp32u            *outSAD, preSAD, preDist;
         Ipp64f        *Rs,*Cs;
         Ipp8u            *prLoc, *objFrame, *refFrame, *fRef;
+
+        struct Rsad {
+            Ipp32u                   SAD;
+            Ipp32u                   distance;
+            MVector                  BestMV;
+            Ipp32s                   angle;
+            Ipp32u                   direction;
+        };
         Rsad        range;
+
         Ipp8u            *pRslt;
         double        *fil;
         double        corFil,*cFil;
@@ -203,11 +261,8 @@ namespace H265Enc {
         Ipp32s            ypos = yLoc * inData.block_size_h;
         Ipp32s            ExtWidth = inData.exwidth;
         Ipp32u            offset        =    inData.initPoint + ypos * ExtWidth + xpos;
-//#ifndef _GCC_BUILD
+
         ALIGN_DECL(16)    unsigned char TempArray1[4*16];
-//#else
-//        unsigned char TempArray1[4*16] __attribute__ ((aligned (16)));
-//#endif
 
         objFrame                =    scale->exImage.Y + offset;
         refFrame                =    scaleRef->exImage.Y + offset;
@@ -219,18 +274,9 @@ namespace H265Enc {
 
         if(fdir == forward)        
         {
-#ifdef LESS_MEM_PDIST
             /* quiet KW */
             printf("Error - (fdir == forward) invalid\n");
             return 0xffffffff;
-#else
-            current                =    scale->pForward;
-            cHalf                =    scale->pFhalf;
-            cQuarter            =    scale->pFquarter;
-            outSAD                =    scale->FSAD;
-            prLoc                =    scale->Forward.Y + offset;
-            outMV                =    outImage->pForward;
-#endif
         }
         else    
         {
@@ -297,8 +343,6 @@ namespace H265Enc {
         range.BestMV.x    =    0;
         range.BestMV.y    =    0;
         range.distance    =    INT_MAX;
-        //range.angle        =    361;
-        //range.direction    =    0;
 
         {
             Ipp32s    distanceY;
@@ -714,314 +758,292 @@ namespace H265Enc {
 
     Ipp32u ME_One3(VidRead *video, Ipp32u fPos, ImDetails inData, ImDetails /*outData*/, 
         imageData *scale, imageData *scaleRef,
-        imageData * /*outImage*/, NGV_Bool first, DIR fdir, Ipp32u accuracy)    {
-            MVector        tMV, ttMV, *current, *cHalf, *cQuarter, Nmv, preMV;            
-            Ipp32s            txMV, tyMV;
-            Ipp32s            limitXleft;
-            Ipp32s            limitXright;
-            Ipp32s            limitYup;
-            Ipp32s            limitYdown;
-            Ipp32s            cor;
-            Ipp32u            pen            =    10;
-            Ipp8u            *pRslt;
-            Ipp32u            Rstride;
-            Ipp32u            *outSAD, preSAD;
-            Ipp64f        *Rs,*Cs;
-            Ipp32u            xLoc        =    (fPos % inData.wBlocks);
-            Ipp32u            yLoc        =    (fPos / inData.wBlocks);
-            Ipp8u            *prLoc, *objFrame, *refFrame;
-            Ipp32u            tSAD        =    INT_MAX;
-            Ipp32u            lSAD        =    INT_MAX;
-            Ipp32u            bestSAD        =    INT_MAX;
-            Ipp32u            tl, vid;
-            Ipp32u            distance    =    INT_MAX;
-            Ipp32u            uprow, left;
-            NGV_Bool        q            =    false;
-            NGV_Bool        foundBetter    =    false;
-            NGV_Bool        bottom        =    false;
+        imageData * /*outImage*/, NGV_Bool first, DIR fdir, Ipp32u accuracy)    
+    {
+        MVector        tMV, ttMV, *current, *cHalf, *cQuarter, Nmv, preMV;            
+        Ipp32s            txMV, tyMV;
+        Ipp32s            limitXleft;
+        Ipp32s            limitXright;
+        Ipp32s            limitYup;
+        Ipp32s            limitYdown;
+        Ipp32s            cor;
+        Ipp32u            pen            =    10;
+        Ipp8u            *pRslt;
+        Ipp32u            Rstride;
+        Ipp32u            *outSAD, preSAD;
+        Ipp64f        *Rs,*Cs;
+        Ipp32u            xLoc        =    (fPos % inData.wBlocks);
+        Ipp32u            yLoc        =    (fPos / inData.wBlocks);
+        Ipp8u            *prLoc, *objFrame, *refFrame;
+        Ipp32u            tSAD        =    INT_MAX;
+        Ipp32u            lSAD        =    INT_MAX;
+        Ipp32u            bestSAD        =    INT_MAX;
+        Ipp32u            tl, vid;
+        Ipp32u            distance    =    INT_MAX;
+        Ipp32u            uprow, left;
+        NGV_Bool        q            =    false;
+        NGV_Bool        foundBetter    =    false;
+        NGV_Bool        bottom        =    false;
 
-            Ipp32s            xpos = xLoc * inData.block_size_w;
-            Ipp32s            ypos = yLoc * inData.block_size_h;
-            Ipp32u            offset        =    inData.initPoint + (yLoc * inData.exwidth * inData.block_size_h) + (xLoc * inData.block_size_w);
+        Ipp32s            xpos = xLoc * inData.block_size_w;
+        Ipp32s            ypos = yLoc * inData.block_size_h;
+        Ipp32u            offset        =    inData.initPoint + (yLoc * inData.exwidth * inData.block_size_h) + (xLoc * inData.block_size_w);
 
-            objFrame                =    scale->exImage.Y + offset;
-            refFrame                =    scaleRef->exImage.Y + offset;
+        objFrame                =    scale->exImage.Y + offset;
+        refFrame                =    scaleRef->exImage.Y + offset;
 
-            Rs                        =    scale->DiffRs;
-            Cs                        =    scale->DiffCs;
+        Rs                        =    scale->DiffRs;
+        Cs                        =    scale->DiffCs;
 
 
-            if(fdir == forward)        {
-#ifdef LESS_MEM_PDIST
-                /* quiet KW */
-                printf("Error - (fdir == forward) invalid\n");
-                return 0xffffffff;
-#else
-                current                =    scale->pForward;
-                cHalf                =    scale->pFhalf;
-                cQuarter            =    scale->pFquarter;
-                outSAD                =    scale->FSAD;
-                prLoc                =    scale->Forward.Y + offset;
-#endif
+        if(fdir == forward)        
+        {
+            /* quiet KW */
+            printf("Error - (fdir == forward) invalid\n");
+            return 0xffffffff;
+        }
+        else                    
+        {
+            current                =    scale->pBackward;
+            cHalf                =    scale->pBhalf;
+            cQuarter            =    scale->pBquarter;
+            outSAD                =    scale->BSAD;
+            prLoc                =    scale->Backward.Y + offset;
+        }
+        cHalf[fPos]                =    zero;
+        cQuarter[fPos]            =    zero;
+
+        Nmv.x = current[fPos].x;
+        Nmv.y = current[fPos].y;
+
+        correctMVectorOpt(&(Nmv), xpos, ypos, inData);
+
+        current[fPos].x = Nmv.x;
+        current[fPos].y = Nmv.y;
+
+        searchMV2(zero, objFrame, refFrame, inData, fPos, xLoc, yLoc, &bestSAD, &distance, &preSAD);
+        tSAD                    =    bestSAD;
+        bestSAD                    =    INT_MAX;
+        distance                =    INT_MAX;
+
+        if(!((current[fPos].x == 0) && (current[fPos].y == 0)))        
+        {
+            searchMV2(current[fPos], objFrame, refFrame, inData, fPos, xLoc, yLoc, &bestSAD, &distance, &preSAD);
+            lSAD                =    bestSAD;
+            bestSAD                =    INT_MAX;
+            distance            =    INT_MAX;
+
+            if(tSAD <= (lSAD * 1.0))    
+            {
+                current[fPos].x    =    0;
+                current[fPos].y    =    0;
             }
-            else                    {
-                current                =    scale->pBackward;
-                cHalf                =    scale->pBhalf;
-                cQuarter            =    scale->pBquarter;
-                outSAD                =    scale->BSAD;
-                prLoc                =    scale->Backward.Y + offset;
+        }
+
+        if(!first)
+            cor                    =    current[fPos].x + (current[fPos].y * inData.exwidth);
+        else
+            cor                    =    0;
+
+        ttMV.x                    =    current[fPos].x;
+        ttMV.y                    =    current[fPos].y;
+        outSAD[fPos]            =    bestSAD;
+
+        calcLimits3(xLoc, yLoc, inData, &limitXleft, &limitXright, &limitYup, &limitYdown, objFrame, refFrame + cor, &(ttMV), fPos);
+        for(tMV.y=limitYup;tMV.y<=limitYdown;tMV.y++)        {
+            for(tMV.x=limitXleft;tMV.x<=limitXright;tMV.x++)    {
+                preMV.x            =    tMV.x + ttMV.x;
+                preMV.y            =    tMV.y + ttMV.y;
+                correctMVectorOpt(&(preMV), xpos, ypos, inData);
+                foundBetter        =    searchMV2(preMV, objFrame, refFrame, inData, fPos, xLoc,
+                    yLoc, &bestSAD, &distance, &preSAD);
+                if(foundBetter)    {
+                    current[fPos].x    =    preMV.x;
+                    current[fPos].y    =    preMV.y;
+                    outSAD[fPos]=    bestSAD;
+                    foundBetter    =    false;
+                }
             }
-            cHalf[fPos]                =    zero;
-            cQuarter[fPos]            =    zero;
+        }
 
-            Nmv.x = current[fPos].x;
-            Nmv.y = current[fPos].y;
-
+        //Neighbor search//
+        uprow                    =    fPos - inData.wBlocks - 1;
+        left                    =    fPos - 1;
+        vid                        =    accuracy / 2;
+        if(yLoc == inData.hBlocks - 1)
+            bottom                =    true;
+        if((fPos > inData.wBlocks) && (xLoc > 0))   {
+            tl                  =   outSAD[fPos] + pen;
+            distance            =   INT_MAX;
+            Nmv.x               =   current[uprow].x;
+            Nmv.y               =   current[uprow].y;
             correctMVectorOpt(&(Nmv), xpos, ypos, inData);
+            foundBetter         =   searchMV2(Nmv, objFrame, refFrame, inData, fPos, xLoc, yLoc, &tl, &distance, &preSAD);
 
-            //correctMVector(&(current[fPos]), xLoc, yLoc, inData);
-            current[fPos].x = Nmv.x;
-            current[fPos].y = Nmv.y;
-
-            searchMV2(zero, objFrame, refFrame, inData, fPos, xLoc, yLoc, &bestSAD, &distance, &preSAD);
-            tSAD                    =    bestSAD;
-            bestSAD                    =    INT_MAX;
-            distance                =    INT_MAX;
-
-            if(!((current[fPos].x == 0) && (current[fPos].y == 0)))        {
-                searchMV2(current[fPos], objFrame, refFrame, inData, fPos, xLoc, yLoc, &bestSAD, &distance, &preSAD);
-                lSAD                =    bestSAD;
-                bestSAD                =    INT_MAX;
-                distance            =    INT_MAX;
-
-                if(tSAD <= (lSAD * 1.0))    {
-                    current[fPos].x    =    0;
-                    current[fPos].y    =    0;
-                    //a                =    1;
-                }
+            if(foundBetter && ((Dist(Nmv)*tl/outSAD[fPos] <= Dist(current[fPos])) || (xLoc == inData.wBlocks - 1) || bottom))   {
+                current[fPos].x =   Nmv.x;
+                current[fPos].y =   Nmv.y;
+                outSAD[fPos]    =   tl;
+                foundBetter     =   false;
             }
+        }
+        uprow++;
+        if(fPos > inData.wBlocks)                       {
+            tl                  =   outSAD[fPos] + pen;
+            distance            =   INT_MAX;
+            Nmv.x               =   current[uprow].x;
+            Nmv.y               =   current[uprow].y;
+            correctMVectorOpt(&(Nmv), xpos, ypos, inData);
+            foundBetter         =   searchMV2(Nmv, objFrame, refFrame, inData, fPos, xLoc,
+                yLoc, &tl, &distance, &preSAD);
 
-            if(!first)
-                cor                    =    current[fPos].x + (current[fPos].y * inData.exwidth);
-            else
-                cor                    =    0;
-
-            ttMV.x                    =    current[fPos].x;
-            ttMV.y                    =    current[fPos].y;
-            outSAD[fPos]            =    bestSAD;
-
-            calcLimits3(xLoc, yLoc, inData, &limitXleft, &limitXright, &limitYup, &limitYdown, objFrame, refFrame + cor, &(ttMV), fPos);
-            for(tMV.y=limitYup;tMV.y<=limitYdown;tMV.y++)        {
-                for(tMV.x=limitXleft;tMV.x<=limitXright;tMV.x++)    {
-                    preMV.x            =    tMV.x + ttMV.x;
-                    preMV.y            =    tMV.y + ttMV.y;
-                    correctMVectorOpt(&(preMV), xpos, ypos, inData);
-                    foundBetter        =    searchMV2(preMV, objFrame, refFrame, inData, fPos, xLoc,
-                        yLoc, &bestSAD, &distance, &preSAD);
-                    if(foundBetter)    {
-                        current[fPos].x    =    preMV.x;
-                        current[fPos].y    =    preMV.y;
-                        outSAD[fPos]=    bestSAD;
-                        foundBetter    =    false;
-                    }
-                }
+            if(foundBetter && ((Dist(Nmv)*tl/outSAD[fPos] <= Dist(current[fPos])) || (xLoc == 0) || (xLoc == inData.wBlocks - 1) || bottom))    
+            {
+                current[fPos].x =   Nmv.x;
+                current[fPos].y =   Nmv.y;
+                outSAD[fPos]     =   tl;
+                foundBetter     =   false;
             }
-
-            //Neighbor search//
-            uprow                    =    fPos - inData.wBlocks - 1;
-            left                    =    fPos - 1;
-            vid                        =    accuracy / 2;
-            if(yLoc == inData.hBlocks - 1)
-                bottom                =    true;
-            if((fPos > inData.wBlocks) && (xLoc > 0))   {
-                tl                  =   outSAD[fPos] + pen;
-                distance            =   INT_MAX;
-                Nmv.x               =   current[uprow].x;
-                Nmv.y               =   current[uprow].y;
-                correctMVectorOpt(&(Nmv), xpos, ypos, inData);
-                foundBetter         =   searchMV2(Nmv, objFrame, refFrame, inData, fPos, xLoc,
-                    yLoc, &tl, &distance, &preSAD);
-                //if(foundBetter)   {
-                if(foundBetter && ((Dist(Nmv)*tl/outSAD[fPos] <= Dist(current[fPos])) || (xLoc == inData.wBlocks - 1) || bottom))   {
-                    current[fPos].x =   Nmv.x;
-                    current[fPos].y =   Nmv.y;
-                    outSAD[fPos]    =   tl;
-                    foundBetter     =   false;
-                }
+        }
+        uprow++;
+        if((fPos > inData.wBlocks) && (xLoc < inData.wBlocks))      
+        {
+            tl                  =   outSAD[fPos] + pen;
+            distance            =   INT_MAX;
+            Nmv.x               =   current[uprow].x;
+            Nmv.y               =   current[uprow].y;
+            correctMVectorOpt(&(Nmv), xpos, ypos, inData);
+            foundBetter         =   searchMV2(Nmv, objFrame, refFrame, inData, fPos, xLoc,
+                yLoc, &tl, &distance, &preSAD);
+            //if(foundBetter)       {
+            if(foundBetter && ((Dist(Nmv)*tl/outSAD[fPos] <= Dist(current[fPos])) || (xLoc == 0) || bottom))        
+            {
+                current[fPos].x =   Nmv.x;
+                current[fPos].y =   Nmv.y;
+                outSAD[fPos]    =   tl;
+                foundBetter     =   false;
             }
-            uprow++;
-            if(fPos > inData.wBlocks)                       {
-                tl                  =   outSAD[fPos] + pen;
-                distance            =   INT_MAX;
-                Nmv.x               =   current[uprow].x;
-                Nmv.y               =   current[uprow].y;
-                correctMVectorOpt(&(Nmv), xpos, ypos, inData);
-                foundBetter         =   searchMV2(Nmv, objFrame, refFrame, inData, fPos, xLoc,
-                    yLoc, &tl, &distance, &preSAD);
-                //if(foundBetter)       {
-                if(foundBetter && ((Dist(Nmv)*tl/outSAD[fPos] <= Dist(current[fPos])) || (xLoc == 0) || (xLoc == inData.wBlocks - 1) || bottom))    {
-                    current[fPos].x =   Nmv.x;
-                    current[fPos].y =   Nmv.y;
-                    outSAD[fPos]     =   tl;
-                    foundBetter     =   false;
-                }
+        }
+        if(xLoc > 0)            {
+            tl                  =   outSAD[fPos] + pen;
+            distance            =   INT_MAX;
+            Nmv.x               =   current[left].x;
+            Nmv.y               =   current[left].y;
+            correctMVectorOpt(&(Nmv), xpos, ypos, inData);
+            foundBetter         =   searchMV2(Nmv, objFrame, refFrame, inData, fPos, xLoc,
+                yLoc, &tl, &distance, &preSAD);
+            //if(foundBetter)       {
+            if(foundBetter && ((Dist(Nmv)*tl/outSAD[fPos] <= Dist(current[fPos])) || (xLoc == inData.wBlocks - 1) || bottom))   {
+                current[fPos].x =   Nmv.x;
+                current[fPos].y =   Nmv.y;
+                outSAD[fPos]    =   tl;
+                foundBetter     =   false;
             }
-            uprow++;
-            if((fPos > inData.wBlocks) && (xLoc < inData.wBlocks))      {
-                tl                  =   outSAD[fPos] + pen;
-                distance            =   INT_MAX;
-                Nmv.x               =   current[uprow].x;
-                Nmv.y               =   current[uprow].y;
-                correctMVectorOpt(&(Nmv), xpos, ypos, inData);
-                foundBetter         =   searchMV2(Nmv, objFrame, refFrame, inData, fPos, xLoc,
-                    yLoc, &tl, &distance, &preSAD);
-                //if(foundBetter)       {
-                if(foundBetter && ((Dist(Nmv)*tl/outSAD[fPos] <= Dist(current[fPos])) || (xLoc == 0) || bottom))        {
-                    current[fPos].x =   Nmv.x;
-                    current[fPos].y =   Nmv.y;
-                    outSAD[fPos]    =   tl;
-                    foundBetter     =   false;
-                }
-            }
-            if(xLoc > 0)            {
-                tl                  =   outSAD[fPos] + pen;
-                distance            =   INT_MAX;
-                Nmv.x               =   current[left].x;
-                Nmv.y               =   current[left].y;
-                correctMVectorOpt(&(Nmv), xpos, ypos, inData);
-                foundBetter         =   searchMV2(Nmv, objFrame, refFrame, inData, fPos, xLoc,
-                    yLoc, &tl, &distance, &preSAD);
-                //if(foundBetter)       {
-                if(foundBetter && ((Dist(Nmv)*tl/outSAD[fPos] <= Dist(current[fPos])) || (xLoc == inData.wBlocks - 1) || bottom))   {
-                    current[fPos].x =   Nmv.x;
-                    current[fPos].y =   Nmv.y;
-                    outSAD[fPos]    =   tl;
-                    foundBetter     =   false;
-                }
-            }
-            cHalf[fPos]                =    current[fPos];
-            Rstride                    =    inData.exwidth;
-            txMV                    =    current[fPos].x;
-            tyMV                    =    current[fPos].y;
-            pRslt                    =    refFrame + cHalf[fPos].x + (cHalf[fPos].y * Rstride);
+        }
+        cHalf[fPos]                =    current[fPos];
+        Rstride                    =    inData.exwidth;
+        txMV                    =    current[fPos].x;
+        tyMV                    =    current[fPos].y;
+        pRslt                    =    refFrame + cHalf[fPos].x + (cHalf[fPos].y * Rstride);
 
-            if(accuracy > 2)
-                q                =    true;
-            if(accuracy > 1)
-                halfpixel(&(cHalf[fPos]), &outSAD[fPos], objFrame, refFrame, inData.block_size_w,
-                fPos, inData.wBlocks, xLoc, yLoc, offset, video, &pRslt, &Rstride, inData.exwidth, q, cQuarter, accuracy, Rs, Cs);
+        if(accuracy > 2)
+            q                =    true;
+        if(accuracy > 1)
+            halfpixel(&(cHalf[fPos]), &outSAD[fPos], objFrame, refFrame, inData.block_size_w,
+            fPos, inData.wBlocks, xLoc, yLoc, offset, video, &pRslt, &Rstride, inData.exwidth, q, cQuarter, accuracy, Rs, Cs);
 
 
 
-            txMV                    =   (current[fPos].x * accuracy) + (cHalf[fPos].x * (accuracy >> 1)) + (cQuarter[fPos].x * (accuracy >> 2));
-            tyMV                    =   (current[fPos].y * accuracy) + (cHalf[fPos].y * (accuracy >> 1)) + (cQuarter[fPos].y * (accuracy >> 2));
+        txMV                    =   (current[fPos].x * accuracy) + (cHalf[fPos].x * (accuracy >> 1)) + (cQuarter[fPos].x * (accuracy >> 2));
+        tyMV                    =   (current[fPos].y * accuracy) + (cHalf[fPos].y * (accuracy >> 1)) + (cQuarter[fPos].y * (accuracy >> 2));
 
-            video->average          +=  (txMV * txMV) + (tyMV * tyMV);
+        video->average          +=  (txMV * txMV) + (tyMV * tyMV);
 
-            txMV                    =   ((128 + current[fPos].x > 254)?254:((128 + current[fPos].x < 0)?0:(128 + current[fPos].x)));
-            tyMV                    =   ((128 + current[fPos].y > 254)?254:((128 + current[fPos].y < 0)?0:(128 + current[fPos].y)));
+        txMV                    =   ((128 + current[fPos].x > 254)?254:((128 + current[fPos].x < 0)?0:(128 + current[fPos].x)));
+        tyMV                    =   ((128 + current[fPos].y > 254)?254:((128 + current[fPos].y < 0)?0:(128 + current[fPos].y)));
 
-            return(tSAD);
+        return(tSAD);
     }
 
 #define ME_SCALE1 1
 
     void    calcLimits(Ipp32u xLoc, Ipp32u yLoc, Ipp32s *limitXleft, Ipp32s *limitXright, Ipp32s *limitYup,
-        Ipp32s *limitYdown, Ipp8u * /*objFrame*/, Ipp8u * /*refFrame*/, ImDetails inData, Ipp32u /*fPos*/)    {
-            Ipp32s            preLimit;
-            Ipp32u            blockSize    =    inData.block_size_w;
-            Ipp32u            rangeX        =    32;
-            Ipp32u            rangeY        =    32;
+        Ipp32s *limitYdown, Ipp8u * /*objFrame*/, Ipp8u * /*refFrame*/, ImDetails inData, Ipp32u /*fPos*/)    
+    {
+        Ipp32s            preLimit;
+        Ipp32u            blockSize    =    inData.block_size_w;
+        Ipp32u            rangeX        =    32;
+        Ipp32u            rangeY        =    32;
 
-            preLimit                =    (xLoc + 1) * blockSize;
-            *limitXleft                =    -IPP_MIN(preLimit, (Ipp32s) rangeX);
-            *limitXright            =    IPP_MIN((inData.exwidth - blockSize - 6) - preLimit, rangeX);
-            preLimit                =    (yLoc + 1) * blockSize;
-            *limitYup                =    -IPP_MIN(preLimit, (Ipp32s) rangeY);
-            *limitYdown                =    IPP_MIN((inData.exheight - blockSize - 6) - preLimit, rangeY);
+        preLimit                =    (xLoc + 1) * blockSize;
+        *limitXleft                =    -IPP_MIN(preLimit, (Ipp32s) rangeX);
+        *limitXright            =    IPP_MIN((inData.exwidth - blockSize - 6) - preLimit, rangeX);
+        preLimit                =    (yLoc + 1) * blockSize;
+        *limitYup                =    -IPP_MIN(preLimit, (Ipp32s) rangeY);
+        *limitYdown                =    IPP_MIN((inData.exheight - blockSize - 6) - preLimit, rangeY);
     }
 
     void    calcLimits2(Ipp32u xLoc, Ipp32u yLoc, Ipp32s *limitXleft, Ipp32s *limitXright, Ipp32s *limitYup,
-        Ipp32s *limitYdown, Ipp8u * /*objFrame*/, Ipp8u * /*refFrame*/, ImDetails inData, MVector *MV, Ipp32u /*fPos*/)    {
-            Ipp32s            preLimit, Xdim, Ydim;
-            Ipp32s            xVal, yVal, exWval, exHval;
-            Ipp32u            rangeX        =    8;
-            Ipp32u            rangeY        =    8;
-
-            xVal                    =    (Ipp32s)((xLoc + 1) * inData.block_size_w);
-            exWval                    =    (Ipp32s)(inData.exwidth - inData.block_size_w);
-            yVal                    =    (Ipp32s)((yLoc + 1) * inData.block_size_h);
-            exHval                    =    (Ipp32s)(inData.exheight - inData.block_size_h);
-
-
-            rangeY = 16;
-            rangeX = 16;
-
-            Xdim                    =    xVal + MV->x;
-            if(Xdim < 0)
-                MV->x                =    - (xVal);
-            else if(Xdim > exWval)
-                MV->x                =    exWval - (Ipp32s)(xLoc * inData.block_size_w);
-
-            Ydim                    =    yVal + MV->y;
-            if(Ydim < 0)
-                MV->y                =    -(yVal);
-            else if(Ydim > exHval)
-                MV->y                =    exHval - (Ipp32s)(yLoc * inData.block_size_h);
-
-            preLimit                =    xVal + MV->x;
-            *limitXleft                =    -IPP_MIN(preLimit, (Ipp32s) rangeX);
-            *limitXright            =    IPP_MIN((Ipp32u)((exWval - 6) - preLimit), rangeX);
-            preLimit                =    yVal + MV->y;
-            *limitYup                =    -IPP_MIN(preLimit, (Ipp32s) rangeY);
-            *limitYdown                =    IPP_MIN((Ipp32u)((exHval - 6) - preLimit), rangeY);
-    }
-
-    void    calcLimits3(Ipp32u xLoc, Ipp32u yLoc, ImDetails inData, Ipp32s *limitXleft,
-        Ipp32s *limitXright, Ipp32s *limitYup, Ipp32s *limitYdown, Ipp8u * /*objFrame*/,
-        Ipp8u * /*refFrame*/, MVector *MV, Ipp32u /*fPos*/)    {
-            Ipp32s            preLimit;
-            Ipp32s            xVal, yVal, exWval, exHval;
-            Ipp32u            rangeX        =    8;
-            Ipp32u            rangeY        =    8;
-
-            xVal                    =    (Ipp32s)((xLoc + 1) * inData.block_size_w);
-            exWval                    =    (Ipp32s)(inData.exwidth - inData.block_size_w);
-            yVal                    =    (Ipp32s)((yLoc + 1) * inData.block_size_h);
-            exHval                    =    (Ipp32s)(inData.exheight - inData.block_size_h);
-
-            rangeY = 8;
-            rangeX = 8;
-
-
-            preLimit                =    xVal + MV->x;
-            *limitXleft                =    -IPP_MIN(preLimit, (Ipp32s) rangeX);
-            *limitXright            =    IPP_MIN((Ipp32u)((exWval - 6) - preLimit), rangeX);
-            preLimit                =    yVal + MV->y;
-            *limitYup                =    -IPP_MIN(preLimit, (Ipp32s) rangeY);
-            *limitYdown                =    IPP_MIN((Ipp32u)((exHval - 6) - preLimit), rangeY);
-    }
-
-    void    correctMVector1(MVector *MV, Ipp32u xLoc, Ipp32u yLoc, ImDetails inData)    {
-        Ipp32s            Xdim, Ydim;
+        Ipp32s *limitYdown, Ipp8u * /*objFrame*/, Ipp8u * /*refFrame*/, ImDetails inData, MVector *MV, Ipp32u /*fPos*/)    
+    {
+        Ipp32s            preLimit, Xdim, Ydim;
         Ipp32s            xVal, yVal, exWval, exHval;
+        Ipp32u            rangeX        =    8;
+        Ipp32u            rangeY        =    8;
 
         xVal                    =    (Ipp32s)((xLoc + 1) * inData.block_size_w);
         exWval                    =    (Ipp32s)(inData.exwidth - inData.block_size_w);
         yVal                    =    (Ipp32s)((yLoc + 1) * inData.block_size_h);
         exHval                    =    (Ipp32s)(inData.exheight - inData.block_size_h);
 
-        Xdim                =    xVal + MV->x;
-        if(Xdim < 0)
-            MV->x            =    - (xVal);
-        else if(Xdim > exWval)
-            MV->x            =    exWval - (Ipp32s)(xLoc * inData.block_size_w);
 
-        Ydim                =    yVal + MV->y;
+        rangeY = 16;
+        rangeX = 16;
+
+        Xdim                    =    xVal + MV->x;
+        if(Xdim < 0)
+            MV->x                =    - (xVal);
+        else if(Xdim > exWval)
+            MV->x                =    exWval - (Ipp32s)(xLoc * inData.block_size_w);
+
+        Ydim                    =    yVal + MV->y;
         if(Ydim < 0)
-            MV->y            =    -(yVal);
+            MV->y                =    -(yVal);
         else if(Ydim > exHval)
-            MV->y            =    exHval - (Ipp32s)(yLoc * inData.block_size_h);
+            MV->y                =    exHval - (Ipp32s)(yLoc * inData.block_size_h);
+
+        preLimit                =    xVal + MV->x;
+        *limitXleft                =    -IPP_MIN(preLimit, (Ipp32s) rangeX);
+        *limitXright            =    IPP_MIN((Ipp32u)((exWval - 6) - preLimit), rangeX);
+        preLimit                =    yVal + MV->y;
+        *limitYup                =    -IPP_MIN(preLimit, (Ipp32s) rangeY);
+        *limitYdown                =    IPP_MIN((Ipp32u)((exHval - 6) - preLimit), rangeY);
+    }
+
+    void    calcLimits3(Ipp32u xLoc, Ipp32u yLoc, ImDetails inData, Ipp32s *limitXleft,
+        Ipp32s *limitXright, Ipp32s *limitYup, Ipp32s *limitYdown, Ipp8u * /*objFrame*/,
+        Ipp8u * /*refFrame*/, MVector *MV, Ipp32u /*fPos*/)    
+    {
+        Ipp32s            preLimit;
+        Ipp32s            xVal, yVal, exWval, exHval;
+        Ipp32u            rangeX        =    8;
+        Ipp32u            rangeY        =    8;
+
+        xVal                    =    (Ipp32s)((xLoc + 1) * inData.block_size_w);
+        exWval                    =    (Ipp32s)(inData.exwidth - inData.block_size_w);
+        yVal                    =    (Ipp32s)((yLoc + 1) * inData.block_size_h);
+        exHval                    =    (Ipp32s)(inData.exheight - inData.block_size_h);
+
+        rangeY = 8;
+        rangeX = 8;
+
+
+        preLimit                =    xVal + MV->x;
+        *limitXleft                =    -IPP_MIN(preLimit, (Ipp32s) rangeX);
+        *limitXright            =    IPP_MIN((Ipp32u)((exWval - 6) - preLimit), rangeX);
+        preLimit                =    yVal + MV->y;
+        *limitYup                =    -IPP_MIN(preLimit, (Ipp32s) rangeY);
+        *limitYdown                =    IPP_MIN((Ipp32u)((exHval - 6) - preLimit), rangeY);
     }
 
     void    correctMVectorOpt(MVector *MV, Ipp32s xPos, Ipp32s yPos, ImDetails inData)
@@ -1045,212 +1067,188 @@ namespace H265Enc {
             MV->y            =    maxright;
     }
 
-    void    correctMVector(MVector *MV, Ipp32u xLoc, Ipp32u yLoc, ImDetails inData)
-    {
-        Ipp32s            Xdim, Ydim;
-        Ipp32s            xVal, yVal, exWval, exHval;
-        int         Xdiml, Ydiml;
-
-        xVal                    =    (Ipp32s)((xLoc + 1) * inData.block_size_w + inData.block_size_w + 4);
-        exWval                    =    (Ipp32s)(inData.exwidth) - 4;
-        yVal                    =    (Ipp32s)((yLoc + 1) * inData.block_size_h + inData.block_size_h + 4);
-        exHval                    =    (Ipp32s)(inData.exheight) - 4;
-
-        Xdim                =    xVal + MV->x;
-        Xdiml               =   Xdim - inData.block_size_w;
-        if(Xdiml < 4)
-            MV->x            =    4 - xVal + inData.block_size_w;
-        else if(Xdim > exWval)
-            MV->x            =    exWval - xVal;
-
-
-        Ydim                =    yVal + MV->y;
-        Ydiml               =   Ydim - inData.block_size_h;
-        if(Ydiml < 4)
-            MV->y            =    4 - yVal + inData.block_size_h;
-        else if(Ydim > exHval)
-            MV->y            =    exHval - yVal;
-    }
-
     NGV_Bool    searchMV(MVector MV, Ipp8u* curY, Ipp8u* refY, Ipp32u blockSize, Ipp32u /*fPos*/,
-        Ipp32u /*xLoc*/, Ipp32u /*yLoc*/, Ipp32u *bestSAD, Ipp32u *distance, Ipp32u exWidth, Ipp32u *preSAD)    {
-            Ipp32u            SAD            =    0;
-            Ipp32u            preDist;//, tSAD;
-            Ipp8u            *fCur, *fRef;
+        Ipp32u /*xLoc*/, Ipp32u /*yLoc*/, Ipp32u *bestSAD, Ipp32u *distance, Ipp32u exWidth, Ipp32u *preSAD)    
+    {
+        Ipp32u            SAD            =    0;
+        Ipp32u            preDist;//, tSAD;
+        Ipp8u            *fCur, *fRef;
 
-            fCur                    =    curY;
-            fRef                    =    refY + MV.x + (MV.y * (signed int) exWidth);
-            preDist                    =    (MV.x * MV.x) + (MV.y * MV.y);
+        fCur                    =    curY;
+        fRef                    =    refY + MV.x + (MV.y * (signed int) exWidth);
+        preDist                    =    (MV.x * MV.x) + (MV.y * MV.y);
 
-            if(blockSize == 4)
-                VM_ASSERT(0);
-            else 
-            {
-                SAD                    =    SAD_8x8_Block(fCur, fRef, exWidth, exWidth);
-            }
+        if(blockSize == 4)
+            VM_ASSERT(0);
+        else 
+        {
+            SAD                    =    SAD_8x8_Block(fCur, fRef, exWidth, exWidth);
+        }
 
-            *preSAD                    =    SAD;
-            if((SAD < *bestSAD) ||((SAD == *(bestSAD)) && *distance > preDist))    {
-                *distance            = preDist;
-                *(bestSAD)            = SAD;
-                return true;
-            }
-            return false;
+        *preSAD                    =    SAD;
+        if((SAD < *bestSAD) ||((SAD == *(bestSAD)) && *distance > preDist))    {
+            *distance            = preDist;
+            *(bestSAD)            = SAD;
+            return true;
+        }
+        return false;
     }
 
     NGV_Bool    searchMV2(MVector MV, Ipp8u* curY, Ipp8u* refY, ImDetails inData, Ipp32u /*fPos*/,
-        Ipp32u /*xLoc*/, Ipp32u /*yLoc*/, Ipp32u *bestSAD, Ipp32u *distance, Ipp32u *preSAD)    {
-            Ipp32u            SAD            =    0;
-            Ipp32u            preDist;
-            Ipp8u*            fRef;
-            Ipp32u            penalty        =    0;
+        Ipp32u /*xLoc*/, Ipp32u /*yLoc*/, Ipp32u *bestSAD, Ipp32u *distance, Ipp32u *preSAD)    
+    {
+        Ipp32u            SAD            =    0;
+        Ipp32u            preDist;
+        Ipp8u*            fRef;
+        Ipp32u            penalty        =    0;
 
-            fRef                    =    refY + MV.x + (MV.y * (signed int)inData.exwidth);
-            preDist                    =    (MV.x * MV.x) + (MV.y * MV.y);
-            penalty                    *=    (preDist + 1)/(*distance + 1);
-            if(inData.block_size_w == 4)
-                VM_ASSERT(0);
-            else 
-            {
-                SAD                    =    SAD_8x8_Block(curY, fRef, inData.exwidth, inData.exwidth);
-            }
-            *preSAD                    =    SAD + penalty;
-            if((*preSAD < *bestSAD) ||((SAD == *(bestSAD)) && *distance > preDist))    {
-                *distance            =    preDist;
-                *(bestSAD)            =    SAD;
-                return true;
-            }
-            return false;
+        fRef                    =    refY + MV.x + (MV.y * (signed int)inData.exwidth);
+        preDist                    =    (MV.x * MV.x) + (MV.y * MV.y);
+        penalty                    *=    (preDist + 1)/(*distance + 1);
+        if(inData.block_size_w == 4)
+            VM_ASSERT(0);
+        else 
+        {
+            SAD                    =    SAD_8x8_Block(curY, fRef, inData.exwidth, inData.exwidth);
+        }
+        *preSAD                    =    SAD + penalty;
+        if((*preSAD < *bestSAD) ||((SAD == *(bestSAD)) && *distance > preDist))    {
+            *distance            =    preDist;
+            *(bestSAD)            =    SAD;
+            return true;
+        }
+        return false;
     }
 
     void    halfpixel(MVector *MV, Ipp32u *bestSAD, Ipp8u* curY, Ipp8u* refY, Ipp32u blockSize, Ipp32u fPos, Ipp32u wBlocks, Ipp32u xLoc,
         Ipp32u yLoc, Ipp32u offset, VidRead *videoIn, Ipp8u **pRslt, Ipp32u *Rstride, Ipp32u exWidth,
-        NGV_Bool q, MVector *stepq, Ipp32u accuracy, Ipp64f* Rs, Ipp64f* Cs)        {
-            Ipp32u            i,j;
-            Ipp32u            blockj, maxMov;
-            Ipp32u            loc;
-            Ipp32u            SAD    = INT_MAX, preSAD = INT_MAX;
-            Ipp32s            txMV, tyMV;
-            Ipp32s            nuOff            =    0;
-            Ipp64f            RsCs;
-            Ipp8u            *fCur, *fRef;
-            Ipp8u*            searchLoc;
-            MVector        tMV                =    {0,0};
-            NGV_Bool        betterfound        =    false;
+        NGV_Bool q, MVector *stepq, Ipp32u accuracy, Ipp64f* Rs, Ipp64f* Cs)        
+    {
+        Ipp32u            i,j;
+        Ipp32u            blockj, maxMov;
+        Ipp32u            loc;
+        Ipp32u            SAD    = INT_MAX, preSAD = INT_MAX;
+        Ipp32s            txMV, tyMV;
+        Ipp32s            nuOff            =    0;
+        Ipp64f            RsCs;
+        Ipp8u            *fCur, *fRef;
+        Ipp8u*            searchLoc;
+        MVector        tMV                =    {0,0};
+        NGV_Bool        betterfound        =    false;
 
-            Ipp8u*            objFrame;
-            Ipp32u            ExtWidth = exWidth;
-            Ipp32u         fPos4       =   yLoc*2*wBlocks*2+xLoc*2;
+        Ipp8u*            objFrame;
+        Ipp32u            ExtWidth = exWidth;
+        Ipp32u         fPos4       =   yLoc*2*wBlocks*2+xLoc*2;
 
-            nuOff                        =    MV->x + (MV->y * exWidth);
-            maxMov                        =    exWidth * 4;
+        nuOff                        =    MV->x + (MV->y * exWidth);
+        maxMov                        =    exWidth * 4;
 
-            objFrame                    =    fCur            =    curY;
-            fRef                        =    refY + nuOff;
-            blockj                        =    blockSize * exWidth;
+        objFrame                    =    fCur            =    curY;
+        fRef                        =    refY + nuOff;
+        blockj                        =    blockSize * exWidth;
 
-            corner(videoIn->cornerBox.Y, fRef, exWidth, blockSize);
-            top(videoIn->topBox.Y, fRef, exWidth, blockSize, 1);
-            left(videoIn->leftBox.Y, fRef, exWidth, blockSize, 1);
+        corner(videoIn->cornerBox.Y, fRef, exWidth, blockSize);
+        top(videoIn->topBox.Y, fRef, exWidth, blockSize, 1);
+        left(videoIn->leftBox.Y, fRef, exWidth, blockSize, 1);
 
-            MV->x                        =    0;
-            MV->y                        =    0;
+        MV->x                        =    0;
+        MV->y                        =    0;
 
-            if(blockSize == 4)
+        if(blockSize == 4)
+        {
+            VM_ASSERT(0);
+        }
+        else
+        {
+            int iSrc2Width = blockSize + 3;
+
+
+            Ipp8u* fRef;
+
+            searchLoc                =    videoIn->cornerBox.Y + blockSize + 3 + 1;
+            ExtWidth                =    iSrc2Width    = blockSize + 3;
+
+            for(i=0;i<2;i++)        
             {
-                VM_ASSERT(0);
-            }
-            else
-            {
-                int iSrc2Width = blockSize + 3;
+                loc                    =    i * (blockSize + 3); 
+                fRef                =    searchLoc + loc; 
+                for(j=0;j<2;j++)    
+                {        
 
+                    preSAD = SAD_8x8_Block(objFrame, fRef, exWidth, ExtWidth);
 
-                Ipp8u* fRef;
+                    txMV            =    ((j * 2) - 1) + MV->x;
+                    tyMV            =    ((i * 2) - 1) + MV->y;
 
-                searchLoc                =    videoIn->cornerBox.Y + blockSize + 3 + 1;
-                ExtWidth                =    iSrc2Width    = blockSize + 3;
-
-                for(i=0;i<2;i++)        
-                {
-                    loc                    =    i * (blockSize + 3); 
-                    fRef                =    searchLoc + loc; 
-                    for(j=0;j<2;j++)    
-                    {        
-
-                        preSAD = SAD_8x8_Block(objFrame, fRef, exWidth, ExtWidth);
-
-                        txMV            =    ((j * 2) - 1) + MV->x;
-                        tyMV            =    ((i * 2) - 1) + MV->y;
-
-                        if((preSAD<*bestSAD))
-                        {
-                            *bestSAD    =    preSAD;
-                            tMV.x        =    (j * 2) - 1;
-                            tMV.y        =    (i * 2) - 1;
-                            *Rstride    =    blockSize + 3;
-                            *pRslt        =    searchLoc + loc;
-                            betterfound    =    true;
-                        }
-                        loc++;
-                        fRef++;
-                    }
-                }
-
-                searchLoc                =    videoIn->topBox.Y + blockSize + 3;
-                for(i=0;i<2;i++)        
-                {
-                    loc                    =    i * (blockSize + 2);
-                    ExtWidth            =    iSrc2Width    = blockSize + 2;
-                    fRef                =    searchLoc + loc;
-
-                    preSAD                =    SAD_8x8_Block(objFrame, fRef, exWidth, blockSize + 2);
-
-                    //SAD                =    ME_SAD_8x8_Block(fCur,searchLoc + loc,exWidth, blockSize + 2);
-                    if((preSAD<*bestSAD))    
+                    if((preSAD<*bestSAD))
                     {
-                        *bestSAD        =    preSAD;
-                        tMV.x            =    0;
-                        tMV.y            =    (i * 2) - 1;
-                        betterfound        =    true;
+                        *bestSAD    =    preSAD;
+                        tMV.x        =    (j * 2) - 1;
+                        tMV.y        =    (i * 2) - 1;
+                        *Rstride    =    blockSize + 3;
+                        *pRslt        =    searchLoc + loc;
+                        betterfound    =    true;
                     }
+                    loc++;
+                    fRef++;
                 }
+            }
 
-                searchLoc                =    videoIn->leftBox.Y + blockSize + 3 + 1;
-                for(i=0;i<2;i++)        
+            searchLoc                =    videoIn->topBox.Y + blockSize + 3;
+            for(i=0;i<2;i++)        
+            {
+                loc                    =    i * (blockSize + 2);
+                ExtWidth            =    iSrc2Width    = blockSize + 2;
+                fRef                =    searchLoc + loc;
+
+                preSAD                =    SAD_8x8_Block(objFrame, fRef, exWidth, blockSize + 2);
+
+                //SAD                =    ME_SAD_8x8_Block(fCur,searchLoc + loc,exWidth, blockSize + 2);
+                if((preSAD<*bestSAD))    
                 {
-                    ExtWidth            =    iSrc2Width  = blockSize + 3;
-                    fRef                =    searchLoc + i;
-
-                    preSAD                =    SAD_8x8_Block(objFrame, fRef, exWidth, blockSize + 3);
-
-                    //SAD                =    ME_SAD_8x8_Block(fCur,searchLoc + i,exWidth,blockSize + 3);
-                    if((preSAD<*bestSAD))    {
-                        *bestSAD        =    preSAD;
-                        tMV.x            =    (i * 2) - 1;
-                        tMV.y            =    0;
-                        *Rstride        =    blockSize + 3;
-                        *pRslt            =    searchLoc + i;
-                        betterfound        =    true;
-                    }
+                    *bestSAD        =    preSAD;
+                    tMV.x            =    0;
+                    tMV.y            =    (i * 2) - 1;
+                    betterfound        =    true;
                 }
             }
 
-            if(betterfound)            
+            searchLoc                =    videoIn->leftBox.Y + blockSize + 3 + 1;
+            for(i=0;i<2;i++)        
             {
-                MV->x                =    tMV.x;
-                MV->y                =    tMV.y;
+                ExtWidth            =    iSrc2Width  = blockSize + 3;
+                fRef                =    searchLoc + i;
+
+                preSAD                =    SAD_8x8_Block(objFrame, fRef, exWidth, blockSize + 3);
+
+                //SAD                =    ME_SAD_8x8_Block(fCur,searchLoc + i,exWidth,blockSize + 3);
+                if((preSAD<*bestSAD))    {
+                    *bestSAD        =    preSAD;
+                    tMV.x            =    (i * 2) - 1;
+                    tMV.y            =    0;
+                    *Rstride        =    blockSize + 3;
+                    *pRslt            =    searchLoc + i;
+                    betterfound        =    true;
+                }
             }
-            RsCs                    =    IPP_MAX(Rs[fPos4],Cs[fPos4]);
-            if(q &&(RsCs <= 1.0))    
-            {
-                q                    =    false;
-                stepq[fPos].x        =    0;
-                stepq[fPos].y        =    0;
-            }
+        }
+
+        if(betterfound)            
+        {
+            MV->x                =    tMV.x;
+            MV->y                =    tMV.y;
+        }
+        RsCs                    =    IPP_MAX(Rs[fPos4],Cs[fPos4]);
+        if(q &&(RsCs <= 1.0))    
+        {
+            q                    =    false;
+            stepq[fPos].x        =    0;
+            stepq[fPos].y        =    0;
+        }
 
 
-            if(accuracy > 2 && q == true)
-                quarterpixel(videoIn, blockSize, &(stepq[fPos]), tMV, offset, fCur, fRef, bestSAD, pRslt, Rstride, exWidth);
+        if(accuracy > 2 && q == true)
+            quarterpixel(videoIn, blockSize, &(stepq[fPos]), tMV, offset, fCur, fRef, bestSAD, pRslt, Rstride, exWidth);
 
     }
 
@@ -1626,7 +1624,8 @@ namespace H265Enc {
         }
     }
 
-    void    left(Ipp8u* dd, Ipp8u* ss1, Ipp32u exWidth, Ipp32u blockSize, Ipp32u filter)    {
+    void    left(Ipp8u* dd, Ipp8u* ss1, Ipp32u exWidth, Ipp32u blockSize, Ipp32u filter)    
+    {
         Ipp32u        i,j;
         Ipp32s        val;
         Ipp32u        rdd, rss;
@@ -1677,219 +1676,8 @@ namespace H265Enc {
         }
     }
 
-    Ipp32u        SAD_Frame(Ipp8u *Yref1,Ipp8u *Yref2, Ipp32u initPoint, Ipp32u hBlocks, Ipp32u wBlocks, Ipp32u stride, Ipp32u blockSize)    {
-        Ipp32u        i,j;
-        Ipp32u        SAD                =    0;
-        Ipp8u        *Img1, *Img2;
-        Ipp32u        xPos, yPos, blockj;
-
-        Img1                    =    Yref1 + initPoint;
-        Img2                    =    Yref2 + initPoint;
-        blockj                    =    blockSize * stride;
-
-        for(i=0;i<hBlocks;i++)        {
-            yPos                =    i * blockj;
-            for(j=0;j<wBlocks; j++)    {
-                xPos            =    yPos + (j * blockSize);
-                if(blockSize == 4)
-                    VM_ASSERT(0);
-                else
-                    SAD            +=    SAD_8x8_Block(Img1 + xPos,Img2 + xPos, stride, stride);
-            }
-        }
-
-        return SAD;
-    }
-
-
-    Ipp32u        averageFrame(imageData *ImStore, Ipp8u* forward, Ipp8u* backward, ImDetails inData, Ipp32u /*frame*/)
+    Ipp32u        searchMV3(MVector Nmv, Ipp8u* curY, Ipp8u* refY, Ipp32u exWidth1, Ipp32u exWidth2)    
     {
-        Ipp32u            i,j,SAD        =    0;
-#ifndef LESS_MEM_PDIST
-        Ipp32u            pos;
-        Ipp8u*            AveIm;
-#endif
-        Ipp32u            blockJump;
-        Ipp8u            *Fim, *Bim;
-        Ipp8u*            OrIm;
-
-#ifndef LESS_MEM_PDIST
-        AveIm                        =    ImStore->Average.Y + inData.initPoint;
-#endif
-        Fim                            =    forward + inData.initPoint;
-        Bim                            =    backward + inData.initPoint;
-
-        for(j=0;j<inData.height;j++)        {
-            for(i=0;i<inData.width;i++)
-#ifndef LESS_MEM_PDIST
-                *(AveIm    + i)        =    (*(Fim + i) + *(Bim + i)) >> 1;
-            AveIm                    +=    inData.exwidth;
-#endif
-            Fim                        +=    inData.exwidth;
-            Bim                        +=    inData.exwidth;
-        }
-
-#ifndef LESS_MEM_PDIST
-        AveIm                        =    ImStore->Average.Y + inData.initPoint;
-#endif
-        OrIm                        =    ImStore->exImage.Y + inData.initPoint;
-        blockJump                    =    2*(inData.block_size_w + 3) + ((inData.block_size_w - 1) * inData.exwidth);
-        SAD                            =    0;
-#ifndef LESS_MEM_PDIST
-        for(j=0;j<inData.hBlocks;j++)        {
-            for(i=0;i<inData.wBlocks;i++)    {
-                pos                    =    i + (j*inData.wBlocks);
-                if(inData.block_size_w == 4)
-                    ImStore->ASAD[pos]    =    ME_SAD_4x4_Block(AveIm, OrIm, inData.exwidth, inData.exwidth);
-                else
-                    ImStore->ASAD[pos]    =    SAD_8x8_Block(AveIm, OrIm, inData.exwidth, inData.exwidth);
-                SAD                    +=    ImStore->ASAD[pos];
-                AveIm                +=    inData.block_size_w;
-                OrIm                +=    inData.block_size_w;
-            }
-            AveIm                    +=    blockJump;
-            OrIm                    +=    blockJump;
-        }
-#endif
-
-        return(SAD);
-    }
-
-    Ipp32u        diffSAD(Ipp8u* forward, Ipp8u* backward, ImDetails inData)    {
-        Ipp32u            i,j,pos,SAD        =    0;
-        Ipp32u            blockJump;
-        Ipp8u            *Fim, *Bim;
-
-        Fim                            =    forward + inData.initPoint;
-        Bim                            =    backward + inData.initPoint;
-        blockJump                    =    22 + (7 * inData.exwidth);
-        SAD                            =    0;
-
-        for(j=0;j<inData.hBlocks;j++)        {
-            for(i=0;i<inData.wBlocks;i++)    {
-                pos                    =    i + (j*inData.wBlocks);
-                SAD                    +=    SAD_8x8_Block(Fim, Bim, inData.exwidth, inData.exwidth);
-                Fim                    +=    8;
-                Bim                    +=    8;
-            }
-            Fim                        +=    blockJump;
-            Bim                        +=    blockJump;
-        }
-
-        return(SAD);
-    }
-
-    Ipp32u        build(imageData /*SrcBuffer*/, ImDetails /*inData*/, Ipp32u Tile)        {
-#ifndef LESS_MEM_PDIST
-        Ipp32u            j,k,l,m;
-        Ipp32u            posy, pos;
-        Ipp32u            tSADF, tSADB;
-        Ipp32u            restW,restH;
-#endif
-        Ipp32u            SAD                =    0;
-        Ipp32u            nBlocks, wBlocks, hBlocks; 
-
-        nBlocks                        =    Tile >> 3;
-        wBlocks                        =    nBlocks;
-        hBlocks                        =    nBlocks;
-#ifndef LESS_MEM_PDIST
-        if(nBlocks > 1)                {
-            for(j=0;j<inData.hBlocks;j+=hBlocks)        {
-                for(k=0;k<inData.wBlocks;k+=wBlocks)    {
-                    tSADB            =    0;
-                    tSADF            =    0;
-                    restH            =    inData.hBlocks - j;
-                    if(restH < nBlocks)
-                        hBlocks        =    restH;
-                    for(l=0;l<hBlocks;l++)                {
-                        restW        =    inData.wBlocks - k;
-                        if(restW < nBlocks)
-                            wBlocks    =    restW;
-                        posy        =    (l * inData.wBlocks) + (j * inData.wBlocks);
-                        for(m=0;m<wBlocks;m++)            {
-                            pos        =    posy + (k + m);
-                            tSADB    +=    SrcBuffer.BSAD[pos];
-                            tSADF    +=    SrcBuffer.FSAD[pos];
-                        }
-                    }
-                    SAD                +=    IPP_MIN(tSADF,tSADB);
-                    wBlocks            =    nBlocks;
-                }
-                hBlocks                =    nBlocks;
-            }
-        }
-        if(nBlocks == 1)            {
-            for(j=0;j<inData.hBlocks;j++)            {
-                posy                =    j * inData.wBlocks;
-                for(k=0;k<inData.wBlocks;k++)    {
-                    pos            =    k + posy;
-                    SAD            +=    IPP_MIN(SrcBuffer.BSAD[pos], SrcBuffer.FSAD[pos]);
-                }
-            }
-        }
-#endif
-        return(SAD);
-    }
-
-    Ipp32u        build3(imageData SrcBuffer, ImDetails inData, Ipp32u Tile)        {
-        Ipp32u            j,k,l,m;
-        Ipp32u            posy, pos;
-        Ipp32u            tSADF, tSADB, tSADA,tSAD;
-        Ipp32u            SAD                =    0;
-        Ipp32u            nBlocks, wBlocks, hBlocks; 
-        Ipp32u            restW,restH;
-
-        nBlocks                        =    Tile >> 3;
-        wBlocks                        =    nBlocks;
-        hBlocks                        =    nBlocks;
-        if(nBlocks > 1)                {
-            for(j=0;j<inData.hBlocks;j+=hBlocks)        {
-                for(k=0;k<inData.wBlocks;k+=wBlocks)    {
-                    tSADB            =    0;
-                    tSADF            =    0;
-                    tSADA            =    0;
-                    restH            =    inData.hBlocks - j;
-                    if(restH < nBlocks)
-                        hBlocks        =    restH;
-                    for(l=0;l<hBlocks;l++)                {
-                        restW        =    inData.wBlocks - k;
-                        if(restW < nBlocks)
-                            wBlocks    =    restW;
-                        posy        =    (l * inData.wBlocks) + (j * inData.wBlocks);
-                        for(m=0;m<wBlocks;m++)            {
-                            pos        =    posy + (k + m);
-                            tSADB    +=    SrcBuffer.BSAD[pos];
-#ifndef LESS_MEM_PDIST
-                            tSADF    +=    SrcBuffer.FSAD[pos];
-                            tSADA    +=    SrcBuffer.ASAD[pos];
-#endif
-                        }
-                    }
-                    tSAD            =    IPP_MIN(tSADB,tSADF);
-                    SAD                +=    IPP_MIN(tSAD, tSADA);
-                    wBlocks            =    nBlocks;
-                }
-                hBlocks                =    nBlocks;
-            }
-        }
-        if(nBlocks == 1)            {
-            for(j=0;j<inData.hBlocks;j++)            {
-                posy                =    j * inData.wBlocks;
-                for(k=0;k<inData.wBlocks;k++)    {
-                    pos            =    k + posy;
-#ifndef LESS_MEM_PDIST
-                    tSAD        =    IPP_MIN(SrcBuffer.BSAD[pos], SrcBuffer.FSAD[pos]);
-                    SAD            +=    IPP_MIN(tSAD, SrcBuffer.ASAD[pos]);
-#else
-                    SAD            +=    SrcBuffer.BSAD[pos];
-#endif
-                }
-            }
-        }
-        return(SAD);
-    }
-
-    Ipp32u        searchMV3(MVector Nmv, Ipp8u* curY, Ipp8u* refY, Ipp32u exWidth1, Ipp32u exWidth2)    {
         Ipp32u            SAD            =    INT_MAX;
         Ipp8u*            fRef;
 
@@ -1899,211 +1687,8 @@ namespace H265Enc {
         return SAD;
     }
 
-    Ipp32u        halfpel(MVector suBmv, Ipp8u* curY, Ipp8u* refY, Ipp32u blockSize, VidRead *videoIn, double cFactor,
-        Ipp32s accuracy, Ipp32u exWidth1, Ipp32u exWidth2, Ipp32u fPos, MVector *pFquarter)        {
-            MVector        Nmv, Qmv;
-            Ipp32s            largeBsize;
-            Ipp8u*            searchLoc;
-            Ipp32u            bestSAD;
-
-            Nmv.x                    =    suBmv.x;
-            Nmv.y                    =    suBmv.y;
-            if(accuracy > 2)        {
-                Qmv.x                =    (Ipp32s)(cFactor * pFquarter[fPos].x);
-                Qmv.y                =    (Ipp32s)(cFactor * pFquarter[fPos].y);
-            }
-            else                    {
-                Qmv.x                =    0;
-                Qmv.y                =    0;
-            }
-
-            largeBsize                =    blockSize + 3;
-            if(Qmv.x != 0 || Qmv.y != 0)        {
-                corner(videoIn->cornerBox.Y, refY, exWidth2, blockSize);
-                top(videoIn->topBox.Y, refY, exWidth2, blockSize, 1);
-                left(videoIn->leftBox.Y, refY, exWidth2, blockSize, 1);
-                bestSAD                =    qpel(videoIn, blockSize, Qmv, Nmv, curY, refY, exWidth1, exWidth2);
-            }
-            else if(Nmv.x != 0 && Nmv.y != 0)    {
-                corner(videoIn->cornerBox.Y, refY, exWidth2, blockSize);
-                searchLoc            =    videoIn->cornerBox.Y + largeBsize + 1;
-                bestSAD                =    searchMV3(Nmv, curY, searchLoc, exWidth1, largeBsize);
-            }
-            else if(Nmv.x == 0)        {
-                top(videoIn->topBox.Y, refY, exWidth2, blockSize, 1);
-                searchLoc            =    videoIn->topBox.Y + largeBsize;
-                bestSAD                =    searchMV3(Nmv, curY, searchLoc, exWidth1, blockSize + 2);
-            }
-            else                    {
-                left(videoIn->leftBox.Y, refY, exWidth2, blockSize, 1);
-                searchLoc            =    videoIn->leftBox.Y + largeBsize + 1;
-                bestSAD                =    searchMV3(Nmv, curY, searchLoc, exWidth1, largeBsize);
-            }
-
-            return (bestSAD);
-    }
-
-    Ipp32u        qpel(VidRead *videoIn, Ipp32u blockSize, MVector Qmv, MVector Nmv, Ipp8u* fCur, Ipp8u* fRef, Ipp32u exWidth1, Ipp32u exWidth2)    {
-        Ipp32u            i,j;
-        Ipp32u            bi;
-        Ipp32u            bestSAD;
-        Ipp8u            *sLA, *sLB, *sLC, *sLI;
-
-        sLA                        =    videoIn->cornerBox.Y + blockSize + 3 + 1;
-        sLB                        =    videoIn->topBox.Y + blockSize + 2 + 1;
-        sLC                        =    videoIn->leftBox.Y + blockSize + 3 + 1;
-        sLI                        =    fRef;
-
-        if(Nmv.x == 0 && Nmv.y == 0)    {
-            for(i=0;i<blockSize;i++)    {
-                for(j=0;j<(blockSize / 4);j++)    {
-                    bi                =    (i * blockSize) + (j * 4);
-                    ME_SUM_cross(sLI, sLA, sLB, sLC,videoIn->spBuffer[0].Y + bi);
-                    ME_SUM_Line(sLI, sLB, sLI - exWidth2, sLB + blockSize + 2, videoIn->spBuffer[1].Y + bi);
-                    ME_SUM_cross(sLI,sLA + 1,sLB,sLC + 1,videoIn->spBuffer[2].Y + bi);
-                    ME_SUM_Line(sLI, sLC, sLI - 1, sLC + 1, videoIn->spBuffer[3].Y + bi);
-                    ME_SUM_Line(sLI, sLC + 1, sLI + 1, sLC, videoIn->spBuffer[4].Y + bi);
-                    ME_SUM_cross(sLI,sLA + blockSize + 3,sLB + blockSize + 2,sLC,videoIn->spBuffer[5].Y + bi);
-                    ME_SUM_Line(sLI, sLB + blockSize + 2, sLI + exWidth2, sLB, videoIn->spBuffer[6].Y + bi);
-                    ME_SUM_cross(sLI,sLA + blockSize + 3 + 1,sLB + blockSize + 2,sLC + 1,videoIn->spBuffer[7].Y + bi);
-                    sLA            +=    4;
-                    sLB            +=    4;
-                    sLC            +=    4;
-                    sLI            +=    4;
-                }
-                sLA                +=    3;
-                sLB                +=    2;
-                sLC                +=    3;
-                sLI                +=    exWidth2 - blockSize;
-            }
-        }
-        else if(Nmv.x != 0 && Nmv.y != 0)    {
-            sLI                    +=    ((1 + Nmv.x) / 2) + (((1 + Nmv.y) / 2) * exWidth2);
-            sLA                    +=    ((1 + Nmv.x) / 2) + (((1 + Nmv.y) / 2) * (blockSize + 3));
-            sLB                    +=    ((1 + Nmv.x) / 2) + (((1 + Nmv.y) / 2) * (blockSize + 2));
-            sLC                    +=    ((1 + Nmv.x) / 2) + (((1 + Nmv.y) / 2) * (blockSize + 3));
-            for(i=0;i<blockSize;i++)    {
-                for(j=0;j<(blockSize / 4);j++)    {
-                    bi            =    (i * blockSize) + (j * 4);
-                    ME_SUM_cross(sLI - 1 - exWidth2, sLA, sLB - 1, sLC - (blockSize + 3),videoIn->spBuffer[0].Y + bi);
-                    ME_SUM_Line(sLA, sLC - (blockSize + 3), sLA - (blockSize + 3), sLC, videoIn->spBuffer[1].Y + bi);
-                    ME_SUM_cross(sLI - exWidth2,sLA,sLB,sLC - (blockSize + 3),videoIn->spBuffer[2].Y + bi);
-                    ME_SUM_Line(sLA, sLB - 1, sLA - 1, sLB, videoIn->spBuffer[3].Y + bi);
-                    ME_SUM_Line(sLA, sLB, sLA + 1, sLB - 1, videoIn->spBuffer[4].Y + bi);
-                    ME_SUM_cross(sLI - 1,sLA,sLB - 1,sLC,videoIn->spBuffer[5].Y + bi);
-                    ME_SUM_Line(sLA, sLC, sLC - (blockSize + 3), sLA + blockSize + 3, videoIn->spBuffer[6].Y + bi);
-                    ME_SUM_cross(sLI,sLA,sLB,sLC,videoIn->spBuffer[7].Y + bi);
-                    sLA            +=    4;
-                    sLB            +=    4;
-                    sLC            +=    4;
-                    sLI            +=    4;
-                }
-                sLA                +=    3;
-                sLB                +=    2;
-                sLC                +=    3;
-                sLI                +=    exWidth2 - blockSize;
-            }
-        }
-        else if(Nmv.x == 0 && Nmv.y != 0)    {
-            sLI                    +=    (((1 + Nmv.y) / 2) * exWidth2);
-            sLA                    +=    (((1 + Nmv.y) / 2) * (blockSize + 3));
-            sLB                    +=    (((1 + Nmv.y) / 2) * (blockSize + 2));
-            sLC                    +=    (((1 + Nmv.y) / 2) * (blockSize + 3));
-            for(i=0;i<blockSize;i++)    {
-                for(j=0;j<(blockSize / 4);j++)    {
-                    bi            =    (i * blockSize) + (j * 4);
-                    ME_SUM_cross(sLI - exWidth2, sLA, sLB, sLC - (blockSize + 3),videoIn->spBuffer[0].Y + bi);
-                    ME_SUM_Line(sLI - exWidth2, sLB, sLI, sLB - (blockSize + 2), videoIn->spBuffer[1].Y + bi);
-                    ME_SUM_cross(sLI - exWidth2,sLA + 1,sLB,sLC - (blockSize + 2),videoIn->spBuffer[2].Y + bi);
-                    ME_SUM_Line(sLA, sLB, sLA + 1, sLB - 1, videoIn->spBuffer[3].Y + bi);
-                    ME_SUM_Line(sLA + 1, sLB, sLA, sLB + 1, videoIn->spBuffer[4].Y + bi);
-                    ME_SUM_cross(sLI,sLA,sLB,sLC,videoIn->spBuffer[5].Y + bi);
-                    ME_SUM_Line(sLI, sLB, sLI - exWidth2, sLB + (blockSize + 2), videoIn->spBuffer[6].Y + bi);
-                    ME_SUM_cross(sLI,sLA + 1,sLB,sLC + 1,videoIn->spBuffer[7].Y + bi);
-                    sLA            +=    4;
-                    sLB            +=    4;
-                    sLC            +=    4;
-                    sLI            +=    4;
-                }
-                sLA                +=    3;
-                sLB                +=    2;
-                sLC                +=    3;
-                sLI                +=    exWidth2 - blockSize;
-            }
-        }
-        else if(Nmv.x != 0 && Nmv.y == 0)    {
-            sLI                    +=    ((1 + Nmv.x) / 2);
-            sLA                    +=    ((1 + Nmv.x) / 2);
-            sLB                    +=    ((1 + Nmv.x) / 2);
-            sLC                    +=    ((1 + Nmv.x) / 2);
-            for(i=0;i<blockSize;i++)    {
-                for(j=0;j<(blockSize / 4);j++)    {
-                    bi            =    (i * blockSize) + (j * 4);
-                    ME_SUM_cross(sLI - 1, sLA, sLB - 1, sLC,videoIn->spBuffer[0].Y + bi);
-                    ME_SUM_Line(sLA,sLC,sLA + blockSize + 3,sLC - (blockSize + 3), videoIn->spBuffer[1].Y + bi);
-                    ME_SUM_cross(sLI,sLA,sLB,sLC,videoIn->spBuffer[2].Y + bi);
-                    ME_SUM_Line(sLI - 1,sLC,sLI,sLC - 1, videoIn->spBuffer[3].Y + bi);
-                    ME_SUM_Line(sLI,sLC,sLI - 1,sLC + 1, videoIn->spBuffer[4].Y + bi);
-                    ME_SUM_cross(sLI - 1,sLA + blockSize + 3,sLB + blockSize + 1,sLC,videoIn->spBuffer[5].Y + bi);
-                    ME_SUM_Line(sLA + blockSize + 3, sLC, sLA, sLC + blockSize + 3, videoIn->spBuffer[6].Y + bi);
-                    ME_SUM_cross(sLI,sLA + blockSize + 3,sLB + blockSize + 2,sLC,videoIn->spBuffer[7].Y + bi);
-                    sLA            +=    4;
-                    sLB            +=    4;
-                    sLC            +=    4;
-                    sLI            +=    4;
-                }
-                sLA                +=    3;
-                sLB                +=    2;
-                sLC                +=    3;
-                sLI                +=    exWidth2 - blockSize;
-            }
-        }
-
-        if(Qmv.x == -1 && Qmv.y == -1)
-            bestSAD                =    SAD_8x8_Block(fCur,videoIn->spBuffer[0].Y,exWidth1,blockSize);
-        else if(Qmv.x == 0 && Qmv.y == -1)
-            bestSAD                =    SAD_8x8_Block(fCur,videoIn->spBuffer[1].Y,exWidth1,blockSize);
-        else if(Qmv.x == 1 && Qmv.y == -1)
-            bestSAD                =    SAD_8x8_Block(fCur,videoIn->spBuffer[2].Y,exWidth1,blockSize);
-        else if(Qmv.x == -1 && Qmv.y == 0)
-            bestSAD                =    SAD_8x8_Block(fCur,videoIn->spBuffer[3].Y,exWidth1,blockSize);
-        else if(Qmv.x == 1 && Qmv.y == 0)
-            bestSAD                =    SAD_8x8_Block(fCur,videoIn->spBuffer[4].Y,exWidth1,blockSize);
-        else if(Qmv.x == -1 && Qmv.y == 1)
-            bestSAD                =    SAD_8x8_Block(fCur,videoIn->spBuffer[5].Y,exWidth1,blockSize);
-        else if(Qmv.x == 0 && Qmv.y == 1)
-            bestSAD                =    SAD_8x8_Block(fCur,videoIn->spBuffer[6].Y,exWidth1,blockSize);
-        else if(Qmv.x == 1 && Qmv.y == 1)
-            bestSAD                =    SAD_8x8_Block(fCur,videoIn->spBuffer[7].Y,exWidth1,blockSize);
-        else
-            bestSAD                =    INT_MAX;
-
-        return(bestSAD);
-    }
-
-    void    histoMagDir(MVector *MV,Ipp32u fBlocks,Ipp32s **histogram)    {
-        Ipp64f        xAvg            =    0;
-        Ipp64f        yAvg            =    0;
-        Ipp64f        offX,offY;
-        Ipp32u        i;
-        MVector    avg;
-
-        for(i=0;i<fBlocks;i++)    {
-            xAvg                +=    MV[i].x;
-            yAvg                +=    MV[i].y;
-        }
-        xAvg                    /=    (Ipp64f)(fBlocks);
-        yAvg                    /=    (Ipp64f)(fBlocks);
-        for(i=0;i<fBlocks;i++)    {
-            offX                =    (Ipp64f)(MV[i].x) - xAvg;
-            offY                =    (Ipp64f)(MV[i].y) - yAvg;
-            avg.x                =    (Ipp32s)sqrt((offX*offX)+(offY*offY));
-            avg.y                =    (Ipp32s)(atan(offY/(offX + 0.001))*180.0/PI);
-            histogram[128 + avg.y][128 + avg.x]++;
-        }
-    }
-
-    Ipp64f        Dist(MVector vector){
+    Ipp64f        Dist(MVector vector)
+    {
         Ipp64f        size;
         size                    =    sqrt(((float)vector.x*vector.x) + (vector.y*vector.y));
         return size;
@@ -2112,62 +1697,7 @@ namespace H265Enc {
     Ipp32u SAD_8x8_Block_SSE(Ipp8u* src, Ipp8u* ref, Ipp32u sPitch, Ipp32u rPitch)
     {
         Ipp32u SAD = 0;
-#ifdef COMPILE_ASM_CODE
-        __asm
-        {
-            mov        edx, sPitch                            
-                mov        ecx, rPitch                            
-                mov        esi, src                        
-                mov        edi, ref                                
-                lea        eax, [edx+2*edx]            /*3sPitch*/            
-            lea        ebx, [ecx+2*ecx]            /*3rPitch*/            
 
-            movq    xmm0, qword ptr [edi]       /*ref line*/
-            movhps    xmm0, qword ptr [edi+ecx]   /*ref line*/
-
-            movq    xmm1, qword ptr [esi]       /*src line*/
-            movhps    xmm1, qword ptr [esi+edx]   /*src line*/
-
-            movq    xmm2, qword ptr [edi+2*ecx]                
-            movhps    xmm2, qword ptr [edi+ebx]                
-
-            movq    xmm3, qword ptr [esi+2*edx]                
-            movhps    xmm3, qword ptr [esi+eax]                
-
-            psadbw     xmm0, xmm1                    
-                psadbw     xmm2, xmm3                
-
-                movq    xmm4, qword ptr [edi+4*ecx]                
-            movq    xmm5, qword ptr [edi+2*ebx]                
-
-            movq    xmm6, qword ptr [esi+4*edx]                
-            movq    xmm7, qword ptr [esi+2*eax]                
-
-            lea        eax, [eax+2*edx]                        
-            lea        ebx, [ebx+2*ecx]                        
-
-            movhps    xmm4, qword ptr [edi+ebx]                
-            movhps    xmm6, qword ptr [esi+eax]                
-
-            paddw     xmm0, xmm2                                
-                lea        eax,[eax+2*edx]                            
-            lea        ebx,[ebx+2*ecx]                            
-
-            movhps    xmm5, qword ptr [edi+ebx]                
-            movhps    xmm7, qword ptr [esi+eax]                
-
-            psadbw    xmm4, xmm6                
-                psadbw    xmm5, xmm7
-
-                paddw    xmm0, xmm4                                
-                paddw    xmm0, xmm5                                
-                movd    eax, xmm0                                
-                psrldq    xmm0, 8                                    
-                movd    edx, xmm0                                
-                add        eax, edx                                
-                mov        SAD, eax            
-        }
-#else
         Ipp8u* psrc = src;
         Ipp8u* pref = ref;
         Ipp32u out, in;
@@ -2179,7 +1709,6 @@ namespace H265Enc {
             }
             psrc += sPitch; pref += rPitch;
         }
-#endif
         return SAD;
     }
 
@@ -2281,42 +1810,8 @@ namespace H265Enc {
 
     void ME_SUM_cross_8x8_SSE(Ipp8u * sLI, Ipp8u * sLA, Ipp8u * sLB, Ipp8u * sLC, Ipp8u * rslt)
     {
-#ifdef  COMPILE_ASM_CODE
-        __asm
-        {
-            mov            eax,    sLI        ;
-            mov            ebx,    sLA        ;
-            mov            ecx,    rslt    ;
-            movq        xmm4,    x4        ;
-            movhps        xmm4,    x4        ;
-            pxor        xmm7,    xmm7        ;
-
-            movq        xmm0,    QWORD PTR [eax]    ;    /*sum of sLI and sLA*/
-            punpcklbw    xmm0,    xmm7        ;
-            movq        xmm1,    QWORD PTR [ebx]    ;
-            punpcklbw    xmm1,    xmm7        ;
-            paddusw        xmm0,    xmm1        ;    /*result saved on mm0*/
-
-            mov            eax,    sLB        ;
-            movq        xmm1,    QWORD PTR [eax]    ;    /*sum of result and SLB*/
-            punpcklbw    xmm1,    xmm7        ;
-            paddusw        xmm0,    xmm1        ;    /*result saved on mm0*/
-
-            mov            eax,    sLC        ;
-            movq        xmm1,    QWORD PTR [eax]    ;    /*sum of result and SLC*/
-            punpcklbw    xmm1,    xmm7        ;
-            paddusw        xmm0,    xmm1        ;    /*result saved on mm0*/
-            paddusw        xmm0,    xmm4        ;
-            psrlw        xmm0,    2h        ;    /*divide result by 4*/
-
-            packuswb    xmm0,    xmm7        ;    /*packs data*/
-            movq        QWORD PTR [ecx],    xmm0        ;    /*returns data*/
-
-        }
-#else
         // For 64-bit can start with using C code.
         VM_ASSERT(0);
-#endif
     }
 
     static const NGV_ALIGN(16, short add2_8[8]) = {2, 2, 2, 2, 2, 2, 2, 2};
@@ -2351,45 +1846,6 @@ namespace H265Enc {
 
     void ME_SUM_Line_8x8_SSE(Ipp8u *sLx, Ipp8u *sLy, Ipp8u *sLx2, Ipp8u *sLy2, Ipp8u *rslt)
     {
-#ifdef  COMPILE_ASM_CODE
-        __asm
-        {
-            mov            eax,    sLx        ;
-            mov            ebx,    sLy        ;
-            mov            ecx,    sLx2    ;
-            mov            edx,    rslt    ;
-
-            pxor        xmm7,    xmm7    ;
-            movq        xmm6,    x1        ;
-            movhps        xmm6,    x1        ;
-            movq        xmm5,    x2        ;
-            movhps        xmm5,    x2        ;
-            movq        xmm4,    x3        ;
-            movhps        xmm4,    x3        ;
-
-            movq        xmm0,    QWORD PTR [eax]    ;    /*sum of sLx and sLy*/
-            punpcklbw    xmm0,    xmm7        ;
-            movq        xmm1,    QWORD PTR [ebx]    ;
-            punpcklbw    xmm1,    xmm7        ;
-            paddusw        xmm0,    xmm1        ;        /*result saved on mm0*/
-            pmullw        xmm0,    xmm6        ;        /*multiply by 20*/
-
-            movq        xmm2,    QWORD PTR [ecx]    ;    /*sum of sLx2 and sLy2*/
-            punpcklbw    xmm2,    xmm7        ;
-            mov            eax,    sLy2    ;
-            movq        xmm1,    QWORD PTR [eax]    ;
-            punpcklbw    xmm1,    xmm7        ;
-            paddusw        xmm2,    xmm1        ;        /*result saved on mm2*/
-            pmullw        xmm2,    xmm5        ;        /*multiply by 4*/
-
-            psubusw        xmm0,    xmm2        ;        /*substraction*/
-            paddusw        xmm0,    xmm4        ;        /*rounding*/
-            psrlw        xmm0,    5h        ;            /*divide result by 32*/
-
-            packuswb    xmm0,    xmm7        ;    /*packs data*/
-            movq        QWORD PTR [edx],    xmm0        ;    /*returns data*/
-        }
-#endif
     }
 
     static const NGV_ALIGN(16, short k16_8[8]) = {16, 16, 16, 16, 16, 16, 16, 16};
@@ -2428,39 +1884,6 @@ namespace H265Enc {
 
     void ME_SUM_cross_SSE(Ipp8u *sLI, Ipp8u *sLA, Ipp8u *sLB, Ipp8u *sLC, Ipp8u *rslt)
     {
-#ifdef  COMPILE_ASM_CODE
-        __asm
-        {
-            mov            eax,    sLI        ;
-            mov            ebx,    sLA        ;
-            mov            ecx,    rslt    ;
-            movq        mm4,    x4        ;
-            pxor        mm7,    mm7        ;
-
-            movd        mm0,    [eax]    ;    /*sum of sLI and sLA*/
-            punpcklbw    mm0,    mm7        ;
-            movd        mm1,    [ebx]    ;
-            punpcklbw    mm1,    mm7        ;
-            paddusw        mm0,    mm1        ;    /*result saved on mm0*/
-
-            mov            eax,    sLB        ;
-            movd        mm1,    [eax]    ;    /*sum of result and SLB*/
-            punpcklbw    mm1,    mm7        ;
-            paddusw        mm0,    mm1        ;    /*result saved on mm0*/
-
-            mov            eax,    sLC        ;
-            movd        mm1,    [eax]    ;    /*sum of result and SLC*/
-            punpcklbw    mm1,    mm7        ;
-            paddusw        mm0,    mm1        ;    /*result saved on mm0*/
-            paddusw        mm0,    mm4        ;
-            psrlw        mm0,    2h        ;    /*divide result by 4*/
-
-            packuswb    mm0,    mm7        ;    /*packs data*/
-            movd        [ecx],    mm0        ;    /*returns data*/
-
-            emms
-        }
-#endif
     }
 
     void ME_SUM_cross_Intrin_SSE2(Ipp8u *sLI, Ipp8u *sLA, Ipp8u *sLB, Ipp8u *sLC, Ipp8u *rslt)
@@ -2493,47 +1916,9 @@ namespace H265Enc {
 
     void    ME_SUM_Line_SSE(Ipp8u *sLx, Ipp8u *sLy, Ipp8u *sLx2, Ipp8u *sLy2, Ipp8u * rslt)
     {
-#ifdef  COMPILE_ASM_CODE
-        __asm
-        {
-            mov            eax,    sLx        ;
-            mov            ebx,    sLy        ;
-            mov            ecx,    sLx2    ;
-            mov            edx,    rslt    ;
-
-            pxor        mm7,    mm7        ;
-            movq        mm6,    x1        ;
-            movq        mm5,    x2        ;
-            movq        mm4,    x3        ;
-
-            movd        mm0,    [eax]    ;    /*sum of sLx and sLy*/
-            punpcklbw    mm0,    mm7        ;
-            movd        mm1,    [ebx]    ;
-            punpcklbw    mm1,    mm7        ;
-            paddusw        mm0,    mm1        ;    /*result saved on mm0*/
-            pmullw        mm0,    mm6        ;    /*multiply by 20*/
-
-            movd        mm2,    [ecx]    ;    /*sum of sLx2 and sLy2*/
-            punpcklbw    mm2,    mm7        ;
-            mov            eax,    sLy2    ;
-            movd        mm1,    [eax]    ;
-            punpcklbw    mm1,    mm7        ;
-            paddusw        mm2,    mm1        ;    /*result saved on mm2*/
-            pmullw        mm2,    mm5        ;    /*multiply by 4*/
-
-            psubusw        mm0,    mm2        ;    /*substraction*/
-            paddusw        mm0,    mm4        ;    /*rounding*/
-            psrlw        mm0,    5h        ;    /*divide result by 32*/
-
-            packuswb    mm0,    mm7        ;    /*packs data*/
-            movd        [edx],    mm0        ;    /*returns data*/
-
-            emms
-        }
-#else
         // For 64-bit can start with C code.
         VM_ASSERT(0);
-#endif
+
     }
 
 
@@ -2591,7 +1976,8 @@ namespace H265Enc {
     static Ipp64f TH[4]                    =    {-12,-4,4,12};
     static Ipp64f SDetection[5]            =    {1.4602,-17.763,70.524,21.34,100.0};
 
-    void    SceneDetect(imageData Data, imageData DataRef, ImDetails imageInfo, Ipp32s scVal, Ipp64f TSC, Ipp64f AFD, NGV_Bool *Schange, NGV_Bool *Gchange)    {
+    void    SceneDetect(imageData Data, imageData DataRef, ImDetails imageInfo, Ipp32s scVal, Ipp64f TSC, Ipp64f AFD, NGV_Bool *Schange, NGV_Bool *Gchange)    
+    {
         Ipp8u        *objFrame, *ssFrame, *refFrame;
         Ipp64f        objDCval                =    0;
         Ipp64f        ssDCval                    =    0;
@@ -2699,7 +2085,8 @@ namespace H265Enc {
         }
     }
 
-    NGV_Bool    ShotDetect(TSCstat *preAnalysis, Ipp32s position)    {
+    NGV_Bool    ShotDetect(TSCstat *preAnalysis, Ipp32s position)    
+    {
         Ipp32s        current                    =    position,
             past                    =    position - 1;
         Ipp64f        DAFD                    =    0.0,

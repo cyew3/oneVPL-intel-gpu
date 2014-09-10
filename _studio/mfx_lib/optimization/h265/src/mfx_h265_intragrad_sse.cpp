@@ -301,7 +301,7 @@ static void BuildHistogramEdge(const mfxU8 *frame, mfxU16 *hist, mfxI32 blockX, 
  *   but might be necessary to use 32-bit for 8x8 (consider max value of 64*(abs(dx)+abs(y)))
  * for now saturate to 2^16 - 1
  */
-static void Generate8x8(const mfxU8 *inData, mfxU16 *outData4, mfxU16 *outData8, mfxI32 width, mfxI32 height)
+static void Generate8x8(mfxU16 *outData4, mfxU16 *outData8, mfxI32 width, mfxI32 height)
 {
     mfxI32 x, y, i, t, xBlocks4, yBlocks4, xBlocks8, yBlocks8;
     mfxU16 *pDst, *pDst8;
@@ -342,64 +342,124 @@ static void Generate8x8(const mfxU8 *inData, mfxU16 *outData4, mfxU16 *outData8,
 }
 
 /* width and height must be multiples of 8 */
-void MAKE_NAME(h265_AnalyzeGradient_8u)(const mfxU8 *inData, mfxU16 *outData4, mfxU16 *outData8, mfxI32 width, mfxI32 height, mfxI32 pitch)
+void MAKE_NAME(h265_AnalyzeGradient_8u)(const Ipp8u *src, Ipp32s pitch, Ipp16u *hist4, Ipp16u *hist8, Ipp32s width, Ipp32s height)
 {
-    mfxI32 x, y, xBlocks4, yBlocks4;
-    const mfxU8 *pSrc;
-    mfxU16 *pDst;
-
-    xBlocks4 = width  / 4;
-    yBlocks4 = height / 4;
+    Ipp32s xBlocks4 = width  / 4;
+    Ipp32s yBlocks4 = height / 4;
 
     /* fast path - inner blocks */
-    for (y = 1; y < yBlocks4 - 1; y++) {
-        pSrc  = inData + 4*(y*pitch + 1);
-        pDst = outData4 + (y*xBlocks4 + 1) * HIST_MAX;
-        for (x = 1; x < xBlocks4 - 1; x++) {
+    for (Ipp32s y = 0; y < yBlocks4; y++) {
+        const Ipp8u *pSrc = src + 4 * y * pitch;
+        Ipp16u *pDst = hist4 + y * xBlocks4 * HIST_MAX;
+        for (Ipp32s x = 0; x < xBlocks4; x++) {
             memset(pDst, 0, sizeof(mfxU16) * HIST_MAX);
             BuildHistogramInner(pSrc, pDst, pitch);
-            pSrc  += 4;
+            pSrc += 4;
             pDst += HIST_MAX;
         }
     }
 
-    /* top edge */
-    y = 0;
-    pDst = outData4;
-    for (x = 0; x < xBlocks4; x++) {
-        memset(pDst, 0, sizeof(mfxU16) * HIST_MAX);
-        BuildHistogramEdge(inData, pDst, x*4, y*4, width, height, pitch);
-        pDst += HIST_MAX;
-    }
-
-    /* bottom edge */
-    y = yBlocks4 - 1;
-    pDst = outData4 + y*xBlocks4 * HIST_MAX;
-    for (x = 0; x < xBlocks4; x++) {
-        memset(pDst, 0, sizeof(mfxU16) * HIST_MAX);
-        BuildHistogramEdge(inData, pDst, x*4, y*4, width, height, pitch);
-        pDst += HIST_MAX;
-    }
-
-    /* left edge (corners already done) */
-    x = 0;
-    for (y = 1; y < yBlocks4 - 1; y++) {
-        pDst = outData4 + (y*xBlocks4 + x) * HIST_MAX;
-        memset(pDst, 0, sizeof(mfxU16) * HIST_MAX);
-        BuildHistogramEdge(inData, pDst, x*4, y*4, width, height, pitch);
-    }
-
-    /* right edge (corners already done) */
-    x = xBlocks4 - 1;
-    for (y = 1; y < yBlocks4 - 1; y++) {
-        pDst = outData4 + (y*xBlocks4 + x) * HIST_MAX;
-        memset(pDst, 0, sizeof(mfxU16) * HIST_MAX);
-        BuildHistogramEdge(inData, pDst, x*4, y*4, width, height, pitch);
-    }
-
     /* sum 4x4 histograms to generate 8x8 map */
-    Generate8x8(inData, outData4, outData8, width, height);
+    Generate8x8(hist4, hist8, width, height);
 }
+
+#define MAX_CU_SIZE 64
+
+void MAKE_NAME(h265_ComputeRsCs_8u)(const unsigned char *ySrc, Ipp32s pitchSrc, Ipp32s *lcuRs, Ipp32s *lcuCs, Ipp32s widthCu)
+{
+    Ipp32s cuSize = widthCu;
+    Ipp32s cuPitch = MAX_CU_SIZE >> 2;
+    Ipp32s i, j, k1, k2;
+    Ipp32s p2 = pitchSrc << 1;
+    Ipp32s p3 = p2 + pitchSrc;
+    Ipp32s p4 = pitchSrc << 2;
+    const unsigned char *pSrcG = ySrc - pitchSrc - 1;
+    const unsigned char *pSrc;
+
+    __m128i xmm1, xmm2, xmm3, xmm4, xmm5, xmm6, xmm7, xmm8, xmm9;
+    __m128i xmm10, xmm11, xmm12, xmm13, xmm14;
+
+    k1 = 0;
+    for(i = 0; i < cuSize; i += 4)
+    { 
+        k2 = k1;
+        pSrc = pSrcG;
+        for(j = 0; j < cuSize; j += 8)
+        {
+            xmm5  = _mm_loadu_si128((__m128i *)&pSrc[0]); 
+            xmm7  = _mm_loadu_si128((__m128i *)&pSrc[pitchSrc]); 
+            xmm9  = _mm_loadu_si128((__m128i *)&pSrc[p2]); 
+            xmm11 = _mm_loadu_si128((__m128i *)&pSrc[p3]); 
+            xmm13 = _mm_loadu_si128((__m128i *)&pSrc[p4]); 
+
+            xmm6 = _mm_srli_si128 (xmm5, 1);    // 1 pixel shift
+            xmm5 = _mm_cvtepu8_epi16(xmm5);
+            xmm6 = _mm_cvtepu8_epi16(xmm6);
+
+            xmm8 = _mm_srli_si128 (xmm7, 1);
+            xmm7 = _mm_cvtepu8_epi16(xmm7);
+            xmm8 = _mm_cvtepu8_epi16(xmm8);
+
+            xmm10 = _mm_srli_si128 (xmm9, 1);
+            xmm9  = _mm_cvtepu8_epi16(xmm9);
+            xmm10 = _mm_cvtepu8_epi16(xmm10);
+
+            xmm12 = _mm_srli_si128 (xmm11, 1);
+            xmm11 = _mm_cvtepu8_epi16(xmm11);
+            xmm12 = _mm_cvtepu8_epi16(xmm12);
+
+            xmm14 = _mm_srli_si128 (xmm13, 1);
+            xmm13 = _mm_cvtepu8_epi16(xmm13);
+            xmm14 = _mm_cvtepu8_epi16(xmm14);
+
+            // Cs
+            xmm1 = _mm_sub_epi16(xmm8, xmm7);
+            xmm1 = _mm_madd_epi16(xmm1, xmm1);
+
+            xmm2 = _mm_sub_epi16(xmm10, xmm9);
+            xmm2 = _mm_madd_epi16(xmm2, xmm2);
+            xmm1 = _mm_add_epi32(xmm1, xmm2);
+
+            xmm2 = _mm_sub_epi16(xmm12, xmm11);
+            xmm2 = _mm_madd_epi16(xmm2, xmm2);
+            xmm1 = _mm_add_epi32(xmm1, xmm2);
+
+            xmm2 = _mm_sub_epi16(xmm14, xmm13);
+            xmm2 = _mm_madd_epi16(xmm2, xmm2);
+            xmm1 = _mm_add_epi32(xmm1, xmm2);
+            
+            xmm1 = _mm_hadd_epi32(xmm1, xmm1);
+            xmm1 = _mm_srli_epi32 (xmm1, 4);
+            _mm_storel_epi64((__m128i *)(lcuCs+k2), xmm1);
+
+            // Rs 
+            xmm3 = _mm_sub_epi16(xmm8, xmm6);
+            xmm3 = _mm_madd_epi16(xmm3, xmm3);
+
+            xmm4 = _mm_sub_epi16(xmm10, xmm8);
+            xmm4 = _mm_madd_epi16(xmm4, xmm4);
+            xmm3 = _mm_add_epi32(xmm3, xmm4);
+
+            xmm4 = _mm_sub_epi16(xmm12, xmm10);
+            xmm4 = _mm_madd_epi16(xmm4, xmm4);
+            xmm3  = _mm_add_epi32(xmm3, xmm4);
+
+            xmm4 = _mm_sub_epi16(xmm14, xmm12);
+            xmm4 = _mm_madd_epi16(xmm4, xmm4);
+            xmm3  = _mm_add_epi32(xmm3, xmm4);
+
+            xmm3 = _mm_hadd_epi32(xmm3, xmm3);
+            xmm3 = _mm_srli_epi32 (xmm3, 4);
+            _mm_storel_epi64((__m128i *)(lcuRs+k2), xmm3);
+
+            pSrc += 8;
+            k2 += 2;
+        }
+        k1 += cuPitch;
+        pSrcG += p4;
+    }
+}
+
 
 }; // namespace MFX_HEVC_PP
 

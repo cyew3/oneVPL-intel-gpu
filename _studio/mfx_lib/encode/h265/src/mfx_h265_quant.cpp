@@ -184,30 +184,28 @@ Ipp32s h265_quant_getSigCtxInc(Ipp32s pattern_sig_ctx,
 }
 
 template <typename PixType>
-void H265CU<PixType>::QuantInvTu(Ipp32u abs_part_idx, Ipp32s offset, Ipp32s width, Ipp32s is_luma)
+void H265CU<PixType>::QuantInvTu(Ipp32s abs_part_idx, Ipp32s offset, Ipp32s width, Ipp32s qp, Ipp32s is_luma)
 {
-    Ipp32s QP = is_luma ? m_data[abs_part_idx].qp  + (m_par->bitDepthLuma - 8) * 6 : 
-        h265_QPtoChromaQP[m_data[abs_part_idx].qp] + (m_par->bitDepthChroma - 8) * 6;
+    Ipp32s QP = is_luma
+        ? qp  + (m_par->bitDepthLuma - 8) * 6
+        : h265_QPtoChromaQP[m_par->chromaFormatIdc-1][qp] + (m_par->bitDepthChroma - 8) * 6;
     Ipp32s log2TrSize = h265_log2m2[width] + 2;
 
     VM_ASSERT(!m_par->csps->sps_scaling_list_data_present_flag);
 
     for (Ipp32s c_idx = 0; c_idx < (is_luma ? 1 : 2); c_idx ++) {
         CoeffsType *residuals = is_luma ? m_residualsY : (c_idx ? m_residualsV : m_residualsU);
-        CoeffsType *coeff = is_luma ? m_trCoeffY : (c_idx ? m_trCoeffV : m_trCoeffU);
+        CoeffsType *coeff = is_luma ? m_coeffWorkY : (c_idx ? m_coeffWorkV : m_coeffWorkU);
         h265_quant_inv(coeff + offset, NULL, residuals + offset, log2TrSize, is_luma ? m_par->bitDepthLuma : m_par->bitDepthChroma, QP);
     }
 }
 
 template <typename PixType>
-void H265CU<PixType>::QuantFwdTu(
-    Ipp32u abs_part_idx,
-    Ipp32s offset,
-    Ipp32s width,
-    Ipp32s is_luma)
+void H265CU<PixType>::QuantFwdTu(Ipp32s abs_part_idx, Ipp32s offset, Ipp32s width, Ipp32s qp, Ipp32s is_luma)
 {
-    Ipp32s QP = is_luma ? m_data[abs_part_idx].qp + (m_par->bitDepthLuma - 8) * 6 :
-        h265_QPtoChromaQP[m_data[abs_part_idx].qp] + (m_par->bitDepthChroma - 8) * 6;
+    Ipp32s QP = is_luma
+        ? qp + (m_par->bitDepthLuma - 8) * 6
+        : h265_QPtoChromaQP[m_par->chromaFormatIdc-1][qp] + (m_par->bitDepthChroma - 8) * 6;
 
     Ipp32s log2TrSize = h265_log2m2[width] + 2;
 
@@ -215,7 +213,7 @@ void H265CU<PixType>::QuantFwdTu(
 
     for (Ipp32s c_idx = 0; c_idx < (is_luma ? 1 : 2); c_idx ++) {
         CoeffsType *residuals = is_luma ? m_residualsY : (c_idx ? m_residualsV : m_residualsU);
-        CoeffsType *coeff = is_luma ? m_trCoeffY : (c_idx ? m_trCoeffV : m_trCoeffU);
+        CoeffsType *coeff = is_luma ? m_coeffWorkY : (c_idx ? m_coeffWorkV : m_coeffWorkU);
         Ipp32u abs_sum = 0;
 
         if ((is_luma || m_par->rdoqChromaFlag) && m_isRdoq) {

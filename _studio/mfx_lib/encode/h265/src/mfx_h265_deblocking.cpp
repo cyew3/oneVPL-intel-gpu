@@ -63,7 +63,7 @@ void H265CU<PixType>::DeblockOneCrossLuma(Ipp32s curPixelColumn,
     H265EdgeData *edge;
     Ipp32s i, start, end;
 
-    srcDstStride = m_pitchRec;
+    srcDstStride = m_pitchRecLuma;
     baseSrcDst = m_yRec + curPixelRow * srcDstStride + curPixelColumn;
 
     start = 0;
@@ -105,6 +105,7 @@ void H265CU<PixType>::DeblockOneCrossLuma(Ipp32s curPixelColumn,
 static Ipp8u GetChromaQP(
     Ipp8u in_QPy,
     Ipp32s in_QPOffset,
+    Ipp8u chromaFormatIdc,
     Ipp8u in_BitDepthChroma)
 {
     Ipp32s qPc;
@@ -114,7 +115,7 @@ static Ipp8u GetChromaQP(
 
     if (qPc >= 0)
     {
-        qPc = h265_QPtoChromaQP[qPc];
+        qPc = h265_QPtoChromaQP[chromaFormatIdc - 1][qPc];
     }
 
     return (Ipp8u)(qPc + QpBdOffsetC);
@@ -134,19 +135,28 @@ void H265CU<PixType>::DeblockOneCrossChroma(Ipp32s curPixelColumn,
     H265EdgeData *edge;
     Ipp32s i, start, end;
 
-    srcDstStride = m_pitchRec;
-    baseSrcDst = m_uvRec + (curPixelRow >> 1) * srcDstStride + (curPixelColumn);
+    srcDstStride = m_pitchRecChroma;
+    baseSrcDst = m_uvRec + (curPixelRow >> m_par->chromaShiftH) * srcDstStride + (curPixelColumn << m_par->chromaShiftWInv);
 
     start = 0;
     end = 2;
-    if ((Ipp32s)m_ctbPelY + curPixelRow >= frameHeightInSamples - 16)
+    if ((Ipp32s)m_ctbPelY + curPixelRow >= frameHeightInSamples - (8 << m_par->chromaShiftH))
     {
         end = 3;
     }
 
     for (i = start; i < end; i++)
     {
-        edge = &m_edge[y + i][x + 1][0];
+        Ipp32s idxY, idxN;
+        if (m_par->chromaFormatIdc == MFX_CHROMAFORMAT_YUV420) {
+            idxY = y + i;
+            idxN = 0;
+        } else {
+            idxY = y + ((i + 1) >> 1);
+            idxN = (i + 1) & 1;
+        }
+        
+        edge = &m_edge[idxY][x + 1][idxN];
 
         if (edge->strength > 1)
         {
@@ -155,21 +165,29 @@ void H265CU<PixType>::DeblockOneCrossChroma(Ipp32s curPixelColumn,
                 baseSrcDst + 4 * (i - 1) * srcDstStride,
                 srcDstStride,
                 VERT_FILT,
-                GetChromaQP(edge->qp, 0, 8),
-                GetChromaQP(edge->qp, 0, 8),
+                GetChromaQP(edge->qp, 0, m_par->chromaFormatIdc, 8),
+                GetChromaQP(edge->qp, 0, m_par->chromaFormatIdc, 8),
                 m_par->bitDepthChroma);
         }
     }
 
     end = 2;
-    if ((Ipp32s)m_ctbPelX + curPixelColumn >= frameWidthInSamples - 16)
+    if ((Ipp32s)m_ctbPelX + curPixelColumn >= frameWidthInSamples - (8 << m_par->chromaShiftW))
     {
         end = 3;
     }
 
     for (i = 0; i < end; i++)
     {
-        edge = &m_edge[y + 1][x + i][2];
+        Ipp32s idxX, idxN;
+        if ( m_par->chromaFormatIdc != MFX_CHROMAFORMAT_YUV444) {
+            idxX = x + i;
+            idxN = 2;
+        } else {
+            idxX = x + ((i + 1) >> 1);
+            idxN = ((i + 1) & 1) + 2;
+        }
+        edge = &m_edge[y + 1][idxX][idxN];
 
         if (edge->strength > 1)
         {
@@ -178,8 +196,8 @@ void H265CU<PixType>::DeblockOneCrossChroma(Ipp32s curPixelColumn,
                 baseSrcDst + 4 * 2 * (i - 1),
                 srcDstStride,
                 HOR_FILT,
-                GetChromaQP(edge->qp, 0, 8),
-                GetChromaQP(edge->qp, 0, 8),
+                GetChromaQP(edge->qp, 0, m_par->chromaFormatIdc, 8),
+                GetChromaQP(edge->qp, 0, m_par->chromaFormatIdc, 8),
                 m_par->bitDepthChroma);
         }
     }
@@ -337,12 +355,12 @@ void H265CU<PixType>::GetEdgeStrength(H265CUPtr *pcCUQptr,
 
         if (numRefsQ == 2)
         {
-            RefPOCQ0 = m_currFrame->m_refPicList[0].m_refFrames[pcCUQ[uiPartQ].refIdx[0]]->m_PicOrderCnt;
-            RefPOCQ1 = m_currFrame->m_refPicList[1].m_refFrames[pcCUQ[uiPartQ].refIdx[1]]->m_PicOrderCnt;
+            RefPOCQ0 = m_currFrame->m_refPicList[0].m_refFrames[pcCUQ[uiPartQ].refIdx[0]]->m_poc;
+            RefPOCQ1 = m_currFrame->m_refPicList[1].m_refFrames[pcCUQ[uiPartQ].refIdx[1]]->m_poc;
             MVQ0 = pcCUQ[uiPartQ].mv[0];
             MVQ1 = pcCUQ[uiPartQ].mv[1];
-            RefPOCP0 = m_currFrame->m_refPicList[0].m_refFrames[pcCUP[uiPartP].refIdx[0]]->m_PicOrderCnt;
-            RefPOCP1 = m_currFrame->m_refPicList[1].m_refFrames[pcCUP[uiPartP].refIdx[1]]->m_PicOrderCnt;
+            RefPOCP0 = m_currFrame->m_refPicList[0].m_refFrames[pcCUP[uiPartP].refIdx[0]]->m_poc;
+            RefPOCP1 = m_currFrame->m_refPicList[1].m_refFrames[pcCUP[uiPartP].refIdx[1]]->m_poc;
             MVP0 = pcCUP[uiPartP].mv[0];
             MVP1 = pcCUP[uiPartP].mv[1];
 
@@ -380,20 +398,20 @@ void H265CU<PixType>::GetEdgeStrength(H265CUPtr *pcCUQptr,
         else
         {
             if (pcCUQ[uiPartQ].refIdx[REF_PIC_LIST_0] >= 0) {
-                RefPOCQ0 = m_currFrame->m_refPicList[0].m_refFrames[pcCUQ[uiPartQ].refIdx[0]]->m_PicOrderCnt;
+                RefPOCQ0 = m_currFrame->m_refPicList[0].m_refFrames[pcCUQ[uiPartQ].refIdx[0]]->m_poc;
                 MVQ0 = pcCUQ[uiPartQ].mv[0];
             }
             else {
-                RefPOCQ0 = m_currFrame->m_refPicList[1].m_refFrames[pcCUQ[uiPartQ].refIdx[1]]->m_PicOrderCnt;
+                RefPOCQ0 = m_currFrame->m_refPicList[1].m_refFrames[pcCUQ[uiPartQ].refIdx[1]]->m_poc;
                 MVQ0 = pcCUQ[uiPartQ].mv[1];
             }
 
             if (pcCUP[uiPartP].refIdx[0] >= 0) {
-                RefPOCP0 = m_currFrame->m_refPicList[0].m_refFrames[pcCUP[uiPartP].refIdx[0]]->m_PicOrderCnt;
+                RefPOCP0 = m_currFrame->m_refPicList[0].m_refFrames[pcCUP[uiPartP].refIdx[0]]->m_poc;
                 MVP0 = pcCUP[uiPartP].mv[0];
             }
             else {
-                RefPOCP0 = m_currFrame->m_refPicList[1].m_refFrames[pcCUP[uiPartP].refIdx[1]]->m_PicOrderCnt;
+                RefPOCP0 = m_currFrame->m_refPicList[1].m_refFrames[pcCUP[uiPartP].refIdx[1]]->m_poc;
                 MVP0 = pcCUP[uiPartP].mv[1];
             }
 
@@ -435,7 +453,7 @@ void H265CU<PixType>::SetEdges(Ipp32s width,
     betaOffset = m_cslice->slice_beta_offset_div2 << 1;
 
     H265CUPtr aboveLCU;
-    GetPuAbove(&aboveLCU, 0, 0, /*false, false,*/ false/*, 0*/);
+    GetPuAbove(&aboveLCU, 0, !crossSliceBoundaryFlag, /*false, false,*/ false/*, 0*/);
 
 // uncomment to hide false uninitialized memory read warning
 //    memset(&edge, 0, sizeof(edge));
@@ -469,7 +487,7 @@ void H265CU<PixType>::SetEdges(Ipp32s width,
     }
 
     H265CUPtr leftLCU;
-    GetPuLeft(&leftLCU, 0, 0/*, false, 0*/);
+    GetPuLeft(&leftLCU, 0, !crossSliceBoundaryFlag/*, false, 0*/);
 
     if (leftLCU.ctbData)
     {
@@ -563,9 +581,9 @@ void H265CU<PixType>::Deblock()
         }
     }
 
-    for (j = 0; j < height; j += 16)
+    for (j = 0; j < height; j += (8 << m_par->chromaShiftH))
     {
-        for (i = 0; i < width; i += 16)
+        for (i = 0; i < width; i += (8 << m_par->chromaShiftW))
         {
             DeblockOneCrossChroma(i, j);
         }

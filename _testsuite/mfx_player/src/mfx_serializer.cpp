@@ -272,6 +272,8 @@ void MFXStructureRef <mfxExtCodingOptionHEVC>::ConstructValues() const
     SERIALIZE_INT(RDOQuantChroma);
     SERIALIZE_INT(RDOQuantCGZ);
     SERIALIZE_INT(CostChroma);
+    SERIALIZE_INT(IntraChromaRDO);
+    SERIALIZE_INT(FastInterp);
     SERIALIZE_INT(SaoOpt);
     SERIALIZE_INT(PatternIntPel);
     SERIALIZE_INT(FastSkip);
@@ -280,10 +282,21 @@ void MFXStructureRef <mfxExtCodingOptionHEVC>::ConstructValues() const
     SERIALIZE_INT(FastCbfMode);
     SERIALIZE_INT(PuDecisionSatd);
     SERIALIZE_INT(MinCUDepthAdapt);
+    SERIALIZE_INT(MaxCUDepthAdapt);
     SERIALIZE_INT(NumBiRefineIter);
     SERIALIZE_INT(CUSplitThreshold);
     SERIALIZE_INT(DeltaQpMode);
     SERIALIZE_INT(Enable10bit);
+    SERIALIZE_INT(IntraAngModesP);
+    SERIALIZE_INT(IntraAngModesBRef);
+    SERIALIZE_INT(IntraAngModesBnonRef);
+    SERIALIZE_INT(SplitThresholdTabIndex);
+    SERIALIZE_INT(CpuFeature);
+    SERIALIZE_INT(TryIntra);
+    SERIALIZE_INT(FastAMPSkipME);
+    SERIALIZE_INT(FastAMPRD);
+    SERIALIZE_INT(SkipMotionPartition);
+    SERIALIZE_INT(SkipCandRD);
 }
 
 void MFXStructureRef <mfxExtCodingOptionVP8Param>::ConstructValues() const
@@ -428,6 +441,13 @@ void MFXStructureRef <mfxInfoMFX>::ConstructValues () const
         else if (MFX_RATECONTROL_LA == m_pStruct->RateControlMethod)
         {
             SERIALIZE_INT(TargetKbps);
+        }
+        else if (MFX_RATECONTROL_LA_HRD == m_pStruct->RateControlMethod)
+        {
+            SERIALIZE_INT(InitialDelayInKB);
+            SERIALIZE_INT(BufferSizeInKB);
+            SERIALIZE_INT(TargetKbps);
+            SERIALIZE_INT(MaxKbps);
         }
         else if (MFX_RATECONTROL_ICQ == m_pStruct->RateControlMethod || MFX_RATECONTROL_LA_ICQ == m_pStruct->RateControlMethod)
         {

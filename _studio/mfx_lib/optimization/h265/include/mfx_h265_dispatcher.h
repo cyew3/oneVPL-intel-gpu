@@ -331,6 +331,22 @@ namespace MFX_HEVC_PP
     void H265_FASTCALL h265_SATD_8x8_Pair_8u_sse (const Ipp8u* pSrcCur, int srcCurStep, const Ipp8u* pSrcRef, int srcRefStep, Ipp32s* satdPair);
     void H265_FASTCALL h265_SATD_8x8_Pair_8u_avx2(const Ipp8u* pSrcCur, int srcCurStep, const Ipp8u* pSrcRef, int srcRefStep, Ipp32s* satdPair);
 
+    Ipp32s H265_FASTCALL h265_SATD_4x4_16u_px  (const Ipp16u* pSrcCur, int srcCurStep, const Ipp16u* pSrcRef, int srcRefStep);
+    Ipp32s H265_FASTCALL h265_SATD_4x4_16u_sse (const Ipp16u* pSrcCur, int srcCurStep, const Ipp16u* pSrcRef, int srcRefStep);
+    Ipp32s H265_FASTCALL h265_SATD_4x4_16u_avx2(const Ipp16u* pSrcCur, int srcCurStep, const Ipp16u* pSrcRef, int srcRefStep);
+
+    Ipp32s H265_FASTCALL h265_SATD_8x8_16u_px  (const Ipp16u* pSrcCur, int srcCurStep, const Ipp16u* pSrcRef, int srcRefStep);
+    Ipp32s H265_FASTCALL h265_SATD_8x8_16u_sse (const Ipp16u* pSrcCur, int srcCurStep, const Ipp16u* pSrcRef, int srcRefStep);
+    Ipp32s H265_FASTCALL h265_SATD_8x8_16u_avx2(const Ipp16u* pSrcCur, int srcCurStep, const Ipp16u* pSrcRef, int srcRefStep);
+
+    void H265_FASTCALL h265_SATD_4x4_Pair_16u_px  (const Ipp16u* pSrcCur, int srcCurStep, const Ipp16u* pSrcRef, int srcRefStep, Ipp32s* satdPair);
+    void H265_FASTCALL h265_SATD_4x4_Pair_16u_sse (const Ipp16u* pSrcCur, int srcCurStep, const Ipp16u* pSrcRef, int srcRefStep, Ipp32s* satdPair);
+    void H265_FASTCALL h265_SATD_4x4_Pair_16u_avx2(const Ipp16u* pSrcCur, int srcCurStep, const Ipp16u* pSrcRef, int srcRefStep, Ipp32s* satdPair);
+
+    void H265_FASTCALL h265_SATD_8x8_Pair_16u_px  (const Ipp16u* pSrcCur, int srcCurStep, const Ipp16u* pSrcRef, int srcRefStep, Ipp32s* satdPair);
+    void H265_FASTCALL h265_SATD_8x8_Pair_16u_sse (const Ipp16u* pSrcCur, int srcCurStep, const Ipp16u* pSrcRef, int srcRefStep, Ipp32s* satdPair);
+    void H265_FASTCALL h265_SATD_8x8_Pair_16u_avx2(const Ipp16u* pSrcCur, int srcCurStep, const Ipp16u* pSrcRef, int srcRefStep, Ipp32s* satdPair);
+
     // [transform.forward]
     void H265_FASTCALL h265_DST4x4Fwd_16s_px(const short *H265_RESTRICT src, short *H265_RESTRICT dst, Ipp32u bitDepth);
     void H265_FASTCALL h265_DCT4x4Fwd_16s_px(const short *H265_RESTRICT src, short *H265_RESTRICT dst, Ipp32u bitDepth);
@@ -434,105 +450,30 @@ namespace MFX_HEVC_PP
 
     void h265_GetCtuStatistics_8u_px( SAOCU_ENCODE_PARAMETERS_LIST );
     void h265_GetCtuStatistics_8u_sse( SAOCU_ENCODE_PARAMETERS_LIST );
+
     // [INTRA predict]
-    void h265_PredictIntra_Ang_8u_px(
-        Ipp32s mode,
-        Ipp8u* PredPel,
-        Ipp8u* pels,
-        Ipp32s pitch,
-        Ipp32s width);
-
-    void h265_PredictIntra_Ang_8u_sse(
-        Ipp32s mode,
-        Ipp8u* PredPel,
-        Ipp8u* pels,
-        Ipp32s pitch,
-        Ipp32s width);
-
-    void h265_PredictIntra_Ang_8u_ssse3(
-        Ipp32s mode,
-        Ipp8u* PredPel,
-        Ipp8u* pels,
-        Ipp32s pitch,
-        Ipp32s width);
-    
-    void h265_PredictIntra_Ang_All_8u_px(
-        Ipp8u* PredPel,
-        Ipp8u* FiltPel,
-        Ipp8u* pels,
-        Ipp32s width);
-
-    void h265_PredictIntra_Ang_All_8u_sse(
-        Ipp8u* PredPel,
-        Ipp8u* FiltPel,
-        Ipp8u* pels,
-        Ipp32s width);
-
-    void h265_PredictIntra_Ang_All_8u_ssse3(
-        Ipp8u* PredPel,
-        Ipp8u* FiltPel,
-        Ipp8u* pels,
-        Ipp32s width);
-
-    void h265_PredictIntra_Ang_NoTranspose_8u_px(
-        Ipp32s mode,
-        Ipp8u* PredPel,
-        Ipp8u* pels,
-        Ipp32s pitch,
-        Ipp32s width);
-
-    void h265_PredictIntra_Ang_NoTranspose_8u_sse(
-        Ipp32s mode,
-        Ipp8u* PredPel,
-        Ipp8u* pels,
-        Ipp32s pitch,
-        Ipp32s width);
-
-    void h265_PredictIntra_Ang_NoTranspose_8u_ssse3(
-        Ipp32s mode,
-        Ipp8u* PredPel,
-        Ipp8u* pels,
-        Ipp32s pitch,
-        Ipp32s width);
-    
-    void h265_PredictIntra_Ang_All_Even_8u_px(
-        Ipp8u* PredPel,
-        Ipp8u* FiltPel,
-        Ipp8u* pels,
-        Ipp32s width);
-
-    void h265_PredictIntra_Ang_All_Even_8u_sse(
-        Ipp8u* PredPel,
-        Ipp8u* FiltPel,
-        Ipp8u* pels,
-        Ipp32s width);
-
-    void h265_PredictIntra_Ang_All_Even_8u_ssse3(
-        Ipp8u* PredPel,
-        Ipp8u* FiltPel,
-        Ipp8u* pels,
-        Ipp32s width);
-
-    void h265_PredictIntra_Ang_16u_px(
-        Ipp32s mode,
-        Ipp16u* PredPel,
-        Ipp16u* pels,
-        Ipp32s pitch,
-        Ipp32s width);
-
-    void h265_PredictIntra_Ang_16u_sse(
-        Ipp32s mode,
-        Ipp16u* PredPel,
-        Ipp16u* pels,
-        Ipp32s pitch,
-        Ipp32s width);
-
-    void h265_PredictIntra_Ang_16u_ssse3(
-        Ipp32s mode,
-        Ipp16u* PredPel,
-        Ipp16u* pels,
-        Ipp32s pitch,
-        Ipp32s width);
+    void h265_PredictIntra_Ang_8u_px(Ipp32s mode, Ipp8u* PredPel, Ipp8u* pels, Ipp32s pitch, Ipp32s width);
+    void h265_PredictIntra_Ang_8u_sse(Ipp32s mode, Ipp8u* PredPel, Ipp8u* pels, Ipp32s pitch, Ipp32s width);
+    void h265_PredictIntra_Ang_8u_ssse3(Ipp32s mode, Ipp8u* PredPel, Ipp8u* pels, Ipp32s pitch, Ipp32s width);
+    void h265_PredictIntra_Ang_8u_avx2(Ipp32s mode, Ipp8u* PredPel, Ipp8u* pels, Ipp32s pitch, Ipp32s width);
+    void h265_PredictIntra_Ang_All_8u_px(Ipp8u* PredPel, Ipp8u* FiltPel, Ipp8u* pels, Ipp32s width);
+    void h265_PredictIntra_Ang_All_8u_sse(Ipp8u* PredPel, Ipp8u* FiltPel, Ipp8u* pels, Ipp32s width);
+    void h265_PredictIntra_Ang_All_8u_ssse3(Ipp8u* PredPel, Ipp8u* FiltPel, Ipp8u* pels, Ipp32s width);
+    void h265_PredictIntra_Ang_NoTranspose_8u_px(Ipp32s mode, Ipp8u* PredPel, Ipp8u* pels, Ipp32s pitch, Ipp32s width);
+    void h265_PredictIntra_Ang_NoTranspose_8u_sse(Ipp32s mode, Ipp8u* PredPel, Ipp8u* pels, Ipp32s pitch, Ipp32s width);
+    void h265_PredictIntra_Ang_NoTranspose_8u_ssse3(Ipp32s mode, Ipp8u* PredPel, Ipp8u* pels, Ipp32s pitch, Ipp32s width);
+    void h265_PredictIntra_Ang_NoTranspose_8u_avx2(Ipp32s mode, Ipp8u* PredPel, Ipp8u* pels, Ipp32s pitch, Ipp32s width);
+    void h265_PredictIntra_Ang_All_Even_8u_px(Ipp8u* PredPel, Ipp8u* FiltPel, Ipp8u* pels, Ipp32s width);
+    void h265_PredictIntra_Ang_All_Even_8u_sse(Ipp8u* PredPel, Ipp8u* FiltPel, Ipp8u* pels, Ipp32s width);
+    void h265_PredictIntra_Ang_All_Even_8u_ssse3(Ipp8u* PredPel, Ipp8u* FiltPel, Ipp8u* pels, Ipp32s width);
+    void h265_PredictIntra_Ang_16u_px(Ipp32s mode, Ipp16u* PredPel, Ipp16u* pels, Ipp32s pitch, Ipp32s width);
+    void h265_PredictIntra_Ang_16u_sse(Ipp32s mode, Ipp16u* PredPel, Ipp16u* pels, Ipp32s pitch, Ipp32s width);
+    void h265_PredictIntra_Ang_16u_ssse3(Ipp32s mode, Ipp16u* PredPel, Ipp16u* pels, Ipp32s pitch, Ipp32s width);
+    void h265_PredictIntra_Ang_16u_avx2(Ipp32s mode, Ipp16u* PredPel, Ipp16u* pels, Ipp32s pitch, Ipp32s width);
+    void h265_PredictIntra_Ang_NoTranspose_16u_px(Ipp32s mode, Ipp16u* PredPel, Ipp16u* pels, Ipp32s pitch, Ipp32s width);
+    void h265_PredictIntra_Ang_NoTranspose_16u_sse(Ipp32s mode, Ipp16u* PredPel, Ipp16u* pels, Ipp32s pitch, Ipp32s width);
+    void h265_PredictIntra_Ang_NoTranspose_16u_ssse3(Ipp32s mode, Ipp16u* PredPel, Ipp16u* pels, Ipp32s pitch, Ipp32s width);
+    void h265_PredictIntra_Ang_NoTranspose_16u_avx2(Ipp32s mode, Ipp16u* PredPel, Ipp16u* pels, Ipp32s pitch, Ipp32s width);
 
     void h265_FilterPredictPels_8u_px(Ipp8u* PredPel, Ipp32s width);
     void h265_FilterPredictPels_8u_sse(Ipp8u* PredPel, Ipp32s width);
@@ -558,9 +499,14 @@ namespace MFX_HEVC_PP
     void h265_PredictIntra_Planar_16s_sse(Ipp16s* PredPel, Ipp16s* pels, Ipp32s pitch, Ipp32s width);
     void h265_PredictIntra_Planar_16s_avx2(Ipp16s* PredPel, Ipp16s* pels, Ipp32s pitch, Ipp32s width);
 
-    void h265_AnalyzeGradient_8u_px  (const mfxU8 *inData, mfxU16 *outData4, mfxU16 *outData8, mfxI32 width, mfxI32 height, mfxI32 pitch);
-    void h265_AnalyzeGradient_8u_sse (const mfxU8 *inData, mfxU16 *outData4, mfxU16 *outData8, mfxI32 width, mfxI32 height, mfxI32 pitch);
-    void h265_AnalyzeGradient_8u_avx2(const mfxU8 *inData, mfxU16 *outData4, mfxU16 *outData8, mfxI32 width, mfxI32 height, mfxI32 pitch);
+    template <class PixType, class HistType>
+    void h265_AnalyzeGradient_px(const PixType* src, Ipp32s pitch, HistType* hist4, HistType* hist8, Ipp32s width, Ipp32s height);
+    void h265_AnalyzeGradient_8u_sse (const Ipp8u* src, Ipp32s pitch, Ipp16u* hist4, Ipp16u* hist8, Ipp32s width, Ipp32s height);
+    void h265_AnalyzeGradient_8u_avx2(const Ipp8u* src, Ipp32s pitch, Ipp16u* hist4, Ipp16u* hist8, Ipp32s width, Ipp32s height);
+    
+    template <class PixType>
+    void h265_ComputeRsCs_px(const PixType* ySrc, Ipp32s pitchSrc, Ipp32s *lcuRs, Ipp32s *lcuCs, Ipp32s widthCu);
+    void h265_ComputeRsCs_8u_sse (const Ipp8u *ySrc, Ipp32s pitchSrc, Ipp32s *lcuRs, Ipp32s *lcuCs, Ipp32s widthCu);
 
     // Interpolation
     void h265_InterpLuma_s8_d16_H_px(INTERP_S8_D16_PARAMETERS_LIST);
@@ -568,6 +514,17 @@ namespace MFX_HEVC_PP
     void h265_InterpLuma_s8_d16_H_ssse3(INTERP_S8_D16_PARAMETERS_LIST);
     void h265_InterpLuma_s8_d16_H_atom(INTERP_S8_D16_PARAMETERS_LIST);
     void h265_InterpLuma_s8_d16_H_avx2(INTERP_S8_D16_PARAMETERS_LIST);
+    // 4-tap filter -1,5,5,-1
+    void h265_InterpLumaFast_s8_d16_H_px(INTERP_S8_D16_PARAMETERS_LIST);
+    void h265_InterpLumaFast_s8_d16_H_sse(INTERP_S8_D16_PARAMETERS_LIST);
+    void h265_InterpLumaFast_s8_d16_H_ssse3(INTERP_S8_D16_PARAMETERS_LIST);
+    void h265_InterpLumaFast_s8_d16_H_atom(INTERP_S8_D16_PARAMETERS_LIST);
+    void h265_InterpLumaFast_s8_d16_H_avx2(INTERP_S8_D16_PARAMETERS_LIST);
+
+    // pack intermediate interpolation pels s16 to u8/u16
+    template <typename PixType> void h265_InterpLumaPack_px(const Ipp16s *src, Ipp32s pitchSrc, PixType *dst, Ipp32s pitchDst, Ipp32s width, Ipp32s height, Ipp32s bitDepth);
+    template <typename PixType> void h265_InterpLumaPack_sse(const Ipp16s *src, Ipp32s pitchSrc, PixType *dst, Ipp32s pitchDst, Ipp32s width, Ipp32s height, Ipp32s bitDepth);
+    template <typename PixType> void h265_InterpLumaPack_avx2(const Ipp16s *src, Ipp32s pitchSrc, PixType *dst, Ipp32s pitchDst, Ipp32s width, Ipp32s height, Ipp32s bitDepth);
 
     void h265_InterpChroma_s8_d16_H_px(INTERP_S8_D16_PARAMETERS_LIST, int plane);
     void h265_InterpChroma_s8_d16_H_sse(INTERP_S8_D16_PARAMETERS_LIST, int plane);
@@ -579,7 +536,13 @@ namespace MFX_HEVC_PP
     void h265_InterpLuma_s8_d16_V_sse(INTERP_S8_D16_PARAMETERS_LIST);
     void h265_InterpLuma_s8_d16_V_ssse3(INTERP_S8_D16_PARAMETERS_LIST);    
     void h265_InterpLuma_s8_d16_V_atom(INTERP_S8_D16_PARAMETERS_LIST);    
-    void h265_InterpLuma_s8_d16_V_avx2(INTERP_S8_D16_PARAMETERS_LIST);    
+    void h265_InterpLuma_s8_d16_V_avx2(INTERP_S8_D16_PARAMETERS_LIST);
+    // 4-tap filter -1 5 5 -1
+    void h265_InterpLumaFast_s8_d16_V_px(INTERP_S8_D16_PARAMETERS_LIST);
+    void h265_InterpLumaFast_s8_d16_V_sse(INTERP_S8_D16_PARAMETERS_LIST);
+    void h265_InterpLumaFast_s8_d16_V_ssse3(INTERP_S8_D16_PARAMETERS_LIST);    
+    void h265_InterpLumaFast_s8_d16_V_atom(INTERP_S8_D16_PARAMETERS_LIST);    
+    void h265_InterpLumaFast_s8_d16_V_avx2(INTERP_S8_D16_PARAMETERS_LIST);    
 
     void h265_InterpChroma_s8_d16_V_px(INTERP_S8_D16_PARAMETERS_LIST);
     void h265_InterpChroma_s8_d16_V_sse(INTERP_S8_D16_PARAMETERS_LIST);
@@ -593,6 +556,14 @@ namespace MFX_HEVC_PP
     void h265_InterpLuma_s16_d16_V_atom(INTERP_S16_D16_PARAMETERS_LIST);
     void h265_InterpLuma_s16_d16_V_avx2(INTERP_S16_D16_PARAMETERS_LIST);
     
+    //kolya
+    void h265_InterpLumaFast_s16_d16_V_px(INTERP_S16_D16_PARAMETERS_LIST);
+    void h265_InterpLumaFast_s16_d16_V_sse(INTERP_S16_D16_PARAMETERS_LIST);
+    void h265_InterpLumaFast_s16_d16_V_ssse3(INTERP_S16_D16_PARAMETERS_LIST);
+    void h265_InterpLumaFast_s16_d16_V_atom(INTERP_S16_D16_PARAMETERS_LIST);
+    void h265_InterpLumaFast_s16_d16_V_avx2(INTERP_S16_D16_PARAMETERS_LIST);
+
+
     void h265_InterpChroma_s16_d16_V_px(INTERP_S16_D16_PARAMETERS_LIST);
     void h265_InterpChroma_s16_d16_V_sse(INTERP_S16_D16_PARAMETERS_LIST);
     void h265_InterpChroma_s16_d16_V_ssse3(INTERP_S16_D16_PARAMETERS_LIST);
@@ -624,6 +595,14 @@ namespace MFX_HEVC_PP
     void h265_InterpLuma_s16_d16_H_ssse3(INTERP_S16_D16_PARAMETERS_LIST);
     void h265_InterpLuma_s16_d16_H_atom(INTERP_S16_D16_PARAMETERS_LIST);
     void h265_InterpLuma_s16_d16_H_avx2(INTERP_S16_D16_PARAMETERS_LIST);
+
+    //FastInterp   //kolya
+    void h265_InterpLumaFast_s16_d16_H_px(INTERP_S16_D16_PARAMETERS_LIST);
+    void h265_InterpLumaFast_s16_d16_H_sse(INTERP_S16_D16_PARAMETERS_LIST);
+    void h265_InterpLumaFast_s16_d16_H_ssse3(INTERP_S16_D16_PARAMETERS_LIST);
+    void h265_InterpLumaFast_s16_d16_H_atom(INTERP_S16_D16_PARAMETERS_LIST);
+    void h265_InterpLumaFast_s16_d16_H_avx2(INTERP_S16_D16_PARAMETERS_LIST);
+
     
     void h265_InterpChroma_s16_d16_H_px(INTERP_S16_D16_PARAMETERS_LIST, int plane);
     void h265_InterpChroma_s16_d16_H_sse(INTERP_S16_D16_PARAMETERS_LIST, int plane);

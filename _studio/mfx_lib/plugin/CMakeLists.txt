@@ -205,7 +205,7 @@ foreach( variant sw hw)
     umc_io_merged_${variant}
     umc_core_merged 
     ${ITT_LIBS}
-    ippmsdk_l ippj_l ippvc_l ippcc_l ippcv_l ippi_l ipps_l ippcore_l
+    ippmsdk_l ippdc_l ippj_l ippvc_l ippcc_l ippcv_l ippi_l ipps_l ippcore_l
     pthread
     dl
     va
@@ -277,7 +277,7 @@ foreach( variant sw hw )
     umc_io_merged_${variant}
     umc_core_merged
     ${ITT_LIBS}
-    ippmsdk_l ippj_l ippvc_l ippcc_l ippcv_l ippi_l ipps_l ippcore_l
+    ippmsdk_l ippdc_l ippj_l ippvc_l ippcc_l ippcv_l ippi_l ipps_l ippcore_l
     pthread
     dl
     )
@@ -299,7 +299,7 @@ foreach( variant sw hw )
     umc_io_merged_${variant}
     umc_core_merged 
     ${ITT_LIBS}
-    ippmsdk_l ippj_l ippvc_l ippcc_l ippcv_l ippi_l ipps_l ippcore_l
+    ippmsdk_l ippdc_l ippj_l ippvc_l ippcc_l ippcv_l ippi_l ipps_l ippcore_l
     pthread
     dl
     )
