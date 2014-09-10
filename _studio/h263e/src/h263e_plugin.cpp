@@ -79,9 +79,9 @@ MFX_H263E_Plugin::MFX_H263E_Plugin(bool CreateByDispatcher)
   m_createdByDispatcher = CreateByDispatcher;
 
   memset(&m_mfxpar, 0, sizeof(m_mfxpar));
+  memset(&m_dst, 0, sizeof(m_dst));
 
   m_frame_order = 0;
-  m_inframe = NULL;
 }
 
 mfxStatus MFX_H263E_Plugin::PluginInit(mfxCoreInterface * pCore)
@@ -169,16 +169,17 @@ mfxStatus MFX_H263E_Plugin::EncodeFrameSubmit(
 
   UMC::VideoData in;
   UMC::MediaData out;
+  mfxFrameSurface1 src;
 
   if (surface) {
     if (surface->Info.FourCC == MFX_FOURCC_NV12) {
-      if (!surface->Data.Y || !surface->Data.UV) {
+      if ((!surface->Data.Y || !surface->Data.UV) && !surface->Data.MemId) {
         sts = MFX_ERR_UNDEFINED_BEHAVIOR;
         DBG_LEAVE_STS(sts);
         return sts;
       }
     } else if (surface->Info.FourCC == MFX_FOURCC_YV12) {
-      if (!surface->Data.Y || !surface->Data.U || !surface->Data.V) {
+      if ((!surface->Data.Y || !surface->Data.U || !surface->Data.V) && !surface->Data.MemId) {
         sts = MFX_ERR_UNDEFINED_BEHAVIOR;
         DBG_LEAVE_STS(sts);
         return sts;
@@ -188,67 +189,63 @@ mfxStatus MFX_H263E_Plugin::EncodeFrameSubmit(
         DBG_LEAVE_STS(sts);
         return sts;
     }
-    in.Init(m_umc_params.m_Param.Width, m_umc_params.m_Param.Height, UMC::YUV420, 8);
-    if (surface->Info.FourCC == MFX_FOURCC_NV12) {
-      mfxU8* y = (mfxU8*)m_inframe;
-      mfxU8* u = (mfxU8*)m_inframe + m_video.mfx.FrameInfo.Width*m_video.mfx.FrameInfo.Height;
-      mfxU8* v = (mfxU8*)m_inframe + m_video.mfx.FrameInfo.Width*m_video.mfx.FrameInfo.Height*5/4;
 
-      in.SetPlanePointer(y, 0);
-      in.SetPlanePointer(u, 1);
-      in.SetPlanePointer(v, 2);
-
-      in.SetPlanePitch(surface->Data.Pitch, 0);
-      in.SetPlanePitch(surface->Data.Pitch/2, 1);
-      in.SetPlanePitch(surface->Data.Pitch/2, 2);
-
-      mfxFrameSurface1 dst;
-      memset(&dst, 0, sizeof(dst));
-      dst.Data.Y = y;
-      dst.Data.U = u;
-      dst.Data.V = v;
-      dst.Data.PitchLow = m_video.mfx.FrameInfo.Width;
-      dst.Data.PitchHigh = 0;
-
-      copy_nv12_to_i420(*surface, dst);
-
-    } else if (surface->Info.FourCC == MFX_FOURCC_YV12) {
-      in.SetPlanePointer(surface->Data.Y, 0);
-      in.SetPlanePointer(surface->Data.U, 1);
-      in.SetPlanePointer(surface->Data.V, 2);
-
-      in.SetPlanePitch(surface->Data.Pitch, 0);
-      in.SetPlanePitch(surface->Data.Pitch/2, 1);
-      in.SetPlanePitch(surface->Data.Pitch/2, 2);
+    memcpy(&src, surface, sizeof(src));
+    if (surface->Data.MemId) {
+      sts = m_pmfxCore->FrameAllocator.Lock(m_pmfxCore->FrameAllocator.pthis, surface->Data.MemId, &src.Data);
+      if (sts != MFX_ERR_NONE) {
+        DBG_LEAVE_STS(sts);
+        return sts;
+      }
     }
+
+    mfxFrameData& data = (surface->Info.FourCC == MFX_FOURCC_YV12)? src.Data: m_dst.Data;
+
+    in.Init(m_umc_params.m_Param.Width, m_umc_params.m_Param.Height, UMC::YUV420, 8);
+
+    in.SetPlanePointer(data.Y, 0);
+    in.SetPlanePointer(data.U, 1);
+    in.SetPlanePointer(data.V, 2);
+
+    in.SetPlanePitch(data.Pitch, 0);
+    in.SetPlanePitch(data.Pitch/2, 1);
+    in.SetPlanePitch(data.Pitch/2, 2);
+
     in.SetTime(m_frame_order/m_umc_params.info.framerate);
+
+    if (surface->Info.FourCC == MFX_FOURCC_NV12) {
+      copy_nv12_to_i420(src, m_dst);
+    }
   }
 
   if ((bitstream->MaxLength - bitstream->DataLength) < m_video.mfx.BufferSizeInKB) {
     sts = MFX_ERR_NOT_ENOUGH_BUFFER;
-    DBG_LEAVE_STS(sts);
-    return sts;
   }
-  out.SetBufferPointer(bitstream->Data + bitstream->DataOffset + bitstream->DataLength,
-                       bitstream->MaxLength - bitstream->DataLength);
-
-  umc_sts = m_umc_encoder.GetFrame((surface)? &in: NULL, &out);
-  DBG_STS(umc_sts);
-
-  if (umc_sts == UMC::UMC_ERR_NOT_ENOUGH_DATA) {
-    sts = MFX_ERR_MORE_DATA;
-  } else if (umc_sts != UMC::UMC_OK) {
-    sts = MFX_ERR_UNDEFINED_BEHAVIOR;
-  }
-
   if (sts == MFX_ERR_NONE) {
-    ++m_frame_order;
+    out.SetBufferPointer(bitstream->Data + bitstream->DataOffset + bitstream->DataLength,
+                         bitstream->MaxLength - bitstream->DataLength);
 
-    DBG_VAL_I(bitstream->DataLength)
-    bitstream->DataLength += (mfxU32)out.GetDataSize();
-    DBG_VAL_I(bitstream->DataLength)
+    umc_sts = m_umc_encoder.GetFrame((surface)? &in: NULL, &out);
+    DBG_STS(umc_sts);
 
-    *task = (mfxThreadTask*)this;
+    if (umc_sts == UMC::UMC_ERR_NOT_ENOUGH_DATA) {
+      sts = MFX_ERR_MORE_DATA;
+    } else if (umc_sts != UMC::UMC_OK) {
+      sts = MFX_ERR_UNDEFINED_BEHAVIOR;
+    }
+
+    if (sts == MFX_ERR_NONE) {
+      ++m_frame_order;
+
+      DBG_VAL_I(bitstream->DataLength)
+      bitstream->DataLength += (mfxU32)out.GetDataSize();
+      DBG_VAL_I(bitstream->DataLength)
+
+      *task = (mfxThreadTask*)this;
+    }
+  }
+  if (surface && surface->Data.MemId) {
+    sts = m_pmfxCore->FrameAllocator.Unlock(m_pmfxCore->FrameAllocator.pthis, surface->Data.MemId, &src.Data);
   }
 
   DBG_LEAVE_STS(sts);
@@ -328,10 +325,17 @@ mfxStatus MFX_H263E_Plugin::Init(mfxVideoParam *par)
   DBG_VAL_I(m_video.mfx.FrameInfo.FrameRateExtD);
 
   if (m_video.mfx.FrameInfo.FourCC == MFX_FOURCC_NV12) {
-    m_inframe = malloc(3*m_video.mfx.FrameInfo.Width*m_video.mfx.FrameInfo.Height/2);
-    if (!m_inframe) {
+    mfxU8* y = (mfxU8*)malloc(3*m_video.mfx.FrameInfo.Width*m_video.mfx.FrameInfo.Height/2);
+    if (!y) {
       return MFX_ERR_MEMORY_ALLOC;
     }
+    memcpy(&m_dst, &m_video.mfx.FrameInfo, sizeof(mfxFrameInfo));
+    m_dst.Info.FourCC = MFX_FOURCC_YV12;
+    m_dst.Data.Y = y;
+    m_dst.Data.U = y + m_video.mfx.FrameInfo.Width*m_video.mfx.FrameInfo.Height;
+    m_dst.Data.V = y + m_video.mfx.FrameInfo.Width*m_video.mfx.FrameInfo.Height*5/4;
+    m_dst.Data.PitchLow = m_video.mfx.FrameInfo.Width;
+    m_dst.Data.PitchHigh = 0;
   } else if (m_video.mfx.FrameInfo.FourCC != MFX_FOURCC_YV12) {
     return MFX_ERR_INVALID_VIDEO_PARAM;
   }
@@ -358,10 +362,11 @@ mfxStatus MFX_H263E_Plugin::Close()
 {
   DBG_ENTER;
 
-  if (m_inframe) {
-    free(m_inframe);
-    m_inframe = NULL;
+  if (m_dst.Data.Y) {
+    free(m_dst.Data.Y);
   }
+  memset(&m_dst, 0, sizeof(m_dst));
+
   DBG_LEAVE_STS(MFX_ERR_NONE);
   return MFX_ERR_NONE;
 }
