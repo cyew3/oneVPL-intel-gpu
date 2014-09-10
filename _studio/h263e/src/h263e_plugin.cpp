@@ -237,9 +237,11 @@ mfxStatus MFX_H263E_Plugin::EncodeFrameSubmit(
     if (sts == MFX_ERR_NONE) {
       ++m_frame_order;
 
-      DBG_VAL_I(bitstream->DataLength)
+      DBG_VAL_I(bitstream->DataLength);
       bitstream->DataLength += (mfxU32)out.GetDataSize();
-      DBG_VAL_I(bitstream->DataLength)
+      DBG_VAL_I(bitstream->DataLength);
+
+      bitstream->TimeStamp = GetMfxTimeStamp(out.GetTime());
 
       *task = (mfxThreadTask*)this;
     }
@@ -316,6 +318,19 @@ mfxStatus MFX_H263E_Plugin::Init(mfxVideoParam *par)
   m_umc_params.info.clip_info.width = par->mfx.FrameInfo.Width;
   m_umc_params.info.clip_info.height = par->mfx.FrameInfo.Height;
   m_umc_params.info.framerate = par->mfx.FrameInfo.FrameRateExtN/par->mfx.FrameInfo.FrameRateExtD;
+  m_umc_params.info.bitrate = par->mfx.TargetKbps * 1000;
+  if (par->mfx.RateControlMethod == MFX_RATECONTROL_CQP) {
+    m_umc_params.info.bitrate = 0;
+    m_umc_params.m_Param.quantIPic = par->mfx.QPI;
+    m_umc_params.m_Param.quantPPic = par->mfx.QPP;
+    m_umc_params.m_Param.quantBPic = par->mfx.QPB;
+  }
+  if (par->mfx.GopPicSize) {
+    m_umc_params.m_Param.IPicdist = par->mfx.GopPicSize;
+  }
+  if (par->mfx.GopRefDist) {
+    m_umc_params.m_Param.PPicdist = par->mfx.GopRefDist;
+  }
 
   m_video.mfx.BufferSizeInKB = GET_DEFAULT_BUFFER_SIZE_IN_KB(m_video.mfx.FrameInfo.Width, m_video.mfx.FrameInfo.Height);
 
