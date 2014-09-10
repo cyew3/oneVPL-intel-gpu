@@ -66,7 +66,7 @@ MFX_H263E_Plugin::MFX_H263E_Plugin(bool CreateByDispatcher)
 {
   m_session = 0;
   m_pmfxCore = NULL;
-  memset(&m_PluginParam, 0, sizeof(mfxPluginParam));
+  memset(&m_PluginParam, 0, sizeof(m_PluginParam));
 
   m_PluginParam.ThreadPolicy = MFX_THREADPOLICY_SERIAL;
   m_PluginParam.MaxThreadNum = 1;
@@ -78,10 +78,10 @@ MFX_H263E_Plugin::MFX_H263E_Plugin(bool CreateByDispatcher)
   m_PluginParam.PluginVersion = 1;
   m_createdByDispatcher = CreateByDispatcher;
 
-  memset(&m_mfxpar, 0, sizeof(mfxVideoParam));
+  memset(&m_mfxpar, 0, sizeof(m_mfxpar));
 
   m_frame_order = 0;
-  inframe = NULL;
+  m_inframe = NULL;
 }
 
 mfxStatus MFX_H263E_Plugin::PluginInit(mfxCoreInterface * pCore)
@@ -173,20 +173,26 @@ mfxStatus MFX_H263E_Plugin::EncodeFrameSubmit(
   if (surface) {
     if (surface->Info.FourCC == MFX_FOURCC_NV12) {
       if (!surface->Data.Y || !surface->Data.UV) {
-        return MFX_ERR_UNDEFINED_BEHAVIOR;
+        sts = MFX_ERR_UNDEFINED_BEHAVIOR;
+        DBG_LEAVE_STS(sts);
+        return sts;
       }
     } else if (surface->Info.FourCC == MFX_FOURCC_YV12) {
       if (!surface->Data.Y || !surface->Data.U || !surface->Data.V) {
-        return MFX_ERR_UNDEFINED_BEHAVIOR;
+        sts = MFX_ERR_UNDEFINED_BEHAVIOR;
+        DBG_LEAVE_STS(sts);
+        return sts;
       }
     } else {
-      return MFX_ERR_UNDEFINED_BEHAVIOR;
+        sts = MFX_ERR_UNDEFINED_BEHAVIOR;
+        DBG_LEAVE_STS(sts);
+        return sts;
     }
     in.Init(m_umc_params.m_Param.Width, m_umc_params.m_Param.Height, UMC::YUV420, 8);
     if (surface->Info.FourCC == MFX_FOURCC_NV12) {
-      mfxU8* y = (mfxU8*)inframe;
-      mfxU8* u = (mfxU8*)inframe + m_video.mfx.FrameInfo.Width*m_video.mfx.FrameInfo.Height;
-      mfxU8* v = (mfxU8*)inframe + m_video.mfx.FrameInfo.Width*m_video.mfx.FrameInfo.Height*5/4;
+      mfxU8* y = (mfxU8*)m_inframe;
+      mfxU8* u = (mfxU8*)m_inframe + m_video.mfx.FrameInfo.Width*m_video.mfx.FrameInfo.Height;
+      mfxU8* v = (mfxU8*)m_inframe + m_video.mfx.FrameInfo.Width*m_video.mfx.FrameInfo.Height*5/4;
 
       in.SetPlanePointer(y, 0);
       in.SetPlanePointer(u, 1);
@@ -197,10 +203,12 @@ mfxStatus MFX_H263E_Plugin::EncodeFrameSubmit(
       in.SetPlanePitch(surface->Data.Pitch/2, 2);
 
       mfxFrameSurface1 dst;
+      memset(&dst, 0, sizeof(dst));
       dst.Data.Y = y;
       dst.Data.U = u;
       dst.Data.V = v;
-      dst.Data.Pitch = m_video.mfx.FrameInfo.Width;
+      dst.Data.PitchLow = m_video.mfx.FrameInfo.Width;
+      dst.Data.PitchHigh = 0;
 
       copy_nv12_to_i420(*surface, dst);
 
@@ -217,7 +225,9 @@ mfxStatus MFX_H263E_Plugin::EncodeFrameSubmit(
   }
 
   if ((bitstream->MaxLength - bitstream->DataLength) < m_video.mfx.BufferSizeInKB) {
-    return MFX_ERR_NOT_ENOUGH_BUFFER;
+    sts = MFX_ERR_NOT_ENOUGH_BUFFER;
+    DBG_LEAVE_STS(sts);
+    return sts;
   }
   out.SetBufferPointer(bitstream->Data + bitstream->DataOffset + bitstream->DataLength,
                        bitstream->MaxLength - bitstream->DataLength);
@@ -318,8 +328,8 @@ mfxStatus MFX_H263E_Plugin::Init(mfxVideoParam *par)
   DBG_VAL_I(m_video.mfx.FrameInfo.FrameRateExtD);
 
   if (m_video.mfx.FrameInfo.FourCC == MFX_FOURCC_NV12) {
-    inframe = malloc(3*m_video.mfx.FrameInfo.Width*m_video.mfx.FrameInfo.Height/2);
-    if (!inframe) {
+    m_inframe = malloc(3*m_video.mfx.FrameInfo.Width*m_video.mfx.FrameInfo.Height/2);
+    if (!m_inframe) {
       return MFX_ERR_MEMORY_ALLOC;
     }
   } else if (m_video.mfx.FrameInfo.FourCC != MFX_FOURCC_YV12) {
@@ -348,9 +358,9 @@ mfxStatus MFX_H263E_Plugin::Close()
 {
   DBG_ENTER;
 
-  if (inframe) {
-    free(inframe);
-    inframe = NULL;
+  if (m_inframe) {
+    free(m_inframe);
+    m_inframe = NULL;
   }
   DBG_LEAVE_STS(MFX_ERR_NONE);
   return MFX_ERR_NONE;

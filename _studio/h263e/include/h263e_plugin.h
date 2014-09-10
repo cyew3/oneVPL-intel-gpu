@@ -111,7 +111,7 @@ protected:
     UMC::H263VideoEncoder  m_umc_encoder;
     UMC::H263EncoderParams m_umc_params;
 
-    void* inframe;
+    void* m_inframe;
     mfxCoreInterface* m_pmfxCore;
 
     mfxSession m_session;

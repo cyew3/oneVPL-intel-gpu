@@ -66,7 +66,7 @@ MFX_H263D_Plugin::MFX_H263D_Plugin(bool CreateByDispatcher)
 {
   m_session = 0;
   m_pmfxCore = NULL;
-  memset(&m_PluginParam, 0, sizeof(mfxPluginParam));
+  memset(&m_PluginParam, 0, sizeof(m_PluginParam));
 
   m_PluginParam.ThreadPolicy = MFX_THREADPOLICY_SERIAL;
   m_PluginParam.MaxThreadNum = 1;
@@ -78,7 +78,7 @@ MFX_H263D_Plugin::MFX_H263D_Plugin(bool CreateByDispatcher)
   m_PluginParam.PluginVersion = 1;
   m_createdByDispatcher = CreateByDispatcher;
 
-  memset(&m_mfxpar, 0, sizeof(mfxVideoParam));
+  memset(&m_mfxpar, 0, sizeof(m_mfxpar));
 
   m_frame_order = 0;
   inframe = NULL;

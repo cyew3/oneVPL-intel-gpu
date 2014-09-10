@@ -1,25 +1,25 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClCompile Include="src\h263e_plugin.cpp">
-      <Filter>Source files</Filter>
-    </ClCompile>
     <ClCompile Include="h263_enc\src\h263_enc_bitstream.cpp">
-      <Filter>Source files</Filter>
+      <Filter>H263\Source files</Filter>
     </ClCompile>
     <ClCompile Include="h263_enc\src\h263_enc_frame.cpp">
-      <Filter>Source files</Filter>
+      <Filter>H263\Source files</Filter>
     </ClCompile>
     <ClCompile Include="h263_enc\src\h263_enc_headers.cpp">
-      <Filter>Source files</Filter>
+      <Filter>H263\Source files</Filter>
     </ClCompile>
     <ClCompile Include="h263_enc\src\h263_enc_misc.cpp">
-      <Filter>Source files</Filter>
+      <Filter>H263\Source files</Filter>
     </ClCompile>
     <ClCompile Include="h263_enc\src\h263_enc_tables.cpp">
-      <Filter>Source files</Filter>
+      <Filter>H263\Source files</Filter>
     </ClCompile>
     <ClCompile Include="h263_enc\src\umc_h263_video_encoder.cpp">
+      <Filter>H263\Source files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\h263e_plugin.cpp">
       <Filter>Source files</Filter>
     </ClCompile>
   </ItemGroup>
