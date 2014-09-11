@@ -49,7 +49,7 @@ mfxStatus MFXVAAPIDeviceX11::Init(mfxU32 nAdapter,
     return MFX_ERR_NONE;
 }
 
-mfxStatus MFXVAAPIDeviceX11::Reset(WindowHandle /*hDeviceWindow*/, bool /*bWindowed*/)
+mfxStatus MFXVAAPIDeviceX11::Reset(WindowHandle /*hDeviceWindow*/, RECT /* drawRect */, bool /*bWindowed*/)
 {
     return MFX_ERR_NONE;
 }

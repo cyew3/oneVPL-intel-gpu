@@ -19,6 +19,10 @@ File Name: .h
 
 typedef void* WindowHandle;
 
+#if ! defined(_WIN32) && ! defined(_WIN64)
+  typedef void* RECT
+#endif
+
 class IHWDevice
 {
 public:
