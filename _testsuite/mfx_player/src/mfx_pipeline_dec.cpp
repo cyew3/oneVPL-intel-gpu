@@ -1719,6 +1719,14 @@ mfxStatus MFXDecPipeline::CreateRender()
                 }
             }
 
+            if ( m_inParams.bFadeBackground && iParams.window.directLocation.right > iParams.window.windowSize.right){ 
+                iParams.window.directLocation.right  = iParams.window.windowSize.right;
+            }
+
+            if ( m_inParams.bFadeBackground && iParams.window.directLocation.bottom > iParams.window.windowSize.bottom){ 
+                iParams.window.directLocation.bottom = iParams.window.windowSize.bottom;
+            }
+
             if (m_inParams.m_bNowWidowHeader)
             {
                 iParams.window.windowsStyle =  WS_POPUP/*| WS_BORDER|WS_MAXIMIZE */;

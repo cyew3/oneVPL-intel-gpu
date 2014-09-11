@@ -424,7 +424,7 @@ mfxStatus MFXD3D9Device::RenderFrame(mfxFrameSurface1 * pSurface, mfxFrameAlloca
         }
         else
         {
-            hr = m_pD3DD9Ex->Present(NULL, &dest, NULL, NULL);
+            hr = m_pD3DD9Ex->Present(&dest, &dest, NULL, NULL);
         }
         if (FAILED(hr))
         {

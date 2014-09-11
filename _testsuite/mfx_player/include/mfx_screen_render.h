@@ -116,7 +116,7 @@ protected:
     bool        m_bSetOverlayText;
     LPCTSTR     m_OverlayText;
     int         m_OverlayTextSize;
-
+    HFONT       font;
 #ifdef BUFFERING_SIZE
     std::list<mfxFrameSurface1 *> frameBuffer;
     

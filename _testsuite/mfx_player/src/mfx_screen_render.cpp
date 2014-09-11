@@ -149,6 +149,7 @@ mfxStatus ScreenRender::SetupDevice()
 
     m_OverlayText     = iParams.pOverlayText;
     m_OverlayTextSize = iParams.OverlayTextSize;
+    font = CreateFont(m_OverlayTextSize, 0, 0, 0, 300, false, false, false, DEFAULT_CHARSET, OUT_TT_PRECIS, CLIP_DEFAULT_PRECIS, CLEARTYPE_QUALITY, DEFAULT_PITCH, L"Verdana");
     // Create window
     m_pWindow->Initialize(iParams);
     if (NULL == (m_Hwnd = m_pWindow->GetWindowHandle()))
@@ -493,7 +494,6 @@ mfxStatus ScreenRender::RenderFrame(mfxFrameSurface1 *pSurface, mfxEncodeCtrl * 
         HDC hdc;
         hdc = GetDC(m_Hwnd);
         SetBkMode(hdc, TRANSPARENT);
-        HFONT font = CreateFont(m_OverlayTextSize, 0, 0, 0, 300, false, false, false, DEFAULT_CHARSET, OUT_TT_PRECIS, CLIP_DEFAULT_PRECIS, CLEARTYPE_QUALITY, DEFAULT_PITCH, L"Verdana");
         (HFONT)SelectObject( hdc, font );
         SetTextColor( hdc, RGB(255, 255, 255));
         DrawTextEx(hdc,
