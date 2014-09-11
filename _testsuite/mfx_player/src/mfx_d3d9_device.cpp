@@ -65,6 +65,7 @@ mfxStatus MFXD3D9Device::Init(mfxU32 nAdapter,
         m_D3DPP.BackBufferHeight = min(r.bottom - r.top, y);
         m_D3DPP.FullScreen_RefreshRateInHz = D3DPRESENT_RATE_DEFAULT;
         fullscreen = NULL;
+        BACK_BUFFER_COUNT = 0;
     }
     else
     {
@@ -417,9 +418,13 @@ mfxStatus MFXD3D9Device::RenderFrame(mfxFrameSurface1 * pSurface, mfxFrameAlloca
             // Otherwise it fails with invalid args error.
             hr = m_pD3DD9Ex->Present(&source, &dest, NULL, NULL);
         }
-        else
+        else if ( IsFullscreen() )
         {
             hr = m_pD3DD9Ex->Present(NULL, NULL, NULL, NULL);
+        }
+        else
+        {
+            hr = m_pD3DD9Ex->Present(NULL, &dest, NULL, NULL);
         }
         if (FAILED(hr))
         {

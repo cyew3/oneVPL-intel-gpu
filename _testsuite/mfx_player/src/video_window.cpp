@@ -62,6 +62,7 @@ BOOL VideoWindow::Initialize(const InitParams &refInit)
     wc.hInstance     = GetModuleHandle(NULL);
     wc.hCursor       = LoadCursor(NULL, IDC_ARROW);
     wc.lpszClassName = CLASS_NAME;
+    wc.hbrBackground = (HBRUSH)CreateSolidBrush(RGB(0, 0, 0));
 
     if (!RegisterClass(&wc))
     {
