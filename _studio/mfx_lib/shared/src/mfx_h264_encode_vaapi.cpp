@@ -2160,6 +2160,7 @@ mfxStatus VAAPIEncoder::QueryStatus(
     mfxU32    fieldId)
 {
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_SCHED, "Enc QueryStatus");
+    mfxStatus sts = MFX_ERR_NONE;
     VAStatus vaSts;
     bool isFound = false;
     VASurfaceID waitSurface;
@@ -2170,7 +2171,7 @@ mfxStatus VAAPIEncoder::QueryStatus(
     VABufferID vaFeiMBStatId = VA_INVALID_ID;
     VABufferID vaFeiMBCODEOutId = VA_INVALID_ID;
     VABufferID vaFeiMVOutId = VA_INVALID_ID;
-#endif    
+#endif
     std::auto_ptr<UMC::AutomaticUMCMutex> guard( new UMC::AutomaticUMCMutex(m_guard) );
 
     for( indxSurf = 0; indxSurf < m_feedbackCache.size(); indxSurf++ )
@@ -2255,24 +2256,35 @@ mfxStatus VAAPIEncoder::QueryStatus(
                 if (m_videoParam.Protected && IsSupported__VAHDCPEncryptionParameterBuffer() && codedBufferSegment->next)
                 {
                     VACodedBufferSegment *nextSegment = (VACodedBufferSegment*)codedBufferSegment->next;
-                    VAHDCPEncryptionParameterBuffer *HDCPParam = NULL;
-                    mfxAES128CipherCounter CipherCounter = {0, 0};
-                    bool isProtected = false;
 
-                    if (nextSegment->status & VA_CODED_BUF_STATUS_PRIVATE_DATA_HDCP &&
-                        NULL != nextSegment->buf)
+                    bool bIsTearDown = ((VA_CODED_BUF_STATUS_BAD_BITSTREAM & codedBufferSegment->status) || (VA_CODED_BUF_STATUS_TEAR_DOWN & nextSegment->status));
+
+                    if (bIsTearDown)
                     {
-                        HDCPParam = (VAHDCPEncryptionParameterBuffer*)nextSegment->buf;
-                        mfxU64* Count = (mfxU64*)&HDCPParam->counter[0];
-                        mfxU64* IV = (mfxU64*)&HDCPParam->counter[2];
-                        CipherCounter.Count = *Count;
-                        CipherCounter.IV = *IV;
-
-                        isProtected = HDCPParam->bEncrypted;
+                        task.m_bsDataLength[fieldId] = 0;
+                        sts = MFX_ERR_DEVICE_LOST;
                     }
+                    else
+                    {
+                        VAHDCPEncryptionParameterBuffer *HDCPParam = NULL;
+                        mfxAES128CipherCounter CipherCounter = {0, 0};
+                        bool isProtected = false;
 
-                    task.m_aesCounter[0] = CipherCounter;
-                    task.m_notProtected = !isProtected;
+                        if (nextSegment->status & VA_CODED_BUF_STATUS_PRIVATE_DATA_HDCP &&
+                            NULL != nextSegment->buf)
+                        {
+                            HDCPParam = (VAHDCPEncryptionParameterBuffer*)nextSegment->buf;
+                            mfxU64* Count = (mfxU64*)&HDCPParam->counter[0];
+                            mfxU64* IV = (mfxU64*)&HDCPParam->counter[2];
+                            CipherCounter.Count = *Count;
+                            CipherCounter.IV = *IV;
+
+                            isProtected = HDCPParam->bEncrypted;
+                        }
+
+                        task.m_aesCounter[0] = CipherCounter;
+                        task.m_notProtected = !isProtected;
+                    }
                 }
 
                 {
@@ -2284,7 +2296,8 @@ mfxStatus VAAPIEncoder::QueryStatus(
                 //FEI buffers pack
                 //VAEncFEIModeBufferTypeIntel,
                 //VAEncFEIDistortionBufferTypeIntel,
-                if (m_isENCPAK) {
+                if (m_isENCPAK)
+                {
                     int numMB = m_sps.picture_height_in_mbs * m_sps.picture_width_in_mbs;
                     //find ext buffers
 //                    mfxBitstream* bs = task.m_bs;
@@ -2292,7 +2305,8 @@ mfxStatus VAAPIEncoder::QueryStatus(
                     mfxExtFeiEncMV* mvout = (mfxExtFeiEncMV*)task.m_feiMVOut;
                     mfxExtFeiPakMBCtrl* mbcodeout = (mfxExtFeiPakMBCtrl*)task.m_feiMBCODEOut;
 
-                    if (mbstat != NULL && vaFeiMBStatId != VA_INVALID_ID) {
+                    if (mbstat != NULL && vaFeiMBStatId != VA_INVALID_ID)
+                    {
                         VAEncFEIDistortionBufferH264Intel* mbs;
                         {
                             MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_SCHED, "MB vaMapBuffer");
@@ -2310,9 +2324,10 @@ mfxStatus VAAPIEncoder::QueryStatus(
                         }
 
                         MFX_DESTROY_VABUFFER(vaFeiMBStatId, m_vaDisplay);
-                    }    
-                    
-                    if (mvout != NULL && vaFeiMVOutId != VA_INVALID_ID) {
+                    }
+
+                    if (mvout != NULL && vaFeiMVOutId != VA_INVALID_ID)
+                    {
                         VAMotionVectorIntel* mvs;
                         {
                             MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_SCHED, "MB vaMapBuffer");
@@ -2333,7 +2348,8 @@ mfxStatus VAAPIEncoder::QueryStatus(
                         MFX_DESTROY_VABUFFER(vaFeiMVOutId, m_vaDisplay);
                     }
 
-                    if (mbcodeout != NULL && vaFeiMBCODEOutId != VA_INVALID_ID) {
+                    if (mbcodeout != NULL && vaFeiMBCODEOutId != VA_INVALID_ID)
+                    {
                         VAEncFEIModeBufferH264Intel* mbcs;
                         {
                             MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_SCHED, "MB vaMapBuffer");
@@ -2354,7 +2370,7 @@ mfxStatus VAAPIEncoder::QueryStatus(
                     }
                 }
 #endif
-                return MFX_ERR_NONE;
+                return sts;
 
             case VASurfaceRendering:
             case VASurfaceDisplaying:
@@ -2372,7 +2388,7 @@ mfxStatus VAAPIEncoder::QueryStatus(
         m_feedbackCache.erase(m_feedbackCache.begin() + indxSurf);
     }
 
-    return MFX_ERR_NONE;
+    return sts;
 }
 
 mfxStatus VAAPIEncoder::Destroy()
