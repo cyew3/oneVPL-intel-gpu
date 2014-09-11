@@ -2035,6 +2035,9 @@ void* CommonCORE::QueryCoreInterface(const MFX_GUID &guid)
 {
     if (MFXIVideoCORE_GUID == guid)
         return (void*) this;
+    
+    if (MFXIEXTERNALLOC_GUID == guid && m_bSetExtFrameAlloc)
+        return &m_FrameAllocator.frameAllocator;
 
     return NULL;
 }

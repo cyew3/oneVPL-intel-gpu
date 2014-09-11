@@ -1455,7 +1455,8 @@ void* D3D9VideoCORE::QueryCoreInterface(const MFX_GUID &guid)
              pCmDevice =  m_pCmCopy.get()->GetCmDevice<IDirect3DDeviceManager9>(m_pDirect3DDeviceManager);
         }
         return (void*)pCmDevice;
-    }
+    }else if (MFXIEXTERNALLOC_GUID == guid && m_bSetExtFrameAlloc)
+        return &m_FrameAllocator.frameAllocator;
 
     return NULL;
 }

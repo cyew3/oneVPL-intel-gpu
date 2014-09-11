@@ -314,7 +314,8 @@ mfxStatus mfxDefAllocFrames(mfxHDL pthis, mfxFrameAllocRequest *request, mfxFram
 {
     MFX_CHECK_NULL_PTR1(pthis);
     VideoCORE *pCore = (VideoCORE*)pthis;
-    return pCore->AllocFrames(request,response); 
+    mfxFrameAllocator* pExtAlloc = (mfxFrameAllocator*)pCore->QueryCoreInterface(MFXIEXTERNALLOC_GUID);
+    return pExtAlloc?pExtAlloc->Alloc(pExtAlloc->pthis,request,response):pCore->AllocFrames(request,response);
 
 } // mfxStatus mfxDefAllocFrames(mfxHDL pthis, mfxFrameAllocRequest *request, mfxFrameAllocResponse *response)
 mfxStatus mfxDefLockFrame(mfxHDL pthis, mfxMemId mid, mfxFrameData *ptr)
@@ -359,7 +360,8 @@ mfxStatus mfxDefFreeFrames(mfxHDL pthis, mfxFrameAllocResponse *response)
 {
     MFX_CHECK_NULL_PTR1(pthis);
     VideoCORE *pCore = (VideoCORE*)pthis;
-    return pCore->FreeFrames(response); 
+    mfxFrameAllocator* pExtAlloc = (mfxFrameAllocator*)pCore->QueryCoreInterface(MFXIEXTERNALLOC_GUID);
+    return pExtAlloc?pExtAlloc->Free(pExtAlloc->pthis,response):pCore->FreeFrames(response); 
 
 } // mfxStatus mfxDefFreeFrames(mfxHDL pthis, mfxFrameAllocResponse *response)
 
