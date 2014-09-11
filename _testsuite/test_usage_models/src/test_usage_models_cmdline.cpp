@@ -9,7 +9,11 @@
 #include "test_usage_models_cmdline.h"
 
 #if !defined(msdk_sscanf)
-# define msdk_sscanf sscanf
+  #if defined(_WIN32) || defined(_WIN64)
+    # define msdk_sscanf _tscanf_s
+  #else
+    # define msdk_sscanf sscanf
+  #endif
 #endif
 
 mfxU32 String2VideoFormat( msdk_char* arg );
