@@ -131,6 +131,31 @@ mem_fun2_right_t <Result, ClassType, Arg1, Arg2>
 
 
 //////////////////////////////////////////////////////////////////////////
+template <class S, class T, class A, class B, class C>
+class mem_fun3_right_t : public std::unary_function<T*, S>
+{
+public:
+    //typedef typename std::unary_function<T*, S>::argument_type argument_type;
+    explicit mem_fun3_right_t(S (T::*p)(A, B, C))
+        : ptr(p)
+    {}
+    S operator()(T* p, A a, B b, C c) const
+    {
+        return (p->*ptr)(a, b, c);
+    }
+private:
+    S (T::*ptr)(A, B, C);
+};
+
+template <class Result, class ClassType, class Arg1, class Arg2, class Arg3>
+mem_fun3_right_t <Result, ClassType, Arg1, Arg2, Arg3> 
+    mem_fun_any (Result (ClassType::*p)(Arg1, Arg2, Arg3))
+{
+    return mem_fun3_right_t<Result, ClassType, Arg1, Arg2, Arg3>(p);
+}
+
+
+//////////////////////////////////////////////////////////////////////////
 
 template <class Result, class ClassType, class Arg1, class Arg2, class Arg3, class Arg4, class Arg5, class Arg6, class Arg7>
 class mem_fun7_t {
@@ -229,6 +254,36 @@ template <class Fnc, class Arg1, class Arg2, class Arg3> inline
     return Binder3_t<Fnc, Arg1, Arg2, Arg3>(fn, x1, x2, x3);
 }
 
+
+//////////////////////////////////////////////////////////////////////////
+//transform 3th arguments functor to a functor with no arguments
+template <class Fnc, class Arg1, class Arg2, class Arg3, class Arg4>
+class Binder4_t {
+    Fnc fn;
+    Arg1 x1;
+    Arg2 x2;
+    Arg3 x3;
+    Arg4 x4;
+public:
+    Binder4_t(const Fnc &fn, Arg1 x1, Arg2 x2, Arg3 x3, Arg4 x4)
+        : fn(fn)
+        , x1(x1)
+        , x2(x2)
+        , x3(x3) 
+        , x4(x4){
+    }
+    typename Fnc::result_type operator () ()  {
+        return fn(x1,x2,x3,x4);
+    }
+};
+
+//transform any arguments functor to a functor with no arguments
+template <class Fnc, class Arg1, class Arg2, class Arg3, class Arg4> inline
+    Binder4_t <Fnc, Arg1, Arg2, Arg3, Arg4> 
+    bind_any (const Fnc &fn, Arg1 x1, Arg2 x2, Arg3 x3, Arg4 x4)
+{
+    return Binder4_t<Fnc, Arg1, Arg2, Arg3, Arg4>(fn, x1, x2, x3, x4);
+}
 
 //////////////////////////////////////////////////////////////////////////
 //transform 8 arguments functor to a functor with no arguments

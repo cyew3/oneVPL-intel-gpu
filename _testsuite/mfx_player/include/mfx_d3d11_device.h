@@ -32,7 +32,7 @@ public:
                           , int backBufferCount
                           , const vm_char *pDvxva2LibName
                           , bool isD3D9FeatureLevels);
-    virtual mfxStatus Reset(WindowHandle hDeviceWindow, bool bWindowed);
+    virtual mfxStatus Reset(WindowHandle hDeviceWindow, RECT drawRect, bool bWindowed);
     virtual mfxStatus GetHandle(mfxHandleType type, mfxHDL *pHdl);
     virtual mfxStatus RenderFrame(mfxFrameSurface1 * pSrf, mfxFrameAllocator *Palloc);
     virtual void      Close();

@@ -30,7 +30,7 @@ public:
                           , int backBufferCount
                           , const vm_char *pDvxva2LibName
                           , bool isD3D9FeatureLevels = false) = 0;
-    virtual mfxStatus Reset(WindowHandle hDeviceWindow, bool bWindowed) = 0;
+    virtual mfxStatus Reset(WindowHandle hDeviceWindow, RECT drawRect, bool bWindowed) = 0;
     virtual mfxStatus GetHandle(mfxHandleType type, mfxHDL *pHdl) = 0;
     virtual mfxStatus RenderFrame(mfxFrameSurface1 * pSrf, mfxFrameAllocator *Palloc ) = 0;
     virtual void      Close() = 0;
@@ -53,8 +53,8 @@ public:
         , bool isD3D9FeatureLevels = false)  {
             return m_pTarget->Init(nAdapter, hDeviceWindow, bIsWindowed, renderTargetFmt, backBufferCount, pDvxva2LibName, isD3D9FeatureLevels);
     }
-    virtual mfxStatus Reset(WindowHandle hDeviceWindow, bool bWindowed) {
-        return m_pTarget->Reset(hDeviceWindow, bWindowed);
+    virtual mfxStatus Reset(WindowHandle hDeviceWindow, RECT drawRect, bool bWindowed) {
+        return m_pTarget->Reset(hDeviceWindow, drawRect, bWindowed);
     }
     virtual mfxStatus GetHandle(mfxHandleType type, mfxHDL *pHdl) {
         return m_pTarget->GetHandle(type, pHdl);

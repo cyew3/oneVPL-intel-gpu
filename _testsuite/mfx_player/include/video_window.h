@@ -35,6 +35,7 @@ public:
         int     nPosition;
         int     nMonitor;
         RECT    directLocation;
+        RECT    windowSize;
         WNDPROC pWindowProc;
         const vm_char *pTitle;
         LPCTSTR  pOverlayText;
@@ -50,7 +51,8 @@ public:
                   , const vm_char *pTitle = NULL
                   , WNDPROC pWindowProc = NULL
                   , int nMonitor = 0) :
-            directLocation()
+             directLocation()
+           , windowSize()
         {
             this->pTitle          = pTitle;
             this->bFullscreen     = bFullscreen ;

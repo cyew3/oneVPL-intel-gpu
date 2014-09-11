@@ -172,6 +172,7 @@ mfxStatus MFXD3D9Device::Init(mfxU32 nAdapter,
 }
 
 mfxStatus MFXD3D9Device::Reset(WindowHandle hWindow,
+                               RECT drawRect,
                                bool bWindowed)
 {
     HRESULT hr;
@@ -185,11 +186,16 @@ mfxStatus MFXD3D9Device::Reset(WindowHandle hWindow,
             GetClientRect((HWND)hWindow, &r);
             m_D3DPP.BackBufferWidth  = r.right - r.left;
             m_D3DPP.BackBufferHeight = r.bottom - r.top;
+            m_drawRect = drawRect;
         }
         else
         {
             m_D3DPP.BackBufferWidth  = GetSystemMetrics(SM_CXSCREEN);
             m_D3DPP.BackBufferHeight = GetSystemMetrics(SM_CYSCREEN);
+            m_drawRect.left   = 0;
+            m_drawRect.top    = 0;
+            m_drawRect.right  = m_D3DPP.BackBufferWidth;
+            m_drawRect.bottom = m_D3DPP.BackBufferHeight;
         }
         m_D3DPP.hDeviceWindow              = (HWND)hWindow;
     }
@@ -372,8 +378,8 @@ mfxStatus MFXD3D9Device::RenderFrame(mfxFrameSurface1 * pSurface, mfxFrameAlloca
         (double)pSurface->Info.CropW * (0 == pSurface->Info.AspectRatioW ? 1 : pSurface->Info.AspectRatioW) / 
         (double)pSurface->Info.CropH / (0 == pSurface->Info.AspectRatioH ? 1 : pSurface->Info.AspectRatioH);
     
-    RECT dest;
-    if (dSrcAspect >dTargetAspect)
+    RECT dest = m_drawRect;
+    /*if (dSrcAspect >dTargetAspect)
     {
         dest.left = 0;
         dest.right = dsc.Width;
@@ -387,7 +393,7 @@ mfxStatus MFXD3D9Device::RenderFrame(mfxFrameSurface1 * pSurface, mfxFrameAlloca
         int width = (int) ( dsc.Height * dSrcAspect);
         dest.left = (dsc.Width - width) / 2;
         dest.right = dest.left + width;
-    }
+    }*/
     RECT targetRect = {0};
     GetClientRect(m_D3DPP.hDeviceWindow, &targetRect);
 

@@ -85,14 +85,14 @@ BOOL VideoWindow::Initialize(const InitParams &refInit)
         y = h * (refInit.nPosition / refInit.nX) + m_RectWindow.top;
     }
     //location specified to match video resolution
-    else if (refInit.directLocation.right != 0)
+    else if (refInit.windowSize.right != 0)
     {
-        RECT rect (refInit.directLocation);
+        RECT rect (refInit.windowSize);
         AdjustWindowRect(&rect, refInit.windowsStyle, FALSE);
         w = rect.right - rect.left;
         h = rect.bottom - rect.top;
-        x = m_RectWindow.left;
-        y = m_RectWindow.top;
+        x = rect.left;
+        y = rect.top;
     }
 
     PrintInfo(VM_STRING("Rendering Window"), VM_STRING("%d,%d,%d,%d\n"), x, y, x+w, y+h);

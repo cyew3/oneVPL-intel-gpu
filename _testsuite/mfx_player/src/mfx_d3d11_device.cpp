@@ -84,7 +84,8 @@ mfxStatus MFXD3D11Device::Init( mfxU32 nAdapter
 
     if (NULL != hDeviceWindow)
     {
-        MFX_CHECK_STS(Reset(hDeviceWindow, bIsWindowed));
+        RECT dummy = {0};
+        MFX_CHECK_STS(Reset(hDeviceWindow, dummy, bIsWindowed));
     }
    
     return MFX_ERR_NONE;
@@ -117,7 +118,7 @@ mfxStatus MFXD3D11Device::CreateVideoProcessor(mfxFrameSurface1 * pSrf)
     return MFX_ERR_NONE;
 }
 
-mfxStatus MFXD3D11Device::Reset(WindowHandle hDeviceWindow, bool bIsWindowed)
+mfxStatus MFXD3D11Device::Reset(WindowHandle hDeviceWindow, RECT, bool bIsWindowed)
 {
     MFX_CHECK_WITH_ERR(!FAILED(m_pDXGIFactory->MakeWindowAssociation( (HWND)hDeviceWindow, 0 )), MFX_ERR_DEVICE_FAILED);
 

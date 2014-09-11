@@ -38,13 +38,13 @@ public:
                         , this, nAdapter, hDeviceWindow, bIsWindowed, renderTargetFmt, backBufferCount, pDvxva2LibName, isD3D9FeatureLevels))->Synhronize(MFX_INFINITE);
             return sts;
     }
-    virtual mfxStatus Reset(WindowHandle hDeviceWindow, bool bWindowed) {
+    virtual mfxStatus Reset(WindowHandle hDeviceWindow, RECT drawRect, bool bWindowed) {
         if (mPool.IsThreadCall()) {
-            return base::Reset(hDeviceWindow, bWindowed);
+            return base::Reset(hDeviceWindow, drawRect, bWindowed);
         }
         mfxStatus sts =  mPool.Queue(
             bind_any( mem_fun_any(&base::Reset)
-                    , this, hDeviceWindow, bWindowed))->Synhronize(MFX_INFINITE);
+                    , this, hDeviceWindow, drawRect, bWindowed))->Synhronize(MFX_INFINITE);
         return sts;
     }
     virtual mfxStatus GetHandle(mfxHandleType type, mfxHDL *pHdl) {

@@ -148,6 +148,8 @@ struct sCommandlineParams
   vm_char        OverlayText[MAX_FILE_PATH];
   int            OverlayTextSize;
 
+  bool           bFadeBackground;
+
   //jpeg support for rotation field
   mfxU16         nRotation;
   
@@ -255,6 +257,8 @@ struct sCommandlineParams
 
       // There is no overlay text by default
       OverlayTextSize = 0;
+
+      bFadeBackground = false;
   }
 };
 

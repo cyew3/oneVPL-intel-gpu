@@ -207,7 +207,7 @@ BOOL ScreenRender::InitializeDevice()
     //HRESULT hr;
 
     // Init D3D device manager
-    if (MFX_ERR_NONE != m_initParams.pDevice->Reset(m_Hwnd, TRUE == m_pWindow->isWindowed()))
+    if (MFX_ERR_NONE != m_initParams.pDevice->Reset(m_Hwnd, m_initParams.window.directLocation, TRUE == m_pWindow->isWindowed()))
     {
         MFX_TRACE_ERR(VM_STRING("MFXD3DDevice::Reset failed\n"));
         return FALSE;
@@ -347,70 +347,15 @@ BOOL ScreenRender::EnableDwmQueuing()
 
 BOOL ScreenRender::ResetDevice()
 {
-//    HRESULT hr;
 
-//    if (m_pD3DD9)
-//    {
-//        //
-//        // Destroy DXVA2 device because it may be holding any D3D9 resources.
-//        //
-////        m_pVPP->Close();
-//
-//        m_D3DPP.Windowed = m_pWindow->isWindowed();
-//        if (m_D3DPP.Windowed)
-//        {
-//            m_D3DPP.BackBufferWidth  = 0;
-//            m_D3DPP.BackBufferHeight = 0;
-//        }
-//        else
-//        {
-//            m_D3DPP.BackBufferWidth  = GetSystemMetrics(SM_CXSCREEN);
-//            m_D3DPP.BackBufferHeight = GetSystemMetrics(SM_CYSCREEN);
-//        }
-//
-//        //
-//        // Reset will change the parameters, so use a copy instead.
-//        //
-//        D3DPRESENT_PARAMETERS d3dpp = m_D3DPP;
-//
-//        hr = m_pD3DD9->Reset(&d3dpp);
-//
-//        if (FAILED(hr))
-//        {
-//            DBGMSG((TEXT("Reset failed with error 0x%x.\n"), hr));
-//        }
+    RECT dummyRect = {0};
+    if (MFX_ERR_NONE == m_initParams.pDevice->Reset(m_Hwnd, dummyRect, TRUE == m_pWindow->isWindowed()))
+    {
+        return TRUE;
+    }
+    m_initParams.pDevice->Close();
 
-        //if (SUCCEEDED(hr)/* && MFX_ERR_NONE == m_pVPP->Init(&m_VPPParams)*/)
-        //{
-        //    //
-        //    // Retrieve a back buffer as the video render target.
-        //    //
-        //    hr = m_pD3DD9->GetBackBuffer(0, 0, D3DBACKBUFFER_TYPE_MONO, &m_pRenderSurface);
-
-        //    if (FAILED(hr))
-        //    {
-        //        DBGMSG((TEXT("GetBackBuffer failed with error 0x%x.\n"), hr));
-        //        return FALSE;
-        //    }
-
-        //    return TRUE;
-        //}
-
-        //
-        // If either Reset didn't work or failed to initialize DXVA2 device,
-        // try to recover by recreating the devices from the scratch.
-        //
-//        m_pVPP->Close();
-        
-        if (MFX_ERR_NONE == m_initParams.pDevice->Reset(m_Hwnd, TRUE == m_pWindow->isWindowed()))
-        {
-            return TRUE;
-        }
-        m_initParams.pDevice->Close();
-        //DestroyD3D9();
-    //}
-
-    if (InitializeDevice()/* && MFX_ERR_NONE == m_pVPP->Init(&m_VPPParams)*/)
+    if (InitializeDevice())
     {
         return TRUE;
     }
@@ -423,16 +368,14 @@ BOOL ScreenRender::ResetDevice()
         return FALSE;
     }
 
-//    m_pVPP->Close();
     m_initParams.pDevice->Close();
-    //DestroyD3D9();
 
     if (!m_pWindow->ChangeFullscreenMode(FALSE))
     {
         return FALSE;
     }
 
-    if (InitializeDevice()/* && MFX_ERR_NONE == m_pVPP->Init(&m_VPPParams)*/)
+    if (InitializeDevice())
     {
         return TRUE;
     }

@@ -1660,13 +1660,6 @@ mfxStatus MFXDecPipeline::CreateRender()
                 iParams.window.nY = m_inParams.m_WallH;
                 iParams.window.nPosition = m_inParams.m_WallN ;
             }
-            else if (!IsZero(m_inParams.m_directRect))
-            {
-                MFX_CHECK(m_inParams.m_directRect.width != 0 && m_inParams.m_directRect.width != 0);
-                IppiRect &r = m_inParams.m_directRect;
-                ::RECT rdirect = {r.x, r.y, r.x + r.width, r.y + r.height};
-                iParams.window.directLocation = rdirect;
-            }
             else
             {
                 //calc target resolution based on selected layer for svc
@@ -1677,23 +1670,55 @@ mfxStatus MFXDecPipeline::CreateRender()
                     m_inParams.svc_layer.TargetDependencyID >= MFX_ARRAY_SIZE(seqDescription->DependencyLayer)||
                     !seqDescription->DependencyLayer[m_inParams.svc_layer.TargetDependencyID].Active)
                 {
-                	if ( m_inParams.bFullscreen )
-                	{
-                    	iParams.window.directLocation.right = GetSystemMetrics(SM_CXSCREEN);
-                    	iParams.window.directLocation.bottom = GetSystemMetrics(SM_CYSCREEN);
-                	}
-                	else
-                	{
-                		iParams.window.directLocation.right = m_components[eDEC].m_params.mfx.FrameInfo.CropW;
-                    	iParams.window.directLocation.bottom = m_components[eDEC].m_params.mfx.FrameInfo.CropH;
-                	}
+                    if ( m_inParams.bFullscreen || m_inParams.bFadeBackground )
+                    {
+                        // In case of fullscreen or fade background mode, window needs to be equal to the screen
+                        iParams.window.windowSize.right  = GetSystemMetrics(SM_CXSCREEN);
+                        iParams.window.windowSize.bottom = GetSystemMetrics(SM_CYSCREEN);
+                    }
+                    else if (!IsZero(m_inParams.m_directRect))
+                    {
+                        // It's not fullscreen nor fade mode. Set size of the window equal to params
+                        MFX_CHECK(m_inParams.m_directRect.width != 0 && m_inParams.m_directRect.width != 0);
+                        IppiRect &r = m_inParams.m_directRect;
+                        ::RECT rdirect = {r.x, r.y, r.x + r.width, r.y + r.height};
+                        iParams.window.windowSize = rdirect;
+                    }
+                    else
+                    {
+                        // No commands got from user. Set up window equal to frame size
+                        iParams.window.windowSize.right  = m_components[eDEC].m_params.mfx.FrameInfo.CropW;
+                        iParams.window.windowSize.bottom = m_components[eDEC].m_params.mfx.FrameInfo.CropH;
+                    }
+
+                    // Part responsible to set up destination region for frames on rendering window
+                    if (!IsZero(m_inParams.m_directRect))
+                    {
+                        MFX_CHECK(m_inParams.m_directRect.width != 0 && m_inParams.m_directRect.width != 0);
+                        IppiRect &r = m_inParams.m_directRect;
+                        ::RECT rdirect = {r.x, r.y, r.x + r.width, r.y + r.height};
+                        if ( ! m_inParams.bFadeBackground )
+                        {
+                             rdirect.right  -= rdirect.left;
+                             rdirect.bottom -= rdirect.top;
+                             rdirect.left = 0;
+                             rdirect.top  = 0;
+                        }
+                        iParams.window.directLocation = rdirect;
+                    }
+                    else
+                    {
+                        iParams.window.directLocation.right  = m_components[eDEC].m_params.mfx.FrameInfo.CropW;
+                        iParams.window.directLocation.bottom = m_components[eDEC].m_params.mfx.FrameInfo.CropH;
+                    }
                 }
                 else
                 {
-                    iParams.window.directLocation.right = seqDescription->DependencyLayer[m_inParams.svc_layer.TargetDependencyID].CropW;
+                    iParams.window.directLocation.right  = seqDescription->DependencyLayer[m_inParams.svc_layer.TargetDependencyID].CropW;
                     iParams.window.directLocation.bottom = seqDescription->DependencyLayer[m_inParams.svc_layer.TargetDependencyID].CropH;
                 }
             }
+
             if (m_inParams.m_bNowWidowHeader)
             {
                 iParams.window.windowsStyle =  WS_POPUP/*| WS_BORDER|WS_MAXIMIZE */;
@@ -1702,6 +1727,7 @@ mfxStatus MFXDecPipeline::CreateRender()
             {
                 iParams.window.windowsStyle = WS_POPUPWINDOW;
             }
+
             iParams.window.nMonitor = m_inParams.m_nMonitor;
 
             if (m_components[eDEC].m_bufType == MFX_BUF_HW || m_components[eREN].m_bufType == MFX_BUF_HW  || m_inParams.bCreateD3D)
@@ -3421,7 +3447,8 @@ mfxStatus MFXDecPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI32 argc, 
 
         }
     }
-    else HANDLE_BOOL_OPTION(m_inParams.bFullscreen,  VM_STRING("-fullscreen"), VM_STRING("Render in fullscreen"));
+    else HANDLE_BOOL_OPTION(m_inParams.bFullscreen,      VM_STRING("-fullscreen"),      VM_STRING("Render in fullscreen"));
+    else HANDLE_BOOL_OPTION(m_inParams.bFadeBackground,  VM_STRING("-fade_background"), VM_STRING("Make backgrond black"));
     else if (m_OptProc.Check(argv[0], VM_STRING("-sys|-swfrbuf"), VM_STRING("video frames in system memory")))
     {
         std::for_each(m_components.begin(), m_components.end(), mem_var_set(&ComponentParams::m_bufType, (int)MFX_BUF_SW));
