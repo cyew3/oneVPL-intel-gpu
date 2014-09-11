@@ -113,7 +113,7 @@ bool ScreenVAAPIRender::InitializeDevice()
 bool ScreenVAAPIRender::ResetDevice()
 {
 
-        if (MFX_ERR_NONE == m_initParams.pDevice->Reset(NULL, true == m_pWindow->isWindowed()))
+        if (MFX_ERR_NONE == m_initParams.pDevice->Reset(NULL, NULL, true == m_pWindow->isWindowed()))
         {
             return true;
         }

@@ -47,7 +47,7 @@ public:
                           , const vm_char *pDvxva2LibName
                           , bool)
     { return MFX_ERR_NONE; }
-    virtual mfxStatus Reset(WindowHandle /*hDeviceWindow*/, bool /*bWindowed*/) { return MFX_ERR_NONE; }
+    virtual mfxStatus Reset(WindowHandle /*hDeviceWindow*/, RECT drawRect, bool /*bWindowed*/) { return MFX_ERR_NONE; }
     virtual mfxStatus GetHandle(mfxHandleType type, mfxHDL *pHdl)
     {
         if ((MFX_HANDLE_VA_DISPLAY == type) && (NULL != pHdl))
