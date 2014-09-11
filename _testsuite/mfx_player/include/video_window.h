@@ -37,8 +37,12 @@ public:
         RECT    directLocation;
         WNDPROC pWindowProc;
         const vm_char *pTitle;
+        LPCTSTR  pOverlayText;
+        int      OverlayTextSize;
 
         InitParams( BOOL  bFullscreen = false
+                  , const vm_char *pOverlayText = NULL
+                  , int OverlayTextSize = 0
                   , DWORD windowsStyle = WS_OVERLAPPEDWINDOW
                   , int nX = 0
                   , int nY = 0
@@ -48,14 +52,16 @@ public:
                   , int nMonitor = 0) :
             directLocation()
         {
-            this->pTitle        = pTitle;
-            this->bFullscreen   = bFullscreen ;
-            this->pWindowProc   = pWindowProc;
-            this->windowsStyle  = windowsStyle ;
-            this->nX            = nX ;
-            this->nY            = nY ;
-            this->nPosition     = nPosition;
-            this->nMonitor      = nMonitor ;
+            this->pTitle          = pTitle;
+            this->bFullscreen     = bFullscreen ;
+            this->pWindowProc     = pWindowProc;
+            this->windowsStyle    = windowsStyle ;
+            this->nX              = nX ;
+            this->nY              = nY ;
+            this->nPosition       = nPosition;
+            this->nMonitor        = nMonitor ;
+            this->pOverlayText    = pOverlayText;
+            this->OverlayTextSize = OverlayTextSize;
         }
     };
     VideoWindow();

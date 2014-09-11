@@ -140,12 +140,15 @@ mfxStatus ScreenRender::SetupDevice()
     m_FrameCount                     = 0;
     m_LastFrameCount                 = 0;
     m_LastTime                       = 0;
+    m_OverlayTextSize                = 0;
     m_nAdapter                       = m_initParams.nAdapter;
 
     VideoWindow::InitParams iParams = m_initParams.window;
     iParams.pTitle      = WINDOW_NAME;
     iParams.pWindowProc = WindowProc;
 
+    m_OverlayText     = iParams.pOverlayText;
+    m_OverlayTextSize = iParams.OverlayTextSize;
     // Create window
     m_pWindow->Initialize(iParams);
     if (NULL == (m_Hwnd = m_pWindow->GetWindowHandle()))
@@ -542,8 +545,24 @@ mfxStatus ScreenRender::RenderFrame(mfxFrameSurface1 *pSurface, mfxEncodeCtrl * 
     //EnableDwmQueuing();
     
     MFX_CHECK_STS(m_initParams.pDevice->RenderFrame(pSurface, m_pCore->GetFrameAllocator()));
+    if ( m_OverlayTextSize )
+    {
+        HDC hdc;
+        hdc = GetDC(m_Hwnd);
+        SetBkMode(hdc, TRANSPARENT);
+        HFONT font = CreateFont(m_OverlayTextSize, 0, 0, 0, 300, false, false, false, DEFAULT_CHARSET, OUT_TT_PRECIS, CLIP_DEFAULT_PRECIS, CLEARTYPE_QUALITY, DEFAULT_PITCH, L"Verdana");
+        (HFONT)SelectObject( hdc, font );
+        SetTextColor( hdc, RGB(255, 255, 255));
+        DrawTextEx(hdc,
+                   (LPWSTR)m_OverlayText, 
+                   (int)_tcslen(m_OverlayText),
+                   &rect,
+                   DT_BOTTOM | DT_CENTER | DT_SINGLELINE ,
+                   NULL);
 
-    
+        ReleaseDC(m_Hwnd, hdc);
+        UpdateWindow(m_Hwnd);
+    }
     return MFXVideoRender::RenderFrame(pSurface, pCtrl);
 }
 

@@ -1647,7 +1647,7 @@ mfxStatus MFXDecPipeline::CreateRender()
 #if defined(_WIN32) || defined(_WIN64)
     case MFX_SCREEN_RENDER:
         {
-            ScreenRender::InitParams iParams(m_components[eREN].GetAdapter(), VideoWindow::InitParams(m_inParams.bFullscreen));
+            ScreenRender::InitParams iParams(m_components[eREN].GetAdapter(), VideoWindow::InitParams(m_inParams.bFullscreen, m_inParams.OverlayText, m_inParams.OverlayTextSize));
 
             if (m_inParams.m_WallW && m_inParams.m_WallH)
             {
@@ -3508,6 +3508,22 @@ mfxStatus MFXDecPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI32 argc, 
         MFX_CHECK(1 + argv != argvEnd);
 
         MFX_PARSE_INT(m_inParams.m_nBackbufferCount, argv[1]);
+        argv++;
+    }
+    else if (m_OptProc.Check(argv[0], VM_STRING("-overlay_text"), VM_STRING("Text to be overlayed on rendering screen. DirectX9 only."), OPT_INT_32))
+    {
+        MFX_CHECK(1 + argv != argvEnd);
+
+        vm_string_strcpy_s(m_inParams.OverlayText, MFX_ARRAY_SIZE(m_inParams.OverlayText), argv[1]);
+        if ( ! m_inParams.OverlayTextSize ) 
+            m_inParams.OverlayTextSize = 18;
+        argv++;
+    }
+    else if (m_OptProc.Check(argv[0], VM_STRING("-overlay_font_size"), VM_STRING("Size of the overlaying text font. Default is 18"), OPT_INT_32))
+    {
+        MFX_CHECK(1 + argv != argvEnd);
+
+        MFX_PARSE_INT(m_inParams.OverlayTextSize, argv[1]);
         argv++;
     }
     else if (m_OptProc.Check(argv[0], VM_STRING("-NumThread|-t"), VM_STRING("number of threads"), OPT_INT_32))

@@ -112,6 +112,11 @@ protected:
     LONGLONG    m_LastTime;
     UINT        m_nAdapter;
     bool        m_bSetWindowText;
+
+    bool        m_bSetOverlayText;
+    LPCTSTR     m_OverlayText;
+    int         m_OverlayTextSize;
+
 #ifdef BUFFERING_SIZE
     std::list<mfxFrameSurface1 *> frameBuffer;
     

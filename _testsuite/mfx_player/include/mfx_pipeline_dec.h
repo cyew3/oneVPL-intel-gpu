@@ -144,6 +144,10 @@ struct sCommandlineParams
   mfxU32         nMaxBitrate;
   mfxU32         nDecBufSize;
 
+  // Overlay text options
+  vm_char        OverlayText[MAX_FILE_PATH];
+  int            OverlayTextSize;
+
   //jpeg support for rotation field
   mfxU16         nRotation;
   
@@ -248,6 +252,9 @@ struct sCommandlineParams
       m_ProcAmp.Saturation = 1.0f;
 
       m_nBackbufferCount = 24;
+
+      // There is no overlay text by default
+      OverlayTextSize = 0;
   }
 };
 
