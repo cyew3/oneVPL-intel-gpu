@@ -247,7 +247,8 @@ mfxStatus MFX_H263E_Plugin::EncodeFrameSubmit(
     }
   }
   if (surface && surface->Data.MemId) {
-    sts = m_pmfxCore->FrameAllocator.Unlock(m_pmfxCore->FrameAllocator.pthis, surface->Data.MemId, &src.Data);
+    mfxStatus _sts = m_pmfxCore->FrameAllocator.Unlock(m_pmfxCore->FrameAllocator.pthis, surface->Data.MemId, &src.Data);
+    if (sts == MFX_ERR_NONE) sts = _sts;
   }
 
   DBG_LEAVE_STS(sts);

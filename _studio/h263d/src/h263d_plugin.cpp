@@ -217,42 +217,58 @@ mfxStatus MFX_H263D_Plugin::DecodeFrameSubmit(
   UMC::Status umc_sts = UMC::UMC_OK;
 
   if (!surface_out) {
-    return MFX_ERR_NONE;
+    return MFX_ERR_NULL_PTR;
   }
   
   UMC::MediaData in;
   UMC::VideoData out;
+  mfxFrameSurface1 src;
 
   if (surface_work) {
     if (surface_work->Info.FourCC == MFX_FOURCC_NV12) {
-      if (!surface_work->Data.Y || !surface_work->Data.UV) {
-        return MFX_ERR_UNDEFINED_BEHAVIOR;
+      if ((!surface_work->Data.Y || !surface_work->Data.UV) && !surface_work->Data.MemId) {
+        sts = MFX_ERR_UNDEFINED_BEHAVIOR;
+        DBG_LEAVE_STS(sts);
+        return sts;
       }
     } else if (surface_work->Info.FourCC == MFX_FOURCC_YV12) {
-      if (!surface_work->Data.Y || !surface_work->Data.U || !surface_work->Data.V) {
-        return MFX_ERR_UNDEFINED_BEHAVIOR;
+      if ((!surface_work->Data.Y || !surface_work->Data.U || !surface_work->Data.V) && !surface_work->Data.MemId) {
+        sts = MFX_ERR_UNDEFINED_BEHAVIOR;
+        DBG_LEAVE_STS(sts);
+        return sts;
       }
     } else {
-      return MFX_ERR_UNDEFINED_BEHAVIOR;
+      sts = MFX_ERR_UNDEFINED_BEHAVIOR;
+      DBG_LEAVE_STS(sts);
+      return sts;
     }
+
+    memcpy(&src, surface_work, sizeof(src));
+    if (surface_work->Data.MemId) {
+      sts = m_pmfxCore->FrameAllocator.Lock(m_pmfxCore->FrameAllocator.pthis, surface_work->Data.MemId, &src.Data);
+      if (sts != MFX_ERR_NONE) {
+        DBG_LEAVE_STS(sts);
+        return sts;
+      }
+    }
+
     if (surface_work->Info.FourCC == MFX_FOURCC_NV12) {
       out.Init(m_umc_params.info.clip_info.width, m_umc_params.info.clip_info.height, UMC::NV12, 8);
-      out.SetPlanePointer(surface_work->Data.Y, 0);
-      out.SetPlanePointer(surface_work->Data.UV, 1);
+      out.SetPlanePointer(src.Data.Y, 0);
+      out.SetPlanePointer(src.Data.UV, 1);
 
-      out.SetPlanePitch(surface_work->Data.Pitch, 0);
-      out.SetPlanePitch(surface_work->Data.Pitch, 1);
+      out.SetPlanePitch(src.Data.Pitch, 0);
+      out.SetPlanePitch(src.Data.Pitch, 1);
     } else if (surface_work->Info.FourCC == MFX_FOURCC_YV12) {
       out.Init(m_umc_params.info.clip_info.width, m_umc_params.info.clip_info.height, UMC::YUV420, 8);
-      out.SetPlanePointer(surface_work->Data.Y, 0);
-      out.SetPlanePointer(surface_work->Data.U, 1);
-      out.SetPlanePointer(surface_work->Data.V, 2);
+      out.SetPlanePointer(src.Data.Y, 0);
+      out.SetPlanePointer(src.Data.U, 1);
+      out.SetPlanePointer(src.Data.V, 2);
 
-      out.SetPlanePitch(surface_work->Data.Pitch, 0);
-      out.SetPlanePitch(surface_work->Data.Pitch/2, 1);
-      out.SetPlanePitch(surface_work->Data.Pitch/2, 2);
+      out.SetPlanePitch(src.Data.Pitch, 0);
+      out.SetPlanePitch(src.Data.Pitch/2, 1);
+      out.SetPlanePitch(src.Data.Pitch/2, 2);
     }
-    //out.SetTime(m_frame_order/m_umc_params.info.framerate);
   }
 
   if (bitstream) {
@@ -260,6 +276,7 @@ mfxStatus MFX_H263D_Plugin::DecodeFrameSubmit(
     in.SetBufferPointer(bitstream->Data + bitstream->DataOffset,
                         bitstream->MaxLength);
     in.SetDataSize(bitstream->DataLength);
+    in.SetTime(GetUmcTimeStamp(bitstream->TimeStamp));
   }
 
   umc_sts = m_umc_decoder.GetFrame((bitstream)? &in: NULL, &out);
@@ -287,9 +304,15 @@ mfxStatus MFX_H263D_Plugin::DecodeFrameSubmit(
     DBG_VAL_I(surface_work->Info.CropW);
     DBG_VAL_I(surface_work->Info.CropH);
 
+    surface_work->Data.TimeStamp = GetMfxTimeStamp(out.GetTime());
+
     *surface_out = surface_work;
 
     *task = (mfxThreadTask*)this;
+  }
+  if (surface_work && surface_work->Data.MemId) {
+    mfxStatus _sts = m_pmfxCore->FrameAllocator.Unlock(m_pmfxCore->FrameAllocator.pthis, surface_work->Data.MemId, &src.Data);
+    if (sts == MFX_ERR_NONE) sts = _sts;
   }
 
   DBG_LEAVE_STS(sts);
