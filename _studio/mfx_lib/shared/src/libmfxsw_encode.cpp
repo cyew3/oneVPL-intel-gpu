@@ -541,6 +541,7 @@ mfxStatus MFXVideoENCODE_Init(mfxSession session, mfxVideoParam *par)
         if (!session->m_pENCODE.get())
         {
             // create a new instance
+            session->m_bIsHWENCSupport = true;
             session->m_pENCODE.reset(CreateENCODESpecificClass(par->mfx.CodecId, session->m_pCORE.get(), session, par));
             MFX_CHECK(session->m_pENCODE.get(), MFX_ERR_INVALID_VIDEO_PARAM);
         }
