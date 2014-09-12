@@ -594,9 +594,12 @@ mfxStatus DISPATCHER_EXPOSED_PREFIX(MFXCloneSession)(mfxSession session, mfxSess
 } // mfxStatus MFXCloneSession(mfxSession session, mfxSession *clone)
 
 
-
 mfxStatus DISPATCHER_EXPOSED_PREFIX(MFXVideoUSER_Load)(mfxSession session, const mfxPluginUID *uid, mfxU32 version) 
 {
+    if (NULL == session)
+    {
+        return MFX_ERR_NULL_PTR;
+    }
     MFX_DISP_HANDLE &pHandle = *(MFX_DISP_HANDLE *) session;
     if (!&pHandle)
     {
@@ -627,12 +630,14 @@ mfxStatus DISPATCHER_EXPOSED_PREFIX(MFXVideoUSER_Load)(mfxSession session, const
                 , i->PluginVersion))
                 continue;
         }
-        try {
+        try
+        {
             if( MFX_ERR_NONE != pHandle.pluginFactory.Create(*i))
                 continue;
             return MFX_ERR_NONE;
         }
-        catch(...) {
+        catch(...)
+        {
             continue;
         }
     }
@@ -645,12 +650,14 @@ mfxStatus DISPATCHER_EXPOSED_PREFIX(MFXVideoUSER_Load)(mfxSession session, const
 
         i->PluginUID = *uid;
         i->PluginVersion = (mfxU16)version;
-        try {
+        try
+        {
             if( MFX_ERR_NONE != pHandle.pluginFactory.Create(*i))
                 continue;
             return MFX_ERR_NONE;
         }
-        catch(...) {
+        catch(...)
+        {
             continue;
         }
     }
@@ -658,6 +665,48 @@ mfxStatus DISPATCHER_EXPOSED_PREFIX(MFXVideoUSER_Load)(mfxSession session, const
     DISPATCHER_LOG_ERROR((("MFXVideoUSER_Load: cannot find registered plugin with requested UID, total plugins available=%d\n"), pHandle.pluginHive.size()));
     return MFX_ERR_NOT_FOUND;
 }
+
+
+mfxStatus DISPATCHER_EXPOSED_PREFIX(MFXVideoUSER_LoadByPath)(mfxSession session, const mfxPluginUID *uid, mfxU32 version, const msdk_disp_char *path, mfxU32 len) 
+{
+    if (NULL == session)
+    {
+        return MFX_ERR_NULL_PTR;
+    }
+    MFX_DISP_HANDLE &pHandle = *(MFX_DISP_HANDLE *) session;
+    if (!&pHandle)
+    {
+        DISPATCHER_LOG_ERROR((("MFXVideoUSER_LoadByPath: session=NULL\n")));
+        return MFX_ERR_NULL_PTR;
+    }
+    if (!uid)
+    {
+        DISPATCHER_LOG_ERROR((("MFXVideoUSER_LoadByPath: uid=NULL\n")));
+        return MFX_ERR_NULL_PTR;
+    }
+
+    DISPATCHER_LOG_INFO((("MFXVideoUSER_LoadByPath: %S uid="MFXGUIDTYPE()" version=%d\n")
+        , MSDK2WIDE(path)
+        , MFXGUIDTOHEX(uid)
+        , version))
+
+    PluginDescriptionRecord record;
+    record.sName[0] = 0;
+    msdk_disp_char_cpy_s(record.sPath, len < MAX_PLUGIN_PATH ? len : MAX_PLUGIN_PATH, path);
+    record.PluginUID = *uid; 
+    record.PluginVersion = (mfxU16)version;
+    record.Default = true;
+
+    try
+    {
+        return pHandle.pluginFactory.Create(record);
+    }
+    catch(...)
+    {
+        return MFX_ERR_NOT_FOUND;
+    }
+}
+
 
 mfxStatus DISPATCHER_EXPOSED_PREFIX(MFXVideoUSER_UnLoad)(mfxSession session, const mfxPluginUID *uid) 
 {
