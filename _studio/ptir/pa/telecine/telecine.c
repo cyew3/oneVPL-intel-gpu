@@ -696,7 +696,8 @@ void Detect_Solve_32BlendedPatterns(Frame **pFrm, Pattern *ptrn, unsigned int *d
                 }
                 else
                 {
-                    pFrm[1]->frmProperties.drop = TRUE;
+                    pFrm[1]->frmProperties.drop = FALSE/*TRUE*/;
+                    DeinterlaceMedianFilter(pFrm, 1, 0);
                 }
                 ptrn->ucPatternType = 6;
                 *dispatch = 2;

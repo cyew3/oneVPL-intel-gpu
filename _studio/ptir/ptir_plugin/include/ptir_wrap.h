@@ -101,7 +101,8 @@ public:
         uiisInterlaced,
         uiTeleCount,
         uiLastFrameNumber,
-        uiDispatch;
+        uiDispatch,
+        uiInterlaceParity; //is Top Field First (0) or Bottom Field First (1)
     unsigned char
         *pucIO;
     Frame
@@ -122,7 +123,8 @@ public:
         dBaseTime,
         dOutBaseTime,
         dBaseTimeSw,
-        dDeIntTime;
+        dDeIntTime,
+        dCurrentTime;
     LARGE_INTEGER
         liTime,
         liFreq,

@@ -41,6 +41,7 @@ PTIR_ProcessorCM::PTIR_ProcessorCM(mfxCoreInterface* mfxCore, frameSupplier* _fr
     liFreq;
     liFileSize;
     fTCodeOut = NULL;
+    uiInterlaceParity = 0;
 
     FrameQueue_Initialize(&fqIn);
     Pattern_init(&mainPattern);
@@ -114,6 +115,11 @@ mfxStatus PTIR_ProcessorCM::Init(mfxVideoParam *par)
     {
         //Deinterlace only mode
         uiisInterlaced = 1;
+
+        if(MFX_PICSTRUCT_FIELD_TFF == par->vpp.In.PicStruct)
+            uiInterlaceParity = 0;
+        else
+            uiInterlaceParity = 1;
 
         if(2 * par->vpp.In.FrameRateExtN * par->vpp.Out.FrameRateExtD ==
             par->vpp.In.FrameRateExtD * par->vpp.Out.FrameRateExtN)
@@ -558,7 +564,7 @@ mfxStatus PTIR_ProcessorCM::PTIR_ProcessFrame(CmSurface2D *surf_in, CmSurface2D 
                 Analyze_Buffer_Stats_CM(frmBuffer, &mainPattern, &uiDispatch, &uiisInterlaced);
                 if(mainPattern.ucPatternFound && uiisInterlaced != 1)
                 {
-                    if (mainPattern.ucPatternType == 0 && uiisInterlaced != 2)
+                    if (((mainPattern.ucPatternType == 0 || mainPattern.ucPatternType == 6) && uiisInterlaced != 2) || uiisInterlaced == 3)
                         dOutBaseTime = dBaseTime;
                     else
                         dOutBaseTime = (dBaseTime * 5 / 4);
@@ -579,10 +585,29 @@ mfxStatus PTIR_ProcessorCM::PTIR_ProcessFrame(CmSurface2D *surf_in, CmSurface2D 
                         }
                         else
                         {
-                            frmBuffer[i + 1]->frmProperties.timestamp = frmBuffer[i]->frmProperties.timestamp;
-                            frmBuffer[i]->frmProperties.drop = false;
-                            frmSupply->FreeSurface(static_cast<CmSurface2DEx*>(frmBuffer[i]->inSurf)->pCmSurface2D);
-                            frmSupply->FreeSurface(static_cast<CmSurface2DEx*>(frmBuffer[i]->outSurf)->pCmSurface2D);
+                            if (uiisInterlaced != 3)
+                            {
+                                frmBuffer[i + 1]->frmProperties.timestamp = frmBuffer[i]->frmProperties.timestamp;
+                                frmBuffer[i]->frmProperties.drop = false;
+                            }
+                            else
+                            {
+                                frmBuffer[i]->frmProperties.candidate = false;
+                                CheckGenFrame(frmBuffer, i, mainPattern.ucPatternType, uiisInterlaced);
+                                Prepare_frame_for_queue(&frmIn, frmBuffer[i], uiWidth, uiHeight);
+                                memcpy(frmIn->plaY.ucStats.ucRs, frmBuffer[i]->plaY.ucStats.ucRs, sizeof(double)* 10);
+
+                                frmBuffer[i + 1]->frmProperties.timestamp = frmBuffer[i]->frmProperties.timestamp + dOutBaseTime;
+                                frmIn->frmProperties.timestamp = frmBuffer[i]->frmProperties.timestamp;
+                                frmBuffer[i]->frmProperties.drop = false;
+                                frmBuffer[i]->frmProperties.candidate = false;
+
+                                FrameQueue_Add(&fqIn, frmIn);
+                            }
+                            //frmBuffer[i + 1]->frmProperties.timestamp = frmBuffer[i]->frmProperties.timestamp;
+                            //frmBuffer[i]->frmProperties.drop = false;
+                            //frmSupply->FreeSurface(static_cast<CmSurface2DEx*>(frmBuffer[i]->inSurf)->pCmSurface2D);
+                            //frmSupply->FreeSurface(static_cast<CmSurface2DEx*>(frmBuffer[i]->outSurf)->pCmSurface2D);
 
                             //static_cast<CmSurface2DEx*>(frmBuffer[i]->inSurf)->pCmSurface2D  = 0;
                             //static_cast<CmSurface2DEx*>(frmBuffer[i]->outSurf)->pCmSurface2D = 0;
@@ -598,6 +623,8 @@ mfxStatus PTIR_ProcessorCM::PTIR_ProcessFrame(CmSurface2D *surf_in, CmSurface2D 
                     uiCurTemp = uiCur;
                     if (uiisInterlaced == 2)
                         dBaseTimeSw = (dBaseTime * 5 / 4);
+                    else
+                        dBaseTimeSw = dBaseTime;
                     for (i = 0; i < min(uiDispatch, uiCurTemp + 1); i++)
                     {
                         if (!frmBuffer[0]->frmProperties.drop)
@@ -609,7 +636,8 @@ mfxStatus PTIR_ProcessorCM::PTIR_ProcessFrame(CmSurface2D *surf_in, CmSurface2D 
                                 {
                                     if (frmBuffer[0]->frmProperties.interlaced)
                                     {
-                                        deinterlaceFilter->DeinterlaceMedianFilterCM(frmBuffer, 0, BUFMINSIZE);
+                                        //deinterlaceFilter.DeinterlaceMedianFilterCM(frmBuffer, 0, BUFMINSIZE);
+                                        deinterlaceFilter->DeinterlaceMedianFilterSingleFieldCM(frmBuffer, 0, uiInterlaceParity);
                                     }
 
                                     Prepare_frame_for_queueCM(&frmIn, frmBuffer[0], uiWidth, uiHeight, 0, mb_UsePtirSurfs);
@@ -632,7 +660,22 @@ mfxStatus PTIR_ProcessorCM::PTIR_ProcessFrame(CmSurface2D *surf_in, CmSurface2D 
                             }
                             else
                             {
-                                deinterlaceFilter->DeinterlaceMedianFilterCM(frmBuffer, 0, BUFMINSIZE);
+                                //deinterlaceFilter->DeinterlaceMedianFilterCM(frmBuffer, 0, BUFMINSIZE);
+                                if(uiInterlaceParity) //BFF
+                                {
+                                    if(bFullFrameRate)
+                                    {
+                                        deinterlaceFilter->DeinterlaceMedianFilterCM(frmBuffer, 0, BUFMINSIZE);
+                                    }
+                                    deinterlaceFilter->DeinterlaceMedianFilterCM(frmBuffer, -1, 0); //bootom field
+                                    deinterlaceFilter->DeinterlaceMedianFilterCM(frmBuffer, 0, -1); //top field
+                                }
+                                else //TFF
+                                {
+                                    deinterlaceFilter->DeinterlaceMedianFilterCM(frmBuffer, 0, BUFMINSIZE);
+                                    //deinterlaceFilter->DeinterlaceMedianFilterCM(frmBuffer, -1, 1);
+                                    //deinterlaceFilter->DeinterlaceMedianFilterCM(frmBuffer, 0, -1);
+                                }
 
                                 Prepare_frame_for_queueCM(&frmIn, frmBuffer[0], uiWidth, uiHeight, 0, mb_UsePtirSurfs); // Go to input frame rate
                                 memcpy(frmIn->plaY.ucStats.ucRs, frmBuffer[0]->plaY.ucStats.ucRs, sizeof(double)* 10);

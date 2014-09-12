@@ -603,7 +603,7 @@ void UndoPatternTypes5and7CM(Frame *frmBuffer[BUFMINSIZE], unsigned int firstPos
 void CheckGenFrameCM(Frame **pfrmIn, unsigned int frameNum, unsigned int patternType, unsigned int uiOPMode)
 {
     bool stop = false;
-    if ((pfrmIn[frameNum]->frmProperties.candidate || patternType == 0) && (uiOPMode == 0))
+    if ((pfrmIn[frameNum]->frmProperties.candidate || patternType == 0) && (uiOPMode == 0 || uiOPMode == 3))
     {
         pdeinterlaceFilter->MeasureRs(pfrmIn[frameNum]);
         pfrmIn[frameNum]->frmProperties.interlaced = false;

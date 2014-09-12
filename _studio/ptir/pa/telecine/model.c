@@ -8122,8 +8122,7 @@ unsigned int classify_f1(double dTextureLevel, double dRsG, double dStatDif, dou
 			}
 		}
 	}
-    assert(0 == 1);
-    return 0;
+    return 1;
 }
 unsigned int classify_f2(double dRsG, double dDynDif, double dAngle, double dSADv, double dZeroTexture)
 {
@@ -12762,8 +12761,7 @@ unsigned int classify_f2(double dRsG, double dDynDif, double dAngle, double dSAD
 			}
 		}
 	}
-    assert(0 == 1);
-    return 0;
+    return 1;
 }
 unsigned int classify_f3(double dTextureLevel, double dRsG, double dCountDif, double dRsT, double dCount)
 {
@@ -16247,8 +16245,7 @@ unsigned int classify_f3(double dTextureLevel, double dRsG, double dCountDif, do
 			}
 		}
 	}
-    assert(0 == 1);
-    return 0;
+    return 1;
 }
 unsigned int classify_f4(double dTextureLevel, double dStatDif, double dZeroTexture, double dStatCount, double dSADv)
 {
@@ -20432,8 +20429,7 @@ unsigned int classify_f4(double dTextureLevel, double dStatDif, double dZeroText
 			}
 		}
 	}
-    assert(0 == 1);
-    return 0;
+    return 1;
 }
 unsigned int classify_f5(double dTextureLevel, double dDynDif, double dCountDif, double dStatCount, double dStatDif)
 {
@@ -24050,8 +24046,7 @@ unsigned int classify_f5(double dTextureLevel, double dDynDif, double dCountDif,
 			return 1;
 		}
 	}
-    assert(0 == 1);
-    return 0;
+    return 1;
 }
 unsigned int classify_f6(double dTextureLevel, double dRsG, double dRsT, double dStatDif, double dCount)
 {
@@ -27668,8 +27663,7 @@ unsigned int classify_f6(double dTextureLevel, double dRsG, double dRsT, double 
 			return 1;
 		}
 	}
-    assert(0 == 1);
-    return 0;
+    return 1;
 }
 unsigned int classify_f7(double dTextureLevel, double dDynDif, double dRsDif, double dStatCount, double dZeroTexture)
 {
@@ -31398,8 +31392,7 @@ unsigned int classify_f7(double dTextureLevel, double dDynDif, double dRsDif, do
 			}
 		}
 	}
-    assert(0 == 1);
-    return 0;
+    return 1;
 }
 unsigned int classify_f8(double dDynDif, double dAngle, double SADCTPB, double dRsB, double dRsDif)
 {
@@ -35289,8 +35282,7 @@ unsigned int classify_f8(double dDynDif, double dAngle, double SADCTPB, double d
 			}
 		}
 	}
-    assert(0 == 1);
-    return 0;
+    return 1;
 }
 unsigned int classify_f9(double SADCBPT, double dAngle, double dRsT, double SADCTPB, double dCount)
 {
@@ -39103,8 +39095,7 @@ unsigned int classify_f9(double SADCBPT, double dAngle, double dRsT, double SADC
 			}
 		}
 	}
-    assert(0 == 1);
-    return 0;
+    return 1;
 }
 unsigned int classify_fA(double dRsG, double dStatDif, double dBigTexture, double dStatCount, double dSADv)
 {
@@ -44149,8 +44140,7 @@ unsigned int classify_fA(double dRsG, double dStatDif, double dBigTexture, doubl
 			}
 		}
 	}
-    assert(0 == 1);
-    return 0;
+    return 1;
 }
 unsigned int classify_fB(double dRsT, double dCountDif, double dStatDif, double SADCTPB, double dZeroTexture)
 {
@@ -47746,6 +47736,5 @@ unsigned int classify_fB(double dRsT, double dCountDif, double dStatDif, double 
 			}
 		}
 	}
-    assert(0 == 1);
-    return 0;
+    return 1;
 }

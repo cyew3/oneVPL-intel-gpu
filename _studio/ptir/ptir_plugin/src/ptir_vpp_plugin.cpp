@@ -301,6 +301,8 @@ mfxStatus MFX_PTIR_Plugin::Execute(mfxThreadTask task, mfxU32 , mfxU32 )
             if(MFX_ERR_NONE == mfxSts)
             {
                 surface_out = 0;
+                //lets try to minimize latency
+                break;
                 if(0 == workSurfs.size())
                     break;
             }

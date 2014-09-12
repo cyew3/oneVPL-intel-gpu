@@ -261,7 +261,7 @@ void Convert_to_I420(unsigned char *pucIn, Frame *pfrmOut, char *pcFormat, doubl
 void CheckGenFrame(Frame **pfrmIn, unsigned int frameNum, unsigned int patternType, unsigned int uiOPMode)
 {
     BOOL stop = FALSE;
-    if((pfrmIn[frameNum]->frmProperties.candidate || patternType == 0) && (uiOPMode == 0))
+    if ((pfrmIn[frameNum]->frmProperties.candidate || patternType == 0) && (uiOPMode == 0 || uiOPMode == 3))
     {
         Rs_measurement(pfrmIn[frameNum]);
         pfrmIn[frameNum]->frmProperties.interlaced = FALSE;
