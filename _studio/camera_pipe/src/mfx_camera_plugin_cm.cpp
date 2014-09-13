@@ -9,6 +9,7 @@
 */
 //#include "ipps.h"
 
+#define MFX_VA
 
 #include "mfx_common.h"
 
