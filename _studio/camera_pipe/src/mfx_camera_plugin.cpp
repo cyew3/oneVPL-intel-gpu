@@ -31,15 +31,19 @@ PluginModuleTemplate g_PluginModule = {
     &MFXCamera_Plugin::CreateByDispatcher
 };
 
-MSDK_PLUGIN_API(MFXVPPPlugin*) mfxCreateVPPPlugin() {
-    if (!g_PluginModule.CreateVPPPlugin) {
+MSDK_PLUGIN_API(MFXVPPPlugin*) mfxCreateVPPPlugin() 
+{
+    if (!g_PluginModule.CreateVPPPlugin)
+    {
         return 0;
     }
     return g_PluginModule.CreateVPPPlugin();
 }
 
-MSDK_PLUGIN_API(MFXPlugin*) CreatePlugin(mfxPluginUID uid, mfxPlugin* plugin) {
-    if (!g_PluginModule.CreatePlugin) {
+MSDK_PLUGIN_API(MFXPlugin*) CreatePlugin(mfxPluginUID uid, mfxPlugin* plugin) 
+{
+    if (!g_PluginModule.CreatePlugin)
+    {
         return 0;
     }
     return (MFXPlugin*) g_PluginModule.CreatePlugin(uid, plugin);
@@ -54,8 +58,7 @@ MFXCamera_Plugin::MFXCamera_Plugin(bool CreateByDispatcher)
     m_useSW = false;
     memset(&m_PluginParam, 0, sizeof(mfxPluginParam));
 
-    m_PluginParam.ThreadPolicy = MFX_THREADPOLICY_PARALLEL;//MFX_THREADPOLICY_SERIAL;
-    //m_PluginParam.ThreadPolicy = MFX_THREADPOLICY_SERIAL;
+    m_PluginParam.ThreadPolicy = MFX_THREADPOLICY_PARALLEL;
     m_PluginParam.MaxThreadNum = 1;
     m_PluginParam.APIVersion.Major = MFX_VERSION_MAJOR;
     m_PluginParam.APIVersion.Minor = MFX_VERSION_MINOR;
@@ -258,14 +261,16 @@ mfxStatus MFXCamera_Plugin::Query(mfxVideoParam *in, mfxVideoParam *out)
         //let it be true for now, later need to consider if App passed padded surface or not.
         bool padding = false;
 
-        out->vpp       = in->vpp;
+        out->vpp     = in->vpp;
 
         /* [asyncDepth] section */
         out->AsyncDepth = in->AsyncDepth;
-        if(out->AsyncDepth > 10){
+        if(out->AsyncDepth > 10)
+        {
             out->AsyncDepth = 0;
             return MFX_ERR_UNSUPPORTED;
         }
+
         /* [Protected] section */
         out->Protected = in->Protected;
         if (out->Protected)
@@ -277,13 +282,8 @@ mfxStatus MFXCamera_Plugin::Query(mfxVideoParam *in, mfxVideoParam *out)
         /* [IOPattern] section */
         out->IOPattern = in->IOPattern;
         mfxSts = CheckIOPattern(in,out,0);
-        //mfxU32 temp = out->IOPattern & (MFX_IOPATTERN_IN_VIDEO_MEMORY|MFX_IOPATTERN_IN_SYSTEM_MEMORY);
-        //if (temp==0 || temp==(MFX_IOPATTERN_IN_VIDEO_MEMORY|MFX_IOPATTERN_IN_SYSTEM_MEMORY))
-        //    out->IOPattern = MFX_IOPATTERN_IN_SYSTEM_MEMORY;
-
 
         /* [ExtParam] section */
-
         if (in->NumExtParam == 0)
         {
             return MFX_ERR_UNSUPPORTED;
@@ -333,7 +333,6 @@ mfxStatus MFXCamera_Plugin::Query(mfxVideoParam *in, mfxVideoParam *out)
                     (in->ExtParam[i] != 0 && out->ExtParam[i] == 0))
                 {
                     mfxSts = MFX_ERR_UNDEFINED_BEHAVIOR;
-                    //mfxSts = MFX_ERR_NULL_PTR;
                     break;
                 }
 
@@ -350,6 +349,7 @@ mfxStatus MFXCamera_Plugin::Query(mfxVideoParam *in, mfxVideoParam *out)
                         mfxSts = MFX_ERR_UNDEFINED_BEHAVIOR;
                         break;
                     }
+
                     // --------------------------------
                     // analysis of DOUSE structure
                     // --------------------------------
@@ -398,26 +398,25 @@ mfxStatus MFXCamera_Plugin::Query(mfxVideoParam *in, mfxVideoParam *out)
             mfxSts = CheckExtBuffers(in, out, MFX_CAM_QUERY_CHECK_RANGE);
 
         } // if (in->ExtParam && out->ExtParam && (in->NumExtParam == out->NumExtParam) )
-        else {
+        else
+        {
             mfxSts = MFX_ERR_UNDEFINED_BEHAVIOR;
         }
 
         //assume we are setting the same params in init.
         if(mfxSts == MFX_WRN_FILTER_SKIPPED && in != out)
             mfxSts = MFX_ERR_UNSUPPORTED;
-        //if (mfxSts < MFX_ERR_NONE)
-        //    return mfxSts;
 
         mfxStatus sts = MFX_ERR_NONE;
 
-        if (out->vpp.In.BitDepthLuma < 8 || out->vpp.In.BitDepthLuma > 16 || (out->vpp.In.BitDepthLuma & 1)) {
+        if (out->vpp.In.BitDepthLuma < 8 || out->vpp.In.BitDepthLuma > 16 || (out->vpp.In.BitDepthLuma & 1))
+        {
             out->vpp.In.BitDepthLuma = 0;
             sts = MFX_ERR_UNSUPPORTED;
         }
 
         if (out->vpp.In.FourCC != MFX_FOURCC_R16)
         {
-            //if (out->vpp.In.FourCC) // ERR_NONE if == 0 ???
             {
                 out->vpp.In.FourCC = 0;
                 out->vpp.Out.ChromaFormat = 0;
@@ -427,25 +426,29 @@ mfxStatus MFXCamera_Plugin::Query(mfxVideoParam *in, mfxVideoParam *out)
 
         if (out->vpp.Out.FourCC != MFX_FOURCC_RGB4 && out->vpp.Out.FourCC != MFX_FOURCC_ARGB16)
         {
-            //if (out->vpp.Out.FourCC) // pass if == 0 ???
             {
                 out->vpp.Out.FourCC = 0;
                 out->vpp.Out.ChromaFormat = 0;
                 sts = MFX_ERR_UNSUPPORTED;
             }
         }
-        if(out->vpp.Out.ChromaFormat != MFX_CHROMAFORMAT_YUV444){
+
+        if(out->vpp.Out.ChromaFormat != MFX_CHROMAFORMAT_YUV444)
+        {
             {
                 out->vpp.Out.ChromaFormat = 0;
                 sts = MFX_ERR_UNSUPPORTED;
             }
         }
-        if(out->vpp.In.ChromaFormat){
+
+        if(out->vpp.In.ChromaFormat)
+        {
             {
                 out->vpp.In.ChromaFormat = 0;
                 sts = MFX_ERR_UNSUPPORTED;
             }
         }
+
         if (!(out->vpp.In.FrameRateExtN * out->vpp.In.FrameRateExtD) &&
             (out->vpp.In.FrameRateExtN + out->vpp.In.FrameRateExtD))
         {
@@ -474,11 +477,13 @@ mfxStatus MFXCamera_Plugin::Query(mfxVideoParam *in, mfxVideoParam *out)
                 sts = MFX_ERR_UNSUPPORTED;
             }
         }
-        else{
+        else
+        {
             out->vpp.In.CropW = 0;
             out->vpp.In.CropX = 0;
             sts = MFX_ERR_UNSUPPORTED;
         }
+
         if (out->vpp.In.Height)
         {
             if ((out->vpp.In.Height & 7) != 0)
@@ -498,9 +503,9 @@ mfxStatus MFXCamera_Plugin::Query(mfxVideoParam *in, mfxVideoParam *out)
                 out->vpp.In.CropY = out->vpp.In.CropH = 0;
                 sts = MFX_ERR_UNSUPPORTED;
             }
-
         }
-        else{
+        else
+        {
             out->vpp.In.CropY = 0;
             out->vpp.In.CropH = 0;
             sts = MFX_ERR_UNSUPPORTED;
@@ -513,10 +518,7 @@ mfxStatus MFXCamera_Plugin::Query(mfxVideoParam *in, mfxVideoParam *out)
             out->vpp.Out.FrameRateExtD = 0;
             sts = MFX_ERR_UNSUPPORTED;
         }
-        //mfxU8 top,bottom,left,right = 8;//need to change hardcoded value
-        /*if(padding){
 
-        }*/
         if (out->vpp.Out.Width)
         {
             if ((out->vpp.Out.Width & 15) != 0)
@@ -535,22 +537,34 @@ mfxStatus MFXCamera_Plugin::Query(mfxVideoParam *in, mfxVideoParam *out)
                 out->vpp.Out.CropX = out->vpp.Out.CropW = 0;
                 sts = MFX_ERR_UNSUPPORTED;
             }
+
             //need to check carefully, it is not right for cases when app gives padded surface.
-            if(!padding){
-                if(out->vpp.Out.Width != out->vpp.In.Width && out->vpp.Out.Width != out->vpp.In.CropW && out->vpp.Out.CropW != out->vpp.In.Width && out->vpp.Out.CropW != out->vpp.In.CropW){
+            if(!padding)
+            {
+                if(out->vpp.Out.Width != out->vpp.In.Width &&
+                   out->vpp.Out.Width != out->vpp.In.CropW &&
+                   out->vpp.Out.CropW != out->vpp.In.Width &&
+                   out->vpp.Out.CropW != out->vpp.In.CropW)
+                {
                     out->vpp.Out.Width = 0;
-                    out->vpp.In.Width = 0;
+                    out->vpp.In.Width  = 0;
                     out->vpp.Out.CropW = 0;
-                    out->vpp.In.CropW = 0;
+                    out->vpp.In.CropW  = 0;
                     sts = MFX_ERR_UNSUPPORTED;
                 }
-            }else{
+            }
+            else
+            {
                 //only 8 pixel padding supported
-                if(out->vpp.Out.Width != (out->vpp.In.Width-16) && out->vpp.Out.Width != (out->vpp.In.CropW-16) && out->vpp.Out.CropW != (out->vpp.In.Width-16) && out->vpp.Out.CropW != (out->vpp.In.CropW-16)){
+                if(out->vpp.Out.Width != (out->vpp.In.Width-16) &&
+                   out->vpp.Out.Width != (out->vpp.In.CropW-16) &&
+                   out->vpp.Out.CropW != (out->vpp.In.Width-16) &&
+                   out->vpp.Out.CropW != (out->vpp.In.CropW-16))
+                {
                     out->vpp.Out.Width = 0;
-                    out->vpp.In.Width = 0;
+                    out->vpp.In.Width  = 0;
                     out->vpp.Out.CropW = 0;
-                    out->vpp.In.CropW = 0;
+                    out->vpp.In.CropW  = 0;
                     sts = MFX_ERR_UNSUPPORTED;
                 }
             }
@@ -563,6 +577,7 @@ mfxStatus MFXCamera_Plugin::Query(mfxVideoParam *in, mfxVideoParam *out)
                 out->vpp.Out.Height = 0;
                 sts = MFX_ERR_UNSUPPORTED;
             }
+
             if (out->vpp.Out.CropH > out->vpp.Out.Height)
             {
                 out->vpp.Out.CropH = 0;
@@ -574,22 +589,33 @@ mfxStatus MFXCamera_Plugin::Query(mfxVideoParam *in, mfxVideoParam *out)
                 out->vpp.Out.CropY = out->vpp.Out.CropH = 0;
                 sts = MFX_ERR_UNSUPPORTED;
             }
-            //need to check carefully, it is not right for cases when app gives padded surface.
-            if(!padding){
-                if(out->vpp.Out.Height != (out->vpp.In.Height) && out->vpp.Out.Height != (out->vpp.In.CropH) && out->vpp.Out.CropH != (out->vpp.In.Height) && out->vpp.Out.CropH != (out->vpp.In.CropH)){
 
+            //need to check carefully, it is not right for cases when app gives padded surface.
+            if(!padding)
+            {
+                if(out->vpp.Out.Height != (out->vpp.In.Height) &&
+                   out->vpp.Out.Height != (out->vpp.In.CropH)  &&
+                   out->vpp.Out.CropH  != (out->vpp.In.Height) &&
+                   out->vpp.Out.CropH  != (out->vpp.In.CropH))
+                {
                     out->vpp.Out.Height = 0;
-                    out->vpp.In.Height = 0;
-                    out->vpp.Out.CropH = 0;
-                    out->vpp.In.CropH = 0;
+                    out->vpp.In.Height  = 0;
+                    out->vpp.Out.CropH  = 0;
+                    out->vpp.In.CropH   = 0;
                     sts = MFX_ERR_UNSUPPORTED;
                 }
-            }else{
-                if(out->vpp.Out.Height != (out->vpp.In.Height-16) && out->vpp.Out.Height != (out->vpp.In.CropH-16) && out->vpp.Out.CropH != (out->vpp.In.Height-16) && out->vpp.Out.CropH != (out->vpp.In.CropH-16)){
+            }
+            else
+            {
+                if(out->vpp.Out.Height != (out->vpp.In.Height-16) &&
+                   out->vpp.Out.Height != (out->vpp.In.CropH-16)  &&
+                   out->vpp.Out.CropH  != (out->vpp.In.Height-16) &&
+                   out->vpp.Out.CropH  != (out->vpp.In.CropH-16))
+                {
                     out->vpp.Out.Height = 0;
-                    out->vpp.In.Height = 0;
-                    out->vpp.Out.CropH = 0;
-                    out->vpp.In.CropH = 0;
+                    out->vpp.In.Height  = 0;
+                    out->vpp.Out.CropH  = 0;
+                    out->vpp.In.CropH   = 0;
                     sts = MFX_ERR_UNSUPPORTED;
                 }
             }
@@ -606,10 +632,6 @@ mfxStatus MFXCamera_Plugin::Query(mfxVideoParam *in, mfxVideoParam *out)
         else if (sts < MFX_ERR_NONE)
             return sts;
 
-        //if(m_platform < MFX_HW_HSW){
-        //    mfxSts = MFX_WRN_PARTIAL_ACCELERATION;
-        //    m_useSW = true;
-        //}
         return mfxSts;
     }
 }
@@ -851,7 +873,6 @@ mfxStatus MFXCamera_Plugin::Init(mfxVideoParam *par)
     fclose(f);
 #endif // CAMERA_DEBUG_PRINTF
 
-
     m_mfxVideoParam = *par;
     m_core = m_session->m_pCORE.get();
 
@@ -868,6 +889,7 @@ if (!m_core->IsExternalFrameAllocator()) {
     {
         m_useSW = true;
     }
+
     mfxSts = Query(&m_mfxVideoParam, &m_mfxVideoParam);
     if(mfxSts == MFX_ERR_UNSUPPORTED)
         return MFX_ERR_INVALID_VIDEO_PARAM;
@@ -881,19 +903,19 @@ if (!m_core->IsExternalFrameAllocator()) {
     m_Caps.bDemosaic = 1;           // demosaic is always on
     ProcessExtendedBuffers(&m_mfxVideoParam);
 
-    if (m_mfxVideoParam.vpp.Out.FourCC == MFX_FOURCC_RGB4) {
-        //m_Caps.bOutToARGB8 = 1;
+    if (m_mfxVideoParam.vpp.Out.FourCC == MFX_FOURCC_RGB4)
+    {
         m_Caps.bOutToARGB16 = 0;
-    } else {
-        //m_Caps.bOutToARGB8 = 0;
+    }
+    else
+    {
         m_Caps.bOutToARGB16 = 1;
     }
 
-
     if (m_Caps.bNoPadding) 
     {
-        if (m_PaddingParams.top < MFX_CAM_MIN_REQUIRED_PADDING_TOP || m_PaddingParams.bottom < MFX_CAM_MIN_REQUIRED_PADDING_BOTTOM ||
-            m_PaddingParams.left < MFX_CAM_MIN_REQUIRED_PADDING_LEFT || m_PaddingParams.right < MFX_CAM_MIN_REQUIRED_PADDING_RIGHT)
+        if (m_PaddingParams.top  < MFX_CAM_MIN_REQUIRED_PADDING_TOP  || m_PaddingParams.bottom < MFX_CAM_MIN_REQUIRED_PADDING_BOTTOM ||
+            m_PaddingParams.left < MFX_CAM_MIN_REQUIRED_PADDING_LEFT || m_PaddingParams.right  < MFX_CAM_MIN_REQUIRED_PADDING_RIGHT)
         {
             m_Caps.bNoPadding = 0; // padding provided by application is not sufficient - have to do it ourselves
 
@@ -905,19 +927,24 @@ if (!m_core->IsExternalFrameAllocator()) {
         }
 
     }
+
     {
-        m_PaddingParams.top = MFX_CAM_DEFAULT_PADDING_TOP;
+        m_PaddingParams.top    = MFX_CAM_DEFAULT_PADDING_TOP;
         m_PaddingParams.bottom = MFX_CAM_DEFAULT_PADDING_BOTTOM;
-        m_PaddingParams.left = MFX_CAM_DEFAULT_PADDING_LEFT;
-        m_PaddingParams.right = MFX_CAM_DEFAULT_PADDING_RIGHT;
+        m_PaddingParams.left   = MFX_CAM_DEFAULT_PADDING_LEFT;
+        m_PaddingParams.right  = MFX_CAM_DEFAULT_PADDING_RIGHT;
     }
-    if(!m_Caps.bNoPadding){
-        m_FrameSizeExtra.frameWidth64   = ((m_mfxVideoParam.vpp.In.CropW + 31) &~ 0x1F); // 2 bytes each for In, 4 bytes for Out, so 32 is good enough for 64 ???
+
+    if(!m_Caps.bNoPadding)
+    {
+        m_FrameSizeExtra.frameWidth64      = ((m_mfxVideoParam.vpp.In.CropW + 31) &~ 0x1F); // 2 bytes each for In, 4 bytes for Out, so 32 is good enough for 64 ???
         m_FrameSizeExtra.paddedFrameWidth  = m_mfxVideoParam.vpp.In.CropW + m_PaddingParams.left + m_PaddingParams.right;
         m_FrameSizeExtra.paddedFrameHeight = m_mfxVideoParam.vpp.In.CropH + m_PaddingParams.top + m_PaddingParams.bottom;
         m_FrameSizeExtra.vSliceWidth       = (((m_mfxVideoParam.vpp.In.CropW / CAM_PIPE_KERNEL_SPLIT)  + 15) &~ 0xF) + 16;
-    }else{
-        m_FrameSizeExtra.frameWidth64   = ((m_mfxVideoParam.vpp.In.Width + 31) &~ 0x1F); // 2 bytes each for In, 4 bytes for Out, so 32 is good enough for 64 ???
+    }
+    else
+    {
+        m_FrameSizeExtra.frameWidth64      = ((m_mfxVideoParam.vpp.In.Width + 31) &~ 0x1F); // 2 bytes each for In, 4 bytes for Out, so 32 is good enough for 64 ???
         m_FrameSizeExtra.paddedFrameWidth  = m_mfxVideoParam.vpp.In.Width;
         m_FrameSizeExtra.paddedFrameHeight = m_mfxVideoParam.vpp.In.Height;
         m_FrameSizeExtra.vSliceWidth       = (((m_mfxVideoParam.vpp.In.Width / CAM_PIPE_KERNEL_SPLIT)  + 15) &~ 0xF) + 16;
@@ -936,9 +963,12 @@ if (!m_core->IsExternalFrameAllocator()) {
         m_Caps.InputMemoryOperationMode = MEM_GPUSHARED;
 
     /* TODO - automatically select SW/HW based on machine capabilities */
-    if (m_useSW) {
+    if (m_useSW)
+    {
         InitCamera_CPU(&m_cmi, m_mfxVideoParam.vpp.In.CropW, m_mfxVideoParam.vpp.In.CropH, m_InputBitDepth, !m_Caps.bNoPadding, m_Caps.BayerPatternType);
-    } else {
+    }
+    else
+    {
         m_cmDevice.Reset(CreateCmDevicePtr(m_core));
         m_cmCtx.reset(new CmContext(m_mfxVideoParam, m_cmDevice, &m_Caps, m_platform));
         m_cmCtx->CreateThreadSpaces(&m_FrameSizeExtra);
@@ -957,7 +987,9 @@ if (!m_core->IsExternalFrameAllocator()) {
 
     CAMERA_LOG("MFXVideoVPP_Init device %p m_cmSurfIn %p  sts =  %d \n", m_cmDevice, m_cmSurfIn, mfxSts);
 
-    if(m_useSW)mfxSts = MFX_WRN_PARTIAL_ACCELERATION;
+    if(m_useSW)
+        mfxSts = MFX_WRN_PARTIAL_ACCELERATION;
+
     return mfxSts;
 }
 

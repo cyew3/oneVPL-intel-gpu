@@ -10,8 +10,6 @@ File Name: mfx_camera_plugin_utils.cpp
 
 \* ****************************************************************************** */
 
-#define MFX_VA
-
 #include "mfx_camera_plugin_utils.h"
 #include "mfx_camera_plugin.h"
 #include "vm_time.h"
@@ -445,7 +443,7 @@ mfxStatus MFXCamera_Plugin::AllocateInternalSurfaces()
     sts = m_raw16padded.AllocCmSurfaces(m_cmDevice, request);
     MFX_CHECK_STS(sts);
 
-    request.Info.Width = (mfxU16)m_FrameSizeExtra.frameWidth64;
+    request.Info.Width  = (mfxU16)m_FrameSizeExtra.frameWidth64;
     request.Info.Height = m_mfxVideoParam.vpp.In.CropH;
     //request.Type = MFX_MEMTYPE_D3D_INT;
     request.Info.FourCC = CM_SURFACE_FORMAT_A8;
@@ -456,7 +454,7 @@ mfxStatus MFXCamera_Plugin::AllocateInternalSurfaces()
     sts = m_raw16aligned.AllocCmSurfaces(m_cmDevice, request);
     MFX_CHECK_STS(sts);
 
-    request.Info.Width = (mfxU16)m_FrameSizeExtra.paddedFrameWidth;
+    request.Info.Width  = (mfxU16)m_FrameSizeExtra.paddedFrameWidth;
     request.Info.Height = (mfxU16)m_FrameSizeExtra.paddedFrameHeight;
     //request.Type = MFX_MEMTYPE_D3D_INT;
     request.Info.FourCC = CM_SURFACE_FORMAT_A8;
@@ -469,15 +467,17 @@ mfxStatus MFXCamera_Plugin::AllocateInternalSurfaces()
 
     m_avgFlagSurf = CreateSurface(m_cmDevice, m_FrameSizeExtra.vSliceWidth, m_FrameSizeExtra.paddedFrameHeight, CM_SURFACE_FORMAT_A8);
 
-    if (m_Caps.bForwardGammaCorrection) {
+    if (m_Caps.bForwardGammaCorrection)
+    {
         m_gammaCorrectSurf = CreateSurface(m_cmDevice, 32, 4, CM_SURFACE_FORMAT_A8);
-        m_gammaPointSurf = CreateSurface(m_cmDevice, 32, 4, CM_SURFACE_FORMAT_A8);
+        m_gammaPointSurf   = CreateSurface(m_cmDevice, 32, 4, CM_SURFACE_FORMAT_A8);
         MFX_CHECK_NULL_PTR2(m_gammaCorrectSurf, m_gammaPointSurf)
 
         mfxU8 *pGammaPts = (mfxU8 *)m_GammaParams.gamma_lut.gammaPoints;
         mfxU8 *pGammaCor = (mfxU8 *)m_GammaParams.gamma_lut.gammaCorrect;
 
-        if (!pGammaPts || !pGammaCor) {
+        if (!pGammaPts || !pGammaCor)
+        {
             return MFX_ERR_INVALID_VIDEO_PARAM;
         }
 
@@ -491,7 +491,6 @@ mfxStatus MFXCamera_Plugin::AllocateInternalSurfaces()
         int width = m_Caps.bNoPadding ? m_FrameSizeExtra.paddedFrameWidth : m_mfxVideoParam.vpp.In.CropW;
         int height = m_Caps.bNoPadding ? m_FrameSizeExtra.paddedFrameHeight : m_mfxVideoParam.vpp.In.CropH;
 
-
 #ifdef CAMERA_DEBUG_PRINTF
     FILE *f = fopen("CanonOut.txt", "at");
     fprintf(f, "AllocateInternalSurfaces:  m_cmSurfIn width %d height %d \n", width, height);
@@ -499,7 +498,7 @@ mfxStatus MFXCamera_Plugin::AllocateInternalSurfaces()
 #endif // CAMERA_DEBUG_PRINTF
 
         m_cmSurfIn = CreateSurface(m_cmDevice, width * sizeof(mfxU16),  height, CM_SURFACE_FORMAT_A8);
-//        m_cmSurfIn = CreateSurface(m_cmDevice, m_FrameSizeExtra.paddedFrameWidth*sizeof(mfxU16),  m_FrameSizeExtra.paddedFrameHeight, CM_SURFACE_FORMAT_A8);
+//      m_cmSurfIn = CreateSurface(m_cmDevice, m_FrameSizeExtra.paddedFrameWidth*sizeof(mfxU16),  m_FrameSizeExtra.paddedFrameHeight, CM_SURFACE_FORMAT_A8);
     }
 
     if (m_Caps.OutputMemoryOperationMode == MEM_GPUSHARED) // need to allocate gammaSurf in case the output memory is not 4k aligned
@@ -849,7 +848,6 @@ mfxStatus MFXCamera_Plugin::CreateEnqueueTasks(AsyncParams *pParam)
         __itt_task_begin(CamPipeAccel, __itt_null, __itt_null, task22);
 #endif
 
-
         if (m_Caps.InputMemoryOperationMode == MEM_GPUSHARED && !pParam->inSurf2DUP)
         {
 
@@ -1087,27 +1085,34 @@ void ConvertCaps2ListDoUse(mfxCameraCaps& caps, std::vector<mfxU32>& list)
 
 #define MFX_CAM_DEFAULT_GAMMA_VALUE 2.2
 #define MFX_CAM_GAMMA_VALUE_MIN 0.1 //??? 1.0?
-
 #define MFX_CAM_GAMMA_NUM_POINTS_MIN 8 // ???
 
-mfxStatus GammaCorrectionCheckParam(mfxExtCamGammaCorrection * pGammaBuf, mfxU32 bitdepth)
+mfxStatus GammaCorrectionCheckParam(mfxExtCamGammaCorrection * pGammaBuf, mfxU32 /*bitdepth*/)
 {
     mfxStatus sts = MFX_ERR_NONE;
-    if (pGammaBuf->Mode != MFX_CAM_GAMMA_VALUE && pGammaBuf->Mode != MFX_CAM_GAMMA_LUT) {
+    if (pGammaBuf->Mode != MFX_CAM_GAMMA_VALUE && pGammaBuf->Mode != MFX_CAM_GAMMA_LUT)
+    {
         pGammaBuf->GammaValue = (mfxF64)0;
         pGammaBuf->NumPoints = 0;
         return MFX_ERR_UNSUPPORTED; // ??? CLIP and MFX_ERR_UNSUPPORTED ???
-    } else if (pGammaBuf->Mode == MFX_CAM_GAMMA_VALUE) {
-        if (pGammaBuf->GammaValue < MFX_CAM_GAMMA_VALUE_MIN) {
+    } 
+    else if (pGammaBuf->Mode == MFX_CAM_GAMMA_VALUE)
+    {
+        if (pGammaBuf->GammaValue < MFX_CAM_GAMMA_VALUE_MIN)
+        {
             pGammaBuf->GammaValue = MFX_CAM_GAMMA_VALUE_MIN;
             return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM; //MFX_WRN_INCOMPATIBLE_VIDEO_PARAM ???
         }
-    } else if (pGammaBuf->Mode == MFX_CAM_GAMMA_LUT) {
+    }
+    else if (pGammaBuf->Mode == MFX_CAM_GAMMA_LUT)
+    {
         mfxU32 numPoints = MFX_CAM_GAMMA_NUM_POINTS_SKL;
-        if (pGammaBuf->NumPoints != numPoints) {
+        if (pGammaBuf->NumPoints != numPoints)
+        {
             pGammaBuf->NumPoints = (mfxU16)numPoints;
             return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
         }
+
         if (!(pGammaBuf->GammaPoint && pGammaBuf->GammaCorrected))
             return MFX_ERR_NULL_PTR;
         //mfxU16 *points = pGammaBuf->GammaPoint;
@@ -1241,10 +1246,14 @@ mfxStatus QueryExtBuf(mfxExtBuffer *extBuf, mfxU32 bitdepth, mfxU32 action)
 void correctDoUseList(mfxU32 *pList, mfxU32 extCount, mfxU32 supportedCount)
 {
     mfxU32 i, j;
-    for (i = 0; i < supportedCount; i++) {
-        if (pList[i] == 0) {
-            for (j = i + 1; j < extCount; j++) {
-                if (pList[j]) {
+    for (i = 0; i < supportedCount; i++)
+    {
+        if (pList[i] == 0)
+        {
+            for (j = i + 1; j < extCount; j++)
+            {
+                if (pList[j])
+                {
                     pList[i] = pList[j];
                     pList[j] = 0;
                     break;
@@ -1254,24 +1263,31 @@ void correctDoUseList(mfxU32 *pList, mfxU32 extCount, mfxU32 supportedCount)
     }
 }
 
-mfxStatus MfxCameraPlugin::CheckIOPattern(mfxVideoParam *in, mfxVideoParam *out, mfxU32 mode){
+mfxStatus MfxCameraPlugin::CheckIOPattern(mfxVideoParam *in, mfxVideoParam *out, mfxU32 mode)
+{
 
    mfxStatus error_status = (mode==0) ? MFX_ERR_UNSUPPORTED : MFX_ERR_INVALID_VIDEO_PARAM;
 
-   if(in->IOPattern & (MFX_IOPATTERN_IN_VIDEO_MEMORY|MFX_IOPATTERN_IN_OPAQUE_MEMORY)){
-        out->IOPattern = 0;
-        return error_status;
-   }
-   if(!((in->IOPattern & 0x0f) && (in->IOPattern & 0xf0))){
-        out->IOPattern = 0;
-        return error_status;
-   }
-   if(in->IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY && in->vpp.In.FourCC == MFX_FOURCC_ARGB16){
+   if(in->IOPattern & (MFX_IOPATTERN_IN_VIDEO_MEMORY|MFX_IOPATTERN_IN_OPAQUE_MEMORY))
+   {
         out->IOPattern = 0;
         return error_status;
    }
 
-   if(in->IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY){
+   if(!((in->IOPattern & 0x0f) && (in->IOPattern & 0xf0)))
+   {
+        out->IOPattern = 0;
+        return error_status;
+   }
+
+   if(in->IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY && in->vpp.In.FourCC == MFX_FOURCC_ARGB16)
+   {
+        out->IOPattern = 0;
+        return error_status;
+   }
+
+   if(in->IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY)
+   {
         out->IOPattern = 0;
         return error_status;
    }
@@ -1295,7 +1311,8 @@ mfxStatus MfxCameraPlugin::CheckExtBuffers(mfxVideoParam *param, mfxVideoParam *
     GetDoUseFilterList(param, &pExtList, &pNumAlg);
     if (pNumAlg)
         extCount = *pNumAlg;
-    if (out) {
+    if (out)
+    {
         GetDoUseFilterList(out, &pOutList, &pNumAlg);
         if (pNumAlg)
             outCount = *pNumAlg;
@@ -1306,9 +1323,12 @@ mfxStatus MfxCameraPlugin::CheckExtBuffers(mfxVideoParam *param, mfxVideoParam *
     mfxU32 searchCount = sizeof(g_TABLE_CAMERA_EXTBUFS) / sizeof(*g_TABLE_CAMERA_EXTBUFS);
     mfxU32 supportedCount = extCount;
     bool camPipefound = false;
-    for (i = 0; i < extCount; i++) {
-        if (!IsFilterFound(g_TABLE_CAMERA_EXTBUFS, searchCount, pExtList[i])) {
-            if (mode != MFX_CAM_QUERY_RETURN_STATUS) {
+    for (i = 0; i < extCount; i++)
+    {
+        if (!IsFilterFound(g_TABLE_CAMERA_EXTBUFS, searchCount, pExtList[i]))
+        {
+            if (mode != MFX_CAM_QUERY_RETURN_STATUS)
+            {
                 if (!out) 
                     pExtList[i] = 0;
                 else
@@ -1316,11 +1336,15 @@ mfxStatus MfxCameraPlugin::CheckExtBuffers(mfxVideoParam *param, mfxVideoParam *
                 supportedCount--;
             }
             sts = MFX_ERR_UNSUPPORTED;
-        } else if (out) {
+        }
+        else if (out)
+        {
             pOutList[i] = pExtList[i];
         }
     }
-    if (supportedCount != extCount) {
+
+    if (supportedCount != extCount)
+    {
         mfxU32 *pList = out ? pOutList : pExtList;
         correctDoUseList(pList, extCount, supportedCount);
         *pNumAlg = supportedCount;
@@ -1336,7 +1360,8 @@ mfxStatus MfxCameraPlugin::CheckExtBuffers(mfxVideoParam *param, mfxVideoParam *
             continue;
         if(curId == MFX_EXTBUF_CAM_PIPECONTROL)
             camPipefound = true;
-        if (!IsFilterFound(g_TABLE_CAMERA_EXTBUFS, searchCount, curId)) {
+        if (!IsFilterFound(g_TABLE_CAMERA_EXTBUFS, searchCount, curId))
+        {
             sts = MFX_ERR_UNSUPPORTED;
             break;
         }
@@ -1344,19 +1369,22 @@ mfxStatus MfxCameraPlugin::CheckExtBuffers(mfxVideoParam *param, mfxVideoParam *
 
     if(!camPipefound)
         sts = MFX_ERR_UNSUPPORTED;
+
     MFX_CHECK_STS(sts);
 
     // no non-camera ext buffers; now to checking which of them are supported
-
     std::vector<mfxU32> capsList(1);
     mfxCameraCaps caps;
     QueryCaps(caps);
     ConvertCaps2ListDoUse(caps, capsList);
     capsList.push_back(MFX_EXTBUF_CAM_PIPECONTROL);
 
-    for (i = 0; i < extCount; i++) {
-        if (!IsFilterFound(&capsList[0], (mfxU32)capsList.size(), pExtList[i])) {
-            if (mode != MFX_CAM_QUERY_RETURN_STATUS) {
+    for (i = 0; i < extCount; i++)
+    {
+        if (!IsFilterFound(&capsList[0], (mfxU32)capsList.size(), pExtList[i]))
+        {
+            if (mode != MFX_CAM_QUERY_RETURN_STATUS)
+            {
                 if (!out)
                     pExtList[i] = 0;
                 else
@@ -1364,35 +1392,43 @@ mfxStatus MfxCameraPlugin::CheckExtBuffers(mfxVideoParam *param, mfxVideoParam *
                 supportedCount--;
             }
             sts = MFX_WRN_FILTER_SKIPPED;
-        } else if (out) {
+        }
+        else if (out)
+        {
             pOutList[i] = pExtList[i];
         }
     }
 
-    if (supportedCount != extCount) {
+    if (supportedCount != extCount)
+    {
         mfxU32 *pList = out ? pOutList : pExtList;
         correctDoUseList(pList, extCount, supportedCount);
         *pNumAlg = supportedCount;
     }
 
-    for (i = 0; i < param->NumExtParam; i++) {
+    for (i = 0; i < param->NumExtParam; i++)
+    {
         mfxU32 curId = param->ExtParam[i]->BufferId;
         if (MFX_EXTBUFF_VPP_DOUSE == curId)
             continue;
         if (!IsFilterFound(&capsList[0], (mfxU32)capsList.size(), curId)) 
         {
-            if (mode != MFX_CAM_QUERY_RETURN_STATUS) {
+            if (mode != MFX_CAM_QUERY_RETURN_STATUS)
+            {
                 mfxExtBuffer *pBuf = out ? out->ExtParam[i] : param->ExtParam[i];
                 QueryExtBuf(pBuf, param->vpp.In.BitDepthLuma, MFX_CAM_QUERY_SET0);
                 sts = MFX_WRN_FILTER_SKIPPED;
-            } else {
+            }
+            else
+            {
                 sts = MFX_WRN_FILTER_SKIPPED;
                 break;
             }
         } 
         else if (IsFilterFound(&pipelineList[0], (mfxU32)pipelineList.size(), curId)) 
         {
-            if (mode != MFX_CAM_QUERY_RETURN_STATUS) {
+            if (mode != MFX_CAM_QUERY_RETURN_STATUS)
+            {
                 mfxExtBuffer *pBuf = out ? out->ExtParam[i] : param->ExtParam[i];
                 QueryExtBuf(pBuf, param->vpp.In.BitDepthLuma, MFX_CAM_QUERY_SET0);
             }
@@ -1401,13 +1437,15 @@ mfxStatus MfxCameraPlugin::CheckExtBuffers(mfxVideoParam *param, mfxVideoParam *
         else 
         {
             pipelineList.push_back(curId);
-            if (mode != MFX_CAM_QUERY_RETURN_STATUS) {
+            if (mode != MFX_CAM_QUERY_RETURN_STATUS)
+            {
                 mfxU32 action = mode;
                 if (action == MFX_CAM_QUERY_SIGNAL)
                     action = MFX_CAM_QUERY_SET1;
 
                 mfxExtBuffer *pBuf = param->ExtParam[i];
-                if (out) {
+                if (out)
+                {
                     memcpy_s(out->ExtParam[i], out->ExtParam[i]->BufferSz, param->ExtParam[i], param->ExtParam[i]->BufferSz); // can we rely on BufferSz ? or use GetConfigSize instead?
                     pBuf = out->ExtParam[i];
                 }
@@ -1424,8 +1462,10 @@ mfxStatus MfxCameraPlugin::CheckExtBuffers(mfxVideoParam *param, mfxVideoParam *
 mfxStatus MFXCamera_Plugin::WaitForActiveThreads()
 {
     mfxStatus sts = MFX_WRN_IN_EXECUTION;
-    for (mfxU32 i = 0; i < 200; i++) {
-        if (m_activeThreadCount == 0) {
+    for (mfxU32 i = 0; i < 200; i++)
+    {
+        if (m_activeThreadCount == 0)
+        {
             sts = MFX_ERR_NONE;
             break;
         }

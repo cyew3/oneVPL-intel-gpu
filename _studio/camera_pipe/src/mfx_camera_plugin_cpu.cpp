@@ -24,7 +24,7 @@ int CPU_Padding_16bpp(unsigned short* bayer_original, //input  of Padding module
                       short* bayer_input,              //output of Padding module, Paddded bayer image of 16bpp format
                       int width,                      //input framewidth
                       int height,                       //input frameheight
-                      int bitDepth, int BayerType)
+                      int bitDepth, int /*BayerType*/)
 {
 
     int new_width = (width / 8 + 2) * 8;
@@ -82,7 +82,7 @@ int CPU_Padding_16bpp(unsigned short* bayer_original, //input  of Padding module
 
 /* TODO - add correct offset for BayerType, see Cm code (need test content) */
 int CPU_GoodPixelCheck(short *pSrcBayer16bpp, int m_Width, int m_Height,
-                       unsigned char *pDstFlag8bpp, int Diff_Prec, int BayerType=0)
+                       unsigned char *pDstFlag8bpp, int Diff_Prec, int /*BayerType=0*/)
 {
     int index;
     int index01;

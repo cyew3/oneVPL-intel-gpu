@@ -9,7 +9,6 @@
 */
 //#include "ipps.h"
 
-#define MFX_VA
 
 #include "mfx_common.h"
 
@@ -312,20 +311,20 @@ CmContext::CmContext(
     mfxCameraCaps *     pCaps,
     eMFXHWType platform)
 {
-//    Zero(task_WhiteBalanceManual);
+//  Zero(task_WhiteBalanceManual);
     Zero(task_Padding);
     Zero(task_GoodPixelCheck);
     Zero(task_RestoreGreen);
     Zero(task_RestoreBlueRed);
     Zero(task_SAD);
     Zero(task_DecideAvg);
-//    Zero(task_CheckConfidence);
-//    Zero(task_BadPixelCheck);
-//    Zero(task_3x3CCM);
+//  Zero(task_CheckConfidence);
+//  Zero(task_BadPixelCheck);
+//  Zero(task_3x3CCM);
     Zero(task_FwGamma);
     Zero(task_ARGB);
-    kernel_ARGB = 0;
-    kernel_FwGamma = 0;
+    kernel_ARGB     = 0;
+    kernel_FwGamma  = 0;
     kernel_FwGamma1 = 0;
 
     m_platform = platform;
@@ -343,37 +342,54 @@ void CmContext::CreateCameraKernels()
 
     kernel_good_pixel_check = CreateKernel(m_device, m_program, CM_KERNEL_FUNCTION(GOOD_PIXEL_CHECK), NULL);
 
-    for (i = 0; i < CAM_PIPE_KERNEL_SPLIT; i++) {
+    for (i = 0; i < CAM_PIPE_KERNEL_SPLIT; i++)
+    {
         CAM_PIPE_KERNEL_ARRAY(kernel_restore_green, i) = CreateKernel(m_device, m_program, CM_KERNEL_FUNCTION(RESTOREG), NULL);
     }
-    for (i = 0; i < CAM_PIPE_KERNEL_SPLIT; i++) {
+
+    for (i = 0; i < CAM_PIPE_KERNEL_SPLIT; i++)
+    {
         CAM_PIPE_KERNEL_ARRAY(kernel_restore_blue_red, i) = CreateKernel(m_device, m_program, CM_KERNEL_FUNCTION(RESTOREBandR), NULL);
     }
-    if (m_video.vpp.In.BitDepthLuma != 16) {
-        for (i = 0; i < CAM_PIPE_KERNEL_SPLIT; i++) {
+
+    if (m_video.vpp.In.BitDepthLuma != 16)
+    {
+        for (i = 0; i < CAM_PIPE_KERNEL_SPLIT; i++)
+        {
             CAM_PIPE_KERNEL_ARRAY(kernel_sad, i) = CreateKernel(m_device, m_program, CM_KERNEL_FUNCTION(SAD), NULL);
         }
-    } else {
-        for (i = 0; i < CAM_PIPE_KERNEL_SPLIT; i++) {
+    }
+    else
+    {
+        for (i = 0; i < CAM_PIPE_KERNEL_SPLIT; i++)
+        {
             CAM_PIPE_KERNEL_ARRAY(kernel_sad, i) = CreateKernel(m_device, m_program, CM_KERNEL_FUNCTION(SAD_16), NULL);
         }
     }
-    for (i = 0; i < CAM_PIPE_KERNEL_SPLIT; i++) {
+
+    for (i = 0; i < CAM_PIPE_KERNEL_SPLIT; i++)
+    {
         CAM_PIPE_KERNEL_ARRAY(kernel_decide_average, i) = CreateKernel(m_device, m_program, CM_KERNEL_FUNCTION(DECIDE_AVG), NULL);
     }
 
-    if (m_caps.bForwardGammaCorrection) {
-        if (m_video.vpp.In.BitDepthLuma == 16) {
+    if (m_caps.bForwardGammaCorrection)
+    {
+        if (m_video.vpp.In.BitDepthLuma == 16)
+        {
             kernel_FwGamma = CreateKernel(m_device, m_program, CM_KERNEL_FUNCTION(GAMMA_ONLY_16bits), NULL);
             // Workaround - otherwise if gamma_argb8 is run with 2DUP out first, and then - with 2D, Enqueue never returns (CM bug)
             kernel_FwGamma1 = CreateKernel(m_device, m_program, CM_KERNEL_FUNCTION(GAMMA_ONLY_16bits), NULL);
-        } else {
-
-            if (m_caps.bOutToARGB16) {
+        }
+        else
+        {
+            if (m_caps.bOutToARGB16)
+            {
                 kernel_FwGamma = CreateKernel(m_device, m_program, CM_KERNEL_FUNCTION(GAMMA_ONLY), NULL);
                 // Workaround - otherwise if gamma_argb8 is run with 2DUP out first, and then - with 2D, Enqueue never returns (CM bug)
                 kernel_FwGamma1 = CreateKernel(m_device, m_program, CM_KERNEL_FUNCTION(GAMMA_ONLY), NULL);
-            } else {
+            }
+            else
+            {
                 kernel_FwGamma = CreateKernel(m_device, m_program, CM_KERNEL_FUNCTION(GAMMA_GPUV4_ARGB8_2D), NULL);
 
                 // Workaround - otherwise if gamma_argb8 is run with 2DUP out first, and then - with 2D, Enqueue never returns (CM bug)
@@ -394,13 +410,13 @@ void CmContext::CreateThreadSpaces(CameraFrameSizeExtra *pFrameSize)
     mfxU32 sliceWidth = pFrameSize->vSliceWidth;
 
     m_heightIn16 = (pFrameSize->paddedFrameHeight + 15) >> 4;
-    m_widthIn16 = (pFrameSize->paddedFrameWidth + 15) >> 4;
+    m_widthIn16  = (pFrameSize->paddedFrameWidth  + 15) >> 4;
 
     m_sliceHeightIn16_np = (m_video.vpp.In.CropH + 15) >> 4;
-    m_sliceWidthIn16_np = (sliceWidth - 16) >> 4;
+    m_sliceWidthIn16_np  = (sliceWidth - 16) >> 4;
 
     m_sliceHeightIn8 = (pFrameSize->paddedFrameHeight + 7) >> 3;
-    m_sliceWidthIn8 = sliceWidth >> 3;   // slicewidth is a multiple of 16
+    m_sliceWidthIn8  = sliceWidth >> 3;   // slicewidth is a multiple of 16
 
     m_sliceHeightIn8_np = (m_video.vpp.In.CropH + 7) >> 3;
     m_sliceWidthIn8_np = (sliceWidth - 16) >> 3;
@@ -489,15 +505,15 @@ void CmContext::DestroyTask(CmTask *&task)
 
 void CmContext::CreateCmTasks()
 {
-
-    for (int i = 0; i < CAM_PIPE_NUM_TASK_BUFFERS; i++) {
-
+    for (int i = 0; i < CAM_PIPE_NUM_TASK_BUFFERS; i++)
+    {
         if (!m_caps.bNoPadding)
             CreateTask(CAM_PIPE_TASK_ARRAY(task_Padding, i));
 
         CreateTask(CAM_PIPE_TASK_ARRAY(task_GoodPixelCheck, i));
 
-        for (int j = 0; j < CAM_PIPE_KERNEL_SPLIT; j++) {
+        for (int j = 0; j < CAM_PIPE_KERNEL_SPLIT; j++)
+        {
             CreateTask(CAM_PIPE_KERNEL_ARRAY(CAM_PIPE_TASK_ARRAY(task_RestoreGreen, i), j));
             CreateTask(CAM_PIPE_KERNEL_ARRAY(CAM_PIPE_TASK_ARRAY(task_RestoreBlueRed, i), j));
             CreateTask(CAM_PIPE_KERNEL_ARRAY(CAM_PIPE_TASK_ARRAY(task_SAD, i), j));
@@ -517,22 +533,21 @@ void CmContext::CreateCmTasks()
     fclose(f);
 #endif // CAMERA_DEBUG_PRINTF
 
-
 }
 
 
 void CmContext::DestroyCmTasks()
 {
-
-    for (int i = 0; i < CAM_PIPE_NUM_TASK_BUFFERS; i++) {
-
+    for (int i = 0; i < CAM_PIPE_NUM_TASK_BUFFERS; i++)
+    {
         if (CAM_PIPE_TASK_ARRAY(task_Padding, i))
             DestroyTask(CAM_PIPE_TASK_ARRAY(task_Padding, i));
 
         if (CAM_PIPE_TASK_ARRAY(task_GoodPixelCheck, i))
             DestroyTask(CAM_PIPE_TASK_ARRAY(task_GoodPixelCheck, i));
 
-        for (int j = 0; j < CAM_PIPE_KERNEL_SPLIT; j++) {
+        for (int j = 0; j < CAM_PIPE_KERNEL_SPLIT; j++)
+        {
             if (CAM_PIPE_KERNEL_ARRAY(CAM_PIPE_TASK_ARRAY(task_RestoreGreen, i), j))
                 DestroyTask(CAM_PIPE_KERNEL_ARRAY(CAM_PIPE_TASK_ARRAY(task_RestoreGreen, i), j));
             if (CAM_PIPE_KERNEL_ARRAY(CAM_PIPE_TASK_ARRAY(task_RestoreBlueRed, i), j))
@@ -894,6 +909,7 @@ void CmContext::Setup(
 
     if (m_device->CreateQueue(m_queue) != CM_SUCCESS)
         throw CmRuntimeError();
+
     if(m_platform == MFX_HW_HSW || m_platform == MFX_HW_HSW_ULT)
         m_program = ReadProgram(m_device, genx_hsw_camerapipe, SizeOf(genx_hsw_camerapipe));
     else if(m_platform == MFX_HW_BDW || m_platform == MFX_HW_CHV)

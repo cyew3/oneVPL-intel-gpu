@@ -39,16 +39,12 @@ public:
     virtual mfxStatus PluginClose();
     virtual mfxStatus GetPluginParam(mfxPluginParam *par);
     virtual mfxStatus VPPFrameSubmit(mfxFrameSurface1 *surface_in, mfxFrameSurface1 *surface_out, mfxExtVppAuxData *aux, mfxThreadTask *task);
-    //{
-    //    return MFXVideoVPP_RunFrameVPPAsync(m_session, surface_in, surface_out, aux, (mfxSyncPoint*) task);
-    //}
     virtual mfxStatus VPPFrameSubmitEx(mfxFrameSurface1 *, mfxFrameSurface1 *, mfxFrameSurface1 **, mfxThreadTask *)
     {
         return MFX_ERR_UNDEFINED_BEHAVIOR;
     }
     virtual mfxStatus Execute(mfxThreadTask task, mfxU32 uid_p, mfxU32 uid_a);
     virtual mfxStatus FreeResources(mfxThreadTask task, mfxStatus );
-    //virtual mfxStatus Query(mfxVideoParam *in, mfxVideoParam *out)
     virtual mfxStatus Query(mfxVideoParam *, mfxVideoParam *);
     virtual mfxStatus QueryIOSurf(mfxVideoParam *par, mfxFrameAllocRequest *in, mfxFrameAllocRequest *out);
 
@@ -57,21 +53,23 @@ public:
     virtual mfxStatus Close();
 
     virtual mfxStatus GetVideoParam(mfxVideoParam *par);
-    //{
-    //    return MFXVideoVPP_GetVideoParam(m_session, par);
-    //}
+
     virtual void Release()
     {
         delete this;
     }
+
     static MFXVPPPlugin* Create() {
         return new MFXCamera_Plugin(false);
     }
-    static mfxStatus CreateByDispatcher(mfxPluginUID guid, mfxPlugin* mfxPlg) {
 
-        if (memcmp(& guid , &g_Camera_PluginGuid, sizeof(mfxPluginUID))) {
+    static mfxStatus CreateByDispatcher(mfxPluginUID guid, mfxPlugin* mfxPlg)
+    {
+        if (memcmp(&guid, &g_Camera_PluginGuid, sizeof(mfxPluginUID)))
+        {
             return MFX_ERR_NOT_FOUND;
         }
+
         MFXCamera_Plugin* tmp_pplg = 0;
         try
         {
@@ -95,15 +93,18 @@ public:
             delete tmp_pplg;
             return MFX_ERR_MEMORY_ALLOC;
         }
+
         *mfxPlg = (mfxPlugin)*tmp_pplg->m_adapter;
         tmp_pplg->m_createdByDispatcher = true;
 
         return MFX_ERR_NONE;
     }
+
     virtual mfxU32 GetPluginType()
     {
         return MFX_PLUGINTYPE_VIDEO_VPP;
     }
+
     virtual mfxStatus SetAuxParams(void* , int )
     {
         return MFX_ERR_UNKNOWN;
