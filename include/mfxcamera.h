@@ -53,7 +53,6 @@ enum {
 typedef enum {
     MFX_CAM_GAMMA_VALUE      = 0x0001,
     MFX_CAM_GAMMA_LUT        = 0x0002,
-    MFX_CAM_GAMMA_DEFAULT    = 0x0003 // use default internal gamma correction
 } mfxCamGammaParam;
 
 typedef struct {
@@ -70,7 +69,7 @@ typedef struct {
 } mfxExtCamGammaCorrection;
 
 typedef enum {
-    MFX_CAM__WHITE_BALANCE_MANUAL   = 0x0001,
+    MFX_CAM_WHITE_BALANCE_MANUAL   = 0x0001,
     MFX_CAM_WHITE_BALANCE_AUTO     = 0x0002
 } mfxCamWhiteBalanceMode;
 
