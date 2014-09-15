@@ -859,12 +859,14 @@ mfxStatus MFX_CDECL MFX_Utility::Query_H265(VideoCORE *core, mfxVideoParam *in, 
             sts = MFX_ERR_UNSUPPORTED;
         }
 
-        if (in->AsyncDepth < MFX_MAX_ASYNC_DEPTH_VALUE) // Actually AsyncDepth > 5-7 is for debugging only.
-            out->AsyncDepth = in->AsyncDepth;
+        out->AsyncDepth = in->AsyncDepth;
 
-        if (in->mfx.DecodedOrder)
+        out->mfx.DecodedOrder = in->mfx.DecodedOrder;
+
+        if (in->mfx.DecodedOrder > 1)
         {
             sts = MFX_ERR_UNSUPPORTED;
+            out->mfx.DecodedOrder = 0;
         }
 
         if (in->mfx.TimeStampCalc)
@@ -1131,7 +1133,7 @@ mfxStatus MFX_CDECL MFX_Utility::Query_H265(VideoCORE *core, mfxVideoParam *in, 
 
         out->mfx.NumThread = 1;
 
-        out->mfx.DecodedOrder = 0;
+        out->mfx.DecodedOrder = 1;
 
         out->mfx.SliceGroupsPresent = 1;
         out->mfx.ExtendedPicStruct = 1;

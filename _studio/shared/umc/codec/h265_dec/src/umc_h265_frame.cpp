@@ -57,7 +57,6 @@ H265DecoderFrame::H265DecoderFrame(UMC::MemoryAllocator *pMemoryAllocator, Heap_
     m_Flags.isDecodingStarted = 0;
     m_Flags.isDecodingCompleted = 0;
     m_isDisplayable = 0;
-    m_Flags.isSkipped = 0;
     m_wasOutputted = 0;
     m_wasDisplayed = 0;
     m_maxUIDWhenWasDisplayed = 0;
@@ -130,16 +129,15 @@ void H265DecoderFrame::Reset()
     m_Flags.isDecodingStarted = 0;
     m_Flags.isDecodingCompleted = 0;
     m_isDisplayable = 0;
-    m_Flags.isSkipped = 0;
     m_wasOutputted = 0;
     m_wasDisplayed = 0;
+    m_pic_output = 1;
     m_dpb_output_delay = INVALID_DPB_DELAY_H265;
     m_maxUIDWhenWasDisplayed = 0;
 
     m_dFrameTime = -1;
     m_isOriginalPTS = false;
 
-    m_IsFrameExist = false;
     m_isUsedAsReference = false;
 
     m_UserData.Reset();
@@ -207,7 +205,7 @@ void H265DecoderFrame::OnDecodingCompleted()
 {
     UpdateErrorWithRefFrameStatus();
 
-    SetisDisplayable();
+    SetisDisplayable(true);
 
     m_Flags.isDecoded = 1;
     DEBUG_PRINT1((VM_STRING("On decoding complete decrement for POC %d, reference = %d\n"), m_PicOrderCnt, m_refCounter));
@@ -234,11 +232,6 @@ void H265DecoderFrame::SetisShortTermRef(bool isRef)
 
         if (wasRef && !isShortTermRef() && !isLongTermRef())
         {
-            if (!IsFrameExist())
-            {
-                setWasOutputted();
-                setWasDisplayed();
-            }
             DecrementReference();
             DEBUG_PRINT1((VM_STRING("On was short term ref decrement for POC %d, reference = %d\n"), m_PicOrderCnt, m_refCounter));
         }
@@ -263,12 +256,6 @@ void H265DecoderFrame::SetisLongTermRef(bool isRef)
 
         if (wasRef && !isShortTermRef() && !isLongTermRef())
         {
-            if (!IsFrameExist())
-            {
-                setWasOutputted();
-                setWasDisplayed();
-            }
-
             DEBUG_PRINT1((VM_STRING("On was long term reft decrement for POC %d, reference = %d\n"), m_PicOrderCnt, m_refCounter));
             DecrementReference();
         }

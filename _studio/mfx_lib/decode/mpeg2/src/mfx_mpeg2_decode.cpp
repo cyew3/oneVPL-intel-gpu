@@ -2678,6 +2678,11 @@ mfxStatus VideoDECODEMPEG2::DecodeFrameCheck(mfxBitstream *bs,
 
             IsField = !m_implUmc.IsFramePictureStructure(m_task_num);
 
+            if (m_task_num > DPB && !IsField)
+            {
+                return MFX_ERR_UNDEFINED_BEHAVIOR;
+            }
+
             if ((false == m_isDecodedOrder && maxNumFrameBuffered <= (Ipp32u)(m_implUmc.GetRetBufferLen())) ||
                  true == m_isDecodedOrder)
             {
@@ -3136,6 +3141,11 @@ mfxStatus VideoDECODEMPEG2::DecodeFrameCheck(mfxBitstream *bs,
             sts = UpdateCurrVideoParams(surface_work, m_task_num);
 
             isField = !m_implUmc.IsFramePictureStructure(m_task_num);
+
+            if (m_task_num > DPB && !isField)
+            {
+                return MFX_ERR_UNDEFINED_BEHAVIOR;
+            }
 
             if ((false == isField || (true == isField && !(dec_field_count & 1))))
             {

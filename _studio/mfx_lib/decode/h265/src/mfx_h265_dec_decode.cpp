@@ -643,9 +643,6 @@ mfxStatus VideoDECODEH265::QueryIOSurf(VideoCORE *core, mfxVideoParam *par, mfxF
     if ((par->IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY) && (par->IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY))
         return MFX_ERR_INVALID_VIDEO_PARAM;
 
-    if (par->mfx.DecodedOrder)
-        return MFX_ERR_UNSUPPORTED;
-
     Ipp32s isInternalManaging = (MFX_PLATFORM_SOFTWARE == platform) ?
         (params.IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY) : (params.IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY);
 
@@ -978,6 +975,9 @@ mfxStatus VideoDECODEH265::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1 *
 
             umcRes = m_pH265VideoDecoder->RunDecoding();
 
+            if (m_vInitPar.mfx.DecodedOrder)
+                force = true;
+
             H265DecoderFrame *pFrame = GetFrameToDisplay_H265(&dst, force);
 
             UMC::AutomaticUMCMutex guard(m_mGuard);
@@ -1255,22 +1255,21 @@ H265DecoderFrame * VideoDECODEH265::GetFrameToDisplay_H265(UMC::VideoData * dst,
         pFrame = m_pH265VideoDecoder->GetFrameToDisplayInternal(force);
         if (!pFrame)
         {
+            return 0;
+        }
+
+        pFrame->setWasOutputted();
+
+        if (pFrame->m_pic_output || m_vInitPar.mfx.DecodedOrder)
+        {
             break;
         }
 
-        m_pH265VideoDecoder->PostProcessDisplayFrame(dst, pFrame);
+        pFrame->setWasDisplayed();
+    } while (true);
 
-        if (pFrame->IsSkipped())
-        {
-            pFrame->setWasOutputted();
-            pFrame->setWasDisplayed();
-        }
-    } while (pFrame->IsSkipped());
-
-    if (pFrame)
-    {
-        pFrame->setWasOutputted();
-    }
+    m_pH265VideoDecoder->PostProcessDisplayFrame(dst, pFrame);
+   
 
     return pFrame;
 }

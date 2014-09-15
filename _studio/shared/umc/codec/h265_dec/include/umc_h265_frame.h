@@ -100,8 +100,6 @@ public:
     Ipp64f           m_dFrameTime;
     bool             m_isOriginalPTS;
 
-    bool             m_IsFrameExist;
-
     Ipp32s           m_dpb_output_delay;
     DisplayPictureStruct_H265  m_DisplayPictureStruct_H265;
 
@@ -126,6 +124,8 @@ public:
     Ipp32s           m_aspect_width;
     Ipp32s           m_aspect_height;
 
+    bool             m_pic_output;
+
     bool             m_isShortTermRef;
     bool             m_isLongTermRef;
     bool             m_isUsedAsReference;
@@ -141,7 +141,6 @@ public:
         Ipp8u  isDecoded : 1;
         Ipp8u  isDecodingStarted : 1;
         Ipp8u  isDecodingCompleted : 1;
-        Ipp8u  isSkipped : 1;
     } m_Flags;
 
     Ipp8u  m_isDisplayable;
@@ -191,28 +190,8 @@ public:
     // Free resources if possible
     virtual void Free();
 
-    void SetSkipped(bool isSkipped)
-    {
-        m_Flags.isSkipped = (Ipp8u) (isSkipped ? 1 : 0);
-    }
-
-    bool IsSkipped() const
-    {
-        return m_Flags.isSkipped != 0;
-    }
-
     // Returns whether frame has been decoded
     bool IsDecoded() const;
-
-    bool IsFrameExist() const
-    {
-        return m_IsFrameExist;
-    }
-
-    void SetFrameExistFlag(bool isFrameExist)
-    {
-        m_IsFrameExist = isFrameExist;
-    }
 
     H265DecoderFrame(UMC::MemoryAllocator *pMemoryAllocator, Heap_Objects * pObjHeap);
 
@@ -235,9 +214,9 @@ public:
 
     bool        isDisplayable()    { return m_isDisplayable != 0; }
 
-    void        SetisDisplayable()
+    void        SetisDisplayable(bool isDisplayable)
     {
-        m_isDisplayable = 1;
+        m_isDisplayable = isDisplayable ? 1 : 0;
     }
 
     bool IsDecodingStarted() const { return m_Flags.isDecodingStarted != 0;}
@@ -250,16 +229,11 @@ public:
     // Check reference frames for error status and flag this frame if error is found
     void UpdateErrorWithRefFrameStatus();
 
-    void        unSetisDisplayable() { m_isDisplayable = 0; }
-
     bool        wasDisplayed()    { return m_wasDisplayed != 0; }
     void        setWasDisplayed() { m_wasDisplayed = 1; }
-    void        unsetWasDisplayed() { m_wasDisplayed = 0; }
 
     bool        wasOutputted()    { return m_wasOutputted != 0; }
-    // Flag frame after it was output
-    void        setWasOutputted();
-    void        unsetWasOutputted() { m_wasOutputted = 0; }
+    void        setWasOutputted(); // Flag frame after it was output
 
     bool        isDisposable()    { return (!m_isShortTermRef &&
                                             !m_isLongTermRef &&

@@ -1347,8 +1347,7 @@ mfxStatus MFX_Utility::Query(VideoCORE *core, mfxVideoParam *in, mfxVideoParam *
             sts = MFX_ERR_UNSUPPORTED;
         }
 
-        if (in->AsyncDepth < MFX_MAX_ASYNC_DEPTH_VALUE) // Actually AsyncDepth > 5-7 is for debugging only.
-            out->AsyncDepth = in->AsyncDepth;
+        out->AsyncDepth = in->AsyncDepth;
 
         out->mfx.DecodedOrder = in->mfx.DecodedOrder;
 

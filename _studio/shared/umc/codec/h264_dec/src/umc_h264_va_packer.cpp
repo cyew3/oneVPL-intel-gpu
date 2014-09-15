@@ -1644,25 +1644,7 @@ Ipp32s PackerDXVA2::PackSliceParams(H264Slice *pSlice, Ipp32s sliceNum, Ipp32s c
     SliceDataOffset = (Ipp32u)(SliceDataOffset%8 + 8 * (pSliceData - pNalUnit)); //from start code to slice data
     SliceDataOffset -= 8;
 
-    Ipp32s k = 0;
-    if (m_va->m_HWPlatform == VA_HW_LAKE)
-    {
-        Ipp8u * startPtr = pDXVA_BitStreamBuffer + sizeof(start_code_prefix);
-        for(Ipp8u *ptr = startPtr; ptr < startPtr + (SliceDataOffset >> 3) + 1; ptr++)
-        {
-            if(ptr[0]==0 && ptr[1]==0 && ptr[2]==3)
-            {
-                size_t offset = ptr - startPtr + 2;
-                //if (offset <= (SliceDataOffset >> 3) + 2)
-                {
-                    memmove(startPtr + offset, startPtr + offset + 1, NalUnitSize - offset);
-                    sliceParams->SliceBytesInBuffer--;
-                }
-            }
-        }
-    }
-
-    sliceParams->BitOffsetToSliceData = (USHORT)(SliceDataOffset-8*k);
+    sliceParams->BitOffsetToSliceData = (USHORT)(SliceDataOffset);
 
     if (sliceParams->wBadSliceChopping == 2 || sliceParams->wBadSliceChopping == 3)
         sliceParams->BitOffsetToSliceData = (USHORT)(0xFFFF);

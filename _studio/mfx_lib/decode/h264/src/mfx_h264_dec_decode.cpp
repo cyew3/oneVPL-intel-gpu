@@ -40,7 +40,7 @@ static inline mfxU32 CalculateAsyncDepth(eMFXPlatform platform, mfxVideoParam *p
     mfxU32 asyncDepth = par->AsyncDepth;
     if (!asyncDepth)
     {
-        asyncDepth = (platform == MFX_PLATFORM_SOFTWARE) ? vm_sys_info_get_cpu_num() : MFX_AUTO_ASYNC_DEPTH_VALUE;
+        asyncDepth = (platform == MFX_PLATFORM_SOFTWARE) ? 8 : MFX_AUTO_ASYNC_DEPTH_VALUE;
     }
 
     return asyncDepth;
@@ -48,7 +48,7 @@ static inline mfxU32 CalculateAsyncDepth(eMFXPlatform platform, mfxVideoParam *p
 
 static inline mfxU32 CalculateNumThread(eMFXPlatform platform, mfxVideoParam *par)
 {
-    mfxU32 numThread = (MFX_PLATFORM_SOFTWARE == platform) ? vm_sys_info_get_cpu_num() : 1;
+    mfxU32 numThread = (MFX_PLATFORM_SOFTWARE == platform) ? 8 : 1;
     if (!par->AsyncDepth)
         return numThread;
 

@@ -296,8 +296,6 @@ bool TaskBroker_H265::AddFrameToDecoding(H265DecoderFrame * frame)
     if (!frame || frame->IsDecodingStarted() || !IsExistTasks(frame))
         return false;
 
-    VM_ASSERT(frame->IsFrameExist());
-
     UMC::AutomaticUMCMutex guard(m_mGuard);
 
 #ifdef VM_DEBUG

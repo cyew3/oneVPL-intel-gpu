@@ -247,7 +247,7 @@ void H265SegmentDecoderMultiThreaded::RestoreErrorRect(H265Task * task)
 
         pCurrentFrame->SetErrorFlagged(UMC::ERROR_FRAME_MAJOR);
 
-        if (!refFrame || refFrame->IsSkipped())
+        if (!refFrame)
         {
             refFrame = m_pTaskBroker->m_pTaskSupplier->GetDPBList()->FindClosest(pCurrentFrame);
         }

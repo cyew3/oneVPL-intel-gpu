@@ -1062,6 +1062,7 @@ struct H264SliceHeader
     Ipp32s        scaled_ref_layer_bottom_offset;
     Ipp32u        num_mbs_in_slice_minus1;
 
+    Ipp32u        hw_wa_redundant_elimination_bits[2]; // [0] - start redundant element, [1] - end redundant element
 }; // H264SliceHeader
 
 typedef struct

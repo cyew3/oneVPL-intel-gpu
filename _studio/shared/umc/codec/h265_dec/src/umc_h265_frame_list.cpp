@@ -368,12 +368,6 @@ void H265DBPList::removeAllRef()
         {
             pCurr->SetisLongTermRef(false);
             pCurr->SetisShortTermRef(false);
-
-            if (pCurr && !pCurr->IsFrameExist())
-            {
-                pCurr->setWasOutputted();
-                pCurr->setWasDisplayed();
-            }
         }
 
         pCurr = pCurr->future();
@@ -472,7 +466,7 @@ H265DecoderFrame * H265DBPList::FindClosest(H265DecoderFrame * pFrame)
 
     for (H265DecoderFrame * pTmp = m_pHead; pTmp; pTmp = pTmp->future())
     {
-        if (pTmp->IsSkipped() || pTmp == pFrame || !pTmp->IsDecodingCompleted())
+        if (pTmp == pFrame || !pTmp->IsDecodingCompleted())
             continue;
 
         if (pTmp->m_chroma_format != pFrame->m_chroma_format ||

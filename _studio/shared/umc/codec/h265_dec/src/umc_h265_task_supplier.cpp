@@ -960,10 +960,6 @@ H265DecoderFrame *TaskSupplier_H265::GetFreeFrame()
 
     // Set current as not displayable (yet) and not outputted. Will be
     // updated to displayable after successful decode.
-    pFrame->unsetWasOutputted();
-    pFrame->unSetisDisplayable();
-    pFrame->SetSkipped(false);
-    pFrame->SetFrameExistFlag(true);
     pFrame->IncrementReference();
 
     m_UIDFrameCounter++;
@@ -1463,13 +1459,6 @@ H265DecoderFrame *TaskSupplier_H265::GetAnyFrameToDisplay(bool force)
                 if (!force && countDisplayable <= pTmp->GetAU()->GetSeqParam()->sps_max_num_reorder_pics[0] && countDPBFullness <= view.sps_max_dec_pic_buffering)
                     return 0;
 
-                if (!pTmp->IsFrameExist())
-                {
-                    pTmp->setWasOutputted();
-                    pTmp->setWasDisplayed();
-                    continue;
-                }
-
                 pTmp->m_maxUIDWhenWasDisplayed = maxUID;
                 return pTmp;
             }
@@ -1518,7 +1507,7 @@ UMC::Status TaskSupplier_H265::CompleteDecodedFrames(H265DecoderFrame ** decoded
 
         for (H265DecoderFrame * frame = view.pDPB->head(); frame; frame = frame->future())
         {
-            if (frame->IsFrameExist() && !frame->IsDecoded())
+            if (!frame->IsDecoded())
             {
                 if (!frame->IsDecodingStarted() && frame->IsFullFrame())
                 {
@@ -1815,7 +1804,6 @@ UMC::Status TaskSupplier_H265::AddOneFrame(UMC::MediaData * pSource, UMC::MediaD
             case NAL_UT_EOB:
                 m_WaitForIDR = true;
                 AddSlice(0, !pSource);
-                GetView()->pDPB->IncreaseRefPicListResetCount(0);
                 m_RA_POC = 0;
                 m_IRAPType = NAL_UT_INVALID;
                 NoRaslOutputFlag = 1;
@@ -2172,9 +2160,7 @@ void TaskSupplier_H265::AddFakeReferenceFrame(H265Slice *)
 
     pFrame->SetisShortTermRef(true);
 
-    pFrame->SetSkipped(true);
-    pFrame->SetFrameExistFlag(false);
-    pFrame->SetisDisplayable();
+    pFrame->SetisDisplayable(false);
 
     pFrame->DefaultFill(false);
 
@@ -2217,7 +2203,7 @@ void TaskSupplier_H265::OnFullFrame(H265DecoderFrame * pFrame)
 #endif
     pFrame->SetFullFrame(true);
 
-    if (pFrame->IsSkipped())
+    if (!pFrame->GetAU()->GetSlice(0)) // seems that it was skipped and slices was dropped
         return;
 
     if (pFrame->GetAU()->GetSlice(0)->GetSliceHeader()->IdrPicFlag && !(pFrame->GetError() & UMC::ERROR_FRAME_DPB))
@@ -2253,8 +2239,9 @@ void TaskSupplier_H265::CompleteFrame(H265DecoderFrame * pFrame)
 
             pFrame->SetisShortTermRef(false);
             pFrame->SetisLongTermRef(false);
-            pFrame->SetSkipped(true);
             pFrame->OnDecodingCompleted();
+            pFrame->SetisDisplayable(false);
+            pFrame->m_pic_output = false;
             return;
         }
         else
@@ -2264,12 +2251,6 @@ void TaskSupplier_H265::CompleteFrame(H265DecoderFrame * pFrame)
                 pFrame->GetAU()->SkipDeblocking();
                 pFrame->GetAU()->SkipSAO();
             }
-        }
-
-        if (!slice->GetSliceHeader()->pic_output_flag)
-        {
-            pFrame->setWasDisplayed();
-            pFrame->setWasOutputted();
         }
     }
 
@@ -2394,13 +2375,9 @@ H265DecoderFrame * TaskSupplier_H265::AllocateNewFrame(const H265Slice *pSlice)
     {
         for (H265DecoderFrame *pCurr = GetView()->pDPB->head(); pCurr; pCurr = pCurr->future())
         {
-            if ((pCurr->isDisplayable() || (!pCurr->IsDecoded() && pCurr->IsFullFrame())) && !pCurr->wasOutputted())
+            if ((pCurr->isDisplayable() || (!pCurr->IsDecoded() && pCurr->IsFullFrame())) && !pCurr->wasOutputted() && !pCurr->RefPicListResetCount())
             {
-                if (!pCurr->wasOutputted())
-                {
-                    pCurr->setWasDisplayed();
-                    pCurr->setWasOutputted();
-                }
+                pCurr->m_pic_output = false;
             }
         }
     }
@@ -2411,6 +2388,7 @@ H265DecoderFrame * TaskSupplier_H265::AllocateNewFrame(const H265Slice *pSlice)
         return NULL;
     }
 
+    pFrame->m_pic_output = pSlice->GetSliceHeader()->pic_output_flag != 0;
     pFrame->SetisShortTermRef(true);
 
     UMC::Status umcRes = InitFreeFrame(pFrame, pSlice);
