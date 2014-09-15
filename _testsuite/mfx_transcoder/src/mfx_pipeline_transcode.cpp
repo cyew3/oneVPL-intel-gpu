@@ -136,12 +136,12 @@ MFXTranscodingPipeline::MFXTranscodingPipeline(IMFXPipelineFactory *pFactory)
     OptContainer options [] =
     {
         //series of parameters that uses callback function to retain it's inter dependencies
-        HANDLE_GLOBAL_OPTION("-b|",  m_,BitRate,    OPT_INT_32, "Target bitrate in bits per second", &m_applyBitrateParams),
+        HANDLE_GLOBAL_OPTION("-b|--bitrate|",  m_,BitRate,    OPT_INT_32, "Target bitrate in bits per second", &m_applyBitrateParams),
         HANDLE_GLOBAL_OPTION("-bm|", m_,MaxBitrate, OPT_INT_32, "Max bitrate in case of VBR", &m_applyBitrateParams),
         HANDLE_GLOBAL_OPTION("-s|",  m_inParams.n,PicStruct,  OPT_INT_32, "0=progressive, 1=tff, 2=bff, 3=field tff, 4=field bff", &m_applyBitrateParams),
 
         //constant qp support
-        HANDLE_GLOBAL_OPTION("", m_,QPI,           OPT_UINT_16,    "Constant quantizer for I frames (if RateControlMethod=3)", &m_applyBitrateParams),
+        HANDLE_GLOBAL_OPTION("-QPI|--qp|", m_,QPI,           OPT_UINT_16,    "Constant quantizer for I frames (if RateControlMethod=3)", &m_applyBitrateParams),
         HANDLE_GLOBAL_OPTION("", m_,QPP,           OPT_UINT_16,    "Constant quantizer for P frames (if RateControlMethod=3)", &m_applyBitrateParams),
         HANDLE_GLOBAL_OPTION("", m_,QPB,           OPT_UINT_16,    "Constant quantizer for B frames (if RateControlMethod=3)", &m_applyBitrateParams),
 
@@ -500,6 +500,14 @@ mfxStatus MFXTranscodingPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI3
 
             vm_string_strcpy(m_extDumpFiles->ReconFilename, argv[0]);
         }
+        else if (m_OptProc.Check(argv[0], VM_STRING("--no-b-pyramid"), VM_STRING("Do no use B-frames as references."), OPT_INT_32))
+        {
+            m_extCodingOptionsHEVC->BPyramid = MFX_CODINGOPTION_OFF;
+        }
+        else if (m_OptProc.Check(argv[0], VM_STRING("--b-pyramid"), VM_STRING("Use B-frames as references. Enabled by default."), OPT_INT_32))
+        {
+            m_extCodingOptionsHEVC->BPyramid = MFX_CODINGOPTION_ON;
+        }
         else if (m_OptProc.Check(argv[0], VM_STRING("-dump_enc_input"), VM_STRING("dump encode input frames into YUV file"), OPT_FILENAME))
         {
             MFX_CHECK(argv + 1 != argvEnd);
@@ -593,7 +601,7 @@ mfxStatus MFXTranscodingPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI3
             vm_string_strcpy(m_inParams.strDstFile, VM_STRING("out.tmp"));
             m_RenderType = MFX_FW_RENDER;
         }
-        else if (m_bResetParamsStart && m_OptProc.Check(argv[0], VM_STRING("-o|-output"), VM_STRING("")))
+        else if (m_bResetParamsStart && m_OptProc.Check(argv[0], VM_STRING("-o|-output|--output"), VM_STRING("")))
         {
             //file name that will be used for output after reseting encoder
             MFX_CHECK(1 + argv != argvEnd);
@@ -601,7 +609,7 @@ mfxStatus MFXTranscodingPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI3
 
             argv++;
         }
-        else if (m_bResetParamsStart && m_OptProc.Check(argv[0], VM_STRING("-i|-input"), VM_STRING("")))
+        else if (m_bResetParamsStart && m_OptProc.Check(argv[0], VM_STRING("-i|-input|--input"), VM_STRING("")))
         {
             //file name that will be used for input after reseting encoder
             MFX_CHECK(1 + argv != argvEnd);
