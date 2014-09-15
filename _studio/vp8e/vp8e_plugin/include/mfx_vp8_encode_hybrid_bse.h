@@ -42,13 +42,9 @@ namespace MFX_VP8ENC
     typedef int              L32;
     typedef float            F32;
     typedef double           F64;
-#if defined (MFX_VA_WIN)    
-    typedef unsigned __int64 U64; //Linux compatibility
-    typedef __int64          I64;
-#elif defined (MFX_VA_LINUX)
-    typedef unsigned long long U64; //Linux compatibility
+    typedef unsigned long long U64;
     typedef long long        I64;
-#endif
+
     typedef union { /* MV type */
         struct {
             I16  mvx;
@@ -228,10 +224,6 @@ namespace MFX_VP8ENC
 #define VP8_MAX_QP                      127
 #define VP8_MAX_LF_LEVEL                63
 }
-
-#if defined VP8_HYBRID_CPUPAK
-#include "mfx_vp8_encode_hybrid_pak.h"
-#endif
 
 namespace MFX_VP8ENC
 {
@@ -1208,9 +1200,6 @@ namespace MFX_VP8ENC
             ctrl.qIndex = MBDataMemory[QP_BYTE_OFFSET];
             ctrl.LoopFilterLevel = MBDataMemory[LFLEVEL_BYTE_OFFSET];
         }
-        VP8_LOG_1("\n(sefremov) ReadBRCStatusReport layout.MB_CODE_offset = %d", layout.MB_CODE_offset);
-        VP8_LOG_1("\n(sefremov) ReadBRCStatusReport ctrl.qIndex = %d", ctrl.qIndex);
-        VP8_LOG_1("\n(sefremov) ReadBRCStatusReport ctrl.LoopFilterLevel = %d", ctrl.LoopFilterLevel);
     }
 
     struct MbUVPred {
@@ -1251,34 +1240,6 @@ namespace MFX_VP8ENC
         U32 mbModeUVHist[VP8_NUM_MB_MODES_UV];
         Vp8MvCounters mbMVs[2];
     } Vp8Counters;
-
-#if defined VP8_HYBRID_CPUPAK
-    class Vp8EncoderFrame
-    {
-    public:
-        BlockSize   frameSize;
-        U32         mbPerCol;
-        U32         mbPerRow;
-        I32         mbStep;
-        U32         uNumMBs;
-
-        U8         *data_y;
-        U8         *data_u;
-        U8         *data_v;
-        I32         pitch;
-
-        Vp8EncoderFrame();
-        ~Vp8EncoderFrame();
-
-        void InitAlloc(U32 width, U32 height);
-
-    private:
-        U8         *m_buffer_ptr;
-        U32         m_buffer_size;
-    };
-
-    class Vp8PakMfd;
-#endif
 
     enum {
         MODE_INTRA_16x16 = 0,
@@ -1325,10 +1286,7 @@ namespace MFX_VP8ENC
         void UpdateEntropyModel(void);
         void CalculateCosts(void);
         mfxStatus OutputBitstream(void);
-        void TokenizeAndCnt(TaskHybridDDI *pTask, MBDATA_LAYOUT const & layout, VideoCORE * pCore
-#if defined (VP8_HYBRID_DUMP_READ) || defined (VP8_HYBRID_DUMP_WRITE)
-            , FILE* m_bse_dump, mfxU32 m_bse_dump_size
-#endif
+        void TokenizeAndCnt(TaskHybridDDI *pTask, MBDATA_LAYOUT const & layout, mfxCoreInterface * pCore
             );
         void EncodeTokens( const CoeffsType un_zigzag_coeffs[], I32 firstCoeff, I32 lastCoeff, U8 cntx1, U8 cntx3, U8 part );
 
@@ -1336,34 +1294,10 @@ namespace MFX_VP8ENC
         Vp8CoreBSE();
         ~Vp8CoreBSE();
         mfxStatus Init(const mfxVideoParam &video);
+        mfxStatus Reset(const mfxVideoParam &video);
         mfxStatus SetNextFrame(mfxFrameSurface1 * pSurface, bool bExternal, const sFrameParams &frameParams, mfxU32 frameNum);
-        mfxStatus RunBSP(bool bIVFHeaders, bool bAddSH, mfxBitstream *bs, TaskHybridDDI *pTask, MBDATA_LAYOUT const & layout,VideoCORE * pCore
-#if defined (VP8_HYBRID_DUMP_READ)  || defined (VP8_HYBRID_DUMP_WRITE)
-            , FILE* m_bse_dump, mfxU32 m_bse_dump_size
-#endif
+        mfxStatus RunBSP(bool bIVFHeaders, bool bAddSH, mfxBitstream *bs, TaskHybridDDI *pTask, MBDATA_LAYOUT const & layout, mfxCoreInterface * pCore
             );
-
-#if defined VP8_HYBRID_CPUPAK
-        mfxStatus RunPAK(bool bAddSH, mfxBitstream *bs, TaskHybridDDI *pTask, MBDATA_LAYOUT const & layout,VideoCORE * pCore
-#if defined (VP8_HYBRID_DUMP_READ)  || defined (VP8_HYBRID_DUMP_WRITE)
-            , FILE* m_bse_dump, mfxU32 m_bse_dump_size
-#endif
-            );
-        void PAKTokenizeAndCnt(TaskHybridDDI *pTask, MBDATA_LAYOUT const & layout, VideoCORE * pCore
-#if defined (VP8_HYBRID_DUMP_READ) || defined (VP8_HYBRID_DUMP_WRITE)
-            , FILE* m_bse_dump, mfxU32 m_bse_dump_size
-#endif
-            );
-
-        Vp8EncoderFrame     m_frames[VP8_NUM_OF_USED_FRAMES];
-        U8                  m_frame_idx[VP8_NUM_OF_USED_FRAMES];
-        PakSurfaceStateVp8  m_pakSurfaceState;
-        PakFrameInfVp8      m_pakFrameInfState;
-        Vp8PakMfd           m_pakMfd;
-        void ReplicateBorders(VidSurfaceState *SurfState);
-        void RefreshFrames(void);
-        void CopyInputFrame(mfxFrameData *iFrame);
-#endif
 
         VP8HybridCosts GetUpdatedCosts();
     };

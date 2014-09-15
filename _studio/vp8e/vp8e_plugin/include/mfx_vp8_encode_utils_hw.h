@@ -9,23 +9,11 @@
 */
 
 #include "mfx_common.h"
-#if defined(MFX_ENABLE_VP8_VIDEO_ENCODE_HW) && defined(MFX_VA)
-
+#include "mfx_ext_buffers.h"
 #ifndef _MFX_VP8_ENCODE_UTILS_HW_H_
 #define _MFX_VP8_ENCODE_UTILS_HW_H_
 
-//#define VP8_HYBRID_CPUPAK
-//#define VP8_HYBRID_DUMP_BS_INFO
-//#define VP8_HYBRID_DUMP_WRITE
-//#define VP8_HYBRID_DUMP_READ
-#if defined (VP8_HYBRID_DUMP_WRITE)
-//#define VP8_HYBRID_DUMP_WRITE_STRUCTS
-#endif
-//#define VP8_HYBRID_TIMING
-//#define VP8_HYBRID_FALL_TO_SW
-#if !defined(NDEBUG)
-# define VP8_LOGGING
-#endif
+//#define VP8_LOGGING
 
 #ifdef VP8_LOGGING
 #define VP8_LOG(S)     printf(S); fflush(0);
@@ -36,23 +24,6 @@
 #endif
 
 #include "umc_mutex.h"
-
-#define LOG_TO_FILE_INT(str, arg) { \
-    FILE * outputfile = fopen("hang_log.txt", "a"); \
-    fprintf(outputfile, str, arg); \
-    fclose(outputfile); \
-    }
-
-#define LOG_TO_FILE(str) { \
-    FILE * outputfile = fopen("hang_log.txt", "a"); \
-    fprintf(outputfile, str); \
-    fclose(outputfile); \
-    }
-
-#define OPEN_LOG_FILE { \
-    FILE * outputfile = fopen("hang_log.txt", "w"); \
-    fclose(outputfile); \
-    }
 
 #if defined(_WIN32) || defined(_WIN64)
   #define VPX_FORCEINLINE __forceinline
@@ -66,34 +37,11 @@
   #define ALIGN_DECL(X) __attribute__ ((aligned(X)))
 #endif
 
-
-#if defined (VP8_HYBRID_TIMING)
-#if defined (MFX_VA_WIN)
-#include <intrin.h>     // for __rdtsc()
-#elif defined (MFX_VA_LINUX)
-static unsigned long long __rdtsc(void)
-{
-    unsigned hi, lo;
-    __asm__ __volatile__ ("rdtsc" : "=a"(lo), "=d"(hi));
-    return ( (unsigned long long)lo)|( ((unsigned long long)hi)<<32 );
-}
-#endif
-
-// timing code
-#define TICK(ts)  { ts = __rdtsc(); } 
-#define TOCK(ts) { ts = (__rdtsc() - ts);}
-//#define PRINT(N,ts) { printf(#ts " time =%4.0f mcs\n ", ts / (double)(N)); fflush(0); }
-#define PRINT(N,ts) { printf(" %4.0f,", ts / (double)(N)); fflush(0); }
-#define FPRINT(N,ts,file) { fprintf(file, "%4.0f,", ts / (double)(N));}
-#define ACCUM(N,ts,ts_accum) { ts_accum += (ts / (double)(N));}
-#endif // VP8_HYBRID_TIMING
-
 #include <vector>
 #include <memory>
 
 #include "mfxstructures.h"
 #include "mfx_enc_common.h"
-#include "mfx_ext_buffers.h"
 
 namespace MFX_VP8ENC
 {
@@ -143,13 +91,13 @@ namespace MFX_VP8ENC
         mfxU32            idInPool;
     };
 
-    inline mfxStatus LockSurface(sFrameEx*  pFrame, VideoCORE* pCore)
+    inline mfxStatus LockSurface(sFrameEx*  pFrame, mfxCoreInterface* pCore)
     {
         //printf("LockSurface: ");
         //if (pFrame) printf("%d\n",pFrame->idInPool); else printf("\n");
-        return (pFrame) ? pCore->IncreaseReference(&pFrame->pSurface->Data) : MFX_ERR_NONE; 
+        return (pFrame) ? pCore->IncreaseReference(pCore->pthis, &pFrame->pSurface->Data) : MFX_ERR_NONE; 
     }
-    inline mfxStatus FreeSurface(sFrameEx* &pFrame, VideoCORE* pCore)
+    inline mfxStatus FreeSurface(sFrameEx* &pFrame, mfxCoreInterface* pCore)
     {        
         mfxStatus sts = MFX_ERR_NONE;
         //printf("FreeSurface\n");
@@ -157,7 +105,7 @@ namespace MFX_VP8ENC
         if (pFrame && pFrame->pSurface)
         {
             //printf("DecreaseReference\n");
-            sts = pCore->DecreaseReference(&pFrame->pSurface->Data);
+            sts = pCore->DecreaseReference(pCore->pthis, &pFrame->pSurface->Data);
             pFrame = 0;
         }
         return sts;   
@@ -216,7 +164,7 @@ namespace MFX_VP8ENC
                                     bool                  isExternalFrameAllocator);
 
     mfxStatus GetVideoParam(mfxVideoParam * parDst, mfxVideoParam *videoSrc);
-    mfxStatus SetFramesParams(mfxVideoParam * par, mfxU32 frameOrder, sFrameParams *pFrameParams);
+    mfxStatus SetFramesParams(mfxVideoParam * par, mfxU16 forcedFrameType, mfxU32 frameOrder, sFrameParams *pFrameParams);
 
 
     /*------------------------ Utils------------------------------------------------------------------------*/
@@ -339,14 +287,8 @@ namespace MFX_VP8ENC
         ~MfxFrameAllocResponse();
 
         mfxStatus Alloc(
-            VideoCORE *            core,
+            mfxCoreInterface * pCore,
             mfxFrameAllocRequest & req);
-
-        mfxStatus Alloc(
-            VideoCORE *            core,
-            mfxFrameAllocRequest & req,
-            mfxFrameSurface1 **    opaqSurf,
-            mfxU32                 numOpaqSurf);
 
         mfxFrameInfo               m_info;
 
@@ -354,7 +296,7 @@ namespace MFX_VP8ENC
         MfxFrameAllocResponse(MfxFrameAllocResponse const &);
         MfxFrameAllocResponse & operator =(MfxFrameAllocResponse const &);
 
-        VideoCORE * m_core;
+        mfxCoreInterface * m_pCore;
         mfxU16      m_numFrameActualReturnedByAllocFrames;
 
         std::vector<mfxFrameAllocResponse> m_responseQueue;
@@ -363,16 +305,16 @@ namespace MFX_VP8ENC
 
     struct FrameLocker
     {
-        FrameLocker(VideoCORE * core, mfxFrameData & data, bool external = false)
-            : m_core(core)
+        FrameLocker(mfxCoreInterface * pCore, mfxFrameData & data, bool external = false)
+            : m_core(pCore)
             , m_data(data)
             , m_memId(data.MemId)
             , m_status(Lock(external))
         {
         }
 
-        FrameLocker(VideoCORE * core, mfxFrameData & data, mfxMemId memId, bool external = false)
-            : m_core(core)
+        FrameLocker(mfxCoreInterface * pCore, mfxFrameData & data, mfxMemId memId, bool external = false)
+            : m_core(pCore)
             , m_data(data)
             , m_memId(memId)
             , m_status(Lock(external))
@@ -384,29 +326,21 @@ namespace MFX_VP8ENC
         mfxStatus Unlock()
         {
             mfxStatus mfxSts = MFX_ERR_NONE;
-
-            if (m_status == LOCK_INT)
-                mfxSts = m_core->UnlockFrame(m_memId, &m_data);
-            else if (m_status == LOCK_EXT)
-                mfxSts = m_core->UnlockExternalFrame(m_memId, &m_data);
-
+            mfxSts = m_core->FrameAllocator.Unlock(m_core->FrameAllocator.pthis, m_memId, &m_data);
             m_status = LOCK_NO;
             return mfxSts;
         }
 
     protected:
-        enum { LOCK_NO, LOCK_INT, LOCK_EXT };
+        enum { LOCK_NO, LOCK_DONE };
 
         mfxU32 Lock(bool external)
         {
             mfxU32 status = LOCK_NO;
 
-            if (m_data.Y == 0)
-            {
-                status = external
-                    ? (m_core->LockExternalFrame(m_memId, &m_data) == MFX_ERR_NONE ? LOCK_EXT : LOCK_NO)
-                    : (m_core->LockFrame(m_memId, &m_data) == MFX_ERR_NONE ? LOCK_INT : LOCK_NO);
-            }
+            if (m_data.Y == 0 &&
+                MFX_ERR_NONE == m_core->FrameAllocator.Lock(m_core->FrameAllocator.pthis, m_memId, &m_data))
+                status = LOCK_DONE;
 
             return status;
         }
@@ -415,10 +349,10 @@ namespace MFX_VP8ENC
         FrameLocker(FrameLocker const &);
         FrameLocker & operator =(FrameLocker const &);
 
-        VideoCORE *    m_core;
-        mfxFrameData & m_data;
-        mfxMemId       m_memId;
-        mfxU32         m_status;
+        mfxCoreInterface * m_core;
+        mfxFrameData &     m_data;
+        mfxMemId           m_memId;
+        mfxU32             m_status;
     };
 
     class VP8MfxParam : public mfxVideoParam
@@ -458,18 +392,13 @@ namespace MFX_VP8ENC
 
     class InternalFrames
     {
-    // [SE] WA for Windows hybrid VP8 HSW driver
-#if defined (MFX_VA_WIN)
-    public:
-#elif defined (MFX_VA_LINUX)
     protected:
-#endif
         std::vector<sFrameEx>           m_frames;
         MfxFrameAllocResponse           m_response;
         std::vector<mfxFrameSurface1>   m_surfaces;
     public:
         InternalFrames() {}
-        mfxStatus Init(VideoCORE *pCore, mfxFrameAllocRequest *pAllocReq, bool bHW);
+        mfxStatus Init(mfxCoreInterface *pCore, mfxFrameAllocRequest *pAllocReq, bool bHW);
         sFrameEx * GetFreeFrame();
         mfxStatus  GetFrame(mfxU32 numFrame, sFrameEx * &Frame);
 
@@ -504,7 +433,7 @@ namespace MFX_VP8ENC
         sFrameEx            *m_pRawFrame;
         sFrameEx            *m_pRawLocalFrame;
         mfxBitstream        *m_pBitsteam;
-        VideoCORE           *m_pCore;
+        mfxCoreInterface    *m_pCore;
 
         sFrameParams         m_sFrameParams;
         sFrameEx            *m_pRecFrame;
@@ -513,6 +442,7 @@ namespace MFX_VP8ENC
         mfxU32              m_frameOrder;
         mfxU64              m_timeStamp;
 
+        mfxEncodeCtrl       m_ctrl;
 
     protected:
 
@@ -525,13 +455,14 @@ namespace MFX_VP8ENC
               m_pRawFrame(0),
               m_pRawLocalFrame(0),
               m_pBitsteam(0),
-              m_pRecFrame(0),
               m_pCore(0),
+              m_pRecFrame(0),
               m_bOpaqInput(false),
               m_frameOrder (0)
           {
-              Zero(m_pRecRefFrames);  
+              Zero(m_pRecRefFrames);
               Zero(m_sFrameParams);
+              Zero(m_ctrl);
           }
           virtual
           ~Task ()
@@ -542,7 +473,7 @@ namespace MFX_VP8ENC
           mfxStatus GetInputSurface(mfxFrameSurface1 *& pSurface, bool &bExternal);
 
           virtual
-          mfxStatus Init(VideoCORE * pCore, mfxVideoParam *par);
+          mfxStatus Init(mfxCoreInterface * pCore, mfxVideoParam *par);
           
           virtual
           mfxStatus InitTask( sFrameEx     *pRawFrame, 
@@ -608,7 +539,7 @@ namespace MFX_VP8ENC
     {
     protected:
 
-        VideoCORE*       m_pCore;
+        mfxCoreInterface*       m_pCore;
         VP8MfxParam      m_video;
 
         bool    m_bHWFrames;
@@ -626,9 +557,9 @@ namespace MFX_VP8ENC
 
     public:
         TaskManager ():
+          m_pCore(0),
           m_bHWFrames(false),
           m_bHWInput(false),
-          m_pCore(0),
           m_frameNum(0)
         {
             memset(&m_dpb, 0, sizeof(m_dpb));
@@ -639,9 +570,8 @@ namespace MFX_VP8ENC
             FreeTasks(m_Tasks);
           }
 
-          mfxStatus Init(VideoCORE* pCore, mfxVideoParam *par, bool bHWImpl, mfxU32 reconFourCC)
+          mfxStatus Init(mfxCoreInterface* pCore, mfxVideoParam *par, bool bHWImpl, mfxU32 reconFourCC)
           {
-              VP8_LOG("\n(sefremov) TaskManager::Init +");
               mfxStatus sts = MFX_ERR_NONE;
 
               MFX_CHECK(!m_pCore, MFX_ERR_UNDEFINED_BEHAVIOR);
@@ -657,20 +587,19 @@ namespace MFX_VP8ENC
 
               m_RawFrames.Init();
 
-              mfxFrameAllocRequest request     = { 0 };
+              mfxFrameAllocRequest request     = {};
               request.Info = m_video.mfx.FrameInfo;
+              request.Info.FourCC = MFX_FOURCC_NV12; // only NV12 is supported as driver input
               request.NumFrameMin = request.NumFrameSuggested = (mfxU16)CalcNumSurfRawLocal(m_video, bHWImpl, m_bHWInput);
 
-              sts = m_LocalRawFrames.Init(m_pCore, &request, m_bHWFrames);
+              sts = m_LocalRawFrames.Init(pCore, &request, m_bHWFrames);
               MFX_CHECK_STS(sts);
 
               request.NumFrameMin = request.NumFrameSuggested = (mfxU16)CalcNumSurfRecon(m_video);
               request.Info.FourCC = reconFourCC;
 
-              VP8_LOG("\n(sefremov) TaskManager::Init 1");
-              sts = m_ReconFrames.Init(m_pCore, &request, m_bHWFrames);
+              sts = m_ReconFrames.Init(pCore, &request, m_bHWFrames);
               MFX_CHECK_STS(sts);
-              VP8_LOG("\n(sefremov) TaskManager::Init 2");
 
               {
                   mfxU32 numTasks = CalcNumTasks(m_video);
@@ -682,28 +611,43 @@ namespace MFX_VP8ENC
                       MFX_CHECK_STS(sts);
                   }
               }
-              VP8_LOG("\n(sefremov) TaskManager::Init -");
-              return sts;          
+
+              return sts;
           }
+
+          mfxStatus ReleaseDpbFrames()
+          {
+              for (mfxU8 refIdx = 0; refIdx < REF_TOTAL; refIdx ++)
+                  MFX_CHECK_STS(FreeSurface(m_dpb.m_refFrames[refIdx],m_pCore));
+
+              return MFX_ERR_NONE;
+          }
+
           mfxStatus Reset(mfxVideoParam *par)
           {
               mfxStatus sts = MFX_ERR_NONE;
-              MFX_CHECK(m_pCore!=0, MFX_ERR_NOT_INITIALIZED);  
+              MFX_CHECK(m_pCore!=0, MFX_ERR_NOT_INITIALIZED);
 
-              m_video   = *par;
-              m_frameNum = 0;
+              MFX_CHECK(m_ReconFrames.Height() >= par->mfx.FrameInfo.Height,MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
+              MFX_CHECK(m_ReconFrames.Width()  >= par->mfx.FrameInfo.Width,MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
 
-              MFX_CHECK(m_ReconFrames.Height() >= m_video.mfx.FrameInfo.Height,MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
-              MFX_CHECK(m_ReconFrames.Width()  >= m_video.mfx.FrameInfo.Width,MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
+              MFX_CHECK(mfxU16(CalcNumSurfRawLocal(*par,m_bHWFrames,isVideoSurfInput(*par))) <= m_LocalRawFrames.Num(),MFX_ERR_INCOMPATIBLE_VIDEO_PARAM); 
+              MFX_CHECK(mfxU16(CalcNumSurfRecon(*par)) <= m_ReconFrames.Num(),MFX_ERR_INCOMPATIBLE_VIDEO_PARAM); 
 
-              MFX_CHECK(mfxU16(CalcNumSurfRawLocal(m_video,m_bHWFrames,isVideoSurfInput(m_video))) <= m_LocalRawFrames.Num(),MFX_ERR_INCOMPATIBLE_VIDEO_PARAM); 
-              MFX_CHECK(mfxU16(CalcNumSurfRecon(m_video)) <= m_ReconFrames.Num(),MFX_ERR_INCOMPATIBLE_VIDEO_PARAM); 
+              bool bResetEncodingPipeline = m_video.mfx.FrameInfo.Width != par->mfx.FrameInfo.Width
+              || m_video.mfx.FrameInfo.Height != par->mfx.FrameInfo.Height
+              || m_video.mfx.GopPicSize != par->mfx.GopPicSize;
 
-              memset(&m_dpb, 0, sizeof(m_dpb));
+              m_video = *par;
 
-              sts = FreeTasks(m_Tasks);
-
-              MFX_CHECK_STS(sts);              
+              if (bResetEncodingPipeline)
+              {
+                  m_frameNum = 0;
+                  ReleaseDpbFrames();
+                  memset(&m_dpb, 0, sizeof(m_dpb));
+                  sts = FreeTasks(m_Tasks);
+                  MFX_CHECK_STS(sts);
+              }
               return MFX_ERR_NONE;
           }
           mfxStatus InitTask(mfxFrameSurface1* pSurface, mfxBitstream* pBitstream, Task* & pOutTask)
@@ -766,9 +710,121 @@ namespace MFX_VP8ENC
               return sts;
 #endif // this implementation isn't used for hybrid - disable it's code (end)
               return MFX_ERR_NONE;
-          }         
+          }
+
+          inline
+          mfxStatus UpdateDpb(sFrameParams *pParams, sFrameEx *pRecFrame)
+          {
+              mfxU8   freeSurfCnt[REF_TOTAL] = {0, };
+              sDpbVP8 dpbBeforeUpdate = m_dpb;
+
+              // reset mapping of ref frames
+              m_dpb.m_refMap[REF_BASE] = m_dpb.m_refMap[REF_GOLD] = m_dpb.m_refMap[REF_ALT] = 0;
+
+              if (pParams->bIntra)
+              {
+                  m_dpb.m_refFrames[REF_BASE] = pRecFrame;
+                  m_dpb.m_refFrames[REF_GOLD] = pRecFrame;
+                  m_dpb.m_refFrames[REF_ALT] =  pRecFrame;
+
+                  // treat all references as free - they all were replaced with current frame
+                  freeSurfCnt[dpbBeforeUpdate.m_refMap[REF_BASE]] ++;
+                  freeSurfCnt[dpbBeforeUpdate.m_refMap[REF_GOLD]] ++;
+                  freeSurfCnt[dpbBeforeUpdate.m_refMap[REF_ALT]]  ++;
+              }
+              else
+              {
+                  // refresh last_ref with current frame
+                  m_dpb.m_refFrames[REF_BASE] = pRecFrame;
+                  m_dpb.m_refMap[REF_BASE] = 0;
+                  // treat last_ref as free - it was replaced with current frame
+                  freeSurfCnt[dpbBeforeUpdate.m_refMap[REF_BASE]] ++;
+
+                  if (pParams->bGold)
+                  {
+                      // refresh gold_ref with current frame
+                      m_dpb.m_refFrames[REF_GOLD] = pRecFrame;
+                      m_dpb.m_refMap[REF_GOLD] = 0;
+                      // treat gold_ref as free - it was replaced with current frame
+                      freeSurfCnt[dpbBeforeUpdate.m_refMap[REF_GOLD]] ++;
+                  }
+                  else
+                  {
+                      if (pParams->copyToGoldRef == 1)
+                      {
+                          // replace gold_ref with last_ref
+                          m_dpb.m_refFrames[REF_GOLD] = dpbBeforeUpdate.m_refFrames[REF_BASE];                        
+                          // treat gold_ref as free - it was replaced with last_ref
+                          freeSurfCnt[dpbBeforeUpdate.m_refMap[REF_GOLD]] ++;
+                          // treat last_ref as occupied - gold_ref was replaced with it
+                          freeSurfCnt[dpbBeforeUpdate.m_refMap[REF_BASE]] = 0;
+                      }
+                      else if (pParams->copyToGoldRef == 2)
+                      {
+                          // replace gold_ref with alt_ref
+                          m_dpb.m_refFrames[REF_GOLD] = dpbBeforeUpdate.m_refFrames[REF_ALT];
+                          // treat gold_ref as free - it was replaced with alt_ref
+                          freeSurfCnt[dpbBeforeUpdate.m_refMap[REF_GOLD]] ++;
+                          // treat alt_ref as occupied - gold_ref was replaced with it
+                          freeSurfCnt[dpbBeforeUpdate.m_refMap[REF_ALT]] = 0;
+                      }
+                      m_dpb.m_refMap[REF_GOLD] = 1;
+                  }
+
+                  if (pParams->bAltRef)
+                  {
+                      // refresh alt_ref with current frame
+                      m_dpb.m_refFrames[REF_ALT] = pRecFrame;
+                      m_dpb.m_refMap[REF_ALT] = 0;
+                      // treat alt_ref as free - it was replaced with current frame
+                      freeSurfCnt[dpbBeforeUpdate.m_refMap[REF_ALT]] ++;
+                  }
+                  else
+                  {
+                      if (pParams->copyToAltRef == 1)
+                      {
+                          // replace alt_ref with last_ref
+                          m_dpb.m_refFrames[REF_ALT] = dpbBeforeUpdate.m_refFrames[REF_BASE];
+                          // treat alt_ref as free - it was replaced with last_ref
+                          freeSurfCnt[dpbBeforeUpdate.m_refMap[REF_ALT]] ++;
+                          // treat last_ref as occupied - alt_ref was replaced with it
+                          freeSurfCnt[dpbBeforeUpdate.m_refMap[REF_BASE]] = 0;
+                      }
+                      else if (pParams->copyToAltRef == 2)
+                      {
+                          // replace alt_ref with gold_ref
+                          m_dpb.m_refFrames[REF_ALT] = dpbBeforeUpdate.m_refFrames[REF_GOLD];
+                          // treat alt_ref as free - it was replaced with gold_ref
+                          freeSurfCnt[dpbBeforeUpdate.m_refMap[REF_ALT]] ++;
+                          // treat gold_ref as occupied - alt_ref was replaced with it
+                          freeSurfCnt[dpbBeforeUpdate.m_refMap[REF_GOLD]] = 0;
+                      }
+
+                      if (m_dpb.m_refMap[REF_GOLD] == 0) // gold_ref was replaced with current frames
+                          m_dpb.m_refMap[REF_ALT] = 1;
+                      else
+                          m_dpb.m_refMap[REF_ALT] = (m_dpb.m_refFrames[REF_ALT] == m_dpb.m_refFrames[REF_GOLD]) ? 1 : 2;
+                  }
+              }
+
+              if (m_dpb.m_refFrames[REF_GOLD] == dpbBeforeUpdate.m_refFrames[REF_GOLD])
+                  freeSurfCnt[dpbBeforeUpdate.m_refMap[REF_GOLD]] = 0;
+              if (m_dpb.m_refFrames[REF_ALT] == dpbBeforeUpdate.m_refFrames[REF_ALT])
+                  freeSurfCnt[dpbBeforeUpdate.m_refMap[REF_ALT]] = 0;
+
+              // release reconstruct surfaces that didn't fit into updated dpb
+              for (mfxU8 refIdx = 0; refIdx < REF_TOTAL; refIdx ++)
+              {
+                  if (freeSurfCnt[dpbBeforeUpdate.m_refMap[refIdx]])
+                  {
+                      MFX_CHECK_STS(FreeSurface(dpbBeforeUpdate.m_refFrames[refIdx],m_pCore));
+                      freeSurfCnt[dpbBeforeUpdate.m_refMap[refIdx]] = 0; // reset counter to 0 to avoid second FreeSurface() call for same surface
+                  }
+              }
+
+              return MFX_ERR_NONE;
+          }
 
     }; 
 }
-#endif
 #endif

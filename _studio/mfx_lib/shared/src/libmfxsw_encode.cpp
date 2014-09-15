@@ -51,15 +51,6 @@ File Name: libmfxsw_encode.cpp
 #endif
 #endif
 
-#if defined (MFX_ENABLE_VP8_VIDEO_ENCODE)
-#include "mfx_vp8_encode.h"
-#endif
-
-#if defined (MFX_ENABLE_VP8_VIDEO_ENCODE_HW) && defined (MFX_VA)
-#include "mfx_vp8_encode_hw.h"
-#endif
-
-
 #if defined (MFX_ENABLE_MJPEG_VIDEO_ENCODE)
 #if defined(MFX_VA)
 #include "mfx_mjpeg_encode_hw.h"
@@ -158,20 +149,6 @@ VideoENCODE *CreateENCODESpecificClass(mfxU32 CodecId, VideoCORE *core, mfxSessi
         pENCODE = new MFXVideoENCODEVC1(core, &mfxRes);
         break;
 #endif
-
-#if defined(MFX_ENABLE_VP8_VIDEO_ENCODE)
-    case MFX_CODEC_VP8:
-#if defined(MFX_VA) && defined(MFX_ENABLE_VP8_VIDEO_ENCODE_HW)
-        if (session->m_bIsHWENCSupport)
-        {
-            pENCODE = new MFXHWVideoENCODEVP8(core, &mfxRes);
-        }
-        else
-#endif // MFX_VA && MFX_ENABLE_VP8_VIDEO_ENCODE_HW
-            pENCODE = new MFXVideoENCODEVP8(core, &mfxRes);
-        break;
-
-#endif // MFX_ENABLE_VP8_VIDEO_ENCODE
 
 #if defined(MFX_ENABLE_MJPEG_VIDEO_ENCODE)
     case MFX_CODEC_JPEG:
@@ -303,27 +280,6 @@ mfxStatus MFXVideoENCODE_Query(mfxSession session, mfxVideoParam *in, mfxVideoPa
             break;
 #endif
 
-
-#ifdef MFX_ENABLE_VP8_VIDEO_ENCODE
-        case MFX_CODEC_VP8:
-#if defined(MFX_VA) && defined(MFX_ENABLE_VP8_VIDEO_ENCODE_HW)
-            mfxRes = MFXHWVideoENCODEVP8::Query(session->m_pCORE.get(), in, out);
-
-            if (MFX_WRN_PARTIAL_ACCELERATION == mfxRes)
-            {
-                mfxRes = MFXVideoENCODEVP8::Query(in, out);
-            }
-            else
-            {
-                bIsHWENCSupport = true;
-            }
-#else // MFX_VA && MFX_ENABLE_VP8_VIDEO_ENCODE_HW
-            mfxRes = MFXVideoENCODEVP8::Query(in, out);
-#endif // MFX_VA && MFX_ENABLE_VP8_VIDEO_ENCODE_HW
-            break;
-
-#endif // MFX_ENABLE_VP8_VIDEO_ENCODE
-
 #if defined(MFX_ENABLE_MJPEG_VIDEO_ENCODE)
         case MFX_CODEC_JPEG:
 #if defined(MFX_VA)
@@ -452,26 +408,6 @@ mfxStatus MFXVideoENCODE_QueryIOSurf(mfxSession session, mfxVideoParam *par, mfx
 #endif // MFX_VA
             break;
 #endif // MFX_ENABLE_MPEG2_VIDEO_ENC
-
-
-#ifdef MFX_ENABLE_VP8_VIDEO_ENCODE
-        case MFX_CODEC_VP8:
-#if defined(MFX_VA) && defined(MFX_ENABLE_VP8_VIDEO_ENCODE_HW)
-            mfxRes = MFXHWVideoENCODEVP8::QueryIOSurf(session->m_pCORE.get(), par, request);
-            if (MFX_WRN_PARTIAL_ACCELERATION == mfxRes)
-            {
-                mfxRes = MFXVideoENCODEVP8::QueryIOSurf(par, request);
-            }
-            else
-            {
-                bIsHWENCSupport = true;
-            }
-#else // MFX_VA && MFX_ENABLE_VP8_VIDEO_ENCODE_HW
-            mfxRes = MFXVideoENCODEVP8::QueryIOSurf(par, request);
-#endif // MFX_VA && MFX_ENABLE_VP8_VIDEO_ENCODE_HW
-                        break;
-#endif // MFX_ENABLE_VP8_VIDEO_ENCODE
-
 
 #if defined(MFX_ENABLE_MJPEG_VIDEO_ENCODE)
         case MFX_CODEC_JPEG:

@@ -212,13 +212,6 @@ namespace MFX_VP8ENC
         st = InitVp8VideoParam(video);
         if(st != MFX_ERR_NONE) return st;
 
-#if defined VP8_HYBRID_CPUPAK
-        for(i=0;i<VP8_NUM_OF_USED_FRAMES;i++) {
-            m_frames[i].InitAlloc(m_Params.SrcWidth, m_Params.SrcHeight);
-        }
-        m_frame_idx[VP8_INTRA_FRAME] = m_frame_idx[VP8_LAST_FRAME] = m_frame_idx[VP8_GOLDEN_FRAME] = m_frame_idx[VP8_ALTREF_FRAME] = VP8_ALTREF_FRAME;
-        m_frame_idx[VP8_ORIGINAL_FRAME] = VP8_ORIGINAL_FRAME;
-#endif
         m_Mbs1 = (TrMbCodeVp8*)malloc(sizeof(TrMbCodeVp8)*m_Params.fSizeInMBs);
         if(!m_Mbs1) return MFX_ERR_MEMORY_ALLOC;
 
@@ -254,6 +247,29 @@ namespace MFX_VP8ENC
 
         m_UVPreds = (MbUVPred*)malloc(sizeof(MbUVPred)*m_Params.fSizeInMBs);
         if(!m_UVPreds) return MFX_ERR_MEMORY_ALLOC;
+
+        return MFX_ERR_NONE;
+    }
+
+    // [SE] Reset supports BSP mode only (not CPU PAK)
+    mfxStatus Vp8CoreBSE::Reset(const mfxVideoParam &video)
+    {
+        I32         i;
+        mfxStatus   st = MFX_ERR_NONE;
+
+        st = InitVp8VideoParam(video);
+        if(st != MFX_ERR_NONE) return st;
+
+        U32 wInMB = (m_Params.SrcWidth+15)>>4;
+        U32 hInMB = (m_Params.SrcHeight+15)>>4;
+        U32 mxPartH = (hInMB + 7) >> 3;
+        U32 mxPartS = mxPartH*wInMB*2048;
+        U32 mxToknS = mxPartH*wInMB*384;
+
+        m_externalMb1.RefFrameMode = VP8_INTRA_FRAME;
+        m_externalMb1.Y4x4Modes0 = m_externalMb1.Y4x4Modes1 = m_externalMb1.Y4x4Modes2 = m_externalMb1.Y4x4Modes3 = 0;
+        m_externalMb1.nonZeroCoeff = 0;
+        m_externalMb1.Y2AboveNotZero = m_externalMb1.Y2LeftNotZero = 0;
 
         return MFX_ERR_NONE;
     }
@@ -404,11 +420,7 @@ namespace MFX_VP8ENC
         memcpy(pPictureHeader, ivf_frame_header, sizeof (ivf_frame_header));
     }
 
-    mfxStatus Vp8CoreBSE::RunBSP(bool bIVFHeaders, bool bSeqHeader, mfxBitstream * pBitstream, TaskHybridDDI *pTask, MBDATA_LAYOUT const & layout,VideoCORE * pCore
-#if defined (VP8_HYBRID_DUMP_READ) || defined (VP8_HYBRID_DUMP_WRITE)
-        , FILE* m_bse_dump, mfxU32 m_bse_dump_size
-#endif
-        )
+    mfxStatus Vp8CoreBSE::RunBSP(bool bIVFHeaders, bool bSeqHeader, mfxBitstream * pBitstream, TaskHybridDDI *pTask, MBDATA_LAYOUT const & layout, mfxCoreInterface * pCore)
     {
         mfxStatus   sts = MFX_ERR_NONE;
         mfxU8      *pPictureHeader = 0;
@@ -433,11 +445,7 @@ namespace MFX_VP8ENC
 
         memset(&m_cnt1, 0, sizeof(m_cnt1));
 
-        TokenizeAndCnt(pTask, layout, pCore
-#if defined (VP8_HYBRID_DUMP_READ) || defined (VP8_HYBRID_DUMP_WRITE)
-            , m_bse_dump, m_bse_dump_size
-#endif
-            );
+        TokenizeAndCnt(pTask, layout, pCore);
         UpdateEntropyModel();
         CalculateCosts();
         EncodeTokenPartitions();
@@ -1321,11 +1329,7 @@ namespace MFX_VP8ENC
             vp8UpdateEobCounters(&m_cnt1, cntx1, vp8_coefBands[k], cntx3);
         }
     }
-    void Vp8CoreBSE::TokenizeAndCnt(TaskHybridDDI *pTask, MBDATA_LAYOUT const & layout, VideoCORE * pCore
-#if defined (VP8_HYBRID_DUMP_READ) || defined (VP8_HYBRID_DUMP_WRITE)
-        , FILE* m_bse_dump, mfxU32 m_bse_dump_size
-#endif
-        )
+    void Vp8CoreBSE::TokenizeAndCnt(TaskHybridDDI *pTask, MBDATA_LAYOUT const & layout, mfxCoreInterface * pCore)
     {
         I32          i, j, partId, mPitch, maxPartId, mRowCnt, cnzMsk;
         U32         *pCoeff32, isZeroY2;
@@ -1337,27 +1341,10 @@ namespace MFX_VP8ENC
         U32          aCntx3, lCntx3;
 
         FrameLocker lockSrc0(pCore, pTask->ddi_frames.m_pMB_hw->pSurface->Data, false);
-        FrameLocker lockDst0(pCore, pTask->ddi_frames.m_pMB_sw->pSurface->Data, false);
 
-#if defined (VP8_HYBRID_DUMP_READ)
-        fread(pTask->ddi_frames.m_pMB_hw->pSurface->Data.Y, 1, m_bse_dump_size, m_bse_dump);
-#endif
-
-#if defined (MFX_VA_WIN)
-        pCore->DoFastCopy(pTask->ddi_frames.m_pMB_sw->pSurface, pTask->ddi_frames.m_pMB_hw->pSurface);
-#if defined (VP8_HYBRID_DUMP_WRITE)
-        fwrite(pTask->ddi_frames.m_pMB_sw->pSurface->Data.Y, 1, m_bse_dump_size, m_bse_dump);
-#endif
-
-        HLDMbDataVp8 *pHLDMbData = (HLDMbDataVp8 *)(pTask->ddi_frames.m_pMB_sw->pSurface->Data.Y + layout.MB_CODE_offset);
-        HLDMvDataVp8 *pHLDMvData = (HLDMvDataVp8 *)(pTask->ddi_frames.m_pMB_sw->pSurface->Data.Y + layout.MV_offset);
-#elif defined (MFX_VA_LINUX)
-#if defined (VP8_HYBRID_DUMP_WRITE)
-        fwrite(pTask->ddi_frames.m_pMB_hw->pSurface->Data.Y, 1, m_bse_dump_size, m_bse_dump);
-#endif
         HLDMbDataVp8 *pHLDMbData = (HLDMbDataVp8 *)(pTask->ddi_frames.m_pMB_hw->pSurface->Data.Y + layout.MB_CODE_offset);
         HLDMvDataVp8 *pHLDMvData = (HLDMvDataVp8 *)(pTask->ddi_frames.m_pMB_hw->pSurface->Data.Y + layout.MV_offset);
-#endif
+
         // get QP and loop_filter_levels provided by BRC
         ReadBRCStatusReport(pTask->ddi_frames.m_pMB_hw->pSurface->Data.Y,
                             m_ctrl,

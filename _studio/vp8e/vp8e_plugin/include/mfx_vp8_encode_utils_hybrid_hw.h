@@ -9,7 +9,6 @@
 */
 
 #include "mfx_common.h"
-#if defined(MFX_ENABLE_VP8_VIDEO_ENCODE_HW) && defined(MFX_VA)
 
 #ifndef _MFX_VP8_ENCODE_UTILS_HYBRID_HW_H_
 #define _MFX_VP8_ENCODE_UTILS_HYBRID_HW_H_
@@ -17,8 +16,6 @@
 #include "mfx_vp8_encode_utils_hw.h"
 #include "mfx_vp8_encode_ddi_hw.h"
 #include <queue>
-#include "ipps.h"
-#include "umc_defs.h"
 
 #define MFX_CHECK_WITH_ASSERT(EXPR, ERR) { assert(EXPR); MFX_CHECK(EXPR, ERR); }
 
@@ -35,7 +32,7 @@ namespace MFX_VP8ENC
     public:
         TaskHybrid():  Task() {}
         virtual ~TaskHybrid() {}
-        virtual  mfxStatus Init(VideoCORE * pCore, mfxVideoParam *par)
+        virtual  mfxStatus Init(mfxCoreInterface * pCore, mfxVideoParam *par)
         { 
             return Task::Init(pCore,par);
         }
@@ -74,6 +71,8 @@ namespace MFX_VP8ENC
         mfxU64         m_prevFrameSize;
         mfxU8          m_brcUpdateDelay;
 
+        mfxU32         m_frameOrderOfPreviousFrame;
+
     public:
         TaskHybridDDI(): 
           TaskHybrid() 
@@ -81,6 +80,7 @@ namespace MFX_VP8ENC
               Zero (ddi_frames);
               m_prevFrameSize = 0;
               m_brcUpdateDelay = 0;
+              m_frameOrderOfPreviousFrame = 0;
           }
         virtual ~TaskHybridDDI() {}
         virtual   mfxStatus SubmitTask (sFrameEx*  pRecFrame, sDpbVP8 &dpb, sFrameParams* pParams,  sFrameEx* pRawLocalFrame, 
@@ -90,18 +90,10 @@ namespace MFX_VP8ENC
             mfxStatus sts = Task::SubmitTask(pRecFrame,dpb,pParams,pRawLocalFrame);
 
             MFX_CHECK(isFreeSurface(pDDIFrames->m_pMB_hw),MFX_ERR_UNDEFINED_BEHAVIOR);
-            MFX_CHECK(isFreeSurface(pDDIFrames->m_pMB_sw),MFX_ERR_UNDEFINED_BEHAVIOR);            
-
-            //MFX_CHECK(isFreeSurface(pDDIFrames->m_pDist_hw),MFX_ERR_UNDEFINED_BEHAVIOR);
-            //MFX_CHECK(isFreeSurface(pDDIFrames->m_pDist_sw),MFX_ERR_UNDEFINED_BEHAVIOR);
 
             ddi_frames = *pDDIFrames;
 
             MFX_CHECK_STS(LockSurface(ddi_frames.m_pMB_hw,m_pCore));
-            MFX_CHECK_STS(LockSurface(ddi_frames.m_pMB_sw,m_pCore));
-
-            //MFX_CHECK_STS(LockSurface(ddi_frames.m_pDist_hw,m_pCore));
-            //MFX_CHECK_STS(LockSurface(ddi_frames.m_pDist_sw,m_pCore));
 
             return sts;
         }
@@ -150,6 +142,9 @@ namespace MFX_VP8ENC
 
         mfxU16           m_maxBrcUpdateDelay;
 
+        mfxU64           m_frameNumOfLastArrivedFrame;
+        mfxU64           m_frameNumOfLastFrameReturnedFromDriver;
+
         std::queue<FrameInfoFromPak> m_cachedFrameInfoFromPak;
         FrameInfoFromPak             m_latestKeyFrame;
         FrameInfoFromPak             m_latestNonKeyFrame;
@@ -157,29 +152,27 @@ namespace MFX_VP8ENC
     public:
 
         inline
-        mfxStatus Init( VideoCORE* pCore, mfxVideoParam *par, mfxU32 reconFourCC)
+        mfxStatus Init( mfxCoreInterface* pCore, mfxVideoParam *par, mfxU32 reconFourCC)
         {
-            VP8_LOG("\n(sefremov) TaskManagerHybridPakDDI::Init +");
-            MFX_CHECK_STS(BaseClass::Init(pCore,par,true,reconFourCC));
+            mfxStatus sts = BaseClass::Init(pCore,par,true,reconFourCC);
+            MFX_CHECK_STS(sts);
             m_maxBrcUpdateDelay = par->AsyncDepth > 2 ? 2: par->AsyncDepth; // driver supports maximum 2-frames BRC update delay
+            m_frameNumOfLastArrivedFrame = 0;
+            m_frameNumOfLastFrameReturnedFromDriver = 0;
             Zero(m_latestNonKeyFrame);
             Zero(m_latestKeyFrame);
-            VP8_LOG("\n(sefremov) TaskManagerHybridPakDDI::Init -");
             return MFX_ERR_NONE;
         }
 
         inline
-        mfxStatus AllocInternalResources( VideoCORE* pCore, 
+        mfxStatus AllocInternalResources(mfxCoreInterface *pCore, 
                         mfxFrameAllocRequest reqMBData,
                         mfxFrameAllocRequest reqDist,
                         mfxFrameAllocRequest reqSegMap)
         {
-            VP8_LOG("\n(sefremov) TaskManagerHybridPakDDI::AllocInternalResources +");
             if (reqMBData.NumFrameMin < m_ReconFrames.Num())
                 reqMBData.NumFrameMin = (mfxU16)m_ReconFrames.Num();
             MFX_CHECK_STS(m_MBDataDDI_hw.Init(pCore, &reqMBData,true));
-            reqMBData.Info.FourCC = MFX_FOURCC_P8;
-            MFX_CHECK_STS(m_MBDataDDI_sw.Init(pCore, &reqMBData,false));
 
             if (reqDist.NumFrameMin)
             {
@@ -193,120 +186,6 @@ namespace MFX_VP8ENC
                 m_bUseSegMap = true;
                 MFX_CHECK_STS(m_SegMapDDI_hw.Init(pCore, &reqSegMap,true));
             }
-            
-            VP8_LOG("\n(sefremov) TaskManagerHybridPakDDI::AllocInternalResources -");
-            return MFX_ERR_NONE;
-        }
-
-        inline
-        mfxStatus UpdateDpb(sFrameParams *pParams, sFrameEx *pRecFrame)
-        {
-            mfxU8   freeSurfCnt[REF_TOTAL] = {0, };
-            sDpbVP8 dpbBeforeUpdate = m_dpb;
-
-            // reset mapping of ref frames
-            m_dpb.m_refMap[REF_BASE] = m_dpb.m_refMap[REF_GOLD] = m_dpb.m_refMap[REF_ALT] = 0;
-
-            if (pParams->bIntra)
-            {
-                m_dpb.m_refFrames[REF_BASE] = pRecFrame;
-                m_dpb.m_refFrames[REF_GOLD] = pRecFrame;
-                m_dpb.m_refFrames[REF_ALT] =  pRecFrame;
-
-                // treat all references as free - they all were replaced with current frame
-                freeSurfCnt[dpbBeforeUpdate.m_refMap[REF_BASE]] ++;
-                freeSurfCnt[dpbBeforeUpdate.m_refMap[REF_GOLD]] ++;
-                freeSurfCnt[dpbBeforeUpdate.m_refMap[REF_ALT]]  ++;
-            }
-            else
-            {
-                // refresh last_ref with current frame
-                m_dpb.m_refFrames[REF_BASE] = pRecFrame;
-                m_dpb.m_refMap[REF_BASE] = 0;
-                // treat last_ref as free - it was replaced with current frame
-                freeSurfCnt[dpbBeforeUpdate.m_refMap[REF_BASE]] ++;
-
-                if (pParams->bGold)
-                {
-                    // refresh gold_ref with current frame
-                    m_dpb.m_refFrames[REF_GOLD] = pRecFrame;
-                    m_dpb.m_refMap[REF_GOLD] = 0;
-                    // treat gold_ref as free - it was replaced with current frame
-                    freeSurfCnt[dpbBeforeUpdate.m_refMap[REF_GOLD]] ++;
-                }
-                else
-                {
-                    if (pParams->copyToGoldRef == 1)
-                    {
-                        // replace gold_ref with last_ref
-                        m_dpb.m_refFrames[REF_GOLD] = dpbBeforeUpdate.m_refFrames[REF_BASE];                        
-                        // treat gold_ref as free - it was replaced with last_ref
-                        freeSurfCnt[dpbBeforeUpdate.m_refMap[REF_GOLD]] ++;
-                        // treat last_ref as occupied - gold_ref was replaced with it
-                        freeSurfCnt[dpbBeforeUpdate.m_refMap[REF_BASE]] = 0;
-                    }
-                    else if (pParams->copyToGoldRef == 2)
-                    {
-                         // replace gold_ref with alt_ref
-                        m_dpb.m_refFrames[REF_GOLD] = dpbBeforeUpdate.m_refFrames[REF_ALT];
-                        // treat gold_ref as free - it was replaced with alt_ref
-                        freeSurfCnt[dpbBeforeUpdate.m_refMap[REF_GOLD]] ++;
-                        // treat alt_ref as occupied - gold_ref was replaced with it
-                        freeSurfCnt[dpbBeforeUpdate.m_refMap[REF_ALT]] = 0;
-                    }
-                    m_dpb.m_refMap[REF_GOLD] = 1;
-                }
-
-                if (pParams->bAltRef)
-                {
-                    // refresh alt_ref with current frame
-                    m_dpb.m_refFrames[REF_ALT] = pRecFrame;
-                    m_dpb.m_refMap[REF_ALT] = 0;
-                    // treat alt_ref as free - it was replaced with current frame
-                    freeSurfCnt[dpbBeforeUpdate.m_refMap[REF_ALT]] ++;
-                }
-                else
-                {
-                    if (pParams->copyToAltRef == 1)
-                    {
-                        // replace alt_ref with last_ref
-                        m_dpb.m_refFrames[REF_ALT] = dpbBeforeUpdate.m_refFrames[REF_BASE];
-                        // treat alt_ref as free - it was replaced with last_ref
-                        freeSurfCnt[dpbBeforeUpdate.m_refMap[REF_ALT]] ++;
-                        // treat last_ref as occupied - alt_ref was replaced with it
-                        freeSurfCnt[dpbBeforeUpdate.m_refMap[REF_BASE]] = 0;
-                    }
-                    else if (pParams->copyToAltRef == 2)
-                    {
-                        // replace alt_ref with gold_ref
-                        m_dpb.m_refFrames[REF_ALT] = dpbBeforeUpdate.m_refFrames[REF_GOLD];
-                        // treat alt_ref as free - it was replaced with gold_ref
-                        freeSurfCnt[dpbBeforeUpdate.m_refMap[REF_ALT]] ++;
-                        // treat gold_ref as occupied - alt_ref was replaced with it
-                        freeSurfCnt[dpbBeforeUpdate.m_refMap[REF_GOLD]] = 0;
-                    }
-
-                    if (m_dpb.m_refMap[REF_GOLD] == 0) // gold_ref was replaced with current frames
-                        m_dpb.m_refMap[REF_ALT] = 1;
-                    else
-                        m_dpb.m_refMap[REF_ALT] = (m_dpb.m_refFrames[REF_ALT] == m_dpb.m_refFrames[REF_GOLD]) ? 1 : 2;
-                }
-            }
-
-            if (m_dpb.m_refFrames[REF_GOLD] == dpbBeforeUpdate.m_refFrames[REF_GOLD])
-                freeSurfCnt[dpbBeforeUpdate.m_refMap[REF_GOLD]] = 0;
-            if (m_dpb.m_refFrames[REF_ALT] == dpbBeforeUpdate.m_refFrames[REF_ALT])
-                freeSurfCnt[dpbBeforeUpdate.m_refMap[REF_ALT]] = 0;
-
-            // release reconstruct surfaces that didn't fit into updated dpb
-            for (mfxU8 refIdx = 0; refIdx < REF_TOTAL; refIdx ++)
-            {
-                if (freeSurfCnt[dpbBeforeUpdate.m_refMap[refIdx]])
-                {
-                    MFX_CHECK_STS(FreeSurface(dpbBeforeUpdate.m_refFrames[refIdx],m_pCore));
-                    freeSurfCnt[dpbBeforeUpdate.m_refMap[refIdx]] = 0; // reset counter to 0 to avoid second FreeSurface() call for same surface
-                }
-            }
 
             return MFX_ERR_NONE;
         }
@@ -314,7 +193,9 @@ namespace MFX_VP8ENC
         inline 
         mfxStatus Reset(mfxVideoParam *par)
         {
-            m_maxBrcUpdateDelay = 2; // driver supports maximum 2-frames BRC update delay
+            m_maxBrcUpdateDelay = par->AsyncDepth > 2 ? 2: par->AsyncDepth; // driver supports maximum 2-frames BRC update delay
+            m_frameNumOfLastArrivedFrame = 0;
+            m_frameNumOfLastFrameReturnedFromDriver = 0;
             return BaseClass::Reset(par);
         }
         inline
@@ -347,7 +228,7 @@ namespace MFX_VP8ENC
             pHybridTask->m_prevFrameSize = newestFrame.m_encodedFrameSize;
             pHybridTask->m_brcUpdateDelay = mfxU8(pOutTask->m_frameOrder - newestFrame.m_frameOrder);
 
-            while (m_cachedFrameInfoFromPak.size() > 1)
+            while (m_cachedFrameInfoFromPak.size())
             {
                 // store costs from last key and last non-key frames
                 if (m_cachedFrameInfoFromPak.front().m_frameType == 0)
@@ -355,10 +236,17 @@ namespace MFX_VP8ENC
                 else
                     m_latestNonKeyFrame = m_cachedFrameInfoFromPak.front();
 
-                if (m_cachedFrameInfoFromPak.size() > 1 || pHybridTask->m_brcUpdateDelay == m_maxBrcUpdateDelay)
+                if (m_cachedFrameInfoFromPak.size() > 1 ||
+                  m_cachedFrameInfoFromPak.front().m_frameOrder < minFrameOrderToUpdateBrc ||
+                  m_cachedFrameInfoFromPak.front().m_frameOrder == minFrameOrderToUpdateBrc && pOutTask->m_frameOrder >= m_maxBrcUpdateDelay)
                 {
                     // remove cached information if it's not longer required
                     m_cachedFrameInfoFromPak.pop();
+                }
+                else
+                {
+                    // all remaining cached information could be required for future frames
+                    break;
                 }
             }
 
@@ -372,6 +260,9 @@ namespace MFX_VP8ENC
                 // non key-frame
                 pHybridTask->m_costs = m_latestNonKeyFrame.m_updatedCosts;
             }
+
+            pHybridTask->m_frameOrderOfPreviousFrame = m_frameNumOfLastArrivedFrame;
+            m_frameNumOfLastArrivedFrame = m_frameNum - 1;
 
             return sts;
         }
@@ -398,25 +289,18 @@ namespace MFX_VP8ENC
             sDDIFrames ddi_frames = {0};
 
             mfxStatus sts = MFX_ERR_NONE;
-            /*printf("-------Submit task start\n");*/
 
             MFX_CHECK(m_pCore!=0, MFX_ERR_NOT_INITIALIZED);
 
             pRecFrame = m_ReconFrames.GetFreeFrame();
             MFX_CHECK(pRecFrame!=0,MFX_WRN_DEVICE_BUSY);
-            /*printf("Submit task, recon frame index = %d\n", pRecFrame->idInPool);*/
 
             if (m_bHWFrames != m_bHWInput)
             {
-                /*printf("Submit task, m_LocalRawFrames\n");*/
                 pRawLocalFrame = m_LocalRawFrames.GetFreeFrame();
                 MFX_CHECK(pRawLocalFrame!= 0,MFX_WRN_DEVICE_BUSY);
-                /*printf("Submit task, m_LocalRawFrames %d\n", pRawLocalFrame->idInPool);*/
             } 
-            /*printf("Submit task, m_MBDataDDI_hw\n");*/
             MFX_CHECK_STS(m_MBDataDDI_hw.GetFrame(pRecFrame->idInPool,ddi_frames.m_pMB_hw));
-            /*printf("Submit task, m_MBDataDDI_sw\n");*/
-            MFX_CHECK_STS(m_MBDataDDI_sw.GetFrame(pRecFrame->idInPool,ddi_frames.m_pMB_sw));
 
             if (m_bUseSegMap)
             {
@@ -424,12 +308,6 @@ namespace MFX_VP8ENC
             }
             else
                 ddi_frames.m_pSegMap_hw = 0;
-
-
-            /*printf("Submit task, m_DistDataDDI_hw\n");*/
-            //MFX_CHECK_STS(m_DistDataDDI_hw.GetFrame(pRecFrame->idInPool,ddi_frames.m_pDist_hw));
-            /*printf("Submit task, m_DistDataDDI_sw\n");*/
-            //MFX_CHECK_STS(m_DistDataDDI_sw.GetFrame(pRecFrame->idInPool,ddi_frames.m_pDist_sw));
 
             sts = ((TaskHybridDDI*)pTask)->SubmitTask(  pRecFrame,m_dpb,
                                                         pParams, pRawLocalFrame,
@@ -439,6 +317,20 @@ namespace MFX_VP8ENC
             UpdateDpb(pParams, pRecFrame);
 
             return sts;
+        }
+        inline
+        void RememberReturnedTask(Task &task)
+        {
+            m_frameNumOfLastFrameReturnedFromDriver = task.m_frameOrder;
+        }
+        inline
+        mfxStatus CheckHybridDependencies(TaskHybridDDI &task)
+        {
+            if (task.m_frameOrder == 0 ||
+                m_frameNumOfLastFrameReturnedFromDriver >= task.m_frameOrderOfPreviousFrame)
+                return MFX_ERR_NONE;
+            else
+                return MFX_WRN_IN_EXECUTION;
         }
         inline MfxFrameAllocResponse& GetRecFramesForReg()
         {
@@ -459,59 +351,5 @@ namespace MFX_VP8ENC
             return m_SegMapDDI_hw.GetFrameAllocReponse();
         }
     };
- #ifdef HYBRID_ENCODE
-
-    /*for Hybrid Encode: HW ENC + SW PAK*/
-
-    class TaskManagerHybridEncode
-    {
-    protected:
-
-        VideoCORE*       m_pCore;
-        VP8MfxParam      m_video;
-
-        bool    m_bHWInput;
-
-        ExternalFrames  m_RawFrames;
-        InternalFrames  m_LocalRawFrames;
-        InternalFrames  m_ReconFramesEnc;
-        InternalFrames  m_ReconFramesPak;
-        InternalFrames  m_MBDataDDI;
-
-        std::vector<TaskHybridDDI>   m_TasksEnc;
-        std::vector<TaskHybrid>      m_TasksPak;
-
-        TaskHybridDDI*   m_pPrevSubmittedTaskEnc;
-        TaskHybrid*      m_pPrevSubmittedTaskPak;
-
-        mfxU32           m_frameNum;
-
-
-    public:
-        TaskManagerHybridEncode ():
-          m_bHWInput(false),
-              m_pCore(0),
-              m_pPrevSubmittedTaskEnc(0),
-              m_pPrevSubmittedTaskPak(),
-              m_frameNum(0)
-          {}
-
-          ~TaskManagerHybridEncode()
-          {
-              FreeTasks(m_TasksEnc);
-              FreeTasks(m_TasksPak);
-          }
-
-          mfxStatus Init(VideoCORE* pCore, mfxVideoParam *par, mfxFrameInfo* pDDIMBInfo, mfxU32 numDDIMBFrames);
-           
-          mfxStatus Reset(mfxVideoParam *par);
-          mfxStatus InitTaskEnc(mfxFrameSurface1* pSurface, mfxBitstream* pBitstream, TaskHybridDDI* & pOutTask);
-          mfxStatus SubmitTaskEnc(TaskHybridDDI*  pTask, sFrameParams *pParams);
-          mfxStatus InitAndSubmitTaskPak(TaskHybridDDI* pTaskEnc, TaskHybrid * &pOutTaskPak);
-          mfxStatus CompleteTasks(TaskHybridDDI* pTaskEnc, TaskHybrid * pTaskPak);
-    };
-#endif
-
 }
-#endif
 #endif

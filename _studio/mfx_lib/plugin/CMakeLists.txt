@@ -29,7 +29,7 @@ list( APPEND vdecs
   )
 
 list( APPEND vencs
-  h264 mpeg2 vc1 mjpeg mvc svc vp8
+  h264 mpeg2 vc1 mjpeg mvc svc
   )
 
 foreach( dec ${vdecs} )
@@ -353,8 +353,6 @@ foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/../shared/src )
     ${prefix}/mfx_mpeg2_enc_common_hw.cpp
     ${prefix}/mfx_mpeg2_encode_factory.cpp
     ${prefix}/mfx_mpeg2_encode_vaapi.cpp
-    ${prefix}/mfx_vp8_enc_common.cpp    
-    ${prefix}/mfx_vp8_enc_common_hw.cpp    
     ${prefix}/libmfxsw_enc.cpp
   )
 endforeach()
@@ -441,8 +439,6 @@ set( defs "" )
 set (VP8_PRODUCT_NAME "Intel(R) Media SDK VP8 Pack")
 set (sw_VP8_DECODER_DESCRIPTION "Intel(R) Media SDK VP8 Software Decode Plug-in")
 set (hw_VP8_DECODER_DESCRIPTION "Intel(R) Media SDK VP8 Hardware Decode Plug-in")
-#set (sw_VP8_ENCODER_DESCRIPTION "Intel(R) Media SDK HEVC Software Encode Plug-in")
-set (hw_VP8_ENCODER_DESCRIPTION "Intel(R) Media SDK VP8 Accelerated Encode Plug-in")
 
   if( NOT DEFINED ENV{MFX_VP8_VERSION} )
     set( vp8_version 0.0.000.0000 )
@@ -553,106 +549,3 @@ foreach( variant sw hw )
   make_library( ${plugin_name} ${variant} shared)
 
 endforeach()
-
-# =============================================================================
-# VP8E
-# =============================================================================
-
-
-set( sources "" )
-set( sources.plus "" )
-
-list( APPEND sources ${plugin_common_sources} )
-
-include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../scheduler/include )
-include_directories( ${CMAKE_HOME_DIRECTORY}/mdp_msdk-contrib/vp8_libvpx )
-
-include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../../shared/umc/codec/vp8_enc/include )
-
-list( APPEND sources ${CMAKE_CURRENT_SOURCE_DIR}/../shared/src/libmfxsw_encode.cpp )
-list( APPEND sources ${CMAKE_CURRENT_SOURCE_DIR}/../shared/src/mfx_vp8_enc_common.cpp )
-list( APPEND sources ${CMAKE_CURRENT_SOURCE_DIR}/../shared/src/mfx_vp8_enc_common_hw.cpp )
-
-#list( APPEND sources ${CMAKE_CURRENT_SOURCE_DIR}/../../shared/umc/codec/vp8_enc/src/vp8_tables.cpp )
-
-set( USE_STRICT_NAME TRUE )
-set(MFX_LDFLAGS "${MFX_ORIG_LDFLAGS} -Wl,--version-script=${CMAKE_CURRENT_SOURCE_DIR}/libmfxsw_plugin.map" )
-
-set( sources.plus "" )
-foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/src )
-  list( APPEND sources.plus
-    ${prefix}/mfx_vp8_enc_plugin.cpp
-  )
-endforeach()
-
-# sw veriants of VP8E deprecated as newer versions of libvpx incompatible with MSDK
-foreach( variant hw )
-
-  if( __ARCH MATCHES intel64 )
-    set( plugin_name mfx_vp8e_${variant}64 )
-  else()
-    set( plugin_name mfx_vp8e_${variant}32 )
-  endif()
-  if( __CONFIG MATCHES debug )
-    set( plugin_name ${plugin_name}_d )
-  endif()
-
-  set (description_name ${${variant}_VP8_ENCODER_DESCRIPTION})
-
-  set( LIBS "" )
-
-  if(${variant} MATCHES hw)
-
-    list( APPEND LIBS va )
-
-    foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/../encode_hw/vp8/src )
-    list( APPEND sources
-      ${prefix}/mfx_vp8_encode_ddi_hw.cpp
-      ${prefix}/mfx_vp8_encode_hw.cpp
-      ${prefix}/mfx_vp8_encode_hybrid_bse.cpp
-      ${prefix}/mfx_vp8_encode_hybrid_hw.cpp
-      ${prefix}/mfx_vp8_encode_hybrid_pak.cpp
-      ${prefix}/mfx_vp8_encode_utils_hw.cpp
-      ${prefix}/mfx_vp8_encode_utils_hybrid_hw.cpp      
-    )
-    endforeach()
-
-
-    foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/../../shared/umc/io/umc_va/src )
-    list( APPEND sources
-      ${prefix}/umc_va_linux.cpp
-    )
-    endforeach()
-
-    set( defs "-DAS_VP8E_PLUGIN -DMFX_VA -DMFX_PLUGIN_PRODUCT_NAME=\"\\\"${VP8_PRODUCT_NAME}\"\\\" -DMFX_FILE_DESCRIPTION=\"\\\"${description_name}\"\\\" ${vp8_version_defs}")
-
-  else()
-
-    # This else section should never be called
-    message( FATAL_ERROR "Latest libvpx version doesn't supported in MSDK SW VP8 Encoder, CMake will exit." )
-    foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/../encode/vp8/src )
-    list( APPEND sources
-      ${prefix}/mfx_vp8_encode.cpp
-    )
-    endforeach()
-
-    set( defs "-DAS_VP8E_PLUGIN -DMFX_PLUGIN_PRODUCT_NAME=\"\\\"${VP8_PRODUCT_NAME}\"\\\" -DMFX_FILE_DESCRIPTION=\"\\\"${description_name}\"\\\" ${vp8_version_defs}")
-
-  endif()
-
-  list( APPEND LIBS
-    vpx
-    umc_csc_sw
-    umc_io_merged_${variant}
-    umc_core_merged
-    ${ITT_LIBS}
-    ippmsdk_l ippj_l ippvc_l ippcc_l ippcv_l ippi_l ipps_l ippcore_l
-    pthread
-    dl
-    )
-
-  make_library( ${plugin_name} ${variant} shared)
-
-endforeach()
-
-# =============================================================================

@@ -129,10 +129,10 @@ namespace MFX_VP8ENC
         return loopFilterValue > 63 ? 63 : loopFilterValue;
     }
 
-    mfxStatus SetFramesParams(mfxVideoParam * par, mfxU32 frameOrder, sFrameParams *pFrameParams)
+    mfxStatus SetFramesParams(mfxVideoParam * par, mfxU16 forcedFrameType, mfxU32 frameOrder, sFrameParams *pFrameParams)
     {
         memset(pFrameParams, 0, sizeof(sFrameParams));
-        pFrameParams->bIntra  = (frameOrder % par->mfx.GopPicSize) == 0 ? true: false; 
+        pFrameParams->bIntra  = (frameOrder % par->mfx.GopPicSize) == 0 || (forcedFrameType & MFX_FRAMETYPE_I) ? true: false;
         if (pFrameParams->bIntra)
         {
             pFrameParams->bAltRef = 1; // refresh gold_ref with current frame only for key-frames
@@ -168,100 +168,35 @@ namespace MFX_VP8ENC
 
     MfxFrameAllocResponse::~MfxFrameAllocResponse()
     {
-        if (m_core == 0)
+        if (m_pCore == 0)
             return;
 
-        if (MFX_HW_D3D11  == m_core->GetVAType())
+        if (mids)
         {
-            for (size_t i = 0; i < m_responseQueue.size(); i++)
-            {
-                m_core->FreeFrames(&m_responseQueue[i]);
-            }
+            NumFrameActual = m_numFrameActualReturnedByAllocFrames;
+            m_pCore->FrameAllocator.Free(m_pCore->FrameAllocator.pthis, this);
         }
-        else
-        {
-            if (mids)
-            {
-                NumFrameActual = m_numFrameActualReturnedByAllocFrames;
-                m_core->FreeFrames(this);
-            }
-        }
-
     } 
 
 
     mfxStatus MfxFrameAllocResponse::Alloc(
-        VideoCORE *            core,
+        mfxCoreInterface *     pCore,
         mfxFrameAllocRequest & req)
     {
-        VP8_LOG("\n(sefremov) MfxFrameAllocResponse::Alloc +");
         req.NumFrameSuggested = req.NumFrameMin; // no need in 2 different NumFrames
-        //printf("MfxFrameAllocResponse::Alloc - start (num: %d, type: %d, w %d, h %d, forCC %d)\n",req.NumFrameSuggested, req.Type,req.Info.Width, req.Info.Height, req.Info.FourCC);
-
-
-        if (MFX_HW_D3D11  == core->GetVAType())
-        {
-            mfxFrameAllocRequest tmp = req;
-            tmp.NumFrameMin = tmp.NumFrameSuggested = 1;
-
-            m_responseQueue.resize(req.NumFrameMin);
-            m_mids.resize(req.NumFrameMin);
-
-            for (int i = 0; i < req.NumFrameMin; i++)
-            {
-                mfxStatus sts = core->AllocFrames(&tmp, &m_responseQueue[i]);
-                MFX_CHECK_STS(sts);
-                m_mids[i] = m_responseQueue[i].mids[0];
-            }
-
-            mids = &m_mids[0];
-            NumFrameActual = req.NumFrameMin;
-        }
-        else
-        {
-            VP8_LOG("\n(sefremov) MfxFrameAllocResponse::Alloc VA 1");
-            //printf("MfxFrameAllocResponse::Alloc: core->AllocFrames:\n");
-            mfxStatus sts = core->AllocFrames(&req, this, false);
-            //printf("MfxFrameAllocResponse::Alloc: core->AllocFrames, sts %d\n", sts);
-            MFX_CHECK_STS(sts);
-        }
-        //printf("MfxFrameAllocResponse::Alloc: %d -> %d\n", req.NumFrameSuggested, this->NumFrameActual);
-
-
-        if (NumFrameActual < req.NumFrameMin)
-            return MFX_ERR_MEMORY_ALLOC;
-
-        m_core = core;
-        m_numFrameActualReturnedByAllocFrames = NumFrameActual;
-        NumFrameActual = req.NumFrameMin; // no need in redundant frames
-        m_info = req.Info;
-
-        VP8_LOG("\n(sefremov) MfxFrameAllocResponse::Alloc -");
-        return MFX_ERR_NONE;
-
-    } 
-
-
-    mfxStatus MfxFrameAllocResponse::Alloc(
-        VideoCORE *            core,
-        mfxFrameAllocRequest & req,
-        mfxFrameSurface1 **    opaqSurf,
-        mfxU32                 numOpaqSurf)
-    {
-        req.NumFrameSuggested = req.NumFrameMin; // no need in 2 different NumFrames
-
-        mfxStatus sts = core->AllocFrames(&req, this, opaqSurf, numOpaqSurf);
+        mfxStatus sts = pCore->FrameAllocator.Alloc(pCore->FrameAllocator.pthis, &req, this);
         MFX_CHECK_STS(sts);
 
         if (NumFrameActual < req.NumFrameMin)
             return MFX_ERR_MEMORY_ALLOC;
 
-        m_core = core;
+        m_pCore = pCore;
         m_numFrameActualReturnedByAllocFrames = NumFrameActual;
-        NumFrameActual = req.NumFrameMin; // no need in redundant frames
+        NumFrameActual = req.NumFrameMin;
+        m_info = req.Info;
 
         return MFX_ERR_NONE;
-    } 
+    }
 
     //---------------------------------------------------------
     // service class: VP8MfxParam
@@ -375,22 +310,19 @@ namespace MFX_VP8ENC
     // service class: InternalFrames
     //---------------------------------------------------------
 
-    mfxStatus InternalFrames::Init(VideoCORE *pCore, mfxFrameAllocRequest *pAllocReq, bool bHW)
+    mfxStatus InternalFrames::Init(mfxCoreInterface *pCore, mfxFrameAllocRequest *pAllocReq, bool bHW)
     {
-        VP8_LOG("\n(sefremov) InternalFrames::Init +");
         mfxStatus sts = MFX_ERR_NONE;
         MFX_CHECK_NULL_PTR2 (pCore, pAllocReq);
         mfxU32 nFrames = pAllocReq->NumFrameMin;
-        
+
         if (nFrames == 0) return sts;
         pAllocReq->Type = (mfxU16)(bHW ? MFX_MEMTYPE_D3D_INT: MFX_MEMTYPE_SYS_INT);
 
         //printf("internal frames init %d (request)\n", req.NumFrameSuggested);
 
-        VP8_LOG("\n(sefremov) InternalFrames::Init 1");
         sts = m_response.Alloc(pCore,*pAllocReq);
         MFX_CHECK_STS(sts);
-        VP8_LOG("\n(sefremov) InternalFrames::Init 2");
 
         //printf("internal frames init %d (%d) [%d](response)\n", m_response.NumFrameActual,Num(),nFrames);
 
@@ -411,7 +343,6 @@ namespace MFX_VP8ENC
             m_surfaces[i].Info = pAllocReq->Info;
             m_frames[i].pSurface = &m_surfaces[i];
         }
-        VP8_LOG("\n(sefremov) InternalFrames::Init -");
         return sts;
     } 
     sFrameEx * InternalFrames::GetFreeFrame()
@@ -444,17 +375,8 @@ namespace MFX_VP8ENC
 
     mfxStatus Task::GetOriginalSurface(mfxFrameSurface1 *& pSurface, bool &bExternal)
     {
-        if (m_bOpaqInput)
-        {
-            pSurface = m_pCore->GetNativeSurface(m_pRawFrame->pSurface);
-            MFX_CHECK_NULL_PTR1(pSurface);
-            bExternal = false;
-        }
-        else
-        {
-             pSurface = m_pRawFrame->pSurface;
-             bExternal = true;        
-        }
+        pSurface = m_pRawFrame->pSurface;
+        bExternal = true;        
         return MFX_ERR_NONE;
     }
     mfxStatus Task::GetInputSurface(mfxFrameSurface1 *& pSurface, bool &bExternal)
@@ -477,7 +399,8 @@ namespace MFX_VP8ENC
 
         if (m_pRawLocalFrame)
         {
-            mfxFrameSurface1 src={0};
+            mfxFrameSurface1 src={};
+            mfxFrameSurface1 dst = *(m_pRawLocalFrame->pSurface);
 
             mfxFrameSurface1 * pInput = 0;
             bool bExternal = true;
@@ -486,18 +409,83 @@ namespace MFX_VP8ENC
             MFX_CHECK_STS(sts);
 
             src.Data = pInput->Data;
-            src.Info = m_pRawLocalFrame->pSurface->Info;
+            src.Info = pInput->Info;
 
             FrameLocker lockSrc(m_pCore, src.Data, bExternal);
-            FrameLocker lockDst(m_pCore, m_pRawLocalFrame->pSurface->Data, false); 
+            FrameLocker lockDst(m_pCore, dst.Data, false);
 
-            sts = m_pCore->DoFastCopy(m_pRawLocalFrame->pSurface, &src);
-            MFX_CHECK_STS(sts);
-        
+            MFX_CHECK(src.Info.FourCC == MFX_FOURCC_YV12 || src.Info.FourCC == MFX_FOURCC_NV12, MFX_ERR_UNDEFINED_BEHAVIOR);
+            MFX_CHECK(dst.Info.FourCC == MFX_FOURCC_NV12, MFX_ERR_UNDEFINED_BEHAVIOR);
+
+            MFX_CHECK_NULL_PTR1(src.Data.Y);
+            if (src.Info.FourCC == MFX_FOURCC_NV12)
+            {
+                MFX_CHECK_NULL_PTR1(src.Data.UV);
+            }
+            else
+            {
+                MFX_CHECK_NULL_PTR2(src.Data.U, src.Data.V);
+            }
+
+            MFX_CHECK_NULL_PTR2(dst.Data.Y, dst.Data.UV);
+
+            MFX_CHECK(dst.Info.Width >= src.Info.Width, MFX_ERR_UNDEFINED_BEHAVIOR);
+            MFX_CHECK(dst.Info.Height >= src.Info.Height, MFX_ERR_UNDEFINED_BEHAVIOR);
+
+            mfxU32 srcPitch = src.Data.PitchLow + ((mfxU32)src.Data.PitchHigh << 16);
+            mfxU32 dstPitch = dst.Data.PitchLow + ((mfxU32)dst.Data.PitchHigh << 16);
+
+            mfxU32 roiWidth = src.Info.Width;
+            mfxU32 roiHeight = src.Info.Height;
+
+            // copy luma
+            mfxU8 * srcLine = src.Data.Y;
+            mfxU8 * dstLine = dst.Data.Y;
+            for (mfxU32 line = 0; line < roiHeight; line ++)
+            {
+                memcpy(dstLine, srcLine, roiWidth);
+                srcLine += srcPitch;
+                dstLine += dstPitch;
+            }
+
+            // copy chroma (with color conversion if required)
+            dstLine = dst.Data.UV;
+            roiHeight >>= 1;
+            if (src.Info.FourCC == MFX_FOURCC_NV12)
+            {
+                // for input NV12 just copy chroma
+                srcLine = src.Data.UV;
+                for (mfxU32 line = 0; line < roiHeight; line ++)
+                {
+                    memcpy(dstLine, srcLine, roiWidth);
+                    srcLine += srcPitch;
+                    dstLine += dstPitch;
+                }
+            }
+            else
+            {
+                // for YV12 color conversion is required
+                mfxU8 * srcU = src.Data.U;
+                mfxU8 * srcV = src.Data.V;
+                roiWidth >>= 1;
+                srcPitch >>= 1;
+                for (mfxU32 line = 0; line < roiHeight; line ++)
+                {
+                    for (mfxU32 pixel = 0; pixel < roiWidth; pixel ++)
+                    {
+                        mfxU32 dstUVPosition = pixel << 1;
+                        dstLine[dstUVPosition] = srcU[pixel];
+                        dstLine[dstUVPosition + 1] = srcV[pixel];
+                    }
+                    srcU += srcPitch;
+                    srcV += srcPitch;
+                    dstLine += dstPitch;
+                }
+            }
         }
         return sts;        
     }
-    mfxStatus Task::Init(VideoCORE * pCore, mfxVideoParam *par)
+    mfxStatus Task::Init(mfxCoreInterface * pCore, mfxVideoParam *par)
     {
         MFX_CHECK(m_status == TASK_FREE, MFX_ERR_UNDEFINED_BEHAVIOR);
 
@@ -565,6 +553,7 @@ namespace MFX_VP8ENC
 
         m_pBitsteam     = 0;
         Zero(m_sFrameParams);
+        Zero(m_ctrl);
         m_status = TASK_FREE;
 
         return MFX_ERR_NONE; 

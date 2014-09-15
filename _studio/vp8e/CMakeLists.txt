@@ -1,0 +1,83 @@
+
+mfx_include_dirs( )
+
+# =============================================================================
+# VP8E
+# =============================================================================
+
+
+set( sources "" )
+set( sources.plus "" )
+
+list( APPEND sources ${plugin_common_sources} )
+
+include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../mfx_lib/scheduler/include )
+include_directories( ${CMAKE_HOME_DIRECTORY}/mdp_msdk-contrib/vp8_libvpx )
+
+include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/vp8e_plugin/include )
+
+list( APPEND sources ${CMAKE_CURRENT_SOURCE_DIR}/../mfx_lib/shared/src/mfx_enc_common.cpp )
+list( APPEND sources ${CMAKE_CURRENT_SOURCE_DIR}/../mfx_lib/shared/src/mfx_common_int.cpp )
+
+set( USE_STRICT_NAME TRUE )
+set(MFX_LDFLAGS "${MFX_ORIG_LDFLAGS} -Wl,--version-script=${CMAKE_CURRENT_SOURCE_DIR}/libmfx_vp8e_plugin.map" )
+
+set( sources.plus "" )
+foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/vp8e_plugin/src )
+  list( APPEND sources.plus
+    ${prefix}/vp8e_plugin.cpp
+  )
+endforeach()
+
+# sw veriants of VP8E deprecated as newer versions of libvpx incompatible with MSDK
+foreach( variant hw )
+
+  if( __ARCH MATCHES intel64 )
+    set( plugin_name mfx_vp8e_${variant}64 )
+  else()
+    set( plugin_name mfx_vp8e_${variant}32 )
+  endif()
+  if( __CONFIG MATCHES debug )
+    set( plugin_name ${plugin_name}_d )
+  endif()
+
+  set (description_name ${${variant}_VP8_ENCODER_DESCRIPTION})
+
+  set( LIBS "" )
+
+  list( APPEND LIBS va )
+
+  foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/vp8e_plugin/src )
+  list( APPEND sources
+    ${prefix}/mfx_vp8_enc_common_hw.cpp    
+    ${prefix}/mfx_vp8_encode_ddi_hw.cpp
+    ${prefix}/mfx_vp8_encode_hybrid_bse.cpp
+    ${prefix}/mfx_vp8_encode_utils_hybrid_hw.cpp      
+  )
+  endforeach()
+
+
+  foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/../shared/umc/io/umc_va/src )
+  list( APPEND sources
+    ${prefix}/umc_va_linux.cpp
+  )
+  endforeach()
+
+  set( defs "-DAS_VP8E_PLUGIN -DMFX_VA -DMFX_ENABLE_VP8_VIDEO_ENCODE_HW -DMFX_PLUGIN_PRODUCT_NAME=\"\\\"${VP8_PRODUCT_NAME}\"\\\" -DMFX_FILE_DESCRIPTION=\"\\\"${description_name}\"\\\" ${vp8_version_defs}")
+
+  list( APPEND LIBS
+    vpx
+    umc_csc_sw
+    umc_io_merged_${variant}
+    umc_core_merged
+    ${ITT_LIBS}
+    ippmsdk_l ippj_l ippvc_l ippcc_l ippcv_l ippi_l ipps_l ippcore_l
+    pthread
+    dl
+    )
+
+  make_library( ${plugin_name} ${variant} shared)
+
+endforeach()
+
+# =============================================================================
