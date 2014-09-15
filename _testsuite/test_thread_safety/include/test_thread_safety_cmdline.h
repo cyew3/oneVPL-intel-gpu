@@ -39,6 +39,7 @@ protected:
     static const vm_char CodecMpeg2[];
     static const vm_char CodecVc1[];
     static const vm_char CodecHevc[];
+    static const vm_char CodecH263[];
 
 private:
     AutoArray<vm_char *> m_argv;

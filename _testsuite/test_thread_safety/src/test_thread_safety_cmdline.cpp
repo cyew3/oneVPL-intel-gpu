@@ -21,6 +21,7 @@ const vm_char CommandLine::CodecH264[] = VM_STRING("-h264");
 const vm_char CommandLine::CodecMpeg2[] = VM_STRING("-m2");
 const vm_char CommandLine::CodecVc1[] = VM_STRING("-vc1");
 const vm_char CommandLine::CodecHevc[] = VM_STRING("-h265");
+const vm_char CommandLine::CodecH263[] = VM_STRING("-h263");
 const mfxU32 MAX_NUM_THREAD = 100;
 
 #define MAKE_PAIR(name)\
@@ -43,11 +44,13 @@ mfxU32 String2TestType(const vm_char* s)
         MAKE_PAIR(HEVCDECODE),
         MAKE_PAIR(HEVCENCODE),
         MAKE_PAIR(VC1DECODE),
+        MAKE_PAIR(H263DECODE),
         MAKE_PAIR(JPEGENCODE),
         MAKE_PAIR(H264ENCODE),
         MAKE_PAIR(MPEG2ENCODE),
         MAKE_PAIR(MVCENCODE),
-        MAKE_PAIR(VC1ENCODE)
+        MAKE_PAIR(VC1ENCODE),
+        MAKE_PAIR(H263ENCODE)
     };
 
     mfxU32 i;
@@ -82,7 +85,9 @@ void CommandLine::PrintUsage(const vm_char* app)
         VM_STRING("  HEVCDECODE\n")
         VM_STRING("  HEVCENCODE\n")
         VM_STRING("  VC1DECODE\n")
-        VM_STRING("  VC1ENCODE\n"));
+        VM_STRING("  VC1ENCODE\n")
+        VM_STRING("  H263DECODE\n")
+        VM_STRING("  H263ENCODE\n"));
     vm_string_printf(
         VM_STRING("numThread:\n")
         VM_STRING("  n - number of components working in parallel\n")
@@ -188,6 +193,9 @@ CommandLine::CommandLine(mfxI32 argc, vm_char** argv)
         case TEST_HEVCENCODE:
             m_argv[m_argc++] = const_cast<vm_char *>(CommandLine::CodecHevc);
             break;
+        case TEST_H263ENCODE:
+            m_argv[m_argc++] = const_cast<vm_char *>(CommandLine::CodecH263);
+            break;
         case TEST_JPEGDECODE:
         case TEST_H264DECODE:
         case TEST_MPEG2DECODE:
@@ -195,6 +203,7 @@ CommandLine::CommandLine(mfxI32 argc, vm_char** argv)
         case TEST_SVCDECODE:
         case TEST_VC1DECODE:
         case TEST_HEVCDECODE:
+        case TEST_H263DECODE:
             break;
         default:
             VM_ASSERT(!"bad test type");
