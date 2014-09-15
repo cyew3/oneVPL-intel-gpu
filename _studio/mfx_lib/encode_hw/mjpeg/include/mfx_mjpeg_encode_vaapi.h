@@ -4,21 +4,19 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2011-2014 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2014 Intel Corporation. All Rights Reserved.
 //
 */
 
-#ifndef __MFX_MJPEG_ENCODE_D3D9_H__
-#define __MFX_MJPEG_ENCODE_D3D9_H__
+#ifndef __MFX_MJPEG_ENCODE_VAAPI_H__
+#define __MFX_MJPEG_ENCODE_VAAPI_H__
 
 #include "mfx_common.h"
 
-#if defined (MFX_ENABLE_MJPEG_VIDEO_ENCODE) && defined (MFX_VA_WIN)
+#if defined (MFX_ENABLE_MJPEG_VIDEO_ENCODE) && defined (MFX_VA_LINUX)
 
 #include <vector>
 #include <assert.h>
-
-#include "auxiliary_device.h"
 
 #include "mfx_ext_buffers.h"
 #include "mfxpcp.h"
@@ -29,33 +27,13 @@
 
 namespace MfxHwMJpegEncode
 {
-    // syncop functionality
-    class CachedFeedback
+    class VAAPIEncoder : public DriverEncoder
     {
     public:
-        typedef ENCODE_QUERY_STATUS_PARAMS Feedback;
-        typedef std::vector<Feedback> FeedbackStorage;
-
-        void Reset(mfxU32 cacheSize);
-
-        void Update(FeedbackStorage const & update);
-
-        const Feedback * Hit(mfxU32 feedbackNumber) const;
-
-        void Remove(mfxU32 feedbackNumber);
-
-    private:
-        FeedbackStorage m_cache;
-    };
-
-    // encoder
-    class D3D9Encoder : public DriverEncoder
-    {
-    public:
-        D3D9Encoder();
+        VAAPIEncoder();
 
         virtual
-        ~D3D9Encoder();
+        ~VAAPIEncoder();
 
         virtual
         mfxStatus CreateAuxilliaryDevice(
@@ -96,24 +74,24 @@ namespace MfxHwMJpegEncode
         mfxStatus Destroy();
 
     private:
-        D3D9Encoder(D3D9Encoder const &);              // no implementation
-        D3D9Encoder & operator =(D3D9Encoder const &); // no implementation
+        VAAPIEncoder(VAAPIEncoder const &);              // no implementation
+        VAAPIEncoder & operator =(VAAPIEncoder const &); // no implementation
 
         VideoCORE       * m_core;
-        AuxiliaryDevice * m_pAuxDevice;
-        GUID              m_guid;
         mfxU32            m_width;
         mfxU32            m_height;
-        ENCODE_CAPS_JPEG  m_caps;
+
+        // ToDo change ENCODE_CAPS_JPEG to libVA analog
+        //ENCODE_CAPS_JPEG  m_caps;
         bool              m_infoQueried;
 
-        std::vector<ENCODE_COMP_BUFFER_INFO>     m_compBufInfo;
-        std::vector<D3DDDIFORMAT>                m_uncompBufInfo;
-        std::vector<ENCODE_QUERY_STATUS_PARAMS>  m_feedbackUpdate;
-        CachedFeedback                           m_feedbackCached;
+        //std::vector<ENCODE_COMP_BUFFER_INFO>     m_compBufInfo;
+        //std::vector<D3DDDIFORMAT>                m_uncompBufInfo;
+        //std::vector<ENCODE_QUERY_STATUS_PARAMS>  m_feedbackUpdate;
+        //CachedFeedback                           m_feedbackCached;
     };
 
 }; // namespace
 
-#endif // #if defined (MFX_ENABLE_MJPEG_VIDEO_ENCODE) && defined (MFX_VA_WIN)
-#endif // __MFX_MJPEG_ENCODE_D3D9_H__
+#endif // #if defined (MFX_ENABLE_MJPEG_VIDEO_ENCODE) && defined (MFX_VA_LINUX)
+#endif // __MFX_MJPEG_ENCODE_VAAPI_H__

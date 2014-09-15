@@ -8,17 +8,17 @@
 //
 */
 
-#ifndef __MFX_MJPEG_ENCODE_D3D11__H
-#define __MFX_MJPEG_ENCODE_D3D11__H
+#ifndef __MFX_MJPEG_ENCODE_D3D11_H__
+#define __MFX_MJPEG_ENCODE_D3D11_H__
 
 #include "mfx_common.h"
 
-#if defined (MFX_ENABLE_MJPEG_VIDEO_ENCODE) && defined (MFX_D3D11_ENABLED)
+#if defined (MFX_ENABLE_MJPEG_VIDEO_ENCODE) && defined (MFX_VA_WIN) && defined (MFX_D3D11_ENABLED)
 
 #include <vector>
 #include <assert.h>
 
-#include "encoding_ddi.h"
+#include <d3d11.h>
 
 #include "mfx_ext_buffers.h"
 #include "mfxpcp.h"
@@ -26,12 +26,12 @@
 #include "mfx_mjpeg_encode_hw_utils.h"
 #include "mfx_mjpeg_encode_interface.h"
 
-#include <d3d11.h>
+#include "mfx_mjpeg_encode_d3d9.h" // suggest that the same syncop based on cache functionality is used
+
 
 namespace MfxHwMJpegEncode
 {
-    class OutputBitstream;
-
+    // encoder
     class D3D11Encoder : public DriverEncoder
     {
     public:
@@ -43,7 +43,6 @@ namespace MfxHwMJpegEncode
         virtual
         mfxStatus CreateAuxilliaryDevice(
             VideoCORE * core,
-            GUID        guid,
             mfxU32      width,
             mfxU32      height,
             bool        isTemporal = false);
@@ -53,34 +52,19 @@ namespace MfxHwMJpegEncode
             mfxVideoParam const & par);
 
         virtual
-        mfxStatus Register(
-            mfxMemId     memId,
-            D3DDDIFORMAT type);
-
-        virtual
-        mfxStatus Register(
-            mfxFrameAllocResponse & response,
-            D3DDDIFORMAT            type);
+        mfxStatus RegisterBitstreamBuffer(
+            mfxFrameAllocResponse & response);
 
         virtual
         mfxStatus Execute(DdiTask &task, mfxHDL surface);
 
         virtual
-        mfxStatus QueryCompBufferInfo(
-            D3DDDIFORMAT           type,
+        mfxStatus QueryBitstreamBufferInfo(
             mfxFrameAllocRequest & request);
 
         virtual
         mfxStatus QueryEncodeCaps(
-            ENCODE_CAPS_JPEG & caps);
-
-        virtual
-        mfxStatus QueryEncCtrlCaps(
-            ENCODE_ENC_CTRL_CAPS & caps);
-
-        virtual
-        mfxStatus SetEncCtrlCaps(
-            ENCODE_ENC_CTRL_CAPS const & caps);
+            JpegEncCaps & caps);
 
         virtual
         mfxStatus QueryStatus(
@@ -123,13 +107,9 @@ namespace MfxHwMJpegEncode
         CachedFeedback                           m_feedbackCached;
 
         std::vector<mfxHDLPair>                  m_bsQueue;
-
-        ENCODE_ENC_CTRL_CAPS m_capsQuery; // from ENCODE_ENC_CTRL_CAPS_ID
-        ENCODE_ENC_CTRL_CAPS m_capsGet;   // from ENCODE_ENC_CTRL_GET_ID
     };
 
 }; // namespace
 
-#endif // #if defined (MFX_ENABLE_MJPEG_VIDEO_ENCODE) && (MFX_D3D11_ENABLED)
-#endif // __MFX_MJPEG_ENCODE_D3D11__H
-/* EOF */
+#endif // #if defined (MFX_ENABLE_MJPEG_VIDEO_ENCODE) && defined (MFX_VA_WIN) && defined (MFX_D3D11_ENABLED)
+#endif // __MFX_MJPEG_ENCODE_D3D11_H__

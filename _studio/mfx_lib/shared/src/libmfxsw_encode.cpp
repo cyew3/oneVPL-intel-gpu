@@ -61,7 +61,7 @@ File Name: libmfxsw_encode.cpp
 
 
 #if defined (MFX_ENABLE_MJPEG_VIDEO_ENCODE)
-#if defined(MFX_VA_WIN)
+#if defined(MFX_VA)
 #include "mfx_mjpeg_encode_hw.h"
 #include "mfx_mjpeg_encode.h"
 #else
@@ -175,7 +175,7 @@ VideoENCODE *CreateENCODESpecificClass(mfxU32 CodecId, VideoCORE *core, mfxSessi
 
 #if defined(MFX_ENABLE_MJPEG_VIDEO_ENCODE)
     case MFX_CODEC_JPEG:
-#if defined(MFX_VA_WIN)
+#if defined(MFX_VA)
         if (session->m_bIsHWENCSupport)
         {
             pENCODE = new MFXVideoENCODEMJPEG_HW(core, &mfxRes);
@@ -326,7 +326,7 @@ mfxStatus MFXVideoENCODE_Query(mfxSession session, mfxVideoParam *in, mfxVideoPa
 
 #if defined(MFX_ENABLE_MJPEG_VIDEO_ENCODE)
         case MFX_CODEC_JPEG:
-#if defined(MFX_VA_WIN)
+#if defined(MFX_VA)
             mfxRes = MFXVideoENCODEMJPEG_HW::Query(session->m_pCORE.get(), in, out);
             if (MFX_WRN_PARTIAL_ACCELERATION == mfxRes)
             {
@@ -475,7 +475,7 @@ mfxStatus MFXVideoENCODE_QueryIOSurf(mfxSession session, mfxVideoParam *par, mfx
 
 #if defined(MFX_ENABLE_MJPEG_VIDEO_ENCODE)
         case MFX_CODEC_JPEG:
-#if defined(MFX_VA_WIN)
+#if defined(MFX_VA)
             mfxRes = MFXVideoENCODEMJPEG_HW::QueryIOSurf(session->m_pCORE.get(), par, request);
             if (MFX_WRN_PARTIAL_ACCELERATION == mfxRes)
             {

@@ -13,7 +13,7 @@
 
 #include "mfx_common.h"
 
-#if defined (MFX_ENABLE_MJPEG_VIDEO_ENCODE) && defined(MFX_VA_WIN) && defined (MFX_D3D11_ENABLED)
+#if defined (MFX_ENABLE_MJPEG_VIDEO_ENCODE) && defined (MFX_VA_WIN) && defined (MFX_D3D11_ENABLED)
 
 #define CHECK_HRES(hRes) \
         if (FAILED(hRes))\
@@ -70,7 +70,6 @@ D3D11Encoder::~D3D11Encoder()
 
 mfxStatus D3D11Encoder::CreateAuxilliaryDevice(
     VideoCORE * core,
-    GUID        guid,
     mfxU32      width,
     mfxU32      height,
     bool        isTemporal)
@@ -82,7 +81,7 @@ mfxStatus D3D11Encoder::CreateAuxilliaryDevice(
     MFX_CHECK_NULL_PTR1(pD3d11);
 
     mfxStatus sts = Init(
-        guid,
+        DXVA2_Intel_Encode_JPEG,
         pD3d11->GetD3D11VideoDevice(isTemporal), 
         pD3d11->GetD3D11VideoContext(isTemporal), 
         width,
@@ -99,10 +98,8 @@ mfxStatus D3D11Encoder::CreateAccelerationService(mfxVideoParam const & par)
     return MFX_ERR_NONE;
 }
 
-mfxStatus D3D11Encoder::QueryCompBufferInfo(D3DDDIFORMAT type, mfxFrameAllocRequest& request)
+mfxStatus D3D11Encoder::QueryBitstreamBufferInfo(mfxFrameAllocRequest& request)
 {
-    type;
-
     MFX_CHECK_WITH_ASSERT(m_pDecoder, MFX_ERR_NOT_INITIALIZED);
 
     if (!m_infoQueried)
@@ -143,10 +140,9 @@ mfxStatus D3D11Encoder::QueryCompBufferInfo(D3DDDIFORMAT type, mfxFrameAllocRequ
         decoderExtParam.ResourceCount = 0;
         decoderExtParam.ppResourceList = 0;
 
-        //hr = m_auxDevice->Execute(ENCODE_FORMATS_ID, (void *)0, encodeFormats);
         hRes = DecoderExtension(m_pVideoContext, m_pDecoder, decoderExtParam);
         CHECK_HRES(hRes);
-       
+
         MFX_CHECK(encodeFormats.CompressedBufferInfoSize > 0, MFX_ERR_DEVICE_FAILED);
         MFX_CHECK(encodeFormats.UncompressedFormatSize > 0, MFX_ERR_DEVICE_FAILED);
 
@@ -186,39 +182,16 @@ mfxStatus D3D11Encoder::QueryCompBufferInfo(D3DDDIFORMAT type, mfxFrameAllocRequ
     return MFX_ERR_NONE;
 }
 
-mfxStatus D3D11Encoder::QueryEncodeCaps(ENCODE_CAPS_JPEG & caps)
+mfxStatus D3D11Encoder::QueryEncodeCaps(JpegEncCaps & caps)
 {
     //MFX_CHECK_WITH_ASSERT(m_pDecoder, MFX_ERR_NOT_INITIALIZED);
-    caps = m_caps;
+    caps.Interleaved = m_caps.Interleaved;
+    caps.MaxPicHeight = m_caps.MaxPicHeight;
+    caps.MaxPicWidth = m_caps.MaxPicWidth;
     return MFX_ERR_NONE;
 }
 
-mfxStatus D3D11Encoder::QueryEncCtrlCaps(ENCODE_ENC_CTRL_CAPS& caps)
-{
-    //MFX_CHECK_WITH_ASSERT(m_pAuxDevice, MFX_ERR_NOT_INITIALIZED);
-    //caps = m_capsQuery;
-    caps;
-    return MFX_ERR_UNSUPPORTED;
-}
-
-mfxStatus D3D11Encoder::SetEncCtrlCaps(ENCODE_ENC_CTRL_CAPS const & caps)
-{
-    //MFX_CHECK_WITH_ASSERT(m_pAuxDevice, MFX_ERR_NOT_INITIALIZED);
-    //m_capsGet = caps; // DDI spec: "The application should use the same structure
-    //                  // returned in a previous ENCODE_ENC_CTRL_GET_ID command."
-    //HRESULT hr = m_pAuxDevice->Execute(ENCODE_ENC_CTRL_SET_ID, &m_capsGet, sizeof(m_capsGet));
-    //MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
-    caps;
-    return MFX_ERR_UNSUPPORTED;
-}
-
-mfxStatus D3D11Encoder::Register(mfxMemId /*memId*/, D3DDDIFORMAT /*type*/)
-{
-    return MFX_ERR_UNSUPPORTED;
-
-} // mfxStatus D3D11Encoder::Register(...)
-
-mfxStatus D3D11Encoder::Register(mfxFrameAllocResponse& response, D3DDDIFORMAT type)
+mfxStatus D3D11Encoder::RegisterBitstreamBuffer(mfxFrameAllocResponse& response)
 {
     m_bsQueue.resize(response.NumFrameActual);
 
@@ -226,20 +199,15 @@ mfxStatus D3D11Encoder::Register(mfxFrameAllocResponse& response, D3DDDIFORMAT t
     {   
         mfxHDLPair handlePair;
 
-        //mfxStatus sts = m_core->GetFrameHDL(response.mids[i], (mfxHDL *)&handlePair);
-        
         mfxStatus sts = m_core->GetFrameHDL(response.mids[i], (mfxHDL *)&handlePair);
         MFX_CHECK_STS(sts);
 
         m_bsQueue[i] = handlePair;
     }
 
-    if( type != D3DDDIFMT_NV12 )
-    {
-        // Reserve space for feedback reports.
-        m_feedbackUpdate.resize(response.NumFrameActual);
-        m_feedbackCached.Reset(response.NumFrameActual);
-    }
+    // Reserve space for feedback reports.
+    m_feedbackUpdate.resize(response.NumFrameActual);
+    m_feedbackCached.Reset(response.NumFrameActual);
 
     return MFX_ERR_NONE;
 }
@@ -584,12 +552,9 @@ mfxStatus D3D11Encoder::Init(
 
     // [6] specific encoder caps - aya:skipped
 
-    // [7] Query encode service caps: see QueryCompBufferInfo
-
 
     return MFX_ERR_NONE;
 
 } // mfxStatus D3D11Encoder::Init(...)
 
-#endif // #if defined (MFX_ENABLE_MJPEG_VIDEO_ENCODE) && defined (MFX_D3D11_ENABLED)
-/* EOF */
+#endif // #if defined (MFX_ENABLE_MJPEG_VIDEO_ENCODE) && defined (MFX_VA_WIN) && defined (MFX_D3D11_ENABLED)

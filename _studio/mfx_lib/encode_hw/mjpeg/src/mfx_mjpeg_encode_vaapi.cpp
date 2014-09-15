@@ -7,13 +7,13 @@
 //          Copyright(c) 2009-2014 Intel Corporation. All Rights Reserved.
 //
 //
-//          MJPEG encoder DXVA2
+//          MJPEG encoder VAAPI
 //
 */
 
 #include "mfx_common.h"
 
-#if defined (MFX_ENABLE_MJPEG_VIDEO_ENCODE) && defined (MFX_VA_WIN)
+#if defined (MFX_ENABLE_MJPEG_VIDEO_ENCODE) && defined (MFX_VA_LINUX)
 
 #include "mfx_mjpeg_encode_hw_utils.h"
 #include "libmfx_core_factory.h"
@@ -21,100 +21,36 @@
 #include "jpegbase.h"
 #include "mfx_enc_common.h"
 
-#include "mfx_mjpeg_encode_d3d9.h"
+#include "mfx_mjpeg_encode_vaapi.h"
 #include "libmfx_core_interface.h"
 
 #include "mfx_mjpeg_encode_hw_utils.h"
 
-#include "umc_va_dxva2_protected.h"
-
 using namespace MfxHwMJpegEncode;
 
-void CachedFeedback::Reset(mfxU32 cacheSize)
-{
-    Feedback init;
-    memset(&init, 0, sizeof(init));
-    init.bStatus = ENCODE_NOTAVAILABLE;
-
-    m_cache.resize(cacheSize, init);
-}
-
-void CachedFeedback::Update(const FeedbackStorage& update)
-{
-    for (size_t i = 0; i < update.size(); i++)
-    {
-        if (update[i].bStatus != ENCODE_NOTAVAILABLE)
-        {
-            Feedback* cache = 0;
-
-            for (size_t j = 0; j < m_cache.size(); j++)
-            {
-                if (m_cache[j].StatusReportFeedbackNumber == update[i].StatusReportFeedbackNumber)
-                {
-                    cache = &m_cache[j];
-                    break;
-                }
-                else if (cache == 0 && m_cache[j].bStatus == ENCODE_NOTAVAILABLE)
-                {
-                    cache = &m_cache[j];
-                }
-            }
-
-            if (cache == 0)
-            {
-                assert(!"no space in cache");
-                throw std::logic_error(__FUNCSIG__": no space in cache");
-            }
-
-            *cache = update[i];
-        }
-    }
-}
-
-const CachedFeedback::Feedback* CachedFeedback::Hit(mfxU32 feedbackNumber) const
-{
-    for (size_t i = 0; i < m_cache.size(); i++)
-        if (m_cache[i].StatusReportFeedbackNumber == feedbackNumber)
-            return &m_cache[i];
-
-    return 0;
-}
-
-void CachedFeedback::Remove(mfxU32 feedbackNumber)
-{
-    for (size_t i = 0; i < m_cache.size(); i++)
-    {
-        if (m_cache[i].StatusReportFeedbackNumber == feedbackNumber)
-        {
-            m_cache[i].bStatus = ENCODE_NOTAVAILABLE;
-            return;
-        }
-    }
-
-    assert(!"wrong feedbackNumber");
-}
-
-D3D9Encoder::D3D9Encoder()
+VAAPIEncoder::VAAPIEncoder()
 : m_core(0)
-, m_pAuxDevice(0)
 , m_infoQueried(false)
 {
 }
 
-D3D9Encoder::~D3D9Encoder()
+VAAPIEncoder::~VAAPIEncoder()
 {
     Destroy();
 }
 
-mfxStatus D3D9Encoder::CreateAuxilliaryDevice(
+mfxStatus VAAPIEncoder::CreateAuxilliaryDevice(
     VideoCORE * core,
     mfxU32      width,
     mfxU32      height,
     bool        isTemporal)
 {
-    m_core = core;
-    GUID guid = DXVA2_Intel_Encode_JPEG;
+    width;
+    height;
+    isTemporal;
 
+    m_core = core;
+/*
     D3D9Interface *pID3D = QueryCoreInterface<D3D9Interface>(m_core, MFXICORED3D_GUID);
     MFX_CHECK(pID3D, MFX_ERR_DEVICE_FAILED);
 
@@ -151,15 +87,14 @@ mfxStatus D3D9Encoder::CreateAuxilliaryDevice(
     m_width  = width;
     m_height = height;
     m_pAuxDevice = pAuxDevice;
-
+*/
     return MFX_ERR_NONE;
 }
 
-mfxStatus D3D9Encoder::CreateAccelerationService(mfxVideoParam const & par)
+mfxStatus VAAPIEncoder::CreateAccelerationService(mfxVideoParam const & par)
 {
     par;
-    MFX_CHECK_WITH_ASSERT(m_pAuxDevice, MFX_ERR_NOT_INITIALIZED);
-
+/*
     DXVADDI_VIDEODESC desc;
     memset(&desc, 0, sizeof(desc));
     desc.SampleWidth  = m_width;
@@ -174,14 +109,14 @@ mfxStatus D3D9Encoder::CreateAccelerationService(mfxVideoParam const & par)
 
     HRESULT hr = m_pAuxDevice->Execute(AUXDEV_CREATE_ACCEL_SERVICE, &m_guid, sizeof(m_guid), &encodeCreateDevice, sizeof(encodeCreateDevice));
     MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
-
+*/
     return MFX_ERR_NONE;
 }
 
-mfxStatus D3D9Encoder::QueryBitstreamBufferInfo(mfxFrameAllocRequest& request)
+mfxStatus VAAPIEncoder::QueryBitstreamBufferInfo(mfxFrameAllocRequest& request)
 {
-    MFX_CHECK_WITH_ASSERT(m_pAuxDevice, MFX_ERR_NOT_INITIALIZED);
-
+    request;
+/*
     if (!m_infoQueried)
     {
         ENCODE_FORMAT_COUNT encodeFormatCount;
@@ -211,7 +146,7 @@ mfxStatus D3D9Encoder::QueryBitstreamBufferInfo(mfxFrameAllocRequest& request)
     size_t i = 0;
     for (; i < m_compBufInfo.size(); i++)
     {
-        if (m_compBufInfo[i].Type == D3DDDIFMT_INTELENCODE_BITSTREAMDATA)
+        if (m_compBufInfo[i].Type == type)
         {
             break;
         }
@@ -222,26 +157,28 @@ mfxStatus D3D9Encoder::QueryBitstreamBufferInfo(mfxFrameAllocRequest& request)
     request.Info.Width  = m_compBufInfo[i].CreationWidth;
     request.Info.Height = m_compBufInfo[i].CreationHeight;
     request.Info.FourCC = m_compBufInfo[i].CompressedFormats;
-
+*/
     return MFX_ERR_NONE;
 }
 
-mfxStatus D3D9Encoder::QueryEncodeCaps(JpegEncCaps & caps)
+mfxStatus VAAPIEncoder::QueryEncodeCaps(JpegEncCaps & caps)
 {
-    MFX_CHECK_WITH_ASSERT(m_pAuxDevice, MFX_ERR_NOT_INITIALIZED);
+    caps;
+/*
+    // ToDo: fill HW capabilities
     caps.Interleaved = m_caps.Interleaved;
     caps.MaxPicHeight = m_caps.MaxPicHeight;
     caps.MaxPicWidth = m_caps.MaxPicWidth;
+*/
     return MFX_ERR_NONE;
 }
 
-mfxStatus D3D9Encoder::RegisterBitstreamBuffer(mfxFrameAllocResponse& response)
+mfxStatus VAAPIEncoder::RegisterBitstreamBuffer(mfxFrameAllocResponse& response)
 {
-    MFX_CHECK_WITH_ASSERT(m_pAuxDevice, MFX_ERR_NOT_INITIALIZED);
-
+/*
     EmulSurfaceRegister surfaceReg;
     memset(&surfaceReg, 0, sizeof(surfaceReg));
-    surfaceReg.type = D3DDDIFMT_INTELENCODE_BITSTREAMDATA;
+    surfaceReg.type = type;
     surfaceReg.num_surf = response.NumFrameActual;
 
     MFX_CHECK(response.mids, MFX_ERR_NULL_PTR);
@@ -257,18 +194,21 @@ mfxStatus D3D9Encoder::RegisterBitstreamBuffer(mfxFrameAllocResponse& response)
 
     m_pAuxDevice->EndFrame(0);
 
-    // Reserve space for feedback reports.
-    m_feedbackUpdate.resize(response.NumFrameActual);
-    m_feedbackCached.Reset(response.NumFrameActual);
-
+    {
+        // Reserve space for feedback reports.
+        m_feedbackUpdate.resize(response.NumFrameActual);
+        m_feedbackCached.Reset(response.NumFrameActual);
+    }
+*/
     return MFX_ERR_NONE;
 }
 
-mfxStatus D3D9Encoder::Execute(DdiTask &task, mfxHDL surface)
+mfxStatus VAAPIEncoder::Execute(DdiTask &task, mfxHDL surface)
 {
-    MFX_CHECK_WITH_ASSERT(m_pAuxDevice, MFX_ERR_NOT_INITIALIZED);
-    ExecuteBuffers *pExecuteBuffers = task.m_pDdiData;
+    surface;
 
+    ExecuteBuffers *pExecuteBuffers = task.m_pDdiData;
+/*
     mfxU32 compBufferCount = 2 + 
         (pExecuteBuffers->m_pps.NumQuantTable ? 1 : 0) + 
         (pExecuteBuffers->m_pps.NumCodingTable ? 1 : 0) + 
@@ -360,15 +300,16 @@ mfxStatus D3D9Encoder::Execute(DdiTask &task, mfxHDL surface)
     {
         return MFX_ERR_DEVICE_FAILED;
     }
-
+*/
     return MFX_ERR_NONE;
 }
 
-mfxStatus D3D9Encoder::QueryStatus(DdiTask & task)
+mfxStatus VAAPIEncoder::QueryStatus(DdiTask & task)
 {
+    task;
+    
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "QueryStatus");
-    MFX_CHECK_WITH_ASSERT(m_pAuxDevice, MFX_ERR_NOT_INITIALIZED);
-
+/*
     // After SNB once reported ENCODE_OK for a certain feedbackNumber
     // it will keep reporting ENCODE_NOTAVAILABLE for same feedbackNumber.
     // As we won't get all bitstreams we need to cache all other statuses. 
@@ -429,9 +370,11 @@ mfxStatus D3D9Encoder::QueryStatus(DdiTask & task)
         assert(!"bad feedback status");
         return MFX_ERR_DEVICE_FAILED;
     }
+*/
+    return MFX_ERR_NONE;
 }
 
-mfxStatus D3D9Encoder::UpdateBitstream(
+mfxStatus VAAPIEncoder::UpdateBitstream(
     mfxMemId       MemId,
     DdiTask      & task)
 {
@@ -454,19 +397,10 @@ mfxStatus D3D9Encoder::UpdateBitstream(
     return (sts != ippStsNoErr) ? MFX_ERR_UNKNOWN : MFX_ERR_NONE;
 }
 
-mfxStatus D3D9Encoder::Destroy()
+mfxStatus VAAPIEncoder::Destroy()
 {
-    mfxStatus sts = MFX_ERR_NONE;
-
-    if (m_pAuxDevice)
-    {
-        sts = m_pAuxDevice->ReleaseAccelerationService();
-        m_pAuxDevice->Release();
-        delete m_pAuxDevice;
-        m_pAuxDevice = 0;
-    }
-
-    return sts;
+    return MFX_ERR_NONE;
 }
 
-#endif // #if defined (MFX_ENABLE_MJPEG_VIDEO_ENCODE) && defined (MFX_VA_WIN)
+#endif // (MFX_ENABLE_MJPEG_VIDEO_ENCODE)
+/* EOF */

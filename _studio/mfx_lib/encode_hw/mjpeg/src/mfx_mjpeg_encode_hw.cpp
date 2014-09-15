@@ -12,11 +12,11 @@
 */
 
 #include "mfx_common.h"
-#if defined (MFX_ENABLE_MJPEG_VIDEO_ENCODE) && defined(MFX_VA_WIN)
+
+#if defined (MFX_ENABLE_MJPEG_VIDEO_ENCODE) && defined (MFX_VA)
 
 #include "mfx_mjpeg_encode_hw.h"
 #include "mfx_enc_common.h"
-#include "libmfx_core_d3d9.h"
 #include "mfx_task.h"
 #include "umc_defs.h"
 #include "ipps.h"
@@ -52,17 +52,17 @@ mfxStatus MFXVideoENCODEMJPEG_HW::Query(VideoCORE * core, mfxVideoParam *in, mfx
 
         out->mfx.FrameInfo.FourCC       = MFX_FOURCC_NV12;
         out->mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
-        out->mfx.FrameInfo.Width   = 0x1000;
-        out->mfx.FrameInfo.Height  = 0x1000;
+        out->mfx.FrameInfo.Width        = 0x1000;
+        out->mfx.FrameInfo.Height       = 0x1000;
 
-        ENCODE_CAPS_JPEG hwCaps = {0};
+        JpegEncCaps hwCaps = {0};
         mfxStatus sts = QueryHwCaps(core->GetVAType(), core->GetAdapterNumber(), hwCaps);
         if (sts != MFX_ERR_NONE)
             return MFX_WRN_PARTIAL_ACCELERATION;
     }
     else
     {
-        ENCODE_CAPS_JPEG hwCaps = {0};
+        JpegEncCaps hwCaps = {0};
         mfxStatus sts = QueryHwCaps(core->GetVAType(), core->GetAdapterNumber(), hwCaps);
         if (sts != MFX_ERR_NONE)
             return MFX_WRN_PARTIAL_ACCELERATION;
@@ -79,7 +79,7 @@ mfxStatus MFXVideoENCODEMJPEG_HW::QueryIOSurf(VideoCORE * core, mfxVideoParam *p
 {
     mfxStatus sts = MFX_ERR_NONE;
 
-    ENCODE_CAPS_JPEG hwCaps = { 0 };
+    JpegEncCaps hwCaps = { 0 };
     sts = QueryHwCaps(core->GetVAType(), core->GetAdapterNumber(), hwCaps);
     if (sts != MFX_ERR_NONE)
         return MFX_WRN_PARTIAL_ACCELERATION;
@@ -102,7 +102,7 @@ mfxStatus MFXVideoENCODEMJPEG_HW::QueryIOSurf(VideoCORE * core, mfxVideoParam *p
     {
         request->NumFrameMin = 1;
 
-        request->Type = MFX_MEMTYPE_FROM_ENCODE | MFX_MEMTYPE_DXVA2_DECODER_TARGET;
+        request->Type = MFX_MEMTYPE_FROM_ENCODE | MFX_MEMTYPE_VIDEO_MEMORY_DECODER_TARGET;
         request->Type |= (inPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY)
             ? MFX_MEMTYPE_OPAQUE_FRAME
             : MFX_MEMTYPE_EXTERNAL_FRAME;
@@ -126,7 +126,6 @@ mfxStatus MFXVideoENCODEMJPEG_HW::Init(mfxVideoParam *par)
 
     mfxStatus sts = m_ddi->CreateAuxilliaryDevice(
         m_pCore,
-        DXVA2_Intel_Encode_JPEG,
         m_vParam.mfx.FrameInfo.Width,
         m_vParam.mfx.FrameInfo.Height);
     if (sts != MFX_ERR_NONE)
@@ -135,7 +134,7 @@ mfxStatus MFXVideoENCODEMJPEG_HW::Init(mfxVideoParam *par)
     sts = CheckExtBufferId(*par);
     MFX_CHECK_STS(sts);
 
-    ENCODE_CAPS_JPEG caps = {0};
+    JpegEncCaps caps = {0};
     sts = m_ddi->QueryEncodeCaps(caps);
     if (sts != MFX_ERR_NONE)
         return MFX_WRN_PARTIAL_ACCELERATION;
@@ -158,7 +157,7 @@ mfxStatus MFXVideoENCODEMJPEG_HW::Init(mfxVideoParam *par)
     if (m_vParam.IOPattern == MFX_IOPATTERN_IN_SYSTEM_MEMORY)
     {
         
-        request.Type = MFX_MEMTYPE_D3D_INT;
+        request.Type = MFX_MEMTYPE_VIDEO_INT;
         request.NumFrameMin = surface_num;
         request.NumFrameSuggested = request.NumFrameMin;
 
@@ -170,15 +169,15 @@ mfxStatus MFXVideoENCODEMJPEG_HW::Init(mfxVideoParam *par)
     }
 
     // Allocate bitstream surfaces.
-    request.Type = MFX_MEMTYPE_D3D_INT;
+    request.Type = MFX_MEMTYPE_VIDEO_INT;
     request.NumFrameMin = surface_num;
     request.NumFrameSuggested = request.NumFrameMin;
 
     // driver may suggest too small buffer for bitstream
-    sts = m_ddi->QueryCompBufferInfo(D3DDDIFMT_INTELENCODE_BITSTREAMDATA, request);
+    sts = m_ddi->QueryBitstreamBufferInfo(request);
     MFX_CHECK_STS(sts);
-    request.Info.Width  = max(request.Info.Width,  m_vParam.mfx.FrameInfo.Width);
-    request.Info.Height = max(request.Info.Height, m_vParam.mfx.FrameInfo.Height * 3 / 2);
+    request.Info.Width  = IPP_MAX(request.Info.Width,  m_vParam.mfx.FrameInfo.Width);
+    request.Info.Height = IPP_MAX(request.Info.Height, m_vParam.mfx.FrameInfo.Height * 3 / 2);
 
     sts = m_pCore->AllocFrames(&request, &m_bitstream);
     MFX_CHECK(
@@ -186,13 +185,13 @@ mfxStatus MFXVideoENCODEMJPEG_HW::Init(mfxVideoParam *par)
         m_bitstream.NumFrameActual >= request.NumFrameMin,
         MFX_ERR_MEMORY_ALLOC);
 
-    sts = m_ddi->Register(m_bitstream, D3DDDIFMT_INTELENCODE_BITSTREAMDATA);
+    sts = m_ddi->RegisterBitstreamBuffer(m_bitstream);
     MFX_CHECK_STS(sts);
 
     sts = m_TaskManager.Init(surface_num);
     MFX_CHECK_STS(sts);
 
-    m_bInitialized = TRUE;
+    m_bInitialized = true;
     return sts;
 }
 
@@ -478,6 +477,8 @@ mfxStatus MFXVideoENCODEMJPEG_HW::TaskRoutineSubmitFrame(
         pSurfaceHdl = (mfxHDL *)&surfacePair;
     else if (MFX_HW_D3D9 == enc.m_pCore->GetVAType())
         pSurfaceHdl = (mfxHDL *)&surfaceHDL;
+    else if (MFX_HW_VAAPI == enc.m_pCore->GetVAType())
+        pSurfaceHdl = NULL;// ToDo... 
     else
         return MFX_ERR_UNDEFINED_BEHAVIOR;
 
@@ -507,10 +508,14 @@ mfxStatus MFXVideoENCODEMJPEG_HW::TaskRoutineSubmitFrame(
         MFX_CHECK(surfacePair.first != 0, MFX_ERR_UNDEFINED_BEHAVIOR);
         sts = enc.m_ddi->Execute(task, (mfxHDL)pSurfaceHdl);
     }
-    else // D3D9 remains only
+    else if (MFX_HW_D3D9 == enc.m_pCore->GetVAType())
     {
         MFX_CHECK(surfaceHDL != 0, MFX_ERR_UNDEFINED_BEHAVIOR);
         sts = enc.m_ddi->Execute(task, surfaceHDL);
+    }
+    else if (MFX_HW_VAAPI == enc.m_pCore->GetVAType())
+    {
+        // ToDo
     }
 
     return sts;
@@ -550,4 +555,4 @@ mfxStatus MFXVideoENCODEMJPEG_HW::CheckDevice()
         : MFX_ERR_NONE;
 }
 
-#endif // MFX_ENABLE_MJPEG_VIDEO_ENCODE
+#endif // #if defined (MFX_ENABLE_MJPEG_VIDEO_ENCODE) && defined (MFX_VA)

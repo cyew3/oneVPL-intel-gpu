@@ -6,29 +6,31 @@
 //     or disclosed except in accordance with the terms of that agreement.
 //          Copyright(c) 2008-2014 Intel Corporation. All Rights Reserved.
 //
-//
 */
-
-#include "mfx_common.h"
-#if defined (MFX_ENABLE_MJPEG_VIDEO_ENCODE) && defined(MFX_VA_WIN)
 
 #ifndef __MFX_MJPEG_ENCODE_HW_UTILS_H__
 #define __MFX_MJPEG_ENCODE_HW_UTILS_H__
+
+#include "mfx_common.h"
+
+#if defined (MFX_ENABLE_MJPEG_VIDEO_ENCODE) && defined (MFX_VA)
+
+#if defined (MFX_VA_WIN)
 #include <d3d9.h>
 #include <dxva.h>
 #include <dxva2api.h>
-
-#define D3DDDIFORMAT        D3DFORMAT
-#define DXVADDI_VIDEODESC   DXVA2_VideoDesc
-
+#include "encoding_ddi.h"
 #include "encoder_ddi.hpp"
+#endif
+
 #include "mfxstructures.h"
 
 #include <vector>
-#include <list>
+#include <memory>
 #include <assert.h>
 
-#include "auxiliary_device.h"
+#include "vm_interlocked.h"
+
 #include "mfxstructures.h"
 #include "mfxjpeg.h"
 
@@ -41,14 +43,20 @@ namespace MfxHwMJpegEncode
 
     enum
     {
-        MFX_MEMTYPE_D3D_INT = MFX_MEMTYPE_FROM_ENCODE | MFX_MEMTYPE_DXVA2_DECODER_TARGET | MFX_MEMTYPE_INTERNAL_FRAME,
-        MFX_MEMTYPE_D3D_EXT = MFX_MEMTYPE_FROM_ENCODE | MFX_MEMTYPE_DXVA2_DECODER_TARGET | MFX_MEMTYPE_EXTERNAL_FRAME
+        MFX_MEMTYPE_VIDEO_INT = MFX_MEMTYPE_FROM_ENCODE | MFX_MEMTYPE_VIDEO_MEMORY_DECODER_TARGET | MFX_MEMTYPE_INTERNAL_FRAME,
+        MFX_MEMTYPE_VIDEO_EXT = MFX_MEMTYPE_FROM_ENCODE | MFX_MEMTYPE_VIDEO_MEMORY_DECODER_TARGET | MFX_MEMTYPE_EXTERNAL_FRAME
     };
 
+    typedef struct {
+        mfxU32    MaxPicWidth;
+        mfxU32    MaxPicHeight;
+        mfxU32    Interleaved;
+    } JpegEncCaps;
+
     mfxStatus QueryHwCaps(
-        eMFXVAType         va_type,
-        mfxU32             adapterNum,
-        ENCODE_CAPS_JPEG & hwCaps);
+        eMFXVAType    va_type,
+        mfxU32        adapterNum,
+        JpegEncCaps & hwCaps);
 
     bool IsJpegParamExtBufferIdSupported(
         mfxU32 id);
@@ -57,9 +65,9 @@ namespace MfxHwMJpegEncode
         mfxVideoParam const & par);
 
     mfxStatus CheckJpegParam(
-        mfxVideoParam          & par,
-        ENCODE_CAPS_JPEG const & hwCaps,
-        bool                     setExtAlloc);
+        mfxVideoParam     & par,
+        JpegEncCaps const & hwCaps,
+        bool                setExtAlloc);
 
     mfxStatus FastCopyFrameBufferSys2Vid(
         VideoCORE    * core,
@@ -72,7 +80,9 @@ namespace MfxHwMJpegEncode
     {
         ExecuteBuffers()
         {
+#if defined (MFX_VA_WIN)
             memset(&m_pps, 0, sizeof(m_pps));
+#endif
             memset(&m_payload, 0, sizeof(m_payload));
 
             m_payload_data_present = false;
@@ -81,12 +91,16 @@ namespace MfxHwMJpegEncode
         mfxStatus Init(mfxVideoParam const *par);
         void      Close();
 
-        ENCODE_CAPS_JPEG     m_caps;
-
+#if defined (MFX_VA_WIN)
         ENCODE_SET_PICTURE_PARAMETERS_JPEG           m_pps;
         std::vector<ENCODE_SET_SCAN_PARAMETERS_JPEG> m_scan_list;
         std::vector<ENCODE_QUANT_TABLE_JPEG>         m_dqt_list;
         std::vector<ENCODE_HUFFMAN_TABLE_JPEG>       m_dht_list;
+
+#elif defined (MFX_VA_LINUX)
+        // ToDo: structures for Linux
+
+#endif
 
         struct {
             mfxU8 * data;
@@ -102,7 +116,7 @@ namespace MfxHwMJpegEncode
         mfxBitstream     * bs;                   // output bitstream
         mfxU32             m_idx;                // index of raw surface
         mfxU32             m_idxBS;              // index of bitstream surface (always equal as m_idx for now)
-        mfxL32             lInUse;               // 0: free, 1: used.
+        mfxU32             lInUse;               // 0: free, 1: used.
         mfxU32             m_statusReportNumber;
         mfxU32             m_bsDataLength;       // output bitstream length
         ExecuteBuffers   * m_pDdiData;
@@ -125,25 +139,7 @@ namespace MfxHwMJpegEncode
         mfxU32    m_TaskNum;
     };
 
-    class CachedFeedback
-    {
-    public:
-        typedef ENCODE_QUERY_STATUS_PARAMS Feedback;
-        typedef std::vector<Feedback> FeedbackStorage;
-
-        void Reset(mfxU32 cacheSize);
-
-        void Update(FeedbackStorage const & update);
-
-        const Feedback * Hit(mfxU32 feedbackNumber) const;
-
-        void Remove(mfxU32 feedbackNumber);
-
-    private:
-        FeedbackStorage m_cache;
-    };
-
 }; // namespace MfxHwMJpegEncode
 
+#endif // #if defined (MFX_ENABLE_MJPEG_VIDEO_ENCODE) && defined (MFX_VA)
 #endif // __MFX_MJPEG_ENCODE_HW_UTILS_H__
-#endif // MFX_ENABLE_MJPEG_VIDEO_ENCODE

@@ -8,12 +8,12 @@
     //
     */
 
+#ifndef __MFX_MJPEG_ENCODE_INTERFACE_H__
+#define __MFX_MJPEG_ENCODE_INTERFACE_H__
+
 #include "mfx_common.h"
 
-#if defined (MFX_ENABLE_MJPEG_VIDEO_ENCODE) && defined(MFX_VA)
-
-#ifndef __MFX_MJPEG_ENCODE_INTERFACE__H
-#define __MFX_MJPEG_ENCODE_INTERFACE__H
+#if defined (MFX_ENABLE_MJPEG_VIDEO_ENCODE) && defined (MFX_VA)
 
 #include <vector>
 #include <assert.h>
@@ -21,9 +21,6 @@
 #include "mfxvideo++int.h"
 
 #include "mfx_mjpeg_encode_hw_utils.h"
-
-#include "encoding_ddi.h"
-#include "encoder_ddi.hpp"
 
 namespace MfxHwMJpegEncode
 {
@@ -37,7 +34,6 @@ namespace MfxHwMJpegEncode
         virtual
         mfxStatus CreateAuxilliaryDevice(
             VideoCORE * core,
-            GUID        guid,
             mfxU32      width,
             mfxU32      height,
             bool        isTemporal = false) = 0;
@@ -47,34 +43,19 @@ namespace MfxHwMJpegEncode
             mfxVideoParam const & par) = 0;
 
         virtual
-        mfxStatus Register(
-            mfxMemId     memId,
-            D3DDDIFORMAT type) = 0;
-
-        virtual
-        mfxStatus Register(
-            mfxFrameAllocResponse & response,
-            D3DDDIFORMAT            type) = 0;
+        mfxStatus RegisterBitstreamBuffer(
+            mfxFrameAllocResponse & response) = 0;
 
         virtual
         mfxStatus Execute(DdiTask &task, mfxHDL surface) = 0;
 
         virtual
-        mfxStatus QueryCompBufferInfo(
-            D3DDDIFORMAT           type,
+        mfxStatus QueryBitstreamBufferInfo(
             mfxFrameAllocRequest & request) = 0;
 
         virtual
         mfxStatus QueryEncodeCaps(
-            ENCODE_CAPS_JPEG & caps) = 0;
-
-        virtual
-        mfxStatus QueryEncCtrlCaps(
-            ENCODE_ENC_CTRL_CAPS & caps) = 0;
-
-        virtual
-        mfxStatus SetEncCtrlCaps(
-            ENCODE_ENC_CTRL_CAPS const & caps) = 0;
+            JpegEncCaps & caps) = 0;
 
         virtual
         mfxStatus QueryStatus(
@@ -93,5 +74,5 @@ namespace MfxHwMJpegEncode
 
 }; // namespace
 
-#endif // __MFX_MJPEG_ENCODE_INTERFACE__H
-#endif // #if defined (MFX_ENABLE_MJPEG_VIDEO_ENCODE) && defined(MFX_VA_WIN)
+#endif // #if defined (MFX_ENABLE_MJPEG_VIDEO_ENCODE) && defined (MFX_VA)
+#endif // __MFX_MJPEG_ENCODE_INTERFACE_H__

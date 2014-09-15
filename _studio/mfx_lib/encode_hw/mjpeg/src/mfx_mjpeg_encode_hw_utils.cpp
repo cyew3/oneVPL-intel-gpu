@@ -10,7 +10,7 @@
 */
 
 #include "mfx_common.h"
-#if defined (MFX_ENABLE_MJPEG_VIDEO_ENCODE) && defined(MFX_VA_WIN)
+#if defined (MFX_ENABLE_MJPEG_VIDEO_ENCODE) && defined (MFX_VA)
 
 #include "mfx_mjpeg_encode_hw_utils.h"
 #include "libmfx_core_factory.h"
@@ -22,19 +22,13 @@
 using namespace MfxHwMJpegEncode;
 
 
-mfxStatus MfxHwMJpegEncode::QueryHwCaps(eMFXVAType va_type, mfxU32 adapterNum, ENCODE_CAPS_JPEG & hwCaps)
+mfxStatus MfxHwMJpegEncode::QueryHwCaps(eMFXVAType va_type, mfxU32 adapterNum, JpegEncCaps & hwCaps)
 {
     //Should be replaced with once quering capabs as other encoders do
 
     // FIXME: remove this when driver starts returning actual encode caps
-    hwCaps.Baseline         = 1;
-    hwCaps.Sequential       = 1;
-    hwCaps.Huffman          = 1;
-    hwCaps.NonInterleaved   = 1;
-    hwCaps.NonDifferential  = 1;
     hwCaps.MaxPicWidth      = 4096;
     hwCaps.MaxPicHeight     = 4096;
-    hwCaps.MaxSamplesPerSecond = 32000;
 
     std::auto_ptr<VideoCORE> pCore(FactoryCORE::CreateCORE(va_type, adapterNum, 1));
 
@@ -42,7 +36,7 @@ mfxStatus MfxHwMJpegEncode::QueryHwCaps(eMFXVAType va_type, mfxU32 adapterNum, E
 
     ddi.reset( CreatePlatformMJpegEncoder(pCore.get()) );
 
-    mfxStatus sts = ddi->CreateAuxilliaryDevice(pCore.get(), DXVA2_Intel_Encode_JPEG, 640, 480);
+    mfxStatus sts = ddi->CreateAuxilliaryDevice(pCore.get(), 640, 480);
     MFX_CHECK_STS(sts);
 
     sts = ddi->QueryEncodeCaps(hwCaps);
@@ -84,7 +78,7 @@ mfxStatus MfxHwMJpegEncode::CheckExtBufferId(mfxVideoParam const & par)
 }
 
 mfxStatus MfxHwMJpegEncode::CheckJpegParam(mfxVideoParam & par,
-                                           ENCODE_CAPS_JPEG const & hwCaps,
+                                           JpegEncCaps const & hwCaps,
                                            bool setExtAlloc)
 {
     MFX_CHECK((par.mfx.FrameInfo.Width > 0 &&
@@ -126,25 +120,25 @@ mfxStatus MfxHwMJpegEncode::FastCopyFrameBufferSys2Vid(
     )
 {
     MFX_CHECK_NULL_PTR1(core);
-    mfxFrameData d3dSurf = { 0 };
+    mfxFrameData vidSurf = { 0 };
     mfxStatus sts = MFX_ERR_NONE;
 
-    core->LockFrame(vidMemId, &d3dSurf);
-    MFX_CHECK(d3dSurf.Y != 0, MFX_ERR_LOCK_MEMORY);
+    core->LockFrame(vidMemId, &vidSurf);
+    MFX_CHECK(vidSurf.Y != 0, MFX_ERR_LOCK_MEMORY);
     core->LockExternalFrame(sysSurf.MemId, &sysSurf);
     MFX_CHECK(sysSurf.Y != 0, MFX_ERR_LOCK_MEMORY);
 
     {
-        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "Copy input (sys->d3d)");
+        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "Copy input (sys->vid)");
         mfxFrameSurface1 surfSrc = { {0,}, frmInfo, sysSurf };
-        mfxFrameSurface1 surfDst = { {0,}, frmInfo, d3dSurf };
+        mfxFrameSurface1 surfDst = { {0,}, frmInfo, vidSurf };
         sts = core->DoFastCopy(&surfDst, &surfSrc);
         MFX_CHECK_STS(sts);
     }
 
     sts = core->UnlockExternalFrame(sysSurf.MemId, &sysSurf);
     MFX_CHECK_STS(sts);
-    sts = core->UnlockFrame(vidMemId, &d3dSurf);
+    sts = core->UnlockFrame(vidMemId, &vidSurf);
     MFX_CHECK_STS(sts);
 
     return sts;
@@ -154,9 +148,11 @@ mfxStatus ExecuteBuffers::Init(mfxVideoParam const *par)
 {
     mfxStatus sts = MFX_ERR_NONE;
 
-    memset(&m_pps, 0, sizeof(m_pps));
     memset(&m_payload, 0, sizeof(m_payload));
     m_payload_data_present = false;
+
+#if defined (MFX_VA_WIN)
+    memset(&m_pps, 0, sizeof(m_pps));
 
     // prepare DDI execute buffers
     m_pps.Profile        = 0; // 0 -Baseline, 1 - Extended, 2 - Lossless, 3 - Hierarchical
@@ -364,6 +360,11 @@ mfxStatus ExecuteBuffers::Init(mfxVideoParam const *par)
         }
     }
 
+#elif defined (MFX_VA_LINUX)
+    // ToDo
+
+#endif
+
     return sts;
 }
 
@@ -422,7 +423,7 @@ mfxStatus TaskManager::Reset()
                 delete m_pTaskList[i].m_pDdiData;
                 m_pTaskList[i].m_pDdiData = NULL;
             }
-            InterlockedExchange(&m_pTaskList[i].lInUse, 0L);
+            vm_interlocked_xchg32(&m_pTaskList[i].lInUse, 0);
             m_pTaskList[i].surface = 0;
             m_pTaskList[i].bs      = 0;
         }
@@ -464,7 +465,7 @@ mfxStatus TaskManager::AssignTask(DdiTask *& newTask)
         if (i < m_TaskNum)
         {
             newTask = &m_pTaskList[i];
-            InterlockedExchange(&newTask->lInUse, 1L);
+            vm_interlocked_xchg32(&newTask->lInUse, 1);
             return MFX_ERR_NONE;
         }
         else
@@ -482,7 +483,7 @@ mfxStatus TaskManager::RemoveTask(DdiTask & task)
 {
     if (m_pTaskList)
     {
-        InterlockedExchange(&task.lInUse, 0L);
+        vm_interlocked_xchg32(&task.lInUse, 0);
         task.surface = 0;
         task.bs      = 0;
         return MFX_ERR_NONE;
@@ -493,68 +494,4 @@ mfxStatus TaskManager::RemoveTask(DdiTask & task)
     }
 }
 
-void CachedFeedback::Reset(mfxU32 cacheSize)
-{
-    Feedback init;
-    memset(&init, 0, sizeof(init));
-    init.bStatus = ENCODE_NOTAVAILABLE;
-
-    m_cache.resize(cacheSize, init);
-}
-
-void CachedFeedback::Update(const FeedbackStorage& update)
-{
-    for (size_t i = 0; i < update.size(); i++)
-    {
-        if (update[i].bStatus != ENCODE_NOTAVAILABLE)
-        {
-            Feedback* cache = 0;
-
-            for (size_t j = 0; j < m_cache.size(); j++)
-            {
-                if (m_cache[j].StatusReportFeedbackNumber == update[i].StatusReportFeedbackNumber)
-                {
-                    cache = &m_cache[j];
-                    break;
-                }
-                else if (cache == 0 && m_cache[j].bStatus == ENCODE_NOTAVAILABLE)
-                {
-                    cache = &m_cache[j];
-                }
-            }
-
-            if (cache == 0)
-            {
-                assert(!"no space in cache");
-                throw std::logic_error(__FUNCSIG__": no space in cache");
-            }
-
-            *cache = update[i];
-        }
-    }
-}
-
-const CachedFeedback::Feedback* CachedFeedback::Hit(mfxU32 feedbackNumber) const
-{
-    for (size_t i = 0; i < m_cache.size(); i++)
-        if (m_cache[i].StatusReportFeedbackNumber == feedbackNumber)
-            return &m_cache[i];
-
-    return 0;
-}
-
-void CachedFeedback::Remove(mfxU32 feedbackNumber)
-{
-    for (size_t i = 0; i < m_cache.size(); i++)
-    {
-        if (m_cache[i].StatusReportFeedbackNumber == feedbackNumber)
-        {
-            m_cache[i].bStatus = ENCODE_NOTAVAILABLE;
-            return;
-        }
-    }
-
-    assert(!"wrong feedbackNumber");
-}
-
-#endif // MFX_ENABLE_MJPEG_VIDEO_ENCODE
+#endif // #if defined (MFX_ENABLE_MJPEG_VIDEO_ENCODE) && defined (MFX_VA)

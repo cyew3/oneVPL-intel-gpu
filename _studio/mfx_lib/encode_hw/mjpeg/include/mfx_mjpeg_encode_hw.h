@@ -6,16 +6,14 @@
 //     or disclosed except in accordance with the terms of that agreement.
 //          Copyright(c) 2008-2014 Intel Corporation. All Rights Reserved.
 //
-//
-//          HW MJPEG  encoder
-//
 */
 
 #ifndef __MFX_MJPEG_ENCODE_HW_H__
 #define __MFX_MJPEG_ENCODE_HW_H__
 
 #include "mfx_common.h"
-#if defined (MFX_ENABLE_MJPEG_VIDEO_ENCODE)
+
+#if defined (MFX_ENABLE_MJPEG_VIDEO_ENCODE) && defined (MFX_VA)
 
 #include "mfxvideo++int.h"
 #include "mfxvideopro++.h"
@@ -74,15 +72,15 @@ public:
 
 protected:
     // callbacks to work with scheduler
-    static mfxStatus MFXVideoENCODEMJPEG_HW::TaskRoutineSubmitFrame(void * state, 
-                                                                    void * param, 
-                                                                    mfxU32 threadNumber, 
-                                                                    mfxU32 callNumber);
+    static mfxStatus TaskRoutineSubmitFrame(void * state,
+                                            void * param,
+                                            mfxU32 threadNumber,
+                                            mfxU32 callNumber);
 
-    static mfxStatus MFXVideoENCODEMJPEG_HW::TaskRoutineQueryFrame(void * state, 
-                                                                   void * param, 
-                                                                   mfxU32 threadNumber, 
-                                                                   mfxU32 callNumber);
+    static mfxStatus TaskRoutineQueryFrame(void * state,
+                                           void * param,
+                                           mfxU32 threadNumber,
+                                           mfxU32 callNumber);
     
     mfxStatus UpdateDeviceStatus(mfxStatus sts);
     mfxStatus CheckDevice();
@@ -109,5 +107,5 @@ protected:
     TaskManager           m_TaskManager;
 };
 
-#endif // MFX_ENABLE_MJPEG_VIDEO_ENCODE
-#endif
+#endif // #if defined (MFX_ENABLE_MJPEG_VIDEO_ENCODE) && defined (MFX_VA)
+#endif // __MFX_MJPEG_ENCODE_HW_H__
