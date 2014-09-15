@@ -1003,11 +1003,13 @@ mfxStatus MFXDecPipeline::CreateVPP()
     {
         //no support any more for plugin as vpp
         return MFX_ERR_UNSUPPORTED;
-    } else if (  vm_string_strlen(m_inParams.strVPPPluginGuid)  )
+    }
+    else if (  vm_string_strlen(m_inParams.strVPPPluginGuid)  )
     {
         m_pVPP = m_pFactory->CreateVPP(
             PipelineObjectDesc<IMFXVideoVPP>(m_components[eVPP].m_pSession->GetMFXSession(), m_inParams.strVPPPluginGuid, 1, VPP_MFX_PLUGIN_GUID, NULL));
-    } else
+    }
+    else
     {
         m_pVPP = m_pFactory->CreateVPP(
             PipelineObjectDesc<IMFXVideoVPP>(m_components[eVPP].m_pSession->GetMFXSession(), VM_STRING(""), VPP_MFX_NATIVE, NULL));
@@ -3323,7 +3325,7 @@ mfxStatus MFXDecPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI32 argc, 
             MFX_CHECK(0==vm_string_strcpy_s(m_inParams.pMFXLibraryPath,  MFX_ARRAY_SIZE(m_inParams.pMFXLibraryPath), argv[1]));
             argv++;
         }
-        else if (m_OptProc.Check(argv[0], VM_STRING("-InputFile|-i"), VM_STRING("input file"), OPT_FILENAME)||
+        else if (m_OptProc.Check(argv[0], VM_STRING("-InputFile|-i|--input"), VM_STRING("input file"), OPT_FILENAME)||
             0!=(nPattern = m_OptProc.Check(argv[0], VM_STRING("-i:(")VM_STRING(MFX_FOURCC_PATTERN())VM_STRING(")"), VM_STRING("input file is raw YUV, or RGB color format"), OPT_FILENAME)))
         {
             MFX_CHECK(1 + argv != argvEnd);
@@ -3417,8 +3419,8 @@ mfxStatus MFXDecPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI32 argc, 
         m_commands.push_back(pActivator);
         m_inParams.bUseSeparateFileWriter = true;
         }
-    else if ( 0!= (nPattern1 = m_OptProc.Check(argv[0], VM_STRING("-OutputFile|-o( |:multi)"), VM_STRING("output file. If Multiple flag specified new file will be created for each view"), OPT_FILENAME)) ||
-        0!= (nPattern = m_OptProc.Check(argv[0], VM_STRING("-o:(bmp|")VM_STRING(MFX_FOURCC_PATTERN())VM_STRING(")"), VM_STRING("output file in NV12 ,YV12, RGB32 color format. Default is YV12"), OPT_FILENAME)))
+    else if ( 0!= (nPattern1 = m_OptProc.Check(argv[0], VM_STRING("--output|-OutputFile|-o( |:multi)"), VM_STRING("output file. If Multiple flag specified new file will be created for each view"), OPT_FILENAME)) ||
+              0!= (nPattern  = m_OptProc.Check(argv[0], VM_STRING("-o:(bmp|")VM_STRING(MFX_FOURCC_PATTERN())VM_STRING(")"), VM_STRING("output file in NV12 ,YV12, RGB32 color format. Default is YV12"), OPT_FILENAME)))
     {
         m_inParams.bMultiFiles = nPattern1 == 3;///-o:multiple is 3rd case
 
@@ -3504,7 +3506,7 @@ mfxStatus MFXDecPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI32 argc, 
     {
         std::for_each(m_components.begin(), m_components.end(), mem_var_set(&ComponentParams::m_bufType, MFX_BUF_OPAQ));
     }
-    else if (m_OptProc.Check(argv[0], VM_STRING("-NumberFrames|-n"), VM_STRING("number frames to process"), OPT_UINT_32))
+    else if (m_OptProc.Check(argv[0], VM_STRING("-NumberFrames|-n|--frames"), VM_STRING("number frames to process"), OPT_UINT_32))
     {
         MFX_CHECK(1 + argv != argvEnd);
         argv++;
@@ -3561,7 +3563,7 @@ mfxStatus MFXDecPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI32 argc, 
         MFX_PARSE_INT(m_inParams.OverlayTextSize, argv[1]);
         argv++;
     }
-    else if (m_OptProc.Check(argv[0], VM_STRING("-NumThread|-t"), VM_STRING("number of threads"), OPT_INT_32))
+    else if (m_OptProc.Check(argv[0], VM_STRING("-NumThread|-t|--threads"), VM_STRING("number of threads"), OPT_INT_32))
     {
         MFX_CHECK(1 + argv != argvEnd);
 
@@ -3747,7 +3749,7 @@ mfxStatus MFXDecPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI32 argc, 
             }
         }
     }
-    else HANDLE_64F_OPTION(m_components[eDEC].m_fFrameRate, VM_STRING("-FrameRate|-f"), VM_STRING("video framerate (frames per second), used for encoding from yuv files"))
+    else HANDLE_64F_OPTION(m_components[eDEC].m_fFrameRate, VM_STRING("-FrameRate|-f|--fps"), VM_STRING("video framerate (frames per second), used for encoding from yuv files"))
         else HANDLE_64F_OPTION(m_components[eVPP].m_fFrameRate, VM_STRING("-frc"), VM_STRING("do FRC from framerate of input stream to specified value"))
         else HANDLE_INT_OPTION(m_inParams.nAdvanceFRCAlgorithm, VM_STRING("-afrc"), VM_STRING("specifies algorithm for advanced frc(1=PRESERVE_TIMESTAMP, 2=DISTRIBUTED_TIMESTAMP"))
         else HANDLE_INT_OPTION(m_inParams.nDecodeInAdvance, VM_STRING("-dec:advance"), VM_STRING("decode specified number frames in advance before passing to VPP/Encode"))
@@ -4149,7 +4151,7 @@ mfxStatus MFXDecPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI32 argc, 
         else HANDLE_BOOL_OPTION(m_inParams.DecodedOrder, VM_STRING("-DecodedOrder"), VM_STRING("disable frame reordering in decoder"));
         else HANDLE_BOOL_OPTION(m_inParams.EncodedOrder, VM_STRING("-EncodedOrder"), VM_STRING("disable frame reordering in encoder"));
         else HANDLE_BOOL_OPTION(m_inParams.bUseSeparateFileWriter, VM_STRING("-separate_file"), VM_STRING("separate output files will be created if RESET in the middle happened"));
-        else HANDLE_BOOL_OPTION(m_inParams.bOptimizeForPerf,  VM_STRING("-perf_opt"), VM_STRING("optimize pipeline for accurate performance measurement"));
+        else HANDLE_BOOL_OPTION(m_inParams.bOptimizeForPerf,  VM_STRING("-perf_opt|--no-progress"), VM_STRING("optimize pipeline for accurate performance measurement"));
         else HANDLE_INT_OPTION(m_inParams.encodeExtraParams.nDelayOnMSDKCalls, VM_STRING("-delay"), VM_STRING("Sleep() for specified time (in ms) before calling to any MediaSDK async function"))
         else HANDLE_64F_OPTION(m_inParams.fLimitPipelineFps, VM_STRING("-limit_fps|-fps"), VM_STRING("limit overall fps"))
         else HANDLE_BOOL_OPTION(m_inParams.encodeExtraParams.bZeroBottomStripe, VM_STRING("-zero_stripe"), VM_STRING("force zeroing of stripes in decoded picture"));
@@ -4197,7 +4199,7 @@ mfxStatus MFXDecPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI32 argc, 
             DebugBreak();
         }
 #endif // #if defined(_WIN32) || defined(_WIN64)
-        else if (m_OptProc.Check(argv[0], VM_STRING("-async_depth"), VM_STRING("fills mfxVideoParam.AsyncDepth to specified value in QueryIOSurface request"), OPT_INT_32))
+        else if (m_OptProc.Check(argv[0], VM_STRING("-async_depth|--frame-threads"), VM_STRING("fills mfxVideoParam.AsyncDepth to specified value in QueryIOSurface request"), OPT_INT_32))
         {
             MFX_CHECK(1 + argv != argvEnd);
             mfxU16 nAsyncDepth;
@@ -4332,6 +4334,15 @@ mfxStatus MFXDecPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI32 argc, 
                 vm_string_strcpy_s(m_inParams.strSrcFile, MFX_ARRAY_SIZE(m_inParams.strSrcFile), argv[0]);
                 m_inParams.m_container      = (mfxContainer)MFX_CAM_BAYER_BGGR;
                 m_inParams.FrameInfo.FourCC = MFX_FOURCC_R16;
+                m_inParams.bYuvReaderMode = true;
+            }
+            else if (m_OptProc.Check(argv[0], VM_STRING("-input-res|--input-res"), VM_STRING("Source picture size [wxh]"), OPT_UINT_32))
+            {
+                MFX_CHECK(1 + argv != argvEnd);
+                MFX_PARSE_INT(m_inParams.FrameInfo.Width, argv[1]);
+
+                vm_string_sscanf(argv[1], VM_STRING("%dx%d"), &m_inParams.FrameInfo.Width, &m_inParams.FrameInfo.Height);
+                argv++;
                 m_inParams.bYuvReaderMode = true;
             }
             else if (0!=(nPattern = m_OptProc.Check(argv[0], VM_STRING("-i:gr16"), VM_STRING("input stream is in Bayer BGGR format. For camera pipe."), OPT_UNDEFINED)))
