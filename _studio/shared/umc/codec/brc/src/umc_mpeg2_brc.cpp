@@ -192,8 +192,9 @@ Status MPEG2BRC::CheckHRDParams()
   if (BRC_VBR == mRCMode) {
     if (mHRD.bufSize > (Ipp32u)16384 * 0x3fffe)
       mHRD.bufSize = (Ipp32u)16384 * 0x3fffe;
+    if(!full_hw)
     //fix for HSD 5293272; allow initial delay to be different from buffer size
-    //mHRD.bufFullness = mHRD.bufSize; // vbv_delay = 0xffff in case of VBR. TODO: check the possibility of VBR with vbv_delay != 0xffff
+    mHRD.bufFullness = mHRD.bufSize; // vbv_delay = 0xffff in case of VBR. TODO: check the possibility of VBR with vbv_delay != 0xffff
     //end of fix for HSD 5293272
   } else { // BRC_CBR
     Ipp32u max_buf_size = (Ipp32u)(0xfffe * (Ipp64u)mHRD.maxBitrate / 90000); // vbv_delay is coded with 16 bits:
@@ -242,11 +243,11 @@ Status MPEG2BRC::CalculatePicTargets()
 }
 */
 
-Status MPEG2BRC::Init(BaseCodecParams *params, Ipp32s)
+Status MPEG2BRC::Init(BaseCodecParams *params, Ipp32s no_full_HW)
 {
   Status status = UMC_OK;
   Ipp64f u_len;
-
+  full_hw = (no_full_HW == 0);
   status = CommonBRC::Init(params);
   if (status != UMC_OK)
     return status;

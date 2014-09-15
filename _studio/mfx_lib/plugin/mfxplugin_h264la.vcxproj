@@ -539,7 +539,7 @@
       <ImportLibrary>$(OutDir)\..\..\lib\$(TargetName).lib</ImportLibrary>
     </Link>
     <PostBuildEvent>
-      <Command>copy "$(SolutionDir)2fca99749fdb49aeb121a5b63ef568f7\plugin.cfg" "$(OutDir)plugin.cfg" /y</Command>
+      <Command>copy "$(SolutionDir)588f1185d47b42968dea377bb5d0dcb4\plugin.cfg" "$(OutDir)plugin.cfg" /y</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release_Intel|x64'">

@@ -650,8 +650,8 @@ mfxStatus CmCopyWrapper::CopySystemToVideoMemoryAPI(void *pDst, mfxU32 dstPitch,
 {
     cmStatus cmSts = 0;
 
-    CmEvent* e = NULL;
-    CM_STATUS sts;
+    CmEvent* e = (CmEvent*)(-1);//NULL;
+    //CM_STATUS sts;
     mfxStatus status = MFX_ERR_NONE;
 
     mfxU32 width  = roi.width;
@@ -662,25 +662,16 @@ mfxStatus CmCopyWrapper::CopySystemToVideoMemoryAPI(void *pDst, mfxU32 dstPitch,
     //m_pCmDevice->CreateSurface2D((AbstractSurfaceHandle*)pDst,pCmSurface2D);
     pCmSurface2D = CreateCmSurface2D(pDst, width, height, false, m_tableCmRelations2, m_tableCmIndex2);
     CHECK_CM_NULL_PTR(pCmSurface2D, MFX_ERR_DEVICE_FAILED);
-    if(srcUVOffset != 0){
-        cmSts = m_pCmQueue->EnqueueCopyCPUToGPUFullStride(pCmSurface2D, pSrc, srcPitch, srcUVOffset, 0, e);
-    }
-    else{
-        cmSts = m_pCmQueue->EnqueueCopyCPUToGPUStride(pCmSurface2D, pSrc, srcPitch, e);
-    }
 
-    if (CM_SUCCESS == cmSts && e)
+    cmSts = m_pCmQueue->EnqueueCopyCPUToGPUFullStride(pCmSurface2D, pSrc, srcPitch, srcUVOffset, 1, e);
+
+    if (CM_SUCCESS == cmSts )
     {
-        e->GetStatus(sts);
-
-        while (sts != CM_STATUS_FINISHED)
-        {
-            e->GetStatus(sts);
-        }
+        return status;
     }else{
         status = MFX_ERR_DEVICE_FAILED;
     }
-    if(e) m_pCmQueue->DestroyEvent(e);
+    //if(e) m_pCmQueue->DestroyEvent(e);
     //m_pCmDevice->DestroySurface(pCmSurface2D);
     return status;
 }
@@ -689,8 +680,8 @@ mfxStatus CmCopyWrapper::CopyVideoToSystemMemoryAPI(mfxU8 *pDst, mfxU32 dstPitch
 {
     cmStatus cmSts = 0;
 
-    CmEvent* e = NULL;
-    CM_STATUS sts;
+    CmEvent* e = (CmEvent*)-1;//NULL;
+    //CM_STATUS sts;
     mfxStatus status = MFX_ERR_NONE;
     mfxU32 width  = roi.width;
     mfxU32 height = roi.height;
@@ -705,24 +696,15 @@ mfxStatus CmCopyWrapper::CopyVideoToSystemMemoryAPI(mfxU8 *pDst, mfxU32 dstPitch
     pCmSurface2D = CreateCmSurface2D(pSrc, width, height, false, m_tableCmRelations2, m_tableCmIndex2);
     CHECK_CM_NULL_PTR(pCmSurface2D, MFX_ERR_DEVICE_FAILED);
 
-    if(dstUVOffset != 0){
-        cmSts = m_pCmQueue->EnqueueCopyGPUToCPUFullStride(pCmSurface2D, pDst, dstPitch, dstUVOffset, 0, e);
-    }
-    else{
-        cmSts = m_pCmQueue->EnqueueCopyGPUToCPUStride(pCmSurface2D, pDst, dstPitch, e);
-    }
-    if (CM_SUCCESS == cmSts && e)
+    cmSts = m_pCmQueue->EnqueueCopyGPUToCPUFullStride(pCmSurface2D, pDst, dstPitch, dstUVOffset, 1, e);
+    
+    if (CM_SUCCESS == cmSts)
     {
-        e->GetStatus(sts);
-
-        while (sts != CM_STATUS_FINISHED)
-        {
-            e->GetStatus(sts);
-        }
+        return status;
     }else{
         status = MFX_ERR_DEVICE_FAILED;
     }
-    if(e) m_pCmQueue->DestroyEvent(e);
+    //if(e) m_pCmQueue->DestroyEvent(e);
     //m_pCmDevice->DestroySurface(pCmSurface2D);
 
     return status;

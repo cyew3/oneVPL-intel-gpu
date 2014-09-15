@@ -70,6 +70,9 @@ typedef enum {
     IGFX_BROADWELL,
     IGFX_CHERRYVIEW,
     IGFX_SKYLAKE,
+    IGFX_WILLOWVIEW,//Need to delete WLW if driver doesn't contain
+    IGFX_BROXTON,
+    IGFX_CANNONLAKE,
     IGFX_GENNEXT,
     PRODUCT_FAMILY_FORCE_ULONG = 0x7fffffff
 } PRODUCT_FAMILY;
@@ -100,6 +103,10 @@ eMFXHWType GetHardwareType(const mfxU32 adapterNum, mfxU32 platformFromDriver)
         return MFX_HW_BDW;
     case IGFX_CHERRYVIEW:
         return MFX_HW_CHV;
+    case IGFX_BROXTON:
+        return MFX_HW_BXT;
+    case IGFX_CANNONLAKE:
+        return MFX_HW_CNL;
     case IGFX_GT:
         return MFX_HW_IVB; // sandybridge
     }

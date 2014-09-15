@@ -159,7 +159,11 @@ enum eMFXHWType
 
     MFX_HW_CHV       = 0x800000,
 
-    MFX_HW_SCL       = 0x900000
+    MFX_HW_SCL       = 0x900000,
+    
+    MFX_HW_BXT       = 0x1000000,
+
+    MFX_HW_CNL       = 0x1100000
 };
 
 enum

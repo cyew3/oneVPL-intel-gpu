@@ -130,7 +130,7 @@ mfxStatus VideoDECODEVP8_HW::Init(mfxVideoParam *p_video_param)
 
     sts = QueryIOSurfInternal(m_platform, &m_video_params, &request);
     MFX_CHECK_STS(sts);
-    sts = m_p_core->AllocFrames(&request, &m_response);
+    sts = m_p_core->AllocFrames(&request, &m_response,type != MFX_HW_VLV);
     MFX_CHECK_STS(sts);
 
     m_request = request;

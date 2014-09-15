@@ -581,7 +581,12 @@ mfxStatus D3D11VideoProcessor::QueryVPE_AndExtCaps(void)
             sizeof(VPE_FUNCTION), 
             &iFunc);
         CHECK_HRES(hRes);
-
+        // copy to old structure
+        memset(&m_vpreCaps, 0, sizeof(PREPROC_QUERYCAPS));
+        m_vpreCaps.bInterlacedScaling   = vpeCaps.bInterlacedScaling;
+        m_vpreCaps.bIS                  = vpeCaps.bImageStabilization;
+        m_vpreCaps.bFieldWeavingControl = vpeCaps.bFieldWeavingControl;
+        m_vpreCaps.bVariance            = vpeCaps.bVariances;
 #ifdef DEBUG_DETAIL_INFO
 #ifndef MSDK_BANNED
         printf("Success: VPE VPREP CAPS\n");
@@ -592,11 +597,7 @@ mfxStatus D3D11VideoProcessor::QueryVPE_AndExtCaps(void)
         printf("bVariances           = [%d]\n", vpeCaps.bVariances);
 
         // copy to old structure
-        memset(&m_vpreCaps, 0, sizeof(PREPROC_QUERYCAPS));
-        m_vpreCaps.bInterlacedScaling   = vpeCaps.bInterlacedScaling;
-        m_vpreCaps.bIS                  = vpeCaps.bImageStabilization;
-        m_vpreCaps.bFieldWeavingControl = vpeCaps.bFieldWeavingControl;
-        m_vpreCaps.bVariance            = vpeCaps.bVariances;
+
 
         // to prevent any issues (HLD not completed yet on VPG side)
         //m_vpreCaps.bVariance = 0;

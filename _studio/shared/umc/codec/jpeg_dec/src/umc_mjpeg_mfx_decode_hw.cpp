@@ -5,7 +5,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2003-2013 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2003-2014 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -103,6 +103,7 @@ Status MJPEGVideoDecoderMFX_HW::Reset(void)
 
         m_cachedReadyTaskIndex.clear();
         m_cachedCorruptedTaskIndex.clear();
+        m_submittedTaskIndex.clear();
     }
 
     return MJPEGVideoDecoderMFX::Reset();
@@ -115,6 +116,7 @@ Status MJPEGVideoDecoderMFX_HW::Close(void)
 
         m_cachedReadyTaskIndex.clear();
         m_cachedCorruptedTaskIndex.clear();
+        m_submittedTaskIndex.clear();
     }
 
     return MJPEGVideoDecoderMFX::Close();
@@ -160,66 +162,80 @@ mfxStatus MJPEGVideoDecoderMFX_HW::CheckStatusReportNumber(Ipp32u statusReportFe
     UMC::Status sts = UMC_OK;
 
     mfxU32 numStructures = 32;
+    mfxU32 numZeroFeedback = 0;
     JPEG_DECODE_QUERY_STATUS queryStatus[32];
 
     std::set<mfxU32>::iterator iteratorReady;
+    std::set<mfxU32>::iterator iteratorSubmitted;
     std::set<mfxU32>::iterator iteratorCorrupted;
-    //in Case TDR occur status won't be updated, otherwise driver will change status to correct.
-    for (mfxU32 i = 0; i < numStructures; i += 1){
-        queryStatus[i].bStatus = 3;
-    }
-    // execute call
-    sts = m_va->ExecuteStatusReportBuffer((void*)queryStatus, sizeof(JPEG_DECODE_QUERY_STATUS) * numStructures);
-
-    // houston, we have a problem :)
-    if(sts != UMC_OK)
-    {
-        return MFX_ERR_DEVICE_FAILED;
-    }
-
-    for (mfxU32 i = 0; i < numStructures; i += 1)
-    {
-        if (0 == queryStatus[i].bStatus || 1 == queryStatus[i].bStatus)
-        {
-            AutomaticUMCMutex guard(m_guard);
-            m_cachedReadyTaskIndex.insert(queryStatus[i].StatusReportFeedbackNumber);
+    
+    AutomaticUMCMutex guard(m_guard);
+    iteratorReady = find(m_cachedReadyTaskIndex.begin(), m_cachedReadyTaskIndex.end(), statusReportFeedbackNumber);
+    iteratorSubmitted = find(m_submittedTaskIndex.begin(), m_submittedTaskIndex.end(), statusReportFeedbackNumber);
+    if (m_cachedReadyTaskIndex.end() == iteratorReady){
+        //in Case TDR occur status won't be updated, otherwise driver will change status to correct.
+        for (mfxU32 i = 0; i < numStructures; i += 1){
+            queryStatus[i].bStatus = 3;
         }
-        else if (2 == queryStatus[i].bStatus)
-        {
-            AutomaticUMCMutex guard(m_guard);
-            m_cachedCorruptedTaskIndex.insert(queryStatus[i].StatusReportFeedbackNumber);
-        }
-        else if (3 == queryStatus[i].bStatus)
+        // execute call
+        sts = m_va->ExecuteStatusReportBuffer((void*)queryStatus, sizeof(JPEG_DECODE_QUERY_STATUS) * numStructures);
+
+        // houston, we have a problem :)
+        if(sts != UMC_OK)
         {
             return MFX_ERR_DEVICE_FAILED;
         }
-        else if (5 == queryStatus[i].bStatus)
-        {
-            // Operation is not completed; do nothing
-            continue;
-        }
-    }
 
-    {
-        AutomaticUMCMutex guard(m_guard);
-        iteratorReady = find(m_cachedReadyTaskIndex.begin(), m_cachedReadyTaskIndex.end(), statusReportFeedbackNumber);
-    
-        if (m_cachedReadyTaskIndex.end() == iteratorReady)
+        for (mfxU32 i = 0; i < numStructures; i += 1)
         {
-            iteratorCorrupted = find(m_cachedCorruptedTaskIndex.begin(), m_cachedCorruptedTaskIndex.end(), statusReportFeedbackNumber);
-            
-            if(m_cachedCorruptedTaskIndex.end() == iteratorCorrupted)
+            if(queryStatus[i].StatusReportFeedbackNumber==0)numZeroFeedback++;
+            if (0 == queryStatus[i].bStatus || 1 == queryStatus[i].bStatus)
             {
-                return MFX_TASK_BUSY;
+                AutomaticUMCMutex guard(m_guard);
+                m_cachedReadyTaskIndex.insert(queryStatus[i].StatusReportFeedbackNumber);
             }
-
-            m_cachedCorruptedTaskIndex.erase(iteratorCorrupted);
-
-            *corrupted = 1;
-
-            return MFX_TASK_DONE;
+            else if (2 == queryStatus[i].bStatus)
+            {
+                AutomaticUMCMutex guard(m_guard);
+                m_cachedCorruptedTaskIndex.insert(queryStatus[i].StatusReportFeedbackNumber);
+            }
+            else if (3 == queryStatus[i].bStatus)
+            {
+                return MFX_ERR_DEVICE_FAILED;
+            }
+            else if (5 == queryStatus[i].bStatus)
+            {
+                numZeroFeedback--;
+                // Operation is not completed; do nothing
+                continue;
+            }
         }
+        iteratorReady = find(m_cachedReadyTaskIndex.begin(), m_cachedReadyTaskIndex.end(), statusReportFeedbackNumber);
+        {
+            if (m_cachedReadyTaskIndex.end() == iteratorReady)
+            {
+                iteratorCorrupted = find(m_cachedCorruptedTaskIndex.begin(), m_cachedCorruptedTaskIndex.end(), statusReportFeedbackNumber);
+        
+                if(m_cachedCorruptedTaskIndex.end() == iteratorCorrupted)
+                {
+                    if(m_submittedTaskIndex.end() != iteratorSubmitted && numZeroFeedback == numStructures )
+                        return MFX_ERR_DEVICE_FAILED;
+                    else
+                        return MFX_TASK_BUSY;
+                }
 
+                m_cachedCorruptedTaskIndex.erase(iteratorCorrupted);
+
+                *corrupted = 1;
+                m_submittedTaskIndex.erase(iteratorSubmitted);
+                return MFX_TASK_DONE;
+            }
+    
+            m_submittedTaskIndex.erase(iteratorSubmitted);
+            m_cachedReadyTaskIndex.erase(iteratorReady);
+        }
+    }else{
+        m_submittedTaskIndex.erase(iteratorSubmitted);
         m_cachedReadyTaskIndex.erase(iteratorReady);
     }
 #endif
@@ -367,8 +383,10 @@ Status MJPEGVideoDecoderMFX_HW::GetFrameHW(MediaDataEx* in)
     sts = m_va->BeginFrame(m_frameData.GetFrameMID());
     if (sts != UMC_OK)
         return sts;
-
-
+    {
+        AutomaticUMCMutex guard(m_guard);
+        m_submittedTaskIndex.insert(m_statusReportFeedbackCounter);
+    }
     /////////////////////////////////////////////////////////////////////////////////////////
 
     buffersForUpdate = (1 << 5) - 1;

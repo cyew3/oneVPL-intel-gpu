@@ -5116,6 +5116,7 @@ SliceDivider MfxHwH264Encode::MakeSliceDivider(
     case 1:  return SliceDividerSnb(numSlice, widthInMbs, heightInMbs);
     case 2:  return SliceDividerHsw(numSlice, widthInMbs, heightInMbs);
     case 3:  return SliceDividerBluRay(numSlice, widthInMbs, heightInMbs);
+    case 4:  return SliceDividerHsw(numSlice, widthInMbs, heightInMbs);//If arbitrary slice size supported by HW make legasy HSW division, need to implement arbitrary case
     default: return SliceDividerOneSlice(numSlice, widthInMbs, heightInMbs);
     }
 }

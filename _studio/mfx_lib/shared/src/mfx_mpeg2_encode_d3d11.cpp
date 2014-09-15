@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2011 - 2013 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2011 - 2014 Intel Corporation. All Rights Reserved.
 //
 //
 //          MPEG2 encoder
@@ -985,7 +985,7 @@ mfxStatus D3D11Encoder::Execute(
             payload.pData = pUserData;
             payload.DataLength = payload.BufferSize = userDataLen;
 
-            encodeCompBufferDesc[bufCnt].CompressedBufferType = D3DDDIFMT_INTELENCODE_PACKEDHEADERDATA;
+            encodeCompBufferDesc[bufCnt].CompressedBufferType = (D3DDDIFORMAT)D3D11_DDI_VIDEO_ENCODER_BUFFER_PACKEDHEADERDATA;
             encodeCompBufferDesc[bufCnt].DataSize       = sizeof (payload);
             encodeCompBufferDesc[bufCnt].pCompBuffer    = &payload;
             bufCnt++;        

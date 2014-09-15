@@ -1938,13 +1938,13 @@ namespace MPEG2EncoderHW
             if (m_pBRC == NULL)
             {
                 m_pBRC = UMC::CreateBRC(UMC::BRC_MPEG2);
-                ret = m_pBRC->Init(&brcParams);
+                ret = m_pBRC->Init(&brcParams,m_pCore->GetHWType() < MFX_HW_HSW || m_pCore->GetHWType()==MFX_HW_VLV);
                 MFX_CHECK_UMC_STS (ret);
             }
             else
             {
                 m_pBRC->Close();
-                ret = m_pBRC->Init(&brcParams);
+                ret = m_pBRC->Init(&brcParams, m_pCore->GetHWType() < MFX_HW_HSW || m_pCore->GetHWType()==MFX_HW_VLV);
                 MFX_CHECK_UMC_STS (ret);
             }
 
