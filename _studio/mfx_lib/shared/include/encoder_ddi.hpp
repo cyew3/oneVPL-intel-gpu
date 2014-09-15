@@ -1014,6 +1014,11 @@ typedef struct tagENCODE_SET_PICTURE_PARAMETERS_H264
     UCHAR           NumSkipFrames;
     UINT            SizeSkipFrames;
 
+    // Max/Min QP settings for BRC
+    UCHAR           BRCMaxQp;
+    UCHAR           BRCMinQp;
+
+
 } ENCODE_SET_PICTURE_PARAMETERS_H264;
 
 typedef struct tagENCODE_SET_PICTURE_PARAMETERS_MPEG2

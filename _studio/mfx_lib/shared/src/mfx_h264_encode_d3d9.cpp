@@ -218,6 +218,8 @@ void MfxHwH264Encode::FillConstPartOfPpsBuffer(
     pps.pic_scaling_matrix_present_flag         = extPps->picScalingMatrixPresentFlag;
     pps.pic_scaling_list_present_flag           = extPps->picScalingMatrixPresentFlag;
     pps.BRCPrecision                            = extDdi->BRCPrecision;
+    pps.BRCMaxQp                                = 0;
+    pps.BRCMinQp                                = 0;
 }
 
 
