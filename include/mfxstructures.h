@@ -514,8 +514,10 @@ enum {
 };
 
 enum {
+    MFX_SKIPFRAME_NO_SKIP         = 0,
     MFX_SKIPFRAME_INSERT_DUMMY    = 1,
     MFX_SKIPFRAME_INSERT_NOTHING  = 2,
+    MFX_SKIPFRAME_BRC_ONLY        = 3,
 };
 
 typedef struct {
