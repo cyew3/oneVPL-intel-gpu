@@ -141,7 +141,7 @@ MFXTranscodingPipeline::MFXTranscodingPipeline(IMFXPipelineFactory *pFactory)
         HANDLE_GLOBAL_OPTION("-s|",  m_inParams.n,PicStruct,  OPT_INT_32, "0=progressive, 1=tff, 2=bff, 3=field tff, 4=field bff", &m_applyBitrateParams),
 
         //constant qp support
-        HANDLE_GLOBAL_OPTION("-QPI|--qp|", m_,QPI,           OPT_UINT_16,    "Constant quantizer for I frames (if RateControlMethod=3)", &m_applyBitrateParams),
+        HANDLE_GLOBAL_OPTION("-QPI|", m_,QPI,           OPT_UINT_16,    "Constant quantizer for I frames (if RateControlMethod=3)", &m_applyBitrateParams),
         HANDLE_GLOBAL_OPTION("", m_,QPP,           OPT_UINT_16,    "Constant quantizer for P frames (if RateControlMethod=3)", &m_applyBitrateParams),
         HANDLE_GLOBAL_OPTION("", m_,QPB,           OPT_UINT_16,    "Constant quantizer for B frames (if RateControlMethod=3)", &m_applyBitrateParams),
 
@@ -161,21 +161,21 @@ MFXTranscodingPipeline::MFXTranscodingPipeline(IMFXPipelineFactory *pFactory)
 
         //direct access to mfx_videoparams
         HANDLE_GLOBAL_OPTION2("", pMFXParams->mfx., LowPower, OPT_TRI_STATE, "on/off low power mode (VDEnc)", NULL),
-        HANDLE_MFX_INFO("",     BRCParamMultiplier,               "target bitrate = TargetKbps * BRCParamMultiplier"),
-        HANDLE_MFX_INFO("",     CodecProfile,                     "Codec profile"),
-        HANDLE_MFX_INFO("",     CodecLevel,                       "Codec level"),
-        HANDLE_MFX_INFO("-u|",  TargetUsage,                      "1=BEST_QUALITY .. 7=BEST_SPEED"),
-        HANDLE_MFX_INFO("-g|",  GopPicSize,                       "GOP size (1 means I-frames only)"),
-        HANDLE_MFX_INFO("-r|",  GopRefDist,                       "Distance between I- or P- key frames (1 means no B-frames)"),
-        HANDLE_MFX_INFO("",     GopOptFlag,                       "1=GOP_CLOSED, 2=GOP_STRICT"),
-        HANDLE_MFX_INFO("",     IdrInterval,                      "IDR frame interval (0 means every I-frame is an IDR frame"),
-        HANDLE_MFX_INFO("",     RateControlMethod,                "1=CBR, 2=VBR, 3=ConstantQP, 4=AVBR, 8=Lookahead, 13==Lookahead with HRD support "),
-        HANDLE_MFX_INFO("",     TargetKbps,                       "Target bitrate in kbits per seconds"),
-        HANDLE_MFX_INFO("",     MaxKbps,                          "Maximum bitrate in the case of VBR"),
-        HANDLE_MFX_INFO("-id|", InitialDelayInKB,                 "For bitrate control"),
-        HANDLE_MFX_INFO("-bs|", BufferSizeInKB,                   "For bitrate control"),
-        HANDLE_MFX_INFO("-l|",  NumSlice,                         "Number of slices in each video frame"),
-        HANDLE_MFX_INFO("-x|",  NumRefFrame,                      "Number of reference frames"),
+        HANDLE_MFX_INFO("",             BRCParamMultiplier,       "target bitrate = TargetKbps * BRCParamMultiplier"),
+        HANDLE_MFX_INFO("",             CodecProfile,             "Codec profile"),
+        HANDLE_MFX_INFO("",             CodecLevel,               "Codec level"),
+        HANDLE_MFX_INFO("-u|",          TargetUsage,              "1=BEST_QUALITY .. 7=BEST_SPEED"),
+        HANDLE_MFX_INFO("-g|--keyint|", GopPicSize,               "GOP size (1 means I-frames only)"),
+        HANDLE_MFX_INFO("-r|",          GopRefDist,               "Distance between I- or P- key frames (1 means no B-frames)"),
+        HANDLE_MFX_INFO("",             GopOptFlag,               "1=GOP_CLOSED, 2=GOP_STRICT"),
+        HANDLE_MFX_INFO("",             IdrInterval,              "IDR frame interval (0 means every I-frame is an IDR frame"),
+        HANDLE_MFX_INFO("",             RateControlMethod,        "1=CBR, 2=VBR, 3=ConstantQP, 4=AVBR, 8=Lookahead, 13==Lookahead with HRD support "),
+        HANDLE_MFX_INFO("",             TargetKbps,               "Target bitrate in kbits per seconds"),
+        HANDLE_MFX_INFO("",             MaxKbps,                  "Maximum bitrate in the case of VBR"),
+        HANDLE_MFX_INFO("-id|",         InitialDelayInKB,         "For bitrate control"),
+        HANDLE_MFX_INFO("-bs|",         BufferSizeInKB,           "For bitrate control"),
+        HANDLE_MFX_INFO("-l|",          NumSlice,                 "Number of slices in each video frame"),
+        HANDLE_MFX_INFO("-x|--ref|",    NumRefFrame,              "Number of reference frames"),
 
         //structure mfxFrameInfo
         HANDLE_MFX_FRAME_INFO(FrameRateExtN,      OPT_INT_32,     "Framerate nominator. NOTE: this value only used inside -reset_start/-reset_end section"),
@@ -499,6 +499,66 @@ mfxStatus MFXTranscodingPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI3
             argv++;
 
             vm_string_strcpy(m_extDumpFiles->ReconFilename, argv[0]);
+        }
+        else if (m_OptProc.Check(argv[0], VM_STRING("--qp"), VM_STRING("Base QP for CQP mode."), OPT_INT_32))
+        {
+            MFX_CHECK(argv + 1 != argvEnd);
+            MFX_PARSE_INT(m_QPI, argv[1]);
+            argv++;
+            m_QPB = m_QPP = m_QPI + 1;
+        }
+        else if (m_OptProc.Check(argv[0], VM_STRING("--bframes"), VM_STRING("Maximum number of consecutive b-frames"), OPT_INT_32))
+        {
+            MFX_CHECK(argv + 1 != argvEnd);
+            MFX_PARSE_INT(pMFXParams->mfx.GopRefDist, argv[1]);
+            argv++;
+            pMFXParams->mfx.GopRefDist += 1;
+        }
+        else if (m_OptProc.Check(argv[0], VM_STRING("--preset"), VM_STRING("ultrafast, veryfast, faster, fast, medium, slow, slower, veryslow, placebo"), OPT_STR))
+        {
+            MFX_CHECK(argv + 1 != argvEnd);
+            argv++;
+            if ( 0 == vm_string_strcmp(argv[0], VM_STRING("ultrafast")))
+            {
+                pMFXParams->mfx.TargetUsage = 7;
+            }
+            else if ( 0 == vm_string_strcmp(argv[0], VM_STRING("veryfast")))
+            {
+                pMFXParams->mfx.TargetUsage = 7;
+            }
+            else if ( 0 == vm_string_strcmp(argv[0], VM_STRING("faster")))
+            {
+                pMFXParams->mfx.TargetUsage = 6;
+            }
+            else if ( 0 == vm_string_strcmp(argv[0], VM_STRING("fast")))
+            {
+                pMFXParams->mfx.TargetUsage = 5;
+            }
+            else if ( 0 == vm_string_strcmp(argv[0], VM_STRING("medium")))
+            {
+                pMFXParams->mfx.TargetUsage = 4;
+            }
+            else if ( 0 == vm_string_strcmp(argv[0], VM_STRING("slow")))
+            {
+                pMFXParams->mfx.TargetUsage = 3;
+            }
+            else if ( 0 == vm_string_strcmp(argv[0], VM_STRING("slower")))
+            {
+                pMFXParams->mfx.TargetUsage = 2;
+            }
+            else if ( 0 == vm_string_strcmp(argv[0], VM_STRING("veryslow")))
+            {
+                pMFXParams->mfx.TargetUsage = 1;
+            }
+            else if ( 0 == vm_string_strcmp(argv[0], VM_STRING("placebo")))
+            {
+                pMFXParams->mfx.TargetUsage = 1;
+            }
+            else
+            {
+                PipelineTrace((VM_STRING("Provided preset is not supported\n")));
+                return MFX_ERR_UNKNOWN;
+            }
         }
         else if (m_OptProc.Check(argv[0], VM_STRING("--no-b-pyramid"), VM_STRING("Do no use B-frames as references."), OPT_INT_32))
         {
