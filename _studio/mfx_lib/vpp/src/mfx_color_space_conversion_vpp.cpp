@@ -55,6 +55,10 @@ IppStatus cc_YV12_to_NV12( mfxFrameData* inData,  mfxFrameInfo* inInfo,
 IppStatus cc_YUY2_to_NV12( mfxFrameData* inData,  mfxFrameInfo* inInfo,
                            mfxFrameData* outData, mfxFrameInfo* outInfo);
 
+IppStatus cc_NV16_to_NV12( mfxFrameData* inData,  mfxFrameInfo* inInfo,
+                           mfxFrameData* outData, mfxFrameInfo* outInfo);
+
+
 IppStatus cc_RGB3_to_NV12( mfxFrameData* inData,  mfxFrameInfo* inInfo,
                            mfxFrameData* outData, mfxFrameInfo* outInfo, mfxU16 picStruct );
 
@@ -139,6 +143,7 @@ mfxStatus MFXVideoVPPColorSpaceConversion::Reset(mfxVideoParam *par)
   case MFX_FOURCC_RGB3:
   case MFX_FOURCC_RGB4:
   case MFX_FOURCC_NV12:
+  case MFX_FOURCC_NV16:
   case MFX_FOURCC_IMC3:
   case MFX_FOURCC_YUV400:
   case MFX_FOURCC_YUV411:
@@ -247,6 +252,16 @@ mfxStatus MFXVideoVPPColorSpaceConversion::RunFrameVPP(mfxFrameSurface1 *in,
     switch ( m_errPrtctState.Out.FourCC ) {
     case MFX_FOURCC_NV12:
       ippSts = cc_YUY2_to_NV12(inData, inInfo, outData, outInfo);
+      break;
+    default:
+      return MFX_ERR_INVALID_VIDEO_PARAM;
+    }
+    break;
+
+  case MFX_FOURCC_NV16:
+    switch ( m_errPrtctState.Out.FourCC ) {
+    case MFX_FOURCC_NV12:
+      ippSts = cc_NV16_to_NV12(inData, inInfo, outData, outInfo);
       break;
     default:
       return MFX_ERR_INVALID_VIDEO_PARAM;
@@ -379,6 +394,7 @@ mfxStatus MFXVideoVPPColorSpaceConversion::Init(mfxFrameInfo* In, mfxFrameInfo* 
   case MFX_FOURCC_RGB4:
   case MFX_FOURCC_NV12:
   case MFX_FOURCC_IMC3:
+  case MFX_FOURCC_NV16:
   case MFX_FOURCC_YUV400:
   case MFX_FOURCC_YUV411:
   case MFX_FOURCC_YUV422H:
@@ -568,6 +584,36 @@ IppStatus cc_YV12_to_NV12( mfxFrameData* inData,  mfxFrameInfo* inInfo,
   return sts;
 
 } // IppStatus cc_YV12_to_NV12( ... )
+
+IppStatus cc_NV16_to_NV12( mfxFrameData* inData,  mfxFrameInfo* inInfo,
+                           mfxFrameData* outData, mfxFrameInfo* /*outInfo*/)
+{
+  IppStatus sts = ippStsNoErr;
+  IppiSize  roiSize = {0, 0};
+
+  VPP_GET_REAL_WIDTH(inInfo, roiSize.width);
+  VPP_GET_REAL_HEIGHT(inInfo, roiSize.height);
+
+  if(MFX_PICSTRUCT_PROGRESSIVE & inInfo->PicStruct)
+  {
+      // Copy Y plane as is
+      sts = ippiCopy_8u_C1R(inData->Y, outData->Pitch, outData->Y, outData->Pitch, roiSize);
+      IPP_CHECK_STS( sts );
+
+      // Copy every second line of UV plane
+      roiSize.height >>= 1;
+      sts = ippiCopy_8u_C1R(inData->UV, outData->Pitch * 2, outData->UV, outData->Pitch, roiSize);
+      IPP_CHECK_STS( sts );
+  }
+  else
+  {
+      /* Interlaced content is not supported... yet. */
+     return ippStsErr;
+  }
+
+  return sts;
+} // IppStatus cc_NV16_to_NV12( mfxFrameData* inData,  mfxFrameInfo* inInfo,...)
+
 
 IppStatus cc_YUY2_to_NV12( mfxFrameData* inData,  mfxFrameInfo* inInfo,
                            mfxFrameData* outData, mfxFrameInfo* outInfo)
