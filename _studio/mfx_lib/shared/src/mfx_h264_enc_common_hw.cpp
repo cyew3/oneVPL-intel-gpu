@@ -4349,6 +4349,7 @@ void MfxHwH264Encode::SetDefaults(
         extSps->log2MaxFrameNumMinus4           = 4;//GetDefaultLog2MaxFrameNumMinux4(par);
         extSps->picOrderCntType                 = extOpt2->SkipFrame ? 0  : GetDefaultPicOrderCount(par);
         extSps->log2MaxPicOrderCntLsbMinus4     = extOpt2->SkipFrame ? ((mfxU8)CeilLog2(2 * par.mfx.GopPicSize) + 1 - 4) : GetDefaultLog2MaxPicOrdCntMinus4(par);
+        extSps->log2MaxPicOrderCntLsbMinus4     = IPP_MIN(12, extSps->log2MaxPicOrderCntLsbMinus4);
         extSps->deltaPicOrderAlwaysZeroFlag     = 1;
         extSps->maxNumRefFrames                 = mfxU8(par.mfx.NumRefFrame);
         extSps->gapsInFrameNumValueAllowedFlag  = par.calcParam.numTemporalLayer > 1

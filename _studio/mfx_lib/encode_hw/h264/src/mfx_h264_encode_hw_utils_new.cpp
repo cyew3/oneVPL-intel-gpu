@@ -1672,7 +1672,7 @@ void MfxHwH264Encode::ConfigureTask(
 
     DecideOnRefPicFlag(video, task); // for temporal layers
     
-    if (task.m_ctrl.SkipFrame != 0 && SkipMode != 3)
+    if (task.m_ctrl.SkipFrame != 0 && SkipMode != MFX_SKIPFRAME_BRC_ONLY)
     {
         task.m_ctrl.SkipFrame = (extOpt2.SkipFrame) ? (1 + (IsProtectionPavp(video.Protected) || IsProtectionHdcp(video.Protected)) ) : 0;
 
@@ -1686,6 +1686,10 @@ void MfxHwH264Encode::ConfigureTask(
             task.m_type.top &= ~MFX_FRAMETYPE_REF;
             task.m_type.bot &= ~MFX_FRAMETYPE_REF;
         }
+    }
+    else
+    {
+        task.m_ctrl.SkipFrame = IPP_MIN(0xFF, task.m_ctrl.SkipFrame);
     }
 
     task.m_reference[ffid]  = !!(task.m_type[ffid] & MFX_FRAMETYPE_REF);

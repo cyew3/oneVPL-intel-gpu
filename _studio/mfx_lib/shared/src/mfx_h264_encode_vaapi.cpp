@@ -1390,13 +1390,13 @@ mfxStatus VAAPIEncoder::Execute(
     mfxU16 skipMode = m_skipMode;
     mfxExtCodingOption2* ctrlOpt2 = GetExtBuffer(task.m_ctrl, MFX_EXTBUFF_CODING_OPTION2);
 
-    if (ctrlOpt2 && ctrlOpt2->SkipFrame <= 3)
+    if (ctrlOpt2 && ctrlOpt2->SkipFrame <= MFX_SKIPFRAME_BRC_ONLY)
         skipMode = ctrlOpt2->SkipFrame;
 
-    if (skipMode == 3)
+    if (skipMode == MFX_SKIPFRAME_BRC_ONLY)
     {
         skipFlag = 0; // encode current frame as normal
-        m_numSkipFrames += task.m_ctrl.SkipFrame;
+        m_numSkipFrames += (mfxU8)task.m_ctrl.SkipFrame;
     }
 
     configBuffers.resize(MAX_CONFIG_BUFFERS_COUNT + m_slice.size()*2);

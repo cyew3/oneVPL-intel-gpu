@@ -385,10 +385,17 @@ mfxStatus D3D11Encoder::Execute(
 
     HRESULT hr = S_OK;
     UCHAR   SkipFlag = task.SkipFlag();
+    mfxU32  skipMode = m_skipMode;
     mfxExtCodingOption2* ctrlOpt2 = GetExtBuffer(task.m_ctrl, MFX_EXTBUFF_CODING_OPTION2);
 
     if (ctrlOpt2 && ctrlOpt2->SkipFrame <= MFX_SKIPFRAME_INSERT_NOTHING)
-        m_skipMode = ctrlOpt2->SkipFrame;
+        skipMode = ctrlOpt2->SkipFrame;
+    
+    if (skipMode == MFX_SKIPFRAME_BRC_ONLY)
+    {
+        SkipFlag = 0; // encode current frame as normal
+        m_numSkipFrames += (mfxU8)task.m_ctrl.SkipFrame;
+    }
 
     // Execute()
     
@@ -544,7 +551,7 @@ mfxStatus D3D11Encoder::Execute(
         m_compBufDesc[bufCnt].pCompBuffer          = RemoveConst(&m_headerPacker.PackSkippedSlice(task, fieldId));
         bufCnt++;
         
-        if (SkipFlag == 2 && m_skipMode != MFX_SKIPFRAME_INSERT_NOTHING)
+        if (SkipFlag == 2 && skipMode != MFX_SKIPFRAME_INSERT_NOTHING)
         {
             m_sizeSkipFrames = 0;
 
@@ -604,7 +611,7 @@ mfxStatus D3D11Encoder::Execute(
     {
         ENCODE_QUERY_STATUS_PARAMS feedback = {task.m_statusReportNumber[fieldId], 0,};
 
-        if (m_skipMode != MFX_SKIPFRAME_INSERT_NOTHING)
+        if (skipMode != MFX_SKIPFRAME_INSERT_NOTHING)
         {
             mfxFrameData bs = {0};
             FrameLocker lock(m_core, bs, task.m_midBit[fieldId]);
