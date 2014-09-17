@@ -125,12 +125,16 @@ mfxU32 ChooseProfile(mfxVideoParam * param, eMFXHWType hwType)
         break;
     case MFX_CODEC_HEVC:
         profile |= VA_H265;
-        if (param->mfx.FrameInfo.FourCC == MFX_FOURCC_P010)
+
+        if (param->mfx.CodecProfile == MFX_PROFILE_HEVC_MAINSP)
+        {
+            profile |= VA_PROFILE_STILL;
+        } else if (param->mfx.FrameInfo.FourCC == MFX_FOURCC_P010)
         {
             profile |= VA_PROFILE_10;
         }
-        break;
 
+        break;
 
     default:
         return 0;

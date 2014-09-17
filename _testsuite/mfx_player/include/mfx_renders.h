@@ -35,6 +35,19 @@ enum MFXVideoRenderType
 
 };
 
+struct FileWriterRenderInputParams
+{
+    FileWriterRenderInputParams(mfxU32  fourCC = 0)
+    {
+        info = mfxFrameInfoCpp(0,0,0,0, fourCC);
+        useSameBitDepthForComponents = false;
+    }
+
+    mfxFrameInfo info;
+    bool useSameBitDepthForComponents;
+    bool use10bitOutput;
+};
+
 
 //////////////////////////////////////////////////////////////////////////
 //base implementation for IMFXVideoRender
@@ -79,7 +92,7 @@ protected:
 class MFXFileWriteRender : public MFXVideoRender
 {
 public :
-    MFXFileWriteRender(const mfxFrameInfo &outInfo, IVideoSession *core, mfxStatus *status);
+    MFXFileWriteRender(const FileWriterRenderInputParams &params, IVideoSession *core, mfxStatus *status);
     ~MFXFileWriteRender();
 
     virtual mfxStatus Init(mfxVideoParam *par, const vm_char *pFilename = NULL);
@@ -95,6 +108,7 @@ protected:
     //converted surface passed to this function
     virtual mfxStatus WriteSurface(mfxFrameSurface1*pSurface);
 
+    FileWriterRenderInputParams  m_params;
     
     mfxU32             m_nFourCC; //output color format
     const vm_char *    m_pOpenMode;
@@ -174,7 +188,7 @@ class MFXMetricComparatorRender : public MFXFileWriteRender, public IMetricCompa
 {
     
 public:
-    MFXMetricComparatorRender(const mfxFrameInfo & outinfo, IVideoSession *core, mfxStatus *status);
+    MFXMetricComparatorRender(const FileWriterRenderInputParams & outinfo, IVideoSession *core, mfxStatus *status);
     ~MFXMetricComparatorRender();
 
     //////////////////////////////////////////////////////////////////////////
@@ -226,7 +240,7 @@ protected:
     bool                 m_bDelaySetOutputPerfFile;
 };
 
-mfxFrameSurface1* ConvertSurface(mfxFrameSurface1* pSurfaceIn, mfxFrameSurface1* pSurfaceOut);
+mfxFrameSurface1* ConvertSurface(mfxFrameSurface1* pSurfaceIn, mfxFrameSurface1* pSurfaceOut, FileWriterRenderInputParams * params);
 mfxStatus       AllocSurface(mfxFrameInfo *pTargetInfo, mfxFrameSurface1* pSurfaceOut);
 
 #endif //__MFX_RENDERS_H

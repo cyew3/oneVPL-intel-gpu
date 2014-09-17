@@ -185,11 +185,20 @@ bool IsNeedSPSInvalidate(const H265SeqParamSet *old_sps, const H265SeqParamSet *
     if (old_sps->pic_height_in_luma_samples != new_sps->pic_height_in_luma_samples)
         return true;
 
-    if ((old_sps->bit_depth_luma > 8 || old_sps->bit_depth_chroma > 8) != (new_sps->bit_depth_luma > 8 || new_sps->bit_depth_chroma > 8))
+    if (old_sps->bit_depth_luma != new_sps->bit_depth_luma)
         return true;
 
-    //if (old_sps->max_dec_frame_buffering < new_sps->max_dec_frame_buffering)
-      //  return true;
+    if (old_sps->bit_depth_chroma != new_sps->bit_depth_chroma)
+        return true;
+
+    if (old_sps->m_pcPTL.GetGeneralPTL()->profile_idc != old_sps->m_pcPTL.GetGeneralPTL()->profile_idc)
+        return true;
+
+    if (old_sps->chroma_format_idc != new_sps->chroma_format_idc)
+        return true;
+
+    if (old_sps->sps_max_dec_pic_buffering[0] < new_sps->sps_max_dec_pic_buffering[0])
+        return true;
 
     return false;
 }
@@ -1806,6 +1815,7 @@ UMC::Status TaskSupplier_H265::AddOneFrame(UMC::MediaData * pSource, UMC::MediaD
                 AddSlice(0, !pSource);
                 m_RA_POC = 0;
                 m_IRAPType = NAL_UT_INVALID;
+                GetView()->pDPB->IncreaseRefPicListResetCount(0); // for flushing DPB
                 NoRaslOutputFlag = 1;
                 break;
 
@@ -2373,9 +2383,21 @@ H265DecoderFrame * TaskSupplier_H265::AllocateNewFrame(const H265Slice *pSlice)
     if ((pSlice->GetSliceHeader()->nal_unit_type == NAL_UT_CODED_SLICE_CRA && NoRaslOutputFlag) ||
         pSlice->GetSliceHeader()->no_output_of_prior_pics_flag)
     {
+        Ipp32s minRefPicResetCount = 0xff; // because it is possible that there is no frames with RefPicListResetCount() equals 0 (after EOS!!)
         for (H265DecoderFrame *pCurr = GetView()->pDPB->head(); pCurr; pCurr = pCurr->future())
         {
-            if ((pCurr->isDisplayable() || (!pCurr->IsDecoded() && pCurr->IsFullFrame())) && !pCurr->wasOutputted() && !pCurr->RefPicListResetCount())
+            if ((pCurr->isDisplayable() || (!pCurr->IsDecoded() && pCurr->IsFullFrame())) && !pCurr->wasOutputted())
+            {
+                minRefPicResetCount = IPP_MIN(minRefPicResetCount, pCurr->RefPicListResetCount());
+            }
+        }
+
+        for (H265DecoderFrame *pCurr = GetView()->pDPB->head(); pCurr; pCurr = pCurr->future())
+        {
+            if (pCurr->RefPicListResetCount() > minRefPicResetCount || pCurr->wasOutputted())
+                continue;
+
+            if (pCurr->isDisplayable() || (!pCurr->IsDecoded() && pCurr->IsFullFrame()))
             {
                 pCurr->m_pic_output = false;
             }

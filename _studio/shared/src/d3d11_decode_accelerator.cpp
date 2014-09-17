@@ -375,7 +375,7 @@ bool MFXD3D11Accelerator::IsIntelCustomGUID() const
 {
     const GUID & guid = m_DecoderGuid;
     return (guid == sDXVA2_Intel_ModeVC1_D_Super || guid == sDXVA2_Intel_EagleLake_ModeH264_VLD_NoFGT || guid == sDXVA_Intel_ModeH264_VLD_MVC || guid == DXVA_Intel_ModeHEVC_VLD_MainProfile ||
-        guid == DXVA_Intel_ModeHEVC_VLD_Main10Profile);
+        guid == DXVA_Intel_ModeHEVC_VLD_Main10Profile || guid == DXVA_Intel_ModeHEVC_VLD_MainStillPictureProfile);
 }
 
 

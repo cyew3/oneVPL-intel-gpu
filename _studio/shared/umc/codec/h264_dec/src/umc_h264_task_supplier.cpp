@@ -1058,6 +1058,9 @@ bool IsNeedSPSInvalidate(const H264SeqParamSet *old_sps, const H264SeqParamSet *
     if (old_sps->max_dec_frame_buffering < new_sps->max_dec_frame_buffering)
         return true;
 
+    if (old_sps->chroma_format_idc != new_sps->chroma_format_idc)
+        return true;
+
     /*if (old_sps->frame_cropping_rect_bottom_offset != new_sps->frame_cropping_rect_bottom_offset)
         return true;
 

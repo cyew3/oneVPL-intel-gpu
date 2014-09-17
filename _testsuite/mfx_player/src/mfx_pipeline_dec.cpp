@@ -1605,11 +1605,14 @@ mfxStatus MFXDecPipeline::CreateRender()
     if (m_inParams.outFrameInfo.FourCC == MFX_FOURCC_UNKNOWN)
     {
         m_inParams.outFrameInfo.FourCC = MFX_FOURCC_YV12;
+        m_inParams.outFrameInfo.BitDepthLuma = 8;
+        m_inParams.outFrameInfo.BitDepthChroma = 8;
         if (m_components[eDEC].m_params.mfx.FrameInfo.FourCC == MFX_FOURCC_P010)
         {
             m_inParams.outFrameInfo.FourCC = MFX_FOURCC_YUV420_16;
-            m_inParams.outFrameInfo.BitDepthLuma = 10;
-            m_inParams.outFrameInfo.BitDepthChroma = 10;
+            m_inParams.outFrameInfo.BitDepthLuma = m_components[eDEC].m_params.mfx.FrameInfo.BitDepthLuma;
+            m_inParams.outFrameInfo.BitDepthChroma = m_components[eDEC].m_params.mfx.FrameInfo.BitDepthChroma;
+            m_inParams.outFrameInfo.Shift          = m_components[eDEC].m_params.mfx.FrameInfo.Shift;
         }
     }
     //crc calculation only possible in filewriter render
@@ -1640,10 +1643,15 @@ mfxStatus MFXDecPipeline::CreateRender()
             m_components[eREN].m_params.mfx.FrameInfo.FourCC = m_inParams.outFrameInfo.FourCC;
     }
 
+    FileWriterRenderInputParams renderParams;
+    renderParams.info = m_inParams.outFrameInfo;
+    renderParams.useSameBitDepthForComponents = m_inParams.isAllegroTest;
+    renderParams.use10bitOutput = m_inParams.isAllegroTest;
+
     switch (m_RenderType)
     {
     case MFX_FW_RENDER :
-        m_pRender = new MFXFileWriteRender(m_inParams.outFrameInfo, m_components[eREN].m_pSession, &sts);
+        m_pRender = new MFXFileWriteRender(renderParams, m_components[eREN].m_pSession, &sts);
         break;
     case MFX_BMP_RENDER: m_pRender = new MFXBMPRender(m_components[eREN].m_pSession, &sts); break;
 #if defined(_WIN32) || defined(_WIN64)
@@ -1811,7 +1819,7 @@ mfxStatus MFXDecPipeline::CreateRender()
     case MFX_METRIC_CHECK_RENDER:
         {
             MFXMetricComparatorRender *pRender;
-            m_pRender = pRender = new MFXMetricComparatorRender(m_inParams.outFrameInfo, m_components[eREN].m_pSession, &sts);
+            m_pRender = pRender = new MFXMetricComparatorRender(renderParams, m_components[eREN].m_pSession, &sts);
             MFX_CHECK_POINTER(m_pRender);
             if (m_metrics.empty())
             {
@@ -1829,7 +1837,7 @@ mfxStatus MFXDecPipeline::CreateRender()
         }
     case MFX_OUTLINE_RENDER:
         {
-            MFXOutlineRender *pRender = new MFXOutlineRender(m_inParams.outFrameInfo, m_components[eREN].m_pSession, &sts);
+            MFXOutlineRender *pRender = new MFXOutlineRender(renderParams, m_components[eREN].m_pSession, &sts);
             MFX_CHECK_WITH_ERR(pRender, MFX_ERR_MEMORY_ALLOC);
 
             pRender->SetDecoderVideoParamsPtr(&m_components[eDEC].m_params);
@@ -4457,6 +4465,13 @@ mfxStatus MFXDecPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI32 argc, 
             else HANDLE_FILENAME_OPTION(m_inParams.strVPPPluginGuid, VM_STRING("-vpp_plugin_guid"),    VM_STRING("MediaSDK VPP plugin GUID"))
             else HANDLE_BOOL_OPTION(m_inParams.bUseOverlay, VM_STRING("-overlay"), VM_STRING("Use overlay for rendering"));
 
+            else if (m_OptProc.Check(argv[0], VM_STRING("-allegro"), VM_STRING("allegro")))
+            {
+                m_inParams.outFrameInfo.FourCC = MFX_FOURCC_YUV420_16;
+                m_inParams.outFrameInfo.BitDepthLuma = 10;
+                m_inParams.outFrameInfo.BitDepthChroma = 10;
+                m_inParams.isAllegroTest = true;
+            }
             else
             {
                 MFX_TRACE_AT_EXIT_IF( MFX_ERR_UNSUPPORTED

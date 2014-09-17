@@ -199,15 +199,17 @@ mfxStatus MFXVideoRender::GetDevice(IHWDevice **ppDevice)
 
 //////////////////////////////////////////////////////////////////////////
 
-MFXFileWriteRender::MFXFileWriteRender(const mfxFrameInfo &outInfo, IVideoSession * core, mfxStatus *status)
+MFXFileWriteRender::MFXFileWriteRender(const FileWriterRenderInputParams &params, IVideoSession * core, mfxStatus *status)
     : MFXVideoRender(core, status)
     , m_pOpenMode(VM_STRING("wb"))
-    , m_nFourCC(outInfo.FourCC)
+    , m_nFourCC(params.info.FourCC)
+    , m_params(params)
     , m_yv12Surface()
 {
     //m_fDest = NULL;
     m_nTimesClosed = 0;
     m_bCreateNewFileOnClose = false;
+  
 }
 
 MFXFileWriteRender::~MFXFileWriteRender()
@@ -230,7 +232,7 @@ MFXFileWriteRender * MFXFileWriteRender::Clone()
 {
     mfxStatus sts = MFX_ERR_NONE;
 
-    std::auto_ptr<MFXFileWriteRender> pNew (new MFXFileWriteRender(mfxFrameInfoCpp(0,0,0,0,m_nFourCC), m_pSessionWrapper, &sts));
+    std::auto_ptr<MFXFileWriteRender> pNew (new MFXFileWriteRender(m_params, m_pSessionWrapper, &sts));
     MFX_CHECK_WITH_ERR(sts == MFX_ERR_NONE, NULL);
     MFX_CHECK_WITH_ERR(MFX_ERR_NONE == pNew->SetAutoView(m_bAutoView), NULL);
     if (m_pFile.get())
@@ -292,7 +294,8 @@ mfxStatus MFXFileWriteRender::Init(mfxVideoParam *pInit, const vm_char *pFilenam
     {
         if (m_nFourCC == 0 || m_nFourCC == MFX_FOURCC_YV12 || m_nFourCC == MFX_FOURCC_YUV420_16)
         {
-            m_VideoParams.mfx.FrameInfo.FourCC = (m_VideoParams.mfx.FrameInfo.BitDepthLuma > 8 || m_VideoParams.mfx.FrameInfo.BitDepthChroma > 8) ? MFX_FOURCC_YUV420_16 : MFX_FOURCC_YV12;
+            bool useP010 = (m_VideoParams.mfx.FrameInfo.BitDepthLuma > 8 || m_VideoParams.mfx.FrameInfo.BitDepthChroma > 8 || m_params.use10bitOutput);
+            m_VideoParams.mfx.FrameInfo.FourCC = useP010 ? MFX_FOURCC_YUV420_16 : MFX_FOURCC_YV12;
             MFX_CHECK_STS(AllocSurface(&m_VideoParams.mfx.FrameInfo, &m_yv12Surface));
             m_VideoParams.mfx.FrameInfo.FourCC = nOldCC;
         }
@@ -335,7 +338,7 @@ mfxStatus MFXFileWriteRender::RenderFrame(mfxFrameSurface1 * pSurface, mfxEncode
     if (m_nFourCC != pSurface->Info.FourCC)
     {
         //selecting converter
-        pConvertedSurface = ConvertSurface(pSurface, &m_yv12Surface);
+        pConvertedSurface = ConvertSurface(pSurface, &m_yv12Surface, &m_params);
         if (!pConvertedSurface)
             return MFX_ERR_UNKNOWN;
     }
@@ -642,7 +645,7 @@ mfxStatus MFXFileWriteRender::PutBsData(mfxBitstream *pBs)
 }
 //////////////////////////////////////////////////////////////////////////
 MFXBMPRender::MFXBMPRender(IVideoSession *core, mfxStatus *status)
-    : MFXFileWriteRender(mfxFrameInfoCpp(0,0,0,0, MFX_FOURCC_RGB4), core, status)
+    : MFXFileWriteRender(FileWriterRenderInputParams(MFX_FOURCC_RGB4), core, status)
 {
 }
 
@@ -707,8 +710,8 @@ mfxStatus MFXBMPRender::WriteSurface(mfxFrameSurface1 * pConvertedSurface)
 }
 
 //////////////////////////////////////////////////////////////////////////
-MFXMetricComparatorRender::MFXMetricComparatorRender(const mfxFrameInfo & outinfo, IVideoSession *core, mfxStatus *status)
-    : MFXFileWriteRender(outinfo, core, status)
+MFXMetricComparatorRender::MFXMetricComparatorRender(const FileWriterRenderInputParams & params, IVideoSession *core, mfxStatus *status)
+    : MFXFileWriteRender(params, core, status)
     , m_nNewFileOffset(0)
     , m_nInFileLen(0)
     , m_bAllocated()
@@ -736,7 +739,7 @@ MFXMetricComparatorRender * MFXMetricComparatorRender::Clone()
 {
     mfxStatus sts = MFX_ERR_NONE;
     
-    std::auto_ptr<MFXMetricComparatorRender> pNew (new MFXMetricComparatorRender(mfxFrameInfoCpp(0,0,0,0,m_nFourCC), m_pSessionWrapper, &sts));
+    std::auto_ptr<MFXMetricComparatorRender> pNew (new MFXMetricComparatorRender(m_params, m_pSessionWrapper, &sts));
     MFX_CHECK_WITH_ERR(sts == MFX_ERR_NONE, NULL);
 
     MFX_CHECK_WITH_ERR(MFX_ERR_NONE == pNew->SetAutoView(m_bAutoView), NULL);
@@ -1026,7 +1029,7 @@ mfxStatus MFXMetricComparatorRender::RenderFrame(mfxFrameSurface1 *surface, mfxE
         return MFX_ERR_NONE;
     }
     mfxU64 nFrameSize = 0;
-    switch(surface->Info.FourCC)
+    switch (m_nFourCC)
     {
         case MFX_FOURCC_NV12 :
         case MFX_FOURCC_YV12 :
@@ -1047,6 +1050,7 @@ mfxStatus MFXMetricComparatorRender::RenderFrame(mfxFrameSurface1 *surface, mfxE
             nFrameSize = (mfxU64)(surface->Info.CropW * surface->Info.CropH) * 2 ;
             break;
         case MFX_FOURCC_P010 :
+        case MFX_FOURCC_YUV420_16 :
             nFrameSize = (mfxU64)(surface->Info.CropW * surface->Info.CropH) * 3;
             break;
 
@@ -1211,10 +1215,92 @@ void MFXMetricComparatorRender::ReportDifference(const vm_char * metricName)
     vm_string_printf(VM_STRING("    tstVal : %.2lf\n"), m_Current.m_valTst);
 }
 
-mfxFrameSurface1* ConvertSurface(mfxFrameSurface1* pSurfaceIn, mfxFrameSurface1* pSurfaceOut)
+template<typename T_In, typename T_Out>
+void copyPlane(mfxU8 * inparam, size_t pitchIn, mfxU8 * outparam, size_t pitchOut, mfxU32 height, mfxU32 width, int shift)
+{
+    T_In * in = (T_In *)inparam;
+    T_Out * out = (T_Out *)outparam;
+
+    pitchIn >>= sizeof(T_In) == 2 ? 1 : 0;  // from byte pitch to sample
+    pitchOut >>= sizeof(T_Out) == 2 ? 1 : 0;
+
+    for (mfxU16 i = 0; i < height; i++)
+    {
+        if (shift || sizeof(T_In) != sizeof(T_Out))
+        {
+            if (shift < 0)
+            {
+                for (mfxU16 j = 0; j < width; j++)
+                {
+                    out[j] = in[j] << -shift;
+                }
+            }
+            else
+            {
+                for (mfxU16 j = 0; j < width; j++)
+                {
+                    out[j] = in[j] >> shift;
+                }
+            }
+        }
+        else
+            memcpy(out, in, sizeof(T_Out)*width);
+
+        out += pitchOut;
+        in += pitchIn;
+    }
+}
+
+template<typename T_In, typename T_Out>
+void copyChromaPlane(mfxU8 * inparam, size_t pitchIn, mfxU8 * outUparam, mfxU8 * outVparam, size_t pitchOut, mfxU32 height, mfxU32 width, int shift)
+{
+    T_In * in = (T_In *)inparam;
+    T_Out * outU = (T_Out *)outUparam;
+    T_Out * outV = (T_Out *)outVparam;
+
+    pitchIn >>= sizeof(T_In) == 2 ? 1 : 0; // from byte pitch to sample
+    pitchOut >>= sizeof(T_Out) == 2 ? 1 : 0;
+
+    for (mfxU16 i = 0; i < height; i++)
+    {
+        if (shift || sizeof(T_In) != sizeof(T_Out))
+        {
+            if (shift < 0)
+            {
+                for (mfxU16 j = 0; j < width; j++)
+                {
+                    outU[j] = in[2*j] << -shift;
+                    outV[j] = in[2*j + 1] << -shift;
+                }
+            }
+            else
+            {
+                for (mfxU16 j = 0; j < width; j++)
+                {
+                    outU[j] = in[2*j] >> shift;
+                    outV[j] = in[2*j + 1] >> shift;
+                }
+            }
+        }
+        else
+        {
+            for (mfxU16 j = 0; j < width; j++)
+            {
+                outU[j] = in[2*j];
+                outV[j] = in[2*j + 1];
+            }
+        }
+
+        outU += pitchOut;
+        outV += pitchOut;
+        in += pitchIn;
+    }
+}
+
+mfxFrameSurface1* ConvertSurface(mfxFrameSurface1* pSurfaceIn, mfxFrameSurface1* pSurfaceOut, FileWriterRenderInputParams * params)
 {
     //nothing to convert
-    if (!pSurfaceIn || !pSurfaceOut)
+    if (!pSurfaceIn || !pSurfaceOut || !params)
         return 0;
     
     mfxU32 pitchIn = pSurfaceIn->Data.PitchLow + ((mfxU32)pSurfaceIn->Data.PitchHigh << 16);
@@ -1337,84 +1423,40 @@ mfxFrameSurface1* ConvertSurface(mfxFrameSurface1* pSurfaceIn, mfxFrameSurface1*
         static_cast<Ipp32s>(pitchOut >> 1)
     };
 
-    if (pSurfaceIn->Info.FourCC == MFX_FOURCC_P010)
+    if (pSurfaceOut->Info.FourCC == MFX_FOURCC_YUV420_16)
     {
-        mfxU16 * ptrIn = (mfxU16 *)pSurfaceIn->Data.Y;
-        mfxU16 * ptrOut = (mfxU16 *)pSurfaceOut->Data.Y;
+        mfxU32 originalBDLuma = pSurfaceIn->Info.BitDepthLuma ? pSurfaceIn->Info.BitDepthLuma : 8;
+        mfxU32 originalBDChroma = pSurfaceIn->Info.BitDepthChroma ? pSurfaceIn->Info.BitDepthChroma : 8;
 
-        mfxU32 pitchIn = pSurfaceIn->Data.Pitch >> 1;
-        mfxU32 pitchOut = pSurfaceOut->Data.Pitch >> 1;
+        mfxU32 finalBitDepth = params->use10bitOutput ? 10 : IPP_MAX(originalBDLuma, originalBDChroma);
+        if (!params->useSameBitDepthForComponents)
+            finalBitDepth = originalBDLuma;
 
-        mfxU32 shift = pSurfaceIn->Info.Shift ? (16 - pSurfaceIn->Info.BitDepthLuma) : 0;
+        mfxI32 shift = pSurfaceIn->Info.Shift ? (16 - finalBitDepth) : originalBDLuma - finalBitDepth;
 
-        for (mfxU16 i = 0; i < pSurfaceIn->Info.Height; i++)
-        {
-            if (shift)
-            {
-                for (mfxU16 j = 0; j < pSurfaceIn->Info.Width; j++)
-                {
-                    ptrOut[j] = ptrIn[j] >> shift;
-                }
-            }
-            else
-                memcpy(ptrOut, ptrIn, sizeof(Ipp16u)*pSurfaceIn->Info.Width);
-            ptrOut += pitchOut;
-            ptrIn += pitchIn;
-        }
+        if (pSurfaceIn->Info.FourCC == MFX_FOURCC_NV12)
+            copyPlane<mfxU8, mfxU16>(pSurfaceIn->Data.Y, pSurfaceIn->Data.Pitch, pSurfaceOut->Data.Y, pSurfaceOut->Data.Pitch, pSurfaceIn->Info.Height, pSurfaceIn->Info.Width, shift);
+        else
+            copyPlane<mfxU16, mfxU16>(pSurfaceIn->Data.Y, pSurfaceIn->Data.Pitch, pSurfaceOut->Data.Y, pSurfaceOut->Data.Pitch, pSurfaceIn->Info.Height, pSurfaceIn->Info.Width, shift);
 
-        ptrIn = (mfxU16 *)pSurfaceIn->Data.UV;
-        mfxU16 * ptrOutU = (mfxU16 *)pSurfaceOut->Data.U;
-        mfxU16 * ptrOutV = (mfxU16 *)pSurfaceOut->Data.V;
+        if (!params->useSameBitDepthForComponents)
+            finalBitDepth = originalBDChroma;
 
-        shift = pSurfaceIn->Info.Shift ? (16 - pSurfaceIn->Info.BitDepthChroma) : 0;
+        shift = pSurfaceIn->Info.Shift ? (16 - finalBitDepth) : originalBDChroma - finalBitDepth;
 
-        for (mfxU16 i = 0; i < pSurfaceIn->Info.Height / 2; i++)
-        {
-            if (shift)
-            {
-                for (mfxU16 j = 0; j < pSurfaceIn->Info.Width / 2; j++)
-                {
-                    ptrOutU[j] = ptrIn[2*j] >> shift;
-                    ptrOutV[j] = ptrIn[2*j + 1] >> shift;
-                }
-            }
-            else
-            {
-                for (mfxU16 j = 0; j < pSurfaceIn->Info.Width / 2; j++)
-                {
-                    ptrOutU[j] = ptrIn[2*j];
-                    ptrOutV[j] = ptrIn[2*j + 1];
-                }
-            }
-
-            ptrOutU += pitchOut >> 1;
-            ptrOutV += pitchOut >> 1;
-            ptrIn += pitchIn;
-        }
+        if (pSurfaceIn->Info.FourCC == MFX_FOURCC_NV12)
+            copyChromaPlane<mfxU8, mfxU16>(pSurfaceIn->Data.UV, pSurfaceIn->Data.Pitch, pSurfaceOut->Data.U, pSurfaceOut->Data.V, pSurfaceOut->Data.Pitch >> 1, pSurfaceIn->Info.Height / 2, pSurfaceIn->Info.Width / 2, shift);
+        else
+            copyChromaPlane<mfxU16, mfxU16>(pSurfaceIn->Data.UV, pSurfaceIn->Data.Pitch, pSurfaceOut->Data.U, pSurfaceOut->Data.V, pSurfaceOut->Data.Pitch >> 1, pSurfaceIn->Info.Height / 2, pSurfaceIn->Info.Width / 2, shift);
 
         return pSurfaceOut;
     }
-
-    if (pSurfaceIn->Info.FourCC == MFX_FOURCC_NV12)
+    else if (pSurfaceOut->Info.FourCC == MFX_FOURCC_YV12)
     {
-        const Ipp8u *(pSrc[2]) = 
-        {
-            pSurfaceIn->Data.Y, 
-            pSurfaceIn->Data.U
-        };
-
-        Ipp32s pSrcStep[2] = 
-        {
-            static_cast<Ipp32s>(pitchIn), 
-            static_cast<Ipp32s>(pitchIn)
-        };
-
-        IppiSize srcSize = 
-        {
-            pSurfaceIn->Info.Width, 
-            pSurfaceIn->Info.Height
-        };
-
+        VM_ASSERT(pSurfaceIn->Info.FourCC == MFX_FOURCC_NV12);
+        const Ipp8u *(pSrc[2]) = {pSurfaceIn->Data.Y, pSurfaceIn->Data.U };
+        Ipp32s pSrcStep[2] = {static_cast<Ipp32s>(pitchIn), static_cast<Ipp32s>(pitchIn)};
+        IppiSize srcSize = { pSurfaceIn->Info.Width, pSurfaceIn->Info.Height};
         IppStatus sts = ippiYCbCr420_8u_P2P3R(pSrc[0], pSrcStep[0], pSrc[1], pSrcStep[1], pDst, pDstStep, srcSize);
 
         if (sts != ippStsNoErr)
@@ -1424,34 +1466,21 @@ mfxFrameSurface1* ConvertSurface(mfxFrameSurface1* pSurfaceIn, mfxFrameSurface1*
     }
     else // IMC3
     {
-        const Ipp8u *(pSrc[3]) = 
-        {
-            pSurfaceIn->Data.Y, 
-            pSurfaceIn->Data.U,
-            pSurfaceIn->Data.V,
-        };
+        const Ipp8u *(pSrc[3]) = { pSurfaceIn->Data.Y, pSurfaceIn->Data.U, pSurfaceIn->Data.V, };
 
-        Ipp32s pSrcStep[3] = 
-        {
-            static_cast<Ipp32s>(pitchIn), 
-            static_cast<Ipp32s>(pitchIn),
-            static_cast<Ipp32s>(pitchIn)
-        };
+        Ipp32s pSrcStep[3] = { static_cast<Ipp32s>(pitchIn), static_cast<Ipp32s>(pitchIn), static_cast<Ipp32s>(pitchIn) };
 
         IppiSize srcSize[3] = 
         {
-            {pSurfaceIn->Info.Width, pSurfaceIn->Info.Height},
-            {pSurfaceIn->Info.Width >> 1, pSurfaceIn->Info.Height >> 1},
+            {pSurfaceIn->Info.Width, pSurfaceIn->Info.Height}, {pSurfaceIn->Info.Width >> 1, pSurfaceIn->Info.Height >> 1},
             {pSurfaceIn->Info.Width >> 1, pSurfaceIn->Info.Height >> 1}
         };
 
         for (Ipp32s c = 0; c < 3; c++)
         {
             IppStatus sts = ippiCopy_8u_C1R(
-                pSrc[c],
-                pSrcStep[c],
-                pDst[c],
-                pDstStep[c],
+                pSrc[c], pSrcStep[c],
+                pDst[c], pDstStep[c],
                 srcSize[c]);
 
             if (sts != ippStsNoErr)

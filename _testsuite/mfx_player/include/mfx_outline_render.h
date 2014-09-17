@@ -20,7 +20,7 @@ class MFXOutlineRender : public MFXFileWriteRender
 {
     IMPLEMENT_CLONE(MFXOutlineRender);
 public:
-    MFXOutlineRender(const mfxFrameInfo & outinfo, IVideoSession *core, mfxStatus *status);
+    MFXOutlineRender(const FileWriterRenderInputParams & params, IVideoSession *core, mfxStatus *status);
     ~MFXOutlineRender();
 
     virtual mfxStatus Init(mfxVideoParam *par, const vm_char *pFilename = NULL);

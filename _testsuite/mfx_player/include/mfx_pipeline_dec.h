@@ -200,6 +200,8 @@ struct sCommandlineParams
   //svc target layer
   mfxExtSvcTargetLayer svc_layer;
 
+  bool isAllegroTest;
+
 #ifdef PAVP_BUILD
   // protected
   mfxU16 Protected; //Protected in mfxVideoParam
@@ -241,6 +243,8 @@ struct sCommandlineParams
       outFrameInfo.BitDepthChroma = 8;
       outFrameInfo.Shift = 0;
       outFrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
+      
+      isAllegroTest = false;
 
       nPicStruct        =  PIPELINE_PICSTRUCT_NOT_SPECIFIED;
       nSeed             = -1;

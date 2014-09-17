@@ -17,8 +17,8 @@ File Name: .h
 #include "outline_mfx_wrapper.h"
 
 
-MFXOutlineRender::MFXOutlineRender(const mfxFrameInfo & outinfo, IVideoSession *core, mfxStatus *status)
-: MFXFileWriteRender(outinfo, core, status)
+MFXOutlineRender::MFXOutlineRender(const FileWriterRenderInputParams & params, IVideoSession *core, mfxStatus *status)
+: MFXFileWriteRender(params, core, status)
 , m_checker (0)
 , m_decoderParams(0)
 , m_wasSequenceProcessed(false)
@@ -159,7 +159,7 @@ mfxStatus MFXOutlineRender::RenderFrame(mfxFrameSurface1 * surface, mfxEncodeCtr
 
     if (surface->Info.FourCC != m_yv12Surface.Info.FourCC)
     {
-        convertedSurface = ConvertSurface(surface, &m_yv12Surface);
+        convertedSurface = ConvertSurface(surface, &m_yv12Surface, &m_params);
         if (!convertedSurface)
             return MFX_ERR_UNKNOWN;
     }

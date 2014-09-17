@@ -1832,6 +1832,11 @@ bool VideoDECODEH264::IsSameVideoParam(mfxVideoParam * newPar, mfxVideoParam * o
         return false;
     }
 
+    if (newPar->mfx.FrameInfo.ChromaFormat != oldPar->mfx.FrameInfo.ChromaFormat)
+    {
+        return false;
+    }
+
     if (m_response.NumFrameActual)
     {
         if (requestNew.NumFrameMin > m_response.NumFrameActual)
