@@ -2003,14 +2003,6 @@ mfxStatus MFXDecPipeline::InitRenderParams()
         refInfoOut.CropH    = m_extDecVideoProcessing->Out.CropH;
     }
 
-    if (refInfoOut.FourCC == MFX_FOURCC_P010 || refInfoOut.FourCC == MFX_FOURCC_P210)
-    {
-        refInfoOut.BitDepthLuma = refInfoOut.BitDepthChroma = 10;
-    }
-    else if (refInfoOut.FourCC == MFX_FOURCC_NV16)
-    {
-        refInfoOut.BitDepthLuma = refInfoOut.BitDepthChroma = 8;
-    }
     m_components[eREN].m_extParams.merge
         ( m_components[eDEC].m_extParams.begin()
         , m_components[eDEC].m_extParams.end());
