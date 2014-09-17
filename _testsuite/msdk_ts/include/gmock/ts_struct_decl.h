@@ -628,3 +628,12 @@ STRUCT(mfxExtCodingOption3,
     FIELD_T(mfxU16      , WinBRCSize)
     FIELD_T(mfxU16*     , reserved)
 )
+
+STRUCT(mfxExtLAControl,
+    FIELD_S(mfxExtBuffer, Header       )
+    FIELD_T(mfxU16      , LookAheadDepth)
+    FIELD_T(mfxU16      , DependencyDepth)
+    FIELD_T(mfxU16      , DownScaleFactor)
+    FIELD_T(mfxU16      , NumOutStream)
+
+)

@@ -183,6 +183,7 @@
     <ClInclude Include="include\gmock\ts_common.h" />
     <ClInclude Include="include\gmock\ts_alloc.h" />
     <ClInclude Include="include\gmock\ts_decoder.h" />
+    <ClInclude Include="include\gmock\ts_enc.h" />
     <ClInclude Include="include\gmock\ts_encoder.h" />
     <ClInclude Include="include\gmock\ts_ext_buffers.h" />
     <ClInclude Include="include\gmock\ts_ext_buffers_decl.h" />
@@ -217,6 +218,7 @@
     <ClCompile Include="src\gmock\test_suites\fei_encode_close.cpp" />
     <ClCompile Include="src\gmock\test_suites\fei_encode_encode_frame_async.cpp" />
     <ClCompile Include="src\gmock\test_suites\hevce_spspps_get.cpp" />
+    <ClCompile Include="src\gmock\test_suites\lookahead_1N.cpp" />
     <ClCompile Include="src\gmock\test_suites\mpeg2d_thomson_timestamp.cpp" />
     <ClCompile Include="src\gmock\test_suites\preenc_init.cpp" />
     <ClCompile Include="src\gmock\test_suites\fei_encode_init.cpp" />
@@ -252,6 +254,7 @@
     <ClCompile Include="src\gmock\ts_bitstream.cpp" />
     <ClCompile Include="src\gmock\ts_common.cpp" />
     <ClCompile Include="src\gmock\ts_decoder.cpp" />
+    <ClCompile Include="src\gmock\ts_enc.cpp" />
     <ClCompile Include="src\gmock\ts_encoder.cpp" />
     <ClCompile Include="src\gmock\ts_fei.cpp" />
     <ClCompile Include="src\gmock\ts_plugin.cpp" />

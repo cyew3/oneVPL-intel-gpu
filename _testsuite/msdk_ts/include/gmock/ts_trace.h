@@ -8,6 +8,7 @@
 #include "mfxplugin.h"
 #include "mfxcamera.h"
 #include "mfxfei.h"
+#include "mfxla.h"
 #include <iostream>
 
 #define TYPEDEF_MEMBER(base, member, name) typedef std::remove_reference<decltype(((base*)0)->member)>::type name;
