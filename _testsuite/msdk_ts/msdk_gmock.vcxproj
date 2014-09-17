@@ -200,6 +200,7 @@
     <ClInclude Include="include\test_sample_allocator.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="avce_skipframes.cpp" />
     <ClCompile Include="src\gmock\test_suites\avcd_decorder.cpp" />
     <ClCompile Include="src\gmock\test_suites\avce_max_bins.cpp" />
     <ClCompile Include="src\gmock\test_suites\avce_max_slice_size.cpp" />
