@@ -36,6 +36,10 @@ IppStatus cc_P010_to_NV12( mfxFrameData* inData,  mfxFrameInfo* inInfo,
                            mfxFrameData* outData, mfxFrameInfo* outInfo,
                            mfxFrameData* yv12Data);
 
+IppStatus cc_P210_to_NV12( mfxFrameData* inData,  mfxFrameInfo* inInfo,
+                           mfxFrameData* outData, mfxFrameInfo* outInfo,
+                           mfxFrameData* yv12Data);
+
 #if defined(_WIN32) || defined(_WIN64)
 IppStatus cc_P010_to_A2RGB10_avx2( mfxFrameData* inData,  mfxFrameInfo* inInfo,
                                    mfxFrameData* outData, mfxFrameInfo* outInfo);
@@ -277,6 +281,9 @@ mfxStatus MFXVideoVPPColorSpaceConversion::RunFrameVPP(mfxFrameSurface1 *in,
     case MFX_FOURCC_P010:
       ippSts = cc_P210_to_P010(inData, inInfo, outData, outInfo);
       break;
+    case MFX_FOURCC_NV12:
+      ippSts = cc_P210_to_NV12(inData, inInfo, outData, outInfo, &m_yv12Data);
+      break;
     default:
       return MFX_ERR_INVALID_VIDEO_PARAM;
     }
@@ -471,7 +478,8 @@ mfxStatus MFXVideoVPPColorSpaceConversion::GetBufferSize( mfxU32* pBufferSize )
       *pBufferSize = 3*(m_errPrtctState.Out.Width * m_errPrtctState.Out.Height) >> 1;
   }
 
-  if(MFX_FOURCC_P010 == m_errPrtctState.In.FourCC)
+  if(MFX_FOURCC_P010 == m_errPrtctState.In.FourCC ||
+     MFX_FOURCC_P210 == m_errPrtctState.In.FourCC)
   {
       /// Need for shift operation
       *pBufferSize = 3*(m_errPrtctState.In.Width * m_errPrtctState.In.Height);
@@ -507,7 +515,8 @@ mfxStatus MFXVideoVPPColorSpaceConversion::SetBuffer( mfxU8* pBuffer )
       m_yv12Data.Pitch = m_errPrtctState.Out.Width;
   }
 
-  if(MFX_FOURCC_P010 == m_errPrtctState.In.FourCC)
+  if(MFX_FOURCC_P010 == m_errPrtctState.In.FourCC ||
+     MFX_FOURCC_P210 == m_errPrtctState.In.FourCC )
   {
       MFX_CHECK_NULL_PTR1(pBuffer);
 
@@ -715,6 +724,44 @@ IppStatus cc_P010_to_NV12( mfxFrameData* inData,  mfxFrameInfo* inInfo,
   return sts;
 
 } // IppStatus cc_P010_to_NV12( mfxFrameData* inData,  mfxFrameInfo* inInfo,...)
+
+IppStatus cc_P210_to_NV12( mfxFrameData* inData,  mfxFrameInfo* inInfo,
+                           mfxFrameData* outData, mfxFrameInfo* outInfo,
+                            mfxFrameData* yv12Data)
+{
+  IppStatus sts = ippStsNoErr;
+  IppiSize  roiSize = {0, 0};
+
+  // cropping was removed
+  outInfo;
+
+  VPP_GET_REAL_WIDTH(inInfo, roiSize.width);
+  VPP_GET_REAL_HEIGHT(inInfo, roiSize.height);
+
+  if(MFX_PICSTRUCT_PROGRESSIVE & inInfo->PicStruct)
+  {
+      /* Initial implementation w/o rounding
+       * TODO: add rounding to match reference algorithm
+       */
+      sts = ippiRShiftC_16u_C1R((const Ipp16u *)inData->Y, inData->Pitch, 2, (Ipp16u *)yv12Data->Y, yv12Data->Pitch, roiSize);
+      IPP_CHECK_STS( sts );
+      sts = ippiConvert_16u8u_C1R((const Ipp16u *)yv12Data->Y,  yv12Data->Pitch, outData->Y, outData->Pitch, roiSize);
+      IPP_CHECK_STS( sts );
+
+      roiSize.height >>= 1;
+      sts = ippiRShiftC_16u_C1R((const Ipp16u *)inData->UV, inData->Pitch * 2, 2, (Ipp16u *)yv12Data->UV, yv12Data->Pitch, roiSize);
+      IPP_CHECK_STS( sts );
+      sts = ippiConvert_16u8u_C1R((const Ipp16u *)yv12Data->UV,  yv12Data->Pitch, outData->UV, outData->Pitch, roiSize);
+      IPP_CHECK_STS( sts );
+  }
+  else
+  {
+     /* Interlaced content is not supported... yet. */
+     return ippStsErr;
+  }
+
+  return sts;
+} // IppStatus cc_P210_to_NV12( mfxFrameData* inData,  mfxFrameInfo* inInfo,...)
 
 IppStatus cc_P210_to_P010( mfxFrameData* inData,  mfxFrameInfo* inInfo,
                            mfxFrameData* outData, mfxFrameInfo* /*outInfo*/)
