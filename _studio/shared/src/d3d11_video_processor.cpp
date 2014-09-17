@@ -1696,7 +1696,10 @@ mfxStatus D3D11VideoProcessor::Execute(mfxExecuteParams *pParams)
 
             fourCC = inInfo->FourCC;
 
-            // [6.1.7] Set YUV Range Param
+            /* [6.1.7] Set YUV Range Param
+            // Full range is implemented only in 15.36 driver in DX11 and has a brightness problem
+            // Therefore don't set flag
+            
             VPE_VPREP_YUV_RANGE_PARAM yuvRangeParam;
             yuvRangeParam.bFullRangeEnabled = 1;
             if(VPE_GUID_INTERFACE_V2 == m_iface.guid){
@@ -1719,6 +1722,7 @@ mfxStatus D3D11VideoProcessor::Execute(mfxExecuteParams *pParams)
                     &iFunc);
                 CHECK_HRES(hRes);
             }
+            */
         }
 
         D3D11_VIDEO_PROCESSOR_INPUT_VIEW_DESC inputDesc;
