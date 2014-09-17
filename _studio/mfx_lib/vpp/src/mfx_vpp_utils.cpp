@@ -1404,6 +1404,7 @@ mfxStatus CheckFrameInfo(mfxFrameInfo* info, mfxU32 request)
         case MFX_FOURCC_YUV422V:
         case MFX_FOURCC_YUV444:
         case MFX_FOURCC_NV16:
+        case MFX_FOURCC_P210:
             if (VPP_OUT == request)
                 return MFX_ERR_INVALID_VIDEO_PARAM;
             break;
