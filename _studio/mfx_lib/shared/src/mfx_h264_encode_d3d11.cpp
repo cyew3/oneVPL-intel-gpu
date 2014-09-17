@@ -388,7 +388,7 @@ mfxStatus D3D11Encoder::Execute(
     mfxU32  skipMode = m_skipMode;
     mfxExtCodingOption2* ctrlOpt2 = GetExtBuffer(task.m_ctrl, MFX_EXTBUFF_CODING_OPTION2);
 
-    if (ctrlOpt2 && ctrlOpt2->SkipFrame <= MFX_SKIPFRAME_INSERT_NOTHING)
+    if (ctrlOpt2 && ctrlOpt2->SkipFrame <= MFX_SKIPFRAME_BRC_ONLY)
         skipMode = ctrlOpt2->SkipFrame;
     
     if (skipMode == MFX_SKIPFRAME_BRC_ONLY)
