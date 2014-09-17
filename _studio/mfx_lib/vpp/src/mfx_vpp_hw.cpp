@@ -1408,9 +1408,14 @@ mfxStatus  VideoVPPHW::Init(
     MFX_CHECK_STS(sts);
 
     hwType = m_pCore->GetHWType();
-    /* Any operations with P010 are SW-only so far,
+    /* Any operations with P010, P210 and NV16 are SW-only so far,
        except p010->nv12 conversion that is supported on BDW */
-    if ((MFX_FOURCC_P010 == par->vpp.In.FourCC && MFX_HW_BDW != hwType) || MFX_FOURCC_P010 == par->vpp.Out.FourCC)
+    if ((MFX_FOURCC_P010 == par->vpp.In.FourCC  && MFX_HW_BDW != hwType) ||
+         MFX_FOURCC_P010 == par->vpp.Out.FourCC ||
+         MFX_FOURCC_P210 == par->vpp.In.FourCC  ||
+         MFX_FOURCC_P210 == par->vpp.Out.FourCC ||
+         MFX_FOURCC_NV16 == par->vpp.In.FourCC  ||
+         MFX_FOURCC_NV16 == par->vpp.Out.FourCC)
     {
         return MFX_WRN_PARTIAL_ACCELERATION;
     }
