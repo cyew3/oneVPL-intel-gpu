@@ -19,6 +19,12 @@ public:
     mfxU32 mh = s.Info.Height / 10;
     mfxU32 mw = s.Info.Width / 6 * (1 + !(m_c++ % 10));
 
+    if (m_c % 100 < 4)
+    {
+        mh = s.Info.Height;
+        mw = s.Info.Width/4;
+    }
+
     for(mfxU32 h = 0; h < s.Info.Height; h++)
     {
         for(mfxU32 w = 0; w < s.Info.Width; w++)
@@ -49,7 +55,7 @@ public:
     BitstreamChecker()
         : tsParserH264AU(BS_H264_INIT_MODE_CABAC) 
     {
-        set_trace_level(BS_H264_TRACE_LEVEL_AU);
+        set_trace_level(0);
     }
     mfxStatus ProcessBitstream(mfxBitstream& bs, mfxU32 nFrames);
 };
@@ -62,7 +68,8 @@ mfxStatus BitstreamChecker::ProcessBitstream(mfxBitstream& bs, mfxU32 nFrames)
 {
     mfxU32 checked = 0;
 
-    SetBuffer(bs);
+    if (bs.Data)
+        SetBuffer(bs);
 
     while(checked++ < nFrames)
     {
@@ -71,6 +78,7 @@ mfxStatus BitstreamChecker::ProcessBitstream(mfxBitstream& bs, mfxU32 nFrames)
         mfxU64 RawMbBits = 0;
         mfxU64 PicSizeInMbs = 0;
         mfxU32 max_bits_per_mb_denom = 1;
+        mfxU32 nSlice = 0;
 
         UnitType& hdr = ParseOrDie();
 
@@ -88,9 +96,11 @@ mfxStatus BitstreamChecker::ProcessBitstream(mfxBitstream& bs, mfxU32 nFrames)
             mfxU16 BitDepthC = 8 + sps.bit_depth_chroma_minus8;
 
             BinCountsInNALunits   += s.BinCount;
-            NumBytesInVclNALunits += nalu->NumBytesInNALunit;
+            NumBytesInVclNALunits += nalu->NumBytesInNALunit - 3 - (nalu == hdr.NALU);
             RawMbBits = 256 * BitDepthY + 2 * MbWidthC * MbHeightC * BitDepthC;
             PicSizeInMbs = (sps.pic_width_in_mbs_minus1 + 1) * (( 2 - sps.frame_mbs_only_flag ) * (sps.pic_height_in_map_units_minus1 + 1) / ( 1 + s.field_pic_flag ));
+
+            g_tsLog << "Slice #" << nSlice++ << ": BinCount = " << s.BinCount << "; NumBytesInNALunit = " << nalu->NumBytesInNALunit << ";\n";
 
             if(sps.vui_parameters_present_flag && sps.vui->bitstream_restriction_flag)
             {
@@ -110,6 +120,9 @@ mfxStatus BitstreamChecker::ProcessBitstream(mfxBitstream& bs, mfxU32 nFrames)
             }
         }
         EXPECT_LE( BinCountsInNALunits, 32 * NumBytesInVclNALunits / 3 + (RawMbBits*PicSizeInMbs) / 32 );
+        g_tsLog << "BinCountsInNALunits <= 32 * NumBytesInVclNALunits / 3 + (RawMbBits*PicSizeInMbs) / 32  : "
+                <<  BinCountsInNALunits << " <= 32 * " << NumBytesInVclNALunits << " / 3 + (" << RawMbBits << "*" << PicSizeInMbs << ") / 32  : "
+                <<  BinCountsInNALunits << " <= " << (32 * NumBytesInVclNALunits / 3 + (RawMbBits*PicSizeInMbs) / 32) << "\n";
     }
     bs.DataLength = 0;
 

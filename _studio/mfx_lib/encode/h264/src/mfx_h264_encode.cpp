@@ -9275,7 +9275,7 @@ re_encode_slice:
                     Ipp64u nBytes = (dst->GetDataSize() - oldsize);
                     Ipp64u nBytesAvailable = (dst->GetBufferSize() - dst->GetDataSize());
 
-                    while( AvgBinCountPerSlice > ((nBytes * 32 / 3) + (RawMbBits*PicSizeInMbs) / 32 / core_enc->m_info.num_slices) 
+                    while( AvgBinCountPerSlice > (((nBytes - 3 - !slice) * 32 / 3) + (RawMbBits*PicSizeInMbs) / 32 / core_enc->m_info.num_slices) 
                         && nBytesAvailable > 3)
                     {
                         //cabac_zero_word
