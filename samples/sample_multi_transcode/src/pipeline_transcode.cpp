@@ -124,6 +124,7 @@ CTranscodingPipeline::CTranscodingPipeline():
     MSDK_ZERO_MEMORY(m_PluginOpaqueAlloc);
     MSDK_ZERO_MEMORY(m_PreEncOpaqueAlloc);
     MSDK_ZERO_MEMORY(m_ExtLAControl);
+    MSDK_ZERO_MEMORY(m_CodingOption2);
 
     m_MVCSeqDesc.Header.BufferId = MFX_EXTBUFF_MVC_SEQ_DESC;
     m_MVCSeqDesc.Header.BufferSz = sizeof(mfxExtMVCSeqDesc);
@@ -139,6 +140,9 @@ CTranscodingPipeline::CTranscodingPipeline():
         m_DecOpaqueAlloc.Header.BufferSz = m_PluginOpaqueAlloc.Header.BufferSz =
         m_PreEncOpaqueAlloc.Header.BufferSz =
         sizeof(mfxExtOpaqueSurfaceAlloc);
+
+    m_CodingOption2.Header.BufferId = MFX_EXTBUFF_CODING_OPTION2;
+    m_CodingOption2.Header.BufferSz = sizeof(m_CodingOption2);
 
 } //CTranscodingPipeline::CTranscodingPipeline()
 
@@ -1286,6 +1290,12 @@ MFX_IOPATTERN_IN_VIDEO_MEMORY : MFX_IOPATTERN_IN_SYSTEM_MEMORY);
     }
 
     // configure and attach external parameters
+    if (pInParams->nMaxSliceSize)
+    {
+        m_CodingOption2.MaxSliceSize = pInParams->nMaxSliceSize;
+        m_EncExtParams.push_back((mfxExtBuffer *)&m_CodingOption2);
+    }
+
     if (m_bUseOpaqueMemory)
         m_EncExtParams.push_back((mfxExtBuffer *)&m_EncOpaqueAlloc);
 

@@ -109,6 +109,8 @@ void TranscodingSample::PrintHelp(const msdk_char *strAppName, const msdk_char *
     msdk_printf(MSDK_STRING("  -u 1|4|7      Target usage: quality (1), balanced (4) or speed (7); valid for H.264, MPEG2 and MVC encoders. Default is balanced\n"));
     msdk_printf(MSDK_STRING("  -q <quality>  Quality parameter for JPEG encoder; in range [1,100], 100 is the best quality\n"));
     msdk_printf(MSDK_STRING("  -l numSlices  Number of slices for encoder; default value 0 \n"));
+    msdk_printf(MSDK_STRING("  -mss maxSliceSize \n"));
+    msdk_printf(MSDK_STRING("                Maximum slice size in bytes. Supported only with -hw and h264 codec. This option is not compatible with -l option.\n"));
     msdk_printf(MSDK_STRING("  -la           Use the look ahead bitrate control algorithm (LA BRC) for H.264 encoder. Supported only with -hw option on 4th Generation Intel Core processors. \n"));
     msdk_printf(MSDK_STRING("  -lad depth    Depth parameter for the LA BRC, the number of frames to be analyzed before encoding. In range [10,100]. \n"));
     msdk_printf(MSDK_STRING("\n"));
@@ -621,6 +623,16 @@ mfxStatus CmdProcessor::ParseParamsForOneSession(mfxU32 argc, msdk_char *argv[])
                 return MFX_ERR_UNSUPPORTED;
             }
         }
+        else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-mss")))
+        {
+            VAL_CHECK(i+1 == argc, i, argv[i]);
+            i++;
+            if (MFX_ERR_NONE != msdk_opt_read(argv[i], InputParams.nMaxSliceSize))
+            {
+                PrintHelp(NULL, MSDK_STRING("maxSliceSize \"%s\" is invalid"), argv[i]);
+                return MFX_ERR_UNSUPPORTED;
+            }
+        }
         else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-async")))
         {
             VAL_CHECK(i+1 == argc, i, argv[i]);
@@ -879,6 +891,21 @@ mfxStatus CmdProcessor::VerifyAndCorrectInputParams(TranscodingSample::sInputPar
     if (InputParams.nLADepth && (InputParams.nLADepth < 10 || InputParams.nLADepth > 100))
     {
         PrintHelp(NULL, MSDK_STRING("Unsupported value of -lad parameter, must be in range [10, 100]!"));
+        return MFX_ERR_UNSUPPORTED;
+    }
+
+    if ((InputParams.nMaxSliceSize) && !(InputParams.libType & MFX_IMPL_HARDWARE_ANY))
+    {
+        PrintHelp(NULL, MSDK_STRING("MaxSliceSize option is supported only with -hw option!"));
+        return MFX_ERR_UNSUPPORTED;
+    }
+    if ((InputParams.nMaxSliceSize) && (InputParams.nSlices))
+    {
+        PrintHelp(NULL, MSDK_STRING("-mss and -l options are not compatible!"));
+    }
+    if ((InputParams.nMaxSliceSize) && (InputParams.EncodeId != MFX_CODEC_AVC))
+    {
+        PrintHelp(NULL, MSDK_STRING("MaxSliceSize option is supported only with H.264 encoder!"));
         return MFX_ERR_UNSUPPORTED;
     }
 

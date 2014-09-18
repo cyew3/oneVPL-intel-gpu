@@ -93,6 +93,7 @@ namespace TranscodingSample
         mfxU32 MaxFrameNumber; // maximum frames fro transcoding
 
         mfxU16 nSlices; // number of slices for encoder initialization
+        mfxU16 nMaxSliceSize; //maximum size of slice
 
         // MVC Specific Options
         bool   bIsMVC; // true if Multi-View-Codec is in use
@@ -405,6 +406,8 @@ namespace TranscodingSample
         bool m_bOwnMVCSeqDescMemory; // true if the pipeline owns memory allocated for MVCSeqDesc structure fields
 
         mfxExtLAControl          m_ExtLAControl;
+        // for setting MaxSliceSize
+        mfxExtCodingOption2      m_CodingOption2;
 
         // for opaque memory
         mfxExtOpaqueSurfaceAlloc m_EncOpaqueAlloc;
