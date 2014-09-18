@@ -29,7 +29,7 @@ list( APPEND vdecs
   )
 
 list( APPEND vencs
-  h264 mpeg2 vc1 mjpeg mvc svc vp8
+  h264 mpeg2 vc1 mjpeg mvc svc
   )
 
 foreach( dec ${vdecs} )
@@ -159,7 +159,6 @@ foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/shared/src )
     ${prefix}/mfx_common_int.cpp
     ${prefix}/mfx_enc_common.cpp
     ${prefix}/mfx_h264_enc_common.cpp
-    ${prefix}/mfx_vp8_enc_common.cpp
     ${prefix}/mfx_mpeg2_dec_common.cpp
     ${prefix}/mfx_vc1_dec_common.cpp
     ${prefix}/mfx_vc1_enc_common.cpp
@@ -176,7 +175,6 @@ foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/shared/src )
   list( APPEND sources.plus
     ${prefix}/mfx_ddi_enc_dump.cpp
     ${prefix}/mfx_h264_enc_common_hw.cpp
-    ${prefix}/mfx_vp8_enc_common_hw.cpp
     ${prefix}/mfx_h264_encode_vaapi.cpp
     ${prefix}/mfx_h264_encode_factory.cpp
     ${prefix}/mfx_mpeg2_enc_common_hw.cpp
@@ -283,7 +281,6 @@ foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/shared/src )
   list( APPEND sources
     ${prefix}/mfx_ddi_enc_dump.cpp
     ${prefix}/mfx_h264_enc_common_hw.cpp
-    ${prefix}/mfx_vp8_enc_common_hw.cpp
     ${prefix}/mfx_h264_encode_vaapi.cpp
     ${prefix}/mfx_h264_encode_factory.cpp
     ${prefix}/mfx_mpeg2_enc_common_hw.cpp
