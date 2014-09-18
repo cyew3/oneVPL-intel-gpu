@@ -345,7 +345,7 @@ mfxStatus MFX_H263E_Plugin::Init(mfxVideoParam *par)
     if (!y) {
       return MFX_ERR_MEMORY_ALLOC;
     }
-    memcpy(&m_dst, &m_video.mfx.FrameInfo, sizeof(mfxFrameInfo));
+    memcpy(&m_dst.Info, &m_video.mfx.FrameInfo, sizeof(mfxFrameInfo));
     m_dst.Info.FourCC = MFX_FOURCC_YV12;
     m_dst.Data.Y = y;
     m_dst.Data.U = y + m_video.mfx.FrameInfo.Width*m_video.mfx.FrameInfo.Height;
