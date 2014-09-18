@@ -258,13 +258,6 @@
     <ClCompile Include="mvc\src\mfx_mvc_encode_hw.cpp" />
     <ClCompile Include="svc\src\mfx_svc_encode_hw.cpp" />
     <ClCompile Include="svc\src\mfx_svc_encode_simulcast_over_avc.cpp" />
-    <ClCompile Include="vp8\src\mfx_vp8_encode_ddi_hw.cpp" />
-    <ClCompile Include="vp8\src\mfx_vp8_encode_hw.cpp" />
-    <ClCompile Include="vp8\src\mfx_vp8_encode_hybrid_bse.cpp" />
-    <ClCompile Include="vp8\src\mfx_vp8_encode_hybrid_hw.cpp" />
-    <ClCompile Include="vp8\src\mfx_vp8_encode_hybrid_pak.cpp" />
-    <ClCompile Include="vp8\src\mfx_vp8_encode_utils_hw.cpp" />
-    <ClCompile Include="vp8\src\mfx_vp8_encode_utils_hybrid_hw.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="h264\include\mfx_h264_encode_cm.h" />
@@ -282,13 +275,6 @@
     <ClInclude Include="mpeg2\include\mfx_mpeg2_encode_hybrid_hw.h" />
     <ClInclude Include="mpeg2\include\mfx_mpeg2_encode_utils_hw.h" />
     <ClInclude Include="svc\include\mfx_svc_encode_simulcast_over_avc.h" />
-    <ClInclude Include="vp8\include\mfx_vp8_encode_hybrid_pak.h" />
-    <ClInclude Include="vp8\include\mfx_vp8_encode_ddi_hw.h" />
-    <ClInclude Include="vp8\include\mfx_vp8_encode_hw.h" />
-    <ClInclude Include="vp8\include\mfx_vp8_encode_hybrid_bse.h" />
-    <ClInclude Include="vp8\include\mfx_vp8_encode_hybrid_hw.h" />
-    <ClInclude Include="vp8\include\mfx_vp8_encode_utils_hw.h" />
-    <ClInclude Include="vp8\include\mfx_vp8_encode_utils_hybrid_hw.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

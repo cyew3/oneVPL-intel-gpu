@@ -38,9 +38,6 @@
     <ClCompile Include="src\mfx_mpeg2_encode_factory.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\mfx_vp8_enc_common_hw.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\encoder_ddi.hpp">
@@ -74,9 +71,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\mfx_mpeg2_encode_interface.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="include\mfx_vp8_enc_common_hw.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
