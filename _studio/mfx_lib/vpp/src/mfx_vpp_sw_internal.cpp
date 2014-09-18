@@ -989,7 +989,7 @@ mfxStatus GetExternalFramesCount(mfxVideoParam* pParam,
                     if (pParam->ExtParam[i]->BufferId == MFX_EXTBUFF_VPP_COMPOSITE)
                     {
                         mfxExtVPPComposite* extComp = (mfxExtVPPComposite*) pParam->ExtParam[i];
-                        if (extComp->NumInputStream > 64)
+                        if (extComp->NumInputStream > MAX_NUM_OF_VPP_COMPOSITE_STREAMS)
                         {
                             return MFX_ERR_INVALID_VIDEO_PARAM;
                         }

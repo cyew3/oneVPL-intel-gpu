@@ -30,6 +30,13 @@
 // (DN, DTL, ProcAmp, Gamut, TCC, STE)
 #define MAX_NUM_OF_VPP_CONFIG_FILTERS (6)
 
+// Max samples number for composition filter
+#if defined(_WIN32) || defined(_WIN64)
+    #define MAX_NUM_OF_VPP_COMPOSITE_STREAMS (17)
+#else
+    #define MAX_NUM_OF_VPP_COMPOSITE_STREAMS (64)
+#endif
+
 // (DO_NOT_USE, DO_USE) + (MAX_NUM_OF_VPP_CONFIG_FILTERS)
 #define MAX_NUM_OF_VPP_EXT_PARAM      (2 + MAX_NUM_OF_VPP_CONFIG_FILTERS)
 
