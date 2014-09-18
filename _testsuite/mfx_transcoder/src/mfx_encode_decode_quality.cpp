@@ -30,7 +30,7 @@ EncodeDecodeQuality::EncodeDecodeQuality( ComponentParams &refParams
 
     *status = MFX_ERR_NONE;
     //decoded frame would be in yv12
-    m_pComparator = new MFXMetricComparatorRender(mfxFrameInfoCpp(), refParams.m_pSession, status);
+    m_pComparator = new MFXMetricComparatorRender(FileWriterRenderInputParams(), refParams.m_pSession, status);
     if (NULL == m_pComparator)
     {
         *status = MFX_ERR_MEMORY_ALLOC;
