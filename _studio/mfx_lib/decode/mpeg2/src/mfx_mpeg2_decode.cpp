@@ -3833,6 +3833,7 @@ mfxStatus VideoDECODEMPEG2::ConstructFrame(mfxBitstream *in, mfxBitstream *out, 
                if (m_InitW >  Width || m_InitH > Height)
               {
                     m_resizing = true;  
+                    return MFX_WRN_VIDEO_PARAM_CHANGED;
               }
             }
 
@@ -3943,7 +3944,7 @@ mfxStatus VideoDECODEMPEG2::ConstructFrame(mfxBitstream *in, mfxBitstream *out, 
             if(m_resizing)
             {          
                 m_resizing = false; 
-                return MFX_WRN_VIDEO_PARAM_CHANGED;
+                //return MFX_WRN_VIDEO_PARAM_CHANGED;
             }
 
             return MFX_ERR_MORE_DATA;
