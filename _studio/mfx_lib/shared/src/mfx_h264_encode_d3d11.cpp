@@ -104,6 +104,8 @@ mfxStatus D3D11Encoder::CreateAuxilliaryDevice(
 
 mfxStatus D3D11Encoder::CreateAccelerationService(MfxVideoParam const & par)
 {
+    D3D11_VIDEO_DECODER_EXTENSION decoderExtParam = {};
+    HRESULT hRes;
     mfxExtCodingOption2 const * extCO2 = GetExtBuffer(par);
 
     if (extCO2)
@@ -128,6 +130,20 @@ mfxStatus D3D11Encoder::CreateAccelerationService(MfxVideoParam const & par)
 
         MFX_CHECK_STS(sts);
     }
+
+    decoderExtParam.Function = ENCODE_ENC_CTRL_CAPS_ID;
+    decoderExtParam.pPrivateOutputData = &m_capsQuery;
+    decoderExtParam.PrivateOutputDataSize = sizeof(m_capsQuery);
+
+    hRes = DecoderExtension(m_pVideoContext, m_pDecoder, decoderExtParam);
+    CHECK_HRES(hRes);
+
+    decoderExtParam.Function = ENCODE_ENC_CTRL_GET_ID;
+    decoderExtParam.pPrivateOutputData = &m_capsGet;
+    decoderExtParam.PrivateOutputDataSize = sizeof(m_capsGet);
+
+    hRes = DecoderExtension(m_pVideoContext, m_pDecoder, decoderExtParam);
+    CHECK_HRES(hRes);
 
     mfxU16 maxNumSlice = GetMaxNumSlices(par);
 
@@ -299,37 +315,38 @@ mfxStatus D3D11Encoder::QueryMbPerSec(mfxVideoParam const & par, mfxU32 (&mbPerS
     return MFX_ERR_NONE;
 }
 
-//mfxStatus D3D11Encoder::QueryEncCtrlCaps(ENCODE_ENC_CTRL_CAPS& caps)
-//{
-//    MFX_CHECK_WITH_ASSERT(m_auxDevice.get(), MFX_ERR_NOT_INITIALIZED);
-//    caps = m_capsQuery;
-//    return MFX_ERR_NONE;
-//}
+mfxStatus D3D11Encoder::QueryEncCtrlCaps(ENCODE_ENC_CTRL_CAPS& caps)
+{
+    MFX_CHECK_WITH_ASSERT(m_pDecoder, MFX_ERR_NOT_INITIALIZED);
 
-//mfxStatus D3D11Encoder::SetEncCtrlCaps(
-//    ENCODE_ENC_CTRL_CAPS const & caps)
-//{
-//    MFX_CHECK_WITH_ASSERT(m_auxDevice.get(), MFX_ERR_NOT_INITIALIZED);
-//
-//    m_capsGet = caps; // DDI spec: "The application should use the same structure
-//                      // returned in a previous ENCODE_ENC_CTRL_GET_ID command."
-//
-//    HRESULT hr = m_auxDevice->Execute(ENCODE_ENC_CTRL_SET_ID, m_capsGet, (void *)0);
-//    MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
-//    return MFX_ERR_NONE;
-//}
+    caps = m_capsQuery;
+    return MFX_ERR_NONE;
+}
 
-//mfxStatus D3D11Encoder::QueryMbDataLayout(
-//    ENCODE_SET_SEQUENCE_PARAMETERS_H264 &sps,
-//    ENCODE_MBDATA_LAYOUT& layout)
-//{
-//    MFX_CHECK_WITH_ASSERT(m_auxDevice.get(), MFX_ERR_NOT_INITIALIZED);
-//
-//    HRESULT hr = m_auxDevice->Execute(MBDATA_LAYOUT_ID, sps, layout);
-//    MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
-//    m_layout = layout;
-//    return MFX_ERR_NONE;
-//}
+mfxStatus D3D11Encoder::GetEncCtrlCaps(ENCODE_ENC_CTRL_CAPS& caps)
+{
+    MFX_CHECK_WITH_ASSERT(m_pDecoder, MFX_ERR_NOT_INITIALIZED);
+
+    caps = m_capsGet;
+    return MFX_ERR_NONE;
+}
+
+mfxStatus D3D11Encoder::SetEncCtrlCaps(ENCODE_ENC_CTRL_CAPS const & caps)
+{
+    MFX_CHECK_WITH_ASSERT(m_pDecoder, MFX_ERR_NOT_INITIALIZED);
+
+    m_capsGet = caps; // DDI spec: "The application should use the same structure
+                      // returned in a previous ENCODE_ENC_CTRL_GET_ID command."
+
+    D3D11_VIDEO_DECODER_EXTENSION decoderExtParam = {};
+    decoderExtParam.Function = ENCODE_ENC_CTRL_SET_ID;
+    decoderExtParam.pPrivateInputData = &m_capsGet;
+    decoderExtParam.PrivateInputDataSize = sizeof(m_capsGet);
+
+    HRESULT hRes = DecoderExtension(m_pVideoContext, m_pDecoder, decoderExtParam);
+    CHECK_HRES(hRes);
+    return MFX_ERR_NONE;
+}
 
 mfxStatus D3D11Encoder::Register(mfxFrameAllocResponse & response, D3DDDIFORMAT type)
 {   
@@ -716,6 +733,8 @@ mfxStatus D3D11Encoder::QueryStatus(
     case ENCODE_OK:
         task.m_bsDataLength[fieldId] = feedback->bitstreamSize;
         task.m_qpY[fieldId] = feedback->AverageQP;
+        if (m_capsGet.MAD)
+            task.m_mad[fieldId] = feedback->MAD;
         m_feedbackCached.Remove(task.m_statusReportNumber[fieldId]);
         return MFX_ERR_NONE;
 

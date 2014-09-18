@@ -859,6 +859,7 @@ namespace MfxHwH264Encode
             , m_bsDataLength(0, 0)
             , m_numLeadingFF(0, 0)
             , m_qpY(0, 0)
+            , m_mad(0, 0)
             , m_notProtected(false)
             , m_nextLayerTask(0)
             , m_repack(0)
@@ -989,6 +990,7 @@ namespace MfxHwH264Encode
         PairU32           m_bsDataLength; // bitstream size reported by driver (0 - progr/top, 1 - bottom)
         PairU32           m_numLeadingFF; // driver may insert 0xff in the beginning of coded frame
         PairU8            m_qpY;          // QpY reported by driver
+        PairU32           m_mad;          // MAD
         BiFrameLocation   m_loc;
         IntraRefreshState m_IRState;
 

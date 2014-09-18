@@ -785,6 +785,29 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
             return MFX_WRN_PARTIAL_ACCELERATION;
     }
 
+    if (IsOn(extOpt2->EnableMAD))
+    {
+        ENCODE_ENC_CTRL_CAPS c_caps = {};
+        sts = m_ddi->QueryEncCtrlCaps(c_caps);
+
+        if (sts == MFX_ERR_NONE && c_caps.MAD)
+        {
+            m_ddi->GetEncCtrlCaps(c_caps);
+
+            if (!c_caps.MAD)
+            {
+                c_caps.MAD = 1;
+                sts = m_ddi->SetEncCtrlCaps(c_caps);
+                MFX_CHECK_STS(sts);
+            }
+        }
+        else
+        {
+            extOpt2->EnableMAD = MFX_CODINGOPTION_OFF;
+            checkStatus = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
+        }
+    }
+
     mfxFrameAllocRequest request = { { 0 } };
     request.Info = m_video.mfx.FrameInfo;
 
@@ -2891,6 +2914,7 @@ mfxStatus ImplementationAvc::UpdateBitstream(
                     // at the moment it's supported for progressive encoding only
                     encFrameInfo->FrameOrder = task.m_extFrameTag;
                     encFrameInfo->LongTermIdx = task.m_longTermFrameIdx == NO_INDEX_U8 ? NO_INDEX_U16 : task.m_longTermFrameIdx;
+                    encFrameInfo->MAD = task.m_mad[fid];
 
                     if ( bRateControlLA(m_video.mfx.RateControlMethod))
                         encFrameInfo->QP = task.m_cqpValue[fid];

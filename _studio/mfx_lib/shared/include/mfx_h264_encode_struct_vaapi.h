@@ -797,7 +797,9 @@ typedef struct tagENCODE_ENC_CTRL_CAPS
     UINT    RateDistortionOpt           : 1;
     UINT    MVPrediction                : 1;
     UINT    DirectVME                   : 1;
-    UINT    MBZ2                        : 11;
+    UINT    MBZ2                        : 5;
+    UINT    MAD                         : 1;
+    UINT    MBZ3                        : 5;
 
 } ENCODE_ENC_CTRL_CAPS;
 

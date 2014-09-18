@@ -90,11 +90,17 @@ namespace MfxHwH264Encode
             mfxVideoParam const & par,
             mfxU32              (&mbPerSec)[16]);
 
-        //mfxStatus QueryEncCtrlCaps(
-        //    ENCODE_ENC_CTRL_CAPS & caps);
+        virtual
+        mfxStatus QueryEncCtrlCaps(
+            ENCODE_ENC_CTRL_CAPS & caps);
 
-        /*mfxStatus SetEncCtrlCaps(
-            ENCODE_ENC_CTRL_CAPS const & caps);*/
+        virtual
+        mfxStatus GetEncCtrlCaps(
+            ENCODE_ENC_CTRL_CAPS & caps);
+
+        virtual
+        mfxStatus SetEncCtrlCaps(
+            ENCODE_ENC_CTRL_CAPS const & caps);
 
         //mfxStatus QueryMbDataLayout(
         //    ENCODE_SET_SEQUENCE_PARAMETERS_H264 & sps,
@@ -140,6 +146,8 @@ namespace MfxHwH264Encode
         GUID                                        m_requestedGuid;
 
         ENCODE_CAPS                                 m_caps;
+        ENCODE_ENC_CTRL_CAPS                        m_capsQuery; // from ENCODE_ENC_CTRL_CAPS_ID
+        ENCODE_ENC_CTRL_CAPS                        m_capsGet;   // from ENCODE_ENC_CTRL_GET_ID
         std::vector<ENCODE_COMP_BUFFER_INFO>        m_compBufInfo;
         std::vector<D3DDDIFORMAT>                   m_uncompBufInfo;
         bool                                        m_infoQueried;

@@ -1010,6 +1010,34 @@ mfxStatus D3D9Encoder::CreateAccelerationService(MfxVideoParam const & par)
     return MFX_ERR_NONE;
 }
 
+mfxStatus D3D9Encoder::QueryEncCtrlCaps(ENCODE_ENC_CTRL_CAPS& caps)
+{
+    MFX_CHECK_WITH_ASSERT(m_auxDevice.get(), MFX_ERR_NOT_INITIALIZED);
+
+    caps = m_capsQuery;
+    return MFX_ERR_NONE;
+}
+
+mfxStatus D3D9Encoder::GetEncCtrlCaps(ENCODE_ENC_CTRL_CAPS& caps)
+{
+    MFX_CHECK_WITH_ASSERT(m_auxDevice.get(), MFX_ERR_NOT_INITIALIZED);
+
+    caps = m_capsGet;
+    return MFX_ERR_NONE;
+}
+
+mfxStatus D3D9Encoder::SetEncCtrlCaps(ENCODE_ENC_CTRL_CAPS const & caps)
+{
+    MFX_CHECK_WITH_ASSERT(m_auxDevice.get(), MFX_ERR_NOT_INITIALIZED);
+
+    m_capsGet = caps; // DDI spec: "The application should use the same structure
+                      // returned in a previous ENCODE_ENC_CTRL_GET_ID command."
+
+    HRESULT hr = m_auxDevice->Execute(ENCODE_ENC_CTRL_SET_ID, &m_capsGet, sizeof(m_capsGet));
+    MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
+    return MFX_ERR_NONE;
+}
+
 mfxStatus D3D9Encoder::Reset(
     MfxVideoParam const & par)
 {
@@ -1524,6 +1552,8 @@ mfxStatus D3D9Encoder::QueryStatus(
     case ENCODE_OK:
         task.m_bsDataLength[fieldId] = feedback->bitstreamSize;
         task.m_qpY[fieldId] = feedback->AverageQP;
+        if (m_capsGet.MAD)
+            task.m_mad[fieldId] = feedback->MAD;
         m_feedbackCached.Remove(task.m_statusReportNumber[fieldId]);
         return MFX_ERR_NONE;
 

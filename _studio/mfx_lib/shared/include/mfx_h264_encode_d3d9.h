@@ -219,11 +219,17 @@ namespace MfxHwH264Encode
             mfxVideoParam const & par,
             mfxU32              (&mbPerSec)[16]);
 
-        //mfxStatus QueryEncCtrlCaps(
-        //    ENCODE_ENC_CTRL_CAPS & caps);
+        virtual
+        mfxStatus QueryEncCtrlCaps(
+            ENCODE_ENC_CTRL_CAPS & caps);
 
-        /*mfxStatus SetEncCtrlCaps(
-            ENCODE_ENC_CTRL_CAPS const & caps);*/
+        virtual
+        mfxStatus GetEncCtrlCaps(
+            ENCODE_ENC_CTRL_CAPS & caps);
+
+        virtual
+        mfxStatus SetEncCtrlCaps(
+            ENCODE_ENC_CTRL_CAPS const & caps);
 
         //mfxStatus QueryMbDataLayout(
         //    ENCODE_SET_SEQUENCE_PARAMETERS_H264 & sps,

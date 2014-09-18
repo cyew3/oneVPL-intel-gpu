@@ -3173,6 +3173,7 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
     }
 
     if (!CheckRangeDflt(extOpt2->DisableDeblockingIdc, 0, 1, 0)) changed = true;
+    if (!CheckTriStateOption(extOpt2->EnableMAD)) changed = true;
 
     return unsupported
         ? MFX_ERR_UNSUPPORTED

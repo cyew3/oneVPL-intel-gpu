@@ -143,6 +143,18 @@ namespace MfxHwH264Encode
             VideoCORE * core,
             GUID        guid,
             bool        isTemporal) = 0;
+
+        virtual
+        mfxStatus QueryEncCtrlCaps(
+            ENCODE_ENC_CTRL_CAPS & caps) { caps; return MFX_ERR_UNSUPPORTED; };
+
+        virtual
+        mfxStatus GetEncCtrlCaps(
+            ENCODE_ENC_CTRL_CAPS & caps) { caps; return MFX_ERR_UNSUPPORTED; };
+
+        virtual
+        mfxStatus SetEncCtrlCaps(
+            ENCODE_ENC_CTRL_CAPS const & caps) { caps; return MFX_ERR_UNSUPPORTED; };
             
     };
 
