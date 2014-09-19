@@ -280,14 +280,17 @@
     <ClCompile Include="src\gmock\test_suites\fei_encode_encode_frame_async.cpp">
       <Filter>Source Files\test_suites\FEI</Filter>
     </ClCompile>
-    <ClCompile Include="avce_skipframes.cpp">
-      <Filter>Source Files\test_suites\avce</Filter>
-    </ClCompile>
     <ClCompile Include="src\gmock\test_suites\lookahead_1N.cpp">
       <Filter>Source Files\test_suites</Filter>
     </ClCompile>
     <ClCompile Include="src\gmock\ts_enc.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\avce_skipframes.cpp">
+      <Filter>Source Files\test_suites\avce</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\avce_skipframes_tektronix.cpp">
+      <Filter>Source Files\test_suites\avce</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

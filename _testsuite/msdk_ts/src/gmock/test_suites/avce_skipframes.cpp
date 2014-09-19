@@ -38,7 +38,6 @@ private:
     static const tc_struct test_case[];
 };
 
-
 const TestSuite::tc_struct TestSuite::test_case[] = 
 {
     // IPPP, all skipped

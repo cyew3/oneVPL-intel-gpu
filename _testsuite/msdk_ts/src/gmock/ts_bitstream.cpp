@@ -10,10 +10,13 @@ tsReader::tsReader(const char* fname)
     : mfxBitstream()
     , m_file(0)
 {
-    
 #pragma warning(disable:4996)
-    m_file = fopen(fname, "rb");    
+    m_file = fopen(fname, "rb");
 #pragma warning(default:4996)
+    if (!m_file)
+    {
+        g_tsLog << "ERROR: cannot open file `" << fname << "'\n";
+    }
 }
 
 tsReader::~tsReader()
