@@ -1778,7 +1778,7 @@ namespace MPEG2EncoderHW
                 GetFrameTypeMpeg2 (m_nFrameInGOP,
                     m_VideoParamsEx.mfxVideoParams.mfx.GopPicSize, 
                     m_VideoParamsEx.mfxVideoParams.mfx.GopRefDist,
-                    false/*(m_GopOptFlag & MFX_GOP_CLOSED)!=0*/,
+                    m_VideoParamsEx.mfxVideoParams.mfx.GopOptFlag&MFX_GOP_CLOSED,
                     &pInternalParams->FrameType);
             } 
             m_nFrameInGOP = (pInternalParams->FrameType & MFX_FRAMETYPE_I) ? 1 : m_nFrameInGOP + 1;
