@@ -21,7 +21,7 @@
 #define DXVADDI_VIDEODESC   DXVA2_VideoDesc
 #include "encoder_ddi.hpp"
 #define NEW_STATUS_REPORTING_DDI_0915
-//#define LOWPOWERENCODE_AVC
+#define LOWPOWERENCODE_AVC
 //#pragma pack(push, 4)
 
 static const mfxU32 NUM_MV_PER_MB = 2 * 16;
