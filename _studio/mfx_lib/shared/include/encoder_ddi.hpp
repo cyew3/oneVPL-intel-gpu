@@ -543,7 +543,8 @@ typedef struct tagENCODE_CAPS
         };
         UINT      CodingLimits2;
     };
-
+    UCHAR    MaxNum_WeightedPredL0;
+    UCHAR    MaxNum_WeightedPredL1;
 } ENCODE_CAPS;
 
 ////////////////////////////////////////////////////////////////////////////////
