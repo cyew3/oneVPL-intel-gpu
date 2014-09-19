@@ -131,7 +131,7 @@ void H265DecoderFrame::Reset()
     m_isDisplayable = 0;
     m_wasOutputted = 0;
     m_wasDisplayed = 0;
-    m_pic_output = 1;
+    m_pic_output = true;
     m_dpb_output_delay = INVALID_DPB_DELAY_H265;
     m_maxUIDWhenWasDisplayed = 0;
 

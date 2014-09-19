@@ -419,10 +419,6 @@ static const GuidProfile guidProfiles[] =
     { VA_H265 | VA_VLD | VA_PROFILE_10, DXVA_ModeHEVC_VLD_Main10  }, // MS
     { VA_H265 | VA_VLD | VA_PROFILE_10, DXVA_Intel_ModeHEVC_VLD_Main10Profile },
 
-    { VA_H265 | VA_VLD | VA_PROFILE_STILL, DXVA_Intel_ModeHEVC_VLD_MainStillPictureProfile },
-    { VA_H265 | VA_VLD | VA_PROFILE_STILL, DXVA_ModeHEVC_VLD_Main },
-    { VA_H265 | VA_VLD | VA_PROFILE_STILL, DXVA_Intel_ModeHEVC_VLD_MainProfile },
-    
 };
 
 const GuidProfile * GuidProfile::GetGuidProfiles()
@@ -449,7 +445,7 @@ bool DXVA2Accelerator::IsIntelCustomGUID() const
 {
     const GUID & guid = m_guidDecoder;
     return (guid == sDXVA2_Intel_ModeVC1_D_Super || guid == sDXVA2_Intel_EagleLake_ModeH264_VLD_NoFGT || guid == sDXVA_Intel_ModeH264_VLD_MVC || guid == DXVA_Intel_ModeHEVC_VLD_MainProfile ||
-        guid == DXVA_Intel_ModeHEVC_VLD_Main10Profile || guid == DXVA_Intel_ModeHEVC_VLD_MainStillPictureProfile);
+        guid == DXVA_Intel_ModeHEVC_VLD_Main10Profile);
 }
 
 //////////////////////////////////////////////////////////////

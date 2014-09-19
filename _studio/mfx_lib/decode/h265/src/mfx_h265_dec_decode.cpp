@@ -1377,11 +1377,6 @@ bool VideoDECODEH265::IsSameVideoParam(mfxVideoParam * newPar, mfxVideoParam * o
         return false;
     }
 
-    if ((newPar->mfx.CodecProfile != MFX_PROFILE_HEVC_MAINSP) != (oldPar->mfx.CodecProfile != MFX_PROFILE_HEVC_MAINSP))
-    {
-        return false;
-    }
-
     if (newPar->mfx.FrameInfo.ChromaFormat != oldPar->mfx.FrameInfo.ChromaFormat)
     {
         return false;

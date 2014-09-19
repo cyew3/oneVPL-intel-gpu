@@ -147,7 +147,6 @@ enum VideoAccelerationProfile
     VA_PROFILE_MVC_STEREO_PROG  = 0x7000,
     VA_PROFILE_INTEL            = 0x8000,
     VA_PROFILE_10               = 0x9000,
-    VA_PROFILE_STILL            = 0xa000,
 
     // configurations
     VA_CONFIGURATION    = 0x00ff0000,
@@ -176,7 +175,6 @@ enum VideoAccelerationProfile
     H264_VLD_MVC_STEREO_PROG    = VA_H264 | VA_VLD | VA_PROFILE_MVC_STEREO_PROG,
 
     H265_10_VLD        = VA_H265 | VA_VLD | VA_PROFILE_10,
-    H265_STILL_VLD     = VA_H265 | VA_VLD | VA_PROFILE_STILL
 };
 
 #define MAX_BUFFER_TYPES    32

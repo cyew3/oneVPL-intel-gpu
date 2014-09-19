@@ -445,22 +445,10 @@ eMFXPlatform MFX_Utility::GetPlatform_H265(VideoCORE * core, mfxVideoParam * par
         }
         else
         {
-            if (par->mfx.CodecProfile == MFX_PROFILE_HEVC_MAINSP)
+            if (MFX_ERR_NONE != core->IsGuidSupported(DXVA_Intel_ModeHEVC_VLD_MainProfile, par) &&
+                MFX_ERR_NONE != core->IsGuidSupported(DXVA_ModeHEVC_VLD_Main, par))
             {
-                if (MFX_ERR_NONE != core->IsGuidSupported(DXVA_Intel_ModeHEVC_VLD_MainStillPictureProfile, par) &&
-                    MFX_ERR_NONE != core->IsGuidSupported(DXVA_Intel_ModeHEVC_VLD_MainProfile, par) &&
-                    MFX_ERR_NONE != core->IsGuidSupported(DXVA_ModeHEVC_VLD_Main, par))
-                {
-                    return MFX_PLATFORM_SOFTWARE;
-                }
-            }
-            else
-            {
-                if (MFX_ERR_NONE != core->IsGuidSupported(DXVA_Intel_ModeHEVC_VLD_MainProfile, par) &&
-                    MFX_ERR_NONE != core->IsGuidSupported(DXVA_ModeHEVC_VLD_Main, par))
-                {
-                    return MFX_PLATFORM_SOFTWARE;
-                }
+                return MFX_PLATFORM_SOFTWARE;
             }
         }
     }
