@@ -144,6 +144,8 @@ mfxStatus MFX_PTIR_Plugin::VPPFrameSubmitEx(mfxFrameSurface1 *surface_in, mfxFra
         return MFX_WRN_DEVICE_BUSY;
     if(UMC::UMC_OK != m_guard.TryLock())
         return MFX_WRN_DEVICE_BUSY;
+    if(!ptir)
+        return MFX_ERR_NOT_INITIALIZED;
 
     mfxStatus mfxSts = MFX_ERR_NONE;
     PTIR_Task *ptir_task = 0;
@@ -231,7 +233,14 @@ mfxStatus MFX_PTIR_Plugin::VPPFrameSubmitEx(mfxFrameSurface1 *surface_in, mfxFra
     } 
     else
     {
-        if(inSurfs.size() && (inSurfs.size() != workSurfs.size() ))
+        if(ptir->bFullFrameRate && inSurfs.size() && workSurfs.size() < (2 * inSurfs.size()))
+        {
+            addWorkSurf(surface_work);
+            m_guard.Unlock();
+            in_expected = false;
+            return MFX_ERR_MORE_SURFACE;
+        }
+        else if(inSurfs.size() && (inSurfs.size() != workSurfs.size() ))
         {
             addWorkSurf(surface_work);
 

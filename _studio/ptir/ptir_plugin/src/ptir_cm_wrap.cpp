@@ -552,6 +552,7 @@ mfxStatus PTIR_ProcessorCM::PTIR_ProcessFrame(CmSurface2D *surf_in, CmSurface2D 
                         if(!static_cast<CmSurface2DEx*>(frmBuffer[i]->outSurf)->pCmSurface2D)
                         {
                             static_cast<CmSurface2DEx*>(frmBuffer[i]->outSurf)->pCmSurface2D = frmSupply->GetWorkSurfaceCM();
+                            assert(0 != static_cast<CmSurface2DEx*>(frmBuffer[i]->outSurf)->pCmSurface2D);
                         }
                         if(!static_cast<CmSurface2DEx*>(frmBuffer[i]->inSurf)->pCmSurface2D)
                         {
