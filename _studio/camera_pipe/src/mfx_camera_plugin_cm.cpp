@@ -23,8 +23,6 @@
 //#include "cm_vm.h"
 #include "mfx_camera_plugin_utils.h"
 #include "genx_hsw_camerapipe_isa.h"
-#include "genx_bdw_camerapipe_isa.h"
-#include "genx_skl_camerapipe_isa.h"
 
 namespace
 {
@@ -37,8 +35,7 @@ CmProgram * ReadProgram(CmDevice * device, const mfxU8 * buffer, size_t len)
     int result = CM_SUCCESS;
     CmProgram * program = 0;
 
-    if ((result = ::ReadProgram(device, program, buffer, (mfxU32)len)) != CM_SUCCESS)
-//    if ((result = device->LoadProgram((void *)buffer, len, program)) != CM_SUCCESS)
+    if ((result = ::ReadProgramJit(device, program, buffer, (mfxU32)len)) != CM_SUCCESS)
         throw CmRuntimeError();
 
     return program;
@@ -911,12 +908,7 @@ void CmContext::Setup(
     if (m_device->CreateQueue(m_queue) != CM_SUCCESS)
         throw CmRuntimeError();
 
-    if(m_platform == MFX_HW_HSW || m_platform == MFX_HW_HSW_ULT)
-        m_program = ReadProgram(m_device, genx_hsw_camerapipe, SizeOf(genx_hsw_camerapipe));
-    else if(m_platform == MFX_HW_BDW || m_platform == MFX_HW_CHV)
-        m_program = ReadProgram(m_device, genx_bdw_camerapipe, SizeOf(genx_bdw_camerapipe));
-    //else if(m_platform == MFX_HW_SCL || m_platform == MFX_HW_BXT)
-    //    m_program = ReadProgram(m_device, genx_skl_camerapipe, SizeOf(genx_skl_camerapipe));
+    m_program = ReadProgram(m_device, genx_hsw_camerapipe, SizeOf(genx_hsw_camerapipe));
 
     CreateCameraKernels();
     CreateCmTasks();

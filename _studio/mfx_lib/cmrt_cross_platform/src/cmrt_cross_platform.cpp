@@ -391,6 +391,16 @@ int ReadProgram(CmDevice * device, CmProgram *& program, const unsigned char * b
 #endif //CMRT_EMU
 }
 
+int ReadProgramJit(CmDevice * device, CmProgram *& program, const unsigned char * buffer, unsigned int len)
+{
+#ifdef CMRT_EMU
+    buffer; len;
+    return device->LoadProgram(0, 0, program);
+#else //CMRT_EMU
+    return device->LoadProgram((void *)buffer, len, program);
+#endif //CMRT_EMU
+}
+
 int CreateKernel(CmDevice * device, CmProgram * program, const char * kernelName, const void * fncPnt, CmKernel *& kernel, const char * options)
 {
 #ifdef CMRT_EMU

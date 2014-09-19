@@ -1369,6 +1369,7 @@ INT DestroyCmDeviceEmu(CmDevice* &pDevice);
 INT DestroyCmDeviceSim(CmDevice* &pDevice);
 
 int ReadProgram(CmDevice * device, CmProgram *& program, const unsigned char * buffer, unsigned int len);
+int ReadProgramJit(CmDevice * device, CmProgram *& program, const unsigned char * buffer, unsigned int len);
 int CreateKernel(CmDevice * device, CmProgram * program, const char * kernelName, const void * fncPnt, CmKernel *& kernel, const char * options = NULL);
 
 #pragma warning(pop)

@@ -223,9 +223,7 @@
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="genx\include\genx_bdw_camerapipe_isa.h" />
     <ClInclude Include="genx\include\genx_hsw_camerapipe_isa.h" />
-    <ClInclude Include="genx\include\genx_skl_camerapipe_isa.h" />
     <ClInclude Include="include\mfx_camera_plugin.h" />
     <ClInclude Include="include\mfx_camera_plugin_cm.h" />
     <ClInclude Include="include\mfx_camera_plugin_cpu.h" />
@@ -256,9 +254,7 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="genx\src\genx_bdw_camerapipe_isa.cpp" />
     <ClCompile Include="genx\src\genx_hsw_camerapipe_isa.cpp" />
-    <ClCompile Include="genx\src\genx_skl_camerapipe_isa.cpp" />
     <ClCompile Include="src\mfx_camera_plugin.cpp" />
     <ClCompile Include="src\mfx_camera_plugin_cm.cpp" />
     <ClCompile Include="src\mfx_camera_plugin_cpu.cpp" />
