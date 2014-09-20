@@ -213,6 +213,7 @@ namespace MFX_HEVC_PP
     // [PTR.QuantFwd]
     typedef void   (H265_FASTCALL *PTR_QuantFwd_16s)    (const Ipp16s* pSrc, Ipp16s* pDst, int len, int scale, int offset, int shift);
     typedef Ipp32s (H265_FASTCALL *PTR_QuantFwd_SBH_16s)(const Ipp16s* pSrc, Ipp16s* pDst, Ipp32s*  pDelta, int len, int scale, int offset, int shift);
+    typedef void   (H265_FASTCALL *PTR_Quant_zCost_16s) (const Ipp16s* pSrc, Ipp32u* qLevels, Ipp64s* zlCosts, Ipp32s len, Ipp32s qScale, Ipp32s qoffset, Ipp32s qbits, Ipp32s rdScale0);
 
     // [PTR.deblocking]
     typedef Ipp32s (* PTR_FilterEdgeLuma_8u_I)(H265EdgeData *edge, Ipp8u *srcDst, Ipp32s srcDstStride, Ipp32s dir);
@@ -461,6 +462,8 @@ namespace MFX_HEVC_PP
         // forward quantization
         HEVCPP_API( PTR_QuantFwd_16s,     void H265_FASTCALL,   h265_QuantFwd_16s,     (const Ipp16s* pSrc, Ipp16s* pDst, int len, int scale, int offset, int shift) );
         HEVCPP_API( PTR_QuantFwd_SBH_16s, Ipp32s H265_FASTCALL, h265_QuantFwd_SBH_16s, (const Ipp16s* pSrc, Ipp16s* pDst, Ipp32s*  pDelta, int len, int scale, int offset, int shift) );
+        HEVCPP_API( PTR_Quant_zCost_16s,  void H265_FASTCALL,   h265_Quant_zCost_16s,  (const Ipp16s* pSrc, Ipp32u* qLevels, Ipp64s* zlCosts, Ipp32s len, Ipp32s qScale, Ipp32s qoffset, Ipp32s qbits, Ipp32s rdScale0) );
+        
 
         // [deblocking]
         HEVCPP_API( PTR_FilterEdgeLuma_8u_I, Ipp32s, h265_FilterEdgeLuma_8u_I, (H265EdgeData *edge, Ipp8u *srcDst, Ipp32s srcDstStride, Ipp32s dir) );

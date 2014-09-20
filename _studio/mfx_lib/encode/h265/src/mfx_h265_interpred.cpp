@@ -328,6 +328,57 @@ void H265CU<Ipp16u>::InterPredCu<TEXT_LUMA>(Ipp32s absPartIdx, Ipp8u depth, Ipp1
 template
 void H265CU<Ipp16u>::InterPredCu<TEXT_CHROMA>(Ipp32s absPartIdx, Ipp8u depth, Ipp16u *dst, Ipp32s dstPitch);
 
+#ifdef MEMOIZE_SUBPEL
+template <typename PixType>
+void H265CU<PixType>::MeInterpolateSave(const H265MEInfo* me_info, const H265MV *MV, PixType *src,
+                                    Ipp32s srcPitch, PixType *dst, Ipp32s dstPitch, PixType *hdst, Ipp16s *dstHi, Ipp16s *hdstHi) const
+{
+    Ipp32s w = me_info->width;
+    Ipp32s h = me_info->height;
+    Ipp32s dx = MV->mvx & 3;
+    Ipp32s dy = MV->mvy & 3;
+    Ipp32s bitDepth = m_par->bitDepthLuma;
+    Ipp32s isFast = false;
+    Ipp32s refOffset = m_ctbPelX + me_info->posx + (MV->mvx >> 2) + (m_ctbPelY + me_info->posy + (MV->mvy >> 2)) * srcPitch;
+    src += refOffset;
+
+    VM_ASSERT (!(dx == 0 && dy == 0));
+    if (dy == 0)
+    {
+        Interpolate<UMC_HEVC_DECODER::TEXT_LUMA>( INTERP_HOR, src, srcPitch, dstHi, dstPitch, dx, w, h, 0, 0, bitDepth, isFast);
+        h265_InterpLumaPack(dstHi, dstPitch, dst, dstPitch, w, h, bitDepth);
+    }
+    else if (dx == 0)
+    {
+        Interpolate<UMC_HEVC_DECODER::TEXT_LUMA>( INTERP_VER, src, srcPitch, dstHi, dstPitch, dy, w, h, 0, 0, bitDepth, isFast);
+        h265_InterpLumaPack(dstHi, dstPitch, dst, dstPitch, w, h, bitDepth);
+    }
+    else
+    {
+        if(hdstHi) {
+            Interpolate<UMC_HEVC_DECODER::TEXT_LUMA>( INTERP_HOR, src - 3 * srcPitch, srcPitch, hdstHi, dstPitch, dx, w, h + 8, bitDepth - 8, 0, bitDepth, isFast);
+            h265_InterpLumaPack(hdstHi, dstPitch, hdst, dstPitch, w, h+6, bitDepth);
+
+            Ipp32s shift  = 6;
+            Ipp16s offset = 0;
+            Interpolate<UMC_HEVC_DECODER::TEXT_LUMA>( INTERP_VER,  hdstHi + 3 * dstPitch, dstPitch, dstHi, dstPitch, dy, w, h, shift, offset, bitDepth, isFast);
+            h265_InterpLumaPack(dstHi, dstPitch, dst, dstPitch, w, h, bitDepth);
+        } else {
+            Ipp16s tmpBuf[((64+8)+8+8) * ((64+8)+8+8)];
+            Ipp16s *tmp = tmpBuf + ((64+8)+8+8) * 8 + 8;
+            Ipp32s tmpPitch = ((64+8)+8+8);
+            Interpolate<UMC_HEVC_DECODER::TEXT_LUMA>( INTERP_HOR, src - 3 * srcPitch, srcPitch, tmp, tmpPitch, dx, w, h + 8, bitDepth - 8, 0, bitDepth, isFast);
+
+            Ipp32s shift  = 6;
+            Ipp16s offset = 0;
+            Interpolate<UMC_HEVC_DECODER::TEXT_LUMA>( INTERP_VER,  tmp + 3 * tmpPitch, tmpPitch, dstHi, dstPitch, dy, w, h, shift, offset, bitDepth, isFast);
+            h265_InterpLumaPack(dstHi, dstPitch, dst, dstPitch, w, h, bitDepth);
+        }
+
+    }
+    return;
+} // void H265CU::MeInterpolate(...)
+#endif
 
 template <typename PixType>
 void H265CU<PixType>::MeInterpolate(const H265MEInfo* me_info, const H265MV *MV, PixType *src,

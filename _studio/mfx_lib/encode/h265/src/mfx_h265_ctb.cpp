@@ -23,6 +23,9 @@
 #include "mfx_h265_enc_cm_defs.h"
 #include "mfx_h265_enc_cm.h"
 
+#if defined(MEMOIZE_SUBPEL_TEST) || defined(MEMOIZE_BIPRED_TEST)
+#include <assert.h>
+#endif
 namespace H265Enc {
 
 #if defined (MFX_VA)
@@ -1029,6 +1032,26 @@ void H265CU<PixType>::InitCu(H265VideoParam *_par, H265CUData *_data, H265CUData
         h265_ComputeRsCs(m_ySrc, m_pitchSrcLuma, m_lcuRs, m_lcuCs, m_par->MaxCUSize);
     }
 #endif
+#ifdef MEMOIZE_SUBPEL
+    {
+        Ipp32s j,k,l;
+        for(j=0;j<m_currFrame->m_numRefUnique;j++) {
+            for(k=0;k<4;k++) {
+                for(l=0;l<4;l++) {
+                    m_memSubpel[3][j][k][l].Init(&(m_predBufHi3[j][k][l][0]), &(m_predBuf3[j][k][l][0]));
+                    m_memSubpel[2][j][k][l].Init(&(m_predBufHi2[j][k][l][0]), &(m_predBuf2[j][k][l][0]));
+                    m_memSubpel[1][j][k][l].Init(&(m_predBufHi1[j][k][l][0]), &(m_predBuf1[j][k][l][0]));
+                    m_memSubpel[0][j][k][l].Init(&(m_predBufHi0[j][k][l][0]), &(m_predBuf0[j][k][l][0]));
+                    if(m_par->hadamardMe>=2) {
+                        m_memSubHad[3][j][k][l].Init(&(m_satd8Buf3[j][k][l][0][0]), &(m_satd8Buf3[j][k][l][1][0]), &(m_satd8Buf3[j][k][l][2][0]), &(m_satd8Buf3[j][k][l][3][0]));
+                        m_memSubHad[2][j][k][l].Init(&(m_satd8Buf2[j][k][l][0][0]), &(m_satd8Buf2[j][k][l][1][0]), &(m_satd8Buf2[j][k][l][2][0]), &(m_satd8Buf2[j][k][l][3][0]));
+                        m_memSubHad[1][j][k][l].Init(&(m_satd8Buf1[j][k][l][0][0]), &(m_satd8Buf1[j][k][l][1][0]), &(m_satd8Buf1[j][k][l][2][0]), &(m_satd8Buf1[j][k][l][3][0]));
+                    }
+                }
+            }
+        }
+    }
+#endif
 }
 
 ////// random generation code, for development purposes
@@ -1719,71 +1742,8 @@ void CopySubPartTo_(H265CUData *dst, const H265CUData *src, Ipp32s absPartIdx, I
 {
     small_memcpy(dst + absPartIdx, src + absPartIdx, numParts * sizeof(H265CUData));
 }
+
 #if defined(AMT_ICRA_OPT)
-/*
-template <Ipp32s widthCu>
-static void compute_RsCs(unsigned char *ySrc, Ipp32s pitchSrc, Ipp32s *lcuRs, Ipp32s *lcuCs)
-{
-    Ipp32s bP = MAX_CU_SIZE>>2;    
-    for(Ipp32s i=0; i<widthCu; i+=4) {
-        for(Ipp32s j=0; j<widthCu; j+=4) {
-            Ipp32s Rs=0;
-            Ipp32s Cs=0;
-            for(Ipp32s k=0; k<4; k++) {
-                for(Ipp32s l=0; l<4; l++) {
-                    Ipp32s temp = ySrc[(i+k)*pitchSrc+(j+l)]-ySrc[(i+k)*pitchSrc+(j+l-1)];
-                    Cs += temp*temp;
-
-                    temp = ySrc[(i+k)*pitchSrc+(j+l)]-ySrc[(i+k-1)*pitchSrc+(j+l)];
-                    Rs += temp*temp;
-                }
-            }
-            lcuCs[(i>>2)*bP+(j>>2)] = Cs>>4;
-            lcuRs[(i>>2)*bP+(j>>2)] = Rs>>4;
-        }
-    }
-}
-template <Ipp32s widthCu>
-static void compute_RsCs(unsigned short *ySrc, Ipp32s pitchSrc, Ipp32s *lcuRs, Ipp32s *lcuCs)
-{
-    Ipp32s bP = MAX_CU_SIZE>>2;    
-    for(Ipp32s i=0; i<widthCu; i+=4) {
-        for(Ipp32s j=0; j<widthCu; j+=4) {
-            Ipp32s Rs=0;
-            Ipp32s Cs=0;
-            for(Ipp32s k=0; k<4; k++) {
-                for(Ipp32s l=0; l<4; l++) {
-                    Ipp32s temp = ySrc[(i+k)*pitchSrc+(j+l)]-ySrc[(i+k)*pitchSrc+(j+l-1)];
-                    Cs += temp*temp;
-
-                    temp = ySrc[(i+k)*pitchSrc+(j+l)]-ySrc[(i+k-1)*pitchSrc+(j+l)];
-                    Rs += temp*temp;
-                }
-            }
-            lcuCs[(i>>2)*bP+(j>>2)] = Cs>>4;
-            lcuRs[(i>>2)*bP+(j>>2)] = Rs>>4;
-        }
-    }
-}
-template <typename PixType>
-void H265CU<PixType>::CalcRsCs()
-{        
-    switch(m_par->MaxCUSize) {
-    case 64:
-        compute_RsCs<64>(m_ySrc, m_pitchSrcLuma, m_lcuRs, m_lcuCs);
-        break;
-    case 32: 
-        compute_RsCs<32>(m_ySrc, m_pitchSrcLuma, m_lcuRs, m_lcuCs);
-        break;
-    case 16:
-        compute_RsCs<16>(m_ySrc, m_pitchSrcLuma, m_lcuRs, m_lcuCs);
-        break;
-    case 8:
-        compute_RsCs<8>(m_ySrc, m_pitchSrcLuma, m_lcuRs, m_lcuCs);
-        break;
-    };    
-}
-*/
 template <typename PixType>
 void H265CU<PixType>::GetSpatialComplexity(Ipp32s absPartIdx, Ipp32s depth, Ipp32s partAddr, Ipp32s partDepth)
 {
@@ -1901,7 +1861,11 @@ Ipp8u H265CU<PixType>::EncInterLumaTuGetBaseCBF(Ipp32u absPartIdx, Ipp32s offset
     ippiCopy_16s_C1R(resid, MAX_CU_SIZE * sizeof(CoeffsType), m_residualsY + offset, width * sizeof(CoeffsType), roiSize);
 
     TransformFwd(offset, width, 1, 0);
+#ifdef AMT_DZ_RDOQ
+    QuantFwdTu(absPartIdx, offset, width, m_data[absPartIdx].qp, 1, 0);
+#else
     QuantFwdTu(absPartIdx, offset, width, m_data[absPartIdx].qp, 1);
+#endif
 
     cbf = !IsZero(m_coeffWorkY + offset, width * width);
     
@@ -1926,7 +1890,11 @@ void H265CU<PixType>::EncInterChromaTuGetBaseCBF(Ipp32u absPartIdx, Ipp32s offse
     ippiCopy_16s_C1R(m_interResidV + offsetCh, (MAX_CU_SIZE >> m_par->chromaShiftW) * sizeof(CoeffsType), m_residualsV + offset, width * sizeof(CoeffsType), roiSize);
 
     TransformFwd(offset, width, 0, 0);
+#ifdef AMT_DZ_RDOQ
+    QuantFwdTu(absPartIdx, offset, width, m_data[absPartIdx].qp, 0, 0);
+#else
     QuantFwdTu(absPartIdx, offset, width, m_data[absPartIdx].qp, 0);
+#endif
 
     nz[0] = !IsZero(m_coeffWorkU + offset, width * width);
     nz[1] = !IsZero(m_coeffWorkV + offset, width * width); 
@@ -2144,6 +2112,21 @@ CostType H265CU<PixType>::ModeDecision(Ipp32s absPartIdx, Ipp8u depth)
 #ifdef AMT_ICRA_OPT
     if (splitMode == SPLIT_TRY && depth >= m_adaptMaxDepth) {
         splitMode = SPLIT_NONE;
+    }
+#endif
+#ifdef MEMOIZE_SUBPEL
+    {
+        Ipp32s memSize = (m_par->Log2MaxCUSize-3-depth);
+        for(Ipp32s j=0;j<m_currFrame->m_numRefUnique;j++) {
+            for(Ipp32s k=0;k<4;k++) {
+                for(Ipp32s l=0;l<4;l++) {
+                    m_memSubpel[memSize][j][k][l].Init();
+                    if(m_par->hadamardMe>=2 && memSize>0) { 
+                        m_memSubHad[memSize][j][k][l].Init();
+                    }
+                }
+            }
+        }
     }
 #endif
     // before checking something at current level save initial states
@@ -2428,6 +2411,581 @@ Ipp32s H265CU<PixType>::MvCost1RefLog(Ipp16s mvx, Ipp16s mvy, const MvPredInfo<2
         (Ipp32s)(m_logMvCostTable[mvy - predInfo->mvCand[mpvIdx].mvy] * m_rdLambdaSqrt + 0.5);
 }
 
+#ifdef MEMOIZE_SUBPEL
+static const Ipp32s MemSubpelExtW[4][4][4]={
+    { // 8x8/
+        { 0, 0, 0, 0}, // 00 01 02 03
+        { 0, 0, 0, 0}, // 10 11 12 13
+        { 8, 0, 8, 0}, // 20 21 22 23
+        { 0, 0, 0, 0}  // 30 31 32 33
+    }, 
+    { // 16x16
+        { 0, 0, 0, 0}, // 00 01 02 03
+        { 0, 0, 0, 0}, // 10 11 12 13
+        { 8, 0, 8, 0}, // 20 21 22 23
+        { 0, 0, 0, 0}  // 30 31 32 33
+    },
+    { // 32x32
+        { 0, 0, 0, 0}, // 00 01 02 03
+        { 0, 0, 0, 0}, // 10 11 12 13
+        { 8, 0, 8, 0}, // 20 21 22 23
+        { 0, 0, 0, 0}  // 30 31 32 33
+    },
+    { // 64x64
+        { 0, 0, 0, 0}, // 00 01 02 03
+        { 0, 0, 0, 0}, // 10 11 12 13
+        { 8, 0, 8, 0}, // 20 21 22 23
+        { 0, 0, 0, 0}  // 30 31 32 33
+    }
+};
+static const Ipp32s MemSubpelExtH[4][4][4]={
+    { // 8x8
+        { 0, 0, 2, 0}, // 00 01 02 03
+        { 8, 2, 2, 2}, // 10 11 12 13
+        { 8, 2, 2, 2}, // 20 21 22 23
+        { 8, 2, 2, 2}  // 30 31 32 33
+    }, 
+    { // 16x16
+        { 0, 0, 2, 0}, // 00 01 02 03
+        { 8, 2, 2, 2}, // 10 11 12 13
+        { 8, 2, 2, 2}, // 20 21 22 23
+        { 8, 2, 2, 2}  // 30 31 32 33
+    },
+    { // 32x32
+        { 0, 0, 2, 0}, // 00 01 02 03
+        { 8, 2, 2, 2}, // 10 11 12 13
+        { 8, 2, 2, 2}, // 20 21 22 23
+        { 8, 2, 2, 2}  // 30 31 32 33
+    },
+    { // 64x64
+        { 0, 0, 2, 0}, // 00 01 02 03
+        { 8, 2, 2, 2}, // 10 11 12 13
+        { 8, 2, 2, 2}, // 20 21 22 23
+        { 8, 2, 2, 2}  // 30 31 32 33
+    }
+};
+
+template <typename PixType>
+Ipp32s H265CU<PixType>::tuHadSave(const Ipp8u* src, Ipp32s pitchSrc, const Ipp8u* rec, Ipp32s pitchRec,
+             Ipp32s width, Ipp32s height, Ipp32s *satd, Ipp32s memPitch)
+{
+    Ipp32u satdTotal = 0;
+    Ipp32s sp = memPitch>>3;
+    /* assume height and width are multiple of 8 */
+    VM_ASSERT(!(width & 0x07) && !(height & 0x07));
+
+    /* test with optimized SATD source code */
+    if (width == 8 && height == 8) {
+        Ipp32s had = MFX_HEVC_PP::NAME(h265_SATD_8x8_8u)(src, pitchSrc, rec, pitchRec);
+        had = (had+2)>>2;
+        satdTotal += had;
+    } else {
+        /* multiple 8x8 blocks - do as many pairs as possible */
+        Ipp32s widthPair = width & ~0x0f;
+        Ipp32s widthRem = width - widthPair;
+        for (Ipp32s j = 0; j < height; j += 8, src += pitchSrc * 8, rec += pitchRec * 8, satd += sp) {
+            Ipp32s i = 0, k = 0;
+            for (; i < widthPair; i += 8*2, k+=2) {
+                MFX_HEVC_PP::NAME(h265_SATD_8x8_Pair_8u)(src + i, pitchSrc, rec + i, pitchRec, &satd[k]);
+                satd[k] = (satd[k]+2)>>2;
+                satd[k+1] = (satd[k+1]+2)>>2;
+                satdTotal += (satd[k] + satd[k+1]);
+            }
+            if (widthRem) {
+                satd[k] = MFX_HEVC_PP::NAME(h265_SATD_8x8_8u)(src, pitchSrc, rec, pitchRec);
+                satd[k] = (satd[k]+2)>>2;
+                satdTotal += satd[k];
+            }
+        }
+    }
+    return satdTotal;
+}
+template <typename PixType>
+Ipp32s H265CU<PixType>::tuHadSave(const Ipp16u* src, Ipp32s pitchSrc, const Ipp16u* rec, Ipp32s pitchRec,
+             Ipp32s width, Ipp32s height, Ipp32s *satd, Ipp32s memPitch)
+{
+    Ipp32u satdTotal = 0;
+    Ipp32s sp = memPitch>>3;
+    /* assume height and width are multiple of 8 */
+    VM_ASSERT(!(width & 0x07) && !(height & 0x07));
+
+    /* test with optimized SATD source code */
+    if (width == 8 && height == 8) {
+        Ipp32s had = tuHad(src, pitchSrc, rec, pitchRec, width, height);
+        satdTotal += had;
+    } else {
+        /* multiple 8x8 blocks - do as many pairs as possible */
+        Ipp32s widthPair = width & ~0x0f;
+        Ipp32s widthRem = width - widthPair;
+        for (Ipp32s j = 0; j < height; j += 8, src += pitchSrc * 8, rec += pitchRec * 8, satd += sp) {
+            Ipp32s i = 0, k = 0;
+            for (; i < widthPair; i += 8*2, k+=2) {
+                satd[k] = tuHad(src+i, pitchSrc, rec+i, pitchRec, 8, 8);
+                satd[k+1] = tuHad(src+i+8, pitchSrc, rec+i+8, pitchRec, 8, 8);
+                 satdTotal += (satd[k] + satd[k+1]);
+            }
+            if (widthRem) {
+                satd[k] = tuHad(src+i, pitchSrc, rec+i, pitchRec, 8, 8);
+                 satdTotal += satd[k];
+            }
+        }
+    }
+    return satdTotal;
+}
+template <typename PixType>
+Ipp32s H265CU<PixType>::tuHadUse(Ipp32s width, Ipp32s height, Ipp32s *satd8, Ipp32s memPitch) const
+{
+    Ipp32u satdTotal = 0;
+
+    /* assume height and width are multiple of 4 */
+    VM_ASSERT(!(width & 0x03) && !(height & 0x03));
+
+    if ( (height | width) & 0x07 ) {
+        //assert(0);
+    } else {
+        Ipp32s s8 = memPitch>>3;
+        /* multiple 8x8 blocks */
+        for (Ipp32s j = 0; j < height>>3; j ++) {
+            for (Ipp32s i = 0; i < width>>3; i ++) {
+                satdTotal += satd8[j*s8+i];
+            }
+        }
+    }
+    return satdTotal;
+}
+
+template <typename PixType>
+inline void  H265CU<PixType>::MemSubpelSetMv(Ipp32s size, Ipp32s hPh, Ipp32s vPh, Ipp32s refIdxMem, H265MV *mv)
+{
+    m_memSubpel[size][refIdxMem][hPh][vPh].done = true;
+    m_memSubpel[size][refIdxMem][hPh][vPh].mv = *mv;
+}
+
+template <typename PixType>
+inline void  H265CU<PixType>::MemSubpelGetBuf(Ipp32s size, Ipp32s hPh, Ipp32s vPh, Ipp32s refIdxMem, PixType*& predBuf, Ipp16s *&predBufHi)
+{
+    predBuf = m_memSubpel[size][refIdxMem][hPh][vPh].predBuf;
+    predBufHi = m_memSubpel[size][refIdxMem][hPh][vPh].predBufHi;
+}
+
+template <typename PixType>
+inline bool  H265CU<PixType>::MemSubpelSave(Ipp32s size, Ipp32s hPh, Ipp32s vPh, 
+                                            const H265MEInfo* meInfo, Ipp32s refIdxMem, 
+                                            const H265MV *mv, PixType*& predBuf, Ipp32s& memPitch,
+                                            PixType*& hpredBuf, Ipp16s*& predBufHi, Ipp16s*& hpredBufHi)
+{    
+    if(meInfo->width != meInfo->height) return false;
+    hpredBuf = NULL;
+    hpredBufHi = NULL;
+
+    if(!m_memSubpel[size][refIdxMem][hPh][vPh].done) {
+        memPitch = (MAX_CU_SIZE>>(3-size))+8;
+        predBuf = m_memSubpel[size][refIdxMem][hPh][vPh].predBuf;
+        predBufHi = m_memSubpel[size][refIdxMem][hPh][vPh].predBufHi;
+        m_memSubpel[size][refIdxMem][hPh][vPh].done = true;
+        m_memSubpel[size][refIdxMem][hPh][vPh].mv   = *mv;
+
+        if(hPh && vPh && MemSubpelExtW[size][hPh][vPh]==MemSubpelExtW[size][hPh][0] 
+        && MemSubpelExtH[size][hPh][0]==MemSubpelExtH[size][hPh][vPh]+6)
+        {
+            hpredBuf = m_memSubpel[size][refIdxMem][hPh][0].predBuf;
+            hpredBufHi = m_memSubpel[size][refIdxMem][hPh][0].predBufHi;
+            m_memSubpel[size][refIdxMem][hPh][0].done = true;
+            m_memSubpel[size][refIdxMem][hPh][0].mv   = *mv;
+            m_memSubpel[size][refIdxMem][hPh][0].mv.mvy -= vPh;
+        }
+        return true;
+    }
+
+    return false;
+}
+template <typename PixType>
+inline bool  H265CU<PixType>::MemSubpelInRange(Ipp32s size, const H265MEInfo* meInfo, Ipp32s refIdxMem, const H265MV *cmv)
+{   
+    const Ipp32s hPh = 2;
+    const Ipp32s vPh = 2;
+    const Ipp32s MaxSubpelExtW = 8;
+    const Ipp32s MaxSubpelExtH = 2;
+    H265MV tmv = *cmv;
+    tmv.mvx -= 2;
+    tmv.mvy -= 2;
+    
+    switch(size)
+    {
+    case 0:
+        if(m_memSubpel[0][refIdxMem][hPh][vPh].done) {
+            Ipp32s rely = meInfo->posy & 0x07;
+            Ipp32s relx = meInfo->posx & 0x07;
+            Ipp32s dMVx = (tmv.mvx - m_memSubpel[0][refIdxMem][hPh][vPh].mv.mvx)>>2;   // same phase, always integer pixel num
+            Ipp32s dMVy = (tmv.mvy - m_memSubpel[0][refIdxMem][hPh][vPh].mv.mvy)>>2;
+            Ipp32s rangeLx = relx+1+(MaxSubpelExtW/2);
+            Ipp32s rangeRx = (8+(MaxSubpelExtW/2) -(relx+meInfo->width));
+            Ipp32s rangeLy = rely+1+(MaxSubpelExtH/2);
+            Ipp32s rangeRy = (8+(MaxSubpelExtH/2) -(rely+meInfo->height));
+            if( dMVx > -rangeLx && dMVx <= rangeRx && dMVy > -rangeLy && dMVy <= rangeRy) {
+                return true;
+            }
+        }
+    case 1:
+        if(m_memSubpel[1][refIdxMem][hPh][vPh].done) {
+            Ipp32s rely = meInfo->posy & 0x0f;
+            Ipp32s relx = meInfo->posx & 0x0f;
+            Ipp32s dMVx = (tmv.mvx - m_memSubpel[1][refIdxMem][hPh][vPh].mv.mvx)>>2;   // same phase, always integer pixel num
+            Ipp32s dMVy = (tmv.mvy - m_memSubpel[1][refIdxMem][hPh][vPh].mv.mvy)>>2;
+            Ipp32s rangeLx = relx+1+(MaxSubpelExtW/2);
+            Ipp32s rangeRx = (16+(MaxSubpelExtW/2) -(relx+meInfo->width));
+            Ipp32s rangeLy = rely+1+(MaxSubpelExtH/2);
+            Ipp32s rangeRy = (16+(MaxSubpelExtH/2) -(rely+meInfo->height));
+            if( dMVx > -rangeLx && dMVx <= rangeRx && dMVy > -rangeLy && dMVy <= rangeRy) {
+                return true;
+            }
+        }
+    case 2:
+        if(m_memSubpel[2][refIdxMem][hPh][vPh].done) {
+            Ipp32s rely = meInfo->posy & 0x1f;
+            Ipp32s relx = meInfo->posx & 0x1f;
+            Ipp32s dMVx = (tmv.mvx - m_memSubpel[2][refIdxMem][hPh][vPh].mv.mvx)>>2;   // same phase, always integer pixel num
+            Ipp32s dMVy = (tmv.mvy - m_memSubpel[2][refIdxMem][hPh][vPh].mv.mvy)>>2;
+            Ipp32s rangeLx = relx+1+(MaxSubpelExtW/2);
+            Ipp32s rangeRx = (32+(MaxSubpelExtW/2) -(relx+meInfo->width));
+            Ipp32s rangeLy = rely+1+(MaxSubpelExtH/2);
+            Ipp32s rangeRy = (32+(MaxSubpelExtH/2) -(rely+meInfo->height));
+            if( dMVx > -rangeLx && dMVx <= rangeRx && dMVy > -rangeLy && dMVy <= rangeRy) {
+                return true;
+            }
+        }
+    case 3:
+        if(m_memSubpel[3][refIdxMem][hPh][vPh].done) {
+            Ipp32s rely = meInfo->posy & 0x3f;
+            Ipp32s relx = meInfo->posx & 0x3f;
+            Ipp32s dMVx = (tmv.mvx - m_memSubpel[3][refIdxMem][hPh][vPh].mv.mvx)>>2;   // same phase, always integer pixel num
+            Ipp32s dMVy = (tmv.mvy - m_memSubpel[3][refIdxMem][hPh][vPh].mv.mvy)>>2;
+            Ipp32s rangeLx = relx+1+(MaxSubpelExtW/2);
+            Ipp32s rangeRx = (64+(MaxSubpelExtW/2) -(relx+meInfo->width));
+            Ipp32s rangeLy = rely+1+(MaxSubpelExtH/2);
+            Ipp32s rangeRy = (64+(MaxSubpelExtH/2) -(rely+meInfo->height));
+            if( dMVx > -rangeLx && dMVx <= rangeRx && dMVy > -rangeLy && dMVy <= rangeRy) {
+                return true;
+            }
+        }
+    } 
+
+    return false;
+}
+template <typename PixType>
+inline bool  H265CU<PixType>::MemSubpelUse(Ipp32s size, Ipp32s hPh, Ipp32s vPh, const H265MEInfo* meInfo, Ipp32s refIdxMem, const H265MV *mv, const PixType*& predBuf, Ipp32s& memPitch)
+{   
+    switch(size)
+    {
+    case 0:
+        if(m_memSubpel[0][refIdxMem][hPh][vPh].done) {
+            Ipp32s rely = meInfo->posy & 0x07;
+            Ipp32s relx = meInfo->posx & 0x07;
+            Ipp32s dMVx = (mv->mvx - m_memSubpel[0][refIdxMem][hPh][vPh].mv.mvx)>>2;   // same phase, always integer pixel num
+            Ipp32s dMVy = (mv->mvy - m_memSubpel[0][refIdxMem][hPh][vPh].mv.mvy)>>2;
+            Ipp32s rangeLx = relx+1+(MemSubpelExtW[0][hPh][vPh]/2);
+            Ipp32s rangeRx = (8+(MemSubpelExtW[0][hPh][vPh]/2) -(relx+meInfo->width));
+            Ipp32s rangeLy = rely+1+(MemSubpelExtH[0][hPh][vPh]/2);
+            Ipp32s rangeRy = (8+(MemSubpelExtH[0][hPh][vPh]/2) -(rely+meInfo->height));
+            if( dMVx > -rangeLx && dMVx <= rangeRx && dMVy > -rangeLy && dMVy <= rangeRy) {
+                memPitch = (MAX_CU_SIZE>>3)+8;
+                predBuf = &(m_memSubpel[0][refIdxMem][hPh][vPh].predBuf[(rely+dMVy+(MemSubpelExtH[0][hPh][vPh]/2))*memPitch+(relx+dMVx+(MemSubpelExtW[0][hPh][vPh]/2))]);
+                return true;
+            }
+        }
+    case 1:
+        if(m_memSubpel[1][refIdxMem][hPh][vPh].done) {
+            Ipp32s rely = meInfo->posy & 0x0f;
+            Ipp32s relx = meInfo->posx & 0x0f;
+            Ipp32s dMVx = (mv->mvx - m_memSubpel[1][refIdxMem][hPh][vPh].mv.mvx)>>2;   // same phase, always integer pixel num
+            Ipp32s dMVy = (mv->mvy - m_memSubpel[1][refIdxMem][hPh][vPh].mv.mvy)>>2;
+            Ipp32s rangeLx = relx+1+(MemSubpelExtW[1][hPh][vPh]/2);
+            Ipp32s rangeRx = (16+(MemSubpelExtW[1][hPh][vPh]/2) -(relx+meInfo->width));
+            Ipp32s rangeLy = rely+1+(MemSubpelExtH[1][hPh][vPh]/2);
+            Ipp32s rangeRy = (16+(MemSubpelExtH[1][hPh][vPh]/2) -(rely+meInfo->height));
+            if( dMVx > -rangeLx && dMVx <= rangeRx && dMVy > -rangeLy && dMVy <= rangeRy) {
+                memPitch = (MAX_CU_SIZE>>2)+8;
+                predBuf = &(m_memSubpel[1][refIdxMem][hPh][vPh].predBuf[(rely+dMVy+(MemSubpelExtH[1][hPh][vPh]/2))*memPitch+(relx+dMVx+(MemSubpelExtW[1][hPh][vPh]/2))]);
+                return true;
+            }
+        }
+    case 2:
+        if(m_memSubpel[2][refIdxMem][hPh][vPh].done) {
+            Ipp32s rely = meInfo->posy & 0x1f;
+            Ipp32s relx = meInfo->posx & 0x1f;
+            Ipp32s dMVx = (mv->mvx - m_memSubpel[2][refIdxMem][hPh][vPh].mv.mvx)>>2;   // same phase, always integer pixel num
+            Ipp32s dMVy = (mv->mvy - m_memSubpel[2][refIdxMem][hPh][vPh].mv.mvy)>>2;
+            Ipp32s rangeLx = relx+1+(MemSubpelExtW[2][hPh][vPh]/2);
+            Ipp32s rangeRx = (32+(MemSubpelExtW[2][hPh][vPh]/2) -(relx+meInfo->width));
+            Ipp32s rangeLy = rely+1+(MemSubpelExtH[2][hPh][vPh]/2);
+            Ipp32s rangeRy = (32+(MemSubpelExtH[2][hPh][vPh]/2) -(rely+meInfo->height));
+            if( dMVx > -rangeLx && dMVx <= rangeRx && dMVy > -rangeLy && dMVy <= rangeRy) {
+                memPitch = (MAX_CU_SIZE>>1)+8;
+                predBuf = &(m_memSubpel[2][refIdxMem][hPh][vPh].predBuf[(rely+dMVy+(MemSubpelExtH[2][hPh][vPh]/2))*memPitch+(relx+dMVx+(MemSubpelExtW[2][hPh][vPh]/2))]);
+                return true;
+            }
+        }
+    case 3:
+        if(m_memSubpel[3][refIdxMem][hPh][vPh].done) {
+            Ipp32s rely = meInfo->posy & 0x3f;
+            Ipp32s relx = meInfo->posx & 0x3f;
+            Ipp32s dMVx = (mv->mvx - m_memSubpel[3][refIdxMem][hPh][vPh].mv.mvx)>>2;   // same phase, always integer pixel num
+            Ipp32s dMVy = (mv->mvy - m_memSubpel[3][refIdxMem][hPh][vPh].mv.mvy)>>2;
+            Ipp32s rangeLx = relx+1+(MemSubpelExtW[3][hPh][vPh]/2);
+            Ipp32s rangeRx = (64+(MemSubpelExtW[3][hPh][vPh]/2) -(relx+meInfo->width));
+            Ipp32s rangeLy = rely+1+(MemSubpelExtH[3][hPh][vPh]/2);
+            Ipp32s rangeRy = (64+(MemSubpelExtH[3][hPh][vPh]/2) -(rely+meInfo->height));
+            if( dMVx > -rangeLx && dMVx <= rangeRx && dMVy > -rangeLy && dMVy <= rangeRy) {
+                memPitch = MAX_CU_SIZE+8;
+                predBuf = &(m_memSubpel[3][refIdxMem][hPh][vPh].predBuf[(rely+dMVy+(MemSubpelExtH[3][hPh][vPh]/2))*memPitch+(relx+dMVx+(MemSubpelExtW[3][hPh][vPh]/2))]);
+                return true;
+            }
+        }
+    } 
+    return false;
+}
+
+template <typename PixType>
+inline bool  H265CU<PixType>::MemSubpelUse(Ipp32s size, Ipp32s hPh, Ipp32s vPh, const H265MEInfo* meInfo, Ipp32s refIdxMem, const H265MV *mv, Ipp16s*& predBuf, Ipp32s& memPitch)
+{
+    switch(size)
+    {
+    case 0:
+        if(m_memSubpel[0][refIdxMem][hPh][vPh].done) {
+            Ipp32s rely = meInfo->posy & 0x07;
+            Ipp32s relx = meInfo->posx & 0x07;
+            Ipp32s dMVx = (mv->mvx - m_memSubpel[0][refIdxMem][hPh][vPh].mv.mvx)>>2;   // same phase, always integer pixel num
+            Ipp32s dMVy = (mv->mvy - m_memSubpel[0][refIdxMem][hPh][vPh].mv.mvy)>>2;
+            Ipp32s rangeLx = relx+1+(MemSubpelExtW[0][hPh][vPh]/2);
+            Ipp32s rangeRx = (8+(MemSubpelExtW[0][hPh][vPh]/2) -(relx+meInfo->width));
+            Ipp32s rangeLy = rely+1+(MemSubpelExtH[0][hPh][vPh]/2);
+            Ipp32s rangeRy = (8+(MemSubpelExtH[0][hPh][vPh]/2) -(rely+meInfo->height));
+            if( dMVx > -rangeLx && dMVx <= rangeRx && dMVy > -rangeLy && dMVy <= rangeRy) {
+                memPitch = (MAX_CU_SIZE>>3)+8;
+                predBuf = &(m_memSubpel[0][refIdxMem][hPh][vPh].predBufHi[(rely+dMVy+(MemSubpelExtH[0][hPh][vPh]/2))*memPitch+(relx+dMVx+(MemSubpelExtW[0][hPh][vPh]/2))]);
+                return true;
+            }
+        }
+    case 1:
+        if(m_memSubpel[1][refIdxMem][hPh][vPh].done) {
+            Ipp32s rely = meInfo->posy & 0x0f;
+            Ipp32s relx = meInfo->posx & 0x0f;
+            Ipp32s dMVx = (mv->mvx - m_memSubpel[1][refIdxMem][hPh][vPh].mv.mvx)>>2;   // same phase, always integer pixel num
+            Ipp32s dMVy = (mv->mvy - m_memSubpel[1][refIdxMem][hPh][vPh].mv.mvy)>>2;
+            Ipp32s rangeLx = relx+1+(MemSubpelExtW[1][hPh][vPh]/2);
+            Ipp32s rangeRx = (16+(MemSubpelExtW[1][hPh][vPh]/2) -(relx+meInfo->width));
+            Ipp32s rangeLy = rely+1+(MemSubpelExtH[1][hPh][vPh]/2);
+            Ipp32s rangeRy = (16+(MemSubpelExtH[1][hPh][vPh]/2) -(rely+meInfo->height));
+            if( dMVx > -rangeLx && dMVx <= rangeRx && dMVy > -rangeLy && dMVy <= rangeRy) {
+                memPitch = (MAX_CU_SIZE>>2)+8;
+                predBuf = &(m_memSubpel[1][refIdxMem][hPh][vPh].predBufHi[(rely+dMVy+(MemSubpelExtH[1][hPh][vPh]/2))*memPitch+(relx+dMVx+(MemSubpelExtW[1][hPh][vPh]/2))]);
+                return true;
+            }
+        }
+    case 2:
+        if(m_memSubpel[2][refIdxMem][hPh][vPh].done) {
+            Ipp32s rely = meInfo->posy & 0x1f;
+            Ipp32s relx = meInfo->posx & 0x1f;
+            Ipp32s dMVx = (mv->mvx - m_memSubpel[2][refIdxMem][hPh][vPh].mv.mvx)>>2;   // same phase, always integer pixel num
+            Ipp32s dMVy = (mv->mvy - m_memSubpel[2][refIdxMem][hPh][vPh].mv.mvy)>>2;
+            Ipp32s rangeLx = relx+1+(MemSubpelExtW[2][hPh][vPh]/2);
+            Ipp32s rangeRx = (32+(MemSubpelExtW[2][hPh][vPh]/2) -(relx+meInfo->width));
+            Ipp32s rangeLy = rely+1+(MemSubpelExtH[2][hPh][vPh]/2);
+            Ipp32s rangeRy = (32+(MemSubpelExtH[2][hPh][vPh]/2) -(rely+meInfo->height));
+            if( dMVx > -rangeLx && dMVx <= rangeRx && dMVy > -rangeLy && dMVy <= rangeRy) {
+                memPitch = (MAX_CU_SIZE>>1)+8;
+                predBuf = &(m_memSubpel[2][refIdxMem][hPh][vPh].predBufHi[(rely+dMVy+(MemSubpelExtH[2][hPh][vPh]/2))*memPitch+(relx+dMVx+(MemSubpelExtW[2][hPh][vPh]/2))]);
+                return true;
+            }
+        }
+    case 3:
+        if(m_memSubpel[3][refIdxMem][hPh][vPh].done) {
+            Ipp32s rely = meInfo->posy & 0x3f;
+            Ipp32s relx = meInfo->posx & 0x3f;
+            Ipp32s dMVx = (mv->mvx - m_memSubpel[3][refIdxMem][hPh][vPh].mv.mvx)>>2;   // same phase, always integer pixel num
+            Ipp32s dMVy = (mv->mvy - m_memSubpel[3][refIdxMem][hPh][vPh].mv.mvy)>>2;
+            Ipp32s rangeLx = relx+1+(MemSubpelExtW[3][hPh][vPh]/2);
+            Ipp32s rangeRx = (64+(MemSubpelExtW[3][hPh][vPh]/2) -(relx+meInfo->width));
+            Ipp32s rangeLy = rely+1+(MemSubpelExtH[3][hPh][vPh]/2);
+            Ipp32s rangeRy = (64+(MemSubpelExtH[3][hPh][vPh]/2) -(rely+meInfo->height));
+            if( dMVx > -rangeLx && dMVx <= rangeRx && dMVy > -rangeLy && dMVy <= rangeRy) {
+                memPitch = MAX_CU_SIZE+8;
+                predBuf = &(m_memSubpel[3][refIdxMem][hPh][vPh].predBufHi[(rely+dMVy+(MemSubpelExtH[3][hPh][vPh]/2))*memPitch+(relx+dMVx+(MemSubpelExtW[3][hPh][vPh]/2))]);
+                return true;
+            }
+        }
+    } 
+    return false;
+}
+
+template <typename PixType>
+inline bool  H265CU<PixType>::MemHadFirst(Ipp32s size, const H265MEInfo* meInfo, Ipp32s refIdxMem)
+{
+    if((meInfo->height | meInfo->width) & 0x07) return false;
+    switch(size)
+    {
+    case 0:
+    case 1:
+        if(m_memSubHad[1][refIdxMem][0][0].count) return false;
+    case 2:
+        if(m_memSubHad[2][refIdxMem][0][0].count) return false;
+    case 3:
+        if(m_memSubHad[3][refIdxMem][0][0].count) return false;
+    }
+
+    return true;
+}
+
+template <typename PixType>
+inline bool  H265CU<PixType>::MemHadUse(Ipp32s size, Ipp32s hPh, Ipp32s vPh, const H265MEInfo* meInfo, Ipp32s refIdxMem, const H265MV *mv, Ipp32s& satd, Ipp32s& foundSize)
+{
+    if((meInfo->height | meInfo->width) & 0x07) return false;
+    if(foundSize<size) return false;
+    if(foundSize>size) size = foundSize;
+    switch(size)
+    {
+    case 0:
+    case 1:
+        for(Ipp32s testPos=0;testPos<m_memSubHad[1][refIdxMem][hPh][vPh].count;testPos++) {
+            if(m_memSubHad[1][refIdxMem][hPh][vPh].mv[testPos] == *mv) {
+                Ipp32s offset = ((meInfo->posy&0x0f)>>3)*((MAX_CU_SIZE>>2)>>3)+((meInfo->posx&0x0f)>>3);
+                Ipp32s *satd8 = &(m_memSubHad[1][refIdxMem][hPh][vPh].satd8[testPos][offset]);
+                Ipp32s memPitch = MAX_CU_SIZE>>2;
+                satd = (tuHadUse(meInfo->width, meInfo->height, satd8, memPitch)) >> m_par->bitDepthLumaShift;
+                foundSize = 1;
+                return true;
+            }
+        }
+    case 2:
+        for(Ipp32s testPos=0;testPos<m_memSubHad[2][refIdxMem][hPh][vPh].count;testPos++) {
+            if(m_memSubHad[2][refIdxMem][hPh][vPh].mv[testPos] == *mv) {
+                Ipp32s offset = ((meInfo->posy&0x1f)>>3)*((MAX_CU_SIZE>>1)>>3)+((meInfo->posx&0x1f)>>3);
+                Ipp32s *satd8 = &(m_memSubHad[2][refIdxMem][hPh][vPh].satd8[testPos][offset]);  
+                Ipp32s memPitch = MAX_CU_SIZE>>1;
+                satd = (tuHadUse(meInfo->width, meInfo->height, satd8, memPitch)) >> m_par->bitDepthLumaShift;
+                foundSize = 2;
+                return true;
+            }
+        }        
+    case 3:
+        for(Ipp32s testPos=0;testPos<m_memSubHad[3][refIdxMem][hPh][vPh].count;testPos++) {
+            if(m_memSubHad[3][refIdxMem][hPh][vPh].mv[testPos] == *mv) {
+                Ipp32s offset = ((meInfo->posy&0x3f)>>3)*(MAX_CU_SIZE>>3)+((meInfo->posx&0x3f)>>3);
+                Ipp32s *satd8 = &(m_memSubHad[3][refIdxMem][hPh][vPh].satd8[testPos][offset]);
+                Ipp32s memPitch = MAX_CU_SIZE;
+                satd = (tuHadUse(meInfo->width, meInfo->height, satd8, memPitch)) >> m_par->bitDepthLumaShift;
+                foundSize = 3;
+                return true;
+            }
+        }
+    default:
+        break;
+    } 
+
+    return false;
+}
+
+template <typename PixType>
+inline bool  H265CU<PixType>::MemHadSave(Ipp32s size, Ipp32s hPh, Ipp32s vPh, const H265MEInfo* meInfo, Ipp32s refIdxMem, const H265MV *mv, Ipp32s*& satd8, Ipp32s& memPitch)
+{
+    if(meInfo->width != meInfo->height) return false;
+    if(size == 0) return false;
+    if(m_memSubHad[size][refIdxMem][hPh][vPh].count<4) {
+        satd8 = &(m_memSubHad[size][refIdxMem][hPh][vPh].satd8[m_memSubHad[size][refIdxMem][hPh][vPh].count][0]);
+        m_memSubHad[size][refIdxMem][hPh][vPh].mv[m_memSubHad[size][refIdxMem][hPh][vPh].count]   = *mv;
+        m_memSubHad[size][refIdxMem][hPh][vPh].count++;
+        memPitch = MAX_CU_SIZE>>(3-size);
+        return true;
+    }
+    return false;
+}
+
+template <typename PixType>
+Ipp32s H265CU<PixType>::MatchingMetricPuMem(const PixType *src, const H265MEInfo *meInfo, const H265MV *mv,
+                                         const H265Frame *refPic, Ipp32s useHadamard, Ipp32s refIdxMem, Ipp32s size, Ipp32s& hadFoundSize)
+{
+    Ipp32s refOffset = m_ctbPelX + meInfo->posx + (mv->mvx >> 2) + (m_ctbPelY + meInfo->posy + (mv->mvy >> 2)) * refPic->pitch_luma_pix;
+    const PixType *rec = (PixType*)refPic->y + refOffset;
+    Ipp32s pitchRec = refPic->pitch_luma_pix;
+    PixType *predPtr, *hpredPtr;
+    Ipp16s  *predPtrHi, *hpredPtrHi;
+    ALIGN_DECL(32) PixType predBuf[MAX_CU_SIZE*MAX_CU_SIZE];
+
+    Ipp32s isFast = m_par->FastInterp;
+
+    Ipp32s hPh = (mv->mvx&0x3);
+    Ipp32s vPh = (mv->mvy&0x3);
+
+    if (hPh || vPh) {
+        if(useHadamard) {
+            Ipp32s satd=0;
+            if(!MemHadUse(size, hPh, vPh, meInfo, refIdxMem, mv, satd, hadFoundSize)) {
+                if(!MemSubpelUse(size, hPh, vPh, meInfo, refIdxMem, mv, rec, pitchRec)) {
+                    if(MemSubpelSave(size, hPh, vPh, meInfo, refIdxMem, mv, predPtr, pitchRec, hpredPtr, predPtrHi, hpredPtrHi)) {
+                        H265MEInfo ext_meInfo = *meInfo;
+                        H265MV ext_mv = *mv;
+                        ext_mv.mvx -= ((MemSubpelExtW[size][hPh][vPh]/2)<<2);
+                        ext_mv.mvy -= ((MemSubpelExtH[size][hPh][vPh]/2)<<2);
+                        ext_meInfo.width +=MemSubpelExtW[size][hPh][vPh];
+                        ext_meInfo.height+=MemSubpelExtH[size][hPh][vPh];
+                        MeInterpolateSave(&ext_meInfo, &ext_mv, (PixType*)refPic->y, refPic->pitch_luma_pix, predPtr, pitchRec, hpredPtr, predPtrHi, hpredPtrHi);
+                        predPtr+= (MemSubpelExtH[size][hPh][vPh]/2)*pitchRec+(MemSubpelExtW[size][hPh][vPh]/2);
+                        rec = predPtr;
+                    } else {
+                        MeInterpolate(meInfo, mv, (PixType*)refPic->y, refPic->pitch_luma_pix, predBuf, MAX_CU_SIZE, isFast);
+                        rec = predBuf;
+                        pitchRec = MAX_CU_SIZE;
+                    }
+                }
+                Ipp32s *satd8 = NULL;
+                Ipp32s memPitch=0;
+                if(MemHadSave(size, hPh, vPh, meInfo, refIdxMem, mv, satd8, memPitch)) {
+                    satd =  (tuHadSave(src, m_pitchSrcLuma, rec, pitchRec, meInfo->width, meInfo->height, satd8, memPitch)) >> m_par->bitDepthLumaShift;
+                } else {
+                    satd =  (tuHad(src, m_pitchSrcLuma, rec, pitchRec, meInfo->width, meInfo->height)) >> m_par->bitDepthLumaShift;
+                }
+            }
+            return satd;
+        } else {
+            if(!MemSubpelUse(size, hPh, vPh, meInfo, refIdxMem, mv, rec, pitchRec))  {
+                if(MemSubpelSave(size, hPh, vPh, meInfo, refIdxMem, mv, predPtr, pitchRec, hpredPtr, predPtrHi, hpredPtrHi)) {
+                    H265MEInfo ext_meInfo = *meInfo;
+                    H265MV ext_mv = *mv;
+                    ext_mv.mvx -= ((MemSubpelExtW[size][hPh][vPh]/2)<<2);
+                    ext_mv.mvy -= ((MemSubpelExtH[size][hPh][vPh]/2)<<2);
+                    ext_meInfo.width +=MemSubpelExtW[size][hPh][vPh];
+                    ext_meInfo.height+=MemSubpelExtH[size][hPh][vPh];
+                    MeInterpolateSave(&ext_meInfo, &ext_mv, (PixType*)refPic->y, refPic->pitch_luma_pix, predPtr, pitchRec, hpredPtr, predPtrHi, hpredPtrHi);
+                    predPtr+= (MemSubpelExtH[size][hPh][vPh]/2)*pitchRec+(MemSubpelExtW[size][hPh][vPh]/2);
+                    rec = predPtr;
+                } else {
+                    MeInterpolate(meInfo, mv, (PixType*)refPic->y, refPic->pitch_luma_pix, predBuf, MAX_CU_SIZE, isFast);
+                    rec = predBuf;
+                    pitchRec = MAX_CU_SIZE;
+                }
+            }
+            return (h265_SAD_MxN_general(rec, pitchRec, src, m_pitchSrcLuma, meInfo->width, meInfo->height)) >> m_par->bitDepthLumaShift;
+        }
+    } else {
+        if(useHadamard) {
+            Ipp32s satd=0;
+            if(!MemHadUse(size, hPh, vPh, meInfo, refIdxMem, mv, satd, hadFoundSize)) {
+                Ipp32s *satd8 = NULL;
+                Ipp32s memPitch=0;
+                if(MemHadSave(size, hPh, vPh, meInfo, refIdxMem, mv, satd8, memPitch)) {
+                    satd =  (tuHadSave(src, m_pitchSrcLuma, rec, pitchRec, meInfo->width, meInfo->height, satd8, memPitch)) >> m_par->bitDepthLumaShift;
+                } else {
+                    satd =  (tuHad(src, m_pitchSrcLuma, rec, pitchRec, meInfo->width, meInfo->height)) >> m_par->bitDepthLumaShift;
+                }
+            }
+            return satd;
+        } else {
+            return (h265_SAD_MxN_general(rec, pitchRec, src, m_pitchSrcLuma, meInfo->width, meInfo->height)) >> m_par->bitDepthLumaShift;
+        }
+    }
+}
+#endif
+
 
 // absPartIdx - for minimal TU
 template <typename PixType>
@@ -2492,6 +3050,382 @@ void WriteAverageToPic(
     }
 }
 
+#ifdef MEMOIZE_SUBPEL
+
+void WriteBiAverageToPicP(
+    const Ipp16s *src0,
+    Ipp32u        pitchSrc0,      // in samples
+    unsigned char *src1,
+    Ipp32u        pitchSrc1,      // in samples
+    Ipp8u * H265_RESTRICT dst,
+    Ipp32u        pitchDst,       // in samples
+    Ipp32s        width,
+    Ipp32s        height,
+    Ipp32s        bitDepth)
+{
+    MFX_HEVC_PP::NAME(h265_AverageModeP)((short*)src0, pitchSrc0, src1, pitchSrc1, dst, pitchDst, width, height);
+}
+
+void WriteBiAverageToPicP(
+    const Ipp16s *src0,
+    Ipp32u        pitchSrc0,      // in samples
+    Ipp16u * H265_RESTRICT src1,
+    Ipp32u        pitchSrc1,      // in samples
+    Ipp16u * H265_RESTRICT dst,
+    Ipp32u        pitchDst,       // in samples
+    Ipp32s        width,
+    Ipp32s        height,
+    Ipp32s        bitDepth)
+{
+    MFX_HEVC_PP::NAME(h265_AverageModeP_U16)((short*)src0, pitchSrc0, src1, pitchSrc1, dst, pitchDst, width, height, bitDepth);
+}
+
+void WriteBiAverageToPicB(
+    const Ipp16s *src0,
+    Ipp32u        pitchSrc0,      // in samples
+    const Ipp16s *src1,
+    Ipp32u        pitchSrc1,      // in samples
+    Ipp8u * H265_RESTRICT dst,
+    Ipp32u        pitchDst,       // in samples
+    Ipp32s        width,
+    Ipp32s        height,
+    Ipp32s        bitDepth)
+{
+    MFX_HEVC_PP::NAME(h265_AverageModeB)((short*)src0, pitchSrc0, (short*)src1, pitchSrc1, dst, pitchDst, width, height);
+}
+
+void WriteBiAverageToPicB(
+    const Ipp16s *src0,
+    Ipp32u        pitchSrc0,      // in samples
+    const Ipp16s *src1,
+    Ipp32u        pitchSrc1,      // in samples
+    Ipp16u * H265_RESTRICT dst,
+    Ipp32u        pitchDst,       // in samples
+    Ipp32s        width,
+    Ipp32s        height,
+    Ipp32s        bitDepth)
+{
+    MFX_HEVC_PP::NAME(h265_AverageModeB_U16)((short*)src0, pitchSrc0, (short*)src1, pitchSrc1, dst, pitchDst, width, height, bitDepth);
+}
+
+template <typename PixType>
+void H265CU<PixType>::MeInterpolateUseSaveHi(const H265MEInfo* meInfo, const H265MV *mv, PixType *src,
+                                    Ipp32s srcPitch, Ipp16s*& dst, Ipp32s& dstPitch, Ipp32s size, Ipp32s refIdxMem)
+{
+    Ipp32s w = meInfo->width;
+    Ipp32s h = meInfo->height;
+    Ipp32s dx = mv->mvx & 3;
+    Ipp32s dy = mv->mvy & 3;
+    Ipp32s hPh = dx;
+    Ipp32s vPh = dy;
+    Ipp32s bitDepth = m_par->bitDepthLuma;
+    Ipp16s *interpBuf;
+    Ipp32s interpPitch;
+    Ipp32s refOffset = m_ctbPelX + meInfo->posx + (mv->mvx >> 2) + (m_ctbPelY + meInfo->posy + (mv->mvy >> 2)) * srcPitch;
+    src += refOffset;
+    
+    bool isFast = m_par->FastInterp;
+
+    VM_ASSERT (!(dx == 0 && dy == 0));
+    if (dy == 0)
+    {
+        if(!MemSubpelUse(size, hPh, vPh, meInfo, refIdxMem, mv, interpBuf, interpPitch)) {
+            dst = m_interpBufBi[m_interpIdxLast].predBufY;
+            m_interpBufBi[m_interpIdxLast].refIdx = refIdxMem;
+            m_interpBufBi[m_interpIdxLast].mv = *mv;
+            m_interpIdxLast = (m_interpIdxLast + 1) & (INTERP_BUF_SZ - 1); // added to end
+            if (m_interpIdxFirst == m_interpIdxLast) // replaced oldest
+                m_interpIdxFirst = (m_interpIdxFirst + 1) & (INTERP_BUF_SZ - 1);
+            dstPitch = MAX_CU_SIZE;
+            Interpolate<UMC_HEVC_DECODER::TEXT_LUMA>( INTERP_HOR, src, srcPitch, dst, dstPitch, dx, w, h, 0, 0, bitDepth, isFast);
+        } else {
+            dst = interpBuf;
+            dstPitch = interpPitch;
+        }
+    }
+    else if (dx == 0)
+    {
+        if(!MemSubpelUse(size, hPh, vPh, meInfo, refIdxMem, mv, interpBuf, interpPitch)) {
+            PixType *predPtr, *hpredPtr;
+            Ipp32s pitchRec;
+            Ipp16s *predPtrHi, *hpredPtrHi;
+            if(MemSubpelSave(size, hPh, vPh, meInfo, refIdxMem, mv, predPtr, pitchRec, hpredPtr, predPtrHi, hpredPtrHi)) {
+                Ipp32s ext_offset = (MemSubpelExtW[size][hPh][vPh]/2);
+                ext_offset += (MemSubpelExtH[size][hPh][vPh]/2)*srcPitch;
+                Ipp32s w2 = w+MemSubpelExtW[size][hPh][vPh];
+                Ipp32s h2 = h+MemSubpelExtH[size][hPh][vPh];
+                Interpolate<UMC_HEVC_DECODER::TEXT_LUMA>( INTERP_VER, src-ext_offset, srcPitch, predPtrHi, pitchRec, dy, w2, h2, 0, 0, bitDepth, isFast);
+                h265_InterpLumaPack(predPtrHi, pitchRec, predPtr, pitchRec, w2, h2, bitDepth);
+                dst = predPtrHi + (MemSubpelExtH[size][hPh][vPh]/2)*pitchRec+(MemSubpelExtW[size][hPh][vPh]/2);
+                dstPitch = pitchRec;
+            } else {
+                dst = m_interpBufBi[m_interpIdxLast].predBufY;
+                m_interpBufBi[m_interpIdxLast].refIdx = refIdxMem;
+                m_interpBufBi[m_interpIdxLast].mv = *mv;
+                m_interpIdxLast = (m_interpIdxLast + 1) & (INTERP_BUF_SZ - 1); // added to end
+                if (m_interpIdxFirst == m_interpIdxLast) // replaced oldest
+                    m_interpIdxFirst = (m_interpIdxFirst + 1) & (INTERP_BUF_SZ - 1);
+                dstPitch = MAX_CU_SIZE;
+                Interpolate<UMC_HEVC_DECODER::TEXT_LUMA>( INTERP_VER, src, srcPitch, dst, dstPitch, dy, w, h, 0, 0, bitDepth, isFast);
+            }
+        } else {
+            dst = interpBuf;
+            dstPitch = interpPitch;
+        }
+    }
+    else
+    {
+        if(!MemSubpelUse(size, hPh, vPh, meInfo, refIdxMem, mv, interpBuf, interpPitch)) {
+            dst = m_interpBufBi[m_interpIdxLast].predBufY;
+            m_interpBufBi[m_interpIdxLast].refIdx = refIdxMem;
+            m_interpBufBi[m_interpIdxLast].mv = *mv;
+            m_interpIdxLast = (m_interpIdxLast + 1) & (INTERP_BUF_SZ - 1); // added to end
+            if (m_interpIdxFirst == m_interpIdxLast) // replaced oldest
+                m_interpIdxFirst = (m_interpIdxFirst + 1) & (INTERP_BUF_SZ - 1);
+            dstPitch = MAX_CU_SIZE;
+
+            Ipp16s tmpBuf[((64+8)+8+8) * ((64+8)+8+8)];
+            Ipp16s *tmp = tmpBuf + ((64+8)+8+8) * 8 + 8;
+            Ipp32s tmpPitch = ((64+8)+8+8);
+
+            Interpolate<UMC_HEVC_DECODER::TEXT_LUMA>( INTERP_HOR, src - 3 * srcPitch, srcPitch, tmp, tmpPitch, dx, w, h + 8, bitDepth - 8, 0, bitDepth, isFast);
+            Ipp32s shift  = 6;
+            Ipp16s offset = 0;
+            Interpolate<UMC_HEVC_DECODER::TEXT_LUMA>( INTERP_VER,  tmp + 3 * tmpPitch, tmpPitch, dst, dstPitch, dy, w, h, shift, offset, bitDepth, isFast);
+        } else {
+            dst = interpBuf;
+            dstPitch = interpPitch;
+        }
+    }
+    return;
+} 
+
+template <typename PixType>
+void H265CU<PixType>::MeInterpolateUseHi(const H265MEInfo* meInfo, const H265MV *mv, PixType *src,
+                                    Ipp32s srcPitch, Ipp16s*& dst, Ipp32s& dstPitch, Ipp32s size, Ipp32s refIdxMem)
+{
+    Ipp32s w = meInfo->width;
+    Ipp32s h = meInfo->height;
+    Ipp32s dx = mv->mvx & 3;
+    Ipp32s dy = mv->mvy & 3;
+    Ipp32s hPh = dx;
+    Ipp32s vPh = dy;
+    Ipp32s bitDepth = m_par->bitDepthLuma;
+    Ipp16s *interpBuf;
+    Ipp32s interpPitch;
+    Ipp32s refOffset = m_ctbPelX + meInfo->posx + (mv->mvx >> 2) + (m_ctbPelY + meInfo->posy + (mv->mvy >> 2)) * srcPitch;
+    src += refOffset;
+    
+    bool isFast = m_par->FastInterp;
+
+    VM_ASSERT (!(dx == 0 && dy == 0));
+    if (dy == 0)
+    {
+        if(!MemSubpelUse(size, hPh, vPh, meInfo, refIdxMem, mv, interpBuf, interpPitch)) {
+            dst = m_interpBufBi[m_interpIdxLast].predBufY;
+            m_interpBufBi[m_interpIdxLast].refIdx = refIdxMem;
+            m_interpBufBi[m_interpIdxLast].mv = *mv;
+            m_interpIdxLast = (m_interpIdxLast + 1) & (INTERP_BUF_SZ - 1); // added to end
+            if (m_interpIdxFirst == m_interpIdxLast) // replaced oldest
+                m_interpIdxFirst = (m_interpIdxFirst + 1) & (INTERP_BUF_SZ - 1);
+            dstPitch = MAX_CU_SIZE;
+            Interpolate<UMC_HEVC_DECODER::TEXT_LUMA>( INTERP_HOR, src, srcPitch, dst, dstPitch, dx, w, h, 0, 0, bitDepth, isFast);
+        } else {
+            dst = interpBuf;
+            dstPitch = interpPitch;
+        }
+    }
+    else if (dx == 0)
+    {
+        if(!MemSubpelUse(size, hPh, vPh, meInfo, refIdxMem, mv, interpBuf, interpPitch)) {
+            dst = m_interpBufBi[m_interpIdxLast].predBufY;
+            m_interpBufBi[m_interpIdxLast].refIdx = refIdxMem;
+            m_interpBufBi[m_interpIdxLast].mv = *mv;
+            m_interpIdxLast = (m_interpIdxLast + 1) & (INTERP_BUF_SZ - 1); // added to end
+            if (m_interpIdxFirst == m_interpIdxLast) // replaced oldest
+                m_interpIdxFirst = (m_interpIdxFirst + 1) & (INTERP_BUF_SZ - 1);
+            dstPitch = MAX_CU_SIZE;
+            Interpolate<UMC_HEVC_DECODER::TEXT_LUMA>( INTERP_VER, src, srcPitch, dst, dstPitch, dy, w, h, 0, 0, bitDepth, isFast);
+        } else {
+            dst = interpBuf;
+            dstPitch = interpPitch;
+        }
+    }
+    else
+    {
+        if(!MemSubpelUse(size, hPh, vPh, meInfo, refIdxMem, mv, interpBuf, interpPitch)) {  
+            dst = m_interpBufBi[m_interpIdxLast].predBufY;
+            m_interpBufBi[m_interpIdxLast].refIdx = refIdxMem;
+            m_interpBufBi[m_interpIdxLast].mv = *mv;
+            m_interpIdxLast = (m_interpIdxLast + 1) & (INTERP_BUF_SZ - 1); // added to end
+            if (m_interpIdxFirst == m_interpIdxLast) // replaced oldest
+                m_interpIdxFirst = (m_interpIdxFirst + 1) & (INTERP_BUF_SZ - 1);
+            dstPitch = MAX_CU_SIZE;
+
+            Ipp16s tmpBuf[((64+8)+8+8) * ((64+8)+8+8)];
+            Ipp16s *tmp = tmpBuf + ((64+8)+8+8) * 8 + 8;
+            Ipp32s tmpPitch = ((64+8)+8+8);
+
+            Interpolate<UMC_HEVC_DECODER::TEXT_LUMA>( INTERP_HOR, src - 3 * srcPitch, srcPitch, tmp, tmpPitch, dx, w, h + 8, bitDepth - 8, 0, bitDepth, isFast);
+            Ipp32s shift  = 6;
+            Ipp16s offset = 0;
+            Interpolate<UMC_HEVC_DECODER::TEXT_LUMA>( INTERP_VER,  tmp + 3 * tmpPitch, tmpPitch, dst, dstPitch, dy, w, h, shift, offset, bitDepth, isFast);
+        } else {
+            dst = interpBuf;
+            dstPitch = interpPitch;
+        }
+    }
+    return;
+} 
+
+template <typename PixType>
+Ipp32s H265CU<PixType>::MatchingMetricBipredPuSearch(const PixType *src, const H265MEInfo *meInfo, const Ipp8s refIdx[2],
+                                      const H265MV mvs[2], Ipp32s useHadamard)
+{
+    H265MV mvsClipped[2] = { mvs[0], mvs[1] };
+    H265Frame *refFrame[2] = { m_currFrame->m_refPicList[0].m_refFrames[refIdx[0]],
+                               m_currFrame->m_refPicList[1].m_refFrames[refIdx[1]] };
+    
+    Ipp32s isFast = m_par->FastInterp;
+
+    ALIGN_DECL(32) PixType predBuf[MAX_CU_SIZE * MAX_CU_SIZE];
+
+    Ipp32s size = 0;
+    if     (meInfo->width<=8 && meInfo->height<=8)   size = 0;
+    else if(meInfo->width<=16 && meInfo->height<=16) size = 1;
+    else if(meInfo->width<=32 && meInfo->height<=32) size = 2;
+    else                                             size = 3;
+
+    if (CheckIdenticalMotion(refIdx, mvsClipped)) {
+        Ipp32s listIdx = !!(refIdx[0] < 0);
+        ClipMV(mvsClipped[listIdx]);
+        H265MV *mv = mvsClipped + listIdx;
+        if ((mv->mvx | mv->mvy) & 3) {
+
+            const PixType* predPtr;
+            Ipp32s predPitch;
+            if(MemSubpelUse(size, mv->mvx&3, mv->mvy&3, meInfo, m_currFrame->m_mapListRefUnique[listIdx][refIdx[listIdx]],
+                &mvsClipped[listIdx], predPtr, predPitch)) 
+            {
+                IppiSize roiSize = {meInfo->width, meInfo->height};
+                _ippiCopy_C1R((PixType*)predPtr, predPitch, predBuf, MAX_CU_SIZE, roiSize);
+            } else {
+                    PredInterUni<TEXT_LUMA>(meInfo->posx, meInfo->posy, meInfo->width, meInfo->height, listIdx,
+                                    refIdx, mvsClipped, predBuf, MAX_CU_SIZE, false, AVERAGE_NO, isFast);
+            }
+        }
+        else {
+            // unique case; int pel from single ref
+            Ipp32s refOffset = (m_ctbPelY + meInfo->posy + (mv->mvy >> 2)) * refFrame[listIdx]->pitch_luma_pix;
+            refOffset += m_ctbPelX + meInfo->posx + (mv->mvx >> 2);
+            PixType *rec = (PixType *)refFrame[listIdx]->y + refOffset;
+            Ipp32s pitchRec = refFrame[listIdx]->pitch_luma_pix;
+            return ((useHadamard)
+                ? tuHad(src, m_pitchSrcLuma, rec, pitchRec, meInfo->width, meInfo->height)
+                : h265_SAD_MxN_general(rec, pitchRec, src, m_pitchSrcLuma, meInfo->width, meInfo->height)) >> m_par->bitDepthLumaShift;
+        }
+    }
+    else {
+        ClipMV(mvsClipped[0]);
+        ClipMV(mvsClipped[1]);
+        Ipp32s interpFlag0 = (mvsClipped[0].mvx | mvsClipped[0].mvy) & 3;
+        Ipp32s interpFlag1 = (mvsClipped[1].mvx | mvsClipped[1].mvy) & 3;
+        bool onlyOneIterp = !(interpFlag0 && interpFlag1);
+#if 1
+        if(!interpFlag0 && !interpFlag1) {
+            Ipp32s listIdx = !interpFlag0;
+            PredInterUni<TEXT_LUMA>(meInfo->posx, meInfo->posy, meInfo->width, meInfo->height, listIdx,
+                refIdx, mvsClipped, predBuf, MAX_CU_SIZE, true, AVERAGE_FROM_PIC, isFast);
+        } else
+#endif
+        if (onlyOneIterp) {
+            //if(!interpFlag0 && !interpFlag1) assert(0);
+            Ipp32s listIdx = !interpFlag0;
+            Ipp32s listIdx2 = !listIdx;
+            Ipp16s *predBufY = NULL;
+            Ipp32s predPitch = MAX_CU_SIZE;
+            bool found=false;
+            
+            H265MV *ref_mv = mvsClipped + listIdx2;
+            Ipp32s refOffset = (m_ctbPelY + meInfo->posy + (ref_mv->mvy >> 2)) * refFrame[listIdx2]->pitch_luma_pix;
+            refOffset += m_ctbPelX + meInfo->posx + (ref_mv->mvx >> 2);
+            PixType *refY = (PixType *)refFrame[listIdx2]->y + refOffset;
+            Ipp32s pitchRef = refFrame[listIdx2]->pitch_luma_pix;
+            Ipp8u idx;
+            for (idx = m_interpIdxFirst; idx !=m_interpIdxLast; idx = (idx + 1) & (INTERP_BUF_SZ - 1)) {
+                if (m_currFrame->m_mapListRefUnique[listIdx][refIdx[listIdx]] == m_interpBufBi[idx].refIdx 
+                    && mvsClipped[listIdx] == m_interpBufBi[idx].mv) {
+                    predBufY = m_interpBufBi[idx].predBufY;
+                    found=true;
+                    break;
+                }
+            }
+            
+            if(!found) {
+#ifdef MEMOIZE_BIPRED_HI_SAVE
+                MeInterpolateUseSaveHi(meInfo, &mvsClipped[listIdx], (PixType *)refFrame[listIdx]->y, 
+                    refFrame[listIdx]->pitch_luma_pix, predBufY, predPitch, size, 
+                    m_currFrame->m_mapListRefUnique[listIdx][refIdx[listIdx]]);
+#else
+                MeInterpolateUseHi(meInfo, &mvsClipped[listIdx], (PixType *)refFrame[listIdx]->y, 
+                    refFrame[listIdx]->pitch_luma_pix, predBufY, predPitch, size, 
+                    m_currFrame->m_mapListRefUnique[listIdx][refIdx[listIdx]]);
+#endif
+            }
+            WriteBiAverageToPicP(predBufY, predPitch, refY, pitchRef, predBuf, MAX_CU_SIZE, meInfo->width, meInfo->height, m_par->bitDepthLuma);
+        }
+        else {
+            Ipp16s *predBufY[2] = {NULL, NULL};
+            Ipp32s predPitch[2] = {MAX_CU_SIZE, MAX_CU_SIZE};
+            bool found[2]={false,false};
+            //for (Ipp8u dir = 0; dir < 2; dir++) 
+            Ipp8u dir =0;
+            Ipp8u idx;
+            for (idx = m_interpIdxFirst; idx !=m_interpIdxLast; idx = (idx + 1) & (INTERP_BUF_SZ - 1)) {
+                if (m_currFrame->m_mapListRefUnique[dir][refIdx[dir]] == m_interpBufBi[idx].refIdx && mvsClipped[dir] == m_interpBufBi[idx].mv) {
+                    predBufY[dir] = m_interpBufBi[idx].predBufY;
+                    found[dir]=true;
+                    break;
+                }
+            }
+            
+            if(!found[0]) {
+#ifdef MEMOIZE_BIPRED_HI_SAVE
+                MeInterpolateUseSaveHi(meInfo, &mvsClipped[0], (PixType *)refFrame[0]->y, refFrame[0]->pitch_luma_pix, 
+                    predBufY[0], predPitch[0], size, m_currFrame->m_mapListRefUnique[0][refIdx[0]]);
+#else
+                MeInterpolateUseHi(meInfo, &mvsClipped[0], (PixType *)refFrame[0]->y, refFrame[0]->pitch_luma_pix, 
+                    predBufY[0], predPitch[0], size, m_currFrame->m_mapListRefUnique[0][refIdx[0]]);
+#endif
+            }
+            dir = 1;
+            for (idx = m_interpIdxFirst; idx !=m_interpIdxLast; idx = (idx + 1) & (INTERP_BUF_SZ - 1)) {
+                if (m_currFrame->m_mapListRefUnique[dir][refIdx[dir]] == m_interpBufBi[idx].refIdx && mvsClipped[dir] == m_interpBufBi[idx].mv) {
+                    predBufY[dir] = m_interpBufBi[idx].predBufY;
+                    found[dir]=true;
+                    break;
+                }
+            }
+            if(!found[1]) {
+#ifdef MEMOIZE_BIPRED_HI_SAVE
+                MeInterpolateUseSaveHi(meInfo, &mvsClipped[1], (PixType *)refFrame[1]->y, refFrame[1]->pitch_luma_pix, 
+                    predBufY[1], predPitch[1], size, m_currFrame->m_mapListRefUnique[1][refIdx[1]]);
+#else
+                MeInterpolateUseHi(meInfo, &mvsClipped[1], (PixType *)refFrame[1]->y, refFrame[1]->pitch_luma_pix, 
+                    predBufY[1], predPitch[1], size, m_currFrame->m_mapListRefUnique[1][refIdx[1]]);
+#endif
+            }
+
+            WriteBiAverageToPicB(predBufY[0], predPitch[0], predBufY[1], predPitch[1], predBuf, MAX_CU_SIZE, 
+                meInfo->width, meInfo->height, m_par->bitDepthLuma);
+        }
+    }
+
+    return ((useHadamard)
+        ? tuHad(src, m_pitchSrcLuma, predBuf, MAX_CU_SIZE, meInfo->width, meInfo->height)
+        : h265_SAD_MxN_special(src, predBuf, m_pitchSrcLuma, meInfo->width, meInfo->height)) >> (m_par->bitDepthLumaShift);
+}
+#endif
 
 template <typename PixType>
 Ipp32s H265CU<PixType>::MatchingMetricBipredPu(const PixType *src, const H265MEInfo *meInfo, const Ipp8s refIdx[2],
@@ -3185,6 +4119,7 @@ void H265CU<PixType>::MeIntPelLog(const H265MEInfo *meInfo, const MvPredInfo<2> 
     Ipp8u start = 0, len = 1;
     Ipp16s meStep = meStepBest;
     mvCenter = mvBest;
+    Ipp32s iterbest = costBest;
     while (meStep >= 2) {
         Ipp32s refine = 1;
         Ipp32s bestPos = 0;
@@ -3209,13 +4144,20 @@ void H265CU<PixType>::MeIntPelLog(const H265MEInfo *meInfo, const MvPredInfo<2> 
             }
         }
 
-        if (refine) 
+        if (refine) {
             meStep --;
-        else
+        } else {
+#ifdef AMT_INT_ME_CONVERGE
+            if((costBest+m_rdLambdaSqrt)>iterbest) {
+                meStep--;
+                bestPos = 0;
+            }
+#endif
             mvCenter = mvBest;
-
+        }
         start = tab_meTransition[bestPos].start;
         len   = tab_meTransition[bestPos].len;
+        iterbest = costBest;
     }
 
     *mv = mvBest;
@@ -3379,6 +4321,333 @@ void H265CU<PixType>::MeSubPelBatchedDia(const H265MEInfo *meInfo, const MvPredI
     *mv = mvBest;
 }
 
+#ifdef MEMOIZE_SUBPEL
+template <typename PixType>
+void H265CU<PixType>::MemSubPelBatchedBox(const H265MEInfo *meInfo, const MvPredInfo<2> *predInfo,
+                                         const H265Frame *ref, H265MV *mv, Ipp32s *cost, Ipp32s *mvCost, Ipp32s refIdxMem, Ipp32s size)
+{
+    VM_ASSERT(m_par->patternSubPel == SUBPEL_BOX);
+    using MFX_HEVC_PP::h265_InterpLumaPack;
+
+    Ipp32s w = meInfo->width;
+    Ipp32s h = meInfo->height;
+    Ipp32s bitDepth = m_par->bitDepthLuma;
+    Ipp32s costShift = m_par->bitDepthLumaShift;
+    Ipp32s shift = 20 - bitDepth;
+    Ipp32s offset = 1 << (19 - bitDepth);
+    Ipp32s useHadamard = (m_par->hadamardMe >= 2);
+
+    Ipp32s isFast = m_par->FastInterp;
+
+    Ipp32s pitchSrc = m_pitchSrcLuma;
+    PixType *src = m_ySrc + meInfo->posx + meInfo->posy * pitchSrc;
+
+    Ipp32s pitchRef = ref->pitch_luma_pix;
+    const PixType *refY = (const PixType *)ref->y;
+    refY += (Ipp32s)(m_ctbPelX + meInfo->posx + (mv->mvx >> 2) + (m_ctbPelY + meInfo->posy + (mv->mvy >> 2)) * pitchRef);
+
+    Ipp32s costs[8];
+
+    Ipp32s memPitch = (MAX_CU_SIZE>>(3-size))+8;
+    Ipp16s *predBufHi20;
+    PixType *predBuf20;
+    H265MV tmv;
+    tmv =*mv;
+    tmv.mvx +=2;
+    MemSubpelGetBuf(size, 2, 0, refIdxMem, predBuf20, predBufHi20);
+    // intermediate halfpels Hi[2,0]: change (-1, -4) (w+8, h+8) to (-4,-4) (w+8, h+8)
+    InterpHor(refY - 4 - 4 * pitchRef, pitchRef, predBufHi20, memPitch, 2, (w + 8) & ~7, h + 10, bitDepth - 8, 0, bitDepth); // (intermediate, save to predBufHi[2][0])
+    Ipp16s *tmpHor2 = predBufHi20 + 3 * memPitch + 3;
+
+    // interpolate horizontal halfpels: Lo (2,0) (-4, -4) (w+8, h+8)
+    h265_InterpLumaPack(predBufHi20, memPitch, predBuf20, memPitch, w + 8, h + 8, bitDepth);                            // save to predBuf[2][0]
+    MemSubpelSetMv(size, 2, 0, refIdxMem, &tmv);
+
+    PixType *tmpSub2 = predBuf20 + 4 * memPitch + 3;
+    Ipp32s *satd8;
+    Ipp32s satdPitch;
+    tmv = *mv;
+    tmv.mvx +=2;
+    MemHadSave(size, tmv.mvx&3, tmv.mvy&3, meInfo, refIdxMem, &tmv, satd8, satdPitch);
+    costs[3] = tuHadSave(src, pitchSrc, tmpSub2 + 1, memPitch, w, h, satd8, satdPitch) >> costShift;                    // save to Had[2][0]
+
+    tmv = *mv;
+    tmv.mvx -=2;
+    MemHadSave(size, tmv.mvx&3, tmv.mvy&3, meInfo, refIdxMem, &tmv, satd8, satdPitch);
+    costs[7] = tuHadSave(src, pitchSrc, tmpSub2,     memPitch, w, h, satd8, satdPitch) >> costShift;                     // save to Had[2][0]
+
+    // interpolate diagonal halfpels Hi (2,2) (-4,-1) (w+8, h+2)
+    Ipp16s *tmpHor22 = predBufHi20 + 3 * memPitch;
+    Ipp16s *predBufHi22;
+    PixType *predBuf22;
+    tmv = *mv;
+    tmv.mvx +=2;
+    tmv.mvy +=2;
+    MemSubpelGetBuf(size, 2, 2, refIdxMem, predBuf22, predBufHi22);
+    InterpVer(tmpHor22, memPitch, predBufHi22, memPitch, 2, (w + 8) & ~7, h + 2, 6, 0, bitDepth);                         // save to predBufHi[2][2]
+    // Lo (2,2) (-4,-1) (w+8, h+2)
+    h265_InterpLumaPack(predBufHi22, memPitch, predBuf22, memPitch, w + 8, h + 2, bitDepth);                                // save to predBuf[2][2]
+    MemSubpelSetMv(size, 2, 2, refIdxMem, &tmv);
+    tmpSub2 = predBuf22 + 3;
+    tmv = *mv;
+    tmv.mvx -=2;
+    tmv.mvy -=2;
+    MemHadSave(size, tmv.mvx&3, tmv.mvy&3, meInfo, refIdxMem, &tmv, satd8, satdPitch);
+    costs[0] = tuHadSave(src, pitchSrc, tmpSub2,                 memPitch, w, h, satd8, satdPitch) >> costShift;       // save to Had[2][2] ++
+
+    tmv = *mv;
+    tmv.mvx +=2;
+    tmv.mvy -=2;
+    MemHadSave(size, tmv.mvx&3, tmv.mvy&3, meInfo, refIdxMem, &tmv, satd8, satdPitch);
+    costs[2] = tuHadSave(src, pitchSrc, tmpSub2 + 1,             memPitch, w, h, satd8, satdPitch) >> costShift;       // save to Had[2][2] ++
+
+    tmv = *mv;
+    tmv.mvx +=2;
+    tmv.mvy +=2;
+    MemHadSave(size, tmv.mvx&3, tmv.mvy&3, meInfo, refIdxMem, &tmv, satd8, satdPitch);
+    costs[4] = tuHadSave(src, pitchSrc, tmpSub2 + 1 + memPitch,  memPitch, w, h, satd8, satdPitch) >> costShift;       // save to Had[2][2] ++
+
+    tmv = *mv;
+    tmv.mvx -=2;
+    tmv.mvy +=2;
+    MemHadSave(size, tmv.mvx&3, tmv.mvy&3, meInfo, refIdxMem, &tmv, satd8, satdPitch);
+    costs[6] = tuHadSave(src, pitchSrc, tmpSub2     + memPitch,  memPitch, w, h, satd8, satdPitch) >> costShift;       // save to Had[2][2] ++
+
+    // interpolate vertical halfpels
+    Ipp16s *predBufHi02;
+    PixType *predBuf02;
+    tmv = *mv;
+    tmv.mvy +=2;
+    MemSubpelGetBuf(size, 0, 2, refIdxMem, predBuf02, predBufHi02);
+    // Hi [0,2] (0,-1) (w, h+2)
+    InterpVer(refY - pitchRef, pitchRef, predBufHi02, memPitch, 2, w, h + 2, 0, 0, bitDepth);                               // save to predBufHi[0][2]
+    // Lo [0,2] (0,-1) (w, h+2)
+    h265_InterpLumaPack(predBufHi02, memPitch, predBuf02, memPitch, w, h + 2, bitDepth);                                    // save to predBuf[0][2]
+    MemSubpelSetMv(size, 0, 2, refIdxMem, &tmv);
+    tmv = *mv;
+    tmv.mvy -=2;
+    MemHadSave(size, tmv.mvx&3, tmv.mvy&3, meInfo, refIdxMem, &tmv, satd8, satdPitch);
+    costs[1] = tuHadSave(src, pitchSrc, predBuf02,             memPitch, w, h, satd8, satdPitch) >> costShift;               // Save to Had[0][2]++
+
+    tmv = *mv;
+    tmv.mvy +=2;
+    MemHadSave(size, tmv.mvx&3, tmv.mvy&3, meInfo, refIdxMem, &tmv, satd8, satdPitch);
+    costs[5] = tuHadSave(src, pitchSrc, predBuf02 + memPitch,  memPitch, w, h, satd8, satdPitch) >> costShift;              // Save to Had[0][2]++
+
+    H265MV mvBest = *mv;
+    Ipp32s costBest = *cost;
+    Ipp32s mvCostBest = *mvCost;
+    if (m_par->hadamardMe >= 2) { // always
+        // when satd is for subpel only need to recalculate cost for intpel motion vector
+        tmv = *mv;
+        MemHadSave(size, tmv.mvx&3, tmv.mvy&3, meInfo, refIdxMem, &tmv, satd8, satdPitch);
+        costBest = tuHadSave(src, pitchSrc, refY, pitchRef, w, h, satd8, satdPitch) >> costShift;                           // Save to Had[0][0]
+        costBest += mvCostBest;
+    }
+
+    AddMvCost(predInfo, 1, costs, &mvBest, &costBest, &mvCostBest);
+
+    Ipp32s hpelx = mvBest.mvx - mv->mvx + 4; // can be 2, 4 or 6
+    Ipp32s hpely = mvBest.mvy - mv->mvy + 4; // can be 2, 4 or 6
+    Ipp32s dx = hpelx & 3; // can be 0 or 2
+    Ipp32s dy = hpely & 3; // can be 0 or 2
+
+    // interpolate vertical quater-pels 
+    if (dx == 0) // best halfpel is intpel or ver-halfpel [0,1/3] (0,0)(w,h)
+    {
+        Ipp16s *predBufHi0q;
+        PixType *predBuf0q;
+        tmv = mvBest;
+        tmv.mvy -=1;
+        MemSubpelGetBuf(size, 0, tmv.mvy&3, refIdxMem, predBuf0q, predBufHi0q);
+        InterpVer(refY + (hpely - 5 >> 2) * pitchRef, pitchRef, predBufHi0q, memPitch, 3 - dy, w, h, 0, 0, bitDepth);                             // hpx+0 hpy-1/4 predBufHi[0][1/3]
+        h265_InterpLumaPack(predBufHi0q, memPitch, predBuf0q, memPitch, w, h, bitDepth);                                                          // predBuf[0][1/3]
+        MemSubpelSetMv(size, 0, tmv.mvy&3, refIdxMem, &tmv);
+        MemHadSave(size, tmv.mvx&3, tmv.mvy&3, meInfo, refIdxMem, &tmv, satd8, satdPitch);
+        costs[1] = tuHadSave(src, pitchSrc, predBuf0q, memPitch, w, h, satd8, satdPitch) >> costShift;                                            // Had[0][1/3]
+    }
+    else // best halfpel is hor-halfpel or diag-halfpel
+    {
+        Ipp16s *predBufHi2q;
+        PixType *predBuf2q;
+        tmv.mvx = mvBest.mvx;
+        tmv.mvy = mv->mvy + 3 - dy;
+
+        MemSubpelGetBuf(size, 2, tmv.mvy&3, refIdxMem, predBuf2q, predBufHi2q);
+        //[2,1/3] (0,0) (w,h+2)
+        InterpVer(tmpHor2 + (hpelx >> 2), memPitch, predBufHi2q, memPitch, 3 - dy, w, h+2, 6, 0, bitDepth);                                     // hpx+0 hpy-1/4 predBufHi[2][1/3]
+        h265_InterpLumaPack(predBufHi2q, memPitch, predBuf2q, memPitch, w, h+2, bitDepth);                                                      // predBuf[2][1/3]
+        MemSubpelSetMv(size, 2, tmv.mvy&3, refIdxMem, &tmv);
+        tmv = mvBest;
+        tmv.mvy -=1;
+        MemHadSave(size, tmv.mvx&3, tmv.mvy&3, meInfo, refIdxMem, &tmv, satd8, satdPitch);
+        costs[1] = tuHadSave(src, pitchSrc, predBuf2q+(hpely - 1 >> 2) * memPitch, memPitch, w, h, satd8, satdPitch) >> costShift;              // Had[2][1/3]
+    }
+    
+
+    // interpolate vertical qpels
+    if (dx == 0) // best halfpel is intpel or ver-halfpel [0,1/3] (0,0) (w,h)
+    {
+        Ipp16s *predBufHi0q;
+        PixType *predBuf0q;
+        tmv = mvBest;
+        tmv.mvy +=1;
+        MemSubpelGetBuf(size, 0, tmv.mvy&3, refIdxMem, predBuf0q, predBufHi0q);
+        InterpVer(refY + (hpely - 3 >> 2) * pitchRef, pitchRef, predBufHi0q, memPitch, dy + 1, w, h, 0, 0, bitDepth);                             // hpx+0 hpy+1/4 predBufHi[2][1/3]
+        h265_InterpLumaPack(predBufHi0q, memPitch, predBuf0q, memPitch, w, h, bitDepth);                                                          // predBuf[0][1/3]
+        MemSubpelSetMv(size, 0, tmv.mvy&3, refIdxMem, &tmv);
+        MemHadSave(size, tmv.mvx&3, tmv.mvy&3, meInfo, refIdxMem, &tmv, satd8, satdPitch);
+        costs[5] = tuHadSave(src, pitchSrc, predBuf0q, memPitch, w, h, satd8, satdPitch) >> costShift;                                            // Had[0/2][1/3]
+    }
+    else // best halfpel is hor-halfpel or diag-halfpel
+    {
+        Ipp16s *predBufHi2q;
+        PixType *predBuf2q;
+        tmv.mvx = mvBest.mvx;
+        tmv.mvy = mv->mvy + dy + 1;
+        MemSubpelGetBuf(size, 2, tmv.mvy&3, refIdxMem, predBuf2q, predBufHi2q);
+        //[2,1/3] (0,0) (w,h+2)
+        InterpVer(tmpHor2 + (hpelx >> 2), memPitch, predBufHi2q, memPitch, dy + 1, w, h+2, 6, 0, bitDepth);                                        // hpx+0 hpy+1/4 predBufHi[2][1/3]
+        h265_InterpLumaPack(predBufHi2q, memPitch, predBuf2q, memPitch, w, h+2, bitDepth);                                                          // predBuf[2][1/3]
+        MemSubpelSetMv(size, 2, tmv.mvy&3, refIdxMem, &tmv);
+        tmv = mvBest;
+        tmv.mvy +=1;
+        MemHadSave(size, tmv.mvx&3, tmv.mvy&3, meInfo, refIdxMem, &tmv, satd8, satdPitch);
+        costs[5] = tuHadSave(src, pitchSrc, predBuf2q+ (hpely + 1 >> 2) * memPitch, memPitch, w, h, satd8, satdPitch) >> costShift;                // Had[0/2][1/3]
+    }
+    
+
+    // intermediate horizontal quater-pels (left of best half-pel) [1/3,0] (0,-4) (w,h+8)
+    Ipp16s *predBufHiq0;
+    PixType *predBufq0;
+    tmv.mvx = mvBest.mvx - 1;
+    tmv.mvy = mv->mvy;
+    MemSubpelGetBuf(size, tmv.mvx&0x3, 0, refIdxMem, predBufq0, predBufHiq0);
+    Ipp16s *tmpHor1 = predBufHiq0 + 3 * memPitch;
+    InterpHor(refY - 4 * pitchRef + (hpelx - 5 >> 2), pitchRef, predBufHiq0, memPitch, 3 - dx, w, h + 10, bitDepth - 8, 0, bitDepth);  // hpx-1/4 hpy+0 (intermediate) predBufHi[1/3][0]
+    // Lo [1/3,0] (0,-4) (w, h+8)
+    h265_InterpLumaPack(predBufHiq0, memPitch, predBufq0, memPitch, w, h + 8, bitDepth);                                               // save to predBuf[1/3][0]
+    MemSubpelSetMv(size, tmv.mvx&03, 0, refIdxMem, &tmv);
+
+    // interpolate horizontal quater-pels (left of best half-pel)
+    if (dy == 0) // best halfpel is intpel or hor-halfpel [1/3, 0] (0,0) (w,h)
+    {
+        //h265_InterpLumaPack(tmpHor1 + pitchTmp1, pitchTmp1, subpel, pitchHpel, w, h, bitDepth);                                 // hpx-1/4 hpy+0, already saved to predBuf[1/3][0]
+        tmv = mvBest;
+        tmv.mvx -=1;
+        MemHadSave(size, tmv.mvx&3, tmv.mvy&3, meInfo, refIdxMem, &tmv, satd8, satdPitch);
+        costs[7] = tuHadSave(src, pitchSrc, predBufq0+4*memPitch, memPitch, w, h, satd8, satdPitch) >> costShift;                 // Had[1/3][0]
+    }
+    else // best halfpel is vert-halfpel or diag-halfpel [1/3,2] (0,0) (w,h+2)
+    {
+        Ipp16s *predBufHiq2;
+        PixType *predBufq2;
+        tmv.mvx = mvBest.mvx - 1;
+        tmv.mvy = mv->mvy + dy;
+        MemSubpelGetBuf(size, tmv.mvx&0x3, 2, refIdxMem, predBufq2, predBufHiq2);
+        InterpVer(tmpHor1, memPitch, predBufHiq2, memPitch, dy, w, h+2, 6, 0, bitDepth);                                         // hpx-1/4 hpy+0 save to predBufHi[1/3][2]
+        h265_InterpLumaPack(predBufHiq2, memPitch, predBufq2, memPitch, w, h+2, bitDepth);                                           // predBuf[1/3][2]
+        MemSubpelSetMv(size, tmv.mvx&03, 2, refIdxMem, &tmv);
+        tmv = mvBest;
+        tmv.mvx -=1;
+        MemHadSave(size, tmv.mvx&3, tmv.mvy&3, meInfo, refIdxMem, &tmv, satd8, satdPitch);
+        costs[7] = tuHadSave(src, pitchSrc, predBufq2+ (hpely >> 2) * memPitch, memPitch, w, h, satd8, satdPitch) >> costShift;     // Had[1/3][2]
+    }
+    
+    Ipp16s *predBufHiqq;
+    PixType *predBufqq;
+    tmv.mvx = mvBest.mvx - 1;
+    tmv.mvy = mv->mvy + 3 - dy;
+    MemSubpelGetBuf(size, tmv.mvx&0x3, tmv.mvy&0x3, refIdxMem, predBufqq, predBufHiqq);
+    // interpolate 2 diagonal quater-pels (left-top and left-bottom of best half-pel) [1/3,1/3] (0,0) (w,h+2)
+    InterpVer(tmpHor1, memPitch, predBufHiqq, memPitch, 3 - dy, w, h+2, 6, 0, bitDepth);                                        // hpx-1/4 hpy-1/4  predBufHi[1/3][1/3]
+    h265_InterpLumaPack(predBufHiqq, memPitch, predBufqq, memPitch, w, h+2, bitDepth);                                              // predBuf[1/3][1/3]
+    MemSubpelSetMv(size, tmv.mvx&0x3, tmv.mvy&0x3, refIdxMem, &tmv);
+    tmv = mvBest;
+    tmv.mvx -=1;
+    tmv.mvy -=1;
+    MemHadSave(size, tmv.mvx&3, tmv.mvy&3, meInfo, refIdxMem, &tmv, satd8, satdPitch);
+    costs[0] = tuHadSave(src, pitchSrc, predBufqq+ (hpely - 1 >> 2) * memPitch, memPitch, w, h, satd8, satdPitch) >> costShift;       // had[1/3][1/3]
+
+    tmv.mvx = mvBest.mvx - 1;
+    tmv.mvy = mv->mvy + dy + 1;
+    MemSubpelGetBuf(size, tmv.mvx&0x3, tmv.mvy&0x3, refIdxMem, predBufqq, predBufHiqq);
+    InterpVer(tmpHor1, memPitch, predBufHiqq, memPitch, dy + 1, w, h+2, 6, 0, bitDepth);                                          // hpx-1/4 hpy+1/4  predBufHi[1/3][1/3]
+    h265_InterpLumaPack(predBufHiqq, memPitch, predBufqq, memPitch, w, h+2, bitDepth);                                                // predBuf[1/3][1/3]
+    MemSubpelSetMv(size, tmv.mvx&0x3, tmv.mvy&0x3, refIdxMem, &tmv);
+    tmv = mvBest;
+    tmv.mvx -=1;
+    tmv.mvy +=1;
+    MemHadSave(size, tmv.mvx&3, tmv.mvy&3, meInfo, refIdxMem, &tmv, satd8, satdPitch);
+    costs[6] = tuHadSave(src, pitchSrc, predBufqq+ (hpely + 1 >> 2) * memPitch, memPitch, w, h, satd8, satdPitch) >> costShift;      // had[1/3][1/3]
+
+    // intermediate horizontal quater-pels (right of best half-pel) [1/3,0] (0,-4) (w,h+8)
+    tmv.mvx = mvBest.mvx + 1;
+    tmv.mvy = mv->mvy;
+    MemSubpelGetBuf(size, tmv.mvx&0x3, 0, refIdxMem, predBufq0, predBufHiq0);
+    Ipp16s *tmpHor3 = predBufHiq0 + 3 * memPitch;
+    InterpHor(refY - 4 * pitchRef + (hpelx - 3 >> 2), pitchRef, predBufHiq0, memPitch, dx + 1, w, h + 10, bitDepth - 8, 0, bitDepth);  // hpx+1/4 hpy+0 (intermediate) predBufHi[1/3][0]
+    // Lo (1/3,0) (0,-4) (w, h+8)
+    h265_InterpLumaPack(predBufHiq0, memPitch, predBufq0, memPitch, w, h + 8, bitDepth);                                               // save to predBuf[1/3][0]
+    MemSubpelSetMv(size, tmv.mvx&0x3, 0, refIdxMem, &tmv);
+
+    // interpolate horizontal quater-pels (right of best half-pel)
+    if (dy == 0) // best halfpel is intpel or hor-halfpel [1/3, 0] (0,0) (w,h)
+    {
+        //h265_InterpLumaPack(tmpHor3 + pitchTmp3, pitchTmp3, subpel, pitchHpel, w, h, bitDepth);                                  // hpx+1/4 hpy+0 already saved to predBuf[1/3][0]
+        tmv = mvBest;
+        tmv.mvx +=1;
+        MemHadSave(size, tmv.mvx&3, tmv.mvy&3, meInfo, refIdxMem, &tmv, satd8, satdPitch);
+        costs[3] = tuHadSave(src, pitchSrc, predBufq0+4*memPitch, memPitch, w, h, satd8, satdPitch) >> costShift;                  // Had[1/3][0]
+    }
+    else // best halfpel is vert-halfpel or diag-halfpel [1/3,2] (0,0) (w,h+2)
+    {
+        Ipp16s *predBufHiq2;
+        PixType *predBufq2;
+        tmv.mvx = mvBest.mvx + 1;
+        tmv.mvy = mv->mvy + dy;
+        MemSubpelGetBuf(size, tmv.mvx&0x3, 2, refIdxMem, predBufq2, predBufHiq2);
+        InterpVer(tmpHor3, memPitch, predBufHiq2, memPitch, dy, w, h+2, 6, 0, bitDepth);                                         // hpx+1/4 hpy+0 predBufHi[1/3][2]
+        h265_InterpLumaPack(predBufHiq2, memPitch, predBufq2, memPitch, w, h+2, bitDepth);                                           // predBuf[1/3][2]
+        MemSubpelSetMv(size, tmv.mvx&03, 2, refIdxMem, &tmv);
+        tmv = mvBest;
+        tmv.mvx +=1;
+        MemHadSave(size, tmv.mvx&3, tmv.mvy&3, meInfo, refIdxMem, &tmv, satd8, satdPitch);
+        costs[3] = tuHadSave(src, pitchSrc, predBufq2+ (hpely >> 2) * memPitch, memPitch, w, h, satd8, satdPitch) >> costShift;      // Had[1/3][1/3]
+    }
+
+    // interpolate 2 diagonal quater-pels (right-top and right-bottom of best half-pel) [1/3,1/3] (0,0) (w,h+2)
+    tmv.mvx = mvBest.mvx + 1;
+    tmv.mvy = mv->mvy + 3 - dy;
+    MemSubpelGetBuf(size, tmv.mvx&0x3, tmv.mvy&0x3, refIdxMem, predBufqq, predBufHiqq);
+    InterpVer(tmpHor3, memPitch, predBufHiqq, memPitch, 3 - dy, w, h+2, 6, 0, bitDepth);                                        // hpx+1/4 hpy-1/4 predBufHi[1/3][1/3]
+    h265_InterpLumaPack(predBufHiqq, memPitch, predBufqq, memPitch, w, h+2, bitDepth);                                              // predBuf[1/3][1/3]
+    MemSubpelSetMv(size, tmv.mvx&03, tmv.mvy&3, refIdxMem, &tmv);
+    tmv = mvBest;
+    tmv.mvx +=1;
+    tmv.mvy -=1;
+    MemHadSave(size, tmv.mvx&3, tmv.mvy&3, meInfo, refIdxMem, &tmv, satd8, satdPitch);
+    costs[2] = tuHadSave(src, pitchSrc, predBufqq+ (hpely - 1 >> 2) * memPitch, memPitch, w, h, satd8, satdPitch) >> costShift;    // had[1/3][1/3]
+
+    tmv.mvx = mvBest.mvx + 1;
+    tmv.mvy = mv->mvy + dy + 1;
+    MemSubpelGetBuf(size, tmv.mvx&0x3, tmv.mvy&0x3, refIdxMem, predBufqq, predBufHiqq);
+    InterpVer(tmpHor3, memPitch, predBufHiqq, memPitch, dy + 1, w, h+2, 6, 0, bitDepth);                                        // hpx+1/4 hpy+1/4 predBufHi[1/3][1/3]
+    h265_InterpLumaPack(predBufHiqq, memPitch, predBufqq, memPitch, w, h+2, bitDepth);                                              // predBuf[1/3][1/3]
+    MemSubpelSetMv(size, tmv.mvx&03, tmv.mvy&3, refIdxMem, &tmv);
+    tmv = mvBest;
+    tmv.mvx +=1;
+    tmv.mvy +=1;
+    MemHadSave(size, tmv.mvx&3, tmv.mvy&3, meInfo, refIdxMem, &tmv, satd8, satdPitch);
+    costs[4] = tuHadSave(src, pitchSrc, predBufqq+ (hpely + 1 >> 2) * memPitch, memPitch, w, h, satd8, satdPitch) >> costShift;    // had[1/3][1/3]
+
+    AddMvCost(predInfo, 0, costs, &mvBest, &costBest, &mvCostBest);
+
+    *cost = costBest;
+    *mvCost = mvCostBest;
+    *mv = mvBest;
+}
+#endif
 
 template <typename PixType>
 void H265CU<PixType>::MeSubPelBatchedBox(const H265MEInfo *meInfo, const MvPredInfo<2> *predInfo,
@@ -3508,10 +4777,15 @@ void H265CU<PixType>::MeSubPelBatchedBox(const H265MEInfo *meInfo, const MvPredI
     *mv = mvBest;
 }
 
-
+#ifdef MEMOIZE_SUBPEL
+template <typename PixType>
+void H265CU<PixType>::MeSubPel(const H265MEInfo *meInfo, const MvPredInfo<2> *predInfo,
+                               const H265Frame *ref, H265MV *mv, Ipp32s *cost, Ipp32s *mvCost, Ipp32s refIdxMem)
+#else
 template <typename PixType>
 void H265CU<PixType>::MeSubPel(const H265MEInfo *meInfo, const MvPredInfo<2> *predInfo,
                                const H265Frame *ref, H265MV *mv, Ipp32s *cost, Ipp32s *mvCost) const
+#endif
 {
     H265MV mvCenter = *mv;
     H265MV mvBest = *mv;
@@ -3524,6 +4798,14 @@ void H265CU<PixType>::MeSubPel(const H265MEInfo *meInfo, const MvPredInfo<2> *pr
     Ipp16s pattern_index;
     Ipp32s iterNum = 1;
 
+#ifdef MEMOIZE_SUBPEL
+    Ipp32s size = 0;
+    if     (meInfo->width<=8 && meInfo->height<=8)   size = 0;
+    else if(meInfo->width<=16 && meInfo->height<=16) size = 1;
+    else if(meInfo->width<=32 && meInfo->height<=32) size = 2;
+    else                                             size = 3;
+    Ipp32s hadFoundSize = size;
+#endif
     // select subMe pattern
     switch (m_par->patternSubPel)
     {
@@ -3534,7 +4816,24 @@ void H265CU<PixType>::MeSubPel(const H265MEInfo *meInfo, const MvPredInfo<2> *pr
             pattern_index = 1;
             break;
         case SUBPEL_BOX:            // more points with square patterns
+#ifdef MEMOIZE_SUBPEL
+            if(m_par->hadamardMe >= 2) {
+                if((meInfo->width == m_par->MaxCUSize && meInfo->width == meInfo->height) || MemHadFirst(size, meInfo, refIdxMem)) {
+                    return MemSubPelBatchedBox(meInfo, predInfo, ref, mv, cost, mvCost, refIdxMem, size);
+                } else if(MemSubpelInRange(size, meInfo, refIdxMem, mv)) {
+                    endPos = 9;
+                    pattern_index = 1;
+                } else if(meInfo->width == meInfo->height) {
+                    return MemSubPelBatchedBox(meInfo, predInfo, ref, mv, cost, mvCost, refIdxMem, size);
+                } else {
+                    return MeSubPelBatchedBox(meInfo, predInfo, ref, mv, cost, mvCost);
+                }
+            } else
+#endif
+            {
             return MeSubPelBatchedBox(meInfo, predInfo, ref, mv, cost, mvCost);
+            }
+            break;
         case SUBPEL_DIA_2STEP:      // quarter pel with simplified diamond pattern - double
             endPos = 5;
             pattern_index = 0;
@@ -3550,7 +4849,16 @@ void H265CU<PixType>::MeSubPel(const H265MEInfo *meInfo, const MvPredInfo<2> *pr
     Ipp32s useHadamard = (m_par->hadamardMe >= 2);
     if (m_par->hadamardMe == 2) {
         // when satd is for subpel only need to recalculate cost for intpel motion vector
+#ifdef MEMOIZE_SUBPEL
+        costBest = MatchingMetricPuMem(src, meInfo, &mvBest, ref, useHadamard, refIdxMem, size, hadFoundSize) + mvCostBest;
+        if(m_par->partModes==1 && hadFoundSize<=size) hadFoundSize = -1;
+#ifdef MEMOIZE_SUBPEL_TEST
+        Ipp32s testcostBest = MatchingMetricPu(src, meInfo, &mvBest, ref, useHadamard) + mvCostBest;
+        assert(testcostBest == costBest);
+#endif
+#else
         costBest = MatchingMetricPu(src, meInfo, &mvBest, ref, useHadamard) + mvCostBest;
+#endif
     }
 
     while (meStep >= 0) {
@@ -3562,7 +4870,16 @@ void H265CU<PixType>::MeSubPel(const H265MEInfo *meInfo, const MvPredInfo<2> *pr
                     Ipp16s(bestMv.mvx + (tab_mePatternSelector[pattern_index][mePos][0] << meStep)),
                     Ipp16s(bestMv.mvy + (tab_mePatternSelector[pattern_index][mePos][1] << meStep))
                 };
+#ifdef MEMOIZE_SUBPEL
+                Ipp32s cost = MatchingMetricPuMem(src, meInfo, &mv, ref, useHadamard, refIdxMem, size, hadFoundSize);
+                if(m_par->partModes==1 && hadFoundSize<=size) hadFoundSize = -1;
+#ifdef MEMOIZE_SUBPEL_TEST
+                Ipp32s testcost = MatchingMetricPu(src, meInfo, &mv, ref, useHadamard);
+                assert(testcost == cost);
+#endif
+#else
                 Ipp32s cost = MatchingMetricPu(src, meInfo, &mv, ref, useHadamard);
+#endif
                 if (costBest > cost) {
                     Ipp32s mvCost = MvCost1RefLog(mv, predInfo);
                     cost += mvCost;
@@ -3580,7 +4897,9 @@ void H265CU<PixType>::MeSubPel(const H265MEInfo *meInfo, const MvPredInfo<2> *pr
 
         if (m_par->patternSubPel == SUBPEL_BOX_HPEL_ONLY)
             break; //no quarter pel
-
+#ifdef MEMOIZE_SUBPEL
+        hadFoundSize = size;
+#endif
         mvCenter = mvBest;
         meStep--;
         startPos = 1;
@@ -3693,7 +5012,21 @@ void H265CU<PixType>::RefineBiPred(const H265MEInfo *meInfo, const Ipp8s refIdxs
 
             Ipp32s mvCost = MvCost1RefLog(mv[0], m_amvpCand[curPUidx] + 2 * refIdxs[0] + 0) +
                             MvCost1RefLog(mv[1], m_amvpCand[curPUidx] + 2 * refIdxs[1] + 1);
-            Ipp32s cost = MatchingMetricBipredPu(src, meInfo, refIdxs, mv, useHadamard);
+            Ipp32s cost = 0;
+#ifdef MEMOIZE_SUBPEL
+            if(m_par->hadamardMe>=2) {
+                // current limitation of MemSubpelBatchedBox (always uses hadamard)
+                cost = MatchingMetricBipredPuSearch(src, meInfo, refIdxs, mv, useHadamard);
+#ifdef MEMOIZE_BIPRED_TEST
+                Ipp32s testcost = MatchingMetricBipredPu(src, meInfo, refIdxs, mv, useHadamard);
+                assert(testcost==cost);
+#endif
+            } else
+#endif
+            {
+                cost = MatchingMetricBipredPu(src, meInfo, refIdxs, mv, useHadamard);
+            }
+
             cost += mvCost;
 
             if (costBest > cost) {
@@ -4203,7 +5536,11 @@ void H265CU<PixType>::MePu(H265MEInfo *meInfos, Ipp32s partIdx)
             }
 
             MeIntPel(meInfo, amvp, ref, &mvBest, &costBest, &mvCostBest);
+#ifdef MEMOIZE_SUBPEL
+            MeSubPel(meInfo, amvp, ref, &mvBest, &costBest, &mvCostBest, m_currFrame->m_mapListRefUnique[list][refIdx]);
+#else
             MeSubPel(meInfo, amvp, ref, &mvBest, &costBest, &mvCostBest);
+#endif
 
             mvRefBest[list][refIdx] = mvBest;
             mvCostRefBest[list][refIdx] = mvCostBest;
@@ -4236,8 +5573,20 @@ void H265CU<PixType>::MePu(H265MEInfo *meInfos, Ipp32s partIdx)
 
         Ipp32s mvCostBiBest = mvCostRefBest[0][idxL0] + mvCostRefBest[1][idxL1];
         costBiBest = mvCostBiBest;
+#ifdef MEMOIZE_SUBPEL
+        if(m_par->hadamardMe>=2) {
+            // current limitation of MemSubpelBatchedBox (always uses hadamard)
+            m_interpIdxFirst = m_interpIdxLast = 0; // for MatchingMetricBipredPu optimization
+            costBiBest += MatchingMetricBipredPuSearch(src, meInfo, refIdxBest, mvBiBest, useHadamard);
+#ifdef MEMOIZE_BIPRED_TEST
+            Ipp32s testcost = MatchingMetricBipredPu(src, meInfo, refIdxBest, mvBiBest, useHadamard) + mvCostBiBest;
+            assert(testcost==costBiBest);
+#endif
+        } else
+#endif
+        {
         costBiBest += MatchingMetricBipredPu(src, meInfo, refIdxBest, mvBiBest, useHadamard);
-
+        }
         // refine Bidir
         if (IPP_MIN(costList[0], costList[1]) * 9 > 8 * costBiBest) {
             RefineBiPred(meInfo, refIdxBest, curPUidx, mvBiBest, &costBiBest, &mvCostBiBest);
@@ -5080,7 +6429,11 @@ void H265CU<PixType>::EncAndRecLumaTu(Ipp32s absPartIdx, Ipp32s offset, Ipp32s w
         }
 
         TransformFwd(offset, width, 1, isIntra);
+#ifdef AMT_DZ_RDOQ
+        QuantFwdTu(absPartIdx, offset, width, dataTu->qp, 1, isIntra);
+#else
         QuantFwdTu(absPartIdx, offset, width, dataTu->qp, 1);
+#endif
 
         if (m_rdOptFlag)
             cbf = !IsZero(m_coeffWorkY + offset, width * width);
@@ -5186,7 +6539,11 @@ void H265CU<PixType>::EncAndRecChromaTu(Ipp32s absPartIdx, Ipp32s idx422, Ipp32s
         }
 
         TransformFwd(offset, width, 0, 0);
+#ifdef AMT_DZ_RDOQ
+        QuantFwdTu(absPartIdx, offset, width, data->qp, 0, data->predMode == MODE_INTRA);
+#else
         QuantFwdTu(absPartIdx, offset, width, data->qp, 0);
+#endif
 
         cbf[0] = !IsZero(m_coeffWorkU + offset, width * width);
         cbf[1] = !IsZero(m_coeffWorkV + offset, width * width);

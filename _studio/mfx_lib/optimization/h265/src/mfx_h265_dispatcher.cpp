@@ -293,6 +293,8 @@ void SetTargetSSE4()
     g_dispatcher.h265_QuantFwd_16s = &MFX_HEVC_PP::h265_QuantFwd_16s_sse;
     g_dispatcher.h265_QuantFwd_SBH_16s = &MFX_HEVC_PP::h265_QuantFwd_SBH_16s_sse;
 
+    g_dispatcher.h265_Quant_zCost_16s = &MFX_HEVC_PP::h265_Quant_zCost_16s_sse;
+
     // SATD
     g_dispatcher.h265_SATD_4x4_8u = &MFX_HEVC_PP::h265_SATD_4x4_8u_sse;
     g_dispatcher.h265_SATD_8x8_8u = &MFX_HEVC_PP::h265_SATD_8x8_8u_sse;
@@ -477,6 +479,8 @@ void SetTargetSSSE3()
     // forward quantization
     g_dispatcher.h265_QuantFwd_16s = &MFX_HEVC_PP::h265_QuantFwd_16s_px;
     g_dispatcher.h265_QuantFwd_SBH_16s = &MFX_HEVC_PP::h265_QuantFwd_SBH_16s_px;
+
+    g_dispatcher.h265_Quant_zCost_16s = &MFX_HEVC_PP::h265_Quant_zCost_16s_px;
 
     // SATD
     g_dispatcher.h265_SATD_4x4_8u = &MFX_HEVC_PP::h265_SATD_4x4_8u_px;
@@ -663,6 +667,8 @@ void SetTargetAVX2()
     // forward quantization
     g_dispatcher.h265_QuantFwd_16s = &MFX_HEVC_PP::h265_QuantFwd_16s_avx2;
     g_dispatcher.h265_QuantFwd_SBH_16s = &MFX_HEVC_PP::h265_QuantFwd_SBH_16s_avx2;
+
+    g_dispatcher.h265_Quant_zCost_16s = &MFX_HEVC_PP::h265_Quant_zCost_16s_avx2;
 
     // SATD
     g_dispatcher.h265_SATD_4x4_8u = &MFX_HEVC_PP::h265_SATD_4x4_8u_avx2;
@@ -866,6 +872,8 @@ void SetTargetPX()
     // forward quantization
     g_dispatcher.h265_QuantFwd_16s = &MFX_HEVC_PP::h265_QuantFwd_16s_px;
     g_dispatcher.h265_QuantFwd_SBH_16s = &MFX_HEVC_PP::h265_QuantFwd_SBH_16s_px;
+
+    g_dispatcher.h265_Quant_zCost_16s = &MFX_HEVC_PP::h265_Quant_zCost_16s_px;
 
     // SATD
     g_dispatcher.h265_SATD_4x4_8u = &MFX_HEVC_PP::h265_SATD_4x4_8u_px;

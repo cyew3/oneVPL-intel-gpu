@@ -201,7 +201,11 @@ void H265CU<PixType>::QuantInvTu(Ipp32s abs_part_idx, Ipp32s offset, Ipp32s widt
 }
 
 template <typename PixType>
+#ifdef AMT_DZ_RDOQ
+void H265CU<PixType>::QuantFwdTu(Ipp32s abs_part_idx, Ipp32s offset, Ipp32s width, Ipp32s qp, Ipp32s is_luma, Ipp32s is_intra)
+#else
 void H265CU<PixType>::QuantFwdTu(Ipp32s abs_part_idx, Ipp32s offset, Ipp32s width, Ipp32s qp, Ipp32s is_luma)
+#endif
 {
     Ipp32s QP = is_luma
         ? qp + (m_par->bitDepthLuma - 8) * 6
@@ -217,9 +221,15 @@ void H265CU<PixType>::QuantFwdTu(Ipp32s abs_part_idx, Ipp32s offset, Ipp32s widt
         Ipp32u abs_sum = 0;
 
         if ((is_luma || m_par->rdoqChromaFlag) && m_isRdoq) {
+#ifdef AMT_DZ_RDOQ
+            h265_quant_fwd_rdo<PixType>( this, residuals + offset, coeff + offset, log2TrSize,
+                                is_luma ? m_par->bitDepthLuma : m_par->bitDepthChroma, m_cslice->slice_type == I_SLICE, is_intra, is_luma ? TEXT_LUMA : TEXT_CHROMA,
+                                abs_part_idx, QP, m_bsf );
+#else
             h265_quant_fwd_rdo<PixType>( this, residuals + offset, coeff + offset, log2TrSize,
                                 is_luma ? m_par->bitDepthLuma : m_par->bitDepthChroma, m_cslice->slice_type == I_SLICE, is_luma ? TEXT_LUMA : TEXT_CHROMA,
                                 abs_part_idx, QP, m_bsf );
+#endif
         }
         else {
             Ipp32s delta_u[32*32];

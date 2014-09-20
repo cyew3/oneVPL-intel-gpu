@@ -122,6 +122,45 @@ namespace MFX_HEVC_PP
         return abs_sum;
     } // Ipp32s h265_QuantFwd_SBH_16s(const Ipp16s* pSrc, Ipp16s* pDst, Ipp32s*  pDelta, int len, int scaleLevel, int scaleOffset, int scale)
 
+    void H265_FASTCALL MAKE_NAME(h265_Quant_zCost_16s)(const Ipp16s* pSrc, Ipp32u* qLevels, Ipp64s* zlCosts, Ipp32s len, Ipp32s qScale, Ipp32s qoffset, Ipp32s qbits, Ipp32s rdScale0)
+    {
+        int i;
+        __m256i ymm0, ymm1, ymm2, ymm3, ymm6, ymm7, ymm10, ymm11, ymm13;
+        __m128i xmm4, xmm12;
+
+        VM_ASSERT((len & 0x03) == 0);
+        _mm256_zeroupper();
+        ymm10 = _mm256_set1_epi32(qScale);
+        ymm11 = _mm256_set1_epi32(qoffset);
+        xmm12 = _mm_cvtsi32_si128(qbits);
+        ymm13 = _mm256_setr_epi32 (rdScale0, 0, rdScale0, 0, rdScale0, 0, rdScale0, 0);
+
+        for (i = 0; i < len; i += 8) 
+        {
+            // load 16-bit coefs, expand to 32 bits
+            xmm4 = _mm_loadu_si128((__m128i *)&pSrc[i]);       // r0:= [c7, c6, c5, c4, c3, c2, c1, c0], r1:=0x0
+            ymm3 = _mm256_cvtepi16_epi32(xmm4);                // r0=c0 r1=c1, r2=c2, r3=c3 are 4 signed-32bit data
+            ymm7 = _mm256_abs_epi32(ymm3);                     // r0=abs(c0) r1=abs(c1), r2=abs(c2), r3=abs(c3)
+
+            // qval = (aval * scale + offset) >> shift; 
+            ymm6 = _mm256_mullo_epi32(ymm7, ymm10);            // r0=c0*qScale, r1=c1*qScale, r2=c2*qScale, r3=c3*qScale
+            ymm2 = _mm256_add_epi32(ymm6, ymm11);              // r0=c0*scale+offset, r1=c1*scale+offset, ...
+            ymm2 = _mm256_sra_epi32(ymm2, xmm12);              // r0=q0=(c0*scale+offset)>>shift, r1=(c1*scale+offset)>>shift, ...
+            _mm256_storeu_si256((__m256i *)&qLevels[i], ymm2);
+
+            // zero level cost = aLevel * aLevel * rdScale0
+            ymm1 = _mm256_mullo_epi32(ymm7, ymm7);             // r0=c0*c0, r1=c1*c1, r2=c2*c2, r3=c3*c3
+            ymm0 = _mm256_cvtepi32_epi64(mm128(ymm1));
+            ymm0 = _mm256_mul_epi32(ymm0, ymm13);              // r0=c0*c0, r1=0, r2=c1*c1, r3=0
+            _mm256_storeu_si256((__m256i *)&zlCosts[i], ymm0);
+
+            ymm1 = _mm256_permute2x128_si256(ymm1, ymm1, 1);
+            ymm0 = _mm256_cvtepi32_epi64(mm128(ymm1));
+            ymm0 = _mm256_mul_epi32(ymm0, ymm13);              // r0=c2*c2, r1=0, r2=c3*c3, r3=0
+            _mm256_storeu_si256((__m256i *)&zlCosts[i+4], ymm0);
+        }
+    }
+
 } // end namespace MFX_HEVC_PP
 
 #endif // #if defined (MFX_TARGET_OPTIMIZATION_PX) || (MFX_TARGET_OPTIMIZATION_SSE4) || (MFX_TARGET_OPTIMIZATION_AVX2)

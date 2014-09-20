@@ -61,6 +61,8 @@ public:
     Ipp8u  m_isRef;
     RefPicList m_refPicList[2]; // 2 reflists containing reference frames used by current frame
     Ipp32s m_mapRefIdxL1ToL0[MAX_NUM_REF_IDX];
+    Ipp32s m_mapListRefUnique[2][MAX_NUM_REF_IDX];
+    Ipp32s m_numRefUnique;
     Ipp32s m_allRefFramesAreFromThePast;
 
     volatile Ipp32s m_codedRow; // sync info in case of frame threading

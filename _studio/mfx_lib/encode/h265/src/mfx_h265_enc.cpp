@@ -1414,7 +1414,30 @@ void H265Encoder::PrepareToEncode(Task *task)
         Ipp32s idxInList0 = (Ipp32s)(std::find(list0, list0 + numRefIdx0, list1[idx1]) - list0);
         currFrame->m_mapRefIdxL1ToL0[idx1] = (idxInList0 < numRefIdx0) ? idxInList0 : -1;
     }
-
+    { 
+        // Map to unique
+        Ipp32s uniqueIdx = 0;
+        for (Ipp32s idx = 0; idx < numRefIdx0; idx++) {
+            currFrame->m_mapListRefUnique[0][idx]=uniqueIdx;
+            uniqueIdx++;
+        }            
+        for (Ipp32s idx = numRefIdx0; idx < MAX_NUM_REF_IDX; idx++) {
+            currFrame->m_mapListRefUnique[0][idx]=-1;
+        }            
+        for (Ipp32s idx1 = 0; idx1 < numRefIdx1; idx1++) {
+            if(currFrame->m_mapRefIdxL1ToL0[idx1]==-1) {
+                currFrame->m_mapListRefUnique[1][idx1]=uniqueIdx;
+                uniqueIdx++;
+            } else {
+                currFrame->m_mapListRefUnique[1][idx1]=currFrame->m_mapListRefUnique[0][currFrame->m_mapRefIdxL1ToL0[idx1]];
+            }
+        }
+        for (Ipp32s idx = numRefIdx1; idx < MAX_NUM_REF_IDX; idx++) {
+            currFrame->m_mapListRefUnique[1][idx]=-1;
+        }            
+        //assert(uniqueIdx<=MAX_NUM_REF_IDX);
+        currFrame->m_numRefUnique = uniqueIdx;
+    }
     // setup flag m_allRefFramesAreFromThePast used for TMVP
     currFrame->m_allRefFramesAreFromThePast = true;
     for (Ipp32s i = 0; i < numRefIdx0 && currFrame->m_allRefFramesAreFromThePast; i++)

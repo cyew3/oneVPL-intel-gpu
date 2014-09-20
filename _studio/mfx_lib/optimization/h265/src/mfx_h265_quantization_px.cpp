@@ -77,6 +77,17 @@ namespace MFX_HEVC_PP
 
     } // Ipp32s h265_QuantFwd_SBH_16s(const Ipp16s* pSrc, Ipp16s* pDst, Ipp32s*  pDelta, int len, int scaleLevel, int scaleOffset, int scale)
 
+    void H265_FASTCALL MAKE_NAME(h265_Quant_zCost_16s)(const Ipp16s* pSrc, Ipp32u* qLevels, Ipp64s* zlCosts, Ipp32s len, Ipp32s qScale, Ipp32s qoffset, Ipp32s qbits, Ipp32s rdScale0)
+    {
+        Ipp32s i, alvl;
+        for (i = 0; i < len; i ++) 
+        {
+            alvl          = abs( pSrc[ i ] );
+            qLevels[ i ]  = ( alvl*qScale + qoffset )>>qbits;
+            zlCosts[ i ]  = (Ipp64s)(alvl * alvl) * rdScale0;
+        }
+    }
+
 } // end namespace MFX_HEVC_PP
 
 #endif // defined(MFX_TARGET_OPTIMIZATION_AUTO) || defined(MFX_TARGET_OPTIMIZATION_PX) || defined(MFX_MAKENAME_SSSE3) && defined(MFX_TARGET_OPTIMIZATION_SSSE3)
