@@ -12,7 +12,7 @@ Copyright(c) 2008-2013 Intel Corporation. All Rights Reserved.
 
 #include "mfx_pipeline_defs.h"
 #include "mfx_d3d9_device.h"
-#include "atlbase.h"
+
 
 MFXD3D9Device::MFXD3D9Device()
     : m_D3DPP()
@@ -100,9 +100,9 @@ mfxStatus MFXD3D9Device::Init(mfxU32 nAdapter,
     // for the optimal performance.
     //
     //if (true) //m_vpp.m_bDXVA2SW
-    {
-        m_D3DPP.Flags |= D3DPRESENTFLAG_LOCKABLE_BACKBUFFER;
-    }
+    //{
+       // m_D3DPP.Flags |= D3DPRESENTFLAG_LOCKABLE_BACKBUFFER;
+    //}
 
     AdjustD3DPP(&m_D3DPP);
     //
@@ -214,6 +214,36 @@ mfxStatus MFXD3D9Device::Reset(WindowHandle hWindow,
     {
         MFX_TRACE_ERR(VM_STRING("Reset failed with error 0x") << std::hex<<hr);
         return MFX_ERR_UNKNOWN;
+    }
+
+    if ( ! IsFullscreen() && ! IsOverlay() ) 
+    {
+        CComPtr<IDirect3DSwapChain9> pSwapChain;
+        hr = m_pD3DD9Ex->GetSwapChain(0, &pSwapChain);
+        if (FAILED(hr))
+        {
+            MFX_TRACE_ERR(VM_STRING("GetSwapChain failed with error 0x") << std::hex<<hr);
+            return MFX_ERR_UNKNOWN;
+        }
+
+        D3DPRESENT_PARAMETERS pp = {0};
+        hr = pSwapChain->GetPresentParameters(&pp);
+        if (FAILED(hr))
+        {
+            MFX_TRACE_ERR(VM_STRING("GetPresentParameters failed with error 0x") << std::hex<<hr);
+            return MFX_ERR_UNKNOWN;
+        }
+
+        pp.BackBufferWidth  = m_D3DPP.BackBufferWidth;
+        pp.BackBufferHeight = m_D3DPP.BackBufferHeight;
+        pp.BackBufferCount = 16;
+        pp.SwapEffect = D3DSWAPEFFECT_FLIPEX;
+        hr = m_pD3DD9Ex->CreateAdditionalSwapChain(&pp, &m_pSwapChain);
+        if (FAILED(hr))
+        {
+            MFX_TRACE_ERR(VM_STRING("CreateAdditionalSwapChain failed with error 0x") << std::hex<<hr);
+            return MFX_ERR_UNKNOWN;
+        }
     }
 
     return MFX_ERR_NONE;
@@ -345,63 +375,26 @@ mfxStatus MFXD3D9Device::RenderFrame(mfxFrameSurface1 * pSurface, mfxFrameAlloca
         }
     }
 
-    //RECT target;
-    //GetClientRect(m_Hwnd, &target);
-
-    // input mfxFrameSurface1
-    //in = *pSurface;
-    //in.Data.TimeStamp = GetTimestamp();
-    //// convert MemId to IDirect3DSurface9 pointer
-    //mfxFrameAllocator *pFrameAllocator = m_pCore->GetFrameAllocator();
-    //if (!in.Data.Y && in.Data.MemId && pFrameAllocator && pFrameAllocator->GetHDL)
-    //{
-    //     MFX_CHECK_STS(pFrameAllocator->GetHDL(pFrameAllocator->pthis, in.Data.MemId, &in.Data.MemId));
-    //}
-
-    // output mfxFrameSurface1
-    /*out.Data.MemId  = m_pRenderSurface;
-    out.Info.Width  = (mfxU16)target.right;
-    out.Info.Height = (mfxU16)target.bottom;*/
-
     RECT source = { pSurface->Info.CropX
                   , pSurface->Info.CropY
                   , pSurface->Info.CropX + pSurface->Info.CropW
                   , pSurface->Info.CropY + pSurface->Info.CropH};
-    
-    CComPtr<IDirect3DSurface9> pBackBuffer;
-    hr = m_pD3DD9Ex->GetBackBuffer(0, 0, D3DBACKBUFFER_TYPE_MONO, &pBackBuffer);
-    
-    D3DSURFACE_DESC dsc ;
-    pBackBuffer->GetDesc(&dsc);
 
-    double dTargetAspect = (double)dsc.Width / dsc.Height;
-    double dSrcAspect = 
-        (double)pSurface->Info.CropW * (0 == pSurface->Info.AspectRatioW ? 1 : pSurface->Info.AspectRatioW) / 
-        (double)pSurface->Info.CropH / (0 == pSurface->Info.AspectRatioH ? 1 : pSurface->Info.AspectRatioH);
-    
-    RECT dest = m_drawRect;
-    /*if (dSrcAspect >dTargetAspect)
+    CComPtr<IDirect3DSurface9> pBackBuffer;
+    if ( ! IsFullscreen() && ! IsOverlay() )
     {
-        dest.left = 0;
-        dest.right = dsc.Width;
-        dest.top = 0;
-        dest.bottom = dsc.Height;
+        hr = m_pSwapChain->GetBackBuffer(0, D3DBACKBUFFER_TYPE_MONO, &pBackBuffer);
     }
     else
     {
-        dest.top = 0;
-        dest.bottom = dsc.Height;
-        int width = (int) ( dsc.Height * dSrcAspect);
-        dest.left = (dsc.Width - width) / 2;
-        dest.right = dest.left + width;
-    }*/
-    RECT targetRect = {0};
-    GetClientRect(m_D3DPP.hDeviceWindow, &targetRect);
+        hr = m_pD3DD9Ex->GetBackBuffer(0, 0, D3DBACKBUFFER_TYPE_MONO, &pBackBuffer);
+    }
+
+    RECT dest = m_drawRect;
 
     {
         MPA_TRACE("D3DRender::StretchRect");
         hr = m_pD3DD9Ex->StretchRect((IDirect3DSurface9 *)pSurface->Data.MemId, &source, pBackBuffer, &dest, D3DTEXF_NONE);
-        //hr = m_pD3DD9Ex->StretchRect((IDirect3DSurface9*)pSurface->Data.MemId, NULL, pBackBuffer, NULL, D3DTEXF_NONE);
         if (FAILED(hr))
         {
             MFX_TRACE_ERR(VM_STRING("StretchRect failed with error 0x") << std::hex<<hr);
@@ -424,7 +417,7 @@ mfxStatus MFXD3D9Device::RenderFrame(mfxFrameSurface1 * pSurface, mfxFrameAlloca
         }
         else
         {
-            hr = m_pD3DD9Ex->Present(&dest, &dest, NULL, NULL);
+            hr = m_pSwapChain->Present(NULL, NULL, NULL, NULL, D3DPRESENT_FORCEIMMEDIATE);
         }
         if (FAILED(hr))
         {

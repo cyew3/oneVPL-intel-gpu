@@ -19,6 +19,7 @@ File Name: .h
 #include <windows.h>
 #include <d3d9.h>
 #include <dxva2api.h>
+#include "atlbase.h"
 
 class MFXD3D9Device : public IHWDevice
 {
@@ -50,6 +51,7 @@ private:
     D3DPRESENT_PARAMETERS       m_D3DPP;
     bool                        m_bModeFullscreen;
     RECT                        m_drawRect;
+    CComPtr<IDirect3DSwapChain9>    m_pSwapChain;
 
     HRESULT myDirect3DCreate9Ex(UINT SDKVersion, IDirect3D9Ex**d);
     HRESULT myDXVA2CreateDirect3DDeviceManager9(UINT* pResetToken,
