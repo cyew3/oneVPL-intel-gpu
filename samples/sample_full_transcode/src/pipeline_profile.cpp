@@ -184,7 +184,8 @@ void PipelineProfile::BuildMuxerInfo() {
     }
 
     for (size_t i = 0; i < m_audios.size(); i++) {
-        mfxTrackInfo tInfo = {};
+        mfxTrackInfo tInfo;
+        MSDK_ZERO_MEMORY(tInfo);
         tInfo.SID = (mfxU32)m_muxerInfo.Tracks().size();
         tInfo.Enable = 1;
         tInfo.AudioParam = m_audios[i].GetTrackInfo().Encode.mfx;

@@ -468,8 +468,10 @@ int main(int argc, char *argv[])
 
 mfxStatus CheckOptions(sInputParams* pParams)
 {
+    mfxStatus sts = MFX_ERR_NONE;
     if(pParams->bENCPAK && pParams->dstFileBuff.size() == 0){
         fprintf(stderr,"Output bitstream file should be specified for ENC+PAK (-o)\n");
-        return MFX_ERR_UNSUPPORTED;
+        sts = MFX_ERR_UNSUPPORTED;
     }
+    return sts;
 }

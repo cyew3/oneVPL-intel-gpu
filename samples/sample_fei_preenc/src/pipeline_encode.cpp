@@ -187,11 +187,14 @@ mfxStatus sTask::Close() {
 }
 
 mfxStatus sTask::WriteBitstream() {
+    mfxStatus sts = MFX_ERR_NONE;
     if (!pWriter)
-        return MFX_ERR_NOT_INITIALIZED;
+        sts = MFX_ERR_NOT_INITIALIZED;
 #if 0
-    return pWriter->WriteNextFrame(&mfxBS);
+    sts = pWriter->WriteNextFrame(&mfxBS);
 #endif
+
+    return sts;
 }
 
 mfxStatus sTask::Reset() {
@@ -326,7 +329,7 @@ mfxStatus CEncodingPipeline::AllocFrames() {
     MSDK_CHECK_POINTER(m_pEncSurfaces, MFX_ERR_MEMORY_ALLOC);
 
     for (int i = 0; i < m_EncResponse.NumFrameActual; i++) {
-        memset(&(m_pEncSurfaces[i]), 0, sizeof (mfxFrameSurface1));
+        MSDK_ZERO_MEMORY(m_pEncSurfaces[i]);
         MSDK_MEMCPY_VAR(m_pEncSurfaces[i].Info, &(m_mfxEncParams.mfx.FrameInfo), sizeof (mfxFrameInfo));
 
         if (m_bExternalAlloc) {
@@ -754,7 +757,7 @@ mfxStatus CEncodingPipeline::Run() {
     bool enableMBQP = m_params.inQPFile != NULL;
 
     mfxExtFeiPreEncCtrl preENCCtr;
-    memset(&preENCCtr, 0, sizeof(mfxExtFeiPreEncCtrl));
+    MSDK_ZERO_MEMORY(preENCCtr);
     preENCCtr.Header.BufferId = MFX_EXTBUFF_FEI_PREENC_CTRL;
     preENCCtr.Header.BufferSz = sizeof (mfxExtFeiPreEncCtrl);
     preENCCtr.DisableMVOutput = disableMVoutput;
@@ -830,6 +833,7 @@ mfxStatus CEncodingPipeline::Run() {
     mfxExtBuffer * outBufs[2];
     mfxExtBuffer * outBufsI[1];
     mfxExtFeiPreEncMV mvs;
+    MSDK_ZERO_MEMORY(mvs);
     if(!preENCCtr.DisableMVOutput)
     {
         mvs.Header.BufferId = MFX_EXTBUFF_FEI_PREENC_MV;
@@ -848,6 +852,7 @@ mfxStatus CEncodingPipeline::Run() {
     }
 
     mfxExtFeiPreEncMBStat mbdata;
+    MSDK_ZERO_MEMORY(mbdata);
     if(!preENCCtr.DisableStatisticsOutput)
     {
         mbdata.Header.BufferId = MFX_EXTBUFF_FEI_PREENC_MB;

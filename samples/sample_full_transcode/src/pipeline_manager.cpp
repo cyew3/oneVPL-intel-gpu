@@ -151,7 +151,8 @@ void PipelineManager::BuildVideoChain()
     VideoTrackInfoExt info = m_profile->GetVideoTrackInfo();
     MFXVideoSessionExt &session = *m_sessions->GetVideoSessionForID(info.SID);
 
-    mfxVideoParam vParam = {};
+    mfxVideoParam vParam;
+    MSDK_ZERO_MEMORY(vParam);
     vParam = info.Decode;
 
     //starting components creation

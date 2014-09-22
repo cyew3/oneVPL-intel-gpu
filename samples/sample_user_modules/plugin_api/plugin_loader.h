@@ -271,7 +271,7 @@ public:
         return m_plugin->QueryIOSurf(par, in, out);
     }
     virtual void Release() {
-        return m_plugin->Release();
+        m_plugin->Release();
     }
     virtual mfxStatus Close() {
         return m_plugin->Close();

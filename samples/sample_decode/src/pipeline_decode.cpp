@@ -1250,12 +1250,13 @@ mfxStatus CDecodingPipeline::RunDecoding()
     if (m_eWorkMode == MODE_RENDERING) {
         m_bStopDeliverLoop = true;
         m_pDeliverOutputSemaphore->Post();
-        pDeliverThread->Wait();
-        MSDK_SAFE_DELETE(m_pDeliverOutputSemaphore);
-        MSDK_SAFE_DELETE(m_pDeliveredEvent);
-        MSDK_SAFE_DELETE(pDeliverThread);
+        if (pDeliverThread)
+            pDeliverThread->Wait();
     }
 
+    MSDK_SAFE_DELETE(pDeliverThread);
+    MSDK_SAFE_DELETE(m_pDeliverOutputSemaphore);
+    MSDK_SAFE_DELETE(m_pDeliveredEvent);
     // exit in case of other errors
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
