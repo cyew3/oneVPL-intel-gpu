@@ -1223,7 +1223,7 @@ Ipp32s H265CU<PixType>::FilterIntraLumaModesBySatd(Ipp32s absPartIdx, Ipp32s dep
             }
         }
         else if (m_cuIntraAngMode == INTRA_ANG_MODE_EVEN) {
-            h265_PredictIntra_Ang_All_Even(predPel, predPelFilt, predPtr, width);
+            h265_PredictIntra_Ang_All_Even(predPel, predPelFilt, predPtr, width, m_par->bitDepthLuma);
         }
         else { // INTRA_ANG_MODE_ALL
             h265_PredictIntra_Ang_All(predPel, predPelFilt, predPtr, width, m_par->bitDepthLuma);

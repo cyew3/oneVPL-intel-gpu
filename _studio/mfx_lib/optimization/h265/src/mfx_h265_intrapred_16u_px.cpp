@@ -915,10 +915,10 @@ namespace MFX_HEVC_PP
         PixType* PredPel,
         PixType* FiltPel,
         PixType* pels,
-        Ipp32s width)
+        Ipp32s width,
+        Ipp32s bitDepth)
     {
         PixType *pred_ptr = pels;
-        const int BIT_DEPTH_LUMA = 8;
 
         for (int mode = 2; mode < 35; mode += 2)
         {
@@ -941,13 +941,13 @@ namespace MFX_HEVC_PP
             pels = pred_ptr + (INTRA_HOR - 2) * width * width;
             for (Ipp32s i = 0; i < width; i++)
             {
-                pels[i*width] = (PixType)Saturate(0, (1 << BIT_DEPTH_LUMA) - 1,
+                pels[i*width] = (PixType)Saturate(0, (1 << bitDepth) - 1,
                     pels[i*width] + ((PredPel[1+i] - PredPel[0]) >> 1));
             }
             pels = pred_ptr + (INTRA_VER - 2) * width * width;
             for (Ipp32s j = 0; j < width; j++)
             {
-                pels[j*width] = (PixType)Saturate(0, (1 << BIT_DEPTH_LUMA) - 1,
+                pels[j*width] = (PixType)Saturate(0, (1 << bitDepth) - 1,
                     pels[j*width] + ((PredPel[2*width+1+j] - PredPel[0]) >> 1));
             }
         }
