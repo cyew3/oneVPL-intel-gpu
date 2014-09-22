@@ -1401,6 +1401,10 @@ void* VAAPIVideoCORE::QueryCoreInterface(const MFX_GUID &guid)
         }
         return (void*)pCmDevice;
     }
+    else if (MFXIHWMBPROCRATE_GUID == guid)
+    {
+        return (void*) &m_encode_mbprocrate;
+    }
     else if (MFXIEXTERNALLOC_GUID == guid && m_bSetExtFrameAlloc)
         return &m_FrameAllocator.frameAllocator;
     else

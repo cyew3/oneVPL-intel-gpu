@@ -1288,10 +1288,37 @@ mfxStatus VAAPIEncoder::QueryEncodeCaps(ENCODE_CAPS& caps)
 
 mfxStatus VAAPIEncoder::QueryMbPerSec(mfxVideoParam const & par, mfxU32 (&mbPerSec)[16])
 {
-    par;
-    mbPerSec;
+    VAConfigID config = VA_INVALID_ID;
 
-    return MFX_ERR_UNSUPPORTED;
+    VAConfigAttrib attrib[2];
+    attrib[0].type = VAConfigAttribRTFormat;
+    attrib[0].value = VA_RT_FORMAT_YUV420;
+    attrib[1].type = VAConfigAttribRateControl;
+    attrib[1].value = ConvertRateControlMFX2VAAPI(par.mfx.RateControlMethod);
+
+    VAStatus vaSts = vaCreateConfig(
+        m_vaDisplay,
+        ConvertProfileTypeMFX2VAAPI(par.mfx.CodecProfile),
+        VAEntrypointEncSlice,
+        attrib,
+        2,
+        &config);
+    MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+
+    VAProcessingRateParams proc_rate_buf = { 0 };
+    mfxU32 & processing_rate = mbPerSec[0];
+
+    proc_rate_buf.proc_buf_enc.level_idc = par.mfx.CodecLevel ? par.mfx.CodecLevel : 0xff;
+    proc_rate_buf.proc_buf_enc.quality_level = par.mfx.TargetUsage ? par.mfx.TargetUsage : 0xffff;
+    proc_rate_buf.proc_buf_enc.intra_period = par.mfx.GopPicSize ? par.mfx.GopPicSize : 0xffff;
+    proc_rate_buf.proc_buf_enc.ip_period = par.mfx.GopRefDist ? par.mfx.GopRefDist : 0xffff;
+
+    vaSts = vaQueryProcessingRate(m_vaDisplay, config, &proc_rate_buf, &processing_rate);
+    MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+
+    vaDestroyConfig(m_vaDisplay, config);
+
+    return MFX_ERR_NONE;
 }
 
 mfxStatus VAAPIEncoder::QueryHWGUID(VideoCORE * core, GUID guid, bool isTemporal)
@@ -2393,16 +2420,16 @@ mfxStatus VAAPIEncoder::QueryStatus(
 
 mfxStatus VAAPIEncoder::Destroy()
 {
-    if( m_vaContextEncode )
+    if (m_vaContextEncode)
     {
-        vaDestroyContext( m_vaDisplay, m_vaContextEncode );
-        m_vaContextEncode = 0;
+        vaDestroyContext(m_vaDisplay, m_vaContextEncode);
+        m_vaContextEncode = VA_INVALID_ID;
     }
 
-    if( m_vaConfig )
+    if (m_vaConfig)
     {
-        vaDestroyConfig( m_vaDisplay, m_vaConfig );
-        m_vaConfig = 0;
+        vaDestroyConfig(m_vaDisplay, m_vaConfig);
+        m_vaConfig = VA_INVALID_ID;
     }
 
     MFX_DESTROY_VABUFFER(m_spsBufferId, m_vaDisplay);
