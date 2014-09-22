@@ -10,7 +10,7 @@
 
 #if !defined(msdk_sscanf)
   #if defined(_WIN32) || defined(_WIN64)
-    # define msdk_sscanf _tscanf_s
+    # define msdk_sscanf _stscanf_s
   #else
     # define msdk_sscanf sscanf
   #endif
