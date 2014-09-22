@@ -5823,7 +5823,8 @@ BrcIface * MfxHwH264Encode::CreateBrc(MfxVideoParam const & video)
 
     switch (video.mfx.RateControlMethod)
     {
-    case MFX_RATECONTROL_LA: return new LookAheadBrc2;
+    case MFX_RATECONTROL_LA:
+    case MFX_RATECONTROL_LA_HRD: return new LookAheadBrc2;
     case MFX_RATECONTROL_LA_ICQ: return new LookAheadCrfBrc;
     case MFX_RATECONTROL_LA_EXT: return new VMEBrc;
     case MFX_RATECONTROL_VME: return new VMEBrc;
