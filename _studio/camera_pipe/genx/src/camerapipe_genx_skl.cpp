@@ -72,6 +72,19 @@ ROWSWAP_8x16(matrix_ref<short, 8, 16> m)
 }
 
 _GENX_ void inline 
+ROWSWAP_16x16(matrix_ref<ushort, 16, 16> m)
+{
+    vector<ushort, 16> tmp_pixel_row;
+#pragma unroll
+    for(int i = 0; i < 8; i++)
+    {
+        tmp_pixel_row = m.row(i);
+        m.row(i)      = m.row(15-i);
+        m.row(15-i)   = tmp_pixel_row;
+    }
+}
+
+_GENX_ void inline
 ROWSWAP_20x32(matrix_ref<ushort, 20, 32> m)
 {
     vector<ushort, 32> tmp_pixel_row;
@@ -1870,4 +1883,204 @@ void ARGB16(SurfaceIndex R_BUF,
     write(ARGB16, wr_h_pos+32, wr_v_pos+8, out.select<8,1,16,1>(8,16));
     write(ARGB16, wr_h_pos+64, wr_v_pos+8, out.select<8,1,16,1>(8,32));
     write(ARGB16, wr_h_pos+96, wr_v_pos+8, out.select<8,1,16,1>(8,48));
+}
+
+///////////////////////////////////////////////////////////
+// Black Level Correction
+//                 ver 1.0
+///////////////////////////////////////////////////////////
+_GENX_ void inline
+BLACK_LEVEL_CORRECT(matrix_ref<ushort, 16, 16> in,
+            short B_amount, short Gtop_amount, short Gbot_amount, short R_amount, ushort max_input)
+{
+    matrix<int, 16, 16> m, tmp;
+    m.select<8, 2, 8, 2>(0,0) = cm_add<int>(in.select<8, 2, 8, 2>(0,0), -B_amount   );
+    m.select<8, 2, 8, 2>(0,1) = cm_add<int>(in.select<8, 2, 8, 2>(0,1), -Gtop_amount);
+    m.select<8, 2, 8, 2>(1,0) = cm_add<int>(in.select<8, 2, 8, 2>(1,0), -Gbot_amount);
+    m.select<8, 2, 8, 2>(1,1) = cm_add<int>(in.select<8, 2, 8, 2>(1,1), -R_amount   );
+
+    m.merge(0, m < 0        );
+    tmp.merge(max_input, m, m > max_input);
+
+    in = tmp;
+}
+
+///////////////////////////////////////////////////////////
+// Vignette Correction
+//                 ver 1.0
+///////////////////////////////////////////////////////////
+_GENX_ void inline
+VIG_CORRECT(matrix_ref<ushort, 16, 16> m,
+            matrix_ref<ushort, 16, 16> mask,
+            ushort max_input)
+{
+    matrix<uint, 16, 16> tmp;
+    tmp = cm_mul<uint>(m, mask);
+
+    tmp = cm_add <uint>(tmp, 128 );      //8;
+    tmp = cm_quot<uint>(tmp, 256);       //16;
+
+    m.merge(max_input, tmp > max_input);
+    m.merge(0,           m   < 0        );
+}
+
+///////////////////////////////////////////////////////////
+// Gain Control ( White Balance )
+//                 ver 1.0
+///////////////////////////////////////////////////////////
+_GENX_ void inline
+BAYER_GAIN(matrix_ref<ushort, 16, 16> in,
+            float Rscale, float Gtop_scale, float Gbot_scale, float Bscale, ushort max_input)
+{
+    matrix<uint, 16, 16> m;
+    m.select<8, 2, 8, 2>(0,0) = cm_mul<uint>(in.select<8, 2, 8, 2>(0,0), Bscale    );//, SAT);
+    m.select<8, 2, 8, 2>(0,1) = cm_mul<uint>(in.select<8, 2, 8, 2>(0,1), Gtop_scale);//, SAT);
+    m.select<8, 2, 8, 2>(1,0) = cm_mul<uint>(in.select<8, 2, 8, 2>(1,0), Gbot_scale);//, SAT);
+    m.select<8, 2, 8, 2>(1,1) = cm_mul<uint>(in.select<8, 2, 8, 2>(1,1), Rscale    );//, SAT);
+
+    in = m;
+    in.merge(0,            m < 0        );
+    in.merge(max_input, m > max_input);
+}
+
+extern "C" _GENX_MAIN_
+void BAYER_CORRECTION(SurfaceIndex PaddedInputIndex,
+                      SurfaceIndex BayerIndex,
+                      SurfaceIndex MaskIndex,
+                      ushort Enable_BLC, ushort Enable_VIG, ushort Enable_WB,
+                      short B_amount, short Gtop_amount, short Gbot_amount, short R_amount,
+                      float  Rscale  , float  Gtop_scale , float  Gbot_scale , float  Bscale,
+                      ushort max_input, int first, int bitDepth, int BayerType)
+{
+    matrix<ushort, 16, 16> BayerMatrix;
+    matrix<ushort, 16, 16> MaskMatrix ;
+    matrix<ushort, 16, 16> OutMatrix  ;
+
+    uint h_pos = get_thread_origin_x() * 16 * sizeof(short);
+    uint v_pos = get_thread_origin_y() * 16;
+
+    if(first == 0) // if not first kernel
+    {
+        read(BayerIndex, h_pos, v_pos  , BayerMatrix.select<8,1,16,1>(0,0));
+        read(BayerIndex, h_pos, v_pos+8, BayerMatrix.select<8,1,16,1>(8,0));
+    }
+    else           // if first kernel, input from paddedinput
+    {
+        read(PaddedInputIndex, h_pos, v_pos  , BayerMatrix.select<8,1,16,1>(0,0));
+        read(PaddedInputIndex, h_pos, v_pos+8, BayerMatrix.select<8,1,16,1>(8,0));
+
+        if(BayerType == GRBG || BayerType == GBRG)
+        {
+            ROWSWAP_16x16(BayerMatrix);
+        }
+        BayerMatrix >>= (16-bitDepth);
+    }
+
+    /*
+    if(first == 1) // If the first kernel executed
+    {
+        if(BayerType == GRBG || BayerType == GBRG)
+        {
+            ROWSWAP_16x16(BayerMatrix);
+        }
+        BayerMatrix >>= (16-bitDepth);
+    }
+    */
+    /////////////////////////////////////////////////////////////////////////////////////////
+
+    if(Enable_BLC == 1)
+        BLACK_LEVEL_CORRECT( BayerMatrix, B_amount, Gtop_amount, Gbot_amount, R_amount, max_input);
+
+     // Note : Mask is not implemented yet, Iwamoto
+    if(Enable_VIG == 1)
+    {
+        read(MaskIndex, h_pos, v_pos  , MaskMatrix.select<8,1,16,1>(0,0));
+        read(MaskIndex, h_pos, v_pos+8, MaskMatrix.select<8,1,16,1>(8,0));
+        VIG_CORRECT( BayerMatrix, MaskMatrix, max_input);
+    }
+
+    if(Enable_WB == 1)
+        BAYER_GAIN( BayerMatrix, Rscale,  Gtop_scale,  Gbot_scale,  Bscale,  max_input);
+
+    write(BayerIndex, h_pos, v_pos  , BayerMatrix.select<8,1,16,1>(0,0));
+    write(BayerIndex, h_pos, v_pos+8, BayerMatrix.select<8,1,16,1>(8,0));
+}
+
+///////////////////////////////////////////////////////////
+// Color Correction Matrix
+//                 ver 1.0
+///////////////////////////////////////////////////////////
+
+_GENX_ void inline
+CCM_ONLY_CORRECT(SurfaceIndex BUF_R, SurfaceIndex BUF_G, SurfaceIndex BUF_B,
+                 int h_pos, int v_pos, vector<float, 9> ccm, ushort max_input_level)
+{
+    matrix<ushort, 8, 16> wr_out;
+    matrix<ushort, 8, 16> rd_in_R, rd_in_G, rd_in_B;
+
+    read(BUF_R, h_pos, v_pos, rd_in_R);
+    read(BUF_G, h_pos, v_pos, rd_in_G);
+    read(BUF_B, h_pos, v_pos, rd_in_B);
+
+    matrix<int   , 8, 16> tmp;
+
+#pragma unroll
+    for(int j = 0; j < 8; j++)
+    {
+        tmp.row(j)  = cm_mul<int>(rd_in_R.row(j), ccm(0));
+        tmp.row(j) += cm_mul<int>(rd_in_G.row(j), ccm(1));
+        tmp.row(j) += cm_mul<int>(rd_in_B.row(j), ccm(2));
+        tmp.row(j)  = cm_max<int>(tmp.row(j), 0);//cm_max<ushort>(tmp.row(j), 0);
+        wr_out.row(j)  = cm_min<int>(tmp.row(j), max_input_level);//cm_min<ushort>(wr_out.row(j), max_input_level);
+    }
+    write(BUF_R, h_pos, v_pos, wr_out);
+
+#pragma unroll
+    for(int j = 0; j < 8; j++)
+    {
+        tmp.row(j)  = cm_mul<int>(rd_in_R.row(j), ccm(3));
+        tmp.row(j) += cm_mul<int>(rd_in_G.row(j), ccm(4));
+        tmp.row(j) += cm_mul<int>(rd_in_B.row(j), ccm(5));
+        tmp.row(j)  = cm_max<int>(tmp.row(j), 0);//cm_max<ushort>(tmp.row(j), 0);
+        wr_out.row(j)  = cm_min<int>(tmp.row(j), max_input_level);//cm_min<ushort>(wr_out.row(j), max_input_level);
+    }
+    write(BUF_G, h_pos, v_pos, wr_out);
+
+#pragma unroll
+    for(int j = 0; j < 8; j++)
+    {
+        tmp.row(j)  = cm_mul<int>(rd_in_R.row(j), ccm(6));
+        tmp.row(j) += cm_mul<int>(rd_in_G.row(j), ccm(7));
+        tmp.row(j) += cm_mul<int>(rd_in_B.row(j), ccm(8));
+        tmp.row(j)  = cm_max<int>(tmp.row(j), 0);//cm_max<ushort>(tmp.row(j), 0);
+        wr_out.row(j)  = cm_min<int>(tmp.row(j), max_input_level);//cm_min<ushort>(wr_out.row(j), max_input_level);
+    }
+    write(BUF_B, h_pos, v_pos, wr_out);
+}
+
+extern "C" _GENX_MAIN_ void
+CCM_ONLY(SurfaceIndex Correct_Index, SurfaceIndex Point_Index,
+         SurfaceIndex R_I_Index, SurfaceIndex G_I_Index, SurfaceIndex B_I_Index,
+         vector<float, 9> ccm,
+         int blocks_in_a_row, int BitDepth, int framewidth_in_bytes, int frameheight,
+         SurfaceIndex LUT_Index)
+{
+    int l_count = (frameheight % 128 == 0)? (frameheight / 128) : ((frameheight / 128)+1);
+    ushort max_input_level = (1 << BitDepth) - 1;
+
+    int rd_v_pos, rd_h_pos;
+    for(int l = 0; l < l_count; l++)    // 17 = (frameHeight / (32(H/group)*4 groups))
+    {                                   // Four Groups, jointly, one time does 128 pixel high. Need (height/128) loops
+        for(int m = 0; m < 4; m++)
+        {
+                //EACH thread in the threadgroup handle 256 byte-wide data
+                rd_v_pos = cm_linear_group_id() * 32 + m * 8 + l * 128;
+#pragma unroll
+                for(int i = 0; i < 8; i++)
+                {
+                    rd_h_pos = cm_linear_local_id() * 256 + 32 * i;
+                    CCM_ONLY_CORRECT(R_I_Index, G_I_Index, B_I_Index, rd_h_pos, rd_v_pos, ccm, max_input_level);
+                }
+        }
+    }
 }
