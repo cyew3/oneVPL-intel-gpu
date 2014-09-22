@@ -266,6 +266,13 @@
     #define MFX_ENABLE_VP8_VIDEO_DECODE_HW
 #endif
 
+#if defined(AS_VP8D_PLUGIN)
+#define MFX_ENABLE_VP8_VIDEO_DECODE
+#ifdef MFX_VA
+#define MFX_ENABLE_VP8_VIDEO_DECODE_HW
+#endif
+#endif
+
 #if defined (MFX_RT)
 #define MFX_ENABLE_VPP
 #define MFX_ENABLE_USER_DECODE
