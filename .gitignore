@@ -8,3 +8,4 @@ _build
 # CMake intermidiate files
 __cmake
 /.project
+.gitreview
