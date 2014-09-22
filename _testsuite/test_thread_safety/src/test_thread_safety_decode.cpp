@@ -95,15 +95,15 @@ mfxStatus OutputYuvTester::RenderFrame(mfxFrameSurface1 *surface, mfxEncodeCtrl 
         mfxU32 nCropXYOffset = (surface->Info.CropY >> 1) * surface->Data.Pitch + (surface->Info.CropX >> 1);
         mfxU8* ptr = surface->Data.U + nCropXYOffset;
 
-        for (mfxI32 i = 0; i < surface->Info.CropH / 2; i++, ptr += surface->Data.Pitch / 2)
+        for (mfxI32 i = 0; i < (surface->Info.CropH + 1) / 2; i++, ptr += surface->Data.Pitch / 2)
         {
-            outReg->CommitData(m_handle, ptr, surface->Info.CropW / 2);
+            outReg->CommitData(m_handle, ptr, (surface->Info.CropW + 1) / 2);
         }
 
         ptr = surface->Data.V + nCropXYOffset;
-        for (mfxI32 i = 0; i < surface->Info.CropH / 2; i++, ptr += surface->Data.Pitch / 2)
+        for (mfxI32 i = 0; i < (surface->Info.CropH + 1) / 2; i++, ptr += surface->Data.Pitch / 2)
         {
-            outReg->CommitData(m_handle, ptr, surface->Info.CropW / 2);
+            outReg->CommitData(m_handle, ptr, (surface->Info.CropW + 1) / 2);
         }
     }
     else if (m_video.mfx.FrameInfo.FourCC == MFX_FOURCC_NV12)
@@ -115,24 +115,24 @@ mfxStatus OutputYuvTester::RenderFrame(mfxFrameSurface1 *surface, mfxEncodeCtrl 
         }
         mfxU32 nCropXYOffset = (surface->Info.CropY >> 1) * surface->Data.Pitch + surface->Info.CropX;
 
-        for (mfxI32 i = 0; i < surface->Info.CropH / 2; i++)
+        for (mfxI32 i = 0; i < (surface->Info.CropH + 1) / 2; i++)
         {
-            for (mfxI32 j = 0; j < surface->Info.CropW / 2; j++)
+            for (mfxI32 j = 0; j < (surface->Info.CropW + 1) / 2; j++)
             {
                 buf[j] = surface->Data.UV[i * surface->Data.Pitch + 2 * j + nCropXYOffset];
             }
 
-            outReg->CommitData(m_handle, buf, surface->Info.CropW / 2);
+            outReg->CommitData(m_handle, buf, (surface->Info.CropW + 1) / 2);
         }
 
-        for (mfxI32 i = 0; i < surface->Info.CropH / 2; i++)
+        for (mfxI32 i = 0; i < (surface->Info.CropH + 1) / 2; i++)
         {
-            for (mfxI32 j = 0; j < surface->Info.CropW / 2; j++)
+            for (mfxI32 j = 0; j < (surface->Info.CropW + 1) / 2; j++)
             {
                 buf[j] = surface->Data.UV[i * surface->Data.Pitch + 2 * j + 1 + nCropXYOffset];
             }
 
-            outReg->CommitData(m_handle, buf, surface->Info.CropW / 2);
+            outReg->CommitData(m_handle, buf, (surface->Info.CropW + 1) / 2);
         }
     }
     else

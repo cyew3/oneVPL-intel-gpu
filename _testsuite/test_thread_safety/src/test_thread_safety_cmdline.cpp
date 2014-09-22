@@ -50,6 +50,7 @@ mfxU32 String2TestType(const vm_char* s)
         MAKE_PAIR(MPEG2ENCODE),
         MAKE_PAIR(MVCENCODE),
         MAKE_PAIR(VC1ENCODE),
+        MAKE_PAIR(VP8DECODE),
         MAKE_PAIR(H263ENCODE)
     };
 
@@ -86,6 +87,7 @@ void CommandLine::PrintUsage(const vm_char* app)
         VM_STRING("  HEVCENCODE\n")
         VM_STRING("  VC1DECODE\n")
         VM_STRING("  VC1ENCODE\n")
+        VM_STRING("  VP8DECODE\n")
         VM_STRING("  H263DECODE\n")
         VM_STRING("  H263ENCODE\n"));
     vm_string_printf(
@@ -203,6 +205,7 @@ CommandLine::CommandLine(mfxI32 argc, vm_char** argv)
         case TEST_SVCDECODE:
         case TEST_VC1DECODE:
         case TEST_HEVCDECODE:
+        case TEST_VP8DECODE:
         case TEST_H263DECODE:
             break;
         default:
