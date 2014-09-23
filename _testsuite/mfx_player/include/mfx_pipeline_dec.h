@@ -445,6 +445,10 @@ protected:
     //multivieencoding support
     MFXExtBufferVector m_InputExtBuffers;
     MFXExtBufferPtr<mfxExtDecVideoProcessing>  m_extDecVideoProcessing;
+
+    //Camera specific buffers
+    MFXExtBufferPtr<mfxExtCamBlackLevelCorrection> m_extExtCamBlackLevelCorrection;
+
     //map for dec view order to enc view id map
     std::vector<std::pair<mfxU16, mfxU16> > m_viewOrderMap;
 

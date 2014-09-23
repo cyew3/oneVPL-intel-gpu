@@ -132,6 +132,7 @@ MFXDecPipeline::MFXDecPipeline(IMFXPipelineFactory *pFactory)
     , m_externalsync()
     , m_pFactory(pFactory)
     , m_extDecVideoProcessing(new mfxExtDecVideoProcessing())
+    , m_extExtCamBlackLevelCorrection(new mfxExtCamBlackLevelCorrection())
     , m_bVPPUpdateInput(false)
 {
 
@@ -1078,6 +1079,11 @@ mfxStatus MFXDecPipeline::CreateVPP()
         pCameraPipeGammaCorrection->NumPoints  = 64;
         memcpy(pCameraPipeGammaCorrection->GammaPoint    , gamma_point  , pCameraPipeGammaCorrection->NumPoints*sizeof(mfxU16));
         memcpy(pCameraPipeGammaCorrection->GammaCorrected, gamma_correct, pCameraPipeGammaCorrection->NumPoints*sizeof(mfxU16));
+    }
+
+    if ( ! m_extExtCamBlackLevelCorrection.IsZero() )
+    {
+        m_components[eVPP].m_extParams.push_back(m_extExtCamBlackLevelCorrection);
     }
 
     if (m_components[eVPP].m_params.vpp.Out.CropW != 0)
@@ -4390,6 +4396,17 @@ mfxStatus MFXDecPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI32 argc, 
                 SetTimeout((int)PIPELINE_TIMEOUT_GENERIC, nTimeout);
 
                 argv++;
+            }
+            else if (m_OptProc.Check(argv[0], VM_STRING("-camera_blacklevel"), VM_STRING("set specific values for camera blacklevel correction filter B G0 G1 R"), OPT_INT_32))
+            {
+                MFX_CHECK(4 + argv != argvEnd);
+
+                MFX_PARSE_INT(m_extExtCamBlackLevelCorrection->B,  argv[1]);
+                MFX_PARSE_INT(m_extExtCamBlackLevelCorrection->G0, argv[2]);
+                MFX_PARSE_INT(m_extExtCamBlackLevelCorrection->G1, argv[3]);
+                MFX_PARSE_INT(m_extExtCamBlackLevelCorrection->R,  argv[4]);
+
+                argv+=4;
             }
             else if (m_OptProc.Check(argv[0], VM_STRING("-mediasdk_splitter"), VM_STRING("split stream from media container with MediaSDK splitter (ts, mp4)"), OPT_BOOL))
             {
