@@ -600,12 +600,12 @@ mfxStatus H265Encoder::SetPPS()
     pps->log2_parallel_merge_level = 2;
 
     if (m_videoParam.GopRefDist == 1) { // most frames are P frames
-        pps->num_ref_idx_l0_default_active = IPP_MIN(1, m_videoParam.MaxRefIdxP[0]);
-        pps->num_ref_idx_l1_default_active = IPP_MIN(1, m_videoParam.MaxRefIdxP[1]);
+        pps->num_ref_idx_l0_default_active = IPP_MAX(1, m_videoParam.MaxRefIdxP[0]);
+        pps->num_ref_idx_l1_default_active = IPP_MAX(1, m_videoParam.MaxRefIdxP[1]);
     }
     else { // most frames are B frames
-        pps->num_ref_idx_l0_default_active = IPP_MIN(1, m_videoParam.MaxRefIdxB[0]);
-        pps->num_ref_idx_l1_default_active = IPP_MIN(1, m_videoParam.MaxRefIdxB[1]);
+        pps->num_ref_idx_l0_default_active = IPP_MAX(1, m_videoParam.MaxRefIdxB[0]);
+        pps->num_ref_idx_l1_default_active = IPP_MAX(1, m_videoParam.MaxRefIdxB[1]);
     }
 
     pps->sign_data_hiding_enabled_flag = m_videoParam.SBHFlag;
@@ -1731,7 +1731,7 @@ mfxStatus H265Encoder::EncodeThread(Ipp32s ithread) {
 
 #ifdef DEBUG_CABAC
             printf("\n");
-            if (ctb_addr == 0) printf("Start POC %d\n",m_pCurrentFrame->m_PicOrderCnt);
+            if (ctb_addr == 0) printf("Start POC %d\n",m_pCurrentFrame->m_poc);
             printf("CTB %d\n",ctb_addr);
 #endif
             cu[ithread].InitCu(pars, m_pReconstructFrame->cu_data + (ctb_addr << pars->Log2NumPartInCU),
@@ -1914,8 +1914,10 @@ mfxStatus H265Encoder::EncodeThreadByRow(Ipp32s ithread) {
 
 #ifdef DEBUG_CABAC
             printf("\n");
-            if (ctb_addr == 0) printf("Start POC %d\n",m_pCurrentFrame->m_PicOrderCnt);
+            if (ctb_addr == 0) printf("Start POC %d\n",m_pCurrentFrame->m_poc);
             printf("CTB %d\n",ctb_addr);
+            if (ctb_addr == 6 && m_pCurrentFrame->m_poc == 1)
+                printf("");
 #endif
             cu[ithread].InitCu(pars, m_pReconstructFrame->cu_data + (ctb_addr << pars->Log2NumPartInCU),
                 data_temp + ithread * data_temp_size, ctb_addr, (PixType*)m_pReconstructFrame->y,
