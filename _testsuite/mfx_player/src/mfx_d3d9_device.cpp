@@ -113,7 +113,7 @@ mfxStatus MFXD3D9Device::Init(mfxU32 nAdapter,
         hr = m_pD3D9Ex->CreateDeviceEx(nAdapter,
             D3DDEVTYPE_HAL,
             (HWND)hWindow,
-            D3DCREATE_SOFTWARE_VERTEXPROCESSING |
+            D3DCREATE_HARDWARE_VERTEXPROCESSING |
             D3DCREATE_FPU_PRESERVE |
             D3DCREATE_MULTITHREADED,
             &m_D3DPP,
@@ -181,7 +181,19 @@ mfxStatus MFXD3D9Device::Reset(WindowHandle hWindow,
     if (m_pD3DD9Ex)
     {
         m_D3DPP.Windowed = bWindowed;
-        if (m_D3DPP.Windowed)
+        if ( IsOverlay() )
+        {
+            RECT r;
+            GetClientRect((HWND)hWindow, &r);
+            // In overlay mode backbuffer cannot be lager than screen widthxheight.
+            m_D3DPP.BackBufferWidth  = min(GetSystemMetrics(SM_CXSCREEN), r.right - r.left);
+            m_D3DPP.BackBufferHeight = min(GetSystemMetrics(SM_CYSCREEN), r.bottom - r.top);
+            m_drawRect.left   = 0;
+            m_drawRect.top    = 0;
+            m_drawRect.right  = m_D3DPP.BackBufferWidth;
+            m_drawRect.bottom = m_D3DPP.BackBufferHeight;
+        }
+        else if (m_D3DPP.Windowed)
         {
             RECT r;
             GetClientRect((HWND)hWindow, &r);
@@ -409,7 +421,7 @@ mfxStatus MFXD3D9Device::RenderFrame(mfxFrameSurface1 * pSurface, mfxFrameAlloca
         {
             // Overlay mode requires specifying source/dest rects.
             // Otherwise it fails with invalid args error.
-            hr = m_pD3DD9Ex->Present(&source, &dest, NULL, NULL);
+            hr = m_pD3DD9Ex->PresentEx(&dest, &dest, NULL, NULL, NULL);
         }
         else if ( IsFullscreen() )
         {
