@@ -1,6 +1,6 @@
 //{{NO_DEPENDENCIES}}
 // Microsoft Visual C++ generated include file.
-// Used by libmfxsw_plugin_hevce.rc
+// Used by libmfxHw_plugin_h264la.rc
 //
 
 // Next default values for new objects
