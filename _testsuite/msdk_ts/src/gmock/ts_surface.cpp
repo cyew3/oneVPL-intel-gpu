@@ -313,10 +313,15 @@ mfxStatus tsRawReader::ProcessSurface(mfxFrameSurface1& s)
         tsFrame dst(s);
 
         dst = src;
-        s.Data.FrameOrder = m_cur - 1;
+        s.Data.FrameOrder = m_cur++;
     }
 
     return MFX_ERR_NONE;
+}
+
+mfxStatus tsRawReader::ResetFile()
+{
+    return SeekToStart();
 }
 
 tsSurfaceWriter::tsSurfaceWriter(const char* fname)

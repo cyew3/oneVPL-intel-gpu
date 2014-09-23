@@ -46,6 +46,12 @@ mfxU32 tsReader::Read(mfxU8* dst, mfxU32 size)
     }
 }
 
+mfxStatus tsReader::SeekToStart()
+{
+    fseek(m_file, 0, SEEK_SET);
+    return MFX_ERR_NONE;
+}
+
 mfxBitstream* tsBitstreamProcessor::ProcessBitstream(mfxBitstream& bs)
 {
     if(ProcessBitstream(bs, 1))

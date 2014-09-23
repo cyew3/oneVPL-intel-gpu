@@ -12,6 +12,7 @@ public:
     ~tsReader();
 
     mfxU32 Read(mfxU8* dst, mfxU32 size);
+    mfxStatus SeekToStart();
 };
 
 class tsBitstreamProcessor
