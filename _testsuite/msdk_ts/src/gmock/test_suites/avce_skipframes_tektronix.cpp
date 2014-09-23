@@ -1,3 +1,5 @@
+#include <fstream>
+
 #include "ts_encoder.h"
 #include "ts_struct.h"
 #include "ts_parser.h"
@@ -47,10 +49,23 @@ private:
 
 const TestSuite::tc_struct TestSuite::test_case[] = 
 {
-    // IPPP, all skipped
+    // IPPP
     {/*00*/ MFX_ERR_NONE, {"YUV/iceage_720x480_491.yuv", 720, 480}, 0, {
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.GopPicSize, 30},
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 1},
+        {EXT_COD2, &tsStruct::mfxExtCodingOption2.SkipFrame, MFX_SKIPFRAME_INSERT_DUMMY}}, "1"},
+    {/*01*/ MFX_ERR_NONE, {"YUV/iceage_720x480_491.yuv", 720, 480}, 0, {
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.GopPicSize, 30},
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 1},
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR},
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.TargetKbps, 700},
+        {EXT_COD2, &tsStruct::mfxExtCodingOption2.SkipFrame, MFX_SKIPFRAME_INSERT_DUMMY}}, "1"},
+    {/*02*/ MFX_ERR_NONE, {"YUV/iceage_720x480_491.yuv", 720, 480}, 0, {
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.GopPicSize, 30},
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 1},
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_VBR},
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.TargetKbps, 700},
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.MaxKbps, 1000},
         {EXT_COD2, &tsStruct::mfxExtCodingOption2.SkipFrame, MFX_SKIPFRAME_INSERT_DUMMY}}, "1"},
 };
 
@@ -176,6 +191,7 @@ public:
 
 int TestSuite::RunTest(unsigned int id)
 {
+    int err = 0;
     TS_START;
     const tc_struct& tc = test_case[id];
 
@@ -194,6 +210,18 @@ int TestSuite::RunTest(unsigned int id)
     m_par.mfx.GopRefDist = 1;
     // set up parameters for case
     SETPARS(m_pPar, MFXPAR);
+    if (m_par.mfx.RateControlMethod == MFX_RATECONTROL_CBR)
+    {
+        m_par.mfx.MaxKbps = m_par.mfx.TargetKbps;
+        m_par.mfx.InitialDelayInKB = 0;
+    }
+    if (m_par.mfx.RateControlMethod != MFX_RATECONTROL_CQP)
+    {
+        mfxU32 fr = mfxU32(m_par.mfx.FrameInfo.FrameRateExtN / m_par.mfx.FrameInfo.FrameRateExtD);
+        // buffer = 0.5 sec
+        m_par.mfx.BufferSizeInKB = mfxU16(m_par.mfx.MaxKbps / fr * mfxU16(fr / 2));
+        m_par.mfx.InitialDelayInKB = mfxU16(m_par.mfx.BufferSizeInKB / 2);
+    }
 
     m_par.mfx.FrameInfo.Width = m_par.mfx.FrameInfo.CropW = tc.stream.width;
     m_par.mfx.FrameInfo.Height = m_par.mfx.FrameInfo.CropH = tc.stream.height;
@@ -221,8 +249,32 @@ int TestSuite::RunTest(unsigned int id)
     g_tsStatus.expect(tc.sts);
     EncodeFrames(nframes);
 
+    // check bitrate
+    if (m_par.mfx.RateControlMethod != MFX_RATECONTROL_CQP)
+    {
+        g_tsLog << "Checking bitrate...\n";
+        std::ifstream in(out_name.c_str(), std::ifstream::ate | std::ifstream::binary);
+        mfxU32 size = in.tellg();
+        mfxI32 bitrate = 8 * size +
+            (m_par.mfx.FrameInfo.FrameRateExtN / m_par.mfx.FrameInfo.FrameRateExtD) / nframes;
+        mfxI32 target = m_par.mfx.TargetKbps * 1000 * 8;
+
+        if (m_par.mfx.RateControlMethod == MFX_RATECONTROL_CBR &&
+            abs(target - bitrate) > target * 0.1)
+        {
+            g_tsLog << "ERROR: Real bitrate=" << bitrate << " is differ from required=" << target << "\n";
+            err++;
+        }
+        if (m_par.mfx.RateControlMethod == MFX_RATECONTROL_AVBR &&
+            bitrate > m_par.mfx.MaxKbps)
+        {
+            g_tsLog << "ERROR: Real bitrate=" << bitrate << " is bigger than MaxKbps=" << m_par.mfx.MaxKbps << "\n";
+            err++;
+        }
+    }
+
     TS_END;
-    return 0;
+    return err;
 }
 
 TS_REG_TEST_SUITE_CLASS(avce_skipframes_tektronix);
