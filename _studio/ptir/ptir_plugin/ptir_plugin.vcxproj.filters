@@ -16,6 +16,9 @@
     <Filter Include="from_libmfxhw">
       <UniqueIdentifier>{0ce92af4-c465-4fe1-bb9f-fc86b5a7de0e}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Cfg-files">
+      <UniqueIdentifier>{51c499aa-6f30-4b85-afcb-cc8bd56ffd38}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\ptir_vpp_plugin.h">
@@ -73,5 +76,13 @@
     <ResourceCompile Include="ptir_plugin.rc">
       <Filter>Resource Files</Filter>
     </ResourceCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\e744753acd74402e89a2ee0635496179\plugin_for_debug.cfg">
+      <Filter>Cfg-files</Filter>
+    </None>
+    <None Include="..\e744753acd74402e89a2ee0635496179\plugin.cfg">
+      <Filter>Cfg-files</Filter>
+    </None>
   </ItemGroup>
 </Project>

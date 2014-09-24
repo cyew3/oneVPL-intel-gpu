@@ -80,25 +80,25 @@
     <LinkIncremental>true</LinkIncremental>
     <OutDir>$(SolutionDir)..\..\..\build\win_$(PlatformName)\bin\e744753acd74402e89a2ee0635496179\</OutDir>
     <IntDir>$(OutDir)..\..\objs\$(Configuration)\$(ProjectName)\</IntDir>
-    <TargetName>$(ProjectName)32_d</TargetName>
+    <TargetName>mfxplugin32_ptir_hw_d</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
     <OutDir>$(SolutionDir)..\..\..\build\win_$(PlatformName)\bin\e744753acd74402e89a2ee0635496179\</OutDir>
     <IntDir>$(OutDir)..\..\objs\$(Configuration)\$(ProjectName)\</IntDir>
-    <TargetName>$(ProjectName)64_d</TargetName>
+    <TargetName>mfxplugin64_ptir_hw_d</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
     <OutDir>$(SolutionDir)..\..\..\build\win_$(PlatformName)\bin\e744753acd74402e89a2ee0635496179\</OutDir>
     <IntDir>$(OutDir)..\..\objs\$(Configuration)\$(ProjectName)\</IntDir>
-    <TargetName>$(ProjectName)32</TargetName>
+    <TargetName>mfxplugin32_ptir_hw</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
     <OutDir>$(SolutionDir)..\..\..\build\win_$(PlatformName)\bin\e744753acd74402e89a2ee0635496179\</OutDir>
     <IntDir>$(OutDir)..\..\objs\$(Configuration)\$(ProjectName)\</IntDir>
-    <TargetName>$(ProjectName)64</TargetName>
+    <TargetName>mfxplugin64_ptir_hw</TargetName>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -296,6 +296,10 @@
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="ptir_plugin.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\e744753acd74402e89a2ee0635496179\plugin.cfg" />
+    <None Include="..\e744753acd74402e89a2ee0635496179\plugin_for_debug.cfg" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
