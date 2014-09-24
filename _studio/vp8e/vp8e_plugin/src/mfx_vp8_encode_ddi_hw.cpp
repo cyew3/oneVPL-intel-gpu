@@ -114,17 +114,13 @@ namespace MFX_VP8ENC
 
         pps.pic_flags.bits.frame_type                      = (task.m_sFrameParams.bIntra) ? 0 : 1;
         pps.pic_flags.bits.segmentation_enabled           = opts->EnableMultipleSegments;
-        
+
         pps.pic_flags.bits.loop_filter_type               = task.m_sFrameParams.LFType;
         pps.pic_flags.bits.loop_filter_adj_enable         = VP8Par->RefTypeLFDelta[0] || VP8Par->RefTypeLFDelta[1] || VP8Par->RefTypeLFDelta[2] || VP8Par->RefTypeLFDelta[3] ||
             VP8Par->MBTypeLFDelta[0] || VP8Par->MBTypeLFDelta[1] || VP8Par->MBTypeLFDelta[2] || VP8Par->MBTypeLFDelta[3];
 
-        // hardcode loop_filter_adj_enable value for key-frames to align with C-model
-        if (pps.pic_flags.bits.frame_type == 0)
-            pps.pic_flags.bits.loop_filter_adj_enable = 1;
-        
         pps.pic_flags.bits.num_token_partitions           = VP8Par->NumPartitions;
-   
+
         if (pps.pic_flags.bits.frame_type)
         {
             pps.pic_flags.bits.refresh_golden_frame = 0; 

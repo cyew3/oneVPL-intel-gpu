@@ -128,6 +128,11 @@ mfxStatus MFX_VP8E_Plugin::Execute(mfxThreadTask task, mfxU32 , mfxU32 )
     {
         VP8_LOG_1("\n (sefremov) Frame %d MFX_VP8E_Plugin::SubmitFrame +", pTask->m_frameOrder);
         mfxStatus sts = MFX_ERR_NONE;
+        {
+            UMC::AutomaticUMCMutex guard(m_taskMutex);
+            if (MFX_ERR_NONE != m_pTaskManager->CheckHybridDependencies(*pTask))
+              return MFX_TASK_BUSY;
+        }
         MFX_VP8ENC::sFrameParams        frameParams={0};
         mfxFrameSurface1    *pSurface=0;
         bool                bExternalSurface = true;
@@ -153,6 +158,11 @@ mfxStatus MFX_VP8E_Plugin::Execute(mfxThreadTask task, mfxU32 , mfxU32 )
         sts = m_ddi->Execute(*pTask, surfaceHDL);
         MFX_CHECK_STS(sts);
 
+        {
+            UMC::AutomaticUMCMutex guard(m_taskMutex);
+            m_pTaskManager->RememberSubmittedTask(*pTask);
+        }
+
         VP8_LOG_1("\n (sefremov) Frame %d MFX_VP8E_Plugin::SubmitFrame -", pTask->m_frameOrder);
         return MFX_TASK_WORKING;
     }
@@ -173,10 +183,6 @@ mfxStatus MFX_VP8E_Plugin::Execute(mfxThreadTask task, mfxU32 , mfxU32 )
             return MFX_TASK_WORKING;
         }
 
-        {
-            UMC::AutomaticUMCMutex guard(m_taskMutex);
-            m_pTaskManager->RememberReturnedTask(*pTask);
-        }
         MFX_CHECK_STS(sts);
         MFX_CHECK_STS(m_ddi->QueryMBLayout(layout));
 
@@ -188,6 +194,11 @@ mfxStatus MFX_VP8E_Plugin::Execute(mfxThreadTask task, mfxU32 , mfxU32 )
         bool bInsertSH  = bInsertIVF && pTask->m_frameOrder==0 && m_bStartIVFSequence;
 
         m_BSE.RunBSP(bInsertIVF, bInsertSH, pTask->m_pBitsteam, (MFX_VP8ENC::TaskHybridDDI *)pTask, layout, m_pmfxCore);
+
+        {
+            UMC::AutomaticUMCMutex guard(m_taskMutex);
+            m_pTaskManager->RememberEncodedTask(*pTask);
+        }
 
         pTask->m_pBitsteam->TimeStamp = pTask->m_timeStamp;
         pTask->m_pBitsteam->FrameType = mfxU16(pTask->m_sFrameParams.bIntra ? MFX_FRAMETYPE_I : MFX_FRAMETYPE_P);

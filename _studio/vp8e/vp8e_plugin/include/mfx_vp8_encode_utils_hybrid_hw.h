@@ -143,7 +143,8 @@ namespace MFX_VP8ENC
         mfxU16           m_maxBrcUpdateDelay;
 
         mfxU64           m_frameNumOfLastArrivedFrame;
-        mfxU64           m_frameNumOfLastFrameReturnedFromDriver;
+        mfxI64           m_frameNumOfLastFrameSubmittedToDriver;
+        mfxI64           m_frameNumOfLastEncodedFrame;
 
         std::queue<FrameInfoFromPak> m_cachedFrameInfoFromPak;
         FrameInfoFromPak             m_latestKeyFrame;
@@ -158,7 +159,8 @@ namespace MFX_VP8ENC
             MFX_CHECK_STS(sts);
             m_maxBrcUpdateDelay = par->AsyncDepth > 2 ? 2: par->AsyncDepth; // driver supports maximum 2-frames BRC update delay
             m_frameNumOfLastArrivedFrame = 0;
-            m_frameNumOfLastFrameReturnedFromDriver = 0;
+            m_frameNumOfLastFrameSubmittedToDriver = -1;
+            m_frameNumOfLastEncodedFrame = -1;
             Zero(m_latestNonKeyFrame);
             Zero(m_latestKeyFrame);
             return MFX_ERR_NONE;
@@ -195,25 +197,30 @@ namespace MFX_VP8ENC
         {
             m_maxBrcUpdateDelay = par->AsyncDepth > 2 ? 2: par->AsyncDepth; // driver supports maximum 2-frames BRC update delay
             m_frameNumOfLastArrivedFrame = 0;
-            m_frameNumOfLastFrameReturnedFromDriver = 0;
+            m_frameNumOfLastFrameSubmittedToDriver = -1;
+            m_frameNumOfLastEncodedFrame = -1;
             return BaseClass::Reset(par);
         }
         inline
         mfxStatus InitTask(mfxFrameSurface1* pSurface, mfxBitstream* pBitstream, Task* & pOutTask)
         {
-            /*printf("TaskManagerHybridPakDDI InitTask: core %p\n", this->m_pCore);*/
-            if (m_frameNum && m_cachedFrameInfoFromPak.size() == 0)
+            if (m_frameNum >= m_maxBrcUpdateDelay && m_cachedFrameInfoFromPak.size() == 0)
             {
+                // MSDK should send frame update to driver but required previous frame isn't encoded yet
+                // let's wait for encoding of this frame
                 return MFX_WRN_DEVICE_BUSY;
             }
 
             mfxStatus sts = BaseClass::InitTask(pSurface,pBitstream,pOutTask);
             TaskHybridDDI *pHybridTask = (TaskHybridDDI*)pOutTask;
             Zero(pHybridTask->m_costs);
-            if (pOutTask->m_frameOrder == 0)
+            if (pOutTask->m_frameOrder < m_maxBrcUpdateDelay && m_cachedFrameInfoFromPak.size() == 0)
             {
+                pHybridTask->m_frameOrderOfPreviousFrame = m_frameNumOfLastArrivedFrame;
+                m_frameNumOfLastArrivedFrame = m_frameNum - 1;
+                // MSDK can't send frame update to driver but it's OK for initial encoding stage
                 return MFX_ERR_NONE;
-            }            
+            }
 
             mfxU64 minFrameOrderToUpdateBrc = 0;
             if (pOutTask->m_frameOrder > m_maxBrcUpdateDelay)
@@ -319,18 +326,30 @@ namespace MFX_VP8ENC
             return sts;
         }
         inline
-        void RememberReturnedTask(Task &task)
+        void RememberSubmittedTask(Task &task)
         {
-            m_frameNumOfLastFrameReturnedFromDriver = task.m_frameOrder;
+            m_frameNumOfLastFrameSubmittedToDriver = task.m_frameOrder;
+        }
+        inline
+        void RememberEncodedTask(Task &task)
+        {
+            m_frameNumOfLastEncodedFrame = task.m_frameOrder;
         }
         inline
         mfxStatus CheckHybridDependencies(TaskHybridDDI &task)
         {
-            if (task.m_frameOrder == 0 ||
-                m_frameNumOfLastFrameReturnedFromDriver >= task.m_frameOrderOfPreviousFrame)
+            if (task.m_frameOrder == 0)
                 return MFX_ERR_NONE;
-            else
-                return MFX_WRN_IN_EXECUTION;
+
+            if (task.m_status == TASK_INITIALIZED &&
+                m_frameNumOfLastFrameSubmittedToDriver >= task.m_frameOrderOfPreviousFrame)
+                return MFX_ERR_NONE;
+
+            if (task.m_status == TASK_SUBMITTED &&
+                m_frameNumOfLastEncodedFrame >= task.m_frameOrderOfPreviousFrame)
+                return MFX_ERR_NONE;
+
+            return MFX_WRN_IN_EXECUTION;
         }
         inline MfxFrameAllocResponse& GetRecFramesForReg()
         {

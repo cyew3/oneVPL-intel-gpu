@@ -369,10 +369,6 @@ namespace MFX_VP8ENC
         m_ctrl.LoopFilterAdjOn = ((m_Params.RefTypeLFDelta[0]|m_Params.RefTypeLFDelta[1]|m_Params.RefTypeLFDelta[2]|m_Params.RefTypeLFDelta[3]|
             m_Params.MBTypeLFDelta[0]|m_Params.MBTypeLFDelta[1]|m_Params.MBTypeLFDelta[2]|m_Params.MBTypeLFDelta[3]) != 0);
 
-        // hardcode loop_filter_adj_enable value for key-frames to align with C-model
-        if (m_ctrl.FrameType == 0)
-            m_ctrl.LoopFilterAdjOn = 1;
-
         if(m_ctrl.LoopFilterAdjOn)
         {
             for(i=0;i<VP8_NUM_OF_REF_FRAMES;i++) {
