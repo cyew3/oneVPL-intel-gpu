@@ -81,11 +81,11 @@ set( defs "" )
 # Plugins section
 # =============================================================================
 
-set (HEVC_PRODUCT_NAME "Intel(R) Media SDK HEVC Pack")
-set (sw_HEVC_DECODER_DESCRIPTION "Intel(R) Media SDK HEVC Software Decode Plug-in")
-set (hw_HEVC_DECODER_DESCRIPTION "Intel(R) Media SDK HEVC Hardware Decode Plug-in")
-set (sw_HEVC_ENCODER_DESCRIPTION "Intel(R) Media SDK HEVC Software Encode Plug-in")
-set (hw_HEVC_ENCODER_DESCRIPTION "Intel(R) Media SDK HEVC GPU Accelerated Encode Plug-in")
+set (HEVC_PRODUCT_NAME "Intel(R) Media Server Studio 2015 - HEVC Decode and Encode")
+set (sw_HEVC_DECODER_DESCRIPTION "Intel(R) Media Server Studio 2015 - HEVC Software Decode Plug-in")
+set (hw_HEVC_DECODER_DESCRIPTION "Intel(R) Media Server Studio 2015 - HEVC Hardware Decode Plug-in")
+set (sw_HEVC_ENCODER_DESCRIPTION "Intel(R) Media Server Studio 2015 - HEVC Software Encode Plug-in")
+set (hw_HEVC_ENCODER_DESCRIPTION "Intel(R) Media Server Studio 2015 - HEVC GPU Accelerated Encode Plug-in")
 
   if( NOT DEFINED ENV{MFX_HEVC_VERSION} )
     set( hevc_version 0.0.000.0000 )
