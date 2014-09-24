@@ -123,6 +123,9 @@ struct ProgramArguments
     bool   need_reset;
     mfxU32 restart_frame;
     string reset_par;
+
+    // MFX Implementation
+    mfxIMPL impl;
 };
 
 bool from_string(const std::string& str, ColorFormat &obj)
@@ -187,6 +190,7 @@ ProgramArguments ParseInputString(const vector<string> &args)
     pa.frames_to_process = 0;
     pa.maxHeight = 0;
     pa.maxWidth  = 0;
+    pa.impl      = MFX_IMPL_HARDWARE;
 
     if (!ParseValue(args, "-par", pa.par))
         throw std::runtime_error("Par file is not specified or invalid (-par)");
@@ -209,6 +213,8 @@ ProgramArguments ParseInputString(const vector<string> &args)
         }
     }
 
+    if (find(args.begin(), args.end(), "-d3d11") != args.end())
+        pa.impl |= MFX_IMPL_VIA_D3D11;
 
     return pa;
 }
@@ -223,6 +229,7 @@ void PrintHelp(ostream &out)
     out << "-dcc <NV12 | YV12 | RGB4> (default: NV12 - dest color format)" << endl;
     out << "-reset_par <filename> path to the parameters file" << endl;
     out << "-reset_start index if the start frame for reset" << endl;
+    out << "-d3d11 flag enables MFX_IMPL_VIA_D3D11 implementation"<< endl;
 }
 
 // trim from start
@@ -722,12 +729,11 @@ int main(int argc, char *argv[])
     // - MFX_IMPL_AUTO_ANY selects HW accelaration if available (on any adapter)
     // - Version 1.0 is selected for greatest backwards compatibility.
     //   If more recent API features are needed, change the version accordingly
-    mfxIMPL impl = MFX_IMPL_HARDWARE;// | MFX_IMPL_VIA_D3D11;
     mfxVersion ver;
     ver.Major = 1;
     ver.Minor = 8;
     MFXVideoSession mfxSession;
-    sts = mfxSession.Init(impl, &ver);
+    sts = mfxSession.Init(pa.impl, &ver);
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
     /*For Linux, it is required to set libVA display handle
