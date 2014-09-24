@@ -6927,7 +6927,12 @@ std::vector<ENCODE_PACKEDHEADER_DATA> const & HeaderPacker::PackSlices(
             : sliceBufferBegin;
 
         OutputBitstream obs(endOfPrefix, sliceBufferEnd, false); // pack without emulation control
-        WriteSlice(obs, task, fieldId, i);
+
+        if (task.m_SliceInfo.size())
+            WriteSlice(obs, task, fieldId, task.m_SliceInfo[i].startMB, task.m_SliceInfo[i].numMB);
+        else
+            WriteSlice(obs, task, fieldId, i);
+
 
         m_packedSlices[i].pData                  = sliceBufferBegin;
         m_packedSlices[i].DataLength             = mfxU32((endOfPrefix - sliceBufferBegin) * 8 + obs.GetNumBits()); // for slices length is in bits

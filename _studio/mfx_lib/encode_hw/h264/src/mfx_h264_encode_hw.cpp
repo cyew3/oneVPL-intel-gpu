@@ -2028,7 +2028,6 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
 
         ConfigureTask(*task, m_lastTask, m_video);
 
-        m_lastTask = *task;
         if(m_isENCPAK){ //temp find better way
             mfxExtFeiEncMBStat* mbstat = NULL;
             mfxExtFeiEncMV* mvout = NULL;
