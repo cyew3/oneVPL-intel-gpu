@@ -109,6 +109,5 @@ endforeach()
   )
 
 set( defs "-DMFX_PLUGIN_PRODUCT_NAME=\"\\\"${PTIR_PRODUCT_NAME}\"\\\" -DMFX_FILE_DESCRIPTION=\"\\\"${PTIR_DESCRIPTION}\"\\\" ${ptir_version_defs}" )
-  make_library( ${eval_plugin_name} ${variant} shared)
 
 make_library( mfx_ptir_hw64 none shared )
