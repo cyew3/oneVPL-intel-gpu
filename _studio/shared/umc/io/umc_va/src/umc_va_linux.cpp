@@ -135,7 +135,7 @@ VAProfile g_VP9Profiles[] =
 
 VAProfile g_JPEGProfiles[] = 
 {
-    VAProfileJPEGBaseline
+	VAProfileJPEGBaseline
 };
 
 VAProfile get_next_va_profile(Ipp32u umc_codec, Ipp32u profile)
@@ -249,7 +249,7 @@ LinuxVideoAccelerator::LinuxVideoAccelerator(void)
     m_dpy        = NULL;
     m_context    = -1;
     m_config_id  = -1;
-    m_pSurfaces  = NULL;
+    m_surfaces   = NULL;
     m_iIndex     = UMC_VA_LINUX_INDEX_UNDEF;
     m_FrameState = lvaBeforeBegin;
 
@@ -260,6 +260,7 @@ LinuxVideoAccelerator::LinuxVideoAccelerator(void)
 
     vm_mutex_set_invalid(&m_SyncMutex);
 
+    m_bIsExtSurfaces    = false;
     m_isUseStatuReport  = true;
     m_bH264MVCSupport   = false;
     memset(&m_guidDecoder, 0 , sizeof(GUID));
@@ -469,21 +470,40 @@ Status LinuxVideoAccelerator::Init(VideoAcceleratorParams* pInfo)
     // creating surfaces
     if (UMC_OK == umcRes)
     {
-        m_pSurfaces = (VASurfaceID**)ippsMalloc_8u(m_NumOfFrameBuffers*sizeof(VASurfaceID*));
-        if (NULL == m_pSurfaces) umcRes = UMC_ERR_ALLOC;
+        m_surfaces = (VASurfaceID*)ippsMalloc_8u(m_NumOfFrameBuffers*sizeof(VASurfaceID));
+        if (NULL == m_surfaces) umcRes = UMC_ERR_ALLOC;
     }
 
     if (UMC_OK == umcRes)
     {
-        VASurfaceID** pSurfaces = (VASurfaceID**)pParams->m_surf;
+        if(!pParams->isExt)
+        {
+            m_bIsExtSurfaces = false;
 
-        for(Ipp32s i = 0; i < pParams->m_iNumberSurfaces; i++)
-            m_pSurfaces[i] = pSurfaces[i];
+            va_res = vaCreateSurfaces(m_dpy, va_attributes[0].value, width, height, m_surfaces, m_NumOfFrameBuffers, NULL, 0);
+            umcRes = va_to_umc_res(va_res);
+        }
+        else
+        {
+#if 1
+            VASurfaceID* pSurfaces = (VASurfaceID*)pParams->m_surf;
+
+            m_bIsExtSurfaces = true;
+            for(Ipp32s i = 0; i < pParams->m_iNumberSurfaces; i++)
+                m_surfaces[i] = pSurfaces[i];
+#else
+            va_res = vaCreateSurfaces(m_dpy, width, height, va_attributes[0].value, m_NumOfFrameBuffers, m_surfaces);
+            umcRes = va_to_umc_res(va_res);
+            for(Ipp32s i = 0; i < pParams->m_iNumberSurfaces; i++)
+                pParams->m_surf[i] = (void*)m_surfaces[i];
+            va_surface_list = m_surfaces;
+#endif
+        }
     }
     // creating context
     if (UMC_OK == umcRes)
     {
-        va_res = vaCreateContext(m_dpy, m_config_id, width, height, VA_PROGRESSIVE, /*m_pSurfaces*/NULL, /*m_NumOfFrameBuffers*/0, &m_context);
+        va_res = vaCreateContext(m_dpy, m_config_id, width, height, VA_PROGRESSIVE, m_surfaces, m_NumOfFrameBuffers, &m_context);
         umcRes = va_to_umc_res(va_res);
     }
 
@@ -521,8 +541,14 @@ Status LinuxVideoAccelerator::Close(void)
             vaDestroyConfig(m_dpy,m_config_id);
             m_config_id  = -1;
         }
-        if (NULL != m_pSurfaces)
-            UMC_FREE(m_pSurfaces);
+        if (NULL != m_surfaces)
+        {
+            if (!m_bIsExtSurfaces) // free if self allocated surfaces
+            {
+                vaDestroySurfaces(m_dpy, m_surfaces, m_NumOfFrameBuffers);
+            }
+            UMC_FREE(m_surfaces);
+        }
         m_dpy = NULL;
     }
 
@@ -555,7 +581,7 @@ Status LinuxVideoAccelerator::BeginFrame(Ipp32s FrameBufIndex)
         {
             {
                 MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_SCHED, "vaBeginPicture");
-                va_res = vaBeginPicture(m_dpy, m_context, *m_pSurfaces[FrameBufIndex]);
+                va_res = vaBeginPicture(m_dpy, m_context, m_surfaces[FrameBufIndex]);
             }
             umcRes = va_to_umc_res(va_res);
             if (UMC_OK == umcRes) m_FrameState = lvaBeforeEnd;
@@ -862,7 +888,7 @@ Ipp32s LinuxVideoAccelerator::GetSurfaceID(Ipp32s idx)
 {
     Ipp32s surface = VA_INVALID_SURFACE;
 
-    if ((idx >= 0) && (idx < m_NumOfFrameBuffers)) surface = *m_pSurfaces[idx];
+    if ((idx >= 0) && (idx < m_NumOfFrameBuffers)) surface = m_surfaces[idx];
     return surface;
 }
 
@@ -883,12 +909,12 @@ Status LinuxVideoAccelerator::QueryTaskStatus(Ipp32s FrameBufIndex, void * statu
         return UMC_ERR_INVALID_PARAMS;
 
     VASurfaceStatus surface_status;
-    VAStatus va_status = vaQuerySurfaceStatus(m_dpy, *m_pSurfaces[FrameBufIndex], &surface_status);
+    VAStatus va_status = vaQuerySurfaceStatus(m_dpy, m_surfaces[FrameBufIndex], &surface_status);
 
     if ((VA_STATUS_SUCCESS == va_status) && (VASurfaceReady == surface_status))
     {
         // handle decoding errors
-        VAStatus va_sts = vaSyncSurface(m_dpy, *m_pSurfaces[FrameBufIndex]);
+        VAStatus va_sts = vaSyncSurface(m_dpy, m_surfaces[FrameBufIndex]);
         if (VA_STATUS_ERROR_DECODING_ERROR == va_sts)
         {
             // TODO: to reduce number of checks we can cache all used render targets
@@ -896,7 +922,7 @@ Status LinuxVideoAccelerator::QueryTaskStatus(Ipp32s FrameBufIndex, void * statu
             for(int cnt = 0; cnt < m_NumOfFrameBuffers; ++cnt)
             {
                 VASurfaceDecodeMBErrors* pVaDecErr = NULL;
-                va_sts = vaQuerySurfaceError(m_dpy, *m_pSurfaces[cnt], VA_STATUS_ERROR_DECODING_ERROR, (void**)&pVaDecErr);
+                va_sts = vaQuerySurfaceError(m_dpy, m_surfaces[cnt], VA_STATUS_ERROR_DECODING_ERROR, (void**)&pVaDecErr);
 
                 if ((VA_STATUS_SUCCESS == va_sts) && (NULL != error))
                 {
@@ -938,7 +964,7 @@ Status LinuxVideoAccelerator::SyncTask(Ipp32s FrameBufIndex)
 
     if (UMC_OK == umcRes)
     {
-        va_res = vaSyncSurface(m_dpy, *m_pSurfaces[FrameBufIndex]);
+        va_res = vaSyncSurface(m_dpy, m_surfaces[FrameBufIndex]);
         if (VA_STATUS_ERROR_DECODING_ERROR == va_res)
             va_res = VA_STATUS_SUCCESS;
 
