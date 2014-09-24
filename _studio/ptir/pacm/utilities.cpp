@@ -25,7 +25,7 @@ static void CopyFrame(Frame *pSrc, Frame* pDst)
     {
         pSrcLine = pSrc->plaY.ucCorner + i * pSrc->plaY.uiStride;
         pDstLine = pDst->plaY.ucCorner + i * pDst->plaY.uiStride;
-        memcpy(pDstLine, pSrcLine, pDst->plaY.uiWidth);
+        ptir_memcpy(pDstLine, pSrcLine, pDst->plaY.uiWidth);
     }
 
     // copying U-component
@@ -33,14 +33,14 @@ static void CopyFrame(Frame *pSrc, Frame* pDst)
     {
         pSrcLine = pSrc->plaU.ucCorner + i * pSrc->plaU.uiStride;
         pDstLine = pDst->plaU.ucCorner + i * pDst->plaU.uiStride;
-        memcpy(pDstLine, pSrcLine, pDst->plaU.uiWidth);
+        ptir_memcpy(pDstLine, pSrcLine, pDst->plaU.uiWidth);
     }
     // copying V-component
     for (i = 0; i < pSrc->plaV.uiHeight; i++)
     {
         pSrcLine = pSrc->plaV.ucCorner + i * pSrc->plaV.uiStride;
         pDstLine = pDst->plaV.ucCorner + i * pDst->plaV.uiStride;
-        memcpy(pDstLine, pSrcLine, pDst->plaV.uiWidth);
+        ptir_memcpy(pDstLine, pSrcLine, pDst->plaV.uiWidth);
     }
 }
 
@@ -62,11 +62,11 @@ void Undo2Frames_CMTest(Frame *frmBuffer1, Frame *frmBuffer2, bool BFF)
     start = BFF;
 
     for(i = start; i < frmBuffer1_c->plaY.uiHeight; i += 2)
-        memcpy(frmBuffer1_c->plaY.ucData + (i * frmBuffer1_c->plaY.uiStride), frmBuffer2->plaY.ucData + (i * frmBuffer2->plaY.uiStride),frmBuffer2->plaY.uiStride);
+        ptir_memcpy(frmBuffer1_c->plaY.ucData + (i * frmBuffer1_c->plaY.uiStride), frmBuffer2->plaY.ucData + (i * frmBuffer2->plaY.uiStride),frmBuffer2->plaY.uiStride);
     for(i = start; i < frmBuffer1_c->plaU.uiHeight; i += 2)
-        memcpy(frmBuffer1_c->plaU.ucData + (i * frmBuffer1_c->plaU.uiStride), frmBuffer2->plaU.ucData + (i * frmBuffer2->plaU.uiStride),frmBuffer2->plaU.uiStride);
+        ptir_memcpy(frmBuffer1_c->plaU.ucData + (i * frmBuffer1_c->plaU.uiStride), frmBuffer2->plaU.ucData + (i * frmBuffer2->plaU.uiStride),frmBuffer2->plaU.uiStride);
     for(i = start; i < frmBuffer1_c->plaV.uiHeight; i += 2)
-        memcpy(frmBuffer1_c->plaV.ucData + (i * frmBuffer1_c->plaV.uiStride), frmBuffer2->plaV.ucData + (i * frmBuffer2->plaV.uiStride),frmBuffer2->plaV.uiStride);
+        ptir_memcpy(frmBuffer1_c->plaV.ucData + (i * frmBuffer1_c->plaV.uiStride), frmBuffer2->plaV.ucData + (i * frmBuffer2->plaV.uiStride),frmBuffer2->plaV.uiStride);
 
     unsigned char * line0 = frmBuffer1->plaY.ucData;
     unsigned char * line1 = frmBuffer1->plaY.ucData + frmBuffer1->plaY.uiStride;

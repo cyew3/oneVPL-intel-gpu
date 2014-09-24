@@ -18,6 +18,12 @@
 #include "cmassert.h"
 #include "assert.h"
 
+#if defined(_WIN32) || defined(_WIN64)
+#define ptir_memcpy(dst, src, size)  memcpy_s(dst, size, src, size)
+#else
+#define ptir_memcpy(dst, src, size)  memcpy(dst, src, size)
+#endif
+
 class CmBufferEx
 {
 public:
@@ -221,14 +227,14 @@ public:
   {
     assert (pSysMem != NULL);
   for (int row = 0; row < actualHeight(); row++)
-    memcpy((char*)pSysMem + actualWidth() *row, DataPtr(row), actualWidth());
+    ptir_memcpy((char*)pSysMem + actualWidth() *row, DataPtr(row), actualWidth());
   }
 
   void Write(const unsigned char * pSysMem)
   {
     assert (pSysMem != NULL);
   for (int row = 0; row < actualHeight(); row++)
-    memcpy(DataPtr(row), (char*)pSysMem + actualWidth()*row, actualWidth());
+    ptir_memcpy(DataPtr(row), (char*)pSysMem + actualWidth()*row, actualWidth());
   }
 
 protected:

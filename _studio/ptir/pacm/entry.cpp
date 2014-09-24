@@ -295,7 +295,7 @@ int main(int argc, char *argv[])
                             {
                                 CheckGenFrameCM(frmBuffer, i, mainPattern.ucPatternType,uiisInterlaced);
                                 Prepare_frame_for_queueCM(&frmIn, frmBuffer[i], uiWidth, uiHeight);
-                                memcpy(frmIn->plaY.ucStats.ucRs, frmBuffer[i]->plaY.ucStats.ucRs, sizeof(double)* 10);
+                                ptir_memcpy(frmIn->plaY.ucStats.ucRs, frmBuffer[i]->plaY.ucStats.ucRs, sizeof(double)* 10);
 
                                 //Timestamp
                                 frmBuffer[i + 1]->frmProperties.timestamp = frmBuffer[i]->frmProperties.timestamp + dOutBaseTime;
@@ -333,7 +333,7 @@ int main(int argc, char *argv[])
                                         }
 
                                         Prepare_frame_for_queueCM(&frmIn, frmBuffer[0], uiWidth, uiHeight);
-                                        memcpy(frmIn->plaY.ucStats.ucRs, frmBuffer[0]->plaY.ucStats.ucRs, sizeof(double)* 10);
+                                        ptir_memcpy(frmIn->plaY.ucStats.ucRs, frmBuffer[0]->plaY.ucStats.ucRs, sizeof(double)* 10);
 
                                         //Timestamp
                                         frmBuffer[1]->frmProperties.timestamp = frmBuffer[0]->frmProperties.timestamp + dBaseTimeSw;
@@ -353,7 +353,7 @@ int main(int argc, char *argv[])
                                     deinterlaceFilter.DeinterlaceMedianFilterCM(frmBuffer, 0, BUFMINSIZE);
 
                                     Prepare_frame_for_queueCM(&frmIn, frmBuffer[0], uiWidth, uiHeight); // Go to input frame rate
-                                    memcpy(frmIn->plaY.ucStats.ucRs, frmBuffer[0]->plaY.ucStats.ucRs, sizeof(double)* 10);
+                                    ptir_memcpy(frmIn->plaY.ucStats.ucRs, frmBuffer[0]->plaY.ucStats.ucRs, sizeof(double)* 10);
 
                                     //Timestamp
                                     frmBuffer[BUFMINSIZE]->frmProperties.tindex = frmBuffer[0]->frmProperties.tindex;
@@ -365,7 +365,7 @@ int main(int argc, char *argv[])
                                     if (bFullFrameRate && uiisInterlaced == 1)
                                     {
                                         Prepare_frame_for_queueCM(&frmIn, frmBuffer[BUFMINSIZE], uiWidth, uiHeight); // Go to double frame rate
-                                        memcpy(frmIn->plaY.ucStats.ucRs, frmBuffer[BUFMINSIZE]->plaY.ucStats.ucRs, sizeof(double)* 10);
+                                        ptir_memcpy(frmIn->plaY.ucStats.ucRs, frmBuffer[BUFMINSIZE]->plaY.ucStats.ucRs, sizeof(double)* 10);
 
                                         //Timestamp
                                         frmIn->frmProperties.timestamp = frmBuffer[BUFMINSIZE]->frmProperties.timestamp;
@@ -495,7 +495,7 @@ int main(int argc, char *argv[])
                         deinterlaceFilter.DeinterlaceMedianFilterCM(frmBuffer, i, BUFMINSIZE);
 
                         Prepare_frame_for_queueCM(&frmIn, frmBuffer[i], uiWidth, uiHeight); // Go to input frame rate
-                        memcpy(frmIn->plaY.ucStats.ucRs, frmBuffer[i]->plaY.ucStats.ucRs, sizeof(double)* 10);
+                        ptir_memcpy(frmIn->plaY.ucStats.ucRs, frmBuffer[i]->plaY.ucStats.ucRs, sizeof(double)* 10);
 
                         //Timestamp
                         frmBuffer[BUFMINSIZE]->frmProperties.tindex = frmBuffer[i]->frmProperties.tindex;
@@ -507,7 +507,7 @@ int main(int argc, char *argv[])
                         if (bFullFrameRate)
                         {
                             Prepare_frame_for_queueCM(&frmIn, frmBuffer[BUFMINSIZE], uiWidth, uiHeight); // Go to double frame rate
-                            memcpy(frmIn->plaY.ucStats.ucRs, frmBuffer[BUFMINSIZE]->plaY.ucStats.ucRs, sizeof(double)* 10);
+                            ptir_memcpy(frmIn->plaY.ucStats.ucRs, frmBuffer[BUFMINSIZE]->plaY.ucStats.ucRs, sizeof(double)* 10);
 
                             //Timestamp
                             frmIn->frmProperties.timestamp = frmBuffer[BUFMINSIZE]->frmProperties.timestamp;
@@ -522,7 +522,7 @@ int main(int argc, char *argv[])
                         {
                             CheckGenFrameCM(frmBuffer, i, mainPattern.ucPatternType,uiisInterlaced);
                             Prepare_frame_for_queueCM(&frmIn, frmBuffer[i], uiWidth, uiHeight);
-                            memcpy(frmIn->plaY.ucStats.ucRs, frmBuffer[i]->plaY.ucStats.ucRs, sizeof(double)* 10);
+                            ptir_memcpy(frmIn->plaY.ucStats.ucRs, frmBuffer[i]->plaY.ucStats.ucRs, sizeof(double)* 10);
 
                             //timestamp
                             frmBuffer[i + 1]->frmProperties.timestamp = frmBuffer[i]->frmProperties.timestamp + (dBaseTime * 5 / 4);

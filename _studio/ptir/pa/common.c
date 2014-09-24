@@ -191,15 +191,15 @@ void AddBorders(Plane *pplaIn, Plane *pplaOut, unsigned int uiBorder)
 
     // Top
     for (i = 0; i < pplaOut->uiBorder; ++i)
-        memcpy(&pplaOut->ucData[i * pplaOut->uiStride + pplaOut->uiBorder], &pplaIn->ucData[0], pplaIn->uiWidth);
+        ptir_memcpy(&pplaOut->ucData[i * pplaOut->uiStride + pplaOut->uiBorder], &pplaIn->ucData[0], pplaIn->uiWidth);
 
     // Center
     for (i = 0; i < pplaIn->uiHeight; ++i)
-        memcpy(&pplaOut->ucData[(i + pplaOut->uiBorder) * pplaOut->uiStride + pplaOut->uiBorder], &pplaIn->ucData[i * pplaIn->uiWidth], pplaIn->uiWidth);
+        ptir_memcpy(&pplaOut->ucData[(i + pplaOut->uiBorder) * pplaOut->uiStride + pplaOut->uiBorder], &pplaIn->ucData[i * pplaIn->uiWidth], pplaIn->uiWidth);
 
     // Bottom
     for (i = 0; i < pplaOut->uiBorder; ++i)
-        memcpy(&pplaOut->ucData[(pplaOut->uiHeight + i + pplaOut->uiBorder) * pplaOut->uiStride + pplaOut->uiBorder], &pplaIn->ucData[pplaIn->uiWidth * (pplaIn->uiHeight - 1)], pplaIn->uiWidth);
+        ptir_memcpy(&pplaOut->ucData[(pplaOut->uiHeight + i + pplaOut->uiBorder) * pplaOut->uiStride + pplaOut->uiBorder], &pplaIn->ucData[pplaIn->uiWidth * (pplaIn->uiHeight - 1)], pplaIn->uiWidth);
 
     // Left
     for (i = 0; i < pplaOut->uiHeight + 2 * pplaOut->uiBorder; ++i)
@@ -219,7 +219,7 @@ void TrimBorders(Plane *pplaIn, Plane *pplaOut)
     pplaOut->uiBorder = 0;
 
     for (i = 0; i < pplaOut->uiHeight; ++i)
-        memcpy(&pplaOut->ucData[i * pplaOut->uiStride], &pplaIn->ucData[(i + pplaIn->uiBorder) * pplaIn->uiStride + pplaIn->uiBorder], pplaIn->uiWidth);
+        ptir_memcpy(&pplaOut->ucData[i * pplaOut->uiStride], &pplaIn->ucData[(i + pplaIn->uiBorder) * pplaIn->uiStride + pplaIn->uiBorder], pplaIn->uiWidth);
 }
 static void Convert_UYVY_to_I420(unsigned char *pucIn, Frame *pfrmOut)
 {
@@ -254,7 +254,7 @@ void Convert_to_I420(unsigned char *pucIn, Frame *pfrmOut, char *pcFormat, doubl
 {
     pfrmOut->frmProperties.fr = uiFrameRate;
     if (strcmp(pcFormat, "I420") == 0)
-        memcpy(pfrmOut->ucMem, pucIn, pfrmOut->uiSize);
+        ptir_memcpy(pfrmOut->ucMem, pucIn, pfrmOut->uiSize);
     else if (strcmp(pcFormat, "UYVY") == 0)
         Convert_UYVY_to_I420(pucIn, pfrmOut);
     else

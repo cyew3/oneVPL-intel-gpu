@@ -216,7 +216,7 @@ mfxStatus PTIR_ProcessorCPU::Process(mfxFrameSurface1 *surface_in, mfxFrameSurfa
         bool isUnlockReq = false;
         mfxFrameSurface1 work420_surface;
         memset(&work420_surface, 0, sizeof(mfxFrameSurface1));
-        memcpy(&(work420_surface.Info), &(surface_in->Info), sizeof(mfxFrameInfo));
+        ptir_memcpy(&(work420_surface.Info), &(surface_in->Info), sizeof(mfxFrameInfo));
         work420_surface.Info.FourCC = MFX_FOURCC_I420;
         mfxU16& w = work420_surface.Info.CropW;
         mfxU16& h = work420_surface.Info.CropH;
@@ -279,7 +279,7 @@ mfxStatus PTIR_ProcessorCPU::PTIR_ProcessFrame(mfxFrameSurface1 *surf_in, mfxFra
     if(!b_firstFrameProceed)
     {
         uiStart = 1;
-        memcpy(frmBuffer[0]->ucMem, frmBuffer[uiSupBuf]->ucMem, frmBuffer[uiSupBuf]->uiSize);
+        ptir_memcpy(frmBuffer[0]->ucMem, frmBuffer[uiSupBuf]->ucMem, frmBuffer[uiSupBuf]->uiSize);
         frmBuffer[0]->frmProperties.tindex = uiStart + 1;
         sadCalc_I420_frame(frmBuffer[0],frmBuffer[0]);
         Rs_measurement(frmBuffer[0]);
@@ -336,7 +336,7 @@ mfxStatus PTIR_ProcessorCPU::PTIR_ProcessFrame(mfxFrameSurface1 *surf_in, mfxFra
                 //----------------------------------------
                 //Convert_to_I420(pucIO, frmBuffer[uiSupBuf], pcFormat, dFrameRate);
 
-                memcpy(frmBuffer[uiCur]->ucMem, frmBuffer[uiSupBuf]->ucMem, frmBuffer[uiSupBuf]->uiSize);
+                ptir_memcpy(frmBuffer[uiCur]->ucMem, frmBuffer[uiSupBuf]->ucMem, frmBuffer[uiSupBuf]->uiSize);
                 frmBuffer[uiCur]->frmProperties.tindex = uiFrame + 1;
                 sadCalc_I420_frame(frmBuffer[uiCur], frmBuffer[uiNext]);
                 Rs_measurement(frmBuffer[uiCur]);
@@ -364,7 +364,7 @@ mfxStatus PTIR_ProcessorCPU::PTIR_ProcessFrame(mfxFrameSurface1 *surf_in, mfxFra
                             {
                                 CheckGenFrame(frmBuffer, i, mainPattern.ucPatternType, uiisInterlaced);
                                 Prepare_frame_for_queue(&frmIn,frmBuffer[i], uiWidth, uiHeight);
-                                memcpy(frmIn->plaY.ucStats.ucRs,frmBuffer[i]->plaY.ucStats.ucRs,sizeof(double) * 10);
+                                ptir_memcpy(frmIn->plaY.ucStats.ucRs,frmBuffer[i]->plaY.ucStats.ucRs,sizeof(double) * 10);
 
                                 //Timestamp
                                 //frmBuffer[i + 1]->frmProperties.timestamp = frmBuffer[i]->frmProperties.timestamp + dOutBaseTime;
@@ -386,7 +386,7 @@ mfxStatus PTIR_ProcessorCPU::PTIR_ProcessFrame(mfxFrameSurface1 *surf_in, mfxFra
                                     frmBuffer[i]->frmProperties.candidate = true;
                                     CheckGenFrame(frmBuffer, i, mainPattern.ucPatternType, uiisInterlaced);
                                     Prepare_frame_for_queue(&frmIn, frmBuffer[i], uiWidth, uiHeight);
-                                    memcpy(frmIn->plaY.ucStats.ucRs, frmBuffer[i]->plaY.ucStats.ucRs, sizeof(double)* 10);
+                                    ptir_memcpy(frmIn->plaY.ucStats.ucRs, frmBuffer[i]->plaY.ucStats.ucRs, sizeof(double)* 10);
 
                                     frmBuffer[i + 1]->frmProperties.timestamp = frmBuffer[i]->frmProperties.timestamp + dOutBaseTime;
                                     frmIn->frmProperties.timestamp = frmBuffer[i]->frmProperties.timestamp;
@@ -428,7 +428,7 @@ mfxStatus PTIR_ProcessorCPU::PTIR_ProcessFrame(mfxFrameSurface1 *surf_in, mfxFra
                                         }
                                         else
                                             Prepare_frame_for_queue(&frmIn, frmBuffer[0], uiWidth, uiHeight);
-                                        memcpy(frmIn->plaY.ucStats.ucRs, frmBuffer[0]->plaY.ucStats.ucRs, sizeof(double)* 10);
+                                        ptir_memcpy(frmIn->plaY.ucStats.ucRs, frmBuffer[0]->plaY.ucStats.ucRs, sizeof(double)* 10);
 
                                         //Timestamp
                                         //frmBuffer[1]->frmProperties.timestamp = frmBuffer[0]->frmProperties.timestamp + dBaseTimeSw;
@@ -451,7 +451,7 @@ mfxStatus PTIR_ProcessorCPU::PTIR_ProcessFrame(mfxFrameSurface1 *surf_in, mfxFra
                                     DeinterlaceMedianFilter(frmBuffer, BUFMINSIZE, !uiInterlaceParity);
 
                                     Prepare_frame_for_queue(&frmIn, frmBuffer[0], uiWidth, uiHeight); // Go to input frame rate
-                                    memcpy(frmIn->plaY.ucStats.ucRs, frmBuffer[0]->plaY.ucStats.ucRs, sizeof(double)* 10);
+                                    ptir_memcpy(frmIn->plaY.ucStats.ucRs, frmBuffer[0]->plaY.ucStats.ucRs, sizeof(double)* 10);
 
                                     //Timestamp
                                     frmBuffer[BUFMINSIZE]->frmProperties.tindex = frmBuffer[0]->frmProperties.tindex;
@@ -463,7 +463,7 @@ mfxStatus PTIR_ProcessorCPU::PTIR_ProcessFrame(mfxFrameSurface1 *surf_in, mfxFra
                                     if (bFullFrameRate && uiisInterlaced == 1)
                                     {
                                         Prepare_frame_for_queue(&frmIn, frmBuffer[BUFMINSIZE], uiWidth, uiHeight); // Go to double frame rate
-                                        memcpy(frmIn->plaY.ucStats.ucRs, frmBuffer[BUFMINSIZE]->plaY.ucStats.ucRs, sizeof(double)* 10);
+                                        ptir_memcpy(frmIn->plaY.ucStats.ucRs, frmBuffer[BUFMINSIZE]->plaY.ucStats.ucRs, sizeof(double)* 10);
 
                                         //Timestamp
                                         //frmIn->frmProperties.timestamp = frmBuffer[BUFMINSIZE]->frmProperties.timestamp;
@@ -555,7 +555,7 @@ mfxStatus PTIR_ProcessorCPU::PTIR_ProcessFrame(mfxFrameSurface1 *surf_in, mfxFra
                     }
                     surf_out->Data.TimeStamp = (mfxU64) frmIO[LASTFRAME].frmProperties.timestamp;
                     frmSupply->AddCPUPtirOutSurf(frmIO[LASTFRAME].ucMem, surf_out);
-                    //memcpy(surf_out->Data.Y, frmIO[LASTFRAME].ucMem, frmIO[LASTFRAME].uiSize);
+                    //ptir_memcpy(surf_out->Data.Y, frmIO[LASTFRAME].ucMem, frmIO[LASTFRAME].uiSize);
                     Frame_Release(frmIn);
                     free(frmIn);
                     surf_out = 0;
@@ -586,7 +586,7 @@ mfxStatus PTIR_ProcessorCPU::PTIR_ProcessFrame(mfxFrameSurface1 *surf_in, mfxFra
                         DeinterlaceMedianFilter(frmBuffer, BUFMINSIZE, 1);
 
                         Prepare_frame_for_queue(&frmIn, frmBuffer[i], uiWidth, uiHeight); // Go to input frame rate
-                        memcpy(frmIn->plaY.ucStats.ucRs, frmBuffer[i]->plaY.ucStats.ucRs, sizeof(double)* 10);
+                        ptir_memcpy(frmIn->plaY.ucStats.ucRs, frmBuffer[i]->plaY.ucStats.ucRs, sizeof(double)* 10);
 
                         //Timestamp
                         frmBuffer[BUFMINSIZE]->frmProperties.tindex = frmBuffer[i]->frmProperties.tindex;
@@ -598,7 +598,7 @@ mfxStatus PTIR_ProcessorCPU::PTIR_ProcessFrame(mfxFrameSurface1 *surf_in, mfxFra
                         if (bFullFrameRate)
                         {
                             Prepare_frame_for_queue(&frmIn, frmBuffer[BUFMINSIZE], uiWidth, uiHeight); // Go to double frame rate
-                            memcpy(frmIn->plaY.ucStats.ucRs, frmBuffer[BUFMINSIZE]->plaY.ucStats.ucRs, sizeof(double)* 10);
+                            ptir_memcpy(frmIn->plaY.ucStats.ucRs, frmBuffer[BUFMINSIZE]->plaY.ucStats.ucRs, sizeof(double)* 10);
 
                             //Timestamp
                             //frmIn->frmProperties.timestamp = frmBuffer[BUFMINSIZE]->frmProperties.timestamp;
@@ -613,7 +613,7 @@ mfxStatus PTIR_ProcessorCPU::PTIR_ProcessFrame(mfxFrameSurface1 *surf_in, mfxFra
                         {
                             CheckGenFrame(frmBuffer, i, mainPattern.ucPatternType, uiisInterlaced);
                             Prepare_frame_for_queue(&frmIn, frmBuffer[i], uiWidth, uiHeight);
-                            memcpy(frmIn->plaY.ucStats.ucRs, frmBuffer[i]->plaY.ucStats.ucRs, sizeof(double)* 10);
+                            ptir_memcpy(frmIn->plaY.ucStats.ucRs, frmBuffer[i]->plaY.ucStats.ucRs, sizeof(double)* 10);
 
                             //timestamp
                             //frmBuffer[i + 1]->frmProperties.timestamp = frmBuffer[i]->frmProperties.timestamp + (dBaseTime * 5 / 4);

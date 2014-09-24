@@ -823,7 +823,7 @@ void DeinterlaceFilter::WriteRAWI420ToGPUNV12(Frame * pFrame, void* ucMem)
     uvPlane = nv12Plane + height*width;
 
     for (int i = 0; i < height; i++)
-        memcpy(yPlane + i*width, inplaYucCorner + pFrame->plaY.uiWidth*i, width);
+        ptir_memcpy(yPlane + i*width, inplaYucCorner + pFrame->plaY.uiWidth*i, width);
 
     for (int i = 0; i < heightby2; i++) {
         for (int j = 0; j < widthby2; j++) {
@@ -863,7 +863,7 @@ void DeinterlaceFilter::ReadRAWI420FromGPUNV12(Frame * pFrame, void* ucMem)
     GetFrameSurfaceCur(pFrame)->Read(nv12Plane);
 
     for (int i = 0; i < height; i++)
-        memcpy(inplaYucCorner + pFrame->plaY.uiWidth*i, yPlane + i*width, width);
+        ptir_memcpy(inplaYucCorner + pFrame->plaY.uiWidth*i, yPlane + i*width, width);
 
     for (int i = 0; i < heightby2; i++) {
         for (int j = 0; j < widthby2; j++) {

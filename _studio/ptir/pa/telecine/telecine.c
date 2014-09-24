@@ -372,10 +372,10 @@ void setLinePointers(unsigned char *pLine[10], Frame pfrmIn, int offset, BOOL la
 }
 void Line_rearrangement(unsigned char *pFrmDstTop,unsigned char *pFrmDstBottom, unsigned char **pucIn, Plane planeOut,unsigned int *off)
 {
-    memcpy(pFrmDstTop + *off, *pucIn, planeOut.uiWidth);
+    ptir_memcpy(pFrmDstTop + *off, *pucIn, planeOut.uiWidth);
     *pucIn += planeOut.uiWidth;
 
-    memcpy(pFrmDstBottom + *off, *pucIn, planeOut.uiWidth);
+    ptir_memcpy(pFrmDstBottom + *off, *pucIn, planeOut.uiWidth);
     *pucIn += planeOut.uiWidth;
 
     *off += planeOut.uiStride;
@@ -1466,11 +1466,11 @@ void Undo2Frames(Frame *frmBuffer1, Frame *frmBuffer2, BOOL BFF)
     start = BFF;
 
     for(i = start; i < frmBuffer1->plaY.uiHeight; i += 2)
-        memcpy(frmBuffer1->plaY.ucData + (i * frmBuffer1->plaY.uiStride), frmBuffer2->plaY.ucData + (i * frmBuffer2->plaY.uiStride),frmBuffer2->plaY.uiStride);
+        ptir_memcpy(frmBuffer1->plaY.ucData + (i * frmBuffer1->plaY.uiStride), frmBuffer2->plaY.ucData + (i * frmBuffer2->plaY.uiStride),frmBuffer2->plaY.uiStride);
     for(i = start; i < frmBuffer1->plaU.uiHeight; i += 2)
-        memcpy(frmBuffer1->plaU.ucData + (i * frmBuffer1->plaU.uiStride), frmBuffer2->plaU.ucData + (i * frmBuffer2->plaU.uiStride),frmBuffer2->plaU.uiStride);
+        ptir_memcpy(frmBuffer1->plaU.ucData + (i * frmBuffer1->plaU.uiStride), frmBuffer2->plaU.ucData + (i * frmBuffer2->plaU.uiStride),frmBuffer2->plaU.uiStride);
     for(i = start; i < frmBuffer1->plaV.uiHeight; i += 2)
-        memcpy(frmBuffer1->plaV.ucData + (i * frmBuffer1->plaV.uiStride), frmBuffer2->plaV.ucData + (i * frmBuffer2->plaV.uiStride),frmBuffer2->plaV.uiStride);
+        ptir_memcpy(frmBuffer1->plaV.ucData + (i * frmBuffer1->plaV.uiStride), frmBuffer2->plaV.ucData + (i * frmBuffer2->plaV.uiStride),frmBuffer2->plaV.uiStride);
 
     frmBuffer1->frmProperties.candidate = TRUE;
 }

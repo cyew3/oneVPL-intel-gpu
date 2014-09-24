@@ -109,7 +109,7 @@ mfxStatus Ptir420toMfxNv12(mfxU8* buffer, mfxFrameSurface1* surface_out)
     outH = surface_out->Info.CropY + surface_out->Info.CropH;
     mfxFrameSurface1 work420_surface;
     memset(&work420_surface, 0, sizeof(mfxFrameSurface1));
-    memcpy(&(work420_surface.Info), &(surface_out->Info), sizeof(mfxFrameInfo));
+    ptir_memcpy(&(work420_surface.Info), &(surface_out->Info), sizeof(mfxFrameInfo));
     work420_surface.Info.FourCC = MFX_FOURCC_I420;
     mfxU16& w = outW;
     mfxU16& h = outH;
@@ -130,7 +130,7 @@ mfxStatus MfxNv12toPtir420(mfxFrameSurface1* surface_in, mfxU8* buffer)
     inH = surface_in->Info.CropY + surface_in->Info.CropH;
     mfxFrameSurface1 work420_surface;
     memset(&work420_surface, 0, sizeof(mfxFrameSurface1));
-    memcpy(&(work420_surface.Info), &(surface_in->Info), sizeof(mfxFrameInfo));
+    ptir_memcpy(&(work420_surface.Info), &(surface_in->Info), sizeof(mfxFrameInfo));
     work420_surface.Info.FourCC = MFX_FOURCC_I420;
     mfxU16& w = inW;
     mfxU16& h = inH;

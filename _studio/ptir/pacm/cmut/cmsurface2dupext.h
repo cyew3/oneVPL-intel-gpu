@@ -101,7 +101,7 @@ public:
     }
 
     for (int i = 0; i < Height (); ++i) {
-      memcpy (DataPtr (i), (T *)pSysMem + i * Width (), Width () * sizeof(T));
+      ptir_memcpy (DataPtr (i), (T *)pSysMem + i * Width (), Width () * sizeof(T));
     }
   }
 

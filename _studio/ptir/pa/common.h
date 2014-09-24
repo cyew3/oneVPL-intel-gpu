@@ -50,6 +50,12 @@ extern "C" {
 
 #endif
 
+#if defined(_WIN32) || defined(_WIN64)
+#define ptir_memcpy(dst, src, size)  memcpy_s(dst, size, src, size)
+#else
+#define ptir_memcpy(dst, src, size)  memcpy(dst, src, size)
+#endif
+
 #define PA_C                    0
 #define PA_SSE2                    1
 #define PRINTX                    1

@@ -1249,7 +1249,7 @@ INTERLEAVE_ODD:
 
     for (k = 1; k < lines; k += 2)  //  only do the luma.
     {
-        memcpy(pNew,pOld,sizeof(ULONG32)*ll);
+        ptir_memcpy(pNew,pOld,sizeof(ULONG32)*ll);
         pOld+=2*ll;
         pNew+=2*ll;
     }
@@ -1292,7 +1292,7 @@ INTERLEAVE_EVEN:
 
     for (k = 0; k < lines; k += 2)  //  only do the luma.
     {
-        memcpy(pNew,pOld,sizeof(ULONG32)*ll);
+        ptir_memcpy(pNew,pOld,sizeof(ULONG32)*ll);
         pOld+=2*ll;
         pNew+=2*ll;
     }
@@ -1775,6 +1775,6 @@ void ReSample(Frame *frmOut, Frame *frmIn)
     }
     else
         AddBorders(&frmIn->plaV, &frmOut->plaV, frmOut->plaV.uiBorder);
-    memcpy(frmOut->plaY.ucStats.ucSAD,frmIn->plaY.ucStats.ucSAD,sizeof(double) * 5);
+    ptir_memcpy(frmOut->plaY.ucStats.ucSAD,frmIn->plaY.ucStats.ucSAD,sizeof(double) * 5);
     frmOut->frmProperties.tindex = frmIn->frmProperties.tindex;
 }
