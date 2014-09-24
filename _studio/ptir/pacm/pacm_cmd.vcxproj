@@ -221,7 +221,7 @@ SET PATH=%ICLDIR%\bin;%ICLDIR%\lib;%PATH%
 SET INCLUDE=%ICLDIR%\include;%ICLDIR%\include\cm;%INCLUDE%
 SET CM_RT_PLATFORM=hsw
 copy /y deinterlace_genx.cpp deinterlace_genx_hsw.cpp
-icl /c /Qxcm /Qxcm_jit_target=gen7_5 deinterlace_genx_hsw.cpp /mCM_print_asm_count
+icl /c /Qxcm /Qxcm_jit_target=gen7 deinterlace_genx_hsw.cpp /mCM_print_asm_count
 cl .\kernels\embed_isa.c
 del embed_isa.obj
 move embed_isa.exe .\kernels\embed_isa.exe
