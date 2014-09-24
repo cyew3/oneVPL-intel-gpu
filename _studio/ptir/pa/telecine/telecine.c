@@ -1434,7 +1434,7 @@ void Detect_32Pattern_rigorous(Frame **pFrm, Pattern *ptrn, unsigned int *dispat
             Detect_Solve_3223Patterns(pFrm, ptrn, dispatch);
     }
 }
-void UndoPatternTypes5and7(Frame *frmBuffer[BUFEXTRASIZE], unsigned int firstPos)
+void UndoPatternTypes5and7(Frame *frmBuffer[BUFMINSIZE + BUFEXTRASIZE], unsigned int firstPos)
 {
     unsigned int 
         start = firstPos;
@@ -1474,7 +1474,7 @@ void Undo2Frames(Frame *frmBuffer1, Frame *frmBuffer2, BOOL BFF)
 
     frmBuffer1->frmProperties.candidate = TRUE;
 }
-void Analyze_Buffer_Stats(Frame *frmBuffer[BUFEXTRASIZE], Pattern *ptrn, unsigned int *pdispatch, unsigned int *uiisInterlaced)
+void Analyze_Buffer_Stats(Frame *frmBuffer[BUFMINSIZE + BUFEXTRASIZE], Pattern *ptrn, unsigned int *pdispatch, unsigned int *uiisInterlaced)
 {
     unsigned int uiDropCount = 0,
         i = 0;

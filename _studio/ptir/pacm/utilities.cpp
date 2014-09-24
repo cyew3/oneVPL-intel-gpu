@@ -412,7 +412,7 @@ static void Detect_Interlacing_Artifacts_fast_CM(Frame **pFrm, Pattern *ptrn, un
         pFrm[i]->frmProperties.processed = true;
 
 }
-void Analyze_Buffer_Stats_CM(Frame *frmBuffer[BUFMINSIZE], Pattern *ptrn, unsigned int *pdispatch, unsigned int *uiisInterlaced)
+void Analyze_Buffer_Stats_CM(Frame *frmBuffer[BUFMINSIZE + BUFEXTRASIZE], Pattern *ptrn, unsigned int *pdispatch, unsigned int *uiisInterlaced)
 {
     unsigned int uiDropCount = 0,
     i = 0;
@@ -575,7 +575,7 @@ void Detect_Solve_32BlendedPatternsCM(Frame **pFrm, Pattern *ptrn, unsigned int 
     }
 }
 
-void UndoPatternTypes5and7CM(Frame *frmBuffer[BUFMINSIZE], unsigned int firstPos)
+void UndoPatternTypes5and7CM(Frame *frmBuffer[BUFMINSIZE + BUFEXTRASIZE], unsigned int firstPos)
 {
     unsigned int
         start = firstPos;
@@ -620,8 +620,12 @@ void CheckGenFrameCM(Frame **pfrmIn, unsigned int frameNum, unsigned int pattern
 void Prepare_frame_for_queueCM(Frame **pfrmOut, Frame *pfrmIn, unsigned int uiWidth, unsigned int uiHeight, frameSupplier* frmSupply, bool bCreate)
 {
     assert(0 != pfrmOut);
-    assert(pfrmIn->inSurf != NULL && pfrmIn->outSurf != NULL);
+    assert(pfrmIn != NULL && pfrmIn->inSurf != NULL && pfrmIn->outSurf != NULL);
+    if(!pfrmOut || !pfrmIn)
+        return;
     *pfrmOut = (Frame *)malloc(sizeof(Frame));
+    if(!*pfrmOut)
+        return;
     memset(*pfrmOut, 0, sizeof(Frame));
     assert(*pfrmOut != NULL);
     Frame_CreateCM(*pfrmOut, uiWidth, uiHeight, uiWidth / 2, uiHeight / 2, 64, bCreate);

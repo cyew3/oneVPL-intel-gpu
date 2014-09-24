@@ -386,6 +386,8 @@ mfxStatus PTIR_ProcessorCPU::PTIR_ProcessFrame(mfxFrameSurface1 *surf_in, mfxFra
                                     frmBuffer[i]->frmProperties.candidate = true;
                                     CheckGenFrame(frmBuffer, i, mainPattern.ucPatternType, uiisInterlaced);
                                     Prepare_frame_for_queue(&frmIn, frmBuffer[i], uiWidth, uiHeight);
+                                    if(!frmIn)
+                                        return MFX_ERR_DEVICE_FAILED;
                                     ptir_memcpy(frmIn->plaY.ucStats.ucRs, frmBuffer[i]->plaY.ucStats.ucRs, sizeof(double)* 10);
 
                                     frmBuffer[i + 1]->frmProperties.timestamp = frmBuffer[i]->frmProperties.timestamp + dOutBaseTime;

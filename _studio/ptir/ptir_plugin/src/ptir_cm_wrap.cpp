@@ -596,6 +596,8 @@ mfxStatus PTIR_ProcessorCM::PTIR_ProcessFrame(CmSurface2D *surf_in, CmSurface2D 
                                 frmBuffer[i]->frmProperties.candidate = false;
                                 CheckGenFrame(frmBuffer, i, mainPattern.ucPatternType, uiisInterlaced);
                                 Prepare_frame_for_queue(&frmIn, frmBuffer[i], uiWidth, uiHeight);
+                                if(!frmIn)
+                                    return MFX_ERR_DEVICE_FAILED;
                                 ptir_memcpy(frmIn->plaY.ucStats.ucRs, frmBuffer[i]->plaY.ucStats.ucRs, sizeof(double)* 10);
 
                                 frmBuffer[i + 1]->frmProperties.timestamp = frmBuffer[i]->frmProperties.timestamp + dOutBaseTime;
