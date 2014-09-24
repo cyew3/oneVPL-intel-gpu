@@ -35,7 +35,7 @@ private:
             mfxU32 height;
         } stream;
         mfxU32 mode;
-        struct f_pair 
+        struct f_pair
         {
             mfxU32 ext_type;
             const  tsStruct::Field* f;
@@ -47,7 +47,7 @@ private:
     static const tc_struct test_case[];
 };
 
-const TestSuite::tc_struct TestSuite::test_case[] = 
+const TestSuite::tc_struct TestSuite::test_case[] =
 {
     // IPPP
     {/*00*/ MFX_ERR_NONE, {"YUV/iceage_720x480_491.yuv", 720, 480}, 0, {
@@ -82,19 +82,23 @@ for(mfxU32 i = 0; i < n_par; i++) \
 
 class SurfProc : public tsSurfaceProcessor
 {
+    std::string m_file_name;
+    mfxU32 m_nframes;
     tsRawReader m_raw_reader;
     mfxEncodeCtrl* pCtrl;
-    //mfxFrameInfo* pFrmInfo;
+    mfxFrameInfo* pFrmInfo;
     std::vector<mfxU32> m_skip_frames;
     mfxU32 m_curr_frame;
     mfxU32 m_target_frames;
   public:
-    SurfProc(const char* fname, mfxFrameInfo fi, mfxU32 n_frames)
+    SurfProc(const char* fname, mfxFrameInfo& fi, mfxU32 n_frames)
         : pCtrl(0)
         , m_curr_frame(0)
         , m_raw_reader(fname, fi, n_frames)
         , m_target_frames(n_frames)
-        //, pFrmInfo(&fi)
+        , pFrmInfo(&fi)
+        , m_file_name(fname)
+        , m_nframes(n_frames)
     {}
     ~SurfProc() {} ;
 
@@ -107,8 +111,20 @@ class SurfProc : public tsSurfaceProcessor
 
     mfxStatus ProcessSurface(mfxFrameSurface1& s)
     {
+        if (m_curr_frame >= m_nframes)
+        {
+            s.Data.Locked++;
+            m_eos = true;
+            return MFX_ERR_NONE;
+        }
+
         mfxStatus sts = m_raw_reader.ProcessSurface(s);
-        //if m_eos;
+
+        if (m_raw_reader.m_eos)  // re-read stream from the beginning to reach target NumFrames
+        {
+            m_raw_reader.ResetFile();
+            sts = m_raw_reader.ProcessSurface(s);
+        }
 
         if (m_skip_frames.size())
         {
@@ -205,7 +221,7 @@ int TestSuite::RunTest(unsigned int id)
         skip_frames.push_back(f);
     }
 
-    mfxU32 nframes = 10;
+    mfxU32 nframes = 900;
     m_par.mfx.GopPicSize = 300;
     m_par.mfx.GopRefDist = 1;
     // set up parameters for case
@@ -239,7 +255,7 @@ int TestSuite::RunTest(unsigned int id)
 
     // setup output stream
     char tmp_out[10];
-    sprintf_s(tmp_out, 10, "%04d.h264", id+1);
+    sprintf(tmp_out, "%04d.h264", id+1);
     std::string out_name = ENV("TS_OUTPUT_NAME", tmp_out);
     BsDump b(out_name.c_str());
     b.Init(skip_frames);
@@ -254,7 +270,7 @@ int TestSuite::RunTest(unsigned int id)
     {
         g_tsLog << "Checking bitrate...\n";
         std::ifstream in(out_name.c_str(), std::ifstream::ate | std::ifstream::binary);
-        mfxU32 size = in.tellg();
+        mfxU32 size = (mfxU32)in.tellg();
         mfxI32 bitrate = 8 * size +
             (m_par.mfx.FrameInfo.FrameRateExtN / m_par.mfx.FrameInfo.FrameRateExtD) / nframes;
         mfxI32 target = m_par.mfx.TargetKbps * 1000 * 8;
