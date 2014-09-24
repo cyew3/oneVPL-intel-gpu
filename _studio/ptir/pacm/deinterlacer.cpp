@@ -36,9 +36,8 @@ DeinterlaceFilter::DeinterlaceFilter(eMFXHWType HWType, UINT width, UINT height,
     case MFX_HW_HSW_ULT:
     case MFX_HW_HSW:
     case MFX_HW_IVB:
-        this->device = std::auto_ptr<CmDeviceEx>(new CmDeviceEx(deinterlace_genx_hsw, sizeof(deinterlace_genx_hsw), mfxDeviceType, mfxDeviceHdl));
-        break;
     default:
+        this->device = std::auto_ptr<CmDeviceEx>(new CmDeviceEx(deinterlace_genx_hsw, sizeof(deinterlace_genx_hsw), mfxDeviceType, mfxDeviceHdl));
         break;
     }
 
@@ -546,7 +545,14 @@ void DeinterlaceFilter::MedianDeinterlaceCM(Frame * pFrame, Frame * pFrame2)
         PLANE_WIDTH = 64, PLANE_HEIGHT = 16
     };
 
-    CMUT_ASSERT_EQUAL(0, pFrame != NULL ? pFrame->plaY.uiBorder : pFrame2->plaY.uiBorder, "Border is not 0");
+    if(pFrame)
+    {
+        CMUT_ASSERT_EQUAL(0, pFrame->plaY.uiBorder, "Border is not 0");
+    }
+    if(pFrame2)
+    {
+        CMUT_ASSERT_EQUAL(0, pFrame2->plaY.uiBorder, "Border is not 0");
+    }
 
     CmThreadSpaceEx threadSpace(this->DeviceEx(), cmut::DivUp(width, PLANE_WIDTH), cmut::DivUp(height, PLANE_HEIGHT));
 
@@ -790,6 +796,7 @@ void DeinterlaceFilter::FrameReleaseSurface(Frame * pfrmIn)
     pfrmIn->outState = Frame::OUT_UNCHANGED;
 }
 
+/* Not used by plugin
 //convert Raw I420 data to NV12 surface
 //Not optimized for speed, should not be used in plugin
 void DeinterlaceFilter::WriteRAWI420ToGPUNV12(Frame * pFrame, void* ucMem)
@@ -867,3 +874,4 @@ void DeinterlaceFilter::ReadRAWI420FromGPUNV12(Frame * pFrame, void* ucMem)
 
     free(nv12Plane);
 }
+*/

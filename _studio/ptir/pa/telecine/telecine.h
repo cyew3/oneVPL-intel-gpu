@@ -66,10 +66,10 @@ void Detect_Interlacing_Artifacts_fast(Frame **pFrm, Pattern *ptrn, unsigned int
 double CalcSAD_Avg_NoSC(Frame **pFrm);
 void Detect_32Pattern_rigorous(Frame **pFrm, Pattern *ptrn, unsigned int *dispatch, unsigned int *uiisInterlaced);
 
-void UndoPatternTypes5and7(Frame *frmBuffer[BUFMINSIZE], unsigned int firstPos);
+void UndoPatternTypes5and7(Frame *frmBuffer[BUFEXTRASIZE], unsigned int firstPos);
 void Undo2Frames(Frame *frmBuffer1, Frame *frmBuffer2, BOOL BFF);
 
-void Analyze_Buffer_Stats(Frame *frmBuffer[BUFMINSIZE], Pattern *ptrn, unsigned int *pdispatch, unsigned int *uiisInterlaced);
+void Analyze_Buffer_Stats(Frame *frmBuffer[BUFEXTRASIZE], Pattern *ptrn, unsigned int *pdispatch, unsigned int *uiisInterlaced);
 
 
 #ifdef __cplusplus

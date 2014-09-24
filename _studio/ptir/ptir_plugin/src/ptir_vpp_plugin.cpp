@@ -196,9 +196,9 @@ mfxStatus MFX_PTIR_Plugin::VPPFrameSubmitEx(mfxFrameSurface1 *surface_in, mfxFra
             }
 
             mfxSts = PrepareTask(ptir_task, task, surface_out);
+            m_guard.Unlock();
             if(mfxSts)
                 return mfxSts;
-            m_guard.Unlock();
             in_expected = false;
             return MFX_ERR_NONE;
         }
@@ -253,10 +253,9 @@ mfxStatus MFX_PTIR_Plugin::VPPFrameSubmitEx(mfxFrameSurface1 *surface_in, mfxFra
         {
             addWorkSurf(surface_work);
             mfxSts = PrepareTask(ptir_task, task, surface_out);
+            m_guard.Unlock();
             if(mfxSts)
                 return mfxSts;
-
-            m_guard.Unlock();
             in_expected = false;
             return MFX_ERR_NONE;
         }
@@ -394,7 +393,8 @@ mfxStatus MFX_PTIR_Plugin::Query(mfxVideoParam *in, mfxVideoParam *out)
     if(!in && !out)
         return MFX_ERR_NULL_PTR;
 
-    mfxVideoParam tmp_param = {};
+    mfxVideoParam tmp_param;
+    memset(&tmp_param, 0, sizeof(tmp_param));
     if(!out)
         out = &tmp_param;
 
@@ -1084,7 +1084,8 @@ mfxStatus MFX_PTIR_Plugin::Reset(mfxVideoParam *par)
 
     mfxStatus mfxSts = MFX_ERR_NONE;
     mfxStatus mfxWrn = MFX_ERR_NONE;
-    mfxVideoParam tmpPar = {};
+    mfxVideoParam tmpPar;
+    memset(&tmpPar, 0, sizeof(tmpPar));
     mfxSts = Query(par, &tmpPar);
     if((MFX_WRN_PARTIAL_ACCELERATION == mfxSts) && par_accel)
         mfxSts = MFX_ERR_NONE;

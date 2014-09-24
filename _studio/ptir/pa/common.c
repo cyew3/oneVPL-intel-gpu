@@ -134,6 +134,8 @@ void FrameQueue_Add(FrameQueue *pfq, Frame *pfrm)
 {
     FrameNode
         *pfn = (FrameNode *)malloc(sizeof(FrameNode));
+    if(!pfn)
+        return;
     pfn->pfrmItem = pfrm;
     pfn->pfnNext = NULL;
 
@@ -260,7 +262,7 @@ void Convert_to_I420(unsigned char *pucIn, Frame *pfrmOut, char *pcFormat, doubl
 }
 void CheckGenFrame(Frame **pfrmIn, unsigned int frameNum, unsigned int patternType, unsigned int uiOPMode)
 {
-    BOOL stop = FALSE;
+    //BOOL stop = FALSE;
     if ((pfrmIn[frameNum]->frmProperties.candidate || patternType == 0) && (uiOPMode == 0 || uiOPMode == 3))
     {
         Rs_measurement(pfrmIn[frameNum]);
@@ -275,7 +277,11 @@ void CheckGenFrame(Frame **pfrmIn, unsigned int frameNum, unsigned int patternTy
 }
 void Prepare_frame_for_queue(Frame **pfrmOut, Frame *pfrmIn, unsigned int uiWidth, unsigned int uiHeight)
 {
+    if(!pfrmOut)
+        return;
     *pfrmOut = (Frame *)malloc(sizeof(Frame));
+    if(!*pfrmOut)
+        return;
     Frame_Create(*pfrmOut, uiWidth, uiHeight, uiWidth / 2, uiHeight / 2, 64);
     (*pfrmOut)->frmProperties.tindex = pfrmIn->frmProperties.tindex;
     ReSample(*pfrmOut, pfrmIn);

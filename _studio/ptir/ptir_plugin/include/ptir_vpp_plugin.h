@@ -44,9 +44,6 @@ enum {
 };
 
 
-
-
-
 class MFX_PTIR_Plugin : public MFXVPPPlugin
 {
     static const mfxPluginUID g_VPP_PluginGuid;

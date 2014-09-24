@@ -1521,11 +1521,22 @@ static void Filter_gradient(Plane *plaOut, Plane *plaIn)
 
     int    i, j;
     int s = plaIn->uiWidth * plaIn->uiHeight * sizeof(float);
-    float *gradX = (float *)malloc(s);
-    float *gradY = (float *)malloc(s);
+    float *gradX = 0;
+    float *gradY = 0;
+    float rx = 0;
+    float ry = 0;
+    gradX = (float *)malloc(s);
+    if(!gradX)
+        return;
+    gradY = (float *)malloc(s);
+    if(!gradY)
+    {
+        free(gradX);
+        return;
+    }
 
-    float rx = (float)plaIn->uiWidth / (float)plaOut->uiWidth;
-    float ry = (float)plaIn->uiHeight / (float)plaOut->uiHeight;
+    rx = (float)plaIn->uiWidth / (float)plaOut->uiWidth;
+    ry = (float)plaIn->uiHeight / (float)plaOut->uiHeight;
     assert(gradX != NULL);
     assert(gradY != NULL);
     memset(gradX, 0, s);

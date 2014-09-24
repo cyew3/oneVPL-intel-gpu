@@ -349,6 +349,7 @@ static void Detect_32Pattern_rigorous_CM(Frame **pFrm, Pattern *ptrn, unsigned i
             //SAD analysis
             condition[1] = pFrm[3]->plaY.ucStats.ucSAD[4] * T3 > min((pFrm[3]->plaY.ucStats.ucSAD[2]),(pFrm[3]->plaY.ucStats.ucSAD[3]));
             //condition[9] = (pFrm[0]->plaY.ucStats.ucSAD[5] == 0) && (pFrm[1]->plaY.ucStats.ucSAD[5] == 0) && (pFrm[2]->plaY.ucStats.ucSAD[5] == 0) && (pFrm[4]->plaY.ucStats.ucSAD[5] == 0);
+            condition[9] = 0;
             if(condition[0] || condition[1])
             {
                 pFrm[2]->frmProperties.candidate = true;

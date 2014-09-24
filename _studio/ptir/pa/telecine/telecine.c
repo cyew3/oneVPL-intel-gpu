@@ -1400,6 +1400,7 @@ void Detect_32Pattern_rigorous(Frame **pFrm, Pattern *ptrn, unsigned int *dispat
             //SAD analysis
             condition[1] = pFrm[3]->plaY.ucStats.ucSAD[4] * T3 > min((pFrm[3]->plaY.ucStats.ucSAD[2]),(pFrm[3]->plaY.ucStats.ucSAD[3]));
             //condition[9] = (pFrm[0]->plaY.ucStats.ucSAD[5] == 0) && (pFrm[1]->plaY.ucStats.ucSAD[5] == 0) && (pFrm[2]->plaY.ucStats.ucSAD[5] == 0) && (pFrm[4]->plaY.ucStats.ucSAD[5] == 0);
+            condition[9] = 0;
             if(condition[0] || condition[1])
             {
                 pFrm[2]->frmProperties.candidate = TRUE;
@@ -1433,7 +1434,7 @@ void Detect_32Pattern_rigorous(Frame **pFrm, Pattern *ptrn, unsigned int *dispat
             Detect_Solve_3223Patterns(pFrm, ptrn, dispatch);
     }
 }
-void UndoPatternTypes5and7(Frame *frmBuffer[BUFMINSIZE], unsigned int firstPos)
+void UndoPatternTypes5and7(Frame *frmBuffer[BUFEXTRASIZE], unsigned int firstPos)
 {
     unsigned int 
         start = firstPos;
@@ -1473,7 +1474,7 @@ void Undo2Frames(Frame *frmBuffer1, Frame *frmBuffer2, BOOL BFF)
 
     frmBuffer1->frmProperties.candidate = TRUE;
 }
-void Analyze_Buffer_Stats(Frame *frmBuffer[BUFMINSIZE], Pattern *ptrn, unsigned int *pdispatch, unsigned int *uiisInterlaced)
+void Analyze_Buffer_Stats(Frame *frmBuffer[BUFEXTRASIZE], Pattern *ptrn, unsigned int *pdispatch, unsigned int *uiisInterlaced)
 {
     unsigned int uiDropCount = 0,
         i = 0;

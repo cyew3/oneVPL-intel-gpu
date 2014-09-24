@@ -201,8 +201,9 @@ public:
       deviceEx->DestroySurface2DUP(pCmSurface2D);
     }  
     
-    if (malloced) {
+    if (malloced && pData) {
       CM_ALIGNED_FREE(pData);
+      pData = 0;
     }
   }
 

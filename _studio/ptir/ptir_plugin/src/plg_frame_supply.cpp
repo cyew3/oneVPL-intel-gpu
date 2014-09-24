@@ -51,14 +51,8 @@ CmSurface2D* frameSupplier::GetWorkSurfaceCM()
         return 0;
     else
     {
-        for(std::vector<mfxFrameSurface1*>::iterator it = workSurfs->begin(); it != workSurfs->end(); ++it) {
-            if((*it)->Data.Locked < 4)
-            {
-                s_out = *it;
-                workSurfs->erase(it);
-                break;
-            }
-        }
+        s_out = workSurfs->front();
+        workSurfs->erase(workSurfs->begin());
         mfxI32 result = -1;
 
         std::map<CmSurface2D*,mfxFrameSurface1*>::iterator it;
