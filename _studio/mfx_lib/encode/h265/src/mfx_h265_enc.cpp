@@ -1094,9 +1094,6 @@ mfxStatus H265Encoder::Init(const mfxVideoParam *param, const mfxExtCodingOption
     m_videoParam.csps = &m_sps;
     m_videoParam.cpps = &m_pps;
 
-    m_pReconstructFrame = new H265Frame();
-    m_pReconstructFrame->Create(&m_videoParam);
-
     m_videoParam.m_slice_ids = m_slice_ids;
     m_videoParam.m_costStat = m_costStat;
 
@@ -1164,11 +1161,6 @@ void H265Encoder::Close() {
         }
     }
 #endif
-
-    /*if (m_pReconstructFrame) {
-        m_pReconstructFrame->Destroy();
-        delete m_pReconstructFrame;
-    }*/
 
     // release resource of frame control
     // [1] frames
