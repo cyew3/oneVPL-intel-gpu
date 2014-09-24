@@ -1793,9 +1793,9 @@ template <typename PixType>
 void MAKE_NAME(h265_InterpLumaPack)(const short *src, int pitchSrc, PixType *dst, int pitchDst, int width, int height, int bitDepth)
 {
     switch (bitDepth) {
-    case  8: return h265_InterpLumaPack_kernel<6>(src, pitchSrc, dst, pitchDst, width, height,  8); // (+32) >> 6
-    case  9: return h265_InterpLumaPack_kernel<5>(src, pitchSrc, dst, pitchDst, width, height,  9); // (+16) >> 5
-    case 10: return h265_InterpLumaPack_kernel<4>(src, pitchSrc, dst, pitchDst, width, height, 10); // ( +8) >> 4
+    case  8: h265_InterpLumaPack_kernel<6>(src, pitchSrc, dst, pitchDst, width, height,  8); break; // (+32) >> 6
+    case  9: h265_InterpLumaPack_kernel<5>(src, pitchSrc, dst, pitchDst, width, height,  9); break; // (+16) >> 5
+    case 10: h265_InterpLumaPack_kernel<4>(src, pitchSrc, dst, pitchDst, width, height, 10); break; // ( +8) >> 4
     default: VM_ASSERT(!"unexpected shift");
     }
 }

@@ -368,6 +368,10 @@ namespace H265Enc {
             if (m_InputFrameVector.length < INPUT_IMAGE_QUEUE_SIZE) {
                 RFrame *pFrame;
                 pFrame = RFrame_Construct();
+                if (pFrame == NULL) {
+                    VM_ASSERT(0);
+                    return true; // FIXME - need correct allocation/check/free
+                }
                 pInputFrame = pFrame;
                 RFrame_Allocate(pFrame, width, height, MAX_TILE_SIZE, RFrame_Input);
                 // Add to list
@@ -420,43 +424,47 @@ namespace H265Enc {
                 } else if(pCodeThisFrame->ePicType==1) {
                     RFrame* past_frame = past_reference_frame(pCodeThisFrame);
 
-                    NGV_PDME_Frame(&np, pCodeThisFrame, past_frame, pCodeThisFrame->PDSAD, pCodeThisFrame->PMV);
+                    if (past_frame == NULL) {
+                        VM_ASSERT(0);
+                    } else {
+                        NGV_PDME_Frame(&np, pCodeThisFrame, past_frame, pCodeThisFrame->PDSAD, pCodeThisFrame->PMV);
 
-                    NGV_PDME_Frame(&np, pCodeThisFrame, pInputFrame, pCodeThisFrame->FDSAD, pCodeThisFrame->FMV);
+                        NGV_PDME_Frame(&np, pCodeThisFrame, pInputFrame, pCodeThisFrame->FDSAD, pCodeThisFrame->FMV);
 
-                    PPicDetermineQpMap(&np, pCodeThisFrame, past_frame);
-                    WriteQpMap(pCodeThisFrame, &acQPMap[pCodeThisFrame->TR % m_histLength]);
+                        PPicDetermineQpMap(&np, pCodeThisFrame, past_frame);
+                        WriteQpMap(pCodeThisFrame, &acQPMap[pCodeThisFrame->TR % m_histLength]);
 
-                    double dqp_orig = acQPMap[pCodeThisFrame->TR % m_histLength].getAvgQP();
-                    int dqp = (int)floor (dqp_orig + 0.5);
-                    /*if(dqpFile)
-                    {
-                    fprintf(dqpFile, "TR = %u, %15.3f, %i\n", pCodeThisFrame->TR, dqp_orig, dqp);
-                    } */               
-                    // Compute GOP SADpp, sqrSCpp
-                    {
-                        int gop_size = 1;
-                        double avgTSC=pCodeThisFrame->TSC;
-                        double avgsqrSCpp =  pCodeThisFrame->SC;
-                        RFrame *pFrame=pCodeThisFrame->past_frame;
-                        while(past_frame!=pFrame) {
-                            avgTSC += pFrame->TSC;
-                            avgsqrSCpp += pFrame->SC;
-                            gop_size++;
-                            pFrame = pFrame->past_frame;
-                        }
-                        avgTSC/=gop_size;
-                        avgTSC/=(pCodeThisFrame->image.width*pCodeThisFrame->image.height);
-                        avgsqrSCpp/=gop_size;
-                        avgsqrSCpp/=sqrt((double)(pCodeThisFrame->image.width*pCodeThisFrame->image.height));
-                        avgsqrSCpp = sqrt(avgsqrSCpp);
-                        pFrame=pCodeThisFrame;
-                        gop_size = 0;
-                        while(past_frame!=pFrame) {
-                            acQPMap[pFrame->TR % m_histLength].setAvgGopSADpp(avgTSC);
-                            acQPMap[pFrame->TR % m_histLength].setAvgGopSCpp(avgsqrSCpp);
-                            pFrame = pFrame->past_frame;
-                            gop_size++;
+                        double dqp_orig = acQPMap[pCodeThisFrame->TR % m_histLength].getAvgQP();
+                        int dqp = (int)floor (dqp_orig + 0.5);
+                        /*if(dqpFile)
+                        {
+                        fprintf(dqpFile, "TR = %u, %15.3f, %i\n", pCodeThisFrame->TR, dqp_orig, dqp);
+                        } */               
+                        // Compute GOP SADpp, sqrSCpp
+                        {
+                            int gop_size = 1;
+                            double avgTSC=pCodeThisFrame->TSC;
+                            double avgsqrSCpp =  pCodeThisFrame->SC;
+                            RFrame *pFrame=pCodeThisFrame->past_frame;
+                            while(past_frame!=pFrame) {
+                                avgTSC += pFrame->TSC;
+                                avgsqrSCpp += pFrame->SC;
+                                gop_size++;
+                                pFrame = pFrame->past_frame;
+                            }
+                            avgTSC/=gop_size;
+                            avgTSC/=(pCodeThisFrame->image.width*pCodeThisFrame->image.height);
+                            avgsqrSCpp/=gop_size;
+                            avgsqrSCpp/=sqrt((double)(pCodeThisFrame->image.width*pCodeThisFrame->image.height));
+                            avgsqrSCpp = sqrt(avgsqrSCpp);
+                            pFrame=pCodeThisFrame;
+                            gop_size = 0;
+                            while(past_frame!=pFrame) {
+                                acQPMap[pFrame->TR % m_histLength].setAvgGopSADpp(avgTSC);
+                                acQPMap[pFrame->TR % m_histLength].setAvgGopSCpp(avgsqrSCpp);
+                                pFrame = pFrame->past_frame;
+                                gop_size++;
+                            }
                         }
                     }
                 } else {
@@ -477,6 +485,10 @@ namespace H265Enc {
             if (m_InputFrameVector.length < INPUT_IMAGE_QUEUE_SIZE) {
                 RFrame *pFrame;
                 pFrame = RFrame_Construct();        
+                if (pFrame == NULL) {
+                    VM_ASSERT(0);
+                    return true; // FIXME - need correct allocation/check/free
+                }
                 pInputFrame = pFrame;
                 RFrame_Allocate(pFrame, width, height, 16, RFrame_Input);
                 // Add to list
@@ -520,55 +532,60 @@ namespace H265Enc {
                     }
                 } else if(pCodeThisFrame->ePicType==1) {
                     RFrame* past_frame = past_reference_frame(pCodeThisFrame);
-                    // PDME
-                    NGV_PDME_Frame(m_np, pCodeThisFrame, past_frame, pCodeThisFrame->PDSAD, pCodeThisFrame->PMV);
-                    // FDME
-                    {
-                        Ipp32u fPos;
-                        for(fPos=0;fPos<((VidData*)(m_np->inData))->R1.fBlocks;fPos++)
-                        {
-                            pCodeThisFrame->FDSAD[fPos]                =    INT_MAX;
-                        }
-                    }
-                    // PPic QP Map
-                    // Last PPic QP Map's (for complete gop only)
-                    if( Ipp32s(pCodeThisFrame->TR - past_frame->TR) >= m_np->maxpdist) {
-                        PPicDetermineQpMap(m_np, pCodeThisFrame, past_frame);
-                        WriteQpMap(pCodeThisFrame, &acQPMap[pCodeThisFrame->TR % m_histLength]);
 
-                        // aya=====================================================
-                        double dqp_orig = acQPMap[pCodeThisFrame->TR % m_histLength ].getAvgQP();
-                        int dqp = (int)floor (dqp_orig + 0.5);
-                        /*if(dqpFile)
+                    if (past_frame == NULL) {
+                        VM_ASSERT(0);
+                    } else {
+                        // PDME
+                        NGV_PDME_Frame(m_np, pCodeThisFrame, past_frame, pCodeThisFrame->PDSAD, pCodeThisFrame->PMV);
+                        // FDME
                         {
-                        fprintf(dqpFile, "P0 TR = %u, %15.3f, %i\n", pCodeThisFrame->TR, dqp_orig, dqp);
-                        }*/
-                        // ========================================================
-                    }
-                    // Compute GOP SADpp, sqrSCpp
-                    {
-                        int gop_size = 1;
-                        double avgTSC=pCodeThisFrame->TSC;
-                        double avgsqrSCpp =  pCodeThisFrame->SC;
-                        RFrame *pFrame=pCodeThisFrame->past_frame;
-                        while(past_frame!=pFrame) {
-                            avgTSC += pFrame->TSC;
-                            avgsqrSCpp += pFrame->SC;
-                            gop_size++;
-                            pFrame = pFrame->past_frame;
+                            Ipp32u fPos;
+                            for(fPos=0;fPos<((VidData*)(m_np->inData))->R1.fBlocks;fPos++)
+                            {
+                                pCodeThisFrame->FDSAD[fPos]                =    INT_MAX;
+                            }
                         }
-                        avgTSC/=gop_size;
-                        avgTSC/=(pCodeThisFrame->image.width*pCodeThisFrame->image.height);
-                        avgsqrSCpp/=gop_size;
-                        avgsqrSCpp/=sqrt((double)(pCodeThisFrame->image.width*pCodeThisFrame->image.height));
-                        avgsqrSCpp = sqrt(avgsqrSCpp);
-                        pFrame=pCodeThisFrame;
-                        gop_size = 0;
-                        while(past_frame!=pFrame) {
-                            acQPMap[pFrame->TR % m_histLength].setAvgGopSADpp(avgTSC);
-                            acQPMap[pFrame->TR % m_histLength].setAvgGopSCpp(avgsqrSCpp);
-                            pFrame = pFrame->past_frame;
-                            gop_size++;
+                        // PPic QP Map
+                        // Last PPic QP Map's (for complete gop only)
+                        if( Ipp32s(pCodeThisFrame->TR - past_frame->TR) >= m_np->maxpdist) {
+                            PPicDetermineQpMap(m_np, pCodeThisFrame, past_frame);
+                            WriteQpMap(pCodeThisFrame, &acQPMap[pCodeThisFrame->TR % m_histLength]);
+
+                            // aya=====================================================
+                            double dqp_orig = acQPMap[pCodeThisFrame->TR % m_histLength ].getAvgQP();
+                            int dqp = (int)floor (dqp_orig + 0.5);
+                            /*if(dqpFile)
+                            {
+                            fprintf(dqpFile, "P0 TR = %u, %15.3f, %i\n", pCodeThisFrame->TR, dqp_orig, dqp);
+                            }*/
+                            // ========================================================
+                        }
+                        // Compute GOP SADpp, sqrSCpp
+                        {
+                            int gop_size = 1;
+                            double avgTSC=pCodeThisFrame->TSC;
+                            double avgsqrSCpp =  pCodeThisFrame->SC;
+                            RFrame *pFrame=pCodeThisFrame->past_frame;
+                            while(past_frame!=pFrame) {
+                                avgTSC += pFrame->TSC;
+                                avgsqrSCpp += pFrame->SC;
+                                gop_size++;
+                                pFrame = pFrame->past_frame;
+                            }
+                            avgTSC/=gop_size;
+                            avgTSC/=(pCodeThisFrame->image.width*pCodeThisFrame->image.height);
+                            avgsqrSCpp/=gop_size;
+                            avgsqrSCpp/=sqrt((double)(pCodeThisFrame->image.width*pCodeThisFrame->image.height));
+                            avgsqrSCpp = sqrt(avgsqrSCpp);
+                            pFrame=pCodeThisFrame;
+                            gop_size = 0;
+                            while(past_frame!=pFrame) {
+                                acQPMap[pFrame->TR % m_histLength].setAvgGopSADpp(avgTSC);
+                                acQPMap[pFrame->TR % m_histLength].setAvgGopSCpp(avgsqrSCpp);
+                                pFrame = pFrame->past_frame;
+                                gop_size++;
+                            }
                         }
                     }
                 } else {

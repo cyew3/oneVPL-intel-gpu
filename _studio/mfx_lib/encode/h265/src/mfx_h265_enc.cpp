@@ -2450,6 +2450,7 @@ mfxStatus H265Encoder::PreEncAnalysis(mfxBitstream* mfxBS)
 
             m_preEnc.m_inputSurface = &inputSurface;
             bool bStatus = m_preEnc.preAnalyzeOne(m_preEnc.m_acQPMap);
+            m_preEnc.m_inputSurface = NULL; // KW issue
         } else {
             m_preEnc.m_inputSurface = NULL;
             bool bStatus = m_preEnc.preAnalyzeOne(m_preEnc.m_acQPMap); 

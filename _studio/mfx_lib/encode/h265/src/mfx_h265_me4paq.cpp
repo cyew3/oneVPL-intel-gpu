@@ -1388,6 +1388,8 @@ namespace H265Enc {
         }
         else // if(blockSize == 4) -  current settings not enabled. So can be removed.
         {
+            VM_ASSERT(0);
+#if 0
             if(tMV.x == 0 && tMV.y == 0)    
             {
                 for(i=0;i<blockSize;i++)    
@@ -1511,6 +1513,7 @@ namespace H265Enc {
                     bi                =    i;
                 }
             }
+#endif
         }
 
         if(betterfound)            
