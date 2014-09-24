@@ -1595,19 +1595,36 @@ mfxStatus MFXVideoENCODEH265::Query(VideoCORE *core, mfxVideoParam *par_in, mfxV
 
         out->mfx.NumThread = in->mfx.NumThread;
 
+
+#ifdef MFX_VA
+        if (in->mfx.TargetUsage != MFX_TARGETUSAGE_7) {
+            isCorrected ++;
+            out->mfx.TargetUsage = MFX_TARGETUSAGE_7;
+        }
+        else out->mfx.TargetUsage = in->mfx.TargetUsage;
+#else
         if (in->mfx.TargetUsage > MFX_TARGETUSAGE_BEST_SPEED) {
             isCorrected ++;
             out->mfx.TargetUsage = MFX_TARGETUSAGE_UNKNOWN;
         }
         else out->mfx.TargetUsage = in->mfx.TargetUsage;
+#endif
 
         out->mfx.GopPicSize = in->mfx.GopPicSize;
 
+#ifdef MFX_VA   // Gacc supports up to 8 B frames now (otherwise it exceeds surface amount)
+        if (in->mfx.GopRefDist > 8) {
+            out->mfx.GopRefDist = 8;
+            isCorrected ++;
+        }
+        else out->mfx.GopRefDist = in->mfx.GopRefDist;
+#else
         if (in->mfx.GopRefDist > H265_MAXREFDIST) {
             out->mfx.GopRefDist = H265_MAXREFDIST;
             isCorrected ++;
         }
         else out->mfx.GopRefDist = in->mfx.GopRefDist;
+#endif
 
         if (in->mfx.NumRefFrame > MAX_NUM_REF_IDX) {
             out->mfx.NumRefFrame = MAX_NUM_REF_IDX;
