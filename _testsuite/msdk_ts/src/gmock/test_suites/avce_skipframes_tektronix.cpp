@@ -53,20 +53,37 @@ const TestSuite::tc_struct TestSuite::test_case[] =
     {/*00*/ MFX_ERR_NONE, {"YUV/iceage_720x480_491.yuv", 720, 480}, 0, {
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.GopPicSize, 30},
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 1},
-        {EXT_COD2, &tsStruct::mfxExtCodingOption2.SkipFrame, MFX_SKIPFRAME_INSERT_DUMMY}}, "1"},
+        {EXT_COD2, &tsStruct::mfxExtCodingOption2.SkipFrame, MFX_SKIPFRAME_INSERT_DUMMY}}, "1 2 3 4 5 6 7 8 9"},
     {/*01*/ MFX_ERR_NONE, {"YUV/iceage_720x480_491.yuv", 720, 480}, 0, {
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.GopPicSize, 30},
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 1},
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR},
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.TargetKbps, 700},
-        {EXT_COD2, &tsStruct::mfxExtCodingOption2.SkipFrame, MFX_SKIPFRAME_INSERT_DUMMY}}, "1"},
+        {EXT_COD2, &tsStruct::mfxExtCodingOption2.SkipFrame, MFX_SKIPFRAME_INSERT_DUMMY}}, "1 2 3 4 5 6 7 8 9"},
     {/*02*/ MFX_ERR_NONE, {"YUV/iceage_720x480_491.yuv", 720, 480}, 0, {
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.GopPicSize, 30},
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 1},
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_VBR},
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.TargetKbps, 700},
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.MaxKbps, 1000},
-        {EXT_COD2, &tsStruct::mfxExtCodingOption2.SkipFrame, MFX_SKIPFRAME_INSERT_DUMMY}}, "1"},
+        {EXT_COD2, &tsStruct::mfxExtCodingOption2.SkipFrame, MFX_SKIPFRAME_INSERT_DUMMY}}, "1 2 3 4 5 6 7 8 9"},
+    {/*03*/ MFX_ERR_NONE, {"YUV/iceage_720x480_491.yuv", 720, 480}, 0, {
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.GopPicSize, 30},
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 1},
+        {EXT_COD2, &tsStruct::mfxExtCodingOption2.SkipFrame, MFX_SKIPFRAME_INSERT_DUMMY}}, "each2"},
+    {/*04*/ MFX_ERR_NONE, {"YUV/iceage_720x480_491.yuv", 720, 480}, 0, {
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.GopPicSize, 30},
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 1},
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR},
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.TargetKbps, 700},
+        {EXT_COD2, &tsStruct::mfxExtCodingOption2.SkipFrame, MFX_SKIPFRAME_INSERT_DUMMY}}, "each2"},
+    {/*05*/ MFX_ERR_NONE, {"YUV/iceage_720x480_491.yuv", 720, 480}, 0, {
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.GopPicSize, 30},
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 1},
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_VBR},
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.TargetKbps, 700},
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.MaxKbps, 1000},
+        {EXT_COD2, &tsStruct::mfxExtCodingOption2.SkipFrame, MFX_SKIPFRAME_INSERT_DUMMY}}, "each2"},
 };
 
 const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case)/sizeof(TestSuite::tc_struct);
@@ -151,17 +168,20 @@ class BsDump : public tsBitstreamProcessor, tsParserH264AU
     tsBitstreamWriter m_writer;
     std::vector<mfxU32> m_skip_frames;
     mfxU32 m_curr_frame;
+    mfxU32 numMb;
 public:
     BsDump(const char* fname)
         : m_writer(fname)
         , tsParserH264AU(BS_H264_INIT_MODE_CABAC|BS_H264_INIT_MODE_CAVLC)
         , m_curr_frame(0)
+        , numMb(0)
     {
         set_trace_level(0);
     }
     ~BsDump() {}
-    mfxStatus Init(std::vector<mfxU32>& skip_frames)
+    mfxStatus Init(std::vector<mfxU32>& skip_frames, mfxFrameInfo& fi)
     {
+        numMb = (fi.Width / 16) * (fi.Height / 16);
         m_skip_frames = skip_frames;
         return MFX_ERR_NONE;
     }
@@ -189,6 +209,14 @@ public:
                 {
                     continue;
                 }
+
+                if (au.NALU[i].slice_hdr->NumMb != numMb)
+                {
+                    g_tsLog << "ERROR: real NumMb=" << au.NALU[i].slice_hdr->NumMb
+                            << "is not equal to targer=" << numMb;
+                    return MFX_ERR_INVALID_VIDEO_PARAM;
+                }
+
                 for (Bs32u nmb = 0; nmb < au.NALU[i].slice_hdr->NumMb; nmb++)
                 {
                     if (0 == au.NALU[i].slice_hdr->mb[nmb].mb_skip_flag)
@@ -213,15 +241,24 @@ int TestSuite::RunTest(unsigned int id)
 
     MFXInit();
 
-    std::stringstream stream(tc.skips);
+    mfxU32 nframes = 900;
+
     std::vector<mfxU32> skip_frames;
-    mfxU32 f;
-    while (stream >> f)
+    if (0 == strncmp(tc.skips, "each2", strlen("each2")))
     {
-        skip_frames.push_back(f);
+        for (mfxU32 i = 1; i < nframes; i += 2)
+            skip_frames.push_back(i);
+    }
+    else
+    {
+        std::stringstream stream(tc.skips);
+        mfxU32 f;
+        while (stream >> f)
+        {
+            skip_frames.push_back(f);
+        }
     }
 
-    mfxU32 nframes = 900;
     m_par.mfx.GopPicSize = 300;
     m_par.mfx.GopRefDist = 1;
     // set up parameters for case
@@ -258,7 +295,7 @@ int TestSuite::RunTest(unsigned int id)
     sprintf(tmp_out, "%04d.h264", id+1);
     std::string out_name = ENV("TS_OUTPUT_NAME", tmp_out);
     BsDump b(out_name.c_str());
-    b.Init(skip_frames);
+    b.Init(skip_frames, m_par.mfx.FrameInfo);
     m_bs_processor = &b;
 
     ///////////////////////////////////////////////////////////////////////////
