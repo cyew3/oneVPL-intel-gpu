@@ -1,5 +1,30 @@
 set(MFX_ORIG_LDFLAGS "${MFX_LDFLAGS}" )
 
+# Plugin version info
+
+set (PTIR_PRODUCT_NAME "Intel(R) Media Server Studio")
+set (PTIR_DESCRIPTION "Intel(R) Media SDK Premium Telecine Interlace Reverser Plug-in")
+
+  if( NOT DEFINED ENV{MFX_PTIR_VERSION} )
+    set( ptir_version 0.0.000.0000 )
+  else( )
+    set( ptir_version $ENV{MFX_PTIR_VERSION} )
+  endif( )
+
+  if( Linux OR Darwin )
+    execute_process(
+      COMMAND echo
+      COMMAND cut -f 1 -d.
+      COMMAND date "+.%-y.%-m.%-d"
+      OUTPUT_VARIABLE cur_date
+      OUTPUT_STRIP_TRAILING_WHITESPACE
+      )
+    string( SUBSTRING ${ptir_version} 0 1 ver )
+
+    set(ptir_version_defs  "-DMFX_PLUGIN_FILE_VERSION=\"\\\"${ver}${cur_date}\"\\\" -DMFX_PLUGIN_PRODUCT_VERSION=\"\\\"${ptir_version}\"\\\"")
+  endif( )
+
+
 # =============================================================================
 
 mfx_include_dirs( )
@@ -83,4 +108,7 @@ endforeach()
     ippmsdk_l ippj_l ippvc_l ippcc_l ippcv_l ippi_l ipps_l ippcore_l
   )
 
-make_library( ptir_plugin none shared )
+set( defs "-DMFX_PLUGIN_PRODUCT_NAME=\"\\\"${PTIR_PRODUCT_NAME}\"\\\" -DMFX_FILE_DESCRIPTION=\"\\\"${PTIR_DESCRIPTION}\"\\\" ${ptir_version_defs}" )
+  make_library( ${eval_plugin_name} ${variant} shared)
+
+make_library( mfx_ptir_hw64 none shared )
