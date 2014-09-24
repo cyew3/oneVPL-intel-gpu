@@ -25,8 +25,6 @@ File Name: ptir_vpp_plugin.h
 #include "ptir_wrap.h"
 #include "ptir_vpp_utils.h"
 
-#include "plugin_version_linux.h"
-
 struct PTIR_Task
 {
     mfxU32           id;
