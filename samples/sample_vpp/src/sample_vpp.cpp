@@ -107,8 +107,8 @@ int main(int argc, char *argv[])
   mfxFrameInfo        outFrameInfo;
 
   mfxFrameSurface1*   pInSurf[MAX_INPUT_STREAMS];
-  mfxFrameSurface1*   pOutSurf;
-  mfxFrameSurface1*   pWorkSurf;
+  mfxFrameSurface1*   pOutSurf = NULL;
+  mfxFrameSurface1*   pWorkSurf = NULL;
 
   mfxSyncPoint        syncPoint;
 
@@ -126,6 +126,7 @@ int main(int argc, char *argv[])
   MSDK_ZERO_MEMORY(Params);
   MSDK_ZERO_MEMORY(Allocator);
   MSDK_ZERO_MEMORY(outFrameInfo);
+  MSDK_ZERO_MEMORY(extVPPAuxData);
 //  MSDK_ZERO_MEMORY(FrameProcessor);
   FrameProcessor.pmfxVPP = NULL;
   for (i = 0; i < MAX_INPUT_STREAMS; i++)
