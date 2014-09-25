@@ -50,6 +50,7 @@ private:
     IDirect3DDeviceManager9*    m_pDeviceManager;
     D3DPRESENT_PARAMETERS       m_D3DPP;
     bool                        m_bModeFullscreen;
+    mfxU16                      m_nBit;
     RECT                        m_drawRect;
     CComPtr<IDirect3DSwapChain9>    m_pSwapChain;
 

@@ -22,6 +22,7 @@ MFXD3D9Device::MFXD3D9Device()
     , m_pD3DD9Ex()
     , m_pDeviceManager()
     , m_bModeFullscreen(false)
+    , m_nBit(8)
 {
 }
 
@@ -84,6 +85,17 @@ mfxStatus MFXD3D9Device::Init(mfxU32 nAdapter,
 
         fullscreen = &fsc;
         m_bModeFullscreen = true;
+    }
+
+    switch((D3DFORMAT)VIDEO_RENDER_TARGET_FORMAT)
+    {
+        case D3DFMT_A2B10G10R10:
+        case D3DFMT_A2R10G10B10:
+            m_nBit = 10;
+            break;
+        default:
+            m_nBit = 8;
+            break;
     }
 
     m_D3DPP.BackBufferFormat           = (D3DFORMAT)VIDEO_RENDER_TARGET_FORMAT;
@@ -228,8 +240,9 @@ mfxStatus MFXD3D9Device::Reset(WindowHandle hWindow,
         return MFX_ERR_UNKNOWN;
     }
 
-    if ( ! IsFullscreen() && ! IsOverlay() ) 
+    if ( ! IsFullscreen() && ! IsOverlay() && 8 == m_nBit )
     {
+        // SwapChain is used for non-overlay windowed 8bit rendering only
         CComPtr<IDirect3DSwapChain9> pSwapChain;
         hr = m_pD3DD9Ex->GetSwapChain(0, &pSwapChain);
         if (FAILED(hr))
@@ -393,8 +406,9 @@ mfxStatus MFXD3D9Device::RenderFrame(mfxFrameSurface1 * pSurface, mfxFrameAlloca
                   , pSurface->Info.CropY + pSurface->Info.CropH};
 
     CComPtr<IDirect3DSurface9> pBackBuffer;
-    if ( ! IsFullscreen() && ! IsOverlay() )
+    if ( ! IsFullscreen() && ! IsOverlay() && 8 == m_nBit )
     {
+        // SwapChain is used for non-overlay windowed 8bit rendering only
         hr = m_pSwapChain->GetBackBuffer(0, D3DBACKBUFFER_TYPE_MONO, &pBackBuffer);
     }
     else
@@ -423,12 +437,13 @@ mfxStatus MFXD3D9Device::RenderFrame(mfxFrameSurface1 * pSurface, mfxFrameAlloca
             // Otherwise it fails with invalid args error.
             hr = m_pD3DD9Ex->PresentEx(&dest, &dest, NULL, NULL, NULL);
         }
-        else if ( IsFullscreen() )
+        else if ( IsFullscreen() || 8 != m_nBit )
         {
             hr = m_pD3DD9Ex->Present(NULL, NULL, NULL, NULL);
         }
         else
         {
+            // SwapChain is used for non-overlay windowed 8bit rendering only
             hr = m_pSwapChain->Present(NULL, NULL, NULL, NULL, D3DPRESENT_FORCEIMMEDIATE);
         }
         if (FAILED(hr))
