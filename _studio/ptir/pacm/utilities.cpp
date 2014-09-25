@@ -366,10 +366,7 @@ static void Detect_32Pattern_rigorous_CM(Frame **pFrm, Pattern *ptrn, unsigned i
                 pFrm[3]->frmProperties.drop = true;
                 pFrm[4]->frmProperties.candidate = true;
                 ptrn->ucLatch.ucFullLatch = true;
-                if(condition[9])
-                    ptrn->ucPatternType = 2;
-                else
-                    ptrn->ucPatternType = 0;
+                ptrn->ucPatternType = 0;
                 *dispatch = 5;
                 return;
             }

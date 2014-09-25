@@ -576,6 +576,8 @@ mfxStatus PTIR_ProcessorCM::PTIR_ProcessFrame(CmSurface2D *surf_in, CmSurface2D 
                         {
                             CheckGenFrameCM(frmBuffer, i, mainPattern.ucPatternType, uiisInterlaced);
                             Prepare_frame_for_queueCM(&frmIn, frmBuffer[i], uiWidth, uiHeight, 0, mb_UsePtirSurfs);
+                            if(!frmIn)
+                                return MFX_ERR_DEVICE_FAILED;
                             ptir_memcpy(frmIn->plaY.ucStats.ucRs, frmBuffer[i]->plaY.ucStats.ucRs, sizeof(double)* 10);
 
                             //Timestamp
@@ -644,6 +646,8 @@ mfxStatus PTIR_ProcessorCM::PTIR_ProcessFrame(CmSurface2D *surf_in, CmSurface2D 
                                     }
 
                                     Prepare_frame_for_queueCM(&frmIn, frmBuffer[0], uiWidth, uiHeight, 0, mb_UsePtirSurfs);
+                                    if(!frmIn)
+                                        return MFX_ERR_DEVICE_FAILED;
                                     ptir_memcpy(frmIn->plaY.ucStats.ucRs, frmBuffer[0]->plaY.ucStats.ucRs, sizeof(double)* 10);
 
                                     //Timestamp
@@ -681,6 +685,8 @@ mfxStatus PTIR_ProcessorCM::PTIR_ProcessFrame(CmSurface2D *surf_in, CmSurface2D 
                                 }
 
                                 Prepare_frame_for_queueCM(&frmIn, frmBuffer[0], uiWidth, uiHeight, 0, mb_UsePtirSurfs); // Go to input frame rate
+                                if(!frmIn)
+                                    return MFX_ERR_DEVICE_FAILED;
                                 ptir_memcpy(frmIn->plaY.ucStats.ucRs, frmBuffer[0]->plaY.ucStats.ucRs, sizeof(double)* 10);
 
                                 //Timestamp
@@ -693,6 +699,8 @@ mfxStatus PTIR_ProcessorCM::PTIR_ProcessFrame(CmSurface2D *surf_in, CmSurface2D 
                                 if (bFullFrameRate && uiisInterlaced == 1)
                                 {
                                     Prepare_frame_for_queueCM(&frmIn, frmBuffer[BUFMINSIZE], uiWidth, uiHeight, frmSupply, mb_UsePtirSurfs); // Go to double frame rate
+                                    if(!frmIn)
+                                        return MFX_ERR_DEVICE_FAILED;
                                     ptir_memcpy(frmIn->plaY.ucStats.ucRs, frmBuffer[BUFMINSIZE]->plaY.ucStats.ucRs, sizeof(double)* 10);
 
                                     //Timestamp
@@ -852,6 +860,8 @@ mfxStatus PTIR_ProcessorCM::PTIR_ProcessFrame(CmSurface2D *surf_in, CmSurface2D 
                     deinterlaceFilter->DeinterlaceMedianFilterCM(frmBuffer, i, BUFMINSIZE);
 
                     Prepare_frame_for_queueCM(&frmIn, frmBuffer[i], uiWidth, uiHeight, 0, mb_UsePtirSurfs); // Go to input frame rate
+                    if(!frmIn)
+                        return MFX_ERR_DEVICE_FAILED;
                     ptir_memcpy(frmIn->plaY.ucStats.ucRs, frmBuffer[i]->plaY.ucStats.ucRs, sizeof(double)* 10);
 
                     //Timestamp
@@ -864,6 +874,8 @@ mfxStatus PTIR_ProcessorCM::PTIR_ProcessFrame(CmSurface2D *surf_in, CmSurface2D 
                     if (bFullFrameRate)
                     {
                         Prepare_frame_for_queueCM(&frmIn, frmBuffer[BUFMINSIZE], uiWidth, uiHeight, frmSupply, mb_UsePtirSurfs); // Go to double frame rate
+                        if(!frmIn)
+                            return MFX_ERR_DEVICE_FAILED;
                         ptir_memcpy(frmIn->plaY.ucStats.ucRs, frmBuffer[BUFMINSIZE]->plaY.ucStats.ucRs, sizeof(double)* 10);
 
                         //Timestamp
@@ -879,6 +891,8 @@ mfxStatus PTIR_ProcessorCM::PTIR_ProcessFrame(CmSurface2D *surf_in, CmSurface2D 
                     {
                         CheckGenFrameCM(frmBuffer, i, mainPattern.ucPatternType,uiisInterlaced);
                         Prepare_frame_for_queueCM(&frmIn, frmBuffer[i], uiWidth, uiHeight, 0, mb_UsePtirSurfs);
+                        if(!frmIn)
+                            return MFX_ERR_DEVICE_FAILED;
                         ptir_memcpy(frmIn->plaY.ucStats.ucRs, frmBuffer[i]->plaY.ucStats.ucRs, sizeof(double)* 10);
 
                         //timestamp

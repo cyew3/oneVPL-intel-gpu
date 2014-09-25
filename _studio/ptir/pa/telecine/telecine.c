@@ -1417,10 +1417,7 @@ void Detect_32Pattern_rigorous(Frame **pFrm, Pattern *ptrn, unsigned int *dispat
                 pFrm[3]->frmProperties.drop = TRUE;
                 pFrm[4]->frmProperties.candidate = TRUE;
                 ptrn->ucLatch.ucFullLatch = TRUE;
-                if(condition[9])
-                    ptrn->ucPatternType = 2;
-                else
-                    ptrn->ucPatternType = 0;
+                ptrn->ucPatternType = 0;
                 *dispatch = 5;
                 return;
             }
