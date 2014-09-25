@@ -96,7 +96,6 @@ class VideoDECODEVP8: public VideoDECODE
         mfx_UMC_MemAllocator m_memoryAllocator;
 
         std::auto_ptr<mfx_UMC_FrameAllocator> m_p_frame_allocator;
-        std::auto_ptr<mfx_UMC_FrameAllocator_NV12> m_p_frame_allocator_nv12;
 
         mfxVideoParamWrapper m_on_init_video_params;
         mfxVideoParamWrapper m_video_params;

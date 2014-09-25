@@ -529,7 +529,7 @@ namespace MFX_HEVC_PP
         HEVCPP_API( PTR_PredictIntra_Planar_16s,        void, h265_PredictIntra_Planar_16s,        (Ipp16s* PredPel, Ipp16s* pels, Ipp32s pitch, Ipp32s width) );
 
         HEVCPP_API( PTR_AnalyzeGradient_8u,  void, h265_AnalyzeGradient_8u,  (const Ipp8u *src, Ipp32s pitch, Ipp16u *hist4, Ipp16u *hist8, Ipp32s width, Ipp32s height) );
-        HEVCPP_API( PTR_AnalyzeGradient_16u, void, h265_AnalyzeGradient_16u, (const Ipp8u *src, Ipp32s pitch, Ipp16u *hist4, Ipp16u *hist8, Ipp32s width, Ipp32s height) );
+        HEVCPP_API( PTR_AnalyzeGradient_16u, void, h265_AnalyzeGradient_16u, (const Ipp16u *src, Ipp32s pitch, Ipp32u *hist4, Ipp32u *hist8, Ipp32s width, Ipp32s height) );
 
         HEVCPP_API( PTR_ComputeRsCs_8u,  void, h265_ComputeRsCs_8u,  (const Ipp8u *ySrc, Ipp32s pitchSrc, Ipp32s *lcuRs, Ipp32s *lcuCs, Ipp32s widthCu) );
         HEVCPP_API( PTR_ComputeRsCs_16u, void, h265_ComputeRsCs_16u, (const Ipp16u *ySrc, Ipp32s pitchSrc, Ipp32s *lcuRs, Ipp32s *lcuCs, Ipp32s widthCu) );

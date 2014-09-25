@@ -31,7 +31,6 @@
 #include "vpx/vpx_codec.h"
 #include "vpx/vpx_decoder.h"
 #include "vpx/vp8dx.h"
-#include "vpx_config.h"
 
 #include "mfx_vp8_dec_decode_common.h"
 
@@ -60,6 +59,57 @@ static mfxStatus vpx_convert_status(mfxI32 status)
 #define CHECK_VPX_STATUS(status) \
     if (VPX_CODEC_OK != status) \
         return vpx_convert_status(status);
+
+
+static mfxStatus Convert_YV12_to_NV12(mfxFrameData* inData,  mfxFrameInfo* inInfo,
+                       mfxFrameData* outData, mfxFrameInfo* outInfo)
+{
+    MFX_CHECK_NULL_PTR2(inData, inInfo);
+    MFX_CHECK_NULL_PTR2(outData, outInfo);
+
+    IppiSize roiSize;
+
+    mfxU32  inOffset0 = 0, inOffset1 = 0;
+    mfxU32  outOffset0 = 0, outOffset1 = 0;
+
+    roiSize.width = inInfo->CropW;
+    if ((roiSize.width == 0) || (roiSize.width > inInfo->Width && inInfo->Width > 0))
+        roiSize.width = inInfo->Width;
+
+    roiSize.height = inInfo->CropH;
+    if ((roiSize.height == 0) || (roiSize.height > inInfo->Height && inInfo->Height > 0))
+        roiSize.height = inInfo->Height;
+
+    inOffset0  = inInfo->CropX        + inInfo->CropY*inData->Pitch;
+    inOffset1  = (inInfo->CropX >> 1) + (inInfo->CropY >> 1)*(inData->Pitch >> 1);
+
+    outOffset0   = outInfo->CropX        + outInfo->CropY*outData->Pitch;
+    outOffset1   = (outInfo->CropX) + (outInfo->CropY >> 1)*(outData->Pitch);
+
+    const mfxU8* pSrc[3] = {(mfxU8*)inData->Y + inOffset0,
+                          (mfxU8*)inData->V + inOffset1,
+                          (mfxU8*)inData->U + inOffset1};
+    /* [U<->V] because some reversing will be done ipp function */
+
+    mfxI32 pSrcStep[3] = {inData->Pitch,
+                        inData->Pitch >> 1,
+                        inData->Pitch >> 1};
+
+    mfxU8* pDst[2]   = {(mfxU8*)outData->Y + outOffset0,
+                      (mfxU8*)outData->UV+ outOffset1};
+
+    mfxI32 pDstStep[2] = {outData->Pitch,
+                        outData->Pitch >> 0};
+
+    IppStatus sts = ippiYCrCb420ToYCbCr420_8u_P3P2R(pSrc, pSrcStep,
+                                                    pDst[0], pDstStep[0],
+                                                    pDst[1], pDstStep[1],
+                                                    roiSize);
+    if (sts != ippStsNoErr)
+        return MFX_ERR_UNKNOWN;
+
+    return MFX_ERR_NONE;
+}
 
 VideoDECODEVP8::VideoDECODEVP8(VideoCORE *p_core, mfxStatus *p_sts)
     :VideoDECODE()
@@ -184,10 +234,9 @@ mfxStatus VideoDECODEVP8::Init(mfxVideoParam *p_params)
         m_video_params.mfx.NumThread = (mfxU16)vm_sys_info_get_cpu_num();
     }
 
-    m_p_frame_allocator_nv12.reset(new mfx_UMC_FrameAllocator_NV12);
-    m_p_frame_allocator = m_p_frame_allocator_nv12;
+    m_p_frame_allocator.reset(new mfx_UMC_FrameAllocator);
 
-    Ipp32s useInternal = (m_on_init_video_params.IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY) || (m_on_init_video_params.IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY);
+    Ipp32s useInternal = m_on_init_video_params.IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY;
 
     // allocate memory
     memset(&m_request, 0, sizeof(m_request));
@@ -303,7 +352,7 @@ mfxStatus VideoDECODEVP8::Init(mfxVideoParam *p_params)
     // init webm software decoder
     mfxI32 vpx_sts = 0;
     vpx_codec_dec_cfg_t cfg;
-    cfg.threads = 8;
+    cfg.threads = m_video_params.mfx.NumThread;
 
     vpx_sts = vpx_codec_dec_init((vpx_codec_ctx_t *)m_vpx_codec, vpx_codec_vp8_dx(), &cfg, 0);
     CHECK_VPX_STATUS(vpx_sts);
@@ -578,12 +627,11 @@ mfxStatus VideoDECODEVP8::QueryIOSurf(VideoCORE *p_core, mfxVideoParam *p_params
     mfxStatus sts = QueryIOSurfInternal(platform, &params, p_request);
     MFX_CHECK_STS(sts);
 
-    Ipp32s isInternalManaging = (MFX_PLATFORM_SOFTWARE == platform) ?
-        (params.IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY) : (params.IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY);
+    Ipp32s isInternalManaging = (MFX_PLATFORM_SOFTWARE == platform) ? true : (params.IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY);
 
     if (isInternalManaging)
     {
-        p_request->NumFrameSuggested = p_request->NumFrameMin = 4;
+        p_request->NumFrameSuggested = p_request->NumFrameMin = p_params->AsyncDepth ? p_params->AsyncDepth : MFX_AUTO_ASYNC_DEPTH_VALUE;
     }
 
     if (params.IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY)
@@ -646,10 +694,17 @@ mfxStatus VideoDECODEVP8::QueryIOSurfInternal(eMFXPlatform platform, mfxVideoPar
         }
     }
 
-    p_request->NumFrameMin = mfxU16 (4);
+    if (MFX_PLATFORM_SOFTWARE == platform)
+    {
+        p_request->NumFrameSuggested = p_request->NumFrameMin = p_params->AsyncDepth ? p_params->AsyncDepth : MFX_AUTO_ASYNC_DEPTH_VALUE;
+    }
+    else
+    {
+        p_request->NumFrameMin = mfxU16 (4);
 
-    p_request->NumFrameMin += p_params->AsyncDepth ? p_params->AsyncDepth : MFX_AUTO_ASYNC_DEPTH_VALUE;
-    p_request->NumFrameSuggested = p_request->NumFrameMin;
+        p_request->NumFrameMin += p_params->AsyncDepth ? p_params->AsyncDepth : MFX_AUTO_ASYNC_DEPTH_VALUE;
+        p_request->NumFrameSuggested = p_request->NumFrameMin;
+    }
 
     if (MFX_PLATFORM_SOFTWARE == platform)
     {
@@ -699,6 +754,8 @@ mfxStatus VideoDECODEVP8::RunThread(void *p_params, mfxU32 thread_number)
 
 static mfxStatus __CDECL VP8DECODERoutine(void *p_state, void *p_param, mfxU32 /*thread_number*/, mfxU32)
 {
+    mfxStatus mfxSts = MFX_ERR_NONE;
+
     THREAD_TASK_INFO *p_thread_info = (THREAD_TASK_INFO *) p_param;
 
     p_state;
@@ -714,51 +771,37 @@ static mfxStatus __CDECL VP8DECODERoutine(void *p_state, void *p_param, mfxU32 /
 
     if (img)
     {
-        Ipp8u *p_data = (Ipp8u *) p_thread_info->m_p_video_data->GetPlanePointer(0);
-        Ipp32u pitch = (Ipp32u) p_thread_info->m_p_video_data->GetPlanePitch(0);
+        mfxFrameData inData = { 0 };
+        inData.Y = img->planes[VPX_PLANE_Y];
+        inData.U = img->planes[VPX_PLANE_U];
+        inData.V = img->planes[VPX_PLANE_V];
+        inData.Pitch = (mfxU16)img->stride[VPX_PLANE_Y];
 
-        unsigned char *buf = img->planes[0];
+        mfxFrameInfo inInfo = { 0 };
+        inInfo.Width  = (mfxU16)img->w;
+        inInfo.Height = (mfxU16)img->h;
+        inInfo.CropW  = (mfxU16)img->d_w;
+        inInfo.CropH  = (mfxU16)img->d_h;
 
-        for (unsigned int j = 0; j < img->d_h; j += 1)
+        mfxFrameData outData = { 0 };
+        outData.Y  = (mfxU8*)p_thread_info->m_p_video_data->GetPlanePointer(0);
+        outData.UV = (mfxU8*)p_thread_info->m_p_video_data->GetPlanePointer(1);
+        outData.Pitch = (mfxU16)p_thread_info->m_p_video_data->GetPlanePitch(0);
+
+        mfxSts = Convert_YV12_to_NV12(&inData, &inInfo, &outData, &p_thread_info->m_p_surface_out->Info);
+
+        if (MFX_ERR_NONE == mfxSts)
         {
-            MFX_INTERNAL_CPY(p_data, buf, img->d_w);
-            p_data += pitch;
-            buf += img->stride[0];
+            p_thread_info->m_p_mfx_umc_frame_allocator->PrepareToOutput(p_thread_info->m_p_surface_out, p_thread_info->m_memId, &p_thread_info->m_video_params, false);
+            p_thread_info->m_p_mfx_umc_frame_allocator->DecreaseReference(p_thread_info->m_memId);
+            p_thread_info->m_p_mfx_umc_frame_allocator->Unlock(p_thread_info->m_memId);
         }
-
-        p_data = (Ipp8u *)p_thread_info->m_p_video_data->GetPlanePointer(1);
-        pitch = (Ipp32u)p_thread_info->m_p_video_data->GetPlanePitch(1);
-
-        buf = img->planes[1];
-
-        for (unsigned int j = 0; j < (img->d_h + 1) >> 1; j += 1)
-        {
-            MFX_INTERNAL_CPY(p_data, buf, (img->d_w + 1) >> 1);
-            p_data += pitch;
-            buf += img->stride[1];
-        }
-
-        p_data = (Ipp8u *)p_thread_info->m_p_video_data->GetPlanePointer(2);
-        pitch = (Ipp32u) p_thread_info->m_p_video_data->GetPlanePitch(2);
-
-        buf = img->planes[2];
-
-        for (unsigned int j = 0; j < (img->d_h + 1) >> 1; j += 1)
-        {
-            MFX_INTERNAL_CPY(p_data, buf, (img->d_w + 1) >> 1);
-            p_data += pitch;
-            buf += img->stride[2];
-        }
-
-        p_thread_info->m_p_mfx_umc_frame_allocator->PrepareToOutput(p_thread_info->m_p_surface_out, p_thread_info->m_memId, &p_thread_info->m_video_params, false);
-        p_thread_info->m_p_mfx_umc_frame_allocator->DecreaseReference(p_thread_info->m_memId);
-        p_thread_info->m_p_mfx_umc_frame_allocator->Unlock(p_thread_info->m_memId);
     }
 
     delete [] p_thread_info->m_p_bitstream;
     delete p_thread_info->m_p_video_data;
 
-    return MFX_ERR_NONE;
+    return mfxSts;
 
 } // static mfxStatus __CDECL VP8DECODERoutine(void *p_state, void *p_param, mfxU32 thread_number, mfxU32)
 
@@ -868,13 +911,8 @@ mfxStatus VideoDECODEVP8::DecodeFrameCheck(mfxBitstream *p_bs, mfxFrameSurface1 
         p_info = p_frame_data->GetPlaneMemoryInfo(1);
         video_data->SetPlanePointer(p_info->m_planePtr, 1);
 
-        p_info = p_frame_data->GetPlaneMemoryInfo(2);
-
-        video_data->SetPlanePointer(p_info->m_planePtr, 2);
-
         video_data->SetPlanePitch(pitch, 0);
-        video_data->SetPlanePitch(pitch / 2, 1);
-        video_data->SetPlanePitch(pitch / 2, 2);
+        video_data->SetPlanePitch(pitch, 1);
 
         // get output surface
         sts = GetOutputSurface(pp_surface_out, p_surface_work, memId);

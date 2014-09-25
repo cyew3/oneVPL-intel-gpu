@@ -231,7 +231,7 @@ enum
 typedef struct _vp8_FrameInfo
 {
   //Ipp8u frameType;
-  FrameType frameType;// ???
+  UMC::FrameType frameType;// ???
 
   Ipp8u showFrame;
 

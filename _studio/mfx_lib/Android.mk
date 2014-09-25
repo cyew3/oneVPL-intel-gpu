@@ -4,7 +4,7 @@ include $(MFX_HOME)/android/mfx_env.mk
 
 # =============================================================================
 
-MFX_LOCAL_DECODERS = h265 h264 mpeg2 vc1 mjpeg vp8
+MFX_LOCAL_DECODERS = h265 h264 mpeg2 vc1 mjpeg vp8 vp9
 MFX_LOCAL_ENCODERS = h265 h264 mpeg2 vc1 mjpeg mvc svc vp8
 
 # Setting subdirectories to march thru
@@ -85,7 +85,6 @@ MFX_SHARED_FILES_IMPL = $(addprefix mfx_lib/shared/src/, \
     mfx_enc_common.cpp \
     mfx_h264_enc_common.cpp \
     mfx_vc1_enc_common.cpp \
-    mfx_vp8_enc_common.cpp \
     mfx_mpeg2_dec_common.cpp \
     mfx_vc1_dec_common.cpp \
     mfx_common_decode_int.cpp)
@@ -96,8 +95,7 @@ MFX_SHARED_FILES_HW = \
 MFX_SHARED_FILES_HW += $(addprefix mfx_lib/shared/src/, \
     mfx_h264_enc_common_hw.cpp \
     mfx_h264_encode_vaapi.cpp \
-    mfx_h264_encode_factory.cpp \
-    mfx_vp8_enc_common_hw.cpp)
+    mfx_h264_encode_factory.cpp)
 
 MFX_LIB_SHARED_FILES_1 = $(addprefix mfx_lib/shared/src/, \
     libmfxsw.cpp \
@@ -215,15 +213,15 @@ ifeq ($(MFX_IMPL_HW), true)
     libmfx_optimization \
     libumc_io_merged_hw \
     libumc_core_merged \
-    libmfx_trace_hw \
-    libvpx
+    libmfx_trace_hw
 
   LOCAL_LDFLAGS += \
     $(MFX_LDFLAGS_INTERNAL_HW) \
     -Wl,--version-script=$(LOCAL_PATH)/mfx_lib/libmfx.map \
-    -lippj_l -lippvc_l -lippcc_l -lippcv_l -lippi_l -lipps_l -lippcore_l -lippmsdk_l
+    -Wl,--no-warn-shared-textrel \
+    -lippj_l -lippvc_l -lippcc_l -lippcv_l -lippi_l -lipps_l -lippcore_l -lippmsdk_l -lvpx-mfx
 
-  LOCAL_SHARED_LIBRARIES := libstlport-mfx libgabi++-mfx libva libva-tpi libdl
+  LOCAL_SHARED_LIBRARIES := libstlport-mfx libgabi++-mfx libva libdl
 
   LOCAL_MODULE_TAGS := optional
   ifeq ($(TARGET_ARCH), x86)
@@ -256,13 +254,13 @@ ifeq ($(MFX_IMPL_SW), true)
     libmfx_optimization \
     libumc_io_merged_sw \
     libumc_core_merged \
-    libmfx_trace_sw \
-    libvpx
+    libmfx_trace_sw
 
   LOCAL_LDFLAGS += \
     $(MFX_LDFLAGS_INTERNAL) \
     -Wl,--version-script=$(LOCAL_PATH)/mfx_lib/libmfx.map \
-    -lippj_l -lippvc_l -lippcc_l -lippcv_l -lippi_l -lipps_l -lippcore_l -lippmsdk_l
+    -Wl,--no-warn-shared-textrel \
+    -lippj_l -lippvc_l -lippcc_l -lippcv_l -lippi_l -lipps_l -lippcore_l -lippmsdk_l -lvpx-mfx
 
   LOCAL_SHARED_LIBRARIES := libstlport-mfx libgabi++-mfx libdl
 

@@ -974,7 +974,7 @@ void SetTargetPX()
 
 #else // MFX_TARGET_OPTIMIZATION_AUTO (PREDEFINED_TARGET_OPTIMIZATION PX/SSE4/AVX2)
 
-IppStatus MFX_HEVC_PP::InitDispatcher()
+IppStatus MFX_HEVC_PP::InitDispatcher(Ipp32s cpuFeature)
 {
     return ippStsNoErr;
 }

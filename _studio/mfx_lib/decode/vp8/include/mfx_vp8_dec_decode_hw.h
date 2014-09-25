@@ -27,8 +27,6 @@
 
 #include "umc_mutex.h"
 
-#include <map>
-
 #include "mfx_vp8_dec_decode_vp8_defs.h"
 #include "mfx_vp8_dec_decode_common.h"
 
@@ -166,6 +164,7 @@ class VideoDECODEVP8_HW : public VideoDECODE
 public:
 
     VideoDECODEVP8_HW(VideoCORE *pCore, mfxStatus *sts);
+    ~VideoDECODEVP8_HW();
 
     static mfxStatus Query(VideoCORE *pCore, mfxVideoParam *pIn, mfxVideoParam *pOut);
     static mfxStatus QueryIOSurf(VideoCORE *pCore, mfxVideoParam *pPar, mfxFrameAllocRequest *pRequest);
@@ -204,15 +203,15 @@ private:
 
     mfxStatus GetFrame(UMC::MediaData* in, UMC::FrameData** out);
 
-	friend mfxStatus VP8DECODERoutine(void *p_state, void *pp_param, mfxU32 thread_number, mfxU32);
+    friend mfxStatus MFX_CDECL VP8DECODERoutine(void *p_state, void *pp_param, mfxU32 thread_number, mfxU32);
 
-	struct VP8DECODERoutineData
-	{
-		VideoDECODEVP8_HW* decoder;
-		mfxFrameSurface1* surface_work;
-		FrameMemID memId;
-		FrameMemID memIdToUnlock;
-	};
+    struct VP8DECODERoutineData
+    {
+        VideoDECODEVP8_HW* decoder;
+        mfxFrameSurface1* surface_work;
+        FrameMemID memId;
+        FrameMemID memIdToUnlock;
+    };
 
     struct sFrameInfo
     {
@@ -236,10 +235,10 @@ private:
     mfxF64                  m_in_framerate;
     mfxU16                  m_frameOrder;
 
-    UMC::Mutex               m_mutex;
+    vm_mutex                m_mutex;
 
     mfxBitstream            m_bs;
-    VP8Defs::vp8_FrameInfo           m_frame_info;
+    VP8Defs::vp8_FrameInfo  m_frame_info;
     unsigned                m_CodedCoeffTokenPartition;
 
     VP8Defs::vp8_RefreshInfo         m_refresh_info;
