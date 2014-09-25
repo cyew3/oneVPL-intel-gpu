@@ -5591,7 +5591,7 @@ namespace
         reader.GetUe();
     }
 }
-mfxFrameData bitstream = { 0 };
+
 
 mfxStatus  MfxHwH264Encode::CopyBitstream(VideoCORE           & core,
                                           MfxVideoParam const & video,
@@ -5600,6 +5600,7 @@ mfxStatus  MfxHwH264Encode::CopyBitstream(VideoCORE           & core,
                                           mfxU8 *             bsData,
                                           mfxU32              bsSizeAvail)
 {
+    mfxFrameData bitstream = { 0 };
 
     FrameLocker lock(&core, bitstream, task.m_midBit[fieldId]);
     MFX_CHECK(video.Protected == 0 || task.m_notProtected, MFX_ERR_UNDEFINED_BEHAVIOR);
