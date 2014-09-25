@@ -637,6 +637,7 @@ namespace MfxHwVideoProcessing
         void SetStreamSourceRect(UINT StreamIndex, BOOL Enable, RECT* pRect);
         void SetStreamDestRect(UINT StreamIndex, BOOL Enable, RECT* pRect);
         void SetStreamAlpha(UINT StreamIndex, BOOL Enable, FLOAT Alpha);
+        void SetStreamLumaKey(UINT StreamIndex, BOOL Enable, FLOAT Lower, FLOAT Upper);
         void SetStreamPalette(UINT StreamIndex, UINT Count, UINT* pEntries);
         void SetStreamPixelAspectRatio(UINT StreamIndex, BOOL Enable, DXGI_RATIONAL *pSourceAspectRatio, DXGI_RATIONAL *pDestinationAspectRatio);
         void SetStreamAutoProcessingMode(UINT StreamIndex, BOOL Enable);
@@ -656,6 +657,7 @@ namespace MfxHwVideoProcessing
         void GetStreamSourceRect(UINT StreamIndex, BOOL* pEnabled, RECT* pRect);
         void GetStreamDestRect(UINT StreamIndex, BOOL* pEnabled, RECT* pRect);
         void GetStreamAlpha(UINT StreamIndex, BOOL* pEnabled, FLOAT* pAlpha);
+        void GetStreamLumaKey(UINT StreamIndex, BOOL* Enable, FLOAT* Lower, FLOAT* Upper);
         void GetStreamPalette(UINT StreamIndex, UINT Count, UINT* pEntries);
         void GetStreamPixelAspectRatio(UINT StreamIndex, BOOL* pEnabled, DXGI_RATIONAL* pSourceAspectRatio, DXGI_RATIONAL* pDestinationAspectRatio);
         void GetStreamAutoProcessingMode(UINT StreamIndex, BOOL* pEnabled);
@@ -671,7 +673,8 @@ namespace MfxHwVideoProcessing
 
         mfxStatus ExecuteBlt(
             ID3D11Texture2D *pOutputSurface, 
-            mfxU32 outIndex, 
+            mfxU32 outIndex,
+            UINT StreamCount,
             D3D11_VIDEO_PROCESSOR_STREAM *pStreams,
             mfxU32 statusReportID);
 

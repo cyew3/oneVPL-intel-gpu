@@ -238,10 +238,10 @@ D3D11VideoProcessor::~D3D11VideoProcessor(void)
 
 
 mfxStatus D3D11VideoProcessor::Init(
-                                    ID3D11Device *pDevice, 
-                                    ID3D11VideoDevice *pVideoDevice, 
-                                    ID3D11DeviceContext *pDeviceContext, 
-                                    ID3D11VideoContext *pVideoContext, 
+                                    ID3D11Device *pDevice,
+                                    ID3D11VideoDevice *pVideoDevice,
+                                    ID3D11DeviceContext *pDeviceContext,
+                                    ID3D11VideoContext *pVideoContext,
                                     mfxVideoParam* par)
 {
 
@@ -280,7 +280,7 @@ mfxStatus D3D11VideoProcessor::Init(
 
     // create video processor enumerator
     hRes = m_pVideoDevice->CreateVideoProcessorEnumerator(
-        &m_videoProcessorDescr, 
+        &m_videoProcessorDescr,
         &m_pVideoProcessorEnum);
     CHECK_HRES(hRes);
 
@@ -288,8 +288,8 @@ mfxStatus D3D11VideoProcessor::Init(
 
     // create video processor device
     hRes = m_pVideoDevice->CreateVideoProcessor(
-        m_pVideoProcessorEnum, 
-        0, 
+        m_pVideoProcessorEnum,
+        0,
         &m_pVideoProcessor);
     CHECK_HRES(hRes);
 
@@ -307,14 +307,14 @@ mfxStatus D3D11VideoProcessor::Init(
                         InputWidth: %d InputHeight: %d \n\
                         OutputFrameRate: %d %d \n\
                         OutputWidth: %d OutputHeight: %d \n\
-                        Usage: %d\n", 
-                        descr.InputFrameFormat, 
-                        descr.InputFrameRate.Numerator, 
-                        descr.InputFrameRate.Denominator, 
-                        descr.InputWidth, 
-                        descr.InputHeight, 
-                        descr.OutputFrameRate.Numerator, 
-                        descr.OutputFrameRate.Denominator, 
+                        Usage: %d\n",
+                        descr.InputFrameFormat,
+                        descr.InputFrameRate.Numerator,
+                        descr.InputFrameRate.Denominator,
+                        descr.InputWidth,
+                        descr.InputHeight,
+                        descr.OutputFrameRate.Numerator,
+                        descr.OutputFrameRate.Denominator,
                         descr.OutputWidth,
                         descr.OutputHeight,
                         descr.Usage);
@@ -346,11 +346,11 @@ mfxStatus D3D11VideoProcessor::Init(
                         FutureFrames: %d\n\
                         ProcessorCaps: %d \n\
                         ITelecineCaps: %d \n\
-                        CustomRateCount: %d \n", 
-                        rateConvCaps.PastFrames, 
-                        rateConvCaps.FutureFrames, 
+                        CustomRateCount: %d \n",
+                        rateConvCaps.PastFrames,
+                        rateConvCaps.FutureFrames,
                         rateConvCaps.ProcessorCaps,
-                        rateConvCaps.ITelecineCaps, 
+                        rateConvCaps.ITelecineCaps,
                         rateConvCaps.CustomRateCount);
 
         OutputDebugStringA(cStr);
@@ -378,8 +378,8 @@ mfxStatus D3D11VideoProcessor::ReconfigDevice(mfxU32 indx)
     SAFE_RELEASE(m_pVideoProcessor);
 
     HRESULT hRes = m_pVideoDevice->CreateVideoProcessor(
-        m_pVideoProcessorEnum, 
-        indx, 
+        m_pVideoProcessorEnum,
+        indx,
         &m_pVideoProcessor);
     CHECK_HRES(hRes);
 
@@ -403,8 +403,8 @@ mfxStatus D3D11VideoProcessor::QueryVPE_AndExtCaps(void)
     guidEnum.pGuidArray = NULL;
 
     hRes = GetOutputExtension(
-        &VPE_GUID, 
-        sizeof(VPE_GUID_ENUM), 
+        &VPE_GUID,
+        sizeof(VPE_GUID_ENUM),
         &guidEnum);
     CHECK_HRES(hRes);
 
@@ -418,8 +418,8 @@ mfxStatus D3D11VideoProcessor::QueryVPE_AndExtCaps(void)
     }
 
     hRes = GetOutputExtension(
-        &VPE_GUID, 
-        sizeof(VPE_GUID_ENUM), 
+        &VPE_GUID,
+        sizeof(VPE_GUID_ENUM),
         &guidEnum);
     CHECK_HRES(hRes);
 
@@ -489,12 +489,12 @@ mfxStatus D3D11VideoProcessor::QueryVPE_AndExtCaps(void)
     // 15.36 shouldn't report v1 guid and switches to v2 guid
     if(isVer1Enable)
     {
-        m_iface.guid    = guidEnum.pGuidArray[idxVer1].Guid;       
+        m_iface.guid    = guidEnum.pGuidArray[idxVer1].Guid;
         m_iface.version = guidEnum.pGuidArray[idxVer1].pVersion[0];
     }
     else if(isVer2Enable)
     {
-        m_iface.guid    = guidEnum.pGuidArray[idxVer2].Guid;       
+        m_iface.guid    = guidEnum.pGuidArray[idxVer2].Guid;
         m_iface.version = guidEnum.pGuidArray[idxVer2].pVersion[0];
     }
     else
@@ -502,7 +502,7 @@ mfxStatus D3D11VideoProcessor::QueryVPE_AndExtCaps(void)
         m_iface.guid    = guidEnum.pGuidArray[0].Guid;       // GUID {4E61148B-46D7-4179-81AA-1163EE8EA1E9}
         m_iface.version = guidEnum.pGuidArray[0].pVersion[0];// 0x0000
     }
-    
+
 
     //-----------------------------------------------------
 
@@ -517,8 +517,8 @@ mfxStatus D3D11VideoProcessor::QueryVPE_AndExtCaps(void)
         preprocMode.pPreprocQueryCaps = &m_vpreCaps;
 
         hRes = GetOutputExtension(
-            &(m_iface.guid), 
-            sizeof(PREPROC_MODE), 
+            &(m_iface.guid),
+            sizeof(PREPROC_MODE),
             &preprocMode);
         CHECK_HRES(hRes);
 
@@ -544,8 +544,8 @@ mfxStatus D3D11VideoProcessor::QueryVPE_AndExtCaps(void)
         iFunc.pVersion = &version;
 
         hRes = SetOutputExtension(
-            &(m_iface.guid), 
-            sizeof(VPE_FUNCTION), 
+            &(m_iface.guid),
+            sizeof(VPE_FUNCTION),
             &iFunc);
         CHECK_HRES(hRes);
 
@@ -555,8 +555,8 @@ mfxStatus D3D11VideoProcessor::QueryVPE_AndExtCaps(void)
         iFunc.pSetStatusParam = &statusParam;
 
         hRes = SetOutputExtension(
-            &(m_iface.guid), 
-            sizeof(VPE_FUNCTION), 
+            &(m_iface.guid),
+            sizeof(VPE_FUNCTION),
             &iFunc);
         CHECK_HRES(hRes);
 
@@ -566,8 +566,8 @@ mfxStatus D3D11VideoProcessor::QueryVPE_AndExtCaps(void)
         iFunc.pModeParam = &modeParam;
 
         hRes = SetOutputExtension(
-            &(m_iface.guid), 
-            sizeof(VPE_FUNCTION), 
+            &(m_iface.guid),
+            sizeof(VPE_FUNCTION),
             &iFunc);
         CHECK_HRES(hRes);
 
@@ -577,8 +577,8 @@ mfxStatus D3D11VideoProcessor::QueryVPE_AndExtCaps(void)
         iFunc.pVprepCaps = &vpeCaps;
 
         hRes = GetOutputExtension(
-            &(m_iface.guid), 
-            sizeof(VPE_FUNCTION), 
+            &(m_iface.guid),
+            sizeof(VPE_FUNCTION),
             &iFunc);
         CHECK_HRES(hRes);
         // copy to old structure
@@ -656,8 +656,8 @@ mfxStatus D3D11VideoProcessor::QueryVarianceCaps(PREPROC_QUERY_VARIANCE_CAPS& va
         preprocMode.pVarianceCaps      = &varianceCaps;
 
         hRes = GetOutputExtension(
-            &(m_iface.guid), 
-            sizeof(PREPROC_MODE), 
+            &(m_iface.guid),
+            sizeof(PREPROC_MODE),
             &preprocMode);
     }
     else //if( VPE_GUID_INTERFACE_V2  == m_iface.guid )
@@ -672,8 +672,8 @@ mfxStatus D3D11VideoProcessor::QueryVarianceCaps(PREPROC_QUERY_VARIANCE_CAPS& va
         iFunc.pVarianceCaps = &vpeVarianceCaps;
 
         hRes = GetOutputExtension(
-            &(m_iface.guid), 
-            sizeof(VPE_FUNCTION), 
+            &(m_iface.guid),
+            sizeof(VPE_FUNCTION),
             &iFunc);
 
         // copy to old structure
@@ -704,9 +704,9 @@ mfxStatus D3D11VideoProcessor::QueryVideoProcessorCaps(void)
         sprintf_s(cStr, "D3D11_VIDEO_PROCESSOR_DEVICE_CAPS:\n");
         OutputDebugStringA(cStr);
 
-        sprintf_s(cStr, "\tRateConversionCapsCount: %d\n\tMaxInputStreams: %d\n\tMaxStreamStates: %d\n", 
-            videoProcessorCaps.RateConversionCapsCount, 
-            videoProcessorCaps.MaxInputStreams, 
+        sprintf_s(cStr, "\tRateConversionCapsCount: %d\n\tMaxInputStreams: %d\n\tMaxStreamStates: %d\n",
+            videoProcessorCaps.RateConversionCapsCount,
+            videoProcessorCaps.MaxInputStreams,
             videoProcessorCaps.MaxStreamStates);
 
         OutputDebugStringA(cStr);
@@ -811,13 +811,13 @@ mfxStatus D3D11VideoProcessor::QueryVideoProcessorCaps(void)
         sprintf_s(cStr, "D3D11_VIDEO_PROCESSOR_RATE_CONVERSION_CAPS:\n");
         OutputDebugStringA(cStr);
 
-        sprintf_s(cStr, "\tCustomRateCount: %d\n\tFutureFrames: %d\n\tPastFrames: %d\n", 
-            videoProcessorRateConvCaps.CustomRateCount, 
-            videoProcessorRateConvCaps.FutureFrames, 
+        sprintf_s(cStr, "\tCustomRateCount: %d\n\tFutureFrames: %d\n\tPastFrames: %d\n",
+            videoProcessorRateConvCaps.CustomRateCount,
+            videoProcessorRateConvCaps.FutureFrames,
             videoProcessorRateConvCaps.PastFrames);
 
         OutputDebugStringA(cStr);
-       
+
 #endif
 
 
@@ -844,8 +844,8 @@ mfxStatus D3D11VideoProcessor::QueryVideoProcessorCaps(void)
 
     UINT flag;
     DXGI_FORMAT queryFormats[] = {
-        DXGI_FORMAT_NV12, 
-        DXGI_FORMAT_YUY2, 
+        DXGI_FORMAT_NV12,
+        DXGI_FORMAT_YUY2,
         DXGI_FORMAT_420_OPAQUE,
         DXGI_FORMAT_B8G8R8A8_UNORM};
 
@@ -1001,13 +1001,13 @@ HRESULT D3D11VideoProcessor::SetOutputExtension(const GUID* pExtensionGuid, UINT
 //        printf("VarianceBufferSize  = %p\n", pParams->VarianceBufferSize) ;fflush(stderr);
 //    }
 //
-//   
+//
 //#endif
 
     hRes = m_pVideoContext->VideoProcessorSetOutputExtension(
-        m_pVideoProcessor, 
-        pExtensionGuid, 
-        DataSize, 
+        m_pVideoProcessor,
+        pExtensionGuid,
+        DataSize,
         pData);
 
 #ifdef DEBUG_DETAIL_INFO
@@ -1059,6 +1059,13 @@ void D3D11VideoProcessor::SetStreamAlpha(UINT StreamIndex, BOOL Enable, FLOAT Al
     m_pVideoContext->VideoProcessorSetStreamAlpha(m_pVideoProcessor, StreamIndex, Enable, Alpha);
 
 } // void D3D11VideoProcessor::SetStreamAlpha(UINT StreamIndex, BOOL Enable, FLOAT Alpha)
+
+void D3D11VideoProcessor::SetStreamLumaKey(UINT StreamIndex, BOOL Enable, FLOAT Lower, FLOAT Upper)
+{
+
+    m_pVideoContext->VideoProcessorSetStreamLumaKey(m_pVideoProcessor, StreamIndex, Enable, Lower, Upper);
+
+} // void D3D11VideoProcessor::SetStreamLumaKey(UINT StreamIndex, BOOL Enable, FLOAT Lower, FLOAT Upper)
 
 void D3D11VideoProcessor::SetStreamPalette(UINT StreamIndex, UINT Count, UINT* pEntries)
 {
@@ -1141,6 +1148,13 @@ void D3D11VideoProcessor::GetStreamAlpha(UINT StreamIndex, BOOL* pEnabled, FLOAT
 
 } // void D3D11VideoProcessor::GetStreamAlpha(UINT StreamIndex, BOOL* pEnabled, FLOAT* pAlpha)
 
+void D3D11VideoProcessor::GetStreamLumaKey(UINT StreamIndex, BOOL* Enable, FLOAT* Lower, FLOAT* Upper)
+{
+
+    m_pVideoContext->VideoProcessorGetStreamLumaKey(m_pVideoProcessor, StreamIndex, Enable, Lower, Upper);
+
+} // void D3D11VideoProcessor::GetStreamLumaKey(UINT StreamIndex, BOOL* Enable, FLOAT* Lower, FLOAT* Upper)
+
 void D3D11VideoProcessor::GetStreamPalette(UINT StreamIndex, UINT Count, UINT* pEntries)
 {
 
@@ -1181,8 +1195,8 @@ HRESULT D3D11VideoProcessor::GetStreamExtension(UINT StreamIndex, const GUID* pE
 } // HRESULT D3D11VideoProcessor::GetStreamExtension(UINT StreamIndex, const GUID* pExtensionGuid, UINT DataSize, void* pData)
 
 HRESULT D3D11VideoProcessor::GetOutputExtension(
-    const GUID* pExtensionGuid, 
-    UINT DataSize, 
+    const GUID* pExtensionGuid,
+    UINT DataSize,
     void* pData)
 {
 
@@ -1208,13 +1222,13 @@ HRESULT D3D11VideoProcessor::GetOutputExtension(
 //        printf("VarianceBufferSize  = %i\n", pParams->VarianceBufferSize) ;fflush(stderr);
 //    }
 //
-//   
+//
 //#endif
 
     hRes = m_pVideoContext->VideoProcessorGetOutputExtension(
-        m_pVideoProcessor, 
-        pExtensionGuid, 
-        DataSize, 
+        m_pVideoProcessor,
+        pExtensionGuid,
+        DataSize,
         pData);
 
 #ifdef DEBUG_DETAIL_INFO
@@ -1267,8 +1281,8 @@ mfxStatus D3D11VideoProcessor::QueryTaskStatus(mfxU32 idx)
         queryStatusParams.pStatusBuffer[i].Status = VPREP_GPU_FAILED;
     }
     hRes = GetOutputExtension(
-        &(m_iface.guid), 
-        sizeof(PREPROC_MODE), 
+        &(m_iface.guid),
+        sizeof(PREPROC_MODE),
             &preprocMode);
         CHECK_HRES(hRes);
 
@@ -1298,8 +1312,8 @@ mfxStatus D3D11VideoProcessor::QueryTaskStatus(mfxU32 idx)
         iFunc.pGetStatusParams = &queryParam;
 
         hRes = GetOutputExtension(
-            &(m_iface.guid), 
-            sizeof(VPE_FUNCTION), 
+            &(m_iface.guid),
+            sizeof(VPE_FUNCTION),
             &iFunc);
         CHECK_HRES(hRes);
 
@@ -1339,7 +1353,7 @@ mfxStatus D3D11VideoProcessor::QueryTaskStatus(mfxU32 idx)
 
 
 mfxStatus D3D11VideoProcessor::QueryVariance(
-    mfxU32 frameIndex, 
+    mfxU32 frameIndex,
     std::vector<UINT> &variance)
 {
     variance.resize(m_varianceCaps.VarianceCount);
@@ -1355,7 +1369,7 @@ mfxStatus D3D11VideoProcessor::QueryVariance(
         queryVarianceParam.FrameNumber = frameIndex;// see D3D11VideoProcessor::Execute()
         queryVarianceParam.pVariances  = &variance[0];
         queryVarianceParam.VarianceBufferSize = m_varianceCaps.VarianceCount * m_varianceCaps.VarianceSize; //variance.size();
- 
+
         PREPROC_MODE preprocMode;
         memset(&preprocMode, 0, sizeof(PREPROC_MODE));
 
@@ -1364,10 +1378,10 @@ mfxStatus D3D11VideoProcessor::QueryVariance(
         preprocMode.pVarianceParams = &queryVarianceParam;
 
         HRESULT hRes = GetOutputExtension(
-            &(m_iface.guid), 
-            sizeof(PREPROC_MODE), 
+            &(m_iface.guid),
+            sizeof(PREPROC_MODE),
             &preprocMode);
-        CHECK_HRES(hRes);    
+        CHECK_HRES(hRes);
     }
     else
     {
@@ -1388,8 +1402,8 @@ mfxStatus D3D11VideoProcessor::QueryVariance(
         UINT streamIndx = 0;
         HRESULT hRes = GetStreamExtension(
             streamIndx,
-            &(m_iface.guid), 
-            sizeof(VPE_FUNCTION), 
+            &(m_iface.guid),
+            sizeof(VPE_FUNCTION),
             &iFunc);
         CHECK_HRES(hRes);
 
@@ -1411,7 +1425,7 @@ mfxStatus D3D11VideoProcessor::QueryVariance(
         }
     }
     //-----------------------------------------------------
-  
+
     return MFX_ERR_NONE;
 
 } // mfxStatus D3D11VideoProcessor::QueryVariance(...)
@@ -1432,7 +1446,7 @@ mfxStatus D3D11VideoProcessor::Execute(mfxExecuteParams *pParams)
     pRect.bottom = outInfo->Height;
     pRect.right  = outInfo->Width;
     SetOutputTargetRect(TRUE, &pRect);
-    
+
     // [2] destination cropping
     pRect.top  = outInfo->CropY;
     pRect.left = outInfo->CropX;
@@ -1446,27 +1460,27 @@ mfxStatus D3D11VideoProcessor::Execute(mfxExecuteParams *pParams)
     if(pParams->bEnableProcAmp)
     {
         SetStreamFilter(
-            0, 
-            D3D11_VIDEO_PROCESSOR_FILTER_BRIGHTNESS, 
-            TRUE, 
+            0,
+            D3D11_VIDEO_PROCESSOR_FILTER_BRIGHTNESS,
+            TRUE,
             (int)(pParams->Brightness * m_multiplier.brightness));
 
         SetStreamFilter(
-            0, 
-            D3D11_VIDEO_PROCESSOR_FILTER_HUE, 
-            TRUE, 
+            0,
+            D3D11_VIDEO_PROCESSOR_FILTER_HUE,
+            TRUE,
             (int)(pParams->Hue * m_multiplier.hue));
 
         SetStreamFilter(
-            0, 
-            D3D11_VIDEO_PROCESSOR_FILTER_SATURATION, 
-            TRUE, 
+            0,
+            D3D11_VIDEO_PROCESSOR_FILTER_SATURATION,
+            TRUE,
             (int)(pParams->Saturation*m_multiplier.saturation));
 
         SetStreamFilter(
-            0, 
-            D3D11_VIDEO_PROCESSOR_FILTER_CONTRAST, 
-            TRUE, 
+            0,
+            D3D11_VIDEO_PROCESSOR_FILTER_CONTRAST,
+            TRUE,
             (int)(pParams->Contrast*m_multiplier.contrast));
     }
 
@@ -1546,7 +1560,7 @@ mfxStatus D3D11VideoProcessor::Execute(mfxExecuteParams *pParams)
 
         UINT streamIndex = 0;
         hRes = SetStreamExtension(
-            streamIndex, 
+            streamIndex,
             &(m_iface.guid),
             sizeof(VPE_FUNCTION),
             &iFunc);
@@ -1567,7 +1581,7 @@ mfxStatus D3D11VideoProcessor::Execute(mfxExecuteParams *pParams)
         iFunc.pInterlacePram = &interlaceParam;
 
         hRes = SetStreamExtension(
-            streamIndex, 
+            streamIndex,
             &(m_iface.guid),
             sizeof(VPE_FUNCTION),
             &iFunc);
@@ -1586,7 +1600,7 @@ mfxStatus D3D11VideoProcessor::Execute(mfxExecuteParams *pParams)
         iFunc.pSetVarianceParam = &varianceSetParam;
 
         hRes = SetStreamExtension(
-            streamIndex, 
+            streamIndex,
             &(m_iface.guid),
             sizeof(VPE_FUNCTION),
             &iFunc);
@@ -1594,79 +1608,110 @@ mfxStatus D3D11VideoProcessor::Execute(mfxExecuteParams *pParams)
 
     }
 
-    // [9] surface registration 
-    D3D11_VIDEO_PROCESSOR_STREAM videoProcessorStream;
-    memset(&videoProcessorStream, 0, sizeof(D3D11_VIDEO_PROCESSOR_STREAM));
+    // [9] surface registration
+    D3D11_VIDEO_PROCESSOR_STREAM *videoProcessorStreams = new D3D11_VIDEO_PROCESSOR_STREAM[pParams->refCount];
+    MFX_CHECK_NULL_PTR1(videoProcessorStreams);
 
-    videoProcessorStream.Enable = TRUE;
-    videoProcessorStream.OutputIndex = 0;//PtrToUlong(pParams->targetSurface.hdl.second);
-    videoProcessorStream.InputFrameOrField = pParams->statusReportID;
+    memset(videoProcessorStreams, 0, sizeof(D3D11_VIDEO_PROCESSOR_STREAM) * pParams->refCount);
+
+    int refIdx = 0;
+
+    for (refIdx = 0; refIdx < pParams->refCount; refIdx++)
+    {
+        videoProcessorStreams[refIdx].Enable = TRUE;
+        videoProcessorStreams[refIdx].OutputIndex = 0;//PtrToUlong(pParams->targetSurface.hdl.second);
+        videoProcessorStreams[refIdx].InputFrameOrField = pParams->statusReportID;
+    }
 
     // [10] advanced configuration
     // FRC
-    if( pParams->bFRCEnable )
-    {
-        if(false == m_frcState.m_isInited)
-        {
-            m_frcState.m_inputFramesOrFieldsPerCycle = pParams->customRateData.inputFramesOrFieldPerCycle;
-            m_frcState.m_outputIndexCountPerCycle    = pParams->customRateData.outputIndexCountPerCycle;
-            m_frcState.m_isInited = true;
-
-            DXGI_RATIONAL customRational = {
-            pParams->customRateData.customRate.FrameRateExtN, 
-            pParams->customRateData.customRate.FrameRateExtD};            
-
-            SetStreamOutputRate(0, D3D11_VIDEO_PROCESSOR_OUTPUT_RATE_CUSTOM, false, &customRational);
-        }
-
-        videoProcessorStream.InputFrameOrField  = m_frcState.m_inputIndx;
-        videoProcessorStream.OutputIndex        = m_frcState.m_outputIndx;
-
-        // update
-        m_frcState.m_outputIndx++;
-        if(m_frcState.m_outputIndexCountPerCycle == m_frcState.m_outputIndx)
-        {
-            m_frcState.m_outputIndx = 0;
-            m_frcState.m_inputIndx += m_frcState.m_inputFramesOrFieldsPerCycle;
-        }
-    }
-    // mode 30i->60p: if input startPts != targetPts it mean second output fom DI required
-    else if(pParams->iDeinterlacingAlgorithm)
-    {
-        if(pParams->pRefSurfaces[pParams->bkwdRefCount].startTimeStamp != pParams->targetTimeStamp)
-        {
-            videoProcessorStream.OutputIndex  = 1;
-        }
-    }
-
-    // [11] reference samples     
-    m_pInputView.resize(pParams->refCount);
-    int refIdx = 0;
     for (refIdx = 0; refIdx < pParams->refCount; refIdx++)
     {
-        mfxU32 fourCC = 0;
+        if( pParams->bFRCEnable )
+        {
+            if(false == m_frcState.m_isInited)
+            {
+                m_frcState.m_inputFramesOrFieldsPerCycle = pParams->customRateData.inputFramesOrFieldPerCycle;
+                m_frcState.m_outputIndexCountPerCycle    = pParams->customRateData.outputIndexCountPerCycle;
+                m_frcState.m_isInited = true;
 
-        SetStreamFrameFormat(0, D3D11PictureStructureMapping(pParams->pRefSurfaces[refIdx].frameInfo.PicStruct));
+                DXGI_RATIONAL customRational = {
+                pParams->customRateData.customRate.FrameRateExtN,
+                pParams->customRateData.customRate.FrameRateExtD};
+
+                SetStreamOutputRate(refIdx, D3D11_VIDEO_PROCESSOR_OUTPUT_RATE_CUSTOM, false, &customRational);
+            }
+
+            videoProcessorStreams[refIdx].InputFrameOrField  = m_frcState.m_inputIndx;
+            videoProcessorStreams[refIdx].OutputIndex        = m_frcState.m_outputIndx;
+
+            // update
+            m_frcState.m_outputIndx++;
+            if(m_frcState.m_outputIndexCountPerCycle == m_frcState.m_outputIndx)
+            {
+                m_frcState.m_outputIndx = 0;
+                m_frcState.m_inputIndx += m_frcState.m_inputFramesOrFieldsPerCycle;
+            }
+        }
+        // mode 30i->60p: if input startPts != targetPts it mean second output fom DI required
+        else if(pParams->iDeinterlacingAlgorithm)
+        {
+            if(pParams->pRefSurfaces[pParams->bkwdRefCount].startTimeStamp != pParams->targetTimeStamp)
+            {
+                videoProcessorStreams[refIdx].OutputIndex  = 1;
+            }
+        }
+    }
+
+    // [11] reference samples
+    m_pInputView.resize(pParams->refCount);
+
+    for (refIdx = 0; refIdx < pParams->refCount; refIdx++)
+    {
+        SetStreamFrameFormat(refIdx, D3D11PictureStructureMapping(pParams->pRefSurfaces[refIdx].frameInfo.PicStruct));
 
         //SetOutputAlphaFillMode(D3D11_VIDEO_PROCESSOR_ALPHA_FILL_MODE_OPAQUE, 0);
 
-        //void SetStreamColorSpace(UINT StreamIndex, D3D11_VIDEO_PROCESSOR_COLOR_SPACE *pColorSpace);        
-
-        //SetStreamAlpha(0, TRUE, 1.0f);
+        //void SetStreamColorSpace(UINT StreamIndex, D3D11_VIDEO_PROCESSOR_COLOR_SPACE *pColorSpace);
 
         mfxDrvSurface* pInputSample = &(pParams->pRefSurfaces[refIdx]);
-        
 
         // source cropping
         mfxFrameInfo *inInfo = &(pInputSample->frameInfo);
         pRect.top    = inInfo->CropY;
         pRect.left   = inInfo->CropX;
         pRect.bottom = inInfo->CropH;
-        pRect.right  = inInfo->CropW;         
+        pRect.right  = inInfo->CropW;
         pRect.bottom += inInfo->CropY;
         pRect.right  += inInfo->CropX;
 
-        SetStreamSourceRect(0, TRUE, &pRect);
+        SetStreamSourceRect(refIdx, TRUE, &pRect);
+
+        // destination cropping
+        if ((pParams->bComposite) && (0 != refIdx))
+        {
+            // for sub-streams use DstRect info from ext buffer set by app
+            MFX_CHECK(refIdx < (int) pParams->dstRects.size(), MFX_ERR_UNKNOWN);
+            const DstRect& rec = pParams->dstRects[refIdx];
+            pRect.top = rec.DstY;
+            pRect.left = rec.DstX;
+            pRect.bottom = rec.DstY + rec.DstH;
+            pRect.right  = rec.DstX + rec.DstW;
+
+            SetStreamAlpha(refIdx, rec.GlobalAlphaEnable, rec.GlobalAlpha / 255.0f);
+            SetStreamLumaKey(refIdx, rec.LumaKeyEnable, rec.LumaKeyMin / 255.0f, rec.LumaKeyMax / 255.0f);
+        }
+        else
+        {
+            pRect.top = outInfo->CropY;
+            pRect.left = outInfo->CropX;
+            pRect.bottom = outInfo->CropH + outInfo->CropY;
+            pRect.right  = outInfo->CropW + outInfo->CropX;
+        }
+
+        SetStreamDestRect(refIdx, TRUE, &pRect);
+
+        mfxU32 fourCC = 0;
 
         if( inInfo->FourCC == MFX_FOURCC_IMC3 ||
             inInfo->FourCC == MFX_FOURCC_YUV400 ||
@@ -1699,7 +1744,7 @@ mfxStatus D3D11VideoProcessor::Execute(mfxExecuteParams *pParams)
             /* [6.1.7] Set YUV Range Param
             // Full range is implemented only in 15.36 driver in DX11 and has a brightness problem
             // Therefore don't set flag
-            
+
             VPE_VPREP_YUV_RANGE_PARAM yuvRangeParam;
             yuvRangeParam.bFullRangeEnabled = 1;
             if(VPE_GUID_INTERFACE_V2 == m_iface.guid){
@@ -1710,15 +1755,15 @@ mfxStatus D3D11VideoProcessor::Execute(mfxExecuteParams *pParams)
                 UINT streamIndex = 0;
 
                 hRes = SetStreamExtension(
-                    streamIndex, 
+                    streamIndex,
                     &(m_iface.guid),
                     sizeof(VPE_FUNCTION),
                     &iFunc);
                 CHECK_HRES(hRes);
 
                 hRes = SetOutputExtension(
-                    &(m_iface.guid), 
-                    sizeof(VPE_FUNCTION), 
+                    &(m_iface.guid),
+                    sizeof(VPE_FUNCTION),
                     &iFunc);
                 CHECK_HRES(hRes);
             }
@@ -1735,9 +1780,9 @@ mfxStatus D3D11VideoProcessor::Execute(mfxExecuteParams *pParams)
         ID3D11VideoProcessorInputView** ppInputView = &(m_pInputView[refIdx]);
 
         hRes = m_pVideoDevice->CreateVideoProcessorInputView(
-            pInputResource, 
-            m_pVideoProcessorEnum, 
-            &inputDesc, 
+            pInputResource,
+            m_pVideoProcessorEnum,
+            &inputDesc,
             ppInputView);
         CHECK_HRES(hRes);
 
@@ -1757,25 +1802,39 @@ mfxStatus D3D11VideoProcessor::Execute(mfxExecuteParams *pParams)
         }
     }
 
-    videoProcessorStream.ppPastSurfaces = (pParams->bkwdRefCount > 0) ? &m_pInputView[0] : NULL;
-    videoProcessorStream.PastFrames     = pParams->bkwdRefCount;
-
-    // aya: wa for DI
-    /*if(pParams->iDeinterlacingAlgorithm)
+    if (pParams->bComposite)
     {
-        videoProcessorStream.PastFrames = 0;
-    }*/    
+        for (refIdx = 0; refIdx < pParams->refCount; refIdx++)
+        {
+            videoProcessorStreams[refIdx].ppPastSurfaces = NULL;
+            videoProcessorStreams[refIdx].PastFrames     = NULL;
 
-    videoProcessorStream.pInputSurface  = m_pInputView[pParams->bkwdRefCount];
+            videoProcessorStreams[refIdx].pInputSurface  = m_pInputView[refIdx];
 
-    videoProcessorStream.ppFutureSurfaces = (pParams->fwdRefCount > 0) ? &(m_pInputView[pParams->bkwdRefCount + 1]) : NULL;
-    videoProcessorStream.FutureFrames     = pParams->fwdRefCount;
+            videoProcessorStreams[refIdx].ppFutureSurfaces = NULL;
+            videoProcessorStreams[refIdx].FutureFrames     = NULL;
+        }
+    }
+    else
+    {
+        videoProcessorStreams[0].ppPastSurfaces = (pParams->bkwdRefCount > 0) ? &m_pInputView[0] : NULL;
+        videoProcessorStreams[0].PastFrames     = pParams->bkwdRefCount;
+
+        videoProcessorStreams[0].pInputSurface  = m_pInputView[pParams->bkwdRefCount];
+
+        videoProcessorStreams[0].ppFutureSurfaces = (pParams->fwdRefCount > 0) ? &(m_pInputView[pParams->bkwdRefCount + 1]) : NULL;
+        videoProcessorStreams[0].FutureFrames     = pParams->fwdRefCount;
+    }
 
     mfxStatus sts = ExecuteBlt(
         (ID3D11Texture2D *)pParams->targetSurface.hdl.first,
         PtrToUlong(pParams->targetSurface.hdl.second),
-        &videoProcessorStream,
+        pParams->refCount,
+        videoProcessorStreams,
         pParams->statusReportID);
+
+    delete videoProcessorStreams;
+    videoProcessorStreams = NULL;
 
     for( refIdx = 0; refIdx < pParams->refCount; refIdx++ )
     {
@@ -1787,11 +1846,12 @@ mfxStatus D3D11VideoProcessor::Execute(mfxExecuteParams *pParams)
 
 } // mfxStatus D3D11VideoProcessor::Execute(mfxExecuteParams *pParams)
 
-#define SAFE_DELETE_ARRAY(ptr) if (ptr) delete [] ptr; ptr = NULL; 
+#define SAFE_DELETE_ARRAY(ptr) if (ptr) delete [] ptr; ptr = NULL;
 
 mfxStatus D3D11VideoProcessor::ExecuteBlt(
-    ID3D11Texture2D *pOutputSurface, 
-    mfxU32 outIndex, 
+    ID3D11Texture2D *pOutputSurface,
+    mfxU32 outIndex,
+    UINT StreamCount,
     D3D11_VIDEO_PROCESSOR_STREAM *pStreams,
     mfxU32 statusReportID)
 {
@@ -1814,9 +1874,9 @@ mfxStatus D3D11VideoProcessor::ExecuteBlt(
     }
 
     hRes = m_pVideoDevice->CreateVideoProcessorOutputView(
-        m_pOutputResource, 
-        m_pVideoProcessorEnum, 
-        &outputDesc, 
+        m_pOutputResource,
+        m_pVideoProcessorEnum,
+        &outputDesc,
         &m_pOutputView);
     CHECK_HRES(hRes);
 
@@ -1825,7 +1885,7 @@ mfxStatus D3D11VideoProcessor::ExecuteBlt(
         hRes = VideoProcessorBlt(
             m_pOutputView,
             statusReportID,
-            1, 
+            StreamCount,
             pStreams);
     }
 
@@ -1850,36 +1910,39 @@ HRESULT D3D11VideoProcessor::VideoProcessorBlt(
     printf("pView           = %p\n", pView);fflush(stderr);
     printf("OutputFrame     = %p\n", OutputFrame);fflush(stderr);
     printf("StreamCount     = %p\n", StreamCount);fflush(stderr);
-    printf("pStreams        = %p\n", pStreams);fflush(stderr);
-    printf("  Enable             = %i\n", pStreams->Enable);fflush(stderr);
-    printf("  OutputIndex        = %i\n", pStreams->OutputIndex);fflush(stderr);
-    printf("  InputFrameOrField  = %i\n", pStreams->InputFrameOrField);fflush(stderr);
-    printf("  PastFrames         = %i\n", pStreams->PastFrames);fflush(stderr);    
-    printf("  ppPastSurfaces     = %p\n", pStreams->ppPastSurfaces);fflush(stderr);
-
-    for( int idxPast = 0; idxPast < (int)pStreams->PastFrames; idxPast++ )
+    for (UINT idx = 0; idx < StreamCount; idx++)
     {
-        printf("      ppPastSurfaces[%i]     = %p\n", idxPast, pStreams->ppPastSurfaces[idxPast]);fflush(stderr);
+        printf("  pStreams[%i]    = %p\n", idx, &pStreams[idx]);fflush(stderr);
+        printf("    Enable             = %i\n", pStreams[idx].Enable);fflush(stderr);
+        printf("    OutputIndex        = %i\n", pStreams[idx].OutputIndex);fflush(stderr);
+        printf("    InputFrameOrField  = %i\n", pStreams[idx].InputFrameOrField);fflush(stderr);
+        printf("    PastFrames         = %i\n", pStreams[idx].PastFrames);fflush(stderr);
+        printf("    ppPastSurfaces     = %p\n", pStreams[idx].ppPastSurfaces);fflush(stderr);
+
+        for( int idxPast = 0; idxPast < (int)pStreams->PastFrames; idxPast++ )
+        {
+            printf("        ppPastSurfaces[%i]     = %p\n", idxPast, pStreams[idx].ppPastSurfaces[idxPast]);fflush(stderr);
+        }
+
+        printf("    FutureFrames       = %i\n", pStreams[idx].FutureFrames);fflush(stderr);
+        printf("    ppFutureSurfaces   = %p\n", pStreams[idx].ppFutureSurfaces);fflush(stderr);
+        for( int idxNext = 0; idxNext < (int)pStreams->FutureFrames; idxNext++ )
+        {
+            printf("        ppFutureSurfaces[%i]     = %p\n", idxNext, pStreams[idx].ppFutureSurfaces[idxNext]);fflush(stderr);
+        }
+
+        printf("    pInputSurface      = %p\n", pStreams[idx].pInputSurface);fflush(stderr);
+
+        printf("    ppPastSurfacesRight= %p\n", pStreams[idx].ppPastSurfacesRight);fflush(stderr);
+        printf("    pInputSurfaceRight = %p\n", pStreams[idx].pInputSurfaceRight);fflush(stderr);
+        printf("    ppFutureSurfacesRight   = %p\n", pStreams[idx].ppFutureSurfacesRight);fflush(stderr);
     }
-
-    printf("  FutureFrames       = %i\n", pStreams->FutureFrames);fflush(stderr);
-    printf("  ppFutureSurfaces   = %p\n", pStreams->ppFutureSurfaces);fflush(stderr);
-    for( int idxNext = 0; idxNext < (int)pStreams->FutureFrames; idxNext++ )
-    {
-        printf("      ppFutureSurfaces[%i]     = %p\n", idxNext, pStreams->ppFutureSurfaces[idxNext]);fflush(stderr);
-    }
-
-    printf("  pInputSurface      = %p\n", pStreams->pInputSurface);fflush(stderr);
-
-    printf("  ppPastSurfacesRight= %p\n", pStreams->ppPastSurfacesRight);fflush(stderr);
-    printf("  pInputSurfaceRight = %p\n", pStreams->pInputSurfaceRight);fflush(stderr);
-    printf("  ppFutureSurfacesRight   = %p\n", pStreams->ppFutureSurfacesRight);fflush(stderr);
 #endif
     //-----------------------------------------------------
 
     HRESULT hRes = m_pVideoContext->VideoProcessorBlt(
             m_pVideoProcessor,
-            pView, 
+            pView,
             OutputFrame,
             StreamCount,
             pStreams);
@@ -1889,37 +1952,40 @@ HRESULT D3D11VideoProcessor::VideoProcessorBlt(
 #ifdef DEBUG_DETAIL_INFO
 
     printf("\n sts = %i \n", hRes);fflush(stderr);
-    
+
     printf("\n----------\n");fflush(stderr);
     printf("State AFTER  VideoProcessorBlt()  call\n");fflush(stderr);
     printf("pVideoProcessor = %p\n", m_pVideoProcessor);fflush(stderr);
     printf("pView           = %p\n", pView);fflush(stderr);
     printf("OutputFrame     = %p\n", OutputFrame);fflush(stderr);
     printf("StreamCount     = %p\n", StreamCount);fflush(stderr);
-    printf("pStreams        = %p\n", pStreams);fflush(stderr);
-    printf("  Enable             = %i\n", pStreams->Enable);fflush(stderr);
-    printf("  OutputIndex        = %i\n", pStreams->OutputIndex);fflush(stderr);
-    printf("  InputFrameOrField  = %i\n", pStreams->InputFrameOrField);fflush(stderr);
-    printf("  PastFrames         = %i\n", pStreams->PastFrames);fflush(stderr);    
-    printf("  ppPastSurfaces     = %p\n", pStreams->ppPastSurfaces);fflush(stderr);
-
-    for( int idxPast = 0; idxPast < (int)pStreams->PastFrames; idxPast++ )
+    for (UINT idx = 0; idx < StreamCount; idx++)
     {
-        printf("      ppPastSurfaces[%i]     = %p\n", idxPast, pStreams->ppPastSurfaces[idxPast]);fflush(stderr);
+        printf("  pStreams[%i]    = %p\n", idx, &pStreams[idx]);fflush(stderr);
+        printf("    Enable             = %i\n", pStreams[idx].Enable);fflush(stderr);
+        printf("    OutputIndex        = %i\n", pStreams[idx].OutputIndex);fflush(stderr);
+        printf("    InputFrameOrField  = %i\n", pStreams[idx].InputFrameOrField);fflush(stderr);
+        printf("    PastFrames         = %i\n", pStreams[idx].PastFrames);fflush(stderr);
+        printf("    ppPastSurfaces     = %p\n", pStreams[idx].ppPastSurfaces);fflush(stderr);
+
+        for( int idxPast = 0; idxPast < (int)pStreams->PastFrames; idxPast++ )
+        {
+            printf("        ppPastSurfaces[%i]     = %p\n", idxPast, pStreams[idx].ppPastSurfaces[idxPast]);fflush(stderr);
+        }
+
+        printf("    FutureFrames       = %i\n", pStreams[idx].FutureFrames);fflush(stderr);
+        printf("    ppFutureSurfaces   = %p\n", pStreams[idx].ppFutureSurfaces);fflush(stderr);
+        for( int idxNext = 0; idxNext < (int)pStreams->FutureFrames; idxNext++ )
+        {
+            printf("        ppFutureSurfaces[%i]     = %p\n", idxNext, pStreams[idx].ppFutureSurfaces[idxNext]);fflush(stderr);
+        }
+
+        printf("    pInputSurface      = %p\n", pStreams[idx].pInputSurface);fflush(stderr);
+
+        printf("    ppPastSurfacesRight= %p\n", pStreams[idx].ppPastSurfacesRight);fflush(stderr);
+        printf("    pInputSurfaceRight = %p\n", pStreams[idx].pInputSurfaceRight);fflush(stderr);
+        printf("    ppFutureSurfacesRight   = %p\n", pStreams[idx].ppFutureSurfacesRight);fflush(stderr);
     }
-
-    printf("  FutureFrames       = %i\n", pStreams->FutureFrames);fflush(stderr);
-    printf("  ppFutureSurfaces   = %p\n", pStreams->ppFutureSurfaces);fflush(stderr);
-    for( int idxNext = 0; idxNext < (int)pStreams->FutureFrames; idxNext++ )
-    {
-        printf("      ppFutureSurfaces[%i]     = %p\n", idxNext, pStreams->ppFutureSurfaces[idxNext]);fflush(stderr);
-    }
-
-    printf("  pInputSurface      = %p\n", pStreams->pInputSurface);fflush(stderr);
-
-    printf("  ppPastSurfacesRight= %p\n", pStreams->ppPastSurfacesRight);fflush(stderr);
-    printf("  pInputSurfaceRight = %p\n", pStreams->pInputSurfaceRight);fflush(stderr);
-    printf("  ppFutureSurfacesRight   = %p\n", pStreams->ppFutureSurfacesRight);fflush(stderr);
 #endif
     //-----------------------------------------------------
 
