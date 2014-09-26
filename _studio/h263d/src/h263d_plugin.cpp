@@ -534,3 +534,26 @@ mfxStatus MFX_H263D_Plugin::GetVideoParam(mfxVideoParam *par)
   DBG_LEAVE_STS(MFX_ERR_NONE);
   return MFX_ERR_NONE;
 }
+
+#if defined(_WIN32) || defined(_WIN64)
+BOOL APIENTRY DllMain(HMODULE /*hModule*/,
+                      DWORD  ul_reason_for_call,
+                      LPVOID /*lpReserved*/)
+{
+  // initialize the IPP library
+  switch (ul_reason_for_call)
+  {
+  case DLL_PROCESS_ATTACH:
+    ippInit();
+    break;
+  default:
+    break;
+  }
+  return TRUE;
+}
+#else
+void __attribute__ ((constructor)) dll_init(void)
+{
+  ippInit();
+}
+#endif
