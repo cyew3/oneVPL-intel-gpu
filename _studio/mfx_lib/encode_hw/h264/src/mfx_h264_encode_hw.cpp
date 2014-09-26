@@ -656,6 +656,8 @@ ImplementationAvc::ImplementationAvc(VideoCORE * core)
 , m_maxBsSize(0)
 , m_NumSlices(0)
 , m_isENCPAK(false)
+, m_isWiDi(false)
+, m_resetBRC(false)
 {
 /*
     FEncLog = fopen("EncLog.txt", "wb");
@@ -711,7 +713,10 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
 
     mfxExtAVCEncoderWiDiUsage * isWiDi = GetExtBuffer(*par);
     if (isWiDi)
+    {
         m_ddi->ForceCodingFunction(ENCODE_ENC_PAK | ENCODE_WIDI);
+        m_isWiDi = true;
+    }
 
     sts = m_ddi->CreateAuxilliaryDevice(
         m_core,
@@ -1843,6 +1848,13 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
     {
         DdiTask & newTask = m_incoming.front();
 
+        if (m_isWiDi && m_resetBRC)
+        {
+            newTask.m_type      = ExtendFrameType(MFX_FRAMETYPE_IREFIDR);
+            newTask.m_resetBRC  = true;
+            m_resetBRC          = false;
+        }
+
        if (m_video.mfx.RateControlMethod == MFX_RATECONTROL_LA_EXT)
        {
             const mfxExtLAFrameStatistics *vmeData = GetExtBuffer(newTask.m_ctrl);
@@ -2772,6 +2784,9 @@ mfxStatus ImplementationAvc::UpdateBitstream(
     bool doPatch =
         needIntermediateBitstreamBuffer ||
         IsInplacePatchNeeded(m_video, task, fid);
+
+    if (m_isWiDi && task.m_qpY[fid] > 47)
+        m_resetBRC = true;
 
     if (m_caps.HeaderInsertion == 0 && (m_currentPlatform != MFX_HW_IVB || m_core->GetVAType() != MFX_HW_VAAPI) || m_video.Protected != 0)
         doPatch = needIntermediateBitstreamBuffer = false;
