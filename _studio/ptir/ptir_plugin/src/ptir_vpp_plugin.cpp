@@ -142,10 +142,10 @@ mfxStatus MFX_PTIR_Plugin::VPPFrameSubmitEx(mfxFrameSurface1 *surface_in, mfxFra
         return MFX_ERR_NULL_PTR;
     if(vTasks.size() != 0)
         return MFX_WRN_DEVICE_BUSY;
-    if(UMC::UMC_OK != m_guard.TryLock())
-        return MFX_WRN_DEVICE_BUSY;
     if(!ptir)
         return MFX_ERR_NOT_INITIALIZED;
+    if(UMC::UMC_OK != m_guard.TryLock())
+        return MFX_WRN_DEVICE_BUSY;
 
     mfxStatus mfxSts = MFX_ERR_NONE;
     PTIR_Task *ptir_task = 0;
