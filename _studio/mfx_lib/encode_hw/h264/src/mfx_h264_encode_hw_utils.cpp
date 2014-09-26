@@ -2837,15 +2837,18 @@ void LookAheadBrc2::Close()
 
 void VMEBrc::Init(MfxVideoParam const & video)
 {
-    mfxExtCodingOptionDDI const * extDdi  = GetExtBuffer(video);
+    mfxExtCodingOptionDDI const * extDdi    = GetExtBuffer(video);
+    mfxExtCodingOption3  const *   extOpt3  = GetExtBuffer(video);
+
 
     m_LaScaleFactor = extDdi->LaScaleFactor;
     m_qpUpdateRange = extDdi->QpUpdateRange;
     m_strength      = extDdi->StrengthN;
 
-    mfxF64 fr = mfxF64(video.mfx.FrameInfo.FrameRateExtN) / video.mfx.FrameInfo.FrameRateExtD;
+    m_fr = mfxF64(video.mfx.FrameInfo.FrameRateExtN) / video.mfx.FrameInfo.FrameRateExtD;
+
     m_totNumMb = video.mfx.FrameInfo.Width * video.mfx.FrameInfo.Height / 256;
-    m_initTargetRate = 1000 * video.mfx.TargetKbps / fr / m_totNumMb;
+    m_initTargetRate = 1000 * video.mfx.TargetKbps / m_fr / m_totNumMb;
     m_targetRateMin = m_initTargetRate;
     m_targetRateMax = m_initTargetRate;
     m_laData.reserve(100);
@@ -2857,6 +2860,21 @@ void VMEBrc::Init(MfxVideoParam const & video)
     m_bitsBehind = 0.0;
     m_curQp = -1;
     m_curBaseQp = -1;
+
+    m_AvgBitrate = 0;
+    if (extOpt3->WinBRCSize)
+    {
+        m_AvgBitrate = new AVGBitrate(extOpt3->WinBRCSize, (mfxU32)(1000.0 * extOpt3->WinBRCMaxAvgKbps/m_fr));    
+    }
+}
+void VMEBrc::Close()
+{
+
+    if (m_AvgBitrate)
+    {
+       delete m_AvgBitrate;
+       m_AvgBitrate = 0;    
+    }
 }
 
 mfxStatus VMEBrc::SetFrameVMEData(const mfxExtLAFrameStatistics *pLaOut, mfxU32 width, mfxU32 height)
@@ -2921,6 +2939,15 @@ mfxF64 GetTotalRate(std::vector<VMEBrc::LaFrameData> const & laData, mfxI32 base
         totalRate += laData[i].estRateTotal[CLIPVAL(0, 51, baseQp + laData[i].deltaQp)];
     return totalRate;
 }
+mfxF64 GetTotalRate(std::vector<VMEBrc::LaFrameData> const & laData, mfxI32 baseQp, size_t size, mfxU32 first)
+{
+    mfxF64 totalRate = 0.0;
+    size = (size < laData.size()) ? size : laData.size();
+    for (size_t i = 0 + first; i < size; i++)
+        totalRate += laData[i].estRateTotal[CLIPVAL(0, 51, baseQp + laData[i].deltaQp)];
+    return totalRate;
+}
+
 
 mfxU8 SelectQp(std::vector<LookAheadBrc2::LaFrameData> const & laData, mfxF64 budget, size_t size, mfxU32 async)
 {
@@ -2936,7 +2963,20 @@ mfxU8 SelectQp(std::vector<LookAheadBrc2::LaFrameData> const & laData, mfxF64 bu
     }
     return 51;
 }
-
+mfxU8 SelectQp(std::vector<VMEBrc::LaFrameData> const & laData, mfxF64 budget, size_t size, mfxU32 async)
+{
+    mfxF64 prevTotalRate = GetTotalRate(laData, 0, size, async);
+    //printf("SelectQp: budget = %f, size = %d, async = %d\n", budget, size, async);
+    for (mfxU8 qp = 1; qp < 52; qp++)
+    {
+        mfxF64 totalRate = GetTotalRate(laData, qp, size, async);
+        if (totalRate < budget)
+            return (prevTotalRate + totalRate < 2 * budget) ? qp - 1 : qp;
+        else
+            prevTotalRate = totalRate;
+    }
+    return 51;
+}
 mfxU8 SelectQp(std::vector<VMEBrc::LaFrameData> const & laData, mfxF64 budget)
 {
     mfxF64 prevTotalRate = GetTotalRate(laData, 0);
@@ -3196,13 +3236,27 @@ mfxU32 LookAheadBrc2::Report(mfxU32 /* frameType*/ , mfxU32 dataLength, mfxU32 /
     return 0;
 }
 
-mfxU32 VMEBrc::Report(mfxU32 frameType, mfxU32 dataLength, mfxU32 /*userDataLength*/, mfxU32 /*repack*/, mfxU32 /*picOrder*/, mfxU32 /* maxFrameSize */, mfxU32 /* qp */)
+mfxU32 VMEBrc::Report(mfxU32 frameType, mfxU32 dataLength, mfxU32 /*userDataLength*/, mfxU32 /*repack*/, mfxU32 picOrder, mfxU32 /* maxFrameSize */, mfxU32 qp )
 {
     frameType; // unused
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "LookAheadBrc2::Report");
     mfxF64 realRatePerMb = 8 * dataLength / mfxF64(m_totNumMb);
     static int size = 0;
     static int nframe = 0;
+    
+    if (m_AvgBitrate)
+    {
+        m_AvgBitrate->UpdateSlidingWindow(8 * dataLength, picOrder);
+        if (!m_AvgBitrate->CheckBitrate())
+        {
+            if (qp < 51)
+                return 1; 
+            else
+                m_AvgBitrate->StoreError();                
+        }
+    }
+
+
     size += dataLength;
     nframe++;
 
@@ -3303,6 +3357,24 @@ mfxU8 VMEBrc::GetQp(mfxU32 frameType, mfxU32 /*picStruct*/)
 
     mfxU8 minQp = SelectQp(m_laData, m_targetRateMax * m_laData.size());
     mfxU8 maxQp = SelectQp(m_laData, m_targetRateMin * m_laData.size());
+
+    if (m_AvgBitrate)
+    {
+        size_t framesForCheck = m_AvgBitrate->GetWindowSize() < m_laData.size() ? m_AvgBitrate->GetWindowSize() : m_laData.size();
+        framesForCheck  = (framesForCheck < 8) ? framesForCheck : 8;
+       // printf("..Get QP: QP [%d (%f), %d (%f)]\n", minQp, m_targetRateMin, maxQp, m_targetRateMax);
+        for (mfxU32 i = 1; i < framesForCheck; i ++)
+        {
+           mfxF64 budget = mfxF64(m_AvgBitrate->GetBudget(i))/(mfxF64(m_totNumMb));
+           mfxU8  QP = SelectQp(m_laData, budget, i, 0);
+           //printf("....QP(%d) [%d (%f)]\n",i, QP, budget/i);
+           if (minQp <  QP)
+           {
+               minQp  = QP;
+               maxQp = maxQp > minQp ? maxQp : minQp;           
+           }
+        }
+    }
 
     if (m_curBaseQp < 0)
         m_curBaseQp = minQp; // first frame

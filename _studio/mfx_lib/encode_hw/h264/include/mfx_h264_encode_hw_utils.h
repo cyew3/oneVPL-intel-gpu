@@ -1462,7 +1462,7 @@ namespace MfxHwH264Encode
 
         void Init(MfxVideoParam const & video);
 
-        void Close() {}
+        void Close();
 
         mfxU8 GetQp(mfxU32 frameType, mfxU32 picStruct);
 
@@ -1507,6 +1507,9 @@ namespace MfxHwH264Encode
         mfxI32  m_curBaseQp;
         mfxI32  m_curQp;
         mfxU16  m_qpUpdateRange;
+        mfxF64  m_fr;
+
+        AVGBitrate* m_AvgBitrate;
 
         std::vector<LaFrameData>    m_laData;
         Regression<20>              m_rateCoeffHistory[52];

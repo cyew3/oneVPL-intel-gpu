@@ -3115,7 +3115,7 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
 
      if (extOpt3->WinBRCMaxAvgKbps || extOpt3->WinBRCSize)
      {
-         if (par.mfx.RateControlMethod != MFX_RATECONTROL_LA  && par.mfx.RateControlMethod != MFX_RATECONTROL_LA_HRD)
+         if (par.mfx.RateControlMethod != MFX_RATECONTROL_LA  && par.mfx.RateControlMethod != MFX_RATECONTROL_LA_HRD && par.mfx.RateControlMethod != MFX_RATECONTROL_LA_EXT)
          {
              extOpt3->WinBRCMaxAvgKbps = 0;
              extOpt3->WinBRCSize = 0;
@@ -3825,7 +3825,7 @@ void MfxHwH264Encode::SetDefaults(
                 par.mfx.GopRefDist = par.mfx.GopPicSize;
         }
     }
-    if ((par.mfx.RateControlMethod & ( MFX_RATECONTROL_LA |MFX_RATECONTROL_LA_HRD)) && (extOpt3->WinBRCMaxAvgKbps || extOpt3->WinBRCSize))
+    if ((par.mfx.RateControlMethod & ( MFX_RATECONTROL_LA |MFX_RATECONTROL_LA_HRD|MFX_RATECONTROL_LA_EXT)) && (extOpt3->WinBRCMaxAvgKbps || extOpt3->WinBRCSize))
     {
       if (!extOpt3->WinBRCMaxAvgKbps)
       {
