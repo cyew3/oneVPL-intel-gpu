@@ -929,7 +929,7 @@ void H265CU<PixType>::CheckIntra(Ipp32s absPartIdx, Ipp32s depth)
 template <typename PixType>
 bool H265CU<PixType>::tryIntraRD(Ipp32s absPartIdx, Ipp32s depth, IntraLumaMode *modes)
 {
-    if ( modes[0].satd < 0 ) return true;
+    if ( !m_bIntraCandInBuf ) return true;
     if ( m_cuIntraAngMode > 2 ) return true;
     Ipp32s widthCu = m_par->MaxCUSize >> depth;
     Ipp32s InterHad = 0;
@@ -974,6 +974,45 @@ bool H265CU<PixType>::tryIntraRD(Ipp32s absPartIdx, Ipp32s depth, IntraLumaMode 
     return !skipIntraRD;
 }
 #endif
+#ifdef AMT_ADAPTIVE_INTRA_RD
+template <typename PixType>
+Ipp32s H265CU<PixType>::GetNumIntraRDModes(Ipp32s depth, IntraLumaMode *modes, Ipp32s numModes)
+{
+    Ipp32s numCand = numModes;
+    Ipp32s widthPu = m_par->MaxCUSize >> depth;
+    Ipp32s NumModesForFullRD = numModes;
+    if (widthPu > 8)  {
+        if(m_SCid>=5) NumModesForFullRD = 2;
+    } else if (widthPu == 8)  {
+        if(m_SCid>=5) NumModesForFullRD = 4;
+    } else {
+                      NumModesForFullRD = 6;
+    }
+
+    if(numModes>1 && m_cslice->slice_type != I_SLICE && m_STC<3 )
+    {
+        //Restrict number of candidates for 4x4 and 8x8 blocks
+        if (widthPu==4 || widthPu==8) 
+        {
+            Ipp8s Qp = m_par->m_lcuQps[m_ctbAddr];
+            CostType rdScale=1.0;
+            const Ipp32s T4_1=400, T8_1=960;
+            if(m_SCid>=5) {
+            //Restrict number of candidates based on Rd cost
+            if      ((modes[0].cost+modes[0].cost) < (modes[1].cost*rdScale))                        NumModesForFullRD = 1;
+            else if (numModes>2 && (modes[0].cost+modes[1].cost) < (modes[2].cost*rdScale))          NumModesForFullRD = 2;
+            else if (numModes>3 && (modes[1].cost+modes[2].cost) < (modes[3].cost*rdScale))          NumModesForFullRD = 3;
+            } else {
+            //Restrict number of candidates based on maximal SATD
+            if ((widthPu==4 && m_IntraCandMaxSatd < T4_1) || (widthPu==8 && m_IntraCandMaxSatd < T8_1))    NumModesForFullRD = 1;
+            }
+        }
+        
+        numCand = MIN(numModes, NumModesForFullRD);
+    }
+    return numCand;
+}
+#endif
 
 template <typename PixType>
 void H265CU<PixType>::CheckIntraLuma(Ipp32s absPartIdx, Ipp32s depth)
@@ -998,7 +1037,12 @@ void H265CU<PixType>::CheckIntraLuma(Ipp32s absPartIdx, Ipp32s depth)
     numModes = FilterIntraLumaModesBySatd(absPartIdx, depth, 0, modes, numModes);
     bool tryIntra = true;
 #ifdef AMT_ICRA_OPT
-    if(m_par->TryIntra>=2 && m_cslice->slice_type != I_SLICE) tryIntra = tryIntraRD(absPartIdx, depth, modes);
+    if(m_par->TryIntra>=2 && m_cslice->slice_type != I_SLICE) {
+        tryIntra = tryIntraRD(absPartIdx, depth, modes);
+    }
+#ifdef AMT_ADAPTIVE_INTRA_RD
+    if(m_par->TryIntra>=2 && tryIntra) numModes = GetNumIntraRDModes(depth, modes, numModes);
+#endif
 #endif
     if(tryIntra) {
         numModes = FilterIntraLumaModesByRdoTr0(absPartIdx, depth, 0, modes, numModes);
@@ -1024,6 +1068,9 @@ void H265CU<PixType>::CheckIntraLuma(Ipp32s absPartIdx, Ipp32s depth)
         for (Ipp32s i = 0, absPartIdxPu = absPartIdx; i < 4; i++, absPartIdxPu += numParts) {
             Ipp32s numModes = InitIntraLumaModes(absPartIdxPu, depth, 1, modes);
             numModes = FilterIntraLumaModesBySatd(absPartIdxPu, depth, 1, modes, numModes);
+#ifdef AMT_ADAPTIVE_INTRA_RD
+            if(m_par->TryIntra>=2) numModes = GetNumIntraRDModes(depth+1, modes, numModes);
+#endif
             numModes = FilterIntraLumaModesByRdoTr0(absPartIdxPu, depth, 1, modes, numModes);
             numModes = FilterIntraLumaModesByRdoTrAll(absPartIdxPu, depth, 1, modes, numModes);
             nonZero |= m_data[absPartIdxPu].cbf[0];
@@ -1190,6 +1237,9 @@ Ipp32s H265CU<PixType>::FilterIntraLumaModesBySatd(Ipp32s absPartIdx, Ipp32s dep
     Ipp64f lambdaSatd = m_rdLambda;
 
     bool optimizedBranch = (SPLIT_MUST != GetTrSplitMode(absPartIdx, depth, trDepth, partMode, 1));
+#ifdef AMT_ICRA_OPT
+    m_bIntraCandInBuf = optimizedBranch;
+#endif
     if (optimizedBranch) {
         GetAvailablity(this, absPartIdx, width, 0, m_par->cpps->constrained_intra_pred_flag, m_inNeighborFlags, m_outNeighborFlags);
         GetPredPelsLuma(m_par, rec, predPel, m_outNeighborFlags, width, m_pitchRecLuma);
@@ -1247,14 +1297,17 @@ Ipp32s H265CU<PixType>::FilterIntraLumaModesBySatd(Ipp32s absPartIdx, Ipp32s dep
             m_costCurr = 0.0;
             FillSubPartIntraPredModeY_(m_data + absPartIdx, numParts, mode);
             CalcCostLuma(absPartIdx, depth, trDepth, COST_PRED_TR_0);
-            modes[i].satd = -1;
-            modes[i].cost = m_costCurr;
+            modes[i].satd = modes[i].cost = m_costCurr;
             modes[i].cost += modes[i].bitCost;
         }
         m_costCurr = costCurrSaved;
     }
 
     Ipp32s numModesAfterSatdStage = m_par->num_cand_1[m_par->Log2MaxCUSize - depth - trDepth];
+#ifdef AMT_ICRA_OPT
+    m_IntraCandMaxSatd = modes[0].satd;
+    for(Ipp32s iter=0;iter<numModes;iter++) { if(modes[iter].satd>m_IntraCandMaxSatd) m_IntraCandMaxSatd = modes[iter].satd; }
+#endif
     SortLumaModesByCost(modes, numModes, numModesAfterSatdStage);
 
     if (INTRA_ANG_MODE_EVEN == m_cuIntraAngMode) {
@@ -1298,13 +1351,14 @@ Ipp32s H265CU<PixType>::FilterIntraLumaModesBySatd(Ipp32s absPartIdx, Ipp32s dep
                 m_costCurr = 0.0;
                 FillSubPartIntraPredModeY_(m_data + absPartIdx, numParts, mode);
                 CalcCostLuma(absPartIdx, depth, trDepth, COST_PRED_TR_0);
-                modes[i].satd = -1;
-                modes[i].cost = m_costCurr;
+                modes[i].satd = modes[i].cost = m_costCurr;
                 modes[i].cost += modes[i].bitCost;
             }
             m_costCurr = costCurrSaved;
         }
-
+#ifdef AMT_ICRA_OPT
+        for(Ipp32s iter=0;iter<numOddModes;iter++) { if(modes[numModesAfterSatdStage+iter].satd>m_IntraCandMaxSatd) m_IntraCandMaxSatd = modes[numModesAfterSatdStage+iter].satd; }
+#endif
         SortLumaModesByCost(modes, numModesAfterSatdStage + numOddModes, numModesAfterSatdStage);
     }
 

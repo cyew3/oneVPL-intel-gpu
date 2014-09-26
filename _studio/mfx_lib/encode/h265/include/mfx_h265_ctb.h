@@ -30,6 +30,8 @@ namespace H265Enc {
 #define AMT_SPEEDUP_RDOQ
 #define AMT_DZ_RDOQ
 #define AMT_INT_ME_CONVERGE
+#define AMT_INT_ME_TRANSITION
+
 #define MEMOIZE_SUBPEL
 #ifdef MEMOIZE_SUBPEL
 #define MEMOIZE_SUBPEL_EXT_W (8+8)
@@ -37,7 +39,17 @@ namespace H265Enc {
 //#define MEMOIZE_SUBPEL_TEST
 #define MEMOIZE_BIPRED_HI_SAVE
 //#define MEMOIZE_BIPRED_TEST
+
+#define MEMOIZE_CAND
+#ifdef MEMOIZE_CAND
+#define MEMOIZE_NUMCAND MAX_NUM_MERGE_CANDS
+//#define MEMOIZE_CAND_TEST
 #endif
+#endif
+
+#define AMT_SETTINGS
+#define AMT_THRESHOLDS
+#define AMT_ADAPTIVE_INTRA_RD
 #endif
 
 struct H265MV
@@ -47,6 +59,21 @@ struct H265MV
 };
 
 #ifdef MEMOIZE_SUBPEL
+
+#ifdef MEMOIZE_CAND
+class MemCand
+{
+public:
+    Ipp32s count;
+    Ipp32s  *satd8  [MEMOIZE_NUMCAND];
+    H265MV  mv[MEMOIZE_NUMCAND][2];
+    Ipp32s  refIdx[MEMOIZE_NUMCAND][2];
+    Ipp32s  list[MEMOIZE_NUMCAND];
+    void    Init() { count = 0; }
+    void    Init(Ipp32u idx, Ipp32s *buf) { if(idx<MEMOIZE_NUMCAND) { satd8[idx] = buf; } }
+};
+#endif
+
 template <typename PixType>
 class MemPred
 {
@@ -302,6 +329,8 @@ public:
     Ipp32s  m_STC;
     Ipp32s  m_mvdMax;
     Ipp32s  m_mvdCost;
+    bool    m_bIntraCandInBuf;
+    Ipp32s  m_IntraCandMaxSatd;
 #endif
 
 #ifdef MEMOIZE_SUBPEL
@@ -328,6 +357,14 @@ public:
         H265MV mv;
     } m_interpBufBi[INTERP_BUF_SZ];
     Ipp8u m_interpIdxFirst, m_interpIdxLast;
+
+#ifdef MEMOIZE_CAND
+    MemCand                  m_memCandSubHad[4];  // [sizes]
+
+    Ipp32s m_satd8CandBuf1[MEMOIZE_NUMCAND][((MAX_CU_SIZE>>3)>>2) *((MAX_CU_SIZE>>3)>>2)];
+    Ipp32s m_satd8CandBuf2[MEMOIZE_NUMCAND][((MAX_CU_SIZE>>3)>>1) *((MAX_CU_SIZE>>3)>>1)];
+    Ipp32s m_satd8CandBuf3[MEMOIZE_NUMCAND][((MAX_CU_SIZE>>3)   ) *((MAX_CU_SIZE>>3)   )];
+#endif
 
 #endif
 
@@ -667,6 +704,24 @@ public:
 
     void MeInterpolateUseSaveHi(const H265MEInfo* meInfo, const H265MV *mv, PixType *src,
                                     Ipp32s srcPitch, Ipp16s*& dst, Ipp32s& dstPitch, Ipp32s size, Ipp32s refIdxMem);
+#ifdef MEMOIZE_CAND
+    bool  MemSCandSave(const H265MEInfo* meInfo, Ipp32s listIdx, const Ipp8s *refIdx, const H265MV *mv, Ipp32s **satd8, 
+                        Ipp32s *memPitch, bool useHadamard);
+    bool  MemSCandUse(const H265MEInfo* meInfo, Ipp32s listIdx, const Ipp8s *refIdx, const H265MV *mv, Ipp32s **satd8, 
+                        Ipp32s *memPitch, bool useHadamard);
+    bool  MemBiCandUse(const H265MEInfo* meInfo, const Ipp8s *refIdx, const H265MV *mv,  Ipp32s **satd8, 
+                        Ipp32s *memPitch, bool useHadamard);
+    bool  MemBiCandSave(const H265MEInfo* meInfo, const Ipp8s *refIdx, const H265MV *mv, Ipp32s **satd8, 
+                        Ipp32s *memPitch, bool useHadamard);
+    Ipp32s MatchingMetricPuSave(const PixType *src, const H265MEInfo *meInfo, const H265MV *mv,
+                                const H265Frame *refPic, Ipp32s useHadamard, Ipp32s *satd8, Ipp32s memPitch);
+    Ipp32s MatchingMetricBipredPuSave(const PixType *src, const H265MEInfo *meInfo, const Ipp8s refIdx[2],
+                                      const H265MV mvs[2], Ipp32s useHadamard, Ipp32s *satd8, Ipp32s memPitch);
+    Ipp32s MatchingMetricPuMemSCand(const PixType *src, const H265MEInfo *meInfo, Ipp32s listIdx, 
+                    const Ipp8s *refIdx, const H265MV *mv, const H265Frame *refPic, Ipp32s useHadamard);
+    Ipp32s MatchingMetricBiPredPuMemCand(const PixType *src, const H265MEInfo *meInfo, 
+                    const Ipp8s *refIdx, const H265MV *mv, Ipp32s useHadamard);
+#endif
 #endif
 
     Ipp32s MatchingMetricBipredPu(const PixType *src, const H265MEInfo *meInfo, const Ipp8s refIdx[2],
@@ -694,6 +749,9 @@ public:
     void GetProjectedDepth(Ipp32s absPartIdx, Ipp32s depth, Ipp8u splitMode);
     void FastCheckAMP(Ipp32s absPartIdx, Ipp8u depth, const H265MEInfo *meInfo2Nx2N);
     void CheckSkipCandFullRD(const H265MEInfo *meInfo, const MvPredInfo<5> *mergeCand, Ipp32s *mergeCandIdx);
+#ifdef AMT_ADAPTIVE_INTRA_RD
+    Ipp32s GetNumIntraRDModes(Ipp32s depth, IntraLumaMode *modes, Ipp32s numModes);
+#endif
 #endif
     CostType ModeDecision(Ipp32s absPartIdx, Ipp8u depth);
 

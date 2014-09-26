@@ -166,7 +166,11 @@ TU_OPT_ALL (QuadtreeTULog2MinSize,          2,   2,   2,   2,   2,   2,   2);
 TU_OPT_SW  (Log2MaxCUSize,                  6,   6,   5,   5,   5,   5,   5);
 TU_OPT_SW  (MaxCUDepth,                     4,   4,   3,   3,   3,   3,   3);
 TU_OPT_SW  (QuadtreeTUMaxDepthIntra,        4,   3,   2,   2,   2,   1,   1);
+#ifdef AMT_SETTINGS
+TU_OPT_SW  (QuadtreeTUMaxDepthInter,        3,   3,   2,   2,   2,   1,   1);
+#else
 TU_OPT_SW  (QuadtreeTUMaxDepthInter,        4,   3,   2,   2,   2,   1,   1);
+#endif
 TU_OPT_GACC(Log2MaxCUSize,                  5,   5,   5,   5,   5,   5,   5);
 TU_OPT_GACC(MaxCUDepth,                     3,   3,   3,   3,   3,   3,   3);
 TU_OPT_GACC(QuadtreeTUMaxDepthIntra,        3,   3,   2,   1,   1,   1,   1);
@@ -176,7 +180,11 @@ TU_OPT_ALL (CUSplit,                        2,   2,   2,   2,   2,   2,   2);
 TU_OPT_ALL (PuDecisionSatd,               OFF, OFF, OFF, OFF, OFF, OFF, OFF);
 TU_OPT_ALL (MinCUDepthAdapt,              OFF, OFF, OFF,  ON,  ON,  ON,  ON);
 TU_OPT_ALL (MaxCUDepthAdapt,               ON,  ON,  ON,  ON,  ON,  ON, OFF);
+#ifdef AMT_THRESHOLDS
+TU_OPT_SW  (CUSplitThreshold,               0,   0,   0,  64, 192, 224, 256);
+#else
 TU_OPT_SW  (CUSplitThreshold,               0,  64, 128, 192, 192, 224, 256);
+#endif
 TU_OPT_GACC(CUSplitThreshold,               0,  64, 128, 192, 224, 224, 240);
 TU_OPT_SW  (PartModes,                      3,   2,   2,   1,   1,   1,   1);
 TU_OPT_GACC(PartModes,                      1,   1,   1,   1,   1,   1,   1);
@@ -184,9 +192,15 @@ TU_OPT_SW  (FastSkip,                     OFF, OFF, OFF, OFF, OFF,  ON,  ON);
 TU_OPT_GACC(FastSkip,                     OFF, OFF, OFF,  ON,  ON,  ON,  ON);
 TU_OPT_ALL (FastCbfMode,                  OFF, OFF,  ON,  ON,  ON,  ON,  ON);
 
+#ifdef AMT_THRESHOLDS
+TU_OPT_SW  (SplitThresholdStrengthCUIntra,  1,   1,   1,   1,   2,   3,   3);
+TU_OPT_SW  (SplitThresholdStrengthTUIntra,  1,   1,   1,   1,   2,   3,   3);
+TU_OPT_SW  (SplitThresholdStrengthCUInter,  1,   2,   2,   3,   3,   3,   3);
+#else
 TU_OPT_SW  (SplitThresholdStrengthCUIntra,  1,   1,   1,   1,   2,   3,   3);
 TU_OPT_SW  (SplitThresholdStrengthTUIntra,  1,   1,   1,   1,   2,   3,   3);
 TU_OPT_SW  (SplitThresholdStrengthCUInter,  1,   1,   1,   1,   2,   3,   3);
+#endif
 TU_OPT_GACC(SplitThresholdStrengthCUIntra,  1,   1,   1,   2,   3,   3,   3);
 TU_OPT_GACC(SplitThresholdStrengthTUIntra,  1,   1,   1,   2,   3,   3,   3);
 TU_OPT_GACC(SplitThresholdStrengthCUInter,  1,   1,   1,   2,   3,   3,   3);
@@ -232,6 +246,18 @@ TU_OPT_SW  (IntraNumCand0_3,                2,   2,   2,   2,   2,   2,   2);
 TU_OPT_SW  (IntraNumCand0_4,                2,   2,   2,   2,   2,   2,   2);
 TU_OPT_SW  (IntraNumCand0_5,                1,   1,   1,   1,   1,   1,   1);
 TU_OPT_SW  (IntraNumCand0_6,                1,   1,   1,   1,   1,   1,   1);
+#ifdef AMT_SETTINGS
+TU_OPT_SW  (IntraNumCand1_2,                6,   6,   4,   2,   2,   1,   1);
+TU_OPT_SW  (IntraNumCand1_3,                6,   6,   4,   2,   1,   1,   1);
+TU_OPT_SW  (IntraNumCand1_4,                4,   3,   2,   1,   1,   1,   1);
+TU_OPT_SW  (IntraNumCand1_5,                4,   3,   2,   1,   1,   1,   1);
+TU_OPT_SW  (IntraNumCand1_6,                4,   3,   2,   1,   1,   1,   1);
+TU_OPT_SW  (IntraNumCand2_2,                3,   3,   2,   2,   1,   1,   1);
+TU_OPT_SW  (IntraNumCand2_3,                3,   3,   2,   1,   1,   1,   1);
+TU_OPT_SW  (IntraNumCand2_4,                2,   2,   1,   1,   1,   1,   1);
+TU_OPT_SW  (IntraNumCand2_5,                2,   2,   1,   1,   1,   1,   1);
+TU_OPT_SW  (IntraNumCand2_6,                2,   2,   1,   1,   1,   1,   1);
+#else
 TU_OPT_SW  (IntraNumCand1_2,                8,   6,   4,   2,   2,   1,   1);
 TU_OPT_SW  (IntraNumCand1_3,                8,   6,   4,   2,   1,   1,   1);
 TU_OPT_SW  (IntraNumCand1_4,                4,   3,   2,   1,   1,   1,   1);
@@ -242,6 +268,7 @@ TU_OPT_SW  (IntraNumCand2_3,                4,   3,   2,   1,   1,   1,   1);
 TU_OPT_SW  (IntraNumCand2_4,                2,   2,   1,   1,   1,   1,   1);
 TU_OPT_SW  (IntraNumCand2_5,                2,   2,   1,   1,   1,   1,   1);
 TU_OPT_SW  (IntraNumCand2_6,                2,   2,   1,   1,   1,   1,   1);
+#endif
 TU_OPT_GACC(IntraNumCand0_2,                1,   1,   1,   1,   1,   1,   1);
 TU_OPT_GACC(IntraNumCand0_3,                2,   2,   2,   2,   1,   1,   1);
 TU_OPT_GACC(IntraNumCand0_4,                2,   2,   2,   2,   1,   1,   1);
@@ -293,7 +320,11 @@ TU_OPT_GACC(GPB,                          OFF, OFF, OFF, OFF, OFF, OFF, OFF);
 TU_OPT_ALL (BPyramid,                      ON,  ON,  ON,  ON,  ON,  ON,  ON);
 
 Ipp8u tab_tuGopRefDist [8] = {8, 8, 8, 8, 8, 8, 8, 8};
+#ifdef AMT_SETTINGS
+Ipp8u tab_tuNumRefFrame_SW[8] = {2, 4, 4, 3, 3, 2, 2, 2};
+#else
 Ipp8u tab_tuNumRefFrame_SW[8] = {2, 4, 4, 4, 3, 3, 2, 2};
+#endif
 Ipp8u tab_tuNumRefFrame_GACC[8] = {4, 4, 4, 4, 4, 4, 4, 4};
 
 
@@ -1004,7 +1035,7 @@ mfxStatus MFXVideoENCODEH265::Init(mfxVideoParam* par_in)
             m_mfxVideoParam.mfx.NumRefFrame = 4; // Low_Delay
         } 
         else {
-            if(m_mfxHEVCOpts.EnableCm == 1)
+            if(m_mfxHEVCOpts.EnableCm == MFX_CODINGOPTION_ON)
                 m_mfxVideoParam.mfx.NumRefFrame = tab_tuNumRefFrame_GACC[m_mfxVideoParam.mfx.TargetUsage];
             else
                 m_mfxVideoParam.mfx.NumRefFrame = tab_tuNumRefFrame_SW[m_mfxVideoParam.mfx.TargetUsage];
