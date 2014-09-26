@@ -36,13 +36,6 @@ enum {
 
 Ipp32s GetPuSize(Ipp32s puw, Ipp32s puh);
 
-mfxStatus AllocateCmResources(mfxU32 w, mfxU32 h, mfxU8 nRefs, VideoCORE *core);
-
-void RunVmeCurr(H265VideoParam const &param, H265Frame *pFrameCur, H265Slice *pSliceCur, H265Frame **dpb, Ipp32s dpbSize);
-
-void RunVmeNext(H265VideoParam const &param, H265Frame *pFrameNext, H265Slice *pSliceNext);
-
-void FreeCmResources();
 void PrintTimes();
 
 struct CmMbIntraDist // sizeof=4

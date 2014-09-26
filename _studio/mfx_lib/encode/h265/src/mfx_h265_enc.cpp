@@ -30,9 +30,6 @@
 
 namespace H265Enc {
 
-extern Ipp32s cmCurIdx;
-extern Ipp32s cmNextIdx;
-
 #if defined( _WIN32) || defined(_WIN64)
 #define thread_sleep(nms) Sleep(nms)
 #else
@@ -1121,8 +1118,9 @@ mfxStatus H265Encoder::Init(const mfxVideoParam *param, const mfxExtCodingOption
 #if defined (MFX_VA)
     if (m_videoParam.enableCmFlag) {
         Ipp8u nRef = m_videoParam.csps->sps_max_dec_pic_buffering[0] + 1;
-        sts = AllocateCmResources(param->mfx.FrameInfo.Width, param->mfx.FrameInfo.Height, nRef, core);
+        m_cmCtx = new CmContext(param->mfx.FrameInfo.Width, param->mfx.FrameInfo.Height, nRef, core);
         MFX_CHECK_STS(sts);
+        m_videoParam.m_cmCtx = m_cmCtx;
     }
 #endif // MFX_VA
 
@@ -1148,7 +1146,7 @@ void H265Encoder::Close() {
 #if defined(_WIN32) || defined(_WIN64)
         PrintTimes();
 #endif // #if defined(_WIN32) || defined(_WIN64)
-        FreeCmResources();
+        delete m_cmCtx;
     }
 #endif // MFX_VA
 
@@ -2321,9 +2319,9 @@ recode:
 
 #if defined (MFX_VA)
     if (m_videoParam.enableCmFlag && brcRecode == 0) {
-        cmCurIdx ^= 1;
-        cmNextIdx ^= 1;
-        RunVmeCurr(m_videoParam, m_pCurrentFrame, m_slices, task->m_dpb, task->m_dpbSize);
+        m_cmCtx->cmCurIdx ^= 1;
+        m_cmCtx->cmNextIdx ^= 1;
+        m_cmCtx->RunVmeCurr(m_videoParam, m_pCurrentFrame, m_slices, task->m_dpb, task->m_dpbSize);
     }
 #endif // MFX_VA
 
@@ -2337,7 +2335,7 @@ recode:
 
 #if defined (MFX_VA)
     if (m_videoParam.enableCmFlag && brcRecode == 0) {
-        RunVmeNext(m_videoParam, m_pNextFrame, m_slicesNext);
+        m_cmCtx->RunVmeNext(m_videoParam, m_pNextFrame, m_slicesNext);
     }
 #endif // MFX_VA
 

@@ -28,32 +28,6 @@
 #endif
 namespace H265Enc {
 
-#if defined (MFX_VA)
-
-extern Ipp32s cmMvW[PU_MAX];
-extern Ipp32s cmMvH[PU_MAX];
-
-extern CmMbIntraDist * cmMbIntraDist[2];
-extern Ipp32u pitchIntra[2];
-
-extern mfxU32 *distCpu[2][2][CM_REF_BUF_LEN][PU_MAX];
-extern Ipp32u pitchDist[PU_MAX];
-
-extern mfxI16Pair * mvCpu[2][2][CM_REF_BUF_LEN][PU_MAX];
-extern Ipp32u pitchMv[PU_MAX];
-
-extern mfxU32 ** pDistCpu[2][2][CM_REF_BUF_LEN];
-extern mfxI16Pair ** pMvCpu[2][2][CM_REF_BUF_LEN];
-
-extern Ipp32u intraPitch[2];
-
-extern Ipp32s cmCurIdx;
-extern Ipp32s cmNextIdx;
-
-extern H265RefMatchData * recBufData;
-
-#endif // MFX_VA
-
 #define NO_TRANSFORM_SPLIT_INTRAPRED_STAGE1 0
 
 #define SWAP_REC_IDX(a,b) {Ipp8u tmp=a; a=b; b=tmp;}
@@ -911,6 +885,9 @@ void H265CU<PixType>::InitCu(H265VideoParam *_par, H265CUData *_data, H265CUData
 
     m_cslice = _cslice;
     m_costStat = m_par->m_costStat;
+#if defined(MFX_VA)
+    m_cmCtx = m_par->m_cmCtx;
+#endif
     m_bsf = _bsf;
     m_logMvCostTable = logMvCostTable + (1 << 15);
     m_data = _data;
@@ -2193,6 +2170,7 @@ CostType H265CU<PixType>::ModeDecision(Ipp32s absPartIdx, Ipp8u depth)
         }
 
         tryIntra = (m_cuIntraAngMode != INTRA_ANG_MODE_DISABLE) && CheckGpuIntraCost(absPartIdx, depth);
+
 #ifdef AMT_ICRA_OPT
         if(tryIntra && m_par->TryIntra>=2) tryIntra = tryIntraICRA(absPartIdx, depth);
 #endif
@@ -6070,8 +6048,8 @@ void H265CU<PixType>::MePuGacc(H265MEInfo *meInfos, Ipp32s partIdx)
     Ipp32s x = (m_ctbPelX + meInfo->posx) / meInfo->width;
     Ipp32s y = (m_ctbPelY + meInfo->posy) / meInfo->height;
     Ipp32s puSize = GetPuSize(meInfo->width, meInfo->height);
-    Ipp32s pitchDist = (Ipp32s)H265Enc::pitchDist[puSize] / sizeof(mfxU32);
-    Ipp32s pitchMv = (Ipp32s)H265Enc::pitchMv[puSize] / sizeof(mfxI16Pair);
+    Ipp32s pitchDist = (Ipp32s)m_cmCtx->pitchDist[puSize] / sizeof(mfxU32);
+    Ipp32s pitchMv = (Ipp32s)m_cmCtx->pitchMv[puSize] / sizeof(mfxI16Pair);
     
     Ipp32u numParts = (m_par->NumPartInCU >> (meInfo->depth << 1));
     Ipp32s partAddr = meInfo->absPartIdx &  (numParts - 1);
@@ -6090,8 +6068,8 @@ void H265CU<PixType>::MePuGacc(H265MEInfo *meInfos, Ipp32s partIdx)
     Ipp32s numLists = (m_cslice->slice_type == B_SLICE) + 1;
     for (Ipp32s list = 0; list < numLists; list++) {
         Ipp32s numRefIdx = m_cslice->num_ref_idx[list];
-        mfxI16Pair *** cmMvs = pMvCpu[cmCurIdx][list];
-        mfxU32 *** cmDists = pDistCpu[cmCurIdx][list];
+        mfxI16Pair *** cmMvs = m_cmCtx->pMvCpu[m_cmCtx->cmCurIdx][list];
+        mfxU32 *** cmDists = m_cmCtx->pDistCpu[m_cmCtx->cmCurIdx][list];
 
         //mfxI16Pair *(* cmMvs)[PU_MAX] = mvCpu[cmCurIdx][list];
         //mfxU32 *(* cmDists)[PU_MAX] = distCpu[cmCurIdx][list];
@@ -6296,17 +6274,17 @@ bool H265CU<PixType>::CheckGpuIntraCost(Ipp32s absPartIdx, Ipp32s depth) const
             cmInterCost = 0;
             for (Ipp32s j = y; j < y + y_num; j++) {
                 for (Ipp32s i = x; i < x + x_num; i++) {
-                    CmMbIntraDist *intraDistLine = (CmMbIntraDist *)((Ipp8u *)cmMbIntraDist[cmCurIdx] + j * intraPitch[cmCurIdx]);
+                    CmMbIntraDist *intraDistLine = (CmMbIntraDist *)((Ipp8u *)m_cmCtx->cmMbIntraDist[m_cmCtx->cmCurIdx] + j * m_cmCtx->intraPitch[m_cmCtx->cmCurIdx]);
                     cmIntraCost += intraDistLine[i].intraDist;
 
                     mfxU32 cmInterCost16x16 = IPP_MAX_32U;
                     for (Ipp8s refIdx = 0; refIdx < m_cslice->num_ref_idx[0]; refIdx++) {
-                        mfxU32 *dist16x16line = (mfxU32 *)((Ipp8u *)(pDistCpu[cmCurIdx][refList][refIdx][PU16x16]) + (j        ) * pitchDist[PU16x16]);
+                        mfxU32 *dist16x16line = (mfxU32 *)((Ipp8u *)(m_cmCtx->pDistCpu[m_cmCtx->cmCurIdx][refList][refIdx][PU16x16]) + (j        ) * m_cmCtx->pitchDist[PU16x16]);
                         //mfxU32 *dist16x8line0 = (mfxU32 *)((Ipp8u *)(pDistCpu[cmCurIdx][refList][refIdx][PU16x8])  + (j * 2    ) * pitchDist[PU16x8]);
                         //mfxU32 *dist16x8line1 = (mfxU32 *)((Ipp8u *)(pDistCpu[cmCurIdx][refList][refIdx][PU16x8])  + (j * 2 + 1) * pitchDist[PU16x8]);
                         //mfxU32 *dist8x16line  = (mfxU32 *)((Ipp8u *)(pDistCpu[cmCurIdx][refList][refIdx][PU8x16])  + (j        ) * pitchDist[PU8x16]);
-                        mfxU32 *dist8x8line0  = (mfxU32 *)((Ipp8u *)(pDistCpu[cmCurIdx][refList][refIdx][PU8x8])   + (j * 2    ) * pitchDist[PU8x8]);
-                        mfxU32 *dist8x8line1  = (mfxU32 *)((Ipp8u *)(pDistCpu[cmCurIdx][refList][refIdx][PU8x8])   + (j * 2 + 1) * pitchDist[PU8x8]);
+                        mfxU32 *dist8x8line0  = (mfxU32 *)((Ipp8u *)(m_cmCtx->pDistCpu[m_cmCtx->cmCurIdx][refList][refIdx][PU8x8])   + (j * 2    ) * m_cmCtx->pitchDist[PU8x8]);
+                        mfxU32 *dist8x8line1  = (mfxU32 *)((Ipp8u *)(m_cmCtx->pDistCpu[m_cmCtx->cmCurIdx][refList][refIdx][PU8x8])   + (j * 2 + 1) * m_cmCtx->pitchDist[PU8x8]);
                         //mfxU32 *dist8x4line0  = (mfxU32 *)((Ipp8u *)(pDistCpu[cmCurIdx][refList][refIdx][PU8x4])   + (j * 4    ) * pitchDist[PU8x4]);
                         //mfxU32 *dist8x4line1  = (mfxU32 *)((Ipp8u *)(pDistCpu[cmCurIdx][refList][refIdx][PU8x4])   + (j * 4 + 1) * pitchDist[PU8x4]);
                         //mfxU32 *dist8x4line2  = (mfxU32 *)((Ipp8u *)(pDistCpu[cmCurIdx][refList][refIdx][PU8x4])   + (j * 4 + 2) * pitchDist[PU8x4]);

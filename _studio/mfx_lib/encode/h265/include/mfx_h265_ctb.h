@@ -21,6 +21,11 @@
 
 using namespace MFX_HEVC_PP;
 
+#if defined(MFX_VA)
+///#include "mfx_h265_enc_cm.h"
+class CmContext;
+#endif
+
 namespace H265Enc {
 
 //Optimization with Intelligent Content and RD Analysis (ICRA)
@@ -318,6 +323,9 @@ public:
     Ipp32s VerMin;
     const Ipp8u *m_logMvCostTable;
     costStat *m_costStat;
+#if defined(MFX_VA)
+    CmContext *m_cmCtx;
+#endif
 
     SaoEncodeFilter m_saoEncodeFilter;
 

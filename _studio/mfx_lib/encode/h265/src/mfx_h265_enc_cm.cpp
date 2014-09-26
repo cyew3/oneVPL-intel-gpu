@@ -292,7 +292,7 @@ void Write(CmBuffer * buffer, void * buf, CmEvent * e = 0)
 #else
     #define TASKNUMALLOC 0
 #endif
-CmDevice * TryCreateCmDevicePtr(VideoCORE * core, mfxU32 * version)
+CmDevice * CmContext::TryCreateCmDevicePtr(VideoCORE * core, mfxU32 * version)
 {
     mfxU32 versionPlaceholder = 0;
     if (version == 0)
@@ -343,14 +343,14 @@ CmDevice * TryCreateCmDevicePtr(VideoCORE * core, mfxU32 * version)
     return device;
 }
 
-CmDevice * CreateCmDevicePtr(VideoCORE * core, mfxU32 * version)
+CmDevice * CmContext::CreateCmDevicePtr(VideoCORE * core, mfxU32 * version)
 {
     CmDevice * device = TryCreateCmDevicePtr(core, version);
     return device;
 }
 
 
-CmBuffer * CreateBuffer(CmDevice * device, mfxU32 size)
+CmBuffer * CmContext::CreateBuffer(CmDevice * device, mfxU32 size)
 {
     CmBuffer * buffer;
     int result = device->CreateBuffer(size, buffer);
@@ -359,7 +359,7 @@ CmBuffer * CreateBuffer(CmDevice * device, mfxU32 size)
     return buffer;
 }
 
-CmBufferUP * CreateBuffer(CmDevice * device, mfxU32 size, void * mem)
+CmBufferUP * CmContext::CreateBuffer(CmDevice * device, mfxU32 size, void * mem)
 {
     CmBufferUP * buffer;
     int result = device->CreateBufferUP(size, mem, buffer);
@@ -368,7 +368,7 @@ CmBufferUP * CreateBuffer(CmDevice * device, mfxU32 size, void * mem)
     return buffer;
 }
 
-CmSurface2D * CreateSurface(CmDevice * device, mfxU32 width, mfxU32 height, mfxU32 fourcc)
+CmSurface2D * CmContext::CreateSurface(CmDevice * device, mfxU32 width, mfxU32 height, mfxU32 fourcc)
 {
     int result = CM_SUCCESS;
     CmSurface2D * cmSurface = 0;
@@ -377,7 +377,7 @@ CmSurface2D * CreateSurface(CmDevice * device, mfxU32 width, mfxU32 height, mfxU
     return cmSurface;
 }
 
-CmSurface2DUP * CreateSurface(CmDevice * device, mfxU32 width, mfxU32 height, mfxU32 fourcc, void * mem)
+CmSurface2DUP * CmContext::CreateSurface(CmDevice * device, mfxU32 width, mfxU32 height, mfxU32 fourcc, void * mem)
 {
     int result = CM_SUCCESS;
     CmSurface2DUP * cmSurface = 0;
@@ -387,7 +387,7 @@ CmSurface2DUP * CreateSurface(CmDevice * device, mfxU32 width, mfxU32 height, mf
 }
 
 
-SurfaceIndex * CreateVmeSurfaceG75(
+SurfaceIndex * CmContext::CreateVmeSurfaceG75(
     CmDevice *      device,
     CmSurface2D *   source,
     CmSurface2D **  fwdRefs,
@@ -408,8 +408,9 @@ SurfaceIndex * CreateVmeSurfaceG75(
 }
 
 template <class T>
-mfxStatus CreateCmSurface2DUp(CmDevice *device, Ipp32u numElemInRow, Ipp32u numRows, CM_SURFACE_FORMAT format,
-                         T *&surfaceCpu, CmSurface2DUP *& surfaceGpu, Ipp32u &pitch)
+mfxStatus CmContext::CreateCmSurface2DUp(
+    CmDevice *device, Ipp32u numElemInRow, Ipp32u numRows, CM_SURFACE_FORMAT format,
+    T *&surfaceCpu, CmSurface2DUP *& surfaceGpu, Ipp32u &pitch)
 {
     Ipp32u size = 0;
     Ipp32u numBytesInRow = numElemInRow * sizeof(T);
@@ -424,7 +425,7 @@ mfxStatus CreateCmSurface2DUp(CmDevice *device, Ipp32u numElemInRow, Ipp32u numR
 }
 
 template <class T>
-mfxStatus CreateCmBufferUp(CmDevice *device, Ipp32u numElems, T *&surfaceCpu, CmBufferUP *& surfaceGpu)
+mfxStatus CmContext::CreateCmBufferUp(CmDevice *device, Ipp32u numElems, T *&surfaceCpu, CmBufferUP *& surfaceGpu)
 {
     Ipp32u numBytes = numElems * sizeof(T);
     surfaceCpu = static_cast<T *>(CM_ALIGNED_MALLOC(numBytes, 0x1000)); // 4K aligned
@@ -434,13 +435,13 @@ mfxStatus CreateCmBufferUp(CmDevice *device, Ipp32u numElems, T *&surfaceCpu, Cm
     return MFX_ERR_NONE;
 }
 
-void DestroyCmSurface2DUp(CmDevice *device, void *surfaceCpu, CmSurface2DUP *surfaceGpu)
+void CmContext::DestroyCmSurface2DUp(CmDevice *device, void *surfaceCpu, CmSurface2DUP *surfaceGpu)
 {
     device->DestroySurface2DUP(surfaceGpu);
     CM_ALIGNED_FREE(surfaceCpu);
 }
 
-void DestroyCmBufferUp(CmDevice *device, void *bufferCpu, CmBufferUP *bufferGpu)
+void CmContext::DestroyCmBufferUp(CmDevice *device, void *bufferCpu, CmBufferUP *bufferGpu)
 {
     device->DestroyBufferUP(bufferGpu);
     CM_ALIGNED_FREE(bufferCpu);
@@ -509,81 +510,6 @@ namespace
     }
 
 };
-
-bool cmResurcesAllocated = false;
-CmDevice * device = 0;
-CmQueue * queue = 0;
-CmSurface2DUP * mbIntraDist[2] = {};
-CmBufferUP * mbIntraGrad4x4[2] = {};
-CmBufferUP * mbIntraGrad8x8[2] = {};
-Ipp32u intraPitch[2] = {};
-CmMbIntraDist * cmMbIntraDist[2] = {};
-CmMbIntraGrad * cmMbIntraGrad4x4[2] = {};
-CmMbIntraGrad * cmMbIntraGrad8x8[2] = {};
-
-CmSurface2DUP * distGpu[2][2][CM_REF_BUF_LEN][PU_MAX] = {};
-CmSurface2DUP * mvGpu[2][2][CM_REF_BUF_LEN][PU_MAX] = {};
-mfxU32 * distCpu[2][2][CM_REF_BUF_LEN][PU_MAX] = {0};
-mfxI16Pair * mvCpu[2][2][CM_REF_BUF_LEN][PU_MAX] = {0};
-mfxU32 ** pDistCpu[2][2][CM_REF_BUF_LEN] = {0};
-mfxI16Pair ** pMvCpu[2][2][CM_REF_BUF_LEN] = {0};
-Ipp32u pitchDist[PU_MAX] = {};
-Ipp32u pitchMv[PU_MAX] = {};
-
-CmSurface2D * raw[2] = {};
-CmSurface2D * raw2x[2] = {};
-CmSurface2D * raw4x[2] = {};
-CmSurface2D * raw8x[2] = {};
-CmSurface2D * raw16x[2] = {};
-CmSurface2D ** fwdRef = 0;
-CmSurface2D ** fwdRef2x = 0;
-CmSurface2D ** fwdRef4x = 0;
-CmSurface2D ** fwdRef8x = 0;
-CmSurface2D ** fwdRef16x = 0;
-CmSurface2D * IntraDist = 0;
-//>CmSurface2D * ZeroPredSurf = 0;
-
-CmProgram * program = 0;
-CmKernel * kernelMeIntra = 0;
-CmKernel * kernelGradient = 0;
-CmKernel * kernelIme = 0;
-CmKernel * kernelImeWithPred = 0;
-CmKernel * kernelMe16 = 0;
-CmKernel * kernelMe32 = 0;
-CmKernel * kernelRefine32x32 = 0;
-CmKernel * kernelRefine32x16 = 0;
-CmKernel * kernelRefine16x32 = 0;
-CmKernel * kernelRefine = 0;
-CmKernel * kernelDownSample2tiers = 0;
-CmKernel * kernelDownSample4tiers = 0;
-CmBuffer * curbe = 0;
-CmBuffer * me1xControl = 0;
-CmBuffer * me2xControl = 0;
-CmBuffer * me4xControl = 0;
-CmBuffer * me8xControl = 0;
-CmBuffer * me16xControl = 0;
-mfxU32 width = 0;
-mfxU32 height = 0;
-mfxU32 width2x = 0;
-mfxU32 height2x = 0;
-mfxU32 width4x = 0;
-mfxU32 height4x = 0;
-mfxU32 width8x = 0;
-mfxU32 height8x = 0;
-mfxU32 width16x = 0;
-mfxU32 height16x = 0;
-mfxU32 frameOrder = 0;
-Ipp32s numBufferedRefs = 0;
-mfxU32 highRes = 0; // 0: <=1920x1080; 1: > 1920x1080
-
-CmEvent * lastEvent[2] = {};
-Ipp32s cmCurIdx = 0;
-Ipp32s cmNextIdx = 0;
-
-Ipp32s cmMvW[PU_MAX] = {};
-Ipp32s cmMvH[PU_MAX] = {};
-
-H265RefMatchData * recBufData = 0;
 
 #if defined(_WIN32) || defined(_WIN64)
 
@@ -658,7 +584,7 @@ void PrintTimes()
 
 #endif // #if defined(_WIN32) || defined(_WIN64)
 
-void FreeCmResources()
+void CmContext::FreeCmResources()
 {
     if (cmResurcesAllocated) {
         if (recBufData)
@@ -805,7 +731,7 @@ void H265RefMatchData::Clean(H265Frame **dpb, Ipp32s dpbSize)
     }
 }
 
-mfxStatus AllocateCmResources(mfxU32 w, mfxU32 h, mfxU8 nRefs, VideoCORE *core)
+mfxStatus CmContext::AllocateCmResources(mfxU32 w, mfxU32 h, mfxU8 nRefs, VideoCORE *core)
 {
     if (cmResurcesAllocated)
         return MFX_ERR_NONE;
@@ -827,6 +753,8 @@ mfxStatus AllocateCmResources(mfxU32 w, mfxU32 h, mfxU8 nRefs, VideoCORE *core)
 
     if ((width > 1920) || (height > 1080))
         highRes = 1;
+    else
+        highRes = 0;
 
     device = CreateCmDevicePtr(core);
     MFX_CHECK(device, MFX_ERR_DEVICE_FAILED);
@@ -972,14 +900,15 @@ mfxStatus AllocateCmResources(mfxU32 w, mfxU32 h, mfxU8 nRefs, VideoCORE *core)
 
     recBufData = new H265RefMatchData(numBufferedRefs);    // keeps pocs of stored ref frames
 
-    cmResurcesAllocated = true;
     cmCurIdx = 1;
     cmNextIdx = 0;
+
+    cmResurcesAllocated = true;
 
     return MFX_ERR_NONE;
 }
 
-void RunVmeCurr(H265VideoParam const &param, H265Frame *pFrameCur, H265Slice *pSliceCur, H265Frame **dpb, Ipp32s dpbSize)
+void CmContext::RunVmeCurr(H265VideoParam const &param, H265Frame *pFrameCur, H265Slice *pSliceCur, H265Frame **dpb, Ipp32s dpbSize)
 {
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "RunVmeCurr");
 
@@ -1128,7 +1057,7 @@ void RunVmeCurr(H265VideoParam const &param, H265Frame *pFrameCur, H265Slice *pS
     }
 }
 
-void RunVmeNext(H265VideoParam const & param, H265Frame * pFrameNext, H265Slice *pSliceNext)
+void CmContext::RunVmeNext(H265VideoParam const & param, H265Frame * pFrameNext, H265Slice *pSliceNext)
 {
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "RunVmeNext");
     
@@ -1301,7 +1230,7 @@ void RunVmeNext(H265VideoParam const & param, H265Frame * pFrameNext, H265Slice 
 }
 
 
-void SetCurbeData(
+void CmContext::SetCurbeData(
     H265EncCURBEData & curbeData,
     mfxU32             picType,
     mfxU32             qp)
@@ -1549,7 +1478,241 @@ Ipp32s GetPuSize(Ipp32s puw, Ipp32s puh)
     return tab_lookUpPuSize[tab_wh2Idx[puw / 4 - 1]][tab_wh2Idx[puh / 4 - 1]];
 }
 
+CmContext::CmContext(mfxU32 width, mfxU32 height, mfxU8 nRefs, VideoCORE *core)
+{
+    cmResurcesAllocated = false;
+    device = 0;
+    queue = 0;
+    lastEvent[0] = NULL;
+    lastEvent[1] = NULL;
+
+    memset(mbIntraDist, 0, sizeof(mbIntraDist));
+    memset(mbIntraGrad4x4, 0, sizeof(mbIntraGrad4x4));
+    memset(mbIntraGrad8x8, 0, sizeof(mbIntraGrad8x8));
+    memset(intraPitch, 0, sizeof(intraPitch));
+    memset(cmMbIntraDist, 0, sizeof(cmMbIntraDist));
+    memset(cmMbIntraGrad4x4, 0, sizeof(cmMbIntraGrad4x4));
+    memset(cmMbIntraGrad8x8, 0, sizeof(cmMbIntraGrad8x8));
+
+    memset(distGpu, 0, sizeof(distGpu));
+    memset(mvGpu, 0, sizeof(mvGpu));
+    memset(distCpu, 0, sizeof(distCpu));
+    memset(mvCpu, 0, sizeof(mvCpu));
+    memset(pDistCpu, 0, sizeof(pDistCpu));
+    memset(pMvCpu, 0, sizeof(pMvCpu));
+    memset(pitchDist, 0, sizeof(pitchDist));
+    memset(pitchMv, 0, sizeof(pitchMv));
+
+    memset(raw, 0, sizeof(raw));
+    memset(raw2x, 0, sizeof(raw2x));
+    memset(raw4x, 0, sizeof(raw4x));
+    memset(raw8x, 0, sizeof(raw8x));
+    memset(raw16x, 0, sizeof(raw16x));
+    fwdRef = 0;
+    fwdRef2x = 0;
+    fwdRef4x = 0;
+    fwdRef8x = 0;
+    fwdRef16x = 0;
+    IntraDist = 0;
+
+    program = 0;
+    kernelMeIntra = 0;
+    kernelGradient = 0;
+    kernelIme = 0;
+    kernelImeWithPred = 0;
+    kernelMe16 = 0;
+    kernelMe32 = 0;
+    kernelRefine32x32 = 0;
+    kernelRefine32x16 = 0;
+    kernelRefine16x32 = 0;
+    kernelRefine = 0;
+    kernelDownSample2tiers = 0;
+    kernelDownSample4tiers = 0;
+    curbe = 0;
+    me1xControl = 0;
+    me2xControl = 0;
+    me4xControl = 0;
+    me8xControl = 0;
+    me16xControl = 0;
+    width2x = 0;
+    height2x = 0;
+    width4x = 0;
+    height4x = 0;
+    width8x = 0;
+    height8x = 0;
+    width16x = 0;
+    height16x = 0;
+    frameOrder = 0;
+    numBufferedRefs = 0;
+    highRes = 0; // 0: <=1920x1080; 1: > 1920x1080
+
+    cmCurIdx = 0;
+    cmNextIdx = 0;
+
+    memset(cmMvW, 0, sizeof(cmMvW));
+    memset(cmMvH, 0, sizeof(cmMvH));
+
+    recBufData = 0;
+
+    AllocateCmResources(width, height, nRefs, core);
+
+    if (!cmResurcesAllocated)
+        throw CmRuntimeError();
+
+}
+
+CmContext::~CmContext()
+{
+    FreeCmResources();
+}
+
+
+template <class T>
+SurfaceIndex & CmContext::GetIndex(const T * cmResource)
+{
+    SurfaceIndex * index = 0;
+    int result = const_cast<T *>(cmResource)->GetIndex(index);
+    if (result != CM_SUCCESS)
+        throw CmRuntimeError();
+    return *index;
+}
+
+template <class T0>
+void CmContext::SetKernelArgLast(CmKernel * kernel, T0 const & arg, unsigned int index)
+{
+    kernel->SetKernelArg(index, sizeof(arg), &arg);
+}
+template <> inline
+    void CmContext::SetKernelArgLast<CmSurface2D *>(CmKernel * kernel, CmSurface2D * const & arg, unsigned int index)
+{
+    kernel->SetKernelArg(index, sizeof(SurfaceIndex), &GetIndex(arg));
+}
+template <> inline
+    void CmContext::SetKernelArgLast<CmSurface2DUP *>(CmKernel * kernel, CmSurface2DUP * const & arg, unsigned int index)
+{
+    kernel->SetKernelArg(index, sizeof(SurfaceIndex), &GetIndex(arg));
+}
+template <> inline
+    void CmContext::SetKernelArgLast<CmBuffer *>(CmKernel * kernel, CmBuffer * const & arg, unsigned int index)
+{
+    kernel->SetKernelArg(index, sizeof(SurfaceIndex), &GetIndex(arg));
+}
+template <> inline
+    void CmContext::SetKernelArgLast<CmBufferUP *>(CmKernel * kernel, CmBufferUP * const & arg, unsigned int index)
+{
+    kernel->SetKernelArg(index, sizeof(SurfaceIndex), &GetIndex(arg));
+}
+
+template <class T0>
+void CmContext::SetKernelArg(CmKernel * kernel, T0 const & arg0)
+{
+    SetKernelArgLast(kernel, arg0, 0);
+}
+
+template <class T0, class T1>
+void CmContext::SetKernelArg(CmKernel * kernel, T0 const & arg0, T1 const & arg1)
+{
+    SetKernelArgLast(kernel, arg0, 0);
+    SetKernelArgLast(kernel, arg1, 1);
+}
+
+template <class T0, class T1, class T2>
+void CmContext::SetKernelArg(CmKernel * kernel, T0 const & arg0, T1 const & arg1, T2 const & arg2)
+{
+    SetKernelArg(kernel, arg0, arg1);
+    SetKernelArgLast(kernel, arg2, 2);
+}
+
+template <class T0, class T1, class T2, class T3>
+void CmContext::SetKernelArg(CmKernel * kernel, T0 const & arg0, T1 const & arg1, T2 const & arg2, T3 const & arg3)
+{
+    SetKernelArg(kernel, arg0, arg1, arg2);
+    SetKernelArgLast(kernel, arg3, 3);
+}
+
+template <class T0, class T1, class T2, class T3, class T4>
+void CmContext::SetKernelArg(CmKernel * kernel, T0 const & arg0, T1 const & arg1, T2 const & arg2, T3 const & arg3, T4 const & arg4)
+{
+    SetKernelArg(kernel, arg0, arg1, arg2, arg3);
+    SetKernelArgLast(kernel, arg4, 4);
+}
+
+template <class T0, class T1, class T2, class T3, class T4, class T5>
+void CmContext::SetKernelArg(CmKernel * kernel, T0 const & arg0, T1 const & arg1, T2 const & arg2, T3 const & arg3, T4 const & arg4, T5 const & arg5)
+{
+    SetKernelArg(kernel, arg0, arg1, arg2, arg3, arg4);
+    SetKernelArgLast(kernel, arg5, 5);
+}
+
+template <class T0, class T1, class T2, class T3, class T4, class T5, class T6>
+void CmContext::SetKernelArg(CmKernel * kernel, T0 const & arg0, T1 const & arg1, T2 const & arg2, T3 const & arg3, T4 const & arg4, T5 const & arg5, T6 const & arg6)
+{
+    SetKernelArg(kernel, arg0, arg1, arg2, arg3, arg4, arg5);
+    SetKernelArgLast(kernel, arg6, 6);
+}
+
+template <class T0, class T1, class T2, class T3, class T4, class T5, class T6, class T7>
+void CmContext::SetKernelArg(CmKernel * kernel, T0 const & arg0, T1 const & arg1, T2 const & arg2, T3 const & arg3, T4 const & arg4, T5 const & arg5, T6 const & arg6, T7 const & arg7)
+{
+    SetKernelArg(kernel, arg0, arg1, arg2, arg3, arg4, arg5, arg6);
+    SetKernelArgLast(kernel, arg7, 7);
+}
+
+template <class T0, class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8>
+void CmContext::SetKernelArg(CmKernel * kernel, T0 const & arg0, T1 const & arg1, T2 const & arg2, T3 const & arg3, T4 const & arg4, T5 const & arg5, T6 const & arg6, T7 const & arg7, T8 const & arg8)
+{
+    SetKernelArg(kernel, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7);
+    SetKernelArgLast(kernel, arg8, 8);
+}
+
+template <class T0, class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9>
+void CmContext::SetKernelArg(CmKernel * kernel, T0 const & arg0, T1 const & arg1, T2 const & arg2, T3 const & arg3, T4 const & arg4, T5 const & arg5, T6 const & arg6, T7 const & arg7, T8 const & arg8, T9 const & arg9)
+{
+    SetKernelArg(kernel, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8);
+    SetKernelArgLast(kernel, arg9, 9);
+}
+
+template <class T0, class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9, class T10>
+void CmContext::SetKernelArg(CmKernel * kernel, T0 const & arg0, T1 const & arg1, T2 const & arg2, T3 const & arg3, T4 const & arg4, T5 const & arg5, T6 const & arg6, T7 const & arg7, T8 const & arg8, T9 const & arg9, T10 const & arg10)
+{
+    SetKernelArg(kernel, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9);
+    SetKernelArgLast(kernel, arg10, 10);
+}
+
+template <class T0, class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9, class T10, class T11>
+void CmContext::SetKernelArg(CmKernel * kernel, T0 const & arg0, T1 const & arg1, T2 const & arg2, T3 const & arg3, T4 const & arg4, T5 const & arg5, T6 const & arg6, T7 const & arg7,
+                             T8 const & arg8, T9 const & arg9, T10 const & arg10, T11 const & arg11)
+{
+    SetKernelArg(kernel, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10);
+    SetKernelArgLast(kernel, arg11, 11);
+}
+
+template <class T0, class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9, class T10, class T11, class T12>
+void CmContext::SetKernelArg(CmKernel * kernel, T0 const & arg0, T1 const & arg1, T2 const & arg2, T3 const & arg3, T4 const & arg4, T5 const & arg5, T6 const & arg6, T7 const & arg7,
+                             T8 const & arg8, T9 const & arg9, T10 const & arg10, T11 const & arg11, T12 const & arg12)
+{
+    SetKernelArg(kernel, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11);
+    SetKernelArgLast(kernel, arg12, 12);
+}
+
+template <class T0, class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9, class T10, class T11, class T12, class T13>
+void CmContext::SetKernelArg(CmKernel * kernel, T0 const & arg0, T1 const & arg1, T2 const & arg2, T3 const & arg3, T4 const & arg4, T5 const & arg5, T6 const & arg6, T7 const & arg7,
+                             T8 const & arg8, T9 const & arg9, T10 const & arg10, T11 const & arg11, T12 const & arg12, T13 const & arg13)
+{
+    SetKernelArg(kernel, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12);
+    SetKernelArgLast(kernel, arg13, 13);
+}
+
+template <class T0, class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9, class T10, class T11, class T12, class T13, class T14>
+void CmContext::SetKernelArg(CmKernel * kernel, T0 const & arg0, T1 const & arg1, T2 const & arg2, T3 const & arg3, T4 const & arg4, T5 const & arg5, T6 const & arg6, T7 const & arg7,
+                             T8 const & arg8, T9 const & arg9, T10 const & arg10, T11 const & arg11, T12 const & arg12, T13 const & arg13, T14 const & arg14)
+{
+    SetKernelArg(kernel, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12, arg13);
+    SetKernelArgLast(kernel, arg14, 14);
+}
+
 } // namespace
+
 
 #endif // MFX_VA
 

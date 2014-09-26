@@ -22,15 +22,6 @@
 
 namespace H265Enc {
 
-#if defined (MFX_VA)
-    extern mfxU32 width;
-    extern mfxU32 height;
-    extern CmMbIntraGrad * cmMbIntraGrad4x4[2];
-    extern CmMbIntraGrad * cmMbIntraGrad8x8[2];
-    extern Ipp32s cmCurIdx;
-#endif // MFX_VA
-
-
 template <typename PixType>
 static
 void IsAboveLeftAvailable(H265CU<PixType> *pCU,
@@ -868,19 +859,19 @@ void H265CU<PixType>::GetAngModesFromHistogram(Ipp32s xPu, Ipp32s yPu, Ipp32s pu
     if (m_par->enableCmFlag) {
 #ifdef MFX_VA
         if (puSize == 4) {
-            Ipp32s pitch = width >> 2;
+            Ipp32s pitch = m_cmCtx->width >> 2;
             xPu += m_ctbPelX;
             yPu += m_ctbPelY;
-            const CmMbIntraGrad *histBlock = cmMbIntraGrad4x4[cmCurIdx] + (xPu >> 2) + (yPu >> 2) * pitch;
+            const CmMbIntraGrad *histBlock = m_cmCtx->cmMbIntraGrad4x4[m_cmCtx->cmCurIdx] + (xPu >> 2) + (yPu >> 2) * pitch;
             for (Ipp32s i = 0; i < 35; i++)
                 histogram[i] = histBlock->histogram[i];
         }
         else {
             puSize >>= 3;
-            Ipp32s pitch = width >> 3;
+            Ipp32s pitch = m_cmCtx->width >> 3;
             xPu += m_ctbPelX;
             yPu += m_ctbPelY;
-            const CmMbIntraGrad *histBlock = cmMbIntraGrad8x8[cmCurIdx] + (xPu >> 3) + (yPu >> 3) * pitch;
+            const CmMbIntraGrad *histBlock = m_cmCtx->cmMbIntraGrad8x8[m_cmCtx->cmCurIdx] + (xPu >> 3) + (yPu >> 3) * pitch;
             for (Ipp32s y = 0; y < puSize; y++, histBlock += pitch)
                 for (Ipp32s x = 0; x < puSize; x++)
                     for (Ipp32s i = 0; i < 35; i++)
