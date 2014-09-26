@@ -301,10 +301,39 @@ CmDevice * TryCreateCmDevicePtr(VideoCORE * core, mfxU32 * version)
     CmDevice * device = 0;
 
     int result = CM_SUCCESS;
+    if (core->GetVAType() == MFX_HW_D3D9)
+    {
 #if defined(_WIN32) || defined(_WIN64)
-        if ((result = ::CreateCmDevice(device, *version, (IDirect3DDeviceManager9 *)0, (TASKNUMALLOC<<4)+1)) != CM_SUCCESS)
+        D3D9Interface * d3dIface = QueryCoreInterface<D3D9Interface>(core, MFXICORED3D_GUID);
+        if (d3dIface == 0)
+            return 0;
+        if ((result = ::CreateCmDevice(device, *version, d3dIface->GetD3D9DeviceManager(),(TASKNUMALLOC<<4)+1)) != CM_SUCCESS)
             return 0;
 #endif  // #if defined(_WIN32) || defined(_WIN64)
+    }
+    else if (core->GetVAType() == MFX_HW_D3D11)
+    {
+#if defined(_WIN32) || defined(_WIN64)
+        D3D11Interface * d3dIface = QueryCoreInterface<D3D11Interface>(core, MFXICORED3D11_GUID);
+        if (d3dIface == 0)
+            return 0;
+        if ((result = ::CreateCmDevice(device, *version, d3dIface->GetD3D11Device(),(TASKNUMALLOC<<4)+1)) != CM_SUCCESS)
+            return 0;
+#endif
+    }
+    else if (core->GetVAType() == MFX_HW_VAAPI)
+    {
+        //throw std::logic_error("GetDeviceManager not implemented on Linux for Look Ahead");
+#if defined(MFX_VA_LINUX)
+        VADisplay display;
+        mfxStatus res = core->GetHandle(MFX_HANDLE_VA_DISPLAY, &display); // == MFX_HANDLE_RESERVED2
+        if (res != MFX_ERR_NONE || !display)
+            return 0;
+
+        if ((result = ::CreateCmDevice(device, *version, display)) != CM_SUCCESS)
+            return 0;
+#endif
+    }
 #if defined(LINUX32) || defined(LINUX64)
         VADisplay display = 0;
         if ((result = ::CreateCmDevice(device, *version, display)) != CM_SUCCESS)
@@ -799,7 +828,7 @@ mfxStatus AllocateCmResources(mfxU32 w, mfxU32 h, mfxU8 nRefs, VideoCORE *core)
     if ((width > 1920) || (height > 1080))
         highRes = 1;
 
-    device = CreateCmDevicePtr(0);
+    device = CreateCmDevicePtr(core);
     MFX_CHECK(device, MFX_ERR_DEVICE_FAILED);
 
     device->CreateQueue(queue);
