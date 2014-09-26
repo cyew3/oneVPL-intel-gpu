@@ -107,13 +107,16 @@ protected:
     MFX_H263D_Plugin(bool CreateByDispatcher);
     virtual ~MFX_H263D_Plugin(){};
 
+    mfxStatus CopyBitstream(mfxU8* data, mfxU32 size);
+    mfxStatus DecodeFrameCheck(mfxBitstream*& bitstream);
+
     mfxVideoParam m_video;
     mfxU32 m_frame_order;
 
     UMC::H263VideoDecoder m_umc_decoder;
     UMC::VideoDecoderParams m_umc_params;
 
-    void* inframe;
+    mfxBitstream m_bitstream;
     mfxCoreInterface* m_pmfxCore;
 
     mfxSession m_session;

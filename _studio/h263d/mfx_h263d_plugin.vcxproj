@@ -265,6 +265,7 @@
     <ClInclude Include="h263_dec\include\h263dec.h" />
     <ClInclude Include="h263_dec\include\umc_h263_video_decoder.h" />
     <ClInclude Include="include\h263d_plugin.h" />
+    <ClInclude Include="include\h263d_plugin_utils.h" />
     <ClInclude Include="resource.h" />
   </ItemGroup>
   <ItemGroup>

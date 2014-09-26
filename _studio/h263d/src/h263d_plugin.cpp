@@ -8,7 +8,10 @@ Copyright(c) 2014 Intel Corporation. All Rights Reserved.
 
 ***********************************************************************************/
 
+#include <assert.h>
+
 #include "h263d_plugin.h"
+#include "h263d_plugin_utils.h"
 #include "mfx_plugin_module.h"
 #include "mfxvideo++int.h"
 
@@ -78,10 +81,10 @@ MFX_H263D_Plugin::MFX_H263D_Plugin(bool CreateByDispatcher)
   m_PluginParam.PluginVersion = 1;
   m_createdByDispatcher = CreateByDispatcher;
 
+  memset(&m_bitstream, 0, sizeof(m_bitstream));
   memset(&m_mfxpar, 0, sizeof(m_mfxpar));
 
   m_frame_order = 0;
-  inframe = NULL;
 }
 
 mfxStatus MFX_H263D_Plugin::PluginInit(mfxCoreInterface * pCore)
@@ -206,6 +209,87 @@ void copy_nv12_to_i420(mfxFrameSurface1& src, mfxFrameSurface1& dst)
     }
 }
 
+mfxStatus MFX_H263D_Plugin::CopyBitstream(mfxU8* data, mfxU32 size)
+{
+  assert(!m_bitstream.DataOffset);
+
+  if (!size) return MFX_ERR_NONE;
+  if ((m_bitstream.MaxLength - m_bitstream.DataLength) < size) {
+    mfxU8* newdata = (mfxU8*)realloc(m_bitstream.Data, m_bitstream.MaxLength + size);
+    if (!newdata) {
+      return MFX_ERR_MEMORY_ALLOC;
+    }
+    m_bitstream.Data = newdata;
+    m_bitstream.MaxLength += size;
+  }
+  memcpy(m_bitstream.Data + m_bitstream.DataLength, data, size);
+  m_bitstream.DataLength += size;
+  return MFX_ERR_NONE;
+}
+
+mfxStatus MFX_H263D_Plugin::DecodeFrameCheck(mfxBitstream*& bitstream)
+{
+  DBG_ENTER;
+  mfxStatus sts = MFX_ERR_NONE;
+
+  if (!bitstream) {
+    if (m_bitstream.DataLength) bitstream = &m_bitstream;
+  } else {
+    MFX_H263DEC::h263_bitstream info;
+    mfxU32 skip;
+
+    info.buffer = bitstream->Data + bitstream->DataOffset;
+    info.bufptr = info.buffer;
+    info.buflen = bitstream->DataLength;
+
+    if (!m_bitstream.DataLength) {
+      mfxU8* ptr1 = info.findStartCodePtr();
+      if (!ptr1) {
+        // no start code found at all
+        skip = info.getSkip();
+        bitstream->DataOffset += skip;
+        bitstream->DataLength -= skip;
+        sts = MFX_ERR_MORE_DATA;
+        DBG_LEAVE_STS(sts);
+        return sts;
+      }
+      info.bufptr = ptr1 + 3; // skipping found start code
+      mfxU8* ptr2 = info.findStartCodePtr();
+      if (!ptr2) {
+        // no second start code: copying bitstream into internal memory
+        skip = info.getSkip();
+        sts = CopyBitstream(ptr1, skip - (mfxU32)(ptr1 - info.buffer));
+        if (MFX_ERR_NONE == sts) {
+          m_bitstream.TimeStamp = bitstream->TimeStamp;
+          bitstream->DataOffset += skip;
+          bitstream->DataLength -= skip;
+          sts = MFX_ERR_MORE_DATA;
+        }
+        DBG_LEAVE_STS(sts);
+        return sts;
+      }
+      // if we are here, we can decode from the input buffer which contains
+      // 1 complete from and at least part of the next frame
+      //frame_size = (mfxU32)(ptr2 - info.buffer);
+    } else {
+      mfxU8* ptr = info.findStartCodePtr();
+
+      skip = (ptr)? (mfxU32)(ptr - info.buffer): info.getSkip();
+
+      sts = CopyBitstream(info.buffer, skip);
+      if (MFX_ERR_NONE == sts) {
+        bitstream->DataOffset += skip;
+        bitstream->DataLength -= skip;
+        if (!ptr) sts = MFX_ERR_MORE_DATA;
+      }
+      bitstream = &m_bitstream;
+      //frame_size = m_bitstream.DataLength;
+    }
+  }
+  DBG_LEAVE_STS(sts);
+  return sts;
+}
+
 mfxStatus MFX_H263D_Plugin::DecodeFrameSubmit(
   mfxBitstream *bitstream,
   mfxFrameSurface1 *surface_work,
@@ -219,7 +303,13 @@ mfxStatus MFX_H263D_Plugin::DecodeFrameSubmit(
   if (!surface_out) {
     return MFX_ERR_NULL_PTR;
   }
-  
+
+  sts = DecodeFrameCheck(bitstream);
+  if (MFX_ERR_NONE != sts) {
+    DBG_LEAVE_STS(sts);
+    return sts;
+  }
+
   UMC::MediaData in;
   UMC::VideoData out;
   mfxFrameSurface1 src;
@@ -274,7 +364,7 @@ mfxStatus MFX_H263D_Plugin::DecodeFrameSubmit(
   if (bitstream) {
     DBG_VAL_I(bitstream->DataLength);
     in.SetBufferPointer(bitstream->Data + bitstream->DataOffset,
-                        bitstream->MaxLength);
+                        bitstream->MaxLength - bitstream->DataOffset);
     in.SetDataSize(bitstream->DataLength);
     in.SetTime(GetUmcTimeStamp(bitstream->TimeStamp));
   }
@@ -287,6 +377,11 @@ mfxStatus MFX_H263D_Plugin::DecodeFrameSubmit(
 
     bitstream->DataOffset += ReadLength;
     bitstream->DataLength -= ReadLength;
+    if (bitstream == &m_bitstream) {
+      assert(!bitstream->DataLength); // some data left after decoding: corrupted bitstream?
+      m_bitstream.DataOffset = 0;
+      m_bitstream.DataLength = 0;
+    }
     DBG_VAL_I(ReadLength);
   }
 
@@ -420,10 +515,10 @@ mfxStatus MFX_H263D_Plugin::Close()
 {
   DBG_ENTER;
 
-  if (inframe) {
-    free(inframe);
-    inframe = NULL;
+  if (m_bitstream.Data) {
+    free(m_bitstream.Data);
   }
+  memset(&m_bitstream, 0, sizeof(m_bitstream));
   DBG_LEAVE_STS(MFX_ERR_NONE);
   return MFX_ERR_NONE;
 }

@@ -40,9 +40,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="resource.h" />
-    <ClInclude Include="include\h263d_plugin.h">
-      <Filter>Header files</Filter>
-    </ClInclude>
     <ClInclude Include="h263_dec\include\h263.h">
       <Filter>H263\Header files</Filter>
     </ClInclude>
@@ -51,6 +48,12 @@
     </ClInclude>
     <ClInclude Include="h263_dec\include\umc_h263_video_decoder.h">
       <Filter>H263\Header files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\h263d_plugin.h">
+      <Filter>Header files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\h263d_plugin_utils.h">
+      <Filter>Header files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
