@@ -1349,8 +1349,8 @@ void H265Encoder::CreateRefPicList(Task *task, H265ShortTermRefPicSet *rps)
     }
 
     // create RPS syntax
-    Ipp32s numL0 = currFrame->m_refPicList[0].m_refFramesCount;
-    Ipp32s numL1 = currFrame->m_refPicList[1].m_refFramesCount;
+//    Ipp32s numL0 = currFrame->m_refPicList[0].m_refFramesCount;
+//    Ipp32s numL1 = currFrame->m_refPicList[1].m_refFramesCount;
     rps->inter_ref_pic_set_prediction_flag = 0;
     rps->num_negative_pics = numStBefore;
     rps->num_positive_pics = numStAfter;
@@ -2449,11 +2449,11 @@ mfxStatus H265Encoder::PreEncAnalysis(mfxBitstream* mfxBS)
             inputSurface.Data.Y = curFrameInEncodeOrder->y;
 
             m_preEnc.m_inputSurface = &inputSurface;
-            bool bStatus = m_preEnc.preAnalyzeOne(m_preEnc.m_acQPMap);
+            m_preEnc.preAnalyzeOne(m_preEnc.m_acQPMap);
             m_preEnc.m_inputSurface = NULL; // KW issue
         } else {
             m_preEnc.m_inputSurface = NULL;
-            bool bStatus = m_preEnc.preAnalyzeOne(m_preEnc.m_acQPMap); 
+            m_preEnc.preAnalyzeOne(m_preEnc.m_acQPMap); 
         }
 
         m_preEnc.m_stagesToGo &= ~AsyncRoutineEmulator::STG_BIT_START_LA;
