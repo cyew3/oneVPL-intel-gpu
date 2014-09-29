@@ -13,6 +13,7 @@ File Name: vp8e_plugin.cpp
 #include "vp8e_plugin.h"
 #include "mfx_plugin_module.h"
 #include "mfxvideo++int.h"
+#include "mfx_trace.h"
 
 PluginModuleTemplate g_PluginModule = {
     NULL,
@@ -65,6 +66,8 @@ mfxStatus MFX_VP8E_Plugin::PluginInit(mfxCoreInterface * pCore)
     if (!pCore)
         return MFX_ERR_NULL_PTR;
 
+    MFX_TRACE_INIT(NULL, MFX_TRACE_OUTPUT_TRASH);
+
     m_pmfxCore = pCore;
     return MFX_ERR_NONE;
 }
@@ -73,6 +76,8 @@ mfxStatus MFX_VP8E_Plugin::PluginClose()
 {
     mfxStatus mfxRes = MFX_ERR_NONE;
     mfxStatus mfxRes2 = MFX_ERR_NONE;
+
+    MFX_TRACE_CLOSE();
 
     if (m_createdByDispatcher) {
         delete this;
@@ -126,6 +131,7 @@ mfxStatus MFX_VP8E_Plugin::Execute(mfxThreadTask task, mfxU32 , mfxU32 )
 
     if (pTask->m_status == MFX_VP8ENC::TASK_INITIALIZED)
     {
+        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL_VTUNE, "VP8::SubmitFrame");
         VP8_LOG_1("\n (sefremov) Frame %d MFX_VP8E_Plugin::SubmitFrame +", pTask->m_frameOrder);
         mfxStatus sts = MFX_ERR_NONE;
         {
@@ -168,6 +174,7 @@ mfxStatus MFX_VP8E_Plugin::Execute(mfxThreadTask task, mfxU32 , mfxU32 )
     }
     else
     {
+        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL_VTUNE, "VP8::SyncFrame");
         VP8_LOG_1("\n (sefremov) Frame %d MFX_VP8E_Plugin::QueryFrame +", pTask->m_frameOrder);
         mfxStatus           sts = MFX_ERR_NONE;
 
@@ -193,7 +200,10 @@ mfxStatus MFX_VP8E_Plugin::Execute(mfxThreadTask task, mfxU32 , mfxU32 )
         bool bInsertIVF = (extOptVP8->WriteIVFHeaders != MFX_CODINGOPTION_OFF);
         bool bInsertSH  = bInsertIVF && pTask->m_frameOrder==0 && m_bStartIVFSequence;
 
-        m_BSE.RunBSP(bInsertIVF, bInsertSH, pTask->m_pBitsteam, (MFX_VP8ENC::TaskHybridDDI *)pTask, layout, m_pmfxCore);
+        {
+            MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL_VTUNE, "VP8::Pack BS");
+            m_BSE.RunBSP(bInsertIVF, bInsertSH, pTask->m_pBitsteam, (MFX_VP8ENC::TaskHybridDDI *)pTask, layout, m_pmfxCore);
+        }
 
         {
             UMC::AutomaticUMCMutex guard(m_taskMutex);
@@ -249,6 +259,7 @@ mfxStatus MFX_VP8E_Plugin::QueryIOSurf(mfxVideoParam *par, mfxFrameAllocRequest 
 }
 mfxStatus MFX_VP8E_Plugin::Init(mfxVideoParam *par)
 {
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL_VTUNE, "VP8::Init");
     mfxStatus sts  = MFX_ERR_NONE;
     mfxStatus sts1 = MFX_ERR_NONE; // to save warnings ater parameters checking
 
