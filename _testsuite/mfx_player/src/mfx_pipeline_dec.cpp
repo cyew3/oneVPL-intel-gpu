@@ -303,7 +303,7 @@ mfxStatus MFXDecPipeline::BuildMFXPart()
         m_components[eVPP].m_params.vpp.Out = m_components[eREN].m_params.mfx.FrameInfo;
         if ( m_components[eVPP].m_params.vpp.In.FourCC == MFX_FOURCC_R16 )
         {
-            m_components[eVPP].m_params.vpp.In.BitDepthLuma  = 10;
+            m_components[eVPP].m_params.vpp.In.BitDepthLuma  = m_inParams.nInputBitdepth;
             m_components[eVPP].m_params.vpp.In.ChromaFormat  = MFX_CHROMAFORMAT_MONOCHROME;
             m_components[eVPP].m_params.vpp.Out.FourCC       = m_components[eREN].m_params.mfx.FrameInfo.FourCC;
             m_components[eVPP].m_params.vpp.Out.ChromaFormat = MFX_CHROMAFORMAT_YUV444;
@@ -4361,6 +4361,7 @@ mfxStatus MFXDecPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI32 argc, 
                 m_inParams.m_container      = (mfxContainer)MFX_CAM_BAYER_GRBG;
                 m_inParams.FrameInfo.FourCC = MFX_FOURCC_R16;
                 m_inParams.bYuvReaderMode = true;
+                m_inParams.nInputBitdepth = (8 == m_inParams.nInputBitdepth) ? 10 : m_inParams.nInputBitdepth;
             }
             else if (0!=(nPattern = m_OptProc.Check(argv[0], VM_STRING("-i:gb16"), VM_STRING("input stream is in Bayer BGGR format. For camera pipe."), OPT_UNDEFINED)))
             {
@@ -4370,6 +4371,7 @@ mfxStatus MFXDecPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI32 argc, 
                 m_inParams.m_container      = (mfxContainer)MFX_CAM_BAYER_GBRG;
                 m_inParams.FrameInfo.FourCC = MFX_FOURCC_R16;
                 m_inParams.bYuvReaderMode = true;
+                m_inParams.nInputBitdepth = (8 == m_inParams.nInputBitdepth) ? 10 : m_inParams.nInputBitdepth;
             }
             else if (0!=(nPattern = m_OptProc.Check(argv[0], VM_STRING("-i:rg16"), VM_STRING("input stream is in Bayer BGGR format. For camera pipe."), OPT_UNDEFINED)))
             {
@@ -4379,6 +4381,7 @@ mfxStatus MFXDecPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI32 argc, 
                 m_inParams.m_container      = (mfxContainer)MFX_CAM_BAYER_RGGB;
                 m_inParams.FrameInfo.FourCC = MFX_FOURCC_R16;
                 m_inParams.bYuvReaderMode = true;
+                m_inParams.nInputBitdepth = (8 == m_inParams.nInputBitdepth) ? 10 : m_inParams.nInputBitdepth;
             }
             else HANDLE_INT_OPTION(m_inParams.targetViewsTemporalId, VM_STRING("-dec:temporalid"), VM_STRING("in case of MVC->AVC and MVC->MVC transcoding,  specifies coresponding field in mfxExtMVCTargetViews structure"))
             else HANDLE_INT_OPTION(m_inParams.nTestId, VM_STRING("-testid"), VM_STRING("testid value used in SendNotifyMessages(WNDBROADCAST,,testid)"))
@@ -4411,8 +4414,23 @@ mfxStatus MFXDecPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI32 argc, 
             else if (m_OptProc.Check(argv[0], VM_STRING("-camera_gamma_value"), VM_STRING("set specific value for camera gamma correction filter"), OPT_INT_32))
             {
                 MFX_CHECK(1 + argv != argvEnd);
-                m_extExtCamGammaCorrection->Mode = MFX_CAM_GAMMA_VALUE;
-                MFX_PARSE_DOUBLE(m_extExtCamGammaCorrection->GammaValue, argv[1]);
+                float value;
+                MFX_PARSE_DOUBLE(value, argv[1]);
+
+                for (int i = 0; i < 64; i++)
+                {
+                    unsigned short max_input_level = 1<<m_inParams.nInputBitdepth;
+                    gamma_point[i] = (i*2)*(i*2);
+                    gamma_correct[i] = (int)(pow((double)gamma_point[i] / (double)max_input_level, (double)1/value) * (double)max_input_level);
+                    if ( i==63 ) {
+                        gamma_point[i] = 16384-1;
+                        gamma_correct[i] = 16384-1;
+                    }
+                }
+                m_extExtCamGammaCorrection->Mode       = MFX_CAM_GAMMA_LUT;
+                m_extExtCamGammaCorrection->NumPoints  = 64;
+                memcpy(m_extExtCamGammaCorrection->GammaPoint    , gamma_point  , m_extExtCamGammaCorrection->NumPoints*sizeof(mfxU16));
+                memcpy(m_extExtCamGammaCorrection->GammaCorrected, gamma_correct, m_extExtCamGammaCorrection->NumPoints*sizeof(mfxU16));
                 argv++;
             }
             else if (m_OptProc.Check(argv[0], VM_STRING("-camera_gamma_lut"), VM_STRING("use predefined LUT for for camera gamma correction filter")))
@@ -4486,6 +4504,7 @@ mfxStatus MFXDecPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI32 argc, 
                 argv ++;
                 MFX_PARSE_INT(m_extDecVideoProcessing->B, argv[0]);
             }
+            else HANDLE_INT_OPTION(m_inParams.nInputBitdepth, VM_STRING("-i_bitdepth"), VM_STRING("bitdepth of input raw stream"))
             else HANDLE_BOOL_OPTION(m_inParams.bDisableIpFieldPair, VM_STRING("-disable_ip_field_pair"), VM_STRING("disable i/p field pair"));
             else HANDLE_INT_OPTION(m_inParams.nImageStab, VM_STRING("-stabilize"), VM_STRING("use particular image stabilization mode 1-upscale, 2-boxing"))
             else HANDLE_BOOL_OPTION(m_inParams.bPAFFDetect, VM_STRING("-paff"), VM_STRING("enabled picture structure detection by VPP"));

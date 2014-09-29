@@ -75,6 +75,7 @@ struct sCommandlineParams
   mfxU32         nLimitChunkSize; //limits chunk reading from downstreams 
   mfxU64         nLimitInputBs;
   mfxI32         nSeed;
+  mfxU16         nInputBitdepth;
   bool           isDefaultFC;
   bool           bVerbose;
   bool           bPrintSplTimeStamps;  
@@ -261,6 +262,8 @@ struct sCommandlineParams
       OverlayTextSize = 0;
 
       bFadeBackground = false;
+
+      nInputBitdepth = 8;
   }
 };
 
