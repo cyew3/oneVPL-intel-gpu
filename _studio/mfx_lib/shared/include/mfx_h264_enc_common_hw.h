@@ -266,6 +266,7 @@ namespace MfxHwH264Encode
         return opt == MFX_CODINGOPTION_ADAPTIVE;
     }
 
+
     struct HrdParameters
     {
         mfxU8   cpbCntMinus1;
@@ -816,7 +817,15 @@ namespace MfxHwH264Encode
     {
         return (par.mfx.FrameInfo.PicStruct & MFX_PICSTRUCT_PROGRESSIVE) == 0;
     }
-
+    
+    inline void ResetNumSliceIPB(mfxVideoParam &par)
+    {
+        mfxExtCodingOption3 * extOpt3 = GetExtBuffer(par);
+        if(extOpt3->NumSliceI == 0 || extOpt3->NumSliceP == 0 || extOpt3->NumSliceB == 0){
+            extOpt3->NumSliceI = extOpt3->NumSliceP = extOpt3->NumSliceB = par.mfx.NumSlice;
+        }
+    }
+    
     struct mfxExtBufferProxyField
     {
     public:

@@ -1064,8 +1064,12 @@ mfxStatus ImplementationAvc::ProcessAndCheckNewParameters(
 
     mfxStatus spsppsSts = CopySpsPpsToVideoParam(newPar);
 
+    
+    //set NumSliceI/P/B to Numslice if not set by new parameters.
+    ResetNumSliceIPB(newPar);
+    
     InheritDefaultValues(m_video, newPar);
-
+    
     mfxStatus checkStatus = CheckVideoParam(newPar, m_caps, m_core->IsExternalFrameAllocator(), m_currentPlatform, m_currentVaType);
     if (checkStatus == MFX_WRN_PARTIAL_ACCELERATION)
         return MFX_ERR_INVALID_VIDEO_PARAM;

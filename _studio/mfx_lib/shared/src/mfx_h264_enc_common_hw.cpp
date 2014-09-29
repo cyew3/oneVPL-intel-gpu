@@ -1936,8 +1936,13 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
     if (par.mfx.NumSlice !=0 &&
       (extOpt3->NumSliceI != 0 || extOpt3->NumSliceP != 0 || extOpt3->NumSliceB != 0))
     {
-        changed = true;
-        par.mfx.NumSlice = 0;
+        if(par.mfx.NumSlice != extOpt3->NumSliceI &&
+           par.mfx.NumSlice != extOpt3->NumSliceP &&
+           par.mfx.NumSlice != extOpt3->NumSliceB)
+        {
+            changed = true;
+            par.mfx.NumSlice = 0;
+        }
     }
 
     if (par.mfx.NumSlice         != 0 &&
