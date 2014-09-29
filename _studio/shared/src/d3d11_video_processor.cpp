@@ -1802,8 +1802,12 @@ mfxStatus D3D11VideoProcessor::Execute(mfxExecuteParams *pParams)
         }
     }
 
+    UINT StreamCount;
+
     if (pParams->bComposite)
     {
+        StreamCount = pParams->refCount;
+
         for (refIdx = 0; refIdx < pParams->refCount; refIdx++)
         {
             videoProcessorStreams[refIdx].ppPastSurfaces = NULL;
@@ -1817,6 +1821,8 @@ mfxStatus D3D11VideoProcessor::Execute(mfxExecuteParams *pParams)
     }
     else
     {
+        StreamCount = 1;
+
         videoProcessorStreams[0].ppPastSurfaces = (pParams->bkwdRefCount > 0) ? &m_pInputView[0] : NULL;
         videoProcessorStreams[0].PastFrames     = pParams->bkwdRefCount;
 
@@ -1829,7 +1835,7 @@ mfxStatus D3D11VideoProcessor::Execute(mfxExecuteParams *pParams)
     mfxStatus sts = ExecuteBlt(
         (ID3D11Texture2D *)pParams->targetSurface.hdl.first,
         PtrToUlong(pParams->targetSurface.hdl.second),
-        pParams->refCount,
+        StreamCount,
         videoProcessorStreams,
         pParams->statusReportID);
 
