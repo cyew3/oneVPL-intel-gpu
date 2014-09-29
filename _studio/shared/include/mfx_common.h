@@ -67,10 +67,6 @@
     #endif // #if defined(LINUX32) || defined(LINUX64)
 #endif // MFX_VA
 
-#if defined (MFX_VA_LINUX)
-    //#define SYNCHRONIZATION_BY_VA_SYNC_SURFACE
-#endif
-
 #if defined(AS_HEVCD_PLUGIN) || defined(AS_HEVCE_PLUGIN)
     #if defined(HEVCE_EVALUATION)
         #define MFX_ENABLE_WATERMARK
@@ -211,6 +207,16 @@
     #define SYNCHRONIZATION_BY_VA_SYNC_SURFACE
 
 #endif // #if !defined(ANDROID)
+
+#if defined (MFX_VA_LINUX)
+    //#define SYNCHRONIZATION_BY_VA_SYNC_SURFACE
+    #if defined (SYNCHRONIZATION_BY_VA_SYNC_SURFACE)
+        // if SYNCHRONIZATION_BY_NON_ZERO_THREAD is defined then
+        // thread #0 submits tasks to the driver
+        // thread(s) #1, #2, ... make synchronization by vaSyncSurface
+        #define SYNCHRONIZATION_BY_NON_ZERO_THREAD
+    #endif
+#endif
 
 #define MFX_BIT_IN_KB 8*1000
 #endif

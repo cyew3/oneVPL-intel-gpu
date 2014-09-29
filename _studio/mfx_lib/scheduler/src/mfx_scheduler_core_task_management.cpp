@@ -293,7 +293,7 @@ mfxStatus mfxSchedulerCore::WrapUpTask(MFX_CALL_INFO &callInfo,
     {
         return MFX_ERR_NOT_FOUND;
     }
-#if defined(SYNCHRONIZATION_BY_VA_SYNC_SURFACE)
+#if defined(SYNCHRONIZATION_BY_NON_ZERO_THREAD)
         // or the dedicated thread tries to get a non-dedicated 'wait' task
     if ((0 == threadNum) &&
         !(MFX_TASK_DEDICATED & occupancyInfo.threadingPolicy) &&
