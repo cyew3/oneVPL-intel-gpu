@@ -170,8 +170,6 @@ struct sCommandlineParams
   mfxExtCamPipeControl m_CameraPipeControl;
   bool bUseCameraPipePadding;
   mfxExtCamPadding     m_CameraPipePadding;
-  bool bUseCameraPipeGammaCorrection;
-  mfxExtCamGammaCorrection m_CameraPipeGammaCorrection;
 
   bool bUseProcAmp;
   mfxExtVPPProcAmp m_ProcAmp;
@@ -448,6 +446,8 @@ protected:
 
     //Camera specific buffers
     MFXExtBufferPtr<mfxExtCamBlackLevelCorrection> m_extExtCamBlackLevelCorrection;
+    MFXExtBufferPtr<mfxExtCamWhiteBalance>         m_extExtCamWhiteBalance;
+    MFXExtBufferPtr<mfxExtCamGammaCorrection>      m_extExtCamGammaCorrection;
 
     //map for dec view order to enc view id map
     std::vector<std::pair<mfxU16, mfxU16> > m_viewOrderMap;

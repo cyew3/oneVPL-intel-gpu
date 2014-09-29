@@ -188,12 +188,6 @@ public:
         CmDevice            *cmDevice,
         mfxCameraCaps       *pCaps);
 
-    //CmEvent* EnqueueKernel(
-    //    CmKernel *            kernel,
-    //    unsigned int          tsWidth,
-    //    unsigned int          tsHeight,
-    //    CM_DEPENDENCY_PATTERN tsPattern);
-
     void Reset(
         mfxVideoParam const & video,
         mfxCameraCaps       *pCaps);
@@ -203,23 +197,23 @@ public:
         DestroyCmTasks();
     }
 
-    int DestroyEvent( CmEvent*& e ){
-        if(m_queue) {
-            if (e) {
+    int DestroyEvent( CmEvent*& e )
+    {
+        if(m_queue)
+        {
+            if (e)
+            {
                 e->WaitForTaskFinished();
-                //CM_STATUS status = CM_STATUS_QUEUED;
-                //while (status != CM_STATUS_FINISHED) {
-                //    if (e->GetStatus(status) != CM_SUCCESS)
-                //        throw CmRuntimeError();
-                //}
             }
             return m_queue->DestroyEvent(e);
         }
         else return 0;
     }
 
-    int DestroyEventWithoutWait( CmEvent*& e ){
-        if(m_queue) {
+    int DestroyEventWithoutWait( CmEvent*& e )
+    {
+        if(m_queue)
+        {
             return m_queue->DestroyEvent(e);
         }
         else return 0;
@@ -231,8 +225,30 @@ public:
     CmEvent *EnqueueCopyGPUToCPU(CmSurface2D *cmSurf, void *mem, mfxU16 stride = 0);
     CmEvent *EnqueueCopyCPUToGPU(CmSurface2D *cmSurf, void *mem, mfxU16 stride = 0);
 
-    void CreateTask_Padding(SurfaceIndex inSurfIndex, SurfaceIndex paddedSurfIndex, mfxU32 paddedWidth, mfxU32 paddedHeight, int bitDepth, int bayerPattern, mfxU32 task_bufId = 0);
-    //void CreateTask_ManualWhiteBalance(SurfaceIndex inSurfIndex, CmSurface2D *pOutSurf, mfxF32 R, mfxF32 G1, mfxF32 B, mfxF32 G2, mfxU32 bitDepth, mfxU32 taks_bufId = 0);
+    void CreateTask_Padding(SurfaceIndex inSurfIndex,
+                            SurfaceIndex paddedSurfIndex,
+                            mfxU32 paddedWidth,
+                            mfxU32 paddedHeight,
+                            int bitDepth,
+                            int bayerPattern,
+                            mfxU32 task_bufId = 0);
+    void CreateTask_BayerCorrection(SurfaceIndex inoutSurfIndex, 
+                                    CmSurface2D * /*pOutSurf*/,
+                                    mfxU16 Enable_BLC,
+                                    mfxU16 Enable_VIG,
+                                    mfxU16 ENABLE_WB,
+                                    short B_shift,
+                                    short Gtop_shift,
+                                    short Gbot_shift,
+                                    short R_shift,
+                                    mfxF32 R_scale,
+                                    mfxF32 Gtop_scale,
+                                    mfxF32 Gbot_scale,
+                                    mfxF32 B_scale,
+                                    int bitDepth,
+                                    int BayerType,
+                                    mfxU32 task_bufId=0);
+
     void CreateTask_GoodPixelCheck(SurfaceIndex inSurfIndex, SurfaceIndex paddedSurfIndex, CmSurface2D *goodPixCntSurf, CmSurface2D *bigPixCntSurf, int bitDepth, int doShiftSwap, int bayerPattern,  mfxU32 task_bufId = 0);
     void CreateTask_RestoreGreen(SurfaceIndex inSurfIndex, CmSurface2D *goodPixCntSurf, CmSurface2D *bigPixCntSurf, CmSurface2D *greenHorSurf, CmSurface2D *greenVerSurf, CmSurface2D *greenAvgSurf, CmSurface2D *avgFlagSurf, mfxU32 bitDepth, mfxU32 task_bufId = 0);
     void CreateTask_RestoreBlueRed(SurfaceIndex inSurfIndex,
@@ -242,14 +258,17 @@ public:
                                    CmSurface2D *avgFlagSurf, mfxU32 bitDepth, mfxU32 task_bufId = 0);
     void CreateTask_SAD(CmSurface2D *redHorSurf, CmSurface2D *greenHorSurf, CmSurface2D *blueHorSurf, CmSurface2D *redVerSurf, CmSurface2D *greenVerSurf, CmSurface2D *blueVerSurf, CmSurface2D *redOutSurf, CmSurface2D *greenOutSurf, CmSurface2D *blueOutSurf, int bayerPattern, mfxU32 task_bufId = 0);
     void CreateTask_DecideAverage(CmSurface2D *redAvgSurf, CmSurface2D *greenAvgSurf, CmSurface2D *blueAvgSurf, CmSurface2D *avgFlagSurf, CmSurface2D *redOutSurf, CmSurface2D *greenOutSurf, CmSurface2D *blueOutSurf, int bayerPattern, mfxU32 task_bufId = 0);
-    void CreateTask_ForwardGamma(CmSurface2D *correcSurf, CmSurface2D *pointSurf,  CmSurface2D *redSurf, CmSurface2D *greenSurf, CmSurface2D *blueSurf, SurfaceIndex outSurfIndex, mfxU32 bitDepth, mfxU32 task_bufId = 0);
+    void CreateTask_3x3CCM(SurfaceIndex inSurfIndex, CmSurface2D *pOutSurf, mfxF32 R, mfxF32 G1, mfxF32 B, mfxF32 G2, mfxU32 bitDepth, mfxU32 taks_bufId = 0);
+    void CreateTask_ForwardGamma(CmSurface2D *correcSurf,  CmSurface2D *pointSurf,  CmSurface2D *redSurf, CmSurface2D *greenSurf, CmSurface2D *blueSurf, SurfaceIndex outSurfIndex, mfxU32 bitDepth, mfxU32 task_bufId = 0);
     void CreateTask_ForwardGamma(CmSurface2D *correctSurf, CmSurface2D *pointSurf,  CmSurface2D *redSurf, CmSurface2D *greenSurf, CmSurface2D *blueSurf, CmSurface2D *outSurf, mfxU32 bitDepth, mfxU32 task_bufId = 0);
     void CreateTask_ARGB(CmSurface2D *redSurf, CmSurface2D *greenSurf, CmSurface2D *blueSurf, SurfaceIndex outSurfIndex, mfxU32 bitDepth, mfxU32 task_bufId = 0);
 
 //    CmEvent *EnqueueTasks();
 
     CmEvent *EnqueueTask_Padding();
+    CmEvent *EnqueueTask_BayerCorrection();
     CmEvent *EnqueueTask_GoodPixelCheck();
+    CmEvent *EnqueueTask_3x3CCM();
     CmEvent *EnqueueTask_ForwardGamma();
     CmEvent *EnqueueTask_ARGB();
 
@@ -289,17 +308,15 @@ private:
     CmDevice *  m_device;
     CmQueue *   m_queue;
     CmProgram * m_program;
-    eMFXHWType m_platform;
+    eMFXHWType  m_platform;
 
     CmThreadSpace * m_TS_16x16;
     CmThreadSpace * m_TS_Slice_8x8;
     CmThreadSpace * m_TS_Slice_16x16_np;
     CmThreadSpace * m_TS_Slice_8x8_np;
 
-
     std::map<void *, CmSurface2D *> m_tableCmRelations;
     std::map<CmSurface2D *, SurfaceIndex *> m_tableCmIndex;
-
 
     mfxU32 m_widthIn16;
     mfxU32 m_heightIn16;
@@ -313,6 +330,8 @@ private:
     CmKernel*   kernel_padding16bpp;
     //CmKernel*   kernel_hotpixel;
 
+    // Manual WhiteBalance/Blacklevel/Vignette ------------
+    CmKernel*   kernel_BayerCorrection;
     // Vignette kernels ---------------
     //CmKernel*   kernel_GenMask;
     //CmKernel*   kernel_GenUpSampledMask;
@@ -346,44 +365,45 @@ private:
     CmKernel*   kernel_FwGamma1;
     CmKernel*   kernel_ARGB;
 
-
     //CmTask*         task_GenMask[CAM_PIPE_NUM_TASK_BUFFERS];
     //CmTask*         task_GenUpSampledMask[CAM_PIPE_NUM_TASK_BUFFERS];
     //CmTask*         task_Vignette[CAM_PIPE_NUM_TASK_BUFFERS];
-//    CmTask*         CAM_PIPE_TASK_ARRAY(task_WhiteBalanceManual, CAM_PIPE_NUM_TASK_BUFFERS);
+    //CmTask*         CAM_PIPE_TASK_ARRAY(task_WhiteBalanceManual, CAM_PIPE_NUM_TASK_BUFFERS);
 
-    CmTask*          CAM_PIPE_TASK_ARRAY(task_Padding, CAM_PIPE_NUM_TASK_BUFFERS);
+    CmTask*      CAM_PIPE_TASK_ARRAY(task_Padding, CAM_PIPE_NUM_TASK_BUFFERS);
+
+    // Bayer correction
+    CmTask*      CAM_PIPE_TASK_ARRAY(task_BayerCorrection, CAM_PIPE_NUM_TASK_BUFFERS);
 
     // Demosaic - good pix check
-    CmTask*         CAM_PIPE_TASK_ARRAY(task_GoodPixelCheck, CAM_PIPE_NUM_TASK_BUFFERS);
-
+    CmTask*      CAM_PIPE_TASK_ARRAY(task_GoodPixelCheck, CAM_PIPE_NUM_TASK_BUFFERS);
 
     // Demosaic - restore green
-    CmTask*         CAM_PIPE_KERNEL_ARRAY(CAM_PIPE_TASK_ARRAY(task_RestoreGreen, CAM_PIPE_NUM_TASK_BUFFERS), CAM_PIPE_KERNEL_SPLIT);
+    CmTask*      CAM_PIPE_KERNEL_ARRAY(CAM_PIPE_TASK_ARRAY(task_RestoreGreen, CAM_PIPE_NUM_TASK_BUFFERS), CAM_PIPE_KERNEL_SPLIT);
 
     // Demosaic - restore blue and red
-    CmTask*         CAM_PIPE_KERNEL_ARRAY(CAM_PIPE_TASK_ARRAY(task_RestoreBlueRed, CAM_PIPE_NUM_TASK_BUFFERS), CAM_PIPE_KERNEL_SPLIT);
+    CmTask*      CAM_PIPE_KERNEL_ARRAY(CAM_PIPE_TASK_ARRAY(task_RestoreBlueRed, CAM_PIPE_NUM_TASK_BUFFERS), CAM_PIPE_KERNEL_SPLIT);
 
     // Demosaic - SAD
-    CmTask*         CAM_PIPE_KERNEL_ARRAY(CAM_PIPE_TASK_ARRAY(task_SAD, CAM_PIPE_NUM_TASK_BUFFERS), CAM_PIPE_KERNEL_SPLIT);
+    CmTask*      CAM_PIPE_KERNEL_ARRAY(CAM_PIPE_TASK_ARRAY(task_SAD, CAM_PIPE_NUM_TASK_BUFFERS), CAM_PIPE_KERNEL_SPLIT);
 
     // Demosaic - decide average
-    CmTask*         CAM_PIPE_KERNEL_ARRAY(CAM_PIPE_TASK_ARRAY(task_DecideAvg, CAM_PIPE_NUM_TASK_BUFFERS), CAM_PIPE_KERNEL_SPLIT);
+    CmTask*      CAM_PIPE_KERNEL_ARRAY(CAM_PIPE_TASK_ARRAY(task_DecideAvg, CAM_PIPE_NUM_TASK_BUFFERS), CAM_PIPE_KERNEL_SPLIT);
 
     // Demoisaic - check confidence
-//    CmTask*         CAM_PIPE_TASK_ARRAY(task_CheckConfidence, CAM_PIPE_NUM_TASK_BUFFERS);
+    //CmTask*    CAM_PIPE_TASK_ARRAY(task_CheckConfidence, CAM_PIPE_NUM_TASK_BUFFERS);
 
     // Demoisaic - bad pixel check
-//    CmTask*         CAM_PIPE_KERNEL_ARRAY(CAM_PIPE_TASK_ARRAY(task_BadPixelCheck, CAM_PIPE_NUM_TASK_BUFFERS), CAM_PIPE_KERNEL_SPLIT);
+    //CmTask*    CAM_PIPE_KERNEL_ARRAY(CAM_PIPE_TASK_ARRAY(task_BadPixelCheck, CAM_PIPE_NUM_TASK_BUFFERS), CAM_PIPE_KERNEL_SPLIT);
 
     // CCM
-//    CmTask*         CAM_PIPE_TASK_ARRAY(task_3x3CCM, CAM_PIPE_NUM_TASK_BUFFERS);
-//    CmBuffer*       CCM_Matrix;
+    CmTask*      CAM_PIPE_TASK_ARRAY(task_3x3CCM, CAM_PIPE_NUM_TASK_BUFFERS);
+    CmBuffer*    CCM_Matrix;
 
      //Forward Gamma Correction
-    CmTask*         CAM_PIPE_TASK_ARRAY(task_FwGamma, CAM_PIPE_NUM_TASK_BUFFERS);
+    CmTask*      CAM_PIPE_TASK_ARRAY(task_FwGamma, CAM_PIPE_NUM_TASK_BUFFERS);
 
-    CmTask*         CAM_PIPE_TASK_ARRAY(task_ARGB, CAM_PIPE_NUM_TASK_BUFFERS);
+    CmTask*      CAM_PIPE_TASK_ARRAY(task_ARGB, CAM_PIPE_NUM_TASK_BUFFERS);
 };
 
 

@@ -27,6 +27,17 @@ File Name: mfx_camera_plugin_utils.h
 
 //#define CAMERA_DEBUG_PRINTF
 
+#ifdef CAMERA_DEBUG_PRINTF
+ #define CAMERA_DEBUG_LOG(fmt, ...)\
+{\
+    f = fopen("CanonOut.txt", "at");\
+    fprintf(f, fmt, __VA_ARGS__);\
+    fclose(f);\
+}
+#else
+    #define CAMERA_DEBUG_LOG(fmt, ...)
+#endif
+
 //#define WRITE_CAMERA_LOG
 #ifdef WRITE_CAMERA_LOG
 #define CAMERA_LOG(...) \
@@ -197,17 +208,31 @@ typedef struct _mfxCameraCaps
 }   mfxCameraCaps;
 
 
+typedef struct _CameraPipeBlackLevelParams
+{
+    bool        bActive;
+    mfxF32      RedLevel;
+    mfxF32      GreenTopLevel;
+    mfxF32      BlueLevel;
+    mfxF32      GreenBottomLevel;
+} CameraPipeBlackLevelParams;
+
 typedef struct _CameraPipeWhiteBalanceParams
 {
-    //bool        bActive;
-    //mfxU32        Mode;
+    bool        bActive;
+    mfxU32      Mode;
     mfxF32      RedCorrection;
     mfxF32      GreenTopCorrection;
     mfxF32      BlueCorrection;
     mfxF32      GreenBottomCorrection;
 } CameraPipeWhiteBalanceParams;
 
-// from CanonLog10ToRec709_10_LUT_Ver.1.1, picked up 64 points
+
+typedef struct _CameraPipe3x3ColorConversionParams
+{
+    bool        bActive;
+    mfxF32      CCM[3][3];
+} CameraPipe3x3ColorConversionParams;
 
 #define MFX_CAM_GAMMA_NUM_POINTS_SKL 64
 

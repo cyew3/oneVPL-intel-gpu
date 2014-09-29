@@ -133,6 +133,8 @@ MFXDecPipeline::MFXDecPipeline(IMFXPipelineFactory *pFactory)
     , m_pFactory(pFactory)
     , m_extDecVideoProcessing(new mfxExtDecVideoProcessing())
     , m_extExtCamBlackLevelCorrection(new mfxExtCamBlackLevelCorrection())
+    , m_extExtCamWhiteBalance(new mfxExtCamWhiteBalance())
+    , m_extExtCamGammaCorrection(new mfxExtCamGammaCorrection())
     , m_bVPPUpdateInput(false)
 {
 
@@ -1071,19 +1073,20 @@ mfxStatus MFXDecPipeline::CreateVPP()
         MFXExtBufferPtr<mfxExtCamPadding> pCameraPipePadding(m_components[eVPP].m_extParams);
         pCameraPipePadding->Top = pCameraPipePadding->Bottom = pCameraPipePadding->Left = pCameraPipePadding->Right = 8;;
     }
-    if (m_inParams.bUseCameraPipeGammaCorrection)
-    {
-        m_components[eVPP].m_extParams.push_back(new mfxExtCamGammaCorrection());
-        MFXExtBufferPtr<mfxExtCamGammaCorrection> pCameraPipeGammaCorrection(m_components[eVPP].m_extParams);
-        pCameraPipeGammaCorrection->Mode       = MFX_CAM_GAMMA_LUT;
-        pCameraPipeGammaCorrection->NumPoints  = 64;
-        memcpy(pCameraPipeGammaCorrection->GammaPoint    , gamma_point  , pCameraPipeGammaCorrection->NumPoints*sizeof(mfxU16));
-        memcpy(pCameraPipeGammaCorrection->GammaCorrected, gamma_correct, pCameraPipeGammaCorrection->NumPoints*sizeof(mfxU16));
-    }
 
     if ( ! m_extExtCamBlackLevelCorrection.IsZero() )
     {
         m_components[eVPP].m_extParams.push_back(m_extExtCamBlackLevelCorrection);
+    }
+
+    if ( ! m_extExtCamGammaCorrection.IsZero() )
+    {
+        m_components[eVPP].m_extParams.push_back(m_extExtCamGammaCorrection);
+    }
+
+    if ( ! m_extExtCamWhiteBalance.IsZero() )
+    {
+        m_components[eVPP].m_extParams.push_back(m_extExtCamWhiteBalance);
     }
 
     if (m_components[eVPP].m_params.vpp.Out.CropW != 0)
@@ -4272,7 +4275,6 @@ mfxStatus MFXDecPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI32 argc, 
             else HANDLE_64F_OPTION_AND_FLAG(m_inParams.m_ProcAmp.Saturation, VM_STRING("-saturation"), VM_STRING("enable ProcAmp filter with specified saturation (from 0.0f to 10.0f by 0.01f, default = 1.0f)"),m_inParams.bUseProcAmp)
             else HANDLE_BOOL_OPTION(m_inParams.bUseCameraPipe,                 VM_STRING("-camera"), VM_STRING("use camera pipe"));
             else HANDLE_BOOL_OPTION(m_inParams.bUseCameraPipePadding,          VM_STRING("-camera_padding"), VM_STRING("provide camera pipe padding exttended buffer"));
-            else HANDLE_BOOL_OPTION(m_inParams.bUseCameraPipeGammaCorrection,  VM_STRING("-camera_gamma_correction"), VM_STRING("Perform gamma correction in camera pipe"));
             else HANDLE_INT_OPTION(m_inParams.m_WallW,VM_STRING("-wall_w"), VM_STRING("width of video wall (several windows without overlapping"))
             else HANDLE_INT_OPTION(m_inParams.m_WallH,VM_STRING("-wall_h"), VM_STRING("height of video wall (several windows without overlapping"))
             else HANDLE_INT_OPTION(m_inParams.m_WallN,VM_STRING("-wall_n"), VM_STRING("number of current window in video wall (several windows without overlapping"))
@@ -4400,12 +4402,34 @@ mfxStatus MFXDecPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI32 argc, 
             else if (m_OptProc.Check(argv[0], VM_STRING("-camera_blacklevel"), VM_STRING("set specific values for camera blacklevel correction filter B G0 G1 R"), OPT_INT_32))
             {
                 MFX_CHECK(4 + argv != argvEnd);
-
                 MFX_PARSE_INT(m_extExtCamBlackLevelCorrection->B,  argv[1]);
                 MFX_PARSE_INT(m_extExtCamBlackLevelCorrection->G0, argv[2]);
                 MFX_PARSE_INT(m_extExtCamBlackLevelCorrection->G1, argv[3]);
                 MFX_PARSE_INT(m_extExtCamBlackLevelCorrection->R,  argv[4]);
-
+                argv+=4;
+            }
+            else if (m_OptProc.Check(argv[0], VM_STRING("-camera_gamma_value"), VM_STRING("set specific value for camera gamma correction filter"), OPT_INT_32))
+            {
+                MFX_CHECK(1 + argv != argvEnd);
+                m_extExtCamGammaCorrection->Mode = MFX_CAM_GAMMA_VALUE;
+                MFX_PARSE_DOUBLE(m_extExtCamGammaCorrection->GammaValue, argv[1]);
+                argv++;
+            }
+            else if (m_OptProc.Check(argv[0], VM_STRING("-camera_gamma_lut"), VM_STRING("use predefined LUT for for camera gamma correction filter")))
+            {
+                m_extExtCamGammaCorrection->Mode       = MFX_CAM_GAMMA_LUT;
+                m_extExtCamGammaCorrection->NumPoints  = 64;
+                memcpy(m_extExtCamGammaCorrection->GammaPoint    , gamma_point  , m_extExtCamGammaCorrection->NumPoints*sizeof(mfxU16));
+                memcpy(m_extExtCamGammaCorrection->GammaCorrected, gamma_correct, m_extExtCamGammaCorrection->NumPoints*sizeof(mfxU16));
+            }
+            else if (m_OptProc.Check(argv[0], VM_STRING("-camera_whitebalance"), VM_STRING("set specific values for camera whitebalance correction filter B G0 G1 R"), OPT_INT_32))
+            {
+                MFX_CHECK(4 + argv != argvEnd);
+                m_extExtCamWhiteBalance->Mode = MFX_CAM_WHITE_BALANCE_MANUAL;
+                MFX_PARSE_DOUBLE(m_extExtCamWhiteBalance->B,  argv[1]);
+                MFX_PARSE_DOUBLE(m_extExtCamWhiteBalance->G0, argv[2]);
+                MFX_PARSE_DOUBLE(m_extExtCamWhiteBalance->G1, argv[3]);
+                MFX_PARSE_DOUBLE(m_extExtCamWhiteBalance->R,  argv[4]);
                 argv+=4;
             }
             else if (m_OptProc.Check(argv[0], VM_STRING("-mediasdk_splitter"), VM_STRING("split stream from media container with MediaSDK splitter (ts, mp4)"), OPT_BOOL))

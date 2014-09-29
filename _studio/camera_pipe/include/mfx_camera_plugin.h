@@ -171,11 +171,15 @@ protected:
     std::auto_ptr<CmContext>    m_cmCtx;
 
     mfxCameraCaps       m_Caps;
-    //CameraPipeWhiteBalanceParams m_WBparams;
+
+    //Filter specific parameters
+    CameraPipeWhiteBalanceParams m_WBparams;
     CameraPipeForwardGammaParams m_GammaParams;
     CameraPipePaddingParams      m_PaddingParams;
-    CameraFrameSizeExtra     m_FrameSizeExtra;
-    mfxU32              m_InputBitDepth;
+    CameraPipeBlackLevelParams   m_BlackLevelParams;
+    CameraFrameSizeExtra         m_FrameSizeExtra;
+
+    mfxU32                       m_InputBitDepth;
 
     CmSurface2D         *m_cmSurfIn; // CmSurface2DUP or CmSurface2D
     void                *m_memIn;

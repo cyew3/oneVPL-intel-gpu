@@ -309,7 +309,7 @@ CmContext::CmContext(
     mfxCameraCaps *     pCaps,
     eMFXHWType platform)
 {
-//  Zero(task_WhiteBalanceManual);
+    Zero(task_BayerCorrection);
     Zero(task_Padding);
     Zero(task_GoodPixelCheck);
     Zero(task_RestoreGreen);
@@ -318,7 +318,7 @@ CmContext::CmContext(
     Zero(task_DecideAvg);
 //  Zero(task_CheckConfidence);
 //  Zero(task_BadPixelCheck);
-//  Zero(task_3x3CCM);
+    Zero(task_3x3CCM);
     Zero(task_FwGamma);
     Zero(task_ARGB);
     kernel_ARGB     = 0;
@@ -332,11 +332,17 @@ CmContext::CmContext(
 void CmContext::CreateCameraKernels()
 {
     int i;
-    //if (m_caps.bWhiteBalance)
-    //    kernel_whitebalance_manual = CreateKernel(m_device, m_program, CM_KERNEL_FUNCTION(BAYER_GAIN), NULL);
 
     if (!m_caps.bNoPadding)
-        kernel_padding16bpp = CreateKernel(m_device, m_program, CM_KERNEL_FUNCTION(Padding_16bpp), NULL); // padding to be done
+    {
+        kernel_padding16bpp = CreateKernel(m_device, m_program, (CM_KERNEL_FUNCTION(Padding_16bpp)), NULL); // padding to be done
+    }
+
+    if (m_caps.bBlackLevelCorrection || m_caps.bWhiteBalance || m_caps.bVignetteCorrection)
+    {
+        // BlackLevel correction, White balance and vignette filter share the same kernel.
+        kernel_BayerCorrection = CreateKernel(m_device, m_program, CM_KERNEL_FUNCTION(BAYER_CORRECTION), NULL);
+    }
 
     kernel_good_pixel_check = CreateKernel(m_device, m_program, CM_KERNEL_FUNCTION(GOOD_PIXEL_CHECK), NULL);
 
@@ -368,6 +374,11 @@ void CmContext::CreateCameraKernels()
     for (i = 0; i < CAM_PIPE_KERNEL_SPLIT; i++)
     {
         CAM_PIPE_KERNEL_ARRAY(kernel_decide_average, i) = CreateKernel(m_device, m_program, CM_KERNEL_FUNCTION(DECIDE_AVG), NULL);
+    }
+
+    if (m_caps.bColorConversionMatrix)
+    {
+        kernel_3x3ccm = CreateKernel(m_device, m_program, CM_KERNEL_FUNCTION(CCM_ONLY), NULL);
     }
 
     if (m_caps.bForwardGammaCorrection)
@@ -438,7 +449,6 @@ void CmContext::CopyMfxSurfToCmSurf(CmSurface2D *cmSurf, mfxFrameSurface1* mfxSu
         throw CmRuntimeError();
 }
 
-
 void CmContext::CopyMemToCmSurf(CmSurface2D *cmSurf, void *mem) //, gpucopy/cpucopy ??? only for gpucopy so far)
 {
     int result = CM_SUCCESS;
@@ -478,7 +488,7 @@ CmEvent *CmContext::EnqueueCopyGPUToCPU(CmSurface2D *cmSurf, void *mem, mfxU16 s
     else
         result = m_queue->EnqueueCopyGPUToCPU(cmSurf, (unsigned char *)mem, event_transfer);
 
-    if (result != CM_SUCCESS)        
+    if (result != CM_SUCCESS)
         throw CmRuntimeError();
 
     return event_transfer;
@@ -499,8 +509,6 @@ void CmContext::DestroyTask(CmTask *&task)
         throw CmRuntimeError();
 }
 
-
-
 void CmContext::CreateCmTasks()
 {
     for (int i = 0; i < CAM_PIPE_NUM_TASK_BUFFERS; i++)
@@ -508,6 +516,7 @@ void CmContext::CreateCmTasks()
         if (!m_caps.bNoPadding)
             CreateTask(CAM_PIPE_TASK_ARRAY(task_Padding, i));
 
+        CreateTask(CAM_PIPE_TASK_ARRAY(task_BayerCorrection, i));
         CreateTask(CAM_PIPE_TASK_ARRAY(task_GoodPixelCheck, i));
 
         for (int j = 0; j < CAM_PIPE_KERNEL_SPLIT; j++)
@@ -525,11 +534,7 @@ void CmContext::CreateCmTasks()
             CreateTask(CAM_PIPE_TASK_ARRAY(task_ARGB, i));
     }
 
-#ifdef CAMERA_DEBUG_PRINTF
-    FILE *f = fopen("CanonOut.txt", "at");
-    fprintf(f, "CreateCmTasks end device %p task_ARGB=%p \n", m_device, task_ARGB);
-    fclose(f);
-#endif // CAMERA_DEBUG_PRINTF
+    CAMERA_DEBUG_LOG("CreateCmTasks end device %p task_ARGB=%p \n", m_device, task_ARGB);
 
 }
 
@@ -617,7 +622,77 @@ CmEvent *CmContext::EnqueueTask_Padding()
     return e;
 }
 
-void CmContext::CreateTask_GoodPixelCheck(SurfaceIndex inSurfIndex, SurfaceIndex paddedSurfIndex, CmSurface2D *goodPixCntSurf, CmSurface2D *bigPixCntSurf, int bitDepth, int doShiftSwap, int bayerPattern, mfxU32)
+
+void CmContext::CreateTask_BayerCorrection(SurfaceIndex inoutSurfIndex,
+                                           CmSurface2D * /*pOutSurf*/,
+                                           mfxU16 Enable_BLC,
+                                           mfxU16 Enable_VIG,
+                                           mfxU16 ENABLE_WB,
+                                           short B_shift,
+                                           short Gtop_shift,
+                                           short Gbot_shift,
+                                           short R_shift,
+                                           mfxF32 R_scale,
+                                           mfxF32 Gtop_scale,
+                                           mfxF32 Gbot_scale,
+                                           mfxF32 B_scale,
+                                           int bitDepth,
+                                           int BayerType,
+                                           mfxU32 task_bufId)
+{
+    int result;
+    mfxU16 MaxInputLevel = (1<<bitDepth)-1;
+    kernel_BayerCorrection->SetThreadCount(m_widthIn16 * m_heightIn16);
+    int i=0;
+    // Having first equal to 1 means that kernek is the first one, thus padding will
+    // be done. At the moment, padding is a separate kernel that is done before this
+    // so first variable must be set to 0
+    int first = 0;
+
+    kernel_BayerCorrection->SetKernelArg( i++, sizeof(SurfaceIndex), &inoutSurfIndex );
+    kernel_BayerCorrection->SetKernelArg( i++, sizeof(SurfaceIndex), &inoutSurfIndex );
+    kernel_BayerCorrection->SetKernelArg( i++, sizeof(SurfaceIndex), &inoutSurfIndex );
+    kernel_BayerCorrection->SetKernelArg( i++, sizeof(signed short), &Enable_BLC     );
+    kernel_BayerCorrection->SetKernelArg( i++, sizeof(signed short), &Enable_VIG     );
+    kernel_BayerCorrection->SetKernelArg( i++, sizeof(signed short), &ENABLE_WB      );
+    kernel_BayerCorrection->SetKernelArg( i++, sizeof(signed short), &B_shift        );
+    kernel_BayerCorrection->SetKernelArg( i++, sizeof(signed short), &Gtop_shift     );
+    kernel_BayerCorrection->SetKernelArg( i++, sizeof(signed short), &Gbot_shift     );
+    kernel_BayerCorrection->SetKernelArg( i++, sizeof(signed short), &R_shift        );
+    kernel_BayerCorrection->SetKernelArg( i++, sizeof(float),        &R_scale        );
+    kernel_BayerCorrection->SetKernelArg( i++, sizeof(float),        &Gtop_scale     );
+    kernel_BayerCorrection->SetKernelArg( i++, sizeof(float),        &Gbot_scale     );
+    kernel_BayerCorrection->SetKernelArg( i++, sizeof(float),        &B_scale        );
+    kernel_BayerCorrection->SetKernelArg( i++, sizeof(signed short), &MaxInputLevel  );
+    kernel_BayerCorrection->SetKernelArg( i++, sizeof(int),          &first          );
+    kernel_BayerCorrection->SetKernelArg( i++, sizeof(int),          &bitDepth       );
+    kernel_BayerCorrection->SetKernelArg( i++, sizeof(int),          &BayerType      );
+
+    result = task_BayerCorrection->Reset();
+    if (result != CM_SUCCESS)
+        throw CmRuntimeError();
+
+    result = task_BayerCorrection->AddKernel(kernel_BayerCorrection);
+    if (result != CM_SUCCESS )
+        throw CmRuntimeError();
+}
+
+CmEvent *CmContext::EnqueueTask_BayerCorrection()
+{
+    int result;
+    CmEvent *e = CM_NO_EVENT;
+    if ((result = m_queue->Enqueue(task_BayerCorrection, e, m_TS_16x16)) != CM_SUCCESS)
+        throw CmRuntimeError();
+    return e;
+}
+
+void CmContext::CreateTask_GoodPixelCheck(SurfaceIndex inSurfIndex,
+                                          SurfaceIndex paddedSurfIndex,
+                                          CmSurface2D *goodPixCntSurf,
+                                          CmSurface2D *bigPixCntSurf,
+                                          int bitDepth,
+                                          int doShiftSwap,
+                                          int bayerPattern, mfxU32)
 {
     int result;
     mfxI32 shift_amount = (bitDepth - 8);
@@ -702,10 +777,10 @@ void CmContext::CreateTask_RestoreBlueRed(SurfaceIndex inSurfIndex,
         SetKernelArgLast(CAM_PIPE_KERNEL_ARRAY(kernel_restore_blue_red, i), MaxIntensity, 15);
 
         CAM_PIPE_KERNEL_ARRAY(task_RestoreBlueRed, i)->Reset();
-        
+
         if ((result = CAM_PIPE_KERNEL_ARRAY(task_RestoreBlueRed, i)->AddKernel(CAM_PIPE_KERNEL_ARRAY(kernel_restore_blue_red, i))) != CM_SUCCESS)
             throw CmRuntimeError();
-       
+
     }
 }
 
@@ -739,7 +814,7 @@ void CmContext::CreateTask_SAD(CmSurface2D *redHorSurf, CmSurface2D *greenHorSur
 
         if ((result = CAM_PIPE_KERNEL_ARRAY(task_SAD, i)->AddKernel(CAM_PIPE_KERNEL_ARRAY(kernel_sad, i))) != CM_SUCCESS)
             throw CmRuntimeError();
-        
+
     }
 }
 
@@ -757,7 +832,7 @@ void CmContext::CreateTask_DecideAverage(CmSurface2D *redAvgSurf, CmSurface2D *g
 
         CAM_PIPE_KERNEL_ARRAY(kernel_decide_average, i)->SetThreadCount(m_sliceWidthIn16_np * m_sliceHeightIn16_np);
 
-        SetKernelArg(CAM_PIPE_KERNEL_ARRAY(kernel_decide_average, i), GetIndex(redAvgSurf), GetIndex(greenAvgSurf), GetIndex(blueAvgSurf), 
+        SetKernelArg(CAM_PIPE_KERNEL_ARRAY(kernel_decide_average, i), GetIndex(redAvgSurf), GetIndex(greenAvgSurf), GetIndex(blueAvgSurf),
                                                                       GetIndex(avgFlagSurf), GetIndex(redOutSurf), GetIndex(greenOutSurf), GetIndex(blueOutSurf),
                                                                       wr_x_base, wr_y_base, height);
         SetKernelArgLast(CAM_PIPE_KERNEL_ARRAY(kernel_decide_average, i), bayerPattern, 10);
@@ -767,6 +842,31 @@ void CmContext::CreateTask_DecideAverage(CmSurface2D *redAvgSurf, CmSurface2D *g
         if ((result = CAM_PIPE_KERNEL_ARRAY(task_DecideAvg, i)->AddKernel(CAM_PIPE_KERNEL_ARRAY(kernel_decide_average, i))) != CM_SUCCESS)
             throw CmRuntimeError();
     }
+}
+
+void CmContext::CreateTask_3x3CCM(SurfaceIndex inSurfIndex, CmSurface2D *pOutSurf, mfxF32 R, mfxF32 G1, mfxF32 B, mfxF32 G2, mfxU32 bitDepth, mfxU32 task_bufId)
+{
+    int result;
+    mfxU16 MaxInputLevel = (1<<bitDepth)-1;
+    kernel_3x3ccm->SetThreadCount(m_widthIn16 * m_heightIn16);
+    SetKernelArg(kernel_3x3ccm, inSurfIndex, GetIndex(pOutSurf), R, G1, B, G2, MaxInputLevel);
+
+    result = CAM_PIPE_TASK_ARRAY(task_3x3CCM, task_bufId)->Reset();
+    if (result != CM_SUCCESS)
+        throw CmRuntimeError();
+
+    result = CAM_PIPE_TASK_ARRAY(task_3x3CCM, task_bufId)->AddKernel(kernel_3x3ccm);
+    if (result != CM_SUCCESS )
+        throw CmRuntimeError();
+}
+
+CmEvent *CmContext::EnqueueTask_3x3CCM()
+{
+    int result;
+    CmEvent *e = CM_NO_EVENT;
+    if ((result = m_queue->Enqueue(task_3x3CCM, e, m_TS_16x16)) != CM_SUCCESS)
+        throw CmRuntimeError();
+    return e;
 }
 
 #define NEW_GAMMA_THREADS
@@ -782,7 +882,7 @@ void CmContext::CreateTask_ForwardGamma(CmSurface2D *correctSurf, CmSurface2D *p
     kernel_FwGamma1->SetThreadCount(gamma_threads_per_group * 4);
     int threadsheight = (( m_video.vpp.In.CropW + 15) / 16); // not used in the kernel (?)
 #else
-    int threadswidth = m_video.vpp.In.CropW/16; // Out.Width/Height ??? here and below
+    int threadswidth  = m_video.vpp.In.CropW/16; // Out.Width/Height ??? here and below
     int threadsheight = m_video.vpp.In.CropH/16;
     mfxU32 gamma_threads_per_group = 64;
     mfxU32 gamma_groups_vert = ((threadswidth % gamma_threads_per_group) == 0)? (threadswidth/gamma_threads_per_group) : (threadswidth/gamma_threads_per_group + 1);
@@ -809,12 +909,12 @@ void CmContext::CreateTask_ForwardGamma(CmSurface2D *correctSurf, CmSurface2D *p
 
 #ifdef NEW_GAMMA_THREADS
     int gamma_threads_per_group =  m_video.vpp.In.CropW * 4 / 512; // 64;
-    gamma_threads_per_group = (gamma_threads_per_group + 15) &~ 0xF;
-    gamma_threads_per_group = (gamma_threads_per_group < 16) ? 16 : gamma_threads_per_group;
+    gamma_threads_per_group     = (gamma_threads_per_group + 15) &~ 0xF;
+    gamma_threads_per_group     = (gamma_threads_per_group < 16) ? 16 : gamma_threads_per_group;
     kernel_FwGamma->SetThreadCount(gamma_threads_per_group * 4);
     int threadsheight = (( m_video.vpp.In.CropW + 15) / 16); // not used in the kernel (?)
 #else
-    int threadswidth = m_video.vpp.In.CropW/16; // Out.Width/Height ??? here and below
+    int threadswidth  = m_video.vpp.In.CropW/16; // Out.Width/Height ??? here and below
     int threadsheight = m_video.vpp.In.CropH/16;
     mfxU32 gamma_threads_per_group = 64;
     mfxU32 gamma_groups_vert = ((threadswidth % gamma_threads_per_group) == 0)? (threadswidth/gamma_threads_per_group) : (threadswidth/gamma_threads_per_group + 1);
@@ -864,7 +964,6 @@ CmEvent *CmContext::EnqueueTask_ForwardGamma()
     return e;
 }
 
-
 void CmContext::CreateTask_ARGB(CmSurface2D *redSurf, CmSurface2D *greenSurf, CmSurface2D *blueSurf, SurfaceIndex outSurfIndex, mfxU32 bitDepth, mfxU32)
 {
 
@@ -884,12 +983,7 @@ CmEvent *CmContext::EnqueueTask_ARGB()
 {
     int result;
     CmEvent *e = NULL;
-#ifdef CAMERA_DEBUG_PRINTF
-    FILE *f = fopen("CanonOut.txt", "at");
-    fprintf(f, "EnqueueTask_ARGB:  task_ARGB=%p\n",task_ARGB);
-    fclose(f);
-#endif // CAMERA_DEBUG_PRINTF
-
+    CAMERA_DEBUG_LOG("EnqueueTask_ARGB:  task_ARGB=%p\n",task_ARGB);
 
     if ((result = m_queue->Enqueue(task_ARGB, e, m_TS_16x16)) != CM_SUCCESS)
         throw CmRuntimeError();
@@ -921,25 +1015,8 @@ void CmContext::Reset(
     mfxCameraCaps      *pCaps)
 {
     // Demosaic is always on, so the DM kernels must be here already
-
-    //if (pCaps->bForwardGammaCorrection && !m_caps.bForwardGammaCorrection) {
-    //    if (pCaps->bOutToARGB16) {
-    //        kernel_FwGamma = CreateKernel(m_device, m_program, CM_KERNEL_FUNCTION(GAMMA_ONLY), NULL);
-    //        kernel_FwGamma1 = CreateKernel(m_device, m_program, CM_KERNEL_FUNCTION(GAMMA_ONLY), NULL);
-    //    } else {
-    //        kernel_FwGamma = CreateKernel(m_device, m_program, CM_KERNEL_FUNCTION(GAMMA_GPUV4_ARGB8_2D), NULL);
-    //        kernel_FwGamma1 = CreateKernel(m_device, m_program, CM_KERNEL_FUNCTION(GAMMA_GPUV4_ARGB8_2D), NULL);
-    //    }
-    //    for (int i = 0; i < CAM_PIPE_NUM_TASK_BUFFERS; i++) {
-    //        CreateTask(CAM_PIPE_TASK_ARRAY(task_FwGamma, i));
-    //    }
-    //}
-
-    //if (m_caps.bOutToARGB16 || !m_caps.bForwardGammaCorrection)
-    //    CreateTask(CAM_PIPE_TASK_ARRAY(task_ARGB, i));
-
-    for (int i = 0; i < CAM_PIPE_NUM_TASK_BUFFERS; i++) {
-
+    for (int i = 0; i < CAM_PIPE_NUM_TASK_BUFFERS; i++)
+    {
         if (CAM_PIPE_TASK_ARRAY(task_FwGamma, i))
             DestroyTask(CAM_PIPE_TASK_ARRAY(task_FwGamma, i));
 
@@ -964,16 +1041,23 @@ void CmContext::Reset(
     if (pCaps->bOutToARGB16 || !pCaps->bForwardGammaCorrection)
         CreateTask(CAM_PIPE_TASK_ARRAY(task_ARGB, i));
 
-    if (pCaps->bForwardGammaCorrection) {
-        if (m_video.vpp.In.BitDepthLuma == 16) {
+    if (pCaps->bForwardGammaCorrection)
+    {
+        if (m_video.vpp.In.BitDepthLuma == 16)
+        {
             kernel_FwGamma = CreateKernel(m_device, m_program, CM_KERNEL_FUNCTION(GAMMA_ONLY_16bits), NULL);
             // Workaround - otherwise if gamma_argb8 is run with 2DUP out first, and then - with 2D, Enqueue never returns (CM bug)
             kernel_FwGamma1 = CreateKernel(m_device, m_program, CM_KERNEL_FUNCTION(GAMMA_ONLY_16bits), NULL);
-        } else {
-            if (pCaps->bOutToARGB16) {
+        }
+        else
+        {
+            if (pCaps->bOutToARGB16)
+            {
                 kernel_FwGamma = CreateKernel(m_device, m_program, CM_KERNEL_FUNCTION(GAMMA_ONLY), NULL);
                 kernel_FwGamma1 = CreateKernel(m_device, m_program, CM_KERNEL_FUNCTION(GAMMA_ONLY), NULL);
-            } else {
+            }
+            else
+            {
                 kernel_FwGamma = CreateKernel(m_device, m_program, CM_KERNEL_FUNCTION(GAMMA_GPUV4_ARGB8_2D), NULL);
                 kernel_FwGamma1 = CreateKernel(m_device, m_program, CM_KERNEL_FUNCTION(GAMMA_GPUV4_ARGB8_2D), NULL);
             }
@@ -985,24 +1069,30 @@ void CmContext::Reset(
     else if (!pCaps->bForwardGammaCorrection || video.vpp.In.BitDepthLuma == 16)
         kernel_ARGB = CreateKernel(m_device, m_program, CM_KERNEL_FUNCTION(ARGB8), NULL);
 
-    if ((video.vpp.In.BitDepthLuma | m_video.vpp.In.BitDepthLuma) > 16) {
+    if ((video.vpp.In.BitDepthLuma | m_video.vpp.In.BitDepthLuma) > 16)
+    {
         int i;
-        for (i = 0; i < CAM_PIPE_KERNEL_SPLIT; i++) {
+        for (i = 0; i < CAM_PIPE_KERNEL_SPLIT; i++)
+        {
             if (CAM_PIPE_KERNEL_ARRAY(kernel_sad, i))
                 m_device->DestroyKernel(CAM_PIPE_KERNEL_ARRAY(kernel_sad, i));
         }
 
-        if (video.vpp.In.BitDepthLuma != 16) {
-            for (i = 0; i < CAM_PIPE_KERNEL_SPLIT; i++) {
+        if (video.vpp.In.BitDepthLuma != 16)
+        {
+            for (i = 0; i < CAM_PIPE_KERNEL_SPLIT; i++)
+            {
                 CAM_PIPE_KERNEL_ARRAY(kernel_sad, i) = CreateKernel(m_device, m_program, CM_KERNEL_FUNCTION(SAD), NULL);
             }
-        } else {
-            for (i = 0; i < CAM_PIPE_KERNEL_SPLIT; i++) {
+        }
+        else
+        {
+            for (i = 0; i < CAM_PIPE_KERNEL_SPLIT; i++)
+            {
                 CAM_PIPE_KERNEL_ARRAY(kernel_sad, i) = CreateKernel(m_device, m_program, CM_KERNEL_FUNCTION(SAD_16), NULL);
             }
         }
     }
-
 
     m_caps = *pCaps;
     m_video = video;
@@ -1023,21 +1113,15 @@ CmSurface2D *CmContext::CreateCmSurface2D(void *pSrc)
     if (m_tableCmRelations.end() == it)
     {
         cmSts = m_device->CreateSurface2D((AbstractSurfaceHandle *)pSrc, pCmSurface2D);
-        if (cmSts != CM_SUCCESS) {
-#ifdef CAMERA_DEBUG_PRINTF
-    FILE *f = fopen("CanonOut.txt", "at");
-    fprintf(f, "CreateCmSurface2D:  CreateSurface2D pSrc=%p sts=%d \n", pSrc, cmSts);
-    fclose(f);
-#endif // CAMERA_DEBUG_PRINTF
+        if (cmSts != CM_SUCCESS)
+        {
+            CAMERA_DEBUG_LOG("CreateCmSurface2D:  CreateSurface2D pSrc=%p sts=%d \n", pSrc, cmSts);
             return NULL;
         }
+
         m_tableCmRelations.insert(std::pair<void *, CmSurface2D *>(pSrc, pCmSurface2D));
         cmSts = pCmSurface2D->GetIndex(pCmSrcIndex);
-#ifdef CAMERA_DEBUG_PRINTF
-    FILE *f = fopen("CanonOut.txt", "at");
-    fprintf(f, "CreateCmSurface2D:  GetIndex pCmSrcIndex %p pCmSurface2D %p pSrc %p sts=%d \n", pCmSrcIndex, pCmSurface2D, pSrc, cmSts);
-    fclose(f);
-#endif // CAMERA_DEBUG_PRINTF
+        CAMERA_DEBUG_LOG("CreateCmSurface2D:  GetIndex pCmSrcIndex %p pCmSurface2D %p pSrc %p sts=%d \n", pCmSrcIndex, pCmSurface2D, pSrc, cmSts);
         if (cmSts != CM_SUCCESS)
             return NULL;
         m_tableCmIndex.insert(std::pair<CmSurface2D *, SurfaceIndex *>(pCmSurface2D, pCmSrcIndex));
@@ -1056,18 +1140,12 @@ mfxStatus CmContext::ReleaseCmSurfaces(void)
     for (itSrc = m_tableCmRelations.begin() ; itSrc != m_tableCmRelations.end(); itSrc++)
     {
         CmSurface2D *temp = itSrc->second;
-#ifdef CAMERA_DEBUG_PRINTF
-    FILE *f = fopen("CanonOut.txt", "at");
-    fprintf(f, "ReleaseCmSurfaces:   %p \n", temp);
-    fclose(f);
-#endif // CAMERA_DEBUG_PRINTF
+        CAMERA_DEBUG_LOG(f, "ReleaseCmSurfaces:   %p \n", temp);
         m_device->DestroySurface(temp);
     }
     m_tableCmRelations.clear();
     return MFX_ERR_NONE;
 }
-
-
 }
 
 
