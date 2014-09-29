@@ -140,6 +140,10 @@ mfxStatus CheckFrameInfoCodecs(mfxFrameInfo  *info, mfxU32 codecId)
         if (info->FourCC != MFX_FOURCC_NV12 && info->FourCC != MFX_FOURCC_YV12)
             return MFX_ERR_INVALID_VIDEO_PARAM;
             break;
+    case MFX_CODEC_AVC:
+        if (info->FourCC != MFX_FOURCC_NV12 && info->FourCC != MFX_FOURCC_NV16)
+            return MFX_ERR_INVALID_VIDEO_PARAM;
+        break;
     case MFX_CODEC_HEVC:
         if (info->FourCC != MFX_FOURCC_NV12 && info->FourCC != MFX_FOURCC_P010 && info->FourCC != MFX_FOURCC_NV16 && info->FourCC != MFX_FOURCC_P210)
             return MFX_ERR_INVALID_VIDEO_PARAM;
@@ -157,6 +161,7 @@ mfxStatus CheckFrameInfoCodecs(mfxFrameInfo  *info, mfxU32 codecId)
             info->ChromaFormat != MFX_CHROMAFORMAT_YUV400 && info->ChromaFormat != MFX_CHROMAFORMAT_YUV422H)
             return MFX_ERR_INVALID_VIDEO_PARAM;
         break;
+    case MFX_CODEC_AVC:
     case MFX_CODEC_HEVC:
         if (info->ChromaFormat != MFX_CHROMAFORMAT_YUV420 && info->ChromaFormat != MFX_CHROMAFORMAT_YUV422 &&
             info->ChromaFormat != MFX_CHROMAFORMAT_YUV400)

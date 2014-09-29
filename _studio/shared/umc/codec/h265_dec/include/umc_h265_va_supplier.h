@@ -39,7 +39,7 @@ public:
 
     VATaskSupplier();
 
-    virtual UMC::Status Init(UMC::BaseCodecParams *pInit);
+    virtual UMC::Status Init(UMC::VideoDecoderParams *pInit);
 
     virtual void Reset();
 

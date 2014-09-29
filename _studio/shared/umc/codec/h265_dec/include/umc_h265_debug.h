@@ -29,7 +29,9 @@ namespace UMC_HEVC_DECODER
 {
 
 #ifdef ENABLE_TRACE
+    class H265DecoderFrame;
     void Trace(vm_char * format, ...);
+    const vm_char* GetFrameInfoString(H265DecoderFrame * frame);
 
 #if defined _DEBUG
 #define DEBUG_PRINT(x) Trace x

@@ -351,8 +351,6 @@ typedef enum
 
 enum
 {
-    INVALID_DPB_DELAY_H265 = 0xffffffff,
-
     MAX_NUM_VPS_PARAM_SETS_H265 = 16,
     MAX_NUM_SEQ_PARAM_SETS_H265 = 16,
     MAX_NUM_PIC_PARAM_SETS_H265 = 64,

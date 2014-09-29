@@ -34,9 +34,9 @@ VATaskSupplier::VATaskSupplier()
 {
 }
 
-UMC::Status VATaskSupplier::Init(UMC::BaseCodecParams *pInit)
+UMC::Status VATaskSupplier::Init(UMC::VideoDecoderParams *pInit)
 {
-    SetVideoHardwareAccelerator(static_cast<UMC::VideoDecoderParams*>(pInit)->pVideoAccelerator);
+    SetVideoHardwareAccelerator(pInit->pVideoAccelerator);
     m_pMemoryAllocator = pInit->lpMemoryAllocator;
 
     pInit->numThreads = 1;
@@ -51,8 +51,7 @@ UMC::Status VATaskSupplier::Init(UMC::BaseCodecParams *pInit)
     if (m_va)
     {
         static_cast<TaskBrokerSingleThreadDXVA*>(m_pTaskBroker)->DXVAStatusReportingMode(false);//m_va->m_HWPlatform != UMC::VA_HW_LAKE);
-        UMC::VideoDecoderParams *init = DynamicCast<UMC::VideoDecoderParams> (pInit);
-        m_DPBSizeEx = m_iThreadNum + init->info.bitrate; 
+        m_DPBSizeEx = m_iThreadNum + pInit->info.bitrate;
     }
 
     m_sei_messages = new SEI_Storer_H265();
@@ -75,9 +74,6 @@ void VATaskSupplier::SetBufferedFramesNumber(Ipp32u buffered)
 {
     m_DPBSizeEx = 1 + buffered;
     m_bufferedFrameNumber = buffered;
-
-    if (buffered)
-        m_isUseDelayDPBValues = false;
 }
 
 H265DecoderFrame * VATaskSupplier::GetFrameToDisplayInternal(bool force)

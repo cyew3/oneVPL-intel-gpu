@@ -487,16 +487,14 @@ public:
     TaskSupplier();
     virtual ~TaskSupplier();
 
-    virtual Status Init(BaseCodecParams *pInit);
+    virtual Status Init(VideoDecoderParams *pInit);
 
-    virtual Status PreInit(BaseCodecParams *pInit);
+    virtual Status PreInit(VideoDecoderParams *pInit);
 
     virtual void Reset();
     virtual void Close();
 
     Status GetInfo(VideoDecoderParams *lpInfo);
-
-    Status GetInfoFromData(BaseCodecParams* params);
 
     virtual Status AddSource(MediaData * pSource, MediaData *dst);
 

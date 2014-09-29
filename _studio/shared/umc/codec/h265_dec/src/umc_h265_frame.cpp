@@ -30,7 +30,6 @@ H265DecoderFrame::H265DecoderFrame(UMC::MemoryAllocator *pMemoryAllocator, Heap_
     , m_pFutureFrame(0)
     , m_dFrameTime(-1.0)
     , m_isOriginalPTS(false)
-    , m_dpb_output_delay(INVALID_DPB_DELAY_H265)
     , post_procces_complete(false)
     , m_index(-1)
     , m_UID(-1)
@@ -132,7 +131,6 @@ void H265DecoderFrame::Reset()
     m_wasOutputted = 0;
     m_wasDisplayed = 0;
     m_pic_output = true;
-    m_dpb_output_delay = INVALID_DPB_DELAY_H265;
     m_maxUIDWhenWasDisplayed = 0;
 
     m_dFrameTime = -1;
@@ -204,8 +202,6 @@ void H265DecoderFrame::UpdateErrorWithRefFrameStatus()
 void H265DecoderFrame::OnDecodingCompleted()
 {
     UpdateErrorWithRefFrameStatus();
-
-    SetisDisplayable(true);
 
     m_Flags.isDecoded = 1;
     DEBUG_PRINT1((VM_STRING("On decoding complete decrement for POC %d, reference = %d\n"), m_PicOrderCnt, m_refCounter));

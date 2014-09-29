@@ -121,10 +121,8 @@ MFXTaskSupplier::~MFXTaskSupplier()
     Close();
 }
 
-Status MFXTaskSupplier::Init(BaseCodecParams *pInit)
+Status MFXTaskSupplier::Init(VideoDecoderParams *init)
 {
-    VideoDecoderParams *init = DynamicCast<VideoDecoderParams> (pInit);
-
     if (NULL == init)
         return UMC_ERR_NULL_PTR;
 
@@ -198,7 +196,7 @@ Status MFXTaskSupplier::Init(BaseCodecParams *pInit)
         m_local_delta_frame_time = 1 / init->info.framerate;
     }
 
-    H264VideoDecoderParams *initH264 = DynamicCast<H264VideoDecoderParams> (pInit);
+    H264VideoDecoderParams *initH264 = DynamicCast<H264VideoDecoderParams> (init);
     m_DPBSizeEx = m_iThreadNum + (initH264 ? initH264->m_bufferedFrames : 0);
     return UMC_OK;
 }
@@ -375,7 +373,7 @@ Status MFXTaskSupplier::DecodeHeaders(MediaDataEx *nalUnit)
 
     if (currSPS)
     {
-        if (currSPS->bit_depth_luma > 8 || currSPS->bit_depth_chroma > 8 || currSPS->chroma_format_idc > 1)
+        if (currSPS->bit_depth_luma > 8 || currSPS->bit_depth_chroma > 8 || currSPS->chroma_format_idc > 2)
             throw h264_exception(UMC_ERR_UNSUPPORTED);
 
         switch (currSPS->profile_idc)
@@ -385,6 +383,7 @@ Status MFXTaskSupplier::DecodeHeaders(MediaDataEx *nalUnit)
         case H264VideoDecoderParams::H264_PROFILE_MAIN:
         case H264VideoDecoderParams::H264_PROFILE_EXTENDED:
         case H264VideoDecoderParams::H264_PROFILE_HIGH:
+        case H264VideoDecoderParams::H264_PROFILE_HIGH422:
 
         case H264VideoDecoderParams::H264_PROFILE_MULTIVIEW_HIGH:
         case H264VideoDecoderParams::H264_PROFILE_STEREO_HIGH:
@@ -581,6 +580,9 @@ bool MFX_Utility::IsNeedPartialAcceleration(mfxVideoParam * par, eMFXHWType )
         return false;
 
     if (par->mfx.SliceGroupsPresent) // Is FMO
+        return true;
+
+    if (par->mfx.FrameInfo.FourCC != MFX_FOURCC_NV12) // yuv422 in SW only
         return true;
 
     /*mfxExtSVCSeqDesc * svcDesc = (mfxExtSVCSeqDesc*)GetExtendedBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_SVC_SEQ_DESC);
@@ -1290,6 +1292,7 @@ mfxStatus MFX_Utility::Query(VideoCORE *core, mfxVideoParam *in, mfxVideoParam *
             (MFX_PROFILE_AVC_BASELINE == in->mfx.CodecProfile) ||
             (MFX_PROFILE_AVC_MAIN == in->mfx.CodecProfile) ||
             (MFX_PROFILE_AVC_HIGH == in->mfx.CodecProfile) ||
+            (MFX_PROFILE_AVC_HIGH_422 == in->mfx.CodecProfile) ||
             (MFX_PROFILE_AVC_EXTENDED == in->mfx.CodecProfile) ||
             (MFX_PROFILE_AVC_MULTIVIEW_HIGH == in->mfx.CodecProfile) ||
             (MFX_PROFILE_AVC_STEREO_HIGH == in->mfx.CodecProfile) ||
@@ -1399,7 +1402,7 @@ mfxStatus MFX_Utility::Query(VideoCORE *core, mfxVideoParam *in, mfxVideoParam *
                 sts = MFX_ERR_UNSUPPORTED;
         }
 
-        if (in->mfx.FrameInfo.ChromaFormat == MFX_CHROMAFORMAT_YUV420 || in->mfx.FrameInfo.ChromaFormat == MFX_CHROMAFORMAT_YUV400)
+        if (in->mfx.FrameInfo.ChromaFormat == MFX_CHROMAFORMAT_YUV420 || in->mfx.FrameInfo.ChromaFormat == MFX_CHROMAFORMAT_YUV400 || in->mfx.FrameInfo.ChromaFormat == MFX_CHROMAFORMAT_YUV422)
             out->mfx.FrameInfo.ChromaFormat = in->mfx.FrameInfo.ChromaFormat;
         else
             sts = MFX_ERR_UNSUPPORTED;
@@ -1809,7 +1812,7 @@ mfxStatus MFX_Utility::Query(VideoCORE *core, mfxVideoParam *in, mfxVideoParam *
         out->AsyncDepth = 1;
 
         // mfxFrameInfo
-        out->mfx.FrameInfo.FourCC = MFX_FOURCC_NV12;
+        out->mfx.FrameInfo.FourCC = 1;
         out->mfx.FrameInfo.Width = 16;
         out->mfx.FrameInfo.Height = 16;
 
@@ -1919,6 +1922,7 @@ bool MFX_Utility::CheckVideoParam(mfxVideoParam *in, eMFXHWType type)
     case MFX_PROFILE_AVC_MAIN:
     case MFX_PROFILE_AVC_EXTENDED:
     case MFX_PROFILE_AVC_HIGH:
+    case MFX_PROFILE_AVC_HIGH_422:
     case MFX_PROFILE_AVC_STEREO_HIGH:
     case MFX_PROFILE_AVC_MULTIVIEW_HIGH:
     case MFX_PROFILE_AVC_SCALABLE_BASELINE:
@@ -1972,7 +1976,7 @@ bool MFX_Utility::CheckVideoParam(mfxVideoParam *in, eMFXHWType type)
         return false;
 #endif
 
-    if (in->mfx.FrameInfo.FourCC != MFX_FOURCC_NV12)
+    if (in->mfx.FrameInfo.FourCC != MFX_FOURCC_NV12 && in->mfx.FrameInfo.FourCC != MFX_FOURCC_NV16)
         return false;
 
     // both zero or not zero
@@ -1993,7 +1997,10 @@ bool MFX_Utility::CheckVideoParam(mfxVideoParam *in, eMFXHWType type)
         return false;
     }
 
-    if (in->mfx.FrameInfo.ChromaFormat != MFX_CHROMAFORMAT_YUV420 && in->mfx.FrameInfo.ChromaFormat != MFX_CHROMAFORMAT_YUV400)
+    if (in->mfx.FrameInfo.ChromaFormat != MFX_CHROMAFORMAT_YUV420 && in->mfx.FrameInfo.ChromaFormat != MFX_CHROMAFORMAT_YUV400 && in->mfx.FrameInfo.ChromaFormat != MFX_CHROMAFORMAT_YUV422)
+        return false;
+
+    if ((in->mfx.FrameInfo.ChromaFormat == MFX_CHROMAFORMAT_YUV422) != (in->mfx.FrameInfo.FourCC == MFX_FOURCC_NV16))
         return false;
 
     if (!(in->IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY) && !(in->IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY) && !(in->IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY))

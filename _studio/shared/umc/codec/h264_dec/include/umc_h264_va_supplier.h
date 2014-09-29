@@ -40,7 +40,7 @@ public:
 
     VATaskSupplier();
 
-    virtual Status Init(BaseCodecParams *pInit);
+    virtual Status Init(VideoDecoderParams *pInit);
 
     virtual void Reset();
 

@@ -34,9 +34,9 @@ VATaskSupplier::VATaskSupplier()
 {
 }
 
-Status VATaskSupplier::Init(BaseCodecParams *pInit)
+Status VATaskSupplier::Init(VideoDecoderParams *pInit)
 {
-    SetVideoHardwareAccelerator(static_cast<UMC::VideoDecoderParams*>(pInit)->pVideoAccelerator);
+    SetVideoHardwareAccelerator(pInit->pVideoAccelerator);
     m_pMemoryAllocator = pInit->lpMemoryAllocator;
 
     pInit->numThreads = 1;

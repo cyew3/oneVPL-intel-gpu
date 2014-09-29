@@ -128,7 +128,14 @@ Status FillVideoParam(const UMC_H264_DECODER::H264SeqParamSet * seq, mfxVideoPar
 {
     par->mfx.CodecId = MFX_CODEC_AVC;
 
-    par->mfx.FrameInfo.FourCC = MFX_FOURCC_NV12;
+    if (seq->bit_depth_luma > 8 || seq->bit_depth_chroma > 8)
+    {
+        par->mfx.FrameInfo.FourCC = seq->chroma_format_idc == 2 ? MFX_FOURCC_P210 : MFX_FOURCC_P010;
+    }
+    else
+    {
+        par->mfx.FrameInfo.FourCC = seq->chroma_format_idc == 2 ? MFX_FOURCC_NV16 : MFX_FOURCC_NV12;
+    }
 
     par->mfx.FrameInfo.Width = (mfxU16) (seq->frame_width_in_mbs * 16);
     par->mfx.FrameInfo.Height = (mfxU16) (seq->frame_height_in_mbs * 16);
@@ -146,7 +153,13 @@ Status FillVideoParam(const UMC_H264_DECODER::H264SeqParamSet * seq, mfxVideoPar
     }
 
     par->mfx.FrameInfo.PicStruct = (mfxU8)(seq->frame_mbs_only_flag ? MFX_PICSTRUCT_PROGRESSIVE : MFX_PICSTRUCT_UNKNOWN);
-    par->mfx.FrameInfo.ChromaFormat = (mfxU16)(seq->chroma_format_idc ? MFX_CHROMAFORMAT_YUV420 : MFX_CHROMAFORMAT_YUV400);
+    
+    if (seq->chroma_format_idc == 2)
+    {
+        par->mfx.FrameInfo.ChromaFormat = (mfxU16)MFX_CHROMAFORMAT_YUV422;
+    }
+    else
+        par->mfx.FrameInfo.ChromaFormat = (mfxU16)(seq->chroma_format_idc ? MFX_CHROMAFORMAT_YUV420 : MFX_CHROMAFORMAT_YUV400);
 
     if (seq->aspect_ratio_info_present_flag || full)
     {

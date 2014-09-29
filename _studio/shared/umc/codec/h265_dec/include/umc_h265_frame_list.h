@@ -103,14 +103,8 @@ public:
     // Return number of active short and long term reference frames.
     void countActiveRefs(Ipp32u &numShortTerm, Ipp32u &numLongTerm);
 
-    // Searches DPB for an oldest displayable frame with maximum ref pic list reset count
-    H265DecoderFrame * findDisplayableByDPBDelay();
-
     // Search through the list for the oldest displayable frame.
     H265DecoderFrame *findOldestDisplayable(Ipp32s dbpSize);
-
-    // Return number of displayable frames.
-    Ipp32u countNumDisplayable();
 
     void calculateInfoForDisplay(Ipp32u &countDisplayable, Ipp32u &countDPBFullness, Ipp32s &maxUID);
 

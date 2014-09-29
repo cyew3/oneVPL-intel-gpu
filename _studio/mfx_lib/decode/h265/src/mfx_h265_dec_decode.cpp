@@ -56,6 +56,14 @@ inline bool IsNeedToUseHWBuffering(eMFXHWType type)
 
 struct ThreadTaskInfo
 {
+    ThreadTaskInfo()
+        : surface_work(0)
+        , surface_out(0)
+        , pFrame(0)
+        , taskID(0)
+    {
+    }
+
     mfxFrameSurface1 *surface_work;
     mfxFrameSurface1 *surface_out;
     mfxU32            taskID; // for task ordering
@@ -769,8 +777,8 @@ mfxStatus VideoDECODEH265::RunThread(void * params, mfxU32 threadNumber)
             return MFX_TASK_DONE;
 
         isDecoded = m_pH265VideoDecoder->CheckDecoding(true, info->pFrame);
-        if (isDecoded)
-            info->pFrame->m_maxUIDWhenWasDisplayed = 0;
+        //if (isDecoded)
+          //  info->pFrame->m_maxUIDWhenWasDisplayed = 0;
     }
 
     if (!isDecoded)
@@ -787,13 +795,13 @@ mfxStatus VideoDECODEH265::RunThread(void * params, mfxU32 threadNumber)
         if (isDecoded)
         {
             info->surface_work = 0;
-            info->pFrame->m_maxUIDWhenWasDisplayed = 0;
+            //info->pFrame->m_maxUIDWhenWasDisplayed = 0;
         }
     }
 
     if (isDecoded)
     {
-        if (!info->pFrame->wasDisplayed())
+        if (!info->pFrame->wasDisplayed() && info->surface_out)
         {
             mfxStatus sts = DecodeFrame(info->surface_out, info->pFrame);
 
@@ -815,22 +823,45 @@ mfxStatus VideoDECODEH265::DecodeFrameCheck(mfxBitstream *bs,
 {
     mfxStatus mfxSts = DecodeFrameCheck(bs, surface_work, surface_out);
 
-    if (MFX_ERR_NONE == mfxSts) // It can be useful to run threads right after first frame receive
+    if (MFX_ERR_NONE == mfxSts || MFX_ERR_MORE_DATA_RUN_TASK == mfxSts) // It can be useful to run threads right after first frame receive
     {
         ThreadTaskInfo * info = new ThreadTaskInfo();
+
         info->surface_work = GetOriginalSurface(surface_work);
-        info->surface_out = GetOriginalSurface(*surface_out);
 
-        mfxI32 index = m_FrameAllocator->FindSurface(info->surface_out, m_isOpaq);
-        H265DecoderFrame *pFrame = m_pH265VideoDecoder->FindSurface((UMC::FrameMemID)index);
+        if (*surface_out)
+        {
+            info->surface_out = GetOriginalSurface(*surface_out);
 
-        info->pFrame = pFrame;
+            mfxI32 index = m_FrameAllocator->FindSurface(info->surface_out, m_isOpaq);
+            H265DecoderFrame *pFrame = m_pH265VideoDecoder->FindSurface((UMC::FrameMemID)index);
+
+            info->pFrame = pFrame;
+        }else
+        {
+            H265DecoderFrame *pFrame = m_pH265VideoDecoder->GetDPBList()->head();
+            for (; pFrame; pFrame = pFrame->future())
+            {
+                if (!pFrame->m_pic_output && !pFrame->IsDecoded())
+                {
+                    info->pFrame = pFrame;
+                    break;
+                }
+            }
+
+            if (!info->pFrame)
+            {
+                return MFX_ERR_UNDEFINED_BEHAVIOR;
+            }
+        }
 
         pEntryPoint->pRoutine = &HEVCDECODERoutine;
         pEntryPoint->pCompleteProc = &HEVCCompleteProc;
         pEntryPoint->pState = this;
         pEntryPoint->requiredNumThreads = m_vPar.mfx.NumThread;
         pEntryPoint->pParam = info;
+
+        return MFX_ERR_NONE;
     }
 
     return mfxSts;
@@ -909,7 +940,7 @@ mfxStatus VideoDECODEH265::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1 *
         {
             if (m_FrameAllocator->FindFreeSurface() == -1)
             {
-                umcRes = UMC::UMC_ERR_NOT_ENOUGH_BUFFER;
+                umcRes = UMC::UMC_ERR_NEED_FORCE_OUTPUT;
             }
             else
             {
@@ -917,9 +948,6 @@ mfxStatus VideoDECODEH265::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1 *
             }
 
             umcAddSourceRes = umcFrameRes = umcRes;
-
-            //if (umcRes == MFX_ERR_DEVICE_LOST)
-              //  return MFX_ERR_DEVICE_LOST;
 
             if (umcRes == UMC::UMC_NTF_NEW_RESOLUTION || umcRes == UMC::UMC_WRN_REPOSITION_INPROGRESS || umcRes == UMC::UMC_ERR_UNSUPPORTED)
             {
@@ -955,10 +983,10 @@ mfxStatus VideoDECODEH265::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1 *
                 umcFrameRes = UMC::UMC_ERR_NOT_ENOUGH_BUFFER;
             }
 
-            if (umcRes == UMC::UMC_ERR_NOT_ENOUGH_BUFFER || umcRes == UMC::UMC_WRN_INFO_NOT_READY)
+            if (umcRes == UMC::UMC_ERR_NOT_ENOUGH_BUFFER || umcRes == UMC::UMC_WRN_INFO_NOT_READY || umcRes == UMC::UMC_ERR_NEED_FORCE_OUTPUT)
             {
-                force = umcRes == UMC::UMC_ERR_NOT_ENOUGH_BUFFER;
-                sts = MFX_WRN_DEVICE_BUSY;
+                force = (umcRes == UMC::UMC_ERR_NEED_FORCE_OUTPUT);
+                sts = umcRes == UMC::UMC_ERR_NOT_ENOUGH_BUFFER ? (mfxStatus)MFX_ERR_MORE_DATA_RUN_TASK : MFX_WRN_DEVICE_BUSY;
             }
 
             if (umcRes == UMC::UMC_ERR_NOT_ENOUGH_DATA || umcRes == UMC::UMC_ERR_SYNC)
@@ -1246,30 +1274,14 @@ mfxStatus VideoDECODEH265::GetPayload( mfxU64 *ts, mfxPayload *payload )
 // Find a next frame ready to be output from decoder
 H265DecoderFrame * VideoDECODEH265::GetFrameToDisplay_H265(UMC::VideoData * dst, bool force)
 {
-    //if (!m_pH265VideoDecoder->IsShouldSuspendDisplay() && !force && m_platform == MFX_PLATFORM_SOFTWARE)
-      //  return 0;
-
-    H265DecoderFrame * pFrame = 0;
-    do
+    H265DecoderFrame * pFrame = m_pH265VideoDecoder->GetFrameToDisplayInternal(force);
+    if (!pFrame)
     {
-        pFrame = m_pH265VideoDecoder->GetFrameToDisplayInternal(force);
-        if (!pFrame)
-        {
-            return 0;
-        }
+        return 0;
+    }
 
-        pFrame->setWasOutputted();
-
-        if (pFrame->m_pic_output || m_vInitPar.mfx.DecodedOrder)
-        {
-            break;
-        }
-
-        pFrame->setWasDisplayed();
-    } while (true);
-
+    pFrame->setWasOutputted();
     m_pH265VideoDecoder->PostProcessDisplayFrame(dst, pFrame);
-   
 
     return pFrame;
 }

@@ -545,6 +545,11 @@ mfxStatus MFXVideoDECODE_DecodeFrameAsync(mfxSession session, mfxBitstream *bs, 
             }
         }
 
+        if (MFX_ERR_MORE_DATA_RUN_TASK == mfxRes)
+        {
+            mfxRes = MFX_WRN_DEVICE_BUSY;
+        }
+
         // return pointer to synchronization point
         if (MFX_ERR_NONE == mfxRes)
         {

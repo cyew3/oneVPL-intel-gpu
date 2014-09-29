@@ -104,9 +104,8 @@ MFXTaskSupplier_H265::~MFXTaskSupplier_H265()
 }
 
 // Initialize task supplier
-UMC::Status MFXTaskSupplier_H265::Init(UMC::BaseCodecParams *pInit)
+UMC::Status MFXTaskSupplier_H265::Init(UMC::VideoDecoderParams *init)
 {
-    UMC::VideoDecoderParams *init = DynamicCast<UMC::VideoDecoderParams> (pInit);
     UMC::Status umcRes;
 
     if (NULL == init)
@@ -148,7 +147,6 @@ UMC::Status MFXTaskSupplier_H265::Init(UMC::BaseCodecParams *pInit)
             return UMC::UMC_ERR_INIT;
     }
 
-    m_isUseDelayDPBValues = true;
     m_local_delta_frame_time = 1.0/30;
     m_frameOrder             = 0;
     m_use_external_framerate = 0 < init->info.framerate;
@@ -253,6 +251,7 @@ void MFXTaskSupplier_H265::CompleteFrame(H265DecoderFrame * pFrame)
 void MFXTaskSupplier_H265::SetVideoParams(mfxVideoParam * par)
 {
     m_firstVideoParams = *par;
+    m_decodedOrder     = m_firstVideoParams.mfx.DecodedOrder != 0;
 }
 
 // Decode headers nal unit

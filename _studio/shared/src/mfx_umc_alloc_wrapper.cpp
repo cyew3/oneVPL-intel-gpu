@@ -160,7 +160,7 @@ UMC::Status mfx_UMC_FrameAllocator::InitMfx(UMC::FrameAllocatorParams *,
     m_pCore = mfxCore;
     m_IsUseExternalFrames = isUseExternalFrames;
 
-    Ipp32s bit_depth = params->mfx.FrameInfo.FourCC == MFX_FOURCC_P010 ? 10 : 8;
+    Ipp32s bit_depth = (params->mfx.FrameInfo.FourCC == MFX_FOURCC_P010 || params->mfx.FrameInfo.FourCC == MFX_FOURCC_P210)? 10 : 8;
 
     UMC::ColorFormat color_format;
 
@@ -678,10 +678,12 @@ mfxI32 mfx_UMC_FrameAllocator::AddSurface(mfxFrameSurface1 *surface)
     switch (surface->Info.FourCC)
     {
     case MFX_FOURCC_NV12:
+    case MFX_FOURCC_NV16:
     case MFX_FOURCC_YV12:
     case MFX_FOURCC_YUY2:
     case MFX_FOURCC_RGB4:
     case MFX_FOURCC_P010:
+    case MFX_FOURCC_P210:
 #if defined (MFX_VA_WIN)
     case DXGI_FORMAT_AYUV:
 #endif

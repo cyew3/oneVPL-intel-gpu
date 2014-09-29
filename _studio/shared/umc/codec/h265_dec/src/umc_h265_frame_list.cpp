@@ -165,62 +165,6 @@ H265DecoderFrame * H265DBPList::GetDisposable(void)
     return NULL;
 } // H265DecoderFrame *H265DBPList::GetDisposable(void)
 
-// Searches DPB for an oldest displayable frame with maximum ref pic list reset count
-H265DecoderFrame * H265DBPList::findDisplayableByDPBDelay(void)
-{
-    H265DecoderFrame *pCurr = m_pHead;
-    H265DecoderFrame *pOldest = NULL;
-    Ipp32s  SmallestPicOrderCnt = 0x7fffffff;    // very large positive
-    Ipp32s  LargestRefPicListResetCount = 0;
-
-    Ipp32s count = 0;
-    while (pCurr)
-    {
-        if ((pCurr->isDisplayable() || (!pCurr->IsDecoded() && pCurr->IsFullFrame())) && !pCurr->wasOutputted() && !pCurr->m_dpb_output_delay)
-        {
-            // corresponding frame
-            if (pCurr->RefPicListResetCount() > LargestRefPicListResetCount)
-            {
-                pOldest = pCurr;
-                SmallestPicOrderCnt = pCurr->PicOrderCnt();
-                LargestRefPicListResetCount = pCurr->RefPicListResetCount();
-            }
-            else if (pCurr->PicOrderCnt() <= SmallestPicOrderCnt && pCurr->RefPicListResetCount() == LargestRefPicListResetCount)
-            {
-                pOldest = pCurr;
-                SmallestPicOrderCnt = pCurr->PicOrderCnt();
-            }
-
-            count++;
-        }
-
-        pCurr = pCurr->future();
-    }
-
-    if (!pOldest)
-        return 0;
-
-    Ipp32s  uid = 0x7fffffff;
-    pCurr = m_pHead;
-    while (pCurr)
-    {
-        if ((pCurr->isDisplayable() || (!pCurr->IsDecoded() && pCurr->IsFullFrame())) && !pCurr->wasOutputted() && !pCurr->m_dpb_output_delay)
-        {
-            // corresponding frame
-            if (pCurr->RefPicListResetCount() == LargestRefPicListResetCount && pCurr->PicOrderCnt() == SmallestPicOrderCnt && pCurr->m_UID < uid)
-            {
-                pOldest = pCurr;
-                SmallestPicOrderCnt = pCurr->PicOrderCnt();
-                LargestRefPicListResetCount = pCurr->RefPicListResetCount();
-                uid = pCurr->m_UID;
-            }
-        }
-
-        pCurr = pCurr->future();
-    }
-    return pOldest;
-}
-
 // Search through the list for the oldest displayable frame. It must be
 // not disposable, not outputted, and have smallest PicOrderCnt.
 H265DecoderFrame * H265DBPList::findOldestDisplayable(Ipp32s /*dbpSize*/ )
@@ -234,7 +178,7 @@ H265DecoderFrame * H265DBPList::findOldestDisplayable(Ipp32s /*dbpSize*/ )
     Ipp32s count = 0;
     while (pCurr)
     {
-        if ((pCurr->isDisplayable() || (!pCurr->IsDecoded() && pCurr->IsFullFrame())) && !pCurr->wasOutputted())
+        if (pCurr->isDisplayable() && !pCurr->wasOutputted())
         {
             // corresponding frame
             if (pCurr->RefPicListResetCount() > LargestRefPicListResetCount)
@@ -262,7 +206,7 @@ H265DecoderFrame * H265DBPList::findOldestDisplayable(Ipp32s /*dbpSize*/ )
 
     while (pCurr)
     {
-        if ((pCurr->isDisplayable() || (!pCurr->IsDecoded() && pCurr->IsFullFrame())) && !pCurr->wasOutputted())
+        if (pCurr->isDisplayable() && !pCurr->wasOutputted())
         {
             // corresponding frame
             if (pCurr->RefPicListResetCount() == LargestRefPicListResetCount && pCurr->PicOrderCnt() == SmallestPicOrderCnt && pCurr->m_UID < uid)
@@ -305,12 +249,12 @@ void H265DBPList::calculateInfoForDisplay(Ipp32u &countDisplayable, Ipp32u &coun
 
     while (pCurr)
     {
-        if ((pCurr->isDisplayable() || (!pCurr->IsDecoded() && pCurr->IsFullFrame())) && !pCurr->wasOutputted())
+        if (pCurr->isDisplayable() && !pCurr->wasOutputted())
         {
             countDisplayable++;
         }
 
-        if (((pCurr->isShortTermRef() || pCurr->isLongTermRef()) && pCurr->IsFullFrame()) || ((pCurr->isDisplayable() || (!pCurr->IsDecoded() && pCurr->IsFullFrame())) && !pCurr->wasOutputted()))
+        if (((pCurr->isShortTermRef() || pCurr->isLongTermRef()) && pCurr->IsFullFrame()) || (pCurr->isDisplayable() && !pCurr->wasOutputted()))
         {
             countDPBFullness++;
             if (maxUID < pCurr->m_UID)
@@ -319,25 +263,7 @@ void H265DBPList::calculateInfoForDisplay(Ipp32u &countDisplayable, Ipp32u &coun
 
         pCurr = pCurr->future();
     }
-}    // countNumDisplayable
-
-//  Return number of displayable frames.
-Ipp32u H265DBPList::countNumDisplayable()
-{
-    H265DecoderFrame *pCurr = head();
-    Ipp32u NumDisplayable = 0;
-
-    while (pCurr)
-    {
-        if ((pCurr->isDisplayable() || (!pCurr->IsDecoded() && pCurr->IsFullFrame())) && !pCurr->wasOutputted())
-        {
-            NumDisplayable++;
-        }
-        pCurr = pCurr->future();
-    }
-
-    return NumDisplayable;
-}    // countNumDisplayable
+}    // calculateInfoForDisplay
 
 // Return number of active short and long term reference frames.
 void H265DBPList::countActiveRefs(Ipp32u &NumShortTerm, Ipp32u &NumLongTerm)

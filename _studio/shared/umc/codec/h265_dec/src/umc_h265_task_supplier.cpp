@@ -600,7 +600,7 @@ TaskSupplier_H265::TaskSupplier_H265()
     , m_UIDFrameCounter(0)
     , m_sei_messages(0)
     , m_isInitialized(false)
-    , m_isUseDelayDPBValues(true)
+    , m_decodedOrder(false)
 {
 }
 
@@ -610,10 +610,8 @@ TaskSupplier_H265::~TaskSupplier_H265()
 }
 
 // Initialize task supplier and creak task broker
-UMC::Status TaskSupplier_H265::Init(UMC::BaseCodecParams *pInit)
+UMC::Status TaskSupplier_H265::Init(UMC::VideoDecoderParams *init)
 {
-    UMC::VideoDecoderParams *init = DynamicCast<UMC::VideoDecoderParams> (pInit);
-
     if (NULL == init)
         return UMC::UMC_ERR_NULL_PTR;
 
@@ -646,7 +644,6 @@ UMC::Status TaskSupplier_H265::Init(UMC::BaseCodecParams *pInit)
             return UMC::UMC_ERR_INIT;
     }
 
-    m_isUseDelayDPBValues = true;
     m_local_delta_frame_time = 1.0/30;
     m_frameOrder = 0;
     m_use_external_framerate = 0 < init->info.framerate;
@@ -692,12 +689,10 @@ void TaskSupplier_H265::CreateTaskBroker()
 }
 
 // Initialize what is necessary to decode bitstream header before the main part is initialized
-UMC::Status TaskSupplier_H265::PreInit(UMC::BaseCodecParams *pInit)
+UMC::Status TaskSupplier_H265::PreInit(UMC::VideoDecoderParams *init)
 {
     if (m_isInitialized)
         return UMC::UMC_OK;
-
-    UMC::VideoDecoderParams *init = DynamicCast<UMC::VideoDecoderParams> (pInit);
 
     if (NULL == init)
         return UMC::UMC_ERR_NULL_PTR;
@@ -717,7 +712,6 @@ UMC::Status TaskSupplier_H265::PreInit(UMC::BaseCodecParams *pInit)
 
     AU_Splitter_H265::Init(init);
 
-    m_isUseDelayDPBValues = true;
     m_local_delta_frame_time = 1.0/30;
     m_frameOrder             = 0;
     m_use_external_framerate = 0 < init->info.framerate;
@@ -776,14 +770,13 @@ void TaskSupplier_H265::Close()
 
     m_frameOrder               = 0;
 
+    m_decodedOrder      = false;
     m_WaitForIDR        = true;
     m_maxUIDWhenWasDisplayed = 0;
 
     m_RA_POC = 0;
     m_IRAPType = NAL_UT_INVALID;
     NoRaslOutputFlag = 1;
-
-    m_isUseDelayDPBValues = true;
 
     m_pLastDisplayed = 0;
 
@@ -839,6 +832,7 @@ void TaskSupplier_H265::Reset()
 
     m_frameOrder               = 0;
 
+    m_decodedOrder      = false;
     m_WaitForIDR        = true;
     m_maxUIDWhenWasDisplayed = 0;
 
@@ -846,7 +840,6 @@ void TaskSupplier_H265::Reset()
     m_IRAPType = NAL_UT_INVALID;
     NoRaslOutputFlag = 1;
 
-    m_isUseDelayDPBValues = true;
     m_pLastDisplayed = 0;
 
     if (m_pTaskBroker)
@@ -875,6 +868,7 @@ void TaskSupplier_H265::AfterErrorRestore()
     m_ObjHeap.Release();
     m_Headers.Reset(true);
 
+    m_decodedOrder      = false;
     m_WaitForIDR        = true;
     m_maxUIDWhenWasDisplayed = 0;
     NoRaslOutputFlag = 1;
@@ -1431,7 +1425,7 @@ void TaskSupplier_H265::PostProcessDisplayFrame(UMC::MediaData *dst, H265Decoder
 
     pFrame->post_procces_complete = true;
 
-    DEBUG_PRINT((VM_STRING("Outputted POC - %d, busyState - %d, uid - %d, pppp - %d\n"), pFrame->m_PicOrderCnt, pFrame->GetRefCounter(), pFrame->m_UID, pppp++));
+    DEBUG_PRINT((VM_STRING("Outputted %s, pppp - %d\n"), GetFrameInfoString(pFrame), pppp++));
     dst->SetTime(pFrame->m_dFrameTime);
 
     m_maxUIDWhenWasDisplayed = IPP_MAX(m_maxUIDWhenWasDisplayed, pFrame->m_maxUIDWhenWasDisplayed);
@@ -1440,53 +1434,47 @@ void TaskSupplier_H265::PostProcessDisplayFrame(UMC::MediaData *dst, H265Decoder
 // Find a next frame ready to be output from decoder
 H265DecoderFrame *TaskSupplier_H265::GetFrameToDisplayInternal(bool force)
 {
-    H265DecoderFrame *pFrame = GetAnyFrameToDisplay(force);
-    return pFrame;
-}
-
-// Find a next frame ready to be output from decoder
-H265DecoderFrame *TaskSupplier_H265::GetAnyFrameToDisplay(bool force)
-{
     ViewItem_H265 &view = *GetView();
-        
+    
+    if (m_decodedOrder)
+    {
+        return view.pDPB->findOldestDisplayable(view.dpbSize);
+    }
+
+
     for (;;)
     {
-        // show oldest frame
-        DEBUG_PRINT1((VM_STRING("GetAnyFrameToDisplay DPB displayable %d, maximum %d, force = %d\n"), view.pDPB->countNumDisplayable(), view.maxDecFrameBuffering, force));
-        Ipp32u countDisplayable;
-        Ipp32s maxUID;
-        Ipp32u countDPBFullness;
-        
-        view.pDPB->calculateInfoForDisplay(countDisplayable, countDPBFullness, maxUID);
+    // show oldest frame
+    
+    Ipp32u countDisplayable;
+    Ipp32s maxUID;
+    Ipp32u countDPBFullness;
 
-        if (countDisplayable > view.sps_max_num_reorder_pics || countDPBFullness > view.sps_max_dec_pic_buffering || force)
+    view.pDPB->calculateInfoForDisplay(countDisplayable, countDPBFullness, maxUID);
+    DEBUG_PRINT1((VM_STRING("GetAnyFrameToDisplay DPB displayable %d, maximum %d, force = %d\n"), countDisplayable, view.maxDecFrameBuffering, force));
+
+    if (countDisplayable > view.sps_max_num_reorder_pics || countDPBFullness > view.sps_max_dec_pic_buffering || force)
+    {
+        H265DecoderFrame *pTmp = view.pDPB->findOldestDisplayable(view.dpbSize);
+
+        if (pTmp)
         {
-            H265DecoderFrame *pTmp = view.pDPB->findOldestDisplayable(view.dpbSize);
+            if (!force && countDisplayable <= pTmp->GetAU()->GetSeqParam()->sps_max_num_reorder_pics[0] && countDPBFullness <= view.sps_max_dec_pic_buffering)
+                return 0;
 
-            if (pTmp)
+            if (!pTmp->m_pic_output)
             {
-                if (!force && countDisplayable <= pTmp->GetAU()->GetSeqParam()->sps_max_num_reorder_pics[0] && countDPBFullness <= view.sps_max_dec_pic_buffering)
-                    return 0;
-
-                pTmp->m_maxUIDWhenWasDisplayed = maxUID;
-                return pTmp;
+                DEBUG_PRINT((VM_STRING("Outputted skip frame %s\n"), GetFrameInfoString(pTmp)));
+                pTmp->setWasDisplayed();
+                pTmp->setWasOutputted();
+                continue;
             }
 
-            break;
+            pTmp->m_maxUIDWhenWasDisplayed = maxUID;
+            return pTmp;
         }
-        else
-        {
-            if (m_isUseDelayDPBValues)
-            {
-                H265DecoderFrame *pTmp = view.pDPB->findDisplayableByDPBDelay();
-                if (pTmp)
-                {
-                    pTmp->m_maxUIDWhenWasDisplayed = maxUID;
-                    return pTmp;
-                }
-            }
-            break;
-        }
+    }
+    break;
     }
 
     return 0;
@@ -1535,7 +1523,7 @@ UMC::Status TaskSupplier_H265::CompleteDecodedFrames(H265DecoderFrame ** decoded
                     continue;
                 }
 
-                DEBUG_PRINT((VM_STRING("Decode POC - %d, uid - %d, \n"), frame->m_PicOrderCnt, frame->m_UID));
+                DEBUG_PRINT((VM_STRING("Decode %s \n"), GetFrameInfoString(frame)));
                 frame->OnDecodingCompleted();
                 existCompleted = true;
             }
@@ -1577,21 +1565,19 @@ UMC::Status TaskSupplier_H265::AddSource(UMC::MediaData * pSource, UMC::MediaDat
     {
         ViewItem_H265 &view = *GetView();
 
-        // in the following case(s) we can lay on the base view only,
-        // because the buffers are managed synchronously.
-
-        // frame is being processed. Wait for asynchronous end of operation.
-        if (view.pDPB->IsDisposableExist())
+        Ipp32s count = 0;
+        for (H265DecoderFrame *pFrame = view.pDPB->head(); pFrame; pFrame = pFrame->future())
         {
-            return UMC::UMC_WRN_INFO_NOT_READY;
+            count++;
+            // frame is being processed. Wait for asynchronous end of operation.
+            if (pFrame->isDisposable() || isInDisplayngStage(pFrame) || isAlmostDisposable(pFrame))
+            {
+                return UMC::UMC_WRN_INFO_NOT_READY;
+            }
         }
 
-        // frame is finished, but still referenced.
-        // Wait for asynchronous complete.
-        if (view.pDPB->IsAlmostDisposableExist())
-        {
+        if (count < view.pDPB->GetDPBSize())
             return UMC::UMC_WRN_INFO_NOT_READY;
-        }
 
         // some more hard reasons of frame lacking.
         if (!m_pTaskBroker->IsEnoughForStartDecoding(true))
@@ -1600,13 +1586,11 @@ UMC::Status TaskSupplier_H265::AddSource(UMC::MediaData * pSource, UMC::MediaDat
                 return UMC::UMC_WRN_INFO_NOT_READY;
 
             if (GetFrameToDisplayInternal(true))
-                return UMC::UMC_ERR_NOT_ENOUGH_BUFFER;
-
+                return UMC::UMC_ERR_NEED_FORCE_OUTPUT;
+                
             PreventDPBFullness();
             return UMC::UMC_WRN_INFO_NOT_READY;
         }
-
-        return UMC::UMC_WRN_INFO_NOT_READY;
     }
 
     return umcRes;
@@ -2216,6 +2200,8 @@ void TaskSupplier_H265::OnFullFrame(H265DecoderFrame * pFrame)
     if (!pFrame->GetAU()->GetSlice(0)) // seems that it was skipped and slices was dropped
         return;
 
+    pFrame->SetisDisplayable(pFrame->GetAU()->GetSlice(0)->GetSliceHeader()->pic_output_flag != 0);
+
     if (pFrame->GetAU()->GetSlice(0)->GetSliceHeader()->IdrPicFlag && !(pFrame->GetError() & UMC::ERROR_FRAME_DPB))
     {
         DecReferencePictureMarking_H265::ResetError();
@@ -2241,26 +2227,25 @@ void TaskSupplier_H265::CompleteFrame(H265DecoderFrame * pFrame)
     DEBUG_PRINT((VM_STRING("Complete frame POC - (%d) type - %d, count - %d, m_uid - %d, IDR - %d\n"), pFrame->m_PicOrderCnt, pFrame->m_FrameType, slicesInfo->GetSliceCount(), pFrame->m_UID, slicesInfo->GetAnySlice()->GetSliceHeader()->IdrPicFlag));
 
     // skipping algorithm
+    const H265Slice *slice = slicesInfo->GetAnySlice();
+    if (IsShouldSkipFrame(pFrame) || IsSkipForCRAorBLA(slice))
     {
-        const H265Slice *slice = slicesInfo->GetAnySlice();
-        if (IsShouldSkipFrame(pFrame) || IsSkipForCRAorBLA(slice))
-        {
-            slicesInfo->SetStatus(H265DecoderFrameInfo::STATUS_COMPLETED);
+        slicesInfo->SetStatus(H265DecoderFrameInfo::STATUS_COMPLETED);
 
-            pFrame->SetisShortTermRef(false);
-            pFrame->SetisLongTermRef(false);
-            pFrame->OnDecodingCompleted();
-            pFrame->SetisDisplayable(false);
-            pFrame->m_pic_output = false;
-            return;
-        }
-        else
+        pFrame->SetisShortTermRef(false);
+        pFrame->SetisLongTermRef(false);
+        pFrame->OnDecodingCompleted();
+        pFrame->SetisDisplayable(false);
+        pFrame->m_pic_output = false;
+        DEBUG_PRINT((VM_STRING("Skip frame ForCRAorBLA - %s\n"), GetFrameInfoString(pFrame)));
+        return;
+    }
+    else
+    {
+        if (IsShouldSkipDeblocking(pFrame))
         {
-            if (IsShouldSkipDeblocking(pFrame))
-            {
-                pFrame->GetAU()->SkipDeblocking();
-                pFrame->GetAU()->SkipSAO();
-            }
+            pFrame->GetAU()->SkipDeblocking();
+            pFrame->GetAU()->SkipSAO();
         }
     }
 
@@ -2386,7 +2371,7 @@ H265DecoderFrame * TaskSupplier_H265::AllocateNewFrame(const H265Slice *pSlice)
         Ipp32s minRefPicResetCount = 0xff; // because it is possible that there is no frames with RefPicListResetCount() equals 0 (after EOS!!)
         for (H265DecoderFrame *pCurr = GetView()->pDPB->head(); pCurr; pCurr = pCurr->future())
         {
-            if ((pCurr->isDisplayable() || (!pCurr->IsDecoded() && pCurr->IsFullFrame())) && !pCurr->wasOutputted())
+            if (pCurr->isDisplayable() && !pCurr->wasOutputted())
             {
                 minRefPicResetCount = IPP_MIN(minRefPicResetCount, pCurr->RefPicListResetCount());
             }
@@ -2397,9 +2382,11 @@ H265DecoderFrame * TaskSupplier_H265::AllocateNewFrame(const H265Slice *pSlice)
             if (pCurr->RefPicListResetCount() > minRefPicResetCount || pCurr->wasOutputted())
                 continue;
 
-            if (pCurr->isDisplayable() || (!pCurr->IsDecoded() && pCurr->IsFullFrame()))
+            if (pCurr->isDisplayable())
             {
+                DEBUG_PRINT((VM_STRING("Skip frame no_output_of_prior_pics_flag - %s\n"), GetFrameInfoString(pCurr)));
                 pCurr->m_pic_output = false;
+                pCurr->SetisDisplayable(false);
             }
         }
     }
@@ -2447,12 +2434,6 @@ H265DecoderFrame * TaskSupplier_H265::AllocateNewFrame(const H265Slice *pSlice)
         pFrame->m_DisplayPictureStruct_H265 = DPS_FRAME_H265;
     }
 
-    if (payload)
-    {
-        pFrame->m_dpb_output_delay = payload->SEI_messages.pic_timing.pic_dpb_output_delay;
-        m_isUseDelayDPBValues = m_isUseDelayDPBValues ? (pFrame->m_dpb_output_delay == 0) : false;
-    }
-
     //fill chroma planes in case of 4:0:0
     if (pFrame->m_chroma_format == 0)
     {
@@ -2479,7 +2460,7 @@ void TaskSupplier_H265::InitFrameCounter(H265DecoderFrame * pFrame, const H265Sl
 
     pFrame->setPicOrderCnt(sliceHeader->slice_pic_order_cnt_lsb);
 
-    DEBUG_PRINT((VM_STRING("Init frame POC - %d, uid - %d\n"), pFrame->m_PicOrderCnt, pFrame->m_UID));
+    DEBUG_PRINT((VM_STRING("Init frame %s\n"), GetFrameInfoString(pFrame)));
 
     pFrame->InitRefPicListResetCount();
 

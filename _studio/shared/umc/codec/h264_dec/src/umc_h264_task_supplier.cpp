@@ -2379,10 +2379,8 @@ TaskSupplier::~TaskSupplier()
     Close();
 }
 
-Status TaskSupplier::Init(BaseCodecParams *pInit)
+Status TaskSupplier::Init(VideoDecoderParams *init)
 {
-    VideoDecoderParams *init = DynamicCast<VideoDecoderParams> (pInit);
-
     if (NULL == init)
         return UMC_ERR_NULL_PTR;
 
@@ -2491,12 +2489,10 @@ void TaskSupplier::CreateTaskBroker()
     }
 }
 
-Status TaskSupplier::PreInit(BaseCodecParams *pInit)
+Status TaskSupplier::PreInit(VideoDecoderParams *init)
 {
     if (m_isInitialized)
         return UMC_OK;
-
-    VideoDecoderParams *init = DynamicCast<VideoDecoderParams> (pInit);
 
     if (NULL == init)
         return UMC_ERR_NULL_PTR;
@@ -2718,43 +2714,6 @@ void TaskSupplier::AfterErrorRestore()
 
     if (m_pTaskBroker)
         m_pTaskBroker->Init(m_iThreadNum);
-}
-
-Status TaskSupplier::GetInfoFromData(BaseCodecParams* params)
-{
-    Status umcRes = UMC_OK;
-    VideoDecoderParams *lpInfo = DynamicCast<VideoDecoderParams> (params);
-    if (!lpInfo)
-        return UMC_ERR_FAILED;
-
-    if (!m_isInitialized)
-    {
-        if (params->m_pData)
-        {
-            if (!m_pMemoryAllocator)
-            {
-                // DEBUG : allocate allocator or do it in PreInit !!!
-            }
-            //m_pTaskSupplier->SetMemoryAllocator(m_pMemoryAllocator);
-            PreInit(params);
-
-            if (lpInfo->m_pData && lpInfo->m_pData->GetDataSize())
-            {
-                umcRes = AddOneFrame(lpInfo->m_pData, 0);
-            }
-
-            umcRes = GetInfo(lpInfo);
-            Close();
-            return umcRes;
-        }
-
-        return UMC_ERR_NOT_INITIALIZED;
-    }
-
-    if (NULL == lpInfo)
-        return UMC_ERR_NULL_PTR;
-
-    return GetInfo(lpInfo);
 }
 
 Status TaskSupplier::GetInfo(VideoDecoderParams *lpInfo)

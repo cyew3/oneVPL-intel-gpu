@@ -266,13 +266,13 @@ public:
     virtual ~TaskSupplier_H265();
 
     // Initialize task supplier and creak task broker
-    virtual UMC::Status Init(UMC::BaseCodecParams *pInit);
+    virtual UMC::Status Init(UMC::VideoDecoderParams *pInit);
 
     // create broker and segment decoders
     virtual void CreateTaskBroker();
 
     // Initialize what is necessary to decode bitstream header before the main part is initialized
-    virtual UMC::Status PreInit(UMC::BaseCodecParams *pInit);
+    virtual UMC::Status PreInit(UMC::VideoDecoderParams *pInit);
 
     // Reset to default state
     virtual void Reset();
@@ -353,8 +353,6 @@ public:
 
 protected:
 
-    void InitColorConverter(H265DecoderFrame *source, UMC::VideoData * videoData);
-
     // Include a new slice into a set of frame slices
     void AddSliceToFrame(H265DecoderFrame *pFrame, H265Slice *pSlice);
 
@@ -404,9 +402,6 @@ protected:
     // If a frame has all slices found, add it to asynchronous decode queue
     UMC::Status CompleteDecodedFrames(H265DecoderFrame ** decoded);
 
-    // Find a next frame ready to be output from decoder
-    H265DecoderFrame *GetAnyFrameToDisplay(bool force);
-
     // Try to reset in case DPB has overflown
     void PreventDPBFullness();
 
@@ -418,6 +413,7 @@ protected:
     Ipp32s      m_maxUIDWhenWasDisplayed;
     Ipp64f      m_local_delta_frame_time;
     bool        m_use_external_framerate;
+    bool        m_decodedOrder;
 
     H265Slice * m_pLastSlice;
 
@@ -439,7 +435,6 @@ protected:
     TaskBroker_H265 * m_pTaskBroker;
 
     UMC::VideoDecoderParams     m_initializationParams;
-    UMC::VideoData              m_LastNonCropDecodedFrame;
 
     Ipp32s m_UIDFrameCounter;
 
@@ -449,7 +444,6 @@ protected:
     PocDecoding m_pocDecoding;
 
     bool m_isInitialized;
-    bool m_isUseDelayDPBValues;
 
     UMC::Mutex m_mGuard;
 

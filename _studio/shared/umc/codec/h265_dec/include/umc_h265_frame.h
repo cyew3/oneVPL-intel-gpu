@@ -100,7 +100,6 @@ public:
     Ipp64f           m_dFrameTime;
     bool             m_isOriginalPTS;
 
-    Ipp32s           m_dpb_output_delay;
     DisplayPictureStruct_H265  m_DisplayPictureStruct_H265;
 
     // For type 1 calculation of m_PicOrderCnt. m_FrameNum is needed to
@@ -370,6 +369,12 @@ inline bool isAlmostDisposable(H265DecoderFrame * pTmp)
         !pTmp->m_isLongTermRef &&
         ((pTmp->m_wasOutputted != 0) || (pTmp->m_isDisplayable == 0)) &&
         !pTmp->GetRefCounter());
+}
+
+// Returns if frame is not needed by decoder
+inline bool isInDisplayngStage(H265DecoderFrame * pTmp)
+{
+    return (pTmp->m_isDisplayable && pTmp->m_wasOutputted && !pTmp->m_wasDisplayed);
 }
 
 } // end namespace UMC_HEVC_DECODER

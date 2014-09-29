@@ -84,7 +84,7 @@ public:
     virtual ~MFXTaskSupplier_H265();
 
     // Initialize task supplier
-    virtual UMC::Status Init(UMC::BaseCodecParams *pInit);
+    virtual UMC::Status Init(UMC::VideoDecoderParams *pInit);
 
     virtual void Reset();
 

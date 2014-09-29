@@ -15,6 +15,10 @@
 #include "umc_h265_timing.h"
 #include <cstdarg>
 
+#ifdef ENABLE_TRACE
+#include "umc_h265_frame.h"
+#endif
+
 namespace UMC_HEVC_DECODER
 {
 
@@ -40,6 +44,14 @@ void Trace(vm_char * format, ...)
     vm_string_printf(VM_STRING("%s"), cStr);
     //fflush(stdout);
 }
+
+const vm_char* GetFrameInfoString(H265DecoderFrame * frame)
+{
+    static vm_char str[256];
+    vm_string_sprintf(str, VM_STRING("POC - %d, uid - %d"), frame->m_PicOrderCnt, frame->m_UID);
+    return str;
+}
+
 #endif // ENABLE_TRACE
 
 } // namespace UMC_HEVC_DECODER
