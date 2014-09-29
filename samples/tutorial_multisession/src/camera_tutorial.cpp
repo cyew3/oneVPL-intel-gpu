@@ -50,7 +50,7 @@ mfxStatus ParseInputString(char* strInput[], mfxU8 nArgNum, sInputParams* pParam
         return MFX_ERR_UNSUPPORTED;
     }
     pParams->deviceHandle = 0;
-	pParams->bOutput = false; // 8 bit default:
+    pParams->bOutput = false; // 8 bit default:
 
     CHECK_POINTER(pParams, MFX_ERR_NULL_PTR);
 
@@ -73,11 +73,11 @@ mfxStatus ParseInputString(char* strInput[], mfxU8 nArgNum, sInputParams* pParam
         }
         else if (0 == strcmp(strInput[i], "-w"))
         {
-			sscanf_s(strInput[++i], "%d", &pParams->raw_width);
+            sscanf_s(strInput[++i], "%d", &pParams->raw_width);
         }
         else if (0 == strcmp(strInput[i], "-h"))
         {
-			sscanf_s(strInput[++i], "%d", &pParams->raw_height);
+            sscanf_s(strInput[++i], "%d", &pParams->raw_height);
         }
         else if (0 == strcmp(strInput[i], "-i"))
         {
@@ -93,23 +93,23 @@ mfxStatus ParseInputString(char* strInput[], mfxU8 nArgNum, sInputParams* pParam
         }
         else if (0 == strcmp(strInput[i], "-bggr"))
         {
-			pParams->rawType = MFX_CAM_BAYER_BGGR;
+            pParams->rawType = MFX_CAM_BAYER_BGGR;
         }
         else if (0 == strcmp(strInput[i], "-rggb"))
         {
-			pParams->rawType = MFX_CAM_BAYER_RGGB;
+            pParams->rawType = MFX_CAM_BAYER_RGGB;
         }
         else if (0 == strcmp(strInput[i], "-grbg"))
         {
-			pParams->rawType = MFX_CAM_BAYER_GRBG;
+            pParams->rawType = MFX_CAM_BAYER_GRBG;
         }
         else if (0 == strcmp(strInput[i], "-gbrg"))
         {
-			pParams->rawType = MFX_CAM_BAYER_GBRG;
+            pParams->rawType = MFX_CAM_BAYER_GBRG;
         }
         else if (0 == strcmp(strInput[i], "-out16"))
         {
-			pParams->bOutARGB16 = true;
+            pParams->bOutARGB16 = true;
         }
         else if (0 == strcmp(strInput[i], "-o"))
         {
@@ -172,9 +172,9 @@ mfxStatus InitMfxParams(sInputParams *pParams)
     pParams->mfx_videoParams.vpp.In.Height = pParams->frameInfo[VPP_IN].nHeight;
     pParams->mfx_videoParams.vpp.In.FourCC = pParams->frameInfo[VPP_IN].FourCC;
 
-	pParams->mfx_videoParams.vpp.In.ChromaFormat = 0;
+    pParams->mfx_videoParams.vpp.In.ChromaFormat = 0;
 
-	pParams->mfx_videoParams.vpp.In.BitDepthLuma = 14;
+    pParams->mfx_videoParams.vpp.In.BitDepthLuma = 14;
 
     pParams->mfx_videoParams.vpp.Out.CropX = pParams->frameInfo[VPP_OUT].CropX;
     pParams->mfx_videoParams.vpp.Out.CropY = pParams->frameInfo[VPP_OUT].CropY;
@@ -184,7 +184,7 @@ mfxStatus InitMfxParams(sInputParams *pParams)
     pParams->mfx_videoParams.vpp.Out.Height = pParams->frameInfo[VPP_OUT].nHeight;
     pParams->mfx_videoParams.vpp.Out.FourCC = pParams->frameInfo[VPP_OUT].FourCC;
 
-	pParams->mfx_videoParams.vpp.Out.ChromaFormat = 3;
+    pParams->mfx_videoParams.vpp.Out.ChromaFormat = 3;
 
     // specify memory type
     if (pParams->memTypeIn != SYSTEM_MEMORY)
@@ -209,10 +209,10 @@ mfxStatus Init(sInputParams *pParams)
 {
     CHECK_POINTER(pParams, MFX_ERR_NULL_PTR);
     mfxStatus sts = MFX_ERR_NONE;
-    
+
     pParams->CameraPluginVersion = 1;
 
-	// init video params
+    // init video params
     memset(&pParams->mfx_videoParams, 0, sizeof(pParams->mfx_videoParams));
 
 
@@ -236,7 +236,7 @@ mfxStatus Init(sInputParams *pParams)
             sts = MFXInit(impl,  &version, &pParams->mfx_session_postprocess);
         }
     }
-	// not supported yet
+    // not supported yet
     //else
     //    sts = m_mfxSession.Init(MFX_IMPL_SOFTWARE, &version);
         //sts = m_mfxSession.Init(MFX_IMPL_SOFTWARE | MFX_IMPL_RT, &version);
@@ -244,11 +244,11 @@ mfxStatus Init(sInputParams *pParams)
     CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
 
-	///////////////////////////////////////////////////
+    ///////////////////////////////////////////////////
     // -d3d specific
-	///////////////////////////////////////////////////
+    ///////////////////////////////////////////////////
 
-    
+
     if (pParams->memTypeIn == D3D11_MEMORY || pParams->memTypeOut == D3D11_MEMORY)
     {
         // D3D11 stuff
@@ -265,18 +265,18 @@ mfxStatus Init(sInputParams *pParams)
         pParams->mfxAllocator.Unlock = simple_unlock_dx11;
         pParams->mfxAllocator.GetHDL = simple_gethdl_dx11;
 
-        // When using video memory we must provide Media SDK with an external allocator 
+        // When using video memory we must provide Media SDK with an external allocator
         sts = MFXVideoCORE_SetFrameAllocator(pParams->mfx_session, &pParams->mfxAllocator);
         CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
     }
-    else if (pParams->memTypeIn == D3D9_MEMORY || pParams->memTypeOut == D3D9_MEMORY) 
+    else if (pParams->memTypeIn == D3D9_MEMORY || pParams->memTypeOut == D3D9_MEMORY)
     {
         sts = CreateHWDevice(pParams->mfx_session, &pParams->deviceHandle, NULL);
         CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
         sts = MFXVideoCORE_SetHandle(pParams->mfx_session, MFX_HANDLE_D3D9_DEVICE_MANAGER, pParams->deviceHandle);
-        CHECK_RESULT(sts, MFX_ERR_NONE, sts);   
+        CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
         pParams->mfxAllocator.pthis  = pParams->mfx_session; // ??? For this sample we use mfxSession as the allocation identifier
         pParams->mfxAllocator.Alloc  = simple_alloc;
@@ -285,10 +285,10 @@ mfxStatus Init(sInputParams *pParams)
         pParams->mfxAllocator.Unlock = simple_unlock;
         pParams->mfxAllocator.GetHDL = simple_gethdl;
 
-        // When using video memory we must provide Media SDK with an external allocator 
+        // When using video memory we must provide Media SDK with an external allocator
         sts = MFXVideoCORE_SetFrameAllocator(pParams->mfx_session, &pParams->mfxAllocator);
         CHECK_RESULT(sts, MFX_ERR_NONE, sts);
-            
+
 
     }
     if(pParams->bPostProcess){
@@ -299,7 +299,7 @@ mfxStatus Init(sInputParams *pParams)
             }
             sts = MFXVideoCORE_SetHandle(pParams->mfx_session_postprocess, MFX_HANDLE_D3D9_DEVICE_MANAGER, pParams->deviceHandle);
             CHECK_RESULT(sts, MFX_ERR_NONE, sts);
-            pParams->mfxAllocator_postProc.pthis  = pParams->mfx_session_postprocess; 
+            pParams->mfxAllocator_postProc.pthis  = pParams->mfx_session_postprocess;
             pParams->mfxAllocator_postProc.Alloc  = simple_alloc;
             pParams->mfxAllocator_postProc.Free   = simple_free;
             pParams->mfxAllocator_postProc.Lock   = simple_lock;
@@ -315,13 +315,13 @@ mfxStatus Init(sInputParams *pParams)
             }
             sts = MFXVideoCORE_SetHandle(pParams->mfx_session_postprocess, MFX_HANDLE_D3D11_DEVICE, pParams->deviceHandle);
             CHECK_RESULT(sts, MFX_ERR_NONE, sts);
-            pParams->mfxAllocator_postProc.pthis  = pParams->mfx_session_postprocess; 
+            pParams->mfxAllocator_postProc.pthis  = pParams->mfx_session_postprocess;
             pParams->mfxAllocator_postProc.Alloc  = simple_alloc_dx11;
             pParams->mfxAllocator_postProc.Free   = simple_free_dx11;
             pParams->mfxAllocator_postProc.Lock   = simple_lock_dx11;
             pParams->mfxAllocator_postProc.Unlock = simple_unlock_dx11;
             pParams->mfxAllocator_postProc.GetHDL = simple_gethdl_dx11;
-            // When using video memory we must provide Media SDK with an external allocator 
+            // When using video memory we must provide Media SDK with an external allocator
             sts = MFXVideoCORE_SetFrameAllocator(pParams->mfx_session_postprocess, &pParams->mfxAllocator_postProc);
         }
     }
@@ -335,9 +335,9 @@ mfxStatus Init(sInputParams *pParams)
         }
     }
 
-	///////////////////////////////////////////////////
-	// Camera Pipe Capability module query
-	// ////////////////////////////////////////////////
+    ///////////////////////////////////////////////////
+    // Camera Pipe Capability module query
+    // ////////////////////////////////////////////////
 
     mfxU32 filterList[2];
     mfxExtBuffer *extBuffers[1];
@@ -356,62 +356,62 @@ mfxStatus Init(sInputParams *pParams)
     pParams->mfx_videoParams.NumExtParam = 1;
 
     sts = MFXVideoVPP_Query(pParams->mfx_session, NULL, &pParams->mfx_videoParams);
-	//if (sts == MFX_ERR_NONE) printf("OK!\n");
-	//else printf("NG!!!\n");
+    //if (sts == MFX_ERR_NONE) printf("OK!\n");
+    //else printf("NG!!!\n");
 
     for (int i = 0; i < (int)vppDoUse.NumAlg; i++) {
-		switch(filterList[i])
-		{
-			case MFX_EXTBUF_CAM_PADDING:
-				printf("filter[%d]:MFX_EXTBUF_CAM_PADDING Supported\n", i);
-				break;
-			case MFX_EXTBUF_CAM_GAMMA_CORRECTION:
-				printf("filter[%d]:MFX_EXTBUF_CAM_GAMMA_CORRECTION Supported\n", i);
-				break;
-			case MFX_EXTBUF_CAM_COLOR_CORRECTION_3X3:
-				printf("filter[%d]:MFX_EXTBUF_CAM_COLOR_CORRECTION_3X3 Supported\n", i);
-				break;
-			default:
-				printf("filter[%d]:NOT SUPPORTED\n", i);
-		}
+        switch(filterList[i])
+        {
+            case MFX_EXTBUF_CAM_PADDING:
+                printf("filter[%d]:MFX_EXTBUF_CAM_PADDING Supported\n", i);
+                break;
+            case MFX_EXTBUF_CAM_GAMMA_CORRECTION:
+                printf("filter[%d]:MFX_EXTBUF_CAM_GAMMA_CORRECTION Supported\n", i);
+                break;
+            case MFX_EXTBUF_CAM_COLOR_CORRECTION_3X3:
+                printf("filter[%d]:MFX_EXTBUF_CAM_COLOR_CORRECTION_3X3 Supported\n", i);
+                break;
+            default:
+                printf("filter[%d]:NOT SUPPORTED\n", i);
+        }
     }
 
 
-	///////////////////////////////////////////////////
-	// Set up camera specific extended buffer
-	// ////////////////////////////////////////////////
+    ///////////////////////////////////////////////////
+    // Set up camera specific extended buffer
+    // ////////////////////////////////////////////////
 
-	// Bayer type
+    // Bayer type
     int numExtBuffers = 0;
     pParams->m_PipeControl.Header.BufferId = MFX_EXTBUF_CAM_PIPECONTROL;
     pParams->m_PipeControl.Header.BufferSz = sizeof(pParams->m_PipeControl);
 
-	// switch the bayer pattern for the source here
-	pParams->m_PipeControl.RawFormat = (mfxU16)pParams->rawType;
+    // switch the bayer pattern for the source here
+    pParams->m_PipeControl.RawFormat = (mfxU16)pParams->rawType;
 
-	
+
     pParams->m_ExtBuffers[numExtBuffers] = (mfxExtBuffer *)&pParams->m_PipeControl;
     numExtBuffers++;
 
 
-	////////////////////////////////
-	// Gamma parameters set up
-	////////////////////////////////
+    ////////////////////////////////
+    // Gamma parameters set up
+    ////////////////////////////////
 
-	mfxU32 max_input_level = 1<<(pParams->bitDepth);
-	pParams->m_GammaCorrection.NumPoints = 64;
-	mfxU32 num_gamma_pt = pParams->m_GammaCorrection.NumPoints;
+    mfxU32 max_input_level = 1<<(pParams->bitDepth);
+    pParams->m_GammaCorrection.NumPoints = 64;
+    mfxU32 num_gamma_pt = pParams->m_GammaCorrection.NumPoints;
 
-	double gamma_value = 2.2;
+    double gamma_value = 2.2;
 
-	for (int i = 0; i < 64; i++) 
+    for (int i = 0; i < 64; i++)
     {
         pParams->m_GammaCorrection.GammaPoint[i] = (mfxU16)(((max_input_level) / num_gamma_pt) * i);
     }
 
     for (int i = 0; i < 64; i++)
     {
-		pParams->m_GammaCorrection.GammaCorrected[i] = (mfxU16)(pow((double)pParams->m_GammaCorrection.GammaPoint[i] / (double)max_input_level, 1.0 / gamma_value) * (double)max_input_level);
+        pParams->m_GammaCorrection.GammaCorrected[i] = (mfxU16)(pow((double)pParams->m_GammaCorrection.GammaPoint[i] / (double)max_input_level, 1.0 / gamma_value) * (double)max_input_level);
     }
 
     printf("const SHORT init_gamma_point[%d] = ", num_gamma_pt);
@@ -423,31 +423,31 @@ mfxStatus Init(sInputParams *pParams)
     printf("}\n");
 
 
-	// set up extended buffer for gamma
+    // set up extended buffer for gamma
 
-	pParams->m_GammaCorrection.Header.BufferId = MFX_EXTBUF_CAM_GAMMA_CORRECTION;
+    pParams->m_GammaCorrection.Header.BufferId = MFX_EXTBUF_CAM_GAMMA_CORRECTION;
     pParams->m_GammaCorrection.Header.BufferSz = sizeof(pParams->m_GammaCorrection);
-	pParams->m_GammaCorrection.Mode = MFX_CAM_GAMMA_LUT;
+    pParams->m_GammaCorrection.Mode = MFX_CAM_GAMMA_LUT;
     pParams->m_ExtBuffers[numExtBuffers] = (mfxExtBuffer *)&pParams->m_GammaCorrection;
     numExtBuffers++;
 
-	// attach extended buffer
-	pParams->mfx_videoParams.ExtParam = pParams->m_ExtBuffers;
+    // attach extended buffer
+    pParams->mfx_videoParams.ExtParam = pParams->m_ExtBuffers;
     pParams->mfx_videoParams.NumExtParam = (mfxU16)numExtBuffers;
 
 
-	///////////////////////////////////////////////////
-	// Initialize frame Info
-	// ////////////////////////////////////////////////
+    ///////////////////////////////////////////////////
+    // Initialize frame Info
+    // ////////////////////////////////////////////////
 
-	mfxI32 frameWidthSamples = pParams->raw_width;
-	mfxI32 frameHeight       = pParams->raw_height;
+    mfxI32 frameWidthSamples = pParams->raw_width;
+    mfxI32 frameHeight       = pParams->raw_height;
 
     pParams->fileFramePitchBytes = frameWidthSamples * sizeof(short);
     pParams->fileFrameHeight     = frameHeight;
 
 
-	// Init videoParams VPP info
+    // Init videoParams VPP info
     pParams->mfx_videoParams.vpp.In.CropX  = pParams->mfx_videoParams.vpp.In.CropY = 0;
     pParams->mfx_videoParams.vpp.In.CropW  = (mfxU16)frameWidthSamples;
     pParams->mfx_videoParams.vpp.In.CropH  = (mfxU16)frameHeight;
@@ -457,12 +457,12 @@ mfxStatus Init(sInputParams *pParams)
     pParams->mfx_videoParams.vpp.In.Height = (mfxU16)frameHeight;
 
 
-	pParams->mfx_videoParams.vpp.In.FourCC = MFX_FOURCC_R16;
+    pParams->mfx_videoParams.vpp.In.FourCC = MFX_FOURCC_R16;
 
     pParams->mfx_videoParams.vpp.In.BitDepthLuma = (mfxU16)pParams->bitDepth;
 
-    //Only R16 input supported now, should use chroma format monochrome 
-	pParams->mfx_videoParams.vpp.In.ChromaFormat = MFX_CHROMAFORMAT_MONOCHROME;
+    //Only R16 input supported now, should use chroma format monochrome
+    pParams->mfx_videoParams.vpp.In.ChromaFormat = MFX_CHROMAFORMAT_MONOCHROME;
 
 
     pParams->mfx_videoParams.vpp.Out.CropX  = pParams->mfx_videoParams.vpp.Out.CropY = 0;
@@ -474,14 +474,14 @@ mfxStatus Init(sInputParams *pParams)
     //Only ARGB onput supported now, should use chroma format 444
     pParams->mfx_videoParams.vpp.Out.ChromaFormat = MFX_CHROMAFORMAT_YUV444;
 
-	// To change 8/16bit out, change here please.
-	if (pParams->bOutARGB16) {
+    // To change 8/16bit out, change here please.
+    if (pParams->bOutARGB16) {
         pParams->mfx_videoParams.vpp.Out.FourCC = MFX_FOURCC_ARGB16;
         pParams->mfx_videoParams.vpp.Out.BitDepthLuma = (mfxU16)pParams->bitDepth;
-	} else {
+    } else {
         pParams->mfx_videoParams.vpp.Out.FourCC = MFX_FOURCC_RGB4;
         pParams->mfx_videoParams.vpp.Out.BitDepthLuma = 8;
-	}
+    }
 
     // specify memory type
     if (pParams->memTypeIn != SYSTEM_MEMORY)
@@ -497,17 +497,17 @@ mfxStatus Init(sInputParams *pParams)
 
     pParams->mfx_videoParams.AsyncDepth = 1;
 
-	///////////////////////////////////////////////////
-	// Query and Init VPP
-	// ////////////////////////////////////////////////
+    ///////////////////////////////////////////////////
+    // Query and Init VPP
+    // ////////////////////////////////////////////////
 
     sts = MFXVideoVPP_Query(pParams->mfx_session, &pParams->mfx_videoParams, &pParams->mfx_videoParams);
-    
+
 //    IGNORE_MFX_STS(sts, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM);
     CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
-	//if (sts == MFX_ERR_NONE) printf("OK!\n");
-	//else printf("NG!!!\n");
+    //if (sts == MFX_ERR_NONE) printf("OK!\n");
+    //else printf("NG!!!\n");
 
     sts = MFXVideoVPP_Init(pParams->mfx_session, &pParams->mfx_videoParams);
     if (MFX_WRN_PARTIAL_ACCELERATION == sts)
@@ -553,12 +553,12 @@ mfxStatus Init(sInputParams *pParams)
         sts = MFXVideoVPP_QueryIOSurf(pParams->mfx_session_postprocess, &pParams->mfx_videoPostProcessParams, VPPRequestPost);
         CHECK_RESULT(sts, MFX_ERR_NONE, sts);
     }
-    
+
     mfxFrameSurface1 *pSurfIn  = &pParams->mfx_surfaces[VPP_IN];
     mfxFrameSurface1 *pSurfOut = &pParams->mfx_surfaces[VPP_OUT];
     mfxFrameSurface1 *pSurfPostProcIn = &pParams->mfx_surfaces_postprocess[VPP_IN];
     mfxFrameSurface1 *pSurfPostProcOut = &pParams->mfx_surfaces_postprocess[VPP_OUT];
-    
+
 
     pSurfIn->Info = pParams->mfx_videoParams.vpp.In;
     pSurfOut->Info = pParams->mfx_videoParams.vpp.Out;
@@ -570,26 +570,26 @@ mfxStatus Init(sInputParams *pParams)
     memset((void*)&pSurfOut->Data, 0, sizeof(pSurfOut->Data));
     memset((void*)&pSurfPostProcIn->Data, 0, sizeof(pSurfPostProcOut->Data));
     memset((void*)&pSurfPostProcOut->Data, 0, sizeof(pSurfPostProcOut->Data));
-    
 
-    
+
+
     int allocSize = 0;
-    if (pParams->memTypeOut == SYSTEM_MEMORY) 
+    if (pParams->memTypeOut == SYSTEM_MEMORY)
     {
         if (pParams->mfx_videoParams.vpp.Out.FourCC == MFX_FOURCC_ARGB16){
             pSurfOut->Data.Pitch = pParams->mfx_videoParams.vpp.Out.Width << 3;
-		} else {
+        } else {
             pSurfOut->Data.Pitch = pParams->mfx_videoParams.vpp.Out.Width << 2;
-		}
+        }
         allocSize += pSurfOut->Data.Pitch * pSurfOut->Info.Height + ALIGNMENT_4K;
-    } 
-    else 
+    }
+    else
     { // (pParams->memTypeOut == D3D11_MEMORY)
         VPPRequest[1].Type |= WILL_READ; // Hint to DX11 memory handler that application will read data from output surfaces
         sts = pParams->mfxAllocator.Alloc(pParams->mfxAllocator.pthis, &VPPRequest[1], &pParams->mfxResponseOut);
         CHECK_RESULT(sts, MFX_ERR_NONE, sts);
-        pSurfOut->Data.MemId = pParams->mfxResponseOut.mids[0]; 
-    } 
+        pSurfOut->Data.MemId = pParams->mfxResponseOut.mids[0];
+    }
 
     if (pParams->memTypeIn == SYSTEM_MEMORY)
     {
@@ -601,7 +601,7 @@ mfxStatus Init(sInputParams *pParams)
         VPPRequest[0].Type |= WILL_WRITE; // Hint to DX11 memory handler that application will write data to input surfaces
         sts = pParams->mfxAllocator.Alloc(pParams->mfxAllocator.pthis, &VPPRequest[0], &pParams->mfxResponseIn);
         CHECK_RESULT(sts, MFX_ERR_NONE, sts);
-        pSurfIn->Data.MemId = pParams->mfxResponseIn.mids[0]; 
+        pSurfIn->Data.MemId = pParams->mfxResponseIn.mids[0];
     }
     if(pParams->bPostProcess){
         if (pParams->memPostPTypeIn == SYSTEM_MEMORY){
@@ -618,7 +618,7 @@ mfxStatus Init(sInputParams *pParams)
             VPPRequestPost[1].Type |= WILL_READ; // Hint to DX11 memory handler that application will read data from output surfaces
             sts = pParams->mfxAllocator_postProc.Alloc(pParams->mfxAllocator_postProc.pthis, &VPPRequestPost[1], &pParams->mfxResponseOut_postprocess);
             CHECK_RESULT(sts, MFX_ERR_NONE, sts);
-            pSurfPostProcOut->Data.MemId = pParams->mfxResponseOut_postprocess.mids[0]; 
+            pSurfPostProcOut->Data.MemId = pParams->mfxResponseOut_postprocess.mids[0];
         }
     }
 
@@ -628,7 +628,7 @@ mfxStatus Init(sInputParams *pParams)
         CHECK_POINTER(pParams->pMemoryAllocated, MFX_ERR_MEMORY_ALLOC);
 
         mfxU8 *tmpptr = (mfxU8*)pParams->pMemoryAllocated;
-        if (pParams->memTypeIn == SYSTEM_MEMORY) 
+        if (pParams->memTypeIn == SYSTEM_MEMORY)
         {
             pSurfIn->Data.Y16 = (mfxU16 *)((size_t)(tmpptr + ALIGNMENT_4K) &~ (size_t)(ALIGNMENT_4K - 1));
             tmpptr = (mfxU8 *)pSurfIn->Data.Y16 + pSurfIn->Data.Pitch * pSurfIn->Info.Height;
@@ -655,10 +655,10 @@ mfxStatus Init(sInputParams *pParams)
             pSurfPostProcIn->Info.PicStruct = 1;
         }
     }
-    
-   
-    
-   
+
+
+
+
     return MFX_ERR_NONE;
 }
 
@@ -687,7 +687,7 @@ void Close(sInputParams *pParams)
 mfxStatus LoadFrame(sInputParams *pParams, char *fname)
 {
 
-	mfxU32 nRead;
+    mfxU32 nRead;
     FILE *f;
 
     mfxFrameData* pData = &pParams->mfx_surfaces[VPP_IN].Data;
@@ -744,7 +744,7 @@ mfxStatus WriteFrame(sInputParams *pParams, char *fname)
         return MFX_ERR_UNDEFINED_BEHAVIOR;
 
     mfxU32 width_bytes = m_bih.biWidth * 4;
-    
+
     mfxFrameData *pData = &pParams->mfx_surfaces[VPP_OUT].Data;
     if(!pParams->bPostProcess){
         pData = &pParams->mfx_surfaces[VPP_OUT].Data;
@@ -755,7 +755,7 @@ mfxStatus WriteFrame(sInputParams *pParams, char *fname)
             {
                 for (int x = 0; x < (int)width_bytes; x++)
                 {
-				    // be careful. data location might be changed later. N.Iwamoto Intel Corp
+                    // be careful. data location might be changed later. N.Iwamoto Intel Corp
                     pOut[x] = (mfxU8)(pData->V16[x + y*width_bytes] >> (pParams->mfx_videoParams.vpp.In.BitDepthLuma - 8));
                     //pOut[x] = (mfxU8)((pData->B[2*x + y*width_bytes*2] | (pData->B[2*x + 1 + 2*y*width_bytes] << 8)) >> 2);
                 }
@@ -780,7 +780,7 @@ mfxStatus WriteFrame(sInputParams *pParams, char *fname)
             {
                 for (int x = 0; x < (int)width_bytes; x++)
                 {
-				    // be careful. data location might be changed later. N.Iwamoto Intel Corp
+                    // be careful. data location might be changed later. N.Iwamoto Intel Corp
                     pOut[x] = (mfxU8)(pData->V16[x + y*width_bytes] >> (pParams->mfx_videoPostProcessParams.vpp.In.BitDepthLuma - 8));
                     //pOut[x] = (mfxU8)((pData->B[2*x + y*width_bytes*2] | (pData->B[2*x + 1 + 2*y*width_bytes] << 8)) >> 2);
                 }
@@ -797,10 +797,10 @@ mfxStatus WriteFrame(sInputParams *pParams, char *fname)
                 return MFX_ERR_UNDEFINED_BEHAVIOR;
         }
     }
-    
 
 
-       
+
+
     fclose(f);
     return MFX_ERR_NONE;
 }
@@ -825,7 +825,7 @@ int main(int argc, char *argv[])
     CHECK_RESULT(sts, MFX_ERR_NONE, 1);
 
 
-    
+
 
     sts = Init(&Params);
     CHECK_RESULT(sts, MFX_ERR_NONE, 1);
@@ -839,7 +839,7 @@ int main(int argc, char *argv[])
 
 //    MFXVideoVPP_Close(Params.mfx_session);
 //    sts = MFXVideoVPP_Init(Params.mfx_session, &Params.mfx_videoParams);
-        
+
     int fileNum = 0;
     char fileName[MAX_FILENAME_LEN];
     mfxSyncPoint syncpoint;
@@ -850,7 +850,7 @@ int main(int argc, char *argv[])
 
         sprintf_s(fileName, "%s", Params.strSrcFile);
 
-		sts = LoadFrame(&Params, fileName);
+        sts = LoadFrame(&Params, fileName);
         BREAK_ON_ERROR(sts);
 
         sts = MFXVideoVPP_RunFrameVPPAsync(Params.mfx_session, &Params.mfx_surfaces[VPP_IN], &Params.mfx_surfaces[VPP_OUT], NULL, &syncpoint);
@@ -863,7 +863,7 @@ int main(int argc, char *argv[])
 
             sprintf_s(fileName, "%s%d.bmp", Params.strDstFile, fileNum);
 
-			if (Params.memTypeOut != SYSTEM_MEMORY) {
+            if (Params.memTypeOut != SYSTEM_MEMORY) {
                 sts = Params.mfxAllocator.Lock(Params.mfxAllocator.pthis, Params.mfx_surfaces[VPP_OUT].Data.MemId, &Params.mfx_surfaces[VPP_OUT].Data);
                 BREAK_ON_ERROR(sts);
             }
@@ -882,8 +882,8 @@ int main(int argc, char *argv[])
 
     //we need to do partial close here: Close VPP only, Even D3D surfaces will be reused later fo rendering
     //Close(&Params);
-    
-    
+
+
     if(Params.bSwitchRequired){
         int filenum_postprocess=0;
         if(Params.bSwitchRequired){
@@ -895,14 +895,14 @@ int main(int argc, char *argv[])
             Params1.memPostPTypeOut = D3D9_MEMORY;
         }
         Init(&Params1);
-        
+
         while (MFX_ERR_NONE <= sts && filenum_postprocess < (int)Params1.nFramesToProceed )
         {
             filenum_postprocess++;
 
             sprintf_s(fileName, "%s", Params1.strSrcFile);
 
-		    sts = LoadFrame(&Params1, fileName);
+            sts = LoadFrame(&Params1, fileName);
             BREAK_ON_ERROR(sts);
 
             sts = MFXVideoVPP_RunFrameVPPAsync(Params1.mfx_session, &Params1.mfx_surfaces[VPP_IN], &Params1.mfx_surfaces[VPP_OUT], NULL, &syncpoint);
@@ -918,10 +918,10 @@ int main(int argc, char *argv[])
                 mfxFrameSurface1 *ppSurfVPP = &Params1.mfx_surfaces_postprocess[VPP_IN];
                 int i, j;
                 mfxU16 B,G,R;
-                
+
                 for (i = 0; i < ppSurf->Info.Height; i++) {
                     for (j = 0; j < ppSurf->Info.Width; j++) {
-                        
+
                         B=((mfxU16*)(ppSurf->Data.B))[i*(ppSurf->Data.Pitch>>1) + (j<<2)];
                         G=((mfxU16*)(ppSurf->Data.G))[i*(ppSurf->Data.Pitch>>1) + (j<<2)];
                         R=((mfxU16*)(ppSurf->Data.R))[i*(ppSurf->Data.Pitch>>1) + (j<<2)];
@@ -949,7 +949,7 @@ int main(int argc, char *argv[])
 
                 sprintf_s(fileName, "%s%d.bmp", Params1.strDstFile, fileNum+filenum_postprocess);
 
-			    if (Params1.memPostPTypeOut != SYSTEM_MEMORY) {
+                if (Params1.memPostPTypeOut != SYSTEM_MEMORY) {
                     sts = Params.mfxAllocator.Lock(Params1.mfxAllocator_postProc.pthis, Params1.mfx_surfaces_postprocess[VPP_OUT].Data.MemId, &Params1.mfx_surfaces_postprocess[VPP_OUT].Data);
                     BREAK_ON_ERROR(sts);
                 }

@@ -104,13 +104,13 @@ mfxStatus CreateHWDevice(mfxSession session, mfxHDL* deviceHandle, HWND window, 
     if (FAILED(hr)) return MFX_ERR_NULL_PTR;
 
     hr = pD3DD9->ResetEx(&D3DPP, NULL);
-    if (FAILED(hr)) return MFX_ERR_UNDEFINED_BEHAVIOR;    
+    if (FAILED(hr)) return MFX_ERR_UNDEFINED_BEHAVIOR;
 
     hr = pD3DD9->Clear(0, NULL, D3DCLEAR_TARGET, D3DCOLOR_XRGB(0, 0, 0), 1.0f, 0);
-    if (FAILED(hr)) return MFX_ERR_UNDEFINED_BEHAVIOR;    
+    if (FAILED(hr)) return MFX_ERR_UNDEFINED_BEHAVIOR;
 
     UINT resetToken = 0;
-    
+
     hr = DXVA2CreateDirect3DDeviceManager9(&resetToken, &pDeviceManager9);
     if (FAILED(hr)) return MFX_ERR_NULL_PTR;
 
@@ -160,7 +160,7 @@ mfxStatus _simple_alloc(mfxFrameAllocRequest *request, mfxFrameAllocResponse *re
     else
         format = (D3DFORMAT)request->Info.FourCC;
 
-    
+
     // Determine render target
     if(MFX_MEMTYPE_DXVA2_PROCESSOR_TARGET & request->Type)
         DxvaType = DXVA2_VideoProcessorRenderTarget;
@@ -184,7 +184,7 @@ mfxStatus _simple_alloc(mfxFrameAllocRequest *request, mfxFrameAllocResponse *re
 
         memset(mids, 0, sizeof(mfxMemId)*request->NumFrameSuggested*2);
     }
-        
+
     if(!pDeviceHandle)
     {
         hr = pDeviceManager9->OpenDeviceHandle(&pDeviceHandle);
@@ -229,7 +229,7 @@ mfxStatus _simple_alloc(mfxFrameAllocRequest *request, mfxFrameAllocResponse *re
     }
     else
     {
-        // Allocate surfaces 
+        // Allocate surfaces
         hr = pDXVAServiceTmp->CreateSurface(request->Info.Width,
                                             request->Info.Height,
                                             request->NumFrameSuggested - 1,
@@ -298,7 +298,7 @@ mfxStatus simple_lock(mfxHDL pthis, mfxMemId mid, mfxFrameData *ptr)
 
     if (pSurface == 0) return MFX_ERR_INVALID_HANDLE;
     if (ptr == 0) return MFX_ERR_LOCK_MEMORY;
-    
+
     D3DSURFACE_DESC desc;
     HRESULT hr = pSurface->GetDesc(&desc);
     if (FAILED(hr)) return MFX_ERR_LOCK_MEMORY;
@@ -357,7 +357,7 @@ mfxStatus simple_unlock(mfxHDL pthis, mfxMemId mid, mfxFrameData *ptr)
     if (pSurface == 0) return MFX_ERR_INVALID_HANDLE;
 
     pSurface->UnlockRect();
-    
+
     if (NULL != ptr)
     {
         ptr->Pitch = 0;
@@ -392,7 +392,7 @@ mfxStatus _simple_free(mfxFrameAllocResponse *response)
                 IDirect3DSurface9* handle = (IDirect3DSurface9*)response->mids[i];
                 handle->Release();
             }
-        }        
+        }
     }
 
     delete [] response->mids;

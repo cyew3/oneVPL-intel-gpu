@@ -21,7 +21,7 @@ public:
     MOCK_METHOD2(UnlockFrame, mfxStatus(mfxMemId mid, mfxFrameData *ptr));
     MOCK_METHOD2(GetFrameHDL, mfxStatus(mfxMemId mid, mfxHDL *handle));
 
-	MOCK_METHOD2(AllocFrames, mfxStatus(mfxFrameAllocRequest *request, mfxFrameAllocResponse *response));
+    MOCK_METHOD2(AllocFrames, mfxStatus(mfxFrameAllocRequest *request, mfxFrameAllocResponse *response));
     MOCK_METHOD1(FreeFrames, mfxStatus(mfxFrameAllocResponse *response));
 };
 
@@ -84,16 +84,16 @@ class MockVaapiFrameAllocator: public vaapiFrameAllocator
 public:
     MOCK_METHOD1(Init, mfxStatus(mfxAllocatorParams *pParams));
     MOCK_METHOD0(Close, mfxStatus());
-	MOCK_METHOD2(AllocFrames, mfxStatus(mfxFrameAllocRequest *request, mfxFrameAllocResponse *response));
+    MOCK_METHOD2(AllocFrames, mfxStatus(mfxFrameAllocRequest *request, mfxFrameAllocResponse *response));
     MOCK_METHOD1(FreeFrames, mfxStatus(mfxFrameAllocResponse *response));
 protected:
     MOCK_METHOD2(LockFrame, mfxStatus(mfxMemId mid, mfxFrameData *ptr));
     MOCK_METHOD2(UnlockFrame, mfxStatus(mfxMemId mid, mfxFrameData *ptr));
     MOCK_METHOD2(GetFrameHDL, mfxStatus(mfxMemId mid, mfxHDL *handle));
-   
-	MOCK_METHOD1(CheckRequestType, mfxStatus(mfxFrameAllocRequest *request));
-	MOCK_METHOD1(ReleaseResponse, mfxStatus(mfxFrameAllocResponse *response));
-	MOCK_METHOD2(AllocImpl, mfxStatus(mfxFrameAllocRequest *request, mfxFrameAllocResponse *response));
+
+    MOCK_METHOD1(CheckRequestType, mfxStatus(mfxFrameAllocRequest *request));
+    MOCK_METHOD1(ReleaseResponse, mfxStatus(mfxFrameAllocResponse *response));
+    MOCK_METHOD2(AllocImpl, mfxStatus(mfxFrameAllocRequest *request, mfxFrameAllocResponse *response));
 };
 #endif //defined(LIBVA_SUPPORT)
 #endif //#if defined(_WIN32) || defined(_WIN64)

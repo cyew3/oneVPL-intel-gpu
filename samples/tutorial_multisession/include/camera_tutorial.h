@@ -65,7 +65,7 @@ typedef struct _ownFrameInfo
 } sOwnFrameInfo;
 
 
-#define MAX_FILENAME_LEN 1024 
+#define MAX_FILENAME_LEN 1024
 
 enum MemType {
     SYSTEM_MEMORY = 0x00,
@@ -81,8 +81,8 @@ struct sInputParams
 
     mfxU32  rawType;
     mfxU32  bitDepth;
-	mfxU32  raw_width;
-	mfxU32  raw_height;
+    mfxU32  raw_width;
+    mfxU32  raw_height;
     bool    bOutput; // if renderer is enabled, possibly no need in output file
     bool    bPostProcess; // if renderer is enabled, possibly no need in output file
     bool    bSwitchRequired;
@@ -112,11 +112,11 @@ struct sInputParams
 
     mfxFrameSurface1  mfx_surfaces[2]; // frames array
     mfxFrameSurface1  mfx_surfaces_postprocess[2]; // frames array
-    
+
 
     mfxExtCamGammaCorrection m_GammaCorrection;
     mfxExtCamPipeControl     m_PipeControl;
-    mfxExtCamPadding         m_Padding; 
+    mfxExtCamPadding         m_Padding;
 
     mfxExtBuffer *m_ExtBuffers[3];
 
@@ -130,7 +130,7 @@ struct sInputParams
     mfxFrameAllocResponse   mfxResponseOut;  // memory allocation response
     mfxFrameAllocResponse   mfxResponseOut_postprocess;  // memory allocation response
 
-	bool bOutARGB16;
+    bool bOutARGB16;
 
 };
 
