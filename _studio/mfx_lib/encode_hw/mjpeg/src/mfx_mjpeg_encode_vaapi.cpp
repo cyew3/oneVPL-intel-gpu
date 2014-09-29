@@ -88,7 +88,7 @@ mfxStatus VAAPIEncoder::CreateAuxilliaryDevice(
     m_height = height;
     m_pAuxDevice = pAuxDevice;
 */
-    return MFX_ERR_NONE;
+    return MFX_ERR_UNSUPPORTED;
 }
 
 mfxStatus VAAPIEncoder::CreateAccelerationService(mfxVideoParam const & par)
@@ -110,7 +110,7 @@ mfxStatus VAAPIEncoder::CreateAccelerationService(mfxVideoParam const & par)
     HRESULT hr = m_pAuxDevice->Execute(AUXDEV_CREATE_ACCEL_SERVICE, &m_guid, sizeof(m_guid), &encodeCreateDevice, sizeof(encodeCreateDevice));
     MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
 */
-    return MFX_ERR_NONE;
+    return MFX_ERR_UNSUPPORTED;
 }
 
 mfxStatus VAAPIEncoder::QueryBitstreamBufferInfo(mfxFrameAllocRequest& request)
@@ -158,7 +158,7 @@ mfxStatus VAAPIEncoder::QueryBitstreamBufferInfo(mfxFrameAllocRequest& request)
     request.Info.Height = m_compBufInfo[i].CreationHeight;
     request.Info.FourCC = m_compBufInfo[i].CompressedFormats;
 */
-    return MFX_ERR_NONE;
+    return MFX_ERR_UNSUPPORTED;
 }
 
 mfxStatus VAAPIEncoder::QueryEncodeCaps(JpegEncCaps & caps)
@@ -170,7 +170,7 @@ mfxStatus VAAPIEncoder::QueryEncodeCaps(JpegEncCaps & caps)
     caps.MaxPicHeight = m_caps.MaxPicHeight;
     caps.MaxPicWidth = m_caps.MaxPicWidth;
 */
-    return MFX_ERR_NONE;
+    return MFX_ERR_UNSUPPORTED;
 }
 
 mfxStatus VAAPIEncoder::RegisterBitstreamBuffer(mfxFrameAllocResponse& response)
@@ -200,7 +200,7 @@ mfxStatus VAAPIEncoder::RegisterBitstreamBuffer(mfxFrameAllocResponse& response)
         m_feedbackCached.Reset(response.NumFrameActual);
     }
 */
-    return MFX_ERR_NONE;
+    return MFX_ERR_UNSUPPORTED;
 }
 
 mfxStatus VAAPIEncoder::Execute(DdiTask &task, mfxHDL surface)
@@ -301,7 +301,7 @@ mfxStatus VAAPIEncoder::Execute(DdiTask &task, mfxHDL surface)
         return MFX_ERR_DEVICE_FAILED;
     }
 */
-    return MFX_ERR_NONE;
+    return MFX_ERR_UNSUPPORTED;
 }
 
 mfxStatus VAAPIEncoder::QueryStatus(DdiTask & task)
@@ -371,7 +371,7 @@ mfxStatus VAAPIEncoder::QueryStatus(DdiTask & task)
         return MFX_ERR_DEVICE_FAILED;
     }
 */
-    return MFX_ERR_NONE;
+    return MFX_ERR_UNSUPPORTED;
 }
 
 mfxStatus VAAPIEncoder::UpdateBitstream(
@@ -394,7 +394,7 @@ mfxStatus VAAPIEncoder::UpdateBitstream(
     task.bs->DataLength += task.m_bsDataLength;
     m_core->UnlockFrame(MemId, &bitstream);
 
-    return (sts != ippStsNoErr) ? MFX_ERR_UNKNOWN : MFX_ERR_NONE;
+    return MFX_ERR_UNSUPPORTED;//(sts != ippStsNoErr) ? MFX_ERR_UNKNOWN : MFX_ERR_NONE;
 }
 
 mfxStatus VAAPIEncoder::Destroy()
