@@ -1397,7 +1397,8 @@ mfxStatus MFXDecPipeline::DecodeHeader()
     }
 
     ////special case when decoder initialized with rgb24/rgb32 fourcc
-    if ( m_components[eDEC].m_params.mfx.FrameInfo.FourCC != MFX_FOURCC_P010 &&
+    if (m_components[eDEC].m_params.mfx.CodecId == MFX_CODEC_JPEG &&
+         m_components[eDEC].m_params.mfx.FrameInfo.FourCC != MFX_FOURCC_P010 &&
          m_components[eDEC].m_params.mfx.FrameInfo.FourCC != MFX_FOURCC_NV16 &&
          m_components[eDEC].m_params.mfx.FrameInfo.FourCC != MFX_FOURCC_P210)
     {
@@ -1605,6 +1606,14 @@ mfxStatus MFXDecPipeline::CreateFileSink(std::auto_ptr<IFile> &pSink)
 mfxStatus MFXDecPipeline::CreateRender()
 {
     mfxStatus sts = MFX_ERR_UNKNOWN;
+
+    if (m_inParams.isAllegroTest)
+    {
+        m_components[eREN].m_params.mfx.FrameInfo.FourCC         = m_components[eDEC].m_params.mfx.FrameInfo.FourCC;
+        m_components[eREN].m_params.mfx.FrameInfo.BitDepthLuma   = m_components[eDEC].m_params.mfx.FrameInfo.BitDepthLuma;
+        m_components[eREN].m_params.mfx.FrameInfo.BitDepthChroma = m_components[eDEC].m_params.mfx.FrameInfo.BitDepthChroma;
+        m_components[eREN].m_params.mfx.FrameInfo.Shift          = m_components[eDEC].m_params.mfx.FrameInfo.Shift;
+    }
 
     //shouldn't recreate existed render in case of light reset
     if(NULL != m_pRender)
