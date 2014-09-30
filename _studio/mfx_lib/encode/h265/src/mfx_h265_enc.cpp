@@ -223,7 +223,7 @@ mfxStatus H265Encoder::InitH265VideoParam(const mfxVideoParam *param, const mfxE
         }
         else if (pars->BiPyramidLayers > 1) {
             pars->MaxRefIdxB[0] = (param->mfx.NumRefFrame + 1) / 2;
-            pars->MaxRefIdxB[1] = (param->mfx.NumRefFrame + 0) / 2;
+            pars->MaxRefIdxB[1] = IPP_MAX(1, (param->mfx.NumRefFrame + 0) / 2);
         }
         else {
             pars->MaxRefIdxB[0] = param->mfx.NumRefFrame - 1;
