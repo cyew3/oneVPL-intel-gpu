@@ -314,8 +314,8 @@ set( defs "" )
 # 1toN Lookahead
 # =============================================================================
 
-set (H264LA_PRODUCT_NAME "Intel(R) Media SDK Advanced AVC Encode Pack")
-set (hw_H264LA_ENCODER_DESCRIPTION "Intel(R) Media SDK H264 Advanced Hardware Encode Plug-in")
+set (H264LA_PRODUCT_NAME "Intel(R) Media Server Studio 2015 - SDK Advanced AVC Encode Pack")
+set (hw_H264LA_ENCODER_DESCRIPTION "Intel(R) Media Server Studio 2015 - SDK Advanced AVC Hardware Encode Plug-in")
 
   if( NOT DEFINED ENV{MFX_H264LA_VERSION} )
     set( h264la_version 0.0.000.0000 )
@@ -436,9 +436,9 @@ set( defs "" )
 # =============================================================================
 # VP8
 # =============================================================================
-set (VP8_PRODUCT_NAME "Intel(R) Media SDK VP8 Pack")
-set (sw_VP8_DECODER_DESCRIPTION "Intel(R) Media SDK VP8 Software Decode Plug-in")
-set (hw_VP8_DECODER_DESCRIPTION "Intel(R) Media SDK VP8 Hardware Decode Plug-in")
+set (VP8_PRODUCT_NAME "Intel(R) Media Server Studio 2015 - SDK VP8 Pack")
+set (sw_VP8_DECODER_DESCRIPTION "Intel(R) Media Server Studio 2015 - SDK VP8 Software Decode Plug-in")
+set (hw_VP8_DECODER_DESCRIPTION "Intel(R) Media Server Studio 2015 - SDK VP8 Hardware Decode Plug-in")
 
   if( NOT DEFINED ENV{MFX_VP8_VERSION} )
     set( vp8_version 0.0.000.0000 )
@@ -454,7 +454,7 @@ set (hw_VP8_DECODER_DESCRIPTION "Intel(R) Media SDK VP8 Hardware Decode Plug-in"
       OUTPUT_VARIABLE cur_date
       OUTPUT_STRIP_TRAILING_WHITESPACE
       )
-    string( SUBSTRING ${hevc_version} 0 1 ver )
+    string( SUBSTRING ${vp8_version} 0 1 ver )
 
     set(vp8_version_defs  "-DMFX_PLUGIN_FILE_VERSION=\"\\\"${ver}${cur_date}\"\\\" -DMFX_PLUGIN_PRODUCT_VERSION=\"\\\"${vp8_version}\"\\\"")
   endif( )
