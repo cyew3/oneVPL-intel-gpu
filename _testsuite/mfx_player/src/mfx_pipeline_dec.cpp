@@ -97,6 +97,7 @@ File Name: .h
 #include "mfx_thread.h"
 
 #include <iostream>
+#include <math.h>
 
 using namespace std;
 
