@@ -194,7 +194,8 @@ void PipelineProfile::BuildMuxerInfo() {
     }
 
     for (size_t i = 0; i < m_videos.size(); i++) {
-        mfxTrackInfo tInfo = {};
+        mfxTrackInfo tInfo;
+        MSDK_ZERO_MEMORY(tInfo);
         tInfo.SID = (mfxU32)m_muxerInfo.Tracks().size();
         tInfo.Enable = 1;
         tInfo.VideoParam = m_videos[i].GetTrackInfo().Encode.mfx;
