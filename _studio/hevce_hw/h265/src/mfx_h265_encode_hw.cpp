@@ -53,9 +53,6 @@ void SetDefaults(
     if (!par.mfx.NumSlice)
         par.mfx.NumSlice = 1;
 
-    if (!par.mfx.NumRefFrame)
-        par.mfx.NumRefFrame = MFX_MIN(2, hwCaps.MaxNum_Reference0) + MFX_MIN(1, hwCaps.MaxNum_Reference1);
-
     if (!par.mfx.GopOptFlag)
         par.mfx.GopOptFlag = MFX_GOP_CLOSED;
 
@@ -64,6 +61,15 @@ void SetDefaults(
 
     if (!par.mfx.GopRefDist)
         par.mfx.GopRefDist = 3;
+
+    if (!par.NumRefLX[0])
+        par.NumRefLX[0] = MFX_MIN(2, hwCaps.MaxNum_Reference0);
+
+    if (!par.NumRefLX[1] && par.mfx.GopRefDist > 1)
+        par.NumRefLX[1] = MFX_MIN(1, hwCaps.MaxNum_Reference1);
+
+    /*if (!par.mfx.NumRefFrame)
+        par.mfx.NumRefFrame = MFX_MIN(2, hwCaps.MaxNum_Reference0) + MFX_MIN(1, hwCaps.MaxNum_Reference1);*/
 
     if (!par.mfx.FrameInfo.FourCC)
         par.mfx.FrameInfo.FourCC = MFX_FOURCC_NV12;
@@ -92,6 +98,11 @@ void SetDefaults(
     if (!par.mfx.FrameInfo.ChromaFormat)
         par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
 
+    if (!par.mfx.FrameInfo.BitDepthLuma)
+        par.mfx.FrameInfo.BitDepthLuma = 8;
+
+    if (!par.mfx.FrameInfo.BitDepthChroma)
+        par.mfx.FrameInfo.BitDepthChroma = par.mfx.FrameInfo.BitDepthLuma;
 
     if (!par.mfx.RateControlMethod)
         par.mfx.RateControlMethod = MFX_RATECONTROL_CQP;
@@ -189,6 +200,7 @@ mfxStatus Plugin::Init(mfxVideoParam *par)
     SetDefaults(m_vpar, m_caps);
 
     m_vpar.SyncCalculableToVideoParam();
+    m_vpar.SyncMfxToHeadersParam();
 
     sts = m_ddi->CreateAccelerationService(m_vpar);
     MFX_CHECK(MFX_SUCCEEDED(sts), MFX_WRN_PARTIAL_ACCELERATION);
@@ -384,6 +396,8 @@ mfxStatus Plugin::EncodeFrameSubmit(mfxEncodeCtrl *ctrl, mfxFrameSurface1 *surfa
         else
         {
             task->m_frameType = GetFrameType(m_vpar, m_frameOrder);
+            if (task->m_frameType & MFX_FRAMETYPE_IDR)
+                m_frameOrder = 0;
             task->m_poc = m_frameOrder;
         }
 

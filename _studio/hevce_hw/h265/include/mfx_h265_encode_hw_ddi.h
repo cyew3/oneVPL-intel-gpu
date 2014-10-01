@@ -13,6 +13,7 @@
 #include "mfxplugin++.h"
 
 #include "mfx_h265_encode_hw_utils.h"
+#include "mfx_h265_encode_hw_bs.h"
 
 #include <memory>
 #include <vector>
@@ -71,6 +72,7 @@ typedef struct tagENCODE_CAPS_HEVC
     UCHAR   MaxNum_Reference0;
     UCHAR   MaxNum_Reference1;
     UCHAR   MBBRCSupport;
+    //UINT reserved;
 } ENCODE_CAPS_HEVC;
 
 typedef struct tagENCODE_SET_SEQUENCE_PARAMETERS_HEVC
@@ -377,7 +379,23 @@ private:
     FeedbackStorage m_cache;
 };
 
-class D3D9Encoder : public DriverEncoder
+class DDIHeaderPacker
+{
+public:
+    DDIHeaderPacker();
+    ~DDIHeaderPacker();
+
+    void Reset(MfxVideoParam const & par);
+
+    ENCODE_PACKEDHEADER_DATA* PackHeader(Task const & task, mfxU32 nut);
+
+private:
+    std::vector<ENCODE_PACKEDHEADER_DATA>           m_buf;
+    std::vector<ENCODE_PACKEDHEADER_DATA>::iterator m_cur;
+    HeaderPacker m_packer;
+};
+
+class D3D9Encoder : public DriverEncoder, DDIHeaderPacker
 {
 public:
     D3D9Encoder();
@@ -448,7 +466,7 @@ private:
     std::vector<ENCODE_COMP_BUFFER_INFO>        m_compBufInfo;
     std::vector<D3DDDIFORMAT>                   m_uncompBufInfo;
     std::vector<ENCODE_QUERY_STATUS_PARAMS>     m_feedbackUpdate;
-    CachedFeedback                              m_feedbackCached; 
+    CachedFeedback                              m_feedbackCached;
 };
 
 }; // namespace MfxHwH265Encode

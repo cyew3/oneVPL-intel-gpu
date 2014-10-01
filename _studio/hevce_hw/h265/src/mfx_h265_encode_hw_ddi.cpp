@@ -11,6 +11,10 @@
 #include "mfx_h265_encode_hw_ddi.h"
 #include <assert.h>
 
+
+//#define HEADER_PACKING_TEST
+
+
 #define MFX_CHECK_WITH_ASSERT(EXPR, ERR) { assert(EXPR); MFX_CHECK(EXPR, ERR); }
 
 namespace MfxHwH265Encode
@@ -50,138 +54,136 @@ mfxStatus QueryHwCaps(MFXCoreInterface* core, GUID guid, ENCODE_CAPS_HEVC & caps
 
 void FillSpsBuffer(
     MfxVideoParam const & par, 
-    ENCODE_CAPS_HEVC const & caps,
+    ENCODE_CAPS_HEVC const & /*caps*/,
     ENCODE_SET_SEQUENCE_PARAMETERS_HEVC & sps)
 {
     Zero(sps);
 
-    { // SKL
-        sps.SAO_enabled_flag                    = 0;
-        sps.pcm_enabled_flag                    = 0;
-        sps.pcm_loop_filter_disable_flag        = 1;
-        sps.log2_min_coding_block_size_minus3   = 0;
-        sps.log2_max_coding_block_size_minus3   = 2;
-    }
+    sps.log2_min_coding_block_size_minus3 = (mfxU8)par.m_sps.log2_min_luma_coding_block_size_minus3;
 
-    sps.wFrameWidthInMinCbMinus1  = 
-        par.mfx.FrameInfo.Width  / (1 << (sps.log2_min_coding_block_size_minus3 + 3)) - 1;
-    sps.wFrameHeightInMinCbMinus1 =
-        par.mfx.FrameInfo.Height / (1 << (sps.log2_min_coding_block_size_minus3 + 3)) - 1;
+    sps.wFrameWidthInMinCbMinus1 = (mfxU16)(par.m_sps.pic_width_in_luma_samples / (1 << (sps.log2_min_coding_block_size_minus3 + 3)) - 1);
+    sps.wFrameHeightInMinCbMinus1 = (mfxU16)(par.m_sps.pic_height_in_luma_samples / (1 << (sps.log2_min_coding_block_size_minus3 + 3)) - 1);
+    sps.general_profile_idc = par.m_sps.general.profile_idc;
+    sps.general_level_idc   = par.m_sps.general.level_idc;
+    sps.general_tier_flag   = par.m_sps.general.tier_flag;
 
-    sps.general_profile_idc = mfxU8(par.mfx.CodecProfile);
-    sps.general_level_idc   =  3 * (par.mfx.CodecLevel & 0xFF);
-    sps.general_tier_flag   = !!(par.mfx.CodecLevel & MFX_TIER_HEVC_HIGH);
-
-    sps.MinBitRate      = par.TargetKbps;
-    sps.FramesPer100Sec = mfxU16(mfxU64(100) * par.mfx.FrameInfo.FrameRateExtN / par.mfx.FrameInfo.FrameRateExtD);
-
-    sps.InitVBVBufferFullnessInBit = 8000 * par.InitialDelayInKB;
-    sps.VBVBufferSizeInBit         = 8000 * par.BufferSizeInKB;
-
-    if (caps.MBBRCSupport)
-    {
-        sps.MBBRC = 0;
-    }
-
-    if (caps.ParallelBRC)
-    {
-        sps.ParallelBRC = 0;
-
-        if (sps.ParallelBRC)
-        {
-            sps.NumOfBInGop[0]  = par.mfx.GopRefDist - 1;
-            sps.NumOfBInGop[1]  = 0;
-            sps.NumOfBInGop[2]  = 0;
-        }
-    }
-
-    if (par.mfx.RateControlMethod == MFX_RATECONTROL_AVBR)
-    {
-        sps.UserMaxFrameSize    = 0;
-        sps.AVBRAccuracy        = par.mfx.Accuracy;
-        sps.AVBRConvergence     = par.mfx.Convergence * 100;
-    }
-    
     sps.GopPicSize          = par.mfx.GopPicSize;
     sps.GopRefDist          = mfxU8(par.mfx.GopRefDist);
     sps.GopOptFlag          = mfxU8(par.mfx.GopOptFlag);
+
     sps.TargetUsage         = mfxU8(par.mfx.TargetUsage);
     sps.RateControlMethod   = mfxU8(par.mfx.RateControlMethod);
 
-    sps.TargetBitRate   = par.TargetKbps;
-    sps.MaxBitRate      = par.MaxKbps;
-
-    sps.scaling_list_enable_flag            = 0;
-    sps.sps_temporal_mvp_enable_flag        = 0;
-    sps.strong_intra_smoothing_enable_flag  = 1;
-    sps.amp_enabled_flag                    = 1;
-    sps.tiles_fixed_structure_flag          = 0;
-
-    sps.chroma_format_idc           = par.mfx.FrameInfo.ChromaFormat;
-    sps.separate_colour_plane_flag  = 0;
-
-    sps.log2_min_transform_block_size_minus2 = 0;
-    sps.log2_max_transform_block_size_minus2 = 3;
-
-    if (!sps.pcm_enabled_flag )
+    if (par.mfx.RateControlMethod != MFX_RATECONTROL_CQP)
     {
-        sps.log2_min_PCM_cb_size_minus3 = 0;
-        sps.log2_max_PCM_cb_size_minus3 = 0;
+        sps.MinBitRate      = par.TargetKbps;
+        sps.TargetBitRate   = par.TargetKbps;
+        sps.MaxBitRate      = par.MaxKbps;
     }
+
+    sps.FramesPer100Sec = (mfxU16)(mfxU64(100) * par.mfx.FrameInfo.FrameRateExtN / par.mfx.FrameInfo.FrameRateExtD);
+    sps.InitVBVBufferFullnessInBit = 8000 * par.InitialDelayInKB;
+    sps.VBVBufferSizeInBit         = 8000 * par.BufferSizeInKB;
+
+    sps.bResetBRC        = 0;
+    sps.GlobalSearch     = 0;
+    sps.LocalSearch      = 0;
+    sps.EarlySkip        = 0;
+    sps.MBBRC            = 0;
+    sps.ParallelBRC      = 0;
+    sps.SliceSizeControl = 0;
+
+    sps.UserMaxFrameSize = 0;
+
+    if (par.mfx.RateControlMethod == MFX_RATECONTROL_AVBR)
+    {
+        sps.AVBRAccuracy    = par.mfx.Accuracy;
+        sps.AVBRConvergence = par.mfx.Convergence;
+    }
+    sps.CRFQualityFactor = 0;
+
+    if (sps.ParallelBRC)
+    {
+        sps.NumOfBInGop[0]  = par.mfx.GopRefDist - 1;
+        sps.NumOfBInGop[1]  = 0;
+        sps.NumOfBInGop[2]  = 0;
+    }
+
+    sps.scaling_list_enable_flag           = par.m_sps.scaling_list_enabled_flag;
+    sps.sps_temporal_mvp_enable_flag       = par.m_sps.temporal_mvp_enabled_flag;
+    sps.strong_intra_smoothing_enable_flag = par.m_sps.strong_intra_smoothing_enabled_flag;
+    sps.amp_enabled_flag                   = par.m_sps.amp_enabled_flag;
+    sps.SAO_enabled_flag                   = par.m_sps.sample_adaptive_offset_enabled_flag;
+    sps.pcm_enabled_flag                   = par.m_sps.pcm_enabled_flag;
+    sps.pcm_loop_filter_disable_flag       = par.m_sps.pcm_loop_filter_disabled_flag;
+    sps.tiles_fixed_structure_flag         = 0;
+    sps.chroma_format_idc                  = par.m_sps.chroma_format_idc;
+    sps.separate_colour_plane_flag         = par.m_sps.separate_colour_plane_flag;
+
+    sps.log2_max_coding_block_size_minus3       = (mfxU8)(par.m_sps.log2_min_luma_coding_block_size_minus3
+        + par.m_sps.log2_diff_max_min_luma_coding_block_size);
+    sps.log2_min_coding_block_size_minus3       = (mfxU8)par.m_sps.log2_min_luma_coding_block_size_minus3;
+    sps.log2_max_transform_block_size_minus2    = (mfxU8)(par.m_sps.log2_min_transform_block_size_minus2
+        + par.m_sps.log2_diff_max_min_transform_block_size);
+    sps.log2_min_transform_block_size_minus2    = (mfxU8)par.m_sps.log2_min_transform_block_size_minus2;
+    sps.max_transform_hierarchy_depth_intra     = (mfxU8)par.m_sps.max_transform_hierarchy_depth_intra;
+    sps.max_transform_hierarchy_depth_inter     = (mfxU8)par.m_sps.max_transform_hierarchy_depth_inter;
+    sps.log2_min_PCM_cb_size_minus3             = (mfxU8)par.m_sps.log2_min_pcm_luma_coding_block_size_minus3;
+    sps.log2_max_PCM_cb_size_minus3             = (mfxU8)(par.m_sps.log2_min_pcm_luma_coding_block_size_minus3
+        + par.m_sps.log2_diff_max_min_pcm_luma_coding_block_size);
+    sps.bit_depth_luma_minus8                   = (mfxU8)par.m_sps.bit_depth_luma_minus8;
+    sps.bit_depth_chroma_minus8                 = (mfxU8)par.m_sps.bit_depth_chroma_minus8;
+    sps.pcm_sample_bit_depth_luma_minus1        = (mfxU8)par.m_sps.pcm_sample_bit_depth_luma_minus1;
+    sps.pcm_sample_bit_depth_chroma_minus1      = (mfxU8)par.m_sps.pcm_sample_bit_depth_chroma_minus1;
 }
 
 void FillPpsBuffer(
-    MfxVideoParam const & /*par*/,
+    MfxVideoParam const & par,
     ENCODE_SET_PICTURE_PARAMETERS_HEVC & pps)
 {
     Zero(pps);
     
     Fill(pps.CollocatedRefPicIndex, IDX_INVALID);
+
+    pps.tiles_enabled_flag               = par.m_pps.tiles_enabled_flag;
+    pps.entropy_coding_sync_enabled_flag = par.m_pps.entropy_coding_sync_enabled_flag;
+    pps.sign_data_hiding_flag            = par.m_pps.sign_data_hiding_enabled_flag;
+    pps.constrained_intra_pred_flag      = par.m_pps.constrained_intra_pred_flag;
+    pps.transform_skip_enabled_flag      = par.m_pps.transform_skip_enabled_flag;
+    pps.transquant_bypass_enabled_flag   = par.m_pps.transquant_bypass_enabled_flag;
+    pps.cu_qp_delta_enabled_flag         = par.m_pps.cu_qp_delta_enabled_flag;
+    pps.weighted_pred_flag               = par.m_pps.weighted_pred_flag;
+    pps.weighted_bipred_flag             = par.m_pps.weighted_pred_flag;
+    pps.bEnableGPUWeightedPrediction     = 0;
     
-    pps.transform_skip_enabled_flag             = 1;
-    pps.sign_data_hiding_flag                   = 0;
-    pps.transquant_bypass_enabled_flag          = 0;
-    pps.constrained_intra_pred_flag             = 0;
+    pps.loop_filter_across_slices_flag        = par.m_pps.loop_filter_across_slices_enabled_flag;
+    pps.loop_filter_across_tiles_flag         = par.m_pps.loop_filter_across_tiles_enabled_flag;
+    pps.scaling_list_data_present_flag        = par.m_pps.scaling_list_data_present_flag;
+    pps.dependent_slice_segments_enabled_flag = par.m_pps.dependent_slice_segments_enabled_flag;
+    pps.bLastPicInSeq                         = 0;
+    pps.bLastPicInStream                      = 0;
+    pps.bUseRawPicForRef                      = 0;
+    pps.bEmulationByteInsertion               = 0; //!!!
+    pps.bEnableRollingIntraRefresh            = 0;
+    pps.BRCPrecision                          = 0;
+    pps.bScreenContent                        = 0;
+    //pps.no_output_of_prior_pics_flag          = ;
+    //pps.XbEnableRollingIntraRefreshX
 
-    pps.entropy_coding_sync_enabled_flag        = 0;
-    pps.dependent_slice_segments_enabled_flag   = 0;
+    pps.QpY = (mfxU8)(par.m_pps.init_qp_minus26 + 26);
 
-    pps.weighted_pred_flag                      = 0;
-    pps.weighted_bipred_flag                    = 0;
-    pps.bEnableGPUWeightedPrediction            = 0;
-
-    pps.loop_filter_across_slices_flag          = 0;
-    pps.loop_filter_across_tiles_flag           = 0;
-    pps.scaling_list_data_present_flag          = 0;
-
-    pps.no_output_of_prior_pics_flag            = 0;
-
-    pps.QpY = 26;
-
-    pps.cu_qp_delta_enabled_flag = 0;
-
-    if (pps.cu_qp_delta_enabled_flag)
-    {
-        pps.diff_cu_qp_delta_depth = 0;
-    }
-
-    pps.pps_cb_qp_offset = 0;
-    pps.pps_cr_qp_offset = 0;
-
-    pps.tiles_enabled_flag = 0;
-
-    if (pps.tiles_enabled_flag)
-    {
-        pps.num_tile_columns_minus1;
-        pps.num_tile_rows_minus1;
-        pps.tile_column_width;
-        pps.tile_row_height;
-    }
-
-    pps.log2_parallel_merge_level_minus2 = 0;
+    pps.diff_cu_qp_delta_depth  = (mfxU8)par.m_pps.diff_cu_qp_delta_depth;
+    pps.pps_cb_qp_offset        = (mfxU8)par.m_pps.cb_qp_offset;
+    pps.pps_cr_qp_offset        = (mfxU8)par.m_pps.cr_qp_offset;
+    pps.num_tile_columns_minus1 = (mfxU8)par.m_pps.num_tile_columns_minus1;
+    pps.num_tile_rows_minus1    = (mfxU8)par.m_pps.num_tile_rows_minus1;
+    //pps.tile_column_width;
+    //pps.tile_row_height;
     
-    pps.num_ref_idx_l0_default_active_minus1 = 0;
-    pps.num_ref_idx_l1_default_active_minus1 = 0;
+    pps.log2_parallel_merge_level_minus2 = (mfxU8)par.m_pps.log2_parallel_merge_level_minus2;
+    
+    pps.num_ref_idx_l0_default_active_minus1 = (mfxU8)par.m_pps.num_ref_idx_l0_default_active_minus1;
+    pps.num_ref_idx_l1_default_active_minus1 = (mfxU8)par.m_pps.num_ref_idx_l1_default_active_minus1;
 
     pps.bEnableRollingIntraRefresh = 0;
 
@@ -256,15 +258,14 @@ void FillSliceBuffer(
 void FillSliceBuffer(
     Task const & task,
     ENCODE_SET_SEQUENCE_PARAMETERS_HEVC const & /*sps*/,
-    ENCODE_SET_PICTURE_PARAMETERS_HEVC const & pps,
+    ENCODE_SET_PICTURE_PARAMETERS_HEVC const & /*pps*/,
     std::vector<ENCODE_SET_SLICE_HEADER_HEVC> & slice)
 {
     for (mfxU16 i = 0; i < slice.size(); i ++)
     {
         ENCODE_SET_SLICE_HEADER_HEVC & cs = slice[i];
 
-        cs.slice_type = CodingTypeToSliceType(task.m_codingType);
-
+        cs.slice_type                           = task.m_sh.type;
         if (cs.slice_type != 2)
         {
             Copy(cs.RefPicList, task.m_refPicList);
@@ -274,18 +275,21 @@ void FillSliceBuffer(
                 cs.num_ref_idx_l1_active_minus1 = task.m_numRefActive[1] - 1;
         }
 
-        cs.dependent_slice_segment_flag         = 0;
-        cs.slice_temporal_mvp_enable_flag       = 0;
-        cs.slice_sao_luma_flag                  = 0;
-        cs.slice_sao_chroma_flag                = 0;
-        cs.mvd_l1_zero_flag                     = 0;
-        cs.cabac_init_flag                      = 0;
-        cs.slice_deblocking_filter_disable_flag = 0;
-        cs.collocated_from_l0_flag              = 0;
+        cs.bLastSliceOfPic                      = (i == slice.size() - 1);
+        cs.dependent_slice_segment_flag         = task.m_sh.dependent_slice_segment_flag;
+        cs.slice_temporal_mvp_enable_flag       = task.m_sh.temporal_mvp_enabled_flag;
+        cs.slice_sao_luma_flag                  = task.m_sh.sao_luma_flag;
+        cs.slice_sao_chroma_flag                = task.m_sh.sao_chroma_flag;
+        cs.mvd_l1_zero_flag                     = task.m_sh.mvd_l1_zero_flag;
+        cs.cabac_init_flag                      = task.m_sh.cabac_init_flag;
+        cs.slice_deblocking_filter_disable_flag = task.m_sh.deblocking_filter_disabled_flag;
+        cs.collocated_from_l0_flag              = task.m_sh.collocated_from_l0_flag;
 
-        cs.slice_qp_delta = mfxI8(task.m_qpY) - pps.QpY;
-        cs.slice_cb_qp_offset = 0;
-        cs.slice_cr_qp_offset = 0;
+        cs.slice_qp_delta       = task.m_sh.slice_qp_delta;
+        cs.slice_cb_qp_offset   = task.m_sh.slice_cr_qp_offset;
+        cs.slice_cr_qp_offset   = task.m_sh.slice_cb_qp_offset;
+        cs.beta_offset_div2     = task.m_sh.beta_offset_div2;
+        cs.tc_offset_div2       = task.m_sh.tc_offset_div2;
 
         //if (pps.weighted_pred_flag || pps.weighted_bipred_flag)
         //{
@@ -297,7 +301,7 @@ void FillSliceBuffer(
         //    cs.delta_chroma_weight[2][15][2];
         //}
 
-        cs.MaxNumMergeCand = 5;
+        cs.MaxNumMergeCand = 5 - task.m_sh.five_minus_max_num_merge_cand;
     }
 }
 
@@ -357,6 +361,60 @@ mfxStatus CachedFeedback::Remove(mfxU32 feedbackNumber)
     }
 
     return MFX_ERR_UNDEFINED_BEHAVIOR;
+}
+
+DDIHeaderPacker::DDIHeaderPacker()
+{
+}
+
+DDIHeaderPacker::~DDIHeaderPacker()
+{
+}
+
+void DDIHeaderPacker::Reset(MfxVideoParam const & par)
+{
+    m_buf.resize(3 + par.mfx.NumSlice);
+    m_cur = m_buf.begin();
+    m_packer.Reset(par);
+}
+
+ENCODE_PACKEDHEADER_DATA* DDIHeaderPacker::PackHeader(Task const & task, mfxU32 nut)
+{
+    assert(m_buf.size());
+
+    if (++m_cur == m_buf.end())
+        m_cur = m_buf.begin();
+
+    Zero(*m_cur);
+
+    switch(nut)
+    {
+    case VPS_NUT:
+        m_packer.GetVPS(m_cur->pData, m_cur->DataLength);
+        m_cur->BufferSize = m_cur->DataLength;
+        m_cur->SkipEmulationByteCount = 4;
+        break;
+    case SPS_NUT:
+        m_packer.GetSPS(m_cur->pData, m_cur->DataLength);
+        m_cur->BufferSize = m_cur->DataLength;
+        m_cur->SkipEmulationByteCount = 4;
+        break;
+    case PPS_NUT:
+        m_packer.GetPPS(m_cur->pData, m_cur->DataLength);
+        m_cur->BufferSize = m_cur->DataLength;
+        m_cur->SkipEmulationByteCount = 4;
+        break;
+    default:
+        if (nut != task.m_shNUT)
+            return 0;
+        m_packer.GetSSH(task, m_cur->pData, m_cur->DataLength);
+        m_cur->BufferSize = m_cur->DataLength;
+        m_cur->SkipEmulationByteCount = 3;
+        m_cur->DataLength *= 8;
+        break;
+    }
+
+    return &*m_cur;
 }
 
 D3D9Encoder::D3D9Encoder()
@@ -449,6 +507,8 @@ mfxStatus D3D9Encoder::CreateAccelerationService(MfxVideoParam const & par)
     m_cu_data.pBuffer       = m_cu_buffer.data();
     m_cu_data.BufferSize    = m_cu_buffer.size();
     //m_cu_data.CUDataOffset = 8;
+
+    DDIHeaderPacker::Reset(par);
 
     return MFX_ERR_NONE;
 }
@@ -555,12 +615,14 @@ mfxStatus D3D9Encoder::Register(mfxFrameAllocResponse& response, D3DDDIFORMAT ty
     executeParams.NumCompBuffers++;                                          \
     assert(executeParams.NumCompBuffers <= MaxCompBufDesc);
 
+
 mfxStatus D3D9Encoder::Execute(Task const & task, mfxHDL surface)
 {
     MFX_CHECK_WITH_ASSERT(m_auxDevice.get(), MFX_ERR_NOT_INITIALIZED);
 
     const mfxU32 MaxCompBufDesc = 16;
     ENCODE_COMPBUFFERDESC compBufDesc[MaxCompBufDesc] = {};
+    ENCODE_PACKEDHEADER_DATA * pPH = 0;
 
     ENCODE_EXECUTE_PARAMS executeParams = {};
     executeParams.pCompressedBuffers = compBufDesc;
@@ -576,8 +638,48 @@ mfxStatus D3D9Encoder::Execute(Task const & task, mfxHDL surface)
     ADD_CBD(D3DDDIFMT_INTELENCODE_BITSTREAMDATA,    bitstream,  1);
     ADD_CBD(D3DDDIFMT_HEVC_BUFFER_CUDATA,           m_cu_data,  1);
 
+    if (task.m_frameType & MFX_FRAMETYPE_IDR)
+    {
+        pPH = PackHeader(task, VPS_NUT); assert(pPH);
+        ADD_CBD(D3DDDIFMT_INTELENCODE_PACKEDHEADERDATA, *pPH, 1);
+    
+        pPH = PackHeader(task, SPS_NUT); assert(pPH);
+        ADD_CBD(D3DDDIFMT_INTELENCODE_PACKEDHEADERDATA, *pPH, 1);
+    }
+    
+    pPH = PackHeader(task, PPS_NUT); assert(pPH);
+    ADD_CBD(D3DDDIFMT_INTELENCODE_PACKEDHEADERDATA, *pPH, 1);
+
+    //TODO: add multi-slice
+    pPH = PackHeader(task, task.m_shNUT); assert(pPH);
+    ADD_CBD(D3DDDIFMT_INTELENCODE_PACKEDSLICEDATA, *pPH, 1);
+
     try
     {
+#ifdef HEADER_PACKING_TEST
+        surface;
+        ENCODE_QUERY_STATUS_PARAMS fb = {task.m_statusReportNumber,};
+        FrameLocker bs(m_core, task.m_midBs);
+
+        for (mfxU32 i = 0; i < executeParams.NumCompBuffers; i ++)
+        {
+            pPH = (ENCODE_PACKEDHEADER_DATA*)executeParams.pCompressedBuffers[i].pCompBuffer;
+
+            if (executeParams.pCompressedBuffers[i].CompressedBufferType == D3DDDIFMT_INTELENCODE_PACKEDHEADERDATA)
+            {
+                memcpy(bs.Y + fb.bitstreamSize, pPH->pData, pPH->DataLength);
+                fb.bitstreamSize += pPH->DataLength;
+            }
+            else if (executeParams.pCompressedBuffers[i].CompressedBufferType == D3DDDIFMT_INTELENCODE_PACKEDSLICEDATA)
+            {
+                mfxU32 sz = m_width * m_height * 3 / 2 - fb.bitstreamSize;
+                HeaderPacker::PackRBSP(bs.Y + fb.bitstreamSize, pPH->pData, sz, (pPH->DataLength + 7) / 8);
+                fb.bitstreamSize += sz;
+            }
+        }
+        m_feedbackCached.Update( CachedFeedback::FeedbackStorage(1, fb) );
+
+#else
         HANDLE handle;
         HRESULT hr = m_auxDevice->BeginFrame((IDirect3DSurface9 *)surface, 0);
         MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
@@ -587,6 +689,7 @@ mfxStatus D3D9Encoder::Execute(Task const & task, mfxHDL surface)
         MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
     
         m_auxDevice->EndFrame(&handle);
+#endif
     }
     catch (...)
     {

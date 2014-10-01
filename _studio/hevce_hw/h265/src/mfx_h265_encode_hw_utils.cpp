@@ -308,16 +308,23 @@ MfxVideoParam::MfxVideoParam()
     , MaxKbps         (0)
 {
     Zero(*(mfxVideoParam*)this);
+    Zero(NumRefLX);
 }
 
 MfxVideoParam::MfxVideoParam(MfxVideoParam const & par)
 {
     Construct(par);
 
-    BufferSizeInKB   = BufferSizeInKB;
-    InitialDelayInKB = InitialDelayInKB;
-    TargetKbps       = TargetKbps;
-    MaxKbps          = MaxKbps;
+    //Copy(m_vps, par.m_vps);
+    //Copy(m_sps, par.m_sps);
+    //Copy(m_pps, par.m_pps);
+
+    BufferSizeInKB   = par.BufferSizeInKB;
+    InitialDelayInKB = par.InitialDelayInKB;
+    TargetKbps       = par.TargetKbps;
+    MaxKbps          = par.MaxKbps;
+    NumRefLX[0]      = par.NumRefLX[0];
+    NumRefLX[1]      = par.NumRefLX[1];
 }
 
 MfxVideoParam::MfxVideoParam(mfxVideoParam const & par)
@@ -340,11 +347,23 @@ void MfxVideoParam::SyncVideoToCalculableParam()
     InitialDelayInKB = mfx.InitialDelayInKB * multiplier;
     TargetKbps       = mfx.TargetKbps       * multiplier;
     MaxKbps          = mfx.MaxKbps          * multiplier;
+
+    if (mfx.NumRefFrame)
+    {
+        NumRefLX[0] = mfx.NumRefFrame - mfx.GopRefDist > 1;
+        NumRefLX[1] = mfx.GopRefDist > 1;
+    } else
+    {
+        NumRefLX[0] = 0;
+        NumRefLX[1] = 0;
+    }
 }
 
 void MfxVideoParam::SyncCalculableToVideoParam()
 {
     mfxU32 maxVal32 = BufferSizeInKB;
+
+    mfx.NumRefFrame = NumRefLX[0] + NumRefLX[1];
 
     if (mfx.RateControlMethod != MFX_RATECONTROL_CQP)
     {
@@ -370,6 +389,352 @@ void MfxVideoParam::SyncCalculableToVideoParam()
             mfx.MaxKbps          = mfxU16((MaxKbps + mfx.BRCParamMultiplier - 1)          / mfx.BRCParamMultiplier);
         }
     }
+}
+
+void MfxVideoParam::SyncMfxToHeadersParam()
+{
+    PTL& general = m_vps.general;
+    SubLayerOrdering& slo = m_vps.sub_layer[0];
+
+    Zero(m_vps);
+    m_vps.video_parameter_set_id    = 0;
+    m_vps.reserved_three_2bits      = 3;
+    m_vps.max_layers_minus1         = 0;
+    m_vps.max_sub_layers_minus1     = 0;
+    m_vps.temporal_id_nesting_flag  = 1;
+    m_vps.reserved_0xffff_16bits    = 0xFFFF;
+    m_vps.sub_layer_ordering_info_present_flag = 0;
+
+    m_vps.timing_info_present_flag          = 1;
+    m_vps.num_units_in_tick                 = mfx.FrameInfo.FrameRateExtD;
+    m_vps.time_scale                        = mfx.FrameInfo.FrameRateExtN;
+    m_vps.poc_proportional_to_timing_flag   = 0;
+    m_vps.num_hrd_parameters                = 0;
+
+    general.profile_space               = 0;
+    general.tier_flag                   = !!(mfx.CodecProfile & MFX_TIER_HEVC_HIGH);
+    general.profile_idc                 = (mfx.CodecProfile & 0x55) * 3;
+    general.profile_compatibility_flags = 0;
+    general.progressive_source_flag     = !!(mfx.FrameInfo.PicStruct & MFX_PICSTRUCT_PROGRESSIVE);
+    general.interlaced_source_flag      = !!(mfx.FrameInfo.PicStruct & (MFX_PICSTRUCT_FIELD_TFF|MFX_PICSTRUCT_FIELD_BFF));
+    general.non_packed_constraint_flag  = 0;
+    general.frame_only_constraint_flag  = 0;
+    general.level_idc                   = (mfxU8)mfx.CodecLevel;
+
+    slo.max_dec_pic_buffering_minus1    = mfx.NumRefFrame;
+    slo.max_num_reorder_pics            = mfx.GopRefDist - 1;
+    slo.max_latency_increase_plus1      = 0;
+
+    assert(0 == m_vps.max_sub_layers_minus1);
+
+    Zero(m_sps);
+    ((LayersInfo&)m_sps) = ((LayersInfo&)m_vps);
+    m_sps.video_parameter_set_id   = m_vps.video_parameter_set_id;
+    m_sps.max_sub_layers_minus1    = m_vps.max_sub_layers_minus1;
+    m_sps.temporal_id_nesting_flag = m_vps.temporal_id_nesting_flag;
+
+    m_sps.seq_parameter_set_id              = 0;
+    m_sps.chroma_format_idc                 = mfx.FrameInfo.ChromaFormat;
+    m_sps.separate_colour_plane_flag        = 0;
+    m_sps.pic_width_in_luma_samples         = mfx.FrameInfo.Width;
+    m_sps.pic_height_in_luma_samples        = mfx.FrameInfo.Height;
+    m_sps.conformance_window_flag           = 0;
+    m_sps.bit_depth_luma_minus8             = Max(0, (mfxI32)mfx.FrameInfo.BitDepthLuma - 8);
+    m_sps.bit_depth_chroma_minus8           = Max(0, (mfxI32)mfx.FrameInfo.BitDepthChroma - 8);
+    m_sps.log2_max_pic_order_cnt_lsb_minus4 = Clip3(0U, 12U, mfx.GopRefDist > 1 ? CeilLog2(mfx.GopRefDist + slo.max_dec_pic_buffering_minus1) + 3 : 0U);
+
+    m_sps.log2_min_luma_coding_block_size_minus3   = 0; // SKL
+    m_sps.log2_diff_max_min_luma_coding_block_size = 2; // SKL
+    m_sps.log2_min_transform_block_size_minus2     = 0;
+    m_sps.log2_diff_max_min_transform_block_size   = 3;
+    m_sps.max_transform_hierarchy_depth_inter      = 2;
+    m_sps.max_transform_hierarchy_depth_intra      = 2;
+    m_sps.scaling_list_enabled_flag                = 0;
+    m_sps.amp_enabled_flag                         = 1;
+    m_sps.sample_adaptive_offset_enabled_flag      = 0; // SKL
+    m_sps.pcm_enabled_flag                         = 0; // SKL
+
+    assert(0 == m_sps.pcm_enabled_flag);
+
+    {
+        //TODO: add ref B
+        mfxU16 nPSets   = NumRefLX[0];
+
+        for (mfxU32 i = 0; i < nPSets; i ++)
+        {
+            STRPS& rps = m_sps.strps[i ? mfx.GopRefDist - 1 + i : 0];
+
+            rps.inter_ref_pic_set_prediction_flag = 0;
+            rps.num_negative_pics = i + 1;
+            rps.num_positive_pics = 0;
+
+            for (mfxU32 j = 0; j < rps.num_negative_pics; j ++)
+            {
+                rps.pic[j].DeltaPocS0               = -mfxI16((j + 1) * mfx.GopRefDist);
+                rps.pic[j].delta_poc_s0_minus1      = -(rps.pic[j].DeltaPocS0 - (j ? rps.pic[j-1].DeltaPocS0 : 0)) - 1;
+                rps.pic[j].used_by_curr_pic_s0_flag = 1;
+            }
+
+            m_sps.num_short_term_ref_pic_sets ++;
+        }
+
+        for (mfxU32 i = 1; i < mfx.GopRefDist; i ++)
+        {
+            STRPS& rps = m_sps.strps[i];
+
+            rps.inter_ref_pic_set_prediction_flag = 0;
+            rps.num_negative_pics = NumRefLX[0];
+            rps.num_positive_pics = 1;
+
+            assert(1 == NumRefLX[1]);
+            rps.pic[0].DeltaPocS0               = -mfxI16(i);
+            rps.pic[0].delta_poc_s0_minus1      = i - 1;
+            rps.pic[0].used_by_curr_pic_s0_flag = 1;
+
+            for (mfxU32 j = 1; j < rps.num_negative_pics; j ++)
+            {
+                rps.pic[j].delta_poc_s0_minus1      = mfx.GopRefDist - 1;
+                rps.pic[j].DeltaPocS0               = (-1) * mfx.GopRefDist + rps.pic[j-1].DeltaPocS0;
+                rps.pic[j].used_by_curr_pic_s0_flag = 1;
+            }
+
+            for (mfxU32 j = rps.num_negative_pics; 
+                    j < mfxU32(rps.num_negative_pics + rps.num_positive_pics); j ++)
+            {
+                rps.pic[j].DeltaPocS1               = mfxI16(mfx.GopRefDist - i);
+                rps.pic[j].delta_poc_s1_minus1      = (rps.pic[j].DeltaPocS1 - ((j > rps.num_negative_pics) ? rps.pic[j-1].DeltaPocS1 : 0)) - 1;
+                rps.pic[j].used_by_curr_pic_s1_flag = 1;
+            }
+
+            m_sps.num_short_term_ref_pic_sets ++;
+        }
+    }
+
+    m_sps.long_term_ref_pics_present_flag       = 0;
+    m_sps.temporal_mvp_enabled_flag             = 1; // SKL ?
+    m_sps.strong_intra_smoothing_enabled_flag   = 0; // SKL
+    m_sps.vui_parameters_present_flag           = 0;
+
+    Zero(m_pps);
+    m_pps.seq_parameter_set_id = m_sps.seq_parameter_set_id;
+
+    m_pps.pic_parameter_set_id                  = 0;
+    m_pps.dependent_slice_segments_enabled_flag = 0;
+    m_pps.output_flag_present_flag              = 0;
+    m_pps.num_extra_slice_header_bits           = 0;
+    m_pps.sign_data_hiding_enabled_flag         = 0;
+    m_pps.cabac_init_present_flag               = 0;
+    m_pps.num_ref_idx_l0_default_active_minus1  = NumRefLX[0] - 1;
+    m_pps.num_ref_idx_l1_default_active_minus1  = 0;
+    m_pps.init_qp_minus26                       = 0;
+    m_pps.constrained_intra_pred_flag           = 0;
+    m_pps.transform_skip_enabled_flag           = 0;
+    m_pps.cu_qp_delta_enabled_flag              = 0;
+
+    if (mfx.RateControlMethod == MFX_RATECONTROL_CQP)
+        m_pps.init_qp_minus26 = (mfx.GopRefDist == 1 ? mfx.QPP : mfx.QPB) - 26;
+
+    m_pps.cb_qp_offset                          = 0;
+    m_pps.cr_qp_offset                          = 0;
+    m_pps.slice_chroma_qp_offsets_present_flag  = 0;
+    m_pps.weighted_pred_flag                    = 0;
+    m_pps.weighted_bipred_flag                  = 0;
+    m_pps.transquant_bypass_enabled_flag        = 0;
+    m_pps.tiles_enabled_flag                    = 0;
+    m_pps.entropy_coding_sync_enabled_flag      = 0;
+
+    m_pps.loop_filter_across_slices_enabled_flag      = 0;
+    m_pps.deblocking_filter_control_present_flag      = 0;
+    m_pps.scaling_list_data_present_flag              = 0;
+    m_pps.lists_modification_present_flag             = 0;
+    m_pps.log2_parallel_merge_level_minus2            = 0;
+    m_pps.slice_segment_header_extension_present_flag = 0;
+
+}
+
+mfxU16 FrameType2SliceType(mfxU32 ft)
+{
+    if (ft & MFX_FRAMETYPE_B)
+        return 0;
+    if (ft & MFX_FRAMETYPE_P)
+        return 1;
+    return 2;
+}
+
+bool isCurrStRef(Task const & task, mfxI32 poc)
+{
+    for (mfxU32 i = 0; i < 2; i ++)
+        for (mfxU32 j = 0; j < task.m_numRefActive[i]; j ++)
+            if (poc == task.m_dpb[0][task.m_refPicList[i][j]].m_poc)
+                return true;
+    return false;
+}
+
+void MfxVideoParam::GetSliceHeader(Task const & task, Slice & s) const
+{
+    bool  isIDR = !!(task.m_frameType & MFX_FRAMETYPE_IDR);
+    bool  isP   = !!(task.m_frameType & MFX_FRAMETYPE_P);
+    bool  isB   = !!(task.m_frameType & MFX_FRAMETYPE_B);
+
+    Zero(s);
+    
+    s.first_slice_segment_in_pic_flag = 1;
+    s.no_output_of_prior_pics_flag    = 0;
+    s.pic_parameter_set_id            = m_pps.pic_parameter_set_id;
+
+    if (!s.first_slice_segment_in_pic_flag)
+    {
+        if (m_pps.dependent_slice_segments_enabled_flag)
+        {
+            s.dependent_slice_segment_flag = 0;
+        }
+
+        s.segment_address = 0;
+    }
+
+    s.type = FrameType2SliceType(task.m_frameType);
+
+    if (m_pps.output_flag_present_flag)
+        s.pic_output_flag = 1;
+
+    assert(0 == m_sps.separate_colour_plane_flag);
+
+    if (!isIDR)
+    {
+        mfxU32 i, j;
+        s.pic_order_cnt_lsb = (task.m_poc & ~(0xFFFFFFFF << (m_sps.log2_max_pic_order_cnt_lsb_minus4 + 4)));
+
+        //TODO: add unused ST
+        for (i = 0; i < m_sps.num_short_term_ref_pic_sets; i ++)
+        {
+            STRPS const & rps = m_sps.strps[i];
+            mfxU32 nRef = 0;
+
+            assert(0 == rps.inter_ref_pic_set_prediction_flag);
+
+            if (   isB && rps.num_positive_pics == 0
+                || isP && rps.num_positive_pics != 0)
+                continue;
+
+            for (j = 0; j < mfxU32(rps.num_negative_pics + rps.num_positive_pics); j ++)
+            {
+                if (rps.pic[j].used_by_curr_pic_sx_flag)
+                {
+                    if (!isCurrStRef(task, task.m_poc + rps.pic[j].DeltaPocSX))
+                    {
+                        nRef = IDX_INVALID;
+                        break;
+                    }
+
+                    nRef ++;
+                }
+            }
+
+            if (nRef == mfxU32(task.m_numRefActive[0] + task.m_numRefActive[1]))
+                break;
+        }
+
+        if (i < m_sps.num_short_term_ref_pic_sets)
+        {
+            s.short_term_ref_pic_set_sps_flag = 1;
+            s.short_term_ref_pic_set_idx      = i;
+            s.strps = m_sps.strps[i];
+        }
+        else
+        {
+            STRPS & rps = s.strps;
+            s.short_term_ref_pic_set_sps_flag = 0;
+
+            rps.num_negative_pics = task.m_numRefActive[0];
+            rps.num_positive_pics = task.m_numRefActive[1];
+
+            for (i = 0; i < mfxU32(task.m_numRefActive[0] + task.m_numRefActive[1]); i ++)
+            {
+                mfxU32 lx = i >= task.m_numRefActive[0];
+                mfxU32 idx = lx ? i - task.m_numRefActive[0] : i;
+                mfxI16 prev = (!i || i == task.m_numRefActive[0]) ? 0 : rps.pic[i-1].DeltaPocSX;
+
+                rps.pic[i].used_by_curr_pic_sx_flag = 1;
+                rps.pic[i].DeltaPocSX               = mfxI16(task.m_dpb[0][task.m_refPicList[lx][idx]].m_poc - task.m_poc);
+                rps.pic[i].delta_poc_sx_minus1      = Abs(rps.pic[i].DeltaPocSX - prev) - 1;
+            }
+        }
+
+        assert(0 == m_sps.long_term_ref_pics_present_flag);
+
+        if (m_sps.temporal_mvp_enabled_flag)
+            s.temporal_mvp_enabled_flag = 1;
+    }
+
+    if (m_sps.sample_adaptive_offset_enabled_flag)
+    {
+        s.sao_luma_flag   = 0;
+        s.sao_chroma_flag = 0;
+    }
+
+    if (isP || isB)
+    {
+        s.num_ref_idx_active_override_flag = 
+           (          m_pps.num_ref_idx_l0_default_active_minus1 + 1 != task.m_numRefActive[0]
+            || isB && m_pps.num_ref_idx_l1_default_active_minus1 + 1 != task.m_numRefActive[1]);
+
+        if (s.num_ref_idx_active_override_flag)
+        {
+            s.num_ref_idx_l0_active_minus1 = task.m_numRefActive[0] - 1;
+
+            if (isB)
+                s.num_ref_idx_l1_active_minus1 = task.m_numRefActive[1] - 1;
+        }
+
+        assert(0 == m_pps.lists_modification_present_flag);
+
+        if (isB)
+            s.mvd_l1_zero_flag = 0;
+
+        if (m_pps.cabac_init_present_flag)
+            s.cabac_init_flag = 0;
+
+        if (s.temporal_mvp_enabled_flag)
+        {
+            if (isB)
+                s.collocated_from_l0_flag = 1;
+
+            s.collocated_from_l0_flag = 0;
+        }
+
+        assert(0 == m_pps.weighted_pred_flag);
+        assert(0 == m_pps.weighted_bipred_flag);
+
+        s.five_minus_max_num_merge_cand = 0;
+    }
+
+    if (mfx.RateControlMethod == MFX_RATECONTROL_CQP)
+        s.slice_qp_delta = task.m_qpY - (m_pps.init_qp_minus26 + 26);
+
+    if (m_pps.slice_chroma_qp_offsets_present_flag)
+    {
+        s.slice_cb_qp_offset = 0;
+        s.slice_cr_qp_offset = 0;
+    }
+
+    if (m_pps.deblocking_filter_override_enabled_flag)
+        s.deblocking_filter_override_flag = 0;
+
+    assert(0 == s.deblocking_filter_override_flag);
+
+    s.loop_filter_across_slices_enabled_flag = 0;
+
+    if (m_pps.tiles_enabled_flag || m_pps.entropy_coding_sync_enabled_flag)
+    {
+        s.num_entry_point_offsets = 0;
+
+        assert(0 == s.num_entry_point_offsets);
+    }
+}
+
+void MfxVideoParam::SyncHeadersToMfxParam()
+{
+    assert(!"not implemented");
 }
 
 MfxVideoParam& MfxVideoParam::operator=(mfxVideoParam const & par)
@@ -500,6 +865,7 @@ void ConfigureTask(
     const bool isP    = !!(task.m_frameType & MFX_FRAMETYPE_P);
     const bool isB    = !!(task.m_frameType & MFX_FRAMETYPE_B);
     const bool isRef  = !!(task.m_frameType & MFX_FRAMETYPE_REF);
+    const bool isIDR  = !!(task.m_frameType & MFX_FRAMETYPE_IDR);
 
     // set coding type and QP
     if (isB)
@@ -549,8 +915,29 @@ void ConfigureTask(
             task.m_refPicList[1][l1++] = task.m_refPicList[0][l0-1];
         }
 
+
+        if (l0 > par.NumRefLX[0])
+        {
+            memmove(task.m_refPicList[0], task.m_refPicList[0] + l0 - par.NumRefLX[0], par.NumRefLX[0]);
+            l0 = (mfxU8)par.NumRefLX[0];
+            memset(task.m_refPicList[0] + l0, IDX_INVALID, sizeof(task.m_refPicList[0]) - l0);
+        }
+        if (l1 > par.NumRefLX[1])
+        {
+            memmove(task.m_refPicList[1], task.m_refPicList[1] + l1 - par.NumRefLX[1], par.NumRefLX[1]);
+            l1 = (mfxU8)par.NumRefLX[1];
+            memset(task.m_refPicList[1] + l1, IDX_INVALID, sizeof(task.m_refPicList[1]) - l1);
+        }
+
         task.m_numRefActive[0] = l0;
         task.m_numRefActive[1] = l1;
+
+        for (mfxU8 lx = 0; lx < 2; lx ++)
+            for (mfxU8 i = 0; i < task.m_numRefActive[lx]; i ++)
+                for (mfxU8 j = i; j < task.m_numRefActive[lx]; j ++)
+                    if (  task.m_dpb[0][task.m_refPicList[lx][i]].m_poc
+                        < task.m_dpb[0][task.m_refPicList[lx][j]].m_poc)
+                        std::swap(task.m_refPicList[lx][i], task.m_refPicList[lx][j]);
     }
 
 
@@ -575,6 +962,11 @@ void ConfigureTask(
         }
     }
 
+    task.m_shNUT = mfxU8(isIDR ? IDR_W_RADL 
+        : task.m_poc >= 0 ? (isRef ? TRAIL_R : TRAIL_N)
+        : (isRef ? RADL_R : RADL_N));
+
+    par.GetSliceHeader(task, task.m_sh);
 }
 
 }; //namespace MfxHwH265Encode

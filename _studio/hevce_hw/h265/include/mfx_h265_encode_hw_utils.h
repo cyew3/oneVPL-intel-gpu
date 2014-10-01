@@ -7,6 +7,7 @@
 //
 
 #pragma once
+#include "mfx_h265_encode_hw_set.h"
 #include "mfx_common.h"
 #include "mfxplugin++.h"
 #include "umc_mutex.h"
@@ -30,6 +31,10 @@ template<class T, class U> inline void Copy(T & dst, U const & src)
     STATIC_ASSERT(sizeof(T) == sizeof(U), copy_objects_of_different_size);
     memcpy(&dst, &src, sizeof(dst));
 }
+template<class T> inline T Abs(T x) { return (x > 0 ? x : -x); }
+template<class T> inline T Min(T x, T y) { return MFX_MIN(x, y); }
+template<class T> inline T Max(T x, T y) { return MFX_MAX(x, y); }
+template<class T> inline T Clip3(T min, T max, T x) { return Min(Max(min, x), max); }
 
 enum
 {
@@ -97,28 +102,6 @@ private:
     std::vector<mfxU32>                m_locked;
 }; 
 
-class MfxVideoParam : public mfxVideoParam
-{
-public:
-    mfxU32 BufferSizeInKB;
-    mfxU32 InitialDelayInKB;
-    mfxU32 TargetKbps;
-    mfxU32 MaxKbps;
-
-    MfxVideoParam();
-    MfxVideoParam(MfxVideoParam const & par);
-    MfxVideoParam(mfxVideoParam const & par);
-
-    MfxVideoParam & operator = (mfxVideoParam const &);
-    mfxVideoParam & operator = (MfxVideoParam const &);
-
-    void SyncVideoToCalculableParam();
-    void SyncCalculableToVideoParam();
-
-private:
-    void Construct(mfxVideoParam const & par);
-};
-
 typedef struct _DpbFrame
 {
     mfxU8    m_idxRaw;
@@ -133,12 +116,14 @@ typedef struct _Task : DpbFrame
     mfxBitstream*       m_bs;
     mfxFrameSurface1*   m_surf;
     mfxEncodeCtrl       m_ctrl;
+    Slice               m_sh;
 
     mfxU32 m_idxBs;
 
     mfxU8 m_refPicList[2][15];
     mfxU8 m_numRefActive[2];
 
+    mfxU8  m_shNUT;
     mfxU8  m_codingType;
     mfxU8  m_qpY;
 
@@ -155,6 +140,37 @@ typedef struct _Task : DpbFrame
 
 typedef std::list<Task> TaskList;
 
+class MfxVideoParam : public mfxVideoParam
+{
+public:
+    VPS m_vps;
+    SPS m_sps;
+    PPS m_pps;
+
+    mfxU32 BufferSizeInKB;
+    mfxU32 InitialDelayInKB;
+    mfxU32 TargetKbps;
+    mfxU32 MaxKbps;
+    mfxU16 NumRefLX[2];
+
+    MfxVideoParam();
+    MfxVideoParam(MfxVideoParam const & par);
+    MfxVideoParam(mfxVideoParam const & par);
+
+    MfxVideoParam & operator = (mfxVideoParam const &);
+    mfxVideoParam & operator = (MfxVideoParam const &);
+
+    void SyncVideoToCalculableParam();
+    void SyncCalculableToVideoParam();
+    void SyncMfxToHeadersParam();
+    void SyncHeadersToMfxParam();
+
+    void GetSliceHeader(Task const & task, Slice & s) const;
+
+private:
+    void Construct(mfxVideoParam const & par);
+};
+
 class TaskManager
 {
 public:
@@ -170,8 +186,31 @@ private:
     UMC::Mutex m_listMutex;
 };
 
+class FrameLocker : public mfxFrameData
+{
+public:
+    FrameLocker(MFXCoreInterface* core, mfxMemId mid)
+        : m_core(core)
+        , m_mid(mid)
+    {
+        Zero((mfxFrameData&)*this);
+        Lock();
+    }
+    ~FrameLocker()
+    {
+        Unlock();
+    }
+    mfxStatus Lock()   { return m_core->FrameAllocator().Lock  (m_core->FrameAllocator().pthis, m_mid, this); }
+    mfxStatus Unlock() { return m_core->FrameAllocator().Unlock(m_core->FrameAllocator().pthis, m_mid, this); }
+
+private:
+    MFXCoreInterface* m_core;
+    mfxMemId m_mid;
+};
+
 inline bool isValid(DpbFrame const & frame) { return IDX_INVALID !=  frame.m_idxRec; }
 inline bool isDpbEnd(DpbArray const & dpb, mfxU32 idx) { return idx >= MAX_DPB_SIZE || !isValid(dpb[idx]); }
+inline mfxU32 CeilLog2(mfxU32 x) { mfxU32 l = 0; while(x > mfxU32(1<<l)) l++; return l; }
 
 mfxU8 GetFrameType(MfxVideoParam const & video, mfxU32 frameOrder);
 
