@@ -90,7 +90,7 @@ mfxStatus LoadSplFunctions(retMfxSpl *mfxSpl)
 {
     int i;
 
-    mfxSpl->hModule = LoadLibraryW(defaultSplDLLName);
+    mfxSpl->hModule = LoadLibraryExW(defaultSplDLLName,NULL,0);
     if (!mfxSpl->hModule)
     {
         return MFX_ERR_NULL_PTR;
@@ -116,7 +116,7 @@ mfxStatus LoadMuxFunctions(retMfxMux *mfxMux)
 {
     int i;
 
-    mfxMux->hModule = LoadLibraryW(defaultMuxDLLName);
+    mfxMux->hModule = LoadLibraryExW(defaultMuxDLLName,NULL,0);
     if (!mfxMux->hModule)
     {
         return MFX_ERR_NULL_PTR;
