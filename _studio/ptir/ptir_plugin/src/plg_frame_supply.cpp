@@ -460,7 +460,7 @@ mfxStatus frameSupplier::CMCreateSurface2D(mfxFrameSurface1*& mfxSurf, CmSurface
             return mfxSts;
 
         if(!isD3D11)
-            cmSts = (*pCMdevice)->CreateSurface2D((mfxHDL*)&native_surf, cmSurfOut);
+            cmSts = (*pCMdevice)->CreateSurface2D(native_surf.first, cmSurfOut);
         else
             cmSts = (*pCMdevice)->CreateSurface2D( ((mfxHDLPair*) &native_surf)->first, cmSurfOut);
 

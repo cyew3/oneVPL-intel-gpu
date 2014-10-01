@@ -35,7 +35,7 @@ class CmDeviceEx
   friend class CmSurface2DExT;
 
 public:
-  CmDeviceEx(const unsigned char * programm, int size, mfxHandleType _mfxDeviceType, mfxHDL _mfxDeviceHdl)
+  CmDeviceEx(const unsigned char * programm, int size, mfxHandleType _mfxDeviceType, mfxHDL _mfxDeviceHdl, bool jit = false)
   {
     mfxDeviceType = _mfxDeviceType;
     mfxDeviceHdl = _mfxDeviceHdl;
@@ -56,7 +56,10 @@ public:
     CM_FAIL_IF(result != CM_SUCCESS || pDevice == NULL, result);
 
     CmProgram * pProgram = NULL;
-    result = ::ReadProgram(pDevice, pProgram, programm, size);  
+    if(jit)
+        result = ::ReadProgramJit(pDevice, pProgram, programm, size);
+    else
+        result = ::ReadProgram(pDevice, pProgram, programm, size);  
     CM_FAIL_IF(result != CM_SUCCESS || pProgram == NULL, result);
 
     this->programs.push_back(pProgram);

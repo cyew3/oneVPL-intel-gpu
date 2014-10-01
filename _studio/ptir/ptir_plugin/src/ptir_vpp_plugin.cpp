@@ -275,8 +275,8 @@ mfxStatus MFX_PTIR_Plugin::Execute(mfxThreadTask task, mfxU32 , mfxU32 )
     PTIR_Task *ptir_task = (PTIR_Task*) task;
     if(!ptir_task->filled)
         return MFX_ERR_UNDEFINED_BEHAVIOR;
-    if(inSurfs.size() == 0 && 0 == ptir->fqIn.iCount && 0 == ptir->uiCur && 0 == outSurfs.size())
-        return MFX_ERR_UNDEFINED_BEHAVIOR;
+    //if(inSurfs.size() == 0 && 0 == ptir->fqIn.iCount && 0 == ptir->uiCur && 0 == outSurfs.size())
+    //    return MFX_ERR_UNDEFINED_BEHAVIOR;
 
     bool beof = false;
     mfxStatus mfxSts = MFX_ERR_NONE;
@@ -356,15 +356,19 @@ mfxStatus MFX_PTIR_Plugin::Execute(mfxThreadTask task, mfxU32 , mfxU32 )
 mfxStatus MFX_PTIR_Plugin::FreeResources(mfxThreadTask task, mfxStatus )
 {
     assert(0 != vTasks.size());
-    assert(0 != outSurfs.size());
-    if(0 == vTasks.size() || 0 == outSurfs.size())
+    //assert(0 != outSurfs.size());
+    if(0 == vTasks.size() /*|| 0 == outSurfs.size()*/)
         return MFX_ERR_UNKNOWN;
 
     for(mfxU32 i=0; i < vTasks.size(); i++){
         if (vTasks[i] == (PTIR_Task*) task)
         {
-            m_pmfxCore->DecreaseReference(m_pmfxCore->pthis, &outSurfs.front()->Data);
-            outSurfs.erase(outSurfs.begin());
+            m_pmfxCore->DecreaseReference(m_pmfxCore->pthis, &vTasks[i]->surface_out->Data);
+            //m_pmfxCore->DecreaseReference(m_pmfxCore->pthis, &outSurfs.front()->Data);
+            if(b_work)
+            {
+                outSurfs.erase(std::remove(outSurfs.begin(), outSurfs.end(), vTasks[i]->surface_out), outSurfs.end());
+            }
             delete vTasks[i];
             vTasks.erase(vTasks.begin() + i);
         }
@@ -439,7 +443,7 @@ mfxStatus MFX_PTIR_Plugin::Query(mfxVideoParam *in, mfxVideoParam *out)
         }
         // auto-detection mode is allowed only for unknown picstruct and unknown input frame rate
         if(const_in.vpp.In.PicStruct == MFX_PICSTRUCT_UNKNOWN && 
-           (const_in.vpp.In.FrameRateExtN || const_in.vpp.In.FrameRateExtD || const_in.vpp.Out.FrameRateExtN || const_in.vpp.Out.FrameRateExtD))
+           (const_in.vpp.In.FrameRateExtN || const_in.vpp.Out.FrameRateExtN))
         {
             out->vpp.In.PicStruct = 0; // MFX_PICSTRUCT_UNKNOWN == 0, so that 0 is meaningless here
             out->vpp.In.FrameRateExtN = 0;
@@ -1067,6 +1071,7 @@ mfxStatus MFX_PTIR_Plugin::Init(mfxVideoParam *par)
 
     bInited = true;
     m_mfxCurrentPar = m_mfxInitPar;
+    b_work = false;
 
     if(par_accel)
         return MFX_WRN_PARTIAL_ACCELERATION;
@@ -1149,9 +1154,16 @@ inline mfxStatus MFX_PTIR_Plugin::PrepareTask(PTIR_Task *ptir_task, mfxThreadTas
         *task = ptir_task;
         ptir_task->filled = true;
         if(outSurfs.size())
+        {
+            b_work = false;
             *surface_out = outSurfs.front();
+            outSurfs.erase(outSurfs.begin());
+        }
         else
+        {
+            b_work = true;
             *surface_out = workSurfs.front();
+        }
         ptir_task->surface_out = *surface_out;
         //m_pmfxCore->IncreaseReference(m_pmfxCore->pthis, &surface_out->Data);
     }
@@ -1293,7 +1305,7 @@ inline mfxStatus MFX_PTIR_Plugin::GetHWTypeAndCheckSupport(mfxIMPL& impl, mfxHDL
         //case MFX_HW_BDW:
         case MFX_HW_HSW_ULT:
         case MFX_HW_HSW:
-        case MFX_HW_IVB:
+        //case MFX_HW_IVB:
         //case MFX_HW_VLV:
             HWSupported = true;
             par_accel = false;
@@ -1331,12 +1343,12 @@ inline mfxStatus MFX_PTIR_Plugin::CheckInFrameSurface1(mfxFrameSurface1*& mfxSur
            return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
     }
 
-    if(!m_mfxCurrentPar.vpp.In.PicStruct)  {
-        if( !((mfxSurf->Info.PicStruct == MFX_PICSTRUCT_FIELD_TFF) || (mfxSurf->Info.PicStruct == MFX_PICSTRUCT_FIELD_BFF)))
-            return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
-    }  else if (m_mfxCurrentPar.vpp.In.PicStruct != mfxSurf->Info.PicStruct)  {
-        return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
-    }
+    //if(!m_mfxCurrentPar.vpp.In.PicStruct)  {
+    //    if( !((mfxSurf->Info.PicStruct == MFX_PICSTRUCT_FIELD_TFF) || (mfxSurf->Info.PicStruct == MFX_PICSTRUCT_FIELD_BFF)))
+    //        return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
+    //}  else if (m_mfxCurrentPar.vpp.In.PicStruct != mfxSurf->Info.PicStruct)  {
+    //    return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
+    //}
 
     return CheckFrameSurface1(mfxSurf);
 }

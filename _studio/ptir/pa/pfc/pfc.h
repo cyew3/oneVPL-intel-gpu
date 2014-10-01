@@ -44,7 +44,6 @@ File Name: api.h
 #define MOVEMENT_THRESH (400)
 #define SKIP_FACTOR (4)
 
-int Deinterlace(Frame *frameIn, Frame *frameRef, int pels, int lines, unsigned int *mode, unsigned int *detection_measure);
 //int Deinterlace(unsigned char *frame, unsigned char *prev_frame, int pels, int lines, unsigned int *mode, unsigned int *detection_measure);
 
 #define INVTELE_RESULT_DROP_FRAME    0

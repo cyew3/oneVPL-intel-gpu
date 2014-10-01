@@ -13,7 +13,7 @@ File Name: ptir_vpp_plugin.h
 #include "pacm.h"
 #include "cmut/clock.h"
 #include "deinterlace_genx_hsw_isa.h"
-//#include "deinterlace_genx_ivb_isa.h"
+//#include "deinterlace_genx_bdw_isa.h"
 
 //input: pIsaFileNames - file names of CM ISA file list. Now due to a bug in CM runtime, we only support length of 1.
 //       size - number of files
@@ -28,16 +28,24 @@ DeinterlaceFilter::DeinterlaceFilter(eMFXHWType HWType, UINT width, UINT height,
     //    assert(pIsaFileNames[i] != NULL);
     //    this->isaFileNames.push_back(string(pIsaFileNames[i]));
     //}
+    bool jit = false;
 
     switch (HWType)
     {
-    case MFX_HW_BDW:
-    case MFX_HW_VLV:
     case MFX_HW_HSW_ULT:
     case MFX_HW_HSW:
+        jit = false;
+        this->device = std::auto_ptr<CmDeviceEx>(new CmDeviceEx(deinterlace_genx_hsw, sizeof(deinterlace_genx_hsw), mfxDeviceType, mfxDeviceHdl, jit));
+        break;
+    case MFX_HW_BDW:
+    //    jit = false;
+    //    this->device = std::auto_ptr<CmDeviceEx>(new CmDeviceEx(deinterlace_genx_bdw, sizeof(deinterlace_genx_bdw), mfxDeviceType, mfxDeviceHdl, jit));
+    //    break;
+    case MFX_HW_VLV:
     case MFX_HW_IVB:
     default:
-        this->device = std::auto_ptr<CmDeviceEx>(new CmDeviceEx(deinterlace_genx_hsw, sizeof(deinterlace_genx_hsw), mfxDeviceType, mfxDeviceHdl));
+        jit = true;
+        this->device = std::auto_ptr<CmDeviceEx>(new CmDeviceEx(deinterlace_genx_hsw, sizeof(deinterlace_genx_hsw), mfxDeviceType, mfxDeviceHdl, jit));
         break;
     }
 

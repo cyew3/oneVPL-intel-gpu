@@ -221,7 +221,7 @@ SET PATH=%ICLDIR%\bin;%ICLDIR%\lib;%PATH%
 SET INCLUDE=%ICLDIR%\include;%ICLDIR%\include\cm;%INCLUDE%
 SET CM_RT_PLATFORM=hsw
 copy /y deinterlace_genx.cpp deinterlace_genx_hsw.cpp
-icl /c /Qxcm /Qxcm_jit_target=gen7 deinterlace_genx_hsw.cpp /mCM_print_asm_count
+icl /c /Qxcm /Qxcm_jit_target=gen7_5 deinterlace_genx_hsw.cpp /mCM_print_asm_count
 cl .\kernels\embed_isa.c
 del embed_isa.obj
 move embed_isa.exe .\kernels\embed_isa.exe
@@ -232,17 +232,17 @@ del ..\deinterlace_genx_hsw.isa
 del ..\deinterlace_genx_hsw.obj
 move deinterlace_genx_hsw.h deinterlace_genx_hsw_isa.h
 
-rem FOR IVB (or any other platform)
+rem rem FOR BDW (or any other platform)
 rem cd ..\
-rem SET CM_RT_PLATFORM=ivb
-rem copy /y deinterlace_genx.cpp deinterlace_genx_ivb.cpp
-rem icl /c /Qxcm  deinterlace_genx_ivb.cpp /mCM_emit_common_isa
+rem SET CM_RT_PLATFORM=bdw
+rem copy /y deinterlace_genx.cpp deinterlace_genx_bdw.cpp
+rem icl /c /Qxcm /Qxcm_jit_target=gen8 deinterlace_genx_bdw.cpp /mCM_print_asm_count
 rem cd kernels
-rem embed_isa ..\deinterlace_genx_ivb.isa
-rem del ..\deinterlace_genx_ivb.cpp
-rem del ..\deinterlace_genx_ivb.isa
-rem del ..\deinterlace_genx_ivb.obj
-rem move deinterlace_genx_ivb.h deinterlace_genx_ivb_isa.h
+rem embed_isa ..\deinterlace_genx_bdw.isa
+rem del ..\deinterlace_genx_bdw.cpp
+rem del ..\deinterlace_genx_bdw.isa
+rem del ..\deinterlace_genx_bdw.obj
+rem move deinterlace_genx_bdw.h deinterlace_genx_bdw_isa.h
 
 del embed_isa.exe</Command>
     </PreBuildEvent>
@@ -326,7 +326,7 @@ SET PATH=%ICLDIR%\bin;%ICLDIR%\lib;%PATH%
 SET INCLUDE=%ICLDIR%\include;%ICLDIR%\include\cm;%INCLUDE%
 SET CM_RT_PLATFORM=hsw
 copy /y deinterlace_genx.cpp deinterlace_genx_hsw.cpp
-icl /c /Qxcm /Qxcm_jit_target=gen7 deinterlace_genx_hsw.cpp /mCM_print_asm_count
+icl /c /Qxcm /Qxcm_jit_target=gen7_5 deinterlace_genx_hsw.cpp /mCM_print_asm_count
 cl .\kernels\embed_isa.c
 del embed_isa.obj
 move embed_isa.exe .\kernels\embed_isa.exe
@@ -337,17 +337,17 @@ del ..\deinterlace_genx_hsw.isa
 del ..\deinterlace_genx_hsw.obj
 move deinterlace_genx_hsw.h deinterlace_genx_hsw_isa.h
 
-rem FOR IVB (or any other platform)
+rem rem FOR BDW (or any other platform)
 rem cd ..\
-rem SET CM_RT_PLATFORM=ivb
-rem copy /y deinterlace_genx.cpp deinterlace_genx_ivb.cpp
-rem icl /c /Qxcm  deinterlace_genx_ivb.cpp /mCM_emit_common_isa
+rem SET CM_RT_PLATFORM=bdw
+rem copy /y deinterlace_genx.cpp deinterlace_genx_bdw.cpp
+rem icl /c /Qxcm /Qxcm_jit_target=gen8 deinterlace_genx_bdw.cpp /mCM_print_asm_count
 rem cd kernels
-rem embed_isa ..\deinterlace_genx_ivb.isa
-rem del ..\deinterlace_genx_ivb.cpp
-rem del ..\deinterlace_genx_ivb.isa
-rem del ..\deinterlace_genx_ivb.obj
-rem move deinterlace_genx_ivb.h deinterlace_genx_ivb_isa.h
+rem embed_isa ..\deinterlace_genx_bdw.isa
+rem del ..\deinterlace_genx_bdw.cpp
+rem del ..\deinterlace_genx_bdw.isa
+rem del ..\deinterlace_genx_bdw.obj
+rem move deinterlace_genx_bdw.h deinterlace_genx_bdw_isa.h
 
 del embed_isa.exe</Command>
     </PreBuildEvent>
@@ -436,7 +436,7 @@ SET PATH=%ICLDIR%\bin;%ICLDIR%\lib;%PATH%
 SET INCLUDE=%ICLDIR%\include;%ICLDIR%\include\cm;%INCLUDE%
 SET CM_RT_PLATFORM=hsw
 copy /y deinterlace_genx.cpp deinterlace_genx_hsw.cpp
-icl /c /Qxcm /Qxcm_jit_target=gen7 deinterlace_genx_hsw.cpp /mCM_print_asm_count
+icl /c /Qxcm /Qxcm_jit_target=gen7_5 deinterlace_genx_hsw.cpp /mCM_print_asm_count
 cl .\kernels\embed_isa.c
 del embed_isa.obj
 move embed_isa.exe .\kernels\embed_isa.exe
@@ -447,17 +447,17 @@ del ..\deinterlace_genx_hsw.isa
 del ..\deinterlace_genx_hsw.obj
 move deinterlace_genx_hsw.h deinterlace_genx_hsw_isa.h
 
-rem FOR IVB (or any other platform)
+rem rem FOR BDW (or any other platform)
 rem cd ..\
-rem SET CM_RT_PLATFORM=ivb
-rem copy /y deinterlace_genx.cpp deinterlace_genx_ivb.cpp
-rem icl /c /Qxcm  deinterlace_genx_ivb.cpp /mCM_emit_common_isa
+rem SET CM_RT_PLATFORM=bdw
+rem copy /y deinterlace_genx.cpp deinterlace_genx_bdw.cpp
+rem icl /c /Qxcm /Qxcm_jit_target=gen8 deinterlace_genx_bdw.cpp /mCM_print_asm_count
 rem cd kernels
-rem embed_isa ..\deinterlace_genx_ivb.isa
-rem del ..\deinterlace_genx_ivb.cpp
-rem del ..\deinterlace_genx_ivb.isa
-rem del ..\deinterlace_genx_ivb.obj
-rem move deinterlace_genx_ivb.h deinterlace_genx_ivb_isa.h
+rem embed_isa ..\deinterlace_genx_bdw.isa
+rem del ..\deinterlace_genx_bdw.cpp
+rem del ..\deinterlace_genx_bdw.isa
+rem del ..\deinterlace_genx_bdw.obj
+rem move deinterlace_genx_bdw.h deinterlace_genx_bdw_isa.h
 
 del embed_isa.exe</Command>
     </PreBuildEvent>
@@ -549,7 +549,7 @@ SET PATH=%ICLDIR%\bin;%ICLDIR%\lib;%PATH%
 SET INCLUDE=%ICLDIR%\include;%ICLDIR%\include\cm;%INCLUDE%
 SET CM_RT_PLATFORM=hsw
 copy /y deinterlace_genx.cpp deinterlace_genx_hsw.cpp
-icl /c /Qxcm /Qxcm_jit_target=gen7 deinterlace_genx_hsw.cpp /mCM_print_asm_count
+icl /c /Qxcm /Qxcm_jit_target=gen7_5 deinterlace_genx_hsw.cpp /mCM_print_asm_count
 cl .\kernels\embed_isa.c
 del embed_isa.obj
 move embed_isa.exe .\kernels\embed_isa.exe
@@ -560,17 +560,17 @@ del ..\deinterlace_genx_hsw.isa
 del ..\deinterlace_genx_hsw.obj
 move deinterlace_genx_hsw.h deinterlace_genx_hsw_isa.h
 
-rem FOR IVB (or any other platform)
+rem rem FOR BDW (or any other platform)
 rem cd ..\
-rem SET CM_RT_PLATFORM=ivb
-rem copy /y deinterlace_genx.cpp deinterlace_genx_ivb.cpp
-rem icl /c /Qxcm  deinterlace_genx_ivb.cpp /mCM_emit_common_isa
+rem SET CM_RT_PLATFORM=bdw
+rem copy /y deinterlace_genx.cpp deinterlace_genx_bdw.cpp
+rem icl /c /Qxcm /Qxcm_jit_target=gen8 deinterlace_genx_bdw.cpp /mCM_print_asm_count
 rem cd kernels
-rem embed_isa ..\deinterlace_genx_ivb.isa
-rem del ..\deinterlace_genx_ivb.cpp
-rem del ..\deinterlace_genx_ivb.isa
-rem del ..\deinterlace_genx_ivb.obj
-rem move deinterlace_genx_ivb.h deinterlace_genx_ivb_isa.h
+rem embed_isa ..\deinterlace_genx_bdw.isa
+rem del ..\deinterlace_genx_bdw.cpp
+rem del ..\deinterlace_genx_bdw.isa
+rem del ..\deinterlace_genx_bdw.obj
+rem move deinterlace_genx_bdw.h deinterlace_genx_bdw_isa.h
 
 del embed_isa.exe</Command>
     </PreBuildEvent>

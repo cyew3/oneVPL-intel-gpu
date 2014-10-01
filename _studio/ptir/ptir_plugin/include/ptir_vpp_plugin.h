@@ -125,6 +125,7 @@ protected:
     bool bInited;
     bool par_accel;
     bool in_expected;
+    bool b_work;
     frameSupplier* frmSupply;
     mfxFrameSurface1* prevSurf;
     std::vector<PTIR_Task*> vTasks;
