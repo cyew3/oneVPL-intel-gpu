@@ -405,8 +405,6 @@ protected:
     // Try to reset in case DPB has overflown
     void PreventDPBFullness();
 
-    Heap_Objects           m_ObjHeap;
-
     H265SegmentDecoderBase **m_pSegmentDecoder;
     Ipp32u m_iThreadNum;
 

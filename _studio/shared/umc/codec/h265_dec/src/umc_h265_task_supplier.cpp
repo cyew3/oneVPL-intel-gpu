@@ -585,8 +585,7 @@ void ViewItem_H265::SetDPBSize(H265SeqParamSet *pSps, Ipp32u & level_idc)
 // TaskSupplier_H265
 /****************************************************************************************************/
 TaskSupplier_H265::TaskSupplier_H265()
-    : AU_Splitter_H265(&m_ObjHeap)
-    , m_SliceIdxInTaskSupplier(0)
+    : m_SliceIdxInTaskSupplier(0)
     , m_pSegmentDecoder(0)
     , m_iThreadNum(0)
     , m_use_external_framerate(false)
@@ -753,8 +752,7 @@ void TaskSupplier_H265::Close()
     }
 
     MVC_Extension::Close();
-    AU_Splitter_H265::Close();
-    DecReferencePictureMarking_H265::Reset();
+        DecReferencePictureMarking_H265::Reset();
 
     if (m_pLastSlice)
     {
@@ -763,9 +761,8 @@ void TaskSupplier_H265::Close()
         m_pLastSlice = 0;
     }
 
-    m_Headers.Reset(false);
+    AU_Splitter_H265::Close();
     Skipping_H265::Reset();
-    m_ObjHeap.Release();
     m_pocDecoding.Reset();
 
     m_frameOrder               = 0;
@@ -815,7 +812,7 @@ void TaskSupplier_H265::Reset()
         m_sei_messages->Reset();
 
     MVC_Extension::Reset();
-    AU_Splitter_H265::Reset();
+    
     DecReferencePictureMarking_H265::Reset();
 
     if (m_pLastSlice)
@@ -825,9 +822,8 @@ void TaskSupplier_H265::Reset()
         m_pLastSlice = 0;
     }
 
-    m_Headers.Reset(true);
     Skipping_H265::Reset();
-    m_ObjHeap.Release();
+    AU_Splitter_H265::Reset();
     m_pocDecoding.Reset();
 
     m_frameOrder               = 0;
@@ -855,7 +851,6 @@ void TaskSupplier_H265::AfterErrorRestore()
     GetView()->pDPB->Reset();
 
     MVC_Extension::Reset();
-    AU_Splitter_H265::Reset();
 
     if (m_pLastSlice)
     {
@@ -865,8 +860,7 @@ void TaskSupplier_H265::AfterErrorRestore()
     }
 
     Skipping_H265::Reset();
-    m_ObjHeap.Release();
-    m_Headers.Reset(true);
+    AU_Splitter_H265::Reset();
 
     m_decodedOrder      = false;
     m_WaitForIDR        = true;

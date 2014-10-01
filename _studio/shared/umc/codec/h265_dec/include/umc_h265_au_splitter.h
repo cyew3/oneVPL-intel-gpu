@@ -30,7 +30,7 @@ class NALUnitSplitter_H265;
 class AU_Splitter_H265
 {
 public:
-    AU_Splitter_H265(Heap_Objects *objectHeap);
+    AU_Splitter_H265();
     virtual ~AU_Splitter_H265();
 
     void Init(UMC::VideoDecoderParams *init);
@@ -48,8 +48,8 @@ public:
 
 protected:
 
+    Heap_Objects    m_ObjHeap;
     Headers         m_Headers;
-    Heap_Objects   *m_objHeap;
 
 protected:
 

@@ -266,7 +266,7 @@ mfxStatus VideoDECODEH265::Init(mfxVideoParam *par)
     {
         m_core->GetVA((mfxHDL*)&m_va, MFX_MEMTYPE_FROM_DECODE);
         umcVideoParams.pVideoAccelerator = m_va;
-        ((VATaskSupplier*)m_pH265VideoDecoder.get())->SetVideoHardwareAccelerator(m_va);
+        static_cast<VATaskSupplier*>(m_pH265VideoDecoder.get())->SetVideoHardwareAccelerator(m_va);
 
 #if defined MFX_VA_WIN
         if (m_va->GetProtectedVA())
@@ -294,7 +294,7 @@ mfxStatus VideoDECODEH265::Init(mfxVideoParam *par)
 #if defined (MFX_VA)
     if (MFX_PLATFORM_SOFTWARE != m_platform && m_useDelayedDisplay)
     {
-        ((VATaskSupplier*)m_pH265VideoDecoder.get())->SetBufferedFramesNumber(NUMBER_OF_ADDITIONAL_FRAMES);
+        static_cast<VATaskSupplier*>(m_pH265VideoDecoder.get())->SetBufferedFramesNumber(NUMBER_OF_ADDITIONAL_FRAMES);
     }
 #endif
 

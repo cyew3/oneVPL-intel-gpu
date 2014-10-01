@@ -165,17 +165,6 @@ UMC::Status MFXTaskSupplier_H265::Init(UMC::VideoDecoderParams *init)
     return UMC::UMC_OK;
 }
 
-// Release resources
-void MFXTaskSupplier_H265::Reset()
-{
-    TaskSupplier_H265::Reset();
-
-    m_Headers.Reset();
-
-    if (m_pTaskBroker)
-        m_pTaskBroker->Init(m_iThreadNum);
-}
-
 // Check whether specified frame has been decoded, and if it was,
 // whether it is necessary to display some frame
 bool MFXTaskSupplier_H265::CheckDecoding(bool should_additional_check, H265DecoderFrame * outputFrame)

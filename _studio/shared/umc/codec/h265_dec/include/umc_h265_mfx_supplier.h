@@ -86,7 +86,7 @@ public:
     // Initialize task supplier
     virtual UMC::Status Init(UMC::VideoDecoderParams *pInit);
 
-    virtual void Reset();
+    using TaskSupplier_H265::Reset;
 
     // Check whether all slices for the frame were found
     virtual void CompleteFrame(H265DecoderFrame * pFrame);

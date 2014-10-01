@@ -18,9 +18,8 @@
 namespace UMC_HEVC_DECODER
 {
 
-AU_Splitter_H265::AU_Splitter_H265(Heap_Objects *objectHeap)
-    : m_Headers(objectHeap)
-    , m_objHeap(objectHeap)
+AU_Splitter_H265::AU_Splitter_H265()
+    : m_Headers(&m_ObjHeap)
 {
 }
 
@@ -40,6 +39,8 @@ void AU_Splitter_H265::Init(UMC::VideoDecoderParams *)
 void AU_Splitter_H265::Close()
 {
     m_pNALSplitter.reset(0);
+    m_Headers.Reset(false);
+    m_ObjHeap.Release();
 }
 
 void AU_Splitter_H265::Reset()
@@ -47,7 +48,8 @@ void AU_Splitter_H265::Reset()
     if (m_pNALSplitter.get())
         m_pNALSplitter->Reset();
 
-    m_Headers.Reset();
+    m_Headers.Reset(false);
+    m_ObjHeap.Release();
 }
 
 // Wrapper for NAL unit splitter CheckNalUnitType
