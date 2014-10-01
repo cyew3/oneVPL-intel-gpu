@@ -32,10 +32,6 @@ File Name: libmfx_allocator_vaapi.cpp
 #define VA_TO_MFX_STATUS(_va_res) \
     (VA_STATUS_SUCCESS == (_va_res))? MFX_ERR_NONE: MFX_ERR_DEVICE_FAILED;
 
-#define VA_SURFACE_ATTRIB_USAGE_HINT_ENCODER    0x00000002
-#define VASurfaceAttribUsageHint 8
-#define VAEncMacroblockMapBufferType 29
-
 enum {
     MFX_FOURCC_VP8_NV12    = MFX_MAKEFOURCC('V','P','8','N'),
     MFX_FOURCC_VP8_MBDATA  = MFX_MAKEFOURCC('V','P','8','M'),

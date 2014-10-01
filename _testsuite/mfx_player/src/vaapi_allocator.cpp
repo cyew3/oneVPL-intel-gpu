@@ -16,10 +16,6 @@ Copyright(c) 2011-2014 Intel Corporation. All Rights Reserved.
 #include "vaapi_allocator.h"
 #include "vaapi_utils.h"
 
-#define VA_SURFACE_ATTRIB_USAGE_HINT_ENCODER    0x00000002
-#define VASurfaceAttribUsageHint 8
-#define VAEncMacroblockMapBufferType 29
-
 enum {
     MFX_FOURCC_VP8_NV12    = MFX_MAKEFOURCC('V','P','8','N'),
     MFX_FOURCC_VP8_MBDATA  = MFX_MAKEFOURCC('V','P','8','M'),
