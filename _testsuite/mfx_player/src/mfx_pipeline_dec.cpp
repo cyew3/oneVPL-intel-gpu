@@ -3000,7 +3000,8 @@ mfxStatus  MFXDecPipeline::RunVPP(mfxFrameSurface1 *pSurface)
                 }
 
                 // Go back to decoder in order to get next frame
-                return MFX_ERR_NONE;
+                if(pSurface)
+                    return MFX_ERR_NONE;
             }
 
             m_bVPPUpdateInput = false;
