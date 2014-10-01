@@ -275,7 +275,11 @@ mfxStatus VideoDECODEH264::Init(mfxVideoParam *par)
     if (MFX_PLATFORM_SOFTWARE == m_platform)
     {
         m_pH264VideoDecoder.reset(new UMC::MFXTaskSupplier());
-        m_FrameAllocator.reset(new mfx_UMC_FrameAllocator());
+        
+        if (m_vPar.mfx.FrameInfo.ChromaFormat == MFX_CHROMAFORMAT_YUV422)
+            m_FrameAllocator.reset(new mfx_UMC_FrameAllocator_NV12());
+        else
+            m_FrameAllocator.reset(new mfx_UMC_FrameAllocator());
     }
     else
     {
@@ -1800,6 +1804,11 @@ bool VideoDECODEH264::IsSameVideoParam(mfxVideoParam * newPar, mfxVideoParam * o
     }
 
     if (newPar->Protected != oldPar->Protected)
+    {
+        return false;
+    }
+
+    if (newPar->mfx.FrameInfo.FourCC != oldPar->mfx.FrameInfo.FourCC)
     {
         return false;
     }

@@ -127,7 +127,7 @@ void H264DecYUVBufferPadded::allocate(const FrameData * frameData, const VideoDa
         m_chromaSize = info->GetPlaneInfo(1)->m_ippSize;
         m_pitch_chroma = (Ipp32s)m_frameData.GetPlaneMemoryInfo(1)->m_pitch / info->GetPlaneInfo(1)->m_iSampleSize;
 
-        if (m_frameData.GetInfo()->GetColorFormat() == UMC::NV12)
+        if (m_frameData.GetInfo()->GetNumPlanes() == 2)
         {
             m_pUVPlane = m_frameData.GetPlaneMemoryInfo(1)->m_planePtr;
             m_pUPlane = 0;
@@ -135,6 +135,7 @@ void H264DecYUVBufferPadded::allocate(const FrameData * frameData, const VideoDa
         }
         else
         {
+            VM_ASSERT(m_frameData.GetInfo()->GetNumPlanes() == 3);
             m_pUPlane = m_frameData.GetPlaneMemoryInfo(1)->m_planePtr;
             m_pVPlane = m_frameData.GetPlaneMemoryInfo(2)->m_planePtr;
             m_pUVPlane = 0;

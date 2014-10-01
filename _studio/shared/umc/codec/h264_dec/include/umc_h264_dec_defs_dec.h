@@ -1548,7 +1548,7 @@ struct H264DecoderMacroblockMVs
 typedef Ipp8u NumCoeffsType;
 struct H264DecoderMacroblockCoeffsInfo
 {
-    NumCoeffsType numCoeffs[24];                                         // (Ipp8u) number of coefficients in each block in macroblock
+    NumCoeffsType numCoeffs[48];                                         // (Ipp8u) number of coefficients in each block in macroblock
 
 }; // 24 bytes for YUV420. For YUV422, YUV444 support need to extend it
 

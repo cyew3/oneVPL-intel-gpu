@@ -2183,13 +2183,14 @@ public:
 
 static const Ipp32s tcoeffs_scale_factors[6]  = { 8, 9, 10, 11, 13, 14 };
 
-template <typename Coeffs, typename PlaneY, typename PlaneUV, Ipp32s color_format, Ipp32s is_field, bool is_high_profile, bool nv12_support = true>
+template <typename Coeffs, typename PlaneY, typename PlaneUV, Ipp32s color_format, Ipp32s is_field, bool is_high_profile>
 class MBReconstructor
 {
 public:
 
     enum
     {
+        nv12_support = color_format < 2,
         width_chroma_div = nv12_support ? 0 : (color_format < 3),  // for plane
         height_chroma_div = (color_format < 2),  // for plane
     };

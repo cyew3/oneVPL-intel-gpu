@@ -513,11 +513,17 @@ mfxStatus InitMfxFrameSurface(mfxFrameSurface1* pSurface, mfxFrameInfo* pFrameIn
     case MFX_FOURCC_YV12:
         nBitsPerPixel                 = 12;
         break;
+    case MFX_FOURCC_YV16:
+        nBitsPerPixel                 = 16;
+        break;
     case MFX_FOURCC_RGB3:
         nBitsPerPixel                 = 24;
         break;
     case MFX_FOURCC_NV12:
         nBitsPerPixel                 = 12;
+        break;
+    case MFX_FOURCC_NV16:
+        nBitsPerPixel                 = 16;
         break;
     case MFX_FOURCC_YUV420_16:
     case MFX_FOURCC_P010:

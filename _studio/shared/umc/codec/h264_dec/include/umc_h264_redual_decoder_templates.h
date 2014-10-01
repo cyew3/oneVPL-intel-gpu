@@ -162,7 +162,7 @@ public:
         {
             for (uBlock = FIRST_DC_CHROMA; uBlock < FIRST_AC_CHROMA; uBlock++)
             {
-                if (((blockcbp & 1) != 0) & (sd->m_pSliceHeader->scan_idx_start == 0))
+                if ((blockcbp & 1) != 0)
                 {
                     switch(color_format)
                     {
@@ -271,7 +271,7 @@ public:
                 Ipp32u addval = uBlock >= (FIRST_AC_CHROMA + 4*colorFactor) ?
                     (FIRST_AC_CHROMA + 4*colorFactor - 3) : 16;
                 sNumCoeff = 0;
-                    if (((blockcbp & 1) != 0) && (sd->m_pSliceHeader->scan_idx_end > 0))
+                if ((blockcbp & 1) != 0)
                 {
                     switch(color_format)
                     {

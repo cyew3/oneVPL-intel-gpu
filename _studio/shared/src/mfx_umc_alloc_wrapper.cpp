@@ -448,11 +448,13 @@ const UMC::FrameData* mfx_UMC_FrameAllocator::Lock(UMC::FrameMemID mid)
 
     switch (frameData->GetInfo()->GetColorFormat())
     {
+    case UMC::NV16:
     case UMC::NV12:
         frameData->SetPlanePointer(data->Y, 0, pitch);
         frameData->SetPlanePointer(data->U, 1, pitch);
         break;
     case UMC::YUV420:
+    case UMC::YUV422:
         frameData->SetPlanePointer(data->Y, 0, pitch);
         frameData->SetPlanePointer(data->U, 1, pitch >> 1);
         frameData->SetPlanePointer(data->V, 2, pitch >> 1);
@@ -917,7 +919,9 @@ UMC::Status mfx_UMC_FrameAllocator_NV12::InitMfx(UMC::FrameAllocatorParams *pPar
     if (sts != UMC::UMC_OK)
         return sts;
 
-    UMC::Status umcSts = m_info_yuv420.Init(params->mfx.FrameInfo.Width, params->mfx.FrameInfo.Height, UMC::YUV420, 8);
+    UMC::ColorFormat colorFormat = (params->mfx.FrameInfo.ChromaFormat == MFX_CHROMAFORMAT_YUV422) ? UMC::YUV422 : UMC::YUV420;
+
+    UMC::Status umcSts = m_info_yuv420.Init(params->mfx.FrameInfo.Width, params->mfx.FrameInfo.Height, colorFormat, 8);
     if (umcSts != UMC::UMC_OK)
         return umcSts;
 
@@ -975,6 +979,58 @@ const UMC::FrameData* mfx_UMC_FrameAllocator_NV12::Lock(UMC::FrameMemID mid)
     return frame;
 }
 
+static IppStatus ippiYCbCr422_8u_P3P2R(
+  const Ipp8u*   pSrc[3],
+        int      srcStep[3],
+        Ipp8u*   pDstY,
+        int      dstYStep,
+        Ipp8u*   pDstUV,
+        int      dstUVStep,
+        IppiSize roiSize)
+{
+  int w;
+  int h;
+
+  int width  = roiSize.width;
+  int height = roiSize.height;
+
+  /* Y plane */
+  for( h = 0; h < height; h ++ )
+  {
+    const Ipp8u* src;
+    Ipp8u* dst;
+
+    src = pSrc[0]+ h * srcStep[0];
+    dst = pDstY  + h * dstYStep;
+
+    for( w = 0; w < width; w ++ )
+    {
+      *dst++ = *src++;
+    }
+  }
+
+  width  /= 2;
+
+  for( h = 0; h < height; h ++ )
+  {
+    const Ipp8u* srcu;
+    const Ipp8u* srcv;
+    Ipp8u* dstuv;
+
+    srcu  = pSrc[1] + h * srcStep[1];
+    srcv  = pSrc[2] + h * srcStep[2];
+    dstuv = pDstUV  + h * dstUVStep;
+
+    for( w = 0; w < width; w ++ )
+    {
+      *dstuv++ = *srcu++;
+      *dstuv++ = *srcv++;
+    }
+  }
+
+  return ippStsNoErr;
+} /* ownYCbCr420ToYCbCr420_8u_P3P2R() */
+
 mfxStatus mfx_UMC_FrameAllocator_NV12::ConvertToNV12(const UMC::FrameData * fd, mfxFrameData *data, const mfxVideoParam * videoPar)
 {
     UMC::AutomaticUMCMutex guard(m_guard);
@@ -999,7 +1055,9 @@ mfxStatus mfx_UMC_FrameAllocator_NV12::ConvertToNV12(const UMC::FrameData * fd, 
                           static_cast<Ipp32s>(data->PitchLow + ((mfxU32)data->PitchHigh << 16))};
 
     IppiSize srcSize = {videoInfo.Width, videoInfo.Height};
-    IppStatus sts = ippiYCbCr420_8u_P3P2R(pYVU, pYVUStep, pDst[0], pDstStep[0], pDst[1], pDstStep[1], srcSize);
+
+    IppStatus sts = (fd->GetInfo()->GetColorFormat() == UMC::YUV422) ? ippiYCbCr422_8u_P3P2R(pYVU, pYVUStep, pDst[0], pDstStep[0], pDst[1], pDstStep[1], srcSize) :
+        ippiYCbCr420_8u_P3P2R(pYVU, pYVUStep, pDst[0], pDstStep[0], pDst[1], pDstStep[1], srcSize);
 
     if (sts != ippStsNoErr)
         return MFX_ERR_UNDEFINED_BEHAVIOR;

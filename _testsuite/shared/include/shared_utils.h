@@ -84,7 +84,8 @@ enum sEntryPoints
 enum
 {
     MFX_FOURCC_UNKNOWN      = MFX_MAKEFOURCC('0','0','0','0'),
-    MFX_FOURCC_YUV420_16    = MFX_MAKEFOURCC('M','0','1','6')   // planar merged YUV 420 16 bits
+    MFX_FOURCC_YUV420_16    = MFX_MAKEFOURCC('M','0','1','6'),   // planar merged YUV 420 16 bits
+    MFX_FOURCC_YV16         = MFX_MAKEFOURCC('Y','V','1','6'),   // planar merged YUV 422 8 bits
 };
 
 struct sFrameEncoder
