@@ -60,6 +60,7 @@ public:
         pCorruptionParams->pActualParams  = pFileReaderParams;
         
         sts = (mfxStatus)m_CorruptionReader->Init(pCorruptionParams);
+        delete pCorruptionParams;
         if ( MFX_ERR_NONE != sts )
         {
              return MFX_ERR_UNDEFINED_BEHAVIOR;
