@@ -44,4 +44,4 @@ mfxStatus ConvertStringToGuid(const msdk_string & strGuid, mfxPluginUID & mfxGui
 
 const mfxPluginUID & msdkGetPluginUID(mfxIMPL impl, msdkComponentType type, mfxU32 uCodecid);
 
-#endif __PLUGIN_UTILS_H__
+#endif //__PLUGIN_UTILS_H__

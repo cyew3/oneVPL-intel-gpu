@@ -24,4 +24,4 @@ typedef std::basic_stringstream<msdk_char> msdk_stringstream;
 typedef std::basic_ostream<msdk_char, std::char_traits<msdk_char> > msdk_ostream;
 typedef std::basic_istream<msdk_char, std::char_traits<msdk_char> > msdk_istream;
 
-#endif __SAMPLE_TYPES_H__
+#endif //__SAMPLE_TYPES_H__

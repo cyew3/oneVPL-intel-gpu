@@ -150,4 +150,4 @@ private:
     void GenerateTemporalLayersBuffer(ULONG nTemporalLayersCount) const;
 };
 
-#endif __TEMPORAL_SCALABLITY_H__
+#endif //__TEMPORAL_SCALABLITY_H__
