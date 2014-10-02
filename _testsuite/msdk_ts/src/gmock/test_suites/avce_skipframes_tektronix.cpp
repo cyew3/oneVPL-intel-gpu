@@ -29,12 +29,6 @@ private:
     struct tc_struct
     {
         mfxStatus sts;
-        struct stream_info
-        {
-            const char* name;
-            mfxU32 width;
-            mfxU32 height;
-        } stream;
         mfxU32 mode;
         struct f_pair
         {
@@ -51,217 +45,217 @@ private:
 const TestSuite::tc_struct TestSuite::test_case[] =
 {
     // IPPP
-    {/*00*/ MFX_ERR_NONE, {"YUV/iceage_720x480_491.yuv", 720, 480}, 0, {
+    {/*00*/ MFX_ERR_NONE, 0, {
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CQP},
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 1},
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, MFX_PICSTRUCT_PROGRESSIVE},
         {EXT_COD, &tsStruct::mfxExtCodingOption.CAVLC, MFX_CODINGOPTION_ON},
         {EXT_COD2, &tsStruct::mfxExtCodingOption2.SkipFrame, MFX_SKIPFRAME_INSERT_DUMMY}}, "1 2 3 4 5 6 7 8 9"},
-    {/*01*/ MFX_ERR_NONE, {"YUV/iceage_720x480_491.yuv", 720, 480}, 0, {
+    {/*01*/ MFX_ERR_NONE, 0, {
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR},
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 1},
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, MFX_PICSTRUCT_PROGRESSIVE},
         {EXT_COD, &tsStruct::mfxExtCodingOption.CAVLC, MFX_CODINGOPTION_ON},
         {EXT_COD2, &tsStruct::mfxExtCodingOption2.SkipFrame, MFX_SKIPFRAME_INSERT_DUMMY}}, "1 2 3 4 5 6 7 8 9"},
-    {/*02*/ MFX_ERR_NONE, {"YUV/iceage_720x480_491.yuv", 720, 480}, 0, {
+    {/*02*/ MFX_ERR_NONE, 0, {
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_VBR},
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 1},
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, MFX_PICSTRUCT_PROGRESSIVE},
         {EXT_COD, &tsStruct::mfxExtCodingOption.CAVLC, MFX_CODINGOPTION_ON},
         {EXT_COD2, &tsStruct::mfxExtCodingOption2.SkipFrame, MFX_SKIPFRAME_INSERT_DUMMY}}, "1 2 3 4 5 6 7 8 9"},
-    {/*03*/ MFX_ERR_NONE, {"YUV/iceage_720x480_491.yuv", 720, 480}, 0, {
+    {/*03*/ MFX_ERR_NONE, 0, {
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CQP},
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 1},
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, MFX_PICSTRUCT_FIELD_TFF},
         {EXT_COD, &tsStruct::mfxExtCodingOption.CAVLC, MFX_CODINGOPTION_ON},
         {EXT_COD2, &tsStruct::mfxExtCodingOption2.SkipFrame, MFX_SKIPFRAME_INSERT_DUMMY}}, "1 2 3 4 5 6 7 8 9"},
-    {/*04*/ MFX_ERR_NONE, {"YUV/iceage_720x480_491.yuv", 720, 480}, 0, {
+    {/*04*/ MFX_ERR_NONE, 0, {
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR},
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 1},
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, MFX_PICSTRUCT_FIELD_TFF},
         {EXT_COD, &tsStruct::mfxExtCodingOption.CAVLC, MFX_CODINGOPTION_ON},
         {EXT_COD2, &tsStruct::mfxExtCodingOption2.SkipFrame, MFX_SKIPFRAME_INSERT_DUMMY}}, "1 2 3 4 5 6 7 8 9"},
-    {/*05*/ MFX_ERR_NONE, {"YUV/iceage_720x480_491.yuv", 720, 480}, 0, {
+    {/*05*/ MFX_ERR_NONE, 0, {
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_VBR},
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 1},
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, MFX_PICSTRUCT_FIELD_TFF},
         {EXT_COD, &tsStruct::mfxExtCodingOption.CAVLC, MFX_CODINGOPTION_ON},
         {EXT_COD2, &tsStruct::mfxExtCodingOption2.SkipFrame, MFX_SKIPFRAME_INSERT_DUMMY}}, "1 2 3 4 5 6 7 8 9"},
-    {/*06*/ MFX_ERR_NONE, {"YUV/iceage_720x480_491.yuv", 720, 480}, 0, {
+    {/*06*/ MFX_ERR_NONE, 0, {
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CQP},
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 1},
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, MFX_PICSTRUCT_PROGRESSIVE},
         {EXT_COD, &tsStruct::mfxExtCodingOption.CAVLC, MFX_CODINGOPTION_OFF},
         {EXT_COD2, &tsStruct::mfxExtCodingOption2.SkipFrame, MFX_SKIPFRAME_INSERT_DUMMY}}, "1 2 3 4 5 6 7 8 9"},
-    {/*07*/ MFX_ERR_NONE, {"YUV/iceage_720x480_491.yuv", 720, 480}, 0, {
+    {/*07*/ MFX_ERR_NONE, 0, {
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR},
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 1},
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, MFX_PICSTRUCT_PROGRESSIVE},
         {EXT_COD, &tsStruct::mfxExtCodingOption.CAVLC, MFX_CODINGOPTION_OFF},
         {EXT_COD2, &tsStruct::mfxExtCodingOption2.SkipFrame, MFX_SKIPFRAME_INSERT_DUMMY}}, "1 2 3 4 5 6 7 8 9"},
-    {/*08*/ MFX_ERR_NONE, {"YUV/iceage_720x480_491.yuv", 720, 480}, 0, {
+    {/*08*/ MFX_ERR_NONE, 0, {
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_VBR},
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 1},
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, MFX_PICSTRUCT_PROGRESSIVE},
         {EXT_COD, &tsStruct::mfxExtCodingOption.CAVLC, MFX_CODINGOPTION_OFF},
         {EXT_COD2, &tsStruct::mfxExtCodingOption2.SkipFrame, MFX_SKIPFRAME_INSERT_DUMMY}}, "1 2 3 4 5 6 7 8 9"},
-    {/*09*/ MFX_ERR_NONE, {"YUV/iceage_720x480_491.yuv", 720, 480}, 0, {
+    {/*09*/ MFX_ERR_NONE, 0, {
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CQP},
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 1},
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, MFX_PICSTRUCT_FIELD_TFF},
         {EXT_COD, &tsStruct::mfxExtCodingOption.CAVLC, MFX_CODINGOPTION_OFF},
         {EXT_COD2, &tsStruct::mfxExtCodingOption2.SkipFrame, MFX_SKIPFRAME_INSERT_DUMMY}}, "1 2 3 4 5 6 7 8 9"},
-    {/*10*/ MFX_ERR_NONE, {"YUV/iceage_720x480_491.yuv", 720, 480}, 0, {
+    {/*10*/ MFX_ERR_NONE, 0, {
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR},
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 1},
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, MFX_PICSTRUCT_FIELD_TFF},
         {EXT_COD, &tsStruct::mfxExtCodingOption.CAVLC, MFX_CODINGOPTION_OFF},
         {EXT_COD2, &tsStruct::mfxExtCodingOption2.SkipFrame, MFX_SKIPFRAME_INSERT_DUMMY}}, "1 2 3 4 5 6 7 8 9"},
-    {/*11*/ MFX_ERR_NONE, {"YUV/iceage_720x480_491.yuv", 720, 480}, 0, {
+    {/*11*/ MFX_ERR_NONE, 0, {
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_VBR},
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 1},
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, MFX_PICSTRUCT_FIELD_TFF},
         {EXT_COD, &tsStruct::mfxExtCodingOption.CAVLC, MFX_CODINGOPTION_OFF},
         {EXT_COD2, &tsStruct::mfxExtCodingOption2.SkipFrame, MFX_SKIPFRAME_INSERT_DUMMY}}, "1 2 3 4 5 6 7 8 9"},
-    {/*12*/ MFX_ERR_NONE, {"YUV/iceage_720x480_491.yuv", 720, 480}, 0, {
+    {/*12*/ MFX_ERR_NONE, 0, {
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CQP},
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 1},
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, MFX_PICSTRUCT_PROGRESSIVE},
         {EXT_COD, &tsStruct::mfxExtCodingOption.CAVLC, MFX_CODINGOPTION_ON},
         {EXT_COD2, &tsStruct::mfxExtCodingOption2.SkipFrame, MFX_SKIPFRAME_INSERT_DUMMY}}, "each2"},
-    {/*13*/ MFX_ERR_NONE, {"YUV/iceage_720x480_491.yuv", 720, 480}, 0, {
+    {/*13*/ MFX_ERR_NONE, 0, {
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR},
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 1},
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, MFX_PICSTRUCT_PROGRESSIVE},
         {EXT_COD, &tsStruct::mfxExtCodingOption.CAVLC, MFX_CODINGOPTION_ON},
         {EXT_COD2, &tsStruct::mfxExtCodingOption2.SkipFrame, MFX_SKIPFRAME_INSERT_DUMMY}}, "each2"},
-    {/*14*/ MFX_ERR_NONE, {"YUV/iceage_720x480_491.yuv", 720, 480}, 0, {
+    {/*14*/ MFX_ERR_NONE, 0, {
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_VBR},
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 1},
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, MFX_PICSTRUCT_PROGRESSIVE},
         {EXT_COD, &tsStruct::mfxExtCodingOption.CAVLC, MFX_CODINGOPTION_ON},
         {EXT_COD2, &tsStruct::mfxExtCodingOption2.SkipFrame, MFX_SKIPFRAME_INSERT_DUMMY}}, "each2"},
-    {/*15*/ MFX_ERR_NONE, {"YUV/iceage_720x480_491.yuv", 720, 480}, 0, {
+    {/*15*/ MFX_ERR_NONE, 0, {
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CQP},
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 1},
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, MFX_PICSTRUCT_FIELD_TFF},
         {EXT_COD, &tsStruct::mfxExtCodingOption.CAVLC, MFX_CODINGOPTION_ON},
         {EXT_COD2, &tsStruct::mfxExtCodingOption2.SkipFrame, MFX_SKIPFRAME_INSERT_DUMMY}}, "each2"},
-    {/*16*/ MFX_ERR_NONE, {"YUV/iceage_720x480_491.yuv", 720, 480}, 0, {
+    {/*16*/ MFX_ERR_NONE, 0, {
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR},
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 1},
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, MFX_PICSTRUCT_FIELD_TFF},
         {EXT_COD, &tsStruct::mfxExtCodingOption.CAVLC, MFX_CODINGOPTION_ON},
         {EXT_COD2, &tsStruct::mfxExtCodingOption2.SkipFrame, MFX_SKIPFRAME_INSERT_DUMMY}}, "each2"},
-    {/*17*/ MFX_ERR_NONE, {"YUV/iceage_720x480_491.yuv", 720, 480}, 0, {
+    {/*17*/ MFX_ERR_NONE, 0, {
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_VBR},
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 1},
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, MFX_PICSTRUCT_FIELD_TFF},
         {EXT_COD, &tsStruct::mfxExtCodingOption.CAVLC, MFX_CODINGOPTION_ON},
         {EXT_COD2, &tsStruct::mfxExtCodingOption2.SkipFrame, MFX_SKIPFRAME_INSERT_DUMMY}}, "each2"},
-    {/*18*/ MFX_ERR_NONE, {"YUV/iceage_720x480_491.yuv", 720, 480}, 0, {
+    {/*18*/ MFX_ERR_NONE, 0, {
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CQP},
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 1},
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, MFX_PICSTRUCT_PROGRESSIVE},
         {EXT_COD, &tsStruct::mfxExtCodingOption.CAVLC, MFX_CODINGOPTION_OFF},
         {EXT_COD2, &tsStruct::mfxExtCodingOption2.SkipFrame, MFX_SKIPFRAME_INSERT_DUMMY}}, "each2"},
-    {/*19*/ MFX_ERR_NONE, {"YUV/iceage_720x480_491.yuv", 720, 480}, 0, {
+    {/*19*/ MFX_ERR_NONE, 0, {
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR},
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 1},
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, MFX_PICSTRUCT_PROGRESSIVE},
         {EXT_COD, &tsStruct::mfxExtCodingOption.CAVLC, MFX_CODINGOPTION_OFF},
         {EXT_COD2, &tsStruct::mfxExtCodingOption2.SkipFrame, MFX_SKIPFRAME_INSERT_DUMMY}}, "each2"},
-    {/*20*/ MFX_ERR_NONE, {"YUV/iceage_720x480_491.yuv", 720, 480}, 0, {
+    {/*20*/ MFX_ERR_NONE, 0, {
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_VBR},
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 1},
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, MFX_PICSTRUCT_PROGRESSIVE},
         {EXT_COD, &tsStruct::mfxExtCodingOption.CAVLC, MFX_CODINGOPTION_OFF},
         {EXT_COD2, &tsStruct::mfxExtCodingOption2.SkipFrame, MFX_SKIPFRAME_INSERT_DUMMY}}, "each2"},
-    {/*21*/ MFX_ERR_NONE, {"YUV/iceage_720x480_491.yuv", 720, 480}, 0, {
+    {/*21*/ MFX_ERR_NONE, 0, {
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CQP},
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 1},
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, MFX_PICSTRUCT_FIELD_TFF},
         {EXT_COD, &tsStruct::mfxExtCodingOption.CAVLC, MFX_CODINGOPTION_OFF},
         {EXT_COD2, &tsStruct::mfxExtCodingOption2.SkipFrame, MFX_SKIPFRAME_INSERT_DUMMY}}, "each2"},
-    {/*22*/ MFX_ERR_NONE, {"YUV/iceage_720x480_491.yuv", 720, 480}, 0, {
+    {/*22*/ MFX_ERR_NONE, 0, {
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR},
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 1},
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, MFX_PICSTRUCT_FIELD_TFF},
         {EXT_COD, &tsStruct::mfxExtCodingOption.CAVLC, MFX_CODINGOPTION_OFF},
         {EXT_COD2, &tsStruct::mfxExtCodingOption2.SkipFrame, MFX_SKIPFRAME_INSERT_DUMMY}}, "each2"},
-    {/*23*/ MFX_ERR_NONE, {"YUV/iceage_720x480_491.yuv", 720, 480}, 0, {
+    {/*23*/ MFX_ERR_NONE, 0, {
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_VBR},
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 1},
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, MFX_PICSTRUCT_FIELD_TFF},
         {EXT_COD, &tsStruct::mfxExtCodingOption.CAVLC, MFX_CODINGOPTION_OFF},
         {EXT_COD2, &tsStruct::mfxExtCodingOption2.SkipFrame, MFX_SKIPFRAME_INSERT_DUMMY}}, "each2"},
-    {/*24*/ MFX_ERR_NONE, {"YUV/iceage_720x480_491.yuv", 720, 480}, 0, {
+    {/*24*/ MFX_ERR_NONE, 0, {
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CQP},
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 1},
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, MFX_PICSTRUCT_PROGRESSIVE},
         {EXT_COD, &tsStruct::mfxExtCodingOption.CAVLC, MFX_CODINGOPTION_ON},
         {EXT_COD2, &tsStruct::mfxExtCodingOption2.SkipFrame, MFX_SKIPFRAME_INSERT_DUMMY}}, "last10"},
-    {/*25*/ MFX_ERR_NONE, {"YUV/iceage_720x480_491.yuv", 720, 480}, 0, {
+    {/*25*/ MFX_ERR_NONE, 0, {
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR},
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 1},
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, MFX_PICSTRUCT_PROGRESSIVE},
         {EXT_COD, &tsStruct::mfxExtCodingOption.CAVLC, MFX_CODINGOPTION_ON},
         {EXT_COD2, &tsStruct::mfxExtCodingOption2.SkipFrame, MFX_SKIPFRAME_INSERT_DUMMY}}, "last10"},
-    {/*26*/ MFX_ERR_NONE, {"YUV/iceage_720x480_491.yuv", 720, 480}, 0, {
+    {/*26*/ MFX_ERR_NONE, 0, {
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_VBR},
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 1},
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, MFX_PICSTRUCT_PROGRESSIVE},
         {EXT_COD, &tsStruct::mfxExtCodingOption.CAVLC, MFX_CODINGOPTION_ON},
         {EXT_COD2, &tsStruct::mfxExtCodingOption2.SkipFrame, MFX_SKIPFRAME_INSERT_DUMMY}}, "last10"},
-    {/*27*/ MFX_ERR_NONE, {"YUV/iceage_720x480_491.yuv", 720, 480}, 0, {
+    {/*27*/ MFX_ERR_NONE, 0, {
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CQP},
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 1},
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, MFX_PICSTRUCT_FIELD_TFF},
         {EXT_COD, &tsStruct::mfxExtCodingOption.CAVLC, MFX_CODINGOPTION_ON},
         {EXT_COD2, &tsStruct::mfxExtCodingOption2.SkipFrame, MFX_SKIPFRAME_INSERT_DUMMY}}, "last10"},
-    {/*28*/ MFX_ERR_NONE, {"YUV/iceage_720x480_491.yuv", 720, 480}, 0, {
+    {/*28*/ MFX_ERR_NONE, 0, {
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR},
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 1},
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, MFX_PICSTRUCT_FIELD_TFF},
         {EXT_COD, &tsStruct::mfxExtCodingOption.CAVLC, MFX_CODINGOPTION_ON},
         {EXT_COD2, &tsStruct::mfxExtCodingOption2.SkipFrame, MFX_SKIPFRAME_INSERT_DUMMY}}, "last10"},
-    {/*29*/ MFX_ERR_NONE, {"YUV/iceage_720x480_491.yuv", 720, 480}, 0, {
+    {/*29*/ MFX_ERR_NONE, 0, {
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_VBR},
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 1},
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, MFX_PICSTRUCT_FIELD_TFF},
         {EXT_COD, &tsStruct::mfxExtCodingOption.CAVLC, MFX_CODINGOPTION_ON},
         {EXT_COD2, &tsStruct::mfxExtCodingOption2.SkipFrame, MFX_SKIPFRAME_INSERT_DUMMY}}, "last10"},
-    {/*30*/ MFX_ERR_NONE, {"YUV/iceage_720x480_491.yuv", 720, 480}, 0, {
+    {/*30*/ MFX_ERR_NONE, 0, {
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CQP},
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 1},
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, MFX_PICSTRUCT_PROGRESSIVE},
         {EXT_COD, &tsStruct::mfxExtCodingOption.CAVLC, MFX_CODINGOPTION_OFF},
         {EXT_COD2, &tsStruct::mfxExtCodingOption2.SkipFrame, MFX_SKIPFRAME_INSERT_DUMMY}}, "last10"},
-    {/*31*/ MFX_ERR_NONE, {"YUV/iceage_720x480_491.yuv", 720, 480}, 0, {
+    {/*31*/ MFX_ERR_NONE, 0, {
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR},
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 1},
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, MFX_PICSTRUCT_PROGRESSIVE},
         {EXT_COD, &tsStruct::mfxExtCodingOption.CAVLC, MFX_CODINGOPTION_OFF},
         {EXT_COD2, &tsStruct::mfxExtCodingOption2.SkipFrame, MFX_SKIPFRAME_INSERT_DUMMY}}, "last10"},
-    {/*32*/ MFX_ERR_NONE, {"YUV/iceage_720x480_491.yuv", 720, 480}, 0, {
+    {/*32*/ MFX_ERR_NONE, 0, {
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_VBR},
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 1},
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, MFX_PICSTRUCT_PROGRESSIVE},
         {EXT_COD, &tsStruct::mfxExtCodingOption.CAVLC, MFX_CODINGOPTION_OFF},
         {EXT_COD2, &tsStruct::mfxExtCodingOption2.SkipFrame, MFX_SKIPFRAME_INSERT_DUMMY}}, "last10"},
-    {/*33*/ MFX_ERR_NONE, {"YUV/iceage_720x480_491.yuv", 720, 480}, 0, {
+    {/*33*/ MFX_ERR_NONE, 0, {
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CQP},
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 1},
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, MFX_PICSTRUCT_FIELD_TFF},
         {EXT_COD, &tsStruct::mfxExtCodingOption.CAVLC, MFX_CODINGOPTION_OFF},
         {EXT_COD2, &tsStruct::mfxExtCodingOption2.SkipFrame, MFX_SKIPFRAME_INSERT_DUMMY}}, "last10"},
-    {/*34*/ MFX_ERR_NONE, {"YUV/iceage_720x480_491.yuv", 720, 480}, 0, {
+    {/*34*/ MFX_ERR_NONE, 0, {
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR},
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 1},
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, MFX_PICSTRUCT_FIELD_TFF},
         {EXT_COD, &tsStruct::mfxExtCodingOption.CAVLC, MFX_CODINGOPTION_OFF},
         {EXT_COD2, &tsStruct::mfxExtCodingOption2.SkipFrame, MFX_SKIPFRAME_INSERT_DUMMY}}, "last10"},
-    {/*35*/ MFX_ERR_NONE, {"YUV/iceage_720x480_491.yuv", 720, 480}, 0, {
+    {/*35*/ MFX_ERR_NONE, 0, {
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_VBR},
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 1},
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, MFX_PICSTRUCT_FIELD_TFF},
@@ -447,6 +441,26 @@ int TestSuite::RunTest(unsigned int id)
         }
     }
 
+    std::string input = ENV("TS_INPUT_YUV", "");
+    std::string in_name;
+    if (input.length())
+    {
+        m_par.mfx.FrameInfo.CropH = m_par.mfx.FrameInfo.Height = 0;
+        m_par.mfx.FrameInfo.CropW = m_par.mfx.FrameInfo.Width = 0;
+
+        std::stringstream s(input);
+        s >> in_name;
+        s >> m_par.mfx.FrameInfo.Width;
+        s >> m_par.mfx.FrameInfo.Height;
+        m_par.mfx.FrameInfo.CropH = m_par.mfx.FrameInfo.Height;
+        m_par.mfx.FrameInfo.CropW = m_par.mfx.FrameInfo.Width;
+    }
+    if (!in_name.length() || !m_par.mfx.FrameInfo.Width || !m_par.mfx.FrameInfo.Height)
+    {
+        g_tsLog << "ERROR: input stream is not defined\n";
+        return 1;
+    }
+
     m_par.mfx.GopPicSize = 300;
     m_par.mfx.GopRefDist = 1;
     // set up parameters for case
@@ -464,9 +478,6 @@ int TestSuite::RunTest(unsigned int id)
         m_par.mfx.InitialDelayInKB = mfxU16(m_par.mfx.BufferSizeInKB / 2);
     }
 
-    m_par.mfx.FrameInfo.Width = m_par.mfx.FrameInfo.CropW = tc.stream.width;
-    m_par.mfx.FrameInfo.Height = m_par.mfx.FrameInfo.CropH = tc.stream.height;
-
     mfxExtCodingOption& cod = m_par;
     SETPARS(&cod, EXT_COD);
 
@@ -476,7 +487,7 @@ int TestSuite::RunTest(unsigned int id)
     SetFrameAllocator();
 
     // setup input stream
-    SurfProc surf_proc(g_tsStreamPool.Get(tc.stream.name), m_par.mfx.FrameInfo, nframes);
+    SurfProc surf_proc(in_name.c_str(), m_par.mfx.FrameInfo, nframes);
     surf_proc.Init(m_ctrl, skip_frames);
     m_filler = &surf_proc;
     g_tsStreamPool.Reg();
