@@ -136,6 +136,7 @@ MFXDecPipeline::MFXDecPipeline(IMFXPipelineFactory *pFactory)
     , m_extExtCamBlackLevelCorrection(new mfxExtCamBlackLevelCorrection())
     , m_extExtCamWhiteBalance(new mfxExtCamWhiteBalance())
     , m_extExtCamGammaCorrection(new mfxExtCamGammaCorrection())
+    , m_extExtColorCorrection3x3(new mfxExtCamColorCorrection3x3())
     , m_bVPPUpdateInput(false)
 {
 
@@ -1088,6 +1089,11 @@ mfxStatus MFXDecPipeline::CreateVPP()
     if ( ! m_extExtCamWhiteBalance.IsZero() )
     {
         m_components[eVPP].m_extParams.push_back(m_extExtCamWhiteBalance);
+    }
+
+    if ( ! m_extExtColorCorrection3x3.IsZero() )
+    {
+        m_components[eVPP].m_extParams.push_back(m_extExtColorCorrection3x3);
     }
 
     if (m_components[eVPP].m_params.vpp.Out.CropW != 0)
@@ -4412,6 +4418,20 @@ mfxStatus MFXDecPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI32 argc, 
                 SetTimeout((int)PIPELINE_TIMEOUT_GENERIC, nTimeout);
 
                 argv++;
+            }
+            else if (m_OptProc.Check(argv[0], VM_STRING("-camera_ccm"), VM_STRING("set specific values for camera color correction matrix. 9 float numbers expected."), OPT_INT_32))
+            {
+                MFX_CHECK(9 + argv != argvEnd);
+
+                for ( int i = 0; i < 3; i++ )
+                {
+                    for ( int j = 0; j < 3; j++)
+                    {
+                        MFX_CHECK(1 + argv != argvEnd);
+                        argv++;
+                        MFX_PARSE_DOUBLE(m_extExtColorCorrection3x3->CCM[i][j], argv[0]);
+                    }
+                }
             }
             else if (m_OptProc.Check(argv[0], VM_STRING("-camera_blacklevel"), VM_STRING("set specific values for camera blacklevel correction filter B G0 G1 R"), OPT_INT_32))
             {

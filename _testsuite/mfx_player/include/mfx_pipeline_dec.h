@@ -451,6 +451,7 @@ protected:
     MFXExtBufferPtr<mfxExtCamBlackLevelCorrection> m_extExtCamBlackLevelCorrection;
     MFXExtBufferPtr<mfxExtCamWhiteBalance>         m_extExtCamWhiteBalance;
     MFXExtBufferPtr<mfxExtCamGammaCorrection>      m_extExtCamGammaCorrection;
+    MFXExtBufferPtr<mfxExtCamColorCorrection3x3>   m_extExtColorCorrection3x3;
 
     //map for dec view order to enc view id map
     std::vector<std::pair<mfxU16, mfxU16> > m_viewOrderMap;
