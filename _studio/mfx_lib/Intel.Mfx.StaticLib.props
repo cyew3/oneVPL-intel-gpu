@@ -7,24 +7,39 @@
     <WindowsSdk8Path Condition="!Exists('$(MINIDDK_ROOT)')">$(registry:HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Microsoft SDKs\Windows\v8.1@InstallationFolder)</WindowsSdk8Path>
     <OutDir>$(MfxBuildDir)win_$(Platform)\lib\</OutDir>
     <IntDir>$(MfxBuildDir)win_$(Platform)\objs\$(Configuration)\$(ProjectName)\</IntDir>
-    <IncludePath>$(WindowsSdk8Path)\Include\um;$(WindowsSdk8Path)\Include\shared;$(IncludePath)</IncludePath>    
+    <IncludePath>$(WindowsSdk8Path)\Include\um;$(WindowsSdk8Path)\Include\shared;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <Target Name="Win8SdkCheck" BeforeTargets="Build">
-    <Error Text=" Unable to find Windows SDK 8.1 by both MINIDDK_ROOT and registry lookup. Please check if it installed correctly or reinstall it from http://msdn.microsoft.com/en-us/windows/desktop/hh852363.aspx."
-       Condition ="!Exists('$(WindowsSdk8Path)')" />
+    <Error Text=" Unable to find Windows SDK 8.1 by both MINIDDK_ROOT and registry lookup. Please check if it installed correctly or reinstall it from http://msdn.microsoft.com/en-us/windows/desktop/hh852363.aspx." Condition="!Exists('$(WindowsSdk8Path)')" />
   </Target>
+  <PropertyGroup Condition="'$(Configuration)'=='Release_THM' or '$(Configuration)'=='Debug_THM'">
+    <PlatformToolset>v120</PlatformToolset>
+  </PropertyGroup>
   <PropertyGroup Condition="'$(Platform)'=='Win32'">
     <LibraryPath>$(WindowsSdk8Path)\Lib\win8\um\x86;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Platform)'=='x64'">
     <LibraryPath>$(WindowsSdk8Path)\Lib\win8\um\x64;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)'=='Debug' or '$(Configuration)'=='debug' or '$(Configuration)'=='Debug_Intel' or '$(Configuration)'=='Debug_MD'">
+  <PropertyGroup Condition="'$(Configuration)'=='Debug' or '$(Configuration)'=='debug' or '$(Configuration)'=='Debug_Intel' or '$(Configuration)'=='Debug_MD' or '$(Configuration)'=='Debug_THM' ">
     <TargetName>$(ProjectName)_d</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)'=='Release' or '$(Configuration)'=='release' or '$(Configuration)'=='Release_Intel' or '$(Configuration)'=='Release_MD'">
     <TargetName>$(ProjectName)</TargetName>
   </PropertyGroup>
+  <PropertyGroup Condition=" ('$(Configuration)'=='Release_THM' or '$(Configuration)'=='Debug_THM' ) and '$(Platform)'=='Win32'">
+    <OutDir>$(MfxBuildDir)win_thm32\lib\</OutDir>
+    <IntDir>$(MfxBuildDir)win_thm32\objs\$(Configuration)\$(ProjectName)\</IntDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="( '$(Configuration)'=='Release_THM' or '$(Configuration)'=='Debug_THM' ) and '$(Platform)'=='x64'">
+    <OutDir>$(MfxBuildDir)win_thm64\lib\</OutDir>
+    <IntDir>$(MfxBuildDir)win_thm64\objs\$(Configuration)\$(ProjectName)\</IntDir>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)'=='Release_THM' or '$(Configuration)'=='Debug_THM'">
+    <ClCompile>
+      <PreprocessorDefinitions>WIN_TRESHOLD_MOBILE;_ATL_NO_WIN_SUPPORT;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+  </ItemDefinitionGroup>
   <ItemDefinitionGroup>
     <ClCompile>
       <AdditionalOptions>$(CPPFLAGS) %(AdditionalOptions)</AdditionalOptions>
@@ -43,7 +58,7 @@
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <Optimization>Disabled</Optimization>
       <MinimalRebuild>true</MinimalRebuild>
-      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>      
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)'=='Release' or '$(Configuration)'=='release' or '$(Configuration)'=='Release_Intel'">
@@ -65,10 +80,10 @@
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <Optimization>Disabled</Optimization>
       <MinimalRebuild>true</MinimalRebuild>
-      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>      
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
     </ClCompile>
   </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)'=='Release_MD' or '$(Configuration)'=='release_md'">
+  <ItemDefinitionGroup Condition="'$(Configuration)'=='Release_MD' or '$(Configuration)'=='release_md' or '$(Configuration)'=='Release_THM'">
     <ClCompile>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <Optimization>MaxSpeed</Optimization>
@@ -76,6 +91,11 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)'=='Release_THM' or '$(Configuration)'=='Debug_THM'">
+    <ClCompile>
+      <PreprocessorDefinitions>WIN_TRESHOLD_MOBILE;_ATL_NO_WIN_SUPPORT;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemGroup />

@@ -6,6 +6,9 @@
     <MfxBuildDir>$(MSBuildThisFileDirectory)..\..\..\build\</MfxBuildDir>
     <PlatformToolset>v110</PlatformToolset>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)'=='Release_THM' or '$(Configuration)'=='Debug_THM'" >
+    <PlatformToolset>v120</PlatformToolset>
+  </PropertyGroup>
   <PropertyGroup Condition="'$(Platform)'=='Win32'" Label="UserMacros" >
     <MfxIppIncludeDir>$(MEDIASDK_ROOT)\ipp\ipp81gold\windows\ia32\include</MfxIppIncludeDir>
     <MfxIppLibraryDir>$(MEDIASDK_ROOT)\ipp\ipp81gold\windows\ia32\lib</MfxIppLibraryDir>
@@ -14,6 +17,31 @@
     <MfxIppIncludeDir>$(MEDIASDK_ROOT)\ipp\ipp81gold\windows\em64t\include</MfxIppIncludeDir>
     <MfxIppLibraryDir>$(MEDIASDK_ROOT)\ipp\ipp81gold\windows\em64t\lib</MfxIppLibraryDir>
   </PropertyGroup>
+
+  <PropertyGroup Condition=" ('$(Configuration)'=='Release_THM' or '$(Configuration)'=='Debug_THM' ) and '$(Platform)'=='Win32'">
+    <OutDir>$(MfxBuildDir)win_thm32\bin\</OutDir>
+    <IntDir>$(MfxBuildDir)win_thm32\objs\$(Configuration)\$(ProjectName)\</IntDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="( '$(Configuration)'=='Release_THM' or '$(Configuration)'=='Debug_THM' ) and '$(Platform)'=='x64'">
+    <OutDir>$(MfxBuildDir)win_thm64\bin\</OutDir>
+    <IntDir>$(MfxBuildDir)win_thm64\objs\$(Configuration)\$(ProjectName)\</IntDir>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)'=='Release_THM' or '$(Configuration)'=='Debug_THM'">
+    <ClCompile>
+      <PreprocessorDefinitions>WIN_TRESHOLD_MOBILE;_ATL_NO_WIN_SUPPORT;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)'=='Release_THM'">
+    <ClCompile>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)'=='Debug_THM'">
+    <ClCompile>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+    </ClCompile>
+  </ItemDefinitionGroup>
+
   <Target Name="MediaSdkRootCheck" BeforeTargets="Build">
     <Warning Text="Unable to find MEDIASDK_ROOT environment variable. Build may fail due to missing IPP libraries."
        Condition ="!Exists('$(MEDIASDK_ROOT)')" />
