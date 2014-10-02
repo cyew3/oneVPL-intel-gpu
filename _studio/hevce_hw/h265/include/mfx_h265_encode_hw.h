@@ -55,16 +55,7 @@ public:
             return MFX_ERR_UNKNOWN;
         }
 
-        try
-        {
-            tmp_pplg->m_adapter.reset(new MFXPluginAdapter<MFXEncoderPlugin> (tmp_pplg));
-        }
-        catch(std::bad_alloc&)
-        {
-            return MFX_ERR_MEMORY_ALLOC;
-        }
-
-        *mfxPlg = tmp_pplg->m_adapter->operator mfxPlugin();
+        *mfxPlg = tmp_pplg->m_adapter.operator mfxPlugin();
         tmp_pplg->m_createdByDispatcher = true;
 
         return MFX_ERR_NONE;
@@ -106,8 +97,8 @@ protected:
     virtual ~Plugin();
 
     bool m_createdByDispatcher;
+    MFXPluginAdapter<MFXEncoderPlugin> m_adapter;
 
-    std::auto_ptr<MFXPluginAdapter<MFXEncoderPlugin> > m_adapter;
     std::auto_ptr<DriverEncoder>    m_ddi;
     MFXCoreInterface                m_core;
 

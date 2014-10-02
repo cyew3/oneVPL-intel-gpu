@@ -15,11 +15,17 @@ namespace MfxHwH265Encode
 {
 
 MfxFrameAllocResponse::MfxFrameAllocResponse()
+    : m_core(0)
 {
     Zero(*(mfxFrameAllocResponse*)this);
 }
 
 MfxFrameAllocResponse::~MfxFrameAllocResponse()
+{
+    Free();
+} 
+
+void MfxFrameAllocResponse::Free()
 {
     if (m_core == 0)
         return;
@@ -35,6 +41,7 @@ MfxFrameAllocResponse::~MfxFrameAllocResponse()
         {
             fa.Free(fa.pthis, &m_responseQueue[i]);
         }
+        m_responseQueue.resize(0);
     }
     else
     {
@@ -42,10 +49,10 @@ MfxFrameAllocResponse::~MfxFrameAllocResponse()
         {
             NumFrameActual = m_numFrameActualReturnedByAllocFrames;
             fa.Free(fa.pthis, this);
+            mids = 0;
         }
     }
-
-} 
+}
 
 mfxStatus MfxFrameAllocResponse::Alloc(
     MFXCoreInterface *     core,

@@ -88,6 +88,8 @@ public:
 
     mfxU32 Locked(mfxU32 idx) const;
 
+    void Free();
+
     mfxFrameInfo               m_info;
 
 private:
@@ -174,6 +176,7 @@ private:
 class TaskManager
 {
 public:
+
     void Reset      (mfxU32 numTask);
     Task* New       ();
     Task* Reorder   (MfxVideoParam const & par, DpbArray const & dpb, bool flush);

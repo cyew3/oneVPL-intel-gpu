@@ -135,6 +135,7 @@ void SetDefaults(
 
 Plugin::Plugin(bool CreateByDispatcher)
     : m_createdByDispatcher(CreateByDispatcher)
+    , m_adapter(this)
 {
 }
 
@@ -533,6 +534,17 @@ mfxStatus Plugin::FreeResources(mfxThreadTask thread_task, mfxStatus /*sts*/)
 
 mfxStatus Plugin::Close()
 {
+    m_rec.Free();
+    m_raw.Free();
+    m_bs.Free();
+
+    if (m_ddi.get())
+        delete m_ddi.release();
+
+    m_frameOrder = 0;
+    Zero(m_lastTask);
+    Zero(m_caps);
+
     return MFX_ERR_NONE;
 }
 
