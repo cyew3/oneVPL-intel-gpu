@@ -435,9 +435,6 @@ mfxStatus D3D11Encoder::Execute(
             m_sps.bResetBRC = true;
     }
 
-    if (task.m_resetBRC && (task.m_type[fieldId] & MFX_FRAMETYPE_IDR))
-        m_sps.bResetBRC = true;
-
     // update pps and slice structures
     {
         size_t slice_size_old = m_slice.size();

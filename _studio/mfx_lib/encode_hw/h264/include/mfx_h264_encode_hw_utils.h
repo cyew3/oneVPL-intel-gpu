@@ -890,7 +890,6 @@ namespace MfxHwH264Encode
             , m_feiDistortion(NULL)
             , m_feiMVOut(NULL)
             , m_feiMBCODEOut(NULL)
-            , m_resetBRC(false)
         {
             Zero(m_ctrl);
             Zero(m_internalListCtrl);
@@ -1035,8 +1034,6 @@ namespace MfxHwH264Encode
 
         mfxU8   m_minQP;
         mfxU8   m_maxQP;
-
-        bool m_resetBRC;
 
         mfxExtBuffer* m_feiDistortion;
         mfxExtBuffer* m_feiMVOut;
@@ -1959,8 +1956,6 @@ namespace MfxHwH264Encode
         eMFXVAType  m_currentVaType;
         bool        m_useWAForHighBitrates;  // FIXME: w/a for SNB issue with HRD at high bitrates
         bool        m_isENCPAK;
-        bool        m_isWiDi;
-        bool        m_resetBRC;
 
         // bitrate reset work-around for SNB
 

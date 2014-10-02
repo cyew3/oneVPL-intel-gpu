@@ -1251,9 +1251,6 @@ mfxStatus D3D9Encoder::Execute(
             m_sps.bResetBRC = true;
     }
 
-    if (task.m_resetBRC && (task.m_type[fieldId] & MFX_FRAMETYPE_IDR))
-        m_sps.bResetBRC = true;
-
     {
         size_t slice_size_old = m_slice.size();
         FillVaringPartOfPpsBuffer(task, fieldId, m_pps);
