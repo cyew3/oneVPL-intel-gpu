@@ -10,6 +10,7 @@
 
 #include "mfx_common.h"
 #include "mfx_ext_buffers.h"
+#include "mfx_trace.h"
 #ifndef _MFX_VP8_ENCODE_UTILS_HW_H_
 #define _MFX_VP8_ENCODE_UTILS_HW_H_
 
