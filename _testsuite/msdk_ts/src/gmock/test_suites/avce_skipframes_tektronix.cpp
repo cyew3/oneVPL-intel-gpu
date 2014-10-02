@@ -371,7 +371,7 @@ public:
 
     mfxStatus ProcessBitstream(mfxBitstream& bs, mfxU32 nFrames)
     {
-        SetBuffer(bs);
+        set_buffer(bs.Data + bs.DataOffset, bs.DataLength+1);
         UnitType& au = ParseOrDie();
 
         bool skipped_frame = (bool)!m_skip_frames.size();
