@@ -29,9 +29,6 @@ void PrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("Supported codecs (<codecid>):\n"));
     msdk_printf(MSDK_STRING("   <codecid>=h264|mpeg2|vc1|mvc|jpeg - built-in Media SDK codecs\n"));
     msdk_printf(MSDK_STRING("   <codecid>=h265                    - in-box Media SDK plugins (may require separate downloading and installation)\n"));
-#if defined(_WIN32) || defined(_WIN64)
-    msdk_printf(MSDK_STRING("   <codecid>=vp8                     - Media SDK sample user-decoder plugin (requires '-p' option to be functional)\n"));
-#endif
     msdk_printf(MSDK_STRING("\n"));
     msdk_printf(MSDK_STRING("Work models:\n"));
     msdk_printf(MSDK_STRING("  1. Performance model: decoding on MAX speed, no rendering, no YUV dumping (no -r or -o option)\n"));
