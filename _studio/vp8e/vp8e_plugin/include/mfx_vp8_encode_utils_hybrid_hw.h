@@ -27,21 +27,6 @@ namespace MFX_VP8ENC
         ENCODE_MV_DATA MV[16];
     };
 
-    class TaskHybrid : public Task
-    {
-    public:
-        TaskHybrid():  Task() {}
-        virtual ~TaskHybrid() {}
-        virtual  mfxStatus Init(mfxCoreInterface * pCore, mfxVideoParam *par)
-        { 
-            return Task::Init(pCore,par);
-        }
-        virtual mfxStatus FreeTask()
-        {
-            //printf("TaskHybrid::FreeTask()\n");
-            return Task::FreeTask();
-        }
-    };
     struct sDDIFrames
     {
         sFrameEx *m_pMB_hw;
@@ -63,7 +48,7 @@ namespace MFX_VP8ENC
         mfxU16  IntraNonDCPenalty4x4;
     } VP8HybridCosts;
 
-    class TaskHybridDDI: public TaskHybrid
+    class TaskHybridDDI: public Task
     {
     public:
         sDDIFrames ddi_frames;
@@ -75,7 +60,7 @@ namespace MFX_VP8ENC
 
     public:
         TaskHybridDDI(): 
-          TaskHybrid() 
+          Task() 
           {
               Zero (ddi_frames);
               m_prevFrameSize = 0;
@@ -106,7 +91,7 @@ namespace MFX_VP8ENC
             //MFX_CHECK_STS(FreeSurface(ddi_frames.m_pDist_hw,m_pCore));
             //MFX_CHECK_STS(FreeSurface(ddi_frames.m_pDist_sw,m_pCore));
 
-            return TaskHybrid::FreeTask();
+            return Task::FreeTask();
         }
     };
 
