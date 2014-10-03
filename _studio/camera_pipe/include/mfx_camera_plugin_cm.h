@@ -18,6 +18,9 @@
 #include "cmrt_cross_platform.h"
 #include "mfx_camera_plugin_utils.h"
 
+#include "cm_def.h" // Needed for CM Vector
+#include "cm_vm.h"  //
+
 class CmDevice;
 class CmBuffer;
 class CmBufferUP;
@@ -35,7 +38,7 @@ namespace MfxCameraPlugin
 class CmRuntimeError : public std::exception
 {
 public:
-    CmRuntimeError() : std::exception() { 
+    CmRuntimeError() : std::exception() {
         assert(!"CmRuntimeError"); }
 };
 
@@ -232,7 +235,7 @@ public:
                             int bitDepth,
                             int bayerPattern,
                             mfxU32 task_bufId = 0);
-    void CreateTask_BayerCorrection(SurfaceIndex inoutSurfIndex, 
+    void CreateTask_BayerCorrection(SurfaceIndex inoutSurfIndex,
                                     CmSurface2D * /*pOutSurf*/,
                                     mfxU16 Enable_BLC,
                                     mfxU16 Enable_VIG,
@@ -258,9 +261,27 @@ public:
                                    CmSurface2D *avgFlagSurf, mfxU32 bitDepth, mfxU32 task_bufId = 0);
     void CreateTask_SAD(CmSurface2D *redHorSurf, CmSurface2D *greenHorSurf, CmSurface2D *blueHorSurf, CmSurface2D *redVerSurf, CmSurface2D *greenVerSurf, CmSurface2D *blueVerSurf, CmSurface2D *redOutSurf, CmSurface2D *greenOutSurf, CmSurface2D *blueOutSurf, int bayerPattern, mfxU32 task_bufId = 0);
     void CreateTask_DecideAverage(CmSurface2D *redAvgSurf, CmSurface2D *greenAvgSurf, CmSurface2D *blueAvgSurf, CmSurface2D *avgFlagSurf, CmSurface2D *redOutSurf, CmSurface2D *greenOutSurf, CmSurface2D *blueOutSurf, int bayerPattern, mfxU32 task_bufId = 0);
-    void CreateTask_3x3CCM(SurfaceIndex inSurfIndex, CmSurface2D *pOutSurf, mfxF32 R, mfxF32 G1, mfxF32 B, mfxF32 G2, mfxU32 bitDepth, mfxU32 taks_bufId = 0);
-    void CreateTask_ForwardGamma(CmSurface2D *correcSurf,  CmSurface2D *pointSurf,  CmSurface2D *redSurf, CmSurface2D *greenSurf, CmSurface2D *blueSurf, SurfaceIndex outSurfIndex, mfxU32 bitDepth, mfxU32 task_bufId = 0);
-    void CreateTask_ForwardGamma(CmSurface2D *correctSurf, CmSurface2D *pointSurf,  CmSurface2D *redSurf, CmSurface2D *greenSurf, CmSurface2D *blueSurf, CmSurface2D *outSurf, mfxU32 bitDepth, mfxU32 task_bufId = 0);
+
+    void CreateTask_GammaAndCCM(CmSurface2D  *correcSurf,
+                                 CmSurface2D *pointSurf,
+                                 CmSurface2D *redSurf,
+                                 CmSurface2D *greenSurf,
+                                 CmSurface2D *blueSurf,
+                                 CameraPipe3x3ColorConversionParams *ccm,
+                                 SurfaceIndex outSurfIndex,
+                                 mfxU32 bitDepth,
+                                 SurfaceIndex *LUTIndex,
+                                 mfxU32 task_bufId = 0);
+    void CreateTask_GammaAndCCM(CmSurface2D  *correctSurf,
+                                 CmSurface2D *pointSurf,
+                                 CmSurface2D *redSurf,
+                                 CmSurface2D *greenSurf,
+                                 CmSurface2D *blueSurf,
+                                 CameraPipe3x3ColorConversionParams *ccm,
+                                 CmSurface2D *outSurf,
+                                 mfxU32 bitDepth,
+                                 SurfaceIndex *LUTIndex,
+                                 mfxU32 task_bufId = 0);
     void CreateTask_ARGB(CmSurface2D *redSurf, CmSurface2D *greenSurf, CmSurface2D *blueSurf, SurfaceIndex outSurfIndex, mfxU32 bitDepth, mfxU32 task_bufId = 0);
 
 //    CmEvent *EnqueueTasks();
@@ -355,9 +376,6 @@ private:
     //CmKernel*   kernel_check_confidence;
     //CmKernel*   CAM_PIPE_KERNEL_ARRAY(kernel_bad_pixel_check, CAM_PIPE_KERNEL_SPLIT); // removed for SKL-light arch
 
-    // CCM kernels ---------------
-    CmKernel*   kernel_3x3ccm;
-
 #if !ENABLE_SLM_GAMMA
     CmKernel*   kernel_PrepLUT;
 #endif
@@ -404,6 +422,9 @@ private:
     CmTask*      CAM_PIPE_TASK_ARRAY(task_FwGamma, CAM_PIPE_NUM_TASK_BUFFERS);
 
     CmTask*      CAM_PIPE_TASK_ARRAY(task_ARGB, CAM_PIPE_NUM_TASK_BUFFERS);
+
+    // Matrix with CCM related params
+    vector<float, 9> m_ccm;
 };
 
 

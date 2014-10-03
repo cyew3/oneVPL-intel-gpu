@@ -166,7 +166,7 @@ void ReleaseResource(
     mfxMemId                mid);
 
 
-typedef struct 
+typedef struct
 {
     mfxU32              frameWidth64;
     mfxU32              paddedFrameWidth;
@@ -221,23 +221,23 @@ typedef struct _CameraPipeWhiteBalanceParams
 {
     bool        bActive;
     mfxU32      Mode;
-    mfxF32      RedCorrection;
-    mfxF32      GreenTopCorrection;
-    mfxF32      BlueCorrection;
-    mfxF32      GreenBottomCorrection;
+    mfxF64      RedCorrection;
+    mfxF64      GreenTopCorrection;
+    mfxF64      BlueCorrection;
+    mfxF64      GreenBottomCorrection;
 } CameraPipeWhiteBalanceParams;
 
 
 typedef struct _CameraPipe3x3ColorConversionParams
 {
     bool        bActive;
-    mfxF32      CCM[3][3];
+    mfxF64      CCM[3][3];
 } CameraPipe3x3ColorConversionParams;
 
 #define MFX_CAM_GAMMA_NUM_POINTS_SKL 64
 
 //// Gamma parameters
-typedef struct 
+typedef struct
 {
     mfxU16     numPoints;
     mfxU16    *gammaPoints;
@@ -261,7 +261,7 @@ typedef struct
 #define MFX_CAM_DEFAULT_PADDING_LEFT   MFX_CAM_MIN_REQUIRED_PADDING_LEFT
 #define MFX_CAM_DEFAULT_PADDING_RIGHT  MFX_CAM_MIN_REQUIRED_PADDING_RIGHT
 
-typedef struct 
+typedef struct
 {
     //mfxU16 mode;
     mfxU16 top;

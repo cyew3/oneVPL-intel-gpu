@@ -173,11 +173,12 @@ protected:
     mfxCameraCaps       m_Caps;
 
     //Filter specific parameters
-    CameraPipeWhiteBalanceParams m_WBparams;
-    CameraPipeForwardGammaParams m_GammaParams;
-    CameraPipePaddingParams      m_PaddingParams;
-    CameraPipeBlackLevelParams   m_BlackLevelParams;
-    CameraFrameSizeExtra         m_FrameSizeExtra;
+    CameraPipeWhiteBalanceParams       m_WBparams;
+    CameraPipeForwardGammaParams       m_GammaParams;
+    CameraPipePaddingParams            m_PaddingParams;
+    CameraPipeBlackLevelParams         m_BlackLevelParams;
+    CameraPipe3x3ColorConversionParams m_CCMParams;
+    CameraFrameSizeExtra               m_FrameSizeExtra;
 
     mfxU32                       m_InputBitDepth;
 
@@ -189,6 +190,7 @@ protected:
     CmSurface2D         *m_gammaPointSurf;
     CmSurface2D         *m_gammaOutSurf;
     CmSurface2D         *m_avgFlagSurf;
+    CmBuffer            *m_LUTSurf;
 
 private:
 

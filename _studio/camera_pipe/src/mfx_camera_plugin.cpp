@@ -620,7 +620,7 @@ mfxStatus MFXCamera_Plugin::QueryIOSurf(mfxVideoParam *par, mfxFrameAllocRequest
     return sts;
 }
 
-mfxStatus  MFXCamera_Plugin::GetVideoParam(mfxVideoParam *par)
+mfxStatus MFXCamera_Plugin::GetVideoParam(mfxVideoParam *par)
 {
     MFX_CHECK(m_isInitialized, MFX_ERR_NOT_INITIALIZED);
     MFX_CHECK_NULL_PTR1(par);
@@ -707,6 +707,7 @@ mfxStatus MFXCamera_Plugin::ProcessExtendedBuffers(mfxVideoParam *par)
     bool paddingset      = false;
     bool blacklevelset   = false;
     bool whitebalanceset = false;
+    bool ccmset          = false;
 
     for (i = 0; i < par->NumExtParam; i++)
     {
@@ -782,13 +783,31 @@ mfxStatus MFXCamera_Plugin::ProcessExtendedBuffers(mfxVideoParam *par)
                     m_WBparams.RedCorrection         = whiteBalanceExtBufParams->R;
                 }
             }
+            else if (MFX_EXTBUF_CAM_COLOR_CORRECTION_3X3 == par->ExtParam[i]->BufferId)
+            {
+                m_Caps.bColorConversionMatrix = 1;
+                mfxExtCamColorCorrection3x3* CCMExtBufParams = (mfxExtCamColorCorrection3x3*)par->ExtParam[i];
+                if ( CCMExtBufParams )
+                {
+                    ccmset = true;
+                    m_CCMParams.bActive = true;
+                    m_CCMParams.CCM[0][0]  = CCMExtBufParams->CCM[0][0];
+                    m_CCMParams.CCM[0][1]  = CCMExtBufParams->CCM[0][1];
+                    m_CCMParams.CCM[0][2]  = CCMExtBufParams->CCM[0][2];
+                    m_CCMParams.CCM[1][0]  = CCMExtBufParams->CCM[1][0];
+                    m_CCMParams.CCM[1][1]  = CCMExtBufParams->CCM[1][1];
+                    m_CCMParams.CCM[1][2]  = CCMExtBufParams->CCM[1][2];
+                    m_CCMParams.CCM[2][0]  = CCMExtBufParams->CCM[2][0];
+                    m_CCMParams.CCM[2][1]  = CCMExtBufParams->CCM[2][1];
+                    m_CCMParams.CCM[2][2]  = CCMExtBufParams->CCM[2][2];
+                }
+            }
             else if (MFX_EXTBUF_CAM_PADDING == par->ExtParam[i]->BufferId)
             {
                 //????
                 m_Caps.bNoPadding = 1;
                 paddingset = true;
                 mfxExtCamPadding* paddingExtBufParams = (mfxExtCamPadding*)par->ExtParam[i];
-                //m_PaddingParams.mode = paddingExtBufParams->Mode;
                 m_PaddingParams.top = paddingExtBufParams->Top;
                 m_PaddingParams.bottom = paddingExtBufParams->Bottom;
                 m_PaddingParams.left = paddingExtBufParams->Left;
@@ -812,6 +831,10 @@ mfxStatus MFXCamera_Plugin::ProcessExtendedBuffers(mfxVideoParam *par)
 
     if (m_Caps.bBlackLevelCorrection)
         if (!blacklevelset)
+            sts = MFX_ERR_UNDEFINED_BEHAVIOR;
+
+    if (m_Caps.bColorConversionMatrix)
+        if (!ccmset)
             sts = MFX_ERR_UNDEFINED_BEHAVIOR;
 
     if (m_Caps.bWhiteBalance)
@@ -937,7 +960,6 @@ mfxStatus MFXCamera_Plugin::Init(mfxVideoParam *par)
     return mfxSts;
 }
 
-
 mfxStatus MFXCamera_Plugin::Reset(mfxVideoParam *par)
 {
 
@@ -1026,7 +1048,7 @@ mfxStatus MFXCamera_Plugin::Reset(mfxVideoParam *par)
         return mfxSts;
 
     // will need to check numPoints as well when different LUT sizes are supported
-    if (m_Caps.bForwardGammaCorrection) {
+    if (m_Caps.bForwardGammaCorrection || m_Caps.bColorConversionMatrix) {
         if (!m_gammaCorrectSurf)
             m_gammaCorrectSurf = CreateSurface(m_cmDevice, 32, 4, CM_SURFACE_FORMAT_A8);
         if (!m_gammaPointSurf)
@@ -1034,6 +1056,7 @@ mfxStatus MFXCamera_Plugin::Reset(mfxVideoParam *par)
 
         mfxU8 *pGammaPts = (mfxU8 *)m_GammaParams.gamma_lut.gammaPoints;
         mfxU8 *pGammaCor = (mfxU8 *)m_GammaParams.gamma_lut.gammaCorrect;
+
         if (pGammaPts != (mfxU8 *)oldGammaParams.gamma_lut.gammaPoints || pGammaCor != (mfxU8 *)oldGammaParams.gamma_lut.gammaCorrect) {
             if (!pGammaPts || !pGammaCor) {
                 // gamma value is used - implement !!! kta
@@ -1150,7 +1173,6 @@ mfxStatus MFXCamera_Plugin::CameraAsyncRoutine(AsyncParams *pParam)
     return sts;
 }
 
-
 mfxStatus MFXCamera_Plugin::CompleteCameraRoutine(void *pState, void *pParam, mfxStatus taskRes)
 {
     mfxStatus sts;
@@ -1166,7 +1188,6 @@ mfxStatus MFXCamera_Plugin::CompleteCameraRoutine(void *pState, void *pParam, mf
 
     return sts;
 }
-
 
 mfxStatus MFXCamera_Plugin::CompleteCameraAsyncRoutine(AsyncParams *pParam)
 {
@@ -1188,7 +1209,7 @@ mfxStatus MFXCamera_Plugin::CompleteCameraAsyncRoutine(AsyncParams *pParam)
         CmEvent *e = (CmEvent *)pParam->pEvent;
         CAMERA_DEBUG_LOG("CompleteCameraAsyncRoutine e=%p device %p \n", e, m_cmDevice);
 
-        if (m_isInitialized)
+       if (m_isInitialized)
             m_cmCtx->DestroyEvent(e);
         else
             m_cmCtx->DestroyEventWithoutWait(e);
@@ -1224,7 +1245,6 @@ mfxStatus MFXCamera_Plugin::CompleteCameraAsyncRoutine(AsyncParams *pParam)
     CAMERA_DEBUG_LOG(f, "CompleteCameraAsyncRoutine end pParam->surf_in->Data.Locked=%d pParam->surf_out->Data.Locked=%d \n", pParam->surf_in->Data.Locked, pParam->surf_out->Data.Locked);
     return sts;
 }
-
 
 mfxStatus MFXCamera_Plugin::VPPFrameSubmit(mfxFrameSurface1 *surface_in, mfxFrameSurface1 *surface_out, mfxExtVppAuxData* /*aux*/, mfxThreadTask *mfxthreadtask)
 {
@@ -1305,6 +1325,7 @@ mfxStatus MFXCamera_Plugin::Execute(mfxThreadTask task, mfxU32 uid_p, mfxU32 uid
 
     return sts;
 }
+
 mfxStatus MFXCamera_Plugin::FreeResources(mfxThreadTask task, mfxStatus )
 {
     mfxStatus sts = MFX_ERR_NONE;

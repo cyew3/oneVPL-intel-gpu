@@ -417,7 +417,6 @@ mfxStatus MFXCamera_Plugin::ReallocateInternalSurfaces(mfxVideoParam &newParam, 
     return sts;
 }
 
-
 mfxStatus MFXCamera_Plugin::AllocateInternalSurfaces()
 {
     mfxFrameAllocRequest request = { { 0 } };
@@ -464,10 +463,23 @@ mfxStatus MFXCamera_Plugin::AllocateInternalSurfaces()
 
     m_avgFlagSurf = CreateSurface(m_cmDevice, m_FrameSizeExtra.vSliceWidth, m_FrameSizeExtra.paddedFrameHeight, CM_SURFACE_FORMAT_A8);
 
-    if (m_Caps.bForwardGammaCorrection)
+    if (m_Caps.bColorConversionMatrix)
+    {
+        // Why such size? Copy-paste from VPG example.
+        // TODO: need to check how to calculate size properly
+        m_LUTSurf = CreateBuffer(m_cmDevice, 65536 * 4);
+        MFX_CHECK_NULL_PTR1(m_LUTSurf);
+    }
+
+    if (m_Caps.bForwardGammaCorrection || m_Caps.bColorConversionMatrix)
     {
         m_gammaCorrectSurf = CreateSurface(m_cmDevice, 32, 4, CM_SURFACE_FORMAT_A8);
         m_gammaPointSurf   = CreateSurface(m_cmDevice, 32, 4, CM_SURFACE_FORMAT_A8);
+        MFX_CHECK_NULL_PTR2(m_gammaCorrectSurf, m_gammaPointSurf)
+    }
+
+    if (m_Caps.bForwardGammaCorrection)
+    {
         MFX_CHECK_NULL_PTR2(m_gammaCorrectSurf, m_gammaPointSurf)
 
         mfxU8 *pGammaPts = (mfxU8 *)m_GammaParams.gamma_lut.gammaPoints;
@@ -717,7 +729,6 @@ mfxStatus MFXCamera_Plugin::CreateEnqueueTasks(AsyncParams *pParam)
             m_cmCtx->CreateTask_Padding(*pInputSurfaceIndex, *pPaddedSurfaceIndex, m_FrameSizeExtra.paddedFrameWidth, m_FrameSizeExtra.paddedFrameHeight, (int)m_InputBitDepth, (int)m_Caps.BayerPatternType);
             m_paddedSurf->GetIndex(pInputSurfaceIndex);
             doShiftAndSwap = 0;
-            //m_cmCtx->EnqueueTask_Padding();
         }
         if ( m_Caps.bBlackLevelCorrection || m_Caps.bWhiteBalance )
         {
@@ -727,14 +738,13 @@ mfxStatus MFXCamera_Plugin::CreateEnqueueTasks(AsyncParams *pParam)
                             m_Caps.bBlackLevelCorrection,
                             0,
                             m_Caps.bWhiteBalance,
-                            m_BlackLevelParams.BlueLevel, m_BlackLevelParams.GreenBottomLevel, m_BlackLevelParams.GreenTopLevel, m_BlackLevelParams.RedLevel,
+                            (short)m_BlackLevelParams.BlueLevel, (short)m_BlackLevelParams.GreenBottomLevel, (short)m_BlackLevelParams.GreenTopLevel, (short)m_BlackLevelParams.RedLevel,
                             m_WBparams.BlueCorrection, m_WBparams.GreenBottomCorrection, m_WBparams.GreenTopCorrection, m_WBparams.RedCorrection,
                             m_InputBitDepth,
                             m_Caps.BayerPatternType);
         }
         CmSurface2D *goodPixCntSurf = (CmSurface2D *)AcquireResource(m_aux8, 0);
         CmSurface2D *bigPixCntSurf  = (CmSurface2D *)AcquireResource(m_aux8, 1);
-        //m_paddedSurf->GetIndex(pInputSurfaceIndex);
         m_cmCtx->CreateTask_GoodPixelCheck(*pInputSurfaceIndex, *pPaddedSurfaceIndex, goodPixCntSurf, bigPixCntSurf, (int)m_InputBitDepth, doShiftAndSwap, (int)m_Caps.BayerPatternType);
         pInputSurfaceIndex = pPaddedSurfaceIndex;
 
@@ -793,15 +803,21 @@ mfxStatus MFXCamera_Plugin::CreateEnqueueTasks(AsyncParams *pParam)
             blueOutSurf       = tmpp;
         }
 
-        if (m_Caps.bForwardGammaCorrection)
+        if (m_Caps.bForwardGammaCorrection || m_Caps.bColorConversionMatrix)
         {
+            SurfaceIndex *LUTIndex = NULL;
+            if ( m_Caps.bColorConversionMatrix )
+            {
+                m_LUTSurf->GetIndex(LUTIndex);
+            }
+
             if (pOutputSurfaceIndex)
-                m_cmCtx->CreateTask_ForwardGamma(m_gammaCorrectSurf, m_gammaPointSurf, redOutSurf, greenOutSurf, blueOutSurf, *pOutputSurfaceIndex, m_InputBitDepth);
+                m_cmCtx->CreateTask_GammaAndCCM(m_gammaCorrectSurf, m_gammaPointSurf, redOutSurf, greenOutSurf, blueOutSurf, (m_Caps.bColorConversionMatrix ? &m_CCMParams : NULL), *pOutputSurfaceIndex, m_InputBitDepth, LUTIndex);
             else
-                m_cmCtx->CreateTask_ForwardGamma(m_gammaCorrectSurf, m_gammaPointSurf, redOutSurf, greenOutSurf, blueOutSurf, m_gammaOutSurf, m_InputBitDepth);
+                m_cmCtx->CreateTask_GammaAndCCM(m_gammaCorrectSurf, m_gammaPointSurf, redOutSurf, greenOutSurf, blueOutSurf, (m_Caps.bColorConversionMatrix ? &m_CCMParams : NULL), m_gammaOutSurf, m_InputBitDepth, LUTIndex);
         }
 
-        if (m_Caps.bOutToARGB16 || !m_Caps.bForwardGammaCorrection || m_InputBitDepth == 16)
+        if (m_Caps.bOutToARGB16 || !m_Caps.bForwardGammaCorrection || m_Caps.bColorConversionMatrix || m_InputBitDepth == 16)
         {
             if (!pOutputSurfaceIndex)
                  m_gammaOutSurf->GetIndex(pOutputSurfaceIndex);
@@ -845,10 +861,10 @@ mfxStatus MFXCamera_Plugin::CreateEnqueueTasks(AsyncParams *pParam)
         }
         CAMERA_DEBUG_LOG("CreateEnqueueTasks after EnqueueSliceTasks  \n");
 
-        if (m_Caps.bForwardGammaCorrection)
+        if (m_Caps.bForwardGammaCorrection || m_Caps.bColorConversionMatrix)
             e = m_cmCtx->EnqueueTask_ForwardGamma();
 
-        if (m_Caps.bOutToARGB16 || !m_Caps.bForwardGammaCorrection || m_InputBitDepth == 16)
+        if (m_Caps.bOutToARGB16 || !m_Caps.bForwardGammaCorrection || m_Caps.bColorConversionMatrix || m_InputBitDepth == 16)
         {
             if (e != NULL)
                 m_cmCtx->DestroyEventWithoutWait(e);
@@ -894,6 +910,7 @@ void QueryCaps(mfxCameraCaps &caps)
     caps.bForwardGammaCorrection = 1;
     caps.bBlackLevelCorrection   = 1;
     caps.bWhiteBalance           = 1;
+    caps.bColorConversionMatrix  = 1;
     //caps.bOutToARGB8 = 1;
     caps.bOutToARGB16 = 1;
 
@@ -902,7 +919,6 @@ void QueryCaps(mfxCameraCaps &caps)
 
     caps.bNoPadding = 1;
 }
-
 
 const mfxU32 g_TABLE_CAMERA_EXTBUFS [] =
 {
@@ -916,7 +932,6 @@ const mfxU32 g_TABLE_CAMERA_EXTBUFS [] =
     MFX_EXTBUF_CAM_PADDING,
     MFX_EXTBUF_CAM_PIPECONTROL
 };
-
 
 bool IsFilterFound(const mfxU32* pList, mfxU32 len, mfxU32 filterName)
 {
@@ -932,7 +947,6 @@ bool IsFilterFound(const mfxU32* pList, mfxU32 len, mfxU32 filterName)
     return false;
 
 } // bool IsFilterFound( mfxU32* pList, mfxU32 len, mfxU32 filterName )
-
 
 void GetDoUseFilterList(mfxVideoParam* par, mfxU32** ppList, mfxU32** ppLen)
 {
@@ -971,7 +985,6 @@ mfxStatus CorrectDoUseFilters(mfxU32* pList, mfxU32 len)
     return sts;
 }
 
-
 mfxStatus GetConfigurableFilterList(mfxVideoParam* par, mfxU32* pList, mfxU32* pLen)
 {
     mfxU32 fIdx = 0;
@@ -1000,7 +1013,6 @@ mfxStatus GetConfigurableFilterList(mfxVideoParam* par, mfxU32* pList, mfxU32* p
     }
     return sts;
 }
-
 
 void ConvertCaps2ListDoUse(mfxCameraCaps& caps, std::vector<mfxU32>& list)
 {

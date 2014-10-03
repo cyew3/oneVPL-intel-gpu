@@ -170,10 +170,10 @@ int CPU_GoodPixelCheck(short *pSrcBayer16bpp, int m_Width, int m_Height,
         //if(Good_Pixel == 81)
         if(Good_Pixel > m_Num_Good_Pix_TH)
         {
-            pDstFlag8bpp[index] = 2;//AVG_True;                    
+            pDstFlag8bpp[index] = 2;//AVG_True;
         }
         else if(Bad_Pixel > m_Num_Big_Pix_TH)
-                
+
         {
             pDstFlag8bpp[index] = 2;//AVG_True;
         }
@@ -1023,7 +1023,7 @@ void ConvertARGB16_CPU(CamInfo *dmi, unsigned short *outBuf, int useFGC)
         inputB = dmi->cpu_B_o;
     }
 
-    for(int j = 0; j < dmi->InHeight; j++){    
+    for(int j = 0; j < dmi->InHeight; j++){
         for(int i = 0; i < dmi->InWidth * 4; i += 4){
             index = (i/4) + j*dmi->InWidth;
             outBuf[i + 0] = inputR[index];  //red   component
@@ -1092,27 +1092,27 @@ void FreeCamera_CPU(CamInfo *dmi)
     delete [] dmi->cpu_AVG_new_flag;
     delete [] dmi->cpu_HV_flag;
 
-    delete [] dmi->cpu_G_h; 
-    delete [] dmi->cpu_B_h; 
+    delete [] dmi->cpu_G_h;
+    delete [] dmi->cpu_B_h;
     delete [] dmi->cpu_R_h;
 
-    delete [] dmi->cpu_G_v; 
-    delete [] dmi->cpu_B_v; 
+    delete [] dmi->cpu_G_v;
+    delete [] dmi->cpu_B_v;
     delete [] dmi->cpu_R_v;
 
-    delete [] dmi->cpu_G_a; 
-    delete [] dmi->cpu_B_a; 
+    delete [] dmi->cpu_G_a;
+    delete [] dmi->cpu_B_a;
     delete [] dmi->cpu_R_a;
 
-    delete [] dmi->cpu_G_c; 
-    delete [] dmi->cpu_B_c; 
+    delete [] dmi->cpu_G_c;
+    delete [] dmi->cpu_B_c;
     delete [] dmi->cpu_R_c;
 
-    delete [] dmi->cpu_G_o; 
-    delete [] dmi->cpu_B_o; 
+    delete [] dmi->cpu_G_o;
+    delete [] dmi->cpu_B_o;
     delete [] dmi->cpu_R_o;
 
-    delete [] dmi->cpu_G_fgc_out; 
-    delete [] dmi->cpu_B_fgc_out; 
+    delete [] dmi->cpu_G_fgc_out;
+    delete [] dmi->cpu_B_fgc_out;
     delete [] dmi->cpu_R_fgc_out;
 }
