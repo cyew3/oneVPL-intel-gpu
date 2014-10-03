@@ -91,7 +91,7 @@ static mfxU32 mfx_init_adapters(struct mfx_disp_adapters** p_adapters)
     int entries_num = scandir(MFX_PCI_DIR, &dir_entries, mfx_dir_filter, (fsort)alphasort);
 
     // sizeof(MFX_PCI_DIR) = 20, sizeof(dirent::d_name) <= 256, sizeof("class"|"vendor"|"device") = 6
-    char file_name[300] = {0};
+    char file_name[300] = {};
     // sizeof("0xzzzzzz") = 8
     char str[16] = {0};
     FILE* file = NULL;
@@ -244,7 +244,7 @@ static mfxU32 mfx_list_libraries(const char* path, bool search_hw, struct mfx_li
 namespace MFX
 {
 
-mfxStatus GetImplementationType(const mfxU32 adapterNum, mfxIMPL *pImplInterface, mfxU32 *pVendorID, mfxU32 *pDeviceID)
+mfxStatus SelectImplementationType(const mfxU32 adapterNum, mfxIMPL *pImplInterface, mfxU32 *pVendorID, mfxU32 *pDeviceID)
 {
     mfx_disp_adapters* adapters = NULL;
     int adapters_num = mfx_init_adapters(&adapters);
@@ -258,8 +258,8 @@ mfxStatus GetImplementationType(const mfxU32 adapterNum, mfxIMPL *pImplInterface
     if (adapterNum >= adapters_num)
         return MFX_ERR_UNSUPPORTED;
 
-    if ((*pImplInterface == MFX_IMPL_VIA_D3D9) ||
-        (*pImplInterface == MFX_IMPL_VIA_D3D11) )
+    if ((*pImplInterface != MFX_IMPL_VIA_ANY) &&
+        (*pImplInterface != MFX_IMPL_VIA_VAAPI) )
         return MFX_ERR_UNSUPPORTED;
 
     *pImplInterface = MFX_IMPL_VIA_VAAPI;
@@ -317,8 +317,9 @@ mfxStatus MFXLibraryIterator::Init(eMfxImplType implType, mfxIMPL impl, const mf
         {
             return MFX_ERR_UNSUPPORTED;
         }
-        m_vendorID = m_adapters[adapter_num].vendor_id;
-        m_deviceID = m_adapters[adapter_num].device_id;
+        m_selected_adapter = adapter_num;
+        m_vendorID = m_adapters[m_selected_adapter].vendor_id;
+        m_deviceID = m_adapters[m_selected_adapter].device_id;
     }
     else if (MFX_LIB_SOFTWARE != implType)
     {
@@ -382,9 +383,10 @@ mfxStatus MFXLibraryIterator::SelectDLLVersion(char *pPath, size_t pathSize,
 
 mfxIMPL MFXLibraryIterator::GetImplementationType()
 {
-    mfxIMPL implInterface;
-    MFX::GetImplementationType(0, &implInterface, NULL, NULL);
-    return implInterface;
+    if (m_selected_adapter < 0 || m_selected_adapter >= m_adapters_num)
+        return MFX_ERR_UNSUPPORTED;
+
+    return MFX_IMPL_VIA_VAAPI;
 }
 
 bool MFXLibraryIterator::GetSubKeyName(msdk_disp_char *subKeyName, size_t length) const

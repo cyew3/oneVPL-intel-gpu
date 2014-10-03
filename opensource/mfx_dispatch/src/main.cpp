@@ -394,7 +394,7 @@ mfxStatus DISPATCHER_EXPOSED_PREFIX(MFXInit)(mfxIMPL impl, mfxVersion *pVer, mfx
                     {
                         implInterface = MFX_IMPL_VIA_ANY;
                     }
-                    mfxRes = MFX::GetImplementationType(implTypes[curImplIdx].adapterID, &implInterface, NULL, NULL);
+                    mfxRes = MFX::SelectImplementationType(implTypes[curImplIdx].adapterID, &implInterface, NULL, NULL);
                 }
                 if (MFX_ERR_NONE == mfxRes)
                 {
@@ -596,10 +596,6 @@ mfxStatus DISPATCHER_EXPOSED_PREFIX(MFXCloneSession)(mfxSession session, mfxSess
 
 mfxStatus DISPATCHER_EXPOSED_PREFIX(MFXVideoUSER_Load)(mfxSession session, const mfxPluginUID *uid, mfxU32 version) 
 {
-    if (NULL == session)
-    {
-        return MFX_ERR_NULL_PTR;
-    }
     MFX_DISP_HANDLE &pHandle = *(MFX_DISP_HANDLE *) session;
     if (!&pHandle)
     {
@@ -669,10 +665,6 @@ mfxStatus DISPATCHER_EXPOSED_PREFIX(MFXVideoUSER_Load)(mfxSession session, const
 
 mfxStatus DISPATCHER_EXPOSED_PREFIX(MFXVideoUSER_LoadByPath)(mfxSession session, const mfxPluginUID *uid, mfxU32 version, const msdk_disp_char *path, mfxU32 len) 
 {
-    if (NULL == session)
-    {
-        return MFX_ERR_NULL_PTR;
-    }
     MFX_DISP_HANDLE &pHandle = *(MFX_DISP_HANDLE *) session;
     if (!&pHandle)
     {
