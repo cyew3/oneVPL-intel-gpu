@@ -233,7 +233,7 @@ mfxTraceU32 MFXTrace_EndTask(mfxTraceStaticHandle *static_handle,
 
 #define MFX_LTRACE(_trace_all_params)                       \
 {                                                           \
-    static mfxTraceStaticHandle _trace_static_handle = {0}; \
+    static mfxTraceStaticHandle _trace_static_handle = {};  \
     MFXTrace_DebugMessage _trace_all_params;                \
 }
 #else
