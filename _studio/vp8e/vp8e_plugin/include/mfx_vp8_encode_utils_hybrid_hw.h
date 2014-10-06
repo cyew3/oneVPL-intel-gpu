@@ -22,11 +22,6 @@
 
 namespace MFX_VP8ENC
 {
-    struct sMBData : sDDI_MBDATA
-    {
-        ENCODE_MV_DATA MV[16];
-    };
-
     struct sDDIFrames
     {
         sFrameEx *m_pMB_hw;
