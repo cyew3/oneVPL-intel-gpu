@@ -86,10 +86,12 @@ else( )
   
   set(CMAKE_C_FLAGS "-pipe -fPIC")
   set(CMAKE_CXX_FLAGS "-pipe -fPIC")
+  append("-fPIE -pie" CMAKE_EXE_LINKER_FLAGS)
+
   set(CMAKE_C_FLAGS_DEBUG     "-O0 -Wall ${no_warnings} -g -D_DEBUG" CACHE STRING "" FORCE)
-  set(CMAKE_C_FLAGS_RELEASE   "-O2 -D_FORTIFY_SOURCE=2 -fstack-protector -Wall ${no_warnings} -DNDEBUG"    CACHE STRING "" FORCE)
+  set(CMAKE_C_FLAGS_RELEASE   "-O2 -D_FORTIFY_SOURCE=2 -fstack-protector-all -Wall ${no_warnings} -DNDEBUG"    CACHE STRING "" FORCE)
   set(CMAKE_CXX_FLAGS_DEBUG   "-O0 -Wall ${no_warnings} -g -D_DEBUG" CACHE STRING "" FORCE)
-  set(CMAKE_CXX_FLAGS_RELEASE "-O2 -D_FORTIFY_SOURCE=2 -fstack-protector -Wall ${no_warnings} -DNDEBUG"    CACHE STRING "" FORCE)
+  set(CMAKE_CXX_FLAGS_RELEASE "-O2 -D_FORTIFY_SOURCE=2 -fstack-protector-all -Wall ${no_warnings} -DNDEBUG"    CACHE STRING "" FORCE)
 
   if (DEFINED CMAKE_FIND_ROOT_PATH)
 #    append("--sysroot=${CMAKE_FIND_ROOT_PATH} " CMAKE_C_FLAGS)
