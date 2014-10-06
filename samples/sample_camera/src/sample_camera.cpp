@@ -168,7 +168,6 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
                 int n;
                 if (msdk_opt_read(strInput[++i], n) == MFX_ERR_NONE) {
                     pParams->maxNumBmpFiles = n;
-                    i++;
                 }
             }
         }
