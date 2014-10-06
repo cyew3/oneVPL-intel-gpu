@@ -39,11 +39,6 @@ mfxStatus MFXQueryIMPL(mfxSession session, mfxIMPL *impl)
 
     // set the library's type
 #ifdef MFX_VA
-#ifdef LINUX
-    if ((*impl == MFX_IMPL_VIA_D3D9) ||
-        (*impl == MFX_IMPL_VIA_D3D11) )
-        return MFX_ERR_UNSUPPORTED;
-#endif
 
     if (0 == session->m_adapterNum)
     {
