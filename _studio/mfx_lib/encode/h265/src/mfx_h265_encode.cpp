@@ -325,7 +325,7 @@ Ipp8u tab_tuNumRefFrame_SW[8] = {2, 4, 4, 3, 3, 2, 2, 2};
 #else
 Ipp8u tab_tuNumRefFrame_SW[8] = {2, 4, 4, 4, 3, 3, 2, 2};
 #endif
-Ipp8u tab_tuNumRefFrame_GACC[8] = {4, 4, 4, 4, 4, 4, 4, 4};
+Ipp8u tab_tuNumRefFrame_GACC[8] = {4, 4, 4, 4, 4, 4, 4, 2};
 
 
 mfxExtCodingOptionHEVC tab_tu[8] = {
