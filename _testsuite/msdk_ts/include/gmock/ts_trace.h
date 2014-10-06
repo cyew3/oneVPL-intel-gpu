@@ -9,6 +9,8 @@
 #include "mfxcamera.h"
 #include "mfxfei.h"
 #include "mfxla.h"
+
+#include "bs_parser.h"
 #include <iostream>
 
 #define TYPEDEF_MEMBER(base, member, name) typedef std::remove_reference<decltype(((base*)0)->member)>::type name;
@@ -92,6 +94,7 @@ public:
     tsTrace& operator << (const mfxPluginUID& p);
     tsTrace& operator << (const mfxFrameData& p);
     tsTrace& operator << (mfxStatus& p);
+    tsTrace& operator << (BSErr& p);
     tsTrace& operator<<(const mfxExtFeiEncMV& p);
 
     template<typename T> tsTrace& operator << (T& p) { (tsAutoTrace&)*this << p; return *this; }

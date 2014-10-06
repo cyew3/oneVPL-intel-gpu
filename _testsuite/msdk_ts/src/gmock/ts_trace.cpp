@@ -259,6 +259,22 @@ tsTrace& tsTrace::operator<<(mfxStatus& p)
     return *this;
 }
 
+tsTrace& tsTrace::operator<<(BSErr& p)
+    {
+    ENUM(p,
+        FIELD_E(BS_ERR_NONE)
+        FIELD_E(BS_ERR_UNKNOWN)
+        FIELD_E(BS_ERR_WRONG_UNITS_ORDER)
+        FIELD_E(BS_ERR_MORE_DATA)
+        FIELD_E(BS_ERR_INVALID_PARAMS)
+        FIELD_E(BS_ERR_MEM_ALLOC)
+        FIELD_E(BS_ERR_NOT_IMPLEMENTED)
+        FIELD_E(BS_ERR_NOT_ENOUGH_BUFFER)
+        FIELD_E(BS_ERR_BAD_HANDLE)
+    )
+
+    return *this;
+}
 
 rawdata hexstr(const void* d, unsigned int s)
 {
