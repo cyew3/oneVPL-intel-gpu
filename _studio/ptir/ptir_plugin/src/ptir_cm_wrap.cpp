@@ -204,6 +204,7 @@ mfxStatus PTIR_ProcessorCM::Init(mfxVideoParam *par)
 
     frmSupply->SetDevice(&deinterlaceFilter->DeviceEx());
     frmSupply->SetMap(&CmToMfxSurfmap);
+    frmSupply->SetFrmBuffer(frmBuffer);
     work_par = *par;
     bInited = true;
 
@@ -243,7 +244,7 @@ mfxStatus PTIR_ProcessorCM::Close()
     }
 }
 
-mfxStatus PTIR_ProcessorCM::Process(mfxFrameSurface1 *surface_in, mfxFrameSurface1 **surface_out, mfxCoreInterface *mfx_core, mfxFrameSurface1 **surface_outt, bool beof)
+mfxStatus PTIR_ProcessorCM::Process(mfxFrameSurface1 *surface_in, mfxFrameSurface1 **surface_out, mfxCoreInterface *mfx_core, mfxFrameSurface1 **surface_outt, bool beof, mfxFrameSurface1 *exp_surf)
 {
     mfxStatus mfxSts = MFX_ERR_NONE;
     mfxStatus mfxCCSts = MFX_ERR_NONE;
@@ -321,7 +322,7 @@ mfxStatus PTIR_ProcessorCM::Process(mfxFrameSurface1 *surface_in, mfxFrameSurfac
         frmBuffer[uiSupBuf]->frmProperties.fr = dFrameRate;
 
 
-        mfxSts = PTIR_ProcessFrame( pInCmSurface2D, pOutCmSurface2D, surface_outt, beof);
+        mfxSts = PTIR_ProcessFrame( pInCmSurface2D, pOutCmSurface2D, surface_outt, beof, exp_surf);
 
         if(beof)
             uiCur = 0;
@@ -394,7 +395,7 @@ mfxStatus PTIR_ProcessorCM::Process(mfxFrameSurface1 *surface_in, mfxFrameSurfac
         frmBuffer[uiSupBuf]->frmProperties.fr = dFrameRate;
 
 
-        mfxSts = PTIR_ProcessFrame( 0, pOutCmSurface2D, surface_outt, beof);
+        mfxSts = PTIR_ProcessFrame( 0, pOutCmSurface2D, surface_outt, beof, exp_surf);
 
         if(isUnlockReq)
         {
@@ -410,7 +411,7 @@ mfxStatus PTIR_ProcessorCM::Process(mfxFrameSurface1 *surface_in, mfxFrameSurfac
     return mfxSts;
 }
 
-mfxStatus PTIR_ProcessorCM::PTIR_ProcessFrame(CmSurface2D *surf_in, CmSurface2D *surf_out,  mfxFrameSurface1 **surf_outt, bool beof)
+mfxStatus PTIR_ProcessorCM::PTIR_ProcessFrame(CmSurface2D *surf_in, CmSurface2D *surf_out,  mfxFrameSurface1 **surf_outt, bool beof, mfxFrameSurface1 *exp_surf)
 {
     //----------------------------------------
     // Loading first frame
@@ -774,7 +775,8 @@ mfxStatus PTIR_ProcessorCM::PTIR_ProcessFrame(CmSurface2D *surf_in, CmSurface2D 
 
                     Frame_ReleaseCM(frmIn);
                     free(frmIn);
-                    frmSupply->AddOutputSurf(output);
+                    frmSupply->AddOutputSurf(output, exp_surf);
+                    exp_surf = 0;
 
                     uiFrameOut++;
                 }
@@ -802,13 +804,13 @@ mfxStatus PTIR_ProcessorCM::PTIR_ProcessFrame(CmSurface2D *surf_in, CmSurface2D 
                     if(it != CmToMfxSurfmap.end())
                         input = CmToMfxSurfmap[static_cast<CmSurface2DEx*>(frmIn->inSurf)->pCmSurface2D];
 
-                    assert(0 != output);
-                    assert(0 != input);
+                    //assert(0 != output);
+                    //assert(0 != input);
                     if(input && output)
                         output->Data.TimeStamp = input->Data.TimeStamp;
                     else if(output)
                         output->Data.TimeStamp = -1;
-                    if(frmIn->outState == Frame::OUT_UNCHANGED)
+                    if(output && frmIn->outState == Frame::OUT_UNCHANGED)
                     {
                         assert(0 != static_cast<CmSurface2DEx*>(frmIn->inSurf)->pCmSurface2D);
                         frmSupply->CMCopyGPUToGpu(static_cast<CmSurface2DEx*>(frmIn->outSurf)->pCmSurface2D, static_cast<CmSurface2DEx*>(frmIn->inSurf)->pCmSurface2D);
@@ -820,7 +822,11 @@ mfxStatus PTIR_ProcessorCM::PTIR_ProcessFrame(CmSurface2D *surf_in, CmSurface2D 
 
                     Frame_ReleaseCM(frmIn);
                     free(frmIn);
-                    frmSupply->AddOutputSurf(output);
+                    if(output)
+                    {
+                        frmSupply->AddOutputSurf(output, exp_surf);
+                        exp_surf = 0;
+                    }
 
                     uiFrameOut++;
                 }
@@ -947,7 +953,8 @@ mfxStatus PTIR_ProcessorCM::PTIR_ProcessFrame(CmSurface2D *surf_in, CmSurface2D 
 
                 Frame_ReleaseCM(frmIn);
                 free(frmIn);
-                frmSupply->AddOutputSurf(output);
+                frmSupply->AddOutputSurf(output, exp_surf);
+                exp_surf = 0;
 
                 uiFrameOut++;
             }

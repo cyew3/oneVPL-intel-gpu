@@ -179,7 +179,7 @@ mfxStatus PTIR_ProcessorCPU::Close()
     }
 }
 
-mfxStatus PTIR_ProcessorCPU::Process(mfxFrameSurface1 *surface_in, mfxFrameSurface1 **surface_out, mfxCoreInterface *mfx_core, mfxFrameSurface1**, bool beof)
+mfxStatus PTIR_ProcessorCPU::Process(mfxFrameSurface1 *surface_in, mfxFrameSurface1 **surface_out, mfxCoreInterface *mfx_core, mfxFrameSurface1**, bool beof, mfxFrameSurface1 *exp_surf)
 {
     mfxStatus mfxSts = MFX_ERR_NONE;
     mfxStatus mfxCCSts = MFX_ERR_NONE;
@@ -273,7 +273,7 @@ mfxStatus PTIR_ProcessorCPU::Process(mfxFrameSurface1 *surface_in, mfxFrameSurfa
     return mfxSts;
 }
 
-mfxStatus PTIR_ProcessorCPU::PTIR_ProcessFrame(mfxFrameSurface1 *surf_in, mfxFrameSurface1 *surf_out, bool beof)
+mfxStatus PTIR_ProcessorCPU::PTIR_ProcessFrame(mfxFrameSurface1 *surf_in, mfxFrameSurface1 *surf_out, bool beof, mfxFrameSurface1 *)
 {
 
     if(!b_firstFrameProceed)

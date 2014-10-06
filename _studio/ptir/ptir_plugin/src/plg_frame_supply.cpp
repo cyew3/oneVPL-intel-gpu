@@ -25,6 +25,7 @@ frameSupplier::frameSupplier(std::vector<mfxFrameSurface1*>* _inSurfs, std::vect
     mfxCoreIfce    = _mfxCore;
     IOPattern      = _IOPattern;
     isD3D11        = _isD3D11;
+    frmBuffer      = 0;
 }
 mfxStatus frameSupplier::SetDevice(CmDeviceEx* _pCMdevice)
 {
@@ -40,6 +41,12 @@ mfxStatus frameSupplier::SetDevice(CmDeviceEx* _pCMdevice)
 void* frameSupplier::SetMap(std::map<CmSurface2D*,mfxFrameSurface1*>* _CmToMfxSurfmap)
 {
     CmToMfxSurfmap = _CmToMfxSurfmap;
+    return 0;
+}
+
+void* frameSupplier::SetFrmBuffer(Frame *_frmBuffer[LASTFRAME])
+{
+    frmBuffer = _frmBuffer;
     return 0;
 }
 
@@ -121,7 +128,7 @@ mfxStatus frameSupplier::AddCPUPtirOutSurf(mfxU8* buffer, mfxFrameSurface1* surf
     mfxSts = AddOutputSurf(surface);
     return mfxSts;
 }
-mfxStatus frameSupplier::AddOutputSurf(mfxFrameSurface1* outSurf)
+mfxStatus frameSupplier::AddOutputSurf(mfxFrameSurface1* outSurf, mfxFrameSurface1* exp_surf)
 {
 #if defined(_DEBUG)
     for(std::vector<mfxFrameSurface1*>::iterator it = outSurfs->begin(); it != outSurfs->end(); ++it)
@@ -129,6 +136,8 @@ mfxStatus frameSupplier::AddOutputSurf(mfxFrameSurface1* outSurf)
         assert((*it) != outSurf);
     }
 #endif
+    CmSurface2D* freeSurf = 0;
+    CmSurface2D* delSurf = 0;
     if(pCMdevice && (IOPattern & MFX_IOPATTERN_IN_SYSTEM_MEMORY) && (IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY))
     {
         CmSurface2D* cmSurf = 0;
@@ -142,16 +151,78 @@ mfxStatus frameSupplier::AddOutputSurf(mfxFrameSurface1* outSurf)
                 break;
             }
         }
+        for (it = CmToMfxSurfmap->begin(); it != CmToMfxSurfmap->end(); ++it)
+        {
+            if(exp_surf == it->second)
+            {
+                delSurf = it->first;
+                break;
+            }
+        }
+
         assert(0 != cmSurf);
         if(cmSurf)
         {
+            if(exp_surf && (outSurf != exp_surf))
+            {
+                outSurf = exp_surf;
+            }
             mfxStatus mfxSts = MFX_ERR_NONE;
             mfxSts = CMCopyGpuToSys(cmSurf, outSurf);
             assert(MFX_ERR_NONE == mfxSts);
+            if(exp_surf && (outSurf != exp_surf))
+            {
+                freeSurf = cmSurf;
+            }
         }
     }
 
+    //In VPPFrameSubmit function in the begining of processing we "promise" to return a certain frame (plugin does not have any output at this point, so that returned frame is the first work frame).
+    //but PTIR generates different output frame
+    //This code is for restoring the right order. This code invokes additional CM frame copy (generated -> expected) (slower the execution), but it will happen only once and only in rare number of cases.
+    if(exp_surf && (outSurf != exp_surf))
+    {
+        mfxStatus mfxSts = MFX_ERR_NONE;
+        CmSurface2D* cmSurfExpOut = 0;
+        CmSurface2D* cmSurfOut = 0;
+        std::map<CmSurface2D*,mfxFrameSurface1*>::iterator it;
+        for (it = CmToMfxSurfmap->begin(); it != CmToMfxSurfmap->end(); ++it)
+        {
+            if(exp_surf == it->second)
+            {
+                cmSurfExpOut = it->first;
+                delSurf = cmSurfExpOut;
+                break;
+            }
+        }
+        for (it = CmToMfxSurfmap->begin(); it != CmToMfxSurfmap->end(); ++it)
+        {
+            if(outSurf == it->second)
+            {
+                cmSurfOut = it->first;
+                break;
+            }
+        }
+
+        mfxSts = CMCopyGPUToGpu(cmSurfOut, cmSurfExpOut);
+        assert(MFX_ERR_NONE == mfxSts);
+        outSurf = exp_surf;
+        freeSurf = cmSurfOut;
+    }
+
     outSurfs->push_back(outSurf);
+
+    if(freeSurf && frmBuffer)
+    {
+        for(mfxU32 i = 0; i < LASTFRAME; ++i)
+        {
+            if(frmBuffer[i] && (static_cast<CmSurface2DEx*>(frmBuffer[i]->outSurf)->pCmSurface2D == freeSurf))
+                static_cast<CmSurface2DEx*>(frmBuffer[i]->outSurf)->pCmSurface2D = 0;
+            if(delSurf && frmBuffer[i] && (static_cast<CmSurface2DEx*>(frmBuffer[i]->outSurf)->pCmSurface2D == delSurf))
+                static_cast<CmSurface2DEx*>(frmBuffer[i]->outSurf)->pCmSurface2D = 0;
+        }
+        FreeSurface(freeSurf);
+    }
 #if defined(_DEBUG)
     for(std::vector<mfxFrameSurface1*>::iterator wSurf = workSurfs->begin(); wSurf != workSurfs->end(); ++wSurf)
     {

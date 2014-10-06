@@ -282,6 +282,9 @@ mfxStatus MFX_PTIR_Plugin::Execute(mfxThreadTask task, mfxU32 , mfxU32 )
     mfxStatus mfxSts = MFX_ERR_NONE;
     mfxFrameSurface1 *surface_out = 0;
     mfxFrameSurface1 *surface_outtt = 0;
+    mfxFrameSurface1 *exp_surf = 0;
+    if(outSurfs.size() == 0 && b_work)
+        exp_surf = ptir_task->surface_out;
 
     if(inSurfs.size() != 0 && outSurfs.size() < 2)
     {
@@ -296,7 +299,7 @@ mfxStatus MFX_PTIR_Plugin::Execute(mfxThreadTask task, mfxU32 , mfxU32 )
                 beof = true;
             try
             {
-                mfxSts = ptir->Process(*it, &surface_out, m_pmfxCore, &surface_outtt, beof);
+                mfxSts = ptir->Process(*it, &surface_out, m_pmfxCore, &surface_outtt, beof, exp_surf);
             }
             catch(...)
             {
@@ -328,6 +331,8 @@ mfxStatus MFX_PTIR_Plugin::Execute(mfxThreadTask task, mfxU32 , mfxU32 )
                 assert(0);
                 return mfxSts;
             }
+            if(outSurfs.size())
+                exp_surf = 0;
         }
         while(0 == *inSurfs.begin())
         {

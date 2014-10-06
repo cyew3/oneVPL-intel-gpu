@@ -46,10 +46,11 @@ public:
     }
     virtual mfxStatus SetDevice(CmDeviceEx* _pCMdevice);
     virtual void* SetMap(std::map<CmSurface2D*,mfxFrameSurface1*>* _CmToMfxSurfmap);
+    virtual void* SetFrmBuffer(Frame *_frmBuffer[LASTFRAME]);
     virtual CmSurface2D* GetWorkSurfaceCM();
     virtual mfxFrameSurface1* GetWorkSurfaceMfx();
     virtual mfxStatus AddCPUPtirOutSurf(mfxU8* buffer, mfxFrameSurface1* surface);
-    virtual mfxStatus AddOutputSurf(mfxFrameSurface1* outSurf);
+    virtual mfxStatus AddOutputSurf(mfxFrameSurface1* outSurf, mfxFrameSurface1* exp_surf = 0);
     virtual mfxStatus FreeFrames();
     virtual mfxStatus FreeSurface(CmSurface2D*& cmSurf);
     virtual mfxStatus CMCopyGPUToGpu(CmSurface2D* cmSurfOut, CmSurface2D* cmSurfIn);
@@ -66,6 +67,7 @@ protected:
     std::vector<mfxFrameSurface1*> *workSurfs;
     std::vector<mfxFrameSurface1*> *outSurfs;
     std::map<CmSurface2D*,mfxFrameSurface1*> *CmToMfxSurfmap;
+    Frame   **frmBuffer;
     mfxU16  IOPattern;
     bool    isD3D11;
     UMC::Mutex& m_guard;
@@ -161,7 +163,7 @@ public:
     //{
     //    return MFX_ERR_UNSUPPORTED;
     //}
-    virtual mfxStatus Process(mfxFrameSurface1 *surf_in, mfxFrameSurface1 **surf_work, mfxCoreInterface *core, mfxFrameSurface1 **surf_out = 0, bool beof = false)
+    virtual mfxStatus Process(mfxFrameSurface1 *surf_in, mfxFrameSurface1 **surf_work, mfxCoreInterface *core, mfxFrameSurface1 **surf_out = 0, bool beof = false, mfxFrameSurface1 *exp_surf = 0)
     {
         return MFX_ERR_UNSUPPORTED;
     }
@@ -181,8 +183,8 @@ public:
 
     virtual mfxStatus Init(mfxVideoParam *par);
     virtual mfxStatus Close();
-    virtual mfxStatus PTIR_ProcessFrame(mfxFrameSurface1 *surf_in, mfxFrameSurface1 *surf_out, bool beof = 0);
-    virtual mfxStatus Process(mfxFrameSurface1 *surf_in, mfxFrameSurface1 **surf_work, mfxCoreInterface *core, mfxFrameSurface1 **surf_out = 0, bool beof = false);
+    virtual mfxStatus PTIR_ProcessFrame(mfxFrameSurface1 *surf_in, mfxFrameSurface1 *surf_out, bool beof = 0, mfxFrameSurface1 *exp_surf = 0);
+    virtual mfxStatus Process(mfxFrameSurface1 *surf_in, mfxFrameSurface1 **surf_work, mfxCoreInterface *core, mfxFrameSurface1 **surf_out = 0, bool beof = false, mfxFrameSurface1 *exp_surf = 0);
 
 protected:
     PTIR_ProcessorCPU(const PTIR_ProcessorCPU& ); // Disallow copy constructor
@@ -198,8 +200,8 @@ public:
 
     virtual mfxStatus Init(mfxVideoParam *par);
     virtual mfxStatus Close();
-    virtual mfxStatus PTIR_ProcessFrame(CmSurface2D *surf_in, CmSurface2D *surf_out, mfxFrameSurface1 **surf_outt = 0, bool beof = 0);
-    virtual mfxStatus Process(mfxFrameSurface1 *surf_in, mfxFrameSurface1 **surf_work, mfxCoreInterface *core, mfxFrameSurface1 **surf_out = 0, bool beof = false);
+    virtual mfxStatus PTIR_ProcessFrame(CmSurface2D *surf_in, CmSurface2D *surf_out, mfxFrameSurface1 **surf_outt = 0, bool beof = 0, mfxFrameSurface1 *exp_surf = 0);
+    virtual mfxStatus Process(mfxFrameSurface1 *surf_in, mfxFrameSurface1 **surf_work, mfxCoreInterface *core, mfxFrameSurface1 **surf_out = 0, bool beof = false, mfxFrameSurface1 *exp_surf = 0);
 
 protected:
     PTIR_ProcessorCM(const PTIR_ProcessorCM& ); // Disallow copy constructor
