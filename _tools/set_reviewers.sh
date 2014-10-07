@@ -23,6 +23,5 @@ ssh -p 29418 $__USER@git-ccr-1.devtools.intel.com gerrit set-reviewers \
   -a dvrogozh \
   -a eguschin \
   -a imironov \
-  -a jshashki \
   -a nlyalyus \
   $__CHANGE
