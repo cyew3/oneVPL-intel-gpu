@@ -126,7 +126,7 @@
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <PropertyGroup>
     <OutDir>..\..\..\build\win_$(Platform)\lib\</OutDir>
-    <IntDir>..\..\..\build\win_$(Platform)\objs\$(Configuration)\$(ProjectName)\</IntDir>
+    <IntDir>$(OutDir)..\objs\$(Configuration)\$(ProjectName)\</IntDir>
     <IncludePath>$(MINIDDK_ROOT)\Include\um;$(MINIDDK_ROOT)\Include\shared;$(IncludePath)</IncludePath>
     <LibraryPath>$(MINIDDK_ROOT)\Lib\win8\um\x86;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
@@ -181,10 +181,10 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
     <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release_THM|Win32'">..\..\..\build\win_$(Platform)\lib\</OutDir>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release_THM|Win32'">$(OutDir)..\objs\$(Configuration)\$(ProjectName)\</IntDir>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release_THM|x64'">..\..\..\build\win_$(Platform)\lib\</OutDir>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release_THM|x64'">$(OutDir)..\objs\$(Configuration)\$(ProjectName)</IntDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release_THM|Win32'">..\..\..\build\win_thm32\lib\</OutDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release_THM|x64'">..\..\..\build\win_thm64\lib\</OutDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug_THM|Win32'">..\..\..\build\win_thm32\lib\</OutDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug_THM|x64'">..\..\..\build\win_thm64\lib\</OutDir>
     <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(ProjectName)_d</TargetName>
     <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug_THM|Win32'">$(ProjectName)md_d</TargetName>
     <TargetName Condition="'$(Configuration)|$(Platform)'=='Release_THM|Win32'">$(ProjectName)md</TargetName>
