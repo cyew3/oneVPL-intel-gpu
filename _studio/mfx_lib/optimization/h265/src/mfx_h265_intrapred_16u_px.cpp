@@ -55,7 +55,7 @@ namespace MFX_HEVC_PP
     };
 
     /* ((1 << 15) + i/2) / i) */
-    static Ipp32s ImDiv[] = {
+    static const Ipp32s ImDiv[] = {
         32768, 16384, 10923,  8192,  6554,  5461,  4681,  4096,
         3641,  3277,  2979,  2731,  2521,  2341,  2185,  2048,
         1928,  1820,  1725,  1638,  1560,  1489,  1425,  1365,
@@ -860,7 +860,7 @@ namespace MFX_HEVC_PP
 #define INTRA_VER                26
 #define INTRA_HOR                10
 
-    static Ipp32s FilteredModes[] = {10, 7, 1, 0, 10};
+    static const Ipp32s FilteredModes[] = {10, 7, 1, 0, 10};
 
 #if defined(MFX_TARGET_OPTIMIZATION_PX)  || defined(MFX_TARGET_OPTIMIZATION_AUTO)
 #if defined(MFX_TARGET_OPTIMIZATION_PX)

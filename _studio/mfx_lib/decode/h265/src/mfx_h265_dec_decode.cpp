@@ -825,36 +825,38 @@ mfxStatus VideoDECODEH265::DecodeFrameCheck(mfxBitstream *bs,
 
     if (MFX_ERR_NONE == mfxSts || MFX_ERR_MORE_DATA_RUN_TASK == mfxSts) // It can be useful to run threads right after first frame receive
     {
-        ThreadTaskInfo * info = new ThreadTaskInfo();
-
-        info->surface_work = GetOriginalSurface(surface_work);
-
+        H265DecoderFrame *frame = 0;
         if (*surface_out)
         {
-            info->surface_out = GetOriginalSurface(*surface_out);
-
-            mfxI32 index = m_FrameAllocator->FindSurface(info->surface_out, m_isOpaq);
-            H265DecoderFrame *pFrame = m_pH265VideoDecoder->FindSurface((UMC::FrameMemID)index);
-
-            info->pFrame = pFrame;
-        }else
+            mfxI32 index = m_FrameAllocator->FindSurface(*surface_out, m_isOpaq);
+            frame = m_pH265VideoDecoder->FindSurface((UMC::FrameMemID)index);
+        }
+        else
         {
             H265DecoderFrame *pFrame = m_pH265VideoDecoder->GetDPBList()->head();
             for (; pFrame; pFrame = pFrame->future())
             {
                 if (!pFrame->m_pic_output && !pFrame->IsDecoded())
                 {
-                    info->pFrame = pFrame;
+                    frame = pFrame;
                     break;
                 }
             }
 
-            if (!info->pFrame)
+            if (!frame)
             {
                 return MFX_ERR_UNDEFINED_BEHAVIOR;
             }
         }
 
+        ThreadTaskInfo * info = new ThreadTaskInfo();
+
+        info->surface_work = GetOriginalSurface(surface_work);
+
+        if (*surface_out)
+            info->surface_out = GetOriginalSurface(*surface_out);
+
+        info->pFrame = frame;
         pEntryPoint->pRoutine = &HEVCDECODERoutine;
         pEntryPoint->pCompleteProc = &HEVCCompleteProc;
         pEntryPoint->pState = this;

@@ -36,10 +36,10 @@ const Ipp32u g_MinInGroup[10] = { 0, 1, 2, 3, 4, 6, 8, 12, 16, 24 };
 const Ipp32u g_GroupIdx[32] = { 0, 1, 2, 3, 4, 4, 5, 5, 6, 6, 6, 6, 7, 7, 7, 7, 8, 8, 8, 8, 8, 8, 8, 8, 9, 9, 9, 9, 9, 9, 9, 9 };
 
 // Prediction unit partition index increment inside of CU
-Ipp32u g_PUOffset[8] = { 0, 8, 4, 4, 2, 10, 1, 5};
+const Ipp32u g_PUOffset[8] = { 0, 8, 4, 4, 2, 10, 1, 5};
 
 // Inverse QP scale lookup table
-Ipp16u g_invQuantScales[6] =
+const Ipp16u g_invQuantScales[6] =
 {
     40,45,51,57,64,72
 };
@@ -54,7 +54,7 @@ const Ipp8u g_ChromaScale[58] =
 };
 
 // Lookup table for converting number log2(number)-2
-Ipp8s  g_ConvertToBit[MAX_CU_SIZE + 1] =
+const Ipp8s  g_ConvertToBit[MAX_CU_SIZE + 1] =
 {
     -1,
     -1, -1, -1,  0,
@@ -87,7 +87,7 @@ const Ipp16u ScanTableDiag4x4[16] =
 };
 
 // Default scaling list 4x4
-Ipp32s g_quantTSDefault4x4[16] =
+const Ipp32s g_quantTSDefault4x4[16] =
 {
   16,16,16,16,
   16,16,16,16,
@@ -96,7 +96,7 @@ Ipp32s g_quantTSDefault4x4[16] =
 };
 
 // Default scaling list 8x8 for intra prediction
-Ipp32s g_quantIntraDefault8x8[64] =
+const Ipp32s g_quantIntraDefault8x8[64] =
 {
   16,16,16,16,17,18,21,24,
   16,16,16,16,17,19,22,25,
@@ -109,7 +109,7 @@ Ipp32s g_quantIntraDefault8x8[64] =
 };
 
 // Default scaling list 8x8 for inter prediction
-Ipp32s g_quantInterDefault8x8[64] =
+const Ipp32s g_quantInterDefault8x8[64] =
 {
   16,16,16,16,17,18,20,24,
   16,16,16,17,18,20,24,25,

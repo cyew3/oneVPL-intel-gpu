@@ -1707,17 +1707,6 @@ bool H265SegmentDecoder::DecodeSliceEnd(Ipp32u AbsPartIdx, Ipp32u Depth)
     return (IsLast > 0);
 }
 
-//LUMA map
-static const Ipp32u ctxIndMap[16] =
-{
-    0, 1, 4, 5,
-    2, 3, 4, 5,
-    6, 6, 8, 8,
-    7, 7, 8, 8
-};
-
-static const Ipp32u lCtx[4] = {0x00010516, 0x06060606, 0x000055AA, 0xAAAAAAAA};
-
 // Returns CABAC context index for sig_coeff_flag. HEVC spec 9.3.4.2.5
 static H265_FORCEINLINE Ipp32u getSigCtxInc(Ipp32s patternSigCtx,
                                  Ipp32u scanIdx,
@@ -1726,6 +1715,17 @@ static H265_FORCEINLINE Ipp32u getSigCtxInc(Ipp32s patternSigCtx,
                                  const Ipp32u log2BlockSize,
                                  bool IsLuma)
 {
+    //LUMA map
+    static const Ipp32u ctxIndMap[16] =
+    {
+        0, 1, 4, 5,
+        2, 3, 4, 5,
+        6, 6, 8, 8,
+        7, 7, 8, 8
+    };
+
+    static const Ipp32u lCtx[4] = {0x00010516, 0x06060606, 0x000055AA, 0xAAAAAAAA};
+
     if ((PosX|PosY) == 0)
         return 0;
 
@@ -2630,13 +2630,13 @@ bool H265SegmentDecoder::hasEqualMotion(Ipp32s dir1, Ipp32s dir2)
     Count++;
 
 
-static Ipp32u PriorityList0[12] = {0 , 1, 0, 2, 1, 2, 0, 3, 1, 3, 2, 3};
-static Ipp32u PriorityList1[12] = {1 , 0, 2, 0, 2, 1, 3, 0, 3, 1, 3, 2};
-
 // Prepare an array of motion vector candidates for merge mode. HEVC spec 8.5.3.2.2
 void H265SegmentDecoder::getInterMergeCandidates(Ipp32u AbsPartIdx, Ipp32u PartIdx, H265MVInfo *MVBufferNeighbours,
                                                  Ipp8u *InterDirNeighbours, Ipp32s mrgCandIdx)
 {
+    static const Ipp32u PriorityList0[12] = {0 , 1, 0, 2, 1, 2, 0, 3, 1, 3, 2, 3};
+    static const Ipp32u PriorityList1[12] = {1 , 0, 2, 0, 2, 1, 3, 0, 3, 1, 3, 2};
+
     bool CandIsInter[MERGE_MAX_NUM_CAND];
     for (Ipp32s ind = 0; ind < m_pSliceHeader->max_num_merge_cand; ++ind)
     {

@@ -41,8 +41,8 @@ namespace MFX_HEVC_PP
 
 #define HIST_MAX    40
 
-static const float CM_CONST_PI   = 3.14159f;
-static const float M_DBL_EPSILON = 0.00001f;
+#define CM_CONST_PI   3.14159f
+#define M_DBL_EPSILON 0.00001f
 
 ALIGN_DECL(32) static const signed char dyShufTab08[32] = {0, 2, 1, 3, 2, 4, 3, 5, 0, 2, 1, 3, 2, 4, 3, 5, 0, 2, 1, 3, 2, 4, 3, 5, 0, 2, 1, 3, 2, 4, 3, 5}; 
 

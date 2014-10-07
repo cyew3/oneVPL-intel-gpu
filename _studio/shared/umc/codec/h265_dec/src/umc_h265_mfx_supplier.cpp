@@ -266,7 +266,7 @@ UMC::Status MFXTaskSupplier_H265::DecodeHeaders(UMC::MediaDataEx *nalUnit)
             case NAL_UT_SPS:
             case NAL_UT_PPS:
                 {
-                    static Ipp8u start_code_prefix[] = {0, 0, 0, 1};
+                    static const Ipp8u start_code_prefix[] = {0, 0, 0, 1};
 
                     size_t size = nalUnit->GetDataSize();
                     bool isSPS = (nal_unit_type == NAL_UT_SPS);

@@ -4482,18 +4482,6 @@ Status TaskSupplier::AddOneFrame(MediaData * pSource, MediaData *dst)
                     }
                     return umsRes;
                 }
-
-                if (m_decodingMode == AVC_DECODING_MODE || m_decodingMode == MVC_DECODING_MODE)
-                {
-                    if (pMediaDataEx->values[i] == NAL_UT_SPS || pMediaDataEx->values[i] == NAL_UT_PPS)
-                    {
-                        umsRes = AddSlice(0, !pSource);
-                        if (umsRes == UMC_ERR_NOT_ENOUGH_BUFFER || umsRes == UMC_OK)
-                        {
-                            return umsRes;
-                        }
-                    }
-                }
                 
                 is_header_readed = true;
                 break;

@@ -19,7 +19,7 @@
 namespace UMC_HEVC_DECODER
 {
 // Prediction unit partition index increment inside of CU
-extern Ipp32u g_PUOffset[8];
+extern const Ipp32u g_PUOffset[8];
 
 #define QUANT_IQUANT_SHIFT    20 // Q(QP%6) * IQ(QP%6) = 2^20
 #define QUANT_SHIFT           14 // Q(4) = 2^14
@@ -27,7 +27,7 @@ extern Ipp32u g_PUOffset[8];
 #define MAX_TR_DYNAMIC_RANGE  15 // Maximum transform dynamic range (excluding sign bit)
 
 // Inverse QP scale lookup table
-extern Ipp16u g_invQuantScales[6];            // IQ(QP%6)
+extern const Ipp16u g_invQuantScales[6];            // IQ(QP%6)
 
 // Luma to chroma QP scale lookup table. HEVC spec 8.6.1
 extern const Ipp8u g_ChromaScale[58];
@@ -62,18 +62,18 @@ static T H265_FORCEINLINE ClipC(T Value, int c_bitDepth = 8)
 }
 
 // Lookup table for converting number log2(number)-2
-extern Ipp8s g_ConvertToBit[MAX_CU_SIZE + 1];   // from width to log2(width)-2
+extern const Ipp8s g_ConvertToBit[MAX_CU_SIZE + 1];   // from width to log2(width)-2
 
 // Scaling list initialization scan lookup table
 extern const Ipp16u g_sigLastScanCG32x32[64];
 // Scaling list initialization scan lookup table
 extern const Ipp16u ScanTableDiag4x4[16];
 // Default scaling list 8x8 for intra prediction
-extern Ipp32s g_quantIntraDefault8x8[64];
+extern const Ipp32s g_quantIntraDefault8x8[64];
 // Default scaling list 8x8 for inter prediction
-extern Ipp32s g_quantInterDefault8x8[64];
+extern const Ipp32s g_quantInterDefault8x8[64];
 // Default scaling list 4x4
-extern Ipp32s g_quantTSDefault4x4[16];
+extern const Ipp32s g_quantTSDefault4x4[16];
 
 // Scaling list table sizes
 static const Ipp32u g_scalingListSize [4] = {16, 64, 256, 1024};
@@ -94,7 +94,7 @@ const Ipp32u SubWidthC[4]  = { 1, 2, 2, 1 };
 const Ipp32u SubHeightC[4] = { 1, 2, 1, 1 };
 
 // Bit masks for fast extraction of bits from bitstream
-const Ipp32u bits_data[] =
+const Ipp32u bits_data[33] =
 {
     (((Ipp32u)0x01 << (0)) - 1),
     (((Ipp32u)0x01 << (1)) - 1),

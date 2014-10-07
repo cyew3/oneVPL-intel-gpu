@@ -371,10 +371,6 @@ bool AccessUnit::IsFullAU() const
     return m_isFullAU;
 }
 
-void AccessUnit::CompleteLayer()
-{
-}
-
 bool AccessUnit::AddSlice(H264Slice * slice)
 {
     if (!slice)

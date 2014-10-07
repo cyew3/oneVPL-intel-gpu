@@ -36,7 +36,7 @@
 namespace UMC_HEVC_DECODER
 {
 
-Ipp32u levelIndexArray[] = {
+const Ipp32u levelIndexArray[] = {
     H265_LEVEL_1,
     H265_LEVEL_2,
     H265_LEVEL_21,
@@ -1882,11 +1882,6 @@ H265Slice *TaskSupplier_H265::DecodeSliceHeader(UMC::MediaDataEx *nalUnit)
         return 0;
     }
 
-    if (pSlice->GetSliceHeader()->nuh_temporal_id == 0)
-    {
-        //m_prevPOC = pSlice->GetSliceHeader()->slice_pic_order_cnt_lsb;
-    }
-
     if (m_WaitForIDR)
     {
         if (pSlice->GetSliceHeader()->slice_type != I_SLICE)
@@ -1899,9 +1894,15 @@ H265Slice *TaskSupplier_H265::DecodeSliceHeader(UMC::MediaDataEx *nalUnit)
 
     H265SliceHeader * sliceHdr = pSlice->GetSliceHeader();
     Ipp32u currOffset = sliceHdr->m_HeaderBitstreamOffset;
-    for (Ipp32s tile = 0; tile < pSlice->getTileLocationCount(); tile++)
+    Ipp32u currOffsetWithEmul = currOffset;
+
+    size_t headersEmuls = 0;
+    for (; headersEmuls < removed_offsets.size(); headersEmuls++)
     {
-        pSlice->m_tileByteLocation[tile] = pSlice->m_tileByteLocation[tile] + currOffset;
+        if (removed_offsets[headersEmuls] < currOffsetWithEmul)
+            currOffsetWithEmul++;
+        else
+            break;
     }
 
     // Update entry points
@@ -1910,17 +1911,17 @@ H265Slice *TaskSupplier_H265::DecodeSliceHeader(UMC::MediaDataEx *nalUnit)
     {
         Ipp32u removed_bytes = 0;
         std::vector<Ipp32u>::iterator it = removed_offsets.begin();
-        Ipp32u offset = *it;
+        Ipp32u emul_offset = *it;
 
         for (Ipp32s tile = 0; tile < (Ipp32s)pSlice->getTileLocationCount(); tile++)
         {
-            while (pSlice->m_tileByteLocation[tile] > offset && removed_bytes < offsets)
+            while ((pSlice->m_tileByteLocation[tile] + currOffsetWithEmul >= emul_offset) && removed_bytes < offsets)
             {
                 removed_bytes++;
                 if (removed_bytes < offsets)
                 {
                     it++;
-                    offset = *it;
+                    emul_offset = *it;
                 }
                 else
                     break;
@@ -1936,6 +1937,11 @@ H265Slice *TaskSupplier_H265::DecodeSliceHeader(UMC::MediaDataEx *nalUnit)
             else
                 pSlice->m_tileByteLocation[tile] = pSlice->m_tileByteLocation[tile] - removed_bytes;
         }
+    }
+
+    for (Ipp32s tile = 0; tile < pSlice->getTileLocationCount(); tile++)
+    {
+        pSlice->m_tileByteLocation[tile] = pSlice->m_tileByteLocation[tile] + currOffset;
     }
 
     m_WaitForIDR = false;

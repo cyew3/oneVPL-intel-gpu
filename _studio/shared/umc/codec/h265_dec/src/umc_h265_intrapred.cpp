@@ -98,6 +98,13 @@ namespace UMC_HEVC_DECODER
         }
     }
 
+    extern const Ipp32s FilteredModes[5] = {10, 7, 1, 0, 10};
+    static const Ipp8u h265_log2table[] =
+    {
+        2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4,
+        5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 6
+    };
+
     // Reconstruct intra luma block
     void H265SegmentDecoder::IntraRecLumaBlk(
         Ipp32u TrDepth,
@@ -107,13 +114,6 @@ namespace UMC_HEVC_DECODER
         Ipp32u width = m_cu->GetWidth(AbsPartIdx) >> TrDepth;
 
         Ipp8u PredPel[(4*64+1) * 2];
-
-        const Ipp32s FilteredModes[] = {10, 7, 1, 0, 10};
-        const Ipp8u h265_log2table[] =
-        {
-            2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4,
-            5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 6
-        };
 
         // Get prediction from neighbours
         m_reconstructor->GetPredPelsLuma(m_pCurrentFrame->GetLumaAddr(m_cu->CUAddr, AbsPartIdx),

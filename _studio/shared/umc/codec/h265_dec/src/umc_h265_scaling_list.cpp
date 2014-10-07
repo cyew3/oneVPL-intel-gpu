@@ -132,9 +132,9 @@ void H265ScalingList::processScalingListDec(Ipp32s *coeff, Ipp16s *dequantcoeff,
 }
 
 // Returns default scaling matrix for specified parameters
-int* H265ScalingList::getScalingListDefaultAddress(unsigned sizeId, unsigned listId)
+const int* H265ScalingList::getScalingListDefaultAddress(unsigned sizeId, unsigned listId)
 {
-    int *src = 0;
+    const int *src = 0;
     switch(sizeId)
     {
     case SCALING_LIST_4x4:

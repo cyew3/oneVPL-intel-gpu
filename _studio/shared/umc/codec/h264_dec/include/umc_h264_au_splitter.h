@@ -126,8 +126,6 @@ public:
 
     bool IsFullAU() const;
 
-    void CompleteLayer();
-
     bool m_isInitialized;
 
     SeiPayloadArray  m_payloads;

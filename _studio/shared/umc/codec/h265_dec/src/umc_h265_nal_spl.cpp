@@ -25,7 +25,7 @@ enum
 // Change memory region to little endian for reading with 32-bit DWORDs and remove start code emulation prevention byteps
 void SwapMemoryAndRemovePreventingBytes_H265(void *pDestination, size_t &nDstSize, void *pSource, size_t nSrcSize, std::vector<Ipp32u> *pRemovedOffsets);
 
-static Ipp8u start_code_prefix[] = {0, 0, 0, 1};
+static const Ipp8u start_code_prefix[] = {0, 0, 0, 1};
 
 // Search bitstream for start code
 static Ipp32s FindStartCode(const Ipp8u *pb, size_t &nSize)
@@ -135,7 +135,7 @@ public:
     // Set destination bitstream pointer and size to NAL unit
     Ipp32s GetNALUnitInternal(UMC::MediaData * pSource, UMC::MediaData * pDst)
     {
-        static Ipp8u start_code_prefix[] = {0, 0, 1};
+        static const Ipp8u start_code_prefix[] = {0, 0, 1};
 
         if (m_code == -1)
             m_prev.clear();

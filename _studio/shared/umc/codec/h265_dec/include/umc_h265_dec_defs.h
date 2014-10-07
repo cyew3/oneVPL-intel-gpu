@@ -449,7 +449,7 @@ private:
     // Calculated coefficients used for dequantization in one scaling list matrix
     __inline void processScalingListDec(Ipp32s *coeff, Ipp16s *dequantcoeff, Ipp32s invQuantScales, Ipp32u height, Ipp32u width, Ipp32u ratio, Ipp32u sizuNum, Ipp32u dc);
     // Returns default scaling matrix for specified parameters
-    static int *getScalingListDefaultAddress(unsigned sizeId, unsigned listId);
+    static const int *getScalingListDefaultAddress(unsigned sizeId, unsigned listId);
 
     int      m_scalingListDC               [SCALING_LIST_SIZE_NUM][SCALING_LIST_NUM];
     unsigned m_refMatrixId                 [SCALING_LIST_SIZE_NUM][SCALING_LIST_NUM];
