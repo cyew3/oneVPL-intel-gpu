@@ -129,6 +129,27 @@ mfxStatus CCameraPipeline::InitMfxParams(sInputParams *pParams)
         m_ExtBuffers.push_back((mfxExtBuffer *)&m_GammaCorrection);
     }
 
+    if (pParams->bBlackLevel)
+    {
+        sts = AllocAndInitCamBlackLevelCorrection(pParams);
+        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+        m_ExtBuffers.push_back((mfxExtBuffer *)&m_BlackLevelCorrection);
+    }
+
+    if (pParams->bWhiteBalance)
+    {
+        sts = AllocAndInitCamWhiteBalance(pParams);
+        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+        m_ExtBuffers.push_back((mfxExtBuffer *)&m_WhiteBalance);
+    }
+
+    if (pParams->bCCM)
+    {
+        sts = AllocAndInitCamCCM(pParams);
+        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+        m_ExtBuffers.push_back((mfxExtBuffer *)&m_CCM);
+    }
+
     m_PipeControl.Header.BufferId = MFX_EXTBUF_CAM_PIPECONTROL;
     m_PipeControl.Header.BufferSz = sizeof(m_PipeControl);
     m_PipeControl.RawFormat = (mfxU16)pParams->bayerType;
@@ -655,6 +676,18 @@ CCameraPipeline::CCameraPipeline()
     m_GammaCorrection.Header.BufferId = MFX_EXTBUF_CAM_GAMMA_CORRECTION;
     m_GammaCorrection.Header.BufferSz = sizeof(m_GammaCorrection);
 
+    MSDK_ZERO_MEMORY(m_BlackLevelCorrection);
+    m_BlackLevelCorrection.Header.BufferId = MFX_EXTBUF_CAM_BLACK_LEVEL_CORRECTION;
+    m_BlackLevelCorrection.Header.BufferSz = sizeof(m_BlackLevelCorrection);
+
+    MSDK_ZERO_MEMORY(m_WhiteBalance);
+    m_WhiteBalance.Header.BufferId = MFX_EXTBUF_CAM_WHITE_BALANCE;
+    m_WhiteBalance.Header.BufferSz = sizeof(m_WhiteBalance);
+
+    MSDK_ZERO_MEMORY(m_CCM);
+    m_CCM.Header.BufferId = MFX_EXTBUF_CAM_COLOR_CORRECTION_3X3;
+    m_CCM.Header.BufferSz = sizeof(m_CCM);
+
 }
 
 CCameraPipeline::~CCameraPipeline()
@@ -882,6 +915,36 @@ void CCameraPipeline::DeleteExtBuffers()
     for (std::vector<mfxExtBuffer *>::iterator it = m_ExtBuffers.begin(); it != m_ExtBuffers.end(); ++it)
         delete *it;
     m_ExtBuffers.clear();
+}
+
+mfxStatus CCameraPipeline::AllocAndInitCamBlackLevelCorrection(sInputParams *pParams)
+{
+    m_BlackLevelCorrection.B  = pParams->black_level_B;
+    m_BlackLevelCorrection.G0 = pParams->black_level_G0;
+    m_BlackLevelCorrection.G1 = pParams->black_level_G1;
+    m_BlackLevelCorrection.R  = pParams->black_level_R;
+
+    return MFX_ERR_NONE;
+}
+
+mfxStatus CCameraPipeline::AllocAndInitCamWhiteBalance(sInputParams *pParams)
+{
+    m_WhiteBalance.Mode = MFX_CAM_WHITE_BALANCE_MANUAL;
+    m_WhiteBalance.B    = pParams->white_balance_B;
+    m_WhiteBalance.G0   = pParams->white_balance_G0;
+    m_WhiteBalance.G1   = pParams->white_balance_G1;
+    m_WhiteBalance.R    = pParams->white_balance_R;
+
+    return MFX_ERR_NONE;
+}
+
+mfxStatus CCameraPipeline::AllocAndInitCamCCM(sInputParams *pParams)
+{
+    for (int i = 0; i < 3; i++)
+        for (int j = 0; j < 3; j++)
+           m_CCM.CCM[i][j] = pParams->CCM[i][j];
+
+    return MFX_ERR_NONE;
 }
 
 mfxStatus CCameraPipeline::AllocAndInitCamGammaCorrection(sInputParams *pParams)

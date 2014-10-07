@@ -67,6 +67,18 @@ template<>struct mfx_ext_buffer_id<mfxExtCamGammaCorrection>{
     enum {id = MFX_EXTBUF_CAM_GAMMA_CORRECTION};
 };
 
+template<>struct mfx_ext_buffer_id<mfxExtCamBlackLevelCorrection>{
+    enum {id = MFX_EXTBUF_CAM_BLACK_LEVEL_CORRECTION};
+};
+
+template<>struct mfx_ext_buffer_id<mfxExtCamWhiteBalance>{
+    enum {id = MFX_EXTBUF_CAM_WHITE_BALANCE};
+};
+
+template<>struct mfx_ext_buffer_id<mfxExtCamColorCorrection3x3>{
+    enum {id = MFX_EXTBUF_CAM_COLOR_CORRECTION_3X3};
+};
+
 // we introduce new macros without error message (returned status only)
 // it allows to remove final error message due to EOF
 #define IOSTREAM_CHECK_NOT_EQUAL(P, X, ERR)          {if ((X) != (P)) {return ERR;}}
@@ -138,6 +150,21 @@ struct sInputParams
     mfxF64 gamma_value;
     mfxU16 gamma_mode;
 
+    bool   bBlackLevel;
+    mfxU16 black_level_B;
+    mfxU16 black_level_G0;
+    mfxU16 black_level_G1;
+    mfxU16 black_level_R;
+
+    bool   bWhiteBalance;
+    mfxF64 white_balance_B;
+    mfxF64 white_balance_G0;
+    mfxF64 white_balance_G1;
+    mfxF64 white_balance_R;
+
+    bool   bCCM;
+    mfxF64 CCM[3][3];
+
     mfxU32 nFramesToProceed;
 
     msdk_char  strSrcFile[MSDK_MAX_FILENAME_LEN];
@@ -166,6 +193,9 @@ struct sInputParams
         memTypeOut = UNDEFINED_MEMORY;
         bitDepth = 10;
         bGamma = true;
+        bBlackLevel   = false;
+        bWhiteBalance = false;
+        bCCM          = false;
         alphaValue = -1;
         resetInterval = 7;
     }

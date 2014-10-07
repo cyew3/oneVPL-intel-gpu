@@ -76,7 +76,10 @@ protected:
     std::auto_ptr<MFXPlugin> m_pCamera_plugin;
     mfxPluginUID        m_UID_Camera;
 
-    mfxExtCamGammaCorrection m_GammaCorrection;
+    mfxExtCamGammaCorrection      m_GammaCorrection;
+    mfxExtCamBlackLevelCorrection m_BlackLevelCorrection;
+    mfxExtCamWhiteBalance         m_WhiteBalance;
+    mfxExtCamColorCorrection3x3   m_CCM;
     mfxExtCamPipeControl     m_PipeControl;
     mfxExtCamPadding         m_Padding;
 
@@ -132,6 +135,9 @@ protected:
     virtual void AttachExtParam();
 
     virtual mfxStatus AllocAndInitCamGammaCorrection(sInputParams *pParams);
+    virtual mfxStatus AllocAndInitCamWhiteBalance(sInputParams *pParams);
+    virtual mfxStatus AllocAndInitCamCCM(sInputParams *pParams);
+    virtual mfxStatus AllocAndInitCamBlackLevelCorrection(sInputParams *pParams);
     virtual void FreeCamGammaCorrection();
 
     virtual mfxStatus CreateAllocator();

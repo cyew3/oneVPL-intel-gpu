@@ -26,6 +26,9 @@ void PrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("   [-of format] / [-outFormat format]                  - output format: of argb16 or 16 meaning 16 bit ARGB, 8 bit ARGB otherwise\n"));
     msdk_printf(MSDK_STRING("   [-ng] / [-noGamma]                                  - no gamma correction\n"));
     msdk_printf(MSDK_STRING("   [-bdn] / [-bayerDenoise]                            - bayer denoise on\n"));
+    msdk_printf(MSDK_STRING("   [-bbl B G0 G1 R] / [-bayerBlackLevel B G0 G1 R]     - bayer black level correction\n"));
+    msdk_printf(MSDK_STRING("   [-bwb B G0 G1 R] / [-bayerWhiteBalance B G0 G1 R]   - bayer white balance\n"));
+    msdk_printf(MSDK_STRING("   [-ccm n00 n10 ... n33 ]                             - color correction 3x3 matrix\n"));
     msdk_printf(MSDK_STRING("   [-w width] / [-width width]                         - input width, default 4096\n"));
     msdk_printf(MSDK_STRING("   [-h height] / [-height height]                      - input height, default 2160\n"));
     msdk_printf(MSDK_STRING("   [-n numFrames] / [-numFramesToProcess numFrames]    - number of frames to process\n"));
@@ -151,6 +154,44 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-bdn")) || 0 == msdk_strcmp(strInput[i], MSDK_STRING("-bayerDenoise")))
         {
             pParams->bBayerDenoise = true;
+        }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-bbl")) || 0 == msdk_strcmp(strInput[i], MSDK_STRING("-bayerBlackLevel")))
+        {
+            if(i + 4 >= nArgNum)
+            {
+                PrintHelp(strInput[0], MSDK_STRING("Not enough parameters for -bbl key"));
+                return MFX_ERR_UNSUPPORTED;
+            }
+            pParams->bBlackLevel = true;
+            msdk_opt_read(strInput[++i], pParams->black_level_B);
+            msdk_opt_read(strInput[++i], pParams->black_level_G0);
+            msdk_opt_read(strInput[++i], pParams->black_level_G1);
+            msdk_opt_read(strInput[++i], pParams->black_level_R);
+        }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-bwb")) || 0 == msdk_strcmp(strInput[i], MSDK_STRING("-bayerWhiteBalance")))
+        {
+            if(i + 4 >= nArgNum)
+            {
+                PrintHelp(strInput[0], MSDK_STRING("Not enough parameters for -bwb key"));
+                return MFX_ERR_UNSUPPORTED;
+            }
+            pParams->bWhiteBalance = true;
+            msdk_opt_read(strInput[++i], pParams->white_balance_B);
+            msdk_opt_read(strInput[++i], pParams->white_balance_G0);
+            msdk_opt_read(strInput[++i], pParams->white_balance_G1);
+            msdk_opt_read(strInput[++i], pParams->white_balance_R);
+        }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-ccm")))
+        {
+            if(i + 9 >= nArgNum)
+            {
+                PrintHelp(strInput[0], MSDK_STRING("Not enough parameters for -ccm key."));
+                return MFX_ERR_UNSUPPORTED;
+            }
+            pParams->bCCM = true;
+            for(int k = 0; k < 3; k++)
+                for (int z = 0; z < 3; z++)
+                    msdk_opt_read(strInput[++i], pParams->CCM[k][z]);
         }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-pd")) || 0 == msdk_strcmp(strInput[i], MSDK_STRING("-padding")))
         {
