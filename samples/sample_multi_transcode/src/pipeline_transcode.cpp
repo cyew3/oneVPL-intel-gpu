@@ -1290,8 +1290,9 @@ MFX_IOPATTERN_IN_VIDEO_MEMORY : MFX_IOPATTERN_IN_SYSTEM_MEMORY);
     }
 
     // configure and attach external parameters
-    if (pInParams->nMaxSliceSize)
+    if (pInParams->bLABRC)
     {
+        m_CodingOption2.LookAheadDepth = pInParams->nLADepth;
         m_CodingOption2.MaxSliceSize = pInParams->nMaxSliceSize;
         m_EncExtParams.push_back((mfxExtBuffer *)&m_CodingOption2);
     }
