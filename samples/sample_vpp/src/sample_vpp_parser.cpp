@@ -107,8 +107,8 @@ void vppPrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("                                  dsth=<height of input video located in the output (def: height)>\n\n"));
     msdk_printf(MSDK_STRING("                                  stream=<video file name>\n"));
     msdk_printf(MSDK_STRING("                                  width=<input video width>\n"));
-    msdk_printf(MSDK_STRING("                                  AlphaEnable=1\n"));
-    msdk_printf(MSDK_STRING("                                  Alpha=<Alpha value>\n"));
+    msdk_printf(MSDK_STRING("                                  GlobalAlphaEnable=1\n"));
+    msdk_printf(MSDK_STRING("                                  GlobalAlpha=<Alpha value>\n"));
     msdk_printf(MSDK_STRING("                                  LumaKeyEnable=1\n"));
     msdk_printf(MSDK_STRING("                                  LumaKeyMin=<Luma key min value>\n"));
     msdk_printf(MSDK_STRING("                                  LumaKeyMax=<Luma key max value>\n"));
@@ -137,8 +137,8 @@ void vppPrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("                                  dsty=100\n"));
     msdk_printf(MSDK_STRING("                                  dstw=320\n"));
     msdk_printf(MSDK_STRING("                                  dsth=240\n"));
-    msdk_printf(MSDK_STRING("                                  AlphaEnable=1\n"));
-    msdk_printf(MSDK_STRING("                                  Alpha=128\n"));
+    msdk_printf(MSDK_STRING("                                  GlobalAlphaEnable=1\n"));
+    msdk_printf(MSDK_STRING("                                  GlobalAlpha=128\n"));
     msdk_printf(MSDK_STRING("                                  LumaKeyEnable=1\n"));
     msdk_printf(MSDK_STRING("                                  LumaKeyMin=250\n"));
     msdk_printf(MSDK_STRING("                                  LumaKeyMax=255\n"));
@@ -301,7 +301,7 @@ mfxStatus ParseCompositionParfile(const msdk_char* parFileName, sInputParams* pP
         {
             pParams->compositionParam.streamInfo[nStreamInd].compStream.DstH = (mfxU16) atoi(value.c_str());
         }
-        else if (key.compare("AlphaEnable") == 0)
+        else if (key.compare("GlobalAlphaEnable") == 0)
         {
             pParams->compositionParam.streamInfo[nStreamInd].compStream.GlobalAlphaEnable = (mfxU16) atoi(value.c_str());
         }
