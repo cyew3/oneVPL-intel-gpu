@@ -23,11 +23,6 @@
 class Watermark;
 #endif
 
-#if defined(MFX_VA)
-#include "mfx_h265_enc_cm.h"
-class CmContext;
-#endif
-
 namespace H265Enc {
 
 enum ParallelRegion
@@ -178,21 +173,17 @@ struct H265VideoParam {
     Ipp8u *m_slice_ids;
     costStat *m_costStat; // npshosta: find more appropriate place for this
     H265Slice m_dqpSlice[2*MAX_DQP+1]; // npshosta: find more appropriate place for this
-#if defined(MFX_VA)
-    CmContext *m_cmCtx;
-#endif
 };
 
 
 class H265BRC;
+#if defined(MFX_VA)
+class FeiContext;
+#endif
 
 class H265Encoder {
 
 public:
-
-#if defined(MFX_VA)
-    CmContext *m_cmCtx;
-#endif
 
     MFXVideoENCODEH265 *mfx_video_encode_h265_ptr;
 
@@ -256,6 +247,10 @@ public:
 
 #if defined(MFX_ENABLE_H265_PAQ)
     TVideoPreanalyzer m_preEnc;
+#endif
+
+#if defined(MFX_VA)
+    FeiContext *m_FeiCtx;
 #endif
 
     const vm_char *m_recon_dump_file_name;

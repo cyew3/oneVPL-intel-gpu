@@ -700,6 +700,9 @@
     <ProjectReference Include="..\encode\h265_enc_hw.vcxproj">
       <Project>{33a9b0ed-16b6-4890-a370-ca8a6781dcc6}</Project>
     </ProjectReference>
+    <ProjectReference Include="..\fei\h265\h265_fei.vcxproj">
+      <Project>{34adec07-ff4a-4cd0-b526-12be7e40d321}</Project>
+    </ProjectReference>
     <ProjectReference Include="..\genx\h265_encode\genx_h265_encode_embeded.vcxproj">
       <Project>{821c734c-1927-4c6f-80f7-37088a80d9e4}</Project>
     </ProjectReference>

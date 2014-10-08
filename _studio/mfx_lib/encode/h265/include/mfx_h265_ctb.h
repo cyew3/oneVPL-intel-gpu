@@ -19,12 +19,11 @@
 #include "mfx_h265_tables.h"
 #include "mfx_h265_paq.h"
 
-using namespace MFX_HEVC_PP;
-
 #if defined(MFX_VA)
-///#include "mfx_h265_enc_cm.h"
-class CmContext;
+#include "mfx_h265_fei.h";
 #endif
+
+using namespace MFX_HEVC_PP;
 
 namespace H265Enc {
 
@@ -37,7 +36,7 @@ namespace H265Enc {
 #define AMT_INT_ME_CONVERGE
 #define AMT_INT_ME_TRANSITION
 
-#define MEMOIZE_SUBPEL
+///#define MEMOIZE_SUBPEL
 #ifdef MEMOIZE_SUBPEL
 #define MEMOIZE_SUBPEL_EXT_W (8+8)
 #define MEMOIZE_SUBPEL_EXT_H (8+2)
@@ -324,7 +323,7 @@ public:
     const Ipp8u *m_logMvCostTable;
     costStat *m_costStat;
 #if defined(MFX_VA)
-    CmContext *m_cmCtx;
+    mfxFEIH265Output *feiOut;
 #endif
 
     SaoEncodeFilter m_saoEncodeFilter;
@@ -741,7 +740,7 @@ public:
 
     void InitCu(H265VideoParam *_par, H265CUData *_data, H265CUData *_dataTemp, Ipp32s cuAddr,
                 PixType *_y, PixType *_uv, Ipp32s _pitch_luma, Ipp32s _pitch_chroma, H265Frame *currFrame, H265BsFake *_bsf,
-                H265Slice *cslice, Ipp32s initializeDataFlag, const Ipp8u *logMvCostTable);
+                H265Slice *cslice, Ipp32s initializeDataFlag, const Ipp8u *logMvCostTable, void *feiH265Out);
 
 #if defined(AMT_ICRA_OPT)
     //void CalcRsCs(void);

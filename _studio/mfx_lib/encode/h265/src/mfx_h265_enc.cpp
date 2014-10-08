@@ -22,11 +22,13 @@
 
 #include "mfx_h265_paq.h"
 
+#if defined (MFX_VA)
+#include "mfx_h265_enc_fei.h"
+#endif // MFX_VA
+
 #ifdef MFX_ENABLE_WATERMARK
 #include "watermark.h"
 #endif
-
-#include "mfx_h265_enc_cm_defs.h"
 
 namespace H265Enc {
 
@@ -1117,10 +1119,9 @@ mfxStatus H265Encoder::Init(const mfxVideoParam *param, const mfxExtCodingOption
 
 #if defined (MFX_VA)
     if (m_videoParam.enableCmFlag) {
-        Ipp8u nRef = m_videoParam.csps->sps_max_dec_pic_buffering[0] + 1;
-        m_cmCtx = new CmContext(param->mfx.FrameInfo.Width, param->mfx.FrameInfo.Height, nRef, core);
-        MFX_CHECK_STS(sts);
-        m_videoParam.m_cmCtx = m_cmCtx;
+        m_FeiCtx = new FeiContext(&m_videoParam, core);
+    } else {
+        m_FeiCtx = NULL;
     }
 #endif // MFX_VA
 
@@ -1143,10 +1144,14 @@ void H265Encoder::Close() {
 
 #if defined (MFX_VA)
     if (m_videoParam.enableCmFlag) {
+/*
 #if defined(_WIN32) || defined(_WIN64)
         PrintTimes();
 #endif // #if defined(_WIN32) || defined(_WIN64)
-        delete m_cmCtx;
+        //delete m_cmCtx;
+*/
+        if (m_FeiCtx)
+            delete m_FeiCtx;
     }
 #endif // MFX_VA
 
@@ -1747,10 +1752,16 @@ mfxStatus H265Encoder::EncodeThread(Ipp32s ithread) {
             if (ctb_addr == 0) printf("Start POC %d\n",m_pCurrentFrame->m_poc);
             printf("CTB %d\n",ctb_addr);
 #endif
+
+            void *feiOutPtr = NULL;
+#if defined (MFX_VA)
+            if (m_videoParam.enableCmFlag)
+                feiOutPtr = m_FeiCtx->feiH265Out;
+#endif // MFX_VA
             cu[ithread].InitCu(pars, m_pReconstructFrame->cu_data + (ctb_addr << pars->Log2NumPartInCU),
                 data_temp + ithread * data_temp_size, ctb_addr, (PixType*)m_pReconstructFrame->y,
                 (PixType*)m_pReconstructFrame->uv, m_pReconstructFrame->pitch_luma_pix,  m_pReconstructFrame->pitch_chroma_pix, m_pCurrentFrame,
-                &m_bsf[ctb_row], m_slices + curr_slice, 1, m_logMvCostTable);
+                &m_bsf[ctb_row], m_slices + curr_slice, 1, m_logMvCostTable, feiOutPtr);
 
             if(m_videoParam.UseDQP && m_videoParam.preEncMode) {
                 int deltaQP = -(m_videoParam.m_sliceQpY - m_videoParam.m_lcuQps[ctb_addr]);
@@ -1932,10 +1943,15 @@ mfxStatus H265Encoder::EncodeThreadByRow(Ipp32s ithread) {
             if (ctb_addr == 6 && m_pCurrentFrame->m_poc == 1)
                 printf("");
 #endif
+            void *feiOutPtr = NULL;
+#if defined (MFX_VA)
+            if (m_videoParam.enableCmFlag)
+                feiOutPtr = m_FeiCtx->feiH265Out;
+#endif // MFX_VA
             cu[ithread].InitCu(pars, m_pReconstructFrame->cu_data + (ctb_addr << pars->Log2NumPartInCU),
                 data_temp + ithread * data_temp_size, ctb_addr, (PixType*)m_pReconstructFrame->y,
                 (PixType*)m_pReconstructFrame->uv, m_pReconstructFrame->pitch_luma_pix,  m_pReconstructFrame->pitch_chroma_pix, m_pCurrentFrame,
-                &m_bsf[ithread], m_slices + curr_slice, 1, m_logMvCostTable);
+                &m_bsf[ithread], m_slices + curr_slice, 1, m_logMvCostTable, feiOutPtr);
 
             // lambda_Ctb = F(QP_Ctb)
             if(m_videoParam.UseDQP && m_videoParam.preEncMode) {
@@ -2319,9 +2335,18 @@ recode:
 
 #if defined (MFX_VA)
     if (m_videoParam.enableCmFlag && brcRecode == 0) {
+        /* finish current frame, wait for it to finish */
+//        m_FeiCtx->ProcessFrameFEI(&m_feiH265In[feiInIdx], m_pCurrentFrame, m_slices, &m_feiFrame[feiInIdx], task->m_dpb, task->m_dpbSize, &m_syncp[feiInIdx], 1);
+        m_FeiCtx->ProcessFrameFEI(m_FeiCtx->feiInIdx, m_pCurrentFrame, m_slices, task->m_dpb, task->m_dpbSize, 1);
+/*
+        H265FEI_SyncOperation(m_feiH265, m_syncp[feiInIdx], -1);
+        ResetFEIFrame(&m_feiFrame[feiInIdx]);
+*/
+/*
         m_cmCtx->cmCurIdx ^= 1;
         m_cmCtx->cmNextIdx ^= 1;
         m_cmCtx->RunVmeCurr(m_videoParam, m_pCurrentFrame, m_slices, task->m_dpb, task->m_dpbSize);
+*/
     }
 #endif // MFX_VA
 
@@ -2335,7 +2360,16 @@ recode:
 
 #if defined (MFX_VA)
     if (m_videoParam.enableCmFlag && brcRecode == 0) {
+        if (m_pNextFrame) {
+            /* start processing next frame */
+///            m_FeiCtx->ProcessFrameFEI(&m_feiH265In[1 - feiInIdx], m_pNextFrame, m_slicesNext, &m_feiFrame[1 - feiInIdx], task->m_dpb, task->m_dpbSize, &m_syncp[1 - feiInIdx], 0);
+            m_FeiCtx->ProcessFrameFEI(1 - m_FeiCtx->feiInIdx, m_pNextFrame, m_slicesNext, task->m_dpb, task->m_dpbSize, 0);
+            /* done with input struct, flip double buffers for next call (next becomes curr) */
+            m_FeiCtx->feiInIdx = 1 - m_FeiCtx->feiInIdx;
+        }
+/*
         m_cmCtx->RunVmeNext(m_videoParam, m_pNextFrame, m_slicesNext);
+*/
     }
 #endif // MFX_VA
 

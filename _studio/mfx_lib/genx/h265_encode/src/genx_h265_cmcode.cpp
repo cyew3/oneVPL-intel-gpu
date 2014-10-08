@@ -1863,6 +1863,7 @@ void SetUpVmeIntra(matrix_ref<uchar, 3, 32> uniIn, matrix_ref<uchar, 4, 32> sicI
     INIT_VME_UNIINPUT(uniIn);
     INIT_VME_SICINPUT(sicIn);
     
+    uniIn.row(1).format<uint1>().select<1,1>(29) = 0; // availability flags (MbIntraStruct)
     // copy dwords from CURBE data into universal VME header
     // register M0
     // M0.0 Reference 0 Delta
@@ -1890,11 +1891,9 @@ void SetUpVmeIntra(matrix_ref<uchar, 3, 32> uniIn, matrix_ref<uchar, 4, 32> sicI
     VME_COPY_DWORD(uniIn, 1, 7, curbeData, 7);
     VME_CLEAR_UNIInput_IntraCornerSwap(uniIn);
 
-    uniIn.row(1).format<uint1>().select<1,1>(29) = 0;
-
     if (mbX)
     {
-        uniIn.row(1).format<uint1>().select<1,1>(29) |= 0x60; // left mb is available
+        uniIn.row(1).format<uint1>().select<1,1>(29) |= 0x60; // left mb is available (bit5=bit6)
         matrix<uint1, 16, 4> temp;
         read_plane(SURF_SRC, GENX_SURFACE_Y_PLANE, x - 4, y, temp);
         leftBlockValues = temp.select<16, 1, 1, 1> (0, 3);
@@ -2051,10 +2050,10 @@ void MeP16_Intra(SurfaceIndex SURF_CURBE_DATA, SurfaceIndex SURF_SRC_AND_REF,
 
 extern "C" _GENX_MAIN_ 
 void MeP16(SurfaceIndex SURF_CONTROL, SurfaceIndex SURF_SRC_AND_REF, SurfaceIndex SURF_MV_PRED, SurfaceIndex SURF_DIST16x16,
-           SurfaceIndex SURF_DIST16x8, SurfaceIndex SURF_DIST8x16, SurfaceIndex SURF_DIST8x8,
-           SurfaceIndex SURF_DIST8x4, SurfaceIndex SURF_DIST4x8, SurfaceIndex SURF_MV16x16,
-           SurfaceIndex SURF_MV16x8, SurfaceIndex SURF_MV8x16, SurfaceIndex SURF_MV8x8,
-           SurfaceIndex SURF_MV8x4, SurfaceIndex SURF_MV4x8)
+           /*SurfaceIndex SURF_DIST16x8, SurfaceIndex SURF_DIST8x16, */SurfaceIndex SURF_DIST8x8,
+           /*SurfaceIndex SURF_DIST8x4, SurfaceIndex SURF_DIST4x8, */SurfaceIndex SURF_MV16x16,
+           /*SurfaceIndex SURF_MV16x8, SurfaceIndex SURF_MV8x16, */SurfaceIndex SURF_MV8x8/*,
+           SurfaceIndex SURF_MV8x4, SurfaceIndex SURF_MV4x8*/)
 {
     uint mbX = get_thread_origin_x();
     uint mbY = get_thread_origin_y();

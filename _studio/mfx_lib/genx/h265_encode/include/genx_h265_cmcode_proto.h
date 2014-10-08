@@ -15,15 +15,16 @@ void DownSampleMB4t(SurfaceIndex, SurfaceIndex, SurfaceIndex, SurfaceIndex, Surf
 void Ime(SurfaceIndex, SurfaceIndex, SurfaceIndex);
 void ImeWithPred(SurfaceIndex, SurfaceIndex, SurfaceIndex, SurfaceIndex);
 void MeP32(SurfaceIndex, SurfaceIndex, SurfaceIndex, SurfaceIndex, SurfaceIndex, SurfaceIndex);
-void MeP16_Intra(SurfaceIndex, SurfaceIndex, SurfaceIndex , SurfaceIndex);
+void MeP16_Intra(SurfaceIndex, SurfaceIndex, SurfaceIndex, SurfaceIndex);
 void MeP16(SurfaceIndex, SurfaceIndex, SurfaceIndex, SurfaceIndex, SurfaceIndex, SurfaceIndex,
-           SurfaceIndex, SurfaceIndex, SurfaceIndex, SurfaceIndex);
+           SurfaceIndex/*, SurfaceIndex, SurfaceIndex, SurfaceIndex*/);
 void RefineMeP32x32(SurfaceIndex, SurfaceIndex, SurfaceIndex, SurfaceIndex);
 void RefineMeP32x16(SurfaceIndex, SurfaceIndex, SurfaceIndex, SurfaceIndex);
 void RefineMeP16x32(SurfaceIndex, SurfaceIndex, SurfaceIndex, SurfaceIndex);
 void AnalyzeGradient(SurfaceIndex, SurfaceIndex, SurfaceIndex, unsigned int);
 void AnalyzeGradient2(SurfaceIndex, SurfaceIndex, SurfaceIndex, unsigned int);
 void AnalyzeGradient3(SurfaceIndex, SurfaceIndex, SurfaceIndex, unsigned int);
+void AnalyzeGradient32x32Best(SurfaceIndex, SurfaceIndex, SurfaceIndex, SurfaceIndex, SurfaceIndex, unsigned int);
 void InterpolateFrame(SurfaceIndex, SurfaceIndex, SurfaceIndex, SurfaceIndex);
 void Me1xAndInterpolateFrame(SurfaceIndex, SurfaceIndex, SurfaceIndex, SurfaceIndex, SurfaceIndex,
                              SurfaceIndex, SurfaceIndex, SurfaceIndex, SurfaceIndex, SurfaceIndex,
