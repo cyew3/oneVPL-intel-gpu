@@ -85,8 +85,12 @@ void vm_time_sleep(Ipp32u msec)
 
 Ipp32u vm_time_get_current_time(void)
 {
-    return (Ipp32u) timeGetTime();
-
+#if defined(WIN_TRESHOLD_MOBILE)
+    // uses GetTickCount on THM less accurate but no dependecy to winmm.dll
+    return (Ipp32u) GetTickCount();
+#else
+    return (Ipp32u)timeGetTime();
+#endif
 } /* Ipp32u vm_time_get_current_time(void) */
 
 /* obtain the clock tick of an uninterrupted master clock */

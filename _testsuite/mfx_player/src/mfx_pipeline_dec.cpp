@@ -416,7 +416,7 @@ mfxStatus MFXDecPipeline::BuildPipeline()
     PipelineBuildTime(platformStr, year, month, day, hh, mm, ss);
     PrintInfo(VM_STRING("Build"), VM_STRING("%s - %d.%d.%d %-2d:%-2d:%-2d"), platformStr, day, month, year, hh,mm,ss);
 
-#if defined(_WIN32) || defined(_WIN64)
+#if ( defined(_WIN32) || defined(_WIN64) ) && !defined(WIN_TRESHOLD_MOBILE)
     //this is the point with min memory allocated by pipeline
     PROCESS_MEMORY_COUNTERS_EX pmcx = {};
     pmcx.cb = sizeof(pmcx);
@@ -432,7 +432,7 @@ mfxStatus MFXDecPipeline::BuildPipeline()
 
     PrintInfo(VM_STRING("Memory AvailPhys"), VM_STRING("%.2f M"),
         (Ipp64f)(memEx.ullAvailPhys)/ (1024 * 1024));
-#endif // #if defined(_WIN32) || defined(_WIN64)
+#endif // #if ( defined(_WIN32) || defined(_WIN64) ) && !defined(WIN_TRESHOLD_MOBILE)
 #if defined(LINUX32) || defined(LINUX64)
     int mem_used = -1;
     char mem_buffer[128];
@@ -1680,7 +1680,7 @@ mfxStatus MFXDecPipeline::CreateRender()
         m_pRender = new MFXFileWriteRender(renderParams, m_components[eREN].m_pSession, &sts);
         break;
     case MFX_BMP_RENDER: m_pRender = new MFXBMPRender(m_components[eREN].m_pSession, &sts); break;
-#if defined(_WIN32) || defined(_WIN64)
+#if !defined(WIN_TRESHOLD_MOBILE) && ( defined(_WIN32) || defined(_WIN64) )
     case MFX_SCREEN_RENDER:
         {
             ScreenRender::InitParams iParams(m_components[eREN].GetAdapter(), VideoWindow::InitParams(m_inParams.bFullscreen, m_inParams.OverlayText, m_inParams.OverlayTextSize));
@@ -2612,7 +2612,7 @@ mfxStatus MFXDecPipeline::Play()
     m_statTimer.Start();
 
     //cpuusage measurement start
-#if defined(_WIN32) || defined(_WIN64)
+#if defined(_WIN32) || defined(_WIN64) 
     FILETIME notUsedVar;
 
     GetProcessTimes( GetCurrentProcess()
@@ -2622,9 +2622,13 @@ mfxStatus MFXDecPipeline::Play()
         , (LPFILETIME)&m_UserTime );
   #define PIPELINE_START   10
   #define PIPELINE_STOP    11
+
+    #ifndef WIN_TRESHOLD_MOBILE
     DWORD  GLBENCH_MESSAGE;
     GLBENCH_MESSAGE = RegisterWindowMessage(_T("GLBenchMessage"));
     if (GLBENCH_MESSAGE) SendNotifyMessage(HWND_BROADCAST, GLBENCH_MESSAGE, 0, PIPELINE_START);
+    #endif
+
 #else
     struct rusage usage;
     getrusage(RUSAGE_SELF,&usage);
@@ -2768,10 +2772,12 @@ mfxStatus MFXDecPipeline::Play()
 
     if (MFX_ERR_NONE == exit_sts)
         notifyPlay.Complete();
-#if defined(_WIN32) || defined(_WIN64)
-    if (GLBENCH_MESSAGE) SendNotifyMessage(HWND_BROADCAST, GLBENCH_MESSAGE, 0, PIPELINE_STOP);
-#endif
 
+#ifndef WIN_TRESHOLD_MOBILE
+    #if defined(_WIN32) || defined(_WIN64)
+    if (GLBENCH_MESSAGE) SendNotifyMessage(HWND_BROADCAST, GLBENCH_MESSAGE, 0, PIPELINE_STOP);
+    #endif
+#endif
     return exit_sts;
 }
 
@@ -4817,7 +4823,7 @@ mfxStatus MFXDecPipeline::ProcessTrickCommands()
         //executing command -> flags manipulations
         MFX_CHECK_STS(m_commands.front()->Execute());
 
-#if defined(_WIN32) || defined(_WIN64)
+#if ( defined(_WIN32) || defined(_WIN64) ) && !defined(WIN_TRESHOLD_MOBILE)
         //printing of current memory usage
         PROCESS_MEMORY_COUNTERS_EX pmcx = {};
         pmcx.cb = sizeof(pmcx);
@@ -4826,7 +4832,7 @@ mfxStatus MFXDecPipeline::ProcessTrickCommands()
 
         PrintInfo(VM_STRING("Memory Private"), VM_STRING("%.2f M"),
             (Ipp64f)(pmcx.PrivateUsage) / (1024 * 1024));
-#endif // #if defined(_WIN32) || defined(_WIN64)
+#endif // ( defined(_WIN32) || defined(_WIN64) ) && !defined(WIN_TRESHOLD_MOBILE)
         //reseting pipeline time
         m_fLastTime  = 0.0;
         m_fFirstTime = -1.0;

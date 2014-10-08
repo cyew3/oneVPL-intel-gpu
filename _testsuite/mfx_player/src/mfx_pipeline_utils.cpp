@@ -886,7 +886,7 @@ mfxU32 GetMinPlaneSize(mfxFrameInfo & info)
 
 void GetLoadedModulesList(std::list<tstring>&refModulesList)
 {
-#if defined(_WIN32) || defined(_WIN64)
+#if ( defined(_WIN32) || defined(_WIN64) ) && !defined(WIN_TRESHOLD_MOBILE)
     HANDLE   hCurrent = GetCurrentProcess();
     HMODULE *pModules;
     DWORD    cbNeeded;
@@ -917,7 +917,7 @@ void GetLoadedModulesList(std::list<tstring>&refModulesList)
     }
 
     delete []pModules;
-#endif // #if defined(_WIN32) || defined(_WIN64)
+#endif // #if ( defined(_WIN32) || defined(_WIN64) ) && !defined(WIN_TRESHOLD_MOBILE)
 }
 
 mfxU64           GetProcessMemoryLimit()
@@ -935,7 +935,10 @@ mfxU64           GetProcessMemoryLimit()
 #ifndef _WIN64
 
     BOOL isWow64 = FALSE;
+    #ifndef WIN_TRESHOLD_MOBILE
+    // win threshold mobile - temporary use only 3Gb
     IsWow64Process(GetCurrentProcess(), &isWow64);
+    #endif 
 
     if (TRUE == isWow64)
     {

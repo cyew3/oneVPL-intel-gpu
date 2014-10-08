@@ -116,7 +116,7 @@ void vm_debug_message(const vm_char *format,...)
     va_start(args, format);
     vm_string_vsprintf(line, format, args);
     va_end(args);
-#if defined(_WIN32) || defined(_WIN64) || defined(_WIN32_WCE)
+#if ( defined(_WIN32) || defined(_WIN64) || defined(_WIN32_WCE) ) && !defined(WIN_TRESHOLD_MOBILE)
     MessageBox(GetActiveWindow(), line, VM_STRING("MESSAGE"), MB_OK);
 #elif defined(LINUX32)
     fprintf(stderr, line);
