@@ -3,9 +3,23 @@
   <ImportGroup Label="PropertySheets" />
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
-    <OutDir>$(SolutionDir)..\..\build\win_$(PlatformName)\bin\</OutDir>
+    <OutDir>$(SolutionDir)..\..\..\build\win_$(PlatformName)\bin\</OutDir>
     <IntDir>$(OutDir)..\objs\$(Configuration)\$(ProjectName)\</IntDir>
   </PropertyGroup>
+  <PropertyGroup Condition=" ('$(Configuration)'=='Release_THM' or '$(Configuration)'=='Debug_THM' ) and '$(Platform)'=='Win32'">
+    <OutDir>$(SolutionDir)..\..\..\build\win_thm32\bin\</OutDir>
+    <IntDir>$(OutDir)..\objs\$(Configuration)\$(ProjectName)\</IntDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="( '$(Configuration)'=='Release_THM' or '$(Configuration)'=='Debug_THM' ) and '$(Platform)'=='x64'">
+    <OutDir>$(SolutionDir)..\..\..\build\win_thm64\bin\</OutDir>
+    <IntDir>$(OutDir)..\objs\$(Configuration)\$(ProjectName)\</IntDir>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)'=='Release_THM' or '$(Configuration)'=='Debug_THM'">
+    <Link>
+      <AdditionalDependencies>mincore.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <IgnoreSpecificDefaultLibraries>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;odbc32.lib;odbccp32.lib;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
+    </Link>
+  </ItemDefinitionGroup>  
   <ItemDefinitionGroup />
   <ItemGroup />
 </Project>

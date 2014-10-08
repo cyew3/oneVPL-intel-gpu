@@ -1,6 +1,10 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ImportGroup Label="PropertySheets" />
   <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)'=='Release_THM' or '$(Configuration)'=='Debug_THM'">
+    <PlatformToolset>v120</PlatformToolset>
+  </PropertyGroup>
   <PropertyGroup>
     <WindowsSdk8Path Condition="Exists('$(MINIDDK_ROOT)')">$(MINIDDK_ROOT)</WindowsSdk8Path>
     <WindowsSdk8Path Condition="!Exists('$(MINIDDK_ROOT)')">$(registry:HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Microsoft SDKs\Windows\v8.1@InstallationFolder)</WindowsSdk8Path>
@@ -23,7 +27,22 @@
       <WarningLevel>Level4</WarningLevel>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>bcrypt.lib; winmm.lib; psapi.lib; ippcoremt.lib; ippccmt.lib; ippcpmt.lib; ippdcmt.lib; ippmsdkmt.lib; ippimt.lib; ippsmt.lib; ippsrmt.lib; ippvcmt.lib; ippjmt.lib; ippcvmt.lib; %(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>bcrypt.lib; ippcoremt.lib; ippccmt.lib; ippcpmt.lib; ippdcmt.lib; ippmsdkmt.lib; ippimt.lib; ippsmt.lib; ippsrmt.lib; ippvcmt.lib; ippjmt.lib; ippcvmt.lib; %(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)'!='Release_THM' and '$(Configuration)'!='Debug_THM'">
+    <Link>
+      <AdditionalDependencies>winmm.lib; psapi.lib; %(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)'=='Release_THM' or '$(Configuration)'=='Debug_THM'">
+    <ClCompile>
+      <PreprocessorDefinitions>WIN_TRESHOLD_MOBILE;_ATL_NO_WIN_SUPPORT;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <Link>
+      <AdditionalDependencies>mincore.lib;%(AdditionalDependencies)</AdditionalDependencies>
+	  <IgnoreSpecificDefaultLibraries>winmm.lib; psapi.lib;;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
+    </Link>
+  </ItemDefinitionGroup>
+  <!-- end of threshold specific settings -->
 </Project>

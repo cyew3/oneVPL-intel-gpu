@@ -4,7 +4,13 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
     <IntDir>$(OutDir)..\objs\$(Configuration)\$(ProjectName)\</IntDir>
-    <OutDir>$(SolutionDir)..\..\build\win_$(PlatformName)\lib\</OutDir>
+    <OutDir>$(SolutionDir)..\..\..\build\win_$(PlatformName)\lib\</OutDir>
+  </PropertyGroup>
+  <PropertyGroup Condition=" ('$(Configuration)'=='Release_THM' or '$(Configuration)'=='Debug_THM' ) and '$(Platform)'=='Win32'">
+    <OutDir>$(SolutionDir)..\..\..\build\win_thm32\lib\</OutDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="( '$(Configuration)'=='Release_THM' or '$(Configuration)'=='Debug_THM' ) and '$(Platform)'=='x64'">
+    <OutDir>$(SolutionDir)..\..\..\win_thm64\lib\</OutDir>
   </PropertyGroup>
   <ItemDefinitionGroup />
   <ItemGroup />
