@@ -71,6 +71,11 @@ mfxStatus MFXVideoVPPPlugin::SetAuxParam(void* auxParam, int auxParamSize)
     return MFX_ERR_NONE;
 }
 
+mfxStatus MFXVideoVPPPlugin::SetFrameAllocator(mfxFrameAllocator *allocator)
+{
+    MSDK_CHECK_POINTER(allocator, MFX_ERR_NULL_PTR);
+    m_FrameAllocator = *allocator;
+}
 
 MFXVideoVPPPlugin::~MFXVideoVPPPlugin(void)
 {

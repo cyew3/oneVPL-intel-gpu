@@ -276,6 +276,12 @@ mfxStatus CTranscodingPipeline::VPPPreInit(sInputParams *pParams)
             sts = pVPPPlugin->SetAuxParam(&m_RotateParam, sizeof(m_RotateParam));
             MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
+            if(!m_bUseOpaqueMemory)
+            {
+                sts = pVPPPlugin->SetFrameAllocator(m_pMFXAllocator);
+                MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+            }
+
             m_pmfxVPP.reset(pVPPPlugin.release());
         }
 
@@ -679,10 +685,7 @@ mfxStatus CTranscodingPipeline::Decode()
 
         if (m_pmfxPreENC.get())
         {
-            //printf("PreEnc %x, %x\n",VppExtSurface.pSurface, VppExtSurface.pCtrl);
             sts = PreEncOneFrame(&VppExtSurface, &PreEncExtSurface);
-            //printf("PreEnc- end %x, %x, %d\n",PreEncExtSurface.pSurface, PreEncExtSurface.pCtrl,sts);
-
         }
         else // no VPP - just copy pointers
         {
@@ -1516,7 +1519,7 @@ mfxStatus CTranscodingPipeline::InitPluginMfxParams(sInputParams *pInParams)
     MSDK_CHECK_POINTER(pInParams,  MFX_ERR_NULL_PTR);
 
     mfxU16 parentPattern = m_bIsVpp ? m_mfxVppParams.IOPattern : m_mfxDecParams.IOPattern;
-    mfxU16 InPatternFromParent = (mfxU16)((MFX_IOPATTERN_OUT_VIDEO_MEMORY == parentPattern) ?
+    mfxU16 InPatternFromParent = (mfxU16)((MFX_IOPATTERN_OUT_VIDEO_MEMORY && parentPattern) ?
 MFX_IOPATTERN_IN_VIDEO_MEMORY : MFX_IOPATTERN_IN_SYSTEM_MEMORY);
 
     // set memory pattern

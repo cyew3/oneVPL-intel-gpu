@@ -39,6 +39,7 @@ public:
 
     virtual mfxStatus LoadDLL(msdk_char *dll_path);
     virtual mfxStatus SetAuxParam(void* auxParam, int auxParamSize);
+    virtual mfxStatus SetFrameAllocator(mfxFrameAllocator *allocator);
 
     // par1 != null enables first VPP (before Plugin), par2 != null enables second VPP (after Plugin); pipeline Plugin-VPP is not unsupported
     // QueryIOSurf must be called prior to Init to create topology
