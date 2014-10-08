@@ -24,6 +24,7 @@
 //#define __EXCEPTION_HANDLER_
 //#define ENABLE_TRACE
 //#define TIME_COUNTER
+//#define ENABLE_STAT
 
 namespace UMC_HEVC_DECODER
 {
@@ -158,6 +159,32 @@ public:
 extern ExceptionHandlerInitializer exceptionHandler;
 
 #endif // __EXCEPTION_HANDLER_
+
+#ifdef ENABLE_STAT
+
+class H265DecoderFrame;
+class H265CodingUnit;
+struct H265SeqParamSet;
+
+class CUSStat
+{
+public:
+    CUSStat();
+    ~CUSStat();
+
+    void CalculateStat(H265DecoderFrame * frame);
+    void CalculateCU(H265CodingUnit* cu);
+
+    static CUSStat* GetCUStat();
+private:
+    void CalculateCURecur(H265CodingUnit* cu, Ipp32u absPartIdx, Ipp32u depth);
+    const H265SeqParamSet* m_sps;
+    Ipp32s bwForFrame;
+
+    float bwForFrameAccum;
+    Ipp32s numFrames;
+};
+#endif
 
 } // namespace UMC_HEVC_DECODER
 

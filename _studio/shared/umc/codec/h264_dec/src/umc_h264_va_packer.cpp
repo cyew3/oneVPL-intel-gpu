@@ -1623,8 +1623,59 @@ Ipp32s PackerDXVA2::PackSliceParams(H264Slice *pSlice, Ipp32s sliceNum, Ipp32s c
         if (sliceParams->wBadSliceChopping < 2)
         {
             MFX_INTERNAL_CPY(pDXVA_BitStreamBuffer, start_code_prefix, sizeof(start_code_prefix));
-            if (NalUnitSize - sizeof(start_code_prefix) > 0)
-                MFX_INTERNAL_CPY(pDXVA_BitStreamBuffer + sizeof(start_code_prefix), pNalUnit, NalUnitSize - sizeof(start_code_prefix));
+            /*if (!m_va->IsLongSliceControl() && pSlice->GetPicParam()->redundant_pic_cnt_present_flag && (NalUnitSize - sizeof(start_code_prefix) > 0))
+            {
+                size_t first_bit = pSliceHeader->hw_wa_redundant_elimination_bits[0];
+                size_t end_bit = pSliceHeader->hw_wa_redundant_elimination_bits[1];
+
+                size_t first_byte = first_bit/8;
+                size_t end_byte = end_bit/8;
+
+                // copy first part:
+                pDXVA_BitStreamBuffer += sizeof(start_code_prefix);
+                NalUnitSize -= sizeof(start_code_prefix);
+                MFX_INTERNAL_CPY(pDXVA_BitStreamBuffer, pNalUnit, first_byte);
+
+                pDXVA_BitStreamBuffer += first_byte;
+                pNalUnit += first_byte;
+                NalUnitSize -= first_byte;
+
+                // copy header size
+                first_bit = first_bit % 8;
+                end_bit = end_bit % 8;
+                Ipp32u a = first_bit;
+                pDXVA_BitStreamBuffer[0] = (pNalUnit[0] & ((1 << a) - 1));
+
+                pNalUnit += end_byte - first_byte;
+                NalUnitSize -= end_byte - first_byte;
+
+                (pNalUnit[0] >> end_bit);
+                pDXVA_BitStreamBuffer[0] |= (pNalUnit[0] >> end_bit) << a;
+                pNalUnit++;
+                NalUnitSize--;
+
+                Ipp32u shift_bit_count = 8 - (8 - end_bit) - first_bit;
+                VM_ASSERT(8 - (8 - end_bit) - first_bit >= 0);
+
+                for (;NalUnitSize > 0;)
+                {
+                    pDXVA_BitStreamBuffer[0] = (pDXVA_BitStreamBuffer[0] << shift_bit_count) || (pNalUnit[0] && ((1 << shift_bit_count) - 1));
+                    pDXVA_BitStreamBuffer[1] = (pNalUnit[0] >> shift_bit_count);
+                    pDXVA_BitStreamBuffer++;
+                    pNalUnit++;
+                    NalUnitSize--;
+                }
+
+                if (m_picParams->entropy_coding_mode_flag) // align slice header
+                {
+
+                }
+            }
+            else*/
+            {
+                if (NalUnitSize - sizeof(start_code_prefix) > 0)
+                    MFX_INTERNAL_CPY(pDXVA_BitStreamBuffer + sizeof(start_code_prefix), pNalUnit, NalUnitSize - sizeof(start_code_prefix));
+            }
         }
         else
         {
