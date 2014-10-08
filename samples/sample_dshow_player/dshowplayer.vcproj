@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="8.00"
+	Version="8,00"
 	Name="sample_dshow"
 	ProjectGUID="{9D7A67A0-5BC7-4CE8-A338-0A10268C00CF}"
 	RootNamespace="DShowPlayer"
@@ -65,6 +65,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
+				AdditionalOptions="/DYNAMICBASE /NXCOMPAT"
 				AdditionalDependencies="comctl32.lib strmiids.lib Dmoguids.lib wmvcore.lib"
 				OutputFile="$(OutDir)\$(ProjectName).exe"
 				LinkIncremental="1"
@@ -146,6 +147,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
+				AdditionalOptions="/DYNAMICBASE /NXCOMPAT"
 				AdditionalDependencies="comctl32.lib strmiids.lib Dmoguids.lib wmvcore.lib"
 				OutputFile="$(OutDir)\$(ProjectName).exe"
 				LinkIncremental="1"
@@ -224,6 +226,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
+				AdditionalOptions="/DYNAMICBASE /NXCOMPAT"
 				AdditionalDependencies="comctl32.lib strmiids.lib Dmoguids.lib wmvcore.lib"
 				OutputFile="$(OutDir)\$(ProjectName).exe"
 				LinkIncremental="1"
@@ -304,6 +307,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
+				AdditionalOptions="/DYNAMICBASE /NXCOMPAT"
 				AdditionalDependencies="comctl32.lib strmiids.lib Dmoguids.lib wmvcore.lib"
 				OutputFile="$(OutDir)\$(ProjectName).exe"
 				LinkIncremental="1"

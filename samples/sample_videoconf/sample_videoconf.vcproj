@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="windows-1251"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="8.00"
+	Version="8,00"
 	Name="sample_videoconf"
 	ProjectGUID="{A6E3D645-0F58-45F4-BDC3-CA457C87D7BC}"
 	RootNamespace="video_enc_con"
@@ -67,6 +67,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
+				AdditionalOptions="/DYNAMICBASE /NXCOMPAT"
 				AdditionalDependencies="libmfx_d.lib dxva2.lib d3d9.lib"
 				OutputFile="$(OutDir)\$(ProjectName).exe"
 				LinkIncremental="2"
@@ -151,6 +152,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
+				AdditionalOptions="/DYNAMICBASE /NXCOMPAT"
 				AdditionalDependencies="libmfx_d.lib dxva2.lib d3d9.lib"
 				OutputFile="$(OutDir)\$(ProjectName).exe"
 				LinkIncremental="2"
@@ -233,6 +235,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
+				AdditionalOptions="/DYNAMICBASE /NXCOMPAT"
 				AdditionalDependencies="libmfx.lib dxva2.lib d3d9.lib"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="$(INTELMEDIASDKROOT)\lib\$(PlatformName)"
@@ -318,6 +321,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
+				AdditionalOptions="/DYNAMICBASE /NXCOMPAT"
 				AdditionalDependencies="libmfx.lib dxva2.lib d3d9.lib"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="$(INTELMEDIASDKROOT)\lib\$(PlatformName)"

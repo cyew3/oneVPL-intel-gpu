@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="windows-1251"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="8.00"
+	Version="8,00"
 	Name="vpp_plugin"
 	ProjectGUID="{D6D9A3B9-5DC0-4025-B27A-751F91AA462D}"
 	RootNamespace="vpp_plugin"
@@ -67,6 +67,7 @@
 			/>
 			<Tool
 				Name="VCLibrarianTool"
+				AdditionalOptions="/DYNAMICBASE /NXCOMPAT"
 				OutputFile="$(OutDir)\lib\$(ProjectName).lib"
 				SuppressStartupBanner="true"
 			/>
@@ -136,6 +137,7 @@
 			/>
 			<Tool
 				Name="VCLibrarianTool"
+				AdditionalOptions="/DYNAMICBASE /NXCOMPAT"
 				OutputFile="$(OutDir)\lib\$(ProjectName).lib"
 			/>
 			<Tool
@@ -202,6 +204,7 @@
 			/>
 			<Tool
 				Name="VCLibrarianTool"
+				AdditionalOptions="/DYNAMICBASE /NXCOMPAT"
 				OutputFile="$(OutDir)\lib\$(ProjectName).lib"
 			/>
 			<Tool
@@ -268,6 +271,7 @@
 			/>
 			<Tool
 				Name="VCLibrarianTool"
+				AdditionalOptions="/DYNAMICBASE /NXCOMPAT"
 				OutputFile="$(OutDir)\lib\$(ProjectName).lib"
 			/>
 			<Tool

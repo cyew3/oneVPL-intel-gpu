@@ -74,6 +74,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				RegisterOutput="true"
+				AdditionalOptions="/DYNAMICBASE /NXCOMPAT"
 				AdditionalDependencies="libmfx_d.lib odbc32.lib odbccp32.lib winmm.lib  dxva2.lib d3d9.lib "
 				OutputFile="$(OutDir)\$(ProjectName).dll"
 				LinkIncremental="1"
@@ -172,6 +173,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
+				AdditionalOptions="/DYNAMICBASE /NXCOMPAT"
 				AdditionalDependencies="odbc32.lib odbccp32.lib winmm.lib libmfx_d.lib  Dxva2.lib d3d9.lib"
 				OutputFile="$(OutDir)\$(ProjectName).dll"
 				LinkIncremental="1"
@@ -264,6 +266,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				RegisterOutput="true"
+				AdditionalOptions="/DYNAMICBASE /NXCOMPAT"
 				AdditionalDependencies="libmfx.lib odbc32.lib odbccp32.lib winmm.lib Dxva2.lib d3d9.lib"
 				OutputFile="$(OutDir)\$(ProjectName).dll"
 				LinkIncremental="1"
@@ -352,6 +355,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
+				AdditionalOptions="/DYNAMICBASE /NXCOMPAT"
 				AdditionalDependencies="odbc32.lib odbccp32.lib winmm.lib libmfx.lib  Dxva2.lib d3d9.lib"
 				OutputFile="$(OutDir)\$(ProjectName).dll"
 				LinkIncremental="1"
@@ -439,6 +443,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				RegisterOutput="false"
+				AdditionalOptions="/DYNAMICBASE /NXCOMPAT"
 				AdditionalDependencies="uafxcw.lib libmfx.lib odbc32.lib odbccp32.lib winmm.lib Dxva2.lib d3d9.lib"
 				OutputFile="$(OutDir)\$(ProjectName).dll"
 				LinkIncremental="1"
@@ -527,6 +532,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
+				AdditionalOptions="/DYNAMICBASE /NXCOMPAT"
 				AdditionalDependencies="uafxcw.lib odbc32.lib odbccp32.lib winmm.lib libmfx.lib  Dxva2.lib d3d9.lib"
 				OutputFile="$(OutDir)\$(ProjectName).dll"
 				LinkIncremental="1"
@@ -569,19 +575,19 @@
 	<References>
 		<ProjectReference
 			ReferencedProjectIdentifier="{6FE0711F-BF6D-4CD3-B4BC-415BB6FBE197}"
-			RelativePathToProject=".\sample_dshow_plugins\common\common.vcproj"
+			RelativePathToProject=".\common\common.vcproj"
 		/>
 		<ProjectReference
 			ReferencedProjectIdentifier="{DB71B91D-16D8-4339-9621-D81798E46E8F}"
-			RelativePathToProject=".\sample_common\sample_common.vcproj"
+			RelativePathToProject="..\sample_common\sample_common.vcproj"
 		/>
 		<ProjectReference
 			ReferencedProjectIdentifier="{6A5DF344-099A-4CEE-80AC-852D61A2FAE1}"
-			RelativePathToProject=".\sample_dshow_plugins\utils\utils.vcproj"
+			RelativePathToProject=".\utils\utils.vcproj"
 		/>
 		<ProjectReference
 			ReferencedProjectIdentifier="{48CEB4EE-EDFA-4628-84F6-868A62E668A5}"
-			RelativePathToProject=".\sample_dshow_plugins\video_enc_filter\video_enc_filter.vcproj"
+			RelativePathToProject=".\video_enc_filter\video_enc_filter.vcproj"
 		/>
 	</References>
 	<Files>

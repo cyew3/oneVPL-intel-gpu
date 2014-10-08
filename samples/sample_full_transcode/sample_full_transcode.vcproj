@@ -67,6 +67,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
+				AdditionalOptions="/DYNAMICBASE /NXCOMPAT"
 				AdditionalDependencies="libmfx_d.lib dxva2.lib d3d9.lib psapi.lib"
 				LinkIncremental="2"
 				AdditionalLibraryDirectories="$(INTELMEDIASDKROOT)\lib\$(PlatformName)"
@@ -146,6 +147,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
+				AdditionalOptions="/DYNAMICBASE /NXCOMPAT"
 				AdditionalDependencies="libmfx_d.lib dxva2.lib d3d9.lib psapi.lib"
 				LinkIncremental="2"
 				AdditionalLibraryDirectories="$(INTELMEDIASDKROOT)\lib\$(PlatformName)"
@@ -227,6 +229,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
+				AdditionalOptions="/DYNAMICBASE /NXCOMPAT"
 				AdditionalDependencies="libmfx.lib dxva2.lib d3d9.lib psapi.lib"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="$(INTELMEDIASDKROOT)\lib\$(PlatformName)"
@@ -307,6 +310,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
+				AdditionalOptions="/DYNAMICBASE /NXCOMPAT"
 				AdditionalDependencies="libmfx.lib dxva2.lib d3d9.lib psapi.lib"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="$(INTELMEDIASDKROOT)\lib\$(PlatformName)"

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="8.00"
+	Version="8,00"
 	Name="sample_common"
 	ProjectGUID="{DB71B91D-16D8-4339-9621-D81798E46E8F}"
 	RootNamespace="sample_common"
@@ -68,6 +68,7 @@
 			/>
 			<Tool
 				Name="VCLibrarianTool"
+				AdditionalOptions="/DYNAMICBASE /NXCOMPAT"
 				OutputFile="$(OutDir)\lib\$(ProjectName).lib"
 				AdditionalLibraryDirectories=""
 				SuppressStartupBanner="true"
@@ -139,6 +140,7 @@
 			/>
 			<Tool
 				Name="VCLibrarianTool"
+				AdditionalOptions="/DYNAMICBASE /NXCOMPAT"
 				OutputFile="$(OutDir)\lib\$(ProjectName).lib"
 			/>
 			<Tool
@@ -206,6 +208,7 @@
 			/>
 			<Tool
 				Name="VCLibrarianTool"
+				AdditionalOptions="/DYNAMICBASE /NXCOMPAT"
 				OutputFile="$(OutDir)\lib\$(ProjectName).lib"
 			/>
 			<Tool
@@ -273,6 +276,7 @@
 			/>
 			<Tool
 				Name="VCLibrarianTool"
+				AdditionalOptions="/DYNAMICBASE /NXCOMPAT"
 				OutputFile="$(OutDir)\lib\$(ProjectName).lib"
 			/>
 			<Tool
@@ -327,6 +331,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\include\general_allocator.h"
+				>
+			</File>
+			<File
 				RelativePath=".\include\hw_device.h"
 				>
 			</File>
@@ -364,10 +372,6 @@
 			</File>
 			<File
 				RelativePath=".\include\sysmem_allocator.h"
-				>
-			</File>
-			<File
-				RelativePath=".\include\general_allocator.h"
 				>
 			</File>
 			<File
@@ -429,6 +433,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\src\general_allocator.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\src\mfx_buffering.cpp"
 				>
 			</File>
@@ -442,10 +450,6 @@
 			</File>
 			<File
 				RelativePath=".\src\sysmem_allocator.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\src\general_allocator.cpp"
 				>
 			</File>
 			<File

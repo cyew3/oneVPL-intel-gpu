@@ -69,6 +69,7 @@
 				Name="VCLinkerTool"
 				RegisterOutput="true"
 				UseLibraryDependencyInputs="true"
+				AdditionalOptions="/DYNAMICBASE /NXCOMPAT"
 				AdditionalDependencies="odbc32.lib odbccp32.lib winmm.lib libmfx_d.lib  dxva2.lib d3d9.lib d3d11.lib dxgi.lib"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="$(INTELMEDIASDKROOT)\lib\$(PlatformName)\;"
@@ -154,6 +155,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				RegisterOutput="false"
+				AdditionalOptions="/DYNAMICBASE /NXCOMPAT"
 				AdditionalDependencies="odbc32.lib odbccp32.lib winmm.lib libmfx_d.lib  dxva2.lib d3d9.lib d3d11.lib dxgi.lib"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="$(INTELMEDIASDKROOT)\lib\$(PlatformName)\;"
@@ -237,6 +239,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				RegisterOutput="true"
+				AdditionalOptions="/DYNAMICBASE /NXCOMPAT"
 				AdditionalDependencies="odbc32.lib odbccp32.lib winmm.lib libmfx.lib  dxva2.lib d3d9.lib d3d11.lib dxgi.lib"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="$(INTELMEDIASDKROOT)\lib\$(PlatformName)\;"
@@ -322,6 +325,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				RegisterOutput="false"
+				AdditionalOptions="/DYNAMICBASE /NXCOMPAT"
 				AdditionalDependencies="odbc32.lib odbccp32.lib winmm.lib libmfx.lib  dxva2.lib d3d9.lib d3d11.lib dxgi.lib"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="$(INTELMEDIASDKROOT)\lib\$(PlatformName)\;"
@@ -406,6 +410,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				RegisterOutput="false"
+				AdditionalOptions="/DYNAMICBASE /NXCOMPAT"
 				AdditionalDependencies="uafxcw.lib odbc32.lib odbccp32.lib winmm.lib libmfx.lib  dxva2.lib d3d9.lib d3d11.lib dxgi.lib"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="$(INTELMEDIASDKROOT)\lib\$(PlatformName)\;"
@@ -491,6 +496,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				RegisterOutput="false"
+				AdditionalOptions="/DYNAMICBASE /NXCOMPAT"
 				AdditionalDependencies="uafxcw.lib  odbc32.lib odbccp32.lib winmm.lib libmfx.lib  dxva2.lib d3d9.lib d3d11.lib dxgi.lib"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="$(INTELMEDIASDKROOT)\lib\$(PlatformName)\;"
@@ -531,19 +537,19 @@
 	<References>
 		<ProjectReference
 			ReferencedProjectIdentifier="{6FE0711F-BF6D-4CD3-B4BC-415BB6FBE197}"
-			RelativePathToProject=".\sample_dshow_plugins\common\common.vcproj"
+			RelativePathToProject=".\common\common.vcproj"
 		/>
 		<ProjectReference
 			ReferencedProjectIdentifier="{DB71B91D-16D8-4339-9621-D81798E46E8F}"
-			RelativePathToProject=".\sample_common\sample_common.vcproj"
+			RelativePathToProject="..\sample_common\sample_common.vcproj"
 		/>
 		<ProjectReference
 			ReferencedProjectIdentifier="{6A5DF344-099A-4CEE-80AC-852D61A2FAE1}"
-			RelativePathToProject=".\sample_dshow_plugins\utils\utils.vcproj"
+			RelativePathToProject=".\utils\utils.vcproj"
 		/>
 		<ProjectReference
 			ReferencedProjectIdentifier="{A689DF23-BF16-4C61-9DF9-ABCD936AC302}"
-			RelativePathToProject=".\sample_dshow_plugins\video_dec_filter\video_dec_filter.vcproj"
+			RelativePathToProject=".\video_dec_filter\video_dec_filter.vcproj"
 		/>
 	</References>
 	<Files>

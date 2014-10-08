@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="windows-1251"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="8.00"
+	Version="8,00"
 	Name="mf_utils"
 	ProjectGUID="{0E1CCECA-B7EE-400E-A557-E3E89CB234C2}"
 	RootNamespace="mf_utils"
@@ -68,6 +68,7 @@
 			/>
 			<Tool
 				Name="VCLibrarianTool"
+				AdditionalOptions="/DYNAMICBASE /NXCOMPAT"
 				OutputFile="$(OutDir)\lib\$(ProjectName).lib"
 			/>
 			<Tool
@@ -137,6 +138,7 @@
 			/>
 			<Tool
 				Name="VCLibrarianTool"
+				AdditionalOptions="/DYNAMICBASE /NXCOMPAT"
 				OutputFile="$(OutDir)\lib\$(ProjectName).lib"
 			/>
 			<Tool
@@ -202,6 +204,7 @@
 			/>
 			<Tool
 				Name="VCLibrarianTool"
+				AdditionalOptions="/DYNAMICBASE /NXCOMPAT"
 				OutputFile="$(OutDir)\lib\$(ProjectName).lib"
 				AdditionalLibraryDirectories="$(INTELMEDIASDK_WINSDK_PATH)\Lib;$(INTELMEDIASDK_WINSDK_PATH)\Lib\win8\um\x86;"
 			/>
@@ -225,8 +228,8 @@
 			Name="Debug|x64"
 			OutputDirectory="..\..\_build\$(PlatformName)\$(ConfigurationName)"
 			IntermediateDirectory="$(OutDir)\obj\$(ProjectName)"
-			InheritedPropertySheets="..\..\sample_common\props\winsdk_x64.vsprops"
 			ConfigurationType="4"
+			InheritedPropertySheets="..\..\sample_common\props\winsdk_x64.vsprops"
 			CharacterSet="1"
 			>
 			<Tool
@@ -269,6 +272,7 @@
 			/>
 			<Tool
 				Name="VCLibrarianTool"
+				AdditionalOptions="/DYNAMICBASE /NXCOMPAT"
 				OutputFile="$(OutDir)\lib\$(ProjectName).lib"
 			/>
 			<Tool

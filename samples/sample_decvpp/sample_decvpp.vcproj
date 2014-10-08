@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="windows-1251"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="8.00"
+	Version="8,00"
 	Name="sample_decvpp"
 	ProjectGUID="{E51FCEF5-E27C-40F9-A0C1-B124E0CD7668}"
 	RootNamespace="video_enc_con"
@@ -67,6 +67,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
+				AdditionalOptions="/DYNAMICBASE /NXCOMPAT"
 				AdditionalDependencies="libmfx_d.lib dxva2.lib d3d9.lib dwmapi.lib igfx_s3dcontrol_d.lib comsuppw.lib d3d11.lib dxgi.lib"
 				OutputFile="$(OutDir)\$(ProjectName).exe"
 				LinkIncremental="2"
@@ -152,6 +153,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
+				AdditionalOptions="/DYNAMICBASE /NXCOMPAT"
 				AdditionalDependencies="libmfx_d.lib dxva2.lib d3d9.lib dwmapi.lib igfx_s3dcontrol_d.lib comsuppw.lib d3d11.lib dxgi.lib"
 				OutputFile="$(OutDir)\$(ProjectName).exe"
 				LinkIncremental="2"
@@ -235,6 +237,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
+				AdditionalOptions="/DYNAMICBASE /NXCOMPAT"
 				AdditionalDependencies="libmfx.lib dxva2.lib d3d9.lib dwmapi.lib igfx_s3dcontrol.lib comsuppw.lib d3d11.lib dxgi.lib"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="$(INTELMEDIASDKROOT)\lib\$(PlatformName);$(INTELMEDIASDKROOT)\igfx_s3dcontrol\lib\$(PlatformName);..\..\igfx_s3dcontrol\lib\$(PlatformName)"
@@ -321,6 +324,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
+				AdditionalOptions="/DYNAMICBASE /NXCOMPAT"
 				AdditionalDependencies="libmfx.lib dxva2.lib d3d9.lib dwmapi.lib igfx_s3dcontrol.lib comsuppw.lib d3d11.lib dxgi.lib"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="$(INTELMEDIASDKROOT)\lib\$(PlatformName);$(INTELMEDIASDKROOT)\igfx_s3dcontrol\lib\$(PlatformName);..\..\igfx_s3dcontrol\lib\$(PlatformName)"
@@ -368,11 +372,11 @@
 			UniqueIdentifier="{0C3D2DB3-1FD9-4abf-957B-FE4F10CBC096}"
 			>
 			<File
-				RelativePath=".\src\mfx_render_decvpp.cpp"
+				RelativePath=".\src\mfx_pipeline_decvpp.cpp"
 				>
 			</File>
 			<File
-				RelativePath=".\src\mfx_pipeline_decvpp.cpp"
+				RelativePath=".\src\mfx_render_decvpp.cpp"
 				>
 			</File>
 			<File
@@ -386,11 +390,11 @@
 			UniqueIdentifier="{B4218FF9-C9E7-4c9d-8311-8233455FF470}"
 			>
 			<File
-				RelativePath=".\include\mfx_render_decvpp.h"
+				RelativePath=".\include\mfx_pipeline_decvpp.h"
 				>
 			</File>
 			<File
-				RelativePath=".\include\mfx_pipeline_decvpp.h"
+				RelativePath=".\include\mfx_render_decvpp.h"
 				>
 			</File>
 		</Filter>

@@ -67,74 +67,9 @@
 			/>
 			<Tool
 				Name="VCLibrarianTool"
+				AdditionalOptions="/DYNAMICBASE /NXCOMPAT"
 				OutputFile="$(OutDir)\lib\$(ProjectName).lib"
 				SuppressStartupBanner="true"
-			/>
-			<Tool
-				Name="VCALinkTool"
-			/>
-			<Tool
-				Name="VCXDCMakeTool"
-			/>
-			<Tool
-				Name="VCBscMakeTool"
-			/>
-			<Tool
-				Name="VCFxCopTool"
-			/>
-			<Tool
-				Name="VCPostBuildEventTool"
-			/>
-		</Configuration>
-		<Configuration
-			Name="Release|Win32"
-			OutputDirectory="..\..\_build\$(PlatformName)\$(ConfigurationName)"
-			IntermediateDirectory="$(OutDir)\obj\$(ProjectName)"
-			ConfigurationType="4"
-			InheritedPropertySheets="..\props\platformsdk.vsprops;..\..\sample_common\props\winsdk_win32.vsprops;..\props\baseclasses_win32.vsprops"
-			UseOfMFC="0"
-			CharacterSet="1"
-			WholeProgramOptimization="1"
-			>
-			<Tool
-				Name="VCPreBuildEventTool"
-			/>
-			<Tool
-				Name="VCCustomBuildTool"
-			/>
-			<Tool
-				Name="VCXMLDataGeneratorTool"
-			/>
-			<Tool
-				Name="VCWebServiceProxyGeneratorTool"
-			/>
-			<Tool
-				Name="VCMIDLTool"
-			/>
-			<Tool
-				Name="VCCLCompilerTool"
-				AdditionalOptions="/O2"
-				AdditionalIncludeDirectories="$(INTELMEDIASDKROOT)\include;include;..\..\sample_common\include;..\..\sample_user_modules\plugin_api;..\..\sample_utilities\vpp_plugin\include;..\utils\include;;"
-				PreprocessorDefinitions="NOMINMAX;WIN32;NDEBUG;_LIB;STRSAFE_NO_DEPRECATE"
-				RuntimeLibrary="0"
-				UsePrecompiledHeader="0"
-				WarningLevel="3"
-				WarnAsError="true"
-				Detect64BitPortabilityProblems="false"
-				DebugInformationFormat="3"
-			/>
-			<Tool
-				Name="VCManagedResourceCompilerTool"
-			/>
-			<Tool
-				Name="VCResourceCompilerTool"
-			/>
-			<Tool
-				Name="VCPreLinkEventTool"
-			/>
-			<Tool
-				Name="VCLibrarianTool"
-				OutputFile="$(OutDir)\lib\$(ProjectName).lib"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -202,6 +137,74 @@
 			/>
 			<Tool
 				Name="VCLibrarianTool"
+				AdditionalOptions="/DYNAMICBASE /NXCOMPAT"
+				OutputFile="$(OutDir)\lib\$(ProjectName).lib"
+			/>
+			<Tool
+				Name="VCALinkTool"
+			/>
+			<Tool
+				Name="VCXDCMakeTool"
+			/>
+			<Tool
+				Name="VCBscMakeTool"
+			/>
+			<Tool
+				Name="VCFxCopTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+			/>
+		</Configuration>
+		<Configuration
+			Name="Release|Win32"
+			OutputDirectory="..\..\_build\$(PlatformName)\$(ConfigurationName)"
+			IntermediateDirectory="$(OutDir)\obj\$(ProjectName)"
+			ConfigurationType="4"
+			InheritedPropertySheets="..\props\platformsdk.vsprops;..\..\sample_common\props\winsdk_win32.vsprops;..\props\baseclasses_win32.vsprops"
+			UseOfMFC="0"
+			CharacterSet="1"
+			WholeProgramOptimization="1"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"
+			/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+			/>
+			<Tool
+				Name="VCCLCompilerTool"
+				AdditionalOptions="/O2"
+				AdditionalIncludeDirectories="$(INTELMEDIASDKROOT)\include;include;..\..\sample_common\include;..\..\sample_user_modules\plugin_api;..\..\sample_utilities\vpp_plugin\include;..\utils\include;;"
+				PreprocessorDefinitions="NOMINMAX;WIN32;NDEBUG;_LIB;STRSAFE_NO_DEPRECATE"
+				RuntimeLibrary="0"
+				UsePrecompiledHeader="0"
+				WarningLevel="3"
+				WarnAsError="true"
+				Detect64BitPortabilityProblems="false"
+				DebugInformationFormat="3"
+			/>
+			<Tool
+				Name="VCManagedResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCPreLinkEventTool"
+			/>
+			<Tool
+				Name="VCLibrarianTool"
+				AdditionalOptions="/DYNAMICBASE /NXCOMPAT"
 				OutputFile="$(OutDir)\lib\$(ProjectName).lib"
 			/>
 			<Tool
@@ -268,6 +271,7 @@
 			/>
 			<Tool
 				Name="VCLibrarianTool"
+				AdditionalOptions="/DYNAMICBASE /NXCOMPAT"
 				OutputFile="$(OutDir)\lib\$(ProjectName).lib"
 			/>
 			<Tool

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="windows-1251"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="8.00"
+	Version="8,00"
 	Name="mfx_mft_hevcvd"
 	ProjectGUID="{9EEAB07A-2A40-454C-9898-2FA63AEBF63E}"
 	RootNamespace="mfx_mft_hevcvd"
@@ -70,6 +70,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				RegisterOutput="true"
+				AdditionalOptions="/DYNAMICBASE /NXCOMPAT"
 				AdditionalDependencies="libmfx_d.lib mf.lib mfuuid.lib mfplat.lib Evr.lib Strmiids.lib D3D9.lib D3D11.lib Dxva2.lib Propsys.lib"
 				OutputFile="$(OutDir)\$(ProjectName)_32.dll"
 				LinkIncremental="1"
@@ -165,6 +166,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				RegisterOutput="true"
+				AdditionalOptions="/DYNAMICBASE /NXCOMPAT"
 				AdditionalDependencies="libmfx_d.lib mf.lib mfuuid.lib mfplat.lib Evr.lib Strmiids.lib D3D9.lib D3D11.lib Dxva2.lib Propsys.lib"
 				OutputFile="$(OutDir)\$(ProjectName)_64.dll"
 				LinkIncremental="1"
@@ -255,6 +257,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				RegisterOutput="false"
+				AdditionalOptions="/DYNAMICBASE /NXCOMPAT"
 				AdditionalDependencies="libmfx.lib mf.lib mfuuid.lib mfplat.lib Evr.lib Strmiids.lib D3D9.lib D3D11.lib Dxva2.lib Propsys.lib"
 				OutputFile="$(OutDir)\$(ProjectName)_32.dll"
 				LinkIncremental="1"
@@ -344,6 +347,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				RegisterOutput="true"
+				AdditionalOptions="/DYNAMICBASE /NXCOMPAT"
 				AdditionalDependencies="libmfx.lib mf.lib mfuuid.lib mfplat.lib Evr.lib Strmiids.lib D3D9.lib D3D11.lib Dxva2.lib Propsys.lib"
 				OutputFile="$(OutDir)\$(ProjectName)_64.dll"
 				LinkIncremental="1"
@@ -432,6 +436,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				RegisterOutput="false"
+				AdditionalOptions="/DYNAMICBASE /NXCOMPAT"
 				AdditionalDependencies="libmfx.lib mf.lib mfuuid.lib mfplat.lib Evr.lib Strmiids.lib D3D9.lib D3D11.lib Dxva2.lib Propsys.lib"
 				OutputFile="$(OutDir)\$(ProjectName)_32.dll"
 				LinkIncremental="1"
@@ -521,6 +526,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				RegisterOutput="false"
+				AdditionalOptions="/DYNAMICBASE /NXCOMPAT"
 				AdditionalDependencies="libmfx.lib mf.lib mfuuid.lib mfplat.lib Evr.lib Strmiids.lib D3D9.lib D3D11.lib Dxva2.lib Propsys.lib"
 				OutputFile="$(OutDir)\$(ProjectName)_64.dll"
 				LinkIncremental="1"

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="windows-1251"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="8.00"
+	Version="8,00"
 	Name="mf_buffers"
 	ProjectGUID="{B84B893F-5E3F-470B-B0AB-8A331A2AD408}"
 	RootNamespace="mf_buffers"
@@ -22,8 +22,8 @@
 			Name="Release|Win32"
 			OutputDirectory="..\..\_build\$(PlatformName)\$(ConfigurationName)"
 			IntermediateDirectory="$(OutDir)\obj\$(ProjectName)"
-			InheritedPropertySheets="..\..\sample_common\props\winsdk_win32.vsprops"
 			ConfigurationType="4"
+			InheritedPropertySheets="..\..\sample_common\props\winsdk_win32.vsprops"
 			UseOfMFC="1"
 			UseOfATL="1"
 			CharacterSet="1"
@@ -68,6 +68,7 @@
 			/>
 			<Tool
 				Name="VCLibrarianTool"
+				AdditionalOptions="/DYNAMICBASE /NXCOMPAT"
 				OutputFile="$(OutDir)\lib\$(ProjectName).lib"
 			/>
 			<Tool
@@ -90,8 +91,8 @@
 			Name="Release|x64"
 			OutputDirectory="..\..\_build\$(PlatformName)\$(ConfigurationName)"
 			IntermediateDirectory="$(OutDir)\obj\$(ProjectName)"
-			InheritedPropertySheets="..\..\sample_common\props\winsdk_x64.vsprops"
 			ConfigurationType="4"
+			InheritedPropertySheets="..\..\sample_common\props\winsdk_x64.vsprops"
 			UseOfMFC="1"
 			UseOfATL="1"
 			CharacterSet="1"
@@ -137,6 +138,7 @@
 			/>
 			<Tool
 				Name="VCLibrarianTool"
+				AdditionalOptions="/DYNAMICBASE /NXCOMPAT"
 				OutputFile="$(OutDir)\lib\$(ProjectName).lib"
 			/>
 			<Tool
@@ -159,8 +161,8 @@
 			Name="Debug|Win32"
 			OutputDirectory="..\..\_build\$(PlatformName)\$(ConfigurationName)"
 			IntermediateDirectory="$(OutDir)\obj\$(ProjectName)"
-			InheritedPropertySheets="..\..\sample_common\props\winsdk_win32.vsprops"
 			ConfigurationType="4"
+			InheritedPropertySheets="..\..\sample_common\props\winsdk_win32.vsprops"
 			CharacterSet="1"
 			>
 			<Tool
@@ -202,6 +204,7 @@
 			/>
 			<Tool
 				Name="VCLibrarianTool"
+				AdditionalOptions="/DYNAMICBASE /NXCOMPAT"
 				OutputFile="$(OutDir)\lib\$(ProjectName).lib"
 			/>
 			<Tool
@@ -224,8 +227,8 @@
 			Name="Debug|x64"
 			OutputDirectory="..\..\_build\$(PlatformName)\$(ConfigurationName)"
 			IntermediateDirectory="$(OutDir)\obj\$(ProjectName)"
-			InheritedPropertySheets="..\..\sample_common\props\winsdk_x64.vsprops"
 			ConfigurationType="4"
+			InheritedPropertySheets="..\..\sample_common\props\winsdk_x64.vsprops"
 			CharacterSet="1"
 			>
 			<Tool
@@ -268,6 +271,7 @@
 			/>
 			<Tool
 				Name="VCLibrarianTool"
+				AdditionalOptions="/DYNAMICBASE /NXCOMPAT"
 				OutputFile="$(OutDir)\lib\$(ProjectName).lib"
 			/>
 			<Tool
@@ -290,7 +294,7 @@
 	<References>
 		<ProjectReference
 			ReferencedProjectIdentifier="{0E1CCECA-B7EE-400E-A557-E3E89CB234C2}"
-			RelativePathToProject=".\sample_mfoundation_plugins\mf_utils\mf_utils.vcproj"
+			RelativePathToProject=".\mf_utils\mf_utils.vcproj"
 		/>
 	</References>
 	<Files>
