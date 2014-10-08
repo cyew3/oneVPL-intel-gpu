@@ -110,50 +110,6 @@ protected:
     void FreeCmResources();
 
     void SetCurbeData(H265EncCURBEData & curbeData, mfxU32 picType, mfxU32 qp);
-    template <class T> SurfaceIndex & GetIndex(const T * cmResource);
-    template <class T0> void SetKernelArgLast(CmKernel * kernel, T0 const & arg, unsigned int index);
-    template <> inline void SetKernelArgLast<CmSurface2D *>(CmKernel * kernel, CmSurface2D * const & arg, unsigned int index);
-    template <> inline void SetKernelArgLast<CmSurface2DUP *>(CmKernel * kernel, CmSurface2DUP * const & arg, unsigned int index);
-    template <> inline void SetKernelArgLast<CmBuffer *>(CmKernel * kernel, CmBuffer * const & arg, unsigned int index);
-    template <> inline void SetKernelArgLast<CmBufferUP *>(CmKernel * kernel, CmBufferUP * const & arg, unsigned int index);
-    template <class T0>
-    void SetKernelArg(CmKernel * kernel, T0 const & arg0);
-    template <class T0, class T1>
-    void SetKernelArg(CmKernel * kernel, T0 const & arg0, T1 const & arg1);
-    template <class T0, class T1, class T2>
-    void SetKernelArg(CmKernel * kernel, T0 const & arg0, T1 const & arg1, T2 const & arg2);
-    template <class T0, class T1, class T2, class T3>
-    void SetKernelArg(CmKernel * kernel, T0 const & arg0, T1 const & arg1, T2 const & arg2, T3 const & arg3);
-    template <class T0, class T1, class T2, class T3, class T4>
-    void SetKernelArg(CmKernel * kernel, T0 const & arg0, T1 const & arg1, T2 const & arg2, T3 const & arg3, T4 const & arg4);
-    template <class T0, class T1, class T2, class T3, class T4, class T5>
-    void SetKernelArg(CmKernel * kernel, T0 const & arg0, T1 const & arg1, T2 const & arg2, T3 const & arg3, T4 const & arg4, T5 const & arg5);
-    template <class T0, class T1, class T2, class T3, class T4, class T5, class T6>
-    void SetKernelArg(CmKernel * kernel, T0 const & arg0, T1 const & arg1, T2 const & arg2, T3 const & arg3, T4 const & arg4, T5 const & arg5, T6 const & arg6);
-    template <class T0, class T1, class T2, class T3, class T4, class T5, class T6, class T7>
-    void SetKernelArg(CmKernel * kernel, T0 const & arg0, T1 const & arg1, T2 const & arg2, T3 const & arg3, T4 const & arg4, T5 const & arg5, T6 const & arg6, T7 const & arg7);
-    template <class T0, class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8>
-    void SetKernelArg(CmKernel * kernel, T0 const & arg0, T1 const & arg1, T2 const & arg2, T3 const & arg3, T4 const & arg4, T5 const & arg5, T6 const & arg6, T7 const & arg7,
-                      T8 const & arg8);
-    template <class T0, class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9>
-    void SetKernelArg(CmKernel * kernel, T0 const & arg0, T1 const & arg1, T2 const & arg2, T3 const & arg3, T4 const & arg4, T5 const & arg5, T6 const & arg6, T7 const & arg7,
-                      T8 const & arg8, T9 const & arg9);
-    template <class T0, class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9, class T10>
-    void SetKernelArg(CmKernel * kernel, T0 const & arg0, T1 const & arg1, T2 const & arg2, T3 const & arg3, T4 const & arg4, T5 const & arg5, T6 const & arg6, T7 const & arg7,
-                      T8 const & arg8, T9 const & arg9, T10 const & arg10);
-    template <class T0, class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9, class T10, class T11>
-    void SetKernelArg(CmKernel * kernel, T0 const & arg0, T1 const & arg1, T2 const & arg2, T3 const & arg3, T4 const & arg4, T5 const & arg5, T6 const & arg6, T7 const & arg7,
-                      T8 const & arg8, T9 const & arg9, T10 const & arg10, T11 const & arg11);
-    template <class T0, class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9, class T10, class T11, class T12>
-    void SetKernelArg(CmKernel * kernel, T0 const & arg0, T1 const & arg1, T2 const & arg2, T3 const & arg3, T4 const & arg4, T5 const & arg5, T6 const & arg6, T7 const & arg7,
-                      T8 const & arg8, T9 const & arg9, T10 const & arg10, T11 const & arg11, T12 const & arg12);
-    template <class T0, class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9, class T10, class T11, class T12, class T13>
-    void SetKernelArg(CmKernel * kernel, T0 const & arg0, T1 const & arg1, T2 const & arg2, T3 const & arg3, T4 const & arg4, T5 const & arg5, T6 const & arg6, T7 const & arg7,
-                      T8 const & arg8, T9 const & arg9, T10 const & arg10, T11 const & arg11, T12 const & arg12, T13 const & arg13);
-    template <class T0, class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9, class T10, class T11, class T12, class T13, class T14>
-    void SetKernelArg(CmKernel * kernel, T0 const & arg0, T1 const & arg1, T2 const & arg2, T3 const & arg3, T4 const & arg4, T5 const & arg5, T6 const & arg6, T7 const & arg7,
-                      T8 const & arg8, T9 const & arg9, T10 const & arg10, T11 const & arg11, T12 const & arg12, T13 const & arg13, T14 const & arg14);
-
 private:
 
     bool cmResurcesAllocated;
@@ -219,6 +175,50 @@ private:
     H265RefMatchData * recBufData;
 };
 
+
+template <class T> SurfaceIndex & GetIndex(const T * cmResource);
+template <class T0> void SetKernelArgLast(CmKernel * kernel, T0 const & arg, unsigned int index);
+template <> inline void SetKernelArgLast<CmSurface2D *>(CmKernel * kernel, CmSurface2D * const & arg, unsigned int index);
+template <> inline void SetKernelArgLast<CmSurface2DUP *>(CmKernel * kernel, CmSurface2DUP * const & arg, unsigned int index);
+template <> inline void SetKernelArgLast<CmBuffer *>(CmKernel * kernel, CmBuffer * const & arg, unsigned int index);
+template <> inline void SetKernelArgLast<CmBufferUP *>(CmKernel * kernel, CmBufferUP * const & arg, unsigned int index);
+template <class T0>
+void SetKernelArg(CmKernel * kernel, T0 const & arg0);
+template <class T0, class T1>
+void SetKernelArg(CmKernel * kernel, T0 const & arg0, T1 const & arg1);
+template <class T0, class T1, class T2>
+void SetKernelArg(CmKernel * kernel, T0 const & arg0, T1 const & arg1, T2 const & arg2);
+template <class T0, class T1, class T2, class T3>
+void SetKernelArg(CmKernel * kernel, T0 const & arg0, T1 const & arg1, T2 const & arg2, T3 const & arg3);
+template <class T0, class T1, class T2, class T3, class T4>
+void SetKernelArg(CmKernel * kernel, T0 const & arg0, T1 const & arg1, T2 const & arg2, T3 const & arg3, T4 const & arg4);
+template <class T0, class T1, class T2, class T3, class T4, class T5>
+void SetKernelArg(CmKernel * kernel, T0 const & arg0, T1 const & arg1, T2 const & arg2, T3 const & arg3, T4 const & arg4, T5 const & arg5);
+template <class T0, class T1, class T2, class T3, class T4, class T5, class T6>
+void SetKernelArg(CmKernel * kernel, T0 const & arg0, T1 const & arg1, T2 const & arg2, T3 const & arg3, T4 const & arg4, T5 const & arg5, T6 const & arg6);
+template <class T0, class T1, class T2, class T3, class T4, class T5, class T6, class T7>
+void SetKernelArg(CmKernel * kernel, T0 const & arg0, T1 const & arg1, T2 const & arg2, T3 const & arg3, T4 const & arg4, T5 const & arg5, T6 const & arg6, T7 const & arg7);
+template <class T0, class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8>
+void SetKernelArg(CmKernel * kernel, T0 const & arg0, T1 const & arg1, T2 const & arg2, T3 const & arg3, T4 const & arg4, T5 const & arg5, T6 const & arg6, T7 const & arg7,
+                  T8 const & arg8);
+template <class T0, class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9>
+void SetKernelArg(CmKernel * kernel, T0 const & arg0, T1 const & arg1, T2 const & arg2, T3 const & arg3, T4 const & arg4, T5 const & arg5, T6 const & arg6, T7 const & arg7,
+                  T8 const & arg8, T9 const & arg9);
+template <class T0, class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9, class T10>
+void SetKernelArg(CmKernel * kernel, T0 const & arg0, T1 const & arg1, T2 const & arg2, T3 const & arg3, T4 const & arg4, T5 const & arg5, T6 const & arg6, T7 const & arg7,
+                  T8 const & arg8, T9 const & arg9, T10 const & arg10);
+template <class T0, class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9, class T10, class T11>
+void SetKernelArg(CmKernel * kernel, T0 const & arg0, T1 const & arg1, T2 const & arg2, T3 const & arg3, T4 const & arg4, T5 const & arg5, T6 const & arg6, T7 const & arg7,
+                  T8 const & arg8, T9 const & arg9, T10 const & arg10, T11 const & arg11);
+template <class T0, class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9, class T10, class T11, class T12>
+void SetKernelArg(CmKernel * kernel, T0 const & arg0, T1 const & arg1, T2 const & arg2, T3 const & arg3, T4 const & arg4, T5 const & arg5, T6 const & arg6, T7 const & arg7,
+                  T8 const & arg8, T9 const & arg9, T10 const & arg10, T11 const & arg11, T12 const & arg12);
+template <class T0, class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9, class T10, class T11, class T12, class T13>
+void SetKernelArg(CmKernel * kernel, T0 const & arg0, T1 const & arg1, T2 const & arg2, T3 const & arg3, T4 const & arg4, T5 const & arg5, T6 const & arg6, T7 const & arg7,
+                  T8 const & arg8, T9 const & arg9, T10 const & arg10, T11 const & arg11, T12 const & arg12, T13 const & arg13);
+template <class T0, class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9, class T10, class T11, class T12, class T13, class T14>
+void SetKernelArg(CmKernel * kernel, T0 const & arg0, T1 const & arg1, T2 const & arg2, T3 const & arg3, T4 const & arg4, T5 const & arg5, T6 const & arg6, T7 const & arg7,
+                  T8 const & arg8, T9 const & arg9, T10 const & arg10, T11 const & arg11, T12 const & arg12, T13 const & arg13, T14 const & arg14);
 
 } // namespace
 

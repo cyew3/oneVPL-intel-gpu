@@ -1568,7 +1568,7 @@ CmContext::~CmContext()
 
 
 template <class T>
-SurfaceIndex & CmContext::GetIndex(const T * cmResource)
+SurfaceIndex & GetIndex(const T * cmResource)
 {
     SurfaceIndex * index = 0;
     int result = const_cast<T *>(cmResource)->GetIndex(index);
@@ -1578,109 +1578,109 @@ SurfaceIndex & CmContext::GetIndex(const T * cmResource)
 }
 
 template <class T0>
-void CmContext::SetKernelArgLast(CmKernel * kernel, T0 const & arg, unsigned int index)
+void SetKernelArgLast(CmKernel * kernel, T0 const & arg, unsigned int index)
 {
     kernel->SetKernelArg(index, sizeof(arg), &arg);
 }
 template <> inline
-    void CmContext::SetKernelArgLast<CmSurface2D *>(CmKernel * kernel, CmSurface2D * const & arg, unsigned int index)
+    void SetKernelArgLast<CmSurface2D *>(CmKernel * kernel, CmSurface2D * const & arg, unsigned int index)
 {
     kernel->SetKernelArg(index, sizeof(SurfaceIndex), &GetIndex(arg));
 }
 template <> inline
-    void CmContext::SetKernelArgLast<CmSurface2DUP *>(CmKernel * kernel, CmSurface2DUP * const & arg, unsigned int index)
+    void SetKernelArgLast<CmSurface2DUP *>(CmKernel * kernel, CmSurface2DUP * const & arg, unsigned int index)
 {
     kernel->SetKernelArg(index, sizeof(SurfaceIndex), &GetIndex(arg));
 }
 template <> inline
-    void CmContext::SetKernelArgLast<CmBuffer *>(CmKernel * kernel, CmBuffer * const & arg, unsigned int index)
+    void SetKernelArgLast<CmBuffer *>(CmKernel * kernel, CmBuffer * const & arg, unsigned int index)
 {
     kernel->SetKernelArg(index, sizeof(SurfaceIndex), &GetIndex(arg));
 }
 template <> inline
-    void CmContext::SetKernelArgLast<CmBufferUP *>(CmKernel * kernel, CmBufferUP * const & arg, unsigned int index)
+    void SetKernelArgLast<CmBufferUP *>(CmKernel * kernel, CmBufferUP * const & arg, unsigned int index)
 {
     kernel->SetKernelArg(index, sizeof(SurfaceIndex), &GetIndex(arg));
 }
 
 template <class T0>
-void CmContext::SetKernelArg(CmKernel * kernel, T0 const & arg0)
+void SetKernelArg(CmKernel * kernel, T0 const & arg0)
 {
     SetKernelArgLast(kernel, arg0, 0);
 }
 
 template <class T0, class T1>
-void CmContext::SetKernelArg(CmKernel * kernel, T0 const & arg0, T1 const & arg1)
+void SetKernelArg(CmKernel * kernel, T0 const & arg0, T1 const & arg1)
 {
     SetKernelArgLast(kernel, arg0, 0);
     SetKernelArgLast(kernel, arg1, 1);
 }
 
 template <class T0, class T1, class T2>
-void CmContext::SetKernelArg(CmKernel * kernel, T0 const & arg0, T1 const & arg1, T2 const & arg2)
+void SetKernelArg(CmKernel * kernel, T0 const & arg0, T1 const & arg1, T2 const & arg2)
 {
     SetKernelArg(kernel, arg0, arg1);
     SetKernelArgLast(kernel, arg2, 2);
 }
 
 template <class T0, class T1, class T2, class T3>
-void CmContext::SetKernelArg(CmKernel * kernel, T0 const & arg0, T1 const & arg1, T2 const & arg2, T3 const & arg3)
+void SetKernelArg(CmKernel * kernel, T0 const & arg0, T1 const & arg1, T2 const & arg2, T3 const & arg3)
 {
     SetKernelArg(kernel, arg0, arg1, arg2);
     SetKernelArgLast(kernel, arg3, 3);
 }
 
 template <class T0, class T1, class T2, class T3, class T4>
-void CmContext::SetKernelArg(CmKernel * kernel, T0 const & arg0, T1 const & arg1, T2 const & arg2, T3 const & arg3, T4 const & arg4)
+void SetKernelArg(CmKernel * kernel, T0 const & arg0, T1 const & arg1, T2 const & arg2, T3 const & arg3, T4 const & arg4)
 {
     SetKernelArg(kernel, arg0, arg1, arg2, arg3);
     SetKernelArgLast(kernel, arg4, 4);
 }
 
 template <class T0, class T1, class T2, class T3, class T4, class T5>
-void CmContext::SetKernelArg(CmKernel * kernel, T0 const & arg0, T1 const & arg1, T2 const & arg2, T3 const & arg3, T4 const & arg4, T5 const & arg5)
+void SetKernelArg(CmKernel * kernel, T0 const & arg0, T1 const & arg1, T2 const & arg2, T3 const & arg3, T4 const & arg4, T5 const & arg5)
 {
     SetKernelArg(kernel, arg0, arg1, arg2, arg3, arg4);
     SetKernelArgLast(kernel, arg5, 5);
 }
 
 template <class T0, class T1, class T2, class T3, class T4, class T5, class T6>
-void CmContext::SetKernelArg(CmKernel * kernel, T0 const & arg0, T1 const & arg1, T2 const & arg2, T3 const & arg3, T4 const & arg4, T5 const & arg5, T6 const & arg6)
+void SetKernelArg(CmKernel * kernel, T0 const & arg0, T1 const & arg1, T2 const & arg2, T3 const & arg3, T4 const & arg4, T5 const & arg5, T6 const & arg6)
 {
     SetKernelArg(kernel, arg0, arg1, arg2, arg3, arg4, arg5);
     SetKernelArgLast(kernel, arg6, 6);
 }
 
 template <class T0, class T1, class T2, class T3, class T4, class T5, class T6, class T7>
-void CmContext::SetKernelArg(CmKernel * kernel, T0 const & arg0, T1 const & arg1, T2 const & arg2, T3 const & arg3, T4 const & arg4, T5 const & arg5, T6 const & arg6, T7 const & arg7)
+void SetKernelArg(CmKernel * kernel, T0 const & arg0, T1 const & arg1, T2 const & arg2, T3 const & arg3, T4 const & arg4, T5 const & arg5, T6 const & arg6, T7 const & arg7)
 {
     SetKernelArg(kernel, arg0, arg1, arg2, arg3, arg4, arg5, arg6);
     SetKernelArgLast(kernel, arg7, 7);
 }
 
 template <class T0, class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8>
-void CmContext::SetKernelArg(CmKernel * kernel, T0 const & arg0, T1 const & arg1, T2 const & arg2, T3 const & arg3, T4 const & arg4, T5 const & arg5, T6 const & arg6, T7 const & arg7, T8 const & arg8)
+void SetKernelArg(CmKernel * kernel, T0 const & arg0, T1 const & arg1, T2 const & arg2, T3 const & arg3, T4 const & arg4, T5 const & arg5, T6 const & arg6, T7 const & arg7, T8 const & arg8)
 {
     SetKernelArg(kernel, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7);
     SetKernelArgLast(kernel, arg8, 8);
 }
 
 template <class T0, class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9>
-void CmContext::SetKernelArg(CmKernel * kernel, T0 const & arg0, T1 const & arg1, T2 const & arg2, T3 const & arg3, T4 const & arg4, T5 const & arg5, T6 const & arg6, T7 const & arg7, T8 const & arg8, T9 const & arg9)
+void SetKernelArg(CmKernel * kernel, T0 const & arg0, T1 const & arg1, T2 const & arg2, T3 const & arg3, T4 const & arg4, T5 const & arg5, T6 const & arg6, T7 const & arg7, T8 const & arg8, T9 const & arg9)
 {
     SetKernelArg(kernel, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8);
     SetKernelArgLast(kernel, arg9, 9);
 }
 
 template <class T0, class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9, class T10>
-void CmContext::SetKernelArg(CmKernel * kernel, T0 const & arg0, T1 const & arg1, T2 const & arg2, T3 const & arg3, T4 const & arg4, T5 const & arg5, T6 const & arg6, T7 const & arg7, T8 const & arg8, T9 const & arg9, T10 const & arg10)
+void SetKernelArg(CmKernel * kernel, T0 const & arg0, T1 const & arg1, T2 const & arg2, T3 const & arg3, T4 const & arg4, T5 const & arg5, T6 const & arg6, T7 const & arg7, T8 const & arg8, T9 const & arg9, T10 const & arg10)
 {
     SetKernelArg(kernel, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9);
     SetKernelArgLast(kernel, arg10, 10);
 }
 
 template <class T0, class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9, class T10, class T11>
-void CmContext::SetKernelArg(CmKernel * kernel, T0 const & arg0, T1 const & arg1, T2 const & arg2, T3 const & arg3, T4 const & arg4, T5 const & arg5, T6 const & arg6, T7 const & arg7,
+void SetKernelArg(CmKernel * kernel, T0 const & arg0, T1 const & arg1, T2 const & arg2, T3 const & arg3, T4 const & arg4, T5 const & arg5, T6 const & arg6, T7 const & arg7,
                              T8 const & arg8, T9 const & arg9, T10 const & arg10, T11 const & arg11)
 {
     SetKernelArg(kernel, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10);
@@ -1688,7 +1688,7 @@ void CmContext::SetKernelArg(CmKernel * kernel, T0 const & arg0, T1 const & arg1
 }
 
 template <class T0, class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9, class T10, class T11, class T12>
-void CmContext::SetKernelArg(CmKernel * kernel, T0 const & arg0, T1 const & arg1, T2 const & arg2, T3 const & arg3, T4 const & arg4, T5 const & arg5, T6 const & arg6, T7 const & arg7,
+void SetKernelArg(CmKernel * kernel, T0 const & arg0, T1 const & arg1, T2 const & arg2, T3 const & arg3, T4 const & arg4, T5 const & arg5, T6 const & arg6, T7 const & arg7,
                              T8 const & arg8, T9 const & arg9, T10 const & arg10, T11 const & arg11, T12 const & arg12)
 {
     SetKernelArg(kernel, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11);
@@ -1696,7 +1696,7 @@ void CmContext::SetKernelArg(CmKernel * kernel, T0 const & arg0, T1 const & arg1
 }
 
 template <class T0, class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9, class T10, class T11, class T12, class T13>
-void CmContext::SetKernelArg(CmKernel * kernel, T0 const & arg0, T1 const & arg1, T2 const & arg2, T3 const & arg3, T4 const & arg4, T5 const & arg5, T6 const & arg6, T7 const & arg7,
+void SetKernelArg(CmKernel * kernel, T0 const & arg0, T1 const & arg1, T2 const & arg2, T3 const & arg3, T4 const & arg4, T5 const & arg5, T6 const & arg6, T7 const & arg7,
                              T8 const & arg8, T9 const & arg9, T10 const & arg10, T11 const & arg11, T12 const & arg12, T13 const & arg13)
 {
     SetKernelArg(kernel, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12);
@@ -1704,7 +1704,7 @@ void CmContext::SetKernelArg(CmKernel * kernel, T0 const & arg0, T1 const & arg1
 }
 
 template <class T0, class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9, class T10, class T11, class T12, class T13, class T14>
-void CmContext::SetKernelArg(CmKernel * kernel, T0 const & arg0, T1 const & arg1, T2 const & arg2, T3 const & arg3, T4 const & arg4, T5 const & arg5, T6 const & arg6, T7 const & arg7,
+void SetKernelArg(CmKernel * kernel, T0 const & arg0, T1 const & arg1, T2 const & arg2, T3 const & arg3, T4 const & arg4, T5 const & arg5, T6 const & arg6, T7 const & arg7,
                              T8 const & arg8, T9 const & arg9, T10 const & arg10, T11 const & arg11, T12 const & arg12, T13 const & arg13, T14 const & arg14)
 {
     SetKernelArg(kernel, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12, arg13);

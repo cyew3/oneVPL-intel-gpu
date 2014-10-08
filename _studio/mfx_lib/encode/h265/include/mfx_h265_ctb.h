@@ -21,12 +21,11 @@
 
 using namespace MFX_HEVC_PP;
 
-#if defined(MFX_VA)
-///#include "mfx_h265_enc_cm.h"
-class CmContext;
-#endif
-
 namespace H265Enc {
+
+#if defined(MFX_VA)
+    class CmContext;
+#endif
 
 //Optimization with Intelligent Content and RD Analysis (ICRA)
 #define AMT_ICRA_OPT 

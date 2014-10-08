@@ -58,24 +58,6 @@ foreach( dir  ${vdirs} ${vdirs_impl} ${vdirs_hw} )
   include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../${dir}/include )
 endforeach( )
 
-
-# =============================================================================
-
-set( sources "" )
-set( sources.plus "" )
-foreach( dir ${CMAKE_CURRENT_SOURCE_DIR}/../encode/h265/src )
-  file( GLOB_RECURSE srcs "${dir}/*.c" "${dir}/*.cpp" )
-  list( APPEND sources ${srcs})
-endforeach()
-
-set( defs "-DAS_HEVCE_PLUGIN" )
-make_library( h265_enc none static )
-
-set( defs "-DAS_HEVCE_PLUGIN -DHEVCE_EVALUATION" )
-make_library( eval_h265_enc none static )
-
-set( defs "" )
-
 ###################################################################################################################
 # =============================================================================
 # Plugins section
@@ -226,6 +208,11 @@ endforeach()
 
 set( defs "" )
 
+foreach( dir ${CMAKE_CURRENT_SOURCE_DIR}/../encode/h265/src )
+  file( GLOB_RECURSE srcs "${dir}/*.c" "${dir}/*.cpp" )
+  list( APPEND sources ${srcs})
+endforeach()
+
 foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/../shared/src )
   list( APPEND sources
     ${prefix}/libmfxsw_encode.cpp
@@ -265,9 +252,6 @@ foreach( variant sw hw )
 
   set( LIBS "" )
   list( APPEND LIBS
-    h265_enc
-    umc_h265_sw
-    umc_csc_sw
     hevc_pp_dispatcher
     hevc_pp_atom
     hevc_pp_avx2
@@ -287,9 +271,6 @@ foreach( variant sw hw )
 
   set( LIBS "" )
   list( APPEND LIBS
-    eval_h265_enc
-    umc_h265_sw
-    umc_csc_sw
     hevc_pp_dispatcher
     hevc_pp_atom
     hevc_pp_avx2
