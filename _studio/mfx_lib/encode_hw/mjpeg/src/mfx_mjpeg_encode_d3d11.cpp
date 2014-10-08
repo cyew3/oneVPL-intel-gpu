@@ -185,9 +185,23 @@ mfxStatus D3D11Encoder::QueryBitstreamBufferInfo(mfxFrameAllocRequest& request)
 mfxStatus D3D11Encoder::QueryEncodeCaps(JpegEncCaps & caps)
 {
     //MFX_CHECK_WITH_ASSERT(m_pDecoder, MFX_ERR_NOT_INITIALIZED);
+
+    caps.Baseline = m_caps.Baseline;
+    caps.Sequential = m_caps.Sequential;
+    caps.Huffman = m_caps.Huffman;
+
+    caps.NonInterleaved = m_caps.NonInterleaved;
     caps.Interleaved = m_caps.Interleaved;
-    caps.MaxPicHeight = m_caps.MaxPicHeight;
-    caps.MaxPicWidth = m_caps.MaxPicWidth;
+
+    caps.MaxPicWidth = m_caps.MaxPicHeight;
+    caps.MaxPicHeight = m_caps.MaxPicWidth;
+
+    caps.SampleBitDepth = m_caps.SampleBitDepth;
+    caps.MaxNumComponent = m_caps.MaxNumComponent;
+    caps.MaxNumScan = m_caps.MaxNumScan;
+    caps.MaxNumHuffTable = m_caps.MaxNumHuffTable; 
+    caps.MaxNumQuantTable = m_caps.MaxNumQuantTable;
+
     return MFX_ERR_NONE;
 }
 

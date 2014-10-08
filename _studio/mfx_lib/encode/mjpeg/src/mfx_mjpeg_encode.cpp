@@ -780,7 +780,7 @@ mfxStatus MFXVideoENCODEMJPEG::Query(mfxVideoParam *in, mfxVideoParam *out)
     if(!in)
     {
         memset(&out->mfx, 0, sizeof(mfxInfoMFX));
-        out->mfx.FrameInfo.FourCC        = 1;
+        out->mfx.FrameInfo.FourCC        = MFX_FOURCC_NV12;
         out->mfx.FrameInfo.Width         = 1;
         out->mfx.FrameInfo.Height        = 1;
         out->mfx.FrameInfo.CropX         = 0;
@@ -792,10 +792,10 @@ mfxStatus MFXVideoENCODEMJPEG::Query(mfxVideoParam *in, mfxVideoParam *out)
         out->mfx.FrameInfo.AspectRatioW  = 1;
         out->mfx.FrameInfo.AspectRatioH  = 1;
         out->mfx.FrameInfo.PicStruct     = 1;
-        out->mfx.FrameInfo.ChromaFormat  = 1;
+        out->mfx.FrameInfo.ChromaFormat  = MFX_CHROMAFORMAT_YUV420;
         out->mfx.CodecId                 = MFX_CODEC_JPEG;
         out->mfx.CodecLevel              = 0;
-        out->mfx.CodecProfile            = 1;
+        out->mfx.CodecProfile            = MFX_PROFILE_JPEG_BASELINE;
         out->mfx.NumThread               = 1;
         out->mfx.Interleaved             = MFX_SCANTYPE_INTERLEAVED;
         out->mfx.Quality                 = 1;
