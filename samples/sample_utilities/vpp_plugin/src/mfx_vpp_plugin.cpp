@@ -75,6 +75,7 @@ mfxStatus MFXVideoVPPPlugin::SetFrameAllocator(mfxFrameAllocator *allocator)
 {
     MSDK_CHECK_POINTER(allocator, MFX_ERR_NULL_PTR);
     m_FrameAllocator = *allocator;
+    return MFX_ERR_NONE;
 }
 
 MFXVideoVPPPlugin::~MFXVideoVPPPlugin(void)
