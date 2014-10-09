@@ -36,7 +36,7 @@ namespace H265Enc {
 #define AMT_INT_ME_CONVERGE
 #define AMT_INT_ME_TRANSITION
 
-///#define MEMOIZE_SUBPEL
+#define MEMOIZE_SUBPEL
 #ifdef MEMOIZE_SUBPEL
 #define MEMOIZE_SUBPEL_EXT_W (8+8)
 #define MEMOIZE_SUBPEL_EXT_H (8+2)

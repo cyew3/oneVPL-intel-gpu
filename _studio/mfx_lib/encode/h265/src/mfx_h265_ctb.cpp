@@ -6042,6 +6042,7 @@ enum {
 };
 
 /* helper function */
+/* should match fei part - !!!psergo: smth more convenient is needed */
 Ipp32s GetPuSize(Ipp32s puw, Ipp32s puh)
 {
     const Ipp32s MAX_PU_WIDTH = 64;
@@ -6073,12 +6074,9 @@ void H265CU<PixType>::MePuGacc(H265MEInfo *meInfos, Ipp32s partIdx)
     Ipp32s x = (m_ctbPelX + meInfo->posx) / meInfo->width;
     Ipp32s y = (m_ctbPelY + meInfo->posy) / meInfo->height;
     Ipp32s puSize = GetPuSize(meInfo->width, meInfo->height);
-/*
-    Ipp32s pitchDist = (Ipp32s)m_cmCtx->pitchDist[puSize] / sizeof(mfxU32);
-    Ipp32s pitchMv = (Ipp32s)m_cmCtx->pitchMv[puSize] / sizeof(mfxI16Pair);
-*/
-    Ipp32s pitchDist = (Ipp32s)feiOut->PitchDist[puSize] / sizeof(mfxU32);
-    Ipp32s pitchMv = (Ipp32s)feiOut->PitchMV[puSize] / sizeof(mfxI16Pair);
+
+    Ipp32s pitchDist = (Ipp32s)feiOut->PitchDist[puSize];
+    Ipp32s pitchMv = (Ipp32s)feiOut->PitchMV[puSize];
     
     Ipp32u numParts = (m_par->NumPartInCU >> (meInfo->depth << 1));
     Ipp32s partAddr = meInfo->absPartIdx &  (numParts - 1);

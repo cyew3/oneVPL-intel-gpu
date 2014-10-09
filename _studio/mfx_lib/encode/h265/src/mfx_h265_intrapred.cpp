@@ -892,8 +892,10 @@ void H265CU<PixType>::GetAngModesFromHistogram(Ipp32s xPu, Ipp32s yPu, Ipp32s pu
         }
 
         VM_ASSERT((modes[0] >= 2) && (modes[0] <=34));
+/*
         if ((modes[0] < 2) || (modes[0] > 34))
             printf("STOP!!!\n");
+*/
 
         return;
 
