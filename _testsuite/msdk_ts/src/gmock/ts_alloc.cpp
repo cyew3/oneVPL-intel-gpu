@@ -16,9 +16,10 @@ tsBufferAllocator::~tsBufferAllocator()
     }
 }
 
-tsSurfacePool::tsSurfacePool(frame_allocator* allocator)
+tsSurfacePool::tsSurfacePool(frame_allocator* allocator, bool d3d11)
     : m_allocator(allocator)
     , m_external(true)
+    , m_isd3d11(d3d11)
 {
 }
 
@@ -46,8 +47,8 @@ void tsSurfacePool::UseDefaultAllocator(bool isSW)
 {
     Close();
     m_allocator = new frame_allocator(
-        isSW ? frame_allocator::SOFTWARE : frame_allocator::HARDWARE, 
-        frame_allocator::ALLOC_MAX, 
+        isSW ? frame_allocator::SOFTWARE : (m_isd3d11 ? frame_allocator::HARDWARE_DX11 : frame_allocator::HARDWARE ),
+        frame_allocator::ALLOC_MAX,
         frame_allocator::ENABLE_ALL,
         frame_allocator::ALLOC_EMPTY);
     m_external = false;

@@ -14,13 +14,14 @@ class tsSurfacePool
 private:
     frame_allocator* m_allocator;
     bool             m_external;
+    bool             m_isd3d11;
     std::vector<mfxFrameSurface1> m_pool;
     std::vector<mfxFrameSurface1*> m_opaque_pool;
 
     void Close();
 
 public:
-    tsSurfacePool(frame_allocator* allocator = 0);
+    tsSurfacePool(frame_allocator* allocator = 0, bool d3d11 = !!((g_tsImpl) & 0xF00));
     ~tsSurfacePool();
 
     inline frame_allocator* GetAllocator() { return m_allocator; }
