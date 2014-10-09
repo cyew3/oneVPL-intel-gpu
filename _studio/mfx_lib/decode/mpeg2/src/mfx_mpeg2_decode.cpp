@@ -1510,6 +1510,8 @@ mfxStatus VideoDECODEMPEG2::Query(VideoCORE *core, mfxVideoParam *in, mfxVideoPa
         mfxU16 numDistBuf = out->NumExtParam;
         memcpy_s(out, sizeof(mfxVideoParam), in, sizeof(mfxVideoParam));
 
+        if (in->AsyncDepth == 0)
+            out->AsyncDepth = 3;
         out->ExtParam = pExtBuffer;
         out->NumExtParam = numDistBuf;
 

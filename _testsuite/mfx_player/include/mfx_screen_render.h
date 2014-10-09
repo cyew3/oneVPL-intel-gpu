@@ -12,7 +12,7 @@ File Name: .h
 
 #pragma once
 
-#if defined(_WIN32) || defined(_WIN64)
+#if ( defined(_WIN32) || defined(_WIN64) ) && !defined(WIN_TRESHOLD_MOBILE)
 
 #include <windows.h>
 #include <d3d9.h>
@@ -125,4 +125,4 @@ protected:
     //mfxFrameAllocator   m_VPPFrameAllocator;
 };
 
-#endif // #if defined(_WIN32) || defined(_WIN64)
+#endif // #if ( defined(_WIN32) || defined(_WIN64) ) &&  !defined(WIN_TRESHOLD_MOBILE)

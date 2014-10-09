@@ -5279,9 +5279,18 @@ void MfxVideoParam::SyncVideoToCalculableParam()
     mfxU32 multiplier = IPP_MAX(mfx.BRCParamMultiplier, 1);
 
     calcParam.bufferSizeInKB   = mfx.BufferSizeInKB   * multiplier;
-    calcParam.initialDelayInKB = mfx.InitialDelayInKB * multiplier;
-    calcParam.targetKbps       = mfx.TargetKbps       * multiplier;
-    calcParam.maxKbps          = mfx.MaxKbps          * multiplier;
+    if (mfx.RateControlMethod != MFX_RATECONTROL_CQP
+        && mfx.RateControlMethod != MFX_RATECONTROL_ICQ
+        && mfx.RateControlMethod != MFX_RATECONTROL_LA_ICQ)
+    {
+        calcParam.initialDelayInKB = mfx.InitialDelayInKB * multiplier;
+        calcParam.targetKbps       = mfx.TargetKbps       * multiplier;
+        calcParam.maxKbps          = mfx.MaxKbps          * multiplier;
+    }
+    else
+    {
+        calcParam.bufferSizeInKB = calcParam.initialDelayInKB = calcParam.maxKbps = 0;
+    }
 
     if (IsSvcProfile(mfx.CodecProfile))
     {
@@ -5332,13 +5341,21 @@ void MfxVideoParam::SyncVideoToCalculableParam()
     if (IsMvcProfile(mfx.CodecProfile))
     {
         mfxExtMVCSeqDesc * extMvc = GetExtBuffer(*this);
-
         if (extMvc->NumView)
         {
             calcParam.mvcPerViewPar.bufferSizeInKB   = calcParam.bufferSizeInKB / extMvc->NumView;
-            calcParam.mvcPerViewPar.initialDelayInKB = calcParam.initialDelayInKB / extMvc->NumView;
-            calcParam.mvcPerViewPar.targetKbps       = calcParam.targetKbps / extMvc->NumView;
-            calcParam.mvcPerViewPar.maxKbps          = calcParam.maxKbps / extMvc->NumView;
+            if (mfx.RateControlMethod != MFX_RATECONTROL_CQP
+                && mfx.RateControlMethod != MFX_RATECONTROL_ICQ
+                && mfx.RateControlMethod != MFX_RATECONTROL_LA_ICQ)
+            {
+                calcParam.mvcPerViewPar.initialDelayInKB = calcParam.initialDelayInKB / extMvc->NumView;
+                calcParam.mvcPerViewPar.targetKbps       = calcParam.targetKbps / extMvc->NumView;
+                calcParam.mvcPerViewPar.maxKbps          = calcParam.maxKbps / extMvc->NumView;
+            }
+            else
+            {
+                calcParam.mvcPerViewPar.initialDelayInKB = calcParam.mvcPerViewPar.targetKbps = calcParam.mvcPerViewPar.maxKbps = 0;
+            }
         }
         calcParam.mvcPerViewPar.codecLevel       = mfx.CodecLevel;
     }
@@ -5359,7 +5376,7 @@ void MfxVideoParam::SyncVideoToCalculableParam()
                 calcParam.numDependencyLayer++;
             }
         }
-    
+
         calcParam.dqId1Exists = m_extSvcSeqDescr.DependencyLayer[calcParam.did[0]].QualityNum > 1 ? 1 : 0;
     }
 }

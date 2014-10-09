@@ -13,7 +13,7 @@ Keyboard:
     END : Enable/Disable the frame drop debug spew.
 */
 
-#if defined(_WIN32) || defined(_WIN64)
+#if ( defined(_WIN32) || defined(_WIN64) ) && !defined(WIN_TRESHOLD_MOBILE)
 
 #include <windows.h>
 #include <windowsx.h>
@@ -766,4 +766,4 @@ ScreenRender::~ScreenRender()
       //DestroyD3D9();
 }
 
-#endif // #if defined(_WIN32) || defined(_WIN64)
+#endif // #if (defined(_WIN32) || defined(_WIN64)) && !defined(WIN_TRESHOLD_MOBILE)

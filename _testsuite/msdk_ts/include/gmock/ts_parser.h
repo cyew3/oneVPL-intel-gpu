@@ -91,7 +91,7 @@ public:
         m_sts = parse_next_au(pAU);
         if(m_sts && m_sts != BS_ERR_MORE_DATA || m_sts && orDie)
         {
-            g_tsLog << "FAILED in tsParser\n";
+            g_tsLog << "ERROR: FAILED in tsParser: " << m_sts << "\n";
             g_tsStatus.check(MFX_ERR_UNKNOWN);
         }
         return pAU;

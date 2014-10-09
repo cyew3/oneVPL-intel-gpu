@@ -342,6 +342,21 @@ mfxStatus MFX_PTIR_Plugin::Execute(mfxThreadTask task, mfxU32 , mfxU32 )
                 break;
         }
     }
+    else if(bEOS)
+    {
+        if(!surface_out)
+            surface_out = GetFreeSurf(workSurfs);
+        beof = true;
+        try
+        {
+            mfxSts = ptir->Process(0, &surface_out, m_pmfxCore, &surface_outtt, beof, exp_surf);
+        }
+        catch(...)
+        {
+            mfxSts = MFX_ERR_DEVICE_FAILED;
+            return mfxSts;
+        }
+    }
     if(!ptir->isHW && surface_out)
     {
         mfxSts = m_pmfxCore->DecreaseReference(m_pmfxCore->pthis, &surface_out->Data);

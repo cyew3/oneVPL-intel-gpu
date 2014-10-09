@@ -277,7 +277,7 @@ Status H263VideoEncoder::GetFrame(MediaData* pIn, MediaData* pOut)
   if (pVideoDataIn) {
     // copy YUV to internal frame
     IppiSize  roi;
-    Ipp8u    *pY, *pU, *pV;
+    Ipp8u    *pY, *pU, *pV = NULL;
     Ipp32s    stepL, stepC;
 
     h263enc.GetCurrentFrameInfo(&pY, &pU, &pV, &stepL, &stepC);

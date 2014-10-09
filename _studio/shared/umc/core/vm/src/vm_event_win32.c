@@ -116,7 +116,7 @@ vm_status vm_event_pulse(vm_event *event)
     else
 #endif
 
-	return VM_OPERATION_FAILED;
+    return VM_OPERATION_FAILED;
 
 } /* vm_status vm_event_pulse(vm_event *event) */
 

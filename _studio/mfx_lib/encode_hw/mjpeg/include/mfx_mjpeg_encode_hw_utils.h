@@ -48,9 +48,21 @@ namespace MfxHwMJpegEncode
     };
 
     typedef struct {
+        mfxU32    Baseline;
+        mfxU32    Sequential;
+        mfxU32    Huffman;
+
+        mfxU32    NonInterleaved;
+        mfxU32    Interleaved;
+
         mfxU32    MaxPicWidth;
         mfxU32    MaxPicHeight;
-        mfxU32    Interleaved;
+
+        mfxU32    SampleBitDepth;
+        mfxU32    MaxNumComponent;
+        mfxU32    MaxNumScan;
+        mfxU32    MaxNumHuffTable; 
+        mfxU32    MaxNumQuantTable;
     } JpegEncCaps;
 
     mfxStatus QueryHwCaps(
@@ -66,8 +78,7 @@ namespace MfxHwMJpegEncode
 
     mfxStatus CheckJpegParam(
         mfxVideoParam     & par,
-        JpegEncCaps const & hwCaps,
-        bool                setExtAlloc);
+        JpegEncCaps const & hwCaps);
 
     mfxStatus FastCopyFrameBufferSys2Vid(
         VideoCORE    * core,

@@ -21,7 +21,7 @@ class MFXNotifyMessage
     MFXNotifyMessage()
         : m_benchmarkMsgId()
     {
-#ifdef WIN32
+#if defined(WIN32) && !defined(WIN_TRESHOLD_MOBILE)
         m_benchmarkMsgId = RegisterWindowMessage(VM_STRING("MFX_Message"));
 #endif
     }
@@ -29,7 +29,7 @@ class MFXNotifyMessage
 public:
     void SendBroadcast(mfxU32 message_id, mfxU32 test_id)
     {
-#ifdef WIN32
+#if defined(WIN32) && !defined(WIN_TRESHOLD_MOBILE)
         SendNotifyMessage(HWND_BROADCAST, m_benchmarkMsgId, message_id, test_id);
 #endif
     }

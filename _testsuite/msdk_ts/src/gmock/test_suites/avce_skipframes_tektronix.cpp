@@ -261,6 +261,372 @@ const TestSuite::tc_struct TestSuite::test_case[] =
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, MFX_PICSTRUCT_FIELD_TFF},
         {EXT_COD, &tsStruct::mfxExtCodingOption.CAVLC, MFX_CODINGOPTION_OFF},
         {EXT_COD2, &tsStruct::mfxExtCodingOption2.SkipFrame, MFX_SKIPFRAME_INSERT_DUMMY}}, "last10"},
+
+    // B-frames
+    {/*36*/ MFX_ERR_NONE, 0, {
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CQP},
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 2},
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, MFX_PICSTRUCT_PROGRESSIVE},
+        {EXT_COD, &tsStruct::mfxExtCodingOption.CAVLC, MFX_CODINGOPTION_ON},
+        {EXT_COD2, &tsStruct::mfxExtCodingOption2.SkipFrame, MFX_SKIPFRAME_INSERT_DUMMY}}, "1 3 5 7 9 11 13"},
+    {/*37*/ MFX_ERR_NONE, 0, {
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR},
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 2},
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, MFX_PICSTRUCT_PROGRESSIVE},
+        {EXT_COD, &tsStruct::mfxExtCodingOption.CAVLC, MFX_CODINGOPTION_ON},
+        {EXT_COD2, &tsStruct::mfxExtCodingOption2.SkipFrame, MFX_SKIPFRAME_INSERT_DUMMY}}, "1 3 5 7 9 11 13"},
+    {/*38*/ MFX_ERR_NONE, 0, {
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_VBR},
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 2},
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, MFX_PICSTRUCT_PROGRESSIVE},
+        {EXT_COD, &tsStruct::mfxExtCodingOption.CAVLC, MFX_CODINGOPTION_ON},
+        {EXT_COD2, &tsStruct::mfxExtCodingOption2.SkipFrame, MFX_SKIPFRAME_INSERT_DUMMY}}, "1 3 5 7 9 11 13"},
+    {/*39*/ MFX_ERR_NONE, 0, {
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CQP},
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 2},
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, MFX_PICSTRUCT_FIELD_TFF},
+        {EXT_COD, &tsStruct::mfxExtCodingOption.CAVLC, MFX_CODINGOPTION_ON},
+        {EXT_COD2, &tsStruct::mfxExtCodingOption2.SkipFrame, MFX_SKIPFRAME_INSERT_DUMMY}}, "1 3 5 7 9 11 13"},
+    {/*40*/ MFX_ERR_NONE, 0, {
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR},
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 2},
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, MFX_PICSTRUCT_FIELD_TFF},
+        {EXT_COD, &tsStruct::mfxExtCodingOption.CAVLC, MFX_CODINGOPTION_ON},
+        {EXT_COD2, &tsStruct::mfxExtCodingOption2.SkipFrame, MFX_SKIPFRAME_INSERT_DUMMY}}, "1 3 5 7 9 11 13"},
+    {/*41*/ MFX_ERR_NONE, 0, {
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_VBR},
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 2},
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, MFX_PICSTRUCT_FIELD_TFF},
+        {EXT_COD, &tsStruct::mfxExtCodingOption.CAVLC, MFX_CODINGOPTION_ON},
+        {EXT_COD2, &tsStruct::mfxExtCodingOption2.SkipFrame, MFX_SKIPFRAME_INSERT_DUMMY}}, "1 3 5 7 9 11 13"},
+    {/*42*/ MFX_ERR_NONE, 0, {
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CQP},
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 2},
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, MFX_PICSTRUCT_PROGRESSIVE},
+        {EXT_COD, &tsStruct::mfxExtCodingOption.CAVLC, MFX_CODINGOPTION_OFF},
+        {EXT_COD2, &tsStruct::mfxExtCodingOption2.SkipFrame, MFX_SKIPFRAME_INSERT_DUMMY}}, "1 3 5 7 9 11 13"},
+    {/*43*/ MFX_ERR_NONE, 0, {
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR},
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 2},
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, MFX_PICSTRUCT_PROGRESSIVE},
+        {EXT_COD, &tsStruct::mfxExtCodingOption.CAVLC, MFX_CODINGOPTION_OFF},
+        {EXT_COD2, &tsStruct::mfxExtCodingOption2.SkipFrame, MFX_SKIPFRAME_INSERT_DUMMY}}, "1 3 5 7 9 11 13"},
+    {/*44*/ MFX_ERR_NONE, 0, {
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_VBR},
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 2},
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, MFX_PICSTRUCT_PROGRESSIVE},
+        {EXT_COD, &tsStruct::mfxExtCodingOption.CAVLC, MFX_CODINGOPTION_OFF},
+        {EXT_COD2, &tsStruct::mfxExtCodingOption2.SkipFrame, MFX_SKIPFRAME_INSERT_DUMMY}}, "1 3 5 7 9 11 13"},
+    {/*45*/ MFX_ERR_NONE, 0, {
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CQP},
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 2},
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, MFX_PICSTRUCT_FIELD_TFF},
+        {EXT_COD, &tsStruct::mfxExtCodingOption.CAVLC, MFX_CODINGOPTION_OFF},
+        {EXT_COD2, &tsStruct::mfxExtCodingOption2.SkipFrame, MFX_SKIPFRAME_INSERT_DUMMY}}, "1 3 5 7 9 11 13"},
+    {/*46*/ MFX_ERR_NONE, 0, {
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR},
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 2},
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, MFX_PICSTRUCT_FIELD_TFF},
+        {EXT_COD, &tsStruct::mfxExtCodingOption.CAVLC, MFX_CODINGOPTION_OFF},
+        {EXT_COD2, &tsStruct::mfxExtCodingOption2.SkipFrame, MFX_SKIPFRAME_INSERT_DUMMY}}, "1 3 5 7 9 11 13"},
+    {/*47*/ MFX_ERR_NONE, 0, {
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_VBR},
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 2},
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, MFX_PICSTRUCT_FIELD_TFF},
+        {EXT_COD, &tsStruct::mfxExtCodingOption.CAVLC, MFX_CODINGOPTION_OFF},
+        {EXT_COD2, &tsStruct::mfxExtCodingOption2.SkipFrame, MFX_SKIPFRAME_INSERT_DUMMY}}, "1 3 5 7 9 11 13"},
+
+    // MFX_SKIPFRAME_INSERT_NOTHING
+    {/*48*/ MFX_ERR_NONE, 0, {
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CQP},
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 1},
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, MFX_PICSTRUCT_PROGRESSIVE},
+        {EXT_COD, &tsStruct::mfxExtCodingOption.CAVLC, MFX_CODINGOPTION_ON},
+        {EXT_COD2, &tsStruct::mfxExtCodingOption2.SkipFrame, MFX_SKIPFRAME_INSERT_NOTHING}}, "1 2 3 4 5 6 7 8 9"},
+    {/*49*/ MFX_ERR_NONE, 0, {
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR},
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 1},
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, MFX_PICSTRUCT_PROGRESSIVE},
+        {EXT_COD, &tsStruct::mfxExtCodingOption.CAVLC, MFX_CODINGOPTION_ON},
+        {EXT_COD2, &tsStruct::mfxExtCodingOption2.SkipFrame, MFX_SKIPFRAME_INSERT_NOTHING}}, "1 2 3 4 5 6 7 8 9"},
+    {/*50*/ MFX_ERR_NONE, 0, {
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_VBR},
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 1},
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, MFX_PICSTRUCT_PROGRESSIVE},
+        {EXT_COD, &tsStruct::mfxExtCodingOption.CAVLC, MFX_CODINGOPTION_ON},
+        {EXT_COD2, &tsStruct::mfxExtCodingOption2.SkipFrame, MFX_SKIPFRAME_INSERT_NOTHING}}, "1 2 3 4 5 6 7 8 9"},
+    {/*51*/ MFX_ERR_NONE, 0, {
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CQP},
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 1},
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, MFX_PICSTRUCT_FIELD_TFF},
+        {EXT_COD, &tsStruct::mfxExtCodingOption.CAVLC, MFX_CODINGOPTION_ON},
+        {EXT_COD2, &tsStruct::mfxExtCodingOption2.SkipFrame, MFX_SKIPFRAME_INSERT_NOTHING}}, "1 2 3 4 5 6 7 8 9"},
+    {/*52*/ MFX_ERR_NONE, 0, {
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR},
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 1},
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, MFX_PICSTRUCT_FIELD_TFF},
+        {EXT_COD, &tsStruct::mfxExtCodingOption.CAVLC, MFX_CODINGOPTION_ON},
+        {EXT_COD2, &tsStruct::mfxExtCodingOption2.SkipFrame, MFX_SKIPFRAME_INSERT_NOTHING}}, "1 2 3 4 5 6 7 8 9"},
+    {/*53*/ MFX_ERR_NONE, 0, {
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_VBR},
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 1},
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, MFX_PICSTRUCT_FIELD_TFF},
+        {EXT_COD, &tsStruct::mfxExtCodingOption.CAVLC, MFX_CODINGOPTION_ON},
+        {EXT_COD2, &tsStruct::mfxExtCodingOption2.SkipFrame, MFX_SKIPFRAME_INSERT_NOTHING}}, "1 2 3 4 5 6 7 8 9"},
+    {/*54*/ MFX_ERR_NONE, 0, {
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CQP},
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 1},
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, MFX_PICSTRUCT_PROGRESSIVE},
+        {EXT_COD, &tsStruct::mfxExtCodingOption.CAVLC, MFX_CODINGOPTION_OFF},
+        {EXT_COD2, &tsStruct::mfxExtCodingOption2.SkipFrame, MFX_SKIPFRAME_INSERT_NOTHING}}, "1 2 3 4 5 6 7 8 9"},
+    {/*55*/ MFX_ERR_NONE, 0, {
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR},
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 1},
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, MFX_PICSTRUCT_PROGRESSIVE},
+        {EXT_COD, &tsStruct::mfxExtCodingOption.CAVLC, MFX_CODINGOPTION_OFF},
+        {EXT_COD2, &tsStruct::mfxExtCodingOption2.SkipFrame, MFX_SKIPFRAME_INSERT_NOTHING}}, "1 2 3 4 5 6 7 8 9"},
+    {/*56*/ MFX_ERR_NONE, 0, {
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_VBR},
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 1},
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, MFX_PICSTRUCT_PROGRESSIVE},
+        {EXT_COD, &tsStruct::mfxExtCodingOption.CAVLC, MFX_CODINGOPTION_OFF},
+        {EXT_COD2, &tsStruct::mfxExtCodingOption2.SkipFrame, MFX_SKIPFRAME_INSERT_NOTHING}}, "1 2 3 4 5 6 7 8 9"},
+    {/*57*/ MFX_ERR_NONE, 0, {
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CQP},
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 1},
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, MFX_PICSTRUCT_FIELD_TFF},
+        {EXT_COD, &tsStruct::mfxExtCodingOption.CAVLC, MFX_CODINGOPTION_OFF},
+        {EXT_COD2, &tsStruct::mfxExtCodingOption2.SkipFrame, MFX_SKIPFRAME_INSERT_NOTHING}}, "1 2 3 4 5 6 7 8 9"},
+    {/*58*/ MFX_ERR_NONE, 0, {
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR},
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 1},
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, MFX_PICSTRUCT_FIELD_TFF},
+        {EXT_COD, &tsStruct::mfxExtCodingOption.CAVLC, MFX_CODINGOPTION_OFF},
+        {EXT_COD2, &tsStruct::mfxExtCodingOption2.SkipFrame, MFX_SKIPFRAME_INSERT_NOTHING}}, "1 2 3 4 5 6 7 8 9"},
+    {/*59*/ MFX_ERR_NONE, 0, {
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_VBR},
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 1},
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, MFX_PICSTRUCT_FIELD_TFF},
+        {EXT_COD, &tsStruct::mfxExtCodingOption.CAVLC, MFX_CODINGOPTION_OFF},
+        {EXT_COD2, &tsStruct::mfxExtCodingOption2.SkipFrame, MFX_SKIPFRAME_INSERT_NOTHING}}, "1 2 3 4 5 6 7 8 9"},
+    {/*60*/ MFX_ERR_NONE, 0, {
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CQP},
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 1},
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, MFX_PICSTRUCT_PROGRESSIVE},
+        {EXT_COD, &tsStruct::mfxExtCodingOption.CAVLC, MFX_CODINGOPTION_ON},
+        {EXT_COD2, &tsStruct::mfxExtCodingOption2.SkipFrame, MFX_SKIPFRAME_INSERT_NOTHING}}, "each2"},
+    {/*61*/ MFX_ERR_NONE, 0, {
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR},
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 1},
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, MFX_PICSTRUCT_PROGRESSIVE},
+        {EXT_COD, &tsStruct::mfxExtCodingOption.CAVLC, MFX_CODINGOPTION_ON},
+        {EXT_COD2, &tsStruct::mfxExtCodingOption2.SkipFrame, MFX_SKIPFRAME_INSERT_NOTHING}}, "each2"},
+    {/*62*/ MFX_ERR_NONE, 0, {
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_VBR},
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 1},
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, MFX_PICSTRUCT_PROGRESSIVE},
+        {EXT_COD, &tsStruct::mfxExtCodingOption.CAVLC, MFX_CODINGOPTION_ON},
+        {EXT_COD2, &tsStruct::mfxExtCodingOption2.SkipFrame, MFX_SKIPFRAME_INSERT_NOTHING}}, "each2"},
+    {/*63*/ MFX_ERR_NONE, 0, {
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CQP},
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 1},
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, MFX_PICSTRUCT_FIELD_TFF},
+        {EXT_COD, &tsStruct::mfxExtCodingOption.CAVLC, MFX_CODINGOPTION_ON},
+        {EXT_COD2, &tsStruct::mfxExtCodingOption2.SkipFrame, MFX_SKIPFRAME_INSERT_NOTHING}}, "each2"},
+    {/*64*/ MFX_ERR_NONE, 0, {
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR},
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 1},
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, MFX_PICSTRUCT_FIELD_TFF},
+        {EXT_COD, &tsStruct::mfxExtCodingOption.CAVLC, MFX_CODINGOPTION_ON},
+        {EXT_COD2, &tsStruct::mfxExtCodingOption2.SkipFrame, MFX_SKIPFRAME_INSERT_NOTHING}}, "each2"},
+    {/*65*/ MFX_ERR_NONE, 0, {
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_VBR},
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 1},
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, MFX_PICSTRUCT_FIELD_TFF},
+        {EXT_COD, &tsStruct::mfxExtCodingOption.CAVLC, MFX_CODINGOPTION_ON},
+        {EXT_COD2, &tsStruct::mfxExtCodingOption2.SkipFrame, MFX_SKIPFRAME_INSERT_NOTHING}}, "each2"},
+    {/*66*/ MFX_ERR_NONE, 0, {
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CQP},
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 1},
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, MFX_PICSTRUCT_PROGRESSIVE},
+        {EXT_COD, &tsStruct::mfxExtCodingOption.CAVLC, MFX_CODINGOPTION_OFF},
+        {EXT_COD2, &tsStruct::mfxExtCodingOption2.SkipFrame, MFX_SKIPFRAME_INSERT_NOTHING}}, "each2"},
+    {/*67*/ MFX_ERR_NONE, 0, {
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR},
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 1},
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, MFX_PICSTRUCT_PROGRESSIVE},
+        {EXT_COD, &tsStruct::mfxExtCodingOption.CAVLC, MFX_CODINGOPTION_OFF},
+        {EXT_COD2, &tsStruct::mfxExtCodingOption2.SkipFrame, MFX_SKIPFRAME_INSERT_NOTHING}}, "each2"},
+    {/*68*/ MFX_ERR_NONE, 0, {
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_VBR},
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 1},
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, MFX_PICSTRUCT_PROGRESSIVE},
+        {EXT_COD, &tsStruct::mfxExtCodingOption.CAVLC, MFX_CODINGOPTION_OFF},
+        {EXT_COD2, &tsStruct::mfxExtCodingOption2.SkipFrame, MFX_SKIPFRAME_INSERT_NOTHING}}, "each2"},
+    {/*69*/ MFX_ERR_NONE, 0, {
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CQP},
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 1},
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, MFX_PICSTRUCT_FIELD_TFF},
+        {EXT_COD, &tsStruct::mfxExtCodingOption.CAVLC, MFX_CODINGOPTION_OFF},
+        {EXT_COD2, &tsStruct::mfxExtCodingOption2.SkipFrame, MFX_SKIPFRAME_INSERT_NOTHING}}, "each2"},
+    {/*70*/ MFX_ERR_NONE, 0, {
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR},
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 1},
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, MFX_PICSTRUCT_FIELD_TFF},
+        {EXT_COD, &tsStruct::mfxExtCodingOption.CAVLC, MFX_CODINGOPTION_OFF},
+        {EXT_COD2, &tsStruct::mfxExtCodingOption2.SkipFrame, MFX_SKIPFRAME_INSERT_NOTHING}}, "each2"},
+    {/*71*/ MFX_ERR_NONE, 0, {
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_VBR},
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 1},
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, MFX_PICSTRUCT_FIELD_TFF},
+        {EXT_COD, &tsStruct::mfxExtCodingOption.CAVLC, MFX_CODINGOPTION_OFF},
+        {EXT_COD2, &tsStruct::mfxExtCodingOption2.SkipFrame, MFX_SKIPFRAME_INSERT_NOTHING}}, "each2"},
+    {/*72*/ MFX_ERR_NONE, 0, {
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CQP},
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 1},
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, MFX_PICSTRUCT_PROGRESSIVE},
+        {EXT_COD, &tsStruct::mfxExtCodingOption.CAVLC, MFX_CODINGOPTION_ON},
+        {EXT_COD2, &tsStruct::mfxExtCodingOption2.SkipFrame, MFX_SKIPFRAME_INSERT_NOTHING}}, "last10"},
+    {/*73*/ MFX_ERR_NONE, 0, {
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR},
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 1},
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, MFX_PICSTRUCT_PROGRESSIVE},
+        {EXT_COD, &tsStruct::mfxExtCodingOption.CAVLC, MFX_CODINGOPTION_ON},
+        {EXT_COD2, &tsStruct::mfxExtCodingOption2.SkipFrame, MFX_SKIPFRAME_INSERT_NOTHING}}, "last10"},
+    {/*74*/ MFX_ERR_NONE, 0, {
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_VBR},
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 1},
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, MFX_PICSTRUCT_PROGRESSIVE},
+        {EXT_COD, &tsStruct::mfxExtCodingOption.CAVLC, MFX_CODINGOPTION_ON},
+        {EXT_COD2, &tsStruct::mfxExtCodingOption2.SkipFrame, MFX_SKIPFRAME_INSERT_NOTHING}}, "last10"},
+    {/*75*/ MFX_ERR_NONE, 0, {
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CQP},
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 1},
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, MFX_PICSTRUCT_FIELD_TFF},
+        {EXT_COD, &tsStruct::mfxExtCodingOption.CAVLC, MFX_CODINGOPTION_ON},
+        {EXT_COD2, &tsStruct::mfxExtCodingOption2.SkipFrame, MFX_SKIPFRAME_INSERT_NOTHING}}, "last10"},
+    {/*76*/ MFX_ERR_NONE, 0, {
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR},
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 1},
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, MFX_PICSTRUCT_FIELD_TFF},
+        {EXT_COD, &tsStruct::mfxExtCodingOption.CAVLC, MFX_CODINGOPTION_ON},
+        {EXT_COD2, &tsStruct::mfxExtCodingOption2.SkipFrame, MFX_SKIPFRAME_INSERT_NOTHING}}, "last10"},
+    {/*77*/ MFX_ERR_NONE, 0, {
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_VBR},
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 1},
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, MFX_PICSTRUCT_FIELD_TFF},
+        {EXT_COD, &tsStruct::mfxExtCodingOption.CAVLC, MFX_CODINGOPTION_ON},
+        {EXT_COD2, &tsStruct::mfxExtCodingOption2.SkipFrame, MFX_SKIPFRAME_INSERT_NOTHING}}, "last10"},
+    {/*78*/ MFX_ERR_NONE, 0, {
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CQP},
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 1},
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, MFX_PICSTRUCT_PROGRESSIVE},
+        {EXT_COD, &tsStruct::mfxExtCodingOption.CAVLC, MFX_CODINGOPTION_OFF},
+        {EXT_COD2, &tsStruct::mfxExtCodingOption2.SkipFrame, MFX_SKIPFRAME_INSERT_NOTHING}}, "last10"},
+    {/*79*/ MFX_ERR_NONE, 0, {
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR},
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 1},
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, MFX_PICSTRUCT_PROGRESSIVE},
+        {EXT_COD, &tsStruct::mfxExtCodingOption.CAVLC, MFX_CODINGOPTION_OFF},
+        {EXT_COD2, &tsStruct::mfxExtCodingOption2.SkipFrame, MFX_SKIPFRAME_INSERT_NOTHING}}, "last10"},
+    {/*80*/ MFX_ERR_NONE, 0, {
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_VBR},
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 1},
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, MFX_PICSTRUCT_PROGRESSIVE},
+        {EXT_COD, &tsStruct::mfxExtCodingOption.CAVLC, MFX_CODINGOPTION_OFF},
+        {EXT_COD2, &tsStruct::mfxExtCodingOption2.SkipFrame, MFX_SKIPFRAME_INSERT_NOTHING}}, "last10"},
+    {/*81*/ MFX_ERR_NONE, 0, {
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CQP},
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 1},
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, MFX_PICSTRUCT_FIELD_TFF},
+        {EXT_COD, &tsStruct::mfxExtCodingOption.CAVLC, MFX_CODINGOPTION_OFF},
+        {EXT_COD2, &tsStruct::mfxExtCodingOption2.SkipFrame, MFX_SKIPFRAME_INSERT_NOTHING}}, "last10"},
+    {/*82*/ MFX_ERR_NONE, 0, {
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR},
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 1},
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, MFX_PICSTRUCT_FIELD_TFF},
+        {EXT_COD, &tsStruct::mfxExtCodingOption.CAVLC, MFX_CODINGOPTION_OFF},
+        {EXT_COD2, &tsStruct::mfxExtCodingOption2.SkipFrame, MFX_SKIPFRAME_INSERT_NOTHING}}, "last10"},
+    {/*83*/ MFX_ERR_NONE, 0, {
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_VBR},
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 1},
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, MFX_PICSTRUCT_FIELD_TFF},
+        {EXT_COD, &tsStruct::mfxExtCodingOption.CAVLC, MFX_CODINGOPTION_OFF},
+        {EXT_COD2, &tsStruct::mfxExtCodingOption2.SkipFrame, MFX_SKIPFRAME_INSERT_NOTHING}}, "last10"},
+
+    // B-frames
+    {/*84*/ MFX_ERR_NONE, 0, {
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CQP},
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 2},
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, MFX_PICSTRUCT_PROGRESSIVE},
+        {EXT_COD, &tsStruct::mfxExtCodingOption.CAVLC, MFX_CODINGOPTION_ON},
+        {EXT_COD2, &tsStruct::mfxExtCodingOption2.SkipFrame, MFX_SKIPFRAME_INSERT_NOTHING}}, "1 3 5 7 9 11 13"},
+    {/*85*/ MFX_ERR_NONE, 0, {
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR},
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 2},
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, MFX_PICSTRUCT_PROGRESSIVE},
+        {EXT_COD, &tsStruct::mfxExtCodingOption.CAVLC, MFX_CODINGOPTION_ON},
+        {EXT_COD2, &tsStruct::mfxExtCodingOption2.SkipFrame, MFX_SKIPFRAME_INSERT_NOTHING}}, "1 3 5 7 9 11 13"},
+    {/*86*/ MFX_ERR_NONE, 0, {
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_VBR},
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 2},
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, MFX_PICSTRUCT_PROGRESSIVE},
+        {EXT_COD, &tsStruct::mfxExtCodingOption.CAVLC, MFX_CODINGOPTION_ON},
+        {EXT_COD2, &tsStruct::mfxExtCodingOption2.SkipFrame, MFX_SKIPFRAME_INSERT_NOTHING}}, "1 3 5 7 9 11 13"},
+    {/*87*/ MFX_ERR_NONE, 0, {
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CQP},
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 2},
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, MFX_PICSTRUCT_FIELD_TFF},
+        {EXT_COD, &tsStruct::mfxExtCodingOption.CAVLC, MFX_CODINGOPTION_ON},
+        {EXT_COD2, &tsStruct::mfxExtCodingOption2.SkipFrame, MFX_SKIPFRAME_INSERT_NOTHING}}, "1 3 5 7 9 11 13"},
+    {/*88*/ MFX_ERR_NONE, 0, {
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR},
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 2},
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, MFX_PICSTRUCT_FIELD_TFF},
+        {EXT_COD, &tsStruct::mfxExtCodingOption.CAVLC, MFX_CODINGOPTION_ON},
+        {EXT_COD2, &tsStruct::mfxExtCodingOption2.SkipFrame, MFX_SKIPFRAME_INSERT_NOTHING}}, "1 3 5 7 9 11 13"},
+    {/*89*/ MFX_ERR_NONE, 0, {
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_VBR},
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 2},
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, MFX_PICSTRUCT_FIELD_TFF},
+        {EXT_COD, &tsStruct::mfxExtCodingOption.CAVLC, MFX_CODINGOPTION_ON},
+        {EXT_COD2, &tsStruct::mfxExtCodingOption2.SkipFrame, MFX_SKIPFRAME_INSERT_NOTHING}}, "1 3 5 7 9 11 13"},
+    {/*90*/ MFX_ERR_NONE, 0, {
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CQP},
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 2},
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, MFX_PICSTRUCT_PROGRESSIVE},
+        {EXT_COD, &tsStruct::mfxExtCodingOption.CAVLC, MFX_CODINGOPTION_OFF},
+        {EXT_COD2, &tsStruct::mfxExtCodingOption2.SkipFrame, MFX_SKIPFRAME_INSERT_NOTHING}}, "1 3 5 7 9 11 13"},
+    {/*91*/ MFX_ERR_NONE, 0, {
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR},
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 2},
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, MFX_PICSTRUCT_PROGRESSIVE},
+        {EXT_COD, &tsStruct::mfxExtCodingOption.CAVLC, MFX_CODINGOPTION_OFF},
+        {EXT_COD2, &tsStruct::mfxExtCodingOption2.SkipFrame, MFX_SKIPFRAME_INSERT_NOTHING}}, "1 3 5 7 9 11 13"},
+    {/*92*/ MFX_ERR_NONE, 0, {
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_VBR},
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 2},
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, MFX_PICSTRUCT_PROGRESSIVE},
+        {EXT_COD, &tsStruct::mfxExtCodingOption.CAVLC, MFX_CODINGOPTION_OFF},
+        {EXT_COD2, &tsStruct::mfxExtCodingOption2.SkipFrame, MFX_SKIPFRAME_INSERT_NOTHING}}, "1 3 5 7 9 11 13"},
+    {/*93*/ MFX_ERR_NONE, 0, {
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CQP},
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 2},
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, MFX_PICSTRUCT_FIELD_TFF},
+        {EXT_COD, &tsStruct::mfxExtCodingOption.CAVLC, MFX_CODINGOPTION_OFF},
+        {EXT_COD2, &tsStruct::mfxExtCodingOption2.SkipFrame, MFX_SKIPFRAME_INSERT_NOTHING}}, "1 3 5 7 9 11 13"},
+    {/*94*/ MFX_ERR_NONE, 0, {
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR},
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 2},
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, MFX_PICSTRUCT_FIELD_TFF},
+        {EXT_COD, &tsStruct::mfxExtCodingOption.CAVLC, MFX_CODINGOPTION_OFF},
+        {EXT_COD2, &tsStruct::mfxExtCodingOption2.SkipFrame, MFX_SKIPFRAME_INSERT_NOTHING}}, "1 3 5 7 9 11 13"},
+    {/*95*/ MFX_ERR_NONE, 0, {
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_VBR},
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 2},
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, MFX_PICSTRUCT_FIELD_TFF},
+        {EXT_COD, &tsStruct::mfxExtCodingOption.CAVLC, MFX_CODINGOPTION_OFF},
+        {EXT_COD2, &tsStruct::mfxExtCodingOption2.SkipFrame, MFX_SKIPFRAME_INSERT_NOTHING}}, "1 3 5 7 9 11 13"},
 };
 
 const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case)/sizeof(TestSuite::tc_struct);
@@ -346,36 +712,47 @@ class BsDump : public tsBitstreamProcessor, tsParserH264AU
     std::vector<mfxU32> m_skip_frames;
     mfxU32 m_curr_frame;
     mfxU32 numMb;
+    mfxU16 m_skip_mode;
 public:
     BsDump(const char* fname)
         : m_writer(fname)
         , tsParserH264AU(BS_H264_INIT_MODE_CABAC|BS_H264_INIT_MODE_CAVLC)
         , m_curr_frame(0)
         , numMb(0)
+        , m_skip_mode(0)
     {
         set_trace_level(0);
     }
     ~BsDump() {}
-    mfxStatus Init(std::vector<mfxU32>& skip_frames, mfxFrameInfo& fi)
+    mfxStatus Init(std::vector<mfxU32>& skip_frames, mfxFrameInfo& fi, mfxU16 skip_mode)
     {
         numMb = (fi.Width / 16) * (fi.Height / 16);
         m_skip_frames = skip_frames;
+        m_skip_mode = skip_mode;
         return MFX_ERR_NONE;
     }
 
     mfxStatus ProcessBitstream(mfxBitstream& bs, mfxU32 nFrames)
     {
-        set_buffer(bs.Data + bs.DataOffset, bs.DataLength+1);
-        UnitType& au = ParseOrDie();
-
         bool skipped_frame = (bool)!m_skip_frames.size();
         if (std::find(m_skip_frames.begin(), m_skip_frames.end(), m_curr_frame) != m_skip_frames.end())
         {
             skipped_frame = true;
         }
 
-        if (skipped_frame)
+        if (skipped_frame && m_skip_mode == MFX_SKIPFRAME_INSERT_NOTHING)
         {
+            if (bs.DataLength != 0)
+            {
+                g_tsLog << "ERROR: frame should be skipped\n";
+                return MFX_ERR_INVALID_VIDEO_PARAM;
+            }
+        }
+        else if (skipped_frame && m_skip_mode == MFX_SKIPFRAME_INSERT_DUMMY)
+        {
+            set_buffer(bs.Data + bs.DataOffset, bs.DataLength+1);
+            UnitType& au = ParseOrDie();
+
             for (Bs32u i = 0; i < au.NumUnits; i++)
             {
                 if (!(au.NALU[i].nal_unit_type == 0x01 || au.NALU[i].nal_unit_type == 0x05))
@@ -390,7 +767,7 @@ public:
                 if (au.NALU[i].slice_hdr->NumMb != numMb)
                 {
                     g_tsLog << "ERROR: real NumMb=" << au.NALU[i].slice_hdr->NumMb
-                            << "is not equal to targer=" << numMb;
+                            << " is not equal to targer=" << numMb << "\n";
                     return MFX_ERR_INVALID_VIDEO_PARAM;
                 }
 
@@ -419,6 +796,10 @@ int TestSuite::RunTest(unsigned int id)
     MFXInit();
 
     mfxU32 nframes = 900;
+    m_par.mfx.GopPicSize = 300;
+    m_par.mfx.GopRefDist = 1;
+
+    SETPARS(m_pPar, MFXPAR);
 
     std::vector<mfxU32> skip_frames;
     if (0 == strncmp(tc.skips, "each2", strlen("each2")))
@@ -430,6 +811,13 @@ int TestSuite::RunTest(unsigned int id)
     {
         for (mfxU32 i = nframes - 1; i > (nframes - 11); i--)
             skip_frames.push_back(i);
+
+        // repeate skipts for each GOP
+        size_t sz = skip_frames.size();
+        for (size_t i = 0; i < sz; i++)
+        {
+            skip_frames.push_back(skip_frames[i] - m_par.mfx.GopPicSize);
+        }
     }
     else
     {
@@ -438,6 +826,13 @@ int TestSuite::RunTest(unsigned int id)
         while (stream >> f)
         {
             skip_frames.push_back(f);
+        }
+
+        // repeate skipts for each GOP
+        size_t sz = skip_frames.size();
+        for (size_t i = 0; i < sz; i++)
+        {
+            skip_frames.push_back(skip_frames[i] + m_par.mfx.GopPicSize);
         }
     }
 
@@ -461,14 +856,22 @@ int TestSuite::RunTest(unsigned int id)
         return 1;
     }
 
-    m_par.mfx.GopPicSize = 300;
-    m_par.mfx.GopRefDist = 1;
     // set up parameters for case
-    SETPARS(m_pPar, MFXPAR);
     if (m_par.mfx.RateControlMethod == MFX_RATECONTROL_CBR)
     {
-        m_par.mfx.MaxKbps = m_par.mfx.TargetKbps;
+        if (m_par.mfx.FrameInfo.Width < 1280)
+        {
+            m_par.mfx.MaxKbps = m_par.mfx.TargetKbps = 700;
+        }
+        else
+        {
+            m_par.mfx.MaxKbps = m_par.mfx.TargetKbps = 1200;
+        }
         m_par.mfx.InitialDelayInKB = 0;
+    }
+    if (m_par.mfx.RateControlMethod == MFX_RATECONTROL_VBR)
+    {
+        m_par.mfx.MaxKbps = mfxU16(m_par.mfx.TargetKbps * 1.4);
     }
     if (m_par.mfx.RateControlMethod != MFX_RATECONTROL_CQP)
     {
@@ -499,7 +902,12 @@ int TestSuite::RunTest(unsigned int id)
 #pragma warning(default:4996)
     std::string out_name = ENV("TS_OUTPUT_NAME", tmp_out);
     BsDump b(out_name.c_str());
-    b.Init(skip_frames, m_par.mfx.FrameInfo);
+    if (m_par.mfx.GopRefDist != 1)
+    {
+        for (size_t i = 0; i < skip_frames.size(); i++)
+            skip_frames[i]++;
+    }
+    b.Init(skip_frames, m_par.mfx.FrameInfo, cod2.SkipFrame);
     m_bs_processor = &b;
 
     ///////////////////////////////////////////////////////////////////////////

@@ -92,6 +92,9 @@ make_library( pacm none static )
 set( sources "" )
 set( sources.plus "" )
 
+set( USE_STRICT_NAME TRUE )
+set(MFX_LDFLAGS "${MFX_ORIG_LDFLAGS} -Wl,--version-script=${CMAKE_CURRENT_SOURCE_DIR}/../mfx_lib/plugin/libmfxsw_plugin.map" )
+
 
 foreach( dir ${CMAKE_CURRENT_SOURCE_DIR}/ptir_plugin/src )
   file( GLOB_RECURSE srcs "${dir}/*.c" "${dir}/*.cpp" )

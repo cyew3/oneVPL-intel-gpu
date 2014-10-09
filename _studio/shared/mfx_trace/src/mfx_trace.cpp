@@ -29,6 +29,7 @@ extern "C"
 }
 #include <stdlib.h>
 #include <string.h>
+#include "vm_interlocked.h"
 
 /*------------------------------------------------------------------------------*/
 
@@ -77,10 +78,11 @@ struct mfxTraceAlgorithm
 
 /*------------------------------------------------------------------------------*/
 
-static mfxTraceU32  g_OutputMode = MFX_TRACE_OUTPUT_TRASH;
-static mfxTraceU32  g_Level      = MFX_TRACE_LEVEL_DEFAULT;
+static mfxTraceU32      g_OutputMode = MFX_TRACE_OUTPUT_TRASH;
+static mfxTraceU32      g_Level      = MFX_TRACE_LEVEL_DEFAULT;
+static volatile Ipp32u  g_refCounter = 0;
 
-static mfxTraceU32                g_mfxTraceCategoriesNum = 0;
+static mfxTraceU32           g_mfxTraceCategoriesNum = 0;
 static mfxTraceCategoryItem* g_mfxTraceCategoriesTable = NULL;
 
 mfxTraceAlgorithm g_TraceAlgorithms[] =
@@ -282,6 +284,11 @@ mfxTraceU32 MFXTrace_Init(const mfxTraceChar *filename, mfxTraceU32 output_mode)
     mfxTraceU32 sts = 0;
     mfxTraceU32 i = 0;
 
+    if (vm_interlocked_inc32(&g_refCounter) != 1)
+    {
+        return sts;
+    }
+
     sts = MFXTrace_GetRegistryParams();
     if (!sts)
     {
@@ -320,6 +327,11 @@ mfxTraceU32 MFXTrace_Close(void)
 {
     mfxTraceU32 sts = 0, res = 0;
     mfxTraceU32 i = 0;
+
+    if (vm_interlocked_dec32(&g_refCounter) != 0)
+    {
+        return sts;
+    }
 
     for (i = 0; i < sizeof(g_TraceAlgorithms)/sizeof(mfxTraceAlgorithm); ++i)
     {

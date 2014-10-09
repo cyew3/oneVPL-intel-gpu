@@ -1115,7 +1115,7 @@ typedef struct tagENCODE_SET_PICTURE_PARAMETERS_JPEG
     UINT    PicWidth;
     UINT    PicHeight;
 
-    UINT    ChromaType;
+    UINT    InputSurfaceFormat;
     UINT    SampleBitDepth;
 
     UINT    NumComponent;

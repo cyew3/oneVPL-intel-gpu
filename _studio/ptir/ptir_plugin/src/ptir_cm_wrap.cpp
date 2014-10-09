@@ -368,40 +368,58 @@ mfxStatus PTIR_ProcessorCM::Process(mfxFrameSurface1 *surface_in, mfxFrameSurfac
     {
         return MFX_ERR_MORE_DATA;
     }
-    else
+    else if(surface_out != 0)
     {
-        bool isUnlockReq = false;
-
         CmSurface2D *pOutCmSurface2D = 0;
 
-        if((surface_out && (*surface_out)->Data.MemId) && (work_par.IOPattern & MFX_IOPATTERN_IN_VIDEO_MEMORY || work_par.IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY))
+#if defined(_DEBUG)
+        //debug: find duplicates:
+        std::map<CmSurface2D*,mfxFrameSurface1*>::iterator ittt;
+        std::map<CmSurface2D*,mfxFrameSurface1*>::iterator ittt2;
+        for (ittt = CmToMfxSurfmap.begin(); ittt != CmToMfxSurfmap.end(); ++ittt)
+        {
+            for (ittt2 = CmToMfxSurfmap.begin(); ittt2 != CmToMfxSurfmap.end(); ++ittt2)
+            {
+                if(ittt2 != ittt)
+                {
+                    if(ittt2->second == ittt->second)
+                    {
+                        assert(ittt2->second != ittt->second);
+                    }
+                }
+            }
+        }
+#endif
+
         {
             //MemId should be a video memory surface
             CmDeviceEx& pCMdevice = this->deinterlaceFilter->DeviceEx();
             int result = -1;
-#if defined(_WIN32) || defined(_WIN64)
-            result = pCMdevice->CreateSurface2D((IDirect3DSurface9 *) (*surface_out)->Data.MemId, pOutCmSurface2D);
-#endif
-            assert(result == 0);
-            CmToMfxSurfmap[pOutCmSurface2D] = (*surface_out);
-            isUnlockReq = false;
+
+            std::map<CmSurface2D*,mfxFrameSurface1*>::iterator it;
+            for (it = CmToMfxSurfmap.begin(); it != CmToMfxSurfmap.end(); ++it)
+            {
+                if(*surface_out == it->second)
+                {
+                    pOutCmSurface2D = it->first;
+                    break;
+                }
+            }
+            if(!pOutCmSurface2D)
+            {
+                mfxSts = frmSupply->CMCreateSurface2D(*surface_out,pOutCmSurface2D,true);
+                if(MFX_ERR_NONE != mfxSts)
+                    return mfxSts;
+            }
         }
-        if((surface_out && (*surface_out)->Data.MemId) && (work_par.IOPattern & MFX_IOPATTERN_IN_SYSTEM_MEMORY || work_par.IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY))
-        {
-            //MemId should be a video memory surface
-            mfx_core->FrameAllocator.Lock(mfx_core->FrameAllocator.pthis, (*surface_out)->Data.MemId, &((*surface_out)->Data));
-            isUnlockReq = true;
-        }
+
         frmBuffer[uiSupBuf]->frmProperties.fr = dFrameRate;
 
 
         mfxSts = PTIR_ProcessFrame( 0, pOutCmSurface2D, surface_outt, beof, exp_surf);
 
-        if(isUnlockReq)
-        {
-            mfx_core->FrameAllocator.Unlock(mfx_core->FrameAllocator.pthis, (*surface_out)->Data.MemId, &((*surface_out)->Data));
-            isUnlockReq = false;
-        }
+        if(beof)
+            uiCur = 0;
 
         if(surface_out)
             *surface_out = 0;
