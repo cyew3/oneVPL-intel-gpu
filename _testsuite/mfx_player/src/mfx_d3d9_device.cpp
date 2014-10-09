@@ -294,7 +294,7 @@ typedef HRESULT (STDAPICALLTYPE *FUNC2)(__out UINT* pResetToken,
 
 HRESULT MFXD3D9Device::myDirect3DCreate9Ex(UINT SDKVersion, IDirect3D9Ex**d)
 {
-    m_pLibD3D9 = LoadLibrary(_T("d3d9.dll"));
+    m_pLibD3D9 = LoadLibraryEx(_T("d3d9.dll"),NULL,0);
     if (NULL == m_pLibD3D9) 
     { 
         MFX_TRACE_ERR(VM_STRING("LoadLibrary(\"d3d9.dll\")) failed with error ") << GetLastError());
@@ -320,7 +320,7 @@ HRESULT MFXD3D9Device::myDXVA2CreateDirect3DDeviceManager9(UINT* pResetToken,
         pDXVA2LibName = VM_STRING("dxva2.dll");
     }
 
-    m_pLibDXVA2 = LoadLibrary(pDXVA2LibName);
+    m_pLibDXVA2 = LoadLibraryEx(pDXVA2LibName,NULL,0);
     if (NULL == m_pLibDXVA2) 
     { 
         MFX_TRACE_ERR(VM_STRING("LoadLibrary(\"") << pDXVA2LibName <<VM_STRING("\") failed with error ") << GetLastError());

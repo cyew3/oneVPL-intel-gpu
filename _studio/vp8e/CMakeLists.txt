@@ -91,8 +91,8 @@ foreach( variant hw )
     vpx
     umc_csc_sw
     umc_io_merged_${variant}
-    umc_core_merged
     ${ITT_LIBS}
+    umc_core_merged
     ippmsdk_l ippj_l ippvc_l ippcc_l ippcv_l ippi_l ipps_l ippcore_l
     pthread
     dl

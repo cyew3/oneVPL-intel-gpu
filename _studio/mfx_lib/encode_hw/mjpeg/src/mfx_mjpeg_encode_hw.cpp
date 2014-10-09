@@ -38,38 +38,293 @@ MFXVideoENCODEMJPEG_HW::MFXVideoENCODEMJPEG_HW(VideoCORE *core, mfxStatus *sts)
 
 mfxStatus MFXVideoENCODEMJPEG_HW::Query(VideoCORE * core, mfxVideoParam *in, mfxVideoParam *out)
 {
+    mfxU32 isCorrected = 0;
+    mfxU32 isInvalid = 0;
     MFX_CHECK_NULL_PTR2(core, out);
 
-    if (in == 0)
+    if (!in)
     {
         memset(&out->mfx, 0, sizeof(out->mfx));
 
-        out->IOPattern             = 1;
-        out->Protected             = 1;
-        out->AsyncDepth            = 1;
-        out->mfx.CodecId           = MFX_CODEC_JPEG;
-        out->mfx.CodecProfile      = MFX_PROFILE_JPEG_BASELINE;
+        out->mfx.FrameInfo.FourCC        = MFX_FOURCC_NV12;
+        out->mfx.FrameInfo.Width         = 1;
+        out->mfx.FrameInfo.Height        = 1;
+        out->mfx.FrameInfo.CropX         = 0;
+        out->mfx.FrameInfo.CropY         = 0;
+        out->mfx.FrameInfo.CropW         = 1;
+        out->mfx.FrameInfo.CropH         = 1;
+        out->mfx.FrameInfo.FrameRateExtN = 1;
+        out->mfx.FrameInfo.FrameRateExtD = 1;
+        out->mfx.FrameInfo.AspectRatioW  = 1;
+        out->mfx.FrameInfo.AspectRatioH  = 1;
+        out->mfx.FrameInfo.PicStruct     = 1;
+        out->mfx.FrameInfo.ChromaFormat  = MFX_CHROMAFORMAT_YUV420;
+        out->mfx.CodecId                 = MFX_CODEC_JPEG;
+        out->mfx.CodecLevel              = 0;
+        out->mfx.CodecProfile            = MFX_PROFILE_JPEG_BASELINE;
+        out->mfx.NumThread               = 1;
+        out->mfx.Interleaved             = MFX_SCANTYPE_INTERLEAVED;
+        out->mfx.Quality                 = 1;
+        out->mfx.RestartInterval         = 0;
+        out->AsyncDepth                  = 1;
+        out->IOPattern                   = 1;
+        out->Protected                   = 0;
 
-        out->mfx.FrameInfo.FourCC       = MFX_FOURCC_NV12;
-        out->mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
-        out->mfx.FrameInfo.Width        = 0x1000;
-        out->mfx.FrameInfo.Height       = 0x1000;
+        //Extended coding options
+        mfxStatus sts = CheckExtBufferId(*out);
+        if (sts != MFX_ERR_NONE)
+            return MFX_WRN_PARTIAL_ACCELERATION;
 
         JpegEncCaps hwCaps = {0};
-        mfxStatus sts = QueryHwCaps(core->GetVAType(), core->GetAdapterNumber(), hwCaps);
+        sts = QueryHwCaps(core->GetVAType(), core->GetAdapterNumber(), hwCaps);
         if (sts != MFX_ERR_NONE)
             return MFX_WRN_PARTIAL_ACCELERATION;
     }
     else
     {
+        // Check HW caps
         JpegEncCaps hwCaps = {0};
         mfxStatus sts = QueryHwCaps(core->GetVAType(), core->GetAdapterNumber(), hwCaps);
         if (sts != MFX_ERR_NONE)
             return MFX_WRN_PARTIAL_ACCELERATION;
 
-        sts = CheckJpegParam(*in, hwCaps, core->IsExternalFrameAllocator());
-        MFX_CHECK_STS(sts);
+        sts = CheckJpegParam(*in, hwCaps);
+        if (sts == MFX_WRN_PARTIAL_ACCELERATION)
+            return MFX_WRN_PARTIAL_ACCELERATION;
+        else if (sts == MFX_ERR_INCOMPATIBLE_VIDEO_PARAM)
+            isInvalid++;
+
+        // Extended coding options
+        sts = CheckExtBufferId(*in);
+        if (sts != MFX_ERR_NONE)
+            isInvalid++;
+        sts = CheckExtBufferId(*out);
+        if (sts != MFX_ERR_NONE)
+            isInvalid++;
+
+        // Check external buffers
+        mfxExtJPEGQuantTables* qt_in  = (mfxExtJPEGQuantTables*)GetExtBuffer( in->ExtParam, in->NumExtParam, MFX_EXTBUFF_JPEG_QT );
+        mfxExtJPEGQuantTables* qt_out = (mfxExtJPEGQuantTables*)GetExtBuffer( out->ExtParam, out->NumExtParam, MFX_EXTBUFF_JPEG_QT );
+        mfxExtJPEGHuffmanTables* ht_in  = (mfxExtJPEGHuffmanTables*)GetExtBuffer( in->ExtParam, in->NumExtParam, MFX_EXTBUFF_JPEG_HUFFMAN );
+        mfxExtJPEGHuffmanTables* ht_out = (mfxExtJPEGHuffmanTables*)GetExtBuffer( out->ExtParam, out->NumExtParam, MFX_EXTBUFF_JPEG_HUFFMAN );
+
+        if ((qt_in == 0) != (qt_out == 0) ||
+            (ht_in == 0) != (ht_out == 0))
+            return MFX_ERR_UNDEFINED_BEHAVIOR;
+
+        if (qt_in && qt_out)
+        {
+            if(qt_in->NumTable <= 4)
+            {
+                qt_out->NumTable = qt_in->NumTable;
+                for(mfxU16 i=0; i<qt_out->NumTable; i++)
+                    for(mfxU16 j=0; j<64; j++)
+                        qt_out->Qm[i][j] = qt_in->Qm[i][j];
+            }
+            else
+            {
+                qt_out->NumTable = 0;
+                for(mfxU16 i=0; i<4; i++)
+                    for(mfxU16 j=0; j<64; j++)
+                        qt_out->Qm[i][j] = 0;
+                isInvalid++;
+            }
+        }
+
+        if (ht_in && ht_out)
+        {
+            if(ht_in->NumDCTable <= 4)
+            {
+                ht_out->NumDCTable = ht_in->NumDCTable;
+                for(mfxU16 i=0; i<ht_out->NumDCTable; i++)
+                {
+                    for(mfxU16 j=0; j<16; j++)
+                        ht_out->DCTables[i].Bits[j] = ht_in->DCTables[i].Bits[j];
+                    for(mfxU16 j=0; j<12; j++)
+                        ht_out->DCTables[i].Values[j] = ht_in->DCTables[i].Values[j];
+                }
+            }
+            else
+            {
+                ht_out->NumDCTable = 0;
+                for(mfxU16 i=0; i<4; i++)
+                {
+                    for(mfxU16 j=0; j<16; j++)
+                        ht_out->DCTables[i].Bits[j] = 0;
+                    for(mfxU16 j=0; j<12; j++)
+                        ht_out->DCTables[i].Values[j] = 0;
+                }
+                isInvalid++;
+            }
+
+            if(ht_in->NumACTable <= 4)
+            {
+                ht_out->NumACTable = ht_in->NumACTable;
+                for(mfxU16 i=0; i<ht_out->NumACTable; i++)
+                {
+                    for(mfxU16 j=0; j<16; j++)
+                        ht_out->ACTables[i].Bits[j] = ht_in->ACTables[i].Bits[j];
+                    for(mfxU16 j=0; j<162; j++)
+                        ht_out->ACTables[i].Values[j] = ht_in->ACTables[i].Values[j];
+                }
+            }
+            else
+            {
+                ht_out->NumACTable = 0;
+                for(mfxU16 i=0; i<4; i++)
+                {
+                    for(mfxU16 j=0; j<16; j++)
+                        ht_out->ACTables[i].Bits[j] = 0;
+                    for(mfxU16 j=0; j<162; j++)
+                        ht_out->ACTables[i].Values[j] = 0;
+                }
+                isInvalid++;
+            }
+        }
+
+        // Check options for correctness
+        if (in->mfx.CodecId != MFX_CODEC_JPEG)
+            isInvalid++;
+        out->mfx.CodecId = MFX_CODEC_JPEG;
+
+        // profile and level can be corrected
+        switch(in->mfx.CodecProfile)
+        {
+            case MFX_PROFILE_JPEG_BASELINE:
+            //case MFX_PROFILE_JPEG_EXTENDED:
+            //case MFX_PROFILE_JPEG_PROGRESSIVE:
+            //case MFX_PROFILE_JPEG_LOSSLESS:
+            case MFX_PROFILE_UNKNOWN:
+                out->mfx.CodecProfile = MFX_PROFILE_JPEG_BASELINE;
+                break;
+            default:
+                isInvalid++;
+                out->mfx.CodecProfile = MFX_PROFILE_UNKNOWN;
+                break;
+        }
+
+        mfxU32 fourCC = in->mfx.FrameInfo.FourCC;
+        mfxU16 chromaFormat = in->mfx.FrameInfo.ChromaFormat;
+
+        if ((fourCC == 0 && chromaFormat == 0) ||
+            (fourCC == MFX_FOURCC_NV12 && (chromaFormat == MFX_CHROMAFORMAT_YUV420 || chromaFormat == MFX_CHROMAFORMAT_YUV400)) ||
+            (fourCC == MFX_FOURCC_YUY2 && chromaFormat == MFX_CHROMAFORMAT_YUV422H) ||
+            (fourCC == MFX_FOURCC_RGB4 && chromaFormat == MFX_CHROMAFORMAT_YUV444))
+        {
+            out->mfx.FrameInfo.FourCC = in->mfx.FrameInfo.FourCC;
+            out->mfx.FrameInfo.ChromaFormat = in->mfx.FrameInfo.ChromaFormat;
+        }
+        else
+        {
+            out->mfx.FrameInfo.FourCC = 0;
+            out->mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
+            return MFX_WRN_PARTIAL_ACCELERATION;
+        }
+
+        if (in->Protected != 0)
+            isInvalid++;
+
+        out->Protected = 0;
+        out->AsyncDepth = in->AsyncDepth;
+
+        //Check for valid framerate
+        if((!in->mfx.FrameInfo.FrameRateExtN && in->mfx.FrameInfo.FrameRateExtD) ||
+            (in->mfx.FrameInfo.FrameRateExtN && !in->mfx.FrameInfo.FrameRateExtD) ||
+            (in->mfx.FrameInfo.FrameRateExtD && ((mfxF64)in->mfx.FrameInfo.FrameRateExtN / in->mfx.FrameInfo.FrameRateExtD) > 172)) 
+        {
+            isInvalid++;
+            out->mfx.FrameInfo.FrameRateExtN = out->mfx.FrameInfo.FrameRateExtD = 0;
+        }
+        else
+        {
+            out->mfx.FrameInfo.FrameRateExtN = in->mfx.FrameInfo.FrameRateExtN;
+            out->mfx.FrameInfo.FrameRateExtD = in->mfx.FrameInfo.FrameRateExtD;
+        }
+
+        switch(in->IOPattern)
+        {
+            case 0:
+            case MFX_IOPATTERN_IN_SYSTEM_MEMORY:
+            case MFX_IOPATTERN_IN_OPAQUE_MEMORY:
+            case MFX_IOPATTERN_IN_VIDEO_MEMORY:
+                out->IOPattern = in->IOPattern;
+                break;
+            default:
+                isCorrected++;
+                if(in->IOPattern & MFX_IOPATTERN_IN_SYSTEM_MEMORY)
+                    out->IOPattern = MFX_IOPATTERN_IN_SYSTEM_MEMORY;
+                else if(in->IOPattern & MFX_IOPATTERN_IN_VIDEO_MEMORY)
+                    out->IOPattern = MFX_IOPATTERN_IN_VIDEO_MEMORY;
+                else
+                    out->IOPattern = 0;
+        }
+
+        out->mfx.NumThread = in->mfx.NumThread;
+        if(out->mfx.NumThread < 1)
+            out->mfx.NumThread = 1;
+
+        // Check crops
+        if (in->mfx.FrameInfo.CropH > in->mfx.FrameInfo.Height && in->mfx.FrameInfo.Height) {
+            out->mfx.FrameInfo.CropH = 0;
+            isInvalid ++;
+        } else
+            out->mfx.FrameInfo.CropH = in->mfx.FrameInfo.CropH;
+        if (in->mfx.FrameInfo.CropW > in->mfx.FrameInfo.Width && in->mfx.FrameInfo.Width) {
+            out->mfx.FrameInfo.CropW = 0;
+            isInvalid ++;
+        } else
+            out->mfx.FrameInfo.CropW = in->mfx.FrameInfo.CropW;
+        if (in->mfx.FrameInfo.CropX + in->mfx.FrameInfo.CropW > in->mfx.FrameInfo.Width) {
+            out->mfx.FrameInfo.CropX = 0;
+            isInvalid ++;
+        } else
+            out->mfx.FrameInfo.CropX = in->mfx.FrameInfo.CropX;
+        if (in->mfx.FrameInfo.CropY + in->mfx.FrameInfo.CropH > in->mfx.FrameInfo.Height) {
+            out->mfx.FrameInfo.CropY = 0;
+            isInvalid ++;
+        } else
+            out->mfx.FrameInfo.CropY = in->mfx.FrameInfo.CropY;
+            out->mfx.FrameInfo.CropY = in->mfx.FrameInfo.CropY;
+
+        out->mfx.FrameInfo.AspectRatioW = in->mfx.FrameInfo.AspectRatioW;
+        out->mfx.FrameInfo.AspectRatioH = in->mfx.FrameInfo.AspectRatioH;
+
+        if (in->mfx.Quality > 100)
+        {
+            out->mfx.Quality = 100;
+            isCorrected++;
+        }
+        else
+        {
+            out->mfx.Quality = in->mfx.Quality;
+        }
+
+        out->mfx.RestartInterval = in->mfx.RestartInterval;
+
+        switch (in->mfx.FrameInfo.PicStruct)
+        {
+            case MFX_PICSTRUCT_UNKNOWN:
+            case MFX_PICSTRUCT_PROGRESSIVE:
+                out->mfx.FrameInfo.PicStruct = in->mfx.FrameInfo.PicStruct;
+                break;
+            case MFX_PICSTRUCT_FIELD_TFF:
+            case MFX_PICSTRUCT_FIELD_BFF:
+            //case MFX_PICSTRUCT_FIELD_REPEATED:
+            //case MFX_PICSTRUCT_FRAME_DOUBLING:
+            //case MFX_PICSTRUCT_FRAME_TRIPLING:
+                return MFX_WRN_PARTIAL_ACCELERATION;
+            default:
+                isInvalid++;
+                out->mfx.FrameInfo.PicStruct = MFX_PICSTRUCT_UNKNOWN;
+                break;
+        }
     }
+    
+    if(isInvalid)
+        return MFX_ERR_UNSUPPORTED;
+
+    if(isCorrected)
+        return MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
 
     return MFX_ERR_NONE;
 }
@@ -114,33 +369,89 @@ mfxStatus MFXVideoENCODEMJPEG_HW::QueryIOSurf(VideoCORE * core, mfxVideoParam *p
 
 mfxStatus MFXVideoENCODEMJPEG_HW::Init(mfxVideoParam *par)
 {
+    mfxStatus sts, QueryStatus;
+
     if (m_bInitialized || !m_pCore)
-    {
         return MFX_ERR_UNDEFINED_BEHAVIOR;
+
+    if(par == NULL)
+        return MFX_ERR_NULL_PTR;
+
+    MFX_CHECK( CheckExtBufferId(*par) == MFX_ERR_NONE, MFX_ERR_INVALID_VIDEO_PARAM );
+
+    mfxExtJPEGQuantTables*    jpegQT       = (mfxExtJPEGQuantTables*)   GetExtBuffer( par->ExtParam, par->NumExtParam, MFX_EXTBUFF_JPEG_QT );
+    mfxExtJPEGHuffmanTables*  jpegHT       = (mfxExtJPEGHuffmanTables*) GetExtBuffer( par->ExtParam, par->NumExtParam, MFX_EXTBUFF_JPEG_HUFFMAN );
+    mfxExtOpaqueSurfaceAlloc* opaqAllocReq = (mfxExtOpaqueSurfaceAlloc*)GetExtBuffer( par->ExtParam, par->NumExtParam, MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION );
+
+    mfxVideoParam checked;
+    mfxExtJPEGQuantTables checked_jpegQT;
+    mfxExtJPEGHuffmanTables checked_jpegHT;
+    mfxExtOpaqueSurfaceAlloc checked_opaqAllocReq;
+    mfxExtBuffer *ptr_checked_ext[3] = {0,};
+    mfxU16 ext_counter = 0;
+    checked = *par;
+
+    if (jpegQT)
+    {
+        checked_jpegQT = *jpegQT;
+        ptr_checked_ext[ext_counter++] = &checked_jpegQT.Header;
+    } 
+    else 
+    {
+        memset(&checked_jpegQT, 0, sizeof(checked_jpegQT));
+        checked_jpegQT.Header.BufferId = MFX_EXTBUFF_JPEG_QT;
+        checked_jpegQT.Header.BufferSz = sizeof(checked_jpegQT);
     }
+    if (jpegHT)
+    {
+        checked_jpegHT = *jpegHT;
+        ptr_checked_ext[ext_counter++] = &checked_jpegHT.Header;
+    } 
+    else 
+    {
+        memset(&checked_jpegHT, 0, sizeof(checked_jpegHT));
+        checked_jpegHT.Header.BufferId = MFX_EXTBUFF_JPEG_HUFFMAN;
+        checked_jpegHT.Header.BufferSz = sizeof(checked_jpegHT);
+    }
+    if (opaqAllocReq) 
+    {
+        checked_opaqAllocReq = *opaqAllocReq;
+        ptr_checked_ext[ext_counter++] = &checked_opaqAllocReq.Header;
+    }
+    checked.ExtParam = ptr_checked_ext;
+    checked.NumExtParam = ext_counter;
+
+    sts = Query(m_pCore, par, &checked);
+
+    if (sts != MFX_ERR_NONE && sts != MFX_WRN_INCOMPATIBLE_VIDEO_PARAM)
+    {
+        if (sts == MFX_ERR_UNSUPPORTED)
+            return MFX_ERR_INVALID_VIDEO_PARAM;
+        else
+            return sts;
+    }
+
+    QueryStatus = sts;
+
+    par = &checked; // from now work with fixed copy of input!
+
+    if (opaqAllocReq)
+        opaqAllocReq = &checked_opaqAllocReq;
+
+    if (!m_pCore->IsExternalFrameAllocator() && (par->IOPattern & (MFX_IOPATTERN_OUT_VIDEO_MEMORY | MFX_IOPATTERN_IN_VIDEO_MEMORY)))
+        return MFX_ERR_INVALID_VIDEO_PARAM;
 
     m_ddi.reset( CreatePlatformMJpegEncoder( m_pCore ) );
 
     MFX_INTERNAL_CPY(&m_vFirstParam, par, sizeof(mfxVideoParam));
     MFX_INTERNAL_CPY(&m_vParam, &m_vFirstParam, sizeof(mfxVideoParam));
 
-    mfxStatus sts = m_ddi->CreateAuxilliaryDevice(
+    sts = m_ddi->CreateAuxilliaryDevice(
         m_pCore,
         m_vParam.mfx.FrameInfo.Width,
         m_vParam.mfx.FrameInfo.Height);
     if (sts != MFX_ERR_NONE)
         return MFX_WRN_PARTIAL_ACCELERATION;
-    
-    sts = CheckExtBufferId(*par);
-    MFX_CHECK_STS(sts);
-
-    JpegEncCaps caps = {0};
-    sts = m_ddi->QueryEncodeCaps(caps);
-    if (sts != MFX_ERR_NONE)
-        return MFX_WRN_PARTIAL_ACCELERATION;
-
-    sts = CheckJpegParam(m_vParam, caps, m_pCore->IsExternalFrameAllocator());
-    MFX_CHECK_STS(sts);
 
     sts = m_ddi->CreateAccelerationService(m_vParam);
     MFX_CHECK_STS(sts);
@@ -176,8 +487,24 @@ mfxStatus MFXVideoENCODEMJPEG_HW::Init(mfxVideoParam *par)
     // driver may suggest too small buffer for bitstream
     sts = m_ddi->QueryBitstreamBufferInfo(request);
     MFX_CHECK_STS(sts);
+
+    mfxU16 doubleBytesPerPx = 0;
+    switch(m_vParam.mfx.FrameInfo.FourCC)
+    {
+        case MFX_FOURCC_NV12:
+        case MFX_FOURCC_YV12:
+            doubleBytesPerPx = 3;
+            break;
+        case MFX_FOURCC_YUY2:
+            doubleBytesPerPx = 4;
+            break;
+        case MFX_FOURCC_RGB4:
+        default:
+            doubleBytesPerPx = 8;
+            break;
+    }
     request.Info.Width  = IPP_MAX(request.Info.Width,  m_vParam.mfx.FrameInfo.Width);
-    request.Info.Height = IPP_MAX(request.Info.Height, m_vParam.mfx.FrameInfo.Height * 3 / 2);
+    request.Info.Height = IPP_MAX(request.Info.Height, m_vParam.mfx.FrameInfo.Height * doubleBytesPerPx / 2);
 
     sts = m_pCore->AllocFrames(&request, &m_bitstream);
     MFX_CHECK(
@@ -192,7 +519,7 @@ mfxStatus MFXVideoENCODEMJPEG_HW::Init(mfxVideoParam *par)
     MFX_CHECK_STS(sts);
 
     m_bInitialized = true;
-    return sts;
+    return (QueryStatus == MFX_ERR_NONE) ? sts : QueryStatus;
 }
 
 mfxStatus MFXVideoENCODEMJPEG_HW::Reset(mfxVideoParam *par)
@@ -431,6 +758,7 @@ mfxStatus MFXVideoENCODEMJPEG_HW::CheckEncodeFrameParam(
     {
         // TBD: set external quant table
         // umc_sts = pMJPEGVideoEncoder->SetQuantTableExtBuf(jpegQT);
+        // check with hwCaps
     }
     else if(!m_vParam.mfx.Quality)
     {
@@ -444,6 +772,7 @@ mfxStatus MFXVideoENCODEMJPEG_HW::CheckEncodeFrameParam(
     {
         // TBD: set external Huffman table
         // umc_sts = pMJPEGVideoEncoder->SetHuffmanTableExtBuf(jpegHT);
+        // check with hwCaps
     }
 
     if(umc_sts != UMC::UMC_OK)

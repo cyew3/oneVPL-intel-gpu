@@ -559,6 +559,7 @@ H265Frame* H265Encoder::InsertInputFrame(const mfxFrameSurface1 *surface)
     // light configure
     (*frm)->ResetEncInfo();
     (*frm)->CopyFrame(surface);
+    (*frm)->m_timeStamp = surface->Data.TimeStamp;
     m_inputQueue_1.back()->m_frameOrigin = *frm;
 
     return m_inputQueue_1.back()->m_frameOrigin;

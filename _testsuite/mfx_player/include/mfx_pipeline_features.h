@@ -29,8 +29,10 @@ File Name: .h
 
 
 //d3d surafece and d3d11 surfaces supported on windows only
-#if defined (_WIN32) && !defined(D3D_SURFACES_SUPPORT)
+#if defined (_WIN32) && !defined(D3D_SURFACES_SUPPORT) 
     #define D3D_SURFACES_SUPPORT
 #endif
 
-
+#if defined(WIN_TRESHOLD_MOBILE)
+    #undef D3D_SURFACES_SUPPORT
+#endif

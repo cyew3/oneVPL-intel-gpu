@@ -679,11 +679,11 @@ mfxStatus MFXVideoENCODEH265::Init(mfxVideoParam* par_in)
             return MFX_ERR_INVALID_VIDEO_PARAM;
         else {
             // check memory type in opaque allocation request
-            if (!(opaqAllocReq->In.Type & MFX_MEMTYPE_DXVA2_DECODER_TARGET) && !(opaqAllocReq->In.Type  & MFX_MEMTYPE_SYSTEM_MEMORY))
-                return MFX_ERR_INVALID_VIDEO_PARAM;
+//             if (!(opaqAllocReq->In.Type & MFX_MEMTYPE_DXVA2_DECODER_TARGET) && !(opaqAllocReq->In.Type  & MFX_MEMTYPE_SYSTEM_MEMORY))
+//                 return MFX_ERR_INVALID_VIDEO_PARAM;
 
-            if ((opaqAllocReq->In.Type & MFX_MEMTYPE_SYSTEM_MEMORY) && (opaqAllocReq->In.Type  & MFX_MEMTYPE_DXVA2_DECODER_TARGET))
-                return MFX_ERR_INVALID_VIDEO_PARAM;
+//             if ((opaqAllocReq->In.Type & MFX_MEMTYPE_SYSTEM_MEMORY) && (opaqAllocReq->In.Type  & MFX_MEMTYPE_DXVA2_DECODER_TARGET))
+//                 return MFX_ERR_INVALID_VIDEO_PARAM;
 
             // use opaque surfaces. Need to allocate
             m_isOpaque = true;
@@ -691,8 +691,8 @@ mfxStatus MFXVideoENCODEH265::Init(mfxVideoParam* par_in)
     }
 
     // return an error if requested opaque memory type isn't equal to native
-    if (m_isOpaque && (opaqAllocReq->In.Type & MFX_MEMTYPE_FROM_ENCODE) && !(opaqAllocReq->In.Type & MFX_MEMTYPE_SYSTEM_MEMORY))
-        return MFX_ERR_INVALID_VIDEO_PARAM;
+//     if (m_isOpaque && (opaqAllocReq->In.Type & MFX_MEMTYPE_FROM_ENCODE) && !(opaqAllocReq->In.Type & MFX_MEMTYPE_SYSTEM_MEMORY))
+//         return MFX_ERR_INVALID_VIDEO_PARAM;
 
     //// to check if needed in hevc
     //m_allocator = new mfx_UMC_MemAllocator;

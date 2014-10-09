@@ -346,7 +346,7 @@ protected:
 
     //d3d9 memory
     mfx_shared_ptr<IHWDevice> m_pHWDevice;
-#ifdef D3D_SURFACES_SUPPORT
+#if defined(D3D_SURFACES_SUPPORT) || MFX_D3D11_SUPPORT==1
     std::auto_ptr<IUnknown> m_dxvaSpy;
 #endif
 
