@@ -404,7 +404,7 @@ CmDevice * TryCreateCmDevicePtr(VideoCORE * core, mfxU32 * version)
     }
     else if (core->GetVAType() == MFX_HW_VAAPI)
     {
-        //throw std::logic_error("GetDeviceManager not implemented on Linux for Look Ahead");
+        //throw std::logic_error("GetDeviceManager not implemented on Linux");
 #if defined(MFX_VA_LINUX)
         VADisplay display;
         mfxStatus res = core->GetHandle(MFX_HANDLE_VA_DISPLAY, &display); // == MFX_HANDLE_RESERVED2
@@ -415,12 +415,6 @@ CmDevice * TryCreateCmDevicePtr(VideoCORE * core, mfxU32 * version)
             return 0;
 #endif
     }
-
-#if defined(LINUX32) || defined(LINUX64)
-    VADisplay display = 0;
-    if ((result = ::CreateCmDevice(device, *version, display)) != CM_SUCCESS)
-        return 0;
-#endif // #if defined(LINUX32) || defined(LINUX64)
 
     return device;
 }
