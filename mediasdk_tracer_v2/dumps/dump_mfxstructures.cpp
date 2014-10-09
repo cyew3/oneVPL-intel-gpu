@@ -107,7 +107,7 @@ std::string DumpContext::dump(const std::string structName, const mfxExtCodingOp
     DUMP_FIELD(DisableDeblockingIdc);
     DUMP_FIELD(DisableVUI);
     DUMP_FIELD(BufferingPeriodSEI);
-    DUMP_FIELD_RESERVED(reserved2);
+    DUMP_FIELD(reserved2);
     return str;
 }
 
@@ -250,7 +250,7 @@ std::string DumpContext::dump(const std::string structName, const mfxInfoMFX &mf
 {
     std::string str;
     str += structName + ".reserved[]=" + DUMP_RESERVED_ARRAY(mfx.reserved) + "\n";
-    str += structName + ".reserved4=" + ToString(mfx.reserved4) + "\n";
+    str += structName + ".reserved5=" + ToString(mfx.reserved5) + "\n";
     str += structName + ".BRCParamMultiplier=" + ToString(mfx.BRCParamMultiplier) + "\n";
     str += dump(structName + ".FrameInfo", mfx.FrameInfo) + "\n";
     str += structName + ".CodecId=" + ToString(mfx.CodecId) + "\n";

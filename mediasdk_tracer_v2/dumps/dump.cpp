@@ -69,5 +69,48 @@ const char* DumpContext::get_bufferid_str(mfxU32 bufferid)
 }
 
 
+//mfxcommon
+DEFINE_GET_TYPE_DEF(mfxBitstream);
+DEFINE_GET_TYPE_DEF(mfxExtBuffer);
+DEFINE_GET_TYPE_DEF(mfxIMPL);
+DEFINE_GET_TYPE_DEF(mfxPriority);
+DEFINE_GET_TYPE_DEF(mfxVersion);
+DEFINE_GET_TYPE_DEF(mfxSyncPoint);
 
+//mfxenc
+DEFINE_GET_TYPE_DEF(mfxENCInput);
+DEFINE_GET_TYPE_DEF(mfxENCOutput);
+
+//mfxplugin
+DEFINE_GET_TYPE_DEF(mfxPlugin);
+
+//mfxstructures
+DEFINE_GET_TYPE_DEF(mfxDecodeStat);
+DEFINE_GET_TYPE_DEF(mfxEncodeCtrl);
+DEFINE_GET_TYPE_DEF(mfxEncodeStat);
+DEFINE_GET_TYPE_DEF(mfxExtCodingOption);
+DEFINE_GET_TYPE_DEF(mfxExtCodingOption2);
+DEFINE_GET_TYPE_DEF(mfxExtCodingOption3);
+DEFINE_GET_TYPE_DEF(mfxExtEncoderResetOption);
+DEFINE_GET_TYPE_DEF(mfxExtVppAuxData);
+DEFINE_GET_TYPE_DEF(mfxFrameAllocRequest);
+DEFINE_GET_TYPE_DEF(mfxFrameData);
+DEFINE_GET_TYPE_DEF(mfxFrameId);
+DEFINE_GET_TYPE_DEF(mfxFrameInfo);
+DEFINE_GET_TYPE_DEF(mfxFrameSurface1);
+DEFINE_GET_TYPE_DEF(mfxHandleType);
+DEFINE_GET_TYPE_DEF(mfxInfoMFX);
+DEFINE_GET_TYPE_DEF(mfxInfoVPP);
+DEFINE_GET_TYPE_DEF(mfxPayload);
+DEFINE_GET_TYPE_DEF(mfxSkipMode);
+DEFINE_GET_TYPE_DEF(mfxVideoParam);
+DEFINE_GET_TYPE_DEF(mfxVPPStat);
+DEFINE_GET_TYPE_DEF(mfxExtVPPDoNotUse);
+
+//mfxsession
+DEFINE_GET_TYPE_DEF(mfxSession);
+
+//mfxvideo
+DEFINE_GET_TYPE_DEF(mfxBufferAllocator);
+DEFINE_GET_TYPE_DEF(mfxFrameAllocator);
 

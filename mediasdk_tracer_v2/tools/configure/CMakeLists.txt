@@ -1,5 +1,5 @@
 cmake_minimum_required( VERSION 2.6.2 FATAL_ERROR )
-project(mfxconf)
+project(mfx-tracer-config)
 
 set(HEADERS "strfuncs.h" "config_manager.h")
 set(SOURCES "config_manager.cpp" "main.cpp")

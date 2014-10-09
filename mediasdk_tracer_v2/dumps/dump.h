@@ -34,13 +34,19 @@ std::string StringToHexString(std::string data);
 
 #define ToHexFormatString( x ) StringToHexString(dynamic_cast< std::ostringstream & >( ( std::ostringstream() << std::dec << x ) ).str() )
 
+//#define DEFINE_GET_TYPE(type) \
+//    template<> \
+//    inline const char* get_type<type>(){ return #type; };
+
 #define DEFINE_GET_TYPE(type) \
     template<> \
-    inline const char* get_type<type>(){ return #type; }
+    const char* get_type<type>();
+
+#define DEFINE_GET_TYPE_DEF(type) \
+    template<> const char* DumpContext::get_type<type>(){ return #type; }
 
 #define DEFINE_DUMP_FUNCTION(type) \
-    DEFINE_GET_TYPE(type) \
-    std::string dump(const std::string structName, const type &_var);
+    std::string dump(const std::string structName, const type & var);
 
 enum eDumpContect {
     DUMPCONTEXT_MFX,

@@ -96,7 +96,7 @@ mfxStatus MFXVideoUSER_ProcessFrameAsync(mfxSession session, const mfxHDL *in, m
         Log::WriteLog(context.dump_mfxU32("in_num", in_num));
         Log::WriteLog(context.dump_mfxHDL("out", out));
         Log::WriteLog(context.dump_mfxU32("out_num", out_num));
-        Log::WriteLog(context.dump("syncp", syncp));
+        if(syncp) Log::WriteLog(context.dump("syncp", *syncp));
 
         Timer t;
         mfxStatus status = (*(fMFXVideoUSER_ProcessFrameAsync) proc) (session, in, in_num, out, out_num, syncp);
@@ -109,7 +109,7 @@ mfxStatus MFXVideoUSER_ProcessFrameAsync(mfxSession session, const mfxHDL *in, m
         Log::WriteLog(context.dump_mfxU32("in_num", in_num));
         Log::WriteLog(context.dump_mfxHDL("out", out));
         Log::WriteLog(context.dump_mfxU32("out_num", out_num));
-        Log::WriteLog(context.dump("syncp", *syncp));
+        if(syncp) Log::WriteLog(context.dump("syncp", *syncp));
 
         Log::WriteLog("function: MFXVideoUSER_ProcessFrameAsync(" + elapsed + ", " + context.dump_mfxStatus("status", status) + ") - \n\n");
         return status;

@@ -355,7 +355,7 @@ mfxStatus MFXVideoDECODE_DecodeFrameAsync(mfxSession session, mfxBitstream *bs, 
         Log::WriteLog(context.dump("surface_work", *surface_work));
         if(surface_out && (*surface_out))
             Log::WriteLog(context.dump("surface_out", (**surface_out)));
-        Log::WriteLog(context.dump("syncp", syncp));
+        if(syncp) Log::WriteLog(context.dump("syncp", *syncp));
 
         sp->timer.Restart();
         Timer t;
@@ -374,7 +374,7 @@ mfxStatus MFXVideoDECODE_DecodeFrameAsync(mfxSession session, mfxBitstream *bs, 
         Log::WriteLog(context.dump("surface_work", *surface_work));
         if(surface_out && (*surface_out))
             Log::WriteLog(context.dump("surface_out", (**surface_out)));
-        Log::WriteLog(context.dump("syncp", &sp->syncPoint));
+        Log::WriteLog(context.dump("syncp", sp->syncPoint));
         Log::WriteLog("function: MFXVideoDECODE_DecodeFrameAsync(" + elapsed + ", " + context.dump_mfxStatus("status", status) + ") - \n\n");
         return status;
     }
