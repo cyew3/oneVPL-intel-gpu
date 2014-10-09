@@ -342,7 +342,7 @@ mfxStatus MFX_PTIR_Plugin::Execute(mfxThreadTask task, mfxU32 , mfxU32 )
                 break;
         }
     }
-    else if(bEOS)
+    else if(bEOS && ptir->uiCur)
     {
         if(!surface_out)
             surface_out = GetFreeSurf(workSurfs);

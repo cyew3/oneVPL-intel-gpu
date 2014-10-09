@@ -34,7 +34,9 @@ private:
         ZERO_OUT_W,
         ZERO_OUT_H,
         NULL_SYNCP,
-        NULL_SURF_WORK
+        NULL_SURF_WORK,
+        SET_CROP_IN,
+        SET_CROP_OUT
     };
 
     struct tc_struct
@@ -64,23 +66,24 @@ const TestSuite::tc_struct TestSuite::test_case[] =
     // IOPattern cases
     {/*1*/ MFX_ERR_NONE, 0, {&tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_VIDEO_MEMORY|MFX_IOPATTERN_OUT_VIDEO_MEMORY}},
     {/*2*/ MFX_ERR_NONE, 0, {&tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_SYSTEM_MEMORY|MFX_IOPATTERN_OUT_SYSTEM_MEMORY}},
-    {/*3*/ MFX_ERR_NONE, 0, {&tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_VIDEO_MEMORY|MFX_IOPATTERN_OUT_SYSTEM_MEMORY}},
-    {/*4*/ MFX_ERR_NONE, 0, {&tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_SYSTEM_MEMORY|MFX_IOPATTERN_OUT_VIDEO_MEMORY}},
-    {/*5*/ MFX_ERR_NONE, ALLOC_OPAQUE, {&tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_OPAQUE_MEMORY|MFX_IOPATTERN_OUT_OPAQUE_MEMORY}},
-    {/*6*/ MFX_ERR_NONE, ALLOC_OPAQUE, {&tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_VIDEO_MEMORY|MFX_IOPATTERN_OUT_OPAQUE_MEMORY}},
-    {/*7*/ MFX_ERR_NONE, ALLOC_OPAQUE, {&tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_SYSTEM_MEMORY|MFX_IOPATTERN_OUT_OPAQUE_MEMORY}},
-    {/*8*/ MFX_ERR_NONE, ALLOC_OPAQUE, {&tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_OPAQUE_MEMORY|MFX_IOPATTERN_OUT_VIDEO_MEMORY}},
-    {/*9*/ MFX_ERR_NONE, ALLOC_OPAQUE, {&tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_OPAQUE_MEMORY|MFX_IOPATTERN_OUT_SYSTEM_MEMORY}},
+    //Preview PTIR release does not support memory type conversion and opaque memory type, as specified in RN.
+    //{/*3*/ MFX_ERR_NONE, 0, {&tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_VIDEO_MEMORY|MFX_IOPATTERN_OUT_SYSTEM_MEMORY}},
+    //{/*4*/ MFX_ERR_NONE, 0, {&tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_SYSTEM_MEMORY|MFX_IOPATTERN_OUT_VIDEO_MEMORY}},
+    //{/*5*/ MFX_ERR_NONE, ALLOC_OPAQUE, {&tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_OPAQUE_MEMORY|MFX_IOPATTERN_OUT_OPAQUE_MEMORY}},
+    //{/*6*/ MFX_ERR_NONE, ALLOC_OPAQUE, {&tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_VIDEO_MEMORY|MFX_IOPATTERN_OUT_OPAQUE_MEMORY}},
+    //{/*7*/ MFX_ERR_NONE, ALLOC_OPAQUE, {&tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_SYSTEM_MEMORY|MFX_IOPATTERN_OUT_OPAQUE_MEMORY}},
+    //{/*8*/ MFX_ERR_NONE, ALLOC_OPAQUE, {&tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_OPAQUE_MEMORY|MFX_IOPATTERN_OUT_VIDEO_MEMORY}},
+    //{/*9*/ MFX_ERR_NONE, ALLOC_OPAQUE, {&tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_OPAQUE_MEMORY|MFX_IOPATTERN_OUT_SYSTEM_MEMORY}},
 
     // unaligned W/H right before RunFrameAsync
     {/*10*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, UNALIGNED_H},
     {/*11*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, UNALIGNED_W},
 
     // crops are mandatory for processing, but for PTIR it is not supported
-    {/*12*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, 0, {{&tsStruct::mfxVideoParam.vpp.In.CropW, 320},
-                                                  {&tsStruct::mfxVideoParam.vpp.In.CropH, 240}}},
-    {/*13*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, 0, {{&tsStruct::mfxVideoParam.vpp.Out.CropW, 320},
-                                                  {&tsStruct::mfxVideoParam.vpp.Out.CropH, 240}}},
+    {/*12*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, SET_CROP_IN,  {{&tsStruct::mfxFrameSurface1.Info.CropW, 320},
+                                                             {&tsStruct::mfxFrameSurface1.Info.CropH, 240}}},
+    {/*13*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, SET_CROP_OUT, {{&tsStruct::mfxFrameSurface1.Info.CropW, 320},
+                                                             {&tsStruct::mfxFrameSurface1.Info.CropH, 240}}},
     
     // W/H are mandatory
     {/*14*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, ZERO_IN_W},
@@ -108,7 +111,7 @@ int TestSuite::RunTest(unsigned int id)
     // set up parameters for case
     for(mfxU32 i = 0; i < n_par; i++)
     {
-        if(tc.set_par[i].f)
+        if(tc.set_par[i].f && SET_CROP_IN != tc.mode && SET_CROP_OUT != tc.mode)
         {
             tsStruct::set(m_pPar, *tc.set_par[i].f, tc.set_par[i].v);
         }
@@ -173,12 +176,12 @@ int TestSuite::RunTest(unsigned int id)
             if (tc.mode == ZERO_OUT_H)
             {
                 m_pSurfWork->Info.Height = 0;
-                m_pSurfOut->Info.Height = 0;
+                //m_pSurfOut->Info.Height = 0;
             }
             if (tc.mode == ZERO_OUT_W)
             {
                 m_pSurfWork->Info.Width = 0;
-                m_pSurfOut->Info.Width = 0;
+                //m_pSurfOut->Info.Width = 0;
             }
             if (tc.mode == NULL_SYNCP)
             {
@@ -187,6 +190,26 @@ int TestSuite::RunTest(unsigned int id)
             if (tc.mode == NULL_SURF_WORK)
             {
                 m_pSurfWork = 0;
+            }
+            if (tc.mode == SET_CROP_IN)
+            {
+                for(mfxU32 i = 0; i < n_par; i++)
+                {
+                    if(tc.set_par[i].f)
+                    {
+                        tsStruct::set(m_pSurfIn, *tc.set_par[i].f, tc.set_par[i].v);
+                    }
+                }
+            }
+            if (tc.mode == SET_CROP_OUT)
+            {
+                for(mfxU32 i = 0; i < n_par; i++)
+                {
+                    if(tc.set_par[i].f)
+                    {
+                        tsStruct::set(m_pSurfIn, *tc.set_par[i].f, tc.set_par[i].v);
+                    }
+                }
             }
 
             res = RunFrameVPPAsyncEx(m_session, m_pSurfIn, m_pSurfWork, &m_pSurfOut, m_pSyncPoint);

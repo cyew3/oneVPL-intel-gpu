@@ -166,14 +166,11 @@ mfxStatus frameSupplier::AddOutputSurf(mfxFrameSurface1* outSurf, mfxFrameSurfac
             if(exp_surf && (outSurf != exp_surf))
             {
                 outSurf = exp_surf;
+                freeSurf = cmSurf;
             }
             mfxStatus mfxSts = MFX_ERR_NONE;
             mfxSts = CMCopyGpuToSys(cmSurf, outSurf);
             assert(MFX_ERR_NONE == mfxSts);
-            if(exp_surf && (outSurf != exp_surf))
-            {
-                freeSurf = cmSurf;
-            }
         }
     }
 
