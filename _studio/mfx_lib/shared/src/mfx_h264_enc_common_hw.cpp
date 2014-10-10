@@ -2521,6 +2521,7 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
             }
         }
         else if (
+            par.mfx.RateControlMethod == MFX_RATECONTROL_VCM ||
             par.mfx.RateControlMethod == MFX_RATECONTROL_VBR ||
             par.mfx.RateControlMethod == MFX_RATECONTROL_WIDI_VBR ||
             par.mfx.RateControlMethod == MFX_RATECONTROL_QVBR ||
@@ -3680,7 +3681,7 @@ namespace
 bool IsHRDBasedBRCMethod(mfxU16  RateControlMethod)
 {
     return  RateControlMethod != MFX_RATECONTROL_CQP && RateControlMethod != MFX_RATECONTROL_AVBR &&
-            RateControlMethod != MFX_RATECONTROL_ICQ && RateControlMethod != MFX_RATECONTROL_VCM && 
+            RateControlMethod != MFX_RATECONTROL_ICQ && 
             RateControlMethod != MFX_RATECONTROL_LA && RateControlMethod != MFX_RATECONTROL_LA_ICQ;
 }
 
@@ -5398,6 +5399,7 @@ void MfxVideoParam::SyncCalculableToVideoParam()
 
     if (mfx.RateControlMethod == MFX_RATECONTROL_CBR ||
         mfx.RateControlMethod == MFX_RATECONTROL_VBR ||
+        mfx.RateControlMethod == MFX_RATECONTROL_VCM ||
         mfx.RateControlMethod == MFX_RATECONTROL_AVBR||
         mfx.RateControlMethod == MFX_RATECONTROL_QVBR)
     {
