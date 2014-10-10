@@ -124,6 +124,7 @@ mfxStatus D3D11FrameAllocator::LockFrame(mfxMemId mid, mfxFrameData *ptr)
             sr.GetTexture()->GetDesc(&desc);
 
             if (DXGI_FORMAT_NV12 != desc.Format &&
+                DXGI_FORMAT_P010 != desc.Format &&
                 DXGI_FORMAT_420_OPAQUE != desc.Format &&
                 DXGI_FORMAT_YUY2 != desc.Format &&
                 DXGI_FORMAT_P8 != desc.Format &&
@@ -167,6 +168,14 @@ mfxStatus D3D11FrameAllocator::LockFrame(mfxMemId mid, mfxFrameData *ptr)
             ptr->U = (mfxU8 *)lockedRect.pData + desc.Height * lockedRect.RowPitch;
             ptr->V = ptr->U + 1;
 
+            break;
+
+        case DXGI_FORMAT_P010:
+            ptr->PitchHigh = (mfxU16)(lockedRect.RowPitch / (1 << 16));
+            ptr->PitchLow  = (mfxU16)(lockedRect.RowPitch % (1 << 16));
+            ptr->Y = (mfxU8 *)lockedRect.pData;
+            ptr->U = (mfxU8 *)lockedRect.pData + desc.Height * lockedRect.RowPitch;
+            ptr->V = ptr->U + 1;
             break;
 
         case DXGI_FORMAT_420_OPAQUE: // can be unsupported by standard ms guid
@@ -451,9 +460,8 @@ DXGI_FORMAT D3D11FrameAllocator::ConverColortFormat(mfxU32 fourcc)
         case MFX_FOURCC_P8_TEXTURE:
             return DXGI_FORMAT_P8;
 
-        case MFX_FOURCC_P010: // tmp !!! kta
-        //case MFX_FOURCC_R16:
-            return DXGI_FORMAT_R16_UINT; // UNORM ??? kta
+        case MFX_FOURCC_P010:
+            return DXGI_FORMAT_P010;
 
         default:
             return DXGI_FORMAT_UNKNOWN;
