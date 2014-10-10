@@ -2703,6 +2703,7 @@ mfxStatus MFXDecPipeline::Play()
                 bEOS     = true;
                 //flushing data back to inBSFrame
                 m_bitstreamBuf.PutBuffer(NULL, true);
+                MFX_CHECK_STS(m_bitstreamBuf.SetMinBuffSize(1));
                 MFX_CHECK_STS_SKIP(sts = m_bitstreamBuf.LockOutput(&inputBs) , MFX_ERR_MORE_DATA);
                 if (MFX_ERR_MORE_DATA == sts)//still don't have enough data in buffer
                 {
@@ -2710,7 +2711,7 @@ mfxStatus MFXDecPipeline::Play()
                 }
                 MFX_CHECK_STS(MFXBistreamBuffer::MoveBsExtended(&m_inBSFrame, &inputBs));
                 MFX_CHECK_STS(m_bitstreamBuf.UnLockOutput(&inputBs));
-
+                MFX_CHECK_STS(m_bitstreamBuf.SetMinBuffSize(nminSize));
                 break;
             }
 

@@ -107,7 +107,7 @@ protected:
     // Fill up frame parameters before returning it to application
     void FillOutputSurface(mfxFrameSurface1 **surface_out, mfxFrameSurface1 *surface_work, H265DecoderFrame * pFrame);
     // Find a next frame ready to be output from decoder
-    H265DecoderFrame * GetFrameToDisplay_H265(UMC::VideoData * dst, bool force);
+    H265DecoderFrame * GetFrameToDisplay_H265(bool force);
 
     // Wait until a frame is ready to be output and set necessary surface flags
     mfxStatus DecodeFrame(mfxFrameSurface1 *surface_out, H265DecoderFrame * pFrame = 0);

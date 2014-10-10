@@ -283,7 +283,7 @@ public:
     UMC::Status GetInfo(UMC::VideoDecoderParams *lpInfo);
 
     // Add a new bitstream data buffer to decoding
-    virtual UMC::Status AddSource(UMC::MediaData * pSource, UMC::MediaData *dst);
+    virtual UMC::Status AddSource(UMC::MediaData * pSource);
 
     // Chose appropriate processing action for specified NAL unit
     UMC::Status ProcessNalUnit(UMC::MediaDataEx *nalUnit);
@@ -329,7 +329,7 @@ public:
     virtual H265DecoderFrame * FindSurface(UMC::FrameMemID id);
 
     // Set frame display time
-    void PostProcessDisplayFrame(UMC::MediaData *dst, H265DecoderFrame *pFrame);
+    void PostProcessDisplayFrame(H265DecoderFrame *pFrame);
 
     // Attempt to recover after something unexpectedly went wrong
     virtual void AfterErrorRestore();
@@ -386,7 +386,7 @@ protected:
     virtual void AddFakeReferenceFrame(H265Slice * pSlice);
 
     // Find NAL units in new bitstream buffer and process them
-    UMC::Status AddOneFrame(UMC::MediaData * pSource, UMC::MediaData *dst);
+    UMC::Status AddOneFrame(UMC::MediaData * pSource);
 
     // Allocate frame internals
     virtual UMC::Status AllocateFrameData(H265DecoderFrame * pFrame, IppiSize dimensions, Ipp32s bit_depth, const H265SeqParamSet* pSeqParamSet, const H265PicParamSet *pPicParamSet);
@@ -412,6 +412,7 @@ protected:
     Ipp64f      m_local_delta_frame_time;
     bool        m_use_external_framerate;
     bool        m_decodedOrder;
+    bool        m_checkCRAInsideResetProcess;
 
     H265Slice * m_pLastSlice;
 

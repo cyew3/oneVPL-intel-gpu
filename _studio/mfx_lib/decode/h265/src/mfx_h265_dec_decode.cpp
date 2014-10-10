@@ -930,7 +930,6 @@ mfxStatus VideoDECODEH265::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1 *
 
     try
     {
-        UMC::VideoData dst;
         bool force = false;
 
         UMC::Status umcFrameRes = UMC::UMC_OK;
@@ -946,7 +945,7 @@ mfxStatus VideoDECODEH265::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1 *
             }
             else
             {
-                umcRes = m_pH265VideoDecoder->AddSource(bs ? &src : 0, &dst);
+                umcRes = m_pH265VideoDecoder->AddSource(bs ? &src : 0);
             }
 
             umcAddSourceRes = umcFrameRes = umcRes;
@@ -1008,7 +1007,7 @@ mfxStatus VideoDECODEH265::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1 *
             if (m_vInitPar.mfx.DecodedOrder)
                 force = true;
 
-            H265DecoderFrame *pFrame = GetFrameToDisplay_H265(&dst, force);
+            H265DecoderFrame *pFrame = GetFrameToDisplay_H265(force);
 
             UMC::AutomaticUMCMutex guard(m_mGuard);
 
@@ -1274,7 +1273,7 @@ mfxStatus VideoDECODEH265::GetPayload( mfxU64 *ts, mfxPayload *payload )
 }
 
 // Find a next frame ready to be output from decoder
-H265DecoderFrame * VideoDECODEH265::GetFrameToDisplay_H265(UMC::VideoData * dst, bool force)
+H265DecoderFrame * VideoDECODEH265::GetFrameToDisplay_H265(bool force)
 {
     H265DecoderFrame * pFrame = m_pH265VideoDecoder->GetFrameToDisplayInternal(force);
     if (!pFrame)
@@ -1283,7 +1282,7 @@ H265DecoderFrame * VideoDECODEH265::GetFrameToDisplay_H265(UMC::VideoData * dst,
     }
 
     pFrame->setWasOutputted();
-    m_pH265VideoDecoder->PostProcessDisplayFrame(dst, pFrame);
+    m_pH265VideoDecoder->PostProcessDisplayFrame(pFrame);
 
     return pFrame;
 }

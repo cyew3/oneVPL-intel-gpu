@@ -317,8 +317,6 @@ UMC::Status MFXTaskSupplier_H265::DecodeSEI(UMC::MediaDataEx *nalUnit)
         MemoryPiece swappedMem;
         swappedMem.Allocate(nalUnit->GetDataSize() + DEFAULT_NU_TAIL_SIZE);
 
-        memset(swappedMem.GetPointer() + nalUnit->GetDataSize(), DEFAULT_NU_TAIL_VALUE, DEFAULT_NU_TAIL_SIZE);
-
         SwapperBase * swapper = m_pNALSplitter->GetSwapper();
         swapper->SwapMemory(&swappedMem, &mem, 0);
 
@@ -686,16 +684,6 @@ UMC::Status HeadersAnalyzer::ProcessNalUnit(UMC::MediaData * data)
         case NAL_UT_VPS:
         case NAL_UT_SPS:
         case NAL_UT_PPS:
-            needProcess = true;
-            break;
-
-
-        case NAL_UT_AU_DELIMITER:
-            //if (header_was_started)
-                //quite = true;
-            break;
-
-        case NAL_UT_SEI:
             needProcess = true;
             break;
 

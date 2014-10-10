@@ -600,6 +600,7 @@ TaskSupplier_H265::TaskSupplier_H265()
     , m_sei_messages(0)
     , m_isInitialized(false)
     , m_decodedOrder(false)
+    , m_checkCRAInsideResetProcess(false)
 {
 }
 
@@ -768,6 +769,7 @@ void TaskSupplier_H265::Close()
     m_frameOrder               = 0;
 
     m_decodedOrder      = false;
+    m_checkCRAInsideResetProcess = false;
     m_WaitForIDR        = true;
     m_maxUIDWhenWasDisplayed = 0;
 
@@ -829,6 +831,7 @@ void TaskSupplier_H265::Reset()
     m_frameOrder               = 0;
 
     m_decodedOrder      = false;
+    m_checkCRAInsideResetProcess = false;
     m_WaitForIDR        = true;
     m_maxUIDWhenWasDisplayed = 0;
 
@@ -863,6 +866,7 @@ void TaskSupplier_H265::AfterErrorRestore()
     AU_Splitter_H265::Reset();
 
     m_decodedOrder      = false;
+    m_checkCRAInsideResetProcess = false;
     m_WaitForIDR        = true;
     m_maxUIDWhenWasDisplayed = 0;
     NoRaslOutputFlag = 1;
@@ -979,8 +983,6 @@ UMC::Status TaskSupplier_H265::DecodeSEI(UMC::MediaDataEx *nalUnit)
 
         MemoryPiece swappedMem;
         swappedMem.Allocate(nalUnit->GetDataSize() + DEFAULT_NU_TAIL_SIZE);
-
-        memset(swappedMem.GetPointer() + nalUnit->GetDataSize(), DEFAULT_NU_TAIL_VALUE, DEFAULT_NU_TAIL_SIZE);
 
         SwapperBase * swapper = m_pNALSplitter->GetSwapper();
         swapper->SwapMemory(&swappedMem, &mem, 0);
@@ -1344,8 +1346,6 @@ UMC::Status TaskSupplier_H265::DecodeHeaders(UMC::MediaDataEx *nalUnit)
 
         swappedMem.Allocate(nalUnit->GetDataSize() + DEFAULT_NU_TAIL_SIZE);
 
-        memset(swappedMem.GetPointer() + nalUnit->GetDataSize(), DEFAULT_NU_TAIL_VALUE, DEFAULT_NU_TAIL_SIZE);
-
         SwapperBase * swapper = m_pNALSplitter->GetSwapper();
         swapper->SwapMemory(&swappedMem, &mem, 0);
 
@@ -1384,7 +1384,7 @@ UMC::Status TaskSupplier_H265::DecodeHeaders(UMC::MediaDataEx *nalUnit)
 }
 
 // Set frame display time
-void TaskSupplier_H265::PostProcessDisplayFrame(UMC::MediaData *dst, H265DecoderFrame *pFrame)
+void TaskSupplier_H265::PostProcessDisplayFrame(H265DecoderFrame *pFrame)
 {
     if (!pFrame || pFrame->post_procces_complete)
         return;
@@ -1420,7 +1420,6 @@ void TaskSupplier_H265::PostProcessDisplayFrame(UMC::MediaData *dst, H265Decoder
     pFrame->post_procces_complete = true;
 
     DEBUG_PRINT((VM_STRING("Outputted %s, pppp - %d\n"), GetFrameInfoString(pFrame), pppp++));
-    dst->SetTime(pFrame->m_dFrameTime);
 
     m_maxUIDWhenWasDisplayed = IPP_MAX(m_maxUIDWhenWasDisplayed, pFrame->m_maxUIDWhenWasDisplayed);
 }
@@ -1544,7 +1543,7 @@ UMC::Status TaskSupplier_H265::CompleteDecodedFrames(H265DecoderFrame ** decoded
 }
 
 // Add a new bitstream data buffer to decoding
-UMC::Status TaskSupplier_H265::AddSource(UMC::MediaData * pSource, UMC::MediaData *dst)
+UMC::Status TaskSupplier_H265::AddSource(UMC::MediaData * pSource)
 {
     UMC::Status umcRes = UMC::UMC_OK;
 
@@ -1553,7 +1552,7 @@ UMC::Status TaskSupplier_H265::AddSource(UMC::MediaData * pSource, UMC::MediaDat
     if (GetFrameToDisplayInternal(false))
         return UMC::UMC_OK;
 
-    umcRes = AddOneFrame(pSource, dst); // construct frame
+    umcRes = AddOneFrame(pSource); // construct frame
 
     if (UMC::UMC_ERR_NOT_ENOUGH_BUFFER == umcRes)
     {
@@ -1590,7 +1589,7 @@ UMC::Status TaskSupplier_H265::AddSource(UMC::MediaData * pSource, UMC::MediaDat
     return umcRes;
 }
 
-// Chose appropriate processing action for specified NAL unit
+// Choose appropriate processing action for specified NAL unit
 UMC::Status TaskSupplier_H265::ProcessNalUnit(UMC::MediaDataEx *nalUnit)
 {
     UMC::Status umcRes = UMC::UMC_OK;
@@ -1639,7 +1638,7 @@ UMC::Status TaskSupplier_H265::ProcessNalUnit(UMC::MediaDataEx *nalUnit)
 }
 
 // Find NAL units in new bitstream buffer and process them
-UMC::Status TaskSupplier_H265::AddOneFrame(UMC::MediaData * pSource, UMC::MediaData *dst)
+UMC::Status TaskSupplier_H265::AddOneFrame(UMC::MediaData * pSource)
 {
     if (m_pLastSlice)
     {
@@ -1648,60 +1647,24 @@ UMC::Status TaskSupplier_H265::AddOneFrame(UMC::MediaData * pSource, UMC::MediaD
             return sts;
     }
 
-    bool is_header_readed = false;
+    if (m_checkCRAInsideResetProcess && !pSource)
+        return UMC::UMC_ERR_FAILED;
+
+    size_t moveToSpsOffset = m_checkCRAInsideResetProcess ? pSource->GetDataSize() : 0;
 
     do
     {
-        if (!dst && is_header_readed)
-        {
-            switch (m_pNALSplitter->CheckNalUnitType(pSource))
-            {
-            case NAL_UT_CODED_SLICE_RASL_N:
-            case NAL_UT_CODED_SLICE_RADL_N:
-            case NAL_UT_CODED_SLICE_TRAIL_R:
-            case NAL_UT_CODED_SLICE_TRAIL_N:
-            case NAL_UT_CODED_SLICE_TLA_R:
-            case NAL_UT_CODED_SLICE_TSA_N:
-            case NAL_UT_CODED_SLICE_STSA_R:
-            case NAL_UT_CODED_SLICE_STSA_N:
-            case NAL_UT_CODED_SLICE_BLA_W_LP:
-            case NAL_UT_CODED_SLICE_BLA_W_RADL:
-            case NAL_UT_CODED_SLICE_BLA_N_LP:
-            case NAL_UT_CODED_SLICE_IDR_W_RADL:
-            case NAL_UT_CODED_SLICE_IDR_N_LP:
-            case NAL_UT_CODED_SLICE_CRA:
-            case NAL_UT_CODED_SLICE_RADL_R:
-            case NAL_UT_CODED_SLICE_RASL_R:
-
-            case NAL_UT_SEI:
-                return UMC::UMC_OK;
-            }
-        }
-
         UMC::MediaDataEx *nalUnit = m_pNALSplitter->GetNalUnits(pSource);
         if (!nalUnit)
-        {
-            if (pSource)
-            {
-                if(!(pSource->GetFlags() & UMC::MediaData::FLAG_VIDEO_DATA_NOT_FULL_FRAME))
-                {
-                    VM_ASSERT(!m_pLastSlice);
-                    return AddSlice(0, true);
-                }
-
-                return is_header_readed && !dst ? UMC::UMC_OK : UMC::UMC_ERR_SYNC;
-            }
-            else
-                return AddSlice(0, true);
-        }
+            break;
 
         UMC::MediaDataEx::_MediaDataEx* pMediaDataEx = nalUnit->GetExData();
 
         for (Ipp32s i = 0; i < (Ipp32s)pMediaDataEx->count; i++, pMediaDataEx->index ++)
         {
-            if (!dst)
+            if (m_checkCRAInsideResetProcess)
             {
-                switch ((NalUnitType)pMediaDataEx->values[i]) // skip data at DecodeHeader mode
+                switch ((NalUnitType)pMediaDataEx->values[i])
                 {
                 case NAL_UT_CODED_SLICE_RASL_N:
                 case NAL_UT_CODED_SLICE_RADL_N:
@@ -1719,12 +1682,44 @@ UMC::Status TaskSupplier_H265::AddOneFrame(UMC::MediaData * pSource, UMC::MediaD
                 case NAL_UT_CODED_SLICE_CRA:
                 case NAL_UT_CODED_SLICE_RADL_R:
                 case NAL_UT_CODED_SLICE_RASL_R:
+                    {
+                        H265Slice * pSlice = m_ObjHeap.AllocateObject<H265Slice>();
+                        pSlice->IncrementReference();
 
-                case NAL_UT_SEI:
-                    if (is_header_readed)
-                        return UMC::UMC_OK;
-                    continue;
-                }
+                        notifier0<H265Slice> memory_leak_preventing_slice(pSlice, &H265Slice::DecrementReference);
+                        nalUnit->SetDataSize(100); // is enough for retrive
+
+                        MemoryPiece memCopy;
+                        memCopy.SetData(nalUnit);
+                        
+                        pSlice->m_source.Allocate(nalUnit->GetDataSize() + DEFAULT_NU_TAIL_SIZE);
+
+                        notifier0<MemoryPiece> memory_leak_preventing(&pSlice->m_source, &MemoryPiece::Release);
+                        SwapperBase * swapper = m_pNALSplitter->GetSwapper();
+                        swapper->SwapMemory(&pSlice->m_source, &memCopy, 0);
+
+                        Ipp32s pps_pid = pSlice->RetrievePicParamSetNumber();
+                        if (pps_pid != -1)
+                            CheckCRAOrBLA(pSlice);
+
+                        m_checkCRAInsideResetProcess = false;
+                        pSource->MoveDataPointer(pSource->GetDataSize() - moveToSpsOffset);
+                        m_pNALSplitter->Reset();
+                        return UMC::UMC_NTF_NEW_RESOLUTION;
+                    }
+                    break;
+
+                case NAL_UT_VPS:
+                case NAL_UT_SPS:
+                case NAL_UT_PPS:
+                    DecodeHeaders(nalUnit);
+                    break;
+
+                default:
+                    break;
+                };
+
+                continue;
             }
 
             switch ((NalUnitType)pMediaDataEx->values[i])
@@ -1772,13 +1767,19 @@ UMC::Status TaskSupplier_H265::AddOneFrame(UMC::MediaData * pSource, UMC::MediaD
                             Ipp32s nalIndex = pMediaDataEx->index;
                             Ipp32s size = pMediaDataEx->offsets[nalIndex + 1] - pMediaDataEx->offsets[nalIndex];
 
-                            pSource->MoveDataPointer(- size - 3);
+                            m_checkCRAInsideResetProcess = true;
+
+                            if (AddSlice(0, !pSource) == UMC::UMC_OK)
+                            {
+                                pSource->MoveDataPointer(- size - 3);
+                                return UMC::UMC_OK;
+                            }
+                            moveToSpsOffset = pSource->GetDataSize() + size + 3;
+                            continue;
                         }
 
                         return umsRes;
                     }
-
-                    is_header_readed = true;
                 }
                 break;
 
@@ -1795,6 +1796,7 @@ UMC::Status TaskSupplier_H265::AddOneFrame(UMC::MediaData * pSource, UMC::MediaD
                 m_IRAPType = NAL_UT_INVALID;
                 GetView()->pDPB->IncreaseRefPicListResetCount(0); // for flushing DPB
                 NoRaslOutputFlag = 1;
+                return UMC::UMC_OK;
                 break;
 
             default:
@@ -1803,6 +1805,12 @@ UMC::Status TaskSupplier_H265::AddOneFrame(UMC::MediaData * pSource, UMC::MediaD
         }
 
     } while ((pSource) && (MINIMAL_DATA_SIZE_H265 < pSource->GetDataSize()));
+
+    if (m_checkCRAInsideResetProcess)
+    {
+        pSource->MoveDataPointer(pSource->GetDataSize() - moveToSpsOffset);
+        m_pNALSplitter->Reset();
+    }
 
     if (!pSource)
     {
@@ -1814,6 +1822,7 @@ UMC::Status TaskSupplier_H265::AddOneFrame(UMC::MediaData * pSource, UMC::MediaD
 
         if (!(flags & UMC::MediaData::FLAG_VIDEO_DATA_NOT_FULL_FRAME))
         {
+            VM_ASSERT(!m_pLastSlice);
             return AddSlice(0, true);
         }
     }
@@ -1841,7 +1850,6 @@ H265Slice *TaskSupplier_H265::DecodeSliceHeader(UMC::MediaDataEx *nalUnit)
     pSlice->m_source.Allocate(nalUnit->GetDataSize() + DEFAULT_NU_TAIL_SIZE);
 
     notifier0<MemoryPiece> memory_leak_preventing(&pSlice->m_source, &MemoryPiece::Release);
-    memset(pSlice->m_source.GetPointer() + nalUnit->GetDataSize(), DEFAULT_NU_TAIL_VALUE, DEFAULT_NU_TAIL_SIZE);
 
     std::vector<Ipp32u> removed_offsets(0);
     SwapperBase * swapper = m_pNALSplitter->GetSwapper();
@@ -2024,7 +2032,32 @@ void TaskSupplier_H265::CheckCRAOrBLA(const H265Slice *pSlice)
         }
 
         m_IRAPType = pSlice->m_SliceHeader.nal_unit_type;
-        return;
+    }
+
+    if ((pSlice->GetSliceHeader()->nal_unit_type == NAL_UT_CODED_SLICE_CRA && NoRaslOutputFlag) ||
+        pSlice->GetSliceHeader()->no_output_of_prior_pics_flag)
+    {
+        Ipp32s minRefPicResetCount = 0xff; // because it is possible that there is no frames with RefPicListResetCount() equals 0 (after EOS!!)
+        for (H265DecoderFrame *pCurr = GetView()->pDPB->head(); pCurr; pCurr = pCurr->future())
+        {
+            if (pCurr->isDisplayable() && !pCurr->wasOutputted())
+            {
+                minRefPicResetCount = IPP_MIN(minRefPicResetCount, pCurr->RefPicListResetCount());
+            }
+        }
+
+        for (H265DecoderFrame *pCurr = GetView()->pDPB->head(); pCurr; pCurr = pCurr->future())
+        {
+            if (pCurr->RefPicListResetCount() > minRefPicResetCount || pCurr->wasOutputted())
+                continue;
+
+            if (pCurr->isDisplayable())
+            {
+                DEBUG_PRINT((VM_STRING("Skip frame no_output_of_prior_pics_flag - %s\n"), GetFrameInfoString(pCurr)));
+                pCurr->m_pic_output = false;
+                pCurr->SetisDisplayable(false);
+            }
+        }
     }
 }
 
@@ -2363,39 +2396,13 @@ H265DecoderFrame * TaskSupplier_H265::AllocateNewFrame(const H265Slice *pSlice)
 
     DPBUpdate(pSlice);
 
-    CheckCRAOrBLA(pSlice);
-
-    if ((pSlice->GetSliceHeader()->nal_unit_type == NAL_UT_CODED_SLICE_CRA && NoRaslOutputFlag) ||
-        pSlice->GetSliceHeader()->no_output_of_prior_pics_flag)
-    {
-        Ipp32s minRefPicResetCount = 0xff; // because it is possible that there is no frames with RefPicListResetCount() equals 0 (after EOS!!)
-        for (H265DecoderFrame *pCurr = GetView()->pDPB->head(); pCurr; pCurr = pCurr->future())
-        {
-            if (pCurr->isDisplayable() && !pCurr->wasOutputted())
-            {
-                minRefPicResetCount = IPP_MIN(minRefPicResetCount, pCurr->RefPicListResetCount());
-            }
-        }
-
-        for (H265DecoderFrame *pCurr = GetView()->pDPB->head(); pCurr; pCurr = pCurr->future())
-        {
-            if (pCurr->RefPicListResetCount() > minRefPicResetCount || pCurr->wasOutputted())
-                continue;
-
-            if (pCurr->isDisplayable())
-            {
-                DEBUG_PRINT((VM_STRING("Skip frame no_output_of_prior_pics_flag - %s\n"), GetFrameInfoString(pCurr)));
-                pCurr->m_pic_output = false;
-                pCurr->SetisDisplayable(false);
-            }
-        }
-    }
-
     pFrame = GetFreeFrame();
     if (NULL == pFrame)
     {
         return NULL;
     }
+
+    CheckCRAOrBLA(pSlice);
 
     pFrame->m_pic_output = pSlice->GetSliceHeader()->pic_output_flag != 0;
     pFrame->SetisShortTermRef(true);

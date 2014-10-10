@@ -172,8 +172,8 @@ public:
             pSource->MoveDataPointer((Ipp32s)(source - (Ipp8u *)pSource->GetDataPointer()));
 
             pDst->SetFlags(UMC::MediaData::FLAG_VIDEO_DATA_NOT_FULL_FRAME);
-            pDst->SetBufferPointer(&(m_prev[3]), m_prev.size());
-            pDst->SetDataSize(m_prev.size());
+            pDst->SetBufferPointer(&(m_prev[3]), m_prev.size() - 3);
+            pDst->SetDataSize(m_prev.size() - 3);
             pDst->SetTime(m_pts);
             Ipp32s code = m_code;
             m_code = -1;
@@ -369,28 +369,17 @@ public:
     virtual void SwapMemory(MemoryPiece * pMemDst, MemoryPiece * pMemSrc, std::vector<Ipp32u> *pRemovedOffsets)
     {
         size_t dstSize = pMemSrc->GetDataSize();
-        /*if (IsVLCCode(pMediaDataEx->values[0]))
-        {
-            size_t small_size = IPP_MIN(1024, pMemSrc->GetDataSize());
-            swapper->SwapMemory(pMemDst->GetPointer(),
-                        dstSize,
-                        (Ipp8u*)pMemSrc->GetPointer(),
-                        small_size);
-        }
-        else*/
-        {
-            SwapMemory(pMemDst->GetPointer(),
-                        dstSize,
-                        pMemSrc->GetPointer(),
-                        pMemSrc->GetDataSize(),
-                        pRemovedOffsets);
+        SwapMemory(pMemDst->GetPointer(),
+                    dstSize,
+                    pMemSrc->GetPointer(),
+                    pMemSrc->GetDataSize(),
+                    pRemovedOffsets);
 
-            VM_ASSERT(pMemDst->GetSize() >= dstSize);
-            size_t tail_size = IPP_MIN(pMemDst->GetSize() - dstSize, DEFAULT_NU_TAIL_SIZE);
-            memset(pMemDst->GetPointer() + dstSize, DEFAULT_NU_TAIL_VALUE, tail_size);
-            pMemDst->SetDataSize(dstSize);
-            pMemDst->SetTime(pMemSrc->GetTime());
-        }
+        VM_ASSERT(pMemDst->GetSize() >= dstSize);
+        size_t tail_size = IPP_MIN(pMemDst->GetSize() - dstSize, DEFAULT_NU_TAIL_SIZE);
+        memset(pMemDst->GetPointer() + dstSize, DEFAULT_NU_TAIL_VALUE, tail_size);
+        pMemDst->SetDataSize(dstSize);
+        pMemDst->SetTime(pMemSrc->GetTime());
     }
 };
 
