@@ -124,7 +124,7 @@ mfxStatus H265CmCtx::AllocateCmResources(mfxFEIH265Param *param, void *core)
     width16x = AlignValue(width / 16, 16);
     height16x = AlignValue(height / 16, 16);
 
-    if ((width > 1920) || (height > 1080))   {
+    if ((width >= 720) || (height >=576))   {
         hmeLevel = HME_LEVEL_HIGH;
     } else {
         hmeLevel = HME_LEVEL_LOW;
