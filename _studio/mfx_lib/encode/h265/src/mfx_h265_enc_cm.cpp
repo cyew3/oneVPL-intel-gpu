@@ -746,7 +746,7 @@ mfxStatus CmContext::AllocateCmResources(mfxU32 w, mfxU32 h, mfxU8 nRefs, VideoC
     frameOrder = 0;
     numBufferedRefs = nRefs + 1; // 1 extra frame for VmeNext
 
-    if ((width > 1920) || (height > 1080))
+    if ((width >= 1280) || (height >= 720))
         highRes = 1;
     else
         highRes = 0;
