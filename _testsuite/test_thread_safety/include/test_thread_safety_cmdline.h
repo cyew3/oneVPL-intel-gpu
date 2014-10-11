@@ -40,7 +40,7 @@ protected:
     static const vm_char CodecVc1[];
     static const vm_char CodecHevc[];
     static const vm_char CodecH263[];
-
+    static const vm_char CodecVP8[];
 private:
     AutoArray<vm_char *> m_argv;
     mfxI32 m_argc;

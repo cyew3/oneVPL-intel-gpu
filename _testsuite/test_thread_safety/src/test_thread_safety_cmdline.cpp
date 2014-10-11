@@ -22,6 +22,7 @@ const vm_char CommandLine::CodecMpeg2[] = VM_STRING("-m2");
 const vm_char CommandLine::CodecVc1[] = VM_STRING("-vc1");
 const vm_char CommandLine::CodecHevc[] = VM_STRING("-h265");
 const vm_char CommandLine::CodecH263[] = VM_STRING("-h263");
+const vm_char CommandLine::CodecVP8[] = VM_STRING("-vp8");
 const mfxU32 MAX_NUM_THREAD = 100;
 
 #define MAKE_PAIR(name)\
@@ -44,13 +45,14 @@ mfxU32 String2TestType(const vm_char* s)
         MAKE_PAIR(HEVCDECODE),
         MAKE_PAIR(HEVCENCODE),
         MAKE_PAIR(VC1DECODE),
+        MAKE_PAIR(VP8DECODE),
         MAKE_PAIR(H263DECODE),
         MAKE_PAIR(JPEGENCODE),
         MAKE_PAIR(H264ENCODE),
         MAKE_PAIR(MPEG2ENCODE),
         MAKE_PAIR(MVCENCODE),
         MAKE_PAIR(VC1ENCODE),
-        MAKE_PAIR(VP8DECODE),
+        MAKE_PAIR(VP8ENCODE),
         MAKE_PAIR(H263ENCODE)
     };
 
@@ -88,6 +90,7 @@ void CommandLine::PrintUsage(const vm_char* app)
         VM_STRING("  VC1DECODE\n")
         VM_STRING("  VC1ENCODE\n")
         VM_STRING("  VP8DECODE\n")
+        VM_STRING("  VP8ENCODE\n")
         VM_STRING("  H263DECODE\n")
         VM_STRING("  H263ENCODE\n"));
     vm_string_printf(
@@ -197,6 +200,9 @@ CommandLine::CommandLine(mfxI32 argc, vm_char** argv)
             break;
         case TEST_H263ENCODE:
             m_argv[m_argc++] = const_cast<vm_char *>(CommandLine::CodecH263);
+            break;
+        case TEST_VP8ENCODE:
+            m_argv[m_argc++] = const_cast<vm_char *>(CommandLine::CodecVP8);
             break;
         case TEST_JPEGDECODE:
         case TEST_H264DECODE:

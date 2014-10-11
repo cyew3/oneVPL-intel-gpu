@@ -245,6 +245,7 @@ Ipp32u VM_THREAD_CALLCONVENTION ThreadStarter(void *p)
         case TEST_MVCENCODE:
         case TEST_HEVCENCODE:
         case TEST_VC1ENCODE:
+        case TEST_VP8ENCODE:
         case TEST_H263ENCODE:
             param->result = RunEncode(param->argc, param->argv, param->pExternalSync);
             break;
