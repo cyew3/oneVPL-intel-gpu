@@ -203,9 +203,9 @@ mfxStatus MFX_H263E_Plugin::EncodeFrameSubmit(
 
     in.Init(m_umc_params.m_Param.Width, m_umc_params.m_Param.Height, UMC::YUV420, 8);
 
-    in.SetPlanePointer(data.Y, 0);
-    in.SetPlanePointer(data.U, 1);
-    in.SetPlanePointer(data.V, 2);
+    in.SetPlanePointer(data.Y + surface->Info.CropY * surface->Data.Pitch + surface->Info.CropX, 0);
+    in.SetPlanePointer(data.U + surface->Info.CropY * surface->Data.Pitch/2 + surface->Info.CropX/2, 1);
+    in.SetPlanePointer(data.V + surface->Info.CropY * surface->Data.Pitch/2 + surface->Info.CropX/2, 2);
 
     in.SetPlanePitch(data.Pitch, 0);
     in.SetPlanePitch(data.Pitch/2, 1);
@@ -283,7 +283,7 @@ mfxStatus MFX_H263E_Plugin::Query(mfxVideoParam *in, mfxVideoParam *out)
 
   memcpy(&(out->mfx), &(in->mfx), sizeof(mfxInfoMFX));
 
-  out->mfx.BufferSizeInKB = GET_DEFAULT_BUFFER_SIZE_IN_KB(in->mfx.FrameInfo.Width, in->mfx.FrameInfo.Height);
+  out->mfx.BufferSizeInKB = GET_DEFAULT_BUFFER_SIZE_IN_KB(in->mfx.FrameInfo.CropW, in->mfx.FrameInfo.CropH);
   out->AsyncDepth = in->AsyncDepth;
   out->IOPattern = in->IOPattern;
 
@@ -314,10 +314,10 @@ mfxStatus MFX_H263E_Plugin::Init(mfxVideoParam *par)
   m_frame_order = 0;
   m_video = *par;
 
-  m_umc_params.m_Param.Width = par->mfx.FrameInfo.Width;
-  m_umc_params.m_Param.Height = par->mfx.FrameInfo.Height;
-  m_umc_params.info.clip_info.width = par->mfx.FrameInfo.Width;
-  m_umc_params.info.clip_info.height = par->mfx.FrameInfo.Height;
+  m_umc_params.m_Param.Width = par->mfx.FrameInfo.CropW;
+  m_umc_params.m_Param.Height = par->mfx.FrameInfo.CropH;
+  m_umc_params.info.clip_info.width = m_umc_params.m_Param.Width;
+  m_umc_params.info.clip_info.height = m_umc_params.m_Param.Height;
   m_umc_params.info.framerate = par->mfx.FrameInfo.FrameRateExtN/par->mfx.FrameInfo.FrameRateExtD;
   m_umc_params.info.bitrate = par->mfx.TargetKbps * 1000;
   if (par->mfx.RateControlMethod == MFX_RATECONTROL_CQP) {
@@ -333,8 +333,12 @@ mfxStatus MFX_H263E_Plugin::Init(mfxVideoParam *par)
     m_umc_params.m_Param.PPicdist = par->mfx.GopRefDist;
   }
 
-  m_video.mfx.BufferSizeInKB = GET_DEFAULT_BUFFER_SIZE_IN_KB(m_video.mfx.FrameInfo.Width, m_video.mfx.FrameInfo.Height);
+  m_video.mfx.BufferSizeInKB = GET_DEFAULT_BUFFER_SIZE_IN_KB(m_video.mfx.FrameInfo.CropW, m_video.mfx.FrameInfo.CropH);
 
+  DBG_VAL_I(m_video.mfx.FrameInfo.CropX);
+  DBG_VAL_I(m_video.mfx.FrameInfo.CropY);
+  DBG_VAL_I(m_video.mfx.FrameInfo.CropW);
+  DBG_VAL_I(m_video.mfx.FrameInfo.CropH);
   DBG_VAL_I(m_video.mfx.FrameInfo.Width);
   DBG_VAL_I(m_video.mfx.FrameInfo.Height);
   DBG_VAL_I(m_video.mfx.FrameInfo.FrameRateExtN);
