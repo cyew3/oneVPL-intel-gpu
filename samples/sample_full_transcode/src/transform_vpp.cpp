@@ -94,7 +94,8 @@ void Transform <MFXVideoVPP>::AllocFrames() {
 
     //alloc frames with an eye to next transform
     // If surfaces are shared by 2 components, c1 and c2. NumSurf = c1_out + c2_in - AsyncDepth + 1
-    allocReq.Video().NumFrameSuggested = allocReq.Video().NumFrameSuggested + m_nFramesForNextTransform - m_initVideoParam.AsyncDepth + 1;
+    // WA: added 1 extra surface for SFT only
+    allocReq.Video().NumFrameSuggested = allocReq.Video().NumFrameSuggested + m_nFramesForNextTransform - m_initVideoParam.AsyncDepth + 2;
     allocReq.Video().NumFrameMin = allocReq.Video().NumFrameSuggested;
     mfxFrameAllocator *allocator = 0;
 

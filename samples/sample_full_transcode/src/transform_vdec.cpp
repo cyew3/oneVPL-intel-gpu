@@ -154,7 +154,8 @@ void Transform <MFXVideoDECODE>::AllocFrames(SamplePtr& sample) {
     MFXAVParams tmpDecParam(m_decParam);
     m_pNextTransform->GetNumSurfaces(tmpDecParam, nextTransformRequest);
     // If surfaces are shared by 2 components, c1 and c2. NumSurf = c1_out + c2_in - AsyncDepth + 1
-    allocReq.NumFrameSuggested = allocReq.NumFrameSuggested + nextTransformRequest.Video().NumFrameSuggested - m_decParam.AsyncDepth + 1;
+    // WA: added 1 extra surface for SFT only
+    allocReq.NumFrameSuggested = allocReq.NumFrameSuggested + nextTransformRequest.Video().NumFrameSuggested - m_decParam.AsyncDepth + 2;
     allocReq.NumFrameMin = allocReq.NumFrameSuggested;
     allocReq.Type |= MFX_MEMTYPE_VIDEO_MEMORY_DECODER_TARGET;
     sts = m_pAllocator->AllocFrames(&allocReq, &allocResp);
