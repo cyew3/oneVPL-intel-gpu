@@ -594,6 +594,7 @@ void WipeMemoryAllocator(sMemoryAllocator* pAllocator)
   MSDK_CHECK_POINTER_NO_RET(pAllocator);
 
   MSDK_SAFE_DELETE_ARRAY(pAllocator->pSurfaces[VPP_IN]);
+  MSDK_SAFE_DELETE_ARRAY(pAllocator->pSurfaces[VPP_IN_RGB]);
   MSDK_SAFE_DELETE_ARRAY(pAllocator->pSurfaces[VPP_OUT]);
 
   // delete frames
