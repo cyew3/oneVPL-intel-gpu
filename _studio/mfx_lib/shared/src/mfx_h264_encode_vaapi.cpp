@@ -43,9 +43,9 @@
 
 #endif
 
-#ifdef MFX_VA_ANDROID
-    #define SKIP_FRAME_SUPPORT
-#else
+#define SKIP_FRAME_SUPPORT
+
+#ifndef MFX_VA_ANDROID
     #define MAX_FRAME_SIZE_SUPPORT
     #define TRELLIS_QUANTIZATION_SUPPORT
     #define ROLLING_INTRA_REFRESH_SUPPORT
