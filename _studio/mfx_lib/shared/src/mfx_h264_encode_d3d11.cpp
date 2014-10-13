@@ -435,6 +435,9 @@ mfxStatus D3D11Encoder::Execute(
             m_sps.bResetBRC = true;
     }
 
+    if (task.m_resetBRC && (task.m_type[fieldId] & MFX_FRAMETYPE_IDR))
+        m_sps.bResetBRC = true;
+
     // update pps and slice structures
     {
         size_t slice_size_old = m_slice.size();
@@ -735,6 +738,8 @@ mfxStatus D3D11Encoder::QueryStatus(
         task.m_qpY[fieldId] = feedback->AverageQP;
         if (m_capsGet.MAD)
             task.m_mad[fieldId] = feedback->MAD;
+        task.m_resetBRC = !!feedback->reserved0; //WiDi w/a
+
         m_feedbackCached.Remove(task.m_statusReportNumber[fieldId]);
         return MFX_ERR_NONE;
 
