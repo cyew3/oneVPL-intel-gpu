@@ -90,6 +90,7 @@ namespace MFX_VP8ENC
     {
         mfxFrameSurface1 *pSurface;
         mfxU32            idInPool;
+        mfxU8             QP;
     };
 
     inline mfxStatus LockSurface(sFrameEx*  pFrame, mfxCoreInterface* pCore)

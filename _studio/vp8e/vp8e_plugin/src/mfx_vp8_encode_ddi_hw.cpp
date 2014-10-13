@@ -286,6 +286,20 @@ namespace MFX_VP8ENC
         frmUpdate.intra_non_dc_penalty_16x16 = task.m_costs.IntraNonDCPenalty16x16;
         frmUpdate.intra_non_dc_penalty_4x4 = task.m_costs.IntraNonDCPenalty4x4;
 
+        frmUpdate.ref_q_index[0] = frmUpdate.ref_q_index[1] = frmUpdate.ref_q_index[2] = 0;
+        if ( task.m_pRecRefFrames[REF_BASE])
+        {
+            frmUpdate.ref_q_index[0] = task.m_pRecRefFrames[REF_BASE]->QP; // pass QP for last ref
+        }
+        if ( task.m_pRecRefFrames[REF_GOLD])
+        {
+            frmUpdate.ref_q_index[1] = task.m_pRecRefFrames[REF_GOLD]->QP; // pass QP for gold ref
+        }
+        if ( task.m_pRecRefFrames[REF_ALT])
+        {
+            frmUpdate.ref_q_index[2] = task.m_pRecRefFrames[REF_ALT]->QP; // pass QP for alt ref
+        }
+
         return MFX_ERR_NONE;
     }
     

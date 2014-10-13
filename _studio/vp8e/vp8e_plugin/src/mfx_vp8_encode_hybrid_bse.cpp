@@ -1346,6 +1346,9 @@ namespace MFX_VP8ENC
                             m_ctrl,
                             layout);
 
+        // save QP value returned by driver
+        pTask->m_pRecFrame->QP = m_ctrl.qIndex;
+
         mPitch      = ((pHLDMbData[m_Params.fSizeInMBs-1].data[0]) & 0x3FF) + 1;
         mRowCnt     = ((pHLDMbData[m_Params.fSizeInMBs-1].data[0]>>10) & 0x3FF) + 1;
         cMb         = m_Mbs1;

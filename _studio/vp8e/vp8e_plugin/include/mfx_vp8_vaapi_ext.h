@@ -62,6 +62,11 @@ typedef struct _VAEncMiscParameterVP8HybridFrameUpdate
     // one per segment
     unsigned short intra_non_dc_penalty_4x4;
 
+    // quantization index for reference frames: 
+    //  ref_q_index[0] - LastRef
+    //  ref_q_index[1] - GoldRef
+    //  ref_q_index[2] - AltRef
+    unsigned char  ref_q_index[3];
 } VAEncMiscParameterVP8HybridFrameUpdate;
 
 // Segment map parameters needed by BRC when app provides segmentation map.
