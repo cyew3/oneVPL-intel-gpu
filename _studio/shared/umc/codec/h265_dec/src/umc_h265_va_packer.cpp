@@ -155,7 +155,7 @@ static const int *getDefaultScalingList(unsigned sizeId, unsigned listId)
     switch(sizeId)
     {
     case SCALING_LIST_4x4:
-        src = g_quantTSDefault4x4;
+        src = (int*)g_quantTSDefault4x4;
         break;
     case SCALING_LIST_8x8:
         src = (listId<3) ? s_quantIntraDefault8x8 : s_quantInterDefault8x8;
