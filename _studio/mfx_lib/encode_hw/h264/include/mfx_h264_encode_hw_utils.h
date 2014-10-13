@@ -887,6 +887,7 @@ namespace MfxHwH264Encode
             , m_timeStamp(0)
             , m_minQP(0)
             , m_maxQP(0)
+            , m_disableDeblockingIdc(0)
             , m_feiDistortion(NULL)
             , m_feiMVOut(NULL)
             , m_feiMBCODEOut(NULL)
@@ -1034,6 +1035,7 @@ namespace MfxHwH264Encode
 
         mfxU8   m_minQP;
         mfxU8   m_maxQP;
+        mfxU8   m_disableDeblockingIdc;
 
         mfxExtBuffer* m_feiDistortion;
         mfxExtBuffer* m_feiMVOut;

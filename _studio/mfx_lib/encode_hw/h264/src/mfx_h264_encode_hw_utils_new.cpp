@@ -1812,6 +1812,11 @@ void MfxHwH264Encode::ConfigureTask(
         task.m_minQP = extOpt2.MinQPB;
         task.m_maxQP = extOpt2.MaxQPB;
     }
+
+    task.m_disableDeblockingIdc = mfxU8(extOpt2Runtime ? extOpt2Runtime->DisableDeblockingIdc : extOpt2.DisableDeblockingIdc);
+
+    if (task.m_disableDeblockingIdc > 2)
+        task.m_disableDeblockingIdc = 0;
 }
 
 

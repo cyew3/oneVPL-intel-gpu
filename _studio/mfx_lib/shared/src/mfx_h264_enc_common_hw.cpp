@@ -6830,7 +6830,6 @@ void HeaderPacker::Init(
     m_isMVC = numViews > 1;
 
     m_numMbPerSlice = extOpt2->NumMbPerSlice;
-    m_disableDeblockingFilterIdc = extOpt2->DisableDeblockingIdc;
 
     PrepareSpsPpsHeaders(par, m_sps, m_subset, m_pps);
 
@@ -7138,7 +7137,7 @@ mfxU32 HeaderPacker::WriteSlice(
     obs.PutSe(task.m_cqpValue[fieldId] - (pps.picInitQpMinus26 + 26));
     if (pps.deblockingFilterControlPresentFlag)
     {
-        mfxU32 disableDeblockingFilterIdc = m_disableDeblockingFilterIdc;
+        mfxU32 disableDeblockingFilterIdc = task.m_disableDeblockingIdc;
         mfxI32 sliceAlphaC0OffsetDiv2     = 0;
         mfxI32 sliceBetaOffsetDiv2        = 0;
 
@@ -7384,7 +7383,7 @@ mfxU32 HeaderPacker::WriteSlice(
     obs.PutSe(task.m_cqpValue[fieldId] - (pps.picInitQpMinus26 + 26));
     if (pps.deblockingFilterControlPresentFlag)
     {
-        mfxU32 disableDeblockingFilterIdc = m_disableDeblockingFilterIdc;
+        mfxU32 disableDeblockingFilterIdc = task.m_disableDeblockingIdc;
         mfxI32 sliceAlphaC0OffsetDiv2     = 0;
         mfxI32 sliceBetaOffsetDiv2        = 0;
 

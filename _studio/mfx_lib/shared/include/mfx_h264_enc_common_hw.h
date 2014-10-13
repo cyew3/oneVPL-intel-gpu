@@ -1347,7 +1347,6 @@ namespace MfxHwH264Encode
         mfxU16                          m_cabacInitIdc;             // same for all layers and slices
         mfxU16                          m_directSpatialMvPredFlag;  // same for all layers and slices
         mfxU16                          m_numMbPerSlice;
-        mfxU16                          m_disableDeblockingFilterIdc;
         bool                            m_needPrefixNalUnit;
         bool                            m_emulPrev;                 // insert emualtion prevention bytes when possible (sps/pps/sei/aud)
         bool                            m_isMVC;

@@ -366,6 +366,7 @@ void MfxHwH264Encode::FillVaringPartOfSliceBuffer(
         slice[i].idr_pic_id                         = task.m_idrPicId;
         slice[i].pic_order_cnt_lsb                  = mfxU16(task.GetPoc(fieldId));
         slice[i].slice_qp_delta                     = mfxI8(task.m_cqpValue[fieldId] - pps.QpY);
+        slice[i].disable_deblocking_filter_idc      = task.m_disableDeblockingIdc;
     }
 }
 
@@ -418,6 +419,7 @@ mfxStatus MfxHwH264Encode::FillVaringPartOfSliceBufferSizeLimited(
         slice[i].idr_pic_id                         = task.m_idrPicId;
         slice[i].pic_order_cnt_lsb                  = mfxU16(task.GetPoc(fieldId));
         slice[i].slice_qp_delta                     = mfxI8(task.m_cqpValue[fieldId] - pps.QpY);
+        slice[i].disable_deblocking_filter_idc      = task.m_disableDeblockingIdc;
     }
 
     return MFX_ERR_NONE;
