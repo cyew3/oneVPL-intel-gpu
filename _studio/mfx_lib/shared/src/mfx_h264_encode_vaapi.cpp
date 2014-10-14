@@ -1415,7 +1415,7 @@ mfxStatus VAAPIEncoder::Execute(
     VAStatus    vaSts;
     mfxU8 skipFlag  = task.SkipFlag();
     mfxU16 skipMode = m_skipMode;
-    mfxExtCodingOption2* ctrlOpt2 = GetExtBuffer(task.m_ctrl, MFX_EXTBUFF_CODING_OPTION2);
+    mfxExtCodingOption2 const * ctrlOpt2 = GetExtBuffer(task.m_ctrl);
 
     if (ctrlOpt2 && ctrlOpt2->SkipFrame <= MFX_SKIPFRAME_BRC_ONLY)
         skipMode = ctrlOpt2->SkipFrame;
