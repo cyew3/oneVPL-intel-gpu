@@ -98,9 +98,6 @@ DeinterlaceFilter::DeinterlaceFilter(eMFXHWType HWType, UINT width, UINT height,
         this->kernelLowEdgeMaskBottom = std::auto_ptr<CmKernelEx>(new CmKernelEx(this->DeviceEx(), CM_KERNEL_FUNCTION(cmk_FilterMask_Main_VarWidth<3840U, 1, 32U>)));
         this->kernelLowEdgeMask2Fields = std::auto_ptr<CmKernelEx>(new CmKernelEx(this->DeviceEx(), CM_KERNEL_FUNCTION(cmk_FilterMask_Main_2Fields_VarWidth<3840U, 32U>)));
     }
-    else {
-        printf("Unsupported width.\n");
-    }
 
     this->kernelUndo2FrameTop = std::auto_ptr<CmKernelEx>(new CmKernelEx(this->DeviceEx(), CM_KERNEL_FUNCTION(cmk_undo2frame_nv12<32U, 8U, 1U>)));
     this->kernelUndo2FrameBottom = std::auto_ptr<CmKernelEx>(new CmKernelEx(this->DeviceEx(), CM_KERNEL_FUNCTION(cmk_undo2frame_nv12<32U, 8U, 0U>)));

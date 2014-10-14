@@ -432,8 +432,8 @@ mfxStatus MFX_PTIR_Plugin::Query(mfxVideoParam *in, mfxVideoParam *out)
         }
         else
         {
-            out->AsyncDepth = 1;
-            warning = true;
+            out->AsyncDepth = 0;
+            error = true;
         }
         out->IOPattern  = const_in.IOPattern;
 
@@ -526,17 +526,17 @@ mfxStatus MFX_PTIR_Plugin::Query(mfxVideoParam *in, mfxVideoParam *out)
             error = true;
         }
 
-        if(const_in.vpp.In.Width  % 16 != 0)
+        if(const_in.vpp.In.Width  % 16 != 0 || const_in.vpp.In.Width > 3840)
         {
             out->vpp.In.Width = 0;
             error = true;
         }
-        if(const_in.vpp.In.Height % 32 != 0)
+        if(const_in.vpp.In.Height % 32 != 0 || const_in.vpp.In.Height > 3840)
         {
             out->vpp.In.Height = 0;
             error = true;
         }
-        if(const_in.vpp.Out.Height % 16 != 0)
+        if(const_in.vpp.Out.Height % 16 != 0 || const_in.vpp.Out.Height > 3840)
         {
             out->vpp.Out.Height = 0;
             error = true;
@@ -1140,6 +1140,8 @@ mfxStatus MFX_PTIR_Plugin::Reset(mfxVideoParam *par)
 mfxStatus MFX_PTIR_Plugin::Close()
 {
     UMC::AutomaticUMCMutex guard(m_guard);
+    if(!bInited)
+        return MFX_ERR_NOT_INITIALIZED;
 
     mfxStatus mfxSts = MFX_ERR_NONE;
     if(ptir)
@@ -1161,6 +1163,14 @@ mfxStatus MFX_PTIR_Plugin::Close()
 
 mfxStatus MFX_PTIR_Plugin::GetVideoParam(mfxVideoParam *par)
 {
+    if(!par)     return MFX_ERR_NULL_PTR;
+    if(!bInited) return MFX_ERR_NOT_INITIALIZED;
+
+    par->AsyncDepth = m_mfxCurrentPar.AsyncDepth;
+    par->vpp        = m_mfxCurrentPar.vpp       ;
+    par->Protected  = m_mfxCurrentPar.Protected ;
+    par->IOPattern  = m_mfxCurrentPar.IOPattern ;
+
     return MFX_ERR_NONE;
 }
 

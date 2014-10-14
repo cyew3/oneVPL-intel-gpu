@@ -227,6 +227,12 @@ mfxStatus PTIR_ProcessorCM::Close()
                 Frame_Release(&frmIO[i]);
             bInited = false;
 
+            if(deinterlaceFilter)
+            {
+                delete deinterlaceFilter;
+                deinterlaceFilter = 0;
+                pdeinterlaceFilter = 0;
+            }
             return MFX_ERR_NONE;
         }
         catch(std::bad_alloc&)
@@ -691,6 +697,8 @@ mfxStatus PTIR_ProcessorCM::PTIR_ProcessFrame(CmSurface2D *surf_in, CmSurface2D 
                                 {
                                     if(bFullFrameRate)
                                     {
+                                        if(exp_surf && exp_surf == CmToMfxSurfmap[static_cast<CmSurface2DEx*>(frmBuffer[0]->outSurf)->pCmSurface2D])
+                                            static_cast<CmSurface2DEx*>(frmBuffer[0]->outSurf)->pCmSurface2D = frmSupply->GetWorkSurfaceCM();
                                         deinterlaceFilter->DeinterlaceMedianFilterCM(frmBuffer, 0, BUFMINSIZE);
                                     }
                                     deinterlaceFilter->DeinterlaceMedianFilterCM(frmBuffer, -1, 0); //bootom field
@@ -703,30 +711,42 @@ mfxStatus PTIR_ProcessorCM::PTIR_ProcessFrame(CmSurface2D *surf_in, CmSurface2D 
                                     //deinterlaceFilter->DeinterlaceMedianFilterCM(frmBuffer, 0, -1);
                                 }
 
-                                Prepare_frame_for_queueCM(&frmIn, frmBuffer[0], uiWidth, uiHeight, 0, mb_UsePtirSurfs); // Go to input frame rate
-                                if(!frmIn)
+                                Frame *first_field  = 0;
+                                Frame *second_field = 0;
+
+                                Prepare_frame_for_queueCM(&first_field, frmBuffer[0], uiWidth, uiHeight, 0, mb_UsePtirSurfs); // Go to input frame rate
+                                if(!first_field)
                                     return MFX_ERR_DEVICE_FAILED;
-                                ptir_memcpy(frmIn->plaY.ucStats.ucRs, frmBuffer[0]->plaY.ucStats.ucRs, sizeof(double)* 10);
+                                ptir_memcpy(first_field->plaY.ucStats.ucRs, frmBuffer[0]->plaY.ucStats.ucRs, sizeof(double)* 10);
 
                                 //Timestamp
                                 frmBuffer[BUFMINSIZE]->frmProperties.tindex = frmBuffer[0]->frmProperties.tindex;
                                 frmBuffer[BUFMINSIZE]->frmProperties.timestamp = frmBuffer[0]->frmProperties.timestamp + dDeIntTime;
                                 frmBuffer[1]->frmProperties.timestamp = frmBuffer[BUFMINSIZE]->frmProperties.timestamp + dDeIntTime;
-                                frmIn->frmProperties.timestamp = frmBuffer[0]->frmProperties.timestamp;
+                                first_field->frmProperties.timestamp = frmBuffer[0]->frmProperties.timestamp;
 
-                                FrameQueue_Add(&fqIn, frmIn);
                                 if (bFullFrameRate && uiisInterlaced == 1)
                                 {
-                                    Prepare_frame_for_queueCM(&frmIn, frmBuffer[BUFMINSIZE], uiWidth, uiHeight, frmSupply, mb_UsePtirSurfs); // Go to double frame rate
-                                    if(!frmIn)
+                                    Prepare_frame_for_queueCM(&second_field, frmBuffer[BUFMINSIZE], uiWidth, uiHeight, frmSupply, mb_UsePtirSurfs); // Go to double frame rate
+                                    if(!second_field)
                                         return MFX_ERR_DEVICE_FAILED;
-                                    ptir_memcpy(frmIn->plaY.ucStats.ucRs, frmBuffer[BUFMINSIZE]->plaY.ucStats.ucRs, sizeof(double)* 10);
+                                    ptir_memcpy(second_field->plaY.ucStats.ucRs, frmBuffer[BUFMINSIZE]->plaY.ucStats.ucRs, sizeof(double)* 10);
 
                                     //Timestamp
-                                    frmIn->frmProperties.timestamp = frmBuffer[BUFMINSIZE]->frmProperties.timestamp;
-
-                                    FrameQueue_Add(&fqIn, frmIn);
+                                    second_field->frmProperties.timestamp = frmBuffer[BUFMINSIZE]->frmProperties.timestamp;
                                 }
+
+                                if(uiInterlaceParity && bFullFrameRate && uiisInterlaced == 1) //BFF
+                                {
+                                    FrameQueue_Add(&fqIn, second_field);
+                                    FrameQueue_Add(&fqIn, first_field);
+                                }
+                                else //TFF
+                                {
+                                    FrameQueue_Add(&fqIn, first_field);
+                                    FrameQueue_Add(&fqIn, second_field);
+                                }
+
                                 Rotate_Buffer_deinterlaced(frmBuffer);
                             }
                         }
