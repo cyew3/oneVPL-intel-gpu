@@ -651,16 +651,13 @@ namespace
 
     mfxU16 GetDefaultGopRefDist(mfxU32 targetUsage, eMFXHWType platform)
     {
-        if(platform == MFX_HW_VLV){
+        if(platform == MFX_HW_VLV || platform == MFX_HW_CHV){
             const mfxU16 DEFAUILT_GOP_REF_DIST[8] = { 3, 3, 2, 2, 1, 1, 1 };
             assert(targetUsage > 0 && targetUsage < 8);
             return DEFAUILT_GOP_REF_DIST[targetUsage - 1];
         }else{
             return 3;
         }
-        /*
-        
-        */
     }
 
     mfxU16 GetDefaultNumRefFrames(mfxU32 targetUsage)
