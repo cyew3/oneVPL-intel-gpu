@@ -2051,10 +2051,10 @@ void MeP16_Intra(SurfaceIndex SURF_CURBE_DATA, SurfaceIndex SURF_SRC_AND_REF,
 
 extern "C" _GENX_MAIN_ 
 void MeP16(SurfaceIndex SURF_CONTROL, SurfaceIndex SURF_SRC_AND_REF, SurfaceIndex SURF_MV_PRED, SurfaceIndex SURF_DIST16x16,
-           SurfaceIndex SURF_DIST16x8, SurfaceIndex SURF_DIST8x16, SurfaceIndex SURF_DIST8x8,
-           SurfaceIndex SURF_DIST8x4, SurfaceIndex SURF_DIST4x8, SurfaceIndex SURF_MV16x16,
-           SurfaceIndex SURF_MV16x8, SurfaceIndex SURF_MV8x16, SurfaceIndex SURF_MV8x8,
-           SurfaceIndex SURF_MV8x4, SurfaceIndex SURF_MV4x8)
+           /*SurfaceIndex SURF_DIST16x8, SurfaceIndex SURF_DIST8x16, */SurfaceIndex SURF_DIST8x8,
+           /*SurfaceIndex SURF_DIST8x4, SurfaceIndex SURF_DIST4x8, */SurfaceIndex SURF_MV16x16,
+           /*SurfaceIndex SURF_MV16x8, SurfaceIndex SURF_MV8x16, */SurfaceIndex SURF_MV8x8/*,
+           SurfaceIndex SURF_MV8x4, SurfaceIndex SURF_MV4x8*/)
 {
     uint mbX = get_thread_origin_x();
     uint mbY = get_thread_origin_y();

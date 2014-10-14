@@ -827,11 +827,19 @@ mfxStatus CmContext::AllocateCmResources(mfxU32 w, mfxU32 h, mfxU8 nRefs, VideoC
                     MFX_CHECK_STS(sts);
                 }
                 for (Ipp32u k = PU16x16; k < PU_MAX; k++) {
+                    if ((k == PU16x8) || (k == PU8x16) || (k == PU8x4) || (k == PU4x8))
+                        continue; // others are not used in tu7 now
                     sts = CreateCmSurface2DUp(device, cmMvW[k] * 1, cmMvH[k], CM_SURFACE_FORMAT_P8,
                                         distCpu[i][l][j][k], distGpu[i][l][j][k], pitchDist[k]);
                     MFX_CHECK_STS(sts);
                 }
                 for (Ipp32u k = 0; k < PU_MAX; k++) {
+                    if ((k == PU16x8) || (k == PU8x16) || (k == PU8x4) || (k == PU4x8))
+                        continue; // others are not used in tu7 now
+                    if (highRes == 0) {
+                        if ((k == PU256x256) || (k == PU128x128))
+                            continue;
+                    }
                     sts = CreateCmSurface2DUp(device, cmMvW[k], cmMvH[k], CM_SURFACE_FORMAT_P8,
                                         mvCpu[i][l][j][k], mvGpu[i][l][j][k], pitchMv[k]);
                     MFX_CHECK_STS(sts);
@@ -839,7 +847,7 @@ mfxStatus CmContext::AllocateCmResources(mfxU32 w, mfxU32 h, mfxU8 nRefs, VideoC
             }
         }
     }
-    
+
     kernelDownSample2tiers = CreateKernel(device, program, "DownSampleMB2t", (void *)DownSampleMB2t);
     kernelDownSample4tiers = CreateKernel(device, program, "DownSampleMB4t", (void *)DownSampleMB4t);
     kernelMeIntra = CreateKernel(device, program, "MeP16_Intra", (void *)MeP16_Intra);
@@ -1028,9 +1036,8 @@ void CmContext::RunVmeCurr(H265VideoParam const &param, H265Frame *pFrameCur, H2
                 }
 
                 {   MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "RefLast_kernelMe16");
-                    SetKernelArg(kernelMe16, me1xControl, *refs, mv[PU32x32], dist[PU16x16], dist[PU16x8], dist[PU8x16],
-                        dist[PU8x8], dist[PU8x4], dist[PU4x8], mv[PU16x16], mv[PU16x8],
-                        mv[PU8x16], mv[PU8x8], mv[PU8x4], mv[PU4x8]);
+                    SetKernelArg(kernelMe16, me1xControl, *refs, mv[PU32x32], dist[PU16x16]/*, dist[PU16x8], dist[PU8x16]*/,
+                        dist[PU8x8]/*, dist[PU8x4], dist[PU4x8]*/, mv[PU16x16]/*, mv[PU16x8], mv[PU8x16]*/, mv[PU8x8]/*, mv[PU8x4], mv[PU4x8]*/);
                     EnqueueKernel(device, queue, kernelMe16, width / 16, height / 16, lastEvent[cmCurIdx]);
                 }
 
@@ -1203,11 +1210,9 @@ void CmContext::RunVmeNext(H265VideoParam const & param, H265Frame * pFrameNext,
                 }
 
                 {   MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "RefNext_Me16");
-                    SetKernelArg(kernelMe16, me1xControl, *refs, mv[PU32x32], dist[PU16x16], dist[PU16x8], dist[PU8x16],
-                                 dist[PU8x8], dist[PU8x4], dist[PU4x8], mv[PU16x16], mv[PU16x8],
-                                 mv[PU8x16], mv[PU8x8], mv[PU8x4], mv[PU4x8]);
-                    EnqueueKernel(device, queue, kernelMe16, width / 16, height / 16,
-                                  lastEvent[cmNextIdx]);
+                    SetKernelArg(kernelMe16, me1xControl, *refs, mv[PU32x32], dist[PU16x16]/*, dist[PU16x8], dist[PU8x16]*/,
+                        dist[PU8x8]/*, dist[PU8x4], dist[PU4x8]*/, mv[PU16x16]/*, mv[PU16x8], mv[PU8x16]*/, mv[PU8x8]/*, mv[PU8x4], mv[PU4x8]*/);
+                    EnqueueKernel(device, queue, kernelMe16, width / 16, height / 16, lastEvent[cmNextIdx]);
                 }
 
                 if (highRes) {
