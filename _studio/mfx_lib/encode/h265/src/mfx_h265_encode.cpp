@@ -1626,10 +1626,9 @@ mfxStatus MFXVideoENCODEH265::Query(VideoCORE *core, mfxVideoParam *par_in, mfxV
 
         out->mfx.NumThread = in->mfx.NumThread;
 
-
+        
 #ifdef MFX_VA
         if (in->mfx.TargetUsage != MFX_TARGETUSAGE_7) {
-            isCorrected ++;
             out->mfx.TargetUsage = MFX_TARGETUSAGE_7;
         }
         else out->mfx.TargetUsage = in->mfx.TargetUsage;
