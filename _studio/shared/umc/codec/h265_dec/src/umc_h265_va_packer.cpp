@@ -151,7 +151,7 @@ static int s_quantInterDefault8x8[64] =
 
 static const int *getDefaultScalingList(unsigned sizeId, unsigned listId)
 {
-    int *src = 0;
+    const int *src = 0;
     switch(sizeId)
     {
     case SCALING_LIST_4x4:

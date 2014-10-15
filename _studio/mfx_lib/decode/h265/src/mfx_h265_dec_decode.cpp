@@ -828,7 +828,7 @@ mfxStatus VideoDECODEH265::DecodeFrameCheck(mfxBitstream *bs,
         H265DecoderFrame *frame = 0;
         if (*surface_out)
         {
-            mfxI32 index = m_FrameAllocator->FindSurface(*surface_out, m_isOpaq);
+            mfxI32 index = m_FrameAllocator->FindSurface(GetOriginalSurface(*surface_out), m_isOpaq);
             frame = m_pH265VideoDecoder->FindSurface((UMC::FrameMemID)index);
         }
         else
