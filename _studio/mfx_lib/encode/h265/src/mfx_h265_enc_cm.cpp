@@ -432,14 +432,18 @@ mfxStatus CmContext::CreateCmBufferUp(CmDevice *device, Ipp32u numElems, T *&sur
 
 void CmContext::DestroyCmSurface2DUp(CmDevice *device, void *surfaceCpu, CmSurface2DUP *surfaceGpu)
 {
-    device->DestroySurface2DUP(surfaceGpu);
-    CM_ALIGNED_FREE(surfaceCpu);
+    if (surfaceGpu)
+        device->DestroySurface2DUP(surfaceGpu);
+    if (surfaceCpu)
+        CM_ALIGNED_FREE(surfaceCpu);
 }
 
 void CmContext::DestroyCmBufferUp(CmDevice *device, void *bufferCpu, CmBufferUP *bufferGpu)
 {
-    device->DestroyBufferUP(bufferGpu);
-    CM_ALIGNED_FREE(bufferCpu);
+    if (bufferGpu)
+        device->DestroyBufferUP(bufferGpu);
+    if (bufferCpu)
+        CM_ALIGNED_FREE(bufferCpu);
 }
 
 
@@ -726,7 +730,7 @@ void H265RefMatchData::Clean(H265Frame **dpb, Ipp32s dpbSize)
     }
 }
 
-mfxStatus CmContext::AllocateCmResources(mfxU32 w, mfxU32 h, mfxU8 nRefs, VideoCORE *core)
+mfxStatus CmContext::AllocateCmResources(mfxU32 w, mfxU32 h, mfxU8 nRefs, mfxI32 maxRefsL0, mfxI32 maxRefsL1, VideoCORE *core)
 {
     if (cmResurcesAllocated)
         return MFX_ERR_NONE;
@@ -820,7 +824,8 @@ mfxStatus CmContext::AllocateCmResources(mfxU32 w, mfxU32 h, mfxU8 nRefs, VideoC
         MFX_CHECK_STS(sts);
 
         for (Ipp32u l = 0; l < 2; l++) {
-            for (Ipp32s j = 0; j < numBufferedRefs; j++) {
+            Ipp32s numRefs = (l == 0) ? maxRefsL0 : maxRefsL1;
+            for (Ipp32s j = 0; j < numRefs; j++) {
                 for (Ipp32u k = PU32x32; k <= PU16x32; k++) {
                     sts = CreateCmSurface2DUp(device, cmMvW[k] * 16, cmMvH[k], CM_SURFACE_FORMAT_P8,
                                         distCpu[i][l][j][k], distGpu[i][l][j][k], pitchDist[k]);
@@ -1069,7 +1074,6 @@ void CmContext::RunVmeNext(H265VideoParam const & param, H265Frame * pFrameNext,
             EnqueueCopyCPUToGPUStride(queue, raw[cmNextIdx], pFrameNext->y, pFrameNext->pitch_luma_pix,
                                       lastEvent[cmNextIdx]);
         }
-        //AFfixme: not sure yet if properly works
         if (INTRA_ANG_MODE_GRADIENT == pSliceNext->sliceIntraAngMode) {
             MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "RefLast_kernelGradient");
             SetKernelArg(kernelGradient, raw[cmNextIdx], mbIntraGrad4x4[cmNextIdx],
@@ -1478,7 +1482,7 @@ Ipp32s GetPuSize(Ipp32s puw, Ipp32s puh)
     return tab_lookUpPuSize[tab_wh2Idx[puw / 4 - 1]][tab_wh2Idx[puh / 4 - 1]];
 }
 
-CmContext::CmContext(mfxU32 width, mfxU32 height, mfxU8 nRefs, VideoCORE *core)
+CmContext::CmContext(mfxU32 width, mfxU32 height, mfxU8 nRefs, mfxI32 maxRefsL0, mfxI32 maxRefsL1, VideoCORE *core)
 {
     cmResurcesAllocated = false;
     device = 0;
@@ -1554,7 +1558,7 @@ CmContext::CmContext(mfxU32 width, mfxU32 height, mfxU8 nRefs, VideoCORE *core)
 
     recBufData = 0;
 
-    AllocateCmResources(width, height, nRefs, core);
+    AllocateCmResources(width, height, nRefs, maxRefsL0, maxRefsL1, core);
 
     if (!cmResurcesAllocated)
         throw CmRuntimeError();

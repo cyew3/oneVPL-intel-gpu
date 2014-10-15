@@ -1117,8 +1117,10 @@ mfxStatus H265Encoder::Init(const mfxVideoParam *param, const mfxExtCodingOption
 
 #if defined (MFX_VA)
     if (m_videoParam.enableCmFlag) {
-        Ipp8u nRef = m_videoParam.csps->sps_max_dec_pic_buffering[0] + 1;
-        m_cmCtx = new CmContext(param->mfx.FrameInfo.Width, param->mfx.FrameInfo.Height, nRef, core);
+        Ipp8u nRef = m_videoParam.csps->sps_max_dec_pic_buffering[0];
+        Ipp32s maxRefsL0 = IPP_MAX(m_videoParam.MaxRefIdxP[0],m_videoParam.MaxRefIdxB[0]);
+        Ipp32s maxRefsL1 = IPP_MAX(m_videoParam.MaxRefIdxP[1],m_videoParam.MaxRefIdxB[1]);
+        m_cmCtx = new CmContext(param->mfx.FrameInfo.Width, param->mfx.FrameInfo.Height, nRef, maxRefsL0, maxRefsL1, core);
         MFX_CHECK_STS(sts);
         m_videoParam.m_cmCtx = m_cmCtx;
     }

@@ -62,7 +62,7 @@ class CmContext
 {
 public:
 
-    CmContext(mfxU32 w, mfxU32 h, mfxU8 nRefs, VideoCORE *core);
+    CmContext(mfxU32 w, mfxU32 h, mfxU8 nRefs, mfxI32 maxRefsL0, mfxI32 maxRefsL1, VideoCORE *core);
     ~CmContext();
 
     void RunVmeCurr(H265VideoParam const &param, H265Frame *pFrameCur, H265Slice *pSliceCur, H265Frame **dpb, Ipp32s dpbSize);
@@ -106,7 +106,7 @@ protected:
     void DestroyCmSurface2DUp(CmDevice *device, void *surfaceCpu, CmSurface2DUP *surfaceGpu);
     void DestroyCmBufferUp(CmDevice *device, void *bufferCpu, CmBufferUP *bufferGpu);
 
-    mfxStatus AllocateCmResources(mfxU32 w, mfxU32 h, mfxU8 nRefs, VideoCORE *core);
+    mfxStatus AllocateCmResources(mfxU32 w, mfxU32 h, mfxU8 nRefs, mfxI32 maxRefsL0, mfxI32 maxRefsL1, VideoCORE *core);
     void FreeCmResources();
 
     void SetCurbeData(H265EncCURBEData & curbeData, mfxU32 picType, mfxU32 qp);
