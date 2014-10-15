@@ -1061,7 +1061,7 @@ void PackerDXVA2::PackPicParams(H264DecoderFrameInfo * pSliceInfo, H264Slice * p
     pPicParams_H264->num_slice_groups_minus1 = (UCHAR)(pPicParamSet->num_slice_groups - 1);
     pPicParams_H264->slice_group_map_type = pPicParamSet->SliceGroupInfo.slice_group_map_type;
     pPicParams_H264->deblocking_filter_control_present_flag = pPicParamSet->deblocking_filter_variables_present_flag;
-    pPicParams_H264->redundant_pic_cnt_present_flag = pPicParamSet->redundant_pic_cnt_present_flag;
+    pPicParams_H264->redundant_pic_cnt_present_flag = 0;//pPicParamSet->redundant_pic_cnt_present_flag;
     pPicParams_H264->slice_group_change_rate_minus1 = (USHORT)(pPicParamSet->SliceGroupInfo.t2.slice_group_change_rate ?
         pPicParamSet->SliceGroupInfo.t2.slice_group_change_rate - 1 : 0);
 
@@ -1455,6 +1455,52 @@ DXVA_PicEntry_H264 PackerDXVA2::GetFrameIndex(const H264DecoderFrame * frame)
     return idx;
 }
 
+static void CopyWithRedundantElimination(const H264SliceHeader *sliceHdr, Ipp8u * dst, Ipp8u* src, Ipp32u srcSize)
+{
+    Ipp32u first_bit = sliceHdr->hw_wa_redundant_elimination_bits[0];
+    Ipp32u end_bit = sliceHdr->hw_wa_redundant_elimination_bits[1];
+
+    Ipp32u first_byte = first_bit/8;
+    Ipp32u end_byte = end_bit/8;
+
+    // copy first part:
+    MFX_INTERNAL_CPY(dst, src, first_byte);
+
+    dst += first_byte;
+    src += first_byte;
+    srcSize -= first_byte;
+
+    // copy header size
+    first_bit = 8 - (first_bit & 7);
+    end_bit = 8 - (end_bit & 7);
+    dst[0] = (src[0] >> (first_bit)) << first_bit;
+
+    src += end_byte - first_byte;
+    srcSize -= end_byte - first_byte;
+
+    Ipp32u shift_bit_count = first_bit - end_bit;
+
+    if (first_byte == end_byte)
+    {
+        dst[0] |= (src[0] & ((1 << end_bit) - 1)) << shift_bit_count;
+        src++;
+        srcSize--;
+    }
+    else
+    {
+        shift_bit_count = first_bit - (8 - end_bit);
+    }
+
+    for (;srcSize > 0;)
+    {
+        dst[0] = dst[0] | (src[0] >> (8 - shift_bit_count));
+        dst[1] = (src[0] << shift_bit_count);
+        dst++;
+        src++;
+        srcSize--;
+    }
+}
+
 Ipp32s PackerDXVA2::PackSliceParams(H264Slice *pSlice, Ipp32s sliceNum, Ipp32s chopping, Ipp32s numSlicesOfPrevField, DXVA_Slice_H264_Long* sliceParams)
 {
     static Ipp8u start_code_prefix[] = {0, 0, 1};
@@ -1623,55 +1669,24 @@ Ipp32s PackerDXVA2::PackSliceParams(H264Slice *pSlice, Ipp32s sliceNum, Ipp32s c
         if (sliceParams->wBadSliceChopping < 2)
         {
             MFX_INTERNAL_CPY(pDXVA_BitStreamBuffer, start_code_prefix, sizeof(start_code_prefix));
-            /*if (!m_va->IsLongSliceControl() && pSlice->GetPicParam()->redundant_pic_cnt_present_flag && (NalUnitSize - sizeof(start_code_prefix) > 0))
+            if (!m_va->IsLongSliceControl() && pSlice->GetPicParam()->redundant_pic_cnt_present_flag && (NalUnitSize - sizeof(start_code_prefix) > 0))
             {
-                size_t first_bit = pSliceHeader->hw_wa_redundant_elimination_bits[0];
-                size_t end_bit = pSliceHeader->hw_wa_redundant_elimination_bits[1];
-
-                size_t first_byte = first_bit/8;
-                size_t end_byte = end_bit/8;
-
-                // copy first part:
-                pDXVA_BitStreamBuffer += sizeof(start_code_prefix);
-                NalUnitSize -= sizeof(start_code_prefix);
-                MFX_INTERNAL_CPY(pDXVA_BitStreamBuffer, pNalUnit, first_byte);
-
-                pDXVA_BitStreamBuffer += first_byte;
-                pNalUnit += first_byte;
-                NalUnitSize -= first_byte;
-
-                // copy header size
-                first_bit = first_bit % 8;
-                end_bit = end_bit % 8;
-                Ipp32u a = first_bit;
-                pDXVA_BitStreamBuffer[0] = (pNalUnit[0] & ((1 << a) - 1));
-
-                pNalUnit += end_byte - first_byte;
-                NalUnitSize -= end_byte - first_byte;
-
-                (pNalUnit[0] >> end_bit);
-                pDXVA_BitStreamBuffer[0] |= (pNalUnit[0] >> end_bit) << a;
-                pNalUnit++;
-                NalUnitSize--;
-
-                Ipp32u shift_bit_count = 8 - (8 - end_bit) - first_bit;
-                VM_ASSERT(8 - (8 - end_bit) - first_bit >= 0);
-
-                for (;NalUnitSize > 0;)
-                {
-                    pDXVA_BitStreamBuffer[0] = (pDXVA_BitStreamBuffer[0] << shift_bit_count) || (pNalUnit[0] && ((1 << shift_bit_count) - 1));
-                    pDXVA_BitStreamBuffer[1] = (pNalUnit[0] >> shift_bit_count);
-                    pDXVA_BitStreamBuffer++;
-                    pNalUnit++;
-                    NalUnitSize--;
-                }
-
+                Ipp32u srcSize = NalUnitSize;
+                Ipp8u needToAdujstSize = 0;
                 if (m_picParams->entropy_coding_mode_flag) // align slice header
                 {
+                    srcSize = (pSliceHeader->hw_wa_redundant_elimination_bits[2] + 7) / 8;
+                    needToAdujstSize = ((pSliceHeader->hw_wa_redundant_elimination_bits[2] - 1) % 8) == 0;
+                }
 
+                CopyWithRedundantElimination(pSliceHeader, pDXVA_BitStreamBuffer + sizeof(start_code_prefix), pNalUnit, srcSize);
+
+                if (m_picParams->entropy_coding_mode_flag)
+                {
+                    MFX_INTERNAL_CPY(pDXVA_BitStreamBuffer + srcSize + sizeof(start_code_prefix) - needToAdujstSize, pNalUnit + srcSize, NalUnitSize - srcSize);
                 }
             }
-            else*/
+            else
             {
                 if (NalUnitSize - sizeof(start_code_prefix) > 0)
                     MFX_INTERNAL_CPY(pDXVA_BitStreamBuffer + sizeof(start_code_prefix), pNalUnit, NalUnitSize - sizeof(start_code_prefix));
@@ -2102,7 +2117,7 @@ void PackerVA::PackPicParams(H264DecoderFrameInfo * pSliceInfo, H264Slice * pSli
     pPicParams_H264->pic_fields.bits.constrained_intra_pred_flag = pPicParamSet->constrained_intra_pred_flag;
     pPicParams_H264->pic_fields.bits.pic_order_present_flag = pPicParamSet->bottom_field_pic_order_in_frame_present_flag;
     pPicParams_H264->pic_fields.bits.deblocking_filter_control_present_flag = pPicParamSet->deblocking_filter_variables_present_flag;
-    pPicParams_H264->pic_fields.bits.redundant_pic_cnt_present_flag = pPicParamSet->redundant_pic_cnt_present_flag;
+    pPicParams_H264->pic_fields.bits.redundant_pic_cnt_present_flag = 0;//pPicParamSet->redundant_pic_cnt_present_flag;
     pPicParams_H264->pic_fields.bits.reference_pic_flag = pSliceHeader->nal_ref_idc != 0; //!!!
 
     pPicParams_H264->frame_num = (unsigned short)pSliceHeader->frame_num;

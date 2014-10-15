@@ -1570,13 +1570,13 @@ Status H264HeadersBitstream::GetSliceHeaderPart2(H264SliceHeader *hdr,
 
     if (pps->redundant_pic_cnt_present_flag)
     {
-        //hdr->hw_wa_redundant_elimination_bits[0] = BitsDecoded();
+        hdr->hw_wa_redundant_elimination_bits[0] = (Ipp32u)BitsDecoded();
         // redundant pic count
         hdr->redundant_pic_cnt = GetVLCElement(false);
         if (hdr->redundant_pic_cnt > 127)
             return UMC_ERR_INVALID_STREAM;
 
-        //hdr->hw_wa_redundant_elimination_bits[1] = BitsDecoded();
+        hdr->hw_wa_redundant_elimination_bits[1] = (Ipp32u)BitsDecoded();
     }
 
     CheckBSLeft();

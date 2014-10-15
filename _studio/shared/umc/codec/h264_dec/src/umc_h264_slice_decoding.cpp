@@ -615,6 +615,8 @@ bool H264Slice::DecodeSliceHeader(H264NalExtension *pNalExt)
             return false;
         }
 
+        m_SliceHeader.hw_wa_redundant_elimination_bits[2] = (Ipp32u)m_BitStream.BitsDecoded();
+
         if (m_pPicParamSet->entropy_coding_mode)
             m_BitStream.AlignPointerRight();
     }
