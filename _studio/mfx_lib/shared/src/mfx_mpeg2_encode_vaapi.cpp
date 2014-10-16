@@ -207,8 +207,10 @@ namespace
         case MFX_LEVEL_MPEG2_MAIN:
             level = 8;
             break;
-        case MFX_LEVEL_MPEG2_HIGH:
         case MFX_LEVEL_MPEG2_HIGH1440:
+            level = 6;
+            break;
+        case MFX_LEVEL_MPEG2_HIGH:
             level = 4;
             break;
         default:

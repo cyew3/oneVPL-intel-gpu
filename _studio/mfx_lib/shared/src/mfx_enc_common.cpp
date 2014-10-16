@@ -770,7 +770,7 @@ void CorrectProfileLevelMpeg2(mfxU16 &profile, mfxU16 & level, mfxU32 w, mfxU32 
         level = MFX_LEVEL_MPEG2_MAIN;
     }
 
-    if (MFX_PROFILE_MPEG2_SIMPLE == profile && MFX_LEVEL_MPEG2_MAIN !=  level)
+    if (MFX_PROFILE_MPEG2_SIMPLE == profile && (MFX_LEVEL_MPEG2_MAIN != level && MFX_LEVEL_MPEG2_LOW != level))
     {
         profile = MFX_PROFILE_MPEG2_MAIN;
     }
