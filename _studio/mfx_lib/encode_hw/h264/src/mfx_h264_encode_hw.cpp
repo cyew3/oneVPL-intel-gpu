@@ -2255,7 +2255,7 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
         //    fprintf(dump, "%4d %4d %4d\n", task->m_encOrder, task->m_type[0], task->m_cqpValue[0]);
         //    fclose(dump);
         //}
-        
+
         for (mfxU32 f = 0; f <= task->m_fieldPicFlag; f++)
         {
             if (m_useWAForHighBitrates)
@@ -2264,10 +2264,13 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
 
             PrepareSeiMessageBuffer(m_video, *task, task->m_fid[f], m_sei);
 
-            if (task->m_insertAud[f] == 0 &&
-                task->m_insertSps[f] == 0 &&
-                task->m_insertPps[f] == 0 &&
-                m_sei.Size() == 0)
+            bool needSvcPrefix = IsSvcProfile(m_video.mfx.CodecProfile) || (m_video.calcParam.numTemporalLayer > 0);
+
+            if (task->m_insertAud[f] == 0
+                 && task->m_insertSps[f] == 0
+                 && task->m_insertPps[f] == 0
+                 && m_sei.Size() == 0
+                 && needSvcPrefix == 0)
                 task->m_AUStartsFromSlice[f] = 1;
             else
                 task->m_AUStartsFromSlice[f] = 0;
