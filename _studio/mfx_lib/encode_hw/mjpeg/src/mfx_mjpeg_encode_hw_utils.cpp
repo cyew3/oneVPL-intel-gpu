@@ -22,7 +22,7 @@
 using namespace MfxHwMJpegEncode;
 
 
-mfxStatus MfxHwMJpegEncode::QueryHwCaps(eMFXVAType va_type, mfxU32 adapterNum, JpegEncCaps & hwCaps)
+mfxStatus MfxHwMJpegEncode::QueryHwCaps(VideoCORE * core, JpegEncCaps & hwCaps)
 {
     //Should be replaced with once quering capabs as other encoders do
 
@@ -30,13 +30,13 @@ mfxStatus MfxHwMJpegEncode::QueryHwCaps(eMFXVAType va_type, mfxU32 adapterNum, J
     hwCaps.MaxPicWidth      = 4096;
     hwCaps.MaxPicHeight     = 4096;
 
-    std::auto_ptr<VideoCORE> pCore(FactoryCORE::CreateCORE(va_type, adapterNum, 1));
+    if (core && core->GetVAType() == MFX_HW_VAAPI && core->GetHWType() < MFX_HW_CHV)
+        return MFX_ERR_UNSUPPORTED;
 
     std::auto_ptr<DriverEncoder> ddi;
+    ddi.reset( CreatePlatformMJpegEncoder(core) );
 
-    ddi.reset( CreatePlatformMJpegEncoder(pCore.get()) );
-
-    mfxStatus sts = ddi->CreateAuxilliaryDevice(pCore.get(), 640, 480);
+    mfxStatus sts = ddi->CreateAuxilliaryDevice(core, 640, 480, true);
     MFX_CHECK_STS(sts);
 
     sts = ddi->QueryEncodeCaps(hwCaps);
@@ -122,10 +122,14 @@ mfxStatus MfxHwMJpegEncode::FastCopyFrameBufferSys2Vid(
     MFX_CHECK_NULL_PTR1(core);
     mfxFrameData vidSurf = { 0 };
     mfxStatus sts = MFX_ERR_NONE;
+    bool      bExternalFrameLocked = false;
 
     core->LockFrame(vidMemId, &vidSurf);
     MFX_CHECK(vidSurf.Y != 0, MFX_ERR_LOCK_MEMORY);
-    core->LockExternalFrame(sysSurf.MemId, &sysSurf);
+    if(sysSurf.Y == 0){ // need to lock the surface
+        core->LockExternalFrame(sysSurf.MemId, &sysSurf);
+        bExternalFrameLocked = true;
+    }
     MFX_CHECK(sysSurf.Y != 0, MFX_ERR_LOCK_MEMORY);
 
     {
@@ -135,9 +139,10 @@ mfxStatus MfxHwMJpegEncode::FastCopyFrameBufferSys2Vid(
         sts = core->DoFastCopy(&surfDst, &surfSrc);
         MFX_CHECK_STS(sts);
     }
-
-    sts = core->UnlockExternalFrame(sysSurf.MemId, &sysSurf);
-    MFX_CHECK_STS(sts);
+    if(bExternalFrameLocked) {
+        sts = core->UnlockExternalFrame(sysSurf.MemId, &sysSurf);
+        MFX_CHECK_STS(sts);
+    }
     sts = core->UnlockFrame(vidMemId, &vidSurf);
     MFX_CHECK_STS(sts);
 
@@ -375,7 +380,171 @@ mfxStatus ExecuteBuffers::Init(mfxVideoParam const *par)
     }
 
 #elif defined (MFX_VA_LINUX)
-    // ToDo
+    memset(&m_pps, 0, sizeof(m_pps));
+
+    // Picture Header
+    m_pps.reconstructed_picture = 0;
+    m_pps.pic_flags.bits.profile = 0;
+    m_pps.pic_flags.bits.progressive = 0;
+    m_pps.pic_flags.bits.huffman = 1;
+    m_pps.pic_flags.bits.interleaved   = (par->mfx.Interleaved != 0);
+    m_pps.pic_flags.bits.differential  = 0;
+    m_pps.picture_width       = (mfxU32)par->mfx.FrameInfo.CropW;
+    m_pps.picture_height      = (mfxU32)par->mfx.FrameInfo.CropH;
+    m_pps.sample_bit_depth = 8;
+    m_pps.component_id[0] = 0;
+    m_pps.component_id[1] = 1;
+    m_pps.component_id[2] = 2;
+    m_pps.component_id[3] = 3;
+    m_pps.quantiser_table_selector[0] = 0;
+    m_pps.quantiser_table_selector[1] = 1;
+    m_pps.quantiser_table_selector[2] = 1;
+    m_pps.quantiser_table_selector[3] = 1;
+    m_pps.quality = (par->mfx.Quality > 100) ? 100 : par->mfx.Quality;
+
+    mfxU32 fourCC = par->mfx.FrameInfo.FourCC;
+    mfxU16 chromaFormat = par->mfx.FrameInfo.ChromaFormat;
+    if (fourCC == MFX_FOURCC_NV12 && chromaFormat == MFX_CHROMAFORMAT_YUV420)
+        m_pps.num_components = 3;
+    else if (fourCC == MFX_FOURCC_YUY2 && chromaFormat == MFX_CHROMAFORMAT_YUV422H)
+        m_pps.num_components = 3;
+    else if (fourCC == MFX_FOURCC_NV12 && chromaFormat == MFX_CHROMAFORMAT_YUV400)
+        m_pps.num_components = 1;
+    else if (fourCC == MFX_FOURCC_RGB4 && chromaFormat == MFX_CHROMAFORMAT_YUV444)
+        m_pps.num_components = 3;
+    else
+        return MFX_ERR_UNDEFINED_BEHAVIOR;
+
+    // Scan Header
+    m_pps.num_scan = 1;
+    m_scan_list.resize(1);
+    m_scan_list[0].restart_interval = par->mfx.RestartInterval;
+    m_scan_list[0].num_components = m_pps.num_components;
+    m_scan_list[0].components[0].component_selector = 0;
+    m_scan_list[0].components[0].dc_table_selector = 0;
+    m_scan_list[0].components[0].ac_table_selector = 0;
+    m_scan_list[0].components[1].component_selector = 1;
+    m_scan_list[0].components[1].dc_table_selector = 1;
+    m_scan_list[0].components[1].ac_table_selector = 1;
+    m_scan_list[0].components[2].component_selector = 2;
+    m_scan_list[0].components[2].dc_table_selector = 1;
+    m_scan_list[0].components[2].ac_table_selector = 1;
+
+    // Huffman Table
+    m_dht_list.resize(1);
+
+    m_dht_list[0].load_huffman_table[0] = 1;  //0 for luma
+    m_dht_list[0].load_huffman_table[1] = 1;  // 1 for chroma
+    for(mfxU16 i = 0; i < 16; i++){
+        m_dht_list[0].huffman_table[0].num_dc_codes[i] = DefaultLuminanceDCBits[i];
+    }
+    for(mfxU16 i = 0; i < 162; i++) {
+        m_dht_list[0].huffman_table[0].dc_values[i] = DefaultLuminanceDCValues[i];
+    }
+    for(mfxU16 i = 0; i < 16; i++){
+        m_dht_list[0].huffman_table[0].num_ac_codes[i] = DefaultLuminanceACBits[i];
+    }
+    for(mfxU16 i = 0; i < 162; i++) {
+        m_dht_list[0].huffman_table[0].ac_values[i] = DefaultLuminanceACValues[i];
+    }
+    for(mfxU16 i = 0; i < 16; i++){
+        m_dht_list[0].huffman_table[1].num_dc_codes[i] = DefaultChrominanceDCBits[i];
+    }
+    for(mfxU16 i = 0; i < 162; i++) {
+        m_dht_list[0].huffman_table[1].dc_values[i] = DefaultChrominanceDCValues[i];
+    }
+    for(mfxU16 i = 0; i < 16; i++){
+        m_dht_list[0].huffman_table[1].num_ac_codes[i] = DefaultChrominanceACBits[i];
+    }
+    for(mfxU16 i = 0; i < 162; i++) {
+        m_dht_list[0].huffman_table[1].ac_values[i] = DefaultChrominanceACValues[i];
+    }
+
+    //m_dqt_list.resize(1);
+
+    //m_dqt_list[0].load_lum_quantiser_matrix = 1;
+    //for(mfxU16 i = 0; i< 64; i++){
+    //    m_dqt_list[0].lum_quantiser_matrix[i]= DefaultLuminanceQuant[i];
+    //}
+    //m_dqt_list[0].load_chroma_quantiser_matrix = 1;
+    //for(mfxU16 i = 0; i< 64; i++){
+    //    m_dqt_list[0].chroma_quantiser_matrix[i]=(unsigned char) DefaultChrominanceQuant[i];
+    //}
+
+    if (par->ExtParam != 0)
+    {
+        for (mfxU16 i = 0; i < par->NumExtParam; i++)
+        {
+            if (par->ExtParam[i] != 0)
+            {
+                switch (par->ExtParam[i]->BufferId)
+                {
+                case MFX_EXTBUFF_JPEG_QT:
+                    {
+                        mfxExtJPEGQuantTables *pExtQuant = (mfxExtJPEGQuantTables*)par->ExtParam[i];
+                        if(pExtQuant->NumTable == 1) {
+                            m_dqt_list[0].load_lum_quantiser_matrix = true;
+                            m_dqt_list[0].load_chroma_quantiser_matrix = false;
+                            for(mfxU16 i = 0; i< 64; i++){
+                                m_dqt_list[0].lum_quantiser_matrix[i]=(unsigned char) pExtQuant->Qm[0][i];
+                            }
+                        }
+                        else if(pExtQuant->NumTable == 2) {
+                            m_dqt_list[0].load_chroma_quantiser_matrix = true;
+                            m_dqt_list[0].load_lum_quantiser_matrix = true;
+                            for(mfxU16 i = 0; i< 64; i++){
+                                m_dqt_list[0].lum_quantiser_matrix[i]=(unsigned char) pExtQuant->Qm[0][i];
+                                m_dqt_list[0].chroma_quantiser_matrix[i]=(unsigned char) pExtQuant->Qm[1][i];
+                            }
+                        }
+                        else {
+                            return MFX_ERR_INVALID_VIDEO_PARAM;
+                        }
+
+                    }
+                    break;
+
+                case MFX_EXTBUFF_JPEG_HUFFMAN:
+                    {
+                        mfxExtJPEGHuffmanTables *pExtHuffman = (mfxExtJPEGHuffmanTables*)par->ExtParam[i];
+                        if (pExtHuffman->NumACTable || pExtHuffman->NumDCTable)
+                        {
+                            for (mfxU16 j = 0; j < pExtHuffman->NumDCTable; j++)
+                            {
+                                if(j < 2) {
+                                    MFX_INTERNAL_CPY(m_dht_list[0].huffman_table[j].num_dc_codes, pExtHuffman->DCTables[j].Bits, 16 * sizeof(mfxU8));
+                                    MFX_INTERNAL_CPY(m_dht_list[0].huffman_table[j].dc_values, pExtHuffman->DCTables[j].Values, 12 * sizeof(mfxU8));
+                                }
+                                else {
+                                    return MFX_ERR_INVALID_VIDEO_PARAM;
+                                }
+                            }
+                            for (mfxU16 j = 0; j < pExtHuffman->NumACTable; j++)
+                            {
+                                if(j < 2) {
+                                    MFX_INTERNAL_CPY(m_dht_list[0].huffman_table[j].num_ac_codes, pExtHuffman->ACTables[j].Bits, 16 * sizeof(mfxU8));
+                                    MFX_INTERNAL_CPY(m_dht_list[0].huffman_table[j].ac_values, pExtHuffman->ACTables[j].Values, 12 * sizeof(mfxU8));
+                                }
+                                else {
+                                    return MFX_ERR_INVALID_VIDEO_PARAM;
+                                }
+                            }
+                        }
+                        else
+                        {
+                            return MFX_ERR_INVALID_VIDEO_PARAM;
+                        }
+                    }
+                    break;
+
+
+                default:
+                    return MFX_ERR_INVALID_VIDEO_PARAM;
+                    break;
+                }
+            }
+        }
+    }
 
 #endif
 

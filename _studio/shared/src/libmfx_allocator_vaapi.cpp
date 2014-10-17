@@ -32,6 +32,10 @@ File Name: libmfx_allocator_vaapi.cpp
 #define VA_TO_MFX_STATUS(_va_res) \
     (VA_STATUS_SUCCESS == (_va_res))? MFX_ERR_NONE: MFX_ERR_DEVICE_FAILED;
 
+#define VA_SURFACE_ATTRIB_USAGE_HINT_ENCODER    0x00000002
+#define VASurfaceAttribUsageHint 8
+#define VAEncMacroblockMapBufferType 29
+
 enum {
     MFX_FOURCC_VP8_NV12    = MFX_MAKEFOURCC('V','P','8','N'),
     MFX_FOURCC_VP8_MBDATA  = MFX_MAKEFOURCC('V','P','8','M'),
@@ -167,13 +171,35 @@ mfxDefaultAllocatorVAAPI::AllocFramesHW(
             {
                 format = VA_RT_FORMAT_YUV420;
             }
+            if ( request->Type & MFX_MEMTYPE_FROM_ENCODE){
+                VASurfaceAttrib surfaceAttrib[2];
+                surfaceAttrib[0].type = VASurfaceAttribPixelFormat;
+                surfaceAttrib[0].value.type = VAGenericValueTypeInteger;
+                surfaceAttrib[0].flags = VA_SURFACE_ATTRIB_SETTABLE;
+                surfaceAttrib[0].value.value.i = va_fourcc;
 
-            va_res = vaCreateSurfaces(pSelf->pVADisplay,
+                /* Input Attribute Usage Hint*/
+                surfaceAttrib[1].flags = VA_SURFACE_ATTRIB_SETTABLE;
+                surfaceAttrib[1].type = (VASurfaceAttribType) VASurfaceAttribUsageHint;
+                surfaceAttrib[1].value.type = VAGenericValueTypeInteger;
+                surfaceAttrib[1].value.value.i = VA_SURFACE_ATTRIB_USAGE_HINT_ENCODER;
+
+                 va_res = vaCreateSurfaces(pSelf->pVADisplay,
+                                    format,
+                                    request->Info.Width, request->Info.Height,
+                                    surfaces,
+                                    surfaces_num,
+                                    &surfaceAttrib[0],2);
+            }
+
+            else {
+                va_res = vaCreateSurfaces(pSelf->pVADisplay,
                                     format,
                                     request->Info.Width, request->Info.Height,
                                     surfaces,
                                     surfaces_num,
                                     pAttrib, pAttrib ? 1 : 0);
+            }
             mfx_res = VA_TO_MFX_STATUS(va_res);
             bCreateSrfSucceeded = (MFX_ERR_NONE == mfx_res);
         }

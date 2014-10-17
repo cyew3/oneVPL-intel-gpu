@@ -76,7 +76,7 @@ mfxStatus MFXVideoENCODEMJPEG_HW::Query(VideoCORE * core, mfxVideoParam *in, mfx
             return MFX_WRN_PARTIAL_ACCELERATION;
 
         JpegEncCaps hwCaps = {0};
-        sts = QueryHwCaps(core->GetVAType(), core->GetAdapterNumber(), hwCaps);
+        sts = QueryHwCaps(core, hwCaps);
         if (sts != MFX_ERR_NONE)
             return MFX_WRN_PARTIAL_ACCELERATION;
     }
@@ -84,7 +84,7 @@ mfxStatus MFXVideoENCODEMJPEG_HW::Query(VideoCORE * core, mfxVideoParam *in, mfx
     {
         // Check HW caps
         JpegEncCaps hwCaps = {0};
-        mfxStatus sts = QueryHwCaps(core->GetVAType(), core->GetAdapterNumber(), hwCaps);
+        mfxStatus sts = QueryHwCaps(core, hwCaps);
         if (sts != MFX_ERR_NONE)
             return MFX_WRN_PARTIAL_ACCELERATION;
 
@@ -319,7 +319,7 @@ mfxStatus MFXVideoENCODEMJPEG_HW::Query(VideoCORE * core, mfxVideoParam *in, mfx
                 break;
         }
     }
-    
+
     if(isInvalid)
         return MFX_ERR_UNSUPPORTED;
 
@@ -335,7 +335,7 @@ mfxStatus MFXVideoENCODEMJPEG_HW::QueryIOSurf(VideoCORE * core, mfxVideoParam *p
     mfxStatus sts = MFX_ERR_NONE;
 
     JpegEncCaps hwCaps = { 0 };
-    sts = QueryHwCaps(core->GetVAType(), core->GetAdapterNumber(), hwCaps);
+    sts = QueryHwCaps(core, hwCaps);
     if (sts != MFX_ERR_NONE)
         return MFX_WRN_PARTIAL_ACCELERATION;
 
@@ -344,6 +344,8 @@ mfxStatus MFXVideoENCODEMJPEG_HW::QueryIOSurf(VideoCORE * core, mfxVideoParam *p
         inPattern == MFX_IOPATTERN_IN_SYSTEM_MEMORY ||
         inPattern == MFX_IOPATTERN_IN_VIDEO_MEMORY,
         MFX_ERR_INVALID_VIDEO_PARAM);
+
+    request->Info              = par->mfx.FrameInfo;
 
     if (inPattern == MFX_IOPATTERN_IN_SYSTEM_MEMORY)
     {
@@ -362,7 +364,7 @@ mfxStatus MFXVideoENCODEMJPEG_HW::QueryIOSurf(VideoCORE * core, mfxVideoParam *p
             ? MFX_MEMTYPE_OPAQUE_FRAME
             : MFX_MEMTYPE_EXTERNAL_FRAME;
     }
-    request->NumFrameSuggested = request->NumFrameMin;
+    request->NumFrameSuggested = IPP_MAX( request->NumFrameMin,par->AsyncDepth);
 
     return MFX_ERR_NONE;
 }
@@ -395,8 +397,8 @@ mfxStatus MFXVideoENCODEMJPEG_HW::Init(mfxVideoParam *par)
     {
         checked_jpegQT = *jpegQT;
         ptr_checked_ext[ext_counter++] = &checked_jpegQT.Header;
-    } 
-    else 
+    }
+    else
     {
         memset(&checked_jpegQT, 0, sizeof(checked_jpegQT));
         checked_jpegQT.Header.BufferId = MFX_EXTBUFF_JPEG_QT;
@@ -406,14 +408,14 @@ mfxStatus MFXVideoENCODEMJPEG_HW::Init(mfxVideoParam *par)
     {
         checked_jpegHT = *jpegHT;
         ptr_checked_ext[ext_counter++] = &checked_jpegHT.Header;
-    } 
-    else 
+    }
+    else
     {
         memset(&checked_jpegHT, 0, sizeof(checked_jpegHT));
         checked_jpegHT.Header.BufferId = MFX_EXTBUFF_JPEG_HUFFMAN;
         checked_jpegHT.Header.BufferSz = sizeof(checked_jpegHT);
     }
-    if (opaqAllocReq) 
+    if (opaqAllocReq)
     {
         checked_opaqAllocReq = *opaqAllocReq;
         ptr_checked_ext[ext_counter++] = &checked_opaqAllocReq.Header;
@@ -454,7 +456,8 @@ mfxStatus MFXVideoENCODEMJPEG_HW::Init(mfxVideoParam *par)
         return MFX_WRN_PARTIAL_ACCELERATION;
 
     sts = m_ddi->CreateAccelerationService(m_vParam);
-    MFX_CHECK_STS(sts);
+    if (sts != MFX_ERR_NONE)
+        return MFX_WRN_PARTIAL_ACCELERATION;
 
     mfxFrameAllocRequest request = { 0 };
     request.Info = m_vParam.mfx.FrameInfo;
@@ -703,7 +706,7 @@ mfxStatus MFXVideoENCODEMJPEG_HW::EncodeFrameCheck(
     // callback to run after complete task / depricated
     pEntryPoints[0].pCompleteProc        = 0;
     // callback to run after complete sub-task (for SW implementation makes sense) / (NON-OBLIGATORY)
-    pEntryPoints[0].pGetSubTaskProc      = 0; 
+    pEntryPoints[0].pGetSubTaskProc      = 0;
     pEntryPoints[0].pCompleteSubTaskProc = 0;
 
     pEntryPoints[0].requiredNumThreads   = 1;
@@ -807,7 +810,7 @@ mfxStatus MFXVideoENCODEMJPEG_HW::TaskRoutineSubmitFrame(
     else if (MFX_HW_D3D9 == enc.m_pCore->GetVAType())
         pSurfaceHdl = (mfxHDL *)&surfaceHDL;
     else if (MFX_HW_VAAPI == enc.m_pCore->GetVAType())
-        pSurfaceHdl = NULL;// ToDo... 
+        pSurfaceHdl = (mfxHDL *)&surfaceHDL;
     else
         return MFX_ERR_UNDEFINED_BEHAVIOR;
 
@@ -828,7 +831,7 @@ mfxStatus MFXVideoENCODEMJPEG_HW::TaskRoutineSubmitFrame(
         if (MFX_IOPATTERN_IN_VIDEO_MEMORY == enc.m_vParam.IOPattern)
             sts = enc.m_pCore->GetExternalFrameHDL(nativeSurf->Data.MemId, pSurfaceHdl);
         else
-            return MFX_ERR_UNDEFINED_BEHAVIOR;   
+            return MFX_ERR_UNDEFINED_BEHAVIOR;
     }
     MFX_CHECK_STS(sts);
 
@@ -844,7 +847,8 @@ mfxStatus MFXVideoENCODEMJPEG_HW::TaskRoutineSubmitFrame(
     }
     else if (MFX_HW_VAAPI == enc.m_pCore->GetVAType())
     {
-        // ToDo
+        MFX_CHECK(surfaceHDL != 0, MFX_ERR_UNDEFINED_BEHAVIOR);
+        sts = enc.m_ddi->Execute(task, (mfxHDL)surfaceHDL);
     }
 
     return sts;

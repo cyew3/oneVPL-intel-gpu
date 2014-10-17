@@ -108,9 +108,9 @@ mfxStatus D3D11Encoder::QueryBitstreamBufferInfo(mfxFrameAllocRequest& request)
         encodeFormatCount.CompressedBufferInfoCount = 0;
         encodeFormatCount.UncompressedFormatCount   = 0;
         
-        //HRESULT hr = m_auxDevice->Execute(ENCODE_FORMAT_COUNT_ID, guid, encodeFormatCount);        
+        //HRESULT hr = m_auxDevice->Execute(ENCODE_FORMAT_COUNT_ID, guid, encodeFormatCount);
         D3D11_VIDEO_DECODER_EXTENSION decoderExtParam;
-        decoderExtParam.Function = ENCODE_FORMAT_COUNT_ID; 
+        decoderExtParam.Function = ENCODE_FORMAT_COUNT_ID;
         decoderExtParam.pPrivateInputData = 0; //m_guid ???
         decoderExtParam.PrivateInputDataSize = 0; // sizeof(m_guid) ???
         decoderExtParam.pPrivateOutputData = &encodeFormatCount;
@@ -132,7 +132,7 @@ mfxStatus D3D11Encoder::QueryBitstreamBufferInfo(mfxFrameAllocRequest& request)
         encodeFormats.pUncompressedFormats     = &m_uncompBufInfo[0];
 
         //D3D11_VIDEO_DECODER_EXTENSION decoderExtParam;
-        decoderExtParam.Function = ENCODE_FORMATS_ID; 
+        decoderExtParam.Function = ENCODE_FORMATS_ID;
         decoderExtParam.pPrivateInputData = 0; //m_guid ???
         decoderExtParam.PrivateInputDataSize = 0; // sizeof(m_guid) ???
         decoderExtParam.pPrivateOutputData = &encodeFormats;
@@ -199,7 +199,7 @@ mfxStatus D3D11Encoder::QueryEncodeCaps(JpegEncCaps & caps)
     caps.SampleBitDepth = m_caps.SampleBitDepth;
     caps.MaxNumComponent = m_caps.MaxNumComponent;
     caps.MaxNumScan = m_caps.MaxNumScan;
-    caps.MaxNumHuffTable = m_caps.MaxNumHuffTable; 
+    caps.MaxNumHuffTable = m_caps.MaxNumHuffTable;
     caps.MaxNumQuantTable = m_caps.MaxNumQuantTable;
 
     return MFX_ERR_NONE;
@@ -238,7 +238,7 @@ mfxStatus D3D11Encoder::Execute(DdiTask &task, mfxHDL surface)
         D3D11_VIDEO_DECODER_OUTPUT_VIEW_DESC outputDesc;
         outputDesc.DecodeProfile = m_guid;
         outputDesc.ViewDimension = D3D11_VDOV_DIMENSION_TEXTURE2D;
-        outputDesc.Texture2D.ArraySlice = (UINT)0; 
+        outputDesc.Texture2D.ArraySlice = (UINT)0;
         SAFE_RELEASE(m_pVDOView);
 
         hr = m_pVideoDevice->CreateVideoDecoderOutputView(
@@ -248,7 +248,7 @@ mfxStatus D3D11Encoder::Execute(DdiTask &task, mfxHDL surface)
         CHECK_HRES(hr);
         
         hr = m_pVideoContext->DecoderBeginFrame(m_pDecoder, m_pVDOView, 0, 0);
-        CHECK_HRES(hr);    
+        CHECK_HRES(hr);
     //}
 
     // prepare resource list
@@ -256,7 +256,7 @@ mfxStatus D3D11Encoder::Execute(DdiTask &task, mfxHDL surface)
     mfxU32       RES_ID_BITSTREAM   = 0;          // bitstream surface takes first place in resourceList
     mfxU32       RES_ID_ORIGINAL    = 1;
 
-    mfxU32 resourceCount = 2;    
+    mfxU32 resourceCount = 2;
     std::vector<ID3D11Resource*> resourceList;
     resourceList.resize(resourceCount);
 
@@ -354,7 +354,7 @@ mfxStatus D3D11Encoder::Execute(DdiTask &task, mfxHDL surface)
     decoderExtParams.PrivateInputDataSize  = sizeof(ENCODE_EXECUTE_PARAMS);
     decoderExtParams.pPrivateOutputData    = 0;
     decoderExtParams.PrivateOutputDataSize = 0;
-    decoderExtParams.ResourceCount         = resourceCount; 
+    decoderExtParams.ResourceCount         = resourceCount;
     decoderExtParams.ppResourceList        = &resourceList[0];
 
     hr = DecoderExtension(m_pVideoContext, m_pDecoder, decoderExtParams);
@@ -488,7 +488,7 @@ mfxStatus D3D11Encoder::Init(
     UINT profileCount = m_pVideoDevice->GetVideoDecoderProfileCount( );
     assert( profileCount > 0 );
 
-    bool isFound = false;    
+    bool isFound = false;
     GUID profileGuid;
     for( UINT indxProfile = 0; indxProfile < profileCount; indxProfile++ )
     {
@@ -538,7 +538,7 @@ mfxStatus D3D11Encoder::Init(
     video_desc.SampleWidth  = width;
     video_desc.SampleHeight = height;
     video_desc.OutputFormat = DXGI_FORMAT_NV12;
-    video_desc.Guid = DXVA2_Intel_Encode_JPEG; 
+    video_desc.Guid = DXVA2_Intel_Encode_JPEG;
 
     // D3D11_VIDEO_DECODER_CONFIG video_config;
     video_config.guidConfigBitstreamEncryption = DXVA_NoEncrypt;// aya: encrypto will be added late

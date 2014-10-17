@@ -17,6 +17,10 @@
 
 #include <vector>
 #include <assert.h>
+#include <va/va.h>
+#include <va/va_enc.h>
+#include <va/va_enc_jpeg.h>
+#include "umc_mutex.h"
 
 #include "mfx_ext_buffers.h"
 #include "mfxpcp.h"
@@ -24,9 +28,25 @@
 #include "mfx_mjpeg_encode_hw_utils.h"
 #include "mfx_mjpeg_encode_interface.h"
 
+#define MFX_DESTROY_VABUFFER(vaBufferId, vaDisplay)    \
+do {                                               \
+    if ( vaBufferId != VA_INVALID_ID)              \
+    {                                              \
+        vaDestroyBuffer(vaDisplay, vaBufferId);    \
+        vaBufferId = VA_INVALID_ID;                \
+    }                                              \
+} while (0)
 
 namespace MfxHwMJpegEncode
 {
+    typedef struct
+    {
+        VASurfaceID surface;
+        mfxU32 number;
+        mfxU32 idxBs;
+        mfxU32 size; // valid only if Surface ID == VA_INVALID_SURFACE (skipped frames)
+    } ExtVASurface;
+
     class VAAPIEncoder : public DriverEncoder
     {
     public:
@@ -76,19 +96,27 @@ namespace MfxHwMJpegEncode
     private:
         VAAPIEncoder(VAAPIEncoder const &);              // no implementation
         VAAPIEncoder & operator =(VAAPIEncoder const &); // no implementation
+        mfxStatus DestroyBuffers();
 
         VideoCORE       * m_core;
         mfxU32            m_width;
         mfxU32            m_height;
+        JpegEncCaps       m_caps;
+        VADisplay         m_vaDisplay;
+        VAContextID       m_vaContextEncode;
+        VAConfigID        m_vaConfig;
 
-        // ToDo change ENCODE_CAPS_JPEG to libVA analog
-        //ENCODE_CAPS_JPEG  m_caps;
-        bool              m_infoQueried;
+        UMC::Mutex        m_guard;
+        std::vector<ExtVASurface> m_feedbackCache;
+        std::vector<ExtVASurface> m_bsQueue;
 
-        //std::vector<ENCODE_COMP_BUFFER_INFO>     m_compBufInfo;
-        //std::vector<D3DDDIFORMAT>                m_uncompBufInfo;
-        //std::vector<ENCODE_QUERY_STATUS_PARAMS>  m_feedbackUpdate;
-        //CachedFeedback                           m_feedbackCached;
+        //std::vector<VABufferID>  m_qmBufferIds;
+        //std::vector<VABufferID>  m_htBufferIds;
+        //std::vector<VABufferID>  m_scanBufferIds;
+        VABufferID  m_qmBufferId;
+        VABufferID  m_htBufferId;
+        VABufferID  m_scanBufferId;
+        VABufferID  m_ppsBufferId;
     };
 
 }; // namespace

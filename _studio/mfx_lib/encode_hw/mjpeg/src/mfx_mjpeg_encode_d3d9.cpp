@@ -243,7 +243,7 @@ mfxStatus D3D9Encoder::QueryEncodeCaps(JpegEncCaps & caps)
     caps.SampleBitDepth = m_caps.SampleBitDepth;
     caps.MaxNumComponent = m_caps.MaxNumComponent;
     caps.MaxNumScan = m_caps.MaxNumScan;
-    caps.MaxNumHuffTable = m_caps.MaxNumHuffTable; 
+    caps.MaxNumHuffTable = m_caps.MaxNumHuffTable;
     caps.MaxNumQuantTable = m_caps.MaxNumQuantTable;
 
     return MFX_ERR_NONE;

@@ -21,6 +21,11 @@
 #include <dxva2api.h>
 #include "encoding_ddi.h"
 #include "encoder_ddi.hpp"
+#elif defined (MFX_VA_LINUX)
+#include <va/va.h>
+#include <va/va_enc.h>
+#include <va/va_enc_jpeg.h>
+
 #endif
 
 #include "mfxstructures.h"
@@ -61,13 +66,12 @@ namespace MfxHwMJpegEncode
         mfxU32    SampleBitDepth;
         mfxU32    MaxNumComponent;
         mfxU32    MaxNumScan;
-        mfxU32    MaxNumHuffTable; 
+        mfxU32    MaxNumHuffTable;
         mfxU32    MaxNumQuantTable;
     } JpegEncCaps;
 
     mfxStatus QueryHwCaps(
-        eMFXVAType    va_type,
-        mfxU32        adapterNum,
+        VideoCORE * core,
         JpegEncCaps & hwCaps);
 
     bool IsJpegParamExtBufferIdSupported(
@@ -91,9 +95,7 @@ namespace MfxHwMJpegEncode
     {
         ExecuteBuffers()
         {
-#if defined (MFX_VA_WIN)
             memset(&m_pps, 0, sizeof(m_pps));
-#endif
             memset(&m_payload, 0, sizeof(m_payload));
 
             m_payload_data_present = false;
@@ -109,7 +111,10 @@ namespace MfxHwMJpegEncode
         std::vector<ENCODE_HUFFMAN_TABLE_JPEG>       m_dht_list;
 
 #elif defined (MFX_VA_LINUX)
-        // ToDo: structures for Linux
+        VAEncPictureParameterBufferJPEG               m_pps;
+        std::vector<VAEncSliceParameterBufferJPEG>    m_scan_list;
+        std::vector<VAQMatrixBufferJPEG>              m_dqt_list;
+        std::vector<VAHuffmanTableBufferJPEGBaseline> m_dht_list;
 
 #endif
 

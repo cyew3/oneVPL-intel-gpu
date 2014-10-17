@@ -1102,7 +1102,7 @@ mfxStatus MFXVideoENCODEMJPEG::QueryIOSurf(mfxVideoParam *par, mfxFrameAllocRequ
 
 mfxStatus MFXVideoENCODEMJPEG::Init(mfxVideoParam *par_in)
 {
-    mfxStatus st, QueryStatus;
+    mfxStatus st = MFX_ERR_NONE, QueryStatus = MFX_ERR_NONE;
     mfxVideoParam* par = par_in;
 
     if(m_isInitialized)
@@ -1155,17 +1155,15 @@ mfxStatus MFXVideoENCODEMJPEG::Init(mfxVideoParam *par_in)
     checked.ExtParam = ptr_checked_ext;
     checked.NumExtParam = ext_counter;
 
-    st = Query(par, &checked);
+    QueryStatus = Query(par, &checked);
 
-    if (st != MFX_ERR_NONE && st != MFX_WRN_INCOMPATIBLE_VIDEO_PARAM && st != MFX_WRN_PARTIAL_ACCELERATION)
+    if (QueryStatus != MFX_ERR_NONE && QueryStatus != MFX_WRN_INCOMPATIBLE_VIDEO_PARAM && QueryStatus != MFX_WRN_PARTIAL_ACCELERATION)
     {
-        if (st == MFX_ERR_UNSUPPORTED)
+        if (QueryStatus == MFX_ERR_UNSUPPORTED)
             return MFX_ERR_INVALID_VIDEO_PARAM;
         else
-            return st;
+            return QueryStatus;
     }
-
-    QueryStatus = st;
 
     par = &checked; // from now work with fixed copy of input!
 
@@ -1193,7 +1191,7 @@ mfxStatus MFXVideoENCODEMJPEG::Init(mfxVideoParam *par_in)
             case MFX_MEMTYPE_DXVA2_PROCESSOR_TARGET:
                 break;
             default:
-                return MFX_ERR_INVALID_VIDEO_PARAM;        
+                return MFX_ERR_INVALID_VIDEO_PARAM;
             }
 
             // use opaque surfaces. Need to allocate
