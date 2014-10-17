@@ -236,7 +236,7 @@ mfxStatus VideoDECODEVP9::Init(mfxVideoParam *params)
 
     m_p_frame_allocator.reset(new mfx_UMC_FrameAllocator);
 
-    Ipp32s useInternal = m_on_init_video_params.IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY;
+    Ipp32s useInternal = (m_on_init_video_params.IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY) || (m_on_init_video_params.IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY);
 
     // allocate memory
     memset(&m_request, 0, sizeof(m_request));
@@ -719,8 +719,8 @@ mfxStatus VideoDECODEVP9::PreDecodeFrame(mfxBitstream *bs, mfxFrameSurface1 *sur
 
     if (si.w && si.h)
     {
-        p_surface->Info.CropW = si.w;
-        p_surface->Info.CropH = si.h;
+        p_surface->Info.CropW = (mfxU16)si.w;
+        p_surface->Info.CropH = (mfxU16)si.h;
 
         si.w = (si.w + 15) & ~0x0f;
         si.h = (si.h + 15) & ~0x0f;

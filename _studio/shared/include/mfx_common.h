@@ -279,6 +279,13 @@
 #endif
 #endif
 
+#if defined(AS_VP9D_PLUGIN)
+//#define MFX_ENABLE_VP9_VIDEO_DECODE
+#ifdef MFX_VA
+//#define MFX_ENABLE_VP9_VIDEO_DECODE_HW
+#endif
+#endif
+
 #if defined (MFX_RT)
 #define MFX_ENABLE_VPP
 #define MFX_ENABLE_USER_DECODE

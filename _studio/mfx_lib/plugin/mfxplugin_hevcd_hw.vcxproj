@@ -290,7 +290,7 @@
     <ClCompile>
       <Optimization>Disabled</Optimization>
       <AdditionalIncludeDirectories>.\include;$(MfxIppIncludeDir);..\..\..\..\mdp_msdk-api\include;..\..\..\_studio\shared\include;..\..\..\_studio\shared\umc\core\vm\include;..\..\..\_studio\shared\umc\core\vm_plus\include;..\..\..\samples\sample_user_modules\plugin_api;..\..\..\opensource\mfx_dispatch\include;..\..\..\_studio\mfx_lib\shared\include;..\..\..\_studio\shared\umc\core\umc\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>MFX_VA;MFX_D3D11_ENABLED;WIN32;_DEBUG;VM_DEBUG;_WINDOWS;_USRDLL;LIBMFXSW_EXPORTS;AS_HEVCD_PLUGIN;AS_VP8D_PLUGIN;UNIFIED_PLUGIN;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>AS_VP9D_PLUGIN;MFX_VA;MFX_D3D11_ENABLED;WIN32;_DEBUG;VM_DEBUG;_WINDOWS;_USRDLL;LIBMFXSW_EXPORTS;AS_HEVCD_PLUGIN;AS_VP8D_PLUGIN;UNIFIED_PLUGIN;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <ExceptionHandling>Async</ExceptionHandling>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -304,8 +304,8 @@
     <Link>
       <ImportLibrary>$(OutDir)\..\lib\$(TargetName).lib</ImportLibrary>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>ippcoremt.lib;ipps_s_p8.lib;ippvc_s_p8.lib;ippi_s_p8.lib;ippcc_s_p8.lib;ippcv_s_p8.lib;ippj_s_p8.lib;ippmsdk_s_p8.lib;D3d9.lib;dxva2.lib;version.lib;D3D11.lib;DXGI.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(MfxIppLibraryDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>vpxmt.lib;ippcoremt.lib;ipps_s_p8.lib;ippvc_s_p8.lib;ippi_s_p8.lib;ippcc_s_p8.lib;ippcv_s_p8.lib;ippj_s_p8.lib;ippmsdk_s_p8.lib;D3d9.lib;dxva2.lib;version.lib;D3D11.lib;DXGI.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(MfxIppLibraryDir);..\..\..\..\mdp_msdk-contrib\libvpx\windows\x86;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <IgnoreSpecificDefaultLibraries>svml_disp.lib;libirc.lib;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <SubSystem>Console</SubSystem>
     </Link>
@@ -319,7 +319,7 @@
     <ClCompile>
       <Optimization>Disabled</Optimization>
       <AdditionalIncludeDirectories>.\include;$(MfxIppIncludeDir);..\..\..\..\mdp_msdk-api\include;..\..\..\_studio\shared\include;..\..\..\_studio\shared\umc\core\vm\include;..\..\..\_studio\shared\umc\core\vm_plus\include;..\..\..\samples\sample_user_modules\plugin_api;..\..\..\opensource\mfx_dispatch\include;..\..\..\_studio\mfx_lib\shared\include;..\..\..\_studio\shared\umc\core\umc\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>MFX_D3D11_ENABLED;WIN32;_DEBUG;VM_DEBUG;_WINDOWS;_USRDLL;LIBMFXSW_EXPORTS;AS_HEVCD_PLUGIN;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>AS_VP9D_PLUGIN;MFX_D3D11_ENABLED;WIN32;_DEBUG;VM_DEBUG;_WINDOWS;_USRDLL;LIBMFXSW_EXPORTS;AS_HEVCD_PLUGIN;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <ExceptionHandling>Async</ExceptionHandling>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -345,7 +345,7 @@
     <ClCompile>
       <Optimization>Disabled</Optimization>
       <AdditionalIncludeDirectories>.\include;$(MfxIppIncludeDir);..\..\..\..\mdp_msdk-api\include;..\..\..\_studio\shared\include;..\..\..\_studio\shared\umc\core\vm\include;..\..\..\_studio\shared\umc\core\vm_plus\include;..\..\..\samples\sample_user_modules\plugin_api;..\..\..\opensource\mfx_dispatch\include;..\..\..\_studio\mfx_lib\shared\include;..\..\..\_studio\shared\umc\core\umc\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>MFX_D3D11_ENABLED;WIN32;_DEBUG;VM_DEBUG;_WINDOWS;_USRDLL;LIBMFXSW_EXPORTS;AS_HEVCD_PLUGIN;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>AS_VP9D_PLUGIN;MFX_D3D11_ENABLED;WIN32;_DEBUG;VM_DEBUG;_WINDOWS;_USRDLL;LIBMFXSW_EXPORTS;AS_HEVCD_PLUGIN;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <ExceptionHandling>Async</ExceptionHandling>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -371,7 +371,7 @@
     <ClCompile>
       <Optimization>Disabled</Optimization>
       <AdditionalIncludeDirectories>.\include;$(MfxIppIncludeDir);..\..\..\..\mdp_msdk-api\include;..\..\..\_studio\shared\include;..\..\..\_studio\shared\umc\core\vm\include;..\..\..\_studio\shared\umc\core\vm_plus\include;..\..\..\samples\sample_user_modules\plugin_api;..\..\..\opensource\mfx_dispatch\include;..\..\..\_studio\mfx_lib\shared\include;..\..\..\_studio\shared\umc\core\umc\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>MFX_VA;MFX_D3D11_ENABLED;WIN64;_DEBUG;VM_DEBUG;_WINDOWS;_USRDLL;LIBMFXSW_EXPORTS;AS_HEVCD_PLUGIN;AS_HEVCD_PLUGIN;AS_VP8D_PLUGIN;UNIFIED_PLUGIN;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>AS_VP9D_PLUGIN;MFX_VA;MFX_D3D11_ENABLED;WIN64;_DEBUG;VM_DEBUG;_WINDOWS;_USRDLL;LIBMFXSW_EXPORTS;AS_HEVCD_PLUGIN;AS_HEVCD_PLUGIN;AS_VP8D_PLUGIN;UNIFIED_PLUGIN;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>Async</ExceptionHandling>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
@@ -383,9 +383,9 @@
     </ClCompile>
     <Link>
       <ImportLibrary>$(OutDir)\..\lib\$(TargetName).lib</ImportLibrary>
-      <AdditionalDependencies>ippcoremt.lib;ipps_s_y8.lib;ippvc_s_y8.lib;ippi_s_y8.lib;ippcc_s_y8.lib;ippcv_s_y8.lib;ippj_s_y8.lib;ippmsdk_s_y8.lib;D3d9.lib;dxva2.lib;version.lib;D3D11.lib;DXGI.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>vpxmt.lib;ippcoremt.lib;ipps_s_y8.lib;ippvc_s_y8.lib;ippi_s_y8.lib;ippcc_s_y8.lib;ippcv_s_y8.lib;ippj_s_y8.lib;ippmsdk_s_y8.lib;D3d9.lib;dxva2.lib;version.lib;D3D11.lib;DXGI.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
-      <AdditionalLibraryDirectories>$(MfxIppLibraryDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(MfxIppLibraryDir);..\..\..\..\mdp_msdk-contrib\libvpx\windows\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
       <Command>
@@ -396,7 +396,7 @@
     <ClCompile>
       <Optimization>Disabled</Optimization>
       <AdditionalIncludeDirectories>.\include;$(MfxIppIncludeDir);..\..\..\..\mdp_msdk-api\include;..\..\..\_studio\shared\include;..\..\..\_studio\shared\umc\core\vm\include;..\..\..\_studio\shared\umc\core\vm_plus\include;..\..\..\samples\sample_user_modules\plugin_api;..\..\..\opensource\mfx_dispatch\include;..\..\..\_studio\mfx_lib\shared\include;..\..\..\_studio\shared\umc\core\umc\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>MFX_D3D11_ENABLED;WIN64;_DEBUG;VM_DEBUG;_WINDOWS;_USRDLL;LIBMFXSW_EXPORTS;AS_HEVCD_PLUGIN;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>AS_VP9D_PLUGIN;MFX_D3D11_ENABLED;WIN64;_DEBUG;VM_DEBUG;_WINDOWS;_USRDLL;LIBMFXSW_EXPORTS;AS_HEVCD_PLUGIN;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>Async</ExceptionHandling>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
@@ -420,7 +420,7 @@
     <ClCompile>
       <Optimization>Disabled</Optimization>
       <AdditionalIncludeDirectories>.\include;$(MfxIppIncludeDir);..\..\..\..\mdp_msdk-api\include;..\..\..\_studio\shared\include;..\..\..\_studio\shared\umc\core\vm\include;..\..\..\_studio\shared\umc\core\vm_plus\include;..\..\..\samples\sample_user_modules\plugin_api;..\..\..\opensource\mfx_dispatch\include;..\..\..\_studio\mfx_lib\shared\include;..\..\..\_studio\shared\umc\core\umc\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>MFX_D3D11_ENABLED;WIN64;_DEBUG;VM_DEBUG;_WINDOWS;_USRDLL;LIBMFXSW_EXPORTS;AS_HEVCD_PLUGIN;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>AS_VP9D_PLUGIN;MFX_D3D11_ENABLED;WIN64;_DEBUG;VM_DEBUG;_WINDOWS;_USRDLL;LIBMFXSW_EXPORTS;AS_HEVCD_PLUGIN;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>Async</ExceptionHandling>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
@@ -443,7 +443,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
       <AdditionalIncludeDirectories>.\include;$(MfxIppIncludeDir);..\..\..\..\mdp_msdk-api\include;..\..\..\_studio\shared\include;..\..\..\_studio\shared\umc\core\vm\include;..\..\..\_studio\shared\umc\core\vm_plus\include;..\..\..\samples\sample_user_modules\plugin_api;..\..\..\opensource\mfx_dispatch\include;..\..\..\_studio\mfx_lib\shared\include;..\..\..\_studio\shared\umc\core\umc\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>MFX_VA;MFX_D3D11_ENABLED;WIN32;NDEBUG;_WINDOWS;_USRDLL;LIBMFXSW_EXPORTS;AS_HEVCD_PLUGIN;AS_HEVCD_PLUGIN;AS_VP8D_PLUGIN;UNIFIED_PLUGIN;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>AS_VP9D_PLUGIN;MFX_VA;MFX_D3D11_ENABLED;WIN32;NDEBUG;_WINDOWS;_USRDLL;LIBMFXSW_EXPORTS;AS_HEVCD_PLUGIN;AS_HEVCD_PLUGIN;AS_VP8D_PLUGIN;UNIFIED_PLUGIN;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <PrecompiledHeader>
       </PrecompiledHeader>
@@ -457,9 +457,9 @@
       <OptimizeReferences>true</OptimizeReferences>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <TargetMachine>MachineX86</TargetMachine>
-      <AdditionalDependencies>ippcoremt.lib;ipps_s_p8.lib;ippvc_s_p8.lib;ippi_s_p8.lib;ippcc_s_p8.lib;ippcv_s_p8.lib;ippj_s_p8.lib;ippmsdk_s_p8.lib;D3d9.lib;dxva2.lib;version.lib;D3D11.lib;DXGI.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>vpxmt.lib;ippcoremt.lib;ipps_s_p8.lib;ippvc_s_p8.lib;ippi_s_p8.lib;ippcc_s_p8.lib;ippcv_s_p8.lib;ippj_s_p8.lib;ippmsdk_s_p8.lib;D3d9.lib;dxva2.lib;version.lib;D3D11.lib;DXGI.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
-      <AdditionalLibraryDirectories>$(MfxIppLibraryDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(MfxIppLibraryDir);..\..\..\..\mdp_msdk-contrib\libvpx\windows\x86;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <ImportLibrary>$(OutDir)\..\lib\$(TargetName).lib</ImportLibrary>
     </Link>
     <PostBuildEvent>
@@ -470,7 +470,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release_Intel|Win32'">
     <ClCompile>
       <AdditionalIncludeDirectories>.\include;$(MfxIppIncludeDir);..\..\..\..\mdp_msdk-api\include;..\..\..\_studio\shared\include;..\..\..\_studio\shared\umc\core\vm\include;..\..\..\_studio\shared\umc\core\vm_plus\include;..\..\..\samples\sample_user_modules\plugin_api;..\..\..\opensource\mfx_dispatch\include;..\..\..\_studio\mfx_lib\shared\include;..\..\..\_studio\shared\umc\core\umc\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>MFX_D3D11_ENABLED;WIN32;NDEBUG;_WINDOWS;_USRDLL;LIBMFXSW_EXPORTS;AS_HEVCD_PLUGIN;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>AS_VP9D_PLUGIN;MFX_D3D11_ENABLED;WIN32;NDEBUG;_WINDOWS;_USRDLL;LIBMFXSW_EXPORTS;AS_HEVCD_PLUGIN;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <PrecompiledHeader>
       </PrecompiledHeader>
@@ -498,7 +498,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release_Intel_Evaluation|Win32'">
     <ClCompile>
       <AdditionalIncludeDirectories>.\include;$(MfxIppIncludeDir);..\..\..\..\mdp_msdk-api\include;..\..\..\_studio\shared\include;..\..\..\_studio\shared\umc\core\vm\include;..\..\..\_studio\shared\umc\core\vm_plus\include;..\..\..\samples\sample_user_modules\plugin_api;..\..\..\opensource\mfx_dispatch\include;..\..\..\_studio\mfx_lib\shared\include;..\..\..\_studio\shared\umc\core\umc\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>MFX_D3D11_ENABLED;WIN32;NDEBUG;_WINDOWS;_USRDLL;LIBMFXSW_EXPORTS;AS_HEVCD_PLUGIN;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>AS_VP9D_PLUGIN;MFX_D3D11_ENABLED;WIN32;NDEBUG;_WINDOWS;_USRDLL;LIBMFXSW_EXPORTS;AS_HEVCD_PLUGIN;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <PrecompiledHeader>
       </PrecompiledHeader>
@@ -526,7 +526,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
       <AdditionalIncludeDirectories>.\include;$(MfxIppIncludeDir);..\..\..\..\mdp_msdk-api\include;..\..\..\_studio\shared\include;..\..\..\_studio\shared\umc\core\vm\include;..\..\..\_studio\shared\umc\core\vm_plus\include;..\..\..\samples\sample_user_modules\plugin_api;..\..\..\opensource\mfx_dispatch\include;..\..\..\_studio\mfx_lib\shared\include;..\..\..\_studio\shared\umc\core\umc\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>MFX_VA;MFX_D3D11_ENABLED;WIN64;NDEBUG;_WINDOWS;_USRDLL;LIBMFXSW_EXPORTS;AS_HEVCD_PLUGIN;AS_VP8D_PLUGIN;UNIFIED_PLUGIN;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>AS_VP9D_PLUGIN;MFX_VA;MFX_D3D11_ENABLED;WIN64;NDEBUG;_WINDOWS;_USRDLL;LIBMFXSW_EXPORTS;AS_HEVCD_PLUGIN;AS_VP8D_PLUGIN;UNIFIED_PLUGIN;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <PrecompiledHeader>
       </PrecompiledHeader>
@@ -539,8 +539,8 @@
       <SubSystem>Windows</SubSystem>
       <OptimizeReferences>true</OptimizeReferences>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
-      <AdditionalLibraryDirectories>$(MfxIppLibraryDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>ippcoremt.lib;ipps_s_y8.lib;ippvc_s_y8.lib;ippi_s_y8.lib;ippcc_s_y8.lib;ippcv_s_y8.lib;ippj_s_y8.lib;ippmsdk_s_y8.lib;D3d9.lib;dxva2.lib;version.lib;D3D11.lib;DXGI.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(MfxIppLibraryDir);..\..\..\..\mdp_msdk-contrib\libvpx\windows\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>vpxmt.lib;ippcoremt.lib;ipps_s_y8.lib;ippvc_s_y8.lib;ippi_s_y8.lib;ippcc_s_y8.lib;ippcv_s_y8.lib;ippj_s_y8.lib;ippmsdk_s_y8.lib;D3d9.lib;dxva2.lib;version.lib;D3D11.lib;DXGI.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <ImportLibrary>$(OutDir)\..\lib\$(TargetName).lib</ImportLibrary>
     </Link>
@@ -552,7 +552,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release_Intel|x64'">
     <ClCompile>
       <AdditionalIncludeDirectories>.\include;$(MfxIppIncludeDir);..\..\..\..\mdp_msdk-api\include;..\..\..\_studio\shared\include;..\..\..\_studio\shared\umc\core\vm\include;..\..\..\_studio\shared\umc\core\vm_plus\include;..\..\..\samples\sample_user_modules\plugin_api;..\..\..\opensource\mfx_dispatch\include;..\..\..\_studio\mfx_lib\shared\include;..\..\..\_studio\shared\umc\core\umc\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>MFX_D3D11_ENABLED;WIN64;NDEBUG;_WINDOWS;_USRDLL;LIBMFXSW_EXPORTS;AS_HEVCD_PLUGIN;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>AS_VP9D_PLUGIN;MFX_D3D11_ENABLED;WIN64;NDEBUG;_WINDOWS;_USRDLL;LIBMFXSW_EXPORTS;AS_HEVCD_PLUGIN;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <PrecompiledHeader>
       </PrecompiledHeader>
@@ -579,7 +579,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release_Intel_Evaluation|x64'">
     <ClCompile>
       <AdditionalIncludeDirectories>.\include;$(MfxIppIncludeDir);..\..\..\..\mdp_msdk-api\include;..\..\..\_studio\shared\include;..\..\..\_studio\shared\umc\core\vm\include;..\..\..\_studio\shared\umc\core\vm_plus\include;..\..\..\samples\sample_user_modules\plugin_api;..\..\..\opensource\mfx_dispatch\include;..\..\..\_studio\mfx_lib\shared\include;..\..\..\_studio\shared\umc\core\umc\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>MFX_D3D11_ENABLED;WIN64;NDEBUG;_WINDOWS;_USRDLL;LIBMFXSW_EXPORTS;AS_HEVCD_PLUGIN;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>AS_VP9D_PLUGIN;MFX_D3D11_ENABLED;WIN64;NDEBUG;_WINDOWS;_USRDLL;LIBMFXSW_EXPORTS;AS_HEVCD_PLUGIN;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <PrecompiledHeader>
       </PrecompiledHeader>
@@ -607,6 +607,7 @@
     <ClInclude Include="include\mfx_hevc_dec_plugin.h" />
     <ClInclude Include="include\mfx_plugin_module.h" />
     <ClInclude Include="include\mfx_vp8_dec_plugin.h" />
+    <ClInclude Include="include\mfx_vp9_dec_plugin.h" />
     <ClInclude Include="resource.h" />
   </ItemGroup>
   <ItemGroup>
@@ -657,6 +658,7 @@
     <ClCompile Include="src\mfx_hevc_dec_plugin.cpp" />
     <ClCompile Include="src\mfx_unified_dec_plugin.cpp" />
     <ClCompile Include="src\mfx_vp8_dec_plugin.cpp" />
+    <ClCompile Include="src\mfx_vp9_dec_plugin.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="libmfxhw_plugin_hevcd.rc" />

@@ -57,7 +57,7 @@ bool VideoDECODEVP9_HW::CheckHardwareSupport(VideoCORE *p_core, mfxVideoParam *p
 
     if (p_core->IsGuidSupported(sDXVA_Intel_ModeVP9_VLD, p_video_param) != MFX_ERR_NONE)
     {
-        //return false;
+        return false;
     }
 
     // todo : VA API alternative ?
@@ -224,6 +224,8 @@ mfxStatus VideoDECODEVP9_HW::Reset(mfxVideoParam *p_video_param)
         return MFX_ERR_MEMORY_ALLOC;
     }
 
+    m_va->Reset();
+
     m_frameOrder = 0;
     memset(&m_stat, 0, sizeof(m_stat));
 
@@ -234,9 +236,6 @@ mfxStatus VideoDECODEVP9_HW::Reset(mfxVideoParam *p_video_param)
     {
         return MFX_WRN_PARTIAL_ACCELERATION;
     }
-
-    if(m_response.NumFrameActual > 0)
-        m_core->FreeFrames(&m_response);
 
     return MFX_ERR_NONE;
 }

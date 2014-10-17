@@ -43,7 +43,7 @@ using namespace UMC;
 #pragma warning (disable : 4018 4996 4995)
 ///////////////////////////////////////////////////////////////////////
 
-#define MPEG4_VLD 0
+#define MPEG4_VLD 1000
 
 DEFINE_GUID(DXVADDI_Intel_Decode_PrivateData_Report, 0x49761bec, 0x4b63, 0x4349, 0xa5, 0xff, 0x87, 0xff, 0xdf, 0x8, 0x84, 0x66);
 DEFINE_GUID(DXVA2_ModeMPEG4_VLD, 0x8ccf025a, 0xbacf, 0x4e44, 0x81, 0x16, 0x55, 0x21, 0xd9, 0xb3, 0x94, 0x7);
@@ -149,6 +149,10 @@ UMC::VideoAccelerationProfile GetProfile(REFGUID Guid)
     else if (Guid == DXVA_Intel_ModeHEVC_VLD_MainProfile || Guid == DXVA_ModeHEVC_VLD_Main || Guid == DXVA_Intel_ModeHEVC_VLD_Main10Profile || Guid == DXVA_ModeHEVC_VLD_Main10)
     {
         profile = HEVC_VLD;
+    }
+    else if (Guid == sDXVA_Intel_ModeVP9_VLD)
+    {
+        profile = VP9_VLD;
     }
 
     return profile;
@@ -291,6 +295,114 @@ public:
             logi(ptr->ScanVertPosition);
             logi(ptr->DataOffset);
             logi(ptr->DataLength);
+            }
+            break;
+        };
+
+        fclose(f);
+    }
+};
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////
+// JPEGBufferDumper
+/////////////////////////////////////////////////////////////////////////////////////////////////////
+class VP9BufferDumper : public BufferDumper
+{
+public:
+
+    enum
+    {
+        D3D9_VIDEO_DECODER_BUFFER_PICTURE_PARAMETERS_VP9 = DXVA2_PictureParametersBufferType,
+        D3D9_VIDEO_DECODER_BUFFER_INVERSE_QUANTIZATION_MATRIX_VP9 = DXVA2_InverseQuantizationMatrixBufferType,
+        D3D9_VIDEO_DECODER_BUFFER_BITSTREAM_DATA_VP9 = DXVA2_BitStreamDateBufferType,
+        D3D9_VIDEO_DECODER_BUFFER_COEFFICIENT_PROBABILITIES = DXVA2_VP9CoefficientProbabilitiesBufferType,
+    };
+
+    virtual void dumpBuffer(int BufferType, void *buffer, size_t bufferSize)
+    {
+        switch(BufferType)
+        {
+        case D3D9_VIDEO_DECODER_BUFFER_PICTURE_PARAMETERS_VP9:
+        case D3D9_VIDEO_DECODER_BUFFER_INVERSE_QUANTIZATION_MATRIX_VP9:
+            break;
+        default:
+            return;
+        };
+
+        f = fopen(fname, "a");
+
+        switch(BufferType)
+        {
+        case D3D9_VIDEO_DECODER_BUFFER_PICTURE_PARAMETERS_VP9:
+            {
+            DXVA_Intel_PicParams_VP9 * ptr = (DXVA_Intel_PicParams_VP9 *)buffer;
+            logi(ptr->FrameHeightMinus1);
+            logi(ptr->FrameWidthMinus1);
+
+            logi(ptr->PicFlags.fields.frame_type);
+            logi(ptr->PicFlags.fields.show_frame);
+            logi(ptr->PicFlags.fields.error_resilient_mode);
+            logi(ptr->PicFlags.fields.intra_only);
+
+            logi(ptr->PicFlags.fields.LastRefIdx);
+            logi(ptr->PicFlags.fields.LastRefSignBias);
+            logi(ptr->PicFlags.fields.GoldenRefIdx);
+            logi(ptr->PicFlags.fields.GoldenRefSignBias);
+            logi(ptr->PicFlags.fields.AltRefIdx);
+            logi(ptr->PicFlags.fields.AltRefSignBias);
+
+            logi(ptr->PicFlags.fields.allow_high_precision_mv);
+            logi(ptr->PicFlags.fields.mcomp_filter_type);
+            logi(ptr->PicFlags.fields.frame_parallel_decoding_mode);
+            logi(ptr->PicFlags.fields.segmentation_enabled);
+            logi(ptr->PicFlags.fields.segmentation_temporal_update);
+            logi(ptr->PicFlags.fields.segmentation_update_map);
+            logi(ptr->PicFlags.fields.reset_frame_context);
+            logi(ptr->PicFlags.fields.refresh_frame_context);
+            logi(ptr->PicFlags.fields.frame_context_idx);
+            logi(ptr->PicFlags.fields.LosslessFlag);
+            logi(ptr->PicFlags.fields.ReservedField);
+
+            for (int i = 0; i < 8; i++)
+            {
+                logi(ptr->RefFrameList[i]);
+            }
+
+            logi(ptr->CurrPic);
+            logi(ptr->filter_level);
+            logi(ptr->sharpness_level);
+            logi(ptr->log2_tile_rows);
+            logi(ptr->log2_tile_columns);
+
+            logi(ptr->UncompressedHeaderLengthInBytes);
+            logi(ptr->FirstPartitionSize);
+
+            for (int i = 0; i < 7; i++)
+            {
+                logi(ptr->mb_segment_tree_probs[i]);
+            }
+
+            for (int i = 0; i < 3; i++)
+            {
+                logi(ptr->segment_pred_probs[i]);
+            }
+
+            logi(ptr->BSBytesInBuffer);
+            logi(ptr->StatusReportFeedbackNumber);
+            }
+            break;
+        case D3D9_VIDEO_DECODER_BUFFER_INVERSE_QUANTIZATION_MATRIX_VP9:
+            {
+            DXVA_Intel_Segment_VP9 * ptr = (DXVA_Intel_Segment_VP9*)buffer;
+
+            for (int i = 0; i < 8; i++)
+            {
+                logi(ptr->SegData[i].FilterLevel[0][0]);
+                logi(ptr->SegData[i].LumaACQuantScale);
+                logi(ptr->SegData[i].LumaDCQuantScale);
+                logi(ptr->SegData[i].ChromaACQuantScale);
+                logi(ptr->SegData[i].ChromaDCQuantScale);
+            }
             }
             break;
         };
@@ -1210,6 +1322,9 @@ public:
             m_bufferDumper.reset(new HEVCBufferDumper);
             m_bufferDumper->m_isLongFormat = m_Config.ConfigBitstreamRaw == 2;
             break;
+        case VP9_VLD:
+            m_bufferDumper.reset(new VP9BufferDumper);
+            break;
         default:
             m_bufferDumper.reset(new BufferDumper);
             break;
@@ -1332,7 +1447,7 @@ public:
 
             sprintf(fname, "%s\\frame%d_buffer%d.log", pDir, m_cFrameNumber, BufferType);
 
-            if (m_Profile == H264_VLD || m_Profile == HEVC_VLD || m_Profile == JPEG_VLD)
+            if (m_Profile == H264_VLD || m_Profile == HEVC_VLD || m_Profile == JPEG_VLD || m_Profile == VP9_VLD)
             {
                 m_bufferDumper->fname = fname;
                 m_bufferDumper->dumpBuffer(BufferType, m_pBuffers[BufferType], m_cBuffersSize[BufferType]);
@@ -1439,7 +1554,9 @@ static GUID g_guids[] =
     DXVA_ModeHEVC_VLD_Main,
     DXVA_ModeHEVC_VLD_Main10,
     DXVA_Intel_ModeHEVC_VLD_MainProfile,
-    DXVA_Intel_ModeHEVC_VLD_Main10Profile
+    DXVA_Intel_ModeHEVC_VLD_Main10Profile,
+
+    sDXVA_Intel_ModeVP9_VLD
 };
 
 static DXVA2_ConfigPictureDecode configs[]=
@@ -1454,7 +1571,9 @@ static DXVA2_ConfigPictureDecode configs[]=
     {DXVA_ModeHEVC_VLD_Main, DXVA_NoEncrypt, DXVA_NoEncrypt, 2, 5000, 5000, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
     {DXVA_ModeHEVC_VLD_Main10, DXVA_NoEncrypt, DXVA_NoEncrypt, 2, 5000, 5000, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
     {DXVA_Intel_ModeHEVC_VLD_MainProfile, DXVA_NoEncrypt, DXVA_NoEncrypt, 2, 5000, 5000, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-    {DXVA_Intel_ModeHEVC_VLD_Main10Profile, DXVA_NoEncrypt, DXVA_NoEncrypt, 2, 5000, 5000, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
+    {DXVA_Intel_ModeHEVC_VLD_Main10Profile, DXVA_NoEncrypt, DXVA_NoEncrypt, 2, 5000, 5000, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+
+    {sDXVA_Intel_ModeVP9_VLD, DXVA_NoEncrypt, DXVA_NoEncrypt, 2, 5000, 5000, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
 };
 
 char pDir[256] = ".\\dxva2_log";

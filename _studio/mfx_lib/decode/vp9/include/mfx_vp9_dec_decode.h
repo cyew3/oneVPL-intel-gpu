@@ -29,7 +29,6 @@
 #include <list>
 
 #include "mfx_task.h"
-#include "mfxpcp.h"
 
 using namespace MfxVP9Decode;
 
