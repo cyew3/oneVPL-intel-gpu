@@ -24,10 +24,6 @@
 #include "ippi.h"
 #include <climits>
 
-// TODO: remove after LibVA changes merge
-#define VAEncPackedHeaderMPEG2_UserData (VAEncPackedHeaderMiscMask | 1)
-
-
 #ifndef D3DDDIFMT_NV12
 #define D3DDDIFMT_NV12 (D3DDDIFORMAT)(MFX_MAKEFOURCC('N', 'V', '1', '2'))
 #endif
@@ -1205,7 +1201,7 @@ mfxStatus VAAPIEncoder::Execute(ExecuteBuffers* pExecuteBuffers, mfxU32 funcId, 
     if (pUserData && userDataLen > 0)
     {
         VAEncPackedHeaderParameterBuffer packedParamsBuffer = {};
-        packedParamsBuffer.type = VAEncPackedHeaderMPEG2_UserData;
+        packedParamsBuffer.type = VAEncPackedHeaderRawData;
         packedParamsBuffer.has_emulation_bytes = false;
         mfxU32 correctedLenght = IPP_MIN(userDataLen - 4, UINT_MAX/8); // minus start code
         packedParamsBuffer.bit_length = correctedLenght * 8;
