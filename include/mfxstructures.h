@@ -568,7 +568,6 @@ typedef struct {
     mfxU16      reserved[246];
 } mfxExtCodingOption3;
 
-
 /* IntraPredBlockSize/InterPredBlockSize */
 enum {
     MFX_BLOCKSIZE_UNKNOWN   = 0,
@@ -663,7 +662,6 @@ typedef struct {
     mfxU32  NumFrame;
     mfxU64  NumBit;
     mfxU32  NumCachedFrame;
-    mfxU32  NumFrameCountAsync;     // counter for Async. part
 } mfxEncodeStat;
 
 typedef struct {
