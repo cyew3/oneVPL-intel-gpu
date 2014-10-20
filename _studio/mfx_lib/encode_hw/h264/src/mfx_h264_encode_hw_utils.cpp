@@ -3445,9 +3445,11 @@ void Hrd::Setup(MfxVideoParam const & par)
         || par.mfx.RateControlMethod == MFX_RATECONTROL_LA_ICQ)
     {
         // hrd control isn't required for BRC methods above
-        m_bIsInitialized = false;
+        m_bIsHrdRequired = false;
         return;
     }
+
+    m_bIsHrdRequired = true;
 
     m_rcMethod = par.mfx.RateControlMethod;
     if (m_rcMethod != MFX_RATECONTROL_CBR &&
@@ -3478,14 +3480,13 @@ void Hrd::Setup(MfxVideoParam const & par)
     else
         m_trn_cur = double(8000) * par.calcParam.initialDelayInKB / m_bitrate;
 // MVC BD }
-    m_trn_cur = GetInitCpbRemovalDelay() / 90000.0;
 
-    m_bIsInitialized = true;
+    m_trn_cur = GetInitCpbRemovalDelay() / 90000.0;
 }
 
 void Hrd::Reset(MfxVideoParam const & par)
 {
-    if (m_bIsInitialized == false)
+    if (m_bIsHrdRequired == false)
         return;
 
     m_bitrate  = GetMaxBitrateValue(par.calcParam.maxKbps) << 6;
@@ -3494,7 +3495,7 @@ void Hrd::Reset(MfxVideoParam const & par)
 
 void Hrd::RemoveAccessUnit(mfxU32 size, mfxU32 interlace, mfxU32 bufferingPeriod)
 {
-    if (m_bIsInitialized == false)
+    if (m_bIsHrdRequired == false)
         return;
 
     mfxU32 initDelay = GetInitCpbRemovalDelay();
@@ -3513,7 +3514,7 @@ void Hrd::RemoveAccessUnit(mfxU32 size, mfxU32 interlace, mfxU32 bufferingPeriod
 
 mfxU32 Hrd::GetInitCpbRemovalDelay() const
 {
-    if (m_bIsInitialized == false)
+    if (m_bIsHrdRequired == false)
         return 0;
 
     double delay = IPP_MAX(0.0, m_trn_cur - m_taf_prv);
@@ -3528,7 +3529,7 @@ mfxU32 Hrd::GetInitCpbRemovalDelay() const
 
 mfxU32 Hrd::GetInitCpbRemovalDelayOffset() const
 {
-    if (m_bIsInitialized == false)
+    if (m_bIsHrdRequired == false)
         return 0;
 
     // init_cpb_removal_delay + init_cpb_removal_delay_offset should be constant
@@ -3536,7 +3537,7 @@ mfxU32 Hrd::GetInitCpbRemovalDelayOffset() const
 }
 mfxU32 Hrd::GetMaxFrameSize(mfxU32 bufferingPeriod) const
 {
-    if (m_bIsInitialized == false)
+    if (m_bIsHrdRequired == false)
         return 0;
 
     mfxU32 initDelay = GetInitCpbRemovalDelay();

@@ -1572,7 +1572,7 @@ namespace MfxHwH264Encode
         double m_trn_cur;   // nominal removal time
         double m_taf_prv;   // final arrival time of prev unit
 
-        bool m_bIsInitialized;
+        bool m_bIsHrdRequired;
     };
 
     class DdiTask2ndField
