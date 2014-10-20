@@ -38,7 +38,6 @@ enum H265HMELevel {
 
 typedef struct {
     Ipp32s       encOrder;
-    Ipp32s       picOrder;
     CmSurface2D *bufOrig;
     CmSurface2D *bufDown2x;
     CmSurface2D *bufDown4x;
@@ -122,7 +121,7 @@ private:
     /* interpolated frames correspond to ref buffer, so need 1 extra for lookahead */
     mfxU32           um_interpolatePitch;
     mfxU8          * um_interpolateData[FEI_MAX_NUM_REF_FRAMES+1][3];
-    mfxU8          * um_pInterpolateData[FEI_DEPTH][2][FEI_MAX_NUM_REF_FRAMES+1][3];
+    mfxU8          * um_pInterpolateData[FEI_DEPTH][FEI_MAX_NUM_REF_FRAMES+1][3];
 
     mfxI16         * um_mbIntraModeTop4[FEI_DEPTH];
     mfxI16         * um_mbIntraModeTop8[FEI_DEPTH];

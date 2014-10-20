@@ -101,14 +101,12 @@ void FeiContext::UpdateFrameStateFEI(mfxFEIH265Input *feiIn, H265Frame *frameIn,
     /* copy state for current input frame */
     feiIn->FEIFrameIn.YPlane   = frameIn->y;
     feiIn->FEIFrameIn.YPitch   = frameIn->pitch_luma_bytes;
-    feiIn->FEIFrameIn.PicOrder = frameIn->m_poc;
     feiIn->FEIFrameIn.EncOrder = frameIn->m_encOrder;
 
     /* copy state for 1 reference to be processed */
     if (frameRef) {
         feiIn->FEIFrameRef.YPlane   = frameRef->y;
         feiIn->FEIFrameRef.YPitch   = frameRef->pitch_luma_bytes;
-        feiIn->FEIFrameRef.PicOrder = frameRef->m_poc;
         feiIn->FEIFrameRef.EncOrder = frameRef->m_encOrder;
     }
 
@@ -154,7 +152,6 @@ void FeiContext::ProcessFrameFEI(mfxI32 feiInIdx, H265Frame *frameIn, H265Slice 
                 continue;
 
             feiFrame->RefEncOrder[0][refIdx] = frameRef->m_encOrder;
-            feiFrame->RefPicOrder[0][refIdx] = frameRef->m_poc;
 
             if (feiFrame->RefDone[0][refIdx] == 0) {
                 UpdateFrameStateFEI(feiH265In, frameIn, frameRef, refIdx, sliceIn->slice_type);
@@ -171,7 +168,6 @@ void FeiContext::ProcessFrameFEI(mfxI32 feiInIdx, H265Frame *frameIn, H265Slice 
                     continue;
 
                 feiFrame->RefEncOrder[1][refIdxB] = frameRef->m_encOrder;
-                feiFrame->RefPicOrder[1][refIdxB] = frameRef->m_poc;
 
                 if (feiFrame->RefDone[1][refIdxB] == 0) {
                     UpdateFrameStateFEI(feiH265In, frameIn, frameRef, refIdx, sliceIn->slice_type);

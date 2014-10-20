@@ -83,7 +83,6 @@ typedef struct
 {
     mfxU8* YPlane;
     mfxI32 YPitch;
-    mfxI32 PicOrder;
     mfxI32 EncOrder;
 } mfxFEIH265Frame;
 
@@ -131,7 +130,7 @@ typedef struct
     mfxI32                InterpolateWidth;
     mfxI32                InterpolateHeight;
     mfxI32                InterpolatePitch;
-    mfxU8               * Interp[2][FEI_MAX_NUM_REF_FRAMES][3];
+    mfxU8               * Interp[FEI_MAX_NUM_REF_FRAMES][3];
 
 } mfxFEIH265Output;
 
