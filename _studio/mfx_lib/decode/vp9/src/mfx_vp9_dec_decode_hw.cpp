@@ -43,6 +43,8 @@ VideoDECODEVP9_HW::VideoDECODEVP9_HW(VideoCORE *p_core, mfxStatus *sts)
 {
     memset(&m_frameInfo, 0, sizeof(m_frameInfo));
     m_frameInfo.currFrame = -1;
+    m_frameInfo.frameCountInBS = -1;
+    m_frameInfo.currFrameInBS = -1;
     memset(&m_frameInfo.ref_frame_map, -1, sizeof(m_frameInfo.ref_frame_map)); // TODO: move to another place
 
     if (sts)
@@ -490,7 +492,11 @@ mfxStatus VideoDECODEVP9_HW::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1
     }
 
     m_frameInfo.currFrame = currMid;
-    sts = DecodeFrameHeader(bs, m_frameInfo);
+
+    sts = DecodeSuperFrame(bs, m_frameInfo);
+    MFX_CHECK_STS(sts);
+
+    sts = DecodeFrameHeader(&m_bs, m_frameInfo);
     MFX_CHECK_STS(sts);
 
     if (UMC::UMC_OK != m_FrameAllocator->IncreaseReference(m_frameInfo.currFrame))
@@ -498,11 +504,8 @@ mfxStatus VideoDECODEVP9_HW::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1
         return MFX_ERR_UNKNOWN;
     }
 
-    sts = PackHeaders(bs, m_frameInfo);
+    sts = PackHeaders(&m_bs, m_frameInfo);
     MFX_CHECK_STS(sts);
-
-    bs->DataOffset += bs->DataLength;
-    bs->DataLength = 0;
 
     if (UMC::UMC_OK != m_va->BeginFrame(m_frameInfo.currFrame))
         return MFX_ERR_DEVICE_FAILED;
@@ -537,7 +540,10 @@ mfxStatus VideoDECODEVP9_HW::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1
 
     p_entry_point->pState = routineData;
     p_entry_point->requiredNumThreads = 1;
-    return showFrame ? MFX_ERR_NONE : MFX_ERR_MORE_DATA;
+
+    if (showFrame)
+        return MFX_ERR_NONE;
+    return bs->DataLength ? MFX_ERR_MORE_SURFACE : MFX_ERR_MORE_DATA;
 }
 
 mfxStatus VideoDECODEVP9_HW::GetOutputSurface(mfxFrameSurface1 **surface_out, mfxFrameSurface1 *surface_work, UMC::FrameMemID index)
@@ -571,12 +577,63 @@ void VideoDECODEVP9_HW::DecodeInitDequantization(MFX_VP9_BoolDecoder &dec)
 }
 */
 
-mfxStatus VideoDECODEVP9_HW::DecodeFrameHeader(mfxBitstream *in, VP9FrameInfo & info)
+mfxStatus VideoDECODEVP9_HW::DecodeSuperFrame(mfxBitstream *in, VP9FrameInfo & info)
 {
     if (!in || !in->Data)
         return MFX_ERR_NULL_PTR;
 
     //memset(&info, 0, sizeof(VP9FrameInfo));
+
+    mfxU32 frameSizes[8] = { 0 };
+    mfxU32 frameCount = 0;
+
+    m_bs = *in;
+
+    ParseSuperFrameIndex(in->Data + in->DataOffset, in->DataLength, frameSizes, &frameCount);
+
+    if (frameCount > 1)
+    {
+        if (info.frameCountInBS == -1)
+        {
+            info.frameCountInBS = frameCount;
+            info.currFrameInBS = 0;
+        }
+
+        if (info.frameCountInBS == frameCount)
+        {
+            // get bs
+            m_bs.DataLength = frameSizes[info.currFrameInBS];
+            m_bs.DataOffset = in->DataOffset;
+            for (mfxU32 i = 0; i < info.currFrameInBS; i++)
+                m_bs.DataOffset += frameSizes[i];
+
+            info.currFrameInBS++;
+            if (info.currFrameInBS == info.frameCountInBS)
+            {
+                info.currFrameInBS = -1;
+                info.frameCountInBS = -1;
+            }
+        }
+    }
+    else
+    {
+        info.currFrameInBS = -1;
+        info.frameCountInBS = -1;
+    }
+
+    if (info.currFrameInBS == -1)
+    {
+        in->DataOffset += in->DataLength;
+        in->DataLength = 0;
+    }
+
+    return MFX_ERR_NONE;
+}
+
+mfxStatus VideoDECODEVP9_HW::DecodeFrameHeader(mfxBitstream *in, VP9FrameInfo & info)
+{
+    if (!in || !in->Data)
+        return MFX_ERR_NULL_PTR;
 
     InputBitstream bsReader(in->Data + in->DataOffset, in->Data + in->DataOffset + in->DataLength);
 
@@ -638,7 +695,6 @@ mfxStatus VideoDECODEVP9_HW::DecodeFrameHeader(mfxBitstream *in, VP9FrameInfo & 
         }
         GetFrameSize(&bsReader, info);
     }
-
     else
     {
         info.intraOnly = info.showFrame ? 0 : bsReader.GetBit();

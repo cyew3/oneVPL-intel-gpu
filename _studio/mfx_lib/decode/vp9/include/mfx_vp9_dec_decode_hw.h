@@ -54,6 +54,7 @@ protected:
 
     mfxStatus UpdateRefFrames(const mfxU8 refreshFrameFlags, VP9FrameInfo & info);
 
+    mfxStatus DecodeSuperFrame(mfxBitstream *in, VP9FrameInfo & info);
     mfxStatus DecodeFrameHeader(mfxBitstream *in, VP9FrameInfo & info);
     mfxStatus PackHeaders(mfxBitstream *bs, VP9FrameInfo const & info);
 
@@ -98,6 +99,7 @@ private:
     UMC::VideoAccelerator * m_va;
 
     VP9FrameInfo m_frameInfo;
+    mfxBitstream m_bs;
 
     mfxI32 m_baseQIndex;
     mfxI32 m_y_dc_delta_q;
