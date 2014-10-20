@@ -99,7 +99,8 @@ private:
     CmKernel * kernelRefine16x32;
     CmKernel * kernelInterpolateFrame;
     CmKernel * kernelIme;
-    CmKernel * kernelImeWithPred;
+//    CmKernel * kernelImeWithPred;
+    CmKernel * kernelIme3tiers;
 
     /* CPU-side: user-provided memory */
     mfxU32                um_intraPitch;
@@ -201,7 +202,8 @@ public:
         kernelRefine16x32(),
         kernelInterpolateFrame(),
         kernelIme(),
-        kernelImeWithPred(),
+//        kernelImeWithPred(),
+        kernelIme3tiers(),
 
         um_intraPitch(),
         um_mbIntraDist(),

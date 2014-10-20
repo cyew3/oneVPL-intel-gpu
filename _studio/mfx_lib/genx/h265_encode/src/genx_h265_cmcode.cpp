@@ -162,7 +162,6 @@ void SetRef(vector_ref<int2, 2> source,         // IN:  SourceX, SourceY
             vector<int2, 2>     predictor,      // IN:  mv predictor
             vector_ref<int1, 2> searchWindow,   // IN:  reference window w/h
             vector<uint1, 2>    picSize,        // IN:  pic size w/h
-            int2                maxMvLenY,      // IN:  max MV.Y
             vector_ref<int2, 2> reference)      // OUT: Ref0X, Ref0Y
 {
     vector<int2, 2> Width = (searchWindow - 16) >> 1;
@@ -172,8 +171,9 @@ void SetRef(vector_ref<int2, 2> source,         // IN:  SourceX, SourceY
     vector<int2, 2> res, otherRes;
 
     // set up parameters
-    MaxMvLen[0] = 512;
-    MaxMvLen[1] = maxMvLenY / 4;
+///    MaxMvLen[0] = 512;
+    MaxMvLen[0] = 0x7fff / 4;
+    MaxMvLen[1] = 0x7fff / 4;
     RefSize[0] = picSize[1] * 16;
     RefSize[1] = (picSize[0] + 1) * 16;
 
@@ -1481,8 +1481,7 @@ void Ime(SurfaceIndex SURF_CONTROL, SurfaceIndex SURF_SRC_AND_REF, SurfaceIndex 
     widthHeight[1] = (width >> 4);
     vector_ref<int1, 2> searchWindow = uniIn.row(0).format<int1>().select<2,1>(22);
     vector_ref<int2, 2> ref0XY = uniIn.row(0).format<int2>().select<2,1>(0);
-    int2 maxMvY = 0x7fff;
-    SetRef(sourceXY, mvPred, searchWindow, widthHeight, maxMvY, /*out*/ref0XY);
+    SetRef(sourceXY, mvPred, searchWindow, widthHeight, ref0XY);
 
     // M1.0-3 Search path parameters & start centers & MaxNumMVs again!!!
     VME_SET_UNIInput_AdaptiveEn(uniIn);
@@ -1563,8 +1562,7 @@ void ImeWithPred(SurfaceIndex SURF_CONTROL, SurfaceIndex SURF_SRC_AND_REF, Surfa
     widthHeight[1] = (width >> 4);
     vector_ref<int1, 2> searchWindow = uniIn.row(0).format<int1>().select<2,1>(22);
     vector_ref<int2, 2> ref0XY = uniIn.row(0).format<int2>().select<2,1>(0);
-    int2 maxMvY = 0x7fff;
-    SetRef(sourceXY, mvPred, searchWindow, widthHeight, maxMvY, /*out*/ref0XY);
+    SetRef(sourceXY, mvPred, searchWindow, widthHeight, ref0XY);
 
     // M1.0-3 Search path parameters & start centers & MaxNumMVs again!!!
     VME_SET_UNIInput_AdaptiveEn(uniIn);
@@ -1594,6 +1592,144 @@ void ImeWithPred(SurfaceIndex SURF_CONTROL, SurfaceIndex SURF_SRC_AND_REF, Surfa
 //    SLICE(fbrOut16x16.format<short>(), 16, 2, 1) = SLICE(fbrOut16x16.format<short>(), 16, 2, 1) << 1;
 //    write(SURF_MV32x32, mbX * MVDATA_SIZE, mbY, SLICE(fbrOut16x16.format<uint>(), 8, 1, 1));
     write(SURF_MV_OUT, mbX * MVDATA_SIZE, mbY, SLICE(imv.format<uint>(), 0, 1, 1));
+}
+
+
+_GENX_ inline
+void ImeOneTier(vector_ref<int2, 2> mvPred, SurfaceIndex SURF_CONTROL, SurfaceIndex SURF_SRC_AND_REF, vector_ref<int2, 2> mvOut,
+    uint2 width, uint2 height, matrix<uchar, 3, 32> uniIn, matrix<uchar, 2, 32> imeIn)
+{
+    matrix<uchar, 9, 32> imeOut;
+
+    // update ref
+    // M0.0 Ref0X, Ref0Y
+    vector_ref<int2, 2> sourceXY = uniIn.row(0).format<int2>().select<2,1>(4);
+    vector<uint1, 2> widthHeight;
+    widthHeight[0] = (height >> 4) - 1;
+    widthHeight[1] = (width >> 4);
+    vector_ref<int1, 2> searchWindow = uniIn.row(0).format<int1>().select<2,1>(22);
+    vector_ref<int2, 2> ref0XY = uniIn.row(0).format<int2>().select<2,1>(0);
+    SetRef(sourceXY, mvPred, searchWindow, widthHeight, ref0XY);
+
+    // M1.2 Start0X, Start0Y
+    vector<int1, 2> start0 = searchWindow;
+    start0 = ((start0 - 16) >> 3) & 0x0f;
+    uniIn.row(1)[10] = start0[0] | (start0[1] << 4);
+
+    uniIn.row(1)[31] = 0x1;
+
+    vector<int2,2>  ref0       = uniIn.row(0).format<int2>().select<2, 1> (0);
+    vector<uint2,4> costCenter = uniIn.row(1).format<uint2>().select<4, 1> (8);
+    run_vme_ime(uniIn, imeIn,
+        VME_STREAM_OUT, VME_SEARCH_SINGLE_REF_SINGLE_REC_SINGLE_START,
+        SURF_SRC_AND_REF, ref0, NULL, costCenter, imeOut);
+
+    mvOut = imeOut.row(7).format<short>().select<2,1>(10) << 1;  // MVs are ready for 32x32
+}
+
+extern "C" _GENX_MAIN_ 
+void Ime3tiers(SurfaceIndex SURF_CONTROL, SurfaceIndex SURF_REF_256x256,
+               SurfaceIndex SURF_REF_128x128, SurfaceIndex SURF_REF_64x64, SurfaceIndex SURF_MV_64x64)
+{
+    uint mbX = get_thread_origin_x();
+    uint mbY = get_thread_origin_y();
+    uint x = mbX * 16;
+    uint y = mbY * 16;
+
+    vector<uchar, 64> control;
+    read(SURF_CONTROL, 0, control);
+
+    uint1 maxNumSu = control.format<uint1>()[56];
+    uint1 lenSp = control.format<uint1>()[57];
+    uint2 width = control.format<uint2>()[30];
+    uint2 height = control.format<uint2>()[31];
+
+    // read MB record data
+    matrix<uchar, 3, 32> uniIn = 0;
+    matrix<uchar, 9, 32> imeOut;
+    matrix<uchar, 2, 32> imeIn = 0;
+    matrix<uchar, 4, 32> fbrIn;
+
+    // declare parameters for VME
+    matrix<uint4, 16, 2> costs = 0;
+    vector<int2, 2> mvPred = 0;
+
+    // load search path
+    SELECT_N_ROWS(imeIn, 0, 2) = SLICE1(control, 0, 64);
+
+    // M0.2
+    VME_SET_UNIInput_SrcX(uniIn, x);
+    VME_SET_UNIInput_SrcY(uniIn, y);
+
+    // M0.3 various prediction parameters
+    VME_SET_DWORD(uniIn, 0, 3, 0x78040000); // BMEDisableFBR=1 InterSAD=0 SubMbPartMask=0x78
+    // M1.1 MaxNumMVs
+    VME_SET_UNIInput_MaxNumMVs(uniIn, 32);
+    // M0.5 Reference Window Width & Height
+    VME_SET_UNIInput_RefW(uniIn, 48);
+    VME_SET_UNIInput_RefH(uniIn, 40);
+
+    // M0.0 Ref0X, Ref0Y
+    vector_ref<int2, 2> sourceXY = uniIn.row(0).format<int2>().select<2,1>(4);
+    vector<uint1, 2> widthHeight;
+    widthHeight[0] = (height >> 4) - 1;
+    widthHeight[1] = (width >> 4);
+    vector_ref<int1, 2> searchWindow = uniIn.row(0).format<int1>().select<2,1>(22);
+    vector_ref<int2, 2> ref0XY = uniIn.row(0).format<int2>().select<2,1>(0);
+    SetRef(sourceXY, mvPred, searchWindow, widthHeight, ref0XY);
+
+    // M1.0-3 Search path parameters & start centers & MaxNumMVs again!!!
+    VME_SET_UNIInput_AdaptiveEn(uniIn);
+    VME_SET_UNIInput_T8x8FlagForInterEn(uniIn);
+    VME_SET_UNIInput_MaxNumMVs(uniIn, 0x3f);
+    VME_SET_UNIInput_MaxNumSU(uniIn, maxNumSu);
+    VME_SET_UNIInput_LenSP(uniIn, lenSp);
+    
+    // M1.2 Start0X, Start0Y
+    vector<int1, 2> start0 = searchWindow;
+    start0 = ((start0 - 16) >> 3) & 0x0f;
+    uniIn.row(1)[10] = start0[0] | (start0[1] << 4);
+
+    uniIn.row(1)[31] = 0x1;
+
+    vector<int2,2>  ref0       = uniIn.row(0).format<int2>().select<2, 1> (0);
+    vector<uint2,4> costCenter = uniIn.row(1).format<uint2>().select<4, 1> (8);
+    run_vme_ime(uniIn, imeIn,
+        VME_STREAM_OUT, VME_SEARCH_SINGLE_REF_SINGLE_REC_SINGLE_START,
+        SURF_REF_256x256, ref0, NULL, costCenter, imeOut);
+
+    vector<int2, 2> mvPred0 = imeOut.row(7).format<int2>().select<2,1>(10) << 1;
+
+    const uint xBase0 = x * 2;
+    const uint yBase0 = y * 2;
+    const uint xBase1 = x * 4;
+    const uint yBase1 = y * 4;
+#pragma unroll
+    for (int yBlk0 = 0; yBlk0 < 32; yBlk0 += 16) {
+#pragma unroll
+        for (int xBlk0 = 0; xBlk0 < 32; xBlk0 += 16) {
+            vector<int2, 2> mvPred1;
+            // update X and Y
+            VME_SET_UNIInput_SrcX(uniIn, xBase0 + xBlk0);
+            VME_SET_UNIInput_SrcY(uniIn, yBase0 + yBlk0);
+
+            ImeOneTier(mvPred0, SURF_CONTROL, SURF_REF_128x128, mvPred1, width * 2, height * 2, uniIn, imeIn);
+
+#pragma unroll
+            for (int yBlk1 = 0; yBlk1 < 32; yBlk1 += 16) {
+#pragma unroll
+                for (int xBlk1 = 0; xBlk1 < 32; xBlk1 += 16) {
+                    vector<int2, 2> mvPred2;
+                    // update X and Y
+                    VME_SET_UNIInput_SrcX(uniIn, xBase1 + xBlk0 * 2 + xBlk1);
+                    VME_SET_UNIInput_SrcY(uniIn, yBase1 + yBlk0 * 2 + yBlk1);
+                    ImeOneTier(mvPred1, SURF_CONTROL, SURF_REF_64x64, mvPred2, width * 4, height * 4, uniIn, imeIn);
+                    write(SURF_MV_64x64, (xBase1 + xBlk0 * 2 + xBlk1) / 16 * MVDATA_SIZE, (yBase1 + yBlk0 * 2 + yBlk1) / 16, SLICE(mvPred2.format<uint>(), 0, 1, 1));
+                }
+            }
+
+        }
+    }
 }
 
 extern "C" _GENX_MAIN_ 
@@ -1647,8 +1783,7 @@ void MeP32Frac(SurfaceIndex SURF_CONTROL, SurfaceIndex SURF_SRC_AND_REF,
     widthHeight[1] = (width >> 4);
     vector_ref<int1, 2> searchWindow = uniIn.row(0).format<int1>().select<2,1>(22);
     vector_ref<int2, 2> ref0XY = uniIn.row(0).format<int2>().select<2,1>(0);
-    int2 maxMvY = 0x7fff;
-    SetRef(sourceXY, mvPred, searchWindow, widthHeight, maxMvY, /*out*/ref0XY);
+    SetRef(sourceXY, mvPred, searchWindow, widthHeight, ref0XY);
 
     // M1.0-3 Search path parameters & start centers & MaxNumMVs again!!!
     VME_SET_UNIInput_AdaptiveEn(uniIn);
@@ -1767,8 +1902,7 @@ void MeP32(SurfaceIndex SURF_CONTROL, SurfaceIndex SURF_SRC_AND_REF, SurfaceInde
     widthHeight[1] = (width >> 4);
     vector_ref<int1, 2> searchWindow = uniIn.row(0).format<int1>().select<2,1>(22);
     vector_ref<int2, 2> ref0XY = uniIn.row(0).format<int2>().select<2,1>(0);
-    int2 maxMvY = 0x7fff;
-    SetRef(sourceXY, mvPred, searchWindow, widthHeight, maxMvY, /*out*/ref0XY);
+    SetRef(sourceXY, mvPred, searchWindow, widthHeight, ref0XY);
 
     // M1.0-3 Search path parameters & start centers & MaxNumMVs again!!!
     VME_SET_UNIInput_AdaptiveEn(uniIn);
@@ -2104,8 +2238,7 @@ void MeP16(SurfaceIndex SURF_CONTROL, SurfaceIndex SURF_SRC_AND_REF, SurfaceInde
     widthHeight[1] = (width >> 4);
     vector_ref<int1, 2> searchWindow = uniIn.row(0).format<int1>().select<2,1>(22);
     vector_ref<int2, 2> ref0XY = uniIn.row(0).format<int2>().select<2,1>(0);
-    int2 maxMvY = 0x7fff;
-    SetRef(sourceXY, mvPred, searchWindow, widthHeight, maxMvY, /*out*/ref0XY);
+    SetRef(sourceXY, mvPred, searchWindow, widthHeight, ref0XY);
 
     // M1.0-3 Search path parameters & start centers & MaxNumMVs again!!!
     VME_SET_UNIInput_AdaptiveEn(uniIn);
@@ -2447,8 +2580,7 @@ void Me1xAndInterpolateFrame(SurfaceIndex SURF_CONTROL, SurfaceIndex SURF_SRC_AN
         widthHeight[1] = (width >> 4);
         vector_ref<int1, 2> searchWindow = uniIn.row(0).format<int1>().select<2,1>(22);
         vector_ref<int2, 2> ref0XY = uniIn.row(0).format<int2>().select<2,1>(0);
-        int2 maxMvY = 0x7fff;
-        SetRef(sourceXY, mvPred, searchWindow, widthHeight, maxMvY, /*out*/ref0XY);
+        SetRef(sourceXY, mvPred, searchWindow, widthHeight, ref0XY);
 
         // M1.0-3 Search path parameters & start centers & MaxNumMVs again!!!
         VME_SET_UNIInput_AdaptiveEn(uniIn);

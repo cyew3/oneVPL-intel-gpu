@@ -26,7 +26,6 @@
 
 namespace H265Enc {
 
-
 template<class T> inline T AlignValue(T value, mfxU32 alignment)
 {
     assert((alignment & (alignment - 1)) == 0); // should be 2^n
@@ -264,7 +263,18 @@ mfxStatus H265CmCtx::AllocateCmResources(mfxFEIH265Param *param, void *core)
                     if ((k == FEI_256x256) || (k == FEI_128x128))
                         continue;
                 }
-                CreateCmSurface2DUp(device, cmMvW[k], cmMvH[k], CM_SURFACE_FORMAT_P8, um_mvCpu[i][j][k], mvGpu[i][j][k], um_pitchMv[k]);
+                { // surfaces 256x256, 126x128 and 64x64 should be aligned to 256 to use Ime3tiers kernel
+                    mfxU32 w0 = cmMvW[k];
+                    mfxU32 h0 = cmMvH[k];
+                    if (k == FEI_128x128) {
+                        w0 = width16x * 2;
+                        h0 = height16x * 2;
+                    } else if (k == FEI_64x64) {
+                        w0 = width16x * 4;
+                        h0 = height16x * 4;
+                    }
+                    CreateCmSurface2DUp(device, w0, h0, CM_SURFACE_FORMAT_P8, um_mvCpu[i][j][k], mvGpu[i][j][k], um_pitchMv[k]);
+                }
             }
         }
 
@@ -287,7 +297,8 @@ mfxStatus H265CmCtx::AllocateCmResources(mfxFEIH265Param *param, void *core)
     kernelRefine16x32      = CreateKernel(device, program, "RefineMeP16x32", (void *)RefineMeP16x32);
     kernelInterpolateFrame = CreateKernel(device, program, "InterpolateFrameWithBorder", (void *)InterpolateFrame);
     kernelIme              = CreateKernel(device, program, "Ime", (void *)Ime);
-    kernelImeWithPred      = CreateKernel(device, program, "ImeWithPred", (void *)ImeWithPred);
+//    kernelImeWithPred      = CreateKernel(device, program, "ImeWithPred", (void *)ImeWithPred);
+    kernelIme3tiers        = CreateKernel(device, program, "Ime3tiers", (void *)Ime3tiers);
 
     /* set up VME */
     curbe       = CreateBuffer(device, sizeof(H265EncCURBEData));
@@ -358,7 +369,8 @@ void H265CmCtx::FreeCmResources()
     device->DestroyKernel(kernelRefine16x32);
     device->DestroyKernel(kernelInterpolateFrame);
     device->DestroyKernel(kernelIme);
-    device->DestroyKernel(kernelImeWithPred);
+//    device->DestroyKernel(kernelImeWithPred);
+    device->DestroyKernel(kernelIme3tiers);
 
     for (i = 0; i < FEI_DEPTH; i++) {
         DestroyCmSurface2DUp(device, um_mbIntraDist[i], mbIntraDist[i]);
@@ -553,21 +565,13 @@ void H265CmCtx::RunVmeKernel(CmEvent **lastEvent, CmSurface2DUP **dist, CmSurfac
     {
         MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "HME");
         if (hmeLevel == HME_LEVEL_HIGH) {
-            //MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "Ime16x");
             refs8x = CreateVmeSurfaceG75(device, picBufInput->bufDown8x, &(picBufRef->bufDown8x), 0, 1, 0);
             refs16x = CreateVmeSurfaceG75(device, picBufInput->bufDown16x, &(picBufRef->bufDown16x), 0, 1, 0);
-
-            kernelIme->SetThreadCount((width16x / 16) * (height16x / 16));
-            SetKernelArg(kernelIme, me16xControl, *refs16x, mv[FEI_256x256]);
-            EnqueueKernelLight(device, queue, task, kernelIme, width16x / 16, height16x / 16, *lastEvent);
-
-            kernelImeWithPred->SetThreadCount((width8x / 16) * (height8x / 16));
-            SetKernelArg(kernelImeWithPred, me8xControl, *refs8x, mv[FEI_256x256], mv[FEI_128x128]);
-            EnqueueKernelLight(device, queue, task, kernelImeWithPred, width8x / 16, height8x / 16, *lastEvent);
-
-            kernelImeWithPred->SetThreadCount((width4x / 16) * (height4x / 16));
-            SetKernelArg(kernelImeWithPred, me4xControl, *refs4x, mv[FEI_128x128], mv[FEI_64x64]);
-            EnqueueKernelLight(device, queue, task, kernelImeWithPred, width4x / 16, height4x / 16, *lastEvent);
+            {   MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "Ime3tiers");
+                kernelIme3tiers->SetThreadCount((width16x / 16) * (height16x / 16));
+                SetKernelArg(kernelIme3tiers, me16xControl, *refs16x, *refs8x, *refs4x, mv[FEI_64x64]);
+                EnqueueKernelLight(device, queue, task, kernelIme3tiers, width16x / 16, height16x / 16, *lastEvent);
+            }
         } else {  // HME_LEVEL_LOW
             //MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "Ime4x");
             SetKernelArg(kernelIme, me4xControl, *refs4x, mv[FEI_64x64]);
