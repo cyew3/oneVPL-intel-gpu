@@ -6,23 +6,60 @@
 //        Copyright (c) 2012 - 2014 Intel Corporation. All Rights Reserved.
 //
 
+#include "mfx_common.h"
+
 #if defined (MFX_ENABLE_H265_VIDEO_ENCODE)
 
 #ifndef __MFX_H265_FRAME_H__
 #define __MFX_H265_FRAME_H__
 
 #include <list>
+#include <vector>
 #include "vm_interlocked.h"
+#include "umc_mutex.h"
 #include "mfx_h265_defs.h"
-#include "mfx_h265_ctb.h"
 #include "mfx_h265_set.h"
 
 namespace H265Enc {
 
+    struct H265VideoParam;
 
-class H265Frame
-{
-public:
+    class State
+    {
+    public:
+        State()
+            : m_free(true)
+        {
+        }
+
+        bool IsFree() const
+        {
+            return m_free;
+        }
+
+        void SetFree(bool free)
+        {
+            m_free = free;
+        }
+
+    private:
+        bool m_free; // resource in use or could be reused (m_free == true means could be reused).
+    };
+
+    struct BiFrameLocation
+    {
+        BiFrameLocation() 
+            : miniGopCount(0), encodingOrder(0), refFrameFlag(0) {}
+
+        mfxU32 miniGopCount;    // sequence of B frames between I/P frames
+        mfxU32 encodingOrder;   // number within mini-GOP (in encoding order)
+        mfxU16 refFrameFlag;    // MFX_FRAMETYPE_REF if B frame is reference
+    };
+
+    struct H265CUData;
+    class H265Frame// : public State
+    {
+    public:
 
     void *mem;
     H265CUData *cu_data;
@@ -43,7 +80,7 @@ public:
     Ipp8u  m_chromaFormatIdc;
 
     mfxU64 m_timeStamp;
-    Ipp32u m_PicCodType;
+    Ipp32u m_picCodeType;
     Ipp32s m_RPSIndex;
     Ipp8u  m_wasLookAheadProcessed;
     Ipp32s m_pyramidLayer;
@@ -81,15 +118,10 @@ public:
     void setWasLAProcessed() { m_wasLookAheadProcessed = true; }
     void unsetWasLAProcessed() { m_wasLookAheadProcessed = false; }
 
-    bool isDisposable()
-    {
-        return (!m_isShortTermRef && !m_isLongTermRef);
-    }
-
-    bool IsReference()
-    {
-        return (isShortTermRef() || isLongTermRef() );
-    }
+        bool IsReference()
+        {
+            return (isShortTermRef() || isLongTermRef() );
+        }
 
     // API for short_ref
     Ipp8u isShortTermRef()
@@ -121,10 +153,8 @@ public:
         m_isLongTermRef = false;
     }
 
-    void Create(H265VideoParam *par);
-    void CopyFrame(const mfxFrameSurface1 *surface);
-    void doPadding();
-    void doPaddingOneLine(int number, int cuSize, bool isLast);
+        void Create(H265VideoParam *par);
+        void CopyFrame(const mfxFrameSurface1 *surface);
 
     void Destroy();
     //void Dump(const vm_char* fname, H265VideoParam *par, TaskList * dpb, Ipp32s frame_num);
@@ -139,38 +169,92 @@ public:
 };
 
 
-struct Task
-{
-    H265Frame* m_frameOrigin;
-    H265Frame* m_frameRecon;
-    Ipp32u     m_encOrder;
-    H265Slice  m_slices[10];//aya tmp hack
-    H265Frame* m_dpb[16];
-    Ipp32s     m_dpbSize;
-    Ipp8s      m_sliceQpY;
-
-    Task() { Reset(); }
-
-    void Reset()
+    struct Task
     {
-        m_frameOrigin = NULL;
-        m_frameRecon  = NULL;
-        m_encOrder    = Ipp32u(-1);
-        m_dpbSize     = 0;
-        m_sliceQpY    = -1;
-    }
-};
+        H265Frame* m_frameOrigin;
+        H265Frame* m_frameRecon;
 
-typedef std::list<Task*>   TaskList;
-typedef TaskList::iterator TaskIter;
+        Ipp32u     m_encOrder;
+        Ipp32u     m_frameOrder;
+        Ipp64u     m_timeStamp;
+        Ipp32u     m_picCodeType;
 
-typedef std::list<H265Frame*>  FramePtrList;
-typedef FramePtrList::iterator FramePtrIter;
+        H265Slice  m_slices[10];//aya tmp hack
+        H265Frame* m_dpb[16];
+        Ipp32s     m_dpbSize;
+
+        //-------------------------------------------------
+        Ipp8s     m_sliceQpY;
+        std::vector<Ipp8s> m_lcuQps; // array for LCU QPs
+        H265Slice m_dqpSlice[2*MAX_DQP+1];
+        //-------------------------------------------------
+
+        H265ShortTermRefPicSet m_shortRefPicSet[66];
+        mfxBitstream *m_bs;
+
+        // quick wa for GAAC
+        void*      m_extParam;
+
+        // for frame parallel
+        Ipp32u m_ready;  // 0 - task submitted to FrameEncoder (not run!!), 1 - FrameEncoder was run, 2 - task ready
+        Ipp32s m_encIdx; // we have "N" frameEncoders. this index indicates owner of the task [0, ..., N-1]
+
+        // for threading control
+        std::vector<Ipp32u> m_ithreadPool;
 
 
-FramePtrIter GetFreeFrame(FramePtrList & queue, H265VideoParam *par);
+        Task()
+            : m_frameOrigin(NULL)
+            , m_frameRecon(NULL)
+            , m_encOrder(Ipp32u(-1))
+            , m_frameOrder(Ipp32u(-1))
+            , m_timeStamp(0)
+        {
+            m_bs       = NULL;
+            m_extParam = NULL;
+            m_ready = 0;
+            m_encIdx= -1;
+        }
 
-void Dump(const vm_char* fname, H265VideoParam *par, H265Frame* frame, TaskList & dpb);
+        ~Task() { Destroy(); }
+
+        void Reset()
+        {
+            m_frameOrigin = NULL;
+            m_frameRecon  = NULL;
+            m_bs          = NULL;
+            m_encOrder    = Ipp32u(-1);
+            m_frameOrder  = Ipp32u(-1);
+            m_timeStamp   = 0;
+            m_bs       = NULL;
+            m_extParam = NULL;
+            m_ready = 0;
+            m_encIdx= -1;
+            m_dpbSize     = 0;
+        }
+
+        void Create(Ipp32u numCtb, Ipp32u numThreadStructs)
+        {
+            m_lcuQps.resize(numCtb);
+            m_ithreadPool.resize(numThreadStructs, 0);
+        }
+
+        void Destroy()
+        {
+            m_lcuQps.resize(0);
+            m_ithreadPool.resize(0);
+        }
+    };
+
+    typedef std::list<Task*> TaskList;
+    typedef std::list<Task*>::iterator   TaskIter;
+
+    typedef std::list<H265Frame*> FramePtrList;
+    typedef std::list<H265Frame*>::iterator   FramePtrIter;
+
+
+    FramePtrIter GetFreeFrame(FramePtrList & queue, H265VideoParam *par);
+    void Dump(const vm_char* fname, H265VideoParam *par, H265Frame* frame, TaskList & dpb);
 
 } // namespace
 

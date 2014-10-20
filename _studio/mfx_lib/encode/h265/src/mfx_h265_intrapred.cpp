@@ -1008,7 +1008,7 @@ Ipp32s H265CU<PixType>::GetNumIntraRDModes(Ipp32s depth, IntraLumaMode *modes, I
         //Restrict number of candidates for 4x4 and 8x8 blocks
         if (widthPu==4 || widthPu==8) 
         {
-            Ipp8s Qp = m_par->m_lcuQps[m_ctbAddr];
+            Ipp8s Qp = m_lcuQps[m_ctbAddr];
             CostType rdScale=1.0;
             const Ipp32s T4_1=400, T8_1=960;
             if(m_SCid>=5) {

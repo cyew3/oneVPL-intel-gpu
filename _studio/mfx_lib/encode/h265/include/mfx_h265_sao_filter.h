@@ -287,9 +287,6 @@ public:
          SaoOffsetParam  &saoLCUParam,
          Ipp32s typeIdx);
 
-     PixType   *m_TmpU[2];
-     PixType   *m_TmpL[2];
-
 //private:
     static const int LUMA_GROUP_NUM = 32;
     static const int SAO_BO_BITS = 5;
@@ -300,18 +297,18 @@ public:
     Ipp32s   m_OffsetEoChroma[LUMA_GROUP_NUM];
     Ipp32s   m_OffsetEo2Chroma[LUMA_GROUP_NUM];
 
-    PixType   *m_OffsetBo;
-    PixType   *m_ClipTable;
-    PixType   *m_ClipTableBase;
-    PixType   *m_lumaTableBo;
-
     Ipp32u   m_PicWidth;
     Ipp32u   m_PicHeight;
     Ipp32u   m_maxCuSize;
 
     Ipp32s   m_bitDepth;
-//    Ipp32u   m_SaoBitIncreaseY;
-//    Ipp32u   m_SaoBitIncreaseC;
+
+    PixType   *m_OffsetBo;
+    PixType   *m_ClipTable;
+    PixType   *m_ClipTableBase;
+    PixType   *m_lumaTableBo;
+    PixType   *m_TmpU[2];
+    PixType   *m_TmpL[2];
 
 
 private:
