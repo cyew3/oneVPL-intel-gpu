@@ -1797,26 +1797,36 @@ void MfxHwH264Encode::ConfigureTask(
         }
     }
 
-    if (task.m_type[ffid] & MFX_FRAMETYPE_I)
     {
-        task.m_minQP = extOpt2.MinQPI;
-        task.m_maxQP = extOpt2.MaxQPI;
-    }
-    else if (task.m_type[ffid] & MFX_FRAMETYPE_P)
-    {
-        task.m_minQP = extOpt2.MinQPP;
-        task.m_maxQP = extOpt2.MaxQPP;
-    }
-    else if (task.m_type[ffid] & MFX_FRAMETYPE_B)
-    {
-        task.m_minQP = extOpt2.MinQPB;
-        task.m_maxQP = extOpt2.MaxQPB;
-    }
+        const mfxExtCodingOption2* extOpt2Cur = (extOpt2Runtime ? extOpt2Runtime : &extOpt2);
 
-    task.m_disableDeblockingIdc = mfxU8(extOpt2Runtime ? extOpt2Runtime->DisableDeblockingIdc : extOpt2.DisableDeblockingIdc);
+        if (task.m_type[ffid] & MFX_FRAMETYPE_I)
+        {
+            task.m_minQP = extOpt2Cur->MinQPI;
+            task.m_maxQP = extOpt2Cur->MaxQPI;
+        }
+        else if (task.m_type[ffid] & MFX_FRAMETYPE_P)
+        {
+            task.m_minQP = extOpt2Cur->MinQPP;
+            task.m_maxQP = extOpt2Cur->MaxQPP;
+        }
+        else if (task.m_type[ffid] & MFX_FRAMETYPE_B)
+        {
+            task.m_minQP = extOpt2Cur->MinQPB;
+            task.m_maxQP = extOpt2Cur->MaxQPB;
+        }
 
-    if (task.m_disableDeblockingIdc > 2)
-        task.m_disableDeblockingIdc = 0;
+        if (task.m_maxQP > 51)
+            task.m_maxQP = 0;
+
+        if (task.m_minQP > 51 || (task.m_maxQP && task.m_minQP > task.m_maxQP))
+            task.m_minQP = 0;
+
+        task.m_disableDeblockingIdc = mfxU8(extOpt2Cur->DisableDeblockingIdc);
+
+        if (task.m_disableDeblockingIdc > 2)
+            task.m_disableDeblockingIdc = 0;
+    }
 }
 
 

@@ -3127,52 +3127,12 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
         || extOpt2->MinQPP || extOpt2->MaxQPP
         || extOpt2->MinQPB || extOpt2->MaxQPB)
     {
-        //if (hwCaps.MinMaxQP == 0) 
-        {
-            // no min/max QP support
-            extOpt2->MinQPI = extOpt2->MaxQPI =
-            extOpt2->MinQPP = extOpt2->MaxQPP =
-            extOpt2->MinQPB = extOpt2->MaxQPB = 0;
-            changed = true;
-        } 
-/*
-        else 
-        {
-            if (extOpt2->MaxQPI > 51)
-            {
-                extOpt2->MaxQPI = 51;
-                changed = true;
-            }
-            if (extOpt2->MaxQPP > 51)
-            {
-                extOpt2->MaxQPP = 51;
-                changed = true;
-            }
-            if (extOpt2->MaxQPB > 51)
-            {
-                extOpt2->MaxQPB = 51;
-                changed = true;
-            }
-            if (   extOpt2->MinQPI > 51
-                || extOpt2->MaxQPI && extOpt2->MinQPI > extOpt2->MaxQPI)
-            {
-                extOpt2->MinQPI = 0;
-                changed = true;
-            }
-            if (   extOpt2->MinQPP > 51
-                || extOpt2->MaxQPP && extOpt2->MinQPP > extOpt2->MaxQPP)
-            {
-                extOpt2->MinQPP = 0;
-                changed = true;
-            }
-            if (   extOpt2->MinQPB > 51
-                || extOpt2->MaxQPB && extOpt2->MinQPB > extOpt2->MaxQPB)
-            {
-                extOpt2->MinQPB = 0;
-                changed = true;
-            }
-        }
-*/
+        if (!CheckRangeDflt(extOpt2->MaxQPI, 0, 51, 0)) changed = true;
+        if (!CheckRangeDflt(extOpt2->MaxQPP, 0, 51, 0)) changed = true;
+        if (!CheckRangeDflt(extOpt2->MaxQPB, 0, 51, 0)) changed = true;
+        if (!CheckRangeDflt(extOpt2->MinQPI, 0, (extOpt2->MaxQPI ? extOpt2->MaxQPI : 51), 0)) changed = true;
+        if (!CheckRangeDflt(extOpt2->MinQPP, 0, (extOpt2->MaxQPP ? extOpt2->MaxQPP : 51), 0)) changed = true;
+        if (!CheckRangeDflt(extOpt2->MinQPB, 0, (extOpt2->MaxQPB ? extOpt2->MaxQPB : 51), 0)) changed = true;
     }
 
     if (!CheckRangeDflt(extOpt2->DisableDeblockingIdc, 0, 1, 0)) changed = true;

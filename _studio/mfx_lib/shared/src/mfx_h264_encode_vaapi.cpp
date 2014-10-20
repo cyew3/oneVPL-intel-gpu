@@ -175,10 +175,7 @@ mfxStatus SetRateControl(
     rate_param->window_size     = par.mfx.Convergence * 100;
 
     rate_param->min_qp = minQP;
-
-#ifdef MFX_VA_ANDROID   // todo: remove this check after ww22.2014 (full switch to mainline LibVA)
     rate_param->max_qp = maxQP;
-#endif
 
     if(par.calcParam.maxKbps)
         rate_param->target_percentage = (unsigned int)(100.0 * (mfxF64)par.calcParam.targetKbps / (mfxF64)par.calcParam.maxKbps);

@@ -283,6 +283,9 @@ void MfxHwH264Encode::FillVaringPartOfPpsBuffer(
         pps.MaxDeltaQp = 51;
         pps.MinDeltaQp = -51;
     }
+
+    pps.BRCMaxQp = task.m_maxQP;
+    pps.BRCMinQp = task.m_minQP;
 }
 
 
