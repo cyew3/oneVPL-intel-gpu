@@ -50,6 +50,7 @@ foreach( variant sw x11 drm )
       bs_parser
       dl
 #      ippvc_l ippcc_l ippi_l ipps_l ippcore_l
+      ippi_l ippdc_l ipps_l ippcore_l
       sample_common_${variant}
       pthread
     )

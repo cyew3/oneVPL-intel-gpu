@@ -113,13 +113,14 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>_VARIADIC_MAX=10;WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>../../../mdp_msdk-samples/samples/sample_common/include/vm;../../../mdp_msdk-samples/samples/sample_common/include;../../../mdp_msdk-contrib/igfx_s3dcontrol/include;../../../mdp_msdk-val-tools/bs_parser/include;../../../mdp_msdk-contrib/gmock/gtest/include;../../../mdp_msdk-contrib/gmock/include;../../../mdp_msdk-api/include;./include/gmock;./include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(MEDIASDK_ROOT)\ipp\ipp81gold\windows\ia32\include;../../../mdp_msdk-samples/samples/sample_common/include/vm;../../../mdp_msdk-samples/samples/sample_common/include;../../../mdp_msdk-contrib/igfx_s3dcontrol/include;../../../mdp_msdk-val-tools/bs_parser/include;../../../mdp_msdk-contrib/gmock/gtest/include;../../../mdp_msdk-contrib/gmock/include;../../../mdp_msdk-api/include;./include/gmock;./include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>dxva2.lib;d3d9.lib;d3d11.lib;dxgi.lib</AdditionalDependencies>
+      <AdditionalDependencies>dxva2.lib;d3d9.lib;d3d11.lib;dxgi.lib;ippcoremt.lib;ippdcmt.lib;ippimt.lib</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(MEDIASDK_ROOT)\ipp\ipp81gold\windows\ia32\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -129,13 +130,14 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>_VARIADIC_MAX=10;WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>../../../mdp_msdk-samples/samples/sample_common/include/vm;../../../mdp_msdk-samples/samples/sample_common/include;../../../mdp_msdk-contrib/igfx_s3dcontrol/include;../../../mdp_msdk-val-tools/bs_parser/include;../../../mdp_msdk-contrib/gmock/gtest/include;../../../mdp_msdk-contrib/gmock/include;../../../mdp_msdk-api/include;./include/gmock;./include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(MEDIASDK_ROOT)\ipp\ipp81gold\windows\em64t\include;../../../mdp_msdk-samples/samples/sample_common/include/vm;../../../mdp_msdk-samples/samples/sample_common/include;../../../mdp_msdk-contrib/igfx_s3dcontrol/include;../../../mdp_msdk-val-tools/bs_parser/include;../../../mdp_msdk-contrib/gmock/gtest/include;../../../mdp_msdk-contrib/gmock/include;../../../mdp_msdk-api/include;./include/gmock;./include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>dxva2.lib;d3d9.lib;d3d11.lib;dxgi.lib</AdditionalDependencies>
+      <AdditionalDependencies>dxva2.lib;d3d9.lib;d3d11.lib;dxgi.lib;ippcoremt.lib;ippdcmt.lib;ippimt.lib</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(MEDIASDK_ROOT)\ipp\ipp81gold\windows\em64t\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -147,7 +149,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>_VARIADIC_MAX=10;WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>../../../mdp_msdk-samples/samples/sample_common/include/vm;../../../mdp_msdk-samples/samples/sample_common/include;../../../mdp_msdk-contrib/igfx_s3dcontrol/include;../../../mdp_msdk-val-tools/bs_parser/include;../../../mdp_msdk-contrib/gmock/gtest/include;../../../mdp_msdk-contrib/gmock/include;../../../mdp_msdk-api/include;./include/gmock;./include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(MEDIASDK_ROOT)\ipp\ipp81gold\windows\ia32\include;../../../mdp_msdk-samples/samples/sample_common/include/vm;../../../mdp_msdk-samples/samples/sample_common/include;../../../mdp_msdk-contrib/igfx_s3dcontrol/include;../../../mdp_msdk-val-tools/bs_parser/include;../../../mdp_msdk-contrib/gmock/gtest/include;../../../mdp_msdk-contrib/gmock/include;../../../mdp_msdk-api/include;./include/gmock;./include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
     </ClCompile>
     <Link>
@@ -155,7 +157,8 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>dxva2.lib;d3d9.lib;d3d11.lib;dxgi.lib</AdditionalDependencies>
+      <AdditionalDependencies>dxva2.lib;d3d9.lib;d3d11.lib;dxgi.lib;ippcoremt.lib;ippdcmt.lib;ippimt.lib</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(MEDIASDK_ROOT)\ipp\ipp81gold\windows\ia32\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -167,7 +170,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>_VARIADIC_MAX=10;WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>../../../mdp_msdk-samples/samples/sample_common/include/vm;../../../mdp_msdk-samples/samples/sample_common/include;../../../mdp_msdk-contrib/igfx_s3dcontrol/include;../../../mdp_msdk-val-tools/bs_parser/include;../../../mdp_msdk-contrib/gmock/gtest/include;../../../mdp_msdk-contrib/gmock/include;../../../mdp_msdk-api/include;./include/gmock;./include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(MEDIASDK_ROOT)\ipp\ipp81gold\windows\em64t\include;../../../mdp_msdk-samples/samples/sample_common/include/vm;../../../mdp_msdk-samples/samples/sample_common/include;../../../mdp_msdk-contrib/igfx_s3dcontrol/include;../../../mdp_msdk-val-tools/bs_parser/include;../../../mdp_msdk-contrib/gmock/gtest/include;../../../mdp_msdk-contrib/gmock/include;../../../mdp_msdk-api/include;./include/gmock;./include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
     </ClCompile>
     <Link>
@@ -175,7 +178,8 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>dxva2.lib;d3d9.lib;d3d11.lib;dxgi.lib</AdditionalDependencies>
+      <AdditionalDependencies>dxva2.lib;d3d9.lib;d3d11.lib;dxgi.lib;ippcoremt.lib;ippdcmt.lib;ippimt.lib</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(MEDIASDK_ROOT)\ipp\ipp81gold\windows\em64t\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -219,6 +223,7 @@
     <ClCompile Include="src\gmock\test_suites\camera_close.cpp" />
     <ClCompile Include="src\gmock\test_suites\fei_encode_close.cpp" />
     <ClCompile Include="src\gmock\test_suites\fei_encode_encode_frame_async.cpp" />
+    <ClCompile Include="src\gmock\test_suites\hevc10d_shift.cpp" />
     <ClCompile Include="src\gmock\test_suites\hevce_spspps_get.cpp" />
     <ClCompile Include="src\gmock\test_suites\lookahead_1N.cpp" />
     <ClCompile Include="src\gmock\test_suites\mpeg2d_thomson_timestamp.cpp" />
