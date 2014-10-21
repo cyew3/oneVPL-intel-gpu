@@ -13,14 +13,29 @@ Copyright(c) 2005-2014 Intel Corporation. All Rights Reserved.
 #include <memory>
 #include "pipeline_encode.h"
 #include "pipeline_user.h"
+#include <stdarg.h>
 
-void PrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage)
+#define VAL_CHECK(val, argIdx, argName) \
+{ \
+    if (val) \
+    { \
+        PrintHelp(NULL, MSDK_STRING("Input argument number %d \"%s\" require more parameters"), argIdx, argName); \
+        return MFX_ERR_UNSUPPORTED;\
+    } \
+}
+
+void PrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage, ...)
 {
     msdk_printf(MSDK_STRING("Encoding Sample Version %s\n\n"), MSDK_SAMPLE_VERSION);
 
     if (strErrorMessage)
     {
-        msdk_printf(MSDK_STRING("Error: %s\n"), strErrorMessage);
+        va_list args;
+        msdk_printf(MSDK_STRING("ERROR: "));
+        va_start(args, strErrorMessage);
+        msdk_vprintf(strErrorMessage, args);
+        va_end(args);
+        msdk_printf(MSDK_STRING("\n\n"));
     }
 
     msdk_printf(MSDK_STRING("Usage: %s <msdk-codecid> [<options>] -i InputYUVFile -o OutputEncodedFile -w width -h height\n"), strAppName);
@@ -124,13 +139,21 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         // process multi-character options
         if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-dstw")))
         {
-            i++;
-            msdk_opt_read(strInput[i], pParams->nDstWidth);
+            VAL_CHECK(i+1 >= nArgNum, i, strInput[i]);
+            if (MFX_ERR_NONE != msdk_opt_read(strInput[++i], pParams->nDstWidth))
+            {
+                PrintHelp(strInput[0], MSDK_STRING("Destination picture Width is invalid"));
+                return MFX_ERR_UNSUPPORTED;
+            }
         }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-dsth")))
         {
-            i++;
-            msdk_opt_read(strInput[i], pParams->nDstHeight);
+            VAL_CHECK(i+1 >= nArgNum, i, strInput[i]);
+            if (MFX_ERR_NONE != msdk_opt_read(strInput[++i], pParams->nDstHeight))
+            {
+                PrintHelp(strInput[0], MSDK_STRING("Destination picture Height is invalid"));
+                return MFX_ERR_UNSUPPORTED;
+            }
         }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-sw")))
         {
@@ -154,8 +177,12 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-angle")))
         {
-            i++;
-            msdk_opt_read(strInput[i], pParams->nRotationAngle);
+            VAL_CHECK(i+1 >= nArgNum, i, strInput[i]);
+            if (MFX_ERR_NONE != msdk_opt_read(strInput[++i], pParams->nRotationAngle))
+            {
+                PrintHelp(strInput[0], MSDK_STRING("Rotation Angle is invalid"));
+                return MFX_ERR_UNSUPPORTED;
+            }
         }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-opencl")))
         {
@@ -177,14 +204,22 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-lad")))
         {
-            i++;
+            VAL_CHECK(i+1 >= nArgNum, i, strInput[i]);
             pParams->nRateControlMethod = MFX_RATECONTROL_LA;
-            msdk_opt_read(strInput[i], pParams->nLADepth);
+            if (MFX_ERR_NONE != msdk_opt_read(strInput[++i], pParams->nLADepth))
+            {
+                PrintHelp(strInput[0], MSDK_STRING("Look Ahead Depth is invalid"));
+                return MFX_ERR_UNSUPPORTED;
+            }
         }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-mss")))
         {
-            i++;
-            msdk_opt_read(strInput[i], pParams->nMaxSliceSize);
+            VAL_CHECK(i+1 >= nArgNum, i, strInput[i]);
+            if (MFX_ERR_NONE != msdk_opt_read(strInput[++i], pParams->nMaxSliceSize))
+            {
+                PrintHelp(strInput[0], MSDK_STRING("MaxSliceSize is invalid"));
+                return MFX_ERR_UNSUPPORTED;
+            }
         }
 #if D3D_SURFACES_SUPPORT
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-d3d")))
@@ -204,14 +239,11 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
 #endif
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-async")))
         {
-            if(i + 1 >= nArgNum)
-            {
-                PrintHelp(strInput[0], MSDK_STRING("Not enough parameters for -async key"));
-                return MFX_ERR_UNSUPPORTED;
-            }
+            VAL_CHECK(i+1 >= nArgNum, i, strInput[i]);
+
             if (MFX_ERR_NONE != msdk_opt_read(strInput[++i], pParams->nAsyncDepth))
             {
-                PrintHelp(strInput[0], MSDK_STRING("async is invalid"));
+                PrintHelp(strInput[0], MSDK_STRING("Async Depth is invalid"));
                 return MFX_ERR_UNSUPPORTED;
             }
         }
@@ -221,23 +253,39 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-qpi")))
         {
-            i++;
-            msdk_opt_read(strInput[i], pParams->nQPI);
+            VAL_CHECK(i+1 >= nArgNum, i, strInput[i]);
+            if (MFX_ERR_NONE != msdk_opt_read(strInput[++i], pParams->nQPI))
+            {
+                PrintHelp(strInput[0], MSDK_STRING("Quantizer for I frames is invalid"));
+                return MFX_ERR_UNSUPPORTED;
+            }
         }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-qpp")))
         {
-            i++;
-            msdk_opt_read(strInput[i], pParams->nQPP);
+            VAL_CHECK(i+1 >= nArgNum, i, strInput[i]);
+            if (MFX_ERR_NONE != msdk_opt_read(strInput[++i], pParams->nQPP))
+            {
+                PrintHelp(strInput[0], MSDK_STRING("Quantizer for P frames is invalid"));
+                return MFX_ERR_UNSUPPORTED;
+            }
         }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-qpb")))
         {
-            i++;
-            msdk_opt_read(strInput[i], pParams->nQPB);
+            VAL_CHECK(i+1 >= nArgNum, i, strInput[i]);
+            if (MFX_ERR_NONE != msdk_opt_read(strInput[++i], pParams->nQPB))
+            {
+                PrintHelp(strInput[0], MSDK_STRING("Quantizer for B frames is invalid"));
+                return MFX_ERR_UNSUPPORTED;
+            }
         }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-num_slice")))
         {
-            i++;
-            msdk_opt_read(strInput[i], pParams->nNumSlice);
+            VAL_CHECK(i+1 >= nArgNum, i, strInput[i]);
+            if (MFX_ERR_NONE != msdk_opt_read(strInput[++i], pParams->nNumSlice))
+            {
+                PrintHelp(strInput[0], MSDK_STRING("Number of slices is invalid"));
+                return MFX_ERR_UNSUPPORTED;
+            }
         }
         else // 1-character options
         {
@@ -253,7 +301,11 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
                 break;
             case MSDK_CHAR('w'):
                 if (++i < nArgNum) {
-                    msdk_opt_read(strInput[i], pParams->nWidth);
+                    if (MFX_ERR_NONE != msdk_opt_read(strInput[i], pParams->nWidth))
+                    {
+                        PrintHelp(strInput[0], MSDK_STRING("Width is invalid"));
+                        return MFX_ERR_UNSUPPORTED;
+                    }
                 }
                 else {
                     msdk_printf(MSDK_STRING("error: option '-w' expects an argument\n"));
@@ -261,7 +313,11 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
                 break;
             case MSDK_CHAR('h'):
                 if (++i < nArgNum) {
-                    msdk_opt_read(strInput[i], pParams->nHeight);
+                    if (MFX_ERR_NONE != msdk_opt_read(strInput[i], pParams->nHeight))
+                    {
+                        PrintHelp(strInput[0], MSDK_STRING("Height is invalid"));
+                        return MFX_ERR_UNSUPPORTED;
+                    }
                 }
                 else {
                     msdk_printf(MSDK_STRING("error: option '-h' expects an argument\n"));
@@ -269,7 +325,11 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
                 break;
             case MSDK_CHAR('f'):
                 if (++i < nArgNum) {
-                    msdk_opt_read(strInput[i], pParams->dFrameRate);
+                    if (MFX_ERR_NONE != msdk_opt_read(strInput[i], pParams->dFrameRate))
+                    {
+                        PrintHelp(strInput[0], MSDK_STRING("Frame Rate is invalid"));
+                        return MFX_ERR_UNSUPPORTED;
+                    }
                 }
                 else {
                     msdk_printf(MSDK_STRING("error: option '-f' expects an argument\n"));
@@ -277,7 +337,11 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
                 break;
             case MSDK_CHAR('b'):
                 if (++i < nArgNum) {
-                    msdk_opt_read(strInput[i], pParams->nBitRate);
+                    if (MFX_ERR_NONE != msdk_opt_read(strInput[i], pParams->nBitRate))
+                    {
+                        PrintHelp(strInput[0], MSDK_STRING("Bit Rate is invalid"));
+                        return MFX_ERR_UNSUPPORTED;
+                    }
                 }
                 else {
                     msdk_printf(MSDK_STRING("error: option '-b' expects an argument\n"));
@@ -305,7 +369,11 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
                 break;
             case MSDK_CHAR('q'):
                 if (++i < nArgNum) {
-                    msdk_opt_read(strInput[i], pParams->nQuality);
+                    if (MFX_ERR_NONE != msdk_opt_read(strInput[i], pParams->nQuality))
+                    {
+                        PrintHelp(strInput[0], MSDK_STRING("Quality is invalid"));
+                        return MFX_ERR_UNSUPPORTED;
+                    }
                 }
                 else {
                     msdk_printf(MSDK_STRING("error: option '-q' expects an argument\n"));
