@@ -2360,6 +2360,7 @@ recode:
 
 #if defined (MFX_VA)
     if (m_videoParam.enableCmFlag && brcRecode == 0) {
+#ifndef SAVE_FEI_STATE
         if (m_pNextFrame) {
             /* start processing next frame */
 ///            m_FeiCtx->ProcessFrameFEI(&m_feiH265In[1 - feiInIdx], m_pNextFrame, m_slicesNext, &m_feiFrame[1 - feiInIdx], task->m_dpb, task->m_dpbSize, &m_syncp[1 - feiInIdx], 0);
@@ -2367,6 +2368,7 @@ recode:
             /* done with input struct, flip double buffers for next call (next becomes curr) */
             m_FeiCtx->feiInIdx = 1 - m_FeiCtx->feiInIdx;
         }
+#endif
 /*
         m_cmCtx->RunVmeNext(m_videoParam, m_pNextFrame, m_slicesNext);
 */

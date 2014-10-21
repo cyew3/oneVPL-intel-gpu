@@ -17,6 +17,9 @@
     <ClCompile Include="src\mfx_h265_enc_cm_utils.cpp">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="src\mfx_h265_enc_cm_plugin.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\mfx_h265_enc_cm_fei.h">
@@ -26,6 +29,9 @@
       <Filter>include</Filter>
     </ClInclude>
     <ClInclude Include="include\mfx_h265_fei.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mfx_h265_enc_cm_plugin.h">
       <Filter>include</Filter>
     </ClInclude>
   </ItemGroup>

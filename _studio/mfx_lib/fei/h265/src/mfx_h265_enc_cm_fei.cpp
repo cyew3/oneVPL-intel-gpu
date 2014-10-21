@@ -25,7 +25,7 @@
 #include "mfx_h265_enc_cm_utils.h"
 
 /* enable interpolation for FEI plugin */
-#if defined AS_H265FEI_PLUGIN
+#if defined AS_H265FEI_PLUGIN || defined SAVE_FEI_STATE
 #define ENABLE_INTERP_KERNELS
 #endif
 
