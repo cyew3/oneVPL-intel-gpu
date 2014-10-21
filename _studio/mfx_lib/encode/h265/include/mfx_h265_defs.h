@@ -410,11 +410,12 @@ inline Ipp32s H265_CeilLog2(Ipp32s a) {
 }
 
 enum {
-    SUBPEL_NO            = 1, // intpel only
-    SUBPEL_BOX_HPEL_ONLY = 2, // no quaterpel step
-    SUBPEL_BOX           = 3, // halfpel & quaterpel
-    SUBPEL_DIA           = 4, // halfpel & quaterpel
-    SUBPEL_DIA_2STEP     = 5, // 2*halfpel & 2*quaterpel
+    SUBPEL_NO               = 1, // intpel only
+    SUBPEL_BOX_HPEL_ONLY    = 2, // no quaterpel step
+    SUBPEL_BOX              = 3, // halfpel & quaterpel
+    SUBPEL_DIA              = 4, // halfpel & quaterpel
+    SUBPEL_DIA_2STEP        = 5, // 2*halfpel & 2*quaterpel
+    SUBPEL_FASTBOX_DIA_ORTH = 6, // Fast Box Half Pel + Dia Quarter + Orthogonal Update
 };
 
 } // namespace

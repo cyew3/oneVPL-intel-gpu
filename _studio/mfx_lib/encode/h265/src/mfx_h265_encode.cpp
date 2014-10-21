@@ -112,6 +112,7 @@ namespace H265Enc {
     tab_##mode##_QuadtreeTULog2MinSize[x],\
     tab_##mode##_QuadtreeTUMaxDepthIntra[x],\
     tab_##mode##_QuadtreeTUMaxDepthInter[x],\
+    tab_##mode##_QuadtreeTUMaxDepthInterRD[x],\
     tab_##mode##_AnalyzeChroma[x],\
     tab_##mode##_SignBitHiding[x],\
     tab_##mode##_RDOQuant[x],\
@@ -176,6 +177,8 @@ namespace H265Enc {
     tab_##mode##_SkipMotionPartition[x],\
     tab_##mode##_SkipCandRD[x],\
     tab_##mode##_FramesInParallel[x],\
+    tab_##mode##_BRefSymmetric[x],\
+    tab_##mode##_FastCoeffCost[x],\
     tab_##mode##_NumTileCols[x],\
     tab_##mode##_NumTileRows[x],\
     }
@@ -191,21 +194,30 @@ namespace H265Enc {
     TU_OPT_SW  (MaxCUDepth,                     4,   4,   3,   3,   3,   3,   3);
     TU_OPT_SW  (QuadtreeTUMaxDepthIntra,        4,   3,   2,   2,   2,   1,   1);
 #ifdef AMT_SETTINGS
+#if defined(AMT_ADAPTIVE_TU_DEPTH)
+    TU_OPT_SW  (QuadtreeTUMaxDepthInter,        3,   3,   2,   2,   2,   2,   2);
+    TU_OPT_SW  (QuadtreeTUMaxDepthInterRD,      3,   3,   2,   2,   2,   1,   1);
+#else
     TU_OPT_SW  (QuadtreeTUMaxDepthInter,        3,   3,   2,   2,   2,   1,   1);
+    TU_OPT_SW  (QuadtreeTUMaxDepthInterRD,      3,   3,   2,   2,   2,   1,   1);
+#endif
 #else
     TU_OPT_SW  (QuadtreeTUMaxDepthInter,        4,   3,   2,   2,   2,   1,   1);
+    TU_OPT_SW  (QuadtreeTUMaxDepthInterRD,      4,   3,   2,   2,   2,   1,   1);
 #endif
     TU_OPT_GACC(Log2MaxCUSize,                  5,   5,   5,   5,   5,   5,   5);
     TU_OPT_GACC(MaxCUDepth,                     3,   3,   3,   3,   3,   3,   3);
     TU_OPT_GACC(QuadtreeTUMaxDepthIntra,        3,   3,   2,   1,   1,   1,   1);
     TU_OPT_GACC(QuadtreeTUMaxDepthInter,        3,   3,   2,   1,   1,   1,   1);
+    TU_OPT_GACC(QuadtreeTUMaxDepthInterRD,      3,   3,   2,   1,   1,   1,   1);
     TU_OPT_ALL (TUSplitIntra,                   1,   1,   3,   3,   3,   3,   3);
     TU_OPT_ALL (CUSplit,                        2,   2,   2,   2,   2,   2,   2);
     TU_OPT_ALL (PuDecisionSatd,               OFF, OFF, OFF, OFF, OFF, OFF, OFF);
     TU_OPT_ALL (MinCUDepthAdapt,              OFF, OFF, OFF,  ON,  ON,  ON,  ON);
-    TU_OPT_ALL (MaxCUDepthAdapt,               ON,  ON,  ON,  ON,  ON,  ON, OFF);
+    TU_OPT_SW  (MaxCUDepthAdapt,               ON,  ON,  ON,  ON,  ON,  ON,  ON);
+    TU_OPT_GACC(MaxCUDepthAdapt,               ON,  ON,  ON,  ON,  ON,  ON,  OFF);
 #ifdef AMT_THRESHOLDS
-    TU_OPT_SW  (CUSplitThreshold,               0,   0,   0,  64, 192, 224, 256);
+    TU_OPT_SW  (CUSplitThreshold,               0,   0,   0,  64, 192, 224, 240);
 #else
     TU_OPT_SW  (CUSplitThreshold,               0,  64, 128, 192, 192, 224, 256);
 #endif
@@ -238,17 +250,30 @@ namespace H265Enc {
     TU_OPT_ALL (reserved,                       0,   0,   0,   0,   0,   0,   0);
 
     //Filtering
+#ifdef AMT_ALT_ENCODE
+    TU_OPT_SW  (SAO,                           ON,  ON,  ON,  ON,  ON,  ON, ON);
+#else
     TU_OPT_SW  (SAO,                           ON,  ON,  ON,  ON,  ON,  ON, OFF);
+#endif
     TU_OPT_GACC(SAO,                           ON,  ON,  ON,  ON,  ON, OFF, OFF);
+#ifdef AMT_SAO_MIN
+    TU_OPT_ALL (SaoOpt,                         1,   1,   2,   2,   2,   2,   3);
+#else
     TU_OPT_ALL (SaoOpt,                         1,   1,   2,   2,   2,   2,   2);
+#endif
     TU_OPT_ALL (Deblocking,                    ON,  ON,  ON,  ON,  ON,  ON,  ON);
 
     //Intra prediction optimization
     TU_OPT_SW  (IntraAngModes,                  1,   1,   1,   1,   1,   1,   1); //I slice SW
     TU_OPT_GACC(IntraAngModes,                  1,   1,   1,   1,   1,   1,   1); //I slice Gacc
-    TU_OPT_SW  (IntraAngModesP,                 1,   1,   2,   2,   2,   2,   3); //P slice SW
-    TU_OPT_GACC(IntraAngModesP,                 2,   2,   2,   2,   2,   2,   3); //P slice Gacc
+#ifdef AMT_SETTINGS
+    TU_OPT_SW  (IntraAngModesP,                 1,   1,   2,   2,   3,   3,   3); //P slice SW
     TU_OPT_SW  (IntraAngModesBRef,              1,   1,   2,   2,   3,   3, 100); //B Ref slice SW
+#else
+    TU_OPT_SW  (IntraAngModesP,                 1,   1,   2,   2,   2,   2,   3); //P slice SW
+    TU_OPT_SW  (IntraAngModesBRef,              1,   1,   2,   2,   3,   3, 100); //B Ref slice SW
+#endif
+    TU_OPT_GACC(IntraAngModesP,                 2,   2,   2,   2,   2,   2,   3); //P slice Gacc
     TU_OPT_GACC(IntraAngModesBRef,              3,   3,   3,   3,   3,   3, 100); //B Ref slice Gacc
     TU_OPT_SW  (IntraAngModesBnonRef,           1,   1,   2,  99,  99, 100, 100); //B non Ref slice SW
     TU_OPT_GACC(IntraAngModesBnonRef,           3,   3,   3, 100, 100, 100, 100); //B non Ref slice Gacc
@@ -257,8 +282,14 @@ namespace H265Enc {
     TU_OPT_SW  (SignBitHiding,                 ON,  ON,  ON,  ON,  ON,  ON, OFF);
     TU_OPT_GACC(SignBitHiding,                 ON,  ON,  ON,  ON,  ON,  ON, OFF);
     TU_OPT_SW  (RDOQuant,                      ON,  ON,  ON,  ON, OFF, OFF, OFF);
+    TU_OPT_SW  (FastCoeffCost,                 OFF, OFF, OFF, OFF, ON,  ON,  ON);
+    TU_OPT_GACC(FastCoeffCost,                 OFF, OFF, OFF, OFF, OFF, OFF, OFF);
     TU_OPT_SW  (RDOQuantChroma,                ON,  ON,  ON, OFF, OFF, OFF, OFF);
+#ifdef AMT_ALT_ENCODE
+    TU_OPT_SW  (RDOQuantCGZ,                   ON,  ON,  ON,  ON, ON,   ON, ON);
+#else
     TU_OPT_SW  (RDOQuantCGZ,                   ON,  ON,  ON,  ON, OFF, OFF, OFF);
+#endif
     TU_OPT_GACC(RDOQuant,                      OFF, OFF, OFF, OFF, OFF, OFF, OFF);
     TU_OPT_GACC(RDOQuantChroma,                OFF, OFF, OFF, OFF, OFF, OFF, OFF);
     TU_OPT_GACC(RDOQuantCGZ,                   OFF, OFF, OFF, OFF, OFF, OFF, OFF);
@@ -322,13 +353,25 @@ namespace H265Enc {
 
     //Inter prediction
     TU_OPT_ALL (TMVP,                          ON,  ON,  ON,  ON,  ON,  ON,  ON);
+#if defined(AMT_ALT_FAST_SKIP) || defined(AMT_FAST_SUBPEL_SEARCH)
+    TU_OPT_SW  (HadamardMe,                     2,   2,   2,   2,   2,   2,   2);
+#else
     TU_OPT_SW  (HadamardMe,                     2,   2,   2,   2,   2,   1,   1);
+#endif
     TU_OPT_GACC(HadamardMe,                     1,   1,   1,   1,   1,   1,   1);
     TU_OPT_ALL (PatternIntPel,                  1,   1,   1,   1,   1,   1,   1);
+#ifdef AMT_FAST_SUBPEL_SEARCH
+    TU_OPT_ALL (PatternSubPel,                  3,   3,   3,   3,   6,   6,   6); //4 -dia subpel search; 3- square; 6- fast box + dia orth (see enum SUBPEL_*)
+#else
     TU_OPT_ALL (PatternSubPel,                  3,   3,   3,   3,   4,   4,   4); //4 -dia subpel search; 3- square (see enum SUBPEL_*)
+#endif
     TU_OPT_ALL (NumBiRefineIter,              999, 999, 999,   3,   2,   1,   1); //999-practically infinite iteration
     TU_OPT_ALL (FastInterp,                   OFF, OFF, OFF, OFF, OFF, OFF, OFF); 
+#ifdef AMT_ALT_ENCODE
+    TU_OPT_SW  (TryIntra,                       2,   2,   2,   2,   2,   2,   2);
+#else
     TU_OPT_SW  (TryIntra,                       2,   2,   2,   2,   2,   2,   1);
+#endif
     TU_OPT_GACC(TryIntra,                       1,   1,   1,   1,   1,   1,   1);
     TU_OPT_SW  (FastAMPSkipME,                  2,   1,   1,   1,   1,   1,   1);
     TU_OPT_GACC(FastAMPSkipME,                  1,   1,   1,   1,   1,   1,   1);
@@ -340,16 +383,27 @@ namespace H265Enc {
     TU_OPT_GACC(SkipCandRD,                   OFF, OFF, OFF, OFF,  OFF, OFF, OFF);
     TU_OPT_ALL (FramesInParallel,               0,   0,   0,   0,   0,   0,   0);
     //GOP structure, reference options
-    TU_OPT_SW  (GPB,                           ON,  ON,  ON,  ON,  ON, OFF, OFF);
+
     TU_OPT_GACC(GPB,                          OFF, OFF, OFF, OFF, OFF, OFF, OFF);
     TU_OPT_ALL (BPyramid,                      ON,  ON,  ON,  ON,  ON,  ON,  ON);
+#ifdef AMT_SYM_BREF
+    TU_OPT_ALL (BRefSymmetric,                OFF, OFF, OFF,  OFF,  ON,  ON,  ON);
+    TU_OPT_SW  (GPB,                           ON,  ON,  ON,  ON,   ON,  ON,  OFF);
+#else
+    TU_OPT_ALL (BRefSymmetric,                OFF, OFF, OFF, OFF, OFF, OFF, OFF);
+    TU_OPT_SW  (GPB,                           ON,  ON,  ON,  ON,  ON, OFF, OFF);
+#endif
 
     TU_OPT_ALL (NumTileCols,                    1,   1,   1,   1,   1,   1,   1);
     TU_OPT_ALL (NumTileRows,                    1,   1,   1,   1,   1,   1,   1);
 
     Ipp8u tab_tuGopRefDist [8] = {8, 8, 8, 8, 8, 8, 8, 8};
 #ifdef AMT_SETTINGS
+#ifdef AMT_SYM_BREF
+    Ipp8u tab_tuNumRefFrame_SW[8] = {2, 4, 4, 3, 3, 3, 3, 3};
+#else
     Ipp8u tab_tuNumRefFrame_SW[8] = {2, 4, 4, 3, 3, 2, 2, 2};
+#endif
 #else
     Ipp8u tab_tuNumRefFrame_SW[8] = {2, 4, 4, 4, 3, 3, 2, 2};
 #endif
@@ -857,6 +911,9 @@ mfxStatus MFXVideoENCODEH265::Init(mfxVideoParam* par_in)
         if(!m_mfxHEVCOpts.QuadtreeTUMaxDepthInter) // opts_in->QuadtreeTUMaxDepthIntra > opts_out->Log2MaxCUSize - 1
             m_mfxHEVCOpts.QuadtreeTUMaxDepthInter = IPP_MIN(opts_tu->QuadtreeTUMaxDepthInter, m_mfxHEVCOpts.Log2MaxCUSize - 1);
 
+        if(!m_mfxHEVCOpts.QuadtreeTUMaxDepthInterRD) // opts_in->QuadtreeTUMaxDepthIntra > opts_out->Log2MaxCUSize - 1
+            m_mfxHEVCOpts.QuadtreeTUMaxDepthInterRD = IPP_MIN(opts_tu->QuadtreeTUMaxDepthInterRD, m_mfxHEVCOpts.Log2MaxCUSize - 1);
+
         if (m_mfxHEVCOpts.AnalyzeChroma == MFX_CODINGOPTION_UNKNOWN)
             m_mfxHEVCOpts.AnalyzeChroma = opts_tu->AnalyzeChroma;
         if (m_mfxHEVCOpts.CostChroma == MFX_CODINGOPTION_UNKNOWN)
@@ -868,6 +925,10 @@ mfxStatus MFXVideoENCODEH265::Init(mfxVideoParam* par_in)
 
         if (m_mfxHEVCOpts.RDOQuant == MFX_CODINGOPTION_UNKNOWN)
             m_mfxHEVCOpts.RDOQuant = opts_tu->RDOQuant;
+
+        if (m_mfxHEVCOpts.FastCoeffCost == MFX_CODINGOPTION_UNKNOWN)
+            m_mfxHEVCOpts.FastCoeffCost = opts_tu->FastCoeffCost;
+
         if (m_mfxHEVCOpts.SignBitHiding == MFX_CODINGOPTION_UNKNOWN)
             m_mfxHEVCOpts.SignBitHiding = opts_tu->SignBitHiding;
 
@@ -943,6 +1004,8 @@ mfxStatus MFXVideoENCODEH265::Init(mfxVideoParam* par_in)
             m_mfxHEVCOpts.SkipMotionPartition = opts_tu->SkipMotionPartition;
         if (m_mfxHEVCOpts.SkipCandRD == 0)
             m_mfxHEVCOpts.SkipCandRD = opts_tu->SkipCandRD;
+        if (m_mfxHEVCOpts.BRefSymmetric == 0)
+            m_mfxHEVCOpts.BRefSymmetric = opts_tu->BRefSymmetric;
         if (m_mfxHEVCOpts.CmIntraThreshold == 0)
             m_mfxHEVCOpts.CmIntraThreshold = opts_tu->CmIntraThreshold;
         if (m_mfxHEVCOpts.TUSplitIntra == 0)
@@ -1465,6 +1528,7 @@ mfxStatus MFXVideoENCODEH265::Reset(mfxVideoParam *par_in)
         if (!optsNew.QuadtreeTULog2MinSize        ) optsNew.QuadtreeTULog2MinSize         = optsOld.QuadtreeTULog2MinSize        ;
         if (!optsNew.QuadtreeTUMaxDepthIntra      ) optsNew.QuadtreeTUMaxDepthIntra       = optsOld.QuadtreeTUMaxDepthIntra      ;
         if (!optsNew.QuadtreeTUMaxDepthInter      ) optsNew.QuadtreeTUMaxDepthInter       = optsOld.QuadtreeTUMaxDepthInter      ;
+        if (!optsNew.QuadtreeTUMaxDepthInterRD    ) optsNew.QuadtreeTUMaxDepthInterRD     = optsOld.QuadtreeTUMaxDepthInterRD    ;
         if (!optsNew.AnalyzeChroma                ) optsNew.AnalyzeChroma                 = optsOld.AnalyzeChroma                ;
         if (!optsNew.SignBitHiding                ) optsNew.SignBitHiding                 = optsOld.SignBitHiding                ;
         if (!optsNew.RDOQuant                     ) optsNew.RDOQuant                      = optsOld.RDOQuant                     ;
@@ -1505,6 +1569,8 @@ mfxStatus MFXVideoENCODEH265::Reset(mfxVideoParam *par_in)
         if (!optsNew.SkipMotionPartition          ) optsNew.SkipMotionPartition           = optsOld.SkipMotionPartition          ;
         if (!optsNew.SkipCandRD                   ) optsNew.SkipCandRD                    = optsOld.SkipCandRD                   ;
         if (!optsNew.FramesInParallel             ) optsNew.FramesInParallel              = optsOld.FramesInParallel             ;
+        if (!optsNew.BRefSymmetric                ) optsNew.BRefSymmetric                 = optsOld.BRefSymmetric                ;
+        if (!optsNew.FastCoeffCost                ) optsNew.FastCoeffCost                 = optsOld.FastCoeffCost                ;
     }
 
     mfxExtHEVCTiles optsTilesNew;
@@ -1655,6 +1721,7 @@ mfxStatus MFXVideoENCODEH265::Query(VideoCORE *core, mfxVideoParam *par_in, mfxV
                 optsHEVC->QuadtreeTULog2MinSize = 1;
                 optsHEVC->QuadtreeTUMaxDepthIntra = 1;
                 optsHEVC->QuadtreeTUMaxDepthInter = 1;
+                optsHEVC->QuadtreeTUMaxDepthInterRD = 1;
                 optsHEVC->AnalyzeChroma = 1;
                 optsHEVC->SignBitHiding = 1;
                 optsHEVC->RDOQuant = 1;
@@ -1695,6 +1762,8 @@ mfxStatus MFXVideoENCODEH265::Query(VideoCORE *core, mfxVideoParam *par_in, mfxV
                 optsHEVC->SkipMotionPartition = 1;
                 optsHEVC->SkipCandRD = 1;
                 optsHEVC->FramesInParallel = 1;
+                optsHEVC->BRefSymmetric = 1;
+                optsHEVC->FastCoeffCost = 1;
             }
 
             mfxExtDumpFiles* optsDump = (mfxExtDumpFiles*)GetExtBuffer( out->ExtParam, out->NumExtParam, MFX_EXTBUFF_DUMP );
@@ -2071,6 +2140,13 @@ mfxStatus MFXVideoENCODEH265::Query(VideoCORE *core, mfxVideoParam *par_in, mfxV
                         isInvalid ++;
                 } else opts_out->QuadtreeTUMaxDepthInter = opts_in->QuadtreeTUMaxDepthInter;
 
+                if ( (opts_in->QuadtreeTUMaxDepthInterRD > 5) ||
+                    (opts_out->Log2MaxCUSize!=0 && opts_in->QuadtreeTUMaxDepthInterRD + 1 > opts_out->Log2MaxCUSize) ) {
+                        opts_out->QuadtreeTUMaxDepthInterRD = 0;
+                        isInvalid ++;
+                } else opts_out->QuadtreeTUMaxDepthInterRD = opts_in->QuadtreeTUMaxDepthInterRD;
+
+
                 opts_out->TryIntra = opts_in->TryIntra;
                 opts_out->CmIntraThreshold = opts_in->CmIntraThreshold;
                 opts_out->TUSplitIntra = opts_in->TUSplitIntra;
@@ -2112,6 +2188,9 @@ mfxStatus MFXVideoENCODEH265::Query(VideoCORE *core, mfxVideoParam *par_in, mfxV
                 CHECK_OPTION(opts_in->MaxCUDepthAdapt, opts_out->MaxCUDepthAdapt, isInvalid);  /* tri-state option */
                 CHECK_OPTION(opts_in->Enable10bit, opts_out->Enable10bit, isInvalid);  /* tri-state option */
                 CHECK_OPTION(opts_in->SkipCandRD, opts_out->SkipCandRD, isInvalid);  /* tri-state option */
+                CHECK_OPTION(opts_in->BRefSymmetric, opts_out->BRefSymmetric, isInvalid);  /* tri-state option */
+                CHECK_OPTION(opts_in->FastCoeffCost, opts_out->FastCoeffCost, isInvalid);  /* tri-state option */
+
 
                 if (opts_in->PartModes > 3) {
                     opts_out->PartModes = 0;

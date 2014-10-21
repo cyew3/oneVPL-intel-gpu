@@ -626,8 +626,11 @@ void SaoEncodeFilter::Init(int width, int height, int maxCUWidth, int maxDepth, 
 
     m_numCTU_inWidth = (m_frameSize.width  + m_maxCuSize - 1) / m_maxCuSize;
     m_numCTU_inHeight= (m_frameSize.height + m_maxCuSize - 1) / m_maxCuSize;
-
+#ifndef AMT_SAO_MIN
     m_numSaoModes = (saoOpt == SAO_OPT_ALL_MODES) ? NUM_SAO_BASE_TYPES : NUM_SAO_BASE_TYPES - 1;
+#else
+    m_numSaoModes = (saoOpt == SAO_OPT_ALL_MODES) ? NUM_SAO_BASE_TYPES : ((saoOpt == SAO_OPT_FAST_MODES_ONLY)? NUM_SAO_BASE_TYPES - 1: 1);
+#endif
 } // void SaoEncodeFilter::Init(...)
 
 
@@ -1099,7 +1102,7 @@ void H265CU<PixType>::EstimateCtuSao( H265BsFake *bs, SaoCtuParam* saoParam, Sao
 
     bool    sliceEnabled[NUM_SAO_COMPONENTS] = {false, false, false};
     m_saoEncodeFilter.EstimateCtuSao<PixType>( &orgYuv, &recYuv, sliceEnabled, saoParam);
-
+    
     // set slice param
     if ( !this->m_cslice->slice_sao_luma_flag ) {
         this->m_cslice->slice_sao_luma_flag = (Ipp8u)sliceEnabled[SAO_Y];

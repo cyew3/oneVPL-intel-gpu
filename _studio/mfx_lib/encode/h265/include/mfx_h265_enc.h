@@ -40,6 +40,7 @@ struct H265VideoParam {
     Ipp32u QuadtreeTULog2MinSize;
     Ipp32u QuadtreeTUMaxDepthIntra;
     Ipp32u QuadtreeTUMaxDepthInter;
+    Ipp32u QuadtreeTUMaxDepthInterRD;
     Ipp8s  QPI;
     Ipp8s  QPP;
     Ipp8s  QPB;
@@ -78,6 +79,7 @@ struct H265VideoParam {
     Ipp8u  deblockTileBordersFlag;
     Ipp8u  SBHFlag;  // Sign Bit Hiding
     Ipp8u  RDOQFlag; // RDO Quantization
+    Ipp8u  FastCoeffCost;   // Use estimator
     Ipp8u  rdoqChromaFlag; // RDOQ Chroma
     Ipp8u  rdoqCGZFlag; // RDOQ Coeff Group Zero
     Ipp8u  SAOFlag;  // Sample Adaptive Offset
@@ -95,6 +97,7 @@ struct H265VideoParam {
     Ipp8u  FastAMPRD;       // 0-default, 1-never, 2-Adaptive Fast Decision 
     Ipp8u  SkipMotionPartition;  // 0-default, 1-never, 2-Adaptive
     Ipp8u  SkipCandRD;       // on: Do Full RD /off : do Fast decision 
+    Ipp8u  BRefSymmetric;    // on: Always symmetric list for B Frames
     Ipp16u cmIntraThreshold;// 0-no theshold
     Ipp16u tuSplitIntra;    // 0-default; 1-always; 2-never; 3-for Intra frames only
     Ipp16u cuSplit;         // 0-default; 1-always; 2-check Skip cost first
@@ -104,7 +107,7 @@ struct H265VideoParam {
     Ipp32s saoOpt;          // 0-all modes; 1-only fast 4 modes
     Ipp16u hadamardMe;      // 0-default; 1-never; 2-subpel; 3-always
     Ipp16u patternIntPel;   // 0-default; 1-log; 3-dia; 100-fullsearch
-    Ipp16u patternSubPel;   // 0-default; 1 - int pel only, 2-halfpel; 3-quarter pels; 4-single diamond; 5-double diamond
+    Ipp16u patternSubPel;   // 0-default; 1 - int pel only, 2-halfpel; 3-quarter pels; 4-single diamond; 5-double diamond; 6-Fast Box Dia Orth 
     Ipp32s numBiRefineIter;
     Ipp32u num_threads;
     Ipp32u num_thread_structs;

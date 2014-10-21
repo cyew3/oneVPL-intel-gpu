@@ -454,6 +454,7 @@ namespace MFX_HEVC_PP
 
     void h265_GetCtuStatistics_8u_px( SAOCU_ENCODE_PARAMETERS_LIST );
     void h265_GetCtuStatistics_8u_sse( SAOCU_ENCODE_PARAMETERS_LIST );
+    void h265_GetCtuStatistics_8u_avx2( SAOCU_ENCODE_PARAMETERS_LIST );
 
     // [INTRA predict]
     void h265_PredictIntra_Ang_8u_px(Ipp32s mode, Ipp8u* PredPel, Ipp8u* pels, Ipp32s pitch, Ipp32s width);

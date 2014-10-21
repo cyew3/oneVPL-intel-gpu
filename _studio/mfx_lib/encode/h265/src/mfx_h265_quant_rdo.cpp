@@ -1244,16 +1244,11 @@ void h265_sign_bit_hiding(
     for(Ipp32s subset = last_scan_set; subset >= 0; subset-- ) {
         Ipp32s sub_pos     = subset << LOG2_SCAN_SET_SIZE;
         Ipp32s last_nz_pos_in_CG = -1, first_nz_pos_in_CG = SCAN_SET_SIZE;
-        Ipp32s abs_sum = 0;
         Ipp32s pos_in_CG;
 
-        for(pos_in_CG = SCAN_SET_SIZE-1; pos_in_CG >= 0; pos_in_CG-- ) {
-            if( levels[ scan[sub_pos+pos_in_CG] ] ) {
-                last_nz_pos_in_CG = pos_in_CG;
-                break;
-            }
-        }
-
+#ifdef __INTEL_COMPILER
+        #pragma unroll(SCAN_SET_SIZE)
+#endif
         for(pos_in_CG = 0; pos_in_CG <SCAN_SET_SIZE; pos_in_CG++ ) {
             if( levels[ scan[sub_pos+pos_in_CG] ] ) {
                 first_nz_pos_in_CG = pos_in_CG;
@@ -1261,17 +1256,28 @@ void h265_sign_bit_hiding(
             }
         }
 
-        for(pos_in_CG = first_nz_pos_in_CG; pos_in_CG <=last_nz_pos_in_CG; pos_in_CG++ ) {
-            abs_sum += levels[ scan[ pos_in_CG + sub_pos ] ];
+#ifdef __INTEL_COMPILER
+        #pragma unroll(SCAN_SET_SIZE)
+#endif
+        for(pos_in_CG = SCAN_SET_SIZE-1; pos_in_CG >= 0; pos_in_CG-- ) {
+            if( levels[ scan[sub_pos+pos_in_CG] ] ) {
+                last_nz_pos_in_CG = pos_in_CG;
+                break;
+            }
         }
 
-        if( (last_nz_pos_in_CG >= 0) && (-1 == lastCG) ) {
-            lastCG = 1;
-        }
+        // if( (last_nz_pos_in_CG >= 0) && (-1 == lastCG) ) lastCG = 1;
+        lastCG &= (last_nz_pos_in_CG >> 31) | 0x1;
 
         bool sign_hidden = (last_nz_pos_in_CG - first_nz_pos_in_CG >= SBH_THRESHOLD);
         if( sign_hidden ) {
-            Ipp8u sign_bit  = (levels[ scan[sub_pos + first_nz_pos_in_CG] ] > 0 ? 0 : 1);
+            Ipp8u sign_bit  = (levels[ scan[sub_pos + first_nz_pos_in_CG] ] >= 0 ? 0 : 1);
+
+            Ipp32s abs_sum = 0;
+            for(pos_in_CG = first_nz_pos_in_CG; pos_in_CG <=last_nz_pos_in_CG; pos_in_CG++ ) {
+                abs_sum += levels[ scan[ pos_in_CG + sub_pos ] ];
+            }
+
             Ipp8u sum_parity= (Ipp8u)(abs_sum & 0x1);
 
             if( sign_bit != sum_parity ) {

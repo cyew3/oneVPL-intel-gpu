@@ -244,7 +244,7 @@ IppStatus ippiCABACInit_H265(
     }
 }
 
-IppStatus ippiCABACEncodeBin_H265 (
+IppStatus ippiCABACEncodeBin_H265_px (
     CABAC_CONTEXT_H265 *ctx,
     Ipp32u          code,
     IppvcCABACStateH265* pCabacState)
@@ -315,6 +315,83 @@ IppStatus ippiCABACEncodeBin_H265 (
         return ippStsNoErr;
     }
 }
+
+
+#if defined( __INTEL_COMPILER ) && (defined( __x86_64__ ) || defined ( _WIN64 ))
+
+IppStatus ippiCABACEncodeBin_H265_bmi (
+    CABAC_CONTEXT_H265 *ctx,
+    Ipp32u          code,
+    IppvcCABACStateH265* pCabacState)
+{
+//    IPP_BAD_PTR1_RET( pCabacState );
+//    IPP_BADARG_RET( code > 1, ippStsOutOfRangeErr );
+//    IPP_BADARG_RET( ctxIdx >= 460, ippStsOutOfRangeErr );
+
+    {
+        Ipp32u* pBitStream = pCabacState->pBitStream;
+        Ipp8u* pBitStreamCopy = (Ipp8u*)pBitStream;
+
+        Ipp32u stateIdx = *ctx;
+        Ipp32u codIRange = pCabacState->lcodIRange;
+        Ipp32u codIOffset = pCabacState->lcodIOffset;
+        Ipp32u codIRangeLPS = tab_cabacRangeTabLps[stateIdx][(codIRange >> 6) & 0x3];
+
+//        printf("range = %d\n",codIRange);
+
+        // Encoding MPS symbol
+        codIRange -= codIRangeLPS;
+        if( code != stateIdx >> 6 ) {
+            // Encoding LPS symbol
+            codIOffset += codIRange;
+            codIRange = codIRangeLPS;
+        }
+
+        {
+            Ipp32u nBitsVacant = pCabacState->nBitsVacant;
+            Ipp32u nBitCount = 8 - (31 - _lzcnt_u32(codIRange));
+            Ipp32u nBitsVacantExt = 32 + nBitsVacant - nBitCount;
+            codIOffset <<= nBitCount;
+            codIRange <<= nBitCount;
+
+            {
+                Ipp64u uBitString = codIOffset >> 10;
+
+                Ipp32u uBuffer = pCabacState->nRegister;
+                Ipp64u uBufferExt = (Ipp64u)uBuffer << 32;
+                Ipp8u bCarry = 0;
+
+                uBufferExt = AddWithCarry_64u( uBufferExt, uBitString << nBitsVacantExt, &bCarry );
+                uBuffer = ExtractHigh_64u32u( uBufferExt );
+                *pBitStream = SwapBytes_32u( uBuffer );
+
+                while( bCarry ) {
+                    pBitStreamCopy--;
+                    *pBitStreamCopy = AddWithCarry_8u( *pBitStreamCopy, 0, &bCarry );
+                }
+
+                if( nBitsVacantExt < 32 ) {
+                    uBuffer = ExtractLow_64u32u( uBufferExt );
+                    pBitStream++;
+                    if( pBitStream >= pCabacState->pBitStreamEnd )
+                        return ippStsH264BufferFullErr;
+                }
+                *ctx = tab_cabacTransTbl[code][stateIdx];
+
+                pCabacState->lcodIRange = codIRange;
+                pCabacState->lcodIOffset = codIOffset & 0x3FF;
+
+                pCabacState->nBitsVacant = nBitsVacantExt % 32;
+                pCabacState->nRegister = uBuffer;
+                pCabacState->pBitStream = pBitStream;
+            }
+        }
+        return ippStsNoErr;
+    }
+}
+
+#endif // if defined( __INTEL_COMPILER ) && (defined( __x86_64__ ) || defined ( _WIN64 ))
+
 
 IppStatus ippiCABACEncodeBinBypass_H265(
         Ipp32u code,
@@ -424,8 +501,7 @@ IppStatus ippiCABACTerminateSlice_H265(
     }
 }
 
-void H265BsReal::EncodeSingleBin_CABAC(CABAC_CONTEXT_H265 *ctx,
-    Ipp32u code)
+void H265BsReal::EncodeSingleBin_CABAC_px(CABAC_CONTEXT_H265 *ctx, Ipp32u code)
 {
 #ifdef DEBUG_CABAC
     Ipp32u codIRange = this->cabacState.lcodIRange;
@@ -435,8 +511,31 @@ void H265BsReal::EncodeSingleBin_CABAC(CABAC_CONTEXT_H265 *ctx,
         printf("cabac %d: %d,%d,%d\n",debug_cabac_print_num++,codIRange,*ctx,code);
     }
 #endif
-    ippiCABACEncodeBin_H265(ctx, code, &this->cabacState);
+    ippiCABACEncodeBin_H265_px(ctx, code, &this->cabacState);
 }
+
+#if defined( __INTEL_COMPILER ) && (defined( __x86_64__ ) || defined ( _WIN64 ))
+
+void H265BsReal::EncodeSingleBin_CABAC_bmi(CABAC_CONTEXT_H265 *ctx, Ipp32u code)
+{
+#ifdef DEBUG_CABAC
+    Ipp32u codIRange = this->cabacState.lcodIRange;
+    if (DEBUG_CABAC_PRINT) {
+      if (debug_cabac_print_num == debug_cabac_print_num_stop)
+          printf("");
+        printf("cabac %d: %d,%d,%d\n",debug_cabac_print_num++,codIRange,*ctx,code);
+    }
+#endif
+    ippiCABACEncodeBin_H265_bmi(ctx, code, &this->cabacState);
+}
+
+// Dispatcher
+t_EncodeSingleBin_CABAC s_pEncodeSingleBin_CABAC_dispatched = 
+    _may_i_use_cpu_feature( _FEATURE_BMI | _FEATURE_LZCNT ) ? 
+        &H265BsReal::EncodeSingleBin_CABAC_bmi : 
+        &H265BsReal::EncodeSingleBin_CABAC_px;
+
+#endif
 
 void H265BsReal::EncodeBinEP_CABAC(Ipp32u code)
 {

@@ -196,6 +196,7 @@ namespace H265Enc {
         pars->QuadtreeTULog2MinSize = optsHevc->QuadtreeTULog2MinSize; // 2;
         pars->QuadtreeTUMaxDepthIntra = optsHevc->QuadtreeTUMaxDepthIntra; // 4;
         pars->QuadtreeTUMaxDepthInter = optsHevc->QuadtreeTUMaxDepthInter; // 4;
+        pars->QuadtreeTUMaxDepthInterRD = optsHevc->QuadtreeTUMaxDepthInterRD; // 4;
         pars->partModes = optsHevc->PartModes;
         pars->TMVPFlag = (optsHevc->TMVP == MFX_CODINGOPTION_ON);
         pars->QPI = (Ipp8s)param->mfx.QPI;
@@ -229,6 +230,7 @@ namespace H265Enc {
         pars->NumRefToStartCodeBSlice = 1;
         pars->TreatBAsReference = 0;
         pars->GeneralizedPB = (optsHevc->GPB == MFX_CODINGOPTION_ON);
+        pars->BRefSymmetric = (optsHevc->BRefSymmetric == MFX_CODINGOPTION_ON);
 
         pars->MaxDecPicBuffering = MAX(param->mfx.NumRefFrame, pars->BiPyramidLayers);
         pars->MaxRefIdxP[0] = param->mfx.NumRefFrame;
@@ -242,8 +244,13 @@ namespace H265Enc {
                 pars->MaxRefIdxB[1] = 2;
             }
             else if (pars->BiPyramidLayers > 1) {
+            if(pars->BRefSymmetric) {
+                pars->MaxRefIdxB[0] = IPP_MAX(1, param->mfx.NumRefFrame >> 1);
+                pars->MaxRefIdxB[1] = IPP_MAX(1, param->mfx.NumRefFrame >> 1);
+            } else {
                 pars->MaxRefIdxB[0] = (param->mfx.NumRefFrame + 1) / 2;
                 pars->MaxRefIdxB[1] = IPP_MAX(1, (param->mfx.NumRefFrame + 0) / 2);
+            }
             }
             else {
                 pars->MaxRefIdxB[0] = param->mfx.NumRefFrame - 1;
@@ -270,6 +277,7 @@ namespace H265Enc {
         pars->SBHFlag  = (optsHevc->SignBitHiding == MFX_CODINGOPTION_ON);
         pars->RDOQFlag = (optsHevc->RDOQuant == MFX_CODINGOPTION_ON);
         pars->rdoqChromaFlag = (optsHevc->RDOQuantChroma == MFX_CODINGOPTION_ON);
+        pars->FastCoeffCost = (optsHevc->FastCoeffCost == MFX_CODINGOPTION_ON);
         pars->rdoqCGZFlag = (optsHevc->RDOQuantCGZ == MFX_CODINGOPTION_ON);
         pars->SAOFlag  = (optsHevc->SAO == MFX_CODINGOPTION_ON);
         pars->num_threads = param->mfx.NumThread;
@@ -751,7 +759,15 @@ mfxStatus MFXVideoENCODEH265::SetSlice(H265Slice *slice, Ipp32u curr_slice, H265
         slice->row_last = m_videoParam.PicHeightInCtbs - 1;
         slice->num_entry_point_offsets = m_videoParam.NumTiles - 1;
     }
-
+#ifdef AMT_SAO_MIN
+    if(!m_videoParam.SAOFlag || (m_videoParam.saoOpt>SAO_OPT_FAST_MODES_ONLY && m_videoParam.BiPyramidLayers > 1 && frame->m_pyramidLayer == m_videoParam.BiPyramidLayers - 1)) {
+        slice->slice_sao_luma_flag = false;
+        slice->slice_sao_chroma_flag = false;
+    } else {
+        slice->slice_sao_luma_flag = true;
+        slice->slice_sao_chroma_flag = false;
+    }
+#endif
     return MFX_ERR_NONE;
 } 
 
@@ -1422,8 +1438,16 @@ void MFXVideoENCODEH265::CreateRefPicList(Task *task, H265ShortTermRefPicSet *rp
         currFrame->m_refPicList[1].m_refFramesCount = IPP_MIN(numStBefore + numStAfter, m_videoParam.MaxRefIdxP[1]);
     }
     else if (currFrame->m_picCodeType == MFX_FRAMETYPE_B) {
+#ifdef AMT_BEST_REF
+        if(m_videoParam.BiPyramidLayers > 1 && m_videoParam.MaxRefIdxB[0]>m_videoParam.MaxRefIdxB[1] && numStBefore<=numStAfter) {
+            currFrame->m_refPicList[0].m_refFramesCount = IPP_MIN(numStBefore + numStAfter, m_videoParam.MaxRefIdxB[1]);
+            currFrame->m_refPicList[1].m_refFramesCount = IPP_MIN(numStBefore + numStAfter, m_videoParam.MaxRefIdxB[0]);
+        } else
+#endif
+        {
         currFrame->m_refPicList[0].m_refFramesCount = IPP_MIN(numStBefore + numStAfter, m_videoParam.MaxRefIdxB[0]);
         currFrame->m_refPicList[1].m_refFramesCount = IPP_MIN(numStBefore + numStAfter, m_videoParam.MaxRefIdxB[1]);
+        }
     }
 
     // create RPS syntax
@@ -2136,12 +2160,22 @@ mfxStatus H265FrameEncoder::EncodeThread(Ipp32s & ithread, volatile Ipp32u* onEx
             cu[ithread].ModeDecision(0, 0);
             //cu[ithread].FillRandom(0, 0);
             //cu[ithread].FillZero(0, 0);
-
+#ifdef AMT_ALT_ENCODE
+            if(!cu[ithread].m_isRdoq) {
+                cu[ithread].m_isRdoq = true;
+                small_memcpy(m_bsf[bsf_id].m_base.context_array, m_bs[bs_id].m_base.context_array, sizeof(CABAC_CONTEXT_H265) * NUM_CABAC_CONTEXT);
+                cu[ithread].EncAndRecLuma(0, 0, 0, NULL);
+            }
+#endif
             if (!cu[ithread].HaveChromaRec())
                 cu[ithread].EncAndRecChroma(0, 0, 0, NULL);
 
             bool isRef = m_pCurrentFrame->m_isRef;
             bool doSao = m_sps.sample_adaptive_offset_enabled_flag;
+#ifdef AMT_SAO_MIN
+            if(doSao && !m_task->m_slices[curr_slice].slice_sao_luma_flag && !m_task->m_slices[curr_slice].slice_sao_chroma_flag) 
+                doSao = false;
+#endif
             bool doDbl = !m_task->m_slices[curr_slice].slice_deblocking_filter_disabled_flag;
 
             if (doDbl && (isRef || doSao || pars->reconForDump)) {
@@ -2151,7 +2185,12 @@ mfxStatus H265FrameEncoder::EncodeThread(Ipp32s & ithread, volatile Ipp32u* onEx
             }
 
             if (m_sps.sample_adaptive_offset_enabled_flag) {
+#ifdef AMT_SAO_MIN
+                if(m_task->m_slices[curr_slice].slice_sao_luma_flag || m_task->m_slices[curr_slice].slice_sao_chroma_flag) 
+#endif
+                {
                 EstimateCtuSao<PixType>(ithread, bs_id, bsf_id, ctb_row, ctb_addr, curr_slice);
+                }
             }
 
             cu[ithread].EncodeCU(&m_bs[bs_id], 0, 0, 0);

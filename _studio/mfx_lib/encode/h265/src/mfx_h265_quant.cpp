@@ -252,6 +252,29 @@ void H265CU<PixType>::QuantFwdTu(Ipp32s abs_part_idx, Ipp32s offset, Ipp32s widt
     }
 }
 
+template <typename PixType>
+void H265CU<PixType>::QuantFwdTuBase(Ipp32s abs_part_idx, Ipp32s offset, Ipp32s width, Ipp32s qp, Ipp32s is_luma)
+{
+    Ipp32s QP = is_luma
+        ? qp + (m_par->bitDepthLuma - 8) * 6
+        : h265_QPtoChromaQP[m_par->chromaFormatIdc-1][qp] + (m_par->bitDepthChroma - 8) * 6;
+
+    Ipp32s log2TrSize = h265_log2m2[width] + 2;
+
+    VM_ASSERT(!m_par->csps->sps_scaling_list_data_present_flag);
+
+    for (Ipp32s c_idx = 0; c_idx < (is_luma ? 1 : 2); c_idx ++) {
+        CoeffsType *residuals = is_luma ? m_residualsY : (c_idx ? m_residualsV : m_residualsU);
+        CoeffsType *coeff = is_luma ? m_coeffWorkY : (c_idx ? m_coeffWorkV : m_coeffWorkU);
+        Ipp32u abs_sum = 0;
+
+        h265_quant_fwd_base( residuals + offset, coeff + offset, log2TrSize, is_luma ? m_par->bitDepthLuma : m_par->bitDepthChroma,
+                                 m_cslice->slice_type == I_SLICE, QP,
+                                 NULL,
+                                 abs_sum );
+    }
+}
+
 
 void h265_quant_inv(const CoeffsType *qcoeffs,
                     const Ipp16s *scaling_list, // aya: replaced 32s->16s to align with decoder/hevc_pp
@@ -323,7 +346,6 @@ void h265_quant_fwd_base(
 
     scaleLevel = h265_quant_table_fwd[qp_rem];
     scaleOffset = (is_slice_i ? 171 : 85) << (scale - 9);
-
 
     abs_sum = 0;
 

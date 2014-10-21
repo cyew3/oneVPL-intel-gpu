@@ -345,12 +345,12 @@ void H265CU<PixType>::MeInterpolateSave(const H265MEInfo* me_info, const H265MV 
     VM_ASSERT (!(dx == 0 && dy == 0));
     if (dy == 0)
     {
-        Interpolate<UMC_HEVC_DECODER::TEXT_LUMA>( INTERP_HOR, src, srcPitch, dstHi, dstPitch, dx, w, h, 0, 0, bitDepth, isFast);
+        Interpolate<UMC_HEVC_DECODER::TEXT_LUMA>( INTERP_HOR, src, srcPitch, dstHi, dstPitch, dx, w, h, bitDepth - 8, 0, bitDepth, isFast);
         h265_InterpLumaPack(dstHi, dstPitch, dst, dstPitch, w, h, bitDepth);
     }
     else if (dx == 0)
     {
-        Interpolate<UMC_HEVC_DECODER::TEXT_LUMA>( INTERP_VER, src, srcPitch, dstHi, dstPitch, dy, w, h, 0, 0, bitDepth, isFast);
+        Interpolate<UMC_HEVC_DECODER::TEXT_LUMA>( INTERP_VER, src, srcPitch, dstHi, dstPitch, dy, w, h, bitDepth - 8, 0, bitDepth, isFast);
         h265_InterpLumaPack(dstHi, dstPitch, dst, dstPitch, w, h, bitDepth);
     }
     else

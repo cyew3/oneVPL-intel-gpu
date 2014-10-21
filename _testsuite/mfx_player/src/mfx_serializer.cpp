@@ -237,6 +237,7 @@ void MFXStructureRef <mfxExtCodingOptionHEVC>::ConstructValues() const
     SERIALIZE_INT(QuadtreeTULog2MinSize);
     SERIALIZE_INT(QuadtreeTUMaxDepthIntra);
     SERIALIZE_INT(QuadtreeTUMaxDepthInter);
+    SERIALIZE_INT(QuadtreeTUMaxDepthInterRD);
     SERIALIZE_INT(AnalyzeChroma);
     SERIALIZE_INT(SignBitHiding);
     SERIALIZE_INT(RDOQuant);
@@ -300,6 +301,8 @@ void MFXStructureRef <mfxExtCodingOptionHEVC>::ConstructValues() const
     SERIALIZE_INT(SkipMotionPartition);
     SERIALIZE_INT(SkipCandRD);
     SERIALIZE_INT(FramesInParallel);
+    SERIALIZE_INT(BRefSymmetric);
+    SERIALIZE_INT(FastCoeffCost);
 }
 
 void MFXStructureRef <mfxExtHEVCTiles>::ConstructValues() const

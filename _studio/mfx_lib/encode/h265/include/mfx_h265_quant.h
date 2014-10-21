@@ -53,7 +53,6 @@ void h265_quant_fwd_base(
     Ipp32s bit_depth,
     Ipp32s is_slice_i,
     Ipp32s QP,
-
     Ipp32s* delta,
     Ipp32u& abs_sum );
 

@@ -50,6 +50,7 @@
     <ClCompile Include="h265\src\mfx_h265_sad_avx2.cpp" />
     <ClCompile Include="h265\src\mfx_h265_sad_general_avx2.cpp" />
     <ClCompile Include="h265\src\mfx_h265_sad_multiple_avx2.cpp" />
+    <ClCompile Include="h265\src\mfx_h265_sao_avx2.cpp" />
     <ClCompile Include="h265\src\mfx_h265_satd_avx2.cpp" />
     <ClCompile Include="h265\src\mfx_h265_transform_fwd_32x32_avx2_nablet.cpp">
       <InlineFunctionExpansion Condition="'$(Configuration)|$(Platform)'=='Release_Intel|x64'">Disabled</InlineFunctionExpansion>

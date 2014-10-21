@@ -153,8 +153,12 @@ public:
                     Ipp8u startPicture,
                     H265NALUnit *nal);
 
-    void EncodeSingleBin_CABAC(CABAC_CONTEXT_H265 *ctx,
-        Ipp32u code);
+    inline void EncodeSingleBin_CABAC(CABAC_CONTEXT_H265 *ctx, Ipp32u code);
+
+    void EncodeSingleBin_CABAC_px(CABAC_CONTEXT_H265 *ctx, Ipp32u code);
+#if defined( __INTEL_COMPILER ) && (defined( __x86_64__ ) || defined ( _WIN64 ))
+    void EncodeSingleBin_CABAC_bmi(CABAC_CONTEXT_H265 *ctx, Ipp32u code);
+#endif
 
     void EncodeBinEP_CABAC(Ipp32u code);
 
@@ -320,6 +324,25 @@ void H265BsReal::ByteAlignWithOnes()
         state->m_base.m_bitOffset = 0;
     }
 }
+
+#if defined( __INTEL_COMPILER ) && (defined( __x86_64__ ) || defined ( _WIN64 ))
+
+// Dispatch through function pointer
+typedef void (H265BsReal::* t_EncodeSingleBin_CABAC)(CABAC_CONTEXT_H265 *ctx, Ipp32u code);
+extern t_EncodeSingleBin_CABAC s_pEncodeSingleBin_CABAC_dispatched;
+
+inline void H265BsReal::EncodeSingleBin_CABAC(CABAC_CONTEXT_H265 *ctx, Ipp32u code) {
+    return (this->*s_pEncodeSingleBin_CABAC_dispatched)(ctx, code);
+}
+
+#else
+
+// Direct call
+inline void H265BsReal::EncodeSingleBin_CABAC(CABAC_CONTEXT_H265 *ctx, Ipp32u code) {
+    EncodeSingleBin_CABAC_px(ctx, code);
+}
+
+#endif
 
 IppStatus ippiCABACInit_H265(
     IppvcCABACStateH265* pCabacState,

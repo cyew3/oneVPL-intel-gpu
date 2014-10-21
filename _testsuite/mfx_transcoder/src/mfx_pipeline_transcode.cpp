@@ -216,6 +216,7 @@ MFXTranscodingPipeline::MFXTranscodingPipeline(IMFXPipelineFactory *pFactory)
         HANDLE_HEVC_OPTION(QuadtreeTULog2MinSize,    OPT_UINT_16,    "2-QuadtreeTULog2MaxSize"),
         HANDLE_HEVC_OPTION(QuadtreeTUMaxDepthIntra,  OPT_UINT_16,    "1-(Log2MaxCUSize-1)"),
         HANDLE_HEVC_OPTION(QuadtreeTUMaxDepthInter,  OPT_UINT_16,    "1-(Log2MaxCUSize-1)"),
+        HANDLE_HEVC_OPTION(QuadtreeTUMaxDepthInterRD, OPT_UINT_16,   "1-(Log2MaxCUSize-1)"),
         HANDLE_HEVC_OPTION(AnalyzeChroma,            OPT_TRI_STATE,  "on/off chroma intra mode"),
         HANDLE_HEVC_OPTION(SignBitHiding,            OPT_TRI_STATE,  ""),
         HANDLE_HEVC_OPTION(RDOQuant,                 OPT_TRI_STATE,  ""),
@@ -280,6 +281,8 @@ MFXTranscodingPipeline::MFXTranscodingPipeline(IMFXPipelineFactory *pFactory)
         HANDLE_HEVC_OPTION(SkipMotionPartition,      OPT_UINT_16,    "Skip Motion Partition RD; 0-default, 1-Never, 2-Adaptive"),
         HANDLE_HEVC_OPTION(SkipCandRD,               OPT_TRI_STATE,  "Skip Candidate RD; on-Full RD, off-Fast Decision"),
         HANDLE_HEVC_OPTION(FramesInParallel,         OPT_UINT_16,    "encoding multiple frames at the same time (0 - auto detect, 1 - default, no frame threading)."),
+        HANDLE_HEVC_OPTION(BRefSymmetric,            OPT_TRI_STATE,  "Use Symmetric ref lists"),
+        HANDLE_HEVC_OPTION(FastCoeffCost,            OPT_TRI_STATE,  "Use Fast Coeff cost Estimator"),
 
         HANDLE_HEVC_TILES(NumTileColumns,            OPT_UINT_16,    "number of tile columns (1 - default)"),
         HANDLE_HEVC_TILES(NumTileRows,               OPT_UINT_16,    "number of tile rows (1 - default)"),
@@ -319,10 +322,10 @@ MFXTranscodingPipeline::MFXTranscodingPipeline(IMFXPipelineFactory *pFactory)
         HANDLE_EXT_OPTION2(UseRawRef,              OPT_TRI_STATE,  "on|off"),
 
         // mfxExtCodingOption3
-        HANDLE_EXT_OPTION3(NumSliceI,                  OPT_UINT_16,   ""),
-        HANDLE_EXT_OPTION3(NumSliceP,                  OPT_UINT_16,   ""),
-        HANDLE_EXT_OPTION3(NumSliceB,                  OPT_UINT_16,   ""),
-        HANDLE_EXT_OPTION3(QVBRQuality,                OPT_UINT_16,   ""),
+        HANDLE_EXT_OPTION3(NumSliceI,              OPT_UINT_16,    ""),
+        HANDLE_EXT_OPTION3(NumSliceP,              OPT_UINT_16,    ""),
+        HANDLE_EXT_OPTION3(NumSliceB,              OPT_UINT_16,    ""),
+        HANDLE_EXT_OPTION3(QVBRQuality,            OPT_UINT_16,    ""),
         HANDLE_EXT_OPTION3(DirectBiasAdjustment,       OPT_TRI_STATE, "on|off"),
         HANDLE_EXT_OPTION3(GlobalMotionBiasAdjustment, OPT_TRI_STATE, "on|off"),
         HANDLE_EXT_OPTION3(MVCostScalingFactor,        OPT_UINT_16,   ""),
