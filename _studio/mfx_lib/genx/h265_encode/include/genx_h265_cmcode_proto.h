@@ -14,6 +14,7 @@ void DownSampleMB2t(SurfaceIndex, SurfaceIndex, SurfaceIndex);
 void DownSampleMB4t(SurfaceIndex, SurfaceIndex, SurfaceIndex, SurfaceIndex, SurfaceIndex);
 void Ime(SurfaceIndex, SurfaceIndex, SurfaceIndex);
 void ImeWithPred(SurfaceIndex, SurfaceIndex, SurfaceIndex, SurfaceIndex);
+void Ime3tiers(SurfaceIndex, SurfaceIndex, SurfaceIndex, SurfaceIndex, SurfaceIndex);
 void MeP32(SurfaceIndex, SurfaceIndex, SurfaceIndex, SurfaceIndex, SurfaceIndex, SurfaceIndex);
 void MeP16_Intra(SurfaceIndex, SurfaceIndex, SurfaceIndex, SurfaceIndex);
 void MeP16(SurfaceIndex, SurfaceIndex, SurfaceIndex, SurfaceIndex, SurfaceIndex, SurfaceIndex,

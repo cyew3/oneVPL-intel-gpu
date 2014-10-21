@@ -24,8 +24,12 @@
 #include "mfx_h265_enc_cm_fei.h"
 #include "mfx_h265_enc_cm_utils.h"
 
-namespace H265Enc {
+/* enable interpolation for FEI plugin */
+#if defined AS_H265FEI_PLUGIN
+#define ENABLE_INTERP_KERNELS
+#endif
 
+namespace H265Enc {
 
 template<class T> inline T AlignValue(T value, mfxU32 alignment)
 {
@@ -178,7 +182,6 @@ mfxStatus H265CmCtx::AllocateCmResources(mfxFEIH265Param *param, void *core)
     /* create surfaces for input (source) data, double buffer for max of one frame lookahead */
     for (i = 0; i < FEI_DEPTH; i++) {
         picBufInput[i].encOrder = -1;
-        picBufInput[i].picOrder = -1;
         picBufInput[i].bufOrig   = CreateSurface(device, width, height, CM_SURFACE_FORMAT_NV12);
         picBufInput[i].bufDown2x = CreateSurface(device, width2x, height2x, CM_SURFACE_FORMAT_NV12);
         picBufInput[i].bufDown4x = CreateSurface(device, width4x, height4x, CM_SURFACE_FORMAT_NV12);
@@ -203,7 +206,6 @@ mfxStatus H265CmCtx::AllocateCmResources(mfxFEIH265Param *param, void *core)
      */
     for (i = 0; i < numRefBufs; i++) {
         picBufRef[i].encOrder = -1;
-        picBufRef[i].picOrder = -1;
         picBufRef[i].bufOrig = CreateSurface(device, width, height, CM_SURFACE_FORMAT_NV12);
         picBufRef[i].bufDown2x = CreateSurface(device, width2x, height2x, CM_SURFACE_FORMAT_NV12);
         picBufRef[i].bufDown4x = CreateSurface(device, width4x, height4x, CM_SURFACE_FORMAT_NV12);
@@ -212,11 +214,11 @@ mfxStatus H265CmCtx::AllocateCmResources(mfxFEIH265Param *param, void *core)
             picBufRef[i].bufDown16x = CreateSurface(device, width16x, height16x, CM_SURFACE_FORMAT_NV12);
         }
 
-/*
+#ifdef ENABLE_INTERP_KERNELS
         CreateCmSurface2DUp(device, interpWidth, interpHeight, CM_SURFACE_FORMAT_P8, um_interpolateData[i][0], picBufRef[i].bufHPelH, um_interpolatePitch);
         CreateCmSurface2DUp(device, interpWidth, interpHeight, CM_SURFACE_FORMAT_P8, um_interpolateData[i][1], picBufRef[i].bufHPelV, um_interpolatePitch);
         CreateCmSurface2DUp(device, interpWidth, interpHeight, CM_SURFACE_FORMAT_P8, um_interpolateData[i][2], picBufRef[i].bufHPelD, um_interpolatePitch);
-*/
+#endif
     }
 
     /* dimensions of output MV grid for each block size (width/height were aligned to multiple of 16)
@@ -264,7 +266,18 @@ mfxStatus H265CmCtx::AllocateCmResources(mfxFEIH265Param *param, void *core)
                     if ((k == FEI_256x256) || (k == FEI_128x128))
                         continue;
                 }
-                CreateCmSurface2DUp(device, cmMvW[k], cmMvH[k], CM_SURFACE_FORMAT_P8, um_mvCpu[i][j][k], mvGpu[i][j][k], um_pitchMv[k]);
+                { // surfaces 256x256, 126x128 and 64x64 should be aligned to 256 to use Ime3tiers kernel
+                    mfxU32 w0 = cmMvW[k];
+                    mfxU32 h0 = cmMvH[k];
+                    if (k == FEI_128x128) {
+                        w0 = width16x * 2;
+                        h0 = height16x * 2;
+                    } else if (k == FEI_64x64) {
+                        w0 = width16x * 4;
+                        h0 = height16x * 4;
+                    }
+                    CreateCmSurface2DUp(device, w0, h0, CM_SURFACE_FORMAT_P8, um_mvCpu[i][j][k], mvGpu[i][j][k], um_pitchMv[k]);
+                }
             }
         }
 
@@ -287,7 +300,8 @@ mfxStatus H265CmCtx::AllocateCmResources(mfxFEIH265Param *param, void *core)
     kernelRefine16x32      = CreateKernel(device, program, "RefineMeP16x32", (void *)RefineMeP16x32);
     kernelInterpolateFrame = CreateKernel(device, program, "InterpolateFrameWithBorder", (void *)InterpolateFrame);
     kernelIme              = CreateKernel(device, program, "Ime", (void *)Ime);
-    kernelImeWithPred      = CreateKernel(device, program, "ImeWithPred", (void *)ImeWithPred);
+//    kernelImeWithPred      = CreateKernel(device, program, "ImeWithPred", (void *)ImeWithPred);
+    kernelIme3tiers        = CreateKernel(device, program, "Ime3tiers", (void *)Ime3tiers);
 
     /* set up VME */
     curbe       = CreateBuffer(device, sizeof(H265EncCURBEData));
@@ -358,7 +372,8 @@ void H265CmCtx::FreeCmResources()
     device->DestroyKernel(kernelRefine16x32);
     device->DestroyKernel(kernelInterpolateFrame);
     device->DestroyKernel(kernelIme);
-    device->DestroyKernel(kernelImeWithPred);
+//    device->DestroyKernel(kernelImeWithPred);
+    device->DestroyKernel(kernelIme3tiers);
 
     for (i = 0; i < FEI_DEPTH; i++) {
         DestroyCmSurface2DUp(device, um_mbIntraDist[i], mbIntraDist[i]);
@@ -399,11 +414,11 @@ void H265CmCtx::FreeCmResources()
             device->DestroySurface(picBufRef[i].bufDown16x);
         }
 
-/*
+#ifdef ENABLE_INTERP_KERNELS
         DestroyCmSurface2DUp(device, um_interpolateData[i][0], picBufRef[i].bufHPelH);
         DestroyCmSurface2DUp(device, um_interpolateData[i][1], picBufRef[i].bufHPelV);
         DestroyCmSurface2DUp(device, um_interpolateData[i][2], picBufRef[i].bufHPelD);
-*/
+#endif
     }
 
     device->DestroyTask(task);
@@ -445,7 +460,7 @@ Ipp32s H265CmCtx::GetGPUBuf(mfxFEIH265Input *feiIn, Ipp32s poc, Ipp32s getRef)
     if (getRef) {
         /* return reference buffer index */
         for (i = 0; i < numRefBufs; i++) {
-            if (picBufRef[i].picOrder == poc)
+            if (picBufRef[i].encOrder == poc)
                 return i;
         }
     } else {
@@ -499,7 +514,7 @@ Ipp32s H265CmCtx::AddGPUBufRef(mfxFEIH265Input *feiIn, mfxFEIH265Frame *frameRef
 
     /* at startup -1 means empty slot */
     for (i = 0; i < numRefBufs; i++) {
-        if (picBufRef[i].picOrder == -1)
+        if (picBufRef[i].encOrder == -1)
             break;
     }
 
@@ -515,7 +530,6 @@ Ipp32s H265CmCtx::AddGPUBufRef(mfxFEIH265Input *feiIn, mfxFEIH265Frame *frameRef
     VM_ASSERT(i < numRefBufs);
 
     picBufRef[i].encOrder = frameRef->EncOrder;
-    picBufRef[i].picOrder = frameRef->PicOrder;
     EnqueueCopyCPUToGPUStride(queue, picBufRef[i].bufOrig, frameRef->YPlane, frameRef->YPitch, lastEvent[idx]);
 
     if (hmeLevel == HME_LEVEL_HIGH) {
@@ -553,21 +567,13 @@ void H265CmCtx::RunVmeKernel(CmEvent **lastEvent, CmSurface2DUP **dist, CmSurfac
     {
         MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "HME");
         if (hmeLevel == HME_LEVEL_HIGH) {
-            //MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "Ime16x");
             refs8x = CreateVmeSurfaceG75(device, picBufInput->bufDown8x, &(picBufRef->bufDown8x), 0, 1, 0);
             refs16x = CreateVmeSurfaceG75(device, picBufInput->bufDown16x, &(picBufRef->bufDown16x), 0, 1, 0);
-
-            kernelIme->SetThreadCount((width16x / 16) * (height16x / 16));
-            SetKernelArg(kernelIme, me16xControl, *refs16x, mv[FEI_256x256]);
-            EnqueueKernelLight(device, queue, task, kernelIme, width16x / 16, height16x / 16, *lastEvent);
-
-            kernelImeWithPred->SetThreadCount((width8x / 16) * (height8x / 16));
-            SetKernelArg(kernelImeWithPred, me8xControl, *refs8x, mv[FEI_256x256], mv[FEI_128x128]);
-            EnqueueKernelLight(device, queue, task, kernelImeWithPred, width8x / 16, height8x / 16, *lastEvent);
-
-            kernelImeWithPred->SetThreadCount((width4x / 16) * (height4x / 16));
-            SetKernelArg(kernelImeWithPred, me4xControl, *refs4x, mv[FEI_128x128], mv[FEI_64x64]);
-            EnqueueKernelLight(device, queue, task, kernelImeWithPred, width4x / 16, height4x / 16, *lastEvent);
+            {   MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "Ime3tiers");
+                kernelIme3tiers->SetThreadCount((width16x / 16) * (height16x / 16));
+                SetKernelArg(kernelIme3tiers, me16xControl, *refs16x, *refs8x, *refs4x, mv[FEI_64x64]);
+                EnqueueKernelLight(device, queue, task, kernelIme3tiers, width16x / 16, height16x / 16, *lastEvent);
+            }
         } else {  // HME_LEVEL_LOW
             //MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "Ime4x");
             SetKernelArg(kernelIme, me4xControl, *refs4x, mv[FEI_64x64]);
@@ -672,7 +678,7 @@ mfxFEISyncPoint H265CmCtx::RunVme(mfxFEIH265Input *feiIn, mfxFEIH265Output *feiO
         if ( feiIn->FEIFrameRef.YPlane ) {
             //MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "RunVmeKernel - P/B");
             refIdx = feiIn->RefIdx;
-            bufRef = GetGPUBuf(feiIn, feiIn->FEIFrameRef.PicOrder, 1);
+            bufRef = GetGPUBuf(feiIn, feiIn->FEIFrameRef.EncOrder, 1);
             if (bufRef < 0)
                 bufRef = AddGPUBufRef(feiIn, &feiIn->FEIFrameRef, curIdx);
 
@@ -681,16 +687,18 @@ mfxFEISyncPoint H265CmCtx::RunVme(mfxFEIH265Input *feiIn, mfxFEIH265Output *feiO
                 RunVmeKernel(&lastEvent[curIdx], distGpu[curIdx][refIdx], mvGpu[curIdx][refIdx], &picBufInput[bufIn], &picBufRef[bufRef]);
             }
 
+#ifdef ENABLE_INTERP_KERNELS
             if (feiIn->FEIOp & (FEI_INTERPOLATE)) {
                 //MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "  Interpolate - P/B");
 
-                um_pInterpolateData[curIdx][0][refIdx][0] = um_interpolateData[bufRef][0];
-                um_pInterpolateData[curIdx][0][refIdx][1] = um_interpolateData[bufRef][1];
-                um_pInterpolateData[curIdx][0][refIdx][2] = um_interpolateData[bufRef][2];
+                um_pInterpolateData[curIdx][refIdx][0] = um_interpolateData[bufRef][0];
+                um_pInterpolateData[curIdx][refIdx][1] = um_interpolateData[bufRef][1];
+                um_pInterpolateData[curIdx][refIdx][2] = um_interpolateData[bufRef][2];
 
                 SetKernelArg(kernelInterpolateFrame, picBufRef[bufRef].bufOrig, picBufRef[bufRef].bufHPelH, picBufRef[bufRef].bufHPelV, picBufRef[bufRef].bufHPelD);
                 EnqueueKernel(device, queue, task, kernelInterpolateFrame, interpBlocksW, interpBlocksH, lastEvent[curIdx]);
             }
+#endif
         }
     }
 
@@ -741,18 +749,17 @@ mfxStatus H265CmCtx::SyncCurrent(mfxSyncPoint syncp, mfxU32 wait)
         }
     }
 
-/* interp is off
+#ifdef ENABLE_INTERP_KERNELS
     feiOut->InterpolateWidth  = interpWidth;
     feiOut->InterpolateHeight = interpHeight;
     feiOut->InterpolatePitch  = um_interpolatePitch;
 
     for (i = 0; i < FEI_MAX_NUM_REF_FRAMES; i++) {
         for (j = 0; j < 3; j++) {
-            feiOut->Interp[0][i][j] = um_pInterpolateData[syncp->curIdx][0][i][j];
-            feiOut->Interp[1][i][j] = um_pInterpolateData[syncp->curIdx][1][i][j];
+            feiOut->Interp[i][j] = um_pInterpolateData[syncp->curIdx][i][j];
         }
     }
-*/
+#endif
 
     feiOut->IntraMaxModes = numIntraModes;
 
@@ -768,8 +775,8 @@ mfxStatus H265CmCtx::SyncCurrent(mfxSyncPoint syncp, mfxU32 wait)
     return MFX_ERR_NONE;
 }
 
-/* from mfx_hevc_enc_plugin.h */
-#if defined(_WIN32) || defined(_WIN64)
+/* from mfx_hevc_enc_plugin.h (only enable if DLL exports are needed) */
+#if 0 && (defined(_WIN32) || defined(_WIN64))
 #define MSDK_PLUGIN_API(ret_type) extern "C" __declspec(dllexport)  ret_type __cdecl
 #else
 #define MSDK_PLUGIN_API(ret_type) extern "C"  ret_type

@@ -26,11 +26,9 @@ class H265Slice;
 
 typedef struct _FEIFrame {
     int EncOrder;   // input frame order
-    int PicOrder;
 
     int IntraDone;
     int RefEncOrder[2][FEI_MAX_NUM_REF_FRAMES];
-    int RefPicOrder[2][FEI_MAX_NUM_REF_FRAMES];
     int RefDone[2][FEI_MAX_NUM_REF_FRAMES];
 } FEIFrame;
 
