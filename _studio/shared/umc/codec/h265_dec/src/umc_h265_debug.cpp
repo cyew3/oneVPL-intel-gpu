@@ -69,7 +69,10 @@ CUSStat::CUSStat()
 
 CUSStat::~CUSStat()
 {
+    bwForFrameAccum = bwForFrameAccum*3 / 2;
     printf("\nnumFrames- %d, average bandwidth bpp - %f\n", numFrames, bwForFrameAccum/numFrames);
+    bwForFrameAccumGPerSec = bwForFrameAccumGPerSec / ((Ipp64f)numFrames / 30);
+    printf("\naverage bandwidth g per sec  - %f\n", (Ipp32f)(bwForFrameAccumGPerSec/(1024*1024)));
 }
 
 void CUSStat::CalculateStat(H265DecoderFrame * frame)
@@ -83,7 +86,8 @@ void CUSStat::CalculateStat(H265DecoderFrame * frame)
         CalculateCU(frame->getCU(i));
     }
 
-    bwForFrameAccum += (float)bwForFrame / (float)(m_sps->pic_width_in_luma_samples*m_sps->pic_height_in_luma_samples);
+    bwForFrameAccum += (Ipp64f)bwForFrame / (Ipp64f)(m_sps->pic_width_in_luma_samples*m_sps->pic_height_in_luma_samples);
+    bwForFrameAccumGPerSec += ((Ipp64f)bwForFrame)/(Ipp64f)1024;
     numFrames++;
 }
 
@@ -133,7 +137,21 @@ void CUSStat::CalculateCURecur(H265CodingUnit* cu, Ipp32u absPartIdx, Ipp32u dep
 
         Ipp32s numRefs = (mvInfo.m_refIdx[REF_PIC_LIST_0] >= 0) + (mvInfo.m_refIdx[REF_PIC_LIST_1] >= 0);
 
-        bwForFrame += PUi.Height*PUi.Width * numRefs;
+        if (mvInfo.m_refIdx[REF_PIC_LIST_0] >= 0)
+        {
+            Ipp32s addV = mvInfo.m_mv[REF_PIC_LIST_0].Vertical & 3;
+            Ipp32s addH = mvInfo.m_mv[REF_PIC_LIST_0].Horizontal & 3;
+
+            bwForFrame += (PUi.Height + addV*8) * (PUi.Width + addH*8);
+        }
+
+        if (mvInfo.m_refIdx[REF_PIC_LIST_1] >= 0)
+        {
+            Ipp32s addV = mvInfo.m_mv[REF_PIC_LIST_1].Vertical & 3;
+            Ipp32s addH = mvInfo.m_mv[REF_PIC_LIST_1].Horizontal & 3;
+
+            bwForFrame += (PUi.Height + addV*8) * (PUi.Width + addH*8);
+        }
     }
 }
 

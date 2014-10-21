@@ -181,8 +181,9 @@ private:
     const H265SeqParamSet* m_sps;
     Ipp32s bwForFrame;
 
-    float bwForFrameAccum;
     Ipp32s numFrames;
+    Ipp64f bwForFrameAccum;
+    Ipp64f bwForFrameAccumGPerSec;
 };
 #endif
 
