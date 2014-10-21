@@ -22,7 +22,7 @@
 #include "mfx_h265_frame.h"
 
 #if defined(MFX_VA)
-#include "mfx_h265_fei.h";
+#include "mfx_h265_fei.h"
 #endif
 
 using namespace MFX_HEVC_PP;

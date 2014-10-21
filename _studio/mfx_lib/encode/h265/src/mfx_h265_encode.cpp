@@ -32,6 +32,10 @@
 #include "umc_structures.h"
 #include "mfx_enc_common.h"
 
+#if defined (MFX_VA)
+#include "mfx_h265_enc_fei.h"
+#endif // MFX_VA
+
 using namespace H265Enc;
 
 //////////////////////////////////////////////////////////////////////////
@@ -72,6 +76,10 @@ typedef struct
     volatile Ipp32u m_threadCount;
     volatile Ipp32u m_outputQueueSize; // to avoid mutex sync with list::size();
     volatile Ipp32u m_reencode;          // BRC repack
+
+    // FEI
+    Task* nextTask;
+    volatile Ipp32u m_doStageFEI;
 
 } H265EncodeTaskInputParams;
 
@@ -1112,6 +1120,8 @@ mfxStatus MFXVideoENCODEH265::Init(mfxVideoParam* par_in)
 
     return stsQuery;
 } // mfxStatus MFXVideoENCODEH265::Init(mfxVideoParam* par_in)
+
+
 mfxStatus MFXVideoENCODEH265::Init_Internal( void )
 {
     Ipp32u streamBufSizeMain = m_videoParam.SourceWidth * m_videoParam.SourceHeight * 3 / 2 + DATA_ALIGN;
@@ -1147,13 +1157,16 @@ mfxStatus MFXVideoENCODEH265::Init_Internal( void )
         MFX_CHECK_STS(sts);
     }
 
+//#if defined (MFX_VA)
+//    if (m_videoParam.enableCmFlag) {
+//        m_FeiCtx = new FeiContext(&m_videoParam, m_core);
+//    } else {
+//        m_FeiCtx = NULL;
+//    }
+//#endif // MFX_VA
+
 #if defined(MFX_ENABLE_H265_PAQ)
     if (m_videoParam.preEncMode) {
-        //mfxVideoParam tmpParam = *param;
-        //m_preEnc.m_emulatorForSyncPart.Init(tmpParam);
-        //m_preEnc.m_emulatorForAsyncPart = m_preEnc.m_emulatorForSyncPart;
-
-        //m_preEnc.m_stagesToGo = AsyncRoutineEmulator::STG_BIT_CALL_EMULATOR;
 
         int frameRate = m_videoParam.FrameRateExtN / m_videoParam.FrameRateExtD;
         int refDist =  m_videoParam.GopRefDist;
@@ -1202,6 +1215,14 @@ mfxStatus MFXVideoENCODEH265::Init_Internal( void )
     m_videoParam.m_vps = &m_vps;
     m_videoParam.csps = &m_sps;
     m_videoParam.cpps = &m_pps;
+
+#if defined (MFX_VA)
+    if (m_videoParam.enableCmFlag) {
+        m_FeiCtx = new FeiContext(&m_videoParam, m_core);
+    } else {
+        m_FeiCtx = NULL;
+    }
+#endif // MFX_VA
     
     MFX_HEVC_PP::InitDispatcher(m_videoParam.cpuFeature);
 
@@ -1291,6 +1312,21 @@ mfxStatus MFXVideoENCODEH265::Close()
         m_responseAlien.NumFrameActual = 0;
         m_useVideoOpaq = false;
     }
+
+#if defined (MFX_VA)
+    if (m_videoParam.enableCmFlag) {
+/*
+#if defined(_WIN32) || defined(_WIN64)
+        PrintTimes();
+#endif // #if defined(_WIN32) || defined(_WIN64)
+        //delete m_cmCtx;
+*/
+        if (m_FeiCtx)
+            delete m_FeiCtx;
+
+        m_FeiCtx = NULL;
+    }
+#endif // MFX_VA
 
 #if defined(MFX_ENABLE_H265_PAQ)
     if (m_videoParam.preEncMode) {
@@ -2455,9 +2491,11 @@ mfxStatus MFXVideoENCODEH265::AddNewOutputTask(int& encIdx)
 
     task->m_encIdx = encIdx;
 
-    if(m_videoParam.enableCmFlag && !m_lookaheadQueue.empty() ) {
-        task->m_extParam = static_cast<void*>( m_lookaheadQueue.front() );
+#if defined (MFX_VA)
+    if (m_videoParam.enableCmFlag) {
+        task->m_extParam = static_cast<void*>( m_FeiCtx );
     }
+#endif
 
 //---------------------------------------------------------
 #if defined (MFX_ENABLE_H265_PAQ)
@@ -2788,6 +2826,25 @@ mfxStatus MFXVideoENCODEH265::TaskRoutine(void *pState, void *pParam, mfxU32 thr
 
         inputParam->m_outputQueueSize = th->m_outputQueue.size();
 
+#if defined (MFX_VA)
+        if (th->m_videoParam.enableCmFlag) {
+            
+            th->ProcessFrameFEI(inputParam->completedTask);
+
+            inputParam->nextTask = NULL;
+            if ( inputParam->m_outputQueueSize > 1 ) {
+                TaskIter it = th->m_outputQueue.begin();
+                it++;
+                inputParam->nextTask = (*it);
+            } else if ( !th->m_encodeQueue.empty() ) {
+                TaskIter it2 = th->m_encodeQueue.begin();
+                inputParam->nextTask = (*it2);
+            }
+
+            inputParam->m_doStageFEI = 0;
+        }
+#endif
+
         vm_interlocked_cas32( &inputParam->m_doStage, 4, 3);
 
         th->m_core->INeedMoreThreadsInside(th);
@@ -2800,6 +2857,18 @@ mfxStatus MFXVideoENCODEH265::TaskRoutine(void *pState, void *pParam, mfxU32 thr
     if(inputParam->m_doStage < 4) {
         return MFX_TASK_WORKING;
     }
+
+    // single thread - FEI (Next)
+#if defined (MFX_VA)
+    if (th->m_videoParam.enableCmFlag) {
+        if (inputParam->nextTask) {
+            Ipp32s stageFEI = vm_interlocked_cas32( &inputParam->m_doStageFEI, 1, 0);
+            if ( stageFEI == 0 ) {
+                th->ProcessFrameFEI_Next(inputParam->nextTask);
+            }
+        }
+    }
+#endif // MFX_VA
 
     // global thread count control
     Ipp32u newThreadCount = vm_interlocked_inc32( &inputParam->m_threadCount );
@@ -2907,6 +2976,19 @@ mfxStatus MFXVideoENCODEH265::TaskCompleteProc(void *pState, void *pParam, mfxSt
     return MFX_TASK_DONE;
 
 } // 
+
+
+void MFXVideoENCODEH265::ProcessFrameFEI(Task* task)
+{
+    m_FeiCtx->ProcessFrameFEI(m_FeiCtx->feiInIdx, task->m_frameOrigin, task->m_slices, task->m_dpb, task->m_dpbSize, 1);
+}
+
+
+void MFXVideoENCODEH265::ProcessFrameFEI_Next(Task* task)
+{
+    m_FeiCtx->ProcessFrameFEI(1 - m_FeiCtx->feiInIdx, task->m_frameOrigin, task->m_slices, task->m_dpb, task->m_dpbSize, 0);
+    m_FeiCtx->feiInIdx = 1 - m_FeiCtx->feiInIdx;
+}
 
 
 mfxFrameSurface1* MFXVideoENCODEH265::GetOriginalSurface(mfxFrameSurface1* input)

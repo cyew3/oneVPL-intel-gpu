@@ -468,6 +468,7 @@ mfxStatus InitH265VideoParam(const mfxVideoParam *param /* IN */, H265VideoParam
 
     pars->tcDuration90KHz = (mfxF64)param->mfx.FrameInfo.FrameRateExtD / param->mfx.FrameInfo.FrameRateExtN * 90000; // calculate tick duration    
     pars->m_framesInParallel = optsHevc->FramesInParallel;    
+
     return MFX_ERR_NONE;
 }
 }
@@ -1150,14 +1151,6 @@ mfxStatus H265FrameEncoder::Init(const mfxVideoParam* mfxParam, const H265VideoP
         }
     }
 
-#if defined (MFX_VA)
-    if (m_videoParam.enableCmFlag) {
-        m_FeiCtx = new FeiContext(&m_videoParam, core);
-    } else {
-        m_FeiCtx = NULL;
-    }
-#endif // MFX_VA
-
 #if defined(DUMP_COSTS_CU) || defined (DUMP_COSTS_TU)
     char fname[100];
 #ifdef DUMP_COSTS_CU
@@ -1192,11 +1185,6 @@ void H265FrameEncoder::Close()
             m_saoApplyFilter[compId].Close();
         }
     }
-
-    /*if (NULL != m_videoParam.m_lcuQps) {
-        delete [] m_videoParam.m_lcuQps;
-        m_videoParam.m_lcuQps = NULL;
-    }*/
 
     if (memBuf) {
         H265_Free(memBuf);
@@ -2030,9 +2018,12 @@ mfxStatus H265FrameEncoder::EncodeThread(Ipp32s & ithread, Ipp32u* onExitEvent)
 
             void *feiOutPtr = NULL;
 #if defined (MFX_VA)
-            if (m_videoParam.enableCmFlag)
+            if (m_videoParam.enableCmFlag) {
+                FeiContext *m_FeiCtx = reinterpret_cast<FeiContext*>(m_task->m_extParam);
                 feiOutPtr = m_FeiCtx->feiH265Out;
+            }
 #endif // MFX_VA
+
             cu[ithread].InitCu(pars, reconstructFrame->cu_data + (ctb_addr << pars->Log2NumPartInCU),
                 data_temp + ithread * data_temp_size, ctb_addr, (PixType*)reconstructFrame->y,
                 (PixType*)reconstructFrame->uv, reconstructFrame->pitch_luma_pix, reconstructFrame->pitch_chroma_pix, m_pCurrentFrame,

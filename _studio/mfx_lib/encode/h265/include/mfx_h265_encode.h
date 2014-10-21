@@ -30,6 +30,10 @@ namespace H265Enc {
     class H265FrameEncoder;
     class H265BRC;
     struct Task;
+
+#if defined(MFX_VA)
+    class FeiContext;
+#endif
 }
 
 class MFXVideoENCODEH265 : public VideoENCODE {
@@ -123,12 +127,18 @@ private:
     std::list<Task*> m_outputQueue;
     std::list<Task*> m_actualDpb;        // reference frames for next frame to encode
     std::list<H265Frame*> m_freeFrames;  // _global_ free frames (origin/recon/reference) pool
-    
+
+
     H265BRC *m_brc;
     TAdapQP *m_pAQP;
 #if defined(MFX_ENABLE_H265_PAQ)
     TVideoPreanalyzer m_preEnc;
 #endif
+
+#if defined(MFX_VA)
+    FeiContext *m_FeiCtx;
+#endif
+
 
     mfxStatus Init_Internal( void );
 
@@ -157,13 +167,16 @@ private:
     static mfxStatus TaskRoutine(void *pState, void *pParam, mfxU32 threadNumber, mfxU32 callNumber);
     static mfxStatus TaskCompleteProc(void *pState, void *pParam, mfxStatus taskRes);
 
-    //void INeedMoreThreadsInside(void) { m_core->INeedMoreThreadsInside(this); }
     mfxStatus EncSolver(Task* task, Ipp32u* onExitEvent);
     void SyncOnTaskCompleted(Task* task, mfxBitstream* mfxBs, void *pParam);
 
     // ------- Pre Encode Analysis (lookahead / paq etc)
     mfxStatus PreEncAnalysis(void);
     mfxStatus UpdateAllLambda(Task* task);
+
+    // -------FEI
+    void ProcessFrameFEI(Task* task);
+    void ProcessFrameFEI_Next(Task* task);
 };
 
 
