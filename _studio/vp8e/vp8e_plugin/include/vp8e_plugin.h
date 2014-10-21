@@ -88,7 +88,6 @@ protected:
     MFX_VP8E_Plugin(bool CreateByDispatcher);
     virtual ~MFX_VP8E_Plugin(){};
 
-    VideoCORE *                     m_core;
     MFX_VP8ENC::VP8MfxParam                     m_video;
     MFX_VP8ENC::TaskManagerHybridPakDDI       * m_pTaskManager;
     MFX_VP8ENC::Vp8CoreBSE                      m_BSE;
@@ -100,7 +99,6 @@ protected:
 
     mfxCoreInterface*    m_pmfxCore;
 
-    mfxSession          m_session;
     mfxPluginParam      m_PluginParam;
     mfxVideoParam       m_mfxpar;
     bool                m_createdByDispatcher;

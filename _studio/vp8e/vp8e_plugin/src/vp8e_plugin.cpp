@@ -41,7 +41,6 @@ const mfxPluginUID MFX_VP8E_Plugin::g_PluginGuid = MFX_PLUGINID_VP8E_HW;
 MFX_VP8E_Plugin::MFX_VP8E_Plugin(bool CreateByDispatcher)
     :m_adapter(0)
 {
-    m_session = 0;
     m_pmfxCore = 0;
     memset(&m_PluginParam, 0, sizeof(mfxPluginParam));
 
@@ -55,7 +54,6 @@ MFX_VP8E_Plugin::MFX_VP8E_Plugin(bool CreateByDispatcher)
     m_PluginParam.PluginVersion = 1;
     m_createdByDispatcher = CreateByDispatcher;
 
-    m_session = 0;
     m_pmfxCore = 0;
     memset(&m_mfxpar, 0, sizeof(mfxVideoParam));
 }
@@ -357,7 +355,7 @@ mfxStatus MFX_VP8E_Plugin::Reset(mfxVideoParam *par)
             mfxExtCodingOptionVP8Param*  pVP8Par = GetExtBuffer(parAfterReset);
             mfxExtOpaqueSurfaceAlloc*    pExtOpaque = GetExtBuffer(parAfterReset);
 
-            sts1 = MFX_VP8ENC::CheckParametersAndSetDefault(par,&parAfterReset, pExtOpt, pVP8Par,pExtOpaque,m_core->IsExternalFrameAllocator(),true);
+            sts1 = MFX_VP8ENC::CheckParametersAndSetDefault(par,&parAfterReset, pExtOpt, pVP8Par,pExtOpaque,true,true);
             MFX_CHECK(sts1>=0, sts1);
         }
 
