@@ -175,6 +175,11 @@ public:
 
     mfxStatus ProcessSurface(mfxFrameSurface1& s)
     {
+        if (s.Data.TimeStamp != expected_timestamp)
+        {
+            g_tsLog << "ERROR: frame timestamp=" << s.Data.TimeStamp <<
+                       " is not equal to requested=" << expected_timestamp << "\n";
+        }
         EXPECT_EQ(expected_timestamp, s.Data.TimeStamp);
 
         return MFX_ERR_NONE;
