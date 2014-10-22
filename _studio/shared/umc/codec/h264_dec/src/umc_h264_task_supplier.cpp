@@ -3455,6 +3455,13 @@ void TaskSupplier::PostProcessDisplayFrame(MediaData *dst, H264DecoderFrame *pFr
 
     ViewItem &view = GetView(pFrame->m_viewId);
 
+    pFrame->post_procces_complete = true;
+
+    DEBUG_PRINT((VM_STRING("Outputted POC - %d, busyState - %d, uid - %d, viewId - %d, pppp - %d\n"), pFrame->m_PicOrderCnt[0], pFrame->GetRefCounter(), pFrame->m_UID, pFrame->m_viewId, pppp++));
+
+    if (!pFrame->IsFrameExist())
+        return;
+
     pFrame->m_isOriginalPTS = pFrame->m_dFrameTime > -1.0;
     if (pFrame->m_isOriginalPTS)
     {
@@ -3495,10 +3502,6 @@ void TaskSupplier::PostProcessDisplayFrame(MediaData *dst, H264DecoderFrame *pFr
 
     if (view.GetDPBList(0)->GetRecoveryFrameCnt() != -1)
         view.GetDPBList(0)->SetRecoveryFrameCnt(-1);
-
-    pFrame->post_procces_complete = true;
-
-    DEBUG_PRINT((VM_STRING("Outputted POC - %d, busyState - %d, uid - %d, viewId - %d, pppp - %d\n"), pFrame->m_PicOrderCnt[0], pFrame->GetRefCounter(), pFrame->m_UID, pFrame->m_viewId, pppp++));
 
     /*if (!CutPlanes(pFrame, m_Headers.GetSeqParamSet(m_CurrentSeqParamSet)))
     {
