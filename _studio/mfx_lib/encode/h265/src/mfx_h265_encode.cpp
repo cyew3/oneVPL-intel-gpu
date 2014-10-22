@@ -2487,6 +2487,7 @@ mfxStatus MFXVideoENCODEH265::AddNewOutputTask(int& encIdx)
     m_encodeQueue.splice(m_encodeQueue.end(), m_lookaheadQueue, m_lookaheadQueue.begin());
     VM_ASSERT(m_encodeQueue.size() == 1);
 
+    // lasy initialization of task
     Task* task = m_encodeQueue.front();
 
     task->m_encIdx = encIdx;
@@ -2497,9 +2498,25 @@ mfxStatus MFXVideoENCODEH265::AddNewOutputTask(int& encIdx)
     }
 #endif
 
+    if ( m_brc && m_videoParam.m_framesInParallel == 1 ) {
+        task->m_sliceQpY = (Ipp8s)m_brc->GetQP(m_videoParam, task->m_frameOrigin);
+    }
+
+    // ----------------------------------------------------
+    Ipp32s numCtb = m_videoParam.PicHeightInCtbs * m_videoParam.PicWidthInCtbs;
+    memset(&task->m_lcuQps[0], task->m_sliceQpY, sizeof(task->m_sliceQpY)*numCtb);
+
+    // setup slices
+    H265Slice *currSlices = task->m_slices;
+    for (Ipp8u i = 0; i < m_videoParam.NumSlices; i++) {
+        (currSlices + i)->slice_qp_delta = task->m_sliceQpY - m_pps.init_qp;
+        SetAllLambda(m_videoParam, (currSlices + i), task->m_sliceQpY, task->m_frameOrigin );
+    }
+    // ----------------------------------------------------
+
 //---------------------------------------------------------
 #if defined (MFX_ENABLE_H265_PAQ)
-    Ipp32s numCtb = m_videoParam.PicHeightInCtbs * m_videoParam.PicWidthInCtbs;
+    //Ipp32s numCtb = m_videoParam.PicHeightInCtbs * m_videoParam.PicWidthInCtbs;
     if(m_videoParam.preEncMode && m_videoParam.UseDQP) {
         int poc = task->m_frameOrigin->m_poc;
         for(int ctb=0; ctb<numCtb; ctb++) {
@@ -2698,19 +2715,21 @@ void MFXVideoENCODEH265::SyncOnTaskCompleted(Task* task, mfxBitstream* mfxBs, vo
                     // lookAheadQueue -> encodeQueue -> outputQueue
                     std::list<Task*> listQueue[] = {m_outputQueue, m_encodeQueue, m_lookaheadQueue};
                     Ipp32s numCtb = m_videoParam.PicHeightInCtbs * m_videoParam.PicWidthInCtbs;
-                    for( Ipp32s qIdx = 0; qIdx < 3; qIdx++) {
+                    Ipp32s qIdxCnt = (m_videoParam.m_framesInParallel > 1) ? 3 : 1;
+                    for( Ipp32s qIdx = 0; qIdx < qIdxCnt; qIdx++) {
                         std::list<Task*> & queue = listQueue[qIdx];
                         for( tit = queue.begin(); tit != queue.end(); tit++) {
 
                             (*tit)->m_sliceQpY = m_brc->GetQP(m_videoParam, (*tit)->m_frameOrigin);
-                            memset(& (*tit)->m_lcuQps[0], (*tit)->m_sliceQpY, sizeof((*tit)->m_sliceQpY)*numCtb);
 
-                            H265Slice *currSlices = (*tit)->m_slices;
-                            for (Ipp8u i = 0; i < m_videoParam.NumSlices; i++) {
-                                //SetSlice(currSlices + i, i, (*tit)->m_frameOrigin);
-                                (currSlices + i)->slice_qp_delta = (*tit)->m_sliceQpY - m_pps.init_qp;
-                                SetAllLambda(m_videoParam, (currSlices + i), (*tit)->m_sliceQpY, (*tit)->m_frameOrigin );
-                            }
+                            //memset(& (*tit)->m_lcuQps[0], (*tit)->m_sliceQpY, sizeof((*tit)->m_sliceQpY)*numCtb);
+
+                            //H265Slice *currSlices = (*tit)->m_slices;
+                            //for (Ipp8u i = 0; i < m_videoParam.NumSlices; i++) {
+                            //    //SetSlice(currSlices + i, i, (*tit)->m_frameOrigin);
+                            //    (currSlices + i)->slice_qp_delta = (*tit)->m_sliceQpY - m_pps.init_qp;
+                            //    SetAllLambda(m_videoParam, (currSlices + i), (*tit)->m_sliceQpY, (*tit)->m_frameOrigin );
+                            //}
                         }
                     }
 
@@ -2983,14 +3002,21 @@ mfxStatus MFXVideoENCODEH265::TaskCompleteProc(void *pState, void *pParam, mfxSt
 
 void MFXVideoENCODEH265::ProcessFrameFEI(Task* task)
 {
+    task;
+#if defined(MFX_VA)
     m_FeiCtx->ProcessFrameFEI(m_FeiCtx->feiInIdx, task->m_frameOrigin, task->m_slices, task->m_dpb, task->m_dpbSize, 1);
+#endif
+
 }
 
 
 void MFXVideoENCODEH265::ProcessFrameFEI_Next(Task* task)
 {
+    task;
+#if defined(MFX_VA)
     m_FeiCtx->ProcessFrameFEI(1 - m_FeiCtx->feiInIdx, task->m_frameOrigin, task->m_slices, task->m_dpb, task->m_dpbSize, 0);
     m_FeiCtx->feiInIdx = 1 - m_FeiCtx->feiInIdx;
+#endif
 }
 
 

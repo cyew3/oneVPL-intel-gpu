@@ -706,7 +706,6 @@ mfxStatus MFXVideoENCODEH265::SetSlice(H265Slice *slice, Ipp32u curr_slice, H265
     slice->slice_num = curr_slice;
 
     slice->five_minus_max_num_merge_cand = 5 - MAX_NUM_MERGE_CANDS;
-    //slice->slice_qp_delta = m_videoParam.m_sliceQpY - m_pps.init_qp;
 
     if (m_pps.entropy_coding_sync_enabled_flag) {
         slice->row_first = slice->slice_segment_address / m_videoParam.PicWidthInCtbs;
@@ -784,7 +783,7 @@ void SetAllLambda(H265VideoParam const & videoParam, H265Slice *slice, Ipp32s qp
     slice->ChromaDistWeight_slice = pow(2.0, (qp - h265_QPtoChromaQP[videoParam.chromaFormatIdc - 1][qp]) / 3.0);
 }
 
-} // mfxStatus H265FrameEncoder::SetAllLambda(H265Slice *slice, int qp, int poc)
+} //
 }
 
 static Ipp8u dpoc_neg[][16][6] = {
@@ -1414,14 +1413,18 @@ Ipp8u SameRps(const H265ShortTermRefPicSet *rps1, const H265ShortTermRefPicSet *
 void MFXVideoENCODEH265::PrepareToEncode(Task* task)
 {
     if (m_brc) {
-        task->m_sliceQpY = (Ipp8s)m_brc->GetQP(m_videoParam, task->m_frameOrigin);//m_videoParam.chromaFormatIdc);
+        // to provide bitexact result in case of frame-threading we set Qp here
+        // otherwise we will set Qp late (before encode directly) to provide more accurate feedback encode<->brc
+        if ( m_videoParam.m_framesInParallel > 1) { 
+            task->m_sliceQpY = (Ipp8s)m_brc->GetQP(m_videoParam, task->m_frameOrigin);
+        }
     } else {
         task->m_sliceQpY = GetConstQp(*task, m_videoParam);
     }
 
     //-----------------------------------------------------
-    Ipp32s numCtb = m_videoParam.PicHeightInCtbs * m_videoParam.PicWidthInCtbs;
-    memset(&task->m_lcuQps[0], task->m_sliceQpY, sizeof(task->m_sliceQpY)*numCtb);
+    //Ipp32s numCtb = m_videoParam.PicHeightInCtbs * m_videoParam.PicWidthInCtbs;
+    //memset(&task->m_lcuQps[0], task->m_sliceQpY, sizeof(task->m_sliceQpY)*numCtb);
 
 //#if defined (MFX_ENABLE_H265_PAQ)
 //    if(m_videoParam.preEncMode && m_videoParam.UseDQP) {
@@ -1492,10 +1495,8 @@ void MFXVideoENCODEH265::PrepareToEncode(Task* task)
         SetSlice(currSlices + i, i, currFrame);
 
         //-------------------------------------------------
-        (currSlices + i)->slice_qp_delta = task->m_sliceQpY - m_pps.init_qp;
-        SetAllLambda(m_videoParam, (currSlices + i), task->m_sliceQpY, task->m_frameOrigin );
-        /*if(m_videoParam.preEncMode && m_videoParam.UseDQP)
-            UpdateAllLambda( task );*/
+        //(currSlices + i)->slice_qp_delta = task->m_sliceQpY - m_pps.init_qp;
+        //SetAllLambda(m_videoParam, (currSlices + i), task->m_sliceQpY, task->m_frameOrigin );
         //--------------------------------------------------
 
         currSlices[i].short_term_ref_pic_set_sps_flag = useSpsRps;
