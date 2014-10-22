@@ -2722,14 +2722,14 @@ void MFXVideoENCODEH265::SyncOnTaskCompleted(Task* task, mfxBitstream* mfxBs, vo
 
                             (*tit)->m_sliceQpY = m_brc->GetQP(m_videoParam, (*tit)->m_frameOrigin);
 
-                            //memset(& (*tit)->m_lcuQps[0], (*tit)->m_sliceQpY, sizeof((*tit)->m_sliceQpY)*numCtb);
+                            memset(& (*tit)->m_lcuQps[0], (*tit)->m_sliceQpY, sizeof((*tit)->m_sliceQpY)*numCtb);
 
-                            //H265Slice *currSlices = (*tit)->m_slices;
-                            //for (Ipp8u i = 0; i < m_videoParam.NumSlices; i++) {
-                            //    //SetSlice(currSlices + i, i, (*tit)->m_frameOrigin);
-                            //    (currSlices + i)->slice_qp_delta = (*tit)->m_sliceQpY - m_pps.init_qp;
-                            //    SetAllLambda(m_videoParam, (currSlices + i), (*tit)->m_sliceQpY, (*tit)->m_frameOrigin );
-                            //}
+                            H265Slice *currSlices = (*tit)->m_slices;
+                            for (Ipp8u i = 0; i < m_videoParam.NumSlices; i++) {
+                                //SetSlice(currSlices + i, i, (*tit)->m_frameOrigin);
+                                (currSlices + i)->slice_qp_delta = (*tit)->m_sliceQpY - m_pps.init_qp;
+                                SetAllLambda(m_videoParam, (currSlices + i), (*tit)->m_sliceQpY, (*tit)->m_frameOrigin );
+                            }
                         }
                     }
 
