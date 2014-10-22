@@ -3147,7 +3147,15 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
 
     if (!CheckRangeDflt(extOpt2->DisableDeblockingIdc, 0, 1, 0)) changed = true;
     if (!CheckTriStateOption(extOpt2->EnableMAD)) changed = true;
-
+    if(!((extOpt2->AdaptiveI == 0)&&(extOpt2->AdaptiveB == 0)))
+    {
+        if(!((extOpt2->AdaptiveI == MFX_CODINGOPTION_OFF)&&(extOpt2->AdaptiveB == MFX_CODINGOPTION_OFF)))
+        {
+               extOpt2->AdaptiveI = 0;
+               extOpt2->AdaptiveB = 0;
+               unsupported = true;
+        }
+    }
     return unsupported
         ? MFX_ERR_UNSUPPORTED
         : (changed || warning)
