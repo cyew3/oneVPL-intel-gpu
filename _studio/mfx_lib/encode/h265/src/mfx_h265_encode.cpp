@@ -2839,6 +2839,9 @@ mfxStatus MFXVideoENCODEH265::TaskRoutine(void *pState, void *pParam, mfxU32 thr
             } else if ( !th->m_encodeQueue.empty() ) {
                 TaskIter it2 = th->m_encodeQueue.begin();
                 inputParam->nextTask = (*it2);
+            } else if ( !th->m_lookaheadQueue.empty() ) {
+                TaskIter it3 = th->m_lookaheadQueue.begin();
+                inputParam->nextTask = (*it3);
             }
 
             inputParam->m_doStageFEI = 0;
