@@ -43,8 +43,8 @@ VideoDECODEVP9_HW::VideoDECODEVP9_HW(VideoCORE *p_core, mfxStatus *sts)
 {
     memset(&m_frameInfo, 0, sizeof(m_frameInfo));
     m_frameInfo.currFrame = -1;
-    m_frameInfo.frameCountInBS = -1;
-    m_frameInfo.currFrameInBS = -1;
+    m_frameInfo.frameCountInBS = 0;
+    m_frameInfo.currFrameInBS = 0;
     memset(&m_frameInfo.ref_frame_map, -1, sizeof(m_frameInfo.ref_frame_map)); // TODO: move to another place
 
     if (sts)
@@ -148,6 +148,11 @@ mfxStatus VideoDECODEVP9_HW::Init(mfxVideoParam *par)
     m_is_initialized = true;
 
     return MFX_ERR_NONE;
+}
+
+mfxStatus VideoDECODEVP9_HW::DecodeHeader(VideoCORE * core, mfxBitstream *bs, mfxVideoParam *params)
+{
+    return MFX_VP9_Utility::DecodeHeader(core, bs, params);
 }
 
 static bool IsSameVideoParam(mfxVideoParam *newPar, mfxVideoParam *oldPar)
@@ -358,7 +363,7 @@ mfxStatus VideoDECODEVP9_HW::QueryIOSurf(VideoCORE *p_core, mfxVideoParam *p_vid
 
     #ifdef MFX_VA_WIN
 
-    if (p_core->IsGuidSupported(sDXVA_Intel_ModeVP8_VLD, p_video_param) != MFX_ERR_NONE)
+    if (p_core->IsGuidSupported(sDXVA_Intel_ModeVP9_VLD, p_video_param) != MFX_ERR_NONE)
     {
         return MFX_WRN_PARTIAL_ACCELERATION;
     }
@@ -593,39 +598,30 @@ mfxStatus VideoDECODEVP9_HW::DecodeSuperFrame(mfxBitstream *in, VP9FrameInfo & i
 
     if (frameCount > 1)
     {
-        if (info.frameCountInBS == -1)
+        if (info.frameCountInBS == 0) // first call we meet super frame
         {
             info.frameCountInBS = frameCount;
             info.currFrameInBS = 0;
         }
 
-        if (info.frameCountInBS == frameCount)
-        {
-            // get bs
-            m_bs.DataLength = frameSizes[info.currFrameInBS];
-            m_bs.DataOffset = in->DataOffset;
-            for (mfxU32 i = 0; i < info.currFrameInBS; i++)
-                m_bs.DataOffset += frameSizes[i];
+        if (info.frameCountInBS != frameCount) // it is not what we met before
+            return MFX_ERR_UNDEFINED_BEHAVIOR;
 
-            info.currFrameInBS++;
-            if (info.currFrameInBS == info.frameCountInBS)
-            {
-                info.currFrameInBS = -1;
-                info.frameCountInBS = -1;
-            }
-        }
-    }
-    else
-    {
-        info.currFrameInBS = -1;
-        info.frameCountInBS = -1;
+        m_bs.DataLength = frameSizes[info.currFrameInBS];
+        m_bs.DataOffset = in->DataOffset;
+        for (mfxU32 i = 0; i < info.currFrameInBS; i++)
+            m_bs.DataOffset += frameSizes[i];
+
+        info.currFrameInBS++;
+        if (info.currFrameInBS < info.frameCountInBS)
+            return MFX_ERR_NONE;
     }
 
-    if (info.currFrameInBS == -1)
-    {
-        in->DataOffset += in->DataLength;
-        in->DataLength = 0;
-    }
+    info.currFrameInBS = 0;
+    info.frameCountInBS = 0;
+
+    in->DataOffset += in->DataLength;
+    in->DataLength = 0;
 
     return MFX_ERR_NONE;
 }

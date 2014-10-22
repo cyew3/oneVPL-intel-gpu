@@ -10,19 +10,20 @@
 
 #include "mfx_common.h"
 
-#ifdef MFX_ENABLE_VP9_VIDEO_DECODE
-
 #include "umc_defs.h"
 
 #ifndef _MFX_VP9_DEC_DECODE_H_
 #define _MFX_VP9_DEC_DECODE_H_
 
-#include "mfx_vp9_dec_decode_utils.h"
-
+#if defined(MFX_ENABLE_VP9_VIDEO_DECODE) || defined(MFX_ENABLE_VP9_VIDEO_DECODE_HW)
 #include "mfx_common_int.h"
 #include "umc_video_decoder.h"
 
 #include "mfx_umc_alloc_wrapper.h"
+#include "mfx_vp9_dec_decode_utils.h"
+#endif
+
+#ifdef MFX_ENABLE_VP9_VIDEO_DECODE
 
 #include "umc_mutex.h"
 #include <queue>
@@ -154,6 +155,9 @@ class VideoDECODEVP9: public VideoDECODE
         mfxU32 m_init_h;
 };
 
+#endif // MFX_ENABLE_VP8_VIDEO_DECODE
+
+#if defined(MFX_ENABLE_VP9_VIDEO_DECODE) || defined(MFX_ENABLE_VP9_VIDEO_DECODE_HW)
 class MFX_VP9_Utility
 {
 public:
@@ -161,11 +165,14 @@ public:
     static eMFXPlatform GetPlatform(VideoCORE *pCore, mfxVideoParam *pPar);
     static mfxStatus Query(VideoCORE *pCore, mfxVideoParam *pIn, mfxVideoParam *pOut, eMFXHWType type);
     static bool CheckVideoParam(mfxVideoParam *pIn, eMFXHWType type);
+    static mfxStatus DecodeHeader(VideoCORE * /*core*/, mfxBitstream *bs, mfxVideoParam *params);
 
 private:
 
     static bool IsNeedPartialAcceleration(mfxVideoParam * pPar);
 };
 
-#endif // _MFX_VP8_DEC_DECODE_H_
-#endif // MFX_ENABLE_VP8_VIDEO_DECODE
+#endif // #if defined(MFX_ENABLE_VP9_VIDEO_DECODE) || defined(MFX_ENABLE_VP9_VIDEO_DECODE_HW)
+
+#endif // _MFX_VP9_DEC_DECODE_H_
+

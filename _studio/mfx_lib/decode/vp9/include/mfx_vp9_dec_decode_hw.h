@@ -40,6 +40,7 @@ public:
     virtual mfxStatus GetVideoParam(mfxVideoParam *pPar);
     virtual mfxStatus GetDecodeStat(mfxDecodeStat *pStat);
 
+    virtual mfxStatus DecodeHeader(VideoCORE * core, mfxBitstream *bs, mfxVideoParam *params);
     virtual mfxStatus DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1 *surface_work, mfxFrameSurface1 **surface_out);
     virtual mfxStatus DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1 *pSurfaceWork, mfxFrameSurface1 **ppSurfaceOut, MFX_ENTRY_POINT *pEntryPoint);
     virtual mfxStatus DecodeFrame(mfxBitstream *bs, mfxFrameSurface1 *pSurfaceWork, mfxFrameSurface1 *pSurfaceOut);
@@ -108,4 +109,4 @@ private:
 };
 
 #endif // _MFX_VP9_DECODE_HW_H_
-#endif // MFX_ENABLE_VP8_VIDEO_DECODE && MFX_VA
+#endif // MFX_ENABLE_VP9_VIDEO_DECODE && MFX_VA

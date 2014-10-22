@@ -228,8 +228,8 @@ namespace MfxVP9Decode
         mfxU32 firstPartitionSize;
         mfxU32 frameDataSize;
 
-        mfxI32 frameCountInBS;
-        mfxI32 currFrameInBS;
+        mfxU32 frameCountInBS;
+        mfxU32 currFrameInBS;
 
     } VP9FrameInfo;
 

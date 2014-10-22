@@ -50,7 +50,7 @@ File Name: libmfxsw_decode.cpp
 #endif
 #endif
 
-#if defined (MFX_ENABLE_VP9_VIDEO_DECODE)
+#if defined (MFX_ENABLE_VP9_VIDEO_DECODE) || defined(MFX_ENABLE_VP9_VIDEO_DECODE_HW)
 #include "mfx_vp9_dec_decode.h"
 #if defined(MFX_VA) && defined(MFX_ENABLE_VP9_VIDEO_DECODE_HW)
 #include "mfx_vp9_dec_decode_hw.h"
@@ -119,7 +119,7 @@ VideoDECODE *CreateDECODESpecificClass(mfxU32 CodecId, VideoCORE *core, mfxSessi
         break;
 #endif
 
-#if defined (MFX_ENABLE_VP9_VIDEO_DECODE)
+#if defined (MFX_ENABLE_VP9_VIDEO_DECODE) || defined(MFX_ENABLE_VP9_VIDEO_DECODE_HW)
      case MFX_CODEC_VP9:
 #if defined(MFX_VA) && defined(MFX_ENABLE_VP9_VIDEO_DECODE_HW)
         pDECODE = new VideoDECODEVP9_HW(core, &mfxRes);
@@ -306,11 +306,10 @@ mfxStatus MFXVideoDECODE_QueryIOSurf(mfxSession session, mfxVideoParam *par, mfx
             break;
 #endif
 
-#ifdef MFX_ENABLE_VP9_VIDEO_DECODE
+#if defined(MFX_ENABLE_VP9_VIDEO_DECODE) || defined (MFX_ENABLE_VP9_VIDEO_DECODE_HW)
         case MFX_CODEC_VP9:
 #if defined(MFX_VA) && defined (MFX_ENABLE_VP9_VIDEO_DECODE_HW)
             mfxRes = VideoDECODEVP9_HW::QueryIOSurf(session->m_pCORE.get(), par, request);
-
 #else
             mfxRes = VideoDECODEVP9::QueryIOSurf(session->m_pCORE.get(), par, request);
 #endif // MFX_VA && MFX_ENABLE_VP9_VIDEO_DECODE_HW
@@ -394,9 +393,9 @@ mfxStatus MFXVideoDECODE_DecodeHeader(mfxSession session, mfxBitstream *bs, mfxV
             break;
 #endif
 
-#ifdef MFX_ENABLE_VP9_VIDEO_DECODE
+#if defined(MFX_ENABLE_VP9_VIDEO_DECODE) || defined (MFX_ENABLE_VP9_VIDEO_DECODE_HW)
         case MFX_CODEC_VP9:
-            mfxRes = VideoDECODEVP9::DecodeHeader(session->m_pCORE.get(), bs, par);
+            mfxRes = MFX_VP9_Utility::DecodeHeader(session->m_pCORE.get(), bs, par);
             break;
 #endif
 

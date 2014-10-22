@@ -11,17 +11,25 @@
 #include <limits>
 #include "mfx_vp9_dec_decode.h"
 
-#ifdef MFX_ENABLE_VP9_VIDEO_DECODE
-
 #include "mfx_common.h"
 #include "mfx_common_decode_int.h"
 #include "mfx_enc_common.h"
+#include "ipps.h"
+
+void MoveBitstreamData2_VP9(mfxBitstream& bs, mfxU32 offset)
+{
+    VM_ASSERT(offset <= bs.DataLength);
+    bs.DataOffset += offset;
+    bs.DataLength -= offset;
+}
+
+#ifdef MFX_ENABLE_VP9_VIDEO_DECODE
 
 #include "umc_data_pointers_copy.h"
 
 #include "vm_sys_info.h"
 #include "ippcore.h"
-#include "ipps.h"
+
 #include "ippcc.h"
 
 #include "mfx_thread_task.h"
@@ -57,13 +65,6 @@ static mfxStatus vpx_convert_status(mfxI32 status)
 #define CHECK_VPX_STATUS(status) \
     if (VPX_CODEC_OK != status) \
         return vpx_convert_status(status);
-
-void MoveBitstreamData2_VP9(mfxBitstream& bs, mfxU32 offset)
-{
-    VM_ASSERT(offset <= bs.DataLength);
-    bs.DataOffset += offset;
-    bs.DataLength -= offset;
-}
 
 static mfxStatus Convert_YV12_to_NV12(mfxFrameData* inData,  mfxFrameInfo* inInfo,
                        mfxFrameData* outData, mfxFrameInfo* outInfo)
@@ -521,114 +522,9 @@ mfxStatus VideoDECODEVP9::GetVideoParam(mfxVideoParam *params)
 
 #define VP9_START_CODE_FOUND(ptr) ((ptr)[0] == 0x49 && (ptr)[1] == 0x83 && (ptr)[2] == 0x42)
 
-mfxStatus VideoDECODEVP9::DecodeHeader(VideoCORE * /*core*/, mfxBitstream *bs, mfxVideoParam *params)
+mfxStatus VideoDECODEVP9::DecodeHeader(VideoCORE * core, mfxBitstream *bs, mfxVideoParam *params)
 {
-    mfxStatus sts = MFX_ERR_NONE;
-
-    MFX_CHECK_NULL_PTR2(bs, params);
-
-    sts = CheckBitstream(bs);
-    MFX_CHECK_STS(sts);
-
-    if (bs->DataLength < 3)
-    {
-        return MFX_ERR_MORE_DATA;
-    }
-
-    mfxU8 *pBegin = bs->Data + bs->DataOffset;
-    mfxU8 *pData = bs->Data + bs->DataOffset;
-    mfxU8 *pDataEnd = bs->Data + bs->DataOffset + bs->DataLength;
-
-    mfxU32 n_bytes_offset = 0;
-    bool bHeaderRead = false;
-
-    mfxU16 version = 0;
-    mfxU16 width = 0;
-    mfxU16 height = 0;
-
-    while (pData < pDataEnd)
-    {
-        if (VP9_START_CODE_FOUND(pData))
-        {
-            if ((pData - 1) >= pBegin)
-            {
-                --pData; // moving back to marker
-                --n_bytes_offset;
-
-                InputBitstream bsReader(pData, pData + bs->DataLength - n_bytes_offset);
-
-                if (VP9_FRAME_MARKER != bsReader.GetBits(2))
-                    continue; // invalid
-
-                version = (mfxU16)bsReader.GetBit();
-                if (version > 1)
-                    continue; // invalid
-
-                bsReader.GetBit(); // skip unused version bit
-
-                if (false == bsReader.GetBit()) // show_existing_frame
-                {
-                    if (KEY_FRAME == (VP9_FRAME_TYPE)bsReader.GetBit())
-                    {
-                        bsReader.GetBit(); // show_frame
-                        bsReader.GetBit(); // error_resilient_mode
-                        bsReader.GetBits(24); // start_code
-
-                        if (SRGB != (COLOR_SPACE)bsReader.GetBits(3)) // color_space
-                        {
-                            bsReader.GetBit();
-                            if (1 == version)
-                                bsReader.GetBits(3);
-                        }
-                        else
-                        {
-                            if (1 == version)
-                                bsReader.GetBit();
-                            else
-                                continue; // invalid
-                        }
-
-                        width = (mfxU16)bsReader.GetBits(16) + 1;
-                        height = (mfxU16)bsReader.GetBits(16) + 1;
-
-                        bHeaderRead = true;
-                        break;
-                    }
-                }
-            }
-        }
-
-        pData++;
-        n_bytes_offset++;
-    }
-
-    if (!bHeaderRead)
-    {
-        // set offset, but leave last six bytes
-        // since they can be start bytes of start code and frame tag
-
-        MoveBitstreamData2_VP9(*bs, n_bytes_offset - 6);
-
-        return MFX_ERR_MORE_DATA;
-    }
-
-    params->mfx.CodecProfile = version + 1;
-
-    params->mfx.FrameInfo.AspectRatioW = 1;
-    params->mfx.FrameInfo.AspectRatioH = 1;
-
-    params->mfx.FrameInfo.CropW = width;
-    params->mfx.FrameInfo.CropH = height;
-
-    params->mfx.FrameInfo.Width = (params->mfx.FrameInfo.CropW + 15) & ~0x0f;
-    params->mfx.FrameInfo.Height = (params->mfx.FrameInfo.CropH + 15) & ~0x0f;
-
-    params->mfx.FrameInfo.FourCC = MFX_FOURCC_NV12;
-    params->mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
-
-    MoveBitstreamData2_VP9(*bs, n_bytes_offset);
-
-    return MFX_ERR_NONE;
+    return MFX_VP9_Utility::DecodeHeader(core, bs, params);
 }
 
 mfxStatus VideoDECODEVP9::ReadFrameInfo(mfxU8 *pData, mfxU32 size, VP9BaseFrameInfo *out)
@@ -1199,9 +1095,50 @@ bool VideoDECODEVP9::IsSameVideoParam(mfxVideoParam *newPar, mfxVideoParam *oldP
     return true;
 }
 
+mfxStatus VideoDECODEVP9::DecodeFrame(mfxBitstream *bs, mfxFrameSurface1 *surface_work, mfxFrameSurface1 *surface_out)
+{
+    bs = bs;
+    surface_work = surface_work;
+    surface_out = surface_out;
+
+    return MFX_ERR_NONE;
+}
+
+mfxStatus VideoDECODEVP9::ConstructFrame(mfxBitstream *p_in, mfxBitstream *p_out, IVF_FRAME_VP9& frame)
+{
+    MFX_CHECK_NULL_PTR1(p_out);
+
+    if (0 == p_in->DataLength)
+        return MFX_ERR_MORE_DATA;
+
+    mfxU8 *bs_start = p_in->Data + p_in->DataOffset;
+
+    if (p_out->Data)
+    {
+        ippFree(p_out->Data);
+        p_out->DataLength = 0;
+    }
+
+    p_out->Data = (Ipp8u*)ippMalloc(p_in->DataLength);
+
+    ippsCopy_8u(bs_start, p_out->Data, p_in->DataLength);
+    p_out->DataLength = p_in->DataLength;
+    p_out->DataOffset = 0;
+
+    frame.frame_size = p_in->DataLength;
+
+    MoveBitstreamData2_VP9(*p_in, p_in->DataLength);
+
+    return MFX_ERR_NONE;
+}
+
+#endif // MFX_ENABLE_VP9_VIDEO_DECODE
+
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // MFX_VP9_Utility implementation
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
+#if defined(MFX_ENABLE_VP9_VIDEO_DECODE) || defined(MFX_ENABLE_VP9_VIDEO_DECODE_HW)
+
 bool MFX_VP9_Utility::IsNeedPartialAcceleration(mfxVideoParam *params)
 {
     if (!params)
@@ -1455,41 +1392,116 @@ bool MFX_VP9_Utility::CheckVideoParam(mfxVideoParam *p_in, eMFXHWType )
     return true;
 }
 
-mfxStatus VideoDECODEVP9::DecodeFrame(mfxBitstream *bs, mfxFrameSurface1 *surface_work, mfxFrameSurface1 *surface_out)
+#define VP9_START_CODE_FOUND(ptr) ((ptr)[0] == 0x49 && (ptr)[1] == 0x83 && (ptr)[2] == 0x42)
+
+mfxStatus MFX_VP9_Utility::DecodeHeader(VideoCORE * /*core*/, mfxBitstream *bs, mfxVideoParam *params)
 {
-    bs = bs;
-    surface_work = surface_work;
-    surface_out = surface_out;
+    mfxStatus sts = MFX_ERR_NONE;
 
-    return MFX_ERR_NONE;
-}
+    MFX_CHECK_NULL_PTR2(bs, params);
 
-mfxStatus VideoDECODEVP9::ConstructFrame(mfxBitstream *p_in, mfxBitstream *p_out, IVF_FRAME_VP9& frame)
-{
-    MFX_CHECK_NULL_PTR1(p_out);
+    sts = CheckBitstream(bs);
+    MFX_CHECK_STS(sts);
 
-    if (0 == p_in->DataLength)
-        return MFX_ERR_MORE_DATA;
-
-    mfxU8 *bs_start = p_in->Data + p_in->DataOffset;
-
-    if (p_out->Data)
+    if (bs->DataLength < 3)
     {
-        ippFree(p_out->Data);
-        p_out->DataLength = 0;
+        return MFX_ERR_MORE_DATA;
     }
 
-    p_out->Data = (Ipp8u*)ippMalloc(p_in->DataLength);
+    mfxU8 *pBegin = bs->Data + bs->DataOffset;
+    mfxU8 *pData = bs->Data + bs->DataOffset;
+    mfxU8 *pDataEnd = bs->Data + bs->DataOffset + bs->DataLength;
 
-    ippsCopy_8u(bs_start, p_out->Data, p_in->DataLength);
-    p_out->DataLength = p_in->DataLength;
-    p_out->DataOffset = 0;
+    mfxU32 n_bytes_offset = 0;
+    bool bHeaderRead = false;
 
-    frame.frame_size = p_in->DataLength;
+    mfxU16 version = 0;
+    mfxU16 width = 0;
+    mfxU16 height = 0;
 
-    MoveBitstreamData2_VP9(*p_in, p_in->DataLength);
+    while (pData < pDataEnd)
+    {
+        if (VP9_START_CODE_FOUND(pData))
+        {
+            if ((pData - 1) >= pBegin)
+            {
+                --pData; // moving back to marker
+                --n_bytes_offset;
+
+                MfxVP9Decode::InputBitstream bsReader(pData, pData + bs->DataLength - n_bytes_offset);
+
+                if (MfxVP9Decode::VP9_FRAME_MARKER != bsReader.GetBits(2))
+                    continue; // invalid
+
+                version = (mfxU16)bsReader.GetBit();
+                if (version > 1)
+                    continue; // invalid
+
+                bsReader.GetBit(); // skip unused version bit
+
+                if (false == bsReader.GetBit()) // show_existing_frame
+                {
+                    if (MfxVP9Decode::KEY_FRAME == (MfxVP9Decode::VP9_FRAME_TYPE)bsReader.GetBit())
+                    {
+                        bsReader.GetBit(); // show_frame
+                        bsReader.GetBit(); // error_resilient_mode
+                        bsReader.GetBits(24); // start_code
+
+                        if (MfxVP9Decode::SRGB != (MfxVP9Decode::COLOR_SPACE)bsReader.GetBits(3)) // color_space
+                        {
+                            bsReader.GetBit();
+                            if (1 == version)
+                                bsReader.GetBits(3);
+                        }
+                        else
+                        {
+                            if (1 == version)
+                                bsReader.GetBit();
+                            else
+                                continue; // invalid
+                        }
+
+                        width = (mfxU16)bsReader.GetBits(16) + 1;
+                        height = (mfxU16)bsReader.GetBits(16) + 1;
+
+                        bHeaderRead = true;
+                        break;
+                    }
+                }
+            }
+        }
+
+        pData++;
+        n_bytes_offset++;
+    }
+
+    if (!bHeaderRead)
+    {
+        // set offset, but leave last six bytes
+        // since they can be start bytes of start code and frame tag
+
+        MoveBitstreamData2_VP9(*bs, n_bytes_offset - 6);
+
+        return MFX_ERR_MORE_DATA;
+    }
+
+    params->mfx.CodecProfile = version + 1;
+
+    params->mfx.FrameInfo.AspectRatioW = 1;
+    params->mfx.FrameInfo.AspectRatioH = 1;
+
+    params->mfx.FrameInfo.CropW = width;
+    params->mfx.FrameInfo.CropH = height;
+
+    params->mfx.FrameInfo.Width = (params->mfx.FrameInfo.CropW + 15) & ~0x0f;
+    params->mfx.FrameInfo.Height = (params->mfx.FrameInfo.CropH + 15) & ~0x0f;
+
+    params->mfx.FrameInfo.FourCC = MFX_FOURCC_NV12;
+    params->mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
+
+    MoveBitstreamData2_VP9(*bs, n_bytes_offset);
 
     return MFX_ERR_NONE;
 }
 
-#endif // MFX_ENABLE_VP9_VIDEO_DECODE
+#endif // #if defined(MFX_ENABLE_VP9_VIDEO_DECODE) || defined(MFX_ENABLE_VP9_VIDEO_DECODE_HW)
