@@ -54,6 +54,7 @@ void PrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage, ...)
     msdk_printf(MSDK_STRING("   [-la] - use the look ahead bitrate control algorithm (LA BRC) (by default constant bitrate control method is used)\n"));
     msdk_printf(MSDK_STRING("           for H.264, H.265 encoder. Supported only with -hw option on 4th Generation Intel Core processors. \n"));
     msdk_printf(MSDK_STRING("   [-lad depth] - depth parameter for the LA BRC, the number of frames to be analyzed before encoding. In range [10,100].\n"));
+    msdk_printf(MSDK_STRING("            may be 1 in the case when -mss option is specified \n"));
     msdk_printf(MSDK_STRING("   [-dstw width] - destination picture width, invokes VPP resizing\n"));
     msdk_printf(MSDK_STRING("   [-dsth height] - destination picture height, invokes VPP resizing\n"));
     msdk_printf(MSDK_STRING("   [-hw] - use platform specific SDK implementation (default)\n"));
@@ -538,8 +539,11 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
 
     if (pParams->nLADepth && (pParams->nLADepth < 10 || pParams->nLADepth > 100))
     {
-        PrintHelp(strInput[0], MSDK_STRING("Unsupported value of -lad parameter, must be in range [10, 100]!"));
-        return MFX_ERR_UNSUPPORTED;
+        if ((pParams->nLADepth != 1) || (!pParams->nMaxSliceSize))
+        {
+            PrintHelp(strInput[0], MSDK_STRING("Unsupported value of -lad parameter, must be in range [10, 100] or 1 in case of -mss option!"));
+            return MFX_ERR_UNSUPPORTED;
+        }
     }
 
     // not all options are supported if rotate plugin is enabled
@@ -558,6 +562,12 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
     if (pParams->nAsyncDepth == 0)
     {
         pParams->nAsyncDepth = 4; //set by default;
+    }
+
+    // Ignoring user-defined Async Depth for LA
+    if (pParams->nMaxSliceSize)
+    {
+        pParams->nAsyncDepth = 1;
     }
 
     if (pParams->nRateControlMethod == 0)
