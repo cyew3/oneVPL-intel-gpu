@@ -91,7 +91,7 @@ static mfxU16 GetDefaultBitrate(mfxU16 w, mfxU16 h, double frame_rate,bool bMin,
 /*temp function, while BRC is not ready*/
 static mfxU16 GetDefaultBufferSize(double frame_rate, mfxU16 bitrate, mfxU16& multiplier)
 {
-    static double numFrames = 10.0;
+    static double numFrames = 60.0; // 2 sec buffer for framerate 30 fps
 
     multiplier = 1;
 

@@ -199,7 +199,8 @@ mfxStatus MFX_VP8E_Plugin::Execute(mfxThreadTask task, mfxU32 , mfxU32 )
 
         {
             MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL_VTUNE, "VP8::Pack BS");
-            m_BSE.RunBSP(bInsertIVF, bInsertSH, pTask->m_pBitsteam, (MFX_VP8ENC::TaskHybridDDI *)pTask, layout, m_pmfxCore);
+            sts = m_BSE.RunBSP(bInsertIVF, bInsertSH, pTask->m_pBitsteam, (MFX_VP8ENC::TaskHybridDDI *)pTask, layout, m_pmfxCore);
+            MFX_CHECK_STS(sts);
         }
 
         {

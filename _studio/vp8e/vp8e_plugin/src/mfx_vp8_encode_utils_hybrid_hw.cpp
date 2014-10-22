@@ -74,6 +74,7 @@ namespace MFX_VP8ENC
         mfxExtOpaqueSurfaceAlloc* opaqDst = (mfxExtOpaqueSurfaceAlloc*)GetExtBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION); 
 
         par->mfx        = parSrc->mfx;
+        par->mfx.BufferSizeInKB *= 3; // hybrid driver BRC can't fit HRD buffer sometimes - let's provide more space
         par->Protected  = parSrc->Protected;
         par->IOPattern  = parSrc->IOPattern;
         par->AsyncDepth = parSrc->AsyncDepth;
