@@ -71,7 +71,8 @@ typedef struct _mfxEncryptedData{
     mfxU32 DataLength; /* size of plain data in bytes */
     mfxU32 MaxLength; /*allocated  buffer size in bytes*/
     mfxAES128CipherCounter CipherCounter;
-    mfxU32 reserved2[8];
+    mfxU32 AppId;
+    mfxU32 reserved2[7];
 } mfxEncryptedData;
 
 typedef struct _mfxExtPAVPOption{
