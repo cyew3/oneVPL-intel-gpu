@@ -30,6 +30,27 @@ IMFXPipeline * ConfigForTestThreadSafetyDecode::CreatePipeline()
 mfxStatus DecodePipelineForTestThreadSafety::CreateRender()
 {
     mfxStatus sts = MFX_ERR_NONE;
+    if (m_inParams.outFrameInfo.FourCC == MFX_FOURCC_UNKNOWN)
+    {
+        m_inParams.outFrameInfo.FourCC = m_components[eDEC].m_params.mfx.FrameInfo.ChromaFormat == MFX_CHROMAFORMAT_YUV422 ?  MFX_FOURCC_YV16 : MFX_FOURCC_YV12;
+        m_inParams.outFrameInfo.BitDepthLuma = 8;
+        m_inParams.outFrameInfo.BitDepthChroma = 8;
+        if (m_components[eDEC].m_params.mfx.FrameInfo.FourCC == MFX_FOURCC_P010)
+        {
+            m_inParams.outFrameInfo.FourCC = MFX_FOURCC_YUV420_16;
+            m_inParams.outFrameInfo.BitDepthLuma = m_components[eDEC].m_params.mfx.FrameInfo.BitDepthLuma;
+            m_inParams.outFrameInfo.BitDepthChroma = m_components[eDEC].m_params.mfx.FrameInfo.BitDepthChroma;
+            m_inParams.outFrameInfo.Shift          = m_components[eDEC].m_params.mfx.FrameInfo.Shift;
+        }
+    }
+    if (   MFX_FOURCC_P010    == m_inParams.outFrameInfo.FourCC
+        || MFX_FOURCC_P210    == m_inParams.outFrameInfo.FourCC
+        || MFX_FOURCC_NV16    == m_inParams.outFrameInfo.FourCC
+        || MFX_FOURCC_NV12    == m_inParams.outFrameInfo.FourCC
+        || MFX_FOURCC_A2RGB10 == m_inParams.outFrameInfo.FourCC
+        ) {
+            m_components[eREN].m_params.mfx.FrameInfo.FourCC = m_inParams.outFrameInfo.FourCC;
+    }
     m_pRender = new OutputYuvTester(m_components[eREN].m_pSession, &sts);
     MFX_CHECK_STS(sts);
     return sts;
@@ -87,7 +108,14 @@ mfxStatus OutputYuvTester::RenderFrame(mfxFrameSurface1 *surface, mfxEncodeCtrl 
     mfxU8* ptr = surface->Data.Y + surface->Info.CropY * surface->Data.Pitch + surface->Info.CropX;
     for (mfxU32 i = 0; i < surface->Info.CropH; i++, ptr += surface->Data.Pitch)
     {
-        outReg->CommitData(m_handle, ptr, surface->Info.CropW);
+        if (m_video.mfx.FrameInfo.FourCC == MFX_FOURCC_P010)
+        {
+            outReg->CommitData(m_handle, ptr, surface->Info.CropW * 2);
+        }
+        else
+        {
+            outReg->CommitData(m_handle, ptr, surface->Info.CropW);
+        }
     }
 
     if (m_video.mfx.FrameInfo.FourCC == MFX_FOURCC_YV12)
@@ -134,6 +162,18 @@ mfxStatus OutputYuvTester::RenderFrame(mfxFrameSurface1 *surface, mfxEncodeCtrl 
 
             outReg->CommitData(m_handle, buf, (surface->Info.CropW + 1) / 2);
         }
+    }
+    else if (m_video.mfx.FrameInfo.FourCC == MFX_FOURCC_P010)
+    {
+        mfxU8* buf = new mfxU8[surface->Info.CropW * 2];
+
+        for (mfxI32 i = 0; i < (surface->Info.CropH + 1) / 2; i++)
+        {
+            memcpy(buf, surface->Data.UV + i*surface->Data.Pitch, surface->Info.CropW * 2);
+            outReg->CommitData(m_handle, buf, surface->Info.CropW * 2);
+        }
+
+        delete [] buf;
     }
     else
     {

@@ -32,12 +32,12 @@ VM_STRING(#name), TEST_##name\
 
 mfxU32 String2TestType(const vm_char* s)
 {
-    static struct _unnamed01{ 
-        vm_char name[64]; 
+    static struct _unnamed01{
+        vm_char name[64];
         mfxU32 id;
-    } TestTypeStrings [] = 
+    } TestTypeStrings [] =
     {
-        MAKE_PAIR(JPEGDECODE), 
+        MAKE_PAIR(JPEGDECODE),
         MAKE_PAIR(H264DECODE),
         MAKE_PAIR(MPEG2DECODE),
         MAKE_PAIR(MVCDECODE),
@@ -161,6 +161,17 @@ CommandLine::CommandLine(mfxI32 argc, vm_char** argv)
         }
         else if (vm_string_strcmp(argv[i], VM_STRING("-o")) == 0)
         {
+            if (++i < argc)
+            {
+                // save output file name
+                // actually there will be as many output files as threads run
+                // names will be <outFileName>.<numThread>
+                m_outFileName = argv[i];
+            }
+        }
+        else if (vm_string_strncmp(argv[i], VM_STRING("-o:"), 3) == 0)
+        {
+            m_argv[m_argc++] = argv[i];
             if (++i < argc)
             {
                 // save output file name
