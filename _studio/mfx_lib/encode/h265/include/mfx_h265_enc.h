@@ -215,7 +215,7 @@ public:
     bool AllReferencesReady(Ipp32u ctb_row);
 
     template <typename PixType>
-    mfxStatus EncodeThread(Ipp32s & ithread, Ipp32u* onExitEvent);
+    mfxStatus EncodeThread(Ipp32s & ithread, volatile Ipp32u* onExitEvent);
 
     H265VideoParam* GetVideoParam() {return &m_videoParam;};
 

@@ -1896,7 +1896,7 @@ template <class PixType> void PadOneLine_Bottom_v2(PixType *startLine, Ipp32s pi
 //#define _HOLD_ON_ROW_
 
 template <typename PixType>
-mfxStatus H265FrameEncoder::EncodeThread(Ipp32s & ithread, Ipp32u* onExitEvent) 
+mfxStatus H265FrameEncoder::EncodeThread(Ipp32s & ithread, volatile Ipp32u* onExitEvent) 
 {
     // Check Flag OnExit - on entry point check
     if ( onExitEvent && (*onExitEvent) >= 2) {
@@ -2475,8 +2475,8 @@ int H265CU<PixType>::GetCalqDeltaQp(TAdapQP* sliceAQP, Ipp64f sliceLambda)
 
 #endif
 
-template mfxStatus H265FrameEncoder::EncodeThread<Ipp8u>(Ipp32s & ithread, Ipp32u* onExitEvent);
-template mfxStatus H265FrameEncoder::EncodeThread<Ipp16u>(Ipp32s & ithread, Ipp32u* onExitEvent);
+template mfxStatus H265FrameEncoder::EncodeThread<Ipp8u>(Ipp32s & ithread, volatile Ipp32u* onExitEvent);
+template mfxStatus H265FrameEncoder::EncodeThread<Ipp16u>(Ipp32s & ithread, volatile Ipp32u* onExitEvent);
 
 //} // namespace
 

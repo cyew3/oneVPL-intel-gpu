@@ -439,7 +439,8 @@ mfxI32 H265BRC::GetQP(H265VideoParam &video, H265Frame *pFrame, mfxI32 *chromaQP
     mfxI32 qp = mQuantB;
 
     if (pFrame) {
-        mfxU32 frameType = pFrame->m_picCodeType;
+        mfxU16 frameType = (mfxU16)pFrame->m_picCodeType | (pFrame->IsReference() ?  MFX_FRAMETYPE_REF : 0);
+        //mfxU32 frameType = pFrame->m_picCodeType;
 
         if (frameType & MFX_FRAMETYPE_I) 
             qp =  mQuantI;

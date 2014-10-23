@@ -167,7 +167,7 @@ private:
     static mfxStatus TaskRoutine(void *pState, void *pParam, mfxU32 threadNumber, mfxU32 callNumber);
     static mfxStatus TaskCompleteProc(void *pState, void *pParam, mfxStatus taskRes);
 
-    mfxStatus EncSolver(Task* task, Ipp32u* onExitEvent);
+    mfxStatus EncSolver(Task* task, volatile Ipp32u* onExitEvent);
     void SyncOnTaskCompleted(Task* task, mfxBitstream* mfxBs, void *pParam);
 
     // ------- Pre Encode Analysis (lookahead / paq etc)

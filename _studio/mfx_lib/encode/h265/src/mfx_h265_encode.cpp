@@ -2499,6 +2499,9 @@ mfxStatus MFXVideoENCODEH265::AddNewOutputTask(int& encIdx)
 #endif
 
     if ( m_brc && m_videoParam.m_framesInParallel == 1 ) {
+        if(task->m_frameOrigin->m_poc == 196) {
+            printf("\n 196 \n");
+        }
         task->m_sliceQpY = (Ipp8s)m_brc->GetQP(m_videoParam, task->m_frameOrigin);
     }
 
@@ -2618,7 +2621,7 @@ mfxStatus MFXVideoENCODEH265::EncodeFrameCheck(mfxEncodeCtrl *ctrl, mfxFrameSurf
 } // 
 
 
-mfxStatus MFXVideoENCODEH265::EncSolver(Task* task, Ipp32u* onExitEvent)
+mfxStatus MFXVideoENCODEH265::EncSolver(Task* task, volatile Ipp32u* onExitEvent)
 {
     int encIdx = task->m_encIdx;
     H265FrameEncoder* fenc = m_frameEncoder[encIdx];
@@ -2695,10 +2698,10 @@ void MFXVideoENCODEH265::SyncOnTaskCompleted(Task* task, mfxBitstream* mfxBs, vo
                     printf("\n REENCODE!!! \n");fflush(stderr);
                     //inputParam->m_reencode = 1;
                     //goto recode;
-                //}
+                    //}
 
-                //if( m_videoParam.m_framesInParallel > 1 ) 
-                //{
+                    //if( m_videoParam.m_framesInParallel > 1 ) 
+                    //{
 
                     // wait completion of all running tasks
                     TaskIter tit = m_outputQueue.begin();
@@ -2743,45 +2746,45 @@ void MFXVideoENCODEH265::SyncOnTaskCompleted(Task* task, mfxBitstream* mfxBs, vo
                         if(taskIdx + 1 < m_outputQueue.size()) 
                             tit++;
                     }
-                 //  ( m_videoParam.m_framesInParallel > 1 )
+                    //  ( m_videoParam.m_framesInParallel > 1 )
 
-                vm_interlocked_cas32( &inputParam->m_reencode, 1, 0);
-                vm_interlocked_cas32( &(m_frameEncoder[task->m_encIdx]->GetEncodeTask()->m_ready), 1, 2);
+                    vm_interlocked_cas32( &inputParam->m_reencode, 1, 0);
+                    vm_interlocked_cas32( &(m_frameEncoder[task->m_encIdx]->GetEncodeTask()->m_ready), 7, 2); // signal to restart!!!
 
-                return;
+                    return;
                 }
-            
-            else if (brcSts & MFX_BRC_ERR_SMALL_FRAME) {
-                Ipp32s maxSize, minSize, bitsize = frameBytes << 3;
-                Ipp8u *p = mfxBs->Data + mfxBs->DataOffset + mfxBs->DataLength;
-                m_brc->GetMinMaxFrameSize(&minSize, &maxSize);
 
-                if (minSize >  ((Ipp32s)mfxBs->MaxLength << 3))
-                    minSize = (Ipp32s)mfxBs->MaxLength << 3;
+                else if (brcSts & MFX_BRC_ERR_SMALL_FRAME) {
+                    Ipp32s maxSize, minSize, bitsize = frameBytes << 3;
+                    Ipp8u *p = mfxBs->Data + mfxBs->DataOffset + mfxBs->DataLength;
+                    m_brc->GetMinMaxFrameSize(&minSize, &maxSize);
 
-                while (bitsize < minSize - 32) {
-                    *(Ipp32u*)p = 0;
-                    p += 4;
-                    bitsize += 32;
+                    if (minSize >  ((Ipp32s)mfxBs->MaxLength << 3))
+                        minSize = (Ipp32s)mfxBs->MaxLength << 3;
+
+                    while (bitsize < minSize - 32) {
+                        *(Ipp32u*)p = 0;
+                        p += 4;
+                        bitsize += 32;
+                    }
+                    while (bitsize < minSize) {
+                        *p = 0;
+                        p++;
+                        bitsize += 8;
+                    }
+                    m_brc->PostPackFrame(*frameEnc->GetVideoParam(),  task->m_sliceQpY, task->m_frameOrigin, bitsize, (overheadBytes << 3) + bitsize - (frameBytes << 3), 1);
+                    mfxBs->DataLength += (bitsize >> 3) - frameBytes;
+
+                } else {
+                    printf("\n !!!MFX_ERR_NOT_ENOUGH_BUFFER!!! \n");fflush(stderr);
+                    //return MFX_ERR_NOT_ENOUGH_BUFFER;
                 }
-                while (bitsize < minSize) {
-                    *p = 0;
-                    p++;
-                    bitsize += 8;
-                }
-                m_brc->PostPackFrame(*frameEnc->GetVideoParam(),  task->m_sliceQpY, task->m_frameOrigin, bitsize, (overheadBytes << 3) + bitsize - (frameBytes << 3), 1);
-                mfxBs->DataLength += (bitsize >> 3) - frameBytes;
-
-            } else {
-                printf("\n !!!MFX_ERR_NOT_ENOUGH_BUFFER!!! \n");fflush(stderr);
-                //return MFX_ERR_NOT_ENOUGH_BUFFER;
             }
-        }
         }
 
         m_totalBits += (bs->DataLength - initialDataLength) * 8;
         vm_interlocked_cas32( &(task->m_ready), 3, 2);
-    
+
     }
 
 } // 
@@ -2902,12 +2905,12 @@ mfxStatus MFXVideoENCODEH265::TaskRoutine(void *pState, void *pParam, mfxU32 thr
     // STAGE [5]::[multi threading]::FRAME THREADING LOOP
     Ipp32u status;
     //while(inputParam->m_doStage >= 4 && inputParam->completedTask->m_ready < 2) {
-    while (inputParam->completedTask->m_ready < 3) {
+    while (inputParam->completedTask->m_ready < 3 || inputParam->completedTask->m_ready == 7) {
 
-        // restart
-        Ipp32u stageReencode = vm_interlocked_cas32( &inputParam->m_reencode, 0, 1 );
+        // restart due to BRC repack
+        Ipp32u stageReencode = vm_interlocked_cas32( &inputParam->completedTask->m_ready, 1, 7 );
         if (stageReencode == 1 ) {
-            th->m_core->INeedMoreThreadsInside(th);
+        //    th->m_core->INeedMoreThreadsInside(th);
         }
 
         // [priority #1]: speedup submitted output tasks

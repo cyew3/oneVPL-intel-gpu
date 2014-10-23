@@ -196,7 +196,7 @@ namespace H265Enc {
         void*      m_extParam;
 
         // for frame parallel
-        Ipp32u m_ready;  // 0 - task submitted to FrameEncoder (not run!!), 1 - FrameEncoder was run, 2 - task ready
+        volatile Ipp32u m_ready;  // 0 - task submitted to FrameEncoder (not run!!), 1 - FrameEncoder was run (resource assigned), 2 - task ready, 7 - need repack
         Ipp32s m_encIdx; // we have "N" frameEncoders. this index indicates owner of the task [0, ..., N-1]
 
         // for threading control
