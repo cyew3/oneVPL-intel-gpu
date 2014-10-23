@@ -239,7 +239,6 @@ STRUCT(mfxEncodeStat,
     FIELD_T(mfxU32, NumFrame            )
     FIELD_T(mfxU64, NumBit              )
     FIELD_T(mfxU32, NumCachedFrame      )
-    FIELD_T(mfxU32, NumFrameCountAsync  )
 )
 
 STRUCT(mfxDecodeStat,
@@ -626,7 +625,6 @@ STRUCT(mfxExtCodingOption3,
     FIELD_T(mfxU16      , NumSliceB    )
     FIELD_T(mfxU16      , WinBRCMaxAvgKbps)
     FIELD_T(mfxU16      , WinBRCSize)
-    FIELD_T(mfxU16*     , reserved)
 )
 
 STRUCT(mfxExtLAControl,
