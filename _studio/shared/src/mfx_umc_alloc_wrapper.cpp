@@ -878,12 +878,6 @@ mfxStatus mfx_UMC_FrameAllocator::PrepareToOutput(mfxFrameSurface1 *surface_work
         return MFX_ERR_UNSUPPORTED;
     }
 
-    MFX_INTERNAL_CPY(&m_surface.Info, &surface_work->Info, sizeof(surface_work->Info));
-
-    mfxFrameSurface1 dstSurface;
-    MFX_INTERNAL_CPY(&dstSurface.Info, &surface_work->Info, sizeof(surface_work->Info));
-    MFX_INTERNAL_CPY(&dstSurface.Data, &surface_work->Data, sizeof(surface_work->Data));
-
     sts = m_pCore->DoFastCopyWrapper(surface_work,
                                      MFX_MEMTYPE_EXTERNAL_FRAME | MFX_MEMTYPE_DXVA2_DECODER_TARGET,
                                      &m_surface,
