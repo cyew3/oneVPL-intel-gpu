@@ -114,6 +114,13 @@ typedef struct {
 
 typedef struct _mfxSyncPoint *mfxSyncPoint;
 
+typedef struct {
+    mfxIMPL     Implementation;
+    mfxVersion  Version;
+    mfxU16      ExternalThreads;
+    mfxU16      reserved[27];
+} mfxInitParam;
+
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */

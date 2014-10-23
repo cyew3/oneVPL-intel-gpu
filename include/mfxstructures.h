@@ -554,7 +554,7 @@ typedef struct {
     mfxU16      DisableVUI;
     mfxU16      BufferingPeriodSEI;
     mfxU16      EnableMAD;              /* tri-state option */
-    mfxU16      reserved2;
+    mfxU16      UseRawRef;              /* tri-state option */
 } mfxExtCodingOption2;
 
 typedef struct {
@@ -565,7 +565,8 @@ typedef struct {
     mfxU16      WinBRCMaxAvgKbps;
     mfxU16      WinBRCSize;
     mfxU16      QVBRQuality;
-    mfxU16      reserved[246];
+    mfxU16      EnableMBQP;
+    mfxU16      reserved[245];
 } mfxExtCodingOption3;
 
 /* IntraPredBlockSize/InterPredBlockSize */
@@ -628,7 +629,9 @@ enum {
     MFX_EXTBUFF_AVC_REFLISTS               = MFX_MAKEFOURCC('R','L','T','S'),
     MFX_EXTBUFF_DEC_VIDEO_PROCESSING       = MFX_MAKEFOURCC('D','E','C','V'),
     MFX_EXTBUFF_VPP_FIELD_PROCESSING       = MFX_MAKEFOURCC('F','P','R','O'),
-    MFX_EXTBUFF_CODING_OPTION3             = MFX_MAKEFOURCC('C','D','O','3')
+    MFX_EXTBUFF_CODING_OPTION3             = MFX_MAKEFOURCC('C','D','O','3'),
+    MFX_EXTBUFF_CHROMA_LOC_INFO            = MFX_MAKEFOURCC('C','L','I','N'),
+    MFX_EXTBUFF_MBQP                       = MFX_MAKEFOURCC('M','B','Q','P')
 };
 
 /* VPP Conf: Do not use certain algorithms  */
@@ -1117,6 +1120,26 @@ typedef struct {
     };
     mfxU16  reserved[9];
 } mfxExtDecVideoProcessing;
+
+typedef struct {
+    mfxExtBuffer Header;
+
+    mfxU16       ChromaLocInfoPresentFlag;
+    mfxU16       ChromaSampleLocTypeTopField;
+    mfxU16       ChromaSampleLocTypeBottomField;
+    mfxU16       reserved[9];
+} mfxExtChromaLocInfo;
+
+typedef struct {
+    mfxExtBuffer    Header;
+
+    mfxU32 reserved[11];
+    mfxU32 NumQPAlloc;
+    union {
+        mfxU8  *QP;
+        mfxU64 reserved2;
+    };
+} mfxExtMBQP;
 
 #ifdef __cplusplus
 } // extern "C"
