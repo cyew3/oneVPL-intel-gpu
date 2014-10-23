@@ -12,7 +12,7 @@
 #define __MFX_H265_ENC_H__
 
 #include <list>
-#include "umc_mutex.h"
+//#include "umc_mutex.h"
 #include "mfx_ext_buffers.h"
 #include "mfx_h265_defs.h"
 #include "mfx_h265_ctb.h"
@@ -150,33 +150,33 @@ struct H265VideoParam {
     Ipp8u UseDQP;
     Ipp32u MaxCuDQPDepth;
     Ipp32u MinCuDQPSize; 
-        Ipp32s m_maxDeltaQP;
+    Ipp32s m_maxDeltaQP;
 
-        Ipp32u  FrameRateExtN;
-        Ipp32u  FrameRateExtD;
-        Ipp16u  AspectRatioW;
-        Ipp16u  AspectRatioH;
-        Ipp16u  Profile;
-        Ipp16u  Tier;
-        Ipp16u  Level;
+    Ipp32u  FrameRateExtN;
+    Ipp32u  FrameRateExtD;
+    Ipp16u  AspectRatioW;
+    Ipp16u  AspectRatioH;
+    Ipp16u  Profile;
+    Ipp16u  Tier;
+    Ipp16u  Level;
 
-        mfxF64 tcDuration90KHz;
+    mfxF64 tcDuration90KHz;
 
-        // set
-        H265ProfileLevelSet* m_profile_level;
-        H265VidParameterSet* m_vps;
+    // set
+    H265ProfileLevelSet* m_profile_level;
+    H265VidParameterSet* m_vps;
 
-        H265SeqParameterSet *csps;
-        H265PicParameterSet *cpps;
+    H265SeqParameterSet *csps;
+    H265PicParameterSet *cpps;
 
-        Ipp8u *m_slice_ids;
-        costStat *m_costStat;
-        Ipp8u* m_logMvCostTable;
+    Ipp8u *m_slice_ids;
+    costStat *m_costStat;
+    Ipp8u* m_logMvCostTable;
 
-        // how many frame encoders will be used
-        Ipp32s m_framesInParallel; // 0, 1 - default. means no frame threading
-        Ipp32s m_meSearchRangeY;   // = Func1 ( m_framesInParallel )
-        Ipp32s m_lagBehindRefRows; // = Func2 ( m_framesInParallel ). How many ctb rows in ref frames have to be encoded
+    // how many frame encoders will be used
+    Ipp32s m_framesInParallel; // 0, 1 - default. means no frame threading
+    Ipp32s m_meSearchRangeY;   // = Func1 ( m_framesInParallel )
+    Ipp32s m_lagBehindRefRows; // = Func2 ( m_framesInParallel ). How many ctb rows in ref frames have to be encoded
     };
 
 class DispatchSaoApplyFilter
@@ -273,9 +273,6 @@ private:
 
     Ipp8u *m_slice_ids;
     costStat *m_costStat;
-
-    H265Frame *m_pNextFrame; // for GACC
-    H265Slice *m_slicesNext;
 
     CABAC_CONTEXT_H265 *m_context_array_wpp;
     

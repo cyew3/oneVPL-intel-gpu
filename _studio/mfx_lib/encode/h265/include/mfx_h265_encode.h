@@ -20,8 +20,6 @@
 #include "mfxvideo++int.h"
 #include "mfx_ext_buffers.h"
 
-#include "mfx_umc_alloc_wrapper.h"
-
 #include "mfx_h265_set.h"
 #include "mfx_h265_enc.h"
 
@@ -139,7 +137,6 @@ private:
     FeiContext *m_FeiCtx;
 #endif
 
-
     mfxStatus Init_Internal( void );
 
     // ------SPS, PPS
@@ -183,7 +180,6 @@ private:
 // pure functions
 namespace H265Enc {
     mfxStatus InitH265VideoParam(const mfxVideoParam *param /* IN */, H265VideoParam *par /* OUT */, const mfxExtCodingOptionHEVC *opts_hevc);
-    Task* FindOldestOutputTask(std::list<Task*> & encodeQueue);
 }
 #endif // __MFX_H265_ENCODE_H__
 

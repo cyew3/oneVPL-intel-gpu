@@ -1002,15 +1002,13 @@ H265FrameEncoder::H265FrameEncoder()
     data_temp = NULL;
     //m_slices = NULL;
     m_slice_ids = NULL;
-    //m_pCurrentFrame = 
-    m_pNextFrame = NULL;
     m_context_array_wpp = NULL;
 
 #ifdef MFX_ENABLE_WATERMARK
     m_watermark = NULL;
 #endif
 
-} // H265FrameEncoder::H265FrameEncoder() 
+} // 
 
 
 mfxStatus H265FrameEncoder::Init(const mfxVideoParam* mfxParam, const H265VideoParam & videoParam, const mfxExtCodingOptionHEVC *optsHevc, VideoCORE *core)
@@ -1122,9 +1120,6 @@ mfxStatus H265FrameEncoder::Init(const mfxVideoParam* mfxParam, const H265VideoP
     m_videoParam.m_slice_ids = m_slice_ids;
     m_videoParam.m_costStat = m_costStat;
 
-    //// CTB BRC
-    //m_videoParam.m_lcuQps = NULL;
-    //m_videoParam.m_lcuQps = new Ipp8s[numCtbs];
 
     ippsZero_8u((Ipp8u *)cu, sizeofH265CU * m_videoParam.num_thread_structs);
     ippsZero_8u((Ipp8u*)data_temp, sizeof(H265CUData) * data_temp_size * m_videoParam.num_thread_structs);
@@ -1205,25 +1200,6 @@ void H265FrameEncoder::Close()
 } // void H265FrameEncoder::Close()
 
 namespace H265Enc {
-
-Task* FindOldestOutputTask(TaskList & encodeQueue)
-{
-    TaskIter begin = encodeQueue.begin();
-    TaskIter end = encodeQueue.end();
-
-    if (begin == end)
-        return NULL;
-
-    TaskIter oldest = begin;
-    for (++begin; begin != end; ++begin) {
-        if ( (*oldest)->m_encOrder > (*begin)->m_encOrder)
-            oldest = begin;
-    }
-    
-    return *oldest;
-
-} // 
-
 
 Ipp8s GetConstQp(Task const & task, H265VideoParam const & param)
 {
@@ -1422,24 +1398,6 @@ void MFXVideoENCODEH265::PrepareToEncode(Task* task)
         task->m_sliceQpY = GetConstQp(*task, m_videoParam);
     }
 
-    //-----------------------------------------------------
-    //Ipp32s numCtb = m_videoParam.PicHeightInCtbs * m_videoParam.PicWidthInCtbs;
-    //memset(&task->m_lcuQps[0], task->m_sliceQpY, sizeof(task->m_sliceQpY)*numCtb);
-
-//#if defined (MFX_ENABLE_H265_PAQ)
-//    if(m_videoParam.preEncMode && m_videoParam.UseDQP) {
-//        int poc = task->m_frameOrigin->m_poc;
-//        for(int ctb=0; ctb<numCtb; ctb++) {
-//            int ctb_adapt = ctb;
-//            int locPoc = poc % m_preEnc.m_histLength;
-//            if(m_videoParam.preEncMode != 2) {// no pure CALQ 
-//                task->m_lcuQps[ctb] += m_preEnc.m_acQPMap[locPoc].getDQP(ctb_adapt);
-//            }
-//        }
-//    }
-//#endif
-//    // ----------------------------------------------------
-
     H265Frame *currFrame = task->m_frameOrigin;
 
     // create reference lists and RPS syntax
@@ -1493,11 +1451,6 @@ void MFXVideoENCODEH265::PrepareToEncode(Task* task)
     H265Slice *currSlices = task->m_slices;
     for (Ipp8u i = 0; i < m_videoParam.NumSlices; i++) {
         SetSlice(currSlices + i, i, currFrame);
-
-        //-------------------------------------------------
-        //(currSlices + i)->slice_qp_delta = task->m_sliceQpY - m_pps.init_qp;
-        //SetAllLambda(m_videoParam, (currSlices + i), task->m_sliceQpY, task->m_frameOrigin );
-        //--------------------------------------------------
 
         currSlices[i].short_term_ref_pic_set_sps_flag = useSpsRps;
         if (currSlices[i].short_term_ref_pic_set_sps_flag)

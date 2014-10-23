@@ -61,112 +61,92 @@ namespace H265Enc {
     {
     public:
 
-    void *mem;
-    H265CUData *cu_data;
-    Ipp8u *y;
-    Ipp8u *uv;
+        void *mem;
+        H265CUData *cu_data;
+        Ipp8u *y;
+        Ipp8u *uv;
 
-    Ipp32s width;
-    Ipp32s height;
-    Ipp32s padding;
-    Ipp32s pitch_luma_pix;
-    Ipp32s pitch_luma_bytes;
-    Ipp32s pitch_chroma_pix;
-    Ipp32s pitch_chroma_bytes;
-    Ipp8u  m_bitDepthLuma;
-    Ipp8u  m_bdLumaFlag;
-    Ipp8u  m_bitDepthChroma;
-    Ipp8u  m_bdChromaFlag;
-    Ipp8u  m_chromaFormatIdc;
+        Ipp32s width;
+        Ipp32s height;
+        Ipp32s padding;
+        Ipp32s pitch_luma_pix;
+        Ipp32s pitch_luma_bytes;
+        Ipp32s pitch_chroma_pix;
+        Ipp32s pitch_chroma_bytes;
+        Ipp8u  m_bitDepthLuma;
+        Ipp8u  m_bdLumaFlag;
+        Ipp8u  m_bitDepthChroma;
+        Ipp8u  m_bdChromaFlag;
+        Ipp8u  m_chromaFormatIdc;
 
-    mfxU64 m_timeStamp;
-    Ipp32u m_picCodeType;
-    Ipp32s m_RPSIndex;
-    Ipp8u  m_wasLookAheadProcessed;
-    Ipp32s m_pyramidLayer;
-    Ipp32s m_miniGopCount;
-    Ipp32s m_biFramesInMiniGop;
-    Ipp32s m_frameOrder;
-    Ipp32s m_frameOrderOfLastIdr;
-    Ipp32s m_frameOrderOfLastIntra;
-    Ipp32s m_frameOrderOfLastAnchor;
-    Ipp32s m_poc;
-    Ipp32s m_encOrder;
-    Ipp8u  m_isShortTermRef;
-    Ipp8u  m_isLongTermRef;
-    Ipp8u  m_isIdrPic;
-    Ipp8u  m_isRef;
-    RefPicList m_refPicList[2]; // 2 reflists containing reference frames used by current frame
-    Ipp32s m_mapRefIdxL1ToL0[MAX_NUM_REF_IDX];
-    Ipp32s m_mapListRefUnique[2][MAX_NUM_REF_IDX];
-    Ipp32s m_numRefUnique;
-    Ipp32s m_allRefFramesAreFromThePast;
+        mfxU64 m_timeStamp;
+        Ipp32u m_picCodeType;
+        Ipp32s m_RPSIndex;
+        Ipp8u  m_wasLookAheadProcessed;
+        Ipp32s m_pyramidLayer;
+        Ipp32s m_miniGopCount;
+        Ipp32s m_biFramesInMiniGop;
+        Ipp32s m_frameOrder;
+        Ipp32s m_frameOrderOfLastIdr;
+        Ipp32s m_frameOrderOfLastIntra;
+        Ipp32s m_frameOrderOfLastAnchor;
+        Ipp32s m_poc;
+        Ipp32s m_encOrder;
+        Ipp8u  m_isShortTermRef;
+        Ipp8u  m_isLongTermRef;
+        Ipp8u  m_isIdrPic;
+        Ipp8u  m_isRef;
+        RefPicList m_refPicList[2]; // 2 reflists containing reference frames used by current frame
+        Ipp32s m_mapRefIdxL1ToL0[MAX_NUM_REF_IDX];
+        Ipp32s m_mapListRefUnique[2][MAX_NUM_REF_IDX];
+        Ipp32s m_numRefUnique;
+        Ipp32s m_allRefFramesAreFromThePast;
 
-    volatile Ipp32s m_codedRow; // sync info in case of frame threading
-    volatile Ipp32u m_refCounter; // to prevent race condition in case of frame threading
+        volatile Ipp32s m_codedRow; // sync info in case of frame threading
+        volatile Ipp32u m_refCounter; // to prevent race condition in case of frame threading
 
-    H265Frame()
-    {
-        ResetMemInfo();
-        ResetEncInfo();
-        ResetCounters();
-    }
+        H265Frame()
+        {
+            ResetMemInfo();
+            ResetEncInfo();
+            ResetCounters();
+        }
 
-    ~H265Frame() { Destroy(); mem = NULL;}
+        ~H265Frame() { Destroy(); mem = NULL;}
 
-    Ipp8u wasLAProcessed()    { return m_wasLookAheadProcessed; }
-    void setWasLAProcessed() { m_wasLookAheadProcessed = true; }
-    void unsetWasLAProcessed() { m_wasLookAheadProcessed = false; }
+        Ipp8u wasLAProcessed()    { return m_wasLookAheadProcessed; }
+        void setWasLAProcessed() { m_wasLookAheadProcessed = true; }
+        void unsetWasLAProcessed() { m_wasLookAheadProcessed = false; }
 
-        bool IsReference()
+        bool IsReference() const
         {
             return (isShortTermRef() || isLongTermRef() );
         }
 
-    // API for short_ref
-    Ipp8u isShortTermRef()
-    {
-        return m_isShortTermRef;
-    }
-    void SetisShortTermRef()
-    {
-        m_isShortTermRef = true;
-    }
-    void unSetisShortTermRef()
-    {
-        m_isShortTermRef = false;
-    }
+        Ipp8u isShortTermRef() const
+        {
+            return m_isShortTermRef;
+        }
 
-    // API for long_ref
-    Ipp8u isLongTermRef()
-    {
-        return m_isLongTermRef;
-    }
-
-    void SetisLongTermRef()
-    {
-        m_isLongTermRef = true;
-    }
-
-    void unSetisLongTermRef()
-    {
-        m_isLongTermRef = false;
-    }
+        Ipp8u isLongTermRef() const
+        {
+            return m_isLongTermRef;
+        }
 
         void Create(H265VideoParam *par);
         void CopyFrame(const mfxFrameSurface1 *surface);
 
-    void Destroy();
-    //void Dump(const vm_char* fname, H265VideoParam *par, TaskList * dpb, Ipp32s frame_num);
+        void Destroy();
+        //void Dump(const vm_char* fname, H265VideoParam *par, TaskList * dpb, Ipp32s frame_num);
 
-    void ResetMemInfo();
-    void ResetEncInfo();
-    void ResetCounters();
-    void CopyEncInfo(const H265Frame* src);
+        void ResetMemInfo();
+        void ResetEncInfo();
+        void ResetCounters();
+        void CopyEncInfo(const H265Frame* src);
 
-    void AddRef(void)  { vm_interlocked_inc32(&m_refCounter);};
-    void Release(void) { vm_interlocked_dec32(&m_refCounter);}; // !!! here not to delete in case of refCounter == 0 !!!
-};
+        void AddRef(void)  { vm_interlocked_inc32(&m_refCounter);};
+        void Release(void) { vm_interlocked_dec32(&m_refCounter);}; // !!! here not to delete in case of refCounter == 0 !!!
+    };
 
 
     struct Task
@@ -183,11 +163,9 @@ namespace H265Enc {
         H265Frame* m_dpb[16];
         Ipp32s     m_dpbSize;
 
-        //-------------------------------------------------
         Ipp8s     m_sliceQpY;
         std::vector<Ipp8s> m_lcuQps; // array for LCU QPs
         H265Slice m_dqpSlice[2*MAX_DQP+1];
-        //-------------------------------------------------
 
         H265ShortTermRefPicSet m_shortRefPicSet[66];
         mfxBitstream *m_bs;
