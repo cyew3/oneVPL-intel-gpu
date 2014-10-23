@@ -873,6 +873,7 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
 
     mfxExtCodingOption3 & extOpt3 = GetExtBufferRef(m_video);
 
+#if defined(MFX_VA_WIN)
     if (IsOn(extOpt3.EnableMBQP) && m_core->GetVAType() != MFX_HW_VAAPI)
     {
         m_useMBQPSurf = true;
@@ -897,6 +898,7 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
         sts = m_ddi->Register(m_mbqp, D3DDDIFMT_INTELENCODE_MBQPDATA);
         MFX_CHECK_STS(sts);
     }
+#endif
 
     // Allocate surfaces for bitstreams.
     // Need at least one such surface and more for async-mode.
