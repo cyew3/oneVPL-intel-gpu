@@ -231,6 +231,10 @@ mfxStatus MFXScreenCapture_Plugin::CreateVideoAccelerator()
     hres  = m_pD11VideoDevice->CreateVideoDecoder(&video_desc, &video_config, &m_pDecoder);
     if (FAILED(hres))
         return MFX_ERR_DEVICE_FAILED;
+    //w/a for debug. Waiting for HSD5595359. This w/a will cause decoder resource leak.
+#if defined(_DEBUG)
+    m_pDecoder.p->AddRef();
+#endif
 
     return MFX_ERR_NONE;
 }

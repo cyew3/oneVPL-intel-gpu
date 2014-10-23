@@ -25,6 +25,10 @@
   <ItemGroup>
     <ClCompile Include="src\mfx_screen_capture_plugin.cpp" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="22d62c07e672408fbb4cc20ed7a053e4\plugin.cfg" />
+    <None Include="22d62c07e672408fbb4cc20ed7a053e4\plugin_for_debug.cfg" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{4041A665-2623-43CA-88D4-7D516875F864}</ProjectGuid>
     <RootNamespace>camera_pipe_plugin</RootNamespace>

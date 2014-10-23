@@ -7,6 +7,9 @@
     <Filter Include="Source Files">
       <UniqueIdentifier>{63eeb42a-2ccb-47ef-b476-a97c63053eca}</UniqueIdentifier>
     </Filter>
+    <Filter Include="cfg-files">
+      <UniqueIdentifier>{99d92eac-ab2c-4ae0-bb20-1fced9ae4056}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\mfx_screen_capture_plugin.h">
@@ -20,5 +23,13 @@
     <ClCompile Include="src\mfx_screen_capture_plugin.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="22d62c07e672408fbb4cc20ed7a053e4\plugin_for_debug.cfg">
+      <Filter>cfg-files</Filter>
+    </None>
+    <None Include="22d62c07e672408fbb4cc20ed7a053e4\plugin.cfg">
+      <Filter>cfg-files</Filter>
+    </None>
   </ItemGroup>
 </Project>
