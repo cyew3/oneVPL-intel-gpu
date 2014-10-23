@@ -2875,7 +2875,8 @@ mfxStatus MFXVideoENCODEH265::TaskRoutine(void *pState, void *pParam, mfxU32 thr
                 nextTask = (*it3);
             }
             //----
-            th->ProcessFrameFEI_Next(nextTask);
+            if (nextTask)
+                th->ProcessFrameFEI_Next(nextTask);
         }
     }
 #endif // MFX_VA
