@@ -535,6 +535,13 @@ namespace MFX_VP8ENC
         return sts;
     }
 
+    inline bool IsResetOfPipelineRequired(const mfxVideoParam& oldPar, const mfxVideoParam& newPar)
+    {
+        return oldPar.mfx.FrameInfo.Width != newPar.mfx.FrameInfo.Width
+              || oldPar.mfx.FrameInfo.Height != newPar.mfx.FrameInfo.Height
+              ||  oldPar.mfx.GopPicSize != newPar.mfx.GopPicSize;
+    }
+
     /*for Full Encode (SW or HW)*/
     template <class TTask>
     class TaskManager
@@ -634,15 +641,11 @@ namespace MFX_VP8ENC
               MFX_CHECK(m_ReconFrames.Width()  >= par->mfx.FrameInfo.Width,MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
 
               MFX_CHECK(mfxU16(CalcNumSurfRawLocal(*par,m_bHWFrames,isVideoSurfInput(*par))) <= m_LocalRawFrames.Num(),MFX_ERR_INCOMPATIBLE_VIDEO_PARAM); 
-              MFX_CHECK(mfxU16(CalcNumSurfRecon(*par)) <= m_ReconFrames.Num(),MFX_ERR_INCOMPATIBLE_VIDEO_PARAM); 
-
-              bool bResetEncodingPipeline = m_video.mfx.FrameInfo.Width != par->mfx.FrameInfo.Width
-              || m_video.mfx.FrameInfo.Height != par->mfx.FrameInfo.Height
-              || m_video.mfx.GopPicSize != par->mfx.GopPicSize;
+              MFX_CHECK(mfxU16(CalcNumSurfRecon(*par)) <= m_ReconFrames.Num(),MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
 
               m_video = *par;
 
-              if (bResetEncodingPipeline)
+              if (IsResetOfPipelineRequired(m_video, *par))
               {
                   m_frameNum = 0;
                   ReleaseDpbFrames();

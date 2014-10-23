@@ -176,9 +176,13 @@ namespace MFX_VP8ENC
         mfxStatus Reset(mfxVideoParam *par)
         {
             m_maxBrcUpdateDelay = par->AsyncDepth > 2 ? 2: par->AsyncDepth; // driver supports maximum 2-frames BRC update delay
-            m_frameNumOfLastArrivedFrame = 0;
-            m_frameNumOfLastFrameSubmittedToDriver = -1;
-            m_frameNumOfLastEncodedFrame = -1;
+
+            if (IsResetOfPipelineRequired(m_video, *par))
+            {
+                m_frameNumOfLastArrivedFrame = 0;
+                m_frameNumOfLastFrameSubmittedToDriver = -1;
+                m_frameNumOfLastEncodedFrame = -1;
+            }
             return BaseClass::Reset(par);
         }
         inline
