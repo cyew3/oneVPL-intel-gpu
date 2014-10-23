@@ -164,6 +164,7 @@ namespace MfxHwH264Encode
 
         std::vector<mfxHDLPair>                     m_reconQueue;
         std::vector<mfxHDLPair>                     m_bsQueue;
+        std::vector<mfxHDLPair>                     m_mbqpQueue;
 
         mfxU16                                      m_forcedCodingFunction;
         mfxU8                                       m_numSkipFrames;

@@ -1201,6 +1201,7 @@ bool MfxHwH264Encode::IsRunTimeExtBufferIdSupported(mfxU32 id)
         || id == MFX_EXTBUFF_PICTURE_TIMING_SEI
         || id == MFX_EXTBUFF_CODING_OPTION2
         || id == MFX_EXTBUFF_ENCODER_ROI
+        || id == MFX_EXTBUFF_MBQP
 #if defined (MFX_ENABLE_H264_VIDEO_FEI_ENCPAK)
         || id == MFX_EXTBUFF_FEI_ENC_CTRL
         || id == MFX_EXTBUFF_FEI_ENC_MB
@@ -3135,6 +3136,15 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
         if (!CheckRangeDflt(extOpt2->MinQPB, 0, (extOpt2->MaxQPB ? extOpt2->MaxQPB : 51), 0)) changed = true;
     }
 
+    
+    if (!CheckTriStateOption(extOpt3->EnableMBQP)) changed = true;
+
+    if (IsOn(extOpt3->EnableMBQP) && !(hwCaps.MbQpDataSupport && par.mfx.RateControlMethod == MFX_RATECONTROL_CQP))
+    {
+        extOpt3->EnableMBQP = MFX_CODINGOPTION_OFF;
+        changed = true;
+    }
+
     if (!CheckRangeDflt(extOpt2->DisableDeblockingIdc, 0, 1, 0)) changed = true;
     if (!CheckTriStateOption(extOpt2->EnableMAD)) changed = true;
 
@@ -4067,6 +4077,9 @@ void MfxHwH264Encode::SetDefaults(
 
     if (par.calcParam.mvcPerViewPar.codecLevel == MFX_LEVEL_UNKNOWN)
         par.calcParam.mvcPerViewPar.codecLevel = MFX_LEVEL_AVC_1;
+
+    if (extOpt3->EnableMBQP == MFX_CODINGOPTION_UNKNOWN)
+        extOpt3->EnableMBQP = MFX_CODINGOPTION_OFF;
 
     CheckVideoParamMvcQueryLike(par);
 

@@ -998,7 +998,7 @@ mfxStatus D3D9Encoder::CreateAccelerationService(MfxVideoParam const & par)
 
     mfxU32 const MAX_NUM_PACKED_SPS = 9;
     mfxU32 const MAX_NUM_PACKED_PPS = 9;
-    m_compBufDesc.resize(11 + MAX_NUM_PACKED_SPS + MAX_NUM_PACKED_PPS + par.mfx.NumSlice);
+    m_compBufDesc.resize(12 + MAX_NUM_PACKED_SPS + MAX_NUM_PACKED_PPS + par.mfx.NumSlice);
 
     Zero(m_sps);
     Zero(m_vui);
@@ -1224,6 +1224,8 @@ mfxStatus D3D9Encoder::Execute(
     UINT & bufCnt = encodeExecuteParams.NumCompBuffers;
     UCHAR  SkipFlag = task.SkipFlag();
     mfxU32 skipMode = m_skipMode;
+    mfxU32 mbqpIdx  = task.m_idxMBQP;
+
     mfxExtCodingOption2* ctrlOpt2 = GetExtBuffer(task.m_ctrl, MFX_EXTBUFF_CODING_OPTION2);
 
     if (ctrlOpt2 && ctrlOpt2->SkipFrame <= MFX_SKIPFRAME_BRC_ONLY)
@@ -1306,6 +1308,14 @@ mfxStatus D3D9Encoder::Execute(
     m_compBufDesc[bufCnt].DataSize = mfxU32(sizeof(bitstream));
     m_compBufDesc[bufCnt].pCompBuffer = &bitstream;
     bufCnt++;
+
+    if (task.m_isMBQP)
+    {
+        m_compBufDesc[bufCnt].CompressedBufferType = D3DDDIFMT_INTELENCODE_MBQPDATA;
+        m_compBufDesc[bufCnt].DataSize             = mfxU32(sizeof(mbqpIdx));
+        m_compBufDesc[bufCnt].pCompBuffer          = &mbqpIdx;
+        bufCnt++;
+    }
 
     if (m_caps.HeaderInsertion == 1 && SkipFlag == 0)
     {

@@ -197,6 +197,7 @@ namespace MfxHwH264Encode
     BIND_EXTBUF_TYPE_TO_ID (mfxExtAVCRefLists,          MFX_EXTBUFF_AVC_REFLISTS             );
 #endif
     BIND_EXTBUF_TYPE_TO_ID (mfxExtCodingOption3,        MFX_EXTBUFF_CODING_OPTION3           );
+    BIND_EXTBUF_TYPE_TO_ID (mfxExtMBQP,                 MFX_EXTBUFF_MBQP                     );
 #undef BIND_EXTBUF_TYPE_TO_ID
 
     template <class T> inline void InitExtBufHeader(T & extBuf)

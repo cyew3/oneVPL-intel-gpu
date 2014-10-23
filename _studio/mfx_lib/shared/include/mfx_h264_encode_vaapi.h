@@ -166,6 +166,7 @@ namespace MfxHwH264Encode
         VABufferID m_miscParameterSkipBufferId; // VAEncMiscParameterSkipFrame
         VABufferID m_roiBufferId;
         VABufferID m_ppsBufferId;
+        VABufferID m_mbqpBufferId;
         std::vector<VABufferID> m_sliceBufferId;
 
         VABufferID m_packedAudHeaderBufferId;

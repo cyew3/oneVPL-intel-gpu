@@ -658,6 +658,7 @@ ImplementationAvc::ImplementationAvc(VideoCORE * core)
 , m_isENCPAK(false)
 , m_isWiDi(false)
 , m_resetBRC(false)
+, m_useMBQPSurf(false)
 {
 /*
     FEncLog = fopen("EncLog.txt", "wb");
@@ -869,6 +870,33 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
     m_recFrameOrder.resize(request.NumFrameMin, 0xffffffff);
 
     m_recNonRef[0] = m_recNonRef[1] = 0xffffffff;
+
+    mfxExtCodingOption3 & extOpt3 = GetExtBufferRef(m_video);
+
+    if (IsOn(extOpt3.EnableMBQP) && m_core->GetVAType() != MFX_HW_VAAPI)
+    {
+        m_useMBQPSurf = true;
+
+        //Allocated surfaces for MB QP data
+        sts = m_ddi->QueryCompBufferInfo(D3DDDIFMT_INTELENCODE_MBQPDATA, request);
+        MFX_CHECK_STS(sts); 
+
+        if (MFX_HW_D3D11 == m_core->GetVAType())
+            request.Info.FourCC = MFX_FOURCC_P8_TEXTURE;
+        else
+            request.Info.FourCC = MFX_FOURCC_P8;
+
+        request.Type        = MFX_MEMTYPE_D3D_INT;
+        request.NumFrameMin = mfxU16(m_emulatorForSyncPart.GetStageGreediness(AsyncRoutineEmulator::STG_WAIT_ENCODE) + bParallelEncPak);
+        request.Info.Width  = IPP_MAX(request.Info.Width,  m_video.mfx.FrameInfo.Width/16);
+        request.Info.Height = IPP_MAX(request.Info.Height, m_video.mfx.FrameInfo.Height/16);
+
+        sts = m_mbqp.Alloc(m_core, request, false);
+        MFX_CHECK_STS(sts);
+
+        sts = m_ddi->Register(m_mbqp, D3DDDIFMT_INTELENCODE_MBQPDATA);
+        MFX_CHECK_STS(sts);
+    }
 
     // Allocate surfaces for bitstreams.
     // Need at least one such surface and more for async-mode.
@@ -1738,6 +1766,9 @@ void ImplementationAvc::OnEncodingQueried(DdiTaskIter task)
     if ((task->m_reference[0] + task->m_reference[1]) == 0)
         ReleaseResource(m_rec, task->m_midRec);
 
+    if(m_useMBQPSurf && task->m_isMBQP)
+        ReleaseResource(m_mbqp, task->m_midMBQP);
+
     mfxU32 numBits = 8 * (task->m_bsDataLength[0] + task->m_bsDataLength[1]);
     *task = DdiTask();
 
@@ -2247,6 +2278,28 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
                 if (sts != MFX_ERR_NONE)
                     return Error(sts);
                 //printf("EST frameSize %d\n", m_brc.GetDistFrameSize());
+            }
+        }
+
+        {
+            const mfxExtMBQP *mbqp = GetExtBuffer(task->m_ctrl);
+            mfxU32 wMB = (m_video.mfx.FrameInfo.CropW + 15) / 16;
+            mfxU32 hMB = (m_video.mfx.FrameInfo.CropH + 15) / 16;
+            task->m_isMBQP = mbqp && mbqp->QP && mbqp->NumQPAlloc >= wMB * hMB;
+
+            if (m_useMBQPSurf && task->m_isMBQP)
+            {
+                task->m_idxMBQP = FindFreeResourceIndex(m_mbqp);
+                task->m_midMBQP = AcquireResource(m_mbqp, task->m_idxMBQP);
+
+                mfxFrameData qpsurf = {};
+                FrameLocker lock(m_core, qpsurf, task->m_midMBQP);
+
+                if (qpsurf.Y == 0)
+                    return Error(MFX_ERR_LOCK_MEMORY);
+
+                for (mfxU32 i = 0; i < hMB; i ++)
+                    MFX_INTERNAL_CPY(&qpsurf.Y[i * qpsurf.Pitch], &mbqp->QP[i * wMB], wMB);
             }
         }
 

@@ -35,6 +35,7 @@ DEFINE_GUID(DXVADDI_Intel_Decode_PrivateData_Report,
 using namespace MfxHwH264Encode;
 
 mfxU16 ownConvertD3DFMT_TO_MFX(DXGI_FORMAT format);
+mfxU8 convertDX9TypeToDX11Type(mfxU8 type);
 
 namespace
 {
@@ -201,7 +202,7 @@ mfxStatus D3D11Encoder::Reset(
 
 mfxStatus D3D11Encoder::QueryCompBufferInfo(D3DDDIFORMAT type, mfxFrameAllocRequest& request)
 {
-    type;
+    type = (D3DDDIFORMAT)convertDX9TypeToDX11Type((mfxU8)type);
 
     MFX_CHECK_WITH_ASSERT(m_pDecoder, MFX_ERR_NOT_INITIALIZED);
 
@@ -256,8 +257,7 @@ mfxStatus D3D11Encoder::QueryCompBufferInfo(D3DDDIFORMAT type, mfxFrameAllocRequ
     size_t i = 0;
     for (; i < m_compBufInfo.size(); i++)
     {
-        //if (m_compBufInfo[i].Type == type) //aya!!!: search bitstream only
-        if (m_compBufInfo[i].Type == D3D11_DDI_VIDEO_ENCODER_BUFFER_BITSTREAMDATA)
+        if (m_compBufInfo[i].Type == type)
         {
             break;
         }
@@ -354,9 +354,9 @@ mfxStatus D3D11Encoder::Register(mfxFrameAllocResponse & response, D3DDDIFORMAT 
     //MFX_CHECK( response.mids, MFX_ERR_NULL_PTR );       
 
     // we should register allocated HW bitstreams and recon surfaces
-    std::vector<mfxHDLPair> & queue = (type == D3DDDIFMT_NV12)
-        ? m_reconQueue 
-        : m_bsQueue;
+    std::vector<mfxHDLPair> & queue = (type == D3DDDIFMT_NV12) ? 
+        m_reconQueue: (type == D3DDDIFMT_INTELENCODE_MBQPDATA) ? 
+        m_mbqpQueue : m_bsQueue;
     
     queue.resize(response.NumFrameActual);
 
@@ -373,7 +373,7 @@ mfxStatus D3D11Encoder::Register(mfxFrameAllocResponse & response, D3DDDIFORMAT 
         queue[i] = handlePair;
     }
 
-    if( type != D3DDDIFMT_NV12 )
+    if (type == D3DDDIFMT_INTELENCODE_BITSTREAMDATA)
     {
         // reserved space for feedback reports
         m_feedbackUpdate.resize( response.NumFrameActual );
@@ -459,14 +459,18 @@ mfxStatus D3D11Encoder::Execute(
     mfxU32       RES_ID_BITSTREAM   = 0;          // bitstream surface takes first place in resourceList
     mfxU32       RES_ID_ORIGINAL    = 1;    
     mfxU32       RES_ID_REFERENCE   = 2;          // then goes all reference frames from dpb    
-    mfxU32       RES_ID_RECONSTRUCT = RES_ID_REFERENCE + task.m_idxRecon;    
+    mfxU32       RES_ID_RECONSTRUCT = RES_ID_REFERENCE + task.m_idxRecon;
+    mfxU32       RES_ID_MBQP        = RES_ID_REFERENCE + (mfxU32)m_reconQueue.size();
 
-    mfxU32 resourceCount = mfxU32(RES_ID_REFERENCE + m_reconQueue.size());    
+    mfxU32 resourceCount = mfxU32(RES_ID_REFERENCE + m_reconQueue.size() + task.m_isMBQP);    
     std::vector<ID3D11Resource*> resourceList;
     resourceList.resize(resourceCount);
 
     resourceList[RES_ID_BITSTREAM] = static_cast<ID3D11Resource *>(m_bsQueue[task.m_idxBs[fieldId]].first);
-    resourceList[RES_ID_ORIGINAL]  = static_cast<ID3D11Resource *>(surface);    
+    resourceList[RES_ID_ORIGINAL]  = static_cast<ID3D11Resource *>(surface);
+
+    if (task.m_isMBQP)
+        resourceList[RES_ID_MBQP]      = static_cast<ID3D11Resource *>(m_mbqpQueue[task.m_idxMBQP].first);
     
     for (mfxU32 i = 0; i < m_reconQueue.size(); i++)
     {        
@@ -524,6 +528,14 @@ mfxStatus D3D11Encoder::Execute(
     m_compBufDesc[bufCnt].DataSize             = mfxU32(sizeof(RES_ID_BITSTREAM));
     m_compBufDesc[bufCnt].pCompBuffer          = &RES_ID_BITSTREAM;
     bufCnt++;
+
+    if (task.m_isMBQP)
+    {
+        m_compBufDesc[bufCnt].CompressedBufferType = (D3DDDIFORMAT)D3D11_DDI_VIDEO_ENCODER_BUFFER_MBQPDATA;
+        m_compBufDesc[bufCnt].DataSize             = mfxU32(sizeof(RES_ID_MBQP));
+        m_compBufDesc[bufCnt].pCompBuffer          = &RES_ID_MBQP;
+        bufCnt++;
+    }
 
     if (task.m_insertAud[fieldId])
     {
@@ -1012,6 +1024,47 @@ mfxU16 ownConvertD3DFMT_TO_MFX(DXGI_FORMAT format)
 
 } // mfxU16 ownConvertD3DFMT_TO_MFX(DXGI_FORMAT format)
 
+mfxU8 convertDX9TypeToDX11Type(mfxU8 type)
+{
+    switch(type)
+    {
+    case D3DDDIFMT_INTELENCODE_SPSDATA:
+        return D3D11_DDI_VIDEO_ENCODER_BUFFER_SPSDATA;
+    case D3DDDIFMT_INTELENCODE_PPSDATA:
+        return D3D11_DDI_VIDEO_ENCODER_BUFFER_PPSDATA;
+    case D3DDDIFMT_INTELENCODE_SLICEDATA:
+        return D3D11_DDI_VIDEO_ENCODER_BUFFER_SLICEDATA;
+    case D3DDDIFMT_INTELENCODE_QUANTDATA:
+        return D3D11_DDI_VIDEO_ENCODER_BUFFER_QUANTDATA;
+    case D3DDDIFMT_INTELENCODE_BITSTREAMDATA:
+        return D3D11_DDI_VIDEO_ENCODER_BUFFER_BITSTREAMDATA;
+    case D3DDDIFMT_INTELENCODE_MBDATA:
+        return D3D11_DDI_VIDEO_ENCODER_BUFFER_MBDATA;
+    case D3DDDIFMT_INTELENCODE_SEIDATA:
+        return D3D11_DDI_VIDEO_ENCODER_BUFFER_SEIDATA;
+    case D3DDDIFMT_INTELENCODE_VUIDATA:
+        return D3D11_DDI_VIDEO_ENCODER_BUFFER_VUIDATA;
+    case D3DDDIFMT_INTELENCODE_VMESTATE:
+        return D3D11_DDI_VIDEO_ENCODER_BUFFER_VMESTATE;
+    case D3DDDIFMT_INTELENCODE_VMEINPUT:
+        return D3D11_DDI_VIDEO_ENCODER_BUFFER_VMEINPUT;
+    case D3DDDIFMT_INTELENCODE_VMEOUTPUT:
+        return D3D11_DDI_VIDEO_ENCODER_BUFFER_VMEOUTPUT;
+    case D3DDDIFMT_INTELENCODE_EFEDATA:
+        return D3D11_DDI_VIDEO_ENCODER_BUFFER_EFEDATA;
+    case D3DDDIFMT_INTELENCODE_STATDATA:
+        return D3D11_DDI_VIDEO_ENCODER_BUFFER_STATDATA;
+    case D3DDDIFMT_INTELENCODE_PACKEDHEADERDATA:
+        return D3D11_DDI_VIDEO_ENCODER_BUFFER_PACKEDHEADERDATA;
+    case D3DDDIFMT_INTELENCODE_PACKEDSLICEDATA:
+        return D3D11_DDI_VIDEO_ENCODER_BUFFER_PACKEDSLICEDATA;
+    case D3DDDIFMT_INTELENCODE_MBQPDATA:
+        return D3D11_DDI_VIDEO_ENCODER_BUFFER_MBQPDATA;
+    default:
+        break;
+    }
+    return 0xFF;
+}
 
 
 namespace

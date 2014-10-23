@@ -892,6 +892,9 @@ namespace MfxHwH264Encode
             , m_feiMVOut(NULL)
             , m_feiMBCODEOut(NULL)
             , m_resetBRC(false)
+            , m_midMBQP(MID_INVALID)
+            , m_idxMBQP(NO_INDEX)
+            , m_isMBQP(false)
         {
             Zero(m_ctrl);
             Zero(m_internalListCtrl);
@@ -1039,6 +1042,10 @@ namespace MfxHwH264Encode
         mfxU8   m_disableDeblockingIdc;
 
         bool m_resetBRC;
+
+        mfxU32   m_idxMBQP;
+        mfxMemId m_midMBQP; 
+        bool     m_isMBQP;
 
         mfxExtBuffer* m_feiDistortion;
         mfxExtBuffer* m_feiMVOut;
@@ -1958,6 +1965,9 @@ namespace MfxHwH264Encode
         mfxStatus               m_failedStatus;
         mfxU32                  m_inputFrameType;
         mfxU32                  m_NumSlices;
+
+        MfxFrameAllocResponse   m_mbqp;
+        bool                    m_useMBQPSurf;
 
         std::vector<mfxU8>  m_tmpBsBuf;
         PreAllocatedVector  m_sei;

@@ -492,6 +492,30 @@ static mfxStatus SetROI(
     return MFX_ERR_NONE;
 }
 
+mfxStatus SetMBQP(
+    VADisplay    vaDisplay,
+    VAContextID  vaContextEncode,
+    VABufferID & mbqp_id,
+    mfxU8*       mbqp,
+    mfxU32       numMB)
+{
+    VAStatus vaSts;
+
+    if (mbqp_id != VA_INVALID_ID)
+        vaDestroyBuffer(vaDisplay, mbqp_id);
+
+    vaSts = vaCreateBuffer(vaDisplay,
+        vaContextEncode,
+        (VABufferType)VAEncQpBufferType,
+        sizeof (VAEncQpBufferH264)*numMB,
+        1,
+        mbqp,
+        &mbqp_id);
+    MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+
+    return MFX_ERR_NONE;
+}
+
 void FillConstPartOfPps(
     MfxVideoParam const & par,
     VAEncPictureParameterBufferH264 & pps)
@@ -807,6 +831,7 @@ VAAPIEncoder::VAAPIEncoder()
 , m_miscParameterSkipBufferId(VA_INVALID_ID)
 , m_roiBufferId(VA_INVALID_ID)
 , m_ppsBufferId(VA_INVALID_ID)
+, m_mbqpBufferId(VA_INVALID_ID)
 , m_packedAudHeaderBufferId(VA_INVALID_ID)
 , m_packedAudBufferId(VA_INVALID_ID)
 , m_packedSpsHeaderBufferId(VA_INVALID_ID)
@@ -968,6 +993,7 @@ mfxStatus VAAPIEncoder::CreateAuxilliaryDevice(
 
     m_caps.UserMaxFrameSizeSupport = 1; // no request on support for libVA
     m_caps.MBBRCSupport = 1;            // starting 16.3 Beta, enabled in driver by default for TU-1,2
+    m_caps.MbQpDataSupport = 1;
 
     vaExtQueryEncCapabilities pfnVaExtQueryCaps = NULL;
     pfnVaExtQueryCaps = (vaExtQueryEncCapabilities)vaGetLibFunc(m_vaDisplay,VPG_EXT_QUERY_ENC_CAPS);
@@ -2026,6 +2052,20 @@ mfxStatus VAAPIEncoder::Execute(
         configBuffers[buffersCount++] = m_roiBufferId;
     }
 
+    if (task.m_isMBQP)
+    {
+        const mfxExtMBQP *mbqp = GetExtBuffer(task.m_ctrl);
+        mfxU32 numMB = m_sps.picture_height_in_mbs * m_sps.picture_width_in_mbs;
+
+        if (mbqp && mbqp->QP && mbqp->NumQPAlloc >= numMB)
+        {
+            MFX_CHECK_WITH_ASSERT(MFX_ERR_NONE == SetMBQP(m_vaDisplay, m_vaContextEncode, m_miscParameterSkipBufferId, 
+                                                          mbqp->QP, numMB), MFX_ERR_DEVICE_FAILED);
+
+            configBuffers[buffersCount++] = m_miscParameterSkipBufferId;
+        }
+    }
+
     if (VA_INVALID_ID != m_privateParamsId) configBuffers[buffersCount++] = m_privateParamsId;
 
     assert(buffersCount <= configBuffers.size());
@@ -2440,6 +2480,7 @@ mfxStatus VAAPIEncoder::Destroy()
     MFX_DESTROY_VABUFFER(m_miscParameterSkipBufferId, m_vaDisplay);
     MFX_DESTROY_VABUFFER(m_roiBufferId, m_vaDisplay);
     MFX_DESTROY_VABUFFER(m_ppsBufferId, m_vaDisplay);
+    MFX_DESTROY_VABUFFER(m_mbqpBufferId, m_vaDisplay);
     for( mfxU32 i = 0; i < m_slice.size(); i++ )
     {
         MFX_DESTROY_VABUFFER(m_sliceBufferId[i], m_vaDisplay);
