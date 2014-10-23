@@ -838,7 +838,6 @@ class SurfProc : public tsSurfaceProcessor
     {
         if (m_curr_frame >= m_nframes)
         {
-            s.Data.Locked++;
             m_eos = true;
             return MFX_ERR_NONE;
         }
@@ -867,7 +866,7 @@ class SurfProc : public tsSurfaceProcessor
         {
             pCtrl->SkipFrame = 1;
         }
-        m_curr_frame++;
+        s.Data.TimeStamp = m_curr_frame++;
         return sts;
     }
 };
@@ -879,6 +878,7 @@ class BsDump : public tsBitstreamProcessor, tsParserH264AU
     mfxU32 m_curr_frame;
     mfxU32 numMb;
     mfxU16 m_skip_mode;
+    bool is_progressive;
 public:
     BsDump(const char* fname)
         : m_writer(fname)
@@ -895,6 +895,7 @@ public:
         numMb = (fi.Width / 16) * (fi.Height / 16);
         m_skip_frames = skip_frames;
         m_skip_mode = skip_mode;
+        is_progressive = !!(fi.PicStruct == MFX_PICSTRUCT_PROGRESSIVE);
         return MFX_ERR_NONE;
     }
 
@@ -917,32 +918,40 @@ public:
         else
         {
             set_buffer(bs.Data + bs.DataOffset, bs.DataLength+1);
-            UnitType& au = ParseOrDie();
-            if (skipped_frame && m_skip_mode == MFX_SKIPFRAME_INSERT_DUMMY)
+            mfxU32 numMb_real = 0;
+            for (int i = 0; i < 1 + !is_progressive; i++)
             {
-                mfxU32 numMb_real = 0;
-                for (Bs32u i = 0; i < au.NumUnits; i++)
+                UnitType& au = ParseOrDie();
+                if (skipped_frame && m_skip_mode == MFX_SKIPFRAME_INSERT_DUMMY)
                 {
-                    if (!(au.NALU[i].nal_unit_type == 0x01 || au.NALU[i].nal_unit_type == 0x05))
+                    for (Bs32u i = 0; i < au.NumUnits; i++)
                     {
-                        continue;
-                    }
-                    if ((au.NALU[i].slice_hdr->slice_type % 5) == 2)   // skip I frames
-                    {
-                        continue;
-                    }
-
-                    numMb_real += au.NALU[i].slice_hdr->NumMb;
-                    for (Bs32u nmb = 0; nmb < au.NALU[i].slice_hdr->NumMb; nmb++)
-                    {
-                        if (0 == au.NALU[i].slice_hdr->mb[nmb].mb_skip_flag)
+                        if (!(au.NALU[i].nal_unit_type == 0x01 || au.NALU[i].nal_unit_type == 0x05))
                         {
-                            g_tsLog << "ERROR: mb_skip_flag should be set\n";
-                            return MFX_ERR_INVALID_VIDEO_PARAM;
+                            continue;
+                        }
+                        byte type = au.NALU[i].slice_hdr->slice_type % 5;
+                        if ((type % 5) == 2)   // skip I frames
+                        {
+                            continue;
+                        }
+                        char ftype[5] = {'P', 'B', 'I', 'S', 'S'};
+                        numMb_real += au.NALU[i].slice_hdr->NumMb;
+                        for (Bs32u nmb = 0; nmb < au.NALU[i].slice_hdr->NumMb; nmb++)
+                        {
+                            if (0 == au.NALU[i].slice_hdr->mb[nmb].mb_skip_flag)
+                            {
+                                g_tsLog << "ERROR: frame#" << bs.TimeStamp << " (" << ftype[type] << ")" <<
+                                           " mb#" << nmb << ": mb_skip_flag is not set\n";
+                                return MFX_ERR_INVALID_VIDEO_PARAM;
+                            }
                         }
                     }
                 }
-
+            }
+            
+            if (skipped_frame && m_skip_mode == MFX_SKIPFRAME_INSERT_DUMMY)
+            {
                 if (numMb_real != numMb)
                 {
                     g_tsLog << "ERROR: real NumMb=" << numMb_real
