@@ -2717,6 +2717,7 @@ void PackerVA_PAVP::PackPavpParams(void)
     {
         mfxEncryptedData *encryptedData = bs->EncryptedData;
         memcpy(pEncryptParam->pavpAesCounter, &(encryptedData->CipherCounter), 16);
+        pEncryptParam->app_id = encryptedData->AppId;
     }
 }
 
