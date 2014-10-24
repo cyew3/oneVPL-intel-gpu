@@ -6,6 +6,7 @@
 //        Copyright (c) 2012 - 2014 Intel Corporation. All Rights Reserved.
 //
 
+#include "mfx_common.h"
 #if defined (MFX_ENABLE_H265_VIDEO_ENCODE)
 
 #ifndef __MFX_H265_DEFS_H__
@@ -143,6 +144,8 @@ extern int DEBUG_CABAC_PRINT;
 #define     MAX_CU_SIZE             (1<<(MAX_CU_DEPTH))         // maximum allowable size of CU
 #define     MAX_NUM_PARTITIONS 256
 
+#define MAX_TOTAL_DEPTH (MAX_CU_DEPTH+4)
+
 
 #define MLS_GRP_NUM                 64     ///< G644 : Max number of coefficient groups, max(16, 64)
 #define MLS_CG_SIZE                 4      ///< G644 : Coefficient group size of 4x4
@@ -202,6 +205,9 @@ const Ipp32s MAX_NUM_AMVP_CANDS  = 2;
 const Ipp32s MAX_NUM_MERGE_CANDS = 5;
 const Ipp32s MAX_NUM_REF_IDX     = 4;
 const Ipp32s OPT_LAMBDA_PYRAMID  = 1;
+
+// PAQ/CALQ tools
+#define  MAX_DQP (6)
 
 enum {
     B_SLICE = 0,
@@ -386,8 +392,6 @@ enum NalUnitType
   NAL_UT_SEI_SUFFIX,            // 40 Suffix SEI
 };
 
-struct H265VideoParam;
-class H265Encoder;
 class H265Frame;
 
 struct RefPicList

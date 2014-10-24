@@ -12,6 +12,7 @@
 
 #include "mfx_h265_defs.h"
 #include "mfx_h265_enc.h"
+#include "mfx_h265_frame.h"
 //#include "mfx_h265_optimization.h"
 
 namespace H265Enc {
