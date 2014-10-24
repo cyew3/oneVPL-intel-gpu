@@ -45,6 +45,53 @@ enum {
     MFX_PROFILE_VP9_0                       = 1
 };
 
+/* Extended Buffer Ids */
+enum {
+    MFX_EXTBUFF_CODING_OPTION_VP9 =   MFX_MAKEFOURCC('I','V','P','9'),
+};
+
+enum {
+    MFX_VP9_RASCTRL_REFINT  = (0x01 | (0x0<<1)),
+    MFX_VP9_RASCTRL_REFLST  = (0x01 | (0x1<<1)),
+    MFX_VP9_RASCTRL_REFGLD  = (0x01 | (0x2<<1)),
+    MFX_VP9_RASCTRL_REFALT  = (0x01 | (0x3<<1)),
+    MFX_VP9_RASCTRL_SKIPZMV = (0x1<<4)
+};
+
+typedef struct {
+    mfxU16  ReferenceAndSkipCtrl;
+    mfxI16  LoopFilterLevelDelta;
+    mfxI16  QIndexDelta;
+    mfxU16  reserved[13];
+} mfxSegmentParamVP9;
+
+typedef struct { 
+    mfxExtBuffer Header;
+
+    mfxU16  Version;
+    mfxU16  SharpnessLevel;
+    mfxU16  WriteIVFHeaders;        /* tri-state option */
+    mfxU32  NumFramesForIVF;
+
+    mfxI16  LoopFilterRefDelta[4];
+    mfxI16  LoopFilterModeDelta[2];
+
+    mfxI16  QIndexDeltaLumaDC;
+    mfxI16  QIndexDeltaChromaAC;
+    mfxI16  QIndexDeltaChromaDC;
+
+    mfxU16  Log2TileRows;
+    mfxU16  Log2TileColumns;
+    
+    mfxU16  reserved1;
+    mfxU16  EnableMultipleSegments; /* tri-state option */
+
+    mfxSegmentParamVP9 Segment[8];
+
+    mfxU16   reserved[106];
+} mfxExtCodingOptionVP9;
+
+
 #ifdef __cplusplus
 } // extern "C"
 #endif
