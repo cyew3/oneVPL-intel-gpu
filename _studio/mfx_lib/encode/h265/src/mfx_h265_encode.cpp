@@ -2655,6 +2655,13 @@ void MFXVideoENCODEH265::SyncOnTaskCompleted(Task* task, mfxBitstream* mfxBs, vo
     H265EncodeTaskInputParams *inputParam = (H265EncodeTaskInputParams*)pParam;
 
     if( status = vm_interlocked_cas32( &(task->m_ready), 2, 1) == 1) {
+
+        // ASSERT
+        if ( !(task->m_frameRecon->m_codedRow == m_videoParam.PicHeightInCtbs) ) { // special case [BRC with Repack && laaaasy thread]
+            vm_interlocked_cas32( &(task->m_ready), 1, 2);
+            return;
+        }
+
         H265FrameEncoder* frameEnc = m_frameEncoder[task->m_encIdx];
 
         // STAGE::[BS UPDATE]
