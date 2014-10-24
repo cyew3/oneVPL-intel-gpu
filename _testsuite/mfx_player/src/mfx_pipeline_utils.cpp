@@ -862,6 +862,9 @@ mfxU32 GetMinPlaneSize(mfxFrameInfo & info)
         case MFX_FOURCC_NV12:
             bpp_m2 = 3;
             break;
+        case MFX_FOURCC_P010:
+            bpp_m2 = 6;
+            break;
         case MFX_FOURCC_RGB3:
             bpp_m2 = 6;
             break;
