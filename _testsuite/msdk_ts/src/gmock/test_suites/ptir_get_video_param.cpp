@@ -95,38 +95,40 @@ private:
 
 const TestSuite::tc_struct TestSuite::test_case[] = 
 {
-    {/* 1*/ MFX_ERR_NONE, 0, {GETVP|REPEAT, 0, {50}}},
-    {/* 2*/ MFX_ERR_NONE, 0,
+    {/* 0*/ MFX_ERR_NONE, 0, {GETVP|REPEAT, 0, {50}}},
+    {/* 1*/ MFX_ERR_NONE, 0,
       {{INIT|ALLOCATOR, 0, {frame_allocator::SOFTWARE, frame_allocator::ALLOC_MAX}},
        {GETVP|REPEAT, 0, {50}}}
     },
-    {/* 3*/ MFX_ERR_NONE, 0,
+    {/* 2*/ MFX_ERR_NONE, 0,
       {{INIT|ALLOCATOR, 0, {frame_allocator::SOFTWARE, frame_allocator::ALLOC_MAX}},
        {GETVP|REPEAT, 0, {2}}}
     },
-    {/* 4*/ MFX_ERR_NONE, 0,
+    {/* 3*/ MFX_ERR_NONE, 0,
       {{INIT|MFXVPAR, &tsStruct::mfxVideoParam.IOPattern, {MFX_IOPATTERN_IN_VIDEO_MEMORY|MFX_IOPATTERN_OUT_VIDEO_MEMORY}},
        {GETVP|REPEAT, 0, {2}}}
     },
-    {/* 5*/ MFX_ERR_INVALID_HANDLE, 0, {GETVP|SESSION}},
-    {/* 6*/ MFX_ERR_NOT_INITIALIZED,          0, {GETVP|CLOSE_VPP}},
-    {/* 7*/ MFX_ERR_NULL_PTR,                 0, {GETVP|NULLPTR}},
-    {/* 8*/ MFX_ERR_NOT_INITIALIZED,          0, {FAILED|INIT|MFXVPAR, &tsStruct::mfxVideoParam.vpp.In.ChromaFormat, {MFX_CHROMAFORMAT_MONOCHROME}}},
-    {/* 9*/ MFX_ERR_NOT_INITIALIZED,          0, {FAILED|INIT|MFXVPAR, &tsStruct::mfxVideoParam.vpp.In.Width, {720 + 31}}},
-    {/*10*/ MFX_ERR_NOT_INITIALIZED,          0, {FAILED|INIT|MFXVPAR, &tsStruct::mfxVideoParam.vpp.In.Height, {480 + 31}}},
-    {/*11*/ MFX_ERR_NONE,                     0, {WARNING|INIT|MFXVPAR, &tsStruct::mfxVideoParam.AsyncDepth, {100}}},  
-    {/*12*/ MFX_ERR_NONE,                     0, {INIT|MFXVPAR, &tsStruct::mfxVideoParam.AsyncDepth, {1}}},
-    {/*13*/ MFX_ERR_NOT_INITIALIZED,          0, {FAILED|INIT|MFXVPAR, &tsStruct::mfxVideoParam.Protected, {1}}},
-    {/*14*/ MFX_ERR_NOT_INITIALIZED,          0, {FAILED|INIT|MFXVPAR, &tsStruct::mfxVideoParam.Protected, {2}}},
-    {/*15*/ MFX_ERR_NONE, 0, 
-       {  {INIT|MFXVPAR,  &tsStruct::mfxVideoParam.vpp.In.Width,   {4096}},
-          {INIT|MFXVPAR,  &tsStruct::mfxVideoParam.vpp.In.Height,  {4096}}  }
+    {/* 4*/ MFX_ERR_INVALID_HANDLE, 0, {GETVP|SESSION}},
+    {/* 5*/ MFX_ERR_NOT_INITIALIZED,          0, {GETVP|CLOSE_VPP}},
+    {/* 6*/ MFX_ERR_NULL_PTR,                 0, {GETVP|NULLPTR}},
+    {/* 7*/ MFX_ERR_NOT_INITIALIZED,          0, {FAILED|INIT|MFXVPAR, &tsStruct::mfxVideoParam.vpp.In.ChromaFormat, {MFX_CHROMAFORMAT_MONOCHROME}}},
+    {/* 8*/ MFX_ERR_NOT_INITIALIZED,          0, {FAILED|INIT|MFXVPAR, &tsStruct::mfxVideoParam.vpp.In.Width, {720 + 31}}},
+    {/* 9*/ MFX_ERR_NOT_INITIALIZED,          0, {FAILED|INIT|MFXVPAR, &tsStruct::mfxVideoParam.vpp.In.Height, {480 + 31}}},
+    {/*10*/ MFX_ERR_NONE,                     0, {WARNING|INIT|MFXVPAR, &tsStruct::mfxVideoParam.AsyncDepth, {100}}},  
+    {/*11*/ MFX_ERR_NONE,                     0, {INIT|MFXVPAR, &tsStruct::mfxVideoParam.AsyncDepth, {1}}},
+    {/*12*/ MFX_ERR_NOT_INITIALIZED,          0, {FAILED|INIT|MFXVPAR, &tsStruct::mfxVideoParam.Protected, {1}}},
+    {/*13*/ MFX_ERR_NOT_INITIALIZED,          0, {FAILED|INIT|MFXVPAR, &tsStruct::mfxVideoParam.Protected, {2}}},
+    {/*14*/ MFX_ERR_NONE, 0, 
+       {  {INIT|MFXVPAR,  &tsStruct::mfxVideoParam.vpp.In.Width,   {3840}},
+          {INIT|MFXVPAR,  &tsStruct::mfxVideoParam.vpp.Out.Width,  {3840}},
+          {INIT|MFXVPAR,  &tsStruct::mfxVideoParam.vpp.Out.Height, {3840}},
+          {INIT|MFXVPAR,  &tsStruct::mfxVideoParam.vpp.In.Height,  {3840}}  }
     },
-    {/*16*/ MFX_ERR_NONE, 0, 
-       {  {INIT|MFXVPAR,  &tsStruct::mfxVideoParam.vpp.In.Width,   {4096}},
-          {INIT|MFXVPAR,  &tsStruct::mfxVideoParam.vpp.In.Height,  {4096}},
-          {GETVP|MFXVPAR, &tsStruct::mfxVideoParam.vpp.In.Width,   {2048}},
-          {GETVP|MFXVPAR, &tsStruct::mfxVideoParam.vpp.In.Height,  {2048}}  }
+    {/*15*/ MFX_ERR_NONE, 0, 
+       {  {GETVP|MFXVPAR, &tsStruct::mfxVideoParam.vpp.In.Width,   {3840}},
+          {GETVP|MFXVPAR, &tsStruct::mfxVideoParam.vpp.In.Height,  {3840}},
+          {GETVP|MFXVPAR, &tsStruct::mfxVideoParam.vpp.Out.Width,   {2048}},
+          {GETVP|MFXVPAR, &tsStruct::mfxVideoParam.vpp.Out.Height,  {2048}}  }
     },
 };
 const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case)/sizeof(TestSuite::tc_struct);
@@ -139,13 +141,14 @@ int TestSuite::RunTest(unsigned int id)
     MFXInit();
 
     // always load plug-in
-    //mfxPluginUID* ptir = g_tsPlugin.UID(MFX_PLUGINTYPE_VIDEO_VPP, MFX_MAKEFOURCC('P','T','I','R'));
+    mfxPluginUID* ptir = g_tsPlugin.UID(MFX_PLUGINTYPE_VIDEO_VPP, MFX_MAKEFOURCC('P','T','I','R'));
     m_session = tsSession::m_session;
-    //tsSession::Load(m_session, ptir, 1);
+    tsSession::Load(m_session, ptir, 1);
 
     tsExtBufType<mfxVideoParam>* pParInit = &m_par;
+    m_par.vpp.In.PicStruct = MFX_PICSTRUCT_FIELD_TFF;
     apply_par(tc, INIT, pParInit);
-        if(FAILED & tc.ctrl[0].type)
+    if(FAILED & tc.ctrl[0].type)
         g_tsStatus.expect(MFX_ERR_INVALID_VIDEO_PARAM);
     if(WARNING & tc.ctrl[0].type)
         g_tsStatus.expect(MFX_WRN_INCOMPATIBLE_VIDEO_PARAM);
