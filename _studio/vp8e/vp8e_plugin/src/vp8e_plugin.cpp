@@ -364,6 +364,8 @@ mfxStatus MFX_VP8E_Plugin::Reset(mfxVideoParam *par)
             && parBeforeReset.mfx.RateControlMethod == parAfterReset.mfx.RateControlMethod,
             MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
 
+        parAfterReset.mfx.BufferSizeInKB = m_video.mfx.BufferSizeInKB; // inherit HRD buffer size from initialization parameters
+
         m_video = parAfterReset;
 
         sts = m_pTaskManager->Reset(&m_video);
