@@ -1480,7 +1480,10 @@ void MFXVideoENCODEH265::PrepareToEncode(Task* task)
         task->m_encOrder   = m_lastEncOrder + 1;
         task->m_frameOrder = task->m_frameOrigin->m_frameOrder;
         task->m_timeStamp  = task->m_frameOrigin->m_timeStamp;
-        task->m_picCodeType= task->m_frameOrigin->m_picCodeType;
+        //task->m_picCodeType= task->m_frameOrigin->m_picCodeType;
+        task->m_frameType= currFrame->m_picCodeType | 
+                          (currFrame->m_isIdrPic ? MFX_FRAMETYPE_IDR : 0) | 
+                          (currFrame->m_isRef ? MFX_FRAMETYPE_REF : 0);
     }
 
     // assign resource for reconstruct

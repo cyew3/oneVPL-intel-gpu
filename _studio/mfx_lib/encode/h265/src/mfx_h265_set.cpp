@@ -700,7 +700,7 @@ mfxStatus H265FrameEncoder::GetOutputData(mfxBitstream *mfxBS, Ipp32s & overhead
     bs->TimeStamp = codedTask->m_timeStamp;
     mfxI32 dpb_output_delay = m_videoParam.m_vps->vps_max_num_reorder_pics[0] + codedTask->m_frameOrder - codedTask->m_encOrder;
     bs->DecodeTimeStamp = mfxI64(bs->TimeStamp - m_videoParam.tcDuration90KHz * dpb_output_delay); // calculate DTS from PTS
-    bs->FrameType = (mfxU16)codedTask->m_picCodeType;
+    bs->FrameType = (mfxU16)codedTask->m_frameType;
 
     return MFX_ERR_NONE;
 

@@ -157,7 +157,8 @@ namespace H265Enc {
         Ipp32u     m_encOrder;
         Ipp32u     m_frameOrder;
         Ipp64u     m_timeStamp;
-        Ipp32u     m_picCodeType;
+        //Ipp32u     m_picCodeType;
+        Ipp32u     m_frameType;// full info for bs. m_frameType = m_codeType | isIDR ? | isRef ? 
 
         H265Slice  m_slices[10];//aya tmp hack
         H265Frame* m_dpb[16];
