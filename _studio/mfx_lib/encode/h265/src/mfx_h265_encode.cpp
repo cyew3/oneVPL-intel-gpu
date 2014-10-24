@@ -173,6 +173,8 @@ mfxExtBuffer HEVC_HEADER = { MFX_EXTBUFF_HEVCENC, sizeof(mfxExtCodingOptionHEVC)
     tab_##mode##_SkipMotionPartition[x],\
     tab_##mode##_SkipCandRD[x],\
     tab_##mode##_FramesInParallel[x],\
+    tab_##mode##_NumTileCols[x],\
+    tab_##mode##_NumTileRows[x],\
 }
 
 // Extended bit depth
@@ -338,6 +340,9 @@ TU_OPT_ALL (FramesInParallel,               1,   1,   1,   1,   1,   1,   1);
 TU_OPT_SW  (GPB,                           ON,  ON,  ON,  ON,  ON, OFF, OFF);
 TU_OPT_GACC(GPB,                          OFF, OFF, OFF, OFF, OFF, OFF, OFF);
 TU_OPT_ALL (BPyramid,                      ON,  ON,  ON,  ON,  ON,  ON,  ON);
+
+TU_OPT_ALL (NumTileCols,                   1,   1,   1,   1,   1,   1,   1);
+TU_OPT_ALL (NumTileRows,                   1,   1,   1,   1,   1,   1,   1);
 
 Ipp8u tab_tuGopRefDist [8] = {8, 8, 8, 8, 8, 8, 8, 8};
 #ifdef AMT_SETTINGS
@@ -972,6 +977,10 @@ mfxStatus MFXVideoENCODEH265::Init(mfxVideoParam* par_in)
             m_mfxHEVCOpts.Enable10bit = opts_tu->Enable10bit;
         if (m_mfxHEVCOpts.FramesInParallel == 0)
             m_mfxHEVCOpts.FramesInParallel = opts_tu->FramesInParallel;
+        if (m_mfxHEVCOpts.NumTileCols == 0)
+            m_mfxHEVCOpts.NumTileCols = opts_tu->NumTileCols;
+        if (m_mfxHEVCOpts.NumTileRows == 0)
+            m_mfxHEVCOpts.NumTileRows = opts_tu->NumTileRows;
     }
 
     // uncomment here if sign bit hiding doesn't work properly
@@ -1035,6 +1044,9 @@ mfxStatus MFXVideoENCODEH265::Init(mfxVideoParam* par_in)
     if (!m_mfxParam.mfx.NumSlice) m_mfxParam.mfx.NumSlice = 1;
     if (m_mfxHEVCOpts.SAO == MFX_CODINGOPTION_ON && m_mfxParam.mfx.NumSlice > 1)
         m_mfxHEVCOpts.SAO = MFX_CODINGOPTION_OFF; // switch off SAO for now, because of inter-slice deblocking
+    if (m_mfxParam.mfx.NumSlice > 1) {
+        m_mfxHEVCOpts.NumTileCols = m_mfxHEVCOpts.NumTileRows = 1;
+    }
 
     if (!m_mfxParam.mfx.NumRefFrame) {
         if (m_mfxParam.mfx.TargetUsage == MFX_TARGETUSAGE_1 && m_mfxParam.mfx.GopRefDist == 1) {
@@ -1104,6 +1116,9 @@ mfxStatus MFXVideoENCODEH265::Init(mfxVideoParam* par_in)
         //m_videoParam.m_lagBehindRefRows = (m_videoParam.m_meSearchRangeY / m_videoParam.MaxCUSize ) + 1;
     }
 
+    m_recon_dump_file_name = m_mfxDumpFiles.ReconFilename[0] ? m_mfxDumpFiles.ReconFilename : NULL;
+    m_videoParam.reconForDump = m_recon_dump_file_name != NULL;
+
     m_frameEncoder.resize(m_videoParam.m_framesInParallel);
     for (size_t encIdx = 0; encIdx < m_frameEncoder.size(); encIdx++) {
         m_frameEncoder[encIdx] = new H265FrameEncoder();
@@ -1114,7 +1129,6 @@ mfxStatus MFXVideoENCODEH265::Init(mfxVideoParam* par_in)
     }
     // 
     
-    m_recon_dump_file_name = m_mfxDumpFiles.ReconFilename[0] ? m_mfxDumpFiles.ReconFilename : NULL;
     m_isInitialized = true;
 
     return stsQuery;
@@ -1445,6 +1459,8 @@ mfxStatus MFXVideoENCODEH265::Reset(mfxVideoParam *par_in)
         if (!optsNew.SkipMotionPartition          ) optsNew.SkipMotionPartition           = optsOld.SkipMotionPartition          ;
         if (!optsNew.SkipCandRD                   ) optsNew.SkipCandRD                    = optsOld.SkipCandRD                   ;
         if (!optsNew.FramesInParallel             ) optsNew.FramesInParallel              = optsOld.FramesInParallel             ;
+        if (!optsNew.NumTileCols                 ) optsNew.NumTileCols                  = optsOld.NumTileCols                 ;
+        if (!optsNew.NumTileRows                 ) optsNew.NumTileRows                  = optsOld.NumTileRows                 ;
     }
 
     if ((parNew.IOPattern & 0xffc8) || (parNew.IOPattern == 0)) // 0 is possible after Query
@@ -1622,6 +1638,8 @@ mfxStatus MFXVideoENCODEH265::Query(VideoCORE *core, mfxVideoParam *par_in, mfxV
             optsHEVC->SkipMotionPartition = 1;
             optsHEVC->SkipCandRD = 1;
             optsHEVC->FramesInParallel = 1;
+            optsHEVC->NumTileCols = 1;
+            optsHEVC->NumTileRows = 1;
         }
 
         mfxExtDumpFiles* optsDump = (mfxExtDumpFiles*)GetExtBuffer( out->ExtParam, out->NumExtParam, MFX_EXTBUFF_DUMP );
@@ -2089,6 +2107,19 @@ mfxStatus MFXVideoENCODEH265::Query(VideoCORE *core, mfxVideoParam *par_in, mfxV
                 }
             }
 
+            if (opts_in->NumTileCols < 1 ||
+                opts_in->NumTileCols > MAX_NUM_TILE_COLUMNS ||
+                (opts_in->NumTileCols != 1 && (out->mfx.NumSlice > 1 || opts_out->FramesInParallel > 1))) {
+                opts_out->NumTileCols = 1;
+                isInvalid ++;
+            } else opts_out->NumTileCols = opts_in->NumTileCols;
+
+            if (opts_in->NumTileRows < 1 ||
+                opts_in->NumTileRows > MAX_NUM_TILE_ROWS ||
+                (opts_in->NumTileRows != 1 && (out->mfx.NumSlice > 1 || opts_out->FramesInParallel > 1))) {
+                opts_out->NumTileRows = 1;
+                isInvalid ++;
+            } else opts_out->NumTileRows = opts_in->NumTileRows;
         } // EO mfxExtCodingOptionHEVC
 
         if (optsDump_in) {
@@ -2669,7 +2700,7 @@ void MFXVideoENCODEH265::SyncOnTaskCompleted(Task* task, mfxBitstream* mfxBs, vo
         mfxBitstream* bs = mfxBs;
         mfxU32 initialDataLength = bs->DataLength;
 
-        Ipp32s bs_main_id = m_videoParam.num_thread_structs;
+        Ipp32s bs_main_id = m_videoParam.num_bs_subsets;
         Ipp8u *pbs0;
         Ipp32u bitOffset0;
         //Ipp32s overheadBytes0 = overheadBytes;

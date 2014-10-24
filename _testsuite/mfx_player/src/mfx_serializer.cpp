@@ -298,6 +298,8 @@ void MFXStructureRef <mfxExtCodingOptionHEVC>::ConstructValues() const
     SERIALIZE_INT(SkipMotionPartition);
     SERIALIZE_INT(SkipCandRD);
     SERIALIZE_INT(FramesInParallel);
+    SERIALIZE_INT(NumTileCols);
+    SERIALIZE_INT(NumTileRows);
 }
 
 void MFXStructureRef <mfxExtCodingOptionVP8Param>::ConstructValues() const

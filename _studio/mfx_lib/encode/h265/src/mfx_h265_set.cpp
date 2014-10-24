@@ -636,13 +636,14 @@ mfxStatus H265FrameEncoder::WriteBitstreamPayload(mfxBitstream *mfxBS, Ipp32s bs
     for (Ipp8u curr_slice = 0; curr_slice < m_videoParam.NumSlices; curr_slice++) {
         H265Slice *pSlice = m_task->m_slices + curr_slice;
 
-        if (m_pps.entropy_coding_sync_enabled_flag) {
+        if (m_pps.entropy_coding_sync_enabled_flag || m_pps.tiles_enabled_flag) {
             Ipp32s ctb_row = pSlice->row_first;
 
             for (Ipp32u i = 0; i < pSlice->num_entry_point_offsets; i++) {
                 Ipp32u offset_add = 0;
-                Ipp8u *curPtr = m_bs[ctb_row].m_base.m_pbsBase;
-                Ipp32s size = H265Bs_GetBsSize(&m_bs[ctb_row]);
+                Ipp32s bs_idx = m_pps.entropy_coding_sync_enabled_flag ? ctb_row++ : i;
+                Ipp8u *curPtr = m_bs[bs_idx].m_base.m_pbsBase;
+                Ipp32s size = H265Bs_GetBsSize(&m_bs[bs_idx]);
 
                 for (Ipp32s j = 1; j < size - 1; j++) {
                     if (!curPtr[j - 1] && !curPtr[j] && !(curPtr[j + 1] & 0xfc)) {
@@ -652,7 +653,6 @@ mfxStatus H265FrameEncoder::WriteBitstreamPayload(mfxBitstream *mfxBS, Ipp32s bs
                 }
 
                 pSlice->entry_point_offset[i] = size + offset_add;
-                ctb_row ++;
             }
         }
 
@@ -664,6 +664,12 @@ mfxStatus H265FrameEncoder::WriteBitstreamPayload(mfxBitstream *mfxBS, Ipp32s bs
             for (Ipp32u row = pSlice->row_first; row <= pSlice->row_last; row++) {
                 Ipp32s size = H265Bs_GetBsSize(&m_bs[row]);
                 small_memcpy(m_bs[bs_main_id].m_base.m_pbs, m_bs[row].m_base.m_pbsBase, size);
+                m_bs[bs_main_id].m_base.m_pbs += size;
+            }
+        } else if (m_pps.tiles_enabled_flag) {
+            for (Ipp32u i = 0; i < pSlice->num_entry_point_offsets + 1; i++) {
+                Ipp32s size = H265Bs_GetBsSize(&m_bs[i]);
+                small_memcpy(m_bs[bs_main_id].m_base.m_pbs, m_bs[i].m_base.m_pbsBase, size);
                 m_bs[bs_main_id].m_base.m_pbs += size;
             }
         } else {
@@ -688,7 +694,7 @@ mfxStatus H265FrameEncoder::GetOutputData(mfxBitstream *mfxBS, Ipp32s & overhead
 {
     //Ipp32s overheadBytes = 0;
     overheadBytes = 0;
-    Ipp32s bs_main_id = m_videoParam.num_thread_structs;
+    Ipp32s bs_main_id = m_videoParam.num_bs_subsets;
 
     m_bs[bs_main_id].Reset();
     WriteBitstreamHeaderSet(mfxBS, bs_main_id, overheadBytes, 0 == m_task->m_encOrder); // const part should moved on top level

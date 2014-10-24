@@ -229,8 +229,10 @@ typedef struct {
     mfxU16      FastAMPRD;          // 0-default, 1-never, 2-Adaptive Fast Decision
     mfxU16      SkipMotionPartition;          // 0-default, 1-never, 2-Adaptive
     mfxU16      SkipCandRD;         // on-Full RD, off-fast decision
-	mfxU16      FramesInParallel;   // number of frames for encoding at the same time (0 - auto detect, 1 - default, no frame threading).
-    mfxU16      reserved[54];       // 256 bytes total
+    mfxU16      FramesInParallel;   // number of frames for encoding at the same time (0 - auto detect, 1 - default, no frame threading).
+    mfxU16      NumTileCols;        // number of tile columns (1 - default)
+    mfxU16      NumTileRows;        // number of tile rows (1 - default)
+    mfxU16      reserved[52];       // 104 bytes total
 } mfxExtCodingOptionHEVC;
 
 

@@ -616,8 +616,8 @@ void H265CU<PixType>::GetPuAbove(H265CUPtr *cu,
                         Ipp32s enforceSliceRestriction,
 //                        Ipp32s /*bEnforceDependentSliceRestriction*/,
 //                        Ipp32s /*MotionDataCompresssion*/,
-                        Ipp32s planarAtLcuBoundary
-//                        ,Ipp32s /*bEnforceTileRestriction*/
+                        Ipp32s planarAtLcuBoundary,
+                        Ipp32s enforceTileRestriction
                         )
 {
     Ipp32s absPartIdx       = h265_scan_z2r4[currPartUnitIdx]; // raster with PITCH_PU
@@ -647,7 +647,8 @@ void H265CU<PixType>::GetPuAbove(H265CUPtr *cu,
 
     cu->absPartIdx = h265_scan_r2z4[ absPartIdx + PITCH_TU * (numPartInCuWidth-1) ];
 
-    if (enforceSliceRestriction && (m_above == NULL || m_aboveAddr < m_cslice->slice_segment_address))
+    if ((enforceSliceRestriction && (m_above == NULL || m_aboveAddr < m_cslice->slice_segment_address)) ||
+        (enforceTileRestriction && m_above == NULL))
     {
         cu->ctbData = NULL;
         cu->ctbAddr = -1;
@@ -660,9 +661,9 @@ void H265CU<PixType>::GetPuAbove(H265CUPtr *cu,
 template <typename PixType>
 void H265CU<PixType>::GetPuLeft(H265CUPtr *cu,
                        Ipp32u currPartUnitIdx,
-                       Ipp32s enforceSliceRestriction
+                       Ipp32s enforceSliceRestriction,
                        //,Ipp32s /*bEnforceDependentSliceRestriction*/
-                       //,Ipp32s /*bEnforceTileRestriction*/
+                       Ipp32s enforceTileRestriction
                        )
 {
     Ipp32s absPartIdx       = h265_scan_z2r4[currPartUnitIdx];
@@ -685,7 +686,8 @@ void H265CU<PixType>::GetPuLeft(H265CUPtr *cu,
 
     cu->absPartIdx = h265_scan_r2z4[ absPartIdx + numPartInCuWidth - 1 ];
 
-    if (enforceSliceRestriction && (m_left == NULL || m_leftAddr < m_cslice->slice_segment_address))
+    if (enforceSliceRestriction && (m_left == NULL || m_leftAddr < m_cslice->slice_segment_address) ||
+        (enforceTileRestriction && m_left == NULL))
     {
         cu->ctbData = NULL;
         cu->ctbAddr = -1;
@@ -953,14 +955,16 @@ void H265CU<PixType>::InitCu(H265VideoParam *_par, H265CUData *_data, H265CUData
     m_aboveLeftAddr = -1;
     m_aboveRightAddr = -1;
 
+    Ipp32u tile_id = m_par->m_tile_ids[m_ctbAddr];
+
     Ipp32u widthInCU = m_par->PicWidthInCtbs;
-    if ( m_ctbAddr % widthInCU )
+    if ( (m_ctbAddr % widthInCU) && tile_id == m_par->m_tile_ids[m_ctbAddr - 1])
     {
         m_left = m_data - m_par->NumPartInCU;
         m_leftAddr = m_ctbAddr - 1;
     }
 
-    if ( m_ctbAddr / widthInCU )
+    if ( (m_ctbAddr >= widthInCU) && tile_id == m_par->m_tile_ids[m_ctbAddr - widthInCU])
     {
         m_above = m_data - (widthInCU << m_par->Log2NumPartInCU);
         m_aboveAddr = m_ctbAddr - widthInCU;
@@ -972,10 +976,26 @@ void H265CU<PixType>::InitCu(H265VideoParam *_par, H265CUData *_data, H265CUData
         m_aboveLeftAddr = m_ctbAddr - widthInCU - 1;
     }
 
-    if ( m_above && ( (m_ctbAddr%widthInCU) < (widthInCU-1) )  )
+    if ( m_above && ( (m_ctbAddr%widthInCU) < (widthInCU-1) ) && tile_id == m_par->m_tile_ids[m_ctbAddr - widthInCU + 1])
     {
         m_aboveRight = m_data - (widthInCU << m_par->Log2NumPartInCU) + m_par->NumPartInCU;
         m_aboveRightAddr = m_ctbAddr - widthInCU + 1;
+    }
+
+    Ipp32s tile_row = tile_id / m_par->NumTileCols;
+    Ipp32s tile_col = tile_id % m_par->NumTileCols;
+    
+    if (m_par->NumTiles == 1 || m_par->deblockTileBordersFlag) {
+        m_tile_border_right = m_par->Width;
+        m_tile_border_bottom = m_par->Height;
+    } else {
+        m_tile_border_right = (m_par->tileColStart[tile_col] + m_par->tileColWidth[tile_col]) << m_par->Log2MaxCUSize;
+        if (m_tile_border_right > m_par->Width)
+            m_tile_border_right = m_par->Width;
+
+        m_tile_border_bottom = (m_par->tileRowStart[tile_row] + m_par->tileRowHeight[tile_row]) << m_par->Log2MaxCUSize;
+        if (m_tile_border_bottom > m_par->Height)
+            m_tile_border_bottom = m_par->Height;
     }
 
     m_bakAbsPartIdxCu = 0;

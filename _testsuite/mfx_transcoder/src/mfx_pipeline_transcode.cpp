@@ -278,7 +278,9 @@ MFXTranscodingPipeline::MFXTranscodingPipeline(IMFXPipelineFactory *pFactory)
         HANDLE_HEVC_OPTION(SkipMotionPartition,      OPT_UINT_16,    "Skip Motion Partition RD; 0-default, 1-Never, 2-Adaptive"),
         HANDLE_HEVC_OPTION(SkipCandRD,               OPT_TRI_STATE,  "Skip Candidate RD; on-Full RD, off-Fast Decision"),
         HANDLE_HEVC_OPTION(FramesInParallel,         OPT_UINT_16,    "encoding multiple frames at the same time (0 - auto detect, 1 - default, no frame threading)."),
-		
+        HANDLE_HEVC_OPTION(NumTileCols,              OPT_UINT_16,    "number of tile columns (1 - default)"),
+        HANDLE_HEVC_OPTION(NumTileRows,              OPT_UINT_16,    "number of tile rows (1 - default)"),
+
         HANDLE_VP8PARAM_OPTION(VP8Version,            OPT_UINT_8,    "0-maxU8"),
         HANDLE_VP8PARAM_OPTION(LoopFilterType,        OPT_UINT_8,    "0-maxU8"),
         HANDLE_VP8PARAM_OPTION(SharpnessLevel,        OPT_UINT_8,    "0-maxU8"),

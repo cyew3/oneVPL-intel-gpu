@@ -212,6 +212,24 @@ static void ExpandPlane(Ipp8u elem_shift, Ipp8u *ptr, Ipp32s pitch_bytes, Ipp32s
     } else if (elem_shift == 2) {
         for (Ipp32s y = 0; y < height + padding_h * 2; y++, p0 += pitch_bytes)
             ippsSet_32s(*(Ipp32s*)p0, (Ipp32s*)p0 + 1, padding_w);
+        }
+    }
+
+    void H265Frame::doPadding()
+    {
+        if (!m_bdLumaFlag) {
+            ippiExpandPlane_H264_8u_C1R(y, width, height, pitch_luma_bytes, padding, IPPVC_FRAME);
+        } else {
+            ExpandPlane(1, y, pitch_luma_bytes, width, height, padding, padding);
+        }
+
+        Ipp32s shift_w = m_chromaFormatIdc != MFX_CHROMAFORMAT_YUV444 ? 1 : 0;
+        Ipp32s shift_h = m_chromaFormatIdc == MFX_CHROMAFORMAT_YUV420 ? 1 : 0;
+        
+        if (!m_bdChromaFlag) {
+            ExpandPlane(1, uv, pitch_chroma_bytes, width >> shift_w, height >> shift_h, padding >> shift_w, padding >> shift_h);
+        } else {
+            ExpandPlane(2, uv, pitch_chroma_bytes, width >> shift_w, height >> shift_h, padding >> shift_w, padding >> shift_h);
     }
 }
 

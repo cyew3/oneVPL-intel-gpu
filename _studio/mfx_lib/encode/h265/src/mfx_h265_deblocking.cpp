@@ -55,8 +55,8 @@ template <typename PixType>
 void H265CU<PixType>::DeblockOneCrossLuma(Ipp32s curPixelColumn,
                                  Ipp32s curPixelRow)
 {
-    Ipp32s frameWidthInSamples = m_par->Width;
-    Ipp32s frameHeightInSamples = m_par->Height;
+    Ipp32s widthInSamples = m_tile_border_right;
+    Ipp32s heightInSamples = m_tile_border_bottom;
     Ipp32s x = curPixelColumn >> 3;
     Ipp32s y = curPixelRow >> 3;
     PixType* baseSrcDst;
@@ -69,7 +69,7 @@ void H265CU<PixType>::DeblockOneCrossLuma(Ipp32s curPixelColumn,
 
     start = 0;
     end = 2;
-    if ((Ipp32s)m_ctbPelY + curPixelRow >= frameHeightInSamples - 8)
+    if ((Ipp32s)m_ctbPelY + curPixelRow >= heightInSamples - 8)
     {
         end = 3;
     }
@@ -87,7 +87,7 @@ void H265CU<PixType>::DeblockOneCrossLuma(Ipp32s curPixelColumn,
 
 
     end = 2;
-    if ((Ipp32s)m_ctbPelX + curPixelColumn >= frameWidthInSamples - 8)
+    if ((Ipp32s)m_ctbPelX + curPixelColumn >= widthInSamples - 8)
     {
         end = 3;
     }
@@ -127,8 +127,8 @@ template <typename PixType>
 void H265CU<PixType>::DeblockOneCrossChroma(Ipp32s curPixelColumn,
                                    Ipp32s curPixelRow)
 {
-    Ipp32s frameWidthInSamples = m_par->Width;
-    Ipp32s frameHeightInSamples = m_par->Height;
+    Ipp32s widthInSamples = m_tile_border_right;
+    Ipp32s heightInSamples = m_tile_border_bottom;
     Ipp32s x = curPixelColumn >> 3;
     Ipp32s y = curPixelRow >> 3;
     PixType* baseSrcDst;
@@ -141,7 +141,7 @@ void H265CU<PixType>::DeblockOneCrossChroma(Ipp32s curPixelColumn,
 
     start = 0;
     end = 2;
-    if ((Ipp32s)m_ctbPelY + curPixelRow >= frameHeightInSamples - (8 << m_par->chromaShiftH))
+    if ((Ipp32s)m_ctbPelY + curPixelRow >= heightInSamples - (8 << m_par->chromaShiftH))
     {
         end = 3;
     }
@@ -173,7 +173,7 @@ void H265CU<PixType>::DeblockOneCrossChroma(Ipp32s curPixelColumn,
     }
 
     end = 2;
-    if ((Ipp32s)m_ctbPelX + curPixelColumn >= frameWidthInSamples - (8 << m_par->chromaShiftW))
+    if ((Ipp32s)m_ctbPelX + curPixelColumn >= widthInSamples - (8 << m_par->chromaShiftW))
     {
         end = 3;
     }
@@ -231,7 +231,7 @@ void H265CU<PixType>::GetEdgeStrength(H265CUPtr *pcCUQptr,
         {
             return;
         }
-        GetPuAbove(&CUPPtr, uiPartQ, !crossSliceBoundaryFlag, /*false, false,*/ false/*, !crossTileBoundaryFlag*/);
+        GetPuAbove(&CUPPtr, uiPartQ, !crossSliceBoundaryFlag, /*false, false,*/ false, !crossTileBoundaryFlag);
         if (pcCUQ != m_data && CUPPtr.ctbData) {
             // pcCUQptr is left of cur CTB, adjust CUPPtr
             CUPPtr.ctbData -= ((size_t)1 << (size_t)(m_par->Log2NumPartInCU));
@@ -244,7 +244,7 @@ void H265CU<PixType>::GetEdgeStrength(H265CUPtr *pcCUQptr,
         {
             return;
         }
-        GetPuLeft(&CUPPtr, uiPartQ, !crossSliceBoundaryFlag/*, false, !crossTileBoundaryFlag*/);
+        GetPuLeft(&CUPPtr, uiPartQ, !crossSliceBoundaryFlag/*, false*/, !crossTileBoundaryFlag);
         if (pcCUQ != m_data && CUPPtr.ctbData) {
             // pcCUQptr is above of cur CTB, adjust CUPPtr
             CUPPtr.ctbData -= m_par->PicWidthInCtbs << m_par->Log2NumPartInCU;
@@ -449,12 +449,12 @@ void H265CU<PixType>::SetEdges(Ipp32s width,
     Ipp32s i, j, e;
 
     crossSliceBoundaryFlag = m_cslice->slice_loop_filter_across_slices_enabled_flag;
-    crossTileBoundaryFlag = 1;
+    crossTileBoundaryFlag = m_par->deblockTileBordersFlag;
     tcOffset = m_cslice->slice_tc_offset_div2 << 1;
     betaOffset = m_cslice->slice_beta_offset_div2 << 1;
 
     H265CUPtr aboveLCU;
-    GetPuAbove(&aboveLCU, 0, !crossSliceBoundaryFlag, /*false, false,*/ false/*, 0*/);
+    GetPuAbove(&aboveLCU, 0, !crossSliceBoundaryFlag, /*false, false,*/ false, !crossTileBoundaryFlag);
 
 // uncomment to hide false uninitialized memory read warning
 //    memset(&edge, 0, sizeof(edge));
@@ -488,7 +488,7 @@ void H265CU<PixType>::SetEdges(Ipp32s width,
     }
 
     H265CUPtr leftLCU;
-    GetPuLeft(&leftLCU, 0, !crossSliceBoundaryFlag/*, false, 0*/);
+    GetPuLeft(&leftLCU, 0, !crossSliceBoundaryFlag/*, false*/, !crossTileBoundaryFlag);
 
     if (leftLCU.ctbData)
     {
@@ -553,19 +553,19 @@ template <typename PixType>
 void H265CU<PixType>::Deblock()
 {
     Ipp32s maxCUSize = m_par->MaxCUSize;
-    Ipp32s frameHeightInSamples = m_par->Height;
-    Ipp32s frameWidthInSamples = m_par->Width;
+    Ipp32s widthInSamples = m_tile_border_right;
+    Ipp32s heightInSamples = m_tile_border_bottom;
     Ipp32s width, height;
     Ipp32s i, j;
 
-    width = frameWidthInSamples - m_ctbPelX;
+    width = widthInSamples - m_ctbPelX;
 
     if (width > maxCUSize)
     {
         width = maxCUSize;
     }
 
-    height = frameHeightInSamples - m_ctbPelY;
+    height = heightInSamples - m_ctbPelY;
 
     if (height > maxCUSize)
     {

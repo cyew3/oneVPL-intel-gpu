@@ -44,6 +44,9 @@ struct H265VideoParam {
     Ipp8u  TMVPFlag;
 
     Ipp32s NumSlices;
+    Ipp32u NumTiles;
+    Ipp32u NumTileCols;
+    Ipp32u NumTileRows;
     Ipp8u  AnalyseFlags;
     Ipp32s GopPicSize;
     Ipp32s GopRefDist;
@@ -69,6 +72,7 @@ struct H265VideoParam {
     Ipp8u num_cand_2[8];
     
     Ipp8u  deblockingFlag; // Deblocking
+    Ipp8u  deblockTileBordersFlag;
     Ipp8u  SBHFlag;  // Sign Bit Hiding
     Ipp8u  RDOQFlag; // RDO Quantization
     Ipp8u  rdoqChromaFlag; // RDOQ Chroma
@@ -101,6 +105,7 @@ struct H265VideoParam {
     Ipp32s numBiRefineIter;
     Ipp32u num_threads;
     Ipp32u num_thread_structs;
+    Ipp32u num_bs_subsets;
     Ipp8u threading_by_rows;
     Ipp8u IntraChromaRDO;   // 1-turns on syntax cost for chroma in Intra
     Ipp8u FastInterp;       // 1-turns on fast filters for ME
@@ -169,7 +174,17 @@ struct H265VideoParam {
     H265SeqParameterSet *csps;
     H265PicParameterSet *cpps;
 
+    Ipp16u tileColStart[MAX_NUM_TILE_COLUMNS];
+    Ipp16u tileRowStart[MAX_NUM_TILE_ROWS];
+    Ipp16u tileColWidth[MAX_NUM_TILE_COLUMNS];
+    Ipp16u tileRowHeight[MAX_NUM_TILE_ROWS];
+    Ipp16u tileColWidthMax;
+    Ipp16u tileRowHeightMax;
+
+    mfxU8 reconForDump;
+
     Ipp8u *m_slice_ids;
+    Ipp8u *m_tile_ids;
     costStat *m_costStat;
     Ipp8u* m_logMvCostTable;
 
@@ -185,7 +200,7 @@ public:
     DispatchSaoApplyFilter();
     ~DispatchSaoApplyFilter();
 
-    mfxStatus Init(int width, int height, int maxCUWidth, int maxDepth, int bitDepth);
+    mfxStatus Init(int width, int maxCUWidth, int maxDepth, int bitDepth, int num);
     void Close();
     
     Ipp32u m_bitDepth;
@@ -222,7 +237,7 @@ public:
 private:
     // ------ SAO estimation
     template <typename PixType>
-    void EstimateCtuSao(Ipp32s ithread, Ipp32u ctb_row, Ipp32u ctb_addr, Ipp8u curr_slice);
+    void EstimateCtuSao(Ipp32s ithread, Ipp32s bs_id, Ipp32s bsf_id, Ipp32u ctb_row, Ipp32u ctb_addr, Ipp8u curr_slice);
 
     template <typename PixType>
     void PadOneReconRow(Ipp32u ctb_row);
@@ -272,6 +287,7 @@ private:
     Ipp32u data_temp_size;
 
     Ipp8u *m_slice_ids;
+    Ipp8u *m_tile_ids;
     costStat *m_costStat;
 
     CABAC_CONTEXT_H265 *m_context_array_wpp;
@@ -279,6 +295,8 @@ private:
     DispatchSaoApplyFilter m_saoApplyFilter[NUM_USED_SAO_COMPONENTS];
 
 public:
+    volatile Ipp32s m_mt_current_tile;
+    volatile Ipp32s m_mt_num_tiles_done;
     H265EncoderRowInfo* m_row_info;
 
 #ifdef MFX_ENABLE_WATERMARK

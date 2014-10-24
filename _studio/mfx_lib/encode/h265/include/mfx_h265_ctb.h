@@ -271,6 +271,8 @@ public:
     H265CUData*   m_aboveLeft;      ///< pointer of above-left CU
     H265CUData*   m_aboveRight;     ///< pointer of above-right CU
 
+    Ipp32u m_tile_border_right, m_tile_border_bottom;
+
     // merge and AMVP candidates shared between function calls for one CU depth, one part mode and all PUs (1, 2, or 4)
     MvPredInfo<5> m_mergeCand[4];
     MvPredInfo<2> m_amvpCand[4][2 * MAX_NUM_REF_IDX];
@@ -399,16 +401,14 @@ public:
 
     Ipp8u GetQtRootCbf(Ipp32u idx);
 
-    void GetPuLeft(H265CUPtr *cu, Ipp32u currPartUnitIdx, Ipp32s enforceSliceRestriction = true
+    void GetPuLeft(H265CUPtr *cu, Ipp32u currPartUnitIdx, Ipp32s enforceSliceRestriction = true,
                    //,Ipp32s enforceDependentSliceRestriction = true
-                   //,Ipp32s enforceTileRestriction = true
-                   );
+                   Ipp32s enforceTileRestriction = true);
 
     void GetPuAbove(H265CUPtr *cu, Ipp32u currPartUnitIdx, Ipp32s enforceSliceRestriction = true,
 //                    Ipp32s enforceDependentSliceRestriction = true, Ipp32s motionDataCompresssion = false,
-                    Ipp32s planarAtLcuBoundary = false
-//                    , Ipp32s enforceTileRestriction = true
-                    );
+                    Ipp32s planarAtLcuBoundary = false,
+                    Ipp32s enforceTileRestriction = true);
 
     bool GetTempMvPred(const H265CUData *currPb, Ipp32s xPb, Ipp32s yPb, Ipp32s nPbW, Ipp32s nPbH,
                        Ipp32s listIdx, Ipp32s refIdx, H265MV *mvLxCol);

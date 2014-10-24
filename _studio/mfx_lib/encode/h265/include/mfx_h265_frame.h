@@ -135,6 +135,7 @@ namespace H265Enc {
 
         void Create(H265VideoParam *par);
         void CopyFrame(const mfxFrameSurface1 *surface);
+        void doPadding();
 
         void Destroy();
         //void Dump(const vm_char* fname, H265VideoParam *par, TaskList * dpb, Ipp32s frame_num);
