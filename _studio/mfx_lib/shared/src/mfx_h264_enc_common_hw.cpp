@@ -3079,7 +3079,7 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
     if (extRoi->NumROI && par.mfx.RateControlMethod != MFX_RATECONTROL_CQP &&
         hwCaps.ROIBRCPriorityLevelSupport == 0)
     {
-        changed = true;
+        unsupported = true;
         extRoi->NumROI = 0;
     }
 
