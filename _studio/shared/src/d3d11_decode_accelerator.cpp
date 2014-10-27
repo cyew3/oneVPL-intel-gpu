@@ -77,11 +77,7 @@ mfxStatus MFXD3D11Accelerator::CreateVideoAccelerator(mfxU32 hwProfile, const mf
 
     m_bH264MVCSupport = IsVaMvcProfile(m_Profile);
     m_isUseStatuReport = true;
-
-    if ((m_Profile & 0xf) == VA_H265)
-        m_bH264ShortSlice = 1 == video_config.ConfigBitstreamRaw;
-    else
-        m_bH264ShortSlice = (2 == video_config.ConfigBitstreamRaw || 4 == video_config.ConfigBitstreamRaw || 6 == video_config.ConfigBitstreamRaw);
+    m_bH264ShortSlice = GuidProfile::isShortFormat((m_Profile & 0xf) == VA_H265, video_config.ConfigBitstreamRaw);
 
     return MFX_ERR_NONE;
 
@@ -105,7 +101,7 @@ mfxStatus MFXD3D11Accelerator::GetSuitVideoDecoderConfig(const mfxVideoParam    
         if (FAILED(hr)) // guid can be absent. It is ok
             continue;
 
-        Ipp32u isHEVCGUID = (m_Profile & 0xf) == VA_H265;
+        bool isHEVCGUID = (m_Profile & 0xf) == VA_H265;
 
         mfxI32 idxConfig = -1;
         for (mfxU32 i = 0; i < count; i++)
@@ -120,19 +116,14 @@ mfxStatus MFXD3D11Accelerator::GetSuitVideoDecoderConfig(const mfxVideoParam    
             if (idxConfig == -1)
                 idxConfig = i;
 
-            if (isHEVCGUID)
-            {
-                if (2 == pConfig->ConfigBitstreamRaw)
-                { // prefer long mode
-                    idxConfig = i;
-                }
+            if (GuidProfile::isShortFormat(isHEVCGUID, pConfig->ConfigBitstreamRaw))
+            { // short mode
+                idxConfig = i;
             }
-            else
+
+            if ((GuidProfile::GetGuidProfile(k)->profile & VA_LONG_SLICE_MODE) && !GuidProfile::isShortFormat(isHEVCGUID, pConfig->ConfigBitstreamRaw))
             {
-                if (2 == pConfig->ConfigBitstreamRaw || 4 == pConfig->ConfigBitstreamRaw || 6 == pConfig->ConfigBitstreamRaw)
-                { // short mode
-                    idxConfig = i;
-                }
+                idxConfig = i;
             }
         }
 
@@ -373,9 +364,7 @@ Status MFXD3D11Accelerator::Close()
 
 bool MFXD3D11Accelerator::IsIntelCustomGUID() const
 {
-    const GUID & guid = m_DecoderGuid;
-    return (guid == sDXVA2_Intel_ModeVC1_D_Super || guid == sDXVA2_Intel_EagleLake_ModeH264_VLD_NoFGT || guid == sDXVA_Intel_ModeH264_VLD_MVC || guid == DXVA_Intel_ModeHEVC_VLD_MainProfile ||
-        guid == DXVA_Intel_ModeHEVC_VLD_Main10Profile);
+    return GuidProfile::IsIntelCustomGUID(m_DecoderGuid);
 }
 
 

@@ -63,7 +63,7 @@ VideoAccelerationHW ConvertMFXToUMCType(eMFXHWType type)
     return umcType;
 }
 
-mfxU32 ChooseProfile(mfxVideoParam * param, eMFXHWType hwType)
+mfxU32 ChooseProfile(mfxVideoParam * param, eMFXHWType )
 {
     mfxU32 profile = UMC::VA_VLD;
 
@@ -84,28 +84,12 @@ mfxU32 ChooseProfile(mfxVideoParam * param, eMFXHWType hwType)
 
         if (IsMVCProfile(profile_idc))
         {
-            if (hwType == MFX_HW_HSW || hwType == MFX_HW_HSW_ULT || hwType == MFX_HW_BDW || hwType == MFX_HW_SCL)
-            {
-#if 0 // Intel  MVC GUID
-                profile |= H264_VLD_MVC;
-                if (param->mfx.FrameInfo.PicStruct == MFX_PICSTRUCT_PROGRESSIVE)
-                    profile |= VA_SHORT_SLICE_MODE;
-#else // or MS MVC GUID
-                mfxExtMVCSeqDesc * points = (mfxExtMVCSeqDesc *)GetExtendedBuffer(param->ExtParam, param->NumExtParam, MFX_EXTBUFF_MVC_SEQ_DESC);
+            mfxExtMVCSeqDesc * points = (mfxExtMVCSeqDesc *)GetExtendedBuffer(param->ExtParam, param->NumExtParam, MFX_EXTBUFF_MVC_SEQ_DESC);
 
-                if (profile_idc == MFX_PROFILE_AVC_MULTIVIEW_HIGH && points && points->NumView > 2)
-                    profile |= VA_PROFILE_MVC_MV;
-                else
-                    profile |= param->mfx.FrameInfo.PicStruct == MFX_PICSTRUCT_PROGRESSIVE ? VA_PROFILE_MVC_STEREO_PROG : VA_PROFILE_MVC_STEREO;
-
-                //if (param->mfx.FrameInfo.PicStruct == MFX_PICSTRUCT_PROGRESSIVE)
-                //    profile |= VA_SHORT_SLICE_MODE;
-#endif
-            }
+            if (profile_idc == MFX_PROFILE_AVC_MULTIVIEW_HIGH && points && points->NumView > 2)
+                profile |= VA_PROFILE_MVC_MV;
             else
-            {
-                profile |= VA_LONG_SLICE_MODE;
-            }
+                profile |= param->mfx.FrameInfo.PicStruct == MFX_PICSTRUCT_PROGRESSIVE ? VA_PROFILE_MVC_STEREO_PROG : VA_PROFILE_MVC_STEREO;
         }
 
         if (IsSVCProfile(profile_idc))
