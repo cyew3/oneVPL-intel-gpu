@@ -44,7 +44,8 @@ EXTBUF(mfxExtCamPadding             , MFX_EXTBUF_CAM_PADDING                 )
 EXTBUF(mfxExtCamPipeControl         , MFX_EXTBUF_CAM_PIPECONTROL             )
 // end of Camera
 EXTBUF(mfxExtAVCRefLists            , MFX_EXTBUFF_AVC_REFLISTS               )
-EXTBUF(mfxExtCodingOption3          , MFX_EXTBUFF_CODING_OPTION3            )
+EXTBUF(mfxExtCodingOption3          , MFX_EXTBUFF_CODING_OPTION3             )
+EXTBUF(mfxExtMBQP                   , MFX_EXTBUFF_MBQP                       )
 
 //EXTBUF(mfxExtMVCSeqDesc             , MFX_EXTBUFF_MVC_SEQ_DESC              );
 //EXTBUF(mfxExtMVCTargetViews         , MFX_EXTBUFF_MVC_TARGET_VIEWS          );

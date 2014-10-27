@@ -625,6 +625,8 @@ STRUCT(mfxExtCodingOption3,
     FIELD_T(mfxU16      , NumSliceB    )
     FIELD_T(mfxU16      , WinBRCMaxAvgKbps)
     FIELD_T(mfxU16      , WinBRCSize)
+    FIELD_T(mfxU16      , QVBRQuality)
+    FIELD_T(mfxU16      , EnableMBQP)
 )
 
 STRUCT(mfxExtLAControl,
@@ -634,4 +636,10 @@ STRUCT(mfxExtLAControl,
     FIELD_T(mfxU16      , DownScaleFactor)
     FIELD_T(mfxU16      , NumOutStream)
 
+)
+
+STRUCT(mfxExtMBQP,
+    FIELD_S(mfxExtBuffer, Header)
+    FIELD_T(mfxU32      , NumQPAlloc)
+    FIELD_T(mfxU8*      , QP)
 )
