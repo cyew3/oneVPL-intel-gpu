@@ -5443,11 +5443,21 @@ void H265CU<PixType>::RefineBiPred(const H265MEInfo *meInfo, const Ipp8s refIdxs
         Ipp32s count = (refF == refB && mvBest[0] == mvBest[1]) ? 4 : 8;
 
         for (Ipp32s i = 0; i < count; i++) {
+
             H265MV mv[2] = { mvCenter[0], mvCenter[1] };
             if (i & 2)
                 mv[i >> 2].mvx += (i & 1) ? 1 : -1;
             else
                 mv[i >> 2].mvy += (i & 1) ? 1 : -1;
+
+            //-------------------------------------------------
+            // FRAME THREADING PATCH
+            if ((m_par->m_framesInParallel > 1) &&
+                (/*refIdx[0] >= 0 && */CheckFrameThreadingSearchRange(meInfo, mv + 0) == false ||
+                 /*refIdx[1] >= 0 && */CheckFrameThreadingSearchRange(meInfo, mv + 1) == false)) {
+                    continue;
+            }
+            //-------------------------------------------------
 
             Ipp32s mvCost = MvCost1RefLog(mv[0], m_amvpCand[curPUidx] + 2 * refIdxs[0] + 0) +
                             MvCost1RefLog(mv[1], m_amvpCand[curPUidx] + 2 * refIdxs[1] + 1);
@@ -5516,13 +5526,25 @@ void H265CU<PixType>::CheckSkipCandFullRD(const H265MEInfo *meInfo, const MvPred
     dataCu->flags.mergeFlag = 1;
     dataCu->flags.skippedFlag = 1;
     CostType bestCost = COST_MAX;
-    Ipp32s candBest = 0;
+    Ipp32s candBest = -1;
+
     for (Ipp32s cand = 0; cand < mergeCand->numCand; cand++) {
         CostType cost = 0;
         const H265MV *mergeMv = mergeCand->mvCand + 2 * cand;
         const Ipp8s  *mergeRefIdx = mergeCand->refIdx + 2 * cand;
+
         if (mergeRefIdx[0] < 0 && mergeRefIdx[1] < 0)
             continue; // skip duplicate
+
+        //-------------------------------------------------
+        // FRAME THREADING PATCH
+        if ((m_par->m_framesInParallel > 1) &&
+            (mergeRefIdx[0] >= 0 && CheckFrameThreadingSearchRange(meInfo, mergeMv + 0) == false ||
+             mergeRefIdx[1] >= 0 && CheckFrameThreadingSearchRange(meInfo, mergeMv + 1) == false)) {
+            continue;
+        }
+        //-------------------------------------------------
+
         // fill CU data
         dataCu->interDir = (mergeRefIdx[0] >= 0) + 2 * (mergeRefIdx[1] >= 0);
         dataCu->mergeIdx = (Ipp8u)cand;
