@@ -507,7 +507,7 @@ mfxStatus SetMBQP(
     vaSts = vaCreateBuffer(vaDisplay,
         vaContextEncode,
         (VABufferType)VAEncQpBufferType,
-        sizeof (VAEncQpBufferH264)*numMB,
+        numMB * sizeof (VAEncQpBufferH264),
         1,
         mbqp,
         &mbqp_id);
@@ -2059,10 +2059,10 @@ mfxStatus VAAPIEncoder::Execute(
 
         if (mbqp && mbqp->QP && mbqp->NumQPAlloc >= numMB)
         {
-            MFX_CHECK_WITH_ASSERT(MFX_ERR_NONE == SetMBQP(m_vaDisplay, m_vaContextEncode, m_miscParameterSkipBufferId, 
+            MFX_CHECK_WITH_ASSERT(MFX_ERR_NONE == SetMBQP(m_vaDisplay, m_vaContextEncode, m_mbqpBufferId, 
                                                           mbqp->QP, numMB), MFX_ERR_DEVICE_FAILED);
 
-            configBuffers[buffersCount++] = m_miscParameterSkipBufferId;
+            configBuffers[buffersCount++] = m_mbqpBufferId;
         }
     }
 
