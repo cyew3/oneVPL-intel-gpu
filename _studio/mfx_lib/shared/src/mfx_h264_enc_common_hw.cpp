@@ -312,6 +312,85 @@ namespace
         return MFX_LEVEL_UNKNOWN;
     }
 
+    // calculate possible minimum level for encoding of input stream 
+    mfxU16 GetMinLevelForAllParameters(MfxVideoParam const & par)
+    {
+        mfxExtSpsHeader * extSps = GetExtBuffer(par);
+        assert(extSps != 0);
+
+        if (par.mfx.FrameInfo.Width         == 0 ||
+            par.mfx.FrameInfo.Height        == 0)
+        {
+            // input information isn't enough to determine required level
+            return 0;
+        }
+
+        mfxU16 maxSupportedLevel = GetMaxSupportedLevel();
+        mfxU16 level = GetLevelLimitByFrameSize(par);
+
+        if (level == 0 || level == maxSupportedLevel)
+        {
+            // level is already maximum possible, return it
+            return maxSupportedLevel;
+        }
+
+        if (extSps->vui.flags.timingInfoPresent == 0 ||
+            par.mfx.FrameInfo.FrameRateExtN == 0 ||
+            par.mfx.FrameInfo.FrameRateExtD == 0)
+        {
+            // no information about frame rate
+            return level;
+        }
+
+        mfxU16 levelMbps = GetLevelLimitByMbps(par);
+
+        if (levelMbps == 0 || levelMbps == maxSupportedLevel)
+        {
+            // level is already maximum possible, return it
+            return maxSupportedLevel;
+        }
+
+        if (levelMbps > level)
+            level = levelMbps;
+        
+        mfxU16 levelDpbs = GetLevelLimitByDpbSize(par);
+
+        if (levelDpbs == 0 || levelDpbs == maxSupportedLevel)
+        {
+            // level is already maximum possible, return it
+            return maxSupportedLevel;
+        }
+
+        if (levelDpbs > level)
+            level = levelDpbs;
+
+        mfxU16 profile = par.mfx.CodecProfile;
+        mfxU32 kbps = par.calcParam.targetKbps;
+        mfxU16 levelBr = GetLevelLimitByMaxBitrate(profile, kbps);
+
+        if (levelBr == 0 || levelBr == maxSupportedLevel)
+        {
+            // level is already maximum possible, return it
+            return maxSupportedLevel;
+        }
+
+        if (levelBr > level)
+            level = levelBr;
+
+        profile = par.mfx.CodecProfile;
+        mfxU32 cpb = par.calcParam.bufferSizeInKB;
+        mfxU16 levelCPM = GetLevelLimitByBufferSize(profile, cpb);
+        if (levelCPM == 0 || levelCPM == maxSupportedLevel)
+        {
+            // level is already maximum possible, return it
+            return maxSupportedLevel;
+        }
+
+        if (levelCPM > level)
+            level = levelCPM;
+
+        return level;
+    }
     // calculate minimum level required for encoding of input stream (with given resolution and frame rate)
     // input stream can't be encoded with lower level regardless of any encoding parameters
     mfxU16 GetMinLevelForResolutionAndFramerate(MfxVideoParam const & par)
@@ -353,7 +432,7 @@ namespace
 
         if (levelMbps > level)
             level = levelMbps;
-
+        
         return level;
     }
 
@@ -2690,6 +2769,23 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
                     // it's impossible to encode stream with level lower than 4.2
                     // allow H264 spec violation ((table A-4, frame_mbs_only_flag)) and return warning
                     warning = true;
+                }
+            }
+        }
+        else
+        {
+            //check correct param for default codeclevel
+            mfxU16  minlevel = GetMinLevelForAllParameters(par);
+            if(minlevel > MFX_LEVEL_AVC_41)
+            {
+                if(minlevel == MFX_LEVEL_AVC_52)
+                {
+                    warning = true;
+                }
+                else
+                {
+                    changed = true;
+                    par.mfx.FrameInfo.PicStruct = MFX_PICSTRUCT_PROGRESSIVE;
                 }
             }
         }
