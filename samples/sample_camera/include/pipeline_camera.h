@@ -40,6 +40,8 @@
 #include "vm/thread_defs.h"
 
 
+#define align(value) ((0x10) * ( (value) / (0x10) + (((value) % (0x10)) ? 1 : 0)))
+
 class CCameraPipeline
 {
 public:

@@ -730,6 +730,13 @@ mfxStatus CCameraPipeline::Init(sInputParams *pParams)
             pParams->frameInfo[VPP_IN].CropH = pParams->frameInfo[VPP_IN].nHeight;
         pParams->frameInfo[VPP_OUT].CropW = pParams->frameInfo[VPP_OUT].nWidth;
         pParams->frameInfo[VPP_OUT].CropH = pParams->frameInfo[VPP_OUT].nHeight;
+
+        pParams->frameInfo[VPP_OUT].nWidth  = align(pParams->frameInfo[VPP_OUT].nWidth);
+        pParams->frameInfo[VPP_OUT].nHeight = align(pParams->frameInfo[VPP_OUT].nHeight);
+        pParams->frameInfo[VPP_IN].nWidth   = align(pParams->frameInfo[VPP_IN].nWidth);
+        pParams->frameInfo[VPP_IN].nHeight  = align(pParams->frameInfo[VPP_IN].nHeight);
+
+
     }
 
     //pParams->frameInfo[VPP_OUT].FourCC = MFX_FOURCC_RGB4;

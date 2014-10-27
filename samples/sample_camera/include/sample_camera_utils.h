@@ -222,6 +222,9 @@ public :
   virtual void  SetStartFileNumber(mfxI32);
 
 protected:
+  mfxStatus  LoadNextFrameSingle    (mfxFrameData* pData, mfxFrameInfo* pInfo, mfxU32 bayerType);
+  mfxStatus  LoadNextFrameSequential(mfxFrameData* pData, mfxFrameInfo* pInfo, mfxU32 bayerType);
+
   FILE*       m_fSrc;
   msdk_char m_FileNameBase[MSDK_MAX_FILENAME_LEN];
   mfxU32   m_FileNum;
@@ -230,6 +233,7 @@ protected:
   mfxU32    m_paddingBufSize;
 #endif
   bool     m_DoPadding;
+  bool     m_bSingleFileMode;
 
 };
 

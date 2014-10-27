@@ -169,6 +169,7 @@ mfxStatus InitSurfaces(sMemoryAllocator* pAllocator, mfxFrameAllocRequest* pRequ
 CRawVideoReader::CRawVideoReader()
 {
     m_fSrc = 0;
+    m_bSingleFileMode = false;
 #ifdef CONVERT_TO_LSB
     m_pPaddingBuffer = 0;
 #endif
@@ -178,6 +179,13 @@ mfxStatus CRawVideoReader::Init(sInputParams* pParams)
 {
     Close();
 
+#if defined (WIN32) || defined(WIN64)
+    WIN32_FILE_ATTRIBUTE_DATA ffi;
+    if ( GetFileAttributesEx(pParams->strSrcFile, GetFileExInfoStandard, &ffi) )
+    {
+       m_bSingleFileMode = true;
+    }
+#endif
     msdk_strcopy(m_FileNameBase, pParams->strSrcFile);
     m_FileNum = 0;
     m_DoPadding = pParams->bDoPadding;
@@ -225,6 +233,97 @@ void CRawVideoReader::SetStartFileNumber(mfxI32 fileNum)
 }
 
 mfxStatus CRawVideoReader::LoadNextFrame(mfxFrameData* pData, mfxFrameInfo* pInfo, mfxU32 bayerType)
+{
+    return ( m_bSingleFileMode ) ? LoadNextFrameSingle(pData, pInfo, bayerType) : LoadNextFrameSequential(pData, pInfo, bayerType);
+}
+
+mfxStatus CRawVideoReader::LoadNextFrameSingle(mfxFrameData* pData, mfxFrameInfo* pInfo, mfxU32)
+{
+    MSDK_CHECK_POINTER(pData, MFX_ERR_NOT_INITIALIZED);
+    MSDK_CHECK_POINTER(pInfo, MFX_ERR_NOT_INITIALIZED);
+
+    if ( m_FileNum )
+    {
+        // File has been read already
+        return MFX_ERR_MORE_DATA;
+    }
+
+    MSDK_FOPEN(m_fSrc, m_FileNameBase, MSDK_STRING("rb"));
+    MSDK_CHECK_POINTER(m_fSrc, MFX_ERR_MORE_DATA);
+
+    mfxI32 w, h, i, j, pitch;
+    mfxI32 nBytesRead;
+    mfxU16 *ptr = pData->Y16;
+
+    if (pInfo->CropH > 0 && pInfo->CropW > 0)
+    {
+        w = (mfxI32)pInfo->CropW;
+        h = (mfxI32)pInfo->CropH;
+    }
+    else
+    {
+        w = (mfxI32)pInfo->Width;
+        h = (mfxI32)pInfo->Height;
+    }
+
+    pitch = (mfxI32)(pData->Pitch >> 1);
+
+#ifdef CONVERT_TO_LSB
+    int shift = 16 - pInfo->BitDepthLuma;
+#endif
+
+    if (!m_DoPadding) {
+        for (i = 0; i < h; i++)
+        {
+            nBytesRead = (mfxI32)fread_s(ptr + i * pitch, pData->Pitch, sizeof(mfxU16), w, m_fSrc);
+            IOSTREAM_CHECK_NOT_EQUAL(nBytesRead, w, MFX_ERR_MORE_DATA);
+        }
+    } else {
+
+        ptr = pData->Y16 + 8 + 8*pitch;
+        for (i = 0; i < h; i++)
+        {
+            mfxU16 *rowPtr = ptr + i * pitch;
+#ifdef CONVERT_TO_LSB
+            nBytesRead = (mfxI32)fread_s(m_pPaddingBuffer, m_paddingBufSize*sizeof(mfxU16), sizeof(mfxU16), w, m_fSrc);
+            IOSTREAM_CHECK_NOT_EQUAL(nBytesRead, w, MFX_ERR_MORE_DATA);
+            for (j = 0; j < w; j++)
+                rowPtr[j] = m_pPaddingBuffer[j] >> shift;
+#else
+            nBytesRead = (mfxI32)fread_s(rowPtr, w*sizeof(mfxU16), sizeof(mfxU16), w, m_fSrc);
+            IOSTREAM_CHECK_NOT_EQUAL(nBytesRead, w, MFX_ERR_MORE_DATA);
+#endif
+            for (j = 0; j < 7; j++) {
+                rowPtr[-j - 1] = rowPtr[j + 1];
+                rowPtr[w + j] = rowPtr[w - 2 - j];
+            }
+            rowPtr[-8] = rowPtr[-7]; // not used
+            rowPtr[w + 7] = rowPtr[w + 6]; // not used
+        }
+        for (j = 0; j < 7; j++) {
+            mfxU16 *pDst = pData->Y16 + (7 - j)*pitch;
+            mfxU16  *pSrc = pData->Y16 + (9 + j)*pitch;
+            MSDK_MEMCPY(pDst, pSrc, (w + 16)*sizeof(mfxU16));
+        }
+        MSDK_MEMCPY(pData->Y16, pData->Y16+pitch, (w + 16)*sizeof(mfxU16));
+
+        for (j = 0; j < 7; j++) {
+            mfxU16 *pDst = pData->Y16 + (8 + h + j)*pitch;
+            mfxU16  *pSrc = pData->Y16 + (8 + h - 2 - j)*pitch;
+            MSDK_MEMCPY(pDst, pSrc, (w + 16)*sizeof(mfxU16));
+        }
+        MSDK_MEMCPY(pData->Y16 + (15 + h)*pitch, pData->Y16 + (14 + h)*pitch, (w + 16)*sizeof(mfxU16));
+   }
+
+    pData->FrameOrder = m_FileNum;
+    m_FileNum++;
+
+    fclose(m_fSrc);
+
+    return MFX_ERR_NONE;
+}
+
+mfxStatus CRawVideoReader::LoadNextFrameSequential(mfxFrameData* pData, mfxFrameInfo* pInfo, mfxU32 bayerType)
 {
     MSDK_CHECK_POINTER(pData, MFX_ERR_NOT_INITIALIZED);
     MSDK_CHECK_POINTER(pInfo, MFX_ERR_NOT_INITIALIZED);

@@ -28,7 +28,7 @@ void PrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("   [-bdn] / [-bayerDenoise]                            - bayer denoise on\n"));
     msdk_printf(MSDK_STRING("   [-bbl B G0 G1 R] / [-bayerBlackLevel B G0 G1 R]     - bayer black level correction\n"));
     msdk_printf(MSDK_STRING("   [-bwb B G0 G1 R] / [-bayerWhiteBalance B G0 G1 R]   - bayer white balance\n"));
-    msdk_printf(MSDK_STRING("   [-ccm n00 n10 ... n33 ]                             - color correction 3x3 matrix\n"));
+    msdk_printf(MSDK_STRING("   [-ccm n00 n01 ... n33 ]                             - color correction 3x3 matrix\n"));
     msdk_printf(MSDK_STRING("   [-w width] / [-width width]                         - input width, default 4096\n"));
     msdk_printf(MSDK_STRING("   [-h height] / [-height height]                      - input height, default 2160\n"));
     msdk_printf(MSDK_STRING("   [-n numFrames] / [-numFramesToProcess numFrames]    - number of frames to process\n"));
