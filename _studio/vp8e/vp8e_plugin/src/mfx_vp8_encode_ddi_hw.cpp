@@ -60,8 +60,8 @@ namespace MFX_VP8ENC
     {
         Zero(sps);
 
-        sps.frame_width  = par.mfx.FrameInfo.CropW!=0 ? par.mfx.FrameInfo.CropW :  par.mfx.FrameInfo.Width;
-        sps.frame_height = par.mfx.FrameInfo.CropH!=0 ? par.mfx.FrameInfo.CropH :  par.mfx.FrameInfo.Height; 
+        sps.frame_width  = par.mfx.FrameInfo.Width;
+        sps.frame_height = par.mfx.FrameInfo.Height; 
         sps.frame_width_scale = 0;
         sps.frame_height_scale = 0;
 

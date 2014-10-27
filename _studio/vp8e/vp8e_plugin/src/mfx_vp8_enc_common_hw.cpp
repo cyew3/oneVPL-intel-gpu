@@ -162,6 +162,16 @@ static mfxStatus CheckMFXParameters(mfxInfoMFX*  par)
         par->FrameInfo.CropH = 0; 
         bChanged = true;
     }
+    if ((par->FrameInfo.Width - par->FrameInfo.CropW) > 15)
+    {
+        par->FrameInfo.CropW = par->FrameInfo.Width;
+        bChanged = true;
+    }
+    if ((par->FrameInfo.Height - par->FrameInfo.CropH) > 15)
+    {
+        par->FrameInfo.CropH = par->FrameInfo.Height;
+        bChanged = true;
+    }
     if (par->FrameInfo.FrameRateExtD != 0)
     {
         frameRate = (double)par->FrameInfo.FrameRateExtN/(double)par->FrameInfo.FrameRateExtD;
