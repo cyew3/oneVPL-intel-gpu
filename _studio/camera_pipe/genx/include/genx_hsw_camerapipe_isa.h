@@ -9,5 +9,5 @@
 
 #ifndef __genx_hsw_camerapipe__
 #define __genx_hsw_camerapipe__
-extern const unsigned char genx_hsw_camerapipe[991626];
+extern const unsigned char genx_hsw_camerapipe[1442721];
 #endif

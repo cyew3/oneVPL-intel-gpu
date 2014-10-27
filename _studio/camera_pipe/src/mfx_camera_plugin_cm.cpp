@@ -719,8 +719,8 @@ void CmContext::CreateTask_GoodPixelCheck(SurfaceIndex inSurfIndex,
                  paddedSurfIndex,
                  GetIndex(goodPixCntSurf),
                  GetIndex(bigPixCntSurf),
-                 height,
                  shift_amount,
+                 height,
                  doShiftSwap,
                  bitDepth,
                  bayerPattern);
@@ -748,6 +748,7 @@ void CmContext::CreateTask_RestoreGreen(SurfaceIndex inSurfIndex,
                                         CmSurface2D *greenAvgSurf,
                                         CmSurface2D *avgFlagSurf,
                                         mfxU32 bitDepth,
+                                        int bayerPattern,
                                         mfxU32)
 {
     int result;
@@ -776,7 +777,7 @@ void CmContext::CreateTask_RestoreGreen(SurfaceIndex inSurfIndex,
                      wr_x_base);
         SetKernelArgLast(CAM_PIPE_KERNEL_ARRAY(kernel_restore_green, i),wr_y_base, 10);
         SetKernelArgLast(CAM_PIPE_KERNEL_ARRAY(kernel_restore_green, i), MaxIntensity, 11);
-
+        SetKernelArgLast(CAM_PIPE_KERNEL_ARRAY(kernel_restore_green, i), bayerPattern, 12);
         CAM_PIPE_KERNEL_ARRAY(task_RestoreGreen, i)->Reset();
 
         if ((result = CAM_PIPE_KERNEL_ARRAY(task_RestoreGreen, i)->AddKernel(CAM_PIPE_KERNEL_ARRAY(kernel_restore_green, i))) != CM_SUCCESS)
@@ -788,7 +789,7 @@ void CmContext::CreateTask_RestoreBlueRed(SurfaceIndex inSurfIndex,
                                             CmSurface2D *greenHorSurf, CmSurface2D *greenVerSurf, CmSurface2D *greenAvgSurf,
                                             CmSurface2D *blueHorSurf, CmSurface2D *blueVerSurf, CmSurface2D *blueAvgSurf,
                                             CmSurface2D *redHorSurf, CmSurface2D *redVerSurf, CmSurface2D *redAvgSurf,
-                                            CmSurface2D *avgFlagSurf, mfxU32 bitDepth, mfxU32)
+                                            CmSurface2D *avgFlagSurf, mfxU32 bitDepth, int bayerPattern, mfxU32)
 {
     int result;
     mfxU16  MaxIntensity = (1 << bitDepth) - 1;
@@ -814,6 +815,7 @@ void CmContext::CreateTask_RestoreBlueRed(SurfaceIndex inSurfIndex,
         SetKernelArgLast(CAM_PIPE_KERNEL_ARRAY(kernel_restore_blue_red, i), wr_x_base, 13);
         SetKernelArgLast(CAM_PIPE_KERNEL_ARRAY(kernel_restore_blue_red, i), wr_y_base, 14);
         SetKernelArgLast(CAM_PIPE_KERNEL_ARRAY(kernel_restore_blue_red, i), MaxIntensity, 15);
+        SetKernelArgLast(CAM_PIPE_KERNEL_ARRAY(kernel_restore_blue_red, i), bayerPattern, 16);
 
         CAM_PIPE_KERNEL_ARRAY(task_RestoreBlueRed, i)->Reset();
 
@@ -853,11 +855,11 @@ void CmContext::CreateTask_SAD(CmSurface2D *redHorSurf,
                      GetIndex(redHorSurf), GetIndex(greenHorSurf),  GetIndex(blueHorSurf),
                      GetIndex(redVerSurf), GetIndex(greenVerSurf),  GetIndex(blueVerSurf),
                      xbase, ybase, wr_x_base, wr_y_base);
-        SetKernelArgLast(CAM_PIPE_KERNEL_ARRAY(kernel_sad, i), height, 10);
-        SetKernelArgLast(CAM_PIPE_KERNEL_ARRAY(kernel_sad, i), bayerPattern, 11);
-        SetKernelArgLast(CAM_PIPE_KERNEL_ARRAY(kernel_sad, i), GetIndex(redOutSurf), 12);
-        SetKernelArgLast(CAM_PIPE_KERNEL_ARRAY(kernel_sad, i), GetIndex(greenOutSurf), 13);
-        SetKernelArgLast(CAM_PIPE_KERNEL_ARRAY(kernel_sad, i), GetIndex(blueOutSurf), 14);
+        //SetKernelArgLast(CAM_PIPE_KERNEL_ARRAY(kernel_sad, i), height, 10);
+        SetKernelArgLast(CAM_PIPE_KERNEL_ARRAY(kernel_sad, i), bayerPattern, 10);
+        SetKernelArgLast(CAM_PIPE_KERNEL_ARRAY(kernel_sad, i), GetIndex(redOutSurf), 11);
+        SetKernelArgLast(CAM_PIPE_KERNEL_ARRAY(kernel_sad, i), GetIndex(greenOutSurf), 12);
+        SetKernelArgLast(CAM_PIPE_KERNEL_ARRAY(kernel_sad, i), GetIndex(blueOutSurf), 13);
 
         CAM_PIPE_KERNEL_ARRAY(task_SAD, i)->Reset();
 
@@ -1065,13 +1067,14 @@ void CmContext::CreateTask_ARGB(CmSurface2D *redSurf,
                                 CmSurface2D *blueSurf,
                                 SurfaceIndex outSurfIndex,
                                 mfxU32 bitDepth,
+                                int BaterType,
                                 mfxU32)
 {
 
     int result;
     kernel_ARGB->SetThreadCount(widthIn16 * heightIn16);
 
-    SetKernelArg(kernel_ARGB, GetIndex(redSurf), GetIndex(greenSurf), GetIndex(blueSurf), outSurfIndex, bitDepth);
+    SetKernelArg(kernel_ARGB, GetIndex(redSurf), GetIndex(greenSurf), GetIndex(blueSurf), outSurfIndex, BaterType, m_video.TileHeight, bitDepth);
 
     task_ARGB->Reset();
 

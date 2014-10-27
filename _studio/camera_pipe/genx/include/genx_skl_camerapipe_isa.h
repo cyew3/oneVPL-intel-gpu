@@ -9,5 +9,5 @@
 
 #ifndef __genx_skl_camerapipe__
 #define __genx_skl_camerapipe__
-extern const unsigned char genx_skl_camerapipe[1018522];
+extern const unsigned char genx_skl_camerapipe[1456015];
 #endif

@@ -270,6 +270,7 @@ public:
                                  CmSurface2D *greenAvgSurf,
                                  CmSurface2D *avgFlagSurf,
                                  mfxU32 bitDepth,
+                                 int bayerPattern,
                                  mfxU32 task_bufId = 0);
 
     void CreateTask_RestoreBlueRed(SurfaceIndex inSurfIndex,
@@ -284,6 +285,7 @@ public:
                                    CmSurface2D *redAvgSurf,
                                    CmSurface2D *avgFlagSurf,
                                    mfxU32 bitDepth,
+                                   int bayerPattern,
                                    mfxU32 task_bufId = 0);
 
     void CreateTask_SAD(CmSurface2D *redHorSurf,
@@ -335,6 +337,7 @@ public:
                          CmSurface2D *blueSurf,
                          SurfaceIndex outSurfIndex,
                          mfxU32 bitDepth,
+                         int BayerType,
                          mfxU32 task_bufId = 0);
 
     CmEvent *EnqueueTask_Padding();

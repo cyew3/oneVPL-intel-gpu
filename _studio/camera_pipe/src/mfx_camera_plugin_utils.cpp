@@ -802,7 +802,7 @@ mfxStatus MFXCamera_Plugin::CreateEnqueueTasks(AsyncParams *pParam)
                                             greenVerSurf,
                                             greenAvgSurf,
                                             avgFlagSurf,
-                                            m_InputBitDepth);
+                                            m_InputBitDepth, (int)m_Caps.BayerPatternType);
 
         CmSurface2D *blueHorSurf = (CmSurface2D *)AcquireResource(m_raw16padded, 3);
         CmSurface2D *blueVerSurf = (CmSurface2D *)AcquireResource(m_raw16padded, 4);
@@ -815,7 +815,7 @@ mfxStatus MFXCamera_Plugin::CreateEnqueueTasks(AsyncParams *pParam)
                                             greenHorSurf, greenVerSurf, greenAvgSurf,
                                             blueHorSurf, blueVerSurf, blueAvgSurf,
                                             redHorSurf, redVerSurf, redAvgSurf,
-                                            avgFlagSurf, m_InputBitDepth);
+                                            avgFlagSurf, m_InputBitDepth, (int)m_Caps.BayerPatternType);
 
 
         CmSurface2D *redOutSurf   = (CmSurface2D *)AcquireResource(m_raw16aligned, 0);
@@ -906,7 +906,8 @@ mfxStatus MFXCamera_Plugin::CreateEnqueueTasks(AsyncParams *pParam)
                                         greenOutSurf,
                                         blueOutSurf,
                                         *pOutputSurfaceIndex,
-                                        m_InputBitDepth);
+                                        m_InputBitDepth,
+                                        (int)m_Caps.BayerPatternType);
         }
 
 #ifdef CAMP_PIPE_ITT
