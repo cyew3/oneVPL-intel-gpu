@@ -201,9 +201,24 @@ mfxStatus InitH265VideoParam(const mfxVideoParam *param /* IN */, H265VideoParam
     pars->QPI = (Ipp8s)param->mfx.QPI;
     pars->QPP = (Ipp8s)param->mfx.QPP;
     pars->QPB = (Ipp8s)param->mfx.QPB;
+
+#if defined (MFX_VA)
+    pars->enableCmFlag = (optsHevc->EnableCm == MFX_CODINGOPTION_ON);
+#else
+    pars->enableCmFlag = 0;
+#endif // MFX_VA
+
     pars->NumSlices = param->mfx.NumSlice;
     pars->NumTileCols = optsHevc->NumTileCols;
     pars->NumTileRows = optsHevc->NumTileRows;
+    pars->m_framesInParallel = optsHevc->FramesInParallel;
+
+    if ( pars->enableCmFlag ) {
+        pars->m_framesInParallel = 1; // gacc doesn't support frame threading mode
+    } else {
+        // TO DO: discribe feature list and priority to support high priority feature in case of incompatibility
+    }
+
     pars->NumTiles = pars->NumTileCols * pars->NumTileRows;
     pars->deblockTileBordersFlag = 0;
 
@@ -331,11 +346,11 @@ mfxStatus InitH265VideoParam(const mfxVideoParam *param /* IN */, H265VideoParam
     pars->num_cand_1[7] = 3; // 128x128
 #endif
 
-#if defined (MFX_VA)
-    pars->enableCmFlag = (optsHevc->EnableCm == MFX_CODINGOPTION_ON);
-#else
-    pars->enableCmFlag = 0;
-#endif // MFX_VA
+//#if defined (MFX_VA)
+//    pars->enableCmFlag = (optsHevc->EnableCm == MFX_CODINGOPTION_ON);
+//#else
+//    pars->enableCmFlag = 0;
+//#endif // MFX_VA
 
     pars->preEncMode = 0;
 #if defined(MFX_ENABLE_H265_PAQ)
@@ -475,7 +490,7 @@ mfxStatus InitH265VideoParam(const mfxVideoParam *param /* IN */, H265VideoParam
     pars->Level = (param->mfx.CodecLevel &~ MFX_TIER_HEVC_HIGH) * 1; // mult 3 it SetProfileLevel
 
     pars->tcDuration90KHz = (mfxF64)param->mfx.FrameInfo.FrameRateExtD / param->mfx.FrameInfo.FrameRateExtN * 90000; // calculate tick duration    
-    pars->m_framesInParallel = optsHevc->FramesInParallel;    
+    //pars->m_framesInParallel = optsHevc->FramesInParallel;    
     pars->tileColWidthMax = pars->tileRowHeightMax = 0;
     Ipp16u tileColStart = 0, tileRowStart = 0;
 
