@@ -160,6 +160,7 @@ namespace MfxHwVideoProcessing
         bool           bDenoiseAutoAdjust; 
         mfxU16         denoiseFactor;
 
+        bool           bDetailAutoAdjust;
         mfxU16         detailFactor;
 
         mfxU32         iTargetInterlacingMode;

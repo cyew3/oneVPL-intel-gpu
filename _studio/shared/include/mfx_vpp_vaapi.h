@@ -73,9 +73,11 @@ namespace MfxHwVideoProcessing
         VAContextID m_vaContextVPP;
 
         VAProcFilterCap m_denoiseCaps;
+        VAProcFilterCap m_detailCaps;
         VAProcFilterCapDeinterlacing m_deinterlacingCaps[VAProcDeinterlacingCount];
 
         VABufferID m_denoiseFilterID;
+        VABufferID m_detailFilterID;
         VABufferID m_deintFilterID;
 
         VABufferID m_filterBufs[VAProcFilterCount];

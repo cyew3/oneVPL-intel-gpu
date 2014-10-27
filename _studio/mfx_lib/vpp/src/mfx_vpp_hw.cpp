@@ -70,6 +70,7 @@ static void MemSetZero4mfxExecuteParams (mfxExecuteParams *pMfxExecuteParams )
     pMfxExecuteParams->iDeinterlacingAlgorithm = 0;
     pMfxExecuteParams->bFMDEnable = 0;
     pMfxExecuteParams->bDenoiseAutoAdjust = 0;
+    pMfxExecuteParams->bDetailAutoAdjust = 0;
     pMfxExecuteParams->denoiseFactor = 0;
     pMfxExecuteParams->detailFactor = 0;
     pMfxExecuteParams->iTargetInterlacingMode = 0;
@@ -2377,6 +2378,7 @@ mfxStatus ConfigureExecuteParams(
             {
                 if(caps.uDetailFilter)
                 {
+                    executeParams.bDetailAutoAdjust = TRUE;
                     for (mfxU32 i = 0; i < videoParam.NumExtParam; i++)
                     {
                         executeParams.detailFactor = 32;// default
@@ -2385,6 +2387,7 @@ mfxStatus ConfigureExecuteParams(
                             mfxExtVPPDetail *extDetail = (mfxExtVPPDetail*) videoParam.ExtParam[i];
                             executeParams.detailFactor = MapDNFactor(extDetail->DetailFactor);
                         }
+                        executeParams.bDetailAutoAdjust = FALSE;
                     }
                 }
                 else

@@ -60,6 +60,7 @@ VAAPIVideoProcessing::VAAPIVideoProcessing():
         m_filterBufs[i] = VA_INVALID_ID;
 
     memset( (void*)&m_denoiseCaps, 0, sizeof(m_denoiseCaps));
+    memset( (void*)&m_detailCaps, 0, sizeof(m_detailCaps));
     memset( (void*)&m_deinterlacingCaps, 0, sizeof(m_deinterlacingCaps));
 
     m_cachedReadyTaskIndex.clear();
@@ -132,6 +133,11 @@ mfxStatus VAAPIVideoProcessing::Close(void)
         vaDestroyBuffer(m_vaDisplay, m_denoiseFilterID);
     }
 
+    if( VA_INVALID_ID != m_detailFilterID )
+    {
+        vaDestroyBuffer(m_vaDisplay, m_detailFilterID);
+    }
+
     if( VA_INVALID_ID != m_deintFilterID )
     {
         vaDestroyBuffer(m_vaDisplay, m_deintFilterID);
@@ -144,6 +150,7 @@ mfxStatus VAAPIVideoProcessing::Close(void)
     m_deintFilterID     = VA_INVALID_ID;
 
     memset( (void*)&m_denoiseCaps, 0, sizeof(m_denoiseCaps));
+    memset( (void*)&m_detailCaps, 0, sizeof(m_detailCaps));
     memset( (void*)&m_deinterlacingCaps, 0, sizeof(m_deinterlacingCaps));
 
     return MFX_ERR_NONE;
@@ -243,14 +250,21 @@ mfxStatus VAAPIVideoProcessing::QueryCapabilities(mfxVppCaps& caps)
     MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
 
     mfxU32 num_denoise_caps = 1;
-    vaQueryVideoProcFilterCaps(m_vaDisplay,
+    vaSts = vaQueryVideoProcFilterCaps(m_vaDisplay,
                                m_vaContextVPP,
                                VAProcFilterNoiseReduction,
                                &m_denoiseCaps, &num_denoise_caps);
     MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
 
+    mfxU32 num_detail_caps = 1;
+    vaSts = vaQueryVideoProcFilterCaps(m_vaDisplay,
+                               m_vaContextVPP,
+                               VAProcFilterSharpening,
+                               &m_detailCaps, &num_detail_caps);
+    MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+
     mfxU32 num_deinterlacing_caps = VAProcDeinterlacingCount;
-    vaQueryVideoProcFilterCaps(m_vaDisplay,
+    vaSts = vaQueryVideoProcFilterCaps(m_vaDisplay,
                                m_vaContextVPP,
                                VAProcFilterDeinterlacing,
                                &m_deinterlacingCaps, &num_deinterlacing_caps);
@@ -264,6 +278,9 @@ mfxStatus VAAPIVideoProcessing::QueryCapabilities(mfxVppCaps& caps)
             {
                 case VAProcFilterNoiseReduction:
                     caps.uDenoiseFilter = 1;
+                    break;
+                case VAProcFilterSharpening:
+                    caps.uDetailFilter = 1;
                     break;
                 case VAProcFilterDeinterlacing:
                     for (mfxU32 i = 0; i < num_deinterlacing_caps; i++)
@@ -377,6 +394,31 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
             MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
 
             m_filterBufs[m_numFilterBufs++] = m_denoiseFilterID;
+        }
+    }
+
+    if (VA_INVALID_ID == m_detailFilterID)
+    {
+        if (pParams->detailFactor || true == pParams->bDetailAutoAdjust)
+        {
+            VAProcFilterParameterBuffer detail;
+            detail.type  = VAProcFilterSharpening;
+            if(pParams->bDetailAutoAdjust)
+                detail.value = m_detailCaps.range.default_value;
+            else
+                detail.value = convertValue(0,
+                                            100,
+                                              m_detailCaps.range.min_value,
+                                              m_detailCaps.range.max_value,
+                                              pParams->detailFactor);
+            vaSts = vaCreateBuffer((void*)m_vaDisplay,
+                          m_vaContextVPP,
+                          VAProcFilterParameterBufferType,
+                          sizeof(detail), 1,
+                          &detail, &m_detailFilterID);
+            MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+
+            m_filterBufs[m_numFilterBufs++] = m_detailFilterID;
         }
     }
 
