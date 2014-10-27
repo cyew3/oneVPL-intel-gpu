@@ -59,8 +59,8 @@ File Name: mfx_camera_plugin_utils.h
 
 namespace MfxCameraPlugin
 {
-static const mfxU32 NO_INDEX      = 0xffffffff;
-static const mfxU8  NO_INDEX_U8   = 0xff;
+static const mfxU32  NO_INDEX      = 0xffffffff;
+static const mfxU8   NO_INDEX_U8   = 0xff;
 static const mfxU16  NO_INDEX_U16 = 0xffff;
 
 template<class T> inline void Zero(T & obj)                { memset(&obj, 0, sizeof(obj)); }
@@ -165,6 +165,10 @@ void ReleaseResource(
     MfxFrameAllocResponse & pool,
     mfxMemId                mid);
 
+typedef struct
+{
+    mfxU32              TileOffset;
+} CameraTileOffset;
 
 typedef struct
 {
@@ -172,6 +176,16 @@ typedef struct
     mfxU32              paddedFrameWidth;
     mfxU32              paddedFrameHeight;
     mfxU32              vSliceWidth;
+
+    mfxU32              BitDepth;
+
+    // Tile specific data
+    mfxU32              tileNum;
+    mfxU32              TileWidth;
+    mfxU32              TileHeight;
+    mfxU32              TileHeightPadded;
+    CameraTileOffset    *tileOffsets;
+    mfxFrameInfo        TileInfo;
 } CameraFrameSizeExtra;
 
 
@@ -227,6 +241,11 @@ typedef struct _CameraPipeWhiteBalanceParams
     mfxF64      GreenBottomCorrection;
 } CameraPipeWhiteBalanceParams;
 
+typedef struct _CameraPipeVignetteParams
+{
+    bool        bActive;
+    // TODO: add vignette specific params here
+} CameraPipeVignetteParams;
 
 typedef struct _CameraPipe3x3ColorConversionParams
 {

@@ -68,21 +68,27 @@ MFXCamera_Plugin::MFXCamera_Plugin(bool CreateByDispatcher)
     m_createdByDispatcher = CreateByDispatcher;
 
     Zero(m_Caps);
-    m_Caps.InputMemoryOperationMode = MEM_GPU;
+    m_Caps.InputMemoryOperationMode  = MEM_GPU;
     m_Caps.OutputMemoryOperationMode = MEM_GPU;
     m_Caps.BayerPatternType = MFX_CAM_BAYER_RGGB;
 
     Zero(m_GammaParams);
-    m_cmSurfIn = 0;
-    m_memIn = 0;
+    m_memIn            = 0;
+    m_cmSurfIn         = 0;
+    m_gammaPointSurf   = 0;
+    m_gammaCorrectSurf = 0;
+    m_gammaOutSurf     = 0;
+    m_paddedSurf       = 0;
+    m_vignetteMaskSurf = 0;
+    m_avgFlagSurf      = 0;
+    m_LUTSurf          = 0;
 
-    m_gammaPointSurf = m_gammaCorrectSurf = 0;
-    m_gammaOutSurf = 0;
-    m_paddedSurf = 0;
-    m_avgFlagSurf = 0;
     m_isInitialized = false;
 
     m_activeThreadCount = 0;
+
+    m_FrameSizeExtra.tileOffsets = 0;
+    m_nTiles = 1; // Single tile by default
 }
 
 MFXCamera_Plugin::~MFXCamera_Plugin()
@@ -107,8 +113,6 @@ mfxStatus MFXCamera_Plugin::PluginInit(mfxCoreInterface *core)
     if (MFX_ERR_NONE != mfxRes)
         return mfxRes;
 
-    //par.Impl = MFX_IMPL_RUNTIME;
-
 #if !defined (MFX_VA) && defined (AS_VPP_PLUGIN)
     par.Impl = MFX_IMPL_SOFTWARE;
 #endif
@@ -121,6 +125,7 @@ mfxStatus MFXCamera_Plugin::PluginInit(mfxCoreInterface *core)
     CAMERA_DEBUG_LOG("PluginInit JoinSession parent %p child %p \n", (mfxSession) m_pmfxCore->pthis, m_session);
     mfxRes = MFXInternalPseudoJoinSession((mfxSession) m_pmfxCore->pthis, m_session);
     CAMERA_DEBUG_LOG("PluginInit sts = %d \n", mfxRes);
+
     return mfxRes;
 }
 
@@ -153,6 +158,9 @@ mfxStatus MFXCamera_Plugin::PluginClose()
         delete this;
     }
 
+    if ( m_FrameSizeExtra.tileOffsets )
+        delete [] m_FrameSizeExtra.tileOffsets;
+
     CAMERA_DEBUG_LOG("PluginClose sts = %d \n", mfxRes2);
     return mfxRes2;
 }
@@ -177,33 +185,23 @@ mfxStatus MFXCamera_Plugin::Query(mfxVideoParam *in, mfxVideoParam *out)
         memset(&out->vpp, 0, sizeof(mfxInfoVPP));
 
         /* vppIn */
-        out->vpp.In.FourCC       = 1;
-        out->vpp.In.Height       = 1;
-        out->vpp.In.Width        = 1;
-        out->vpp.In.CropW        = 1;
-        out->vpp.In.CropH        = 1;
-        out->vpp.In.CropX        = 1;
-        out->vpp.In.CropY        = 1;
-        //out->vpp.In.PicStruct    = 1;
+        out->vpp.In.FourCC        = 1;
+        out->vpp.In.Height        = 1;
+        out->vpp.In.Width         = 1;
+        out->vpp.In.CropW         = 1;
+        out->vpp.In.CropH         = 1;
+        out->vpp.In.CropX         = 1;
+        out->vpp.In.CropY         = 1;
         out->vpp.In.FrameRateExtN = 1;
         out->vpp.In.FrameRateExtD = 1;
-        out->vpp.In.ChromaFormat = 1;
-        out->vpp.In.BitDepthLuma = 1;
+        out->vpp.In.ChromaFormat  = 1;
+        out->vpp.In.BitDepthLuma  = 1;
 
         /* vppOut */
         out->vpp.Out.FourCC       = 1;
         out->vpp.Out.Height       = 1;
         out->vpp.Out.Width        = 1;
         out->vpp.Out.ChromaFormat = 1;
-
-        //out->vpp.Out.CropW        = 1;
-        //out->vpp.Out.CropH        = 1;
-        //out->vpp.Out.CropX        = 1;
-        //out->vpp.Out.CropY        = 1;
-
-        //out->vpp.Out.PicStruct    = 1;
-        //out->vpp.Out.FrameRateExtN = 1;
-        //out->vpp.Out.FrameRateExtD = 1;
 
         out->Protected           = 0; //???
         out->IOPattern           = 1; //???
@@ -674,6 +672,10 @@ mfxStatus MFXCamera_Plugin::Close()
         if (m_paddedSurf)
             m_cmDevice->DestroySurface(m_paddedSurf);
 
+        if (m_vignetteMaskSurf)
+            m_cmDevice->DestroySurface(m_vignetteMaskSurf);
+
+        // TODO: need to delete LUT buffer in case CCM was used.
         m_cmCtx->Close();
 
         m_cmDevice.Reset(0);
@@ -684,21 +686,6 @@ mfxStatus MFXCamera_Plugin::Close()
     return MFX_ERR_NONE;
 }
 
-/*
-mfxExtBuffer* GetExtendedBuffer(mfxExtBuffer** extBuf, mfxU32 numExtBuf, mfxU32 id)
-{
-    if (extBuf != 0)
-    {
-        for (mfxU16 i = 0; i < numExtBuf; i++)
-        {
-            if (extBuf[i] != 0 && extBuf[i]->BufferId == id) // assuming aligned buffers
-                return (extBuf[i]);
-        }
-    }
-    return 0;
-}
-*/
-
 mfxStatus MFXCamera_Plugin::ProcessExtendedBuffers(mfxVideoParam *par)
 {
     mfxU32 i, j;
@@ -708,6 +695,7 @@ mfxStatus MFXCamera_Plugin::ProcessExtendedBuffers(mfxVideoParam *par)
     bool blacklevelset   = false;
     bool whitebalanceset = false;
     bool ccmset          = false;
+    bool vignetteset     = false;
 
     for (i = 0; i < par->NumExtParam; i++)
     {
@@ -783,6 +771,17 @@ mfxStatus MFXCamera_Plugin::ProcessExtendedBuffers(mfxVideoParam *par)
                     m_WBparams.RedCorrection         = whiteBalanceExtBufParams->R;
                 }
             }
+            else if (MFX_EXTBUF_CAM_VIGNETTE_CORRECTION == par->ExtParam[i]->BufferId)
+            {
+                m_Caps.bVignetteCorrection = 1;
+                mfxExtCamVignetteCorrection* VignetteExtBufParams = (mfxExtCamVignetteCorrection*)par->ExtParam[i];
+                if ( VignetteExtBufParams )
+                {
+                    vignetteset = true;
+                    m_VignetteParams.bActive = true;
+                    // TODO: copy vignette mask data to internal structure
+                }
+            }
             else if (MFX_EXTBUF_CAM_COLOR_CORRECTION_3X3 == par->ExtParam[i]->BufferId)
             {
                 m_Caps.bColorConversionMatrix = 1;
@@ -839,6 +838,10 @@ mfxStatus MFXCamera_Plugin::ProcessExtendedBuffers(mfxVideoParam *par)
 
     if (m_Caps.bWhiteBalance)
         if (!whitebalanceset)
+            sts = MFX_ERR_UNDEFINED_BEHAVIOR;
+
+    if (m_Caps.bVignetteCorrection)
+        if (!vignetteset)
             sts = MFX_ERR_UNDEFINED_BEHAVIOR;
 
     return sts;
@@ -902,27 +905,53 @@ mfxStatus MFXCamera_Plugin::Init(mfxVideoParam *par)
         }
     }
 
+    if ( m_mfxVideoParam.vpp.In.CropW * m_mfxVideoParam.vpp.In.CropH > 0xF00000 )
     {
-        m_PaddingParams.top    = MFX_CAM_DEFAULT_PADDING_TOP;
-        m_PaddingParams.bottom = MFX_CAM_DEFAULT_PADDING_BOTTOM;
-        m_PaddingParams.left   = MFX_CAM_DEFAULT_PADDING_LEFT;
-        m_PaddingParams.right  = MFX_CAM_DEFAULT_PADDING_RIGHT;
+        // TODO: make number of tiles dependent on frame size.
+        // For existing 7Kx4K 2 tiles seems to be enough.
+        m_nTiles = 2;
     }
+
+    m_PaddingParams.top    = MFX_CAM_DEFAULT_PADDING_TOP;
+    m_PaddingParams.bottom = MFX_CAM_DEFAULT_PADDING_BOTTOM;
+    m_PaddingParams.left   = MFX_CAM_DEFAULT_PADDING_LEFT;
+    m_PaddingParams.right  = MFX_CAM_DEFAULT_PADDING_RIGHT;
 
     if(!m_Caps.bNoPadding)
     {
-        m_FrameSizeExtra.frameWidth64      = ((m_mfxVideoParam.vpp.In.CropW + 31) &~ 0x1F); // 2 bytes each for In, 4 bytes for Out, so 32 is good enough for 64 ???
-        m_FrameSizeExtra.paddedFrameWidth  = m_mfxVideoParam.vpp.In.CropW + m_PaddingParams.left + m_PaddingParams.right;
-        m_FrameSizeExtra.paddedFrameHeight = m_mfxVideoParam.vpp.In.CropH + m_PaddingParams.top + m_PaddingParams.bottom;
+        m_FrameSizeExtra.frameWidth64      = ((m_mfxVideoParam.vpp.In.CropW  + 31) &~ 0x1F); // 2 bytes each for In, 4 bytes for Out, so 32 is good enough for 64 ???
+        m_FrameSizeExtra.paddedFrameWidth  = m_mfxVideoParam.vpp.In.CropW  + m_PaddingParams.left + m_PaddingParams.right;
+        m_FrameSizeExtra.paddedFrameHeight = m_mfxVideoParam.vpp.In.CropH  + m_PaddingParams.top + m_PaddingParams.bottom;
         m_FrameSizeExtra.vSliceWidth       = (((m_mfxVideoParam.vpp.In.CropW / CAM_PIPE_KERNEL_SPLIT)  + 15) &~ 0xF) + 16;
+        m_FrameSizeExtra.tileNum           = m_nTiles;
+        m_FrameSizeExtra.tileOffsets       = new CameraTileOffset[m_nTiles];
+        m_FrameSizeExtra.TileWidth         = m_mfxVideoParam.vpp.In.CropW;
+        m_FrameSizeExtra.TileHeight        = ( ( m_mfxVideoParam.vpp.In.CropH / m_nTiles ) + 31 ) &~ 0x1F;
+        m_FrameSizeExtra.TileHeightPadded  =  m_FrameSizeExtra.TileHeight + m_PaddingParams.top + m_PaddingParams.bottom;
+        m_FrameSizeExtra.BitDepth          = m_mfxVideoParam.vpp.In.BitDepthLuma;
+        m_FrameSizeExtra.TileInfo          = m_mfxVideoParam.vpp.In;
+        for (int i = 0; i < m_nTiles; i++)
+        {
+            if ( m_nTiles - 1 == i && i > 0)
+            {
+                // In case of several tiles, last tile must be aligned to the original frame bottom
+                m_FrameSizeExtra.tileOffsets[i].TileOffset = m_mfxVideoParam.vpp.In.CropH - m_FrameSizeExtra.TileHeight;
+            }
+            else
+            {
+                m_FrameSizeExtra.tileOffsets[i].TileOffset = ( m_mfxVideoParam.vpp.In.CropH / m_nTiles ) * i;
+            }
+        }
     }
     else
     {
+        // TODO: need to set up data for tiles.
         m_FrameSizeExtra.frameWidth64      = ((m_mfxVideoParam.vpp.In.Width + 31) &~ 0x1F); // 2 bytes each for In, 4 bytes for Out, so 32 is good enough for 64 ???
         m_FrameSizeExtra.paddedFrameWidth  = m_mfxVideoParam.vpp.In.Width;
         m_FrameSizeExtra.paddedFrameHeight = m_mfxVideoParam.vpp.In.Height;
         m_FrameSizeExtra.vSliceWidth       = (((m_mfxVideoParam.vpp.In.Width / CAM_PIPE_KERNEL_SPLIT)  + 15) &~ 0xF) + 16;
     }
+
     m_InputBitDepth = m_mfxVideoParam.vpp.In.BitDepthLuma;
 
     if (par->IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY)
@@ -938,12 +967,13 @@ mfxStatus MFXCamera_Plugin::Init(mfxVideoParam *par)
     /* TODO - automatically select SW/HW based on machine capabilities */
     if (m_useSW)
     {
+        //m_CameraProcessor = new CPUCameraProcessor();
         InitCamera_CPU(&m_cmi, m_mfxVideoParam.vpp.In.CropW, m_mfxVideoParam.vpp.In.CropH, m_InputBitDepth, !m_Caps.bNoPadding, m_Caps.BayerPatternType);
     }
     else
     {
         m_cmDevice.Reset(CreateCmDevicePtr(m_core));
-        m_cmCtx.reset(new CmContext(m_mfxVideoParam, m_cmDevice, &m_Caps, m_platform));
+        m_cmCtx.reset(new CmContext(m_FrameSizeExtra, m_cmDevice, &m_Caps, m_platform));
         m_cmCtx->CreateThreadSpaces(&m_FrameSizeExtra);
         mfxSts = AllocateInternalSurfaces();
     }
@@ -1033,7 +1063,7 @@ mfxStatus MFXCamera_Plugin::Reset(mfxVideoParam *par)
 
     CameraFrameSizeExtra frameSizeExtra;
 
-    frameSizeExtra.frameWidth64   = ((newParam.vpp.In.CropW + 31) &~ 0x1F);
+    frameSizeExtra.frameWidth64      = ((newParam.vpp.In.CropW + 31) &~ 0x1F);
     frameSizeExtra.paddedFrameWidth  = newParam.vpp.In.CropW + m_PaddingParams.left + m_PaddingParams.right;
     frameSizeExtra.paddedFrameHeight = newParam.vpp.In.CropH + m_PaddingParams.top + m_PaddingParams.bottom;
     frameSizeExtra.vSliceWidth       = (((newParam.vpp.In.CropW / CAM_PIPE_KERNEL_SPLIT)  + 15) &~ 0xF) + 16;
@@ -1095,12 +1125,12 @@ mfxStatus MFXCamera_Plugin::CameraRoutine(void *pState, void *pParam, mfxU32 thr
 mfxStatus MFXCamera_Plugin::CameraAsyncRoutine(AsyncParams *pParam)
 {
     mfxStatus sts = MFX_ERR_NONE;
-    mfxFrameSurface1 *surfIn = pParam->surf_in;
+    mfxFrameSurface1 *surfIn  = pParam->surf_in;
     mfxFrameSurface1 *surfOut = pParam->surf_out;
 
     if (m_useSW)
     {
-        /* input data in surfIn->Data.Y16 (16-bit)
+        /* input data  in surfIn->Data.Y16 (16-bit)
          * output data in surfOut->Data.V16 (16-bit) or Data.B (8-bit)
          * params in surfIn->Info
          */

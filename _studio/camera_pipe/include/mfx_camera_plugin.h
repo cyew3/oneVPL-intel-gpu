@@ -175,26 +175,28 @@ protected:
     //Filter specific parameters
     CameraPipeWhiteBalanceParams       m_WBparams;
     CameraPipeForwardGammaParams       m_GammaParams;
+    CameraPipeVignetteParams           m_VignetteParams;
     CameraPipePaddingParams            m_PaddingParams;
     CameraPipeBlackLevelParams         m_BlackLevelParams;
     CameraPipe3x3ColorConversionParams m_CCMParams;
     CameraFrameSizeExtra               m_FrameSizeExtra;
 
     mfxU32                       m_InputBitDepth;
+    int                          m_nTiles;
 
-    CmSurface2D         *m_cmSurfIn; // CmSurface2DUP or CmSurface2D
     void                *m_memIn;
 
+    CmSurface2D         *m_cmSurfIn;
     CmSurface2D         *m_paddedSurf;
     CmSurface2D         *m_gammaCorrectSurf;
     CmSurface2D         *m_gammaPointSurf;
     CmSurface2D         *m_gammaOutSurf;
     CmSurface2D         *m_avgFlagSurf;
+    CmSurface2D         *m_vignetteMaskSurf;
     CmBuffer            *m_LUTSurf;
 
 private:
 
-    //MfxFrameAllocResponse   m_raw16;
     MfxFrameAllocResponse   m_raw16padded;
     MfxFrameAllocResponse   m_raw16aligned;
     MfxFrameAllocResponse   m_aux8;

@@ -299,16 +299,16 @@ CmContext::CmContext()
 : m_device(0)
 , m_program(0)
 , m_queue(0)
-, m_TS_16x16(0)
 {
 }
 
 CmContext::CmContext(
-    mfxVideoParam const & video,
+    CameraFrameSizeExtra const & video,
     CmDevice *          cmDevice,
     mfxCameraCaps *     pCaps,
     eMFXHWType platform)
 {
+    m_nTiles = video.tileNum;
     Zero(task_BayerCorrection);
     Zero(task_Padding);
     Zero(task_GoodPixelCheck);
@@ -357,7 +357,7 @@ void CmContext::CreateCameraKernels()
         CAM_PIPE_KERNEL_ARRAY(kernel_restore_blue_red, i) = CreateKernel(m_device, m_program, CM_KERNEL_FUNCTION(RESTOREBandR), NULL);
     }
 
-    if (m_video.vpp.In.BitDepthLuma != 16)
+    if (m_video.BitDepth != 16)
     {
         for (i = 0; i < CAM_PIPE_KERNEL_SPLIT; i++)
         {
@@ -381,7 +381,7 @@ void CmContext::CreateCameraKernels()
     {
         // Only gamma correction needed w/o color corection
 
-        if (m_video.vpp.In.BitDepthLuma == 16)
+        if (m_video.BitDepth == 16)
         {
             kernel_FwGamma  = CreateKernel(m_device, m_program, CM_KERNEL_FUNCTION(GAMMA_ONLY_16bits), NULL);
             // Workaround - otherwise if gamma_argb8 is run with 2DUP out first, and then - with 2D, Enqueue never returns (CM bug)
@@ -410,7 +410,7 @@ void CmContext::CreateCameraKernels()
     {
         // Both gamma correction and color corection needed
 
-        if (m_video.vpp.In.BitDepthLuma == 16)
+        if (m_video.BitDepth == 16)
         {
             kernel_FwGamma  = CreateKernel(m_device, m_program, CM_KERNEL_FUNCTION(CCM_AND_GAMMA_16bits), NULL);
             // Workaround - otherwise if gamma_argb8 is run with 2DUP out first, and then - with 2D, Enqueue never returns (CM bug)
@@ -426,9 +426,9 @@ void CmContext::CreateCameraKernels()
     else if (! m_caps.bForwardGammaCorrection && m_caps.bColorConversionMatrix)
     {
         // color corection needed w/o gamma correction
-       kernel_FwGamma  = CreateKernel(m_device, m_program, CM_KERNEL_FUNCTION(CCM_ONLY), NULL);
-       // Workaround - otherwise if gamma_argb8 is run with 2DUP out first, and then - with 2D, Enqueue never returns (CM bug)
-       kernel_FwGamma1 = CreateKernel(m_device, m_program, CM_KERNEL_FUNCTION(CCM_ONLY), NULL);
+        kernel_FwGamma  = CreateKernel(m_device, m_program, CM_KERNEL_FUNCTION(CCM_ONLY), NULL);
+        // Workaround - otherwise if gamma_argb8 is run with 2DUP out first, and then - with 2D, Enqueue never returns (CM bug)
+        kernel_FwGamma1 = CreateKernel(m_device, m_program, CM_KERNEL_FUNCTION(CCM_ONLY), NULL);
 
     }
 
@@ -445,27 +445,27 @@ void CmContext::CreateCameraKernels()
 void CmContext::CreateThreadSpaces(CameraFrameSizeExtra *pFrameSize)
 {
     mfxU32 sliceWidth = pFrameSize->vSliceWidth;
+    int    result = CM_SUCCESS;
 
-    m_heightIn16 = (pFrameSize->paddedFrameHeight + 15) >> 4;
-    m_widthIn16  = (pFrameSize->paddedFrameWidth  + 15) >> 4;
+    heightIn16 = (pFrameSize->TileHeightPadded + 15) >> 4;
+    widthIn16  = (pFrameSize->paddedFrameWidth  + 15) >> 4;
 
-    m_sliceHeightIn16_np = (m_video.vpp.In.CropH + 15) >> 4;
-    m_sliceWidthIn16_np  = (sliceWidth - 16) >> 4;
+    sliceHeightIn16_np = (pFrameSize->TileHeight + 15) >> 4;
+    sliceWidthIn16_np  = (sliceWidth - 16) >> 4;
 
-    m_sliceHeightIn8 = (pFrameSize->paddedFrameHeight + 7) >> 3;
-    m_sliceWidthIn8  = sliceWidth >> 3;   // slicewidth is a multiple of 16
+    sliceHeightIn8 = (pFrameSize->TileHeightPadded + 7) >> 3;
+    sliceWidthIn8  = sliceWidth >> 3;   // slicewidth is a multiple of 16
 
-    m_sliceHeightIn8_np = (m_video.vpp.In.CropH + 7) >> 3;
-    m_sliceWidthIn8_np = (sliceWidth - 16) >> 3;
+    sliceHeightIn8_np = (pFrameSize->TileHeight + 7) >> 3;
+    sliceWidthIn8_np  = (sliceWidth - 16) >> 3;
 
-    int result = CM_SUCCESS;
-    if ((result = m_device->CreateThreadSpace(m_widthIn16, m_heightIn16, m_TS_16x16)) != CM_SUCCESS)
+    if ((result = m_device->CreateThreadSpace(widthIn16, heightIn16, TS_16x16)) != CM_SUCCESS)
         throw CmRuntimeError();
-    if ((result = m_device->CreateThreadSpace(m_sliceWidthIn16_np, m_sliceHeightIn16_np, m_TS_Slice_16x16_np)) != CM_SUCCESS)
+    if ((result = m_device->CreateThreadSpace(sliceWidthIn16_np, sliceHeightIn16_np, TS_Slice_16x16_np)) != CM_SUCCESS)
         throw CmRuntimeError();
-    if ((result = m_device->CreateThreadSpace(m_sliceWidthIn8, m_sliceHeightIn8, m_TS_Slice_8x8)) != CM_SUCCESS)
+    if ((result = m_device->CreateThreadSpace(sliceWidthIn8, sliceHeightIn8, TS_Slice_8x8)) != CM_SUCCESS)
         throw CmRuntimeError();
-    if ((result = m_device->CreateThreadSpace(m_sliceWidthIn8_np, m_sliceHeightIn8_np, m_TS_Slice_8x8_np)) != CM_SUCCESS)
+    if ((result = m_device->CreateThreadSpace(sliceWidthIn8_np, sliceHeightIn8_np, TS_Slice_8x8_np)) != CM_SUCCESS)
         throw CmRuntimeError();
 }
 
@@ -604,32 +604,21 @@ void CmContext::DestroyCmTasks()
     Zero(task_ARGB);
 }
 
-//void CmContext::CreateTask_ManualWhiteBalance(CmSurface2D *pInSurf, CmSurface2D *pOutSurf, mfxF32 R, mfxF32 G1, mfxF32 B, mfxF32 G2, mfxU32 bitDepth, mfxU32 task_bufId)
-//void CmContext::CreateTask_ManualWhiteBalance(SurfaceIndex inSurfIndex, CmSurface2D *pOutSurf, mfxF32 R, mfxF32 G1, mfxF32 B, mfxF32 G2, mfxU32 bitDepth, mfxU32 task_bufId)
-//{
-//    int result;
-//    mfxU16 MaxInputLevel = (1<<bitDepth)-1;
-//    kernel_whitebalance_manual->SetThreadCount(m_widthIn16 * m_heightIn16);
-//    SetKernelArg(kernel_whitebalance_manual, inSurfIndex, GetIndex(pOutSurf), R, G1, B, G2, MaxInputLevel);
-//
-//    result = CAM_PIPE_TASK_ARRAY(task_WhiteBalanceManual, task_bufId)->Reset();
-//    if (result != CM_SUCCESS)
-//        throw CmRuntimeError();
-//
-//    result = CAM_PIPE_TASK_ARRAY(task_WhiteBalanceManual, task_bufId)->AddKernel(kernel_whitebalance_manual);
-//    if (result != CM_SUCCESS )
-//        throw CmRuntimeError();
-//}
-
-void CmContext::CreateTask_Padding(SurfaceIndex inSurfIndex, SurfaceIndex paddedSurfIndex, mfxU32 paddedWidth, mfxU32 paddedHeight, int bitDepth, int bayerPattern, mfxU32)
+void CmContext::CreateTask_Padding(SurfaceIndex inSurfIndex,
+                                   SurfaceIndex paddedSurfIndex,
+                                   mfxU32 paddedWidth,
+                                   mfxU32 paddedHeight,
+                                   int bitDepth,
+                                   int bayerPattern,
+                                   mfxU32)
 {
     int result;
-    int threadswidth  = paddedWidth >> 3;  //width * 3(bytes/row) / 24(bytes/row of a block)
+    int threadswidth  = paddedWidth  >> 3;
     int threadsheight = paddedHeight >> 3;
-    int width = m_video.vpp.In.CropW;
-    int height = m_video.vpp.In.CropH;
+    int width  = m_video.TileInfo.CropW;
+    int height = m_video.TileInfo.CropH;
 
-    kernel_padding16bpp->SetThreadCount(m_widthIn16 * m_heightIn16);
+    kernel_padding16bpp->SetThreadCount(widthIn16 * heightIn16);
     SetKernelArg(kernel_padding16bpp, inSurfIndex, paddedSurfIndex, threadswidth, threadsheight, width, height, bitDepth, bayerPattern);
 
     task_Padding->Reset();
@@ -642,13 +631,13 @@ CmEvent *CmContext::EnqueueTask_Padding()
 {
     int result;
     CmEvent *e = CM_NO_EVENT;
-    if ((result = m_queue->Enqueue(task_Padding, e, m_TS_16x16)) != CM_SUCCESS)
+    if ((result = m_queue->Enqueue(task_Padding, e, TS_16x16)) != CM_SUCCESS)
         throw CmRuntimeError();
     return e;
 }
 
 void CmContext::CreateTask_BayerCorrection(SurfaceIndex inoutSurfIndex,
-                                           CmSurface2D * /*pOutSurf*/,
+                                           SurfaceIndex vignetteMaskIndex,
                                            mfxU16 Enable_BLC,
                                            mfxU16 Enable_VIG,
                                            mfxU16 ENABLE_WB,
@@ -666,31 +655,31 @@ void CmContext::CreateTask_BayerCorrection(SurfaceIndex inoutSurfIndex,
 {
     int result;
     mfxU16 MaxInputLevel = (1<<bitDepth)-1;
-    kernel_BayerCorrection->SetThreadCount(m_widthIn16 * m_heightIn16);
+    kernel_BayerCorrection->SetThreadCount(widthIn16 * heightIn16);
     int i=0;
     // Having first equal to 1 means that kernel is the first one, thus padding will
     // be done. At the moment, padding is a separate kernel that is done before this
     // so first variable must be set to 0
     int first = 0;
 
-    kernel_BayerCorrection->SetKernelArg( i++, sizeof(SurfaceIndex), &inoutSurfIndex );
-    kernel_BayerCorrection->SetKernelArg( i++, sizeof(SurfaceIndex), &inoutSurfIndex );
-    kernel_BayerCorrection->SetKernelArg( i++, sizeof(SurfaceIndex), &inoutSurfIndex );
-    kernel_BayerCorrection->SetKernelArg( i++, sizeof(signed short), &Enable_BLC     );
-    kernel_BayerCorrection->SetKernelArg( i++, sizeof(signed short), &Enable_VIG     );
-    kernel_BayerCorrection->SetKernelArg( i++, sizeof(signed short), &ENABLE_WB      );
-    kernel_BayerCorrection->SetKernelArg( i++, sizeof(signed short), &B_shift        );
-    kernel_BayerCorrection->SetKernelArg( i++, sizeof(signed short), &Gtop_shift     );
-    kernel_BayerCorrection->SetKernelArg( i++, sizeof(signed short), &Gbot_shift     );
-    kernel_BayerCorrection->SetKernelArg( i++, sizeof(signed short), &R_shift        );
-    kernel_BayerCorrection->SetKernelArg( i++, sizeof(float),        &R_scale        );
-    kernel_BayerCorrection->SetKernelArg( i++, sizeof(float),        &Gtop_scale     );
-    kernel_BayerCorrection->SetKernelArg( i++, sizeof(float),        &Gbot_scale     );
-    kernel_BayerCorrection->SetKernelArg( i++, sizeof(float),        &B_scale        );
-    kernel_BayerCorrection->SetKernelArg( i++, sizeof(signed short), &MaxInputLevel  );
-    kernel_BayerCorrection->SetKernelArg( i++, sizeof(int),          &first          );
-    kernel_BayerCorrection->SetKernelArg( i++, sizeof(int),          &bitDepth       );
-    kernel_BayerCorrection->SetKernelArg( i++, sizeof(int),          &BayerType      );
+    kernel_BayerCorrection->SetKernelArg( i++, sizeof(SurfaceIndex), &inoutSurfIndex   );
+    kernel_BayerCorrection->SetKernelArg( i++, sizeof(SurfaceIndex), &inoutSurfIndex   );
+    kernel_BayerCorrection->SetKernelArg( i++, sizeof(SurfaceIndex), &vignetteMaskIndex);
+    kernel_BayerCorrection->SetKernelArg( i++, sizeof(signed short), &Enable_BLC       );
+    kernel_BayerCorrection->SetKernelArg( i++, sizeof(signed short), &Enable_VIG       );
+    kernel_BayerCorrection->SetKernelArg( i++, sizeof(signed short), &ENABLE_WB        );
+    kernel_BayerCorrection->SetKernelArg( i++, sizeof(signed short), &B_shift          );
+    kernel_BayerCorrection->SetKernelArg( i++, sizeof(signed short), &Gtop_shift       );
+    kernel_BayerCorrection->SetKernelArg( i++, sizeof(signed short), &Gbot_shift       );
+    kernel_BayerCorrection->SetKernelArg( i++, sizeof(signed short), &R_shift          );
+    kernel_BayerCorrection->SetKernelArg( i++, sizeof(float),        &R_scale          );
+    kernel_BayerCorrection->SetKernelArg( i++, sizeof(float),        &Gtop_scale       );
+    kernel_BayerCorrection->SetKernelArg( i++, sizeof(float),        &Gbot_scale       );
+    kernel_BayerCorrection->SetKernelArg( i++, sizeof(float),        &B_scale          );
+    kernel_BayerCorrection->SetKernelArg( i++, sizeof(signed short), &MaxInputLevel    );
+    kernel_BayerCorrection->SetKernelArg( i++, sizeof(int),          &first            );
+    kernel_BayerCorrection->SetKernelArg( i++, sizeof(int),          &bitDepth         );
+    kernel_BayerCorrection->SetKernelArg( i++, sizeof(int),          &BayerType        );
 
     result = task_BayerCorrection->Reset();
     if (result != CM_SUCCESS)
@@ -705,7 +694,7 @@ CmEvent *CmContext::EnqueueTask_BayerCorrection()
 {
     int result;
     CmEvent *e = CM_NO_EVENT;
-    if ((result = m_queue->Enqueue(task_BayerCorrection, e, m_TS_16x16)) != CM_SUCCESS)
+    if ((result = m_queue->Enqueue(task_BayerCorrection, e, TS_16x16)) != CM_SUCCESS)
         throw CmRuntimeError();
     return e;
 }
@@ -716,15 +705,25 @@ void CmContext::CreateTask_GoodPixelCheck(SurfaceIndex inSurfIndex,
                                           CmSurface2D *bigPixCntSurf,
                                           int bitDepth,
                                           int doShiftSwap,
-                                          int bayerPattern, mfxU32)
+                                          int bayerPattern,
+                                          mfxU32)
 {
     int result;
     mfxI32 shift_amount = (bitDepth - 8);
-    kernel_good_pixel_check->SetThreadCount(m_widthIn16 * m_heightIn16);
+    kernel_good_pixel_check->SetThreadCount(widthIn16 * heightIn16);
 
-    int height = (int)m_video.vpp.In.CropH;
+    int height = (int)m_video.TileHeight; 
 
-    SetKernelArg(kernel_good_pixel_check, inSurfIndex, paddedSurfIndex, GetIndex(goodPixCntSurf), GetIndex(bigPixCntSurf), height, shift_amount, doShiftSwap, bitDepth, bayerPattern);
+    SetKernelArg(kernel_good_pixel_check,
+                 inSurfIndex,
+                 paddedSurfIndex,
+                 GetIndex(goodPixCntSurf),
+                 GetIndex(bigPixCntSurf),
+                 height,
+                 shift_amount,
+                 doShiftSwap,
+                 bitDepth,
+                 bayerPattern);
 
     task_GoodPixelCheck->Reset();
 
@@ -736,30 +735,46 @@ CmEvent *CmContext::EnqueueTask_GoodPixelCheck()
 {
     int result;
     CmEvent *e = CM_NO_EVENT;
-    if ((result = m_queue->Enqueue(task_GoodPixelCheck, e, m_TS_16x16)) != CM_SUCCESS)
+    if ((result = m_queue->Enqueue(task_GoodPixelCheck, e, TS_16x16)) != CM_SUCCESS)
         throw CmRuntimeError();
     return e;
 }
 
-void CmContext::CreateTask_RestoreGreen(SurfaceIndex inSurfIndex, CmSurface2D *goodPixCntSurf, CmSurface2D *bigPixCntSurf, CmSurface2D *greenHorSurf, CmSurface2D *greenVerSurf, CmSurface2D *greenAvgSurf, CmSurface2D *avgFlagSurf, mfxU32 bitDepth, mfxU32)
+void CmContext::CreateTask_RestoreGreen(SurfaceIndex inSurfIndex,
+                                        CmSurface2D *goodPixCntSurf,
+                                        CmSurface2D *bigPixCntSurf,
+                                        CmSurface2D *greenHorSurf,
+                                        CmSurface2D *greenVerSurf,
+                                        CmSurface2D *greenAvgSurf,
+                                        CmSurface2D *avgFlagSurf,
+                                        mfxU32 bitDepth,
+                                        mfxU32)
 {
     int result;
     mfxU16  MaxIntensity = (1 << bitDepth) - 1;
 
     for (int i = 0; i < CAM_PIPE_KERNEL_SPLIT; i++)
     {
-        int xbase = (i * m_sliceWidthIn8) - ((i == 0) ? 0 : i * 2);
+        int xbase = (i * sliceWidthIn8) - ((i == 0) ? 0 : i * 2);
         int ybase = 0;
 
         int wr_x_base = 0;
         int wr_y_base = 0;
 
-        CAM_PIPE_KERNEL_ARRAY(kernel_restore_green, i)->SetThreadCount(m_sliceWidthIn8 * m_sliceHeightIn8);
+        CAM_PIPE_KERNEL_ARRAY(kernel_restore_green, i)->SetThreadCount(sliceWidthIn8 * sliceHeightIn8);
 
         SetKernelArg(CAM_PIPE_KERNEL_ARRAY(kernel_restore_green, i),
-                     inSurfIndex, GetIndex(goodPixCntSurf), GetIndex(bigPixCntSurf),
-                     GetIndex(greenHorSurf), GetIndex(greenVerSurf), GetIndex(greenAvgSurf), GetIndex(avgFlagSurf), xbase, ybase, wr_x_base);
-        SetKernelArgLast(CAM_PIPE_KERNEL_ARRAY(kernel_restore_green, i), wr_y_base, 10);
+                     inSurfIndex,
+                     GetIndex(goodPixCntSurf),
+                     GetIndex(bigPixCntSurf),
+                     GetIndex(greenHorSurf),
+                     GetIndex(greenVerSurf),
+                     GetIndex(greenAvgSurf),
+                     GetIndex(avgFlagSurf),
+                     xbase,
+                     ybase,
+                     wr_x_base);
+        SetKernelArgLast(CAM_PIPE_KERNEL_ARRAY(kernel_restore_green, i),wr_y_base, 10);
         SetKernelArgLast(CAM_PIPE_KERNEL_ARRAY(kernel_restore_green, i), MaxIntensity, 11);
 
         CAM_PIPE_KERNEL_ARRAY(task_RestoreGreen, i)->Reset();
@@ -783,10 +798,10 @@ void CmContext::CreateTask_RestoreBlueRed(SurfaceIndex inSurfIndex,
         int xbase = 0;
         int ybase = 0;
 
-        int wr_x_base = (i * m_sliceWidthIn8) - ((i == 0) ? 0 : i * 2);
+        int wr_x_base = (i * sliceWidthIn8) - ((i == 0) ? 0 : i * 2);
         int wr_y_base = 0;
 
-        CAM_PIPE_KERNEL_ARRAY(kernel_restore_blue_red, i)->SetThreadCount(m_sliceWidthIn8 * m_sliceHeightIn8);
+        CAM_PIPE_KERNEL_ARRAY(kernel_restore_blue_red, i)->SetThreadCount(sliceWidthIn8 * sliceHeightIn8);
 
         SetKernelArg(CAM_PIPE_KERNEL_ARRAY(kernel_restore_blue_red, i),
                      inSurfIndex,
@@ -808,7 +823,17 @@ void CmContext::CreateTask_RestoreBlueRed(SurfaceIndex inSurfIndex,
     }
 }
 
-void CmContext::CreateTask_SAD(CmSurface2D *redHorSurf, CmSurface2D *greenHorSurf, CmSurface2D *blueHorSurf, CmSurface2D *redVerSurf, CmSurface2D *greenVerSurf, CmSurface2D *blueVerSurf, CmSurface2D *redOutSurf, CmSurface2D *greenOutSurf, CmSurface2D *blueOutSurf, int bayerPattern, mfxU32)
+void CmContext::CreateTask_SAD(CmSurface2D *redHorSurf,
+                               CmSurface2D *greenHorSurf,
+                               CmSurface2D *blueHorSurf,
+                               CmSurface2D *redVerSurf,
+                               CmSurface2D *greenVerSurf,
+                               CmSurface2D *blueVerSurf,
+                               CmSurface2D *redOutSurf,
+                               CmSurface2D *greenOutSurf,
+                               CmSurface2D *blueOutSurf,
+                               int bayerPattern,
+                               mfxU32)
 {
     int result;
 
@@ -817,12 +842,12 @@ void CmContext::CreateTask_SAD(CmSurface2D *redHorSurf, CmSurface2D *greenHorSur
         int xbase = 0;
         int ybase = 0;
 
-        int wr_x_base = (i * m_sliceWidthIn8_np);// - ((i == 0)? 0 : i*2);
+        int wr_x_base = (i * sliceWidthIn8_np);// - ((i == 0)? 0 : i*2);
         int wr_y_base = 0;
 
-        int height = (int)m_video.vpp.In.CropH;
+        int height = (int)m_video.TileHeight;
 
-        CAM_PIPE_KERNEL_ARRAY(kernel_sad, i)->SetThreadCount(m_sliceWidthIn8_np * m_sliceHeightIn8_np);
+        CAM_PIPE_KERNEL_ARRAY(kernel_sad, i)->SetThreadCount(sliceWidthIn8_np * sliceHeightIn8_np);
 
         SetKernelArg(CAM_PIPE_KERNEL_ARRAY(kernel_sad, i),
                      GetIndex(redHorSurf), GetIndex(greenHorSurf),  GetIndex(blueHorSurf),
@@ -842,19 +867,27 @@ void CmContext::CreateTask_SAD(CmSurface2D *redHorSurf, CmSurface2D *greenHorSur
     }
 }
 
-void CmContext::CreateTask_DecideAverage(CmSurface2D *redAvgSurf, CmSurface2D *greenAvgSurf, CmSurface2D *blueAvgSurf, CmSurface2D *avgFlagSurf, CmSurface2D *redOutSurf, CmSurface2D *greenOutSurf, CmSurface2D *blueOutSurf, int bayerPattern, mfxU32)
+void CmContext::CreateTask_DecideAverage(CmSurface2D *redAvgSurf,
+                                         CmSurface2D *greenAvgSurf,
+                                         CmSurface2D *blueAvgSurf,
+                                         CmSurface2D *avgFlagSurf,
+                                         CmSurface2D *redOutSurf,
+                                         CmSurface2D *greenOutSurf,
+                                         CmSurface2D *blueOutSurf,
+                                         int bayerPattern,
+                                         mfxU32)
 {
     int result;
 
     for (int i = 0; i < CAM_PIPE_KERNEL_SPLIT; i++)
     {
 
-        int wr_x_base = (i * m_sliceWidthIn16_np);// - ((i == 0)? 0 : i*2);;
+        int wr_x_base = (i * sliceWidthIn16_np);// - ((i == 0)? 0 : i*2);;
         int wr_y_base = 0;
 
-        int height = (int)m_video.vpp.In.CropH;
+        int height = (int)m_video.TileHeight;
 
-        CAM_PIPE_KERNEL_ARRAY(kernel_decide_average, i)->SetThreadCount(m_sliceWidthIn16_np * m_sliceHeightIn16_np);
+        CAM_PIPE_KERNEL_ARRAY(kernel_decide_average, i)->SetThreadCount(sliceWidthIn16_np * sliceHeightIn16_np);
 
         SetKernelArg(CAM_PIPE_KERNEL_ARRAY(kernel_decide_average, i), GetIndex(redAvgSurf), GetIndex(greenAvgSurf), GetIndex(blueAvgSurf),
                                                                       GetIndex(avgFlagSurf), GetIndex(redOutSurf), GetIndex(greenOutSurf), GetIndex(blueOutSurf),
@@ -885,11 +918,11 @@ void CmContext::CreateTask_GammaAndCCM(CmSurface2D  *correctSurf,
     int result;
 
 #ifdef NEW_GAMMA_THREADS
-    int gamma_threads_per_group =  m_video.vpp.In.CropW * 4 / 512; // 64;
+    int gamma_threads_per_group =  m_video.TileWidth * 4 / 512; // 64;
     gamma_threads_per_group = (gamma_threads_per_group + 15) &~ 0xF;
     gamma_threads_per_group = (gamma_threads_per_group < 16) ? 16 : gamma_threads_per_group;
     kernel_FwGamma1->SetThreadCount(gamma_threads_per_group * 4);
-    int threadsheight = (( m_video.vpp.In.CropW + 15) / 16); // not used in the kernel (?)
+    int threadsheight = (( m_video.TileHeight + 15) / 16); // not used in the kernel (?)
 #else
     int threadswidth  = m_video.vpp.In.CropW/16; // Out.Width/Height ??? here and below
     int threadsheight = m_video.vpp.In.CropH/16;
@@ -899,9 +932,9 @@ void CmContext::CreateTask_GammaAndCCM(CmSurface2D  *correctSurf,
     kernel_FwGamma1->SetThreadCount(threadcount);
 #endif
 
-    int framewidth_in_bytes = m_video.vpp.In.CropW * sizeof(int);
+    int framewidth_in_bytes = m_video.TileWidth * sizeof(int);
 
-    mfxU32 height = (mfxU32)m_video.vpp.In.CropH;
+    mfxU32 height = (mfxU32)m_video.TileHeight;
     int i = 0;
     kernel_FwGamma1->SetKernelArg(i++, sizeof(SurfaceIndex), &GetIndex(correctSurf));
     kernel_FwGamma1->SetKernelArg(i++, sizeof(SurfaceIndex), &GetIndex(pointSurf)  );
@@ -949,11 +982,11 @@ void CmContext::CreateTask_GammaAndCCM(CmSurface2D *correctSurf,
     int result;
 
 #ifdef NEW_GAMMA_THREADS
-    int gamma_threads_per_group =  m_video.vpp.In.CropW * 4 / 512; // 64;
+    int gamma_threads_per_group =  m_video.TileWidth * 4 / 512; // 64;
     gamma_threads_per_group     = (gamma_threads_per_group + 15) &~ 0xF;
     gamma_threads_per_group     = (gamma_threads_per_group < 16) ? 16 : gamma_threads_per_group;
     kernel_FwGamma->SetThreadCount(gamma_threads_per_group * 4);
-    int threadsheight = (( m_video.vpp.In.CropW + 15) / 16); // not used in the kernel (?)
+    int threadsheight = (( m_video.TileHeight + 15) / 16); // not used in the kernel (?)
 #else
     int threadswidth  = m_video.vpp.In.CropW/16; // Out.Width/Height ??? here and below
     int threadsheight = m_video.vpp.In.CropH/16;
@@ -963,9 +996,9 @@ void CmContext::CreateTask_GammaAndCCM(CmSurface2D *correctSurf,
     kernel_FwGamma->SetThreadCount(threadcount);
 #endif
 
-    int framewidth_in_bytes = m_video.vpp.In.CropW * sizeof(int);
+    int framewidth_in_bytes = m_video.TileWidth * sizeof(int);
 
-    mfxU32 height = (mfxU32)m_video.vpp.In.CropH;
+    mfxU32 height = (mfxU32)m_video.TileHeight;
     int i = 0;
     kernel_FwGamma->SetKernelArg(i++, sizeof(SurfaceIndex), &GetIndex(correctSurf));
     kernel_FwGamma->SetKernelArg(i++, sizeof(SurfaceIndex), &GetIndex(pointSurf)  );
@@ -1002,7 +1035,7 @@ CmEvent *CmContext::EnqueueTask_ForwardGamma()
     int result;
 #ifdef NEW_GAMMA_THREADS
     int gamma_threads_per_group;
-    gamma_threads_per_group =  m_video.vpp.In.CropW * 4 / 512; // 64;
+    gamma_threads_per_group =  m_video.TileWidth * 4 / 512; // 64;
     gamma_threads_per_group = (gamma_threads_per_group + 15) &~ 0xF;
     gamma_threads_per_group = (gamma_threads_per_group < 16) ? 16 : gamma_threads_per_group;
 #else
@@ -1027,11 +1060,16 @@ CmEvent *CmContext::EnqueueTask_ForwardGamma()
     return e;
 }
 
-void CmContext::CreateTask_ARGB(CmSurface2D *redSurf, CmSurface2D *greenSurf, CmSurface2D *blueSurf, SurfaceIndex outSurfIndex, mfxU32 bitDepth, mfxU32)
+void CmContext::CreateTask_ARGB(CmSurface2D *redSurf,
+                                CmSurface2D *greenSurf,
+                                CmSurface2D *blueSurf,
+                                SurfaceIndex outSurfIndex,
+                                mfxU32 bitDepth,
+                                mfxU32)
 {
 
     int result;
-    kernel_ARGB->SetThreadCount(m_widthIn16 * m_heightIn16);
+    kernel_ARGB->SetThreadCount(widthIn16 * heightIn16);
 
     SetKernelArg(kernel_ARGB, GetIndex(redSurf), GetIndex(greenSurf), GetIndex(blueSurf), outSurfIndex, bitDepth);
 
@@ -1048,19 +1086,19 @@ CmEvent *CmContext::EnqueueTask_ARGB()
     CmEvent *e = NULL;
     CAMERA_DEBUG_LOG("EnqueueTask_ARGB:  task_ARGB=%p\n",task_ARGB);
 
-    if ((result = m_queue->Enqueue(task_ARGB, e, m_TS_16x16)) != CM_SUCCESS)
+    if ((result = m_queue->Enqueue(task_ARGB, e, TS_16x16)) != CM_SUCCESS)
         throw CmRuntimeError();
     return e;
 }
 
 void CmContext::Setup(
-    mfxVideoParam const & video,
+    CameraFrameSizeExtra const & video,
     CmDevice *            cmDevice,
     mfxCameraCaps      *pCaps)
 {
     m_video  = video;
     m_device = cmDevice;
-    m_caps = *pCaps;
+    m_caps   = *pCaps;
 
     if (m_device->CreateQueue(m_queue) != CM_SUCCESS)
         throw CmRuntimeError();
@@ -1107,7 +1145,7 @@ void CmContext::Reset(
     // TODO: change to reflect new CCM-Gamma combined kernels
     if (pCaps->bForwardGammaCorrection)
     {
-        if (m_video.vpp.In.BitDepthLuma == 16)
+        if (m_video.BitDepth == 16)
         {
             kernel_FwGamma = CreateKernel(m_device, m_program, CM_KERNEL_FUNCTION(GAMMA_ONLY_16bits), NULL);
             // Workaround - otherwise if gamma_argb8 is run with 2DUP out first, and then - with 2D, Enqueue never returns (CM bug)
@@ -1133,7 +1171,7 @@ void CmContext::Reset(
     else if (!pCaps->bForwardGammaCorrection || video.vpp.In.BitDepthLuma == 16)
         kernel_ARGB = CreateKernel(m_device, m_program, CM_KERNEL_FUNCTION(ARGB8), NULL);
 
-    if ((video.vpp.In.BitDepthLuma | m_video.vpp.In.BitDepthLuma) > 16)
+    if ((video.vpp.In.BitDepthLuma | m_video.BitDepth) > 16)
     {
         int i;
         for (i = 0; i < CAM_PIPE_KERNEL_SPLIT; i++)
@@ -1159,8 +1197,8 @@ void CmContext::Reset(
     }
 
     m_caps = *pCaps;
-    m_video = video;
-
+    // Fix me
+    m_video.TileInfo = video.vpp.In;
 
     ReleaseCmSurfaces();
 }
