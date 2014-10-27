@@ -18,6 +18,7 @@
 #if defined(MFX_TARGET_OPTIMIZATION_PX) || defined(MFX_TARGET_OPTIMIZATION_AUTO)
 
 #define Saturate(min_val, max_val, val) IPP_MAX((min_val), IPP_MIN((max_val), (val)))
+#define SaturateToShort(val) Saturate(-32768, 32767, (val))
 
 //=========================================================
 // AYA TMP SOLUTIONS
@@ -77,7 +78,7 @@ namespace MFX_HEVC_PP
                     acc += pSrc[j+k] * coeffs16x[k];
                 acc += offset;
                 acc >>= shift;
-                pDst[j] = (short)acc;
+                pDst[j] = (short)SaturateToShort(acc);
             }
             pSrc += srcPitch;
             pDst += dstPitch;
@@ -98,7 +99,7 @@ namespace MFX_HEVC_PP
                     acc += pSrc[j+k] * coeffs16x[k];
                 acc += offset;
                 acc >>= shift;
-                pDst[j] = (short)acc;
+                pDst[j] = (short)SaturateToShort(acc);
             }
             pSrc += srcPitch;
             pDst += dstPitch;
@@ -123,7 +124,7 @@ namespace MFX_HEVC_PP
                     acc += pSrc[j+k*srcOff] * coeffs8x[k];
                 acc += offset;
                 acc >>= shift;
-                pDst[j] = (short)acc;
+                pDst[j] = (short)SaturateToShort(acc);
             }
             pSrc += srcPitch;
             pDst += dstPitch;
@@ -143,7 +144,7 @@ namespace MFX_HEVC_PP
                     acc += pSrc[j+k] * coeffs16x[k];
                 acc += offset;
                 acc >>= shift;
-                pDst[j] = (short)acc;
+                pDst[j] = (short)SaturateToShort(acc);
             }
             pSrc += srcPitch;
             pDst += dstPitch;
@@ -164,7 +165,7 @@ namespace MFX_HEVC_PP
                     acc += pSrc[j+k] * coeffs16x[k];
                 acc += offset;
                 acc >>= shift;
-                pDst[j] = (short)acc;
+                pDst[j] = (short)SaturateToShort(acc);
             }
             pSrc += srcPitch;
             pDst += dstPitch;
@@ -190,7 +191,7 @@ namespace MFX_HEVC_PP
                     acc += pSrc[j+k*srcOff] * coeffs8x[k];
                 acc += offset;
                 acc >>= shift;
-                pDst[j] = (short)acc;
+                pDst[j] = (short)SaturateToShort(acc);
             }
             pSrc += srcPitch;
             pDst += dstPitch;
@@ -210,7 +211,7 @@ namespace MFX_HEVC_PP
                     acc += pSrc[j + k*srcPitch] * coeffs16x[k];
                 acc += offset;
                 acc >>= shift;
-                pDst[j] = (short)acc;
+                pDst[j] = (short)SaturateToShort(acc);
             }
             pSrc += srcPitch;
             pDst += dstPitch;
@@ -231,7 +232,7 @@ namespace MFX_HEVC_PP
                     acc += pSrc[j + k*srcPitch] * coeffs16x[k];
                 acc += offset;
                 acc >>= shift;
-                pDst[j] = (short)acc;
+                pDst[j] = (short)SaturateToShort(acc);
             }
             pSrc += srcPitch;
             pDst += dstPitch;
@@ -252,7 +253,7 @@ namespace MFX_HEVC_PP
                     acc += pSrc[j + k*srcPitch] * coeffs8x[k];
                 acc += offset;
                 acc >>= shift;
-                pDst[j] = (short)acc;
+                pDst[j] = (short)SaturateToShort(acc);
             }
             pSrc += srcPitch;
             pDst += dstPitch;
@@ -273,7 +274,7 @@ namespace MFX_HEVC_PP
                     acc += pSrc[j + k*srcPitch] * coeffs16x[k];
                 acc += offset;
                 acc >>= shift;
-                pDst[j] = (short)acc;
+                pDst[j] = (short)SaturateToShort(acc);
             }
             pSrc += srcPitch;
             pDst += dstPitch;
@@ -294,7 +295,7 @@ namespace MFX_HEVC_PP
                     acc += pSrc[j + k*srcPitch] * coeffs16x[k];
                 acc += offset;
                 acc >>= shift;
-                pDst[j] = (short)acc;
+                pDst[j] = (short)SaturateToShort(acc);
             }
             pSrc += srcPitch;
             pDst += dstPitch;
@@ -315,7 +316,7 @@ namespace MFX_HEVC_PP
                     acc += pSrc[j + k*srcPitch] * coeffs8x[k];
                 acc += offset;
                 acc >>= shift;
-                pDst[j] = (short)acc;
+                pDst[j] = (short)SaturateToShort(acc);
             }
             pSrc += srcPitch;
             pDst += dstPitch;
