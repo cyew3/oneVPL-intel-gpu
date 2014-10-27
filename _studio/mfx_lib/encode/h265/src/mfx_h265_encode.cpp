@@ -2107,16 +2107,14 @@ mfxStatus MFXVideoENCODEH265::Query(VideoCORE *core, mfxVideoParam *par_in, mfxV
                 }
             }
 
-            if (opts_in->NumTileCols < 1 ||
-                opts_in->NumTileCols > MAX_NUM_TILE_COLUMNS ||
-                (opts_in->NumTileCols != 1 && (out->mfx.NumSlice > 1 || opts_out->FramesInParallel > 1))) {
+            if (opts_in->NumTileCols > MAX_NUM_TILE_COLUMNS ||
+                (opts_in->NumTileCols > 1 && (out->mfx.NumSlice > 1 || opts_out->FramesInParallel > 1))) {
                 opts_out->NumTileCols = 1;
                 isInvalid ++;
             } else opts_out->NumTileCols = opts_in->NumTileCols;
 
-            if (opts_in->NumTileRows < 1 ||
-                opts_in->NumTileRows > MAX_NUM_TILE_ROWS ||
-                (opts_in->NumTileRows != 1 && (out->mfx.NumSlice > 1 || opts_out->FramesInParallel > 1))) {
+            if (opts_in->NumTileRows > MAX_NUM_TILE_ROWS ||
+                (opts_in->NumTileRows > 1 && (out->mfx.NumSlice > 1 || opts_out->FramesInParallel > 1))) {
                 opts_out->NumTileRows = 1;
                 isInvalid ++;
             } else opts_out->NumTileRows = opts_in->NumTileRows;
