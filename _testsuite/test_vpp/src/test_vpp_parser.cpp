@@ -39,6 +39,7 @@ void vppPrintHelp(vm_char *strAppName, vm_char *strErrorMessage)
     vm_string_printf(VM_STRING("   [-scrH  h]        - cropH  of src video (def: height)\n"));
     vm_string_printf(VM_STRING("   [-sf   frameRate] - frame rate of src video (def: 30.0)\n"));
     vm_string_printf(VM_STRING("   [-scc  format]    - format (FourCC) of src video (def: nv12. support nv12|yv12|yuy2|rgb3|rgb4|imc3|yuv400|yuv411|yuv422h|yuv422v|yuv444)\n"));
+    vm_string_printf(VM_STRING("   [-sbitshift 0|1]  - shift data to right or keep it the same way as in Microsoft's P010\n"));
 
     vm_string_printf(VM_STRING("   [-spic value]     - picture structure of src video\n")); 
     vm_string_printf(VM_STRING("                        0 - interlaced top    field first\n"));
@@ -54,6 +55,7 @@ void vppPrintHelp(vm_char *strAppName, vm_char *strErrorMessage)
     vm_string_printf(VM_STRING("   [-dcrH  h]        - cropH  of dst video (def: height)\n"));
     vm_string_printf(VM_STRING("   [-df  frameRate]  - frame rate of dst video (def: 30.0)\n"));
     vm_string_printf(VM_STRING("   [-dcc format]     - format (FourCC) of dst video (def: nv12. support nv12|yuy2|rgb4|yv12)\n"));
+    vm_string_printf(VM_STRING("   [-dbitshift 0|1]  - shift data to right or keep it the same way as in Microsoft's P010\n"));
 
     vm_string_printf(VM_STRING("   [-dpic value]     - picture structure of dst video\n")); 
     vm_string_printf(VM_STRING("                        0 - interlaced top    field first\n"));
@@ -278,7 +280,7 @@ mfxStatus vppParseInputString(vm_char* strInput[], mfxU8 nArgNum, sInputParams* 
     mfxU32 ioStatus;
     if (nArgNum < 4)
     {
-        //vppPrintHelp(strInput[0], VM_STRING("Please, specify all necessary parameters"));
+        vppPrintHelp(strInput[0], VM_STRING("Not enough parameters"));
 
         return MFX_ERR_MORE_DATA;
     }
@@ -812,7 +814,11 @@ mfxStatus vppParseInputString(vm_char* strInput[], mfxU8 nArgNum, sInputParams* 
                 pParams->use_extapi = true;
             }
             else
+            {
+                vm_string_printf(VM_STRING("Unknow option: %s\n"), strInput[i]);
+
                 return MFX_ERR_UNKNOWN;
+            }
         }
     }
 
