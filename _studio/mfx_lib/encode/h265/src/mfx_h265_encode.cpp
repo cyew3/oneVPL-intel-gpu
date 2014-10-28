@@ -2906,21 +2906,20 @@ mfxStatus MFXVideoENCODEH265::TaskRoutine(void *pState, void *pParam, mfxU32 thr
         // [priority #1]: speedup submitted output tasks
         TaskIter beg = th->m_outputQueue.begin(); // aya: protect by mutex???
         for (size_t taskIdx = 0; taskIdx < inputParam->m_outputQueueSize; taskIdx++) {
-
-                Task* nextTask = *beg;
-                if(nextTask->m_ready == 1 ) {
-                    sts = th->EncSolver(nextTask, (taskIdx == 0) ? NULL : &(inputParam->completedTask->m_ready)); // taskIdx == 0 the same as nextTask == inputParam->completedTask
-                    if(taskIdx == 0 && sts == MFX_TASK_DONE) { // special case OnComplete for expectedTask
-                        th->SyncOnTaskCompleted(inputParam->completedTask, inputParam->bs, inputParam);
-                    }
-                    if(sts == MFX_TASK_DONE || sts == MFX_TASK_WORKING) {
-                        break;
-                    }
+            Task* nextTask = *beg;
+            if(nextTask->m_ready == 1 ) {
+                sts = th->EncSolver(nextTask, (taskIdx == 0) ? NULL : &(inputParam->completedTask->m_ready)); // taskIdx == 0 the same as nextTask == inputParam->completedTask
+                if(taskIdx == 0 && sts == MFX_TASK_DONE) { // special case OnComplete for expectedTask
+                    th->SyncOnTaskCompleted(inputParam->completedTask, inputParam->bs, inputParam);
                 }
-                if (taskIdx + 1 < inputParam->m_outputQueueSize) {
-                        beg++;// aya: protect by mutex???
+                if(sts == MFX_TASK_DONE || sts == MFX_TASK_WORKING) {
+                    break;
                 }
             }
+            if (taskIdx + 1 < inputParam->m_outputQueueSize) {
+                beg++;// aya: protect by mutex???
+            }
+        }
 
         // [priority #2] - try to add new task in output queue. not run here!!!
         if( MFX_TASK_BUSY == sts && inputParam->m_outputQueueSize < (size_t)th->m_videoParam.m_framesInParallel ) {
