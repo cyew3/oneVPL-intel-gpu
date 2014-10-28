@@ -176,8 +176,8 @@ extern int DEBUG_CABAC_PRINT;
 #define CU_DQP_TU_CMAX 5 //max number bins for truncated unary
 #define CU_DQP_EG_k 0 //expgolomb order
 
-#define MAX_NUM_TILE_COLUMNS 16
-#define MAX_NUM_TILE_ROWS 16
+#define MAX_NUM_TILE_COLUMNS 20
+#define MAX_NUM_TILE_ROWS 22
 #define MAX_NUM_LONG_TERM_PICS 8
 #define MAX_PIC_HEIGHT_IN_CTBS 270
 #define MAX_TEMPORAL_LAYERS 16

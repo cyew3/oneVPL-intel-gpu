@@ -449,8 +449,15 @@ static Ipp32s Check265Level(Ipp32s inLevelTier, const mfxVideoParam *parMfx)
 
         // MaxDpbSIze not checked
 
-        if (opts && opts->Log2MaxCUSize > 0 && tab_level[level].levelId >= MFX_LEVEL_HEVC_5 && opts->Log2MaxCUSize < 5)
-            continue;
+
+        if (opts) {
+            if (opts->Log2MaxCUSize > 0 && tab_level[level].levelId >= MFX_LEVEL_HEVC_5 && opts->Log2MaxCUSize < 5)
+                continue;
+            if (opts->NumTileCols > tab_level[level].maxTileCols)
+                continue;
+            if (opts->NumTileRows > tab_level[level].maxTileRows)
+                continue;
+        }
 
         Ipp32s tier = (bitrate > tab_level[level].maxBr[0]) ? MFX_TIER_HEVC_HIGH : MFX_TIER_HEVC_MAIN;
 
