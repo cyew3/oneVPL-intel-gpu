@@ -1117,6 +1117,8 @@ mfxStatus MFXVideoENCODEH265::Init(mfxVideoParam* par_in)
     m_recon_dump_file_name = m_mfxDumpFiles.ReconFilename[0] ? m_mfxDumpFiles.ReconFilename : NULL;
     m_isInitialized = true;
 
+    m_ctbFinishedEvent.Init(/*manual=*/0, /*state=*/0);
+
     return stsQuery;
 } // mfxStatus MFXVideoENCODEH265::Init(mfxVideoParam* par_in)
 
@@ -2632,8 +2634,8 @@ mfxStatus MFXVideoENCODEH265::EncSolver(Task* task, volatile Ipp32u* onExitEvent
 
     sts = 
         bitDepth ?
-        fenc->EncodeThread<Ipp16u>(thread_number, onExitEvent):
-        fenc->EncodeThread<Ipp8u>(thread_number, onExitEvent);
+        fenc->EncodeThread<Ipp16u>(thread_number, onExitEvent, &m_ctbFinishedEvent):
+        fenc->EncodeThread<Ipp8u>(thread_number, onExitEvent, &m_ctbFinishedEvent);
 
     return sts;
 
@@ -2778,6 +2780,8 @@ void MFXVideoENCODEH265::SyncOnTaskCompleted(Task* task, mfxBitstream* mfxBs, vo
         // bs update on complete stage
         m_totalBits += (bs->DataLength - initialDataLength) * 8;
         vm_interlocked_cas32( &(task->m_ready), 3, 2);
+        for (Ipp32u i = 0; i < m_videoParam.num_threads; i++)
+            m_ctbFinishedEvent.Set();
     }
 
 } // 
@@ -2851,6 +2855,9 @@ mfxStatus MFXVideoENCODEH265::TaskRoutine(void *pState, void *pParam, mfxU32 thr
         vm_interlocked_cas32( &inputParam->m_doStage, 4, 3);
 
         th->m_core->INeedMoreThreadsInside(th);
+
+        for (Ipp32u i = 0; i < th->m_videoParam.num_threads; i++)
+            th->m_ctbFinishedEvent.Set();
     }
 
     
@@ -2858,6 +2865,7 @@ mfxStatus MFXVideoENCODEH265::TaskRoutine(void *pState, void *pParam, mfxU32 thr
     // not found output task yet. 
     // may be Sleep() untill != 4 here and continue to work is better strategy instead of exit
     if(inputParam->m_doStage < 4) {
+        th->m_ctbFinishedEvent.Wait();
         return MFX_TASK_WORKING;
     }
 
@@ -2894,7 +2902,7 @@ mfxStatus MFXVideoENCODEH265::TaskRoutine(void *pState, void *pParam, mfxU32 thr
     }
 
     // STAGE [5]::[multi threading]::FRAME THREADING LOOP
-    Ipp32u status;
+    Ipp32u failCounter = 0;
     while (inputParam->completedTask->m_ready < 3 || inputParam->completedTask->m_ready == 7) {
 
         // restart due to BRC repack
@@ -2909,6 +2917,12 @@ mfxStatus MFXVideoENCODEH265::TaskRoutine(void *pState, void *pParam, mfxU32 thr
             Task* nextTask = *beg;
             if(nextTask->m_ready == 1 ) {
                 sts = th->EncSolver(nextTask, (taskIdx == 0) ? NULL : &(inputParam->completedTask->m_ready)); // taskIdx == 0 the same as nextTask == inputParam->completedTask
+                if (sts == 100) {
+                    failCounter++;
+                }
+                else {
+                    failCounter = 0;
+                }
                 if(taskIdx == 0 && sts == MFX_TASK_DONE) { // special case OnComplete for expectedTask
                     th->SyncOnTaskCompleted(inputParam->completedTask, inputParam->bs, inputParam);
                 }
@@ -2922,7 +2936,7 @@ mfxStatus MFXVideoENCODEH265::TaskRoutine(void *pState, void *pParam, mfxU32 thr
         }
 
         // [priority #2] - try to add new task in output queue. not run here!!!
-        if( MFX_TASK_BUSY == sts && inputParam->m_outputQueueSize < (size_t)th->m_videoParam.m_framesInParallel ) {
+        if( (MFX_TASK_BUSY == sts || sts == 100) && inputParam->m_outputQueueSize < (size_t)th->m_videoParam.m_framesInParallel ) {
 
             Ipp32u stageEnqueue = vm_interlocked_cas32( &inputParam->m_doStage, 5, 4 );
             if(stageEnqueue == 4 && inputParam->m_outputQueueSize < (size_t)th->m_videoParam.m_framesInParallel) {
@@ -2934,6 +2948,9 @@ mfxStatus MFXVideoENCODEH265::TaskRoutine(void *pState, void *pParam, mfxU32 thr
                 vm_interlocked_dec32( &inputParam->m_doStage );
             }
         }
+
+        if (failCounter >= inputParam->m_outputQueueSize)
+            th->m_ctbFinishedEvent.Wait();
     }
 
     // STAGE [5]::OUTPUT READY. STOP Routine
