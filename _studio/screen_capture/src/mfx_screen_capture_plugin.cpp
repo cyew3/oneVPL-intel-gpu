@@ -44,10 +44,6 @@ typedef struct tagDESKTOP_PARAM_STRUCT_SIZE
     UINT    reserved;
 } DESKTOP_PARAM_STRUCT_SIZE;
 
-
-
-
-
 enum
 {
     QUERY_SIZE = 32
@@ -69,12 +65,13 @@ MSDK_PLUGIN_API(mfxStatus) CreatePlugin(mfxPluginUID uid, mfxPlugin* plugin) {
     return MFXScreenCapture_Plugin::CreateByDispatcher(uid, plugin);
 }
 
-
 MFXScreenCapture_Plugin::MFXScreenCapture_Plugin(bool CreateByDispatcher)
 {
     m_pmfxCore = 0;
     memset(&m_PluginParam, 0, sizeof(mfxPluginParam));
-    memset(&m_par, 0, sizeof(mfxVideoParam));
+    memset(&m_CurrentPar, 0, sizeof(mfxVideoParam));
+    memset(&m_InitPar, 0, sizeof(mfxVideoParam));
+    m_inited = false;
 
     m_PluginParam.ThreadPolicy = MFX_THREADPOLICY_SERIAL;
     m_PluginParam.MaxThreadNum = 1;
@@ -107,12 +104,18 @@ mfxStatus MFXScreenCapture_Plugin::PluginInit(mfxCoreInterface *core)
     if (MFX_ERR_NONE != mfxRes)
         return mfxRes;
 
+    //only MFX_IMPL_VIA_D3D11 is supported
+    if(MFX_IMPL_VIA_D3D11 != (par.Impl & 0x0F00))
+        return MFX_ERR_UNSUPPORTED;
+
     return mfxRes;
 }
 
 mfxStatus MFXScreenCapture_Plugin::PluginClose()
 {
     mfxStatus mfxRes = MFX_ERR_NONE;
+
+    mfxRes = Close();
 
     if (m_createdByDispatcher) {
         delete this;
@@ -157,12 +160,341 @@ mfxStatus MFXScreenCapture_Plugin::QueryIOSurf(mfxVideoParam *par, mfxFrameAlloc
     }
     return MFX_ERR_NONE;
 }
+
 mfxStatus MFXScreenCapture_Plugin::Init(mfxVideoParam *par)
 {
     mfxStatus mfxRes = MFX_ERR_NONE;
     MFX_CHECK_NULL_PTR1(par);
+    if(m_inited)
+        return MFX_ERR_UNDEFINED_BEHAVIOR;
+
+    mfxRes = QueryMode2(*par, m_InitPar, true);
+    if(MFX_ERR_UNSUPPORTED ==  mfxRes)
+        return MFX_ERR_INVALID_VIDEO_PARAM;
+    else if(MFX_ERR_NONE != mfxRes)
+        return mfxRes;
+
+    if(!m_InitPar.AsyncDepth)
+        m_InitPar.AsyncDepth = 1;
+    if(!m_InitPar.mfx.FrameInfo.CropH)
+        m_InitPar.mfx.FrameInfo.CropH = m_InitPar.mfx.FrameInfo.Height;
+    if(!m_InitPar.mfx.FrameInfo.CropW)
+        m_InitPar.mfx.FrameInfo.CropW = m_InitPar.mfx.FrameInfo.Width;
+    if(!m_InitPar.mfx.FrameInfo.PicStruct)
+        m_InitPar.mfx.FrameInfo.PicStruct = MFX_PICSTRUCT_PROGRESSIVE;
+
+    m_CurrentPar = m_InitPar;
+    m_inited = true;
+
+    return mfxRes;
+}
+
+mfxStatus MFXScreenCapture_Plugin::Close()
+{
+    if(!m_inited)
+        return MFX_ERR_NOT_INITIALIZED;
+
+    m_pD11Device.Release();
+    m_pD11Context.Release();
+    m_pD11VideoDevice.Release();
+    m_pD11VideoContext.Release();
+    m_pDecoder.Release();
+
+    m_inited = false;
+
+    return MFX_ERR_NONE;
+}
+
+mfxStatus MFXScreenCapture_Plugin::Query(mfxVideoParam *in, mfxVideoParam *out)
+{
+    MFX_CHECK_NULL_PTR1(out);
+    if(in)
+        return QueryMode2(*in,*out);
+    else
+        return QueryMode1(*out);
+}
+
+mfxStatus MFXScreenCapture_Plugin::QueryMode1(mfxVideoParam& out)
+{
+    /*
+    If the in pointer is zero, the function returns the class configurability in the output mfxVideoParam structure.
+    A non-zero value in each field of the output structure indicates that the SDK implementation can configure the field with Init.
+    */
+    out.AsyncDepth                  = 1;
+    out.IOPattern                   = 1;
+    out.mfx.FrameInfo.FourCC        = 1;
+    out.mfx.FrameInfo.ChromaFormat  = 1;
+    out.mfx.FrameInfo.Width         = 1;
+    out.mfx.FrameInfo.Height        = 1;
+    out.mfx.FrameInfo.CropW         = 1;
+    out.mfx.FrameInfo.CropH         = 1;
+    //CropX and CropY are not supported by driver
+
+    //Todo: should it be there?
+    //out.mfx.FrameInfo.FrameRateExtN = 1;
+    //out.mfx.FrameInfo.FrameRateExtD = 1;
+    //out.mfx.FrameInfo.AspectRatioW = 1;
+    //out.mfx.FrameInfo.AspectRatioH = 1;
+    //out.mfx.FrameInfo.PicStruct    = 1;
+
+    return MFX_ERR_NONE;
+}
+
+mfxStatus MFXScreenCapture_Plugin::QueryMode2(const mfxVideoParam& in, mfxVideoParam& out, bool onInit)
+{
+    mfxStatus mfxRes = MFX_ERR_NONE;
+    mfxU16 width  = 0;
+    mfxU16 height = 0;
+    DXGI_FORMAT format = DXGI_FORMAT_NV12;
+
+    //bool warning     = false;
+    bool error       = false;
+
+    out.IOPattern  = in.IOPattern;
+    out.AsyncDepth = in.AsyncDepth;
+    memcpy_s(&out.mfx,sizeof(out.mfx),&in.mfx,sizeof(in.mfx));
+
+    if(in.AsyncDepth > 5 )
+    {
+        error = true;
+        out.AsyncDepth = 0;
+    }
+    if(in.IOPattern & 0xF)
+    {
+        //encoder's or VPP's IOPatterns are unsupported
+        out.IOPattern = 0;
+        error = true;
+    }
+    if(in.ExtParam || in.NumExtParam || out.ExtParam || out.NumExtParam)
+    {
+        error = true;
+    }
+    if(in.Protected)
+    {
+        out.Protected = 0;
+        error = true;
+    }
+    if(in.mfx.LowPower)
+    {
+        out.mfx.LowPower = 0;
+        error = true;
+    }
+    if(in.mfx.BRCParamMultiplier)
+    {
+        out.mfx.BRCParamMultiplier = 0;
+        error = true;
+    }
+    if(MFX_CODEC_CAPTURE != in.mfx.CodecId)
+    {
+        out.mfx.CodecId = 0;
+        error = true;
+    }
+    if(in.mfx.CodecProfile)
+    {
+        out.mfx.CodecProfile = 0;
+        error = true;
+    }
+    if(in.mfx.CodecLevel)
+    {
+        out.mfx.CodecLevel = 0;
+        error = true;
+    }
+    if(in.mfx.NumThread)
+    {
+        out.mfx.NumThread = 0;
+        error = true;
+    }
+
+    if(in.mfx.DecodedOrder       ||    /*in.mfx.ExtendedPicStruct  || */   in.mfx.TimeStampCalc      ||    in.mfx.SliceGroupsPresent ||
+       in.mfx.JPEGChromaFormat   ||    /*in.mfx.Rotation           || */   in.mfx.JPEGColorFormat    ||    in.mfx.InterleavedDec        )
+    {
+        out.mfx.DecodedOrder       = 0;
+        out.mfx.ExtendedPicStruct  = 0;
+        out.mfx.TimeStampCalc      = 0;
+        out.mfx.SliceGroupsPresent = 0;
+        out.mfx.JPEGChromaFormat   = 0;
+        out.mfx.Rotation           = 0;
+        out.mfx.JPEGColorFormat    = 0;
+        out.mfx.InterleavedDec     = 0;
+    }
+
+    if(in.mfx.FrameInfo.PicStruct && (MFX_PICSTRUCT_PROGRESSIVE != in.mfx.FrameInfo.PicStruct))
+    {
+        out.mfx.FrameInfo.PicStruct = 0;
+        error = true;
+    }
+    if(in.mfx.FrameInfo.CropH > in.mfx.FrameInfo.Height)
+    {
+        out.mfx.FrameInfo.CropH = 0;
+        error = true;
+    }
+    if(in.mfx.FrameInfo.CropW > in.mfx.FrameInfo.Width)
+    {
+        out.mfx.FrameInfo.CropW = 0;
+        error = true;
+    }
+    if(in.mfx.FrameInfo.CropY)
+    {
+        out.mfx.FrameInfo.CropY = 0;
+        error = true;
+    }
+    if(in.mfx.FrameInfo.CropX)
+    {
+        out.mfx.FrameInfo.CropX = 0;
+        error = true;
+    }
+    if(in.mfx.FrameInfo.Width  % 16 != 0)
+    {
+        out.mfx.FrameInfo.Width = 0;
+        error = true;
+    }
+    if(in.mfx.FrameInfo.Height % 16 != 0)
+    {
+        out.mfx.FrameInfo.Height = 0;
+        error = true;
+    }
+    if(in.mfx.FrameInfo.Width > 4096)
+    {
+        out.mfx.FrameInfo.Width = 0;
+        error = true;
+    }
+    if(in.mfx.FrameInfo.Height > 4096)
+    {
+        out.mfx.FrameInfo.Height = 0;
+        error = true;
+    }
+    if(!(in.mfx.FrameInfo.FourCC == MFX_FOURCC_NV12 /*|| in.mfx.FrameInfo.FourCC == MFX_FOURCC_RGB4*/) )
+    {
+        out.mfx.FrameInfo.FourCC = 0;
+        error = true;
+    }
+    if(in.mfx.FrameInfo.ChromaFormat != MFX_CHROMAFORMAT_YUV420)
+    {
+        out.mfx.FrameInfo.ChromaFormat = 0;
+        error = true;
+    }
+
+    {
+        if(!(in.mfx.FrameInfo.BitDepthChroma == 0 || in.mfx.FrameInfo.BitDepthChroma == 8))
+        {
+            out.mfx.FrameInfo.BitDepthChroma = 0;
+            error = true;
+        }
+        if(!(in.mfx.FrameInfo.BitDepthLuma   == 0 || in.mfx.FrameInfo.BitDepthLuma == 8))
+        {
+            out.mfx.FrameInfo.BitDepthLuma = 0;
+            error = true;
+        }
+        if(in.mfx.FrameInfo.Shift != 0)
+        {
+            out.mfx.FrameInfo.Shift = 0;
+            error = true;
+        }
+    }
+
+    if (error)
+    {
+        return MFX_ERR_UNSUPPORTED;
+    }
+
+    width  = in.mfx.FrameInfo.CropW ? in.mfx.FrameInfo.CropW : in.mfx.FrameInfo.Width;
+    height = in.mfx.FrameInfo.CropH ? in.mfx.FrameInfo.CropH : in.mfx.FrameInfo.Height;
+    if(MFX_FOURCC_NV12 == in.mfx.FrameInfo.FourCC)
+        format = DXGI_FORMAT_NV12;
+
+    //mfxRes = CreateVideoAccelerator(width, height, format);
+    //if(mfxRes)
+    //{
+    //    out.mfx.FrameInfo.Width  = out.mfx.FrameInfo.CropW = width;
+    //    out.mfx.FrameInfo.Height = out.mfx.FrameInfo.CropH = height;
+    //    return MFX_ERR_UNSUPPORTED;
+    //}
+
+    if(onInit)
+    {
+        mfxRes = CreateVideoAccelerator(width, height, format);
+        MFX_CHECK_STS(mfxRes);
+
+        mfxRes = CheckCapabilities(m_pD11VideoContext, width, height);
+        MFX_CHECK_STS(mfxRes);
+    }
+    else
+    {
+        HRESULT hres;
+        D3D11_VIDEO_DECODER_DESC video_desc;
+        mfxStatus mfxRes = MFX_ERR_NONE;
+        mfxHDL hdl;
+        CComPtr<ID3D11Device>            pD11Device;
+        CComPtr<ID3D11DeviceContext>     pD11Context;
+
+        CComQIPtr<ID3D11VideoDevice>     pD11VideoDevice;
+        CComQIPtr<ID3D11VideoContext>    pD11VideoContext;
+        CComPtr<ID3D11VideoDecoder>      pDecoder;
+
+        mfxRes = m_pmfxCore->GetHandle(m_pmfxCore->pthis, MFX_HANDLE_D3D11_DEVICE, (mfxHDL*)&hdl);
+        if(mfxRes || !hdl)
+            return MFX_ERR_UNSUPPORTED;
+        pD11Device = (ID3D11Device*)hdl;
+        CComPtr<ID3D11DeviceContext> pImmediateContext;
+        pD11Device->GetImmediateContext(&pImmediateContext);
+        pD11Context = pImmediateContext;
+
+        pD11VideoDevice  = pD11Device;
+        pD11VideoContext = pD11Context;
+
+        video_desc.SampleWidth = width;
+        video_desc.SampleHeight = height;
+        video_desc.OutputFormat = format;
+        video_desc.Guid = DXVADDI_Intel_GetDesktopScreen;
+
+        D3D11_VIDEO_DECODER_CONFIG video_config = {0}; 
+
+        mfxU32 cDecoderProfiles = pD11VideoDevice->GetVideoDecoderProfileCount();
+        bool isRequestedGuidPresent = false;
+
+
+        for (mfxU32 i = 0; i < cDecoderProfiles; i++)
+        {
+            GUID decoderGuid;
+            HRESULT hr = pD11VideoDevice->GetVideoDecoderProfile(i, &decoderGuid);
+            if (FAILED(hr))
+            {
+                continue;
+            }
+
+            if (DXVADDI_Intel_GetDesktopScreen == decoderGuid)
+                isRequestedGuidPresent = true;
+        }
+
+        hres  = pD11VideoDevice->CreateVideoDecoder(&video_desc, &video_config, &pDecoder);
+        if (FAILED(hres))
+        {
+            error = true;
+        }
+        //w/a for debug. Waiting for HSD5595359. This w/a will cause decoder resource leak.
+        #if defined(_DEBUG)
+            pDecoder.p->AddRef();
+        #endif
+
+        mfxRes = CheckCapabilities(pD11VideoContext, width, height);
+        if(mfxRes)
+        {
+            out.mfx.FrameInfo.Width  = out.mfx.FrameInfo.CropW = 0;
+            out.mfx.FrameInfo.Height = out.mfx.FrameInfo.CropH = 0;
+            return MFX_ERR_UNSUPPORTED;
+        }
+    }
+
+    return MFX_ERR_NONE;
+}
+
+mfxStatus MFXScreenCapture_Plugin::CreateVideoAccelerator(mfxU16& SampleWidth, mfxU16& SampleHeight, DXGI_FORMAT& OutputFormat)
+{
+    HRESULT hres;
+    D3D11_VIDEO_DECODER_DESC video_desc;
+    mfxStatus mfxRes = MFX_ERR_NONE;
     mfxHDL hdl;
-    m_par = *par;
+
     mfxRes = m_pmfxCore->GetHandle(m_pmfxCore->pthis, MFX_HANDLE_D3D11_DEVICE, (mfxHDL*)&hdl);
     m_pD11Device = (ID3D11Device*)hdl;
     CComPtr<ID3D11DeviceContext> pImmediateContext;
@@ -172,26 +504,10 @@ mfxStatus MFXScreenCapture_Plugin::Init(mfxVideoParam *par)
     m_pD11VideoDevice = m_pD11Device;
     m_pD11VideoContext = m_pD11Context;
 
-    mfxRes = CreateVideoAccelerator();
-    MFX_CHECK_STS(mfxRes);
-
-    mfxRes = CheckCapabilities();
-    MFX_CHECK_STS(mfxRes);
-
-    return mfxRes;
-
-
-}
-mfxStatus MFXScreenCapture_Plugin::CreateVideoAccelerator()
-{
-    HRESULT hres;
-    D3D11_VIDEO_DECODER_DESC video_desc;
-
-    video_desc.SampleWidth = m_par.mfx.FrameInfo.Width;
-    video_desc.SampleHeight = m_par.mfx.FrameInfo.Height;
-    video_desc.OutputFormat = DXGI_FORMAT_NV12;
+    video_desc.SampleWidth = SampleWidth;
+    video_desc.SampleHeight = SampleHeight;
+    video_desc.OutputFormat = OutputFormat;
     video_desc.Guid = DXVADDI_Intel_GetDesktopScreen;
-
 
     D3D11_VIDEO_DECODER_CONFIG video_config = {0}; 
 
@@ -238,8 +554,12 @@ mfxStatus MFXScreenCapture_Plugin::CreateVideoAccelerator()
 
     return MFX_ERR_NONE;
 }
+
 mfxStatus MFXScreenCapture_Plugin::DecodeFrameSubmit(mfxBitstream *bs, mfxFrameSurface1 *surface_work, mfxFrameSurface1 **surface_out,  mfxThreadTask *task)
 {
+    if(!m_inited)
+        return MFX_ERR_NOT_INITIALIZED;
+
     mfxStatus mfxRes = DecodeFrameSubmit(bs, surface_work, surface_out);
     if (MFX_ERR_NONE == mfxRes)
     {
@@ -289,8 +609,8 @@ mfxStatus MFXScreenCapture_Plugin::DecodeFrameSubmit(mfxBitstream *bs, mfxFrameS
         return MFX_ERR_DEVICE_FAILED;
     }
 
-    surface_work->Info.CropH = m_par.mfx.FrameInfo.Height;
-    surface_work->Info.CropW = m_par.mfx.FrameInfo.Width;
+    surface_work->Info.CropH = m_CurrentPar.mfx.FrameInfo.Height;
+    surface_work->Info.CropW = m_CurrentPar.mfx.FrameInfo.Width;
 
     surface_work->Info.PicStruct = MFX_PICSTRUCT_PROGRESSIVE;
 
@@ -336,15 +656,15 @@ mfxStatus MFXScreenCapture_Plugin::Execute(mfxThreadTask task, mfxU32 uid_p, mfx
 
 mfxStatus MFXScreenCapture_Plugin::CheckFrameInfo(mfxFrameInfo *info)
 {
-    if (info->Width  > m_par.mfx.FrameInfo.Width)
+    if (info->Width  > m_CurrentPar.mfx.FrameInfo.Width)
         return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
-    if (info->Height > m_par.mfx.FrameInfo.Height)
+    if (info->Height > m_CurrentPar.mfx.FrameInfo.Height)
         return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
 
     return MFX_ERR_NONE;
 }
 
-mfxStatus  MFXScreenCapture_Plugin::BeginFrame(mfxMemId MemId, ID3D11VideoDecoderOutputView *pOutputView)
+mfxStatus MFXScreenCapture_Plugin::BeginFrame(mfxMemId MemId, ID3D11VideoDecoderOutputView *pOutputView)
 {
     HRESULT hr = S_OK;
     mfxHDLPair Pair;
@@ -374,7 +694,7 @@ mfxStatus  MFXScreenCapture_Plugin::BeginFrame(mfxMemId MemId, ID3D11VideoDecode
 
 } 
 
-mfxStatus  MFXScreenCapture_Plugin::GetDesktopScreenOperation(mfxFrameSurface1 *surface_work)
+mfxStatus MFXScreenCapture_Plugin::GetDesktopScreenOperation(mfxFrameSurface1 *surface_work)
 {
     HRESULT hr;
     D3D11_VIDEO_DECODER_EXTENSION dec_ext =  {0};
@@ -400,7 +720,7 @@ mfxStatus  MFXScreenCapture_Plugin::GetDesktopScreenOperation(mfxFrameSurface1 *
 
 }
 
-mfxStatus  MFXScreenCapture_Plugin::CheckCapabilities()
+mfxStatus MFXScreenCapture_Plugin::CheckCapabilities(CComQIPtr<ID3D11VideoContext>& pD11VideoContext, mfxU16& w, mfxU16& h)
 {
     HRESULT hr;
     D3D11_VIDEO_DECODER_EXTENSION dec_ext =  {0};
@@ -415,7 +735,7 @@ mfxStatus  MFXScreenCapture_Plugin::CheckCapabilities()
     dec_ext.PrivateOutputDataSize = sizeof(count);
 
 
-    hr = m_pD11VideoContext->DecoderExtension(m_pDecoder, &dec_ext);
+    hr = pD11VideoContext->DecoderExtension(m_pDecoder, &dec_ext);
     if (FAILED(hr))
         return MFX_ERR_DEVICE_FAILED;
 
@@ -423,11 +743,11 @@ mfxStatus  MFXScreenCapture_Plugin::CheckCapabilities()
     {
         return MFX_ERR_DEVICE_FAILED;
     }
-    
-    count = dec_ext.PrivateOutputDataSize;
+
+    //count = dec_ext.PrivateOutputDataSize;
 
     desktop_format = new DESKTOP_FORMAT[count];
-    param_size.SizeOfParamStruct = count;
+    param_size.SizeOfParamStruct = sizeof(DESKTOP_FORMAT);
     
     dec_ext.Function = DESKTOP_FORMATS_ID;
     dec_ext.pPrivateInputData =  &param_size;
@@ -436,7 +756,7 @@ mfxStatus  MFXScreenCapture_Plugin::CheckCapabilities()
     dec_ext.pPrivateOutputData = desktop_format;
     dec_ext.PrivateOutputDataSize = sizeof(DESKTOP_FORMAT) * count; //Not sure about multiplying by count
 
-    hr = m_pD11VideoContext->DecoderExtension(m_pDecoder, &dec_ext);
+    hr = pD11VideoContext->DecoderExtension(m_pDecoder, &dec_ext);
     if (FAILED(hr))
     {
         delete []desktop_format;
@@ -447,8 +767,8 @@ mfxStatus  MFXScreenCapture_Plugin::CheckCapabilities()
     {
         if(desktop_format[i].DesktopFormat == DXGI_FORMAT_NV12)
         {
-            if (m_par.mfx.FrameInfo.Height <= desktop_format[i].MaxHeight &&
-                m_par.mfx.FrameInfo.Width <= desktop_format[i].MaxWidth)
+            if (h <= desktop_format[i].MaxHeight &&
+                w <= desktop_format[i].MaxWidth)
             {
                 delete []desktop_format;
                 return MFX_ERR_NONE;
@@ -462,7 +782,7 @@ mfxStatus  MFXScreenCapture_Plugin::CheckCapabilities()
 
 }
 
-mfxStatus  MFXScreenCapture_Plugin::QueryStatus()
+mfxStatus MFXScreenCapture_Plugin::QueryStatus()
 {
     HRESULT hr;
     D3D11_VIDEO_DECODER_EXTENSION dec_ext =  {0};
@@ -490,8 +810,19 @@ mfxStatus  MFXScreenCapture_Plugin::QueryStatus()
             m_StatusList.push_back(pQuaryParams[i]);
     }
     return MFX_ERR_NONE;
-
 }
 
+mfxStatus MFXScreenCapture_Plugin::GetVideoParam(mfxVideoParam *par)
+{
+    MFX_CHECK_NULL_PTR1(par);
+    if(!m_inited)
+        return MFX_ERR_NOT_INITIALIZED;
 
+    par->AsyncDepth = m_CurrentPar.AsyncDepth;
+    par->IOPattern = m_CurrentPar.IOPattern;
+    par->Protected = m_CurrentPar.Protected;
+    par->mfx = m_CurrentPar.mfx;
 
+    return MFX_ERR_NONE;
+
+}

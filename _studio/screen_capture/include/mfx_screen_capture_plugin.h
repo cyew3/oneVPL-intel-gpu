@@ -86,15 +86,16 @@ public:
     virtual mfxStatus Execute(mfxThreadTask task, mfxU32 uid_p, mfxU32 uid_a);
     virtual mfxStatus FreeResources(mfxThreadTask task, mfxStatus sts)
     {
+        if(!task)
+            return MFX_ERR_NULL_PTR;
         delete (AsyncParams*)task;
         sts = MFX_ERR_NONE;
         return MFX_ERR_NONE;
     }
 
-    virtual mfxStatus Query(mfxVideoParam *, mfxVideoParam *)
-    {
-        return MFX_ERR_UNSUPPORTED;
-    }
+    virtual mfxStatus Query(mfxVideoParam *in, mfxVideoParam *out);
+    virtual mfxStatus QueryMode1(mfxVideoParam& out);
+    virtual mfxStatus QueryMode2(const mfxVideoParam& in, mfxVideoParam& out, bool onInit = false);
 
     virtual mfxStatus QueryIOSurf(mfxVideoParam *par, mfxFrameAllocRequest *in, mfxFrameAllocRequest *out);
 
@@ -105,16 +106,9 @@ public:
         return MFX_ERR_UNSUPPORTED;
     }
 
-    virtual mfxStatus Close()
-    {
-        return MFX_ERR_NONE;
-    }
+    virtual mfxStatus Close();
 
-    virtual mfxStatus GetVideoParam(mfxVideoParam *par)
-    {
-        par;
-        return MFX_ERR_UNSUPPORTED;
-    }
+    virtual mfxStatus GetVideoParam(mfxVideoParam *par);
 
     virtual void Release()
     {
@@ -135,17 +129,19 @@ protected:
     std::auto_ptr<MFXPluginAdapter<MFXDecoderPlugin> > m_adapter;
 
     mfxStatus DecodeFrameSubmit(mfxBitstream *bs, mfxFrameSurface1 *surface_work, mfxFrameSurface1 **surface_out);
-    mfxStatus CreateVideoAccelerator();
+    mfxStatus CreateVideoAccelerator(mfxU16& SampleWidth, mfxU16& SampleHeight, DXGI_FORMAT& OutputFormat);
     mfxStatus CheckFrameInfo(mfxFrameInfo *info);
     mfxStatus BeginFrame(mfxMemId   MemId, ID3D11VideoDecoderOutputView *pOutputView);
     mfxStatus GetDesktopScreenOperation(mfxFrameSurface1 *surface_work);
-    mfxStatus CheckCapabilities();
+    mfxStatus CheckCapabilities(CComQIPtr<ID3D11VideoContext>& pD11VideoContext, mfxU16& w, mfxU16& h);
     mfxStatus QueryStatus();
 
-    mfxVideoParam       m_par;
+    mfxVideoParam       m_CurrentPar;
+    mfxVideoParam       m_InitPar; //for Reset() func impl
     mfxCoreInterface*   m_pmfxCore;
     mfxPluginParam      m_PluginParam;
     bool                m_createdByDispatcher;
+    bool                m_inited;
 
     mfxU32              m_StatusReportFeedbackNumber;
 
