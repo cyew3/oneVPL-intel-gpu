@@ -308,6 +308,7 @@ public:
                                   CmSurface2D *greenOutSurf,
                                   CmSurface2D *blueOutSurf,
                                   int bayerPattern,
+                                  int bitDepth,
                                   mfxU32 task_bufId = 0);
 
     void CreateTask_GammaAndCCM(CmSurface2D  *correcSurf,
@@ -319,6 +320,7 @@ public:
                                  SurfaceIndex outSurfIndex,
                                  mfxU32 bitDepth,
                                  SurfaceIndex *LUTIndex,
+                                 int BayerType,
                                  mfxU32 task_bufId = 0);
 
     void CreateTask_GammaAndCCM(CmSurface2D  *correctSurf,
@@ -330,6 +332,7 @@ public:
                                  CmSurface2D *outSurf,
                                  mfxU32 bitDepth,
                                  SurfaceIndex *LUTIndex,
+                                 int BayerType,
                                  mfxU32 task_bufId = 0);
 
     void CreateTask_ARGB(CmSurface2D *redSurf,

@@ -840,7 +840,8 @@ mfxStatus MFXCamera_Plugin::CreateEnqueueTasks(AsyncParams *pParam)
                                             redOutSurf,
                                             greenOutSurf,
                                             blueOutSurf,
-                                            (int)m_Caps.BayerPatternType);
+                                            (int)m_Caps.BayerPatternType,
+                                            m_InputBitDepth);
 
         SurfaceIndex *pOutputSurfaceIndex;
 
@@ -885,7 +886,8 @@ mfxStatus MFXCamera_Plugin::CreateEnqueueTasks(AsyncParams *pParam)
                                                 (m_Caps.bColorConversionMatrix ? &m_CCMParams : NULL),
                                                 *pOutputSurfaceIndex,
                                                 m_InputBitDepth,
-                                                LUTIndex);
+                                                LUTIndex,
+                                                (int)m_Caps.BayerPatternType);
             else
                 m_cmCtx->CreateTask_GammaAndCCM(m_gammaCorrectSurf,
                                                 m_gammaPointSurf,
@@ -894,8 +896,9 @@ mfxStatus MFXCamera_Plugin::CreateEnqueueTasks(AsyncParams *pParam)
                                                 blueOutSurf,
                                                 (m_Caps.bColorConversionMatrix ? &m_CCMParams : NULL), 
                                                 m_gammaOutSurf, 
-                                                m_InputBitDepth, 
-                                                LUTIndex);
+                                                m_InputBitDepth,
+                                                LUTIndex,
+                                                (int)m_Caps.BayerPatternType);
         }
 
         if (m_Caps.bOutToARGB16 || !m_Caps.bForwardGammaCorrection || m_Caps.bColorConversionMatrix || m_InputBitDepth == 16)

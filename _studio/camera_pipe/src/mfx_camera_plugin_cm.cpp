@@ -877,6 +877,7 @@ void CmContext::CreateTask_DecideAverage(CmSurface2D *redAvgSurf,
                                          CmSurface2D *greenOutSurf,
                                          CmSurface2D *blueOutSurf,
                                          int bayerPattern,
+                                         int bitdepth,
                                          mfxU32)
 {
     int result;
@@ -891,10 +892,12 @@ void CmContext::CreateTask_DecideAverage(CmSurface2D *redAvgSurf,
 
         CAM_PIPE_KERNEL_ARRAY(kernel_decide_average, i)->SetThreadCount(sliceWidthIn16_np * sliceHeightIn16_np);
 
-        SetKernelArg(CAM_PIPE_KERNEL_ARRAY(kernel_decide_average, i), GetIndex(redAvgSurf), GetIndex(greenAvgSurf), GetIndex(blueAvgSurf),
-                                                                      GetIndex(avgFlagSurf), GetIndex(redOutSurf), GetIndex(greenOutSurf), GetIndex(blueOutSurf),
-                                                                      wr_x_base, wr_y_base, height);
-        SetKernelArgLast(CAM_PIPE_KERNEL_ARRAY(kernel_decide_average, i), bayerPattern, 10);
+        SetKernelArg(CAM_PIPE_KERNEL_ARRAY(kernel_decide_average, i), 
+                                           GetIndex(redAvgSurf), GetIndex(greenAvgSurf), GetIndex(blueAvgSurf),
+                                           GetIndex(avgFlagSurf), 
+                                           GetIndex(redOutSurf), GetIndex(greenOutSurf), GetIndex(blueOutSurf),
+                                           wr_x_base, wr_y_base, bayerPattern);
+        SetKernelArgLast(CAM_PIPE_KERNEL_ARRAY(kernel_decide_average, i), bitdepth, 10);
 
         CAM_PIPE_KERNEL_ARRAY(task_DecideAvg, i)->Reset();
 
@@ -915,6 +918,7 @@ void CmContext::CreateTask_GammaAndCCM(CmSurface2D  *correctSurf,
                                        CmSurface2D  *outSurf,
                                        mfxU32       bitDepth,
                                        SurfaceIndex *LUTIndex,
+                                       int BayerType,
                                        mfxU32)
 {
     int result;
@@ -962,6 +966,10 @@ void CmContext::CreateTask_GammaAndCCM(CmSurface2D  *correctSurf,
     {
         kernel_FwGamma1->SetKernelArg(i++, sizeof(SurfaceIndex), LUTIndex);
     }
+    else
+    {
+        kernel_FwGamma1->SetKernelArg(i++, sizeof(int), &BayerType);
+    }
 
     task_FwGamma->Reset();
 
@@ -979,6 +987,7 @@ void CmContext::CreateTask_GammaAndCCM(CmSurface2D *correctSurf,
                                        SurfaceIndex outSurfIndex,
                                        mfxU32 bitDepth,
                                        SurfaceIndex *LUTIndex,
+                                       int BayerType,
                                        mfxU32)
 {
     int result;
@@ -1026,6 +1035,11 @@ void CmContext::CreateTask_GammaAndCCM(CmSurface2D *correctSurf,
     {
         kernel_FwGamma->SetKernelArg(i++, sizeof(SurfaceIndex), LUTIndex);
     }
+    else 
+    {
+        kernel_FwGamma->SetKernelArg(i++, sizeof(int), &BayerType);
+    }
+    
     task_FwGamma->Reset();
 
     if ((result = task_FwGamma->AddKernel(kernel_FwGamma)) != CM_SUCCESS)
