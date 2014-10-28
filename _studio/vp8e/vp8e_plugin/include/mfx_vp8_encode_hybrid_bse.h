@@ -1242,7 +1242,9 @@ namespace MFX_VP8ENC
     } Vp8Counters;
 
     enum {
-        MODE_INTRA_16x16 = 0,
+        MODE_INTRA_NONPRED = 0,
+        MODE_INTRA_16x16,
+        MODE_INTRA_8x8,
         MODE_INTRA_4x4
     };
 
