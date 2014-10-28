@@ -75,7 +75,7 @@ mfxStatus MFXD3D11Accelerator::CreateVideoAccelerator(mfxU32 hwProfile, const mf
     if (FAILED(hres))
         return MFX_ERR_DEVICE_FAILED;
 
-    m_bH264MVCSupport = IsVaMvcProfile(m_Profile);
+    m_bH264MVCSupport = GuidProfile::IsMVCGUID(m_DecoderGuid);
     m_isUseStatuReport = true;
     m_bH264ShortSlice = GuidProfile::isShortFormat((m_Profile & 0xf) == VA_H265, video_config.ConfigBitstreamRaw);
 
@@ -91,7 +91,7 @@ mfxStatus MFXD3D11Accelerator::GetSuitVideoDecoderConfig(const mfxVideoParam    
 
     for (mfxU32 k = 0; k < GuidProfile::GetGuidProfileSize(); k++)
     {
-        if ((m_Profile & (VA_ENTRY_POINT | VA_CODEC)) != GuidProfile::GetGuidProfile(k)->profile)
+        if ((m_Profile & (VA_ENTRY_POINT | VA_CODEC)) != (GuidProfile::GetGuidProfile(k)->profile  & (VA_ENTRY_POINT | VA_CODEC)))
             continue;
 
         video_desc->Guid = GuidProfile::GetGuidProfile(k)->guid;
@@ -116,14 +116,18 @@ mfxStatus MFXD3D11Accelerator::GetSuitVideoDecoderConfig(const mfxVideoParam    
             if (idxConfig == -1)
                 idxConfig = i;
 
-            if (GuidProfile::isShortFormat(isHEVCGUID, pConfig->ConfigBitstreamRaw))
-            { // short mode
-                idxConfig = i;
-            }
-
-            if ((GuidProfile::GetGuidProfile(k)->profile & VA_LONG_SLICE_MODE) && !GuidProfile::isShortFormat(isHEVCGUID, pConfig->ConfigBitstreamRaw))
+            bool isShort = GuidProfile::isShortFormat(isHEVCGUID, pConfig->ConfigBitstreamRaw);
+            if (GuidProfile::GetGuidProfile(k)->profile & VA_LONG_SLICE_MODE)
             {
-                idxConfig = i;
+                if (!isShort)
+                {
+                    idxConfig = i;
+                }
+            }
+            else
+            {
+                if (isShort)
+                    idxConfig = i;
             }
         }
 

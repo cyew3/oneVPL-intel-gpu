@@ -469,6 +469,11 @@ bool GuidProfile::IsIntelCustomGUID(const GUID & guid)
         guid == DXVA_Intel_ModeHEVC_VLD_Main10Profile);
 }
 
+bool GuidProfile::IsMVCGUID(const GUID & guid)
+{
+    return (guid == sDXVA_ModeH264_VLD_Multiview_NoFGT || guid == sDXVA_ModeH264_VLD_Stereo_NoFGT || guid == sDXVA_ModeH264_VLD_Stereo_Progressive_NoFGT || guid == sDXVA_Intel_ModeH264_VLD_MVC);
+}
+
 //////////////////////////////////////////////////////////////
 
 bool DXVA2Accelerator::IsIntelCustomGUID() const
@@ -634,18 +639,22 @@ Status DXVA2Accelerator::FindConfiguration(VideoStreamInfo *pVideoInfo)
                     if (idxConfig == -1)
                         idxConfig = iConfig;
 
-                    if (GuidProfile::isShortFormat(isHEVCGUID, pConfig[iConfig].ConfigBitstreamRaw))
-                    { // short mode
-                        idxConfig = iConfig;
-                    }
-
-                    if ((GuidProfile::GetGuidProfile(k)->profile & VA_LONG_SLICE_MODE) && !GuidProfile::isShortFormat(isHEVCGUID, pConfig[iConfig].ConfigBitstreamRaw))
+                    bool isShort = GuidProfile::isShortFormat(isHEVCGUID, pConfig[iConfig].ConfigBitstreamRaw);
+                    if (GuidProfile::GetGuidProfile(k)->profile & VA_LONG_SLICE_MODE)
                     {
-                        idxConfig = iConfig;
+                        if (!isShort)
+                        {
+                            idxConfig = iConfig;
+                        }
+                    }
+                    else
+                    {
+                        if (isShort)
+                            idxConfig = iConfig;
                     }
                 }
 
-                m_bH264MVCSupport = IsVaMvcProfile(m_Profile);
+                m_bH264MVCSupport = GuidProfile::IsMVCGUID(m_guidDecoder);
                 m_Config = pConfig[idxConfig];
                 m_bH264ShortSlice = GuidProfile::isShortFormat(isHEVCGUID, m_Config.ConfigBitstreamRaw);
 

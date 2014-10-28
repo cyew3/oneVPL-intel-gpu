@@ -64,6 +64,7 @@ struct GuidProfile
     static const GuidProfile * GetGuidProfile(size_t k);
     static size_t GetGuidProfileSize();
     static bool IsIntelCustomGUID(const GUID & guid);
+    static bool IsMVCGUID(const GUID & guid);
     static bool isShortFormat(bool isHEVCGUID, Ipp32u configBitstreamRaw);
 };
 
