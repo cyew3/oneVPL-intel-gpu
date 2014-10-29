@@ -1203,8 +1203,8 @@ mfxStatus VAAPIEncoder::Execute(ExecuteBuffers* pExecuteBuffers, mfxU32 funcId, 
         VAEncPackedHeaderParameterBuffer packedParamsBuffer = {};
         packedParamsBuffer.type = VAEncPackedHeaderRawData;
         packedParamsBuffer.has_emulation_bytes = false;
-        mfxU32 correctedLenght = IPP_MIN(userDataLen - 4, UINT_MAX/8); // minus start code
-        packedParamsBuffer.bit_length = correctedLenght * 8;
+        mfxU32 correctedLength = IPP_MIN(userDataLen, UINT_MAX/8); // keep start code
+        packedParamsBuffer.bit_length = correctedLength * 8;
         
         MFX_DESTROY_VABUFFER(m_packedUserDataParamsId, m_vaDisplay);
         vaSts = vaCreateBuffer(m_vaDisplay,
@@ -1220,7 +1220,7 @@ mfxStatus VAAPIEncoder::Execute(ExecuteBuffers* pExecuteBuffers, mfxU32 funcId, 
         vaSts = vaCreateBuffer(m_vaDisplay,
             m_vaContextEncode,
             VAEncPackedHeaderDataBufferType,
-            correctedLenght, 1, pUserData + 4,
+            correctedLength, 1, pUserData,
             &m_packedUserDataId);
         MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
 
