@@ -2319,8 +2319,8 @@ GAMMA_ONLY_SLM_ARGB8_OUT(SurfaceIndex BUF_R, SurfaceIndex BUF_G, SurfaceIndex BU
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 extern "C" _GENX_MAIN_ void 
 GAMMA_GPUV4_ARGB8_2D(SurfaceIndex Correct_Index, SurfaceIndex Point_Index,
-                     SurfaceIndex R_I_Index, SurfaceIndex G_I_Index, SurfaceIndex B_I_Index,
-					 //SurfaceIndex B_I_Index, SurfaceIndex G_I_Index, SurfaceIndex R_I_Index,
+                     //SurfaceIndex R_I_Index, SurfaceIndex G_I_Index, SurfaceIndex B_I_Index,
+					 SurfaceIndex B_I_Index, SurfaceIndex G_I_Index, SurfaceIndex R_I_Index,
                      SurfaceIndex ARGB8_Index,
                      int blocks_in_a_row, int BitDepth, int framewidth_in_bytes, int frameheight, int BayerType)
 {

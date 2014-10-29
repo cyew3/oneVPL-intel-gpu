@@ -19,8 +19,6 @@
 #include <stdexcept> /* for std exceptions on Linux/Android */
 
 #include "libmfx_core_interface.h"
-//#include "cm_def.h"
-//#include "cm_vm.h"
 #include "mfx_camera_plugin_utils.h"
 #include "genx_hsw_camerapipe_isa.h"
 
@@ -661,6 +659,59 @@ void CmContext::CreateTask_BayerCorrection(SurfaceIndex inoutSurfIndex,
     // be done. At the moment, padding is a separate kernel that is done before this
     // so first variable must be set to 0
     int first = 0;
+    signed short  _B_shift;
+    signed short  _Gtop_shift;
+    signed short  _Gbot_shift;
+    signed short  _R_shift;
+
+    float  _B_scale;
+    float  _Gtop_scale;
+    float  _Gbot_scale;
+    float  _R_scale;
+
+    switch( BayerType)
+    {
+    case BAYER_BGGR:
+        _B_shift    = B_shift;
+        _Gtop_shift = Gtop_shift;
+        _Gbot_shift = Gbot_shift;
+        _R_shift    = R_shift;
+        _B_scale    = B_scale;
+        _Gtop_scale = Gtop_scale;
+        _Gbot_scale = Gbot_scale;
+        _R_scale    = R_scale;
+        break;
+    case BAYER_RGGB:
+        _B_shift    = R_shift;
+        _Gtop_shift = Gtop_shift;
+        _Gbot_shift = Gbot_shift;
+        _R_shift    = B_shift;
+        _B_scale    = R_scale;
+        _Gtop_scale = Gtop_scale;
+        _Gbot_scale = Gbot_scale;
+        _R_scale    = B_scale;
+        break;
+    case BAYER_GRBG:
+        _B_shift    = Gbot_shift;
+        _Gtop_shift = B_shift;
+        _Gbot_shift = R_shift;
+        _R_shift    = Gtop_shift;
+        _B_scale    = Gbot_scale;
+        _Gtop_scale = B_scale;
+        _Gbot_scale = R_scale;
+        _R_scale    = Gtop_scale;
+        break;
+    case BAYER_GBRG:
+        _B_shift    = Gtop_shift;
+        _Gtop_shift = B_shift;
+        _Gbot_shift = R_shift;
+        _R_shift    = Gbot_shift;
+        _B_scale    = Gtop_scale;
+        _Gtop_scale = B_scale;
+        _Gbot_scale = R_scale;
+        _R_scale    = Gbot_scale;
+        break;
+    }
 
     kernel_BayerCorrection->SetKernelArg( i++, sizeof(SurfaceIndex), &inoutSurfIndex   );
     kernel_BayerCorrection->SetKernelArg( i++, sizeof(SurfaceIndex), &inoutSurfIndex   );
@@ -668,14 +719,14 @@ void CmContext::CreateTask_BayerCorrection(SurfaceIndex inoutSurfIndex,
     kernel_BayerCorrection->SetKernelArg( i++, sizeof(signed short), &Enable_BLC       );
     kernel_BayerCorrection->SetKernelArg( i++, sizeof(signed short), &Enable_VIG       );
     kernel_BayerCorrection->SetKernelArg( i++, sizeof(signed short), &ENABLE_WB        );
-    kernel_BayerCorrection->SetKernelArg( i++, sizeof(signed short), &B_shift          );
-    kernel_BayerCorrection->SetKernelArg( i++, sizeof(signed short), &Gtop_shift       );
-    kernel_BayerCorrection->SetKernelArg( i++, sizeof(signed short), &Gbot_shift       );
-    kernel_BayerCorrection->SetKernelArg( i++, sizeof(signed short), &R_shift          );
-    kernel_BayerCorrection->SetKernelArg( i++, sizeof(float),        &R_scale          );
-    kernel_BayerCorrection->SetKernelArg( i++, sizeof(float),        &Gtop_scale       );
-    kernel_BayerCorrection->SetKernelArg( i++, sizeof(float),        &Gbot_scale       );
-    kernel_BayerCorrection->SetKernelArg( i++, sizeof(float),        &B_scale          );
+    kernel_BayerCorrection->SetKernelArg( i++, sizeof(signed short), &_B_shift          );
+    kernel_BayerCorrection->SetKernelArg( i++, sizeof(signed short), &_Gtop_shift       );
+    kernel_BayerCorrection->SetKernelArg( i++, sizeof(signed short), &_Gbot_shift       );
+    kernel_BayerCorrection->SetKernelArg( i++, sizeof(signed short), &_R_shift          );
+    kernel_BayerCorrection->SetKernelArg( i++, sizeof(float),        &_B_scale          );
+    kernel_BayerCorrection->SetKernelArg( i++, sizeof(float),        &_Gtop_scale       );
+    kernel_BayerCorrection->SetKernelArg( i++, sizeof(float),        &_Gbot_scale       );
+    kernel_BayerCorrection->SetKernelArg( i++, sizeof(float),        &_R_scale          );
     kernel_BayerCorrection->SetKernelArg( i++, sizeof(signed short), &MaxInputLevel    );
     kernel_BayerCorrection->SetKernelArg( i++, sizeof(int),          &first            );
     kernel_BayerCorrection->SetKernelArg( i++, sizeof(int),          &bitDepth         );
@@ -924,13 +975,12 @@ void CmContext::CreateTask_GammaAndCCM(CmSurface2D  *correctSurf,
     int result;
 
 #ifdef NEW_GAMMA_THREADS
-    int gamma_threads_per_group =  m_video.TileWidth * 4 / 512; // 64;
-    gamma_threads_per_group = (gamma_threads_per_group + 15) &~ 0xF;
-    gamma_threads_per_group = (gamma_threads_per_group < 16) ? 16 : gamma_threads_per_group;
+    int gamma_threads_per_group = ((m_video.TileWidth + 127) & 0xFFFFFFF8) / 128;
+    gamma_threads_per_group = (gamma_threads_per_group > 32)? 64 : ((gamma_threads_per_group > 16)? 32 : ((gamma_threads_per_group > 8)? 16 : 8));
     kernel_FwGamma1->SetThreadCount(gamma_threads_per_group * 4);
-    int threadsheight = (( m_video.TileHeight + 15) / 16); // not used in the kernel (?)
+    int threadsheight = (( m_video.TileWidth+15)  & 0xFFFFFFF0 / 16); //(( m_video.TileWidth + 15) / 16); // not used in the kernel (?)
 #else
-    int threadswidth  = m_video.vpp.In.CropW/16; // Out.Width/Height ??? here and below
+    int threadswidth  = m_video.vpp.In.CropW/16;
     int threadsheight = m_video.vpp.In.CropH/16;
     mfxU32 gamma_threads_per_group = 64;
     mfxU32 gamma_groups_vert = ((threadswidth % gamma_threads_per_group) == 0)? (threadswidth/gamma_threads_per_group) : (threadswidth/gamma_threads_per_group + 1);
@@ -944,9 +994,18 @@ void CmContext::CreateTask_GammaAndCCM(CmSurface2D  *correctSurf,
     int i = 0;
     kernel_FwGamma1->SetKernelArg(i++, sizeof(SurfaceIndex), &GetIndex(correctSurf));
     kernel_FwGamma1->SetKernelArg(i++, sizeof(SurfaceIndex), &GetIndex(pointSurf)  );
-    kernel_FwGamma1->SetKernelArg(i++, sizeof(SurfaceIndex), &GetIndex(redSurf)    );
-    kernel_FwGamma1->SetKernelArg(i++, sizeof(SurfaceIndex), &GetIndex(greenSurf)  );
-    kernel_FwGamma1->SetKernelArg(i++, sizeof(SurfaceIndex), &GetIndex(blueSurf)   );
+    if( BayerType == BAYER_BGGR || BayerType == BAYER_GRBG )
+    {
+        kernel_FwGamma1->SetKernelArg(i++, sizeof(SurfaceIndex), &GetIndex(redSurf)  );
+        kernel_FwGamma1->SetKernelArg(i++, sizeof(SurfaceIndex), &GetIndex(greenSurf));
+        kernel_FwGamma1->SetKernelArg(i++, sizeof(SurfaceIndex), &GetIndex(blueSurf) );
+    }
+    else
+    {
+        kernel_FwGamma1->SetKernelArg(i++, sizeof(SurfaceIndex), &GetIndex(blueSurf) );
+        kernel_FwGamma1->SetKernelArg(i++, sizeof(SurfaceIndex), &GetIndex(greenSurf));
+        kernel_FwGamma1->SetKernelArg(i++, sizeof(SurfaceIndex), &GetIndex(redSurf)  );
+    }
     if ( ! ccm )
     {
         kernel_FwGamma1->SetKernelArg(i++, sizeof(SurfaceIndex), &GetIndex(outSurf));
@@ -993,9 +1052,8 @@ void CmContext::CreateTask_GammaAndCCM(CmSurface2D *correctSurf,
     int result;
 
 #ifdef NEW_GAMMA_THREADS
-    int gamma_threads_per_group =  m_video.TileWidth * 4 / 512; // 64;
-    gamma_threads_per_group     = (gamma_threads_per_group + 15) &~ 0xF;
-    gamma_threads_per_group     = (gamma_threads_per_group < 16) ? 16 : gamma_threads_per_group;
+    int gamma_threads_per_group = ((m_video.TileWidth + 127) & 0xFFFFFFF8) / 128;
+    gamma_threads_per_group = (gamma_threads_per_group > 32)? 64 : ((gamma_threads_per_group > 16)? 32 : ((gamma_threads_per_group > 8)? 16 : 8));
     kernel_FwGamma->SetThreadCount(gamma_threads_per_group * 4);
     int threadsheight = (( m_video.TileHeight + 15) / 16); // not used in the kernel (?)
 #else
@@ -1013,9 +1071,19 @@ void CmContext::CreateTask_GammaAndCCM(CmSurface2D *correctSurf,
     int i = 0;
     kernel_FwGamma->SetKernelArg(i++, sizeof(SurfaceIndex), &GetIndex(correctSurf));
     kernel_FwGamma->SetKernelArg(i++, sizeof(SurfaceIndex), &GetIndex(pointSurf)  );
-    kernel_FwGamma->SetKernelArg(i++, sizeof(SurfaceIndex), &GetIndex(redSurf)    );
-    kernel_FwGamma->SetKernelArg(i++, sizeof(SurfaceIndex), &GetIndex(greenSurf)  );
-    kernel_FwGamma->SetKernelArg(i++, sizeof(SurfaceIndex), &GetIndex(blueSurf)   );
+    if( BayerType == BAYER_BGGR || BayerType == BAYER_GRBG )
+    {
+        kernel_FwGamma1->SetKernelArg(i++, sizeof(SurfaceIndex), &GetIndex(redSurf)  );
+        kernel_FwGamma1->SetKernelArg(i++, sizeof(SurfaceIndex), &GetIndex(greenSurf));
+        kernel_FwGamma1->SetKernelArg(i++, sizeof(SurfaceIndex), &GetIndex(blueSurf) );
+    }
+    else
+    {
+        kernel_FwGamma1->SetKernelArg(i++, sizeof(SurfaceIndex), &GetIndex(blueSurf) );
+        kernel_FwGamma1->SetKernelArg(i++, sizeof(SurfaceIndex), &GetIndex(greenSurf));
+        kernel_FwGamma1->SetKernelArg(i++, sizeof(SurfaceIndex), &GetIndex(redSurf)  );
+    }
+
     if ( ! ccm )
     {
         kernel_FwGamma->SetKernelArg(i++, sizeof(SurfaceIndex), &outSurfIndex     );
@@ -1050,10 +1118,8 @@ CmEvent *CmContext::EnqueueTask_ForwardGamma()
 {
     int result;
 #ifdef NEW_GAMMA_THREADS
-    int gamma_threads_per_group;
-    gamma_threads_per_group =  m_video.TileWidth * 4 / 512; // 64;
-    gamma_threads_per_group = (gamma_threads_per_group + 15) &~ 0xF;
-    gamma_threads_per_group = (gamma_threads_per_group < 16) ? 16 : gamma_threads_per_group;
+    int gamma_threads_per_group = ((m_video.TileWidth + 127) & 0xFFFFFFF8) / 128;
+    gamma_threads_per_group = (gamma_threads_per_group > 32)? 64 : ((gamma_threads_per_group > 16)? 32 : ((gamma_threads_per_group > 8)? 16 : 8));
 #else
     int threadswidth = m_video.vpp.In.CropW/16; // Out.Width/Height ??? here and below
     mfxU32 gamma_threads_per_group = 64;
@@ -1081,15 +1147,21 @@ void CmContext::CreateTask_ARGB(CmSurface2D *redSurf,
                                 CmSurface2D *blueSurf,
                                 SurfaceIndex outSurfIndex,
                                 mfxU32 bitDepth,
-                                int BaterType,
+                                int BayerType,
                                 mfxU32)
 {
 
     int result;
     kernel_ARGB->SetThreadCount(widthIn16 * heightIn16);
 
-    SetKernelArg(kernel_ARGB, GetIndex(redSurf), GetIndex(greenSurf), GetIndex(blueSurf), outSurfIndex, BaterType, m_video.TileHeight, bitDepth);
-
+    if( BayerType == BAYER_BGGR || BayerType == BAYER_GRBG )
+    {
+        SetKernelArg(kernel_ARGB, GetIndex(blueSurf), GetIndex(greenSurf), GetIndex(redSurf), outSurfIndex, BayerType, m_video.TileHeight, bitDepth);
+    }
+    else
+    {
+        SetKernelArg(kernel_ARGB, GetIndex(redSurf), GetIndex(greenSurf), GetIndex(blueSurf), outSurfIndex, BayerType, m_video.TileHeight, bitDepth);
+    }
     task_ARGB->Reset();
 
     if ((result = task_ARGB->AddKernel(kernel_ARGB)) != CM_SUCCESS)

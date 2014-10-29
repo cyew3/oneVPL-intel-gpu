@@ -35,6 +35,12 @@ class CmTask;
 
 namespace MfxCameraPlugin
 {
+
+#define  BAYER_BGGR  0x0000
+#define  BAYER_RGGB  0x0001
+#define  BAYER_GRBG  0x0002
+#define  BAYER_GBRG  0x0003
+
 class CmRuntimeError : public std::exception
 {
 public:

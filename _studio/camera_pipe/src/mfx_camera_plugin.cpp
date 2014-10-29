@@ -905,7 +905,7 @@ mfxStatus MFXCamera_Plugin::Init(mfxVideoParam *par)
         }
     }
 
-    if ( m_mfxVideoParam.vpp.In.CropW * m_mfxVideoParam.vpp.In.CropH > 0xF00000 )
+    if ( m_mfxVideoParam.vpp.In.CropW * m_mfxVideoParam.vpp.In.CropH > 0x16E3600 )
     {
         // TODO: make number of tiles dependent on frame size.
         // For existing 7Kx4K 2 tiles seems to be enough.
