@@ -559,14 +559,18 @@ typedef struct {
 
 typedef struct {
     mfxExtBuffer Header;
+
     mfxU16      NumSliceI;
     mfxU16      NumSliceP;
     mfxU16      NumSliceB;
+
     mfxU16      WinBRCMaxAvgKbps;
     mfxU16      WinBRCSize;
+
     mfxU16      QVBRQuality;
     mfxU16      EnableMBQP;
-    mfxU16      reserved[245];
+    mfxU16      IntRefCycleDist;
+    mfxU16      reserved[244];
 } mfxExtCodingOption3;
 
 /* IntraPredBlockSize/InterPredBlockSize */
