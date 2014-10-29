@@ -22,7 +22,7 @@
 #include "umc_hevc_ddi.h"
 #endif
 
-#if defined(UMC_VA_LINUX) && defined(VA_HEVC_DECODER)
+#if defined(UMC_VA_LINUX)
 #include <va/va_dec_hevc.h>
 #endif
 
@@ -111,7 +111,7 @@ public:
 #endif // UMC_VA_DXVA
 
 
-#if defined(UMC_VA_LINUX) && defined(VA_HEVC_DECODER)
+#if defined(UMC_VA_LINUX)
 
 class PackerVA : public Packer
 {

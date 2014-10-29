@@ -168,7 +168,13 @@ const mfx_device_item listLegalDevIDs[] = {
     { 0x160E, MFX_HW_BDW},
     { 0x160B, MFX_HW_BDW},
     { 0x1606, MFX_HW_BDW},
-    { 0x1602, MFX_HW_BDW}
+    { 0x1602, MFX_HW_BDW},
+
+    /* CHV */
+    { 0x22b0, MFX_HW_CHV},
+    { 0x22b1, MFX_HW_CHV},
+    { 0x22b2, MFX_HW_CHV},
+    { 0x22b3, MFX_HW_CHV}
 };
 
 /* END: IOCTLs definitions */

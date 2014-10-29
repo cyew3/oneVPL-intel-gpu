@@ -50,7 +50,11 @@ UMC::Status VATaskSupplier::Init(UMC::VideoDecoderParams *pInit)
 
     if (m_va)
     {
+#ifdef UMC_VA_DXVA
         static_cast<TaskBrokerSingleThreadDXVA*>(m_pTaskBroker)->DXVAStatusReportingMode(true);
+#else
+        static_cast<TaskBrokerSingleThreadDXVA*>(m_pTaskBroker)->DXVAStatusReportingMode(false);
+#endif
         m_DPBSizeEx = m_iThreadNum + pInit->info.bitrate;
     }
 

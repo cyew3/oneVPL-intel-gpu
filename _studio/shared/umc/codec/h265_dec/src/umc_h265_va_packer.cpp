@@ -48,7 +48,7 @@ Packer * Packer::CreatePacker(UMC::VideoAccelerator * va)
         packer = new PackerDXVA2(va);
     else
         packer = new MSPackerDXVA2(va);
-#elif defined(UMC_VA_LINUX) && defined(VA_HEVC_DECODER)
+#elif defined(UMC_VA_LINUX)
     packer = new PackerVA(va);
 #endif
 
@@ -1027,7 +1027,7 @@ bool MSPackerDXVA2::PackSliceParams(H265Slice *pSlice, Ipp32u &sliceNum, bool is
 
 #endif // UMC_VA_DXVA
 
-#if defined(UMC_VA_LINUX) && defined(VA_HEVC_DECODER)
+#if defined(UMC_VA_LINUX)
 /****************************************************************************************************/
 // VA linux packer implementation
 /****************************************************************************************************/
@@ -1049,12 +1049,12 @@ void PackerVA::PackPicParams(const H265DecoderFrame *pCurrentFrame, H265DecoderF
     const H265PicParamSet* pPicParamSet = pSlice->GetPicParam();
 
     UMCVACompBuffer *picParamBuf;
-    VADecPictureParameterBufferHEVC* picParam = (VADecPictureParameterBufferHEVC*)m_va->GetCompBuffer(VAPictureParameterBufferType, &picParamBuf, sizeof(VADecPictureParameterBufferHEVC));
+    VAPictureParameterBufferHEVC* picParam = (VAPictureParameterBufferHEVC*)m_va->GetCompBuffer(VAPictureParameterBufferType, &picParamBuf, sizeof(VAPictureParameterBufferHEVC));
     if (!picParam)
         throw h265_exception(UMC_ERR_FAILED);
 
-    picParamBuf->SetDataSize(sizeof(VADecPictureParameterBufferHEVC));
-    memset(picParam, 0, sizeof(VADecPictureParameterBufferHEVC));
+    picParamBuf->SetDataSize(sizeof(VAPictureParameterBufferHEVC));
+    memset(picParam, 0, sizeof(VAPictureParameterBufferHEVC));
 
     picParam->CurrPic.picture_id = m_va->GetSurfaceID(pCurrentFrame->m_index);
     picParam->CurrPic.PicOrderCnt = pCurrentFrame->m_PicOrderCnt;
@@ -1269,7 +1269,7 @@ bool PackerVA::PackSliceParams(H265Slice *pSlice, Ipp32u &sliceNum, bool isLastS
     H265DecoderFrame *pCurrentFrame = pSlice->GetCurrentFrame();
     const H265SliceHeader *sliceHeader = pSlice->GetSliceHeader();
 
-    VADecPictureParameterBufferHEVC* picParams = (VADecPictureParameterBufferHEVC*)m_va->GetCompBuffer(VAPictureParameterBufferType);
+    VAPictureParameterBufferHEVC* picParams = (VAPictureParameterBufferHEVC*)m_va->GetCompBuffer(VAPictureParameterBufferType);
     if (!picParams)
         throw h265_exception(UMC_ERR_FAILED);
 
@@ -1520,7 +1520,7 @@ void PackerVA::EndFrame()
 {
 }
 
-#endif // #if defined(UMC_VA_LINUX) && defined(VA_HEVC_DECODER)
+#endif // #if defined(UMC_VA_LINUX)
 
 } // namespace UMC_HEVC_DECODER
 

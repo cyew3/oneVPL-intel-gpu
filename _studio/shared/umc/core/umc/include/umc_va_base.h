@@ -70,10 +70,7 @@
 #include <va/va_dec_vp8.h>
 #include <va/va_vpp.h>
 #include <va/va_dec_vp9.h>
-
-#ifdef VA_HEVC_DECODER
 #include <va/va_dec_hevc.h>
-#endif
 
 #ifndef UNREFERENCED_PARAMETER
 #define UNREFERENCED_PARAMETER(p) (p);

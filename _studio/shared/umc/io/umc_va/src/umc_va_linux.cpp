@@ -115,9 +115,7 @@ VAProfile g_H264Profiles[] =
 
 VAProfile g_H265Profiles[] =
 {
-#ifdef VA_HEVC_DECODER
     VAProfileHEVCMain, VAProfileHEVCMain10
-#endif
 };
 
 VAProfile g_VC1Profiles[] =
@@ -692,6 +690,10 @@ VACompBuffer* LinuxVideoAccelerator::GetCompBufferHW(Ipp32s type, Ipp32s size, I
             case UMC::VA_VP9:
                 va_size         = sizeof(VASliceParameterBufferVP9);
                 va_num_elements = size/sizeof(VASliceParameterBufferVP9);
+                break;
+            case UMC::VA_H265:
+                va_size         = sizeof(VASliceParameterBufferHEVC);
+                va_num_elements = size/sizeof(VASliceParameterBufferHEVC);
                 break;
             default:
                 va_size         = 0;
