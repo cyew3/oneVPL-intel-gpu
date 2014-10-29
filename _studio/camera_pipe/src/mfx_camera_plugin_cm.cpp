@@ -1055,7 +1055,7 @@ void CmContext::CreateTask_GammaAndCCM(CmSurface2D *correctSurf,
     int gamma_threads_per_group = ((m_video.TileWidth + 127) & 0xFFFFFFF8) / 128;
     gamma_threads_per_group = (gamma_threads_per_group > 32)? 64 : ((gamma_threads_per_group > 16)? 32 : ((gamma_threads_per_group > 8)? 16 : 8));
     kernel_FwGamma->SetThreadCount(gamma_threads_per_group * 4);
-    int threadsheight = (( m_video.TileHeight + 15) / 16); // not used in the kernel (?)
+    int threadsheight = (( m_video.TileWidth+15)  & 0xFFFFFFF0 / 16); // not used in the kernel (?)
 #else
     int threadswidth  = m_video.vpp.In.CropW/16; // Out.Width/Height ??? here and below
     int threadsheight = m_video.vpp.In.CropH/16;
@@ -1073,15 +1073,15 @@ void CmContext::CreateTask_GammaAndCCM(CmSurface2D *correctSurf,
     kernel_FwGamma->SetKernelArg(i++, sizeof(SurfaceIndex), &GetIndex(pointSurf)  );
     if( BayerType == BAYER_BGGR || BayerType == BAYER_GRBG )
     {
-        kernel_FwGamma1->SetKernelArg(i++, sizeof(SurfaceIndex), &GetIndex(redSurf)  );
-        kernel_FwGamma1->SetKernelArg(i++, sizeof(SurfaceIndex), &GetIndex(greenSurf));
-        kernel_FwGamma1->SetKernelArg(i++, sizeof(SurfaceIndex), &GetIndex(blueSurf) );
+        kernel_FwGamma->SetKernelArg(i++, sizeof(SurfaceIndex), &GetIndex(redSurf)  );
+        kernel_FwGamma->SetKernelArg(i++, sizeof(SurfaceIndex), &GetIndex(greenSurf));
+        kernel_FwGamma->SetKernelArg(i++, sizeof(SurfaceIndex), &GetIndex(blueSurf) );
     }
     else
     {
-        kernel_FwGamma1->SetKernelArg(i++, sizeof(SurfaceIndex), &GetIndex(blueSurf) );
-        kernel_FwGamma1->SetKernelArg(i++, sizeof(SurfaceIndex), &GetIndex(greenSurf));
-        kernel_FwGamma1->SetKernelArg(i++, sizeof(SurfaceIndex), &GetIndex(redSurf)  );
+        kernel_FwGamma->SetKernelArg(i++, sizeof(SurfaceIndex), &GetIndex(blueSurf) );
+        kernel_FwGamma->SetKernelArg(i++, sizeof(SurfaceIndex), &GetIndex(greenSurf));
+        kernel_FwGamma->SetKernelArg(i++, sizeof(SurfaceIndex), &GetIndex(redSurf)  );
     }
 
     if ( ! ccm )
