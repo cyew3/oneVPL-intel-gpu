@@ -1604,49 +1604,77 @@ mfxStatus VAAPIEncoder::Execute(
         //output buffer for MB distortions
         if (mbstat != NULL)
         {
-            vaSts = vaCreateBuffer(m_vaDisplay,
-                    m_vaContextEncode,
-                    (VABufferType)VAEncFEIDistortionBufferTypeIntel,
-                    sizeof (VAEncFEIDistortionBufferH264Intel)*numMB, //limitation from driver, num elements should be 1
-                    1,
-                    NULL, //should be mapped later
-                    &vaFeiMBStatId);
-            MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
-            outBuffers[numOutBufs++] = vaFeiMBStatId;
+            if (m_vaFeiMBStatId.size() == 0 )
+            {
+                m_vaFeiMBStatId.resize(16);
+                for( mfxU32 ii = 0; ii < 16; ii++ )
+                {
+                    vaSts = vaCreateBuffer(m_vaDisplay,
+                            m_vaContextEncode,
+                            (VABufferType)VAEncFEIDistortionBufferTypeIntel,
+                            sizeof (VAEncFEIDistortionBufferH264Intel)*numMB, //limitation from driver, num elements should be 1
+                            1,
+                            NULL, //should be mapped later
+                            //&vaFeiMBStatId);
+                            &m_vaFeiMBStatId[ii]);
+                    MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+                }
+            } // if (m_vaFeiMBStatId.size() == 0 )
+            //outBuffers[numOutBufs++] = vaFeiMBStatId;
+            outBuffers[numOutBufs++] = m_vaFeiMBStatId[idxRecon];
             //mdprintf(stderr, "MB Stat bufId=%d\n", vaFeiMBStatId);
-            configBuffers[buffersCount++] = vaFeiMBStatId;
+            //configBuffers[buffersCount++] = vaFeiMBStatId;
+            configBuffers[buffersCount++] = m_vaFeiMBStatId[idxRecon];
         }
 
         //output buffer for MV  
         if (mvout != NULL)
         {
-            vaSts = vaCreateBuffer(m_vaDisplay,
-                    m_vaContextEncode,
-                    (VABufferType)VAEncFEIMVBufferTypeIntel,
-                    sizeof (VAMotionVectorIntel)*16*numMB, //limitation from driver, num elements should be 1
-                    1,
-                    NULL, //should be mapped later
-                    &vaFeiMVOutId);
-            MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
-            outBuffers[numOutBufs++] = vaFeiMVOutId;
+            if (m_vaFeiMVOutId.size() == 0 )
+            {
+                m_vaFeiMVOutId.resize(16);
+                for( mfxU32 ii = 0; ii < 16; ii++ )
+                {
+                    vaSts = vaCreateBuffer(m_vaDisplay,
+                            m_vaContextEncode,
+                            (VABufferType)VAEncFEIMVBufferTypeIntel,
+                            sizeof (VAMotionVectorIntel)*16*numMB, //limitation from driver, num elements should be 1
+                            1,
+                            NULL, //should be mapped later
+                            &m_vaFeiMVOutId[ii]);
+                    MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+                }
+            } // if (m_vaFeiMVOutId.size() == 0 )
+            //outBuffers[numOutBufs++] = vaFeiMVOutId;
+            outBuffers[numOutBufs++] = m_vaFeiMVOutId[idxRecon];
             //mdprintf(stderr, "MV Out bufId=%d\n", vaFeiMVOutId);
-            configBuffers[buffersCount++] = vaFeiMVOutId;
+            //configBuffers[buffersCount++] = vaFeiMVOutId;
+            configBuffers[buffersCount++] = m_vaFeiMVOutId[idxRecon];
         }
 
         //output buffer for MBCODE (Pak object cmds)
         if (mbcodeout != NULL)
         {
-            vaSts = vaCreateBuffer(m_vaDisplay,
-                    m_vaContextEncode,
-                    (VABufferType)VAEncFEIModeBufferTypeIntel,
-                    sizeof (VAEncFEIModeBufferH264Intel)*numMB, //limitation from driver, num elements should be 1
-                    1,
-                    NULL, //should be mapped later
-                    &vaFeiMCODEOutId);
-            MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
-            outBuffers[numOutBufs++] = vaFeiMCODEOutId;
+            m_vaFeiMCODEOutId.resize(16);
+            if (m_vaFeiMCODEOutId.size() == 0 )
+            {
+                for( mfxU32 ii = 0; ii < 16; ii++ )
+                {
+                    vaSts = vaCreateBuffer(m_vaDisplay,
+                            m_vaContextEncode,
+                            (VABufferType)VAEncFEIModeBufferTypeIntel,
+                            sizeof (VAEncFEIModeBufferH264Intel)*numMB, //limitation from driver, num elements should be 1
+                            1,
+                            NULL, //should be mapped later
+                            &m_vaFeiMCODEOutId[ii]);
+                    MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+                }
+            } //if (m_vaFeiMCODEOutId.size() == 0 )
+            //outBuffers[numOutBufs++] = vaFeiMCODEOutId;
+            outBuffers[numOutBufs++] = m_vaFeiMCODEOutId[idxRecon];
             //mdprintf(stderr, "MCODE Out bufId=%d\n", vaFeiMCODEOutId);
-            configBuffers[buffersCount++] = vaFeiMCODEOutId;
+            //configBuffers[buffersCount++] = vaFeiMCODEOutId;
+            configBuffers[buffersCount++] = m_vaFeiMCODEOutId[idxRecon];
         }
 
         if (frameCtrl != NULL)
@@ -2387,7 +2415,8 @@ mfxStatus VAAPIEncoder::QueryStatus(
                             vaUnmapBuffer(m_vaDisplay, vaFeiMBStatId);
                         }
 
-                        MFX_DESTROY_VABUFFER(vaFeiMBStatId, m_vaDisplay);
+                        //MFX_DESTROY_VABUFFER(vaFeiMBStatId, m_vaDisplay);
+                        vaFeiMBStatId = VA_INVALID_ID;
                     }
 
                     if (mvout != NULL && vaFeiMVOutId != VA_INVALID_ID)
@@ -2409,7 +2438,8 @@ mfxStatus VAAPIEncoder::QueryStatus(
                             vaUnmapBuffer(m_vaDisplay, vaFeiMVOutId);
                         }
 
-                        MFX_DESTROY_VABUFFER(vaFeiMVOutId, m_vaDisplay);
+                        //MFX_DESTROY_VABUFFER(vaFeiMVOutId, m_vaDisplay);
+                        vaFeiMVOutId = VA_INVALID_ID;
                     }
 
                     if (mbcodeout != NULL && vaFeiMBCODEOutId != VA_INVALID_ID)
@@ -2430,7 +2460,8 @@ mfxStatus VAAPIEncoder::QueryStatus(
                             vaUnmapBuffer(m_vaDisplay, vaFeiMBCODEOutId);
                         }
 
-                        MFX_DESTROY_VABUFFER(vaFeiMBCODEOutId, m_vaDisplay);
+                        //MFX_DESTROY_VABUFFER(vaFeiMBCODEOutId, m_vaDisplay);
+                        vaFeiMBCODEOutId = VA_INVALID_ID;
                     }
                 }
 #endif
@@ -2497,6 +2528,22 @@ mfxStatus VAAPIEncoder::Destroy()
     MFX_DESTROY_VABUFFER(m_packedSeiBufferId, m_vaDisplay);
     MFX_DESTROY_VABUFFER(m_packedSkippedSliceHeaderBufferId, m_vaDisplay);
     MFX_DESTROY_VABUFFER(m_packedSkippedSliceBufferId, m_vaDisplay);
+
+    for( mfxU32 i = 0; i < m_vaFeiMBStatId.size(); i++ )
+    {
+        MFX_DESTROY_VABUFFER(m_vaFeiMBStatId[i], m_vaDisplay);
+    }
+
+    for( mfxU32 i = 0; i < m_vaFeiMVOutId.size(); i++ )
+    {
+        MFX_DESTROY_VABUFFER(m_vaFeiMVOutId[i], m_vaDisplay);
+    }
+
+    for( mfxU32 i = 0; i < m_vaFeiMCODEOutId.size(); i++ )
+    {
+        MFX_DESTROY_VABUFFER(m_vaFeiMCODEOutId[i], m_vaDisplay);
+    }
+
 
     return MFX_ERR_NONE;
 } // mfxStatus VAAPIEncoder::Destroy()
