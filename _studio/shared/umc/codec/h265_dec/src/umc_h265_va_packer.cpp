@@ -266,22 +266,41 @@ void PackerDXVA2::PackAU(const H265DecoderFrame *frame, TaskSupplier_H265 * supp
     const H265SeqParamSet *pSeqParamSet = pSlice->GetSeqParam();
     H265DecoderFrame *pCurrentFrame = pSlice->GetCurrentFrame();
 
-    PackPicParams(pCurrentFrame, sliceInfo, supplier);
-    if (pSeqParamSet->scaling_list_enabled_flag)
-    {
-        PackQmatrix(pSlice);
-    }
+    Ipp32s first_slice = 0;
 
-    Ipp32u sliceNum = 0;
-    for (Ipp32s n = 0; n < sliceCount; n++)
+    for (;;)
     {
-        PackSliceParams(sliceInfo->GetSlice(n), sliceNum, n == sliceCount - 1);
-        sliceNum++;
-    }
+        bool notchopping = true;
+        PackPicParams(pCurrentFrame, sliceInfo, supplier);
+        if (pSeqParamSet->scaling_list_enabled_flag)
+        {
+            PackQmatrix(pSlice);
+        }
 
-    Status s = m_va->Execute();
-    if(s != UMC_OK)
-        throw h265_exception(s);
+        Ipp32u sliceNum = 0;
+        for (Ipp32s n = first_slice; n < sliceCount; n++)
+        {
+            notchopping = PackSliceParams(sliceInfo->GetSlice(n), sliceNum, n == sliceCount - 1);
+            if (!notchopping)
+            {
+                if (n == first_slice) // avoid splitting of slice
+                    return; 
+                first_slice = n;
+                break;
+            }
+
+            sliceNum++;
+        }
+
+        Status s = m_va->Execute();
+        if(s != UMC_OK)
+            throw h265_exception(s);
+
+        if (!notchopping)
+            continue;
+
+        break;
+    }
 }
 
 void PackerDXVA2::PackPicParams(const H265DecoderFrame *pCurrentFrame,
@@ -491,7 +510,7 @@ void PackerDXVA2::PackPicParams(const H265DecoderFrame *pCurrentFrame,
     pPicParam->StatusReportFeedbackNumber = m_statusReportFeedbackCounter;
 }
 
-void PackerDXVA2::PackSliceParams(H265Slice *pSlice, Ipp32u &, bool isLastSlice)
+bool PackerDXVA2::PackSliceParams(H265Slice *pSlice, Ipp32u &, bool isLastSlice)
 {
     static Ipp8u start_code_prefix[] = {0, 0, 1};
 
@@ -517,23 +536,6 @@ void PackerDXVA2::PackSliceParams(H265Slice *pSlice, Ipp32u &, bool isLastSlice)
 
         pDXVASlice->ByteOffsetToSliceData = (UINT)(pSlice->m_BitStream.BytesDecoded() + sizeof(start_code_prefix));  // ???
         pDXVASlice->slice_segment_address = pSlice->GetSliceHeader()->slice_segment_address;
-
-        Ipp32u k = 0;
-        for(Ipp8u *ptr = (Ipp8u *)rawDataPtr; ptr < (Ipp8u *)rawDataPtr + pSlice->m_BitStream.BytesDecoded() - 2; ptr++)
-        {
-            if(ptr[0]==0 && ptr[1]==0 && ptr[2]==3)
-            {
-                k++;
-                //size_t offset = ptr - startPtr + 2;
-                //if (offset <= (SliceDataOffset >> 3) + 2)
-                {
-                    //memmove(startPtr + offset, startPtr + offset + 1, NalUnitSize - offset);
-                    //sliceParams->SliceBytesInBuffer--;
-                }
-            }
-        }
-
-        //pDXVASlice->ByteOffsetToSliceData += k;
 
         for(int iDir = 0; iDir < 2; iDir++)
         {
@@ -646,6 +648,7 @@ void PackerDXVA2::PackSliceParams(H265Slice *pSlice, Ipp32u &, bool isLastSlice)
     // copy slice data to slice data buffer
     MFX_INTERNAL_CPY(pSliceData, start_code_prefix, sizeof(start_code_prefix));
     MFX_INTERNAL_CPY((Ipp8u*)pSliceData + sizeof(start_code_prefix), rawDataPtr, rawDataSize);
+    return true;
 }
 
 void PackerDXVA2::PackQmatrix(const H265Slice *pSlice)
@@ -976,7 +979,7 @@ void MSPackerDXVA2::PackPicParams(const H265DecoderFrame *pCurrentFrame,
     pPicParam->StatusReportFeedbackNumber = m_statusReportFeedbackCounter;
 }
 
-void MSPackerDXVA2::PackSliceParams(H265Slice *pSlice, Ipp32u &sliceNum, bool isLastSlice)
+bool MSPackerDXVA2::PackSliceParams(H265Slice *pSlice, Ipp32u &sliceNum, bool isLastSlice)
 {
     static Ipp8u start_code_prefix[] = {0, 0, 1};
 
@@ -989,6 +992,9 @@ void MSPackerDXVA2::PackSliceParams(H265Slice *pSlice, Ipp32u &sliceNum, bool is
     UMCVACompBuffer *headVABffr = 0;
     UMCVACompBuffer *dataVABffr = 0;
     DXVA_Slice_HEVC_Short* dxvaSlice = (DXVA_Slice_HEVC_Short*)m_va->GetCompBuffer(DXVA_SLICE_CONTROL_BUFFER, &headVABffr);
+    if (headVABffr->GetBufferSize() - headVABffr->GetDataSize() < sizeof(DXVA_Slice_HEVC_Short))
+        return false;
+
     dxvaSlice += sliceNum;
     Ipp8u *dataBffr = (Ipp8u *)m_va->GetCompBuffer(DXVA_BITSTREAM_DATA_BUFFER, &dataVABffr);
 
@@ -998,20 +1004,25 @@ void MSPackerDXVA2::PackSliceParams(H265Slice *pSlice, Ipp32u &sliceNum, bool is
     dxvaSlice->SliceBytesInBuffer = storedSize;
     dxvaSlice->wBadSliceChopping = 0;
 
-    if (storedSize >= dataVABffr->GetBufferSize() - dataVABffr->GetDataSize())
-        return;
+    if (storedSize + 127 >= dataVABffr->GetBufferSize() - dataVABffr->GetDataSize())
+        return false;
 
     dataBffr += dataVABffr->GetDataSize();
     MFX_INTERNAL_CPY(dataBffr, start_code_prefix, sizeof(start_code_prefix));
     MFX_INTERNAL_CPY(dataBffr + sizeof(start_code_prefix), rawDataPtr, rawDataSize);
 
-    Ipp32s alignedSize = dataVABffr->GetDataSize() + storedSize;
+    Ipp32s fullSize = dataVABffr->GetDataSize() + storedSize;
     if (isLastSlice)
-        alignedSize = align_value<Ipp32s>(alignedSize, 128);
+    {
+        Ipp32s alignedSize = align_value<Ipp32s>(fullSize, 128);
+        VM_ASSERT(alignedSize < dataVABffr->GetBufferSize());
+        memset(dataBffr + storedSize, 0, alignedSize - fullSize);
+        fullSize = alignedSize;
+    }
 
-    memset(dataBffr + storedSize, 0, alignedSize - storedSize);
-    dataVABffr->SetDataSize(alignedSize);
+    dataVABffr->SetDataSize(fullSize);
     headVABffr->SetDataSize(headVABffr->GetDataSize() + sizeof(DXVA_Slice_HEVC_Short));
+    return true;
 }
 
 #endif // UMC_VA_DXVA
@@ -1251,7 +1262,7 @@ void PackerVA::CreateSliceDataBuffer(H265DecoderFrameInfo * sliceInfo)
     compBuf->SetDataSize(0);
 }
 
-void PackerVA::PackSliceParams(H265Slice *pSlice, Ipp32u &sliceNum, bool isLastSlice)
+bool PackerVA::PackSliceParams(H265Slice *pSlice, Ipp32u &sliceNum, bool isLastSlice)
 {
     static Ipp8u start_code_prefix[] = {0, 0, 1};
 
@@ -1298,7 +1309,7 @@ void PackerVA::PackSliceParams(H265Slice *pSlice, Ipp32u &sliceNum, bool isLastS
     MFX_INTERNAL_CPY(sliceDataBuf + sizeof(start_code_prefix), rawDataPtr, rawDataSize);
 
     if (!m_va->IsLongSliceControl())
-        return;
+        return true;
 
     sliceParams->slice_data_byte_offset = pSlice->m_BitStream.BytesDecoded() + sizeof(start_code_prefix);
 
@@ -1404,6 +1415,7 @@ void PackerVA::PackSliceParams(H265Slice *pSlice, Ipp32u &sliceNum, bool isLastS
     }
 
     sliceParams->five_minus_max_num_merge_cand = (uint8_t)(5 - sliceHeader->max_num_merge_cand);
+    return true;
 }
 
 void PackerVA::PackQmatrix(const H265Slice *pSlice)

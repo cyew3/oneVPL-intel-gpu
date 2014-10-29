@@ -51,7 +51,7 @@ public:
                         H265DecoderFrameInfo * pSliceInfo,
                         TaskSupplier_H265 * supplier) = 0;
 
-    virtual void PackSliceParams(H265Slice *pSlice, Ipp32u &sliceNum, bool isLastSlice) = 0;
+    virtual bool PackSliceParams(H265Slice *pSlice, Ipp32u &sliceNum, bool isLastSlice) = 0;
 
     virtual void PackQmatrix(const H265Slice *pSlice) = 0;
 
@@ -79,7 +79,7 @@ public:
                         H265DecoderFrameInfo * pSliceInfo,
                         TaskSupplier_H265 * supplier);
 
-    virtual void PackSliceParams(H265Slice *pSlice, Ipp32u &sliceNum, bool isLastSlice);
+    virtual bool PackSliceParams(H265Slice *pSlice, Ipp32u &sliceNum, bool isLastSlice);
 
     virtual void PackAU(const H265DecoderFrame *pCurrentFrame, TaskSupplier_H265 * supplier);
 
@@ -105,7 +105,7 @@ public:
                         H265DecoderFrameInfo * pSliceInfo,
                         TaskSupplier_H265 * supplier);
 
-    virtual void PackSliceParams(H265Slice *pSlice, Ipp32u &sliceNum, bool isLastSlice);
+    virtual bool PackSliceParams(H265Slice *pSlice, Ipp32u &sliceNum, bool isLastSlice);
 };
 
 #endif // UMC_VA_DXVA
@@ -126,7 +126,7 @@ public:
                         H265DecoderFrameInfo * pSliceInfo,
                         TaskSupplier_H265 * supplier);
 
-    virtual void PackSliceParams(H265Slice *pSlice, Ipp32u &sliceNum, bool isLastSlice);
+    virtual bool PackSliceParams(H265Slice *pSlice, Ipp32u &sliceNum, bool isLastSlice);
 
     virtual void BeginFrame();
     virtual void EndFrame();
