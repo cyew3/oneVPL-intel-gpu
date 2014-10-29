@@ -840,7 +840,7 @@ mfxStatus CCameraPipeline::Init(sInputParams *pParams)
 
     if (pParams->bGamma) {
         pParams->gamma_mode = MFX_CAM_GAMMA_LUT; // tmp ??? kta
-        if (pParams->gamma_mode == MFX_CAM_GAMMA_LUT)  {
+        if (pParams->gamma_mode == MFX_CAM_GAMMA_LUT && ! pParams->bExternalGammaLUT)  {
             for (int i = 0; i < 64; i++) {
                 pParams->gamma_point[i]  = gamma_point[i];
                 pParams->gamma_corrected[i] = gamma_correct[i];

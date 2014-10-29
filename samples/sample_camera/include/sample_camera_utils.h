@@ -145,6 +145,7 @@ struct sInputParams
     mfxU32  nWallTimeout; //timeout for -wall option
 
     bool   bGamma;
+    bool   bExternalGammaLUT;
     mfxU16 gamma_point[64];
     mfxU16 gamma_corrected[64];
     mfxF64 gamma_value;
@@ -198,6 +199,7 @@ struct sInputParams
         bCCM          = false;
         alphaValue = -1;
         resetInterval = 7;
+        bExternalGammaLUT = false;
     }
 };
 

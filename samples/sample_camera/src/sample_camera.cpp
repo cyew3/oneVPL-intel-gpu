@@ -25,6 +25,9 @@ void PrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("   [-f format] / [-format format]                      - input Bayer format: rggb, bggr, grbg or gbrg\n"));
     msdk_printf(MSDK_STRING("   [-of format] / [-outFormat format]                  - output format: of argb16 or 16 meaning 16 bit ARGB, 8 bit ARGB otherwise\n"));
     msdk_printf(MSDK_STRING("   [-ng] / [-noGamma]                                  - no gamma correction\n"));
+    msdk_printf(MSDK_STRING("   [-gamma_points]                                     - set specific gamma points (64 points expected)\n"));
+    msdk_printf(MSDK_STRING("   [-gamma_corrected]                                  - set specific gamma corrected values (64 values expected)\n"));
+    msdk_printf(MSDK_STRING("                                                           -gamma_points and -gamma_corrected options must be used together\n"));
     msdk_printf(MSDK_STRING("   [-bdn] / [-bayerDenoise]                            - bayer denoise on\n"));
     msdk_printf(MSDK_STRING("   [-bbl B G0 G1 R] / [-bayerBlackLevel B G0 G1 R]     - bayer black level correction\n"));
     msdk_printf(MSDK_STRING("   [-bwb B G0 G1 R] / [-bayerWhiteBalance B G0 G1 R]   - bayer white balance\n"));
@@ -192,6 +195,30 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
             for(int k = 0; k < 3; k++)
                 for (int z = 0; z < 3; z++)
                     msdk_opt_read(strInput[++i], pParams->CCM[k][z]);
+        }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-gamma_points")))
+        {
+            if(i + 64 >= nArgNum)
+            {
+                PrintHelp(strInput[0], MSDK_STRING("There should be 64 points provided."));
+                return MFX_ERR_UNSUPPORTED;
+            }
+            for(int k = 0; k < 64; k++)
+                msdk_opt_read(strInput[++i],  pParams->gamma_point[k]);
+
+            pParams->bExternalGammaLUT = true;
+        }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-gamma_corrected")))
+        {
+            if(i + 64 >= nArgNum)
+            {
+                PrintHelp(strInput[0], MSDK_STRING("There should be 64 points provided."));
+                return MFX_ERR_UNSUPPORTED;
+            }
+            for(int k = 0; k < 64; k++)
+                msdk_opt_read(strInput[++i],  pParams->gamma_corrected[k]);
+
+            pParams->bExternalGammaLUT = true;
         }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-pd")) || 0 == msdk_strcmp(strInput[i], MSDK_STRING("-padding")))
         {
