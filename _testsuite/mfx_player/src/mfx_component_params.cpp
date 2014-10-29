@@ -217,10 +217,11 @@ mfxStatus ComponentParams::AllocFrames( RWAllocatorFactory::root* pFactory
         {
             MFX_CHECK_POINTER(hwDevice);
 #ifdef D3D_SURFACES_SUPPORT
-            if (pRequest->Info.FourCC == MFX_FOURCC_RGB4)
-                pRequest->Type |= MFX_MEMTYPE_DXVA2_PROCESSOR_TARGET;
-            else
+            /* if pRequest->Type doesn't specify flags the use default MFX_MEMTYPE_DXVA2_DECODER_TARGET*/
+            if ( ( pRequest->Type & (MFX_MEMTYPE_DXVA2_PROCESSOR_TARGET | MFX_MEMTYPE_DXVA2_DECODER_TARGET)) == 0)
+            {
                 pRequest->Type |= MFX_MEMTYPE_DXVA2_DECODER_TARGET;
+            }
 
             if (NULL == m_pAllocator)
             {
