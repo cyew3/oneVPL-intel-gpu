@@ -528,6 +528,7 @@ mfxStatus VideoDECODEVP9_HW::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1
 
     MFX_CHECK_STS(sts);
 
+    (*surface_out)->Data.TimeStamp = bs->TimeStamp;
     (*surface_out)->Data.Corrupted = 0;
     (*surface_out)->Data.FrameOrder = m_frameOrder;
 
